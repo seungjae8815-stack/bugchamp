@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "traps": [
+    {
+      "id": "sap_trap",
+      "name": { "ko": "수액 트랩", "en": "Sap Trap", "ja": "樹液トラップ" },
+      "yieldMultiplier": 1.0
+    },
+    {
+      "id": "fruit_trap",
+      "name": { "ko": "과일 트랩", "en": "Fruit Trap", "ja": "フルーツトラップ" },
+      "yieldMultiplier": 1.05
+    },
+    {
+      "id": "light_trap",
+      "name": { "ko": "불빛 트랩", "en": "Light Trap", "ja": "ライトトラップ" },
+      "yieldMultiplier": 1.15
+    },
+    {
+      "id": "pitfall_trap",
+      "name": { "ko": "함정 트랩", "en": "Pitfall Trap", "ja": "落とし穴トラップ" },
+      "yieldMultiplier": 0.9
+    }
+  ]
+}

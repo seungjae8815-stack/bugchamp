@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "fields": [
+    {
+      "id": "oak_forest",
+      "name": { "ko": "참나무 숲", "en": "Oak Forest", "ja": "ナラの森" },
+      "unlockOrder": 0
+    },
+    {
+      "id": "valley_stream",
+      "name": { "ko": "계곡 물가", "en": "Valley Stream", "ja": "渓谷の水辺" },
+      "unlockOrder": 1
+    },
+    {
+      "id": "grass_field",
+      "name": { "ko": "풀숲 초원", "en": "Grassland", "ja": "草原" },
+      "unlockOrder": 2
+    },
+    {
+      "id": "night_mountain",
+      "name": { "ko": "야산 밤숲", "en": "Night Mountain", "ja": "夜の山林" },
+      "unlockOrder": 3
+    }
+  ]
+}

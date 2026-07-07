@@ -1,0 +1,120 @@
+{
+  "@@locale": "en",
+  "appTitle": "Bug Champ",
+  "@appTitle": { "description": "Application title" },
+  "navHome": "Home",
+  "navCollect": "Collect",
+  "navStorage": "Storage",
+
+  "homeTitle": "Traps",
+  "homeMaterialsTitle": "Materials",
+  "slotLabel": "Slot {index}",
+  "@slotLabel": { "placeholders": { "index": { "type": "int" } } },
+  "slotEmpty": "Empty",
+  "slotInstallCta": "Install a trap",
+  "elapsedLabel": "Elapsed {duration} / max 8h",
+  "@elapsedLabel": { "placeholders": { "duration": { "type": "String" } } },
+  "collectButton": "Claim",
+  "collectResultSnack": "Got {materialCount} materials, {bugCount} bugs!",
+  "@collectResultSnack": {
+    "placeholders": {
+      "materialCount": { "type": "int" },
+      "bugCount": { "type": "int" }
+    }
+  },
+  "collectNothingSnack": "Nothing to collect yet",
+  "homeYard": "My Yard",
+  "collecting": "Collecting",
+  "readyLabel": "Ready",
+  "collectAll": "Collect all",
+  "comingSoon": "Coming soon",
+  "offlineBanner": "Welcome back! {materialCount} materials, {bugCount} bugs waiting",
+  "@offlineBanner": {
+    "placeholders": {
+      "materialCount": { "type": "int" },
+      "bugCount": { "type": "int" }
+    }
+  },
+  "chapterTitle": "Chapter {n}",
+  "@chapterTitle": { "placeholders": { "n": { "type": "int" } } },
+  "chapterRemaining": "{count} more bugs to the next chapter",
+  "@chapterRemaining": { "placeholders": { "count": { "type": "int" } } },
+  "statusForaging": "Foraging…",
+  "statusIdle": "Install a trap to start foraging",
+  "navUpgrade": "Upgrade",
+  "navShop": "Shop",
+  "upgradeTitle": "Upgrades",
+  "retreat": "Retreat!",
+  "offlineReward": "Welcome back! +{gold} gold, +{xp} XP",
+  "@offlineReward": {
+    "placeholders": {
+      "gold": { "type": "String" },
+      "xp": { "type": "String" }
+    }
+  },
+  "upAttack": "Harvest Power",
+  "upAttackSpeed": "Swift Hands",
+  "upCrit": "Weak Point",
+  "upCritDamage": "Heavy Blow",
+  "upBossDamage": "Fighting Spirit",
+  "upMaxHp": "Grit",
+  "upDefense": "Toughness",
+  "upRegen": "Recovery",
+  "upReward": "Merchant Skill",
+  "upXp": "Foraging Lore",
+  "upBugFind": "Bug Sense",
+  "upMaterialFind": "Careful Harvest",
+  "upMoveSpeed": "Footwork",
+  "upBoost": "Focus",
+  "upBugBuff": "Codex Mastery",
+  "statAttack": "Attack",
+  "statAttackSpeed": "Attack Speed",
+  "statReward": "Gold Bonus",
+  "notEnoughGold": "Not enough gold",
+  "bossLabel": "BOSS",
+  "tapBoostHint": "Tap to boost!",
+  "levelBadge": "Lv {n}",
+  "@levelBadge": { "placeholders": { "n": { "type": "int" } } },
+
+  "collectTitle": "Fields",
+  "collectPickTrap": "Choose a trap",
+  "collectPickSlot": "Choose a slot",
+  "collectInstalledSnack": "Installed {trap} at {field}",
+  "@collectInstalledSnack": {
+    "placeholders": {
+      "field": { "type": "String" },
+      "trap": { "type": "String" }
+    }
+  },
+  "locked": "Locked",
+  "install": "Install",
+
+  "storageTitle": "Storage",
+  "storageEmpty": "No bugs yet.\nGather some from the fields!",
+  "storageCount": "{count} bugs",
+  "@storageCount": { "placeholders": { "count": { "type": "int" } } },
+  "bugSize": "{mm}mm",
+  "@bugSize": { "placeholders": { "mm": { "type": "String" } } },
+  "bugPotential": "{stars}★",
+  "@bugPotential": { "placeholders": { "stars": { "type": "int" } } },
+
+  "gradeCommon": "Common",
+  "gradeUncommon": "Uncommon",
+  "gradeRare": "Rare",
+  "gradeEpic": "Epic",
+  "gradeLegendary": "Legendary",
+  "specialtyStrike": "Strike",
+  "specialtyGrip": "Grip",
+  "specialtyToss": "Toss",
+  "temperamentAggressive": "Aggressive",
+  "temperamentCautious": "Cautious",
+  "temperamentCunning": "Cunning",
+  "temperamentSteadfast": "Steadfast",
+  "temperamentFickle": "Fickle",
+  "sexMale": "Male",
+  "sexFemale": "Female",
+  "materialChitin": "Chitin",
+  "materialMineral": "Mineral",
+  "materialSap": "Sap Crystal",
+  "materialJelly": "Bug Jelly"
+}

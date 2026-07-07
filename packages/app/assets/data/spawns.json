@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "defaultPotentialWeights": [
+    { "potential": 1, "weight": 50 },
+    { "potential": 2, "weight": 30 },
+    { "potential": 3, "weight": 15 },
+    { "potential": 4, "weight": 4 },
+    { "potential": 5, "weight": 1 }
+  ],
+  "spawns": [
+    {
+      "fieldId": "oak_forest",
+      "trapId": "sap_trap",
+      "encountersPerHour": 0.6,
+      "materialsPerHour": [
+        { "kind": "chitin", "perHour": 2.0 },
+        { "kind": "sap", "perHour": 1.5 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "stag_dorcus", "weight": 40 },
+        { "speciesId": "stag_saw", "weight": 30 },
+        { "speciesId": "rhino_lesser", "weight": 15 },
+        { "speciesId": "rhino_japanese", "weight": 10 },
+        { "speciesId": "chafer_flower", "weight": 5 }
+      ]
+    },
+    {
+      "fieldId": "oak_forest",
+      "trapId": "fruit_trap",
+      "encountersPerHour": 0.55,
+      "materialsPerHour": [
+        { "kind": "sap", "perHour": 2.0 },
+        { "kind": "jelly", "perHour": 0.5 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "stag_saw", "weight": 35 },
+        { "speciesId": "stag_flat", "weight": 25 },
+        { "speciesId": "rhino_japanese", "weight": 20 },
+        { "speciesId": "chafer_flower", "weight": 15 },
+        { "speciesId": "stag_miyama", "weight": 5 }
+      ]
+    },
+    {
+      "fieldId": "oak_forest",
+      "trapId": "light_trap",
+      "encountersPerHour": 0.5,
+      "materialsPerHour": [
+        { "kind": "chitin", "perHour": 1.5 },
+        { "kind": "mineral", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "rhino_japanese", "weight": 30 },
+        { "speciesId": "longhorn_saw", "weight": 25 },
+        { "speciesId": "longhorn_whitespot", "weight": 20 },
+        { "speciesId": "stag_miyama", "weight": 15 },
+        { "speciesId": "longhorn_oak", "weight": 10 }
+      ]
+    },
+    {
+      "fieldId": "oak_forest",
+      "trapId": "pitfall_trap",
+      "encountersPerHour": 0.5,
+      "materialsPerHour": [
+        { "kind": "chitin", "perHour": 2.5 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "stag_dorcus", "weight": 45 },
+        { "speciesId": "longhorn_saw", "weight": 30 },
+        { "speciesId": "rhino_lesser", "weight": 25 }
+      ]
+    },
+    {
+      "fieldId": "valley_stream",
+      "trapId": "sap_trap",
+      "encountersPerHour": 0.5,
+      "materialsPerHour": [
+        { "kind": "sap", "perHour": 1.8 },
+        { "kind": "mineral", "perHour": 1.2 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "stag_flat", "weight": 30 },
+        { "speciesId": "longhorn_whitespot", "weight": 25 },
+        { "speciesId": "mantis_widebelly", "weight": 25 },
+        { "speciesId": "longhorn_oak", "weight": 20 }
+      ]
+    },
+    {
+      "fieldId": "valley_stream",
+      "trapId": "fruit_trap",
+      "encountersPerHour": 0.5,
+      "materialsPerHour": [
+        { "kind": "jelly", "perHour": 1.0 },
+        { "kind": "sap", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "chafer_flower", "weight": 30 },
+        { "speciesId": "stag_miyama", "weight": 25 },
+        { "speciesId": "mantis_widebelly", "weight": 25 },
+        { "speciesId": "stag_flat", "weight": 20 }
+      ]
+    },
+    {
+      "fieldId": "valley_stream",
+      "trapId": "light_trap",
+      "encountersPerHour": 0.45,
+      "materialsPerHour": [
+        { "kind": "mineral", "perHour": 1.5 },
+        { "kind": "chitin", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "mantis_giant", "weight": 20 },
+        { "speciesId": "longhorn_oak", "weight": 25 },
+        { "speciesId": "longhorn_whitespot", "weight": 25 },
+        { "speciesId": "water_bug_giant", "weight": 15 },
+        { "speciesId": "mantis_widebelly", "weight": 15 }
+      ]
+    },
+    {
+      "fieldId": "valley_stream",
+      "trapId": "pitfall_trap",
+      "encountersPerHour": 0.5,
+      "materialsPerHour": [
+        { "kind": "mineral", "perHour": 2.0 },
+        { "kind": "chitin", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "water_bug_giant", "weight": 30 },
+        { "speciesId": "mantis_jumping", "weight": 30 },
+        { "speciesId": "grasshopper_longheaded", "weight": 25 },
+        { "speciesId": "longhorn_saw", "weight": 15 }
+      ]
+    },
+    {
+      "fieldId": "grass_field",
+      "trapId": "sap_trap",
+      "encountersPerHour": 0.6,
+      "materialsPerHour": [
+        { "kind": "sap", "perHour": 1.5 },
+        { "kind": "jelly", "perHour": 0.5 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "mantis_jumping", "weight": 30 },
+        { "speciesId": "katydid", "weight": 25 },
+        { "speciesId": "grasshopper_longheaded", "weight": 25 },
+        { "speciesId": "mantis_widebelly", "weight": 20 }
+      ]
+    },
+    {
+      "fieldId": "grass_field",
+      "trapId": "fruit_trap",
+      "encountersPerHour": 0.55,
+      "materialsPerHour": [
+        { "kind": "jelly", "perHour": 1.2 },
+        { "kind": "sap", "perHour": 0.8 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "chafer_flower", "weight": 30 },
+        { "speciesId": "katydid", "weight": 25 },
+        { "speciesId": "mantis_jumping", "weight": 25 },
+        { "speciesId": "mantis_widebelly", "weight": 20 }
+      ]
+    },
+    {
+      "fieldId": "grass_field",
+      "trapId": "light_trap",
+      "encountersPerHour": 0.5,
+      "materialsPerHour": [
+        { "kind": "mineral", "perHour": 1.2 },
+        { "kind": "chitin", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "katydid", "weight": 30 },
+        { "speciesId": "mantis_giant", "weight": 20 },
+        { "speciesId": "mantis_widebelly", "weight": 25 },
+        { "speciesId": "grasshopper_longheaded", "weight": 25 }
+      ]
+    },
+    {
+      "fieldId": "grass_field",
+      "trapId": "pitfall_trap",
+      "encountersPerHour": 0.6,
+      "materialsPerHour": [
+        { "kind": "chitin", "perHour": 1.5 },
+        { "kind": "mineral", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "grasshopper_longheaded", "weight": 40 },
+        { "speciesId": "mantis_jumping", "weight": 35 },
+        { "speciesId": "katydid", "weight": 25 }
+      ]
+    },
+    {
+      "fieldId": "night_mountain",
+      "trapId": "sap_trap",
+      "encountersPerHour": 0.4,
+      "materialsPerHour": [
+        { "kind": "sap", "perHour": 2.0 },
+        { "kind": "jelly", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "stag_miyama", "weight": 25 },
+        { "speciesId": "stag_giant", "weight": 20 },
+        { "speciesId": "stag_twospot", "weight": 20 },
+        { "speciesId": "rhino_japanese", "weight": 20 },
+        { "speciesId": "stag_flat", "weight": 15 }
+      ]
+    },
+    {
+      "fieldId": "night_mountain",
+      "trapId": "fruit_trap",
+      "encountersPerHour": 0.4,
+      "materialsPerHour": [
+        { "kind": "jelly", "perHour": 1.5 },
+        { "kind": "sap", "perHour": 1.0 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "stag_giant", "weight": 25 },
+        { "speciesId": "stag_twospot", "weight": 25 },
+        { "speciesId": "chafer_flower", "weight": 20 },
+        { "speciesId": "stag_miyama", "weight": 20 },
+        { "speciesId": "longhorn_oak", "weight": 10 }
+      ]
+    },
+    {
+      "fieldId": "night_mountain",
+      "trapId": "light_trap",
+      "encountersPerHour": 0.35,
+      "materialsPerHour": [
+        { "kind": "mineral", "perHour": 1.5 },
+        { "kind": "chitin", "perHour": 1.5 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "hornet_giant", "weight": 15 },
+        { "speciesId": "mantis_giant", "weight": 20 },
+        { "speciesId": "longhorn_relict", "weight": 10 },
+        { "speciesId": "longhorn_oak", "weight": 30 },
+        { "speciesId": "stag_miyama", "weight": 25 }
+      ]
+    },
+    {
+      "fieldId": "night_mountain",
+      "trapId": "pitfall_trap",
+      "encountersPerHour": 0.4,
+      "materialsPerHour": [
+        { "kind": "chitin", "perHour": 2.0 },
+        { "kind": "mineral", "perHour": 1.5 }
+      ],
+      "speciesWeights": [
+        { "speciesId": "stag_giant", "weight": 30 },
+        { "speciesId": "water_bug_giant", "weight": 25 },
+        { "speciesId": "stag_twospot", "weight": 25 },
+        { "speciesId": "longhorn_relict", "weight": 8 },
+        { "speciesId": "mantis_giant", "weight": 12 }
+      ]
+    }
+  ]
+}

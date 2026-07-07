@@ -1,0 +1,51 @@
+name: app
+description: "Bug Champ — 곤충 채집 배틀 게임 (Flutter 앱)."
+publish_to: 'none'
+version: 1.0.0+1
+
+resolution: workspace
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # 워크스페이스 내부 패키지
+  core_models:
+    path: ../core_models
+  core_battle:
+    path: ../core_battle
+  core_gathering:
+    path: ../core_gathering
+  core_run:
+    path: ../core_run
+
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^3.3.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.6
+  uuid: ^4.5.3
+  collection: ^1.19.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true   # ARB 기반 다국어 코드 생성 활성화
+
+  assets:
+    - assets/data/
+    - assets/images/character/
+    - assets/images/habitats/
+    - assets/images/bosses/
+    - assets/images/regions/
+    - assets/images/materials/
+    - assets/images/upgrades/

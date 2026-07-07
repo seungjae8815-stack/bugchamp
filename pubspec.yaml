@@ -1,0 +1,16 @@
+name: bugchamp_workspace
+description: Bug Champ 모노레포 워크스페이스 루트 (pub workspace).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.11.5
+
+# pub workspace 멤버 (단일 lockfile 공유).
+# 의존 방향: app -> {core_battle, core_gathering} -> core_models
+workspace:
+  - packages/core_models
+  - packages/core_battle
+  - packages/core_gathering
+  - packages/core_run
+  - packages/app

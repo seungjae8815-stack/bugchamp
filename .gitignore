@@ -1,0 +1,17 @@
+# Dart/Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 워크스페이스 lockfile 은 커밋 (앱 재현성). 필요시 개별 무시하지 말 것.
