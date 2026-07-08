@@ -3,183 +3,463 @@
   "species": [
     {
       "id": "stag_dorcus",
-      "name": { "ko": "애사슴벌레", "en": "Dorcus Stag Beetle", "ja": "コクワガタ" },
+      "name": {
+        "ko": "애사슴벌레",
+        "en": "Dorcus Stag Beetle",
+        "ja": "コクワガタ"
+      },
       "grade": "common",
       "specialty": "grip",
-      "baseStats": { "hp": 95, "atk": 30, "def": 35, "spd": 22 },
+      "baseStats": {
+        "hp": 95,
+        "atk": 30,
+        "def": 35,
+        "spd": 22
+      },
       "sizeMinMm": 20,
-      "sizeMaxMm": 55
+      "sizeMaxMm": 55,
+      "desc": {
+        "ko": "몸집은 작지만 단단한 검은 사슴벌레. 짧고 야무진 큰턱으로 상대를 집어 던진다.",
+        "en": "A small but sturdy black stag beetle that grips and throws foes.",
+        "ja": "몸집은 작지만 단단한 검은 사슴벌레. 짧고 야무진 큰턱으로 상대를 집어 던진다."
+      }
     },
     {
       "id": "stag_saw",
-      "name": { "ko": "톱사슴벌레", "en": "Saw Stag Beetle", "ja": "ノコギリクワガタ" },
+      "name": {
+        "ko": "톱사슴벌레",
+        "en": "Saw Stag Beetle",
+        "ja": "ノコギリクワガタ"
+      },
       "grade": "common",
       "specialty": "toss",
-      "baseStats": { "hp": 90, "atk": 34, "def": 30, "spd": 28 },
+      "baseStats": {
+        "hp": 90,
+        "atk": 34,
+        "def": 30,
+        "spd": 28
+      },
       "sizeMinMm": 25,
-      "sizeMaxMm": 75
+      "sizeMaxMm": 75,
+      "desc": {
+        "ko": "길고 톱니 같은 큰턱이 특징인 사슴벌레. 굽은 턱으로 상대를 걸어 넘긴다.",
+        "en": "A stag beetle with long saw-toothed jaws to hook opponents.",
+        "ja": "길고 톱니 같은 큰턱이 특징인 사슴벌레. 굽은 턱으로 상대를 걸어 넘긴다."
+      }
     },
     {
       "id": "rhino_lesser",
-      "name": { "ko": "외뿔장수풍뎅이", "en": "Lesser Rhinoceros Beetle", "ja": "コカブト" },
+      "name": {
+        "ko": "외뿔장수풍뎅이",
+        "en": "Lesser Rhinoceros Beetle",
+        "ja": "コカブト"
+      },
       "grade": "common",
       "specialty": "strike",
-      "baseStats": { "hp": 92, "atk": 38, "def": 28, "spd": 24 },
+      "baseStats": {
+        "hp": 92,
+        "atk": 38,
+        "def": 28,
+        "spd": 24
+      },
       "sizeMinMm": 15,
-      "sizeMaxMm": 28
+      "sizeMaxMm": 28,
+      "desc": {
+        "ko": "이마에 짧은 외뿔이 난 작은 장수풍뎅이. 힘차게 들이받는다.",
+        "en": "A small rhinoceros beetle with one short horn; charges hard.",
+        "ja": "이마에 짧은 외뿔이 난 작은 장수풍뎅이. 힘차게 들이받는다."
+      }
     },
     {
       "id": "mantis_jumping",
-      "name": { "ko": "좀사마귀", "en": "Asian Jumping Mantis", "ja": "コカマキリ" },
+      "name": {
+        "ko": "좀사마귀",
+        "en": "Asian Jumping Mantis",
+        "ja": "コカマキリ"
+      },
       "grade": "common",
       "specialty": "strike",
-      "baseStats": { "hp": 74, "atk": 42, "def": 22, "spd": 44 },
+      "baseStats": {
+        "hp": 74,
+        "atk": 42,
+        "def": 22,
+        "spd": 44
+      },
       "sizeMinMm": 40,
-      "sizeMaxMm": 65
+      "sizeMaxMm": 65,
+      "desc": {
+        "ko": "몸이 가는 작은 갈색 사마귀. 재빠른 앞다리로 순식간에 낚아챈다.",
+        "en": "A slender brown mantis with lightning-fast forelegs.",
+        "ja": "몸이 가는 작은 갈색 사마귀. 재빠른 앞다리로 순식간에 낚아챈다."
+      }
     },
     {
       "id": "longhorn_saw",
-      "name": { "ko": "톱하늘소", "en": "Saw Longhorn Beetle", "ja": "ノコギリカミキリ" },
+      "name": {
+        "ko": "톱하늘소",
+        "en": "Saw Longhorn Beetle",
+        "ja": "ノコギリカミキリ"
+      },
       "grade": "common",
       "specialty": "grip",
-      "baseStats": { "hp": 88, "atk": 36, "def": 30, "spd": 28 },
+      "baseStats": {
+        "hp": 88,
+        "atk": 36,
+        "def": 30,
+        "spd": 28
+      },
       "sizeMinMm": 23,
-      "sizeMaxMm": 50
+      "sizeMaxMm": 50,
+      "desc": {
+        "ko": "톱니 더듬이를 가진 갈색 하늘소. 단단한 겉날개가 방패가 된다.",
+        "en": "A brown longhorn beetle with serrated antennae and a tough shell.",
+        "ja": "톱니 더듬이를 가진 갈색 하늘소. 단단한 겉날개가 방패가 된다."
+      }
     },
     {
       "id": "grasshopper_longheaded",
-      "name": { "ko": "방아깨비", "en": "Oriental Longheaded Grasshopper", "ja": "ショウリョウバッタ" },
+      "name": {
+        "ko": "방아깨비",
+        "en": "Oriental Longheaded Grasshopper",
+        "ja": "ショウリョウバッタ"
+      },
       "grade": "common",
       "specialty": "toss",
-      "baseStats": { "hp": 78, "atk": 30, "def": 22, "spd": 50 },
+      "baseStats": {
+        "hp": 78,
+        "atk": 30,
+        "def": 22,
+        "spd": 50
+      },
       "sizeMinMm": 40,
-      "sizeMaxMm": 80
+      "sizeMaxMm": 80,
+      "desc": {
+        "ko": "머리가 길쭉한 초록 메뚜기. 긴 뒷다리로 멀리 도약한다.",
+        "en": "A long-headed green grasshopper that leaps far.",
+        "ja": "머리가 길쭉한 초록 메뚜기. 긴 뒷다리로 멀리 도약한다."
+      }
     },
     {
       "id": "stag_flat",
-      "name": { "ko": "넓적사슴벌레", "en": "Flat Stag Beetle", "ja": "ヒラタクワガタ" },
+      "name": {
+        "ko": "넓적사슴벌레",
+        "en": "Flat Stag Beetle",
+        "ja": "ヒラタクワガタ"
+      },
       "grade": "uncommon",
       "specialty": "grip",
-      "baseStats": { "hp": 120, "atk": 40, "def": 45, "spd": 26 },
+      "baseStats": {
+        "hp": 120,
+        "atk": 40,
+        "def": 45,
+        "spd": 26
+      },
       "sizeMinMm": 30,
-      "sizeMaxMm": 90
+      "sizeMaxMm": 90,
+      "desc": {
+        "ko": "넓고 납작한 몸에 강한 큰턱을 지닌 사슴벌레. 힘이 세다.",
+        "en": "A broad flat stag beetle with powerful jaws.",
+        "ja": "넓고 납작한 몸에 강한 큰턱을 지닌 사슴벌레. 힘이 세다."
+      }
     },
     {
       "id": "rhino_japanese",
-      "name": { "ko": "장수풍뎅이", "en": "Rhinoceros Beetle", "ja": "カブトムシ" },
+      "name": {
+        "ko": "장수풍뎅이",
+        "en": "Rhinoceros Beetle",
+        "ja": "カブトムシ"
+      },
       "grade": "uncommon",
       "specialty": "strike",
-      "baseStats": { "hp": 115, "atk": 52, "def": 40, "spd": 28 },
+      "baseStats": {
+        "hp": 115,
+        "atk": 52,
+        "def": 40,
+        "spd": 28
+      },
       "sizeMinMm": 30,
-      "sizeMaxMm": 85
+      "sizeMaxMm": 85,
+      "desc": {
+        "ko": "Y자 뿔이 위풍당당한 장수풍뎅이. 곤충계의 대표 장사.",
+        "en": "A mighty rhinoceros beetle with a proud Y-horn.",
+        "ja": "Y자 뿔이 위풍당당한 장수풍뎅이. 곤충계의 대표 장사."
+      }
     },
     {
       "id": "mantis_widebelly",
-      "name": { "ko": "넓적배사마귀", "en": "Wide-bellied Mantis", "ja": "ハラビロカマキリ" },
+      "name": {
+        "ko": "넓적배사마귀",
+        "en": "Wide-bellied Mantis",
+        "ja": "ハラビロカマキリ"
+      },
       "grade": "uncommon",
       "specialty": "grip",
-      "baseStats": { "hp": 105, "atk": 50, "def": 36, "spd": 44 },
+      "baseStats": {
+        "hp": 105,
+        "atk": 50,
+        "def": 36,
+        "spd": 44
+      },
       "sizeMinMm": 45,
-      "sizeMaxMm": 70
+      "sizeMaxMm": 70,
+      "desc": {
+        "ko": "배가 넓은 초록 사마귀. 낫 같은 앞다리 공격이 매섭다.",
+        "en": "A wide-bellied green mantis with fierce scythe arms.",
+        "ja": "배가 넓은 초록 사마귀. 낫 같은 앞다리 공격이 매섭다."
+      }
     },
     {
       "id": "longhorn_whitespot",
-      "name": { "ko": "알락하늘소", "en": "White-spotted Longhorn Beetle", "ja": "ゴマダラカミキリ" },
+      "name": {
+        "ko": "알락하늘소",
+        "en": "White-spotted Longhorn Beetle",
+        "ja": "ゴマダラカミキリ"
+      },
       "grade": "uncommon",
       "specialty": "grip",
-      "baseStats": { "hp": 110, "atk": 46, "def": 42, "spd": 34 },
+      "baseStats": {
+        "hp": 110,
+        "atk": 46,
+        "def": 42,
+        "spd": 34
+      },
       "sizeMinMm": 25,
-      "sizeMaxMm": 40
+      "sizeMaxMm": 40,
+      "desc": {
+        "ko": "흰 점무늬와 아주 긴 더듬이를 가진 검은 하늘소.",
+        "en": "A black longhorn beetle with white speckles and very long antennae.",
+        "ja": "흰 점무늬와 아주 긴 더듬이를 가진 검은 하늘소."
+      }
     },
     {
       "id": "katydid",
-      "name": { "ko": "여치", "en": "Katydid", "ja": "キリギリス" },
+      "name": {
+        "ko": "여치",
+        "en": "Katydid",
+        "ja": "キリギリス"
+      },
       "grade": "uncommon",
       "specialty": "strike",
-      "baseStats": { "hp": 88, "atk": 54, "def": 28, "spd": 62 },
+      "baseStats": {
+        "hp": 88,
+        "atk": 54,
+        "def": 28,
+        "spd": 62
+      },
       "sizeMinMm": 28,
-      "sizeMaxMm": 48
+      "sizeMaxMm": 48,
+      "desc": {
+        "ko": "통통한 초록 여치. 긴 더듬이로 주변을 살핀다.",
+        "en": "A plump green katydid with long antennae.",
+        "ja": "통통한 초록 여치. 긴 더듬이로 주변을 살핀다."
+      }
     },
     {
       "id": "stag_miyama",
-      "name": { "ko": "사슴벌레", "en": "Miyama Stag Beetle", "ja": "ミヤマクワガタ" },
+      "name": {
+        "ko": "사슴벌레",
+        "en": "Miyama Stag Beetle",
+        "ja": "ミヤマクワガタ"
+      },
       "grade": "rare",
       "specialty": "toss",
-      "baseStats": { "hp": 145, "atk": 62, "def": 52, "spd": 40 },
+      "baseStats": {
+        "hp": 145,
+        "atk": 62,
+        "def": 52,
+        "spd": 40
+      },
       "sizeMinMm": 40,
-      "sizeMaxMm": 78
+      "sizeMaxMm": 78,
+      "desc": {
+        "ko": "머리에 황금빛 귀 모양 돌기가 난 산지의 사슴벌레. 크고 우아한 큰턱.",
+        "en": "A mountain stag beetle with golden head flanges and elegant jaws.",
+        "ja": "머리에 황금빛 귀 모양 돌기가 난 산지의 사슴벌레. 크고 우아한 큰턱."
+      }
     },
     {
       "id": "mantis_giant",
-      "name": { "ko": "왕사마귀", "en": "Giant Asian Mantis", "ja": "オオカマキリ" },
+      "name": {
+        "ko": "왕사마귀",
+        "en": "Giant Asian Mantis",
+        "ja": "オオカマキリ"
+      },
       "grade": "rare",
       "specialty": "strike",
-      "baseStats": { "hp": 120, "atk": 72, "def": 40, "spd": 70 },
+      "baseStats": {
+        "hp": 120,
+        "atk": 72,
+        "def": 40,
+        "spd": 70
+      },
       "sizeMinMm": 70,
-      "sizeMaxMm": 95
+      "sizeMaxMm": 95,
+      "desc": {
+        "ko": "크고 위엄 있는 초록 사마귀. 사냥의 제왕.",
+        "en": "A large, majestic green mantis; king of the hunt.",
+        "ja": "크고 위엄 있는 초록 사마귀. 사냥의 제왕."
+      }
     },
     {
       "id": "longhorn_oak",
-      "name": { "ko": "참나무하늘소", "en": "Oak Longhorn Beetle", "ja": "ミヤマカミキリ" },
+      "name": {
+        "ko": "참나무하늘소",
+        "en": "Oak Longhorn Beetle",
+        "ja": "ミヤマカミキリ"
+      },
       "grade": "rare",
       "specialty": "grip",
-      "baseStats": { "hp": 140, "atk": 60, "def": 58, "spd": 42 },
+      "baseStats": {
+        "hp": 140,
+        "atk": 60,
+        "def": 58,
+        "spd": 42
+      },
       "sizeMinMm": 35,
-      "sizeMaxMm": 58
+      "sizeMaxMm": 58,
+      "desc": {
+        "ko": "아주 긴 줄무늬 더듬이를 가진 큰 갈색 하늘소. 참나무의 주인.",
+        "en": "A big brown oak longhorn with extra-long banded antennae.",
+        "ja": "아주 긴 줄무늬 더듬이를 가진 큰 갈색 하늘소. 참나무의 주인."
+      }
     },
     {
       "id": "chafer_flower",
-      "name": { "ko": "장수꽃무지", "en": "Flower Chafer", "ja": "オオハナムグリ" },
+      "name": {
+        "ko": "장수꽃무지",
+        "en": "Flower Chafer",
+        "ja": "オオハナムグリ"
+      },
       "grade": "rare",
       "specialty": "strike",
-      "baseStats": { "hp": 135, "atk": 66, "def": 50, "spd": 48 },
+      "baseStats": {
+        "hp": 135,
+        "atk": 66,
+        "def": 50,
+        "spd": 48
+      },
       "sizeMinMm": 22,
-      "sizeMaxMm": 38
+      "sizeMaxMm": 38,
+      "desc": {
+        "ko": "금속빛 초록·청동색으로 빛나는 꽃무지. 화려한 겉날개가 아름답다.",
+        "en": "A flower chafer shining in metallic green-bronze.",
+        "ja": "금속빛 초록·청동색으로 빛나는 꽃무지. 화려한 겉날개가 아름답다."
+      }
     },
     {
       "id": "stag_giant",
-      "name": { "ko": "왕사슴벌레", "en": "Giant Stag Beetle", "ja": "オオクワガタ" },
+      "name": {
+        "ko": "왕사슴벌레",
+        "en": "Giant Stag Beetle",
+        "ja": "オオクワガタ"
+      },
       "grade": "epic",
       "specialty": "grip",
-      "baseStats": { "hp": 180, "atk": 78, "def": 72, "spd": 42 },
+      "baseStats": {
+        "hp": 180,
+        "atk": 78,
+        "def": 72,
+        "spd": 42
+      },
       "sizeMinMm": 40,
-      "sizeMaxMm": 92
+      "sizeMaxMm": 92,
+      "desc": {
+        "ko": "두껍고 힘센 큰턱을 가진 거대한 검은 사슴벌레. 왕의 품격.",
+        "en": "A giant black stag beetle with thick, powerful jaws.",
+        "ja": "두껍고 힘센 큰턱을 가진 거대한 검은 사슴벌레. 왕의 품격."
+      }
     },
     {
       "id": "water_bug_giant",
-      "name": { "ko": "물장군", "en": "Giant Water Bug", "ja": "タガメ" },
+      "name": {
+        "ko": "물장군",
+        "en": "Giant Water Bug",
+        "ja": "タガメ"
+      },
       "grade": "epic",
       "specialty": "grip",
-      "baseStats": { "hp": 165, "atk": 88, "def": 60, "spd": 58 },
+      "baseStats": {
+        "hp": 165,
+        "atk": 88,
+        "def": 60,
+        "spd": 58
+      },
       "sizeMinMm": 48,
-      "sizeMaxMm": 72
+      "sizeMaxMm": 72,
+      "desc": {
+        "ko": "납작한 갈색 몸에 강력한 앞다리를 지닌 물속의 포식자.",
+        "en": "A flat brown predator of the water with strong forelegs.",
+        "ja": "납작한 갈색 몸에 강력한 앞다리를 지닌 물속의 포식자."
+      }
     },
     {
       "id": "stag_twospot",
-      "name": { "ko": "두점박이사슴벌레", "en": "Two-spotted Stag Beetle", "ja": "フタボシクワガタ" },
+      "name": {
+        "ko": "두점박이사슴벌레",
+        "en": "Two-spotted Stag Beetle",
+        "ja": "フタボシクワガタ"
+      },
       "grade": "epic",
       "specialty": "toss",
-      "baseStats": { "hp": 170, "atk": 82, "def": 62, "spd": 56 },
+      "baseStats": {
+        "hp": 170,
+        "atk": 82,
+        "def": 62,
+        "spd": 56
+      },
       "sizeMinMm": 35,
-      "sizeMaxMm": 68
+      "sizeMaxMm": 68,
+      "desc": {
+        "ko": "붉은 갈색 몸에 밝은 두 점이 박힌 희귀한 사슴벌레.",
+        "en": "A rare reddish-brown stag beetle with two bright spots.",
+        "ja": "붉은 갈색 몸에 밝은 두 점이 박힌 희귀한 사슴벌레."
+      }
     },
     {
       "id": "longhorn_relict",
-      "name": { "ko": "장수하늘소", "en": "Relict Longhorn Beetle", "ja": "チョウセンオオカミキリ" },
+      "name": {
+        "ko": "장수하늘소",
+        "en": "Relict Longhorn Beetle",
+        "ja": "チョウセンオオカミキリ"
+      },
       "grade": "legendary",
       "specialty": "grip",
-      "baseStats": { "hp": 220, "atk": 96, "def": 88, "spd": 52 },
+      "baseStats": {
+        "hp": 220,
+        "atk": 96,
+        "def": 88,
+        "spd": 52
+      },
       "sizeMinMm": 60,
-      "sizeMaxMm": 120
+      "sizeMaxMm": 120,
+      "desc": {
+        "ko": "길고 우아한 몸을 지닌 전설의 거대 하늘소. 영웅의 기품이 감돈다.",
+        "en": "A legendary giant longhorn with a long, elegant, heroic body.",
+        "ja": "길고 우아한 몸을 지닌 전설의 거대 하늘소. 영웅의 기품이 감돈다."
+      }
     },
     {
       "id": "hornet_giant",
-      "name": { "ko": "장수말벌", "en": "Asian Giant Hornet", "ja": "オオスズメバチ" },
+      "name": {
+        "ko": "장수말벌",
+        "en": "Asian Giant Hornet",
+        "ja": "オオスズメバチ"
+      },
       "grade": "legendary",
       "specialty": "strike",
-      "baseStats": { "hp": 150, "atk": 120, "def": 55, "spd": 128 },
+      "baseStats": {
+        "hp": 150,
+        "atk": 120,
+        "def": 55,
+        "spd": 128
+      },
       "sizeMinMm": 27,
-      "sizeMaxMm": 48
+      "sizeMaxMm": 48,
+      "desc": {
+        "ko": "노란 머리의 거대 말벌. 빠르고 강력한 전설의 사냥꾼.",
+        "en": "A giant yellow-headed hornet; a fast, powerful legendary hunter.",
+        "ja": "노란 머리의 거대 말벌. 빠르고 강력한 전설의 사냥꾼."
+      }
     }
   ]
 }

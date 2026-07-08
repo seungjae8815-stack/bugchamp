@@ -109,6 +109,22 @@ plain soft pastel background, {STYLE} --ar 1:1 --style raw --sref <key> --sw 100
 | `sap` | golden sap crystal droplet, glowing honey amber |
 | `jelly` | cute insect jelly cup, translucent, colorful |
 
+## 4b. 버프 아이콘 ×5 (`assets/images/buffs/`)
+
+광고/제작으로 발동하는 일시 버프. 파일명 = `BuffKind.key`. 40px에서 읽히는 강한 실루엣 + 테마색 오라.
+
+공통: `glossy game buff skill icon, single centered emblem, bold readable silhouette, soft {color} glow rim, plain background, {STYLE} --ar 1:1 --style raw --sref <key> --sw 100`
+
+| 파일명 | 오라색 | 프롬프트(핵심 Subject) |
+|---|---|---|
+| `goldRush` | honey amber `#E0A32E` | overflowing heap of shiny gold coins with one big glowing coin on top, warm sparkles |
+| `xpBoost` | leaf green `#3E7D4F` | open glowing insect field-guide book with an upward arrow of light and rising sparks |
+| `frenzy` | crimson `#B5432E` | crossed beetle horn / mandible blades wrapped in fierce warm-red flame aura, sharp and aggressive |
+| `gatherer` | steel blue `#2E6DA4` | bulging treasure pouch spilling crafting materials — a chitin shard, teal mineral crystal, amber sap droplet |
+| `luckyWind` | violet `#7E57C2` | glowing four-leaf clover in a gentle breeze with one small lucky butterfly and drifting leaf motes |
+
+> `no text, no letters, no frame border` 는 STYLE에 이미 포함. 투명 배경은 단색으로 뽑고 `rembg` 로 컷아웃.
+
 ## 5. 등급 프레임 ×5 (`assets/images/frames/`)
 
 공통: `ornate rounded card frame border, gem accents, empty transparent center, mobile gacha rarity frame, {STYLE} --ar 1:1`

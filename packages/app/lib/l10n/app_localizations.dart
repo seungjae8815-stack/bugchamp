@@ -579,6 +579,690 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bug Jelly'**
   String get materialJelly;
+
+  /// No description provided for @combatPowerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Power'**
+  String get combatPowerLabel;
+
+  /// No description provided for @chatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chatTitle;
+
+  /// No description provided for @chatPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat (coming soon) — tap to open'**
+  String get chatPlaceholder;
+
+  /// No description provided for @characterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Character'**
+  String get characterTitle;
+
+  /// No description provided for @statCombatPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Combat Power'**
+  String get statCombatPower;
+
+  /// No description provided for @statCrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Crit'**
+  String get statCrit;
+
+  /// No description provided for @statMaxHp.
+  ///
+  /// In en, this message translates to:
+  /// **'Max HP'**
+  String get statMaxHp;
+
+  /// No description provided for @statDefense.
+  ///
+  /// In en, this message translates to:
+  /// **'Defense'**
+  String get statDefense;
+
+  /// No description provided for @rankingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranking'**
+  String get rankingTitle;
+
+  /// No description provided for @mailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailbox'**
+  String get mailTitle;
+
+  /// No description provided for @mailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No new mail'**
+  String get mailEmpty;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Nickname'**
+  String get settingsNickname;
+
+  /// No description provided for @settingsNicknameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get settingsNicknameHint;
+
+  /// No description provided for @actionSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get actionSave;
+
+  /// No description provided for @actionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get actionCancel;
+
+  /// No description provided for @actionClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get actionClose;
+
+  /// No description provided for @exitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit game'**
+  String get exitTitle;
+
+  /// No description provided for @exitConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit the game?'**
+  String get exitConfirm;
+
+  /// No description provided for @exitAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit'**
+  String get exitAction;
+
+  /// No description provided for @questHunt.
+  ///
+  /// In en, this message translates to:
+  /// **'Monster Hunt'**
+  String get questHunt;
+
+  /// No description provided for @buffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffs'**
+  String get buffTitle;
+
+  /// No description provided for @buffSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate a buff'**
+  String get buffSheetTitle;
+
+  /// No description provided for @buffWatchAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad'**
+  String get buffWatchAd;
+
+  /// No description provided for @buffMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String buffMinutes(int minutes);
+
+  /// No description provided for @buffActivatedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'{buff} active! ({minutes}m)'**
+  String buffActivatedSnack(String buff, int minutes);
+
+  /// No description provided for @buffGoldRush.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold Rush'**
+  String get buffGoldRush;
+
+  /// No description provided for @buffGoldRushDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold gain ×2'**
+  String get buffGoldRushDesc;
+
+  /// No description provided for @buffXpBoost.
+  ///
+  /// In en, this message translates to:
+  /// **'XP Boost'**
+  String get buffXpBoost;
+
+  /// No description provided for @buffXpBoostDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'XP gain ×2'**
+  String get buffXpBoostDesc;
+
+  /// No description provided for @buffFrenzy.
+  ///
+  /// In en, this message translates to:
+  /// **'Frenzy'**
+  String get buffFrenzy;
+
+  /// No description provided for @buffFrenzyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack & attack speed up'**
+  String get buffFrenzyDesc;
+
+  /// No description provided for @buffGatherer.
+  ///
+  /// In en, this message translates to:
+  /// **'Gatherer\'s Touch'**
+  String get buffGatherer;
+
+  /// No description provided for @buffGathererDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Material gain ×2'**
+  String get buffGathererDesc;
+
+  /// No description provided for @buffLuckyWind.
+  ///
+  /// In en, this message translates to:
+  /// **'Lucky Wind'**
+  String get buffLuckyWind;
+
+  /// No description provided for @buffLuckyWindDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug find rate ×2'**
+  String get buffLuckyWindDesc;
+
+  /// No description provided for @enhanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhance Parts'**
+  String get enhanceTitle;
+
+  /// No description provided for @partHornJaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Horn/Jaw'**
+  String get partHornJaw;
+
+  /// No description provided for @partCuticle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cuticle'**
+  String get partCuticle;
+
+  /// No description provided for @partWing.
+  ///
+  /// In en, this message translates to:
+  /// **'Wings'**
+  String get partWing;
+
+  /// No description provided for @partBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get partBuild;
+
+  /// No description provided for @enhanceAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhance'**
+  String get enhanceAction;
+
+  /// No description provided for @enhanceMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get enhanceMaxed;
+
+  /// No description provided for @enhanceCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhance {cur}/{max}'**
+  String enhanceCap(int cur, int max);
+
+  /// No description provided for @enhancePerLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'+{pct}%/Lv'**
+  String enhancePerLevel(String pct);
+
+  /// No description provided for @equipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped Pets'**
+  String get equipTitle;
+
+  /// No description provided for @equipEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get equipEmpty;
+
+  /// No description provided for @equipAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip'**
+  String get equipAction;
+
+  /// No description provided for @unequipAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unequip'**
+  String get unequipAction;
+
+  /// No description provided for @equipFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip slots are full'**
+  String get equipFull;
+
+  /// No description provided for @equippedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'ON'**
+  String get equippedBadge;
+
+  /// No description provided for @petBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet bonus · ATK +{atk}% · HP +{hp}%'**
+  String petBonus(String atk, String hp);
+
+  /// No description provided for @stageEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg'**
+  String get stageEgg;
+
+  /// No description provided for @stageLarva.
+  ///
+  /// In en, this message translates to:
+  /// **'Larva'**
+  String get stageLarva;
+
+  /// No description provided for @stagePupa.
+  ///
+  /// In en, this message translates to:
+  /// **'Pupa'**
+  String get stagePupa;
+
+  /// No description provided for @stageAdult.
+  ///
+  /// In en, this message translates to:
+  /// **'Adult'**
+  String get stageAdult;
+
+  /// No description provided for @evolveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Evolve'**
+  String get evolveTitle;
+
+  /// No description provided for @evolveNext.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} to {next}'**
+  String evolveNext(String next, String time);
+
+  /// No description provided for @evolveReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to evolve'**
+  String get evolveReady;
+
+  /// No description provided for @evolveMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully evolved (Adult)'**
+  String get evolveMaxed;
+
+  /// No description provided for @accelerateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed up'**
+  String get accelerateAction;
+
+  /// No description provided for @synthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthesis (★ up)'**
+  String get synthTitle;
+
+  /// No description provided for @synthDo.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthesize'**
+  String get synthDo;
+
+  /// No description provided for @synthDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Same species {have}/{need} · Potential +1'**
+  String synthDesc(int have, int need);
+
+  /// No description provided for @synthMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max potential'**
+  String get synthMaxed;
+
+  /// No description provided for @synthSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthesis complete! Potential +1'**
+  String get synthSnack;
+
+  /// No description provided for @petEffectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip effect'**
+  String get petEffectTitle;
+
+  /// No description provided for @petAtkBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet ATK +{v}%'**
+  String petAtkBonus(String v);
+
+  /// No description provided for @petHpBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet HP +{v}%'**
+  String petHpBonus(String v);
+
+  /// No description provided for @trainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Train'**
+  String get trainTitle;
+
+  /// No description provided for @trainLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Train level'**
+  String get trainLevel;
+
+  /// No description provided for @trainAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Train'**
+  String get trainAction;
+
+  /// No description provided for @trainMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max level'**
+  String get trainMaxed;
+
+  /// No description provided for @trainSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Trained! Level +1'**
+  String get trainSnack;
+
+  /// No description provided for @disassembleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disassemble'**
+  String get disassembleTitle;
+
+  /// No description provided for @disassembleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to {n} jelly'**
+  String disassembleDesc(int n);
+
+  /// No description provided for @disassembleAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Disassemble'**
+  String get disassembleAction;
+
+  /// No description provided for @disassembleSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Disassembled'**
+  String get disassembleSnack;
+
+  /// No description provided for @bugDescTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get bugDescTitle;
+
+  /// No description provided for @onlyAdultTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Only adults can be trained'**
+  String get onlyAdultTrain;
+
+  /// No description provided for @craftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Craft'**
+  String get craftTitle;
+
+  /// No description provided for @craftMake.
+  ///
+  /// In en, this message translates to:
+  /// **'Craft'**
+  String get craftMake;
+
+  /// No description provided for @craftPotion.
+  ///
+  /// In en, this message translates to:
+  /// **'{buff} Potion'**
+  String craftPotion(String buff);
+
+  /// No description provided for @craftAllPotion.
+  ///
+  /// In en, this message translates to:
+  /// **'All-in-One Potion'**
+  String get craftAllPotion;
+
+  /// No description provided for @craftedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Crafted {name}!'**
+  String craftedSnack(String name);
+
+  /// No description provided for @missionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Missions'**
+  String get missionsTitle;
+
+  /// No description provided for @missionKillMonsters.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunt Monsters'**
+  String get missionKillMonsters;
+
+  /// No description provided for @missionKillBosses.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat Bosses'**
+  String get missionKillBosses;
+
+  /// No description provided for @missionBuyUpgrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade Stats'**
+  String get missionBuyUpgrades;
+
+  /// No description provided for @missionReachStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Stage'**
+  String get missionReachStage;
+
+  /// No description provided for @missionClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get missionClaim;
+
+  /// No description provided for @missionComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete! Tap to claim'**
+  String get missionComplete;
+
+  /// No description provided for @missionClaimedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission reward claimed!'**
+  String get missionClaimedSnack;
+
+  /// No description provided for @upAttackDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases damage dealt per hit.'**
+  String get upAttackDesc;
+
+  /// No description provided for @upAttackSpeedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'More attacks per second; faster hunting.'**
+  String get upAttackSpeedDesc;
+
+  /// No description provided for @upCritDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases critical hit chance.'**
+  String get upCritDesc;
+
+  /// No description provided for @upCritDamageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases the critical hit damage multiplier.'**
+  String get upCritDamageDesc;
+
+  /// No description provided for @upBossDamageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra damage dealt to bosses.'**
+  String get upBossDamageDesc;
+
+  /// No description provided for @upMaxHpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases max HP so you last longer.'**
+  String get upMaxHpDesc;
+
+  /// No description provided for @upDefenseDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduces damage taken from enemies.'**
+  String get upDefenseDesc;
+
+  /// No description provided for @upRegenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases HP regenerated per second.'**
+  String get upRegenDesc;
+
+  /// No description provided for @upRewardDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'More gold earned per monster kill.'**
+  String get upRewardDesc;
+
+  /// No description provided for @upXpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'More XP earned per monster kill.'**
+  String get upXpDesc;
+
+  /// No description provided for @upBugFindDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases the chance to find bugs.'**
+  String get upBugFindDesc;
+
+  /// No description provided for @upMaterialFindDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Increases enhancement materials gained.'**
+  String get upMaterialFindDesc;
+
+  /// No description provided for @upMoveSpeedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Faster travel to the next hunting spot.'**
+  String get upMoveSpeedDesc;
+
+  /// No description provided for @upBoostDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Strengthens the tap-to-boost effect.'**
+  String get upBoostDesc;
+
+  /// No description provided for @upBugBuffDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus scales with the number of bugs collected.'**
+  String get upBugBuffDesc;
+
+  /// No description provided for @tagCommonMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get tagCommonMaterial;
+
+  /// No description provided for @tagPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get tagPremium;
+
+  /// No description provided for @materialChitinDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A hard exoskeleton shard. Used for advanced upgrade costs and horn/jaw enhancement.'**
+  String get materialChitinDesc;
+
+  /// No description provided for @materialMineralDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A hard mined mineral. Used for advanced upgrade costs and cuticle enhancement.'**
+  String get materialMineralDesc;
+
+  /// No description provided for @materialSapDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Hardened crystallized tree sap. Used for advanced upgrade costs and wing enhancement.'**
+  String get materialSapDesc;
+
+  /// No description provided for @materialJellyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A special premium currency. Used for crafting (All-in-One Potion) and special goods.'**
+  String get materialJellyDesc;
 }
 
 class _AppLocalizationsDelegate

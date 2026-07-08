@@ -13,6 +13,11 @@ class GameData {
     required this.fields,
     required this.spawnTable,
     this.runConfig,
+    this.buffConfig,
+    this.enhanceConfig,
+    this.craftConfig,
+    this.missionConfig,
+    this.petConfig,
   });
 
   final Map<String, Species> speciesById;
@@ -22,6 +27,21 @@ class GameData {
 
   /// v2 런 밸런스 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final RunConfig? runConfig;
+
+  /// 광고 버프 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final BuffConfig? buffConfig;
+
+  /// 부위 강화 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final EnhanceConfig? enhanceConfig;
+
+  /// 제작 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final CraftConfig? craftConfig;
+
+  /// 미션 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final MissionConfig? missionConfig;
+
+  /// 애완펫 보너스 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final PetConfig? petConfig;
 
   /// speciesId → Species (accrue 의 resolveSpecies 로 그대로 넘길 수 있음).
   Species species(String id) {
@@ -45,6 +65,11 @@ class GameData {
     required Map<String, dynamic> fields,
     required Map<String, dynamic> spawns,
     Map<String, dynamic>? runConfig,
+    Map<String, dynamic>? buffConfig,
+    Map<String, dynamic>? enhanceConfig,
+    Map<String, dynamic>? craftConfig,
+    Map<String, dynamic>? missionConfig,
+    Map<String, dynamic>? petConfig,
   }) {
     final speciesList = (species['species'] as List)
         .cast<Map<String, dynamic>>()
@@ -64,6 +89,17 @@ class GameData {
       fields: fieldList,
       spawnTable: SpawnTable.fromJson(spawns),
       runConfig: runConfig == null ? null : RunConfig.fromJson(runConfig),
+      buffConfig: buffConfig == null ? null : BuffConfig.fromJson(buffConfig),
+      enhanceConfig: enhanceConfig == null
+          ? null
+          : EnhanceConfig.fromJson(enhanceConfig),
+      craftConfig: craftConfig == null
+          ? null
+          : CraftConfig.fromJson(craftConfig),
+      missionConfig: missionConfig == null
+          ? null
+          : MissionConfig.fromJson(missionConfig),
+      petConfig: petConfig == null ? null : PetConfig.fromJson(petConfig),
     );
   }
 
@@ -78,6 +114,11 @@ class GameData {
       read('fields.json'),
       read('spawns.json'),
       read('run_config.json'),
+      read('buffs.json'),
+      read('enhance.json'),
+      read('craft.json'),
+      read('missions.json'),
+      read('pets.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -85,6 +126,11 @@ class GameData {
       fields: results[2],
       spawns: results[3],
       runConfig: results[4],
+      buffConfig: results[5],
+      enhanceConfig: results[6],
+      craftConfig: results[7],
+      missionConfig: results[8],
+      petConfig: results[9],
     );
   }
 }

@@ -3,7 +3,10 @@ import 'package:core_run/core_run.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
-const int kSaveSchemaVersion = 2;
+const int kSaveSchemaVersion = 6;
+
+/// 닉네임 기본값(설정에서 변경 가능).
+const String kDefaultNickname = '채집가';
 
 /// 설치된 트랩 1개 (레거시 v1 채집 시스템. v2 에서는 미사용이나 세이브 호환 위해 유지).
 class TrapInstallation {
@@ -57,6 +60,11 @@ class SaveGame {
     required this.level,
     required this.upgradeLevels,
     required this.stageNumber,
+    required this.nickname,
+    required this.buffExpiry,
+    required this.missionProgress,
+    required this.missionClaims,
+    required this.equippedBugIds,
   });
 
   final int schemaVersion;
@@ -94,6 +102,26 @@ class SaveGame {
   /// 현재 도달 스테이지 (지역1 기준 1-based).
   final int stageNumber;
 
+  /// 플레이어 표시 이름.
+  final String nickname;
+
+  /// 활성 버프별 만료 UTC 시각. now 이후면 활성으로 취급.
+  final Map<BuffKind, DateTime> buffExpiry;
+
+  /// 미션 id별 진행 카운터(카운터형 미션. reachStage 는 stageNumber 파생이라 미저장).
+  final Map<String, int> missionProgress;
+
+  /// 미션 id별 수집(클레임) 횟수 = 현재 티어.
+  final Map<String, int> missionClaims;
+
+  /// 장착한 애완펫(곤충) id 목록 (최대 3). 캐릭터 스탯 보너스.
+  final List<String> equippedBugIds;
+
+  bool isEquipped(String bugId) => equippedBugIds.contains(bugId);
+
+  int missionClaimCount(String id) => missionClaims[id] ?? 0;
+  int missionProgressCount(String id) => missionProgress[id] ?? 0;
+
   factory SaveGame.initial({DateTime? createdAt}) => SaveGame(
     schemaVersion: kSaveSchemaVersion,
     bugs: const [],
@@ -107,6 +135,11 @@ class SaveGame {
     level: 1,
     upgradeLevels: const {},
     stageNumber: 1,
+    nickname: kDefaultNickname,
+    buffExpiry: const {},
+    missionProgress: const {},
+    missionClaims: const {},
+    equippedBugIds: const [],
   );
 
   SaveGame copyWith({
@@ -120,6 +153,11 @@ class SaveGame {
     int? level,
     Map<UpgradeKind, int>? upgradeLevels,
     int? stageNumber,
+    String? nickname,
+    Map<BuffKind, DateTime>? buffExpiry,
+    Map<String, int>? missionProgress,
+    Map<String, int>? missionClaims,
+    List<String>? equippedBugIds,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -133,11 +171,29 @@ class SaveGame {
     level: level ?? this.level,
     upgradeLevels: upgradeLevels ?? this.upgradeLevels,
     stageNumber: stageNumber ?? this.stageNumber,
+    nickname: nickname ?? this.nickname,
+    buffExpiry: buffExpiry ?? this.buffExpiry,
+    missionProgress: missionProgress ?? this.missionProgress,
+    missionClaims: missionClaims ?? this.missionClaims,
+    equippedBugIds: equippedBugIds ?? this.equippedBugIds,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
 
   int upgradeLevel(UpgradeKind kind) => upgradeLevels[kind] ?? 0;
+
+  /// [now] 기준 활성(만료 전) 버프 종류들.
+  Set<BuffKind> activeBuffs(DateTime now) => {
+    for (final e in buffExpiry.entries)
+      if (e.value.isAfter(now)) e.key,
+  };
+
+  /// [kind] 버프의 남은 시간([now] 기준). 비활성이면 null.
+  Duration? buffRemaining(BuffKind kind, DateTime now) {
+    final exp = buffExpiry[kind];
+    if (exp == null || !exp.isAfter(now)) return null;
+    return exp.difference(now);
+  }
 
   TrapInstallation? installationAt(int slotIndex) {
     for (final i in installations) {
@@ -169,6 +225,18 @@ class SaveGame {
       json['upgradeLevels'] as Map<String, dynamic>,
     ),
     stageNumber: (json['stageNumber'] as num).toInt(),
+    nickname: json['nickname'] as String? ?? kDefaultNickname,
+    buffExpiry: _buffsFromJson(
+      json['buffExpiry'] as Map<String, dynamic>? ?? const {},
+    ),
+    missionProgress: _intMapFromJson(
+      json['missionProgress'] as Map<String, dynamic>? ?? const {},
+    ),
+    missionClaims: _intMapFromJson(
+      json['missionClaims'] as Map<String, dynamic>? ?? const {},
+    ),
+    equippedBugIds:
+        (json['equippedBugIds'] as List?)?.cast<String>().toList() ?? const [],
   );
 
   Map<String, dynamic> toJson() => {
@@ -186,6 +254,14 @@ class SaveGame {
       for (final e in upgradeLevels.entries) e.key.key: e.value,
     },
     'stageNumber': stageNumber,
+    'nickname': nickname,
+    'buffExpiry': {
+      for (final e in buffExpiry.entries)
+        e.key.key: e.value.toUtc().toIso8601String(),
+    },
+    'missionProgress': missionProgress,
+    'missionClaims': missionClaims,
+    'equippedBugIds': equippedBugIds,
   };
 
   static Map<MaterialKind, int> _materialsFromJson(Map<String, dynamic> json) {
@@ -200,5 +276,20 @@ class SaveGame {
       for (final e in json.entries)
         UpgradeKind.fromKey(e.key): (e.value as num).toInt(),
     };
+  }
+
+  static Map<String, int> _intMapFromJson(Map<String, dynamic> json) => {
+    for (final e in json.entries) e.key: (e.value as num).toInt(),
+  };
+
+  /// 알 수 없는 버프 key 는 무시(미래 버전 호환).
+  static Map<BuffKind, DateTime> _buffsFromJson(Map<String, dynamic> json) {
+    final out = <BuffKind, DateTime>{};
+    for (final e in json.entries) {
+      final kind = BuffKind.fromKey(e.key);
+      if (kind == null) continue;
+      out[kind] = DateTime.parse(e.value as String).toUtc();
+    }
+    return out;
   }
 }

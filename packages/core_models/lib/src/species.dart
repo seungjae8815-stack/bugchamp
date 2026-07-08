@@ -17,6 +17,7 @@ class Species {
     required this.sizeMinMm,
     required this.sizeMaxMm,
     this.imageAsset,
+    this.desc,
   });
 
   /// 안정적 식별자 (예: 'stag_beetle_common').
@@ -41,6 +42,9 @@ class Species {
   /// 종 일러스트 파일명 (예: 'stag_dorcus.webp'). 없으면 UI 가 플레이스홀더로 폴백.
   final String? imageAsset;
 
+  /// 다국어 종 설명(도감/상세 팝업용). 없으면 null.
+  final LocalizedText? desc;
+
   factory Species.fromJson(Map<String, dynamic> json) => Species(
     id: json['id'] as String,
     name: LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
@@ -50,6 +54,9 @@ class Species {
     sizeMinMm: (json['sizeMinMm'] as num).toDouble(),
     sizeMaxMm: (json['sizeMaxMm'] as num).toDouble(),
     imageAsset: json['image'] as String?,
+    desc: json['desc'] == null
+        ? null
+        : LocalizedText.fromJson(json['desc'] as Map<String, dynamic>),
   );
 
   Map<String, dynamic> toJson() => {
@@ -61,6 +68,7 @@ class Species {
     'sizeMinMm': sizeMinMm,
     'sizeMaxMm': sizeMaxMm,
     if (imageAsset != null) 'image': imageAsset,
+    if (desc != null) 'desc': desc!.toJson(),
   };
 
   @override

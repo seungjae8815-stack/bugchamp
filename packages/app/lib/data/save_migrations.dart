@@ -40,6 +40,10 @@ Map<String, dynamic> migrateToCurrent(Map<String, dynamic> raw) {
 const Map<int, _JsonMap Function(_JsonMap)> _migrations = {
   0: _v0ToV1,
   1: _v1ToV2,
+  2: _v2ToV3,
+  3: _v3ToV4,
+  4: _v4ToV5,
+  5: _v5ToV6,
 };
 
 /// v0(스키마 미표기 레거시) → v1: 누락 필드를 기본값으로 채우고 버전을 승격.
@@ -64,4 +68,36 @@ _JsonMap _v1ToV2(_JsonMap old) => {
   'level': old['level'] ?? 1,
   'upgradeLevels': old['upgradeLevels'] ?? const <String, dynamic>{},
   'stageNumber': old['stageNumber'] ?? 1,
+};
+
+/// v2 → v3(닉네임·광고 버프): 닉네임/버프 필드를 기본값으로 추가.
+_JsonMap _v2ToV3(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 3,
+  'nickname': old['nickname'] ?? '채집가',
+  'buffExpiry': old['buffExpiry'] ?? const <String, dynamic>{},
+};
+
+/// v3 → v4(미션): 미션 진행/수집 필드를 기본값으로 추가.
+_JsonMap _v3ToV4(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 4,
+  'missionProgress': old['missionProgress'] ?? const <String, dynamic>{},
+  'missionClaims': old['missionClaims'] ?? const <String, dynamic>{},
+};
+
+/// v4 → v5(미션 순차화): 이전 버전에서 누적된 미션 진행/티어를 초기화해
+/// 순차 미션이 처음부터 새로 시작되게 한다.
+_JsonMap _v4ToV5(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 5,
+  'missionProgress': const <String, dynamic>{},
+  'missionClaims': const <String, dynamic>{},
+};
+
+/// v5 → v6(애완펫 장착): 장착 목록 필드를 기본값으로 추가.
+_JsonMap _v5ToV6(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 6,
+  'equippedBugIds': old['equippedBugIds'] ?? const <String>[],
 };

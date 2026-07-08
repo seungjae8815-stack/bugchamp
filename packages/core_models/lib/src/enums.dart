@@ -75,6 +75,64 @@ enum Sex {
   );
 }
 
+/// 곤충 생애주기 단계 (§2.5). 알 → 유충 → 번데기 → 성충.
+enum LifeStage {
+  egg('egg'),
+  larva('larva'),
+  pupa('pupa'),
+  adult('adult');
+
+  const LifeStage(this.key);
+  final String key;
+
+  /// 다음 단계 (성충은 그대로).
+  LifeStage get next => switch (this) {
+    LifeStage.egg => LifeStage.larva,
+    LifeStage.larva => LifeStage.pupa,
+    LifeStage.pupa => LifeStage.adult,
+    LifeStage.adult => LifeStage.adult,
+  };
+
+  bool get isFinal => this == LifeStage.adult;
+
+  static LifeStage fromKey(String key) =>
+      values.firstWhere((e) => e.key == key, orElse: () => LifeStage.adult);
+}
+
+/// 미션(퀘스트) 종류. 자동 진행 후 완료 시 클릭 수집.
+enum MissionType {
+  killMonsters('killMonsters'), // 일반 몬스터 처치
+  killBosses('killBosses'), // 보스 처치
+  buyUpgrades('buyUpgrades'), // 능력치 강화 구매
+  reachStage('reachStage'); // 스테이지 도달(마일스톤)
+
+  const MissionType(this.key);
+  final String key;
+
+  static MissionType? fromKey(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
+}
+
+/// 부위 강화 대상 부위 (§2.2). 뿔·큰턱→ATK / 표피→DEF / 날개→SPD·회피 / 체격→HP.
+enum BugPart {
+  hornJaw('hornJaw'), // 뿔·큰턱
+  cuticle('cuticle'), // 표피
+  wing('wing'), // 날개
+  build('build'); // 체격
+
+  const BugPart(this.key);
+  final String key;
+
+  static BugPart fromKey(String key) => values.firstWhere(
+    (e) => e.key == key,
+    orElse: () => throw ArgumentError('Unknown BugPart key: $key'),
+  );
+}
+
 /// 채집 부산물 재료 종류 (§2.2). 키틴조각/미네랄/수액결정/곤충젤리.
 enum MaterialKind {
   chitin('chitin'), // 키틴조각

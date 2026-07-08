@@ -90,6 +90,20 @@ Widget materialImage(
   fallback: fallback,
 );
 
+/// 버프 아이콘. `assets/images/buffs/{key}.webp` 또는 `.png` (없으면 fallback 글리프)
+Widget buffImage(
+  BuffKind kind, {
+  required double size,
+  required Widget fallback,
+}) => gameImageChain(
+  [
+    'assets/images/buffs/${kind.key}.webp',
+    'assets/images/buffs/${kind.key}.png',
+  ],
+  size: size,
+  fallback: fallback,
+);
+
 /// 골드(화폐) 아이콘. `assets/images/materials/gold.webp` (없으면 이모지)
 Widget goldIcon({required double size}) => gameImage(
   'assets/images/materials/gold.webp',
@@ -161,6 +175,58 @@ class SceneBackground extends StatelessWidget {
       errorBuilder: (_, _, _) => gradient,
     );
   }
+}
+
+/// 종 → 생애주기 아트 그룹(알·유충·번데기 공통 세트 단위).
+/// 딱정벌레류/하늘소/사마귀/메뚜기목/물장군/말벌은 초기 단계 생김새가 그룹별로 다르다.
+String bugFamily(String speciesId) {
+  const borer = {
+    'longhorn_saw',
+    'longhorn_whitespot',
+    'longhorn_oak',
+    'longhorn_relict',
+  };
+  const mantis = {'mantis_jumping', 'mantis_widebelly', 'mantis_giant'};
+  const ortho = {'grasshopper_longheaded', 'katydid'};
+  if (borer.contains(speciesId)) return 'borer';
+  if (mantis.contains(speciesId)) return 'mantis';
+  if (ortho.contains(speciesId)) return 'ortho';
+  if (speciesId == 'water_bug_giant') return 'waterbug';
+  if (speciesId == 'hornet_giant') return 'hornet';
+  return 'scarab'; // 사슴벌레·장수풍뎅이·꽃무지 등 기본
+}
+
+/// 생애주기 단계별 곤충 이미지.
+/// - 성충: 종별 `bugs/{id}_adult.webp` → `bugs/{id}.webp`
+/// - 알/유충/번데기: 종별 override 있으면 우선 → **그룹 공통** `bugs/stage_{family}_{stage}.webp`
+///   → 전체 공통 `bugs/stage_{stage}.webp` → 폴백.
+Widget bugStageImage(
+  String speciesId,
+  LifeStage stage, {
+  required double size,
+  required Widget fallback,
+}) {
+  final List<String> paths;
+  if (stage == LifeStage.adult) {
+    paths = [
+      'assets/images/bugs/${speciesId}_adult.webp',
+      'assets/images/bugs/${speciesId}_adult.png',
+      'assets/images/bugs/$speciesId.webp',
+      'assets/images/bugs/$speciesId.png',
+    ];
+  } else {
+    final fam = bugFamily(speciesId);
+    final s = stage.key;
+    paths = [
+      'assets/images/bugs/${speciesId}_$s.webp',
+      'assets/images/bugs/${speciesId}_$s.png',
+      'assets/images/bugs/stage_${fam}_$s.webp',
+      'assets/images/bugs/stage_${fam}_$s.png',
+      'assets/images/bugs/stage_$s.webp',
+      'assets/images/bugs/stage_$s.png',
+    ];
+  }
+  return gameImageChain(paths, size: size, fallback: fallback);
 }
 
 /// 곤충 아바타. species.imageAsset 없으면 등급색 원 + 이모지 폴백.

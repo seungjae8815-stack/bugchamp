@@ -33,6 +33,11 @@ SaveGame _sampleSave() => SaveGame(
   level: 5,
   upgradeLevels: const {UpgradeKind.attack: 8, UpgradeKind.reward: 3},
   stageNumber: 12,
+  nickname: '테스트챔프',
+  buffExpiry: {BuffKind.goldRush: DateTime.utc(2026, 7, 5, 13)},
+  missionProgress: const {'hunt': 12},
+  missionClaims: const {'hunt': 2},
+  equippedBugIds: const ['x1'],
 );
 
 void main() {

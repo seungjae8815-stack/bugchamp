@@ -49,3 +49,26 @@ enum UpgradeKind {
     orElse: () => throw ArgumentError('Unknown UpgradeKind key: $key'),
   );
 }
+
+/// 광고 시청으로 일정 시간 활성화되는 일시 버프 종류.
+/// 효과 계수·지속시간은 코드가 아니라 assets/data/buffs.json 에 있다(§6).
+/// 버프는 전투 시드 로직이 아니라 유효 스탯/보상 **배율에만** 곱해지므로
+/// core_battle 의 결정론(§2.3)에는 영향이 없다.
+enum BuffKind {
+  goldRush('goldRush'), // 황금 러시 — 골드 획득 배율
+  xpBoost('xpBoost'), // 성장 가속 — 경험치 배율
+  frenzy('frenzy'), // 광폭화 — 공격력/공격속도
+  gatherer('gatherer'), // 채집가의 손길 — 재료 획득 배율
+  luckyWind('luckyWind'); // 행운의 바람 — 곤충 발견율 배율
+
+  const BuffKind(this.key);
+  final String key;
+
+  /// 알 수 없는 key 는 null (미래 버전 세이브가 새 버프를 담아도 안전하게 무시).
+  static BuffKind? fromKey(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
+}

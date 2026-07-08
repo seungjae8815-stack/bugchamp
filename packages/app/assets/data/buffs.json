@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "durationSeconds": 1800,
+  "maxSeconds": 21600,
+  "buffs": [
+    { "kind": "goldRush", "gold": 2.0 },
+    { "kind": "xpBoost", "xp": 2.0 },
+    { "kind": "frenzy", "attack": 1.2, "attackSpeed": 1.5 },
+    { "kind": "gatherer", "materialFind": 2.0 },
+    { "kind": "luckyWind", "bugFind": 2.0 }
+  ]
+}

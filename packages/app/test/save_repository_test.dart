@@ -61,6 +61,11 @@ void main() {
       level: 2,
       upgradeLevels: const {},
       stageNumber: 4,
+      nickname: '채집가',
+      buffExpiry: const {},
+      missionProgress: const {},
+      missionClaims: const {},
+      equippedBugIds: const [],
     );
 
     await repo.save(original);

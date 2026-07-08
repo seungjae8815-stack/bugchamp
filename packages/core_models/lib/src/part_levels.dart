@@ -1,5 +1,7 @@
 import 'package:meta/meta.dart';
 
+import 'enums.dart';
+
 /// 부위 강화 레벨 (§2.2).
 /// 뿔·큰턱→ATK, 표피→DEF, 날개→SPD/회피, 체격→HP.
 ///
@@ -23,6 +25,22 @@ class PartLevels {
 
   /// 전 부위 레벨 합 (강화 상한 = 포텐셜×10 과 비교하는 데 사용).
   int get total => hornJaw + cuticle + wing + build;
+
+  /// [part] 의 현재 레벨.
+  int levelOf(BugPart part) => switch (part) {
+    BugPart.hornJaw => hornJaw,
+    BugPart.cuticle => cuticle,
+    BugPart.wing => wing,
+    BugPart.build => build,
+  };
+
+  /// [part] 레벨을 [by] 만큼 올린 새 값.
+  PartLevels incremented(BugPart part, [int by = 1]) => switch (part) {
+    BugPart.hornJaw => copyWith(hornJaw: hornJaw + by),
+    BugPart.cuticle => copyWith(cuticle: cuticle + by),
+    BugPart.wing => copyWith(wing: wing + by),
+    BugPart.build => copyWith(build: build + by),
+  };
 
   PartLevels copyWith({int? hornJaw, int? cuticle, int? wing, int? build}) =>
       PartLevels(

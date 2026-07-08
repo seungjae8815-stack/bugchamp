@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:core_gathering/core_gathering.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../data/save_repository.dart';
 import 'gather_service.dart';
@@ -106,6 +109,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     required int xp,
     IndividualBug? bug,
     Map<MaterialKind, int>? materials,
+    MissionType? mission,
   }) async {
     final s = state.requireValue;
     var newXp = s.xp + xp;
@@ -127,8 +131,35 @@ class SaveController extends AsyncNotifier<SaveGame> {
         level: newLevel,
         materials: newMaterials,
         bugs: bug == null ? null : [...s.bugs, bug],
+        missionProgress: mission == null
+            ? null
+            : _bumpMissions(s.missionProgress, mission, 1),
       ),
     );
+  }
+
+  /// **현재 활성 미션 1개만** 진행시킨다(순차 미션). 타입이 맞을 때만 [by] 증가.
+  /// 활성 미션 = 총 수집 횟수 % 미션 수 (수집할 때마다 다음 미션으로 넘어감).
+  Map<String, int>? _bumpMissions(
+    Map<String, int> progress,
+    MissionType type,
+    int by,
+  ) {
+    final cfg = ref.read(gameDataProvider).requireValue.missionConfig;
+    if (cfg == null || cfg.missions.isEmpty) return null;
+    final s = state.requireValue;
+    var totalClaims = 0;
+    for (final v in s.missionClaims.values) {
+      totalClaims += v;
+    }
+    final active = cfg.missions[totalClaims % cfg.missions.length];
+    // reachStage 는 stageNumber 파생이라 카운터를 쓰지 않는다.
+    if (active.type != type || active.type == MissionType.reachStage) {
+      return null;
+    }
+    final out = Map<String, int>.from(progress);
+    out[active.id] = (out[active.id] ?? 0) + by;
+    return out;
   }
 
   /// 업그레이드를 최대 [count] 레벨까지 구매(골드 되는 만큼). 구매한 레벨 수 반환.
@@ -137,20 +168,84 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (config == null) return 0;
     final s = state.requireValue;
     final spec = config.upgrade(kind);
+    final matKind = spec.materialKind;
     var level = s.upgradeLevel(kind);
     var gold = s.gold;
+    final mats = Map<MaterialKind, int>.from(s.materials);
     var bought = 0;
     for (var i = 0; i < count; i++) {
       final cost = upgradeCost(spec, level);
       if (gold < cost) break;
+      // 골드 외에 재료가 필요한 업그레이드는 재료도 충분해야 구매 가능.
+      final matCost = upgradeMaterialCost(spec, level);
+      if (matKind != null && (mats[matKind] ?? 0) < matCost) break;
       gold -= cost;
+      if (matKind != null && matCost > 0) {
+        mats[matKind] = (mats[matKind] ?? 0) - matCost;
+      }
       level++;
       bought++;
     }
     if (bought == 0) return 0;
     final levels = Map<UpgradeKind, int>.from(s.upgradeLevels)..[kind] = level;
-    await _commit(s.copyWith(gold: gold, upgradeLevels: levels));
+    await _commit(
+      s.copyWith(
+        gold: gold,
+        upgradeLevels: levels,
+        materials: mats,
+        missionProgress: _bumpMissions(
+          s.missionProgress,
+          MissionType.buyUpgrades,
+          bought,
+        ),
+      ),
+    );
     return bought;
+  }
+
+  /// 미션 [id] 완료 보상 수집. 목표 미달·정의 없음이면 false.
+  /// 수집 시 티어(claims)가 1 오르고(→ 목표 상승), 카운터형은 목표만큼 차감(초과분 이월).
+  Future<bool> claimMission(String id) async {
+    final cfg = ref.read(gameDataProvider).requireValue.missionConfig;
+    if (cfg == null) return false;
+    MissionDef? def;
+    for (final d in cfg.missions) {
+      if (d.id == id) {
+        def = d;
+        break;
+      }
+    }
+    if (def == null) return false;
+    final s = state.requireValue;
+    final claims = s.missionClaimCount(id);
+    final goal = def.goalAt(claims);
+    if (s.missionProgressCount(id) < goal) return false;
+
+    // 보상 지급.
+    var gold = s.gold;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    final amount = def.rewardAt(claims);
+    switch (def.reward) {
+      case 'gold':
+        gold += amount;
+      case 'jelly':
+        mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + amount;
+      case 'material':
+        final m = def.rewardMaterial;
+        if (m != null) mats[m] = (mats[m] ?? 0) + amount;
+    }
+
+    // 티어 +1(다음 미션으로 순환) & 진행도 전체 초기화(다음 미션은 0부터 새로).
+    final claimsMap = Map<String, int>.from(s.missionClaims)..[id] = claims + 1;
+    await _commit(
+      s.copyWith(
+        gold: gold,
+        materials: mats,
+        missionClaims: claimsMap,
+        missionProgress: const {},
+      ),
+    );
+    return true;
   }
 
   /// 도달 스테이지 갱신(최고 기록만).
@@ -158,6 +253,301 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     if (stage <= s.stageNumber) return;
     await _commit(s.copyWith(stageNumber: stage));
+  }
+
+  // ── 개발자(테스트) 전용 ───────────────────────────────────────
+  static const _devUuid = Uuid();
+
+  /// (개발) 채집함 비우기(장착 해제 포함).
+  Future<void> devClearBugs() async {
+    await _commit(
+      state.requireValue.copyWith(bugs: const [], equippedBugIds: const []),
+    );
+  }
+
+  /// (개발) 모든 종을 성충으로 [perSpecies]마리씩 채집함에 추가.
+  Future<void> devFillBugs({int perSpecies = 3}) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final rng = math.Random();
+    final s = state.requireValue;
+    final bugs = List<IndividualBug>.from(s.bugs);
+    for (final sp in data.allSpecies) {
+      for (var i = 0; i < perSpecies; i++) {
+        final potential = 1 + (rng.nextDouble() * rng.nextDouble() * 4).floor();
+        bugs.add(
+          IndividualBug.roll(
+            id: _devUuid.v4(),
+            species: sp,
+            rng: rng,
+            potential: potential.clamp(1, 5),
+          ),
+        );
+      }
+    }
+    await _commit(s.copyWith(bugs: bugs));
+  }
+
+  /// (개발) 스테이지 세이브 기록. 라이브 점프는 PlayScreen 에서 처리.
+  Future<void> devSetStage(int stage) async {
+    final n = stage < 1 ? 1 : stage;
+    await _commit(state.requireValue.copyWith(stageNumber: n));
+  }
+
+  /// (개발) 재화 추가(음수면 차감).
+  Future<void> devAddResources({
+    int gold = 0,
+    int chitin = 0,
+    int mineral = 0,
+    int sap = 0,
+    int jelly = 0,
+    int xp = 0,
+  }) async {
+    final s = state.requireValue;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    void bump(MaterialKind k, int v) {
+      if (v != 0) mats[k] = ((mats[k] ?? 0) + v).clamp(0, 1 << 40);
+    }
+
+    bump(MaterialKind.chitin, chitin);
+    bump(MaterialKind.mineral, mineral);
+    bump(MaterialKind.sap, sap);
+    bump(MaterialKind.jelly, jelly);
+    await _commit(
+      s.copyWith(
+        gold: (s.gold + gold).clamp(0, 1 << 40),
+        xp: (s.xp + xp).clamp(0, 1 << 40),
+        materials: mats,
+      ),
+    );
+  }
+
+  /// 광고 시청 등으로 버프를 활성화/연장. 남은 시간에 duration 을 더하되
+  /// buffs.json 의 maxSeconds 상한까지만 누적된다.
+  Future<void> activateBuff(BuffKind kind) async {
+    final buffs = ref.read(gameDataProvider).requireValue.buffConfig;
+    if (buffs == null) return;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final current = s.buffExpiry[kind];
+    // 이미 활성이면 남은 시간에 이어붙이고, 아니면 지금부터 시작.
+    final base = (current != null && current.isAfter(now)) ? current : now;
+    var next = base.add(Duration(seconds: buffs.durationSeconds));
+    final cap = now.add(Duration(seconds: buffs.maxSeconds));
+    if (next.isAfter(cap)) next = cap;
+    final updated = Map<BuffKind, DateTime>.from(s.buffExpiry)..[kind] = next;
+    await _commit(s.copyWith(buffExpiry: updated));
+  }
+
+  /// 만료된 버프 항목을 세이브에서 정리(선택적 위생 관리).
+  Future<void> pruneExpiredBuffs() async {
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final active = {
+      for (final e in s.buffExpiry.entries)
+        if (e.value.isAfter(now)) e.key: e.value,
+    };
+    if (active.length == s.buffExpiry.length) return;
+    await _commit(s.copyWith(buffExpiry: active));
+  }
+
+  /// 레시피 재료가 충분한지.
+  bool canCraft(CraftRecipe recipe) {
+    final s = state.requireValue;
+    for (final e in recipe.inputs.entries) {
+      if (s.materialCount(e.key) < e.value) return false;
+    }
+    return true;
+  }
+
+  /// 제작(§C): 재료를 소비하고 결과 버프를 발동한다. 재료 부족이면 false.
+  Future<bool> craft(CraftRecipe recipe) async {
+    final buffs = ref.read(gameDataProvider).requireValue.buffConfig;
+    if (buffs == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    for (final e in recipe.inputs.entries) {
+      if (s.materialCount(e.key) < e.value) return false;
+    }
+    // 재료 차감.
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final e in recipe.inputs.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) - e.value;
+    }
+    // 발동할 버프 목록.
+    final targets = recipe.allBuffs
+        ? BuffKind.values
+        : (recipe.buff != null ? [recipe.buff!] : const <BuffKind>[]);
+    final expiry = Map<BuffKind, DateTime>.from(s.buffExpiry);
+    for (final k in targets) {
+      final current = expiry[k];
+      final base = (current != null && current.isAfter(now)) ? current : now;
+      var next = base.add(Duration(seconds: buffs.durationSeconds));
+      final cap = now.add(Duration(seconds: buffs.maxSeconds));
+      if (next.isAfter(cap)) next = cap;
+      expiry[k] = next;
+    }
+    await _commit(s.copyWith(materials: mats, buffExpiry: expiry));
+    return true;
+  }
+
+  /// 개체 [bugId] 의 [part] 를 1레벨 강화(§2.2). 재료를 차감한다.
+  /// 강화 상한(포텐셜×10) 도달·재료 부족·개체 없음이면 false.
+  Future<bool> enhancePart(String bugId, BugPart part) async {
+    final cfg = ref.read(gameDataProvider).requireValue.enhanceConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bug = s.bugs[idx];
+    if (bug.enhancement.total >= bug.maxLevel) return false; // 상한 도달
+    final spec = cfg.spec(part);
+    final cost = spec.costAt(bug.enhancement.levelOf(part));
+    final have = s.materials[spec.material] ?? 0;
+    if (have < cost) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[spec.material] = have - cost;
+    final bugs = List<IndividualBug>.from(s.bugs);
+    bugs[idx] = bug.copyWith(enhancement: bug.enhancement.incremented(part));
+    await _commit(s.copyWith(bugs: bugs, materials: mats));
+    return true;
+  }
+
+  /// 수련: 골드를 소비해 성충 [bugId] 의 레벨을 1 올린다.
+  /// 성충 아님·최대레벨·골드부족·없음이면 false.
+  Future<bool> trainBug(String bugId) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bug = s.bugs[idx];
+    if (effectiveStage(bug.stage, bug.stageSince, now, cfg) !=
+        LifeStage.adult) {
+      return false;
+    }
+    if (bug.level >= cfg.maxLevel) return false;
+    final cost = cfg.trainCost(bug.level);
+    if (s.gold < cost) return false;
+    final bugs = List<IndividualBug>.from(s.bugs);
+    bugs[idx] = bug.copyWith(level: bug.level + 1);
+    await _commit(s.copyWith(gold: s.gold - cost, bugs: bugs));
+    return true;
+  }
+
+  /// 분해: 미장착 곤충 [bugId] 를 없애고 젤리로 환원. 장착/없음이면 false.
+  Future<bool> disassembleBug(String bugId) async {
+    final s = state.requireValue;
+    if (s.isEquipped(bugId)) return false;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bug = s.bugs[idx];
+    final reward = bug.potential; // 포텐셜만큼 젤리
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = (s.materials[MaterialKind.jelly] ?? 0) + reward;
+    final bugs = List<IndividualBug>.from(s.bugs)..removeAt(idx);
+    await _commit(s.copyWith(bugs: bugs, materials: mats));
+    return true;
+  }
+
+  /// 진화 촉진: 젤리를 소비해 [bugId] 를 다음 단계로. 성충/젤리부족/없음이면 false.
+  Future<bool> accelerateEvolution(String bugId) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bug = s.bugs[idx];
+    final eff = effectiveStage(bug.stage, bug.stageSince, now, cfg);
+    if (eff.isFinal) return false;
+    final jelly = s.materialCount(MaterialKind.jelly);
+    if (jelly < cfg.accelerateJelly) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = jelly - cfg.accelerateJelly;
+    final bugs = List<IndividualBug>.from(s.bugs);
+    bugs[idx] = bug.copyWith(stage: eff.next, stageSince: now);
+    await _commit(s.copyWith(bugs: bugs, materials: mats));
+    return true;
+  }
+
+  /// 합성(★강화): 같은 종의 미장착 곤충 synthFodder마리를 소비해 [targetId] 포텐셜 +1.
+  /// 최대 포텐셜 도달·재료 부족이면 false.
+  Future<bool> synthesize(String targetId) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    IndividualBug? target;
+    for (final b in s.bugs) {
+      if (b.id == targetId) {
+        target = b;
+        break;
+      }
+    }
+    if (target == null || target.potential >= cfg.synthMaxPotential) {
+      return false;
+    }
+    final targetSpeciesId = target.speciesId;
+    final fodder = s.bugs
+        .where(
+          (b) =>
+              b.id != targetId &&
+              b.speciesId == targetSpeciesId &&
+              !s.isEquipped(b.id),
+        )
+        .take(cfg.synthFodder)
+        .toList();
+    if (fodder.length < cfg.synthFodder) return false;
+    final fodderIds = fodder.map((b) => b.id).toSet();
+    final bugs = <IndividualBug>[];
+    for (final b in s.bugs) {
+      if (b.id == targetId) {
+        bugs.add(b.copyWith(potential: b.potential + 1));
+      } else if (!fodderIds.contains(b.id)) {
+        bugs.add(b);
+      }
+    }
+    await _commit(s.copyWith(bugs: bugs));
+    return true;
+  }
+
+  /// [target] 종으로 합성 가능한(미장착·타깃 제외) 같은 종 재료 수.
+  int synthFodderCount(SaveGame s, String targetId, String speciesId) => s.bugs
+      .where(
+        (b) =>
+            b.id != targetId && b.speciesId == speciesId && !s.isEquipped(b.id),
+      )
+      .length;
+
+  /// 곤충 [bugId] 를 애완펫으로 장착(최대 maxEquip). 이미 장착이면 무시.
+  Future<void> equipBug(String bugId) async {
+    final petCfg = ref.read(gameDataProvider).requireValue.petConfig;
+    final maxEquip = petCfg?.maxEquip ?? 3;
+    final s = state.requireValue;
+    if (s.isEquipped(bugId)) return;
+    if (s.equippedBugIds.length >= maxEquip) return;
+    if (!s.bugs.any((b) => b.id == bugId)) return;
+    await _commit(s.copyWith(equippedBugIds: [...s.equippedBugIds, bugId]));
+  }
+
+  /// 장착 해제.
+  Future<void> unequipBug(String bugId) async {
+    final s = state.requireValue;
+    if (!s.isEquipped(bugId)) return;
+    await _commit(
+      s.copyWith(
+        equippedBugIds: s.equippedBugIds.where((id) => id != bugId).toList(),
+      ),
+    );
+  }
+
+  /// 플레이어 닉네임 변경(공백 트림, 빈 값은 무시).
+  Future<void> renamePlayer(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    final s = state.requireValue;
+    if (trimmed == s.nickname) return;
+    await _commit(s.copyWith(nickname: trimmed));
   }
 }
 

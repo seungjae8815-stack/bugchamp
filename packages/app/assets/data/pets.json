@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "maxEquip": 3,
+  "potentialScale": 0.06,
+  "enhanceScale": 0.005,
+  "gradeAttackPct": { "common": 0.03, "uncommon": 0.05, "rare": 0.09, "epic": 0.15, "legendary": 0.25 },
+  "gradeHpPct": { "common": 0.03, "uncommon": 0.05, "rare": 0.09, "epic": 0.15, "legendary": 0.25 },
+  "stageMult": { "egg": 0.4, "larva": 0.6, "pupa": 0.8, "adult": 1.0 },
+  "stageDurationsSec": { "egg": 300, "larva": 600, "pupa": 900 },
+  "accelerateJelly": 2,
+  "synthFodder": 3,
+  "synthMaxPotential": 5,
+  "maxLevel": 30,
+  "levelBonus": 0.06,
+  "trainBaseCost": 200,
+  "trainCostGrowth": 1.18
+}

@@ -49,3 +49,5 @@ flutter:
     - assets/images/regions/
     - assets/images/materials/
     - assets/images/upgrades/
+    - assets/images/buffs/
+    - assets/images/bugs/

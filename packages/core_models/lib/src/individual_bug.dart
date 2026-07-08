@@ -23,6 +23,9 @@ class IndividualBug {
     required this.temperament,
     required this.sex,
     this.enhancement = PartLevels.zero,
+    this.stage = LifeStage.adult,
+    this.stageSince,
+    this.level = 1,
   });
 
   /// 개체 고유 id (앱 레이어에서 생성해 주입).
@@ -45,6 +48,15 @@ class IndividualBug {
 
   /// 부위 강화 레벨.
   final PartLevels enhancement;
+
+  /// 생애주기 단계 (§2.5). 새로 잡으면 알로 시작.
+  final LifeStage stage;
+
+  /// 현재 단계 진입 UTC 시각 (진화 타이머 기준). null=아주 오래전(즉시 진화 가능).
+  final DateTime? stageSince;
+
+  /// 성충 수련 레벨(1~). 펫 보너스에 곱해진다.
+  final int level;
 
   /// 강화 상한 레벨 (§2.1).
   int get maxLevel => potential * kLevelsPerPotential;
@@ -99,6 +111,9 @@ class IndividualBug {
     Temperament? temperament,
     Sex? sex,
     PartLevels? enhancement,
+    LifeStage? stage,
+    DateTime? stageSince,
+    int? level,
   }) => IndividualBug(
     id: id ?? this.id,
     speciesId: speciesId ?? this.speciesId,
@@ -107,6 +122,9 @@ class IndividualBug {
     temperament: temperament ?? this.temperament,
     sex: sex ?? this.sex,
     enhancement: enhancement ?? this.enhancement,
+    stage: stage ?? this.stage,
+    stageSince: stageSince ?? this.stageSince,
+    level: level ?? this.level,
   );
 
   factory IndividualBug.fromJson(Map<String, dynamic> json) => IndividualBug(
@@ -119,6 +137,13 @@ class IndividualBug {
     enhancement: json['enhancement'] == null
         ? PartLevels.zero
         : PartLevels.fromJson(json['enhancement'] as Map<String, dynamic>),
+    stage: json['stage'] == null
+        ? LifeStage.adult
+        : LifeStage.fromKey(json['stage'] as String),
+    stageSince: json['stageSince'] == null
+        ? null
+        : DateTime.parse(json['stageSince'] as String).toUtc(),
+    level: (json['level'] as num?)?.toInt() ?? 1,
   );
 
   Map<String, dynamic> toJson() => {
@@ -129,6 +154,9 @@ class IndividualBug {
     'temperament': temperament.key,
     'sex': sex.key,
     'enhancement': enhancement.toJson(),
+    'stage': stage.key,
+    if (stageSince != null) 'stageSince': stageSince!.toUtc().toIso8601String(),
+    'level': level,
   };
 
   @override

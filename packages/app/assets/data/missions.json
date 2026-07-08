@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "missions": [
+    { "id": "hunt", "type": "killMonsters", "goalBase": 20, "goalGrowth": 1.25, "reward": "gold", "rewardBase": 200, "rewardGrowth": 1.6 },
+    { "id": "boss", "type": "killBosses", "goalBase": 3, "goalGrowth": 1.3, "reward": "jelly", "rewardBase": 1, "rewardGrowth": 1.15 },
+    { "id": "power", "type": "buyUpgrades", "goalBase": 15, "goalGrowth": 1.3, "reward": "material", "rewardMaterial": "chitin", "rewardBase": 5, "rewardGrowth": 1.4 }
+  ]
+}

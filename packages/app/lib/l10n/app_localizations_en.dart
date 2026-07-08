@@ -271,4 +271,375 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get materialJelly => 'Bug Jelly';
+
+  @override
+  String get combatPowerLabel => 'Power';
+
+  @override
+  String get chatTitle => 'Chat';
+
+  @override
+  String get chatPlaceholder => 'Chat (coming soon) — tap to open';
+
+  @override
+  String get characterTitle => 'My Character';
+
+  @override
+  String get statCombatPower => 'Combat Power';
+
+  @override
+  String get statCrit => 'Crit';
+
+  @override
+  String get statMaxHp => 'Max HP';
+
+  @override
+  String get statDefense => 'Defense';
+
+  @override
+  String get rankingTitle => 'Ranking';
+
+  @override
+  String get mailTitle => 'Mailbox';
+
+  @override
+  String get mailEmpty => 'No new mail';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsNickname => 'Nickname';
+
+  @override
+  String get settingsNicknameHint => 'Enter a name';
+
+  @override
+  String get actionSave => 'Save';
+
+  @override
+  String get actionCancel => 'Cancel';
+
+  @override
+  String get actionClose => 'Close';
+
+  @override
+  String get exitTitle => 'Exit game';
+
+  @override
+  String get exitConfirm => 'Quit the game?';
+
+  @override
+  String get exitAction => 'Quit';
+
+  @override
+  String get questHunt => 'Monster Hunt';
+
+  @override
+  String get buffTitle => 'Buffs';
+
+  @override
+  String get buffSheetTitle => 'Activate a buff';
+
+  @override
+  String get buffWatchAd => 'Watch ad';
+
+  @override
+  String buffMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String buffActivatedSnack(String buff, int minutes) {
+    return '$buff active! (${minutes}m)';
+  }
+
+  @override
+  String get buffGoldRush => 'Gold Rush';
+
+  @override
+  String get buffGoldRushDesc => 'Gold gain ×2';
+
+  @override
+  String get buffXpBoost => 'XP Boost';
+
+  @override
+  String get buffXpBoostDesc => 'XP gain ×2';
+
+  @override
+  String get buffFrenzy => 'Frenzy';
+
+  @override
+  String get buffFrenzyDesc => 'Attack & attack speed up';
+
+  @override
+  String get buffGatherer => 'Gatherer\'s Touch';
+
+  @override
+  String get buffGathererDesc => 'Material gain ×2';
+
+  @override
+  String get buffLuckyWind => 'Lucky Wind';
+
+  @override
+  String get buffLuckyWindDesc => 'Bug find rate ×2';
+
+  @override
+  String get enhanceTitle => 'Enhance Parts';
+
+  @override
+  String get partHornJaw => 'Horn/Jaw';
+
+  @override
+  String get partCuticle => 'Cuticle';
+
+  @override
+  String get partWing => 'Wings';
+
+  @override
+  String get partBuild => 'Build';
+
+  @override
+  String get enhanceAction => 'Enhance';
+
+  @override
+  String get enhanceMaxed => 'MAX';
+
+  @override
+  String enhanceCap(int cur, int max) {
+    return 'Enhance $cur/$max';
+  }
+
+  @override
+  String enhancePerLevel(String pct) {
+    return '+$pct%/Lv';
+  }
+
+  @override
+  String get equipTitle => 'Equipped Pets';
+
+  @override
+  String get equipEmpty => 'Empty';
+
+  @override
+  String get equipAction => 'Equip';
+
+  @override
+  String get unequipAction => 'Unequip';
+
+  @override
+  String get equipFull => 'Equip slots are full';
+
+  @override
+  String get equippedBadge => 'ON';
+
+  @override
+  String petBonus(String atk, String hp) {
+    return 'Pet bonus · ATK +$atk% · HP +$hp%';
+  }
+
+  @override
+  String get stageEgg => 'Egg';
+
+  @override
+  String get stageLarva => 'Larva';
+
+  @override
+  String get stagePupa => 'Pupa';
+
+  @override
+  String get stageAdult => 'Adult';
+
+  @override
+  String get evolveTitle => 'Evolve';
+
+  @override
+  String evolveNext(String next, String time) {
+    return '$time to $next';
+  }
+
+  @override
+  String get evolveReady => 'Ready to evolve';
+
+  @override
+  String get evolveMaxed => 'Fully evolved (Adult)';
+
+  @override
+  String get accelerateAction => 'Speed up';
+
+  @override
+  String get synthTitle => 'Synthesis (★ up)';
+
+  @override
+  String get synthDo => 'Synthesize';
+
+  @override
+  String synthDesc(int have, int need) {
+    return 'Same species $have/$need · Potential +1';
+  }
+
+  @override
+  String get synthMaxed => 'Max potential';
+
+  @override
+  String get synthSnack => 'Synthesis complete! Potential +1';
+
+  @override
+  String get petEffectTitle => 'Equip effect';
+
+  @override
+  String petAtkBonus(String v) {
+    return 'Pet ATK +$v%';
+  }
+
+  @override
+  String petHpBonus(String v) {
+    return 'Pet HP +$v%';
+  }
+
+  @override
+  String get trainTitle => 'Train';
+
+  @override
+  String get trainLevel => 'Train level';
+
+  @override
+  String get trainAction => 'Train';
+
+  @override
+  String get trainMaxed => 'Max level';
+
+  @override
+  String get trainSnack => 'Trained! Level +1';
+
+  @override
+  String get disassembleTitle => 'Disassemble';
+
+  @override
+  String disassembleDesc(int n) {
+    return 'Convert to $n jelly';
+  }
+
+  @override
+  String get disassembleAction => 'Disassemble';
+
+  @override
+  String get disassembleSnack => 'Disassembled';
+
+  @override
+  String get bugDescTitle => 'About';
+
+  @override
+  String get onlyAdultTrain => 'Only adults can be trained';
+
+  @override
+  String get craftTitle => 'Craft';
+
+  @override
+  String get craftMake => 'Craft';
+
+  @override
+  String craftPotion(String buff) {
+    return '$buff Potion';
+  }
+
+  @override
+  String get craftAllPotion => 'All-in-One Potion';
+
+  @override
+  String craftedSnack(String name) {
+    return 'Crafted $name!';
+  }
+
+  @override
+  String get missionsTitle => 'Missions';
+
+  @override
+  String get missionKillMonsters => 'Hunt Monsters';
+
+  @override
+  String get missionKillBosses => 'Defeat Bosses';
+
+  @override
+  String get missionBuyUpgrades => 'Upgrade Stats';
+
+  @override
+  String get missionReachStage => 'Reach Stage';
+
+  @override
+  String get missionClaim => 'Claim';
+
+  @override
+  String get missionComplete => 'Complete! Tap to claim';
+
+  @override
+  String get missionClaimedSnack => 'Mission reward claimed!';
+
+  @override
+  String get upAttackDesc => 'Increases damage dealt per hit.';
+
+  @override
+  String get upAttackSpeedDesc => 'More attacks per second; faster hunting.';
+
+  @override
+  String get upCritDesc => 'Increases critical hit chance.';
+
+  @override
+  String get upCritDamageDesc =>
+      'Increases the critical hit damage multiplier.';
+
+  @override
+  String get upBossDamageDesc => 'Extra damage dealt to bosses.';
+
+  @override
+  String get upMaxHpDesc => 'Increases max HP so you last longer.';
+
+  @override
+  String get upDefenseDesc => 'Reduces damage taken from enemies.';
+
+  @override
+  String get upRegenDesc => 'Increases HP regenerated per second.';
+
+  @override
+  String get upRewardDesc => 'More gold earned per monster kill.';
+
+  @override
+  String get upXpDesc => 'More XP earned per monster kill.';
+
+  @override
+  String get upBugFindDesc => 'Increases the chance to find bugs.';
+
+  @override
+  String get upMaterialFindDesc => 'Increases enhancement materials gained.';
+
+  @override
+  String get upMoveSpeedDesc => 'Faster travel to the next hunting spot.';
+
+  @override
+  String get upBoostDesc => 'Strengthens the tap-to-boost effect.';
+
+  @override
+  String get upBugBuffDesc => 'Bonus scales with the number of bugs collected.';
+
+  @override
+  String get tagCommonMaterial => 'Material';
+
+  @override
+  String get tagPremium => 'Premium';
+
+  @override
+  String get materialChitinDesc =>
+      'A hard exoskeleton shard. Used for advanced upgrade costs and horn/jaw enhancement.';
+
+  @override
+  String get materialMineralDesc =>
+      'A hard mined mineral. Used for advanced upgrade costs and cuticle enhancement.';
+
+  @override
+  String get materialSapDesc =>
+      'Hardened crystallized tree sap. Used for advanced upgrade costs and wing enhancement.';
+
+  @override
+  String get materialJellyDesc =>
+      'A special premium currency. Used for crafting (All-in-One Potion) and special goods.';
 }

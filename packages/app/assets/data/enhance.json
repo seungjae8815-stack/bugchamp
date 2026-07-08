@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    { "part": "hornJaw", "material": "chitin", "baseCost": 2, "costGrowth": 1.12, "effectPerLevel": 0.04 },
+    { "part": "cuticle", "material": "mineral", "baseCost": 2, "costGrowth": 1.12, "effectPerLevel": 0.04 },
+    { "part": "wing", "material": "sap", "baseCost": 2, "costGrowth": 1.12, "effectPerLevel": 0.03 },
+    { "part": "build", "material": "chitin", "baseCost": 3, "costGrowth": 1.13, "effectPerLevel": 0.05 }
+  ]
+}

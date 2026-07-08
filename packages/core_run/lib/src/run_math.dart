@@ -48,6 +48,22 @@ int bulkUpgradeCost(UpgradeSpec spec, int level, int count) {
   return total;
 }
 
+/// 업그레이드 [level] → 다음 레벨 구매에 드는 재료 비용(재료 미요구면 0).
+int upgradeMaterialCost(UpgradeSpec spec, int level) {
+  if (spec.materialKind == null) return 0;
+  return (spec.materialBaseCost * math.pow(spec.materialCostGrowth, level))
+      .round();
+}
+
+/// [level] 부터 [count] 레벨 연속 구매의 재료 총비용.
+int bulkUpgradeMaterialCost(UpgradeSpec spec, int level, int count) {
+  var total = 0;
+  for (var i = 0; i < count; i++) {
+    total += upgradeMaterialCost(spec, level + i);
+  }
+  return total;
+}
+
 /// 캐릭터 레벨 [level] → [level]+1 로 가는 데 필요한 경험치.
 int xpForNextLevel(int level) => (25 * math.pow(1.45, level - 1)).round();
 
@@ -91,6 +107,19 @@ CharacterStats deriveStats(
     moveSpeed: v(UpgradeKind.moveSpeed, 1.0),
     boostBonus: v(UpgradeKind.boost, 1.0),
   );
+}
+
+/// 전투력(CP): 능력치를 하나의 지표로 집계한 **표시용** 값.
+/// 밸런스 계산에 쓰이지 않는 순수 표시 지표라 코드 공식으로 둔다.
+/// 공격 성능(DPS 근사) + 생존력(유효 체력)을 가중 합산한다.
+int combatPower(CharacterStats s) {
+  final dps =
+      s.attack *
+      s.attackSpeed *
+      (1 + s.critChance * (s.critDamage - 1)) *
+      s.bossDamage;
+  final effectiveHp = s.maxHp * (1 + s.defense / 100);
+  return (dps * 6 + effectiveHp * 0.4).round();
 }
 
 /// (스테이지, 서식지 인덱스)에 대응하는 서식지 종류 (결정론, 해당 지역 기준).

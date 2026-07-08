@@ -12,6 +12,9 @@ class UpgradeSpec {
     required this.costGrowth,
     required this.baseValue,
     required this.perLevel,
+    this.materialKind,
+    this.materialBaseCost = 0,
+    this.materialCostGrowth = 1.0,
   });
 
   final UpgradeKind kind;
@@ -19,6 +22,11 @@ class UpgradeSpec {
   final double costGrowth;
   final double baseValue;
   final double perLevel;
+
+  /// 이 업그레이드가 골드 외에 추가로 요구하는 재료(없으면 null).
+  final MaterialKind? materialKind;
+  final double materialBaseCost;
+  final double materialCostGrowth;
 
   /// 레벨 [level] 에서의 스탯 값.
   double valueAt(int level) => baseValue + perLevel * level;
@@ -29,6 +37,11 @@ class UpgradeSpec {
     costGrowth: (json['costGrowth'] as num).toDouble(),
     baseValue: (json['baseValue'] as num).toDouble(),
     perLevel: (json['perLevel'] as num).toDouble(),
+    materialKind: json['materialKind'] != null
+        ? MaterialKind.fromKey(json['materialKind'] as String)
+        : null,
+    materialBaseCost: (json['materialBaseCost'] as num?)?.toDouble() ?? 0,
+    materialCostGrowth: (json['materialCostGrowth'] as num?)?.toDouble() ?? 1.0,
   );
 }
 
@@ -40,6 +53,7 @@ class RegionConfig {
     required this.name,
     required this.bossName,
     required this.habitatKinds,
+    this.bossFlip = true,
   });
 
   /// 기존 필드 id 재활용 가능 (예: 'oak_forest').
@@ -47,6 +61,10 @@ class RegionConfig {
   final LocalizedText name;
   final LocalizedText bossName;
   final List<HabitatKind> habitatKinds;
+
+  /// 보스 스프라이트를 좌우 반전해 캐릭터(좌측)를 바라보게 할지.
+  /// 원본 아트가 오른쪽을 보면 true, 이미 왼쪽을 보면 false.
+  final bool bossFlip;
 
   factory RegionConfig.fromJson(Map<String, dynamic> json) => RegionConfig(
     id: json['id'] as String,
@@ -56,6 +74,7 @@ class RegionConfig {
         .cast<String>()
         .map(HabitatKind.fromKey)
         .toList(),
+    bossFlip: json['bossFlip'] as bool? ?? true,
   );
 }
 

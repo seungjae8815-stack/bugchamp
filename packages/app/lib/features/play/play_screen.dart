@@ -13,11 +13,20 @@ import '../../domain/save_controller.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
+import '../../ui/labels.dart';
 
 const _uuid = Uuid();
 const _honey = Color(0xFFEBA52F);
 const _onScene = Color(0xFFFFFFFF);
+
+/// 일반 강화 재료(처치/채집 드롭 대상). 젤리는 프리미엄이라 제외(§E).
+const _regularMaterials = [
+  MaterialKind.chitin,
+  MaterialKind.mineral,
+  MaterialKind.sap,
+];
 const _walkDuration = 0.6;
 const _boostDuration = 3.0;
 const _deathDuration = 0.4;
@@ -46,6 +55,58 @@ String _statLabel(AppLocalizations l, UpgradeKind k) => switch (k) {
   UpgradeKind.boost => l.upBoost,
   UpgradeKind.bugBuff => l.upBugBuff,
 };
+
+String _statDesc(AppLocalizations l, UpgradeKind k) => switch (k) {
+  UpgradeKind.attack => l.upAttackDesc,
+  UpgradeKind.attackSpeed => l.upAttackSpeedDesc,
+  UpgradeKind.crit => l.upCritDesc,
+  UpgradeKind.critDamage => l.upCritDamageDesc,
+  UpgradeKind.bossDamage => l.upBossDamageDesc,
+  UpgradeKind.maxHp => l.upMaxHpDesc,
+  UpgradeKind.defense => l.upDefenseDesc,
+  UpgradeKind.regen => l.upRegenDesc,
+  UpgradeKind.reward => l.upRewardDesc,
+  UpgradeKind.xp => l.upXpDesc,
+  UpgradeKind.bugFind => l.upBugFindDesc,
+  UpgradeKind.materialFind => l.upMaterialFindDesc,
+  UpgradeKind.moveSpeed => l.upMoveSpeedDesc,
+  UpgradeKind.boost => l.upBoostDesc,
+  UpgradeKind.bugBuff => l.upBugBuffDesc,
+};
+
+/// 업그레이드 아이콘 탭 시 뜨는 상세 설명 카드.
+void _showUpgradeInfo(
+  BuildContext context,
+  AppLocalizations l,
+  UpgradeKind kind,
+  double cur,
+) {
+  showConceptCard(
+    context,
+    // 업그레이드 목록과 동일한 아이콘(이미지 없으면 동일 색상칩 폴백).
+    iconBox: SizedBox(
+      width: 46,
+      height: 46,
+      child: upgradeImage(
+        kind,
+        size: 46,
+        fallback: Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _statColor(kind),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(_statIcon(kind), color: Colors.white, size: 24),
+        ),
+      ),
+    ),
+    title: _statLabel(l, kind),
+    body: _statDesc(l, kind),
+    closeLabel: l.actionClose,
+  );
+}
 
 IconData _statIcon(UpgradeKind k) => switch (k) {
   UpgradeKind.attack => Icons.bolt,
@@ -106,18 +167,39 @@ String _valuePair(UpgradeKind k, double cur, double next) {
 }
 
 class _Pop {
-  _Pop(this.text, this.dx, this.color, this.size, {this.baseX = 0.4});
+  _Pop(
+    this.text,
+    this.dx,
+    this.color,
+    this.size, {
+    this.baseX = 0.4,
+    this.baseY = 0.0,
+    this.delay = 0,
+  });
   final String text;
   final double dx;
   final Color color;
   final double size;
   final double baseX;
+  final double baseY; // 시작 세로 위치(−1 상단 ~ 1 하단).
+  double delay; // 이 시간(초)이 지난 뒤부터 떠오르기 시작.
   double age = 0;
 }
 
 class _Impact {
   _Impact(this.crit);
   final bool crit;
+  double age = 0;
+}
+
+/// 처치 시 몬스터 근처에서 튀어나와 캐릭터로 빨려 들어가는 재화 알갱이.
+class _Pickup {
+  _Pickup(this.glyph, this.color, this.scatterX, this.scatterY, this.life);
+  final String glyph;
+  final Color color;
+  final double scatterX; // 초기 흩뿌림(적 기준 픽셀)
+  final double scatterY;
+  final double life; // 총 수명(초). 도착까지 시간.
   double age = 0;
 }
 
@@ -283,10 +365,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   double _attackPulse = 0;
   double _hitFlash = 0;
   double _boost = 0;
+  double _tapHint = 0; // 손가락 탭 힌트 애니 주기
   double _bgOffset = 0;
   double _dmgCooldown = 0;
   double _enemyAtkAcc = 0;
-  double _bossLunge = 0;
+  double _enemyLunge = 0; // 적(보스·서식지) 공격 달려듦 모션 값
   double _playerHitFlash = 0;
   double _screenShake = 0;
 
@@ -294,6 +377,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   final List<_Pop> _pops = [];
   final List<_Impact> _impacts = [];
   final List<_Particle> _particles = [];
+  final List<_Pickup> _pickups = [];
+
+  late final Clock _clock;
   late final List<List<Offset>> _cracks;
   bool _dying = false;
   double _dyingT = 0;
@@ -304,6 +390,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void initState() {
     super.initState();
     _cracks = _makeCracks();
+    _clock = ref.read(clockProvider);
     _data = ref.read(gameDataProvider).requireValue;
     _config = _data.runConfig!;
     final save = ref.read(saveControllerProvider).requireValue;
@@ -392,15 +479,72 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _walkT = 0;
     _attackAcc = 0;
     _enemyAtkAcc = 0;
-    _bossLunge = 0;
+    _enemyLunge = 0;
     _dying = false;
   }
 
-  CharacterStats _stats(SaveGame save) => deriveStats(
+  /// 업그레이드/레벨 기반 순수 능력치(버프 미포함) — 전투력 표시에 사용.
+  /// 업그레이드/레벨만의 순수 능력치(펫·버프 미포함).
+  CharacterStats _baseStats(SaveGame save) => deriveStats(
     _config,
     upgradeLevels: save.upgradeLevels,
     characterLevel: save.level,
     bugsCollected: save.bugs.length,
+  );
+
+  /// 장착 애완펫 보너스까지 반영한 능력치 — 전투력 표시 기준.
+  CharacterStats _petStats(SaveGame save) {
+    final base = _baseStats(save);
+    final cfg = _data.petConfig;
+    if (cfg == null || save.equippedBugIds.isEmpty) return base;
+    final now = _clock.now().toUtc();
+    final pets = <PetStat>[];
+    for (final id in save.equippedBugIds) {
+      IndividualBug? bug;
+      for (final b in save.bugs) {
+        if (b.id == id) {
+          bug = b;
+          break;
+        }
+      }
+      if (bug == null) continue;
+      final sp = _data.speciesById[bug.speciesId];
+      if (sp == null) continue;
+      pets.add((
+        grade: sp.grade,
+        sizeMult: bug.statMultiplier(sp),
+        potential: bug.potential,
+        enhanceTotal: bug.enhancement.total,
+        stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
+        level: bug.level,
+      ));
+    }
+    return _applyPetBonus(base, computePetBonus(pets, cfg));
+  }
+
+  CharacterStats _applyPetBonus(CharacterStats s, PetBonus pb) =>
+      CharacterStats(
+        attack: s.attack * pb.attackMult,
+        attackSpeed: s.attackSpeed,
+        rewardMultiplier: s.rewardMultiplier,
+        critChance: s.critChance,
+        critDamage: s.critDamage,
+        bossDamage: s.bossDamage,
+        maxHp: s.maxHp * pb.hpMult,
+        defense: s.defense,
+        hpRegen: s.hpRegen,
+        xpMultiplier: s.xpMultiplier,
+        bugFind: s.bugFind,
+        materialFind: s.materialFind,
+        moveSpeed: s.moveSpeed,
+        boostBonus: s.boostBonus,
+      );
+
+  /// 펫 + 활성 버프까지 반영한 유효 능력치 — 전투/보상 계산에 사용.
+  CharacterStats _stats(SaveGame save) => applyBuffs(
+    _petStats(save),
+    save.activeBuffs(_clock.now().toUtc()),
+    _data.buffConfig,
   );
 
   void _tick(Duration elapsed) {
@@ -412,19 +556,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   void _step(double dt) {
+    _tapHint += dt;
+    if (_tapHint > 60) _tapHint -= 60; // 시작 시 1회 + 60초마다
     if (_boost > 0) _boost = math.max(0, _boost - dt);
     if (_attackPulse > 0) _attackPulse = math.max(0, _attackPulse - dt * 2.6);
     if (_hitFlash > 0) _hitFlash = math.max(0, _hitFlash - dt * 7);
     if (_retreatFlash > 0) _retreatFlash = math.max(0, _retreatFlash - dt);
-    if (_bossLunge > 0) _bossLunge = math.max(0, _bossLunge - dt * 3);
+    if (_enemyLunge > 0) _enemyLunge = math.max(0, _enemyLunge - dt * 3);
     if (_playerHitFlash > 0) {
       _playerHitFlash = math.max(0, _playerHitFlash - dt * 4);
     }
     if (_dmgCooldown > 0) _dmgCooldown -= dt;
     for (final p in _pops) {
+      if (p.delay > 0) {
+        p.delay -= dt;
+        continue;
+      }
       p.age += dt;
     }
     _pops.removeWhere((p) => p.age > 1.0);
+    for (final pk in _pickups) {
+      pk.age += dt;
+    }
+    _pickups.removeWhere((pk) => pk.age > pk.life);
     if (_screenShake > 0) _screenShake = math.max(0, _screenShake - dt * 4);
     for (final im in _impacts) {
       im.age += dt;
@@ -461,37 +615,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       return;
     }
 
-    // 적 반격
+    // 적 반격 — 보스·일반 서식지 모두 주기적으로 달려들어(공격 모션) 그 순간 피해.
     final depth = _stage - 1;
     final threat = habitatThreat(_config, depth, boss: _isBoss);
     final incoming = threat * 100 / (100 + stats.defense);
-    if (_isBoss) {
-      // 보스는 주기적으로 달려들어 큰 피해
-      _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * dt);
-      _enemyAtkAcc += dt;
-      const bossInterval = 1.3;
-      if (_enemyAtkAcc >= bossInterval) {
-        _enemyAtkAcc -= bossInterval;
-        final burst = incoming * bossInterval * 1.4;
+    // 회복은 상시 적용.
+    _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * dt);
+    _enemyAtkAcc += dt;
+    final atkInterval = _isBoss ? 1.3 : 1.5;
+    if (_enemyAtkAcc >= atkInterval) {
+      _enemyAtkAcc -= atkInterval;
+      // 서식지는 이전 상시 피해와 평균 DPS가 같도록 interval 만큼 묶어서 준다.
+      final burst = incoming * atkInterval * (_isBoss ? 1.4 : 1.0);
+      if (burst > 0) {
         _playerHp -= burst;
-        _bossLunge = 1;
-        _playerHitFlash = 1;
+        _enemyLunge = 1; // 공격 모션(캐릭터 쪽으로 달려듦)
+        _playerHitFlash = _isBoss ? 1.0 : 0.6;
         _pops.add(
           _Pop(
             '-${formatCompact(burst)}',
             (_rng.nextDouble() - 0.5) * 0.2,
             const Color(0xFFFF5252),
-            18,
+            _isBoss ? 18 : 15,
             baseX: -0.55,
+            baseY: 0.3,
           ),
         );
       }
-    } else {
-      // 일반 서식지는 곤충이 지속적으로 갉아먹음
-      _playerHp = math.min(
-        _playerHpMax,
-        _playerHp + (stats.hpRegen - incoming) * dt,
-      );
     }
     if (_playerHp <= 0) {
       _beginDefeat();
@@ -571,33 +721,103 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         species: sp,
         rng: _rng,
         potential: potential.clamp(1, 5),
-      );
+      ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
     }
 
     Map<MaterialKind, int>? mats;
     if (_rng.nextDouble() < _config.materialDropChance * stats.materialFind) {
-      final kind =
-          MaterialKind.values[_rng.nextInt(MaterialKind.values.length)];
+      final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
       mats = {kind: 1 + _rng.nextInt(2)};
     }
 
     ref
         .read(saveControllerProvider.notifier)
-        .applyReward(gold: gold, xp: xp, bug: bug, materials: mats);
+        .applyReward(
+          gold: gold,
+          xp: xp,
+          bug: bug,
+          materials: mats,
+          mission: _isBoss ? MissionType.killBosses : MissionType.killMonsters,
+        );
 
+    // 재화 드롭 연출: 처치 지점에서 코인/재료가 튀어나와 캐릭터로 빨려 들어간다.
+    _spawnPickups(hasMaterial: mats != null, hasBug: bug != null);
+
+    // 코인이 캐릭터에 도착할 즈음(≈0.42s 뒤) +골드 / +경험치 숫자가 캐릭터 쪽에서 떠오름.
     _pops.add(
       _Pop(
-        '+${formatCompact(gold)}',
-        (_rng.nextDouble() - 0.5) * 0.3,
+        '+${formatCompact(gold)} Gold',
+        (_rng.nextDouble() - 0.5) * 0.2,
         _honey,
-        18,
+        17,
+        baseX: -0.55,
+        baseY: 0.35,
+        delay: 0.42,
       ),
     );
-    if (bug != null) _pops.add(_Pop('🐛', 0.25, Colors.white, 20));
+    if (xp > 0) {
+      _pops.add(
+        _Pop(
+          '+${formatCompact(xp)} xp',
+          (_rng.nextDouble() - 0.5) * 0.2,
+          const Color(0xFF66D9FF),
+          15,
+          baseX: -0.35,
+          baseY: 0.5,
+          delay: 0.52,
+        ),
+      );
+    }
+    // 곤충 포획 시 캐릭터에 획득 표시.
+    if (bug != null) {
+      _pops.add(
+        _Pop(
+          '🐛 +1',
+          (_rng.nextDouble() - 0.5) * 0.15,
+          const Color(0xFFB9F6CA),
+          17,
+          baseX: -0.45,
+          baseY: 0.2,
+          delay: 0.62,
+        ),
+      );
+    }
 
     // 적이 쓰러지는 연출(죽음 애니) 후 다음으로.
     _dying = true;
     _dyingT = _deathDuration;
+  }
+
+  /// 처치 지점(몬스터 발밑)에서 아래로 떨어졌다가 캐릭터 발밑으로 끌려가는 재화 생성.
+  void _spawnPickups({required bool hasMaterial, required bool hasBug}) {
+    for (var i = 0; i < 5; i++) {
+      _pickups.add(
+        _Pickup(
+          '🪙',
+          _honey,
+          (_rng.nextDouble() - 0.5) * 46,
+          8 + _rng.nextDouble() * 26, // 몬스터 아래로 흩어짐
+          0.42 + _rng.nextDouble() * 0.18,
+        ),
+      );
+    }
+    if (hasMaterial) {
+      _pickups.add(
+        _Pickup(
+          '💠',
+          const Color(0xFF4FC3F7),
+          (_rng.nextDouble() - 0.5) * 30,
+          14,
+          0.55,
+        ),
+      );
+    }
+    if (hasBug) {
+      _pickups.add(_Pickup('🐛', Colors.white, 0, 6, 0.62));
+    }
+    if (_pickups.length > 60) {
+      _pickups.removeRange(0, _pickups.length - 60);
+    }
   }
 
   void _advanceAfterDeath() {
@@ -638,20 +858,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final save = ref.watch(saveControllerProvider).requireValue;
     return Column(
       children: [
-        SafeArea(bottom: false, child: _TopBar(save: save)),
-        _StageBanner(
-          regionName: _config
-              .regionForStage(_stage)
-              .name
-              .resolve(Localizations.localeOf(context).languageCode),
-          chapter: (_stage - 1) ~/ _config.stagesPerRegion + 1,
-          stageInRegion: (_stage - 1) % _config.stagesPerRegion + 1,
-          habitatIndex: _habitatIndex,
-          habitatsPerStage: _config.habitatsPerStage,
-          isBoss: _isBoss,
-        ),
-        Expanded(flex: 50, child: _combatViewport(l)),
-        Expanded(flex: 50, child: _upgradePanel(l, save)),
+        SafeArea(bottom: false, child: _topSection(l, save)),
+        // 스테이지 배너는 이제 사냥 화면 위 오버레이로 → 사냥 화면이 더 넓어짐.
+        Expanded(flex: 54, child: _combatViewport(l)),
+        Expanded(flex: 46, child: _upgradePanel(l, save)),
       ],
     );
   }
@@ -702,9 +912,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (_dying) {
       eState = 'death';
       eFrame = deathP < 0.5 ? 1 : 2;
-    } else if (_isBoss && _bossLunge > 0) {
+    } else if (_enemyLunge > 0) {
       eState = 'attack';
-      eFrame = _bossLunge > 0.5 ? 1 : 2;
+      eFrame = _enemyLunge > 0.5 ? 1 : 2;
     } else {
       eState = 'idle';
       eFrame = 1;
@@ -718,7 +928,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             'assets/images/habitats/${_kind.key}_${eState}_$eFrame.webp',
             'assets/images/habitats/${_kind.key}.webp',
           ];
-    final enemyBase = gameImageChain(
+    final rawEnemy = gameImageChain(
       ePaths,
       size: _isBoss ? 172 : 84,
       byHeight: true,
@@ -726,6 +936,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ? const Text('🪲', style: TextStyle(fontSize: 72))
           : Text(habitatGlyph(_kind), style: const TextStyle(fontSize: 52)),
     );
+    // 보스는 캐릭터(좌측)를 바라보도록 좌우 반전(지역별 bossFlip).
+    final enemyBase = _isBoss && _config.regionForStage(_stage).bossFlip
+        ? Transform.scale(
+            scaleX: -1,
+            alignment: Alignment.center,
+            child: rawEnemy,
+          )
+        : rawEnemy;
     final Widget enemyWidget = _dying
         ? Opacity(
             opacity: (1 - deathP).clamp(0.0, 1.0),
@@ -759,13 +977,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       'assets/images/regions/${_config.regionForStage(_stage).id}.webp',
                 ),
               ),
+              // 좌측 오버레이: 퀘스트 진행 + 재화 목록 (레퍼런스 차용)
+              Positioned(
+                left: 8,
+                top: 8,
+                child: _questAndResources(
+                  l,
+                  ref.watch(saveControllerProvider).requireValue,
+                ),
+              ),
+              // 상단 중앙 오버레이: 스테이지 배너
+              Positioned(top: 8, left: 0, right: 0, child: _stageOverlay(l)),
               // 적/서식지 (하단=발 기준 정렬)
               Align(
                 alignment: const Alignment(0.45, 1.0),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Transform.translate(
-                    offset: Offset(shake - _bossLunge * 24 + walkSlide, 0),
+                    offset: Offset(shake - _enemyLunge * 24 + walkSlide, 0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -803,6 +1032,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                 ),
               ),
+
+              // 장착 펫: 캐릭터 뒤를 따라다니는 작은 동행
+              _petFollowers(),
 
               // 캐릭터 + 플레이어 HP바 (하단=발 기준 정렬)
               Align(
@@ -852,7 +1084,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               // 팝업(데미지/골드)
               for (final p in _pops)
                 Align(
-                  alignment: Alignment(p.baseX + p.dx, 0.0 - p.age * 0.5),
+                  alignment: Alignment(p.baseX + p.dx, p.baseY - p.age * 0.5),
                   child: Opacity(
                     opacity: (1 - p.age).clamp(0.0, 1.0),
                     child: Text(
@@ -876,8 +1108,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     builder: (context, c) {
                       final ex = c.maxWidth * 0.72;
                       final ey = c.maxHeight * 0.6;
+                      // 픽업: 몬스터 발밑 → 캐릭터 발밑(화면 하단)으로.
+                      final pex = c.maxWidth * 0.7;
+                      final pey = c.maxHeight * 0.82;
+                      final pcx = c.maxWidth * 0.22;
+                      final pcy = c.maxHeight * 0.9;
                       return Stack(
                         children: [
+                          for (final pk in _pickups)
+                            _buildPickup(pk, pex, pey, pcx, pcy),
                           for (final pt in _particles)
                             Positioned(
                               left: ex + pt.x,
@@ -978,20 +1217,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     ),
                   ),
                 ),
-              Positioned(
-                bottom: 6,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Text(
-                    l.tapBoostHint,
-                    style: const TextStyle(
-                      color: Color(0x99FFFFFF),
-                      fontSize: 10.5,
-                    ),
-                  ),
-                ),
-              ),
+              // 부스트 유도: 주기적으로 나타났다 사라지는 손가락 탭 아이콘
+              if (_boost <= 0) _buildTapHint(),
             ],
           ),
         ),
@@ -1041,6 +1268,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   config: _config,
                   level: save.upgradeLevel(kind),
                   gold: save.gold,
+                  materials: save.materials,
                   buyAmount: _buyAmount,
                   onBuy: () => ref
                       .read(saveControllerProvider.notifier)
@@ -1053,66 +1281,75 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ),
     );
   }
-}
+  // ─────────────────────────────────────────────────────────────
+  // 상단 상태창 + 버프 스트립 (레퍼런스 레이아웃 차용)
+  // ─────────────────────────────────────────────────────────────
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.save});
-  final SaveGame save;
+  Widget _topSection(AppLocalizations l, SaveGame save) => Container(
+    color: const Color(0xF20B1206),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [_topBar(l, save), _chatBar(l)],
+    ),
+  );
 
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
+  Widget _topBar(AppLocalizations l, SaveGame save) {
     final xpNeed = xpForNextLevel(save.level);
-    final totalMats = MaterialKind.values.fold<int>(
-      0,
-      (a, k) => a + save.materialCount(k),
-    );
-    return Container(
-      color: const Color(0xF20B1206),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+    final cp = combatPower(_petStats(save));
+    final now = _clock.now().toUtc();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: _glass(10),
-            child: Row(
+          // 캐릭터 초상화 → 탭하면 능력치/닉네임 카드
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => _showCharacterCard(l, save),
+            child: _portrait(save),
+          ),
+          const SizedBox(width: 8),
+          // 닉네임 · 전투력 · 경험치
+          Expanded(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                goldIcon(size: 18),
-                const SizedBox(width: 5),
                 Text(
-                  formatCompact(save.gold),
-                  key: const Key('goldHud'),
+                  save.nickname,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: _onScene,
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          _pill('🧪', formatCompact(totalMats)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  l.levelBadge(save.level),
-                  style: const TextStyle(
-                    color: _onScene,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.local_fire_department,
+                      color: _honey,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${l.combatPowerLabel} ${formatCompact(cp)}',
+                      style: const TextStyle(
+                        color: _honey,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: (save.xp / xpNeed).clamp(0.0, 1.0),
-                    minHeight: 6,
+                    minHeight: 5,
                     backgroundColor: const Color(0x33FFFFFF),
                     valueColor: const AlwaysStoppedAnimation(Color(0xFF66BB6A)),
                   ),
@@ -1120,68 +1357,1066 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 6),
+          // 재화: 골드 + 다이아(젤리)만 — 두 칸 폭을 동일하게(IntrinsicWidth).
+          IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _resourcePill(
+                  goldIcon(size: 15),
+                  formatCompact(save.gold),
+                  valueKey: const Key('goldHud'),
+                ),
+                const SizedBox(height: 4),
+                _resourcePill(
+                  const Icon(Icons.diamond, size: 13, color: Color(0xFF4FC3F7)),
+                  formatCompact(save.materialCount(MaterialKind.jelly)),
+                  tint: const Color(0x3355C7F2),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          // 랭킹·편지함·설정 + 그 아래 버프 5개
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _iconBtn(
+                    Icons.leaderboard_rounded,
+                    () => _showComingSoon(l, l.rankingTitle),
+                  ),
+                  _iconBtn(Icons.mail_rounded, () => _showMail(l)),
+                  _iconBtn(Icons.settings_rounded, () => _showSettings(l)),
+                ],
+              ),
+              const SizedBox(height: 3),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _showBuffSheet(l),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final k in BuffKind.values)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 3),
+                        child: _buffMini(k, save.buffRemaining(k, now)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _pill(String icon, String value) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: _glass(10),
-    child: Text(
-      '$icon $value',
-      style: const TextStyle(
-        color: _onScene,
-        fontWeight: FontWeight.w800,
-        fontSize: 13,
+  /// 상단 우측 미니 버프 아이콘 + 아래 남은시간. 탭 시 버프 시트.
+  Widget _buffMini(BuffKind k, Duration? remaining) {
+    final active = remaining != null;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Opacity(
+          opacity: active ? 1.0 : 0.4,
+          child: SizedBox(width: 20, height: 20, child: _buffIconCircle(k, 20)),
+        ),
+        SizedBox(
+          height: 10,
+          child: active
+              ? Text(
+                  _mmss(remaining),
+                  style: const TextStyle(
+                    color: _honey,
+                    fontSize: 7.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                )
+              : null,
+        ),
+      ],
+    );
+  }
+
+  /// 버프 스트립이 있던 자리 → 실시간 채팅 바(플레이스홀더). 탭 시 채팅 창(추후).
+  Widget _chatBar(AppLocalizations l) => Padding(
+    padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showComingSoon(l, l.chatTitle),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0x33000000),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0x22FFFFFF)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: Color(0x99FFFFFF),
+              size: 14,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                l.chatPlaceholder,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0x99FFFFFF),
+                  fontSize: 11.5,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );
-}
 
-class _StageBanner extends StatelessWidget {
-  const _StageBanner({
-    required this.regionName,
-    required this.chapter,
-    required this.stageInRegion,
-    required this.habitatIndex,
-    required this.habitatsPerStage,
-    required this.isBoss,
-  });
-
-  final String regionName;
-  final int chapter;
-  final int stageInRegion;
-  final int habitatIndex;
-  final int habitatsPerStage;
-  final bool isBoss;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xF2101A0A),
-        border: Border(bottom: BorderSide(color: Color(0x66EBA52F), width: 2)),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Column(
-        children: [
-          Text(
-            '🌳 $regionName',
-            style: const TextStyle(
-              color: _onScene,
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
+  Widget _portrait(SaveGame save) => SizedBox(
+    width: 44,
+    height: 48,
+    child: Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: const Color(0x33000000),
+            border: Border.all(
+              color: _honey.withValues(alpha: 0.7),
+              width: 1.5,
             ),
           ),
-          const SizedBox(height: 1),
+          child: gameImageChain(
+            const [
+              'assets/images/character/portrait.webp',
+              'assets/images/character/idle.webp',
+            ],
+            size: 44,
+            fallback: const Center(
+              child: Text('🧑‍🌾', style: TextStyle(fontSize: 24)),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: -3,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: _honey,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              'Lv ${save.level}',
+              style: const TextStyle(
+                color: Color(0xFF3A2600),
+                fontWeight: FontWeight.w900,
+                fontSize: 9,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _resourcePill(
+    Widget icon,
+    String value, {
+    Key? valueKey,
+    Color? tint,
+  }) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: tint == null
+        ? _glass(9)
+        : BoxDecoration(
+            color: tint,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: const Color(0x5555C7F2)),
+          ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(width: 15, height: 15, child: Center(child: icon)),
+        const SizedBox(width: 4),
+        Text(
+          value,
+          key: valueKey,
+          style: const TextStyle(
+            color: _onScene,
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _iconBtn(IconData icon, VoidCallback onTap) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Padding(
+      padding: const EdgeInsets.all(4),
+      child: Icon(icon, color: const Color(0xE6FFFFFF), size: 20),
+    ),
+  );
+
+  /// 버프 아이콘. 아트가 이미 원형 배지라 그대로 표시(추가 프레임 없음).
+  /// 아트가 없을 때만 테마색 원형 + 이모지로 폴백.
+  Widget _buffIconCircle(BuffKind k, double size) => buffImage(
+    k,
+    size: size,
+    fallback: Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF141E0C),
+        border: Border.all(
+          color: buffColor(k).withValues(alpha: 0.7),
+          width: 1.4,
+        ),
+      ),
+      child: Text(buffGlyph(k), style: TextStyle(fontSize: size * 0.5)),
+    ),
+  );
+
+  /// 상단 중앙 스테이지 배너(사냥 화면 위 오버레이).
+  Widget _stageOverlay(AppLocalizations l) {
+    final region = _config.regionForStage(_stage);
+    final name = region.name.resolve(
+      Localizations.localeOf(context).languageCode,
+    );
+    final chapter = (_stage - 1) ~/ _config.stagesPerRegion + 1;
+    final stageInRegion = (_stage - 1) % _config.stagesPerRegion + 1;
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xB3101A0A),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0x66EBA52F)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '🌳 $name',
+              style: const TextStyle(
+                color: _onScene,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+            Text(
+              _isBoss
+                  ? '$chapter-$stageInRegion · ${l.bossLabel}'
+                  : '$chapter-$stageInRegion · $_habitatIndex/${_config.habitatsPerStage}',
+              style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _questAndResources(AppLocalizations l, SaveGame save) {
+    final missions = _data.missionConfig?.missions ?? const <MissionDef>[];
+    return Container(
+      width: 120,
+      padding: const EdgeInsets.all(7),
+      decoration: BoxDecoration(
+        color: const Color(0x88121A10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0x33FFFFFF)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.assignment_rounded, color: _honey, size: 13),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  l.missionsTitle,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _onScene,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          // 한 번에 하나의 미션만 노출. 수집하면 다음 미션으로 순환.
+          if (missions.isNotEmpty)
+            _missionRow(l, save, missions[_activeMissionIndex(save, missions)]),
+          const Divider(height: 10, color: Color(0x22FFFFFF)),
+          _resRow(goldIcon(size: 14), formatCompact(save.gold)),
+          for (final m in _regularMaterials)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: _resRow(
+                materialImage(
+                  m,
+                  size: 14,
+                  fallback: Icon(
+                    materialIcon(m),
+                    size: 13,
+                    color: Colors.white70,
+                  ),
+                ),
+                formatCompact(save.materialCount(m)),
+              ),
+            ),
+          // 프리미엄 재화(젤리) — 다른 재화와 동일 간격.
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: _resRow(
+              const Icon(Icons.diamond, size: 13, color: Color(0xFF4FC3F7)),
+              formatCompact(save.materialCount(MaterialKind.jelly)),
+              valueColor: const Color(0xFF81D4FA),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _resRow(Widget icon, String value, {Color valueColor = _onScene}) =>
+      Row(
+        children: [
+          SizedBox(width: 16, height: 16, child: Center(child: icon)),
+          const SizedBox(width: 5),
           Text(
-            isBoss
-                ? '$chapter-$stageInRegion · ${l.bossLabel}'
-                : '$chapter-$stageInRegion · $habitatIndex/$habitatsPerStage',
-            style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12),
+            value,
+            style: TextStyle(
+              color: valueColor,
+              fontWeight: FontWeight.w700,
+              fontSize: 10.5,
+            ),
+          ),
+        ],
+      );
+
+  /// 현재 노출할 미션 인덱스. 총 수집 횟수만큼 다음 미션으로 순환.
+  int _activeMissionIndex(SaveGame save, List<MissionDef> missions) {
+    var totalClaims = 0;
+    for (final v in save.missionClaims.values) {
+      totalClaims += v;
+    }
+    return totalClaims % missions.length;
+  }
+
+  Widget _missionRow(AppLocalizations l, SaveGame save, MissionDef def) {
+    final claims = save.missionClaimCount(def.id);
+    final goal = def.goalAt(claims);
+    final progress = save.missionProgressCount(def.id);
+    final claimable = progress >= goal;
+    // 완료 시 칸을 은은하게 깜빡이는 하이라이트로.
+    final pulse = 0.5 + 0.5 * math.sin(_tapHint * 4);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: claimable ? () => _claimMission(l, def.id) : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          decoration: claimable
+              ? BoxDecoration(
+                  color: _honey.withValues(alpha: 0.16 + 0.12 * pulse),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _honey.withValues(alpha: 0.55 + 0.45 * pulse),
+                    width: 1.3,
+                  ),
+                )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(missionIcon(def.type), color: _honey, size: 11),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      missionLabel(l, def.type),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _onScene,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ),
+                  if (claimable)
+                    const Icon(Icons.card_giftcard, size: 12, color: _honey),
+                ],
+              ),
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: (progress / goal).clamp(0.0, 1.0),
+                        minHeight: 4,
+                        backgroundColor: const Color(0x33FFFFFF),
+                        valueColor: const AlwaysStoppedAnimation(_honey),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$progress/$goal',
+                    style: const TextStyle(
+                      color: Color(0xCCFFFFFF),
+                      fontSize: 8.5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _claimMission(AppLocalizations l, String id) async {
+    final ok = await ref.read(saveControllerProvider.notifier).claimMission(id);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l.missionClaimedSnack)));
+    }
+  }
+
+  /// 흩어졌다가 캐릭터로 흡수되는 재화 알갱이 1개를 배치한다.
+  Widget _buildPickup(_Pickup pk, double ex, double ey, double cx, double cy) {
+    final t = (pk.age / pk.life).clamp(0.0, 1.0);
+    final ease = t * t; // 후반 가속(흡수)
+    final sx = ex + pk.scatterX;
+    final sy = ey + pk.scatterY;
+    // 초반엔 살짝 더 떨어졌다가(중력) 캐릭터 발밑으로 끌려간다.
+    final drop = math.sin(t * math.pi) * 10;
+    final x = sx + (cx - sx) * ease;
+    final y = sy + (cy - sy) * ease + drop;
+    final opacity = t < 0.85 ? 1.0 : (1 - (t - 0.85) / 0.15);
+    return Positioned(
+      left: x - 9,
+      top: y - 9,
+      child: Opacity(
+        opacity: opacity.clamp(0.0, 1.0),
+        child: Transform.scale(
+          scale: 1.0 - t * 0.35,
+          child: Text(
+            pk.glyph,
+            style: TextStyle(
+              fontSize: 17,
+              shadows: [
+                Shadow(color: pk.color.withValues(alpha: 0.9), blurRadius: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 화면 중앙에서 크게, 시작 시 1회 + 60초마다 나타나는 손가락 탭 아이콘.
+  Widget _buildTapHint() {
+    const showDur = 1.9; // 노출 지속(초)
+    final ph = _tapHint % 60.0;
+    if (ph > showDur) return const SizedBox.shrink();
+    final local = ph / showDur; // 0..1
+    // 노출 구간 동안 두 번 누르는 동작.
+    final press = 0.5 - 0.5 * math.cos(local * 4 * math.pi);
+    final opacity = local < 0.12
+        ? local / 0.12
+        : (local > 0.85 ? (1 - local) / 0.15 : 1.0);
+    return IgnorePointer(
+      child: Center(
+        child: Opacity(
+          opacity: opacity.clamp(0.0, 1.0),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 84 + press * 34,
+                height: 84 + press * 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.55 * (1 - press)),
+                    width: 3.5,
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: Offset(0, press * 8),
+                child: Transform.scale(
+                  scale: 1.0 - press * 0.2,
+                  child: const Icon(
+                    Icons.touch_app_rounded,
+                    color: Colors.white,
+                    size: 76,
+                    shadows: [Shadow(color: Colors.black87, blurRadius: 10)],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 장착한 애완펫들을 캐릭터 뒤에서 살짝 떠서 따라다니게 렌더.
+  Widget _petFollowers() {
+    final save = ref.read(saveControllerProvider).requireValue;
+    if (save.equippedBugIds.isEmpty) return const SizedBox.shrink();
+    final cfg = _data.petConfig;
+    final now = _clock.now().toUtc();
+    // 캐릭터(x≈-0.55) 뒤(더 왼쪽) 3자리.
+    const spots = <(Alignment, double)>[
+      (Alignment(-0.82, 0.98), 30),
+      (Alignment(-0.94, 0.90), 26),
+      (Alignment(-0.72, 0.86), 24),
+    ];
+    final followers = <Widget>[];
+    for (var i = 0; i < save.equippedBugIds.length && i < 3; i++) {
+      IndividualBug? bug;
+      for (final b in save.bugs) {
+        if (b.id == save.equippedBugIds[i]) {
+          bug = b;
+          break;
+        }
+      }
+      if (bug == null) continue;
+      final sp = _data.speciesById[bug.speciesId];
+      if (sp == null) continue;
+      final stage = cfg == null
+          ? bug.stage
+          : effectiveStage(bug.stage, bug.stageSince, now, cfg);
+      final (align, size) = spots[i];
+      final bob = math.sin(_tapHint * 3 + i * 2.1) * 4;
+      followers.add(
+        Align(
+          alignment: align,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            // 캐릭터 공격 시 살짝 같이 앞으로 튀며 동행감.
+            child: Transform.translate(
+              offset: Offset(_attackPulse * 8, bob),
+              child: Opacity(
+                opacity: 0.92,
+                child: bugStageImage(
+                  bug.speciesId,
+                  stage,
+                  size: size,
+                  fallback: bugAvatar(sp, size: size),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return Stack(children: followers);
+  }
+
+  String _mmss(Duration d) =>
+      '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+
+  // ── 다이얼로그/시트 ──────────────────────────────────────────
+
+  void _showComingSoon(AppLocalizations l, String title) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('$title · ${l.comingSoon}')));
+  }
+
+  void _showMail(AppLocalizations l) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.mailTitle),
+        content: Text(l.mailEmpty),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.actionClose),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSettings(AppLocalizations l) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.settingsTitle),
+        content: const Text('개발 빌드'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l.actionClose),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showDevTools(l);
+            },
+            icon: const Icon(Icons.build, size: 18),
+            label: const Text('개발자 모드'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 개발자(테스트) 도구 시트 — 채집함/스테이지/재화 조작. (개발 전용, 하드코딩 허용)
+  void _showDevTools(AppLocalizations l) {
+    final stageCtrl = TextEditingController();
+    void toast(String m) => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(m)));
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xF2141F0E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Consumer(
+          builder: (ctx, r, _) {
+            final ctrl = r.read(saveControllerProvider.notifier);
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                14,
+                16,
+                16 + MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🛠 개발자 모드',
+                    style: TextStyle(
+                      color: _onScene,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _devSection('채집함', [
+                    _devBtn('채우기(종별 3)', () async {
+                      await ctrl.devFillBugs();
+                      toast('채집함 채움');
+                    }),
+                    _devBtn('초기화', () async {
+                      await ctrl.devClearBugs();
+                      toast('채집함 초기화');
+                    }, danger: true),
+                  ]),
+                  _devSection('스테이지 (현재 $_stage)', [
+                    _devBtn('초기화(1)', () {
+                      _devJumpStage(1);
+                      toast('스테이지 1');
+                    }, danger: true),
+                    SizedBox(
+                      width: 90,
+                      child: TextField(
+                        controller: stageCtrl,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          hintText: '스테이지',
+                          hintStyle: TextStyle(color: Color(0x66FFFFFF)),
+                        ),
+                      ),
+                    ),
+                    _devBtn('이동', () {
+                      final n = int.tryParse(stageCtrl.text.trim());
+                      if (n != null && n >= 1) {
+                        _devJumpStage(n);
+                        toast('스테이지 $n 이동');
+                      }
+                    }),
+                  ]),
+                  _devSection('재화 추가', [
+                    _devBtn('골드 +100K', () {
+                      ctrl.devAddResources(gold: 100000);
+                      toast('골드 +100K');
+                    }),
+                    _devBtn('재료 +500', () {
+                      ctrl.devAddResources(chitin: 500, mineral: 500, sap: 500);
+                      toast('재료 +500');
+                    }),
+                    _devBtn('젤리 +100', () {
+                      ctrl.devAddResources(jelly: 100);
+                      toast('젤리 +100');
+                    }),
+                    _devBtn('경험치 +10K', () {
+                      ctrl.devAddResources(xp: 10000);
+                      toast('경험치 +10K');
+                    }),
+                  ]),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _devSection(String title, List<Widget> children) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFEBA52F),
+            fontWeight: FontWeight.w800,
+            fontSize: 12.5,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: children,
+        ),
+      ],
+    ),
+  );
+
+  Widget _devBtn(String label, VoidCallback onTap, {bool danger = false}) =>
+      FilledButton(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          backgroundColor: danger
+              ? const Color(0xFF7A2E2E)
+              : const Color(0xFF2E6DA4),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: const Size(0, 36),
+          textStyle: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        child: Text(label),
+      );
+
+  /// (개발) 라이브 스테이지 즉시 이동 + 세이브 기록.
+  void _devJumpStage(int n) {
+    setState(() {
+      _stage = n;
+      _habitatIndex = 0;
+      _isBoss = false;
+      _defeated = false;
+      _dying = false;
+      _walking = false;
+      _spawn();
+      _playerHp = _playerHpMax;
+    });
+    ref.read(saveControllerProvider.notifier).devSetStage(n);
+  }
+
+  /// 초상화 탭 → 현재 능력치 카드 + 닉네임 설정.
+  /// 닉네임은 전투력 표기보다 길어지지 않도록 8자로 제한.
+  void _showCharacterCard(AppLocalizations l, SaveGame save) {
+    final controller = TextEditingController(text: save.nickname);
+    final base = _petStats(save);
+    final rows = <(String, String)>[
+      (l.statCombatPower, formatCompact(combatPower(base))),
+      (l.statAttack, base.attack.toStringAsFixed(0)),
+      (l.statAttackSpeed, '${base.attackSpeed.toStringAsFixed(2)}/s'),
+      (l.statCrit, '${(base.critChance * 100).toStringAsFixed(0)}%'),
+      (l.statMaxHp, formatCompact(base.maxHp)),
+      (l.statDefense, base.defense.toStringAsFixed(0)),
+    ];
+    showDialog<void>(
+      context: context,
+      barrierColor: const Color(0xAA000000),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 36),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xF21F2E13), Color(0xF20E1608)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0x88EBA52F), width: 1.5),
+            boxShadow: const [
+              BoxShadow(color: Color(0x99000000), blurRadius: 18),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _portrait(save),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      maxLength: 8,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        counterText: '',
+                        labelText: l.settingsNickname,
+                        labelStyle: const TextStyle(color: Color(0xFFEBA52F)),
+                        hintText: l.settingsNicknameHint,
+                        enabledBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Color(0x55EBA52F)),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFFEBA52F)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Divider(height: 1, color: Color(0x33EBA52F)),
+              ),
+              for (final r in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    children: [
+                      Text(
+                        r.$1,
+                        style: const TextStyle(
+                          color: Color(0xB3FFFFFF),
+                          fontSize: 13,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        r.$2,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xB3FFFFFF),
+                    ),
+                    child: Text(l.actionCancel),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      ref
+                          .read(saveControllerProvider.notifier)
+                          .renamePlayer(controller.text);
+                      Navigator.pop(ctx);
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFEBA52F),
+                      foregroundColor: const Color(0xFF3A2600),
+                    ),
+                    child: Text(l.actionSave),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showBuffSheet(AppLocalizations l) {
+    final buffs = _data.buffConfig;
+    if (buffs == null) return;
+    final minutes = (buffs.durationSeconds / 60).round();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xF2141F0E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Consumer(
+          builder: (ctx, r, _) {
+            final save = r.watch(saveControllerProvider).requireValue;
+            final now = _clock.now().toUtc();
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.buffSheetTitle,
+                    style: const TextStyle(
+                      color: _onScene,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final k in BuffKind.values)
+                    _buffSheetRow(l, r, k, save.buffRemaining(k, now), minutes),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buffSheetRow(
+    AppLocalizations l,
+    WidgetRef r,
+    BuffKind k,
+    Duration? remaining,
+    int minutes,
+  ) {
+    final active = remaining != null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          _buffIconCircle(k, 44),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        buffLabel(l, k),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _onScene,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                    ),
+                    // 활성 시 남은 시간을 이름 옆에 표시(설명은 그대로 유지).
+                    if (active) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _honey.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _mmss(remaining),
+                          style: const TextStyle(
+                            color: _honey,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  buffDesc(l, k),
+                  style: const TextStyle(
+                    color: Color(0xB3FFFFFF),
+                    fontSize: 11.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: () async {
+              final ctrl = r.read(saveControllerProvider.notifier);
+              await ctrl.activateBuff(k);
+              // 광고 보상(테스트): 프리미엄 재화 젤리 1개 지급.
+              await ctrl.applyReward(
+                gold: 0,
+                xp: 0,
+                materials: const {MaterialKind.jelly: 1},
+              );
+              if (!mounted) return;
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      l.buffActivatedSnack(buffLabel(l, k), minutes),
+                    ),
+                  ),
+                );
+            },
+            icon: const Icon(Icons.play_arrow_rounded, size: 18),
+            label: Text(l.buffWatchAd),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2E7D32),
+            ),
           ),
         ],
       ),
@@ -1238,6 +2473,7 @@ class _UpgradeRow extends StatelessWidget {
     required this.config,
     required this.level,
     required this.gold,
+    required this.materials,
     required this.buyAmount,
     required this.onBuy,
   });
@@ -1246,6 +2482,7 @@ class _UpgradeRow extends StatelessWidget {
   final RunConfig config;
   final int level;
   final int gold;
+  final Map<MaterialKind, int> materials;
   final int buyAmount;
   final VoidCallback onBuy;
 
@@ -1257,7 +2494,14 @@ class _UpgradeRow extends StatelessWidget {
     final batchCost = bulkUpgradeCost(spec, level, buyAmount);
     final cur = spec.valueAt(level);
     final next = spec.valueAt(level + 1);
-    final affordable = gold >= singleCost;
+
+    // 재료 추가비용(있으면). 1레벨분 비용으로 구매 가능 여부 판정.
+    final matKind = spec.materialKind;
+    final singleMatCost = upgradeMaterialCost(spec, level);
+    final batchMatCost = bulkUpgradeMaterialCost(spec, level, buyAmount);
+    final haveMat = matKind == null ? 0 : (materials[matKind] ?? 0);
+    final matOk = matKind == null || haveMat >= singleMatCost;
+    final affordable = gold >= singleCost && matOk;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -1269,46 +2513,68 @@ class _UpgradeRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          SizedBox(
-            width: 46,
-            height: 46,
-            child: upgradeImage(
-              kind,
-              size: 46,
-              fallback: Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _statColor(kind),
-                  borderRadius: BorderRadius.circular(10),
+          InkWell(
+            onTap: () => _showUpgradeInfo(context, l, kind, cur),
+            borderRadius: BorderRadius.circular(10),
+            child: Stack(
+              children: [
+                SizedBox(
+                  width: 46,
+                  height: 46,
+                  child: upgradeImage(
+                    kind,
+                    size: 46,
+                    fallback: Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _statColor(kind),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        _statIcon(kind),
+                        color: Colors.white,
+                        size: 21,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Icon(_statIcon(kind), color: Colors.white, size: 21),
-              ),
+                // 설명 힌트(ⓘ)
+                const Positioned(
+                  right: -1,
+                  top: -1,
+                  child: Icon(Icons.info, size: 13, color: Color(0xCCFFD977)),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_statLabel(l, kind)}  Lv.$level',
-                  style: const TextStyle(
-                    color: _onScene,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13.5,
+            child: GestureDetector(
+              onTap: () => _showUpgradeInfo(context, l, kind, cur),
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_statLabel(l, kind)}  Lv.$level',
+                    style: const TextStyle(
+                      color: _onScene,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _valuePair(kind, cur, next),
-                  style: const TextStyle(
-                    color: Color(0xB3FFFFFF),
-                    fontSize: 11.5,
+                  const SizedBox(height: 2),
+                  Text(
+                    _valuePair(kind, cur, next),
+                    style: const TextStyle(
+                      color: Color(0xB3FFFFFF),
+                      fontSize: 11.5,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -1342,14 +2608,49 @@ class _UpgradeRow extends StatelessWidget {
                       fontSize: 11,
                     ),
                   ),
-                  Text(
-                    '💰 ${formatCompact(batchCost)}',
-                    style: TextStyle(
-                      color: affordable
-                          ? const Color(0xFFFFE082)
-                          : const Color(0x66FFFFFF),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
+                  const SizedBox(height: 2),
+                  // 골드 + 재료 비용을 한 줄로 → 재료 유무와 무관하게 행 높이 통일.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '💰${formatCompact(batchCost)}',
+                          style: TextStyle(
+                            color: affordable
+                                ? const Color(0xFFFFE082)
+                                : const Color(0x66FFFFFF),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        if (matKind != null && batchMatCost > 0) ...[
+                          const SizedBox(width: 6),
+                          materialImage(
+                            matKind,
+                            size: 12,
+                            fallback: Icon(
+                              materialIcon(matKind),
+                              size: 11,
+                              color: matOk
+                                  ? const Color(0xFF9CCC65)
+                                  : const Color(0xFFEF9A9A),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            formatCompact(batchMatCost),
+                            style: TextStyle(
+                              color: matOk
+                                  ? const Color(0xFFC5E1A5)
+                                  : const Color(0xFFEF9A9A),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],

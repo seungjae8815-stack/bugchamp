@@ -15,3 +15,6 @@ build/
 Thumbs.db
 
 # 워크스페이스 lockfile 은 커밋 (앱 재현성). 필요시 개별 무시하지 말 것.
+
+# 대용량 원본 백업(누끼 전 2048px) — 커밋 제외
+packages/app/assets/images/bugs/_raw_backup/

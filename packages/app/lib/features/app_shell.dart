@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'play/play_screen.dart';
+import 'shop/craft_screen.dart';
 import 'storage/storage_screen.dart';
 
 /// 하단 3탭 셸: 홈(플레이+강화) · 도감 · 상점. 세이브 로드 완료 후 표시.
@@ -20,34 +22,56 @@ class AppShell extends ConsumerWidget {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
-      data: (save) => Scaffold(
-        body: IndexedStack(
-          index: index,
-          children: [
-            const PlayScreen(),
-            StorageScreen(save: save),
-            const _ComingSoonScreen(),
-          ],
-        ),
-        bottomNavigationBar: _GameNavBar(
-          index: index,
-          onTap: (i) => ref.read(tabIndexProvider.notifier).set(i),
+      data: (save) => PopScope(
+        // 뒤로가기: 홈이 아니면 홈으로, 홈이면 종료 확인.
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) async {
+          if (didPop) return;
+          if (index != 0) {
+            ref.read(tabIndexProvider.notifier).set(0);
+            return;
+          }
+          final exit = await _confirmExit(context);
+          if (exit) await SystemNavigator.pop();
+        },
+        child: Scaffold(
+          body: IndexedStack(
+            index: index,
+            children: [
+              const PlayScreen(),
+              StorageScreen(save: save),
+              const CraftScreen(),
+            ],
+          ),
+          bottomNavigationBar: _GameNavBar(
+            index: index,
+            onTap: (i) => ref.read(tabIndexProvider.notifier).set(i),
+          ),
         ),
       ),
     );
   }
-}
 
-class _ComingSoonScreen extends StatelessWidget {
-  const _ComingSoonScreen();
-
-  @override
-  Widget build(BuildContext context) {
+  Future<bool> _confirmExit(BuildContext context) async {
     final l = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l.navShop)),
-      body: Center(child: Text(l.comingSoon)),
+    final res = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.exitTitle),
+        content: Text(l.exitConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.exitAction),
+          ),
+        ],
+      ),
     );
+    return res ?? false;
   }
 }
 

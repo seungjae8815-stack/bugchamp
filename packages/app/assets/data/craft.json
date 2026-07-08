@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "recipes": [
+    { "id": "potion_gold", "buff": "goldRush", "inputs": { "chitin": 20 } },
+    { "id": "potion_xp", "buff": "xpBoost", "inputs": { "sap": 20 } },
+    { "id": "potion_frenzy", "buff": "frenzy", "inputs": { "mineral": 20 } },
+    { "id": "potion_gather", "buff": "gatherer", "inputs": { "chitin": 15, "sap": 15 } },
+    { "id": "potion_luck", "buff": "luckyWind", "inputs": { "mineral": 15, "sap": 15 } },
+    { "id": "potion_all", "allBuffs": true, "inputs": { "jelly": 5 } }
+  ]
+}

@@ -18,7 +18,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navCollect => '채집';
 
   @override
-  String get navStorage => '보관함';
+  String get navStorage => '채집함';
 
   @override
   String get homeTitle => '트랩 현황';
@@ -195,7 +195,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get install => '설치';
 
   @override
-  String get storageTitle => '보관함';
+  String get storageTitle => '채집함';
 
   @override
   String get storageEmpty => '아직 수집한 곤충이 없어요.\n채집으로 모아보세요!';
@@ -271,4 +271,373 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get materialJelly => '곤충젤리';
+
+  @override
+  String get combatPowerLabel => '전투력';
+
+  @override
+  String get chatTitle => '채팅';
+
+  @override
+  String get chatPlaceholder => '채팅 (준비 중) — 탭하면 열려요';
+
+  @override
+  String get characterTitle => '내 캐릭터';
+
+  @override
+  String get statCombatPower => '전투력';
+
+  @override
+  String get statCrit => '치명타';
+
+  @override
+  String get statMaxHp => '최대 체력';
+
+  @override
+  String get statDefense => '방어력';
+
+  @override
+  String get rankingTitle => '랭킹';
+
+  @override
+  String get mailTitle => '편지함';
+
+  @override
+  String get mailEmpty => '새 편지가 없어요';
+
+  @override
+  String get settingsTitle => '설정';
+
+  @override
+  String get settingsNickname => '닉네임';
+
+  @override
+  String get settingsNicknameHint => '이름을 입력하세요';
+
+  @override
+  String get actionSave => '저장';
+
+  @override
+  String get actionCancel => '취소';
+
+  @override
+  String get actionClose => '닫기';
+
+  @override
+  String get exitTitle => '게임 종료';
+
+  @override
+  String get exitConfirm => '게임을 종료할까요?';
+
+  @override
+  String get exitAction => '종료';
+
+  @override
+  String get questHunt => '몬스터 사냥';
+
+  @override
+  String get buffTitle => '버프';
+
+  @override
+  String get buffSheetTitle => '버프 활성화';
+
+  @override
+  String get buffWatchAd => '광고 보기';
+
+  @override
+  String buffMinutes(int minutes) {
+    return '$minutes분';
+  }
+
+  @override
+  String buffActivatedSnack(String buff, int minutes) {
+    return '$buff 활성! ($minutes분)';
+  }
+
+  @override
+  String get buffGoldRush => '황금 러시';
+
+  @override
+  String get buffGoldRushDesc => '골드 획득 ×2';
+
+  @override
+  String get buffXpBoost => '성장 가속';
+
+  @override
+  String get buffXpBoostDesc => '경험치 ×2';
+
+  @override
+  String get buffFrenzy => '광폭화';
+
+  @override
+  String get buffFrenzyDesc => '공격력·공격속도 상승';
+
+  @override
+  String get buffGatherer => '채집가의 손길';
+
+  @override
+  String get buffGathererDesc => '재료 획득 ×2';
+
+  @override
+  String get buffLuckyWind => '행운의 바람';
+
+  @override
+  String get buffLuckyWindDesc => '곤충 발견율 ×2';
+
+  @override
+  String get enhanceTitle => '부위 강화';
+
+  @override
+  String get partHornJaw => '뿔·큰턱';
+
+  @override
+  String get partCuticle => '표피';
+
+  @override
+  String get partWing => '날개';
+
+  @override
+  String get partBuild => '체격';
+
+  @override
+  String get enhanceAction => '강화';
+
+  @override
+  String get enhanceMaxed => '최대';
+
+  @override
+  String enhanceCap(int cur, int max) {
+    return '강화 $cur/$max';
+  }
+
+  @override
+  String enhancePerLevel(String pct) {
+    return '+$pct%/Lv';
+  }
+
+  @override
+  String get equipTitle => '장착 펫';
+
+  @override
+  String get equipEmpty => '빈 슬롯';
+
+  @override
+  String get equipAction => '장착';
+
+  @override
+  String get unequipAction => '해제';
+
+  @override
+  String get equipFull => '장착 슬롯이 가득 찼어요';
+
+  @override
+  String get equippedBadge => '장착중';
+
+  @override
+  String petBonus(String atk, String hp) {
+    return '펫 보너스 · 공격 +$atk% · 체력 +$hp%';
+  }
+
+  @override
+  String get stageEgg => '알';
+
+  @override
+  String get stageLarva => '유충';
+
+  @override
+  String get stagePupa => '번데기';
+
+  @override
+  String get stageAdult => '성충';
+
+  @override
+  String get evolveTitle => '진화';
+
+  @override
+  String evolveNext(String next, String time) {
+    return '$next까지 $time';
+  }
+
+  @override
+  String get evolveReady => '진화 준비 완료';
+
+  @override
+  String get evolveMaxed => '최종 진화 (성충)';
+
+  @override
+  String get accelerateAction => '촉진';
+
+  @override
+  String get synthTitle => '합성 (★강화)';
+
+  @override
+  String get synthDo => '합성';
+
+  @override
+  String synthDesc(int have, int need) {
+    return '같은 종 $have/$need마리 · 포텐셜 +1';
+  }
+
+  @override
+  String get synthMaxed => '최대 포텐셜';
+
+  @override
+  String get synthSnack => '합성 완료! 포텐셜 +1';
+
+  @override
+  String get petEffectTitle => '장착 효과';
+
+  @override
+  String petAtkBonus(String v) {
+    return '펫 공격력 +$v%';
+  }
+
+  @override
+  String petHpBonus(String v) {
+    return '펫 체력 +$v%';
+  }
+
+  @override
+  String get trainTitle => '수련';
+
+  @override
+  String get trainLevel => '수련 레벨';
+
+  @override
+  String get trainAction => '수련';
+
+  @override
+  String get trainMaxed => '최대 레벨';
+
+  @override
+  String get trainSnack => '수련 완료! 레벨 +1';
+
+  @override
+  String get disassembleTitle => '분해';
+
+  @override
+  String disassembleDesc(int n) {
+    return '젤리 $n개로 환원';
+  }
+
+  @override
+  String get disassembleAction => '분해';
+
+  @override
+  String get disassembleSnack => '분해 완료';
+
+  @override
+  String get bugDescTitle => '설명';
+
+  @override
+  String get onlyAdultTrain => '성충만 수련할 수 있어요';
+
+  @override
+  String get craftTitle => '제작';
+
+  @override
+  String get craftMake => '제작';
+
+  @override
+  String craftPotion(String buff) {
+    return '$buff 물약';
+  }
+
+  @override
+  String get craftAllPotion => '올인원 물약';
+
+  @override
+  String craftedSnack(String name) {
+    return '$name 제작 완료!';
+  }
+
+  @override
+  String get missionsTitle => '미션';
+
+  @override
+  String get missionKillMonsters => '몬스터 사냥';
+
+  @override
+  String get missionKillBosses => '보스 처치';
+
+  @override
+  String get missionBuyUpgrades => '능력 강화';
+
+  @override
+  String get missionReachStage => '스테이지 도달';
+
+  @override
+  String get missionClaim => '수집';
+
+  @override
+  String get missionComplete => '완료! 탭하여 수집';
+
+  @override
+  String get missionClaimedSnack => '미션 보상 획득!';
+
+  @override
+  String get upAttackDesc => '한 번의 타격으로 주는 피해량이 늘어납니다.';
+
+  @override
+  String get upAttackSpeedDesc => '초당 공격 횟수가 늘어 사냥이 빨라집니다.';
+
+  @override
+  String get upCritDesc => '치명타가 터질 확률이 올라갑니다.';
+
+  @override
+  String get upCritDamageDesc => '치명타가 터질 때 추가 피해 배수가 커집니다.';
+
+  @override
+  String get upBossDamageDesc => '보스에게 주는 피해가 추가로 늘어납니다.';
+
+  @override
+  String get upMaxHpDesc => '최대 체력이 늘어 더 오래 버팁니다.';
+
+  @override
+  String get upDefenseDesc => '적에게서 받는 피해가 줄어듭니다.';
+
+  @override
+  String get upRegenDesc => '초당 체력 회복량이 늘어납니다.';
+
+  @override
+  String get upRewardDesc => '몬스터 처치 시 얻는 골드가 늘어납니다.';
+
+  @override
+  String get upXpDesc => '몬스터 처치 시 얻는 경험치가 늘어납니다.';
+
+  @override
+  String get upBugFindDesc => '곤충(개체)을 발견할 확률이 올라갑니다.';
+
+  @override
+  String get upMaterialFindDesc => '강화 재료 획득량이 늘어납니다.';
+
+  @override
+  String get upMoveSpeedDesc => '다음 사냥터로 이동하는 속도가 빨라집니다.';
+
+  @override
+  String get upBoostDesc => '화면을 탭할 때 발동하는 부스트 효과가 강해집니다.';
+
+  @override
+  String get upBugBuffDesc => '보유한 곤충 수에 따른 보상 보너스가 커집니다.';
+
+  @override
+  String get tagCommonMaterial => '일반 재료';
+
+  @override
+  String get tagPremium => '프리미엄 재화';
+
+  @override
+  String get materialChitinDesc =>
+      '곤충의 단단한 외골격 조각. 고급 능력치 강화의 추가 비용과 부위 강화(뿔·큰턱)에 사용됩니다.';
+
+  @override
+  String get materialMineralDesc =>
+      '땅에서 캔 단단한 광물. 고급 능력치 강화의 추가 비용과 부위 강화(표피)에 사용됩니다.';
+
+  @override
+  String get materialSapDesc =>
+      '굳어 결정이 된 나무 수액. 고급 능력치 강화의 추가 비용과 부위 강화(날개)에 사용됩니다.';
+
+  @override
+  String get materialJellyDesc => '특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다.';
 }
