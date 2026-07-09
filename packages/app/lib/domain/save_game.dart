@@ -1,9 +1,11 @@
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
+import 'gift_mail.dart';
+
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
-const int kSaveSchemaVersion = 6;
+const int kSaveSchemaVersion = 11;
 
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
@@ -65,6 +67,13 @@ class SaveGame {
     required this.missionProgress,
     required this.missionClaims,
     required this.equippedBugIds,
+    required this.dailyClaims,
+    required this.gifts,
+    required this.clearedChapters,
+    required this.incubatorCapacity,
+    required this.incubating,
+    required this.pvpTrophies,
+    this.nextGiftAt,
   });
 
   final int schemaVersion;
@@ -119,6 +128,29 @@ class SaveGame {
 
   bool isEquipped(String bugId) => equippedBugIds.contains(bugId);
 
+  /// 일일보상 슬롯별 마지막 수령 로컬 날짜('yyyy-MM-dd').
+  final Map<String, String> dailyClaims;
+
+  String? dailyClaimedDate(String slotId) => dailyClaims[slotId];
+
+  /// 편지함에 쌓인 깜짝 선물(만료 전).
+  final List<GiftMail> gifts;
+
+  /// 다음 깜짝 선물 예정 UTC 시각(온라인 중 도달 시 지급).
+  final DateTime? nextGiftAt;
+
+  /// 첫 클리어 보상을 이미 받은 로드맵 챕터 id 집합.
+  final Set<String> clearedChapters;
+
+  /// 부화기 슬롯 개수(젤리로 확장).
+  final int incubatorCapacity;
+
+  /// 부화기에서 부화 중인 알: bugId → 부화 완료 UTC 시각.
+  final Map<String, DateTime> incubating;
+
+  /// 비동기 PvP(곤충 결투) 트로피 점수.
+  final int pvpTrophies;
+
   int missionClaimCount(String id) => missionClaims[id] ?? 0;
   int missionProgressCount(String id) => missionProgress[id] ?? 0;
 
@@ -140,6 +172,12 @@ class SaveGame {
     missionProgress: const {},
     missionClaims: const {},
     equippedBugIds: const [],
+    dailyClaims: const {},
+    gifts: const [],
+    clearedChapters: const {},
+    incubatorCapacity: 1,
+    incubating: const {},
+    pvpTrophies: 0,
   );
 
   SaveGame copyWith({
@@ -158,6 +196,13 @@ class SaveGame {
     Map<String, int>? missionProgress,
     Map<String, int>? missionClaims,
     List<String>? equippedBugIds,
+    Map<String, String>? dailyClaims,
+    List<GiftMail>? gifts,
+    DateTime? nextGiftAt,
+    Set<String>? clearedChapters,
+    int? incubatorCapacity,
+    Map<String, DateTime>? incubating,
+    int? pvpTrophies,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -176,6 +221,13 @@ class SaveGame {
     missionProgress: missionProgress ?? this.missionProgress,
     missionClaims: missionClaims ?? this.missionClaims,
     equippedBugIds: equippedBugIds ?? this.equippedBugIds,
+    dailyClaims: dailyClaims ?? this.dailyClaims,
+    gifts: gifts ?? this.gifts,
+    nextGiftAt: nextGiftAt ?? this.nextGiftAt,
+    clearedChapters: clearedChapters ?? this.clearedChapters,
+    incubatorCapacity: incubatorCapacity ?? this.incubatorCapacity,
+    incubating: incubating ?? this.incubating,
+    pvpTrophies: pvpTrophies ?? this.pvpTrophies,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -237,6 +289,29 @@ class SaveGame {
     ),
     equippedBugIds:
         (json['equippedBugIds'] as List?)?.cast<String>().toList() ?? const [],
+    dailyClaims:
+        (json['dailyClaims'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, v as String),
+        ) ??
+        const {},
+    gifts:
+        (json['gifts'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(GiftMail.fromJson)
+            .toList() ??
+        const [],
+    nextGiftAt: json['nextGiftAt'] == null
+        ? null
+        : DateTime.parse(json['nextGiftAt'] as String).toUtc(),
+    clearedChapters:
+        (json['clearedChapters'] as List?)?.cast<String>().toSet() ?? const {},
+    incubatorCapacity: (json['incubatorCapacity'] as num?)?.toInt() ?? 1,
+    incubating:
+        (json['incubating'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, DateTime.parse(v as String).toUtc()),
+        ) ??
+        const {},
+    pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -262,6 +337,16 @@ class SaveGame {
     'missionProgress': missionProgress,
     'missionClaims': missionClaims,
     'equippedBugIds': equippedBugIds,
+    'dailyClaims': dailyClaims,
+    'gifts': gifts.map((g) => g.toJson()).toList(),
+    if (nextGiftAt != null) 'nextGiftAt': nextGiftAt!.toUtc().toIso8601String(),
+    'clearedChapters': clearedChapters.toList(),
+    'incubatorCapacity': incubatorCapacity,
+    'incubating': {
+      for (final e in incubating.entries)
+        e.key: e.value.toUtc().toIso8601String(),
+    },
+    'pvpTrophies': pvpTrophies,
   };
 
   static Map<MaterialKind, int> _materialsFromJson(Map<String, dynamic> json) {

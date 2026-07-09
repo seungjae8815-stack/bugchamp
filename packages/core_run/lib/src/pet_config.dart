@@ -21,6 +21,17 @@ class PetConfig {
     this.levelBonus = 0.06,
     this.trainBaseCost = 200,
     this.trainCostGrowth = 1.18,
+    this.trainJellyCost = 3,
+    this.trainJellyLevels = 5,
+    this.tierCaps = const [10, 20, 35, 55, 80],
+    this.breakthroughDurationsSec = const [600, 1800, 5400, 14400],
+    this.breakthroughGold = const [20000, 60000, 200000, 600000],
+    this.breakthroughMaterial = const [100, 250, 600, 1500],
+    this.breakthroughJellyPerMinute = 0.5,
+    this.incubatorSlotsInitial = 1,
+    this.incubatorSlotsMax = 3,
+    this.incubatorExpandJelly = 30,
+    this.incubateDurationsSec = const {},
   });
 
   /// 등급별 공격력 기여(0.05 = +5%).
@@ -63,10 +74,59 @@ class PetConfig {
   final double trainBaseCost;
   final double trainCostGrowth;
 
-  /// [level] → [level]+1 수련 비용(골드). 최대치면 0.
-  int trainCost(int level) => level >= maxLevel
-      ? 0
-      : (trainBaseCost * math.pow(trainCostGrowth, level - 1)).round();
+  /// 젤리 즉시 수련(레거시): [trainJellyCost] 젤리로 한 번에 [trainJellyLevels] 레벨.
+  final int trainJellyCost;
+  final int trainJellyLevels;
+
+  /// 돌파 티어별 레벨 상한(누적 절대값). 예: [10,20,35,55,80].
+  final List<int> tierCaps;
+
+  /// 티어 i→i+1 돌파에 걸리는 시간(초).
+  final List<int> breakthroughDurationsSec;
+
+  /// 티어 i→i+1 돌파 골드 비용.
+  final List<int> breakthroughGold;
+
+  /// 티어 i→i+1 돌파 재료 비용(키틴/미네랄/수액 각각).
+  final List<int> breakthroughMaterial;
+
+  /// 즉시완료 젤리 = 남은분 × 이 값(비례, 최소 1).
+  final double breakthroughJellyPerMinute;
+
+  /// 부화기 초기/최대 슬롯 수, 슬롯 확장 젤리 비용.
+  final int incubatorSlotsInitial;
+  final int incubatorSlotsMax;
+  final int incubatorExpandJelly;
+
+  /// 등급별 알→유충 부화 시간(초).
+  final Map<Grade, int> incubateDurationsSec;
+
+  /// 돌파 최대 티어(마지막 인덱스).
+  int get maxTier => tierCaps.length - 1;
+
+  /// 티어의 레벨 상한.
+  int levelCap(int tier) => tierCaps[tier.clamp(0, maxTier)];
+
+  int _atOrLast(List<int> xs, int i) =>
+      xs.isEmpty ? 0 : xs[i.clamp(0, xs.length - 1)];
+
+  int breakthroughDuration(int tier) =>
+      _atOrLast(breakthroughDurationsSec, tier);
+  int breakthroughGoldCost(int tier) => _atOrLast(breakthroughGold, tier);
+  int breakthroughMatCost(int tier) => _atOrLast(breakthroughMaterial, tier);
+
+  /// 남은 시간 비례 즉시완료 젤리 비용.
+  int breakthroughJelly(Duration remaining) {
+    if (remaining <= Duration.zero) return 0;
+    final v = (remaining.inSeconds / 60 * breakthroughJellyPerMinute).ceil();
+    return v < 1 ? 1 : v;
+  }
+
+  int incubateDuration(Grade g) => incubateDurationsSec[g] ?? 300;
+
+  /// [level] → [level]+1 수련 비용(골드).
+  int trainCost(int level) =>
+      (trainBaseCost * math.pow(trainCostGrowth, level - 1)).round();
 
   factory PetConfig.fromJson(Map<String, dynamic> json) {
     Map<Grade, double> grades(String key) => {
@@ -95,6 +155,42 @@ class PetConfig {
       levelBonus: (json['levelBonus'] as num?)?.toDouble() ?? 0.06,
       trainBaseCost: (json['trainBaseCost'] as num?)?.toDouble() ?? 200,
       trainCostGrowth: (json['trainCostGrowth'] as num?)?.toDouble() ?? 1.18,
+      trainJellyCost: (json['trainJellyCost'] as num?)?.toInt() ?? 3,
+      trainJellyLevels: (json['trainJellyLevels'] as num?)?.toInt() ?? 5,
+      tierCaps:
+          (json['tierCaps'] as List?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          const [10, 20, 35, 55, 80],
+      breakthroughDurationsSec:
+          (json['breakthroughDurationsSec'] as List?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          const [600, 1800, 5400, 14400],
+      breakthroughGold:
+          (json['breakthroughGold'] as List?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          const [20000, 60000, 200000, 600000],
+      breakthroughMaterial:
+          (json['breakthroughMaterial'] as List?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          const [100, 250, 600, 1500],
+      breakthroughJellyPerMinute:
+          (json['breakthroughJellyPerMinute'] as num?)?.toDouble() ?? 0.5,
+      incubatorSlotsInitial:
+          (json['incubatorSlotsInitial'] as num?)?.toInt() ?? 1,
+      incubatorSlotsMax: (json['incubatorSlotsMax'] as num?)?.toInt() ?? 3,
+      incubatorExpandJelly:
+          (json['incubatorExpandJelly'] as num?)?.toInt() ?? 30,
+      incubateDurationsSec: {
+        for (final e
+            in ((json['incubateDurationsSec'] as Map<String, dynamic>?) ??
+                    const {})
+                .entries)
+          Grade.fromKey(e.key): (e.value as num).toInt(),
+      },
     );
   }
 }
@@ -151,6 +247,8 @@ LifeStage effectiveStage(
   DateTime now,
   PetConfig cfg,
 ) {
+  // 알은 자동 진화하지 않는다(부화기로만 유충이 됨).
+  if (stored == LifeStage.egg) return LifeStage.egg;
   var st = stored;
   var t = since ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
   var guard = 0;
@@ -172,6 +270,7 @@ Duration? stageRemaining(
   DateTime now,
   PetConfig cfg,
 ) {
+  if (stored == LifeStage.egg) return null; // 알은 부화기 수동
   var st = stored;
   var t = since ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
   var guard = 0;

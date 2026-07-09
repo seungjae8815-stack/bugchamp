@@ -66,6 +66,12 @@ void main() {
       missionProgress: const {},
       missionClaims: const {},
       equippedBugIds: const [],
+      dailyClaims: const {},
+      gifts: const [],
+      clearedChapters: const {},
+      incubatorCapacity: 1,
+      incubating: const {},
+      pvpTrophies: 0,
     );
 
     await repo.save(original);

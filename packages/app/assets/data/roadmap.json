@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "chapters": [
+    {
+      "id": "easy",
+      "difficulty": {
+        "ko": "쉬움",
+        "en": "Easy",
+        "ja": "やさしい"
+      },
+      "boss": {
+        "ko": "숲의 지배자",
+        "en": "Forest Lord",
+        "ja": "森の主"
+      },
+      "startStage": 1,
+      "endStage": 10,
+      "color": "0xFF5CD65C",
+      "rewardGold": 10000,
+      "rewardJelly": 5,
+      "rewardChitin": 50,
+      "rewardMineral": 50,
+      "rewardSap": 50
+    },
+    {
+      "id": "normal",
+      "difficulty": {
+        "ko": "보통",
+        "en": "Normal",
+        "ja": "ふつう"
+      },
+      "boss": {
+        "ko": "계곡의 폭군",
+        "en": "Valley Tyrant",
+        "ja": "渓谷の暴君"
+      },
+      "startStage": 11,
+      "endStage": 20,
+      "color": "0xFF3FA9FF",
+      "rewardGold": 30000,
+      "rewardJelly": 10,
+      "rewardChitin": 120,
+      "rewardMineral": 120,
+      "rewardSap": 120
+    },
+    {
+      "id": "hard",
+      "difficulty": {
+        "ko": "어려움",
+        "en": "Hard",
+        "ja": "むずかしい"
+      },
+      "boss": {
+        "ko": "동굴의 마수",
+        "en": "Cavern Beast",
+        "ja": "洞窟の魔獣"
+      },
+      "startStage": 21,
+      "endStage": 30,
+      "color": "0xFFC072F0",
+      "rewardGold": 80000,
+      "rewardJelly": 20,
+      "rewardChitin": 300,
+      "rewardMineral": 300,
+      "rewardSap": 300
+    },
+    {
+      "id": "extreme",
+      "difficulty": {
+        "ko": "극한",
+        "en": "Extreme",
+        "ja": "きわみ"
+      },
+      "boss": {
+        "ko": "곤충왕",
+        "en": "Insect King",
+        "ja": "昆虫王"
+      },
+      "startStage": 31,
+      "endStage": 40,
+      "color": "0xFFFFC93C",
+      "rewardGold": 200000,
+      "rewardJelly": 40,
+      "rewardChitin": 700,
+      "rewardMineral": 700,
+      "rewardSap": 700
+    }
+  ]
+}

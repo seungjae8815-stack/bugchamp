@@ -61,6 +61,42 @@ enum Temperament {
   );
 }
 
+/// 오행 속성 (전투 상성). 개체마다 랜덤 부여.
+/// 상극(克): 水火 · 火金 · 金木 · 木土 · 土水.  상생(生): 木火 · 火土 · 土金 · 金水 · 水木.
+enum Element {
+  fire('fire'), // 화
+  water('water'), // 수
+  wood('wood'), // 목
+  metal('metal'), // 금
+  earth('earth'); // 토
+
+  const Element(this.key);
+  final String key;
+
+  static Element fromKey(String key) => values.firstWhere(
+    (e) => e.key == key,
+    orElse: () => throw ArgumentError('Unknown Element key: $key'),
+  );
+
+  /// this 가 [other] 를 상극(克)하면 true.
+  bool restrains(Element other) => switch (this) {
+    Element.water => other == Element.fire, // 水克火
+    Element.fire => other == Element.metal, // 火克金
+    Element.metal => other == Element.wood, // 金克木
+    Element.wood => other == Element.earth, // 木克土
+    Element.earth => other == Element.water, // 土克水
+  };
+
+  /// this 가 [other] 를 상생(生)하면 true.
+  bool generates(Element other) => switch (this) {
+    Element.wood => other == Element.fire, // 木生火
+    Element.fire => other == Element.earth, // 火生土
+    Element.earth => other == Element.metal, // 土生金
+    Element.metal => other == Element.water, // 金生水
+    Element.water => other == Element.wood, // 水生木
+  };
+}
+
 /// 성별 (§2.1, 브리딩 조건).
 enum Sex {
   male('male'),

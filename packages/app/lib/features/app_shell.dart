@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
+import '../ui/game_dialog.dart';
+import 'battle/battle_screen.dart';
 import 'play/play_screen.dart';
 import 'shop/craft_screen.dart';
 import 'storage/storage_screen.dart';
 
-/// 하단 3탭 셸: 홈(플레이+강화) · 도감 · 상점. 세이브 로드 완료 후 표시.
+/// 하단 4탭 셸: 홈 · 채집함 · 전투 · 상점. 세이브 로드 완료 후 표시.
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
@@ -40,6 +42,7 @@ class AppShell extends ConsumerWidget {
             children: [
               const PlayScreen(),
               StorageScreen(save: save),
+              const BattleScreen(),
               const CraftScreen(),
             ],
           ),
@@ -54,22 +57,30 @@ class AppShell extends ConsumerWidget {
 
   Future<bool> _confirmExit(BuildContext context) async {
     final l = AppLocalizations.of(context);
-    final res = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.exitTitle),
-        content: Text(l.exitConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.exitAction),
-          ),
-        ],
+    final res = await showGameDialog<bool>(
+      context,
+      title: l.exitTitle,
+      icon: Icons.exit_to_app_rounded,
+      content: Text(
+        l.exitConfirm,
+        style: const TextStyle(
+          color: Color(0xD9FFFFFF),
+          fontSize: 13.5,
+          height: 1.4,
+        ),
       ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.exitAction,
+          () => Navigator.pop(context, true),
+          color: const Color(0xFFC85454),
+        ),
+      ],
     );
     return res ?? false;
   }
@@ -87,6 +98,7 @@ class _GameNavBar extends StatelessWidget {
     final items = <(IconData, String)>[
       (Icons.home_rounded, l.navHome),
       (Icons.menu_book_rounded, l.navStorage),
+      (Icons.sports_mma_rounded, l.navBattle),
       (Icons.storefront_rounded, l.navShop),
     ];
     return Container(

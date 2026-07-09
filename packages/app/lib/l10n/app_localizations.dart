@@ -124,6 +124,162 @@ abstract class AppLocalizations {
   /// **'Storage'**
   String get navStorage;
 
+  /// No description provided for @navBattle.
+  ///
+  /// In en, this message translates to:
+  /// **'Battle'**
+  String get navBattle;
+
+  /// No description provided for @battleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Duel'**
+  String get battleTitle;
+
+  /// No description provided for @battleTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'Trophies {n}'**
+  String battleTrophies(int n);
+
+  /// No description provided for @battleMyTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'My Team (3)'**
+  String get battleMyTeam;
+
+  /// No description provided for @battleStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Battle'**
+  String get battleStart;
+
+  /// No description provided for @battleNeedBugs.
+  ///
+  /// In en, this message translates to:
+  /// **'You need adult bugs to duel'**
+  String get battleNeedBugs;
+
+  /// No description provided for @battlePickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a bug (adult)'**
+  String get battlePickTitle;
+
+  /// No description provided for @battleEmptySlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get battleEmptySlot;
+
+  /// No description provided for @battleWin.
+  ///
+  /// In en, this message translates to:
+  /// **'Victory!'**
+  String get battleWin;
+
+  /// No description provided for @battleLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat…'**
+  String get battleLose;
+
+  /// No description provided for @battleDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get battleDraw;
+
+  /// No description provided for @battleReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward'**
+  String get battleReward;
+
+  /// No description provided for @battleVs.
+  ///
+  /// In en, this message translates to:
+  /// **'VS'**
+  String get battleVs;
+
+  /// No description provided for @battleFoe.
+  ///
+  /// In en, this message translates to:
+  /// **'Opponent'**
+  String get battleFoe;
+
+  /// No description provided for @battleLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Battle log'**
+  String get battleLog;
+
+  /// No description provided for @battleAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel again'**
+  String get battleAgain;
+
+  /// No description provided for @battleTeamEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bugs to your team'**
+  String get battleTeamEmpty;
+
+  /// No description provided for @battleHpPct.
+  ///
+  /// In en, this message translates to:
+  /// **'HP {v}%'**
+  String battleHpPct(String v);
+
+  /// No description provided for @stanceAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get stanceAttack;
+
+  /// No description provided for @stanceDefend.
+  ///
+  /// In en, this message translates to:
+  /// **'Defend'**
+  String get stanceDefend;
+
+  /// No description provided for @stanceHeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal'**
+  String get stanceHeal;
+
+  /// No description provided for @elementFire.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire'**
+  String get elementFire;
+
+  /// No description provided for @elementWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water'**
+  String get elementWater;
+
+  /// No description provided for @elementWood.
+  ///
+  /// In en, this message translates to:
+  /// **'Wood'**
+  String get elementWood;
+
+  /// No description provided for @elementMetal.
+  ///
+  /// In en, this message translates to:
+  /// **'Metal'**
+  String get elementMetal;
+
+  /// No description provided for @elementEarth.
+  ///
+  /// In en, this message translates to:
+  /// **'Earth'**
+  String get elementEarth;
+
   /// No description provided for @homeTitle.
   ///
   /// In en, this message translates to:
@@ -268,6 +424,48 @@ abstract class AppLocalizations {
   /// **'Welcome back! +{gold} gold, +{xp} XP'**
   String offlineReward(String gold, String xp);
 
+  /// No description provided for @offlineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back!'**
+  String get offlineTitle;
+
+  /// No description provided for @offlineElapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle rewards earned over {time}'**
+  String offlineElapsed(String time);
+
+  /// No description provided for @offlineGoldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get offlineGoldLabel;
+
+  /// No description provided for @offlineXpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'XP'**
+  String get offlineXpLabel;
+
+  /// No description provided for @durationHm.
+  ///
+  /// In en, this message translates to:
+  /// **'{h}h {m}m'**
+  String durationHm(int h, int m);
+
+  /// No description provided for @durationM.
+  ///
+  /// In en, this message translates to:
+  /// **'{m}m'**
+  String durationM(int m);
+
+  /// No description provided for @durationS.
+  ///
+  /// In en, this message translates to:
+  /// **'{s}s'**
+  String durationS(int s);
+
   /// No description provided for @upAttack.
   ///
   /// In en, this message translates to:
@@ -381,6 +579,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not enough gold'**
   String get notEnoughGold;
+
+  /// No description provided for @curGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get curGold;
+
+  /// No description provided for @rewardGained.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards'**
+  String get rewardGained;
 
   /// No description provided for @bossLabel.
   ///
@@ -634,6 +844,78 @@ abstract class AppLocalizations {
   /// **'Ranking'**
   String get rankingTitle;
 
+  /// No description provided for @roadmapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Roadmap'**
+  String get roadmapTitle;
+
+  /// No description provided for @roadmapStageRange.
+  ///
+  /// In en, this message translates to:
+  /// **'STAGE {start}–{end}'**
+  String roadmapStageRange(int start, int end);
+
+  /// No description provided for @roadmapProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{cur} / {total}'**
+  String roadmapProgress(int cur, int total);
+
+  /// No description provided for @roadmapCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleared'**
+  String get roadmapCleared;
+
+  /// No description provided for @roadmapCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get roadmapCurrent;
+
+  /// No description provided for @roadmapLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get roadmapLocked;
+
+  /// No description provided for @roadmapFinalBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Final boss'**
+  String get roadmapFinalBoss;
+
+  /// No description provided for @roadmapEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get roadmapEnter;
+
+  /// No description provided for @roadmapReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay'**
+  String get roadmapReplay;
+
+  /// No description provided for @chapterClearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter cleared! 🎉'**
+  String get chapterClearTitle;
+
+  /// No description provided for @chapterClearMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Conquered {difficulty}! Final boss {boss} defeated!'**
+  String chapterClearMsg(String difficulty, String boss);
+
+  /// No description provided for @chapterClearReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear reward'**
+  String get chapterClearReward;
+
   /// No description provided for @mailTitle.
   ///
   /// In en, this message translates to:
@@ -645,6 +927,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No new mail'**
   String get mailEmpty;
+
+  /// No description provided for @mailDailyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reward (twice a day)'**
+  String get mailDailyTitle;
+
+  /// No description provided for @dailyLunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunch reward'**
+  String get dailyLunch;
+
+  /// No description provided for @dailyDinner.
+  ///
+  /// In en, this message translates to:
+  /// **'Dinner reward'**
+  String get dailyDinner;
+
+  /// No description provided for @dailyClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get dailyClaim;
+
+  /// No description provided for @dailyClaimedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Claimed today'**
+  String get dailyClaimedToday;
+
+  /// No description provided for @dailyLockedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'from {hour}:00'**
+  String dailyLockedUntil(int hour);
+
+  /// No description provided for @dailyRewardSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reward claimed!'**
+  String get dailyRewardSnack;
+
+  /// No description provided for @giftSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Surprise gifts (claim within 3h)'**
+  String get giftSectionTitle;
+
+  /// No description provided for @giftClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get giftClaim;
+
+  /// No description provided for @giftClaimAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad ×2'**
+  String get giftClaimAd;
+
+  /// No description provided for @giftExpiresIn.
+  ///
+  /// In en, this message translates to:
+  /// **'expires in {time}'**
+  String giftExpiresIn(String time);
+
+  /// No description provided for @giftClaimedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift claimed!'**
+  String get giftClaimedSnack;
+
+  /// No description provided for @giftDoubledSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad reward ×2!'**
+  String get giftDoubledSnack;
+
+  /// No description provided for @giftNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No gifts yet. Keep playing and they\'ll arrive!'**
+  String get giftNone;
 
   /// No description provided for @settingsTitle.
   ///
@@ -699,6 +1065,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quit'**
   String get exitAction;
+
+  /// No description provided for @settingsReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset game data'**
+  String get settingsReset;
+
+  /// No description provided for @settingsResetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'All progress (bugs, currency, upgrades, stage) will be deleted. Reset for real?'**
+  String get settingsResetConfirm;
+
+  /// No description provided for @settingsResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Game data reset'**
+  String get settingsResetDone;
 
   /// No description provided for @questHunt.
   ///
@@ -1023,6 +1407,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Trained! Level +1'**
   String get trainSnack;
+
+  /// No description provided for @trainJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'💎{n}'**
+  String trainJelly(int n);
+
+  /// No description provided for @trainJellySnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant train! Level +{lv}'**
+  String trainJellySnack(int lv);
+
+  /// No description provided for @breakthroughTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakthrough'**
+  String get breakthroughTitle;
+
+  /// No description provided for @breakthroughTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Tier {n}'**
+  String breakthroughTier(int n);
+
+  /// No description provided for @breakthroughReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakthrough ready · cap ↑'**
+  String get breakthroughReady;
+
+  /// No description provided for @breakthroughProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Breaking through · {time}'**
+  String breakthroughProgress(String time);
+
+  /// No description provided for @breakthroughDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done! Collect it'**
+  String get breakthroughDone;
+
+  /// No description provided for @breakthroughMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max tier reached'**
+  String get breakthroughMaxed;
+
+  /// No description provided for @breakthroughDo.
+  ///
+  /// In en, this message translates to:
+  /// **'Break'**
+  String get breakthroughDo;
+
+  /// No description provided for @breakthroughCollect.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect'**
+  String get breakthroughCollect;
+
+  /// No description provided for @breakthroughInstant.
+  ///
+  /// In en, this message translates to:
+  /// **'Now 💎{n}'**
+  String breakthroughInstant(int n);
+
+  /// No description provided for @breakthroughStartedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakthrough started!'**
+  String get breakthroughStartedSnack;
+
+  /// No description provided for @breakthroughDoneSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakthrough done! Level cap raised'**
+  String get breakthroughDoneSnack;
+
+  /// No description provided for @incubatorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubator'**
+  String get incubatorTitle;
+
+  /// No description provided for @incubatorSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'Slots {cur}/{max}'**
+  String incubatorSlots(int cur, int max);
+
+  /// No description provided for @incubatorPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Place'**
+  String get incubatorPlace;
+
+  /// No description provided for @incubatorHatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatching · {time}'**
+  String incubatorHatching(String time);
+
+  /// No description provided for @incubatorReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatched!'**
+  String get incubatorReady;
+
+  /// No description provided for @incubatorCollect.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect'**
+  String get incubatorCollect;
+
+  /// No description provided for @incubatorFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubator full'**
+  String get incubatorFull;
+
+  /// No description provided for @incubatorExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand 💎{n}'**
+  String incubatorExpand(int n);
+
+  /// No description provided for @incubatorPlacedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubation started!'**
+  String get incubatorPlacedSnack;
+
+  /// No description provided for @incubatorCollectedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatched into a larva!'**
+  String get incubatorCollectedSnack;
+
+  /// No description provided for @incubatorExpandedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubator slot added!'**
+  String get incubatorExpandedSnack;
+
+  /// No description provided for @incubatorEmptySlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty slot'**
+  String get incubatorEmptySlot;
+
+  /// No description provided for @incubatorWaitingEggs.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting eggs ({n})'**
+  String incubatorWaitingEggs(int n);
+
+  /// No description provided for @incubatorNoEggs.
+  ///
+  /// In en, this message translates to:
+  /// **'No eggs to hatch'**
+  String get incubatorNoEggs;
+
+  /// No description provided for @incubatorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an empty capsule to add an egg; tap a ready one to collect.'**
+  String get incubatorHint;
+
+  /// No description provided for @incubatorPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an egg'**
+  String get incubatorPick;
 
   /// No description provided for @disassembleTitle.
   ///

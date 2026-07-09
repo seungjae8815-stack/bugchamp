@@ -18,6 +18,9 @@ class GameData {
     this.craftConfig,
     this.missionConfig,
     this.petConfig,
+    this.dailyConfig,
+    this.giftConfig,
+    this.roadmapConfig,
   });
 
   final Map<String, Species> speciesById;
@@ -42,6 +45,15 @@ class GameData {
 
   /// 애완펫 보너스 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final PetConfig? petConfig;
+
+  /// 일일 보상 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final DailyConfig? dailyConfig;
+
+  /// 깜짝 선물 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final GiftConfig? giftConfig;
+
+  /// 로드맵(난이도 챕터) 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final RoadmapConfig? roadmapConfig;
 
   /// speciesId → Species (accrue 의 resolveSpecies 로 그대로 넘길 수 있음).
   Species species(String id) {
@@ -70,6 +82,9 @@ class GameData {
     Map<String, dynamic>? craftConfig,
     Map<String, dynamic>? missionConfig,
     Map<String, dynamic>? petConfig,
+    Map<String, dynamic>? dailyConfig,
+    Map<String, dynamic>? giftConfig,
+    Map<String, dynamic>? roadmapConfig,
   }) {
     final speciesList = (species['species'] as List)
         .cast<Map<String, dynamic>>()
@@ -100,6 +115,13 @@ class GameData {
           ? null
           : MissionConfig.fromJson(missionConfig),
       petConfig: petConfig == null ? null : PetConfig.fromJson(petConfig),
+      dailyConfig: dailyConfig == null
+          ? null
+          : DailyConfig.fromJson(dailyConfig),
+      giftConfig: giftConfig == null ? null : GiftConfig.fromJson(giftConfig),
+      roadmapConfig: roadmapConfig == null
+          ? null
+          : RoadmapConfig.fromJson(roadmapConfig),
     );
   }
 
@@ -119,6 +141,9 @@ class GameData {
       read('craft.json'),
       read('missions.json'),
       read('pets.json'),
+      read('daily.json'),
+      read('gifts.json'),
+      read('roadmap.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -131,6 +156,9 @@ class GameData {
       craftConfig: results[7],
       missionConfig: results[8],
       petConfig: results[9],
+      dailyConfig: results[10],
+      giftConfig: results[11],
+      roadmapConfig: results[12],
     );
   }
 }

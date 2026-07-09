@@ -38,6 +38,12 @@ SaveGame _sampleSave() => SaveGame(
   missionProgress: const {'hunt': 12},
   missionClaims: const {'hunt': 2},
   equippedBugIds: const ['x1'],
+  dailyClaims: const {'lunch': '2026-07-05'},
+  gifts: const [],
+  clearedChapters: const {'easy'},
+  incubatorCapacity: 2,
+  incubating: const {},
+  pvpTrophies: 30,
 );
 
 void main() {

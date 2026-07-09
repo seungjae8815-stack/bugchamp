@@ -99,6 +99,7 @@ class RunConfig {
     this.threatBase = 3.0,
     this.threatGrowth = 1.12,
     this.bossThreatMult = 4.0,
+    this.offlineEfficiency = 0.3,
   });
 
   final double hpBase;
@@ -122,6 +123,9 @@ class RunConfig {
   final double threatBase;
   final double threatGrowth;
   final double bossThreatMult;
+
+  /// 오프라인 파밍 효율(실시간 대비). 온라인이 훨씬 유리하도록 <1.
+  final double offlineEfficiency;
 
   /// 첫 지역 (하위호환).
   RegionConfig get region => regions.first;
@@ -164,6 +168,7 @@ class RunConfig {
       threatBase: (json['threatBase'] as num?)?.toDouble() ?? 3.0,
       threatGrowth: (json['threatGrowth'] as num?)?.toDouble() ?? 1.12,
       bossThreatMult: (json['bossThreatMult'] as num?)?.toDouble() ?? 4.0,
+      offlineEfficiency: (json['offlineEfficiency'] as num?)?.toDouble() ?? 0.3,
     );
   }
 }

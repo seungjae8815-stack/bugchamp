@@ -13,5 +13,16 @@
   "maxLevel": 30,
   "levelBonus": 0.06,
   "trainBaseCost": 200,
-  "trainCostGrowth": 1.18
+  "trainCostGrowth": 1.18,
+  "trainJellyCost": 3,
+  "trainJellyLevels": 5,
+  "tierCaps": [10, 20, 35, 55, 80],
+  "breakthroughDurationsSec": [600, 1800, 5400, 14400],
+  "breakthroughGold": [20000, 60000, 200000, 600000],
+  "breakthroughMaterial": [100, 250, 600, 1500],
+  "breakthroughJellyPerMinute": 0.5,
+  "incubatorSlotsInitial": 1,
+  "incubatorSlotsMax": 3,
+  "incubatorExpandJelly": 30,
+  "incubateDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 }
 }

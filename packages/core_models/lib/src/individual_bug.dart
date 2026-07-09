@@ -26,7 +26,14 @@ class IndividualBug {
     this.stage = LifeStage.adult,
     this.stageSince,
     this.level = 1,
-  });
+    this.breakthroughTier = 0,
+    this.breakthroughEndsAt,
+    Element? element,
+  }) : _element = element;
+
+  /// id 기반 안정 배정(기존 개체·미지정 시). 롤 시엔 랜덤 주입.
+  static Element _elementFor(String id) =>
+      Element.values[id.hashCode.abs() % Element.values.length];
 
   /// 개체 고유 id (앱 레이어에서 생성해 주입).
   final String id;
@@ -57,6 +64,17 @@ class IndividualBug {
 
   /// 성충 수련 레벨(1~). 펫 보너스에 곱해진다.
   final int level;
+
+  /// 돌파 티어(0~). 티어가 높을수록 레벨 상한이 커진다.
+  final int breakthroughTier;
+
+  /// 돌파 진행 종료 UTC 시각(진행 중이면 non-null). 도달 후 수령하면 티어 상승.
+  final DateTime? breakthroughEndsAt;
+
+  final Element? _element;
+
+  /// 오행 속성(전투 상성). 개체마다 랜덤(미지정 개체는 id 기반 안정 배정).
+  Element get element => _element ?? _elementFor(id);
 
   /// 강화 상한 레벨 (§2.1).
   int get maxLevel => potential * kLevelsPerPotential;
@@ -100,6 +118,7 @@ class IndividualBug {
       potential: potential,
       temperament: temp,
       sex: resolvedSex,
+      element: Element.values[rng.nextInt(Element.values.length)],
     );
   }
 
@@ -114,6 +133,10 @@ class IndividualBug {
     LifeStage? stage,
     DateTime? stageSince,
     int? level,
+    int? breakthroughTier,
+    DateTime? breakthroughEndsAt,
+    bool clearBreakthrough = false,
+    Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
     speciesId: speciesId ?? this.speciesId,
@@ -125,6 +148,11 @@ class IndividualBug {
     stage: stage ?? this.stage,
     stageSince: stageSince ?? this.stageSince,
     level: level ?? this.level,
+    breakthroughTier: breakthroughTier ?? this.breakthroughTier,
+    breakthroughEndsAt: clearBreakthrough
+        ? null
+        : (breakthroughEndsAt ?? this.breakthroughEndsAt),
+    element: element ?? this.element,
   );
 
   factory IndividualBug.fromJson(Map<String, dynamic> json) => IndividualBug(
@@ -144,6 +172,13 @@ class IndividualBug {
         ? null
         : DateTime.parse(json['stageSince'] as String).toUtc(),
     level: (json['level'] as num?)?.toInt() ?? 1,
+    breakthroughTier: (json['breakthroughTier'] as num?)?.toInt() ?? 0,
+    breakthroughEndsAt: json['breakthroughEndsAt'] == null
+        ? null
+        : DateTime.parse(json['breakthroughEndsAt'] as String).toUtc(),
+    element: json['element'] == null
+        ? null
+        : Element.fromKey(json['element'] as String),
   );
 
   Map<String, dynamic> toJson() => {
@@ -157,6 +192,10 @@ class IndividualBug {
     'stage': stage.key,
     if (stageSince != null) 'stageSince': stageSince!.toUtc().toIso8601String(),
     'level': level,
+    'breakthroughTier': breakthroughTier,
+    if (breakthroughEndsAt != null)
+      'breakthroughEndsAt': breakthroughEndsAt!.toUtc().toIso8601String(),
+    'element': element.key,
   };
 
   @override

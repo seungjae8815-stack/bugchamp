@@ -44,6 +44,11 @@ const Map<int, _JsonMap Function(_JsonMap)> _migrations = {
   3: _v3ToV4,
   4: _v4ToV5,
   5: _v5ToV6,
+  6: _v6ToV7,
+  7: _v7ToV8,
+  8: _v8ToV9,
+  9: _v9ToV10,
+  10: _v10ToV11,
 };
 
 /// v0(스키마 미표기 레거시) → v1: 누락 필드를 기본값으로 채우고 버전을 승격.
@@ -100,4 +105,40 @@ _JsonMap _v5ToV6(_JsonMap old) => {
   ...old,
   'schemaVersion': 6,
   'equippedBugIds': old['equippedBugIds'] ?? const <String>[],
+};
+
+/// v6 → v7(일일보상): 수령 기록 필드를 기본값으로 추가.
+_JsonMap _v6ToV7(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 7,
+  'dailyClaims': old['dailyClaims'] ?? const <String, dynamic>{},
+};
+
+/// v7 → v8(깜짝 선물): 선물 목록 필드를 기본값으로 추가.
+_JsonMap _v7ToV8(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 8,
+  'gifts': old['gifts'] ?? const <dynamic>[],
+};
+
+/// v8 → v9(챕터 클리어 보상): 클리어 기록 필드를 기본값으로 추가.
+_JsonMap _v8ToV9(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 9,
+  'clearedChapters': old['clearedChapters'] ?? const <dynamic>[],
+};
+
+/// v9 → v10(부화기): 슬롯/진행 필드를 기본값으로 추가.
+_JsonMap _v9ToV10(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 10,
+  'incubatorCapacity': old['incubatorCapacity'] ?? 1,
+  'incubating': old['incubating'] ?? const <String, dynamic>{},
+};
+
+/// v10 → v11(PvP): 트로피 필드를 기본값으로 추가.
+_JsonMap _v10ToV11(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 11,
+  'pvpTrophies': old['pvpTrophies'] ?? 0,
 };

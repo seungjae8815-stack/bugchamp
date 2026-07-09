@@ -1,6 +1,6 @@
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Element;
 
 import '../l10n/app_localizations.dart';
 
@@ -26,6 +26,30 @@ String specialtyLabel(AppLocalizations l, Specialty s) => switch (s) {
   Specialty.strike => l.specialtyStrike,
   Specialty.grip => l.specialtyGrip,
   Specialty.toss => l.specialtyToss,
+};
+
+String elementLabel(AppLocalizations l, Element e) => switch (e) {
+  Element.fire => l.elementFire,
+  Element.water => l.elementWater,
+  Element.wood => l.elementWood,
+  Element.metal => l.elementMetal,
+  Element.earth => l.elementEarth,
+};
+
+String elementGlyph(Element e) => switch (e) {
+  Element.fire => '🔥',
+  Element.water => '💧',
+  Element.wood => '🌿',
+  Element.metal => '⚙️',
+  Element.earth => '⛰️',
+};
+
+Color elementColor(Element e) => switch (e) {
+  Element.fire => const Color(0xFFFF6B4A),
+  Element.water => const Color(0xFF4AA8FF),
+  Element.wood => const Color(0xFF6FCF6F),
+  Element.metal => const Color(0xFFCBD3DA),
+  Element.earth => const Color(0xFFD2A56A),
 };
 
 String temperamentLabel(AppLocalizations l, Temperament t) => switch (t) {

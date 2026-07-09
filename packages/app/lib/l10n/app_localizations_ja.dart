@@ -21,6 +21,88 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navStorage => 'コレクション';
 
   @override
+  String get navBattle => 'Battle';
+
+  @override
+  String get battleTitle => 'Bug Duel';
+
+  @override
+  String battleTrophies(int n) {
+    return 'Trophies $n';
+  }
+
+  @override
+  String get battleMyTeam => 'My Team (3)';
+
+  @override
+  String get battleStart => 'Start Battle';
+
+  @override
+  String get battleNeedBugs => 'You need adult bugs to duel';
+
+  @override
+  String get battlePickTitle => 'Choose a bug (adult)';
+
+  @override
+  String get battleEmptySlot => 'Empty';
+
+  @override
+  String get battleWin => 'Victory!';
+
+  @override
+  String get battleLose => 'Defeat…';
+
+  @override
+  String get battleDraw => 'Draw';
+
+  @override
+  String get battleReward => 'Reward';
+
+  @override
+  String get battleVs => 'VS';
+
+  @override
+  String get battleFoe => 'Opponent';
+
+  @override
+  String get battleLog => 'Battle log';
+
+  @override
+  String get battleAgain => 'Duel again';
+
+  @override
+  String get battleTeamEmpty => 'Add bugs to your team';
+
+  @override
+  String battleHpPct(String v) {
+    return 'HP $v%';
+  }
+
+  @override
+  String get stanceAttack => 'Attack';
+
+  @override
+  String get stanceDefend => 'Defend';
+
+  @override
+  String get stanceHeal => 'Heal';
+
+  @override
+  String get elementFire => 'Fire';
+
+  @override
+  String get elementWater => 'Water';
+
+  @override
+  String get elementWood => 'Wood';
+
+  @override
+  String get elementMetal => 'Metal';
+
+  @override
+  String get elementEarth => 'Earth';
+
+  @override
   String get homeTitle => 'トラップ状況';
 
   @override
@@ -107,6 +189,35 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get offlineTitle => 'Welcome back!';
+
+  @override
+  String offlineElapsed(String time) {
+    return 'Idle rewards earned over $time';
+  }
+
+  @override
+  String get offlineGoldLabel => 'Gold';
+
+  @override
+  String get offlineXpLabel => 'XP';
+
+  @override
+  String durationHm(int h, int m) {
+    return '${h}h ${m}m';
+  }
+
+  @override
+  String durationM(int m) {
+    return '${m}m';
+  }
+
+  @override
+  String durationS(int s) {
+    return '${s}s';
+  }
+
+  @override
   String get upAttack => '採集力';
 
   @override
@@ -162,6 +273,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notEnoughGold => 'ゴールドが足りません';
+
+  @override
+  String get curGold => 'Gold';
+
+  @override
+  String get rewardGained => 'Rewards';
 
   @override
   String get bossLabel => 'ボス';
@@ -300,10 +417,98 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rankingTitle => 'ランキング';
 
   @override
+  String get roadmapTitle => 'Roadmap';
+
+  @override
+  String roadmapStageRange(int start, int end) {
+    return 'STAGE $start–$end';
+  }
+
+  @override
+  String roadmapProgress(int cur, int total) {
+    return '$cur / $total';
+  }
+
+  @override
+  String get roadmapCleared => 'Cleared';
+
+  @override
+  String get roadmapCurrent => 'In progress';
+
+  @override
+  String get roadmapLocked => 'Locked';
+
+  @override
+  String get roadmapFinalBoss => 'Final boss';
+
+  @override
+  String get roadmapEnter => 'Resume';
+
+  @override
+  String get roadmapReplay => 'Replay';
+
+  @override
+  String get chapterClearTitle => 'Chapter cleared! 🎉';
+
+  @override
+  String chapterClearMsg(String difficulty, String boss) {
+    return 'Conquered $difficulty! Final boss $boss defeated!';
+  }
+
+  @override
+  String get chapterClearReward => 'Clear reward';
+
+  @override
   String get mailTitle => 'メールボックス';
 
   @override
   String get mailEmpty => '新しいメールはありません';
+
+  @override
+  String get mailDailyTitle => 'Daily reward (twice a day)';
+
+  @override
+  String get dailyLunch => 'Lunch reward';
+
+  @override
+  String get dailyDinner => 'Dinner reward';
+
+  @override
+  String get dailyClaim => 'Claim';
+
+  @override
+  String get dailyClaimedToday => 'Claimed today';
+
+  @override
+  String dailyLockedUntil(int hour) {
+    return 'from $hour:00';
+  }
+
+  @override
+  String get dailyRewardSnack => 'Daily reward claimed!';
+
+  @override
+  String get giftSectionTitle => 'Surprise gifts (claim within 3h)';
+
+  @override
+  String get giftClaim => 'Claim';
+
+  @override
+  String get giftClaimAd => 'Ad ×2';
+
+  @override
+  String giftExpiresIn(String time) {
+    return 'expires in $time';
+  }
+
+  @override
+  String get giftClaimedSnack => 'Gift claimed!';
+
+  @override
+  String get giftDoubledSnack => 'Ad reward ×2!';
+
+  @override
+  String get giftNone => 'No gifts yet. Keep playing and they\'ll arrive!';
 
   @override
   String get settingsTitle => '設定';
@@ -331,6 +536,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get exitAction => 'Quit';
+
+  @override
+  String get settingsReset => 'Reset game data';
+
+  @override
+  String get settingsResetConfirm =>
+      'All progress (bugs, currency, upgrades, stage) will be deleted. Reset for real?';
+
+  @override
+  String get settingsResetDone => 'Game data reset';
 
   @override
   String get questHunt => 'モンスター狩り';
@@ -511,6 +726,112 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trainSnack => 'Trained! Level +1';
+
+  @override
+  String trainJelly(int n) {
+    return '💎$n';
+  }
+
+  @override
+  String trainJellySnack(int lv) {
+    return 'Instant train! Level +$lv';
+  }
+
+  @override
+  String get breakthroughTitle => 'Breakthrough';
+
+  @override
+  String breakthroughTier(int n) {
+    return 'Tier $n';
+  }
+
+  @override
+  String get breakthroughReady => 'Breakthrough ready · cap ↑';
+
+  @override
+  String breakthroughProgress(String time) {
+    return 'Breaking through · $time';
+  }
+
+  @override
+  String get breakthroughDone => 'Done! Collect it';
+
+  @override
+  String get breakthroughMaxed => 'Max tier reached';
+
+  @override
+  String get breakthroughDo => 'Break';
+
+  @override
+  String get breakthroughCollect => 'Collect';
+
+  @override
+  String breakthroughInstant(int n) {
+    return 'Now 💎$n';
+  }
+
+  @override
+  String get breakthroughStartedSnack => 'Breakthrough started!';
+
+  @override
+  String get breakthroughDoneSnack => 'Breakthrough done! Level cap raised';
+
+  @override
+  String get incubatorTitle => 'Incubator';
+
+  @override
+  String incubatorSlots(int cur, int max) {
+    return 'Slots $cur/$max';
+  }
+
+  @override
+  String get incubatorPlace => 'Place';
+
+  @override
+  String incubatorHatching(String time) {
+    return 'Hatching · $time';
+  }
+
+  @override
+  String get incubatorReady => 'Hatched!';
+
+  @override
+  String get incubatorCollect => 'Collect';
+
+  @override
+  String get incubatorFull => 'Incubator full';
+
+  @override
+  String incubatorExpand(int n) {
+    return 'Expand 💎$n';
+  }
+
+  @override
+  String get incubatorPlacedSnack => 'Incubation started!';
+
+  @override
+  String get incubatorCollectedSnack => 'Hatched into a larva!';
+
+  @override
+  String get incubatorExpandedSnack => 'Incubator slot added!';
+
+  @override
+  String get incubatorEmptySlot => 'Empty slot';
+
+  @override
+  String incubatorWaitingEggs(int n) {
+    return 'Waiting eggs ($n)';
+  }
+
+  @override
+  String get incubatorNoEggs => 'No eggs to hatch';
+
+  @override
+  String get incubatorHint =>
+      'Tap an empty capsule to add an egg; tap a ready one to collect.';
+
+  @override
+  String get incubatorPick => 'Choose an egg';
 
   @override
   String get disassembleTitle => 'Disassemble';

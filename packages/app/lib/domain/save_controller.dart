@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/save_repository.dart';
 import 'gather_service.dart';
+import 'gift_mail.dart';
 import 'providers.dart';
 import 'save_game.dart';
 
@@ -41,6 +42,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           stageNumber: save.stageNumber,
           stats: stats,
           elapsed: elapsed,
+          efficiency: config.offlineEfficiency,
         );
         if (!report.isEmpty) {
           var xp = save.xp + report.xp;
@@ -255,6 +257,151 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(stageNumber: stage));
   }
 
+  /// 최고 도달 스테이지 기준으로 **처음 클리어한 챕터**들의 보상을 지급하고,
+  /// 새로 클리어한 챕터 목록을 반환한다(UI 축하 팝업용). 없으면 빈 리스트.
+  Future<List<RoadmapChapter>> grantChapterClears() async {
+    final cfg = ref.read(gameDataProvider).requireValue.roadmapConfig;
+    if (cfg == null) return const [];
+    final s = state.requireValue;
+    final newly = <RoadmapChapter>[];
+    for (final ch in cfg.chapters) {
+      if (ch.clearedBy(s.stageNumber) && !s.clearedChapters.contains(ch.id)) {
+        newly.add(ch);
+      }
+    }
+    if (newly.isEmpty) return const [];
+    var gold = s.gold;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    final cleared = Set<String>.from(s.clearedChapters);
+    for (final ch in newly) {
+      gold += ch.rewardGold;
+      for (final e in ch.rewardMaterials.entries) {
+        mats[e.key] = (mats[e.key] ?? 0) + e.value;
+      }
+      cleared.add(ch.id);
+    }
+    await _commit(
+      s.copyWith(gold: gold, materials: mats, clearedChapters: cleared),
+    );
+    return newly;
+  }
+
+  /// 온라인 중 주기적으로 호출 → 예정 시각 도달 시 깜짝 선물 1개 지급.
+  /// 만료된 선물은 정리한다. 상태가 바뀔 때만 저장.
+  Future<void> maybeSpawnGift() async {
+    final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
+    if (cfg == null) return;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final alive = s.gifts.where((g) => !g.isExpired(now)).toList();
+    final prunedAny = alive.length != s.gifts.length;
+
+    // 최초: 첫 선물 예약만.
+    if (s.nextGiftAt == null) {
+      await _commit(
+        s.copyWith(
+          gifts: alive,
+          nextGiftAt: now.add(Duration(seconds: cfg.firstDelaySec)),
+        ),
+      );
+      return;
+    }
+    // 아직 예정 시각 전.
+    if (now.isBefore(s.nextGiftAt!)) {
+      if (prunedAny) await _commit(s.copyWith(gifts: alive));
+      return;
+    }
+    final rng = math.Random();
+    final reschedule = now.add(Duration(seconds: cfg.nextIntervalSec(rng)));
+    // 가득 찼으면 지급 보류(간격만 재예약).
+    if (alive.length >= cfg.maxActive) {
+      await _commit(s.copyWith(gifts: alive, nextGiftAt: reschedule));
+      return;
+    }
+    final t = cfg.rollTier(rng);
+    final gift = GiftMail(
+      id: _devUuid.v4(),
+      expiry: now.add(Duration(hours: cfg.expiryHours)),
+      gold: t.gold,
+      jelly: t.jelly,
+      chitin: t.chitin,
+      mineral: t.mineral,
+      sap: t.sap,
+    );
+    await _commit(s.copyWith(gifts: [...alive, gift], nextGiftAt: reschedule));
+  }
+
+  /// 깜짝 선물 수령. [doubled]=광고 시청 시 배수. 만료/없음이면 false.
+  Future<bool> claimGift(String id, {bool doubled = false}) async {
+    final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final idx = s.gifts.indexWhere((g) => g.id == id);
+    if (idx < 0) return false;
+    final g = s.gifts[idx];
+    final gifts = List<GiftMail>.from(s.gifts)..removeAt(idx);
+    if (g.isExpired(now)) {
+      await _commit(s.copyWith(gifts: gifts));
+      return false;
+    }
+    final mult = doubled ? (cfg?.adMultiplier ?? 2) : 1;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final e in g.materials.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value * mult;
+    }
+    await _commit(
+      s.copyWith(gold: s.gold + g.gold * mult, materials: mats, gifts: gifts),
+    );
+    return true;
+  }
+
+  /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
+  Future<void> applyBattleResult({
+    required int gold,
+    required int trophyDelta,
+  }) async {
+    final s = state.requireValue;
+    await _commit(
+      s.copyWith(
+        gold: s.gold + (gold < 0 ? 0 : gold),
+        pvpTrophies: (s.pvpTrophies + trophyDelta).clamp(0, 1 << 30),
+      ),
+    );
+  }
+
+  /// 게임 데이터 전체 초기화(설정). 저장소를 비우고 새 세이브로 교체.
+  Future<void> resetGame() async {
+    await _repo.clear();
+    final now = ref.read(clockProvider).now().toUtc();
+    final fresh = SaveGame.initial(createdAt: now).copyWith(lastSeen: now);
+    await _repo.save(fresh);
+    pendingOffline = null;
+    state = AsyncData(fresh);
+  }
+
+  /// 일일보상 수령(편지함). 아직 시간 전·오늘 이미 수령이면 false.
+  /// 판정은 **로컬 시각** 기준(점심 12시/저녁 18시).
+  Future<bool> claimDaily(DailyReward reward) async {
+    final now = ref.read(clockProvider).now(); // 로컬 벽시계
+    if (now.hour < reward.hour) return false;
+    final today = dailyDateKey(now);
+    final s = state.requireValue;
+    if (s.dailyClaims[reward.id] == today) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final e in reward.materials.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value;
+    }
+    final claims = Map<String, String>.from(s.dailyClaims)..[reward.id] = today;
+    await _commit(
+      s.copyWith(
+        gold: s.gold + reward.gold,
+        materials: mats,
+        dailyClaims: claims,
+      ),
+    );
+    return true;
+  }
+
   // ── 개발자(테스트) 전용 ───────────────────────────────────────
   static const _devUuid = Uuid();
 
@@ -413,7 +560,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 수련: 골드를 소비해 성충 [bugId] 의 레벨을 1 올린다.
-  /// 성충 아님·최대레벨·골드부족·없음이면 false.
+  /// 성충 아님·티어 상한 도달·돌파 진행중·골드부족·없음이면 false.
   Future<bool> trainBug(String bugId) async {
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;
     if (cfg == null) return false;
@@ -426,12 +573,147 @@ class SaveController extends AsyncNotifier<SaveGame> {
         LifeStage.adult) {
       return false;
     }
-    if (bug.level >= cfg.maxLevel) return false;
+    if (bug.breakthroughEndsAt != null) return false; // 돌파 중엔 수련 불가
+    if (bug.level >= cfg.levelCap(bug.breakthroughTier)) return false;
     final cost = cfg.trainCost(bug.level);
     if (s.gold < cost) return false;
     final bugs = List<IndividualBug>.from(s.bugs);
     bugs[idx] = bug.copyWith(level: bug.level + 1);
     await _commit(s.copyWith(gold: s.gold - cost, bugs: bugs));
+    return true;
+  }
+
+  static const _breakMats = [
+    MaterialKind.chitin,
+    MaterialKind.mineral,
+    MaterialKind.sap,
+  ];
+
+  /// 돌파 시작: 티어 상한을 채운 성충의 레벨 상한을 올리는 업그레이드(타이머 시작).
+  /// 재화(골드+재료) 소비. 조건 미달이면 false.
+  Future<bool> breakthrough(String bugId) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bug = s.bugs[idx];
+    if (effectiveStage(bug.stage, bug.stageSince, now, cfg) !=
+        LifeStage.adult) {
+      return false;
+    }
+    if (bug.breakthroughEndsAt != null) return false; // 이미 진행 중
+    final tier = bug.breakthroughTier;
+    if (tier >= cfg.maxTier) return false; // 최대
+    if (bug.level < cfg.levelCap(tier)) return false; // 상한 미달
+    final gold = cfg.breakthroughGoldCost(tier);
+    final matCost = cfg.breakthroughMatCost(tier);
+    if (s.gold < gold) return false;
+    for (final k in _breakMats) {
+      if ((s.materials[k] ?? 0) < matCost) return false;
+    }
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final k in _breakMats) {
+      mats[k] = (mats[k] ?? 0) - matCost;
+    }
+    final endsAt = now.add(Duration(seconds: cfg.breakthroughDuration(tier)));
+    final bugs = List<IndividualBug>.from(s.bugs);
+    bugs[idx] = bug.copyWith(breakthroughEndsAt: endsAt);
+    await _commit(s.copyWith(gold: s.gold - gold, materials: mats, bugs: bugs));
+    return true;
+  }
+
+  /// 돌파 완료 수령. [viaJelly]=남은시간 비례 젤리로 즉시완료. 아니면 타이머 종료 후만.
+  Future<bool> completeBreakthrough(
+    String bugId, {
+    bool viaJelly = false,
+  }) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bug = s.bugs[idx];
+    final endsAt = bug.breakthroughEndsAt;
+    if (endsAt == null) return false;
+    final bugs = List<IndividualBug>.from(s.bugs);
+    if (viaJelly) {
+      final cost = cfg.breakthroughJelly(endsAt.difference(now));
+      final have = s.materials[MaterialKind.jelly] ?? 0;
+      if (have < cost) return false;
+      final mats = Map<MaterialKind, int>.from(s.materials)
+        ..[MaterialKind.jelly] = have - cost;
+      bugs[idx] = bug.copyWith(
+        breakthroughTier: bug.breakthroughTier + 1,
+        clearBreakthrough: true,
+      );
+      await _commit(s.copyWith(bugs: bugs, materials: mats));
+    } else {
+      if (now.isBefore(endsAt)) return false; // 아직 안 끝남
+      bugs[idx] = bug.copyWith(
+        breakthroughTier: bug.breakthroughTier + 1,
+        clearBreakthrough: true,
+      );
+      await _commit(s.copyWith(bugs: bugs));
+    }
+    return true;
+  }
+
+  // ── 부화기 ────────────────────────────────────────────────────
+  /// 알 [bugId] 를 부화기 슬롯에 넣는다(등급별 시간). 알 아님·슬롯 부족·중복이면 false.
+  Future<bool> placeInIncubator(String bugId) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    if (s.incubating.containsKey(bugId)) return false;
+    if (s.incubating.length >= s.incubatorCapacity) return false;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bug = s.bugs[idx];
+    if (effectiveStage(bug.stage, bug.stageSince, now, cfg) != LifeStage.egg) {
+      return false;
+    }
+    final sp = data.speciesById[bug.speciesId];
+    if (sp == null) return false;
+    final endsAt = now.add(Duration(seconds: cfg.incubateDuration(sp.grade)));
+    final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = endsAt;
+    await _commit(s.copyWith(incubating: inc));
+    return true;
+  }
+
+  /// 부화 완료된 알을 수령 → 유충으로. 미완료/없음이면 false.
+  Future<bool> collectIncubated(String bugId) async {
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final endsAt = s.incubating[bugId];
+    if (endsAt == null) return false;
+    if (now.isBefore(endsAt)) return false;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return false;
+    final bugs = List<IndividualBug>.from(s.bugs);
+    bugs[idx] = bugs[idx].copyWith(stage: LifeStage.larva, stageSince: now);
+    final inc = Map<String, DateTime>.from(s.incubating)..remove(bugId);
+    await _commit(s.copyWith(bugs: bugs, incubating: inc));
+    return true;
+  }
+
+  /// 부화기 슬롯 확장(젤리). 최대치·젤리부족이면 false.
+  Future<bool> expandIncubator() async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    if (s.incubatorCapacity >= cfg.incubatorSlotsMax) return false;
+    final have = s.materials[MaterialKind.jelly] ?? 0;
+    if (have < cfg.incubatorExpandJelly) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cfg.incubatorExpandJelly;
+    await _commit(
+      s.copyWith(incubatorCapacity: s.incubatorCapacity + 1, materials: mats),
+    );
     return true;
   }
 

@@ -10,12 +10,15 @@ import 'package:uuid/uuid.dart';
 import '../../data/game_data.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
+import '../../domain/gift_mail.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
+import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../roadmap/roadmap_screen.dart';
 
 const _uuid = Uuid();
 const _honey = Color(0xFFEBA52F);
@@ -362,6 +365,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   bool _walking = false;
   double _walkT = 0;
   double _attackAcc = 0;
+  double _giftCheckAcc = 0; // 깜짝 선물 스폰 체크 누적(초)
   double _attackPulse = 0;
   double _hitFlash = 0;
   double _boost = 0;
@@ -408,21 +412,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       controller.consumeOffline();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                l.offlineReward(
-                  formatCompact(offline.gold),
-                  formatCompact(offline.xp),
-                ),
-              ),
-            ),
-          );
+        _showOfflineReward(offline);
       });
     }
+    // 선물 예약 초기화 + 만료 정리(첫 진입 시).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) controller.maybeSpawnGift();
+    });
+  }
+
+  /// 복귀 보상 팝업(방치 정산).
+  void _showOfflineReward(OfflineReport r) {
+    final l = AppLocalizations.of(context);
+    final d = r.accrued;
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final timeStr = h > 0 ? l.durationHm(h, m) : l.durationM(m);
+    showGameDialog<void>(
+      context,
+      title: l.offlineTitle,
+      subtitle: l.offlineElapsed(timeStr),
+      icon: Icons.wb_sunny_rounded,
+      content: gameRewardList(context, gold: r.gold, xp: r.xp),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    );
   }
 
   @override
@@ -553,6 +566,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final dt = raw.clamp(0.0, 0.05);
     if (dt <= 0) return;
     setState(() => _step(dt));
+    // 온라인 중 주기적으로 깜짝 선물 스폰 체크(20초마다).
+    _giftCheckAcc += dt;
+    if (_giftCheckAcc >= 20) {
+      _giftCheckAcc = 0;
+      ref.read(saveControllerProvider.notifier).maybeSpawnGift();
+    }
   }
 
   void _step(double dt) {
@@ -825,8 +844,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _playerHp = math.min(_playerHpMax, _playerHp + _playerHpMax * 0.3);
     if (_isBoss) {
       _stage++;
-      ref.read(saveControllerProvider.notifier).reachStage(_stage);
       _habitatIndex = 0;
+      _afterBossAdvance(_stage); // 최고기록 갱신 + 챕터 클리어 보상
     } else {
       _habitatIndex++;
     }
@@ -1391,7 +1410,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     Icons.leaderboard_rounded,
                     () => _showComingSoon(l, l.rankingTitle),
                   ),
-                  _iconBtn(Icons.mail_rounded, () => _showMail(l)),
+                  _iconBtn(
+                    Icons.mail_rounded,
+                    () => _showMail(l),
+                    badge: _hasClaimableDaily(save),
+                  ),
                   _iconBtn(Icons.settings_rounded, () => _showSettings(l)),
                 ],
               ),
@@ -1567,14 +1590,54 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     ),
   );
 
-  Widget _iconBtn(IconData icon, VoidCallback onTap) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Padding(
-      padding: const EdgeInsets.all(4),
-      child: Icon(icon, color: const Color(0xE6FFFFFF), size: 20),
-    ),
-  );
+  Widget _iconBtn(IconData icon, VoidCallback onTap, {bool badge = false}) =>
+      InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, color: const Color(0xE6FFFFFF), size: 20),
+              if (badge)
+                Positioned(
+                  right: -1,
+                  top: -1,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF5252),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF0B1206),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+
+  /// 지금 수령 가능한 일일보상/깜짝선물이 하나라도 있는지(편지 아이콘 알림 점).
+  bool _hasClaimableDaily(SaveGame save) {
+    final now = _clock.now();
+    // 만료 전 깜짝 선물이 있으면 알림.
+    final nowUtc = now.toUtc();
+    if (save.gifts.any((g) => !g.isExpired(nowUtc))) return true;
+    final daily = _data.dailyConfig;
+    if (daily == null) return false;
+    final today = dailyDateKey(now);
+    for (final rw in daily.rewards) {
+      if (now.hour >= rw.hour && save.dailyClaimedDate(rw.id) != today) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /// 버프 아이콘. 아트가 이미 원형 배지라 그대로 표시(추가 프레임 없음).
   /// 아트가 없을 때만 테마색 원형 + 이모지로 폴백.
@@ -1605,35 +1668,151 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
     final chapter = (_stage - 1) ~/ _config.stagesPerRegion + 1;
     final stageInRegion = (_stage - 1) % _config.stagesPerRegion + 1;
+    final rmChapter = _data.roadmapConfig?.chapterForStage(_stage);
+    final diff = rmChapter?.difficulty.resolve(
+      Localizations.localeOf(context).languageCode,
+    );
     return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xB3101A0A),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: const Color(0x66EBA52F)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '🌳 $name',
-              style: const TextStyle(
-                color: _onScene,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
+      child: GestureDetector(
+        onTap: _data.roadmapConfig == null ? null : _openRoadmap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xB3101A0A),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0x66EBA52F)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    diff == null ? '🌳 $name' : '🗺 $name · $diff',
+                    style: const TextStyle(
+                      color: _onScene,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (_data.roadmapConfig != null) ...[
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.expand_more_rounded,
+                      color: Color(0xAAEBA52F),
+                      size: 15,
+                    ),
+                  ],
+                ],
               ),
-            ),
-            Text(
-              _isBoss
-                  ? '$chapter-$stageInRegion · ${l.bossLabel}'
-                  : '$chapter-$stageInRegion · $_habitatIndex/${_config.habitatsPerStage}',
-              style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5),
-            ),
-          ],
+              Text(
+                _isBoss
+                    ? '$chapter-$stageInRegion · ${l.bossLabel}'
+                    : '$chapter-$stageInRegion · $_habitatIndex/${_config.habitatsPerStage}',
+                style: const TextStyle(
+                  color: Color(0xCCFFFFFF),
+                  fontSize: 10.5,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// 보스 격파로 스테이지 상승 시: 최고기록 반영 후 새로 클리어한 챕터 축하.
+  Future<void> _afterBossAdvance(int stage) async {
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    await ctrl.reachStage(stage);
+    final cleared = await ctrl.grantChapterClears();
+    if (!mounted) return;
+    for (final ch in cleared) {
+      await _showChapterClearDialog(ch);
+      if (!mounted) return;
+    }
+  }
+
+  Future<void> _showChapterClearDialog(RoadmapChapter ch) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final color = Color(ch.color);
+    return showGameDialog<void>(
+      context,
+      title: l.chapterClearTitle,
+      subtitle:
+          '${ch.difficulty.resolve(locale)} · 👑 ${ch.boss.resolve(locale)}',
+      icon: Icons.emoji_events_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.35),
+                  color.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color),
+            ),
+            child: Text(
+              l.chapterClearMsg(
+                ch.difficulty.resolve(locale),
+                ch.boss.resolve(locale),
+              ),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                height: 1.35,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l.chapterClearReward,
+            style: const TextStyle(
+              color: Color(0xFFEBA52F),
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          gameRewardList(
+            context,
+            gold: ch.rewardGold,
+            materials: ch.rewardMaterials,
+          ),
+        ],
+      ),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    );
+  }
+
+  /// 스테이지 배너 탭 → 로드맵. 챕터 선택 시 해당 스테이지로 이동.
+  Future<void> _openRoadmap() async {
+    final cfg = _data.roadmapConfig;
+    if (cfg == null) return;
+    final save = ref.read(saveControllerProvider).requireValue;
+    final target = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (_) => RoadmapScreen(
+          config: cfg,
+          highestStage: save.stageNumber,
+          liveStage: _stage,
+        ),
+      ),
+    );
+    if (target != null && mounted) {
+      _applyStageJump(target);
+      ref.read(saveControllerProvider.notifier).reachStage(target);
+    }
   }
 
   Widget _questAndResources(AppLocalizations l, SaveGame save) {
@@ -1960,43 +2139,415 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ..showSnackBar(SnackBar(content: Text('$title · ${l.comingSoon}')));
   }
 
+  /// 편지함 = 일일보상(점심/저녁). 현재 로컬 시각·수령 이력으로 상태 표시.
   void _showMail(AppLocalizations l) {
-    showDialog<void>(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.mailTitle),
-        content: Text(l.mailEmpty),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.actionClose),
+      backgroundColor: const Color(0xF2141F0E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Consumer(
+          builder: (ctx, r, _) {
+            final save = r.watch(saveControllerProvider).requireValue;
+            final daily = _data.dailyConfig;
+            final now = _clock.now();
+            final today = dailyDateKey(now);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.mail_rounded, color: _honey, size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        l.mailTitle,
+                        style: const TextStyle(
+                          color: _onScene,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l.mailDailyTitle,
+                    style: const TextStyle(
+                      color: Color(0xFFEBA52F),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (daily == null || daily.rewards.isEmpty)
+                    Text(
+                      l.mailEmpty,
+                      style: const TextStyle(color: Color(0xB3FFFFFF)),
+                    )
+                  else
+                    for (final rw in daily.rewards)
+                      _dailyMailRow(ctx, r, l, save, rw, now, today),
+                  const SizedBox(height: 6),
+                  Text(
+                    l.giftSectionTitle,
+                    style: const TextStyle(
+                      color: Color(0xFFEBA52F),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ..._giftSection(ctx, r, l, save),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _giftSection(
+    BuildContext ctx,
+    WidgetRef r,
+    AppLocalizations l,
+    SaveGame save,
+  ) {
+    final now = _clock.now().toUtc();
+    final gifts = save.gifts.where((g) => !g.isExpired(now)).toList()
+      ..sort((a, b) => a.expiry.compareTo(b.expiry));
+    if (gifts.isEmpty) {
+      return [
+        Text(
+          l.giftNone,
+          style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+        ),
+      ];
+    }
+    return [for (final g in gifts) _giftMailRow(ctx, r, l, g, now)];
+  }
+
+  Widget _giftMailRow(
+    BuildContext ctx,
+    WidgetRef r,
+    AppLocalizations l,
+    GiftMail g,
+    DateTime now,
+  ) {
+    final rem = g.expiry.difference(now);
+    final h = rem.inHours;
+    final m = rem.inMinutes % 60;
+    final timeStr = h > 0 ? l.durationHm(h, m) : l.durationM(m);
+    final parts = <String>[
+      if (g.gold > 0) '💰${formatCompact(g.gold)}',
+      if (g.jelly > 0) '💎${g.jelly}',
+      if (g.chitin + g.mineral + g.sap > 0)
+        '🧪${formatCompact(g.chitin + g.mineral + g.sap)}',
+    ];
+    Future<void> claim({required bool doubled}) async {
+      final mult = doubled ? (_data.giftConfig?.adMultiplier ?? 2) : 1;
+      final gold = g.gold * mult;
+      final materials = {
+        for (final e in g.materials.entries) e.key: e.value * mult,
+      };
+      final ok = await r
+          .read(saveControllerProvider.notifier)
+          .claimGift(g.id, doubled: doubled);
+      if (ok && ctx.mounted) {
+        await showRewardPopup(
+          ctx,
+          title: doubled ? l.giftDoubledSnack : l.giftClaimedSnack,
+          subtitle: l.rewardGained,
+          icon: Icons.card_giftcard_rounded,
+          gold: gold,
+          materials: materials,
+        );
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0x33EBA52F),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _honey),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.card_giftcard_rounded,
+              color: Color(0xFFFFD977),
+              size: 24,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    parts.join('  ·  '),
+                    style: const TextStyle(
+                      color: _onScene,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  Text(
+                    l.giftExpiresIn(timeStr),
+                    style: const TextStyle(
+                      color: Color(0xCCFFFFFF),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 104,
+                  height: 32,
+                  child: FilledButton(
+                    onPressed: () => claim(doubled: false),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF556070),
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 32),
+                    ),
+                    child: Text(
+                      l.giftClaim,
+                      style: const TextStyle(fontSize: 11.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                SizedBox(
+                  width: 104,
+                  height: 32,
+                  child: FilledButton.icon(
+                    onPressed: () => claim(doubled: true),
+                    icon: const Icon(Icons.play_circle_fill, size: 14),
+                    label: Text(
+                      l.giftClaimAd,
+                      style: const TextStyle(fontSize: 11.5),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFEBA52F),
+                      foregroundColor: const Color(0xFF3A2600),
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 32),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _dailySlotLabel(AppLocalizations l, String id) => switch (id) {
+    'lunch' => l.dailyLunch,
+    'dinner' => l.dailyDinner,
+    _ => id,
+  };
+
+  Widget _dailyMailRow(
+    BuildContext ctx,
+    WidgetRef r,
+    AppLocalizations l,
+    SaveGame save,
+    DailyReward rw,
+    DateTime now,
+    String today,
+  ) {
+    final claimedToday = save.dailyClaimedDate(rw.id) == today;
+    final unlocked = now.hour >= rw.hour;
+    final claimable = unlocked && !claimedToday;
+    // 보상 요약
+    final parts = <String>[
+      if (rw.gold > 0) '💰${formatCompact(rw.gold)}',
+      if (rw.jelly > 0) '💎${rw.jelly}',
+      if (rw.chitin + rw.mineral + rw.sap > 0)
+        '🧪${formatCompact(rw.chitin + rw.mineral + rw.sap)}',
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: claimable ? const Color(0x33EBA52F) : const Color(0x22000000),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: claimable ? _honey : const Color(0x22FFFFFF),
           ),
-        ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              rw.id == 'lunch'
+                  ? Icons.wb_sunny_rounded
+                  : Icons.nightlight_round,
+              color: const Color(0xFFFFD977),
+              size: 22,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _dailySlotLabel(l, rw.id),
+                    style: const TextStyle(
+                      color: _onScene,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  Text(
+                    parts.join('  ·  '),
+                    style: const TextStyle(
+                      color: Color(0xCCFFFFFF),
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (claimedToday)
+              Text(
+                l.dailyClaimedToday,
+                style: const TextStyle(
+                  color: Color(0x88FFFFFF),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              )
+            else if (!unlocked)
+              Text(
+                l.dailyLockedUntil(rw.hour),
+                style: const TextStyle(
+                  color: Color(0x99FFFFFF),
+                  fontSize: 11.5,
+                ),
+              )
+            else
+              FilledButton(
+                onPressed: () async {
+                  final ok = await r
+                      .read(saveControllerProvider.notifier)
+                      .claimDaily(rw);
+                  if (ok && ctx.mounted) {
+                    ScaffoldMessenger.of(ctx)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        SnackBar(content: Text(l.dailyRewardSnack)),
+                      );
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFEBA52F),
+                  foregroundColor: const Color(0xFF3A2600),
+                  minimumSize: const Size(0, 36),
+                ),
+                child: Text(l.dailyClaim),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   void _showSettings(AppLocalizations l) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.settingsTitle),
-        content: const Text('개발 빌드'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.actionClose),
+    showGameDialog<void>(
+      context,
+      title: l.settingsTitle,
+      icon: Icons.settings_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _showDevTools(l);
+              },
+              icon: const Icon(Icons.build, size: 18),
+              label: const Text('개발자 모드'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2E6DA4),
+              ),
+            ),
           ),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showDevTools(l);
-            },
-            icon: const Icon(Icons.build, size: 18),
-            label: const Text('개발자 모드'),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _confirmReset(l);
+              },
+              icon: const Icon(Icons.delete_forever, size: 18),
+              label: Text(l.settingsReset),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFEF9A9A),
+                side: const BorderSide(color: Color(0x55EF9A9A)),
+              ),
+            ),
           ),
         ],
       ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context),
+          primary: false,
+        ),
+      ],
+    );
+  }
+
+  void _confirmReset(AppLocalizations l) {
+    showGameDialog<void>(
+      context,
+      title: l.settingsReset,
+      icon: Icons.warning_amber_rounded,
+      content: Text(
+        l.settingsResetConfirm,
+        style: const TextStyle(
+          color: Color(0xD9FFFFFF),
+          fontSize: 13.5,
+          height: 1.4,
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(context),
+          primary: false,
+        ),
+        gameDialogButton(l.exitAction, () async {
+          Navigator.pop(context);
+          await ref.read(saveControllerProvider.notifier).resetGame();
+          if (!mounted) return;
+          _devJumpStage(1); // 라이브 화면도 처음으로 동기화
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(l.settingsResetDone)));
+        }, color: const Color(0xFFC85454)),
+      ],
     );
   }
 
@@ -2143,7 +2694,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       );
 
   /// (개발) 라이브 스테이지 즉시 이동 + 세이브 기록.
-  void _devJumpStage(int n) {
+  /// 라이브 화면을 스테이지 [n]으로 이동(세이브 기록 없음).
+  void _applyStageJump(int n) {
     setState(() {
       _stage = n;
       _habitatIndex = 0;
@@ -2154,6 +2706,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _spawn();
       _playerHp = _playerHpMax;
     });
+  }
+
+  void _devJumpStage(int n) {
+    _applyStageJump(n);
     ref.read(saveControllerProvider.notifier).devSetStage(n);
   }
 

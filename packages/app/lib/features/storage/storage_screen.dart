@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
+import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 
 const _honey = Color(0xFFEBA52F);
@@ -42,7 +43,493 @@ class StorageScreen extends ConsumerWidget {
           _materialsStrip(context, l, save),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
           Expanded(child: _grid(context, ref, data, l, save)),
+          _incubatorBar(context, ref, data, l, save),
         ],
+      ),
+    );
+  }
+
+  /// 채집함 하단(탭바 바로 위) 부화기 진입 버튼. 부화 완료 있으면 알림 점.
+  Widget _incubatorBar(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+    SaveGame save,
+  ) {
+    if (data.petConfig == null) return const SizedBox.shrink();
+    final now = ref.read(clockProvider).now().toUtc();
+    final used = save.incubating.length;
+    final cap = save.incubatorCapacity;
+    final ready = save.incubating.values.where((e) => !now.isBefore(e)).length;
+    return Material(
+      color: const Color(0xFF15200D),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+        child: SizedBox(
+          height: 46,
+          child: FilledButton(
+            onPressed: () => _showIncubator(context, ref, data),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2E6DA4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🥚', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Text(
+                  l.incubatorTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x33000000),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    l.incubatorSlots(used, cap),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (ready > 0) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 9,
+                    height: 9,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF5252),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 부화기 전용 시트: 슬롯(부화 중/빈) + 확장 + 대기 알 넣기.
+  void _showIncubator(BuildContext context, WidgetRef ref, GameData data) {
+    final cfg = data.petConfig;
+    if (cfg == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xF2141F0E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Consumer(
+          builder: (ctx, r, _) {
+            final l = AppLocalizations.of(ctx);
+            final save = r.watch(saveControllerProvider).requireValue;
+            final now = r.read(clockProvider).now().toUtc();
+            final locale = Localizations.localeOf(ctx).languageCode;
+            final used = save.incubating.length;
+            final cap = save.incubatorCapacity;
+            final incing = save.incubating.entries.toList()
+              ..sort((a, b) => a.value.compareTo(b.value));
+
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('🥚', style: TextStyle(fontSize: 20)),
+                      const SizedBox(width: 8),
+                      Text(
+                        l.incubatorTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        l.incubatorSlots(used, cap),
+                        style: const TextStyle(
+                          color: _honey,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  // 캡슐 슬롯(확장 전엔 1개만 열림).
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var i = 0; i < cfg.incubatorSlotsMax; i++)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: _capsule(
+                              ctx,
+                              r,
+                              data,
+                              cfg,
+                              save,
+                              l,
+                              locale,
+                              now,
+                              slotIndex: i,
+                              occupant: (i < cap && i < incing.length)
+                                  ? incing[i]
+                                  : null,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Center(
+                    child: Text(
+                      l.incubatorHint,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 11.5,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 캡슐 1개. 잠김(🔒·확장) / 빈(넣기) / 부화중(액체 차오름) / 완료(수령).
+  Widget _capsule(
+    BuildContext ctx,
+    WidgetRef r,
+    GameData data,
+    PetConfig cfg,
+    SaveGame save,
+    AppLocalizations l,
+    String locale,
+    DateTime now, {
+    required int slotIndex,
+    required MapEntry<String, DateTime>? occupant,
+  }) {
+    final ctrl = r.read(saveControllerProvider.notifier);
+    final unlocked = slotIndex < save.incubatorCapacity;
+    final isNextUnlock = slotIndex == save.incubatorCapacity;
+
+    late final Widget center; // 캡슐 안 콘텐츠(그림 뒤 → 유리로 은은히 비침)
+    Widget? bottomTag; // 하단 라벨(💎 확장 비용)
+    VoidCallback? onTap;
+    double fill = 0;
+    Color fillColor = const Color(0x556FC96F);
+    var done = false;
+
+    if (!unlocked) {
+      // 잠긴 캡슐: 자물쇠 아이콘(코드) + 회색 처리(그림). 다음 슬롯이면 💎 확장.
+      center = const Icon(
+        Icons.lock_rounded,
+        color: Color(0xCCFFFFFF),
+        size: 26,
+      );
+      if (isNextUnlock) {
+        final canExp =
+            save.materialCount(MaterialKind.jelly) >= cfg.incubatorExpandJelly;
+        bottomTag = Text(
+          '💎${cfg.incubatorExpandJelly}',
+          style: TextStyle(
+            color: canExp ? _honey : const Color(0x99FFFFFF),
+            fontWeight: FontWeight.w900,
+            fontSize: 12.5,
+          ),
+        );
+        onTap = canExp
+            ? () async {
+                final ok = await ctrl.expandIncubator();
+                if (ok && ctx.mounted) _snack(ctx, l.incubatorExpandedSnack);
+              }
+            : null;
+      }
+    } else if (occupant == null) {
+      center = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.add_circle_outline,
+            color: Color(0xCCEBA52F),
+            size: 26,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.incubatorPlace,
+            style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 11),
+          ),
+        ],
+      );
+      onTap = () => _showEggPicker(ctx, r, data);
+    } else {
+      final bug = _findBug(save, occupant.key);
+      final sp = bug == null ? null : data.species(bug.speciesId);
+      final total = sp == null ? 1 : cfg.incubateDuration(sp.grade);
+      final rem = occupant.value.difference(now);
+      done = rem <= Duration.zero;
+      fill = total > 0 ? (1 - rem.inSeconds / total).clamp(0.0, 1.0) : 1.0;
+      fillColor = done ? const Color(0x66EBA52F) : const Color(0x556FC96F);
+      center = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (bug != null)
+            bugStageImage(
+              bug.speciesId,
+              LifeStage.egg,
+              size: 46,
+              fallback: bugAvatar(sp!, size: 40),
+            ),
+          const SizedBox(height: 4),
+          Text(
+            done ? l.incubatorReady : _remainLabel(l, rem),
+            style: TextStyle(
+              color: done ? _honey : Colors.white,
+              fontWeight: done ? FontWeight.w900 : FontWeight.w700,
+              fontSize: 10.5,
+              shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
+            ),
+          ),
+        ],
+      );
+      onTap = done
+          ? () async {
+              final ok = await ctrl.collectIncubated(occupant.key);
+              if (ok && ctx.mounted) _snack(ctx, l.incubatorCollectedSnack);
+            }
+          : null;
+    }
+
+    const radius = BorderRadius.vertical(
+      top: Radius.circular(42),
+      bottom: Radius.circular(16),
+    );
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        height: 176,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (done)
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _honey.withValues(alpha: 0.5),
+                      blurRadius: 18,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+            // 유리 안쪽 액체(진행도) — 관 내부 근사.
+            if (fill > 0)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.bottomCenter,
+                    widthFactor: 0.42,
+                    heightFactor: fill * 0.58,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: fillColor,
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(28),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            // 콘텐츠(알/넣기/자물쇠) — 캡슐 그림 뒤.
+            Padding(padding: const EdgeInsets.all(10), child: center),
+            // 캡슐 프레임 그림(하나). 잠김이면 회색 처리. 없으면 유리 그라데이션 폴백.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ColorFiltered(
+                  colorFilter: unlocked
+                      ? const ColorFilter.mode(Color(0x00000000), BlendMode.dst)
+                      : const ColorFilter.matrix(<double>[
+                          0.30,
+                          0.40,
+                          0.11,
+                          0,
+                          -18,
+                          0.30,
+                          0.40,
+                          0.11,
+                          0,
+                          -18,
+                          0.30,
+                          0.40,
+                          0.11,
+                          0,
+                          -12,
+                          0,
+                          0,
+                          0,
+                          1,
+                          0,
+                        ]),
+                  child: Image.asset(
+                    'assets/images/ui/incubator_capsule.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0x3AA9D8FF), Color(0x14203040)],
+                        ),
+                        borderRadius: radius,
+                        border: Border.all(
+                          color: const Color(0x88A9D8FF),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // 하단 태그(💎 확장) — 그림 위.
+            if (bottomTag != null)
+              Align(alignment: const Alignment(0, 0.68), child: bottomTag),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 부화할 알 선택 다이얼로그(빈 캡슐 탭 시).
+  void _showEggPicker(BuildContext ctx, WidgetRef r, GameData data) {
+    final cfg = data.petConfig;
+    if (cfg == null) return;
+    final l = AppLocalizations.of(ctx);
+    final save = r.read(saveControllerProvider).requireValue;
+    final now = r.read(clockProvider).now().toUtc();
+    final locale = Localizations.localeOf(ctx).languageCode;
+    final eggs = save.bugs
+        .where(
+          (b) =>
+              effectiveStage(b.stage, b.stageSince, now, cfg) ==
+                  LifeStage.egg &&
+              !save.incubating.containsKey(b.id),
+        )
+        .toList();
+    showGameDialog<void>(
+      ctx,
+      title: l.incubatorPick,
+      icon: Icons.egg_alt,
+      content: eggs.isEmpty
+          ? Text(
+              l.incubatorNoEggs,
+              style: const TextStyle(color: Color(0x99FFFFFF)),
+            )
+          : ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final b in eggs)
+                        _eggPickTile(ctx, r, data, l, locale, b),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(ctx))],
+    );
+  }
+
+  Widget _eggPickTile(
+    BuildContext ctx,
+    WidgetRef r,
+    GameData data,
+    AppLocalizations l,
+    String locale,
+    IndividualBug bug,
+  ) {
+    final sp = data.species(bug.speciesId);
+    return GestureDetector(
+      onTap: () async {
+        final ok = await r
+            .read(saveControllerProvider.notifier)
+            .placeInIncubator(bug.id);
+        if (ok && ctx.mounted) {
+          Navigator.pop(ctx);
+          _snack(ctx, l.incubatorPlacedSnack);
+        }
+      },
+      child: SizedBox(
+        width: 84,
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: const Color(0x22000000),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: gradeColor(sp.grade).withValues(alpha: 0.7),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              bugStageImage(
+                bug.speciesId,
+                LifeStage.egg,
+                size: 42,
+                fallback: bugAvatar(sp, size: 36),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                sp.name.resolve(locale),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 10),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -598,11 +1085,15 @@ class StorageScreen extends ConsumerWidget {
                     _petEffectCard(l, species, bug, effStage, petCfg),
                   if (petCfg != null && effStage == LifeStage.adult) ...[
                     const SizedBox(height: 6),
-                    _trainRow(ctx, r, petCfg, save, bug),
+                    _trainRow(ctx, r, petCfg, save, bug, now),
                   ],
-                  if (petCfg != null) ...[
+                  if (petCfg != null &&
+                      (effStage == LifeStage.larva ||
+                          effStage == LifeStage.pupa)) ...[
                     const SizedBox(height: 6),
                     _evolveRow(ctx, r, petCfg, save, bug, effStage, now),
+                  ],
+                  if (petCfg != null) ...[
                     const SizedBox(height: 6),
                     _synthRow(ctx, r, petCfg, save, bug),
                   ],
@@ -724,63 +1215,208 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 
+  static const _rowTitle = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w800,
+    fontSize: 13.5,
+  );
+  static const _rowSub = TextStyle(color: Color(0xB3FFFFFF), fontSize: 11.5);
+
+  ButtonStyle _pillStyle(Color bg, {Color fg = Colors.white}) =>
+      FilledButton.styleFrom(
+        backgroundColor: bg,
+        foregroundColor: fg,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        minimumSize: const Size(0, 36),
+        textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+      );
+
+  String _remainLabel(AppLocalizations l, Duration d) {
+    final s = d.inSeconds <= 0 ? 0 : d.inSeconds;
+    if (s >= 3600) return l.durationHm(s ~/ 3600, (s % 3600) ~/ 60);
+    if (s >= 60) return l.durationM(s ~/ 60); // 1분 이상 → 분
+    return l.durationS(s); // 1분 미만 → 초
+  }
+
+  void _snack(BuildContext ctx, String text) => ScaffoldMessenger.of(ctx)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(text)));
+
+  /// 수련/돌파 행: 상한 미만이면 골드 수련, 상한 도달이면 돌파(타이머), 진행중이면 즉시완료/수령.
   Widget _trainRow(
     BuildContext ctx,
     WidgetRef r,
     PetConfig cfg,
     SaveGame save,
     IndividualBug bug,
+    DateTime now,
   ) {
     final l = AppLocalizations.of(ctx);
-    final maxed = bug.level >= cfg.maxLevel;
-    final cost = cfg.trainCost(bug.level);
-    final can = !maxed && save.gold >= cost;
+    final ctrl = r.read(saveControllerProvider.notifier);
+    final ends = bug.breakthroughEndsAt;
+
+    // 돌파 진행 중.
+    if (ends != null) {
+      final rem = ends.difference(now);
+      final done = rem <= Duration.zero;
+      final jellyCost = cfg.breakthroughJelly(rem);
+      final canInstant = save.materialCount(MaterialKind.jelly) >= jellyCost;
+      return _sectionBox(
+        child: Row(
+          children: [
+            const Icon(Icons.auto_graph, color: _honey, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${l.breakthroughTitle} · ${l.breakthroughTier(bug.breakthroughTier + 1)}',
+                    style: _rowTitle,
+                  ),
+                  Text(
+                    done
+                        ? l.breakthroughDone
+                        : l.breakthroughProgress(_remainLabel(l, rem)),
+                    style: _rowSub,
+                  ),
+                ],
+              ),
+            ),
+            done
+                ? FilledButton(
+                    onPressed: () async {
+                      final ok = await ctrl.completeBreakthrough(bug.id);
+                      if (ok && ctx.mounted) {
+                        _snack(ctx, l.breakthroughDoneSnack);
+                      }
+                    },
+                    style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
+                    child: Text(l.breakthroughCollect),
+                  )
+                : FilledButton.icon(
+                    onPressed: canInstant
+                        ? () async {
+                            final ok = await ctrl.completeBreakthrough(
+                              bug.id,
+                              viaJelly: true,
+                            );
+                            if (ok && ctx.mounted) {
+                              _snack(ctx, l.breakthroughDoneSnack);
+                            }
+                          }
+                        : null,
+                    icon: const Icon(Icons.bolt, size: 15),
+                    label: Text(l.breakthroughInstant(jellyCost)),
+                    style: _pillStyle(const Color(0xFF2E6DA4)),
+                  ),
+          ],
+        ),
+      );
+    }
+
+    final tier = bug.breakthroughTier;
+    final cap = cfg.levelCap(tier);
+
+    // 일반 수련(상한 미만).
+    if (bug.level < cap) {
+      final cost = cfg.trainCost(bug.level);
+      final can = save.gold >= cost;
+      return _sectionBox(
+        child: Row(
+          children: [
+            const Icon(
+              Icons.fitness_center,
+              color: Color(0xFF9CCC65),
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${l.trainLevel}  Lv.${bug.level}/$cap · ${l.breakthroughTier(tier + 1)}',
+                    style: _rowTitle,
+                  ),
+                  Text('💰 ${formatCompact(cost)}', style: _rowSub),
+                ],
+              ),
+            ),
+            FilledButton(
+              onPressed: can
+                  ? () async {
+                      final ok = await ctrl.trainBug(bug.id);
+                      if (ok && ctx.mounted) _snack(ctx, l.trainSnack);
+                    }
+                  : null,
+              style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
+              child: Text(l.trainAction),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 최고 티어 달성.
+    if (tier >= cfg.maxTier) {
+      return _sectionBox(
+        child: Row(
+          children: [
+            const Icon(Icons.workspace_premium, color: _honey, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '${l.trainLevel} Lv.$cap · ${l.breakthroughMaxed}',
+                style: _rowTitle,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 돌파 가능.
+    final gold = cfg.breakthroughGoldCost(tier);
+    final mat = cfg.breakthroughMatCost(tier);
+    final canBreak =
+        save.gold >= gold &&
+        const [
+          MaterialKind.chitin,
+          MaterialKind.mineral,
+          MaterialKind.sap,
+        ].every((k) => save.materialCount(k) >= mat);
     return _sectionBox(
       child: Row(
         children: [
-          const Icon(Icons.fitness_center, color: Color(0xFF9CCC65), size: 20),
+          const Icon(Icons.auto_graph, color: _honey, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${l.trainLevel}  Lv.${bug.level}/${cfg.maxLevel}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13.5,
-                  ),
+                  '${l.breakthroughTitle} → ${l.breakthroughTier(tier + 2)}',
+                  style: _rowTitle,
                 ),
                 Text(
-                  maxed ? l.trainMaxed : '💰 ${formatCompact(cost)}',
-                  style: const TextStyle(
-                    color: Color(0xB3FFFFFF),
-                    fontSize: 11.5,
-                  ),
+                  '💰${formatCompact(gold)} · 🧪${formatCompact(mat)}×3 · ⏱${_remainLabel(l, Duration(seconds: cfg.breakthroughDuration(tier)))}',
+                  style: _rowSub,
                 ),
               ],
             ),
           ),
           FilledButton(
-            onPressed: can
+            onPressed: canBreak
                 ? () async {
-                    final ok = await r
-                        .read(saveControllerProvider.notifier)
-                        .trainBug(bug.id);
+                    final ok = await ctrl.breakthrough(bug.id);
                     if (ok && ctx.mounted) {
-                      ScaffoldMessenger.of(ctx)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(SnackBar(content: Text(l.trainSnack)));
+                      _snack(ctx, l.breakthroughStartedSnack);
                     }
                   }
                 : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEBA52F),
-              foregroundColor: const Color(0xFF3A2600),
-              minimumSize: const Size(0, 36),
-            ),
-            child: Text(l.trainAction),
+            style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
+            child: Text(l.breakthroughDo),
           ),
         ],
       ),

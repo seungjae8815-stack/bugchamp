@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "rewards": [
+    { "id": "lunch", "hour": 12, "gold": 5000, "jelly": 3, "chitin": 30, "mineral": 30, "sap": 30 },
+    { "id": "dinner", "hour": 18, "gold": 8000, "jelly": 5, "chitin": 50, "mineral": 50, "sap": 50 }
+  ]
+}

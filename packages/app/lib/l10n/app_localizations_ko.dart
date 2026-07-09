@@ -21,6 +21,88 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navStorage => '채집함';
 
   @override
+  String get navBattle => '전투';
+
+  @override
+  String get battleTitle => '곤충 결투';
+
+  @override
+  String battleTrophies(int n) {
+    return '트로피 $n';
+  }
+
+  @override
+  String get battleMyTeam => '내 팀 (3)';
+
+  @override
+  String get battleStart => '전투 시작';
+
+  @override
+  String get battleNeedBugs => '성충 곤충이 있어야 결투할 수 있어요';
+
+  @override
+  String get battlePickTitle => '곤충 선택 (성충)';
+
+  @override
+  String get battleEmptySlot => '빈 슬롯';
+
+  @override
+  String get battleWin => '승리!';
+
+  @override
+  String get battleLose => '패배…';
+
+  @override
+  String get battleDraw => '무승부';
+
+  @override
+  String get battleReward => '보상';
+
+  @override
+  String get battleVs => 'VS';
+
+  @override
+  String get battleFoe => '상대';
+
+  @override
+  String get battleLog => '전투 로그';
+
+  @override
+  String get battleAgain => '다시 도전';
+
+  @override
+  String get battleTeamEmpty => '팀에 곤충을 넣어주세요';
+
+  @override
+  String battleHpPct(String v) {
+    return '체력 $v%';
+  }
+
+  @override
+  String get stanceAttack => '공격';
+
+  @override
+  String get stanceDefend => '방어';
+
+  @override
+  String get stanceHeal => '회복';
+
+  @override
+  String get elementFire => '화';
+
+  @override
+  String get elementWater => '수';
+
+  @override
+  String get elementWood => '목';
+
+  @override
+  String get elementMetal => '금';
+
+  @override
+  String get elementEarth => '토';
+
+  @override
   String get homeTitle => '트랩 현황';
 
   @override
@@ -107,6 +189,35 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get offlineTitle => '돌아왔어요!';
+
+  @override
+  String offlineElapsed(String time) {
+    return '$time 동안 모은 방치 보상이에요';
+  }
+
+  @override
+  String get offlineGoldLabel => '골드';
+
+  @override
+  String get offlineXpLabel => '경험치';
+
+  @override
+  String durationHm(int h, int m) {
+    return '$h시간 $m분';
+  }
+
+  @override
+  String durationM(int m) {
+    return '$m분';
+  }
+
+  @override
+  String durationS(int s) {
+    return '$s초';
+  }
+
+  @override
   String get upAttack => '채집력';
 
   @override
@@ -162,6 +273,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get notEnoughGold => '골드가 부족해요';
+
+  @override
+  String get curGold => '골드';
+
+  @override
+  String get rewardGained => '획득 보상';
 
   @override
   String get bossLabel => '보스';
@@ -300,10 +417,98 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rankingTitle => '랭킹';
 
   @override
+  String get roadmapTitle => '로드맵';
+
+  @override
+  String roadmapStageRange(int start, int end) {
+    return 'STAGE $start–$end';
+  }
+
+  @override
+  String roadmapProgress(int cur, int total) {
+    return '$cur / $total';
+  }
+
+  @override
+  String get roadmapCleared => '클리어';
+
+  @override
+  String get roadmapCurrent => '진행 중';
+
+  @override
+  String get roadmapLocked => '잠김';
+
+  @override
+  String get roadmapFinalBoss => '최종 보스';
+
+  @override
+  String get roadmapEnter => '이어하기';
+
+  @override
+  String get roadmapReplay => '재도전';
+
+  @override
+  String get chapterClearTitle => '챕터 클리어! 🎉';
+
+  @override
+  String chapterClearMsg(String difficulty, String boss) {
+    return '$difficulty 정복! 최종보스 $boss 격파!';
+  }
+
+  @override
+  String get chapterClearReward => '클리어 보상';
+
+  @override
   String get mailTitle => '편지함';
 
   @override
   String get mailEmpty => '새 편지가 없어요';
+
+  @override
+  String get mailDailyTitle => '일일 보상 (하루 2회)';
+
+  @override
+  String get dailyLunch => '점심 보상';
+
+  @override
+  String get dailyDinner => '저녁 보상';
+
+  @override
+  String get dailyClaim => '받기';
+
+  @override
+  String get dailyClaimedToday => '오늘 받음';
+
+  @override
+  String dailyLockedUntil(int hour) {
+    return '$hour시부터';
+  }
+
+  @override
+  String get dailyRewardSnack => '일일보상을 받았어요!';
+
+  @override
+  String get giftSectionTitle => '깜짝 선물 (3시간 내 수령)';
+
+  @override
+  String get giftClaim => '받기';
+
+  @override
+  String get giftClaimAd => '광고 2배';
+
+  @override
+  String giftExpiresIn(String time) {
+    return '$time 후 만료';
+  }
+
+  @override
+  String get giftClaimedSnack => '선물을 받았어요!';
+
+  @override
+  String get giftDoubledSnack => '광고 보상 2배 획득!';
+
+  @override
+  String get giftNone => '아직 도착한 선물이 없어요. 플레이하다 보면 도착해요!';
 
   @override
   String get settingsTitle => '설정';
@@ -331,6 +536,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get exitAction => '종료';
+
+  @override
+  String get settingsReset => '게임 데이터 초기화';
+
+  @override
+  String get settingsResetConfirm => '모든 진행(곤충·재화·강화·스테이지)이 삭제됩니다. 정말 초기화할까요?';
+
+  @override
+  String get settingsResetDone => '초기화되었어요';
 
   @override
   String get questHunt => '몬스터 사냥';
@@ -511,6 +725,111 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trainSnack => '수련 완료! 레벨 +1';
+
+  @override
+  String trainJelly(int n) {
+    return '💎$n';
+  }
+
+  @override
+  String trainJellySnack(int lv) {
+    return '💎 즉시 수련! 레벨 +$lv';
+  }
+
+  @override
+  String get breakthroughTitle => '돌파';
+
+  @override
+  String breakthroughTier(int n) {
+    return '티어 $n';
+  }
+
+  @override
+  String get breakthroughReady => '돌파 가능 · 레벨 상한 ↑';
+
+  @override
+  String breakthroughProgress(String time) {
+    return '돌파 중 · $time';
+  }
+
+  @override
+  String get breakthroughDone => '돌파 완료! 수령하세요';
+
+  @override
+  String get breakthroughMaxed => '최고 티어 달성';
+
+  @override
+  String get breakthroughDo => '돌파';
+
+  @override
+  String get breakthroughCollect => '수령';
+
+  @override
+  String breakthroughInstant(int n) {
+    return '즉시 💎$n';
+  }
+
+  @override
+  String get breakthroughStartedSnack => '돌파를 시작했어요!';
+
+  @override
+  String get breakthroughDoneSnack => '돌파 완료! 레벨 상한이 올랐어요';
+
+  @override
+  String get incubatorTitle => '부화기';
+
+  @override
+  String incubatorSlots(int cur, int max) {
+    return '슬롯 $cur/$max';
+  }
+
+  @override
+  String get incubatorPlace => '넣기';
+
+  @override
+  String incubatorHatching(String time) {
+    return '부화 중 · $time';
+  }
+
+  @override
+  String get incubatorReady => '부화 완료!';
+
+  @override
+  String get incubatorCollect => '수령';
+
+  @override
+  String get incubatorFull => '부화기 가득 참';
+
+  @override
+  String incubatorExpand(int n) {
+    return '슬롯 확장 💎$n';
+  }
+
+  @override
+  String get incubatorPlacedSnack => '부화를 시작했어요!';
+
+  @override
+  String get incubatorCollectedSnack => '유충으로 부화했어요!';
+
+  @override
+  String get incubatorExpandedSnack => '부화기 슬롯이 늘었어요!';
+
+  @override
+  String get incubatorEmptySlot => '빈 슬롯';
+
+  @override
+  String incubatorWaitingEggs(int n) {
+    return '대기 중인 알 $n';
+  }
+
+  @override
+  String get incubatorNoEggs => '부화할 알이 없어요';
+
+  @override
+  String get incubatorHint => '빈 캡슐을 눌러 알을 넣고, 완료되면 눌러 수령하세요';
+
+  @override
+  String get incubatorPick => '부화할 알 선택';
 
   @override
   String get disassembleTitle => '분해';

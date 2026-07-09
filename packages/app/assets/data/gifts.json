@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "firstDelaySec": 90,
+  "intervalMinSec": 600,
+  "intervalMaxSec": 1500,
+  "expiryHours": 3,
+  "maxActive": 5,
+  "adMultiplier": 2,
+  "tiers": [
+    { "weight": 50, "gold": 3000, "chitin": 20, "mineral": 20, "sap": 20 },
+    { "weight": 35, "gold": 6000, "jelly": 2, "chitin": 40, "mineral": 40, "sap": 40 },
+    { "weight": 15, "gold": 12000, "jelly": 5, "chitin": 80, "mineral": 80, "sap": 80 }
+  ]
+}
