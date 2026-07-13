@@ -21,6 +21,7 @@
   "battleLog": "전투 로그",
   "battleAgain": "다시 도전",
   "battleTeamEmpty": "팀에 곤충을 넣어주세요",
+  "battleSkip": "건너뛰기",
   "battleHpPct": "체력 {v}%",
   "stanceAttack": "공격",
   "stanceDefend": "방어",

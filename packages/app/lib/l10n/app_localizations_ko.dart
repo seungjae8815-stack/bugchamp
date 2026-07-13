@@ -74,6 +74,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get battleTeamEmpty => '팀에 곤충을 넣어주세요';
 
   @override
+  String get battleSkip => '건너뛰기';
+
+  @override
   String battleHpPct(String v) {
     return '체력 $v%';
   }

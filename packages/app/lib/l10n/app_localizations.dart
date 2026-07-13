@@ -226,6 +226,12 @@ abstract class AppLocalizations {
   /// **'Add bugs to your team'**
   String get battleTeamEmpty;
 
+  /// No description provided for @battleSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get battleSkip;
+
   /// No description provided for @battleHpPct.
   ///
   /// In en, this message translates to:

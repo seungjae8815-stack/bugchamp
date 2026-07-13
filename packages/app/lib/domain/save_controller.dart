@@ -61,6 +61,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
 
+    // 자가치유: 존재하지 않는 곤충을 가리키는 부화 항목 제거(슬롯 누수 방지).
+    if (save.incubating.isNotEmpty) {
+      final ids = {for (final b in save.bugs) b.id};
+      final pruned = {
+        for (final e in save.incubating.entries)
+          if (ids.contains(e.key)) e.key: e.value,
+      };
+      if (pruned.length != save.incubating.length) {
+        save = save.copyWith(incubating: pruned);
+      }
+    }
+
     save = save.copyWith(lastSeen: now);
     await repo.save(save);
     return save;
@@ -721,6 +733,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<bool> disassembleBug(String bugId) async {
     final s = state.requireValue;
     if (s.isEquipped(bugId)) return false;
+    if (s.incubating.containsKey(bugId)) return false; // 부화 중 보호
     final idx = s.bugs.indexWhere((b) => b.id == bugId);
     if (idx < 0) return false;
     final bug = s.bugs[idx];
@@ -775,7 +788,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
           (b) =>
               b.id != targetId &&
               b.speciesId == targetSpeciesId &&
-              !s.isEquipped(b.id),
+              !s.isEquipped(b.id) &&
+              !s.incubating.containsKey(b.id), // 부화 중 보호
         )
         .take(cfg.synthFodder)
         .toList();

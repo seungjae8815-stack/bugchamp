@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -2477,21 +2478,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _showDevTools(l);
-              },
-              icon: const Icon(Icons.build, size: 18),
-              label: const Text('개발자 모드'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2E6DA4),
+          // 개발자 모드는 디버그 빌드 전용(릴리즈 노출 방지).
+          if (kDebugMode) ...[
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showDevTools(l);
+                },
+                icon: const Icon(Icons.build, size: 18),
+                label: const Text('개발자 모드'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E6DA4),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
+          ],
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

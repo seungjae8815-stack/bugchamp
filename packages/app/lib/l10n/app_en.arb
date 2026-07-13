@@ -23,6 +23,7 @@
   "battleLog": "Battle log",
   "battleAgain": "Duel again",
   "battleTeamEmpty": "Add bugs to your team",
+  "battleSkip": "Skip",
   "battleHpPct": "HP {v}%",
   "@battleHpPct": { "placeholders": { "v": { "type": "String" } } },
   "stanceAttack": "Attack",

@@ -74,6 +74,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get battleTeamEmpty => 'Add bugs to your team';
 
   @override
+  String get battleSkip => 'Skip';
+
+  @override
   String battleHpPct(String v) {
     return 'HP $v%';
   }

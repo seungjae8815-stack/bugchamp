@@ -12,9 +12,8 @@ import '../../domain/save_controller.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
-import '../../ui/format.dart';
-import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import 'battle_arena.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -82,8 +81,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
-  /// 내 팀 파워에 맞춘 로컬 상대 3마리 생성.
-  List<BattleBug> _genOpponent(
+  /// 내 팀 파워에 맞춘 로컬 상대 3마리 생성(전투용 + 표시용 종 id).
+  List<({BattleBug bug, String speciesId})> _genOpponent(
     List<BattleBug> mine,
     GameData data,
     String locale,
@@ -97,17 +96,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     return List.generate(3, (i) {
       final sp = species[_rng.nextInt(species.length)];
       final f = 0.85 + _rng.nextDouble() * 0.32; // 0.85~1.17
-      return BattleBug(
-        id: 'opp$i',
-        name: sp.name.resolve(locale),
-        element: Element.values[_rng.nextInt(Element.values.length)],
-        temperament:
-            Temperament.values[_rng.nextInt(Temperament.values.length)],
-        preferredStance: _prefStance(sp.specialty),
-        maxHp: avgHp * f,
-        atk: avgAtk * f,
-        def: avgDef * f,
-        spd: avgSpd * f,
+      return (
+        speciesId: sp.id,
+        bug: BattleBug(
+          id: 'opp$i',
+          name: sp.name.resolve(locale),
+          element: Element.values[_rng.nextInt(Element.values.length)],
+          temperament:
+              Temperament.values[_rng.nextInt(Temperament.values.length)],
+          preferredStance: _prefStance(sp.specialty),
+          maxHp: avgHp * f,
+          atk: avgAtk * f,
+          def: avgDef * f,
+          spd: avgSpd * f,
+        ),
       );
     });
   }
@@ -425,12 +427,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   Future<void> _battle(GameData data, SaveGame save, String locale) async {
-    final mine = <BattleBug>[
-      for (final id in _team.whereType<String>())
-        _toBattleBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
-    ];
+    final speciesOf = <String, String>{};
+    final mine = <BattleBug>[];
+    for (final id in _team.whereType<String>()) {
+      final bug = save.bugs.firstWhere((b) => b.id == id);
+      speciesOf[bug.id] = bug.speciesId;
+      mine.add(_toBattleBug(bug, data, locale));
+    }
     if (mine.isEmpty) return;
-    final foe = _genOpponent(mine, data, locale);
+    final foeGen = _genOpponent(mine, data, locale);
+    final foe = <BattleBug>[];
+    for (final e in foeGen) {
+      speciesOf[e.bug.id] = e.speciesId;
+      foe.add(e.bug);
+    }
     final seed = _rng.nextInt(1 << 31);
     final result = simulate(seed, mine, foe);
 
@@ -442,157 +452,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         .read(saveControllerProvider.notifier)
         .applyBattleResult(gold: gold, trophyDelta: trophy);
     if (!mounted) return;
-    _showResult(result, gold: gold, trophy: trophy);
-  }
-
-  void _showResult(BattleResult r, {required int gold, required int trophy}) {
-    final l = AppLocalizations.of(context);
-    final win = r.outcome == BattleOutcome.teamA;
-    final draw = r.outcome == BattleOutcome.draw;
-    final title = win ? l.battleWin : (draw ? l.battleDraw : l.battleLose);
-    final color = win
-        ? const Color(0xFF6FCF6F)
-        : (draw ? const Color(0xFFBFC4CC) : const Color(0xFFEF9A9A));
-    showGameDialog<void>(
-      context,
-      title: title,
-      icon: win ? Icons.emoji_events_rounded : Icons.sports_mma_rounded,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _hpBar(l.battleMyTeam, r.teamAHpPct, const Color(0xFF6FC96F)),
-          const SizedBox(height: 6),
-          _hpBar(l.battleFoe, r.teamBHpPct, const Color(0xFFC85454)),
-          const SizedBox(height: 12),
-          Text(
-            l.battleReward,
-            style: const TextStyle(
-              color: _honey,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '💰 ${formatCompact(gold)}    🏆 ${trophy >= 0 ? '+' : ''}$trophy',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              childrenPadding: EdgeInsets.zero,
-              title: Text(
-                l.battleLog,
-                style: const TextStyle(
-                  color: Color(0xCCFFFFFF),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-              ),
-              iconColor: _honey,
-              collapsedIconColor: const Color(0x99FFFFFF),
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 220),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [for (final e in r.events) _logRow(l, e)],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      actions: [gameDialogButton(l.battleAgain, () => Navigator.pop(context))],
-    );
-  }
-
-  Widget _hpBar(String label, double pct, Color color) => Row(
-    children: [
-      SizedBox(
-        width: 64,
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 11.5),
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BattleArenaScreen(
+          data: data,
+          myTeam: mine,
+          foeTeam: foe,
+          speciesOf: speciesOf,
+          result: result,
+          gold: gold,
+          trophyDelta: trophy,
         ),
-      ),
-      Expanded(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(5),
-          child: LinearProgressIndicator(
-            value: pct.clamp(0.0, 1.0),
-            minHeight: 10,
-            backgroundColor: const Color(0x33000000),
-            valueColor: AlwaysStoppedAnimation(color),
-          ),
-        ),
-      ),
-      const SizedBox(width: 6),
-      SizedBox(
-        width: 38,
-        child: Text(
-          '${(pct * 100).round()}%',
-          textAlign: TextAlign.right,
-          style: const TextStyle(
-            color: Color(0xCCFFFFFF),
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    ],
-  );
-
-  String _stanceLabel(AppLocalizations l, Stance s) => switch (s) {
-    Stance.attack => l.stanceAttack,
-    Stance.defend => l.stanceDefend,
-    Stance.heal => l.stanceHeal,
-  };
-
-  Widget _logRow(AppLocalizations l, BattleEvent e) {
-    final net = (e.dmgToB + e.healToA) - (e.dmgToA + e.healToB);
-    final tag = e.rps == -1 ? '=' : (e.rps == 0 ? '▶' : '◀');
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 22,
-            child: Text(
-              '${e.round}',
-              style: const TextStyle(color: Color(0x88FFFFFF), fontSize: 10),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              '${e.aName}·${_stanceLabel(l, e.aStance)} $tag '
-              '${e.bName}·${_stanceLabel(l, e.bStance)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5),
-            ),
-          ),
-          if (net.abs() >= 1)
-            Text(
-              net >= 0 ? '+${net.round()}' : '${net.round()}',
-              style: TextStyle(
-                color: net >= 0
-                    ? const Color(0xFF9CCC65)
-                    : const Color(0xFFEF9A9A),
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-        ],
       ),
     );
   }
