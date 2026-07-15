@@ -212,6 +212,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get breedingGotEgg => '알을 얻었어요! 부화기에 넣어 키우세요';
 
   @override
+  String get leaderboardLocalNote => '로컬 랭킹 · 온라인 연동 준비 중';
+
+  @override
+  String leaderboardMyRank(int n) {
+    return '내 순위 #$n';
+  }
+
+  @override
   String get stanceAttack => '공격';
 
   @override

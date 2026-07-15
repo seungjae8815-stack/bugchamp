@@ -213,6 +213,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get breedingGotEgg => 'Got an egg! Raise it in the incubator';
 
   @override
+  String get leaderboardLocalNote => 'Local ranking · online sync coming';
+
+  @override
+  String leaderboardMyRank(int n) {
+    return 'My rank #$n';
+  }
+
+  @override
   String get stanceAttack => 'Attack';
 
   @override

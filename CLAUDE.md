@@ -87,7 +87,7 @@
 | 프레임워크 | Flutter + Dart |
 | 상태관리 | Riverpod |
 | 로컬 저장 | Hive (`schemaVersion` 마이그레이션 포함) |
-| 백엔드 | Supabase (비동기 PvP·리더보드 — **Phase 4**에서 연동, 지금은 로컬 상대·인터페이스만) |
+| 백엔드 | Supabase (비동기 PvP·리더보드 — **Phase 4**). `PvpBackend` 인터페이스 + `LocalPvpBackend`(자리표시) 완료, Supabase 구현만 남음(키 필요). 가이드: `docs/backend_supabase.md` |
 | 전투 로직 | `core_battle` 순수 Dart 패키지 (오행·기력·스탠스. Flutter 의존 금지) |
 | 방치 수학·설정 | `core_run` 순수 Dart (오프라인 보상·펫·부화기·돌파·버프·전투보상 등 config) |
 | 다국어 | ARB (ko/en/ja, **한국어 우선**) |
@@ -196,7 +196,7 @@ cd packages\app ; flutter run -d <device-id>
 버프·미션·펫·부화기·수련돌파·로드맵·일일보상·깜짝선물·PvP(오행 전투·수동배틀·스카우트·리그·시즌)·아레나 폴리시까지 구현.
 
 **남은 큰 축**
-- **Phase 4 (백엔드)**: Supabase 비동기 PvP 매칭·리더보드 연동(현재 로컬 상대·인터페이스만).
+- **Phase 4 (백엔드)**: 인터페이스(`PvpBackend`)·로컬 리더보드·랭킹 화면은 완료. **남은 것 = Supabase 실연동**(프로젝트 생성+키 → 어댑터 연결, 방어팀 등록, 스카우트 실데이터). `docs/backend_supabase.md`.
 - **수익화 실연동**: AdMob 실광고·IAP(현재 광고는 플레이스홀더).
 - (브리딩 §2.5는 2026-07 구현 완료.)
 - 세부 다음 작업·우선순위는 **`docs/PROJECT_STATUS.md` §7**(업그레이드 제안) 참조 — 완료 항목이 체크되어 있음.

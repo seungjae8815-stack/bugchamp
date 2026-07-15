@@ -478,6 +478,18 @@ abstract class AppLocalizations {
   /// **'Got an egg! Raise it in the incubator'**
   String get breedingGotEgg;
 
+  /// No description provided for @leaderboardLocalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Local ranking · online sync coming'**
+  String get leaderboardLocalNote;
+
+  /// No description provided for @leaderboardMyRank.
+  ///
+  /// In en, this message translates to:
+  /// **'My rank #{n}'**
+  String leaderboardMyRank(int n);
+
   /// No description provided for @stanceAttack.
   ///
   /// In en, this message translates to:
