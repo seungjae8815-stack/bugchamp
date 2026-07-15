@@ -72,6 +72,8 @@ void main() {
       incubatorCapacity: 1,
       incubating: const {},
       pvpTrophies: 0,
+      injured: const {},
+      claimedLeagues: const {},
     );
 
     await repo.save(original);

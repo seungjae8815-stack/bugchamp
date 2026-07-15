@@ -32,6 +32,8 @@ class PetConfig {
     this.incubatorSlotsMax = 3,
     this.incubatorExpandJelly = 30,
     this.incubateDurationsSec = const {},
+    this.injuryDurationsSec = const {},
+    this.injuryJellyPerMinute = 0.5,
   });
 
   /// 등급별 공격력 기여(0.05 = +5%).
@@ -101,6 +103,12 @@ class PetConfig {
   /// 등급별 알→유충 부화 시간(초).
   final Map<Grade, int> incubateDurationsSec;
 
+  /// 등급별 KO 후 부상 회복 시간(초). 높은 등급일수록 회복이 오래 걸린다.
+  final Map<Grade, int> injuryDurationsSec;
+
+  /// 부상 즉시회복 젤리 = 남은분 × 이 값(비례, 최소 1).
+  final double injuryJellyPerMinute;
+
   /// 돌파 최대 티어(마지막 인덱스).
   int get maxTier => tierCaps.length - 1;
 
@@ -123,6 +131,16 @@ class PetConfig {
   }
 
   int incubateDuration(Grade g) => incubateDurationsSec[g] ?? 300;
+
+  /// 등급별 부상 회복 시간(초). 미설정이면 10분.
+  int injuryDuration(Grade g) => injuryDurationsSec[g] ?? 600;
+
+  /// 남은 시간 비례 부상 즉시회복 젤리 비용(최소 1).
+  int injuryJelly(Duration remaining) {
+    if (remaining <= Duration.zero) return 0;
+    final v = (remaining.inSeconds / 60 * injuryJellyPerMinute).ceil();
+    return v < 1 ? 1 : v;
+  }
 
   /// [level] → [level]+1 수련 비용(골드).
   int trainCost(int level) =>
@@ -191,6 +209,15 @@ class PetConfig {
                 .entries)
           Grade.fromKey(e.key): (e.value as num).toInt(),
       },
+      injuryDurationsSec: {
+        for (final e
+            in ((json['injuryDurationsSec'] as Map<String, dynamic>?) ??
+                    const {})
+                .entries)
+          Grade.fromKey(e.key): (e.value as num).toInt(),
+      },
+      injuryJellyPerMinute:
+          (json['injuryJellyPerMinute'] as num?)?.toDouble() ?? 0.5,
     );
   }
 }

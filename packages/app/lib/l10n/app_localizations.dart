@@ -238,6 +238,180 @@ abstract class AppLocalizations {
   /// **'HP {v}%'**
   String battleHpPct(String v);
 
+  /// No description provided for @battleAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Battle'**
+  String get battleAuto;
+
+  /// No description provided for @battleManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Battle'**
+  String get battleManual;
+
+  /// No description provided for @battleManualDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Mind games — pick every move'**
+  String get battleManualDesc;
+
+  /// No description provided for @battleYourMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your move'**
+  String get battleYourMove;
+
+  /// No description provided for @battleEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get battleEnergy;
+
+  /// No description provided for @battleClashWin.
+  ///
+  /// In en, this message translates to:
+  /// **'You read them!'**
+  String get battleClashWin;
+
+  /// No description provided for @battleClashLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Caught off guard'**
+  String get battleClashLose;
+
+  /// No description provided for @battleClashEven.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeling it out'**
+  String get battleClashEven;
+
+  /// No description provided for @injuryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovering'**
+  String get injuryTitle;
+
+  /// No description provided for @injuryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t be fielded in a duel until healed'**
+  String get injuryDesc;
+
+  /// No description provided for @injuryHealJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'💎{n} Heal now'**
+  String injuryHealJelly(int n);
+
+  /// No description provided for @notEnoughJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough jelly'**
+  String get notEnoughJelly;
+
+  /// No description provided for @scoutBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Scout Board'**
+  String get scoutBoard;
+
+  /// No description provided for @scoutRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get scoutRefresh;
+
+  /// No description provided for @scoutEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak'**
+  String get scoutEasy;
+
+  /// No description provided for @scoutEven.
+  ///
+  /// In en, this message translates to:
+  /// **'Even'**
+  String get scoutEven;
+
+  /// No description provided for @scoutHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get scoutHard;
+
+  /// No description provided for @leagueBronze.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze'**
+  String get leagueBronze;
+
+  /// No description provided for @leagueSilver.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver'**
+  String get leagueSilver;
+
+  /// No description provided for @leagueGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get leagueGold;
+
+  /// No description provided for @leaguePlatinum.
+  ///
+  /// In en, this message translates to:
+  /// **'Platinum'**
+  String get leaguePlatinum;
+
+  /// No description provided for @leagueDiamond.
+  ///
+  /// In en, this message translates to:
+  /// **'Diamond'**
+  String get leagueDiamond;
+
+  /// No description provided for @leagueToNext.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}🏆 to {name}'**
+  String leagueToNext(int n, String name);
+
+  /// No description provided for @leagueMaxRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Top rank'**
+  String get leagueMaxRank;
+
+  /// No description provided for @leagueClaimReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim promotion'**
+  String get leagueClaimReward;
+
+  /// No description provided for @leaguePromoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotion Reward'**
+  String get leaguePromoTitle;
+
+  /// No description provided for @seasonEndTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Season Over!'**
+  String get seasonEndTitle;
+
+  /// No description provided for @seasonPeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak rank: {name}'**
+  String seasonPeak(String name);
+
+  /// No description provided for @seasonTrophyReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Trophies {from} → {to}'**
+  String seasonTrophyReset(int from, int to);
+
   /// No description provided for @stanceAttack.
   ///
   /// In en, this message translates to:

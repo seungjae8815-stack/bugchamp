@@ -45,5 +45,40 @@ void main() {
         throwsStateError,
       );
     });
+
+    test('v11(PvP) → 현재: 부상(injured) 맵이 기본값으로 채워진다', () {
+      final v11 = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).toJson()
+        ..['schemaVersion'] = 11
+        ..remove('injured');
+      final migrated = migrateToCurrent(v11);
+      expect(migrated['schemaVersion'], kSaveSchemaVersion);
+      expect(migrated['injured'], isEmpty);
+      final save = SaveGame.fromJson(migrated);
+      expect(save.injured, isEmpty);
+    });
+
+    test('v12(부상) → 현재: 승급보상 기록(claimedLeagues)이 기본값으로 채워진다', () {
+      final v12 = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).toJson()
+        ..['schemaVersion'] = 12
+        ..remove('claimedLeagues');
+      final migrated = migrateToCurrent(v12);
+      expect(migrated['schemaVersion'], kSaveSchemaVersion);
+      expect(migrated['claimedLeagues'], isEmpty);
+      final save = SaveGame.fromJson(migrated);
+      expect(save.claimedLeagues, isEmpty);
+    });
+
+    test('v13(리그) → 현재: 시즌 필드 추가 & seasonStartedAt은 로드 시 null', () {
+      final v13 = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).toJson()
+        ..['schemaVersion'] = 13
+        ..remove('seasonStartedAt')
+        ..remove('seasonPeakTrophies');
+      final migrated = migrateToCurrent(v13);
+      expect(migrated['schemaVersion'], kSaveSchemaVersion);
+      expect(migrated['seasonPeakTrophies'], 0);
+      final save = SaveGame.fromJson(migrated);
+      expect(save.seasonStartedAt, isNull); // 로드 시 컨트롤러가 now로 초기화
+      expect(save.seasonPeakTrophies, 0);
+    });
   });
 }

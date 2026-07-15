@@ -8,6 +8,17 @@ String formatDuration(Duration d) {
   return '${m}m';
 }
 
+/// Duration → "m:ss" (1시간 이상은 "h:mm:ss"). 남은 타이머(카운트다운) 표시용.
+String formatClock(Duration d) {
+  final s = d.inSeconds < 0 ? 0 : d.inSeconds;
+  final h = s ~/ 3600;
+  final m = (s % 3600) ~/ 60;
+  final sec = s % 60;
+  final ss = sec.toString().padLeft(2, '0');
+  if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:$ss';
+  return '$m:$ss';
+}
+
 /// 사이즈(mm) → 소수 1자리.
 String formatSizeMm(double mm) => mm.toStringAsFixed(1);
 

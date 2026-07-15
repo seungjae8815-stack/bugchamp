@@ -249,4 +249,39 @@ void main() {
       expect(config.region.habitatKinds, isNotEmpty);
     });
   });
+
+  group('battle.json', () {
+    final cfg = BattleConfig.fromJson(_readJson('assets/data/battle.json'));
+
+    test('보상 계수 파싱 & 양수', () {
+      expect(cfg.winGoldBase, greaterThan(0));
+      expect(cfg.trophyWin, greaterThan(0));
+      expect(cfg.trophyLose, lessThan(0)); // 패배는 트로피 감소
+    });
+
+    test('스카우트 티어 3종 & 파워↑ 상대일수록 보상↑', () {
+      expect(cfg.scoutTiers.length, 3);
+      final sorted = [...cfg.scoutTiers]
+        ..sort((a, b) => a.powerMult.compareTo(b.powerMult));
+      // 파워 오름차순이면 보상배율도 오름차순(하이리스크-하이리턴)
+      for (var i = 1; i < sorted.length; i++) {
+        expect(
+          sorted[i].rewardMult,
+          greaterThanOrEqualTo(sorted[i - 1].rewardMult),
+        );
+      }
+    });
+
+    test('리그: minTrophy 오름차순 & 첫 리그 0에서 시작', () {
+      expect(cfg.leagues, isNotEmpty);
+      expect(cfg.leagues.first.minTrophy, 0);
+      for (var i = 1; i < cfg.leagues.length; i++) {
+        expect(
+          cfg.leagues[i].minTrophy,
+          greaterThan(cfg.leagues[i - 1].minTrophy),
+          reason: cfg.leagues[i].id,
+        );
+      }
+    });
+  });
 }

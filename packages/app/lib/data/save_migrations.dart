@@ -49,6 +49,9 @@ const Map<int, _JsonMap Function(_JsonMap)> _migrations = {
   8: _v8ToV9,
   9: _v9ToV10,
   10: _v10ToV11,
+  11: _v11ToV12,
+  12: _v12ToV13,
+  13: _v13ToV14,
 };
 
 /// v0(스키마 미표기 레거시) → v1: 누락 필드를 기본값으로 채우고 버전을 승격.
@@ -141,4 +144,26 @@ _JsonMap _v10ToV11(_JsonMap old) => {
   ...old,
   'schemaVersion': 11,
   'pvpTrophies': old['pvpTrophies'] ?? 0,
+};
+
+/// v11 → v12(부상/회복): KO 회복 타이머 맵을 기본값으로 추가.
+_JsonMap _v11ToV12(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 12,
+  'injured': old['injured'] ?? const <String, dynamic>{},
+};
+
+/// v12 → v13(리그/티어): 승급 보상 수령 기록을 기본값으로 추가.
+_JsonMap _v12ToV13(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 13,
+  'claimedLeagues': old['claimedLeagues'] ?? const <dynamic>[],
+};
+
+/// v13 → v14(시즌): 시즌 최고 트로피 필드 추가. `seasonStartedAt` 은 미표기 →
+/// 로드 시 now 로 초기화(마이그레이션에서 시간을 만들지 않는다).
+_JsonMap _v13ToV14(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 14,
+  'seasonPeakTrophies': old['seasonPeakTrophies'] ?? 0,
 };

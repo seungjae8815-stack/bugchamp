@@ -615,6 +615,11 @@ class StorageScreen extends ConsumerWidget {
     bool equipped,
   ) {
     final species = data.species(bug.speciesId);
+    final now = ref.read(clockProvider).now().toUtc();
+    final injured = ref
+        .read(saveControllerProvider)
+        .requireValue
+        .isInjured(bug.id, now);
     return GestureDetector(
       onTap: () => _showBugDetail(context, ref, data, bug.id),
       child: Container(
@@ -671,6 +676,12 @@ class StorageScreen extends ConsumerWidget {
                           ),
                         ),
                       ),
+                    ),
+                  if (injured)
+                    const Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Text('🩹', style: TextStyle(fontSize: 13)),
                     ),
                 ],
               ),
@@ -1082,6 +1093,8 @@ class StorageScreen extends ConsumerWidget {
                   ],
                   const SizedBox(height: 10),
                   if (petCfg != null)
+                    _injuryCard(ctx, r, petCfg, save, bug, now),
+                  if (petCfg != null)
                     _petEffectCard(l, species, bug, effStage, petCfg),
                   if (petCfg != null && effStage == LifeStage.adult) ...[
                     const SizedBox(height: 6),
@@ -1173,6 +1186,63 @@ class StorageScreen extends ConsumerWidget {
     ),
     child: child,
   );
+
+  /// 부상 회복 카드: 회복 중일 때만 표시(남은 시간 + 젤리 즉시회복).
+  Widget _injuryCard(
+    BuildContext ctx,
+    WidgetRef r,
+    PetConfig cfg,
+    SaveGame save,
+    IndividualBug bug,
+    DateTime now,
+  ) {
+    final l = AppLocalizations.of(ctx);
+    final until = save.injuredUntil(bug.id);
+    if (until == null || !now.isBefore(until)) return const SizedBox.shrink();
+    final remaining = until.difference(now);
+    final jelly = cfg.injuryJelly(remaining);
+    final have = save.materialCount(MaterialKind.jelly);
+    final canHeal = have >= jelly;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: _sectionBox(
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '🩹 ${l.injuryTitle}  ${_remainLabel(l, remaining)}',
+                    style: const TextStyle(
+                      color: Color(0xFFEF9A9A),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(l.injuryDesc, style: _rowSub),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: canHeal
+                  ? () async {
+                      final ok = await r
+                          .read(saveControllerProvider.notifier)
+                          .healInjury(bug.id, viaJelly: true);
+                      if (ctx.mounted && !ok) _snack(ctx, l.notEnoughJelly);
+                    }
+                  : null,
+              style: _pillStyle(const Color(0xFF7E57C2)),
+              child: Text(l.injuryHealJelly(jelly)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _petEffectCard(
     AppLocalizations l,

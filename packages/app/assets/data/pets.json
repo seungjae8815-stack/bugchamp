@@ -24,5 +24,7 @@
   "incubatorSlotsInitial": 1,
   "incubatorSlotsMax": 3,
   "incubatorExpandJelly": 30,
-  "incubateDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 }
+  "incubateDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 },
+  "injuryDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 },
+  "injuryJellyPerMinute": 0.5
 }

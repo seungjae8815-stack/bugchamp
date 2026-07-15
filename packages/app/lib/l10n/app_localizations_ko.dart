@@ -82,6 +82,101 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get battleAuto => '자동 전투';
+
+  @override
+  String get battleManual => '수동 전투';
+
+  @override
+  String get battleManualDesc => '심리전 · 매 수를 직접 선택';
+
+  @override
+  String get battleYourMove => '수를 고르세요';
+
+  @override
+  String get battleEnergy => '기력';
+
+  @override
+  String get battleClashWin => '기선제압!';
+
+  @override
+  String get battleClashLose => '허를 찔렸다';
+
+  @override
+  String get battleClashEven => '팽팽한 탐색';
+
+  @override
+  String get injuryTitle => '회복 중';
+
+  @override
+  String get injuryDesc => '회복 전까지 결투에 편성할 수 없어요';
+
+  @override
+  String injuryHealJelly(int n) {
+    return '💎$n 즉시회복';
+  }
+
+  @override
+  String get notEnoughJelly => '곤충젤리가 부족해요';
+
+  @override
+  String get scoutBoard => '스카우트 보드';
+
+  @override
+  String get scoutRefresh => '새로고침';
+
+  @override
+  String get scoutEasy => '약함';
+
+  @override
+  String get scoutEven => '대등';
+
+  @override
+  String get scoutHard => '강함';
+
+  @override
+  String get leagueBronze => '브론즈';
+
+  @override
+  String get leagueSilver => '실버';
+
+  @override
+  String get leagueGold => '골드';
+
+  @override
+  String get leaguePlatinum => '플래티넘';
+
+  @override
+  String get leagueDiamond => '다이아';
+
+  @override
+  String leagueToNext(int n, String name) {
+    return '$name까지 $n🏆';
+  }
+
+  @override
+  String get leagueMaxRank => '최고 등급';
+
+  @override
+  String get leagueClaimReward => '승급 보상 수령';
+
+  @override
+  String get leaguePromoTitle => '승급 보상';
+
+  @override
+  String get seasonEndTitle => '시즌 종료!';
+
+  @override
+  String seasonPeak(String name) {
+    return '최고 등급: $name';
+  }
+
+  @override
+  String seasonTrophyReset(int from, int to) {
+    return '트로피 $from → $to';
+  }
+
+  @override
   String get stanceAttack => '공격';
 
   @override

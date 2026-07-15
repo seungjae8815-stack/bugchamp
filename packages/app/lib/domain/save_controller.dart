@@ -12,11 +12,31 @@ import 'gift_mail.dart';
 import 'providers.dart';
 import 'save_game.dart';
 
+/// 시즌 종료 정산 결과(UI 가 1회 표시). 트로피 소프트리셋 + 보상.
+class SeasonReport {
+  const SeasonReport({
+    required this.peakTrophies,
+    required this.rewardGold,
+    required this.rewardJelly,
+    required this.fromTrophies,
+    required this.toTrophies,
+  });
+
+  final int peakTrophies;
+  final int rewardGold;
+  final int rewardJelly;
+  final int fromTrophies;
+  final int toTrophies;
+}
+
 /// 세이브 상태를 보유·변경하는 Riverpod 컨트롤러.
 /// 변경 액션은 상태를 갱신하고 즉시 저장소에 반영(자동 저장)한다.
 class SaveController extends AsyncNotifier<SaveGame> {
   /// 마지막 로드 시 계산된 오프라인 보상(UI 가 1회 표시 후 [consumeOffline]).
   OfflineReport? pendingOffline;
+
+  /// 마지막 로드 시 정산된 시즌 종료(UI 가 1회 표시 후 [consumeSeason]).
+  SeasonReport? pendingSeason;
 
   @override
   Future<SaveGame> build() async {
@@ -73,12 +93,58 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
 
+    // 자가치유: 회복 완료됐거나 존재하지 않는 곤충의 부상 기록 정리.
+    if (save.injured.isNotEmpty) {
+      final ids = {for (final b in save.bugs) b.id};
+      final pruned = {
+        for (final e in save.injured.entries)
+          if (ids.contains(e.key) && now.isBefore(e.value)) e.key: e.value,
+      };
+      if (pruned.length != save.injured.length) {
+        save = save.copyWith(injured: pruned);
+      }
+    }
+
+    // 시즌: 시작시각 초기화 + 만료 시 소프트리셋·보상.
+    final battleCfg = data.battleConfig;
+    if (battleCfg != null) {
+      if (save.seasonStartedAt == null) {
+        save = save.copyWith(seasonStartedAt: now);
+      }
+      final start = save.seasonStartedAt!;
+      if (now.difference(start).inDays >= battleCfg.seasonDays) {
+        final peak = save.seasonPeakTrophies > save.pvpTrophies
+            ? save.seasonPeakTrophies
+            : save.pvpTrophies;
+        final rw = battleCfg.seasonReward(peak);
+        final reset = battleCfg.seasonResetTrophies(save.pvpTrophies);
+        final mats = Map<MaterialKind, int>.from(save.materials)
+          ..[MaterialKind.jelly] =
+              (save.materials[MaterialKind.jelly] ?? 0) + rw.jelly;
+        pendingSeason = SeasonReport(
+          peakTrophies: peak,
+          rewardGold: rw.gold,
+          rewardJelly: rw.jelly,
+          fromTrophies: save.pvpTrophies,
+          toTrophies: reset,
+        );
+        save = save.copyWith(
+          gold: save.gold + rw.gold,
+          materials: mats,
+          pvpTrophies: reset,
+          seasonPeakTrophies: reset,
+          seasonStartedAt: now,
+        );
+      }
+    }
+
     save = save.copyWith(lastSeen: now);
     await repo.save(save);
     return save;
   }
 
   void consumeOffline() => pendingOffline = null;
+  void consumeSeason() => pendingSeason = null;
 
   GatherService get _service => ref.read(gatherServiceProvider);
   SaveRepository get _repo => ref.read(saveRepositoryProvider);
@@ -368,17 +434,95 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
+  /// 결투 결과 반영: 골드·트로피 정산 + KO된 내 곤충([koedBugIds])에 부상 회복 타이머 부여.
   Future<void> applyBattleResult({
     required int gold,
     required int trophyDelta,
+    List<String> koedBugIds = const [],
   }) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
+    final injured = Map<String, DateTime>.from(s.injured);
+    if (cfg != null) {
+      for (final id in koedBugIds) {
+        final bug = s.bugs.cast<IndividualBug?>().firstWhere(
+          (b) => b!.id == id,
+          orElse: () => null,
+        );
+        if (bug == null) continue;
+        final sp = data.speciesById[bug.speciesId];
+        if (sp == null) continue;
+        // 이미 부상 중이면 더 늦은 회복 시각으로 갱신(중복 KO 방어).
+        final until = now.add(Duration(seconds: cfg.injuryDuration(sp.grade)));
+        final prev = injured[id];
+        injured[id] = (prev != null && prev.isAfter(until)) ? prev : until;
+      }
+    }
+    final newTrophies = (s.pvpTrophies + trophyDelta).clamp(0, 1 << 30);
     await _commit(
       s.copyWith(
         gold: s.gold + (gold < 0 ? 0 : gold),
-        pvpTrophies: (s.pvpTrophies + trophyDelta).clamp(0, 1 << 30),
+        pvpTrophies: newTrophies,
+        seasonPeakTrophies: newTrophies > s.seasonPeakTrophies
+            ? newTrophies
+            : s.seasonPeakTrophies,
+        injured: injured,
       ),
     );
+  }
+
+  /// 도달했지만 미수령한 리그 승급 보상을 일괄 수령. 없으면 null,
+  /// 있으면 지급한 총 골드·젤리를 반환(UI 다이얼로그용).
+  Future<({int gold, int jelly})?> claimLeagueRewards() async {
+    final cfg = ref.read(gameDataProvider).requireValue.battleConfig;
+    if (cfg == null) return null;
+    final s = state.requireValue;
+    final claimable = cfg.claimableLeagues(s.pvpTrophies, s.claimedLeagues);
+    if (claimable.isEmpty) return null;
+    var gold = 0;
+    var jelly = 0;
+    for (final lg in claimable) {
+      gold += lg.rewardGold;
+      jelly += lg.rewardJelly;
+    }
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = (s.materials[MaterialKind.jelly] ?? 0) + jelly;
+    final claimed = {...s.claimedLeagues, for (final lg in claimable) lg.id};
+    await _commit(
+      s.copyWith(gold: s.gold + gold, materials: mats, claimedLeagues: claimed),
+    );
+    return (gold: gold, jelly: jelly);
+  }
+
+  /// 부상 회복. [viaJelly] 면 남은 시간 비례 젤리를 소비해 즉시 회복,
+  /// 아니면 회복 시각이 지났을 때만 정리. 성공 시 true.
+  Future<bool> healInjury(String bugId, {bool viaJelly = false}) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final until = s.injured[bugId];
+    if (until == null) return false;
+    final injured = Map<String, DateTime>.from(s.injured)..remove(bugId);
+    if (viaJelly) {
+      if (!now.isBefore(until)) {
+        // 이미 회복 완료 → 젤리 없이 정리.
+        await _commit(s.copyWith(injured: injured));
+        return true;
+      }
+      final cost = cfg.injuryJelly(until.difference(now));
+      final have = s.materials[MaterialKind.jelly] ?? 0;
+      if (have < cost) return false;
+      final mats = Map<MaterialKind, int>.from(s.materials)
+        ..[MaterialKind.jelly] = have - cost;
+      await _commit(s.copyWith(injured: injured, materials: mats));
+      return true;
+    }
+    if (now.isBefore(until)) return false; // 아직 회복 안 됨
+    await _commit(s.copyWith(injured: injured));
+    return true;
   }
 
   /// 게임 데이터 전체 초기화(설정). 저장소를 비우고 새 세이브로 교체.

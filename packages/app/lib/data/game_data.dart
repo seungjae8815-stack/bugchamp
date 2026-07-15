@@ -21,6 +21,7 @@ class GameData {
     this.dailyConfig,
     this.giftConfig,
     this.roadmapConfig,
+    this.battleConfig,
   });
 
   final Map<String, Species> speciesById;
@@ -55,6 +56,9 @@ class GameData {
   /// 로드맵(난이도 챕터) 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final RoadmapConfig? roadmapConfig;
 
+  /// PvP 보상·스카우트 설정 (에셋 로드 시 채워짐. null이면 기본값 사용).
+  final BattleConfig? battleConfig;
+
   /// speciesId → Species (accrue 의 resolveSpecies 로 그대로 넘길 수 있음).
   Species species(String id) {
     final s = speciesById[id];
@@ -85,6 +89,7 @@ class GameData {
     Map<String, dynamic>? dailyConfig,
     Map<String, dynamic>? giftConfig,
     Map<String, dynamic>? roadmapConfig,
+    Map<String, dynamic>? battleConfig,
   }) {
     final speciesList = (species['species'] as List)
         .cast<Map<String, dynamic>>()
@@ -122,6 +127,9 @@ class GameData {
       roadmapConfig: roadmapConfig == null
           ? null
           : RoadmapConfig.fromJson(roadmapConfig),
+      battleConfig: battleConfig == null
+          ? null
+          : BattleConfig.fromJson(battleConfig),
     );
   }
 
@@ -144,6 +152,7 @@ class GameData {
       read('daily.json'),
       read('gifts.json'),
       read('roadmap.json'),
+      read('battle.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -159,6 +168,7 @@ class GameData {
       dailyConfig: results[10],
       giftConfig: results[11],
       roadmapConfig: results[12],
+      battleConfig: results[13],
     );
   }
 }

@@ -5,7 +5,7 @@ import 'gift_mail.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
-const int kSaveSchemaVersion = 11;
+const int kSaveSchemaVersion = 14;
 
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
@@ -73,7 +73,11 @@ class SaveGame {
     required this.incubatorCapacity,
     required this.incubating,
     required this.pvpTrophies,
+    required this.injured,
+    required this.claimedLeagues,
     this.nextGiftAt,
+    this.seasonStartedAt,
+    this.seasonPeakTrophies = 0,
   });
 
   final int schemaVersion;
@@ -151,8 +155,29 @@ class SaveGame {
   /// 비동기 PvP(곤충 결투) 트로피 점수.
   final int pvpTrophies;
 
+  /// 결투에서 KO된 곤충: bugId → 회복 완료 UTC 시각. 회복 전엔 결투 편성 불가.
+  final Map<String, DateTime> injured;
+
+  /// 승급 보상을 이미 받은 리그 id 집합(리그당 1회).
+  final Set<String> claimedLeagues;
+
+  /// 현재 시즌 시작 UTC 시각. null이면 로드 시 now로 초기화.
+  final DateTime? seasonStartedAt;
+
+  /// 이번 시즌 최고 도달 트로피(시즌 보상 산정 기준).
+  final int seasonPeakTrophies;
+
   int missionClaimCount(String id) => missionClaims[id] ?? 0;
   int missionProgressCount(String id) => missionProgress[id] ?? 0;
+
+  /// [bugId] 의 회복 완료 시각(부상 중이 아니면 null).
+  DateTime? injuredUntil(String bugId) => injured[bugId];
+
+  /// [now] 기준 [bugId] 가 아직 회복 중인지.
+  bool isInjured(String bugId, DateTime now) {
+    final until = injured[bugId];
+    return until != null && now.isBefore(until);
+  }
 
   factory SaveGame.initial({DateTime? createdAt}) => SaveGame(
     schemaVersion: kSaveSchemaVersion,
@@ -178,6 +203,10 @@ class SaveGame {
     incubatorCapacity: 1,
     incubating: const {},
     pvpTrophies: 0,
+    injured: const {},
+    claimedLeagues: const {},
+    seasonStartedAt: (createdAt ?? DateTime.now()).toUtc(),
+    seasonPeakTrophies: 0,
   );
 
   SaveGame copyWith({
@@ -203,6 +232,10 @@ class SaveGame {
     int? incubatorCapacity,
     Map<String, DateTime>? incubating,
     int? pvpTrophies,
+    Map<String, DateTime>? injured,
+    Set<String>? claimedLeagues,
+    DateTime? seasonStartedAt,
+    int? seasonPeakTrophies,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -228,6 +261,10 @@ class SaveGame {
     incubatorCapacity: incubatorCapacity ?? this.incubatorCapacity,
     incubating: incubating ?? this.incubating,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
+    injured: injured ?? this.injured,
+    claimedLeagues: claimedLeagues ?? this.claimedLeagues,
+    seasonStartedAt: seasonStartedAt ?? this.seasonStartedAt,
+    seasonPeakTrophies: seasonPeakTrophies ?? this.seasonPeakTrophies,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -312,6 +349,17 @@ class SaveGame {
         ) ??
         const {},
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
+    injured:
+        (json['injured'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, DateTime.parse(v as String).toUtc()),
+        ) ??
+        const {},
+    claimedLeagues:
+        (json['claimedLeagues'] as List?)?.cast<String>().toSet() ?? const {},
+    seasonStartedAt: json['seasonStartedAt'] == null
+        ? null
+        : DateTime.parse(json['seasonStartedAt'] as String).toUtc(),
+    seasonPeakTrophies: (json['seasonPeakTrophies'] as num?)?.toInt() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -347,6 +395,13 @@ class SaveGame {
         e.key: e.value.toUtc().toIso8601String(),
     },
     'pvpTrophies': pvpTrophies,
+    'injured': {
+      for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),
+    },
+    'claimedLeagues': claimedLeagues.toList(),
+    if (seasonStartedAt != null)
+      'seasonStartedAt': seasonStartedAt!.toUtc().toIso8601String(),
+    'seasonPeakTrophies': seasonPeakTrophies,
   };
 
   static Map<MaterialKind, int> _materialsFromJson(Map<String, dynamic> json) {

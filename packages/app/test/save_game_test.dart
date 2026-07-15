@@ -44,6 +44,8 @@ SaveGame _sampleSave() => SaveGame(
   incubatorCapacity: 2,
   incubating: const {},
   pvpTrophies: 30,
+  injured: const {},
+  claimedLeagues: const {'bronze'},
 );
 
 void main() {

@@ -1,0 +1,23 @@
+{
+  "_comment": "PvP(곤충 결투) 보상·스카우트 밸런스. 코드 하드코딩 금지(§6).",
+  "winGoldBase": 4000,
+  "winGoldPerTrophy": 30,
+  "trophyWin": 12,
+  "trophyDraw": 0,
+  "trophyLose": -8,
+  "scout": {
+    "tiers": [
+      { "id": "easy", "powerMult": 0.82, "rewardMult": 0.7 },
+      { "id": "even", "powerMult": 1.0, "rewardMult": 1.0 },
+      { "id": "hard", "powerMult": 1.22, "rewardMult": 1.6 }
+    ]
+  },
+  "leagues": [
+    { "id": "bronze", "minTrophy": 0 },
+    { "id": "silver", "minTrophy": 100, "reward": { "gold": 5000, "jelly": 5 } },
+    { "id": "gold", "minTrophy": 300, "reward": { "gold": 15000, "jelly": 10 } },
+    { "id": "platinum", "minTrophy": 700, "reward": { "gold": 40000, "jelly": 20 } },
+    { "id": "diamond", "minTrophy": 1500, "reward": { "gold": 100000, "jelly": 40 } }
+  ],
+  "season": { "days": 14, "resetFactor": 0.5, "rewardMult": 3 }
+}

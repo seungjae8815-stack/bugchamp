@@ -1,19 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
-import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/game_data.dart';
 import '../../l10n/app_localizations.dart';
-import '../../ui/art.dart';
-import '../../ui/format.dart';
-import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
-
-const _honey = Color(0xFFEBA52F);
-const _roundDur = 0.85; // 라운드 1회 재생 시간(초, 1x)
+import 'arena_widgets.dart';
 
 /// 전투 아레나 — `BattleResult`의 라운드 이벤트를 절차적 모션으로 재생(오토).
 class BattleArenaScreen extends StatefulWidget {
@@ -40,15 +35,6 @@ class BattleArenaScreen extends StatefulWidget {
   State<BattleArenaScreen> createState() => _BattleArenaScreenState();
 }
 
-class _Float {
-  _Float(this.text, this.color, this.left);
-  final String text;
-  final Color color;
-  final bool left;
-  double age = 0;
-  static const life = 0.9;
-}
-
 class _BattleArenaScreenState extends State<BattleArenaScreen>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
@@ -61,7 +47,8 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
   int _a = 0, _b = 0;
   late List<double> _hpA, _hpB;
   double _tgtA = 0, _tgtB = 0;
-  final List<_Float> _floats = [];
+  final List<FloatText> _floats = [];
+  final List<BurstFx> _bursts = [];
   int _lungeSide = 0; // -1 왼쪽(내팀) 공격, 1 오른쪽(상대) 공격
   double _flashL = 0, _flashR = 0, _shake = 0;
   bool _finished = false;
@@ -98,24 +85,34 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     final dmgA = ev.dmgToA, dmgB = ev.dmgToB, hA = ev.healToA, hB = ev.healToB;
     _lungeSide = dmgB > dmgA + 0.5 ? -1 : (dmgA > dmgB + 0.5 ? 1 : 0);
     if (dmgA >= 1) {
-      _floats.add(_Float('-${dmgA.round()}', const Color(0xFFFF6B6B), true));
+      _floats.add(FloatText('-${dmgA.round()}', const Color(0xFFFF6B6B), true));
       _flashL = 1;
     }
     if (hA >= 1) {
-      _floats.add(_Float('+${hA.round()}', const Color(0xFF7CE38B), true));
+      _floats.add(FloatText('+${hA.round()}', const Color(0xFF7CE38B), true));
     }
     if (dmgB >= 1) {
-      _floats.add(_Float('-${dmgB.round()}', const Color(0xFFFF6B6B), false));
+      _floats.add(
+        FloatText('-${dmgB.round()}', const Color(0xFFFF6B6B), false),
+      );
       _flashR = 1;
     }
     if (hB >= 1) {
-      _floats.add(_Float('+${hB.round()}', const Color(0xFF7CE38B), false));
+      _floats.add(FloatText('+${hB.round()}', const Color(0xFF7CE38B), false));
     }
     final ua = widget.myTeam[_a], ub = widget.foeTeam[_b];
-    final crit =
-        (dmgB >= 1 && ua.element.restrains(ub.element)) ||
-        (dmgA >= 1 && ub.element.restrains(ua.element));
-    if (crit) _shake = 1;
+    final foeRestrained = dmgB >= 1 && ua.element.restrains(ub.element);
+    final selfRestrained = dmgA >= 1 && ub.element.restrains(ua.element);
+    if (foeRestrained) {
+      _bursts.add(BurstFx(left: false, color: elementColor(ua.element)));
+    }
+    if (selfRestrained) {
+      _bursts.add(BurstFx(left: true, color: elementColor(ub.element)));
+    }
+    if (foeRestrained || selfRestrained) {
+      _shake = 1;
+      HapticFeedback.mediumImpact();
+    }
   }
 
   double _lerp(double a, double b, double t) => a + (b - a) * t.clamp(0.0, 1.0);
@@ -132,14 +129,18 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
       for (final f in _floats) {
         f.age += dt;
       }
-      _floats.removeWhere((f) => f.age > _Float.life);
+      _floats.removeWhere((f) => f.age > FloatText.life);
+      for (final b in _bursts) {
+        b.age += dt;
+      }
+      _bursts.removeWhere((b) => b.age > BurstFx.life);
 
       if (!_finished) {
         _accum += dt;
         _clashT += dt;
         _hpA[_a] = _lerp(_hpA[_a], _tgtA, dt * 7);
         _hpB[_b] = _lerp(_hpB[_b], _tgtB, dt * 7);
-        if (_accum >= _roundDur) {
+        if (_accum >= kRoundDur) {
           _hpA[_a] = _tgtA;
           _hpB[_b] = _tgtB;
           final ev = _events[_ei];
@@ -166,6 +167,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     setState(() {
       _finished = true;
       _floats.clear();
+      _bursts.clear();
     });
     if (!_resultShown) {
       _resultShown = true;
@@ -175,93 +177,17 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
 
   void _showResult() {
     if (!mounted) return;
-    final l = AppLocalizations.of(context);
-    final r = widget.result;
-    final win = r.outcome == BattleOutcome.teamA;
-    final draw = r.outcome == BattleOutcome.draw;
-    final title = win ? l.battleWin : (draw ? l.battleDraw : l.battleLose);
-    final color = win
-        ? const Color(0xFF6FCF6F)
-        : (draw ? const Color(0xFFBFC4CC) : const Color(0xFFEF9A9A));
-    showGameDialog<void>(
+    showBattleResultDialog(
       context,
-      title: title,
-      icon: win ? Icons.emoji_events_rounded : Icons.sports_mma_rounded,
-      barrierDismissible: false,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _teamHpBar(l.battleMyTeam, r.teamAHpPct, const Color(0xFF6FC96F)),
-          const SizedBox(height: 6),
-          _teamHpBar(l.battleFoe, r.teamBHpPct, const Color(0xFFC85454)),
-          const SizedBox(height: 12),
-          Text(
-            l.battleReward,
-            style: const TextStyle(
-              color: _honey,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '💰 ${formatCompact(widget.gold)}    '
-            '🏆 ${widget.trophyDelta >= 0 ? '+' : ''}${widget.trophyDelta}',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        gameDialogButton(l.actionClose, () {
-          Navigator.pop(context); // 다이얼로그
-          Navigator.pop(context); // 아레나
-        }),
-      ],
+      result: widget.result,
+      gold: widget.gold,
+      trophyDelta: widget.trophyDelta,
+      onClose: () {
+        Navigator.pop(context); // 다이얼로그
+        Navigator.pop(context); // 아레나
+      },
     );
   }
-
-  Widget _teamHpBar(String label, double pct, Color color) => Row(
-    children: [
-      SizedBox(
-        width: 64,
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 11.5),
-        ),
-      ),
-      Expanded(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(5),
-          child: LinearProgressIndicator(
-            value: pct.clamp(0.0, 1.0),
-            minHeight: 10,
-            backgroundColor: const Color(0x33000000),
-            valueColor: AlwaysStoppedAnimation(color),
-          ),
-        ),
-      ),
-      const SizedBox(width: 6),
-      SizedBox(
-        width: 38,
-        child: Text(
-          '${(pct * 100).round()}%',
-          textAlign: TextAlign.right,
-          style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 11),
-        ),
-      ),
-    ],
-  );
-
-  String _stanceGlyph(Stance s) => switch (s) {
-    Stance.attack => '⚔️',
-    Stance.defend => '🛡️',
-    Stance.heal => '💚',
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +195,10 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     final ev = _ei < _events.length ? _events[_ei] : null;
     final round = ev?.round ?? widget.result.rounds;
     final shakeDx = _shake > 0 ? math.sin(_shake * 40) * _shake * 6 : 0.0;
+
+    final lunge = _lungeSide != 0
+        ? math.sin((_clashT / kRoundDur).clamp(0.0, 1.0) * math.pi) * 26
+        : 0.0;
 
     return Scaffold(
       body: Container(
@@ -310,7 +240,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                         child: Text(
                           'ROUND $round / ${widget.result.rounds}',
                           style: const TextStyle(
-                            color: _honey,
+                            color: arenaHoney,
                             fontWeight: FontWeight.w900,
                             fontSize: 13,
                           ),
@@ -328,33 +258,44 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                       Row(
                         children: [
                           Expanded(
-                            child: _fighter(
-                              team: widget.myTeam,
-                              hp: _hpA,
-                              idx: _a,
-                              flip: false,
-                              stance: ev?.aStance,
-                              flash: _flashL,
-                              lunge: _lungeSide == -1,
-                              toRight: true,
-                            ),
+                            child: _a < widget.myTeam.length
+                                ? ArenaFighter(
+                                    data: widget.data,
+                                    bug: widget.myTeam[_a],
+                                    speciesId:
+                                        widget.speciesOf[widget.myTeam[_a].id],
+                                    hpFrac: (_hpA[_a] / widget.myTeam[_a].maxHp)
+                                        .clamp(0.0, 1.0),
+                                    flip: false,
+                                    stance: ev?.aStance,
+                                    flash: _flashL,
+                                    dx: _lungeSide == -1 ? lunge : 0.0,
+                                  )
+                                : const SizedBox.shrink(),
                           ),
                           Expanded(
-                            child: _fighter(
-                              team: widget.foeTeam,
-                              hp: _hpB,
-                              idx: _b,
-                              flip: true,
-                              stance: ev?.bStance,
-                              flash: _flashR,
-                              lunge: _lungeSide == 1,
-                              toRight: false,
-                            ),
+                            child: _b < widget.foeTeam.length
+                                ? ArenaFighter(
+                                    data: widget.data,
+                                    bug: widget.foeTeam[_b],
+                                    speciesId:
+                                        widget.speciesOf[widget.foeTeam[_b].id],
+                                    hpFrac:
+                                        (_hpB[_b] / widget.foeTeam[_b].maxHp)
+                                            .clamp(0.0, 1.0),
+                                    flip: true,
+                                    stance: ev?.bStance,
+                                    flash: _flashR,
+                                    dx: _lungeSide == 1 ? -lunge : 0.0,
+                                  )
+                                : const SizedBox.shrink(),
                           ),
                         ],
                       ),
+                      // 오행 克 버스트
+                      for (final b in _bursts) ArenaBurst(fx: b),
                       // 데미지/회복 숫자
-                      for (final f in _floats) _floatWidget(f),
+                      for (final f in _floats) ArenaFloat(f: f),
                     ],
                   ),
                 ),
@@ -396,156 +337,4 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
           foregroundColor: Colors.white,
         ),
       );
-
-  Widget _fighter({
-    required List<BattleBug> team,
-    required List<double> hp,
-    required int idx,
-    required bool flip,
-    required Stance? stance,
-    required double flash,
-    required bool lunge,
-    required bool toRight,
-  }) {
-    if (idx >= team.length) return const SizedBox.shrink();
-    final u = team[idx];
-    final sp = widget.data.speciesById[widget.speciesOf[u.id] ?? ''];
-    final hpFrac = (hp[idx] / u.maxHp).clamp(0.0, 1.0);
-    // 돌진: 라운드 중반 sin 곡선.
-    final lungeAmt = lunge
-        ? math.sin((_clashT / _roundDur).clamp(0.0, 1.0) * math.pi) * 26
-        : 0.0;
-    final dx = (toRight ? lungeAmt : -lungeAmt);
-
-    Widget img = sp == null
-        ? const Icon(Icons.bug_report, color: Colors.white, size: 60)
-        : bugStageImage(
-            sp.id,
-            LifeStage.adult,
-            size: 96,
-            fallback: bugAvatar(sp, size: 84),
-          );
-    if (flip) img = Transform.flip(flipX: true, child: img);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // 이름 + 오행
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                elementGlyph(u.element),
-                style: const TextStyle(fontSize: 12),
-              ),
-              const SizedBox(width: 3),
-              Flexible(
-                child: Text(
-                  u.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: elementColor(u.element),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          // HP 바
-          SizedBox(
-            width: 120,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Stack(
-                children: [
-                  Container(height: 12, color: const Color(0x55000000)),
-                  FractionallySizedBox(
-                    widthFactor: hpFrac,
-                    child: Container(
-                      height: 12,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: hpFrac > 0.3
-                              ? const [Color(0xFF7CE38B), Color(0xFF3FA84E)]
-                              : const [Color(0xFFFF8A6B), Color(0xFFD84A2E)],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          // 스탠스 아이콘 + 캐릭터
-          SizedBox(
-            height: 120,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                Transform.translate(
-                  offset: Offset(dx, 0),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      img,
-                      if (flash > 0)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFFF3B3B,
-                                ).withValues(alpha: flash * 0.5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (stance != null)
-                  Positioned(
-                    top: -14,
-                    child: Text(
-                      _stanceGlyph(stance),
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _floatWidget(_Float f) {
-    final t = (f.age / _Float.life).clamp(0.0, 1.0);
-    final w = MediaQuery.of(context).size.width;
-    final x = f.left ? w * 0.25 : w * 0.72;
-    return Positioned(
-      left: x - 24,
-      top: 150 - t * 60,
-      child: Opacity(
-        opacity: (1 - t).clamp(0.0, 1.0),
-        child: Text(
-          f.text,
-          style: TextStyle(
-            color: f.color,
-            fontWeight: FontWeight.w900,
-            fontSize: 22,
-            shadows: const [Shadow(color: Colors.black, blurRadius: 4)],
-          ),
-        ),
-      ),
-    );
-  }
 }

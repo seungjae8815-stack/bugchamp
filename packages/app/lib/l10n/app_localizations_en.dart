@@ -82,6 +82,101 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get battleAuto => 'Auto Battle';
+
+  @override
+  String get battleManual => 'Manual Battle';
+
+  @override
+  String get battleManualDesc => 'Mind games — pick every move';
+
+  @override
+  String get battleYourMove => 'Choose your move';
+
+  @override
+  String get battleEnergy => 'Energy';
+
+  @override
+  String get battleClashWin => 'You read them!';
+
+  @override
+  String get battleClashLose => 'Caught off guard';
+
+  @override
+  String get battleClashEven => 'Feeling it out';
+
+  @override
+  String get injuryTitle => 'Recovering';
+
+  @override
+  String get injuryDesc => 'Can\'t be fielded in a duel until healed';
+
+  @override
+  String injuryHealJelly(int n) {
+    return '💎$n Heal now';
+  }
+
+  @override
+  String get notEnoughJelly => 'Not enough jelly';
+
+  @override
+  String get scoutBoard => 'Scout Board';
+
+  @override
+  String get scoutRefresh => 'Refresh';
+
+  @override
+  String get scoutEasy => 'Weak';
+
+  @override
+  String get scoutEven => 'Even';
+
+  @override
+  String get scoutHard => 'Strong';
+
+  @override
+  String get leagueBronze => 'Bronze';
+
+  @override
+  String get leagueSilver => 'Silver';
+
+  @override
+  String get leagueGold => 'Gold';
+
+  @override
+  String get leaguePlatinum => 'Platinum';
+
+  @override
+  String get leagueDiamond => 'Diamond';
+
+  @override
+  String leagueToNext(int n, String name) {
+    return '$n🏆 to $name';
+  }
+
+  @override
+  String get leagueMaxRank => 'Top rank';
+
+  @override
+  String get leagueClaimReward => 'Claim promotion';
+
+  @override
+  String get leaguePromoTitle => 'Promotion Reward';
+
+  @override
+  String get seasonEndTitle => 'Season Over!';
+
+  @override
+  String seasonPeak(String name) {
+    return 'Peak rank: $name';
+  }
+
+  @override
+  String seasonTrophyReset(int from, int to) {
+    return 'Trophies $from → $to';
+  }
+
+  @override
   String get stanceAttack => 'Attack';
 
   @override
