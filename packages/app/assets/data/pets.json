@@ -26,5 +26,15 @@
   "incubatorExpandJelly": 30,
   "incubateDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 },
   "injuryDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 },
-  "injuryJellyPerMinute": 0.5
+  "injuryJellyPerMinute": 0.5,
+  "breedingDurationsSec": { "common": 600, "uncommon": 1200, "rare": 2400, "epic": 4800, "legendary": 9600 },
+  "breedingJellyPerMinute": 0.5,
+  "breedingSlotsInitial": 1,
+  "breedingSlotsMax": 3,
+  "breedingExpandJelly": 40,
+  "breedingSizeVariancePct": 0.08,
+  "breedingMutationChance": 0.05,
+  "breedingMutationBonusPct": 0.15,
+  "breedingPotUpChance": 0.10,
+  "breedingPotDownChance": 0.30
 }

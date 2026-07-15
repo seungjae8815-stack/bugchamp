@@ -34,6 +34,16 @@ class PetConfig {
     this.incubateDurationsSec = const {},
     this.injuryDurationsSec = const {},
     this.injuryJellyPerMinute = 0.5,
+    this.breedingDurationsSec = const {},
+    this.breedingJellyPerMinute = 0.5,
+    this.breedingSlotsInitial = 1,
+    this.breedingSlotsMax = 3,
+    this.breedingExpandJelly = 40,
+    this.breedingSizeVariancePct = 0.08,
+    this.breedingMutationChance = 0.05,
+    this.breedingMutationBonusPct = 0.15,
+    this.breedingPotUpChance = 0.10,
+    this.breedingPotDownChance = 0.30,
   });
 
   /// 등급별 공격력 기여(0.05 = +5%).
@@ -109,6 +119,18 @@ class PetConfig {
   /// 부상 즉시회복 젤리 = 남은분 × 이 값(비례, 최소 1).
   final double injuryJellyPerMinute;
 
+  /// 브리딩(§2.5) 설정.
+  final Map<Grade, int> breedingDurationsSec; // 등급별 임신(산란) 시간
+  final double breedingJellyPerMinute; // 즉시완료 젤리 비례계수
+  final int breedingSlotsInitial;
+  final int breedingSlotsMax;
+  final int breedingExpandJelly;
+  final double breedingSizeVariancePct; // 부모평균 대비 사이즈 변이
+  final double breedingMutationChance; // 돌연변이 확률
+  final double breedingMutationBonusPct; // 돌연변이 사이즈 보너스
+  final double breedingPotUpChance; // 포텐셜 상승 확률
+  final double breedingPotDownChance; // 포텐셜 하락 확률(나머지=유지)
+
   /// 돌파 최대 티어(마지막 인덱스).
   int get maxTier => tierCaps.length - 1;
 
@@ -139,6 +161,16 @@ class PetConfig {
   int injuryJelly(Duration remaining) {
     if (remaining <= Duration.zero) return 0;
     final v = (remaining.inSeconds / 60 * injuryJellyPerMinute).ceil();
+    return v < 1 ? 1 : v;
+  }
+
+  /// 등급별 산란(임신) 시간(초). 미설정이면 20분.
+  int breedingDuration(Grade g) => breedingDurationsSec[g] ?? 1200;
+
+  /// 남은 시간 비례 브리딩 즉시완료 젤리 비용(최소 1).
+  int breedingJelly(Duration remaining) {
+    if (remaining <= Duration.zero) return 0;
+    final v = (remaining.inSeconds / 60 * breedingJellyPerMinute).ceil();
     return v < 1 ? 1 : v;
   }
 
@@ -218,6 +250,29 @@ class PetConfig {
       },
       injuryJellyPerMinute:
           (json['injuryJellyPerMinute'] as num?)?.toDouble() ?? 0.5,
+      breedingDurationsSec: {
+        for (final e
+            in ((json['breedingDurationsSec'] as Map<String, dynamic>?) ??
+                    const {})
+                .entries)
+          Grade.fromKey(e.key): (e.value as num).toInt(),
+      },
+      breedingJellyPerMinute:
+          (json['breedingJellyPerMinute'] as num?)?.toDouble() ?? 0.5,
+      breedingSlotsInitial:
+          (json['breedingSlotsInitial'] as num?)?.toInt() ?? 1,
+      breedingSlotsMax: (json['breedingSlotsMax'] as num?)?.toInt() ?? 3,
+      breedingExpandJelly: (json['breedingExpandJelly'] as num?)?.toInt() ?? 40,
+      breedingSizeVariancePct:
+          (json['breedingSizeVariancePct'] as num?)?.toDouble() ?? 0.08,
+      breedingMutationChance:
+          (json['breedingMutationChance'] as num?)?.toDouble() ?? 0.05,
+      breedingMutationBonusPct:
+          (json['breedingMutationBonusPct'] as num?)?.toDouble() ?? 0.15,
+      breedingPotUpChance:
+          (json['breedingPotUpChance'] as num?)?.toDouble() ?? 0.10,
+      breedingPotDownChance:
+          (json['breedingPotDownChance'] as num?)?.toDouble() ?? 0.30,
     );
   }
 }

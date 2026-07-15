@@ -873,6 +873,109 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  // ── 브리딩 (§2.5) ─────────────────────────────────────────────
+  static const _uuid = Uuid();
+
+  /// 같은 종 ♂+♀ 성충으로 산란 시작(등급별 타이머). 슬롯은 부모 스냅샷만 저장(부모 미잠금).
+  /// [seed] 는 UI에서 생성해 주입(자식 롤 결정론). 조건 불충족이면 false.
+  Future<bool> startBreeding(String motherId, String fatherId, int seed) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null || motherId == fatherId) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    if (s.breeding.length >= s.breedingCapacity) return false;
+    final mother = s.bugs.cast<IndividualBug?>().firstWhere(
+      (b) => b!.id == motherId,
+      orElse: () => null,
+    );
+    final father = s.bugs.cast<IndividualBug?>().firstWhere(
+      (b) => b!.id == fatherId,
+      orElse: () => null,
+    );
+    if (mother == null || father == null) return false;
+    if (mother.speciesId != father.speciesId) return false;
+    if (mother.sex != Sex.female || father.sex != Sex.male) return false;
+    LifeStage eff(IndividualBug b) =>
+        effectiveStage(b.stage, b.stageSince, now, cfg);
+    if (eff(mother) != LifeStage.adult || eff(father) != LifeStage.adult) {
+      return false;
+    }
+    final sp = data.speciesById[mother.speciesId];
+    if (sp == null) return false;
+    final slot = BreedingSlot(
+      id: _uuid.v4(),
+      speciesId: mother.speciesId,
+      parentAvgSizeMm: (mother.sizeMm + father.sizeMm) / 2,
+      motherPotential: mother.potential,
+      fatherPotential: father.potential,
+      endsAt: now.add(Duration(seconds: cfg.breedingDuration(sp.grade))),
+      seed: seed,
+    );
+    await _commit(s.copyWith(breeding: [...s.breeding, slot]));
+    return true;
+  }
+
+  /// 산란 완료 슬롯 수령 → 자식(알)을 보관함에 추가. [viaJelly]=남은시간 비례 젤리 즉시완료.
+  Future<bool> collectBreeding(String slotId, {bool viaJelly = false}) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final idx = s.breeding.indexWhere((b) => b.id == slotId);
+    if (idx < 0) return false;
+    final slot = s.breeding[idx];
+    final sp = data.speciesById[slot.speciesId];
+    if (sp == null) return false;
+    var mats = s.materials;
+    if (viaJelly) {
+      if (now.isBefore(slot.endsAt)) {
+        final cost = cfg.breedingJelly(slot.endsAt.difference(now));
+        final have = s.materials[MaterialKind.jelly] ?? 0;
+        if (have < cost) return false;
+        mats = Map<MaterialKind, int>.from(s.materials)
+          ..[MaterialKind.jelly] = have - cost;
+      }
+    } else if (now.isBefore(slot.endsAt)) {
+      return false; // 아직 산란 중
+    }
+    final egg = IndividualBug.breed(
+      id: _uuid.v4(),
+      species: sp,
+      rng: math.Random(slot.seed),
+      parentAvgSizeMm: slot.parentAvgSizeMm,
+      motherPotential: slot.motherPotential,
+      fatherPotential: slot.fatherPotential,
+      sizeVariancePct: cfg.breedingSizeVariancePct,
+      mutationChance: cfg.breedingMutationChance,
+      mutationBonusPct: cfg.breedingMutationBonusPct,
+      potUpChance: cfg.breedingPotUpChance,
+      potDownChance: cfg.breedingPotDownChance,
+    ).copyWith(stageSince: now);
+    final breeding = List<BreedingSlot>.from(s.breeding)..removeAt(idx);
+    await _commit(
+      s.copyWith(bugs: [...s.bugs, egg], breeding: breeding, materials: mats),
+    );
+    return true;
+  }
+
+  /// 브리딩 슬롯 확장(젤리). 최대치·젤리부족이면 false.
+  Future<bool> expandBreedingSlots() async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    if (s.breedingCapacity >= cfg.breedingSlotsMax) return false;
+    final have = s.materials[MaterialKind.jelly] ?? 0;
+    if (have < cfg.breedingExpandJelly) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cfg.breedingExpandJelly;
+    await _commit(
+      s.copyWith(breedingCapacity: s.breedingCapacity + 1, materials: mats),
+    );
+    return true;
+  }
+
   /// 분해: 미장착 곤충 [bugId] 를 없애고 젤리로 환원. 장착/없음이면 false.
   Future<bool> disassembleBug(String bugId) async {
     final s = state.requireValue;

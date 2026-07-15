@@ -80,5 +80,19 @@ void main() {
       expect(save.seasonStartedAt, isNull); // 로드 시 컨트롤러가 now로 초기화
       expect(save.seasonPeakTrophies, 0);
     });
+
+    test('v14(시즌) → 현재: 브리딩 슬롯·용량이 기본값으로 채워진다', () {
+      final v14 = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).toJson()
+        ..['schemaVersion'] = 14
+        ..remove('breeding')
+        ..remove('breedingCapacity');
+      final migrated = migrateToCurrent(v14);
+      expect(migrated['schemaVersion'], kSaveSchemaVersion);
+      expect(migrated['breeding'], isEmpty);
+      expect(migrated['breedingCapacity'], 1);
+      final save = SaveGame.fromJson(migrated);
+      expect(save.breeding, isEmpty);
+      expect(save.breedingCapacity, 1);
+    });
   });
 }

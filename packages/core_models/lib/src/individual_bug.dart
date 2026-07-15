@@ -122,6 +122,56 @@ class IndividualBug {
     );
   }
 
+  /// 브리딩(§2.5)으로 자식 개체(**알**)를 롤한다.
+  ///
+  /// - 사이즈: **부모 평균 ± 변이**(정규분포), [mutationChance] 확률로 돌연변이 보너스,
+  ///   최종적으로 종 범위로 clamp.
+  /// - 포텐셜: 부모 중 **높은 쪽**을 기준으로 상속 — [potUpChance] 상승(+1) /
+  ///   [potDownChance] 하락(−1) / 나머지 유지. [kPotentialMin]~[kPotentialMax] clamp.
+  /// - 기질/성별/오행: 균등 랜덤. 생애주기: **알**.
+  ///
+  /// 계수는 밸런스라 **인자로 주입**(모델에 상수 박지 않음). 결정론: 같은 [rng]+인자 → 같은 자식.
+  factory IndividualBug.breed({
+    required String id,
+    required Species species,
+    required Random rng,
+    required double parentAvgSizeMm,
+    required int motherPotential,
+    required int fatherPotential,
+    required double sizeVariancePct,
+    required double mutationChance,
+    required double mutationBonusPct,
+    required double potUpChance,
+    required double potDownChance,
+  }) {
+    var size = parentAvgSizeMm * (1 + nextGaussian(rng) * sizeVariancePct);
+    if (rng.nextDouble() < mutationChance) size *= (1 + mutationBonusPct);
+    size = size.clamp(species.sizeMinMm, species.sizeMaxMm).toDouble();
+
+    final basePot = motherPotential > fatherPotential
+        ? motherPotential
+        : fatherPotential;
+    final r = rng.nextDouble();
+    var pot = basePot;
+    if (r < potUpChance) {
+      pot = basePot + 1;
+    } else if (r < potUpChance + potDownChance) {
+      pot = basePot - 1;
+    }
+    pot = pot.clamp(kPotentialMin, kPotentialMax);
+
+    return IndividualBug(
+      id: id,
+      speciesId: species.id,
+      sizeMm: size,
+      potential: pot,
+      temperament: Temperament.values[rng.nextInt(Temperament.values.length)],
+      sex: rng.nextBool() ? Sex.male : Sex.female,
+      element: Element.values[rng.nextInt(Element.values.length)],
+      stage: LifeStage.egg,
+    );
+  }
+
   IndividualBug copyWith({
     String? id,
     String? speciesId,

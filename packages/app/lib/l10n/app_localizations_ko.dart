@@ -183,6 +183,35 @@ class AppLocalizationsKo extends AppLocalizations {
   String get synergyHint => '곤충 2마리 이상 배치 · 앞 슬롯이 뒤를 生하면 시너지(순서 중요)';
 
   @override
+  String get breedingTitle => '브리딩';
+
+  @override
+  String breedingSlotsLabel(int used, int cap) {
+    return '$used/$cap';
+  }
+
+  @override
+  String get breedingNew => '새 브리딩';
+
+  @override
+  String get breedingPickMother => '엄마 선택 (♀ 성충)';
+
+  @override
+  String get breedingPickFather => '아빠 선택 (♂ · 같은 종)';
+
+  @override
+  String get breedingNoFemales => '브리딩 가능한 ♀ 성충이 없어요';
+
+  @override
+  String get breedingNoMate => '같은 종 ♂ 성충이 없어요';
+
+  @override
+  String get breedingInProgress => '산란 중';
+
+  @override
+  String get breedingGotEgg => '알을 얻었어요! 부화기에 넣어 키우세요';
+
+  @override
   String get stanceAttack => '공격';
 
   @override

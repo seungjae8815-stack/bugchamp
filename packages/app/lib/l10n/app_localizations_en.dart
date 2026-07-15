@@ -184,6 +184,35 @@ class AppLocalizationsEn extends AppLocalizations {
       'Place 2+ bugs so a front slot generates the next (order matters)';
 
   @override
+  String get breedingTitle => 'Breeding';
+
+  @override
+  String breedingSlotsLabel(int used, int cap) {
+    return '$used/$cap';
+  }
+
+  @override
+  String get breedingNew => 'New breeding';
+
+  @override
+  String get breedingPickMother => 'Pick mother (♀ adult)';
+
+  @override
+  String get breedingPickFather => 'Pick father (♂ · same species)';
+
+  @override
+  String get breedingNoFemales => 'No breedable ♀ adults';
+
+  @override
+  String get breedingNoMate => 'No same-species ♂ adult';
+
+  @override
+  String get breedingInProgress => 'Breeding';
+
+  @override
+  String get breedingGotEgg => 'Got an egg! Raise it in the incubator';
+
+  @override
   String get stanceAttack => 'Attack';
 
   @override

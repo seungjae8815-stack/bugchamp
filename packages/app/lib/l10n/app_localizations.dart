@@ -424,6 +424,60 @@ abstract class AppLocalizations {
   /// **'Place 2+ bugs so a front slot generates the next (order matters)'**
   String get synergyHint;
 
+  /// No description provided for @breedingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Breeding'**
+  String get breedingTitle;
+
+  /// No description provided for @breedingSlotsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{used}/{cap}'**
+  String breedingSlotsLabel(int used, int cap);
+
+  /// No description provided for @breedingNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New breeding'**
+  String get breedingNew;
+
+  /// No description provided for @breedingPickMother.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick mother (♀ adult)'**
+  String get breedingPickMother;
+
+  /// No description provided for @breedingPickFather.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick father (♂ · same species)'**
+  String get breedingPickFather;
+
+  /// No description provided for @breedingNoFemales.
+  ///
+  /// In en, this message translates to:
+  /// **'No breedable ♀ adults'**
+  String get breedingNoFemales;
+
+  /// No description provided for @breedingNoMate.
+  ///
+  /// In en, this message translates to:
+  /// **'No same-species ♂ adult'**
+  String get breedingNoMate;
+
+  /// No description provided for @breedingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Breeding'**
+  String get breedingInProgress;
+
+  /// No description provided for @breedingGotEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Got an egg! Raise it in the incubator'**
+  String get breedingGotEgg;
+
   /// No description provided for @stanceAttack.
   ///
   /// In en, this message translates to:

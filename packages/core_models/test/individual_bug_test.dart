@@ -119,4 +119,61 @@ void main() {
       expect(restored.enhancement, bug.enhancement);
     });
   });
+
+  group('IndividualBug.breed', () {
+    IndividualBug breed(
+      Random rng, {
+      int mom = 3,
+      int dad = 3,
+      double up = 0.10,
+      double down = 0.30,
+      double mut = 0.0,
+    }) => IndividualBug.breed(
+      id: 'egg',
+      species: _species,
+      rng: rng,
+      parentAvgSizeMm: 50,
+      motherPotential: mom,
+      fatherPotential: dad,
+      sizeVariancePct: 0.08,
+      mutationChance: mut,
+      mutationBonusPct: 0.15,
+      potUpChance: up,
+      potDownChance: down,
+    );
+
+    test('자식은 알 단계 · 사이즈 종범위 내 · 포텐셜 1~5', () {
+      final rng = Random(1);
+      for (var i = 0; i < 500; i++) {
+        final e = breed(rng);
+        expect(e.stage, LifeStage.egg);
+        expect(
+          e.sizeMm,
+          inInclusiveRange(_species.sizeMinMm, _species.sizeMaxMm),
+        );
+        expect(e.potential, inInclusiveRange(1, 5));
+      }
+    });
+
+    test('결정론: 같은 seed+인자 → 같은 자식', () {
+      final a = breed(Random(42));
+      final b = breed(Random(42));
+      expect(a.sizeMm, b.sizeMm);
+      expect(a.potential, b.potential);
+      expect(a.element, b.element);
+      expect(a.sex, b.sex);
+      expect(a.temperament, b.temperament);
+    });
+
+    test('포텐셜 상속: 높은 부모 기준 상승/하락/유지(+clamp)', () {
+      // 상승(+1), 5 clamp
+      expect(breed(Random(1), mom: 2, dad: 4, up: 1.0, down: 0.0).potential, 5);
+      expect(breed(Random(1), mom: 5, dad: 5, up: 1.0, down: 0.0).potential, 5);
+      // 하락(−1), 1 clamp
+      expect(breed(Random(1), mom: 2, dad: 3, up: 0.0, down: 1.0).potential, 2);
+      expect(breed(Random(1), mom: 1, dad: 1, up: 0.0, down: 1.0).potential, 1);
+      // 유지
+      expect(breed(Random(1), mom: 2, dad: 4, up: 0.0, down: 0.0).potential, 4);
+    });
+  });
 }

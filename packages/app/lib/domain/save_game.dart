@@ -5,7 +5,7 @@ import 'gift_mail.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
-const int kSaveSchemaVersion = 14;
+const int kSaveSchemaVersion = 15;
 
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
@@ -47,6 +47,48 @@ class TrapInstallation {
   };
 }
 
+/// 브리딩(§2.5) 진행 슬롯 — 산란 완료 시 부모 스냅샷으로 자식(알)을 롤한다.
+/// 부모를 잠그지 않고 스냅샷만 저장(부모가 사라져도 알은 영향 없음).
+class BreedingSlot {
+  const BreedingSlot({
+    required this.id,
+    required this.speciesId,
+    required this.parentAvgSizeMm,
+    required this.motherPotential,
+    required this.fatherPotential,
+    required this.endsAt,
+    required this.seed,
+  });
+
+  final String id;
+  final String speciesId;
+  final double parentAvgSizeMm;
+  final int motherPotential;
+  final int fatherPotential;
+  final DateTime endsAt;
+  final int seed;
+
+  factory BreedingSlot.fromJson(Map<String, dynamic> json) => BreedingSlot(
+    id: json['id'] as String,
+    speciesId: json['speciesId'] as String,
+    parentAvgSizeMm: (json['parentAvgSizeMm'] as num).toDouble(),
+    motherPotential: (json['motherPotential'] as num).toInt(),
+    fatherPotential: (json['fatherPotential'] as num).toInt(),
+    endsAt: DateTime.parse(json['endsAt'] as String).toUtc(),
+    seed: (json['seed'] as num).toInt(),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'speciesId': speciesId,
+    'parentAvgSizeMm': parentAvgSizeMm,
+    'motherPotential': motherPotential,
+    'fatherPotential': fatherPotential,
+    'endsAt': endsAt.toUtc().toIso8601String(),
+    'seed': seed,
+  };
+}
+
 /// 저장 루트 (버전드 JSON 스냅샷). v2: 횡스크롤 런 진행 상태 포함.
 class SaveGame {
   const SaveGame({
@@ -78,6 +120,8 @@ class SaveGame {
     this.nextGiftAt,
     this.seasonStartedAt,
     this.seasonPeakTrophies = 0,
+    this.breeding = const [],
+    this.breedingCapacity = 1,
   });
 
   final int schemaVersion;
@@ -167,6 +211,12 @@ class SaveGame {
   /// 이번 시즌 최고 도달 트로피(시즌 보상 산정 기준).
   final int seasonPeakTrophies;
 
+  /// 진행 중인 브리딩 슬롯(산란 타이머).
+  final List<BreedingSlot> breeding;
+
+  /// 브리딩 슬롯 개수(젤리로 확장).
+  final int breedingCapacity;
+
   int missionClaimCount(String id) => missionClaims[id] ?? 0;
   int missionProgressCount(String id) => missionProgress[id] ?? 0;
 
@@ -207,6 +257,8 @@ class SaveGame {
     claimedLeagues: const {},
     seasonStartedAt: (createdAt ?? DateTime.now()).toUtc(),
     seasonPeakTrophies: 0,
+    breeding: const [],
+    breedingCapacity: 1,
   );
 
   SaveGame copyWith({
@@ -236,6 +288,8 @@ class SaveGame {
     Set<String>? claimedLeagues,
     DateTime? seasonStartedAt,
     int? seasonPeakTrophies,
+    List<BreedingSlot>? breeding,
+    int? breedingCapacity,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -265,6 +319,8 @@ class SaveGame {
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
     seasonStartedAt: seasonStartedAt ?? this.seasonStartedAt,
     seasonPeakTrophies: seasonPeakTrophies ?? this.seasonPeakTrophies,
+    breeding: breeding ?? this.breeding,
+    breedingCapacity: breedingCapacity ?? this.breedingCapacity,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -360,6 +416,13 @@ class SaveGame {
         ? null
         : DateTime.parse(json['seasonStartedAt'] as String).toUtc(),
     seasonPeakTrophies: (json['seasonPeakTrophies'] as num?)?.toInt() ?? 0,
+    breeding:
+        (json['breeding'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(BreedingSlot.fromJson)
+            .toList() ??
+        const [],
+    breedingCapacity: (json['breedingCapacity'] as num?)?.toInt() ?? 1,
   );
 
   Map<String, dynamic> toJson() => {
@@ -402,6 +465,8 @@ class SaveGame {
     if (seasonStartedAt != null)
       'seasonStartedAt': seasonStartedAt!.toUtc().toIso8601String(),
     'seasonPeakTrophies': seasonPeakTrophies,
+    'breeding': breeding.map((b) => b.toJson()).toList(),
+    'breedingCapacity': breedingCapacity,
   };
 
   static Map<MaterialKind, int> _materialsFromJson(Map<String, dynamic> json) {

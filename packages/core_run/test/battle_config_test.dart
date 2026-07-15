@@ -41,7 +41,8 @@ void main() {
   });
 
   group('BattleConfig 리그', () {
-    const cfg = BattleConfig(); // bronze0 / silver100 / gold300 / plat700 / dia1500
+    const cfg =
+        BattleConfig(); // bronze0 / silver100 / gold300 / plat700 / dia1500
 
     test('트로피 → 현재 리그(경계 포함)', () {
       expect(cfg.leagueFor(0).id, 'bronze');

@@ -25,4 +25,39 @@ void main() {
       expect(cfg.injuryJelly(Duration.zero), 0);
     });
   });
+
+  group('PetConfig 브리딩', () {
+    final cfg = PetConfig.fromJson({
+      'gradeAttackPct': {'common': 0.05},
+      'gradeHpPct': {'common': 0.05},
+      'stageMult': {'adult': 1.0},
+      'stageDurationsSec': {'egg': 60},
+      'breedingDurationsSec': {'common': 600, 'legendary': 9600},
+      'breedingJellyPerMinute': 0.5,
+    });
+
+    test('등급별 산란 시간(미설정 등급은 기본 1200초)', () {
+      expect(cfg.breedingDuration(Grade.common), 600);
+      expect(cfg.breedingDuration(Grade.legendary), 9600);
+      expect(cfg.breedingDuration(Grade.rare), 1200);
+    });
+
+    test('즉시완료 젤리 = 남은분 × rate, 올림·최소 1', () {
+      expect(cfg.breedingJelly(const Duration(minutes: 20)), 10);
+      expect(cfg.breedingJelly(const Duration(seconds: 10)), 1);
+      expect(cfg.breedingJelly(Duration.zero), 0);
+    });
+
+    test('기본 상속 계수(유지60/상승10/하락30·돌연변이5%)', () {
+      const d = PetConfig(
+        gradeAttackPct: {},
+        gradeHpPct: {},
+        stageMult: {},
+        stageDurationsSec: {},
+      );
+      expect(d.breedingPotUpChance, 0.10);
+      expect(d.breedingPotDownChance, 0.30);
+      expect(d.breedingMutationChance, 0.05);
+    });
+  });
 }

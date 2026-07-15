@@ -168,7 +168,8 @@ class BattleConfig {
   }
 
   /// 시즌 종료 후 남는 트로피(소프트 리셋).
-  int seasonResetTrophies(int trophies) => (trophies * seasonResetFactor).floor();
+  int seasonResetTrophies(int trophies) =>
+      (trophies * seasonResetFactor).floor();
 
   factory BattleConfig.fromJson(Map<String, dynamic> json) {
     final scout = json['scout'] as Map<String, dynamic>?;

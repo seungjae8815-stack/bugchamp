@@ -52,6 +52,7 @@ const Map<int, _JsonMap Function(_JsonMap)> _migrations = {
   11: _v11ToV12,
   12: _v12ToV13,
   13: _v13ToV14,
+  14: _v14ToV15,
 };
 
 /// v0(스키마 미표기 레거시) → v1: 누락 필드를 기본값으로 채우고 버전을 승격.
@@ -166,4 +167,12 @@ _JsonMap _v13ToV14(_JsonMap old) => {
   ...old,
   'schemaVersion': 14,
   'seasonPeakTrophies': old['seasonPeakTrophies'] ?? 0,
+};
+
+/// v14 → v15(브리딩): 산란 슬롯·용량 필드를 기본값으로 추가.
+_JsonMap _v14ToV15(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 15,
+  'breeding': old['breeding'] ?? const <dynamic>[],
+  'breedingCapacity': old['breedingCapacity'] ?? 1,
 };

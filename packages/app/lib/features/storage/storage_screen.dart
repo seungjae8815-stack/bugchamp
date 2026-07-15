@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
@@ -43,13 +45,457 @@ class StorageScreen extends ConsumerWidget {
           _materialsStrip(context, l, save),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
           Expanded(child: _grid(context, ref, data, l, save)),
+          _breedingBar(context, ref, data, l, save),
           _incubatorBar(context, ref, data, l, save),
         ],
       ),
     );
   }
 
+  /// 브리딩 진입 바(슬롯 수·완료 알림 점).
+  Widget _breedingBar(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+    SaveGame save,
+  ) {
+    if (data.petConfig == null) return const SizedBox.shrink();
+    final now = ref.read(clockProvider).now().toUtc();
+    final used = save.breeding.length;
+    final cap = save.breedingCapacity;
+    final ready = save.breeding.where((b) => !now.isBefore(b.endsAt)).length;
+    return Material(
+      color: const Color(0xFF15200D),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: SizedBox(
+          height: 46,
+          child: FilledButton(
+            onPressed: () => _showBreeding(context, ref, data),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF7E57C2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🧬', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                Text(
+                  l.breedingTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x33000000),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    l.breedingSlotsLabel(used, cap),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (ready > 0) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 9,
+                    height: 9,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF5252),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 채집함 하단(탭바 바로 위) 부화기 진입 버튼. 부화 완료 있으면 알림 점.
+  /// 특정 성별의 성충 목록(브리딩 후보).
+  List<IndividualBug> _adultsBySex(
+    SaveGame save,
+    GameData data,
+    DateTime now,
+    Sex sex,
+  ) {
+    final cfg = data.petConfig;
+    return save.bugs.where((b) {
+      if (b.sex != sex) return false;
+      final st = cfg == null
+          ? b.stage
+          : effectiveStage(b.stage, b.stageSince, now, cfg);
+      return st == LifeStage.adult;
+    }).toList();
+  }
+
+  /// 브리딩 시트: 진행 슬롯(산란중/수령) + 슬롯 확장 + 새 브리딩(짝 선택).
+  void _showBreeding(BuildContext context, WidgetRef ref, GameData data) {
+    final cfg = data.petConfig;
+    if (cfg == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xF2141F0E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Consumer(
+          builder: (ctx, r, _) {
+            final l = AppLocalizations.of(ctx);
+            final save = r.watch(saveControllerProvider).requireValue;
+            final now = r.read(clockProvider).now().toUtc();
+            final locale = Localizations.localeOf(ctx).languageCode;
+            final slots = [...save.breeding]
+              ..sort((a, b) => a.endsAt.compareTo(b.endsAt));
+            final canAdd = save.breeding.length < save.breedingCapacity;
+            final canExpand = save.breedingCapacity < cfg.breedingSlotsMax;
+            final jellyHave = save.materialCount(MaterialKind.jelly);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('🧬', style: TextStyle(fontSize: 20)),
+                      const SizedBox(width: 8),
+                      Text(
+                        l.breedingTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        l.breedingSlotsLabel(
+                          save.breeding.length,
+                          save.breedingCapacity,
+                        ),
+                        style: const TextStyle(
+                          color: _honey,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  for (final slot in slots) ...[
+                    _breedRow(ctx, r, cfg, data, slot, now, locale),
+                    const SizedBox(height: 8),
+                  ],
+                  if (canAdd)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _breedPickPair(ctx, r, data),
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: Text(l.breedingNew),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFCBB6F0),
+                          side: const BorderSide(color: Color(0x557E57C2)),
+                          minimumSize: const Size(0, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (canExpand) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: jellyHave >= cfg.breedingExpandJelly
+                            ? () => r
+                                  .read(saveControllerProvider.notifier)
+                                  .expandBreedingSlots()
+                            : null,
+                        icon: const Icon(Icons.add_box_rounded, size: 18),
+                        label: Text('💎${cfg.breedingExpandJelly}'),
+                        style: _pillStyle(const Color(0xFF7E57C2)),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _breedRow(
+    BuildContext ctx,
+    WidgetRef r,
+    PetConfig cfg,
+    GameData data,
+    BreedingSlot slot,
+    DateTime now,
+    String locale,
+  ) {
+    final l = AppLocalizations.of(ctx);
+    final sp = data.speciesById[slot.speciesId];
+    if (sp == null) return const SizedBox.shrink();
+    final ready = !now.isBefore(slot.endsAt);
+    final remaining = slot.endsAt.difference(now);
+    final total = cfg.breedingDuration(sp.grade);
+    final fill = ready
+        ? 1.0
+        : (total > 0 ? (1 - remaining.inSeconds / total).clamp(0.0, 1.0) : 1.0);
+    final jelly = cfg.breedingJelly(remaining);
+    final jellyHave = r
+        .watch(saveControllerProvider)
+        .requireValue
+        .materialCount(MaterialKind.jelly);
+    return _sectionBox(
+      child: Row(
+        children: [
+          bugStageImage(
+            sp.id,
+            LifeStage.adult,
+            size: 34,
+            fallback: bugAvatar(sp, size: 30),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${sp.name.resolve(locale)} 🧬🥚',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _rowTitle,
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: fill,
+                    minHeight: 6,
+                    backgroundColor: const Color(0x33000000),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFF7E57C2)),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  ready ? l.breedingInProgress : _remainLabel(l, remaining),
+                  style: _rowSub,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ready
+              ? FilledButton(
+                  onPressed: () async {
+                    final ok = await r
+                        .read(saveControllerProvider.notifier)
+                        .collectBreeding(slot.id);
+                    if (ctx.mounted && ok) _snack(ctx, l.breedingGotEgg);
+                  },
+                  style: _pillStyle(const Color(0xFF3E7D4F)),
+                  child: Text(l.incubatorCollect),
+                )
+              : FilledButton(
+                  onPressed: jellyHave >= jelly
+                      ? () async {
+                          final ok = await r
+                              .read(saveControllerProvider.notifier)
+                              .collectBreeding(slot.id, viaJelly: true);
+                          if (ctx.mounted && ok) _snack(ctx, l.breedingGotEgg);
+                        }
+                      : null,
+                  style: _pillStyle(const Color(0xFF7E57C2)),
+                  child: Text('💎$jelly'),
+                ),
+        ],
+      ),
+    );
+  }
+
+  /// 짝 선택 시트(단일): 엄마(♀) 선택 → 같은 종 아빠(♂) 선택 → 산란 시작.
+  void _breedPickPair(BuildContext context, WidgetRef ref, GameData data) {
+    IndividualBug? mother;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xF2141F0E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Consumer(
+          builder: (ctx, r, _) => StatefulBuilder(
+            builder: (ctx, setSheet) {
+              final l = AppLocalizations.of(ctx);
+              final save = r.watch(saveControllerProvider).requireValue;
+              final now = r.read(clockProvider).now().toUtc();
+              final locale = Localizations.localeOf(ctx).languageCode;
+              final picking = mother == null;
+              final list = picking
+                  ? _adultsBySex(save, data, now, Sex.female)
+                  : _adultsBySex(
+                      save,
+                      data,
+                      now,
+                      Sex.male,
+                    ).where((b) => b.speciesId == mother!.speciesId).toList();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        if (!picking)
+                          GestureDetector(
+                            onTap: () => setSheet(() => mother = null),
+                            child: const Padding(
+                              padding: EdgeInsets.only(right: 8),
+                              child: Icon(
+                                Icons.arrow_back_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        Expanded(
+                          child: Text(
+                            picking
+                                ? l.breedingPickMother
+                                : l.breedingPickFather,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (list.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          picking ? l.breedingNoFemales : l.breedingNoMate,
+                          style: const TextStyle(color: Color(0x99FFFFFF)),
+                        ),
+                      )
+                    else
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 340),
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final b in list)
+                                _breedPickTile(ctx, data, locale, b, () async {
+                                  if (picking) {
+                                    setSheet(() => mother = b);
+                                  } else {
+                                    final seed = math.Random().nextInt(1 << 31);
+                                    final ok = await r
+                                        .read(saveControllerProvider.notifier)
+                                        .startBreeding(mother!.id, b.id, seed);
+                                    if (ctx.mounted && ok) Navigator.pop(ctx);
+                                  }
+                                }),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _breedPickTile(
+    BuildContext ctx,
+    GameData data,
+    String locale,
+    IndividualBug bug,
+    VoidCallback onTap,
+  ) {
+    final sp = data.species(bug.speciesId);
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 86,
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: const Color(0x22000000),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: gradeColor(sp.grade).withValues(alpha: 0.7),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              bugStageImage(
+                bug.speciesId,
+                LifeStage.adult,
+                size: 42,
+                fallback: bugAvatar(sp, size: 36),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                sp.name.resolve(locale),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 10),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    sexIcon(bug.sex),
+                    size: 11,
+                    color: const Color(0xCCFFFFFF),
+                  ),
+                  const SizedBox(width: 2),
+                  _stars(bug.potential, 8),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _incubatorBar(
     BuildContext context,
     WidgetRef ref,
