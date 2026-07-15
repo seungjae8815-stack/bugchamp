@@ -52,6 +52,8 @@
   "seasonEndTitle": "시즌 종료!",
   "seasonPeak": "최고 등급: {name}",
   "seasonTrophyReset": "트로피 {from} → {to}",
+  "synergyLabel": "상생",
+  "synergyHint": "곤충 2마리 이상 배치 · 앞 슬롯이 뒤를 生하면 시너지(순서 중요)",
   "stanceAttack": "공격",
   "stanceDefend": "방어",
   "stanceHeal": "회복",

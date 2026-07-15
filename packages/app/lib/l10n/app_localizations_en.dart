@@ -177,6 +177,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get synergyLabel => 'Synergy';
+
+  @override
+  String get synergyHint =>
+      'Place 2+ bugs so a front slot generates the next (order matters)';
+
+  @override
   String get stanceAttack => 'Attack';
 
   @override

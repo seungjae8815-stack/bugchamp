@@ -454,7 +454,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 8),
+                _synergyBar(l, data, save, locale),
+                const SizedBox(height: 14),
                 // ── 스카우트 보드 ──
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -604,78 +606,166 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final sp = bug == null ? null : data.species(bug.speciesId);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: GestureDetector(
-        onTap: () => _showPicker(data, save, locale, index),
-        child: Container(
-          height: 150,
-          decoration: BoxDecoration(
-            color: const Color(0x22000000),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: bug == null ? const Color(0x33FFFFFF) : _honey,
-              width: bug == null ? 1 : 1.6,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          GestureDetector(
+            onTap: () => _showPicker(data, save, locale, index),
+            child: Container(
+              height: 150,
+              decoration: BoxDecoration(
+                color: const Color(0x22000000),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: bug == null ? const Color(0x33FFFFFF) : _honey,
+                  width: bug == null ? 1 : 1.6,
+                ),
+              ),
+              child: bug == null
+                  ? const Center(
+                      child: Icon(
+                        Icons.add_circle_outline,
+                        color: Color(0x66FFFFFF),
+                        size: 28,
+                      ),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: bugStageImage(
+                            bug.speciesId,
+                            LifeStage.adult,
+                            size: 60,
+                            fallback: bugAvatar(sp!, size: 52),
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: elementColor(
+                              bug.element,
+                            ).withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${elementGlyph(bug.element)} ${elementLabel(AppLocalizations.of(context), bug.element)}',
+                            style: TextStyle(
+                              color: elementColor(bug.element),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            sp.name.resolve(locale),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                    ),
             ),
           ),
-          child: bug == null
-              ? const Center(
-                  child: Icon(
-                    Icons.add_circle_outline,
-                    color: Color(0x66FFFFFF),
-                    size: 28,
-                  ),
-                )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: bugStageImage(
-                        bug.speciesId,
-                        LifeStage.adult,
-                        size: 60,
-                        fallback: bugAvatar(sp!, size: 52),
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 2),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: elementColor(
-                          bug.element,
-                        ).withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${elementGlyph(bug.element)} ${elementLabel(AppLocalizations.of(context), bug.element)}',
-                        style: TextStyle(
-                          color: elementColor(bug.element),
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        sp.name.resolve(locale),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                ),
-        ),
+          // 전투 순서 배지 ①②③
+          Positioned(top: -6, left: -2, child: _orderBadge(index)),
+        ],
       ),
     );
   }
+
+  Widget _orderBadge(int index) => Container(
+    width: 19,
+    height: 19,
+    decoration: const BoxDecoration(color: _honey, shape: BoxShape.circle),
+    alignment: Alignment.center,
+    child: Text(
+      '${index + 1}',
+      style: const TextStyle(
+        color: Color(0xFF3A2600),
+        fontSize: 11,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
+
+  /// 편성 순서대로 오행 상생(生) 연결·팀 시너지% 미리보기.
+  Widget _synergyBar(
+    AppLocalizations l,
+    GameData data,
+    SaveGame save,
+    String locale,
+  ) {
+    final mine = [
+      for (final id in _team.whereType<String>())
+        _toBattleBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
+    ];
+    if (mine.length < 2) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Text(
+          l.synergyHint,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0x77FFFFFF), fontSize: 10.5),
+        ),
+      );
+    }
+    final pct = ((teamSynergy(mine) - 1) * 100).round();
+    final active = pct > 0;
+    final color = active ? const Color(0xFF6FCF6F) : const Color(0xFFBFC4CC);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < mine.length; i++) ...[
+          if (i > 0) _linkGlyph(mine[i - 1].element.generates(mine[i].element)),
+          Text(
+            elementGlyph(mine[i].element),
+            style: const TextStyle(fontSize: 15),
+          ),
+        ],
+        const SizedBox(width: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            '${l.synergyLabel} ${active ? '+' : ''}$pct%',
+            style: TextStyle(
+              color: active ? const Color(0xFF6FCF6F) : const Color(0xCCFFFFFF),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _linkGlyph(bool gen) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    child: Text(
+      gen ? '→' : '·',
+      style: TextStyle(
+        color: gen ? const Color(0xFF6FCF6F) : const Color(0x55FFFFFF),
+        fontSize: gen ? 16 : 15,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
 
   void _showPicker(GameData data, SaveGame save, String locale, int slot) {
     final now = ref.read(clockProvider).now().toUtc();

@@ -59,6 +59,8 @@
   "@seasonPeak": { "placeholders": { "name": { "type": "String" } } },
   "seasonTrophyReset": "Trophies {from} → {to}",
   "@seasonTrophyReset": { "placeholders": { "from": { "type": "int" }, "to": { "type": "int" } } },
+  "synergyLabel": "Synergy",
+  "synergyHint": "Place 2+ bugs so a front slot generates the next (order matters)",
   "stanceAttack": "Attack",
   "stanceDefend": "Defend",
   "stanceHeal": "Heal",

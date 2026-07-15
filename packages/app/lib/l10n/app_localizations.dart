@@ -412,6 +412,18 @@ abstract class AppLocalizations {
   /// **'Trophies {from} → {to}'**
   String seasonTrophyReset(int from, int to);
 
+  /// No description provided for @synergyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Synergy'**
+  String get synergyLabel;
+
+  /// No description provided for @synergyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Place 2+ bugs so a front slot generates the next (order matters)'**
+  String get synergyHint;
+
   /// No description provided for @stanceAttack.
   ///
   /// In en, this message translates to:

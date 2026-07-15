@@ -177,6 +177,12 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get synergyLabel => '상생';
+
+  @override
+  String get synergyHint => '곤충 2마리 이상 배치 · 앞 슬롯이 뒤를 生하면 시너지(순서 중요)';
+
+  @override
   String get stanceAttack => '공격';
 
   @override
