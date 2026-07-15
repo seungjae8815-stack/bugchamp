@@ -7,28 +7,35 @@
 
 ---
 
-## 1. 현재 코드 상태 (Increment 1 완료)
+## 1. 현재 코드 상태 (Increment 1·2 코드 완료)
 
 - `domain/pvp_backend.dart` — `PvpBackend` 인터페이스 + `PvpProfile`/`LeaderboardEntry` +
-  `LocalPvpBackend`(자리표시) + `pvpBackendProvider`.
+  `LocalPvpBackend`(폴백) + `pvpBackendProvider`.
+- `domain/supabase_pvp_backend.dart` — **`SupabasePvpBackend` 구현 완료**(upsert 프로필 + RPC 조회,
+  실패 시 로컬 폴백).
+- `main.dart` — `--dart-define` 로 URL/anon key 주입 시 `Supabase.initialize` + 익명 로그인 후
+  `pvpBackendProvider` 를 Supabase 구현으로 오버라이드. 키 없으면 로컬.
 - `features/leaderboard/leaderboard_screen.dart` — 랭킹 화면(홈 상단 랭킹 아이콘 → 진입).
-- 인터페이스:
-  ```dart
-  abstract interface class PvpBackend {
-    Future<List<LeaderboardEntry>> leaderboard({required PvpProfile me, int limit});
-  }
-  ```
-- **아직 없음**(다음 단계): 방어팀 등록/조회(진짜 비동기 매칭), 인증, Supabase 구현.
+- **남은 것**: 실기에서 §2 셋업 후 `--dart-define` 로 실행해 검증, 이후 방어팀 등록·스카우트 실데이터(Inc.2 후속).
+
+### 실행(실 Supabase로 테스트)
+```powershell
+cd packages\app
+flutter run -d <device> ^
+  --dart-define=SUPABASE_URL=https://rvmpwyycivmtrbbynjyy.supabase.co ^
+  --dart-define=SUPABASE_ANON_KEY=<anon public key(eyJ...)>
+```
+> 키를 안 주면(그냥 `flutter run`) 로컬 랭킹으로 동작. 키는 저장소에 커밋되지 않음.
 
 ---
 
 ## 2. 사장님이 할 일 (1회)
 
-1. https://supabase.com 에서 프로젝트 생성(무료 티어 OK).
-2. **Project URL** 과 **anon public key** 를 확보(Settings → API).
-3. 아래 §4 SQL 을 Supabase SQL Editor 에 실행(테이블 + RLS).
-4. URL/key 를 Claude 에게 전달 → `supabase_flutter` 어댑터 연결.
-   - 키는 코드에 하드코딩하지 말고 `--dart-define`(빌드 인자) 또는 별도 설정으로 주입.
+1. ✅ 프로젝트 생성됨: `https://rvmpwyycivmtrbbynjyy.supabase.co`.
+2. **anon public key** 확보(Settings → API → Project API keys → `anon`/`public`, `eyJ...`).
+3. 아래 §4 SQL 을 **SQL Editor** 에 실행(테이블 + RLS + RPC).
+4. **Auth → Providers → Anonymous sign-ins** 켜기(내 프로필 upsert에 필요).
+5. §1 실행 명령의 `--dart-define` 에 URL/anon key 넣어 실기 실행 → 랭킹이 실데이터로.
 
 ---
 
