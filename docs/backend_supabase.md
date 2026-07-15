@@ -51,45 +51,50 @@ flutter run -d <device> ^
 
 ```sql
 -- 익명 인증 사용 가정(supabase auth anonymous). auth.uid() = 유저 식별.
-create table profiles (
+-- 재실행해도 안전(idempotent).
+create table if not exists profiles (
   id         uuid primary key references auth.users(id) on delete cascade,
   nickname   text not null,
   trophies   int  not null default 0,
   updated_at timestamptz not null default now()
 );
 
-create table defenders (
+create table if not exists defenders (
   id         uuid primary key references auth.users(id) on delete cascade,
   team       jsonb not null,           -- 성충3 스냅샷(종·오행·스탯·기질·사이즈)
   trophies   int  not null default 0,  -- 매칭 대역폭용(비정규화)
   updated_at timestamptz not null default now()
 );
 
--- 리더보드 상위 조회 인덱스
-create index profiles_trophies_idx on profiles (trophies desc);
-create index defenders_trophies_idx on defenders (trophies desc);
+create index if not exists profiles_trophies_idx on profiles (trophies desc);
+create index if not exists defenders_trophies_idx on defenders (trophies desc);
 
--- RLS: 누구나 읽기, 본인만 자기 행 upsert.
+-- RLS: **본인 행만** 접근(테이블 전체는 비공개). 랭킹은 아래 SECURITY DEFINER 함수로만 노출.
 alter table profiles  enable row level security;
 alter table defenders enable row level security;
-create policy read_all_profiles  on profiles  for select using (true);
-create policy read_all_defenders on defenders for select using (true);
-create policy upsert_own_profile  on profiles
-  for all using (auth.uid() = id) with check (auth.uid() = id);
-create policy upsert_own_defender on defenders
-  for all using (auth.uid() = id) with check (auth.uid() = id);
-```
 
-리더보드 상위 + 내 순위는 RPC(SQL 함수)로 한 번에 받는 게 효율적:
+drop policy if exists read_all_profiles   on profiles;   -- (구버전 정리)
+drop policy if exists read_all_defenders  on defenders;
+drop policy if exists own_profile  on profiles;
+drop policy if exists own_defender on defenders;
 
-```sql
+create policy own_profile  on profiles
+  for all using (auth.uid() = id) with check (auth.uid() = id);
+create policy own_defender on defenders
+  for all using (auth.uid() = id) with check (auth.uid() = id);
+
+-- 리더보드 상위 N(순위 포함): SECURITY DEFINER 로 RLS 우회 → 전체 랭킹 반환.
+-- 민감정보 없이 rank/nickname/trophies 만 노출. search_path 고정(보안).
 create or replace function leaderboard_top(lim int)
 returns table(rank bigint, id uuid, nickname text, trophies int)
-language sql stable as $$
+language sql stable security definer set search_path = public as $$
   select row_number() over (order by trophies desc) as rank,
          id, nickname, trophies
   from profiles order by trophies desc limit lim;
 $$;
+
+-- PostgREST 스키마 캐시 갱신(테이블/함수가 즉시 API에 노출되도록).
+notify pgrst, 'reload schema';
 ```
 
 ---
