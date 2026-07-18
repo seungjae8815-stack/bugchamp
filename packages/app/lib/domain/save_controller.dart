@@ -984,7 +984,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final idx = s.bugs.indexWhere((b) => b.id == bugId);
     if (idx < 0) return false;
     final bug = s.bugs[idx];
-    final reward = bug.potential; // 포텐셜만큼 젤리
+    // 분해 보상(젤리)은 pets.json 의 PetConfig 계수로 결정(§6). config 없으면 포텐셜만큼.
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    final reward = cfg?.disassembleJelly(bug.potential) ?? bug.potential;
     final mats = Map<MaterialKind, int>.from(s.materials)
       ..[MaterialKind.jelly] = (s.materials[MaterialKind.jelly] ?? 0) + reward;
     final bugs = List<IndividualBug>.from(s.bugs)..removeAt(idx);

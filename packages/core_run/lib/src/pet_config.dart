@@ -17,7 +17,8 @@ class PetConfig {
     this.accelerateJelly = 2,
     this.synthFodder = 3,
     this.synthMaxPotential = 5,
-    this.maxLevel = 30,
+    this.disassembleJellyBase = 0,
+    this.disassembleJellyPerPotential = 1.0,
     this.levelBonus = 0.06,
     this.trainBaseCost = 200,
     this.trainCostGrowth = 1.18,
@@ -76,8 +77,16 @@ class PetConfig {
   /// 합성으로 올릴 수 있는 최대 포텐셜.
   final int synthMaxPotential;
 
-  /// 성충 수련 최대 레벨.
-  final int maxLevel;
+  /// 분해(젤리 환원) 보상 기본값 + 포텐셜 1당 젤리(§6, JSON).
+  /// 보상 = [disassembleJellyBase] + [disassembleJellyPerPotential] × 포텐셜.
+  final int disassembleJellyBase;
+  final double disassembleJellyPerPotential;
+
+  /// 곤충 분해 시 돌려받는 젤리(포텐셜 [potential] 기준). 0 미만은 0으로 클램프.
+  int disassembleJelly(int potential) =>
+      (disassembleJellyBase + disassembleJellyPerPotential * potential)
+          .round()
+          .clamp(0, 1 << 30);
 
   /// 레벨 1당 그 펫 기여의 증폭(0.06 = 레벨당 +6%p).
   final double levelBonus;
@@ -201,7 +210,10 @@ class PetConfig {
       accelerateJelly: (json['accelerateJelly'] as num?)?.toInt() ?? 2,
       synthFodder: (json['synthFodder'] as num?)?.toInt() ?? 3,
       synthMaxPotential: (json['synthMaxPotential'] as num?)?.toInt() ?? 5,
-      maxLevel: (json['maxLevel'] as num?)?.toInt() ?? 30,
+      disassembleJellyBase:
+          (json['disassembleJellyBase'] as num?)?.toInt() ?? 0,
+      disassembleJellyPerPotential:
+          (json['disassembleJellyPerPotential'] as num?)?.toDouble() ?? 1.0,
       levelBonus: (json['levelBonus'] as num?)?.toDouble() ?? 0.06,
       trainBaseCost: (json['trainBaseCost'] as num?)?.toDouble() ?? 200,
       trainCostGrowth: (json['trainCostGrowth'] as num?)?.toDouble() ?? 1.18,
