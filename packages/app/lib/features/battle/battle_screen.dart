@@ -630,191 +630,202 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 ),
               ),
             )
-          : Column(
-              children: [
-                const SizedBox(height: 12),
-                _leaguePanel(l, battleCfg, save, now),
-                const SizedBox(height: 14),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.groups_rounded, color: _honey, size: 18),
-                      const SizedBox(width: 6),
-                      Text(
-                        l.battleMyTeam,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  _leaguePanel(l, battleCfg, save, now),
+                  const SizedBox(height: 14),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.groups_rounded,
+                          color: _honey,
+                          size: 18,
                         ),
-                      ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.drag_indicator_rounded,
-                        color: Color(0x88FFFFFF),
-                        size: 15,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        l.teamReorderHint,
-                        style: const TextStyle(
+                        const SizedBox(width: 6),
+                        Text(
+                          l.battleMyTeam,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Spacer(),
+                        const Icon(
+                          Icons.drag_indicator_rounded,
                           color: Color(0x88FFFFFF),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
+                          size: 15,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < 3; i++)
-                        Expanded(child: _teamSlot(data, save, locale, i)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _synergyBar(l, data, save, locale),
-                const SizedBox(height: 14),
-                // ── 스카우트 보드 ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.travel_explore_rounded,
-                        color: _honey,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        l.scoutBoard,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: avg == null
-                            ? null
-                            : () {
-                                setState(() => _rollScouts(data, locale, avg));
-                                _fetchRealScouts(data, locale, avg, save);
-                              },
-                        icon: const Icon(Icons.smart_display_rounded, size: 16),
-                        label: Text(l.scoutRefresh),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFE9D9A6),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (var i = 0; i < _scouts.length; i++)
-                        Expanded(
-                          child: _scoutCard(l, data, battleCfg, save, i),
-                        ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: Column(
-                    children: [
-                      // 수동 전투(심리전) — 헤드라인
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: FilledButton.icon(
-                          onPressed: canBattle
-                              ? () => _battleManual(
-                                  data,
-                                  save,
-                                  locale,
-                                  _scouts[_selectedScout],
-                                )
-                              : null,
-                          icon: const Icon(Icons.psychology_rounded),
-                          label: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                l.battleManual,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              Text(
-                                l.battleManualDesc,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xCCFFFFFF),
-                                ),
-                              ),
-                            ],
-                          ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFC1502E),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                        const SizedBox(width: 2),
+                        Text(
+                          l.teamReorderHint,
+                          style: const TextStyle(
+                            color: Color(0x88FFFFFF),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      // 자동 전투 — 빠른 진행
-                      SizedBox(
-                        width: double.infinity,
-                        height: 46,
-                        child: OutlinedButton.icon(
-                          onPressed: canBattle
-                              ? () => _battle(
-                                  data,
-                                  save,
-                                  locale,
-                                  _scouts[_selectedScout],
-                                )
-                              : null,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < 3; i++)
+                          Expanded(child: _teamSlot(data, save, locale, i)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _synergyBar(l, data, save, locale),
+                  const SizedBox(height: 14),
+                  // ── 스카우트 보드 ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.travel_explore_rounded,
+                          color: _honey,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          l.scoutBoard,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: avg == null
+                              ? null
+                              : () {
+                                  setState(
+                                    () => _rollScouts(data, locale, avg),
+                                  );
+                                  _fetchRealScouts(data, locale, avg, save);
+                                },
                           icon: const Icon(
-                            Icons.fast_forward_rounded,
-                            size: 20,
+                            Icons.smart_display_rounded,
+                            size: 16,
                           ),
-                          label: Text(
-                            l.battleAuto,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
+                          label: Text(l.scoutRefresh),
+                          style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFFE9D9A6),
-                            side: const BorderSide(color: Color(0x55EBA52F)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = 0; i < _scouts.length; i++)
+                          Expanded(
+                            child: _scoutCard(l, data, battleCfg, save, i),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    child: Column(
+                      children: [
+                        // 수동 전투(심리전) — 헤드라인
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: FilledButton.icon(
+                            onPressed: canBattle
+                                ? () => _battleManual(
+                                    data,
+                                    save,
+                                    locale,
+                                    _scouts[_selectedScout],
+                                  )
+                                : null,
+                            icon: const Icon(Icons.psychology_rounded),
+                            label: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  l.battleManual,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                Text(
+                                  l.battleManualDesc,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xCCFFFFFF),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFFC1502E),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 10),
+                        // 자동 전투 — 빠른 진행
+                        SizedBox(
+                          width: double.infinity,
+                          height: 46,
+                          child: OutlinedButton.icon(
+                            onPressed: canBattle
+                                ? () => _battle(
+                                    data,
+                                    save,
+                                    locale,
+                                    _scouts[_selectedScout],
+                                  )
+                                : null,
+                            icon: const Icon(
+                              Icons.fast_forward_rounded,
+                              size: 20,
+                            ),
+                            label: Text(
+                              l.battleAuto,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFE9D9A6),
+                              side: const BorderSide(color: Color(0x55EBA52F)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }

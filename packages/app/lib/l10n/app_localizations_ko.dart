@@ -191,7 +191,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get teamReorderHint => '끌어서 순서 변경';
 
   @override
-  String get breedingTitle => '브리딩';
+  String get breedingTitle => '짝짓기';
 
   @override
   String breedingSlotsLabel(int used, int cap) {
@@ -199,25 +199,25 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get breedingNew => '새 브리딩';
+  String get breedingNew => '새 짝짓기';
 
   @override
-  String get breedingPickMother => '엄마 선택 (♀ 성충)';
+  String get breedingPickMother => '엄마 곤충 고르기 (♀ 어른)';
 
   @override
-  String get breedingPickFather => '아빠 선택 (♂ · 같은 종)';
+  String get breedingPickFather => '아빠 곤충 고르기 (♂ · 같은 종류)';
 
   @override
-  String get breedingNoFemales => '브리딩 가능한 ♀ 성충이 없어요';
+  String get breedingNoFemales => '짝짓기할 엄마(♀ 어른) 곤충이 없어요';
 
   @override
-  String get breedingNoMate => '같은 종 ♂ 성충이 없어요';
+  String get breedingNoMate => '같은 종류의 아빠(♂ 어른) 곤충이 없어요';
 
   @override
-  String get breedingInProgress => '산란 중';
+  String get breedingInProgress => '알 낳는 중';
 
   @override
-  String get breedingGotEgg => '알을 얻었어요! 부화기에 넣어 키우세요';
+  String get breedingGotEgg => '알이 나왔어요! 부화기에 넣어 키우세요';
 
   @override
   String get leaderboardLocalNote => '로컬 랭킹 · 온라인 연동 준비 중';
@@ -669,6 +669,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get giftDoubledSnack => '광고 보상 2배 획득!';
+
+  @override
+  String get giftAdMoreTitle => '광고 보고 한 번 더?';
+
+  @override
+  String get giftAdMoreBody => '광고를 보면 같은 보상을 한 번 더 받아요';
+
+  @override
+  String get giftAdMoreYes => '광고 보고 받기';
+
+  @override
+  String get giftAdMoreLater => '괜찮아요';
 
   @override
   String get giftNone => '아직 도착한 선물이 없어요. 플레이하다 보면 도착해요!';

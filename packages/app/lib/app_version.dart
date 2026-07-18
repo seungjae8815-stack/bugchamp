@@ -13,5 +13,6 @@ const String kBuildDate = '2026-07-18';
 /// 이 빌드에 새로 들어간 것 — 설치 후 무엇을 확인하면 되는지 힌트.
 const String kBuildHighlights = '비동기 PvP · 트로피 라이브 · 슬롯 드래그 · 시즌 카운트다운';
 
-/// 설정 화면에 표시할 짧은 라벨. 예: "v1.0.0 · 2026-07-18".
-const String kBuildLabel = 'v$kAppVersionName · $kBuildDate';
+/// 설정 화면에 표시할 짧은 라벨(날짜 없이 버전만). 예: "v1.0.0".
+/// 날짜·기능 상세는 ⓘ 아이콘을 눌러 펼친다.
+const String kBuildLabel = 'v$kAppVersionName';

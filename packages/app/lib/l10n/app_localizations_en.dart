@@ -672,6 +672,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftDoubledSnack => 'Ad reward ×2!';
 
   @override
+  String get giftAdMoreTitle => 'Watch an ad for one more?';
+
+  @override
+  String get giftAdMoreBody => 'Watch an ad to get the same reward once more';
+
+  @override
+  String get giftAdMoreYes => 'Watch ad';
+
+  @override
+  String get giftAdMoreLater => 'No thanks';
+
+  @override
   String get giftNone => 'No gifts yet. Keep playing and they\'ll arrive!';
 
   @override

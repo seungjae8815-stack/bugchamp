@@ -433,6 +433,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 이미 수령한 선물 [g] 를 광고 보상으로 **한 번 더**(추가 1배) 지급.
+  /// "그냥 받기" 후 광고 보고 한 번 더 받기 흐름용(선물은 이미 목록에서 제거됨).
+  Future<void> grantGiftBonus(GiftMail g) async {
+    final s = state.requireValue;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final e in g.materials.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value;
+    }
+    await _commit(s.copyWith(gold: s.gold + g.gold, materials: mats));
+  }
+
   /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
   /// 결투 결과 반영: 골드·트로피 정산 + KO된 내 곤충([koedBugIds])에 부상 회복 타이머 부여.
   Future<void> applyBattleResult({

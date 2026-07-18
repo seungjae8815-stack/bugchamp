@@ -355,6 +355,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   Duration _lastElapsed = Duration.zero;
 
+  /// 설정의 빌드 상세(빌드일·기능) 펼침 여부.
+  bool _showBuildDetail = false;
+
   int _stage = 1;
   int _habitatIndex = 0;
   bool _isBoss = false;
@@ -2257,23 +2260,52 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (g.chitin + g.mineral + g.sap > 0)
         '🧪${formatCompact(g.chitin + g.mineral + g.sap)}',
     ];
-    Future<void> claim({required bool doubled}) async {
-      final mult = doubled ? (_data.giftConfig?.adMultiplier ?? 2) : 1;
-      final gold = g.gold * mult;
-      final materials = {
-        for (final e in g.materials.entries) e.key: e.value * mult,
-      };
-      final ok = await r
-          .read(saveControllerProvider.notifier)
-          .claimGift(g.id, doubled: doubled);
-      if (ok && ctx.mounted) {
+    // 그냥 받기(1배) → 수령 후 "광고 보고 한 번 더 받기" 제안 → 수락 시 +1배.
+    Future<void> claimThenOffer() async {
+      final notifier = r.read(saveControllerProvider.notifier);
+      final ok = await notifier.claimGift(g.id, doubled: false);
+      if (!ok || !ctx.mounted) return;
+      await showRewardPopup(
+        ctx,
+        title: l.giftClaimedSnack,
+        subtitle: l.rewardGained,
+        icon: Icons.card_giftcard_rounded,
+        gold: g.gold,
+        materials: g.materials,
+      );
+      if (!ctx.mounted) return;
+      final more = await showGameDialog<bool>(
+        ctx,
+        title: l.giftAdMoreTitle,
+        icon: Icons.play_circle_fill_rounded,
+        content: Text(
+          l.giftAdMoreBody,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xD9FFFFFF),
+            fontSize: 13.5,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          gameDialogButton(
+            l.giftAdMoreLater,
+            () => Navigator.pop(ctx, false),
+            primary: false,
+          ),
+          gameDialogButton(l.giftAdMoreYes, () => Navigator.pop(ctx, true)),
+        ],
+      );
+      if (more == true && ctx.mounted) {
+        await notifier.grantGiftBonus(g);
+        if (!ctx.mounted) return;
         await showRewardPopup(
           ctx,
-          title: doubled ? l.giftDoubledSnack : l.giftClaimedSnack,
+          title: l.giftDoubledSnack,
           subtitle: l.rewardGained,
-          icon: Icons.card_giftcard_rounded,
-          gold: gold,
-          materials: materials,
+          icon: Icons.play_circle_fill_rounded,
+          gold: g.gold,
+          materials: g.materials,
         );
       }
     }
@@ -2318,45 +2350,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
             const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 104,
-                  height: 32,
-                  child: FilledButton(
-                    onPressed: () => claim(doubled: false),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF556070),
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 32),
-                    ),
-                    child: Text(
-                      l.giftClaim,
-                      style: const TextStyle(fontSize: 11.5),
-                    ),
+            SizedBox(
+              width: 104,
+              height: 40,
+              child: FilledButton(
+                onPressed: claimThenOffer,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFEBA52F),
+                  foregroundColor: const Color(0xFF3A2600),
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 40),
+                ),
+                child: Text(
+                  l.giftClaim,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 5),
-                SizedBox(
-                  width: 104,
-                  height: 32,
-                  child: FilledButton.icon(
-                    onPressed: () => claim(doubled: true),
-                    icon: const Icon(Icons.play_circle_fill, size: 14),
-                    label: Text(
-                      l.giftClaimAd,
-                      style: const TextStyle(fontSize: 11.5),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFEBA52F),
-                      foregroundColor: const Color(0xFF3A2600),
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 32),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
@@ -2521,52 +2533,84 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
           ),
           // ── 빌드 식별자 — 설치본이 어떤 업데이트인지 확인용 ──
+          // ⓘ 아이콘을 누르면 빌드일·기능 상세가 펼쳐진다(기본 접힘).
           const SizedBox(height: 14),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                size: 14,
-                color: Color(0x99FFFFFF),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                l.settingsBuildLabel(kBuildLabel),
-                style: const TextStyle(
-                  color: Color(0xCCFFFFFF),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                decoration: BoxDecoration(
-                  color: (online ? const Color(0xFF5FD3C8) : Colors.white)
-                      .withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  online ? '🌐 ${l.backendOnline}' : '📴 ${l.backendLocal}',
-                  style: TextStyle(
-                    color: online
-                        ? const Color(0xFF7FE3D8)
-                        : const Color(0xCCFFFFFF),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
+          const SizedBox(height: 8),
+          StatefulBuilder(
+            builder: (context, setLocal) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      InkResponse(
+                        onTap: () => setLocal(
+                          () => _showBuildDetail = !_showBuildDetail,
+                        ),
+                        radius: 16,
+                        child: Icon(
+                          _showBuildDetail
+                              ? Icons.info_rounded
+                              : Icons.info_outline_rounded,
+                          size: 16,
+                          color: _showBuildDetail
+                              ? const Color(0xFFEBA52F)
+                              : const Color(0x99FFFFFF),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        l.settingsBuildLabel(kBuildLabel),
+                        style: const TextStyle(
+                          color: Color(0xCCFFFFFF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              (online ? const Color(0xFF5FD3C8) : Colors.white)
+                                  .withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          online
+                              ? '🌐 ${l.backendOnline}'
+                              : '📴 ${l.backendLocal}',
+                          style: TextStyle(
+                            color: online
+                                ? const Color(0xFF7FE3D8)
+                                : const Color(0xCCFFFFFF),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            kBuildHighlights,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0x88FFFFFF), fontSize: 10.5),
+                  if (_showBuildDetail) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '$kBuildDate · $kBuildHighlights',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 10.5,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
         ],
       ),

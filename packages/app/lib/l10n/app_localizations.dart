@@ -1300,6 +1300,30 @@ abstract class AppLocalizations {
   /// **'Ad reward ×2!'**
   String get giftDoubledSnack;
 
+  /// No description provided for @giftAdMoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch an ad for one more?'**
+  String get giftAdMoreTitle;
+
+  /// No description provided for @giftAdMoreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch an ad to get the same reward once more'**
+  String get giftAdMoreBody;
+
+  /// No description provided for @giftAdMoreYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad'**
+  String get giftAdMoreYes;
+
+  /// No description provided for @giftAdMoreLater.
+  ///
+  /// In en, this message translates to:
+  /// **'No thanks'**
+  String get giftAdMoreLater;
+
   /// No description provided for @giftNone.
   ///
   /// In en, this message translates to:

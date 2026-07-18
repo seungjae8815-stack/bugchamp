@@ -411,6 +411,7 @@ class StorageScreen extends ConsumerWidget {
                         constraints: const BoxConstraints(maxHeight: 340),
                         child: SingleChildScrollView(
                           child: Wrap(
+                            alignment: WrapAlignment.center,
                             spacing: 8,
                             runSpacing: 8,
                             children: [

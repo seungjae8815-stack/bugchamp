@@ -66,6 +66,15 @@ class BugChampApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF3B7A2A)),
         useMaterial3: true,
+        // 앱은 다크 게임 톤 — Scaffold/AppBar 기본 배경을 어둡게(밝은 M3 기본 위
+        // 흰 글씨가 안 보이던 전투·랭킹 등 화면을 한 번에 맞춘다). 플레이/보관함은
+        // 자체 다크 배경을 그 위에 그리므로 영향 없음.
+        scaffoldBackgroundColor: const Color(0xFF11190B),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF16240D),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
