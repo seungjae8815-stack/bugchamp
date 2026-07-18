@@ -227,6 +227,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaderboardOnlineNote => 'Online ranking · live';
 
   @override
+  String get backendOnline => 'Online';
+
+  @override
+  String get backendLocal => 'Local';
+
+  @override
+  String settingsBuildLabel(String label) {
+    return 'Build $label';
+  }
+
+  @override
   String leaderboardMyRank(int n) {
     return 'My rank #$n';
   }

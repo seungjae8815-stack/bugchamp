@@ -502,6 +502,24 @@ abstract class AppLocalizations {
   /// **'Online ranking · live'**
   String get leaderboardOnlineNote;
 
+  /// No description provided for @backendOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get backendOnline;
+
+  /// No description provided for @backendLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get backendLocal;
+
+  /// No description provided for @settingsBuildLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Build {label}'**
+  String settingsBuildLabel(String label);
+
   /// No description provided for @leaderboardMyRank.
   ///
   /// In en, this message translates to:

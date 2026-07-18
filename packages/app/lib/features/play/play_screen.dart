@@ -8,8 +8,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../app_version.dart';
 import '../../data/game_data.dart';
 import '../../domain/providers.dart';
+import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
 import '../../domain/gift_mail.dart';
 import '../../domain/save_game.dart';
@@ -2476,6 +2478,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   void _showSettings(AppLocalizations l) {
+    // 실기에서 어떤 빌드로 켰는지(온라인 Supabase / 로컬) 바로 확인.
+    final online = ref.read(pvpBackendProvider).isRemote;
     showGameDialog<void>(
       context,
       title: l.settingsTitle,
@@ -2515,6 +2519,54 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 side: const BorderSide(color: Color(0x55EF9A9A)),
               ),
             ),
+          ),
+          // ── 빌드 식별자 — 설치본이 어떤 업데이트인지 확인용 ──
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0x22FFFFFF)),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 14,
+                color: Color(0x99FFFFFF),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                l.settingsBuildLabel(kBuildLabel),
+                style: const TextStyle(
+                  color: Color(0xCCFFFFFF),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                decoration: BoxDecoration(
+                  color: (online ? const Color(0xFF5FD3C8) : Colors.white)
+                      .withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  online ? '🌐 ${l.backendOnline}' : '📴 ${l.backendLocal}',
+                  style: TextStyle(
+                    color: online
+                        ? const Color(0xFF7FE3D8)
+                        : const Color(0xCCFFFFFF),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            kBuildHighlights,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0x88FFFFFF), fontSize: 10.5),
           ),
         ],
       ),

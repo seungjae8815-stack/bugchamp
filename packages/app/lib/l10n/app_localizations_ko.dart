@@ -226,6 +226,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leaderboardOnlineNote => '온라인 랭킹 · 실시간 반영';
 
   @override
+  String get backendOnline => '온라인';
+
+  @override
+  String get backendLocal => '로컬';
+
+  @override
+  String settingsBuildLabel(String label) {
+    return '빌드 $label';
+  }
+
+  @override
   String leaderboardMyRank(int n) {
     return '내 순위 #$n';
   }
