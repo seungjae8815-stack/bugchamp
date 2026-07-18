@@ -38,6 +38,16 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# 런처 아이콘 생성: 이미지 교체 후 `dart run flutter_launcher_icons` 재실행.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#0E1608"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
