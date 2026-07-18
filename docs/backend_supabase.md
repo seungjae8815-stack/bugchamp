@@ -11,12 +11,14 @@
 
 - `domain/pvp_backend.dart` — `PvpBackend` 인터페이스 + `PvpProfile`/`LeaderboardEntry` +
   `LocalPvpBackend`(폴백) + `pvpBackendProvider`.
-- `domain/supabase_pvp_backend.dart` — **`SupabasePvpBackend` 구현 완료**(upsert 프로필 + RPC 조회,
-  실패 시 로컬 폴백).
+- `domain/supabase_pvp_backend.dart` — **`SupabasePvpBackend` 구현 완료**(리더보드 upsert+RPC,
+  **방어팀 등록 `registerDefender`**, **실 유저 방어팀 fetch `fetchOpponents`(RPC `nearby_defenders`)**,
+  실패 시 로컬 폴백). `PvpBackend.isRemote` 로 UI 가 온라인/로컬 안내를 구분.
 - `main.dart` — `--dart-define` 로 URL/anon key 주입 시 `Supabase.initialize` + 익명 로그인 후
   `pvpBackendProvider` 를 Supabase 구현으로 오버라이드. 키 없으면 로컬.
 - `features/leaderboard/leaderboard_screen.dart` — 랭킹 화면(홈 상단 랭킹 아이콘 → 진입).
-- **남은 것**: 실기에서 §2 셋업 후 `--dart-define` 로 실행해 검증, 이후 방어팀 등록·스카우트 실데이터(Inc.2 후속).
+- `features/battle/battle_screen.dart` — 진입 시 편성을 방어팀으로 등록, 스카우트 보드에 실 유저 방어팀 병합.
+- **남은 것**: §4 SQL 에 **`nearby_defenders` RPC 추가 실행** 후 실기 2계정으로 비동기 대전 검증(§6 ⏳ 항목).
 
 ### 실행(실 Supabase로 테스트)
 ```powershell
@@ -93,9 +95,26 @@ language sql stable security definer set search_path = public as $$
   from profiles order by trophies desc limit lim;
 $$;
 
+-- 비동기 매칭(Inc.2): 내 트로피 근처의 **다른 유저** 방어팀 N개.
+-- defenders 는 RLS 로 본인 행만 보이므로, 남의 방어팀은 이 SECURITY DEFINER 로만 노출.
+-- 나(auth.uid()) 는 제외. 방어팀·닉네임·트로피만 반환(민감정보 없음).
+create or replace function nearby_defenders(my_trophies int, lim int)
+returns table(id uuid, nickname text, trophies int, team jsonb)
+language sql stable security definer set search_path = public as $$
+  select d.id, coalesce(p.nickname, '') as nickname, d.trophies, d.team
+  from defenders d
+  left join profiles p on p.id = d.id
+  where d.id <> auth.uid()
+  order by abs(d.trophies - my_trophies) asc, d.updated_at desc
+  limit lim;
+$$;
+
 -- PostgREST 스키마 캐시 갱신(테이블/함수가 즉시 API에 노출되도록).
 notify pgrst, 'reload schema';
 ```
+
+> ⚠️ **Inc.2 추가 시 재실행 필요**: `nearby_defenders` 함수를 SQL Editor 에 실행(위 블록 전체를
+> 다시 실행해도 idempotent). 이 함수가 없으면 스카우트 보드는 로컬 합성 상대로만 채워진다.
 
 ---
 
@@ -129,7 +148,10 @@ class SupabasePvpBackend implements PvpBackend {
 
 ## 6. 다음 인크리먼트 (연결 후)
 
-1. **방어팀 등록**: 전투 탭에서 방어팀 선택 → `defenders` upsert(save v16 로 로컬 캐시).
-2. **스카우트 보드 실데이터**: 로컬 생성 대신 내 트로피 근처 defenders N개 fetch → 3택1.
-3. **결과 반영**: 승패 시 내 트로피 갱신 → 프로필/디펜더 갱신.
-4. **오프라인/에러 폴백**: 네트워크 실패 시 `LocalPvpBackend` 로 자동 폴백.
+- ✅ **방어팀 등록**(Inc.2, 2026-07-18): 전투 탭 진입 시 현재 편성을 `defenders` 로 upsert(`registerDefender`).
+  시그니처(곤충 id·트로피) 변화 시에만 재등록. 별도 방어팀 피커/세이브 캐시는 미도입(파생 상태라 불필요).
+- ✅ **스카우트 보드 실데이터**(Inc.2, 2026-07-18): `nearby_defenders` RPC 로 내 트로피 근처 defenders fetch →
+  내 로스터 대비 파워비율로 난이도 티어(약/대등/강)에 배치, 남는 슬롯은 로컬 합성으로 채움. 실 유저면 카드에 닉네임 표시.
+- ✅ **오프라인/에러 폴백**(Inc.2): fetch 실패/실데이터 없음 → 로컬 합성 상대 유지(스카우트 보드 항상 동작).
+- ⏳ **결과 반영**: 승패 시 내 트로피 갱신 → 프로필/디펜더는 다음 진입 때 재등록으로 반영(라이브 갱신은 후속).
+- ⏳ **정확한 매칭 폭·재대결 제한·복수전** 등은 후속 폴리시.

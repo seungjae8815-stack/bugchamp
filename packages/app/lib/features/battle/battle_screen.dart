@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/providers.dart';
+import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
@@ -22,14 +23,16 @@ import 'manual_battle_screen.dart';
 const _honey = Color(0xFFEBA52F);
 
 /// 스카우트된 상대 후보 1팀(난이도 티어 + 상대 3마리).
+/// [ownerName] 이 있으면 **실제 다른 유저**의 방어팀, null 이면 로컬 합성 상대.
 class _Scout {
-  _Scout({required this.tier, required this.team});
+  _Scout({required this.tier, required this.team, this.ownerName});
   final ScoutTier tier;
   final List<({BattleBug bug, String speciesId})> team;
+  final String? ownerName;
 }
 
-/// 곤충 결투(PvP). 성충 3마리 팀 vs 로컬 생성 상대. 결정론적 simulate 사용.
-/// (Supabase 비동기 매칭은 Phase 4 — 지금은 로컬 상대)
+/// 곤충 결투(PvP). 성충 3마리 팀 vs 상대(실제 다른 유저 방어팀 또는 로컬 합성).
+/// 결정론적 simulate 사용. Supabase 연동 시 스카우트 보드가 실 유저 방어팀으로 채워진다.
 class BattleScreen extends ConsumerStatefulWidget {
   const BattleScreen({super.key});
 
@@ -44,8 +47,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   List<_Scout> _scouts = [];
   int _selectedScout = 1; // 기본 '대등' 티어
+  bool _scoutsFetched = false; // 실 유저 방어팀 fetch 를 이번 세션에 시도했는지
+  String? _registeredSig; // 마지막으로 등록한 방어팀 시그니처(중복 업서트 방지)
 
   double _power(BattleBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
+
+  PvpProfile _me(SaveGame save) =>
+      PvpProfile(id: 'me', nickname: save.nickname, trophies: save.pvpTrophies);
 
   /// 성충 개체 목록.
   List<IndividualBug> _adults(SaveGame save, GameData data, DateTime now) {
@@ -159,6 +167,157 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
     ];
     if (_selectedScout >= _scouts.length) _selectedScout = _scouts.length ~/ 2;
+  }
+
+  Species? _speciesOrNull(GameData data, String id) {
+    try {
+      return data.species(id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  double _teamPower(Iterable<BattleBug> team) {
+    if (team.isEmpty) return 0;
+    return team.map(_power).reduce((a, b) => a + b) / team.length;
+  }
+
+  /// 방어팀 스냅샷([dt]) → 전투용 팀. 종을 못 찾으면(데이터 변경) null 로 스킵.
+  List<({BattleBug bug, String speciesId})>? _defenderTeam(
+    DefenderTeam dt,
+    GameData data,
+    String locale,
+    int salt,
+  ) {
+    final out = <({BattleBug bug, String speciesId})>[];
+    for (var i = 0; i < dt.bugs.length; i++) {
+      final d = dt.bugs[i];
+      final sp = _speciesOrNull(data, d.speciesId);
+      if (sp == null) return null;
+      out.add((
+        speciesId: d.speciesId,
+        bug: BattleBug(
+          id: 'def${salt}_$i',
+          name: sp.name.resolve(locale),
+          element: d.element,
+          temperament: d.temperament,
+          preferredStance: _prefStance(sp.specialty),
+          maxHp: d.maxHp,
+          atk: d.atk,
+          def: d.def,
+          spd: d.spd,
+        ),
+      ));
+    }
+    return out.isEmpty ? null : out;
+  }
+
+  /// 내 편성([_team]) → 방어팀 스냅샷(서버 등록용).
+  DefenderBug _defenderBugOf(IndividualBug bug, GameData data, String locale) {
+    final bb = _toBattleBug(bug, data, locale);
+    return DefenderBug(
+      speciesId: bug.speciesId,
+      element: bb.element,
+      temperament: bb.temperament,
+      maxHp: bb.maxHp,
+      atk: bb.atk,
+      def: bb.def,
+      spd: bb.spd,
+    );
+  }
+
+  /// 현재 편성을 내 방어팀으로 등록(업서트). 시그니처가 같으면 스킵.
+  /// 로컬 백엔드는 no-op — fire-and-forget(에러 무시).
+  void _maybeRegisterDefender(GameData data, SaveGame save, String locale) {
+    final ids = _team.whereType<String>().toList();
+    if (ids.isEmpty) return;
+    final sig = '${ids.join(',')}|${save.pvpTrophies}';
+    if (sig == _registeredSig) return;
+    _registeredSig = sig;
+    final team = [
+      for (final id in ids)
+        _defenderBugOf(save.bugs.firstWhere((b) => b.id == id), data, locale),
+    ];
+    ref.read(pvpBackendProvider).registerDefender(me: _me(save), team: team);
+  }
+
+  /// [ratio] 에 powerMult 가 가장 가까운 **빈** 티어 슬롯 index. 없으면 -1.
+  int _closestFreeTier(
+    double ratio,
+    List<_Scout?> slots,
+    List<ScoutTier> tiers,
+  ) {
+    var best = -1;
+    var bestD = double.infinity;
+    for (var i = 0; i < tiers.length; i++) {
+      if (slots[i] != null) continue;
+      final d = (tiers[i].powerMult - ratio).abs();
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  /// 실 유저 방어팀을 fetch 해 스카우트 보드에 병합.
+  /// 각 방어팀을 내 로스터 대비 파워 비율로 난이도 티어에 배치하고,
+  /// 남는 티어는 로컬 합성 상대로 채운다(실데이터가 없으면 전부 합성 유지).
+  Future<void> _fetchRealScouts(
+    GameData data,
+    String locale,
+    ({double hp, double atk, double def, double spd}) avg,
+    SaveGame save,
+  ) async {
+    final backend = ref.read(pvpBackendProvider);
+    final cfg = data.battleConfig ?? const BattleConfig();
+    final tiers = cfg.scoutTiers;
+    final reals = await backend.fetchOpponents(
+      me: _me(save),
+      count: tiers.length,
+    );
+    if (!mounted || reals.isEmpty) return;
+
+    final myPower = avg.atk + avg.def + avg.spd + avg.hp * 0.15;
+    // 실 방어팀 → (전투팀, 파워비율). 종을 못 찾으면 스킵.
+    final built =
+        <
+          ({
+            List<({BattleBug bug, String speciesId})> team,
+            double ratio,
+            String owner,
+          })
+        >[];
+    for (var r = 0; r < reals.length; r++) {
+      final team = _defenderTeam(reals[r], data, locale, r);
+      if (team == null) continue;
+      final ratio =
+          _teamPower(team.map((e) => e.bug)) / (myPower <= 0 ? 1 : myPower);
+      built.add((team: team, ratio: ratio, owner: reals[r].ownerName));
+    }
+    if (built.isEmpty) return;
+
+    // 파워 낮은 순으로 가장 가까운 빈 티어에 배치(약→easy, 강→hard 경향).
+    built.sort((a, b) => a.ratio.compareTo(b.ratio));
+    final slots = List<_Scout?>.filled(tiers.length, null);
+    for (final b in built) {
+      final idx = _closestFreeTier(b.ratio, slots, tiers);
+      if (idx < 0) break;
+      slots[idx] = _Scout(tier: tiers[idx], team: b.team, ownerName: b.owner);
+    }
+    // 빈 티어는 로컬 합성 상대로 채움.
+    for (var i = 0; i < tiers.length; i++) {
+      slots[i] ??= _Scout(
+        tier: tiers[i],
+        team: _genFoeTeam(avg, tiers[i].powerMult, data, locale, 100 + i),
+      );
+    }
+    setState(() {
+      _scouts = [for (final s in slots) s!];
+      if (_selectedScout >= _scouts.length) {
+        _selectedScout = _scouts.length ~/ 2;
+      }
+    });
   }
 
   /// 티어 id → 현지화 라벨/색.
@@ -376,10 +535,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
     final teamCount = _team.whereType<String>().length;
 
-    // 스카우트 보드: 로스터가 있으면 최초 1회 생성(리롤 버튼으로 갱신).
+    // 스카우트 보드: 로스터가 있으면 합성 상대로 즉시 채우고(빈 보드 방지),
+    // 실 유저 방어팀은 비동기로 fetch 해 병합(있으면 교체).
     final battleCfg = data.battleConfig ?? const BattleConfig();
     final avg = _rosterAvg(adults, data, locale);
     if (avg != null && _scouts.isEmpty) _rollScouts(data, locale, avg);
+    if (avg != null && !_scoutsFetched) {
+      _scoutsFetched = true;
+      _fetchRealScouts(data, locale, avg, save);
+    }
+    // 현재 편성을 내 방어팀으로 등록(다른 유저가 나를 상대하게).
+    _maybeRegisterDefender(data, save, locale);
     final canBattle = teamCount > 0 && _scouts.isNotEmpty;
 
     // 시즌 종료 정산(로드 시 계산됨) → 1회 다이얼로그.
@@ -480,9 +646,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       TextButton.icon(
                         onPressed: avg == null
                             ? null
-                            : () => setState(
-                                () => _rollScouts(data, locale, avg),
-                              ),
+                            : () {
+                                setState(() => _rollScouts(data, locale, avg));
+                                _fetchRealScouts(data, locale, avg, save);
+                              },
                         icon: const Icon(Icons.smart_display_rounded, size: 16),
                         label: Text(l.scoutRefresh),
                         style: TextButton.styleFrom(
@@ -1048,6 +1215,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 ),
               ),
             ),
+            // 실제 다른 유저 방어팀이면 닉네임 표시(합성 상대는 미표시).
+            if (scout.ownerName != null) ...[
+              const SizedBox(height: 3),
+              Text(
+                '👤 ${scout.ownerName}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xCCE9D9A6),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

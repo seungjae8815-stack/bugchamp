@@ -215,6 +215,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leaderboardLocalNote => '로컬 랭킹 · 온라인 연동 준비 중';
 
   @override
+  String get leaderboardOnlineNote => '온라인 랭킹 · 실시간 반영';
+
+  @override
   String leaderboardMyRank(int n) {
     return '내 순위 #$n';
   }

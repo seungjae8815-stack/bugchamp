@@ -13,6 +13,9 @@ class SupabasePvpBackend implements PvpBackend {
   final PvpBackend fallback;
 
   @override
+  bool get isRemote => true;
+
+  @override
   Future<List<LeaderboardEntry>> leaderboard({
     required PvpProfile me,
     int limit = 50,
@@ -51,6 +54,66 @@ class SupabasePvpBackend implements PvpBackend {
       return entries;
     } catch (_) {
       return fallback.leaderboard(me: me, limit: limit);
+    }
+  }
+
+  /// 내 방어팀 스냅샷을 `defenders` 테이블에 업서트(id = auth.uid()).
+  /// 오프라인/에러는 조용히 무시 — 다음 진입 때 다시 등록된다.
+  @override
+  Future<void> registerDefender({
+    required PvpProfile me,
+    required List<DefenderBug> team,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await _client.from('defenders').upsert({
+        'id': uid,
+        'team': [for (final b in team) b.toJson()],
+        'trophies': me.trophies,
+      });
+    } catch (_) {
+      // 등록 실패는 게임 흐름을 막지 않는다.
+    }
+  }
+
+  /// 내 트로피 근처의 다른 유저 방어팀을 RPC(`nearby_defenders`)로 조회.
+  /// 실패하면 빈 리스트 → 호출측이 로컬 합성 상대로 채운다.
+  @override
+  Future<List<DefenderTeam>> fetchOpponents({
+    required PvpProfile me,
+    int count = 3,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const [];
+    try {
+      final rows =
+          (await _client.rpc(
+                'nearby_defenders',
+                params: {'my_trophies': me.trophies, 'lim': count},
+              ))
+              as List;
+      final teams = <DefenderTeam>[];
+      for (final r in rows.cast<Map<String, dynamic>>()) {
+        final raw = (r['team'] as List?) ?? const [];
+        final bugs = <DefenderBug>[
+          for (final b in raw)
+            DefenderBug.fromJson(Map<String, dynamic>.from(b as Map)),
+        ];
+        if (bugs.isEmpty) continue;
+        final name = (r['nickname'] as String?) ?? '';
+        teams.add(
+          DefenderTeam(
+            ownerId: r['id'] as String,
+            ownerName: name.isEmpty ? '???' : name,
+            trophies: (r['trophies'] as num?)?.toInt() ?? 0,
+            bugs: bugs,
+          ),
+        );
+      }
+      return teams;
+    } catch (_) {
+      return const [];
     }
   }
 }

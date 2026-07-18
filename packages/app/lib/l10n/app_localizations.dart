@@ -484,6 +484,12 @@ abstract class AppLocalizations {
   /// **'Local ranking · online sync coming'**
   String get leaderboardLocalNote;
 
+  /// No description provided for @leaderboardOnlineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Online ranking · live'**
+  String get leaderboardOnlineNote;
+
   /// No description provided for @leaderboardMyRank.
   ///
   /// In en, this message translates to:

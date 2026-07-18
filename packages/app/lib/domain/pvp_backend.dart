@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:core_models/core_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 비동기 PvP·리더보드 백엔드 추상화 (Phase 4).
@@ -35,13 +36,90 @@ class LeaderboardEntry {
   final bool isMe;
 }
 
+/// 방어팀 스냅샷 속 곤충 한 마리(비동기 PvP 매칭용).
+///
+/// 다른 유저가 이 곤충을 상대하므로 **전투에 필요한 해석된 스탯**을 그대로 담는다.
+/// 이름/선호 스탠스는 보는 쪽이 자신의 언어·데이터로 [speciesId] 에서 재해석한다.
+class DefenderBug {
+  const DefenderBug({
+    required this.speciesId,
+    required this.element,
+    required this.temperament,
+    required this.maxHp,
+    required this.atk,
+    required this.def,
+    required this.spd,
+  });
+
+  final String speciesId;
+  final Element element;
+  final Temperament temperament;
+  final double maxHp;
+  final double atk;
+  final double def;
+  final double spd;
+
+  Map<String, dynamic> toJson() => {
+    'sp': speciesId,
+    'el': element.key,
+    'tm': temperament.key,
+    'hp': maxHp,
+    'atk': atk,
+    'def': def,
+    'spd': spd,
+  };
+
+  factory DefenderBug.fromJson(Map<String, dynamic> j) => DefenderBug(
+    speciesId: j['sp'] as String,
+    element: Element.fromKey(j['el'] as String),
+    temperament: Temperament.fromKey(j['tm'] as String),
+    maxHp: (j['hp'] as num).toDouble(),
+    atk: (j['atk'] as num).toDouble(),
+    def: (j['def'] as num).toDouble(),
+    spd: (j['spd'] as num).toDouble(),
+  );
+}
+
+/// 한 유저의 방어팀 스냅샷(성충 최대 3마리). 스카우트 보드에서 상대로 노출된다.
+class DefenderTeam {
+  const DefenderTeam({
+    required this.ownerId,
+    required this.ownerName,
+    required this.trophies,
+    required this.bugs,
+  });
+
+  final String ownerId;
+  final String ownerName;
+  final int trophies;
+  final List<DefenderBug> bugs;
+}
+
 /// 비동기 PvP 백엔드 계약. 구현은 로컬/Supabase 등으로 교체 가능.
 abstract interface class PvpBackend {
+  /// 실서버(Supabase 등)에 연결된 백엔드면 true, 로컬 자리표시면 false.
+  /// UI 안내 문구(로컬 랭킹 vs 온라인)·방어팀 등록 표시에 사용.
+  bool get isRemote;
+
   /// 내 프로필([me])을 반영한 리더보드 상위 [limit] 줄을 반환한다.
   /// 결과에는 **항상 나(me)** 가 포함되며(상위권 밖이면 말미에 덧붙임) `isMe` 로 표시된다.
   Future<List<LeaderboardEntry>> leaderboard({
     required PvpProfile me,
     int limit,
+  });
+
+  /// 내 방어팀 스냅샷([team])을 서버에 등록(업서트)한다.
+  /// 로컬 백엔드는 no-op. 네트워크 실패는 조용히 무시(앱 흐름을 막지 않음).
+  Future<void> registerDefender({
+    required PvpProfile me,
+    required List<DefenderBug> team,
+  });
+
+  /// 내 트로피 근처의 **다른 유저** 방어팀을 최대 [count]개 가져온다(나 제외).
+  /// 실데이터가 없으면 빈 리스트를 반환하고, 호출측이 로컬 합성 상대로 채운다.
+  Future<List<DefenderTeam>> fetchOpponents({
+    required PvpProfile me,
+    int count,
   });
 }
 
@@ -49,6 +127,9 @@ abstract interface class PvpBackend {
 /// 온라인 연동 전까지 랭킹 화면이 동작하도록 하는 자리표시 구현.
 class LocalPvpBackend implements PvpBackend {
   const LocalPvpBackend();
+
+  @override
+  bool get isRemote => false;
 
   static const _npcCount = 80;
   static const _handles = [
@@ -107,6 +188,20 @@ class LocalPvpBackend implements PvpBackend {
     }
     return top;
   }
+
+  /// 로컬 모드엔 실제 다른 유저가 없다 — 등록은 no-op.
+  @override
+  Future<void> registerDefender({
+    required PvpProfile me,
+    required List<DefenderBug> team,
+  }) async {}
+
+  /// 로컬 모드엔 실제 방어팀이 없다 — 빈 리스트(호출측이 로컬 합성으로 채움).
+  @override
+  Future<List<DefenderTeam>> fetchOpponents({
+    required PvpProfile me,
+    int count = 3,
+  }) async => const [];
 }
 
 /// 교체 가능한 백엔드 제공자. 기본은 로컬. Supabase 연동 시 override.

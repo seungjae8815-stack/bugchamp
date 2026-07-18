@@ -216,6 +216,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaderboardLocalNote => 'Local ranking · online sync coming';
 
   @override
+  String get leaderboardOnlineNote => 'Online ranking · live';
+
+  @override
   String leaderboardMyRank(int n) {
     return 'My rank #$n';
   }

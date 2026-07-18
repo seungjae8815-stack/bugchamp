@@ -72,6 +72,7 @@
   "breedingInProgress": "Breeding",
   "breedingGotEgg": "Got an egg! Raise it in the incubator",
   "leaderboardLocalNote": "Local ranking · online sync coming",
+  "leaderboardOnlineNote": "Online ranking · live",
   "leaderboardMyRank": "My rank #{n}",
   "@leaderboardMyRank": { "placeholders": { "n": { "type": "int" } } },
   "stanceAttack": "Attack",

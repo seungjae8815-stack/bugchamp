@@ -45,7 +45,9 @@ class LeaderboardScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: 6),
             color: const Color(0x22000000),
             child: Text(
-              l.leaderboardLocalNote,
+              backend.isRemote
+                  ? l.leaderboardOnlineNote
+                  : l.leaderboardLocalNote,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
             ),
