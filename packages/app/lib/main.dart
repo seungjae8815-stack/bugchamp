@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data/save_repository.dart';
+import 'domain/notification_service.dart';
 import 'domain/providers.dart';
 import 'domain/pvp_backend.dart';
 import 'domain/supabase_pvp_backend.dart';
@@ -21,6 +22,9 @@ Future<void> main() async {
   await Hive.initFlutter();
   final box = await Hive.openBox<String>('bugchamp_save');
   final repository = HiveSaveRepository(box);
+
+  // 로컬 알림 초기화(실패해도 앱은 정상). 권한 요청·예약은 AppShell 에서.
+  await NotificationService.instance.init();
 
   // Supabase: 키가 주입됐을 때만 초기화 + 익명 로그인. 실패 시 client=null → 로컬 유지.
   SupabaseClient? supaClient;

@@ -683,6 +683,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftAdMoreLater => '괜찮아요';
 
   @override
+  String get notifLunchTitle => '점심 보상이 도착했어요 🍱';
+
+  @override
+  String get notifDinnerTitle => '저녁 보상이 도착했어요 🌙';
+
+  @override
+  String get notifRewardBody => '지금 접속해서 받아가세요!';
+
+  @override
+  String get notifOfflineTitle => '방치 보상이 가득 찼어요 🐛';
+
+  @override
+  String get notifOfflineBody => '8시간치가 모두 모였어요. 접속해서 받으세요!';
+
+  @override
   String get giftNone => '아직 도착한 선물이 없어요. 플레이하다 보면 도착해요!';
 
   @override

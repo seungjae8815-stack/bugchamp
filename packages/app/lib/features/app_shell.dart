@@ -1,7 +1,9 @@
+import 'package:core_models/core_models.dart' show kMaxOfflineAccrual;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/notification_service.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
@@ -12,11 +14,74 @@ import 'shop/craft_screen.dart';
 import 'storage/storage_screen.dart';
 
 /// 하단 4탭 셸: 홈 · 채집함 · 전투 · 상점. 세이브 로드 완료 후 표시.
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
+  bool _notifSetup = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setupNotifications());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    final svc = NotificationService.instance;
+    if (state == AppLifecycleState.paused) {
+      // 백그라운드 진입 → 오프라인 상한(8h) 도달 시 알림 예약.
+      svc.scheduleOfflineFull(
+        after: kMaxOfflineAccrual,
+        title: l.notifOfflineTitle,
+        body: l.notifOfflineBody,
+      );
+    } else if (state == AppLifecycleState.resumed) {
+      // 복귀 → 오프라인 알림 취소(이미 접속).
+      svc.cancelOfflineFull();
+    }
+  }
+
+  /// 첫 프레임 후 1회: 알림 권한 요청 + 일일 보상 시각(daily.json)마다 반복 예약.
+  Future<void> _setupNotifications() async {
+    if (_notifSetup || !mounted) return;
+    _notifSetup = true;
+    final l = AppLocalizations.of(context);
+    final svc = NotificationService.instance;
+    await svc.requestPermission();
+    final rewards =
+        ref.read(gameDataProvider).value?.dailyConfig?.rewards ?? const [];
+    for (var i = 0; i < rewards.length; i++) {
+      final rw = rewards[i];
+      await svc.scheduleDaily(
+        id: i + 1,
+        hour: rw.hour,
+        title: switch (rw.id) {
+          'lunch' => l.notifLunchTitle,
+          'dinner' => l.notifDinnerTitle,
+          _ => l.notifRewardBody,
+        },
+        body: l.notifRewardBody,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final index = ref.watch(tabIndexProvider);
     final saveAsync = ref.watch(saveControllerProvider);
 

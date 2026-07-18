@@ -684,6 +684,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftAdMoreLater => 'No thanks';
 
   @override
+  String get notifLunchTitle => 'Lunch reward is ready 🍱';
+
+  @override
+  String get notifDinnerTitle => 'Dinner reward is ready 🌙';
+
+  @override
+  String get notifRewardBody => 'Hop in and claim it!';
+
+  @override
+  String get notifOfflineTitle => 'Idle rewards are full 🐛';
+
+  @override
+  String get notifOfflineBody =>
+      '8 hours\' worth has piled up. Come collect it!';
+
+  @override
   String get giftNone => 'No gifts yet. Keep playing and they\'ll arrive!';
 
   @override

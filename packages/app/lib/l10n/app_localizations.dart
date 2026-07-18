@@ -1324,6 +1324,36 @@ abstract class AppLocalizations {
   /// **'No thanks'**
   String get giftAdMoreLater;
 
+  /// No description provided for @notifLunchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunch reward is ready 🍱'**
+  String get notifLunchTitle;
+
+  /// No description provided for @notifDinnerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dinner reward is ready 🌙'**
+  String get notifDinnerTitle;
+
+  /// No description provided for @notifRewardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Hop in and claim it!'**
+  String get notifRewardBody;
+
+  /// No description provided for @notifOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle rewards are full 🐛'**
+  String get notifOfflineTitle;
+
+  /// No description provided for @notifOfflineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'8 hours\' worth has piled up. Come collect it!'**
+  String get notifOfflineBody;
+
   /// No description provided for @giftNone.
   ///
   /// In en, this message translates to:
