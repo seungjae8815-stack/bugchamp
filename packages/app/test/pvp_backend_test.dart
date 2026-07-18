@@ -52,6 +52,8 @@ void main() {
     );
     final foes = await backend.fetchOpponents(me: me(500), count: 3);
     expect(foes, isEmpty);
+    // 트로피 라이브 반영도 로컬은 no-op(던지지 않고 완료).
+    await backend.pushTrophies(me: me(750));
   });
 
   test('DefenderBug: toJson/fromJson 왕복 보존', () {

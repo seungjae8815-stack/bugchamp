@@ -116,4 +116,25 @@ class SupabasePvpBackend implements PvpBackend {
       return const [];
     }
   }
+
+  /// 승패 후 내 트로피를 즉시 반영: 리더보드 프로필 upsert + 방어팀 행 트로피 갱신.
+  /// 방어팀 미등록이면 update 는 0행(무시). 실패는 조용히 무시.
+  @override
+  Future<void> pushTrophies({required PvpProfile me}) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await _client.from('profiles').upsert({
+        'id': uid,
+        'nickname': me.nickname,
+        'trophies': me.trophies,
+      });
+      await _client
+          .from('defenders')
+          .update({'trophies': me.trophies})
+          .eq('id', uid);
+    } catch (_) {
+      // 트로피 반영 실패는 다음 진입/전투 때 재시도된다.
+    }
+  }
 }

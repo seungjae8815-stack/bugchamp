@@ -412,6 +412,12 @@ abstract class AppLocalizations {
   /// **'Trophies {from} → {to}'**
   String seasonTrophyReset(int from, int to);
 
+  /// No description provided for @seasonEndsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Season {time} left'**
+  String seasonEndsIn(String time);
+
   /// No description provided for @synergyLabel.
   ///
   /// In en, this message translates to:
@@ -423,6 +429,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Place 2+ bugs so a front slot generates the next (order matters)'**
   String get synergyHint;
+
+  /// No description provided for @teamReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get teamReorderHint;
 
   /// No description provided for @breedingTitle.
   ///

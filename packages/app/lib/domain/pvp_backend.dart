@@ -121,6 +121,10 @@ abstract interface class PvpBackend {
     required PvpProfile me,
     int count,
   });
+
+  /// 승패 후 내 트로피를 서버(리더보드 프로필·방어팀 브래킷)에 즉시 반영한다.
+  /// 로컬 백엔드는 no-op. 네트워크 실패는 조용히 무시(게임 흐름을 막지 않음).
+  Future<void> pushTrophies({required PvpProfile me});
 }
 
 /// 로컬 리더보드 — 결정론적 NPC 사다리(고정 seed) + 내 트로피로 순위 삽입.
@@ -202,6 +206,10 @@ class LocalPvpBackend implements PvpBackend {
     required PvpProfile me,
     int count = 3,
   }) async => const [];
+
+  /// 로컬 모드엔 반영할 서버가 없다 — no-op.
+  @override
+  Future<void> pushTrophies({required PvpProfile me}) async {}
 }
 
 /// 교체 가능한 백엔드 제공자. 기본은 로컬. Supabase 연동 시 override.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
@@ -339,14 +340,35 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         _ => (id, const Color(0xFFBFC4CC), '🏅'),
       };
 
-  /// 리그 패널 — 현재 등급 엠블럼·트로피·다음 티어 진행바·승급 보상 수령.
-  Widget _leaguePanel(AppLocalizations l, BattleConfig cfg, SaveGame save) {
+  /// 시즌 종료까지 남은 시간 표기(일 포함). "13d 04:22" / "04:22".
+  String _seasonLeft(Duration d) {
+    if (d.isNegative) d = Duration.zero;
+    final days = d.inDays;
+    final h = d.inHours % 24;
+    final m = d.inMinutes % 60;
+    final hm =
+        '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+    return days > 0 ? '${days}d $hm' : hm;
+  }
+
+  /// 리그 패널 — 현재 등급 엠블럼·트로피·다음 티어 진행바·시즌 카운트다운·승급 보상 수령.
+  Widget _leaguePanel(
+    AppLocalizations l,
+    BattleConfig cfg,
+    SaveGame save,
+    DateTime now,
+  ) {
     final trophies = save.pvpTrophies;
     final cur = cfg.leagueFor(trophies);
     final next = cfg.nextLeagueAfter(cur);
     final progress = cfg.leagueProgress(trophies);
     final claimable = cfg.claimableLeagues(trophies, save.claimedLeagues);
     final (label, color, emoji) = _leagueStyle(l, cur.id);
+    // 시즌 종료 = 시작 + seasonDays. 시작 미기록이면 지금을 시작으로 간주.
+    final seasonStart = save.seasonStartedAt ?? now;
+    final seasonRemaining = seasonStart
+        .add(Duration(days: cfg.seasonDays))
+        .difference(now);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -391,17 +413,37 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              next == null
-                  ? l.leagueMaxRank
-                  : l.leagueToNext(
-                      next.minTrophy - trophies,
-                      _leagueStyle(l, next.id).$1,
-                    ),
-              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
-            ),
+          Row(
+            children: [
+              const Icon(
+                Icons.hourglass_bottom_rounded,
+                size: 12,
+                color: Color(0x99FFFFFF),
+              ),
+              const SizedBox(width: 3),
+              Text(
+                l.seasonEndsIn(_seasonLeft(seasonRemaining)),
+                style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+              ),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  next == null
+                      ? l.leagueMaxRank
+                      : l.leagueToNext(
+                          next.minTrophy - trophies,
+                          _leagueStyle(l, next.id).$1,
+                        ),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
           ),
           if (claimable.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -591,7 +633,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           : Column(
               children: [
                 const SizedBox(height: 12),
-                _leaguePanel(l, battleCfg, save),
+                _leaguePanel(l, battleCfg, save, now),
                 const SizedBox(height: 14),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -605,6 +647,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 14,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.drag_indicator_rounded,
+                        color: Color(0x88FFFFFF),
+                        size: 15,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        l.teamReorderHint,
+                        style: const TextStyle(
+                          color: Color(0x88FFFFFF),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -762,6 +819,37 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  /// 슬롯 [from] 의 곤충을 [to] 위치로 이동(삽입 재배치, 나머지는 밀림).
+  /// 오행 상생(生)이 앞→뒤 인접으로 작동하므로 순서가 곧 전략.
+  void _reorderSlots(int from, int to) {
+    if (from == to) return;
+    final item = _team.removeAt(from);
+    _team.insert(to, item);
+  }
+
+  /// 드래그 중 손가락을 따라오는 축소 피드백(종 초상).
+  Widget _dragFeedback(IndividualBug bug, Species sp) => Material(
+    type: MaterialType.transparency,
+    child: Transform.translate(
+      offset: const Offset(-30, -30),
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: const Color(0xE6141F0E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _honey, width: 1.6),
+        ),
+        child: bugStageImage(
+          bug.speciesId,
+          LifeStage.adult,
+          size: 48,
+          fallback: bugAvatar(sp, size: 42),
+        ),
+      ),
+    ),
+  );
+
   Widget _teamSlot(GameData data, SaveGame save, String locale, int index) {
     final id = _team[index];
     final bug = id == null
@@ -771,84 +859,111 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             orElse: () => null,
           );
     final sp = bug == null ? null : data.species(bug.speciesId);
+    final card = GestureDetector(
+      onTap: () => _showPicker(data, save, locale, index),
+      child: Container(
+        height: 150,
+        decoration: BoxDecoration(
+          color: const Color(0x22000000),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: bug == null ? const Color(0x33FFFFFF) : _honey,
+            width: bug == null ? 1 : 1.6,
+          ),
+        ),
+        child: bug == null
+            ? const Center(
+                child: Icon(
+                  Icons.add_circle_outline,
+                  color: Color(0x66FFFFFF),
+                  size: 28,
+                ),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: bugStageImage(
+                      bug.speciesId,
+                      LifeStage.adult,
+                      size: 60,
+                      fallback: bugAvatar(sp!, size: 52),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: elementColor(bug.element).withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '${elementGlyph(bug.element)} ${elementLabel(AppLocalizations.of(context), bug.element)}',
+                      style: TextStyle(
+                        color: elementColor(bug.element),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      sp.name.resolve(locale),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+              ),
+      ),
+    );
+    // 채워진 슬롯은 드래그 가능(탭=선택 유지). 빈 슬롯은 드롭 대상만.
+    final Widget content = (bug == null)
+        ? card
+        : Draggable<int>(
+            data: index,
+            dragAnchorStrategy: pointerDragAnchorStrategy,
+            feedback: _dragFeedback(bug, sp!),
+            childWhenDragging: Opacity(opacity: 0.35, child: card),
+            child: card,
+          );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          GestureDetector(
-            onTap: () => _showPicker(data, save, locale, index),
-            child: Container(
-              height: 150,
-              decoration: BoxDecoration(
-                color: const Color(0x22000000),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: bug == null ? const Color(0x33FFFFFF) : _honey,
-                  width: bug == null ? 1 : 1.6,
+      child: DragTarget<int>(
+        onWillAcceptWithDetails: (d) => d.data != index,
+        onAcceptWithDetails: (d) =>
+            setState(() => _reorderSlots(d.data, index)),
+        builder: (ctx, candidate, rejected) => Stack(
+          clipBehavior: Clip.none,
+          children: [
+            content,
+            // 드롭 대상 하이라이트.
+            if (candidate.isNotEmpty)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _honey.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _honey, width: 2),
+                    ),
+                  ),
                 ),
               ),
-              child: bug == null
-                  ? const Center(
-                      child: Icon(
-                        Icons.add_circle_outline,
-                        color: Color(0x66FFFFFF),
-                        size: 28,
-                      ),
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: bugStageImage(
-                            bug.speciesId,
-                            LifeStage.adult,
-                            size: 60,
-                            fallback: bugAvatar(sp!, size: 52),
-                          ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 2),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: elementColor(
-                              bug.element,
-                            ).withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${elementGlyph(bug.element)} ${elementLabel(AppLocalizations.of(context), bug.element)}',
-                            style: TextStyle(
-                              color: elementColor(bug.element),
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text(
-                            sp.name.resolve(locale),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                      ],
-                    ),
-            ),
-          ),
-          // 전투 순서 배지 ①②③
-          Positioned(top: -6, left: -2, child: _orderBadge(index)),
-        ],
+            // 전투 순서 배지 ①②③
+            Positioned(top: -6, left: -2, child: _orderBadge(index)),
+          ],
+        ),
       ),
     );
   }
@@ -1097,13 +1212,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     int gold,
     int trophyDelta,
     List<String> koedBugIds,
-  ) => ref
-      .read(saveControllerProvider.notifier)
-      .applyBattleResult(
-        gold: gold,
-        trophyDelta: trophyDelta,
-        koedBugIds: koedBugIds,
-      );
+  ) async {
+    await ref
+        .read(saveControllerProvider.notifier)
+        .applyBattleResult(
+          gold: gold,
+          trophyDelta: trophyDelta,
+          koedBugIds: koedBugIds,
+        );
+    // 승패 반영 후 트로피를 백엔드에 즉시 push(비동기 대전 라이브).
+    // 네트워크가 UI(아레나 전환)를 막지 않도록 fire-and-forget.
+    final save = ref.read(saveControllerProvider).requireValue;
+    unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(save)));
+  }
 
   /// 자동 전투 — 결정론 simulate 후 아레나 재생.
   Future<void> _battle(

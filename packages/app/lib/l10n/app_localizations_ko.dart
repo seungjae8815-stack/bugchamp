@@ -177,10 +177,18 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String seasonEndsIn(String time) {
+    return '시즌 $time 남음';
+  }
+
+  @override
   String get synergyLabel => '상생';
 
   @override
   String get synergyHint => '곤충 2마리 이상 배치 · 앞 슬롯이 뒤를 生하면 시너지(순서 중요)';
+
+  @override
+  String get teamReorderHint => '끌어서 순서 변경';
 
   @override
   String get breedingTitle => '브리딩';

@@ -177,11 +177,19 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String seasonEndsIn(String time) {
+    return 'Season $time left';
+  }
+
+  @override
   String get synergyLabel => 'Synergy';
 
   @override
   String get synergyHint =>
       'Place 2+ bugs so a front slot generates the next (order matters)';
+
+  @override
+  String get teamReorderHint => 'Drag to reorder';
 
   @override
   String get breedingTitle => 'Breeding';
