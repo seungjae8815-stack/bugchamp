@@ -436,6 +436,30 @@ abstract class AppLocalizations {
   /// **'Drag to reorder'**
   String get teamReorderHint;
 
+  /// No description provided for @leagueSeasonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'League · Season'**
+  String get leagueSeasonTitle;
+
+  /// No description provided for @modeManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get modeManual;
+
+  /// No description provided for @modeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get modeAuto;
+
+  /// No description provided for @opponentPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Opponent'**
+  String get opponentPick;
+
   /// No description provided for @breedingTitle.
   ///
   /// In en, this message translates to:

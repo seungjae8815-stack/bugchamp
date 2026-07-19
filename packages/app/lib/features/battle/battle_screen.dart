@@ -48,6 +48,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   List<_Scout> _scouts = [];
   int _selectedScout = 1; // 기본 '대등' 티어
+  bool _manual = true; // 전투 모드 토글(수동/자동), 기본 수동(심리전)
   bool _scoutsFetched = false; // 실 유저 방어팀 fetch 를 이번 세션에 시도했는지
   String? _registeredSig; // 마지막으로 등록한 방어팀 시그니처(중복 업서트 방지)
 
@@ -633,59 +634,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           : SingleChildScrollView(
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
-                  _leaguePanel(l, battleCfg, save, now),
-                  const SizedBox(height: 14),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.groups_rounded,
-                          color: _honey,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          l.battleMyTeam,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const Spacer(),
-                        const Icon(
-                          Icons.drag_indicator_rounded,
-                          color: Color(0x88FFFFFF),
-                          size: 15,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          l.teamReorderHint,
-                          style: const TextStyle(
-                            color: Color(0x88FFFFFF),
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < 3; i++)
-                          Expanded(child: _teamSlot(data, save, locale, i)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _synergyBar(l, data, save, locale),
+                  _leagueStrip(l, battleCfg, save, now),
+                  const SizedBox(height: 12),
+                  _matchupCard(l, data, battleCfg, save, locale),
                   const SizedBox(height: 14),
-                  // ── 스카우트 보드 ──
+                  // ── 상대 고르기(스카우트) ──
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
@@ -697,7 +651,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          l.scoutBoard,
+                          l.opponentPick,
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -740,90 +694,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  _battleControls(l, data, save, locale, canBattle),
                   const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    child: Column(
-                      children: [
-                        // 수동 전투(심리전) — 헤드라인
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: FilledButton.icon(
-                            onPressed: canBattle
-                                ? () => _battleManual(
-                                    data,
-                                    save,
-                                    locale,
-                                    _scouts[_selectedScout],
-                                  )
-                                : null,
-                            icon: const Icon(Icons.psychology_rounded),
-                            label: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  l.battleManual,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                Text(
-                                  l.battleManualDesc,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xCCFFFFFF),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFFC1502E),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // 자동 전투 — 빠른 진행
-                        SizedBox(
-                          width: double.infinity,
-                          height: 46,
-                          child: OutlinedButton.icon(
-                            onPressed: canBattle
-                                ? () => _battle(
-                                    data,
-                                    save,
-                                    locale,
-                                    _scouts[_selectedScout],
-                                  )
-                                : null,
-                            icon: const Icon(
-                              Icons.fast_forward_rounded,
-                              size: 20,
-                            ),
-                            label: Text(
-                              l.battleAuto,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFE9D9A6),
-                              side: const BorderSide(color: Color(0x55EBA52F)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -860,6 +733,387 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ),
     ),
   );
+
+  /// 리그·시즌 요약 스트립(한 줄). 탭하면 상세(진행바·승급 보상) 다이얼로그.
+  Widget _leagueStrip(
+    AppLocalizations l,
+    BattleConfig cfg,
+    SaveGame save,
+    DateTime now,
+  ) {
+    final cur = cfg.leagueFor(save.pvpTrophies);
+    final (label, color, emoji) = _leagueStyle(l, cur.id);
+    final start = save.seasonStartedAt ?? now;
+    final left = start.add(Duration(days: cfg.seasonDays)).difference(now);
+    final hasReward = cfg
+        .claimableLeagues(save.pvpTrophies, save.claimedLeagues)
+        .isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Material(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _showLeagueDetail(l, cfg, save, now),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 17)),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '🏆${save.pvpTrophies}',
+                  style: const TextStyle(
+                    color: _honey,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12.5,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.hourglass_bottom_rounded,
+                  size: 11,
+                  color: Color(0x99FFFFFF),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  l.seasonEndsIn(_seasonLeft(left)),
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 10.5,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  hasReward
+                      ? Icons.card_giftcard_rounded
+                      : Icons.chevron_right_rounded,
+                  size: 16,
+                  color: hasReward
+                      ? const Color(0xFF6FCF6F)
+                      : const Color(0x99FFFFFF),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showLeagueDetail(
+    AppLocalizations l,
+    BattleConfig cfg,
+    SaveGame save,
+    DateTime now,
+  ) => showGameDialog<void>(
+    context,
+    title: l.leagueSeasonTitle,
+    icon: Icons.emoji_events_rounded,
+    content: _leaguePanel(l, cfg, save, now),
+    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+  );
+
+  /// 상대(선택된 스카우트) 1마리 포트레이트 — 이미지 + 오행 글리프.
+  Widget _oppPortrait(({BattleBug bug, String speciesId}) e) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 3),
+    child: Column(
+      children: [
+        bugStageImage(
+          e.speciesId,
+          LifeStage.adult,
+          size: 46,
+          fallback: Text(
+            elementGlyph(e.bug.element),
+            style: const TextStyle(fontSize: 24),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          elementGlyph(e.bug.element),
+          style: TextStyle(color: elementColor(e.bug.element), fontSize: 13),
+        ),
+      ],
+    ),
+  );
+
+  /// VS 매치업 카드 — 내 팀(편성·드래그)과 선택 상대·상생·승리 보상.
+  Widget _matchupCard(
+    AppLocalizations l,
+    GameData data,
+    BattleConfig cfg,
+    SaveGame save,
+    String locale,
+  ) {
+    final scout = (_scouts.isNotEmpty && _selectedScout < _scouts.length)
+        ? _scouts[_selectedScout]
+        : null;
+    final (tierLabel, tierColor) = scout != null
+        ? _tierStyle(l, scout.tier.id)
+        : ('', const Color(0xFFBFC4CC));
+    final gold = scout != null
+        ? cfg.winGold(save.pvpTrophies, scout.tier.rewardMult)
+        : 0;
+    final trophy = scout != null ? cfg.trophyOnWin(scout.tier.rewardMult) : 0;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _honey.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.groups_rounded, color: _honey, size: 16),
+              const SizedBox(width: 5),
+              Text(
+                l.battleMyTeam,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+              ),
+              const Spacer(),
+              const Icon(
+                Icons.drag_indicator_rounded,
+                color: Color(0x77FFFFFF),
+                size: 13,
+              ),
+              const SizedBox(width: 2),
+              Text(
+                l.teamReorderHint,
+                style: const TextStyle(color: Color(0x77FFFFFF), fontSize: 10),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (var i = 0; i < 3; i++)
+                Expanded(child: _teamSlot(data, save, locale, i)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _synergyBar(l, data, save, locale),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                const Expanded(child: Divider(color: Color(0x33FFFFFF))),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: const [
+                      Icon(
+                        Icons.sports_mma_rounded,
+                        color: Color(0xFFEF6B4A),
+                        size: 16,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'VS',
+                        style: TextStyle(
+                          color: Color(0xFFEF6B4A),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Expanded(child: Divider(color: Color(0x33FFFFFF))),
+              ],
+            ),
+          ),
+          if (scout != null) ...[
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tierColor.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    tierLabel,
+                    style: TextStyle(
+                      color: tierColor,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                if (scout.ownerName != null) ...[
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '👤 ${scout.ownerName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xCCE9D9A6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                Text(
+                  '💰${formatCompact(gold)}  🏆+$trophy',
+                  style: const TextStyle(
+                    color: Color(0xFFEBD24A),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (final e in scout.team) Expanded(child: _oppPortrait(e)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _modeTab(
+    String label,
+    IconData icon,
+    bool selected,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? _honey : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: selected
+                    ? const Color(0xFF3A2600)
+                    : const Color(0x99FFFFFF),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected
+                      ? const Color(0xFF3A2600)
+                      : const Color(0x99FFFFFF),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 수동/자동 토글 + 큰 전투 시작 버튼.
+  Widget _battleControls(
+    AppLocalizations l,
+    GameData data,
+    SaveGame save,
+    String locale,
+    bool canBattle,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: const Color(0x22000000),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0x33FFFFFF)),
+            ),
+            child: Row(
+              children: [
+                _modeTab(
+                  l.modeManual,
+                  Icons.psychology_rounded,
+                  _manual,
+                  () => setState(() => _manual = true),
+                ),
+                _modeTab(
+                  l.modeAuto,
+                  Icons.fast_forward_rounded,
+                  !_manual,
+                  () => setState(() => _manual = false),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: FilledButton.icon(
+              onPressed: canBattle
+                  ? () {
+                      final scout = _scouts[_selectedScout];
+                      if (_manual) {
+                        _battleManual(data, save, locale, scout);
+                      } else {
+                        _battle(data, save, locale, scout);
+                      }
+                    }
+                  : null,
+              icon: const Icon(Icons.sports_mma_rounded),
+              label: Text(
+                l.battleStart,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: _manual
+                    ? const Color(0xFFC1502E)
+                    : const Color(0xFF3E7D4F),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _teamSlot(GameData data, SaveGame save, String locale, int index) {
     final id = _team[index];

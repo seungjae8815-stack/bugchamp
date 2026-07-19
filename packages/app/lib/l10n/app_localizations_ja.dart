@@ -192,6 +192,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get teamReorderHint => 'Drag to reorder';
 
   @override
+  String get leagueSeasonTitle => 'League · Season';
+
+  @override
+  String get modeManual => 'Manual';
+
+  @override
+  String get modeAuto => 'Auto';
+
+  @override
+  String get opponentPick => 'Pick Opponent';
+
+  @override
   String get breedingTitle => 'Breeding';
 
   @override

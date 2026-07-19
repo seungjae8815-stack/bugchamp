@@ -191,6 +191,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get teamReorderHint => '끌어서 순서 변경';
 
   @override
+  String get leagueSeasonTitle => '리그 · 시즌';
+
+  @override
+  String get modeManual => '수동';
+
+  @override
+  String get modeAuto => '자동';
+
+  @override
+  String get opponentPick => '상대 고르기';
+
+  @override
   String get breedingTitle => '짝짓기';
 
   @override

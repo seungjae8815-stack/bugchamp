@@ -8,10 +8,10 @@ library;
 const String kAppVersionName = '1.0.0';
 
 /// 이 빌드를 만든 날짜(YYYY-MM-DD). 설치본 구분 기준.
-const String kBuildDate = '2026-07-18';
+const String kBuildDate = '2026-07-19';
 
 /// 이 빌드에 새로 들어간 것 — 설치 후 무엇을 확인하면 되는지 힌트.
-const String kBuildHighlights = '다크 UI · 앱 아이콘 · 알림 · 깜짝보상 광고 · 브리딩 정리 · 비동기 PvP';
+const String kBuildHighlights = '전투 VS 매치업 · 짝짓기 그리드 · 팀 정렬 · 알림 · 앱아이콘';
 
 /// 설정 화면에 표시할 짧은 라벨(날짜 없이 버전만). 예: "v1.0.0".
 /// 날짜·기능 상세는 ⓘ 아이콘을 눌러 펼친다.
