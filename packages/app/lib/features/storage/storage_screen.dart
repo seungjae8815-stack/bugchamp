@@ -409,27 +409,38 @@ class StorageScreen extends ConsumerWidget {
                       )
                     else
                       ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 340),
-                        child: SingleChildScrollView(
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final b in list)
-                                _breedPickTile(ctx, data, locale, b, () async {
-                                  if (picking) {
-                                    setSheet(() => mother = b);
-                                  } else {
-                                    final seed = math.Random().nextInt(1 << 31);
-                                    final ok = await r
-                                        .read(saveControllerProvider.notifier)
-                                        .startBreeding(mother!.id, b.id, seed);
-                                    if (ctx.mounted && ok) Navigator.pop(ctx);
-                                  }
-                                }),
-                            ],
-                          ),
+                        constraints: const BoxConstraints(maxHeight: 380),
+                        child: GridView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                                childAspectRatio: 0.82,
+                              ),
+                          itemCount: list.length,
+                          itemBuilder: (c, i) {
+                            final b = list[i];
+                            return _breedPickTile(
+                              ctx,
+                              data,
+                              locale,
+                              b,
+                              () async {
+                                if (picking) {
+                                  setSheet(() => mother = b);
+                                } else {
+                                  final seed = math.Random().nextInt(1 << 31);
+                                  final ok = await r
+                                      .read(saveControllerProvider.notifier)
+                                      .startBreeding(mother!.id, b.id, seed);
+                                  if (ctx.mounted && ok) Navigator.pop(ctx);
+                                }
+                              },
+                            );
+                          },
                         ),
                       ),
                   ],
@@ -452,47 +463,51 @@ class StorageScreen extends ConsumerWidget {
     final sp = data.species(bug.speciesId);
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        width: 86,
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: const Color(0x22000000),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: gradeColor(sp.grade).withValues(alpha: 0.7),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0x22000000),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: gradeColor(sp.grade).withValues(alpha: 0.7),
+            width: 1.4,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            bugStageImage(
+              bug.speciesId,
+              LifeStage.adult,
+              size: 60,
+              fallback: bugAvatar(sp, size: 50),
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              bugStageImage(
-                bug.speciesId,
-                LifeStage.adult,
-                size: 42,
-                fallback: bugAvatar(sp, size: 36),
+            const SizedBox(height: 4),
+            Text(
+              sp.name.resolve(locale),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: 2),
-              Text(
-                sp.name.resolve(locale),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 10),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    sexIcon(bug.sex),
-                    size: 11,
-                    color: const Color(0xCCFFFFFF),
-                  ),
-                  const SizedBox(width: 2),
-                  _stars(bug.potential, 8),
-                ],
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  sexIcon(bug.sex),
+                  size: 12,
+                  color: const Color(0xCCFFFFFF),
+                ),
+                const SizedBox(width: 3),
+                _stars(bug.potential, 9),
+              ],
+            ),
+          ],
         ),
       ),
     );
