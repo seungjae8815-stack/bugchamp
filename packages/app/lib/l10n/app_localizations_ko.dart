@@ -203,6 +203,26 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opponentPick => '상대 고르기';
 
   @override
+  String get biomeForest => '숲';
+
+  @override
+  String get biomeVolcano => '용암굴';
+
+  @override
+  String get biomeBadlands => '황무지';
+
+  @override
+  String get biomeCity => '폐허도시';
+
+  @override
+  String get biomeDeep => '심해';
+
+  @override
+  String locationAffinity(String element) {
+    return '$element 곤충 강화';
+  }
+
+  @override
   String get breedingTitle => '짝짓기';
 
   @override

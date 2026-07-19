@@ -30,6 +30,7 @@ class ManualBattleScreen extends StatefulWidget {
     required this.trophiesAtStart,
     required this.config,
     required this.onApply,
+    required this.location,
     this.rewardMult = 1.0,
   });
 
@@ -41,6 +42,9 @@ class ManualBattleScreen extends StatefulWidget {
   final int trophiesAtStart;
   final BattleConfig config;
   final double rewardMult;
+
+  /// 전투 장소 오행(같은 오행 곤충 강화 + 배경).
+  final Element location;
   final Future<void> Function(
     int gold,
     int trophyDelta,
@@ -76,7 +80,13 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   @override
   void initState() {
     super.initState();
-    _state = initBattle(widget.seed, widget.myTeam, widget.foeTeam);
+    _state = initBattle(
+      widget.seed,
+      widget.myTeam,
+      widget.foeTeam,
+      location: widget.location,
+      locationBonus: widget.config.locationAffinityBonus,
+    );
     _hpA = [for (final u in widget.myTeam) u.maxHp];
     _hpB = [for (final u in widget.foeTeam) u.maxHp];
     _ticker = createTicker(_tick)..start();
@@ -223,11 +233,11 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF16240E), Color(0xFF0A1206)],
+            colors: biomeColors(widget.location),
           ),
         ),
         child: SafeArea(
@@ -268,7 +278,27 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                         ),
                       ),
                       const Spacer(),
-                      const SizedBox(width: 48),
+                      Container(
+                        constraints: const BoxConstraints(minWidth: 48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: elementColor(
+                            widget.location,
+                          ).withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '${biomeEmoji(widget.location)} ${biomeName(l, widget.location)}',
+                          style: TextStyle(
+                            color: elementColor(widget.location),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -276,6 +306,16 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                 Expanded(
                   child: Stack(
                     children: [
+                      // 장소 배경 워터마크(큰 이모지, 은은하게)
+                      Center(
+                        child: Opacity(
+                          opacity: 0.07,
+                          child: Text(
+                            biomeEmoji(widget.location),
+                            style: const TextStyle(fontSize: 200),
+                          ),
+                        ),
+                      ),
                       Row(
                         children: [
                           Expanded(
@@ -407,22 +447,54 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _stanceBtn(l, Stance.attack, canAct, true),
-              const SizedBox(width: 10),
-              _stanceBtn(l, Stance.defend, canAct, energy >= 1),
-              const SizedBox(width: 10),
-              _stanceBtn(l, Stance.heal, canAct, energy >= 1),
-            ],
+          const SizedBox(height: 6),
+          _stanceWheel(l, canAct, energy),
+        ],
+      ),
+    );
+  }
+
+  /// 공/방/회 상성(공>회>방>공)을 원형으로 표현한 스탠스 휠.
+  /// 공격 12시 · 회복 4시 · 방어 8시 → 시계방향 화살표가 "이김" 방향.
+  Widget _stanceWheel(AppLocalizations l, bool canAct, int energy) {
+    return SizedBox(
+      height: 196,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          const Positioned.fill(
+            child: CustomPaint(painter: _StanceRingPainter()),
+          ),
+          const Align(
+            alignment: Alignment(0, 0.02),
+            child: Text(
+              '공 › 회 › 방 › 공',
+              style: TextStyle(
+                color: Color(0x66FFFFFF),
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Align(
+            alignment: const Alignment(0, -0.92),
+            child: _wheelNode(l, Stance.attack, canAct, true),
+          ),
+          Align(
+            alignment: const Alignment(0.82, 0.7),
+            child: _wheelNode(l, Stance.heal, canAct, energy >= 1),
+          ),
+          Align(
+            alignment: const Alignment(-0.82, 0.7),
+            child: _wheelNode(l, Stance.defend, canAct, energy >= 1),
           ),
         ],
       ),
     );
   }
 
-  Widget _stanceBtn(
+  Widget _wheelNode(
     AppLocalizations l,
     Stance s,
     bool phaseActive,
@@ -430,49 +502,99 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   ) {
     final enabled = phaseActive && affordable;
     final base = stanceColor(s);
-    // 기력 증감 표시(공격 +1, 방어·회복 −1).
     final cost = s == Stance.attack ? '+1' : '−1';
-    return Expanded(
-      child: Opacity(
-        opacity: enabled ? 1 : 0.4,
-        child: SizedBox(
-          height: 66,
-          child: FilledButton(
-            onPressed: enabled ? () => _choose(s) : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: base,
-              disabledBackgroundColor: base,
-              padding: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+    return Opacity(
+      opacity: enabled ? 1 : 0.4,
+      child: GestureDetector(
+        onTap: enabled ? () => _choose(s) : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 62,
+              height: 62,
+              decoration: BoxDecoration(
+                color: base,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 2),
+                boxShadow: enabled
+                    ? [
+                        BoxShadow(
+                          color: base.withValues(alpha: 0.5),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Icon(stanceIcon(s), size: 26, color: Colors.white),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              stanceLabel(l, s),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
               ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(stanceIcon(s), size: 20, color: Colors.white),
-                const SizedBox(height: 2),
-                Text(
-                  stanceLabel(l, s),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  '⚡$cost',
-                  style: const TextStyle(
-                    color: Color(0xDDFFFFFF),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            Text(
+              '⚡$cost',
+              style: const TextStyle(
+                color: Color(0xCCFFFFFF),
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
+}
+
+/// 스탠스 휠 링 + 시계방향 화살표(공>회>방>공 상성 흐름).
+class _StanceRingPainter extends CustomPainter {
+  const _StanceRingPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2 - 6);
+    final r = math.min(size.width, size.height) / 2 - 46;
+    if (r <= 0) return;
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..color = const Color(0x2EFFFFFF);
+    canvas.drawCircle(c, r, ring);
+    // 노드 12시(-90°)·4시(30°)·8시(150°) 사이 호 중점에 시계방향 화살촉.
+    final arrow = Paint()
+      ..style = PaintingStyle.fill
+      ..color = const Color(0x66FFFFFF);
+    for (final deg in const [-30.0, 90.0, 210.0]) {
+      final a = deg * math.pi / 180;
+      final p = c + Offset(math.cos(a), math.sin(a)) * r;
+      final t = a + math.pi / 2; // 시계방향 접선
+      _head(canvas, p, Offset(math.cos(t), math.sin(t)), arrow);
+    }
+  }
+
+  void _head(Canvas canvas, Offset p, Offset dir, Paint paint) {
+    const s = 8.0;
+    final perp = Offset(-dir.dy, dir.dx);
+    final tip = p + dir * s;
+    final b1 = p - dir * s + perp * (s * 0.7);
+    final b2 = p - dir * s - perp * (s * 0.7);
+    canvas.drawPath(
+      Path()
+        ..moveTo(tip.dx, tip.dy)
+        ..lineTo(b1.dx, b1.dy)
+        ..lineTo(b2.dx, b2.dy)
+        ..close(),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

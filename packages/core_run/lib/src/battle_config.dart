@@ -74,6 +74,7 @@ class BattleConfig {
     this.seasonDays = 14,
     this.seasonResetFactor = 0.5,
     this.seasonRewardMult = 3.0,
+    this.locationAffinityBonus = 0.2,
   });
 
   /// 승리 기본 골드.
@@ -101,6 +102,9 @@ class BattleConfig {
 
   /// 시즌 보상 = 최고 리그 승급보상 × 이 배율.
   final double seasonRewardMult;
+
+  /// 장소 상성: 전투 장소 오행과 같은 곤충의 데미지 강화 비율(0.2 = +20%).
+  final double locationAffinityBonus;
 
   static const _defaultTiers = [
     ScoutTier(id: 'easy', powerMult: 0.82, rewardMult: 0.7),
@@ -196,6 +200,8 @@ class BattleConfig {
       seasonDays: (season?['days'] as num?)?.toInt() ?? 14,
       seasonResetFactor: (season?['resetFactor'] as num?)?.toDouble() ?? 0.5,
       seasonRewardMult: (season?['rewardMult'] as num?)?.toDouble() ?? 3.0,
+      locationAffinityBonus:
+          (json['locationAffinityBonus'] as num?)?.toDouble() ?? 0.2,
     );
   }
 }

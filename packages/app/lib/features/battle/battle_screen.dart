@@ -23,12 +23,19 @@ import 'manual_battle_screen.dart';
 
 const _honey = Color(0xFFEBA52F);
 
-/// 스카우트된 상대 후보 1팀(난이도 티어 + 상대 3마리).
+/// 스카우트된 상대 후보 1팀(난이도 티어 + 상대 3마리 + 전투 장소).
 /// [ownerName] 이 있으면 **실제 다른 유저**의 방어팀, null 이면 로컬 합성 상대.
+/// [location] = 상대 리드 곤충의 오행(그 오행 곤충이 강화되는 장소, §장소 상성).
 class _Scout {
-  _Scout({required this.tier, required this.team, this.ownerName});
+  _Scout({
+    required this.tier,
+    required this.team,
+    required this.location,
+    this.ownerName,
+  });
   final ScoutTier tier;
   final List<({BattleBug bug, String speciesId})> team;
+  final Element location;
   final String? ownerName;
 }
 
@@ -154,6 +161,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     });
   }
 
+  /// 팀·티어 → 스카우트(장소 = 리드 곤충 오행).
+  _Scout _scoutOf(
+    ScoutTier tier,
+    List<({BattleBug bug, String speciesId})> team, {
+    String? owner,
+  }) => _Scout(
+    tier: tier,
+    team: team,
+    location: team.first.bug.element,
+    ownerName: owner,
+  );
+
   /// 스카우트 보드 갱신(난이도 티어별 상대 1팀씩).
   void _rollScouts(
     GameData data,
@@ -163,9 +182,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final cfg = data.battleConfig ?? const BattleConfig();
     _scouts = [
       for (var i = 0; i < cfg.scoutTiers.length; i++)
-        _Scout(
-          tier: cfg.scoutTiers[i],
-          team: _genFoeTeam(avg, cfg.scoutTiers[i].powerMult, data, locale, i),
+        _scoutOf(
+          cfg.scoutTiers[i],
+          _genFoeTeam(avg, cfg.scoutTiers[i].powerMult, data, locale, i),
         ),
     ];
     if (_selectedScout >= _scouts.length) _selectedScout = _scouts.length ~/ 2;
@@ -305,13 +324,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     for (final b in built) {
       final idx = _closestFreeTier(b.ratio, slots, tiers);
       if (idx < 0) break;
-      slots[idx] = _Scout(tier: tiers[idx], team: b.team, ownerName: b.owner);
+      slots[idx] = _scoutOf(tiers[idx], b.team, owner: b.owner);
     }
     // 빈 티어는 로컬 합성 상대로 채움.
     for (var i = 0; i < tiers.length; i++) {
-      slots[i] ??= _Scout(
-        tier: tiers[i],
-        team: _genFoeTeam(avg, tiers[i].powerMult, data, locale, 100 + i),
+      slots[i] ??= _scoutOf(
+        tiers[i],
+        _genFoeTeam(avg, tiers[i].powerMult, data, locale, 100 + i),
       );
     }
     setState(() {
@@ -847,6 +866,26 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ),
   );
 
+  /// 전투 장소 칩 — 장소 이모지·이름 + 상성(그 오행 곤충 강화).
+  Widget _locationChip(AppLocalizations l, Element loc) => Center(
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: elementColor(loc).withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: elementColor(loc).withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        '${biomeEmoji(loc)} ${biomeName(l, loc)} · ${l.locationAffinity(elementLabel(l, loc))}',
+        style: TextStyle(
+          color: elementColor(loc),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  );
+
   /// VS 매치업 카드 — 내 팀(편성·드래그)과 선택 상대·상생·승리 보상.
   Widget _matchupCard(
     AppLocalizations l,
@@ -940,6 +979,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             ),
           ),
           if (scout != null) ...[
+            _locationChip(l, scout.location),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Container(
@@ -1502,7 +1543,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
     final cfg = data.battleConfig ?? const BattleConfig();
-    final result = simulate(m.seed, m.mine, m.foe);
+    final result = simulate(
+      m.seed,
+      m.mine,
+      m.foe,
+      location: scout.location,
+      locationBonus: cfg.locationAffinityBonus,
+    );
     final rw = pvpReward(
       result.outcome,
       save.pvpTrophies,
@@ -1525,6 +1572,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           result: result,
           gold: rw.gold,
           trophyDelta: rw.trophyDelta,
+          location: scout.location,
         ),
       ),
     );
@@ -1551,6 +1599,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           config: data.battleConfig ?? const BattleConfig(),
           rewardMult: scout.tier.rewardMult,
           onApply: _applyReward,
+          location: scout.location,
         ),
       ),
     );

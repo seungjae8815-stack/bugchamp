@@ -460,6 +460,42 @@ abstract class AppLocalizations {
   /// **'Pick Opponent'**
   String get opponentPick;
 
+  /// No description provided for @biomeForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest'**
+  String get biomeForest;
+
+  /// No description provided for @biomeVolcano.
+  ///
+  /// In en, this message translates to:
+  /// **'Lava Cave'**
+  String get biomeVolcano;
+
+  /// No description provided for @biomeBadlands.
+  ///
+  /// In en, this message translates to:
+  /// **'Badlands'**
+  String get biomeBadlands;
+
+  /// No description provided for @biomeCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Ruined City'**
+  String get biomeCity;
+
+  /// No description provided for @biomeDeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Sea'**
+  String get biomeDeep;
+
+  /// No description provided for @locationAffinity.
+  ///
+  /// In en, this message translates to:
+  /// **'{element} bugs boosted'**
+  String locationAffinity(String element);
+
   /// No description provided for @breedingTitle.
   ///
   /// In en, this message translates to:

@@ -52,6 +52,34 @@ Color elementColor(Element e) => switch (e) {
   Element.earth => const Color(0xFFD2A56A),
 };
 
+// ── 전투 장소(오행 1:1 매핑) ─────────────────────────────
+// 木=숲 · 火=용암굴 · 土=황무지 · 金=폐허도시 · 水=심해.
+// 그 장소 오행과 같은 곤충은 데미지 강화(장소 상성).
+String biomeName(AppLocalizations l, Element e) => switch (e) {
+  Element.wood => l.biomeForest,
+  Element.fire => l.biomeVolcano,
+  Element.earth => l.biomeBadlands,
+  Element.metal => l.biomeCity,
+  Element.water => l.biomeDeep,
+};
+
+String biomeEmoji(Element e) => switch (e) {
+  Element.wood => '🌲',
+  Element.fire => '🌋',
+  Element.earth => '🏜️',
+  Element.metal => '🏙️',
+  Element.water => '🌊',
+};
+
+/// 장소 배경 그라데이션(상단→하단). 배경 아트가 없을 때의 폴백.
+List<Color> biomeColors(Element e) => switch (e) {
+  Element.wood => const [Color(0xFF1E3A1E), Color(0xFF0B1A0B)],
+  Element.fire => const [Color(0xFF3E1712), Color(0xFF190807)],
+  Element.earth => const [Color(0xFF3A2E15), Color(0xFF19140A)],
+  Element.metal => const [Color(0xFF262C34), Color(0xFF0E1218)],
+  Element.water => const [Color(0xFF102A44), Color(0xFF071522)],
+};
+
 String temperamentLabel(AppLocalizations l, Temperament t) => switch (t) {
   Temperament.aggressive => l.temperamentAggressive,
   Temperament.cautious => l.temperamentCautious,

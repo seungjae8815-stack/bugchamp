@@ -82,6 +82,7 @@ void main() {
           seed: 7,
           trophiesAtStart: 0,
           config: const BattleConfig(),
+          location: Element.wood,
           onApply: (g, t, koed) async {
             gold = g;
             trophy = t;
@@ -91,11 +92,11 @@ void main() {
     );
     await tester.pump();
 
-    // 입력 단계마다 '공격' 버튼이 활성일 때만 눌러 결착까지 진행.
-    final attackBtn = find.widgetWithText(FilledButton, 'Attack');
+    // 입력 단계마다 '공격' 휠 노드가 활성일 때만 눌러 결착까지 진행.
+    final attackBtn = find.widgetWithText(GestureDetector, 'Attack');
     for (var i = 0; i < 60 && gold == null; i++) {
-      final btn = tester.widget<FilledButton>(attackBtn);
-      if (btn.onPressed != null) {
+      final btn = tester.widget<GestureDetector>(attackBtn);
+      if (btn.onTap != null) {
         await tester.tap(attackBtn);
       }
       await tester.pump(const Duration(milliseconds: 100));

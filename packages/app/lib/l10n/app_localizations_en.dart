@@ -204,6 +204,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get opponentPick => 'Pick Opponent';
 
   @override
+  String get biomeForest => 'Forest';
+
+  @override
+  String get biomeVolcano => 'Lava Cave';
+
+  @override
+  String get biomeBadlands => 'Badlands';
+
+  @override
+  String get biomeCity => 'Ruined City';
+
+  @override
+  String get biomeDeep => 'Deep Sea';
+
+  @override
+  String locationAffinity(String element) {
+    return '$element bugs boosted';
+  }
+
+  @override
   String get breedingTitle => 'Breeding';
 
   @override

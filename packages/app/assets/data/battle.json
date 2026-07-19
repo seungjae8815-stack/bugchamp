@@ -5,6 +5,7 @@
   "trophyWin": 12,
   "trophyDraw": 0,
   "trophyLose": -8,
+  "locationAffinityBonus": 0.2,
   "scout": {
     "tiers": [
       { "id": "easy", "powerMult": 0.82, "rewardMult": 0.7 },

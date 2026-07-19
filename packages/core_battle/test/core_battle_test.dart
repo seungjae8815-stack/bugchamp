@@ -131,4 +131,66 @@ void main() {
       expect(st.events.first.aStance, Stance.attack);
     });
   });
+
+  group('장소 상성', () {
+    // 방어자(b)는 안 죽게 큰 HP — 총 데미지 비교용. 상극 관계 아닌 오행 선택.
+    List<BattleBug> atkTeam() => [_bug('a', Element.wood, Temperament.aggressive)];
+    List<BattleBug> defTeam() => [
+      _bug(
+        'b',
+        Element.fire,
+        Temperament.steadfast,
+        pref: Stance.defend,
+        hp: 100000,
+        def: 0,
+      ),
+    ];
+    double dmgToB(BattleResult r) =>
+        r.events.fold(0.0, (s, e) => s + e.dmgToB);
+
+    test('같은 오행 곤충이 장소에서 데미지 강화', () {
+      final noLoc = simulate(7, atkTeam(), defTeam());
+      final woodLoc = simulate(
+        7,
+        atkTeam(),
+        defTeam(),
+        location: Element.wood,
+        locationBonus: 0.5,
+      );
+      // 같은 seed → 스탠스 시퀀스 동일, 木 장소에서 목(a) 데미지만 ↑.
+      expect(dmgToB(woodLoc), greaterThan(dmgToB(noLoc)));
+    });
+
+    test('장소 지정해도 결정론 유지', () {
+      final r1 = simulate(
+        7,
+        atkTeam(),
+        defTeam(),
+        location: Element.wood,
+        locationBonus: 0.5,
+      );
+      final r2 = simulate(
+        7,
+        atkTeam(),
+        defTeam(),
+        location: Element.wood,
+        locationBonus: 0.5,
+      );
+      expect(dmgToB(r1), dmgToB(r2));
+      expect(r1.outcome, r2.outcome);
+    });
+
+    test('장소 오행과 다른 곤충은 강화 없음', () {
+      final noLoc = simulate(7, atkTeam(), defTeam());
+      // 장소가 水(a=목과 무관) → a 데미지 변화 없음.
+      final waterLoc = simulate(
+        7,
+        atkTeam(),
+        defTeam(),
+        location: Element.water,
+        locationBonus: 0.5,
+      );
+      expect(dmgToB(waterLoc), closeTo(dmgToB(noLoc), 0.001));
+    });
+  });
 }

@@ -111,8 +111,14 @@ double teamSynergy(List<BattleBug> team) {
 
 /// 진행 가능한(step) 전투 상태. 오토=양쪽 AI, 수동=A 스탠스 주입.
 class BattleState {
-  BattleState._(this.teamA, this.teamB, this._rng)
-    : hpA = [for (final u in teamA) u.maxHp],
+  BattleState._(
+    this.teamA,
+    this.teamB,
+    this._rng, {
+    this.location,
+    double locationBonus = 0.0,
+  }) : _locBonus = locationBonus,
+       hpA = [for (final u in teamA) u.maxHp],
       hpB = [for (final u in teamB) u.maxHp],
       enA = [for (final _ in teamA) _startEnergy],
       enB = [for (final _ in teamB) _startEnergy],
@@ -124,6 +130,10 @@ class BattleState {
   final List<BattleBug> teamA;
   final List<BattleBug> teamB;
   final Random _rng;
+
+  /// 전투 장소 오행(null=장소 없음). 같은 오행 곤충은 데미지 [_locBonus] 만큼 강화.
+  final Element? location;
+  final double _locBonus;
 
   final List<double> hpA;
   final List<double> hpB;
@@ -152,6 +162,8 @@ class BattleState {
   double _dmg(BattleBug att, BattleBug def, double mult, double syn) {
     var m = mult * syn;
     if (att.element.restrains(def.element)) m *= _restrainMult;
+    // 장소 상성: 장소 오행과 같은 곤충은 데미지 강화(양측 대칭).
+    if (location != null && att.element == location) m *= (1 + _locBonus);
     return att.atk * m * (100.0 / (100.0 + def.def));
   }
 
@@ -326,15 +338,36 @@ class BattleState {
 }
 
 /// 수동/오토 공용 전투 상태 생성.
+/// [location] 이 있으면 그 오행 곤충은 데미지 [locationBonus] 만큼 강화(장소 상성).
 BattleState initBattle(
   int seed,
   List<BattleBug> teamA,
-  List<BattleBug> teamB,
-) => BattleState._(teamA, teamB, Random(seed));
+  List<BattleBug> teamB, {
+  Element? location,
+  double locationBonus = 0.0,
+}) => BattleState._(
+  teamA,
+  teamB,
+  Random(seed),
+  location: location,
+  locationBonus: locationBonus,
+);
 
-/// 오토 전투(양쪽 AI). 같은 seed·팀 → 같은 결과 (§2.3, 결정론).
-BattleResult simulate(int seed, List<BattleBug> teamA, List<BattleBug> teamB) {
-  final st = initBattle(seed, teamA, teamB);
+/// 오토 전투(양쪽 AI). 같은 seed·팀·장소 → 같은 결과 (§2.3, 결정론).
+BattleResult simulate(
+  int seed,
+  List<BattleBug> teamA,
+  List<BattleBug> teamB, {
+  Element? location,
+  double locationBonus = 0.0,
+}) {
+  final st = initBattle(
+    seed,
+    teamA,
+    teamB,
+    location: location,
+    locationBonus: locationBonus,
+  );
   var guard = 0;
   while (!st.done && guard < 200) {
     st.step();

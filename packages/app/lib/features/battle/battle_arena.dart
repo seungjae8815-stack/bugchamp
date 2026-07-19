@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
+import 'package:core_models/core_models.dart' show Element;
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,7 @@ class BattleArenaScreen extends StatefulWidget {
     required this.result,
     required this.gold,
     required this.trophyDelta,
+    required this.location,
   });
 
   final GameData data;
@@ -30,6 +32,9 @@ class BattleArenaScreen extends StatefulWidget {
   final BattleResult result;
   final int gold;
   final int trophyDelta;
+
+  /// 전투 장소 오행(배경 톤).
+  final Element location;
 
   @override
   State<BattleArenaScreen> createState() => _BattleArenaScreenState();
@@ -202,11 +207,11 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF16240E), Color(0xFF0A1206)],
+            colors: biomeColors(widget.location),
           ),
         ),
         child: SafeArea(
