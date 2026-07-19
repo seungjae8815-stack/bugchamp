@@ -873,6 +873,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final card = GestureDetector(
       onTap: () => _showPicker(data, save, locale, index),
       child: Container(
+        width: double.infinity, // 셀(1/3)을 꽉 채워 3슬롯 균등 정렬
         height: 150,
         decoration: BoxDecoration(
           color: const Color(0x22000000),

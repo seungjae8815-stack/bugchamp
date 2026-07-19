@@ -367,7 +367,8 @@ class StorageScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  // stretch: 타일 Wrap 영역이 전체 너비를 차지해야 가운데 정렬이 작동.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
                       children: [
