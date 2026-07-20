@@ -25,19 +25,28 @@
 |---|---|
 | `SUPABASE_URL` | 프로젝트 URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | RLS 우회 쓰기 (🔴 비밀) |
-| `SUPABASE_JWT_SECRET` | 클라이언트 토큰 검증 (🔴 비밀) |
 | `PORT` | Cloud Run 이 주입(기본 8080) |
 
-> 🔴 두 비밀은 **절대 앱·저장소에 넣지 않는다.**
-> `SUPABASE_JWT_SECRET` 을 아는 쪽은 아무 사용자로도 위장할 수 있다.
-> Supabase 대시보드 → Settings → API 에서 확인한다.
+> 🔴 `SUPABASE_SERVICE_ROLE_KEY` 는 **절대 앱·저장소에 넣지 않는다.**
+
+### JWT 시크릿은 필요 없다
+
+이 프로젝트는 **비대칭 서명(ES256 / ECC P-256)** 을 쓴다.
+서버는 `/auth/v1/.well-known/jwks.json` 의 **공개키**로 검증하므로
+공유 시크릿을 들고 있을 필요가 없다.
+
+대칭키(HS256)였다면 그 값을 아는 쪽은 누구든 임의의 사용자로 위장할 수 있어
+서버 유출이 곧 전면 위조로 이어진다. 공개키만 두면 서버가 털려도
+토큰을 만들어낼 수는 없다.
+
+**HS256 토큰은 알고리즘 단계에서 거부한다** — 레거시 공유 시크릿이 남아 있어도
+그것으로 서명한 토큰이 통과하면 다운그레이드 통로가 되기 때문이다.
 
 ## 로컬 실행
 
 ```powershell
 $env:SUPABASE_URL="https://xxx.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY="..."
-$env:SUPABASE_JWT_SECRET="..."
 dart run bin/server.dart
 ```
 
@@ -47,8 +56,9 @@ dart run bin/server.dart
 cd packages\server ; dart test
 ```
 
-인증은 보안 핵심이라 위조·`alg:none`·페이로드 교체·만료·발급자 불일치까지
-테스트로 막아두었다. 손댈 때 반드시 테스트를 함께 확인할 것.
+인증은 보안 핵심이라 위조 서명·`alg:none`·**HS256 다운그레이드**·페이로드 교체·
+만료·nbf·발급자 불일치까지 테스트로 막아두었다.
+손댈 때 반드시 테스트를 함께 확인할 것.
 
 ## 배포 (Cloud Run)
 
@@ -57,7 +67,7 @@ cd packages\server ; dart test
 gcloud run deploy bugchamp-server `
   --source . `
   --region asia-northeast3 `
-  --set-secrets "SUPABASE_SERVICE_ROLE_KEY=supabase-service-role:latest,SUPABASE_JWT_SECRET=supabase-jwt-secret:latest" `
+  --set-secrets "SUPABASE_SERVICE_ROLE_KEY=supabase-service-role:latest" `
   --set-env-vars "SUPABASE_URL=https://xxx.supabase.co"
 ```
 

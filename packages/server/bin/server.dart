@@ -7,7 +7,8 @@ import 'package:shelf/shelf_io.dart' as io;
 /// Bug Champ 권위 서버 진입점.
 ///
 /// 실행에 필요한 환경변수:
-///   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET
+///   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+/// (JWT 시크릿은 불필요 — 비대칭 서명이라 공개키 JWKS 로 검증한다)
 /// Cloud Run 은 PORT 를 주입한다(없으면 8080).
 Future<void> main() async {
   final ServerConfig config;

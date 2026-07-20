@@ -39,6 +39,8 @@ Dart 와 TS 양쪽을 맞춰야 하고, 어긋나는 순간 "클라에선 되는
 - 호스팅: **Google Cloud Run** (이미 GCP 프로젝트 `bugchamp` 사용 중, Play 연동됨)
 - DB: **기존 Supabase Postgres 유지** (auth·테이블 이미 있음)
 - 인증: 클라이언트가 보낸 **Supabase JWT 를 서버가 검증**
+  (**ES256 비대칭** — JWKS 공개키로 검증하므로 서버에 JWT 비밀이 필요 없다.
+  이 프로젝트는 2026-07-15경 레거시 HS256 에서 ECC P-256 으로 전환됨)
 
 > Supabase Edge Function 은 Deno(JS)라 Dart 코드를 못 쓴다.
 > `dart compile js` 로 우겨넣는 방법도 있으나 디버깅·의존성이 지저분해진다.

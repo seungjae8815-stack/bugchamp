@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
+import 'package:jose/jose.dart';
 import 'package:meta/meta.dart';
 
 /// 검증된 호출자.
@@ -16,7 +16,7 @@ class AuthedUser {
 }
 
 /// JWT 검증 실패 사유. 클라이언트에는 세부 사유를 돌려주지 않는다
-/// (공격자에게 힌트를 주지 않기 위해) — 로그용이다.
+/// (공격자에게 어디까지 맞았는지 알려주지 않기 위해) — 로그용이다.
 enum AuthFailure {
   missing,
   malformed,
@@ -26,6 +26,7 @@ enum AuthFailure {
   notYetValid,
   wrongIssuer,
   noSubject,
+  keysUnavailable,
 }
 
 class AuthResult {
@@ -38,115 +39,108 @@ class AuthResult {
   bool get isOk => user != null;
 }
 
-/// Supabase JWT(HS256) 검증기.
+/// Supabase JWT 검증기 (**비대칭 ES256 / JWKS**).
 ///
-/// Supabase 는 프로젝트별 **JWT 시크릿**으로 토큰을 HMAC-SHA256 서명한다.
-/// 그 시크릿을 아는 쪽만 유효한 토큰을 만들 수 있으므로, 서명이 맞으면
-/// "Supabase 가 발급한 토큰"임이 보장된다.
+/// Supabase 는 2025년 이후 프로젝트별 **비대칭 서명키**(ECC P-256, ES256)를 쓴다.
+/// 서버는 `/auth/v1/.well-known/jwks.json` 의 **공개키**로 서명을 검증한다.
 ///
-/// ⚠️ 시크릿은 **서버 환경변수로만** 주입한다. 앱이나 저장소에 두면 안 된다
-/// (알고 있으면 아무 사용자로도 위장할 수 있다).
+/// 대칭키(HS256) 방식보다 나은 점: **서버가 비밀을 들고 있지 않아도 된다.**
+/// 공유 시크릿 방식이면 그 값을 아는 쪽은 누구든 임의의 사용자로 위장할 수
+/// 있으므로, 서버가 유출되면 곧바로 전면 위조가 가능하다. 공개키만 두면
+/// 서버가 털려도 토큰을 만들어낼 수는 없다.
+///
+/// ⚠️ **HS256 토큰은 받지 않는다.** 레거시 공유 시크릿이 남아 있어도
+/// (이 프로젝트는 5일 전 교체됨) 그것으로 서명된 토큰을 받아주면
+/// 알고리즘 다운그레이드 통로가 된다.
 class SupabaseJwtVerifier {
-  SupabaseJwtVerifier({required String jwtSecret, this.expectedIssuer})
-    : _key = utf8.encode(jwtSecret);
+  SupabaseJwtVerifier({
+    required this.jwksUri,
+    required this.expectedIssuer,
+    JsonWebKeyStore? store,
+  }) : _store = store ?? (JsonWebKeyStore()..addKeySetUrl(jwksUri));
 
-  final List<int> _key;
+  /// `https://<project>.supabase.co/auth/v1/.well-known/jwks.json`
+  final Uri jwksUri;
 
-  /// `https://<project>.supabase.co/auth/v1` — 지정하면 iss 도 검사한다.
-  final String? expectedIssuer;
+  /// `https://<project>.supabase.co/auth/v1`
+  final String expectedIssuer;
+
+  final JsonWebKeyStore _store;
+
+  /// 허용 알고리즘 — 여기 없는 alg 는 서명이 맞아도 거부한다.
+  static const _allowedAlgorithms = {'ES256'};
+
+  /// 프로젝트 URL 로부터 검증기를 만든다.
+  factory SupabaseJwtVerifier.forProject(String supabaseUrl) {
+    final base = supabaseUrl.endsWith('/')
+        ? supabaseUrl.substring(0, supabaseUrl.length - 1)
+        : supabaseUrl;
+    return SupabaseJwtVerifier(
+      jwksUri: Uri.parse('$base/auth/v1/.well-known/jwks.json'),
+      expectedIssuer: '$base/auth/v1',
+    );
+  }
 
   /// `Authorization: Bearer <token>` 헤더를 검증한다.
-  AuthResult verifyHeader(String? header, {DateTime? now}) {
+  Future<AuthResult> verifyHeader(String? header, {DateTime? now}) async {
     if (header == null || !header.startsWith('Bearer ')) {
       return const AuthResult.fail(AuthFailure.missing);
     }
     return verify(header.substring(7).trim(), now: now);
   }
 
-  AuthResult verify(String token, {DateTime? now}) {
-    final parts = token.split('.');
-    if (parts.length != 3) {
-      return const AuthResult.fail(AuthFailure.malformed);
-    }
-
-    final Map<String, dynamic> header;
-    final Map<String, dynamic> payload;
+  Future<AuthResult> verify(String token, {DateTime? now}) async {
+    final JsonWebSignature jws;
     try {
-      header = _decodeSegment(parts[0]);
-      payload = _decodeSegment(parts[1]);
+      jws = JsonWebSignature.fromCompactSerialization(token);
     } catch (_) {
       return const AuthResult.fail(AuthFailure.malformed);
     }
 
-    // 알고리즘 고정 — `alg: none` 이나 비대칭 혼동 공격을 막는다.
-    if (header['alg'] != 'HS256') {
+    // 알고리즘을 서명 검증 **전에** 확인한다 — alg:none 이나 HS256 다운그레이드 차단.
+    final alg = jws.commonProtectedHeader.algorithm;
+    if (alg == null || !_allowedAlgorithms.contains(alg)) {
       return const AuthResult.fail(AuthFailure.badAlgorithm);
     }
 
-    // 서명 검증. 상수시간 비교로 타이밍 공격을 피한다.
-    final signing = utf8.encode('${parts[0]}.${parts[1]}');
-    final expected = Hmac(sha256, _key).convert(signing).bytes;
-    final actual = _decodeBytes(parts[2]);
-    if (actual == null || !_constantTimeEquals(expected, actual)) {
+    final JosePayload payload;
+    try {
+      payload = await jws.getPayload(_store);
+    } on JoseException {
       return const AuthResult.fail(AuthFailure.badSignature);
+    } catch (_) {
+      // JWKS 를 못 받아온 경우 등 — 서명이 틀렸다고 단정하지 않는다.
+      return const AuthResult.fail(AuthFailure.keysUnavailable);
+    }
+
+    final Map<String, dynamic> claims;
+    try {
+      claims = jsonDecode(utf8.decode(payload.data)) as Map<String, dynamic>;
+    } catch (_) {
+      return const AuthResult.fail(AuthFailure.malformed);
     }
 
     final t = (now ?? DateTime.now().toUtc()).millisecondsSinceEpoch ~/ 1000;
-    final exp = (payload['exp'] as num?)?.toInt();
+    final exp = (claims['exp'] as num?)?.toInt();
     if (exp != null && t >= exp) {
       return const AuthResult.fail(AuthFailure.expired);
     }
-    final nbf = (payload['nbf'] as num?)?.toInt();
+    final nbf = (claims['nbf'] as num?)?.toInt();
     if (nbf != null && t < nbf) {
       return const AuthResult.fail(AuthFailure.notYetValid);
     }
-
-    final iss = expectedIssuer;
-    if (iss != null && payload['iss'] != iss) {
+    if (claims['iss'] != expectedIssuer) {
       return const AuthResult.fail(AuthFailure.wrongIssuer);
     }
 
-    final sub = payload['sub'];
+    final sub = claims['sub'];
     if (sub is! String || sub.isEmpty) {
       return const AuthResult.fail(AuthFailure.noSubject);
     }
 
     // Supabase 는 익명 로그인에 is_anonymous 클레임을 준다.
-    final anon = payload['is_anonymous'] == true;
-    return AuthResult.ok(AuthedUser(id: sub, isAnonymous: anon));
-  }
-
-  static Map<String, dynamic> _decodeSegment(String seg) {
-    final bytes = _decodeBytes(seg);
-    if (bytes == null) throw const FormatException('bad base64url');
-    return jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
-  }
-
-  static List<int>? _decodeBytes(String seg) {
-    var s = seg.replaceAll('-', '+').replaceAll('_', '/');
-    switch (s.length % 4) {
-      case 2:
-        s += '==';
-      case 3:
-        s += '=';
-      case 1:
-        return null; // 유효한 base64 가 아님
-    }
-    try {
-      return base64.decode(s);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// 길이·내용 비교를 상수시간으로 — 서명 비교에서 조기 반환하면
-  /// 응답 시간 차이로 서명을 한 바이트씩 맞춰갈 수 있다.
-  static bool _constantTimeEquals(List<int> a, List<int> b) {
-    if (a.length != b.length) return false;
-    var diff = 0;
-    for (var i = 0; i < a.length; i++) {
-      diff |= a[i] ^ b[i];
-    }
-    return diff == 0;
+    return AuthResult.ok(
+      AuthedUser(id: sub, isAnonymous: claims['is_anonymous'] == true),
+    );
   }
 }

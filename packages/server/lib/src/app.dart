@@ -9,15 +9,10 @@ import 'state_store.dart';
 
 /// 서버 설정. 전부 환경변수에서 온다 — 코드·저장소에 비밀을 두지 않는다.
 class ServerConfig {
-  ServerConfig({
-    required this.supabaseUrl,
-    required this.serviceRoleKey,
-    required this.jwtSecret,
-  });
+  ServerConfig({required this.supabaseUrl, required this.serviceRoleKey});
 
   final String supabaseUrl;
   final String serviceRoleKey;
-  final String jwtSecret;
 
   /// JWT 발급자 — 프로젝트 URL 로부터 유도한다.
   String get issuer => '$supabaseUrl/auth/v1';
@@ -32,10 +27,10 @@ class ServerConfig {
       return v;
     }
 
+    // JWT 시크릿은 필요 없다 — 비대칭(ES256) 서명이라 공개키(JWKS)로 검증한다.
     return ServerConfig(
       supabaseUrl: need('SUPABASE_URL'),
       serviceRoleKey: need('SUPABASE_SERVICE_ROLE_KEY'),
-      jwtSecret: need('SUPABASE_JWT_SECRET'),
     );
   }
 }
@@ -48,7 +43,7 @@ const _userKey = 'authedUser';
 Middleware requireAuth(SupabaseJwtVerifier verifier) {
   return (Handler inner) {
     return (Request req) async {
-      final result = verifier.verifyHeader(req.headers['authorization']);
+      final result = await verifier.verifyHeader(req.headers['authorization']);
       if (!result.isOk) {
         return Response.unauthorized(
           jsonEncode({'error': 'unauthorized'}),
@@ -72,11 +67,12 @@ Response _json(Map<String, dynamic> body, {int status = 200}) => Response(
 Handler buildHandler({
   required ServerConfig config,
   required StateStore store,
+
+  /// 테스트에서 가짜 키셋을 주입하기 위한 훅. 운영에서는 null.
+  SupabaseJwtVerifier? jwtVerifier,
 }) {
-  final verifier = SupabaseJwtVerifier(
-    jwtSecret: config.jwtSecret,
-    expectedIssuer: config.issuer,
-  );
+  final verifier =
+      jwtVerifier ?? SupabaseJwtVerifier.forProject(config.supabaseUrl);
 
   final public = Router()
     // Cloud Run 헬스체크 — 인증 없이 접근 가능해야 한다.

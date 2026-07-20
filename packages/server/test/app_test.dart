@@ -6,7 +6,7 @@ import 'package:server/src/state_store.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-import 'auth_test.dart' show makeToken;
+import 'auth_test.dart' show makeToken, attackerKey, signingKey, verifierFor;
 
 /// Supabase REST 를 흉내내는 가짜 클라이언트 — 네트워크 없이 라우팅을 검증한다.
 class _FakeHttp extends http.BaseClient {
@@ -37,21 +37,23 @@ class _FakeHttp extends http.BaseClient {
 }
 
 void main() {
-  const secret = 'super-secret-for-tests-only';
   const url = 'https://proj.supabase.co';
 
   Handler handlerWith(Map<String, Map<String, dynamic>> rows) {
     final config = ServerConfig(
       supabaseUrl: url,
       serviceRoleKey: 'service-role',
-      jwtSecret: secret,
     );
     final store = StateStore(
       supabaseUrl: url,
       serviceRoleKey: 'service-role',
       client: _FakeHttp(rows),
     );
-    return buildHandler(config: config, store: store);
+    return buildHandler(
+      config: config,
+      store: store,
+      jwtVerifier: verifierFor(signingKey),
+    );
   }
 
   Future<Response> get(Handler h, String path, {String? token}) async => h(
@@ -76,7 +78,7 @@ void main() {
     final res = await get(
       handlerWith({}),
       '/state',
-      token: makeToken(secret: 'wrong-secret'),
+      token: makeToken(key: attackerKey),
     );
     expect(res.statusCode, 401);
   });
@@ -85,7 +87,7 @@ void main() {
     final res = await get(
       handlerWith({}),
       '/state',
-      token: makeToken(secret: 'wrong-secret'),
+      token: makeToken(key: attackerKey),
     );
     final body = jsonDecode(await res.readAsString()) as Map;
     expect(body['error'], 'unauthorized');
