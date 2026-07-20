@@ -16,6 +16,8 @@
 - [x] 릴리즈 빌드는 자동으로 실결제·실광고 모드
 - [x] 개인정보처리방침 문서 작성 (`docs/privacy-policy.html`)
 - [x] 스토어 등록정보 문안 작성 (`docs/store_listing.md`)
+- [x] **앱 내 계정 삭제** (설정 → 계정 → 계정 삭제, 확인 단어 입력)
+      ⚠️ 서버 RPC `delete_my_account()` **SQL 실행 필요** → `docs/backend_supabase.md` §7
 
 ---
 
@@ -91,6 +93,13 @@ Google Cloud Console → 사용자 인증 정보 → **Android 클라이언트**
 
 ---
 
+## C-2. Supabase — ⚠️ SQL 1회 실행 필요
+
+- [ ] `docs/backend_supabase.md` §7 의 `delete_my_account()` 함수를
+      Supabase SQL Editor 에서 실행. **안 하면 앱의 계정 삭제가 실패한다.**
+
+---
+
 ## D. Play Console 등록
 
 - [ ] 앱 만들기(이름/언어/게임/무료)
@@ -99,6 +108,8 @@ Google Cloud Console → 사용자 인증 정보 → **Android 클라이언트**
 - [ ] **콘텐츠 등급** 설문 — 예상 답변 `store_listing.md` §6
 - [ ] **데이터 보안** 양식 — 예상 답변 `store_listing.md` §7
 - [ ] **광고 포함** 신고 → 예
+- [ ] **계정 삭제 URL** 입력 (데이터 보안 양식)
+      `https://dkc260701.github.io/bugchamp-policy/delete.html`
 - [ ] **인앱 상품 11개 등록** → `docs/play_console_iap.md` §3 (id 정확히 일치!)
 - [ ] 대상 연령·타겟 국가 설정
 

@@ -223,6 +223,35 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountSignIn => '구글로 로그인';
 
   @override
+  String get accountDelete => '계정 삭제';
+
+  @override
+  String get accountDeleteTitle => '정말 계정을 삭제할까요?';
+
+  @override
+  String accountDeleteBody(String word) {
+    return '곤충·재화·트로피·짝짓기 기록이 모두 사라지고 되돌릴 수 없어요.\n\n확인을 위해 아래에 «$word» 라고 입력해 주세요.';
+  }
+
+  @override
+  String get accountDeleteWord => '삭제';
+
+  @override
+  String get accountDeleteConfirm => '영구 삭제';
+
+  @override
+  String get accountDeleteDone => '계정과 데이터를 삭제했어요';
+
+  @override
+  String get accountDeleteFailed => '삭제하지 못했어요. 잠시 후 다시 시도해 주세요';
+
+  @override
+  String get accountDeleteOffline => '온라인 연결이 없어 삭제할 수 없어요';
+
+  @override
+  String get accountDeleteWarnPurchase => '구매하신 상품은 환불되지 않으며, 복원할 수 없게 됩니다.';
+
+  @override
   String get accountSignOut => '로그아웃';
 
   @override

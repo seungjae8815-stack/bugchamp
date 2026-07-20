@@ -2723,8 +2723,111 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ..hideCurrentSnackBar()
               ..showSnackBar(SnackBar(content: Text(l.accountSignedOut)));
           }, color: const Color(0xFF556070)),
+        // 계정 삭제는 로그인 여부와 무관하게 제공한다 — 익명 계정도 서버에
+        // 랭킹·방어팀 데이터가 쌓이므로 지울 경로가 있어야 한다(Play 요구사항).
+        gameDialogButton(l.accountDelete, () async {
+          Navigator.pop(context);
+          await _deleteAccount(l);
+        }, color: const Color(0xFF7A2E2E)),
       ],
     );
+  }
+
+  /// 계정·서버 데이터 영구 삭제. 되돌릴 수 없으므로 **확인 단어 입력**을 요구한다.
+  ///
+  /// 순서가 중요하다: **서버 삭제가 성공한 뒤에만 로컬을 초기화**한다.
+  /// 반대로 하면 서버 삭제가 실패했을 때 진행도만 날아간다.
+  Future<void> _deleteAccount(AppLocalizations l) async {
+    final auth = ref.read(authServiceProvider);
+    final controller = TextEditingController();
+    final word = l.accountDeleteWord;
+
+    final confirmed = await showGameDialog<bool>(
+      context,
+      title: l.accountDeleteTitle,
+      icon: Icons.delete_forever_rounded,
+      content: StatefulBuilder(
+        builder: (ctx, setLocal) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l.accountDeleteBody(word),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xD9FFFFFF),
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l.accountDeleteWarnPurchase,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFE79A9A),
+                fontSize: 11.5,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              onChanged: (_) => setLocal(() {}),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              decoration: InputDecoration(
+                hintText: word,
+                hintStyle: const TextStyle(color: Color(0x55FFFFFF)),
+                filled: true,
+                fillColor: const Color(0x22000000),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                gameDialogButton(
+                  l.actionClose,
+                  () => Navigator.pop(ctx, false),
+                  primary: false,
+                ),
+                const SizedBox(width: 8),
+                // 확인 단어가 정확히 입력됐을 때만 삭제 버튼이 살아난다.
+                if (controller.text.trim() == word)
+                  gameDialogButton(
+                    l.accountDeleteConfirm,
+                    () => Navigator.pop(ctx, true),
+                    color: const Color(0xFF9A3434),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: const [],
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final ok = await auth.deleteAccount();
+    if (!mounted) return;
+    if (!ok) {
+      // 서버 삭제 실패 → 로컬은 절대 건드리지 않는다.
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l.accountDeleteFailed)));
+      return;
+    }
+
+    await ref.read(saveControllerProvider.notifier).resetGame();
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l.accountDeleteDone)));
   }
 
   /// 구글 로그인 → 성공 시 클라우드 백업 유무에 따라 동기화 방향을 묻는다.

@@ -1,14 +1,22 @@
 {
   "@@locale": "en",
   "appTitle": "Bug Champ",
-  "@appTitle": { "description": "Application title" },
+  "@appTitle": {
+    "description": "Application title"
+  },
   "navHome": "Home",
   "navCollect": "Collect",
   "navStorage": "Storage",
   "navBattle": "Battle",
   "battleTitle": "Bug Duel",
   "battleTrophies": "Trophies {n}",
-  "@battleTrophies": { "placeholders": { "n": { "type": "int" } } },
+  "@battleTrophies": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "battleMyTeam": "My Team (3)",
   "autoBattleRunning": "Auto battle in progress",
   "battleStart": "Start Battle",
@@ -26,7 +34,13 @@
   "battleTeamEmpty": "Add bugs to your team",
   "battleSkip": "Skip",
   "battleHpPct": "HP {v}%",
-  "@battleHpPct": { "placeholders": { "v": { "type": "String" } } },
+  "@battleHpPct": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "battleAuto": "Auto Battle",
   "battleManual": "Manual Battle",
   "battleManualDesc": "Mind games — pick every move",
@@ -38,7 +52,13 @@
   "injuryTitle": "Recovering",
   "injuryDesc": "Can't be fielded in a duel until healed",
   "injuryHealJelly": "💎{n} Heal now",
-  "@injuryHealJelly": { "placeholders": { "n": { "type": "int" } } },
+  "@injuryHealJelly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "notEnoughJelly": "Not enough jelly",
   "scoutBoard": "Scout Board",
   "scoutRefresh": "Refresh",
@@ -51,31 +71,82 @@
   "leaguePlatinum": "Platinum",
   "leagueDiamond": "Diamond",
   "leagueToNext": "{n}🏆 to {name}",
-  "@leagueToNext": { "placeholders": { "n": { "type": "int" }, "name": { "type": "String" } } },
+  "@leagueToNext": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "leagueMaxRank": "Top rank",
   "leagueClaimReward": "Claim promotion",
   "leaguePromoTitle": "Promotion Reward",
   "seasonEndTitle": "Season Over!",
   "seasonPeak": "Peak rank: {name}",
-  "@seasonPeak": { "placeholders": { "name": { "type": "String" } } },
+  "@seasonPeak": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "seasonTrophyReset": "Trophies {from} → {to}",
-  "@seasonTrophyReset": { "placeholders": { "from": { "type": "int" }, "to": { "type": "int" } } },
+  "@seasonTrophyReset": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
   "seasonEndsIn": "Season {time} left",
-  "@seasonEndsIn": { "placeholders": { "time": { "type": "String" } } },
+  "@seasonEndsIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "synergyLabel": "Synergy",
   "synergyHint": "Place 2+ bugs so a front slot generates the next (order matters)",
   "teamReorderHint": "Drag to reorder",
   "leagueSeasonTitle": "League · Season",
   "modeManual": "Manual",
   "modeAuto": "Auto",
-  "battleStart": "Start Battle",
   "opponentWild": "Wild",
   "opponentPick": "Pick Opponent",
   "accountTitle": "Account",
   "accountAnonymous": "You're on a temporary device account",
   "accountSignedIn": "Signed in as {email}",
-  "@accountSignedIn": { "placeholders": { "email": { "type": "String" } } },
+  "@accountSignedIn": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "accountSignIn": "Sign in with Google",
+  "accountDelete": "Delete account",
+  "accountDeleteTitle": "Delete your account?",
+  "accountDeleteBody": "All bugs, currency, trophies and breeding records will be gone for good.\n\nType «{word}» below to confirm.",
+  "accountDeleteWord": "DELETE",
+  "accountDeleteConfirm": "Delete permanently",
+  "accountDeleteDone": "Your account and data were deleted",
+  "accountDeleteFailed": "Couldn't delete. Please try again shortly",
+  "accountDeleteOffline": "Can't delete without an online connection",
+  "accountDeleteWarnPurchase": "Purchases are not refunded and cannot be restored afterwards.",
+  "@accountDeleteBody": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
   "accountSignOut": "Sign out",
   "accountSignedOut": "Signed out",
   "accountSignInFailed": "Sign-in failed",
@@ -94,7 +165,13 @@
   "cloudFailed": "Failed. Please try again in a moment",
   "cloudNoBackup": "No backup yet",
   "cloudLastBackup": "Last backup: {when}",
-  "@cloudLastBackup": { "placeholders": { "when": { "type": "String" } } },
+  "@cloudLastBackup": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "cloudUnavailable": "Backup unavailable — no online connection",
   "cloudAnonWarning": "You're on a temporary device account, so deleting the app also loses the backup. Google sign-in is coming soon.",
   "tabCraft": "Craft",
@@ -107,7 +184,13 @@
   "storeRestore": "Restore purchases",
   "storeRestoreDone": "Purchases restored",
   "storeBought": "{name} purchased!",
-  "@storeBought": { "placeholders": { "name": { "type": "String" } } },
+  "@storeBought": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "storeFailed": "Purchase failed",
   "storeCanceled": "Purchase canceled",
   "storePending": "Confirming payment. It'll be granted automatically once it completes",
@@ -115,17 +198,38 @@
   "storeNotRegistered": "This item isn't on sale yet",
   "storeDevMode": "Dev mode — no real payment; items are granted immediately",
   "storePassLeft": "{days} days left",
-  "@storePassLeft": { "placeholders": { "days": { "type": "int" } } },
+  "@storePassLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "biomeForest": "Forest",
   "biomeVolcano": "Lava Cave",
   "biomeBadlands": "Badlands",
   "biomeCity": "Ruined City",
   "biomeDeep": "Deep Sea",
   "locationAffinity": "{element} bugs boosted",
-  "@locationAffinity": { "placeholders": { "element": { "type": "String" } } },
+  "@locationAffinity": {
+    "placeholders": {
+      "element": {
+        "type": "String"
+      }
+    }
+  },
   "breedingTitle": "Breeding",
   "breedingSlotsLabel": "{used}/{cap}",
-  "@breedingSlotsLabel": { "placeholders": { "used": { "type": "int" }, "cap": { "type": "int" } } },
+  "@breedingSlotsLabel": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
   "breedingNew": "New breeding",
   "breedingPickMother": "Pick mother (♀ adult)",
   "breedingPickFather": "Pick father (♂ · same species)",
@@ -138,9 +242,21 @@
   "backendOnline": "Online",
   "backendLocal": "Local",
   "settingsBuildLabel": "Build {label}",
-  "@settingsBuildLabel": { "placeholders": { "label": { "type": "String" } } },
+  "@settingsBuildLabel": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "leaderboardMyRank": "My rank #{n}",
-  "@leaderboardMyRank": { "placeholders": { "n": { "type": "int" } } },
+  "@leaderboardMyRank": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "stanceAttack": "Attack",
   "stanceDefend": "Defend",
   "stanceHeal": "Heal",
@@ -149,21 +265,36 @@
   "elementWood": "Wood",
   "elementMetal": "Metal",
   "elementEarth": "Earth",
-
   "homeTitle": "Traps",
   "homeMaterialsTitle": "Materials",
   "slotLabel": "Slot {index}",
-  "@slotLabel": { "placeholders": { "index": { "type": "int" } } },
+  "@slotLabel": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
   "slotEmpty": "Empty",
   "slotInstallCta": "Install a trap",
   "elapsedLabel": "Elapsed {duration} / max 8h",
-  "@elapsedLabel": { "placeholders": { "duration": { "type": "String" } } },
+  "@elapsedLabel": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
   "collectButton": "Claim",
   "collectResultSnack": "Got {materialCount} materials, {bugCount} bugs!",
   "@collectResultSnack": {
     "placeholders": {
-      "materialCount": { "type": "int" },
-      "bugCount": { "type": "int" }
+      "materialCount": {
+        "type": "int"
+      },
+      "bugCount": {
+        "type": "int"
+      }
     }
   },
   "collectNothingSnack": "Nothing to collect yet",
@@ -175,14 +306,30 @@
   "offlineBanner": "Welcome back! {materialCount} materials, {bugCount} bugs waiting",
   "@offlineBanner": {
     "placeholders": {
-      "materialCount": { "type": "int" },
-      "bugCount": { "type": "int" }
+      "materialCount": {
+        "type": "int"
+      },
+      "bugCount": {
+        "type": "int"
+      }
     }
   },
   "chapterTitle": "Chapter {n}",
-  "@chapterTitle": { "placeholders": { "n": { "type": "int" } } },
+  "@chapterTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "chapterRemaining": "{count} more bugs to the next chapter",
-  "@chapterRemaining": { "placeholders": { "count": { "type": "int" } } },
+  "@chapterRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statusForaging": "Foraging…",
   "statusIdle": "Install a trap to start foraging",
   "navUpgrade": "Upgrade",
@@ -192,23 +339,52 @@
   "offlineReward": "Welcome back! +{gold} gold, +{xp} XP",
   "@offlineReward": {
     "placeholders": {
-      "gold": { "type": "String" },
-      "xp": { "type": "String" }
+      "gold": {
+        "type": "String"
+      },
+      "xp": {
+        "type": "String"
+      }
     }
   },
   "offlineTitle": "Welcome back!",
   "offlineElapsed": "Idle rewards earned over {time}",
-  "@offlineElapsed": { "placeholders": { "time": { "type": "String" } } },
+  "@offlineElapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "offlineGoldLabel": "Gold",
   "offlineXpLabel": "XP",
   "durationHm": "{h}h {m}m",
   "@durationHm": {
-    "placeholders": { "h": { "type": "int" }, "m": { "type": "int" } }
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
   },
   "durationM": "{m}m",
-  "@durationM": { "placeholders": { "m": { "type": "int" } } },
+  "@durationM": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "durationS": "{s}s",
-  "@durationS": { "placeholders": { "s": { "type": "int" } } },
+  "@durationS": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
   "upAttack": "Harvest Power",
   "upAttackSpeed": "Swift Hands",
   "upCrit": "Weak Point",
@@ -233,30 +409,55 @@
   "bossLabel": "BOSS",
   "tapBoostHint": "Tap to boost!",
   "levelBadge": "Lv {n}",
-  "@levelBadge": { "placeholders": { "n": { "type": "int" } } },
-
+  "@levelBadge": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "collectTitle": "Fields",
   "collectPickTrap": "Choose a trap",
   "collectPickSlot": "Choose a slot",
   "collectInstalledSnack": "Installed {trap} at {field}",
   "@collectInstalledSnack": {
     "placeholders": {
-      "field": { "type": "String" },
-      "trap": { "type": "String" }
+      "field": {
+        "type": "String"
+      },
+      "trap": {
+        "type": "String"
+      }
     }
   },
   "locked": "Locked",
   "install": "Install",
-
   "storageTitle": "Storage",
   "storageEmpty": "No bugs yet.\nGather some from the fields!",
   "storageCount": "{count} bugs",
-  "@storageCount": { "placeholders": { "count": { "type": "int" } } },
+  "@storageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "bugSize": "{mm}mm",
-  "@bugSize": { "placeholders": { "mm": { "type": "String" } } },
+  "@bugSize": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
   "bugPotential": "{stars}★",
-  "@bugPotential": { "placeholders": { "stars": { "type": "int" } } },
-
+  "@bugPotential": {
+    "placeholders": {
+      "stars": {
+        "type": "int"
+      }
+    }
+  },
   "gradeCommon": "Common",
   "gradeUncommon": "Uncommon",
   "gradeRare": "Rare",
@@ -276,7 +477,6 @@
   "materialMineral": "Mineral",
   "materialSap": "Sap Crystal",
   "materialJelly": "Bug Jelly",
-
   "combatPowerLabel": "Power",
   "chatTitle": "Chat",
   "chatPlaceholder": "Chat (coming soon) — tap to open",
@@ -289,11 +489,25 @@
   "roadmapTitle": "Roadmap",
   "roadmapStageRange": "STAGE {start}–{end}",
   "@roadmapStageRange": {
-    "placeholders": { "start": { "type": "int" }, "end": { "type": "int" } }
+    "placeholders": {
+      "start": {
+        "type": "int"
+      },
+      "end": {
+        "type": "int"
+      }
+    }
   },
   "roadmapProgress": "{cur} / {total}",
   "@roadmapProgress": {
-    "placeholders": { "cur": { "type": "int" }, "total": { "type": "int" } }
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "roadmapCleared": "Cleared",
   "roadmapCurrent": "In progress",
@@ -304,7 +518,14 @@
   "chapterClearTitle": "Chapter cleared! 🎉",
   "chapterClearMsg": "Conquered {difficulty}! Final boss {boss} defeated!",
   "@chapterClearMsg": {
-    "placeholders": { "difficulty": { "type": "String" }, "boss": { "type": "String" } }
+    "placeholders": {
+      "difficulty": {
+        "type": "String"
+      },
+      "boss": {
+        "type": "String"
+      }
+    }
   },
   "chapterClearReward": "Clear reward",
   "mailTitle": "Mailbox",
@@ -315,13 +536,25 @@
   "dailyClaim": "Claim",
   "dailyClaimedToday": "Claimed today",
   "dailyLockedUntil": "from {hour}:00",
-  "@dailyLockedUntil": { "placeholders": { "hour": { "type": "int" } } },
+  "@dailyLockedUntil": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      }
+    }
+  },
   "dailyRewardSnack": "Daily reward claimed!",
   "giftSectionTitle": "Surprise gifts (claim within 3h)",
   "giftClaim": "Claim",
   "giftClaimAd": "Ad ×2",
   "giftExpiresIn": "expires in {time}",
-  "@giftExpiresIn": { "placeholders": { "time": { "type": "String" } } },
+  "@giftExpiresIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "giftClaimedSnack": "Gift claimed!",
   "giftDoubledSnack": "Ad reward ×2!",
   "giftAdMoreTitle": "Watch an ad for one more?",
@@ -347,17 +580,26 @@
   "settingsResetConfirm": "All progress (bugs, currency, upgrades, stage) will be deleted. Reset for real?",
   "settingsResetDone": "Game data reset",
   "questHunt": "Monster Hunt",
-
   "buffTitle": "Buffs",
   "buffSheetTitle": "Activate a buff",
   "buffWatchAd": "Watch ad",
   "buffMinutes": "{minutes}m",
-  "@buffMinutes": { "placeholders": { "minutes": { "type": "int" } } },
+  "@buffMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "buffActivatedSnack": "{buff} active! ({minutes}m)",
   "@buffActivatedSnack": {
     "placeholders": {
-      "buff": { "type": "String" },
-      "minutes": { "type": "int" }
+      "buff": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
     }
   },
   "buffGoldRush": "Gold Rush",
@@ -370,7 +612,6 @@
   "buffGathererDesc": "Material gain ×2",
   "buffLuckyWind": "Lucky Wind",
   "buffLuckyWindDesc": "Bug find rate ×2",
-
   "enhanceTitle": "Enhance Parts",
   "partHornJaw": "Horn/Jaw",
   "partCuticle": "Cuticle",
@@ -381,13 +622,22 @@
   "enhanceCap": "Enhance {cur}/{max}",
   "@enhanceCap": {
     "placeholders": {
-      "cur": { "type": "int" },
-      "max": { "type": "int" }
+      "cur": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
     }
   },
   "enhancePerLevel": "+{pct}%/Lv",
-  "@enhancePerLevel": { "placeholders": { "pct": { "type": "String" } } },
-
+  "@enhancePerLevel": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "equipTitle": "Equipped Pets",
   "equipEmpty": "Empty",
   "equipAction": "Equip",
@@ -403,8 +653,12 @@
   "evolveNext": "{time} to {next}",
   "@evolveNext": {
     "placeholders": {
-      "next": { "type": "String" },
-      "time": { "type": "String" }
+      "next": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
     }
   },
   "evolveReady": "Ready to evolve",
@@ -415,82 +669,175 @@
   "synthDesc": "Same species {have}/{need} · Potential +1",
   "@synthDesc": {
     "placeholders": {
-      "have": { "type": "int" },
-      "need": { "type": "int" }
+      "have": {
+        "type": "int"
+      },
+      "need": {
+        "type": "int"
+      }
     }
   },
   "synthMaxed": "Max potential",
   "synthSnack": "Synthesis complete! Potential +1",
   "petEffectTitle": "Equip effect",
   "petAtkBonus": "Pet ATK +{v}%",
-  "@petAtkBonus": { "placeholders": { "v": { "type": "String" } } },
+  "@petAtkBonus": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "petHpBonus": "Pet HP +{v}%",
-  "@petHpBonus": { "placeholders": { "v": { "type": "String" } } },
+  "@petHpBonus": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "trainTitle": "Train",
   "trainLevel": "Train level",
   "trainAction": "Train",
   "trainMaxed": "Max level",
   "trainSnack": "Trained! Level +1",
   "trainJelly": "💎{n}",
-  "@trainJelly": { "placeholders": { "n": { "type": "int" } } },
+  "@trainJelly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "trainJellySnack": "Instant train! Level +{lv}",
-  "@trainJellySnack": { "placeholders": { "lv": { "type": "int" } } },
+  "@trainJellySnack": {
+    "placeholders": {
+      "lv": {
+        "type": "int"
+      }
+    }
+  },
   "breakthroughTitle": "Breakthrough",
   "breakthroughTier": "Tier {n}",
-  "@breakthroughTier": { "placeholders": { "n": { "type": "int" } } },
+  "@breakthroughTier": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "breakthroughReady": "Breakthrough ready · cap ↑",
   "breakthroughProgress": "Breaking through · {time}",
-  "@breakthroughProgress": { "placeholders": { "time": { "type": "String" } } },
+  "@breakthroughProgress": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "breakthroughDone": "Done! Collect it",
   "breakthroughMaxed": "Max tier reached",
   "breakthroughDo": "Break",
   "breakthroughCollect": "Collect",
   "breakthroughInstant": "Now 💎{n}",
-  "@breakthroughInstant": { "placeholders": { "n": { "type": "int" } } },
+  "@breakthroughInstant": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "breakthroughStartedSnack": "Breakthrough started!",
   "breakthroughDoneSnack": "Breakthrough done! Level cap raised",
   "incubatorTitle": "Incubator",
   "incubatorSlots": "Slots {cur}/{max}",
-  "@incubatorSlots": { "placeholders": { "cur": { "type": "int" }, "max": { "type": "int" } } },
+  "@incubatorSlots": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "incubatorPlace": "Place",
   "incubatorHatching": "Hatching · {time}",
-  "@incubatorHatching": { "placeholders": { "time": { "type": "String" } } },
+  "@incubatorHatching": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "incubatorReady": "Hatched!",
   "incubatorCollect": "Collect",
   "incubatorFull": "Incubator full",
   "incubatorExpand": "Expand 💎{n}",
-  "@incubatorExpand": { "placeholders": { "n": { "type": "int" } } },
+  "@incubatorExpand": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "incubatorPlacedSnack": "Incubation started!",
   "incubatorCollectedSnack": "Hatched into a larva!",
   "incubatorExpandedSnack": "Incubator slot added!",
   "incubatorEmptySlot": "Empty slot",
   "incubatorWaitingEggs": "Waiting eggs ({n})",
-  "@incubatorWaitingEggs": { "placeholders": { "n": { "type": "int" } } },
+  "@incubatorWaitingEggs": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "incubatorNoEggs": "No eggs to hatch",
   "incubatorHint": "Tap an empty capsule to add an egg; tap a ready one to collect.",
   "incubatorPick": "Choose an egg",
   "disassembleTitle": "Disassemble",
   "disassembleDesc": "Convert to {n} jelly",
-  "@disassembleDesc": { "placeholders": { "n": { "type": "int" } } },
+  "@disassembleDesc": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "disassembleAction": "Disassemble",
   "disassembleSnack": "Disassembled",
   "bugDescTitle": "About",
   "onlyAdultTrain": "Only adults can be trained",
   "@petBonus": {
     "placeholders": {
-      "atk": { "type": "String" },
-      "hp": { "type": "String" }
+      "atk": {
+        "type": "String"
+      },
+      "hp": {
+        "type": "String"
+      }
     }
   },
-
   "craftTitle": "Craft",
   "craftMake": "Craft",
   "craftPotion": "{buff} Potion",
-  "@craftPotion": { "placeholders": { "buff": { "type": "String" } } },
+  "@craftPotion": {
+    "placeholders": {
+      "buff": {
+        "type": "String"
+      }
+    }
+  },
   "craftAllPotion": "All-in-One Potion",
   "craftedSnack": "Crafted {name}!",
-  "@craftedSnack": { "placeholders": { "name": { "type": "String" } } },
-
+  "@craftedSnack": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "missionsTitle": "Missions",
   "missionKillMonsters": "Hunt Monsters",
   "missionKillBosses": "Defeat Bosses",
@@ -499,7 +846,6 @@
   "missionClaim": "Claim",
   "missionComplete": "Complete! Tap to claim",
   "missionClaimedSnack": "Mission reward claimed!",
-
   "upAttackDesc": "Increases damage dealt per hit.",
   "upAttackSpeedDesc": "More attacks per second; faster hunting.",
   "upCritDesc": "Increases critical hit chance.",
@@ -515,7 +861,6 @@
   "upMoveSpeedDesc": "Faster travel to the next hunting spot.",
   "upBoostDesc": "Strengthens the tap-to-boost effect.",
   "upBugBuffDesc": "Bonus scales with the number of bugs collected.",
-
   "tagCommonMaterial": "Material",
   "tagPremium": "Premium",
   "materialChitinDesc": "A hard exoskeleton shard. Used for advanced upgrade costs and horn/jaw enhancement.",

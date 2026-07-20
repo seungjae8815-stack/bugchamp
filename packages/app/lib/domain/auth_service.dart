@@ -25,6 +25,16 @@ abstract interface class AuthService {
 
   /// 로그아웃 → 다시 익명 계정으로 돌아간다(로컬 세이브는 유지).
   Future<void> signOut();
+
+  /// **계정과 서버 데이터를 영구 삭제**한다. 성공 시 true.
+  ///
+  /// 서버 쪽은 RPC `delete_my_account()` 한 번으로 끝난다 — `profiles`·
+  /// `defenders`·`saves` 가 모두 `auth.users` 에 `on delete cascade` 로 걸려
+  /// 있어 인증 계정을 지우면 함께 지워진다(SQL 은 docs/backend_supabase.md §6).
+  ///
+  /// ⚠️ 되돌릴 수 없다. 로컬 세이브 초기화는 **호출부 책임**이다
+  /// (서버 삭제가 실패했는데 로컬만 날리는 일이 없도록 분리해 둔다).
+  Future<bool> deleteAccount();
 }
 
 /// 백엔드 미연결 — 로그인 불가.
@@ -41,6 +51,10 @@ class NoAuthService implements AuthService {
   Future<bool> signInWithGoogle() async => false;
   @override
   Future<void> signOut() async {}
+
+  /// 서버가 없으므로 지울 서버 데이터도 없다(로컬 초기화는 호출부가 한다).
+  @override
+  Future<bool> deleteAccount() async => true;
 }
 
 /// Supabase + 네이티브 구글 로그인(google_sign_in) 구현.
@@ -115,6 +129,30 @@ class SupabaseAuthService implements AuthService {
     } catch (e) {
       debugPrint('sign out error: $e');
     }
+  }
+
+  @override
+  Future<bool> deleteAccount() async {
+    if (_client.auth.currentUser == null) return true; // 지울 계정이 없음
+    try {
+      // SECURITY DEFINER RPC — 클라이언트 권한으로는 auth.users 를 못 지운다.
+      await _client.rpc<void>('delete_my_account');
+    } catch (e) {
+      debugPrint('deleteAccount RPC 실패: $e');
+      return false; // 실패를 감추지 않는다 — 호출부가 로컬을 보존해야 한다.
+    }
+    // 서버 계정이 사라졌으니 세션을 정리하고 새 익명 계정으로 시작한다.
+    try {
+      await GoogleSignIn.instance.signOut();
+    } catch (_) {}
+    try {
+      await _client.auth.signOut();
+      await _client.auth.signInAnonymously();
+    } catch (e) {
+      // 세션 정리 실패는 삭제 성공 자체를 무르지 않는다(데이터는 이미 지워짐).
+      debugPrint('deleteAccount 세션 정리 경고: $e');
+    }
+    return true;
   }
 }
 

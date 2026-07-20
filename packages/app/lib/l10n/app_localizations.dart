@@ -496,6 +496,60 @@ abstract class AppLocalizations {
   /// **'Sign in with Google'**
   String get accountSignIn;
 
+  /// No description provided for @accountDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountDelete;
+
+  /// No description provided for @accountDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account?'**
+  String get accountDeleteTitle;
+
+  /// No description provided for @accountDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All bugs, currency, trophies and breeding records will be gone for good.\n\nType «{word}» below to confirm.'**
+  String accountDeleteBody(String word);
+
+  /// No description provided for @accountDeleteWord.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get accountDeleteWord;
+
+  /// No description provided for @accountDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete permanently'**
+  String get accountDeleteConfirm;
+
+  /// No description provided for @accountDeleteDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account and data were deleted'**
+  String get accountDeleteDone;
+
+  /// No description provided for @accountDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete. Please try again shortly'**
+  String get accountDeleteFailed;
+
+  /// No description provided for @accountDeleteOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t delete without an online connection'**
+  String get accountDeleteOffline;
+
+  /// No description provided for @accountDeleteWarnPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases are not refunded and cannot be restored afterwards.'**
+  String get accountDeleteWarnPurchase;
+
   /// No description provided for @accountSignOut.
   ///
   /// In en, this message translates to:

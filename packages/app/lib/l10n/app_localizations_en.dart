@@ -224,6 +224,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSignIn => 'Sign in with Google';
 
   @override
+  String get accountDelete => 'Delete account';
+
+  @override
+  String get accountDeleteTitle => 'Delete your account?';
+
+  @override
+  String accountDeleteBody(String word) {
+    return 'All bugs, currency, trophies and breeding records will be gone for good.\n\nType «$word» below to confirm.';
+  }
+
+  @override
+  String get accountDeleteWord => 'DELETE';
+
+  @override
+  String get accountDeleteConfirm => 'Delete permanently';
+
+  @override
+  String get accountDeleteDone => 'Your account and data were deleted';
+
+  @override
+  String get accountDeleteFailed =>
+      'Couldn\'t delete. Please try again shortly';
+
+  @override
+  String get accountDeleteOffline =>
+      'Can\'t delete without an online connection';
+
+  @override
+  String get accountDeleteWarnPurchase =>
+      'Purchases are not refunded and cannot be restored afterwards.';
+
+  @override
   String get accountSignOut => 'Sign out';
 
   @override

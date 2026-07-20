@@ -166,3 +166,52 @@ class SupabasePvpBackend implements PvpBackend {
 - ✅ **오프라인/에러 폴백**(Inc.2): fetch 실패/실데이터 없음 → 로컬 합성 상대 유지(스카우트 보드 항상 동작).
 - ✅ **결과 반영(트로피 라이브)**(2026-07-18): 승패 직후 `pushTrophies` 로 `profiles`(리더보드) upsert + `defenders.trophies`(매칭 브래킷) 즉시 갱신(fire-and-forget). 화면 재진입 없이 랭킹/브래킷 반영.
 - ⏳ **정확한 매칭 폭·재대결 제한·복수전·방어팀 팀 스냅샷 라이브 갱신** 등은 후속 폴리시.
+
+---
+
+## 7. 계정·데이터 삭제 RPC (Play 필수)
+
+구글은 계정 생성이 가능한 앱에 **계정·데이터 삭제 수단**을 요구한다.
+클라이언트 권한(anon/authenticated)으로는 `auth.users` 를 지울 수 없으므로
+**SECURITY DEFINER** 함수로 처리한다.
+
+`profiles`·`defenders`·`saves` 는 전부 `auth.users(id)` 에 `on delete cascade`
+로 걸려 있어 인증 계정만 지우면 함께 사라지지만, 의도를 분명히 하고 cascade 가
+바뀌어도 안전하도록 **명시적으로 먼저 지운다**.
+
+> ⚠️ 아래 SQL 을 Supabase **SQL Editor** 에 붙여 실행할 것.
+> 실행하지 않으면 앱의 "계정 삭제" 버튼이 실패한다(로컬 데이터는 보존됨).
+
+```sql
+create or replace function public.delete_my_account()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as {D}{D}
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+
+  delete from public.defenders where id = uid;
+  delete from public.saves     where id = uid;
+  delete from public.profiles  where id = uid;
+
+  -- 인증 계정 자체를 삭제(위 테이블은 cascade 로도 정리된다)
+  delete from auth.users where id = uid;
+end;
+{D}{D};
+
+revoke all on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
+```
+
+**앱 쪽**: `AuthService.deleteAccount()` 가 이 RPC 를 호출한다.
+성공하면 세션을 정리하고 새 익명 계정으로 복귀하며, **그 다음에** 호출부가
+`SaveController.resetGame()` 으로 로컬을 초기화한다.
+순서를 반대로 하면 서버 삭제 실패 시 진행도만 날아가므로 바꾸지 말 것.
+
+**안내 페이지**: `https://dkc260701.github.io/bugchamp-policy/delete.html`

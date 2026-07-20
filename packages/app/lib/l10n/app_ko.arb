@@ -60,13 +60,28 @@
   "leagueSeasonTitle": "리그 · 시즌",
   "modeManual": "수동",
   "modeAuto": "자동",
-  "battleStart": "전투 시작",
   "opponentWild": "야생",
   "opponentPick": "상대 고르기",
   "accountTitle": "계정",
   "accountAnonymous": "지금은 기기 임시 계정이에요",
   "accountSignedIn": "{email} 로 로그인됨",
   "accountSignIn": "구글로 로그인",
+  "accountDelete": "계정 삭제",
+  "accountDeleteTitle": "정말 계정을 삭제할까요?",
+  "accountDeleteBody": "곤충·재화·트로피·짝짓기 기록이 모두 사라지고 되돌릴 수 없어요.\n\n확인을 위해 아래에 «{word}» 라고 입력해 주세요.",
+  "accountDeleteWord": "삭제",
+  "accountDeleteConfirm": "영구 삭제",
+  "accountDeleteDone": "계정과 데이터를 삭제했어요",
+  "accountDeleteFailed": "삭제하지 못했어요. 잠시 후 다시 시도해 주세요",
+  "accountDeleteOffline": "온라인 연결이 없어 삭제할 수 없어요",
+  "accountDeleteWarnPurchase": "구매하신 상품은 환불되지 않으며, 복원할 수 없게 됩니다.",
+  "@accountDeleteBody": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
   "accountSignOut": "로그아웃",
   "accountSignedOut": "로그아웃했어요",
   "accountSignInFailed": "로그인하지 못했어요",
@@ -133,7 +148,6 @@
   "elementWood": "목",
   "elementMetal": "금",
   "elementEarth": "토",
-
   "homeTitle": "트랩 현황",
   "homeMaterialsTitle": "재료",
   "slotLabel": "슬롯 {index}",
@@ -189,20 +203,17 @@
   "bossLabel": "보스",
   "tapBoostHint": "화면을 탭해 부스트!",
   "levelBadge": "Lv {n}",
-
   "collectTitle": "채집 필드",
   "collectPickTrap": "트랩 선택",
   "collectPickSlot": "슬롯 선택",
   "collectInstalledSnack": "{field}에 {trap} 설치 완료",
   "locked": "잠김",
   "install": "설치",
-
   "storageTitle": "채집함",
   "storageEmpty": "아직 수집한 곤충이 없어요.\n채집으로 모아보세요!",
   "storageCount": "{count}마리",
   "bugSize": "{mm}mm",
   "bugPotential": "{stars}★",
-
   "gradeCommon": "일반",
   "gradeUncommon": "고급",
   "gradeRare": "희귀",
@@ -222,7 +233,6 @@
   "materialMineral": "미네랄",
   "materialSap": "수액결정",
   "materialJelly": "곤충젤리",
-
   "combatPowerLabel": "전투력",
   "chatTitle": "채팅",
   "chatPlaceholder": "채팅 (준비 중) — 탭하면 열려요",
@@ -282,7 +292,6 @@
   "settingsResetConfirm": "모든 진행(곤충·재화·강화·스테이지)이 삭제됩니다. 정말 초기화할까요?",
   "settingsResetDone": "초기화되었어요",
   "questHunt": "몬스터 사냥",
-
   "buffTitle": "버프",
   "buffSheetTitle": "버프 활성화",
   "buffWatchAd": "광고 보기",
@@ -298,7 +307,6 @@
   "buffGathererDesc": "재료 획득 ×2",
   "buffLuckyWind": "행운의 바람",
   "buffLuckyWindDesc": "곤충 발견율 ×2",
-
   "enhanceTitle": "부위 강화",
   "partHornJaw": "뿔·큰턱",
   "partCuticle": "표피",
@@ -308,7 +316,6 @@
   "enhanceMaxed": "최대",
   "enhanceCap": "강화 {cur}/{max}",
   "enhancePerLevel": "+{pct}%/Lv",
-
   "equipTitle": "장착 펫",
   "equipEmpty": "빈 슬롯",
   "equipAction": "장착",
@@ -373,13 +380,11 @@
   "disassembleSnack": "분해 완료",
   "bugDescTitle": "설명",
   "onlyAdultTrain": "성충만 수련할 수 있어요",
-
   "craftTitle": "제작",
   "craftMake": "제작",
   "craftPotion": "{buff} 물약",
   "craftAllPotion": "올인원 물약",
   "craftedSnack": "{name} 제작 완료!",
-
   "missionsTitle": "미션",
   "missionKillMonsters": "몬스터 사냥",
   "missionKillBosses": "보스 처치",
@@ -388,7 +393,6 @@
   "missionClaim": "수집",
   "missionComplete": "완료! 탭하여 수집",
   "missionClaimedSnack": "미션 보상 획득!",
-
   "upAttackDesc": "한 번의 타격으로 주는 피해량이 늘어납니다.",
   "upAttackSpeedDesc": "초당 공격 횟수가 늘어 사냥이 빨라집니다.",
   "upCritDesc": "치명타가 터질 확률이 올라갑니다.",
@@ -404,7 +408,6 @@
   "upMoveSpeedDesc": "다음 사냥터로 이동하는 속도가 빨라집니다.",
   "upBoostDesc": "화면을 탭할 때 발동하는 부스트 효과가 강해집니다.",
   "upBugBuffDesc": "보유한 곤충 수에 따른 보상 보너스가 커집니다.",
-
   "tagCommonMaterial": "일반 재료",
   "tagPremium": "프리미엄 재화",
   "materialChitinDesc": "곤충의 단단한 외골격 조각. 고급 능력치 강화의 추가 비용과 부위 강화(뿔·큰턱)에 사용됩니다.",
