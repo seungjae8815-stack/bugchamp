@@ -211,3 +211,23 @@ class BattleConfig {
     );
   }
 }
+
+/// PvP 승패 → 보상(골드·트로피). 수치는 `battle.json`(§6).
+///
+/// **앱과 서버가 같은 함수를 쓴다** — 보상이 어긋나면 클라 화면과 서버 세이브가
+/// 달라진다. `core_run` 은 `core_battle` 을 모르므로(형제 관계) 승패를
+/// enum 이 아니라 bool 로 받는다. 호출부가 `BattleOutcome` 을 변환한다.
+///
+/// [rewardMult] 는 스카우트 난이도 티어 배율(승리 보상에만 적용).
+({int gold, int trophyDelta}) pvpReward({
+  required bool won,
+  required bool draw,
+  required int trophies,
+  required BattleConfig cfg,
+  double rewardMult = 1.0,
+}) => (
+  gold: won ? cfg.winGold(trophies, rewardMult) : 0,
+  trophyDelta: won
+      ? cfg.trophyOnWin(rewardMult)
+      : (draw ? cfg.trophyDraw : cfg.trophyLose),
+);

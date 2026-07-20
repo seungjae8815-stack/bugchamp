@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
-import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart' hide Element;
 
 import '../../data/game_data.dart';
@@ -587,30 +586,5 @@ Future<void> showBattleResultDialog(
       ],
     ),
     actions: [gameDialogButton(l.actionClose, onClose)],
-  );
-}
-
-/// 내 팀(A)에서 이번 전투 중 KO된 파이터 id들.
-/// 1:1 순차전이라 `aDown` 이벤트 수 = 앞에서부터 쓰러진 곤충 수.
-List<String> koedTeamAIds(List<BattleBug> teamA, List<BattleEvent> events) {
-  final n = events.where((e) => e.aDown).length;
-  return [for (var i = 0; i < n && i < teamA.length; i++) teamA[i].id];
-}
-
-/// PvP 승패 → 보상(골드·트로피). 오토/수동 공용. 수치는 `battle.json`(§6).
-/// [rewardMult] 는 스카우트 난이도 티어 보상 배율(승리 보상에만 적용).
-({int gold, int trophyDelta}) pvpReward(
-  BattleOutcome outcome,
-  int trophies,
-  BattleConfig cfg, {
-  double rewardMult = 1.0,
-}) {
-  final win = outcome == BattleOutcome.teamA;
-  final draw = outcome == BattleOutcome.draw;
-  return (
-    gold: win ? cfg.winGold(trophies, rewardMult) : 0,
-    trophyDelta: win
-        ? cfg.trophyOnWin(rewardMult)
-        : (draw ? cfg.trophyDraw : cfg.trophyLose),
   );
 }

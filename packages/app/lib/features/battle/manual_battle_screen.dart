@@ -222,9 +222,10 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   Future<void> _finish() async {
     final r = _state.toResult();
     final rw = pvpReward(
-      r.outcome,
-      widget.trophiesAtStart,
-      widget.config,
+      won: r.outcome == BattleOutcome.teamA,
+      draw: r.outcome == BattleOutcome.draw,
+      trophies: widget.trophiesAtStart,
+      cfg: widget.config,
       rewardMult: widget.rewardMult,
     );
     final koed = koedTeamAIds(widget.myTeam, r.events);

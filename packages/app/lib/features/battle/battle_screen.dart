@@ -19,7 +19,6 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
-import 'arena_widgets.dart';
 import 'battle_arena.dart';
 import 'manual_battle_screen.dart';
 
@@ -1555,9 +1554,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       locationBonus: cfg.locationAffinityBonus,
     );
     final rw = pvpReward(
-      result.outcome,
-      save.pvpTrophies,
-      cfg,
+      won: result.outcome == BattleOutcome.teamA,
+      draw: result.outcome == BattleOutcome.draw,
+      trophies: save.pvpTrophies,
+      cfg: cfg,
       rewardMult: scout.tier.rewardMult,
     );
     await _applyReward(

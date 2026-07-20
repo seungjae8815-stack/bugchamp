@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
@@ -170,6 +174,116 @@ void main() {
     test('0 이하는 거부 — 음수로 재화를 늘리지 못한다', () {
       expect(actions.spendJelly(withJelly(100), 0).error, 'bad_amount');
       expect(actions.spendJelly(withJelly(100), -50).error, 'bad_amount');
+    });
+  });
+
+  group('서버 전투', () {
+    final species = Species.fromJson({
+      'id': 'a',
+      'name': {'ko': '테스트벌레', 'en': 'T', 'ja': 'T'},
+      'grade': 'common',
+      'specialty': 'strike',
+      'baseStats': {'hp': 100, 'atk': 40, 'def': 30, 'spd': 20},
+      'sizeMinMm': 20,
+      'sizeMaxMm': 60,
+    });
+    final speciesById = {'a': species};
+    // 실제 pets.json 을 읽는다 — 서버가 운영에서 하는 것과 동일한 경로.
+    final petCfg = PetConfig.fromJson(
+      jsonDecode(File('../app/assets/data/pets.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+
+    IndividualBug bug(String id) => IndividualBug(
+      id: id,
+      speciesId: 'a',
+      sizeMm: 40,
+      potential: 3,
+      temperament: Temperament.aggressive,
+      sex: Sex.male,
+      element: Element.wood,
+      stage: LifeStage.adult,
+      stageSince: t0.subtract(const Duration(days: 30)),
+    );
+
+    SaveGame saveWith(List<String> ids) => SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(bugs: [for (final id in ids) bug(id)]);
+
+    List<BattleBug> foe() => [
+      buildBattleBug(bug: bug('foe-1'), species: species, locale: 'ko'),
+    ];
+
+    ActionResult run(SaveGame save, List<String> team) => actions.runBattle(
+      save,
+      myTeamBugIds: team,
+      foeTeam: foe(),
+      location: Element.wood,
+      seed: 12345,
+      rewardMult: 1.0,
+      speciesById: speciesById,
+      petConfig: petCfg,
+    );
+
+    test('내가 가진 곤충으로만 싸울 수 있다', () {
+      final r = run(saveWith(['mine-1']), ['not-mine']);
+      expect(r.isOk, isFalse);
+      expect(r.error, 'bug_not_owned');
+    });
+
+    test('빈 편성은 거부', () {
+      final r = run(saveWith(['mine-1']), []);
+      expect(r.error, 'empty_team');
+    });
+
+    test('부상 중인 곤충은 출전 불가', () {
+      final s = saveWith([
+        'mine-1',
+      ]).copyWith(injured: {'mine-1': t0.add(const Duration(hours: 1))});
+      expect(run(s, ['mine-1']).error, 'bug_injured');
+    });
+
+    test('전투가 성립하면 결과와 보상이 확정된다', () {
+      final r = run(saveWith(['mine-1']), ['mine-1']);
+      expect(r.isOk, isTrue);
+      expect(r.extra['outcome'], isNotNull);
+      expect(r.extra['rounds'], greaterThan(0));
+      // 시드를 돌려줘야 클라이언트가 같은 전개를 재생할 수 있다.
+      expect(r.extra['seed'], 12345);
+    });
+
+    test('같은 입력이면 항상 같은 결과 (결정론)', () {
+      final a = run(saveWith(['mine-1']), ['mine-1']);
+      final b = run(saveWith(['mine-1']), ['mine-1']);
+      expect(a.extra['outcome'], b.extra['outcome']);
+      expect(a.extra['rounds'], b.extra['rounds']);
+      expect(a.extra['teamAHpPct'], b.extra['teamAHpPct']);
+    });
+
+    test('서버 결과가 앱의 simulate 와 일치한다 (로직 한 벌 검증)', () {
+      final save = saveWith(['mine-1']);
+      final r = run(save, ['mine-1']);
+
+      // 앱이 하는 것과 동일하게 직접 시뮬레이션.
+      final mine = [
+        buildBattleBug(bug: bug('mine-1'), species: species, locale: 'ko'),
+      ];
+      final direct = simulate(
+        12345,
+        mine,
+        foe(),
+        location: Element.wood,
+        locationBonus: const BattleConfig().locationAffinityBonus,
+      );
+      expect(r.extra['outcome'], direct.outcome.name);
+      expect(r.extra['rounds'], direct.rounds);
+      expect(r.extra['teamAHpPct'], direct.teamAHpPct);
+    });
+
+    test('트로피는 0 아래로 내려가지 않는다', () {
+      final s = saveWith(['mine-1']).copyWith(pvpTrophies: 0);
+      final r = run(s, ['mine-1']);
+      expect(r.save!.pvpTrophies, greaterThanOrEqualTo(0));
     });
   });
 }

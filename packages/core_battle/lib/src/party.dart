@@ -52,3 +52,12 @@ BattleBug buildBattleBug({
         (1 + e.levelOf(BugPart.wing) * wingPerLevel),
   );
 }
+
+/// 내 팀(A)에서 이번 전투 중 KO 된 파이터 id들.
+/// 1:1 순차전이라 `aDown` 이벤트 수 = 앞에서부터 쓰러진 곤충 수.
+///
+/// 부상 처리에 쓰이므로 **앱과 서버가 같은 판정**을 해야 한다.
+List<String> koedTeamAIds(List<BattleBug> teamA, List<BattleEvent> events) {
+  final n = events.where((e) => e.aDown).length;
+  return [for (var i = 0; i < n && i < teamA.length; i++) teamA[i].id];
+}
