@@ -22,6 +22,17 @@ String formatClock(Duration d) {
 /// 사이즈(mm) → 소수 1자리.
 String formatSizeMm(double mm) => mm.toStringAsFixed(1);
 
+/// 천 단위 구분(가격 표기: 5500 → "5,500"). 축약하지 않는다.
+String formatThousands(int value) {
+  final s = value.abs().toString();
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+    b.write(s[i]);
+  }
+  return value < 0 ? '-$b' : b.toString();
+}
+
 const _suffixes = ['', 'K', 'M', 'B', 'T', 'aa', 'ab', 'ac'];
 
 /// 큰 수를 방치형 표기(1.2K, 3.4M, 2.4B…)로. 1000 미만은 그대로.

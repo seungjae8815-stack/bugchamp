@@ -204,6 +204,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get opponentPick => 'Pick Opponent';
 
   @override
+  String get tabCraft => 'Craft';
+
+  @override
+  String get tabStore => 'Store';
+
+  @override
+  String get storeOwned => 'Owned';
+
+  @override
+  String get storeRestore => 'Restore purchases';
+
+  @override
+  String get storeRestoreDone => 'Purchases restored';
+
+  @override
+  String storeBought(String name) {
+    return '$name purchased!';
+  }
+
+  @override
+  String get storeFailed => 'Purchase failed';
+
+  @override
+  String storePassLeft(int days) {
+    return '$days days left';
+  }
+
+  @override
   String get biomeForest => 'Forest';
 
   @override

@@ -460,6 +460,54 @@ abstract class AppLocalizations {
   /// **'Pick Opponent'**
   String get opponentPick;
 
+  /// No description provided for @tabCraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Craft'**
+  String get tabCraft;
+
+  /// No description provided for @tabStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get tabStore;
+
+  /// No description provided for @storeOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Owned'**
+  String get storeOwned;
+
+  /// No description provided for @storeRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get storeRestore;
+
+  /// No description provided for @storeRestoreDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases restored'**
+  String get storeRestoreDone;
+
+  /// No description provided for @storeBought.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} purchased!'**
+  String storeBought(String name);
+
+  /// No description provided for @storeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed'**
+  String get storeFailed;
+
+  /// No description provided for @storePassLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days left'**
+  String storePassLeft(int days);
+
   /// No description provided for @biomeForest.
   ///
   /// In en, this message translates to:

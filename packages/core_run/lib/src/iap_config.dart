@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart' show LocalizedText;
 import 'package:meta/meta.dart';
 
 /// 인앱결제 상품 종류(스토어 처리 방식).
@@ -75,6 +76,8 @@ class IapProduct {
     required this.kind,
     required this.type,
     required this.priceKrw,
+    this.name,
+    this.desc,
     this.sort = 0,
     this.bonusPct = 0,
     this.skinId,
@@ -83,6 +86,10 @@ class IapProduct {
 
   /// 스토어 상품 ID(구글 플레이 콘솔에 동일하게 등록).
   final String id;
+
+  /// 표시용 다국어 이름·설명(JSON `{ko,en,ja}`). 없으면 UI 가 id 로 대체.
+  final LocalizedText? name;
+  final LocalizedText? desc;
   final IapKind kind;
   final IapType type;
   final int priceKrw;
@@ -98,6 +105,12 @@ class IapProduct {
 
   factory IapProduct.fromJson(Map<String, dynamic> json) => IapProduct(
     id: json['id'] as String,
+    name: json['name'] == null
+        ? null
+        : LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
+    desc: json['desc'] == null
+        ? null
+        : LocalizedText.fromJson(json['desc'] as Map<String, dynamic>),
     kind: IapKind.fromKey(json['kind'] as String? ?? 'consumable'),
     type: IapType.fromKey(json['type'] as String? ?? 'jelly'),
     priceKrw: (json['priceKrw'] as num?)?.toInt() ?? 0,

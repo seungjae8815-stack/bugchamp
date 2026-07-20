@@ -32,6 +32,9 @@ class SeasonReport {
 /// 세이브 상태를 보유·변경하는 Riverpod 컨트롤러.
 /// 변경 액션은 상태를 갱신하고 즉시 저장소에 반영(자동 저장)한다.
 class SaveController extends AsyncNotifier<SaveGame> {
+  /// 결제 혜택 일일 젤리 수령 기록용 키(dailyClaims 재사용 — 세이브 필드 추가 없이).
+  static const _iapDailyKey = '_iapDaily';
+
   /// 마지막 로드 시 계산된 오프라인 보상(UI 가 1회 표시 후 [consumeOffline]).
   OfflineReport? pendingOffline;
 
@@ -57,13 +60,26 @@ class SaveController extends AsyncNotifier<SaveGame> {
           characterLevel: save.level,
           bugsCollected: save.bugs.length,
         );
-        final report = computeOfflineReward(
+        // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(iap.json §6).
+        final iap = data.iapConfig;
+        final passOn = save.passActive(now);
+        final raw = computeOfflineReward(
           config: config,
           stageNumber: save.stageNumber,
           stats: stats,
           elapsed: elapsed,
           efficiency: config.offlineEfficiency,
+          maxAccrual: passOn
+              ? Duration(hours: iap?.passOfflineCapHours ?? 12)
+              : kMaxOfflineAccrual,
         );
+        final report = passOn
+            ? OfflineReport(
+                gold: (raw.gold * (iap?.passIdleGoldMult ?? 1.2)).round(),
+                xp: raw.xp,
+                accrued: raw.accrued,
+              )
+            : raw;
         if (!report.isEmpty) {
           var xp = save.xp + report.xp;
           var level = save.level;
@@ -77,6 +93,27 @@ class SaveController extends AsyncNotifier<SaveGame> {
             level: level,
           );
           pendingOffline = report;
+        }
+      }
+    }
+
+    // 결제 혜택 일일 젤리(로컬 날짜 기준 1회). 패스가 광고제거보다 우선(중복 지급 금지).
+    final iapCfg = data.iapConfig;
+    if (iapCfg != null) {
+      final today = dailyDateKey(ref.read(clockProvider).now());
+      if (save.dailyClaims[_iapDailyKey] != today) {
+        final jelly = save.passActive(now)
+            ? iapCfg.passDailyJelly
+            : (save.adsRemoved ? iapCfg.removeAdsDailyJelly : 0);
+        if (jelly > 0) {
+          final mats = Map<MaterialKind, int>.from(save.materials)
+            ..[MaterialKind.jelly] =
+                (save.materials[MaterialKind.jelly] ?? 0) + jelly;
+          save = save.copyWith(
+            materials: mats,
+            dailyClaims: Map<String, String>.from(save.dailyClaims)
+              ..[_iapDailyKey] = today,
+          );
         }
       }
     }
@@ -429,6 +466,58 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     await _commit(
       s.copyWith(gold: s.gold + g.gold * mult, materials: mats, gifts: gifts),
+    );
+    return true;
+  }
+
+  /// 인앱결제 상품 [p] 지급/적용. 성공하면 true.
+  ///
+  /// - 재화·재료·부화기 슬롯은 `grant` 대로 지급
+  /// - `removeAds` → 영구 광고 제거, `starter` → 계정당 1회(중복 구매 방지)
+  /// - `skin` → 보유 스킨에 추가, `pass` → 남은 기간에 **이어서** 연장
+  ///
+  /// 수치는 전부 `iap.json`(IapConfig). 스탯은 지급하지 않는다(§2.6 P2W 금지).
+  Future<bool> applyPurchase(IapProduct p) async {
+    final cfg = ref.read(gameDataProvider).requireValue.iapConfig;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+
+    // 스타터는 계정당 1회.
+    if (p.type == IapType.starter && s.starterBought) return false;
+
+    final g = p.grant;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    void add(MaterialKind k, int n) {
+      if (n > 0) mats[k] = (mats[k] ?? 0) + n;
+    }
+
+    add(MaterialKind.jelly, g.jelly);
+    add(MaterialKind.chitin, g.chitin);
+    add(MaterialKind.mineral, g.mineral);
+    add(MaterialKind.sap, g.sap);
+
+    // 패스는 남은 기간에 이어서 연장(중복 구매 시 손해 없게).
+    DateTime? passExpiry = s.passExpiresAt;
+    if (p.type == IapType.pass) {
+      final days = cfg?.passDurationDays ?? 30;
+      final base = (passExpiry != null && passExpiry.isAfter(now))
+          ? passExpiry
+          : now;
+      passExpiry = base.add(Duration(days: days));
+    }
+
+    await _commit(
+      s.copyWith(
+        gold: s.gold + g.gold,
+        materials: mats,
+        incubatorCapacity: s.incubatorCapacity + g.incubatorSlots,
+        adsRemoved: s.adsRemoved || p.type == IapType.removeAds,
+        starterBought: s.starterBought || p.type == IapType.starter,
+        ownedSkins: p.skinId == null
+            ? s.ownedSkins
+            : {...s.ownedSkins, p.skinId!},
+        passExpiresAt: passExpiry,
+      ),
     );
     return true;
   }

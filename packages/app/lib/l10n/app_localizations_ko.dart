@@ -203,6 +203,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opponentPick => '상대 고르기';
 
   @override
+  String get tabCraft => '제작';
+
+  @override
+  String get tabStore => '상점';
+
+  @override
+  String get storeOwned => '보유중';
+
+  @override
+  String get storeRestore => '구매 복원';
+
+  @override
+  String get storeRestoreDone => '구매 내역을 복원했어요';
+
+  @override
+  String storeBought(String name) {
+    return '$name 구매 완료!';
+  }
+
+  @override
+  String get storeFailed => '구매하지 못했어요';
+
+  @override
+  String storePassLeft(int days) {
+    return '$days일 남음';
+  }
+
+  @override
   String get biomeForest => '숲';
 
   @override

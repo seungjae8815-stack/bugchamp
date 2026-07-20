@@ -13,7 +13,17 @@
       "kind": "nonConsumable",
       "type": "removeAds",
       "priceKrw": 7700,
-      "sort": 10
+      "sort": 10,
+      "name": {
+        "ko": "광고 제거 패스",
+        "en": "Remove Ads",
+        "ja": "広告除去パス"
+      },
+      "desc": {
+        "ko": "강제 광고 영구 제거 + 매일 젤리 10",
+        "en": "No forced ads, forever + 10 jelly daily",
+        "ja": "強制広告を永久除去＋毎日ゼリー10"
+      }
     },
     {
       "id": "starter_pack",
@@ -28,6 +38,16 @@
         "mineral": 500,
         "sap": 500,
         "incubatorSlots": 1
+      },
+      "name": {
+        "ko": "스타터 패키지",
+        "en": "Starter Pack",
+        "ja": "スターターパック"
+      },
+      "desc": {
+        "ko": "젤리·골드·재료 + 부화기 슬롯 (계정당 1회)",
+        "en": "Jelly, gold, materials + incubator slot (once)",
+        "ja": "ゼリー・ゴールド・素材＋孵化器スロット（1回限り）"
       }
     },
     {
@@ -35,7 +55,17 @@
       "kind": "timed",
       "type": "pass",
       "priceKrw": 9900,
-      "sort": 30
+      "sort": 30,
+      "name": {
+        "ko": "곤충학자 패스 (30일)",
+        "en": "Entomologist Pass (30d)",
+        "ja": "昆虫学者パス（30日）"
+      },
+      "desc": {
+        "ko": "오프라인 12시간 · 방치 골드 +20% · 매일 젤리 30 · 광고 제거",
+        "en": "12h offline cap, +20% idle gold, 30 jelly daily, no ads",
+        "ja": "オフライン12時間・放置ゴールド+20%・毎日ゼリー30・広告除去"
+      }
     },
     {
       "id": "jelly_s",
@@ -43,7 +73,14 @@
       "type": "jelly",
       "priceKrw": 1200,
       "sort": 100,
-      "grant": { "jelly": 60 }
+      "grant": {
+        "jelly": 60
+      },
+      "name": {
+        "ko": "곤충젤리 소",
+        "en": "Jelly Pouch",
+        "ja": "昆虫ゼリー 小"
+      }
     },
     {
       "id": "jelly_m",
@@ -52,7 +89,14 @@
       "priceKrw": 5500,
       "sort": 110,
       "bonusPct": 10,
-      "grant": { "jelly": 330 }
+      "grant": {
+        "jelly": 330
+      },
+      "name": {
+        "ko": "곤충젤리 중",
+        "en": "Jelly Bag",
+        "ja": "昆虫ゼリー 中"
+      }
     },
     {
       "id": "jelly_l",
@@ -61,7 +105,14 @@
       "priceKrw": 11000,
       "sort": 120,
       "bonusPct": 17,
-      "grant": { "jelly": 700 }
+      "grant": {
+        "jelly": 700
+      },
+      "name": {
+        "ko": "곤충젤리 대",
+        "en": "Jelly Box",
+        "ja": "昆虫ゼリー 大"
+      }
     },
     {
       "id": "jelly_xl",
@@ -70,7 +121,14 @@
       "priceKrw": 29000,
       "sort": 130,
       "bonusPct": 25,
-      "grant": { "jelly": 1500 }
+      "grant": {
+        "jelly": 1500
+      },
+      "name": {
+        "ko": "곤충젤리 특대",
+        "en": "Jelly Crate",
+        "ja": "昆虫ゼリー 特大"
+      }
     },
     {
       "id": "jelly_xxl",
@@ -79,7 +137,14 @@
       "priceKrw": 59000,
       "sort": 140,
       "bonusPct": 37,
-      "grant": { "jelly": 3300 }
+      "grant": {
+        "jelly": 3300
+      },
+      "name": {
+        "ko": "곤충젤리 최대",
+        "en": "Jelly Vault",
+        "ja": "昆虫ゼリー 最大"
+      }
     },
     {
       "id": "skin_gold_rhino",
@@ -87,7 +152,17 @@
       "type": "skin",
       "priceKrw": 3300,
       "sort": 200,
-      "skinId": "gold_rhino"
+      "skinId": "gold_rhino",
+      "name": {
+        "ko": "황금 장수풍뎅이",
+        "en": "Golden Rhino Beetle",
+        "ja": "黄金カブトムシ"
+      },
+      "desc": {
+        "ko": "외형 전용 · 능력치 영향 없음",
+        "en": "Cosmetic only, no stat effect",
+        "ja": "見た目のみ・能力に影響なし"
+      }
     },
     {
       "id": "skin_albino_stag",
@@ -95,7 +170,17 @@
       "type": "skin",
       "priceKrw": 3300,
       "sort": 210,
-      "skinId": "albino_stag"
+      "skinId": "albino_stag",
+      "name": {
+        "ko": "알비노 사슴벌레",
+        "en": "Albino Stag Beetle",
+        "ja": "アルビノクワガタ"
+      },
+      "desc": {
+        "ko": "외형 전용 · 능력치 영향 없음",
+        "en": "Cosmetic only, no stat effect",
+        "ja": "見た目のみ・能力に影響なし"
+      }
     },
     {
       "id": "theme_arena",
@@ -103,7 +188,17 @@
       "type": "skin",
       "priceKrw": 2200,
       "sort": 220,
-      "skinId": "arena_theme"
+      "skinId": "arena_theme",
+      "name": {
+        "ko": "아레나 테마",
+        "en": "Arena Theme",
+        "ja": "アリーナテーマ"
+      },
+      "desc": {
+        "ko": "전투 장소 배경 스킨",
+        "en": "Battle location background skin",
+        "ja": "戦闘場所の背景スキン"
+      }
     }
   ]
 }
