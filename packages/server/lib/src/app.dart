@@ -114,7 +114,8 @@ Handler buildHandler({
         return _json({
           'userId': user.id,
           'isAnonymous': user.isAnonymous,
-          // 신규 유저면 null — P2 에서 서버가 초기 상태를 생성하도록 옮긴다.
+          // 신규 유저면 null — 클라이언트가 최초 1회 업로드하거나,
+          // 쓰기 액션이 들어올 때 서버가 만든다(loadOrCreate).
           'save': data,
           'serverTime': DateTime.now().toUtc().toIso8601String(),
         });
@@ -137,11 +138,49 @@ Handler buildHandler({
     final verifier =
         receiptVerifier ?? const FixedVerifier(VerifyVerdict.unknown);
 
+    /// 서버 세이브를 읽는다. 없으면 null.
+    ///
+    /// ⚠️ **없다고 해서 빈 세이브를 만들면 안 된다.** 로컬에 진행도가 있는
+    /// 유저가 그 빈 세이브를 채택하면 게임이 통째로 날아간다.
+    /// 서버 세이브 생성은 오직 `POST /state`(부트스트랩) 한 곳에서만 한다.
     Future<SaveGame?> loadSave(String uid) async {
       final raw = await store.load(uid);
       if (raw == null) return null;
       return SaveGame.fromJson(migrateToCurrent(raw));
     }
+
+    /// 최초 1회 세이브 업로드(로컬 → 서버 이관).
+    ///
+    /// **이미 서버 세이브가 있으면 거부한다(409).** 허용하면 클라이언트가
+    /// 아무 상태나 밀어넣을 수 있어 서버 권위가 무너진다. 그때는 서버 것을
+    /// 돌려주고 앱이 그걸 채택하게 한다.
+    authed.post('/state', (Request req) async {
+      final user = userOf(req);
+      try {
+        final existing = await store.load(user.id);
+        if (existing != null) {
+          return _json({'save': existing, 'alreadyExists': true}, status: 409);
+        }
+        final body = jsonDecode(await req.readAsString());
+        if (body is! Map<String, dynamic>) {
+          return _json({'error': 'bad_request'}, status: 400);
+        }
+        final incoming = body['save'];
+        if (incoming is! Map<String, dynamic>) {
+          return _json({'error': 'bad_request'}, status: 400);
+        }
+        // 파싱을 거쳐 형식을 검증한다(쓰레기 JSON 저장 방지).
+        final save = SaveGame.fromJson(migrateToCurrent(incoming));
+        await store.save(user.id, save.toJson());
+        return _json({'save': save.toJson(), 'bootstrapped': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[bootstrap] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      } catch (e) {
+        stderr.writeln('[bootstrap] ${user.id} 파싱 실패: $e');
+        return _json({'error': 'bad_save'}, status: 400);
+      }
+    });
 
     authed.post('/purchase', (Request req) async {
       final user = userOf(req);

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:core_models/core_models.dart' show kMaxOfflineAccrual;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/notification_service.dart';
+import '../domain/server_sync.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
@@ -29,7 +31,11 @@ class _AppShellState extends ConsumerState<AppShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _setupNotifications());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupNotifications();
+      // 서버 권위 모드면 세이브를 맞춘다(최초 1회 이관 포함).
+      unawaited(syncWithServer(ref));
+    });
   }
 
   @override

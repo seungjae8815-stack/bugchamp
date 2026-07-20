@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
 import 'actions.dart';
@@ -18,6 +19,7 @@ class GameConfig implements GameConfigLike {
     required this.battle,
     required this.run,
     required this.pet,
+    this.speciesById = const {},
   });
 
   @override
@@ -26,6 +28,9 @@ class GameConfig implements GameConfigLike {
   final BattleConfig battle;
   final RunConfig run;
   final PetConfig pet;
+
+  /// 종 정보 — 전투 유닛 변환·부상 시간 계산에 필요하다.
+  final Map<String, Species> speciesById;
 
   /// 기본 경로 — 리포지토리 구조 기준. 환경변수 `GAME_DATA_DIR` 로 덮어쓴다.
   static const defaultDir = 'packages/app/assets/data';
@@ -41,7 +46,13 @@ class GameConfig implements GameConfigLike {
       return jsonDecode(await file.readAsString()) as Map<String, dynamic>;
     }
 
+    final speciesJson = await read('species.json');
+    final speciesList = (speciesJson['species'] as List)
+        .cast<Map<String, dynamic>>()
+        .map(Species.fromJson);
+
     return GameConfig(
+      speciesById: {for (final s in speciesList) s.id: s},
       iap: IapConfig.fromJson(await read('iap.json')),
       battle: BattleConfig.fromJson(await read('battle.json')),
       run: RunConfig.fromJson(await read('run_config.json')),

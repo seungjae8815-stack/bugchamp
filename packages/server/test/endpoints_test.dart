@@ -118,8 +118,12 @@ void main() {
   Handler handler({
     VerifyVerdict verdict = VerifyVerdict.valid,
     Map<String, List<Map<String, dynamic>>> defenders = const {},
+    bool serverHasSave = true,
   }) {
-    fake = _Fake({'user-1': mySave.toJson()}, defenders: defenders);
+    fake = _Fake(
+      serverHasSave ? {'user-1': mySave.toJson()} : {},
+      defenders: defenders,
+    );
     return buildHandler(
       config: ServerConfig(
         supabaseUrl: _url,
@@ -268,6 +272,57 @@ void main() {
       expect(res.statusCode, 200);
       final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
       expect(body['outcome'], isNot('teamA'));
+    });
+  });
+
+  group('세이브 부트스트랩', () {
+    test('서버에 세이브가 없으면 액션이 409 로 거부된다 (빈 세이브를 만들지 않음)', () async {
+      final h = handler(serverHasSave: false);
+      final res = await post(h, '/purchase', {
+        'productId': 'jelly_m',
+        'purchaseToken': 'tok',
+      }, token: makeToken());
+      expect(res.statusCode, 409);
+      // 🔴 여기서 빈 세이브를 만들어 저장하면 로컬 진행도가 날아간다.
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('최초 업로드로 로컬 세이브를 서버에 이관한다', () async {
+      final h = handler(serverHasSave: false);
+      final res = await post(h, '/state', {
+        'save': mySave.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body['bootstrapped'], isTrue);
+      final saved = SaveGame.fromJson(
+        fake.lastSaved!['data'] as Map<String, dynamic>,
+      );
+      expect(saved.bugs.length, 1);
+      expect(saved.bugs.first.id, 'mine-1');
+    });
+
+    test('이미 서버 세이브가 있으면 덮어쓰지 못한다 (클라가 상태를 밀어넣는 것 차단)', () async {
+      final h = handler(); // 서버에 이미 세이브 있음
+      final evil = SaveGame.initial(createdAt: _t).copyWith(gold: 99999999);
+      final res = await post(h, '/state', {
+        'save': evil.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 409);
+      expect(fake.lastSaved, isNull);
+      // 서버 것을 돌려줘 앱이 그걸 채택하게 한다.
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body['alreadyExists'], isTrue);
+      expect((body['save'] as Map)['gold'], isNot(99999999));
+    });
+
+    test('망가진 세이브는 저장하지 않는다', () async {
+      final h = handler(serverHasSave: false);
+      final res = await post(h, '/state', {
+        'save': {'schemaVersion': 'not-a-number'},
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+      expect(fake.lastSaved, isNull);
     });
   });
 }

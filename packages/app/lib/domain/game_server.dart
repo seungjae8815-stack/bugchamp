@@ -45,6 +45,10 @@ abstract interface class GameServer {
     required List<String> teamBugIds,
     required String opponentUserId,
   });
+
+  /// 로컬 세이브를 서버로 **최초 1회 이관**한다.
+  /// 서버에 이미 세이브가 있으면 409 와 함께 서버 것을 돌려준다.
+  Future<ServerResult> bootstrap(Map<String, dynamic> save);
 }
 
 /// 서버 미설정 — 항상 사용 불가.
@@ -66,6 +70,9 @@ class NoGameServer implements GameServer {
     required List<String> teamBugIds,
     required String opponentUserId,
   }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> bootstrap(Map<String, dynamic> save) async =>
+      const ServerResult.fail('unavailable', 0);
 }
 
 /// HTTP 구현. 인증은 **Supabase 세션 토큰**을 그대로 실어 보낸다
@@ -141,6 +148,10 @@ class HttpGameServer implements GameServer {
     'teamBugIds': teamBugIds,
     'opponentUserId': opponentUserId,
   });
+
+  @override
+  Future<ServerResult> bootstrap(Map<String, dynamic> save) =>
+      _send('POST', '/state', {'save': save});
 }
 
 /// 교체 가능한 권위 서버. 기본은 미설정(로컬 경로 유지).
