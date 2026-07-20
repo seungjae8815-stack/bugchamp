@@ -14,7 +14,7 @@
 
 | 엔드포인트 | 인증 | 설명 |
 |---|---|---|
-| `GET /healthz` | 불필요 | Cloud Run 헬스체크 |
+| `GET /health` | 불필요 | 헬스체크 (⚠️ `/healthz` 는 구글 인프라가 가로챈다) |
 | `GET /state` | 필요 | 내 세이브 조회 |
 | `POST /purchase` | 필요 | 영수증 검증 → 지급 |
 | `POST /battle` | 필요 | 서버가 전투를 시뮬레이션하고 결과 확정 |

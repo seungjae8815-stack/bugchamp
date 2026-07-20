@@ -83,8 +83,8 @@ void main() {
     ),
   );
 
-  test('헬스체크는 인증 없이 통과한다 (Cloud Run 이 부른다)', () async {
-    final res = await get(handlerWith({}), '/healthz');
+  test('헬스체크(/health)는 인증 없이 통과한다 — /healthz 는 구글이 가로챈다', () async {
+    final res = await get(handlerWith({}), '/health');
     expect(res.statusCode, 200);
   });
 

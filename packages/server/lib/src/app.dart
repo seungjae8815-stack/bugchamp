@@ -100,8 +100,11 @@ Handler buildHandler({
       jwtVerifier ?? SupabaseJwtVerifier.forProject(config.supabaseUrl);
 
   final public = Router()
-    // Cloud Run 헬스체크 — 인증 없이 접근 가능해야 한다.
-    ..get('/healthz', (Request _) => Response.ok('ok'));
+    // 헬스체크 — 인증 없이 접근 가능해야 한다.
+    //
+    // ⚠️ `/healthz` 를 쓰면 안 된다. Google Cloud 인프라가 그 경로를
+    //    가로채서 컨테이너까지 요청이 오지 않는다(실제로 404 를 받았다).
+    ..get('/health', (Request _) => Response.ok('ok'));
 
   final authed = Router()
     ..get('/state', (Request req) async {
