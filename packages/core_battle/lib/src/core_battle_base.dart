@@ -119,13 +119,13 @@ class BattleState {
     double locationBonus = 0.0,
   }) : _locBonus = locationBonus,
        hpA = [for (final u in teamA) u.maxHp],
-      hpB = [for (final u in teamB) u.maxHp],
-      enA = [for (final _ in teamA) _startEnergy],
-      enB = [for (final _ in teamB) _startEnergy],
-      synA = teamSynergy(teamA),
-      synB = teamSynergy(teamB),
-      _maxA = teamA.fold(0.0, (s, u) => s + u.maxHp),
-      _maxB = teamB.fold(0.0, (s, u) => s + u.maxHp);
+       hpB = [for (final u in teamB) u.maxHp],
+       enA = [for (final _ in teamA) _startEnergy],
+       enB = [for (final _ in teamB) _startEnergy],
+       synA = teamSynergy(teamA),
+       synB = teamSynergy(teamB),
+       _maxA = teamA.fold(0.0, (s, u) => s + u.maxHp),
+       _maxB = teamB.fold(0.0, (s, u) => s + u.maxHp);
 
   final List<BattleBug> teamA;
   final List<BattleBug> teamB;

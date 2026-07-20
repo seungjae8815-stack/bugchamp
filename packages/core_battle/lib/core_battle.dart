@@ -4,3 +4,4 @@
 library;
 
 export 'src/core_battle_base.dart';
+export 'src/party.dart';

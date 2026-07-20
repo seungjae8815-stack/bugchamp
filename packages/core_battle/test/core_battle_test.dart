@@ -134,7 +134,9 @@ void main() {
 
   group('장소 상성', () {
     // 방어자(b)는 안 죽게 큰 HP — 총 데미지 비교용. 상극 관계 아닌 오행 선택.
-    List<BattleBug> atkTeam() => [_bug('a', Element.wood, Temperament.aggressive)];
+    List<BattleBug> atkTeam() => [
+      _bug('a', Element.wood, Temperament.aggressive),
+    ];
     List<BattleBug> defTeam() => [
       _bug(
         'b',
@@ -145,8 +147,7 @@ void main() {
         def: 0,
       ),
     ];
-    double dmgToB(BattleResult r) =>
-        r.events.fold(0.0, (s, e) => s + e.dmgToB);
+    double dmgToB(BattleResult r) => r.events.fold(0.0, (s, e) => s + e.dmgToB);
 
     test('같은 오행 곤충이 장소에서 데미지 강화', () {
       final noLoc = simulate(7, atkTeam(), defTeam());

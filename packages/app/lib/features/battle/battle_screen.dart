@@ -77,40 +77,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     }).toList();
   }
 
-  Stance _prefStance(Specialty s) => switch (s) {
-    Specialty.strike => Stance.attack,
-    Specialty.grip => Stance.defend,
-    Specialty.toss => Stance.heal,
-  };
-
+  /// 개체 → 전투 유닛. 변환 로직은 `core_battle` 에 있다 —
+  /// **서버도 같은 함수를 쓴다**(결과가 어긋나면 승패가 갈린다).
   BattleBug _toBattleBug(IndividualBug bug, GameData data, String locale) {
-    final sp = data.species(bug.speciesId);
-    final sm = bug.statMultiplier(sp);
     final enh = data.enhanceConfig;
     double per(BugPart p, double d) => enh?.spec(p).effectPerLevel ?? d;
-    final e = bug.enhancement;
-    return BattleBug(
-      id: bug.id,
-      name: sp.name.resolve(locale),
-      element: bug.element,
-      temperament: bug.temperament,
-      preferredStance: _prefStance(sp.specialty),
-      maxHp:
-          sp.baseStats.hp *
-          sm *
-          (1 + e.levelOf(BugPart.build) * per(BugPart.build, 0.05)),
-      atk:
-          sp.baseStats.atk *
-          sm *
-          (1 + e.levelOf(BugPart.hornJaw) * per(BugPart.hornJaw, 0.04)),
-      def:
-          sp.baseStats.def *
-          sm *
-          (1 + e.levelOf(BugPart.cuticle) * per(BugPart.cuticle, 0.04)),
-      spd:
-          sp.baseStats.spd *
-          sm *
-          (1 + e.levelOf(BugPart.wing) * per(BugPart.wing, 0.03)),
+    return buildBattleBug(
+      bug: bug,
+      species: data.species(bug.speciesId),
+      locale: locale,
+      hornJawPerLevel: per(BugPart.hornJaw, 0.04),
+      cuticlePerLevel: per(BugPart.cuticle, 0.04),
+      wingPerLevel: per(BugPart.wing, 0.03),
+      buildPerLevel: per(BugPart.build, 0.05),
     );
   }
 
@@ -153,7 +132,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           element: Element.values[_rng.nextInt(Element.values.length)],
           temperament:
               Temperament.values[_rng.nextInt(Temperament.values.length)],
-          preferredStance: _prefStance(sp.specialty),
+          preferredStance: preferredStanceOf(sp.specialty),
           maxHp: avg.hp * f,
           atk: avg.atk * f,
           def: avg.def * f,
@@ -224,7 +203,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           name: sp.name.resolve(locale),
           element: d.element,
           temperament: d.temperament,
-          preferredStance: _prefStance(sp.specialty),
+          preferredStance: preferredStanceOf(sp.specialty),
           maxHp: d.maxHp,
           atk: d.atk,
           def: d.def,
