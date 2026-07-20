@@ -2,10 +2,10 @@
 
 파일명 = 오행 key. 있으면 자동 사용, 없으면 그라데이션 폴백.
 
-- wood.png  — 🌲 숲
-- fire.png  — 🌋 용암굴
-- earth.png — 🏜️ 황무지
-- metal.png — 🏙️ 폐허도시
-- water.png — 🌊 심해
+- wood.webp  — 🌲 숲
+- fire.webp  — 🌋 용암굴
+- earth.webp — 🏜️ 황무지
+- metal.webp — 🏙️ 폐허도시
+- water.webp — 🌊 심해
 
 권장: 가로 16:9(1920×1080), 어둡고 대비 낮게(곤충·UI 가독성 확보), 곤충/캐릭터 없이 배경만.
