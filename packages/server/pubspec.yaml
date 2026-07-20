@@ -1,0 +1,26 @@
+name: server
+description: Bug Champ 권위 서버 (순수 Dart). core_* 패키지를 그대로 import 해 게임 로직을 한 벌로 유지한다. Flutter 금지.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  core_models:
+    path: ../core_models
+  core_run:
+    path: ../core_run
+  core_battle:
+    path: ../core_battle
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+  http: ^1.2.2
+  crypto: ^3.0.6
+  meta: ^1.16.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

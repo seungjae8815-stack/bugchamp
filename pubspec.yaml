@@ -7,10 +7,12 @@ environment:
   sdk: ^3.11.5
 
 # pub workspace 멤버 (단일 lockfile 공유).
-# 의존 방향: app -> {core_battle, core_gathering} -> core_models
+# 의존 방향: {app, server} -> {core_battle, core_run, core_gathering} -> core_models
+# server 는 게임 로직을 앱과 **같은 코드**로 돌리기 위해 core_* 를 그대로 쓴다.
 workspace:
   - packages/core_models
   - packages/core_battle
   - packages/core_gathering
   - packages/core_run
   - packages/app
+  - packages/server
