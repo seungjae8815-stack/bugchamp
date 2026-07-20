@@ -6,6 +6,7 @@ import 'package:shelf_router/shelf_router.dart';
 
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 
 import 'actions.dart';
@@ -179,6 +180,50 @@ Handler buildHandler({
       } catch (e) {
         stderr.writeln('[bootstrap] ${user.id} 파싱 실패: $e');
         return _json({'error': 'bad_save'}, status: 400);
+      }
+    });
+
+    /// 방치 수입 정산. 클라이언트는 "정산해줘"만 보내고 금액은 서버가 정한다.
+    authed.post('/sync', (Request req) async {
+      final user = userOf(req);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.sync(save);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[sync] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 업그레이드 1단계. 비용·잔액 판정은 서버가 한다.
+    authed.post('/upgrade', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final kindKey = body['kind']?.toString() ?? '';
+      final kind = UpgradeKind.values
+          .where((k) => k.key == kindKey)
+          .firstOrNull;
+      if (kind == null) return _json({'error': 'unknown_upgrade'}, status: 400);
+
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.upgrade(save, kind);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[upgrade] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
       }
     });
 

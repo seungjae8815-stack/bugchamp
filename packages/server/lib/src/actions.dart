@@ -200,6 +200,78 @@ class GameActions {
     );
   }
 
+  /// 경과시간만큼 방치 수입을 정산한다.
+  ///
+  /// **클라이언트가 "얼마 벌었다"고 보고하지 않는다.** 서버가 `lastSeen` 부터
+  /// 지금까지를 직접 계산한다. 방치 수입은 (스탯, 스테이지, 경과시간)의
+  /// 결정론적 함수이므로 서버가 정확히 재현할 수 있다.
+  ///
+  /// 이 게임엔 **수동 탭 공격이 없다**(자동 전투만). 그래서 클라이언트가
+  /// 보고할 것이 아예 없고, 탭 상한 같은 방어도 필요 없다.
+  ActionResult sync(SaveGame save) {
+    final t = now().toUtc();
+    final elapsed = t.difference(save.lastSeen);
+    if (elapsed.isNegative) {
+      // 기기 시계가 과거로 조작된 경우 — 수입 없이 시각만 맞춘다.
+      return ActionResult.ok(save.copyWith(lastSeen: t));
+    }
+
+    final run = config.run;
+    final stats = deriveStats(
+      run,
+      upgradeLevels: save.upgradeLevels,
+      characterLevel: save.level,
+      bugsCollected: save.bugs.length,
+    );
+
+    // 접속 중 수입도 같은 함수로 계산한다 — 앱과 서버가 어긋나지 않게.
+    // 오프라인 효율(offlineEfficiency)은 앱이 쓰던 값을 그대로 따른다.
+    final report = computeOfflineReward(
+      config: run,
+      stageNumber: save.stageNumber,
+      stats: stats,
+      elapsed: elapsed,
+      efficiency: run.offlineEfficiency,
+    );
+
+    var xp = save.xp + report.xp;
+    var level = save.level;
+    while (xp >= xpForNextLevel(level)) {
+      xp -= xpForNextLevel(level);
+      level++;
+    }
+
+    return ActionResult.ok(
+      save.copyWith(
+        gold: save.gold + report.gold,
+        xp: xp,
+        level: level,
+        lastSeen: t,
+      ),
+      extra: {
+        'gold': report.gold,
+        'xp': report.xp,
+        'elapsedSeconds': elapsed.inSeconds,
+      },
+    );
+  }
+
+  /// 업그레이드 1단계. **비용은 서버가 계산하고 잔액도 서버가 확인한다.**
+  ActionResult upgrade(SaveGame save, UpgradeKind kind) {
+    final spec = config.run.upgrades[kind];
+    if (spec == null) return const ActionResult.fail('unknown_upgrade');
+    final level = save.upgradeLevel(kind);
+    final cost = upgradeCost(spec, level);
+    if (save.gold < cost) return const ActionResult.fail('insufficient_gold');
+    return ActionResult.ok(
+      save.copyWith(
+        gold: save.gold - cost,
+        upgradeLevels: {...save.upgradeLevels, kind: level + 1},
+      ),
+      extra: {'cost': cost, 'newLevel': level + 1},
+    );
+  }
+
   /// 젤리 소비. 잔액이 모자라면 거부한다 — **클라이언트 말을 믿지 않는다.**
   ActionResult spendJelly(SaveGame save, int amount, {String? reason}) {
     if (amount <= 0) return const ActionResult.fail('bad_amount');
@@ -216,4 +288,5 @@ class GameActions {
 abstract interface class GameConfigLike {
   IapConfig get iap;
   BattleConfig get battle;
+  RunConfig get run;
 }

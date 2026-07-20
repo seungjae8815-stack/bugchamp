@@ -26,6 +26,7 @@ class GameConfig implements GameConfigLike {
   final IapConfig iap;
   @override
   final BattleConfig battle;
+  @override
   final RunConfig run;
   final PetConfig pet;
 

@@ -42,6 +42,12 @@ class _Config implements GameConfigLike {
 
   @override
   final BattleConfig battle = const BattleConfig();
+
+  @override
+  final RunConfig run = RunConfig.fromJson(
+    jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
 }
 
 void main() {
@@ -284,6 +290,80 @@ void main() {
       final s = saveWith(['mine-1']).copyWith(pvpTrophies: 0);
       final r = run(s, ['mine-1']);
       expect(r.save!.pvpTrophies, greaterThanOrEqualTo(0));
+    });
+  });
+
+  group('방치 수입 정산(sync)', () {
+    // now 를 고정하고 lastSeen 을 뒤로 밀어 경과시간을 만든다.
+    SaveGame agedBy(Duration d) => SaveGame.initial(
+      createdAt: t0.subtract(d),
+    ).copyWith(lastSeen: t0.subtract(d), stageNumber: 5, level: 5);
+
+    test('경과시간만큼 골드·경험치가 들어온다', () {
+      final r = actions.sync(agedBy(const Duration(hours: 1)));
+      expect(r.isOk, isTrue);
+      expect(r.save!.gold, greaterThan(0));
+      expect(r.extra['elapsedSeconds'], 3600);
+    });
+
+    test('경과가 길수록 더 많이 번다', () {
+      final short = actions.sync(agedBy(const Duration(minutes: 10)));
+      final long = actions.sync(agedBy(const Duration(hours: 2)));
+      expect(long.save!.gold, greaterThan(short.save!.gold));
+    });
+
+    test('정산 후 lastSeen 이 서버 시각으로 갱신된다 (중복 정산 방지)', () {
+      final first = actions.sync(agedBy(const Duration(hours: 1)));
+      expect(first.save!.lastSeen, t0);
+      // 곧바로 다시 정산해도 경과가 0 이라 추가 수입이 없다.
+      final second = actions.sync(first.save!);
+      expect(second.save!.gold, first.save!.gold);
+    });
+
+    test('기기 시계를 미래로 돌려도 서버 시각 기준이라 이득이 없다', () {
+      // lastSeen 이 미래인 세이브(시계 조작 흔적) → 음수 경과.
+      final tampered = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(lastSeen: t0.add(const Duration(days: 365)));
+      final r = actions.sync(tampered);
+      expect(r.isOk, isTrue);
+      expect(r.save!.gold, 0); // 수입 없음
+      expect(r.save!.lastSeen, t0); // 시각만 정상화
+    });
+
+    test('오프라인 상한을 넘겨도 상한까지만 준다', () {
+      final aDay = actions.sync(agedBy(const Duration(hours: 24)));
+      final aWeek = actions.sync(agedBy(const Duration(days: 7)));
+      expect(aWeek.save!.gold, aDay.save!.gold);
+    });
+  });
+
+  group('업그레이드', () {
+    test('골드가 충분하면 레벨이 오르고 비용이 빠진다', () {
+      final rich = SaveGame.initial(createdAt: t0).copyWith(gold: 1000000);
+      final r = actions.upgrade(rich, UpgradeKind.attack);
+      expect(r.isOk, isTrue);
+      expect(r.save!.upgradeLevel(UpgradeKind.attack), 1);
+      expect(r.save!.gold, lessThan(1000000));
+      expect(r.extra['newLevel'], 1);
+    });
+
+    test('골드가 모자라면 거부 — 클라 주장을 믿지 않는다', () {
+      final broke = SaveGame.initial(createdAt: t0).copyWith(gold: 0);
+      final r = actions.upgrade(broke, UpgradeKind.attack);
+      expect(r.isOk, isFalse);
+      expect(r.error, 'insufficient_gold');
+    });
+
+    test('레벨이 오를수록 비용이 비싸진다', () {
+      var s = SaveGame.initial(createdAt: t0).copyWith(gold: 100000000);
+      final first = actions.upgrade(s, UpgradeKind.attack);
+      s = first.save!;
+      final second = actions.upgrade(s, UpgradeKind.attack);
+      expect(
+        second.extra['cost'] as int,
+        greaterThanOrEqualTo(first.extra['cost'] as int),
+      );
     });
   });
 }
