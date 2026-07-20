@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'package:core_save/core_save.dart';
 import '../data/save_repository.dart';
 import 'gather_service.dart';
+import 'game_server.dart';
 import 'providers.dart';
 
 /// 시즌 종료 정산 결과(UI 가 1회 표시). 트로피 소프트리셋 + 보상.
@@ -281,6 +282,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 업그레이드를 최대 [count] 레벨까지 구매(골드 되는 만큼). 구매한 레벨 수 반환.
   Future<int> buyUpgrade(UpgradeKind kind, {int count = 1}) async {
+    // 서버 권위 모드면 비용·잔액 판정을 서버가 한다.
+    final server = ref.read(gameServerProvider);
+    if (server.available) {
+      final res = await server.upgrade(kind.key, count: count);
+      if (res.isOk && res.save != null) {
+        await adoptServerSave(res.save!);
+        return (res.data!['bought'] as num?)?.toInt() ?? 0;
+      }
+      debugPrint('[server] 업그레이드 실패: ${res.error}');
+      return 0;
+    }
+
     final config = ref.read(gameDataProvider).requireValue.runConfig;
     if (config == null) return 0;
     final s = state.requireValue;
@@ -649,6 +662,23 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 서버 권위 모드면 [call] 로 서버에 처리를 맡기고 결과를 채택한다.
+  ///
+  /// 반환값이 null 이면 서버가 없다는 뜻이므로 호출부가 기존 로컬 경로를 쓴다.
+  /// **서버가 있는데 실패한 경우는 false** — 로컬로 폴백하지 않는다.
+  /// 폴백하면 "서버가 거부하면 로컬로 처리"가 되어 권위가 무의미해진다.
+  Future<bool?> _viaServer(Future<ServerResult> Function() call) async {
+    final server = ref.read(gameServerProvider);
+    if (!server.available) return null;
+    final res = await call();
+    if (res.isOk && res.save != null) {
+      await adoptServerSave(res.save!);
+      return true;
+    }
+    debugPrint('[server] 액션 실패: ${res.error} (${res.status})');
+    return false;
+  }
+
   /// 권위 서버가 확정한 세이브를 그대로 채택한다.
   ///
   /// 서버 권위 모드에서는 **서버가 진실**이므로 로컬 계산 결과를 버리고
@@ -845,6 +875,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 개체 [bugId] 의 [part] 를 1레벨 강화(§2.2). 재료를 차감한다.
   /// 강화 상한(포텐셜×10) 도달·재료 부족·개체 없음이면 false.
   Future<bool> enhancePart(String bugId, BugPart part) async {
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).enhance(bugId, part.key),
+    );
+    if (viaServer != null) return viaServer;
+
     final cfg = ref.read(gameDataProvider).requireValue.enhanceConfig;
     if (cfg == null) return false;
     final s = state.requireValue;
@@ -867,6 +902,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 수련: 골드를 소비해 성충 [bugId] 의 레벨을 1 올린다.
   /// 성충 아님·티어 상한 도달·돌파 진행중·골드부족·없음이면 false.
   Future<bool> trainBug(String bugId) async {
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).train(bugId),
+    );
+    if (viaServer != null) return viaServer;
+
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;
     if (cfg == null) return false;
     final now = ref.read(clockProvider).now().toUtc();

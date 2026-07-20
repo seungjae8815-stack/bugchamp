@@ -27,19 +27,23 @@ class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   bool _notifSetup = false;
 
+  /// 방치 수입 주기 정산(서버 권위 모드에서만 동작).
+  late final _syncTimer = ServerSyncTimer(ref);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotifications();
-      // 서버 권위 모드면 세이브를 맞춘다(최초 1회 이관 포함).
-      unawaited(syncWithServer(ref));
+      // 서버 권위 모드면 세이브를 맞추고(최초 1회 이관 포함) 주기 정산을 건다.
+      unawaited(syncWithServer(ref).then((_) => _syncTimer.start()));
     });
   }
 
   @override
   void dispose() {
+    _syncTimer.stop();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

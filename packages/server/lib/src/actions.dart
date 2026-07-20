@@ -309,19 +309,46 @@ class GameActions {
     );
   }
 
-  /// 업그레이드 1단계. **비용은 서버가 계산하고 잔액도 서버가 확인한다.**
-  ActionResult upgrade(SaveGame save, UpgradeKind kind) {
+  /// 업그레이드 구매(일괄 [count] 단계까지).
+  ///
+  /// **비용 계산과 잔액 확인을 서버가 한다.** 앱과 같은 규칙:
+  /// 골드나 재료가 모자라면 **거기서 멈추고 산 만큼만** 반영한다.
+  ActionResult upgrade(SaveGame save, UpgradeKind kind, {int count = 1}) {
+    if (count <= 0) return const ActionResult.fail('bad_count');
     final spec = config.run.upgrades[kind];
     if (spec == null) return const ActionResult.fail('unknown_upgrade');
-    final level = save.upgradeLevel(kind);
-    final cost = upgradeCost(spec, level);
-    if (save.gold < cost) return const ActionResult.fail('insufficient_gold');
+
+    final matKind = spec.materialKind;
+    var level = save.upgradeLevel(kind);
+    var gold = save.gold;
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    var bought = 0;
+
+    for (var i = 0; i < count; i++) {
+      final cost = upgradeCost(spec, level);
+      if (gold < cost) break;
+      final matCost = upgradeMaterialCost(spec, level);
+      if (matKind != null && (mats[matKind] ?? 0) < matCost) break;
+      gold -= cost;
+      if (matKind != null && matCost > 0) {
+        mats[matKind] = (mats[matKind] ?? 0) - matCost;
+      }
+      level++;
+      bought++;
+    }
+    if (bought == 0) return const ActionResult.fail('insufficient_gold');
+
     return ActionResult.ok(
       save.copyWith(
-        gold: save.gold - cost,
-        upgradeLevels: {...save.upgradeLevels, kind: level + 1},
+        gold: gold,
+        upgradeLevels: {...save.upgradeLevels, kind: level},
+        materials: mats,
       ),
-      extra: {'cost': cost, 'newLevel': level + 1},
+      extra: {
+        'bought': bought,
+        'newLevel': level,
+        'goldSpent': save.gold - gold,
+      },
     );
   }
 

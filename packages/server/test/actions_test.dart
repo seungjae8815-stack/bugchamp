@@ -365,6 +365,7 @@ void main() {
       expect(r.save!.upgradeLevel(UpgradeKind.attack), 1);
       expect(r.save!.gold, lessThan(1000000));
       expect(r.extra['newLevel'], 1);
+      expect(r.extra['bought'], 1);
     });
 
     test('골드가 모자라면 거부 — 클라 주장을 믿지 않는다', () {
@@ -374,14 +375,34 @@ void main() {
       expect(r.error, 'insufficient_gold');
     });
 
+    test('일괄 구매는 살 수 있는 만큼만 사고 멈춘다', () {
+      // 1단계 값만 겨우 되는 골드로 10단계를 요청.
+      final spec = _Config().run.upgrades[UpgradeKind.attack]!;
+      final justOne = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(gold: upgradeCost(spec, 0));
+      final r = actions.upgrade(justOne, UpgradeKind.attack, count: 10);
+      expect(r.isOk, isTrue);
+      expect(r.extra['bought'], 1);
+      expect(r.save!.gold, 0);
+    });
+
+    test('count 가 0 이하면 거부', () {
+      final rich = SaveGame.initial(createdAt: t0).copyWith(gold: 1000000);
+      expect(
+        actions.upgrade(rich, UpgradeKind.attack, count: 0).error,
+        'bad_count',
+      );
+    });
+
     test('레벨이 오를수록 비용이 비싸진다', () {
       var s = SaveGame.initial(createdAt: t0).copyWith(gold: 100000000);
       final first = actions.upgrade(s, UpgradeKind.attack);
       s = first.save!;
       final second = actions.upgrade(s, UpgradeKind.attack);
       expect(
-        second.extra['cost'] as int,
-        greaterThanOrEqualTo(first.extra['cost'] as int),
+        second.extra['goldSpent'] as int,
+        greaterThanOrEqualTo(first.extra['goldSpent'] as int),
       );
     });
   });

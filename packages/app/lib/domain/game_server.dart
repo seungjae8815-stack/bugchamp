@@ -46,6 +46,18 @@ abstract interface class GameServer {
     required String opponentUserId,
   });
 
+  /// 방치 수입 정산 — 금액은 서버가 정한다.
+  Future<ServerResult> sync();
+
+  /// 업그레이드 1단계.
+  Future<ServerResult> upgrade(String kindKey, {int count});
+
+  /// 부위 강화 1단계.
+  Future<ServerResult> enhance(String bugId, String partKey);
+
+  /// 수련(성충 레벨업).
+  Future<ServerResult> train(String bugId);
+
   /// 로컬 세이브를 서버로 **최초 1회 이관**한다.
   /// 서버에 이미 세이브가 있으면 409 와 함께 서버 것을 돌려준다.
   Future<ServerResult> bootstrap(Map<String, dynamic> save);
@@ -72,6 +84,18 @@ class NoGameServer implements GameServer {
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> bootstrap(Map<String, dynamic> save) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> sync() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> upgrade(String kindKey, {int count = 1}) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> enhance(String bugId, String partKey) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> train(String bugId) async =>
       const ServerResult.fail('unavailable', 0);
 }
 
@@ -152,6 +176,21 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> bootstrap(Map<String, dynamic> save) =>
       _send('POST', '/state', {'save': save});
+
+  @override
+  Future<ServerResult> sync() => _send('POST', '/sync', const {});
+
+  @override
+  Future<ServerResult> upgrade(String kindKey, {int count = 1}) =>
+      _send('POST', '/upgrade', {'kind': kindKey, 'count': count});
+
+  @override
+  Future<ServerResult> enhance(String bugId, String partKey) =>
+      _send('POST', '/enhance', {'bugId': bugId, 'part': partKey});
+
+  @override
+  Future<ServerResult> train(String bugId) =>
+      _send('POST', '/train', {'bugId': bugId});
 }
 
 /// 교체 가능한 권위 서버. 기본은 미설정(로컬 경로 유지).

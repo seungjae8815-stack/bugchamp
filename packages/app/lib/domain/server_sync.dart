@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -42,5 +44,45 @@ Future<void> syncWithServer(WidgetRef ref) async {
     await ctrl.adoptServerSave(res.save!);
   } else {
     debugPrint('[sync] 이관 실패: ${res.error}');
+  }
+}
+
+/// 서버 권위 모드에서 방치 수입을 주기적으로 정산한다.
+///
+/// 15초 주기 + 앱이 백그라운드로 갈 때. 금액은 서버가 정하므로
+/// 클라이언트는 "정산해줘"만 보낸다.
+///
+/// 실패해도 조용히 넘어간다 — 다음 주기에 다시 시도하면 되고,
+/// 경과시간 기준이라 **놓친 구간이 사라지지 않는다**(중복 정산도 없다).
+class ServerSyncTimer {
+  ServerSyncTimer(this._ref);
+
+  final WidgetRef _ref;
+  Timer? _timer;
+
+  static const period = Duration(seconds: 15);
+
+  void start() {
+    if (!_ref.read(gameServerProvider).available) return;
+    _timer?.cancel();
+    _timer = Timer.periodic(period, (_) => syncNow());
+  }
+
+  Future<void> syncNow() async {
+    final server = _ref.read(gameServerProvider);
+    if (!server.available) return;
+    final res = await server.sync();
+    if (res.isOk && res.save != null) {
+      await _ref
+          .read(saveControllerProvider.notifier)
+          .adoptServerSave(res.save!);
+    } else {
+      debugPrint('[sync] 정산 실패(다음 주기 재시도): ${res.error}');
+    }
+  }
+
+  void stop() {
+    _timer?.cancel();
+    _timer = null;
   }
 }

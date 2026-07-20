@@ -14,6 +14,11 @@ final signingKey = JsonWebKey.generate('ES256');
 final attackerKey = JsonWebKey.generate('ES256');
 
 /// [key] 로 서명한 JWT 를 만든다.
+///
+/// ⚠️ 기본 만료는 **실제 현재 시각 기준**이다. 고정 시각(t0)으로 두면
+/// 미들웨어가 실시간으로 검증하는 테스트(엔드포인트 테스트)가 그 시각을
+/// 지나는 순간 갑자기 깨진다 — 실제로 그렇게 깨졌다.
+/// 만료 자체를 검사하는 테스트는 claims 를 직접 넘기고 verify(now:) 를 쓴다.
 String makeToken({
   JsonWebKey? key,
   Map<String, dynamic>? claims,
@@ -26,7 +31,10 @@ String makeToken({
           'sub': 'user-1',
           'iss': issuer,
           'exp':
-              t0.add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+              DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
         }
     ..addRecipient(key ?? signingKey, algorithm: algorithm);
   return builder.build().toCompactSerialization();

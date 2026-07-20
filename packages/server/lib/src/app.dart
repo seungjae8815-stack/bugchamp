@@ -239,7 +239,8 @@ Handler buildHandler({
       try {
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.upgrade(save, kind);
+        final count = (body['count'] as num?)?.toInt() ?? 1;
+        final r = actions.upgrade(save, kind, count: count);
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
         await store.save(user.id, r.save!.toJson());
         return _json({'save': r.save!.toJson(), ...r.extra});
