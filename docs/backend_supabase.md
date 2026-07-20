@@ -188,7 +188,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, auth
-as {D}{D}
+as $$
 declare
   uid uuid := auth.uid();
 begin
@@ -203,7 +203,7 @@ begin
   -- 인증 계정 자체를 삭제(위 테이블은 cascade 로도 정리된다)
   delete from auth.users where id = uid;
 end;
-{D}{D};
+$$;
 
 revoke all on function public.delete_my_account() from public, anon;
 grant execute on function public.delete_my_account() to authenticated;
@@ -260,7 +260,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as {D}{D}
+as $$
 declare
   last_at timestamptz;
 begin
@@ -272,7 +272,7 @@ begin
   end if;
   return new;
 end;
-{D}{D};
+$$;
 
 drop trigger if exists chat_rate_limit_trg on chat_messages;
 create trigger chat_rate_limit_trg
