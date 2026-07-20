@@ -71,6 +71,14 @@ String biomeEmoji(Element e) => switch (e) {
   Element.water => '🌊',
 };
 
+/// 장소 배경 이미지(`assets/images/biomes/{오행key}.png`).
+/// 파일이 없으면 [fallback] 로 폴백(보통 그라데이션만 보이게 빈 위젯).
+Widget biomeBackground(Element e, {required Widget fallback}) => Image.asset(
+  'assets/images/biomes/${e.key}.png',
+  fit: BoxFit.cover,
+  errorBuilder: (_, _, _) => fallback,
+);
+
 /// 장소 배경 그라데이션(상단→하단). 배경 아트가 없을 때의 폴백.
 List<Color> biomeColors(Element e) => switch (e) {
   Element.wood => const [Color(0xFF1E3A1E), Color(0xFF0B1A0B)],
