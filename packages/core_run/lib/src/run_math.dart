@@ -152,6 +152,30 @@ class OfflineReport {
 
 /// 오프라인 동안의 골드/경험치 추정 (현재 스테이지·능력치 기준 파밍 속도 × 시간).
 /// 상한 [maxAccrual](기본 8h), 효율 [efficiency](실시간 대비).
+/// 경과시간 동안 처치했을 서식지 수(효율 반영). 소수 단위다.
+///
+/// 방치 수입·드롭을 **같은 근거**로 계산하기 위해 분리했다.
+/// 서버가 드롭을 굴릴 때도 이 값을 쓴다 — 공식이 두 벌이 되면
+/// "골드는 맞는데 곤충 수가 다른" 상황이 생긴다.
+double estimateClears({
+  required RunConfig config,
+  required int stageNumber,
+  required CharacterStats stats,
+  required Duration elapsed,
+  Duration maxAccrual = kMaxOfflineAccrual,
+  double efficiency = 0.5,
+}) {
+  if (elapsed <= Duration.zero) return 0;
+  final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
+  final secs = capped.inMilliseconds / 1000.0;
+  final dps = stats.attack * stats.attackSpeed;
+  if (dps <= 0) return 0;
+  final hp = habitatMaxHp(config, stageNumber - 1).toDouble();
+  final timePerClear = hp / dps + 0.6; // + 이동시간 근사
+  if (timePerClear <= 0) return 0;
+  return secs / timePerClear * efficiency;
+}
+
 OfflineReport computeOfflineReward({
   required RunConfig config,
   required int stageNumber,
@@ -162,19 +186,23 @@ OfflineReport computeOfflineReward({
 }) {
   if (elapsed <= Duration.zero) return OfflineReport.empty;
   final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
-  final secs = capped.inMilliseconds / 1000.0;
+  final clears = estimateClears(
+    config: config,
+    stageNumber: stageNumber,
+    stats: stats,
+    elapsed: elapsed,
+    maxAccrual: maxAccrual,
+    efficiency: efficiency,
+  );
+  if (clears <= 0) return OfflineReport.empty;
+
   final depth = stageNumber - 1;
-
-  final dps = stats.attack * stats.attackSpeed;
-  if (dps <= 0) return OfflineReport.empty;
-  final hp = habitatMaxHp(config, depth).toDouble();
-  final timePerClear = hp / dps + 0.6; // + 이동시간 근사
-  final clearsPerSec = timePerClear > 0 ? 1 / timePerClear : 0.0;
-
   final goldPer = rewardGold(config, depth, stats.rewardMultiplier);
   final xpPer = (rewardXp(config, depth) * stats.xpMultiplier).round();
 
-  final gold = (clearsPerSec * secs * goldPer * efficiency).round();
-  final xp = (clearsPerSec * secs * xpPer * efficiency).round();
-  return OfflineReport(gold: gold, xp: xp, accrued: capped);
+  return OfflineReport(
+    gold: (clears * goldPer).round(),
+    xp: (clears * xpPer).round(),
+    accrued: capped,
+  );
 }

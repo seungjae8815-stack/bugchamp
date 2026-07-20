@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io';
 
 import 'package:core_battle/core_battle.dart';
@@ -9,6 +10,17 @@ import 'package:server/src/actions.dart';
 import 'package:test/test.dart';
 
 final t0 = DateTime.utc(2026, 7, 20, 12, 0, 0);
+
+/// 드롭 롤·전투에 공통으로 쓰는 테스트 종.
+final testSpecies = Species.fromJson({
+  'id': 'a',
+  'name': {'ko': '테스트벌레', 'en': 'T', 'ja': 'T'},
+  'grade': 'common',
+  'specialty': 'strike',
+  'baseStats': {'hp': 100, 'atk': 40, 'def': 30, 'spd': 20},
+  'sizeMinMm': 20,
+  'sizeMaxMm': 60,
+});
 
 class _Config implements GameConfigLike {
   @override
@@ -42,6 +54,9 @@ class _Config implements GameConfigLike {
 
   @override
   final BattleConfig battle = const BattleConfig();
+
+  @override
+  List<Species> get speciesList => [testSpecies];
 
   @override
   final RunConfig run = RunConfig.fromJson(
@@ -184,15 +199,7 @@ void main() {
   });
 
   group('서버 전투', () {
-    final species = Species.fromJson({
-      'id': 'a',
-      'name': {'ko': '테스트벌레', 'en': 'T', 'ja': 'T'},
-      'grade': 'common',
-      'specialty': 'strike',
-      'baseStats': {'hp': 100, 'atk': 40, 'def': 30, 'spd': 20},
-      'sizeMinMm': 20,
-      'sizeMaxMm': 60,
-    });
+    final species = testSpecies;
     final speciesById = {'a': species};
     // 실제 pets.json 을 읽는다 — 서버가 운영에서 하는 것과 동일한 경로.
     final petCfg = PetConfig.fromJson(
@@ -364,6 +371,81 @@ void main() {
         second.extra['cost'] as int,
         greaterThanOrEqualTo(first.extra['cost'] as int),
       );
+    });
+  });
+
+  group('드롭 롤(서버 소유)', () {
+    // 시드 고정 난수로 결정론 확보.
+    GameActions seeded(int seed) => GameActions(
+      config: _Config(),
+      now: () => t0,
+      rngFactory: () => Random(seed),
+    );
+
+    SaveGame aged(Duration d) => SaveGame.initial(
+      createdAt: t0.subtract(d),
+    ).copyWith(lastSeen: t0.subtract(d), stageNumber: 5, level: 10);
+
+    test('오래 비울수록 곤충을 더 얻는다', () {
+      final short = seeded(1).sync(aged(const Duration(minutes: 5)));
+      final long = seeded(1).sync(aged(const Duration(hours: 8)));
+      expect(
+        long.extra['bugsGained'] as int,
+        greaterThanOrEqualTo(short.extra['bugsGained'] as int),
+      );
+    });
+
+    test('같은 시드·같은 입력이면 결과가 같다 (결정론)', () {
+      final a = seeded(42).sync(aged(const Duration(hours: 2)));
+      final b = seeded(42).sync(aged(const Duration(hours: 2)));
+      expect(a.extra['bugsGained'], b.extra['bugsGained']);
+      expect(a.save!.bugs.length, b.save!.bugs.length);
+    });
+
+    test('롤 수에 상한이 있다 (오래 비워도 계산이 폭주하지 않음)', () {
+      final r = seeded(7).sync(aged(const Duration(days: 30)));
+      expect(r.extra['clears'] as int, lessThanOrEqualTo(300));
+    });
+
+    test('얻은 곤충은 알 단계로 들어온다', () {
+      final r = seeded(3).sync(aged(const Duration(hours: 8)));
+      final gained = r.save!.bugs;
+      if (gained.isNotEmpty) {
+        expect(gained.every((b) => b.stage == LifeStage.egg), isTrue);
+      }
+    });
+
+    test('포텐셜은 1~5 범위를 벗어나지 않는다', () {
+      for (final seed in [1, 2, 3, 99]) {
+        final r = seeded(seed).sync(aged(const Duration(hours: 8)));
+        for (final b in r.save!.bugs) {
+          expect(b.potential, inInclusiveRange(1, 5));
+        }
+      }
+    });
+
+    test('고포텐셜(5성)은 드물다 — 클라가 굴렸다면 마음대로 만들 수 있었다', () {
+      var total = 0;
+      var fiveStar = 0;
+      for (var seed = 0; seed < 12; seed++) {
+        final r = seeded(seed).sync(aged(const Duration(hours: 8)));
+        for (final b in r.save!.bugs) {
+          total++;
+          if (b.potential == 5) fiveStar++;
+        }
+      }
+      expect(total, greaterThan(0));
+      // rng*rng 분포라 5성은 소수여야 한다.
+      expect(fiveStar / total, lessThan(0.2));
+    });
+
+    test('재료도 서버가 굴려 지급한다', () {
+      final r = seeded(5).sync(aged(const Duration(hours: 8)));
+      final mats = r.save!.materials;
+      final gained = mats.values.fold<int>(0, (a, b) => a + b);
+      expect(gained, greaterThan(0));
+      // 젤리는 프리미엄이라 일반 드롭에 없어야 한다.
+      expect(mats[MaterialKind.jelly] ?? 0, 0);
     });
   });
 }

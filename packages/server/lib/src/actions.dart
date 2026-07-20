@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
+import 'package:uuid/uuid.dart';
 
 /// 액션 처리 결과.
 class ActionResult {
@@ -27,12 +30,23 @@ class ActionResult {
 ///
 /// 앱과 **같은 `core_*` 코드**로 계산하므로 결과가 어긋나지 않는다.
 class GameActions {
-  GameActions({required this.config, required this.now});
+  GameActions({required this.config, required this.now, this.rngFactory});
 
   final GameConfigLike config;
 
   /// 서버 시각(주입 가능 — 테스트 결정론).
   final DateTime Function() now;
+
+  /// 드롭 롤용 난수. **서버가 소유한다** — 클라이언트가 굴리면 5성 전설을
+  /// 마음대로 만들 수 있다(골드 조작보다 훨씬 치명적이다).
+  /// 테스트에서 결정론을 위해 주입할 수 있다.
+  final Random Function()? rngFactory;
+
+  /// 한 번의 sync 에서 굴릴 드롭 롤 상한.
+  /// 오래 비운 뒤 접속하면 처치 수가 수천이 될 수 있어 계산량을 묶는다.
+  static const maxRollsPerSync = 300;
+
+  static const _uuid = Uuid();
 
   /// 구매 지급. **영수증 검증은 호출 전에 끝나 있어야 한다.**
   ///
@@ -241,17 +255,56 @@ class GameActions {
       level++;
     }
 
+    // 처치 수 → 곤충·재료 드롭. **서버가 굴린다.**
+    final clears = estimateClears(
+      config: run,
+      stageNumber: save.stageNumber,
+      stats: stats,
+      elapsed: elapsed,
+      efficiency: run.offlineEfficiency,
+    );
+    final rolls = clears.floor().clamp(0, maxRollsPerSync);
+    final rng = (rngFactory ?? Random.new)();
+    final newBugs = <IndividualBug>[];
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    final species = config.speciesList;
+
+    for (var i = 0; i < rolls; i++) {
+      if (species.isNotEmpty &&
+          rng.nextDouble() < run.bugDropChance * stats.bugFind) {
+        final sp = species[rng.nextInt(species.length)];
+        // 앱과 같은 분포: rng*rng 라 고포텐셜이 드물다.
+        final potential = 1 + (rng.nextDouble() * rng.nextDouble() * 4).floor();
+        newBugs.add(
+          IndividualBug.roll(
+            id: _uuid.v4(),
+            species: sp,
+            rng: rng,
+            potential: potential.clamp(1, 5),
+          ).copyWith(stage: LifeStage.egg, stageSince: t),
+        );
+      }
+      if (rng.nextDouble() < run.materialDropChance * stats.materialFind) {
+        final kind = _regularMaterials[rng.nextInt(_regularMaterials.length)];
+        mats[kind] = (mats[kind] ?? 0) + 1 + rng.nextInt(2);
+      }
+    }
+
     return ActionResult.ok(
       save.copyWith(
         gold: save.gold + report.gold,
         xp: xp,
         level: level,
         lastSeen: t,
+        bugs: newBugs.isEmpty ? null : [...save.bugs, ...newBugs],
+        materials: mats,
       ),
       extra: {
         'gold': report.gold,
         'xp': report.xp,
         'elapsedSeconds': elapsed.inSeconds,
+        'bugsGained': newBugs.length,
+        'clears': rolls,
       },
     );
   }
@@ -289,4 +342,14 @@ abstract interface class GameConfigLike {
   IapConfig get iap;
   BattleConfig get battle;
   RunConfig get run;
+
+  /// 드롭 롤 대상 종 목록.
+  List<Species> get speciesList;
 }
+
+/// 일반 채집으로 나오는 재료(젤리는 프리미엄이라 제외 — 앱과 동일).
+const _regularMaterials = [
+  MaterialKind.chitin,
+  MaterialKind.mineral,
+  MaterialKind.sap,
+];

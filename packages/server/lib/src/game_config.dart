@@ -33,6 +33,9 @@ class GameConfig implements GameConfigLike {
   /// 종 정보 — 전투 유닛 변환·부상 시간 계산에 필요하다.
   final Map<String, Species> speciesById;
 
+  @override
+  List<Species> get speciesList => speciesById.values.toList();
+
   /// 기본 경로 — 리포지토리 구조 기준. 환경변수 `GAME_DATA_DIR` 로 덮어쓴다.
   static const defaultDir = 'packages/app/assets/data';
 
