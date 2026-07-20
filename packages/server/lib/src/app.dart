@@ -77,6 +77,28 @@ AuthedUser userOf(Request req) => req.context[_userKey]! as AuthedUser;
 String _jwtOf(Request req) =>
     (req.headers['authorization'] ?? '').replaceFirst('Bearer ', '').trim();
 
+/// 저장된 방어팀 스냅샷 → 전투 유닛.
+BattleBug _defenderToBattleBug(
+  Map<String, dynamic> d,
+  int index,
+  Map<String, Species> speciesById,
+) {
+  final sp = speciesById[d['sp']?.toString() ?? ''];
+  return BattleBug(
+    id: 'foe-$index',
+    name: sp?.name.resolve('ko') ?? '상대',
+    element: Element.fromKey(d['el']?.toString() ?? 'wood'),
+    temperament: Temperament.fromKey(d['tm']?.toString() ?? 'steadfast'),
+    preferredStance: sp == null
+        ? Stance.attack
+        : preferredStanceOf(sp.specialty),
+    maxHp: (d['hp'] as num?)?.toDouble() ?? 100,
+    atk: (d['atk'] as num?)?.toDouble() ?? 10,
+    def: (d['def'] as num?)?.toDouble() ?? 10,
+    spd: (d['spd'] as num?)?.toDouble() ?? 10,
+  );
+}
+
 Response _json(Map<String, dynamic> body, {int status = 200}) => Response(
   status,
   body: jsonEncode(body),
@@ -286,7 +308,9 @@ Handler buildHandler({
           id.toString(),
       ];
       final opponentId = body['opponentUserId']?.toString() ?? '';
-      if (teamIds.isEmpty || opponentId.isEmpty) {
+      // 야생(합성) 상대는 티어 id 만 받는다 — 배율은 서버가 config 에서 고른다.
+      final tierId = body['tierId']?.toString() ?? '';
+      if (teamIds.isEmpty || (opponentId.isEmpty && tierId.isEmpty)) {
         return _json({'error': 'bad_request'}, status: 400);
       }
 
@@ -294,33 +318,32 @@ Handler buildHandler({
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
 
-        // 상대 팀은 **서버가 직접 읽는다** — 클라가 보낸 스탯을 쓰면
-        // 약한 상대를 만들어 트로피를 쓸어담을 수 있다.
-        final rows = await store.loadDefenderTeam(opponentId);
-        if (rows == null || rows.isEmpty) {
-          return _json({'error': 'opponent_not_found'}, status: 404);
-        }
-        final foe = <BattleBug>[];
-        for (var i = 0; i < rows.length; i++) {
-          final d = rows[i];
-          final sp = species[d['sp']?.toString() ?? ''];
-          foe.add(
-            BattleBug(
-              id: 'foe-$i',
-              name: sp?.name.resolve('ko') ?? '상대',
-              element: Element.fromKey(d['el']?.toString() ?? 'wood'),
-              temperament: Temperament.fromKey(
-                d['tm']?.toString() ?? 'steadfast',
-              ),
-              preferredStance: sp == null
-                  ? Stance.attack
-                  : preferredStanceOf(sp.specialty),
-              maxHp: (d['hp'] as num?)?.toDouble() ?? 100,
-              atk: (d['atk'] as num?)?.toDouble() ?? 10,
-              def: (d['def'] as num?)?.toDouble() ?? 10,
-              spd: (d['spd'] as num?)?.toDouble() ?? 10,
-            ),
+        final List<BattleBug> foe;
+        final double rewardMult;
+        if (opponentId.isNotEmpty) {
+          // 실 유저 상대 — 방어팀을 서버가 DB 에서 직접 읽는다.
+          final rows = await store.loadDefenderTeam(opponentId);
+          if (rows == null || rows.isEmpty) {
+            return _json({'error': 'opponent_not_found'}, status: 404);
+          }
+          foe = [
+            for (var i = 0; i < rows.length; i++)
+              _defenderToBattleBug(rows[i], i, species),
+          ];
+          rewardMult = 1.0;
+        } else {
+          // 야생 상대 — 서버가 내 로스터 기준으로 만든다.
+          final wild = actions.buildWildTeam(
+            save,
+            tierId: tierId,
+            speciesById: species,
+            petConfig: cfg.pet,
           );
+          if (wild == null) {
+            return _json({'error': 'cannot_build_wild'}, status: 400);
+          }
+          foe = wild.team;
+          rewardMult = wild.tier.rewardMult;
         }
 
         // 시드는 **서버가 정한다** — 클라가 유리한 시드를 고르지 못하게.
@@ -331,7 +354,7 @@ Handler buildHandler({
           foeTeam: foe,
           location: foe.first.element,
           seed: seed,
-          rewardMult: 1.0,
+          rewardMult: rewardMult,
           speciesById: species,
           petConfig: cfg.pet,
         );

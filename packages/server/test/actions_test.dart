@@ -448,4 +448,104 @@ void main() {
       expect(mats[MaterialKind.jelly] ?? 0, 0);
     });
   });
+
+  group('야생 상대 생성(서버 소유)', () {
+    final petCfg = PetConfig.fromJson(
+      jsonDecode(File('../app/assets/data/pets.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+
+    IndividualBug adult(String id, {int potential = 3}) => IndividualBug(
+      id: id,
+      speciesId: 'a',
+      sizeMm: 40,
+      potential: potential,
+      temperament: Temperament.aggressive,
+      sex: Sex.male,
+      element: Element.wood,
+      stage: LifeStage.adult,
+      stageSince: t0.subtract(const Duration(days: 30)),
+    );
+
+    SaveGame withRoster(int n) => SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(bugs: [for (var i = 0; i < n; i++) adult('m$i')]);
+
+    final tiers = _Config().battle.scoutTiers;
+
+    test('설정에 없는 티어 id 는 거부 — 클라가 임의 배율을 못 넣는다', () {
+      final r = actions.buildWildTeam(
+        withRoster(3),
+        tierId: 'godmode_0.001x',
+        speciesById: {'a': testSpecies},
+        petConfig: petCfg,
+        rng: Random(1),
+      );
+      expect(r, isNull);
+    });
+
+    test('유효한 티어면 3마리를 만든다', () {
+      final r = actions.buildWildTeam(
+        withRoster(3),
+        tierId: tiers.first.id,
+        speciesById: {'a': testSpecies},
+        petConfig: petCfg,
+        rng: Random(1),
+      );
+      expect(r, isNotNull);
+      expect(r!.team.length, 3);
+    });
+
+    test('티어 배율이 셀수록 상대가 강해진다', () {
+      double avgAtk(String tierId) {
+        final r = actions.buildWildTeam(
+          withRoster(3),
+          tierId: tierId,
+          speciesById: {'a': testSpecies},
+          petConfig: petCfg,
+          rng: Random(7),
+        )!;
+        return r.team.fold(0.0, (s, b) => s + b.atk) / r.team.length;
+      }
+
+      final sorted = [...tiers]
+        ..sort((a, b) => a.powerMult.compareTo(b.powerMult));
+      if (sorted.length >= 2) {
+        expect(avgAtk(sorted.last.id), greaterThan(avgAtk(sorted.first.id)));
+      }
+    });
+
+    test('성충이 없으면 만들 수 없다', () {
+      final noAdults = SaveGame.initial(createdAt: t0);
+      final r = actions.buildWildTeam(
+        noAdults,
+        tierId: tiers.first.id,
+        speciesById: {'a': testSpecies},
+        petConfig: petCfg,
+        rng: Random(1),
+      );
+      expect(r, isNull);
+    });
+
+    test('내 로스터가 강하면 상대도 강해진다 (스케일 연동)', () {
+      double avgAtkFor(SaveGame s) {
+        final r = actions.buildWildTeam(
+          s,
+          tierId: tiers.first.id,
+          speciesById: {'a': testSpecies},
+          petConfig: petCfg,
+          rng: Random(3),
+        )!;
+        return r.team.fold(0.0, (x, b) => x + b.atk) / r.team.length;
+      }
+
+      final weak = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(bugs: [adult('w', potential: 1)]);
+      final strong = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(bugs: [adult('s', potential: 5)]);
+      expect(avgAtkFor(strong), greaterThanOrEqualTo(avgAtkFor(weak)));
+    });
+  });
 }

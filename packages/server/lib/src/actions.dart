@@ -325,6 +325,79 @@ class GameActions {
     );
   }
 
+  /// 야생(합성) 상대 팀을 **서버가** 만든다.
+  ///
+  /// 클라이언트가 상대를 만들어 보내면 약한 팀으로 트로피를 쓸어담을 수 있다.
+  /// 내 로스터 상위 3마리 평균 × 티어 배율로 만드는 규칙은 앱과 같지만,
+  /// **난수와 배율 선택을 서버가 쥔다** — 클라는 티어 id 만 고른다.
+  ({List<BattleBug> team, ScoutTier tier})? buildWildTeam(
+    SaveGame save, {
+    required String tierId,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+    Random? rng,
+  }) {
+    final tier = config.battle.scoutTiers
+        .where((t) => t.id == tierId)
+        .firstOrNull;
+    if (tier == null) return null; // 클라가 임의 배율을 못 넣게 id 로만 받는다
+
+    final t = now().toUtc();
+    double per(BugPart p, double d) => enhance?.spec(p).effectPerLevel ?? d;
+
+    // 내 성충 로스터 → 전투 유닛 → 파워 상위 3마리 평균.
+    final mine = <BattleBug>[];
+    for (final bug in save.bugs) {
+      final sp = speciesById[bug.speciesId];
+      if (sp == null) continue;
+      if (effectiveStage(bug.stage, bug.stageSince, t, petConfig) !=
+          LifeStage.adult) {
+        continue;
+      }
+      mine.add(
+        buildBattleBug(
+          bug: bug,
+          species: sp,
+          locale: 'ko',
+          hornJawPerLevel: per(BugPart.hornJaw, 0.04),
+          cuticlePerLevel: per(BugPart.cuticle, 0.04),
+          wingPerLevel: per(BugPart.wing, 0.03),
+          buildPerLevel: per(BugPart.build, 0.05),
+        ),
+      );
+    }
+    if (mine.isEmpty) return null;
+
+    double power(BattleBug b) => b.maxHp + b.atk * 10 + b.def * 5 + b.spd * 2;
+    mine.sort((a, b) => power(b).compareTo(power(a)));
+    final top = mine.take(3).toList();
+    final n = top.length;
+    final avgHp = top.fold(0.0, (s, b) => s + b.maxHp) / n;
+    final avgAtk = top.fold(0.0, (s, b) => s + b.atk) / n;
+    final avgDef = top.fold(0.0, (s, b) => s + b.def) / n;
+    final avgSpd = top.fold(0.0, (s, b) => s + b.spd) / n;
+
+    final r = rng ?? (rngFactory ?? Random.new)();
+    final species = config.speciesList;
+    final team = List.generate(3, (i) {
+      final sp = species[r.nextInt(species.length)];
+      final f = (0.9 + r.nextDouble() * 0.2) * tier.powerMult;
+      return BattleBug(
+        id: 'wild_$i',
+        name: sp.name.resolve('ko'),
+        element: Element.values[r.nextInt(Element.values.length)],
+        temperament: Temperament.values[r.nextInt(Temperament.values.length)],
+        preferredStance: preferredStanceOf(sp.specialty),
+        maxHp: avgHp * f,
+        atk: avgAtk * f,
+        def: avgDef * f,
+        spd: avgSpd * f,
+      );
+    });
+    return (team: team, tier: tier);
+  }
+
   /// 젤리 소비. 잔액이 모자라면 거부한다 — **클라이언트 말을 믿지 않는다.**
   ActionResult spendJelly(SaveGame save, int amount, {String? reason}) {
     if (amount <= 0) return const ActionResult.fail('bad_amount');
