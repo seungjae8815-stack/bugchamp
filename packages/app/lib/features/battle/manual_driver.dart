@@ -1,4 +1,5 @@
 import 'package:core_battle/core_battle.dart';
+import 'package:core_models/core_models.dart';
 
 import '../../domain/game_server.dart';
 
@@ -204,4 +205,36 @@ class ServerManualDriver implements ManualBattleDriver {
   static Stance _stance(Object? v) =>
       Stance.values.where((s) => s.name == v?.toString()).firstOrNull ??
       Stance.attack;
+}
+
+/// 서버가 돌려준 상대 1마리를 전투 유닛으로 복원한다.
+///
+/// 야생 상대는 **서버가 만든다**. 앱이 따로 만들면 화면에 보이는 상대와
+/// 서버가 실제로 싸운 상대가 달라져, 연출이 승패와 어긋난다.
+List<({BattleBug bug, String speciesId})> foeTeamFromServer(Object? raw) {
+  if (raw is! List) return const [];
+  final out = <({BattleBug bug, String speciesId})>[];
+  for (var i = 0; i < raw.length; i++) {
+    final j = raw[i];
+    if (j is! Map) continue;
+    out.add((
+      bug: BattleBug(
+        id: j['id']?.toString() ?? 'foe-$i',
+        name: j['name']?.toString() ?? '상대',
+        element: Element.fromKey(j['el']?.toString() ?? 'wood'),
+        temperament: Temperament.fromKey(j['tm']?.toString() ?? 'steadfast'),
+        preferredStance:
+            Stance.values
+                .where((s) => s.name == j['stance']?.toString())
+                .firstOrNull ??
+            Stance.attack,
+        maxHp: (j['hp'] as num?)?.toDouble() ?? 100,
+        atk: (j['atk'] as num?)?.toDouble() ?? 10,
+        def: (j['def'] as num?)?.toDouble() ?? 10,
+        spd: (j['spd'] as num?)?.toDouble() ?? 10,
+      ),
+      speciesId: j['sp']?.toString() ?? '',
+    ));
+  }
+  return out;
 }

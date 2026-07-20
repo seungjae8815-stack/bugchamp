@@ -41,16 +41,22 @@ abstract interface class GameServer {
   });
 
   /// PvP 전투 — 서버가 시뮬레이션하고 승패·보상을 확정한다.
+  ///
+  /// [opponentUserId] 는 실제 유저 상대, [tierId] 는 야생(합성) 상대.
+  /// 야생은 **서버가 상대를 만들어** 응답의 `foe` 로 돌려준다 — 앱이 따로
+  /// 만들면 연출과 서버 결과가 갈린다.
   Future<ServerResult> battle({
     required List<String> teamBugIds,
-    required String opponentUserId,
+    String? opponentUserId,
+    String? tierId,
   });
 
   /// 수동 전투 시작 — 세션을 열고 상대 스탯을 받는다.
   /// **시드는 응답에 없다**(있으면 상대의 수를 미리 계산할 수 있다).
   Future<ServerResult> startManualBattle({
     required List<String> teamBugIds,
-    required String opponentUserId,
+    String? opponentUserId,
+    String? tierId,
   });
 
   /// 수동 전투 한 수 — 이번 라운드 결과만 돌아온다.
@@ -105,7 +111,8 @@ class NoGameServer implements GameServer {
   @override
   Future<ServerResult> battle({
     required List<String> teamBugIds,
-    required String opponentUserId,
+    String? opponentUserId,
+    String? tierId,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> bootstrap(Map<String, dynamic> save) async =>
@@ -139,7 +146,8 @@ class NoGameServer implements GameServer {
   @override
   Future<ServerResult> startManualBattle({
     required List<String> teamBugIds,
-    required String opponentUserId,
+    String? opponentUserId,
+    String? tierId,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> stepManualBattle({
@@ -216,10 +224,12 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> battle({
     required List<String> teamBugIds,
-    required String opponentUserId,
+    String? opponentUserId,
+    String? tierId,
   }) => _send('POST', '/battle', {
     'teamBugIds': teamBugIds,
-    'opponentUserId': opponentUserId,
+    'opponentUserId': ?opponentUserId,
+    'tierId': ?tierId,
   });
 
   @override
@@ -263,10 +273,12 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> startManualBattle({
     required List<String> teamBugIds,
-    required String opponentUserId,
+    String? opponentUserId,
+    String? tierId,
   }) => _send('POST', '/battle/manual/start', {
     'teamBugIds': teamBugIds,
-    'opponentUserId': opponentUserId,
+    'opponentUserId': ?opponentUserId,
+    'tierId': ?tierId,
   });
 
   @override

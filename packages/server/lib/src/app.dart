@@ -101,6 +101,21 @@ BattleBug _defenderToBattleBug(
   );
 }
 
+/// 상대 1마리 직렬화 — 앱이 **서버가 싸운 것과 똑같은 상대**를 그려야 한다.
+/// 야생은 서버가 만들므로 앱이 따로 만들면 연출과 결과가 갈린다.
+Map<String, dynamic> _foeJson(BattleBug b, String speciesId) => {
+  'id': b.id,
+  'sp': speciesId,
+  'name': b.name,
+  'el': b.element.key,
+  'tm': b.temperament.key,
+  'stance': b.preferredStance.name,
+  'hp': b.maxHp,
+  'atk': b.atk,
+  'def': b.def,
+  'spd': b.spd,
+};
+
 /// 세션 id — 추측 불가능해야 한다(남의 세션을 찍어보지 못하게).
 String _newSessionId() {
   final r = Random.secure();
@@ -417,6 +432,7 @@ Handler buildHandler({
         }
 
         final List<BattleBug> foe;
+        final List<String> foeSpecies;
         final double rewardMult;
         if (opponentId.isNotEmpty) {
           final rows = await store.loadDefenderTeam(opponentId);
@@ -427,6 +443,7 @@ Handler buildHandler({
             for (var i = 0; i < rows.length; i++)
               _defenderToBattleBug(rows[i], i, species),
           ];
+          foeSpecies = [for (final d in rows) d['sp']?.toString() ?? ''];
           rewardMult = 1.0;
         } else {
           final wild = actions.buildWildTeam(
@@ -439,6 +456,7 @@ Handler buildHandler({
             return _json({'error': 'cannot_build_wild'}, status: 400);
           }
           foe = wild.team;
+          foeSpecies = wild.speciesIds;
           rewardMult = wild.tier.rewardMult;
         }
 
@@ -462,15 +480,8 @@ Handler buildHandler({
           'location': session.location.key,
           'energyA': 1, // 엔진 시작 기력
           'foe': [
-            for (final b in foe)
-              {
-                'name': b.name,
-                'el': b.element.key,
-                'hp': b.maxHp,
-                'atk': b.atk,
-                'def': b.def,
-                'spd': b.spd,
-              },
+            for (var i = 0; i < foe.length; i++)
+              _foeJson(foe[i], i < foeSpecies.length ? foeSpecies[i] : ''),
           ],
         });
       } on StateStoreException catch (e) {
@@ -716,6 +727,7 @@ Handler buildHandler({
         if (save == null) return _json({'error': 'no_save'}, status: 409);
 
         final List<BattleBug> foe;
+        final List<String> foeSpecies;
         final double rewardMult;
         if (opponentId.isNotEmpty) {
           // 실 유저 상대 — 방어팀을 서버가 DB 에서 직접 읽는다.
@@ -727,6 +739,7 @@ Handler buildHandler({
             for (var i = 0; i < rows.length; i++)
               _defenderToBattleBug(rows[i], i, species),
           ];
+          foeSpecies = [for (final d in rows) d['sp']?.toString() ?? ''];
           rewardMult = 1.0;
         } else {
           // 야생 상대 — 서버가 내 로스터 기준으로 만든다.
@@ -740,6 +753,7 @@ Handler buildHandler({
             return _json({'error': 'cannot_build_wild'}, status: 400);
           }
           foe = wild.team;
+          foeSpecies = wild.speciesIds;
           rewardMult = wild.tier.rewardMult;
         }
 
@@ -757,7 +771,16 @@ Handler buildHandler({
         );
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
         await store.save(user.id, r.save!.toJson());
-        return _json({'save': r.save!.toJson(), ...r.extra});
+        return _json({
+          'save': r.save!.toJson(),
+          ...r.extra,
+          // 야생은 서버가 만든 상대다 — 앱이 이걸로 그리고 재생해야
+          // 연출이 서버 결과와 일치한다.
+          'foe': [
+            for (var i = 0; i < foe.length; i++)
+              _foeJson(foe[i], i < foeSpecies.length ? foeSpecies[i] : ''),
+          ],
+        });
       } on StateStoreException catch (e) {
         stderr.writeln('[battle] ${user.id}: $e');
         return _json({'error': 'store_unavailable'}, status: 503);

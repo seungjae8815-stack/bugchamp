@@ -395,7 +395,8 @@ class GameActions {
   /// 클라이언트가 상대를 만들어 보내면 약한 팀으로 트로피를 쓸어담을 수 있다.
   /// 내 로스터 상위 3마리 평균 × 티어 배율로 만드는 규칙은 앱과 같지만,
   /// **난수와 배율 선택을 서버가 쥔다** — 클라는 티어 id 만 고른다.
-  ({List<BattleBug> team, ScoutTier tier})? buildWildTeam(
+  ({List<BattleBug> team, List<String> speciesIds, ScoutTier tier})?
+  buildWildTeam(
     SaveGame save, {
     required String tierId,
     required Map<String, Species> speciesById,
@@ -445,8 +446,14 @@ class GameActions {
 
     final r = rng ?? (rngFactory ?? Random.new)();
     final species = config.speciesList;
+    // 종 데이터가 없으면 상대를 만들 수 없다. 여기서 막지 않으면
+    // nextInt(0) 으로 500 이 난다(`sync` 는 이미 같은 가드가 있다).
+    if (species.isEmpty) return null;
+    // 앱이 같은 상대를 그리려면 종 id 도 알아야 한다(스프라이트).
+    final speciesIds = <String>[];
     final team = List.generate(3, (i) {
       final sp = species[r.nextInt(species.length)];
+      speciesIds.add(sp.id);
       final f = (0.9 + r.nextDouble() * 0.2) * tier.powerMult;
       return BattleBug(
         id: 'wild_$i',
@@ -460,7 +467,7 @@ class GameActions {
         spd: avgSpd * f,
       );
     });
-    return (team: team, tier: tier);
+    return (team: team, speciesIds: speciesIds, tier: tier);
   }
 
   /// 부위 강화 1단계. 재료 비용·상한을 서버가 판정한다.

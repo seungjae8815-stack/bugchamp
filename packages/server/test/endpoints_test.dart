@@ -100,13 +100,6 @@ Map<String, dynamic> _defender({
 };
 
 void main() {
-  final gameConfig = GameConfig(
-    iap: IapConfig.fromJson(_readJson('iap.json')),
-    battle: BattleConfig.fromJson(_readJson('battle.json')),
-    run: RunConfig.fromJson(_readJson('run_config.json')),
-    pet: PetConfig.fromJson(_readJson('pets.json')),
-  );
-
   final species = Species.fromJson({
     'id': 'a',
     'name': {'ko': '테스트벌레', 'en': 'T', 'ja': 'T'},
@@ -116,6 +109,14 @@ void main() {
     'sizeMinMm': 20,
     'sizeMaxMm': 60,
   });
+
+  final gameConfig = GameConfig(
+    iap: IapConfig.fromJson(_readJson('iap.json')),
+    battle: BattleConfig.fromJson(_readJson('battle.json')),
+    run: RunConfig.fromJson(_readJson('run_config.json')),
+    pet: PetConfig.fromJson(_readJson('pets.json')),
+    speciesById: {'a': species},
+  );
 
   final mySave = SaveGame.initial(createdAt: _t).copyWith(
     bugs: [
@@ -460,6 +461,103 @@ void main() {
         'stance': 'attack',
       }, token: makeToken());
       expect(again.statusCode, 409);
+    });
+  });
+
+  group('야생 상대', () {
+    /// battle.json 의 첫 스카우트 티어 id.
+    final tierId = gameConfig.battle.scoutTiers.first.id;
+
+    test('티어 id 로만 받는다 — 임의 배율을 넣지 못하게', () async {
+      final res = await post(handler(), '/battle', {
+        'teamBugIds': ['mine-1'],
+        'tierId': 'made-up-tier',
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('상대도 티어도 없으면 거부', () async {
+      final res = await post(handler(), '/battle', {
+        'teamBugIds': ['mine-1'],
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+    });
+
+    test('야생 전투가 성립하고, 서버가 만든 상대를 돌려준다', () async {
+      final res = await post(handler(), '/battle', {
+        'teamBugIds': ['mine-1'],
+        'tierId': tierId,
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body['outcome'], isNotNull);
+      expect(body['seed'], isNotNull);
+
+      // 앱이 **서버가 싸운 그 상대**를 그리려면 종·스탯·기질이 다 필요하다.
+      final foe = body['foe'] as List;
+      expect(foe, hasLength(3));
+      for (final f in foe.cast<Map<String, dynamic>>()) {
+        for (final k in ['id', 'sp', 'el', 'tm', 'stance', 'hp', 'atk']) {
+          expect(f.containsKey(k), isTrue, reason: '상대에 $k 가 없다');
+        }
+        expect(f['sp'], isNotEmpty, reason: '종 id 가 없으면 스프라이트를 못 그린다');
+      }
+    });
+
+    test('내 곤충이 아니면 야생전도 불가', () async {
+      final res = await post(handler(), '/battle', {
+        'teamBugIds': ['someone-elses-bug'],
+        'tierId': tierId,
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('성충이 없으면 야생 상대를 만들 수 없다', () async {
+      final h = handler(serverHasSave: false);
+      final res = await post(h, '/battle', {
+        'teamBugIds': ['mine-1'],
+        'tierId': tierId,
+      }, token: makeToken());
+      // 세이브가 없으면 409, 있으나 로스터가 비면 400 — 어느 쪽이든 전투는 없다.
+      expect(res.statusCode, anyOf(400, 409));
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('수동 야생 전투도 서버가 상대를 만든다', () async {
+      final h = handler();
+      final res = await post(h, '/battle/manual/start', {
+        'teamBugIds': ['mine-1'],
+        'tierId': tierId,
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body['sessionId'], isNotNull);
+      expect(body['foe'], hasLength(3));
+      expect((body['foe'] as List).first['sp'], isNotEmpty);
+      // 여기서도 시드는 새면 안 된다.
+      expect(jsonEncode(body), isNot(contains('seed')));
+    });
+
+    test('야생 티어마다 보상 배율이 다르게 적용된다', () async {
+      final tiers = gameConfig.battle.scoutTiers;
+      expect(tiers.length, greaterThan(1), reason: '티어가 하나뿐이면 검증 불가');
+
+      final golds = <double>[];
+      for (final t in [tiers.first, tiers.last]) {
+        final res = await post(handler(), '/battle', {
+          'teamBugIds': ['mine-1'],
+          'tierId': t.id,
+        }, token: makeToken());
+        final b = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+        golds.add((b['gold'] as num).toDouble() / t.rewardMult);
+      }
+      // 배율을 걷어내면 같은 기준액이 나와야 한다(승패에 따라 0 일 수 있다).
+      expect(
+        golds.first == 0 || golds.last == 0 || golds.first == golds.last,
+        isTrue,
+      );
     });
   });
 }

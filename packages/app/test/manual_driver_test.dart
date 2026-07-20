@@ -168,4 +168,47 @@ void main() {
     expect(f!.rewardsApplied, isFalse);
     expect(f.save, isNull);
   });
+
+  group('서버 상대 복원', () {
+    test('서버가 준 상대를 그대로 복원한다 — 앱이 따로 만들면 연출이 갈린다', () {
+      final team = foeTeamFromServer([
+        {
+          'id': 'wild_0',
+          'sp': 'stag',
+          'name': '사슴벌레',
+          'el': 'metal',
+          'tm': 'cunning',
+          'stance': 'defend',
+          'hp': 240.5,
+          'atk': 33.0,
+          'def': 21.0,
+          'spd': 14.0,
+        },
+      ]);
+      expect(team, hasLength(1));
+      final e = team.first;
+      expect(e.speciesId, 'stag');
+      expect(e.bug.id, 'wild_0');
+      expect(e.bug.element, Element.metal);
+      expect(e.bug.temperament, Temperament.cunning);
+      expect(e.bug.preferredStance, Stance.defend);
+      expect(e.bug.maxHp, 240.5);
+      expect(e.bug.atk, 33.0);
+    });
+
+    test('상대가 없거나 형식이 아니면 빈 목록 — 호출부가 로컬 상대로 남는다', () {
+      expect(foeTeamFromServer(null), isEmpty);
+      expect(foeTeamFromServer('nonsense'), isEmpty);
+      expect(foeTeamFromServer([]), isEmpty);
+    });
+
+    test('필드가 빠져도 터지지 않는다', () {
+      final team = foeTeamFromServer([
+        {'id': 'x'},
+      ]);
+      expect(team, hasLength(1));
+      expect(team.first.bug.maxHp, greaterThan(0));
+      expect(team.first.speciesId, '');
+    });
+  });
 }

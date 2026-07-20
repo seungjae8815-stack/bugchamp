@@ -1577,7 +1577,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         .read(gameServerProvider)
         .battle(
           teamBugIds: [for (final b in m.mine) b.id],
-          opponentUserId: scout.ownerId!,
+          opponentUserId: scout.ownerId,
+          tierId: scout.ownerId == null ? scout.tier.id : null,
         );
     if (!res.isOk || res.save == null) {
       if (!mounted) return false;
@@ -1591,13 +1592,24 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     if (!mounted) return false;
 
     // 서버가 준 시드로 같은 전투를 재현해 연출한다.
+    //
+    // 상대도 **서버가 준 것**을 쓴다. 야생은 서버가 만들기 때문에 앱이
+    // 만든 상대로 재생하면 연출이 서버가 확정한 승패와 어긋난다.
     final cfg = data.battleConfig ?? const BattleConfig();
     final seed = (res.data!['seed'] as num?)?.toInt() ?? m.seed;
+    final srvFoe = foeTeamFromServer(res.data!['foe']);
+    final foe = srvFoe.isEmpty ? m.foe : [for (final e in srvFoe) e.bug];
+    final speciesOf = {
+      ...m.speciesOf,
+      for (final e in srvFoe) e.bug.id: e.speciesId,
+    };
+    // 장소 = 상대 리드 곤충의 오행(서버와 같은 규칙).
+    final location = foe.isEmpty ? scout.location : foe.first.element;
     final result = simulate(
       seed,
       m.mine,
-      m.foe,
-      location: scout.location,
+      foe,
+      location: location,
       locationBonus: cfg.locationAffinityBonus,
     );
     await Navigator.of(context).push(
@@ -1605,12 +1617,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         builder: (_) => BattleArenaScreen(
           data: data,
           myTeam: m.mine,
-          foeTeam: m.foe,
-          speciesOf: m.speciesOf,
+          foeTeam: foe,
+          speciesOf: speciesOf,
           result: result,
           gold: (res.data!['gold'] as num?)?.toInt() ?? 0,
           trophyDelta: (res.data!['trophyDelta'] as num?)?.toInt() ?? 0,
-          location: scout.location,
+          location: location,
           skinOf: ref.read(skinOfProvider),
           arenaTheme: ref.read(arenaThemeOwnedProvider),
         ),
@@ -1629,10 +1641,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
 
-    // 실제 유저 상대이고 권위 서버가 붙어 있으면 **서버가 승패를 확정**한다.
-    // 야생(합성) 상대는 아직 로컬 계산이다 — 상대 생성이 앱에 있어서(P3).
+    // 권위 서버가 붙어 있으면 **서버가 승패를 확정**한다.
+    // 야생 상대도 서버가 만든다 — 앱이 만들면 약한 상대를 골라
+    // 트로피를 쓸어담을 수 있다.
     final server = ref.read(gameServerProvider);
-    if (server.available && scout.ownerId != null) {
+    if (server.available) {
       final ok = await _serverBattle(data, locale, scout, m);
       if (ok) return;
       // 서버가 거부/불통이면 아래 로컬 경로로 폴백하지 않는다 —
@@ -1689,15 +1702,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
 
-    // 실제 유저 상대 + 권위 서버 → 서버 세션이 매 수를 확정한다.
-    // 야생(합성) 상대는 자동 전투와 마찬가지로 아직 로컬이다.
+    // 권위 서버가 붙어 있으면 서버 세션이 매 수를 확정한다(야생 포함).
     ManualBattleDriver? driver;
+    var foe = m.foe;
+    var speciesOf = m.speciesOf;
+    var location = scout.location;
+
     final server = ref.read(gameServerProvider);
-    if (server.available && scout.ownerId != null) {
+    if (server.available) {
       final l = AppLocalizations.of(context);
       final res = await server.startManualBattle(
         teamBugIds: [for (final b in m.mine) b.id],
-        opponentUserId: scout.ownerId!,
+        opponentUserId: scout.ownerId,
+        tierId: scout.ownerId == null ? scout.tier.id : null,
       );
       if (!res.isOk || res.data?['sessionId'] == null) {
         if (!mounted) return;
@@ -1711,6 +1728,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         sessionId: res.data!['sessionId'].toString(),
         startEnergy: (res.data!['energyA'] as num?)?.toInt() ?? 1,
       );
+      // 서버가 싸울 상대를 그대로 그린다.
+      final srvFoe = foeTeamFromServer(res.data!['foe']);
+      if (srvFoe.isNotEmpty) {
+        foe = [for (final e in srvFoe) e.bug];
+        speciesOf = {
+          ...m.speciesOf,
+          for (final e in srvFoe) e.bug.id: e.speciesId,
+        };
+        location = foe.first.element;
+      }
     }
     if (!mounted) return;
 
@@ -1722,14 +1749,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ref.read(saveControllerProvider.notifier).adoptServerSave(srv),
           data: data,
           myTeam: m.mine,
-          foeTeam: m.foe,
-          speciesOf: m.speciesOf,
+          foeTeam: foe,
+          speciesOf: speciesOf,
           seed: m.seed,
           trophiesAtStart: save.pvpTrophies,
           config: data.battleConfig ?? const BattleConfig(),
           rewardMult: scout.tier.rewardMult,
           onApply: _applyReward,
-          location: scout.location,
+          location: location,
           skinOf: ref.read(skinOfProvider),
           arenaTheme: ref.read(arenaThemeOwnedProvider),
         ),
