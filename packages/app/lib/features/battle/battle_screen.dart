@@ -704,8 +704,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
-                      // stretch: 카드 3개 높이를 항상 동일하게 유지.
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // 스크롤(높이 무한) 안이라 stretch 금지 — 대신 카드 내용이
+                      // 항상 같은 줄 수(닉네임/'야생' 한 줄)라 높이가 맞는다.
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         for (var i = 0; i < _scouts.length; i++)
                           Expanded(
