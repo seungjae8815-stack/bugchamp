@@ -67,13 +67,19 @@ Google Cloud Console → 사용자 인증 정보 → **Android 클라이언트**
 > 넣지 않으면 **구글 테스트 광고**가 나온다(광고는 뜨지만 수익 0).
 > 개발 중엔 오히려 이게 안전하다 — 실광고를 본인이 누르면 계정 정지될 수 있다.
 
-### B-4. 개인정보처리방침 호스팅
-`docs/privacy-policy.html` 을 공개 URL 로 올린다. GitHub Pages 가 가장 간단:
-```powershell
-gh api -X POST repos/seungjae8815-stack/bugchamp/pages `
-  -f "source[branch]=main" -f "source[path]=/docs"
-```
-→ `https://seungjae8815-stack.github.io/bugchamp/privacy-policy.html`
+### B-4. 개인정보처리방침 · 계정 삭제 페이지 — ✅ 완료 (2026-07-20)
+
+사업자 계정 **dkc260701(디케이컴퍼니)** 의 기존 앱과 같은 방식으로 만들었다
+(`yourgarden-policy` 와 동일한 구조: index=방침, delete=계정 삭제).
+
+| 콘솔 입력 항목 | URL |
+|---|---|
+| **개인정보처리방침 URL** | `https://dkc260701.github.io/bugchamp-policy/` |
+| **계정 삭제 URL** (데이터 보안 양식) | `https://dkc260701.github.io/bugchamp-policy/delete.html` |
+
+- 저장소: `github.com/dkc260701/bugchamp-policy` (public, Pages 켜짐, 빌드 완료)
+- 문의 이메일은 사업자 계정 기준 **DKC260701@gmail.com** 으로 통일했다.
+- 수정하려면 그 저장소의 `index.html` / `delete.html` 을 고치고 push 하면 몇 분 뒤 반영된다.
 
 ---
 

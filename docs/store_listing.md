@@ -8,9 +8,11 @@
 ## 1. 앱 이름 (30자 이내)
 
 ```
-곤충 키우기 : 방치형 곤충 배틀
+곤충 키우기 : 방치형 수집 배틀
 ```
-- 글자 수: 18자 ✅
+- 글자 수: 17자 ✅
+- ⚠️ 원안은 "방치형 **곤충** 배틀" 이었으나 제목에 "곤충"이 두 번 들어가
+  키워드 반복(스팸 정책)으로 읽힐 수 있어 "수집"으로 바꿨다.
 - 영문(en-US): `Bug Champ: Idle Beetle Battle`
 
 ---
@@ -113,9 +115,10 @@ No text, no letters, no watermark.
 
 - **앱 카테고리**: 게임 → **시뮬레이션** (또는 롤플레잉)
 - **태그**: 방치형, 수집, 육성, 전략
-- **연락처 이메일**: seungjae8815@gmail.com
-- **개인정보처리방침 URL**: `docs/privacy-policy.html` 호스팅 후 그 주소
-  (GitHub Pages 예: `https://seungjae8815-stack.github.io/bugchamp/privacy-policy.html`)
+- **연락처 이메일**: DKC260701@gmail.com (사업자 계정 기준)
+- **개인정보처리방침 URL**: `https://dkc260701.github.io/bugchamp-policy/`
+- **계정 삭제 URL**: `https://dkc260701.github.io/bugchamp-policy/delete.html`
+- **개발자 표시명**: 디케이컴퍼니
 
 ---
 
@@ -151,7 +154,8 @@ No text, no letters, no watermark.
 
 **보안 관련 체크:**
 - [x] 데이터가 전송 중 암호화됨 (HTTPS)
-- [x] 사용자가 데이터 삭제를 요청할 수 있음 (이메일 문의)
+- [x] 사용자가 데이터 삭제를 요청할 수 있음
+      → 삭제 요청 URL: `https://dkc260701.github.io/bugchamp-policy/delete.html`
 
 > ⚠️ 이 표는 **현재 구현 기준**이다. 기능이 바뀌면 양식도 갱신해야 한다
 > (허위 신고는 앱 정지 사유).
