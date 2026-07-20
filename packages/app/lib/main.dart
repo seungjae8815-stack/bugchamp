@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data/save_repository.dart';
+import 'domain/auth_service.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
 import 'domain/providers.dart';
@@ -17,6 +18,9 @@ import 'l10n/app_localizations.dart';
 /// 둘 중 하나라도 비어 있으면 로컬 백엔드(LocalPvpBackend)로 동작한다.
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+/// 구글 로그인용 **웹** 클라이언트 ID(공개값). 없으면 로그인 버튼이 비활성.
+const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +58,9 @@ Future<void> main() async {
         if (supaClient != null) ...[
           pvpBackendProvider.overrideWithValue(SupabasePvpBackend(supaClient)),
           cloudSaveProvider.overrideWithValue(SupabaseCloudSave(supaClient)),
+          authServiceProvider.overrideWithValue(
+            SupabaseAuthService(supaClient, _googleWebClientId),
+          ),
         ],
       ],
       child: const BugChampApp(),

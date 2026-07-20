@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../app_version.dart';
 import '../../data/game_data.dart';
+import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
@@ -2533,6 +2534,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
           ),
+          // ── 계정(구글 로그인) ──
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _showAccount(l);
+              },
+              icon: const Icon(Icons.account_circle_rounded, size: 18),
+              label: Text(
+                ref.read(authServiceProvider).accountLabel ?? l.accountTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF9BE38B),
+                side: const BorderSide(color: Color(0x559BE38B)),
+              ),
+            ),
+          ),
           // ── 클라우드 백업/복원 ──
           const SizedBox(height: 8),
           SizedBox(
@@ -2640,6 +2662,121 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ),
       ],
     );
+  }
+
+  /// 계정 시트 — 로그인 상태 표시 + 구글 로그인/로그아웃.
+  Future<void> _showAccount(AppLocalizations l) async {
+    final auth = ref.read(authServiceProvider);
+    await showGameDialog<void>(
+      context,
+      title: l.accountTitle,
+      icon: Icons.account_circle_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            auth.isSignedIn
+                ? l.accountSignedIn(auth.accountLabel ?? '')
+                : l.accountAnonymous,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xD9FFFFFF),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            auth.available ? l.accountWhy : l.accountUnavailable,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0x99FFFFFF),
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context),
+          primary: false,
+        ),
+        if (auth.available && !auth.isSignedIn)
+          gameDialogButton(l.accountSignIn, () async {
+            Navigator.pop(context);
+            await _signIn(l);
+          }),
+        if (auth.isSignedIn)
+          gameDialogButton(l.accountSignOut, () async {
+            Navigator.pop(context);
+            await ref.read(authServiceProvider).signOut();
+            if (!mounted) return;
+            setState(() {});
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(l.accountSignedOut)));
+          }, color: const Color(0xFF556070)),
+      ],
+    );
+  }
+
+  /// 구글 로그인 → 성공 시 클라우드 백업 유무에 따라 동기화 방향을 묻는다.
+  Future<void> _signIn(AppLocalizations l) async {
+    final ok = await ref.read(authServiceProvider).signInWithGoogle();
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l.accountSignInFailed)));
+      return;
+    }
+    setState(() {});
+    // 이 계정에 이미 백업이 있으면 어느 쪽을 쓸지 선택하게 한다(덮어쓰기 사고 방지).
+    final cloud = ref.read(cloudSaveProvider);
+    final existing = cloud.available ? await cloud.download() : null;
+    if (!mounted) return;
+    if (existing == null) {
+      await _cloudBackup(l); // 백업이 없으면 현재 진행도를 그대로 올림
+      return;
+    }
+    final useCloud = await showGameDialog<bool>(
+      context,
+      title: l.accountSyncTitle,
+      icon: Icons.cloud_sync_rounded,
+      content: Text(
+        l.accountSyncBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Color(0xD9FFFFFF),
+          fontSize: 13,
+          height: 1.4,
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.accountKeepDevice,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(l.accountUseCloud, () => Navigator.pop(context, true)),
+      ],
+    );
+    if (!mounted || useCloud == null) return;
+    if (useCloud) {
+      final done = await ref
+          .read(saveControllerProvider.notifier)
+          .restoreFromJson(existing);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(done ? l.cloudRestoreDone : l.cloudFailed)),
+        );
+    } else {
+      await _cloudBackup(l);
+    }
   }
 
   /// 클라우드 백업/복원 시트. 백엔드 미연결이면 안내만 표시.

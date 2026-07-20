@@ -203,6 +203,47 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opponentPick => '상대 고르기';
 
   @override
+  String get accountTitle => '계정';
+
+  @override
+  String get accountAnonymous => '지금은 기기 임시 계정이에요';
+
+  @override
+  String accountSignedIn(String email) {
+    return '$email 로 로그인됨';
+  }
+
+  @override
+  String get accountSignIn => '구글로 로그인';
+
+  @override
+  String get accountSignOut => '로그아웃';
+
+  @override
+  String get accountSignedOut => '로그아웃했어요';
+
+  @override
+  String get accountSignInFailed => '로그인하지 못했어요';
+
+  @override
+  String get accountWhy => '로그인하면 폰을 바꿔도 진행 상황을 이어서 할 수 있어요.';
+
+  @override
+  String get accountUnavailable => '지금 빌드에서는 로그인을 쓸 수 없어요';
+
+  @override
+  String get accountSyncTitle => '어느 진행 상황을 쓸까요?';
+
+  @override
+  String get accountSyncBody => '이 계정에 저장된 진행 상황이 있어요. 어느 쪽을 쓸지 골라주세요.';
+
+  @override
+  String get accountKeepDevice => '지금 기기 것';
+
+  @override
+  String get accountUseCloud => '저장된 것 불러오기';
+
+  @override
   String get cloudTitle => '클라우드 백업';
 
   @override

@@ -460,6 +460,84 @@ abstract class AppLocalizations {
   /// **'Pick Opponent'**
   String get opponentPick;
 
+  /// No description provided for @accountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountTitle;
+
+  /// No description provided for @accountAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re on a temporary device account'**
+  String get accountAnonymous;
+
+  /// No description provided for @accountSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {email}'**
+  String accountSignedIn(String email);
+
+  /// No description provided for @accountSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get accountSignIn;
+
+  /// No description provided for @accountSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get accountSignOut;
+
+  /// No description provided for @accountSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out'**
+  String get accountSignedOut;
+
+  /// No description provided for @accountSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed'**
+  String get accountSignInFailed;
+
+  /// No description provided for @accountWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to keep your progress when you change phones.'**
+  String get accountWhy;
+
+  /// No description provided for @accountUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in isn\'t available in this build'**
+  String get accountUnavailable;
+
+  /// No description provided for @accountSyncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which progress do you want?'**
+  String get accountSyncTitle;
+
+  /// No description provided for @accountSyncBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has saved progress. Choose which one to keep.'**
+  String get accountSyncBody;
+
+  /// No description provided for @accountKeepDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get accountKeepDevice;
+
+  /// No description provided for @accountUseCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Load saved'**
+  String get accountUseCloud;
+
   /// No description provided for @cloudTitle.
   ///
   /// In en, this message translates to:

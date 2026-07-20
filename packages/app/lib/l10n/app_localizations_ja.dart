@@ -204,6 +204,49 @@ class AppLocalizationsJa extends AppLocalizations {
   String get opponentPick => 'Pick Opponent';
 
   @override
+  String get accountTitle => 'Account';
+
+  @override
+  String get accountAnonymous => 'You\'re on a temporary device account';
+
+  @override
+  String accountSignedIn(String email) {
+    return 'Signed in as $email';
+  }
+
+  @override
+  String get accountSignIn => 'Sign in with Google';
+
+  @override
+  String get accountSignOut => 'Sign out';
+
+  @override
+  String get accountSignedOut => 'Signed out';
+
+  @override
+  String get accountSignInFailed => 'Sign-in failed';
+
+  @override
+  String get accountWhy =>
+      'Sign in to keep your progress when you change phones.';
+
+  @override
+  String get accountUnavailable => 'Sign-in isn\'t available in this build';
+
+  @override
+  String get accountSyncTitle => 'Which progress do you want?';
+
+  @override
+  String get accountSyncBody =>
+      'This account already has saved progress. Choose which one to keep.';
+
+  @override
+  String get accountKeepDevice => 'This device';
+
+  @override
+  String get accountUseCloud => 'Load saved';
+
+  @override
   String get cloudTitle => 'Cloud Backup';
 
   @override
