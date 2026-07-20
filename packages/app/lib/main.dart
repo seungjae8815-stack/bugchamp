@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data/save_repository.dart';
+import 'domain/ad_service.dart';
+import 'domain/admob_ad_service.dart';
 import 'domain/auth_service.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
@@ -33,6 +37,17 @@ const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 /// "깜빡하고 로컬로 출시"가 구조적으로 불가능하게 만든다.
 const _storeIapFlag = String.fromEnvironment('STORE_IAP');
 bool get _useStoreIap => switch (_storeIapFlag) {
+  'on' => true,
+  'off' => false,
+  _ => kReleaseMode,
+};
+
+/// 실광고 사용 여부. `--dart-define=REAL_ADS=on|off`, 기본은 릴리즈에서만 켬.
+///
+/// 개발용 `NoAdService` 는 광고 없이 보상을 주므로, 릴리즈에 딸려 나가면
+/// "광고 보기"가 공짜 재화 버튼이 된다 — 결제와 같은 이유로 기본값을 릴리즈로 둔다.
+const _realAdsFlag = String.fromEnvironment('REAL_ADS');
+bool get _useRealAds => switch (_realAdsFlag) {
   'on' => true,
   'off' => false,
   _ => kReleaseMode,
@@ -71,6 +86,13 @@ Future<void> main() async {
     ProviderScope(
       overrides: [
         saveRepositoryProvider.overrideWithValue(repository),
+        if (_useRealAds)
+          adServiceProvider.overrideWith((ref) {
+            final s = AdMobAdService();
+            ref.onDispose(s.dispose);
+            unawaited(s.init());
+            return s;
+          }),
         if (_useStoreIap)
           iapServiceProvider.overrideWith((ref) {
             final s = StoreIapService(ref);

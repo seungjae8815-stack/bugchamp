@@ -296,6 +296,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tabStore => 'Store';
 
   @override
+  String get adNotReady =>
+      'No ad is ready right now. Please try again in a moment';
+
+  @override
+  String get adDismissed => 'Watch the full ad to get the reward';
+
+  @override
+  String get adFailed => 'Couldn\'t load the ad';
+
+  @override
+  String get adLoading => 'Loading ad…';
+
+  @override
   String get storeOwned => 'Owned';
 
   @override

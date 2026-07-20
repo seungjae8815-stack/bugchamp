@@ -7,6 +7,12 @@
         android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- AdMob 앱 ID. 값은 gradle 이 채운다(android/local.properties 의
+             admobAppId, 없으면 구글 공식 테스트 앱 ID).
+             ⚠️ 실제 ID 를 넣지 않으면 실광고가 나가지 않는다. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

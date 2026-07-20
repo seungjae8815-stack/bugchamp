@@ -13,6 +13,7 @@ import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
@@ -682,7 +683,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         TextButton.icon(
                           onPressed: avg == null
                               ? null
-                              : () {
+                              : () async {
+                                  // 새로고침도 광고 보상 — 끝까지 본 경우에만.
+                                  if (!await watchAdForReward(
+                                    context,
+                                    ref,
+                                    l,
+                                  )) {
+                                    return;
+                                  }
+                                  if (!mounted) return;
                                   setState(
                                     () => _rollScouts(data, locale, avg),
                                   );

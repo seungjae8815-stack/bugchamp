@@ -292,6 +292,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tabStore => '상점';
 
   @override
+  String get adNotReady => '지금은 광고가 준비되지 않았어요. 잠시 후 다시 시도해 주세요';
+
+  @override
+  String get adDismissed => '광고를 끝까지 봐야 보상을 받을 수 있어요';
+
+  @override
+  String get adFailed => '광고를 불러오지 못했어요';
+
+  @override
+  String get adLoading => '광고 불러오는 중…';
+
+  @override
   String get storeOwned => '보유중';
 
   @override

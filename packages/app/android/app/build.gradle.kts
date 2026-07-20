@@ -9,6 +9,16 @@ val keystoreProperties = Properties().apply {
 }
 val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
 
+// AdMob 앱 ID. `android/local.properties` 에 admobAppId=ca-app-pub-...~... 를 넣으면
+// 그 값이 쓰이고, 없으면 구글 공식 **테스트 앱 ID** 로 떨어진다.
+// (테스트 ID 로도 광고는 뜨지만 수익은 발생하지 않는다 — 개발 중 계정 정지 방지용.)
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val admobAppIdValue: String =
+    localProps.getProperty("admobAppId") ?: "ca-app-pub-3940256099942544~3347511713"
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -41,6 +51,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["admobAppId"] = admobAppIdValue
     }
 
     signingConfigs {

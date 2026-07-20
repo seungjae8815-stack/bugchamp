@@ -18,6 +18,7 @@ import '../../domain/save_controller.dart';
 import '../../domain/gift_mail.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
@@ -2301,6 +2302,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ],
       );
       if (more == true && ctx.mounted) {
+        if (!await watchAdForReward(ctx, r, l)) return;
+        if (!ctx.mounted) return;
         await notifier.grantGiftBonus(g);
         if (!ctx.mounted) return;
         await showRewardPopup(
@@ -3329,9 +3332,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: () async {
+              // 광고를 끝까지 본 경우에만 버프·보상이 나간다.
+              if (!await watchAdForReward(context, r, l)) return;
+              if (!mounted) return;
               final ctrl = r.read(saveControllerProvider.notifier);
               await ctrl.activateBuff(k);
-              // 광고 보상(테스트): 프리미엄 재화 젤리 1개 지급.
+              // 광고 보상: 프리미엄 재화 젤리 1개 지급.
               await ctrl.applyReward(
                 gold: 0,
                 xp: 0,

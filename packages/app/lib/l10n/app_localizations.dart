@@ -628,6 +628,30 @@ abstract class AppLocalizations {
   /// **'Store'**
   String get tabStore;
 
+  /// No description provided for @adNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'No ad is ready right now. Please try again in a moment'**
+  String get adNotReady;
+
+  /// No description provided for @adDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch the full ad to get the reward'**
+  String get adDismissed;
+
+  /// No description provided for @adFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the ad'**
+  String get adFailed;
+
+  /// No description provided for @adLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading ad…'**
+  String get adLoading;
+
   /// No description provided for @storeOwned.
   ///
   /// In en, this message translates to:
