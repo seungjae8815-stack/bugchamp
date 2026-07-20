@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -8,7 +9,9 @@ import 'domain/auth_service.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
 import 'domain/providers.dart';
+import 'domain/iap_service.dart';
 import 'domain/pvp_backend.dart';
+import 'domain/store_iap_service.dart';
 import 'domain/supabase_pvp_backend.dart';
 import 'features/app_shell.dart';
 import 'l10n/app_localizations.dart';
@@ -21,6 +24,19 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 /// 구글 로그인용 **웹** 클라이언트 ID(공개값). 없으면 로그인 버튼이 비활성.
 const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
+/// 스토어 결제 사용 여부. `--dart-define=STORE_IAP=on|off` 로 강제할 수 있고,
+/// 지정이 없으면 **릴리즈 빌드에서만 켠다**.
+///
+/// 기본값이 이런 이유: 개발용 `LocalIapService` 는 결제 없이 상품을 그냥 주므로
+/// 릴리즈에 딸려 나가면 전 상품이 공짜가 된다. 릴리즈=스토어를 기본으로 두어
+/// "깜빡하고 로컬로 출시"가 구조적으로 불가능하게 만든다.
+const _storeIapFlag = String.fromEnvironment('STORE_IAP');
+bool get _useStoreIap => switch (_storeIapFlag) {
+  'on' => true,
+  'off' => false,
+  _ => kReleaseMode,
+};
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +71,12 @@ Future<void> main() async {
     ProviderScope(
       overrides: [
         saveRepositoryProvider.overrideWithValue(repository),
+        if (_useStoreIap)
+          iapServiceProvider.overrideWith((ref) {
+            final s = StoreIapService(ref);
+            ref.onDispose(s.dispose);
+            return s;
+          }),
         if (supaClient != null) ...[
           pvpBackendProvider.overrideWithValue(SupabasePvpBackend(supaClient)),
           cloudSaveProvider.overrideWithValue(SupabaseCloudSave(supaClient)),

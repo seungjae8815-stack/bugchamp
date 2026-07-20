@@ -658,6 +658,36 @@ abstract class AppLocalizations {
   /// **'Purchase failed'**
   String get storeFailed;
 
+  /// No description provided for @storeCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase canceled'**
+  String get storeCanceled;
+
+  /// No description provided for @storePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming payment. It\'ll be granted automatically once it completes'**
+  String get storePending;
+
+  /// No description provided for @storeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app purchases aren\'t available on this device'**
+  String get storeUnavailable;
+
+  /// No description provided for @storeNotRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This item isn\'t on sale yet'**
+  String get storeNotRegistered;
+
+  /// No description provided for @storeDevMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dev mode — no real payment; items are granted immediately'**
+  String get storeDevMode;
+
   /// No description provided for @storePassLeft.
   ///
   /// In en, this message translates to:

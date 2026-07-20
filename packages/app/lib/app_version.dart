@@ -11,7 +11,8 @@ const String kAppVersionName = '1.0.0';
 const String kBuildDate = '2026-07-20';
 
 /// 이 빌드에 새로 들어간 것 — 설치 후 무엇을 확인하면 되는지 힌트.
-const String kBuildHighlights = '스킨 실제 적용(황금·알비노·아레나 테마) · 상점(IAP)·패스 효과 · 전투 장소·상성 · 상성 휠';
+const String kBuildHighlights =
+    '스킨 실제 적용(황금·알비노·아레나 테마) · 상점(IAP)·패스 효과 · 전투 장소·상성 · 상성 휠';
 
 /// 설정 화면에 표시할 짧은 라벨(날짜 없이 버전만). 예: "v1.0.0".
 /// 날짜·기능 상세는 ⓘ 아이콘을 눌러 펼친다.

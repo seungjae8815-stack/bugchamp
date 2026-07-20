@@ -21,3 +21,9 @@ packages/app/assets/images/bugs/_raw_backup/
 
 # Supabase 로컬 자격증명(anon key 등) — 커밋 금지, --dart-define-from-file 로 주입
 packages/app/supabase.env.json
+
+# 안드로이드 서명 키 — 절대 커밋 금지.
+# 이 키를 잃어버리면 앱을 영영 업데이트할 수 없고, 유출되면 남이 내 앱을 사칭한다.
+**/android/key.properties
+*.jks
+*.keystore

@@ -492,10 +492,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// - `skin` → 보유 스킨에 추가, `pass` → 남은 기간에 **이어서** 연장
   ///
   /// 수치는 전부 `iap.json`(IapConfig). 스탯은 지급하지 않는다(§2.6 P2W 금지).
-  Future<bool> applyPurchase(IapProduct p) async {
+  /// [purchaseId] 는 스토어 구매 1건의 고유 식별자(`PurchaseDetails.purchaseID`).
+  /// 주면 **중복 지급을 막는다** — 스토어는 같은 구매를 여러 번 전달할 수 있다
+  /// (앱 재시작 시 미완료 구매 재전달, 복원 등). 개발용 로컬 구매는 null.
+  Future<bool> applyPurchase(IapProduct p, {String? purchaseId}) async {
     final cfg = ref.read(gameDataProvider).requireValue.iapConfig;
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
+
+    // 이미 지급한 구매면 조용히 성공 처리(스토어에는 완료 통보해야 하므로 true).
+    if (purchaseId != null && s.redeemedPurchases.contains(purchaseId)) {
+      return true;
+    }
 
     // 스타터는 계정당 1회.
     if (p.type == IapType.starter && s.starterBought) return false;
@@ -532,6 +540,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
             ? s.ownedSkins
             : {...s.ownedSkins, p.skinId!},
         passExpiresAt: passExpiry,
+        redeemedPurchases: purchaseId == null
+            ? s.redeemedPurchases
+            : {...s.redeemedPurchases, purchaseId},
       ),
     );
     return true;

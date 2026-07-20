@@ -115,6 +115,18 @@ void main() {
       expect(save.adsHidden(now), isFalse);
     });
 
+    test('v16(로컬 결제) → 현재: 구매 원장이 빈 목록으로 채워진다', () {
+      final v16 = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).toJson()
+        ..['schemaVersion'] = 16
+        ..remove('redeemedPurchases');
+      final migrated = migrateToCurrent(v16);
+      expect(migrated['schemaVersion'], kSaveSchemaVersion);
+      final save = SaveGame.fromJson(migrated);
+      expect(save.redeemedPurchases, isEmpty);
+      // 기존 구매 상태는 그대로 살아남아야 한다(원장 추가가 지우지 않음).
+      expect(save.adsRemoved, isFalse);
+    });
+
     test('구매 상태는 직렬화 왕복으로 보존된다', () {
       final expiry = DateTime.utc(2026, 3, 1);
       final bought = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1))

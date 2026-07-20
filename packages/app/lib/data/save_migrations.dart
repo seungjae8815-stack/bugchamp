@@ -54,6 +54,7 @@ const Map<int, _JsonMap Function(_JsonMap)> _migrations = {
   13: _v13ToV14,
   14: _v14ToV15,
   15: _v15ToV16,
+  16: _v16ToV17,
 };
 
 /// v0(스키마 미표기 레거시) → v1: 누락 필드를 기본값으로 채우고 버전을 승격.
@@ -187,4 +188,12 @@ _JsonMap _v15ToV16(_JsonMap old) => {
   'starterBought': old['starterBought'] ?? false,
   'ownedSkins': old['ownedSkins'] ?? const <dynamic>[],
   'passExpiresAt': old['passExpiresAt'],
+};
+
+/// v16 → v17(스토어 결제 실연동): 지급 완료한 구매 식별자 원장을 추가.
+/// 기존 세이브는 스토어 구매 이력이 없으므로 빈 목록에서 시작한다.
+_JsonMap _v16ToV17(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 17,
+  'redeemedPurchases': old['redeemedPurchases'] ?? const <dynamic>[],
 };

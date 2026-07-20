@@ -223,6 +223,78 @@ void main() {
     expect(s.materialCount(MaterialKind.jelly), 0);
   });
 
+  // ── 스토어 실연동: 같은 구매가 여러 번 전달돼도 한 번만 지급 ──────────
+  // 스토어는 앱 재시작·복원 등으로 같은 구매를 반복 전달한다. purchaseId 로
+  // 막지 못하면 젤리가 몇 배로 들어간다.
+  group('중복 지급 방지(purchaseId)', () {
+    const jelly = IapProduct(
+      id: 'jelly_m',
+      kind: IapKind.consumable,
+      type: IapType.jelly,
+      priceKrw: 5500,
+      grant: IapGrant(jelly: 330),
+    );
+
+    test('같은 purchaseId 재전달 → 1회만 지급, 스토어에는 성공 응답', () async {
+      final c = container();
+      final s = await ctrl(c);
+
+      expect(await s.applyPurchase(jelly, purchaseId: 'GPA-1'), isTrue);
+      expect(
+        c
+            .read(saveControllerProvider)
+            .requireValue
+            .materialCount(MaterialKind.jelly),
+        330,
+      );
+
+      // 스트림 재전달 2회 — 지급은 그대로여야 한다.
+      expect(await s.applyPurchase(jelly, purchaseId: 'GPA-1'), isTrue);
+      expect(await s.applyPurchase(jelly, purchaseId: 'GPA-1'), isTrue);
+      expect(
+        c
+            .read(saveControllerProvider)
+            .requireValue
+            .materialCount(MaterialKind.jelly),
+        330,
+      );
+    });
+
+    test('다른 purchaseId(재구매)는 정상 지급된다', () async {
+      final c = container();
+      final s = await ctrl(c);
+      await s.applyPurchase(jelly, purchaseId: 'GPA-1');
+      await s.applyPurchase(jelly, purchaseId: 'GPA-2');
+      expect(
+        c
+            .read(saveControllerProvider)
+            .requireValue
+            .materialCount(MaterialKind.jelly),
+        660,
+      );
+    });
+
+    test('지급한 구매 식별자는 세이브에 남는다(앱 재시작 후에도 유효)', () async {
+      final c = container();
+      final s = await ctrl(c);
+      await s.applyPurchase(jelly, purchaseId: 'GPA-1');
+      expect(
+        c.read(saveControllerProvider).requireValue.redeemedPurchases,
+        contains('GPA-1'),
+      );
+    });
+
+    test('purchaseId 없는 로컬 구매는 원장을 늘리지 않는다', () async {
+      final c = container();
+      final s = await ctrl(c);
+      await s.applyPurchase(jelly);
+      expect(
+        c.read(saveControllerProvider).requireValue.redeemedPurchases,
+        isEmpty,
+      );
+    });
+  });
+
   test('스킨: 보유 목록에 추가(스탯 영향 없음)', () async {
     final c = container();
     final s = await ctrl(c);

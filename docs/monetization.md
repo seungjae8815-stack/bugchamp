@@ -76,9 +76,31 @@
 - [x] 상점 UI (카탈로그 표시, `[제작 | 상점]` 2섹션 + 구매 복원 버튼)
 - [x] 패스/광고제거 효과 적용 (오프라인 12h·방치골드 ×1.2·일일 젤리)
 - [x] **계정/클라우드 세이브**(결제 선행조건) — 구글 로그인 + saves 백업/복원 실기 검증 완료
-- [ ] in_app_purchase 연동 · 복원 · 지급 ← **다음**. Play Console 상품 등록 선행 필요
+- [x] **in_app_purchase 연동 · 복원 · 지급** (2026-07-20) — `StoreIapService`.
+      실기 테스트는 **Play Console 작업 선행 필요** → `docs/play_console_iap.md`
+- [ ] **영수증 서버 검증** — 아직 없음(아래 §6). 매출 나기 전 필수
 - [x] **스킨 실제 적용** (ColorFilter 방식 — 새 아트 없이. 아트 생기면 교체)
 - [ ] AdMob 실광고(현재 보상형은 플레이스홀더)
 
 > 현재 `iapServiceProvider` 는 **개발용 `LocalIapService`**(결제 없이 즉시 지급).
 > 스토어 연동 시 `StoreIapService` 로 오버라이드하면 지급 로직(`applyPurchase`)은 그대로 재사용된다.
+
+---
+
+## 6. ⚠️ 남은 보안 구멍 — 영수증 서버 검증
+
+`StoreIapService` 는 **클라이언트 판단만으로** 구매를 인정한다.
+루팅 기기 + 결제 후킹 앱이면 가짜 구매로 상품을 받을 수 있다.
+
+| 항목 | 상태 |
+|---|---|
+| 같은 구매 중복 지급 차단 | ✅ `SaveGame.redeemedPurchases` 원장 |
+| 지급 실패 시 스토어에 완료 통보 보류(재전달 유도) | ✅ |
+| 영수증이 **진짜 구글 발급인지** 검증 | ❌ **없음** |
+
+제대로 하려면 Supabase Edge Function 에서 Google Play Developer API
+(`purchases.products.get`)로 `serverVerificationData` 토큰을 검증해야 하고,
+GCP 서비스 계정 + Play Console 연결이 필요하다.
+
+**판단**: 내부 테스트·소규모 출시 단계에선 이대로 진행 가능.
+**매출이 의미 있게 나기 시작하면 반드시 붙일 것.**

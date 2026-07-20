@@ -309,6 +309,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storeFailed => '구매하지 못했어요';
 
   @override
+  String get storeCanceled => '구매를 취소했어요';
+
+  @override
+  String get storePending => '결제 확인 중이에요. 완료되면 자동으로 지급돼요';
+
+  @override
+  String get storeUnavailable => '이 기기에서는 결제를 쓸 수 없어요';
+
+  @override
+  String get storeNotRegistered => '아직 판매 준비 중인 상품이에요';
+
+  @override
+  String get storeDevMode => '개발 모드 — 실제 결제가 아니라 바로 지급됩니다';
+
+  @override
   String storePassLeft(int days) {
     return '$days일 남음';
   }

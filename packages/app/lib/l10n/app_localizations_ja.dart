@@ -313,6 +313,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get storeFailed => 'Purchase failed';
 
   @override
+  String get storeCanceled => 'Purchase canceled';
+
+  @override
+  String get storePending =>
+      'Confirming payment. It\'ll be granted automatically once it completes';
+
+  @override
+  String get storeUnavailable =>
+      'In-app purchases aren\'t available on this device';
+
+  @override
+  String get storeNotRegistered => 'This item isn\'t on sale yet';
+
+  @override
+  String get storeDevMode =>
+      'Dev mode — no real payment; items are granted immediately';
+
+  @override
   String storePassLeft(int days) {
     return '$days days left';
   }

@@ -1,3 +1,14 @@
+import java.util.Properties
+
+// 릴리즈 서명 키. `android/key.properties` 가 있으면 그 키로 서명하고,
+// 없으면 디버그 키로 폴백한다(키 없는 환경에서도 빌드는 되게).
+// key.properties 와 .jks 는 절대 커밋하지 않는다 — .gitignore 확인.
+val keystoreProperties = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -32,11 +43,27 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // 업로드 키가 있으면 그것으로, 없으면 디버그 키로 서명한다.
+            // ⚠️ 디버그 키로 서명된 빌드는 Play Console 에 업로드할 수 없고
+            //    인앱결제·구글 로그인도 동작하지 않는다.
+            signingConfig = if (hasReleaseKey) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

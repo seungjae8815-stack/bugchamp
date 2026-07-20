@@ -5,7 +5,7 @@ import 'gift_mail.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
-const int kSaveSchemaVersion = 16;
+const int kSaveSchemaVersion = 17;
 
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
@@ -126,6 +126,7 @@ class SaveGame {
     this.starterBought = false,
     this.ownedSkins = const {},
     this.passExpiresAt,
+    this.redeemedPurchases = const {},
   });
 
   final int schemaVersion;
@@ -234,6 +235,14 @@ class SaveGame {
   /// 곤충학자 패스 만료 시각(UTC). null/과거면 미보유.
   final DateTime? passExpiresAt;
 
+  /// 이미 지급 처리한 스토어 구매 식별자들(중복 지급 방지).
+  ///
+  /// 스토어 구매는 **스트림으로 여러 번 전달될 수 있다**(앱 재시작 시 미완료
+  /// 구매 재전달, `restorePurchases()` 재전달 등). 지급 전에 여기 있는지
+  /// 확인하고, 지급 후 추가한다. 소모성(젤리)도 구매마다 식별자가 달라
+  /// 재구매는 정상 동작한다.
+  final Set<String> redeemedPurchases;
+
   /// [now] 기준 패스가 유효한지.
   bool passActive(DateTime now) =>
       passExpiresAt != null && now.isBefore(passExpiresAt!);
@@ -286,6 +295,7 @@ class SaveGame {
     adsRemoved: false,
     starterBought: false,
     ownedSkins: const {},
+    redeemedPurchases: const {},
   );
 
   SaveGame copyWith({
@@ -321,6 +331,7 @@ class SaveGame {
     bool? starterBought,
     Set<String>? ownedSkins,
     DateTime? passExpiresAt,
+    Set<String>? redeemedPurchases,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -356,6 +367,7 @@ class SaveGame {
     starterBought: starterBought ?? this.starterBought,
     ownedSkins: ownedSkins ?? this.ownedSkins,
     passExpiresAt: passExpiresAt ?? this.passExpiresAt,
+    redeemedPurchases: redeemedPurchases ?? this.redeemedPurchases,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -462,6 +474,9 @@ class SaveGame {
     starterBought: json['starterBought'] as bool? ?? false,
     ownedSkins:
         (json['ownedSkins'] as List?)?.cast<String>().toSet() ?? const {},
+    redeemedPurchases:
+        (json['redeemedPurchases'] as List?)?.cast<String>().toSet() ??
+        const {},
     passExpiresAt: json['passExpiresAt'] == null
         ? null
         : DateTime.parse(json['passExpiresAt'] as String).toUtc(),
@@ -512,6 +527,7 @@ class SaveGame {
     'adsRemoved': adsRemoved,
     'starterBought': starterBought,
     'ownedSkins': ownedSkins.toList(),
+    'redeemedPurchases': redeemedPurchases.toList(),
     'passExpiresAt': passExpiresAt?.toIso8601String(),
   };
 

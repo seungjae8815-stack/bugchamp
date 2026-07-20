@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/iap_service.dart';
 import '../../domain/providers.dart';
+import '../../domain/store_iap_service.dart';
 import '../../domain/save_controller.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
@@ -75,22 +76,54 @@ class _StoreSection extends ConsumerWidget {
     final now = ref.read(clockProvider).now().toUtc();
     final locale = Localizations.localeOf(context).languageCode;
     final products = cfg.sorted;
+    // 스토어가 붙어 있으면 현지 통화 가격으로 덮어쓴다(없으면 원화 참고값).
+    final prices = ref.watch(storePricesProvider).value ?? const {};
+    final devMode = !ref.watch(iapServiceProvider).isStore;
 
     return ListView.separated(
       padding: const EdgeInsets.all(12),
-      itemCount: products.length + 1,
+      itemCount: products.length + (devMode ? 2 : 1),
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
-        if (i == products.length) return _restoreRow(context, ref, l);
+        if (devMode && i == 0) return _devBanner(l);
+        final idx = devMode ? i - 1 : i;
+        if (idx == products.length) return _restoreRow(context, ref, l);
         return _ProductCard(
-          product: products[i],
+          product: products[idx],
           save: save,
           now: now,
           locale: locale,
+          storePrice: prices[products[idx].id],
         );
       },
     );
   }
+
+  /// 개발용 로컬 결제일 때만 보이는 경고 — 실제 결제가 아님을 숨기지 않는다.
+  Widget _devBanner(AppLocalizations l) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    decoration: BoxDecoration(
+      color: const Color(0x22EBA52F),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: const Color(0x55EBA52F)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.science_rounded, color: Color(0xFFEBA52F), size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            l.storeDevMode,
+            style: const TextStyle(
+              color: Color(0xFFEBD24A),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   /// 비소모성 구매 복원(스토어 심사 필수 항목).
   Widget _restoreRow(BuildContext ctx, WidgetRef ref, AppLocalizations l) =>
@@ -122,12 +155,16 @@ class _ProductCard extends ConsumerWidget {
     required this.save,
     required this.now,
     required this.locale,
+    this.storePrice,
   });
 
   final IapProduct product;
   final SaveGame save;
   final DateTime now;
   final String locale;
+
+  /// 스토어가 알려준 현지 가격 표시(예: "₩5,500", "$4.99"). null 이면 원화 참고값.
+  final String? storePrice;
 
   /// 이미 보유해서 다시 살 수 없는 상품인지.
   bool get _owned => switch (product.type) {
@@ -270,7 +307,9 @@ class _ProductCard extends ConsumerWidget {
                 padding: EdgeInsets.zero,
               ),
               child: Text(
-                owned ? l.storeOwned : '₩${formatThousands(product.priceKrw)}',
+                owned
+                    ? l.storeOwned
+                    : (storePrice ?? '₩${formatThousands(product.priceKrw)}'),
                 style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w900,
@@ -289,13 +328,20 @@ class _ProductCard extends ConsumerWidget {
     AppLocalizations l,
     String name,
   ) async {
-    final ok = await ref.read(iapServiceProvider).buy(product);
+    final outcome = await ref.read(iapServiceProvider).buy(product);
     if (!ctx.mounted) return;
+    // 결과마다 다른 안내를 준다 — 취소를 "실패"라고 하면 사용자가 불안해한다.
+    final msg = switch (outcome) {
+      PurchaseOutcome.success => l.storeBought(name),
+      PurchaseOutcome.canceled => l.storeCanceled,
+      PurchaseOutcome.pending => l.storePending,
+      PurchaseOutcome.unavailable => l.storeUnavailable,
+      PurchaseOutcome.notInStore => l.storeNotRegistered,
+      PurchaseOutcome.failed => l.storeFailed,
+    };
     ScaffoldMessenger.of(ctx)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(ok ? l.storeBought(name) : l.storeFailed)),
-      );
+      ..showSnackBar(SnackBar(content: Text(msg)));
   }
 }
 
