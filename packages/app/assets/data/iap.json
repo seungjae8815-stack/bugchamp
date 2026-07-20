@@ -80,7 +80,13 @@
         "ko": "곤충젤리 소",
         "en": "Jelly Pouch",
         "ja": "昆虫ゼリー 小"
-      }
+      },
+      "desc": {
+        "ko": "곤충젤리 60개",
+        "en": "60 jelly",
+        "ja": "昆虫ゼリー60個"
+      },
+      "bonusPct": 0
     },
     {
       "id": "jelly_m",
@@ -90,12 +96,17 @@
       "sort": 110,
       "bonusPct": 10,
       "grant": {
-        "jelly": 330
+        "jelly": 300
       },
       "name": {
         "ko": "곤충젤리 중",
         "en": "Jelly Bag",
         "ja": "昆虫ゼリー 中"
+      },
+      "desc": {
+        "ko": "곤충젤리 300개 (보너스 +10%)",
+        "en": "300 jelly (+10% bonus)",
+        "ja": "昆虫ゼリー300個（+10%）"
       }
     },
     {
@@ -104,14 +115,19 @@
       "type": "jelly",
       "priceKrw": 11000,
       "sort": 120,
-      "bonusPct": 17,
+      "bonusPct": 20,
       "grant": {
-        "jelly": 700
+        "jelly": 660
       },
       "name": {
         "ko": "곤충젤리 대",
         "en": "Jelly Box",
         "ja": "昆虫ゼリー 大"
+      },
+      "desc": {
+        "ko": "곤충젤리 660개 (보너스 +20%)",
+        "en": "660 jelly (+20% bonus)",
+        "ja": "昆虫ゼリー660個（+20%）"
       }
     },
     {
@@ -120,14 +136,19 @@
       "type": "jelly",
       "priceKrw": 29000,
       "sort": 130,
-      "bonusPct": 25,
+      "bonusPct": 31,
       "grant": {
-        "jelly": 1500
+        "jelly": 1900
       },
       "name": {
         "ko": "곤충젤리 특대",
         "en": "Jelly Crate",
         "ja": "昆虫ゼリー 特大"
+      },
+      "desc": {
+        "ko": "곤충젤리 1,900개 (보너스 +31%)",
+        "en": "1,900 jelly (+31% bonus)",
+        "ja": "昆虫ゼリー1,900個（+31%）"
       }
     },
     {
@@ -136,14 +157,19 @@
       "type": "jelly",
       "priceKrw": 59000,
       "sort": 140,
-      "bonusPct": 37,
+      "bonusPct": 42,
       "grant": {
-        "jelly": 3300
+        "jelly": 4200
       },
       "name": {
         "ko": "곤충젤리 최대",
         "en": "Jelly Vault",
         "ja": "昆虫ゼリー 最大"
+      },
+      "desc": {
+        "ko": "곤충젤리 4,200개 (보너스 +42%)",
+        "en": "4,200 jelly (+42% bonus)",
+        "ja": "昆虫ゼリー4,200個（+42%）"
       }
     },
     {
