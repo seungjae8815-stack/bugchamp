@@ -59,6 +59,18 @@ class _Config implements GameConfigLike {
   List<Species> get speciesList => [testSpecies];
 
   @override
+  final PetConfig pet = PetConfig.fromJson(
+    jsonDecode(File('../app/assets/data/pets.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+
+  @override
+  final EnhanceConfig? enhance = EnhanceConfig.fromJson(
+    jsonDecode(File('../app/assets/data/enhance.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+
+  @override
   final RunConfig run = RunConfig.fromJson(
     jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
         as Map<String, dynamic>,
@@ -546,6 +558,91 @@ void main() {
         createdAt: t0,
       ).copyWith(bugs: [adult('s', potential: 5)]);
       expect(avgAtkFor(strong), greaterThanOrEqualTo(avgAtkFor(weak)));
+    });
+  });
+
+  group('육성(강화·수련)', () {
+    final cfg = _Config();
+
+    IndividualBug adult(String id) => IndividualBug(
+      id: id,
+      speciesId: 'a',
+      sizeMm: 40,
+      potential: 5,
+      temperament: Temperament.aggressive,
+      sex: Sex.male,
+      element: Element.wood,
+      stage: LifeStage.adult,
+      stageSince: t0.subtract(const Duration(days: 30)),
+    );
+
+    SaveGame owner({int gold = 0, Map<MaterialKind, int>? mats}) =>
+        SaveGame.initial(createdAt: t0).copyWith(
+          bugs: [adult('mine')],
+          gold: gold,
+          materials: mats ?? const {},
+        );
+
+    test('내 곤충이 아니면 강화 불가', () {
+      final r = actions.enhancePart(
+        owner(mats: {MaterialKind.chitin: 9999}),
+        'not-mine',
+        BugPart.hornJaw,
+        enhance: cfg.enhance!,
+      );
+      expect(r.error, 'bug_not_owned');
+    });
+
+    test('재료가 모자라면 강화 거부 — 클라 주장을 믿지 않는다', () {
+      final r = actions.enhancePart(
+        owner(),
+        'mine',
+        BugPart.hornJaw,
+        enhance: cfg.enhance!,
+      );
+      expect(r.error, 'insufficient_material');
+    });
+
+    test('재료가 충분하면 강화되고 재료가 빠진다', () {
+      final spec = cfg.enhance!.spec(BugPart.hornJaw);
+      final before = owner(mats: {spec.material: 99999});
+      final r = actions.enhancePart(
+        before,
+        'mine',
+        BugPart.hornJaw,
+        enhance: cfg.enhance!,
+      );
+      expect(r.isOk, isTrue);
+      expect(r.save!.bugs.first.enhancement.levelOf(BugPart.hornJaw), 1);
+      expect(
+        r.save!.materialCount(spec.material),
+        lessThan(before.materialCount(spec.material)),
+      );
+    });
+
+    test('골드가 모자라면 수련 거부', () {
+      final r = actions.trainBug(owner(), 'mine', petConfig: cfg.pet);
+      expect(r.error, 'insufficient_gold');
+    });
+
+    test('골드가 충분하면 레벨이 오른다', () {
+      final r = actions.trainBug(
+        owner(gold: 99999999),
+        'mine',
+        petConfig: cfg.pet,
+      );
+      expect(r.isOk, isTrue);
+      expect(r.save!.bugs.first.level, 2);
+      expect(r.save!.gold, lessThan(99999999));
+    });
+
+    test('성충이 아니면 수련 불가', () {
+      final egg = SaveGame.initial(createdAt: t0).copyWith(
+        gold: 99999999,
+        bugs: [adult('mine').copyWith(stage: LifeStage.egg, stageSince: t0)],
+      );
+      final r = actions.trainBug(egg, 'mine', petConfig: cfg.pet);
+      expect(r.error, 'not_adult');
     });
   });
 }

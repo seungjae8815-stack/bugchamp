@@ -249,6 +249,61 @@ Handler buildHandler({
       }
     });
 
+    /// 부위 강화 — 재료 비용·상한을 서버가 판정.
+    authed.post('/enhance', (Request req) async {
+      final user = userOf(req);
+      final enh = cfg.enhance;
+      if (enh == null) return _json({'error': 'not_configured'}, status: 503);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final bugId = body['bugId']?.toString() ?? '';
+      final part = BugPart.values
+          .where((p) => p.key == (body['part']?.toString() ?? ''))
+          .firstOrNull;
+      if (bugId.isEmpty || part == null) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.enhancePart(save, bugId, part, enhance: enh);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[enhance] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 수련(성충 레벨업) — 골드 비용·상한을 서버가 판정.
+    authed.post('/train', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final bugId = body['bugId']?.toString() ?? '';
+      if (bugId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.trainBug(save, bugId, petConfig: cfg.pet);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[train] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     authed.post('/purchase', (Request req) async {
       final user = userOf(req);
       final Map<String, dynamic> body;

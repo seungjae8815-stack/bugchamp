@@ -19,6 +19,7 @@ class GameConfig implements GameConfigLike {
     required this.battle,
     required this.run,
     required this.pet,
+    this.enhance,
     this.speciesById = const {},
   });
 
@@ -28,10 +29,14 @@ class GameConfig implements GameConfigLike {
   final BattleConfig battle;
   @override
   final RunConfig run;
+  @override
   final PetConfig pet;
 
   /// 종 정보 — 전투 유닛 변환·부상 시간 계산에 필요하다.
   final Map<String, Species> speciesById;
+
+  @override
+  final EnhanceConfig? enhance;
 
   @override
   List<Species> get speciesList => speciesById.values.toList();
@@ -61,6 +66,7 @@ class GameConfig implements GameConfigLike {
       battle: BattleConfig.fromJson(await read('battle.json')),
       run: RunConfig.fromJson(await read('run_config.json')),
       pet: PetConfig.fromJson(await read('pets.json')),
+      enhance: EnhanceConfig.fromJson(await read('enhance.json')),
     );
   }
 }

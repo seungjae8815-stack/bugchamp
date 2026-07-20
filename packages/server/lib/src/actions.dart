@@ -398,6 +398,68 @@ class GameActions {
     return (team: team, tier: tier);
   }
 
+  /// 부위 강화 1단계. 재료 비용·상한을 서버가 판정한다.
+  ///
+  /// 강화는 전투 스탯을 직접 올리므로 PvP 에 바로 영향을 준다.
+  /// 클라이언트가 처리하면 재료 없이 만렙 강화가 가능해진다.
+  ActionResult enhancePart(
+    SaveGame save,
+    String bugId,
+    BugPart part, {
+    required EnhanceConfig enhance,
+  }) {
+    final idx = save.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return const ActionResult.fail('bug_not_owned');
+    final bug = save.bugs[idx];
+    if (bug.enhancement.total >= bug.maxLevel) {
+      return const ActionResult.fail('at_cap');
+    }
+    final spec = enhance.spec(part);
+    final cost = spec.costAt(bug.enhancement.levelOf(part));
+    final have = save.materialCount(spec.material);
+    if (have < cost) return const ActionResult.fail('insufficient_material');
+
+    final mats = Map<MaterialKind, int>.from(save.materials)
+      ..[spec.material] = have - cost;
+    final bugs = List<IndividualBug>.from(save.bugs);
+    bugs[idx] = bug.copyWith(enhancement: bug.enhancement.incremented(part));
+    return ActionResult.ok(
+      save.copyWith(bugs: bugs, materials: mats),
+      extra: {'cost': cost, 'part': part.key},
+    );
+  }
+
+  /// 수련(성충 레벨업). 골드 비용·티어 상한·돌파중 여부를 서버가 확인한다.
+  ActionResult trainBug(
+    SaveGame save,
+    String bugId, {
+    required PetConfig petConfig,
+  }) {
+    final t = now().toUtc();
+    final idx = save.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return const ActionResult.fail('bug_not_owned');
+    final bug = save.bugs[idx];
+    if (effectiveStage(bug.stage, bug.stageSince, t, petConfig) !=
+        LifeStage.adult) {
+      return const ActionResult.fail('not_adult');
+    }
+    if (bug.breakthroughEndsAt != null) {
+      return const ActionResult.fail('breakthrough_in_progress');
+    }
+    if (bug.level >= petConfig.levelCap(bug.breakthroughTier)) {
+      return const ActionResult.fail('at_cap');
+    }
+    final cost = petConfig.trainCost(bug.level);
+    if (save.gold < cost) return const ActionResult.fail('insufficient_gold');
+
+    final bugs = List<IndividualBug>.from(save.bugs);
+    bugs[idx] = bug.copyWith(level: bug.level + 1);
+    return ActionResult.ok(
+      save.copyWith(gold: save.gold - cost, bugs: bugs),
+      extra: {'cost': cost, 'newLevel': bug.level + 1},
+    );
+  }
+
   /// 젤리 소비. 잔액이 모자라면 거부한다 — **클라이언트 말을 믿지 않는다.**
   ActionResult spendJelly(SaveGame save, int amount, {String? reason}) {
     if (amount <= 0) return const ActionResult.fail('bad_amount');
@@ -415,6 +477,8 @@ abstract interface class GameConfigLike {
   IapConfig get iap;
   BattleConfig get battle;
   RunConfig get run;
+  PetConfig get pet;
+  EnhanceConfig? get enhance;
 
   /// 드롭 롤 대상 종 목록.
   List<Species> get speciesList;
