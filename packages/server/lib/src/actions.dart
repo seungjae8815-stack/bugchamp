@@ -105,46 +105,39 @@ class GameActions {
     );
   }
 
-  /// PvP 전투를 **서버에서 시뮬레이션**하고 결과를 확정한다.
+  /// 편성 검증 → 전투 유닛 목록. 실패 시 [error] 에 사유.
   ///
-  /// 클라이언트는 "누구와 싸우겠다"만 보낸다. 승패·보상·트로피는 전부
-  /// 여기서 정해진다 — 앱과 **같은 `core_battle` 코드**를 쓰므로 결과가
-  /// 어긋나지 않는다(그래서 서버를 Dart 로 만들었다).
-  ///
-  /// [myTeamBugIds] 는 편성 순서다. 실제 스탯은 **서버 세이브의 개체**에서
-  /// 가져온다 — 클라이언트가 보낸 스탯을 쓰면 조작이 가능해진다.
-  ActionResult runBattle(
-    SaveGame save, {
-    required List<String> myTeamBugIds,
-    required List<BattleBug> foeTeam,
-    required Element location,
-    required int seed,
-    required double rewardMult,
+  /// 자동/수동 전투가 **같은 기준**을 쓰도록 분리했다 —
+  /// 한쪽만 느슨하면 그쪽으로 우회한다.
+  ({List<BattleBug> team, String? error}) validateTeam(
+    SaveGame save,
+    List<String> bugIds, {
     required Map<String, Species> speciesById,
     required PetConfig petConfig,
     EnhanceConfig? enhance,
   }) {
+    if (bugIds.isEmpty) return (team: const [], error: 'empty_team');
     final t = now().toUtc();
-
-    // 1) 편성 검증 — 내 세이브에 실제로 있는, 부상 아닌 성충만.
     final byId = {for (final b in save.bugs) b.id: b};
-    final mine = <BattleBug>[];
-    final mineIds = <String>[];
-    for (final id in myTeamBugIds) {
-      final bug = byId[id];
-      if (bug == null) return const ActionResult.fail('bug_not_owned');
-      if (save.isInjured(bug.id, t))
-        return const ActionResult.fail('bug_injured');
-      final species = speciesById[bug.speciesId];
-      if (species == null) return const ActionResult.fail('unknown_species');
-      final stage = effectiveStage(bug.stage, bug.stageSince, t, petConfig);
-      if (stage != LifeStage.adult) return const ActionResult.fail('not_adult');
+    final team = <BattleBug>[];
+    double per(BugPart p, double d) => enhance?.spec(p).effectPerLevel ?? d;
 
-      double per(BugPart p, double d) => enhance?.spec(p).effectPerLevel ?? d;
-      mine.add(
+    for (final id in bugIds) {
+      final bug = byId[id];
+      if (bug == null) return (team: const [], error: 'bug_not_owned');
+      if (save.isInjured(bug.id, t)) {
+        return (team: const [], error: 'bug_injured');
+      }
+      final sp = speciesById[bug.speciesId];
+      if (sp == null) return (team: const [], error: 'unknown_species');
+      if (effectiveStage(bug.stage, bug.stageSince, t, petConfig) !=
+          LifeStage.adult) {
+        return (team: const [], error: 'not_adult');
+      }
+      team.add(
         buildBattleBug(
           bug: bug,
-          species: species,
+          species: sp,
           locale: 'ko',
           hornJawPerLevel: per(BugPart.hornJaw, 0.04),
           cuticlePerLevel: per(BugPart.cuticle, 0.04),
@@ -152,39 +145,37 @@ class GameActions {
           buildPerLevel: per(BugPart.build, 0.05),
         ),
       );
-      mineIds.add(bug.id);
     }
-    if (mine.isEmpty) return const ActionResult.fail('empty_team');
-    if (foeTeam.isEmpty) return const ActionResult.fail('empty_foe');
+    return (team: team, error: null);
+  }
 
-    // 2) 시뮬레이션 — 시드는 서버가 정한다(클라가 유리한 시드를 고르지 못하게).
-    final cfg = config.battle;
-    final result = simulate(
-      seed,
-      mine,
-      foeTeam,
-      location: location,
-      locationBonus: cfg.locationAffinityBonus,
-    );
-
-    // 3) 보상 — 앱과 **같은 규칙**(pvpReward)으로 계산한다.
+  /// 전투 결과 → 보상·트로피·부상 반영. 자동/수동 공용.
+  ActionResult applyBattleOutcome(
+    SaveGame save, {
+    required BattleResult result,
+    required List<BattleBug> myTeam,
+    required double rewardMult,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+  }) {
+    final t = now().toUtc();
     final rw = pvpReward(
       won: result.outcome == BattleOutcome.teamA,
       draw: result.outcome == BattleOutcome.draw,
       trophies: save.pvpTrophies,
-      cfg: cfg,
+      cfg: config.battle,
       rewardMult: rewardMult,
     );
 
-    // 4) KO 된 내 곤충 부상 처리 — 판정도 앱과 같은 함수를 쓴다.
+    final byId = {for (final b in save.bugs) b.id: b};
     final injured = Map<String, DateTime>.from(save.injured);
-    for (final koedId in koedTeamAIds(mine, result.events)) {
+    for (final koedId in koedTeamAIds(myTeam, result.events)) {
       final bug = byId[koedId];
       if (bug == null) continue;
-      final species = speciesById[bug.speciesId];
-      if (species == null) continue;
+      final sp = speciesById[bug.speciesId];
+      if (sp == null) continue;
       final until = t.add(
-        Duration(seconds: petConfig.injuryDuration(species.grade)),
+        Duration(seconds: petConfig.injuryDuration(sp.grade)),
       );
       final prev = injured[koedId];
       injured[koedId] = (prev != null && prev.isAfter(until)) ? prev : until;
@@ -207,10 +198,57 @@ class GameActions {
         'rounds': result.rounds,
         'teamAHpPct': result.teamAHpPct,
         'teamBHpPct': result.teamBHpPct,
-        // 클라이언트가 아레나 연출을 재생하도록 시드를 돌려준다
-        // (같은 시드 + 같은 팀 = 같은 전개 — 결정론).
-        'seed': seed,
       },
+    );
+  }
+
+  /// 자동 전투 — 서버가 시뮬레이션하고 결과를 확정한다.
+  ///
+  /// 클라이언트는 "누구와 싸우겠다"만 보낸다. 스탯은 **서버 세이브의 개체**에서
+  /// 가져오고 시드도 서버가 정한다 — 앱과 같은 `core_battle` 코드를 쓰므로
+  /// 결과가 어긋나지 않는다(그래서 서버를 Dart 로 만들었다).
+  ActionResult runBattle(
+    SaveGame save, {
+    required List<String> myTeamBugIds,
+    required List<BattleBug> foeTeam,
+    required Element location,
+    required int seed,
+    required double rewardMult,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    final built = validateTeam(
+      save,
+      myTeamBugIds,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+    );
+    if (built.error != null) return ActionResult.fail(built.error);
+    if (foeTeam.isEmpty) return const ActionResult.fail('empty_foe');
+
+    final result = simulate(
+      seed,
+      built.team,
+      foeTeam,
+      location: location,
+      locationBonus: config.battle.locationAffinityBonus,
+    );
+
+    final applied = applyBattleOutcome(
+      save,
+      result: result,
+      myTeam: built.team,
+      rewardMult: rewardMult,
+      speciesById: speciesById,
+      petConfig: petConfig,
+    );
+    if (!applied.isOk) return applied;
+    return ActionResult.ok(
+      applied.save!,
+      // 클라이언트가 같은 전개를 재생하도록 시드를 돌려준다(결정론).
+      extra: {...applied.extra, 'seed': seed},
     );
   }
 

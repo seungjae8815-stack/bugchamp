@@ -417,3 +417,38 @@ Supabase 가 자동 주입하므로 따로 넣지 않아도 된다.
 완전히 막으려면 재화·구매 상태를 **서버 권威**로 옮겨야 하는데, 그건
 게임 구조 전체를 바꾸는 일이다. 지금 단계에서는 과하다 — 매출 규모가
 커지면 그때 검토한다.
+
+---
+
+## 10. 수동 전투 세션 (서버 권위)
+
+수동 전투는 **상대의 수를 미리 알 수 없어야** 성립한다. 시드를 클라이언트에
+주면 매 라운드 상대 수를 계산해 최적해를 고를 수 있으므로, 시드는 서버에만 둔다.
+
+Cloud Run 은 인스턴스가 바뀔 수 있어 메모리에 세션을 둘 수 없다. DB 에 저장하고
+매 스텝마다 시드+수 목록으로 **처음부터 재생**한다(최대 20라운드라 비용은 무시할 수준).
+
+```sql
+create table if not exists battle_sessions (
+  id         text primary key,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  data       jsonb not null,
+  updated_at timestamptz not null default now()
+);
+create index if not exists battle_sessions_user_idx
+  on battle_sessions (user_id);
+
+alter table battle_sessions enable row level security;
+-- 정책 없음 = 클라이언트 직접 접근 불가. 서버가 service_role 로만 읽고 쓴다.
+-- (세션 data 에 시드가 들어 있으므로 클라가 읽으면 안 된다.)
+```
+
+### 오래된 세션 정리 (선택)
+
+```sql
+delete from battle_sessions where updated_at < now() - interval '1 day';
+```
+
+> 세션 id 는 `Random.secure()` 16바이트라 추측할 수 없고, 스텝 요청 시
+> **소유자(user_id)를 확인**하므로 남의 세션을 진행시킬 수 없다.
+> 끝난 세션은 `finished` 로 잠가 보상 중복 수령을 막는다.

@@ -82,6 +82,46 @@ class StateStore {
     return [for (final t in team) t as Map<String, dynamic>];
   }
 
+  /// 수동 전투 세션 저장(신규/갱신).
+  Future<void> saveSession(
+    String id,
+    String userId,
+    Map<String, dynamic> data,
+  ) async {
+    final uri = Uri.parse(
+      '$supabaseUrl/rest/v1/battle_sessions?on_conflict=id',
+    );
+    final res = await _http.post(
+      uri,
+      headers: {..._headers, 'Prefer': 'resolution=merge-duplicates'},
+      body: jsonEncode([
+        {
+          'id': id,
+          'user_id': userId,
+          'data': data,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+      ]),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('session save 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 수동 전투 세션 조회. 없으면 null.
+  Future<Map<String, dynamic>?> loadSession(String id) async {
+    final uri = Uri.parse(
+      '$supabaseUrl/rest/v1/battle_sessions?id=eq.$id&select=user_id,data&limit=1',
+    );
+    final res = await _http.get(uri, headers: _headers);
+    if (res.statusCode != 200) {
+      throw StateStoreException('session load 실패: ${res.statusCode}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    return rows.first as Map<String, dynamic>;
+  }
+
   void close() => _http.close();
 }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:io' show stderr;
 
 import 'package:shelf/shelf.dart';
@@ -11,6 +12,7 @@ import 'package:core_save/core_save.dart';
 
 import 'actions.dart';
 import 'auth.dart';
+import 'battle_session.dart';
 import 'game_config.dart';
 import 'state_store.dart';
 import 'verifier.dart';
@@ -97,6 +99,15 @@ BattleBug _defenderToBattleBug(
     def: (d['def'] as num?)?.toDouble() ?? 10,
     spd: (d['spd'] as num?)?.toDouble() ?? 10,
   );
+}
+
+/// 세션 id — 추측 불가능해야 한다(남의 세션을 찍어보지 못하게).
+String _newSessionId() {
+  final r = Random.secure();
+  return List<int>.generate(
+    16,
+    (_) => r.nextInt(256),
+  ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
 
 Response _json(Map<String, dynamic> body, {int status = 200}) => Response(
@@ -364,6 +375,209 @@ Handler buildHandler({
         return _json({'save': r.save!.toJson(), ...r.extra});
       } on StateStoreException catch (e) {
         stderr.writeln('[breed/collect] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 수동 전투 시작 — 세션을 만들고 **시드는 서버에만 둔다**.
+    ///
+    /// 시드를 클라이언트가 알면 상대의 매 라운드 수를 미리 계산해
+    /// 최적해를 고를 수 있다(심리전이 무의미해진다). 그래서 응답에 넣지 않는다.
+    authed.post('/battle/manual/start', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final teamIds = [
+        for (final id in (body['teamBugIds'] as List? ?? const []))
+          id.toString(),
+      ];
+      final opponentId = body['opponentUserId']?.toString() ?? '';
+      final tierId = body['tierId']?.toString() ?? '';
+      if (teamIds.isEmpty || (opponentId.isEmpty && tierId.isEmpty)) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+
+        final built = actions.validateTeam(
+          save,
+          teamIds,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        if (built.error != null) {
+          return _json({'error': built.error}, status: 400);
+        }
+
+        final List<BattleBug> foe;
+        final double rewardMult;
+        if (opponentId.isNotEmpty) {
+          final rows = await store.loadDefenderTeam(opponentId);
+          if (rows == null || rows.isEmpty) {
+            return _json({'error': 'opponent_not_found'}, status: 404);
+          }
+          foe = [
+            for (var i = 0; i < rows.length; i++)
+              _defenderToBattleBug(rows[i], i, species),
+          ];
+          rewardMult = 1.0;
+        } else {
+          final wild = actions.buildWildTeam(
+            save,
+            tierId: tierId,
+            speciesById: species,
+            petConfig: cfg.pet,
+          );
+          if (wild == null) {
+            return _json({'error': 'cannot_build_wild'}, status: 400);
+          }
+          foe = wild.team;
+          rewardMult = wild.tier.rewardMult;
+        }
+
+        final sessionId = _newSessionId();
+        final session = BattleSession(
+          id: sessionId,
+          userId: user.id,
+          seed: DateTime.now().microsecondsSinceEpoch & 0x7fffffff,
+          myTeamBugIds: teamIds,
+          foe: foe,
+          location: foe.first.element,
+          rewardMult: rewardMult,
+          stances: const [],
+          finished: false,
+        );
+        await store.saveSession(sessionId, user.id, session.toJson());
+
+        // 상대 스탯은 화면 표시에 필요하므로 준다. 시드는 주지 않는다.
+        return _json({
+          'sessionId': sessionId,
+          'location': session.location.key,
+          'foe': [
+            for (final b in foe)
+              {
+                'name': b.name,
+                'el': b.element.key,
+                'hp': b.maxHp,
+                'atk': b.atk,
+                'def': b.def,
+                'spd': b.spd,
+              },
+          ],
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[manual/start] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 수동 전투 한 수 진행. 서버가 처음부터 재생해 **이번 라운드 결과만** 준다.
+    authed.post('/battle/manual/step', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final sessionId = body['sessionId']?.toString() ?? '';
+      final stance = Stance.values
+          .where((s) => s.name == (body['stance']?.toString() ?? ''))
+          .firstOrNull;
+      if (sessionId.isEmpty || stance == null) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+
+      try {
+        final row = await store.loadSession(sessionId);
+        if (row == null) return _json({'error': 'no_session'}, status: 404);
+        // 남의 세션을 진행시킬 수 없다.
+        if (row['user_id']?.toString() != user.id) {
+          return _json({'error': 'forbidden'}, status: 403);
+        }
+        var session = BattleSession.fromJson(
+          sessionId,
+          user.id,
+          row['data'] as Map<String, dynamic>,
+        );
+        // 끝난 세션을 다시 돌려 보상을 두 번 받지 못하게.
+        if (session.finished) {
+          return _json({'error': 'already_finished'}, status: 409);
+        }
+
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final built = actions.validateTeam(
+          save,
+          session.myTeamBugIds,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        if (built.error != null) {
+          return _json({'error': built.error}, status: 400);
+        }
+
+        session = session.copyWith(stances: [...session.stances, stance]);
+        final st = replay(
+          session,
+          built.team,
+          locationBonus: cfg.battle.locationAffinityBonus,
+        );
+
+        final out = <String, dynamic>{
+          'round': st.round,
+          'done': st.done,
+          'hpA': st.hpA,
+          'hpB': st.hpB,
+        };
+        if (st.events.isNotEmpty) {
+          final ev = st.events.last;
+          out['event'] = {
+            'aStance': ev.aStance.name,
+            'bStance': ev.bStance.name,
+            'dmgToA': ev.dmgToA,
+            'dmgToB': ev.dmgToB,
+            'aDown': ev.aDown,
+            'bDown': ev.bDown,
+          };
+        }
+
+        if (!st.done) {
+          await store.saveSession(sessionId, user.id, session.toJson());
+          return _json(out);
+        }
+
+        // 결착 — 보상을 서버가 확정하고 세션을 닫는다.
+        final applied = actions.applyBattleOutcome(
+          save,
+          result: st.toResult(),
+          myTeam: built.team,
+          rewardMult: session.rewardMult,
+          speciesById: species,
+          petConfig: cfg.pet,
+        );
+        await store.saveSession(
+          sessionId,
+          user.id,
+          session.copyWith(finished: true).toJson(),
+        );
+        if (!applied.isOk) return _json(out);
+        await store.save(user.id, applied.save!.toJson());
+        return _json({
+          ...out,
+          ...applied.extra,
+          'save': applied.save!.toJson(),
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[manual/step] ${user.id}: $e');
         return _json({'error': 'store_unavailable'}, status: 503);
       }
     });
