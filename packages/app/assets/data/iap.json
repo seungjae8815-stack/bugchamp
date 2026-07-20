@@ -159,9 +159,9 @@
         "ja": "黄金カブトムシ"
       },
       "desc": {
-        "ko": "외형 전용 · 능력치 영향 없음",
-        "en": "Cosmetic only, no stat effect",
-        "ja": "見た目のみ・能力に影響なし"
+        "ko": "장수풍뎅이 계열 전체가 황금빛으로 · 외형 전용, 능력치 영향 없음",
+        "en": "All rhinoceros beetles turn gold. Cosmetic only — no stat effect.",
+        "ja": "カブトムシ系がすべて黄金色に。見た目のみ・能力に影響なし。"
       }
     },
     {
@@ -177,9 +177,9 @@
         "ja": "アルビノクワガタ"
       },
       "desc": {
-        "ko": "외형 전용 · 능력치 영향 없음",
-        "en": "Cosmetic only, no stat effect",
-        "ja": "見た目のみ・能力に影響なし"
+        "ko": "사슴벌레 계열 전체가 알비노(백화)로 · 외형 전용, 능력치 영향 없음",
+        "en": "All stag beetles turn albino. Cosmetic only — no stat effect.",
+        "ja": "クワガタ系がすべてアルビノに。見た目のみ・能力に影響なし。"
       }
     },
     {
@@ -195,10 +195,26 @@
         "ja": "アリーナテーマ"
       },
       "desc": {
-        "ko": "전투 장소 배경 스킨",
-        "en": "Battle location background skin",
-        "ja": "戦闘場所の背景スキン"
+        "ko": "전투 장소 배경이 선명한 톤으로 · 외형 전용, 능력치 영향 없음",
+        "en": "Battle backgrounds get a vivid grade. Cosmetic only.",
+        "ja": "バトル背景が鮮やかなトーンに。見た目のみ。"
       }
+    }
+  ],
+  "skins": [
+    {
+      "id": "gold_rhino",
+      "speciesPrefix": "rhino_",
+      "effect": "gold"
+    },
+    {
+      "id": "albino_stag",
+      "speciesPrefix": "stag_",
+      "effect": "albino"
+    },
+    {
+      "id": "arena_theme",
+      "effect": "arenaTheme"
     }
   ]
 }

@@ -200,11 +200,13 @@ String bugFamily(String speciesId) {
 /// - 성충: 종별 `bugs/{id}_adult.webp` → `bugs/{id}.webp`
 /// - 알/유충/번데기: 종별 override 있으면 우선 → **그룹 공통** `bugs/stage_{family}_{stage}.webp`
 ///   → 전체 공통 `bugs/stage_{stage}.webp` → 폴백.
+/// [skin] 이 있으면 구매한 코스메틱 색 필터를 입힌다(§2.6 — 외형만, 스탯 무관).
 Widget bugStageImage(
   String speciesId,
   LifeStage stage, {
   required double size,
   required Widget fallback,
+  ColorFilter? skin,
 }) {
   final List<String> paths;
   if (stage == LifeStage.adult) {
@@ -226,11 +228,12 @@ Widget bugStageImage(
       'assets/images/bugs/stage_$s.png',
     ];
   }
-  return gameImageChain(paths, size: size, fallback: fallback);
+  final img = gameImageChain(paths, size: size, fallback: fallback);
+  return skin == null ? img : ColorFiltered(colorFilter: skin, child: img);
 }
 
 /// 곤충 아바타. species.imageAsset 없으면 등급색 원 + 이모지 폴백.
-Widget bugAvatar(Species s, {double size = 44}) {
+Widget bugAvatar(Species s, {double size = 44, ColorFilter? skin}) {
   final placeholder = Container(
     width: size,
     height: size,
@@ -257,7 +260,7 @@ Widget bugAvatar(Species s, {double size = 44}) {
   );
   final path = s.imageAsset;
   if (path == null) return placeholder;
-  return ClipOval(
+  final avatar = ClipOval(
     child: Image.asset(
       'assets/images/bugs/$path',
       width: size,
@@ -266,6 +269,9 @@ Widget bugAvatar(Species s, {double size = 44}) {
       errorBuilder: (_, _, _) => placeholder,
     ),
   );
+  return skin == null
+      ? avatar
+      : ColorFiltered(colorFilter: skin, child: avatar);
 }
 
 /// 서식지 표시용 이모지 폴백.

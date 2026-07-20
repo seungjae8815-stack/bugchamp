@@ -66,4 +66,38 @@ void main() {
     expect(cfg.passIdleGoldMult, 1.2);
     expect(cfg.passDailyJelly, 30); // 미지정 → 기본값
   });
+
+  group('스킨 적용 규칙', () {
+    final skinCfg = IapConfig.fromJson({
+      'products': const [],
+      'skins': [
+        {'id': 'gold_rhino', 'speciesPrefix': 'rhino_', 'effect': 'gold'},
+        {'id': 'albino_stag', 'speciesPrefix': 'stag_', 'effect': 'albino'},
+        {'id': 'arena_theme', 'effect': 'arenaTheme'},
+      ],
+    });
+
+    test('보유한 스킨만, 해당 종 접두사에만 적용된다', () {
+      const owned = {'gold_rhino'};
+      expect(skinCfg.skinEffectFor(owned, 'rhino_common'), 'gold');
+      expect(skinCfg.skinEffectFor(owned, 'stag_giant'), isNull); // 미보유
+      expect(skinCfg.skinEffectFor(owned, 'mantis_giant'), isNull); // 대상 아님
+    });
+
+    test('미보유면 아무 효과도 없다', () {
+      expect(skinCfg.skinEffectFor(const {}, 'rhino_common'), isNull);
+    });
+
+    test('종별 스킨은 곤충이 아닌 효과(아레나 테마)와 섞이지 않는다', () {
+      const owned = {'arena_theme'};
+      expect(skinCfg.skinEffectFor(owned, 'rhino_common'), isNull);
+      expect(skinCfg.ownsEffect(owned, 'arenaTheme'), isTrue);
+      expect(skinCfg.ownsEffect(const {}, 'arenaTheme'), isFalse);
+    });
+
+    test('skins 미정의 JSON 이면 빈 목록', () {
+      expect(cfg.skins, isEmpty);
+      expect(cfg.skinEffectFor(const {'gold_rhino'}, 'rhino_common'), isNull);
+    });
+  });
 }

@@ -23,6 +23,7 @@ import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../roadmap/roadmap_screen.dart';
 
@@ -2131,6 +2132,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   stage,
                   size: size,
                   fallback: bugAvatar(sp, size: size),
+                  skin: ref.watch(skinOfProvider)(bug.speciesId),
                 ),
               ),
             ),

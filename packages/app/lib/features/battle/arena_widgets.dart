@@ -75,6 +75,7 @@ class ArenaFighter extends StatelessWidget {
     required this.flash,
     required this.dx,
     this.stanceHidden = false,
+    this.skin,
   });
 
   final GameData data;
@@ -87,6 +88,9 @@ class ArenaFighter extends StatelessWidget {
   final double dx;
   final bool stanceHidden;
 
+  /// 구매한 스킨의 색 필터. **내 쪽 파이터에만** 준다(상대 곤충은 상대의 외형).
+  final ColorFilter? skin;
+
   @override
   Widget build(BuildContext context) {
     final u = bug;
@@ -98,6 +102,7 @@ class ArenaFighter extends StatelessWidget {
             LifeStage.adult,
             size: 96,
             fallback: bugAvatar(sp, size: 84),
+            skin: skin,
           );
     if (flip) img = Transform.flip(flipX: true, child: img);
 

@@ -17,6 +17,7 @@ import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
 import 'arena_widgets.dart';
 import 'battle_arena.dart';
 import 'manual_battle_screen.dart';
@@ -750,6 +751,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           LifeStage.adult,
           size: 48,
           fallback: bugAvatar(sp, size: 42),
+          skin: ref.read(skinOfProvider)(bug.speciesId),
         ),
       ),
     ),
@@ -1197,6 +1199,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       LifeStage.adult,
                       size: 60,
                       fallback: bugAvatar(sp!, size: 52),
+                      skin: ref.watch(skinOfProvider)(bug.speciesId),
                     ),
                   ),
                   Container(
@@ -1457,6 +1460,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   LifeStage.adult,
                   size: 44,
                   fallback: bugAvatar(sp, size: 38),
+                  skin: ref.watch(skinOfProvider)(bug.speciesId),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -1575,6 +1579,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           gold: rw.gold,
           trophyDelta: rw.trophyDelta,
           location: scout.location,
+          skinOf: ref.read(skinOfProvider),
+          arenaTheme: ref.read(arenaThemeOwnedProvider),
         ),
       ),
     );
@@ -1602,6 +1608,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           rewardMult: scout.tier.rewardMult,
           onApply: _applyReward,
           location: scout.location,
+          skinOf: ref.read(skinOfProvider),
+          arenaTheme: ref.read(arenaThemeOwnedProvider),
         ),
       ),
     );

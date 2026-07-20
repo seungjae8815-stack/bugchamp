@@ -123,11 +123,35 @@ class IapProduct {
   );
 }
 
+/// 스킨 1종의 적용 규칙 (코스메틱 — 스탯 영향 없음).
+///
+/// [speciesPrefix] 로 시작하는 종의 **내 곤충**에 [effect] 색 처리를 입힌다.
+/// prefix 가 없으면 곤충이 아닌 곳(예: 아레나 테마)에 쓰는 스킨.
+@immutable
+class SkinDef {
+  const SkinDef({required this.id, required this.effect, this.speciesPrefix});
+
+  final String id;
+
+  /// 색 처리 종류: 'gold' | 'albino' | 'arenaTheme'.
+  final String effect;
+
+  /// 적용 대상 종 접두사(예: 'rhino_' = 장수풍뎅이 계열).
+  final String? speciesPrefix;
+
+  factory SkinDef.fromJson(Map<String, dynamic> json) => SkinDef(
+    id: json['id'] as String,
+    effect: json['effect'] as String? ?? 'gold',
+    speciesPrefix: json['speciesPrefix'] as String?,
+  );
+}
+
 /// 인앱결제 카탈로그 + 패스/광고제거 효과 수치 (assets/data/iap.json, §6).
 @immutable
 class IapConfig {
   const IapConfig({
     required this.products,
+    this.skins = const [],
     this.currency = 'KRW',
     this.passDurationDays = 30,
     this.passDailyJelly = 30,
@@ -137,7 +161,28 @@ class IapConfig {
   });
 
   final List<IapProduct> products;
+
+  /// 스킨 적용 규칙(구매한 스킨이 실제로 보이게 하는 정의).
+  final List<SkinDef> skins;
+
   final String currency;
+
+  /// [speciesId] 에 적용될 스킨 효과. [owned] 에 없는 스킨은 무시.
+  /// 없으면 null(기본 외형).
+  String? skinEffectFor(Set<String> owned, String speciesId) {
+    for (final s in skins) {
+      final p = s.speciesPrefix;
+      if (p == null || !owned.contains(s.id)) continue;
+      if (speciesId.startsWith(p)) return s.effect;
+    }
+    return null;
+  }
+
+  /// 보유한 스킨 중 곤충이 아닌 대상(아레나 테마 등)의 효과들.
+  bool ownsEffect(Set<String> owned, String effect) => skins.any(
+    (s) =>
+        s.effect == effect && s.speciesPrefix == null && owned.contains(s.id),
+  );
 
   /// 패스 기간(일)·매일 젤리·오프라인 상한(시간)·방치 골드 배율.
   final int passDurationDays;
@@ -167,6 +212,10 @@ class IapConfig {
     products: [
       for (final p in (json['products'] as List? ?? const []))
         IapProduct.fromJson(p as Map<String, dynamic>),
+    ],
+    skins: [
+      for (final s in (json['skins'] as List? ?? const []))
+        SkinDef.fromJson(s as Map<String, dynamic>),
     ],
     currency: json['currency'] as String? ?? 'KRW',
     passDurationDays: (json['passDurationDays'] as num?)?.toInt() ?? 30,

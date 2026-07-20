@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import '../../data/game_data.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
 import 'arena_widgets.dart';
 
 /// 전투 아레나 — `BattleResult`의 라운드 이벤트를 절차적 모션으로 재생(오토).
@@ -23,6 +24,8 @@ class BattleArenaScreen extends StatefulWidget {
     required this.gold,
     required this.trophyDelta,
     required this.location,
+    this.skinOf = noSkin,
+    this.arenaTheme = false,
   });
 
   final GameData data;
@@ -35,6 +38,12 @@ class BattleArenaScreen extends StatefulWidget {
 
   /// 전투 장소 오행(배경 톤).
   final Element location;
+
+  /// 내 곤충의 종 id → 구매한 스킨 색 필터. 상대에는 적용하지 않는다.
+  final SkinOf skinOf;
+
+  /// 아레나 테마 스킨 보유 여부(배경 색보정).
+  final bool arenaTheme;
 
   @override
   State<BattleArenaScreen> createState() => _BattleArenaScreenState();
@@ -254,9 +263,13 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                   children: [
                     // 전투 씬 배경 — 이 영역(상단)에만 깐다.
                     Positioned.fill(
-                      child: biomeBackground(
-                        widget.location,
-                        fallback: const SizedBox.shrink(),
+                      child: withSkin(
+                        biomeBackground(
+                          widget.location,
+                          fallback: const SizedBox.shrink(),
+                        ),
+                        // 아레나 테마 스킨 보유 시 배경 색보정.
+                        widget.arenaTheme ? arenaThemeFilter : null,
                       ),
                     ),
                     Row(
@@ -274,6 +287,10 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                                   stance: ev?.aStance,
                                   flash: _flashL,
                                   dx: _lungeSide == -1 ? lunge : 0.0,
+                                  skin: widget.skinOf(
+                                    widget.speciesOf[widget.myTeam[_a].id] ??
+                                        '',
+                                  ),
                                 )
                               : const SizedBox.shrink(),
                         ),

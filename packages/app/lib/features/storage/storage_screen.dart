@@ -15,6 +15,7 @@ import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -1115,6 +1116,7 @@ class StorageScreen extends ConsumerWidget {
                       stage,
                       size: 48,
                       fallback: bugAvatar(species, size: 44),
+                      skin: ref.watch(skinOfProvider)(bug.speciesId),
                     ),
                   ),
                   if (equipped)
@@ -1357,6 +1359,7 @@ class StorageScreen extends ConsumerWidget {
                         stage,
                         size: 58,
                         fallback: bugAvatar(species!, size: 52),
+                        skin: ref.watch(skinOfProvider)(bug.speciesId),
                       ),
                     ),
                     Padding(
@@ -1497,6 +1500,7 @@ class StorageScreen extends ConsumerWidget {
                           effStage,
                           size: 54,
                           fallback: bugAvatar(species, size: 50),
+                          skin: r.watch(skinOfProvider)(bug.speciesId),
                         ),
                       ),
                       const SizedBox(width: 12),

@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import '../../data/game_data.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
 import 'arena_widgets.dart';
 
 /// 표시용 최대 기력(엔진 상수와 일치 — core_battle `_maxEnergy`).
@@ -31,6 +32,8 @@ class ManualBattleScreen extends StatefulWidget {
     required this.config,
     required this.onApply,
     required this.location,
+    this.skinOf = noSkin,
+    this.arenaTheme = false,
     this.rewardMult = 1.0,
   });
 
@@ -45,6 +48,12 @@ class ManualBattleScreen extends StatefulWidget {
 
   /// 전투 장소 오행(같은 오행 곤충 강화 + 배경).
   final Element location;
+
+  /// 내 곤충의 종 id → 구매한 스킨 색 필터. 상대에는 적용하지 않는다.
+  final SkinOf skinOf;
+
+  /// 아레나 테마 스킨 보유 여부(배경 색보정).
+  final bool arenaTheme;
   final Future<void> Function(
     int gold,
     int trophyDelta,
@@ -316,9 +325,13 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                   children: [
                     // 전투 씬 배경 — 이 영역(상단)에만 깐다.
                     Positioned.fill(
-                      child: biomeBackground(
-                        widget.location,
-                        fallback: const SizedBox.shrink(),
+                      child: withSkin(
+                        biomeBackground(
+                          widget.location,
+                          fallback: const SizedBox.shrink(),
+                        ),
+                        // 아레나 테마 스킨 보유 시 배경 색보정.
+                        widget.arenaTheme ? arenaThemeFilter : null,
                       ),
                     ),
                     Row(
@@ -338,6 +351,12 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                   stance: reveal ? ev?.aStance : null,
                                   flash: _flashL,
                                   dx: _lungeSide == -1 ? lunge : 0.0,
+                                  skin: widget.skinOf(
+                                    widget.speciesOf[widget
+                                            .myTeam[_dispA]
+                                            .id] ??
+                                        '',
+                                  ),
                                 )
                               : const SizedBox.shrink(),
                         ),
