@@ -21,27 +21,32 @@
 
 ## B. 계정·키 — ⚠️ 사장님 작업
 
-### B-1. 릴리즈 키스토어 만들기 (제일 먼저)
-```powershell
-keytool -genkey -v -keystore $env:USERPROFILE\bugchamp-upload.jks `
-  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
-```
-그다음 `packages\app\android\key.properties` 생성:
-```properties
-storePassword=<비밀번호>
-keyPassword=<비밀번호>
-keyAlias=upload
-storeFile=C:/Users/Lenovo/bugchamp-upload.jks
-```
-> 🔴 **이 키를 잃어버리면 앱을 영영 업데이트할 수 없다.** 반드시 백업.
-> (커밋은 안 된다 — 이미 gitignore 처리됨)
+### B-1. 릴리즈 키스토어 — ✅ 완료 (2026-07-20)
 
-### B-2. 키 SHA-1 을 Google Cloud 에 등록 (구글 로그인용)
-```powershell
-keytool -list -v -keystore $env:USERPROFILE\bugchamp-upload.jks -alias upload
+| 항목 | 값 |
+|---|---|
+| 키스토어 | `C:\Users\Lenovo\keys\bugchamp-upload.jks` |
+| 별칭 | `upload` |
+| 비밀번호 | `C:\Users\Lenovo\keys\READ_ME_비밀번호.txt` 안에 |
+| 유효기간 | 10000일 |
+| **SHA-1** | `78:C3:6D:0B:A8:B8:FD:2A:BE:B2:57:5D:5F:E1:4C:98:13:6E:73:03` |
+| **SHA-256** | `18:C4:3A:10:2D:DA:EA:C1:7E:F7:83:FF:DE:E6:EF:41:C6:E8:B3:44:37:D1:3D:23:4F:87:15:19:49:15:94:34` |
+
+`packages\app\android\key.properties` 작성 완료 → 릴리즈 빌드가 이 키로 서명됨을
+apksigner 로 검증했다(APK 서명자 SHA-1 = 위 값 일치).
+
+> 🔴 **지금 당장 백업할 것**: `bugchamp-upload.jks` + `READ_ME_비밀번호.txt` 두 파일.
+> 비밀번호 관리자 + 외장/클라우드 최소 2곳. 이 둘을 잃으면 같은 키로 업데이트가 불가능하다.
+> (Play 앱 서명 사용 시 업로드 키는 구글에 재설정 요청이 가능하지만 번거롭다.)
+
+### B-2. 키 SHA-1 을 Google Cloud 에 등록 (구글 로그인용) ⚠️ 사장님 작업
+
+**등록할 SHA-1 (업로드 키)**:
 ```
-출력된 SHA-1 을 Google Cloud Console → 사용자 인증 정보 →
-**Android 클라이언트**에 추가. 안 하면 릴리즈에서 구글 로그인이 실패한다.
+78:C3:6D:0B:A8:B8:FD:2A:BE:B2:57:5D:5F:E1:4C:98:13:6E:73:03
+```
+Google Cloud Console → 사용자 인증 정보 → **Android 클라이언트**에 추가
+(패키지명 `com.bugchamp.app`). 안 하면 릴리즈에서 구글 로그인이 실패한다.
 
 > Play 앱 서명을 쓰면 구글이 **재서명**하므로, 업로드 후 Play Console →
 > 설정 → 앱 서명 에 나오는 **앱 서명 키의 SHA-1도 함께 등록**해야 한다. (중요)
