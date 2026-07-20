@@ -636,6 +636,52 @@ class GameActions {
     );
   }
 
+  /// 부화 수령(알 → 유충). 완료 전이면 거부.
+  ActionResult collectIncubated(SaveGame save, String bugId) {
+    final t = now().toUtc();
+    final endsAt = save.incubating[bugId];
+    if (endsAt == null) return const ActionResult.fail('not_incubating');
+    if (t.isBefore(endsAt)) return const ActionResult.fail('not_ready');
+    final idx = save.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return const ActionResult.fail('bug_not_owned');
+
+    final bugs = List<IndividualBug>.from(save.bugs);
+    bugs[idx] = bugs[idx].copyWith(stage: LifeStage.larva, stageSince: t);
+    final inc = Map<String, DateTime>.from(save.incubating)..remove(bugId);
+    return ActionResult.ok(save.copyWith(bugs: bugs, incubating: inc));
+  }
+
+  /// 곤충 분해 → 젤리. 지급량은 `pets.json` 이 정한다(§6).
+  ///
+  /// 편성 중이거나 부상 중인 개체는 분해할 수 없다 —
+  /// 전투 도중 사라지면 상태가 꼬인다.
+  ActionResult disassembleBug(
+    SaveGame save,
+    String bugId, {
+    required PetConfig petConfig,
+  }) {
+    final t = now().toUtc();
+    final idx = save.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return const ActionResult.fail('bug_not_owned');
+    if (save.equippedBugIds.contains(bugId)) {
+      return const ActionResult.fail('equipped');
+    }
+    if (save.isInjured(bugId, t)) return const ActionResult.fail('injured');
+    if (save.incubating.containsKey(bugId)) {
+      return const ActionResult.fail('incubating');
+    }
+
+    final bug = save.bugs[idx];
+    final reward = petConfig.disassembleJelly(bug.potential);
+    final mats = Map<MaterialKind, int>.from(save.materials)
+      ..[MaterialKind.jelly] = save.materialCount(MaterialKind.jelly) + reward;
+    final bugs = List<IndividualBug>.from(save.bugs)..removeAt(idx);
+    return ActionResult.ok(
+      save.copyWith(bugs: bugs, materials: mats),
+      extra: {'jelly': reward},
+    );
+  }
+
   /// 젤리 소비. 잔액이 모자라면 거부한다 — **클라이언트 말을 믿지 않는다.**
   ActionResult spendJelly(SaveGame save, int amount, {String? reason}) {
     if (amount <= 0) return const ActionResult.fail('bad_amount');

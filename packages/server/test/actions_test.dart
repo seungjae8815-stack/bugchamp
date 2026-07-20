@@ -786,4 +786,81 @@ void main() {
       expect(r.save!.bugs.last.stage, LifeStage.egg);
     });
   });
+
+  group('부화 수령·분해', () {
+    final cfg = _Config();
+
+    IndividualBug egg(String id) => IndividualBug(
+      id: id,
+      speciesId: 'a',
+      sizeMm: 40,
+      potential: 4,
+      temperament: Temperament.aggressive,
+      sex: Sex.male,
+      element: Element.wood,
+      stage: LifeStage.egg,
+      stageSince: t0,
+    );
+
+    test('부화 중이 아니면 수령 불가', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(bugs: [egg('e')]);
+      expect(actions.collectIncubated(s, 'e').error, 'not_incubating');
+    });
+
+    test('완료 전에는 수령 불가 — 타이머를 건너뛸 수 없다', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(
+        bugs: [egg('e')],
+        incubating: {'e': t0.add(const Duration(hours: 1))},
+      );
+      expect(actions.collectIncubated(s, 'e').error, 'not_ready');
+    });
+
+    test('완료 후 유충으로 바뀐다', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(
+        bugs: [egg('e')],
+        incubating: {'e': t0.subtract(const Duration(seconds: 1))},
+      );
+      final r = actions.collectIncubated(s, 'e');
+      expect(r.isOk, isTrue);
+      expect(r.save!.bugs.first.stage, LifeStage.larva);
+      expect(r.save!.incubating, isEmpty);
+    });
+
+    test('분해하면 젤리를 주고 곤충이 사라진다', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(bugs: [egg('e')]);
+      final r = actions.disassembleBug(s, 'e', petConfig: cfg.pet);
+      expect(r.isOk, isTrue);
+      expect(r.save!.bugs, isEmpty);
+      expect(r.save!.materialCount(MaterialKind.jelly), greaterThan(0));
+    });
+
+    test('편성 중인 곤충은 분해 불가', () {
+      final s = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(bugs: [egg('e')], equippedBugIds: ['e']);
+      expect(
+        actions.disassembleBug(s, 'e', petConfig: cfg.pet).error,
+        'equipped',
+      );
+    });
+
+    test('부화 중인 곤충은 분해 불가 (슬롯 누수 방지)', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(
+        bugs: [egg('e')],
+        incubating: {'e': t0.add(const Duration(hours: 1))},
+      );
+      expect(
+        actions.disassembleBug(s, 'e', petConfig: cfg.pet).error,
+        'incubating',
+      );
+    });
+
+    test('내 곤충이 아니면 분해 불가', () {
+      final s = SaveGame.initial(createdAt: t0);
+      expect(
+        actions.disassembleBug(s, 'nope', petConfig: cfg.pet).error,
+        'bug_not_owned',
+      );
+    });
+  });
 }

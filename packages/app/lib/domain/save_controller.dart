@@ -1032,6 +1032,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 부화 완료된 알을 수령 → 유충으로. 미완료/없음이면 false.
   Future<bool> collectIncubated(String bugId) async {
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).collectIncubated(bugId),
+    );
+    if (viaServer != null) return viaServer;
+
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
     final endsAt = s.incubating[bugId];
@@ -1181,6 +1186,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 분해: 미장착 곤충 [bugId] 를 없애고 젤리로 환원. 장착/없음이면 false.
   Future<bool> disassembleBug(String bugId) async {
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).disassemble(bugId),
+    );
+    if (viaServer != null) return viaServer;
+
     final s = state.requireValue;
     if (s.isEquipped(bugId)) return false;
     if (s.incubating.containsKey(bugId)) return false; // 부화 중 보호

@@ -582,6 +582,54 @@ Handler buildHandler({
       }
     });
 
+    /// 부화 수령(알 → 유충) — 타이머 완료를 서버가 확인한다.
+    authed.post('/incubate/collect', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final bugId = body['bugId']?.toString() ?? '';
+      if (bugId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.collectIncubated(save, bugId);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[incubate/collect] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 곤충 분해 → 젤리. 지급량은 서버가 pets.json 에서 정한다.
+    authed.post('/disassemble', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final bugId = body['bugId']?.toString() ?? '';
+      if (bugId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.disassembleBug(save, bugId, petConfig: cfg.pet);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[disassemble] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     authed.post('/purchase', (Request req) async {
       final user = userOf(req);
       final Map<String, dynamic> body;

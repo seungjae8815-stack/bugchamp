@@ -26,6 +26,8 @@
 | `POST /breed/collect` | 필요 | 산란 수령 — 서버 시드로 자식 롤 |
 | `POST /battle/manual/start` | 필요 | 수동 전투 세션 시작(**시드 비공개**) |
 | `POST /battle/manual/step` | 필요 | 한 수 진행 — 이번 라운드 결과만 반환 |
+| `POST /incubate/collect` | 필요 | 부화 수령 — 타이머 완료를 서버가 확인 |
+| `POST /disassemble` | 필요 | 분해 → 젤리(지급량은 pets.json) |
 | `POST /battle` | 필요 | 서버가 전투를 시뮬레이션하고 결과 확정 |
 
 쓰기 엔드포인트는 `gameConfig`·`speciesById` 가 주입된 경우에만 노출된다.
