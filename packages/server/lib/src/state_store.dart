@@ -62,6 +62,26 @@ class StateStore {
     }
   }
 
+  /// [userId] 의 방어팀(곤충 3마리 스냅샷). 없으면 null.
+  ///
+  /// 상대 스탯을 **클라이언트가 보내게 하면 안 된다** — 약한 상대를 만들어
+  /// 트로피를 쓸어담을 수 있다. 서버가 직접 읽는다.
+  Future<List<Map<String, dynamic>>?> loadDefenderTeam(String userId) async {
+    final uri = Uri.parse(
+      '$supabaseUrl/rest/v1/defenders?id=eq.$userId&select=team&limit=1',
+    );
+    final res = await _http.get(uri, headers: _headers);
+    if (res.statusCode != 200) {
+      throw StateStoreException('defender load 실패: ${res.statusCode}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    var team = (rows.first as Map<String, dynamic>)['team'];
+    if (team is String) team = jsonDecode(team);
+    if (team is! List) return null;
+    return [for (final t in team) t as Map<String, dynamic>];
+  }
+
   void close() => _http.close();
 }
 

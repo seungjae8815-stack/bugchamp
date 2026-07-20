@@ -10,26 +10,44 @@ import 'auth_test.dart' show makeToken, attackerKey, signingKey, verifierFor;
 
 /// Supabase REST 를 흉내내는 가짜 클라이언트 — 네트워크 없이 라우팅을 검증한다.
 class _FakeHttp extends http.BaseClient {
-  _FakeHttp(this.rows);
+  _FakeHttp(this.rows, {this.defenders = const {}});
 
   /// userId → 세이브 JSON
   final Map<String, Map<String, dynamic>> rows;
-  int loadCount = 0;
+
+  /// userId → 방어팀
+  final Map<String, List<Map<String, dynamic>>> defenders;
+
+  /// 마지막으로 저장된 세이브(쓰기 검증용).
+  Map<String, dynamic>? lastSaved;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    loadCount++;
+    final path = request.url.path;
+    if (request.method == 'POST' && path.contains('/saves')) {
+      final raw = await request.finalize().bytesToString();
+      lastSaved = (jsonDecode(raw) as List).first as Map<String, dynamic>;
+      return http.StreamedResponse(Stream.value(utf8.encode('[]')), 201);
+    }
     final id = request.url.queryParameters['id']?.replaceFirst('eq.', '');
-    final data = rows[id];
-    final body = jsonEncode(
-      data == null
+    final Object body;
+    if (path.contains('/defenders')) {
+      final team = defenders[id];
+      body = team == null
+          ? []
+          : [
+              {'team': team},
+            ];
+    } else {
+      final data = rows[id];
+      body = data == null
           ? []
           : [
               {'data': data},
-            ],
-    );
+            ];
+    }
     return http.StreamedResponse(
-      Stream.value(utf8.encode(body)),
+      Stream.value(utf8.encode(jsonEncode(body))),
       200,
       headers: {'content-type': 'application/json'},
     );
@@ -43,6 +61,7 @@ void main() {
     final config = ServerConfig(
       supabaseUrl: url,
       serviceRoleKey: 'service-role',
+      anonKey: 'anon',
     );
     final store = StateStore(
       supabaseUrl: url,
