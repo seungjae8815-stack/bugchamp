@@ -7,7 +7,7 @@
 ///   2) `_migrations[이전버전]` 에 변환 함수를 추가한다.
 library;
 
-import '../domain/save_game.dart' show kSaveSchemaVersion;
+import 'save_game.dart' show kSaveSchemaVersion;
 
 typedef _JsonMap = Map<String, dynamic>;
 

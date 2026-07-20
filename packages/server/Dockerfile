@@ -17,5 +17,9 @@ FROM scratch
 COPY --from=build /runtime/ /
 COPY --from=build /app/bin/server /app/bin/server
 
+# 밸런스 JSON — 앱과 **같은 파일**을 서버도 읽는다(§6: JSON 이 유일한 원본).
+COPY --from=build /app/packages/app/assets/data /app/game_data
+ENV GAME_DATA_DIR=/app/game_data
+
 EXPOSE 8080
 CMD ["/app/bin/server"]

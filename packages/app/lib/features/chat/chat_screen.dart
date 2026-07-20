@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
-import '../../domain/save_game.dart';
+import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/game_dialog.dart';
 

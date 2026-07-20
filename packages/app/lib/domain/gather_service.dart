@@ -4,7 +4,7 @@ import 'package:core_gathering/core_gathering.dart';
 import 'package:core_models/core_models.dart';
 
 import '../data/game_data.dart';
-import 'save_game.dart';
+import 'package:core_save/core_save.dart';
 
 /// 채집 수령 결과: 갱신된 세이브 + 이번에 얻은 산출.
 class CollectResult {

@@ -2,8 +2,7 @@ import 'dart:convert';
 
 import 'package:hive/hive.dart';
 
-import '../domain/save_game.dart';
-import 'save_migrations.dart';
+import 'package:core_save/core_save.dart';
 
 /// 세이브 로드/저장 추상화. (Phase 4 에서 클라우드 동기화로 확장 여지)
 abstract interface class SaveRepository {

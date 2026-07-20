@@ -1,6 +1,6 @@
 import 'package:app/data/game_data.dart';
 import 'package:app/domain/gather_service.dart';
-import 'package:app/domain/save_game.dart';
+import 'package:core_save/core_save.dart';
 import 'package:core_models/core_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 

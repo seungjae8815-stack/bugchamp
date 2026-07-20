@@ -1,0 +1,19 @@
+name: core_save
+description: Bug Champ 세이브 모델·마이그레이션 (순수 Dart). 앱과 권위 서버가 **같은 모델**을 쓰기 위해 분리했다. Flutter/Hive 금지.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  core_models:
+    path: ../core_models
+  core_run:
+    path: ../core_run
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

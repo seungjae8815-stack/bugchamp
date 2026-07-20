@@ -112,6 +112,10 @@ BugChamp/
 │   │   ├── lib/                #   (PetConfig·BattleConfig·Buff/Craft/Enhance/Mission/Daily/Gift/Roadmap).
 │   │   └── test/               #   core_models 에만 의존. Flutter 금지.
 │   ├── core_gathering/         # 순수 Dart. 레거시 v1 트랩 채집(현재 UI 미사용).
+│   ├── core_save/              # 순수 Dart. 세이브 모델·마이그레이션.
+│   │                           #   app 과 server 가 **같은 모델**을 쓰기 위해 분리.
+│   ├── server/                 # 순수 Dart 권위 서버(shelf). core_* 를 그대로 import.
+│   │                           #   재화·전투를 서버가 확정한다. Flutter 금지.
 │   └── app/                    # Flutter 앱. UI·Riverpod·Hive·assets·다국어.
 │       ├── lib/
 │       │   ├── data/           # JSON 로더(game_data), 세이브 리포지토리·마이그레이션
@@ -125,7 +129,9 @@ BugChamp/
 │       └── test/
 ```
 
-**의존 방향(엄수)**: `app → core_battle / core_run → core_models` (core_gathering 도 core_models 만).
+**의존 방향(엄수)**: `{app, server} → core_battle / core_run / core_save → core_models`
+(core_gathering 도 core_models 만). **server 는 앱과 같은 core_* 코드로 계산한다** —
+로직이 두 벌이 되면 "클라에선 되는데 서버가 거부"가 발생하므로 절대 복제하지 않는다.
 core_models 는 어떤 상위 패키지도 모른다. core_run 은 core_battle 을 모른다(형제). 역참조·순환 금지.
 
 ---

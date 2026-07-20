@@ -2,7 +2,7 @@ import 'package:app/data/game_data.dart';
 import 'package:app/data/save_repository.dart';
 import 'package:app/domain/providers.dart';
 import 'package:app/domain/save_controller.dart';
-import 'package:app/domain/save_game.dart';
+import 'package:core_save/core_save.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -1,7 +1,7 @@
-import 'package:app/domain/save_game.dart';
+import 'package:core_save/core_save.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 SaveGame _sampleSave() => SaveGame(
   schemaVersion: kSaveSchemaVersion,

@@ -24,6 +24,8 @@ dependencies:
     path: ../core_gathering
   core_run:
     path: ../core_run
+  core_save:
+    path: ../core_save
 
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.3.2

@@ -14,5 +14,6 @@ workspace:
   - packages/core_battle
   - packages/core_gathering
   - packages/core_run
+  - packages/core_save
   - packages/app
   - packages/server

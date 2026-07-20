@@ -7,12 +7,10 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../data/save_migrations.dart';
+import 'package:core_save/core_save.dart';
 import '../data/save_repository.dart';
 import 'gather_service.dart';
-import 'gift_mail.dart';
 import 'providers.dart';
-import 'save_game.dart';
 
 /// 시즌 종료 정산 결과(UI 가 1회 표시). 트로피 소프트리셋 + 보상.
 class SeasonReport {

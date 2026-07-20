@@ -1,6 +1,5 @@
-import 'package:app/data/save_migrations.dart';
-import 'package:app/domain/save_game.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:core_save/core_save.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('migrateToCurrent', () {

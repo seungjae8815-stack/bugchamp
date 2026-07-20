@@ -11,7 +11,7 @@ import '../../data/game_data.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
-import '../../domain/save_game.dart';
+import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
