@@ -428,7 +428,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     final canAct = _phase == _Phase.input && !_state.done;
     final energy = _myEnergy;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -479,8 +479,9 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   Widget _stanceWheel(AppLocalizations l, bool canAct, int energy) {
     return LayoutBuilder(
       builder: (ctx, cons) {
-        final s = math.min(cons.maxWidth, 320.0);
-        final node = s * 0.27; // 노드 지름(폭 비례)
+        // 화면 폭을 최대한 사용(태블릿만 상한). 노드도 크게.
+        final s = math.min(cons.maxWidth, 460.0);
+        final node = s * 0.34; // 노드 지름(폭 비례)
         final r = s / 2 - node / 2 - 2; // 노드 중심이 지나는 링 반지름
         final center = Offset(s / 2, s / 2);
         Widget at(double deg, Widget child) {
@@ -571,12 +572,12 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
               stanceLabel(l, s),
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -584,7 +585,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
               '⚡$cost',
               style: const TextStyle(
                 color: Color(0xCCFFFFFF),
-                fontSize: 10,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -609,8 +610,8 @@ class _StanceRingPainter extends CustomPainter {
     if (r <= 0) return;
     final ring = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..color = const Color(0x2EFFFFFF);
+      ..strokeWidth = 4.5
+      ..color = const Color(0x3AFFFFFF);
     canvas.drawCircle(c, r, ring);
     // 노드 12시(-90°)·4시(30°)·8시(150°) 사이 호 중점에 시계방향 화살촉.
     final arrow = Paint()
@@ -625,7 +626,7 @@ class _StanceRingPainter extends CustomPainter {
   }
 
   void _head(Canvas canvas, Offset p, Offset dir, Paint paint) {
-    const s = 10.0;
+    const s = 14.0;
     final perp = Offset(-dir.dy, dir.dx);
     final tip = p + dir * s;
     final b1 = p - dir * s + perp * (s * 0.7);
