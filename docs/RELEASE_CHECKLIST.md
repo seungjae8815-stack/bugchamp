@@ -53,21 +53,29 @@ Google Cloud Console → 사용자 인증 정보 → **Android 클라이언트**
 > Play 앱 서명을 쓰면 구글이 **재서명**하므로, 업로드 후 Play Console →
 > 설정 → 앱 서명 에 나오는 **앱 서명 키의 SHA-1도 함께 등록**해야 한다. (중요)
 
-### B-3. AdMob 계정·광고 단위
-1. https://admob.google.com 에서 앱 등록(Android, 패키지 `com.bugchamp.app`)
-2. **보상형 광고 단위** 생성 → 두 개의 ID 를 받는다
-   - 앱 ID: `ca-app-pub-XXXX~YYYY`
-   - 광고 단위 ID: `ca-app-pub-XXXX/ZZZZ`
-3. 앱 ID → `packages\app\android\local.properties` 에 추가:
+### B-3. AdMob 계정·광고 단위 — ⚠️ 사장님 작업 (**출시 전 필수**)
+
+> 결정: **A안** — 지금 ID 를 발급받아 넣고 출시한다.
+> AdMob 은 스토어 미등재 앱도 **"앱이 스토어에 등록되어 있지 않습니다"** 를 골라
+> 등록할 수 있고, ID 는 즉시 나온다. 실제 광고 채움(app review)은 스토어 등재
+> 이후 정상화되므로 **앱 업데이트 없이** 해결된다.
+
+1. https://admob.google.com → 앱 추가 → **Android**
+   - "앱이 Google Play 에 등록되어 있나요?" → **아니요**
+   - 앱 이름: `곤충 키우기`
+2. **보상형(Rewarded) 광고 단위** 생성 → ID 두 개 확보
+   - 앱 ID: `ca-app-pub-XXXX~YYYY`  (물결표 `~`)
+   - 광고 단위 ID: `ca-app-pub-XXXX/ZZZZ`  (슬래시 `/`)
+3. 앱 ID → `packages/app/android/local.properties` 에 한 줄 추가:
    ```properties
    admobAppId=ca-app-pub-XXXX~YYYY
    ```
-4. 광고 단위 ID → 빌드할 때 주입:
-   ```
-   --dart-define=ADMOB_REWARDED_ANDROID=ca-app-pub-XXXX/ZZZZ
-   ```
-> 넣지 않으면 **구글 테스트 광고**가 나온다(광고는 뜨지만 수익 0).
-> 개발 중엔 오히려 이게 안전하다 — 실광고를 본인이 누르면 계정 정지될 수 있다.
+4. 광고 단위 ID → 빌드 시 주입(아래 D 섹션 빌드 명령 참고)
+5. 스토어 등재 후 AdMob 에서 **앱 연결(링크)** + `app-ads.txt` 설정
+
+> 🔴 **프로덕션 빌드에 광고 단위 ID 를 빠뜨리면 구글 테스트 광고가 나간다.**
+> 실사용자가 테스트 광고를 보게 되고 수익도 0이다. 업로드 전 반드시 확인할 것.
+> (확인법: 설정 → ⓘ 에서 빌드 확인 후, 광고 시청 시 "테스트 광고" 표기가 없어야 함)
 
 ### B-4. 개인정보처리방침 · 계정 삭제 페이지 — ✅ 완료 (2026-07-20)
 
@@ -119,6 +127,7 @@ cd packages\app
 flutter build appbundle --dart-define-from-file=supabase.env.json `
   --dart-define=ADMOB_REWARDED_ANDROID=ca-app-pub-XXXX/ZZZZ
 ```
+> `ADMOB_REWARDED_ANDROID` 를 빼면 테스트 광고가 나간다(위 B-3 경고).
 → `build\app\outputs\bundle\release\app-release.aab` 업로드
 
 ---
