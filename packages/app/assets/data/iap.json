@@ -1,0 +1,109 @@
+{
+  "_comment": "인앱결제 상품 카탈로그 (§6 — 가격·구성은 여기서만 수정). 기획: docs/monetization.md",
+  "schemaVersion": 1,
+  "currency": "KRW",
+  "passDurationDays": 30,
+  "passDailyJelly": 30,
+  "passOfflineCapHours": 12,
+  "passIdleGoldMult": 1.2,
+  "removeAdsDailyJelly": 10,
+  "products": [
+    {
+      "id": "remove_ads",
+      "kind": "nonConsumable",
+      "type": "removeAds",
+      "priceKrw": 7700,
+      "sort": 10
+    },
+    {
+      "id": "starter_pack",
+      "kind": "nonConsumable",
+      "type": "starter",
+      "priceKrw": 5500,
+      "sort": 20,
+      "grant": {
+        "jelly": 300,
+        "gold": 200000,
+        "chitin": 500,
+        "mineral": 500,
+        "sap": 500,
+        "incubatorSlots": 1
+      }
+    },
+    {
+      "id": "idle_pass",
+      "kind": "timed",
+      "type": "pass",
+      "priceKrw": 9900,
+      "sort": 30
+    },
+    {
+      "id": "jelly_s",
+      "kind": "consumable",
+      "type": "jelly",
+      "priceKrw": 1200,
+      "sort": 100,
+      "grant": { "jelly": 60 }
+    },
+    {
+      "id": "jelly_m",
+      "kind": "consumable",
+      "type": "jelly",
+      "priceKrw": 5500,
+      "sort": 110,
+      "bonusPct": 10,
+      "grant": { "jelly": 330 }
+    },
+    {
+      "id": "jelly_l",
+      "kind": "consumable",
+      "type": "jelly",
+      "priceKrw": 11000,
+      "sort": 120,
+      "bonusPct": 17,
+      "grant": { "jelly": 700 }
+    },
+    {
+      "id": "jelly_xl",
+      "kind": "consumable",
+      "type": "jelly",
+      "priceKrw": 29000,
+      "sort": 130,
+      "bonusPct": 25,
+      "grant": { "jelly": 1500 }
+    },
+    {
+      "id": "jelly_xxl",
+      "kind": "consumable",
+      "type": "jelly",
+      "priceKrw": 59000,
+      "sort": 140,
+      "bonusPct": 37,
+      "grant": { "jelly": 3300 }
+    },
+    {
+      "id": "skin_gold_rhino",
+      "kind": "nonConsumable",
+      "type": "skin",
+      "priceKrw": 3300,
+      "sort": 200,
+      "skinId": "gold_rhino"
+    },
+    {
+      "id": "skin_albino_stag",
+      "kind": "nonConsumable",
+      "type": "skin",
+      "priceKrw": 3300,
+      "sort": 210,
+      "skinId": "albino_stag"
+    },
+    {
+      "id": "theme_arena",
+      "kind": "nonConsumable",
+      "type": "skin",
+      "priceKrw": 2200,
+      "sort": 220,
+      "skinId": "arena_theme"
+    }
+  ]
+}

@@ -94,5 +94,44 @@ void main() {
       expect(save.breeding, isEmpty);
       expect(save.breedingCapacity, 1);
     });
+
+    test('v15(브리딩) → 현재: 인앱결제 상태가 미구매 기본값으로 채워진다', () {
+      final v15 = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).toJson()
+        ..['schemaVersion'] = 15
+        ..remove('adsRemoved')
+        ..remove('starterBought')
+        ..remove('ownedSkins')
+        ..remove('passExpiresAt');
+      final migrated = migrateToCurrent(v15);
+      expect(migrated['schemaVersion'], kSaveSchemaVersion);
+      final save = SaveGame.fromJson(migrated);
+      expect(save.adsRemoved, isFalse);
+      expect(save.starterBought, isFalse);
+      expect(save.ownedSkins, isEmpty);
+      expect(save.passExpiresAt, isNull);
+      // 미구매 상태에선 패스 비활성 · 광고 노출.
+      final now = DateTime.utc(2026, 1, 2);
+      expect(save.passActive(now), isFalse);
+      expect(save.adsHidden(now), isFalse);
+    });
+
+    test('구매 상태는 직렬화 왕복으로 보존된다', () {
+      final expiry = DateTime.utc(2026, 3, 1);
+      final bought = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1))
+          .copyWith(
+            adsRemoved: true,
+            starterBought: true,
+            ownedSkins: {'gold_rhino'},
+            passExpiresAt: expiry,
+          );
+      final back = SaveGame.fromJson(bought.toJson());
+      expect(back.adsRemoved, isTrue);
+      expect(back.starterBought, isTrue);
+      expect(back.ownedSkins, {'gold_rhino'});
+      expect(back.passExpiresAt, expiry);
+      expect(back.passActive(DateTime.utc(2026, 2, 1)), isTrue);
+      expect(back.passActive(DateTime.utc(2026, 4, 1)), isFalse);
+      expect(back.adsHidden(DateTime.utc(2026, 4, 1)), isTrue); // 광고제거는 영구
+    });
   });
 }

@@ -479,8 +479,10 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   Widget _stanceWheel(AppLocalizations l, bool canAct, int energy) {
     return LayoutBuilder(
       builder: (ctx, cons) {
-        // 화면 폭을 최대한 사용(태블릿만 상한). 노드도 크게.
-        final s = math.min(cons.maxWidth, 460.0);
+        // 화면 폭을 최대한 사용하되, 화면 높이의 일정 비율로도 상한을 둔다
+        // (짧은 화면에서 휠이 아레나를 밀어내 넘치는 것 방지).
+        final maxByHeight = MediaQuery.sizeOf(context).height * 0.42;
+        final s = math.min(math.min(cons.maxWidth, 460.0), maxByHeight);
         final node = s * 0.34; // 노드 지름(폭 비례)
         final r = s / 2 - node / 2 - 2; // 노드 중심이 지나는 링 반지름
         final center = Offset(s / 2, s / 2);

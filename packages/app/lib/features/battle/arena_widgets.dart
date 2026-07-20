@@ -101,116 +101,121 @@ class ArenaFighter extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                elementGlyph(u.element),
-                style: const TextStyle(fontSize: 12),
-              ),
-              const SizedBox(width: 3),
-              Flexible(
-                child: Text(
-                  u.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: elementColor(u.element),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
+      // 아레나 높이가 좁아도(작은 화면·큰 하단 UI) 넘치지 않게 축소.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  elementGlyph(u.element),
+                  style: const TextStyle(fontSize: 12),
+                ),
+                const SizedBox(width: 3),
+                Flexible(
+                  child: Text(
+                    u.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: elementColor(u.element),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 120,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Stack(
+                  children: [
+                    Container(height: 12, color: const Color(0x55000000)),
+                    FractionallySizedBox(
+                      widthFactor: hpFrac,
+                      child: Container(
+                        height: 12,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: hpFrac > 0.3
+                                ? const [Color(0xFF7CE38B), Color(0xFF3FA84E)]
+                                : const [Color(0xFFFF8A6B), Color(0xFFD84A2E)],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          SizedBox(
-            width: 120,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 120,
               child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
                 children: [
-                  Container(height: 12, color: const Color(0x55000000)),
-                  FractionallySizedBox(
-                    widthFactor: hpFrac,
-                    child: Container(
-                      height: 12,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: hpFrac > 0.3
-                              ? const [Color(0xFF7CE38B), Color(0xFF3FA84E)]
-                              : const [Color(0xFFFF8A6B), Color(0xFFD84A2E)],
+                  Transform.translate(
+                    offset: Offset(dx, 0),
+                    // 교대 시 슬라이드-인/아웃(KO 퇴장 + 다음 파이터 등장).
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      switchInCurve: Curves.easeOutBack,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(
+                          position: Tween(
+                            begin: Offset(flip ? 0.7 : -0.7, 0),
+                            end: Offset.zero,
+                          ).animate(anim),
+                          child: child,
+                        ),
+                      ),
+                      child: KeyedSubtree(
+                        key: ValueKey(bug.id),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            img,
+                            if (flash > 0)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFFFF3B3B,
+                                      ).withValues(alpha: flash * 0.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
                   ),
+                  if (stance != null || stanceHidden)
+                    Positioned(
+                      top: -14,
+                      child: Text(
+                        stanceHidden ? '❓' : stanceGlyph(stance!),
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 120,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                Transform.translate(
-                  offset: Offset(dx, 0),
-                  // 교대 시 슬라이드-인/아웃(KO 퇴장 + 다음 파이터 등장).
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    switchInCurve: Curves.easeOutBack,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, anim) => FadeTransition(
-                      opacity: anim,
-                      child: SlideTransition(
-                        position: Tween(
-                          begin: Offset(flip ? 0.7 : -0.7, 0),
-                          end: Offset.zero,
-                        ).animate(anim),
-                        child: child,
-                      ),
-                    ),
-                    child: KeyedSubtree(
-                      key: ValueKey(bug.id),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          img,
-                          if (flash > 0)
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFFFF3B3B,
-                                    ).withValues(alpha: flash * 0.5),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                if (stance != null || stanceHidden)
-                  Positioned(
-                    top: -14,
-                    child: Text(
-                      stanceHidden ? '❓' : stanceGlyph(stance!),
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

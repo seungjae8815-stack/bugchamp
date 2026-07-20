@@ -5,7 +5,7 @@ import 'gift_mail.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
-const int kSaveSchemaVersion = 15;
+const int kSaveSchemaVersion = 16;
 
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
@@ -122,6 +122,10 @@ class SaveGame {
     this.seasonPeakTrophies = 0,
     this.breeding = const [],
     this.breedingCapacity = 1,
+    this.adsRemoved = false,
+    this.starterBought = false,
+    this.ownedSkins = const {},
+    this.passExpiresAt,
   });
 
   final int schemaVersion;
@@ -217,6 +221,26 @@ class SaveGame {
   /// 브리딩 슬롯 개수(젤리로 확장).
   final int breedingCapacity;
 
+  // ── 인앱결제 상태(v16) ──
+  /// 광고 제거 구매 여부(강제 광고만 제거, 보상형 광고는 유지).
+  final bool adsRemoved;
+
+  /// 스타터 패키지 구매 여부(계정당 1회).
+  final bool starterBought;
+
+  /// 보유 스킨 id 집합(코스메틱 — 스탯 영향 없음).
+  final Set<String> ownedSkins;
+
+  /// 곤충학자 패스 만료 시각(UTC). null/과거면 미보유.
+  final DateTime? passExpiresAt;
+
+  /// [now] 기준 패스가 유효한지.
+  bool passActive(DateTime now) =>
+      passExpiresAt != null && now.isBefore(passExpiresAt!);
+
+  /// 강제 광고를 숨겨야 하는지(광고제거 구매 또는 패스 보유).
+  bool adsHidden(DateTime now) => adsRemoved || passActive(now);
+
   int missionClaimCount(String id) => missionClaims[id] ?? 0;
   int missionProgressCount(String id) => missionProgress[id] ?? 0;
 
@@ -259,6 +283,9 @@ class SaveGame {
     seasonPeakTrophies: 0,
     breeding: const [],
     breedingCapacity: 1,
+    adsRemoved: false,
+    starterBought: false,
+    ownedSkins: const {},
   );
 
   SaveGame copyWith({
@@ -290,6 +317,10 @@ class SaveGame {
     int? seasonPeakTrophies,
     List<BreedingSlot>? breeding,
     int? breedingCapacity,
+    bool? adsRemoved,
+    bool? starterBought,
+    Set<String>? ownedSkins,
+    DateTime? passExpiresAt,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -321,6 +352,10 @@ class SaveGame {
     seasonPeakTrophies: seasonPeakTrophies ?? this.seasonPeakTrophies,
     breeding: breeding ?? this.breeding,
     breedingCapacity: breedingCapacity ?? this.breedingCapacity,
+    adsRemoved: adsRemoved ?? this.adsRemoved,
+    starterBought: starterBought ?? this.starterBought,
+    ownedSkins: ownedSkins ?? this.ownedSkins,
+    passExpiresAt: passExpiresAt ?? this.passExpiresAt,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -423,6 +458,13 @@ class SaveGame {
             .toList() ??
         const [],
     breedingCapacity: (json['breedingCapacity'] as num?)?.toInt() ?? 1,
+    adsRemoved: json['adsRemoved'] as bool? ?? false,
+    starterBought: json['starterBought'] as bool? ?? false,
+    ownedSkins:
+        (json['ownedSkins'] as List?)?.cast<String>().toSet() ?? const {},
+    passExpiresAt: json['passExpiresAt'] == null
+        ? null
+        : DateTime.parse(json['passExpiresAt'] as String).toUtc(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -467,6 +509,10 @@ class SaveGame {
     'seasonPeakTrophies': seasonPeakTrophies,
     'breeding': breeding.map((b) => b.toJson()).toList(),
     'breedingCapacity': breedingCapacity,
+    'adsRemoved': adsRemoved,
+    'starterBought': starterBought,
+    'ownedSkins': ownedSkins.toList(),
+    'passExpiresAt': passExpiresAt?.toIso8601String(),
   };
 
   static Map<MaterialKind, int> _materialsFromJson(Map<String, dynamic> json) {

@@ -53,6 +53,7 @@ const Map<int, _JsonMap Function(_JsonMap)> _migrations = {
   12: _v12ToV13,
   13: _v13ToV14,
   14: _v14ToV15,
+  15: _v15ToV16,
 };
 
 /// v0(스키마 미표기 레거시) → v1: 누락 필드를 기본값으로 채우고 버전을 승격.
@@ -175,4 +176,15 @@ _JsonMap _v14ToV15(_JsonMap old) => {
   'schemaVersion': 15,
   'breeding': old['breeding'] ?? const <dynamic>[],
   'breedingCapacity': old['breedingCapacity'] ?? 1,
+};
+
+/// v15 → v16(인앱결제): 구매 상태 필드를 미구매 기본값으로 추가.
+/// 패스 만료는 없음(null) — 마이그레이션에서 시간을 만들지 않는다.
+_JsonMap _v15ToV16(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 16,
+  'adsRemoved': old['adsRemoved'] ?? false,
+  'starterBought': old['starterBought'] ?? false,
+  'ownedSkins': old['ownedSkins'] ?? const <dynamic>[],
+  'passExpiresAt': old['passExpiresAt'],
 };

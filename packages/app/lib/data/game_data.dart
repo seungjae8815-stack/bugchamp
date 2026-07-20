@@ -22,6 +22,7 @@ class GameData {
     this.giftConfig,
     this.roadmapConfig,
     this.battleConfig,
+    this.iapConfig,
   });
 
   final Map<String, Species> speciesById;
@@ -59,6 +60,9 @@ class GameData {
   /// PvP 보상·스카우트 설정 (에셋 로드 시 채워짐. null이면 기본값 사용).
   final BattleConfig? battleConfig;
 
+  /// 인앱결제 카탈로그 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final IapConfig? iapConfig;
+
   /// speciesId → Species (accrue 의 resolveSpecies 로 그대로 넘길 수 있음).
   Species species(String id) {
     final s = speciesById[id];
@@ -90,6 +94,7 @@ class GameData {
     Map<String, dynamic>? giftConfig,
     Map<String, dynamic>? roadmapConfig,
     Map<String, dynamic>? battleConfig,
+    Map<String, dynamic>? iapConfig,
   }) {
     final speciesList = (species['species'] as List)
         .cast<Map<String, dynamic>>()
@@ -130,6 +135,7 @@ class GameData {
       battleConfig: battleConfig == null
           ? null
           : BattleConfig.fromJson(battleConfig),
+      iapConfig: iapConfig == null ? null : IapConfig.fromJson(iapConfig),
     );
   }
 
@@ -153,6 +159,7 @@ class GameData {
       read('gifts.json'),
       read('roadmap.json'),
       read('battle.json'),
+      read('iap.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -169,6 +176,7 @@ class GameData {
       giftConfig: results[11],
       roadmapConfig: results[12],
       battleConfig: results[13],
+      iapConfig: results[14],
     );
   }
 }

@@ -12,6 +12,7 @@ export 'src/gift_config.dart';
 export 'src/roadmap_config.dart';
 export 'src/enhance_config.dart';
 export 'src/enums.dart';
+export 'src/iap_config.dart';
 export 'src/mission_config.dart';
 export 'src/pet_config.dart';
 export 'src/run_config.dart';
