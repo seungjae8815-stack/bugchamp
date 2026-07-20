@@ -460,6 +460,7 @@ Handler buildHandler({
         return _json({
           'sessionId': sessionId,
           'location': session.location.key,
+          'energyA': 1, // 엔진 시작 기력
           'foe': [
             for (final b in foe)
               {
@@ -537,14 +538,25 @@ Handler buildHandler({
           'done': st.done,
           'hpA': st.hpA,
           'hpB': st.hpB,
+          // 다음 수의 버튼 활성 판정용(기력 0 이면 공격만 가능).
+          'energyA': st.a < st.enA.length ? st.enA[st.a] : 0,
         };
         if (st.events.isNotEmpty) {
           final ev = st.events.last;
+          // 앱 연출이 로컬 엔진과 같으려면 이벤트를 통째로 줘야 한다.
           out['event'] = {
+            'round': ev.round,
+            'aName': ev.aName,
+            'bName': ev.bName,
             'aStance': ev.aStance.name,
             'bStance': ev.bStance.name,
+            'rps': ev.rps,
             'dmgToA': ev.dmgToA,
             'dmgToB': ev.dmgToB,
+            'healToA': ev.healToA,
+            'healToB': ev.healToB,
+            'aHp': ev.aHp,
+            'bHp': ev.bHp,
             'aDown': ev.aDown,
             'bDown': ev.bDown,
           };
@@ -569,6 +581,10 @@ Handler buildHandler({
           user.id,
           session.copyWith(finished: true).toJson(),
         );
+        final r = st.toResult();
+        out['teamAHpPct'] = r.teamAHpPct;
+        out['teamBHpPct'] = r.teamBHpPct;
+        out['rounds'] = r.rounds;
         if (!applied.isOk) return _json(out);
         await store.save(user.id, applied.save!.toJson());
         return _json({

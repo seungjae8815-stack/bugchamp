@@ -22,6 +22,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import 'battle_arena.dart';
 import 'manual_battle_screen.dart';
+import 'manual_driver.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -1687,9 +1688,38 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ) async {
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
+
+    // 실제 유저 상대 + 권위 서버 → 서버 세션이 매 수를 확정한다.
+    // 야생(합성) 상대는 자동 전투와 마찬가지로 아직 로컬이다.
+    ManualBattleDriver? driver;
+    final server = ref.read(gameServerProvider);
+    if (server.available && scout.ownerId != null) {
+      final l = AppLocalizations.of(context);
+      final res = await server.startManualBattle(
+        teamBugIds: [for (final b in m.mine) b.id],
+        opponentUserId: scout.ownerId!,
+      );
+      if (!res.isOk || res.data?['sessionId'] == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+        return; // 로컬로 폴백하지 않는다 — 폴백하면 서버 권위가 무의미해진다.
+      }
+      driver = ServerManualDriver(
+        server: server,
+        sessionId: res.data!['sessionId'].toString(),
+        startEnergy: (res.data!['energyA'] as num?)?.toInt() ?? 1,
+      );
+    }
+    if (!mounted) return;
+
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ManualBattleScreen(
+          driver: driver,
+          onAdoptSave: (srv) =>
+              ref.read(saveControllerProvider.notifier).adoptServerSave(srv),
           data: data,
           myTeam: m.mine,
           foeTeam: m.foe,

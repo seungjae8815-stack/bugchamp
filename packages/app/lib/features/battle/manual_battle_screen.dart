@@ -12,6 +12,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import 'arena_widgets.dart';
+import 'manual_driver.dart';
 
 /// 표시용 최대 기력(엔진 상수와 일치 — core_battle `_maxEnergy`).
 const _maxEnergyDisplay = 3;
@@ -35,6 +36,8 @@ class ManualBattleScreen extends StatefulWidget {
     this.skinOf = noSkin,
     this.arenaTheme = false,
     this.rewardMult = 1.0,
+    this.driver,
+    this.onAdoptSave,
   });
 
   final GameData data;
@@ -61,6 +64,13 @@ class ManualBattleScreen extends StatefulWidget {
   )
   onApply;
 
+  /// 전투를 진행시킬 주체. null 이면 `seed` 로 로컬 엔진을 쓴다.
+  /// 서버 드라이버를 주면 승패·보상을 서버가 확정한다.
+  final ManualBattleDriver? driver;
+
+  /// 서버가 확정한 세이브 채택(서버 드라이버일 때만 호출).
+  final Future<void> Function(Map<String, dynamic> save)? onAdoptSave;
+
   @override
   State<ManualBattleScreen> createState() => _ManualBattleScreenState();
 }
@@ -68,7 +78,10 @@ class ManualBattleScreen extends StatefulWidget {
 class _ManualBattleScreenState extends State<ManualBattleScreen>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
-  late final BattleState _state;
+  late final ManualBattleDriver _driver;
+
+  /// 한 수 처리 중 재진입 방지(서버 왕복 동안 제한시간이 또 부를 수 있다).
+  bool _stepping = false;
   Duration _last = Duration.zero;
 
   _Phase _phase = _Phase.input;
@@ -94,13 +107,17 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   @override
   void initState() {
     super.initState();
-    _state = initBattle(
-      widget.seed,
-      widget.myTeam,
-      widget.foeTeam,
-      location: widget.location,
-      locationBonus: widget.config.locationAffinityBonus,
-    );
+    _driver =
+        widget.driver ??
+        LocalManualDriver(
+          initBattle(
+            widget.seed,
+            widget.myTeam,
+            widget.foeTeam,
+            location: widget.location,
+            locationBonus: widget.config.locationAffinityBonus,
+          ),
+        );
     _hpA = [for (final u in widget.myTeam) u.maxHp];
     _hpB = [for (final u in widget.foeTeam) u.maxHp];
     _ticker = createTicker(_tick)..start();
@@ -113,15 +130,35 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   }
 
   /// 현재 내 파이터의 기력(입력 단계에서 버튼 활성 판정).
-  int get _myEnergy => _state.a < _state.enA.length ? _state.enA[_state.a] : 0;
+  int get _myEnergy => _driver.energyA;
 
-  void _choose(Stance s) {
-    if (_phase != _Phase.input || _state.done) return;
+  Future<void> _choose(Stance s) async {
+    if (_phase != _Phase.input || _driver.done || _stepping) return;
     // 기력 부족 시 공격 외 선택 불가(엔진과 동일 규칙).
     if (_myEnergy < 1 && s != Stance.attack) return;
     HapticFeedback.selectionClick();
-    _state.step(playerAStance: s);
-    _enterResolve(_state.events.last);
+
+    _stepping = true;
+    final step = await _driver.step(s);
+    _stepping = false;
+    if (!mounted) return;
+
+    // 서버가 이 수를 거부/불통 → **로컬로 대신 계산하지 않는다.**
+    // 계산하면 서버 권위가 무의미해지고 화면과 서버 상태가 갈린다.
+    if (step == null) {
+      _abort();
+      return;
+    }
+    setState(() => _enterResolve(step.event));
+  }
+
+  /// 전투를 더 진행할 수 없을 때 — 알리고 빠져나간다.
+  void _abort() {
+    final l = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+    Navigator.pop(context);
   }
 
   void _enterResolve(BattleEvent ev) {
@@ -196,7 +233,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
           if (ev.aDown) _dispA++;
           if (ev.bDown) _dispB++;
           _lungeSide = 0;
-          _phase = _state.done ? _Phase.done : _Phase.input;
+          _phase = _driver.done ? _Phase.done : _Phase.input;
           // 다음 입력 턴 제한시간 리셋.
           _turnLeft = widget.config.manualTurnSeconds.toDouble();
         }
@@ -220,22 +257,42 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   }
 
   Future<void> _finish() async {
-    final r = _state.toResult();
-    final rw = pvpReward(
-      won: r.outcome == BattleOutcome.teamA,
-      draw: r.outcome == BattleOutcome.draw,
-      trophies: widget.trophiesAtStart,
-      cfg: widget.config,
-      rewardMult: widget.rewardMult,
-    );
-    final koed = koedTeamAIds(widget.myTeam, r.events);
-    await widget.onApply(rw.gold, rw.trophyDelta, koed);
+    final f = await _driver.finish();
+    if (!mounted) return;
+    if (f == null) {
+      _abort();
+      return;
+    }
+    final r = f.result;
+
+    final int gold, trophyDelta;
+    if (f.rewardsApplied) {
+      // 서버가 이미 지급했다 — 여기서 또 주면 두 배가 된다.
+      gold = f.gold;
+      trophyDelta = f.trophyDelta;
+      if (f.save != null) await widget.onAdoptSave?.call(f.save!);
+    } else {
+      final rw = pvpReward(
+        won: r.outcome == BattleOutcome.teamA,
+        draw: r.outcome == BattleOutcome.draw,
+        trophies: widget.trophiesAtStart,
+        cfg: widget.config,
+        rewardMult: widget.rewardMult,
+      );
+      gold = rw.gold;
+      trophyDelta = rw.trophyDelta;
+      await widget.onApply(
+        gold,
+        trophyDelta,
+        koedTeamAIds(widget.myTeam, r.events),
+      );
+    }
     if (!mounted) return;
     showBattleResultDialog(
       context,
       result: r,
-      gold: rw.gold,
-      trophyDelta: rw.trophyDelta,
+      gold: gold,
+      trophyDelta: trophyDelta,
       onClose: () {
         Navigator.pop(context); // 다이얼로그
         Navigator.pop(context); // 수동 배틀
@@ -250,8 +307,8 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     final reveal = _phase != _Phase.input; // 스탠스 공개(심리전 → 동시 공개)
     final ev = _lastEvent;
     final round = _phase == _Phase.input
-        ? math.min(_state.round + 1, kMaxBattleRounds)
-        : _state.round;
+        ? math.min(_driver.round + 1, kMaxBattleRounds)
+        : _driver.round;
     final shakeDx = _shake > 0 ? math.sin(_shake * 40) * _shake * 6 : 0.0;
     final lunge = _lungeSide != 0
         ? math.sin((_clashT / kRoundDur).clamp(0.0, 1.0) * math.pi) * 26
@@ -430,7 +487,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   }
 
   Widget _controls(AppLocalizations l) {
-    final canAct = _phase == _Phase.input && !_state.done;
+    final canAct = _phase == _Phase.input && !_stepping && !_driver.done;
     final energy = _myEnergy;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),

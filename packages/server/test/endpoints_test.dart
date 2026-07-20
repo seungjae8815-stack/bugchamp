@@ -27,16 +27,27 @@ class _Fake extends http.BaseClient {
   /// 마지막으로 저장된 행 — "세이브를 건드렸는가"를 확인하는 데 쓴다.
   Map<String, dynamic>? lastSaved;
 
+  /// 수동 전투 세션 — 수와 수 사이에 살아남아야 한다.
+  final Map<String, Map<String, dynamic>> sessions = {};
+
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (request.method == 'POST') {
       final raw = await request.finalize().bytesToString();
-      lastSaved = (jsonDecode(raw) as List).first as Map<String, dynamic>;
+      final row = (jsonDecode(raw) as List).first as Map<String, dynamic>;
+      if (request.url.path.contains('/battle_sessions')) {
+        sessions[row['id'].toString()] = row;
+      } else {
+        lastSaved = row;
+      }
       return http.StreamedResponse(Stream.value(utf8.encode('[]')), 201);
     }
     final id = request.url.queryParameters['id']?.replaceFirst('eq.', '');
     final Object body;
-    if (request.url.path.contains('/defenders')) {
+    if (request.url.path.contains('/battle_sessions')) {
+      final row = sessions[id];
+      body = row == null ? [] : [row];
+    } else if (request.url.path.contains('/defenders')) {
       final team = defenders[id];
       body = team == null
           ? []
@@ -62,6 +73,15 @@ class _Fake extends http.BaseClient {
 Map<String, dynamic> _readJson(String name) =>
     jsonDecode(File('../app/assets/data/$name').readAsStringSync())
         as Map<String, dynamic>;
+
+/// 다른 유저의 토큰 클레임.
+Map<String, dynamic> _claimsFor(String sub) => {
+  'sub': sub,
+  'iss': '$_url/auth/v1',
+  'exp':
+      DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+      1000,
+};
 
 /// 방어팀 1마리 스냅샷.
 Map<String, dynamic> _defender({
@@ -323,6 +343,123 @@ void main() {
       }, token: makeToken());
       expect(res.statusCode, 400);
       expect(fake.lastSaved, isNull);
+    });
+  });
+
+  group('수동 전투 엔드포인트', () {
+    Handler withFoe() => handler(
+      defenders: {
+        'foe': [_defender(), _defender(), _defender()],
+      },
+    );
+
+    Future<Map<String, dynamic>> start(Handler h, {String? token}) async {
+      final res = await post(h, '/battle/manual/start', {
+        'teamBugIds': ['mine-1'],
+        'opponentUserId': 'foe',
+      }, token: token ?? makeToken());
+      return jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+    }
+
+    test('인증 없이는 시작 불가', () async {
+      final res = await post(handler(), '/battle/manual/start', {
+        'teamBugIds': ['mine-1'],
+        'opponentUserId': 'foe',
+      });
+      expect(res.statusCode, 401);
+    });
+
+    test('상대가 없으면 시작 불가', () async {
+      final res = await post(handler(), '/battle/manual/start', {
+        'teamBugIds': ['mine-1'],
+        'opponentUserId': 'ghost',
+      }, token: makeToken());
+      expect(res.statusCode, 404);
+    });
+
+    test('내 곤충이 아니면 출전 불가', () async {
+      final res = await post(withFoe(), '/battle/manual/start', {
+        'teamBugIds': ['someone-elses-bug'],
+        'opponentUserId': 'foe',
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+    });
+
+    test('시작해도 시드는 주지 않는다 — 상대 수를 미리 계산하지 못하게', () async {
+      final body = await start(withFoe());
+      expect(body['sessionId'], isNotNull);
+      expect(body['foe'], isNotEmpty);
+      expect(body['energyA'], 1);
+      // 시드가 새면 심리전이 무의미해진다.
+      expect(body.containsKey('seed'), isFalse);
+      expect(jsonEncode(body), isNot(contains('seed')));
+    });
+
+    test('한 수 진행하면 그 라운드 결과만 온다', () async {
+      final h = withFoe();
+      final sid = (await start(h))['sessionId'];
+      final res = await post(h, '/battle/manual/step', {
+        'sessionId': sid,
+        'stance': 'attack',
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body['round'], 1);
+      // 연출에 필요한 이벤트가 통째로 와야 한다.
+      final ev = body['event'] as Map<String, dynamic>;
+      for (final k in ['aStance', 'bStance', 'aHp', 'bHp', 'healToA', 'rps']) {
+        expect(ev.containsKey(k), isTrue, reason: '이벤트에 $k 가 없다');
+      }
+      expect(body['energyA'], isNotNull);
+      // 미결착 라운드에 보상이 새면 안 된다.
+      expect(body.containsKey('gold'), isFalse);
+    });
+
+    test('남의 세션은 진행시킬 수 없다', () async {
+      final h = withFoe();
+      final sid = (await start(h))['sessionId'];
+      final res = await post(h, '/battle/manual/step', {
+        'sessionId': sid,
+        'stance': 'attack',
+      }, token: makeToken(claims: _claimsFor('user-2')));
+      expect(res.statusCode, 403);
+    });
+
+    test('없는 세션은 거부', () async {
+      final res = await post(withFoe(), '/battle/manual/step', {
+        'sessionId': 'nope',
+        'stance': 'attack',
+      }, token: makeToken());
+      expect(res.statusCode, 404);
+    });
+
+    test('결착까지 진행하면 보상이 확정되고, 세션은 다시 못 돈다', () async {
+      final h = withFoe();
+      final sid = (await start(h))['sessionId'];
+
+      Map<String, dynamic>? last;
+      for (var i = 0; i < kMaxBattleRounds * 3 + 5; i++) {
+        final res = await post(h, '/battle/manual/step', {
+          'sessionId': sid,
+          'stance': 'attack',
+        }, token: makeToken());
+        expect(res.statusCode, 200, reason: '${i + 1}수째에서 실패');
+        last = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+        if (last['done'] == true) break;
+      }
+      expect(last, isNotNull);
+      expect(last!['done'], isTrue);
+      expect(last['outcome'], isNotNull);
+      expect(last['gold'], isNotNull);
+      expect(last['save'], isNotNull);
+      expect(fake.lastSaved, isNotNull);
+
+      // 끝난 세션을 또 돌려 보상을 두 번 받을 수 없다.
+      final again = await post(h, '/battle/manual/step', {
+        'sessionId': sid,
+        'stance': 'attack',
+      }, token: makeToken());
+      expect(again.statusCode, 409);
     });
   });
 }

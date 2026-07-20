@@ -46,6 +46,19 @@ abstract interface class GameServer {
     required String opponentUserId,
   });
 
+  /// 수동 전투 시작 — 세션을 열고 상대 스탯을 받는다.
+  /// **시드는 응답에 없다**(있으면 상대의 수를 미리 계산할 수 있다).
+  Future<ServerResult> startManualBattle({
+    required List<String> teamBugIds,
+    required String opponentUserId,
+  });
+
+  /// 수동 전투 한 수 — 이번 라운드 결과만 돌아온다.
+  Future<ServerResult> stepManualBattle({
+    required String sessionId,
+    required String stance,
+  });
+
   /// 방치 수입 정산 — 금액은 서버가 정한다.
   Future<ServerResult> sync();
 
@@ -123,6 +136,16 @@ class NoGameServer implements GameServer {
   @override
   Future<ServerResult> disassemble(String bugId) async =>
       const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> startManualBattle({
+    required List<String> teamBugIds,
+    required String opponentUserId,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> stepManualBattle({
+    required String sessionId,
+    required String stance,
+  }) async => const ServerResult.fail('unavailable', 0);
 }
 
 /// HTTP 구현. 인증은 **Supabase 세션 토큰**을 그대로 실어 보낸다
@@ -236,6 +259,24 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> disassemble(String bugId) =>
       _send('POST', '/disassemble', {'bugId': bugId});
+
+  @override
+  Future<ServerResult> startManualBattle({
+    required List<String> teamBugIds,
+    required String opponentUserId,
+  }) => _send('POST', '/battle/manual/start', {
+    'teamBugIds': teamBugIds,
+    'opponentUserId': opponentUserId,
+  });
+
+  @override
+  Future<ServerResult> stepManualBattle({
+    required String sessionId,
+    required String stance,
+  }) => _send('POST', '/battle/manual/step', {
+    'sessionId': sessionId,
+    'stance': stance,
+  });
 }
 
 /// 교체 가능한 권위 서버. 기본은 미설정(로컬 경로 유지).
