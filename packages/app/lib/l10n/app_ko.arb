@@ -61,6 +61,7 @@
   "modeManual": "수동",
   "modeAuto": "자동",
   "battleStart": "전투 시작",
+  "opponentWild": "야생",
   "opponentPick": "상대 고르기",
   "accountTitle": "계정",
   "accountAnonymous": "지금은 기기 임시 계정이에요",

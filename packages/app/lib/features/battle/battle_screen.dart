@@ -704,7 +704,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      // stretch: 카드 3개 높이를 항상 동일하게 유지.
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         for (var i = 0; i < _scouts.length; i++)
                           Expanded(
@@ -1651,20 +1652,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 ),
               ),
             ),
-            // 실제 다른 유저 방어팀이면 닉네임 표시(합성 상대는 미표시).
-            if (scout.ownerName != null) ...[
-              const SizedBox(height: 3),
-              Text(
-                '👤 ${scout.ownerName}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xCCE9D9A6),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                ),
+            // 실제 유저면 닉네임, 합성 상대면 '야생' — 항상 한 줄을 차지해
+            // 카드 3개의 높이가 어긋나지 않게 한다.
+            const SizedBox(height: 3),
+            Text(
+              scout.ownerName == null
+                  ? '🌿 ${l.opponentWild}'
+                  : '👤 ${scout.ownerName}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: scout.ownerName == null
+                    ? const Color(0x8899BB88)
+                    : const Color(0xCCE9D9A6),
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
               ),
-            ],
+            ),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

@@ -77,6 +77,11 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   bool _resultPending = false;
   double _endWait = 0;
 
+  /// 이번 수를 고를 남은 시간(초). 0 이하가 되면 공격이 자동 선택된다.
+  /// config 가 0 이하면 무제한(카운터 미표시).
+  late double _turnLeft = widget.config.manualTurnSeconds.toDouble();
+  bool get _timed => widget.config.manualTurnSeconds > 0;
+
   @override
   void initState() {
     super.initState();
@@ -183,6 +188,17 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
           if (ev.bDown) _dispB++;
           _lungeSide = 0;
           _phase = _state.done ? _Phase.done : _Phase.input;
+          // 다음 입력 턴 제한시간 리셋.
+          _turnLeft = widget.config.manualTurnSeconds.toDouble();
+        }
+      } else if (_phase == _Phase.input && _timed) {
+        // 제한시간 소진 → 공격 자동 선택(기력 없어도 항상 가능한 수).
+        _turnLeft -= dt;
+        if (_turnLeft <= 0) {
+          _turnLeft = 0;
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _choose(Stance.attack),
+          );
         }
       } else if (_phase == _Phase.done && !_resultPending) {
         _endWait += dt;
@@ -427,14 +443,64 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            canAct ? l.battleYourMove : '',
-            style: const TextStyle(
-              color: arenaHoney,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-            ),
+          // 내 차례 + 남은 제한시간(3초 이하면 붉게 경고).
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                canAct ? l.battleYourMove : '',
+                style: const TextStyle(
+                  color: arenaHoney,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (canAct && _timed) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.timer_outlined,
+                  size: 14,
+                  color: _turnLeft <= 3
+                      ? const Color(0xFFFF6B6B)
+                      : const Color(0x99FFFFFF),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  '${_turnLeft.ceil()}',
+                  style: TextStyle(
+                    color: _turnLeft <= 3
+                        ? const Color(0xFFFF6B6B)
+                        : const Color(0xCCFFFFFF),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ],
           ),
+          if (canAct && _timed) ...[
+            const SizedBox(height: 5),
+            // 남은 시간 게이지
+            SizedBox(
+              width: 160,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: (_turnLeft / widget.config.manualTurnSeconds).clamp(
+                    0.0,
+                    1.0,
+                  ),
+                  minHeight: 5,
+                  backgroundColor: const Color(0x33000000),
+                  valueColor: AlwaysStoppedAnimation(
+                    _turnLeft <= 3
+                        ? const Color(0xFFFF6B6B)
+                        : const Color(0xFFEBA52F),
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 6),
           StanceWheel(energy: energy, enabled: canAct, onPick: _choose),
         ],

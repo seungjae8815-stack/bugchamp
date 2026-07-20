@@ -75,6 +75,7 @@ class BattleConfig {
     this.seasonResetFactor = 0.5,
     this.seasonRewardMult = 3.0,
     this.locationAffinityBonus = 0.2,
+    this.manualTurnSeconds = 10,
   });
 
   /// 승리 기본 골드.
@@ -105,6 +106,10 @@ class BattleConfig {
 
   /// 장소 상성: 전투 장소 오행과 같은 곤충의 데미지 강화 비율(0.2 = +20%).
   final double locationAffinityBonus;
+
+  /// 수동 전투에서 한 수를 고를 제한시간(초). 0 이하면 무제한.
+  /// 시간이 다하면 **공격**이 자동 선택된다(기력 없이도 항상 가능한 수).
+  final int manualTurnSeconds;
 
   static const _defaultTiers = [
     ScoutTier(id: 'easy', powerMult: 0.82, rewardMult: 0.7),
@@ -202,6 +207,7 @@ class BattleConfig {
       seasonRewardMult: (season?['rewardMult'] as num?)?.toDouble() ?? 3.0,
       locationAffinityBonus:
           (json['locationAffinityBonus'] as num?)?.toDouble() ?? 0.2,
+      manualTurnSeconds: (json['manualTurnSeconds'] as num?)?.toInt() ?? 10,
     );
   }
 }

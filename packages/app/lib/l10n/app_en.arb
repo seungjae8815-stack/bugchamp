@@ -69,6 +69,7 @@
   "modeManual": "Manual",
   "modeAuto": "Auto",
   "battleStart": "Start Battle",
+  "opponentWild": "Wild",
   "opponentPick": "Pick Opponent",
   "accountTitle": "Account",
   "accountAnonymous": "You're on a temporary device account",

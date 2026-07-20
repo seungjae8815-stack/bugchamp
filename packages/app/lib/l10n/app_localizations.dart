@@ -460,6 +460,12 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get modeAuto;
 
+  /// No description provided for @opponentWild.
+  ///
+  /// In en, this message translates to:
+  /// **'Wild'**
+  String get opponentWild;
+
   /// No description provided for @opponentPick.
   ///
   /// In en, this message translates to:

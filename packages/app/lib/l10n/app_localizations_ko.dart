@@ -203,6 +203,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get modeAuto => '자동';
 
   @override
+  String get opponentWild => '야생';
+
+  @override
   String get opponentPick => '상대 고르기';
 
   @override

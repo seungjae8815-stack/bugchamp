@@ -204,6 +204,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modeAuto => 'Auto';
 
   @override
+  String get opponentWild => 'Wild';
+
+  @override
   String get opponentPick => 'Pick Opponent';
 
   @override
