@@ -335,3 +335,85 @@ delete from chat_messages where id = <id>;
   **이미 서버에 등록된 이름은 표시할 때 대체**한다(`maskNickname` → "이용자").
   적용 위치: 채팅 말풍선 · 랭킹 · 스카우트 보드.
   별표가 아니라 중립 이름을 쓰는 이유 — 별표는 오히려 눈에 띄어 관심을 끈다.
+
+---
+
+## 9. 영수증 서버 검증 (결제 위조 방지)
+
+> 클라이언트만으로 구매를 인정하면 결제 후킹 앱이 만든 **가짜 영수증**으로
+> 상품이 그냥 나간다. 진짜 구글이 발급한 영수증인지는 **서버만** 판단할 수 있다.
+
+### 9-1. 재사용 방지 테이블
+
+```sql
+create table if not exists verified_purchases (
+  purchase_token text primary key,
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  product_id     text not null,
+  order_id       text,
+  verified_at    timestamptz not null default now()
+);
+
+alter table verified_purchases enable row level security;
+-- 정책 없음 = 클라이언트는 접근 불가. Edge Function 이 service_role 로만 쓴다.
+```
+
+`purchase_token` 이 기본키라 **같은 영수증을 두 계정이 쓸 수 없다**.
+앱 로컬 원장(`redeemedPurchases`)은 기기별이라 계정 간 재사용을 막지 못한다.
+
+### 9-2. 구글 서비스 계정 만들기 (사장님 작업)
+
+1. **Google Cloud Console → IAM → 서비스 계정 → 만들기**
+   - 이름 예: `play-verify`. 역할은 부여하지 않아도 된다.
+2. 만든 계정 → **키 → 새 키 만들기 → JSON** → 파일 다운로드
+3. **Play Console → 설정 → API 액세스**
+   - 해당 Google Cloud 프로젝트를 연결
+   - 위 서비스 계정에 **"재무 데이터 보기"** + **"주문 및 구독 관리"** 권한 부여
+4. 권한 반영에 **최대 24시간**이 걸릴 수 있다(구글 안내). 바로 안 되면 기다린다.
+
+> 🔴 이 JSON 키는 **비밀**이다. 앱·저장소에 절대 넣지 않는다.
+> 유출되면 남이 내 결제 데이터를 조회할 수 있다.
+
+### 9-3. Edge Function 배포
+
+시크릿 등록(대시보드 → Edge Functions → Secrets, 또는 CLI):
+
+```bash
+supabase secrets set PLAY_SERVICE_ACCOUNT_JSON="$(cat ~/Downloads/play-verify-xxxx.json)"
+supabase functions deploy verify-purchase
+```
+
+`SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 는
+Supabase 가 자동 주입하므로 따로 넣지 않아도 된다.
+
+함수 소스: `supabase/functions/verify-purchase/index.ts`
+
+### 9-4. 앱 동작
+
+| 서버 판정 | 앱 동작 |
+|---|---|
+| `ok: true` | 지급 + 스토어에 완료 통보 |
+| `invalid` / `owned_by_other` | **지급 안 함** + 완료 통보(재시도 무의미하므로 큐에서 제거) |
+| 그 외(네트워크·점검·미배포) | **지급도 완료통보도 안 함** → 다음 실행에 재시도 |
+
+마지막 줄이 중요하다. 서버에 못 닿았다고 정상 구매를 거부해버리면
+**비행기모드나 서버 점검 중에 돈 낸 사용자가 상품을 못 받는다.**
+판정이 안 될 때는 보류하고 나중에 다시 확인한다.
+
+> ⚠️ 함수를 배포하지 않으면 모든 구매가 **보류** 상태가 된다(지급 안 됨).
+> 결제를 켜기 전에 반드시 배포할 것.
+
+### 9-5. ⚠️ 이걸로도 못 막는 것
+
+영수증 검증은 **가짜 영수증**을 막는다. 하지만 이 게임은 진행도가
+**기기(Hive)** 에 있고 클라이언트가 자기 세이브를 직접 쓴다. 따라서
+앱을 뜯어고친 사용자가 결제 흐름 자체를 건너뛰고 재화를 넣는 것은
+여전히 가능하다.
+
+- ✅ 막아지는 것: 결제 후킹 앱(Lucky Patcher 류)으로 만든 위조 영수증 — **현실의 주된 위협**
+- ✅ 막아지는 것: 한 영수증을 여러 계정이 돌려쓰기
+- ❌ 안 막아지는 것: 앱 자체를 개조해 로컬 세이브를 조작
+
+완전히 막으려면 재화·구매 상태를 **서버 권威**로 옮겨야 하는데, 그건
+게임 구조 전체를 바꾸는 일이다. 지금 단계에서는 과하다 — 매출 규모가
+커지면 그때 검토한다.

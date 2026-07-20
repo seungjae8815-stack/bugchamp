@@ -15,6 +15,7 @@ import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
 import 'domain/providers.dart';
 import 'domain/iap_service.dart';
+import 'domain/purchase_verifier.dart';
 import 'domain/pvp_backend.dart';
 import 'domain/store_iap_service.dart';
 import 'domain/supabase_pvp_backend.dart';
@@ -103,6 +104,9 @@ Future<void> main() async {
         if (supaClient != null) ...[
           pvpBackendProvider.overrideWithValue(SupabasePvpBackend(supaClient)),
           cloudSaveProvider.overrideWithValue(SupabaseCloudSave(supaClient)),
+          purchaseVerifierProvider.overrideWithValue(
+            SupabasePurchaseVerifier(supaClient),
+          ),
           chatServiceProvider.overrideWith((ref) {
             final s = SupabaseChatService(supaClient!);
             ref.onDispose(s.dispose);

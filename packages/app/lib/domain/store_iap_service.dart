@@ -7,6 +7,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 import 'iap_service.dart';
 import 'providers.dart';
+import 'purchase_verifier.dart';
 import 'save_controller.dart';
 
 /// 실제 스토어(구글 플레이 / 앱스토어) 결제 구현.
@@ -140,16 +141,33 @@ class StoreIapService implements IapService {
 
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
-          final granted = await _grant(p);
-          // 지급에 실패했으면 완료 통보하지 않는다 — 그래야 스토어가 다시 전달해
-          // 다음 기회에 지급할 수 있다(돈만 받고 물건 안 주는 상황 방지).
-          if (granted && p.pendingCompletePurchase) {
-            await _store.completePurchase(p);
+          // 지급 전에 **서버에서 영수증을 검증**한다. 클라이언트만 믿으면
+          // 결제 후킹 앱이 만든 가짜 영수증으로 상품이 나간다.
+          switch (await _verify(p)) {
+            case VerifyResult.invalid:
+              // 위조·취소·재사용 — 지급하지 않는다. 재시도해도 결과가 같으므로
+              // 완료 통보해 큐에서 뺀다(무한 재전달 방지).
+              if (p.pendingCompletePurchase) await _store.completePurchase(p);
+              _finish(p.productID, PurchaseOutcome.failed);
+
+            case VerifyResult.unknown:
+              // 판정 불가(네트워크·서버 점검). 지급도 완료통보도 하지 않는다 →
+              // 다음 실행에 스토어가 다시 전달해 재시도된다.
+              // 정상 구매자가 오프라인이라는 이유로 손해 보지 않게 하는 쪽을 택한다.
+              _finish(p.productID, PurchaseOutcome.pending);
+
+            case VerifyResult.valid:
+              final granted = await _grant(p);
+              // 지급에 실패했으면 완료 통보하지 않는다 — 그래야 스토어가 다시 전달해
+              // 다음 기회에 지급할 수 있다(돈만 받고 물건 안 주는 상황 방지).
+              if (granted && p.pendingCompletePurchase) {
+                await _store.completePurchase(p);
+              }
+              _finish(
+                p.productID,
+                granted ? PurchaseOutcome.success : PurchaseOutcome.failed,
+              );
           }
-          _finish(
-            p.productID,
-            granted ? PurchaseOutcome.success : PurchaseOutcome.failed,
-          );
 
         case PurchaseStatus.canceled:
           if (p.pendingCompletePurchase) await _store.completePurchase(p);
@@ -161,6 +179,20 @@ class StoreIapService implements IapService {
           _finish(p.productID, PurchaseOutcome.failed);
       }
     }
+  }
+
+  /// 영수증 서버 검증. 검증기가 없으면(백엔드 미연결 빌드) 통과시킨다 —
+  /// 막아버리면 상점이 아예 동작하지 않기 때문이다. 릴리즈 빌드는 항상
+  /// Supabase 키가 주입되므로 실제로는 검증을 거친다.
+  Future<VerifyResult> _verify(PurchaseDetails p) async {
+    final verifier = _ref.read(purchaseVerifierProvider);
+    if (!verifier.available) {
+      debugPrint('[iap] ⚠️ 영수증 검증기 미연결 — 검증 없이 지급한다');
+      return VerifyResult.valid;
+    }
+    final token = p.verificationData.serverVerificationData;
+    if (token.isEmpty) return VerifyResult.unknown;
+    return verifier.verify(productId: p.productID, purchaseToken: token);
   }
 
   /// 구매 1건을 세이브에 반영. 중복 지급은 `purchaseId` 로 막는다.

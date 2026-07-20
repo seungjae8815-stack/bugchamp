@@ -1,0 +1,6 @@
+# 서비스 계정 키 등 비밀은 절대 커밋하지 않는다.
+*.json
+!functions/**/deno.json
+.env
+.branches
+.temp
