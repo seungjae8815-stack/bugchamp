@@ -53,29 +53,27 @@ Google Cloud Console → 사용자 인증 정보 → **Android 클라이언트**
 > Play 앱 서명을 쓰면 구글이 **재서명**하므로, 업로드 후 Play Console →
 > 설정 → 앱 서명 에 나오는 **앱 서명 키의 SHA-1도 함께 등록**해야 한다. (중요)
 
-### B-3. AdMob 계정·광고 단위 — ⚠️ 사장님 작업 (**출시 전 필수**)
+### B-3. AdMob — ✅ 완료 (2026-07-20)
 
-> 결정: **A안** — 지금 ID 를 발급받아 넣고 출시한다.
-> AdMob 은 스토어 미등재 앱도 **"앱이 스토어에 등록되어 있지 않습니다"** 를 골라
-> 등록할 수 있고, ID 는 즉시 나온다. 실제 광고 채움(app review)은 스토어 등재
-> 이후 정상화되므로 **앱 업데이트 없이** 해결된다.
+| 항목 | 값 |
+|---|---|
+| 앱 ID | `ca-app-pub-9286376018372718~3392603608` |
+| 보상형 광고 단위 ID | `ca-app-pub-9286376018372718/1668458392` |
 
-1. https://admob.google.com → 앱 추가 → **Android**
-   - "앱이 Google Play 에 등록되어 있나요?" → **아니요**
-   - 앱 이름: `곤충 키우기`
-2. **보상형(Rewarded) 광고 단위** 생성 → ID 두 개 확보
-   - 앱 ID: `ca-app-pub-XXXX~YYYY`  (물결표 `~`)
-   - 광고 단위 ID: `ca-app-pub-XXXX/ZZZZ`  (슬래시 `/`)
-3. 앱 ID → `packages/app/android/local.properties` 에 한 줄 추가:
-   ```properties
-   admobAppId=ca-app-pub-XXXX~YYYY
-   ```
-4. 광고 단위 ID → 빌드 시 주입(아래 D 섹션 빌드 명령 참고)
-5. 스토어 등재 후 AdMob 에서 **앱 연결(링크)** + `app-ads.txt` 설정
+둘 다 **공개값**이라(APK 안에 어차피 들어간다) 저장소에 커밋했다.
+gitignore 되는 `local.properties` 에만 두면 새로 클론했을 때 조용히
+테스트 ID 로 떨어지기 때문이다.
 
-> 🔴 **프로덕션 빌드에 광고 단위 ID 를 빠뜨리면 구글 테스트 광고가 나간다.**
-> 실사용자가 테스트 광고를 보게 되고 수익도 0이다. 업로드 전 반드시 확인할 것.
-> (확인법: 설정 → ⓘ 에서 빌드 확인 후, 광고 시청 시 "테스트 광고" 표기가 없어야 함)
+- 앱 ID → `android/app/build.gradle.kts` 의 기본값(→ manifest placeholder)
+- 광고 단위 ID → `packages/app/admob.env.json` (dart-define)
+- 릴리즈 APK 에 실제로 들어갔는지 검증 완료
+  (매니페스트 = 앱 ID, `libapp.so` = 광고 단위 ID)
+
+**안전장치**: 릴리즈인데 테스트 광고 단위로 돌면 설정 화면 빌드 표시 옆에
+**⚠️ 테스트광고** 배지가 뜬다. 업로드 전 눈으로 확인할 것.
+
+**남은 것(스토어 등재 후)**: AdMob 에서 앱 연결(링크) + `app-ads.txt` 설정.
+초기에는 광고 채움률이 낮을 수 있으나 심사 통과 후 정상화된다(앱 업데이트 불필요).
 
 ### B-4. 개인정보처리방침 · 계정 삭제 페이지 — ✅ 완료 (2026-07-20)
 
@@ -122,13 +120,17 @@ Google Cloud Console → 사용자 인증 정보 → **Android 클라이언트**
 - [ ] 대상 연령·타겟 국가 설정
 
 ### 빌드 & 업로드
+
 ```powershell
 cd packages\app
-flutter build appbundle --dart-define-from-file=supabase.env.json `
-  --dart-define=ADMOB_REWARDED_ANDROID=ca-app-pub-XXXX/ZZZZ
+flutter build appbundle `
+  --dart-define-from-file=supabase.env.json `
+  --dart-define-from-file=admob.env.json
 ```
-> `ADMOB_REWARDED_ANDROID` 를 빼면 테스트 광고가 나간다(위 B-3 경고).
 → `build\app\outputs\bundle\release\app-release.aab` 업로드
+
+> 두 파일 모두 필요하다. `admob.env.json` 을 빼면 **구글 테스트 광고**가 나간다
+> (설정 화면에 ⚠️ 테스트광고 배지로 잡힌다).
 
 ---
 
@@ -145,8 +147,9 @@ flutter build appbundle --dart-define-from-file=supabase.env.json `
 
 ## 🔴 출시 전 마지막으로 다시 볼 것
 
-1. **영수증 서버 검증이 아직 없다** (`docs/monetization.md` §6).
+1. 업로드 전 **설정 → 빌드 표시에 ⚠️ 테스트광고 배지가 없는지** 확인.
+2. **영수증 서버 검증이 아직 없다** (`docs/monetization.md` §6).
    소규모 출시는 가능하나, 매출이 붙으면 반드시 추가.
-2. **일본어 번역이 미완성**이다. 일본 대상 출시는 미루거나 영어 폴백으로 나간다.
-3. 첫 출시는 **한국만** 대상으로 좁게 시작하는 편이 안전하다
+3. **일본어 번역이 미완성**이다. 일본 대상 출시는 미루거나 영어 폴백으로 나간다.
+4. 첫 출시는 **한국만** 대상으로 좁게 시작하는 편이 안전하다
    (문제 발견 시 영향 범위가 작다).

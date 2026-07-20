@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../app_version.dart';
 import '../../data/game_data.dart';
+import '../../domain/admob_ad_service.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
 import '../../domain/providers.dart';
@@ -2639,6 +2640,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           ),
                         ),
                       ),
+                      // 릴리즈인데 구글 테스트 광고 단위로 도는 경우 경고.
+                      // 이대로 업로드하면 실사용자가 테스트 광고를 보고 수익도 0이라,
+                      // 업로드 전에 눈으로 잡을 수 있게 빌드 표시 옆에 띄운다.
+                      if (kReleaseMode && AdMobAdService.usingTestUnits) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0x33E05A5A),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Text(
+                            '⚠️ 테스트광고',
+                            style: TextStyle(
+                              color: Color(0xFFF3A5A5),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   if (_showBuildDetail) ...[

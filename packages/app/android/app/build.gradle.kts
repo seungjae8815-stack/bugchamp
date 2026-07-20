@@ -9,15 +9,16 @@ val keystoreProperties = Properties().apply {
 }
 val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
 
-// AdMob 앱 ID. `android/local.properties` 에 admobAppId=ca-app-pub-...~... 를 넣으면
-// 그 값이 쓰이고, 없으면 구글 공식 **테스트 앱 ID** 로 떨어진다.
-// (테스트 ID 로도 광고는 뜨지만 수익은 발생하지 않는다 — 개발 중 계정 정지 방지용.)
+// AdMob 앱 ID. **공개값**이라 저장소에 두어도 문제없다(APK 안에 어차피 들어간다).
+// gitignore 되는 local.properties 에만 두면 새로 클론했을 때 조용히 테스트 ID 로
+// 떨어져 실사용자에게 테스트 광고가 나가므로, 실제 값을 기본값으로 못박는다.
+// 다른 계정으로 빌드할 땐 local.properties 의 admobAppId 로 덮어쓰면 된다.
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
 val admobAppIdValue: String =
-    localProps.getProperty("admobAppId") ?: "ca-app-pub-3940256099942544~3347511713"
+    localProps.getProperty("admobAppId") ?: "ca-app-pub-9286376018372718~3392603608"
 
 plugins {
     id("com.android.application")
