@@ -487,6 +487,117 @@ class GameActions {
     );
   }
 
+  /// 짝짓기 시작. 조건 검사와 **자식 롤 시드 생성을 서버가 한다.**
+  ///
+  /// ⚠️ 기존 앱은 시드를 UI 가 만들어 넘겼다. 그러면 시드를 골라가며
+  /// 완벽한 자식이 나올 때까지 돌려볼 수 있다(브루트포스).
+  /// 서버가 시드를 정하고 슬롯에 박아두면 결과가 미리 확정된다.
+  ActionResult startBreeding(
+    SaveGame save, {
+    required String motherId,
+    required String fatherId,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+  }) {
+    if (motherId == fatherId) return const ActionResult.fail('same_bug');
+    if (save.breeding.length >= save.breedingCapacity) {
+      return const ActionResult.fail('no_slot');
+    }
+    final t = now().toUtc();
+    IndividualBug? find(String id) {
+      for (final b in save.bugs) {
+        if (b.id == id) return b;
+      }
+      return null;
+    }
+
+    final mother = find(motherId);
+    final father = find(fatherId);
+    if (mother == null || father == null) {
+      return const ActionResult.fail('bug_not_owned');
+    }
+    if (mother.speciesId != father.speciesId) {
+      return const ActionResult.fail('species_mismatch');
+    }
+    if (mother.sex != Sex.female || father.sex != Sex.male) {
+      return const ActionResult.fail('sex_mismatch');
+    }
+    LifeStage eff(IndividualBug b) =>
+        effectiveStage(b.stage, b.stageSince, t, petConfig);
+    if (eff(mother) != LifeStage.adult || eff(father) != LifeStage.adult) {
+      return const ActionResult.fail('not_adult');
+    }
+    final sp = speciesById[mother.speciesId];
+    if (sp == null) return const ActionResult.fail('unknown_species');
+
+    final rng = (rngFactory ?? Random.new)();
+    final slot = BreedingSlot(
+      id: _uuid.v4(),
+      speciesId: mother.speciesId,
+      parentAvgSizeMm: (mother.sizeMm + father.sizeMm) / 2,
+      motherPotential: mother.potential,
+      fatherPotential: father.potential,
+      endsAt: t.add(Duration(seconds: petConfig.breedingDuration(sp.grade))),
+      // 서버가 정한다 — 클라이언트가 고를 수 없다.
+      seed: rng.nextInt(1 << 31),
+    );
+    return ActionResult.ok(
+      save.copyWith(breeding: [...save.breeding, slot]),
+      extra: {'slotId': slot.id, 'endsAt': slot.endsAt.toIso8601String()},
+    );
+  }
+
+  /// 산란 완료 슬롯 수령. [viaJelly] 면 남은 시간만큼 젤리로 즉시 완료.
+  ActionResult collectBreeding(
+    SaveGame save,
+    String slotId, {
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    bool viaJelly = false,
+  }) {
+    final t = now().toUtc();
+    final idx = save.breeding.indexWhere((b) => b.id == slotId);
+    if (idx < 0) return const ActionResult.fail('slot_not_found');
+    final slot = save.breeding[idx];
+    final sp = speciesById[slot.speciesId];
+    if (sp == null) return const ActionResult.fail('unknown_species');
+
+    var mats = save.materials;
+    if (t.isBefore(slot.endsAt)) {
+      if (!viaJelly) return const ActionResult.fail('not_ready');
+      final cost = petConfig.breedingJelly(slot.endsAt.difference(t));
+      final have = save.materialCount(MaterialKind.jelly);
+      if (have < cost) return const ActionResult.fail('insufficient_jelly');
+      mats = Map<MaterialKind, int>.from(save.materials)
+        ..[MaterialKind.jelly] = have - cost;
+    }
+
+    // 자식 롤 — 슬롯에 박힌 서버 시드로 결정론적으로 굴린다.
+    final egg = IndividualBug.breed(
+      id: _uuid.v4(),
+      species: sp,
+      rng: Random(slot.seed),
+      parentAvgSizeMm: slot.parentAvgSizeMm,
+      motherPotential: slot.motherPotential,
+      fatherPotential: slot.fatherPotential,
+      sizeVariancePct: petConfig.breedingSizeVariancePct,
+      mutationChance: petConfig.breedingMutationChance,
+      mutationBonusPct: petConfig.breedingMutationBonusPct,
+      potUpChance: petConfig.breedingPotUpChance,
+      potDownChance: petConfig.breedingPotDownChance,
+    ).copyWith(stageSince: t);
+
+    final breeding = List<BreedingSlot>.from(save.breeding)..removeAt(idx);
+    return ActionResult.ok(
+      save.copyWith(
+        bugs: [...save.bugs, egg],
+        breeding: breeding,
+        materials: mats,
+      ),
+      extra: {'bugId': egg.id, 'potential': egg.potential},
+    );
+  }
+
   /// 젤리 소비. 잔액이 모자라면 거부한다 — **클라이언트 말을 믿지 않는다.**
   ActionResult spendJelly(SaveGame save, int amount, {String? reason}) {
     if (amount <= 0) return const ActionResult.fail('bad_amount');

@@ -58,6 +58,12 @@ abstract interface class GameServer {
   /// 수련(성충 레벨업).
   Future<ServerResult> train(String bugId);
 
+  /// 짝짓기 시작 — **시드는 서버가 정한다**(클라가 고를 수 없다).
+  Future<ServerResult> breed(String motherId, String fatherId);
+
+  /// 산란 완료 수령.
+  Future<ServerResult> collectBreeding(String slotId, {bool viaJelly});
+
   /// 로컬 세이브를 서버로 **최초 1회 이관**한다.
   /// 서버에 이미 세이브가 있으면 409 와 함께 서버 것을 돌려준다.
   Future<ServerResult> bootstrap(Map<String, dynamic> save);
@@ -97,6 +103,14 @@ class NoGameServer implements GameServer {
   @override
   Future<ServerResult> train(String bugId) async =>
       const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> breed(String motherId, String fatherId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> collectBreeding(
+    String slotId, {
+    bool viaJelly = false,
+  }) async => const ServerResult.fail('unavailable', 0);
 }
 
 /// HTTP 구현. 인증은 **Supabase 세션 토큰**을 그대로 실어 보낸다
@@ -191,6 +205,17 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> train(String bugId) =>
       _send('POST', '/train', {'bugId': bugId});
+
+  @override
+  Future<ServerResult> breed(String motherId, String fatherId) =>
+      _send('POST', '/breed', {'motherId': motherId, 'fatherId': fatherId});
+
+  @override
+  Future<ServerResult> collectBreeding(
+    String slotId, {
+    bool viaJelly = false,
+  }) =>
+      _send('POST', '/breed/collect', {'slotId': slotId, 'viaJelly': viaJelly});
 }
 
 /// 교체 가능한 권위 서버. 기본은 미설정(로컬 경로 유지).

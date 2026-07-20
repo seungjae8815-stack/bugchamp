@@ -1068,6 +1068,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 같은 종 ♂+♀ 성충으로 산란 시작(등급별 타이머). 슬롯은 부모 스냅샷만 저장(부모 미잠금).
   /// [seed] 는 UI에서 생성해 주입(자식 롤 결정론). 조건 불충족이면 false.
   Future<bool> startBreeding(String motherId, String fatherId, int seed) async {
+    // 서버 권위 모드에서는 **시드도 서버가 정한다** — 인자로 받은 seed 는 무시된다.
+    // 클라가 시드를 고를 수 있으면 완벽한 자식이 나올 때까지 돌려볼 수 있다.
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).breed(motherId, fatherId),
+    );
+    if (viaServer != null) return viaServer;
+
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
     if (cfg == null || motherId == fatherId) return false;
@@ -1107,6 +1114,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 산란 완료 슬롯 수령 → 자식(알)을 보관함에 추가. [viaJelly]=남은시간 비례 젤리 즉시완료.
   Future<bool> collectBreeding(String slotId, {bool viaJelly = false}) async {
+    final viaServer = await _viaServer(
+      () => ref
+          .read(gameServerProvider)
+          .collectBreeding(slotId, viaJelly: viaJelly),
+    );
+    if (viaServer != null) return viaServer;
+
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
     if (cfg == null) return false;

@@ -666,4 +666,124 @@ void main() {
       expect(r.error, 'not_adult');
     });
   });
+
+  group('짝짓기(시드는 서버가 정한다)', () {
+    final cfg = _Config();
+    final speciesById = {'a': testSpecies};
+
+    IndividualBug parent(String id, Sex sex, {int potential = 3}) =>
+        IndividualBug(
+          id: id,
+          speciesId: 'a',
+          sizeMm: 40,
+          potential: potential,
+          temperament: Temperament.aggressive,
+          sex: sex,
+          element: Element.wood,
+          stage: LifeStage.adult,
+          stageSince: t0.subtract(const Duration(days: 30)),
+        );
+
+    SaveGame pair() => SaveGame.initial(createdAt: t0).copyWith(
+      bugs: [parent('mom', Sex.female), parent('dad', Sex.male)],
+      breedingCapacity: 1,
+    );
+
+    ActionResult start(GameActions a, SaveGame s) => a.startBreeding(
+      s,
+      motherId: 'mom',
+      fatherId: 'dad',
+      speciesById: speciesById,
+      petConfig: cfg.pet,
+    );
+
+    test('조건이 맞으면 슬롯이 생긴다', () {
+      final r = start(actions, pair());
+      expect(r.isOk, isTrue);
+      expect(r.save!.breeding.length, 1);
+    });
+
+    test('클라이언트는 시드를 넣을 수 없다 — 서버 난수가 정한다', () {
+      // 서로 다른 서버 난수 → 다른 시드가 나와야 한다.
+      final a = GameActions(
+        config: cfg,
+        now: () => t0,
+        rngFactory: () => Random(1),
+      );
+      final b = GameActions(
+        config: cfg,
+        now: () => t0,
+        rngFactory: () => Random(2),
+      );
+      final sa = start(a, pair()).save!.breeding.first.seed;
+      final sb = start(b, pair()).save!.breeding.first.seed;
+      expect(sa, isNot(sb));
+    });
+
+    test('같은 종이 아니면 거부', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(
+        bugs: [
+          parent('mom', Sex.female),
+          parent('dad', Sex.male).copyWith(speciesId: 'other'),
+        ],
+        breedingCapacity: 1,
+      );
+      expect(start(actions, s).error, 'species_mismatch');
+    });
+
+    test('암수가 아니면 거부', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(
+        bugs: [parent('mom', Sex.male), parent('dad', Sex.male)],
+        breedingCapacity: 1,
+      );
+      expect(start(actions, s).error, 'sex_mismatch');
+    });
+
+    test('슬롯이 없으면 거부', () {
+      final s = pair().copyWith(breedingCapacity: 0);
+      expect(start(actions, s).error, 'no_slot');
+    });
+
+    test('산란 중에는 수령할 수 없다 (젤리 없이)', () {
+      final started = start(actions, pair()).save!;
+      final r = actions.collectBreeding(
+        started,
+        started.breeding.first.id,
+        speciesById: speciesById,
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'not_ready');
+    });
+
+    test('젤리가 모자라면 즉시완료 거부', () {
+      final started = start(actions, pair()).save!;
+      final r = actions.collectBreeding(
+        started,
+        started.breeding.first.id,
+        speciesById: speciesById,
+        petConfig: cfg.pet,
+        viaJelly: true,
+      );
+      expect(r.error, 'insufficient_jelly');
+    });
+
+    test('시간이 지나면 알을 수령한다', () {
+      final started = start(actions, pair()).save!;
+      final slot = started.breeding.first;
+      final later = GameActions(
+        config: cfg,
+        now: () => slot.endsAt.add(const Duration(seconds: 1)),
+      );
+      final r = later.collectBreeding(
+        started,
+        slot.id,
+        speciesById: speciesById,
+        petConfig: cfg.pet,
+      );
+      expect(r.isOk, isTrue);
+      expect(r.save!.breeding, isEmpty);
+      expect(r.save!.bugs.length, 3); // 부모 2 + 알 1
+      expect(r.save!.bugs.last.stage, LifeStage.egg);
+    });
+  });
 }

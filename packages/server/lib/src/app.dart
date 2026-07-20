@@ -305,6 +305,69 @@ Handler buildHandler({
       }
     });
 
+    /// 짝짓기 시작 — 조건 검사와 **자식 롤 시드 생성**을 서버가 한다.
+    authed.post('/breed', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final motherId = body['motherId']?.toString() ?? '';
+      final fatherId = body['fatherId']?.toString() ?? '';
+      if (motherId.isEmpty || fatherId.isEmpty) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.startBreeding(
+          save,
+          motherId: motherId,
+          fatherId: fatherId,
+          speciesById: species,
+          petConfig: cfg.pet,
+        );
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[breed] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 산란 완료 수령 — 자식 롤은 슬롯에 박힌 서버 시드로 굴린다.
+    authed.post('/breed/collect', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final slotId = body['slotId']?.toString() ?? '';
+      if (slotId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.collectBreeding(
+          save,
+          slotId,
+          speciesById: species,
+          petConfig: cfg.pet,
+          viaJelly: body['viaJelly'] == true,
+        );
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[breed/collect] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     authed.post('/purchase', (Request req) async {
       final user = userOf(req);
       final Map<String, dynamic> body;
