@@ -35,6 +35,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get battleMyTeam => 'My Team (3)';
 
   @override
+  String get autoBattleRunning => 'Auto battle in progress';
+
+  @override
   String get battleStart => 'Start Battle';
 
   @override

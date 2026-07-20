@@ -35,6 +35,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get battleMyTeam => '내 팀 (3)';
 
   @override
+  String get autoBattleRunning => '자동 전투 진행 중';
+
+  @override
   String get battleStart => '전투 시작';
 
   @override

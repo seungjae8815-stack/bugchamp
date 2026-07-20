@@ -206,142 +206,128 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
         : 0.0;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: biomeColors(widget.location),
-          ),
-        ),
-        child: Stack(
-          children: [
-            // 장소 배경 아트(없으면 그라데이션만).
-            Positioned.fill(
-              child: biomeBackground(
-                widget.location,
-                fallback: const SizedBox.shrink(),
-              ),
-            ),
-            SafeArea(
-              child: Transform.translate(
-                offset: Offset(shakeDx, 0),
-                child: Column(
+      body: SafeArea(
+        child: Transform.translate(
+          offset: Offset(shakeDx, 0),
+          child: Column(
+            children: [
+              // 상단: 라운드 + 닫기
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: Row(
                   children: [
-                    // 상단: 라운드 + 닫기
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: _skipToEnd,
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: Color(0xCCFFFFFF),
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x88000000),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: const Color(0x55EBA52F),
-                              ),
-                            ),
-                            child: Text(
-                              'ROUND $round / ${widget.result.rounds}',
-                              style: const TextStyle(
-                                color: arenaHoney,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          const SizedBox(width: 48),
-                        ],
+                    IconButton(
+                      onPressed: _skipToEnd,
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Color(0xCCFFFFFF),
                       ),
                     ),
-                    // 아레나
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _a < widget.myTeam.length
-                                    ? ArenaFighter(
-                                        data: widget.data,
-                                        bug: widget.myTeam[_a],
-                                        speciesId: widget
-                                            .speciesOf[widget.myTeam[_a].id],
-                                        hpFrac:
-                                            (_hpA[_a] / widget.myTeam[_a].maxHp)
-                                                .clamp(0.0, 1.0),
-                                        flip: false,
-                                        stance: ev?.aStance,
-                                        flash: _flashL,
-                                        dx: _lungeSide == -1 ? lunge : 0.0,
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-                              Expanded(
-                                child: _b < widget.foeTeam.length
-                                    ? ArenaFighter(
-                                        data: widget.data,
-                                        bug: widget.foeTeam[_b],
-                                        speciesId: widget
-                                            .speciesOf[widget.foeTeam[_b].id],
-                                        hpFrac:
-                                            (_hpB[_b] /
-                                                    widget.foeTeam[_b].maxHp)
-                                                .clamp(0.0, 1.0),
-                                        flip: true,
-                                        stance: ev?.bStance,
-                                        flash: _flashR,
-                                        dx: _lungeSide == 1 ? -lunge : 0.0,
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-                            ],
-                          ),
-                          // 오행 克 버스트
-                          for (final b in _bursts) ArenaBurst(fx: b),
-                          // 데미지/회복 숫자
-                          for (final f in _floats) ArenaFloat(f: f),
-                        ],
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x88000000),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: const Color(0x55EBA52F)),
+                      ),
+                      child: Text(
+                        'ROUND $round / ${widget.result.rounds}',
+                        style: const TextStyle(
+                          color: arenaHoney,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                    // 하단: 속도 컨트롤
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _ctrlBtn(
-                            _speed >= 2 ? '2x' : '1x',
-                            Icons.fast_forward_rounded,
-                            () => setState(() => _speed = _speed >= 2 ? 1 : 2),
-                          ),
-                          const SizedBox(width: 12),
-                          _ctrlBtn(
-                            l.battleSkip,
-                            Icons.skip_next_rounded,
-                            _skipToEnd,
-                          ),
-                        ],
-                      ),
-                    ),
+                    const Spacer(),
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
-            ),
-          ],
+              // 아레나
+              Expanded(
+                child: Stack(
+                  children: [
+                    // 전투 씬 배경 — 이 영역(상단)에만 깐다.
+                    Positioned.fill(
+                      child: biomeBackground(
+                        widget.location,
+                        fallback: const SizedBox.shrink(),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _a < widget.myTeam.length
+                              ? ArenaFighter(
+                                  data: widget.data,
+                                  bug: widget.myTeam[_a],
+                                  speciesId:
+                                      widget.speciesOf[widget.myTeam[_a].id],
+                                  hpFrac: (_hpA[_a] / widget.myTeam[_a].maxHp)
+                                      .clamp(0.0, 1.0),
+                                  flip: false,
+                                  stance: ev?.aStance,
+                                  flash: _flashL,
+                                  dx: _lungeSide == -1 ? lunge : 0.0,
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                        Expanded(
+                          child: _b < widget.foeTeam.length
+                              ? ArenaFighter(
+                                  data: widget.data,
+                                  bug: widget.foeTeam[_b],
+                                  speciesId:
+                                      widget.speciesOf[widget.foeTeam[_b].id],
+                                  hpFrac: (_hpB[_b] / widget.foeTeam[_b].maxHp)
+                                      .clamp(0.0, 1.0),
+                                  flip: true,
+                                  stance: ev?.bStance,
+                                  flash: _flashR,
+                                  dx: _lungeSide == 1 ? -lunge : 0.0,
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                    // 오행 克 버스트
+                    for (final b in _bursts) ArenaBurst(fx: b),
+                    // 데미지/회복 숫자
+                    for (final f in _floats) ArenaFloat(f: f),
+                  ],
+                ),
+              ),
+              // 하단: 상성 휠(표시 전용 — 현재 내 수 강조) + 속도 컨트롤
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: StanceWheel(
+                  energy: 0,
+                  centerLabel: l.autoBattleRunning,
+                  highlight: ev?.aStance,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _ctrlBtn(
+                      _speed >= 2 ? '2x' : '1x',
+                      Icons.fast_forward_rounded,
+                      () => setState(() => _speed = _speed >= 2 ? 1 : 2),
+                    ),
+                    const SizedBox(width: 12),
+                    _ctrlBtn(l.battleSkip, Icons.skip_next_rounded, _skipToEnd),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

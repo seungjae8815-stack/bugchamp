@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
@@ -219,6 +221,213 @@ class ArenaFighter extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 공/방/회 상성(공>회>방>공)을 원형으로 보여주는 휠.
+/// 공격 12시 · 회복 4시 · 방어 8시 → 시계방향 화살표가 "이김" 방향.
+///
+/// - 수동 전투: [onPick] 을 주면 노드를 탭해 스탠스를 고른다.
+/// - 자동 전투: [onPick] 을 비우고 [centerLabel] 로 진행 상태만 보여준다
+///   ([highlight] 로 현재 내 수를 강조).
+class StanceWheel extends StatelessWidget {
+  const StanceWheel({
+    super.key,
+    required this.energy,
+    this.onPick,
+    this.enabled = true,
+    this.centerLabel,
+    this.highlight,
+  });
+
+  /// 현재 기력(방어·회복 선택 가능 판정).
+  final int energy;
+
+  /// 스탠스 선택 콜백. null 이면 **표시 전용**.
+  final void Function(Stance)? onPick;
+
+  /// 입력 단계인지(표시 전용이면 무시).
+  final bool enabled;
+
+  /// 링 가운데 문구. 기본은 상성 순서 안내.
+  final String? centerLabel;
+
+  /// 강조 표시할 스탠스(자동 전투의 현재 수).
+  final Stance? highlight;
+
+  bool get _interactive => onPick != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return LayoutBuilder(
+      builder: (ctx, cons) {
+        // 폭을 최대한 쓰되 화면 높이 비율로도 상한(짧은 화면 오버플로우 방지).
+        final maxByHeight = MediaQuery.sizeOf(context).height * 0.42;
+        final s = math.min(math.min(cons.maxWidth, 460.0), maxByHeight);
+        final node = s * 0.34;
+        final r = s / 2 - node / 2 - 2;
+        final center = Offset(s / 2, s / 2);
+        Widget at(double deg, Widget child) {
+          final a = deg * math.pi / 180;
+          final p = center + Offset(math.cos(a), math.sin(a)) * r;
+          return Positioned(
+            left: p.dx - node / 2,
+            top: p.dy - node / 2,
+            width: node,
+            child: child,
+          );
+        }
+
+        return SizedBox(
+          width: s,
+          height: s + 26,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                width: s,
+                height: s,
+                child: CustomPaint(painter: _StanceRingPainter(r)),
+              ),
+              Positioned(
+                left: 0,
+                top: s / 2 - 9,
+                width: s,
+                child: Text(
+                  centerLabel ?? '공 › 회 › 방 › 공',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: centerLabel == null
+                        ? const Color(0x66FFFFFF)
+                        : arenaHoney,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              at(-90, _node(l, Stance.attack, true, node)),
+              at(30, _node(l, Stance.heal, energy >= 1, node)),
+              at(150, _node(l, Stance.defend, energy >= 1, node)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _node(AppLocalizations l, Stance s, bool affordable, double size) {
+    // 표시 전용이면 강조된 수만 또렷하게, 나머지는 흐리게.
+    final active = _interactive
+        ? (enabled && affordable)
+        : (highlight == null || highlight == s);
+    final base = stanceColor(s);
+    final cost = s == Stance.attack ? '+1' : '−1';
+    return Opacity(
+      opacity: active ? 1 : 0.4,
+      child: GestureDetector(
+        onTap: (_interactive && enabled && affordable)
+            ? () => onPick!(s)
+            : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: base,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: highlight == s ? Colors.white : Colors.white24,
+                  width: highlight == s ? 3.5 : 2.5,
+                ),
+                boxShadow: active
+                    ? [
+                        BoxShadow(
+                          color: base.withValues(alpha: 0.55),
+                          blurRadius: 16,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Icon(
+                stanceIcon(s),
+                size: size * 0.44,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              stanceLabel(l, s),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              '⚡$cost',
+              style: const TextStyle(
+                color: Color(0xCCFFFFFF),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 스탠스 휠 링 + 시계방향 화살표(공>회>방>공 상성 흐름).
+class _StanceRingPainter extends CustomPainter {
+  const _StanceRingPainter(this.radius);
+
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = radius;
+    if (r <= 0) return;
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.5
+      ..color = const Color(0x3AFFFFFF);
+    canvas.drawCircle(c, r, ring);
+    final arrow = Paint()
+      ..style = PaintingStyle.fill
+      ..color = const Color(0x66FFFFFF);
+    for (final deg in const [-30.0, 90.0, 210.0]) {
+      final a = deg * math.pi / 180;
+      final p = c + Offset(math.cos(a), math.sin(a)) * r;
+      final t = a + math.pi / 2;
+      _head(canvas, p, Offset(math.cos(t), math.sin(t)), arrow);
+    }
+  }
+
+  void _head(Canvas canvas, Offset p, Offset dir, Paint paint) {
+    const s = 14.0;
+    final perp = Offset(-dir.dy, dir.dx);
+    final tip = p + dir * s;
+    final b1 = p - dir * s + perp * (s * 0.7);
+    final b2 = p - dir * s - perp * (s * 0.7);
+    canvas.drawPath(
+      Path()
+        ..moveTo(tip.dx, tip.dy)
+        ..lineTo(b1.dx, b1.dy)
+        ..lineTo(b2.dx, b2.dy)
+        ..close(),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _StanceRingPainter old) => old.radius != radius;
 }
 
 /// 떠오르는 데미지/회복 숫자 위젯.

@@ -8,6 +8,7 @@
   "battleTitle": "곤충 결투",
   "battleTrophies": "트로피 {n}",
   "battleMyTeam": "내 팀 (3)",
+  "autoBattleRunning": "자동 전투 진행 중",
   "battleStart": "전투 시작",
   "battleNeedBugs": "성충 곤충이 있어야 결투할 수 있어요",
   "battlePickTitle": "곤충 선택 (성충)",

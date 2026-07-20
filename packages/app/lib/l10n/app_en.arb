@@ -10,6 +10,7 @@
   "battleTrophies": "Trophies {n}",
   "@battleTrophies": { "placeholders": { "n": { "type": "int" } } },
   "battleMyTeam": "My Team (3)",
+  "autoBattleRunning": "Auto battle in progress",
   "battleStart": "Start Battle",
   "battleNeedBugs": "You need adult bugs to duel",
   "battlePickTitle": "Choose a bug (adult)",

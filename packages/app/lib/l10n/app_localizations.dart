@@ -148,6 +148,12 @@ abstract class AppLocalizations {
   /// **'My Team (3)'**
   String get battleMyTeam;
 
+  /// No description provided for @autoBattleRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto battle in progress'**
+  String get autoBattleRunning;
+
   /// No description provided for @battleStart.
   ///
   /// In en, this message translates to:
