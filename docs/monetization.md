@@ -65,8 +65,13 @@
 
 ## 5. 진행 상태
 - [x] 기획 확정 · `iap.json` · `IapConfig` 모델
-- [ ] 세이브 v16 (adsRemoved/starterBought/ownedSkins/passExpiresAt)
-- [ ] 상점 UI (카탈로그 표시)
-- [ ] in_app_purchase 연동 · 복원 · 지급
-- [ ] 패스/광고제거 효과 적용 (오프라인 상한·획득량·광고 억제)
-- [ ] 스킨 적용 (아트 필요)
+- [x] 세이브 v16 (adsRemoved/starterBought/ownedSkins/passExpiresAt)
+- [x] 상점 UI (카탈로그 표시, `[제작 | 상점]` 2섹션 + 구매 복원 버튼)
+- [x] 패스/광고제거 효과 적용 (오프라인 12h·방치골드 ×1.2·일일 젤리)
+- [x] **계정/클라우드 세이브**(결제 선행조건) — 구글 로그인 + saves 백업/복원 실기 검증 완료
+- [ ] in_app_purchase 연동 · 복원 · 지급 ← **다음**. Play Console 상품 등록 선행 필요
+- [ ] 스킨 실제 적용 (아트 필요)
+- [ ] AdMob 실광고(현재 보상형은 플레이스홀더)
+
+> 현재 `iapServiceProvider` 는 **개발용 `LocalIapService`**(결제 없이 즉시 지급).
+> 스토어 연동 시 `StoreIapService` 로 오버라이드하면 지급 로직(`applyPurchase`)은 그대로 재사용된다.
