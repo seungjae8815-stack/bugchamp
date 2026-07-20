@@ -9,7 +9,7 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
-  String get appTitle => '버그 챔프';
+  String get appTitle => '곤충 키우기';
 
   @override
   String get navHome => '홈';
@@ -201,6 +201,42 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get opponentPick => '상대 고르기';
+
+  @override
+  String get cloudTitle => '클라우드 백업';
+
+  @override
+  String get cloudBackup => '백업하기';
+
+  @override
+  String get cloudRestore => '복원하기';
+
+  @override
+  String get cloudBackupDone => '클라우드에 백업했어요';
+
+  @override
+  String get cloudRestoreDone => '백업에서 복원했어요';
+
+  @override
+  String get cloudRestoreConfirm => '지금 진행 상황을 백업 내용으로 덮어씁니다. 되돌릴 수 없어요.';
+
+  @override
+  String get cloudFailed => '실패했어요. 잠시 후 다시 시도해주세요';
+
+  @override
+  String get cloudNoBackup => '아직 백업이 없어요';
+
+  @override
+  String cloudLastBackup(String when) {
+    return '마지막 백업: $when';
+  }
+
+  @override
+  String get cloudUnavailable => '온라인 연결이 없어 백업을 쓸 수 없어요';
+
+  @override
+  String get cloudAnonWarning =>
+      '지금은 기기 임시 계정이라, 앱을 삭제하면 백업도 함께 사라져요. 곧 구글 로그인을 붙일 예정이에요.';
 
   @override
   String get tabCraft => '제작';

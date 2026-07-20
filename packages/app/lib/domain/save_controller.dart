@@ -3,9 +3,11 @@ import 'dart:math' as math;
 import 'package:core_gathering/core_gathering.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../data/save_migrations.dart';
 import '../data/save_repository.dart';
 import 'gather_service.dart';
 import 'gift_mail.dart';
@@ -468,6 +470,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.copyWith(gold: s.gold + g.gold * mult, materials: mats, gifts: gifts),
     );
     return true;
+  }
+
+  /// 클라우드에서 받은 세이브 JSON 으로 **덮어쓰기** 복원.
+  /// 구버전 백업도 마이그레이션을 거치며, 손상 데이터면 false(현재 세이브 유지).
+  Future<bool> restoreFromJson(Map<String, dynamic> json) async {
+    try {
+      final restored = SaveGame.fromJson(migrateToCurrent(json));
+      await _commit(restored);
+      return true;
+    } catch (e) {
+      debugPrint('cloud restore failed: $e');
+      return false;
+    }
   }
 
   /// 인앱결제 상품 [p] 지급/적용. 성공하면 true.

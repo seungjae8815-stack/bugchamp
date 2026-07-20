@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 기본(영어권 등). 한국어는 values-ko, 일본어는 values-ja 로 자동 분기. -->
+    <string name="app_name">Bug Champ</string>
+</resources>

@@ -109,6 +109,17 @@ language sql stable security definer set search_path = public as $$
   limit lim;
 $$;
 
+-- 클라우드 세이브: 유저 1명 = 행 1개. 본인 행만 접근(RLS).
+create table if not exists saves (
+  id         uuid primary key references auth.users(id) on delete cascade,
+  data       jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table saves enable row level security;
+drop policy if exists own_save on saves;
+create policy own_save on saves
+  for all using (auth.uid() = id) with check (auth.uid() = id);
+
 -- PostgREST 스키마 캐시 갱신(테이블/함수가 즉시 API에 노출되도록).
 notify pgrst, 'reload schema';
 ```

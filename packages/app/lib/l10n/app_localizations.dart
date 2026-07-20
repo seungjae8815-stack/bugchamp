@@ -460,6 +460,72 @@ abstract class AppLocalizations {
   /// **'Pick Opponent'**
   String get opponentPick;
 
+  /// No description provided for @cloudTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Backup'**
+  String get cloudTitle;
+
+  /// No description provided for @cloudBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up'**
+  String get cloudBackup;
+
+  /// No description provided for @cloudRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get cloudRestore;
+
+  /// No description provided for @cloudBackupDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Backed up to the cloud'**
+  String get cloudBackupDone;
+
+  /// No description provided for @cloudRestoreDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored from backup'**
+  String get cloudRestoreDone;
+
+  /// No description provided for @cloudRestoreConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This overwrites your current progress with the backup. It cannot be undone.'**
+  String get cloudRestoreConfirm;
+
+  /// No description provided for @cloudFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed. Please try again in a moment'**
+  String get cloudFailed;
+
+  /// No description provided for @cloudNoBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'No backup yet'**
+  String get cloudNoBackup;
+
+  /// No description provided for @cloudLastBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Last backup: {when}'**
+  String cloudLastBackup(String when);
+
+  /// No description provided for @cloudUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup unavailable — no online connection'**
+  String get cloudUnavailable;
+
+  /// No description provided for @cloudAnonWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re on a temporary device account, so deleting the app also loses the backup. Google sign-in is coming soon.'**
+  String get cloudAnonWarning;
+
   /// No description provided for @tabCraft.
   ///
   /// In en, this message translates to:

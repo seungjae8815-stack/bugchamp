@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../app_version.dart';
 import '../../data/game_data.dart';
+import '../../domain/cloud_save_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
@@ -2532,6 +2533,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
           ),
+          // ── 클라우드 백업/복원 ──
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _showCloudSave(l);
+              },
+              icon: const Icon(Icons.cloud_sync_rounded, size: 18),
+              label: Text(l.cloudTitle),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF7FD3F5),
+                side: const BorderSide(color: Color(0x557FD3F5)),
+              ),
+            ),
+          ),
           // ── 빌드 식별자 — 설치본이 어떤 업데이트인지 확인용 ──
           // ⓘ 아이콘을 누르면 빌드일·기능 상세가 펼쳐진다(기본 접힘).
           const SizedBox(height: 14),
@@ -2622,6 +2640,124 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ),
       ],
     );
+  }
+
+  /// 클라우드 백업/복원 시트. 백엔드 미연결이면 안내만 표시.
+  Future<void> _showCloudSave(AppLocalizations l) async {
+    final cloud = ref.read(cloudSaveProvider);
+    final lastAt = cloud.available ? await cloud.lastBackupAt() : null;
+    if (!mounted) return;
+    await showGameDialog<void>(
+      context,
+      title: l.cloudTitle,
+      icon: Icons.cloud_sync_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            cloud.available
+                ? (lastAt == null
+                      ? l.cloudNoBackup
+                      : l.cloudLastBackup(
+                          '${lastAt.toLocal()}'.split('.').first,
+                        ))
+                : l.cloudUnavailable,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xD9FFFFFF),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l.cloudAnonWarning,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0x99FFFFFF),
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context),
+          primary: false,
+        ),
+        if (cloud.available)
+          gameDialogButton(l.cloudRestore, () async {
+            Navigator.pop(context);
+            await _cloudRestore(l);
+          }, color: const Color(0xFF2E6DA4)),
+        if (cloud.available)
+          gameDialogButton(l.cloudBackup, () async {
+            Navigator.pop(context);
+            await _cloudBackup(l);
+          }),
+      ],
+    );
+  }
+
+  Future<void> _cloudBackup(AppLocalizations l) async {
+    final save = ref.read(saveControllerProvider).requireValue;
+    final ok = await ref.read(cloudSaveProvider).upload(save.toJson());
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(ok ? l.cloudBackupDone : l.cloudFailed)),
+      );
+  }
+
+  /// 서버 세이브로 덮어쓴다(되돌릴 수 없어 확인 후 실행).
+  Future<void> _cloudRestore(AppLocalizations l) async {
+    final data = await ref.read(cloudSaveProvider).download();
+    if (!mounted) return;
+    if (data == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l.cloudNoBackup)));
+      return;
+    }
+    final yes = await showGameDialog<bool>(
+      context,
+      title: l.cloudRestore,
+      icon: Icons.warning_amber_rounded,
+      content: Text(
+        l.cloudRestoreConfirm,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Color(0xD9FFFFFF),
+          fontSize: 13,
+          height: 1.4,
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.cloudRestore,
+          () => Navigator.pop(context, true),
+          color: const Color(0xFFC85454),
+        ),
+      ],
+    );
+    if (yes != true || !mounted) return;
+    final ok = await ref
+        .read(saveControllerProvider.notifier)
+        .restoreFromJson(data);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(ok ? l.cloudRestoreDone : l.cloudFailed)),
+      );
   }
 
   void _confirmReset(AppLocalizations l) {

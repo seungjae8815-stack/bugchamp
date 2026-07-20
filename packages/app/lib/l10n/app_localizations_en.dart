@@ -204,6 +204,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get opponentPick => 'Pick Opponent';
 
   @override
+  String get cloudTitle => 'Cloud Backup';
+
+  @override
+  String get cloudBackup => 'Back up';
+
+  @override
+  String get cloudRestore => 'Restore';
+
+  @override
+  String get cloudBackupDone => 'Backed up to the cloud';
+
+  @override
+  String get cloudRestoreDone => 'Restored from backup';
+
+  @override
+  String get cloudRestoreConfirm =>
+      'This overwrites your current progress with the backup. It cannot be undone.';
+
+  @override
+  String get cloudFailed => 'Failed. Please try again in a moment';
+
+  @override
+  String get cloudNoBackup => 'No backup yet';
+
+  @override
+  String cloudLastBackup(String when) {
+    return 'Last backup: $when';
+  }
+
+  @override
+  String get cloudUnavailable => 'Backup unavailable — no online connection';
+
+  @override
+  String get cloudAnonWarning =>
+      'You\'re on a temporary device account, so deleting the app also loses the backup. Google sign-in is coming soon.';
+
+  @override
   String get tabCraft => 'Craft';
 
   @override

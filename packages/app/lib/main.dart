@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'data/save_repository.dart';
+import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
 import 'domain/providers.dart';
 import 'domain/pvp_backend.dart';
@@ -50,8 +51,10 @@ Future<void> main() async {
     ProviderScope(
       overrides: [
         saveRepositoryProvider.overrideWithValue(repository),
-        if (supaClient != null)
+        if (supaClient != null) ...[
           pvpBackendProvider.overrideWithValue(SupabasePvpBackend(supaClient)),
+          cloudSaveProvider.overrideWithValue(SupabaseCloudSave(supaClient)),
+        ],
       ],
       child: const BugChampApp(),
     ),
