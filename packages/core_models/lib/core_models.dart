@@ -4,6 +4,7 @@
 /// 사이즈 롤 로직, 구조적 규칙 상수를 제공한다.
 library;
 
+export 'src/chat.dart';
 export 'src/clock.dart';
 export 'src/enums.dart';
 export 'src/field.dart';

@@ -755,10 +755,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get combatPowerLabel => '전투력';
 
   @override
-  String get chatTitle => '채팅';
+  String get chatTitle => '전체 채팅';
 
   @override
-  String get chatPlaceholder => '채팅 (준비 중) — 탭하면 열려요';
+  String get chatPlaceholder => '전체 채팅 — 탭하면 열려요';
 
   @override
   String get characterTitle => '내 캐릭터';
@@ -1348,4 +1348,73 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get materialJellyDesc => '특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다.';
+
+  @override
+  String get chatHint => '메시지를 입력하세요';
+
+  @override
+  String get chatSend => '보내기';
+
+  @override
+  String get chatEmpty => '아직 대화가 없어요. 먼저 인사해 보세요!';
+
+  @override
+  String get chatUnavailable => '지금은 채팅을 쓸 수 없어요';
+
+  @override
+  String get chatSendFailed => '메시지를 보내지 못했어요';
+
+  @override
+  String chatTooLong(int max) {
+    return '메시지가 너무 길어요 ($max자까지)';
+  }
+
+  @override
+  String get chatBlockedWord => '사용할 수 없는 표현이 있어요';
+
+  @override
+  String get chatTooFast => '조금 천천히 보내주세요';
+
+  @override
+  String get chatReport => '신고';
+
+  @override
+  String get chatBlock => '차단';
+
+  @override
+  String get chatUnblock => '차단 해제';
+
+  @override
+  String get chatReported => '신고했어요. 검토 후 조치할게요';
+
+  @override
+  String chatBlockedUser(String name) {
+    return '$name 님을 차단했어요';
+  }
+
+  @override
+  String chatUnblockedUser(String name) {
+    return '$name 님 차단을 해제했어요';
+  }
+
+  @override
+  String get chatBlockedMessage => '차단한 사용자의 메시지입니다';
+
+  @override
+  String get chatReportTitle => '이 메시지를 신고할까요?';
+
+  @override
+  String get chatReportBody =>
+      '욕설·광고·사기 등 부적절한 내용을 신고할 수 있어요. 반복 신고된 사용자는 이용이 제한됩니다.';
+
+  @override
+  String chatBlockTitle(String name) {
+    return '$name 님을 차단할까요?';
+  }
+
+  @override
+  String get chatBlockBody => '이 사용자의 메시지가 더 이상 보이지 않아요. 설정에서 언제든 해제할 수 있어요.';
+
+  @override
+  String get chatRules => '서로 존중하는 대화를 부탁드려요. 욕설·광고·개인정보 공유는 제한됩니다.';
 }

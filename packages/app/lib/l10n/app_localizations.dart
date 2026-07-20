@@ -1465,13 +1465,13 @@ abstract class AppLocalizations {
   /// No description provided for @chatTitle.
   ///
   /// In en, this message translates to:
-  /// **'Chat'**
+  /// **'Global chat'**
   String get chatTitle;
 
   /// No description provided for @chatPlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'Chat (coming soon) — tap to open'**
+  /// **'Global chat — tap to open'**
   String get chatPlaceholder;
 
   /// No description provided for @characterTitle.
@@ -2541,6 +2541,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A special premium currency. Used for crafting (All-in-One Potion) and special goods.'**
   String get materialJellyDesc;
+
+  /// No description provided for @chatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message'**
+  String get chatHint;
+
+  /// No description provided for @chatSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get chatSend;
+
+  /// No description provided for @chatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet. Say hello!'**
+  String get chatEmpty;
+
+  /// No description provided for @chatUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat isn\'t available right now'**
+  String get chatUnavailable;
+
+  /// No description provided for @chatSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send your message'**
+  String get chatSendFailed;
+
+  /// No description provided for @chatTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Message is too long (max {max})'**
+  String chatTooLong(int max);
+
+  /// No description provided for @chatBlockedWord.
+  ///
+  /// In en, this message translates to:
+  /// **'That message contains blocked words'**
+  String get chatBlockedWord;
+
+  /// No description provided for @chatTooFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Please slow down a little'**
+  String get chatTooFast;
+
+  /// No description provided for @chatReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get chatReport;
+
+  /// No description provided for @chatBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get chatBlock;
+
+  /// No description provided for @chatUnblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get chatUnblock;
+
+  /// No description provided for @chatReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported. We\'ll review it'**
+  String get chatReported;
+
+  /// No description provided for @chatBlockedUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked {name}'**
+  String chatBlockedUser(String name);
+
+  /// No description provided for @chatUnblockedUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocked {name}'**
+  String chatUnblockedUser(String name);
+
+  /// No description provided for @chatBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message from a blocked user'**
+  String get chatBlockedMessage;
+
+  /// No description provided for @chatReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this message?'**
+  String get chatReportTitle;
+
+  /// No description provided for @chatReportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Report abuse, spam or scams. Repeatedly reported users get restricted.'**
+  String get chatReportBody;
+
+  /// No description provided for @chatBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String chatBlockTitle(String name);
+
+  /// No description provided for @chatBlockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t see their messages anymore. You can undo this in settings.'**
+  String get chatBlockBody;
+
+  /// No description provided for @chatRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Please be respectful. Abuse, ads and sharing personal info are not allowed.'**
+  String get chatRules;
 }
 
 class _AppLocalizationsDelegate

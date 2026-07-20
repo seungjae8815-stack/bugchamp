@@ -651,6 +651,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 채팅 사용자 차단/해제(로컬). 차단하면 그 사람 메시지가 보이지 않는다.
+  ///
+  /// 서버에 알리지 않는 이유: 차단당한 쪽이 알면 보복·우회 계정으로 이어진다.
+  /// 닉네임이 아니라 계정 id 로 막는다(닉네임은 바꿀 수 있으므로).
+  Future<void> setUserBlocked(String userId, bool blocked) async {
+    final s = state.requireValue;
+    final next = {...s.blockedUserIds};
+    if (blocked) {
+      next.add(userId);
+    } else {
+      next.remove(userId);
+    }
+    await _commit(s.copyWith(blockedUserIds: next));
+  }
+
   /// 게임 데이터 전체 초기화(설정). 저장소를 비우고 새 세이브로 교체.
   Future<void> resetGame() async {
     await _repo.clear();

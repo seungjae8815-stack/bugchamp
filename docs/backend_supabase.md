@@ -215,3 +215,120 @@ grant execute on function public.delete_my_account() to authenticated;
 순서를 반대로 하면 서버 삭제 실패 시 진행도만 날아가므로 바꾸지 말 것.
 
 **안내 페이지**: `https://dkc260701.github.io/bugchamp-policy/delete.html`
+
+---
+
+## 8. 전체 채팅 (UGC — 신고·차단·도배방지 필수)
+
+> ⚠️ 채팅은 **사용자 제작 콘텐츠**다. 구글 플레이 정책상 신고·차단 수단이 없으면
+> 심사에서 거부되거나 출시 후 앱이 내려간다. 아래 SQL 을 **전부** 실행할 것.
+
+### 8-1. 테이블 + RLS
+
+```sql
+-- 메시지
+create table if not exists chat_messages (
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  nickname   text not null check (char_length(nickname) between 1 and 20),
+  body       text not null check (char_length(body) between 1 and 100),
+  created_at timestamptz not null default now()
+);
+create index if not exists chat_messages_created_idx
+  on chat_messages (created_at desc);
+
+alter table chat_messages enable row level security;
+
+-- 읽기: 로그인한 사용자 누구나
+create policy chat_read on chat_messages
+  for select to authenticated using (true);
+
+-- 쓰기: 본인 명의로만
+create policy chat_insert on chat_messages
+  for insert to authenticated with check (auth.uid() = user_id);
+
+-- 수정/삭제는 아무도 못 한다(정책 미생성 = 거부).
+```
+
+### 8-2. 서버 도배 방지 (클라이언트 검사만으론 부족)
+
+앱을 조작하면 클라이언트 간격 제한은 우회된다. 서버에서도 막는다.
+
+```sql
+create or replace function public.chat_rate_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as {D}{D}
+declare
+  last_at timestamptz;
+begin
+  select max(created_at) into last_at
+    from chat_messages where user_id = new.user_id;
+
+  if last_at is not null and now() - last_at < interval '3 seconds' then
+    raise exception 'rate_limited';
+  end if;
+  return new;
+end;
+{D}{D};
+
+drop trigger if exists chat_rate_limit_trg on chat_messages;
+create trigger chat_rate_limit_trg
+  before insert on chat_messages
+  for each row execute function public.chat_rate_limit();
+```
+
+> 간격(3초)은 `assets/data/chat.json` 의 `minIntervalSeconds` 와 맞춘다.
+> 한쪽만 바꾸면 앱은 보내는데 서버가 거부하는 상태가 된다.
+
+### 8-3. 신고
+
+```sql
+create table if not exists chat_reports (
+  id          bigint generated always as identity primary key,
+  message_id  bigint not null references chat_messages(id) on delete cascade,
+  reporter_id uuid   not null references auth.users(id) on delete cascade,
+  reason      text,
+  created_at  timestamptz not null default now(),
+  unique (message_id, reporter_id)   -- 같은 사람이 같은 메시지를 중복 신고 못 함
+);
+
+alter table chat_reports enable row level security;
+
+-- 신고는 본인 명의로만 등록. 조회는 운영자(대시보드)에서만 한다.
+create policy chat_report_insert on chat_reports
+  for insert to authenticated with check (auth.uid() = reporter_id);
+```
+
+### 8-4. Realtime 켜기
+
+Supabase 대시보드 → **Database → Replication** → `supabase_realtime` 게시에
+**`chat_messages` 테이블을 추가**한다. 안 하면 새 메시지가 실시간으로 안 온다
+(앱은 최근 목록만 보여주고 조용히 멈춘 것처럼 보인다).
+
+### 8-5. 운영 — 신고 확인하는 법
+
+```sql
+-- 신고 많이 받은 메시지 순
+select m.id, m.nickname, m.body, count(r.id) as reports, m.created_at
+  from chat_messages m
+  join chat_reports r on r.message_id = m.id
+ group by m.id
+ order by reports desc, m.created_at desc
+ limit 50;
+
+-- 문제 메시지 삭제
+delete from chat_messages where id = <id>;
+```
+
+> 지금은 **수동 운영**이다. 신고가 쌓이면 위 쿼리로 확인하고 지운다.
+> 자동 차단·계정 정지는 후속 과제.
+
+### 8-6. 클라이언트 쪽 방어(참고)
+
+- 금칙어 필터: `assets/data/chat.json` 의 `bannedWords` — **보낼 때와 보여줄 때 양쪽**에서 검사.
+  목록 갱신 전에 서버에 들어간 과거 메시지도 화면에서 가려진다.
+- 차단: `SaveGame.blockedUserIds` (기기 로컬). 차단당한 쪽은 알 수 없다(보복 방지).
+- 닉네임은 아직 필터가 없다 — **후속 과제**.

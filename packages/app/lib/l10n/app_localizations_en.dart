@@ -766,10 +766,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get combatPowerLabel => 'Power';
 
   @override
-  String get chatTitle => 'Chat';
+  String get chatTitle => 'Global chat';
 
   @override
-  String get chatPlaceholder => 'Chat (coming soon) — tap to open';
+  String get chatPlaceholder => 'Global chat — tap to open';
 
   @override
   String get characterTitle => 'My Character';
@@ -1364,4 +1364,75 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get materialJellyDesc =>
       'A special premium currency. Used for crafting (All-in-One Potion) and special goods.';
+
+  @override
+  String get chatHint => 'Type a message';
+
+  @override
+  String get chatSend => 'Send';
+
+  @override
+  String get chatEmpty => 'No messages yet. Say hello!';
+
+  @override
+  String get chatUnavailable => 'Chat isn\'t available right now';
+
+  @override
+  String get chatSendFailed => 'Couldn\'t send your message';
+
+  @override
+  String chatTooLong(int max) {
+    return 'Message is too long (max $max)';
+  }
+
+  @override
+  String get chatBlockedWord => 'That message contains blocked words';
+
+  @override
+  String get chatTooFast => 'Please slow down a little';
+
+  @override
+  String get chatReport => 'Report';
+
+  @override
+  String get chatBlock => 'Block';
+
+  @override
+  String get chatUnblock => 'Unblock';
+
+  @override
+  String get chatReported => 'Reported. We\'ll review it';
+
+  @override
+  String chatBlockedUser(String name) {
+    return 'Blocked $name';
+  }
+
+  @override
+  String chatUnblockedUser(String name) {
+    return 'Unblocked $name';
+  }
+
+  @override
+  String get chatBlockedMessage => 'Message from a blocked user';
+
+  @override
+  String get chatReportTitle => 'Report this message?';
+
+  @override
+  String get chatReportBody =>
+      'Report abuse, spam or scams. Repeatedly reported users get restricted.';
+
+  @override
+  String chatBlockTitle(String name) {
+    return 'Block $name?';
+  }
+
+  @override
+  String get chatBlockBody =>
+      'You won\'t see their messages anymore. You can undo this in settings.';
+
+  @override
+  String get chatRules =>
+      'Please be respectful. Abuse, ads and sharing personal info are not allowed.';
 }

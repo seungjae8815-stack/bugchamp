@@ -478,8 +478,8 @@
   "materialSap": "Sap Crystal",
   "materialJelly": "Bug Jelly",
   "combatPowerLabel": "Power",
-  "chatTitle": "Chat",
-  "chatPlaceholder": "Chat (coming soon) — tap to open",
+  "chatTitle": "Global chat",
+  "chatPlaceholder": "Global chat — tap to open",
   "characterTitle": "My Character",
   "statCombatPower": "Combat Power",
   "statCrit": "Crit",
@@ -866,5 +866,53 @@
   "materialChitinDesc": "A hard exoskeleton shard. Used for advanced upgrade costs and horn/jaw enhancement.",
   "materialMineralDesc": "A hard mined mineral. Used for advanced upgrade costs and cuticle enhancement.",
   "materialSapDesc": "Hardened crystallized tree sap. Used for advanced upgrade costs and wing enhancement.",
-  "materialJellyDesc": "A special premium currency. Used for crafting (All-in-One Potion) and special goods."
+  "materialJellyDesc": "A special premium currency. Used for crafting (All-in-One Potion) and special goods.",
+  "chatHint": "Type a message",
+  "chatSend": "Send",
+  "chatEmpty": "No messages yet. Say hello!",
+  "chatUnavailable": "Chat isn't available right now",
+  "chatSendFailed": "Couldn't send your message",
+  "chatTooLong": "Message is too long (max {max})",
+  "chatBlockedWord": "That message contains blocked words",
+  "chatTooFast": "Please slow down a little",
+  "chatReport": "Report",
+  "chatBlock": "Block",
+  "chatUnblock": "Unblock",
+  "chatReported": "Reported. We'll review it",
+  "chatBlockedUser": "Blocked {name}",
+  "chatUnblockedUser": "Unblocked {name}",
+  "chatBlockedMessage": "Message from a blocked user",
+  "chatReportTitle": "Report this message?",
+  "chatReportBody": "Report abuse, spam or scams. Repeatedly reported users get restricted.",
+  "chatBlockTitle": "Block {name}?",
+  "chatBlockBody": "You won't see their messages anymore. You can undo this in settings.",
+  "chatRules": "Please be respectful. Abuse, ads and sharing personal info are not allowed.",
+  "@chatTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatBlockedUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatUnblockedUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatBlockTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

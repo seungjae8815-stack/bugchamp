@@ -55,6 +55,7 @@ const Map<int, _JsonMap Function(_JsonMap)> _migrations = {
   14: _v14ToV15,
   15: _v15ToV16,
   16: _v16ToV17,
+  17: _v17ToV18,
 };
 
 /// v0(스키마 미표기 레거시) → v1: 누락 필드를 기본값으로 채우고 버전을 승격.
@@ -196,4 +197,11 @@ _JsonMap _v16ToV17(_JsonMap old) => {
   ...old,
   'schemaVersion': 17,
   'redeemedPurchases': old['redeemedPurchases'] ?? const <dynamic>[],
+};
+
+/// v17 → v18(전체 채팅): 차단 사용자 목록을 빈 집합으로 추가.
+_JsonMap _v17ToV18(_JsonMap old) => {
+  ...old,
+  'schemaVersion': 18,
+  'blockedUserIds': old['blockedUserIds'] ?? const <dynamic>[],
 };

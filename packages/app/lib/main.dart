@@ -10,6 +10,7 @@ import 'data/save_repository.dart';
 import 'domain/ad_service.dart';
 import 'domain/admob_ad_service.dart';
 import 'domain/auth_service.dart';
+import 'domain/chat_service.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
 import 'domain/providers.dart';
@@ -102,6 +103,11 @@ Future<void> main() async {
         if (supaClient != null) ...[
           pvpBackendProvider.overrideWithValue(SupabasePvpBackend(supaClient)),
           cloudSaveProvider.overrideWithValue(SupabaseCloudSave(supaClient)),
+          chatServiceProvider.overrideWith((ref) {
+            final s = SupabaseChatService(supaClient!);
+            ref.onDispose(s.dispose);
+            return s;
+          }),
           authServiceProvider.overrideWithValue(
             SupabaseAuthService(supaClient, _googleWebClientId),
           ),

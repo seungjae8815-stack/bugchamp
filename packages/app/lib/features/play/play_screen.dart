@@ -19,6 +19,7 @@ import '../../domain/save_controller.dart';
 import '../../domain/gift_mail.dart';
 import '../../domain/save_game.dart';
 import '../../l10n/app_localizations.dart';
+import '../chat/chat_screen.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
@@ -1483,12 +1484,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
-  /// 버프 스트립이 있던 자리 → 실시간 채팅 바(플레이스홀더). 탭 시 채팅 창(추후).
+  /// 홈 상단 채팅 바. 탭하면 전체 채팅 화면으로 들어간다.
   Widget _chatBar(AppLocalizations l) => Padding(
     padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _showComingSoon(l, l.chatTitle),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const ChatScreen())),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -2149,12 +2152,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
   // ── 다이얼로그/시트 ──────────────────────────────────────────
-
-  void _showComingSoon(AppLocalizations l, String title) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('$title · ${l.comingSoon}')));
-  }
 
   /// 편지함 = 일일보상(점심/저녁). 현재 로컬 시각·수령 이력으로 상태 표시.
   void _showMail(AppLocalizations l) {

@@ -234,8 +234,8 @@
   "materialSap": "수액결정",
   "materialJelly": "곤충젤리",
   "combatPowerLabel": "전투력",
-  "chatTitle": "채팅",
-  "chatPlaceholder": "채팅 (준비 중) — 탭하면 열려요",
+  "chatTitle": "전체 채팅",
+  "chatPlaceholder": "전체 채팅 — 탭하면 열려요",
   "characterTitle": "내 캐릭터",
   "statCombatPower": "전투력",
   "statCrit": "치명타",
@@ -413,5 +413,53 @@
   "materialChitinDesc": "곤충의 단단한 외골격 조각. 고급 능력치 강화의 추가 비용과 부위 강화(뿔·큰턱)에 사용됩니다.",
   "materialMineralDesc": "땅에서 캔 단단한 광물. 고급 능력치 강화의 추가 비용과 부위 강화(표피)에 사용됩니다.",
   "materialSapDesc": "굳어 결정이 된 나무 수액. 고급 능력치 강화의 추가 비용과 부위 강화(날개)에 사용됩니다.",
-  "materialJellyDesc": "특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다."
+  "materialJellyDesc": "특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다.",
+  "chatHint": "메시지를 입력하세요",
+  "chatSend": "보내기",
+  "chatEmpty": "아직 대화가 없어요. 먼저 인사해 보세요!",
+  "chatUnavailable": "지금은 채팅을 쓸 수 없어요",
+  "chatSendFailed": "메시지를 보내지 못했어요",
+  "chatTooLong": "메시지가 너무 길어요 ({max}자까지)",
+  "chatBlockedWord": "사용할 수 없는 표현이 있어요",
+  "chatTooFast": "조금 천천히 보내주세요",
+  "chatReport": "신고",
+  "chatBlock": "차단",
+  "chatUnblock": "차단 해제",
+  "chatReported": "신고했어요. 검토 후 조치할게요",
+  "chatBlockedUser": "{name} 님을 차단했어요",
+  "chatUnblockedUser": "{name} 님 차단을 해제했어요",
+  "chatBlockedMessage": "차단한 사용자의 메시지입니다",
+  "chatReportTitle": "이 메시지를 신고할까요?",
+  "chatReportBody": "욕설·광고·사기 등 부적절한 내용을 신고할 수 있어요. 반복 신고된 사용자는 이용이 제한됩니다.",
+  "chatBlockTitle": "{name} 님을 차단할까요?",
+  "chatBlockBody": "이 사용자의 메시지가 더 이상 보이지 않아요. 설정에서 언제든 해제할 수 있어요.",
+  "chatRules": "서로 존중하는 대화를 부탁드려요. 욕설·광고·개인정보 공유는 제한됩니다.",
+  "@chatTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatBlockedUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatUnblockedUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@chatBlockTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

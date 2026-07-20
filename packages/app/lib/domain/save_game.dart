@@ -5,7 +5,7 @@ import 'gift_mail.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
-const int kSaveSchemaVersion = 17;
+const int kSaveSchemaVersion = 18;
 
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
@@ -127,6 +127,7 @@ class SaveGame {
     this.ownedSkins = const {},
     this.passExpiresAt,
     this.redeemedPurchases = const {},
+    this.blockedUserIds = const {},
   });
 
   final int schemaVersion;
@@ -243,6 +244,16 @@ class SaveGame {
   /// 재구매는 정상 동작한다.
   final Set<String> redeemedPurchases;
 
+  /// 채팅에서 차단한 사용자 id 집합.
+  ///
+  /// 차단은 **기기 로컬**로 처리한다 — 차단당한 쪽이 알 수 없고(보복 방지),
+  /// 서버 왕복 없이 즉시 반영된다. 구글 플레이 UGC 정책의 '차단 수단' 요건.
+  /// 닉네임이 아니라 계정 id 기준(닉네임은 바꿀 수 있으므로).
+  final Set<String> blockedUserIds;
+
+  /// [userId] 의 메시지를 숨겨야 하는지.
+  bool isBlocked(String userId) => blockedUserIds.contains(userId);
+
   /// [now] 기준 패스가 유효한지.
   bool passActive(DateTime now) =>
       passExpiresAt != null && now.isBefore(passExpiresAt!);
@@ -296,6 +307,7 @@ class SaveGame {
     starterBought: false,
     ownedSkins: const {},
     redeemedPurchases: const {},
+    blockedUserIds: const {},
   );
 
   SaveGame copyWith({
@@ -332,6 +344,7 @@ class SaveGame {
     Set<String>? ownedSkins,
     DateTime? passExpiresAt,
     Set<String>? redeemedPurchases,
+    Set<String>? blockedUserIds,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -368,6 +381,7 @@ class SaveGame {
     ownedSkins: ownedSkins ?? this.ownedSkins,
     passExpiresAt: passExpiresAt ?? this.passExpiresAt,
     redeemedPurchases: redeemedPurchases ?? this.redeemedPurchases,
+    blockedUserIds: blockedUserIds ?? this.blockedUserIds,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -477,6 +491,8 @@ class SaveGame {
     redeemedPurchases:
         (json['redeemedPurchases'] as List?)?.cast<String>().toSet() ??
         const {},
+    blockedUserIds:
+        (json['blockedUserIds'] as List?)?.cast<String>().toSet() ?? const {},
     passExpiresAt: json['passExpiresAt'] == null
         ? null
         : DateTime.parse(json['passExpiresAt'] as String).toUtc(),
@@ -528,6 +544,7 @@ class SaveGame {
     'starterBought': starterBought,
     'ownedSkins': ownedSkins.toList(),
     'redeemedPurchases': redeemedPurchases.toList(),
+    'blockedUserIds': blockedUserIds.toList(),
     'passExpiresAt': passExpiresAt?.toIso8601String(),
   };
 

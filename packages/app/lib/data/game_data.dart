@@ -23,6 +23,7 @@ class GameData {
     this.roadmapConfig,
     this.battleConfig,
     this.iapConfig,
+    this.chatRules,
   });
 
   final Map<String, Species> speciesById;
@@ -63,6 +64,9 @@ class GameData {
   /// 인앱결제 카탈로그 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final IapConfig? iapConfig;
 
+  /// 전체 채팅 규칙·금칙어 (chat.json). 없으면 채팅 비활성.
+  final ChatRules? chatRules;
+
   /// speciesId → Species (accrue 의 resolveSpecies 로 그대로 넘길 수 있음).
   Species species(String id) {
     final s = speciesById[id];
@@ -95,6 +99,7 @@ class GameData {
     Map<String, dynamic>? roadmapConfig,
     Map<String, dynamic>? battleConfig,
     Map<String, dynamic>? iapConfig,
+    Map<String, dynamic>? chatRules,
   }) {
     final speciesList = (species['species'] as List)
         .cast<Map<String, dynamic>>()
@@ -136,6 +141,7 @@ class GameData {
           ? null
           : BattleConfig.fromJson(battleConfig),
       iapConfig: iapConfig == null ? null : IapConfig.fromJson(iapConfig),
+      chatRules: chatRules == null ? null : ChatRules.fromJson(chatRules),
     );
   }
 
@@ -160,6 +166,7 @@ class GameData {
       read('roadmap.json'),
       read('battle.json'),
       read('iap.json'),
+      read('chat.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -177,6 +184,7 @@ class GameData {
       roadmapConfig: results[12],
       battleConfig: results[13],
       iapConfig: results[14],
+      chatRules: results[15],
     );
   }
 }

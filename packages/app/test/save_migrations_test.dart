@@ -127,6 +127,27 @@ void main() {
       expect(save.adsRemoved, isFalse);
     });
 
+    test('v17(결제 원장) → 현재: 차단 목록이 빈 집합으로 채워진다', () {
+      final v17 = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).toJson()
+        ..['schemaVersion'] = 17
+        ..remove('blockedUserIds');
+      final migrated = migrateToCurrent(v17);
+      expect(migrated['schemaVersion'], kSaveSchemaVersion);
+      final save = SaveGame.fromJson(migrated);
+      expect(save.blockedUserIds, isEmpty);
+      expect(save.isBlocked('아무나'), isFalse);
+    });
+
+    test('차단 목록은 직렬화 왕복으로 보존된다', () {
+      final s = SaveGame.initial(
+        createdAt: DateTime.utc(2026, 1, 1),
+      ).copyWith(blockedUserIds: {'u-1', 'u-2'});
+      final back = SaveGame.fromJson(s.toJson());
+      expect(back.blockedUserIds, {'u-1', 'u-2'});
+      expect(back.isBlocked('u-1'), isTrue);
+      expect(back.isBlocked('u-3'), isFalse);
+    });
+
     test('구매 상태는 직렬화 왕복으로 보존된다', () {
       final expiry = DateTime.utc(2026, 3, 1);
       final bought = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1))
