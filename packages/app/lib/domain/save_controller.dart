@@ -649,6 +649,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 권위 서버가 확정한 세이브를 그대로 채택한다.
+  ///
+  /// 서버 권위 모드에서는 **서버가 진실**이므로 로컬 계산 결과를 버리고
+  /// 서버 값으로 덮어쓴다. 마이그레이션을 거치는 이유: 서버가 더 낮은
+  /// 스키마로 저장돼 있을 수 있다(배포 시점 차이).
+  Future<void> adoptServerSave(Map<String, dynamic> json) async {
+    final migrated = migrateToCurrent(json);
+    await _commit(SaveGame.fromJson(migrated));
+  }
+
   /// 채팅 사용자 차단/해제(로컬). 차단하면 그 사람 메시지가 보이지 않는다.
   ///
   /// 서버에 알리지 않는 이유: 차단당한 쪽이 알면 보복·우회 계정으로 이어진다.

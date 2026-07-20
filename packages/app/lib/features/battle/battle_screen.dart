@@ -8,6 +8,7 @@ import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
+import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
@@ -33,11 +34,16 @@ class _Scout {
     required this.team,
     required this.location,
     this.ownerName,
+    this.ownerId,
   });
   final ScoutTier tier;
   final List<({BattleBug bug, String speciesId})> team;
   final Element location;
   final String? ownerName;
+
+  /// 실제 유저 상대의 계정 id. 있으면 **서버가 전투를 확정**할 수 있다.
+  /// null 이면 로컬 합성 상대(야생) — 아직 로컬 계산이다(P3 에서 서버 이관).
+  final String? ownerId;
 }
 
 /// 곤충 결투(PvP). 성충 3마리 팀 vs 상대(실제 다른 유저 방어팀 또는 로컬 합성).
@@ -146,11 +152,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ScoutTier tier,
     List<({BattleBug bug, String speciesId})> team, {
     String? owner,
+    String? ownerId,
   }) => _Scout(
     tier: tier,
     team: team,
     location: team.first.bug.element,
     ownerName: owner,
+    ownerId: ownerId,
   );
 
   /// 스카우트 보드 갱신(난이도 티어별 상대 1팀씩).
@@ -287,6 +295,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             List<({BattleBug bug, String speciesId})> team,
             double ratio,
             String owner,
+            String ownerId,
           })
         >[];
     for (var r = 0; r < reals.length; r++) {
@@ -294,7 +303,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       if (team == null) continue;
       final ratio =
           _teamPower(team.map((e) => e.bug)) / (myPower <= 0 ? 1 : myPower);
-      built.add((team: team, ratio: ratio, owner: reals[r].ownerName));
+      built.add((
+        team: team,
+        ratio: ratio,
+        owner: reals[r].ownerName,
+        ownerId: reals[r].ownerId,
+      ));
     }
     if (built.isEmpty) return;
 
@@ -304,7 +318,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     for (final b in built) {
       final idx = _closestFreeTier(b.ratio, slots, tiers);
       if (idx < 0) break;
-      slots[idx] = _scoutOf(tiers[idx], b.team, owner: b.owner);
+      slots[idx] = _scoutOf(
+        tiers[idx],
+        b.team,
+        owner: b.owner,
+        ownerId: b.ownerId,
+      );
     }
     // 빈 티어는 로컬 합성 상대로 채움.
     for (var i = 0; i < tiers.length; i++) {
@@ -1536,6 +1555,69 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(save)));
   }
 
+  /// 서버 권위 전투 — 승패·보상을 서버가 확정하고, 앱은 결과를 재생만 한다.
+  ///
+  /// 서버가 같은 시드로 같은 `core_battle` 을 돌리므로 클라이언트가
+  /// 그 시드로 재시뮬레이션하면 **완전히 같은 전개**가 나온다.
+  Future<bool> _serverBattle(
+    GameData data,
+    String locale,
+    _Scout scout,
+    ({
+      List<BattleBug> mine,
+      List<BattleBug> foe,
+      Map<String, String> speciesOf,
+      int seed,
+    })
+    m,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final res = await ref
+        .read(gameServerProvider)
+        .battle(
+          teamBugIds: [for (final b in m.mine) b.id],
+          opponentUserId: scout.ownerId!,
+        );
+    if (!res.isOk || res.save == null) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+      return false;
+    }
+
+    await ref.read(saveControllerProvider.notifier).adoptServerSave(res.save!);
+    if (!mounted) return false;
+
+    // 서버가 준 시드로 같은 전투를 재현해 연출한다.
+    final cfg = data.battleConfig ?? const BattleConfig();
+    final seed = (res.data!['seed'] as num?)?.toInt() ?? m.seed;
+    final result = simulate(
+      seed,
+      m.mine,
+      m.foe,
+      location: scout.location,
+      locationBonus: cfg.locationAffinityBonus,
+    );
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BattleArenaScreen(
+          data: data,
+          myTeam: m.mine,
+          foeTeam: m.foe,
+          speciesOf: m.speciesOf,
+          result: result,
+          gold: (res.data!['gold'] as num?)?.toInt() ?? 0,
+          trophyDelta: (res.data!['trophyDelta'] as num?)?.toInt() ?? 0,
+          location: scout.location,
+          skinOf: ref.read(skinOfProvider),
+          arenaTheme: ref.read(arenaThemeOwnedProvider),
+        ),
+      ),
+    );
+    return true;
+  }
+
   /// 자동 전투 — 결정론 simulate 후 아레나 재생.
   Future<void> _battle(
     GameData data,
@@ -1545,6 +1627,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ) async {
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
+
+    // 실제 유저 상대이고 권위 서버가 붙어 있으면 **서버가 승패를 확정**한다.
+    // 야생(합성) 상대는 아직 로컬 계산이다 — 상대 생성이 앱에 있어서(P3).
+    final server = ref.read(gameServerProvider);
+    if (server.available && scout.ownerId != null) {
+      final ok = await _serverBattle(data, locale, scout, m);
+      if (ok) return;
+      // 서버가 거부/불통이면 아래 로컬 경로로 폴백하지 않는다 —
+      // 폴백하면 서버 권위가 무의미해진다. 사용자에게 알리고 끝낸다.
+      return;
+    }
+
     final cfg = data.battleConfig ?? const BattleConfig();
     final result = simulate(
       m.seed,

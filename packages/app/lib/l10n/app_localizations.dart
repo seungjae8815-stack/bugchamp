@@ -2673,6 +2673,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Player'**
   String get nicknameFallback;
+
+  /// No description provided for @battleServerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t confirm the battle result. Check your connection'**
+  String get battleServerFailed;
 }
 
 class _AppLocalizationsDelegate

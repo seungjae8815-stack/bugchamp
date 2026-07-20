@@ -463,5 +463,6 @@
     }
   },
   "nicknameBlockedWord": "닉네임에 사용할 수 없는 표현이 있어요",
-  "nicknameFallback": "이용자"
+  "nicknameFallback": "이용자",
+  "battleServerFailed": "전투 결과를 확인하지 못했어요. 연결을 확인해 주세요"
 }

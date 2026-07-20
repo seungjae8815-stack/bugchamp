@@ -916,5 +916,6 @@
     }
   },
   "nicknameBlockedWord": "That nickname contains blocked words",
-  "nicknameFallback": "Player"
+  "nicknameFallback": "Player",
+  "battleServerFailed": "Couldn't confirm the battle result. Check your connection"
 }

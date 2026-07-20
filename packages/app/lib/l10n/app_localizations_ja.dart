@@ -1441,4 +1441,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nicknameFallback => 'Player';
+
+  @override
+  String get battleServerFailed =>
+      'Couldn\'t confirm the battle result. Check your connection';
 }

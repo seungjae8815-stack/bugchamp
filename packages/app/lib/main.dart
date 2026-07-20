@@ -11,6 +11,7 @@ import 'domain/ad_service.dart';
 import 'domain/admob_ad_service.dart';
 import 'domain/auth_service.dart';
 import 'domain/chat_service.dart';
+import 'domain/game_server.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
 import 'domain/providers.dart';
@@ -30,6 +31,10 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 /// 구글 로그인용 **웹** 클라이언트 ID(공개값). 없으면 로그인 버튼이 비활성.
 const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
+/// 권위 서버 주소. `--dart-define=GAME_SERVER_URL=https://...` 로 주입한다.
+/// 비어 있으면 **기존 로컬 계산 경로**로 동작한다(전환 중 안전장치).
+const _gameServerUrl = String.fromEnvironment('GAME_SERVER_URL');
 
 /// 스토어 결제 사용 여부. `--dart-define=STORE_IAP=on|off` 로 강제할 수 있고,
 /// 지정이 없으면 **릴리즈 빌드에서만 켠다**.
@@ -104,6 +109,10 @@ Future<void> main() async {
         if (supaClient != null) ...[
           pvpBackendProvider.overrideWithValue(SupabasePvpBackend(supaClient)),
           cloudSaveProvider.overrideWithValue(SupabaseCloudSave(supaClient)),
+          if (_gameServerUrl.isNotEmpty)
+            gameServerProvider.overrideWithValue(
+              HttpGameServer(baseUrl: _gameServerUrl, client: supaClient),
+            ),
           purchaseVerifierProvider.overrideWithValue(
             SupabasePurchaseVerifier(supaClient),
           ),

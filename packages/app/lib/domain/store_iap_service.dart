@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import 'game_server.dart';
 import 'iap_service.dart';
 import 'providers.dart';
 import 'purchase_verifier.dart';
@@ -195,6 +196,31 @@ class StoreIapService implements IapService {
     return verifier.verify(productId: p.productID, purchaseToken: token);
   }
 
+  /// 구매 1건을 반영한다.
+  ///
+  /// **권위 서버가 붙어 있으면 서버가 지급한다** — 클라이언트가 자기 세이브에
+  /// 재화를 쓰면 앱을 개조해 결제 없이 넣을 수 있기 때문이다.
+  /// 서버가 없으면(전환 중·오프라인 빌드) 기존 로컬 경로로 폴백한다.
+  Future<bool> _grantViaServer(PurchaseDetails p) async {
+    final server = _ref.read(gameServerProvider);
+    if (!server.available) return false; // 로컬 경로로
+    final token = p.verificationData.serverVerificationData;
+    if (token.isEmpty) return false;
+
+    final res = await server.purchase(
+      productId: p.productID,
+      purchaseToken: token,
+    );
+    if (res.isOk && res.save != null) {
+      await _ref
+          .read(saveControllerProvider.notifier)
+          .adoptServerSave(res.save!);
+      return true;
+    }
+    debugPrint('[iap] 서버 지급 실패: ${res.error} (${res.status})');
+    return false;
+  }
+
   /// 구매 1건을 세이브에 반영. 중복 지급은 `purchaseId` 로 막는다.
   Future<bool> _grant(PurchaseDetails p) async {
     final cfg = _ref.read(gameDataProvider).value?.iapConfig;
@@ -204,6 +230,10 @@ class StoreIapService implements IapService {
       debugPrint('[iap] 알 수 없는 상품: ${p.productID}');
       return false;
     }
+    // 권위 서버가 있으면 서버가 지급한다(영수증 검증도 서버가 다시 한다).
+    final server = _ref.read(gameServerProvider);
+    if (server.available) return _grantViaServer(p);
+
     try {
       return await _ref
           .read(saveControllerProvider.notifier)

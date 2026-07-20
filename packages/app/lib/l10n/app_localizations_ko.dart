@@ -1423,4 +1423,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get nicknameFallback => '이용자';
+
+  @override
+  String get battleServerFailed => '전투 결과를 확인하지 못했어요. 연결을 확인해 주세요';
 }
