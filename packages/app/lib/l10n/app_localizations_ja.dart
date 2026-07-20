@@ -1435,4 +1435,10 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get chatRules =>
       'Please be respectful. Abuse, ads and sharing personal info are not allowed.';
+
+  @override
+  String get nicknameBlockedWord => 'That nickname contains blocked words';
+
+  @override
+  String get nicknameFallback => 'Player';
 }

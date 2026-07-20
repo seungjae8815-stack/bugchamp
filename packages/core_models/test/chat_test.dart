@@ -95,6 +95,32 @@ void main() {
     });
   });
 
+  group('닉네임 필터', () {
+    test('깨끗한 닉네임은 허용', () {
+      expect(rules.nicknameAllowed('채집가'), isTrue);
+      expect(rules.maskNickname('채집가'), '채집가');
+    });
+
+    test('금칙어가 든 닉네임은 거부', () {
+      expect(rules.nicknameAllowed('금칙왕'), isFalse);
+      expect(rules.nicknameAllowed('badword123'), isFalse);
+    });
+
+    test('빈 닉네임은 거부', () {
+      expect(rules.nicknameAllowed(''), isFalse);
+      expect(rules.nicknameAllowed('   '), isFalse);
+    });
+
+    test('이미 등록된 부적절한 닉네임은 표시할 때 대체된다', () {
+      expect(rules.maskNickname('금칙왕'), '이용자');
+      expect(rules.maskNickname('금칙왕', fallback: 'Player'), 'Player');
+    });
+
+    test('닉네임도 띄어쓰기 우회를 잡는다', () {
+      expect(rules.nicknameAllowed('금 칙'), isFalse);
+    });
+  });
+
   group('메시지 직렬화', () {
     test('왕복해도 값이 보존된다', () {
       final m = ChatMessage(

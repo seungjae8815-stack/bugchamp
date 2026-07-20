@@ -461,5 +461,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "nicknameBlockedWord": "닉네임에 사용할 수 없는 표현이 있어요",
+  "nicknameFallback": "이용자"
 }

@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +30,7 @@ class LeaderboardScreen extends ConsumerWidget {
     final save = ref.watch(saveControllerProvider).requireValue;
     final data = ref.watch(gameDataProvider).requireValue;
     final cfg = data.battleConfig ?? const BattleConfig();
+    final rules = data.chatRules ?? const ChatRules();
     final backend = ref.watch(pvpBackendProvider);
     final me = PvpProfile(
       id: 'me',
@@ -104,7 +106,8 @@ class LeaderboardScreen extends ConsumerWidget {
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         itemCount: entries.length,
-                        itemBuilder: (context, i) => _row(cfg, entries[i]),
+                        itemBuilder: (context, i) =>
+                            _row(cfg, entries[i], rules, l),
                       ),
                     ),
                   ],
@@ -117,7 +120,12 @@ class LeaderboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _row(BattleConfig cfg, LeaderboardEntry e) {
+  Widget _row(
+    BattleConfig cfg,
+    LeaderboardEntry e,
+    ChatRules rules,
+    AppLocalizations l,
+  ) {
     final league = cfg.leagueFor(e.profile.trophies);
     final rankColor = switch (e.rank) {
       1 => const Color(0xFFEBC24A),
@@ -156,7 +164,11 @@ class LeaderboardScreen extends ConsumerWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              e.profile.nickname,
+              // 부적절한 닉네임은 표시 단계에서 대체(채팅과 같은 기준).
+              rules.maskNickname(
+                e.profile.nickname,
+                fallback: l.nicknameFallback,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

@@ -914,5 +914,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "nicknameBlockedWord": "That nickname contains blocked words",
+  "nicknameFallback": "Player"
 }

@@ -3328,6 +3328,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                   FilledButton(
                     onPressed: () {
+                      // 닉네임은 랭킹·스카우트·채팅에 그대로 노출되므로
+                      // 채팅과 같은 금칙어 기준으로 막는다.
+                      final rules = _data.chatRules ?? const ChatRules();
+                      if (!rules.nicknameAllowed(controller.text)) {
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            SnackBar(content: Text(l.nicknameBlockedWord)),
+                          );
+                        return;
+                      }
                       ref
                           .read(saveControllerProvider.notifier)
                           .renamePlayer(controller.text);

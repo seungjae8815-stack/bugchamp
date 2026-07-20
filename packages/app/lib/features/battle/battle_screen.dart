@@ -735,6 +735,15 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  /// 다른 유저 닉네임 표시용 — 부적절한 이름은 중립 이름으로 대체.
+  /// 이미 서버에 등록된 이름은 되돌릴 수 없으므로 보여줄 때 가린다.
+  String _maskName(String name) =>
+      (ref.read(gameDataProvider).value?.chatRules ?? const ChatRules())
+          .maskNickname(
+            name,
+            fallback: AppLocalizations.of(context).nicknameFallback,
+          );
+
   /// 슬롯 [from] 의 곤충을 [to] 위치로 이동(삽입 재배치, 나머지는 밀림).
   /// 오행 상생(生)이 앞→뒤 인접으로 작동하므로 순서가 곧 전략.
   void _reorderSlots(int from, int to) {
@@ -1019,7 +1028,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      '👤 ${scout.ownerName}',
+                      '👤 ${_maskName(scout.ownerName!)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -1677,7 +1686,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             Text(
               scout.ownerName == null
                   ? '🌿 ${l.opponentWild}'
-                  : '👤 ${scout.ownerName}',
+                  : '👤 ${_maskName(scout.ownerName!)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

@@ -121,6 +121,19 @@ class ChatRules {
     return maskChar * text.length.clamp(1, maxLength);
   }
 
+  /// 닉네임으로 쓸 수 있는지. 채팅과 **같은 금칙어 목록**을 공유한다
+  /// (닉네임은 랭킹·스카우트·채팅에 그대로 노출되므로 기준이 같아야 한다).
+  bool nicknameAllowed(String name) =>
+      name.trim().isNotEmpty && !hasBannedWord(name);
+
+  /// 표시용 닉네임. 금칙어가 든 이름은 [fallback] 으로 대체한다.
+  ///
+  /// 이미 서버에 등록된 이름은 되돌릴 수 없으므로 **보여줄 때 가린다**.
+  /// 별표 대신 중립적인 이름을 쓰는 이유: 별표는 오히려 눈에 띄어
+  /// "무슨 말이었을까" 하는 관심을 끈다.
+  String maskNickname(String name, {String fallback = '이용자'}) =>
+      hasBannedWord(name) ? fallback : name;
+
   /// 전송 전 검사. [lastSentAt] 이 null 이면 첫 전송.
   ChatCheckResult check(String body, {DateTime? lastSentAt, DateTime? now}) {
     final trimmed = body.trim();

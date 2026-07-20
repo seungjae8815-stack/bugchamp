@@ -165,7 +165,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _block(ChatMessage m, AppLocalizations l) async {
     final ok = await showGameDialog<bool>(
       context,
-      title: l.chatBlockTitle(m.nickname),
+      title: l.chatBlockTitle(
+        _rules.maskNickname(m.nickname, fallback: l.nicknameFallback),
+      ),
       icon: Icons.block_rounded,
       content: Text(
         l.chatBlockBody,
@@ -194,7 +196,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .read(saveControllerProvider.notifier)
         .setUserBlocked(m.userId, true);
     if (!mounted) return;
-    _snack(l.chatBlockedUser(m.nickname));
+    _snack(
+      l.chatBlockedUser(
+        _rules.maskNickname(m.nickname, fallback: l.nicknameFallback),
+      ),
+    );
   }
 
   @override
@@ -288,7 +294,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             : CrossAxisAlignment.start,
         children: [
           Text(
-            m.nickname,
+            // 이미 등록된 부적절한 닉네임은 표시 단계에서 대체한다.
+            _rules.maskNickname(m.nickname, fallback: l.nicknameFallback),
             style: TextStyle(
               color: mine ? const Color(0xFFEBA52F) : const Color(0x99FFFFFF),
               fontSize: 11,

@@ -1417,4 +1417,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatRules => '서로 존중하는 대화를 부탁드려요. 욕설·광고·개인정보 공유는 제한됩니다.';
+
+  @override
+  String get nicknameBlockedWord => '닉네임에 사용할 수 없는 표현이 있어요';
+
+  @override
+  String get nicknameFallback => '이용자';
 }

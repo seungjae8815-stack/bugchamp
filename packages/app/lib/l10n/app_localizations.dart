@@ -2661,6 +2661,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please be respectful. Abuse, ads and sharing personal info are not allowed.'**
   String get chatRules;
+
+  /// No description provided for @nicknameBlockedWord.
+  ///
+  /// In en, this message translates to:
+  /// **'That nickname contains blocked words'**
+  String get nicknameBlockedWord;
+
+  /// No description provided for @nicknameFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get nicknameFallback;
 }
 
 class _AppLocalizationsDelegate
