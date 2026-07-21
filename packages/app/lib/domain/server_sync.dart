@@ -21,7 +21,11 @@ Future<void> syncWithServer(WidgetRef ref) async {
   final server = ref.read(gameServerProvider);
   if (!server.available) return;
 
-  final state = await server.fetchState();
+  // 앱을 갓 켜면 **저장된 세션 토큰이 만료**돼 있을 수 있다. Supabase 가
+  // 백그라운드로 토큰을 갱신하는 동안 첫 조회가 401 을 맞는다(콜드스타트 경쟁).
+  // 인증이 준비될 시간을 주고 몇 번 재시도한다 — 여기서 포기하면 이번 실행 내내
+  // 서버 세이브를 채택하지 못해, 다른 기기에서 더 진행한 상태가 묻힌다.
+  final state = await fetchStateWithAuthRetry(server.fetchState);
   if (!state.isOk) {
     debugPrint('[sync] 서버 상태 조회 실패: ${state.error}');
     return; // 로컬 유지 — 연결이 없다고 진행도를 건드리지 않는다.
@@ -45,6 +49,32 @@ Future<void> syncWithServer(WidgetRef ref) async {
   } else {
     debugPrint('[sync] 이관 실패: ${res.error}');
   }
+}
+
+/// 인증이 아직 준비 안 됐거나 일시적 오류라 재시도할 가치가 있는지.
+///
+/// 401 은 보통 "저장된 토큰이 만료됐고 갱신이 진행 중"이라는 뜻이라
+/// 여기서만 재시도 대상으로 본다(다른 경로에서는 401 을 재시도하지 않는다).
+bool _authNotReady(ServerResult r) =>
+    r.status == 401 || r.status == 0 || r.status >= 500;
+
+/// 상태 조회를 하되, 인증이 아직 준비 안 됐으면(콜드스타트 토큰 갱신 중)
+/// 준비될 때까지 짧게 재시도한다. 성공하거나 재시도가 소진되면 반환.
+///
+/// 진짜 실패(잘못된 토큰 등)면 재시도를 다 쓰고 마지막 실패를 그대로 돌려준다
+/// — 호출부는 지금처럼 로컬을 유지한다.
+@visibleForTesting
+Future<ServerResult> fetchStateWithAuthRetry(
+  Future<ServerResult> Function() fetch, {
+  int maxAttempts = 7,
+  Duration delay = const Duration(milliseconds: 700),
+}) async {
+  var state = await fetch();
+  for (var i = 1; i < maxAttempts && !state.isOk && _authNotReady(state); i++) {
+    await Future<void>.delayed(delay);
+    state = await fetch();
+  }
+  return state;
 }
 
 /// 서버 권위 모드에서 방치 수입을 주기적으로 정산한다.
