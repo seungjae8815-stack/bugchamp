@@ -889,9 +889,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
-    // 서버 권위 모드: 서버가 경과시간으로 올린 스테이지 **아래로는 안 보이게**.
-    // 액티브 보스킬은 시각적으로 앞설 수 있으니, 서버가 더 높을 때만 따라잡는다.
-    if (save.stageNumber > _stage && ref.read(gameServerProvider).available) {
+    // 시작 시 서버 세이브를 채택하면(다른 기기 진행) 로컬 스크롤러보다 스테이지가
+    // 높을 수 있다 — 그럴 때만 따라잡는다(뒤로는 안 감).
+    if (save.stageNumber > _stage) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && save.stageNumber > _stage) {
           _applyStageJump(save.stageNumber);

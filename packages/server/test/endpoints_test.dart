@@ -648,4 +648,31 @@ void main() {
       expect(b['cleared'], isEmpty);
     });
   });
+
+  group('세이브 업로드 엔드포인트(/save)', () {
+    test('인증 없이는 불가', () async {
+      final res = await post(handler(), '/save', {'save': mySave.toJson()});
+      expect(res.statusCode, 401);
+    });
+
+    test('저장본이 없으면 409 (부트스트랩이 먼저)', () async {
+      final res = await post(handler(serverHasSave: false), '/save', {
+        'save': mySave.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 409);
+    });
+
+    test('솔로 필드는 수용, 트로피 위조는 서버 값 유지', () async {
+      final cheat = mySave.copyWith(gold: 12345, pvpTrophies: 999999);
+      final res = await post(handler(), '/save', {
+        'save': cheat.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final saved = SaveGame.fromJson(
+        fake.lastSaved!['data'] as Map<String, dynamic>,
+      );
+      expect(saved.gold, 12345); // 솔로 필드 수용
+      expect(saved.pvpTrophies, mySave.pvpTrophies); // 위조 무시
+    });
+  });
 }

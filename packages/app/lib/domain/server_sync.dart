@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,37 +78,63 @@ Future<ServerResult> fetchStateWithAuthRetry(
   return state;
 }
 
-/// 서버 권위 모드에서 방치 수입을 주기적으로 정산한다.
+/// 기기 권위 세이브를 **주기적으로 서버에 올린다**(저장·백업).
 ///
-/// 15초 주기 + 앱이 백그라운드로 갈 때. 금액은 서버가 정하므로
-/// 클라이언트는 "정산해줘"만 보낸다.
+/// 솔로 루프는 기기가 즉시 처리하고, 이 업로더가 변경분이 있을 때만
+/// 몇 초마다 `/save` 로 올린다 — 서버는 보호필드(트로피·IAP)·골드상한만
+/// 손대고 저장한다. 앱이 백그라운드로 갈 때도 [flush] 한다(놓친 진행 방지).
 ///
-/// 실패해도 조용히 넘어간다 — 다음 주기에 다시 시도하면 되고,
-/// 경과시간 기준이라 **놓친 구간이 사라지지 않는다**(중복 정산도 없다).
-class ServerSyncTimer {
-  ServerSyncTimer(this._ref);
+/// 변경이 없으면 올리지 않아 **호출 수를 억제**한다(AFK 중엔 사실상 0).
+class ServerSaveUploader {
+  ServerSaveUploader(this._ref);
 
   final WidgetRef _ref;
   Timer? _timer;
 
-  static const period = Duration(seconds: 15);
+  /// 마지막으로 올린 세이브의 직렬화(변경 감지용).
+  String? _lastUploaded;
+  bool _inFlight = false;
+
+  static const period = Duration(seconds: 10);
 
   void start() {
     if (!_ref.read(gameServerProvider).available) return;
     _timer?.cancel();
-    _timer = Timer.periodic(period, (_) => syncNow());
+    _timer = Timer.periodic(period, (_) => flush());
   }
 
-  Future<void> syncNow() async {
+  /// 변경분이 있으면 서버에 올린다. 이미 올린 상태면 건너뛴다.
+  Future<void> flush() async {
     final server = _ref.read(gameServerProvider);
-    if (!server.available) return;
-    final res = await server.sync();
-    if (res.isOk && res.save != null) {
-      await _ref
-          .read(saveControllerProvider.notifier)
-          .adoptServerSave(res.save!);
-    } else {
-      debugPrint('[sync] 정산 실패(다음 주기 재시도): ${res.error}');
+    if (!server.available || _inFlight) return;
+    final save = _ref.read(saveControllerProvider).value;
+    if (save == null) return;
+
+    final json = save.toJson();
+    final encoded = jsonEncode(json);
+    if (encoded == _lastUploaded) return; // 변경 없음 → 호출 안 함
+
+    _inFlight = true;
+    try {
+      final res = await server.uploadSave(json);
+      if (res.isOk) {
+        _lastUploaded = encoded;
+        // 서버가 골드를 잘랐으면(치팅 의심) 그 값을 채택해 화면과 맞춘다.
+        if (res.data?['clamped'] == true && res.save != null) {
+          await _ref
+              .read(saveControllerProvider.notifier)
+              .adoptServerSave(res.save!);
+          _lastUploaded = jsonEncode(res.save);
+        }
+      } else if (res.status == 409) {
+        // 서버에 저장본이 없다 → 최초 이관(부트스트랩)이 먼저.
+        final boot = await server.bootstrap(json);
+        if (boot.isOk) _lastUploaded = encoded;
+      } else {
+        debugPrint('[save] 업로드 실패(다음 주기 재시도): ${res.error}');
+      }
+    } finally {
+      _inFlight = false;
     }
   }
 

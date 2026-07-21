@@ -105,6 +105,83 @@ class GameActions {
     );
   }
 
+  /// 세이브 편집으로 위조하지 못하게 **서버가 소유하는** 필드들.
+  /// 트로피·시즌기록(랭킹), IAP 지급물(결제)·부화기 슬롯(IAP). 업로드 때
+  /// 클라 값을 무시하고 서버 저장본 값으로 덮는다.
+  static const _serverOwnedKeys = {
+    'pvpTrophies',
+    'seasonPeakTrophies',
+    'redeemedPurchases',
+    'starterBought',
+    'adsRemoved',
+    'passExpiresAt',
+    'ownedSkins',
+    'incubatorCapacity',
+  };
+
+  /// 골드 급증 상식 상한의 바닥(수령·전투 보상이 한 번에 커도 통과).
+  static const _goldSanityFloor = 2000000;
+
+  /// 상한 계산용 넉넉한 방치 효율(부스트·액티브 여유 포함 — 절대치만 잡는다).
+  static const _saveBoundEfficiency = 4.0;
+
+  /// 기기 권위 세이브 업로드 병합.
+  ///
+  /// 솔로 루프(업그레이드·재화·육성·방치·수령)는 **기기가 확정**하고 여기로
+  /// 올린다. 서버는 두 가지만 강제한다:
+  ///  1. **보호 필드**(트로피·IAP)를 서버 저장본 값으로 덮는다 — 세이브 편집으로
+  ///     랭킹·결제 상태를 위조하지 못하게.
+  ///  2. 골드가 **말도 안 되게** 뛰면(1→10억) 상식 상한으로 자른다.
+  /// PvP 전투·결제의 실제 지급은 별도 서버 액션이 확정한다.
+  ActionResult mergeSave(SaveGame stored, Map<String, dynamic> clientJson) {
+    final t = now().toUtc();
+    var elapsed = t.difference(stored.lastSeen);
+    if (elapsed.isNegative) elapsed = Duration.zero;
+
+    final stats = deriveStats(
+      config.run,
+      upgradeLevels: stored.upgradeLevels,
+      characterLevel: stored.level,
+      bugsCollected: stored.bugs.length,
+    );
+    final generous = simulateIdleProgress(
+      config: config.run,
+      startStage: stored.stageNumber,
+      stats: stats,
+      elapsed: elapsed,
+      efficiency: _saveBoundEfficiency,
+    ).gold;
+    final maxGain = _goldSanityFloor + generous;
+
+    final merged = Map<String, dynamic>.from(clientJson);
+    // 보호 필드는 서버 저장본 값으로 (없는 키/null 까지 정확히).
+    final storedJson = stored.toJson();
+    for (final k in _serverOwnedKeys) {
+      if (storedJson.containsKey(k)) {
+        merged[k] = storedJson[k];
+      } else {
+        merged.remove(k);
+      }
+    }
+
+    // 골드 상식 상한.
+    final clientGold = (merged['gold'] as num?)?.toInt() ?? stored.gold;
+    var clamped = false;
+    if (clientGold - stored.gold > maxGain) {
+      merged['gold'] = stored.gold + maxGain;
+      clamped = true;
+    }
+    merged['lastSeen'] = t.toIso8601String();
+
+    final SaveGame out;
+    try {
+      out = SaveGame.fromJson(merged);
+    } catch (_) {
+      return const ActionResult.fail('bad_save');
+    }
+    return ActionResult.ok(out, extra: {'clamped': clamped});
+  }
+
   /// 편성 검증 → 전투 유닛 목록. 실패 시 [error] 에 사유.
   ///
   /// 자동/수동 전투가 **같은 기준**을 쓰도록 분리했다 —

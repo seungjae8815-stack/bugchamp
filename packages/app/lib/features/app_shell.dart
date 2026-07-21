@@ -27,8 +27,8 @@ class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   bool _notifSetup = false;
 
-  /// 방치 수입 주기 정산(서버 권위 모드에서만 동작).
-  late final _syncTimer = ServerSyncTimer(ref);
+  /// 기기 권위 세이브 주기 업로드(서버 연결 시에만 동작).
+  late final _uploader = ServerSaveUploader(ref);
 
   @override
   void initState() {
@@ -36,14 +36,14 @@ class _AppShellState extends ConsumerState<AppShell>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotifications();
-      // 서버 권위 모드면 세이브를 맞추고(최초 1회 이관 포함) 주기 정산을 건다.
-      unawaited(syncWithServer(ref).then((_) => _syncTimer.start()));
+      // 서버 연결 시: 세이브를 맞추고(최초 1회 이관 포함) 주기 업로드를 건다.
+      unawaited(syncWithServer(ref).then((_) => _uploader.start()));
     });
   }
 
   @override
   void dispose() {
-    _syncTimer.stop();
+    _uploader.stop();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -54,7 +54,9 @@ class _AppShellState extends ConsumerState<AppShell>
     final l = AppLocalizations.of(context);
     final svc = NotificationService.instance;
     if (state == AppLifecycleState.paused) {
-      // 백그라운드 진입 → 오프라인 상한(8h) 도달 시 알림 예약.
+      // 백그라운드 진입 → 놓친 진행이 없게 세이브를 즉시 올린다.
+      unawaited(_uploader.flush());
+      // 오프라인 상한(8h) 도달 시 알림 예약.
       svc.scheduleOfflineFull(
         after: kMaxOfflineAccrual,
         title: l.notifOfflineTitle,

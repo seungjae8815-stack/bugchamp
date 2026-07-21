@@ -231,6 +231,38 @@ Handler buildHandler({
       }
     });
 
+    /// 기기 권위 세이브 업로드(주기 저장).
+    ///
+    /// 솔로 루프(업그레이드·재화·육성·방치·수령)는 기기가 확정하고 몇 초마다
+    /// 여기로 올린다. 서버는 **트로피·IAP 지급물을 자기 값으로 덮고**(위조 차단),
+    /// 골드 급증을 상식 상한으로 자른 뒤 저장한다. PvP·결제는 별도 액션이 확정.
+    ///
+    /// 저장본이 없으면 409 — 최초 이관은 `POST /state`(부트스트랩)가 먼저다.
+    authed.post('/save', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final incoming = body['save'];
+      if (incoming is! Map<String, dynamic>) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final stored = await loadSave(user.id);
+        if (stored == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.mergeSave(stored, migrateToCurrent(incoming));
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[save] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     /// 방치 수입 정산. 클라이언트는 "정산해줘"만 보내고 금액은 서버가 정한다.
     authed.post('/sync', (Request req) async {
       final user = userOf(req);

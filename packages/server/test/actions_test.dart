@@ -1249,4 +1249,76 @@ void main() {
       expect((r.extra['cleared'] as List), isEmpty);
     });
   });
+
+  group('기기 권위 세이브 업로드(mergeSave)', () {
+    SaveGame stored({int gold = 1000, int trophies = 500}) =>
+        SaveGame.initial(createdAt: t0).copyWith(
+          lastSeen: t0,
+          gold: gold,
+          pvpTrophies: trophies,
+          seasonPeakTrophies: trophies,
+          starterBought: true,
+          redeemedPurchases: {'GPA-1'},
+        );
+
+    test('솔로 필드(골드·업그레이드)는 클라 값을 수용한다', () {
+      final client = stored().copyWith(
+        gold: 5000,
+        upgradeLevels: {UpgradeKind.attack: 10},
+      );
+      final r = actions.mergeSave(stored(), client.toJson());
+      expect(r.isOk, isTrue);
+      expect(r.save!.gold, 5000);
+      expect(r.save!.upgradeLevel(UpgradeKind.attack), 10);
+    });
+
+    test('트로피 위조는 무시하고 서버 값을 유지한다', () {
+      final cheat = stored().copyWith(pvpTrophies: 999999);
+      final r = actions.mergeSave(stored(trophies: 500), cheat.toJson());
+      expect(r.save!.pvpTrophies, 500); // 서버 값 유지
+    });
+
+    test('IAP 지급물 위조는 무시한다(스타터·영수증)', () {
+      // 서버엔 스타터 미구매인데 클라가 샀다고 우김.
+      final serverSave = SaveGame.initial(createdAt: t0).copyWith(lastSeen: t0);
+      final cheat = serverSave.copyWith(
+        starterBought: true,
+        gold: 500,
+        redeemedPurchases: {'FAKE'},
+      );
+      final r = actions.mergeSave(serverSave, cheat.toJson());
+      expect(r.save!.starterBought, isFalse);
+      expect(r.save!.redeemedPurchases, isEmpty);
+    });
+
+    test('패스 위조(미구매인데 만료일 설정)는 무시한다 — nullable 도 정확히', () {
+      final serverSave = SaveGame.initial(createdAt: t0).copyWith(lastSeen: t0);
+      expect(serverSave.passActive(t0), isFalse);
+      final cheat = serverSave.copyWith(
+        passExpiresAt: t0.add(const Duration(days: 365)),
+      );
+      final r = actions.mergeSave(serverSave, cheat.toJson());
+      expect(r.save!.passActive(t0), isFalse); // 여전히 미구매
+    });
+
+    test('골드 급증(1000→10억)은 상식 상한으로 잘린다', () {
+      final cheat = stored(gold: 1000).copyWith(gold: 1000000000);
+      final r = actions.mergeSave(stored(gold: 1000), cheat.toJson());
+      expect(r.extra['clamped'], isTrue);
+      expect(r.save!.gold, lessThan(1000000000));
+    });
+
+    test('정상 범위 골드 증가는 안 잘린다(수령·전투 보상)', () {
+      // 바닥(2M) 이내 증가는 통과.
+      final ok = stored(gold: 1000).copyWith(gold: 1000 + 1500000);
+      final r = actions.mergeSave(stored(gold: 1000), ok.toJson());
+      expect(r.extra['clamped'], isFalse);
+      expect(r.save!.gold, 1000 + 1500000);
+    });
+
+    test('lastSeen 은 서버 시각으로 갱신된다', () {
+      final r = actions.mergeSave(stored(), stored().toJson());
+      expect(r.save!.lastSeen, t0);
+    });
+  });
 }

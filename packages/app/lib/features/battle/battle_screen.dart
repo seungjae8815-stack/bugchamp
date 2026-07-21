@@ -1560,6 +1560,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ///
   /// 서버가 같은 시드로 같은 `core_battle` 을 돌리므로 클라이언트가
   /// 그 시드로 재시뮬레이션하면 **완전히 같은 전개**가 나온다.
+  /// 전투 전 최신 로컬 세이브를 서버에 올린다(기기 권위 → 서버가 최신으로 전투).
+  /// 저장본이 없으면(신규) 부트스트랩으로 대신한다.
+  Future<void> _flushSave() async {
+    final server = ref.read(gameServerProvider);
+    if (!server.available) return;
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null) return;
+    final res = await server.uploadSave(save.toJson());
+    if (res.status == 409) await server.bootstrap(save.toJson());
+  }
+
   Future<bool> _serverBattle(
     GameData data,
     String locale,
@@ -1573,6 +1584,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     m,
   ) async {
     final l = AppLocalizations.of(context);
+    // 전투 전 최신 세이브를 서버에 올린다 — 서버가 **최신 곤충·골드**로 전투를
+    // 확정하고, 승패·보상을 그 위에 얹는다(기기 권위 진행이 묻히지 않게).
+    await _flushSave();
     final res = await ref
         .read(gameServerProvider)
         .battle(
@@ -1711,6 +1725,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final server = ref.read(gameServerProvider);
     if (server.available) {
       final l = AppLocalizations.of(context);
+      // 전투 전 최신 세이브 업로드(기기 권위 진행이 묻히지 않게).
+      await _flushSave();
       final res = await server.startManualBattle(
         teamBugIds: [for (final b in m.mine) b.id],
         opponentUserId: scout.ownerId,

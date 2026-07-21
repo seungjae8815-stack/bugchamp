@@ -107,6 +107,10 @@ abstract interface class GameServer {
   /// 로드맵 챕터 클리어 보상(스테이지 기준, 서버 확정).
   Future<ServerResult> claimRoadmap();
 
+  /// 기기 권위 세이브 **주기 업로드**(저장). 서버가 보호필드·골드상한만 손대고
+  /// 저장한다. 최초 1회는 [bootstrap] 이 먼저(저장본 없으면 이 호출은 409).
+  Future<ServerResult> uploadSave(Map<String, dynamic> save);
+
   /// 로컬 세이브를 서버로 **최초 1회 이관**한다.
   /// 서버에 이미 세이브가 있으면 409 와 함께 서버 것을 돌려준다.
   Future<ServerResult> bootstrap(Map<String, dynamic> save);
@@ -134,6 +138,9 @@ class NoGameServer implements GameServer {
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> bootstrap(Map<String, dynamic> save) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> uploadSave(Map<String, dynamic> save) async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> sync() async =>
@@ -273,6 +280,10 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> bootstrap(Map<String, dynamic> save) =>
       _send('POST', '/state', {'save': save});
+
+  @override
+  Future<ServerResult> uploadSave(Map<String, dynamic> save) =>
+      _send('POST', '/save', {'save': save});
 
   @override
   Future<ServerResult> sync() => _send('POST', '/sync', const {});

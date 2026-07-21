@@ -406,6 +406,54 @@ Future<void> main() async {
     );
   }
 
+  // ── 10. 기기 권위 세이브 업로드 (/save) ──────────────────────
+  print('\n[10] 세이브 업로드 (/save — 위조 차단·골드 상한)');
+  final sAuth = await signIn();
+  if (sAuth != null) {
+    final base = SaveGame.initial(createdAt: now).copyWith(gold: 1000);
+    final boot = await post('/state', {'save': base.toJson()}, sAuth);
+    check(
+      '업로드 검증용 부트스트랩',
+      boot.statusCode == 200 || boot.statusCode == 201,
+      'HTTP ${boot.statusCode}',
+    );
+
+    // 솔로 필드(골드 정상 증가)는 수용.
+    final ok = base.copyWith(gold: 1000 + 500000);
+    final up = await post('/save', {'save': ok.toJson()}, sAuth);
+    check(
+      '솔로 필드 수용 200',
+      up.statusCode == 200,
+      'HTTP ${up.statusCode} ${up.body}',
+    );
+    if (up.statusCode == 200) {
+      final b = jsonDecode(up.body) as Map<String, dynamic>;
+      check('정상 골드 증가 수용', (b['save']['gold'] as num) == 1000 + 500000);
+      check('안 잘림(clamped=false)', b['clamped'] == false);
+    }
+
+    // 트로피 위조 → 서버 값(0) 유지.
+    final cheat = base.copyWith(gold: 1000 + 500000, pvpTrophies: 999999);
+    final up2 = await post('/save', {'save': cheat.toJson()}, sAuth);
+    if (up2.statusCode == 200) {
+      final b = jsonDecode(up2.body) as Map<String, dynamic>;
+      check('트로피 위조 무시(서버 0 유지)', (b['save']['pvpTrophies'] as num) == 0);
+    } else {
+      check('트로피 위조 업로드 200', false, 'HTTP ${up2.statusCode}');
+    }
+
+    // 골드 급증(10억) → 상한으로 잘림.
+    final absurd = base.copyWith(gold: 1000000000);
+    final up3 = await post('/save', {'save': absurd.toJson()}, sAuth);
+    if (up3.statusCode == 200) {
+      final b = jsonDecode(up3.body) as Map<String, dynamic>;
+      check('골드 급증 상한 클램프', b['clamped'] == true);
+      check('클램프된 골드는 10억 미만', (b['save']['gold'] as num) < 1000000000);
+    } else {
+      check('골드 급증 업로드 200', false, 'HTTP ${up3.statusCode}');
+    }
+  }
+
   print('\n${'-' * 40}');
   print('통과 $_pass / 실패 $_fail');
   c.close();

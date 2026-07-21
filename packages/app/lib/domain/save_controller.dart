@@ -50,10 +50,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     var save = await repo.load();
     final now = clock.now().toUtc();
 
-    // 오프라인 정산 — **서버 권위 모드에선 서버 sync 가 한다**(로컬 계산은
-    // adoptServerSave 에 덮여 사라진다). 로컬 모드에서만 여기서 정산한다.
+    // 오프라인 정산 — 기기가 계산한다(기기 권위). 서버는 세이브를 저장만 한다.
     final config = data.runConfig;
-    if (config != null && !ref.read(gameServerProvider).available) {
+    if (config != null) {
       final elapsed = now.difference(save.lastSeen);
       if (elapsed.inSeconds > 60) {
         final stats = deriveStats(
@@ -231,11 +230,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     MissionType? mission,
     bool idle = false,
   }) async {
-    // 서버 권위 모드에서 **아이들 처치 보상은 서버 sync 가 확정**한다.
-    // 로컬로 지급하면 다음 sync(15s)에 덮여 사라지고, 클라 실시간 처치속도가
-    // 서버 방치효율보다 빨라 HUD 골드가 요동친다. 아이들 루프는 연출만 돈다.
-    if (idle && ref.read(gameServerProvider).available) return;
-
+    // 기기 권위 — 아이들 처치 보상도 로컬에서 즉시 반영(재화 즉각 누적).
+    // 세이브는 [ServerSaveUploader] 가 주기적으로 올린다. [idle] 은 이제 표시용.
     final s = state.requireValue;
     var newXp = s.xp + xp;
     var newLevel = s.level;
@@ -288,19 +284,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 업그레이드를 최대 [count] 레벨까지 구매(골드 되는 만큼). 구매한 레벨 수 반환.
+  ///
+  /// **기기 권위** — 즉시 로컬 반영(버튼 딜레이 없음). 세이브는 주기 업로드.
   Future<int> buyUpgrade(UpgradeKind kind, {int count = 1}) async {
-    // 서버 권위 모드면 비용·잔액 판정을 서버가 한다.
-    final server = ref.read(gameServerProvider);
-    if (server.available) {
-      final res = await server.upgrade(kind.key, count: count);
-      if (res.isOk && res.save != null) {
-        await adoptServerSave(res.save!);
-        return (res.data!['bought'] as num?)?.toInt() ?? 0;
-      }
-      debugPrint('[server] 업그레이드 실패: ${res.error}');
-      return 0;
-    }
-
     final config = ref.read(gameDataProvider).requireValue.runConfig;
     if (config == null) return 0;
     final s = state.requireValue;
@@ -390,11 +376,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
-  /// 도달 스테이지 갱신(최고 기록만).
+  /// 도달 스테이지 갱신(최고 기록만). 기기 권위 — 로컬 즉시 반영.
   Future<void> reachStage(int stage) async {
-    // 서버 권위 모드: 스테이지는 서버 sync 가 경과시간으로 올린다.
-    // 로컬로 올리면 다음 sync 에 덮인다 — 스크롤러는 연출만 돈다.
-    if (ref.read(gameServerProvider).available) return;
     final s = state.requireValue;
     if (stage <= s.stageNumber) return;
     await _commit(s.copyWith(stageNumber: stage));
@@ -405,21 +388,6 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<List<RoadmapChapter>> grantChapterClears() async {
     final cfg = ref.read(gameDataProvider).requireValue.roadmapConfig;
     if (cfg == null) return const [];
-
-    // 서버 권위 모드: 스테이지가 서버 소유라 클리어도 서버가 확정한다.
-    // 서버가 준 클리어 id 를 챕터 객체로 되돌려 UI 축하 팝업에 넘긴다.
-    final server = ref.read(gameServerProvider);
-    if (server.available) {
-      final res = await server.claimRoadmap();
-      if (!res.isOk || res.save == null) return const [];
-      await adoptServerSave(res.save!);
-      final ids = (res.data!['cleared'] as List?)?.cast<String>() ?? const [];
-      return [
-        for (final ch in cfg.chapters)
-          if (ids.contains(ch.id)) ch,
-      ];
-    }
-
     final s = state.requireValue;
     final newly = <RoadmapChapter>[];
     for (final ch in cfg.chapters) {
@@ -447,8 +415,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 온라인 중 주기적으로 호출 → 예정 시각 도달 시 깜짝 선물 1개 지급.
   /// 만료된 선물은 정리한다. 상태가 바뀔 때만 저장.
   Future<void> maybeSpawnGift() async {
-    // 서버 권위 모드: 선물 스폰은 서버 sync 가 시각 기반으로 한다.
-    if (ref.read(gameServerProvider).available) return;
+    // 기기 권위 — 선물 스폰도 로컬에서. 세이브는 주기 업로드로 보존된다.
     final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
     if (cfg == null) return;
     final now = ref.read(clockProvider).now().toUtc();
@@ -704,17 +671,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 반환값이 null 이면 서버가 없다는 뜻이므로 호출부가 기존 로컬 경로를 쓴다.
   /// **서버가 있는데 실패한 경우는 false** — 로컬로 폴백하지 않는다.
   /// 폴백하면 "서버가 거부하면 로컬로 처리"가 되어 권위가 무의미해진다.
-  Future<bool?> _viaServer(Future<ServerResult> Function() call) async {
-    final server = ref.read(gameServerProvider);
-    if (!server.available) return null;
-    final res = await call();
-    if (res.isOk && res.save != null) {
-      await adoptServerSave(res.save!);
-      return true;
-    }
-    debugPrint('[server] 액션 실패: ${res.error} (${res.status})');
-    return false;
-  }
+  /// (구조 전환 2026-07-21) **솔로 루프는 기기 권위**다 — 업그레이드·재화·육성·
+  /// 방치·수령을 로컬에서 즉시 처리하고, 서버에는 주기적으로 세이브를 올린다
+  /// ([ServerSaveUploader]). 그래서 이 헬퍼는 항상 null 을 돌려주어 호출부가
+  /// **로컬 경로**로 떨어지게 한다(즉각 반응). PvP 전투·결제만 서버가 확정한다.
+  ///
+  /// 서버 액션 메서드(GameServer.upgrade 등)는 서버에 남아 있지만 클라는 쓰지
+  /// 않는다 — 나중에 특정 액션만 다시 서버 권위로 돌릴 때를 위한 여지다.
+  Future<bool?> _viaServer(Future<ServerResult> Function() call) async => null;
 
   /// 권위 서버가 확정한 세이브를 그대로 채택한다.
   ///
