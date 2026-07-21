@@ -120,8 +120,18 @@ Deno.serve(async (req) => {
     }
     if (!res.ok) {
       // 5xx·권한 문제 등 일시적일 수 있는 오류 → 앱이 재시도하도록 5xx 로 돌려준다.
-      console.error('play api error', res.status, await res.text())
-      return Response.json({ ok: false, reason: 'upstream_error' }, { status: 502 })
+      const errText = await res.text()
+      console.error('play api error', res.status, errText)
+      // ⚙️ 임시 디버그: 원인 진단용으로 status·메시지를 응답에 실어 준다.
+      //    진단 끝나면 이 debug 필드를 제거하고 재배포한다.
+      return Response.json(
+        {
+          ok: false,
+          reason: 'upstream_error',
+          debug: { status: res.status, body: errText.slice(0, 500) },
+        },
+        { status: 502 },
+      )
     }
     purchase = await res.json()
   } catch (e) {
