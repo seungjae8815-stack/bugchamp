@@ -465,5 +465,11 @@
   },
   "nicknameBlockedWord": "닉네임에 사용할 수 없는 표현이 있어요",
   "nicknameFallback": "이용자",
-  "battleServerFailed": "전투 결과를 확인하지 못했어요. 연결을 확인해 주세요"
+  "battleServerFailed": "전투 결과를 확인하지 못했어요. 연결을 확인해 주세요",
+  "updateRequiredTitle": "업데이트가 필요합니다",
+  "updateRequiredBody": "원활한 플레이를 위해 최신 버전으로 업데이트해 주세요.",
+  "updateAvailableTitle": "새 버전이 있어요",
+  "updateAvailableBody": "더 좋아진 버전이 준비됐어요. 지금 업데이트할까요?",
+  "updateNow": "업데이트",
+  "updateLater": "나중에"
 }

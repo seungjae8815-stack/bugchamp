@@ -430,5 +430,11 @@
   "chatRules": "お互いを尊重した会話をお願いします。暴言・広告・個人情報の共有は制限されます。",
   "nicknameBlockedWord": "ニックネームに使用できない表現が含まれています",
   "nicknameFallback": "プレイヤー",
-  "battleServerFailed": "戦闘結果を確認できませんでした。接続を確認してください"
+  "battleServerFailed": "戦闘結果を確認できませんでした。接続を確認してください",
+  "updateRequiredTitle": "アップデートが必要です",
+  "updateRequiredBody": "快適にプレイするため、最新バージョンに更新してください。",
+  "updateAvailableTitle": "新しいバージョンがあります",
+  "updateAvailableBody": "改善されたバージョンが準備できました。今すぐ更新しますか？",
+  "updateNow": "アップデート",
+  "updateLater": "あとで"
 }

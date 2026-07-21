@@ -1430,4 +1430,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get battleServerFailed => '戦闘結果を確認できませんでした。接続を確認してください';
+
+  @override
+  String get updateRequiredTitle => 'アップデートが必要です';
+
+  @override
+  String get updateRequiredBody => '快適にプレイするため、最新バージョンに更新してください。';
+
+  @override
+  String get updateAvailableTitle => '新しいバージョンがあります';
+
+  @override
+  String get updateAvailableBody => '改善されたバージョンが準備できました。今すぐ更新しますか？';
+
+  @override
+  String get updateNow => 'アップデート';
+
+  @override
+  String get updateLater => 'あとで';
 }

@@ -2685,6 +2685,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t confirm the battle result. Check your connection'**
   String get battleServerFailed;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Please update to the latest version to keep playing.'**
+  String get updateRequiredBody;
+
+  /// No description provided for @updateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New version available'**
+  String get updateAvailableTitle;
+
+  /// No description provided for @updateAvailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An improved version is ready. Update now?'**
+  String get updateAvailableBody;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateNow;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:io' show stderr;
+import 'dart:io' show Platform, stderr;
 
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -153,7 +153,18 @@ Handler buildHandler({
     //
     // ⚠️ `/healthz` 를 쓰면 안 된다. Google Cloud 인프라가 그 경로를
     //    가로채서 컨테이너까지 요청이 오지 않는다(실제로 404 를 받았다).
-    ..get('/health', (Request _) => Response.ok('ok'));
+    ..get('/health', (Request _) => Response.ok('ok'))
+    // 앱 버전 안내 — **인증 없이**(앱이 시작 즉시, 로그인 전에도 확인).
+    //   min    = 이 미만이면 강제 업데이트(막힘). 서버 규약이 깨질 때 올린다.
+    //   latest = 이 미만이면 권장 업데이트(닫기 가능).
+    // 값은 Cloud Run 환경변수로 관리 → 재배포 없이 gcloud run update 로 바꾼다.
+    ..get('/version', (Request _) {
+      int env(String k) => int.tryParse(Platform.environment[k] ?? '') ?? 0;
+      return _json({
+        'min': env('MIN_SUPPORTED_VERSION'),
+        'latest': env('LATEST_VERSION'),
+      });
+    });
 
   final authed = Router()
     ..get('/state', (Request req) async {

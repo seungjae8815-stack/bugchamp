@@ -1429,4 +1429,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get battleServerFailed => '전투 결과를 확인하지 못했어요. 연결을 확인해 주세요';
+
+  @override
+  String get updateRequiredTitle => '업데이트가 필요합니다';
+
+  @override
+  String get updateRequiredBody => '원활한 플레이를 위해 최신 버전으로 업데이트해 주세요.';
+
+  @override
+  String get updateAvailableTitle => '새 버전이 있어요';
+
+  @override
+  String get updateAvailableBody => '더 좋아진 버전이 준비됐어요. 지금 업데이트할까요?';
+
+  @override
+  String get updateNow => '업데이트';
+
+  @override
+  String get updateLater => '나중에';
 }

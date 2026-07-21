@@ -8,6 +8,7 @@ import '../domain/notification_service.dart';
 import '../domain/server_sync.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
+import '../domain/update_checker.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/game_dialog.dart';
 import 'battle/battle_screen.dart';
@@ -38,7 +39,45 @@ class _AppShellState extends ConsumerState<AppShell>
       _setupNotifications();
       // 서버 연결 시: 세이브를 맞추고(최초 1회 이관 포함) 주기 업로드를 건다.
       unawaited(syncWithServer(ref).then((_) => _uploader.start()));
+      // 버전 점검 — 새 버전/강제 업데이트 안내(서버 /version 기준).
+      unawaited(_checkForUpdate());
     });
+  }
+
+  /// 서버가 알려준 최소·최신 버전과 내 버전을 비교해 안내한다.
+  /// - hard: 업데이트 전엔 못 넘어감(서버 규약이 깨질 때). 닫기·뒤로가기 불가.
+  /// - soft: "새 버전 있어요" — 나중에 가능.
+  Future<void> _checkForUpdate() async {
+    final verdict = await checkAppVersion();
+    if (!mounted || verdict == UpdateVerdict.none) return;
+    final l = AppLocalizations.of(context);
+    final hard = verdict == UpdateVerdict.hard;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: !hard,
+      builder: (ctx) => PopScope(
+        canPop: !hard,
+        child: AlertDialog(
+          title: Text(hard ? l.updateRequiredTitle : l.updateAvailableTitle),
+          content: Text(hard ? l.updateRequiredBody : l.updateAvailableBody),
+          actions: [
+            if (!hard)
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l.updateLater),
+              ),
+            FilledButton(
+              onPressed: () async {
+                await openStore();
+                // 강제 업데이트는 스토어 다녀와도 유지(반드시 갱신).
+                if (!hard && ctx.mounted) Navigator.pop(ctx);
+              },
+              child: Text(l.updateNow),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

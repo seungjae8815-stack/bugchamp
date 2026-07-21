@@ -1448,4 +1448,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get battleServerFailed =>
       'Couldn\'t confirm the battle result. Check your connection';
+
+  @override
+  String get updateRequiredTitle => 'Update required';
+
+  @override
+  String get updateRequiredBody =>
+      'Please update to the latest version to keep playing.';
+
+  @override
+  String get updateAvailableTitle => 'New version available';
+
+  @override
+  String get updateAvailableBody => 'An improved version is ready. Update now?';
+
+  @override
+  String get updateNow => 'Update';
+
+  @override
+  String get updateLater => 'Later';
 }

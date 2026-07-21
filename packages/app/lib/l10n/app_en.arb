@@ -918,5 +918,11 @@
   },
   "nicknameBlockedWord": "That nickname contains blocked words",
   "nicknameFallback": "Player",
-  "battleServerFailed": "Couldn't confirm the battle result. Check your connection"
+  "battleServerFailed": "Couldn't confirm the battle result. Check your connection",
+  "updateRequiredTitle": "Update required",
+  "updateRequiredBody": "Please update to the latest version to keep playing.",
+  "updateAvailableTitle": "New version available",
+  "updateAvailableBody": "An improved version is ready. Update now?",
+  "updateNow": "Update",
+  "updateLater": "Later"
 }
