@@ -122,6 +122,10 @@ class GameActions {
   /// 골드 급증 상식 상한의 바닥(수령·전투 보상이 한 번에 커도 통과).
   static const _goldSanityFloor = 2000000;
 
+  /// 젤리(프리미엄 재화) 급증 상한의 바닥. 솔로 획득(선물·분해)은 소량이라
+  /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
+  static const _jellySanityFloor = 1000;
+
   /// 상한 계산용 넉넉한 방치 효율(부스트·액티브 여유 포함 — 절대치만 잡는다).
   static const _saveBoundEfficiency = 4.0;
 
@@ -171,6 +175,19 @@ class GameActions {
       merged['gold'] = stored.gold + maxGain;
       clamped = true;
     }
+
+    // 젤리(프리미엄) 상식 상한 — 결제로 사는 재화라 급증을 막는다.
+    final mats = merged['materials'];
+    if (mats is Map) {
+      final clientJelly =
+          (mats['jelly'] as num?)?.toInt() ??
+          stored.materialCount(MaterialKind.jelly);
+      final storedJelly = stored.materialCount(MaterialKind.jelly);
+      if (clientJelly - storedJelly > _jellySanityFloor) {
+        mats['jelly'] = storedJelly + _jellySanityFloor;
+        clamped = true;
+      }
+    }
     merged['lastSeen'] = t.toIso8601String();
 
     final SaveGame out;
@@ -180,6 +197,25 @@ class GameActions {
       return const ActionResult.fail('bad_save');
     }
     return ActionResult.ok(out, extra: {'clamped': clamped});
+  }
+
+  /// 최초 이관(부트스트랩) 세이브를 정화한다.
+  ///
+  /// 부트스트랩은 저장본이 없어 `mergeSave` 의 보호가 안 걸린다. 그 틈으로
+  /// 새 익명 계정이 **트로피·IAP 지급물을 위조**해 올릴 수 있어(랭킹 도배·무료
+  /// 결제 혜택), 서버가 소유하는 필드를 **초기값으로 리셋**한다. 솔로 진행
+  /// (골드·곤충·업그레이드)은 그대로 둔다 — 기기 권위라 편집을 수용하는 범위다.
+  Map<String, dynamic> sanitizeBootstrap(Map<String, dynamic> clientJson) {
+    final fresh = SaveGame.initial(createdAt: now().toUtc()).toJson();
+    final out = Map<String, dynamic>.from(clientJson);
+    for (final k in _serverOwnedKeys) {
+      if (fresh.containsKey(k)) {
+        out[k] = fresh[k];
+      } else {
+        out.remove(k);
+      }
+    }
+    return out;
   }
 
   /// 편성 검증 → 전투 유닛 목록. 실패 시 [error] 에 사유.

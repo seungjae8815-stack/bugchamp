@@ -1562,13 +1562,22 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// 그 시드로 재시뮬레이션하면 **완전히 같은 전개**가 나온다.
   /// 전투 전 최신 로컬 세이브를 서버에 올린다(기기 권위 → 서버가 최신으로 전투).
   /// 저장본이 없으면(신규) 부트스트랩으로 대신한다.
-  Future<void> _flushSave() async {
+  ///
+  /// **성공했을 때만 true.** 실패(네트워크·5xx)면 서버엔 낡은 세이브가 남아 있어,
+  /// 그 위에서 전투를 돌리고 결과를 adopt 하면 **최근 로컬 진행이 통째로 사라진다.**
+  /// 그래서 호출부는 실패 시 전투를 진행하지 않는다.
+  Future<bool> _flushSave() async {
     final server = ref.read(gameServerProvider);
-    if (!server.available) return;
+    if (!server.available) return true; // 서버 미연결이면 로컬 경로로 진행
     final save = ref.read(saveControllerProvider).value;
-    if (save == null) return;
+    if (save == null) return false;
     final res = await server.uploadSave(save.toJson());
-    if (res.status == 409) await server.bootstrap(save.toJson());
+    if (res.isOk) return true;
+    if (res.status == 409) {
+      final boot = await server.bootstrap(save.toJson());
+      return boot.isOk;
+    }
+    return false;
   }
 
   Future<bool> _serverBattle(
@@ -1586,7 +1595,15 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final l = AppLocalizations.of(context);
     // 전투 전 최신 세이브를 서버에 올린다 — 서버가 **최신 곤충·골드**로 전투를
     // 확정하고, 승패·보상을 그 위에 얹는다(기기 권위 진행이 묻히지 않게).
-    await _flushSave();
+    // 업로드 실패 시 전투를 진행하지 않는다 — 낡은 세이브로 싸우고 adopt 하면
+    // 최근 진행이 사라진다. 다음 주기 업로드가 따라잡은 뒤 다시 시도하면 된다.
+    if (!await _flushSave()) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+      return false;
+    }
     final res = await ref
         .read(gameServerProvider)
         .battle(
@@ -1726,7 +1743,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     if (server.available) {
       final l = AppLocalizations.of(context);
       // 전투 전 최신 세이브 업로드(기기 권위 진행이 묻히지 않게).
-      await _flushSave();
+      // 실패 시 시작하지 않는다 — 낡은 세이브로 세션을 열면 진행이 사라진다.
+      if (!await _flushSave()) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+        return;
+      }
       final res = await server.startManualBattle(
         teamBugIds: [for (final b in m.mine) b.id],
         opponentUserId: scout.ownerId,

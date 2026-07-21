@@ -1320,5 +1320,48 @@ void main() {
       final r = actions.mergeSave(stored(), stored().toJson());
       expect(r.save!.lastSeen, t0);
     });
+
+    test('젤리 급증(→99만)은 상한으로 잘린다 — 결제 우회 차단', () {
+      final base = stored().copyWith(materials: {MaterialKind.jelly: 10});
+      final cheat = base.copyWith(materials: {MaterialKind.jelly: 999999});
+      final r = actions.mergeSave(base, cheat.toJson());
+      expect(r.extra['clamped'], isTrue);
+      expect(r.save!.materialCount(MaterialKind.jelly), lessThan(999999));
+    });
+
+    test('젤리 소량 증가(선물·분해)는 통과', () {
+      final base = stored().copyWith(materials: {MaterialKind.jelly: 10});
+      final ok = base.copyWith(materials: {MaterialKind.jelly: 60});
+      final r = actions.mergeSave(base, ok.toJson());
+      expect(r.save!.materialCount(MaterialKind.jelly), 60);
+    });
+  });
+
+  group('부트스트랩 정화(sanitizeBootstrap)', () {
+    test('트로피·IAP 위조는 초기값으로 리셋된다', () {
+      final cheat = SaveGame.initial(createdAt: t0).copyWith(
+        gold: 50000,
+        pvpTrophies: 999999,
+        seasonPeakTrophies: 999999,
+        starterBought: true,
+        adsRemoved: true,
+        ownedSkins: {'gold_rhino'},
+        redeemedPurchases: {'FAKE'},
+        passExpiresAt: t0.add(const Duration(days: 365)),
+      );
+      final clean = SaveGame.fromJson(
+        actions.sanitizeBootstrap(cheat.toJson()),
+      );
+      // 솔로 진행(골드)은 그대로.
+      expect(clean.gold, 50000);
+      // 서버 소유 필드는 전부 초기화.
+      expect(clean.pvpTrophies, 0);
+      expect(clean.seasonPeakTrophies, 0);
+      expect(clean.starterBought, isFalse);
+      expect(clean.adsRemoved, isFalse);
+      expect(clean.ownedSkins, isEmpty);
+      expect(clean.redeemedPurchases, isEmpty);
+      expect(clean.passActive(t0), isFalse);
+    });
   });
 }

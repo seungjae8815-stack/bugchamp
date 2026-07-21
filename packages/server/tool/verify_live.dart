@@ -454,6 +454,42 @@ Future<void> main() async {
     }
   }
 
+  // ── 11. 부트스트랩 위조 차단 + 젤리 상한 ─────────────────────
+  print('\n[11] 부트스트랩 위조 차단 · 젤리 상한');
+  final fAuth = await signIn();
+  if (fAuth != null) {
+    // 새 계정이 트로피·스타터를 위조해 부트스트랩 시도.
+    final forged = SaveGame.initial(
+      createdAt: now,
+    ).copyWith(gold: 7777, pvpTrophies: 999999, starterBought: true);
+    final boot = await post('/state', {'save': forged.toJson()}, fAuth);
+    check(
+      '위조 부트스트랩 200',
+      boot.statusCode == 200 || boot.statusCode == 201,
+      'HTTP ${boot.statusCode}',
+    );
+    if (boot.statusCode == 200 || boot.statusCode == 201) {
+      final st = await get('/state', fAuth);
+      final saved = (jsonDecode(st.body) as Map)['save'] as Map;
+      check('부트스트랩: 솔로 골드는 유지', (saved['gold'] as num) == 7777);
+      check('부트스트랩: 트로피 위조 리셋(0)', (saved['pvpTrophies'] as num) == 0);
+      check('부트스트랩: 스타터 위조 리셋(false)', saved['starterBought'] == false);
+    }
+
+    // 젤리 급증 업로드 → 상한.
+    final jellyCheat = forged.copyWith(materials: {MaterialKind.jelly: 999999});
+    final up = await post('/save', {'save': jellyCheat.toJson()}, fAuth);
+    if (up.statusCode == 200) {
+      final b = jsonDecode(up.body) as Map<String, dynamic>;
+      check('젤리 급증 클램프', b['clamped'] == true);
+      final jelly =
+          ((b['save']['materials'] as Map)['jelly'] as num?)?.toInt() ?? 0;
+      check('클램프된 젤리는 99만 미만', jelly < 999999);
+    } else {
+      check('젤리 업로드 200', false, 'HTTP ${up.statusCode}');
+    }
+  }
+
   print('\n${'-' * 40}');
   print('통과 $_pass / 실패 $_fail');
   c.close();

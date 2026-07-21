@@ -218,8 +218,10 @@ Handler buildHandler({
         if (incoming is! Map<String, dynamic>) {
           return _json({'error': 'bad_request'}, status: 400);
         }
-        // 파싱을 거쳐 형식을 검증한다(쓰레기 JSON 저장 방지).
-        final save = SaveGame.fromJson(migrateToCurrent(incoming));
+        // 보호 필드(트로피·IAP)를 초기값으로 리셋 후 파싱 — 부트스트랩으로
+        // 랭킹·결제 상태를 위조하지 못하게(솔로 진행은 그대로).
+        final sanitized = actions.sanitizeBootstrap(migrateToCurrent(incoming));
+        final save = SaveGame.fromJson(sanitized);
         await store.save(user.id, save.toJson());
         return _json({'save': save.toJson(), 'bootstrapped': true});
       } on StateStoreException catch (e) {

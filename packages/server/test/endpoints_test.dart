@@ -327,6 +327,25 @@ void main() {
       expect(saved.bugs.first.id, 'mine-1');
     });
 
+    test('부트스트랩은 트로피·IAP 위조를 리셋한다(솔로 진행은 유지)', () async {
+      final h = handler(serverHasSave: false);
+      final cheat = mySave.copyWith(
+        gold: 12345,
+        pvpTrophies: 999999,
+        starterBought: true,
+      );
+      final res = await post(h, '/state', {
+        'save': cheat.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final saved = SaveGame.fromJson(
+        fake.lastSaved!['data'] as Map<String, dynamic>,
+      );
+      expect(saved.gold, 12345); // 솔로 진행 유지
+      expect(saved.pvpTrophies, 0); // 위조 리셋
+      expect(saved.starterBought, isFalse);
+    });
+
     test('이미 서버 세이브가 있으면 덮어쓰지 못한다 (클라가 상태를 밀어넣는 것 차단)', () async {
       final h = handler(); // 서버에 이미 세이브 있음
       final evil = SaveGame.initial(createdAt: _t).copyWith(gold: 99999999);

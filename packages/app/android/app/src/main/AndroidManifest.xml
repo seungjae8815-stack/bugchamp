@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 서버(Supabase·권위서버)·광고 통신. 릴리즈에서 명시 —
+         광고 플러그인 매니페스트 병합에만 의존하지 않게. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- 로컬 알림(점심·저녁 보상·오프라인 가득참) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />

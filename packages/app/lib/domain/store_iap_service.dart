@@ -182,13 +182,19 @@ class StoreIapService implements IapService {
     }
   }
 
-  /// 영수증 서버 검증. 검증기가 없으면(백엔드 미연결 빌드) 통과시킨다 —
-  /// 막아버리면 상점이 아예 동작하지 않기 때문이다. 릴리즈 빌드는 항상
-  /// Supabase 키가 주입되므로 실제로는 검증을 거친다.
+  /// 영수증 서버 검증.
+  ///
+  /// 검증기가 없을 때: **개발 빌드는 통과**(백엔드 없이 상점을 돌려보려고),
+  /// **릴리즈 빌드는 보류**(unknown). 릴리즈에서 통과시키면, 검증기 없이
+  /// 빌드된 출시본이 **위조 영수증을 무검증 지급**하는 구멍이 된다.
   Future<VerifyResult> _verify(PurchaseDetails p) async {
     final verifier = _ref.read(purchaseVerifierProvider);
     if (!verifier.available) {
-      debugPrint('[iap] ⚠️ 영수증 검증기 미연결 — 검증 없이 지급한다');
+      if (kReleaseMode) {
+        debugPrint('[iap] ⚠️ 릴리즈인데 검증기 미연결 — 지급 보류');
+        return VerifyResult.unknown; // 릴리즈는 검증 없이 지급하지 않는다
+      }
+      debugPrint('[iap] 검증기 미연결(개발 빌드) — 통과');
       return VerifyResult.valid;
     }
     final token = p.verificationData.serverVerificationData;
@@ -206,6 +212,14 @@ class StoreIapService implements IapService {
     if (!server.available) return false; // 로컬 경로로
     final token = p.verificationData.serverVerificationData;
     if (token.isEmpty) return false;
+
+    // 지급 전 최신 로컬 세이브를 올린다 — 안 그러면 서버가 **낡은 세이브**에
+    // 지급하고 그걸 adopt 해, 최근 기기 진행(방금 번 골드·잡은 곤충)이 사라진다.
+    final save = _ref.read(saveControllerProvider).value;
+    if (save != null) {
+      final up = await server.uploadSave(save.toJson());
+      if (up.status == 409) await server.bootstrap(save.toJson());
+    }
 
     final res = await server.purchase(
       productId: p.productID,
