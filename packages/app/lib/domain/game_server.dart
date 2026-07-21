@@ -77,6 +77,12 @@ abstract interface class GameServer {
   /// 수련(성충 레벨업).
   Future<ServerResult> train(String bugId);
 
+  /// 돌파 시작(레벨 상한 확장 — 재화 소비 + 타이머).
+  Future<ServerResult> breakthrough(String bugId);
+
+  /// 돌파 완료 수령(타이머 종료 후 또는 젤리 즉시완료).
+  Future<ServerResult> completeBreakthrough(String bugId, {bool viaJelly});
+
   /// 짝짓기 시작 — **시드는 서버가 정한다**(클라가 고를 수 없다).
   Future<ServerResult> breed(String motherId, String fatherId);
 
@@ -129,6 +135,14 @@ class NoGameServer implements GameServer {
   @override
   Future<ServerResult> train(String bugId) async =>
       const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> breakthrough(String bugId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> completeBreakthrough(
+    String bugId, {
+    bool viaJelly = false,
+  }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> breed(String motherId, String fatherId) async =>
       const ServerResult.fail('unavailable', 0);
@@ -250,6 +264,19 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> train(String bugId) =>
       _send('POST', '/train', {'bugId': bugId});
+
+  @override
+  Future<ServerResult> breakthrough(String bugId) =>
+      _send('POST', '/breakthrough', {'bugId': bugId});
+
+  @override
+  Future<ServerResult> completeBreakthrough(
+    String bugId, {
+    bool viaJelly = false,
+  }) => _send('POST', '/breakthrough/complete', {
+    'bugId': bugId,
+    'viaJelly': viaJelly,
+  });
 
   @override
   Future<ServerResult> breed(String motherId, String fatherId) =>

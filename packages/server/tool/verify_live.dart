@@ -253,6 +253,77 @@ Future<void> main() async {
     }
   }
 
+  // ── 7. 돌파 (레벨 상한 확장 — 스탯 직결) ─────────────────────
+  print('\n[7] 돌파 (재화 소비 + 티어 상승)');
+  // 이미 레벨 상한(10)을 채우고 재화를 가진 유저를 부트스트랩한다
+  // (기존 플레이어가 수련을 끝낸 상황과 같다).
+  final bAuth = await signIn();
+  check('돌파 검증용 새 유저 준비', bAuth != null);
+  if (bAuth != null) {
+    final ready = SaveGame.initial(createdAt: now).copyWith(
+      bugs: [adult('bt-1', 'stag_dorcus', Element.wood).copyWith(level: 10)],
+      gold: 50000,
+      materials: {
+        MaterialKind.chitin: 200,
+        MaterialKind.mineral: 200,
+        MaterialKind.sap: 200,
+        MaterialKind.jelly: 999,
+      },
+    );
+    final boot = await post('/state', {'save': ready.toJson()}, bAuth);
+    check(
+      '돌파 준비 세이브 부트스트랩',
+      boot.statusCode == 200 || boot.statusCode == 201,
+      'HTTP ${boot.statusCode} ${boot.body}',
+    );
+
+    final start = await post('/breakthrough', {'bugId': 'bt-1'}, bAuth);
+    check(
+      '돌파 시작 200',
+      start.statusCode == 200,
+      'HTTP ${start.statusCode} ${start.body}',
+    );
+    if (start.statusCode == 200) {
+      final b = jsonDecode(start.body) as Map<String, dynamic>;
+      final saved = b['save'] as Map<String, dynamic>;
+      // 재화가 실제로 빠졌는가.
+      check('돌파 시작 시 골드 차감', (saved['gold'] as num) < 50000);
+      final bug = (saved['bugs'] as List).first as Map<String, dynamic>;
+      check('돌파 타이머가 걸린다', bug['breakthroughEndsAt'] != null);
+
+      // 젤리로 즉시완료 → 티어 상승.
+      final done = await post('/breakthrough/complete', {
+        'bugId': 'bt-1',
+        'viaJelly': true,
+      }, bAuth);
+      check(
+        '젤리 즉시완료 200',
+        done.statusCode == 200,
+        'HTTP ${done.statusCode} ${done.body}',
+      );
+      if (done.statusCode == 200) {
+        final d = jsonDecode(done.body) as Map<String, dynamic>;
+        final bug2 =
+            ((d['save'] as Map)['bugs'] as List).first as Map<String, dynamic>;
+        check('티어가 1 올랐다', (bug2['breakthroughTier'] as num) == 1);
+        check('돌파 타이머가 해제됐다', bug2['breakthroughEndsAt'] == null);
+      }
+    }
+
+    // 완료 전 무료 수령 조작 차단(다시 시작 후 타이머 남은 상태로 확인).
+    final start2 = await post('/breakthrough', {'bugId': 'bt-1'}, bAuth);
+    if (start2.statusCode == 200) {
+      final free = await post('/breakthrough/complete', {
+        'bugId': 'bt-1',
+      }, bAuth);
+      check(
+        '타이머 안 끝났는데 무료 수령하면 거부(400)',
+        free.statusCode == 400,
+        'got ${free.statusCode}',
+      );
+    }
+  }
+
   print('\n${'-' * 40}');
   print('통과 $_pass / 실패 $_fail');
   c.close();

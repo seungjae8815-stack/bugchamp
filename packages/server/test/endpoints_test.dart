@@ -560,4 +560,40 @@ void main() {
       );
     });
   });
+
+  group('돌파 엔드포인트', () {
+    test('인증 없이는 시작 불가', () async {
+      final res = await post(handler(), '/breakthrough', {'bugId': 'mine-1'});
+      expect(res.statusCode, 401);
+    });
+
+    test('상한 미달이면 400 (mine-1 은 레벨 1)', () async {
+      final res = await post(handler(), '/breakthrough', {
+        'bugId': 'mine-1',
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body['error'], 'cap_not_reached');
+      expect(fake.lastSaved, isNull); // 실패 시 세이브를 건드리지 않는다
+    });
+
+    test('bugId 가 없으면 400', () async {
+      final res = await post(
+        handler(),
+        '/breakthrough',
+        {},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 400);
+    });
+
+    test('돌파 중이 아닌데 완료 요청하면 400', () async {
+      final res = await post(handler(), '/breakthrough/complete', {
+        'bugId': 'mine-1',
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body['error'], 'not_breaking');
+    });
+  });
 }

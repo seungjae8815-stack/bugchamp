@@ -532,6 +532,109 @@ class GameActions {
     );
   }
 
+  /// 돌파에 쓰는 재료 3종(젤리 제외).
+  static const _breakMats = [
+    MaterialKind.chitin,
+    MaterialKind.mineral,
+    MaterialKind.sap,
+  ];
+
+  /// 돌파 시작 — 티어 상한을 채운 성충의 레벨 상한을 올린다(타이머 시작).
+  ///
+  /// 돌파는 수련 상한을 늘려 **곤충 스탯을 직접 올린다** → PvP 에 영향.
+  /// 클라이언트가 처리하면 재화 없이 상한을 뚫어 강해질 수 있다.
+  ActionResult startBreakthrough(
+    SaveGame save,
+    String bugId, {
+    required PetConfig petConfig,
+  }) {
+    final t = now().toUtc();
+    final idx = save.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return const ActionResult.fail('bug_not_owned');
+    final bug = save.bugs[idx];
+    if (effectiveStage(bug.stage, bug.stageSince, t, petConfig) !=
+        LifeStage.adult) {
+      return const ActionResult.fail('not_adult');
+    }
+    if (bug.breakthroughEndsAt != null) {
+      return const ActionResult.fail('breakthrough_in_progress');
+    }
+    final tier = bug.breakthroughTier;
+    if (tier >= petConfig.maxTier)
+      return const ActionResult.fail('at_max_tier');
+    // 현재 티어 상한을 다 채워야 돌파할 수 있다.
+    if (bug.level < petConfig.levelCap(tier)) {
+      return const ActionResult.fail('cap_not_reached');
+    }
+    final gold = petConfig.breakthroughGoldCost(tier);
+    final matCost = petConfig.breakthroughMatCost(tier);
+    if (save.gold < gold) return const ActionResult.fail('insufficient_gold');
+    for (final k in _breakMats) {
+      if (save.materialCount(k) < matCost) {
+        return const ActionResult.fail('insufficient_material');
+      }
+    }
+
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    for (final k in _breakMats) {
+      mats[k] = save.materialCount(k) - matCost;
+    }
+    final endsAt = t.add(
+      Duration(seconds: petConfig.breakthroughDuration(tier)),
+    );
+    final bugs = List<IndividualBug>.from(save.bugs);
+    bugs[idx] = bug.copyWith(breakthroughEndsAt: endsAt);
+    return ActionResult.ok(
+      save.copyWith(gold: save.gold - gold, materials: mats, bugs: bugs),
+      extra: {
+        'gold': gold,
+        'material': matCost,
+        'endsAt': endsAt.toIso8601String(),
+      },
+    );
+  }
+
+  /// 돌파 완료 수령. [viaJelly]=남은시간 비례 젤리로 즉시완료,
+  /// 아니면 타이머 종료 후에만. 완료 전 젤리 없이 수령하는 조작을 막는다.
+  ActionResult completeBreakthrough(
+    SaveGame save,
+    String bugId, {
+    required PetConfig petConfig,
+    bool viaJelly = false,
+  }) {
+    final t = now().toUtc();
+    final idx = save.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return const ActionResult.fail('bug_not_owned');
+    final bug = save.bugs[idx];
+    final endsAt = bug.breakthroughEndsAt;
+    if (endsAt == null) return const ActionResult.fail('not_breaking');
+
+    final bugs = List<IndividualBug>.from(save.bugs);
+    final upgraded = bug.copyWith(
+      breakthroughTier: bug.breakthroughTier + 1,
+      clearBreakthrough: true,
+    );
+
+    if (viaJelly) {
+      final cost = petConfig.breakthroughJelly(endsAt.difference(t));
+      final have = save.materialCount(MaterialKind.jelly);
+      if (have < cost) return const ActionResult.fail('insufficient_jelly');
+      final mats = Map<MaterialKind, int>.from(save.materials)
+        ..[MaterialKind.jelly] = have - cost;
+      bugs[idx] = upgraded;
+      return ActionResult.ok(
+        save.copyWith(bugs: bugs, materials: mats),
+        extra: {'jelly': cost, 'newTier': upgraded.breakthroughTier},
+      );
+    }
+    if (t.isBefore(endsAt)) return const ActionResult.fail('not_ready');
+    bugs[idx] = upgraded;
+    return ActionResult.ok(
+      save.copyWith(bugs: bugs),
+      extra: {'newTier': upgraded.breakthroughTier},
+    );
+  }
+
   /// 짝짓기 시작. 조건 검사와 **자식 롤 시드 생성을 서버가 한다.**
   ///
   /// ⚠️ 기존 앱은 시드를 UI 가 만들어 넘겼다. 그러면 시드를 골라가며

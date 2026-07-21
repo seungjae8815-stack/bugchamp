@@ -863,4 +863,207 @@ void main() {
       );
     });
   });
+
+  group('돌파(breakthrough)', () {
+    final cfg = _Config();
+    // pets.json: tierCaps[0]=10, breakthroughGold[0]=20000, material[0]=100.
+    const capL0 = 10;
+    const gold0 = 20000;
+    const mat0 = 100;
+
+    IndividualBug bug(
+      String id, {
+      int level = 1,
+      int tier = 0,
+      DateTime? ends,
+    }) => IndividualBug(
+      id: id,
+      speciesId: 'a',
+      sizeMm: 40,
+      potential: 5,
+      temperament: Temperament.aggressive,
+      sex: Sex.male,
+      element: Element.wood,
+      stage: LifeStage.adult,
+      stageSince: t0.subtract(const Duration(days: 30)),
+      level: level,
+      breakthroughTier: tier,
+      breakthroughEndsAt: ends,
+    );
+
+    SaveGame owner(
+      IndividualBug b, {
+      int gold = 0,
+      Map<MaterialKind, int>? mats,
+    }) => SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(bugs: [b], gold: gold, materials: mats ?? const {});
+
+    final fullMats = {
+      MaterialKind.chitin: mat0,
+      MaterialKind.mineral: mat0,
+      MaterialKind.sap: mat0,
+    };
+
+    test('상한 미달이면 돌파 불가', () {
+      final r = actions.startBreakthrough(
+        owner(
+          bug('b', level: capL0 - 1),
+          gold: gold0,
+          mats: fullMats,
+        ),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'cap_not_reached');
+    });
+
+    test('골드가 모자라면 거부', () {
+      final r = actions.startBreakthrough(
+        owner(
+          bug('b', level: capL0),
+          gold: gold0 - 1,
+          mats: fullMats,
+        ),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'insufficient_gold');
+    });
+
+    test('재료가 모자라면 거부', () {
+      final r = actions.startBreakthrough(
+        owner(
+          bug('b', level: capL0),
+          gold: gold0,
+          mats: {MaterialKind.chitin: mat0, MaterialKind.mineral: mat0},
+        ),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'insufficient_material');
+    });
+
+    test('조건을 채우면 재화를 쓰고 타이머가 걸린다', () {
+      final r = actions.startBreakthrough(
+        owner(
+          bug('b', level: capL0),
+          gold: gold0,
+          mats: fullMats,
+        ),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.isOk, isTrue);
+      expect(r.save!.gold, 0);
+      for (final k in [
+        MaterialKind.chitin,
+        MaterialKind.mineral,
+        MaterialKind.sap,
+      ]) {
+        expect(r.save!.materialCount(k), 0);
+      }
+      expect(r.save!.bugs.first.breakthroughEndsAt, isNotNull);
+      // 티어는 아직 그대로 — 완료해야 오른다.
+      expect(r.save!.bugs.first.breakthroughTier, 0);
+    });
+
+    test('이미 돌파 중이면 다시 시작 못 한다', () {
+      final r = actions.startBreakthrough(
+        owner(
+          bug('b', level: capL0, ends: t0.add(const Duration(hours: 1))),
+          gold: gold0,
+          mats: fullMats,
+        ),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'breakthrough_in_progress');
+    });
+
+    test('완료 전에는 무료 수령 불가 — 타이머를 건너뛸 수 없다', () {
+      final r = actions.completeBreakthrough(
+        owner(bug('b', level: capL0, ends: t0.add(const Duration(hours: 1)))),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'not_ready');
+    });
+
+    test('타이머가 끝나면 티어가 오른다', () {
+      final r = actions.completeBreakthrough(
+        owner(
+          bug('b', level: capL0, ends: t0.subtract(const Duration(seconds: 1))),
+        ),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.isOk, isTrue);
+      expect(r.save!.bugs.first.breakthroughTier, 1);
+      expect(r.save!.bugs.first.breakthroughEndsAt, isNull);
+    });
+
+    test('젤리로 즉시완료 — 젤리를 쓰고 티어가 오른다', () {
+      final r = actions.completeBreakthrough(
+        owner(
+          bug('b', level: capL0, ends: t0.add(const Duration(minutes: 10))),
+          mats: {MaterialKind.jelly: 999},
+        ),
+        'b',
+        petConfig: cfg.pet,
+        viaJelly: true,
+      );
+      expect(r.isOk, isTrue);
+      expect(r.save!.bugs.first.breakthroughTier, 1);
+      expect(r.save!.materialCount(MaterialKind.jelly), lessThan(999));
+    });
+
+    test('젤리가 모자라면 즉시완료 거부', () {
+      final r = actions.completeBreakthrough(
+        owner(
+          bug('b', level: capL0, ends: t0.add(const Duration(hours: 4))),
+          mats: {MaterialKind.jelly: 0},
+        ),
+        'b',
+        petConfig: cfg.pet,
+        viaJelly: true,
+      );
+      expect(r.error, 'insufficient_jelly');
+    });
+
+    test('돌파 중이 아니면 수령 불가', () {
+      final r = actions.completeBreakthrough(
+        owner(bug('b', level: capL0)),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'not_breaking');
+    });
+
+    test('최대 티어면 더 돌파할 수 없다', () {
+      final r = actions.startBreakthrough(
+        owner(
+          bug('b', level: 999, tier: cfg.pet.maxTier),
+          gold: 99999999,
+          mats: {
+            MaterialKind.chitin: 99999,
+            MaterialKind.mineral: 99999,
+            MaterialKind.sap: 99999,
+          },
+        ),
+        'b',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'at_max_tier');
+    });
+
+    test('내 곤충이 아니면 거부', () {
+      final r = actions.startBreakthrough(
+        SaveGame.initial(createdAt: t0),
+        'ghost',
+        petConfig: cfg.pet,
+      );
+      expect(r.error, 'bug_not_owned');
+    });
+  });
 }

@@ -937,6 +937,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 돌파 시작: 티어 상한을 채운 성충의 레벨 상한을 올리는 업그레이드(타이머 시작).
   /// 재화(골드+재료) 소비. 조건 미달이면 false.
   Future<bool> breakthrough(String bugId) async {
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).breakthrough(bugId),
+    );
+    if (viaServer != null) return viaServer;
+
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;
     if (cfg == null) return false;
     final now = ref.read(clockProvider).now().toUtc();
@@ -974,6 +979,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     String bugId, {
     bool viaJelly = false,
   }) async {
+    final viaServer = await _viaServer(
+      () => ref
+          .read(gameServerProvider)
+          .completeBreakthrough(bugId, viaJelly: viaJelly),
+    );
+    if (viaServer != null) return viaServer;
+
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;
     if (cfg == null) return false;
     final now = ref.read(clockProvider).now().toUtc();

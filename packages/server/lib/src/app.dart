@@ -331,6 +331,60 @@ Handler buildHandler({
       }
     });
 
+    /// 돌파 시작 — 레벨 상한을 올린다(재화 소비 + 타이머). 스탯에 직결돼 PvP 영향.
+    authed.post('/breakthrough', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final bugId = body['bugId']?.toString() ?? '';
+      if (bugId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.startBreakthrough(save, bugId, petConfig: cfg.pet);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[breakthrough] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 돌파 완료 수령 — 타이머 종료 후, 또는 젤리 즉시완료. 건너뛰기를 서버가 막는다.
+    authed.post('/breakthrough/complete', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final bugId = body['bugId']?.toString() ?? '';
+      if (bugId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      final viaJelly = body['viaJelly'] == true;
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.completeBreakthrough(
+          save,
+          bugId,
+          petConfig: cfg.pet,
+          viaJelly: viaJelly,
+        );
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[breakthrough/complete] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     /// 짝짓기 시작 — 조건 검사와 **자식 롤 시드 생성**을 서버가 한다.
     authed.post('/breed', (Request req) async {
       final user = userOf(req);

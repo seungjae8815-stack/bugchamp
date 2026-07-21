@@ -28,6 +28,8 @@
 | `POST /battle/manual/step` | 필요 | 한 수 진행 — 이번 라운드 결과만 반환 |
 | `POST /incubate/collect` | 필요 | 부화 수령 — 타이머 완료를 서버가 확인 |
 | `POST /disassemble` | 필요 | 분해 → 젤리(지급량은 pets.json) |
+| `POST /breakthrough` | 필요 | 돌파 시작 — 레벨 상한 확장(재화+타이머) |
+| `POST /breakthrough/complete` | 필요 | 돌파 완료 — 타이머 종료 후/젤리 즉시완료 |
 | `POST /battle` | 필요 | 서버가 전투를 시뮬레이션하고 결과 확정 |
 
 쓰기 엔드포인트는 `gameConfig`·`speciesById` 가 주입된 경우에만 노출된다.
