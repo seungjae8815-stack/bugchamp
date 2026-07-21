@@ -95,6 +95,18 @@ abstract interface class GameServer {
   /// 곤충 분해 → 젤리.
   Future<ServerResult> disassemble(String bugId);
 
+  /// 미션 보상 수령(진행도·목표는 서버가 판정).
+  Future<ServerResult> claimMission(String missionId);
+
+  /// 깜짝선물 수령([doubled]=광고 배수).
+  Future<ServerResult> claimGift(String giftId, {bool doubled});
+
+  /// 일일보상 수령(UTC 날짜당 1회).
+  Future<ServerResult> claimDaily(String rewardId);
+
+  /// 로드맵 챕터 클리어 보상(스테이지 기준, 서버 확정).
+  Future<ServerResult> claimRoadmap();
+
   /// 로컬 세이브를 서버로 **최초 1회 이관**한다.
   /// 서버에 이미 세이브가 있으면 409 와 함께 서버 것을 돌려준다.
   Future<ServerResult> bootstrap(Map<String, dynamic> save);
@@ -156,6 +168,18 @@ class NoGameServer implements GameServer {
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> disassemble(String bugId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> claimMission(String missionId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> claimGift(String giftId, {bool doubled = false}) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> claimDaily(String rewardId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> claimRoadmap() async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> startManualBattle({
@@ -296,6 +320,22 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> disassemble(String bugId) =>
       _send('POST', '/disassemble', {'bugId': bugId});
+
+  @override
+  Future<ServerResult> claimMission(String missionId) =>
+      _send('POST', '/mission/claim', {'missionId': missionId});
+
+  @override
+  Future<ServerResult> claimGift(String giftId, {bool doubled = false}) =>
+      _send('POST', '/gift/claim', {'giftId': giftId, 'doubled': doubled});
+
+  @override
+  Future<ServerResult> claimDaily(String rewardId) =>
+      _send('POST', '/daily/claim', {'rewardId': rewardId});
+
+  @override
+  Future<ServerResult> claimRoadmap() =>
+      _send('POST', '/roadmap/claim', const {});
 
   @override
   Future<ServerResult> startManualBattle({

@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart' show UpgradeKind;
 import 'package:core_save/core_save.dart';
 import 'package:http/http.dart' as http;
 
@@ -322,6 +323,87 @@ Future<void> main() async {
         'got ${free.statusCode}',
       );
     }
+  }
+
+  // ── 8. 방치 진행: sync 가 스테이지를 올린다 ──────────────────
+  print('\n[8] 방치 진행 (sync 가 스테이지·미션·선물 확정)');
+  final iAuth = await signIn();
+  if (iAuth != null) {
+    // 강한 캐릭터(스테이지를 밀 수 있게) + 오래 비운 세이브를 부트스트랩.
+    final long = now.subtract(const Duration(hours: 3));
+    final idleSave = SaveGame.initial(createdAt: long).copyWith(
+      lastSeen: long,
+      stageNumber: 1,
+      level: 20,
+      upgradeLevels: {UpgradeKind.attack: 80, UpgradeKind.attackSpeed: 30},
+      nextGiftAt: long, // 선물 예정 시각을 과거로 → 스폰돼야 함
+    );
+    final boot = await post('/state', {'save': idleSave.toJson()}, iAuth);
+    check(
+      '방치 검증용 세이브 부트스트랩',
+      boot.statusCode == 200 || boot.statusCode == 201,
+      'HTTP ${boot.statusCode} ${boot.body}',
+    );
+
+    final sync = await post('/sync', const {}, iAuth);
+    check(
+      'sync 200',
+      sync.statusCode == 200,
+      'HTTP ${sync.statusCode} ${sync.body}',
+    );
+    if (sync.statusCode == 200) {
+      final b = jsonDecode(sync.body) as Map<String, dynamic>;
+      check('sync 가 스테이지를 올렸다', (b['newStage'] as num) > 1);
+      check('방치 골드가 들어왔다', (b['gold'] as num) > 0);
+      final saved = b['save'] as Map<String, dynamic>;
+      check(
+        '세이브에 오른 스테이지가 반영됐다',
+        (saved['stageNumber'] as num) == b['newStage'],
+      );
+      check('선물이 스폰됐다', (saved['gifts'] as List).isNotEmpty);
+    }
+  }
+
+  // ── 9. 보상 수령 (미션·일일·선물·챕터) ───────────────────────
+  print('\n[9] 보상 수령 (서버가 지급 확정)');
+  final rAuth = await signIn();
+  if (rAuth != null) {
+    // 일일보상은 시간 게이트가 UI 라 서버는 UTC 날짜 중복만 본다 → 바로 수령 가능.
+    final base = SaveGame.initial(createdAt: now);
+    await post('/state', {'save': base.toJson()}, rAuth);
+
+    final daily = await post('/daily/claim', {'rewardId': 'lunch'}, rAuth);
+    check(
+      '일일보상(lunch) 수령 200',
+      daily.statusCode == 200,
+      'HTTP ${daily.statusCode} ${daily.body}',
+    );
+    if (daily.statusCode == 200) {
+      final b = jsonDecode(daily.body) as Map<String, dynamic>;
+      check('일일보상 골드 지급', (b['save']['gold'] as num) > 0);
+    }
+    final dup = await post('/daily/claim', {'rewardId': 'lunch'}, rAuth);
+    check('같은 날 재수령 거부 (400)', dup.statusCode == 400, 'got ${dup.statusCode}');
+
+    // 미션: 목표 미달이면 거부(진행도를 서버가 소유).
+    final miss = await post('/mission/claim', {'missionId': 'hunt'}, rAuth);
+    check(
+      '목표 미달 미션 거부 (400)',
+      miss.statusCode == 400,
+      'got ${miss.statusCode}',
+    );
+
+    // 선물: 없으면 거부.
+    final gift = await post('/gift/claim', {'giftId': 'nope'}, rAuth);
+    check('없는 선물 거부 (400)', gift.statusCode == 400, 'got ${gift.statusCode}');
+
+    // 챕터: 스테이지 미달이면 빈 목록(200).
+    final road = await post('/roadmap/claim', const {}, rAuth);
+    check(
+      '챕터 수령 200(미달이면 빈 목록)',
+      road.statusCode == 200,
+      'HTTP ${road.statusCode}',
+    );
   }
 
   print('\n${'-' * 40}');

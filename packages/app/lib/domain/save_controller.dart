@@ -50,9 +50,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     var save = await repo.load();
     final now = clock.now().toUtc();
 
-    // 오프라인 정산
+    // 오프라인 정산 — **서버 권위 모드에선 서버 sync 가 한다**(로컬 계산은
+    // adoptServerSave 에 덮여 사라진다). 로컬 모드에서만 여기서 정산한다.
     final config = data.runConfig;
-    if (config != null) {
+    if (config != null && !ref.read(gameServerProvider).available) {
       final elapsed = now.difference(save.lastSeen);
       if (elapsed.inSeconds > 60) {
         final stats = deriveStats(
@@ -228,7 +229,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     IndividualBug? bug,
     Map<MaterialKind, int>? materials,
     MissionType? mission,
+    bool idle = false,
   }) async {
+    // 서버 권위 모드에서 **아이들 처치 보상은 서버 sync 가 확정**한다.
+    // 로컬로 지급하면 다음 sync(15s)에 덮여 사라지고, 클라 실시간 처치속도가
+    // 서버 방치효율보다 빨라 HUD 골드가 요동친다. 아이들 루프는 연출만 돈다.
+    if (idle && ref.read(gameServerProvider).available) return;
+
     final s = state.requireValue;
     var newXp = s.xp + xp;
     var newLevel = s.level;
@@ -336,6 +343,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 미션 [id] 완료 보상 수집. 목표 미달·정의 없음이면 false.
   /// 수집 시 티어(claims)가 1 오르고(→ 목표 상승), 카운터형은 목표만큼 차감(초과분 이월).
   Future<bool> claimMission(String id) async {
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).claimMission(id),
+    );
+    if (viaServer != null) return viaServer;
+
     final cfg = ref.read(gameDataProvider).requireValue.missionConfig;
     if (cfg == null) return false;
     MissionDef? def;
@@ -380,6 +392,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 도달 스테이지 갱신(최고 기록만).
   Future<void> reachStage(int stage) async {
+    // 서버 권위 모드: 스테이지는 서버 sync 가 경과시간으로 올린다.
+    // 로컬로 올리면 다음 sync 에 덮인다 — 스크롤러는 연출만 돈다.
+    if (ref.read(gameServerProvider).available) return;
     final s = state.requireValue;
     if (stage <= s.stageNumber) return;
     await _commit(s.copyWith(stageNumber: stage));
@@ -390,6 +405,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<List<RoadmapChapter>> grantChapterClears() async {
     final cfg = ref.read(gameDataProvider).requireValue.roadmapConfig;
     if (cfg == null) return const [];
+
+    // 서버 권위 모드: 스테이지가 서버 소유라 클리어도 서버가 확정한다.
+    // 서버가 준 클리어 id 를 챕터 객체로 되돌려 UI 축하 팝업에 넘긴다.
+    final server = ref.read(gameServerProvider);
+    if (server.available) {
+      final res = await server.claimRoadmap();
+      if (!res.isOk || res.save == null) return const [];
+      await adoptServerSave(res.save!);
+      final ids = (res.data!['cleared'] as List?)?.cast<String>() ?? const [];
+      return [
+        for (final ch in cfg.chapters)
+          if (ids.contains(ch.id)) ch,
+      ];
+    }
+
     final s = state.requireValue;
     final newly = <RoadmapChapter>[];
     for (final ch in cfg.chapters) {
@@ -417,6 +447,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 온라인 중 주기적으로 호출 → 예정 시각 도달 시 깜짝 선물 1개 지급.
   /// 만료된 선물은 정리한다. 상태가 바뀔 때만 저장.
   Future<void> maybeSpawnGift() async {
+    // 서버 권위 모드: 선물 스폰은 서버 sync 가 시각 기반으로 한다.
+    if (ref.read(gameServerProvider).available) return;
     final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
     if (cfg == null) return;
     final now = ref.read(clockProvider).now().toUtc();
@@ -461,6 +493,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 깜짝 선물 수령. [doubled]=광고 시청 시 배수. 만료/없음이면 false.
   Future<bool> claimGift(String id, {bool doubled = false}) async {
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).claimGift(id, doubled: doubled),
+    );
+    if (viaServer != null) return viaServer;
+
     final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
@@ -718,7 +755,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 판정은 **로컬 시각** 기준(점심 12시/저녁 18시).
   Future<bool> claimDaily(DailyReward reward) async {
     final now = ref.read(clockProvider).now(); // 로컬 벽시계
+    // 시간 게이트(점심/저녁)는 로컬 UI 판정으로 남긴다 — 서버는 UTC 타임존을
+    // 모른다. 서버는 하루에 같은 슬롯을 여러 번 먹는 조작만 막는다.
     if (now.hour < reward.hour) return false;
+
+    final viaServer = await _viaServer(
+      () => ref.read(gameServerProvider).claimDaily(reward.id),
+    );
+    if (viaServer != null) return viaServer;
+
     final today = dailyDateKey(now);
     final s = state.requireValue;
     if (s.dailyClaims[reward.id] == today) return false;

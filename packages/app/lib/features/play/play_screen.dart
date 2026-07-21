@@ -770,6 +770,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           bug: bug,
           materials: mats,
           mission: _isBoss ? MissionType.killBosses : MissionType.killMonsters,
+          idle: true, // 서버 모드에선 서버 sync 가 확정(로컬 억제)
         );
 
     // 재화 드롭 연출: 처치 지점에서 코인/재료가 튀어나와 캐릭터로 빨려 들어간다.
@@ -888,6 +889,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
+    // 서버 권위 모드: 서버가 경과시간으로 올린 스테이지 **아래로는 안 보이게**.
+    // 액티브 보스킬은 시각적으로 앞설 수 있으니, 서버가 더 높을 때만 따라잡는다.
+    if (save.stageNumber > _stage && ref.read(gameServerProvider).available) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && save.stageNumber > _stage) {
+          _applyStageJump(save.stageNumber);
+        }
+      });
+    }
     return Column(
       children: [
         SafeArea(bottom: false, child: _topSection(l, save)),
