@@ -115,6 +115,10 @@ void main() {
     battle: BattleConfig.fromJson(_readJson('battle.json')),
     run: RunConfig.fromJson(_readJson('run_config.json')),
     pet: PetConfig.fromJson(_readJson('pets.json')),
+    mission: MissionConfig.fromJson(_readJson('missions.json')),
+    gift: GiftConfig.fromJson(_readJson('gifts.json')),
+    daily: DailyConfig.fromJson(_readJson('daily.json')),
+    roadmap: RoadmapConfig.fromJson(_readJson('roadmap.json')),
     speciesById: {'a': species},
   );
 
@@ -594,6 +598,54 @@ void main() {
       expect(res.statusCode, 400);
       final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
       expect(body['error'], 'not_breaking');
+    });
+  });
+
+  group('보상 수령 엔드포인트', () {
+    test('인증 없이는 미션 수령 불가', () async {
+      final res = await post(handler(), '/mission/claim', {
+        'missionId': 'hunt',
+      });
+      expect(res.statusCode, 401);
+    });
+
+    test('목표 미달 미션은 400 (mine 세이브는 진행도 0)', () async {
+      final res = await post(handler(), '/mission/claim', {
+        'missionId': 'hunt',
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+      final b = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(b['error'], 'goal_not_reached');
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('선물이 없으면 400', () async {
+      final res = await post(handler(), '/gift/claim', {
+        'giftId': 'nope',
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+    });
+
+    test('일일보상 첫 수령은 성공하고 세이브가 바뀐다', () async {
+      final res = await post(handler(), '/daily/claim', {
+        'rewardId': 'lunch',
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final b = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(b['save'], isNotNull);
+      expect(fake.lastSaved, isNotNull);
+    });
+
+    test('로드맵 수령은 스테이지 미달이면 빈 목록(200)', () async {
+      final res = await post(
+        handler(),
+        '/roadmap/claim',
+        {},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 200);
+      final b = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(b['cleared'], isEmpty);
     });
   });
 }

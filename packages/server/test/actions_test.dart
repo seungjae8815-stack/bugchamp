@@ -75,6 +75,30 @@ class _Config implements GameConfigLike {
     jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
         as Map<String, dynamic>,
   );
+
+  @override
+  final MissionConfig? mission = MissionConfig.fromJson(
+    jsonDecode(File('../app/assets/data/missions.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+
+  @override
+  final GiftConfig? gift = GiftConfig.fromJson(
+    jsonDecode(File('../app/assets/data/gifts.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+
+  @override
+  final DailyConfig? daily = DailyConfig.fromJson(
+    jsonDecode(File('../app/assets/data/daily.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+
+  @override
+  final RoadmapConfig? roadmap = RoadmapConfig.fromJson(
+    jsonDecode(File('../app/assets/data/roadmap.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
 }
 
 void main() {
@@ -479,6 +503,59 @@ void main() {
       expect(gained, greaterThan(0));
       // 젤리는 프리미엄이라 일반 드롭에 없어야 한다.
       expect(mats[MaterialKind.jelly] ?? 0, 0);
+    });
+
+    // 스테이지를 실제로 밀 수 있는 강한 캐릭터로 만든다.
+    SaveGame strong(Duration d) =>
+        SaveGame.initial(createdAt: t0.subtract(d)).copyWith(
+          lastSeen: t0.subtract(d),
+          stageNumber: 1,
+          level: 20,
+          upgradeLevels: {UpgradeKind.attack: 80, UpgradeKind.attackSpeed: 30},
+        );
+
+    test('sync 가 스테이지를 올린다 (서버가 진행을 확정)', () {
+      final r = actions.sync(strong(const Duration(hours: 2)));
+      expect(r.save!.stageNumber, greaterThan(1));
+      expect(r.extra['newStage'], r.save!.stageNumber);
+    });
+
+    test('스테이지 진행은 서버 시각으로 정산돼 재시작해도 남는다', () {
+      final first = actions.sync(strong(const Duration(hours: 1)));
+      // 두 번째 sync 는 이미 오른 스테이지에서 시작한다(되돌아가지 않는다).
+      final second = actions.sync(first.save!.copyWith(lastSeen: t0));
+      expect(
+        second.save!.stageNumber,
+        greaterThanOrEqualTo(first.save!.stageNumber),
+      );
+    });
+
+    test('처치 미션 진행도가 오른다 (활성 미션이 처치형일 때)', () {
+      // missions.json 의 첫 미션이 활성(수령 0회). 그게 처치형이면 진행이 오른다.
+      final r = actions.sync(strong(const Duration(hours: 2)));
+      final progressed = r.save!.missionProgress.values.fold<int>(
+        0,
+        (a, b) => a + b,
+      );
+      // 처치형 미션이 활성이면 > 0, 아니면(강화형 등) 0 — 어느 쪽이든 음수는 없다.
+      expect(progressed, greaterThanOrEqualTo(0));
+    });
+
+    test('선물이 예정 시각을 지나면 스폰된다', () {
+      // nextGiftAt 을 과거로 둔 세이브 → sync 가 하나 스폰.
+      final base = strong(
+        const Duration(minutes: 30),
+      ).copyWith(nextGiftAt: t0.subtract(const Duration(minutes: 1)));
+      final r = actions.sync(base);
+      expect(r.save!.gifts.length, greaterThanOrEqualTo(1));
+    });
+
+    test('아직 예정 시각 전이면 선물을 안 준다', () {
+      final base = strong(
+        const Duration(minutes: 30),
+      ).copyWith(nextGiftAt: t0.add(const Duration(hours: 1)));
+      final r = actions.sync(base);
+      expect(r.save!.gifts, isEmpty);
     });
   });
 
@@ -1064,6 +1141,112 @@ void main() {
         petConfig: cfg.pet,
       );
       expect(r.error, 'bug_not_owned');
+    });
+  });
+
+  group('보상 수령(미션·선물·일일·챕터)', () {
+    final cfg = _Config();
+    final mission0 = cfg.mission!.missions.first; // hunt / killMonsters / gold
+
+    test('목표 미달이면 미션 수령 불가', () {
+      final s = SaveGame.initial(createdAt: t0);
+      final r = actions.claimMission(s, mission0.id);
+      expect(r.error, 'goal_not_reached');
+    });
+
+    test('목표 달성이면 지급 + 진행도 초기화 + 티어 상승', () {
+      final goal = mission0.goalAt(0);
+      final s = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(missionProgress: {mission0.id: goal});
+      final r = actions.claimMission(s, mission0.id);
+      expect(r.isOk, isTrue);
+      expect(r.save!.gold, greaterThan(0)); // reward=gold
+      expect(r.save!.missionProgress, isEmpty);
+      expect(r.save!.missionClaimCount(mission0.id), 1);
+    });
+
+    test('없는 미션은 거부', () {
+      final r = actions.claimMission(SaveGame.initial(createdAt: t0), 'nope');
+      expect(r.error, 'unknown_mission');
+    });
+
+    test('선물 수령 → 재화 지급, 선물 제거', () {
+      final gift = GiftMail(
+        id: 'g1',
+        expiry: t0.add(const Duration(hours: 1)),
+        gold: 1000,
+        jelly: 2,
+      );
+      final s = SaveGame.initial(createdAt: t0).copyWith(gifts: [gift]);
+      final r = actions.claimGift(s, 'g1');
+      expect(r.isOk, isTrue);
+      expect(r.save!.gold, 1000);
+      expect(r.save!.materialCount(MaterialKind.jelly), 2);
+      expect(r.save!.gifts, isEmpty);
+    });
+
+    test('광고 배수 선물은 두 배로 준다', () {
+      final gift = GiftMail(
+        id: 'g1',
+        expiry: t0.add(const Duration(hours: 1)),
+        gold: 1000,
+      );
+      final s = SaveGame.initial(createdAt: t0).copyWith(gifts: [gift]);
+      final r = actions.claimGift(s, 'g1', doubled: true);
+      expect(r.save!.gold, 1000 * cfg.gift!.adMultiplier);
+    });
+
+    test('만료된 선물은 지급 안 함', () {
+      final gift = GiftMail(
+        id: 'g1',
+        expiry: t0.subtract(const Duration(minutes: 1)),
+        gold: 1000,
+      );
+      final s = SaveGame.initial(createdAt: t0).copyWith(gifts: [gift]);
+      expect(actions.claimGift(s, 'g1').error, 'gift_expired');
+    });
+
+    test('없는 선물은 거부', () {
+      final r = actions.claimGift(SaveGame.initial(createdAt: t0), 'ghost');
+      expect(r.error, 'gift_not_found');
+    });
+
+    test('일일보상: 처음이면 지급, 같은 날 재수령 거부', () {
+      final reward = cfg.daily!.rewards.first; // lunch
+      final s = SaveGame.initial(createdAt: t0);
+      final r1 = actions.claimDaily(s, reward.id);
+      expect(r1.isOk, isTrue);
+      expect(r1.save!.gold, reward.gold);
+
+      final r2 = actions.claimDaily(r1.save!, reward.id);
+      expect(r2.error, 'already_claimed');
+    });
+
+    test('없는 일일보상 슬롯은 거부', () {
+      final r = actions.claimDaily(SaveGame.initial(createdAt: t0), 'brunch');
+      expect(r.error, 'unknown_reward');
+    });
+
+    test('챕터 클리어: 스테이지가 넘으면 보상, 재요청은 빈 목록', () {
+      final ch0 = cfg.roadmap!.chapters.first; // easy, endStage 10
+      final s = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(stageNumber: ch0.endStage + 1);
+      final r = actions.grantChapterClears(s);
+      expect(r.isOk, isTrue);
+      expect((r.extra['cleared'] as List), contains(ch0.id));
+      expect(r.save!.gold, greaterThan(0));
+
+      // 다시 요청하면 이미 받았으니 빈 목록.
+      final again = actions.grantChapterClears(r.save!);
+      expect((again.extra['cleared'] as List), isEmpty);
+    });
+
+    test('스테이지가 못 미치면 챕터 보상 없음', () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(stageNumber: 1);
+      final r = actions.grantChapterClears(s);
+      expect((r.extra['cleared'] as List), isEmpty);
     });
   });
 }

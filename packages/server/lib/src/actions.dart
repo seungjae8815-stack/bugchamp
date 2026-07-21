@@ -276,17 +276,28 @@ class GameActions {
       bugsCollected: save.bugs.length,
     );
 
-    // 접속 중 수입도 같은 함수로 계산한다 — 앱과 서버가 어긋나지 않게.
-    // 오프라인 효율(offlineEfficiency)은 앱이 쓰던 값을 그대로 따른다.
-    final report = computeOfflineReward(
+    // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(앱과 동일).
+    // 서버 모드에선 이걸 서버가 반영하지 않으면 패스 혜택이 sync 마다 사라진다.
+    final passOn = save.passActive(t);
+    final maxAccrual = passOn
+        ? Duration(hours: config.iap.passOfflineCapHours)
+        : kMaxOfflineAccrual;
+
+    // **스테이지가 오르며** 진행을 계산한다 — 앱과 같은 core_run 함수.
+    // 스테이지가 서버에 반영돼야 재시작해도 진행이 남고 수입이 맞는다.
+    final prog = simulateIdleProgress(
       config: run,
-      stageNumber: save.stageNumber,
+      startStage: save.stageNumber,
       stats: stats,
       elapsed: elapsed,
       efficiency: run.offlineEfficiency,
+      maxAccrual: maxAccrual,
     );
+    final goldGain = passOn
+        ? (prog.gold * config.iap.passIdleGoldMult).round()
+        : prog.gold;
 
-    var xp = save.xp + report.xp;
+    var xp = save.xp + prog.xp;
     var level = save.level;
     while (xp >= xpForNextLevel(level)) {
       xp -= xpForNextLevel(level);
@@ -294,14 +305,7 @@ class GameActions {
     }
 
     // 처치 수 → 곤충·재료 드롭. **서버가 굴린다.**
-    final clears = estimateClears(
-      config: run,
-      stageNumber: save.stageNumber,
-      stats: stats,
-      elapsed: elapsed,
-      efficiency: run.offlineEfficiency,
-    );
-    final rolls = clears.floor().clamp(0, maxRollsPerSync);
+    final rolls = prog.habitatClears.floor().clamp(0, maxRollsPerSync);
     final rng = (rngFactory ?? Random.new)();
     final newBugs = <IndividualBug>[];
     final mats = Map<MaterialKind, int>.from(save.materials);
@@ -328,23 +332,101 @@ class GameActions {
       }
     }
 
+    // 미션 진행(처치) — 활성 미션이 killMonsters/killBosses 면 반영.
+    // 하나만 활성이라 둘 중 최대 하나가 실제로 바뀐다.
+    var mp = _bumpMission(
+      save,
+      save.missionProgress,
+      MissionType.killMonsters,
+      prog.habitatClears.floor(),
+    );
+    mp = _bumpMission(save, mp, MissionType.killBosses, prog.bossClears);
+
+    // 깜짝선물 스폰(시각 기반, 서버 RNG).
+    final (gifts, nextGiftAt) = _spawnGifts(save, t, rng);
+
     return ActionResult.ok(
       save.copyWith(
-        gold: save.gold + report.gold,
+        gold: save.gold + goldGain,
         xp: xp,
         level: level,
         lastSeen: t,
+        stageNumber: prog.newStage,
         bugs: newBugs.isEmpty ? null : [...save.bugs, ...newBugs],
         materials: mats,
+        missionProgress: mp,
+        gifts: gifts,
+        nextGiftAt: nextGiftAt,
       ),
       extra: {
-        'gold': report.gold,
-        'xp': report.xp,
+        'gold': goldGain,
+        'xp': prog.xp,
         'elapsedSeconds': elapsed.inSeconds,
         'bugsGained': newBugs.length,
         'clears': rolls,
+        'newStage': prog.newStage,
+        'bossClears': prog.bossClears,
       },
     );
+  }
+
+  /// 활성 미션 1개를 [by] 만큼 진행시킨다(앱 `_bumpMissions` 와 같은 규칙).
+  ///
+  /// 활성 미션 = 총 수령횟수 % 미션수 — 수령할 때마다 다음 미션으로 순환한다.
+  /// 타입이 맞고 `reachStage` 가 아닐 때만 올린다(reachStage 는 스테이지 파생).
+  Map<String, int> _bumpMission(
+    SaveGame save,
+    Map<String, int> progress,
+    MissionType type,
+    int by,
+  ) {
+    final cfg = config.mission;
+    if (cfg == null || cfg.missions.isEmpty || by <= 0) return progress;
+    var totalClaims = 0;
+    for (final v in save.missionClaims.values) {
+      totalClaims += v;
+    }
+    final active = cfg.missions[totalClaims % cfg.missions.length];
+    if (active.type != type || active.type == MissionType.reachStage) {
+      return progress;
+    }
+    return Map<String, int>.from(progress)
+      ..[active.id] = (progress[active.id] ?? 0) + by;
+  }
+
+  /// 깜짝선물 스폰(앱 `maybeSpawnGift` 의 서버 포팅, 서버 RNG).
+  /// 만료된 선물을 정리하고, 예정 시각을 지났으면 하나 스폰한다.
+  (List<GiftMail>, DateTime) _spawnGifts(
+    SaveGame save,
+    DateTime t,
+    Random rng,
+  ) {
+    final alive = save.gifts.where((g) => !g.isExpired(t)).toList();
+    final cfg = config.gift;
+    if (cfg == null) return (alive, save.nextGiftAt ?? t);
+
+    final next = save.nextGiftAt;
+    if (next == null) {
+      // 최초: 첫 선물 예약만.
+      return (alive, t.add(Duration(seconds: cfg.firstDelaySec)));
+    }
+    if (t.isBefore(next)) return (alive, next); // 아직 예정 시각 전
+
+    final rescheduled = t.add(Duration(seconds: cfg.nextIntervalSec(rng)));
+    if (alive.length >= cfg.maxActive) {
+      return (alive, rescheduled); // 가득 참 → 간격만 재예약
+    }
+    final tier = cfg.rollTier(rng);
+    final gift = GiftMail(
+      id: _uuid.v4(),
+      expiry: t.add(Duration(hours: cfg.expiryHours)),
+      gold: tier.gold,
+      jelly: tier.jelly,
+      chitin: tier.chitin,
+      mineral: tier.mineral,
+      sap: tier.sap,
+    );
+    return ([...alive, gift], rescheduled);
   }
 
   /// 업그레이드 구매(일괄 [count] 단계까지).
@@ -376,11 +458,20 @@ class GameActions {
     }
     if (bought == 0) return const ActionResult.fail('insufficient_gold');
 
+    // 미션 진행(강화 구매) — 산 만큼 활성 미션에 반영.
+    final mp = _bumpMission(
+      save,
+      save.missionProgress,
+      MissionType.buyUpgrades,
+      bought,
+    );
+
     return ActionResult.ok(
       save.copyWith(
         gold: gold,
         upgradeLevels: {...save.upgradeLevels, kind: level},
         materials: mats,
+        missionProgress: mp,
       ),
       extra: {
         'bought': bought,
@@ -635,6 +726,149 @@ class GameActions {
     );
   }
 
+  /// 미션 보상 수령. 목표 미달·정의 없음이면 거부.
+  ///
+  /// 서버가 진행도를 소유하므로(§sync·upgrade 에서 bump), 클라가 진행도를
+  /// 속여 수령할 수 없다. 수령하면 티어(claims)가 1 오르고(→ 다음 미션 순환)
+  /// 진행도 전체를 초기화한다(앱 `claimMission` 과 같은 규칙).
+  ActionResult claimMission(SaveGame save, String missionId) {
+    final cfg = config.mission;
+    if (cfg == null) return const ActionResult.fail('unavailable');
+    MissionDef? def;
+    for (final d in cfg.missions) {
+      if (d.id == missionId) {
+        def = d;
+        break;
+      }
+    }
+    if (def == null) return const ActionResult.fail('unknown_mission');
+
+    final claims = save.missionClaimCount(missionId);
+    final goal = def.goalAt(claims);
+    if (save.missionProgressCount(missionId) < goal) {
+      return const ActionResult.fail('goal_not_reached');
+    }
+
+    var gold = save.gold;
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    final amount = def.rewardAt(claims);
+    switch (def.reward) {
+      case 'gold':
+        gold += amount;
+      case 'jelly':
+        mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + amount;
+      case 'material':
+        final m = def.rewardMaterial;
+        if (m != null) mats[m] = (mats[m] ?? 0) + amount;
+    }
+
+    final claimsMap = Map<String, int>.from(save.missionClaims)
+      ..[missionId] = claims + 1;
+    return ActionResult.ok(
+      save.copyWith(
+        gold: gold,
+        materials: mats,
+        missionClaims: claimsMap,
+        missionProgress: const {},
+      ),
+      extra: {'reward': def.reward, 'amount': amount},
+    );
+  }
+
+  /// 깜짝선물 수령. 만료·없음이면 거부. [doubled]=광고 시청 배수.
+  ///
+  /// ⚠️ [doubled] 는 아직 클라 신뢰다 — AdMob SSV(서버 보상 검증)가 붙기 전까지.
+  /// 출시 후 SSV 로 "실제로 광고를 봤는가"를 서버가 확인해야 이 배수를 신뢰한다.
+  ActionResult claimGift(SaveGame save, String giftId, {bool doubled = false}) {
+    final t = now().toUtc();
+    final idx = save.gifts.indexWhere((g) => g.id == giftId);
+    if (idx < 0) return const ActionResult.fail('gift_not_found');
+    final g = save.gifts[idx];
+    final gifts = List<GiftMail>.from(save.gifts)..removeAt(idx);
+    // 만료된 선물은 지급하지 않는다(다음 sync 가 정리한다).
+    if (g.isExpired(t)) return const ActionResult.fail('gift_expired');
+    final mult = doubled ? (config.gift?.adMultiplier ?? 2) : 1;
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    for (final e in g.materials.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value * mult;
+    }
+    return ActionResult.ok(
+      save.copyWith(
+        gold: save.gold + g.gold * mult,
+        materials: mats,
+        gifts: gifts,
+      ),
+      extra: {'gold': g.gold * mult, 'doubled': doubled},
+    );
+  }
+
+  /// 일일보상 수령. **UTC 날짜당 슬롯 1회**만 지급한다.
+  ///
+  /// 앱은 로컬 벽시계로 "점심 12시/저녁 18시" 게이트를 두지만, 서버는
+  /// 클라 타임존을 알 수 없다. 그래서 **시간 게이트는 UI(UX)에 맡기고**,
+  /// 서버는 하루에 같은 슬롯을 여러 번 먹는 조작만 막는다(UTC 날짜 중복).
+  ActionResult claimDaily(SaveGame save, String rewardId) {
+    final cfg = config.daily;
+    if (cfg == null) return const ActionResult.fail('unavailable');
+    DailyReward? reward;
+    for (final r in cfg.rewards) {
+      if (r.id == rewardId) {
+        reward = r;
+        break;
+      }
+    }
+    if (reward == null) return const ActionResult.fail('unknown_reward');
+
+    final today = dailyDateKey(now().toUtc());
+    if (save.dailyClaims[rewardId] == today) {
+      return const ActionResult.fail('already_claimed');
+    }
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    for (final e in reward.materials.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value;
+    }
+    final claims = Map<String, String>.from(save.dailyClaims)
+      ..[rewardId] = today;
+    return ActionResult.ok(
+      save.copyWith(
+        gold: save.gold + reward.gold,
+        materials: mats,
+        dailyClaims: claims,
+      ),
+      extra: {'gold': reward.gold},
+    );
+  }
+
+  /// 최고 도달 스테이지 기준 **처음 클리어한 챕터** 보상을 지급한다.
+  ///
+  /// 스테이지를 서버가 소유하므로(sync 에서 올림) 챕터 클리어도 서버가 확정한다.
+  /// 이미 받은 챕터는 건너뛴다(중복 지급 방지). 새로 받은 챕터 id 를 extra 로.
+  ActionResult grantChapterClears(SaveGame save) {
+    final cfg = config.roadmap;
+    if (cfg == null) return const ActionResult.fail('unavailable');
+    final newly = <String>[];
+    var gold = save.gold;
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    final cleared = Set<String>.from(save.clearedChapters);
+    for (final ch in cfg.chapters) {
+      if (ch.clearedBy(save.stageNumber) && !cleared.contains(ch.id)) {
+        gold += ch.rewardGold;
+        for (final e in ch.rewardMaterials.entries) {
+          mats[e.key] = (mats[e.key] ?? 0) + e.value;
+        }
+        cleared.add(ch.id);
+        newly.add(ch.id);
+      }
+    }
+    if (newly.isEmpty) {
+      return ActionResult.ok(save, extra: {'cleared': const <String>[]});
+    }
+    return ActionResult.ok(
+      save.copyWith(gold: gold, materials: mats, clearedChapters: cleared),
+      extra: {'cleared': newly},
+    );
+  }
+
   /// 짝짓기 시작. 조건 검사와 **자식 롤 시드 생성을 서버가 한다.**
   ///
   /// ⚠️ 기존 앱은 시드를 UI 가 만들어 넘겼다. 그러면 시드를 골라가며
@@ -811,6 +1045,12 @@ abstract interface class GameConfigLike {
   RunConfig get run;
   PetConfig get pet;
   EnhanceConfig? get enhance;
+
+  /// 미션·선물·일일보상·로드맵 — 방치 보상 루프. 없으면 해당 기능은 서버가 건너뛴다.
+  MissionConfig? get mission;
+  GiftConfig? get gift;
+  DailyConfig? get daily;
+  RoadmapConfig? get roadmap;
 
   /// 드롭 롤 대상 종 목록.
   List<Species> get speciesList;

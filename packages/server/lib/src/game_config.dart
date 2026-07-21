@@ -20,6 +20,10 @@ class GameConfig implements GameConfigLike {
     required this.run,
     required this.pet,
     this.enhance,
+    this.mission,
+    this.gift,
+    this.daily,
+    this.roadmap,
     this.speciesById = const {},
   });
 
@@ -37,6 +41,14 @@ class GameConfig implements GameConfigLike {
 
   @override
   final EnhanceConfig? enhance;
+  @override
+  final MissionConfig? mission;
+  @override
+  final GiftConfig? gift;
+  @override
+  final DailyConfig? daily;
+  @override
+  final RoadmapConfig? roadmap;
 
   @override
   List<Species> get speciesList => speciesById.values.toList();
@@ -55,10 +67,22 @@ class GameConfig implements GameConfigLike {
       return jsonDecode(await file.readAsString()) as Map<String, dynamic>;
     }
 
+    /// 있으면 읽고, 없으면 null(방치 보상 루프는 없어도 서버가 뜬다).
+    Future<Map<String, dynamic>?> readOpt(String name) async {
+      final file = File('$base/$name');
+      if (!file.existsSync()) return null;
+      return jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+    }
+
     final speciesJson = await read('species.json');
     final speciesList = (speciesJson['species'] as List)
         .cast<Map<String, dynamic>>()
         .map(Species.fromJson);
+
+    final missionJson = await readOpt('missions.json');
+    final giftJson = await readOpt('gifts.json');
+    final dailyJson = await readOpt('daily.json');
+    final roadmapJson = await readOpt('roadmap.json');
 
     return GameConfig(
       speciesById: {for (final s in speciesList) s.id: s},
@@ -67,6 +91,10 @@ class GameConfig implements GameConfigLike {
       run: RunConfig.fromJson(await read('run_config.json')),
       pet: PetConfig.fromJson(await read('pets.json')),
       enhance: EnhanceConfig.fromJson(await read('enhance.json')),
+      mission: missionJson == null ? null : MissionConfig.fromJson(missionJson),
+      gift: giftJson == null ? null : GiftConfig.fromJson(giftJson),
+      daily: dailyJson == null ? null : DailyConfig.fromJson(dailyJson),
+      roadmap: roadmapJson == null ? null : RoadmapConfig.fromJson(roadmapJson),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart' show kMaxOfflineAccrual;
+import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
 import 'enums.dart';
@@ -147,6 +148,137 @@ class OfflineReport {
     gold: 0,
     xp: 0,
     accrued: Duration.zero,
+  );
+}
+
+/// 방치 진행 결과 — 골드/경험치뿐 아니라 **스테이지 진행**과 처치 수를 함께 낸다.
+///
+/// 서버가 권위를 가질 때 스테이지가 서버에만 남으면 재시작마다 진행이
+/// 사라지므로(로컬 스크롤러는 연출), 방치 정산이 스테이지도 올려야 한다.
+@immutable
+class IdleProgress {
+  const IdleProgress({
+    required this.newStage,
+    required this.gold,
+    required this.xp,
+    required this.habitatClears,
+    required this.bossClears,
+    required this.accrued,
+  });
+
+  /// 정산 후 도달 스테이지(시작 스테이지 이상).
+  final int newStage;
+  final int gold;
+  final int xp;
+
+  /// 처치한 서식지 수(소수) — 드롭 롤·`killMonsters` 미션 근거.
+  final double habitatClears;
+
+  /// 처치한 보스 수 — `killBosses` 미션 근거.
+  final int bossClears;
+  final Duration accrued;
+
+  bool get isEmpty => gold <= 0 && xp <= 0 && bossClears == 0;
+
+  /// 진행 없이 스테이지만 유지하는 결과(예산 0·dps 0 인 경우).
+  IdleProgress copyStage(int stage) => IdleProgress(
+    newStage: stage,
+    gold: 0,
+    xp: 0,
+    habitatClears: 0,
+    bossClears: 0,
+    accrued: Duration.zero,
+  );
+
+  static const IdleProgress empty = IdleProgress(
+    newStage: 1,
+    gold: 0,
+    xp: 0,
+    habitatClears: 0,
+    bossClears: 0,
+    accrued: Duration.zero,
+  );
+}
+
+/// 경과시간 동안의 방치 진행을 **스테이지가 오르며** 시뮬레이션한다.
+///
+/// 한 스테이지 = 서식지 [RunConfig.habitatsPerStage] 개 + 보스 1.
+/// 스테이지를 다 밀면 다음 스테이지로 넘어가고, 그러면 적 HP 가 커져
+/// (`hpGrowth`) 처치가 느려진다 — 그래서 무한히 오르지 않고 전투력에 수렴한다.
+///
+/// [maxStageAdvance] 는 안전장치(dps 가 비정상으로 크면 루프가 길어질 수 있다).
+/// 서버·앱이 **같은 함수**를 써야 "서버가 준 스테이지"와 앱 연출이 어긋나지 않는다.
+IdleProgress simulateIdleProgress({
+  required RunConfig config,
+  required int startStage,
+  required CharacterStats stats,
+  required Duration elapsed,
+  Duration maxAccrual = kMaxOfflineAccrual,
+  double efficiency = 0.5,
+  int maxStageAdvance = 500,
+}) {
+  if (elapsed <= Duration.zero) {
+    return IdleProgress.empty.copyStage(startStage);
+  }
+  final dps = stats.attack * stats.attackSpeed;
+  if (dps <= 0) return IdleProgress.empty.copyStage(startStage);
+
+  final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
+  var budget = capped.inMilliseconds / 1000.0;
+  final eff = efficiency <= 0 ? 1.0 : efficiency;
+  final bossDps = dps * (stats.bossDamage <= 0 ? 1.0 : stats.bossDamage);
+
+  var stage = startStage;
+  var gold = 0.0;
+  var xp = 0.0;
+  var habitatClears = 0.0;
+  var bossClears = 0;
+  var advanced = 0;
+
+  while (budget > 0 && advanced < maxStageAdvance) {
+    final depth = stage - 1;
+    final habHp = habitatMaxHp(config, depth).toDouble();
+    final bossHp = bossMaxHp(config, depth).toDouble();
+    // 효율을 시간에 반영: 실제로 한 번 처치하는 데 드는 예산(초).
+    final habTime = (habHp / dps + 0.6) / eff;
+    final bossTime = (bossHp / bossDps + 0.6) / eff;
+    final stageTime = config.habitatsPerStage * habTime + bossTime;
+
+    final goldHab = rewardGold(config, depth, stats.rewardMultiplier);
+    final xpHab = rewardXp(config, depth);
+
+    if (budget >= stageTime) {
+      // 스테이지 전체(서식지들 + 보스)를 밀고 다음 스테이지로.
+      gold +=
+          config.habitatsPerStage * goldHab +
+          rewardGold(config, depth, stats.rewardMultiplier, boss: true);
+      xp +=
+          config.habitatsPerStage * xpHab + rewardXp(config, depth, boss: true);
+      habitatClears += config.habitatsPerStage;
+      bossClears += 1;
+      budget -= stageTime;
+      stage += 1;
+      advanced += 1;
+    } else {
+      // 남은 예산으로 서식지만(보스 못 잡으면 스테이지는 안 넘어간다).
+      final n = budget / habTime;
+      final cleared = n > config.habitatsPerStage
+          ? config.habitatsPerStage.toDouble()
+          : n;
+      gold += cleared * goldHab;
+      xp += cleared * xpHab;
+      habitatClears += cleared;
+      budget = 0;
+    }
+  }
+
+  return IdleProgress(
+    newStage: stage,
+    gold: gold.round(),
+    xp: (xp * stats.xpMultiplier).round(),
+    habitatClears: habitatClears,
+    bossClears: bossClears,
+    accrued: capped,
   );
 }
 

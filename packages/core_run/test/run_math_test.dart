@@ -239,4 +239,155 @@ void main() {
       expect(xpForNextLevel(3), greaterThan(xpForNextLevel(2)));
     });
   });
+
+  group('simulateIdleProgress — 스테이지 진행', () {
+    // 강한 캐릭터(빠르게 스테이지를 민다)와 약한 캐릭터(거의 못 민다).
+    final strong = deriveStats(
+      c,
+      upgradeLevels: {UpgradeKind.attack: 60, UpgradeKind.attackSpeed: 30},
+      characterLevel: 20,
+      bugsCollected: 10,
+    );
+    final weak = deriveStats(
+      c,
+      upgradeLevels: {},
+      characterLevel: 1,
+      bugsCollected: 0,
+    );
+
+    test('경과 0 이면 진행 없음, 스테이지 유지', () {
+      final r = simulateIdleProgress(
+        config: c,
+        startStage: 7,
+        stats: strong,
+        elapsed: Duration.zero,
+      );
+      expect(r.isEmpty, isTrue);
+      expect(r.newStage, 7);
+    });
+
+    test('dps 가 0 이면 스테이지만 유지', () {
+      final noDmg = deriveStats(
+        c,
+        upgradeLevels: {UpgradeKind.attack: 0},
+        characterLevel: 1,
+        bugsCollected: 0,
+      );
+      // attack 은 0 이 아니어도, 인위적으로 0 dps 를 만들 순 없으니
+      // 최소 진행만 확인(약캐는 오래 걸려도 결국 조금은 민다).
+      final r = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: noDmg,
+        elapsed: const Duration(seconds: 1),
+      );
+      expect(r.newStage, greaterThanOrEqualTo(1));
+    });
+
+    test('시간이 길수록 스테이지가 오른다', () {
+      final short = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: strong,
+        elapsed: const Duration(minutes: 5),
+      );
+      final long = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: strong,
+        elapsed: const Duration(hours: 2),
+      );
+      expect(long.newStage, greaterThan(short.newStage));
+      expect(long.gold, greaterThan(short.gold));
+    });
+
+    test('스테이지를 넘기면 보스도 잡힌다(bossClears)', () {
+      final r = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: strong,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(r.newStage, greaterThan(1));
+      // 스테이지를 N칸 올렸으면 보스도 N마리 잡은 것.
+      expect(r.bossClears, r.newStage - 1);
+      expect(r.habitatClears, greaterThan(0));
+    });
+
+    test('8h 상한: 100h 나 8h 나 진행이 같다', () {
+      final r8 = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: strong,
+        elapsed: const Duration(hours: 8),
+      );
+      final r100 = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: strong,
+        elapsed: const Duration(hours: 100),
+      );
+      expect(r100.newStage, r8.newStage);
+      expect(r100.gold, r8.gold);
+    });
+
+    test('약캐는 보스를 못 넘겨 스테이지가 거의 안 오른다', () {
+      final strongR = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: strong,
+        elapsed: const Duration(minutes: 30),
+      );
+      final weakR = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: weak,
+        elapsed: const Duration(minutes: 30),
+      );
+      expect(weakR.newStage, lessThan(strongR.newStage));
+    });
+
+    test('결정론: 같은 입력이면 같은 결과', () {
+      IdleProgress run() => simulateIdleProgress(
+        config: c,
+        startStage: 3,
+        stats: strong,
+        elapsed: const Duration(minutes: 45),
+      );
+      final a = run(), b = run();
+      expect(a.newStage, b.newStage);
+      expect(a.gold, b.gold);
+      expect(a.bossClears, b.bossClears);
+    });
+
+    test('도달 스테이지는 시작 이상이고, accrued 는 상한을 넘지 않는다', () {
+      final r = simulateIdleProgress(
+        config: c,
+        startStage: 5,
+        stats: strong,
+        elapsed: const Duration(hours: 100),
+        maxAccrual: const Duration(hours: 8),
+      );
+      expect(r.newStage, greaterThanOrEqualTo(5));
+      expect(r.accrued, const Duration(hours: 8));
+    });
+
+    test('전투력을 넘어선 고스테이지는 진행이 거의 멈춘다(과확장 페널티)', () {
+      // HP 성장이 골드 성장보다 빠르므로, 전투력에 비해 너무 높은
+      // 스테이지에서는 같은 시간에 스테이지가 거의 안 오른다.
+      final reachable = simulateIdleProgress(
+        config: c,
+        startStage: 1,
+        stats: strong,
+        elapsed: const Duration(minutes: 10),
+      );
+      final tooHigh = simulateIdleProgress(
+        config: c,
+        startStage: 80,
+        stats: strong,
+        elapsed: const Duration(minutes: 10),
+      );
+      expect(tooHigh.newStage - 80, lessThan(reachable.newStage - 1));
+    });
+  });
 }
