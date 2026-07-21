@@ -776,7 +776,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           bug: bug,
           materials: mats,
           mission: _isBoss ? MissionType.killBosses : MissionType.killMonsters,
-          idle: true, // 서버 모드에선 서버 sync 가 확정(로컬 억제)
+          idle: true, // 표시용 힌트(현재 로직에서 분기 없음)
         );
 
     // 재화 드롭 연출: 처치 지점에서 코인/재료가 튀어나와 캐릭터로 빨려 들어간다.

@@ -138,7 +138,7 @@
   "leaderboardOnlineNote": "온라인 랭킹 · 실시간 반영",
   "backendOnline": "온라인",
   "backendLocal": "로컬",
-  "backendServer": "서버권위",
+  "backendServer": "서버연결",
   "settingsBuildLabel": "빌드 {label}",
   "leaderboardMyRank": "내 순위 #{n}",
   "stanceAttack": "공격",

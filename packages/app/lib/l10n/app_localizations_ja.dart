@@ -442,7 +442,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backendLocal => 'Local';
 
   @override
-  String get backendServer => 'Server-Auth';
+  String get backendServer => 'Server';
 
   @override
   String settingsBuildLabel(String label) {

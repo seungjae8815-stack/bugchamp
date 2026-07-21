@@ -241,7 +241,7 @@
   "leaderboardOnlineNote": "Online ranking · live",
   "backendOnline": "Online",
   "backendLocal": "Local",
-  "backendServer": "Server-Auth",
+  "backendServer": "Server",
   "settingsBuildLabel": "Build {label}",
   "@settingsBuildLabel": {
     "placeholders": {
