@@ -365,6 +365,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   bool _showBuildDetail = false;
 
   int _stage = 1;
+
+  /// 스크롤러가 로컬에서 도달한 **최고** 스테이지. 실패 후퇴(_stage↓)와 무관하게
+  /// 유지된다 — 시작 시 서버 세이브 채택(다른 기기 진행)을 따라잡을지 판단하는
+  /// 기준으로만 쓴다. 이게 없으면 후퇴할 때마다 최고기록으로 튕겨 올라간다.
+  int _stageMax = 1;
   int _habitatIndex = 0;
   bool _isBoss = false;
   HabitatKind _kind = HabitatKind.tree;
@@ -412,6 +417,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _config = _data.runConfig!;
     final save = ref.read(saveControllerProvider).requireValue;
     _stage = save.stageNumber;
+    _stageMax = save.stageNumber;
     final stats = _stats(save);
     _playerHpMax = stats.maxHp;
     _playerHp = stats.maxHp;
@@ -858,6 +864,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _playerHp = math.min(_playerHpMax, _playerHp + _playerHpMax * 0.3);
     if (_isBoss) {
       _stage++;
+      _stageMax = math.max(_stageMax, _stage);
       _habitatIndex = 0;
       _afterBossAdvance(_stage); // 최고기록 갱신 + 챕터 클리어 보상
     } else {
@@ -889,11 +896,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
-    // 시작 시 서버 세이브를 채택하면(다른 기기 진행) 로컬 스크롤러보다 스테이지가
-    // 높을 수 있다 — 그럴 때만 따라잡는다(뒤로는 안 감).
-    if (save.stageNumber > _stage) {
+    // 다른 기기에서 더 진행한 세이브를 채택했을 때만 따라잡는다.
+    // **로컬 최고치(_stageMax) 기준** — 실패 후퇴(_stage↓)는 방해하지 않는다.
+    if (save.stageNumber > _stageMax) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && save.stageNumber > _stage) {
+        if (mounted && save.stageNumber > _stageMax) {
           _applyStageJump(save.stageNumber);
         }
       });
@@ -3242,6 +3249,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _applyStageJump(int n) {
     setState(() {
       _stage = n;
+      _stageMax = math.max(_stageMax, n);
       _habitatIndex = 0;
       _isBoss = false;
       _defeated = false;
