@@ -431,6 +431,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backendLocal => '로컬';
 
   @override
+  String get backendServer => '서버권위';
+
+  @override
   String settingsBuildLabel(String label) {
     return '빌드 $label';
   }

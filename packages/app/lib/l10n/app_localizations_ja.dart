@@ -442,6 +442,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backendLocal => 'Local';
 
   @override
+  String get backendServer => 'Server-Auth';
+
+  @override
   String settingsBuildLabel(String label) {
     return 'Build $label';
   }

@@ -886,6 +886,12 @@ abstract class AppLocalizations {
   /// **'Local'**
   String get backendLocal;
 
+  /// No description provided for @backendServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-Auth'**
+  String get backendServer;
+
   /// No description provided for @settingsBuildLabel.
   ///
   /// In en, this message translates to:

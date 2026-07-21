@@ -13,6 +13,7 @@ import '../../data/game_data.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
+import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
@@ -2496,6 +2497,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _showSettings(AppLocalizations l) {
     // 실기에서 어떤 빌드로 켰는지(온라인 Supabase / 로컬) 바로 확인.
     final online = ref.read(pvpBackendProvider).isRemote;
+    // 권위 서버 연결 여부는 Supabase 연결과 별개다 — GAME_SERVER_URL 이
+    // 주입돼야 붙는다. 실기 검증 때 "지금 서버 경로로 도는가"를 눈으로 본다.
+    final serverAuthority = ref.read(gameServerProvider).available;
     showGameDialog<void>(
       context,
       title: l.settingsTitle,
@@ -2636,6 +2640,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           ),
                         ),
                       ),
+                      // 권위 서버에 붙었을 때만 뜬다. 이 칩이 없으면 전투·재화는
+                      // 아직 로컬 계산이다 — 검증 빌드에서 반드시 확인할 신호.
+                      if (serverAuthority) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0x333B7A2A),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '🔐 ${l.backendServer}',
+                            style: const TextStyle(
+                              color: Color(0xFF9FE38B),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                       // 릴리즈인데 구글 테스트 광고 단위로 도는 경우 경고.
                       // 이대로 업로드하면 실사용자가 테스트 광고를 보고 수익도 0이라,
                       // 업로드 전에 눈으로 잡을 수 있게 빌드 표시 옆에 띄운다.
