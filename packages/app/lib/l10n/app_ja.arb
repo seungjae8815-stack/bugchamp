@@ -436,5 +436,8 @@
   "updateAvailableTitle": "新しいバージョンがあります",
   "updateAvailableBody": "改善されたバージョンが準備できました。今すぐ更新しますか？",
   "updateNow": "アップデート",
-  "updateLater": "あとで"
+  "updateLater": "あとで",
+  "accountSignInApple": "Appleでサインイン",
+  "termsOfUse": "利用規約",
+  "privacyPolicy": "プライバシーポリシー"
 }

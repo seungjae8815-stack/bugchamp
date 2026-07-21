@@ -924,5 +924,8 @@
   "updateAvailableTitle": "New version available",
   "updateAvailableBody": "An improved version is ready. Update now?",
   "updateNow": "Update",
-  "updateLater": "Later"
+  "updateLater": "Later",
+  "accountSignInApple": "Sign in with Apple",
+  "termsOfUse": "Terms of Use",
+  "privacyPolicy": "Privacy Policy"
 }

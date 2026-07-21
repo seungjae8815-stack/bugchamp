@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// 계정(로그인) 계약.
@@ -22,6 +28,13 @@ abstract interface class AuthService {
 
   /// 구글 로그인. 성공 시 true. 사용자가 취소하면 false.
   Future<bool> signInWithGoogle();
+
+  /// Apple 로그인(iOS). Apple 4.8 대응 — 제3자 로그인이 있으면 프라이버시
+  /// 로그인도 함께 제공해야 한다. 성공 시 true, 취소 시 false.
+  Future<bool> signInWithApple();
+
+  /// Apple 로그인을 쓸 수 있는 환경인지(iOS 등 지원 플랫폼).
+  bool get appleAvailable;
 
   /// 로그아웃 → 다시 익명 계정으로 돌아간다(로컬 세이브는 유지).
   Future<void> signOut();
@@ -49,6 +62,10 @@ class NoAuthService implements AuthService {
   String? get accountLabel => null;
   @override
   Future<bool> signInWithGoogle() async => false;
+  @override
+  Future<bool> signInWithApple() async => false;
+  @override
+  bool get appleAvailable => false;
   @override
   Future<void> signOut() async {}
 
@@ -115,6 +132,57 @@ class SupabaseAuthService implements AuthService {
       debugPrint('google sign-in error: $e');
       return false;
     }
+  }
+
+  @override
+  bool get appleAvailable => available && !kIsWeb && Platform.isIOS;
+
+  @override
+  Future<bool> signInWithApple() async {
+    if (!appleAvailable) return false;
+    try {
+      // nonce: 원문을 SHA256 해서 Apple 에 넘기고, 원문을 Supabase 에 넘긴다.
+      // Supabase 가 토큰 속 해시와 원문을 대조해 재생공격을 막는다.
+      final rawNonce = _randomNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+      final cred = await SignInWithApple.getAppleIDCredential(
+        scopes: const [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+      final idToken = cred.identityToken;
+      if (idToken == null) {
+        debugPrint('apple sign-in: identityToken 없음');
+        return false;
+      }
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+      return true;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // 취소 포함 — 조용히 실패.
+      debugPrint('apple sign-in cancelled/failed: ${e.code}');
+      return false;
+    } catch (e) {
+      debugPrint('apple sign-in error: $e');
+      return false;
+    }
+  }
+
+  /// 암호학적으로 안전한 nonce(Apple 로그인 재생공격 방지).
+  String _randomNonce([int length = 32]) {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._';
+    final rng = Random.secure();
+    return List.generate(
+      length,
+      (_) => chars[rng.nextInt(chars.length)],
+    ).join();
   }
 
   @override

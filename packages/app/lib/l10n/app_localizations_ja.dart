@@ -1448,4 +1448,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get updateLater => 'あとで';
+
+  @override
+  String get accountSignInApple => 'Appleでサインイン';
+
+  @override
+  String get termsOfUse => '利用規約';
+
+  @override
+  String get privacyPolicy => 'プライバシーポリシー';
 }

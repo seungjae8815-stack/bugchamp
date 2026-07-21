@@ -1,0 +1,61 @@
+# Codemagic — iOS 클라우드 빌드(맥 없이 App Store 제출).
+#
+# 준비(Codemagic 웹 UI 에서 1회):
+#  1) 이 저장소를 Codemagic 에 연결.
+#  2) Teams → Integrations → App Store Connect: API 키(Issuer ID·Key ID·.p8) 등록.
+#  3) 코드 서명: iOS code signing → "Automatic"(App Store Connect API 사용) 권장.
+#  4) 환경변수 그룹 `bugchamp_ios` 에 아래를 **암호화**로 넣는다
+#     (supabase.env.json 은 gitignore 라 CI 에 없다 → 값으로 직접 주입):
+#       SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_WEB_CLIENT_ID,
+#       GAME_SERVER_URL, ADMOB_REWARDED_IOS
+#     그리고 App Store Connect 발행용:
+#       APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_KEY_IDENTIFIER,
+#       APP_STORE_CONNECT_PRIVATE_KEY, BUNDLE_ID(=com.bugchamp.app)
+#
+# 참고: 이 파일은 시작 템플릿이다 — 팀·번들 설정에 맞게 서명 부분을 조정한다.
+
+workflows:
+  ios-release:
+    name: Bug Champ iOS (App Store)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - bugchamp_ios
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.bugchamp.app"
+    integrations:
+      app_store_connect: bugchamp_asc   # Codemagic UI 에서 만든 통합 이름
+    scripts:
+      - name: Flutter 의존성(워크스페이스 루트에서 먼저)
+        script: |
+          flutter --version
+          flutter pub get
+      - name: 코드 서명(자동 — App Store Connect API)
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: IPA 빌드 (dart-define 주입)
+        script: |
+          cd packages/app
+          flutter build ipa --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+            --dart-define=GAME_SERVER_URL="$GAME_SERVER_URL" \
+            --dart-define=ADMOB_REWARDED_IOS="$ADMOB_REWARDED_IOS" \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - packages/app/build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        # TestFlight 내부 테스터에게 자동 배포. 심사는 콘솔에서 수동 제출 권장.
+        submit_to_testflight: true
+        submit_to_app_store: false

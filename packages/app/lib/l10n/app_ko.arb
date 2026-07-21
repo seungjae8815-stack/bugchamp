@@ -471,5 +471,8 @@
   "updateAvailableTitle": "새 버전이 있어요",
   "updateAvailableBody": "더 좋아진 버전이 준비됐어요. 지금 업데이트할까요?",
   "updateNow": "업데이트",
-  "updateLater": "나중에"
+  "updateLater": "나중에",
+  "accountSignInApple": "Apple로 로그인",
+  "termsOfUse": "이용약관",
+  "privacyPolicy": "개인정보처리방침"
 }

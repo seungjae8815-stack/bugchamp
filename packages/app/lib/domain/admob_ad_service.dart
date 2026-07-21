@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -45,8 +46,24 @@ class AdMobAdService implements AdService {
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
+    // iOS: 광고 IDFA 를 쓰기 전에 App Tracking Transparency 권한을 묻는다.
+    // 이 프롬프트가 없으면 심사에서 거절될 수 있다(5.1.2). 거부해도 광고는
+    // 나가되(비맞춤), 요청 자체는 반드시 해야 한다.
+    await _requestTrackingIfNeeded();
     await MobileAds.instance.initialize();
     preload();
+  }
+
+  Future<void> _requestTrackingIfNeeded() async {
+    if (kIsWeb || !Platform.isIOS) return;
+    try {
+      final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+      if (status == TrackingStatus.notDetermined) {
+        await AppTrackingTransparency.requestTrackingAuthorization();
+      }
+    } catch (e) {
+      debugPrint('ATT 요청 실패(무시): $e');
+    }
   }
 
   @override

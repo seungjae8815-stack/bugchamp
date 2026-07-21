@@ -4,6 +4,7 @@ import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -2776,8 +2777,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         if (auth.available && !auth.isSignedIn)
           gameDialogButton(l.accountSignIn, () async {
             Navigator.pop(context);
-            await _signIn(l);
+            await _signIn(l, ref.read(authServiceProvider).signInWithGoogle);
           }),
+        // Apple 로그인은 iOS 에서만 노출(Apple 4.8 대응). 구글과 나란히.
+        if (auth.appleAvailable && !auth.isSignedIn)
+          gameDialogButton(l.accountSignInApple, () async {
+            Navigator.pop(context);
+            await _signIn(l, ref.read(authServiceProvider).signInWithApple);
+          }, color: const Color(0xFF1A1A1A)),
         if (auth.isSignedIn)
           gameDialogButton(l.accountSignOut, () async {
             Navigator.pop(context);
@@ -2794,9 +2801,35 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           Navigator.pop(context);
           await _deleteAccount(l);
         }, color: const Color(0xFF7A2E2E)),
+        // 이용약관·개인정보처리방침 — 스토어 심사(특히 채팅 UGC) 요건.
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _policyLink(l.termsOfUse, _termsUrl),
+            const Text('·', style: TextStyle(color: Color(0x66FFFFFF))),
+            _policyLink(l.privacyPolicy, _privacyUrl),
+          ],
+        ),
       ],
     );
   }
+
+  static const _termsUrl =
+      'https://dkc260701.github.io/bugchamp-policy/terms.html';
+  static const _privacyUrl = 'https://dkc260701.github.io/bugchamp-policy/';
+
+  Widget _policyLink(String label, String url) => TextButton(
+    onPressed: () =>
+        launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+    child: Text(
+      label,
+      style: const TextStyle(
+        color: Color(0x99FFFFFF),
+        fontSize: 11.5,
+        decoration: TextDecoration.underline,
+      ),
+    ),
+  );
 
   /// 계정·서버 데이터 영구 삭제. 되돌릴 수 없으므로 **확인 단어 입력**을 요구한다.
   ///
@@ -2895,9 +2928,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ..showSnackBar(SnackBar(content: Text(l.accountDeleteDone)));
   }
 
-  /// 구글 로그인 → 성공 시 클라우드 백업 유무에 따라 동기화 방향을 묻는다.
-  Future<void> _signIn(AppLocalizations l) async {
-    final ok = await ref.read(authServiceProvider).signInWithGoogle();
+  /// 로그인(구글/Apple) → 성공 시 클라우드 백업 유무에 따라 동기화 방향을 묻는다.
+  /// [doSignIn] 만 갈아끼우면 어느 제공자든 같은 후처리를 공유한다.
+  Future<void> _signIn(
+    AppLocalizations l,
+    Future<bool> Function() doSignIn,
+  ) async {
+    final ok = await doSignIn();
     if (!mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context)

@@ -1447,4 +1447,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get updateLater => '나중에';
+
+  @override
+  String get accountSignInApple => 'Apple로 로그인';
+
+  @override
+  String get termsOfUse => '이용약관';
+
+  @override
+  String get privacyPolicy => '개인정보처리방침';
 }
