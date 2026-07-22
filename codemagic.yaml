@@ -33,6 +33,8 @@ workflows:
       - name: Flutter 의존성(워크스페이스 루트에서 먼저)
         script: |
           flutter --version
+          # google_mobile_ads·sign_in_with_apple 등이 SPM 미지원 → SPM 끄고 CocoaPods 만 사용.
+          flutter config --no-enable-swift-package-manager
           flutter pub get
       - name: 코드 서명(자동 — App Store Connect API)
         script: |
