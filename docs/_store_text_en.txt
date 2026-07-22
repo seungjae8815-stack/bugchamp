@@ -2,6 +2,9 @@
  Bug Champ — Store Listing (English)
 ========================================
 
+[App Store — App Name] (max 30 chars) ★ CONFIRMED unique on App Store
+Bug Champ: Idle Insect RPG
+
 [App Store Subtitle] (max 30 chars)
 Collect, breed & battle bugs
 
@@ -15,42 +18,43 @@ Every bug is unique. Build the perfect team, master the five-element clashes, an
 idle,bug,insect,collect,battle,breeding,creature,beetle,afk,rpg,strategy,monster,team
 
 [Full description] (App Store & Google Play)
-🪲 Collect, raise, and battle your very own bugs!
+--- App Store SAFE VERSION (ASCII only — no special chars that ASC rejects) ---
+Collect, raise, and battle your very own bugs!
 
-Rhino beetles, stag beetles, mantises, longhorns… gather a wild variety of insects and build the ultimate team in this idle battler. Your bugs keep foraging even when the game is closed.
+Rhino beetles, stag beetles, mantises, longhorns... gather a wild variety of insects and build the ultimate team in this idle battler. Your bugs keep foraging even when the game is closed.
 
-■ Idle collecting
+- Idle collecting -
 Bugs auto-explore habitats and hunt bosses. Rewards pile up for up to 8 hours while you're away.
 
-■ Every bug is one of a kind
-No two bugs are the same — not even two rhino beetles.
-· Element (Wood · Fire · Earth · Metal · Water)
-· Size — rolled on a normal distribution; bigger is stronger
-· Potential 1–5★ — sets the enhancement cap
-· Temperament — its behavior in battle
-· Sex — a breeding condition
+- Every bug is one of a kind -
+No two bugs are the same - not even two rhino beetles.
+* Element (Wood, Fire, Earth, Metal, Water)
+* Size - rolled on a normal distribution; bigger is stronger
+* Potential 1-5 stars - sets the enhancement cap
+* Temperament - its behavior in battle
+* Sex - a breeding condition
 
-■ Battles that reward thinking
+- Battles that reward thinking -
 This isn't a plain stat race.
-· Three stances — Attack / Defend / Heal (Attack > Heal > Defend > Attack)
-· Energy management — no infinite defending or healing
-· Elemental clash deals 1.5× damage
-· Team order IS the strategy — when a front bug empowers the one behind, the whole team grows stronger
-· Each battlefield favors a different element
-In manual battles you read your opponent move by move — pure mind games.
+* Three stances - Attack / Defend / Heal (Attack > Heal > Defend > Attack)
+* Energy management - no infinite defending or healing
+* Elemental clash deals 1.5x damage
+* Team order IS the strategy - when a front bug empowers the one behind, the whole team grows stronger
+* Each battlefield favors a different element
+In manual battles you read your opponent move by move - pure mind games.
 
-■ Breed stronger champions
+- Breed stronger champions -
 Pair adult males and females to get eggs, then raise them in the incubator. A child inherits its parents' size and potential, with a rare chance of a mutation. Crafting great bugs is the heart of the game.
 
-■ Battle other players
+- Battle other players -
 Face other players' defense teams asynchronously. Earn trophies, climb from Bronze to Diamond, and compete for rank each season.
 
-■ Great for you if you…
-· love insects
-· want an idle game with real depth of progression
-· want to win by team-building and order, not luck
+- Great for you if you... -
+* love insects
+* want an idle game with real depth of progression
+* want to win by team-building and order, not luck
 
-■ Notes
-· Most content is playable offline (ranking & PvP need a connection)
-· Ads are opt-in rewarded ads only — never forced
-· Paid items focus on convenience and cosmetics; stats are never sold directly
+- Notes -
+* Most content is playable offline (ranking & PvP need a connection)
+* Ads are opt-in rewarded ads only - never forced
+* Paid items focus on convenience and cosmetics; stats are never sold directly
