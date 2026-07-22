@@ -28,7 +28,7 @@ workflows:
       vars:
         BUNDLE_ID: "com.bugchamp.app"
     integrations:
-      app_store_connect: bugchamp_asc   # Codemagic UI 에서 만든 통합 이름
+      app_store_connect: codemagic   # Codemagic UI 의 기존 통합 이름(Developer Portal)
     scripts:
       - name: Flutter 의존성(워크스페이스 루트에서 먼저)
         script: |
