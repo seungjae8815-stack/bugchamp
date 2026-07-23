@@ -343,6 +343,9 @@ class StorageScreen extends ConsumerWidget {
     IndividualBug? mother;
     showModalBottomSheet<void>(
       context: context,
+      // 기본 높이 제한(화면 9/16)에 그리드가 걸려 RenderFlex 오버플로우가 나던
+      // 문제 방지 — 시트가 내용 높이만큼 커지도록 한다.
+      isScrollControlled: true,
       backgroundColor: const Color(0xF2141F0E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),

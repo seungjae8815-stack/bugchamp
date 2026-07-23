@@ -56,7 +56,9 @@ dev_dependencies:
 # 런처 아이콘 생성: 이미지 교체 후 `dart run flutter_launcher_icons` 재실행.
 flutter_launcher_icons:
   android: true
-  ios: false
+  ios: true
+  remove_alpha_ios: true          # App Store 아이콘은 알파(투명) 금지 → 배경색으로 평탄화
+  background_color_ios: "#0E1608"
   image_path: "assets/icon/app_icon.png"
   adaptive_icon_background: "#0E1608"
   adaptive_icon_foreground: "assets/icon/app_icon.png"
