@@ -86,8 +86,10 @@ class SupabaseAuthService implements AuthService {
   final String _webClientId;
   bool _initialized = false;
 
+  // 로그인 가능 여부 = 애플(iOS) 또는 구글(웹 클라이언트 ID 주입) 중 하나라도 가능.
+  // 이 서비스는 Supabase 초기화됐을 때만 생성되므로, iOS 면 애플 로그인은 항상 가능.
   @override
-  bool get available => _webClientId.isNotEmpty;
+  bool get available => appleAvailable || _webClientId.isNotEmpty;
 
   @override
   bool get isSignedIn {
@@ -134,8 +136,9 @@ class SupabaseAuthService implements AuthService {
     }
   }
 
+  // 애플 로그인은 구글 설정과 무관하게 iOS 면 가능(Supabase 는 이미 초기화됨).
   @override
-  bool get appleAvailable => available && !kIsWeb && Platform.isIOS;
+  bool get appleAvailable => !kIsWeb && Platform.isIOS;
 
   @override
   Future<bool> signInWithApple() async {
