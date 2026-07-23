@@ -14,6 +14,7 @@ import '../../data/game_data.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
+import '../../domain/diag.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
@@ -2774,7 +2775,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               child: Text(
                 '진단 URL:${const String.fromEnvironment('SUPABASE_URL').isEmpty ? 'X' : 'O'}'
                 ' KEY:${const String.fromEnvironment('SUPABASE_ANON_KEY').isEmpty ? 'X' : 'O'}'
-                ' GID:${const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID').isEmpty ? 'X' : 'O'}',
+                ' GID:${const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID').isEmpty ? 'X' : 'O'}'
+                '\n단계:$supabaseInitStage'
+                '${supabaseInitError.isEmpty ? '' : '\n오류:${supabaseInitError.length > 120 ? supabaseInitError.substring(0, 120) : supabaseInitError}'}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Color(0x66FFFF88), fontSize: 10),
               ),
