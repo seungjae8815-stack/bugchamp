@@ -11,10 +11,6 @@ import 'providers.dart';
 import 'purchase_verifier.dart';
 import 'save_controller.dart';
 
-/// 임시 진단 — 마지막 구매 처리의 내부 경로(검증기 연결·영수증 길이·결과).
-/// 상점 스낵바에 함께 표시해 iOS 미지급 원인을 눈으로 확인한다. 원인 파악 후 제거.
-String iapLastDiag = '';
-
 /// 실제 스토어(구글 플레이 / 앱스토어) 결제 구현.
 ///
 /// 결제는 **비동기 스트림**이다: `buy()` 는 결제창을 띄우기만 하고, 실제 결과는
@@ -163,7 +159,6 @@ class StoreIapService implements IapService {
 
             case VerifyResult.valid:
               final granted = await _grant(p);
-              iapLastDiag += ' grant=$granted';
               // 지급에 실패했으면 완료 통보하지 않는다 — 그래야 스토어가 다시 전달해
               // 다음 기회에 지급할 수 있다(돈만 받고 물건 안 주는 상황 방지).
               if (granted && p.pendingCompletePurchase) {
@@ -194,11 +189,7 @@ class StoreIapService implements IapService {
   /// 빌드된 출시본이 **위조 영수증을 무검증 지급**하는 구멍이 된다.
   Future<VerifyResult> _verify(PurchaseDetails p) async {
     final verifier = _ref.read(purchaseVerifierProvider);
-    final tokLen = p.verificationData.serverVerificationData.length;
-    final srv = _ref.read(gameServerProvider).available;
-    iapLastDiag = 'chk avail=${verifier.available} tok=$tokLen srv=$srv';
     if (!verifier.available) {
-      iapLastDiag += ' →미연결';
       if (kReleaseMode) {
         debugPrint('[iap] ⚠️ 릴리즈인데 검증기 미연결 — 지급 보류');
         return VerifyResult.unknown; // 릴리즈는 검증 없이 지급하지 않는다
@@ -207,13 +198,8 @@ class StoreIapService implements IapService {
       return VerifyResult.valid;
     }
     final token = p.verificationData.serverVerificationData;
-    if (token.isEmpty) {
-      iapLastDiag += ' →영수증빈값';
-      return VerifyResult.unknown;
-    }
-    final r = await verifier.verify(productId: p.productID, purchaseToken: token);
-    iapLastDiag += ' →$r';
-    return r;
+    if (token.isEmpty) return VerifyResult.unknown;
+    return verifier.verify(productId: p.productID, purchaseToken: token);
   }
 
   /// 구매 1건을 반영한다.
