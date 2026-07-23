@@ -2,7 +2,7 @@ name: app
 description: "Bug Champ — 곤충 채집 배틀 게임 (Flutter 앱)."
 publish_to: 'none'
 # 빌드번호는 빌드일(YYYYMMDD). 앱 내 버전 표기는 lib/app_version.dart 와 맞춘다.
-version: 1.0.0+20260731
+version: 1.0.0+20260732
 
 resolution: workspace
 
@@ -44,7 +44,10 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
   google_sign_in: ^7.2.0
-  in_app_purchase: ^3.2.0
+  # StoreKit1 고정: 3.2.0 은 in_app_purchase_storekit 0.4.x(StoreKit2)를 끌어와
+  # serverVerificationData 가 JWS 가 되어 Apple verifyReceipt 가 21002 로 거부한다.
+  # 3.1.x 는 storekit 0.3.x(StoreKit1)라 base64 영수증 → 서버 검증(verifyReceipt) 동작.
+  in_app_purchase: '>=3.1.0 <3.2.0'
   google_mobile_ads: ^5.3.1
 
 dev_dependencies:
