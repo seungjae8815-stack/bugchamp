@@ -2766,6 +2766,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               height: 1.35,
             ),
           ),
+          // 임시 진단(다음 빌드 후 제거) — 빌드에 키가 실제로 주입됐는지 표시.
+          // O=값 있음, X=빈값(=Codemagic env 가 빌드에 안 실림).
+          if (!auth.available)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '진단 URL:${const String.fromEnvironment('SUPABASE_URL').isEmpty ? 'X' : 'O'}'
+                ' KEY:${const String.fromEnvironment('SUPABASE_ANON_KEY').isEmpty ? 'X' : 'O'}'
+                ' GID:${const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID').isEmpty ? 'X' : 'O'}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0x66FFFF88), fontSize: 10),
+              ),
+            ),
         ],
       ),
       actions: [
