@@ -88,7 +88,7 @@
 	     AdMob 에서 **iOS 앱을 별도 생성**해 실제 ID 로 교체해야 실광고가 나간다
 	     (안드로이드 ID 와 다르다). docs/APPSTORE_CHECKLIST.md 참조. -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-9286376018372718~9199302354</string>
 
 	<!-- SKAdNetwork: 광고 어트리뷰션용 네트워크 ID(AdMob 권장 목록 일부). -->
 	<key>SKAdNetworkItems</key>
