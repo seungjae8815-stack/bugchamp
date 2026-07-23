@@ -173,7 +173,7 @@
     }
   },
   "cloudUnavailable": "Backup unavailable — no online connection",
-  "cloudAnonWarning": "You're on a temporary device account, so deleting the app also loses the backup. Google sign-in is coming soon.",
+  "cloudAnonWarning": "You're on a temporary device account, so deleting the app also loses the backup. Sign in to keep your progress across devices.",
   "tabCraft": "Craft",
   "tabStore": "Store",
   "adNotReady": "No ad is ready right now. Please try again in a moment",

@@ -312,7 +312,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cloudAnonWarning =>
-      '現在は端末の仮アカウントのため、アプリを削除するとバックアップも失われます。まもなくGoogleログインに対応予定です。';
+      '現在は端末の仮アカウントのため、アプリを削除するとバックアップも失われます。ログインすると他の端末でも続けられます。';
 
   @override
   String get tabCraft => 'クラフト';

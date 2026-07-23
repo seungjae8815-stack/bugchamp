@@ -101,7 +101,7 @@
   "cloudNoBackup": "아직 백업이 없어요",
   "cloudLastBackup": "마지막 백업: {when}",
   "cloudUnavailable": "온라인 연결이 없어 백업을 쓸 수 없어요",
-  "cloudAnonWarning": "지금은 기기 임시 계정이라, 앱을 삭제하면 백업도 함께 사라져요. 곧 구글 로그인을 붙일 예정이에요.",
+  "cloudAnonWarning": "지금은 기기 임시 계정이라, 앱을 삭제하면 백업도 함께 사라져요. 로그인하면 다른 기기에서도 이어서 할 수 있어요.",
   "tabCraft": "제작",
   "tabStore": "상점",
   "adNotReady": "지금은 광고가 준비되지 않았어요. 잠시 후 다시 시도해 주세요",

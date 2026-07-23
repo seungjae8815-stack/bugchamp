@@ -312,7 +312,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get cloudAnonWarning =>
-      '지금은 기기 임시 계정이라, 앱을 삭제하면 백업도 함께 사라져요. 곧 구글 로그인을 붙일 예정이에요.';
+      '지금은 기기 임시 계정이라, 앱을 삭제하면 백업도 함께 사라져요. 로그인하면 다른 기기에서도 이어서 할 수 있어요.';
 
   @override
   String get tabCraft => '제작';

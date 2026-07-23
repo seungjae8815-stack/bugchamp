@@ -667,7 +667,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudAnonWarning.
   ///
   /// In en, this message translates to:
-  /// **'You\'re on a temporary device account, so deleting the app also loses the backup. Google sign-in is coming soon.'**
+  /// **'You\'re on a temporary device account, so deleting the app also loses the backup. Sign in to keep your progress across devices.'**
   String get cloudAnonWarning;
 
   /// No description provided for @tabCraft.

@@ -319,7 +319,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cloudAnonWarning =>
-      'You\'re on a temporary device account, so deleting the app also loses the backup. Google sign-in is coming soon.';
+      'You\'re on a temporary device account, so deleting the app also loses the backup. Sign in to keep your progress across devices.';
 
   @override
   String get tabCraft => 'Craft';
