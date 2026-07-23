@@ -86,7 +86,7 @@ function looksLikeAppleReceipt(token: string): boolean {
 
 type AppleResult =
   | { ok: true; reuseKey: string; orderId: string | null }
-  | { ok: false; reason: string; status?: number }
+  | { ok: false; reason: string; status?: number; debug?: string }
 
 async function verifyApple(receipt: string, productId: string): Promise<AppleResult> {
   if (!APPLE_SHARED_SECRET) {
@@ -106,6 +106,10 @@ async function verifyApple(receipt: string, productId: string): Promise<AppleRes
     })
     return (await r.json()) as Record<string, unknown>
   }
+
+  // 토큰 형식 진단 — StoreKit2 JWS(점 2개)인지 base64 영수증인지 구분.
+  const dotCount = (receipt.match(/\./g) || []).length
+  console.log('[apple] token fmt dots=', dotCount, 'head=', receipt.slice(0, 40))
 
   // 프로덕션 먼저 → 21007(샌드박스 영수증)이면 샌드박스로 재시도(테스트/심사 대응).
   let data = await call('https://buy.itunes.apple.com/verifyReceipt')
