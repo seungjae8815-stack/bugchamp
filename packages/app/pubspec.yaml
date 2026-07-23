@@ -2,7 +2,7 @@ name: app
 description: "Bug Champ — 곤충 채집 배틀 게임 (Flutter 앱)."
 publish_to: 'none'
 # 빌드번호는 빌드일(YYYYMMDD). 앱 내 버전 표기는 lib/app_version.dart 와 맞춘다.
-version: 1.0.0+20260723
+version: 1.0.0+20260724
 
 resolution: workspace
 

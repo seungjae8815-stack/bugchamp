@@ -2774,12 +2774,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           () => Navigator.pop(context),
           primary: false,
         ),
-        if (auth.available && !auth.isSignedIn)
+        // 구글 로그인은 iOS 를 제외하고 노출(iOS 에선 Apple 로그인만 — Apple 4.8).
+        // appleAvailable 는 iOS 에서만 true 이므로, !appleAvailable = Android 등.
+        if (auth.available && !auth.isSignedIn && !auth.appleAvailable)
           gameDialogButton(l.accountSignIn, () async {
             Navigator.pop(context);
             await _signIn(l, ref.read(authServiceProvider).signInWithGoogle);
           }),
-        // Apple 로그인은 iOS 에서만 노출(Apple 4.8 대응). 구글과 나란히.
+        // Apple 로그인은 iOS 에서만 노출(Apple 4.8 대응).
         if (auth.appleAvailable && !auth.isSignedIn)
           gameDialogButton(l.accountSignInApple, () async {
             Navigator.pop(context);
