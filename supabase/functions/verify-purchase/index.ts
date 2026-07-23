@@ -109,16 +109,21 @@ async function verifyApple(receipt: string, productId: string): Promise<AppleRes
 
   // 프로덕션 먼저 → 21007(샌드박스 영수증)이면 샌드박스로 재시도(테스트/심사 대응).
   let data = await call('https://buy.itunes.apple.com/verifyReceipt')
+  console.log('[apple] prod status', data.status, 'productId', productId)
   if (data.status === 21007) {
     data = await call('https://sandbox.itunes.apple.com/verifyReceipt')
+    console.log('[apple] sandbox status', data.status)
   } else if (data.status === 21008) {
     data = await call('https://buy.itunes.apple.com/verifyReceipt')
+    console.log('[apple] prod-retry status', data.status)
   }
 
   const status = Number(data.status ?? -1)
   if (status !== 0) {
     // 21010/21003 등 = 위조·무효. 21005(서버 일시 오류)는 재시도 여지.
-    const retryable = status === 21005 || status === 21009
+    // 21004 = 공유암호 불일치(서버 설정 문제) → 재시도 대상으로 둔다(지급 보류).
+    const retryable = status === 21005 || status === 21009 || status === 21004
+    console.error('[apple] verify failed status', status, 'retryable', retryable)
     return {
       ok: false,
       reason: retryable ? 'upstream_error' : 'invalid',
@@ -138,7 +143,12 @@ async function verifyApple(receipt: string, productId: string): Promise<AppleRes
     .sort((a, b) => Number(b.purchase_date_ms ?? 0) - Number(a.purchase_date_ms ?? 0))
   const match = matches[0]
 
-  if (!match) return { ok: false, reason: 'invalid' } // 영수증에 이 상품 없음
+  if (!match) {
+    // 영수증에 이 상품 없음 — 진단용으로 영수증에 담긴 product_id 들을 남긴다.
+    const ids = inApp.map((t) => t.product_id).join(',')
+    console.error('[apple] productId not in receipt. want', productId, 'have', ids)
+    return { ok: false, reason: 'invalid' }
+  }
   if (match.cancellation_date || match.cancellation_date_ms) {
     return { ok: false, reason: 'invalid' } // 환불·취소됨
   }
@@ -176,6 +186,9 @@ Deno.serve(async (req) => {
   // 2) 플랫폼별 영수증 확인 → 재사용방지 키(reuseKey)·주문번호(orderId) 확정.
   let reuseKey: string
   let orderId: string | null = null
+
+  console.log('[verify] platform', looksLikeAppleReceipt(purchaseToken) ? 'ios' : 'android',
+    'productId', productId, 'tokenLen', purchaseToken.length)
 
   if (looksLikeAppleReceipt(purchaseToken)) {
     // ── iOS(App Store) ──
