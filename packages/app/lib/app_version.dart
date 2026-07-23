@@ -11,7 +11,7 @@ const String kAppVersionName = '1.0.0';
 const String kBuildDate = '2026-07-25';
 
 /// 이 빌드의 빌드번호(pubspec version 뒤 +숫자와 일치). 설치본을 확실히 구분한다.
-const String kBuildNumber = '20260730';
+const String kBuildNumber = '20260731';
 
 /// 이 빌드에 새로 들어간 것 — 설치 후 무엇을 확인하면 되는지 힌트.
 const String kBuildHighlights =

@@ -339,9 +339,14 @@ class _ProductCard extends ConsumerWidget {
       PurchaseOutcome.notInStore => l.storeNotRegistered,
       PurchaseOutcome.failed => l.storeFailed,
     };
+    // 임시 진단 — 미지급 원인 파악용(원인 확정 후 iapLastDiag 표시 제거).
+    final diag = iapLastDiag.isEmpty ? '' : '\n[$iapLastDiag]';
     ScaffoldMessenger.of(ctx)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+      ..showSnackBar(SnackBar(
+        content: Text('$msg$diag'),
+        duration: const Duration(seconds: 8),
+      ));
   }
 }
 
