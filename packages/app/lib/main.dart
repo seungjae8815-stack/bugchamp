@@ -11,7 +11,6 @@ import 'domain/ad_service.dart';
 import 'domain/admob_ad_service.dart';
 import 'domain/auth_service.dart';
 import 'domain/chat_service.dart';
-import 'domain/diag.dart';
 import 'domain/game_server.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
@@ -77,7 +76,6 @@ Future<void> main() async {
   final supaKey = _supabaseAnonKey.trim();
   if (supaUrl.isNotEmpty && supaKey.isNotEmpty) {
     try {
-      supabaseInitStage = 'init';
       await Supabase.initialize(
         url: supaUrl,
         // ignore: deprecated_member_use — 레거시 anon(JWT) 키 사용. 신형 키면 publishableKey 로 교체.
@@ -85,18 +83,13 @@ Future<void> main() async {
       );
       final client = Supabase.instance.client;
       if (client.auth.currentUser == null) {
-        supabaseInitStage = 'anon';
         await client.auth.signInAnonymously();
       }
       supaClient = client;
-      supabaseInitStage = 'ok';
     } catch (e) {
       // 초기화/로그인 실패 → 로컬 백엔드 유지(앱은 정상 동작).
-      supabaseInitError = e.toString();
       debugPrint('Supabase init failed: $e');
     }
-  } else {
-    supabaseInitStage = 'empty(url:${supaUrl.length} key:${supaKey.length})';
   }
 
   runApp(

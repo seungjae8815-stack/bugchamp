@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
@@ -14,7 +15,6 @@ import '../../data/game_data.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
-import '../../domain/diag.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
@@ -1479,12 +1479,68 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 상단 우측 미니 버프 아이콘 + 아래 남은시간. 탭 시 버프 시트.
   Widget _buffMini(BuffKind k, Duration? remaining) {
     final active = remaining != null;
+    // 비활성 버프는 부드럽게 맥동하는 글로우 + "!" 로 활성화를 유도한다.
+    final pulse = 0.5 + 0.5 * math.sin(_tapHint * 3.2);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Opacity(
-          opacity: active ? 1.0 : 0.4,
-          child: SizedBox(width: 20, height: 20, child: _buffIconCircle(k, 20)),
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              if (!active)
+                // 맥동 글로우(활성화 유도)
+                Container(
+                  width: 20 + pulse * 6,
+                  height: 20 + pulse * 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: _honey.withValues(alpha: 0.35 + pulse * 0.4),
+                        blurRadius: 6 + pulse * 6,
+                        spreadRadius: 0.5 + pulse * 1.5,
+                      ),
+                    ],
+                  ),
+                ),
+              Opacity(
+                opacity: active ? 1.0 : 0.55 + pulse * 0.3,
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: _buffIconCircle(k, 20),
+                ),
+              ),
+              if (!active)
+                // 우상단 "!" 배지
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: _honey,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Text(
+                      '!',
+                      style: TextStyle(
+                        color: Color(0xFF3A2600),
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
         SizedBox(
           height: 10,
@@ -2767,21 +2823,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               height: 1.35,
             ),
           ),
-          // 임시 진단(다음 빌드 후 제거) — 빌드에 키가 실제로 주입됐는지 표시.
-          // O=값 있음, X=빈값(=Codemagic env 가 빌드에 안 실림).
-          if (!auth.available)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                '진단 URL:${const String.fromEnvironment('SUPABASE_URL').isEmpty ? 'X' : 'O'}'
-                ' KEY:${const String.fromEnvironment('SUPABASE_ANON_KEY').isEmpty ? 'X' : 'O'}'
-                ' GID:${const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID').isEmpty ? 'X' : 'O'}'
-                '\n단계:$supabaseInitStage'
-                '${supabaseInitError.isEmpty ? '' : '\n오류:${supabaseInitError.length > 120 ? supabaseInitError.substring(0, 120) : supabaseInitError}'}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0x66FFFF88), fontSize: 10),
-              ),
-            ),
         ],
       ),
       actions: [
@@ -2798,11 +2839,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             await _signIn(l, ref.read(authServiceProvider).signInWithGoogle);
           }),
         // Apple 로그인은 iOS 에서만 노출(Apple 4.8 대응).
+        // 흰 배경 + 진한 글씨(gameDialogButton 기본 전경색)로 가독성 확보 —
+        // 기존 검정 배경은 진한 글씨와 겹쳐 버튼이 안 보였다.
         if (auth.appleAvailable && !auth.isSignedIn)
           gameDialogButton(l.accountSignInApple, () async {
             Navigator.pop(context);
             await _signIn(l, ref.read(authServiceProvider).signInWithApple);
-          }, color: const Color(0xFF1A1A1A)),
+          }, color: const Color(0xFFFFFFFF)),
         if (auth.isSignedIn)
           gameDialogButton(l.accountSignOut, () async {
             Navigator.pop(context);
@@ -3644,6 +3687,74 @@ class _AmountButton extends StatelessWidget {
   }
 }
 
+/// 구매 버튼 — 한 번 탭하면 1회, **꾹 누르고 있으면 연속**으로 레벨업한다.
+/// 홀드 중 재화가 부족해지면(enabled=false) 자동으로 멈춘다.
+class _HoldBuyButton extends StatefulWidget {
+  const _HoldBuyButton({
+    required this.enabled,
+    required this.onFire,
+    required this.child,
+  });
+
+  final bool enabled;
+  final VoidCallback onFire;
+  final Widget child;
+
+  @override
+  State<_HoldBuyButton> createState() => _HoldBuyButtonState();
+}
+
+class _HoldBuyButtonState extends State<_HoldBuyButton> {
+  Timer? _timer;
+  // 홀드가 이어지면 점점 빨라진다(초반 천천히 → 빠르게).
+  int _ticks = 0;
+
+  void _startHold() {
+    if (!widget.enabled) return;
+    widget.onFire(); // 홀드 인식 즉시 1회
+    _ticks = 0;
+    _schedule(const Duration(milliseconds: 180));
+  }
+
+  void _schedule(Duration d) {
+    _timer?.cancel();
+    _timer = Timer(d, () {
+      if (!mounted || !widget.enabled) {
+        _stopHold();
+        return;
+      }
+      widget.onFire();
+      _ticks++;
+      // 가속: 180ms → 최소 45ms 까지 단계적으로 단축.
+      final ms = (180 - _ticks * 12).clamp(45, 180);
+      _schedule(Duration(milliseconds: ms));
+    });
+  }
+
+  void _stopHold() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopHold();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      // 짧게 탭 = 1회 구매. 꾹 누르면 = 연속.
+      onTap: widget.enabled ? widget.onFire : null,
+      onLongPressStart: (_) => _startHold(),
+      onLongPressEnd: (_) => _stopHold(),
+      onLongPressCancel: _stopHold,
+      child: widget.child,
+    );
+  }
+}
+
 class _UpgradeRow extends StatelessWidget {
   const _UpgradeRow({
     required this.kind,
@@ -3755,8 +3866,9 @@ class _UpgradeRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          GestureDetector(
-            onTap: affordable ? onBuy : null,
+          _HoldBuyButton(
+            enabled: affordable,
+            onFire: onBuy,
             child: Container(
               width: 96,
               padding: const EdgeInsets.symmetric(vertical: 8),
