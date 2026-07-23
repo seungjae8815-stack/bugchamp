@@ -386,6 +386,14 @@ supabase functions deploy verify-purchase
 `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 는
 Supabase 가 자동 주입하므로 따로 넣지 않아도 된다.
 
+**iOS(App Store) 도 지원한다.** 같은 함수가 iOS 영수증(긴 base64)을 감지해
+Apple `verifyReceipt` 로 검증한다(프로덕션→샌드박스 자동 재시도). 이를 위해
+`APPLE_SHARED_SECRET`(App-Specific Shared Secret) 시크릿을 추가로 넣는다:
+```bash
+supabase secrets set APPLE_SHARED_SECRET="<App Store Connect 공유 암호>"
+```
+자세한 iOS 등록·검증 절차는 `docs/appstore_iap.md`.
+
 함수 소스: `supabase/functions/verify-purchase/index.ts`
 
 ### 9-4. 앱 동작
