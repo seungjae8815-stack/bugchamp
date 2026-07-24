@@ -161,6 +161,43 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _snack(l.chatReported);
   }
 
+  /// 내가 쓴 메시지 삭제 — 확인 후 서버에서 제거(UGC 정책, Apple 1.2).
+  Future<void> _deleteMine(ChatMessage m, AppLocalizations l) async {
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.chatDeleteTitle,
+      icon: Icons.delete_outline_rounded,
+      content: Text(
+        l.chatDeleteBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Color(0xD9FFFFFF),
+          fontSize: 13,
+          height: 1.4,
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.chatDelete,
+          () => Navigator.pop(context, true),
+          color: const Color(0xFF9A3434),
+        ),
+      ],
+    );
+    if (ok != true || !mounted) return;
+    final done = await ref
+        .read(chatServiceProvider)
+        .deleteOwn(messageId: m.id);
+    if (!mounted) return;
+    if (done) setState(() => _messages.removeWhere((x) => x.id == m.id));
+    _snack(done ? l.chatDeleted : l.chatUnavailable);
+  }
+
   /// 사용자 차단 — 확인 후 로컬 목록에 추가(즉시 반영).
   Future<void> _block(ChatMessage m, AppLocalizations l) async {
     final ok = await showGameDialog<bool>(
@@ -304,8 +341,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           const SizedBox(height: 2),
           GestureDetector(
-            // 남의 메시지를 길게 누르면 신고/차단 메뉴.
-            onLongPress: mine ? null : () => _actions(m, l),
+            // 내 메시지 길게누르기=삭제, 남의 메시지=신고/차단 메뉴.
+            onLongPress: () => mine ? _deleteMine(m, l) : _actions(m, l),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 280),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

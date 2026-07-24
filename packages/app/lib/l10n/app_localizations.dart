@@ -2614,6 +2614,30 @@ abstract class AppLocalizations {
   /// **'Unblock'**
   String get chatUnblock;
 
+  /// No description provided for @chatDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get chatDelete;
+
+  /// No description provided for @chatDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get chatDeleted;
+
+  /// No description provided for @chatDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this message?'**
+  String get chatDeleteTitle;
+
+  /// No description provided for @chatDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes your message for everyone. It can\'t be undone.'**
+  String get chatDeleteBody;
+
   /// No description provided for @chatReported.
   ///
   /// In en, this message translates to:

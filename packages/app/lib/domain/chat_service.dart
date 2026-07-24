@@ -27,6 +27,10 @@ abstract interface class ChatService {
   /// 메시지 신고(UGC 정책 필수). 같은 메시지를 두 번 신고해도 오류가 아니다.
   Future<bool> report({required String messageId, required String reason});
 
+  /// **본인이 쓴 메시지 삭제**(UGC 정책 — Apple 1.2). 성공 시 true.
+  /// 서버 RLS 로 본인 메시지만 지워진다(남의 것은 지워지지 않음).
+  Future<bool> deleteOwn({required String messageId});
+
   void dispose();
 }
 
@@ -48,6 +52,8 @@ class NoChatService implements ChatService {
     required String messageId,
     required String reason,
   }) async => false;
+  @override
+  Future<bool> deleteOwn({required String messageId}) async => false;
   @override
   void dispose() {}
 }
@@ -150,6 +156,24 @@ class SupabaseChatService implements ChatService {
       return true;
     } catch (e) {
       debugPrint('[chat] report 실패: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> deleteOwn({required String messageId}) async {
+    final uid = _uid;
+    if (uid == null) return false;
+    try {
+      // RLS(chat_delete)로 본인 메시지만 삭제된다. user_id 조건도 명시(방어).
+      await _client
+          .from('chat_messages')
+          .delete()
+          .eq('id', int.tryParse(messageId) ?? 0)
+          .eq('user_id', uid);
+      return true;
+    } catch (e) {
+      debugPrint('[chat] delete 실패: $e');
       return false;
     }
   }

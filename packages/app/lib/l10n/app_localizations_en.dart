@@ -1404,6 +1404,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatUnblock => 'Unblock';
 
   @override
+  String get chatDelete => 'Delete';
+
+  @override
+  String get chatDeleted => 'Message deleted';
+
+  @override
+  String get chatDeleteTitle => 'Delete this message?';
+
+  @override
+  String get chatDeleteBody =>
+      'This removes your message for everyone. It can\'t be undone.';
+
+  @override
   String get chatReported => 'Reported. We\'ll review it';
 
   @override

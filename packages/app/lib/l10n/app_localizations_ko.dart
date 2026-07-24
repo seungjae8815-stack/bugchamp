@@ -1388,6 +1388,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatUnblock => '차단 해제';
 
   @override
+  String get chatDelete => '삭제';
+
+  @override
+  String get chatDeleted => '메시지를 삭제했어요';
+
+  @override
+  String get chatDeleteTitle => '이 메시지를 삭제할까요?';
+
+  @override
+  String get chatDeleteBody => '내가 쓴 이 메시지를 모두에게서 지웁니다. 되돌릴 수 없어요.';
+
+  @override
   String get chatReported => '신고했어요. 검토 후 조치할게요';
 
   @override

@@ -247,8 +247,14 @@ create policy chat_read on chat_messages
 create policy chat_insert on chat_messages
   for insert to authenticated with check (auth.uid() = user_id);
 
--- 수정/삭제는 아무도 못 한다(정책 미생성 = 거부).
+-- 수정은 아무도 못 한다(정책 미생성 = 거부).
+-- 삭제: 본인이 쓴 메시지만(Apple 1.2 — UGC 는 본인 콘텐츠 삭제 수단 필요).
+create policy chat_delete on chat_messages
+  for delete to authenticated using (auth.uid() = user_id);
 ```
+
+> ⚠️ **`chat_delete` 정책을 SQL Editor 에 실행할 것.** 없으면 앱의 "내 메시지 삭제"가
+> RLS 로 막혀 조용히 실패한다(0행 삭제). 앱은 `deleteOwn()` 으로 이 정책에 의존한다.
 
 ### 8-2. 서버 도배 방지 (클라이언트 검사만으론 부족)
 

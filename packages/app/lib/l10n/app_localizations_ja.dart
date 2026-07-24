@@ -1389,6 +1389,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatUnblock => 'ブロック解除';
 
   @override
+  String get chatDelete => '削除';
+
+  @override
+  String get chatDeleted => 'メッセージを削除しました';
+
+  @override
+  String get chatDeleteTitle => 'このメッセージを削除しますか？';
+
+  @override
+  String get chatDeleteBody => '自分のこのメッセージを全員から削除します。元に戻せません。';
+
+  @override
   String get chatReported => '通報しました。確認のうえ対応します';
 
   @override
