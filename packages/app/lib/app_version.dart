@@ -11,11 +11,11 @@ const String kAppVersionName = '1.0.0';
 const String kBuildDate = '2026-07-25';
 
 /// 이 빌드의 빌드번호(pubspec version 뒤 +숫자와 일치). 설치본을 확실히 구분한다.
-const String kBuildNumber = '20260734';
+const String kBuildNumber = '20260735';
 
 /// 이 빌드에 새로 들어간 것 — 설치 후 무엇을 확인하면 되는지 힌트.
 const String kBuildHighlights =
-    '빌드 20260733 · 인앱결제(iOS) 완성 · 출시 후보';
+    '빌드 20260735 · ATT 시작시 표시 · 결제 지급 폴백 · 재심사';
 
 /// 설정 화면에 표시할 짧은 라벨(날짜 없이 버전만). 예: "v1.0.0".
 /// 날짜·기능 상세는 ⓘ 아이콘을 눌러 펼친다.

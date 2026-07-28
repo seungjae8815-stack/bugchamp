@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:core_models/core_models.dart' show kMaxOfflineAccrual;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,11 +40,32 @@ class _AppShellState extends ConsumerState<AppShell>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotifications();
+      // ATT(앱 추적 투명성) 프롬프트 — iOS 요건. 광고 초기화와 무관하게 **앱 시작 시
+      // 항상** 띄운다(예전엔 광고 프로바이더 안에 있어 지연 로딩→심사에서 프롬프트
+      // 미표시로 반려됨). 앱이 완전히 활성화된 뒤 호출해야 프롬프트가 뜬다.
+      unawaited(_requestTrackingIfNeeded());
       // 서버 연결 시: 세이브를 맞추고(최초 1회 이관 포함) 주기 업로드를 건다.
       unawaited(syncWithServer(ref).then((_) => _uploader.start()));
       // 버전 점검 — 새 버전/강제 업데이트 안내(서버 /version 기준).
       unawaited(_checkForUpdate());
     });
+  }
+
+  /// ATT 권한 요청(iOS). 추적 데이터 수집 전에 반드시 한 번 띄워야 한다.
+  /// 첫 프레임 직후 앱이 foreground-active 가 되도록 잠깐 대기한 뒤 호출한다 —
+  /// 너무 이르면 iOS 가 프롬프트를 조용히 무시한다.
+  Future<void> _requestTrackingIfNeeded() async {
+    if (kIsWeb || !Platform.isIOS) return;
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      final status =
+          await AppTrackingTransparency.trackingAuthorizationStatus;
+      if (status == TrackingStatus.notDetermined) {
+        await AppTrackingTransparency.requestTrackingAuthorization();
+      }
+    } catch (e) {
+      debugPrint('ATT 요청 실패(무시): $e');
+    }
   }
 
   /// 서버가 알려준 최소·최신 버전과 내 버전을 비교해 안내한다.

@@ -246,7 +246,13 @@ class StoreIapService implements IapService {
     }
     // 권위 서버가 있으면 서버가 지급한다(영수증 검증도 서버가 다시 한다).
     final server = _ref.read(gameServerProvider);
-    if (server.available) return _grantViaServer(p);
+    if (server.available) {
+      if (await _grantViaServer(p)) return true;
+      // 서버 지급 실패(콜드스타트·일시 오류 등) → **영수증은 이미 검증됐으므로**
+      // 로컬 지급으로 폴백해 결제가 유실되지 않게 한다. 위조 영수증은 앞선
+      // _verify 에서 걸러졌고, 로컬은 purchaseId 로 중복 지급을 막는다.
+      debugPrint('[iap] 서버 지급 실패 → 로컬 지급 폴백');
+    }
 
     try {
       return await _ref
