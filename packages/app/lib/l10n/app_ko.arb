@@ -87,6 +87,8 @@
   "accountSignInFailed": "로그인하지 못했어요",
   "accountWhy": "로그인하면 폰을 바꿔도 진행 상황을 이어서 할 수 있어요.",
   "accountUnavailable": "지금 빌드에서는 로그인을 쓸 수 없어요",
+  "accountAnonRisk": "로그인하지 않으면 기기를 바꾸거나 앱을 지웠을 때 진행 상황을 되살릴 수 없어요.",
+  "loginNudge": "게스트 계정 · 눌러서 로그인하고 데이터를 지키세요",
   "accountSyncTitle": "어느 진행 상황을 쓸까요?",
   "accountSyncBody": "이 계정에 저장된 진행 상황이 있어요. 어느 쪽을 쓸지 골라주세요.",
   "accountKeepDevice": "지금 기기 것",

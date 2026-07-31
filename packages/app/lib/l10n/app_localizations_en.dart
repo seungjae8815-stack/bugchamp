@@ -272,6 +272,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountUnavailable => 'Sign-in isn\'t available in this build';
 
   @override
+  String get accountAnonRisk =>
+      'Without signing in, your progress can\'t be recovered if you switch devices or delete the app.';
+
+  @override
+  String get loginNudge =>
+      'Guest account · tap to sign in and protect your data';
+
+  @override
   String get accountSyncTitle => 'Which progress do you want?';
 
   @override

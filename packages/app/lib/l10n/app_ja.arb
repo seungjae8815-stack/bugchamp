@@ -80,6 +80,8 @@
   "accountSignInFailed": "ログインできませんでした",
   "accountWhy": "ログインすると、スマホを変えても進行状況を引き継げます。",
   "accountUnavailable": "このビルドではログインを利用できません",
+  "accountAnonRisk": "ログインしないと、機種変更やアプリ削除のときに進行状況を復元できません。",
+  "loginNudge": "ゲストアカウント · タップしてログインしデータを守る",
   "accountSyncTitle": "どちらの進行状況を使いますか？",
   "accountSyncBody": "このアカウントには保存された進行状況があります。どちらを使うか選んでください。",
   "accountKeepDevice": "この端末のデータ",

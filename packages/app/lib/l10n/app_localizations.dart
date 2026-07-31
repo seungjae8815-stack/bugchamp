@@ -580,6 +580,18 @@ abstract class AppLocalizations {
   /// **'Sign-in isn\'t available in this build'**
   String get accountUnavailable;
 
+  /// No description provided for @accountAnonRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Without signing in, your progress can\'t be recovered if you switch devices or delete the app.'**
+  String get accountAnonRisk;
+
+  /// No description provided for @loginNudge.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest account · tap to sign in and protect your data'**
+  String get loginNudge;
+
   /// No description provided for @accountSyncTitle.
   ///
   /// In en, this message translates to:

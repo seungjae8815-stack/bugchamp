@@ -152,6 +152,8 @@
   "accountSignInFailed": "Sign-in failed",
   "accountWhy": "Sign in to keep your progress when you change phones.",
   "accountUnavailable": "Sign-in isn't available in this build",
+  "accountAnonRisk": "Without signing in, your progress can't be recovered if you switch devices or delete the app.",
+  "loginNudge": "Guest account · tap to sign in and protect your data",
   "accountSyncTitle": "Which progress do you want?",
   "accountSyncBody": "This account already has saved progress. Choose which one to keep.",
   "accountKeepDevice": "This device",

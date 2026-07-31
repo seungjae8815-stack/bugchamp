@@ -267,6 +267,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountUnavailable => 'このビルドではログインを利用できません';
 
   @override
+  String get accountAnonRisk => 'ログインしないと、機種変更やアプリ削除のときに進行状況を復元できません。';
+
+  @override
+  String get loginNudge => 'ゲストアカウント · タップしてログインしデータを守る';
+
+  @override
   String get accountSyncTitle => 'どちらの進行状況を使いますか？';
 
   @override

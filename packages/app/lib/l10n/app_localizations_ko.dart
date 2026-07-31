@@ -267,6 +267,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountUnavailable => '지금 빌드에서는 로그인을 쓸 수 없어요';
 
   @override
+  String get accountAnonRisk => '로그인하지 않으면 기기를 바꾸거나 앱을 지웠을 때 진행 상황을 되살릴 수 없어요.';
+
+  @override
+  String get loginNudge => '게스트 계정 · 눌러서 로그인하고 데이터를 지키세요';
+
+  @override
   String get accountSyncTitle => '어느 진행 상황을 쓸까요?';
 
   @override

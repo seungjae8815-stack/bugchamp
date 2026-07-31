@@ -1340,9 +1340,53 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     color: const Color(0xF20B1206),
     child: Column(
       mainAxisSize: MainAxisSize.min,
-      children: [_topBar(l, save), _chatBar(l)],
+      children: [_topBar(l, save), _loginNudge(l), _chatBar(l)],
     ),
   );
+
+  /// 게스트(익명) 상태에서만 뜨는 로그인 유도 배너 — 눌러서 계정 시트를 연다.
+  /// 로그인하지 않은 유저는 기기 변경·앱 삭제 시 진행도를 복구할 수 없으므로,
+  /// 계정 창을 열지 않아도 홈에서 바로 보이도록 상단에 상시 노출한다.
+  /// `_signIn` 성공 시 setState 로 리빌드되어 자동으로 사라진다.
+  Widget _loginNudge(AppLocalizations l) {
+    final auth = ref.read(authServiceProvider);
+    if (!auth.available || auth.isSignedIn) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _showAccount(l),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: _honey.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _honey.withValues(alpha: 0.55)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.shield_rounded, color: _honey, size: 14),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  l.loginNudge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _honey,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: _honey, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _topBar(AppLocalizations l, SaveGame save) {
     final xpNeed = xpForNextLevel(save.level);
@@ -2814,15 +2858,58 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
           ),
           const SizedBox(height: 10),
-          Text(
-            auth.available ? l.accountWhy : l.accountUnavailable,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0x99FFFFFF),
-              fontSize: 11,
-              height: 1.35,
+          if (auth.available && !auth.isSignedIn) ...[
+            // 데이터 유실 경고 — 게스트는 기기 변경·앱 삭제 시 복구 불가.
+            // 회색 소극적 안내 대신 눈에 띄는 경고 박스로 로그인을 유도한다.
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: _honey.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _honey.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: _honey,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l.accountAnonRisk,
+                      style: const TextStyle(
+                        color: Color(0xF2FFE7B0),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              l.accountWhy,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0x99FFFFFF),
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+          ] else
+            Text(
+              auth.available ? l.accountWhy : l.accountUnavailable,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0x99FFFFFF),
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
         ],
       ),
       actions: [
