@@ -1,6 +1,7 @@
 import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart';
 
+import '../domain/audio_service.dart';
 import '../l10n/app_localizations.dart';
 import 'art.dart';
 import 'format.dart';
@@ -253,6 +254,7 @@ Future<void> showRewardPopup(
   Map<MaterialKind, int> materials = const {},
 }) {
   final l = AppLocalizations.of(context);
+  AudioService.instance.sfxReward();
   return showGameDialog<void>(
     context,
     title: title,

@@ -1756,6 +1756,24 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @settingsSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get settingsSound;
+
+  /// No description provided for @settingsBgm.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get settingsBgm;
+
+  /// No description provided for @settingsSfx.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound effects'**
+  String get settingsSfx;
+
   /// No description provided for @settingsNickname.
   ///
   /// In en, this message translates to:
@@ -2560,6 +2578,12 @@ abstract class AppLocalizations {
   /// **'A special premium currency. Used for crafting (All-in-One Potion) and special goods.'**
   String get materialJellyDesc;
 
+  /// No description provided for @materialsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials — used for upgrades, part enhancement & crafting (tap for details)'**
+  String get materialsHint;
+
   /// No description provided for @chatHint.
   ///
   /// In en, this message translates to:
@@ -2709,6 +2733,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That nickname contains blocked words'**
   String get nicknameBlockedWord;
+
+  /// No description provided for @nicknameRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a nickname'**
+  String get nicknameRequiredTitle;
+
+  /// No description provided for @nicknameRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the name other collectors will see. You only set it once.'**
+  String get nicknameRequiredBody;
+
+  /// No description provided for @nicknameChangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change nickname'**
+  String get nicknameChangeTitle;
+
+  /// No description provided for @nicknameChangeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing your nickname costs insect jelly. Proceed?'**
+  String get nicknameChangeBody;
+
+  /// No description provided for @nicknameChangeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get nicknameChangeConfirm;
 
   /// No description provided for @nicknameFallback.
   ///

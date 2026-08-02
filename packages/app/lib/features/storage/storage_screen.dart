@@ -1376,42 +1376,61 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 
-  // ── 재화 스트립(탭 → 설명) ────────────────────────────────────
+  // ── 재화 스트립(용도 캡션 + 탭 → 상세) ─────────────────────────
   Widget _materialsStrip(
     BuildContext context,
     AppLocalizations l,
     SaveGame save,
   ) => Container(
     padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final k in MaterialKind.values)
-          InkWell(
-            onTap: () => _showMaterialInfo(context, l, k),
-            borderRadius: BorderRadius.circular(10),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  materialImage(
-                    k,
-                    size: 26,
-                    fallback: Icon(materialIcon(k), size: 22),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    formatCompact(save.materialCount(k)),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 4),
+          child: Text(
+            l.materialsHint,
+            style: const TextStyle(
+              color: Color(0x99FFFFFF),
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            for (final k in MaterialKind.values)
+              InkWell(
+                onTap: () => _showMaterialInfo(context, l, k),
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      materialImage(
+                        k,
+                        size: 26,
+                        fallback: Icon(materialIcon(k), size: 22),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        formatCompact(save.materialCount(k)),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ],
     ),
   );

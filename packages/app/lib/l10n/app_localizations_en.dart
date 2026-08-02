@@ -926,6 +926,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsSound => 'Sound';
+
+  @override
+  String get settingsBgm => 'Music';
+
+  @override
+  String get settingsSfx => 'Sound effects';
+
+  @override
   String get settingsNickname => 'Nickname';
 
   @override
@@ -1377,6 +1386,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'A special premium currency. Used for crafting (All-in-One Potion) and special goods.';
 
   @override
+  String get materialsHint =>
+      'Materials — used for upgrades, part enhancement & crafting (tap for details)';
+
+  @override
   String get chatHint => 'Type a message';
 
   @override
@@ -1462,6 +1475,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nicknameBlockedWord => 'That nickname contains blocked words';
+
+  @override
+  String get nicknameRequiredTitle => 'Choose a nickname';
+
+  @override
+  String get nicknameRequiredBody =>
+      'This is the name other collectors will see. You only set it once.';
+
+  @override
+  String get nicknameChangeTitle => 'Change nickname';
+
+  @override
+  String get nicknameChangeBody =>
+      'Changing your nickname costs insect jelly. Proceed?';
+
+  @override
+  String get nicknameChangeConfirm => 'Change';
 
   @override
   String get nicknameFallback => 'Player';

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/audio_service.dart';
 import '../domain/notification_service.dart';
 import '../domain/server_sync.dart';
 import '../domain/providers.dart';
@@ -40,6 +41,12 @@ class _AppShellState extends ConsumerState<AppShell>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotifications();
+      // 사운드 초기화 + 배경음 시작(설정 on 일 때).
+      unawaited(
+        AudioService.instance.init().then(
+          (_) => AudioService.instance.startBgm(),
+        ),
+      );
       // ATT(앱 추적 투명성) 프롬프트 — iOS 요건. 광고 초기화와 무관하게 **앱 시작 시
       // 항상** 띄운다(예전엔 광고 프로바이더 안에 있어 지연 로딩→심사에서 프롬프트
       // 미표시로 반려됨). 앱이 완전히 활성화된 뒤 호출해야 프롬프트가 뜬다.
@@ -119,6 +126,7 @@ class _AppShellState extends ConsumerState<AppShell>
     if (state == AppLifecycleState.paused) {
       // 백그라운드 진입 → 놓친 진행이 없게 세이브를 즉시 올린다.
       unawaited(_uploader.flush());
+      unawaited(AudioService.instance.pauseBgm());
       // 오프라인 상한(8h) 도달 시 알림 예약.
       svc.scheduleOfflineFull(
         after: kMaxOfflineAccrual,
@@ -128,6 +136,7 @@ class _AppShellState extends ConsumerState<AppShell>
     } else if (state == AppLifecycleState.resumed) {
       // 복귀 → 오프라인 알림 취소(이미 접속).
       svc.cancelOfflineFull();
+      unawaited(AudioService.instance.startBgm());
     }
   }
 
@@ -138,8 +147,12 @@ class _AppShellState extends ConsumerState<AppShell>
     final l = AppLocalizations.of(context);
     final svc = NotificationService.instance;
     await svc.requestPermission();
-    final rewards =
-        ref.read(gameDataProvider).value?.dailyConfig?.rewards ?? const [];
+    // gameData 는 비동기 로드(FutureProvider) — 첫 프레임엔 .value 가 아직 null 이라
+    // 예약이 통째로 건너뛰어졌다(점심/저녁 알림 미발화의 근본 원인).
+    // .future 를 await 해 로드 완료를 보장한 뒤 예약한다.
+    final data = await ref.read(gameDataProvider.future);
+    if (!mounted) return;
+    final rewards = data.dailyConfig?.rewards ?? const [];
     for (var i = 0; i < rewards.length; i++) {
       final rw = rewards[i];
       await svc.scheduleDaily(
@@ -188,7 +201,10 @@ class _AppShellState extends ConsumerState<AppShell>
           ),
           bottomNavigationBar: _GameNavBar(
             index: index,
-            onTap: (i) => ref.read(tabIndexProvider.notifier).set(i),
+            onTap: (i) {
+              AudioService.instance.sfxTap();
+              ref.read(tabIndexProvider.notifier).set(i);
+            },
           ),
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/auth_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
@@ -10,6 +11,30 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/format.dart';
 
 const _honey = Color(0xFFEBA52F);
+
+/// 로그인(비익명) 시 내 현재 랭킹. 미로그인·실패·미확정이면 null.
+/// 트로피/닉네임이 바뀔 때만 재조회(select) — 매 세이브마다 네트워크 호출 방지.
+final myRankProvider = FutureProvider<int?>((ref) async {
+  final auth = ref.watch(authServiceProvider);
+  if (!auth.available || !auth.isSignedIn) return null;
+  final trophies = ref.watch(
+    saveControllerProvider.select((s) => s.asData?.value.pvpTrophies ?? 0),
+  );
+  final nickname = ref.watch(
+    saveControllerProvider.select((s) => s.asData?.value.nickname ?? ''),
+  );
+  final backend = ref.watch(pvpBackendProvider);
+  try {
+    final entries = await backend.leaderboard(
+      me: PvpProfile(id: 'me', nickname: nickname, trophies: trophies),
+      limit: 50,
+    );
+    for (final e in entries) {
+      if (e.isMe) return e.rank;
+    }
+  } catch (_) {}
+  return null;
+});
 
 /// 랭킹(리더보드) 화면. [PvpBackend] 를 통해 순위를 가져온다(로컬→추후 Supabase).
 class LeaderboardScreen extends ConsumerWidget {

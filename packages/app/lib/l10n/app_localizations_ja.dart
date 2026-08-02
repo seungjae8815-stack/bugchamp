@@ -912,6 +912,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsTitle => '設定';
 
   @override
+  String get settingsSound => 'サウンド';
+
+  @override
+  String get settingsBgm => 'BGM';
+
+  @override
+  String get settingsSfx => '効果音';
+
+  @override
   String get settingsNickname => 'ニックネーム';
 
   @override
@@ -1360,6 +1369,9 @@ class AppLocalizationsJa extends AppLocalizations {
       '特別なプレミアム通貨。ショップのクラフト（オールインワンポーション）と特別商品に使われます。';
 
   @override
+  String get materialsHint => '素材 — ステータス・部位強化とクラフトに使用（タップで詳細）';
+
+  @override
   String get chatHint => 'メッセージを入力してください';
 
   @override
@@ -1442,6 +1454,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nicknameBlockedWord => 'ニックネームに使用できない表現が含まれています';
+
+  @override
+  String get nicknameRequiredTitle => 'ニックネームを決めてください';
+
+  @override
+  String get nicknameRequiredBody => '他の採集者に表示される名前です。最初の一度だけ設定します。';
+
+  @override
+  String get nicknameChangeTitle => 'ニックネーム変更';
+
+  @override
+  String get nicknameChangeBody => 'ニックネームの変更には昆虫ゼリーが必要です。変更しますか？';
+
+  @override
+  String get nicknameChangeConfirm => '変更';
 
   @override
   String get nicknameFallback => 'プレイヤー';

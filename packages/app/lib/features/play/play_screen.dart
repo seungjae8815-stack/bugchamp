@@ -13,6 +13,7 @@ import 'package:uuid/uuid.dart';
 import '../../app_version.dart';
 import '../../data/game_data.dart';
 import '../../domain/admob_ad_service.dart';
+import '../../domain/audio_service.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
 import '../../domain/game_server.dart';
@@ -1392,6 +1393,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final xpNeed = xpForNextLevel(save.level);
     final cp = combatPower(_petStats(save));
     final now = _clock.now().toUtc();
+    final myRank = ref.watch(myRankProvider).asData?.value;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
       child: Row(
@@ -1437,6 +1439,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         fontSize: 12,
                       ),
                     ),
+                    // 로그인 시 현재 랭킹 노출(동기부여).
+                    if (myRank != null) ...[
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.emoji_events_rounded,
+                        color: Color(0xFFFFD24A),
+                        size: 12,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '#$myRank',
+                        style: const TextStyle(
+                          color: Color(0xFFFFD24A),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -2525,6 +2545,60 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (rw.chitin + rw.mineral + rw.sap > 0)
         '🧪${formatCompact(rw.chitin + rw.mineral + rw.sap)}',
     ];
+    // 그냥 받기(1배) → 수령 후 "광고 보고 한 번 더 받기" 제안 → 수락 시 +1배.
+    Future<void> claimDailyThenOffer() async {
+      final notifier = r.read(saveControllerProvider.notifier);
+      final ok = await notifier.claimDaily(rw);
+      if (!ok || !ctx.mounted) return;
+      await showRewardPopup(
+        ctx,
+        title: l.dailyRewardSnack,
+        subtitle: l.rewardGained,
+        icon: rw.id == 'lunch'
+            ? Icons.wb_sunny_rounded
+            : Icons.nightlight_round,
+        gold: rw.gold,
+        materials: rw.materials,
+      );
+      if (!ctx.mounted) return;
+      final more = await showGameDialog<bool>(
+        ctx,
+        title: l.giftAdMoreTitle,
+        icon: Icons.play_circle_fill_rounded,
+        content: Text(
+          l.giftAdMoreBody,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xD9FFFFFF),
+            fontSize: 13.5,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          gameDialogButton(
+            l.giftAdMoreLater,
+            () => Navigator.pop(ctx, false),
+            primary: false,
+          ),
+          gameDialogButton(l.giftAdMoreYes, () => Navigator.pop(ctx, true)),
+        ],
+      );
+      if (more == true && ctx.mounted) {
+        if (!await watchAdForReward(ctx, r, l)) return;
+        if (!ctx.mounted) return;
+        await notifier.grantDailyBonus(rw);
+        if (!ctx.mounted) return;
+        await showRewardPopup(
+          ctx,
+          title: l.giftDoubledSnack,
+          subtitle: l.rewardGained,
+          icon: Icons.play_circle_fill_rounded,
+          gold: rw.gold,
+          materials: rw.materials,
+        );
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Container(
@@ -2588,18 +2662,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               )
             else
               FilledButton(
-                onPressed: () async {
-                  final ok = await r
-                      .read(saveControllerProvider.notifier)
-                      .claimDaily(rw);
-                  if (ok && ctx.mounted) {
-                    ScaffoldMessenger.of(ctx)
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(
-                        SnackBar(content: Text(l.dailyRewardSnack)),
-                      );
-                  }
-                },
+                onPressed: claimDailyThenOffer,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFEBA52F),
                   foregroundColor: const Color(0xFF3A2600),
@@ -2612,6 +2675,80 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ),
     );
   }
+
+  /// 설정창 사운드 섹션 — 배경음/효과음 on-off + 볼륨(설정은 로컬 저장).
+  Widget _audioSettings(AppLocalizations l) =>
+      ValueListenableBuilder<AudioSettings>(
+        valueListenable: AudioService.instance.settings,
+        builder: (context, s, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                l.settingsSound,
+                style: const TextStyle(
+                  color: Color(0xFFEBA52F),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            _audioRow(
+              Icons.music_note_rounded,
+              l.settingsBgm,
+              s.bgmOn,
+              (v) => AudioService.instance.setBgmOn(v),
+              s.bgmVol,
+              (v) => AudioService.instance.setBgmVol(v),
+            ),
+            _audioRow(
+              Icons.graphic_eq_rounded,
+              l.settingsSfx,
+              s.sfxOn,
+              (v) => AudioService.instance.setSfxOn(v),
+              s.sfxVol,
+              (v) => AudioService.instance.setSfxVol(v),
+            ),
+          ],
+        ),
+      );
+
+  Widget _audioRow(
+    IconData icon,
+    String label,
+    bool on,
+    ValueChanged<bool> onToggle,
+    double vol,
+    ValueChanged<double> onVol,
+  ) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        children: [
+          Icon(icon, color: const Color(0xFFEBA52F), size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+              ),
+            ),
+          ),
+          Switch(value: on, onChanged: onToggle),
+        ],
+      ),
+      Slider(
+        value: vol.clamp(0.0, 1.0),
+        activeColor: const Color(0xFFEBA52F),
+        onChanged: on ? onVol : null,
+      ),
+    ],
+  );
 
   void _showSettings(AppLocalizations l) {
     // 실기에서 어떤 빌드로 켰는지(온라인 Supabase / 로컬) 바로 확인.
@@ -2644,6 +2781,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
             const SizedBox(height: 8),
           ],
+          _audioSettings(l),
+          const Divider(height: 18, color: Color(0x22FFFFFF)),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -2939,6 +3078,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             await ref.read(authServiceProvider).signOut();
             if (!mounted) return;
             setState(() {});
+            ref.invalidate(myRankProvider); // 로그아웃 → 랭킹 표시 제거
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(SnackBar(content: Text(l.accountSignedOut)));
@@ -3091,12 +3231,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       return;
     }
     setState(() {});
+    ref.invalidate(myRankProvider); // 로그인 후 랭킹 재조회
     // 이 계정에 이미 백업이 있으면 어느 쪽을 쓸지 선택하게 한다(덮어쓰기 사고 방지).
     final cloud = ref.read(cloudSaveProvider);
     final existing = cloud.available ? await cloud.download() : null;
     if (!mounted) return;
     if (existing == null) {
       await _cloudBackup(l); // 백업이 없으면 현재 진행도를 그대로 올림
+      await _promptNicknameMandatory(l);
       return;
     }
     final useCloud = await showGameDialog<bool>(
@@ -3135,6 +3277,102 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     } else {
       await _cloudBackup(l);
     }
+    await _promptNicknameMandatory(l);
+  }
+
+  /// 첫 로그인 시 닉네임 강제 설정 — 닉네임 미확정이면 취소 불가 다이얼로그.
+  /// (닉네임을 정할 때까지 닫히지 않음. 첫 설정이라 비용 없음.)
+  Future<void> _promptNicknameMandatory(AppLocalizations l) async {
+    if (!mounted) return;
+    final save = ref.read(saveControllerProvider).requireValue;
+    if (save.nicknameSet) return;
+    final controller = TextEditingController(
+      text: save.nicknameSet ? save.nickname : '',
+    );
+    final rules = _data.chatRules ?? const ChatRules();
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          backgroundColor: const Color(0xF21F2E13),
+          title: Text(
+            l.nicknameRequiredTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l.nicknameRequiredBody,
+                style: const TextStyle(
+                  color: Color(0xCCFFFFFF),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLength: 8,
+                autofocus: true,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: l.settingsNicknameHint,
+                  hintStyle: const TextStyle(color: Color(0x55FFFFFF)),
+                  filled: true,
+                  fillColor: const Color(0x22000000),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () async {
+                final name = controller.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(content: Text(l.nicknameRequiredBody)),
+                    );
+                  return;
+                }
+                if (!rules.nicknameAllowed(name)) {
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(content: Text(l.nicknameBlockedWord)),
+                    );
+                  return;
+                }
+                await ref
+                    .read(saveControllerProvider.notifier)
+                    .renamePlayer(name);
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEBA52F),
+                foregroundColor: const Color(0xFF3A2600),
+              ),
+              child: Text(l.actionSave),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   /// 클라우드 백업/복원 시트. 백엔드 미연결이면 안내만 표시.
@@ -3556,11 +3794,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     child: Text(l.actionCancel),
                   ),
                   FilledButton(
-                    onPressed: () {
+                    onPressed: () async {
                       // 닉네임은 랭킹·스카우트·채팅에 그대로 노출되므로
                       // 채팅과 같은 금칙어 기준으로 막는다.
                       final rules = _data.chatRules ?? const ChatRules();
-                      if (!rules.nicknameAllowed(controller.text)) {
+                      final name = controller.text.trim();
+                      if (name.isEmpty || name == save.nickname) {
+                        Navigator.pop(ctx);
+                        return;
+                      }
+                      if (!rules.nicknameAllowed(name)) {
                         ScaffoldMessenger.of(context)
                           ..hideCurrentSnackBar()
                           ..showSnackBar(
@@ -3568,10 +3811,48 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           );
                         return;
                       }
-                      ref
+                      // 이미 확정된 닉네임 변경 → 젤리 소비, 먼저 확인.
+                      if (save.nicknameSet) {
+                        final confirm = await showGameDialog<bool>(
+                          context,
+                          title: l.nicknameChangeTitle,
+                          icon: Icons.badge_rounded,
+                          content: Text(
+                            '${l.nicknameChangeBody}\n\n💎 ${SaveController.kNicknameChangeCost}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xD9FFFFFF),
+                              fontSize: 13.5,
+                              height: 1.4,
+                            ),
+                          ),
+                          actions: [
+                            gameDialogButton(
+                              l.actionCancel,
+                              () => Navigator.pop(context, false),
+                              primary: false,
+                            ),
+                            gameDialogButton(
+                              l.nicknameChangeConfirm,
+                              () => Navigator.pop(context, true),
+                            ),
+                          ],
+                        );
+                        if (confirm != true) return;
+                      }
+                      final result = await ref
                           .read(saveControllerProvider.notifier)
-                          .renamePlayer(controller.text);
-                      Navigator.pop(ctx);
+                          .renamePlayer(name);
+                      if (!mounted) return;
+                      if (result == RenameResult.notEnoughJelly) {
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            SnackBar(content: Text(l.notEnoughJelly)),
+                          );
+                        return;
+                      }
+                      if (ctx.mounted) Navigator.pop(ctx);
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFFEBA52F),

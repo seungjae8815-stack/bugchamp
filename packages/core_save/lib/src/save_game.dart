@@ -128,6 +128,7 @@ class SaveGame {
     this.passExpiresAt,
     this.redeemedPurchases = const {},
     this.blockedUserIds = const {},
+    this.nicknameSet = false,
   });
 
   final int schemaVersion;
@@ -167,6 +168,10 @@ class SaveGame {
 
   /// 플레이어 표시 이름.
   final String nickname;
+
+  /// 닉네임을 (기본값에서) 실제로 한 번 이상 확정했는지.
+  /// 첫 설정은 무료, 이후 변경은 유료(젤리) — see SaveController.renamePlayer.
+  final bool nicknameSet;
 
   /// 활성 버프별 만료 UTC 시각. now 이후면 활성으로 취급.
   final Map<BuffKind, DateTime> buffExpiry;
@@ -322,6 +327,7 @@ class SaveGame {
     Map<UpgradeKind, int>? upgradeLevels,
     int? stageNumber,
     String? nickname,
+    bool? nicknameSet,
     Map<BuffKind, DateTime>? buffExpiry,
     Map<String, int>? missionProgress,
     Map<String, int>? missionClaims,
@@ -359,6 +365,7 @@ class SaveGame {
     upgradeLevels: upgradeLevels ?? this.upgradeLevels,
     stageNumber: stageNumber ?? this.stageNumber,
     nickname: nickname ?? this.nickname,
+    nicknameSet: nicknameSet ?? this.nicknameSet,
     buffExpiry: buffExpiry ?? this.buffExpiry,
     missionProgress: missionProgress ?? this.missionProgress,
     missionClaims: missionClaims ?? this.missionClaims,
@@ -432,6 +439,10 @@ class SaveGame {
     ),
     stageNumber: (json['stageNumber'] as num).toInt(),
     nickname: json['nickname'] as String? ?? kDefaultNickname,
+    // 신규 필드 — 기존 세이브가 커스텀 닉네임이면 확정으로 간주(재입력 방지).
+    nicknameSet:
+        json['nicknameSet'] as bool? ??
+        (json['nickname'] as String? ?? kDefaultNickname) != kDefaultNickname,
     buffExpiry: _buffsFromJson(
       json['buffExpiry'] as Map<String, dynamic>? ?? const {},
     ),
@@ -514,6 +525,7 @@ class SaveGame {
     },
     'stageNumber': stageNumber,
     'nickname': nickname,
+    'nicknameSet': nicknameSet,
     'buffExpiry': {
       for (final e in buffExpiry.entries)
         e.key.key: e.value.toUtc().toIso8601String(),

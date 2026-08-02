@@ -574,6 +574,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(gold: s.gold + g.gold, materials: mats));
   }
 
+  /// 이미 수령한 일일보상 [reward] 를 광고 보상으로 **한 번 더**(추가 1배) 지급.
+  /// 점심/저녁 보상 "광고 보고 한 번 더 받기" 흐름용(로컬 전용 — 선물 보너스와 동일).
+  Future<void> grantDailyBonus(DailyReward reward) async {
+    final s = state.requireValue;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final e in reward.materials.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value;
+    }
+    await _commit(s.copyWith(gold: s.gold + reward.gold, materials: mats));
+  }
+
   /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
   /// 결투 결과 반영: 골드·트로피 정산 + KO된 내 곤충([koedBugIds])에 부상 회복 타이머 부여.
   Future<void> applyBattleResult({
@@ -1320,15 +1331,35 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
-  /// 플레이어 닉네임 변경(공백 트림, 빈 값은 무시).
-  Future<void> renamePlayer(String name) async {
+  /// 닉네임 변경 비용(곤충젤리). 첫 설정은 무료, 이후 변경마다 소비.
+  static const int kNicknameChangeCost = 100;
+
+  /// 플레이어 닉네임 변경. 첫 설정(미확정)은 무료, 이후 변경은 젤리 [kNicknameChangeCost] 소비.
+  /// 공백은 [RenameResult.noChange], 젤리 부족 시 변경 없이 [RenameResult.notEnoughJelly].
+  Future<RenameResult> renamePlayer(String name) async {
     final trimmed = name.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty) return RenameResult.noChange;
     final s = state.requireValue;
-    if (trimmed == s.nickname) return;
-    await _commit(s.copyWith(nickname: trimmed));
+    if (trimmed == s.nickname && s.nicknameSet) return RenameResult.noChange;
+    if (s.nicknameSet) {
+      // 이미 한 번 확정한 뒤의 변경 → 젤리 소비.
+      final have = s.materials[MaterialKind.jelly] ?? 0;
+      if (have < kNicknameChangeCost) return RenameResult.notEnoughJelly;
+      final mats = Map<MaterialKind, int>.from(s.materials)
+        ..[MaterialKind.jelly] = have - kNicknameChangeCost;
+      await _commit(
+        s.copyWith(nickname: trimmed, nicknameSet: true, materials: mats),
+      );
+    } else {
+      // 첫 설정 — 무료.
+      await _commit(s.copyWith(nickname: trimmed, nicknameSet: true));
+    }
+    return RenameResult.ok;
   }
 }
+
+/// [SaveController.renamePlayer] 결과.
+enum RenameResult { ok, notEnoughJelly, noChange }
 
 final saveControllerProvider = AsyncNotifierProvider<SaveController, SaveGame>(
   SaveController.new,

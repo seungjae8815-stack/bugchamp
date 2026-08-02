@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/game_data.dart';
+import '../../domain/audio_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
@@ -101,6 +102,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     if (dmgA >= 1) {
       _floats.add(FloatText('-${dmgA.round()}', const Color(0xFFFF6B6B), true));
       _flashL = 1;
+      AudioService.instance.sfxHurt();
     }
     if (hA >= 1) {
       _floats.add(FloatText('+${hA.round()}', const Color(0xFF7CE38B), true));
@@ -110,6 +112,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
         FloatText('-${dmgB.round()}', const Color(0xFFFF6B6B), false),
       );
       _flashR = 1;
+      AudioService.instance.sfxHit();
     }
     if (hB >= 1) {
       _floats.add(FloatText('+${hB.round()}', const Color(0xFF7CE38B), false));

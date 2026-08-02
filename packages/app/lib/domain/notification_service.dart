@@ -33,8 +33,14 @@ class NotificationService {
       // 한국 우선 — 기기 타임존 감지는 추후(flutter_timezone). 기본 Asia/Seoul.
       tz.setLocalLocation(tz.getLocation('Asia/Seoul'));
       const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      // iOS: 권한은 requestPermission() 에서 타이밍을 제어해 따로 요청 → 여기선 false.
+      const darwinInit = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
       await _plugin.initialize(
-        const InitializationSettings(android: androidInit),
+        const InitializationSettings(android: androidInit, iOS: darwinInit),
       );
       await _android?.createNotificationChannel(_channel);
       _ready = true;
@@ -48,10 +54,16 @@ class NotificationService {
         AndroidFlutterLocalNotificationsPlugin
       >();
 
-  /// 안드로이드 13+ 알림 권한 요청(이미 허용/거부면 무시됨).
+  IOSFlutterLocalNotificationsPlugin? get _ios => _plugin
+      .resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin
+      >();
+
+  /// 알림 권한 요청(Android 13+ / iOS). 이미 허용·거부면 무시됨.
   Future<void> requestPermission() async {
     try {
       await _android?.requestNotificationsPermission();
+      await _ios?.requestPermissions(alert: true, badge: true, sound: true);
     } catch (_) {}
   }
 
@@ -63,6 +75,7 @@ class NotificationService {
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
     ),
+    iOS: const DarwinNotificationDetails(),
   );
 
   tz.TZDateTime _nextAt(int hour) {

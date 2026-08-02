@@ -912,6 +912,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsTitle => '설정';
 
   @override
+  String get settingsSound => '사운드';
+
+  @override
+  String get settingsBgm => '배경음';
+
+  @override
+  String get settingsSfx => '효과음';
+
+  @override
   String get settingsNickname => '닉네임';
 
   @override
@@ -1359,6 +1368,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get materialJellyDesc => '특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다.';
 
   @override
+  String get materialsHint => '재료 — 능력치·부위 강화와 제작에 사용해요 (탭하면 상세)';
+
+  @override
   String get chatHint => '메시지를 입력하세요';
 
   @override
@@ -1441,6 +1453,21 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get nicknameBlockedWord => '닉네임에 사용할 수 없는 표현이 있어요';
+
+  @override
+  String get nicknameRequiredTitle => '닉네임을 정해주세요';
+
+  @override
+  String get nicknameRequiredBody => '다른 채집가들에게 표시될 이름이에요. 처음 한 번만 정하면 됩니다.';
+
+  @override
+  String get nicknameChangeTitle => '닉네임 변경';
+
+  @override
+  String get nicknameChangeBody => '닉네임을 바꾸려면 곤충젤리가 필요해요. 변경할까요?';
+
+  @override
+  String get nicknameChangeConfirm => '변경';
 
   @override
   String get nicknameFallback => '이용자';
