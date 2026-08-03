@@ -1,4 +1,3 @@
-import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,52 +8,23 @@ import '../../domain/store_iap_service.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
-import '../../ui/art.dart';
 import '../../ui/format.dart';
-import '../../ui/labels.dart';
 
-/// 상점 탭: [제작 | 상점] 2섹션.
-/// 제작 = 재료로 버프 물약(§C), 상점 = 인앱결제 카탈로그(iap.json).
+/// 상점 탭 — 인앱결제 카탈로그(iap.json).
+///
+/// (2026-08) 제작 탭은 제거했다 — 물약 제작은 사용률이 낮고 광고 버프와 역할이
+/// 겹쳤다. `craft.json`·`SaveController.craft` 는 남아 있어 되살리기 쉽다.
 class CraftScreen extends ConsumerWidget {
   const CraftScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final data = ref.watch(gameDataProvider).requireValue;
     final save = ref.watch(saveControllerProvider).requireValue;
-    final cfg = data.craftConfig;
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l.craftTitle),
-          bottom: TabBar(
-            indicatorColor: const Color(0xFFEBA52F),
-            labelColor: const Color(0xFFEBA52F),
-            unselectedLabelColor: const Color(0x99FFFFFF),
-            tabs: [
-              Tab(text: l.tabCraft),
-              Tab(text: l.tabStore),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            cfg == null
-                ? Center(child: Text(l.comingSoon))
-                : ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: cfg.recipes.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) =>
-                        _RecipeCard(recipe: cfg.recipes[i], save: save),
-                  ),
-            _StoreSection(save: save),
-          ],
-        ),
-      ),
+    return Scaffold(
+      appBar: AppBar(title: Text(l.tabStore)),
+      body: _StoreSection(save: save),
     );
   }
 }
@@ -342,117 +312,5 @@ class _ProductCard extends ConsumerWidget {
     ScaffoldMessenger.of(ctx)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(msg)));
-  }
-}
-
-class _RecipeCard extends ConsumerWidget {
-  const _RecipeCard({required this.recipe, required this.save});
-
-  final CraftRecipe recipe;
-  final SaveGame save;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final buff = recipe.buff;
-    final name = recipe.allBuffs
-        ? l.craftAllPotion
-        : l.craftPotion(buffLabel(l, buff!));
-    final color = recipe.allBuffs ? const Color(0xFF4FC3F7) : buffColor(buff!);
-    final glyph = recipe.allBuffs ? '💎' : buffGlyph(buff!);
-
-    var affordable = true;
-    for (final e in recipe.inputs.entries) {
-      if (save.materialCount(e.key) < e.value) affordable = false;
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(glyph, style: const TextStyle(fontSize: 22)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 2,
-                    children: [
-                      for (final e in recipe.inputs.entries)
-                        _cost(e.key, e.value, save.materialCount(e.key)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: affordable
-                  ? () async {
-                      final ok = await ref
-                          .read(saveControllerProvider.notifier)
-                          .craft(recipe);
-                      if (ok && context.mounted) {
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            SnackBar(content: Text(l.craftedSnack(name))),
-                          );
-                      }
-                    }
-                  : null,
-              child: Text(l.craftMake),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _cost(MaterialKind kind, int need, int have) {
-    final ok = have >= need;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        materialImage(
-          kind,
-          size: 15,
-          fallback: Icon(
-            materialIcon(kind),
-            size: 14,
-            color: ok ? const Color(0xFF9CCC65) : const Color(0xFFEF9A9A),
-          ),
-        ),
-        const SizedBox(width: 3),
-        Text(
-          formatCompact(need),
-          style: TextStyle(
-            color: ok ? const Color(0xFF9CCC65) : const Color(0xFFEF9A9A),
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
   }
 }

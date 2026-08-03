@@ -1348,6 +1348,48 @@ abstract class AppLocalizations {
   /// **'{count} bugs'**
   String storageCount(int count);
 
+  /// No description provided for @storageCapacityCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{used}/{cap}'**
+  String storageCapacityCount(int used, int cap);
+
+  /// No description provided for @storageCapacityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage {used} / {cap} slots'**
+  String storageCapacityLabel(int used, int cap);
+
+  /// No description provided for @storageFullBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage full — no new bugs'**
+  String get storageFullBanner;
+
+  /// No description provided for @storageFullSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage is full. Release a bug or expand your storage.'**
+  String get storageFullSnack;
+
+  /// No description provided for @storageExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'+{n} 💎{jelly}'**
+  String storageExpand(int n, int jelly);
+
+  /// No description provided for @storageExpandMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max size'**
+  String get storageExpandMaxed;
+
+  /// No description provided for @storageExpandedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage expanded!'**
+  String get storageExpandedSnack;
+
   /// No description provided for @bugSize.
   ///
   /// In en, this message translates to:
@@ -2734,6 +2776,48 @@ abstract class AppLocalizations {
   /// **'That nickname contains blocked words'**
   String get nicknameBlockedWord;
 
+  /// No description provided for @nicknameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'That nickname is already in use'**
+  String get nicknameTaken;
+
+  /// No description provided for @rankPopupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Ranking'**
+  String get rankPopupTitle;
+
+  /// No description provided for @rankSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'th'**
+  String get rankSuffix;
+
+  /// No description provided for @rankFirstCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'First ranking check — good luck!'**
+  String get rankFirstCheck;
+
+  /// No description provided for @rankUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No change since last time'**
+  String get rankUnchanged;
+
+  /// No description provided for @rankChangedFromTo.
+  ///
+  /// In en, this message translates to:
+  /// **'#{from} → #{to}'**
+  String rankChangedFromTo(int from, int to);
+
+  /// No description provided for @rankTopStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {days} at #1 👑'**
+  String rankTopStreak(int days);
+
   /// No description provided for @nicknameRequiredTitle.
   ///
   /// In en, this message translates to:
@@ -2811,6 +2895,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Later'**
   String get updateLater;
+
+  /// No description provided for @maintenanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Under maintenance'**
+  String get maintenanceTitle;
+
+  /// No description provided for @maintenanceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is under maintenance. Please try again in a moment.'**
+  String get maintenanceBody;
+
+  /// No description provided for @connectionRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection required'**
+  String get connectionRequiredTitle;
+
+  /// No description provided for @connectionRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An internet connection is required to play. Check your network and try again.'**
+  String get connectionRequiredBody;
+
+  /// No description provided for @retryButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryButton;
 
   /// No description provided for @accountSignInApple.
   ///

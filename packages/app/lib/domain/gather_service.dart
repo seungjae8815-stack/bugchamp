@@ -97,8 +97,10 @@ class GatherService {
         .map((i) => i.slotIndex == slotIndex ? i.copyWith(installedAt: now) : i)
         .toList();
 
+    // 채집함 상한을 넘는 분은 버린다(획득 차단). 재료는 그대로 들어온다.
+    final accepted = harvest.encounters.take(save.storageFree);
     final updated = save.copyWith(
-      bugs: [...save.bugs, ...harvest.encounters],
+      bugs: [...save.bugs, ...accepted],
       materials: newMaterials,
       installations: newInstallations,
     );

@@ -28,6 +28,7 @@ import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/nickname_gate.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
@@ -424,7 +425,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final stats = _stats(save);
     _playerHpMax = stats.maxHp;
     _playerHp = stats.maxHp;
-    _spawn();
+    _spawn(announce: false);
     _ticker = createTicker(_tick)..start();
 
     // 오프라인 복귀 보상 알림 (1회)
@@ -463,6 +464,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   @override
   void dispose() {
     _ticker.dispose();
+    // 챕터 보스전 도중에 화면을 떠나도 보스 배경음이 남지 않게 되돌린다.
+    unawaited(AudioService.instance.restoreBgm());
     super.dispose();
   }
 
@@ -502,8 +505,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return out;
   }
 
-  void _spawn() {
+  /// [announce] 는 보스 등장 스팅어 재생 여부. 앱 시작·개발도구처럼 **플레이 흐름이
+  /// 아닌** 스폰에서는 꺼서, 켜자마자 보스음이 튀어나오지 않게 한다.
+  void _spawn({bool announce = true}) {
     _isBoss = _habitatIndex >= _config.habitatsPerStage;
+    if (_isBoss && announce) AudioService.instance.sfxBoss();
+    // 챕터 최종보스에서만 전용 배경음. 스테이지 보스마다 바꾸면 1분에 한 번씩
+    // 곡이 갈려서 오히려 산만하다. 매 스폰마다 호출되지만 같은 트랙이면 무시된다.
+    final ch = _data.roadmapConfig?.chapterForStage(_stage);
+    unawaited(
+      _isBoss && ch != null && _stage == ch.endStage
+          ? AudioService.instance.switchBgm('bgm_boss')
+          : AudioService.instance.restoreBgm(),
+    );
     final depth = _stage - 1;
     _hpMax =
         (_isBoss ? bossMaxHp(_config, depth) : habitatMaxHp(_config, depth))
@@ -672,6 +686,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _playerHp -= burst;
         _enemyLunge = 1; // 공격 모션(캐릭터 쪽으로 달려듦)
         _playerHitFlash = _isBoss ? 1.0 : 0.6;
+        AudioService.instance.sfxHurt(); // 플레이어 피격음
+
         _pops.add(
           _Pop(
             '-${formatCompact(burst)}',
@@ -735,6 +751,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         }
         _screenShake = crit ? 0.7 : 0.4;
         _dmgCooldown = 0.12;
+        // 타격음 — 연출 쿨다운과 같은 주기라 연타에도 시끄럽지 않다.
+        AudioService.instance.sfxHit();
       }
       guard++;
     }
@@ -742,6 +760,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   void _beginDeath(CharacterStats stats) {
+    AudioService.instance.sfxDie(); // 몬스터 처치음
     final depth = _stage - 1;
     final gold = rewardGold(
       _config,
@@ -752,8 +771,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final xp = (rewardXp(_config, depth, boss: _isBoss) * stats.xpMultiplier)
         .round();
 
+    // 채집함이 가득 차면 곤충 롤 자체를 건너뛴다 — 굴려서 버리면 연출만 뜨고
+    // 실제로는 안 들어와 버그로 보인다.
+    final storageFull = ref
+        .read(saveControllerProvider)
+        .requireValue
+        .storageFull;
     IndividualBug? bug;
-    final bugChance = _isBoss ? 1.0 : _config.bugDropChance * stats.bugFind;
+    final bugChance = storageFull
+        ? 0.0
+        : (_isBoss ? 1.0 : _config.bugDropChance * stats.bugFind);
     if (_rng.nextDouble() < bugChance) {
       final sp = _data.allSpecies[_rng.nextInt(_data.allSpecies.length)];
       final potential = 1 + (_rng.nextDouble() * _rng.nextDouble() * 4).floor();
@@ -763,6 +790,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         rng: _rng,
         potential: potential.clamp(1, 5),
       ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
+      // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
+      if (sp.grade.index >= Grade.rare.index) {
+        AudioService.instance.sfxRare();
+      } else {
+        AudioService.instance.sfxCatch();
+      }
     }
 
     Map<MaterialKind, int>? mats;
@@ -1291,6 +1324,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ),
       child: Column(
         children: [
+          // 채집함 만석 알림 — 구매 버튼 바로 위(씬을 가리지 않는 자리).
+          _storageFullBar(l, save),
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: Row(
@@ -1393,7 +1428,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final xpNeed = xpForNextLevel(save.level);
     final cp = combatPower(_petStats(save));
     final now = _clock.now().toUtc();
-    final myRank = ref.watch(myRankProvider).asData?.value;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
       child: Row(
@@ -1439,24 +1473,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         fontSize: 12,
                       ),
                     ),
-                    // 로그인 시 현재 랭킹 노출(동기부여).
-                    if (myRank != null) ...[
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.emoji_events_rounded,
-                        color: Color(0xFFFFD24A),
-                        size: 12,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '#$myRank',
-                        style: const TextStyle(
-                          color: Color(0xFFFFD24A),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    // (2026-08) 랭킹은 여기서 빼고 **앱 시작 팝업**으로 옮겼다
+                    // — 상시 표기는 갱신 시점이 모호해 실제 순위와 어긋나 보였다.
+                    // see ui/rank_popup.dart
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -1818,14 +1837,79 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     ),
   );
 
+  /// "채집함이 가득 찼어요" 알림 바 — 곤충 드롭이 멈춘 이유 안내.
+  ///
+  /// 강화 패널의 [1/10/100] 버튼 **바로 위**에 얇게 깐다. 씬 위에 띄우면
+  /// 캐릭터·연출과 겹쳐 가리기 때문이다. 가득 찼을 때만 아래에서 슬라이드로
+  /// 올라오고, 자리가 생기면 높이 0 으로 접혀 레이아웃을 밀지 않는다.
+  Widget _storageFullBar(AppLocalizations l, SaveGame save) => AnimatedSize(
+    duration: const Duration(milliseconds: 240),
+    curve: Curves.easeOutCubic,
+    alignment: Alignment.bottomCenter,
+    child: !save.storageFull
+        ? const SizedBox(width: double.infinity)
+        : ClipRect(
+            child: TweenAnimationBuilder<double>(
+              key: const ValueKey('storage-full-bar'),
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+              builder: (context, t, child) => Opacity(
+                opacity: t,
+                // 아래에서 위로 밀려 올라오는 슬라이드.
+                child: Transform.translate(
+                  offset: Offset(0, (1 - t) * 14),
+                  child: child,
+                ),
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
+                color: const Color(0xCC4A1A0A),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.inventory_2_outlined,
+                      size: 12,
+                      color: Color(0xFFFF8A65),
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        l.storageFullBanner,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFFFCCBC),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+  );
+
   /// 상단 중앙 스테이지 배너(사냥 화면 위 오버레이).
   Widget _stageOverlay(AppLocalizations l) {
     final region = _config.regionForStage(_stage);
     final name = region.name.resolve(
       Localizations.localeOf(context).languageCode,
     );
-    final chapter = (_stage - 1) ~/ _config.stagesPerRegion + 1;
-    final stageInRegion = (_stage - 1) % _config.stagesPerRegion + 1;
+    // "1-37" = 월드-스테이지. 월드 미설정(worldSize=0)이면 지역 기준(구버전).
+    final chapter = _config.worldSize > 0
+        ? _config.worldOf(_stage)
+        : (_stage - 1) ~/ _config.stagesPerRegion + 1;
+    final stageInRegion = _config.worldSize > 0
+        ? _config.stageInWorld(_stage)
+        : (_stage - 1) % _config.stagesPerRegion + 1;
     final rmChapter = _data.roadmapConfig?.chapterForStage(_stage);
     final diff = rmChapter?.difficulty.resolve(
       Localizations.localeOf(context).languageCode,
@@ -1887,6 +1971,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final cleared = await ctrl.grantChapterClears();
     if (!mounted) return;
     for (final ch in cleared) {
+      AudioService.instance.sfxLevelUp(); // 챕터 돌파 — 스테이지 클리어보다 큰 마디
       await _showChapterClearDialog(ch);
       if (!mounted) return;
     }
@@ -1962,6 +2047,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       MaterialPageRoute(
         builder: (_) => RoadmapScreen(
           config: cfg,
+          runConfig: _config,
           highestStage: save.stageNumber,
           liveStage: _stage,
         ),
@@ -2145,7 +2231,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   Future<void> _claimMission(AppLocalizations l, String id) async {
     final ok = await ref.read(saveControllerProvider.notifier).claimMission(id);
-    if (ok && mounted) {
+    if (!ok) return;
+    AudioService.instance.sfxMission();
+    if (mounted) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l.missionClaimedSnack)));
@@ -2292,22 +2380,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   // ── 다이얼로그/시트 ──────────────────────────────────────────
 
-  /// 편지함 = 일일보상(점심/저녁). 현재 로컬 시각·수령 이력으로 상태 표시.
+  /// 편지함 = 일일보상(점심/저녁) + 깜짝선물. 현재 로컬 시각·수령 이력으로 상태 표시.
   void _showMail(AppLocalizations l) {
     showModalBottomSheet<void>(
       context: context,
+      // 일일보상 + 선물이 쌓이면 기본 시트 높이를 넘는다 — 스크롤 없이는
+      // 맨 아래(깜짝선물 섹션)가 하단 바 뒤로 잘려 안 보였다.
+      isScrollControlled: true,
       backgroundColor: const Color(0xF2141F0E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.72,
+      ),
       builder: (ctx) => SafeArea(
+        top: false,
         child: Consumer(
           builder: (ctx, r, _) {
             final save = r.watch(saveControllerProvider).requireValue;
             final daily = _data.dailyConfig;
             final now = _clock.now();
             final today = dailyDateKey(now);
-            return Padding(
+            return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -3280,98 +3375,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     await _promptNicknameMandatory(l);
   }
 
-  /// 첫 로그인 시 닉네임 강제 설정 — 닉네임 미확정이면 취소 불가 다이얼로그.
-  /// (닉네임을 정할 때까지 닫히지 않음. 첫 설정이라 비용 없음.)
+  /// 첫 로그인 시 닉네임 강제 설정 — 공용 게이트(ui/nickname_gate.dart)에 위임.
+  /// 빈 값·금칙어·**중복(온라인)** 검증까지 한 곳에서 처리한다.
   Future<void> _promptNicknameMandatory(AppLocalizations l) async {
     if (!mounted) return;
-    final save = ref.read(saveControllerProvider).requireValue;
-    if (save.nicknameSet) return;
-    final controller = TextEditingController(
-      text: save.nicknameSet ? save.nickname : '',
-    );
-    final rules = _data.chatRules ?? const ChatRules();
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => PopScope(
-        canPop: false,
-        child: AlertDialog(
-          backgroundColor: const Color(0xF21F2E13),
-          title: Text(
-            l.nicknameRequiredTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                l.nicknameRequiredBody,
-                style: const TextStyle(
-                  color: Color(0xCCFFFFFF),
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                maxLength: 8,
-                autofocus: true,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-                decoration: InputDecoration(
-                  counterText: '',
-                  hintText: l.settingsNicknameHint,
-                  hintStyle: const TextStyle(color: Color(0x55FFFFFF)),
-                  filled: true,
-                  fillColor: const Color(0x22000000),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () async {
-                final name = controller.text.trim();
-                if (name.isEmpty) {
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(content: Text(l.nicknameRequiredBody)),
-                    );
-                  return;
-                }
-                if (!rules.nicknameAllowed(name)) {
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(content: Text(l.nicknameBlockedWord)),
-                    );
-                  return;
-                }
-                await ref
-                    .read(saveControllerProvider.notifier)
-                    .renamePlayer(name);
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFEBA52F),
-                foregroundColor: const Color(0xFF3A2600),
-              ),
-              child: Text(l.actionSave),
-            ),
-          ],
-        ),
-      ),
-    );
+    await ensureNicknameSet(context, ref);
     if (mounted) setState(() {});
   }
 
@@ -3678,7 +3686,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _defeated = false;
       _dying = false;
       _walking = false;
-      _spawn();
+      _spawn(announce: false);
       _playerHp = _playerHpMax;
     });
   }
@@ -3811,6 +3819,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           );
                         return;
                       }
+                      // 다른 유저가 쓰는 닉네임인지(온라인일 때만 실검사).
+                      final taken = await ref
+                          .read(pvpBackendProvider)
+                          .isNicknameTaken(name);
+                      if (!ctx.mounted) return;
+                      if (taken) {
+                        ScaffoldMessenger.of(ctx)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            SnackBar(content: Text(l.nicknameTaken)),
+                          );
+                        return;
+                      }
+                      if (!mounted) return;
                       // 이미 확정된 닉네임 변경 → 젤리 소비, 먼저 확인.
                       if (save.nicknameSet) {
                         final confirm = await showGameDialog<bool>(

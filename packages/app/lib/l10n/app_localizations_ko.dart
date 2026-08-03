@@ -694,6 +694,33 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String storageCapacityCount(int used, int cap) {
+    return '$used/$cap';
+  }
+
+  @override
+  String storageCapacityLabel(int used, int cap) {
+    return '채집함 $used / $cap칸';
+  }
+
+  @override
+  String get storageFullBanner => '채집함이 가득 찼어요 — 곤충이 들어오지 않아요';
+
+  @override
+  String get storageFullSnack => '채집함이 가득 찼어요. 분해하거나 확장해 주세요.';
+
+  @override
+  String storageExpand(int n, int jelly) {
+    return '+$n칸 💎$jelly';
+  }
+
+  @override
+  String get storageExpandMaxed => '최대 확장';
+
+  @override
+  String get storageExpandedSnack => '채집함이 늘었어요!';
+
+  @override
   String bugSize(String mm) {
     return '${mm}mm';
   }
@@ -1455,6 +1482,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get nicknameBlockedWord => '닉네임에 사용할 수 없는 표현이 있어요';
 
   @override
+  String get nicknameTaken => '이미 사용 중인 닉네임이에요';
+
+  @override
+  String get rankPopupTitle => '내 랭킹';
+
+  @override
+  String get rankSuffix => '위';
+
+  @override
+  String get rankFirstCheck => '첫 랭킹 확인이에요. 화이팅!';
+
+  @override
+  String get rankUnchanged => '지난번과 순위가 같아요';
+
+  @override
+  String rankChangedFromTo(int from, int to) {
+    return '$from위 → $to위';
+  }
+
+  @override
+  String rankTopStreak(int days) {
+    return '1위 유지 $days일째 👑';
+  }
+
+  @override
   String get nicknameRequiredTitle => '닉네임을 정해주세요';
 
   @override
@@ -1492,6 +1544,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get updateLater => '나중에';
+
+  @override
+  String get maintenanceTitle => '서버 점검 중';
+
+  @override
+  String get maintenanceBody => '지금 서버 점검 중이에요. 잠시 후 다시 시도해 주세요.';
+
+  @override
+  String get connectionRequiredTitle => '인터넷 연결 필요';
+
+  @override
+  String get connectionRequiredBody =>
+      '게임을 하려면 인터넷 연결이 필요해요. 연결을 확인하고 다시 시도해 주세요.';
+
+  @override
+  String get retryButton => '다시 시도';
 
   @override
   String get accountSignInApple => 'Apple로 로그인';

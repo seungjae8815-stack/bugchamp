@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'data/save_repository.dart';
 import 'domain/ad_service.dart';
 import 'domain/admob_ad_service.dart';
+import 'domain/audio_service.dart';
 import 'domain/auth_service.dart';
 import 'domain/chat_service.dart';
 import 'domain/game_server.dart';
@@ -158,7 +159,17 @@ class BugChampApp extends StatelessWidget {
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      navigatorObservers: [_SheetSound()],
       home: const AppShell(),
     );
+  }
+}
+
+/// 바텀시트가 열릴 때 스와이프 효과음. 시트를 여는 곳이 10군데라 호출부마다
+/// 넣으면 새 시트를 추가할 때 빠뜨린다 — 라우트를 관찰해 한 곳에서 처리한다.
+class _SheetSound extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is ModalBottomSheetRoute) AudioService.instance.sfxSwipe();
   }
 }

@@ -693,5 +693,81 @@ void main() {
       expect(saved.gold, 12345); // 솔로 필드 수용
       expect(saved.pvpTrophies, mySave.pvpTrophies); // 위조 무시
     });
+
+    // ── 비용 회귀 방지(2026-07 장애) ──────────────────────────────
+    // 13.6MB 세이브를 10초마다 왕복시켜 Cloud Run 요금이 폭증했다.
+    // 아래 셋이 그 재발 경로를 각각 막는다.
+
+    test('평시 응답에 세이브 전체를 싣지 않는다 — 왕복 이그레스 차단', () async {
+      final res = await post(handler(), '/save', {
+        'save': mySave.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final b = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(b['ok'], isTrue);
+      expect(b.containsKey('save'), isFalse);
+    });
+
+    test('상한 초과 세이브는 서버가 잘라 저장하고, 클라가 채택하도록 돌려준다', () async {
+      // 구버전 앱·조작된 업로드를 흉내낸다 — 클라 상한을 우회한 경우.
+      final bloated = mySave.copyWith(
+        bugs: [
+          for (var i = 0; i < 500; i++)
+            mySave.bugs.first.copyWith(id: 'bloat-$i'),
+        ],
+      );
+      final res = await post(handler(), '/save', {
+        'save': bloated.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+
+      final saved = SaveGame.fromJson(
+        fake.lastSaved!['data'] as Map<String, dynamic>,
+      );
+      expect(saved.bugs, hasLength(kDefaultStorageCapacity));
+
+      // clamped 여야 클라이언트가 잘린 세이브를 채택한다 — 아니면 다음 주기에
+      // 다시 500마리를 올려 무한히 되풀이된다.
+      final b = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(b['clamped'], isTrue);
+      expect((b['save'] as Map)['bugs'], hasLength(kDefaultStorageCapacity));
+    });
+
+    test('칸 수 자체를 위조해도 설정 상한으로 잘린다', () async {
+      final cheat = mySave.copyWith(storageCapacity: 999999);
+      await post(handler(), '/save', {
+        'save': cheat.toJson(),
+      }, token: makeToken());
+      final saved = SaveGame.fromJson(
+        fake.lastSaved!['data'] as Map<String, dynamic>,
+      );
+      expect(saved.storageCapacity, gameConfig.pet.storageSlotsMax);
+    });
+  });
+
+  group('요청 크기 가드', () {
+    test('상한을 넘는 본문은 읽기 전에 413 — DB 까지 가지 않는다', () async {
+      final huge = 'x' * (kMaxRequestBytes + 1024);
+      final res = await handler()(
+        Request(
+          'POST',
+          Uri.parse('http://localhost/save'),
+          headers: {
+            'authorization': 'Bearer ${makeToken()}',
+            'content-type': 'application/json',
+          },
+          body: jsonEncode({'blob': huge}),
+        ),
+      );
+      expect(res.statusCode, 413);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('정상 크기 요청은 통과한다', () async {
+      final res = await post(handler(), '/save', {
+        'save': mySave.toJson(),
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+    });
   });
 }

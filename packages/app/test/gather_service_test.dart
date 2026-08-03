@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:app/data/game_data.dart';
 import 'package:app/domain/gather_service.dart';
 import 'package:core_save/core_save.dart';
@@ -134,6 +136,67 @@ void main() {
       expect(result.save.materialCount(MaterialKind.chitin), 8);
       // 타이머 리셋
       expect(result.save.installationAt(0)!.installedAt, clock.now());
+    });
+
+    test('채집함 상한을 넘는 곤충은 버린다 — 재료는 그대로 들어온다', () {
+      final clock = FixedClock(t0);
+      final svc = makeService(clock);
+      // 상한 3칸에 2마리 보유 → 12마리를 수확해도 1마리만 들어와야 한다.
+      final base = _unlockedSave(t0);
+      final seeded = base.copyWith(
+        storageCapacity: 3,
+        bugs: [
+          for (var i = 0; i < 2; i++)
+            IndividualBug.roll(
+              id: 'have$i',
+              species: _fixtureData().species('a'),
+              rng: Random(i),
+              potential: 1,
+            ),
+        ],
+      );
+      final installed = svc.installTrap(
+        seeded,
+        slotIndex: 0,
+        fieldId: 'f',
+        trapId: 't',
+      );
+
+      clock.advance(const Duration(hours: 4));
+      final result = svc.collect(installed, slotIndex: 0);
+
+      expect(result.save.bugs.length, 3); // 상한에서 멈춤
+      expect(result.save.storageFull, isTrue);
+      expect(result.save.materialCount(MaterialKind.chitin), 8); // 재료는 정상
+    });
+
+    test('채집함이 이미 가득 차면 곤충이 하나도 들어오지 않는다', () {
+      final clock = FixedClock(t0);
+      final svc = makeService(clock);
+      final base = _unlockedSave(t0);
+      final full = base.copyWith(
+        storageCapacity: 1,
+        bugs: [
+          IndividualBug.roll(
+            id: 'have0',
+            species: _fixtureData().species('a'),
+            rng: Random(1),
+            potential: 1,
+          ),
+        ],
+      );
+      final installed = svc.installTrap(
+        full,
+        slotIndex: 0,
+        fieldId: 'f',
+        trapId: 't',
+      );
+
+      clock.advance(const Duration(hours: 4));
+      final result = svc.collect(installed, slotIndex: 0);
+
+      expect(result.save.bugs.map((b) => b.id), ['have0']);
+      expect(result.save.materialCount(MaterialKind.chitin), 8);
     });
 
     test('설치 상태 동일 → 산출 재현(리롤 불가)', () {

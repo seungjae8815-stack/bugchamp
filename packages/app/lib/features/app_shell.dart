@@ -15,6 +15,8 @@ import '../domain/save_controller.dart';
 import '../domain/update_checker.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/game_dialog.dart';
+import '../ui/nickname_gate.dart';
+import '../ui/rank_popup.dart';
 import 'battle/battle_screen.dart';
 import 'play/play_screen.dart';
 import 'shop/craft_screen.dart';
@@ -54,7 +56,14 @@ class _AppShellState extends ConsumerState<AppShell>
       // 서버 연결 시: 세이브를 맞추고(최초 1회 이관 포함) 주기 업로드를 건다.
       unawaited(syncWithServer(ref).then((_) => _uploader.start()));
       // 버전 점검 — 새 버전/강제 업데이트 안내(서버 /version 기준).
-      unawaited(_checkForUpdate());
+      // 게이트 통과 후 닉네임 미설정이면 강제 설정(랭킹·채팅에 "채집가" 도배 방지).
+      // 순서: 버전/점검 게이트 → 닉네임 강제 → 랭킹 팝업.
+      // (닉네임을 먼저 받아야 랭킹 프로필에 기본값 "채집가"가 올라가지 않는다.)
+      unawaited(
+        _checkForUpdate()
+            .then((_) => mounted ? ensureNicknameSet(context, ref) : null)
+            .then((_) => mounted ? showRankPopupOnStart(context, ref) : null),
+      );
     });
   }
 
@@ -65,8 +74,7 @@ class _AppShellState extends ConsumerState<AppShell>
     if (kIsWeb || !Platform.isIOS) return;
     try {
       await Future<void>.delayed(const Duration(milliseconds: 600));
-      final status =
-          await AppTrackingTransparency.trackingAuthorizationStatus;
+      final status = await AppTrackingTransparency.trackingAuthorizationStatus;
       if (status == TrackingStatus.notDetermined) {
         await AppTrackingTransparency.requestTrackingAuthorization();
       }
@@ -75,37 +83,95 @@ class _AppShellState extends ConsumerState<AppShell>
     }
   }
 
-  /// 서버가 알려준 최소·최신 버전과 내 버전을 비교해 안내한다.
+  /// 서버 상태·버전 게이트. 시작 시 **온라인 필수**다.
   /// - hard: 업데이트 전엔 못 넘어감(서버 규약이 깨질 때). 닫기·뒤로가기 불가.
+  /// - maintenance: 서버 점검 중 — 재시도로만 풀림.
+  /// - offline: 서버에 닿지 못함 — 연결 확인 후 재시도.
   /// - soft: "새 버전 있어요" — 나중에 가능.
+  ///
+  /// 차단 상태에서 재시도가 통과되면 다이얼로그를 닫는다. 게임 도중의 끊김은
+  /// 여기서 다루지 않는다(진행 중 튕기지 않게 — 업로더가 알아서 재시도).
   Future<void> _checkForUpdate() async {
-    final verdict = await checkAppVersion();
+    var verdict = await checkAppVersion();
     if (!mounted || verdict == UpdateVerdict.none) return;
     final l = AppLocalizations.of(context);
-    final hard = verdict == UpdateVerdict.hard;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: !hard,
-      builder: (ctx) => PopScope(
-        canPop: !hard,
-        child: AlertDialog(
-          title: Text(hard ? l.updateRequiredTitle : l.updateAvailableTitle),
-          content: Text(hard ? l.updateRequiredBody : l.updateAvailableBody),
+
+    if (verdict == UpdateVerdict.soft) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.updateAvailableTitle),
+          content: Text(l.updateAvailableBody),
           actions: [
-            if (!hard)
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(l.updateLater),
-              ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.updateLater),
+            ),
             FilledButton(
               onPressed: () async {
                 await openStore();
-                // 강제 업데이트는 스토어 다녀와도 유지(반드시 갱신).
-                if (!hard && ctx.mounted) Navigator.pop(ctx);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
               child: Text(l.updateNow),
             ),
           ],
+        ),
+      );
+      return;
+    }
+
+    // 차단 상태(hard/maintenance/offline) — 통과할 때까지 닫히지 않는다.
+    var checking = false;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: StatefulBuilder(
+          builder: (ctx, setDialog) {
+            final (title, body) = switch (verdict) {
+              UpdateVerdict.hard => (
+                l.updateRequiredTitle,
+                l.updateRequiredBody,
+              ),
+              UpdateVerdict.maintenance => (
+                l.maintenanceTitle,
+                l.maintenanceBody,
+              ),
+              _ => (l.connectionRequiredTitle, l.connectionRequiredBody),
+            };
+            return AlertDialog(
+              title: Text(title),
+              content: Text(body),
+              actions: [
+                if (verdict == UpdateVerdict.hard)
+                  FilledButton(
+                    onPressed: openStore, // 다녀와도 유지 — 재시작으로 재검사.
+                    child: Text(l.updateNow),
+                  )
+                else
+                  FilledButton(
+                    onPressed: checking
+                        ? null
+                        : () async {
+                            setDialog(() => checking = true);
+                            final next = await checkAppVersion();
+                            if (!ctx.mounted) return;
+                            if (next == UpdateVerdict.none ||
+                                next == UpdateVerdict.soft) {
+                              Navigator.pop(ctx); // 통과(soft 안내는 생략)
+                              return;
+                            }
+                            setDialog(() {
+                              verdict = next; // 상태가 바뀌었으면 문구 갱신
+                              checking = false;
+                            });
+                          },
+                    child: Text(l.retryButton),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );

@@ -707,6 +707,34 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String storageCapacityCount(int used, int cap) {
+    return '$used/$cap';
+  }
+
+  @override
+  String storageCapacityLabel(int used, int cap) {
+    return 'Storage $used / $cap slots';
+  }
+
+  @override
+  String get storageFullBanner => 'Storage full — no new bugs';
+
+  @override
+  String get storageFullSnack =>
+      'Storage is full. Release a bug or expand your storage.';
+
+  @override
+  String storageExpand(int n, int jelly) {
+    return '+$n 💎$jelly';
+  }
+
+  @override
+  String get storageExpandMaxed => 'Max size';
+
+  @override
+  String get storageExpandedSnack => 'Storage expanded!';
+
+  @override
   String bugSize(String mm) {
     return '${mm}mm';
   }
@@ -1477,6 +1505,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nicknameBlockedWord => 'That nickname contains blocked words';
 
   @override
+  String get nicknameTaken => 'That nickname is already in use';
+
+  @override
+  String get rankPopupTitle => 'Your Ranking';
+
+  @override
+  String get rankSuffix => 'th';
+
+  @override
+  String get rankFirstCheck => 'First ranking check — good luck!';
+
+  @override
+  String get rankUnchanged => 'No change since last time';
+
+  @override
+  String rankChangedFromTo(int from, int to) {
+    return '#$from → #$to';
+  }
+
+  @override
+  String rankTopStreak(int days) {
+    return 'Day $days at #1 👑';
+  }
+
+  @override
   String get nicknameRequiredTitle => 'Choose a nickname';
 
   @override
@@ -1518,6 +1571,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateLater => 'Later';
+
+  @override
+  String get maintenanceTitle => 'Under maintenance';
+
+  @override
+  String get maintenanceBody =>
+      'The server is under maintenance. Please try again in a moment.';
+
+  @override
+  String get connectionRequiredTitle => 'Connection required';
+
+  @override
+  String get connectionRequiredBody =>
+      'An internet connection is required to play. Check your network and try again.';
+
+  @override
+  String get retryButton => 'Retry';
 
   @override
   String get accountSignInApple => 'Sign in with Apple';

@@ -137,4 +137,54 @@ class SupabasePvpBackend implements PvpBackend {
       // 트로피 반영 실패는 다음 진입/전투 때 재시도된다.
     }
   }
+
+  /// 상위 [_rankScanLimit] 안에서 내 순위를 찾는다. 밖이면 null(= "순위권 밖").
+  ///
+  /// 세션(uid)이 없으면 **폴백하지 않고 null** — 로컬 사다리 순위가 진짜 순위인
+  /// 것처럼 캐시되는 사고를 막는다(2026-08: 77위로 굳던 버그).
+  @override
+  Future<int?> myRank({required PvpProfile me}) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return null;
+    try {
+      await _client.from('profiles').upsert({
+        'id': uid,
+        'nickname': me.nickname,
+        'trophies': me.trophies,
+      });
+      final rows =
+          (await _client.rpc(
+                'leaderboard_top',
+                params: {'lim': _rankScanLimit},
+              ))
+              as List;
+      for (final r in rows.cast<Map<String, dynamic>>()) {
+        if (r['id'] == uid) return (r['rank'] as num).toInt();
+      }
+      return null; // 상위권 밖 — 지어내지 않는다.
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 순위를 훑어볼 상위 인원. 플레이어 수가 커지면 전용 RPC 로 교체할 것.
+  static const _rankScanLimit = 200;
+
+  /// RPC `nickname_taken`(SECURITY DEFINER) — profiles 는 RLS 로 본인 행만
+  /// 보이므로 직접 select 로는 다른 유저의 닉네임을 확인할 수 없다.
+  /// 함수 SQL 은 docs/backend_supabase.md §9. 실패·미배포 시 false(막지 않음).
+  @override
+  Future<bool> isNicknameTaken(String name) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return false;
+    try {
+      final r = await _client.rpc(
+        'nickname_taken',
+        params: {'p_name': name.trim()},
+      );
+      return r == true;
+    } catch (_) {
+      return false;
+    }
+  }
 }

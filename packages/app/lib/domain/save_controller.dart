@@ -119,6 +119,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
 
+    // 자가치유: 채집함 상한 초과분 정리.
+    //
+    // 상한 도입 전(2026-08 이전) 세이브에는 곤충이 수만 마리 쌓여 있어 업로드가
+    // 통째로 실패했다. 여기서 한 번 잘라내면 그 계정이 정상 크기로 돌아온다.
+    // 부화 항목 정리보다 **먼저** 해야 한다 — 잘린 곤충의 부화 기록이 남으면
+    // 슬롯이 새기 때문(아래 자가치유가 이어서 걷어낸다).
+    save = save.trimmedToStorage();
+
     // 자가치유: 존재하지 않는 곤충을 가리키는 부화 항목 제거(슬롯 누수 방지).
     if (save.incubating.isNotEmpty) {
       final ids = {for (final b in save.bugs) b.id};
@@ -188,7 +196,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
   SaveRepository get _repo => ref.read(saveRepositoryProvider);
 
   Future<void> _commit(SaveGame save) async {
-    final stamped = save.copyWith(
+    // 채집함 상한은 **저장되는 모든 경로**에서 지켜져야 한다. 획득 지점마다
+    // 막아두긴 했지만, 여기서 한 번 더 자르면 새 획득 경로가 생겨도 세이브가
+    // 비대해지지 않는다(상한 이하면 그대로 통과 — 비용 없음).
+    final stamped = save.trimmedToStorage().copyWith(
       lastSeen: ref.read(clockProvider).now().toUtc(),
     );
     state = AsyncData(stamped);
@@ -245,13 +256,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
         newMaterials[e.key] = (newMaterials[e.key] ?? 0) + e.value;
       }
     }
+    // 채집함이 가득 차면 새 곤충은 **버린다**(획득 차단). 골드·재료·경험치는
+    // 그대로 들어온다 — 방치 보상이 통째로 끊기지는 않게.
+    final accepted = bug != null && !s.storageFull ? bug : null;
     await _commit(
       s.copyWith(
         gold: s.gold + gold,
         xp: newXp,
         level: newLevel,
         materials: newMaterials,
-        bugs: bug == null ? null : [...s.bugs, bug],
+        bugs: accepted == null ? null : [...s.bugs, accepted],
         missionProgress: mission == null
             ? null
             : _bumpMissions(s.missionProgress, mission, 1),
@@ -1163,6 +1177,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (cfg == null) return false;
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
+    // 채집함이 가득 차면 수령하지 않는다 — 슬롯을 그대로 두어 자리를 비운 뒤
+    // 다시 받게 한다(여기서 알을 버리면 산란 시간이 통째로 날아간다).
+    if (s.storageFull) return false;
     final idx = s.breeding.indexWhere((b) => b.id == slotId);
     if (idx < 0) return false;
     final slot = s.breeding[idx];
@@ -1213,6 +1230,27 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(
       s.copyWith(breedingCapacity: s.breedingCapacity + 1, materials: mats),
     );
+    return true;
+  }
+
+  /// 채집함 확장(젤리). 최대치·젤리부족이면 false.
+  ///
+  /// 1회에 `storageExpandAmount` 칸씩 `storageSlotsMax` 까지. 상한은 세이브
+  /// 크기의 방어선이라 **서버도 같은 상한으로 자른다**(actions.mergeSave).
+  Future<bool> expandStorage() async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    if (s.storageCapacity >= cfg.storageSlotsMax) return false;
+    final have = s.materials[MaterialKind.jelly] ?? 0;
+    if (have < cfg.storageExpandJelly) return false;
+    final next = (s.storageCapacity + cfg.storageExpandAmount).clamp(
+      0,
+      cfg.storageSlotsMax,
+    );
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cfg.storageExpandJelly;
+    await _commit(s.copyWith(storageCapacity: next, materials: mats));
     return true;
   }
 

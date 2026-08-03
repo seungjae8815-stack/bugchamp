@@ -8,6 +8,7 @@ import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
+import '../../domain/audio_service.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
@@ -499,6 +500,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         .read(saveControllerProvider.notifier)
         .claimLeagueRewards();
     if (r == null || !mounted) return;
+    AudioService.instance.sfxPromote();
     await showGameDialog<void>(
       context,
       title: l.leaguePromoTitle,

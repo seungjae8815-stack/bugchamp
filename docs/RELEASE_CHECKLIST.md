@@ -149,12 +149,18 @@ gitignore 되는 `local.properties` 에만 두면 새로 클론했을 때 조용
 cd packages\app
 flutter build appbundle `
   --dart-define-from-file=supabase.env.json `
-  --dart-define-from-file=admob.env.json
+  --dart-define-from-file=admob.env.json `
+  --dart-define=GAME_SERVER_URL=https://bugchamp-server-867649520275.asia-northeast3.run.app
 ```
 → `build\app\outputs\bundle\release\app-release.aab` 업로드
 
 > 두 파일 모두 필요하다. `admob.env.json` 을 빼면 **구글 테스트 광고**가 나간다
 > (설정 화면에 ⚠️ 테스트광고 배지로 잡힌다).
+>
+> ⚠️ **`GAME_SERVER_URL` 도 반드시 넣는다.** 없으면 `main.dart` 의 안전장치가
+> 걸려 앱이 서버에 아예 붙지 않는다 — 클라우드 저장·PvP·서버측 이상치 차단이
+> 전부 꺼진 채로 출시된다(에러가 안 나서 눈치채기 어렵다).
+> iOS(codemagic)는 환경변수로 이미 주입하고 있다. URL 은 비밀이 아니라 그대로 적는다.
 
 ---
 

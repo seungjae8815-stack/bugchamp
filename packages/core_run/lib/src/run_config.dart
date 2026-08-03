@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
@@ -15,6 +17,7 @@ class UpgradeSpec {
     this.materialKind,
     this.materialBaseCost = 0,
     this.materialCostGrowth = 1.0,
+    this.valueGrowth,
   });
 
   final UpgradeKind kind;
@@ -28,8 +31,21 @@ class UpgradeSpec {
   final double materialBaseCost;
   final double materialCostGrowth;
 
+  /// 레벨당 **곱연산** 성장률. 지정하면 [perLevel](덧셈) 대신 이걸 쓴다.
+  ///
+  /// 왜 필요한가: 덧셈 성장은 비용이 지수(`costGrowth`)라서 **스탯 ∝ log(골드)**
+  /// 가 된다. 적 HP 는 스테이지당 `hpGrowth` 배로 지수 증가하므로, 파밍을
+  /// 두 배 해도 다음 스테이지를 못 뚫는 구간(진행 벽)이 반드시 생긴다.
+  /// [valueGrowth] 를 `costGrowth` 와 같은 값으로 두면 **스탯 ∝ 쓴 골드**가 되어
+  /// "막히면 더 모아서 뚫는다"가 성립한다.
+  ///
+  /// null 이면 기존 덧셈 그대로 — JSON 에 없으면 동작이 안 바뀐다.
+  final double? valueGrowth;
+
   /// 레벨 [level] 에서의 스탯 값.
-  double valueAt(int level) => baseValue + perLevel * level;
+  double valueAt(int level) => valueGrowth == null
+      ? baseValue + perLevel * level
+      : baseValue * math.pow(valueGrowth!, level);
 
   factory UpgradeSpec.fromJson(Map<String, dynamic> json) => UpgradeSpec(
     kind: UpgradeKind.fromKey(json['kind'] as String),
@@ -42,6 +58,7 @@ class UpgradeSpec {
         : null,
     materialBaseCost: (json['materialBaseCost'] as num?)?.toDouble() ?? 0,
     materialCostGrowth: (json['materialCostGrowth'] as num?)?.toDouble() ?? 1.0,
+    valueGrowth: (json['valueGrowth'] as num?)?.toDouble(),
   );
 }
 
@@ -100,6 +117,10 @@ class RunConfig {
     this.threatGrowth = 1.12,
     this.bossThreatMult = 4.0,
     this.offlineEfficiency = 0.3,
+    this.worldSize = 0,
+    this.worldHpMult = 1.0,
+    this.worldGoldMult = 1.0,
+    this.worldBossHpMult = 1.0,
   });
 
   final double hpBase;
@@ -127,15 +148,50 @@ class RunConfig {
   /// 오프라인 파밍 효율(실시간 대비). 온라인이 훨씬 유리하도록 <1.
   final double offlineEfficiency;
 
+  // ── 월드(회차 아님 — "1-37" 의 1) ──────────────────────────────
+  /// 한 월드의 스테이지 수. **0 이면 월드 없음**(구버전 동작 그대로).
+  ///
+  /// 월드 구조(2026-08 확정): 구간 내에서는 hp·gold 가 같은 속도로 늘어
+  /// 순항하고, 월드 경계에서 적 HP 가 [worldHpMult] 배 점프해 **벽**이 된다.
+  /// 벽은 이전 월드에서 재화를 모아 업그레이드해야 뚫린다(방치 루프의 핵).
+  final int worldSize;
+
+  /// 월드가 하나 넘어갈 때마다 적 HP(·위협도)에 곱해지는 점프.
+  final double worldHpMult;
+
+  /// 월드가 하나 넘어갈 때마다 골드·경험치 보상에 곱해지는 점프.
+  /// [worldHpMult] 보다 작아야 벽이 생긴다(같으면 벽이 없다).
+  final double worldGoldMult;
+
+  /// 월드 **마지막 스테이지 보스**(1-100 의 보스)에 추가로 곱하는 HP 배.
+  /// 다음 월드로 가는 관문 — 이 벽을 넘으면 월드가 바뀐다.
+  final double worldBossHpMult;
+
+  /// 스테이지가 몇 번째 월드인지(1-based). 월드 없으면 항상 1.
+  int worldOf(int stageNumber) =>
+      worldSize <= 0 ? 1 : (stageNumber - 1) ~/ worldSize + 1;
+
+  /// 월드 안에서의 스테이지 번호(1-based). "1-37" 의 37.
+  int stageInWorld(int stageNumber) =>
+      worldSize <= 0 ? stageNumber : (stageNumber - 1) % worldSize + 1;
+
+  /// 이 스테이지가 월드의 마지막(월드 보스)인가.
+  bool isWorldFinal(int stageNumber) =>
+      worldSize > 0 && stageNumber % worldSize == 0;
+
+  /// 깊이(depth = stage-1)에 대한 월드 점프 누적 배율.
+  double worldMult(double per, int depth) =>
+      worldSize <= 0 ? 1.0 : math.pow(per, depth ~/ worldSize).toDouble();
+
   /// 첫 지역 (하위호환).
   RegionConfig get region => regions.first;
 
   /// 스테이지 번호(1-based)에 해당하는 지역.
+  ///
+  /// 지역은 **순환**한다(1-25 참나무숲 → … → 1-100 밤숲 → 2-1 다시 참나무숲).
+  /// 아트 4종으로 월드 10개를 채우기 위함 — 마지막 지역에서 멈추지 않는다.
   RegionConfig regionForStage(int stageNumber) {
-    final idx = ((stageNumber - 1) ~/ stagesPerRegion).clamp(
-      0,
-      regions.length - 1,
-    );
+    final idx = ((stageNumber - 1) ~/ stagesPerRegion) % regions.length;
     return regions[idx];
   }
 
@@ -169,6 +225,10 @@ class RunConfig {
       threatGrowth: (json['threatGrowth'] as num?)?.toDouble() ?? 1.12,
       bossThreatMult: (json['bossThreatMult'] as num?)?.toDouble() ?? 4.0,
       offlineEfficiency: (json['offlineEfficiency'] as num?)?.toDouble() ?? 0.3,
+      worldSize: (json['worldSize'] as num?)?.toInt() ?? 0,
+      worldHpMult: (json['worldHpMult'] as num?)?.toDouble() ?? 1.0,
+      worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
+      worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
     );
   }
 }

@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "hpBase": 12,
-  "hpGrowth": 1.18,
+  "hpBase": 40,
+  "hpGrowth": 1.025,
   "bossHpMult": 5.0,
-  "goldBase": 10,
-  "goldGrowth": 1.15,
+  "goldBase": 1.5,
+  "goldGrowth": 1.0165,
   "xpBase": 5,
-  "xpGrowth": 1.1,
+  "xpGrowth": 1.005,
   "bossRewardMult": 8.0,
-  "habitatsPerStage": 5,
-  "bugDropChance": 0.1,
+  "habitatsPerStage": 20,
+  "bugDropChance": 0.03,
   "materialDropChance": 0.5,
   "threatBase": 2.0,
-  "threatGrowth": 1.13,
+  "threatGrowth": 1.025,
   "bossThreatMult": 3.0,
-  "stagesPerRegion": 10,
+  "stagesPerRegion": 25,
   "regions": [
     {
       "id": "oak_forest",
@@ -103,7 +103,8 @@
       "baseCost": 15,
       "costGrowth": 1.15,
       "baseValue": 8,
-      "perLevel": 4
+      "perLevel": 4,
+      "valueGrowth": 1.15
     },
     {
       "kind": "attackSpeed",
@@ -150,14 +151,16 @@
       "baseCost": 20,
       "costGrowth": 1.16,
       "baseValue": 100,
-      "perLevel": 25
+      "perLevel": 25,
+      "valueGrowth": 1.15
     },
     {
       "kind": "defense",
       "baseCost": 25,
       "costGrowth": 1.18,
       "baseValue": 4,
-      "perLevel": 3
+      "perLevel": 3,
+      "valueGrowth": 1.15
     },
     {
       "kind": "regen",
@@ -216,5 +219,9 @@
       "perLevel": 0.1
     }
   ],
-  "offlineEfficiency": 0.3
+  "offlineEfficiency": 0.3,
+  "worldSize": 100,
+  "worldHpMult": 3.0,
+  "worldGoldMult": 2.2,
+  "worldBossHpMult": 3.0
 }

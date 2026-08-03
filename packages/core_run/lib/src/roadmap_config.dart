@@ -84,9 +84,15 @@ class RoadmapChapter {
 /// 로드맵 전체 설정 (assets/data/roadmap.json).
 @immutable
 class RoadmapConfig {
-  const RoadmapConfig({required this.chapters});
+  const RoadmapConfig({required this.chapters, this.nodeStep = 10});
 
   final List<RoadmapChapter> chapters;
+
+  /// 로드맵에 칸(징검다리 노드)을 하나 찍는 간격(스테이지).
+  ///
+  /// 10 이면 한 월드(100스테이지)가 10칸 = 2줄 × 5칸이 된다. 칸의 이름은 그
+  /// 칸의 **마지막 스테이지**(1-10, 1-20 … 1-100)이고, `x-100` 은 월드 보스다.
+  final int nodeStep;
 
   /// 캠페인 총 스테이지(마지막 챕터 endStage). 이후는 확장.
   int get finalStage => chapters.isEmpty ? 0 : chapters.last.endStage;
@@ -105,5 +111,6 @@ class RoadmapConfig {
         .cast<Map<String, dynamic>>()
         .map(RoadmapChapter.fromJson)
         .toList(),
+    nodeStep: (json['nodeStep'] as num?)?.toInt() ?? 10,
   );
 }

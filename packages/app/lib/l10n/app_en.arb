@@ -445,6 +445,43 @@
       }
     }
   },
+  "storageCapacityCount": "{used}/{cap}",
+  "@storageCapacityCount": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
+  "storageCapacityLabel": "Storage {used} / {cap} slots",
+  "@storageCapacityLabel": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
+  "storageFullBanner": "Storage full — no new bugs",
+  "storageFullSnack": "Storage is full. Release a bug or expand your storage.",
+  "storageExpand": "+{n} 💎{jelly}",
+  "@storageExpand": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
+  "storageExpandMaxed": "Max size",
+  "storageExpandedSnack": "Storage expanded!",
   "bugSize": "{mm}mm",
   "@bugSize": {
     "placeholders": {
@@ -927,6 +964,19 @@
     }
   },
   "nicknameBlockedWord": "That nickname contains blocked words",
+  "nicknameTaken": "That nickname is already in use",
+  "rankPopupTitle": "Your Ranking",
+  "rankSuffix": "th",
+  "rankFirstCheck": "First ranking check — good luck!",
+  "rankUnchanged": "No change since last time",
+  "rankChangedFromTo": "#{from} → #{to}",
+  "rankTopStreak": "Day {days} at #1 👑",
+  "@rankChangedFromTo": {
+    "placeholders": { "from": {"type": "int"}, "to": {"type": "int"} }
+  },
+  "@rankTopStreak": {
+    "placeholders": { "days": {"type": "int"} }
+  },
   "nicknameRequiredTitle": "Choose a nickname",
   "nicknameRequiredBody": "This is the name other collectors will see. You only set it once.",
   "nicknameChangeTitle": "Change nickname",
@@ -940,6 +990,11 @@
   "updateAvailableBody": "An improved version is ready. Update now?",
   "updateNow": "Update",
   "updateLater": "Later",
+  "maintenanceTitle": "Under maintenance",
+  "maintenanceBody": "The server is under maintenance. Please try again in a moment.",
+  "connectionRequiredTitle": "Connection required",
+  "connectionRequiredBody": "An internet connection is required to play. Check your network and try again.",
+  "retryButton": "Retry",
   "accountSignInApple": "Sign in with Apple",
   "termsOfUse": "Terms of Use",
   "privacyPolicy": "Privacy Policy"

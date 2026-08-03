@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/game_data.dart';
+import '../../domain/audio_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
@@ -121,11 +123,13 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     _hpA = [for (final u in widget.myTeam) u.maxHp];
     _hpB = [for (final u in widget.foeTeam) u.maxHp];
     _ticker = createTicker(_tick)..start();
+    unawaited(AudioService.instance.switchBgm('bgm_pvp'));
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    unawaited(AudioService.instance.restoreBgm());
     super.dispose();
   }
 

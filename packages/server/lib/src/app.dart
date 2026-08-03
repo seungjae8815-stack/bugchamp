@@ -163,6 +163,10 @@ Handler buildHandler({
       return _json({
         'min': env('MIN_SUPPORTED_VERSION'),
         'latest': env('LATEST_VERSION'),
+        // 점검 모드 — 앱이 "점검 중" 화면을 띄우고 입장을 막는다. 재배포 없이
+        // `gcloud run services update --update-env-vars MAINTENANCE=1` 로 켜고
+        // `MAINTENANCE=0`(또는 제거)으로 끈다.
+        'maintenance': Platform.environment['MAINTENANCE'] == '1',
       });
     });
 
@@ -232,7 +236,9 @@ Handler buildHandler({
         // 보호 필드(트로피·IAP)를 초기값으로 리셋 후 파싱 — 부트스트랩으로
         // 랭킹·결제 상태를 위조하지 못하게(솔로 진행은 그대로).
         final sanitized = actions.sanitizeBootstrap(migrateToCurrent(incoming));
-        final save = SaveGame.fromJson(sanitized);
+        // 부트스트랩은 mergeSave 를 거치지 않으므로 채집함 상한을 여기서도
+        // 강제한다 — 안 그러면 비대한 세이브를 새 계정으로 올려 되살릴 수 있다.
+        final save = actions.enforceStorage(SaveGame.fromJson(sanitized));
         await store.save(user.id, save.toJson());
         return _json({'save': save.toJson(), 'bootstrapped': true});
       } on StateStoreException catch (e) {
@@ -269,7 +275,16 @@ Handler buildHandler({
         final r = actions.mergeSave(stored, migrateToCurrent(incoming));
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
         await store.save(user.id, r.save!.toJson());
-        return _json({'save': r.save!.toJson(), ...r.extra});
+        // ⚠️ 세이브 전체를 되돌려주지 않는다. 이 엔드포인트는 주기 업로드라
+        // 호출이 잦은데, 응답까지 세이브 통째면 왕복마다 세이브 크기 × 2 의
+        // 이그레스가 나간다(과거 14MB 응답 × 수천 회 = 요금 대부분).
+        // 클라이언트는 `clamped` 일 때만 서버 값을 채택하므로 그때만 실어준다.
+        final clamped = r.extra['clamped'] == true;
+        return _json({
+          'ok': true,
+          ...r.extra,
+          if (clamped) 'save': r.save!.toJson(),
+        });
       } on StateStoreException catch (e) {
         stderr.writeln('[save] ${user.id}: $e');
         return _json({'error': 'store_unavailable'}, status: 503);
@@ -986,5 +1001,46 @@ Handler buildHandler({
 
   return const Pipeline()
       .addMiddleware(logRequests())
+      .addMiddleware(limitBodySize())
       .addHandler(cascade.handler);
+}
+
+/// 정상 세이브의 몇 배까지 허용할지 — 이 위는 사고로 본다.
+///
+/// 채집함 100마리 세이브가 60KB 수준이라 1MB 는 20배 가까운 여유다.
+/// 그런데도 넘는 요청은 읽어서 파싱할 가치가 없다. 2026-07 에 13.6MB 짜리
+/// 세이브가 10초마다 올라와 인스턴스 시간·DB 를 모두 태웠다 — 그때
+/// 이 가드가 있었다면 첫 요청에서 413 으로 끝났다.
+const int kMaxRequestBytes = 1 * 1024 * 1024;
+
+/// 과대 요청을 **읽기 전에** 413 으로 끊는 미들웨어.
+///
+/// `Content-Length` 가 있으면 그걸로 즉시 거절한다. 없으면(청크 전송)
+/// 본문을 그대로 흘리되 누적 바이트가 상한을 넘는 순간 스트림을 끊는다.
+Middleware limitBodySize({int maxBytes = kMaxRequestBytes}) {
+  return (Handler inner) {
+    return (Request req) async {
+      final declared = req.contentLength;
+      if (declared != null && declared > maxBytes) {
+        stderr.writeln('[limit] ${req.requestedUri.path}: $declared bytes 거절');
+        return _json({'error': 'payload_too_large'}, status: 413);
+      }
+      if (declared != null) return inner(req);
+
+      var seen = 0;
+      final guarded = req.read().map((chunk) {
+        seen += chunk.length;
+        if (seen > maxBytes) {
+          throw StateError('요청 본문이 상한($maxBytes bytes)을 넘었습니다');
+        }
+        return chunk;
+      });
+      try {
+        return await inner(req.change(body: guarded));
+      } on StateError catch (e) {
+        stderr.writeln('[limit] ${req.requestedUri.path}: $e');
+        return _json({'error': 'payload_too_large'}, status: 413);
+      }
+    };
+  };
 }

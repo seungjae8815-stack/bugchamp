@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
@@ -83,11 +84,13 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
       _enterEvent(0);
     }
     _ticker = createTicker(_tick)..start();
+    unawaited(AudioService.instance.switchBgm('bgm_pvp'));
   }
 
   @override
   void dispose() {
     _ticker.dispose();
+    unawaited(AudioService.instance.restoreBgm());
     super.dispose();
   }
 

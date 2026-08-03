@@ -7,6 +7,23 @@ import 'gift_mail.dart';
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
 const int kSaveSchemaVersion = 18;
 
+/// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
+///
+/// 50 인 이유: `deriveStats` 의 곤충 수 버프가 `min(bugsCollected, 50)` 이라
+/// 50마리를 넘겨도 캐릭터 스탯이 더 오르지 않는다. 즉 이 상한은 **밸런스를
+/// 깎지 않으면서** 세이브 크기를 묶는다.
+///
+/// ⚠️ 이 상한이 없으면 세이브가 무한히 커진다(곤충 3만 마리 = 13.6MB 세이브
+/// → 서버 업로드마다 수십 MB 트래픽·DB 타임아웃). 절대 제거하지 말 것.
+///
+/// **스키마 버전을 올리지 않은 이유**: `storageCapacity` 는 없으면 이 기본값으로
+/// 읽히므로 구/신 버전이 서로의 세이브를 그대로 읽는다. 버전을 올리면 서버가
+/// 새 버전 세이브를 저장하는 순간, 스토어에 이미 배포된 구버전 앱이
+/// `migrateToCurrent` 에서 "다운그레이드 불가" 예외로 죽는다. 상한 적용은
+/// 버전 게이트가 아니라 **로드·커밋 시 정리**(SaveController)와
+/// **업로드 시 서버 강제**(GameActions.enforceStorage)로 처리한다.
+const int kDefaultStorageCapacity = 50;
+
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
 
@@ -89,6 +106,57 @@ class BreedingSlot {
   };
 }
 
+/// 채집함 상한 정리에 필요한 곤충 1마리의 최소 정보.
+typedef BugTrimEntry = ({
+  String id,
+  int level,
+  int tier,
+  int potential,
+  double size,
+});
+
+/// 채집함 상한([capacity])을 넘겼을 때 **남길 곤충 id** 집합.
+///
+/// [pinned](장착·부화 중)은 무조건 남긴다. 나머지는 **플레이어가 투자한 순서**로
+/// 남긴다 — 수련 레벨 > 돌파 티어 > 포텐셜 > 사이즈. 골드·재료를 쏟은 개체가
+/// 먼저 사라지면 그게 곧 클레임이 된다.
+///
+/// 앱(마이그레이션)과 서버(업로드 강제)가 **같은 결과**를 내야 하므로 정리
+/// 기준은 이 함수 하나로만 정의한다.
+Set<String> keepBugIds(
+  List<BugTrimEntry> entries, {
+  required int capacity,
+  Set<String> pinned = const {},
+}) {
+  if (entries.length <= capacity) return {for (final e in entries) e.id};
+
+  final pinnedHere = <String>{};
+  final rest = <BugTrimEntry>[];
+  for (final e in entries) {
+    if (pinned.contains(e.id)) {
+      pinnedHere.add(e.id);
+    } else {
+      rest.add(e);
+    }
+  }
+  // 장착·부화 중만으로 상한을 넘는 극단 케이스(상한을 낮췄을 때) — 보호분만 남긴다.
+  final room = capacity - pinnedHere.length;
+  if (room <= 0) return pinnedHere;
+
+  rest.sort((a, b) {
+    var c = b.level.compareTo(a.level);
+    if (c != 0) return c;
+    c = b.tier.compareTo(a.tier);
+    if (c != 0) return c;
+    c = b.potential.compareTo(a.potential);
+    if (c != 0) return c;
+    c = b.size.compareTo(a.size);
+    if (c != 0) return c;
+    return a.id.compareTo(b.id); // 완전 동률이어도 결정론적으로.
+  });
+  return {...pinnedHere, for (final e in rest.take(room)) e.id};
+}
+
 /// 저장 루트 (버전드 JSON 스냅샷). v2: 횡스크롤 런 진행 상태 포함.
 class SaveGame {
   const SaveGame({
@@ -122,6 +190,7 @@ class SaveGame {
     this.seasonPeakTrophies = 0,
     this.breeding = const [],
     this.breedingCapacity = 1,
+    this.storageCapacity = kDefaultStorageCapacity,
     this.adsRemoved = false,
     this.starterBought = false,
     this.ownedSkins = const {},
@@ -228,6 +297,52 @@ class SaveGame {
   /// 브리딩 슬롯 개수(젤리로 확장).
   final int breedingCapacity;
 
+  /// 채집함 칸 수 = 보유 가능한 곤충 최대 마리 수(젤리로 확장, pets.json 상한).
+  ///
+  /// 가득 차면 새 곤충은 **획득되지 않는다**(드롭 스킵). 이 상한이 세이브
+  /// 크기의 유일한 방어선이다 — §2.1, [kDefaultStorageCapacity] 주석 참조.
+  final int storageCapacity;
+
+  /// 보유 곤충이 칸 수를 채웠는지(= 새 곤충을 받을 수 없음).
+  bool get storageFull => bugs.length >= storageCapacity;
+
+  /// 남은 채집함 칸 수(0 이상).
+  int get storageFree {
+    final free = storageCapacity - bugs.length;
+    return free < 0 ? 0 : free;
+  }
+
+  /// 장착 중이거나 부화기에 들어 있어 **상한 정리에서 보호되는** 곤충 id.
+  Set<String> get pinnedBugIds => {...equippedBugIds, ...incubating.keys};
+
+  /// 곤충 목록을 [storageCapacity] 이하로 줄인 세이브(초과분 폐기).
+  ///
+  /// 상한 내면 자기 자신을 그대로 돌려준다. 구버전 앱·조작된 업로드가 상한을
+  /// 넘긴 세이브를 올려도 서버가 이걸로 잘라 세이브 비대화를 원천 차단한다.
+  SaveGame trimmedToStorage() {
+    if (bugs.length <= storageCapacity) return this;
+    final keep = keepBugIds(
+      [
+        for (final b in bugs)
+          (
+            id: b.id,
+            level: b.level,
+            tier: b.breakthroughTier,
+            potential: b.potential,
+            size: b.sizeMm,
+          ),
+      ],
+      capacity: storageCapacity,
+      pinned: pinnedBugIds,
+    );
+    return copyWith(
+      bugs: [
+        for (final b in bugs)
+          if (keep.contains(b.id)) b,
+      ],
+    );
+  }
+
   // ── 인앱결제 상태(v16) ──
   /// 광고 제거 구매 여부(강제 광고만 제거, 보상형 광고는 유지).
   final bool adsRemoved;
@@ -308,6 +423,7 @@ class SaveGame {
     seasonPeakTrophies: 0,
     breeding: const [],
     breedingCapacity: 1,
+    storageCapacity: kDefaultStorageCapacity,
     adsRemoved: false,
     starterBought: false,
     ownedSkins: const {},
@@ -345,6 +461,7 @@ class SaveGame {
     int? seasonPeakTrophies,
     List<BreedingSlot>? breeding,
     int? breedingCapacity,
+    int? storageCapacity,
     bool? adsRemoved,
     bool? starterBought,
     Set<String>? ownedSkins,
@@ -383,6 +500,7 @@ class SaveGame {
     seasonPeakTrophies: seasonPeakTrophies ?? this.seasonPeakTrophies,
     breeding: breeding ?? this.breeding,
     breedingCapacity: breedingCapacity ?? this.breedingCapacity,
+    storageCapacity: storageCapacity ?? this.storageCapacity,
     adsRemoved: adsRemoved ?? this.adsRemoved,
     starterBought: starterBought ?? this.starterBought,
     ownedSkins: ownedSkins ?? this.ownedSkins,
@@ -495,6 +613,8 @@ class SaveGame {
             .toList() ??
         const [],
     breedingCapacity: (json['breedingCapacity'] as num?)?.toInt() ?? 1,
+    storageCapacity:
+        (json['storageCapacity'] as num?)?.toInt() ?? kDefaultStorageCapacity,
     adsRemoved: json['adsRemoved'] as bool? ?? false,
     starterBought: json['starterBought'] as bool? ?? false,
     ownedSkins:
@@ -552,6 +672,7 @@ class SaveGame {
     'seasonPeakTrophies': seasonPeakTrophies,
     'breeding': breeding.map((b) => b.toJson()).toList(),
     'breedingCapacity': breedingCapacity,
+    'storageCapacity': storageCapacity,
     'adsRemoved': adsRemoved,
     'starterBought': starterBought,
     'ownedSkins': ownedSkins.toList(),

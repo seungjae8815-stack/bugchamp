@@ -205,3 +205,9 @@ _JsonMap _v17ToV18(_JsonMap old) => {
   'schemaVersion': 18,
   'blockedUserIds': old['blockedUserIds'] ?? const <dynamic>[],
 };
+
+// ⚠️ 채집함 상한(2026-08)은 **일부러 마이그레이션을 만들지 않았다**.
+// `storageCapacity` 는 없으면 기본값으로 읽히는 하위/상위 호환 필드라, 버전을
+// 올리면 스토어에 배포된 구버전 앱이 서버가 저장한 새 버전 세이브를 못 읽고
+// 죽는다. 초과 보유분 정리는 로드·커밋 시(SaveController)와 업로드 시
+// (GameActions.enforceStorage) 수행한다 — 자세한 이유는 kDefaultStorageCapacity 주석.

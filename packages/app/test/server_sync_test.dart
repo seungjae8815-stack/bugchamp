@@ -3,6 +3,18 @@ import 'package:app/domain/server_sync.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('업로드 주기 — 비용 회귀 방지', () {
+    test('세이브 전체를 올리는 주기는 60초 이상이어야 한다', () {
+      // 2026-07: 10초 주기 × 13.6MB 세이브로 Cloud Run 인스턴스 시간이
+      // 하루 8 vCPU-시간까지 올라갔다. 주기를 줄이면 요금이 그대로 따라 오른다.
+      expect(
+        ServerSaveUploader.period.inSeconds,
+        greaterThanOrEqualTo(60),
+        reason: '업로드 주기를 줄이려면 세이브 크기·요금 영향을 먼저 확인할 것',
+      );
+    });
+  });
+
   group('fetchStateWithAuthRetry — 콜드스타트 토큰 갱신 경쟁', () {
     // 실제 지연을 기다리지 않도록 0 으로.
     const noWait = Duration.zero;

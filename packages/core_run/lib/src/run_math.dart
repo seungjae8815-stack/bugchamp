@@ -11,28 +11,39 @@ import 'run_config.dart';
 ///
 /// [depth] = 진행 깊이(0-based). 지역1에서는 depth = stageNumber - 1.
 
-/// 서식지 최대 HP.
+/// 서식지 최대 HP. 월드 경계마다 [RunConfig.worldHpMult] 점프(벽).
 int habitatMaxHp(RunConfig c, int depth) =>
-    (c.hpBase * math.pow(c.hpGrowth, depth)).round();
+    (c.hpBase * math.pow(c.hpGrowth, depth) * c.worldMult(c.worldHpMult, depth))
+        .round();
 
-/// 보스 최대 HP.
-int bossMaxHp(RunConfig c, int depth) =>
-    (habitatMaxHp(c, depth) * c.bossHpMult).round();
+/// 보스 최대 HP. 월드 마지막 보스(1-100)는 [RunConfig.worldBossHpMult] 추가
+/// — 다음 월드로 가는 관문 벽.
+int bossMaxHp(RunConfig c, int depth) {
+  final worldFinal = c.isWorldFinal(depth + 1) ? c.worldBossHpMult : 1.0;
+  return (habitatMaxHp(c, depth) * c.bossHpMult * worldFinal).round();
+}
 
-/// 파괴 보상 골드. 보스면 [c.bossRewardMult] 배.
+/// 파괴 보상 골드. 보스면 [c.bossRewardMult] 배. 월드마다 [c.worldGoldMult] 점프.
 int rewardGold(
   RunConfig c,
   int depth,
   double rewardMultiplier, {
   bool boss = false,
 }) {
-  final base = c.goldBase * math.pow(c.goldGrowth, depth) * rewardMultiplier;
+  final base =
+      c.goldBase *
+      math.pow(c.goldGrowth, depth) *
+      c.worldMult(c.worldGoldMult, depth) *
+      rewardMultiplier;
   return (base * (boss ? c.bossRewardMult : 1.0)).round();
 }
 
-/// 파괴 보상 경험치.
+/// 파괴 보상 경험치. 골드와 같은 월드 점프를 따른다.
 int rewardXp(RunConfig c, int depth, {bool boss = false}) {
-  final base = c.xpBase * math.pow(c.xpGrowth, depth);
+  final base =
+      c.xpBase *
+      math.pow(c.xpGrowth, depth) *
+      c.worldMult(c.worldGoldMult, depth);
   return (base * (boss ? c.bossRewardMult : 1.0)).round();
 }
 
@@ -69,8 +80,12 @@ int bulkUpgradeMaterialCost(UpgradeSpec spec, int level, int count) {
 int xpForNextLevel(int level) => (25 * math.pow(1.45, level - 1)).round();
 
 /// 서식지 곤충의 반격 위협도(초당 피해). 보스면 [c.bossThreatMult] 배.
+/// 적 HP 와 같은 월드 점프를 따른다(플레이어 체력 업그레이드도 곱연산이므로).
 double habitatThreat(RunConfig c, int depth, {bool boss = false}) {
-  final base = c.threatBase * math.pow(c.threatGrowth, depth);
+  final base =
+      c.threatBase *
+      math.pow(c.threatGrowth, depth) *
+      c.worldMult(c.worldHpMult, depth);
   return base * (boss ? c.bossThreatMult : 1.0);
 }
 
@@ -113,14 +128,17 @@ CharacterStats deriveStats(
 /// 전투력(CP): 능력치를 하나의 지표로 집계한 **표시용** 값.
 /// 밸런스 계산에 쓰이지 않는 순수 표시 지표라 코드 공식으로 둔다.
 /// 공격 성능(DPS 근사) + 생존력(유효 체력)을 가중 합산한다.
-int combatPower(CharacterStats s) {
+///
+/// double 인 이유: 곱연산 성장(valueGrowth)에서는 후반 스탯이 int64 를 넘는다
+/// — `.round()` 는 9.2e18 에서 조용히 포화해 CP 가 멈춘 것처럼 보였다.
+double combatPower(CharacterStats s) {
   final dps =
       s.attack *
       s.attackSpeed *
       (1 + s.critChance * (s.critDamage - 1)) *
       s.bossDamage;
   final effectiveHp = s.maxHp * (1 + s.defense / 100);
-  return (dps * 6 + effectiveHp * 0.4).round();
+  return dps * 6 + effectiveHp * 0.4;
 }
 
 /// (스테이지, 서식지 인덱스)에 대응하는 서식지 종류 (결정론, 해당 지역 기준).

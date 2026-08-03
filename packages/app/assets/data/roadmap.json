@@ -1,8 +1,9 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "nodeStep": 10,
   "chapters": [
     {
-      "id": "easy",
+      "id": "w1",
       "difficulty": {
         "ko": "쉬움",
         "en": "Easy",
@@ -10,80 +11,206 @@
       },
       "boss": {
         "ko": "숲의 지배자",
-        "en": "Forest Lord",
+        "en": "Forest Warden",
         "ja": "森の主"
       },
       "startStage": 1,
-      "endStage": 10,
+      "endStage": 100,
       "color": "0xFF5CD65C",
-      "rewardGold": 10000,
-      "rewardJelly": 5,
-      "rewardChitin": 50,
-      "rewardMineral": 50,
-      "rewardSap": 50
+      "rewardGold": 20000,
+      "rewardJelly": 10,
+      "rewardChitin": 100,
+      "rewardMineral": 100,
+      "rewardSap": 100
     },
     {
-      "id": "normal",
+      "id": "w2",
+      "difficulty": {
+        "ko": "쉬움",
+        "en": "Easy",
+        "ja": "やさしい"
+      },
+      "boss": {
+        "ko": "물가의 포식자",
+        "en": "Stream Stalker",
+        "ja": "水辺の捕食者"
+      },
+      "startStage": 101,
+      "endStage": 200,
+      "color": "0xFF4CC9B0",
+      "rewardGold": 60000,
+      "rewardJelly": 15,
+      "rewardChitin": 150,
+      "rewardMineral": 150,
+      "rewardSap": 150
+    },
+    {
+      "id": "w3",
+      "difficulty": {
+        "ko": "쉬움",
+        "en": "Easy",
+        "ja": "やさしい"
+      },
+      "boss": {
+        "ko": "초원의 여왕",
+        "en": "Meadow Queen",
+        "ja": "草原の女王"
+      },
+      "startStage": 201,
+      "endStage": 300,
+      "color": "0xFF8BC34A",
+      "rewardGold": 180000,
+      "rewardJelly": 20,
+      "rewardChitin": 220,
+      "rewardMineral": 220,
+      "rewardSap": 220
+    },
+    {
+      "id": "w4",
       "difficulty": {
         "ko": "보통",
         "en": "Normal",
         "ja": "ふつう"
       },
       "boss": {
-        "ko": "계곡의 폭군",
-        "en": "Valley Tyrant",
-        "ja": "渓谷の暴君"
+        "ko": "밤의 군주",
+        "en": "Night Sovereign",
+        "ja": "夜の君主"
       },
-      "startStage": 11,
-      "endStage": 20,
-      "color": "0xFF3FA9FF",
-      "rewardGold": 30000,
-      "rewardJelly": 10,
-      "rewardChitin": 120,
-      "rewardMineral": 120,
-      "rewardSap": 120
+      "startStage": 301,
+      "endStage": 400,
+      "color": "0xFFFFC107",
+      "rewardGold": 540000,
+      "rewardJelly": 25,
+      "rewardChitin": 330,
+      "rewardMineral": 330,
+      "rewardSap": 330
     },
     {
-      "id": "hard",
+      "id": "w5",
+      "difficulty": {
+        "ko": "보통",
+        "en": "Normal",
+        "ja": "ふつう"
+      },
+      "boss": {
+        "ko": "무쇠턱 폭군",
+        "en": "Ironjaw Tyrant",
+        "ja": "鉄顎の暴君"
+      },
+      "startStage": 401,
+      "endStage": 500,
+      "color": "0xFFFF9800",
+      "rewardGold": 1600000,
+      "rewardJelly": 30,
+      "rewardChitin": 500,
+      "rewardMineral": 500,
+      "rewardSap": 500
+    },
+    {
+      "id": "w6",
+      "difficulty": {
+        "ko": "보통",
+        "en": "Normal",
+        "ja": "ふつう"
+      },
+      "boss": {
+        "ko": "맹독 여제",
+        "en": "Venom Empress",
+        "ja": "猛毒の女帝"
+      },
+      "startStage": 501,
+      "endStage": 600,
+      "color": "0xFFFF7043",
+      "rewardGold": 5000000,
+      "rewardJelly": 40,
+      "rewardChitin": 750,
+      "rewardMineral": 750,
+      "rewardSap": 750
+    },
+    {
+      "id": "w7",
       "difficulty": {
         "ko": "어려움",
         "en": "Hard",
         "ja": "むずかしい"
       },
       "boss": {
-        "ko": "동굴의 마수",
-        "en": "Cavern Beast",
-        "ja": "洞窟の魔獣"
+        "ko": "그림자 사마귀",
+        "en": "Shadow Mantis",
+        "ja": "影のカマキリ"
       },
-      "startStage": 21,
-      "endStage": 30,
-      "color": "0xFFC072F0",
-      "rewardGold": 80000,
-      "rewardJelly": 20,
-      "rewardChitin": 300,
-      "rewardMineral": 300,
-      "rewardSap": 300
+      "startStage": 601,
+      "endStage": 700,
+      "color": "0xFFEF5350",
+      "rewardGold": 15000000,
+      "rewardJelly": 50,
+      "rewardChitin": 1100,
+      "rewardMineral": 1100,
+      "rewardSap": 1100
     },
     {
-      "id": "extreme",
+      "id": "w8",
+      "difficulty": {
+        "ko": "어려움",
+        "en": "Hard",
+        "ja": "むずかしい"
+      },
+      "boss": {
+        "ko": "심연의 집게왕",
+        "en": "Abyss Pincer King",
+        "ja": "深淵のハサミ王"
+      },
+      "startStage": 701,
+      "endStage": 800,
+      "color": "0xFFE53935",
+      "rewardGold": 45000000,
+      "rewardJelly": 60,
+      "rewardChitin": 1700,
+      "rewardMineral": 1700,
+      "rewardSap": 1700
+    },
+    {
+      "id": "w9",
       "difficulty": {
         "ko": "극한",
         "en": "Extreme",
-        "ja": "きわみ"
+        "ja": "極限"
       },
       "boss": {
-        "ko": "곤충왕",
-        "en": "Insect King",
-        "ja": "昆虫王"
+        "ko": "태고의 여왕개미",
+        "en": "Primal Ant Queen",
+        "ja": "太古の女王アリ"
       },
-      "startStage": 31,
-      "endStage": 40,
-      "color": "0xFFFFC93C",
-      "rewardGold": 200000,
-      "rewardJelly": 40,
-      "rewardChitin": 700,
-      "rewardMineral": 700,
-      "rewardSap": 700
+      "startStage": 801,
+      "endStage": 900,
+      "color": "0xFFAB47BC",
+      "rewardGold": 140000000,
+      "rewardJelly": 80,
+      "rewardChitin": 2500,
+      "rewardMineral": 2500,
+      "rewardSap": 2500
+    },
+    {
+      "id": "w10",
+      "difficulty": {
+        "ko": "극한",
+        "en": "Extreme",
+        "ja": "極限"
+      },
+      "boss": {
+        "ko": "곤충 황제",
+        "en": "Insect Emperor",
+        "ja": "昆虫皇帝"
+      },
+      "startStage": 901,
+      "endStage": 1000,
+      "color": "0xFF7E57C2",
+      "rewardGold": 400000000,
+      "rewardJelly": 100,
+      "rewardChitin": 4000,
+      "rewardMineral": 4000,
+      "rewardSap": 4000
     }
   ]
 }

@@ -125,6 +125,22 @@ abstract interface class PvpBackend {
   /// 승패 후 내 트로피를 서버(리더보드 프로필·방어팀 브래킷)에 즉시 반영한다.
   /// 로컬 백엔드는 no-op. 네트워크 실패는 조용히 무시(게임 흐름을 막지 않음).
   Future<void> pushTrophies({required PvpProfile me});
+
+  /// 리더보드 상의 **내 순위**(1-based). 확정할 수 없으면 null.
+  ///
+  /// null 을 돌려주는 경우: 로컬 백엔드(NPC 사다리라 의미 없음)·미로그인·
+  /// 세션 준비 전·네트워크 실패·상위권 밖. **폴백 순위를 지어내지 않는다** —
+  /// [leaderboard] 는 화면이 비지 않게 로컬로 폴백하는데, 그 값을 순위로 쓰면
+  /// 로그인 직후 경쟁 상황에서 엉뚱한 등수(예: 77위)가 캐시된다.
+  Future<int?> myRank({required PvpProfile me});
+
+  /// [name] 을 **다른 유저**가 이미 쓰고 있는지(대소문자 무시).
+  ///
+  /// 닉네임 설정/변경 전에 확인해 "이미 사용 중" 안내에 쓴다. 로컬 백엔드·
+  /// 네트워크 실패 시 false(막지 않음 — 확인 못 했다고 이름 짓기를 막으면
+  /// 오프라인 전환 때 게임이 잠긴다). 완전한 중복 차단은 서버 unique 인덱스가
+  /// 담당하고, 이 검사는 UX 용 사전 안내다.
+  Future<bool> isNicknameTaken(String name);
 }
 
 /// 로컬 리더보드 — 결정론적 NPC 사다리(고정 seed) + 내 트로피로 순위 삽입.
@@ -210,6 +226,14 @@ class LocalPvpBackend implements PvpBackend {
   /// 로컬 모드엔 반영할 서버가 없다 — no-op.
   @override
   Future<void> pushTrophies({required PvpProfile me}) async {}
+
+  /// 로컬 모드엔 다른 유저가 없다 — 항상 사용 가능.
+  @override
+  Future<bool> isNicknameTaken(String name) async => false;
+
+  /// NPC 사다리 순위는 실제 경쟁이 아니다 — 표시하지 않는다.
+  @override
+  Future<int?> myRank({required PvpProfile me}) async => null;
 }
 
 /// 교체 가능한 백엔드 제공자. 기본은 로컬. Supabase 연동 시 override.

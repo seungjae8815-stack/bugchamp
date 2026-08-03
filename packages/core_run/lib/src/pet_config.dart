@@ -45,6 +45,9 @@ class PetConfig {
     this.breedingMutationBonusPct = 0.15,
     this.breedingPotUpChance = 0.10,
     this.breedingPotDownChance = 0.30,
+    this.storageSlotsMax = 100,
+    this.storageExpandJelly = 50,
+    this.storageExpandAmount = 10,
   });
 
   /// 등급별 공격력 기여(0.05 = +5%).
@@ -139,6 +142,16 @@ class PetConfig {
   final double breedingMutationBonusPct; // 돌연변이 사이즈 보너스
   final double breedingPotUpChance; // 포텐셜 상승 확률
   final double breedingPotDownChance; // 포텐셜 하락 확률(나머지=유지)
+
+  /// 채집함 확장(젤리) — 1회 확장으로 [storageExpandAmount] 칸을
+  /// [storageExpandJelly] 젤리에 늘리고, [storageSlotsMax] 에서 멈춘다.
+  ///
+  /// 초기 칸 수는 세이브 기본값(`kDefaultStorageCapacity`)이다.
+  /// **상한은 세이브 크기의 방어선이기도 하다** — 상한 100마리 ≈ 세이브 60KB.
+  /// 이 값을 크게 올리면 업로드 트래픽이 그대로 따라 오른다.
+  final int storageSlotsMax;
+  final int storageExpandJelly;
+  final int storageExpandAmount;
 
   /// 돌파 최대 티어(마지막 인덱스).
   int get maxTier => tierCaps.length - 1;
@@ -285,6 +298,9 @@ class PetConfig {
           (json['breedingPotUpChance'] as num?)?.toDouble() ?? 0.10,
       breedingPotDownChance:
           (json['breedingPotDownChance'] as num?)?.toDouble() ?? 0.30,
+      storageSlotsMax: (json['storageSlotsMax'] as num?)?.toInt() ?? 100,
+      storageExpandJelly: (json['storageExpandJelly'] as num?)?.toInt() ?? 50,
+      storageExpandAmount: (json['storageExpandAmount'] as num?)?.toInt() ?? 10,
     );
   }
 }

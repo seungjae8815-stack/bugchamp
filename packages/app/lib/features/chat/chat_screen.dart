@@ -190,9 +190,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ],
     );
     if (ok != true || !mounted) return;
-    final done = await ref
-        .read(chatServiceProvider)
-        .deleteOwn(messageId: m.id);
+    final done = await ref.read(chatServiceProvider).deleteOwn(messageId: m.id);
     if (!mounted) return;
     if (done) setState(() => _messages.removeWhere((x) => x.id == m.id));
     _snack(done ? l.chatDeleted : l.chatUnavailable);

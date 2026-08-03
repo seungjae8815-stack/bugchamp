@@ -466,3 +466,37 @@ delete from battle_sessions where updated_at < now() - interval '1 day';
 > 세션 id 는 `Random.secure()` 16바이트라 추측할 수 없고, 스텝 요청 시
 > **소유자(user_id)를 확인**하므로 남의 세션을 진행시킬 수 없다.
 > 끝난 세션은 `finished` 로 잠가 보상 중복 수령을 막는다.
+
+## 11. 닉네임 중복 확인 RPC (2026-08)
+
+닉네임 설정/변경 시 "이미 사용 중" 안내용. profiles 는 RLS 로 본인 행만 보이므로
+클라이언트가 직접 select 할 수 없다 → SECURITY DEFINER 함수로 존재 여부만 알려준다.
+앱은 `SupabasePvpBackend.isNicknameTaken` 이 이 RPC 를 호출한다(미배포/실패 시
+false 폴백 — 이름 짓기를 막지 않음).
+
+```sql
+create or replace function public.nickname_taken(p_name text)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists(
+    select 1 from public.profiles
+    where lower(nickname) = lower(trim(p_name))
+      and id <> auth.uid()
+  );
+$$;
+
+grant execute on function public.nickname_taken(text) to authenticated;
+```
+
+경쟁 조건(둘이 동시에 같은 이름 저장)까지 완전히 막으려면 unique 인덱스가 필요하다.
+단, **기존 중복(기본 닉네임 '채집가' 등)을 먼저 정리해야** 생성이 성공한다:
+
+```sql
+-- 중복 확인: select lower(nickname), count(*) from profiles group by 1 having count(*)>1;
+-- 정리 후:
+-- create unique index profiles_nickname_uniq on public.profiles (lower(nickname));
+```

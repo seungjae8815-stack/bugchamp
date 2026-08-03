@@ -34,7 +34,8 @@ class AudioSettings {
 /// Riverpod 없는 순수 위젯(전투 아레나 등)에서도 직접 호출할 수 있다.
 ///
 /// 설정은 shared_preferences 에 **기기 로컬** 저장(세이브·서버와 무관 → 기기별 유지).
-/// 사운드 파일은 `assets/sounds/*.wav`(합성 스타터). 같은 파일명으로 CC0 교체 가능.
+/// 사운드 파일은 `assets/sounds/` — **효과음은 `.wav`**(디코딩 지연 없이 즉시 재생),
+/// **배경음은 `.mp3`**(137초 트랙을 wav 로 넣으면 APK 가 24MB 늘어난다).
 class AudioService {
   AudioService._();
   static final AudioService instance = AudioService._();
@@ -49,10 +50,28 @@ class AudioService {
   SharedPreferences? _prefs;
   bool _ready = false;
   bool _bgmStarted = false;
+  String _bgmTrack = 'bgm';
+  Duration _mainPos = Duration.zero;
 
   Future<void> init() async {
     if (_ready) return;
     try {
+      // ⚠️ 오디오 포커스를 끈다. 기본값(gain)이면 **효과음이 재생될 때마다
+      // 배경음 플레이어의 포커스를 뺏어** BGM 이 멈춘다(탭 전환음 한 번에
+      // 배경음이 사라지던 버그의 원인). 게임 사운드는 서로 섞여야 한다.
+      await AudioPlayer.global.setAudioContext(
+        AudioContext(
+          android: const AudioContextAndroid(
+            audioFocus: AndroidAudioFocus.none,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.game,
+          ),
+          // ⚠️ ambient 에 mixWithOthers 를 **명시하면** audioplayers 가 assert 로
+          // 죽어 init 전체가 실패한다 = 배경음·효과음이 통째로 안 난다(디버그 빌드).
+          // ambient 는 원래 다른 앱 오디오와 섞이고 무음 스위치를 따르므로 옵션 불필요.
+          iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+        ),
+      );
       _prefs = await SharedPreferences.getInstance();
       final p = _prefs!;
       settings.value = AudioSettings(
@@ -88,13 +107,43 @@ class AudioService {
         await _bgm.setVolume(s.bgmVol);
         await _bgm.resume();
       } else {
-        await _bgm.play(AssetSource('sounds/bgm.wav'), volume: s.bgmVol);
+        await _bgm.play(AssetSource('sounds/$_bgmTrack.mp3'), volume: s.bgmVol);
         _bgmStarted = true;
       }
     } catch (e) {
       debugPrint('startBgm: $e');
     }
   }
+
+  /// 배경음 트랙 교체(보스전·아레나 전용곡). 같은 트랙이면 아무것도 하지 않는다.
+  /// 복귀는 [restoreBgm].
+  ///
+  /// 메인 트랙은 **재생 위치를 기억했다가 이어서** 튼다. 안 그러면 보스를 만날
+  /// 때마다 137초짜리 배경음이 처음으로 되감겨 앞 몇 초만 반복해 듣게 된다.
+  Future<void> switchBgm(String track) async {
+    if (_bgmTrack == track) return;
+    if (_bgmTrack == 'bgm') {
+      try {
+        _mainPos = await _bgm.getCurrentPosition() ?? Duration.zero;
+      } catch (_) {
+        _mainPos = Duration.zero;
+      }
+    }
+    _bgmTrack = track;
+    _bgmStarted = false;
+    try {
+      await _bgm.stop();
+    } catch (_) {}
+    await startBgm();
+    if (track == 'bgm' && _mainPos > Duration.zero && _bgmStarted) {
+      try {
+        await _bgm.seek(_mainPos);
+      } catch (_) {}
+    }
+  }
+
+  /// 기본 배경음으로 복귀.
+  Future<void> restoreBgm() => switchBgm('bgm');
 
   Future<void> pauseBgm() async {
     try {
@@ -139,18 +188,53 @@ class AudioService {
     try {
       final p = _sfx.putIfAbsent(
         name,
-        () => AudioPlayer(playerId: 'sfx_$name')
-          ..setReleaseMode(ReleaseMode.stop),
+        () =>
+            AudioPlayer(playerId: 'sfx_$name')
+              ..setReleaseMode(ReleaseMode.stop),
       );
       await p.stop();
-      await p.play(AssetSource('sounds/$name.wav'), volume: settings.value.sfxVol);
+      await p.play(
+        AssetSource('sounds/$name.wav'),
+        volume: settings.value.sfxVol,
+      );
     } catch (e) {
       debugPrint('playSfx($name): $e');
     }
   }
 
+  // ── 전투/조작 (자주 재생 — 파일이 짧고 음량도 낮게 정규화돼 있다) ──────────
   void sfxHit() => _playSfx('hit');
   void sfxHurt() => _playSfx('hurt');
   void sfxTap() => _playSfx('tap');
+  void sfxSwipe() => _playSfx('swipe');
+
+  /// 몬스터(서식지/보스) 처치음.
+  void sfxDie() => _playSfx('die');
+
+  /// 재화 부족·채집함 가득참·잠긴 칸 등 "안 됨" 피드백.
+  void sfxError() => _playSfx('error');
+
+  // ── 획득 ────────────────────────────────────────────────────────────────
+  /// 곤충 획득(일반). ⚠️ `catch.wav` 미납품 상태 — 파일이 없으면 조용히 무시된다.
+  void sfxCatch() => _playSfx('catch');
+
+  /// 희귀 이상 곤충 획득. [sfxCatch] 대신 재생한다.
+  void sfxRare() => _playSfx('rare');
+  void sfxCoin() => _playSfx('coin');
   void sfxReward() => _playSfx('reward');
+
+  // ── 육성 ────────────────────────────────────────────────────────────────
+  void sfxEnhance() => _playSfx('enhance');
+  void sfxHatch() => _playSfx('hatch');
+  void sfxBreed() => _playSfx('breed');
+  void sfxMission() => _playSfx('mission');
+
+  // ── 진행/전투 결과 ──────────────────────────────────────────────────────
+  void sfxLevelUp() => _playSfx('levelup');
+  void sfxBoss() => _playSfx('boss');
+  void sfxWin() => _playSfx('win');
+  void sfxLose() => _playSfx('lose');
+  void sfxPromote() => _playSfx('promote');
+  void sfxRankUp() => _playSfx('rankup');
+  void sfxRankDown() => _playSfx('rankdown');
 }

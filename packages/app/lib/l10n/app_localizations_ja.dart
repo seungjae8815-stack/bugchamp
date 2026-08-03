@@ -694,6 +694,33 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String storageCapacityCount(int used, int cap) {
+    return '$used/$cap';
+  }
+
+  @override
+  String storageCapacityLabel(int used, int cap) {
+    return '採集箱 $used / $cap枠';
+  }
+
+  @override
+  String get storageFullBanner => '採集箱がいっぱいです — 昆虫が入りません';
+
+  @override
+  String get storageFullSnack => '採集箱がいっぱいです。分解するか拡張してください。';
+
+  @override
+  String storageExpand(int n, int jelly) {
+    return '+$n枠 💎$jelly';
+  }
+
+  @override
+  String get storageExpandMaxed => '拡張上限';
+
+  @override
+  String get storageExpandedSnack => '採集箱が広がりました！';
+
+  @override
   String bugSize(String mm) {
     return '${mm}mm';
   }
@@ -1456,6 +1483,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nicknameBlockedWord => 'ニックネームに使用できない表現が含まれています';
 
   @override
+  String get nicknameTaken => 'そのニックネームは既に使われています';
+
+  @override
+  String get rankPopupTitle => 'マイランキング';
+
+  @override
+  String get rankSuffix => '位';
+
+  @override
+  String get rankFirstCheck => '初めてのランキング確認です！';
+
+  @override
+  String get rankUnchanged => '前回と同じ順位です';
+
+  @override
+  String rankChangedFromTo(int from, int to) {
+    return '$from位 → $to位';
+  }
+
+  @override
+  String rankTopStreak(int days) {
+    return '1位を$days日連続キープ 👑';
+  }
+
+  @override
   String get nicknameRequiredTitle => 'ニックネームを決めてください';
 
   @override
@@ -1493,6 +1545,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get updateLater => 'あとで';
+
+  @override
+  String get maintenanceTitle => 'メンテナンス中';
+
+  @override
+  String get maintenanceBody => 'ただいまサーバーメンテナンス中です。しばらくしてからもう一度お試しください。';
+
+  @override
+  String get connectionRequiredTitle => 'インターネット接続が必要です';
+
+  @override
+  String get connectionRequiredBody =>
+      'プレイするにはインターネット接続が必要です。接続を確認してもう一度お試しください。';
+
+  @override
+  String get retryButton => '再試行';
 
   @override
   String get accountSignInApple => 'Appleでサインイン';

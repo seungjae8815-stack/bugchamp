@@ -95,7 +95,10 @@ class ServerSaveUploader {
   String? _lastUploaded;
   bool _inFlight = false;
 
-  static const period = Duration(seconds: 10);
+  /// 업로드 주기. 세이브 **전체**를 올리는 호출이라 짧을수록 트래픽·서버
+  /// 인스턴스 시간이 그대로 늘어난다(10초였을 때 하루 8 vCPU-시간까지 갔다).
+  /// 백그라운드 전환 때도 [flush] 하므로 진행도 손실 위험은 낮다.
+  static const period = Duration(seconds: 60);
 
   void start() {
     if (!_ref.read(gameServerProvider).available) return;

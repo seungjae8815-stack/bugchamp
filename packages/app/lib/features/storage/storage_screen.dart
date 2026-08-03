@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
+import '../../domain/audio_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
@@ -36,18 +37,117 @@ class StorageScreen extends ConsumerWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: Center(child: Text(l.storageCount(save.bugs.length))),
+            child: Center(
+              child: Text(
+                l.storageCapacityCount(save.bugs.length, save.storageCapacity),
+                style: TextStyle(
+                  color: save.storageFull ? const Color(0xFFFF8A65) : null,
+                  fontWeight: save.storageFull ? FontWeight.w900 : null,
+                ),
+              ),
+            ),
           ),
         ],
       ),
       body: Column(
         children: [
+          _capacityBar(context, ref, data, l, save),
           _equipStrip(context, ref, data, l, save),
           _materialsStrip(context, l, save),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
           Expanded(child: _grid(context, ref, data, l, save)),
           _breedingBar(context, ref, data, l, save),
           _incubatorBar(context, ref, data, l, save),
+        ],
+      ),
+    );
+  }
+
+  /// 채집함 칸 수 바: 사용량 게이지 + 젤리 확장 버튼.
+  ///
+  /// 가득 차면 새 곤충이 들어오지 않으므로(획득 차단) 상태를 눈에 띄게 보여준다.
+  Widget _capacityBar(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+    SaveGame save,
+  ) {
+    final cfg = data.petConfig;
+    if (cfg == null) return const SizedBox.shrink();
+    final used = save.bugs.length;
+    final cap = save.storageCapacity;
+    final full = save.storageFull;
+    final atMax = cap >= cfg.storageSlotsMax;
+    final jelly = save.materialCount(MaterialKind.jelly);
+    final canExpand = !atMax && jelly >= cfg.storageExpandJelly;
+
+    return Container(
+      color: const Color(0xFF15200D),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  full
+                      ? l.storageFullBanner
+                      : l.storageCapacityLabel(used, cap),
+                  style: TextStyle(
+                    color: full
+                        ? const Color(0xFFFF8A65)
+                        : const Color(0xDDFFFFFF),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: cap <= 0 ? 0 : (used / cap).clamp(0.0, 1.0),
+                    minHeight: 6,
+                    backgroundColor: const Color(0x33FFFFFF),
+                    valueColor: AlwaysStoppedAnimation(
+                      full ? const Color(0xFFFF8A65) : _honey,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          if (atMax)
+            Text(
+              l.storageExpandMaxed,
+              style: const TextStyle(color: Color(0x88FFFFFF), fontSize: 11.5),
+            )
+          else
+            FilledButton.tonalIcon(
+              onPressed: canExpand
+                  ? () async {
+                      final ok = await ref
+                          .read(saveControllerProvider.notifier)
+                          .expandStorage();
+                      if (ok && context.mounted) {
+                        _snack(context, l.storageExpandedSnack);
+                      }
+                    }
+                  : null,
+              icon: const Icon(Icons.add_box_outlined, size: 17),
+              label: Text(
+                l.storageExpand(
+                  cfg.storageExpandAmount,
+                  cfg.storageExpandJelly,
+                ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -267,10 +367,9 @@ class StorageScreen extends ConsumerWidget {
         ? 1.0
         : (total > 0 ? (1 - remaining.inSeconds / total).clamp(0.0, 1.0) : 1.0);
     final jelly = cfg.breedingJelly(remaining);
-    final jellyHave = r
-        .watch(saveControllerProvider)
-        .requireValue
-        .materialCount(MaterialKind.jelly);
+    final saveNow = r.watch(saveControllerProvider).requireValue;
+    final jellyHave = saveNow.materialCount(MaterialKind.jelly);
+    final storageFull = saveNow.storageFull;
     return _sectionBox(
       child: Row(
         children: [
@@ -313,10 +412,17 @@ class StorageScreen extends ConsumerWidget {
           ready
               ? FilledButton(
                   onPressed: () async {
+                    // 채집함이 가득 차면 수령이 거부된다 — 이유를 알려준다.
+                    if (storageFull) {
+                      AudioService.instance.sfxError();
+                      return _snack(ctx, l.storageFullSnack);
+                    }
                     final ok = await r
                         .read(saveControllerProvider.notifier)
                         .collectBreeding(slot.id);
-                    if (ctx.mounted && ok) _snack(ctx, l.breedingGotEgg);
+                    if (!ok) return;
+                    AudioService.instance.sfxBreed();
+                    if (ctx.mounted) _snack(ctx, l.breedingGotEgg);
                   },
                   style: _pillStyle(const Color(0xFF3E7D4F)),
                   child: Text(l.incubatorCollect),
@@ -324,10 +430,16 @@ class StorageScreen extends ConsumerWidget {
               : FilledButton(
                   onPressed: jellyHave >= jelly
                       ? () async {
+                          if (storageFull) {
+                            AudioService.instance.sfxError();
+                            return _snack(ctx, l.storageFullSnack);
+                          }
                           final ok = await r
                               .read(saveControllerProvider.notifier)
                               .collectBreeding(slot.id, viaJelly: true);
-                          if (ctx.mounted && ok) _snack(ctx, l.breedingGotEgg);
+                          if (!ok) return;
+                          AudioService.instance.sfxBreed();
+                          if (ctx.mounted) _snack(ctx, l.breedingGotEgg);
                         }
                       : null,
                   style: _pillStyle(const Color(0xFF7E57C2)),
@@ -790,7 +902,9 @@ class StorageScreen extends ConsumerWidget {
       onTap = done
           ? () async {
               final ok = await ctrl.collectIncubated(occupant.key);
-              if (ok && ctx.mounted) _snack(ctx, l.incubatorCollectedSnack);
+              if (!ok) return;
+              AudioService.instance.sfxHatch();
+              if (ctx.mounted) _snack(ctx, l.incubatorCollectedSnack);
             }
           : null;
     }
@@ -1906,7 +2020,9 @@ class StorageScreen extends ConsumerWidget {
               onPressed: can
                   ? () async {
                       final ok = await ctrl.trainBug(bug.id);
-                      if (ok && ctx.mounted) _snack(ctx, l.trainSnack);
+                      if (!ok) return;
+                      AudioService.instance.sfxEnhance();
+                      if (ctx.mounted) _snack(ctx, l.trainSnack);
                     }
                   : null,
               style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
@@ -2288,9 +2404,12 @@ class StorageScreen extends ConsumerWidget {
           ],
           FilledButton(
             onPressed: canBuy
-                ? () => r
-                      .read(saveControllerProvider.notifier)
-                      .enhancePart(bug.id, part)
+                ? () {
+                    AudioService.instance.sfxEnhance();
+                    r
+                        .read(saveControllerProvider.notifier)
+                        .enhancePart(bug.id, part);
+                  }
                 : null,
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32),

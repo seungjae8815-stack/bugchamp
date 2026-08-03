@@ -5,6 +5,7 @@ import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart' hide Element;
 
 import '../../data/game_data.dart';
+import '../../domain/audio_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
@@ -545,6 +546,12 @@ Future<void> showBattleResultDialog(
   final win = result.outcome == BattleOutcome.teamA;
   final draw = result.outcome == BattleOutcome.draw;
   final title = win ? l.battleWin : (draw ? l.battleDraw : l.battleLose);
+  // 무승부는 패배음까지 붙이면 과하다 — 승/패만 울린다.
+  if (win) {
+    AudioService.instance.sfxWin();
+  } else if (!draw) {
+    AudioService.instance.sfxLose();
+  }
   final color = win
       ? const Color(0xFF6FCF6F)
       : (draw ? const Color(0xFFBFC4CC) : const Color(0xFFEF9A9A));

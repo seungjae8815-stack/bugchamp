@@ -190,13 +190,35 @@ class GameActions {
     }
     merged['lastSeen'] = t.toIso8601String();
 
-    final SaveGame out;
+    final SaveGame parsed;
     try {
-      out = SaveGame.fromJson(merged);
+      parsed = SaveGame.fromJson(merged);
     } catch (_) {
       return const ActionResult.fail('bad_save');
     }
-    return ActionResult.ok(out, extra: {'clamped': clamped});
+
+    // 채집함 상한 강제 — **세이브 비대화의 마지막 방어선**.
+    //
+    // 상한을 클라이언트에만 맡기면 구버전 앱·조작된 업로드가 곤충 수만 마리를
+    // 그대로 올려 세이브가 10MB 를 넘고, 업로드마다 DB 가 타임아웃한다
+    // (2026-07 실제 장애). 서버가 여기서 자르고 `clamped` 로 알려주면
+    // 클라이언트가 잘린 세이브를 채택해 다음 업로드부터 정상 크기가 된다.
+    final capped = enforceStorage(parsed);
+    if (capped.bugs.length != parsed.bugs.length ||
+        capped.storageCapacity != parsed.storageCapacity) {
+      clamped = true;
+    }
+    return ActionResult.ok(capped, extra: {'clamped': clamped});
+  }
+
+  /// 칸 수를 설정 상한(`pets.json.storageSlotsMax`)으로, 보유 곤충을 칸 수로 자른다.
+  SaveGame enforceStorage(SaveGame save) {
+    final max = config.pet.storageSlotsMax;
+    final cap = save.storageCapacity > max ? max : save.storageCapacity;
+    final out = cap == save.storageCapacity
+        ? save
+        : save.copyWith(storageCapacity: cap);
+    return out.trimmedToStorage();
   }
 
   /// 최초 이관(부트스트랩) 세이브를 정화한다.
@@ -424,9 +446,14 @@ class GameActions {
     final mats = Map<MaterialKind, int>.from(save.materials);
     final species = config.speciesList;
 
+    // 채집함 여유분까지만 받는다(가득 차면 곤충 획득 차단 — 재료·골드는 계속).
+    // 롤 자체는 그대로 굴려 RNG 소비 순서를 유지한다(결정론).
+    var bugRoom = save.storageFree;
+
     for (var i = 0; i < rolls; i++) {
       if (species.isNotEmpty &&
-          rng.nextDouble() < run.bugDropChance * stats.bugFind) {
+          rng.nextDouble() < run.bugDropChance * stats.bugFind &&
+          bugRoom > 0) {
         final sp = species[rng.nextInt(species.length)];
         // 앱과 같은 분포: rng*rng 라 고포텐셜이 드물다.
         final potential = 1 + (rng.nextDouble() * rng.nextDouble() * 4).floor();
@@ -438,6 +465,7 @@ class GameActions {
             potential: potential.clamp(1, 5),
           ).copyWith(stage: LifeStage.egg, stageSince: t),
         );
+        bugRoom--;
       }
       if (rng.nextDouble() < run.materialDropChance * stats.materialFind) {
         final kind = _regularMaterials[rng.nextInt(_regularMaterials.length)];
@@ -1056,6 +1084,10 @@ class GameActions {
     final slot = save.breeding[idx];
     final sp = speciesById[slot.speciesId];
     if (sp == null) return const ActionResult.fail('unknown_species');
+
+    // 채집함이 가득 차면 수령을 거부한다 — 슬롯을 남겨 자리를 비운 뒤 받게 한다
+    // (여기서 알을 버리면 산란에 쓴 시간·젤리가 통째로 날아간다).
+    if (save.storageFull) return const ActionResult.fail('storage_full');
 
     var mats = save.materials;
     if (t.isBefore(slot.endsAt)) {
