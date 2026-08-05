@@ -14,22 +14,38 @@
 
 ```
 🐛 곤충키우기 (Bug Champ)
-📅 2026-07-22 리포트
+📅 2026-08-05 리포트
 
-👥 총 사용자      1,234명
-🆕 오늘 신규      56명
-🎮 최근 24h 활동  320명
-⚔️ PvP 참여       210명
-💰 누적 결제      18건
+🎮 실사용(24h)   14명
+📆 주간(7일)     53명
+🗓 월간(30일)    107명
+🌱 정착 사용자   43명
+🔁 D1 리텐션     27% (15명 중 4명)
+🔗 계정 연동     9명
+
+📥 누적 설치     134
+🆕 오늘 신규     10명
+💰 결제         0건 (테스트 4건 제외)
 ```
 
 | 항목 | 소스 |
 |---|---|
-| 총 사용자 | `auth.users` 전체(익명 계정 = 설치 후 백엔드 접속한 사람) |
-| 오늘 신규 | 최근 24h 에 생성된 `auth.users` |
-| 최근 24h 활동 | 최근 24h 에 세이브 업로드한 `saves`(DAU 근사) |
-| PvP 참여 | `profiles` 행 수 |
-| 누적 결제 | `verified_purchases` 행 수 |
+| **실사용(24h)** | 최근 24h 에 세이브를 올린 `saves` = **DAU. 실질 사용자는 이 숫자다.** |
+| 주간/월간 | 같은 기준의 7일·30일 |
+| 정착 사용자 | 가입 24h 넘긴 계정 중 최근 7일 접속 — 설치만 하고 떠난 사람 제외 |
+| D1 리텐션 | 어제 신규(`d1_new`) 중 오늘 접속한 수(`d1_returned`) |
+| 계정 연동 | `auth.users.is_anonymous = false` (구글·애플 로그인) |
+| 누적 설치 | `auth.users` 전체 |
+| 결제 | `verified_purchases` 중 `environment = 'production'` |
+
+> ⚠️ **`누적 설치`를 사용자 수로 읽으면 안 된다.** 앱이 첫 실행에 `signInAnonymously()`
+> 를 부르므로 **설치 1회 = 계정 1개**이고, 앱을 지우면 신원이 사라져 재설치하면
+> **또 새 계정**이 생긴다. 사람 수가 아니라 설치 시도 횟수에 가깝다.
+>
+> ⚠️ **결제는 `environment` 로 걸러야 한다.** 예전엔 테이블 전체를 세서 라이선스
+> 테스터·샌드박스(TestFlight·심사) 결제가 매출로 잡혔다. `verify-purchase` 가
+> Apple 은 응답의 `environment`, Google 은 `purchaseType`(0=Test, 1=Promo)을 보고
+> 기록한다. **지급은 어느 값이든 정상 진행한다** — 테스트도 아이템이 나와야 QA 가 된다.
 
 ---
 
@@ -38,44 +54,56 @@
 ### 1) 통계 RPC 생성 — SQL Editor 에 실행
 
 ```sql
--- 곤충키우기 일일 통계: service_role(Edge Function)만 실행. 없는 테이블은 0 처리.
+-- 결제 출처 컬럼(테스트/샌드박스 구분). 없으면 매출 집계에 테스트가 섞인다.
+alter table public.verified_purchases
+  add column if not exists environment text not null default 'production';
+
+create index if not exists verified_purchases_env_idx
+  on public.verified_purchases (environment);
+
+-- 곤충키우기 일일 통계: service_role(Edge Function)만 실행.
+-- ※ saves 는 user_id 컬럼이 없다 — **id 가 곧 auth.users.id** 다.
 create or replace function public.bugchamp_daily_stats()
-returns jsonb
-language plpgsql
-security definer
-set search_path = public, auth
-as $$
-declare
-  total_users     bigint := 0;
-  new_today       bigint := 0;
-  active_24h      bigint := 0;
-  pvp_players     bigint := 0;
-  purchases_total bigint := 0;
+returns jsonb language plpgsql security definer
+set search_path = public, auth as $$
+declare r jsonb;
 begin
-  select count(*) into total_users from auth.users;
-  select count(*) into new_today
-    from auth.users where created_at >= now() - interval '24 hours';
+  select jsonb_build_object(
+    'installs',       (select count(*) from auth.users),
+    'new_today',      (select count(*) from auth.users
+                         where created_at >= now() - interval '24 hours'),
 
-  if to_regclass('public.saves') is not null then
-    execute 'select count(*) from public.saves
-             where updated_at >= now() - interval ''24 hours''' into active_24h;
-  end if;
-  if to_regclass('public.profiles') is not null then
-    execute 'select count(*) from public.profiles' into pvp_players;
-  end if;
-  if to_regclass('public.verified_purchases') is not null then
-    execute 'select count(*) from public.verified_purchases' into purchases_total;
-  end if;
+    'dau',            (select count(*) from public.saves
+                         where updated_at >= now() - interval '24 hours'),
+    'wau',            (select count(*) from public.saves
+                         where updated_at >= now() - interval '7 days'),
+    'mau',            (select count(*) from public.saves
+                         where updated_at >= now() - interval '30 days'),
 
-  return jsonb_build_object(
-    'total_users',     total_users,
-    'new_today',       new_today,
-    'active_24h',      active_24h,
-    'pvp_players',     pvp_players,
-    'purchases_total', purchases_total
-  );
-end;
-$$;
+    -- 정착: 가입 하루 넘긴 계정 중 최근 7일 접속(설치만 하고 떠난 사람 제외)
+    'retained',       (select count(*) from public.saves s
+                         join auth.users u on u.id = s.id
+                        where s.updated_at >= now() - interval '7 days'
+                          and u.created_at <  now() - interval '24 hours'),
+
+    'd1_new',         (select count(*) from auth.users
+                        where created_at >= now() - interval '48 hours'
+                          and created_at <  now() - interval '24 hours'),
+    'd1_returned',    (select count(*) from public.saves s
+                         join auth.users u on u.id = s.id
+                        where u.created_at >= now() - interval '48 hours'
+                          and u.created_at <  now() - interval '24 hours'
+                          and s.updated_at >= now() - interval '24 hours'),
+
+    'linked',         (select count(*) from auth.users where is_anonymous = false),
+
+    'purchases',      (select count(*) from public.verified_purchases
+                        where environment = 'production'),
+    'purchases_test', (select count(*) from public.verified_purchases
+                        where environment <> 'production')
+  ) into r;
+  return r;
+end; $$;
 
 -- 클라이언트(anon/authenticated)는 실행 불가. Edge Function 의 service_role 만 실행.
 revoke all on function public.bugchamp_daily_stats() from public, anon, authenticated;

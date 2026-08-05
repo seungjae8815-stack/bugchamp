@@ -84,8 +84,13 @@ function looksLikeAppleReceipt(token: string): boolean {
   return token.length > 900
 }
 
+/// 집계에서 실매출과 구분하기 위한 구매 출처.
+/// 'production' 만 매출로 센다. 지급 자체는 어느 값이든 정상 진행한다 —
+/// 테스트 결제도 아이템이 나와야 QA·심사가 된다.
+type PurchaseEnv = 'production' | 'test' | 'promo'
+
 type AppleResult =
-  | { ok: true; reuseKey: string; orderId: string | null }
+  | { ok: true; reuseKey: string; orderId: string | null; env: PurchaseEnv }
   | { ok: false; reason: string }
 
 async function verifyApple(receipt: string, productId: string): Promise<AppleResult> {
@@ -144,7 +149,12 @@ async function verifyApple(receipt: string, productId: string): Promise<AppleRes
   // 재사용 방지 키 = transaction_id(거래 고유). 소비형 재구매도 매번 다르다.
   const reuseKey = String(match.transaction_id ?? match.original_transaction_id ?? '')
   if (!reuseKey) return { ok: false, reason: 'invalid' }
-  return { ok: true, reuseKey, orderId: match.original_transaction_id ?? null }
+  // 검증 응답의 environment 가 "Sandbox" 면 TestFlight·심사·개발 결제다.
+  // (위에서 21007 이면 샌드박스로 재검증하므로 여기까지 통과해 온다.)
+  const env: PurchaseEnv = String(data.environment ?? '') === 'Sandbox'
+    ? 'test'
+    : 'production'
+  return { ok: true, reuseKey, orderId: match.original_transaction_id ?? null, env }
 }
 
 Deno.serve(async (req) => {
@@ -174,6 +184,7 @@ Deno.serve(async (req) => {
   // 2) 플랫폼별 영수증 확인 → 재사용방지 키(reuseKey)·주문번호(orderId) 확정.
   let reuseKey: string
   let orderId: string | null = null
+  let env: PurchaseEnv = 'production'
 
   if (looksLikeAppleReceipt(purchaseToken)) {
     // ── iOS(App Store) ──
@@ -188,6 +199,7 @@ Deno.serve(async (req) => {
     }
     reuseKey = r.reuseKey
     orderId = r.orderId
+    env = r.env
   } else {
     // ── Android(Google Play) ──
     if (!SERVICE_ACCOUNT_JSON) {
@@ -227,6 +239,10 @@ Deno.serve(async (req) => {
     }
     reuseKey = purchaseToken
     orderId = (purchase.orderId as string) ?? null
+    // purchaseType: 0=Test(라이선스 테스터), 1=Promo(프로모션 코드).
+    // 실제 결제에는 이 필드가 아예 없다.
+    const pType = purchase.purchaseType
+    env = pType === 0 ? 'test' : pType === 1 ? 'promo' : 'production'
   }
 
   // 3) 재사용 방지 — 같은 거래를 여러 계정이 쓰지 못하게 서버에 못박는다.
@@ -251,6 +267,7 @@ Deno.serve(async (req) => {
       user_id: uid,
       product_id: productId,
       order_id: orderId,
+      environment: env,
     })
     // 동시 요청으로 unique 충돌이 나면 이미 기록된 것이므로 성공으로 본다.
     if (error && !String(error.message).includes('duplicate')) {

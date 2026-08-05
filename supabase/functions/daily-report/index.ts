@@ -79,15 +79,27 @@ Deno.serve(async (req) => {
   }
 
   const s = (data ?? {}) as Record<string, number>
+
+  // D1 리텐션 — 어제 신규 중 오늘 돌아온 비율. 분모가 0이면 표시하지 않는다.
+  const d1 = s.d1_new > 0 ? Math.round((s.d1_returned / s.d1_new) * 100) : null
+
   const msg =
     `🐛 곤충키우기 (Bug Champ)\n` +
     `📅 ${kstDate()} 리포트\n` +
     `\n` +
-    `👥 총 사용자      ${fmt(s.total_users)}명\n` +
-    `🆕 오늘 신규      ${fmt(s.new_today)}명\n` +
-    `🎮 최근 24h 활동  ${fmt(s.active_24h)}명\n` +
-    `⚔️ PvP 참여       ${fmt(s.pvp_players)}명\n` +
-    `💰 누적 결제      ${fmt(s.purchases_total)}건`
+    `🎮 실사용(24h)   ${fmt(s.dau)}명\n` +
+    `📆 주간(7일)     ${fmt(s.wau)}명\n` +
+    `🗓 월간(30일)    ${fmt(s.mau)}명\n` +
+    `🌱 정착 사용자   ${fmt(s.retained)}명\n` +
+    (d1 === null
+      ? `🔁 D1 리텐션     -\n`
+      : `🔁 D1 리텐션     ${d1}% (${fmt(s.d1_new)}명 중 ${fmt(s.d1_returned)}명)\n`) +
+    `🔗 계정 연동     ${fmt(s.linked)}명\n` +
+    `\n` +
+    `📥 누적 설치     ${fmt(s.installs)}\n` +
+    `🆕 오늘 신규     ${fmt(s.new_today)}명\n` +
+    `💰 결제         ${fmt(s.purchases)}건` +
+    (s.purchases_test > 0 ? ` (테스트 ${fmt(s.purchases_test)}건 제외)` : '')
 
   await sendTelegram(msg)
   return Response.json({ ok: true, stats: s })
