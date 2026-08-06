@@ -1625,4 +1625,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String nicknameEditActionCost(int cost) {
     return '💎$cost 변경';
   }
+
+  @override
+  String get notifHatchTitle => '부화 완료!';
+
+  @override
+  String get notifHatchBody => '알이 부화했어요. 채집함에서 확인해 보세요.';
+
+  @override
+  String get settingsNotify => '알림';
+
+  @override
+  String get notifyOfflineFull => '오프라인 보상 가득참';
+
+  @override
+  String get notifyHatchDone => '부화 완료';
+
+  @override
+  String get notifyDaily => '일일 보상 시간';
 }

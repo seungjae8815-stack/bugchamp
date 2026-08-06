@@ -15,6 +15,7 @@ import '../../data/game_data.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/audio_service.dart';
 import '../../domain/chat_service.dart';
+import '../../domain/notify_prefs.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
 import '../../domain/game_server.dart';
@@ -2205,25 +2206,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final goal = def.goalAt(claims);
     final progress = save.missionProgressCount(def.id);
     final claimable = progress >= goal;
-    // 완료 시 칸을 은은하게 깜빡이는 하이라이트로.
-    final pulse = 0.5 + 0.5 * math.sin(_tapHint * 4);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: claimable ? () => _claimMission(l, def.id) : null,
-        child: Container(
+        child: _PulseBox(
+          // ⚠️ 깜빡임은 **스스로** 돌아야 한다. 예전엔 부모(_tapHint)의 값을 읽어
+          //    계산했는데, 미션 목록은 바텀시트라 부모가 갱신돼도 다시 그려지지
+          //    않아 한 프레임 값에 멈춰 있었다(=깜빡이지 않았다).
+          active: claimable,
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-          decoration: claimable
-              ? BoxDecoration(
-                  color: _honey.withValues(alpha: 0.16 + 0.12 * pulse),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _honey.withValues(alpha: 0.55 + 0.45 * pulse),
-                    width: 1.3,
-                  ),
-                )
-              : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2821,6 +2814,70 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 설정창 사운드 섹션 — 배경음/효과음 on-off + 볼륨(설정은 로컬 저장).
+  /// 알림 종류별 on/off. 알림을 늘리면서 끌 수단이 없으면 앱을 지워버린다.
+  Widget _notifySettings(AppLocalizations l) =>
+      ValueListenableBuilder<NotifySettings>(
+        valueListenable: NotifyPrefs.instance.settings,
+        builder: (context, s, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                l.settingsNotify,
+                style: const TextStyle(
+                  color: Color(0xFFEBA52F),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            _notifyRow(
+              Icons.hourglass_full_rounded,
+              l.notifyOfflineFull,
+              s.offlineFull,
+              NotifyPrefs.instance.setOfflineFull,
+            ),
+            _notifyRow(
+              Icons.egg_alt_rounded,
+              l.notifyHatchDone,
+              s.hatchDone,
+              NotifyPrefs.instance.setHatchDone,
+            ),
+            _notifyRow(
+              Icons.card_giftcard_rounded,
+              l.notifyDaily,
+              s.daily,
+              NotifyPrefs.instance.setDaily,
+            ),
+          ],
+        ),
+      );
+
+  Widget _notifyRow(
+    IconData icon,
+    String label,
+    bool on,
+    Future<void> Function(bool) onChanged,
+  ) => Row(
+    children: [
+      Icon(icon, size: 18, color: const Color(0xCCFFFFFF)),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(
+          label,
+          style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13),
+        ),
+      ),
+      Switch(
+        value: on,
+        onChanged: (v) => onChanged(v),
+        activeThumbColor: _honey,
+      ),
+    ],
+  );
+
   Widget _audioSettings(AppLocalizations l) =>
       ValueListenableBuilder<AudioSettings>(
         valueListenable: AudioService.instance.settings,
@@ -2926,6 +2983,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             const SizedBox(height: 8),
           ],
           _audioSettings(l),
+          const SizedBox(height: 10),
+          _notifySettings(l),
           // ⚠️ "게임 데이터 초기화" 버튼을 여기 두지 말 것.
           //    확인 다이얼로그가 있어도 **되돌릴 수 없고**, 초기화된 세이브가
           //    60초 안에 서버로 올라가 서버 백업까지 덮는다(무료 플랜은 백업이
@@ -4506,6 +4565,71 @@ class _Bar extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// 달성한 미션처럼 "지금 눌러야 할" 칸을 은은하게 깜빡이는 상자.
+///
+/// 스스로 애니메이션을 돈다 — 부모의 틱 값을 읽어 계산하면, 바텀시트처럼
+/// 부모와 함께 다시 그려지지 않는 자리에서 값이 멈춰 깜빡이지 않는다.
+class _PulseBox extends StatefulWidget {
+  const _PulseBox({
+    required this.active,
+    required this.child,
+    this.padding = EdgeInsets.zero,
+  });
+
+  final bool active;
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  State<_PulseBox> createState() => _PulseBoxState();
+}
+
+class _PulseBoxState extends State<_PulseBox>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.active) {
+      return Padding(padding: widget.padding, child: widget.child);
+    }
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_c.value);
+        return Container(
+          padding: widget.padding,
+          decoration: BoxDecoration(
+            color: _honey.withValues(alpha: 0.14 + 0.16 * t),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _honey.withValues(alpha: 0.5 + 0.5 * t),
+              width: 1.3,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _honey.withValues(alpha: 0.25 * t),
+                blurRadius: 10 * t,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: widget.child,
     );
   }
 }

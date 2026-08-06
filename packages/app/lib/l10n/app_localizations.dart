@@ -3039,6 +3039,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change 💎{cost}'**
   String nicknameEditActionCost(int cost);
+
+  /// No description provided for @notifHatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatched!'**
+  String get notifHatchTitle;
+
+  /// No description provided for @notifHatchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An egg has hatched. Check your collection.'**
+  String get notifHatchBody;
+
+  /// No description provided for @settingsNotify.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsNotify;
+
+  /// No description provided for @notifyOfflineFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline rewards full'**
+  String get notifyOfflineFull;
+
+  /// No description provided for @notifyHatchDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatching complete'**
+  String get notifyHatchDone;
+
+  /// No description provided for @notifyDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reward time'**
+  String get notifyDaily;
 }
 
 class _AppLocalizationsDelegate

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/audio_service.dart';
 import '../domain/notification_service.dart';
+import '../domain/notify_prefs.dart';
 import '../domain/server_sync.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
@@ -92,15 +93,33 @@ class _AppShellState extends ConsumerState<AppShell>
       // (배경음 일시정지는 AudioService 가 스스로 처리한다 — 타이틀 화면에서도
       //  멈춰야 하고 hidden/detached 경로도 잡아야 해서 서비스로 옮겼다.)
       unawaited(_uploader.flush());
+      final notify = NotifyPrefs.instance.settings.value;
       // 오프라인 상한(8h) 도달 시 알림 예약.
-      svc.scheduleOfflineFull(
-        after: kMaxOfflineAccrual,
-        title: l.notifOfflineTitle,
-        body: l.notifOfflineBody,
-      );
+      if (notify.offlineFull) {
+        svc.scheduleOfflineFull(
+          after: kMaxOfflineAccrual,
+          title: l.notifOfflineTitle,
+          body: l.notifOfflineBody,
+        );
+      }
+      // 부화 완료 예정 시각마다 알림 — 앱을 꺼둔 채 기다리는 시간이라
+      // 알려주지 않으면 알이 다 익은 채 방치된다.
+      final save = ref.read(saveControllerProvider).value;
+      if (notify.hatchDone && save != null) {
+        unawaited(
+          svc.scheduleHatches(
+            save.incubating.values.toList(),
+            title: l.notifHatchTitle,
+            body: l.notifHatchBody,
+          ),
+        );
+      } else {
+        unawaited(svc.cancelHatches());
+      }
     } else if (state == AppLifecycleState.resumed) {
       // 복귀 → 오프라인 알림 취소(이미 접속).
       svc.cancelOfflineFull();
+      unawaited(svc.cancelHatches());
     }
   }
 
@@ -110,7 +129,9 @@ class _AppShellState extends ConsumerState<AppShell>
     _notifSetup = true;
     final l = AppLocalizations.of(context);
     final svc = NotificationService.instance;
+    await NotifyPrefs.instance.load();
     await svc.requestPermission();
+    if (!NotifyPrefs.instance.settings.value.daily) return; // 꺼두면 예약 안 함
     // gameData 는 비동기 로드(FutureProvider) — 첫 프레임엔 .value 가 아직 null 이라
     // 예약이 통째로 건너뛰어졌다(점심/저녁 알림 미발화의 근본 원인).
     // .future 를 await 해 로드 완료를 보장한 뒤 예약한다.

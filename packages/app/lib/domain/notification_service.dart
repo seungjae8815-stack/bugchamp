@@ -19,6 +19,10 @@ class NotificationService {
   /// 오프라인 가득참 알림 id(고정). 일일 보상은 1부터 사용.
   static const int offlineId = 900;
 
+  /// 부화 완료 알림 id 대역. 알 여러 개가 각자 다른 시각에 끝나므로
+  /// 슬롯마다 다른 id 를 써야 서로 덮어쓰지 않는다.
+  static const int hatchIdBase = 910;
+
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'bugchamp_daily',
     '보상 알림',
@@ -130,6 +134,49 @@ class NotificationService {
       );
     } catch (e) {
       debugPrint('scheduleOfflineFull failed: $e');
+    }
+  }
+
+  /// 부화 완료 예정 시각마다 1회 알림. 이미 지난 시각은 건너뛴다.
+  ///
+  /// 부화는 앱을 꺼둔 채 기다리는 시간이라, 끝난 걸 알려주지 않으면 알이 다
+  /// 익은 채 방치된다 — 복귀를 만드는 알림이다.
+  Future<void> scheduleHatches(
+    List<DateTime> endsAt, {
+    required String title,
+    required String body,
+  }) async {
+    if (!_ready) return;
+    await cancelHatches();
+    final now = tz.TZDateTime.now(tz.local);
+    var i = 0;
+    for (final t in endsAt) {
+      if (i >= 8) break; // 부화기 슬롯 상한을 넉넉히 덮는다
+      final at = tz.TZDateTime.from(t.toLocal(), tz.local);
+      if (!at.isAfter(now)) continue;
+      try {
+        await _plugin.zonedSchedule(
+          hatchIdBase + i,
+          title,
+          body,
+          at,
+          _details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        i++;
+      } catch (e) {
+        debugPrint('scheduleHatches failed: $e');
+      }
+    }
+  }
+
+  Future<void> cancelHatches() async {
+    for (var i = 0; i < 8; i++) {
+      try {
+        await _plugin.cancel(hatchIdBase + i);
+      } catch (_) {}
     }
   }
 

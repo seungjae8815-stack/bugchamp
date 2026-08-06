@@ -1653,4 +1653,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String nicknameEditActionCost(int cost) {
     return 'Change 💎$cost';
   }
+
+  @override
+  String get notifHatchTitle => 'Hatched!';
+
+  @override
+  String get notifHatchBody => 'An egg has hatched. Check your collection.';
+
+  @override
+  String get settingsNotify => 'Notifications';
+
+  @override
+  String get notifyOfflineFull => 'Offline rewards full';
+
+  @override
+  String get notifyHatchDone => 'Hatching complete';
+
+  @override
+  String get notifyDaily => 'Daily reward time';
 }

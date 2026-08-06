@@ -489,5 +489,11 @@
   "incubatorAdSkip": "📺 広告で{pct}%短縮",
   "incubatorAdSkipDone": "孵化時間が短くなりました！",
   "nicknameEditAction": "変更",
-  "nicknameEditActionCost": "💎{cost}で変更"
+  "nicknameEditActionCost": "💎{cost}で変更",
+  "notifHatchTitle": "孵化完了！",
+  "notifHatchBody": "卵が孵化しました。採集ボックスで確認してください。",
+  "settingsNotify": "通知",
+  "notifyOfflineFull": "放置報酬が満タン",
+  "notifyHatchDone": "孵化完了",
+  "notifyDaily": "デイリー報酬の時間"
 }

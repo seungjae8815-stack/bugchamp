@@ -1626,4 +1626,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String nicknameEditActionCost(int cost) {
     return '💎$costで変更';
   }
+
+  @override
+  String get notifHatchTitle => '孵化完了！';
+
+  @override
+  String get notifHatchBody => '卵が孵化しました。採集ボックスで確認してください。';
+
+  @override
+  String get settingsNotify => '通知';
+
+  @override
+  String get notifyOfflineFull => '放置報酬が満タン';
+
+  @override
+  String get notifyHatchDone => '孵化完了';
+
+  @override
+  String get notifyDaily => 'デイリー報酬の時間';
 }

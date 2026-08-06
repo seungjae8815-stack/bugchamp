@@ -1045,5 +1045,11 @@
         "type": "int"
       }
     }
-  }
+  },
+  "notifHatchTitle": "Hatched!",
+  "notifHatchBody": "An egg has hatched. Check your collection.",
+  "settingsNotify": "Notifications",
+  "notifyOfflineFull": "Offline rewards full",
+  "notifyHatchDone": "Hatching complete",
+  "notifyDaily": "Daily reward time"
 }

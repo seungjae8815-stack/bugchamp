@@ -524,5 +524,11 @@
   "incubatorAdSkip": "📺 광고보고 {pct}% 단축",
   "incubatorAdSkipDone": "부화 시간이 줄었어요!",
   "nicknameEditAction": "변경",
-  "nicknameEditActionCost": "💎{cost} 변경"
+  "nicknameEditActionCost": "💎{cost} 변경",
+  "notifHatchTitle": "부화 완료!",
+  "notifHatchBody": "알이 부화했어요. 채집함에서 확인해 보세요.",
+  "settingsNotify": "알림",
+  "notifyOfflineFull": "오프라인 보상 가득참",
+  "notifyHatchDone": "부화 완료",
+  "notifyDaily": "일일 보상 시간"
 }

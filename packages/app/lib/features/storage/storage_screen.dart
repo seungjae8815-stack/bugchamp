@@ -52,9 +52,11 @@ class StorageScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          // 재료는 **칸 수 바보다 위**에 둔다 — 강화·제작에 쓸 재고를 가장 먼저
+          // 확인하는 정보라 화면 중간에 있으면 눈에 안 들어온다.
+          _materialsStrip(context, l, save),
           _capacityBar(context, ref, data, l, save),
           _equipStrip(context, ref, data, l, save),
-          _materialsStrip(context, l, save),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
           Expanded(child: _grid(context, ref, data, l, save)),
           _breedingBar(context, ref, data, l, save),
