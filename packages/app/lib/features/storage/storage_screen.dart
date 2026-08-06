@@ -145,15 +145,17 @@ class StorageScreen extends ConsumerWidget {
                       }
                     }
                   : null,
-              icon: const Icon(Icons.add_box_outlined, size: 17),
+              // 가로 아이콘+글씨는 폭이 모자라 글씨가 잘려 아이콘만 보였다.
+              icon: const SizedBox.shrink(),
               label: Text(
                 l.storageExpand(
                   cfg.storageExpandAmount,
                   cfg.storageExpandJelly,
                 ),
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12.5,
                 ),
               ),
             ),
@@ -951,86 +953,94 @@ class StorageScreen extends ConsumerWidget {
           GestureDetector(
             onTap: onTap,
             behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              height: 176,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (done)
-                    Container(
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        borderRadius: radius,
-                        boxShadow: [
-                          BoxShadow(
-                            color: _honey.withValues(alpha: 0.5),
-                            blurRadius: 18,
-                          ),
-                        ],
+            // ⚠️ 너비까지 못 박아야 한다. 높이만 고정하면 BoxFit.contain 이
+            //    칸 너비에 맞춰 스케일해 슬롯마다 그림 크기가 달라진다.
+            child: Center(
+              child: SizedBox(
+                width: 96,
+                height: 176,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (done)
+                      Container(
+                        margin: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: radius,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _honey.withValues(alpha: 0.5),
+                              blurRadius: 18,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  // 콘텐츠(알/넣기/자물쇠) — 캡슐 그림 뒤.
-                  Padding(padding: const EdgeInsets.all(10), child: center),
-                  // 캡슐 프레임 그림(하나). 잠김이면 회색 처리. 없으면 유리 그라데이션 폴백.
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: ColorFiltered(
-                        colorFilter: unlocked
-                            ? const ColorFilter.mode(
-                                Color(0x00000000),
-                                BlendMode.dst,
-                              )
-                            : const ColorFilter.matrix(<double>[
-                                0.30,
-                                0.40,
-                                0.11,
-                                0,
-                                -18,
-                                0.30,
-                                0.40,
-                                0.11,
-                                0,
-                                -18,
-                                0.30,
-                                0.40,
-                                0.11,
-                                0,
-                                -12,
-                                0,
-                                0,
-                                0,
-                                1,
-                                0,
-                              ]),
-                        child: Image.asset(
-                          'assets/images/ui/incubator_capsule.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, _, _) => Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 6),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Color(0x3AA9D8FF), Color(0x14203040)],
-                              ),
-                              borderRadius: radius,
-                              border: Border.all(
-                                color: const Color(0x88A9D8FF),
-                                width: 1.5,
+                    // 콘텐츠(알/넣기/자물쇠) — 캡슐 그림 뒤.
+                    Padding(padding: const EdgeInsets.all(10), child: center),
+                    // 캡슐 프레임 그림(하나). 잠김이면 회색 처리. 없으면 유리 그라데이션 폴백.
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: ColorFiltered(
+                          colorFilter: unlocked
+                              ? const ColorFilter.mode(
+                                  Color(0x00000000),
+                                  BlendMode.dst,
+                                )
+                              : const ColorFilter.matrix(<double>[
+                                  0.30,
+                                  0.40,
+                                  0.11,
+                                  0,
+                                  -18,
+                                  0.30,
+                                  0.40,
+                                  0.11,
+                                  0,
+                                  -18,
+                                  0.30,
+                                  0.40,
+                                  0.11,
+                                  0,
+                                  -12,
+                                  0,
+                                  0,
+                                  0,
+                                  1,
+                                  0,
+                                ]),
+                          child: Image.asset(
+                            'assets/images/ui/incubator_capsule.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, _, _) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 6),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Color(0x3AA9D8FF),
+                                    Color(0x14203040),
+                                  ],
+                                ),
+                                borderRadius: radius,
+                                border: Border.all(
+                                  color: const Color(0x88A9D8FF),
+                                  width: 1.5,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  // 하단 태그(💎 확장) — 그림 위.
-                  if (bottomTag != null)
-                    Align(
-                      alignment: const Alignment(0, 0.68),
-                      child: bottomTag,
-                    ),
-                ],
+                    // 하단 태그(💎 확장) — 그림 위.
+                    if (bottomTag != null)
+                      Align(
+                        alignment: const Alignment(0, 0.68),
+                        child: bottomTag,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

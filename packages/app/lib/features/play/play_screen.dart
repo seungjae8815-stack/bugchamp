@@ -403,8 +403,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 탭 순간의 화면 파동(1 → 0). 눌렀다는 시각 피드백.
   double _tapFlash = 0;
 
-  /// 설정 시트의 알림 섹션이 펼쳐져 있는지.
-  bool _notifyOpen = false;
   double _tapHint = 0; // 손가락 탭 힌트 애니 주기
   double _bgOffset = 0;
   double _dmgCooldown = 0;
@@ -2843,110 +2841,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 설정창 사운드 섹션 — 배경음/효과음 on-off + 볼륨(설정은 로컬 저장).
-  /// 알림 종류별 on/off. 알림을 늘리면서 끌 수단이 없으면 앱을 지워버린다.
-  Widget _notifySettings(AppLocalizations l) =>
-      ValueListenableBuilder<NotifySettings>(
-        valueListenable: NotifyPrefs.instance.settings,
-        builder: (context, s, _) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Text(
-                l.settingsNotify,
-                style: const TextStyle(
-                  color: Color(0xFFEBA52F),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            // 전체 스위치 — 누르면 아래 개별 항목이 펼쳐진다.
-            // 항상 펼쳐두면 설정 시트가 길어져 다른 항목이 밀린다.
-            InkWell(
-              onTap: () => setState(() => _notifyOpen = !_notifyOpen),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _notifyRow(
-                      Icons.notifications_active_rounded,
-                      l.notifyAll,
-                      s.enabled,
-                      NotifyPrefs.instance.setEnabled,
-                    ),
-                  ),
-                  Icon(
-                    _notifyOpen
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    color: const Color(0xCCFFFFFF),
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-            if (_notifyOpen)
-              Padding(
-                padding: const EdgeInsets.only(left: 18),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _notifyRow(
-                      Icons.hourglass_full_rounded,
-                      l.notifyOfflineFull,
-                      s.offlineFull,
-                      NotifyPrefs.instance.setOfflineFull,
-                      enabled: s.enabled,
-                    ),
-                    _notifyRow(
-                      Icons.egg_alt_rounded,
-                      l.notifyHatchDone,
-                      s.hatchDone,
-                      NotifyPrefs.instance.setHatchDone,
-                      enabled: s.enabled,
-                    ),
-                    _notifyRow(
-                      Icons.card_giftcard_rounded,
-                      l.notifyDaily,
-                      s.daily,
-                      NotifyPrefs.instance.setDaily,
-                      enabled: s.enabled,
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      );
-
-  Widget _notifyRow(
-    IconData icon,
-    String label,
-    bool on,
-    Future<void> Function(bool) onChanged, {
-    bool enabled = true,
-  }) => Opacity(
-    opacity: enabled ? 1 : 0.4,
-    child: Row(
-      children: [
-        Icon(icon, size: 18, color: const Color(0xCCFFFFFF)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13),
-          ),
-        ),
-        Switch(
-          value: on,
-          onChanged: enabled ? (v) => onChanged(v) : null,
-          activeThumbColor: _honey,
-        ),
-      ],
-    ),
-  );
-
   Widget _audioSettings(AppLocalizations l) =>
       ValueListenableBuilder<AudioSettings>(
         valueListenable: AudioService.instance.settings,
@@ -3053,7 +2947,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ],
           _audioSettings(l),
           const SizedBox(height: 10),
-          _notifySettings(l),
+          const _NotifySection(),
           // ⚠️ "게임 데이터 초기화" 버튼을 여기 두지 말 것.
           //    확인 다이얼로그가 있어도 **되돌릴 수 없고**, 초기화된 세이브가
           //    60초 안에 서버로 올라가 서버 백업까지 덮는다(무료 플랜은 백업이
@@ -3958,6 +3852,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             showCenterToast(ctx, l.notEnoughJelly);
                             return;
                           }
+                          if (save.nicknameSet) {
+                            showCenterToast(
+                              ctx,
+                              l.nicknameChangeCostHint(
+                                SaveController.kNicknameChangeCost,
+                              ),
+                            );
+                          }
                           controller.text = save.nickname;
                           setD(() => editing = true);
                         },
@@ -3970,8 +3872,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         ),
                         child: Text(
                           save.nicknameSet
-                              ? '${l.nicknameEditAction} '
-                                    '💎${SaveController.kNicknameChangeCost}'
+                              ? '${l.nicknameEditAction} 💎'
                               : l.nicknameEditAction,
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
@@ -4681,4 +4582,117 @@ class _PulseBoxState extends State<_PulseBox>
       child: widget.child,
     );
   }
+}
+
+/// 설정 시트의 알림 섹션.
+///
+/// ⚠️ **자체 State 를 가져야 한다.** 설정은 바텀시트라 화면(_PlayScreenState)의
+/// setState 로는 다시 그려지지 않는다 — 펼치기가 먹지 않던 원인.
+class _NotifySection extends StatefulWidget {
+  const _NotifySection();
+
+  @override
+  State<_NotifySection> createState() => _NotifySectionState();
+}
+
+class _NotifySectionState extends State<_NotifySection> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ValueListenableBuilder<NotifySettings>(
+      valueListenable: NotifyPrefs.instance.settings,
+      builder: (context, s, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _open = !_open),
+            child: Row(
+              children: [
+                Text(
+                  l.settingsNotify,
+                  style: const TextStyle(
+                    color: Color(0xFFEBA52F),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  _open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  color: const Color(0xCCFFFFFF),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+          _row(
+            Icons.notifications_active_rounded,
+            l.notifyAll,
+            s.enabled,
+            NotifyPrefs.instance.setEnabled,
+          ),
+          if (_open)
+            Padding(
+              padding: const EdgeInsets.only(left: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _row(
+                    Icons.hourglass_full_rounded,
+                    l.notifyOfflineFull,
+                    s.offlineFull,
+                    NotifyPrefs.instance.setOfflineFull,
+                    enabled: s.enabled,
+                  ),
+                  _row(
+                    Icons.egg_alt_rounded,
+                    l.notifyHatchDone,
+                    s.hatchDone,
+                    NotifyPrefs.instance.setHatchDone,
+                    enabled: s.enabled,
+                  ),
+                  _row(
+                    Icons.card_giftcard_rounded,
+                    l.notifyDaily,
+                    s.daily,
+                    NotifyPrefs.instance.setDaily,
+                    enabled: s.enabled,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(
+    IconData icon,
+    String label,
+    bool on,
+    Future<void> Function(bool) onChanged, {
+    bool enabled = true,
+  }) => Opacity(
+    opacity: enabled ? 1 : 0.4,
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xCCFFFFFF)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13),
+          ),
+        ),
+        Switch(
+          value: on,
+          onChanged: enabled ? (v) => onChanged(v) : null,
+          activeThumbColor: _honey,
+        ),
+      ],
+    ),
+  );
 }
