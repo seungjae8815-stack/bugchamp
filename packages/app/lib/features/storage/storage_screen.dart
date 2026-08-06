@@ -825,8 +825,10 @@ class StorageScreen extends ConsumerWidget {
     Widget? bottomTag; // 하단 라벨(💎 확장 비용)
     VoidCallback? onTap;
     double fill = 0;
-    Color fillColor = const Color(0x556FC96F);
     var done = false;
+    // 부화 진행 중이면 남은 시간·대상 — 시간바와 가속 버튼이 쓴다.
+    Duration? hatchRem;
+    String? hatchBugId;
 
     if (!unlocked) {
       // 잠긴 캡슐: 자물쇠 아이콘(코드) + 회색 처리(그림). 다음 슬롯이면 💎 확장.
@@ -877,7 +879,10 @@ class StorageScreen extends ConsumerWidget {
       final rem = occupant.value.difference(now);
       done = rem <= Duration.zero;
       fill = total > 0 ? (1 - rem.inSeconds / total).clamp(0.0, 1.0) : 1.0;
-      fillColor = done ? const Color(0x66EBA52F) : const Color(0x556FC96F);
+      if (!done) {
+        hatchRem = rem;
+        hatchBugId = occupant.key;
+      }
       center = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -898,21 +903,6 @@ class StorageScreen extends ConsumerWidget {
               shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
             ),
           ),
-          // 부화 중일 때만 — 탭하면 광고를 보고 시간을 당길 수 있다는 안내.
-          if (!done)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                l.incubatorAdSkip((cfg.incubateAdSkipRatio * 100).round()),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFEBA52F),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 9,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 3)],
-                ),
-              ),
-            ),
         ],
       );
       onTap = done
@@ -924,121 +914,195 @@ class StorageScreen extends ConsumerWidget {
             }
           // 부화 중 탭 → 광고 보고 시간 당기기. 대기 자체가 이탈 지점이라
           // "기다림을 줄일 수단"을 주는 대신 광고 노출을 얻는다.
-          : () async {
-              if (!await watchAdForReward(ctx, r, l)) return;
-              if (!await ctrl.adSkipIncubation(occupant.key)) return;
-              AudioService.instance.sfxReward();
-              if (ctx.mounted) _snack(ctx, l.incubatorAdSkipDone);
-            };
+          : null; // 가속은 캡슐 아래 버튼이 담당한다.
     }
 
     const radius = BorderRadius.vertical(
       top: Radius.circular(42),
       bottom: Radius.circular(16),
     );
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        height: 176,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (done)
-              Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  boxShadow: [
-                    BoxShadow(
-                      color: _honey.withValues(alpha: 0.5),
-                      blurRadius: 18,
-                      spreadRadius: 1,
+    // 위: 시간바 / 가운데: 캡슐 / 아래: 가속 버튼 2개.
+    // 예전엔 진행도를 캡슐 안 초록 액체로 그려서 "이게 뭔지" 알기 어려웠다.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hatchRem != null) ...[
+          _hatchBar(fill, _remainLabel(l, hatchRem)),
+          const SizedBox(height: 4),
+        ],
+        GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: SizedBox(
+            height: 176,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (done)
+                  Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      borderRadius: radius,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _honey.withValues(alpha: 0.5),
+                          blurRadius: 18,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            // 유리 안쪽 액체(진행도) — 관 내부 근사.
-            if (fill > 0)
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.bottomCenter,
-                    widthFactor: 0.42,
-                    heightFactor: fill * 0.58,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: fillColor,
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(28),
+                  ),
+                // 콘텐츠(알/넣기/자물쇠) — 캡슐 그림 뒤.
+                Padding(padding: const EdgeInsets.all(10), child: center),
+                // 캡슐 프레임 그림(하나). 잠김이면 회색 처리. 없으면 유리 그라데이션 폴백.
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColorFiltered(
+                      colorFilter: unlocked
+                          ? const ColorFilter.mode(
+                              Color(0x00000000),
+                              BlendMode.dst,
+                            )
+                          : const ColorFilter.matrix(<double>[
+                              0.30,
+                              0.40,
+                              0.11,
+                              0,
+                              -18,
+                              0.30,
+                              0.40,
+                              0.11,
+                              0,
+                              -18,
+                              0.30,
+                              0.40,
+                              0.11,
+                              0,
+                              -12,
+                              0,
+                              0,
+                              0,
+                              1,
+                              0,
+                            ]),
+                      child: Image.asset(
+                        'assets/images/ui/incubator_capsule.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Color(0x3AA9D8FF), Color(0x14203040)],
+                            ),
+                            borderRadius: radius,
+                            border: Border.all(
+                              color: const Color(0x88A9D8FF),
+                              width: 1.5,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            // 콘텐츠(알/넣기/자물쇠) — 캡슐 그림 뒤.
-            Padding(padding: const EdgeInsets.all(10), child: center),
-            // 캡슐 프레임 그림(하나). 잠김이면 회색 처리. 없으면 유리 그라데이션 폴백.
-            Positioned.fill(
-              child: IgnorePointer(
-                child: ColorFiltered(
-                  colorFilter: unlocked
-                      ? const ColorFilter.mode(Color(0x00000000), BlendMode.dst)
-                      : const ColorFilter.matrix(<double>[
-                          0.30,
-                          0.40,
-                          0.11,
-                          0,
-                          -18,
-                          0.30,
-                          0.40,
-                          0.11,
-                          0,
-                          -18,
-                          0.30,
-                          0.40,
-                          0.11,
-                          0,
-                          -12,
-                          0,
-                          0,
-                          0,
-                          1,
-                          0,
-                        ]),
-                  child: Image.asset(
-                    'assets/images/ui/incubator_capsule.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 6),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0x3AA9D8FF), Color(0x14203040)],
-                        ),
-                        borderRadius: radius,
-                        border: Border.all(
-                          color: const Color(0x88A9D8FF),
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+                // 하단 태그(💎 확장) — 그림 위.
+                if (bottomTag != null)
+                  Align(alignment: const Alignment(0, 0.68), child: bottomTag),
+              ],
             ),
-            // 하단 태그(💎 확장) — 그림 위.
-            if (bottomTag != null)
-              Align(alignment: const Alignment(0, 0.68), child: bottomTag),
-          ],
+          ),
         ),
-      ),
+        if (hatchRem != null && hatchBugId != null) ...[
+          const SizedBox(height: 6),
+          _hatchActions(ctx, r, cfg, save, l, hatchBugId, hatchRem),
+        ],
+      ],
     );
   }
+
+  /// 부화 진행 시간바(캡슐 **위**). 남은 시간을 숫자로도 같이 보여준다.
+  Widget _hatchBar(double fill, String remainText) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: LinearProgressIndicator(
+          value: fill.clamp(0.0, 1.0),
+          minHeight: 6,
+          backgroundColor: const Color(0x33FFFFFF),
+          valueColor: const AlwaysStoppedAnimation(Color(0xFF6FC96F)),
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        remainText,
+        style: const TextStyle(
+          color: Color(0xE6FFFFFF),
+          fontWeight: FontWeight.w800,
+          fontSize: 10,
+          shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+        ),
+      ),
+    ],
+  );
+
+  /// 캡슐 아래 가속 버튼 두 개 — 젤리(즉시) / 광고(일부 단축).
+  Widget _hatchActions(
+    BuildContext ctx,
+    WidgetRef r,
+    PetConfig cfg,
+    SaveGame save,
+    AppLocalizations l,
+    String bugId,
+    Duration rem,
+  ) {
+    final ctrl = r.read(saveControllerProvider.notifier);
+    final cost = cfg.incubateJelly(rem);
+    final canPay = save.materialCount(MaterialKind.jelly) >= cost;
+    return Row(
+      children: [
+        Expanded(
+          child: _hatchBtn(
+            '💎$cost',
+            const Color(0xFF7E57C2),
+            canPay
+                ? () async {
+                    if (!await ctrl.instantIncubate(bugId)) return;
+                    AudioService.instance.sfxHatch();
+                    if (ctx.mounted) _snack(ctx, l.incubatorReady);
+                  }
+                : null,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _hatchBtn('📺', const Color(0xFF3E7D4F), () async {
+            if (!await watchAdForReward(ctx, r, l)) return;
+            if (!await ctrl.adSkipIncubation(bugId)) return;
+            AudioService.instance.sfxReward();
+            if (ctx.mounted) _snack(ctx, l.incubatorAdSkipDone);
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _hatchBtn(String label, Color bg, VoidCallback? onTap) => FilledButton(
+    onPressed: onTap,
+    style: FilledButton.styleFrom(
+      backgroundColor: bg,
+      disabledBackgroundColor: const Color(0x33FFFFFF),
+      padding: EdgeInsets.zero,
+      minimumSize: const Size(0, 28),
+      visualDensity: VisualDensity.compact,
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+    ),
+  );
 
   /// 부화할 알 선택 다이얼로그(빈 캡슐 탭 시).
   void _showEggPicker(BuildContext ctx, WidgetRef r, GameData data) {

@@ -1617,4 +1617,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get incubatorAdSkipDone => '부화 시간이 줄었어요!';
+
+  @override
+  String get nicknameEditAction => '변경';
+
+  @override
+  String nicknameEditActionCost(int cost) {
+    return '💎$cost 변경';
+  }
 }

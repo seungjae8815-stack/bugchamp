@@ -1036,5 +1036,14 @@
         "type": "int"
       }
     }
+  },
+  "nicknameEditAction": "Change",
+  "nicknameEditActionCost": "Change 💎{cost}",
+  "@nicknameEditActionCost": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      }
+    }
   }
 }

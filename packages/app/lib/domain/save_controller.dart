@@ -1128,6 +1128,28 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 젤리로 부화 즉시완료. 남은 시간 비례 비용(산란·돌파와 같은 방식).
+  /// 젤리 부족·대상 없음이면 false.
+  Future<bool> instantIncubate(String bugId) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    final endsAt = s.incubating[bugId];
+    if (endsAt == null) return false;
+
+    final now = ref.read(clockProvider).now().toUtc();
+    final rem = endsAt.difference(now);
+    if (rem <= Duration.zero) return true; // 이미 완료 — 수령만 하면 된다
+    final cost = cfg.incubateJelly(rem);
+    if (s.materialCount(MaterialKind.jelly) < cost) return false;
+
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) - cost;
+    final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = now;
+    await _commit(s.copyWith(materials: mats, incubating: inc));
+    return true;
+  }
+
   /// 부화기 슬롯 확장(젤리). 최대치·젤리부족이면 false.
   Future<bool> expandIncubator() async {
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;

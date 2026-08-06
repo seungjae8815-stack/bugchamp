@@ -3027,6 +3027,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hatching time reduced!'**
   String get incubatorAdSkipDone;
+
+  /// No description provided for @nicknameEditAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get nicknameEditAction;
+
+  /// No description provided for @nicknameEditActionCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Change 💎{cost}'**
+  String nicknameEditActionCost(int cost);
 }
 
 class _AppLocalizationsDelegate

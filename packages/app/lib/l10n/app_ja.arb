@@ -487,5 +487,7 @@
   "titleStoreTagline": "放置コレクトバトル",
   "nicknameChangeCostHint": "変更に💎{cost}消費",
   "incubatorAdSkip": "📺 広告で{pct}%短縮",
-  "incubatorAdSkipDone": "孵化時間が短くなりました！"
+  "incubatorAdSkipDone": "孵化時間が短くなりました！",
+  "nicknameEditAction": "変更",
+  "nicknameEditActionCost": "💎{cost}で変更"
 }

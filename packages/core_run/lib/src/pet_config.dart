@@ -34,6 +34,7 @@ class PetConfig {
     this.incubatorExpandJelly = 30,
     this.incubateDurationsSec = const {},
     this.incubateAdSkipRatio = 0.2,
+    this.incubateJellyPerMinute = 0.5,
     this.injuryDurationsSec = const {},
     this.injuryJellyPerMinute = 0.5,
     this.breedingDurationsSec = const {},
@@ -132,6 +133,9 @@ class PetConfig {
   /// 의미가 남는다 — 비율이면 등급과 무관하게 체감이 같다. 횟수 제한은 없다.
   final double incubateAdSkipRatio;
 
+  /// 부화 즉시완료 젤리 비용의 분당 계수(산란과 같은 방식 — 남은 시간 비례).
+  final double incubateJellyPerMinute;
+
   /// 등급별 KO 후 부상 회복 시간(초). 높은 등급일수록 회복이 오래 걸린다.
   final Map<Grade, int> injuryDurationsSec;
 
@@ -203,6 +207,13 @@ class PetConfig {
     return v < 1 ? 1 : v;
   }
 
+  /// 남은 시간 비례 부화 즉시완료 젤리 비용(최소 1).
+  int incubateJelly(Duration remaining) {
+    if (remaining <= Duration.zero) return 0;
+    final v = (remaining.inSeconds / 60 * incubateJellyPerMinute).ceil();
+    return v < 1 ? 1 : v;
+  }
+
   /// [level] → [level]+1 수련 비용(골드).
   int trainCost(int level) =>
       (trainBaseCost * math.pow(trainCostGrowth, level - 1)).round();
@@ -268,6 +279,8 @@ class PetConfig {
           (json['incubatorExpandJelly'] as num?)?.toInt() ?? 30,
       incubateAdSkipRatio:
           (json['incubateAdSkipRatio'] as num?)?.toDouble() ?? 0.2,
+      incubateJellyPerMinute:
+          (json['incubateJellyPerMinute'] as num?)?.toDouble() ?? 0.5,
       incubateDurationsSec: {
         for (final e
             in ((json['incubateDurationsSec'] as Map<String, dynamic>?) ??

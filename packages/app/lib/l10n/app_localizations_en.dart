@@ -1645,4 +1645,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get incubatorAdSkipDone => 'Hatching time reduced!';
+
+  @override
+  String get nicknameEditAction => 'Change';
+
+  @override
+  String nicknameEditActionCost(int cost) {
+    return 'Change 💎$cost';
+  }
 }

@@ -21,6 +21,7 @@ import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
+import '../../domain/server_sync.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/chat_screen.dart';
@@ -670,8 +671,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _playerHpMax = stats.maxHp;
 
     if (_walking) {
-      _walkT += dt;
-      _bgOffset += dt * 130;
+      // 부스트는 이동에도 실린다 — 때리는 속도만 빨라지고 다음 몬스터를 만나는
+      // 데 그대로 걸리면, 연타해도 진행이 안 빨라져 손맛이 죽는다.
+      final boostMove = 1 + (_boostMult - 1) * _config.boostSpeedFactor;
+      _walkT += dt * boostMove;
+      _bgOffset += dt * 130 * boostMove;
       _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * 2 * dt);
       if (_walkT >= _walkDuration / stats.moveSpeed) _spawn();
       return;
@@ -3742,6 +3746,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 닉네임은 전투력 표기보다 길어지지 않도록 8자로 제한.
   void _showCharacterCard(AppLocalizations l, SaveGame save) {
     final controller = TextEditingController(text: save.nickname);
+    // 닉네임 편집 모드. 처음엔 잠겨 있고, 옆 버튼을 눌러야 열린다.
+    var editing = false;
     final base = _petStats(save);
     final rows = <(String, String)>[
       (l.statCombatPower, formatCompact(combatPower(base))),
@@ -3771,173 +3777,227 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               BoxShadow(color: Color(0x99000000), blurRadius: 18),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _portrait(save),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      maxLength: 8,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        counterText: '',
-                        labelText: l.settingsNickname,
-                        labelStyle: const TextStyle(color: Color(0xFFEBA52F)),
-                        hintText: l.settingsNicknameHint,
-                        // 비용은 **고치기 전에** 보여야 한다. 예전엔 저장을 누른
-                        // 뒤 확인창에서야 젤리가 든다고 알려줬다. 첫 설정은 무료.
-                        helperText: save.nicknameSet
-                            ? l.nicknameChangeCostHint(
-                                SaveController.kNicknameChangeCost,
-                              )
-                            : null,
-                        helperStyle: const TextStyle(
-                          color: Color(0xCCEBA52F),
-                          fontSize: 11,
-                        ),
-                        enabledBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0x55EBA52F)),
-                        ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFFEBA52F)),
-                        ),
-                      ),
+          // 닉네임은 **잠겨 있다가** 옆 버튼을 눌러야 고칠 수 있다. 바로 입력
+          // 가능하면 실수로 건드린 뒤 저장 단계에서야 젤리가 든다는 걸 알게 된다.
+          child: StatefulBuilder(
+            builder: (ctx, setD) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _portrait(save),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: editing
+                          ? TextField(
+                              controller: controller,
+                              maxLength: 8,
+                              autofocus: true,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                counterText: '',
+                                labelText: l.settingsNickname,
+                                labelStyle: const TextStyle(
+                                  color: Color(0xFFEBA52F),
+                                ),
+                                hintText: l.settingsNicknameHint,
+                                enabledBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Color(0x55EBA52F),
+                                  ),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Color(0xFFEBA52F),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  l.settingsNickname,
+                                  style: const TextStyle(
+                                    color: Color(0xFFEBA52F),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  save.nickname,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
-                  ),
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Divider(height: 1, color: Color(0x33EBA52F)),
-              ),
-              for (final r in rows)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    children: [
-                      Text(
-                        r.$1,
-                        style: const TextStyle(
-                          color: Color(0xB3FFFFFF),
-                          fontSize: 13,
+                    if (!editing) ...[
+                      const SizedBox(width: 8),
+                      // 비용을 버튼에 박아둔다 — 누르기 전에 보여야 한다.
+                      OutlinedButton(
+                        onPressed: () {
+                          controller.text = save.nickname;
+                          setD(() => editing = true);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFEBA52F),
+                          side: const BorderSide(color: Color(0x66EBA52F)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          minimumSize: const Size(0, 34),
+                          visualDensity: VisualDensity.compact,
                         ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        r.$2,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
+                        child: Text(
+                          save.nicknameSet
+                              ? l.nicknameEditActionCost(
+                                  SaveController.kNicknameChangeCost,
+                                )
+                              : l.nicknameEditAction,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xB3FFFFFF),
-                    ),
-                    child: Text(l.actionCancel),
-                  ),
-                  FilledButton(
-                    onPressed: () async {
-                      // 닉네임은 랭킹·스카우트·채팅에 그대로 노출되므로
-                      // 채팅과 같은 금칙어 기준으로 막는다.
-                      final rules = _data.chatRules ?? const ChatRules();
-                      final name = controller.text.trim();
-                      if (name.isEmpty || name == save.nickname) {
-                        Navigator.pop(ctx);
-                        return;
-                      }
-                      if (!rules.nicknameAllowed(name)) {
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            SnackBar(content: Text(l.nicknameBlockedWord)),
-                          );
-                        return;
-                      }
-                      // 다른 유저가 쓰는 닉네임인지(온라인일 때만 실검사).
-                      final taken = await ref
-                          .read(pvpBackendProvider)
-                          .isNicknameTaken(name);
-                      if (!ctx.mounted) return;
-                      if (taken) {
-                        ScaffoldMessenger.of(ctx)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            SnackBar(content: Text(l.nicknameTaken)),
-                          );
-                        return;
-                      }
-                      if (!mounted) return;
-                      // 이미 확정된 닉네임 변경 → 젤리 소비, 먼저 확인.
-                      if (save.nicknameSet) {
-                        final confirm = await showGameDialog<bool>(
-                          context,
-                          title: l.nicknameChangeTitle,
-                          icon: Icons.badge_rounded,
-                          content: Text(
-                            '${l.nicknameChangeBody}\n\n💎 ${SaveController.kNicknameChangeCost}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xD9FFFFFF),
-                              fontSize: 13.5,
-                              height: 1.4,
-                            ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Divider(height: 1, color: Color(0x33EBA52F)),
+                ),
+                for (final r in rows)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      children: [
+                        Text(
+                          r.$1,
+                          style: const TextStyle(
+                            color: Color(0xB3FFFFFF),
+                            fontSize: 13,
                           ),
-                          actions: [
-                            gameDialogButton(
-                              l.actionCancel,
-                              () => Navigator.pop(context, false),
-                              primary: false,
-                            ),
-                            gameDialogButton(
-                              l.nicknameChangeConfirm,
-                              () => Navigator.pop(context, true),
-                            ),
-                          ],
-                        );
-                        if (confirm != true) return;
-                      }
-                      final result = await ref
-                          .read(saveControllerProvider.notifier)
-                          .renamePlayer(name);
-                      if (!mounted) return;
-                      if (result == RenameResult.notEnoughJelly) {
-                        ScaffoldMessenger.of(context)
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            SnackBar(content: Text(l.notEnoughJelly)),
-                          );
-                        return;
-                      }
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFEBA52F),
-                      foregroundColor: const Color(0xFF3A2600),
+                        ),
+                        const Spacer(),
+                        Text(
+                          r.$2,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Text(l.actionSave),
                   ),
-                ],
-              ),
-            ],
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => editing
+                          ? setD(() => editing = false)
+                          : Navigator.pop(ctx),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xB3FFFFFF),
+                      ),
+                      child: Text(editing ? l.actionCancel : l.actionClose),
+                    ),
+                    if (editing)
+                      FilledButton(
+                        onPressed: () async {
+                          final rules = _data.chatRules ?? const ChatRules();
+                          final name = controller.text.trim();
+                          if (name.isEmpty || name == save.nickname) {
+                            setD(() => editing = false);
+                            return;
+                          }
+                          if (!rules.nicknameAllowed(name)) {
+                            ScaffoldMessenger.of(ctx)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(content: Text(l.nicknameBlockedWord)),
+                              );
+                            return;
+                          }
+                          final taken = await ref
+                              .read(pvpBackendProvider)
+                              .isNicknameTaken(name);
+                          if (!ctx.mounted) return;
+                          if (taken) {
+                            ScaffoldMessenger.of(ctx)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(content: Text(l.nicknameTaken)),
+                              );
+                            return;
+                          }
+                          // 이미 확정된 닉네임 변경 → 젤리 소비, 먼저 확인.
+                          if (save.nicknameSet) {
+                            final confirm = await showGameDialog<bool>(
+                              ctx,
+                              title: l.nicknameChangeTitle,
+                              icon: Icons.badge_rounded,
+                              content: Text(
+                                l.nicknameChangeBody,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Color(0xD9FFFFFF),
+                                  fontSize: 13.5,
+                                  height: 1.4,
+                                ),
+                              ),
+                              actions: [
+                                gameDialogButton(
+                                  l.actionCancel,
+                                  () => Navigator.pop(ctx, false),
+                                  primary: false,
+                                ),
+                                gameDialogButton(
+                                  l.nicknameChangeConfirm,
+                                  () => Navigator.pop(ctx, true),
+                                ),
+                              ],
+                            );
+                            if (confirm != true || !ctx.mounted) return;
+                          }
+                          final res = await ref
+                              .read(saveControllerProvider.notifier)
+                              .renamePlayer(name);
+                          if (!ctx.mounted) return;
+                          if (res == RenameResult.notEnoughJelly) {
+                            ScaffoldMessenger.of(ctx)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(content: Text(l.notEnoughJelly)),
+                              );
+                            return;
+                          }
+                          // 다음 실행에 서버 세이브가 덮지 않도록 즉시 올린다.
+                          await pushSaveNow(ref);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFEBA52F),
+                          foregroundColor: const Color(0xFF3A2600),
+                        ),
+                        child: Text(l.nicknameEditAction),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

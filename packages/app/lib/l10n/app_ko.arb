@@ -522,5 +522,7 @@
   "titleStoreTagline": "방치형 수집 배틀",
   "nicknameChangeCostHint": "변경 시 💎{cost} 소모",
   "incubatorAdSkip": "📺 광고보고 {pct}% 단축",
-  "incubatorAdSkipDone": "부화 시간이 줄었어요!"
+  "incubatorAdSkipDone": "부화 시간이 줄었어요!",
+  "nicknameEditAction": "변경",
+  "nicknameEditActionCost": "💎{cost} 변경"
 }

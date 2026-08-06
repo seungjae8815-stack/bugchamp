@@ -101,5 +101,6 @@
   "breedingMutationBonusPct": 0.15,
   "breedingPotUpChance": 0.1,
   "breedingPotDownChance": 0.3,
-  "incubateAdSkipRatio": 0.2
+  "incubateAdSkipRatio": 0.2,
+  "incubateJellyPerMinute": 0.5
 }

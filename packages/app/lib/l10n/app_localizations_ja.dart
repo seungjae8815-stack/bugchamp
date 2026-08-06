@@ -1618,4 +1618,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get incubatorAdSkipDone => '孵化時間が短くなりました！';
+
+  @override
+  String get nicknameEditAction => '変更';
+
+  @override
+  String nicknameEditActionCost(int cost) {
+    return '💎$costで変更';
+  }
 }
