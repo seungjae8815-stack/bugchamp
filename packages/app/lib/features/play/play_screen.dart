@@ -11,6 +11,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../ui/toast.dart';
 import '../../app_version.dart';
 import '../../data/game_data.dart';
 import '../../domain/admob_ad_service.dart';
@@ -401,6 +402,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 탭 순간의 화면 파동(1 → 0). 눌렀다는 시각 피드백.
   double _tapFlash = 0;
+
+  /// 설정 시트의 알림 섹션이 펼쳐져 있는지.
+  bool _notifyOpen = false;
   double _tapHint = 0; // 손가락 탭 힌트 애니 주기
   double _bgOffset = 0;
   double _dmgCooldown = 0;
@@ -2303,9 +2307,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (!ok) return;
     AudioService.instance.sfxMission();
     if (mounted) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l.missionClaimedSnack)));
+      showCenterToast(context, l.missionClaimedSnack);
     }
   }
 
@@ -2860,42 +2862,60 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
               ),
             ),
-            // 전체 스위치 — 끄면 아래 개별 항목이 통째로 비활성.
-            _notifyRow(
-              Icons.notifications_active_rounded,
-              l.notifyAll,
-              s.enabled,
-              NotifyPrefs.instance.setEnabled,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            // 전체 스위치 — 누르면 아래 개별 항목이 펼쳐진다.
+            // 항상 펼쳐두면 설정 시트가 길어져 다른 항목이 밀린다.
+            InkWell(
+              onTap: () => setState(() => _notifyOpen = !_notifyOpen),
+              child: Row(
                 children: [
-                  _notifyRow(
-                    Icons.hourglass_full_rounded,
-                    l.notifyOfflineFull,
-                    s.offlineFull,
-                    NotifyPrefs.instance.setOfflineFull,
-                    enabled: s.enabled,
+                  Expanded(
+                    child: _notifyRow(
+                      Icons.notifications_active_rounded,
+                      l.notifyAll,
+                      s.enabled,
+                      NotifyPrefs.instance.setEnabled,
+                    ),
                   ),
-                  _notifyRow(
-                    Icons.egg_alt_rounded,
-                    l.notifyHatchDone,
-                    s.hatchDone,
-                    NotifyPrefs.instance.setHatchDone,
-                    enabled: s.enabled,
-                  ),
-                  _notifyRow(
-                    Icons.card_giftcard_rounded,
-                    l.notifyDaily,
-                    s.daily,
-                    NotifyPrefs.instance.setDaily,
-                    enabled: s.enabled,
+                  Icon(
+                    _notifyOpen
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    color: const Color(0xCCFFFFFF),
+                    size: 20,
                   ),
                 ],
               ),
             ),
+            if (_notifyOpen)
+              Padding(
+                padding: const EdgeInsets.only(left: 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _notifyRow(
+                      Icons.hourglass_full_rounded,
+                      l.notifyOfflineFull,
+                      s.offlineFull,
+                      NotifyPrefs.instance.setOfflineFull,
+                      enabled: s.enabled,
+                    ),
+                    _notifyRow(
+                      Icons.egg_alt_rounded,
+                      l.notifyHatchDone,
+                      s.hatchDone,
+                      NotifyPrefs.instance.setHatchDone,
+                      enabled: s.enabled,
+                    ),
+                    _notifyRow(
+                      Icons.card_giftcard_rounded,
+                      l.notifyDaily,
+                      s.daily,
+                      NotifyPrefs.instance.setDaily,
+                      enabled: s.enabled,
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       );
@@ -3320,9 +3340,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             if (!mounted) return;
             setState(() {});
             ref.invalidate(myRankProvider); // 로그아웃 → 랭킹 표시 제거
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(l.accountSignedOut)));
+            showCenterToast(context, l.accountSignedOut);
           }, color: const Color(0xFF556070)),
         // 계정 삭제는 로그인 여부와 무관하게 제공한다 — 익명 계정도 서버에
         // 랭킹·방어팀 데이터가 쌓이므로 지울 경로가 있어야 한다(Play 요구사항).
@@ -3443,18 +3461,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (!mounted) return;
     if (!ok) {
       // 서버 삭제 실패 → 로컬은 절대 건드리지 않는다.
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l.accountDeleteFailed)));
+      showCenterToast(context, l.accountDeleteFailed);
       return;
     }
 
     await ref.read(saveControllerProvider.notifier).resetGame();
     if (!mounted) return;
     setState(() {});
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(l.accountDeleteDone)));
+    showCenterToast(context, l.accountDeleteDone);
   }
 
   /// 로그인(구글/Apple) → 성공 시 클라우드 백업 유무에 따라 동기화 방향을 묻는다.
@@ -3466,9 +3480,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final ok = await doSignIn();
     if (!mounted) return;
     if (!ok) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l.accountSignInFailed)));
+      showCenterToast(context, l.accountSignInFailed);
       return;
     }
     setState(() {});
@@ -3510,11 +3522,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           .read(saveControllerProvider.notifier)
           .restoreFromJson(existing);
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(done ? l.cloudRestoreDone : l.cloudFailed)),
-        );
+      showCenterToast(context, done ? l.cloudRestoreDone : l.cloudFailed);
     } else {
       await _cloudBackup(l);
     }
@@ -3592,11 +3600,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final save = ref.read(saveControllerProvider).requireValue;
     final ok = await ref.read(cloudSaveProvider).upload(save.toJson());
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(ok ? l.cloudBackupDone : l.cloudFailed)),
-      );
+    showCenterToast(context, ok ? l.cloudBackupDone : l.cloudFailed);
   }
 
   /// 서버 세이브로 덮어쓴다(되돌릴 수 없어 확인 후 실행).
@@ -3604,9 +3608,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final data = await ref.read(cloudSaveProvider).download();
     if (!mounted) return;
     if (data == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l.cloudNoBackup)));
+      showCenterToast(context, l.cloudNoBackup);
       return;
     }
     final yes = await showGameDialog<bool>(
@@ -3640,11 +3642,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         .read(saveControllerProvider.notifier)
         .restoreFromJson(data);
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(ok ? l.cloudRestoreDone : l.cloudFailed)),
-      );
+    showCenterToast(context, ok ? l.cloudRestoreDone : l.cloudFailed);
   }
 
   void _confirmReset(AppLocalizations l) {
@@ -3671,9 +3669,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           await ref.read(saveControllerProvider.notifier).resetGame();
           if (!mounted) return;
           _devJumpStage(1); // 라이브 화면도 처음으로 동기화
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(l.settingsResetDone)));
+          showCenterToast(context, l.settingsResetDone);
         }, color: const Color(0xFFC85454)),
       ],
     );
@@ -3682,9 +3678,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 개발자(테스트) 도구 시트 — 채집함/스테이지/재화 조작. (개발 전용, 하드코딩 허용)
   void _showDevTools(AppLocalizations l) {
     final stageCtrl = TextEditingController();
-    void toast(String m) => ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(m)));
+    void toast(String m) => showCenterToast(context, m);
 
     showModalBottomSheet<void>(
       context: context,
@@ -3961,11 +3955,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           if (save.nicknameSet &&
                               save.materialCount(MaterialKind.jelly) <
                                   SaveController.kNicknameChangeCost) {
-                            ScaffoldMessenger.of(ctx)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                SnackBar(content: Text(l.notEnoughJelly)),
-                              );
+                            showCenterToast(ctx, l.notEnoughJelly);
                             return;
                           }
                           controller.text = save.nickname;
@@ -3980,9 +3970,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         ),
                         child: Text(
                           save.nicknameSet
-                              ? l.nicknameEditActionCost(
-                                  SaveController.kNicknameChangeCost,
-                                )
+                              ? '${l.nicknameEditAction} '
+                                    '💎${SaveController.kNicknameChangeCost}'
                               : l.nicknameEditAction,
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
@@ -4044,11 +4033,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             return;
                           }
                           if (!rules.nicknameAllowed(name)) {
-                            ScaffoldMessenger.of(ctx)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                SnackBar(content: Text(l.nicknameBlockedWord)),
-                              );
+                            showCenterToast(ctx, l.nicknameBlockedWord);
                             return;
                           }
                           final taken = await ref
@@ -4056,11 +4041,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                               .isNicknameTaken(name);
                           if (!ctx.mounted) return;
                           if (taken) {
-                            ScaffoldMessenger.of(ctx)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                SnackBar(content: Text(l.nicknameTaken)),
-                              );
+                            showCenterToast(ctx, l.nicknameTaken);
                             return;
                           }
                           // 이미 확정된 닉네임 변경 → 젤리 소비, 먼저 확인.
@@ -4097,11 +4078,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                               .renamePlayer(name);
                           if (!ctx.mounted) return;
                           if (res == RenameResult.notEnoughJelly) {
-                            ScaffoldMessenger.of(ctx)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                SnackBar(content: Text(l.notEnoughJelly)),
-                              );
+                            showCenterToast(ctx, l.notEnoughJelly);
                             return;
                           }
                           // 다음 실행에 서버 세이브가 덮지 않도록 즉시 올린다.
@@ -4372,12 +4349,14 @@ class _HoldBuyButtonState extends State<_HoldBuyButton> {
       // 진동은 **여기 한 곳**에만 — 연속 구매(_schedule)마다 울리면 손이 아프다.
       onTap: widget.enabled
           ? () {
-              HapticFeedback.selectionClick();
+              // selectionClick 은 기기·설정에 따라 아예 안 느껴진다 —
+              // 구매는 확실한 피드백이 필요하므로 lightImpact 로 쓴다.
+              HapticFeedback.lightImpact();
               widget.onFire();
             }
           : null,
       onLongPressStart: (_) {
-        HapticFeedback.selectionClick();
+        HapticFeedback.lightImpact();
         _startHold();
       },
       onLongPressEnd: (_) => _stopHold(),

@@ -5,6 +5,7 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../ui/toast.dart';
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
 import '../../domain/providers.dart';
@@ -930,111 +931,118 @@ class StorageScreen extends ConsumerWidget {
     );
     // 위: 시간바 / 가운데: 캡슐 / 아래: 가속 버튼 2개.
     // 예전엔 진행도를 캡슐 안 초록 액체로 그려서 "이게 뭔지" 알기 어려웠다.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // ⚠️ 시간바·버튼 자리는 부화 중이 아니어도 **비워서 유지**한다.
-        //    조건부로 넣고 빼면 부화가 끝나는 순간 칸 높이가 바뀌어 캡슐이
-        //    커졌다 작아졌다 한다.
-        SizedBox(
-          height: 24,
-          child: hatchRem == null
-              ? null
-              : _hatchBar(fill, _remainLabel(l, hatchRem)),
-        ),
-        const SizedBox(height: 4),
-        GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: SizedBox(
-            height: 176,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (done)
-                  Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      borderRadius: radius,
-                      boxShadow: [
-                        BoxShadow(
-                          color: _honey.withValues(alpha: 0.5),
-                          blurRadius: 18,
-                          spreadRadius: 1,
-                        ),
-                      ],
+    // ⚠️ 슬롯 높이를 **못 박는다**. 비었을 때/부화 중/완료의 내용물이 달라
+    //    높이가 흔들리면 캡슐이 커졌다 작아졌다 한다.
+    return SizedBox(
+      height: 24 + 4 + 176 + 6 + 62,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 시간바·버튼 자리는 부화 중이 아니어도 비워서 유지한다.
+          //    조건부로 넣고 빼면 부화가 끝나는 순간 칸 높이가 바뀌어 캡슐이
+          //    커졌다 작아졌다 한다.
+          SizedBox(
+            height: 24,
+            child: hatchRem == null
+                ? null
+                : _hatchBar(fill, _remainLabel(l, hatchRem)),
+          ),
+          const SizedBox(height: 4),
+          GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: SizedBox(
+              height: 176,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (done)
+                    Container(
+                      margin: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        borderRadius: radius,
+                        boxShadow: [
+                          BoxShadow(
+                            color: _honey.withValues(alpha: 0.5),
+                            blurRadius: 18,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                // 콘텐츠(알/넣기/자물쇠) — 캡슐 그림 뒤.
-                Padding(padding: const EdgeInsets.all(10), child: center),
-                // 캡슐 프레임 그림(하나). 잠김이면 회색 처리. 없으면 유리 그라데이션 폴백.
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: ColorFiltered(
-                      colorFilter: unlocked
-                          ? const ColorFilter.mode(
-                              Color(0x00000000),
-                              BlendMode.dst,
-                            )
-                          : const ColorFilter.matrix(<double>[
-                              0.30,
-                              0.40,
-                              0.11,
-                              0,
-                              -18,
-                              0.30,
-                              0.40,
-                              0.11,
-                              0,
-                              -18,
-                              0.30,
-                              0.40,
-                              0.11,
-                              0,
-                              -12,
-                              0,
-                              0,
-                              0,
-                              1,
-                              0,
-                            ]),
-                      child: Image.asset(
-                        'assets/images/ui/incubator_capsule.png',
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 6),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Color(0x3AA9D8FF), Color(0x14203040)],
-                            ),
-                            borderRadius: radius,
-                            border: Border.all(
-                              color: const Color(0x88A9D8FF),
-                              width: 1.5,
+                  // 콘텐츠(알/넣기/자물쇠) — 캡슐 그림 뒤.
+                  Padding(padding: const EdgeInsets.all(10), child: center),
+                  // 캡슐 프레임 그림(하나). 잠김이면 회색 처리. 없으면 유리 그라데이션 폴백.
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: ColorFiltered(
+                        colorFilter: unlocked
+                            ? const ColorFilter.mode(
+                                Color(0x00000000),
+                                BlendMode.dst,
+                              )
+                            : const ColorFilter.matrix(<double>[
+                                0.30,
+                                0.40,
+                                0.11,
+                                0,
+                                -18,
+                                0.30,
+                                0.40,
+                                0.11,
+                                0,
+                                -18,
+                                0.30,
+                                0.40,
+                                0.11,
+                                0,
+                                -12,
+                                0,
+                                0,
+                                0,
+                                1,
+                                0,
+                              ]),
+                        child: Image.asset(
+                          'assets/images/ui/incubator_capsule.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 6),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Color(0x3AA9D8FF), Color(0x14203040)],
+                              ),
+                              borderRadius: radius,
+                              border: Border.all(
+                                color: const Color(0x88A9D8FF),
+                                width: 1.5,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                // 하단 태그(💎 확장) — 그림 위.
-                if (bottomTag != null)
-                  Align(alignment: const Alignment(0, 0.68), child: bottomTag),
-              ],
+                  // 하단 태그(💎 확장) — 그림 위.
+                  if (bottomTag != null)
+                    Align(
+                      alignment: const Alignment(0, 0.68),
+                      child: bottomTag,
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 6),
-        SizedBox(
-          height: 62,
-          child: hatchRem == null || hatchBugId == null
-              ? null
-              : _hatchActions(ctx, r, cfg, save, l, hatchBugId, hatchRem),
-        ),
-      ],
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 62,
+            child: hatchRem == null || hatchBugId == null
+                ? null
+                : _hatchActions(ctx, r, cfg, save, l, hatchBugId, hatchRem),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1610,17 +1618,6 @@ class StorageScreen extends ConsumerWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4),
-          child: Text(
-            l.materialsHint,
-            style: const TextStyle(
-              color: Color(0x99FFFFFF),
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -1664,6 +1661,22 @@ class StorageScreen extends ConsumerWidget {
                 ),
               ),
           ],
+        ),
+        // 설명은 아이콘 **아래**에 오른쪽 정렬 — 위에 있으면 수량보다 먼저
+        // 읽혀서 정작 봐야 할 숫자가 뒤로 밀린다.
+        Padding(
+          padding: const EdgeInsets.only(top: 2, right: 4),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              l.materialsHint,
+              style: const TextStyle(
+                color: Color(0x99FFFFFF),
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ),
       ],
     ),
@@ -2031,7 +2044,10 @@ class StorageScreen extends ConsumerWidget {
     return l.durationS(s); // 1분 미만 → 초
   }
 
-  void _snack(BuildContext ctx, String text) => ScaffoldMessenger.of(ctx)
+  void _snack(BuildContext ctx, String text) => showCenterToast(ctx, text);
+
+  // ignore: unused_element
+  void _snackLegacy(BuildContext ctx, String text) => ScaffoldMessenger.of(ctx)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
 
