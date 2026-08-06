@@ -87,18 +87,20 @@ Deno.serve(async (req) => {
     `🐛 곤충키우기 (Bug Champ)\n` +
     `📅 ${kstDate()} 리포트\n` +
     `\n` +
-    `🎮 실사용(24h)   ${fmt(s.dau)}명\n` +
-    `📆 주간(7일)     ${fmt(s.wau)}명\n` +
-    `🗓 월간(30일)    ${fmt(s.mau)}명\n` +
-    `🌱 정착 사용자   ${fmt(s.retained)}명\n` +
+    `🎮 실사용(24h): ${fmt(s.dau)}명\n` +
+    `📆 주간(7일): ${fmt(s.wau)}명\n` +
+    `🗓 월간(30일): ${fmt(s.mau)}명\n` +
+    `🌱 정착 사용자: ${fmt(s.retained)}명\n` +
     (d1 === null
-      ? `🔁 D1 리텐션     -\n`
-      : `🔁 D1 리텐션     ${d1}% (${fmt(s.d1_new)}명 중 ${fmt(s.d1_returned)}명)\n`) +
-    `🔗 계정 연동     ${fmt(s.linked)}명\n` +
+      ? `🔁 D1 리텐션: -\n`
+      : `🔁 D1 리텐션: ${d1}% (${fmt(s.d1_new)}명 중 ${fmt(s.d1_returned)}명)\n`) +
     `\n` +
-    `📥 누적 설치     ${fmt(s.installs)}\n` +
-    `🆕 오늘 신규     ${fmt(s.new_today)}명\n` +
-    `💰 결제         ${fmt(s.purchases)}건` +
+    `🔑 로그인 유저: ${fmt(s.linked)}명 ` +
+    `(구글 ${fmt(s.linked_google)}·애플 ${fmt(s.linked_apple)})\n` +
+    `💾 세이브 보유자: ${fmt(s.saves_total)}명\n` +
+    `👥 누적 계정(익명포함): ${fmt(s.installs)}명\n` +
+    `🆕 오늘 신규: ${fmt(s.new_today)}명\n` +
+    `💰 결제: ${fmt(s.purchases)}건` +
     (s.purchases_test > 0 ? ` (테스트 ${fmt(s.purchases_test)}건 제외)` : '')
 
   await sendTelegram(msg)

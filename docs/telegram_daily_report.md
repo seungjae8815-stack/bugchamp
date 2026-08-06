@@ -16,17 +16,22 @@
 🐛 곤충키우기 (Bug Champ)
 📅 2026-08-05 리포트
 
-🎮 실사용(24h)   14명
-📆 주간(7일)     53명
-🗓 월간(30일)    107명
-🌱 정착 사용자   43명
-🔁 D1 리텐션     27% (15명 중 4명)
-🔗 계정 연동     9명
+🎮 실사용(24h): 12명
+📆 주간(7일): 53명
+🗓 월간(30일): 107명
+🌱 정착 사용자: 43명
+🔁 D1 리텐션: 27% (15명 중 4명)
 
-📥 누적 설치     134
-🆕 오늘 신규     10명
-💰 결제         0건 (테스트 4건 제외)
+🔑 로그인 유저: 10명 (구글 9·애플 2)
+💾 세이브 보유자: 110명
+👥 누적 계정(익명포함): 138명
+🆕 오늘 신규: 9명
+💰 결제: 0건 (테스트 4건 제외)
 ```
+
+> ⚠️ **배포된 함수가 저장소와 어긋난 적이 있다.** 2026-08 에 대시보드에서 직접
+> 배포한 버전이 돌고 있어, 저장소 코드를 고쳐도 리포트가 안 바뀌었다.
+> **반드시 이 저장소를 고친 뒤 배포**하고, 대시보드 편집기로 직접 수정하지 않는다.
 
 | 항목 | 소스 |
 |---|---|
@@ -96,6 +101,13 @@ begin
                           and s.updated_at >= now() - interval '24 hours'),
 
     'linked',         (select count(*) from auth.users where is_anonymous = false),
+    'linked_google',  (select count(distinct user_id) from auth.identities
+                        where provider = 'google'),
+    'linked_apple',   (select count(distinct user_id) from auth.identities
+                        where provider = 'apple'),
+
+    -- 세이브를 한 번이라도 올린 계정(서버까지 도달한 설치)
+    'saves_total',    (select count(*) from public.saves),
 
     'purchases',      (select count(*) from public.verified_purchases
                         where environment = 'production'),
@@ -127,10 +139,15 @@ supabase secrets set \
 ### 3) 함수 배포
 
 ```bash
-supabase functions deploy daily-report --no-verify-jwt \
+# supabase CLI 가 전역 설치돼 있지 않다면 npx 로 그대로 쓸 수 있다(Node 필요).
+npx supabase login          # 최초 1회
+npx supabase functions deploy daily-report --no-verify-jwt \
+  --project-ref rvmpwyycivmtrbbynjyy
+npx supabase functions deploy verify-purchase \
   --project-ref rvmpwyycivmtrbbynjyy
 ```
-> `--no-verify-jwt`: 크론(pg_net)이 JWT 없이 호출한다. 대신 함수가 `REPORT_SECRET` 로 막는다.
+> `--no-verify-jwt` 는 `daily-report` 에만 준다: 크론(pg_net)이 JWT 없이 호출한다.
+> 대신 함수가 `REPORT_SECRET` 로 막는다. `verify-purchase` 는 앱이 JWT 를 달고 부른다.
 
 ### 4) 크론 등록 — SQL Editor 에 실행 (매일 09:00 KST)
 
