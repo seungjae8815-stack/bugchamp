@@ -53,14 +53,19 @@ class _AppShellState extends ConsumerState<AppShell>
       // 항상** 띄운다(예전엔 광고 프로바이더 안에 있어 지연 로딩→심사에서 프롬프트
       // 미표시로 반려됨). 앱이 완전히 활성화된 뒤 호출해야 프롬프트가 뜬다.
       unawaited(_requestTrackingIfNeeded());
-      // 서버 연결 시: 세이브를 맞추고(최초 1회 이관 포함) 주기 업로드를 건다.
-      unawaited(syncWithServer(ref).then((_) => _uploader.start()));
-      // 버전 점검 — 새 버전/강제 업데이트 안내(서버 /version 기준).
-      // 게이트 통과 후 닉네임 미설정이면 강제 설정(랭킹·채팅에 "채집가" 도배 방지).
-      // 순서: 버전/점검 게이트 → 닉네임 강제 → 랭킹 팝업.
-      // (닉네임을 먼저 받아야 랭킹 프로필에 기본값 "채집가"가 올라가지 않는다.)
+      // 순서: 버전/점검 게이트 → 서버 세이브 채택 → 닉네임 강제 → 랭킹 팝업.
+      //
+      // ⚠️ **한 줄로 이어야 한다.** 예전엔 syncWithServer 를 따로 unawaited 로
+      //    돌려서 닉네임 게이트와 경합했다. /version 한 번이 세이브 전체 조회보다
+      //    먼저 끝나는 경우가 많아, **이미 닉네임이 있는 계정에도 입력창이 뜨는**
+      //    문제가 있었다(서버 세이브를 채택하기 전에 로컬 기본값을 봤다).
+      //
+      // 닉네임을 랭킹 팝업보다 먼저 받는 이유: 랭킹 프로필에 기본값 "채집가"가
+      // 올라가지 않게 하려면 순서가 이래야 한다.
       unawaited(
         _checkForUpdate()
+            .then((_) => syncWithServer(ref))
+            .then((_) => _uploader.start())
             .then((_) => mounted ? ensureNicknameSet(context, ref) : null)
             .then((_) => mounted ? showRankPopupOnStart(context, ref) : null),
       );
