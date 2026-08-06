@@ -1656,4 +1656,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notEnoughMaterials => '素材が足りません';
+
+  @override
+  String get notifGiftTitle => 'サプライズギフト到着！';
+
+  @override
+  String get notifGiftBody => 'ギフトが待っています。消える前に受け取ってください。';
+
+  @override
+  String get notifyGift => 'サプライズギフト';
+
+  @override
+  String get notifyQuietHours => 'おやすみ時間（22時〜8時）';
 }

@@ -534,5 +534,9 @@
   "incubatorInstant": "즉시 부화",
   "incubatorAdSkipBtn": "광고 보고 단축",
   "notifyAll": "알림 받기",
-  "notEnoughMaterials": "재료가 부족해요"
+  "notEnoughMaterials": "재료가 부족해요",
+  "notifGiftTitle": "깜짝선물 도착!",
+  "notifGiftBody": "선물이 기다리고 있어요. 사라지기 전에 받아 가세요.",
+  "notifyGift": "깜짝선물",
+  "notifyQuietHours": "야간 휴식 (밤 10시~아침 8시)"
 }

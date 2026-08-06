@@ -12,6 +12,8 @@ class NotifySettings {
     this.offlineFull = true,
     this.hatchDone = true,
     this.daily = true,
+    this.gift = true,
+    this.quietHours = true,
   });
 
   /// 알림 전체 스위치. 끄면 개별 설정과 무관하게 아무것도 보내지 않는다.
@@ -26,11 +28,19 @@ class NotifySettings {
   /// 일일 보상 시각 안내.
   final bool daily;
 
+  /// 깜짝선물이 쌓였을 때.
+  final bool gift;
+
+  /// 야간 휴식(22:00~08:00) — 이 시간대 알림은 아침 8시로 미룬다.
+  final bool quietHours;
+
   NotifySettings copyWith({
     bool? enabled,
     bool? offlineFull,
     bool? hatchDone,
     bool? daily,
+    bool? gift,
+    bool? quietHours,
   }) => NotifySettings(
     enabled: enabled ?? this.enabled,
     offlineFull: offlineFull ?? this.offlineFull,
@@ -59,6 +69,8 @@ class NotifyPrefs {
         offlineFull: p.getBool('notify.offlineFull') ?? true,
         hatchDone: p.getBool('notify.hatchDone') ?? true,
         daily: p.getBool('notify.daily') ?? true,
+        gift: p.getBool('notify.gift') ?? true,
+        quietHours: p.getBool('notify.quietHours') ?? true,
       );
     } catch (e) {
       debugPrint('NotifyPrefs.load 실패(기본값 사용): $e');
@@ -83,5 +95,15 @@ class NotifyPrefs {
   Future<void> setDaily(bool v) async {
     settings.value = settings.value.copyWith(daily: v);
     await _prefs?.setBool('notify.daily', v);
+  }
+
+  Future<void> setGift(bool v) async {
+    settings.value = settings.value.copyWith(gift: v);
+    await _prefs?.setBool('notify.gift', v);
+  }
+
+  Future<void> setQuietHours(bool v) async {
+    settings.value = settings.value.copyWith(quietHours: v);
+    await _prefs?.setBool('notify.quietHours', v);
   }
 }

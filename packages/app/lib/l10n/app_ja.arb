@@ -499,5 +499,9 @@
   "incubatorInstant": "すぐ孵化",
   "incubatorAdSkipBtn": "広告で短縮",
   "notifyAll": "通知を受け取る",
-  "notEnoughMaterials": "素材が足りません"
+  "notEnoughMaterials": "素材が足りません",
+  "notifGiftTitle": "サプライズギフト到着！",
+  "notifGiftBody": "ギフトが待っています。消える前に受け取ってください。",
+  "notifyGift": "サプライズギフト",
+  "notifyQuietHours": "おやすみ時間（22時〜8時）"
 }

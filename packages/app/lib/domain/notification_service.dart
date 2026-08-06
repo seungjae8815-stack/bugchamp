@@ -23,6 +23,67 @@ class NotificationService {
   /// 슬롯마다 다른 id 를 써야 서로 덮어쓰지 않는다.
   static const int hatchIdBase = 910;
 
+  /// 깜짝선물 알림 id.
+  static const int giftId = 905;
+
+  /// 야간 휴식 시작·종료 시각(로컬). 이 사이에 잡힌 알림은 아침으로 미룬다.
+  static const int quietFromHour = 22;
+  static const int quietToHour = 8;
+
+  /// [quiet] 이면 야간(22~08)에 잡힌 시각을 **다음 아침 8시**로 옮긴다.
+  /// 잠든 사이 울리는 알림은 알림 자체를 꺼버리게 만든다.
+  tz.TZDateTime _avoidQuiet(tz.TZDateTime t, {required bool quiet}) {
+    if (!quiet) return t;
+    if (t.hour >= quietFromHour) {
+      return tz.TZDateTime(
+        tz.local,
+        t.year,
+        t.month,
+        t.day,
+        quietToHour,
+      ).add(const Duration(days: 1));
+    }
+    if (t.hour < quietToHour) {
+      return tz.TZDateTime(tz.local, t.year, t.month, t.day, quietToHour);
+    }
+    return t;
+  }
+
+  /// 깜짝선물이 쌓였을 무렵 1회. 선물은 10~25분마다 생기므로 **매번 알리면
+  /// 성가시다** — 백그라운드 진입 후 한 번만 부른다.
+  Future<void> scheduleGift({
+    required Duration after,
+    required String title,
+    required String body,
+    bool quiet = true,
+  }) async {
+    if (!_ready) return;
+    try {
+      final at = _avoidQuiet(
+        tz.TZDateTime.now(tz.local).add(after),
+        quiet: quiet,
+      );
+      await _plugin.zonedSchedule(
+        giftId,
+        title,
+        body,
+        at,
+        _details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('scheduleGift failed: $e');
+    }
+  }
+
+  Future<void> cancelGift() async {
+    try {
+      await _plugin.cancel(giftId);
+    } catch (_) {}
+  }
+
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'bugchamp_daily',
     '보상 알림',
@@ -119,6 +180,7 @@ class NotificationService {
     required Duration after,
     required String title,
     required String body,
+    bool quiet = true,
   }) async {
     if (!_ready) return;
     try {
@@ -126,7 +188,7 @@ class NotificationService {
         offlineId,
         title,
         body,
-        tz.TZDateTime.now(tz.local).add(after),
+        _avoidQuiet(tz.TZDateTime.now(tz.local).add(after), quiet: quiet),
         _details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
@@ -145,6 +207,7 @@ class NotificationService {
     List<DateTime> endsAt, {
     required String title,
     required String body,
+    bool quiet = true,
   }) async {
     if (!_ready) return;
     await cancelHatches();
@@ -152,7 +215,10 @@ class NotificationService {
     var i = 0;
     for (final t in endsAt) {
       if (i >= 8) break; // 부화기 슬롯 상한을 넉넉히 덮는다
-      final at = tz.TZDateTime.from(t.toLocal(), tz.local);
+      final at = _avoidQuiet(
+        tz.TZDateTime.from(t.toLocal(), tz.local),
+        quiet: quiet,
+      );
       if (!at.isAfter(now)) continue;
       try {
         await _plugin.zonedSchedule(

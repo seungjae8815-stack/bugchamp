@@ -1684,4 +1684,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notEnoughMaterials => 'Not enough materials';
+
+  @override
+  String get notifGiftTitle => 'A gift arrived!';
+
+  @override
+  String get notifGiftBody =>
+      'Gifts are waiting. Claim them before they expire.';
+
+  @override
+  String get notifyGift => 'Surprise gifts';
+
+  @override
+  String get notifyQuietHours => 'Quiet hours (10 PM - 8 AM)';
 }

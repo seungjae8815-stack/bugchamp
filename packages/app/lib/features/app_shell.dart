@@ -100,6 +100,7 @@ class _AppShellState extends ConsumerState<AppShell>
           after: kMaxOfflineAccrual,
           title: l.notifOfflineTitle,
           body: l.notifOfflineBody,
+          quiet: notify.quietHours,
         );
       }
       // 부화 완료 예정 시각마다 알림 — 앱을 꺼둔 채 기다리는 시간이라
@@ -111,15 +112,31 @@ class _AppShellState extends ConsumerState<AppShell>
             save.incubating.values.toList(),
             title: l.notifHatchTitle,
             body: l.notifHatchBody,
+            quiet: notify.quietHours,
           ),
         );
       } else {
         unawaited(svc.cancelHatches());
       }
+      // 깜짝선물은 10~25분마다 생긴다 — 매번 알리면 성가시므로 백그라운드
+      // 진입 후 몇 개 쌓였을 무렵 **한 번만** 알린다.
+      if (notify.enabled && notify.gift) {
+        unawaited(
+          svc.scheduleGift(
+            after: const Duration(minutes: 40),
+            title: l.notifGiftTitle,
+            body: l.notifGiftBody,
+            quiet: notify.quietHours,
+          ),
+        );
+      } else {
+        unawaited(svc.cancelGift());
+      }
     } else if (state == AppLifecycleState.resumed) {
       // 복귀 → 오프라인 알림 취소(이미 접속).
       svc.cancelOfflineFull();
       unawaited(svc.cancelHatches());
+      unawaited(svc.cancelGift());
     }
   }
 

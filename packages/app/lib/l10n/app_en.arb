@@ -1055,5 +1055,9 @@
   "incubatorInstant": "Hatch now",
   "incubatorAdSkipBtn": "Watch ad to speed up",
   "notifyAll": "Enable notifications",
-  "notEnoughMaterials": "Not enough materials"
+  "notEnoughMaterials": "Not enough materials",
+  "notifGiftTitle": "A gift arrived!",
+  "notifGiftBody": "Gifts are waiting. Claim them before they expire.",
+  "notifyGift": "Surprise gifts",
+  "notifyQuietHours": "Quiet hours (10 PM - 8 AM)"
 }

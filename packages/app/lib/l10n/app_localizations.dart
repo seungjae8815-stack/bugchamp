@@ -3099,6 +3099,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not enough materials'**
   String get notEnoughMaterials;
+
+  /// No description provided for @notifGiftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A gift arrived!'**
+  String get notifGiftTitle;
+
+  /// No description provided for @notifGiftBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Gifts are waiting. Claim them before they expire.'**
+  String get notifGiftBody;
+
+  /// No description provided for @notifyGift.
+  ///
+  /// In en, this message translates to:
+  /// **'Surprise gifts'**
+  String get notifyGift;
+
+  /// No description provided for @notifyQuietHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours (10 PM - 8 AM)'**
+  String get notifyQuietHours;
 }
 
 class _AppLocalizationsDelegate

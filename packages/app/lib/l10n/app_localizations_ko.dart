@@ -1655,4 +1655,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get notEnoughMaterials => '재료가 부족해요';
+
+  @override
+  String get notifGiftTitle => '깜짝선물 도착!';
+
+  @override
+  String get notifGiftBody => '선물이 기다리고 있어요. 사라지기 전에 받아 가세요.';
+
+  @override
+  String get notifyGift => '깜짝선물';
+
+  @override
+  String get notifyQuietHours => '야간 휴식 (밤 10시~아침 8시)';
 }
