@@ -210,7 +210,7 @@
   "storageCount": "{count}匹",
   "storageCapacityCount": "{used}/{cap}",
   "storageCapacityLabel": "採集箱 {used} / {cap}枠",
-  "storageFullBanner": "採集箱がいっぱいです — 昆虫が入りません",
+  "storageFullBanner": "採集ボックスが満杯です\n虫が入りません",
   "storageFullSnack": "採集箱がいっぱいです。分解するか拡張してください。",
   "storageExpand": "+{n}枠 💎{jelly}",
   "storageExpandMaxed": "拡張上限",
@@ -495,5 +495,8 @@
   "settingsNotify": "通知",
   "notifyOfflineFull": "放置報酬が満タン",
   "notifyHatchDone": "孵化完了",
-  "notifyDaily": "デイリー報酬の時間"
+  "notifyDaily": "デイリー報酬の時間",
+  "incubatorInstant": "すぐ孵化",
+  "incubatorAdSkipBtn": "広告で短縮",
+  "notifyAll": "通知を受け取る"
 }

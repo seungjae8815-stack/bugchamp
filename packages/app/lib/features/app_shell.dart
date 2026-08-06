@@ -95,7 +95,7 @@ class _AppShellState extends ConsumerState<AppShell>
       unawaited(_uploader.flush());
       final notify = NotifyPrefs.instance.settings.value;
       // 오프라인 상한(8h) 도달 시 알림 예약.
-      if (notify.offlineFull) {
+      if (notify.enabled && notify.offlineFull) {
         svc.scheduleOfflineFull(
           after: kMaxOfflineAccrual,
           title: l.notifOfflineTitle,
@@ -105,7 +105,7 @@ class _AppShellState extends ConsumerState<AppShell>
       // 부화 완료 예정 시각마다 알림 — 앱을 꺼둔 채 기다리는 시간이라
       // 알려주지 않으면 알이 다 익은 채 방치된다.
       final save = ref.read(saveControllerProvider).value;
-      if (notify.hatchDone && save != null) {
+      if (notify.enabled && notify.hatchDone && save != null) {
         unawaited(
           svc.scheduleHatches(
             save.incubating.values.toList(),
@@ -131,7 +131,8 @@ class _AppShellState extends ConsumerState<AppShell>
     final svc = NotificationService.instance;
     await NotifyPrefs.instance.load();
     await svc.requestPermission();
-    if (!NotifyPrefs.instance.settings.value.daily) return; // 꺼두면 예약 안 함
+    final np = NotifyPrefs.instance.settings.value;
+    if (!np.enabled || !np.daily) return; // 꺼두면 예약 안 함
     // gameData 는 비동기 로드(FutureProvider) — 첫 프레임엔 .value 가 아직 null 이라
     // 예약이 통째로 건너뛰어졌다(점심/저녁 알림 미발화의 근본 원인).
     // .future 를 await 해 로드 완료를 보장한 뒤 예약한다.

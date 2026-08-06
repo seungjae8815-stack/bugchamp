@@ -704,7 +704,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get storageFullBanner => '採集箱がいっぱいです — 昆虫が入りません';
+  String get storageFullBanner => '採集ボックスが満杯です\n虫が入りません';
 
   @override
   String get storageFullSnack => '採集箱がいっぱいです。分解するか拡張してください。';
@@ -1644,4 +1644,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notifyDaily => 'デイリー報酬の時間';
+
+  @override
+  String get incubatorInstant => 'すぐ孵化';
+
+  @override
+  String get incubatorAdSkipBtn => '広告で短縮';
+
+  @override
+  String get notifyAll => '通知を受け取る';
 }

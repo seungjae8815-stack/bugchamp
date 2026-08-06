@@ -717,7 +717,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get storageFullBanner => 'Storage full — no new bugs';
+  String get storageFullBanner =>
+      'Your collection is full\nNo new bugs will be added';
 
   @override
   String get storageFullSnack =>
@@ -1671,4 +1672,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifyDaily => 'Daily reward time';
+
+  @override
+  String get incubatorInstant => 'Hatch now';
+
+  @override
+  String get incubatorAdSkipBtn => 'Watch ad to speed up';
+
+  @override
+  String get notifyAll => 'Enable notifications';
 }

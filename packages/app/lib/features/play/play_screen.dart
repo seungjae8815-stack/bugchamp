@@ -5,6 +5,7 @@ import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -397,6 +398,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 탭 연타로 쌓이는 공격 배율(1.0 = 부스트 없음). 안 누르면 초당 감소한다.
   double _boostMult = 1.0;
+
+  /// 탭 순간의 화면 파동(1 → 0). 눌렀다는 시각 피드백.
+  double _tapFlash = 0;
   double _tapHint = 0; // 손가락 탭 힌트 애니 주기
   double _bgOffset = 0;
   double _dmgCooldown = 0;
@@ -619,6 +623,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _step(double dt) {
     _tapHint += dt;
     if (_tapHint > 60) _tapHint -= 60; // 시작 시 1회 + 60초마다
+    if (_tapFlash > 0) _tapFlash = math.max(0, _tapFlash - dt * 3.2);
     // 탭을 멈추면 배율이 서서히 1.0 으로 돌아간다 — 계속 두드리게 만드는 축.
     if (_boostMult > 1.0) {
       _boostMult = math.max(1.0, _boostMult - _config.boostDecayPerSec * dt);
@@ -1057,14 +1062,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() {
-        // 한 번에 오르는 폭은 부스트 업그레이드(boostBonus)에 비례한다.
-        final stats = _stats(ref.read(saveControllerProvider).requireValue);
-        _boostMult = math.min(
-          _config.boostMultMax,
-          _boostMult + _config.boostStepPerTap * stats.boostBonus,
-        );
-      }),
+      onTap: () {
+        // 손맛: 짧은 진동 + 화면 파동. 눌린 게 몸으로 느껴져야 계속 두드린다.
+        HapticFeedback.lightImpact();
+        setState(() {
+          // 한 번에 오르는 폭은 부스트 업그레이드(boostBonus)에 비례한다.
+          final stats = _stats(ref.read(saveControllerProvider).requireValue);
+          _boostMult = math.min(
+            _config.boostMultMax,
+            _boostMult + _config.boostStepPerTap * stats.boostBonus,
+          );
+          _tapFlash = 1.0;
+        });
+      },
       child: ClipRect(
         child: Transform.translate(
           offset: shakeOffset,
@@ -1301,6 +1311,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                 ),
 
+              // 탭 파동 — 눌린 순간 화면 전체가 살짝 밝아졌다 사라진다.
+              if (_tapFlash > 0)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [
+                            _honey.withValues(alpha: 0.18 * _tapFlash),
+                            const Color(0x00000000),
+                          ],
+                          radius: 0.9 - 0.25 * _tapFlash,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               if (_boostMult > 1.0)
                 Positioned(
                   top: 8,
@@ -2833,23 +2860,41 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
               ),
             ),
+            // 전체 스위치 — 끄면 아래 개별 항목이 통째로 비활성.
             _notifyRow(
-              Icons.hourglass_full_rounded,
-              l.notifyOfflineFull,
-              s.offlineFull,
-              NotifyPrefs.instance.setOfflineFull,
+              Icons.notifications_active_rounded,
+              l.notifyAll,
+              s.enabled,
+              NotifyPrefs.instance.setEnabled,
             ),
-            _notifyRow(
-              Icons.egg_alt_rounded,
-              l.notifyHatchDone,
-              s.hatchDone,
-              NotifyPrefs.instance.setHatchDone,
-            ),
-            _notifyRow(
-              Icons.card_giftcard_rounded,
-              l.notifyDaily,
-              s.daily,
-              NotifyPrefs.instance.setDaily,
+            Padding(
+              padding: const EdgeInsets.only(left: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _notifyRow(
+                    Icons.hourglass_full_rounded,
+                    l.notifyOfflineFull,
+                    s.offlineFull,
+                    NotifyPrefs.instance.setOfflineFull,
+                    enabled: s.enabled,
+                  ),
+                  _notifyRow(
+                    Icons.egg_alt_rounded,
+                    l.notifyHatchDone,
+                    s.hatchDone,
+                    NotifyPrefs.instance.setHatchDone,
+                    enabled: s.enabled,
+                  ),
+                  _notifyRow(
+                    Icons.card_giftcard_rounded,
+                    l.notifyDaily,
+                    s.daily,
+                    NotifyPrefs.instance.setDaily,
+                    enabled: s.enabled,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -2859,23 +2904,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     IconData icon,
     String label,
     bool on,
-    Future<void> Function(bool) onChanged,
-  ) => Row(
-    children: [
-      Icon(icon, size: 18, color: const Color(0xCCFFFFFF)),
-      const SizedBox(width: 8),
-      Expanded(
-        child: Text(
-          label,
-          style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13),
+    Future<void> Function(bool) onChanged, {
+    bool enabled = true,
+  }) => Opacity(
+    opacity: enabled ? 1 : 0.4,
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xCCFFFFFF)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 13),
+          ),
         ),
-      ),
-      Switch(
-        value: on,
-        onChanged: (v) => onChanged(v),
-        activeThumbColor: _honey,
-      ),
-    ],
+        Switch(
+          value: on,
+          onChanged: enabled ? (v) => onChanged(v) : null,
+          activeThumbColor: _honey,
+        ),
+      ],
+    ),
   );
 
   Widget _audioSettings(AppLocalizations l) =>
@@ -3907,6 +3956,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       // 비용을 버튼에 박아둔다 — 누르기 전에 보여야 한다.
                       OutlinedButton(
                         onPressed: () {
+                          // 젤리가 모자라면 **편집을 열지 않는다**. 열어두면 다
+                          // 고치고 나서야 못 바꾼다는 걸 알게 된다.
+                          if (save.nicknameSet &&
+                              save.materialCount(MaterialKind.jelly) <
+                                  SaveController.kNicknameChangeCost) {
+                            ScaffoldMessenger.of(ctx)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(content: Text(l.notEnoughJelly)),
+                              );
+                            return;
+                          }
                           controller.text = save.nickname;
                           setD(() => editing = true);
                         },
@@ -4308,8 +4369,17 @@ class _HoldBuyButtonState extends State<_HoldBuyButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       // 짧게 탭 = 1회 구매. 꾹 누르면 = 연속.
-      onTap: widget.enabled ? widget.onFire : null,
-      onLongPressStart: (_) => _startHold(),
+      // 진동은 **여기 한 곳**에만 — 연속 구매(_schedule)마다 울리면 손이 아프다.
+      onTap: widget.enabled
+          ? () {
+              HapticFeedback.selectionClick();
+              widget.onFire();
+            }
+          : null,
+      onLongPressStart: (_) {
+        HapticFeedback.selectionClick();
+        _startHold();
+      },
       onLongPressEnd: (_) => _stopHold(),
       onLongPressCancel: _stopHold,
       child: widget.child,

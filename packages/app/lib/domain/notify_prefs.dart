@@ -8,10 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 @immutable
 class NotifySettings {
   const NotifySettings({
+    this.enabled = true,
     this.offlineFull = true,
     this.hatchDone = true,
     this.daily = true,
   });
+
+  /// 알림 전체 스위치. 끄면 개별 설정과 무관하게 아무것도 보내지 않는다.
+  final bool enabled;
 
   /// 오프라인 보상이 가득 찼을 때(8시간).
   final bool offlineFull;
@@ -22,12 +26,17 @@ class NotifySettings {
   /// 일일 보상 시각 안내.
   final bool daily;
 
-  NotifySettings copyWith({bool? offlineFull, bool? hatchDone, bool? daily}) =>
-      NotifySettings(
-        offlineFull: offlineFull ?? this.offlineFull,
-        hatchDone: hatchDone ?? this.hatchDone,
-        daily: daily ?? this.daily,
-      );
+  NotifySettings copyWith({
+    bool? enabled,
+    bool? offlineFull,
+    bool? hatchDone,
+    bool? daily,
+  }) => NotifySettings(
+    enabled: enabled ?? this.enabled,
+    offlineFull: offlineFull ?? this.offlineFull,
+    hatchDone: hatchDone ?? this.hatchDone,
+    daily: daily ?? this.daily,
+  );
 }
 
 /// [NotifySettings] 를 기기에 읽고 쓰는 싱글턴. [AudioService] 와 같은 방식이라
@@ -46,6 +55,7 @@ class NotifyPrefs {
     try {
       final p = _prefs = await SharedPreferences.getInstance();
       settings.value = NotifySettings(
+        enabled: p.getBool('notify.enabled') ?? true,
         offlineFull: p.getBool('notify.offlineFull') ?? true,
         hatchDone: p.getBool('notify.hatchDone') ?? true,
         daily: p.getBool('notify.daily') ?? true,
@@ -53,6 +63,11 @@ class NotifyPrefs {
     } catch (e) {
       debugPrint('NotifyPrefs.load 실패(기본값 사용): $e');
     }
+  }
+
+  Future<void> setEnabled(bool v) async {
+    settings.value = settings.value.copyWith(enabled: v);
+    await _prefs?.setBool('notify.enabled', v);
   }
 
   Future<void> setOfflineFull(bool v) async {

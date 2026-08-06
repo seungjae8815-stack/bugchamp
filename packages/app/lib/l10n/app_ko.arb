@@ -217,7 +217,7 @@
   "storageCount": "{count}마리",
   "storageCapacityCount": "{used}/{cap}",
   "storageCapacityLabel": "채집함 {used} / {cap}칸",
-  "storageFullBanner": "채집함이 가득 찼어요 — 곤충이 들어오지 않아요",
+  "storageFullBanner": "채집함이 가득 찼어요\n곤충이 들어오지 않아요",
   "storageFullSnack": "채집함이 가득 찼어요. 분해하거나 확장해 주세요.",
   "storageExpand": "+{n}칸 💎{jelly}",
   "storageExpandMaxed": "최대 확장",
@@ -530,5 +530,8 @@
   "settingsNotify": "알림",
   "notifyOfflineFull": "오프라인 보상 가득참",
   "notifyHatchDone": "부화 완료",
-  "notifyDaily": "일일 보상 시간"
+  "notifyDaily": "일일 보상 시간",
+  "incubatorInstant": "즉시 부화",
+  "incubatorAdSkipBtn": "광고 보고 단축",
+  "notifyAll": "알림 받기"
 }

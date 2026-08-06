@@ -33,23 +33,7 @@ class StorageScreen extends ConsumerWidget {
     final data = ref.watch(gameDataProvider).requireValue;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l.storageTitle),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                l.storageCapacityCount(save.bugs.length, save.storageCapacity),
-                style: TextStyle(
-                  color: save.storageFull ? const Color(0xFFFF8A65) : null,
-                  fontWeight: save.storageFull ? FontWeight.w900 : null,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(l.storageTitle)),
       body: Column(
         children: [
           // 재료는 **칸 수 바보다 위**에 둔다 — 강화·제작에 쓸 재고를 가장 먼저
@@ -94,17 +78,38 @@ class StorageScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  full
-                      ? l.storageFullBanner
-                      : l.storageCapacityLabel(used, cap),
-                  style: TextStyle(
-                    color: full
-                        ? const Color(0xFFFF8A65)
-                        : const Color(0xDDFFFFFF),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12.5,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        full
+                            ? l.storageFullBanner
+                            : l.storageCapacityLabel(used, cap),
+                        style: TextStyle(
+                          color: full
+                              ? const Color(0xFFFF8A65)
+                              : const Color(0xDDFFFFFF),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12.5,
+                          height: 1.25,
+                        ),
+                      ),
+                    ),
+                    // 가득 찼을 때도 몇 칸인지 바로 보이게 — 안내 문구만 있으면
+                    // "얼마나 늘려야 하나"를 알 수 없다.
+                    const SizedBox(width: 8),
+                    Text(
+                      l.storageCapacityCount(used, cap),
+                      style: TextStyle(
+                        color: full
+                            ? const Color(0xFFFF8A65)
+                            : const Color(0xDDFFFFFF),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 ClipRRect(
@@ -928,10 +933,16 @@ class StorageScreen extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (hatchRem != null) ...[
-          _hatchBar(fill, _remainLabel(l, hatchRem)),
-          const SizedBox(height: 4),
-        ],
+        // ⚠️ 시간바·버튼 자리는 부화 중이 아니어도 **비워서 유지**한다.
+        //    조건부로 넣고 빼면 부화가 끝나는 순간 칸 높이가 바뀌어 캡슐이
+        //    커졌다 작아졌다 한다.
+        SizedBox(
+          height: 24,
+          child: hatchRem == null
+              ? null
+              : _hatchBar(fill, _remainLabel(l, hatchRem)),
+        ),
+        const SizedBox(height: 4),
         GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
@@ -1016,10 +1027,13 @@ class StorageScreen extends ConsumerWidget {
             ),
           ),
         ),
-        if (hatchRem != null && hatchBugId != null) ...[
-          const SizedBox(height: 6),
-          _hatchActions(ctx, r, cfg, save, l, hatchBugId, hatchRem),
-        ],
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 62,
+          child: hatchRem == null || hatchBugId == null
+              ? null
+              : _hatchActions(ctx, r, cfg, save, l, hatchBugId, hatchRem),
+        ),
       ],
     );
   }
@@ -1063,46 +1077,53 @@ class StorageScreen extends ConsumerWidget {
     final ctrl = r.read(saveControllerProvider.notifier);
     final cost = cfg.incubateJelly(rem);
     final canPay = save.materialCount(MaterialKind.jelly) >= cost;
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: _hatchBtn(
-            '💎$cost',
-            const Color(0xFF7E57C2),
-            canPay
-                ? () async {
-                    if (!await ctrl.instantIncubate(bugId)) return;
-                    AudioService.instance.sfxHatch();
-                    if (ctx.mounted) _snack(ctx, l.incubatorReady);
-                  }
-                : null,
-          ),
+        _hatchBtn(
+          '💎$cost  ${l.incubatorInstant}',
+          const Color(0xFF7E57C2),
+          canPay
+              ? () async {
+                  if (!await ctrl.instantIncubate(bugId)) return;
+                  AudioService.instance.sfxHatch();
+                  if (ctx.mounted) _snack(ctx, l.incubatorReady);
+                }
+              : null,
         ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _hatchBtn('📺', const Color(0xFF3E7D4F), () async {
+        const SizedBox(height: 4),
+        _hatchBtn(
+          '📺  ${l.incubatorAdSkipBtn}',
+          const Color(0xFF3E7D4F),
+          () async {
             if (!await watchAdForReward(ctx, r, l)) return;
             if (!await ctrl.adSkipIncubation(bugId)) return;
             AudioService.instance.sfxReward();
             if (ctx.mounted) _snack(ctx, l.incubatorAdSkipDone);
-          }),
+          },
         ),
       ],
     );
   }
 
-  Widget _hatchBtn(String label, Color bg, VoidCallback? onTap) => FilledButton(
-    onPressed: onTap,
-    style: FilledButton.styleFrom(
-      backgroundColor: bg,
-      disabledBackgroundColor: const Color(0x33FFFFFF),
-      padding: EdgeInsets.zero,
-      minimumSize: const Size(0, 28),
-      visualDensity: VisualDensity.compact,
-    ),
-    child: Text(
-      label,
-      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+  Widget _hatchBtn(String label, Color bg, VoidCallback? onTap) => SizedBox(
+    width: double.infinity,
+    height: 29,
+    child: FilledButton(
+      onPressed: onTap,
+      style: FilledButton.styleFrom(
+        backgroundColor: bg,
+        disabledBackgroundColor: const Color(0x33FFFFFF),
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 28),
+        visualDensity: VisualDensity.compact,
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5),
+      ),
     ),
   );
 

@@ -467,7 +467,7 @@
       }
     }
   },
-  "storageFullBanner": "Storage full — no new bugs",
+  "storageFullBanner": "Your collection is full\nNo new bugs will be added",
   "storageFullSnack": "Storage is full. Release a bug or expand your storage.",
   "storageExpand": "+{n} 💎{jelly}",
   "@storageExpand": {
@@ -1051,5 +1051,8 @@
   "settingsNotify": "Notifications",
   "notifyOfflineFull": "Offline rewards full",
   "notifyHatchDone": "Hatching complete",
-  "notifyDaily": "Daily reward time"
+  "notifyDaily": "Daily reward time",
+  "incubatorInstant": "Hatch now",
+  "incubatorAdSkipBtn": "Watch ad to speed up",
+  "notifyAll": "Enable notifications"
 }

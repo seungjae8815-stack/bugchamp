@@ -704,7 +704,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get storageFullBanner => '채집함이 가득 찼어요 — 곤충이 들어오지 않아요';
+  String get storageFullBanner => '채집함이 가득 찼어요\n곤충이 들어오지 않아요';
 
   @override
   String get storageFullSnack => '채집함이 가득 찼어요. 분해하거나 확장해 주세요.';
@@ -1643,4 +1643,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get notifyDaily => '일일 보상 시간';
+
+  @override
+  String get incubatorInstant => '즉시 부화';
+
+  @override
+  String get incubatorAdSkipBtn => '광고 보고 단축';
+
+  @override
+  String get notifyAll => '알림 받기';
 }

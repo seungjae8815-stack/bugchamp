@@ -1363,7 +1363,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageFullBanner.
   ///
   /// In en, this message translates to:
-  /// **'Storage full — no new bugs'**
+  /// **'Your collection is full\nNo new bugs will be added'**
   String get storageFullBanner;
 
   /// No description provided for @storageFullSnack.
@@ -3075,6 +3075,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Daily reward time'**
   String get notifyDaily;
+
+  /// No description provided for @incubatorInstant.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatch now'**
+  String get incubatorInstant;
+
+  /// No description provided for @incubatorAdSkipBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad to speed up'**
+  String get incubatorAdSkipBtn;
+
+  /// No description provided for @notifyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notifications'**
+  String get notifyAll;
 }
 
 class _AppLocalizationsDelegate
