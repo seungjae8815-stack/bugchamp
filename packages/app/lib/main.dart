@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app_version.dart';
 import 'data/save_repository.dart';
 import 'domain/ad_service.dart';
 import 'domain/admob_ad_service.dart';
@@ -63,6 +64,8 @@ bool get _useRealAds => switch (_realAdsFlag) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // 설정 화면에 보여줄 버전 — pubspec 값을 그대로 읽는다(표시 전용).
+  await loadAppVersion();
   await Hive.initFlutter();
   final box = await Hive.openBox<String>('bugchamp_save');
   final repository = HiveSaveRepository(box);
