@@ -1648,7 +1648,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incubatorAdSkipDone => 'Hatching time reduced!';
 
   @override
-  String get nicknameEditAction => 'Change';
+  String get nicknameEditAction => 'Change nickname';
 
   @override
   String nicknameEditActionCost(int cost) {
@@ -1681,4 +1681,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifyAll => 'Enable notifications';
+
+  @override
+  String get notEnoughMaterials => 'Not enough materials';
 }

@@ -488,7 +488,7 @@
   "nicknameChangeCostHint": "変更に💎{cost}消費",
   "incubatorAdSkip": "📺 広告で{pct}%短縮",
   "incubatorAdSkipDone": "孵化時間が短くなりました！",
-  "nicknameEditAction": "変更",
+  "nicknameEditAction": "ニックネーム変更",
   "nicknameEditActionCost": "💎{cost}で変更",
   "notifHatchTitle": "孵化完了！",
   "notifHatchBody": "卵が孵化しました。採集ボックスで確認してください。",
@@ -498,5 +498,6 @@
   "notifyDaily": "デイリー報酬の時間",
   "incubatorInstant": "すぐ孵化",
   "incubatorAdSkipBtn": "広告で短縮",
-  "notifyAll": "通知を受け取る"
+  "notifyAll": "通知を受け取る",
+  "notEnoughMaterials": "素材が足りません"
 }

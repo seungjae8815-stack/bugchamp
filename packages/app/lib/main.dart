@@ -159,6 +159,26 @@ class BugChampApp extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
+        // ⚠️ 비활성 버튼 색을 **여기서 한 번에** 정한다.
+        //    호출부는 보통 backgroundColor 만 주는데, 그러면 비활성 색은 M3
+        //    기본값(밝은 테마 기준 회색)이 깔려 **다크 배경에서 글씨가 사라진다**.
+        //    "재화가 모자라다"를 알려야 할 버튼이 통째로 안 보이던 원인.
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            disabledBackgroundColor: const Color(0x33FFFFFF),
+            disabledForegroundColor: const Color(0x99FFFFFF),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            disabledForegroundColor: const Color(0x99FFFFFF),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            disabledForegroundColor: const Color(0x99FFFFFF),
+          ),
+        ),
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

@@ -4628,11 +4628,16 @@ class _NotifySectionState extends State<_NotifySection> {
               ],
             ),
           ),
-          _row(
-            Icons.notifications_active_rounded,
-            l.notifyAll,
-            s.enabled,
-            NotifyPrefs.instance.setEnabled,
+          // 제목뿐 아니라 "알림 받기" 줄을 눌러도 펼쳐진다 — 스위치만 피해서
+          // 탭하면 되도록 InkWell 을 행 전체에 건다.
+          InkWell(
+            onTap: () => setState(() => _open = !_open),
+            child: _row(
+              Icons.notifications_active_rounded,
+              l.notifyAll,
+              s.enabled,
+              NotifyPrefs.instance.setEnabled,
+            ),
           ),
           if (_open)
             Padding(

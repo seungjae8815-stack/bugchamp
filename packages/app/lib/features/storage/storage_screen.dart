@@ -135,16 +135,26 @@ class StorageScreen extends ConsumerWidget {
             )
           else
             FilledButton.tonalIcon(
-              onPressed: canExpand
-                  ? () async {
-                      final ok = await ref
-                          .read(saveControllerProvider.notifier)
-                          .expandStorage();
-                      if (ok && context.mounted) {
-                        _snack(context, l.storageExpandedSnack);
-                      }
-                    }
-                  : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF3E7D4F),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0x553E7D4F),
+                disabledForegroundColor: const Color(0x99FFFFFF),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                minimumSize: const Size(0, 40),
+              ),
+              onPressed: () async {
+                if (!canExpand) {
+                  _snack(context, l.notEnoughJelly);
+                  return;
+                }
+                final ok = await ref
+                    .read(saveControllerProvider.notifier)
+                    .expandStorage();
+                if (ok && context.mounted) {
+                  _snack(context, l.storageExpandedSnack);
+                }
+              },
               // 가로 아이콘+글씨는 폭이 모자라 글씨가 잘려 아이콘만 보였다.
               icon: const SizedBox.shrink(),
               label: Text(
@@ -339,11 +349,15 @@ class StorageScreen extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: jellyHave >= cfg.breedingExpandJelly
-                            ? () => r
-                                  .read(saveControllerProvider.notifier)
-                                  .expandBreedingSlots()
-                            : null,
+                        onPressed: () {
+                          if (jellyHave < cfg.breedingExpandJelly) {
+                            _snack(ctx, l.notEnoughJelly);
+                            return;
+                          }
+                          r
+                              .read(saveControllerProvider.notifier)
+                              .expandBreedingSlots();
+                        },
                         icon: const Icon(Icons.add_box_rounded, size: 18),
                         label: Text('💎${cfg.breedingExpandJelly}'),
                         style: _pillStyle(const Color(0xFF7E57C2)),
@@ -439,20 +453,22 @@ class StorageScreen extends ConsumerWidget {
                   child: Text(l.incubatorCollect),
                 )
               : FilledButton(
-                  onPressed: jellyHave >= jelly
-                      ? () async {
-                          if (storageFull) {
-                            AudioService.instance.sfxError();
-                            return _snack(ctx, l.storageFullSnack);
-                          }
-                          final ok = await r
-                              .read(saveControllerProvider.notifier)
-                              .collectBreeding(slot.id, viaJelly: true);
-                          if (!ok) return;
-                          AudioService.instance.sfxBreed();
-                          if (ctx.mounted) _snack(ctx, l.breedingGotEgg);
-                        }
-                      : null,
+                  onPressed: () async {
+                    if (jellyHave < jelly) {
+                      _snack(ctx, l.notEnoughJelly);
+                      return;
+                    }
+                    if (storageFull) {
+                      AudioService.instance.sfxError();
+                      return _snack(ctx, l.storageFullSnack);
+                    }
+                    final ok = await r
+                        .read(saveControllerProvider.notifier)
+                        .collectBreeding(slot.id, viaJelly: true);
+                    if (!ok) return;
+                    AudioService.instance.sfxBreed();
+                    if (ctx.mounted) _snack(ctx, l.breedingGotEgg);
+                  },
                   style: _pillStyle(const Color(0xFF7E57C2)),
                   child: Text('💎$jelly'),
                 ),
@@ -858,12 +874,14 @@ class StorageScreen extends ConsumerWidget {
             fontSize: 12.5,
           ),
         );
-        onTap = canExp
-            ? () async {
-                final ok = await ctrl.expandIncubator();
-                if (ok && ctx.mounted) _snack(ctx, l.incubatorExpandedSnack);
-              }
-            : null;
+        onTap = () async {
+          if (!canExp) {
+            _snack(ctx, l.notEnoughJelly);
+            return;
+          }
+          final ok = await ctrl.expandIncubator();
+          if (ok && ctx.mounted) _snack(ctx, l.incubatorExpandedSnack);
+        };
       }
     } else if (occupant == null) {
       center = Column(
@@ -1101,13 +1119,15 @@ class StorageScreen extends ConsumerWidget {
         _hatchBtn(
           '💎$cost  ${l.incubatorInstant}',
           const Color(0xFF7E57C2),
-          canPay
-              ? () async {
-                  if (!await ctrl.instantIncubate(bugId)) return;
-                  AudioService.instance.sfxHatch();
-                  if (ctx.mounted) _snack(ctx, l.incubatorReady);
-                }
-              : null,
+          () async {
+            if (!canPay) {
+              _snack(ctx, l.notEnoughJelly);
+              return;
+            }
+            if (!await ctrl.instantIncubate(bugId)) return;
+            AudioService.instance.sfxHatch();
+            if (ctx.mounted) _snack(ctx, l.incubatorReady);
+          },
         ),
         const SizedBox(height: 4),
         _hatchBtn(
@@ -1973,14 +1993,16 @@ class StorageScreen extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             FilledButton(
-              onPressed: canHeal
-                  ? () async {
-                      final ok = await r
-                          .read(saveControllerProvider.notifier)
-                          .healInjury(bug.id, viaJelly: true);
-                      if (ctx.mounted && !ok) _snack(ctx, l.notEnoughJelly);
-                    }
-                  : null,
+              onPressed: () async {
+                if (!canHeal) {
+                  _snack(ctx, l.notEnoughJelly);
+                  return;
+                }
+                final ok = await r
+                    .read(saveControllerProvider.notifier)
+                    .healInjury(bug.id, viaJelly: true);
+                if (ctx.mounted && !ok) _snack(ctx, l.notEnoughJelly);
+              },
               style: _pillStyle(const Color(0xFF7E57C2)),
               child: Text(l.injuryHealJelly(jelly)),
             ),
@@ -2042,6 +2064,10 @@ class StorageScreen extends ConsumerWidget {
       FilledButton.styleFrom(
         backgroundColor: bg,
         foregroundColor: fg,
+        // ⚠️ 비활성 색을 **반드시** 지정한다. 안 주면 다크 배경에 기본 회색이
+        //    깔려 "재화가 모자란다"를 알려야 할 글씨가 통째로 안 보인다.
+        disabledBackgroundColor: bg.withValues(alpha: 0.30),
+        disabledForegroundColor: const Color(0x99FFFFFF),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         minimumSize: const Size(0, 36),
         textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
@@ -2114,17 +2140,19 @@ class StorageScreen extends ConsumerWidget {
                     child: Text(l.breakthroughCollect),
                   )
                 : FilledButton.icon(
-                    onPressed: canInstant
-                        ? () async {
-                            final ok = await ctrl.completeBreakthrough(
-                              bug.id,
-                              viaJelly: true,
-                            );
-                            if (ok && ctx.mounted) {
-                              _snack(ctx, l.breakthroughDoneSnack);
-                            }
-                          }
-                        : null,
+                    onPressed: () async {
+                      if (!canInstant) {
+                        _snack(ctx, l.notEnoughJelly);
+                        return;
+                      }
+                      final ok = await ctrl.completeBreakthrough(
+                        bug.id,
+                        viaJelly: true,
+                      );
+                      if (ok && ctx.mounted) {
+                        _snack(ctx, l.breakthroughDoneSnack);
+                      }
+                    },
                     icon: const Icon(Icons.bolt, size: 15),
                     label: Text(l.breakthroughInstant(jellyCost)),
                     style: _pillStyle(const Color(0xFF2E6DA4)),
@@ -2163,14 +2191,16 @@ class StorageScreen extends ConsumerWidget {
               ),
             ),
             FilledButton(
-              onPressed: can
-                  ? () async {
-                      final ok = await ctrl.trainBug(bug.id);
-                      if (!ok) return;
-                      AudioService.instance.sfxEnhance();
-                      if (ctx.mounted) _snack(ctx, l.trainSnack);
-                    }
-                  : null,
+              onPressed: () async {
+                if (!can) {
+                  _snack(ctx, l.notEnoughGold);
+                  return;
+                }
+                final ok = await ctrl.trainBug(bug.id);
+                if (!ok) return;
+                AudioService.instance.sfxEnhance();
+                if (ctx.mounted) _snack(ctx, l.trainSnack);
+              },
               style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
               child: Text(l.trainAction),
             ),
@@ -2228,14 +2258,16 @@ class StorageScreen extends ConsumerWidget {
             ),
           ),
           FilledButton(
-            onPressed: canBreak
-                ? () async {
-                    final ok = await ctrl.breakthrough(bug.id);
-                    if (ok && ctx.mounted) {
-                      _snack(ctx, l.breakthroughStartedSnack);
-                    }
-                  }
-                : null,
+            onPressed: () async {
+              if (!canBreak) {
+                _snack(ctx, l.notEnoughMaterials);
+                return;
+              }
+              final ok = await ctrl.breakthrough(bug.id);
+              if (ok && ctx.mounted) {
+                _snack(ctx, l.breakthroughStartedSnack);
+              }
+            },
             style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
             child: Text(l.breakthroughDo),
           ),
@@ -2294,11 +2326,15 @@ class StorageScreen extends ConsumerWidget {
           ),
           if (!effStage.isFinal)
             FilledButton.icon(
-              onPressed: canAcc
-                  ? () => r
-                        .read(saveControllerProvider.notifier)
-                        .accelerateEvolution(bug.id)
-                  : null,
+              onPressed: () {
+                if (!canAcc) {
+                  _snack(ctx, l.notEnoughJelly);
+                  return;
+                }
+                r
+                    .read(saveControllerProvider.notifier)
+                    .accelerateEvolution(bug.id);
+              },
               icon: const Icon(Icons.bolt, size: 16),
               label: Text('${l.accelerateAction} 💎${petCfg.accelerateJelly}'),
               style: FilledButton.styleFrom(
@@ -2358,18 +2394,16 @@ class StorageScreen extends ConsumerWidget {
             ),
           ),
           FilledButton(
-            onPressed: can
-                ? () async {
-                    final ok = await r
-                        .read(saveControllerProvider.notifier)
-                        .synthesize(bug.id);
-                    if (ok && ctx.mounted) {
-                      ScaffoldMessenger.of(ctx)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(SnackBar(content: Text(l.synthSnack)));
-                    }
-                  }
-                : null,
+            onPressed: () async {
+              if (!can) {
+                _snack(ctx, l.notEnoughMaterials);
+                return;
+              }
+              final ok = await r
+                  .read(saveControllerProvider.notifier)
+                  .synthesize(bug.id);
+              if (ok && ctx.mounted) _snack(ctx, l.synthSnack);
+            },
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFEBA52F),
               foregroundColor: const Color(0xFF3A2600),
@@ -2549,14 +2583,14 @@ class StorageScreen extends ConsumerWidget {
             const SizedBox(width: 8),
           ],
           FilledButton(
-            onPressed: canBuy
-                ? () {
-                    AudioService.instance.sfxEnhance();
-                    r
-                        .read(saveControllerProvider.notifier)
-                        .enhancePart(bug.id, part);
-                  }
-                : null,
+            onPressed: () {
+              if (!canBuy) {
+                _snack(ctx, l.notEnoughMaterials);
+                return;
+              }
+              AudioService.instance.sfxEnhance();
+              r.read(saveControllerProvider.notifier).enhancePart(bug.id, part);
+            },
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32),
               padding: const EdgeInsets.symmetric(horizontal: 12),

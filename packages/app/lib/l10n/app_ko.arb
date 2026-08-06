@@ -523,7 +523,7 @@
   "nicknameChangeCostHint": "변경 시 💎{cost} 소모",
   "incubatorAdSkip": "📺 광고보고 {pct}% 단축",
   "incubatorAdSkipDone": "부화 시간이 줄었어요!",
-  "nicknameEditAction": "변경",
+  "nicknameEditAction": "닉네임 변경",
   "nicknameEditActionCost": "💎{cost} 변경",
   "notifHatchTitle": "부화 완료!",
   "notifHatchBody": "알이 부화했어요. 채집함에서 확인해 보세요.",
@@ -533,5 +533,6 @@
   "notifyDaily": "일일 보상 시간",
   "incubatorInstant": "즉시 부화",
   "incubatorAdSkipBtn": "광고 보고 단축",
-  "notifyAll": "알림 받기"
+  "notifyAll": "알림 받기",
+  "notEnoughMaterials": "재료가 부족해요"
 }

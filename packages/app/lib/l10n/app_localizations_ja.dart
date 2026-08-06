@@ -1620,7 +1620,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get incubatorAdSkipDone => '孵化時間が短くなりました！';
 
   @override
-  String get nicknameEditAction => '変更';
+  String get nicknameEditAction => 'ニックネーム変更';
 
   @override
   String nicknameEditActionCost(int cost) {
@@ -1653,4 +1653,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notifyAll => '通知を受け取る';
+
+  @override
+  String get notEnoughMaterials => '素材が足りません';
 }

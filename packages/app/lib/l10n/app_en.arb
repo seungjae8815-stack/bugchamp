@@ -1037,7 +1037,7 @@
       }
     }
   },
-  "nicknameEditAction": "Change",
+  "nicknameEditAction": "Change nickname",
   "nicknameEditActionCost": "Change 💎{cost}",
   "@nicknameEditActionCost": {
     "placeholders": {
@@ -1054,5 +1054,6 @@
   "notifyDaily": "Daily reward time",
   "incubatorInstant": "Hatch now",
   "incubatorAdSkipBtn": "Watch ad to speed up",
-  "notifyAll": "Enable notifications"
+  "notifyAll": "Enable notifications",
+  "notEnoughMaterials": "Not enough materials"
 }
