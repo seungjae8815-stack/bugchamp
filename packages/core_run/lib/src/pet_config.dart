@@ -33,6 +33,7 @@ class PetConfig {
     this.incubatorSlotsMax = 3,
     this.incubatorExpandJelly = 30,
     this.incubateDurationsSec = const {},
+    this.incubateAdSkipRatio = 0.2,
     this.injuryDurationsSec = const {},
     this.injuryJellyPerMinute = 0.5,
     this.breedingDurationsSec = const {},
@@ -124,6 +125,12 @@ class PetConfig {
 
   /// 등급별 알→유충 부화 시간(초).
   final Map<Grade, int> incubateDurationsSec;
+
+  /// 보상형 광고 1회로 당기는 부화 시간의 **비율**(전체 부화시간 대비).
+  ///
+  /// 고정 분수로 하면 5분짜리 일반 알은 광고 한 번에 끝나고 80분짜리 전설만
+  /// 의미가 남는다 — 비율이면 등급과 무관하게 체감이 같다. 횟수 제한은 없다.
+  final double incubateAdSkipRatio;
 
   /// 등급별 KO 후 부상 회복 시간(초). 높은 등급일수록 회복이 오래 걸린다.
   final Map<Grade, int> injuryDurationsSec;
@@ -259,6 +266,8 @@ class PetConfig {
       incubatorSlotsMax: (json['incubatorSlotsMax'] as num?)?.toInt() ?? 3,
       incubatorExpandJelly:
           (json['incubatorExpandJelly'] as num?)?.toInt() ?? 30,
+      incubateAdSkipRatio:
+          (json['incubateAdSkipRatio'] as num?)?.toDouble() ?? 0.2,
       incubateDurationsSec: {
         for (final e
             in ((json['incubateDurationsSec'] as Map<String, dynamic>?) ??

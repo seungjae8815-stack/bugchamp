@@ -12,6 +12,7 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/ad_gate.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
@@ -897,6 +898,21 @@ class StorageScreen extends ConsumerWidget {
               shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
             ),
           ),
+          // 부화 중일 때만 — 탭하면 광고를 보고 시간을 당길 수 있다는 안내.
+          if (!done)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                l.incubatorAdSkip((cfg.incubateAdSkipRatio * 100).round()),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFEBA52F),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 9,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                ),
+              ),
+            ),
         ],
       );
       onTap = done
@@ -906,7 +922,14 @@ class StorageScreen extends ConsumerWidget {
               AudioService.instance.sfxHatch();
               if (ctx.mounted) _snack(ctx, l.incubatorCollectedSnack);
             }
-          : null;
+          // 부화 중 탭 → 광고 보고 시간 당기기. 대기 자체가 이탈 지점이라
+          // "기다림을 줄일 수단"을 주는 대신 광고 노출을 얻는다.
+          : () async {
+              if (!await watchAdForReward(ctx, r, l)) return;
+              if (!await ctrl.adSkipIncubation(occupant.key)) return;
+              AudioService.instance.sfxReward();
+              if (ctx.mounted) _snack(ctx, l.incubatorAdSkipDone);
+            };
     }
 
     const radius = BorderRadius.vertical(
@@ -1534,9 +1557,19 @@ class StorageScreen extends ConsumerWidget {
                       const SizedBox(width: 4),
                       Text(
                         formatCompact(save.materialCount(k)),
+                        // 색을 안 주면 테마 기본색을 상속해 어두운 배경에 묻힌다.
                         style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          shadows: [
+                            Shadow(color: Colors.black, blurRadius: 3),
+                            Shadow(
+                              color: Color(0xCC000000),
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
                         ),
                       ),
                     ],

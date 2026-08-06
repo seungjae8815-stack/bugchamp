@@ -113,6 +113,10 @@ class RunConfig {
     required this.regions,
     required this.upgrades,
     this.stagesPerRegion = 10,
+    this.boostStepPerTap = 0.15,
+    this.boostMultMax = 5.0,
+    this.boostDecayPerSec = 0.4,
+    this.boostSpeedFactor = 1.0,
     this.threatBase = 3.0,
     this.threatGrowth = 1.12,
     this.bossThreatMult = 4.0,
@@ -139,6 +143,24 @@ class RunConfig {
 
   /// 지역 1개당 스테이지 수 (넘어가면 다음 지역).
   final int stagesPerRegion;
+
+  // ── 탭 부스트(연타 콤보) ────────────────────────────────────────────
+  // 탭할수록 배율이 쌓이고, 안 누르면 초당 [boostDecayPerSec] 씩 1.0 으로
+  // 돌아간다. "계속 두드리면 보스를 뚫는다"가 이 게임의 능동 플레이 손잡이다.
+  //
+  // ⚠️ **플레이어 공격에만 적용된다.** 몬스터 공격은 따로 계산한다.
+
+  /// 탭 1회에 오르는 배율. 실제 증가폭은 `boostBonus`(업그레이드) 를 곱한다.
+  final double boostStepPerTap;
+
+  /// 배율 상한. 데미지 `×배율`, 공격속도 `×(1 + (배율-1) × [boostSpeedFactor])`.
+  final double boostMultMax;
+
+  /// 탭을 멈췄을 때 초당 떨어지는 배율.
+  final double boostDecayPerSec;
+
+  /// 부스트가 공격속도에 얼마나 실릴지(1.0 이면 데미지와 같은 배율).
+  final double boostSpeedFactor;
 
   /// 서식지의 곤충 반격 위협도(초당 피해) 스케일링.
   final double threatBase;
@@ -220,6 +242,10 @@ class RunConfig {
                 .toList()
           : [RegionConfig.fromJson(json['region'] as Map<String, dynamic>)],
       stagesPerRegion: (json['stagesPerRegion'] as num?)?.toInt() ?? 10,
+      boostStepPerTap: (json['boostStepPerTap'] as num?)?.toDouble() ?? 0.15,
+      boostMultMax: (json['boostMultMax'] as num?)?.toDouble() ?? 5.0,
+      boostDecayPerSec: (json['boostDecayPerSec'] as num?)?.toDouble() ?? 0.4,
+      boostSpeedFactor: (json['boostSpeedFactor'] as num?)?.toDouble() ?? 1.0,
       upgrades: {for (final u in upgradeList) u.kind: u},
       threatBase: (json['threatBase'] as num?)?.toDouble() ?? 3.0,
       threatGrowth: (json['threatGrowth'] as num?)?.toDouble() ?? 1.12,

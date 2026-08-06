@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 사운드 설정(로컬 저장). 배경음·효과음 각각 on/off + 볼륨(0~1).
@@ -45,6 +47,7 @@ class AudioService {
     const AudioSettings(),
   );
 
+  final _lifecycle = _BgmLifecycle();
   final AudioPlayer _bgm = AudioPlayer(playerId: 'bgm');
   final Map<String, AudioPlayer> _sfx = {};
   SharedPreferences? _prefs;
@@ -81,6 +84,11 @@ class AudioService {
         sfxVol: p.getDouble('audio.sfxVol') ?? 0.8,
       );
       await _bgm.setReleaseMode(ReleaseMode.loop);
+      // 배경음 일시정지/재개는 **여기서** 책임진다. 예전엔 AppShell 의 생명주기
+      // 콜백이 했는데, ① 타이틀 화면에는 옵저버가 없어 대문에서 앱을 내리면
+      // 음악이 계속 났고 ② `paused` 만 보고 있어 `hidden`/`detached` 로 빠지는
+      // 경로에서 안 멈췄다. 화면과 무관하게 서비스가 스스로 처리한다.
+      WidgetsBinding.instance.addObserver(_lifecycle);
       _ready = true;
     } catch (e) {
       debugPrint('AudioService init failed: $e');
@@ -237,4 +245,25 @@ class AudioService {
   void sfxPromote() => _playSfx('promote');
   void sfxRankUp() => _playSfx('rankup');
   void sfxRankDown() => _playSfx('rankdown');
+}
+
+/// 앱이 백그라운드로 가면 배경음을 멈춘다.
+///
+/// `paused` 만 보면 안 된다 — Flutter 3.13 부터 `hidden` 이 추가돼서, 기기·경로에
+/// 따라 `hidden` 으로만 빠지고 `paused` 가 안 오는 경우가 있다(그때 음악이 계속
+/// 났다). `inactive` 는 전화·알림센터처럼 잠깐 스치는 상태라 건드리지 않는다.
+class _BgmLifecycle extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        unawaited(AudioService.instance.pauseBgm());
+      case AppLifecycleState.resumed:
+        unawaited(AudioService.instance.startBgm());
+      case AppLifecycleState.inactive:
+        break;
+    }
+  }
 }

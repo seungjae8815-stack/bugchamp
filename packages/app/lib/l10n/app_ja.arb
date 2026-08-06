@@ -482,5 +482,10 @@
   "guestNudgeSignIn": "ログインする",
   "guestNudgeContinue": "ゲストで続ける",
   "guestWarnTitle": "ゲストでプレイ中です",
-  "guestWarnBody": "現在は端末の仮アカウントです。アプリを削除したり機種を変更すると、集めた虫と順位が消えます。ログインしておくと安全に引き継げます。"
+  "guestWarnBody": "現在は端末の仮アカウントです。アプリを削除したり機種を変更すると、集めた虫と順位が消えます。ログインしておくと安全に引き継げます。",
+  "titleStoreName": "昆虫チャンプ",
+  "titleStoreTagline": "放置コレクトバトル",
+  "nicknameChangeCostHint": "変更に💎{cost}消費",
+  "incubatorAdSkip": "📺 広告で{pct}%短縮",
+  "incubatorAdSkipDone": "孵化時間が短くなりました！"
 }

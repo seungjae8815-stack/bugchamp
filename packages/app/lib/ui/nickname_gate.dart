@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/providers.dart';
 import '../domain/pvp_backend.dart';
 import '../domain/save_controller.dart';
+import '../domain/server_sync.dart';
 import '../l10n/app_localizations.dart';
 
 /// 닉네임 검증 한 곳: 빈 값 → 금칙어 → **중복(온라인)** 순.
@@ -117,6 +118,10 @@ Future<void> ensureNicknameSet(BuildContext context, WidgetRef ref) async {
                       await ref
                           .read(saveControllerProvider.notifier)
                           .renamePlayer(controller.text.trim());
+                      // ⚠️ 즉시 서버에 올린다. 주기 업로드(60초)를 기다리다
+                      //    앱을 끄면, 다음 실행에 서버의 옛 세이브를 채택하면서
+                      //    닉네임이 날아가고 이 창이 매번 다시 뜬다.
+                      await pushSaveNow(ref);
                       if (ctx.mounted) Navigator.pop(ctx);
                     },
               style: FilledButton.styleFrom(

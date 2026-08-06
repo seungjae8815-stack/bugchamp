@@ -1598,4 +1598,23 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get guestWarnBody =>
       '지금은 기기 임시 계정이라, 앱을 지우거나 기기를 바꾸면 모아둔 곤충과 순위가 사라져요. 로그인해 두면 안전하게 이어서 할 수 있어요.';
+
+  @override
+  String get titleStoreName => '곤충 키우기';
+
+  @override
+  String get titleStoreTagline => '방치형 수집 배틀';
+
+  @override
+  String nicknameChangeCostHint(int cost) {
+    return '변경 시 💎$cost 소모';
+  }
+
+  @override
+  String incubatorAdSkip(int pct) {
+    return '📺 광고보고 $pct% 단축';
+  }
+
+  @override
+  String get incubatorAdSkipDone => '부화 시간이 줄었어요!';
 }

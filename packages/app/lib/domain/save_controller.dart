@@ -1097,6 +1097,37 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 광고 보상으로 부화 시간을 당긴다. **광고 시청은 호출부 책임**
+  /// (`watchAdForReward` 가 true 를 준 뒤에만 부른다).
+  ///
+  /// 줄이는 양은 등급별 전체 부화시간의 `incubateAdSkipRatio` — 고정 분수로
+  /// 하면 5분짜리 일반 알은 광고 한 번에 끝나고 80분짜리 전설만 의미가 남는다.
+  /// 비율이면 어느 등급이든 체감이 같다. 횟수 제한은 두지 않는다.
+  Future<bool> adSkipIncubation(String bugId) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    final endsAt = s.incubating[bugId];
+    if (endsAt == null) return false;
+
+    final bug = s.bugs.firstWhere(
+      (b) => b.id == bugId,
+      orElse: () => throw StateError('bug not found'),
+    );
+    final grade = data.speciesById[bug.speciesId]?.grade ?? Grade.common;
+    final fullSec = cfg.incubateDuration(grade); // 등급별 전체 부화시간(초)
+    final cut = Duration(seconds: (fullSec * cfg.incubateAdSkipRatio).round());
+    if (cut <= Duration.zero) return false;
+
+    final now = ref.read(clockProvider).now().toUtc();
+    var next = endsAt.subtract(cut);
+    if (next.isBefore(now)) next = now; // 즉시 수령 가능 상태로
+    final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = next;
+    await _commit(s.copyWith(incubating: inc));
+    return true;
+  }
+
   /// 부화기 슬롯 확장(젤리). 최대치·젤리부족이면 false.
   Future<bool> expandIncubator() async {
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;

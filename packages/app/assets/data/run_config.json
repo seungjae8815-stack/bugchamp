@@ -15,6 +15,10 @@
   "threatGrowth": 1.025,
   "bossThreatMult": 3.0,
   "stagesPerRegion": 25,
+  "boostStepPerTap": 0.15,
+  "boostMultMax": 5.0,
+  "boostDecayPerSec": 0.4,
+  "boostSpeedFactor": 1.0,
   "regions": [
     {
       "id": "oak_forest",

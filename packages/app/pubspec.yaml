@@ -86,3 +86,10 @@ flutter:
     - assets/images/biomes/
     - assets/images/ui/
     - assets/sounds/
+
+  # 타이틀 제목용. Jua (SIL OFL 1.1 — 상업 이용·번들 배포 가능, Jua-OFL.txt 동봉).
+  # 기본 폰트로는 손그림 타이틀 아트와 톤이 안 맞아서 넣었다.
+  fonts:
+    - family: Jua
+      fonts:
+        - asset: assets/fonts/Jua-Regular.ttf

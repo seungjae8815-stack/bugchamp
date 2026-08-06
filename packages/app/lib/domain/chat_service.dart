@@ -96,10 +96,19 @@ class SupabaseChatService implements ChatService {
     }
   }
 
+  /// 구독자 전체가 나눠 쓰는 브로드캐스트 스트림.
+  StreamController<ChatMessage>? _events;
+
+  /// ⚠️ **구독자가 둘 이상이다** — 홈 상단 채팅 바와 전체 채팅 화면.
+  ///
+  /// 예전엔 호출마다 같은 토픽(`public:chat_messages`)으로 채널을 새로 만들고
+  /// `_channel` 을 덮어썼다. 그러면 나중에 붙은 쪽이 먼저 붙은 쪽을 밀어내
+  /// **홈 채팅 바가 조용히 갱신을 멈췄고**, 채팅 화면을 나갈 때 채널을 지워
+  /// 남은 구독자까지 끊겼다. 채널은 하나만 두고 스트림을 공유한다.
   @override
   Stream<ChatMessage> subscribe() {
-    final controller = StreamController<ChatMessage>.broadcast();
-    _channel = _client
+    final controller = _events ??= StreamController<ChatMessage>.broadcast();
+    _channel ??= _client
         .channel('public:chat_messages')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -114,11 +123,7 @@ class SupabaseChatService implements ChatService {
           },
         )
         .subscribe();
-    controller.onCancel = () {
-      final ch = _channel;
-      _channel = null;
-      if (ch != null) _client.removeChannel(ch);
-    };
+    // 개별 구독자가 떠나도 채널은 유지한다 — 정리는 [dispose] 한 곳에서만.
     return controller.stream;
   }
 
@@ -183,6 +188,8 @@ class SupabaseChatService implements ChatService {
     final ch = _channel;
     _channel = null;
     if (ch != null) _client.removeChannel(ch);
+    unawaited(_events?.close());
+    _events = null;
   }
 }
 
@@ -198,4 +205,27 @@ final chatServiceProvider = Provider<ChatService>((ref) {
   const s = NoChatService();
   ref.onDispose(s.dispose);
   return s;
+});
+
+/// 홈 상단 채팅 바에 보여줄 **가장 최근 메시지 1건**.
+///
+/// 처음엔 최근 목록에서 마지막 하나를 집고, 그 뒤로는 실시간 구독으로 갱신한다.
+/// 채팅이 미연결이거나 아직 아무 말도 없으면 null → 바는 안내 문구를 보여준다.
+final chatLatestProvider = StreamProvider<ChatMessage?>((ref) async* {
+  final svc = ref.watch(chatServiceProvider);
+  if (!svc.available) {
+    yield null;
+    return;
+  }
+  ChatMessage? latest;
+  try {
+    final recent = await svc.recent(limit: 1);
+    if (recent.isNotEmpty) latest = recent.last;
+  } catch (_) {
+    // 조회 실패는 조용히 넘긴다 — 홈 화면이 채팅 때문에 깨지면 안 된다.
+  }
+  yield latest;
+  await for (final m in svc.subscribe()) {
+    yield latest = m;
+  }
 });

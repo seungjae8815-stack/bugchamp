@@ -89,8 +89,9 @@ class _AppShellState extends ConsumerState<AppShell>
     final svc = NotificationService.instance;
     if (state == AppLifecycleState.paused) {
       // 백그라운드 진입 → 놓친 진행이 없게 세이브를 즉시 올린다.
+      // (배경음 일시정지는 AudioService 가 스스로 처리한다 — 타이틀 화면에서도
+      //  멈춰야 하고 hidden/detached 경로도 잡아야 해서 서비스로 옮겼다.)
       unawaited(_uploader.flush());
-      unawaited(AudioService.instance.pauseBgm());
       // 오프라인 상한(8h) 도달 시 알림 예약.
       svc.scheduleOfflineFull(
         after: kMaxOfflineAccrual,
@@ -100,7 +101,6 @@ class _AppShellState extends ConsumerState<AppShell>
     } else if (state == AppLifecycleState.resumed) {
       // 복귀 → 오프라인 알림 취소(이미 접속).
       svc.cancelOfflineFull();
-      unawaited(AudioService.instance.startBgm());
     }
   }
 

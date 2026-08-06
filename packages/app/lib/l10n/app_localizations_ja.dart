@@ -1599,4 +1599,23 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get guestWarnBody =>
       '現在は端末の仮アカウントです。アプリを削除したり機種を変更すると、集めた虫と順位が消えます。ログインしておくと安全に引き継げます。';
+
+  @override
+  String get titleStoreName => '昆虫チャンプ';
+
+  @override
+  String get titleStoreTagline => '放置コレクトバトル';
+
+  @override
+  String nicknameChangeCostHint(int cost) {
+    return '変更に💎$cost消費';
+  }
+
+  @override
+  String incubatorAdSkip(int pct) {
+    return '📺 広告で$pct%短縮';
+  }
+
+  @override
+  String get incubatorAdSkipDone => '孵化時間が短くなりました！';
 }

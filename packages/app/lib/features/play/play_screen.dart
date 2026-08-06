@@ -14,6 +14,7 @@ import '../../app_version.dart';
 import '../../data/game_data.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/audio_service.dart';
+import '../../domain/chat_service.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
 import '../../domain/game_server.dart';
@@ -46,7 +47,7 @@ const _regularMaterials = [
   MaterialKind.sap,
 ];
 const _walkDuration = 0.6;
-const _boostDuration = 3.0;
+// 부스트 지속시간·속도계수는 밸런스라 run_config.json 에 있다(§6).
 const _deathDuration = 0.4;
 const _defeatDuration = 2.5;
 
@@ -391,7 +392,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   double _giftCheckAcc = 0; // 깜짝 선물 스폰 체크 누적(초)
   double _attackPulse = 0;
   double _hitFlash = 0;
-  double _boost = 0;
+
+  /// 탭 연타로 쌓이는 공격 배율(1.0 = 부스트 없음). 안 누르면 초당 감소한다.
+  double _boostMult = 1.0;
   double _tapHint = 0; // 손가락 탭 힌트 애니 주기
   double _bgOffset = 0;
   double _dmgCooldown = 0;
@@ -614,7 +617,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _step(double dt) {
     _tapHint += dt;
     if (_tapHint > 60) _tapHint -= 60; // 시작 시 1회 + 60초마다
-    if (_boost > 0) _boost = math.max(0, _boost - dt);
+    // 탭을 멈추면 배율이 서서히 1.0 으로 돌아간다 — 계속 두드리게 만드는 축.
+    if (_boostMult > 1.0) {
+      _boostMult = math.max(1.0, _boostMult - _config.boostDecayPerSec * dt);
+    }
     if (_attackPulse > 0) _attackPulse = math.max(0, _attackPulse - dt * 2.6);
     if (_hitFlash > 0) _hitFlash = math.max(0, _hitFlash - dt * 7);
     if (_retreatFlash > 0) _retreatFlash = math.max(0, _retreatFlash - dt);
@@ -707,9 +713,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
 
     // 플레이어 공격
-    final boosting = _boost > 0;
-    final dmgMul = boosting ? (1 + stats.boostBonus) : 1.0;
-    final speedMul = boosting ? (1 + stats.boostBonus * 0.6) : 1.0;
+    // ⚠️ 부스트는 **플레이어 공격에만** 실린다(몬스터 공격은 아래에서 따로).
+    final dmgMul = _boostMult;
+    final speedMul = 1 + (_boostMult - 1) * _config.boostSpeedFactor;
     final atkSpeed = stats.attackSpeed * speedMul;
     var perHit = stats.attack * dmgMul;
     if (_isBoss) perHit *= stats.bossDamage;
@@ -1046,7 +1052,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _boost = _boostDuration),
+      onTap: () => setState(() {
+        // 한 번에 오르는 폭은 부스트 업그레이드(boostBonus)에 비례한다.
+        final stats = _stats(ref.read(saveControllerProvider).requireValue);
+        _boostMult = math.min(
+          _config.boostMultMax,
+          _boostMult + _config.boostStepPerTap * stats.boostBonus,
+        );
+      }),
       child: ClipRect(
         child: Transform.translate(
           offset: shakeOffset,
@@ -1283,7 +1296,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                 ),
 
-              if (_boost > 0)
+              if (_boostMult > 1.0)
                 Positioned(
                   top: 8,
                   right: 10,
@@ -1293,18 +1306,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       vertical: 4,
                     ),
                     decoration: _glass(),
-                    child: const Text(
-                      '⚡ BOOST',
-                      style: TextStyle(
+                    child: Text(
+                      '⚡ x${_boostMult.toStringAsFixed(1)}',
+                      style: const TextStyle(
                         color: _honey,
                         fontWeight: FontWeight.w900,
-                        fontSize: 12,
+                        fontSize: 13,
                       ),
                     ),
                   ),
                 ),
               // 부스트 유도: 주기적으로 나타났다 사라지는 손가락 탭 아이콘
-              if (_boost <= 0) _buildTapHint(),
+              if (_boostMult <= 1.0) _buildTapHint(),
             ],
           ),
         ),
@@ -1667,15 +1680,44 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               size: 14,
             ),
             const SizedBox(width: 6),
+            // 마지막 채팅을 보여준다 — "탭하면 열려요"만 있으면 들어갈 이유가
+            // 없다. 대화가 오가는 게 보여야 눌러본다.
             Expanded(
-              child: Text(
-                l.chatPlaceholder,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
-                  fontSize: 11.5,
-                ),
+              child: Consumer(
+                builder: (context, r, _) {
+                  final last = r.watch(chatLatestProvider).value;
+                  if (last == null) {
+                    return Text(
+                      l.chatPlaceholder,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 11.5,
+                      ),
+                    );
+                  }
+                  return Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${last.nickname} ',
+                          style: const TextStyle(
+                            color: Color(0xFFEBA52F),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        TextSpan(
+                          text: last.body,
+                          style: const TextStyle(color: Color(0xE6FFFFFF)),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11.5),
+                  );
+                },
               ),
             ),
           ],
@@ -2880,22 +2922,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             const SizedBox(height: 8),
           ],
           _audioSettings(l),
-          const Divider(height: 18, color: Color(0x22FFFFFF)),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _confirmReset(l);
-              },
-              icon: const Icon(Icons.delete_forever, size: 18),
-              label: Text(l.settingsReset),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFEF9A9A),
-                side: const BorderSide(color: Color(0x55EF9A9A)),
-              ),
-            ),
-          ),
+          // ⚠️ "게임 데이터 초기화" 버튼을 여기 두지 말 것.
+          //    확인 다이얼로그가 있어도 **되돌릴 수 없고**, 초기화된 세이브가
+          //    60초 안에 서버로 올라가 서버 백업까지 덮는다(무료 플랜은 백업이
+          //    없어 복구 수단이 전무하다). 실제로 잘못 눌러 진행도를 통째로 잃는
+          //    사고가 났다. 초기화는 개발자 도구(_devTools)에만 둔다.
           // ── 계정(구글 로그인) ──
           const SizedBox(height: 8),
           SizedBox(
@@ -3574,6 +3605,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     ),
                   ),
                   const SizedBox(height: 12),
+                  // 설정 화면에서 옮겨온 것 — 유저가 잘못 눌러 진행도를 통째로
+                  // 잃는 사고가 나서, 개발자 모드 안으로만 남긴다.
+                  _devSection('세이브', [
+                    _devBtn('게임 데이터 초기화', () {
+                      Navigator.pop(context);
+                      _confirmReset(AppLocalizations.of(context));
+                    }),
+                  ]),
                   _devSection('채집함', [
                     _devBtn('채우기(종별 3)', () async {
                       await ctrl.devFillBugs();
@@ -3754,6 +3793,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         labelText: l.settingsNickname,
                         labelStyle: const TextStyle(color: Color(0xFFEBA52F)),
                         hintText: l.settingsNicknameHint,
+                        // 비용은 **고치기 전에** 보여야 한다. 예전엔 저장을 누른
+                        // 뒤 확인창에서야 젤리가 든다고 알려줬다. 첫 설정은 무료.
+                        helperText: save.nicknameSet
+                            ? l.nicknameChangeCostHint(
+                                SaveController.kNicknameChangeCost,
+                              )
+                            : null,
+                        helperStyle: const TextStyle(
+                          color: Color(0xCCEBA52F),
+                          fontSize: 11,
+                        ),
                         enabledBorder: const UnderlineInputBorder(
                           borderSide: BorderSide(color: Color(0x55EBA52F)),
                         ),

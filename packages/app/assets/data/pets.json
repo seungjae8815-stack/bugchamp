@@ -3,10 +3,31 @@
   "maxEquip": 3,
   "potentialScale": 0.06,
   "enhanceScale": 0.005,
-  "gradeAttackPct": { "common": 0.03, "uncommon": 0.05, "rare": 0.09, "epic": 0.15, "legendary": 0.25 },
-  "gradeHpPct": { "common": 0.03, "uncommon": 0.05, "rare": 0.09, "epic": 0.15, "legendary": 0.25 },
-  "stageMult": { "egg": 0.4, "larva": 0.6, "pupa": 0.8, "adult": 1.0 },
-  "stageDurationsSec": { "egg": 300, "larva": 600, "pupa": 900 },
+  "gradeAttackPct": {
+    "common": 0.03,
+    "uncommon": 0.05,
+    "rare": 0.09,
+    "epic": 0.15,
+    "legendary": 0.25
+  },
+  "gradeHpPct": {
+    "common": 0.03,
+    "uncommon": 0.05,
+    "rare": 0.09,
+    "epic": 0.15,
+    "legendary": 0.25
+  },
+  "stageMult": {
+    "egg": 0.4,
+    "larva": 0.6,
+    "pupa": 0.8,
+    "adult": 1.0
+  },
+  "stageDurationsSec": {
+    "egg": 300,
+    "larva": 600,
+    "pupa": 900
+  },
   "accelerateJelly": 2,
   "synthFodder": 3,
   "synthMaxPotential": 5,
@@ -17,18 +38,57 @@
   "trainCostGrowth": 1.18,
   "trainJellyCost": 3,
   "trainJellyLevels": 5,
-  "tierCaps": [10, 20, 35, 55, 80],
-  "breakthroughDurationsSec": [600, 1800, 5400, 14400],
-  "breakthroughGold": [20000, 60000, 200000, 600000],
-  "breakthroughMaterial": [100, 250, 600, 1500],
+  "tierCaps": [
+    10,
+    20,
+    35,
+    55,
+    80
+  ],
+  "breakthroughDurationsSec": [
+    600,
+    1800,
+    5400,
+    14400
+  ],
+  "breakthroughGold": [
+    20000,
+    60000,
+    200000,
+    600000
+  ],
+  "breakthroughMaterial": [
+    100,
+    250,
+    600,
+    1500
+  ],
   "breakthroughJellyPerMinute": 0.5,
   "incubatorSlotsInitial": 1,
   "incubatorSlotsMax": 3,
   "incubatorExpandJelly": 30,
-  "incubateDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 },
-  "injuryDurationsSec": { "common": 300, "uncommon": 600, "rare": 1200, "epic": 2400, "legendary": 4800 },
+  "incubateDurationsSec": {
+    "common": 300,
+    "uncommon": 600,
+    "rare": 1200,
+    "epic": 2400,
+    "legendary": 4800
+  },
+  "injuryDurationsSec": {
+    "common": 300,
+    "uncommon": 600,
+    "rare": 1200,
+    "epic": 2400,
+    "legendary": 4800
+  },
   "injuryJellyPerMinute": 0.5,
-  "breedingDurationsSec": { "common": 600, "uncommon": 1200, "rare": 2400, "epic": 4800, "legendary": 9600 },
+  "breedingDurationsSec": {
+    "common": 600,
+    "uncommon": 1200,
+    "rare": 2400,
+    "epic": 4800,
+    "legendary": 9600
+  },
   "breedingJellyPerMinute": 0.5,
   "breedingSlotsInitial": 1,
   "breedingSlotsMax": 3,
@@ -39,6 +99,7 @@
   "breedingSizeVariancePct": 0.08,
   "breedingMutationChance": 0.05,
   "breedingMutationBonusPct": 0.15,
-  "breedingPotUpChance": 0.10,
-  "breedingPotDownChance": 0.30
+  "breedingPotUpChance": 0.1,
+  "breedingPotDownChance": 0.3,
+  "incubateAdSkipRatio": 0.2
 }

@@ -1251,6 +1251,8 @@ void main() {
   });
 
   group('기기 권위 세이브 업로드(mergeSave)', () {
+    final cfg = _Config();
+
     SaveGame stored({int gold = 1000, int trophies = 500}) =>
         SaveGame.initial(createdAt: t0).copyWith(
           lastSeen: t0,
@@ -1308,12 +1310,59 @@ void main() {
       expect(r.save!.gold, lessThan(1000000000));
     });
 
+    // 챕터 보상은 앱이 지급해서 세이브에 실려 온다. 뒷 챕터는 보상이 수백만~수억
+    // 이라, 인정하지 않으면 **정상 유저의 보상이 상식 상한에 잘린다**.
+    test('큰 챕터 보상은 정당하게 통과한다(잘리지 않는다)', () {
+      final big = cfg.roadmap!.chapters.firstWhere(
+        (c) => c.rewardGold > 1000000,
+      );
+      final before = stored(gold: 1000);
+      final after = before.copyWith(
+        gold: 1000 + big.rewardGold,
+        stageNumber: big.endStage + 1,
+        clearedChapters: {big.id},
+      );
+      final r = actions.mergeSave(before, after.toJson());
+      expect(r.extra['clamped'], isFalse);
+      expect(r.save!.gold, 1000 + big.rewardGold);
+    });
+
+    test('클리어하지 않은 챕터를 claim 해도 보상만큼 봐주지 않는다', () {
+      final big = cfg.roadmap!.chapters.firstWhere(
+        (c) => c.rewardGold > 1000000,
+      );
+      final before = stored(gold: 1000);
+      // 스테이지는 그대로인데 챕터만 클리어했다고 우긴다.
+      final cheat = before.copyWith(
+        gold: 1000 + big.rewardGold,
+        clearedChapters: {big.id},
+      );
+      final r = actions.mergeSave(before, cheat.toJson());
+      expect(r.extra['clamped'], isTrue);
+      expect(r.save!.gold, lessThan(1000 + big.rewardGold));
+    });
+
+    test('같은 챕터를 다시 claim 해도 두 번 인정하지 않는다', () {
+      final big = cfg.roadmap!.chapters.firstWhere(
+        (c) => c.rewardGold > 1000000,
+      );
+      // 서버에 이미 클리어로 기록돼 있다.
+      final before = stored(
+        gold: 1000,
+      ).copyWith(stageNumber: big.endStage + 1, clearedChapters: {big.id});
+      final cheat = before.copyWith(gold: 1000 + big.rewardGold);
+      final r = actions.mergeSave(before, cheat.toJson());
+      expect(r.extra['clamped'], isTrue);
+    });
+
     test('정상 범위 골드 증가는 안 잘린다(수령·전투 보상)', () {
-      // 바닥(2M) 이내 증가는 통과.
-      final ok = stored(gold: 1000).copyWith(gold: 1000 + 1500000);
+      // 바닥(20만) 이내 증가는 통과. 예전엔 200만이었는데, 업로드(60초)마다
+      // 무조건 통과해 하루 28억까지 정당화되던 구멍이라 좁혔다. 큰 몫인 챕터
+      // 보상은 _chapterGrantAllowance 가 따로 인정하므로 바닥은 작아도 된다.
+      final ok = stored(gold: 1000).copyWith(gold: 1000 + 150000);
       final r = actions.mergeSave(stored(gold: 1000), ok.toJson());
       expect(r.extra['clamped'], isFalse);
-      expect(r.save!.gold, 1000 + 1500000);
+      expect(r.save!.gold, 1000 + 150000);
     });
 
     test('lastSeen 은 서버 시각으로 갱신된다', () {

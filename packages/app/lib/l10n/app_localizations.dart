@@ -2997,6 +2997,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.'**
   String get guestWarnBody;
+
+  /// No description provided for @titleStoreName.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Champ'**
+  String get titleStoreName;
+
+  /// No description provided for @titleStoreTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle Insect RPG'**
+  String get titleStoreTagline;
+
+  /// No description provided for @nicknameChangeCostHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Costs 💎{cost} to change'**
+  String nicknameChangeCostHint(int cost);
+
+  /// No description provided for @incubatorAdSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'📺 Watch ad: -{pct}%'**
+  String incubatorAdSkip(int pct);
+
+  /// No description provided for @incubatorAdSkipDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatching time reduced!'**
+  String get incubatorAdSkipDone;
 }
 
 class _AppLocalizationsDelegate

@@ -1626,4 +1626,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get guestWarnBody =>
       'This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.';
+
+  @override
+  String get titleStoreName => 'Bug Champ';
+
+  @override
+  String get titleStoreTagline => 'Idle Insect RPG';
+
+  @override
+  String nicknameChangeCostHint(int cost) {
+    return 'Costs 💎$cost to change';
+  }
+
+  @override
+  String incubatorAdSkip(int pct) {
+    return '📺 Watch ad: -$pct%';
+  }
+
+  @override
+  String get incubatorAdSkipDone => 'Hatching time reduced!';
 }

@@ -1017,5 +1017,24 @@
   "guestNudgeSignIn": "Sign in",
   "guestNudgeContinue": "Continue as guest",
   "guestWarnTitle": "You're playing as a guest",
-  "guestWarnBody": "This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe."
+  "guestWarnBody": "This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.",
+  "titleStoreName": "Bug Champ",
+  "titleStoreTagline": "Idle Insect RPG",
+  "nicknameChangeCostHint": "Costs 💎{cost} to change",
+  "@nicknameChangeCostHint": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      }
+    }
+  },
+  "incubatorAdSkip": "📺 Watch ad: -{pct}%",
+  "incubatorAdSkipDone": "Hatching time reduced!",
+  "@incubatorAdSkip": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  }
 }

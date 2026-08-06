@@ -69,8 +69,13 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
     });
   }
 
+  /// 자동 진입 시 대문을 최소한 이만큼은 보여준다. 서버 응답이 빠르면 한 프레임
+  /// 만에 지나가 버려서 타이틀 아트를 볼 새가 없다.
+  static const _minShow = Duration(seconds: 2);
+
   /// 버전 게이트부터 진입까지. 차단 상태면 [_Phase.blocked] 로 멈춘다.
   Future<void> _start() async {
+    final shownAt = DateTime.now();
     final verdict = await checkAppVersion();
     if (!mounted) return;
 
@@ -92,6 +97,10 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
     if (!mounted) return;
 
     if (seen || signedIn) {
+      // 로그인 선택 없이 지나가는 경우에만 최소 노출 시간을 채운다.
+      final left = _minShow - DateTime.now().difference(shownAt);
+      if (left > Duration.zero) await Future<void>.delayed(left);
+      if (!mounted) return;
       await _enterGame();
       return;
     }
@@ -235,35 +244,48 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
               ),
             ),
           ),
-          // 하단을 어둡게 — 버튼·버전 글씨가 배경 밝기와 무관하게 읽혀야 한다.
+          // 위아래를 어둡게 — 제목·버튼·버전 글씨가 배경 그림 밝기와 무관하게
+          // 읽혀야 한다. 위쪽은 제목이 포충망 위에 얹혀도 보이게 하는 용도.
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.center,
+                begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0x00000000), Color(0xCC000000)],
+                stops: [0.0, 0.22, 0.5, 1.0],
+                colors: [
+                  Color(0x99000000),
+                  Color(0x11000000),
+                  Color(0x00000000),
+                  Color(0xD9000000),
+                ],
               ),
             ),
           ),
           SafeArea(
             child: Column(
               children: [
-                const Spacer(flex: 3),
-                Text(
-                  l.appTitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                    shadows: [
-                      Shadow(color: Colors.black, blurRadius: 12),
-                      Shadow(color: Color(0xFFE3A62F), blurRadius: 26),
-                    ],
-                  ),
+                // 제목은 **맨 위**에 둔다 — 가운데 두면 타이틀 아트의 캐릭터와
+                // 겹친다. 위 로고 / 가운데 아트 / 아래 버튼이 기본 구도다.
+                const SizedBox(height: 26),
+                // 스토어 등록명을 그대로 쓴다 — 앱 안 이름과 스토어 이름이
+                // 다르면 "내가 받은 그 게임이 맞나" 싶은 위화감이 생긴다.
+                //
+                // 기본 폰트로는 손그림 아트와 안 어울려서, 짙은 외곽선을 두른
+                // 라운드 계열 폰트(assets/fonts)로 그린다. 진짜 로고 이미지가
+                // 준비되면 이 Text 를 Image 로 갈아끼우면 된다.
+                _titleText(
+                  l.titleStoreName,
+                  size: 40,
+                  color: const Color(0xFFFFE9B0),
                 ),
-                const Spacer(flex: 4),
+                const SizedBox(height: 4),
+                _titleText(
+                  l.titleStoreTagline,
+                  size: 15,
+                  color: const Color(0xFFE9DCC0),
+                  spacing: 3,
+                ),
+                const Spacer(), // 아트가 보이는 자리
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: _body(l),
@@ -414,6 +436,44 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
             ),
           ],
         ],
+      ],
+    );
+  }
+
+  /// 배경 그림 위에서도 읽히는 제목 글자 — 짙은 외곽선(stroke) 위에 채움색을
+  /// 겹쳐 그린다. 그림자만으로는 밝은 숲 배경에서 뭉개진다.
+  Widget _titleText(
+    String text, {
+    required double size,
+    required Color color,
+    double spacing = 1,
+  }) {
+    TextStyle base(Paint? stroke) => TextStyle(
+      fontFamily: 'Jua',
+      fontSize: size,
+      letterSpacing: spacing,
+      height: 1.15,
+      foreground: stroke,
+      color: stroke == null ? color : null,
+      shadows: stroke == null
+          ? null
+          : const [Shadow(color: Color(0xAA000000), blurRadius: 10)],
+    );
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          style: base(
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = size * 0.13
+              ..strokeJoin = StrokeJoin.round
+              ..color = const Color(0xFF2A1A08),
+          ),
+        ),
+        Text(text, textAlign: TextAlign.center, style: base(null)),
       ],
     );
   }

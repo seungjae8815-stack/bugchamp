@@ -119,15 +119,59 @@ class GameActions {
     'incubatorCapacity',
   };
 
-  /// 골드 급증 상식 상한의 바닥(수령·전투 보상이 한 번에 커도 통과).
-  static const _goldSanityFloor = 2000000;
+  /// 골드 급증 상식 상한의 바닥 — 전투·미션·광고 등 **소소한 보상**만 덮는다.
+  ///
+  /// 예전엔 2,000,000 이었다. 큰 챕터 보상까지 이 값 하나로 덮으려다 보니
+  /// 업로드(60초)마다 200만이 무조건 통과해 **하루 28억까지 정당화**됐다.
+  /// 챕터 보상은 아래 [_chapterGrantAllowance] 로 따로 인정하므로 이 바닥은
+  /// 작아도 된다.
+  static const _goldSanityFloor = 200000;
 
   /// 젤리(프리미엄 재화) 급증 상한의 바닥. 솔로 획득(선물·분해)은 소량이라
   /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
   static const _jellySanityFloor = 1000;
 
-  /// 상한 계산용 넉넉한 방치 효율(부스트·액티브 여유 포함 — 절대치만 잡는다).
-  static const _saveBoundEfficiency = 4.0;
+  /// 상한 계산용 넉넉한 방치 효율(액티브 플레이 여유 포함 — 절대치만 잡는다).
+  ///
+  /// ⚠️ **탭 부스트 상한과 함께 움직여야 한다.** 부스트는 연타로 배율이 쌓여
+  /// `boostMultMax`(현재 5.0)까지 오르고, 데미지·공격속도에 모두 실려 최대
+  /// 25배 DPS 가 된다. 이 값이 낮으면 **열심히 두드린 정상 유저의 골드가
+  /// 잘린다** — 방어보다 오탐이 더 나쁘다. 방치 효율(0.3) 대비 100배까지 인정.
+  static const _saveBoundEfficiency = 30.0;
+
+  /// 이번 업로드에서 **정당하게 받았을 수 있는 챕터 클리어 보상**의 합.
+  ///
+  /// 챕터 보상은 앱이 지급하고(`SaveController.grantChapterClears`) 세이브에
+  /// 실려 올라온다. 6챕터부터 500만·1500만… 40억까지 커지는데, 이걸 인정하지
+  /// 않으면 골드 상식 상한에 걸려 **정상 유저의 보상이 통째로 잘린다**.
+  ///
+  /// 부풀리기는 세 가지로 막는다:
+  /// 1. 로드맵 설정에 있는 챕터만,
+  /// 2. 저장본에 **없던** 챕터만(같은 챕터를 두 번 인정하지 않는다),
+  /// 3. 올라온 최고 스테이지가 실제로 그 챕터를 넘겼을 때만.
+  int _chapterGrantAllowance(SaveGame stored, Map<String, dynamic> clientJson) {
+    final chapters = config.roadmap?.chapters;
+    if (chapters == null || chapters.isEmpty) return 0;
+
+    final claimed = ((clientJson['clearedChapters'] as List?) ?? const [])
+        .map((e) => e.toString())
+        .toSet();
+    if (claimed.isEmpty) return 0;
+
+    final already = stored.clearedChapters.toSet();
+    final stage = (clientJson['stageNumber'] as num?)?.toInt() ?? 0;
+    final highest = stage > stored.stageNumber ? stage : stored.stageNumber;
+
+    var sum = 0;
+    for (final ch in chapters) {
+      if (claimed.contains(ch.id) &&
+          !already.contains(ch.id) &&
+          ch.clearedBy(highest)) {
+        sum += ch.rewardGold;
+      }
+    }
+    return sum;
+  }
 
   /// 기기 권위 세이브 업로드 병합.
   ///
@@ -155,7 +199,10 @@ class GameActions {
       elapsed: elapsed,
       efficiency: _saveBoundEfficiency,
     ).gold;
-    final maxGain = _goldSanityFloor + generous;
+    final maxGain =
+        _goldSanityFloor +
+        generous +
+        _chapterGrantAllowance(stored, clientJson);
 
     final merged = Map<String, dynamic>.from(clientJson);
     // 보호 필드는 서버 저장본 값으로 (없는 키/null 까지 정확히).

@@ -146,3 +146,11 @@ class ServerSaveUploader {
     _timer = null;
   }
 }
+
+/// 지금 즉시 서버에 올린다(60초 주기 업로드를 기다리지 않는다).
+///
+/// **다음 실행에서 서버 세이브에 덮이면 안 되는 변경** 직후에 부른다.
+/// 실제 사고: 닉네임을 정하고 60초 안에 앱을 끄면, 서버에는 이관 시점의
+/// (닉네임 없는) 세이브가 남아 있다. 다음 실행에 [syncWithServer] 가 그걸
+/// 채택하면서 닉네임이 사라지고 입력창이 매번 다시 떴다.
+Future<void> pushSaveNow(WidgetRef ref) => ServerSaveUploader(ref).flush();
