@@ -508,5 +508,14 @@
   "retryButton": "다시 시도",
   "accountSignInApple": "Apple로 로그인",
   "termsOfUse": "이용약관",
-  "privacyPolicy": "개인정보처리방침"
+  "privacyPolicy": "개인정보처리방침",
+  "titleStartGuest": "게스트로 시작하기",
+  "titleOr": "또는",
+  "titleLoading": "불러오는 중…",
+  "guestNudgeTitle": "로그인하고 시작할까요?",
+  "guestNudgeBody": "로그인하지 않으면 기기를 바꾸거나 앱을 지웠을 때 진행 상황과 순위를 되살릴 수 없어요. 지금까지 모은 곤충과 순위를 지키려면 로그인해 주세요.",
+  "guestNudgeSignIn": "로그인하기",
+  "guestNudgeContinue": "게스트로 계속하기",
+  "guestWarnTitle": "게스트로 플레이 중이에요",
+  "guestWarnBody": "지금은 기기 임시 계정이라, 앱을 지우거나 기기를 바꾸면 모아둔 곤충과 순위가 사라져요. 로그인해 두면 안전하게 이어서 할 수 있어요."
 }

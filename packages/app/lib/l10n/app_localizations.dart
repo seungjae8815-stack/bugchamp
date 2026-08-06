@@ -2943,6 +2943,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Privacy Policy'**
   String get privacyPolicy;
+
+  /// No description provided for @titleStartGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Play as guest'**
+  String get titleStartGuest;
+
+  /// No description provided for @titleOr.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get titleOr;
+
+  /// No description provided for @titleLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get titleLoading;
+
+  /// No description provided for @guestNudgeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in before you start?'**
+  String get guestNudgeTitle;
+
+  /// No description provided for @guestNudgeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Without signing in, your progress and rank can\'t be restored if you change devices or delete the app. Sign in to keep the bugs and the rank you earn.'**
+  String get guestNudgeBody;
+
+  /// No description provided for @guestNudgeSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get guestNudgeSignIn;
+
+  /// No description provided for @guestNudgeContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as guest'**
+  String get guestNudgeContinue;
+
+  /// No description provided for @guestWarnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re playing as a guest'**
+  String get guestWarnTitle;
+
+  /// No description provided for @guestWarnBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.'**
+  String get guestWarnBody;
 }
 
 class _AppLocalizationsDelegate

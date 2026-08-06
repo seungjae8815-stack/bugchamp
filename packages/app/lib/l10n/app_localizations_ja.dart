@@ -1570,4 +1570,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get privacyPolicy => 'プライバシーポリシー';
+
+  @override
+  String get titleStartGuest => 'ゲストで始める';
+
+  @override
+  String get titleOr => 'または';
+
+  @override
+  String get titleLoading => '読み込み中…';
+
+  @override
+  String get guestNudgeTitle => 'ログインしてから始めますか？';
+
+  @override
+  String get guestNudgeBody =>
+      'ログインしないと、機種変更やアプリ削除のときに進行状況と順位を戻せません。集めた虫と順位を守るためにログインしてください。';
+
+  @override
+  String get guestNudgeSignIn => 'ログインする';
+
+  @override
+  String get guestNudgeContinue => 'ゲストで続ける';
+
+  @override
+  String get guestWarnTitle => 'ゲストでプレイ中です';
+
+  @override
+  String get guestWarnBody =>
+      '現在は端末の仮アカウントです。アプリを削除したり機種を変更すると、集めた虫と順位が消えます。ログインしておくと安全に引き継げます。';
 }

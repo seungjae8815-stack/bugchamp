@@ -28,6 +28,7 @@ import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/guest_warning.dart';
 import '../../ui/nickname_gate.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
@@ -1975,6 +1976,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       await _showChapterClearDialog(ch);
       if (!mounted) return;
     }
+    // 게스트면 진척 지점에서 데이터 유실을 상기시킨다(하루 1회 상한은 내부에서).
+    await maybeWarnGuest(context, ref, stage);
   }
 
   Future<void> _showChapterClearDialog(RoadmapChapter ch) {

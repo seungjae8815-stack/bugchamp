@@ -1597,4 +1597,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get titleStartGuest => 'Play as guest';
+
+  @override
+  String get titleOr => 'or';
+
+  @override
+  String get titleLoading => 'Loading…';
+
+  @override
+  String get guestNudgeTitle => 'Sign in before you start?';
+
+  @override
+  String get guestNudgeBody =>
+      'Without signing in, your progress and rank can\'t be restored if you change devices or delete the app. Sign in to keep the bugs and the rank you earn.';
+
+  @override
+  String get guestNudgeSignIn => 'Sign in';
+
+  @override
+  String get guestNudgeContinue => 'Continue as guest';
+
+  @override
+  String get guestWarnTitle => 'You\'re playing as a guest';
+
+  @override
+  String get guestWarnBody =>
+      'This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.';
 }

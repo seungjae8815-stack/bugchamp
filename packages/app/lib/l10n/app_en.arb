@@ -972,10 +972,21 @@
   "rankChangedFromTo": "#{from} → #{to}",
   "rankTopStreak": "Day {days} at #1 👑",
   "@rankChangedFromTo": {
-    "placeholders": { "from": {"type": "int"}, "to": {"type": "int"} }
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
   },
   "@rankTopStreak": {
-    "placeholders": { "days": {"type": "int"} }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "nicknameRequiredTitle": "Choose a nickname",
   "nicknameRequiredBody": "This is the name other collectors will see. You only set it once.",
@@ -997,5 +1008,14 @@
   "retryButton": "Retry",
   "accountSignInApple": "Sign in with Apple",
   "termsOfUse": "Terms of Use",
-  "privacyPolicy": "Privacy Policy"
+  "privacyPolicy": "Privacy Policy",
+  "titleStartGuest": "Play as guest",
+  "titleOr": "or",
+  "titleLoading": "Loading…",
+  "guestNudgeTitle": "Sign in before you start?",
+  "guestNudgeBody": "Without signing in, your progress and rank can't be restored if you change devices or delete the app. Sign in to keep the bugs and the rank you earn.",
+  "guestNudgeSignIn": "Sign in",
+  "guestNudgeContinue": "Continue as guest",
+  "guestWarnTitle": "You're playing as a guest",
+  "guestWarnBody": "This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe."
 }

@@ -1,8 +1,9 @@
 import 'package:app/data/game_data.dart';
 import 'package:app/data/save_repository.dart';
 import 'package:app/domain/providers.dart';
+import 'package:app/features/app_shell.dart';
+import 'package:app/l10n/app_localizations.dart';
 import 'package:core_save/core_save.dart';
-import 'package:app/main.dart';
 import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -118,7 +119,14 @@ Widget _wrap(SaveRepository repo) => ProviderScope(
       FixedClock(DateTime.utc(2026, 1, 1, 0, 0, 30)),
     ),
   ],
-  child: const BugChampApp(),
+  // 이 테스트의 관심사는 **게임 셸**(탭·HUD·자동 타격 루프)이다.
+  // 앱 진입점은 이제 TitleScreen(버전 게이트 → 로그인 선택 → 동기화 → 닉네임)
+  // 이라 BugChampApp 을 띄우면 대문에서 멈춘다 — 셸을 직접 띄운다.
+  child: MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: const AppShell(),
+  ),
 );
 
 Future<void> _advance(WidgetTester tester, double seconds) async {

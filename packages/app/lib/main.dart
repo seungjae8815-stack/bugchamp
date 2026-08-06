@@ -22,7 +22,7 @@ import 'domain/purchase_verifier.dart';
 import 'domain/pvp_backend.dart';
 import 'domain/store_iap_service.dart';
 import 'domain/supabase_pvp_backend.dart';
-import 'features/app_shell.dart';
+import 'features/title/title_screen.dart';
 import 'l10n/app_localizations.dart';
 
 /// Supabase 자격증명은 코드에 넣지 않고 빌드 인자로 주입(GitHub 유출 방지):
@@ -163,7 +163,8 @@ class BugChampApp extends StatelessWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       navigatorObservers: [_SheetSound()],
-      home: const AppShell(),
+      // 대문 → (게이트·로그인·동기화·닉네임) → AppShell.
+      home: const TitleScreen(),
     );
   }
 }

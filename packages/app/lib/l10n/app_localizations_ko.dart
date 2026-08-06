@@ -1569,4 +1569,33 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get privacyPolicy => '개인정보처리방침';
+
+  @override
+  String get titleStartGuest => '게스트로 시작하기';
+
+  @override
+  String get titleOr => '또는';
+
+  @override
+  String get titleLoading => '불러오는 중…';
+
+  @override
+  String get guestNudgeTitle => '로그인하고 시작할까요?';
+
+  @override
+  String get guestNudgeBody =>
+      '로그인하지 않으면 기기를 바꾸거나 앱을 지웠을 때 진행 상황과 순위를 되살릴 수 없어요. 지금까지 모은 곤충과 순위를 지키려면 로그인해 주세요.';
+
+  @override
+  String get guestNudgeSignIn => '로그인하기';
+
+  @override
+  String get guestNudgeContinue => '게스트로 계속하기';
+
+  @override
+  String get guestWarnTitle => '게스트로 플레이 중이에요';
+
+  @override
+  String get guestWarnBody =>
+      '지금은 기기 임시 계정이라, 앱을 지우거나 기기를 바꾸면 모아둔 곤충과 순위가 사라져요. 로그인해 두면 안전하게 이어서 할 수 있어요.';
 }

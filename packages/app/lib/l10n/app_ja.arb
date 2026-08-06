@@ -473,5 +473,14 @@
   "retryButton": "再試行",
   "accountSignInApple": "Appleでサインイン",
   "termsOfUse": "利用規約",
-  "privacyPolicy": "プライバシーポリシー"
+  "privacyPolicy": "プライバシーポリシー",
+  "titleStartGuest": "ゲストで始める",
+  "titleOr": "または",
+  "titleLoading": "読み込み中…",
+  "guestNudgeTitle": "ログインしてから始めますか？",
+  "guestNudgeBody": "ログインしないと、機種変更やアプリ削除のときに進行状況と順位を戻せません。集めた虫と順位を守るためにログインしてください。",
+  "guestNudgeSignIn": "ログインする",
+  "guestNudgeContinue": "ゲストで続ける",
+  "guestWarnTitle": "ゲストでプレイ中です",
+  "guestWarnBody": "現在は端末の仮アカウントです。アプリを削除したり機種を変更すると、集めた虫と順位が消えます。ログインしておくと安全に引き継げます。"
 }
