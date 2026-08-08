@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "hpBase": 40,
-  "hpGrowth": 1.025,
+  "hpBase": 150,
+  "hpGrowth": 1.015,
   "bossHpMult": 5.0,
   "goldBase": 1.5,
   "goldGrowth": 1.0165,
@@ -225,7 +225,7 @@
   ],
   "offlineEfficiency": 0.3,
   "worldSize": 100,
-  "worldHpMult": 3.0,
+  "worldHpMult": 8.0,
   "worldGoldMult": 2.2,
   "worldBossHpMult": 3.0
 }

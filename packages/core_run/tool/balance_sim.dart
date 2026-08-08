@@ -15,6 +15,7 @@
 //  - 활동 플레이는 efficiency 1.0, 오프라인은 run_config 의 offlineEfficiency.
 
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:io';
 
 import 'package:core_models/core_models.dart' show MaterialKind;
@@ -25,6 +26,13 @@ const _activeHoursPerDay = 2.0;
 
 /// 하루에 오프라인 보상으로 회수하는 시간(상한 8h — kMaxOfflineAccrual).
 const _offlineHoursPerDay = 8.0;
+
+/// 펫을 다 갖췄을 때의 추가 공격 배율(+150% = x2.5).
+/// pets.json 의 상한(전설3 만렙 x4.04)이 아니라 **평균적인 유저**를 가정한다.
+const _petMaxBonus = 1.5;
+
+/// 펫이 위 배율에 도달하는 스테이지(그 전까지는 선형으로 오른다).
+const _petFullStage = 600.0;
 
 /// 업그레이드 구매를 다시 판단하는 간격(초). 짧을수록 정확하고 느리다.
 const _sliceSeconds = 600.0;
@@ -116,6 +124,34 @@ void main(List<String> args) {
   }
 
   stdout.writeln('');
+  stdout.writeln('── 타격감(일반 몬스터를 몇 대에 잡나) ──');
+  stdout.writeln('  1대 = 스치기만 해도 죽는다(성장할 이유가 안 느껴짐)');
+  for (final m in _samplePoints(finalStage)) {
+    final h = sim.hitsToKill[m];
+    stdout.writeln(
+      '  스테이지 ${m.toString().padLeft(4)} : ${h == null ? '미도달' : '$h 대'}',
+    );
+  }
+
+  // 월드 관문 앞뒤 — "벽이 지점에 있나, 구간에 퍼져 있나"를 본다.
+  if (config.worldSize > 0) {
+    stdout.writeln('');
+    stdout.writeln('── 월드 관문 앞뒤 타격 수 ──');
+    stdout.writeln('  (관문에서 확 뛰고 그 뒤로 완만해야 "뚫는 맛"이 난다)');
+    for (var w = 1; w < opts.worlds && w <= 5; w++) {
+      final last = w * config.worldSize; // x-100 (월드 보스)
+      final next = last + 1; // 다음 월드 첫 칸
+      final a = sim.hitsToKill[last - 1];
+      final b = sim.hitsToKill[next];
+      if (a == null || b == null) continue;
+      stdout.writeln(
+        '  월드 $w 끝(${last - 1}) $a 대  →  월드 ${w + 1} 시작($next) $b 대'
+        '  (x${(b / a).toStringAsFixed(1)})',
+      );
+    }
+  }
+
+  stdout.writeln('');
   stdout.writeln('── 결과 ──');
   for (final m in marks) {
     final d = sim.reached[m];
@@ -171,6 +207,12 @@ class _Player {
   /// 스테이지 → 도달 시점(소수 일수).
   final Map<int, double> reached = {};
 
+  /// 스테이지 → 그 시점에 **일반 몬스터를 몇 대 때려야 죽었는지**.
+  ///
+  /// 방치 게임의 '타격감'은 이 값이 결정한다. 1이면 스치기만 해도 죽어서
+  /// 성장할 이유가 안 느껴지고, 너무 크면 진행이 답답하다.
+  final Map<int, int> hitsToKill = {};
+
   /// 지금까지 흘린 시뮬레이션 시간(일). 하루 = 활동 + 오프라인.
   double elapsedDays = 0;
 
@@ -184,7 +226,39 @@ class _Player {
   final Map<UpgradeKind, int> levels = {};
   final Map<MaterialKind, double> materials = {};
 
-  CharacterStats get stats => deriveStats(
+  /// 진행도에 따른 **펫 공격 배율**.
+  ///
+  /// 예전엔 펫을 통째로 빼고 계산했다("맨몸 = 가장 느린 경로"). 그런데 실제
+  /// 유저는 펫을 키우고, 그 배율이 공격에 곱해진다 — 빼고 재면 "체력을 올렸는데
+  /// 한 방에 죽는다"를 못 본다(실제로 그렇게 틀렸다).
+  ///
+  /// 모델: 초반엔 낮은 등급·저레벨(≈+5%), 진행할수록 좋은 펫을 갖춰
+  /// [_petMaxBonus] 까지 오른다. 최대치(전설3 만렙)가 아니라 **평균적인 유저**를
+  /// 가정한다 — 상한을 기준으로 맞추면 대다수가 너무 어려워진다.
+  double get petAttackMult =>
+      1 + _petMaxBonus * math.min(1.0, stage / _petFullStage);
+
+  CharacterStats get stats {
+    final s = _baseStats;
+    return CharacterStats(
+      attack: s.attack * petAttackMult,
+      attackSpeed: s.attackSpeed,
+      rewardMultiplier: s.rewardMultiplier,
+      critChance: s.critChance,
+      critDamage: s.critDamage,
+      bossDamage: s.bossDamage,
+      maxHp: s.maxHp,
+      defense: s.defense,
+      hpRegen: s.hpRegen,
+      xpMultiplier: s.xpMultiplier,
+      bugFind: s.bugFind,
+      materialFind: s.materialFind,
+      moveSpeed: s.moveSpeed,
+      boostBonus: s.boostBonus,
+    );
+  }
+
+  CharacterStats get _baseStats => deriveStats(
     config,
     upgradeLevels: levels,
     characterLevel: level,
@@ -215,6 +289,13 @@ class _Player {
       // 모든 스테이지의 클리어 시각을 남긴다 — 곡선 모양(스테이지당 소요)을 보기 위해.
       for (var s = prevStage; s < stage; s++) {
         reached.putIfAbsent(s, () => elapsedDays);
+        // 그 스테이지를 지날 때 **실제 스탯으로** 몇 대에 죽었는지.
+        hitsToKill.putIfAbsent(s, () {
+          final st = stats;
+          final hp = habitatMaxHp(config, s - 1);
+          final dmg = st.attack <= 0 ? 1.0 : st.attack;
+          return (hp / dmg).ceil();
+        });
       }
       prevStage = stage;
       stage = prog.newStage;

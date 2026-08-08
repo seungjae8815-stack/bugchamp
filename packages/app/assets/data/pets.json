@@ -33,7 +33,7 @@
   "synthMaxPotential": 5,
   "disassembleJellyBase": 0,
   "disassembleJellyPerPotential": 1,
-  "levelBonus": 0.06,
+  "levelBonus": 0.015,
   "trainBaseCost": 200,
   "trainCostGrowth": 1.18,
   "trainJellyCost": 3,
