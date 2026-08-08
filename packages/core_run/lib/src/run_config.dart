@@ -101,6 +101,7 @@ class RunConfig {
   const RunConfig({
     required this.hpBase,
     required this.hpGrowth,
+    this.onlineGoldBonus = 0,
     this.hpAdaptTargetHits = 0,
     this.hpAdaptPower = 0,
     this.hpAdaptMinRatio = 0.5,
@@ -132,6 +133,13 @@ class RunConfig {
   });
 
   final double hpBase;
+
+  /// **접속 중에만** 붙는 골드 보너스(0.5 = +50%).
+  ///
+  /// 방치 보상(효율 0.3 × 최대 8시간)이 활동 2시간보다 커서, 연타를 안 하면
+  /// **켜두는 것보다 꺼두는 게 이득**이었다. 방치 보상을 깎으면 "안 켜도
+  /// 벌린다"를 보고 온 유저가 이탈하므로, 대신 온라인에 얹는다.
+  final double onlineGoldBonus;
 
   // ── 적응형 체력(§7, 2026-08) ──
   // 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.015 로 자라 공격이
@@ -247,6 +255,7 @@ class RunConfig {
         .map(UpgradeSpec.fromJson);
     return RunConfig(
       hpBase: (json['hpBase'] as num).toDouble(),
+      onlineGoldBonus: (json['onlineGoldBonus'] as num?)?.toDouble() ?? 0,
       hpAdaptTargetHits: (json['hpAdaptTargetHits'] as num?)?.toDouble() ?? 0,
       hpAdaptPower: (json['hpAdaptPower'] as num?)?.toDouble() ?? 0,
       hpAdaptMinRatio: (json['hpAdaptMinRatio'] as num?)?.toDouble() ?? 0.5,

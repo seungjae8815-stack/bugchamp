@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "hpBase": 150,
-  "hpGrowth": 1.00875,
+  "hpGrowth": 1.0092,
   "_hpAdaptComment": "적응형 체력(§7). 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.015 라 공격이 항상 이겨 스테이지 100부터 한 방이 됐다. 기준선 대비 세진 만큼을 체력에 일부 반영한다. power<1 이라 강해질수록 타격 수는 줄어든다. 월드 관문(worldHpMult)에는 걸지 않는다 — 벽이 뭉개지면 뚫는 맛이 사라진다.",
   "hpAdaptTargetHits": 6,
   "hpAdaptPower": 0.85,
@@ -232,5 +232,7 @@
   "worldSize": 100,
   "worldHpMult": 8.0,
   "worldGoldMult": 2.2,
-  "worldBossHpMult": 3.0
+  "worldBossHpMult": 3.0,
+  "_onlineComment": "접속 중에만 붙는 골드 보너스. 방치(효율 0.3 x 8h)가 활동 2h보다 커서 켜둘 이유가 없던 문제를 방치를 깎지 않고 해결한다.",
+  "onlineGoldBonus": 0.6
 }

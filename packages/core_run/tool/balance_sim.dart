@@ -51,7 +51,9 @@ const _dailyBonusGold = 100000.0;
 
 /// 펫을 다 갖췄을 때의 추가 공격 배율(+150% = x2.5).
 /// pets.json 의 상한(전설3 만렙 x4.04)이 아니라 **평균적인 유저**를 가정한다.
-const _petMaxBonus = 1.5;
+/// `--pet-bonus=` 로 덮어쓸 수 있다(펫 상한을 바꿔볼 때).
+const _petMaxBonusDefault = 1.5;
+double _petMaxBonus = _petMaxBonusDefault;
 
 /// 펫이 위 배율에 도달하는 스테이지(그 전까지는 선형으로 오른다).
 const _petFullStage = 600.0;
@@ -240,6 +242,9 @@ class _Player {
 
   int stage = 1;
 
+  /// 지금이 활동(접속) 구간인지 — 접속 보너스 적용 여부.
+  bool _online = false;
+
   /// 직전 슬라이스의 스테이지 — 그 사이 구간을 클리어로 기록한다.
   int prevStage = 1;
   double gold = 0;
@@ -291,7 +296,10 @@ class _Player {
   void playDay() {
     // 전투 밖 보상(일일·선물·미션·결투)은 하루 한 번 정액으로 넣는다.
     gold += _dailyBonusGold;
+    // 접속 보너스는 **활동 구간에만** — 켜두는 쪽이 이득이어야 한다.
+    _online = true;
     _run(_activeHoursPerDay * 3600, 1.0);
+    _online = false;
     _run(_offlineHoursPerDay * 3600, config.offlineEfficiency);
   }
 
@@ -323,7 +331,10 @@ class _Player {
       }
       prevStage = stage;
       stage = prog.newStage;
-      gold += prog.gold * _buffGoldMult;
+      gold +=
+          prog.gold *
+          _buffGoldMult *
+          (_online ? 1 + config.onlineGoldBonus : 1.0);
       _gainXp(prog.xp);
       // 재료: 처치당 materialDropChance 확률로 평균 1.5개, 3종에 고르게.
       final mats =
@@ -421,6 +432,11 @@ _Opts _parseArgs(List<String> args) {
   double? mult;
   var worlds = 10;
   for (final a in args) {
+    final pb = RegExp(r'^--pet-bonus=(.+)$').firstMatch(a);
+    if (pb != null) {
+      _petMaxBonus = double.parse(pb.group(1)!);
+      continue;
+    }
     final m = RegExp(r'^--([a-z-]+)=(.+)$').firstMatch(a);
     if (m == null) continue;
     if (m.group(1) == 'mult') {

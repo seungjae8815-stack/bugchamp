@@ -565,7 +565,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final depth = _stage - 1;
     // 적응형 체력(§7) — 내 공격력을 넘겨야 "한 방에 죽는" 오버킬이 막힌다.
     // 방치 정산(simulateIdleProgress)도 같은 보정을 쓰므로 화면과 어긋나지 않는다.
-    final atk = _stats(ref.read(saveControllerProvider).requireValue).attack;
+    //
+    // ⚠️ 기준은 **영구 전력(업그레이드+펫)** 이다. `_stats` 는 버프가 실린
+    // 값이라 그걸 쓰면 광폭화를 켤 때마다 몬스터 체력도 같이 올라
+    // **버프 효과가 상쇄된다**(버프가 끝나면 반대로 쉬워진다).
+    // 탭 부스트도 같은 이유로 여기 들어오면 안 된다 — 데미지 계산에만 실린다.
+    final atk = _petStats(ref.read(saveControllerProvider).requireValue).attack;
     _hpMax =
         (_isBoss
                 ? bossMaxHp(_config, depth, playerAttack: atk)
@@ -818,12 +823,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _beginDeath(CharacterStats stats) {
     AudioService.instance.sfxDie(); // 몬스터 처치음
     final depth = _stage - 1;
-    final gold = rewardGold(
-      _config,
-      depth,
-      stats.rewardMultiplier,
-      boss: _isBoss,
-    );
+    // 접속 보너스 — **직접 잡았을 때만** 붙는다(방치 정산에는 안 붙는다).
+    // 켜두는 쪽이 이득이어야 자주 들어오고, 그래야 업그레이드·채팅도 돈다.
+    final gold =
+        (rewardGold(_config, depth, stats.rewardMultiplier, boss: _isBoss) *
+                (1 + _config.onlineGoldBonus))
+            .round();
     final xp = (rewardXp(_config, depth, boss: _isBoss) * stats.xpMultiplier)
         .round();
 
@@ -1175,8 +1180,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           fraction: hpFrac,
                           wide: _isBoss,
                           colors: const [Color(0xFFFF7043), Color(0xFFE53935)],
-                          label:
-                              '${formatCompact(_hp.clamp(0, _hpMax))} / ${formatCompact(_hpMax)}',
+                          // 숫자는 **보스에만** 남긴다.
+                          //
+                          // 적응형 체력(§7)이 들어가 같은 스테이지라도 사람마다
+                          // 체력이 다르다 — 숫자를 보여주면 "쟤 몬스터는 왜 약해"가
+                          // 되고 설명할 방법이 없다. 게다가 방치형에서 절대값은
+                          // 정보 가치가 거의 없다(남은 비율만 알면 된다).
+                          // 보스는 "얼마나 남았나"가 실제로 궁금한 유일한 지점이라
+                          // 남긴다.
+                          label: _isBoss
+                              ? '${formatCompact(_hp.clamp(0, _hpMax))} / ${formatCompact(_hpMax)}'
+                              : null,
                         ),
                         const SizedBox(height: 4),
                         enemyWidget,
@@ -1201,8 +1215,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         fraction: pHpFrac,
                         wide: false,
                         colors: const [Color(0xFF81C784), Color(0xFF43A047)],
-                        label:
-                            '${formatCompact(_playerHp.clamp(0, _playerHpMax))} / ${formatCompact(_playerHpMax)}',
+                        // 내 체력도 숫자를 뺀다 — 위험한지 아닌지는 게이지가
+                        // 더 빨리 읽힌다(전투 중에 자릿수를 읽지 않는다).
+                        label: null,
                       ),
                       const SizedBox(height: 4),
                       Transform.translate(
