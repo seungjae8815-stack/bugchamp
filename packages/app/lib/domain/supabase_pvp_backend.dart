@@ -16,7 +16,7 @@ class SupabasePvpBackend implements PvpBackend {
   bool get isRemote => true;
 
   @override
-  Future<List<LeaderboardEntry>> leaderboard({
+  Future<Leaderboard> leaderboard({
     required PvpProfile me,
     int limit = 50,
   }) async {
@@ -51,8 +51,9 @@ class SupabasePvpBackend implements PvpBackend {
           LeaderboardEntry(rank: entries.length + 1, profile: me, isMe: true),
         );
       }
-      return entries;
+      return Leaderboard(entries: entries, live: true);
     } catch (_) {
+      // 화면이 비지 않게 NPC 사다리로 폴백하되, live=false 로 **사실대로** 알린다.
       return fallback.leaderboard(me: me, limit: limit);
     }
   }

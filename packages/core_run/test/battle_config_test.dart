@@ -89,4 +89,137 @@ void main() {
       expect(cfg.seasonResetTrophies(0), 0);
     });
   });
+
+  group('결투 티켓', () {
+    const cfg = BattleConfig(); // max10 / 30분당 1 / 광고+3(30회) / 젤리10
+    final t0 = DateTime.utc(2026, 8, 6, 12);
+
+    test('30분당 1개씩 충전, 상한에서 멈춘다', () {
+      // 29분 → 아직 0개
+      expect(
+        regenTickets(
+          tickets: 3,
+          at: t0,
+          now: t0.add(const Duration(minutes: 29)),
+          cfg: cfg,
+        ).tickets,
+        3,
+      );
+      // 95분 → 3개(자투리 5분은 기준시각에 보존)
+      final r = regenTickets(
+        tickets: 3,
+        at: t0,
+        now: t0.add(const Duration(minutes: 95)),
+        cfg: cfg,
+      );
+      expect(r.tickets, 6);
+      expect(r.at, t0.add(const Duration(minutes: 90)));
+      // 하루가 지나도 상한 10에서 멈춘다
+      expect(
+        regenTickets(
+          tickets: 3,
+          at: t0,
+          now: t0.add(const Duration(days: 1)),
+          cfg: cfg,
+        ).tickets,
+        10,
+      );
+    });
+
+    test('가득 찬 동안에는 충전분이 쌓이지 않는다', () {
+      // 상한에서 6시간 대기 → 여전히 10, 기준시각은 now
+      final full = regenTickets(
+        tickets: 10,
+        at: t0,
+        now: t0.add(const Duration(hours: 6)),
+        cfg: cfg,
+      );
+      expect(full.tickets, 10);
+      expect(full.at, t0.add(const Duration(hours: 6)));
+      // 그 상태에서 한 장 쓰면 30분 뒤에 채워진다(즉시 복구 아님)
+      final used = consumeTicket(
+        tickets: full.tickets,
+        at: full.at,
+        now: full.at,
+        cfg: cfg,
+      )!;
+      expect(used.tickets, 9);
+      expect(
+        regenTickets(
+          tickets: used.tickets,
+          at: used.at,
+          now: used.at.add(const Duration(minutes: 29)),
+          cfg: cfg,
+        ).tickets,
+        9,
+      );
+    });
+
+    test('소모: 없으면 null, 있으면 충전 진행도를 유지', () {
+      expect(consumeTicket(tickets: 0, at: t0, now: t0, cfg: cfg), isNull);
+      // 20분 경과(충전 진행 중) 상태에서 소모 → 자투리 20분이 유지된다
+      final now = t0.add(const Duration(minutes: 20));
+      final r = consumeTicket(tickets: 5, at: t0, now: now, cfg: cfg)!;
+      expect(r.tickets, 4);
+      expect(r.at, t0);
+    });
+
+    test('광고 지급은 상한을 넘길 수 있고, 젤리는 상한까지 채운다', () {
+      final ad = grantTickets(
+        tickets: 9,
+        at: t0,
+        now: t0,
+        cfg: cfg,
+        amount: cfg.ticketAdGrant,
+      );
+      expect(ad.tickets, 12); // 9+3 — 광고를 낭비시키지 않는다
+      expect(refillTickets(tickets: 2, at: t0, now: t0, cfg: cfg).tickets, 10);
+      // 이미 상한 이상이면 젤리를 써도 늘지 않는다(호출부가 막아야 한다)
+      expect(refillTickets(tickets: 12, at: t0, now: t0, cfg: cfg).tickets, 12);
+    });
+
+    test('기기 시계를 되돌려도 충전이 멈추지 않는다', () {
+      final back = regenTickets(
+        tickets: 2,
+        at: t0,
+        now: t0.subtract(const Duration(days: 3)),
+        cfg: cfg,
+      );
+      expect(back.tickets, 2);
+      expect(back.at, t0.subtract(const Duration(days: 3))); // 기준시각만 재조정
+    });
+
+    test('남은 시간: 상한이면 null, 아니면 다음 1개까지', () {
+      expect(
+        ticketRegenRemaining(tickets: 10, at: t0, now: t0, cfg: cfg),
+        isNull,
+      );
+      expect(
+        ticketRegenRemaining(
+          tickets: 1,
+          at: t0,
+          now: t0.add(const Duration(minutes: 10)),
+          cfg: cfg,
+        ),
+        const Duration(minutes: 20),
+      );
+    });
+
+    test('fromJson: tickets 블록 파싱(§6 — 수치는 JSON에서만)', () {
+      final c = BattleConfig.fromJson({
+        'tickets': {
+          'max': 5,
+          'regenSeconds': 600,
+          'adGrant': 1,
+          'adDailyLimit': 4,
+          'refillJelly': 25,
+        },
+      });
+      expect(c.ticketMax, 5);
+      expect(c.ticketRegen, const Duration(minutes: 10));
+      expect(c.ticketAdGrant, 1);
+      expect(c.ticketAdDailyLimit, 4);
+      expect(c.ticketRefillJelly, 25);
+    });
+  });
 }

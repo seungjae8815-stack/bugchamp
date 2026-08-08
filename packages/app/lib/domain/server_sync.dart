@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'game_server.dart';
@@ -154,3 +155,27 @@ class ServerSaveUploader {
 /// (닉네임 없는) 세이브가 남아 있다. 다음 실행에 [syncWithServer] 가 그걸
 /// 채택하면서 닉네임이 사라지고 입력창이 매번 다시 떴다.
 Future<void> pushSaveNow(WidgetRef ref) => ServerSaveUploader(ref).flush();
+
+/// 서버가 **세이브를 고쳐서 돌려주는 액션 직전에** 최신 로컬 세이브를 올린다.
+/// 성공했을 때만 true.
+///
+/// 이걸 건너뛰면 이렇게 된다: 서버에는 최대 60초 낡은 세이브가 있는데, 서버가
+/// 그 위에 보상을 얹어 돌려주고 앱이 그걸 채택한다 → **최근 1분의 진행(골드·
+/// 곤충·업그레이드)이 통째로 사라진다.** 그래서 실패하면 호출부는 액션 자체를
+/// 진행하지 않는다(다음 주기 업로드가 따라잡은 뒤 다시 시도하면 된다).
+///
+/// 전투·우편수령·코드사용이 같은 함수를 쓴다 — 한 곳이라도 빠지면 그 경로에서만
+/// 진행도가 사라지는, 재현하기 어려운 버그가 된다.
+Future<bool> flushSaveBeforeServerAction(
+  GameServer server,
+  SaveGame? save,
+) async {
+  if (!server.available) return true; // 서버 미연결이면 로컬 경로로 진행
+  if (save == null) return false;
+  final json = save.toJson();
+  final res = await server.uploadSave(json);
+  if (res.isOk) return true;
+  // 저장본이 없다 = 최초 이관이 먼저.
+  if (res.status == 409) return (await server.bootstrap(json)).isOk;
+  return false;
+}

@@ -500,3 +500,178 @@ grant execute on function public.nickname_taken(text) to authenticated;
 -- 정리 후:
 -- create unique index profiles_nickname_uniq on public.profiles (lower(nickname));
 ```
+
+---
+
+## 12. 공지 · 운영 우편 · 선물코드 (2026-08-07)
+
+셋 다 **"서버가 유저에게 보낸다"는 같은 일**이라 한 벌로 만들었다.
+점검·업데이트 보상은 별도 기능이 아니라 **전체 발송 우편 한 통**이다.
+
+### 왜 지급을 서버가 하나
+재화는 기기 권위지만, 이 보상만은 **서버가 세이브에 더하고 앱이 그 세이브를
+채택**한다(`/purchase` 와 같은 방식). 앱이 스스로 더하면 다음 업로드에서
+골드 급증 상한(`_goldSanityFloor` = 20만)에 걸려 **정당한 보상이 잘린다.**
+
+### SQL (Supabase SQL Editor 에서 1회 실행 — 재실행 안전)
+
+```sql
+-- 공지: 전체 공개 읽기지만 서버(service_role)를 통해서만 나간다.
+create table if not exists notices (
+  id         bigserial primary key,
+  title      text not null,
+  body       text not null default '',
+  starts_at  timestamptz,          -- null = 즉시
+  ends_at    timestamptz,          -- null = 무기한
+  pinned     boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- 운영 우편: user_id 가 null 이면 **전체 유저 대상**(점검 보상 등).
+create table if not exists user_mail (
+  id         bigserial primary key,
+  user_id    uuid references auth.users(id) on delete cascade,
+  title      text not null,
+  body       text not null default '',
+  gold int not null default 0,
+  jelly int not null default 0,
+  chitin int not null default 0,
+  mineral int not null default 0,
+  sap int not null default 0,
+  starts_at  timestamptz,
+  ends_at    timestamptz,          -- 만료(수령 기한)
+  created_at timestamptz not null default now()
+);
+create index if not exists user_mail_user_idx on user_mail (user_id);
+
+-- 수령 이력: **기본키가 중복 지급을 막는다**(앱 연타·재시도 안전).
+create table if not exists mail_claims (
+  mail_id    bigint not null references user_mail(id) on delete cascade,
+  user_id    uuid   not null references auth.users(id) on delete cascade,
+  claimed_at timestamptz not null default now(),
+  primary key (mail_id, user_id)
+);
+
+-- 선물코드: 코드는 대문자로 저장한다(앱이 대문자로 조회).
+create table if not exists gift_codes (
+  code       text primary key,
+  gold int not null default 0,
+  jelly int not null default 0,
+  chitin int not null default 0,
+  mineral int not null default 0,
+  sap int not null default 0,
+  max_uses   int,                  -- null = 무제한
+  used_count int not null default 0,
+  ends_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+create table if not exists code_redemptions (
+  code        text not null references gift_codes(code) on delete cascade,
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  redeemed_at timestamptz not null default now(),
+  primary key (code, user_id)
+);
+
+-- RLS: 클라이언트 직접 접근 전면 차단. 접근은 서버(service_role)뿐이다.
+-- 정책을 하나도 만들지 않으면 anon/authenticated 는 아무 것도 못 읽는다.
+alter table notices          enable row level security;
+alter table user_mail        enable row level security;
+alter table mail_claims      enable row level security;
+alter table gift_codes       enable row level security;
+alter table code_redemptions enable row level security;
+
+-- 코드 사용 횟수 +1 (동시 사용 경합에서도 정확하게).
+create or replace function bump_gift_code(c text)
+returns void language sql security definer set search_path = public as $$
+  update gift_codes set used_count = used_count + 1 where code = upper(c);
+$$;
+```
+
+### 운영 사용법 (SQL Editor 에서 한 줄)
+
+```sql
+-- 점검 보상: 전체 유저에게 젤리 100 (7일 안에 받기)
+insert into user_mail (user_id, title, body, jelly, ends_at)
+values (null, '점검 보상', '점검으로 불편을 드려 죄송합니다.', 100, now() + interval '7 days');
+
+-- 공지 띄우기
+insert into notices (title, body, pinned)
+values ('v1.0.4 업데이트', '결투 티켓이 생겼어요. 하루 판수가 제한됩니다.', true);
+
+-- 선물코드 만들기 (선착순 1000명, 계정당 1회)
+insert into gift_codes (code, jelly, gold, max_uses, ends_at)
+values ('BUGCHAMP100', 100, 50000, 1000, now() + interval '30 days');
+```
+
+### 엔드포인트
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `GET /notices` | 진행 중인 공지(고정 먼저, 최신순) |
+| `GET /mail` | 내가 **아직 안 받은** 우편(개인 + 전체 발송) |
+| `POST /mail/claim {id}` | 우편 수령 → 지급된 세이브 반환 |
+| `POST /code/redeem {code}` | 코드 사용 → 지급된 세이브 반환 |
+
+거절 사유: `mail_not_found`(남의 것/기간 지남/이미 받음) · `already_claimed` ·
+`bad_code` · `code_expired` · `code_exhausted` · `code_already_used`.
+
+---
+
+## 13. 운영 관리 패널 `/admin` (2026-08-07)
+
+공지·전체발송 우편·선물코드를 **웹에서** 관리한다. SQL 을 직접 칠 필요가 없다.
+
+주소: `https://bugchamp-server-867649520275.asia-northeast3.run.app/admin`
+
+### 왜 서버가 직접 서빙하나 (Vercel·GitHub Pages 가 아니라)
+
+이 테이블들은 RLS 로 클라이언트 직접 접근이 막혀 있고, 쓰려면 `service_role`
+키가 필요하다. 그 키는 **DB 전체 권한**이라 정적 호스팅(브라우저)에 두면
+모든 유저의 세이브가 노출된다. 서버는 이미 그 키를 Secret Manager 로 안전하게
+쥐고 있으므로, 여기서 서빙하면 **키가 브라우저로 나갈 일이 없다.**
+별도 호스팅·CORS 설정도 필요 없다.
+
+### 설정 (1회) — 사장님 작업
+
+```powershell
+# 40자 랜덤 키 생성 → Secret Manager 에 저장
+$key = -join ((48..57)+(65..90)+(97..122) | Get-Random -Count 40 | % {[char]$_})
+$key | gcloud secrets create bugchamp-admin-key --data-file=-
+
+# 서버에 주입
+gcloud run services update bugchamp-server --region asia-northeast3 `
+  --update-secrets ADMIN_KEY=bugchamp-admin-key:latest
+
+$key   # ← 이 값을 패널 로그인에 입력(비밀번호 관리자에 보관)
+```
+
+키를 잊었으면: `gcloud secrets versions access latest --secret=bugchamp-admin-key`
+키를 바꾸려면 새 버전을 추가하고 서비스를 다시 update 한다.
+
+⚠️ **`ADMIN_KEY` 가 없으면 `/admin/*` 은 전부 401 이다.** 기본값을 두지 않았다 —
+환경변수를 깜빡한 배포가 재화를 뿌릴 수 있는 문을 연 채로 뜨는 것을 막는다.
+
+### 사고 방지 장치 (UI 가 아니라 **서버**가 강제)
+
+| 장치 | 값 |
+|---|---|
+| 1건당 골드 상한 | 10,000,000 |
+| 1건당 젤리 상한 | 10,000 |
+| 1건당 재료 상한 | 100,000 |
+| 음수 지급 | 0 으로 처리(운영 실수로 재화를 뺏지 않는다) |
+| 코드 형식 | 영문 대문자·숫자 4~32자만 |
+| 상한 초과 | **잘라서 보내지 않고 거절** — 조용히 자르면 100만 보낸 줄 알고 1만이 나간다 |
+
+전체 발송은 되돌릴 수 없다(이미 받은 유저의 재화는 회수되지 않는다). 패널이
+한 번 더 확인을 묻는다.
+
+### 엔드포인트
+
+| 엔드포인트 | 인증 | 설명 |
+|---|---|---|
+| `GET /admin` | 불필요 | 패널 HTML(로그인 폼) |
+| `GET /admin/data` | `x-admin-key` | 공지·우편·코드 전체 목록(만료분 포함) |
+| `POST /admin/notice` | 〃 | 공지 등록 |
+| `POST /admin/mail` | 〃 | 우편 발송(`userId` 없으면 전체) |
+| `POST /admin/code` | 〃 | 선물코드 생성 |
+| `POST /admin/delete` | 〃 | `{kind: notice\|mail\|code, id}` 삭제 |

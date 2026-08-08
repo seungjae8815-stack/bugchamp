@@ -85,6 +85,41 @@ void main() {
     });
   });
 
+  group('결투 티켓 필드(호환 필드 — 스키마 버전 안 올림)', () {
+    test('티켓 필드가 없는 예전 세이브는 만땅으로 읽힌다', () {
+      final old = _sampleSave().toJson()
+        ..remove('pvpTickets')
+        ..remove('ticketsAt')
+        ..remove('adUseCounts')
+        ..remove('adUseDate');
+      final restored = SaveGame.fromJson(old);
+      expect(restored.pvpTickets, kDefaultPvpTickets);
+      expect(restored.ticketsAt, isNull);
+      expect(restored.adUseCounts, isEmpty);
+    });
+
+    test('티켓 상태가 왕복 저장된다', () {
+      final at = DateTime.utc(2026, 8, 6, 3);
+      final save = _sampleSave().copyWith(
+        pvpTickets: 4,
+        ticketsAt: at,
+        adUseCounts: {kAdFeaturePvpTicket: 7},
+        adUseDate: '2026-08-06',
+      );
+      final restored = SaveGame.fromJson(save.toJson());
+      expect(restored.pvpTickets, 4);
+      expect(restored.ticketsAt, at);
+      expect(restored.adUseCount(kAdFeaturePvpTicket, '2026-08-06'), 7);
+      // 날짜가 다르면 0 — 자정을 넘기면 자동 리셋된다.
+      expect(restored.adUseCount(kAdFeaturePvpTicket, '2026-08-07'), 0);
+    });
+
+    test('새 필드가 붙어도 스키마 버전은 그대로(구버전 앱이 읽을 수 있게)', () {
+      expect(_sampleSave().toJson()['schemaVersion'], kSaveSchemaVersion);
+      expect(kSaveSchemaVersion, 18);
+    });
+  });
+
   group('헬퍼', () {
     test('materialCount 는 없는 재료에 0', () {
       expect(_sampleSave().materialCount(MaterialKind.mineral), 0);

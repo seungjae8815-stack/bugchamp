@@ -95,6 +95,20 @@ class DefenderTeam {
   final List<DefenderBug> bugs;
 }
 
+/// 리더보드 조회 결과.
+///
+/// [live] = 이 목록이 **서버 실데이터**인지. false 면 NPC 사다리(폴백)다.
+/// 화면 안내 문구는 반드시 이 값으로 정한다 — 백엔드 종류가 아니라
+/// "이번 조회가 성공했는지"가 사용자에게 의미 있는 사실이다.
+class Leaderboard {
+  const Leaderboard({required this.entries, required this.live});
+
+  const Leaderboard.local(this.entries) : live = false;
+
+  final List<LeaderboardEntry> entries;
+  final bool live;
+}
+
 /// 비동기 PvP 백엔드 계약. 구현은 로컬/Supabase 등으로 교체 가능.
 abstract interface class PvpBackend {
   /// 실서버(Supabase 등)에 연결된 백엔드면 true, 로컬 자리표시면 false.
@@ -103,10 +117,11 @@ abstract interface class PvpBackend {
 
   /// 내 프로필([me])을 반영한 리더보드 상위 [limit] 줄을 반환한다.
   /// 결과에는 **항상 나(me)** 가 포함되며(상위권 밖이면 말미에 덧붙임) `isMe` 로 표시된다.
-  Future<List<LeaderboardEntry>> leaderboard({
-    required PvpProfile me,
-    int limit,
-  });
+  ///
+  /// 반환값의 [Leaderboard.live] 가 **실제로 서버에서 받아온 것인지**를 말한다.
+  /// [isRemote] 와 다르다 — 서버 백엔드라도 조회에 실패하면 화면이 비지 않게
+  /// NPC 사다리로 폴백하는데, 그때 "온라인 랭킹"이라고 쓰면 거짓말이 된다.
+  Future<Leaderboard> leaderboard({required PvpProfile me, int limit});
 
   /// 내 방어팀 스냅샷([team])을 서버에 등록(업서트)한다.
   /// 로컬 백엔드는 no-op. 네트워크 실패는 조용히 무시(앱 흐름을 막지 않음).
@@ -178,7 +193,7 @@ class LocalPvpBackend implements PvpBackend {
   }
 
   @override
-  Future<List<LeaderboardEntry>> leaderboard({
+  Future<Leaderboard> leaderboard({
     required PvpProfile me,
     int limit = 50,
   }) async {
@@ -206,7 +221,7 @@ class LocalPvpBackend implements PvpBackend {
     if (!top.any((e) => e.isMe)) {
       top.add(ranked.firstWhere((e) => e.isMe));
     }
-    return top;
+    return Leaderboard.local(top);
   }
 
   /// 로컬 모드엔 실제 다른 유저가 없다 — 등록은 no-op.

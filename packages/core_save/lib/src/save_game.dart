@@ -27,6 +27,17 @@ const int kDefaultStorageCapacity = 50;
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
 
+/// 결투 티켓 기본 보유량(신규·구버전 세이브는 만땅에서 시작).
+///
+/// 실제 상한·충전속도는 `battle.json → tickets`(§6). 여기 값은 필드가 없는
+/// 세이브를 읽을 때의 **구조적 기본값**일 뿐이라 밸런스가 아니다.
+const int kDefaultPvpTickets = 10;
+
+/// 하루 시청 상한이 걸린 광고 기능의 키(= [SaveGame.adUseCounts] 의 키).
+/// 지금은 결투 티켓 하나뿐 — 다른 보상형 광고는 구조적 상한이 이미 있다
+/// (버프=누적 6h, 부화단축=알이 다 부화하면 끝, 일일보상=자체 제한).
+const String kAdFeaturePvpTicket = 'pvpTicket';
+
 /// 설치된 트랩 1개 (레거시 v1 채집 시스템. v2 에서는 미사용이나 세이브 호환 위해 유지).
 class TrapInstallation {
   const TrapInstallation({
@@ -191,6 +202,12 @@ class SaveGame {
     this.breeding = const [],
     this.breedingCapacity = 1,
     this.storageCapacity = kDefaultStorageCapacity,
+    this.pvpTickets = kDefaultPvpTickets,
+    this.ticketsAt,
+    this.adUseCounts = const {},
+    this.adUseDate,
+    this.lastReadNoticeId = 0,
+    this.reviewAsked = false,
     this.adsRemoved = false,
     this.starterBought = false,
     this.ownedSkins = const {},
@@ -343,6 +360,52 @@ class SaveGame {
     );
   }
 
+  // ── 결투 티켓(2026-08) ──
+  //
+  // **스키마 버전을 올리지 않았다** — `storageCapacity` 와 같은 이유다.
+  // 없으면 기본값으로 읽히는 호환 필드라 구/신 버전이 서로의 세이브를 그대로
+  // 읽는다. 버전을 올리면 서버가 새 세이브를 저장하는 순간 스토어의 구버전
+  // 앱이 "다운그레이드 불가"로 죽는다(kDefaultStorageCapacity 주석 참조).
+
+  /// 남은 결투 티켓. **화면에 쓸 값은 이 필드가 아니라** `regenTickets(...)` 의
+  /// 결과다 — 저장된 값은 [ticketsAt] 이후 충전분이 반영되지 않은 원본이다.
+  ///
+  /// 서버 소유 필드(`GameActions._serverOwnedKeys`) — 세이브를 편집해 판수를
+  /// 늘리면 티켓 제한 자체가 무의미해지므로 업로드 때 서버 값으로 덮는다.
+  final int pvpTickets;
+
+  /// 자연 충전 기준시각(UTC). null이면 "지금부터" 로 취급한다.
+  final DateTime? ticketsAt;
+
+  /// 하루 상한이 걸린 광고의 기능별 오늘 시청 횟수([kAdFeaturePvpTicket] 등).
+  /// [adUseDate] 가 오늘이 아니면 전부 0으로 본다(날짜가 바뀌면 자동 리셋).
+  final Map<String, int> adUseCounts;
+
+  /// [adUseCounts] 가 기록된 날짜('yyyy-MM-dd', 로컬 기준 `dailyDateKey`).
+  final String? adUseDate;
+
+  /// [today] 기준 [feature] 광고를 오늘 몇 번 봤는지(날짜가 다르면 0).
+  int adUseCount(String feature, String today) =>
+      adUseDate == today ? (adUseCounts[feature] ?? 0) : 0;
+
+  // ── 공지 · 리뷰(2026-08-07) ──
+
+  /// 마지막으로 읽은 공지 id. 이 값보다 큰 id 가 있으면 "새 공지"다.
+  ///
+  /// 읽은 id 집합이 아니라 **최댓값 하나만** 쓴다 — 공지 id 는 증가하는
+  /// 일련번호라 이걸로 충분하고, 집합은 해가 갈수록 세이브에 계속 쌓인다.
+  final int lastReadNoticeId;
+
+  /// 스토어 리뷰를 이미 한 번 요청했는지(중복 요청 방지).
+  ///
+  /// ⚠️ **리뷰 작성 여부가 아니다.** 스토어 API 는 유저가 실제로 썼는지,
+  /// 별점이 몇 개인지 앱에 알려주지 않는다. 그래서 리뷰에 보상을 걸 수 없고
+  /// (걸어도 검증 불가), 플레이·앱스토어 정책도 이를 금지한다.
+  final bool reviewAsked;
+
+  /// [noticeId] 가 아직 안 읽은 새 공지인지.
+  bool isNewNotice(int noticeId) => noticeId > lastReadNoticeId;
+
   // ── 인앱결제 상태(v16) ──
   /// 광고 제거 구매 여부(강제 광고만 제거, 보상형 광고는 유지).
   final bool adsRemoved;
@@ -424,6 +487,9 @@ class SaveGame {
     breeding: const [],
     breedingCapacity: 1,
     storageCapacity: kDefaultStorageCapacity,
+    pvpTickets: kDefaultPvpTickets,
+    ticketsAt: (createdAt ?? DateTime.now()).toUtc(),
+    adUseCounts: const {},
     adsRemoved: false,
     starterBought: false,
     ownedSkins: const {},
@@ -462,6 +528,12 @@ class SaveGame {
     List<BreedingSlot>? breeding,
     int? breedingCapacity,
     int? storageCapacity,
+    int? pvpTickets,
+    DateTime? ticketsAt,
+    Map<String, int>? adUseCounts,
+    String? adUseDate,
+    int? lastReadNoticeId,
+    bool? reviewAsked,
     bool? adsRemoved,
     bool? starterBought,
     Set<String>? ownedSkins,
@@ -501,6 +573,12 @@ class SaveGame {
     breeding: breeding ?? this.breeding,
     breedingCapacity: breedingCapacity ?? this.breedingCapacity,
     storageCapacity: storageCapacity ?? this.storageCapacity,
+    pvpTickets: pvpTickets ?? this.pvpTickets,
+    ticketsAt: ticketsAt ?? this.ticketsAt,
+    adUseCounts: adUseCounts ?? this.adUseCounts,
+    adUseDate: adUseDate ?? this.adUseDate,
+    lastReadNoticeId: lastReadNoticeId ?? this.lastReadNoticeId,
+    reviewAsked: reviewAsked ?? this.reviewAsked,
     adsRemoved: adsRemoved ?? this.adsRemoved,
     starterBought: starterBought ?? this.starterBought,
     ownedSkins: ownedSkins ?? this.ownedSkins,
@@ -615,6 +693,16 @@ class SaveGame {
     breedingCapacity: (json['breedingCapacity'] as num?)?.toInt() ?? 1,
     storageCapacity:
         (json['storageCapacity'] as num?)?.toInt() ?? kDefaultStorageCapacity,
+    pvpTickets: (json['pvpTickets'] as num?)?.toInt() ?? kDefaultPvpTickets,
+    ticketsAt: json['ticketsAt'] == null
+        ? null
+        : DateTime.parse(json['ticketsAt'] as String).toUtc(),
+    adUseCounts: _intMapFromJson(
+      json['adUseCounts'] as Map<String, dynamic>? ?? const {},
+    ),
+    adUseDate: json['adUseDate'] as String?,
+    lastReadNoticeId: (json['lastReadNoticeId'] as num?)?.toInt() ?? 0,
+    reviewAsked: json['reviewAsked'] as bool? ?? false,
     adsRemoved: json['adsRemoved'] as bool? ?? false,
     starterBought: json['starterBought'] as bool? ?? false,
     ownedSkins:
@@ -673,6 +761,12 @@ class SaveGame {
     'breeding': breeding.map((b) => b.toJson()).toList(),
     'breedingCapacity': breedingCapacity,
     'storageCapacity': storageCapacity,
+    'pvpTickets': pvpTickets,
+    if (ticketsAt != null) 'ticketsAt': ticketsAt!.toUtc().toIso8601String(),
+    'adUseCounts': adUseCounts,
+    if (adUseDate != null) 'adUseDate': adUseDate,
+    'lastReadNoticeId': lastReadNoticeId,
+    'reviewAsked': reviewAsked,
     'adsRemoved': adsRemoved,
     'starterBought': starterBought,
     'ownedSkins': ownedSkins.toList(),

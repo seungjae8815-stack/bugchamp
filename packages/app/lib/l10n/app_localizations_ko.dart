@@ -1667,4 +1667,111 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get notifyQuietHours => '야간 휴식 (밤 10시~아침 8시)';
+
+  @override
+  String get pvpTicketTitle => '결투 티켓';
+
+  @override
+  String pvpTicketCount(int tickets, int max) {
+    return '$tickets/$max';
+  }
+
+  @override
+  String pvpTicketNextIn(String time) {
+    return '다음 충전 $time';
+  }
+
+  @override
+  String get pvpTicketFullLabel => '가득참';
+
+  @override
+  String get pvpTicketNone => '결투하려면 티켓이 필요해요. 아래에서 충전할 수 있어요.';
+
+  @override
+  String pvpTicketAdBtn(int amount) {
+    return '광고 보고 +$amount장';
+  }
+
+  @override
+  String pvpTicketAdLeft(int used, int limit) {
+    return '오늘 $used/$limit회';
+  }
+
+  @override
+  String pvpTicketJellyBtn(int cost) {
+    return '💎$cost 만땅 충전';
+  }
+
+  @override
+  String pvpTicketCharged(int amount) {
+    return '티켓 +$amount장';
+  }
+
+  @override
+  String get pvpTicketFilled => '티켓을 가득 채웠어요';
+
+  @override
+  String get pvpTicketAlreadyFull => '티켓이 이미 가득 찼어요';
+
+  @override
+  String get pvpTicketChargeFailed => '티켓을 충전하지 못했어요. 잠시 후 다시 시도해 주세요';
+
+  @override
+  String get pvpTicketWhy => '티켓은 트로피 랭킹을 \'많이 돌린 순\'이 아니라 \'전력 순\'으로 지켜 줘요.';
+
+  @override
+  String adDailyLimit(int limit) {
+    return '오늘 볼 수 있는 광고를 모두 봤어요 (하루 $limit회)';
+  }
+
+  @override
+  String get noticeTitle => '공지사항';
+
+  @override
+  String get noticeEmpty => '아직 공지가 없어요.';
+
+  @override
+  String get noticeFailed => '공지를 불러오지 못했어요. 연결을 확인해 주세요.';
+
+  @override
+  String get mailNoticeSection => '운영자 우편';
+
+  @override
+  String get mailClaim => '받기';
+
+  @override
+  String get giftCodeTitle => '선물코드';
+
+  @override
+  String get giftCodeHint => '이벤트·공지에서 받은 코드를 입력하세요.';
+
+  @override
+  String get giftCodeField => '코드 입력';
+
+  @override
+  String get giftCodeSubmit => '사용하기';
+
+  @override
+  String get giftCodeChecking => '확인 중…';
+
+  @override
+  String get giftCodeOk => '보상을 받았어요!';
+
+  @override
+  String get giftCodeBad => '없는 코드예요';
+
+  @override
+  String get giftCodeExpired => '기간이 지난 코드예요';
+
+  @override
+  String get giftCodeExhausted => '수량이 모두 소진된 코드예요';
+
+  @override
+  String get giftCodeUsed => '이미 사용했어요';
+
+  @override
+  String get giftCodeFailed => '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요';
+
+  @override
+  String get reviewAction => '게임 평가하기';
 }

@@ -9,7 +9,7 @@ void main() {
       PvpProfile(id: 'me', nickname: '나', trophies: trophies);
 
   test('리더보드: 나 포함 · 트로피 내림차순 · 랭크 연속', () async {
-    final board = await backend.leaderboard(me: me(500), limit: 50);
+    final board = (await backend.leaderboard(me: me(500), limit: 50)).entries;
     expect(board.any((e) => e.isMe), isTrue);
     for (var i = 1; i < board.length; i++) {
       expect(
@@ -21,8 +21,8 @@ void main() {
   });
 
   test('높은 트로피일수록 상위(작은) 랭크', () async {
-    final low = await backend.leaderboard(me: me(0), limit: 50);
-    final high = await backend.leaderboard(me: me(3000), limit: 50);
+    final low = (await backend.leaderboard(me: me(0), limit: 50)).entries;
+    final high = (await backend.leaderboard(me: me(3000), limit: 50)).entries;
     final lowRank = low.firstWhere((e) => e.isMe).rank;
     final highRank = high.firstWhere((e) => e.isMe).rank;
     expect(highRank, lessThan(lowRank));
@@ -30,7 +30,9 @@ void main() {
 
   test('상위권 밖이어도 나는 결과에 포함(말미 덧붙임)', () async {
     final board = await backend.leaderboard(me: me(0), limit: 5);
-    expect(board.any((e) => e.isMe), isTrue);
+    expect(board.entries.any((e) => e.isMe), isTrue);
+    // 로컬 사다리는 서버 실데이터가 아니다 — 화면이 '온라인'이라 쓰면 안 된다.
+    expect(board.live, isFalse);
   });
 
   test('로컬 백엔드: isRemote=false · 등록 no-op · 상대 없음', () async {

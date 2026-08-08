@@ -76,6 +76,11 @@ class BattleConfig {
     this.seasonRewardMult = 3.0,
     this.locationAffinityBonus = 0.2,
     this.manualTurnSeconds = 10,
+    this.ticketMax = 10,
+    this.ticketRegenSeconds = 1800,
+    this.ticketAdGrant = 3,
+    this.ticketAdDailyLimit = 30,
+    this.ticketRefillJelly = 10,
   });
 
   /// 승리 기본 골드.
@@ -110,6 +115,34 @@ class BattleConfig {
   /// 수동 전투에서 한 수를 고를 제한시간(초). 0 이하면 무제한.
   /// 시간이 다하면 **공격**이 자동 선택된다(기력 없이도 항상 가능한 수).
   final int manualTurnSeconds;
+
+  // ── 결투 티켓(2026-08) ──
+  // 결투가 무제한이면 트로피 랭킹이 "많이 돌린 사람" 순이 된다(실측: 스테이지
+  // 86 유저가 스테이지 413 유저의 3.5배 트로피). 티켓이 하루 판수를 묶어
+  // 랭킹을 **전력 순위**로 되돌린다.
+
+  /// 티켓 상한(자연 충전이 채우는 최대치). 광고·젤리 지급은 이 위로 넘칠 수 있다.
+  final int ticketMax;
+
+  /// 티켓 1개가 자연 충전되는 데 걸리는 시간(초).
+  final int ticketRegenSeconds;
+
+  /// 보상형 광고 1회로 받는 티켓 수.
+  final int ticketAdGrant;
+
+  /// 티켓 광고의 **하루 시청 상한**(UTC 날짜 기준 — 앱과 서버가 같은 날짜를
+  /// 세야 하고, 로컬 기준이면 타임존을 바꿔 상한을 리셋할 수 있다).
+  ///
+  /// ⚠️ 광고제거·패스 구매자에게도 **똑같이** 적용된다. 광고제거는 광고를
+  /// 스킵하고 즉시 지급하므로(시간 절약), 상한까지 없애면 결제로 판수를 사는
+  /// 것이 되어 트로피 랭킹이 다시 무너진다.
+  final int ticketAdDailyLimit;
+
+  /// 티켓을 [ticketMax] 로 즉시 채우는 젤리 비용.
+  final int ticketRefillJelly;
+
+  /// 자연 충전 1회 간격.
+  Duration get ticketRegen => Duration(seconds: ticketRegenSeconds);
 
   static const _defaultTiers = [
     ScoutTier(id: 'easy', powerMult: 0.82, rewardMult: 0.7),
@@ -184,6 +217,7 @@ class BattleConfig {
     final scout = json['scout'] as Map<String, dynamic>?;
     final tiers = scout?['tiers'] as List?;
     final season = json['season'] as Map<String, dynamic>?;
+    final tickets = json['tickets'] as Map<String, dynamic>?;
     return BattleConfig(
       winGoldBase: (json['winGoldBase'] as num?)?.toInt() ?? 4000,
       winGoldPerTrophy: (json['winGoldPerTrophy'] as num?)?.toInt() ?? 30,
@@ -208,8 +242,104 @@ class BattleConfig {
       locationAffinityBonus:
           (json['locationAffinityBonus'] as num?)?.toDouble() ?? 0.2,
       manualTurnSeconds: (json['manualTurnSeconds'] as num?)?.toInt() ?? 10,
+      ticketMax: (tickets?['max'] as num?)?.toInt() ?? 10,
+      ticketRegenSeconds: (tickets?['regenSeconds'] as num?)?.toInt() ?? 1800,
+      ticketAdGrant: (tickets?['adGrant'] as num?)?.toInt() ?? 3,
+      ticketAdDailyLimit: (tickets?['adDailyLimit'] as num?)?.toInt() ?? 30,
+      ticketRefillJelly: (tickets?['refillJelly'] as num?)?.toInt() ?? 10,
     );
   }
+}
+
+/// 티켓 잔량과 **다음 충전 기준시각**. 세이브에 이 둘만 저장하고, 화면에
+/// 보이는 수는 언제나 [regenTickets] 로 파생한다 — 앱과 서버가 같은 함수로
+/// 같은 값을 얻으므로 "화면엔 있는데 서버가 없다고 한다"가 생기지 않는다.
+typedef TicketState = ({int tickets, DateTime at});
+
+/// [at] 이후 흐른 시간만큼 티켓을 채워 넣는다(순수 함수).
+///
+/// - 상한([BattleConfig.ticketMax])까지만 채운다. 이미 상한 이상이면 그대로 두고
+///   기준시각만 [now] 로 당긴다 — 가득 찬 동안 충전분이 쌓이지 않게.
+/// - 남은 자투리 시간은 [at] 에 보존한다(`at + 채운개수 × 간격`). 그래야 결투를
+///   한 판 할 때마다 충전 진행도가 0으로 되돌아가지 않는다.
+/// - 기기 시계가 과거로 간 경우([now] < [at])엔 충전 없이 기준시각만 [now] 로
+///   맞춘다. 그대로 두면 시계를 되돌린 기기가 영원히 충전되지 않는다.
+TicketState regenTickets({
+  required int tickets,
+  required DateTime? at,
+  required DateTime now,
+  required BattleConfig cfg,
+}) {
+  final t = now.toUtc();
+  if (tickets >= cfg.ticketMax || at == null || cfg.ticketRegenSeconds <= 0) {
+    return (tickets: tickets, at: t);
+  }
+  final elapsed = t.difference(at.toUtc());
+  if (elapsed.isNegative) return (tickets: tickets, at: t);
+
+  final interval = cfg.ticketRegen;
+  final gained = elapsed.inSeconds ~/ interval.inSeconds;
+  if (gained <= 0) return (tickets: tickets, at: at.toUtc());
+  final next = tickets + gained;
+  if (next >= cfg.ticketMax) return (tickets: cfg.ticketMax, at: t);
+  return (tickets: next, at: at.toUtc().add(interval * gained));
+}
+
+/// 충전을 반영한 뒤 티켓 1장을 소모한다. 남은 티켓이 없으면 null.
+///
+/// 앱(낙관 반영)과 서버(확정)가 **같은 함수**를 쓴다 — 한쪽만 다르면
+/// "화면에선 깎였는데 서버는 안 깎였다"가 된다.
+TicketState? consumeTicket({
+  required int tickets,
+  required DateTime? at,
+  required DateTime now,
+  required BattleConfig cfg,
+}) {
+  final cur = regenTickets(tickets: tickets, at: at, now: now, cfg: cfg);
+  if (cur.tickets <= 0) return null;
+  // 상한에서 한 장을 쓰는 순간부터 충전이 시작된다 → 기준시각을 now 로.
+  final wasFull = cur.tickets >= cfg.ticketMax;
+  return (tickets: cur.tickets - 1, at: wasFull ? now.toUtc() : cur.at);
+}
+
+/// 충전을 반영한 뒤 티켓 [amount] 장을 지급한다(광고 보상).
+/// 상한을 넘겨 쌓일 수 있다 — 9장에서 광고를 봤다고 +1만 주면 광고가 낭비된다.
+TicketState grantTickets({
+  required int tickets,
+  required DateTime? at,
+  required DateTime now,
+  required BattleConfig cfg,
+  required int amount,
+}) {
+  final cur = regenTickets(tickets: tickets, at: at, now: now, cfg: cfg);
+  final next = cur.tickets + (amount < 0 ? 0 : amount);
+  return (tickets: next, at: next >= cfg.ticketMax ? now.toUtc() : cur.at);
+}
+
+/// 티켓을 상한까지 즉시 채운다(젤리). 이미 상한 이상이면 그대로.
+TicketState refillTickets({
+  required int tickets,
+  required DateTime? at,
+  required DateTime now,
+  required BattleConfig cfg,
+}) {
+  final cur = regenTickets(tickets: tickets, at: at, now: now, cfg: cfg);
+  if (cur.tickets >= cfg.ticketMax) return cur;
+  return (tickets: cfg.ticketMax, at: now.toUtc());
+}
+
+/// 다음 티켓 1개까지 남은 시간. 상한 이상이면 null(더 채울 것이 없다).
+Duration? ticketRegenRemaining({
+  required int tickets,
+  required DateTime? at,
+  required DateTime now,
+  required BattleConfig cfg,
+}) {
+  if (tickets >= cfg.ticketMax || at == null || cfg.ticketRegenSeconds <= 0) {
+    return null;
+  }
+  final left = at.toUtc().add(cfg.ticketRegen).difference(now.toUtc());
+  return left.isNegative ? Duration.zero : left;
 }
 
 /// PvP 승패 → 보상(골드·트로피). 수치는 `battle.json`(§6).

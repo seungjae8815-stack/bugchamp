@@ -21,5 +21,13 @@
     { "id": "platinum", "minTrophy": 700, "reward": { "gold": 40000, "jelly": 20 } },
     { "id": "diamond", "minTrophy": 1500, "reward": { "gold": 100000, "jelly": 40 } }
   ],
-  "season": { "days": 14, "resetFactor": 0.5, "rewardMult": 3 }
+  "season": { "days": 14, "resetFactor": 0.5, "rewardMult": 3 },
+  "_ticketsComment": "결투 티켓 = 하루 판수 제한(랭킹을 '전력'으로 되돌린다). adDailyLimit 은 광고제거 구매자에게도 동일 적용.",
+  "tickets": {
+    "max": 10,
+    "regenSeconds": 1800,
+    "adGrant": 3,
+    "adDailyLimit": 30,
+    "refillJelly": 10
+  }
 }

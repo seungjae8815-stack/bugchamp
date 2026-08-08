@@ -10,6 +10,7 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/toast.dart';
 
 /// 전체 채팅 화면.
 ///
@@ -120,9 +121,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _snack(String msg) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+    showCenterToast(context, msg);
   }
 
   /// 메시지 신고 — 확인 후 서버에 기록.

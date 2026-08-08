@@ -9,6 +9,7 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/format.dart';
+import '../../ui/toast.dart';
 
 /// 상점 탭 — 인앱결제 카탈로그(iap.json).
 ///
@@ -104,9 +105,7 @@ class _StoreSection extends ConsumerWidget {
             onPressed: () async {
               await ref.read(iapServiceProvider).restore();
               if (!ctx.mounted) return;
-              ScaffoldMessenger.of(ctx)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(SnackBar(content: Text(l.storeRestoreDone)));
+              showCenterToast(ctx, l.storeRestoreDone);
             },
             icon: const Icon(Icons.restore_rounded, size: 18),
             label: Text(l.storeRestore),
@@ -309,8 +308,6 @@ class _ProductCard extends ConsumerWidget {
       PurchaseOutcome.notInStore => l.storeNotRegistered,
       PurchaseOutcome.failed => l.storeFailed,
     };
-    ScaffoldMessenger.of(ctx)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(msg)));
+    showCenterToast(ctx, msg);
   }
 }

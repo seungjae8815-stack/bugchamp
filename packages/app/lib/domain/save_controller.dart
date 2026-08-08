@@ -30,6 +30,23 @@ class SeasonReport {
   final int toTrophies;
 }
 
+/// 결투 티켓 충전 시도 결과(UI 안내 문구 분기용).
+enum TicketCharge {
+  ok,
+
+  /// 오늘 광고 시청 상한에 걸렸다(광고제거 구매자도 동일).
+  adLimit,
+
+  /// 젤리가 모자란다.
+  notEnoughJelly,
+
+  /// 이미 가득 차 있다.
+  alreadyFull,
+
+  /// 서버가 거부했거나 통신 실패.
+  failed,
+}
+
 /// 세이브 상태를 보유·변경하는 Riverpod 컨트롤러.
 /// 변경 액션은 상태를 갱신하고 즉시 저장소에 반영(자동 저장)한다.
 class SaveController extends AsyncNotifier<SaveGame> {
@@ -637,6 +654,213 @@ class SaveController extends AsyncNotifier<SaveGame> {
         injured: injured,
       ),
     );
+  }
+
+  /// 공지를 [maxNoticeId] 까지 읽은 것으로 기록(느낌표 해제).
+  /// 뒤로 가지 않는다 — 이미 더 큰 값을 읽었으면 그대로 둔다.
+  Future<void> markNoticesRead(int maxNoticeId) async {
+    final s = state.requireValue;
+    if (s.lastReadNoticeId >= maxNoticeId) return;
+    await _commit(s.copyWith(lastReadNoticeId: maxNoticeId));
+  }
+
+  /// 스토어 리뷰를 요청했다고 기록(계정당 1회만 띄우기 위함).
+  ///
+  /// ⚠️ 리뷰를 **썼는지**가 아니라 **요청창을 띄웠는지**다. 스토어 API 는 작성
+  /// 여부·별점을 알려주지 않으므로 리뷰에 보상을 걸 수 없다(정책상 금지이기도).
+  Future<void> markReviewAsked() async {
+    final s = state.requireValue;
+    if (s.reviewAsked) return;
+    await _commit(s.copyWith(reviewAsked: true));
+  }
+
+  // ── 결투 티켓 ──
+  //
+  // 티켓은 **서버 소유**다(GameActions._serverOwnedKeys). 로컬 변경은 화면이
+  // 즉시 반응하게 하는 낙관 반영일 뿐이고, 진짜 잔량은 서버가 확정한다
+  // (전투는 /battle·/battle/manual/start, 충전은 /pvp/ticket/*).
+  // 계산은 core_run 의 순수 함수를 서버와 공유하므로 값이 갈리지 않는다.
+
+  BattleConfig get _battleCfg =>
+      ref.read(gameDataProvider).requireValue.battleConfig ??
+      const BattleConfig();
+
+  /// 자연 충전을 반영한 **지금 쓸 수 있는** 티켓 수.
+  int get ticketsNow {
+    final s = state.requireValue;
+    return regenTickets(
+      tickets: s.pvpTickets,
+      at: s.ticketsAt,
+      now: ref.read(clockProvider).now().toUtc(),
+      cfg: _battleCfg,
+    ).tickets;
+  }
+
+  /// 다음 티켓 1장까지 남은 시간(가득이면 null).
+  Duration? get ticketRemaining {
+    final s = state.requireValue;
+    final now = ref.read(clockProvider).now().toUtc();
+    final cfg = _battleCfg;
+    final cur = regenTickets(
+      tickets: s.pvpTickets,
+      at: s.ticketsAt,
+      now: now,
+      cfg: cfg,
+    );
+    return ticketRegenRemaining(
+      tickets: cur.tickets,
+      at: cur.at,
+      now: now,
+      cfg: cfg,
+    );
+  }
+
+  /// 결투 1판분 티켓을 로컬에서 먼저 깎는다(낙관 반영). 없으면 false.
+  ///
+  /// 서버가 붙어 있으면 전투 요청에서 서버도 같은 계산으로 깎고, 전투 후
+  /// `adoptServerSave` 가 서버 값으로 덮는다. 로컬만 깎고 서버 요청이 실패한
+  /// 경우를 대비해 [restorePvpTicket] 로 되돌릴 수 있게 해 둔다.
+  Future<bool> consumePvpTicket() async {
+    final s = state.requireValue;
+    final next = consumeTicket(
+      tickets: s.pvpTickets,
+      at: s.ticketsAt,
+      now: ref.read(clockProvider).now().toUtc(),
+      cfg: _battleCfg,
+    );
+    if (next == null) return false;
+    await _commit(s.copyWith(pvpTickets: next.tickets, ticketsAt: next.at));
+    return true;
+  }
+
+  /// 낙관 차감한 티켓을 되돌린다(전투 시작 실패 시).
+  /// 서버 값이 진실이므로 여기서 늘려도 다음 전투 때 서버가 다시 확정한다.
+  Future<void> restorePvpTicket() async {
+    final s = state.requireValue;
+    await _commit(s.copyWith(pvpTickets: s.pvpTickets + 1));
+  }
+
+  /// 서버가 돌려준 티켓 상태를 로컬에 반영(세이브 왕복 없이 몇 바이트만).
+  Future<void> adoptTicketState(Map<String, dynamic> data) async {
+    final s = state.requireValue;
+    final tickets = (data['tickets'] as num?)?.toInt();
+    if (tickets == null) return;
+    final at = data['ticketsAt'] == null
+        ? s.ticketsAt
+        : DateTime.parse(data['ticketsAt'] as String).toUtc();
+    final adUsed = (data['adUsed'] as num?)?.toInt();
+    final today = dailyDateKey(ref.read(clockProvider).now().toUtc());
+    await _commit(
+      s.copyWith(
+        pvpTickets: tickets,
+        ticketsAt: at,
+        adUseCounts: adUsed == null
+            ? null
+            : {
+                ...(s.adUseDate == today ? s.adUseCounts : const {}),
+                kAdFeaturePvpTicket: adUsed,
+              },
+        adUseDate: adUsed == null ? null : today,
+      ),
+    );
+  }
+
+  /// 광고 보상 티켓 지급. **광고 시청은 호출부 책임**(`watchAdForReward`).
+  ///
+  /// 하루 상한은 서버가 센다 — 앱만 세면 세이브를 지우거나 시계를 돌려
+  /// 무제한으로 받을 수 있고, 그러면 판수 제한이 무의미해진다.
+  Future<TicketCharge> grantAdTickets() async {
+    final cfg = _battleCfg;
+    final server = ref.read(gameServerProvider);
+    if (server.available) {
+      final res = await server.pvpTicketAd();
+      if (res.isOk) {
+        await adoptTicketState(res.data!);
+        return TicketCharge.ok;
+      }
+      return res.error == 'ad_limit'
+          ? TicketCharge.adLimit
+          : TicketCharge.failed;
+    }
+
+    // 서버 미연결(개발·오프라인) — 로컬로 처리한다.
+    final now = ref.read(clockProvider).now().toUtc();
+    final today = dailyDateKey(now);
+    final s = state.requireValue;
+    final used = s.adUseCount(kAdFeaturePvpTicket, today);
+    if (cfg.ticketAdDailyLimit > 0 && used >= cfg.ticketAdDailyLimit) {
+      return TicketCharge.adLimit;
+    }
+    final next = grantTickets(
+      tickets: s.pvpTickets,
+      at: s.ticketsAt,
+      now: now,
+      cfg: cfg,
+      amount: cfg.ticketAdGrant,
+    );
+    await _commit(
+      s.copyWith(
+        pvpTickets: next.tickets,
+        ticketsAt: next.at,
+        adUseCounts: {
+          ...(s.adUseDate == today ? s.adUseCounts : const {}),
+          kAdFeaturePvpTicket: used + 1,
+        },
+        adUseDate: today,
+      ),
+    );
+    return TicketCharge.ok;
+  }
+
+  /// 젤리로 티켓을 상한까지 즉시 충전.
+  Future<TicketCharge> refillTicketsWithJelly() async {
+    final cfg = _battleCfg;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    if (ticketsNow >= cfg.ticketMax) return TicketCharge.alreadyFull;
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cfg.ticketRefillJelly) return TicketCharge.notEnoughJelly;
+
+    final server = ref.read(gameServerProvider);
+    if (server.available) {
+      // 서버가 먼저 값을 치르고 채운다 — 실패하면 로컬 젤리도 건드리지 않는다.
+      final res = await server.pvpTicketRefill();
+      if (!res.isOk) {
+        return switch (res.error) {
+          'insufficient' => TicketCharge.notEnoughJelly,
+          'already_full' => TicketCharge.alreadyFull,
+          _ => TicketCharge.failed,
+        };
+      }
+      // 젤리는 기기 권위 필드라 **서버가 준 잔액을 받지 않는다**(서버 값이
+      // 낡아 최근 획득분이 사라질 수 있다). 같은 비용을 로컬에서 뺀다.
+      final s2 = state.requireValue;
+      await _commit(
+        s2.copyWith(
+          materials: Map<MaterialKind, int>.from(s2.materials)
+            ..[MaterialKind.jelly] =
+                s2.materialCount(MaterialKind.jelly) - cfg.ticketRefillJelly,
+        ),
+      );
+      await adoptTicketState(res.data!);
+      return TicketCharge.ok;
+    }
+
+    final next = refillTickets(
+      tickets: s.pvpTickets,
+      at: s.ticketsAt,
+      now: now,
+      cfg: cfg,
+    );
+    await _commit(
+      s.copyWith(
+        pvpTickets: next.tickets,
+        ticketsAt: next.at,
+        materials: Map<MaterialKind, int>.from(s.materials)
+          ..[MaterialKind.jelly] = have - cfg.ticketRefillJelly,
+      ),
+    );
+    return TicketCharge.ok;
   }
 
   /// 도달했지만 미수령한 리그 승급 보상을 일괄 수령. 없으면 null,

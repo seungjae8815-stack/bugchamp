@@ -1697,4 +1697,115 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifyQuietHours => 'Quiet hours (10 PM - 8 AM)';
+
+  @override
+  String get pvpTicketTitle => 'Duel tickets';
+
+  @override
+  String pvpTicketCount(int tickets, int max) {
+    return '$tickets/$max';
+  }
+
+  @override
+  String pvpTicketNextIn(String time) {
+    return 'Next in $time';
+  }
+
+  @override
+  String get pvpTicketFullLabel => 'Full';
+
+  @override
+  String get pvpTicketNone =>
+      'You need a duel ticket to fight. Charge one below.';
+
+  @override
+  String pvpTicketAdBtn(int amount) {
+    return 'Watch ad +$amount';
+  }
+
+  @override
+  String pvpTicketAdLeft(int used, int limit) {
+    return '$used/$limit today';
+  }
+
+  @override
+  String pvpTicketJellyBtn(int cost) {
+    return 'Fill up 💎$cost';
+  }
+
+  @override
+  String pvpTicketCharged(int amount) {
+    return 'Tickets +$amount';
+  }
+
+  @override
+  String get pvpTicketFilled => 'Tickets filled up';
+
+  @override
+  String get pvpTicketAlreadyFull => 'Tickets are already full';
+
+  @override
+  String get pvpTicketChargeFailed =>
+      'Could not charge tickets. Try again in a moment.';
+
+  @override
+  String get pvpTicketWhy =>
+      'Tickets keep the trophy ranking about strength, not how many matches you grind.';
+
+  @override
+  String adDailyLimit(int limit) {
+    return 'You\'ve watched all of today\'s ads ($limit/day)';
+  }
+
+  @override
+  String get noticeTitle => 'Notices';
+
+  @override
+  String get noticeEmpty => 'No notices right now.';
+
+  @override
+  String get noticeFailed => 'Couldn\'t load notices. Check your connection.';
+
+  @override
+  String get mailNoticeSection => 'From the team';
+
+  @override
+  String get mailClaim => 'Claim';
+
+  @override
+  String get giftCodeTitle => 'Gift code';
+
+  @override
+  String get giftCodeHint => 'Enter a code from an event or announcement.';
+
+  @override
+  String get giftCodeField => 'CODE';
+
+  @override
+  String get giftCodeSubmit => 'Redeem';
+
+  @override
+  String get giftCodeChecking => 'Checking…';
+
+  @override
+  String get giftCodeOk => 'Rewards claimed!';
+
+  @override
+  String get giftCodeBad => 'That code doesn\'t exist';
+
+  @override
+  String get giftCodeExpired => 'That code has expired';
+
+  @override
+  String get giftCodeExhausted => 'That code has run out';
+
+  @override
+  String get giftCodeUsed => 'You\'ve already used this';
+
+  @override
+  String get giftCodeFailed =>
+      'Couldn\'t reach the server. Try again in a moment.';
+
+  @override
+  String get reviewAction => 'Rate the game';
 }

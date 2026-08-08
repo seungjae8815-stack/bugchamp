@@ -15,6 +15,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import 'arena_widgets.dart';
 import 'manual_driver.dart';
+import '../../ui/toast.dart';
 
 /// 표시용 최대 기력(엔진 상수와 일치 — core_battle `_maxEnergy`).
 const _maxEnergyDisplay = 3;
@@ -159,9 +160,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   /// 전투를 더 진행할 수 없을 때 — 알리고 빠져나간다.
   void _abort() {
     final l = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+    showCenterToast(context, l.battleServerFailed);
     Navigator.pop(context);
   }
 

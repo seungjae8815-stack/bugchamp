@@ -39,6 +39,9 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../roadmap/roadmap_screen.dart';
+import '../notice/notice_screen.dart';
+import '../../domain/review_service.dart';
+import '../../domain/notice_service.dart';
 
 const _uuid = Uuid();
 const _honey = Color(0xFFEBA52F);
@@ -1569,6 +1572,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // 공지 — 안 읽은 글이 있으면 빨간 점.
+                  _iconBtn(
+                    Icons.campaign_rounded,
+                    () {
+                      // 열 때마다 최신 공지를 다시 받는다(플레이 중 올라온 글 반영).
+                      ref.invalidate(noticesProvider);
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const NoticeScreen(),
+                        ),
+                      );
+                    },
+                    badge: ref.watch(hasUnreadNoticeProvider),
+                  ),
                   _iconBtn(
                     Icons.leaderboard_rounded,
                     () => Navigator.of(context).push(
@@ -1580,7 +1597,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   _iconBtn(
                     Icons.mail_rounded,
                     () => _showMail(l),
-                    badge: _hasClaimableDaily(save),
+                    // 운영 우편(점검 보상 등)도 편지함 알림에 포함한다.
+                    badge:
+                        _hasClaimableDaily(save) ||
+                        (ref.watch(serverMailProvider).value?.isNotEmpty ??
+                            false),
                   ),
                   _iconBtn(Icons.settings_rounded, () => _showSettings(l)),
                 ],
@@ -2052,6 +2073,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       await _showChapterClearDialog(ch);
       if (!mounted) return;
     }
+    // 챕터를 깬 직후 = 기분 좋은 순간. 리뷰는 **여기서 계정당 한 번만** 묻는다
+    // (보상 없음 — 평점에 보상을 걸 수 없다. review_service.dart 주석 참조).
+    if (cleared.isNotEmpty) await requestStoreReview(ref);
+    if (!mounted) return;
     // 게스트면 진척 지점에서 데이터 유실을 상기시킨다(하루 1회 상한은 내부에서).
     await maybeWarnGuest(context, ref, stage);
   }
@@ -2451,6 +2476,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 편지함 = 일일보상(점심/저녁) + 깜짝선물. 현재 로컬 시각·수령 이력으로 상태 표시.
   void _showMail(AppLocalizations l) {
+    // 편지함을 열 때 운영 우편을 다시 받는다 — 플레이 중 발송된 보상이
+    // 앱을 껐다 켜야 보이면 "안 왔다"는 문의가 된다.
+    ref.invalidate(serverMailProvider);
     showModalBottomSheet<void>(
       context: context,
       // 일일보상 + 선물이 쌓이면 기본 시트 높이를 넘는다 — 스크롤 없이는
@@ -2520,6 +2548,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                   const SizedBox(height: 10),
                   ..._giftSection(ctx, r, l, save),
+                  ..._serverMailSection(ctx, r, l),
                 ],
               ),
             );
@@ -2528,6 +2557,141 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ),
     );
   }
+
+  /// 운영 우편(점검 보상·이벤트 지급). 서버가 보낸 것만 뜨고, 없으면 통째로 숨긴다.
+  ///
+  /// 수령은 **서버가 확정**한다 — 앱이 재화를 직접 더하면 다음 업로드에서
+  /// 골드 급증 상한에 걸려 정당한 보상이 잘린다.
+  List<Widget> _serverMailSection(
+    BuildContext ctx,
+    WidgetRef r,
+    AppLocalizations l,
+  ) {
+    final mails = r.watch(serverMailProvider).value ?? const <ServerMail>[];
+    if (mails.isEmpty) return const [];
+    return [
+      const SizedBox(height: 14),
+      Text(
+        l.mailNoticeSection,
+        style: const TextStyle(
+          color: Color(0xFFEBA52F),
+          fontWeight: FontWeight.w700,
+          fontSize: 11.5,
+        ),
+      ),
+      const SizedBox(height: 10),
+      for (final m in mails) _serverMailRow(ctx, r, l, m),
+    ];
+  }
+
+  Widget _serverMailRow(
+    BuildContext ctx,
+    WidgetRef r,
+    AppLocalizations l,
+    ServerMail m,
+  ) {
+    final parts = <String>[
+      if (m.gold > 0) '💰${formatCompact(m.gold)}',
+      if (m.jelly > 0) '💎${m.jelly}',
+      if (m.chitin + m.mineral + m.sap > 0)
+        '🧪${formatCompact(m.chitin + m.mineral + m.sap)}',
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0x2255AACC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xAA5FA8D3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.campaign_rounded,
+              color: Color(0xFFBFE3F5),
+              size: 24,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    m.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _onScene,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (m.body.isNotEmpty)
+                    Text(
+                      m.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xB3FFFFFF),
+                        fontSize: 11,
+                      ),
+                    ),
+                  if (parts.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        parts.join('  '),
+                        style: const TextStyle(
+                          color: Color(0xFFFFE9A8),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: () async {
+                final res = await r.read(rewardClaimerProvider).claimMail(m.id);
+                if (!ctx.mounted) return;
+                if (res == RedeemResult.ok) {
+                  AudioService.instance.sfxReward();
+                  await showRewardPopup(
+                    ctx,
+                    title: m.title,
+                    subtitle: l.rewardGained,
+                    icon: Icons.campaign_rounded,
+                    gold: m.gold,
+                    materials: m.materials,
+                  );
+                } else {
+                  showCenterToast(ctx, _redeemMessage(l, res));
+                }
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF3E7D4F),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+              ),
+              child: Text(l.mailClaim),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 수령·코드 실패 사유 → 안내 문구. 실패를 뭉뚱그리지 않는다.
+  String _redeemMessage(AppLocalizations l, RedeemResult r) => switch (r) {
+    RedeemResult.ok => l.giftCodeOk,
+    RedeemResult.badCode => l.giftCodeBad,
+    RedeemResult.expired => l.giftCodeExpired,
+    RedeemResult.exhausted => l.giftCodeExhausted,
+    RedeemResult.alreadyUsed => l.giftCodeUsed,
+    RedeemResult.failed => l.giftCodeFailed,
+  };
 
   List<Widget> _giftSection(
     BuildContext ctx,
@@ -2914,6 +3078,92 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     ],
   );
 
+  /// 선물코드 입력. 지급은 서버가 확정하고 앱은 결과 세이브를 채택한다.
+  void _showGiftCode(AppLocalizations l) {
+    final ctrl = TextEditingController();
+    var busy = false;
+    showGameDialog<void>(
+      context,
+      title: l.giftCodeTitle,
+      icon: Icons.confirmation_number_rounded,
+      content: StatefulBuilder(
+        builder: (ctx, setLocal) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l.giftCodeHint,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xB3FFFFFF),
+                fontSize: 12.5,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 32,
+              enabled: !busy,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+              ),
+              decoration: InputDecoration(
+                counterText: '',
+                hintText: l.giftCodeField,
+                hintStyle: const TextStyle(color: Color(0x66FFFFFF)),
+                filled: true,
+                fillColor: const Color(0x22000000),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0x33FFFFFF)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final code = ctrl.text.trim();
+                        if (code.isEmpty) return;
+                        setLocal(() => busy = true);
+                        final res = await ref
+                            .read(rewardClaimerProvider)
+                            .redeemCode(code);
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        if (res == RedeemResult.ok) {
+                          AudioService.instance.sfxReward();
+                        }
+                        if (mounted) {
+                          showCenterToast(context, _redeemMessage(l, res));
+                        }
+                      },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF3E7D4F),
+                ),
+                child: Text(busy ? l.giftCodeChecking : l.giftCodeSubmit),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context),
+          primary: false,
+        ),
+      ],
+    );
+  }
+
   void _showSettings(AppLocalizations l) {
     // 실기에서 어떤 빌드로 켰는지(온라인 Supabase / 로컬) 바로 확인.
     final online = ref.read(pvpBackendProvider).isRemote;
@@ -2988,6 +3238,44 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF7FD3F5),
                 side: const BorderSide(color: Color(0x557FD3F5)),
+              ),
+            ),
+          ),
+          // ── 선물코드 ──
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _showGiftCode(l);
+              },
+              icon: const Icon(Icons.confirmation_number_rounded, size: 18),
+              label: Text(l.giftCodeTitle),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFEBC24A),
+                side: const BorderSide(color: Color(0x55EBC24A)),
+              ),
+            ),
+          ),
+          // ── 리뷰 남기기 ──
+          //
+          // **보상을 걸지 않는다.** 스토어 API 는 리뷰 작성 여부·별점을 앱에
+          // 알려주지 않아 검증이 불가능하고, 플레이·앱스토어 정책도 평점을
+          // 대가로 보상 주는 것을 금지한다(적발 시 앱 내림 사유).
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                Navigator.pop(context);
+                await requestStoreReview(ref, force: true);
+              },
+              icon: const Icon(Icons.star_rounded, size: 18),
+              label: Text(l.reviewAction),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFFFD977),
+                side: const BorderSide(color: Color(0x55FFD977)),
               ),
             ),
           ),
@@ -4123,15 +4411,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 materials: const {MaterialKind.jelly: 1},
               );
               if (!mounted) return;
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      l.buffActivatedSnack(buffLabel(l, k), minutes),
-                    ),
-                  ),
-                );
+              showCenterToast(
+                context,
+                l.buffActivatedSnack(buffLabel(l, k), minutes),
+              );
             },
             icon: const Icon(Icons.play_arrow_rounded, size: 18),
             label: Text(l.buffWatchAd),

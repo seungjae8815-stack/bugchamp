@@ -334,6 +334,101 @@ void main() {
       final r = run(s, ['mine-1']);
       expect(r.save!.pvpTrophies, greaterThanOrEqualTo(0));
     });
+
+    test('전투 1판마다 티켓 1장이 깎인다', () {
+      final r = run(saveWith(['mine-1']), ['mine-1']);
+      expect(r.save!.pvpTickets, kDefaultPvpTickets - 1);
+      expect(r.extra['tickets'], kDefaultPvpTickets - 1);
+    });
+
+    test('티켓이 없으면 전투 자체가 거부된다 (판수 제한의 핵심)', () {
+      final s = saveWith(['mine-1']).copyWith(pvpTickets: 0, ticketsAt: t0);
+      final r = run(s, ['mine-1']);
+      expect(r.isOk, isFalse);
+      expect(r.error, 'no_tickets');
+    });
+
+    test('편성이 잘못되면 티켓을 쓰지 않는다', () {
+      final s = saveWith(['mine-1']);
+      final r = run(s, ['not-mine']);
+      expect(r.isOk, isFalse);
+      expect(s.pvpTickets, kDefaultPvpTickets); // 원본 그대로
+    });
+  });
+
+  group('결투 티켓 충전', () {
+    const cfg = BattleConfig(); // max10 / 30분 / 광고+3(30회) / 젤리10
+    final spent = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(pvpTickets: 2, ticketsAt: t0);
+
+    test('세이브를 편집해 티켓을 채워도 업로드 때 서버 값으로 덮인다', () {
+      final stored = spent;
+      final forged = stored.toJson()..['pvpTickets'] = 999;
+      final r = actions.mergeSave(stored, forged);
+      expect(r.isOk, isTrue);
+      expect(r.save!.pvpTickets, 2);
+    });
+
+    test('광고 1회 = +3장, 시청 횟수가 기록된다', () {
+      final r = actions.grantAdTicket(spent);
+      expect(r.isOk, isTrue);
+      expect(r.save!.pvpTickets, 2 + cfg.ticketAdGrant);
+      expect(r.save!.adUseCount(kAdFeaturePvpTicket, dailyDateKey(t0)), 1);
+      expect(r.extra['adUsed'], 1);
+    });
+
+    test('하루 상한을 넘기면 거부 — 광고제거 구매자도 동일', () {
+      final maxed = spent.copyWith(
+        adUseCounts: {kAdFeaturePvpTicket: cfg.ticketAdDailyLimit},
+        adUseDate: dailyDateKey(t0),
+        adsRemoved: true, // 광고제거여도 상한은 그대로
+      );
+      expect(actions.grantAdTicket(maxed).error, 'ad_limit');
+    });
+
+    test('날짜가 바뀌면 시청 횟수가 리셋된다', () {
+      final yesterday = spent.copyWith(
+        adUseCounts: {kAdFeaturePvpTicket: cfg.ticketAdDailyLimit},
+        adUseDate: dailyDateKey(t0.subtract(const Duration(days: 1))),
+      );
+      final r = actions.grantAdTicket(yesterday);
+      expect(r.isOk, isTrue);
+      expect(r.extra['adUsed'], 1);
+    });
+
+    test('젤리 충전은 값을 치르고 만땅이 된다', () {
+      final rich = spent.copyWith(materials: {MaterialKind.jelly: 30});
+      final r = actions.refillPvpTickets(rich);
+      expect(r.isOk, isTrue);
+      expect(r.save!.pvpTickets, cfg.ticketMax);
+      expect(
+        r.save!.materialCount(MaterialKind.jelly),
+        30 - cfg.ticketRefillJelly,
+      );
+    });
+
+    test('젤리가 모자라면 충전되지 않는다', () {
+      final poor = spent.copyWith(materials: {MaterialKind.jelly: 1});
+      final r = actions.refillPvpTickets(poor);
+      expect(r.error, 'insufficient');
+      expect(poor.pvpTickets, 2);
+    });
+
+    test('가득 찬 상태에서는 젤리를 받지 않는다', () {
+      final full = spent.copyWith(
+        pvpTickets: cfg.ticketMax,
+        materials: {MaterialKind.jelly: 30},
+      );
+      expect(actions.refillPvpTickets(full).error, 'already_full');
+    });
+
+    test('시간이 지나면 서버가 자연 충전분을 인정한다', () {
+      final old = spent.copyWith(
+        ticketsAt: t0.subtract(const Duration(hours: 2)),
+      );
+      expect(actions.ticketsNow(old).tickets, 2 + 4); // 2시간 = 4장
+    });
   });
 
   group('방치 수입 정산(sync)', () {

@@ -2,7 +2,7 @@
 
 > 이 문서는 "지금까지 뭘 만들었고, 다음에 뭘 하면 되는지"를 담은 **작업 재개용 스냅샷**이다.
 > 게임 규칙의 원본(헌법)은 `CLAUDE.md` (2026-07-15 현행화 완료 — 전투·신규 시스템 반영). 이 문서는 상세 현황·다음 작업 스냅샷.
-> 마지막 갱신: 2026-07-18 (**Phase 4 Inc.2 — 진짜 비동기 대전**: 방어팀 등록 `registerDefender` + 스카우트 보드가 실 유저 방어팀 `fetchOpponents`. 그 전 2026-07-15: 수동 배틀·부상/회복·PvP 보상 JSON화·스카우트 보드·리그/티어·시즌 리셋·아레나 폴리시. 그 전: PvP 아레나 + 오행 전투엔진).
+> 마지막 갱신: 2026-08-06 (**결투 티켓** — PvP 하루 판수 제한. 그 전 2026-07-18 (**Phase 4 Inc.2 — 진짜 비동기 대전**: 방어팀 등록 `registerDefender` + 스카우트 보드가 실 유저 방어팀 `fetchOpponents`. 그 전 2026-07-15: 수동 배틀·부상/회복·PvP 보상 JSON화·스카우트 보드·리그/티어·시즌 리셋·아레나 폴리시. 그 전: PvP 아레나 + 오행 전투엔진)).
 
 ---
 
@@ -45,6 +45,9 @@
 | **브리딩(§2.5)** | 같은 종 ♂+♀ 성충 → 산란 타이머 → **알** 획득(부모평균±변이·돌연변이5%·포텐셜 60/10/30) → 부화기로 육성. 슬롯제·젤리 | `IndividualBug.breed`, save v15 `breeding`, `startBreeding`/`collectBreeding`, storage `_showBreeding`/짝 피커 |
 | **랭킹/백엔드(Phase 4 Inc.1·2)** | `PvpBackend` 인터페이스(리더보드+**`registerDefender`**+**`fetchOpponents`**+`isRemote`) + `LocalPvpBackend`(폴백) + `SupabasePvpBackend`(실연동) + **랭킹 화면**. Inc.2: 진입 시 편성=방어팀 upsert, 스카우트 보드에 **실 유저 방어팀** 병합(파워비율로 티어 배치, 부족분 합성), **승패 직후 `pushTrophies` 로 프로필·방어팀 트로피 라이브 갱신** | `domain/pvp_backend.dart`·`supabase_pvp_backend.dart`, `features/battle/battle_screen.dart`, `features/leaderboard/leaderboard_screen.dart`, `docs/backend_supabase.md` |
 | **수동 배틀(심리전)** | 매 라운드 공/방/회 직접 선택 → `step(playerAStance:)` → 양측 동시 공개 + 판정배너·기력 표시, 결착 후 보상 | `features/battle/manual_battle_screen.dart` + 공용 `arena_widgets.dart` |
+| **공지·운영우편·선물코드(2026-08-07)** | 셋 다 "서버가 유저에게 보낸다"는 한 시스템. **점검/업데이트 보상 = 전체 발송 우편 한 통**(별도 기능 아님). 지급은 **서버가 확정**하고 앱은 결과 세이브 채택 — 앱이 더하면 골드 급증 상한에 걸려 정당한 보상이 잘린다. 중복 지급은 DB 기본키(`mail_claims`/`code_redemptions`)가 차단. 음수 보상은 무시(운영 실수로 재화를 뺏지 않음) | SQL·운영법 `docs/backend_supabase.md` §12, `state_store.dart`(loadNotices/loadMail/claimMail/loadGiftCode/redeemGiftCode), `GameActions.grantRewardRow`, `/notices`·`/mail`·`/mail/claim`·`/code/redeem`, 앱 `domain/notice_service.dart`·`features/notice/notice_screen.dart`, 편지함 운영우편 섹션, 설정 선물코드 |
+| **스토어 리뷰 유도(2026-08-07)** | 챕터 클리어 직후 1회 + 설정 버튼. **보상 없음** — 스토어 API 가 작성 여부·별점을 알려주지 않아 검증이 불가능하고, 플레이·앱스토어 정책이 평점 대가 보상을 금지한다 | `domain/review_service.dart`, save `reviewAsked` |
+| **결투 티켓(2026-08-06)** | 결투 1판=티켓 1장. 최대 10, **30분당 1장** 자연충전, 광고 +3장(**하루 30회**), 젤리 10=만땅. 무제한 결투 탓에 트로피 랭킹이 "많이 돌린 사람" 순이 되던 문제를 막는다(실측: 스테이지 86 유저가 스테이지 413 유저의 3.5배 트로피). **서버 소유 필드** — 세이브 편집·구버전 앱으로 못 늘린다 | `battle.json → tickets`, `core_run/battle_config.dart`(`regenTickets`/`consumeTicket`/`grantTickets`/`refillTickets`), save `pvpTickets`·`ticketsAt`·`adUseCounts`·`adUseDate`, `GameActions.consumePvpTicket`/`grantAdTicket`/`refillPvpTickets` + `/pvp/ticket/ad`·`/pvp/ticket/refill`, battle_screen `TicketBar` |
 | **부상/회복** | 결투에서 KO된 내 곤충 → 등급별 회복 타이머(부상 중 편성 불가), **젤리 즉시회복**, 채집함 🩹배지·상세카드, 편성 피커 비활성 | `save_game.injured`(v12), `applyBattleResult(koedBugIds:)`/`healInjury`, `pet_config.injuryDuration/Jelly`, `pets.json` |
 | 공용 팝업 테마 | 다크그린+허니, 보상 나열 | `ui/game_dialog.dart` |
 | 시스템 | 뒤로가기(탭→홈/홈→종료), 데이터 초기화, 개발자 모드(**디버그 전용**) | app_shell, play_screen |
@@ -69,9 +72,15 @@ CLAUDE.md는 아직 "치기/집기/던지기"로 적혀 있으나 **실제 구�
 
 ## 4. 세이브 스키마 & 마이그레이션
 
-`kSaveSchemaVersion = 15`. 필드 추가 이력:
+`kSaveSchemaVersion = 18`. 필드 추가 이력:
 - v4 닉네임·버프 / v5 미션 / v6 장착 / v7 일일보상 / v8 선물 / v9 클리어챕터 / v10 부화기 / v11 PvP 트로피 / v12 부상(injured) / v13 승급보상(claimedLeagues) / v14 시즌(seasonStartedAt·seasonPeakTrophies) / **v15 브리딩(breeding·breedingCapacity)**.
 - `seasonStartedAt` 은 마이그레이션에서 미표기 → 로드 시 컨트롤러가 now로 초기화(시간을 만들지 않는 원칙).
+- **v16 결제(adsRemoved·starterBought·ownedSkins·passExpiresAt) / v17 구매원장(redeemedPurchases) / v18 채팅차단(blockedUserIds)**.
+- ⚠️ **버전을 올리지 않는 필드**(호환 필드): `storageCapacity`(채집함 상한, 2026-08-03) 와
+  `pvpTickets`·`ticketsAt`·`adUseCounts`·`adUseDate`(결투 티켓, 2026-08-06). 없으면 기본값으로
+  읽히므로 구/신 버전이 서로의 세이브를 그대로 읽는다. 버전을 올리면 서버가 새 세이브를
+  저장하는 순간 **스토어의 구버전 앱이 "다운그레이드 불가"로 죽는다**. 새 필드가 단순 추가라면
+  이 방식을 쓴다.
 - 로드 시 **자가치유**: 존재하지 않는 곤충을 가리키는 `incubating`·`injured` 항목 자동 정리(슬롯 누수 방지). `injured` 는 **회복 완료된 항목도 프룬**.
 
 ---

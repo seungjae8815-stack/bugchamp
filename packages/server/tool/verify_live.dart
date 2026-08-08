@@ -419,7 +419,12 @@ Future<void> main() async {
     );
 
     // 솔로 필드(골드 정상 증가)는 수용.
-    final ok = base.copyWith(gold: 1000 + 500000);
+    //
+    // 증가폭은 **골드 상식 상한의 바닥(_goldSanityFloor)보다 작아야** 한다.
+    // 부트스트랩 직후라 경과시간이 0이고, 그때 인정되는 최대 증가분이 곧
+    // 그 바닥값이다. 2026-08-03 에 바닥이 200만 → 20만으로 내려가면서
+    // 여기 있던 +50만이 정상인데도 잘려 이 검증이 빨간불이었다.
+    final ok = base.copyWith(gold: 1000 + 100000);
     final up = await post('/save', {'save': ok.toJson()}, sAuth);
     check(
       '솔로 필드 수용 200',
@@ -428,8 +433,17 @@ Future<void> main() async {
     );
     if (up.statusCode == 200) {
       final b = jsonDecode(up.body) as Map<String, dynamic>;
-      check('정상 골드 증가 수용', (b['save']['gold'] as num) == 1000 + 500000);
       check('안 잘림(clamped=false)', b['clamped'] == false);
+      // 안 잘렸으면 응답에 세이브를 싣지 않는다(2026-08-03 이그레스 절약).
+      // 그래서 실제 저장 여부는 /state 로 확인한다.
+      check('평시 응답엔 세이브가 없다', b['save'] == null);
+      final st = await get('/state', sAuth);
+      final saved = (jsonDecode(st.body) as Map)['save'] as Map?;
+      check(
+        '정상 골드 증가가 저장됐다',
+        (saved?['gold'] as num?)?.toInt() == 1000 + 100000,
+        '저장된 골드 ${saved?['gold']}',
+      );
     }
 
     // 트로피 위조 → 서버 값(0) 유지.
@@ -487,6 +501,67 @@ Future<void> main() async {
       check('클램프된 젤리는 99만 미만', jelly < 999999);
     } else {
       check('젤리 업로드 200', false, 'HTTP ${up.statusCode}');
+    }
+  }
+
+  // ── 12. 결투 티켓 ────────────────────────────────────────────
+  //
+  // 배포된 서버에 티켓 라우트가 실제로 있는지는 **인증된 요청**으로만 알 수
+  // 있다. 인증 미들웨어가 라우팅보다 먼저라 없는 경로도 401 이기 때문이다.
+  print('\n[12] 결투 티켓(판수 제한)');
+  final tAuth = await freshUserWithBugs();
+  check('티켓 검증용 새 유저 준비', tAuth != null);
+  if (tAuth != null) {
+    final before = await post('/battle', {
+      'teamBugIds': ['v-1', 'v-2', 'v-3'],
+      'tierId': 'even',
+    }, tAuth);
+    check('전투 200', before.statusCode == 200, 'HTTP ${before.statusCode}');
+    if (before.statusCode == 200) {
+      final b = jsonDecode(before.body) as Map<String, dynamic>;
+      final left = (b['tickets'] as num?)?.toInt();
+      check('전투가 티켓을 1장 쓴다', left == kDefaultPvpTickets - 1, '남은 $left');
+      final saved = (b['save'] as Map)['pvpTickets'] as num?;
+      check('세이브에도 반영된다', saved?.toInt() == kDefaultPvpTickets - 1);
+    }
+
+    // 티켓을 다 쓰는 경로(no_tickets)는 여기서 재현하지 않는다 —
+    // 연속 전투는 곤충이 KO 되면서 `bug_injured` 로 먼저 막히기 때문에
+    // 티켓 소진에 도달하지 못한다. 그 경로는 서버 단위테스트가 덮는다
+    // (actions_test '티켓이 없으면 전투 자체가 거부된다' + endpoints_test).
+
+    // 광고 충전(+3) — 라우트 존재 + 지급 + 시청 횟수 카운트.
+    final ad = await post('/pvp/ticket/ad', const {}, tAuth);
+    check('광고 충전 200', ad.statusCode == 200, 'HTTP ${ad.statusCode}');
+    if (ad.statusCode == 200) {
+      final b = jsonDecode(ad.body) as Map<String, dynamic>;
+      check('광고로 티켓 지급', (b['tickets'] as num) > 0);
+      check('오늘 시청 횟수 1', b['adUsed'] == 1);
+      check('응답에 세이브를 싣지 않는다', !b.containsKey('save'));
+    }
+
+    // 젤리 충전 — 이 계정은 젤리가 없고(insufficient) 광고로 이미 가득 찼을
+    // 수도 있다(already_full). 어느 쪽이든 **라우트가 살아 있고 액션이 돌았다**는
+    // 뜻이다. 지급 성공(200)이 나오면 오히려 공짜로 준 것이라 실패로 본다.
+    final refill = await post('/pvp/ticket/refill', const {}, tAuth);
+    final refillErr = refill.statusCode == 400
+        ? (jsonDecode(refill.body) as Map)['error']
+        : null;
+    check(
+      '젤리 없이는 즉시충전 안 된다',
+      refillErr == 'insufficient' || refillErr == 'already_full',
+      'HTTP ${refill.statusCode} ${refill.body}',
+    );
+
+    // 세이브를 편집해 티켓을 채우려는 시도 → 서버 값이 이긴다.
+    final cheat = save.copyWith(pvpTickets: 999);
+    final up = await post('/save', {'save': cheat.toJson()}, tAuth);
+    if (up.statusCode == 200) {
+      final st = await get('/state', tAuth);
+      final saved = (jsonDecode(st.body) as Map)['save'] as Map;
+      check('티켓 위조 업로드는 서버 값으로 덮인다', (saved['pvpTickets'] as num) < 999);
+    } else {
+      check('티켓 위조 업로드 200', false, 'HTTP ${up.statusCode}');
     }
   }
 

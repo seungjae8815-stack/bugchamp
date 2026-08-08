@@ -24,8 +24,222 @@ import '../../ui/skins.dart';
 import 'battle_arena.dart';
 import 'manual_battle_screen.dart';
 import 'manual_driver.dart';
+import '../../ui/toast.dart';
+import '../../domain/server_sync.dart';
 
 const _honey = Color(0xFFEBA52F);
+
+/// 결투 티켓 바 — 잔량·다음 충전 카운트다운·충전 버튼(광고/젤리).
+///
+/// 1초 타이머를 **이 위젯 안에만** 둔다. 결투 화면 전체를 매초 다시 그리면
+/// 스카우트 카드·초상까지 같이 리빌드된다.
+class TicketBar extends ConsumerStatefulWidget {
+  const TicketBar({super.key});
+
+  @override
+  ConsumerState<TicketBar> createState() => _TicketBarState();
+}
+
+class _TicketBarState extends ConsumerState<TicketBar> {
+  Timer? _tick;
+  bool _busy = false; // 광고·서버 왕복 중 중복 탭 방지
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  void _snack(String msg) => showCenterToast(context, msg);
+
+  /// 충전 결과 → 안내 문구. 실패 사유를 삼키지 않는다(왜 안 됐는지 알려준다).
+  void _report(AppLocalizations l, TicketCharge r, {required String okMsg}) {
+    final cfg = _cfg;
+    _snack(switch (r) {
+      TicketCharge.ok => okMsg,
+      TicketCharge.adLimit => l.adDailyLimit(cfg.ticketAdDailyLimit),
+      TicketCharge.notEnoughJelly => l.notEnoughJelly,
+      TicketCharge.alreadyFull => l.pvpTicketAlreadyFull,
+      TicketCharge.failed => l.pvpTicketChargeFailed,
+    });
+    if (r == TicketCharge.ok) AudioService.instance.sfxReward();
+  }
+
+  BattleConfig get _cfg =>
+      ref.read(gameDataProvider).value?.battleConfig ?? const BattleConfig();
+
+  Future<void> _watchAd(AppLocalizations l) async {
+    final cfg = _cfg;
+    setState(() => _busy = true);
+    try {
+      // 광고를 끝까지 본 경우에만 지급(하루 상한도 여기서 먼저 확인).
+      if (!await watchAdForReward(
+        context,
+        ref,
+        l,
+        feature: kAdFeaturePvpTicket,
+        dailyLimit: cfg.ticketAdDailyLimit,
+      )) {
+        return;
+      }
+      final r = await ref
+          .read(saveControllerProvider.notifier)
+          .grantAdTickets();
+      if (!mounted) return;
+      _report(l, r, okMsg: l.pvpTicketCharged(cfg.ticketAdGrant));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _refill(AppLocalizations l) async {
+    setState(() => _busy = true);
+    try {
+      final r = await ref
+          .read(saveControllerProvider.notifier)
+          .refillTicketsWithJelly();
+      if (!mounted) return;
+      _report(l, r, okMsg: l.pvpTicketFilled);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).value;
+    if (save == null) return const SizedBox.shrink();
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final cfg = _cfg;
+    final tickets = ctrl.ticketsNow;
+    final left = ctrl.ticketRemaining;
+    final today = dailyDateKey(ref.read(clockProvider).now().toUtc());
+    final adUsed = save.adUseCount(kAdFeaturePvpTicket, today);
+    final empty = tickets <= 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
+        decoration: BoxDecoration(
+          color: const Color(0x22000000),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: empty ? const Color(0x66C1502E) : const Color(0x33FFFFFF),
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Text('⚔️', style: TextStyle(fontSize: 15)),
+                const SizedBox(width: 5),
+                Text(
+                  l.pvpTicketTitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l.pvpTicketCount(tickets, cfg.ticketMax),
+                  style: TextStyle(
+                    color: empty
+                        ? const Color(0xFFE07A5F)
+                        : const Color(0xFFBFE3A6),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  left == null
+                      ? l.pvpTicketFullLabel
+                      : l.pvpTicketNextIn(formatClock(left)),
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            Row(
+              children: [
+                Expanded(
+                  child: _chargeBtn(
+                    // 광고제거·패스는 광고를 건너뛰고 즉시 받는다(ad_gate).
+                    '📺 ${l.pvpTicketAdBtn(cfg.ticketAdGrant)}',
+                    l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
+                    const Color(0xFF3E7D4F),
+                    () => _watchAd(l),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _chargeBtn(
+                    l.pvpTicketJellyBtn(cfg.ticketRefillJelly),
+                    null,
+                    const Color(0xFF3F5E86),
+                    () => _refill(l),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 재화·상한이 모자라도 **버튼은 눌린다** — 비활성 대신 이유를 알려준다
+  /// (2026-08 정책). 눌리지 않는 버튼은 왜 안 되는지 알 방법이 없다.
+  Widget _chargeBtn(
+    String label,
+    String? sub,
+    Color color,
+    Future<void> Function() onTap,
+  ) => FilledButton(
+    onPressed: _busy ? null : () => onTap(),
+    style: FilledButton.styleFrom(
+      backgroundColor: color,
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+        ),
+        if (sub != null)
+          Text(
+            sub,
+            style: const TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.w700,
+              color: Color(0xCCFFFFFF),
+            ),
+          ),
+      ],
+    ),
+  );
+}
 
 /// 스카우트된 상대 후보 1팀(난이도 티어 + 상대 3마리 + 전투 장소).
 /// [ownerName] 이 있으면 **실제 다른 유저**의 방어팀, null 이면 로컬 합성 상대.
@@ -67,6 +281,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   bool _manual = true; // 전투 모드 토글(수동/자동), 기본 수동(심리전)
   bool _scoutsFetched = false; // 실 유저 방어팀 fetch 를 이번 세션에 시도했는지
   String? _registeredSig; // 마지막으로 등록한 방어팀 시그니처(중복 업서트 방지)
+
+  /// 직전 서버 전투 요청이 **티켓 부족**으로 거절됐는지.
+  /// 이 경우 낙관 차감분을 되돌리면 안 된다(서버 잔량으로 이미 맞췄다).
+  bool _lastRejectedForTickets = false;
 
   double _power(BattleBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
 
@@ -626,8 +844,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       appBar: AppBar(
         title: Text(l.battleTitle),
         actions: [
+          Center(
+            child: Text(
+              '⚔️ ${ref.read(saveControllerProvider.notifier).ticketsNow}'
+              '/${battleCfg.ticketMax}',
+              style: const TextStyle(
+                color: Color(0xFFBFE3A6),
+                fontWeight: FontWeight.w900,
+                fontSize: 13.5,
+              ),
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.only(right: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Center(
               child: Text(
                 '🏆 ${save.pvpTrophies}',
@@ -657,6 +886,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 children: [
                   const SizedBox(height: 10),
                   _leagueStrip(l, battleCfg, save, now),
+                  const SizedBox(height: 8),
+                  const TicketBar(),
                   const SizedBox(height: 12),
                   _matchupCard(l, data, battleCfg, save, locale),
                   const SizedBox(height: 14),
@@ -1568,19 +1799,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// **성공했을 때만 true.** 실패(네트워크·5xx)면 서버엔 낡은 세이브가 남아 있어,
   /// 그 위에서 전투를 돌리고 결과를 adopt 하면 **최근 로컬 진행이 통째로 사라진다.**
   /// 그래서 호출부는 실패 시 전투를 진행하지 않는다.
-  Future<bool> _flushSave() async {
-    final server = ref.read(gameServerProvider);
-    if (!server.available) return true; // 서버 미연결이면 로컬 경로로 진행
-    final save = ref.read(saveControllerProvider).value;
-    if (save == null) return false;
-    final res = await server.uploadSave(save.toJson());
-    if (res.isOk) return true;
-    if (res.status == 409) {
-      final boot = await server.bootstrap(save.toJson());
-      return boot.isOk;
-    }
-    return false;
-  }
+  Future<bool> _flushSave() => flushSaveBeforeServerAction(
+    ref.read(gameServerProvider),
+    ref.read(saveControllerProvider).value,
+  );
 
   Future<bool> _serverBattle(
     GameData data,
@@ -1595,15 +1817,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     m,
   ) async {
     final l = AppLocalizations.of(context);
+    // 이번 요청의 결과로만 판단하도록 **매번 초기화**한다. 남겨두면 세이브
+    // 업로드 실패(티켓과 무관)로 돌아왔을 때 직전의 '티켓 없음' 값이 남아
+    // 낙관 차감한 티켓을 되돌리지 않는다 = 티켓 1장이 그냥 사라진다.
+    _lastRejectedForTickets = false;
     // 전투 전 최신 세이브를 서버에 올린다 — 서버가 **최신 곤충·골드**로 전투를
     // 확정하고, 승패·보상을 그 위에 얹는다(기기 권위 진행이 묻히지 않게).
     // 업로드 실패 시 전투를 진행하지 않는다 — 낡은 세이브로 싸우고 adopt 하면
     // 최근 진행이 사라진다. 다음 주기 업로드가 따라잡은 뒤 다시 시도하면 된다.
     if (!await _flushSave()) {
       if (!mounted) return false;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+      showCenterToast(context, l.battleServerFailed);
       return false;
     }
     final res = await ref
@@ -1614,10 +1838,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           tierId: scout.ownerId == null ? scout.tier.id : null,
         );
     if (!res.isOk || res.save == null) {
+      final noTicket = await _syncTicketRejection(res);
       if (!mounted) return false;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+      showCenterToast(
+        context,
+        noTicket ? l.pvpTicketNone : l.battleServerFailed,
+      );
       return false;
     }
 
@@ -1664,6 +1890,34 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     return true;
   }
 
+  /// 결투 1판분 티켓을 확보한다. 없으면 이유를 알리고 false.
+  ///
+  /// 로컬에서 먼저 깎는 이유: 서버 응답을 기다리는 동안에도 화면의 잔량이
+  /// 즉시 줄어야 연타로 여러 판이 시작되지 않는다. 진짜 잔량은 서버가 확정한다.
+  Future<bool> _takeTicket(AppLocalizations l) async {
+    final ok = await ref
+        .read(saveControllerProvider.notifier)
+        .consumePvpTicket();
+    if (!ok && mounted) showCenterToast(context, l.pvpTicketNone);
+    return ok;
+  }
+
+  /// 전투를 시작하지 못했을 때 낙관 차감분을 되돌린다.
+  Future<void> _returnTicket() =>
+      ref.read(saveControllerProvider.notifier).restorePvpTicket();
+
+  /// 서버가 "티켓 없음"으로 거절했는지. 맞으면 **서버가 알려준 잔량으로 맞춘다**
+  /// (앱이 재설치·구버전 세이브로 서버보다 많이 갖고 있다고 착각한 경우).
+  /// 되돌리기(_returnTicket)보다 이쪽이 우선이라 호출부는 이 값을 보고 분기한다.
+  Future<bool> _syncTicketRejection(ServerResult res) async {
+    _lastRejectedForTickets = res.error == 'no_tickets';
+    if (!_lastRejectedForTickets) return false;
+    await ref
+        .read(saveControllerProvider.notifier)
+        .adoptTicketState(res.errorData);
+    return true;
+  }
+
   /// 자동 전투 — 결정론 simulate 후 아레나 재생.
   Future<void> _battle(
     GameData data,
@@ -1671,18 +1925,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     String locale,
     _Scout scout,
   ) async {
+    final l = AppLocalizations.of(context);
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
+    if (!await _takeTicket(l)) return;
 
     // 권위 서버가 붙어 있으면 **서버가 승패를 확정**한다.
     // 야생 상대도 서버가 만든다 — 앱이 만들면 약한 상대를 골라
     // 트로피를 쓸어담을 수 있다.
     final server = ref.read(gameServerProvider);
     if (server.available) {
-      final ok = await _serverBattle(data, locale, scout, m);
-      if (ok) return;
       // 서버가 거부/불통이면 아래 로컬 경로로 폴백하지 않는다 —
-      // 폴백하면 서버 권위가 무의미해진다. 사용자에게 알리고 끝낸다.
+      // 폴백하면 서버 권위가 무의미해진다. 알리고 끝내되, 싸우지도 못했으니
+      // 낙관 차감한 티켓은 돌려준다(성공 시엔 서버 값이 덮어쓴다).
+      // 단 "티켓 없음"으로 거절당한 경우는 _serverBattle 이 서버 잔량으로
+      // 맞춰 놓았으므로 되돌리면 안 된다.
+      final ok = await _serverBattle(data, locale, scout, m);
+      if (!ok && !_lastRejectedForTickets) await _returnTicket();
       return;
     }
 
@@ -1732,8 +1991,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     String locale,
     _Scout scout,
   ) async {
+    final l = AppLocalizations.of(context);
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
+    // 수동 전투도 **시작할 때** 한 장. 중간에 나가도 돌려주지 않는다
+    // (돌려주면 불리한 판을 나가버리는 것으로 무한 재시도가 된다).
+    if (!await _takeTicket(l)) return;
 
     // 권위 서버가 붙어 있으면 서버 세션이 매 수를 확정한다(야생 포함).
     ManualBattleDriver? driver;
@@ -1743,14 +2006,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
     final server = ref.read(gameServerProvider);
     if (server.available) {
-      final l = AppLocalizations.of(context);
       // 전투 전 최신 세이브 업로드(기기 권위 진행이 묻히지 않게).
       // 실패 시 시작하지 않는다 — 낡은 세이브로 세션을 열면 진행이 사라진다.
       if (!await _flushSave()) {
+        await _returnTicket();
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+        showCenterToast(context, l.battleServerFailed);
         return;
       }
       final res = await server.startManualBattle(
@@ -1759,12 +2020,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         tierId: scout.ownerId == null ? scout.tier.id : null,
       );
       if (!res.isOk || res.data?['sessionId'] == null) {
+        // 서버가 "티켓 없음"이라 했으면 되돌리지 않는다 — 서버가 진실이다.
+        final noTicket = await _syncTicketRejection(res);
+        if (!noTicket) await _returnTicket();
         if (!mounted) return;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(l.battleServerFailed)));
+        showCenterToast(
+          context,
+          noTicket ? l.pvpTicketNone : l.battleServerFailed,
+        );
         return; // 로컬로 폴백하지 않는다 — 폴백하면 서버 권위가 무의미해진다.
       }
+      // 서버가 확정한 티켓 잔량으로 맞춘다(낙관 차감과 어긋나지 않게).
+      // 세이브 전체가 아니라 몇 바이트만 온다 — 이그레스 절약.
+      await ref
+          .read(saveControllerProvider.notifier)
+          .adoptTicketState(res.data!);
       driver = ServerManualDriver(
         server: server,
         sessionId: res.data!['sessionId'].toString(),

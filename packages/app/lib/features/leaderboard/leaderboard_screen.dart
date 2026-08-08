@@ -25,11 +25,12 @@ final myRankProvider = FutureProvider<int?>((ref) async {
   );
   final backend = ref.watch(pvpBackendProvider);
   try {
-    final entries = await backend.leaderboard(
+    final board = await backend.leaderboard(
       me: PvpProfile(id: 'me', nickname: nickname, trophies: trophies),
       limit: 50,
     );
-    for (final e in entries) {
+    if (!board.live) return null; // 폴백(NPC)은 순위로 쓰지 않는다
+    for (final e in board.entries) {
       if (e.isMe) return e.rank;
     }
   } catch (_) {}
@@ -65,82 +66,101 @@ class LeaderboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l.rankingTitle)),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            color: const Color(0x22000000),
-            child: Text(
-              backend.isRemote
-                  ? l.leaderboardOnlineNote
-                  : l.leaderboardLocalNote,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
-            ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<LeaderboardEntry>>(
-              future: backend.leaderboard(me: me, limit: 50),
-              builder: (context, snap) {
-                if (!snap.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final entries = snap.data!;
-                final myRank = entries
-                    .firstWhere(
-                      (e) => e.isMe,
-                      orElse: () =>
-                          LeaderboardEntry(rank: 0, profile: me, isMe: true),
-                    )
-                    .rank;
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.emoji_events_rounded,
-                            color: _honey,
-                            size: 18,
+      body: FutureBuilder<Leaderboard>(
+        future: backend.leaderboard(me: me, limit: 50),
+        builder: (context, snap) {
+          if (!snap.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final board = snap.data!;
+          return Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                color: const Color(0x22000000),
+                child: Text(
+                  // **이번 조회가 실제로 서버에서 왔는지**로 안내한다.
+                  // 백엔드 종류로 쓰면 조회 실패로 NPC 를 보여주면서도
+                  // "온라인 랭킹"이라고 우기게 된다.
+                  board.live ? l.leaderboardOnlineNote : l.leaderboardLocalNote,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    final entries = board.entries;
+                    final myRank = entries
+                        .firstWhere(
+                          (e) => e.isMe,
+                          orElse: () => LeaderboardEntry(
+                            rank: 0,
+                            profile: me,
+                            isMe: true,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            l.leaderboardMyRank(myRank),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 14,
+                        )
+                        .rank;
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.emoji_events_rounded,
+                                color: _honey,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                l.leaderboardMyRank(myRank),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '🏆 ${save.pvpTrophies}',
+                                style: const TextStyle(
+                                  color: _honey,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1, color: Color(0x22FFFFFF)),
+                        Expanded(
+                          child: ListView.builder(
+                            // 마지막 줄이 **기기 하단 바에 가려지지 않게** 그만큼 더
+                            // 띄운다. 안드로이드 제스처 바·아이폰 홈 인디케이터 높이가
+                            // viewPadding.bottom 이다(0인 기기도 있어 그대로 더한다).
+                            padding: EdgeInsets.only(
+                              top: 6,
+                              bottom:
+                                  6 + MediaQuery.viewPaddingOf(context).bottom,
                             ),
+                            itemCount: entries.length,
+                            itemBuilder: (context, i) =>
+                                _row(cfg, entries[i], rules, l),
                           ),
-                          const Spacer(),
-                          Text(
-                            '🏆 ${save.pvpTrophies}',
-                            style: const TextStyle(
-                              color: _honey,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1, color: Color(0x22FFFFFF)),
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        itemCount: entries.length,
-                        itemBuilder: (context, i) =>
-                            _row(cfg, entries[i], rules, l),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

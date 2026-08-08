@@ -3123,6 +3123,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quiet hours (10 PM - 8 AM)'**
   String get notifyQuietHours;
+
+  /// No description provided for @pvpTicketTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel tickets'**
+  String get pvpTicketTitle;
+
+  /// No description provided for @pvpTicketCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{tickets}/{max}'**
+  String pvpTicketCount(int tickets, int max);
+
+  /// No description provided for @pvpTicketNextIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Next in {time}'**
+  String pvpTicketNextIn(String time);
+
+  /// No description provided for @pvpTicketFullLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get pvpTicketFullLabel;
+
+  /// No description provided for @pvpTicketNone.
+  ///
+  /// In en, this message translates to:
+  /// **'You need a duel ticket to fight. Charge one below.'**
+  String get pvpTicketNone;
+
+  /// No description provided for @pvpTicketAdBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad +{amount}'**
+  String pvpTicketAdBtn(int amount);
+
+  /// No description provided for @pvpTicketAdLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{used}/{limit} today'**
+  String pvpTicketAdLeft(int used, int limit);
+
+  /// No description provided for @pvpTicketJellyBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill up 💎{cost}'**
+  String pvpTicketJellyBtn(int cost);
+
+  /// No description provided for @pvpTicketCharged.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets +{amount}'**
+  String pvpTicketCharged(int amount);
+
+  /// No description provided for @pvpTicketFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets filled up'**
+  String get pvpTicketFilled;
+
+  /// No description provided for @pvpTicketAlreadyFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets are already full'**
+  String get pvpTicketAlreadyFull;
+
+  /// No description provided for @pvpTicketChargeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not charge tickets. Try again in a moment.'**
+  String get pvpTicketChargeFailed;
+
+  /// No description provided for @pvpTicketWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets keep the trophy ranking about strength, not how many matches you grind.'**
+  String get pvpTicketWhy;
+
+  /// No description provided for @adDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve watched all of today\'s ads ({limit}/day)'**
+  String adDailyLimit(int limit);
+
+  /// No description provided for @noticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notices'**
+  String get noticeTitle;
+
+  /// No description provided for @noticeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No notices right now.'**
+  String get noticeEmpty;
+
+  /// No description provided for @noticeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notices. Check your connection.'**
+  String get noticeFailed;
+
+  /// No description provided for @mailNoticeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'From the team'**
+  String get mailNoticeSection;
+
+  /// No description provided for @mailClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get mailClaim;
+
+  /// No description provided for @giftCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift code'**
+  String get giftCodeTitle;
+
+  /// No description provided for @giftCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a code from an event or announcement.'**
+  String get giftCodeHint;
+
+  /// No description provided for @giftCodeField.
+  ///
+  /// In en, this message translates to:
+  /// **'CODE'**
+  String get giftCodeField;
+
+  /// No description provided for @giftCodeSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Redeem'**
+  String get giftCodeSubmit;
+
+  /// No description provided for @giftCodeChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get giftCodeChecking;
+
+  /// No description provided for @giftCodeOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards claimed!'**
+  String get giftCodeOk;
+
+  /// No description provided for @giftCodeBad.
+  ///
+  /// In en, this message translates to:
+  /// **'That code doesn\'t exist'**
+  String get giftCodeBad;
+
+  /// No description provided for @giftCodeExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'That code has expired'**
+  String get giftCodeExpired;
+
+  /// No description provided for @giftCodeExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'That code has run out'**
+  String get giftCodeExhausted;
+
+  /// No description provided for @giftCodeUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already used this'**
+  String get giftCodeUsed;
+
+  /// No description provided for @giftCodeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the server. Try again in a moment.'**
+  String get giftCodeFailed;
+
+  /// No description provided for @reviewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate the game'**
+  String get reviewAction;
 }
 
 class _AppLocalizationsDelegate

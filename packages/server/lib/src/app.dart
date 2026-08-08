@@ -11,6 +11,7 @@ import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 
 import 'actions.dart';
+import 'admin_page.dart';
 import 'auth.dart';
 import 'battle_session.dart';
 import 'game_config.dart';
@@ -144,6 +145,9 @@ Handler buildHandler({
   Map<String, Species>? speciesById,
   ReceiptVerifier? receiptVerifier,
   DateTime Function()? clock,
+
+  /// 운영 패널 키. 생략하면 환경변수 `ADMIN_KEY`(운영), 비어 있으면 패널 잠김.
+  String? adminKey,
 }) {
   final verifier =
       jwtVerifier ?? SupabaseJwtVerifier.forProject(config.supabaseUrl);
@@ -154,6 +158,15 @@ Handler buildHandler({
     // ⚠️ `/healthz` 를 쓰면 안 된다. Google Cloud 인프라가 그 경로를
     //    가로채서 컨테이너까지 요청이 오지 않는다(실제로 404 를 받았다).
     ..get('/health', (Request _) => Response.ok('ok'))
+    // 운영 관리 패널(HTML). 여기서는 **키를 요구하지 않는다** — 로그인 폼일
+    // 뿐이고, 데이터에 닿는 /admin/* 요청이 키를 검사한다.
+    ..get(
+      '/admin',
+      (Request _) => Response.ok(
+        adminHtml,
+        headers: {'content-type': 'text/html; charset=utf-8'},
+      ),
+    )
     // 앱 버전 안내 — **인증 없이**(앱이 시작 즉시, 로그인 전에도 확인).
     //   min    = 이 미만이면 강제 업데이트(막힘). 서버 규약이 깨질 때 올린다.
     //   latest = 이 미만이면 권장 업데이트(닫기 가능).
@@ -634,6 +647,18 @@ Handler buildHandler({
           return _json({'error': built.error}, status: 400);
         }
 
+        // 수동 전투도 티켓 1장 — **시작할 때** 깎는다(중간 이탈로 무한 판수를
+        // 돌리지 못하게). 자동 전투는 actions.runBattle 안에서 함께 처리된다.
+        // 실제 저장은 세션 생성에 성공한 뒤에(아래) — 세션도 못 열었는데
+        // 티켓만 사라지는 일이 없게.
+        final ticketed = actions.consumePvpTicket(save);
+        if (!ticketed.isOk) {
+          return _json(
+            _ticketError(actions, save, ticketed.error),
+            status: ticketed.status,
+          );
+        }
+
         final List<BattleBug> foe;
         final List<String> foeSpecies;
         final double rewardMult;
@@ -676,12 +701,15 @@ Handler buildHandler({
           finished: false,
         );
         await store.saveSession(sessionId, user.id, session.toJson());
+        await store.save(user.id, ticketed.save!.toJson());
 
         // 상대 스탯은 화면 표시에 필요하므로 준다. 시드는 주지 않는다.
+        // 세이브는 싣지 않는다(이그레스 비용) — 바뀐 티켓 값만 돌려준다.
         return _json({
           'sessionId': sessionId,
           'location': session.location.key,
           'energyA': 1, // 엔진 시작 기력
+          ...ticketed.extra,
           'foe': [
             for (var i = 0; i < foe.length; i++)
               _foeJson(foe[i], i < foeSpecies.length ? foeSpecies[i] : ''),
@@ -972,7 +1000,9 @@ Handler buildHandler({
           speciesById: species,
           petConfig: cfg.pet,
         );
-        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        if (!r.isOk) {
+          return _json(_ticketError(actions, save, r.error), status: r.status);
+        }
         await store.save(user.id, r.save!.toJson());
         return _json({
           'save': r.save!.toJson(),
@@ -989,6 +1019,341 @@ Handler buildHandler({
         return _json({'error': 'store_unavailable'}, status: 503);
       }
     });
+
+    /// 결투 티켓 충전 — 광고(`/pvp/ticket/ad`) · 젤리(`/pvp/ticket/refill`).
+    ///
+    /// 티켓은 서버 소유라 앱이 로컬로 늘려봐야 업로드 때 덮인다. 그래서 충전은
+    /// 반드시 여기를 거친다. 응답에 **세이브를 싣지 않는다** — 바뀌는 건 티켓
+    /// 몇 바이트인데 세이브를 왕복시키면 이그레스 요금만 는다(2026-07 사고).
+    Future<Response> ticketAction(
+      Request req,
+      String tag,
+      ActionResult Function(SaveGame) run,
+    ) async {
+      final user = userOf(req);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = run(save);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json(r.extra);
+      } on StateStoreException catch (e) {
+        stderr.writeln('[$tag] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    }
+
+    // ── 공지 · 운영 우편 · 선물코드 ──
+    //
+    // 셋 다 "서버가 유저에게 보낸다"는 하나의 일이다. 지급은 반드시 서버가
+    // 하고 앱은 결과 세이브를 채택한다(구매와 같은 방식) — 앱이 스스로 더하면
+    // 다음 업로드에서 골드 급증 상한에 걸려 정당한 보상이 잘린다.
+
+    /// 진행 중인 공지 목록. 보상이 아니라 읽을거리라 세이브를 건드리지 않는다.
+    authed.get('/notices', (Request req) async {
+      try {
+        final rows = await store.loadNotices(now: actions.now().toUtc());
+        return _json({'notices': rows});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[notices] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 내가 아직 안 받은 우편(개인 + 전체 발송).
+    authed.get('/mail', (Request req) async {
+      final user = userOf(req);
+      try {
+        final rows = await store.loadMail(
+          userId: user.id,
+          now: actions.now().toUtc(),
+        );
+        return _json({'mail': rows});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[mail] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 우편 수령 → 재화 지급. 중복 수령은 `mail_claims` 기본키가 막는다.
+    authed.post('/mail/claim', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final mailId = body['id']?.toString() ?? '';
+      if (mailId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final now = actions.now().toUtc();
+        final rows = await store.loadMail(userId: user.id, now: now);
+        final row = rows.cast<Map<String, dynamic>?>().firstWhere(
+          (r) => '${r!['id']}' == mailId,
+          orElse: () => null,
+        );
+        // 목록에 없다 = 남의 우편이거나, 기간이 지났거나, 이미 받았다.
+        if (row == null) return _json({'error': 'mail_not_found'}, status: 404);
+
+        // **먼저 수령을 확정**하고 지급한다. 순서가 반대면 지급 후 기록에
+        // 실패했을 때 같은 우편을 계속 받을 수 있다.
+        if (!await store.claimMail(mailId, user.id)) {
+          return _json({'error': 'already_claimed'}, status: 409);
+        }
+        final r = actions.grantRewardRow(save, row);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[mail/claim] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 선물코드 사용 → 재화 지급(계정당 1회).
+    authed.post('/code/redeem', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final code = (body['code']?.toString() ?? '').trim().toUpperCase();
+      if (code.isEmpty || code.length > 32) {
+        return _json({'error': 'bad_code'}, status: 400);
+      }
+
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final row = await store.loadGiftCode(code);
+        if (row == null) return _json({'error': 'bad_code'}, status: 404);
+
+        final ends = row['ends_at'];
+        if (ends is String) {
+          final e = DateTime.tryParse(ends)?.toUtc();
+          if (e != null && !actions.now().toUtc().isBefore(e)) {
+            return _json({'error': 'code_expired'}, status: 410);
+          }
+        }
+        final maxUses = (row['max_uses'] as num?)?.toInt();
+        final used = (row['used_count'] as num?)?.toInt() ?? 0;
+        if (maxUses != null && used >= maxUses) {
+          return _json({'error': 'code_exhausted'}, status: 409);
+        }
+
+        // 계정당 1회 — DB 기본키 충돌로 막는다(연타·재시도 안전).
+        if (!await store.redeemGiftCode(code, user.id)) {
+          return _json({'error': 'code_already_used'}, status: 409);
+        }
+        final r = actions.grantRewardRow(save, row);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        await store.bumpGiftCodeUse(code);
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[code/redeem] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    // ── 운영 관리 패널 API (/admin/*) ──
+    //
+    // 인증은 **Supabase JWT 가 아니라 관리자 키**다(운영자는 게임 계정이
+    // 아닐 수 있다). 그래서 authed 라우터가 아닌 public 에 달고 키를 직접 본다.
+    //
+    // ⚠️ `ADMIN_KEY` 가 없으면 **엔드포인트를 아예 열지 않는다.** 기본값을 두면
+    // 환경변수를 깜빡한 배포가 전 유저에게 재화를 뿌릴 수 있는 문을 연 채로 뜬다.
+    // ⚠️ **양끝 공백·BOM 을 반드시 걷어낸다.** PowerShell 로 시크릿을 만들면
+    // (`$key | gcloud secrets create ... --data-file=-`) 값 끝에 CRLF 가, 앞에
+    // BOM 이 붙는다. 실제로 40자 키가 46바이트로 저장돼 로그인이 계속 실패했다.
+    // Dart 의 trim() 은 U+FEFF(BOM)까지 제거한다.
+    final key = (adminKey ?? Platform.environment['ADMIN_KEY'] ?? '').trim();
+
+    /// 관리자 키 검사. 길이·내용이 모두 같을 때만 통과(시간차를 줄여 비교).
+    bool adminOk(Request req) {
+      if (key.isEmpty) return false;
+      // 붙여넣기에 딸려온 공백도 걷어낸다(사람이 손으로 옮기는 값이다).
+      final given = (req.headers['x-admin-key'] ?? '').trim();
+      if (given.length != key.length) return false;
+      var diff = 0;
+      for (var i = 0; i < key.length; i++) {
+        diff |= given.codeUnitAt(i) ^ key.codeUnitAt(i);
+      }
+      return diff == 0;
+    }
+
+    /// 운영 지급의 **1건당 상한**. 오타 한 번으로 전 유저에게 젤리 100만이
+    /// 나가는 사고를 코드로 막는다(UI 검증만으로는 못 막는다).
+    const adminMaxGold = 10000000;
+    const adminMaxJelly = 10000;
+    const adminMaxMaterial = 100000;
+
+    /// 지급 필드 정규화 + 상한 검사.
+    ///
+    /// 상한을 넘으면 **잘라서 보내지 않고 거절**한다. 조용히 잘라 보내면
+    /// 운영자는 100만을 보냈다고 믿는데 실제로는 1만이 나가 있다.
+    /// 음수는 0으로 만든다(운영 실수로 재화를 뺏는 일은 없어야 한다).
+    (Map<String, int>, String?) rewardFields(Map<String, dynamic> b) {
+      int n(String k) {
+        final v = b[k];
+        final i = (v is num) ? v.toInt() : 0;
+        return i < 0 ? 0 : i;
+      }
+
+      final out = {
+        'gold': n('gold'),
+        'jelly': n('jelly'),
+        'chitin': n('chitin'),
+        'mineral': n('mineral'),
+        'sap': n('sap'),
+      };
+      if (out['gold']! > adminMaxGold) return (out, 'gold_too_large');
+      if (out['jelly']! > adminMaxJelly) return (out, 'jelly_too_large');
+      for (final k in ['chitin', 'mineral', 'sap']) {
+        if (out[k]! > adminMaxMaterial) return (out, 'material_too_large');
+      }
+      return (out, null);
+    }
+
+    /// 본문 파싱 + 키 검사를 한 번에. 통과하면 본문을, 아니면 응답을 돌려준다.
+    Future<(Map<String, dynamic>?, Response?)> adminBody(Request req) async {
+      if (!adminOk(req)) {
+        return (null, _json({'error': 'unauthorized'}, status: 401));
+      }
+      try {
+        final raw = await req.readAsString();
+        final b = raw.isEmpty
+            ? <String, dynamic>{}
+            : jsonDecode(raw) as Map<String, dynamic>;
+        return (b, null);
+      } catch (_) {
+        return (null, _json({'error': 'bad_request'}, status: 400));
+      }
+    }
+
+    String? clean(Object? v, int max) {
+      final s = v?.toString().trim() ?? '';
+      if (s.isEmpty) return null;
+      return s.length > max ? s.substring(0, max) : s;
+    }
+
+    public.get('/admin/data', (Request req) async {
+      if (!adminOk(req)) return _json({'error': 'unauthorized'}, status: 401);
+      try {
+        return _json(await store.adminData());
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/data] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    public.post('/admin/notice', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final title = clean(b!['title'], 100);
+      if (title == null) return _json({'error': 'title_required'}, status: 400);
+      try {
+        await store.insertRow('notices', {
+          'title': title,
+          'body': clean(b['body'], 1000) ?? '',
+          'pinned': b['pinned'] == true,
+          if (b['endsAt'] != null) 'ends_at': b['endsAt'],
+        });
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/notice] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    public.post('/admin/mail', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final title = clean(b!['title'], 100);
+      if (title == null) return _json({'error': 'title_required'}, status: 400);
+      final (reward, tooBig) = rewardFields(b);
+      if (tooBig != null) return _json({'error': tooBig}, status: 400);
+      try {
+        await store.insertRow('user_mail', {
+          // null = 전체 유저 대상(점검 보상 등).
+          'user_id': clean(b['userId'], 64),
+          'title': title,
+          'body': clean(b['body'], 1000) ?? '',
+          ...reward,
+          if (b['endsAt'] != null) 'ends_at': b['endsAt'],
+        });
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/mail] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    public.post('/admin/code', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final code = clean(b!['code'], 32)?.toUpperCase();
+      // 코드는 손으로 입력한다 — 헷갈릴 여지가 없게 영문 대문자·숫자만 받는다.
+      if (code == null || !RegExp(r'^[A-Z0-9]{4,32}$').hasMatch(code)) {
+        return _json({'error': 'bad_code_format'}, status: 400);
+      }
+      final (reward, tooBig) = rewardFields(b);
+      if (tooBig != null) return _json({'error': tooBig}, status: 400);
+      final maxUses = (b['maxUses'] as num?)?.toInt();
+      try {
+        await store.insertRow('gift_codes', {
+          'code': code,
+          ...reward,
+          if (maxUses != null && maxUses > 0) 'max_uses': maxUses,
+          if (b['endsAt'] != null) 'ends_at': b['endsAt'],
+        });
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/code] $e');
+        // 같은 코드가 이미 있으면 여기로 온다(기본키 충돌).
+        return _json({'error': 'insert_failed'}, status: 409);
+      }
+    });
+
+    public.post('/admin/delete', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final id = clean(b!['id'], 64);
+      final target = switch (b['kind']?.toString()) {
+        'notice' => ('notices', 'id'),
+        'mail' => ('user_mail', 'id'),
+        'code' => ('gift_codes', 'code'),
+        _ => null,
+      };
+      if (target == null || id == null) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        await store.deleteRow(target.$1, target.$2, id);
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/delete] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    authed.post(
+      '/pvp/ticket/ad',
+      (Request req) => ticketAction(req, 'ticket/ad', actions.grantAdTicket),
+    );
+
+    authed.post(
+      '/pvp/ticket/refill',
+      (Request req) =>
+          ticketAction(req, 'ticket/refill', actions.refillPvpTickets),
+    );
   }
 
   final cascade = Cascade()
@@ -1003,6 +1368,25 @@ Handler buildHandler({
       .addMiddleware(logRequests())
       .addMiddleware(limitBodySize())
       .addHandler(cascade.handler);
+}
+
+/// 액션 실패 응답 본문. 티켓 부족이면 **서버가 아는 잔량·충전시각을 함께** 준다.
+///
+/// 앱이 로컬로만 세던 잔량이 서버와 어긋났을 때(재설치·구버전 세이브),
+/// 그냥 "실패"라고만 하면 사용자는 화면에 티켓이 남아 보이는데 못 싸운다.
+/// 정확한 값을 함께 주면 앱이 즉시 맞춰 그린다.
+Map<String, dynamic> _ticketError(
+  GameActions actions,
+  SaveGame save,
+  String? error,
+) {
+  if (error != 'no_tickets') return {'error': error};
+  final t = actions.ticketsNow(save);
+  return {
+    'error': error,
+    'tickets': t.tickets,
+    'ticketsAt': t.at.toIso8601String(),
+  };
 }
 
 /// 정상 세이브의 몇 배까지 허용할지 — 이 위는 사고로 본다.

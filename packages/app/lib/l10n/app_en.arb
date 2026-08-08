@@ -1059,5 +1059,91 @@
   "notifGiftTitle": "A gift arrived!",
   "notifGiftBody": "Gifts are waiting. Claim them before they expire.",
   "notifyGift": "Surprise gifts",
-  "notifyQuietHours": "Quiet hours (10 PM - 8 AM)"
+  "notifyQuietHours": "Quiet hours (10 PM - 8 AM)",
+  "pvpTicketTitle": "Duel tickets",
+  "pvpTicketCount": "{tickets}/{max}",
+  "@pvpTicketCount": {
+    "placeholders": {
+      "tickets": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "pvpTicketNextIn": "Next in {time}",
+  "@pvpTicketNextIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pvpTicketFullLabel": "Full",
+  "pvpTicketNone": "You need a duel ticket to fight. Charge one below.",
+  "pvpTicketAdBtn": "Watch ad +{amount}",
+  "@pvpTicketAdBtn": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "pvpTicketAdLeft": "{used}/{limit} today",
+  "@pvpTicketAdLeft": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "pvpTicketJellyBtn": "Fill up 💎{cost}",
+  "@pvpTicketJellyBtn": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      }
+    }
+  },
+  "pvpTicketCharged": "Tickets +{amount}",
+  "@pvpTicketCharged": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "pvpTicketFilled": "Tickets filled up",
+  "pvpTicketAlreadyFull": "Tickets are already full",
+  "pvpTicketChargeFailed": "Could not charge tickets. Try again in a moment.",
+  "pvpTicketWhy": "Tickets keep the trophy ranking about strength, not how many matches you grind.",
+  "adDailyLimit": "You've watched all of today's ads ({limit}/day)",
+  "@adDailyLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "noticeTitle": "Notices",
+  "noticeEmpty": "No notices right now.",
+  "noticeFailed": "Couldn't load notices. Check your connection.",
+  "mailNoticeSection": "From the team",
+  "mailClaim": "Claim",
+  "giftCodeTitle": "Gift code",
+  "giftCodeHint": "Enter a code from an event or announcement.",
+  "giftCodeField": "CODE",
+  "giftCodeSubmit": "Redeem",
+  "giftCodeChecking": "Checking…",
+  "giftCodeOk": "Rewards claimed!",
+  "giftCodeBad": "That code doesn't exist",
+  "giftCodeExpired": "That code has expired",
+  "giftCodeExhausted": "That code has run out",
+  "giftCodeUsed": "You've already used this",
+  "giftCodeFailed": "Couldn't reach the server. Try again in a moment.",
+  "reviewAction": "Rate the game"
 }

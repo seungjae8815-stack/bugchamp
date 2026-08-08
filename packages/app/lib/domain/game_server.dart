@@ -7,13 +7,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// 권위 서버 호출 결과.
 class ServerResult {
-  const ServerResult.ok(this.data) : error = null, status = 200;
-  const ServerResult.fail(this.error, this.status) : data = null;
+  const ServerResult.ok(this.data)
+    : error = null,
+      status = 200,
+      errorData = const {};
+  const ServerResult.fail(this.error, this.status, {this.errorData = const {}})
+    : data = null;
 
   /// 서버가 돌려준 JSON(성공 시). `save` 키에 갱신된 세이브가 들어 있다.
   final Map<String, dynamic>? data;
   final String? error;
   final int status;
+
+  /// 실패 응답 본문. 거절 사유와 함께 온 값이 있으면 담긴다
+  /// (예: `no_tickets` 일 때 서버가 아는 티켓 잔량).
+  final Map<String, dynamic> errorData;
 
   bool get isOk => data != null;
 
@@ -64,6 +72,34 @@ abstract interface class GameServer {
     required String sessionId,
     required String stance,
   });
+
+  /// 결투 티켓 충전 — 광고 보상(+N장, 하루 상한은 서버가 센다).
+  ///
+  /// 티켓은 서버 소유라 앱이 로컬로 늘려도 업로드 때 덮인다. 광고를 끝까지 본
+  /// 뒤 이걸 호출해야 실제로 늘어난다. 응답은 `tickets`·`ticketsAt`·`adUsed`
+  /// 만 담는다(세이브 왕복 없음 — 이그레스 절약).
+  Future<ServerResult> pvpTicketAd();
+
+  /// 결투 티켓 충전 — 젤리로 즉시 만땅.
+  Future<ServerResult> pvpTicketRefill();
+
+  // ── 공지 · 운영 우편 · 선물코드 ──
+  //
+  // 셋 다 "서버가 유저에게 보낸다"는 같은 일이다. **지급은 서버가 확정**하고
+  // 앱은 돌려받은 세이브를 채택한다 — 앱이 직접 재화를 더하면 다음 업로드에서
+  // 골드 급증 상한에 걸려 정당한 보상이 잘린다.
+
+  /// 진행 중인 공지 목록.
+  Future<ServerResult> notices();
+
+  /// 내가 **아직 받지 않은** 우편(개인 + 전체 발송).
+  Future<ServerResult> mail();
+
+  /// 우편 수령. 성공하면 지급이 반영된 세이브가 온다.
+  Future<ServerResult> claimMail(String id);
+
+  /// 선물코드 사용(계정당 1회). 성공하면 지급된 세이브가 온다.
+  Future<ServerResult> redeemCode(String code);
 
   /// 방치 수입 정산 — 금액은 서버가 정한다.
   Future<ServerResult> sync();
@@ -199,6 +235,24 @@ class NoGameServer implements GameServer {
     required String sessionId,
     required String stance,
   }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> pvpTicketAd() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> pvpTicketRefill() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> notices() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> mail() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> claimMail(String id) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> redeemCode(String code) async =>
+      const ServerResult.fail('unavailable', 0);
 }
 
 /// HTTP 구현. 인증은 **Supabase 세션 토큰**을 그대로 실어 보낸다
@@ -246,6 +300,7 @@ class HttpGameServer implements GameServer {
       return ServerResult.fail(
         decoded['error']?.toString() ?? 'http_${res.statusCode}',
         res.statusCode,
+        errorData: decoded,
       );
     } catch (e) {
       debugPrint('[server] $method $path 실패: $e');
@@ -367,6 +422,28 @@ class HttpGameServer implements GameServer {
     'sessionId': sessionId,
     'stance': stance,
   });
+
+  @override
+  Future<ServerResult> pvpTicketAd() =>
+      _send('POST', '/pvp/ticket/ad', const {});
+
+  @override
+  Future<ServerResult> pvpTicketRefill() =>
+      _send('POST', '/pvp/ticket/refill', const {});
+
+  @override
+  Future<ServerResult> notices() => _send('GET', '/notices');
+
+  @override
+  Future<ServerResult> mail() => _send('GET', '/mail');
+
+  @override
+  Future<ServerResult> claimMail(String id) =>
+      _send('POST', '/mail/claim', {'id': id});
+
+  @override
+  Future<ServerResult> redeemCode(String code) =>
+      _send('POST', '/code/redeem', {'code': code});
 }
 
 /// 교체 가능한 권위 서버. 기본은 미설정(로컬 경로 유지).

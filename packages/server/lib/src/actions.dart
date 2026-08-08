@@ -117,6 +117,13 @@ class GameActions {
     'passExpiresAt',
     'ownedSkins',
     'incubatorCapacity',
+    // 결투 티켓 = 하루 판수 제한. 세이브를 편집해 티켓을 채우면 제한이
+    // 통째로 무의미해지므로(=트로피 랭킹이 다시 '많이 돌린 사람' 순),
+    // 잔량·충전기준시각·광고 시청횟수 모두 서버가 소유한다.
+    'pvpTickets',
+    'ticketsAt',
+    'adUseCounts',
+    'adUseDate',
   };
 
   /// 골드 급증 상식 상한의 바닥 — 전투·미션·광고 등 **소소한 보상**만 덮는다.
@@ -410,6 +417,12 @@ class GameActions {
     if (built.error != null) return ActionResult.fail(built.error);
     if (foeTeam.isEmpty) return const ActionResult.fail('empty_foe');
 
+    // 티켓 소모는 **전투 확정과 같은 액션 안에서** 한다. 분리하면 "티켓만 깎이고
+    // 전투는 실패" 또는 그 반대가 생긴다.
+    final ticketed = consumePvpTicket(save);
+    if (!ticketed.isOk) return ticketed;
+    final paid = ticketed.save!;
+
     final result = simulate(
       seed,
       built.team,
@@ -419,7 +432,7 @@ class GameActions {
     );
 
     final applied = applyBattleOutcome(
-      save,
+      paid,
       result: result,
       myTeam: built.team,
       rewardMult: rewardMult,
@@ -430,7 +443,7 @@ class GameActions {
     return ActionResult.ok(
       applied.save!,
       // 클라이언트가 같은 전개를 재생하도록 시드를 돌려준다(결정론).
-      extra: {...applied.extra, 'seed': seed},
+      extra: {...ticketed.extra, ...applied.extra, 'seed': seed},
     );
   }
 
@@ -1215,6 +1228,146 @@ class GameActions {
     return ActionResult.ok(
       save.copyWith(bugs: bugs, materials: mats),
       extra: {'jelly': reward},
+    );
+  }
+
+  // ── 결투 티켓(2026-08) ──
+  //
+  // 티켓은 **서버 소유**다([_serverOwnedKeys]). 그래서 소모·지급도 전부 여기서
+  // 확정한다 — 앱이 로컬로 깎아 올려봐야 업로드 때 서버 값으로 덮인다.
+  // 계산 자체는 `core_run` 의 순수 함수를 앱과 공유한다(같은 결과 보장).
+
+  /// [save] 의 티켓을 지금 시각 기준으로 정산한 값.
+  TicketState ticketsNow(SaveGame save) => regenTickets(
+    tickets: save.pvpTickets,
+    at: save.ticketsAt,
+    now: now().toUtc(),
+    cfg: config.battle,
+  );
+
+  /// 결투 1판분 티켓 소모. 없으면 `no_tickets` 로 거부한다.
+  ActionResult consumePvpTicket(SaveGame save) {
+    final next = consumeTicket(
+      tickets: save.pvpTickets,
+      at: save.ticketsAt,
+      now: now().toUtc(),
+      cfg: config.battle,
+    );
+    if (next == null) return const ActionResult.fail('no_tickets');
+    return ActionResult.ok(
+      save.copyWith(pvpTickets: next.tickets, ticketsAt: next.at),
+      extra: {'tickets': next.tickets, 'ticketsAt': next.at.toIso8601String()},
+    );
+  }
+
+  /// 광고 보상 티켓 지급. 하루 상한을 넘으면 `ad_limit`.
+  ///
+  /// 상한은 **광고제거·패스 구매자에게도 동일**하다. 광고제거는 광고를 스킵하고
+  /// 즉시 받는 '시간 절약'이지 판수를 더 사는 수단이 아니다(랭킹 보호).
+  ActionResult grantAdTicket(SaveGame save) {
+    final cfg = config.battle;
+    if (cfg.ticketAdGrant <= 0) return const ActionResult.fail('disabled');
+    final t = now().toUtc();
+    // 날짜 경계는 UTC. 서버는 기기 타임존을 모르고, 알더라도 타임존을 바꿔가며
+    // 상한을 리셋하는 우회가 생긴다.
+    final today = dailyDateKey(t);
+    final used = save.adUseCount(kAdFeaturePvpTicket, today);
+    if (cfg.ticketAdDailyLimit > 0 && used >= cfg.ticketAdDailyLimit) {
+      return const ActionResult.fail('ad_limit');
+    }
+    final next = grantTickets(
+      tickets: save.pvpTickets,
+      at: save.ticketsAt,
+      now: t,
+      cfg: cfg,
+      amount: cfg.ticketAdGrant,
+    );
+    // 날짜가 바뀌었으면 카운터를 통째로 새로 시작한다(다른 기능 키까지 리셋).
+    final counts = save.adUseDate == today
+        ? Map<String, int>.from(save.adUseCounts)
+        : <String, int>{};
+    counts[kAdFeaturePvpTicket] = used + 1;
+    return ActionResult.ok(
+      save.copyWith(
+        pvpTickets: next.tickets,
+        ticketsAt: next.at,
+        adUseCounts: counts,
+        adUseDate: today,
+      ),
+      extra: {
+        'tickets': next.tickets,
+        'ticketsAt': next.at.toIso8601String(),
+        'adUsed': used + 1,
+        'adLimit': cfg.ticketAdDailyLimit,
+      },
+    );
+  }
+
+  /// 젤리로 티켓을 상한까지 즉시 충전. 이미 가득이면 `already_full`.
+  ActionResult refillPvpTickets(SaveGame save) {
+    final cfg = config.battle;
+    final t = now().toUtc();
+    final cur = regenTickets(
+      tickets: save.pvpTickets,
+      at: save.ticketsAt,
+      now: t,
+      cfg: cfg,
+    );
+    if (cur.tickets >= cfg.ticketMax) {
+      return const ActionResult.fail('already_full');
+    }
+    final paid = spendJelly(save, cfg.ticketRefillJelly, reason: 'pvp_ticket');
+    if (!paid.isOk) return paid;
+    final next = refillTickets(
+      tickets: save.pvpTickets,
+      at: save.ticketsAt,
+      now: t,
+      cfg: cfg,
+    );
+    return ActionResult.ok(
+      paid.save!.copyWith(pvpTickets: next.tickets, ticketsAt: next.at),
+      extra: {
+        'tickets': next.tickets,
+        'ticketsAt': next.at.toIso8601String(),
+        'jelly': paid.save!.materialCount(MaterialKind.jelly),
+      },
+    );
+  }
+
+  /// 운영 지급(공지 보상·선물코드) 반영.
+  ///
+  /// **지급은 서버가 하고 클라이언트는 결과 세이브를 채택한다**(구매와 같은 방식).
+  /// 앱이 자기 세이브에 직접 더하게 하면 다음 업로드에서 골드 급증 상한
+  /// ([_goldSanityFloor])에 걸려 정당한 보상이 잘린다.
+  ///
+  /// [row] 는 `user_mail` / `gift_codes` 행(gold·jelly·chitin·mineral·sap).
+  ActionResult grantRewardRow(SaveGame save, Map<String, dynamic> row) {
+    int n(String k) {
+      final v = row[k];
+      final i = (v is num) ? v.toInt() : 0;
+      return i < 0 ? 0 : i; // 음수 지급은 없다(운영 실수로 재화를 뺏지 않게)
+    }
+
+    final gold = n('gold');
+    final grant = {
+      MaterialKind.jelly: n('jelly'),
+      MaterialKind.chitin: n('chitin'),
+      MaterialKind.mineral: n('mineral'),
+      MaterialKind.sap: n('sap'),
+    };
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    for (final e in grant.entries) {
+      if (e.value > 0) mats[e.key] = save.materialCount(e.key) + e.value;
+    }
+    return ActionResult.ok(
+      save.copyWith(gold: save.gold + gold, materials: mats),
+      extra: {
+        'granted': {
+          'gold': gold,
+          for (final e in grant.entries)
+            if (e.value > 0) e.key.key: e.value,
+        },
+      },
     );
   }
 

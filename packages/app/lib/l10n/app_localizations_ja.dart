@@ -1668,4 +1668,111 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notifyQuietHours => 'おやすみ時間（22時〜8時）';
+
+  @override
+  String get pvpTicketTitle => '決闘チケット';
+
+  @override
+  String pvpTicketCount(int tickets, int max) {
+    return '$tickets/$max';
+  }
+
+  @override
+  String pvpTicketNextIn(String time) {
+    return '次の回復 $time';
+  }
+
+  @override
+  String get pvpTicketFullLabel => '満タン';
+
+  @override
+  String get pvpTicketNone => '決闘にはチケットが必要です。下から補充できます。';
+
+  @override
+  String pvpTicketAdBtn(int amount) {
+    return '広告で+$amount枚';
+  }
+
+  @override
+  String pvpTicketAdLeft(int used, int limit) {
+    return '本日 $used/$limit回';
+  }
+
+  @override
+  String pvpTicketJellyBtn(int cost) {
+    return '💎$costで満タン';
+  }
+
+  @override
+  String pvpTicketCharged(int amount) {
+    return 'チケット+$amount枚';
+  }
+
+  @override
+  String get pvpTicketFilled => 'チケットを満タンにしました';
+
+  @override
+  String get pvpTicketAlreadyFull => 'チケットはすでに満タンです';
+
+  @override
+  String get pvpTicketChargeFailed => 'チケットを補充できませんでした。しばらくしてからお試しください';
+
+  @override
+  String get pvpTicketWhy => 'チケットはトロフィーランキングを「回数」ではなく「戦力」で決めるための仕組みです。';
+
+  @override
+  String adDailyLimit(int limit) {
+    return '本日分の広告はすべて視聴済みです（1日$limit回）';
+  }
+
+  @override
+  String get noticeTitle => 'お知らせ';
+
+  @override
+  String get noticeEmpty => '現在お知らせはありません。';
+
+  @override
+  String get noticeFailed => 'お知らせを読み込めませんでした。接続を確認してください。';
+
+  @override
+  String get mailNoticeSection => '運営からのメール';
+
+  @override
+  String get mailClaim => '受け取る';
+
+  @override
+  String get giftCodeTitle => 'ギフトコード';
+
+  @override
+  String get giftCodeHint => 'イベント・お知らせで配布されたコードを入力してください。';
+
+  @override
+  String get giftCodeField => 'コード入力';
+
+  @override
+  String get giftCodeSubmit => '使用する';
+
+  @override
+  String get giftCodeChecking => '確認中…';
+
+  @override
+  String get giftCodeOk => '報酬を受け取りました！';
+
+  @override
+  String get giftCodeBad => '存在しないコードです';
+
+  @override
+  String get giftCodeExpired => '期限切れのコードです';
+
+  @override
+  String get giftCodeExhausted => '配布数が上限に達しました';
+
+  @override
+  String get giftCodeUsed => 'すでに使用済みです';
+
+  @override
+  String get giftCodeFailed => 'サーバーに接続できませんでした。しばらくしてからお試しください';
+
+  @override
+  String get reviewAction => 'ゲームを評価する';
 }

@@ -1919,11 +1919,7 @@ class StorageScreen extends ConsumerWidget {
                                 .disassembleBug(bug.id);
                             if (ok && ctx.mounted) {
                               Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context)
-                                ..hideCurrentSnackBar()
-                                ..showSnackBar(
-                                  SnackBar(content: Text(l.disassembleSnack)),
-                                );
+                              showCenterToast(context, l.disassembleSnack);
                             }
                           },
                           icon: const Icon(Icons.call_split, size: 18),
@@ -2081,11 +2077,6 @@ class StorageScreen extends ConsumerWidget {
   }
 
   void _snack(BuildContext ctx, String text) => showCenterToast(ctx, text);
-
-  // ignore: unused_element
-  void _snackLegacy(BuildContext ctx, String text) => ScaffoldMessenger.of(ctx)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
 
   /// 수련/돌파 행: 상한 미만이면 골드 수련, 상한 도달이면 돌파(타이머), 진행중이면 즉시완료/수령.
   Widget _trainRow(

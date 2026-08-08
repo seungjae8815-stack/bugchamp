@@ -35,7 +35,8 @@ Future<void> loadAppVersion() async {
 // ── 아래 둘은 릴리스마다 손으로 갱신한다(코드로는 알 수 없는 편집 정보) ──────
 
 /// 이 빌드를 만든 날짜(YYYY-MM-DD).
-const String kBuildDate = '2026-08-04';
+const String kBuildDate = '2026-08-08';
 
 /// 이 빌드에 새로 들어간 것 — 설치 후 무엇을 확인하면 되는지 힌트.
-const String kBuildHighlights = '사운드 24종 · 로드맵 보스 칸 · 랭킹 팝업 · 채집함 상한';
+const String kBuildHighlights =
+    '결투 티켓 · 공지사항 · 운영 우편(점검 보상) · 선물코드 · 안내문구 중앙 정렬';
