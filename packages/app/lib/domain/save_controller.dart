@@ -24,6 +24,18 @@ class SeasonReport {
     required this.toTrophies,
   });
 
+  /// 서버가 정산한 시즌 내역(앱을 켜둔 채 경계를 넘긴 경우).
+  ///
+  /// 앱이 먼저 정산하면 로컬에서 만들지만, 켜둔 채 월요일 09시를 넘기면
+  /// **서버가 먼저** 확정한다. 그때도 같은 다이얼로그를 띄우려고 받아온다.
+  factory SeasonReport.fromJson(Map<String, dynamic> json) => SeasonReport(
+    peakTrophies: (json['peakTrophies'] as num?)?.toInt() ?? 0,
+    rewardGold: (json['rewardGold'] as num?)?.toInt() ?? 0,
+    rewardJelly: (json['rewardJelly'] as num?)?.toInt() ?? 0,
+    fromTrophies: (json['fromTrophies'] as num?)?.toInt() ?? 0,
+    toTrophies: (json['toTrophies'] as num?)?.toInt() ?? 0,
+  );
+
   final int peakTrophies;
   final int rewardGold;
   final int rewardJelly;
@@ -124,7 +136,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
 
-    // 시즌: 시작시각 초기화 + 만료 시 소프트리셋·보상.
+    save = _applySeason(save, data, now);
+
+    save = save.copyWith(lastSeen: now);
+    await repo.save(save);
+    return save;
+  }
+
+  /// 시즌 경계(주간·KST 월 09:00)를 넘겼으면 소프트리셋·보상을 적용한다.
+  ///
+  /// 앱 시작([build])과 **서버 세이브 채택**([adoptServerSave]) 양쪽에서 부른다.
+  /// 채택 뒤에 다시 돌리지 않으면, 시작하자마자 채택이 방금 한 정산을 지워
+  /// 트로피가 잠깐 되돌아가고 "시즌 종료" 팝업이 두 번 뜬다.
+  /// 최종 확정은 서버가 한다(`GameActions.mergeSave`) — 여기서는 화면용.
+  SaveGame _applySeason(SaveGame save, GameData data, DateTime now) {
     final battleCfg = data.battleConfig;
     if (battleCfg != null) {
       // 시즌 경계는 요일·시각 앵커로 **모두에게 같은 순간**이다(주간).
@@ -160,8 +185,6 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
 
-    save = save.copyWith(lastSeen: now);
-    await repo.save(save);
     return save;
   }
 
@@ -961,7 +984,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 스키마로 저장돼 있을 수 있다(배포 시점 차이).
   Future<void> adoptServerSave(Map<String, dynamic> json) async {
     final migrated = migrateToCurrent(json);
-    await _commit(SaveGame.fromJson(migrated));
+    var save = SaveGame.fromJson(migrated);
+    // 채택한 세이브가 **아직 정산 전 시즌**일 수 있다(서버는 다음 업로드에서
+    // 확정한다). 여기서 한 번 더 돌리지 않으면 시작 직후 트로피가 되돌아간
+    // 것처럼 보이고, 60초 뒤 서버 정산이 오면서 팝업이 두 번 뜬다.
+    final data = ref.read(gameDataProvider).value;
+    if (data != null) {
+      save = _applySeason(save, data, ref.read(clockProvider).now().toUtc());
+    }
+    await _commit(save);
   }
 
   /// 채팅 사용자 차단/해제(로컬). 차단하면 그 사람 메시지가 보이지 않는다.

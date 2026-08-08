@@ -307,12 +307,13 @@ Handler buildHandler({
         // ⚠️ 세이브 전체를 되돌려주지 않는다. 이 엔드포인트는 주기 업로드라
         // 호출이 잦은데, 응답까지 세이브 통째면 왕복마다 세이브 크기 × 2 의
         // 이그레스가 나간다(과거 14MB 응답 × 수천 회 = 요금 대부분).
-        // 클라이언트는 `clamped` 일 때만 서버 값을 채택하므로 그때만 실어준다.
-        final clamped = r.extra['clamped'] == true;
+        // 클라이언트는 `clamped`·`season` 일 때만 서버 값을 채택하므로
+        // 그때만 실어준다. 시즌 정산은 **주 1회**라 이그레스에 영향이 없다.
+        final adopt = r.extra['clamped'] == true || r.extra['season'] == true;
         return _json({
           'ok': true,
           ...r.extra,
-          if (clamped) 'save': r.save!.toJson(),
+          if (adopt) 'save': r.save!.toJson(),
         });
       } on StateStoreException catch (e) {
         stderr.writeln('[save] ${user.id}: $e');

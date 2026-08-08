@@ -141,12 +141,23 @@ class ServerSaveUploader {
       final res = await server.uploadSave(json);
       if (res.isOk) {
         _lastUploaded = encoded;
-        // 서버가 골드를 잘랐으면(치팅 의심) 그 값을 채택해 화면과 맞춘다.
-        if (res.data?['clamped'] == true && res.save != null) {
-          await _ref
-              .read(saveControllerProvider.notifier)
-              .adoptServerSave(res.save!);
+        // 서버가 값을 고쳤으면 채택해 화면과 맞춘다. 두 경우다 —
+        //  · `clamped`: 골드·칸수를 잘랐다(치팅 의심).
+        //  · `season`: 앱을 켜둔 채 주간 경계를 넘겨 **서버가 시즌을 정산**했다.
+        //    이때만 세이브가 실려 온다(주 1회라 이그레스 부담 없음).
+        final data = res.data;
+        final season = data?['season'] == true;
+        if ((data?['clamped'] == true || season) && res.save != null) {
+          final ctrl = _ref.read(saveControllerProvider.notifier);
+          await ctrl.adoptServerSave(res.save!);
           _lastUploaded = jsonEncode(res.save);
+          final report = data?['seasonReport'];
+          if (season && report is Map) {
+            // 전투 탭이 다음 빌드에서 "시즌 종료" 다이얼로그로 보여준다.
+            ctrl.pendingSeason = SeasonReport.fromJson(
+              Map<String, dynamic>.from(report),
+            );
+          }
         }
       } else if (res.status == 409) {
         // 서버에 저장본이 없다 → 최초 이관(부트스트랩)이 먼저.

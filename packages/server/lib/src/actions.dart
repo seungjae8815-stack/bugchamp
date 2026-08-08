@@ -116,7 +116,10 @@ class GameActions {
     'adsRemoved',
     'passExpiresAt',
     'ownedSkins',
-    'incubatorCapacity',
+    // ⚠️ `incubatorCapacity` 는 여기 두면 안 된다. 부화기 슬롯은 IAP 뿐 아니라
+    // **젤리로도 산다**(`expandIncubator`). 서버가 소유하면 젤리는 빠지고
+    // 슬롯은 업로드 때 되돌아가, 앱을 껐다 켜면 산 게 사라진다(2026-08 버그).
+    // 채집함 칸과 같은 정책 — 소유하지 않고 **상한만** 강제한다(enforceStorage).
     // 결투 티켓 = 하루 판수 제한. 세이브를 편집해 티켓을 채우면 제한이
     // 통째로 무의미해지므로(=트로피 랭킹이 다시 '많이 돌린 사람' 순),
     // 잔량·충전기준시각·광고 시청횟수 모두 서버가 소유한다.
@@ -259,20 +262,111 @@ class GameActions {
     // 클라이언트가 잘린 세이브를 채택해 다음 업로드부터 정상 크기가 된다.
     final capped = enforceStorage(parsed);
     if (capped.bugs.length != parsed.bugs.length ||
-        capped.storageCapacity != parsed.storageCapacity) {
+        capped.storageCapacity != parsed.storageCapacity ||
+        capped.incubatorCapacity != parsed.incubatorCapacity) {
       clamped = true;
     }
-    return ActionResult.ok(capped, extra: {'clamped': clamped});
+
+    // 시즌 정산은 **서버가 확정한다**. 트로피는 서버 소유 필드라 앱이 혼자
+    // 깎아 올려도 위에서 저장본 값으로 덮인다 — 그래서 앱만 리셋하던 시절엔
+    // 주간 리셋이 아예 먹지 않았다(2026-08 버그).
+    final settled = _settleSeason(stored, clientJson, capped, t);
+    return ActionResult.ok(
+      settled.save,
+      extra: {
+        'clamped': clamped,
+        'season': settled.report != null,
+        // 앱이 "시즌 종료" 다이얼로그를 그대로 띄울 수 있게 내역을 실어준다.
+        if (settled.report != null) 'seasonReport': settled.report,
+      },
+    );
   }
 
-  /// 칸 수를 설정 상한(`pets.json.storageSlotsMax`)으로, 보유 곤충을 칸 수로 자른다.
+  /// 칸 수를 설정 상한(`pets.json` 의 `storageSlotsMax`·`incubatorSlotsMax`)으로,
+  /// 보유 곤충을 칸 수로 자른다.
+  ///
+  /// 소유(덮어쓰기)가 아니라 **상한 강제**다 — 둘 다 젤리로 사는 편의 칸이라
+  /// 상한만 지키면 경제·랭킹에 영향이 없다. 소유했다가 젤리로 산 슬롯이
+  /// 사라지는 사고가 있었다.
   SaveGame enforceStorage(SaveGame save) {
     final max = config.pet.storageSlotsMax;
     final cap = save.storageCapacity > max ? max : save.storageCapacity;
-    final out = cap == save.storageCapacity
+    final incMax = config.pet.incubatorSlotsMax;
+    final inc = save.incubatorCapacity > incMax
+        ? incMax
+        : save.incubatorCapacity;
+    final out = (cap == save.storageCapacity && inc == save.incubatorCapacity)
         ? save
-        : save.copyWith(storageCapacity: cap);
+        : save.copyWith(storageCapacity: cap, incubatorCapacity: inc);
     return out.trimmedToStorage();
+  }
+
+  /// 주간 시즌 경계(KST 월 09:00)를 넘겼으면 **트로피를 소프트리셋**한다.
+  ///
+  /// 누가 보상을 주는가로 두 갈래다:
+  ///  - **앱이 먼저 정산**(보통) — 앱이 시작할 때 보상·팝업을 처리하고
+  ///    `seasonStartedAt` 을 새 경계로 올려 보낸다. 서버는 트로피만 깎는다.
+  ///  - **서버가 먼저**(앱을 켜둔 채 경계를 넘김) — 앱은 아직 모르므로 보상까지
+  ///    서버가 지급하고 `season: true` 로 알린다. 앱이 그 세이브를 채택한다.
+  /// 어느 쪽이든 **보상은 한 번**이고, 저장본의 `seasonStartedAt` 이 경계로
+  /// 올라가므로 다음 업로드에서 다시 깎이지 않는다.
+  ({SaveGame save, Map<String, dynamic>? report}) _settleSeason(
+    SaveGame stored,
+    Map<String, dynamic> clientJson,
+    SaveGame merged,
+    DateTime t,
+  ) {
+    final cfg = config.battle;
+    final curStart = seasonStartAt(t, cfg);
+    final clientStart = DateTime.tryParse(
+      clientJson['seasonStartedAt'] as String? ?? '',
+    )?.toUtc();
+
+    // 아직 경계를 안 넘었으면 **미래 날짜만** 막는다. 앞당겨 적어두면
+    // 서버가 "이미 정산했다"고 착각해 리셋을 영영 건너뛴다.
+    if (stored.seasonStartedAt == null ||
+        !stored.seasonStartedAt!.isBefore(curStart)) {
+      final safe = (clientStart == null || clientStart.isAfter(curStart))
+          ? curStart
+          : clientStart;
+      return (
+        save: merged.seasonStartedAt == safe
+            ? merged
+            : merged.copyWith(seasonStartedAt: safe),
+        report: null,
+      );
+    }
+
+    final reset = cfg.seasonResetTrophies(stored.pvpTrophies);
+    var out = merged.copyWith(
+      pvpTrophies: reset,
+      seasonPeakTrophies: reset,
+      seasonStartedAt: curStart,
+    );
+
+    // 앱이 이미 정산했으면(경계를 올려 보냄) 보상은 앱이 줬다 — 두 번 주지 않는다.
+    final appPaid = clientStart != null && !clientStart.isBefore(curStart);
+    if (appPaid) return (save: out, report: null);
+
+    final peak = stored.seasonPeakTrophies > stored.pvpTrophies
+        ? stored.seasonPeakTrophies
+        : stored.pvpTrophies;
+    final rw = cfg.seasonReward(peak);
+    if (rw.gold > 0 || rw.jelly > 0) {
+      final mats = Map<MaterialKind, int>.from(out.materials);
+      mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + rw.jelly;
+      out = out.copyWith(gold: out.gold + rw.gold, materials: mats);
+    }
+    return (
+      save: out,
+      report: {
+        'peakTrophies': peak,
+        'rewardGold': rw.gold,
+        'rewardJelly': rw.jelly,
+        'fromTrophies': stored.pvpTrophies,
+        'toTrophies': reset,
+      },
+    );
   }
 
   /// 최초 이관(부트스트랩) 세이브를 정화한다.

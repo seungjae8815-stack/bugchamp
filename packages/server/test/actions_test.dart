@@ -1369,6 +1369,79 @@ void main() {
       expect(r.save!.upgradeLevel(UpgradeKind.attack), 10);
     });
 
+    // t0 = 2026-07-20(월) 12:00 UTC → 이번 시즌 시작은 같은 날 09:00 KST(=00:00 UTC).
+    final curStart = DateTime.utc(2026, 7, 20);
+    final lastWeek = curStart.subtract(const Duration(days: 7));
+
+    test('시즌 경계를 넘기면 서버가 트로피를 깎는다 (앱만 깎으면 되돌아갔다)', () {
+      final st = stored(trophies: 1500).copyWith(seasonStartedAt: lastWeek);
+      // 앱이 먼저 정산해 750 으로 깎고 경계를 올려 보낸 세이브.
+      final client = st
+          .copyWith(
+            pvpTrophies: 750,
+            seasonPeakTrophies: 750,
+            seasonStartedAt: curStart,
+          )
+          .toJson();
+      final r = actions.mergeSave(st, client);
+      expect(r.save!.pvpTrophies, 750);
+      expect(r.save!.seasonPeakTrophies, 750);
+      expect(r.save!.seasonStartedAt, curStart);
+      // 앱이 이미 보상을 줬으므로 서버는 또 주지 않는다.
+      expect(r.save!.gold, st.gold);
+      expect(r.extra['season'], isFalse);
+    });
+
+    test('같은 주에 다시 올려도 또 깎이지 않는다', () {
+      final settled = stored(trophies: 750).copyWith(seasonStartedAt: curStart);
+      final r = actions.mergeSave(settled, settled.toJson());
+      expect(r.save!.pvpTrophies, 750); // 절반의 절반이 되면 안 된다
+    });
+
+    test('앱을 켜둔 채 경계를 넘기면 서버가 보상까지 주고 알린다', () {
+      final st = stored(trophies: 800).copyWith(seasonStartedAt: lastWeek);
+      // 앱은 아직 모른다 — 지난 시즌 시작을 그대로 올린다.
+      final r = actions.mergeSave(st, st.toJson());
+      expect(r.save!.pvpTrophies, 400);
+      expect(r.save!.seasonStartedAt, curStart);
+      // 플래티넘(40000골드·20젤리) × 시즌배율 3.
+      expect(r.save!.gold, st.gold + 120000);
+      expect(r.save!.materialCount(MaterialKind.jelly), 60);
+      expect(r.extra['season'], isTrue);
+      final report = r.extra['seasonReport'] as Map<String, dynamic>;
+      expect(report['peakTrophies'], 800);
+      expect(report['fromTrophies'], 800);
+      expect(report['toTrophies'], 400);
+    });
+
+    test('시즌 시작을 미래로 적어 리셋을 건너뛸 수 없다', () {
+      final st = stored(trophies: 1500).copyWith(seasonStartedAt: lastWeek);
+      final cheat = st
+          .copyWith(seasonStartedAt: curStart.add(const Duration(days: 365)))
+          .toJson();
+      final r = actions.mergeSave(st, cheat);
+      expect(r.save!.seasonStartedAt, curStart); // 미래 날짜는 경계로 잘린다
+      expect(r.save!.pvpTrophies, 750); // 리셋도 정상 적용
+    });
+
+    test('젤리로 늘린 부화기 슬롯은 유지된다 (서버가 소유하지 않는다)', () {
+      final st = stored();
+      final expanded = st
+          .copyWith(incubatorCapacity: st.incubatorCapacity + 1)
+          .toJson();
+      final r = actions.mergeSave(st, expanded);
+      expect(r.save!.incubatorCapacity, st.incubatorCapacity + 1);
+      expect(r.extra['clamped'], isFalse);
+    });
+
+    test('부화기 슬롯도 설정 상한을 넘기면 잘린다', () {
+      final st = stored();
+      final forged = st.copyWith(incubatorCapacity: 999).toJson();
+      final r = actions.mergeSave(st, forged);
+      expect(r.save!.incubatorCapacity, cfg.pet.incubatorSlotsMax);
+      expect(r.extra['clamped'], isTrue);
+    });
+
     test('트로피 위조는 무시하고 서버 값을 유지한다', () {
       final cheat = stored().copyWith(pvpTrophies: 999999);
       final r = actions.mergeSave(stored(trophies: 500), cheat.toJson());

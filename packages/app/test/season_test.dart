@@ -153,4 +153,32 @@ void main() {
     expect(s.pvpTrophies, 800); // 리셋되지 않는다
     expect(c.read(saveControllerProvider.notifier).pendingSeason, isNull);
   });
+
+  test('서버 세이브를 채택해도 정산되지 않은 시즌은 다시 정산한다', () async {
+    // 시작할 때 서버 세이브를 통째로 채택하는데, 서버는 다음 업로드에서야
+    // 시즌을 확정한다. 채택 뒤 다시 돌리지 않으면 방금 깎은 트로피가
+    // 되돌아가고 "시즌 종료" 팝업이 두 번 뜬다.
+    final seed = SaveGame.initial(
+      createdAt: DateTime.utc(2026, 1, 1),
+    ).copyWith(lastSeen: t0, seasonStartedAt: curSeasonStart);
+    final c = container(seed);
+    await c.read(saveControllerProvider.future);
+    final ctrl = c.read(saveControllerProvider.notifier);
+    ctrl.consumeSeason();
+
+    // 서버가 아직 정산하지 않은(지난 시즌 그대로인) 세이브를 내려준다.
+    final stale = seed
+        .copyWith(
+          pvpTrophies: 800,
+          seasonPeakTrophies: 800,
+          seasonStartedAt: DateTime.utc(2026, 1, 19),
+        )
+        .toJson();
+    await ctrl.adoptServerSave(stale);
+
+    final s = c.read(saveControllerProvider).requireValue;
+    expect(s.pvpTrophies, 400); // 채택 직후 바로 소프트리셋
+    expect(s.seasonStartedAt, curSeasonStart);
+    expect(ctrl.pendingSeason, isNotNull);
+  });
 }
