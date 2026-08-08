@@ -1093,6 +1093,41 @@ void main() {
     });
   });
 
+  group('버전 게이트(플랫폼별)', () {
+    // 스토어 승인 시점이 달라 iOS 와 안드로이드의 권장 버전이 갈린다.
+    // 앱이 platform 을 보내면 그쪽 값을, 없으면 공용 값을 쓴다(구버전 호환).
+    test('platform 을 안 보내면 공용 값으로 답한다', () async {
+      final res = await get(handler(), '/version');
+      expect(res.statusCode, 200);
+      final b = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(b.containsKey('min'), isTrue);
+      expect(b.containsKey('latest'), isTrue);
+      expect(b['maintenance'], isFalse);
+    });
+
+    test('알 수 없는 platform 이어도 깨지지 않는다', () async {
+      final res = await get(handler(), '/version?platform=windows');
+      expect(res.statusCode, 200);
+    });
+
+    test('platform 별 값이 없으면 공용 값으로 떨어진다', () async {
+      // 테스트 환경엔 LATEST_VERSION_IOS 가 없다 → 공용과 같아야 한다.
+      final common =
+          jsonDecode(await (await get(handler(), '/version')).readAsString())
+              as Map<String, dynamic>;
+      final ios =
+          jsonDecode(
+                await (await get(
+                  handler(),
+                  '/version?platform=ios',
+                )).readAsString(),
+              )
+              as Map<String, dynamic>;
+      expect(ios['latest'], common['latest']);
+      expect(ios['min'], common['min']);
+    });
+  });
+
   group('운영 관리 패널(/admin)', () {
     const key = 'test-admin-key-0123456789';
 

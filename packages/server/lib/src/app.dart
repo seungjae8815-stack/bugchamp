@@ -174,11 +174,24 @@ Handler buildHandler({
     //   min    = 이 미만이면 강제 업데이트(막힘). 서버 규약이 깨질 때 올린다.
     //   latest = 이 미만이면 권장 업데이트(닫기 가능).
     // 값은 Cloud Run 환경변수로 관리 → 재배포 없이 gcloud run update 로 바꾼다.
-    ..get('/version', (Request _) {
+    ..get('/version', (Request req) {
       int env(String k) => int.tryParse(Platform.environment[k] ?? '') ?? 0;
+      // 스토어 심사 통과 시점이 플랫폼마다 다르다. 한쪽만 출시됐는데 양쪽에
+      // 업데이트를 권하면 아직 못 받는 쪽은 **없는 업데이트**를 안내받는다.
+      // 앱이 `?platform=ios|android` 를 보내면 그쪽 값을 쓰고, 없거나 값이
+      // 설정되지 않았으면 공용 값으로 떨어진다(구버전 앱 호환).
+      final p = req.url.queryParameters['platform']?.toUpperCase();
+      int forPlatform(String base) {
+        if (p == 'IOS' || p == 'ANDROID') {
+          final v = env('${base}_$p');
+          if (v > 0) return v;
+        }
+        return env(base);
+      }
+
       return _json({
-        'min': env('MIN_SUPPORTED_VERSION'),
-        'latest': env('LATEST_VERSION'),
+        'min': forPlatform('MIN_SUPPORTED_VERSION'),
+        'latest': forPlatform('LATEST_VERSION'),
         // 점검 모드 — 앱이 "점검 중" 화면을 띄우고 입장을 막는다. 재배포 없이
         // `gcloud run services update --update-env-vars MAINTENANCE=1` 로 켜고
         // `MAINTENANCE=0`(또는 제거)으로 끈다.

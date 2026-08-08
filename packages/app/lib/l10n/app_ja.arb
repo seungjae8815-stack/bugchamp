@@ -534,5 +534,6 @@
   "giftCodeExhausted": "配布数が上限に達しました",
   "giftCodeUsed": "すでに使用済みです",
   "giftCodeFailed": "サーバーに接続できませんでした。しばらくしてからお試しください",
-  "reviewAction": "ゲームを評価する"
+  "reviewAction": "ゲームを評価する",
+  "chatAdminBadge": "運営"
 }

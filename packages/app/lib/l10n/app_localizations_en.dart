@@ -1808,4 +1808,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewAction => 'Rate the game';
+
+  @override
+  String get chatAdminBadge => 'STAFF';
 }

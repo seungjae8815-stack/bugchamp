@@ -1755,10 +1755,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   return Text.rich(
                     TextSpan(
                       children: [
+                        // 운영자 메시지는 홈 채팅바에서도 구분된다 — 여기가
+                        // 대부분의 유저가 채팅을 접하는 유일한 자리다.
                         TextSpan(
                           text: '${last.nickname} ',
-                          style: const TextStyle(
-                            color: Color(0xFFEBA52F),
+                          style: TextStyle(
+                            color: last.isAdmin
+                                ? const Color(0xFF9FD3F5)
+                                : const Color(0xFFEBA52F),
                             fontWeight: FontWeight.w800,
                           ),
                         ),

@@ -58,5 +58,20 @@
     "핵",
     "현금거래",
     "호구"
+  ],
+  "_reservedComment": "운영자 사칭 금지 이름(부분 일치). 진짜 운영자 표시는 DB is_admin 이 근거지만, 이름만 보고 믿는 유저를 위해 이름 단계에서도 막는다.",
+  "reservedNames": [
+    "운영자",
+    "관리자",
+    "운영팀",
+    "고객센터",
+    "gm",
+    "admin",
+    "administrator",
+    "operator",
+    "staff",
+    "벌레챔프",
+    "bugchamp",
+    "공식"
   ]
 }

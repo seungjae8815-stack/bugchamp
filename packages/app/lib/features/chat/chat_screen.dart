@@ -302,8 +302,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     String? myId,
     AppLocalizations l,
   ) {
-    // 차단한 사용자의 메시지는 내용을 보여주지 않는다.
-    if (save.isBlocked(m.userId)) {
+    // 운영자 메시지는 **차단으로 가려지지 않는다** — 점검·보상 안내를 못 보면
+    // 그 피해는 유저가 본다. is_admin 은 서버만 세울 수 있어 우회도 안 된다.
+    if (!m.isAdmin && save.isBlocked(m.userId)) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Text(
@@ -327,25 +328,70 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
-          Text(
-            // 이미 등록된 부적절한 닉네임은 표시 단계에서 대체한다.
-            _rules.maskNickname(m.nickname, fallback: l.nicknameFallback),
-            style: TextStyle(
-              color: mine ? const Color(0xFFEBA52F) : const Color(0x99FFFFFF),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (m.isAdmin) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3F7FB5),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    l.chatAdminBadge,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                // 이미 등록된 부적절한 닉네임은 표시 단계에서 대체한다.
+                // 운영자 이름은 예약어라 일반 유저는 쓸 수 없다(그래서 안 가린다).
+                _rules.maskNickname(
+                  m.nickname,
+                  fallback: l.nicknameFallback,
+                  isAdmin: m.isAdmin,
+                ),
+                style: TextStyle(
+                  color: m.isAdmin
+                      ? const Color(0xFF9FD3F5)
+                      : (mine
+                            ? const Color(0xFFEBA52F)
+                            : const Color(0x99FFFFFF)),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 2),
           GestureDetector(
             // 내 메시지 길게누르기=삭제, 남의 메시지=신고/차단 메뉴.
-            onLongPress: () => mine ? _deleteMine(m, l) : _actions(m, l),
+            // 운영자 메시지는 신고·차단 대상이 아니다(공지 성격).
+            onLongPress: m.isAdmin
+                ? null
+                : () => mine ? _deleteMine(m, l) : _actions(m, l),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 280),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: mine ? const Color(0x33EBA52F) : const Color(0x22FFFFFF),
+                color: m.isAdmin
+                    ? const Color(0x333F7FB5)
+                    : (mine
+                          ? const Color(0x33EBA52F)
+                          : const Color(0x22FFFFFF)),
                 borderRadius: BorderRadius.circular(12),
+                border: m.isAdmin
+                    ? Border.all(color: const Color(0x883F7FB5))
+                    : null,
               ),
               child: Text(
                 body,

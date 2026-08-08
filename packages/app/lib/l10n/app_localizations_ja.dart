@@ -1775,4 +1775,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reviewAction => 'ゲームを評価する';
+
+  @override
+  String get chatAdminBadge => '運営';
 }

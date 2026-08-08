@@ -3309,6 +3309,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rate the game'**
   String get reviewAction;
+
+  /// No description provided for @chatAdminBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'STAFF'**
+  String get chatAdminBadge;
 }
 
 class _AppLocalizationsDelegate

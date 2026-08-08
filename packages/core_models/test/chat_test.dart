@@ -148,5 +148,59 @@ void main() {
       });
       expect(m.id, '7');
     });
+
+    test('is_admin 이 없는 서버 응답은 false 로 읽는다(구버전 스키마 호환)', () {
+      final m = ChatMessage.fromJson({
+        'id': 7,
+        'user_id': 'u-2',
+        'nickname': 'a',
+        'body': 'b',
+        'created_at': '2026-07-20T00:00:00Z',
+      });
+      expect(m.isAdmin, isFalse);
+      final admin = ChatMessage.fromJson({
+        'id': 8,
+        'user_id': 'u-3',
+        'nickname': '운영자',
+        'body': '점검 안내',
+        'created_at': '2026-07-20T00:00:00Z',
+        'is_admin': true,
+      });
+      expect(admin.isAdmin, isTrue);
+    });
+  });
+
+  group('운영자 사칭 방지', () {
+    const rules = ChatRules(
+      reservedNames: ['운영자', 'gm', 'admin'],
+      bannedWords: ['욕설'],
+    );
+
+    test('예약된 이름은 닉네임으로 쓸 수 없다', () {
+      expect(rules.nicknameAllowed('운영자'), isFalse);
+      expect(rules.nicknameAllowed('GM김씨'), isFalse);
+      // 부분 일치·띄어쓰기 우회도 막는다.
+      expect(rules.nicknameAllowed('운 영 자 입니다'), isFalse);
+      expect(rules.nicknameAllowed('ADMIN_2'), isFalse);
+      // 평범한 이름은 통과.
+      expect(rules.nicknameAllowed('풍뎅이왕'), isTrue);
+    });
+
+    test('이미 등록된 사칭 이름은 표시 단계에서 가린다', () {
+      expect(rules.maskNickname('운영자', fallback: '이용자'), '이용자');
+      expect(rules.maskNickname('욕설맨', fallback: '이용자'), '이용자');
+      expect(rules.maskNickname('풍뎅이왕', fallback: '이용자'), '풍뎅이왕');
+    });
+
+    test('진짜 운영자 메시지는 가리지 않는다', () {
+      // is_admin 은 서버(service_role)만 세울 수 있으므로 우회 불가.
+      expect(rules.maskNickname('운영자', fallback: '이용자', isAdmin: true), '운영자');
+    });
+
+    test('예약어 목록이 비면 아무것도 막지 않는다(설정 누락 시 기존 동작)', () {
+      const empty = ChatRules();
+      expect(empty.isReservedName('운영자'), isFalse);
+      expect(empty.nicknameAllowed('운영자'), isTrue);
+    });
   });
 }

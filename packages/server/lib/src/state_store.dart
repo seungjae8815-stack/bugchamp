@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show stderr;
 
 import 'package:http/http.dart' as http;
 
@@ -268,7 +269,13 @@ class StateStore {
       'codes': await rows(
         'gift_codes?select=*&order=created_at.desc&limit=$limit',
       ),
-      'chat': await listChat(),
+      // 채팅 조회가 실패해도 **패널 전체를 죽이지 않는다.** 공지·우편·코드는
+      // 채팅과 무관한데, 한 테이블이 없거나 권한이 어긋났다고 관리 화면이
+      // 통째로 안 열리면 그때 손쓸 방법이 사라진다(실제로 그렇게 깨뜨렸다).
+      'chat': await listChat().catchError((Object e) {
+        stderr.writeln('[admin] chat 조회 건너뜀: $e');
+        return const <Map<String, dynamic>>[];
+      }),
     };
   }
 
@@ -293,12 +300,14 @@ class StateStore {
   });
 
   /// 최근 채팅(운영 모더레이션용). 부적절한 글을 지우려면 먼저 보여야 한다.
+  ///
+  /// 컬럼을 나열하지 않고 `select=*` 를 쓴다 — `is_admin` 을 아직 추가하지 않은
+  /// 프로젝트에서도 그대로 동작해야 한다(마이그레이션 전에 패널이 죽으면 안 된다).
   Future<List<Map<String, dynamic>>> listChat({int limit = 40}) async {
     final res = await _http.get(
       Uri.parse(
         '$supabaseUrl/rest/v1/chat_messages'
-        '?select=id,user_id,nickname,body,is_admin,created_at'
-        '&order=created_at.desc&limit=$limit',
+        '?select=*&order=created_at.desc&limit=$limit',
       ),
       headers: _headers,
     );

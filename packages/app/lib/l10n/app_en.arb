@@ -1145,5 +1145,6 @@
   "giftCodeExhausted": "That code has run out",
   "giftCodeUsed": "You've already used this",
   "giftCodeFailed": "Couldn't reach the server. Try again in a moment.",
-  "reviewAction": "Rate the game"
+  "reviewAction": "Rate the game",
+  "chatAdminBadge": "STAFF"
 }

@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'review_service.dart' show kAppStoreId;
 
 /// 앱 버전 점검 결과.
 enum UpdateVerdict {
@@ -27,8 +30,20 @@ enum UpdateVerdict {
 }
 
 const _serverUrl = String.fromEnvironment('GAME_SERVER_URL');
-const _storeUrl =
-    'https://play.google.com/store/apps/details?id=com.bugchamp.app';
+
+/// 이 기기의 스토어 페이지.
+///
+/// ⚠️ 예전엔 플레이스토어 주소 하나만 있었다 — **iOS 에서 업데이트 버튼을
+/// 누르면 구글 플레이 웹페이지로 갔다**(앱을 구할 수 없는 곳). 스토어가 둘이면
+/// 링크도 둘이어야 한다.
+String get _storeUrl => Platform.isIOS
+    ? 'https://apps.apple.com/app/id$kAppStoreId'
+    : 'https://play.google.com/store/apps/details?id=com.bugchamp.app';
+
+/// 서버에 알릴 플랫폼. 스토어 심사 통과 시점이 서로 다르므로 **권장 버전도
+/// 플랫폼마다 다르다** — 한쪽만 출시됐는데 양쪽에 업데이트를 권하면,
+/// 아직 못 받는 쪽은 "있지도 않은 업데이트"를 안내받는다.
+String get _platform => Platform.isIOS ? 'ios' : 'android';
 
 /// 서버의 `/version`(min·latest·maintenance)과 내 versionCode 를 비교한다.
 ///
@@ -41,7 +56,7 @@ Future<UpdateVerdict> checkAppVersion({http.Client? client}) async {
   try {
     // 타임아웃 8초: Cloud Run 콜드스타트(스케일 0→1)를 감안한 여유.
     final res = await c
-        .get(Uri.parse('$_serverUrl/version'))
+        .get(Uri.parse('$_serverUrl/version?platform=$_platform'))
         .timeout(const Duration(seconds: 8));
     if (res.statusCode != 200) return UpdateVerdict.offline;
     final d = jsonDecode(res.body) as Map<String, dynamic>;

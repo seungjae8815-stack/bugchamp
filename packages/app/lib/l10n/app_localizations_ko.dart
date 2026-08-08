@@ -1774,4 +1774,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get reviewAction => '게임 평가하기';
+
+  @override
+  String get chatAdminBadge => '운영자';
 }

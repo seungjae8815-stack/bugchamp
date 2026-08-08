@@ -569,5 +569,6 @@
   "giftCodeExhausted": "수량이 모두 소진된 코드예요",
   "giftCodeUsed": "이미 사용했어요",
   "giftCodeFailed": "서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요",
-  "reviewAction": "게임 평가하기"
+  "reviewAction": "게임 평가하기",
+  "chatAdminBadge": "운영자"
 }
