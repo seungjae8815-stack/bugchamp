@@ -65,6 +65,22 @@ android {
     }
 
     buildTypes {
+        // ── 개발 빌드는 **다른 패키지 id** 로 나간다 ──
+        //
+        // 스토어에서 받은 앱은 구글이 자체 키로 재서명하므로, 로컬 빌드로
+        // 덮어쓸 수 없다(INSTALL_FAILED_UPDATE_INCOMPATIBLE). 지우고 깔면
+        // 로컬 세이브가 날아간다(익명 계정이면 진행도 유실).
+        //
+        // 그래서 debug/profile 만 `.dev` 를 붙여 **스토어 앱과 나란히** 깔리게
+        // 한다. release 는 손대지 않는다 — 스토어 제출 경로에 영향이 없어야 하고,
+        // 여기에 flavor 를 쓰면 앞으로 모든 빌드 명령에 --flavor 를 붙여야 해서
+        // 한 번만 빠뜨려도 잘못된 id 로 제출된다.
+        debug {
+            applicationIdSuffix = ".dev"
+        }
+        maybeCreate("profile").apply {
+            applicationIdSuffix = ".dev"
+        }
         release {
             // 업로드 키가 있으면 그것으로, 없으면 디버그 키로 서명한다.
             // ⚠️ 디버그 키로 서명된 빌드는 Play Console 에 업로드할 수 없고

@@ -19,8 +19,22 @@ import 'save_controller.dart';
 ///
 /// ⚠️ 순서를 뒤집으면 안 된다. 서버가 빈 세이브를 만들고 앱이 그걸 채택하면
 /// 기존 진행도가 통째로 날아간다.
-Future<void> syncWithServer(WidgetRef ref) async {
-  final server = ref.read(gameServerProvider);
+Future<void> syncWithServer(WidgetRef ref) => syncSaveWith(
+  server: ref.read(gameServerProvider),
+  ctrl: ref.read(saveControllerProvider.notifier),
+  localSave: () => ref.read(saveControllerProvider.future),
+);
+
+/// [syncWithServer] 의 알맹이 — `WidgetRef` 없이 테스트할 수 있게 분리했다
+/// (Riverpod 3 의 WidgetRef 는 sealed 라 가짜로 만들 수 없다).
+///
+/// [localSave] 는 **Future 를 돌려주는 함수**다. 세이브가 아직 로딩 중일 수
+/// 있어서(첫 실행) 값을 바로 요구하면 안 된다.
+Future<void> syncSaveWith({
+  required GameServer server,
+  required SaveController ctrl,
+  required Future<SaveGame> Function() localSave,
+}) async {
   if (!server.available) return;
 
   // 앱을 갓 켜면 **저장된 세션 토큰이 만료**돼 있을 수 있다. Supabase 가
@@ -33,7 +47,6 @@ Future<void> syncWithServer(WidgetRef ref) async {
     return; // 로컬 유지 — 연결이 없다고 진행도를 건드리지 않는다.
   }
 
-  final ctrl = ref.read(saveControllerProvider.notifier);
   final remote = state.save;
   if (remote != null) {
     await ctrl.adoptServerSave(remote);
@@ -41,7 +54,12 @@ Future<void> syncWithServer(WidgetRef ref) async {
   }
 
   // 서버에 없음 → 로컬을 이관한다.
-  final local = ref.read(saveControllerProvider).requireValue;
+  //
+  // ⚠️ `requireValue` 를 쓰면 안 된다. **완전 신규 설치**에서는 세이브가 아직
+  // 로딩 중(AsyncLoading)이라 즉시 예외가 나고, 타이틀이 "불러오는 중"에서
+  // 영영 멈춘다(기존 유저는 세이브가 이미 있어 이 경로를 안 밟는다).
+  // 로드가 끝날 때까지 기다렸다가 이관한다.
+  final local = await localSave();
   final res = await server.bootstrap(local.toJson());
   if (res.isOk) {
     debugPrint('[sync] 로컬 세이브를 서버로 이관했다');

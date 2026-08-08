@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 개발 빌드는 이름으로 구분한다 — 스토어 앱과 나란히 깔리기 때문. -->
+<resources>
+    <string name="app_name">벌레챔프 DEV</string>
+</resources>
