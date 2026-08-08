@@ -1,0 +1,101 @@
+========================================
+ App Store — 이 버전의 새로운 기능 (1.0.4)
+========================================
+※ iOS 는 1.0.3 이 심사를 통과하지 못해 출시되지 않았다.
+   그래서 이 노트는 **1.0.3 + 1.0.4 내용을 합쳐서** 적는다.
+   (Google Play 용 1.0.4 전용 노트는 _release_notes_1.0.4.txt)
+※ App Store 는 언어별로 따로 입력한다 — 아래 각 블록 본문만 붙여넣는다.
+※ 한도 4,000자.
+
+---------- 한국어 ----------
+결투 티켓이 생겼어요
+결투에 티켓 1장이 듭니다. 30분마다 1장씩 차오르고 최대 10장까지 모여요.
+광고를 보거나 곤충젤리로도 채울 수 있습니다.
+오래 붙잡고 돌린 사람이 아니라, 강한 곤충을 키운 사람이 위로 올라가도록 바꿨습니다.
+
+공지사항
+게임 소식을 앱 안에서 바로 볼 수 있어요. 새 글이 오면 표시가 뜹니다.
+
+운영자 우편 · 선물코드
+점검 보상 같은 선물을 편지함에서 받을 수 있고, 설정에서 선물코드를 입력할 수 있어요.
+
+광고 제거를 구매하셨다면
+이제 보상형 광고도 건너뛰고 보상을 바로 받습니다.
+
+소리가 붙었습니다
+• 채집·탐험·이벤트 효과음 20여 종 추가
+• 결투장·특별 스테이지 전용 배경음 추가
+• 배경음·효과음을 설정에서 따로 켜고 끄거나 볼륨 조절
+• 소리가 나지 않던 문제 수정
+
+그 밖의 개선
+• 로드맵 개편 — 스테이지 표시와 글씨를 또렷하게
+• 접속하면 내 순위와 지난번 대비 변동을 알려드려요
+• 채집함 보유 한도 적용 — 기본 50마리, 젤리로 100마리까지 확장
+  한도를 넘으면 우수한 개체가 남아요. 아끼는 곤충은 미리 고정해 주세요
+• 안내 문구가 화면 가운데에 보입니다
+• 랭킹 맨 아래가 가려지던 문제를 고쳤습니다
+
+재미있게 즐겨주세요!
+
+---------- English ----------
+Duel tickets
+Each duel now costs one ticket. You get one back every 30 minutes, up to 10.
+You can also top up with an ad or with jelly.
+Trophies now reflect how strong your bugs are, not how long you played.
+
+Notices
+Read game news right inside the app. A dot appears when something new arrives.
+
+Mail and gift codes
+Claim gifts such as maintenance rewards from your mailbox, and redeem gift codes in Settings.
+
+If you bought Remove Ads
+Rewarded ads are now skipped too - you get the reward straight away.
+
+Sound is here
+• 20+ new sound effects for collecting, exploring and events
+• New background music for the arena and special stages
+• Toggle BGM and SFX separately, with volume control in Settings
+• Fixed an issue where no sound played
+
+More improvements
+• Roadmap redesign - clearer stage markers and text
+• See your rank and how it changed when you sign in
+• Collection limit - 50 bugs, expandable to 100 with jelly
+  Over the limit? Your best bugs are kept, so pin your favorites first
+• Messages now appear in the middle of the screen
+• Fixed the last row of the ranking being cut off
+
+Thanks for playing!
+
+---------- 日本語 ----------
+決闘チケットが登場
+決闘にはチケットが1枚必要になります。30分ごとに1枚回復し、最大10枚まで貯まります。
+広告視聴や昆虫ゼリーでも補充できます。
+長く回した人ではなく、強い昆虫を育てた人が上位に来るようにしました。
+
+お知らせ
+ゲームの最新情報をアプリ内で確認できます。新着があると印が付きます。
+
+運営メール・ギフトコード
+メンテナンス報酬などのギフトをメールボックスで受け取れます。設定からギフトコードも入力できます。
+
+広告除去をご購入の方へ
+リワード広告もスキップして、報酬をすぐ受け取れるようになりました。
+
+サウンドを追加しました
+• 採集・探索・イベントの効果音を20種以上追加
+• 闘技場・特別ステージ専用のBGMを追加
+• BGM・効果音を設定で個別にオン/オフ、音量調整が可能に
+• 音が鳴らない不具合を修正
+
+その他の改善
+• ロードマップ改善 - ステージ表示と文字を見やすく
+• ログイン時に自分の順位と前回からの変動をお知らせします
+• 採集ボックスの所持上限を適用 - 基本50匹、ゼリーで100匹まで拡張
+  上限を超えると優れた個体が残ります。大切な虫は先にピン留めを
+• 案内メッセージが画面中央に表示されます
+• ランキングの最下行が隠れる問題を修正しました
+
+お楽しみください！
