@@ -268,7 +268,44 @@ class StateStore {
       'codes': await rows(
         'gift_codes?select=*&order=created_at.desc&limit=$limit',
       ),
+      'chat': await listChat(),
     };
+  }
+
+  /// 운영자 이름으로 전체 채팅에 글을 쓴다.
+  ///
+  /// `is_admin = true` 는 **service_role 로만** 넣을 수 있다(RLS 가 클라이언트의
+  /// true 삽입을 막는다) — 이게 없으면 누구나 닉네임을 '운영자'로 바꿔 사칭한다.
+  ///
+  /// ⚠️ [userId] 는 **실재하는 계정 uuid** 여야 한다. `chat_messages.user_id` 는
+  /// NOT NULL + auth.users 참조이고, 무엇보다 앱의 `recent()` 가 파싱에 실패하면
+  /// **목록 전체를 빈 배열로** 돌려준다 — 잘못된 값 하나가 모든 유저의 채팅창을
+  /// 비워버린다.
+  Future<void> insertAdminChat({
+    required String userId,
+    required String nickname,
+    required String body,
+  }) => insertRow('chat_messages', {
+    'user_id': userId,
+    'nickname': nickname,
+    'body': body,
+    'is_admin': true,
+  });
+
+  /// 최근 채팅(운영 모더레이션용). 부적절한 글을 지우려면 먼저 보여야 한다.
+  Future<List<Map<String, dynamic>>> listChat({int limit = 40}) async {
+    final res = await _http.get(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/chat_messages'
+        '?select=id,user_id,nickname,body,is_admin,created_at'
+        '&order=created_at.desc&limit=$limit',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw StateStoreException('chat 조회 실패: ${res.statusCode} ${res.body}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
   }
 
   /// 행 1개 삽입(운영 등록). 실패는 예외 — 조용히 넘기면 "올렸는데 없다"가 된다.

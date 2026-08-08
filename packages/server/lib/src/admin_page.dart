@@ -81,6 +81,7 @@ const String adminHtml = r'''<!doctype html>
     <button id="t-notice" class="on" onclick="tab('notice')">공지</button>
     <button id="t-mail" onclick="tab('mail')">우편</button>
     <button id="t-code" onclick="tab('code')">선물코드</button>
+    <button id="t-chat" onclick="tab('chat')">채팅</button>
   </div>
 
   <section id="s-notice" class="on">
@@ -149,6 +150,17 @@ const String adminHtml = r'''<!doctype html>
     </div>
     <div class="card"><h2>만든 코드</h2><div id="list-code"></div></div>
   </section>
+
+  <section id="s-chat">
+    <div class="card">
+      <h2>운영자로 보내기</h2>
+      <label>표시 이름</label><input id="h-nick" maxlength="20" value="운영자">
+      <label>메시지 (100자)</label><textarea id="h-body" maxlength="100"></textarea>
+      <button class="act" onclick="sendChat()">채팅에 보내기</button>
+      <p class="hint">전체 채팅에 바로 나갑니다. 지우려면 아래 목록에서 삭제하세요.</p>
+    </div>
+    <div class="card"><h2>최근 채팅</h2><div id="list-chat"></div></div>
+  </section>
 </main>
 </div>
 <div id="toast"></div>
@@ -189,7 +201,7 @@ async function login() {
 }
 function logout() { sessionStorage.removeItem('adminKey'); location.reload(); }
 function tab(name) {
-  for (const n of ['notice','mail','code']) {
+  for (const n of ['notice','mail','code','chat']) {
     document.getElementById('s-' + n).className = n === name ? 'on' : '';
     document.getElementById('t-' + n).className = n === name ? 'on' : '';
   }
@@ -233,6 +245,28 @@ async function refresh() {
     ' · 종료 ' + fmt(c.ends_at) + '</div></div>' +
     '<button onclick="del(\'code\',\'' + esc(c.code) + '\')">삭제</button></div>'
   ).join('') || '<div class="sub">없음</div>';
+
+  document.getElementById('list-chat').innerHTML = (d.chat || []).map(c =>
+    '<div class="item"><div class="body"><b>' + esc(c.nickname) + '</b>' +
+    (c.is_admin ? ' <span class="pill">운영자</span>' : '') +
+    '<div class="sub">' + esc(c.body) + '</div>' +
+    '<div class="sub">' + esc((c.created_at || '').replace('T', ' ').slice(0, 16)) +
+    '</div></div>' +
+    '<button onclick="del(\'chat\',\'' + c.id + '\')">삭제</button></div>'
+  ).join('') || '<div class="sub">없음</div>';
+}
+
+async function sendChat() {
+  const body = val('h-body');
+  if (!body) return toast('메시지를 입력하세요');
+  try {
+    await api('/admin/chat', { nickname: val('h-nick') || '운영자', body: body });
+    document.getElementById('h-body').value = '';
+    toast('채팅에 보냈습니다'); refresh();
+  } catch (e) {
+    toast(e.message === 'admin_chat_user_id_missing'
+      ? 'ADMIN_CHAT_USER_ID 가 설정되지 않았습니다' : e.message);
+  }
 }
 
 async function del(kind, id) {

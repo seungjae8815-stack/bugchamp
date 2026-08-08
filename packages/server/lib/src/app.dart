@@ -148,6 +148,9 @@ Handler buildHandler({
 
   /// 운영 패널 키. 생략하면 환경변수 `ADMIN_KEY`(운영), 비어 있으면 패널 잠김.
   String? adminKey,
+
+  /// 운영자 채팅을 보낼 계정 uuid. 생략하면 환경변수 `ADMIN_CHAT_USER_ID`.
+  String? adminChatUserId,
 }) {
   final verifier =
       jwtVerifier ?? SupabaseJwtVerifier.forProject(config.supabaseUrl);
@@ -1322,6 +1325,38 @@ Handler buildHandler({
       }
     });
 
+    /// 운영자 이름으로 전체 채팅에 글쓰기.
+    ///
+    /// 보내는 계정은 `ADMIN_CHAT_USER_ID`(실재하는 uuid). 앱의 채팅 목록은
+    /// 파싱에 한 줄만 실패해도 **전체가 빈 목록**이 되므로, 존재하지 않는
+    /// id 로 쓰면 모든 유저의 채팅창이 비어버린다 — 그래서 설정을 강제한다.
+    final chatUserId =
+        (adminChatUserId ?? Platform.environment['ADMIN_CHAT_USER_ID'] ?? '')
+            .trim();
+
+    public.post('/admin/chat', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      // 요청이 잘못된 것과 서버 설정이 빠진 것은 구분해서 알린다.
+      final body = clean(b!['body'], 100); // 테이블 제약과 같은 100자
+      if (body == null) return _json({'error': 'body_required'}, status: 400);
+      if (chatUserId.isEmpty) {
+        return _json({'error': 'admin_chat_user_id_missing'}, status: 503);
+      }
+      final nickname = clean(b['nickname'], 20) ?? '운영자';
+      try {
+        await store.insertAdminChat(
+          userId: chatUserId,
+          nickname: nickname,
+          body: body,
+        );
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/chat] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     public.post('/admin/delete', (Request req) async {
       final (b, err) = await adminBody(req);
       if (err != null) return err;
@@ -1330,6 +1365,9 @@ Handler buildHandler({
         'notice' => ('notices', 'id'),
         'mail' => ('user_mail', 'id'),
         'code' => ('gift_codes', 'code'),
+        // 채팅 모더레이션 — 유저는 본인 글만 지울 수 있어(RLS), 부적절한 글을
+        // 내리려면 서버가 대신 지워야 한다(UGC 정책 요구사항).
+        'chat' => ('chat_messages', 'id'),
         _ => null,
       };
       if (target == null || id == null) {

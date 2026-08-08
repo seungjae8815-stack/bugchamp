@@ -675,3 +675,62 @@ $key   # ← 이 값을 패널 로그인에 입력(비밀번호 관리자에 보
 | `POST /admin/mail` | 〃 | 우편 발송(`userId` 없으면 전체) |
 | `POST /admin/code` | 〃 | 선물코드 생성 |
 | `POST /admin/delete` | 〃 | `{kind: notice\|mail\|code, id}` 삭제 |
+
+---
+
+## 14. 운영자 채팅 · 채팅 모더레이션 (2026-08-08)
+
+`/admin` 패널의 **채팅 탭**에서 운영자 이름으로 전체 채팅에 글을 쓰고,
+부적절한 메시지를 지운다.
+
+### 왜 DB 표시가 필요한가
+
+닉네임은 유저가 자유롭게 바꾼다 → 누구나 "운영자"로 사칭할 수 있다.
+그래서 `is_admin` 컬럼을 두고, **클라이언트는 이 값을 true 로 넣지 못하게** RLS 로
+막는다(서버의 service_role 만 가능).
+
+### SQL (1회 실행 — 재실행 안전)
+
+```sql
+alter table chat_messages
+  add column if not exists is_admin boolean not null default false;
+
+-- 클라이언트 삽입은 본인 명의 + is_admin=false 만 허용.
+-- 기존 앱은 is_admin 을 보내지 않으므로 기본값 false 로 통과한다(호환).
+drop policy if exists chat_insert on chat_messages;
+create policy chat_insert on chat_messages
+  for insert to authenticated
+  with check (auth.uid() = user_id and is_admin = false);
+```
+
+### 운영자 계정 (필수)
+
+`chat_messages.user_id` 는 NOT NULL + `auth.users` 참조다. 그리고 무엇보다
+**앱의 `recent()` 는 한 줄만 파싱에 실패해도 목록 전체를 빈 배열로 돌려준다**
+— 잘못된 값 하나가 모든 유저의 채팅창을 비운다. 그래서 실재하는 uuid 가 필요하다.
+
+1. Supabase → Authentication → Users → **Add user** (이메일·비밀번호 아무거나)
+2. 생성된 **uuid** 복사
+3. Cloud Run 에 주입
+
+```powershell
+gcloud run services update bugchamp-server --region asia-northeast3 `
+  --update-env-vars ADMIN_CHAT_USER_ID=<복사한-uuid>
+```
+
+설정하지 않으면 `/admin/chat` 이 503 `admin_chat_user_id_missing` 을 돌려주고,
+패널이 "ADMIN_CHAT_USER_ID 가 설정되지 않았습니다" 라고 알린다.
+
+### 엔드포인트
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `POST /admin/chat` | `{nickname?, body}` — 운영자 이름으로 전체 채팅 전송(기본 "운영자") |
+| `POST /admin/delete` | `{kind:"chat", id}` — 메시지 삭제(유저는 RLS 로 본인 것만 지운다) |
+| `GET /admin/data` | 응답의 `chat` 에 최근 40건 |
+
+### 앱 쪽 (1.0.5 예정)
+
+지금은 운영자 메시지가 **일반 메시지처럼** 보인다(닉네임만 "운영자").
+1.0.5 에서 `ChatMessage.isAdmin` 을 읽어 배지·색을 주고, 차단·신고 대상에서
+제외하고, "운영자" 계열 닉네임을 예약어로 막는다.

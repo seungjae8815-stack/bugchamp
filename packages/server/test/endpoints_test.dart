@@ -35,6 +35,9 @@ class _Fake extends http.BaseClient {
   final List<Map<String, dynamic>> mail;
   final List<Map<String, dynamic>> codes;
 
+  /// 최근 채팅(운영 모더레이션 목록).
+  final List<Map<String, dynamic>> chat = const [];
+
   /// 운영 패널이 지운 행(URL 그대로).
   final List<String> deleted = [];
 
@@ -87,7 +90,9 @@ class _Fake extends http.BaseClient {
     }
     final id = request.url.queryParameters['id']?.replaceFirst('eq.', '');
     final Object body;
-    if (path.contains('/notices')) {
+    if (path.contains('/chat_messages')) {
+      body = chat;
+    } else if (path.contains('/notices')) {
       body = notices;
     } else if (path.contains('/user_mail')) {
       body = mail;
@@ -1109,6 +1114,7 @@ void main() {
         speciesById: {'a': species},
         clock: () => _t,
         adminKey: withKey,
+        adminChatUserId: 'ffffffff-0000-0000-0000-000000000001',
       );
     }
 
@@ -1239,6 +1245,43 @@ void main() {
       expect(ok.statusCode, 200);
       expect(fake.lastSaved!['code'], 'SUMMER2026');
       expect(fake.lastSaved!['max_uses'], 100);
+    });
+
+    test('운영자 채팅 — 키가 없으면 못 보낸다', () async {
+      final res = await adminPost(handler(), '/admin/chat', {
+        'body': '안녕하세요',
+      }, k: null);
+      expect(res.statusCode, 401);
+    });
+
+    test('운영자 채팅 — 본문이 없으면 거절', () async {
+      final h = adminHandler();
+      final res = await adminPost(h, '/admin/chat', {'nickname': '운영자'});
+      expect(res.statusCode, 400);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('운영자 채팅 — is_admin 을 붙여 저장한다(사칭 방지의 근거)', () async {
+      final h = adminHandler();
+      final res = await adminPost(h, '/admin/chat', {'body': '점검 안내드립니다'});
+      expect(res.statusCode, 200);
+      expect(fake.lastSaved!['is_admin'], true);
+      expect(fake.lastSaved!['nickname'], '운영자'); // 기본 표시 이름
+      // 보내는 계정은 **실재하는 uuid** 여야 한다 — 앱의 채팅 목록은 한 줄만
+      // 파싱에 실패해도 전체가 빈 목록이 된다.
+      expect(fake.lastSaved!['user_id'], isNotNull);
+    });
+
+    test('삭제 — 채팅도 지울 수 있다(모더레이션)', () async {
+      // 유저는 RLS 로 본인 글만 지운다 → 부적절한 글은 서버가 대신 지운다.
+      final h = adminHandler();
+      final res = await adminPost(h, '/admin/delete', {
+        'kind': 'chat',
+        'id': '42',
+      });
+      expect(res.statusCode, 200);
+      expect(fake.deleted.single, contains('chat_messages'));
+      expect(fake.deleted.single, contains('id=eq.42'));
     });
 
     test('삭제 — 알 수 없는 종류는 거절', () async {
