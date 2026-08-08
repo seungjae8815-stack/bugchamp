@@ -1,0 +1,58 @@
+========================================
+ Google Play — 출시 노트 (1.0.5 / 20260809)
+========================================
+※ Play Console 은 아래 태그 블록을 **통째로** 붙여넣는다(언어별 분리 불필요).
+※ 한 언어당 500자 한도.
+※ iOS 용 노트는 _appstore_whatsnew_1.0.5.txt (이모지 금지).
+
+<ko-KR>
+⚔️ 성장이 느껴지는 전투로 바꿨어요
+몬스터 체력이 내 전력에 맞춰 함께 오릅니다. 한 방에 쓸려나가지 않고, 강해질수록 잡는 속도가 빨라져요.
+→ 월드 관문에서는 확실히 막힙니다. 업그레이드와 펫에 투자해서 뚫는 재미를 살렸습니다.
+
+🎮 켜두고 하면 더 이득이에요
+직접 잡은 골드에 접속 보너스가 붙습니다. 깜짝선물도 더 자주 찾아와요.
+방치 보상은 그대로입니다 — 줄이지 않았습니다.
+
+🏆 결투 시즌이 매주 월요일에 끝나요
+월요일 오전 9시에 모두 함께 시즌이 종료되고 트로피가 조정됩니다.
+
+🔧 이런 것들을 고쳤어요
+· 앱을 다시 열었을 때 방치 보상이 들어오지 않던 문제
+· 처음 설치했을 때 로딩에서 멈추던 문제
+· 젤리로 늘린 부화기 칸이 사라지던 문제
+· 채집함 정렬·펫 장착·편성 화면을 보기 쉽게 다듬었습니다
+</ko-KR>
+<en-US>
+⚔️ Growth you can feel
+Monster HP scales with your power — nothing dies in one hit, and the stronger you get, the faster they fall.
+→ World gates still stop you cold. Invest to break through.
+
+🎮 Playing beats idling
+Your own kills now pay an online bonus, and gifts arrive more often. Idle rewards are untouched.
+
+🏆 Seasons end every Monday, 9 AM KST.
+
+🔧 Fixes
+· Idle rewards missing on reopen
+· Stuck on loading after a fresh install
+· Jelly-bought incubator slots vanishing
+</en-US>
+<ja-JP>
+⚔️ 成長を実感できる戦闘へ
+モンスターの体力が自分の戦力に合わせて上がります。一撃で消えることがなくなり、強くなるほど早く倒せます。
+ワールドの関門ではしっかり詰まります。強化とペットに投資して突破する手応えを残しました。
+
+🎮 起動しておくほど得になります
+自分で倒して得た金貨にオンラインボーナスが付きます。サプライズギフトの間隔も短くなりました。
+放置報酬はそのままです。減らしていません。
+
+🏆 決闘シーズンが毎週月曜に終わります
+月曜午前9時（韓国時間）に全員同時にシーズンが終了し、トロフィーが調整されます。
+
+🔧 修正
+・アプリを開き直したときに放置報酬が入らない問題
+・新規インストール後、読み込みで止まる問題
+・ゼリーで増やした孵化器の枠が消える問題
+・採集箱の並び替え、ペット装着、編成画面を見やすく調整
+</ja-JP>
