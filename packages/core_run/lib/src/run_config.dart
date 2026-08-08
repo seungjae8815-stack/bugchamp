@@ -101,6 +101,10 @@ class RunConfig {
   const RunConfig({
     required this.hpBase,
     required this.hpGrowth,
+    this.hpAdaptTargetHits = 0,
+    this.hpAdaptPower = 0,
+    this.hpAdaptMinRatio = 0.5,
+    this.hpAdaptMaxRatio = 1000,
     required this.bossHpMult,
     required this.goldBase,
     required this.goldGrowth,
@@ -128,6 +132,24 @@ class RunConfig {
   });
 
   final double hpBase;
+
+  // ── 적응형 체력(§7, 2026-08) ──
+  // 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.015 로 자라 공격이
+  // 항상 이긴다. "기준선 대비 얼마나 세졌나"를 체력에 일부 반영해 한 방을 막되,
+  // 강해질수록 타격 수는 줄어들게(지수 < 1) 둔다. 0 이면 기능 꺼짐(기존 동작).
+
+  /// 기준선에서 목표로 삼는 타격 수. 0 이면 적응형 끔.
+  final double hpAdaptTargetHits;
+
+  /// 보정 지수(0~1). 1 이면 항상 같은 타격 수(성장 실감 없음),
+  /// 0 이면 보정 없음. 0.85 근처가 "줄긴 줄되 한 방은 안 되는" 구간.
+  final double hpAdaptPower;
+
+  /// 보정 비율의 하한 — 기준보다 약한 플레이어를 더 괴롭히지 않는다(따라잡기).
+  final double hpAdaptMinRatio;
+
+  /// 상한 — 극단적으로 센 계정에서 체력이 무한히 커지지 않게.
+  final double hpAdaptMaxRatio;
   final double hpGrowth;
   final double bossHpMult;
   final double goldBase;
@@ -225,6 +247,10 @@ class RunConfig {
         .map(UpgradeSpec.fromJson);
     return RunConfig(
       hpBase: (json['hpBase'] as num).toDouble(),
+      hpAdaptTargetHits: (json['hpAdaptTargetHits'] as num?)?.toDouble() ?? 0,
+      hpAdaptPower: (json['hpAdaptPower'] as num?)?.toDouble() ?? 0,
+      hpAdaptMinRatio: (json['hpAdaptMinRatio'] as num?)?.toDouble() ?? 0.5,
+      hpAdaptMaxRatio: (json['hpAdaptMaxRatio'] as num?)?.toDouble() ?? 1000,
       hpGrowth: (json['hpGrowth'] as num).toDouble(),
       bossHpMult: (json['bossHpMult'] as num).toDouble(),
       goldBase: (json['goldBase'] as num).toDouble(),

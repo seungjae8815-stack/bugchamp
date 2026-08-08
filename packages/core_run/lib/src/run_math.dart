@@ -12,15 +12,42 @@ import 'run_config.dart';
 /// [depth] = 진행 깊이(0-based). 지역1에서는 depth = stageNumber - 1.
 
 /// 서식지 최대 HP. 월드 경계마다 [RunConfig.worldHpMult] 점프(벽).
-int habitatMaxHp(RunConfig c, int depth) =>
-    (c.hpBase * math.pow(c.hpGrowth, depth) * c.worldMult(c.worldHpMult, depth))
-        .round();
+///
+/// [playerAttack] 을 주면 **적응형 보정**이 걸린다(§7 밸런스, 2026-08).
+///
+/// 왜 필요한가: 몬스터 체력은 스테이지당 x1.015 로 자라는데 공격 업그레이드는
+/// 레벨당 x1.15 로 자란다. 한 스테이지에 레벨을 여러 개 사므로 공격이 항상
+/// 앞서가고, 스테이지 100 부터는 무엇을 해도 **한 방**이 된다(실측).
+/// 그래서 "기준선 대비 얼마나 세졌는지"를 체력에 일부 반영한다.
+///
+/// 두 가지를 일부러 지켰다:
+///  1. **보정은 월드 안에서만** 건다. 월드 관문(worldHpMult)에 걸면 벽이
+///     같이 뭉개져 "뚫는 맛"이 사라진다 — 관문 배율은 보정 밖에 곱한다.
+///  2. 지수 [RunConfig.hpAdaptPower] < 1 이라 **강해질수록 타격 수는 줄어든다**.
+///     1.0 이면 항상 같은 횟수가 되어 성장 실감이 사라진다.
+int habitatMaxHp(RunConfig c, int depth, {double? playerAttack}) {
+  final base = c.hpBase * math.pow(c.hpGrowth, depth);
+  final gate = c.worldMult(c.worldHpMult, depth);
+  if (playerAttack == null || c.hpAdaptPower <= 0 || c.hpAdaptTargetHits <= 0) {
+    return (base * gate).round();
+  }
+  // 기준선 = 이 깊이에서 목표 타격 수로 잡으려면 필요한 공격력.
+  final onCurve = base / c.hpAdaptTargetHits;
+  final ratio = (playerAttack / onCurve).clamp(
+    c.hpAdaptMinRatio,
+    c.hpAdaptMaxRatio,
+  );
+  return (base * math.pow(ratio, c.hpAdaptPower) * gate).round();
+}
 
 /// 보스 최대 HP. 월드 마지막 보스(1-100)는 [RunConfig.worldBossHpMult] 추가
 /// — 다음 월드로 가는 관문 벽.
-int bossMaxHp(RunConfig c, int depth) {
+int bossMaxHp(RunConfig c, int depth, {double? playerAttack}) {
   final worldFinal = c.isWorldFinal(depth + 1) ? c.worldBossHpMult : 1.0;
-  return (habitatMaxHp(c, depth) * c.bossHpMult * worldFinal).round();
+  return (habitatMaxHp(c, depth, playerAttack: playerAttack) *
+          c.bossHpMult *
+          worldFinal)
+      .round();
 }
 
 /// 파괴 보상 골드. 보스면 [c.bossRewardMult] 배. 월드마다 [c.worldGoldMult] 점프.
@@ -255,8 +282,16 @@ IdleProgress simulateIdleProgress({
 
   while (budget > 0 && advanced < maxStageAdvance) {
     final depth = stage - 1;
-    final habHp = habitatMaxHp(config, depth).toDouble();
-    final bossHp = bossMaxHp(config, depth).toDouble();
+    final habHp = habitatMaxHp(
+      config,
+      depth,
+      playerAttack: stats.attack,
+    ).toDouble();
+    final bossHp = bossMaxHp(
+      config,
+      depth,
+      playerAttack: stats.attack,
+    ).toDouble();
     // 효율을 시간에 반영: 실제로 한 번 처치하는 데 드는 예산(초).
     final habTime = (habHp / dps + 0.6) / eff;
     final bossTime = (bossHp / bossDps + 0.6) / eff;
@@ -320,7 +355,11 @@ double estimateClears({
   final secs = capped.inMilliseconds / 1000.0;
   final dps = stats.attack * stats.attackSpeed;
   if (dps <= 0) return 0;
-  final hp = habitatMaxHp(config, stageNumber - 1).toDouble();
+  final hp = habitatMaxHp(
+    config,
+    stageNumber - 1,
+    playerAttack: stats.attack,
+  ).toDouble();
   final timePerClear = hp / dps + 0.6; // + 이동시간 근사
   if (timePerClear <= 0) return 0;
   return secs / timePerClear * efficiency;

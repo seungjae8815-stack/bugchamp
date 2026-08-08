@@ -563,8 +563,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           : AudioService.instance.restoreBgm(),
     );
     final depth = _stage - 1;
+    // 적응형 체력(§7) — 내 공격력을 넘겨야 "한 방에 죽는" 오버킬이 막힌다.
+    // 방치 정산(simulateIdleProgress)도 같은 보정을 쓰므로 화면과 어긋나지 않는다.
+    final atk = _stats(ref.read(saveControllerProvider).requireValue).attack;
     _hpMax =
-        (_isBoss ? bossMaxHp(_config, depth) : habitatMaxHp(_config, depth))
+        (_isBoss
+                ? bossMaxHp(_config, depth, playerAttack: atk)
+                : habitatMaxHp(_config, depth, playerAttack: atk))
             .toDouble();
     _hp = _hpMax;
     _kind = habitatKindAt(_config, _stage, _isBoss ? 0 : _habitatIndex);

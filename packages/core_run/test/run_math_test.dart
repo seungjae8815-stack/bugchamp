@@ -390,4 +390,67 @@ void main() {
       expect(tooHigh.newStage - 80, lessThan(reachable.newStage - 1));
     });
   });
+
+  group('적응형 체력(§7)', () {
+    // 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.0088 로 자라
+    // 공격이 항상 이긴다 → 스테이지 100부터 한 방이 됐다. 그래서 "기준선 대비
+    // 얼마나 세졌나"를 체력에 일부 반영한다.
+    const c = RunConfig(
+      hpBase: 100,
+      hpGrowth: 1.01,
+      hpAdaptTargetHits: 6,
+      hpAdaptPower: 0.85,
+      hpAdaptMinRatio: 0.6,
+      hpAdaptMaxRatio: 500,
+      bossHpMult: 5,
+      goldBase: 1,
+      goldGrowth: 1.01,
+      xpBase: 1,
+      xpGrowth: 1.01,
+      bossRewardMult: 2,
+      habitatsPerStage: 20,
+      bugDropChance: 0.1,
+      materialDropChance: 0.5,
+      threatBase: 1,
+      threatGrowth: 1.01,
+      bossThreatMult: 2,
+      stagesPerRegion: 25,
+      regions: [],
+      upgrades: {},
+      worldSize: 100,
+      worldHpMult: 8,
+      worldGoldMult: 2,
+      worldBossHpMult: 3,
+    );
+
+    test('공격력을 안 주면 기존 동작 그대로', () {
+      expect(habitatMaxHp(c, 0), (100 * 1.0).round());
+      expect(habitatMaxHp(c, 10), habitatMaxHp(c, 10, playerAttack: null));
+    });
+
+    test('세질수록 체력도 오르지만 **타격 수는 줄어든다**', () {
+      // 성장 실감이 사라지면 안 된다 — 지수가 1 미만인 이유.
+      int hits(double atk) =>
+          (habitatMaxHp(c, 50, playerAttack: atk) / atk).ceil();
+      final weak = hits(20);
+      final strong = hits(2000);
+      expect(strong, lessThan(weak));
+      expect(strong, greaterThan(1)); // 그래도 한 방은 아니다
+    });
+
+    test('월드 관문은 보정 밖에 곱해진다 — 벽이 뭉개지면 안 된다', () {
+      const atk = 500.0;
+      final endOfWorld1 = habitatMaxHp(c, 99, playerAttack: atk);
+      final startOfWorld2 = habitatMaxHp(c, 100, playerAttack: atk);
+      // 관문에서 worldHpMult(8배)에 가까운 점프가 남아 있어야 한다.
+      expect(startOfWorld2 / endOfWorld1, greaterThan(6.0));
+    });
+
+    test('약한 플레이어를 더 괴롭히지 않는다(하한 클램프)', () {
+      // 기준선보다 훨씬 약해도 체력이 무한히 내려가진 않지만, 최소한
+      // 기준 체력보다 커지지는 않는다.
+      final base = habitatMaxHp(c, 30);
+      expect(habitatMaxHp(c, 30, playerAttack: 1), lessThan(base));
+    });
+  });
 }

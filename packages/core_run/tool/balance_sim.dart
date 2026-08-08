@@ -27,6 +27,28 @@ const _activeHoursPerDay = 2.0;
 /// 하루에 오프라인 보상으로 회수하는 시간(상한 8h — kMaxOfflineAccrual).
 const _offlineHoursPerDay = 8.0;
 
+// ── 맨몸이 아닌 "실제 유저"를 재기 위한 보정 ─────────────────────────
+//
+// 예전 이 도구는 펫·버프·보상을 전부 빼고 "맨몸 = 가장 느린 경로"를 쟀다.
+// 그런데 **아무도 맨몸으로 남지 않는다** — 시간이 지나면 펫이 자라고, 버프를
+// 켜고, 일일보상·선물·미션·결투 보상이 매일 쌓인다. 그걸 빼고 맞춘 수치는
+// 실제보다 항상 느슨하다(실제로 "6대로 맞췄는데 1대"가 그렇게 나왔다).
+//
+// 아래 값들은 **평균적인 유저**의 가정이다. 상한(전부 최대)으로 잡으면 대다수가
+// 너무 어려워지고, 0으로 잡으면 지금처럼 빗나간다.
+
+/// 골드 배율 — `goldRush` 버프(gold x2.0, 누적 상한 6h/일)를 하루 평균으로.
+/// 광고를 꼬박꼬박 보는 유저는 2.0 에 가깝고, 안 보면 1.0 이다.
+const _buffGoldMult = 1.5;
+
+/// DPS 배율 — `frenzy` 버프(공격 x1.2, 공속 x1.5 = DPS x1.8)를 활동 시간 평균으로.
+const _buffDpsMult = 1.4;
+
+/// 전투 밖에서 하루에 들어오는 골드(일일보상 13,000 + 깜짝선물 약 32,000 +
+/// 미션·결투 보상). **초반에 결정적**이고 후반엔 무의미해진다 —
+/// 그래서 정액으로 둔다(day1 골드의 25% 수준, day25 엔 반올림 오차).
+const _dailyBonusGold = 100000.0;
+
 /// 펫을 다 갖췄을 때의 추가 공격 배율(+150% = x2.5).
 /// pets.json 의 상한(전설3 만렙 x4.04)이 아니라 **평균적인 유저**를 가정한다.
 const _petMaxBonus = 1.5;
@@ -241,7 +263,7 @@ class _Player {
   CharacterStats get stats {
     final s = _baseStats;
     return CharacterStats(
-      attack: s.attack * petAttackMult,
+      attack: s.attack * petAttackMult * _buffDpsMult,
       attackSpeed: s.attackSpeed,
       rewardMultiplier: s.rewardMultiplier,
       critChance: s.critChance,
@@ -267,6 +289,8 @@ class _Player {
   );
 
   void playDay() {
+    // 전투 밖 보상(일일·선물·미션·결투)은 하루 한 번 정액으로 넣는다.
+    gold += _dailyBonusGold;
     _run(_activeHoursPerDay * 3600, 1.0);
     _run(_offlineHoursPerDay * 3600, config.offlineEfficiency);
   }
@@ -292,14 +316,14 @@ class _Player {
         // 그 스테이지를 지날 때 **실제 스탯으로** 몇 대에 죽었는지.
         hitsToKill.putIfAbsent(s, () {
           final st = stats;
-          final hp = habitatMaxHp(config, s - 1);
+          final hp = habitatMaxHp(config, s - 1, playerAttack: st.attack);
           final dmg = st.attack <= 0 ? 1.0 : st.attack;
           return (hp / dmg).ceil();
         });
       }
       prevStage = stage;
       stage = prog.newStage;
-      gold += prog.gold;
+      gold += prog.gold * _buffGoldMult;
       _gainXp(prog.xp);
       // 재료: 처치당 materialDropChance 확률로 평균 1.5개, 3종에 고르게.
       final mats =
