@@ -7,11 +7,17 @@ import 'package:in_app_review/in_app_review.dart';
 import 'save_controller.dart';
 
 /// App Store 앱 id(숫자). **iOS 에서 스토어 페이지를 열려면 반드시 필요**하다 —
-/// 없으면 `openStoreListing` 이 조용히 아무 일도 하지 않는다.
+/// 없으면 `openStoreListing` 이 조용히 아무 일도 하지 않아 버튼이 고장난 것처럼
+/// 보인다.
 ///
-/// 앱스토어에 앱을 만들면 그 숫자를 여기(또는 dart-define)로 넣는다. 비어 있는
-/// 동안 iOS 는 시스템 리뷰창으로 대신한다.
-const String kAppStoreId = String.fromEnvironment('APP_STORE_ID');
+/// 비밀이 아니라 앱스토어 URL 에 그대로 드러나는 공개 값이라 기본값으로 둔다
+/// (플레이스토어 주소를 `update_checker.dart` 에 박아둔 것과 같은 이유).
+/// CI 변수를 깜빡해도 동작하고, 필요하면 `--dart-define=APP_STORE_ID=` 로 덮는다.
+/// 출처: App Store Connect → 앱 정보 → Apple ID.
+const String kAppStoreId = String.fromEnvironment(
+  'APP_STORE_ID',
+  defaultValue: '6793452983',
+);
 
 /// 스토어 리뷰 요청.
 ///

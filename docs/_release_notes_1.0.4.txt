@@ -1,0 +1,54 @@
+<ko-KR>
+⚔️ 결투 티켓이 생겼어요
+결투에 티켓 1장이 듭니다. 30분마다 1장씩 차오르고 최대 10장까지 모여요. 광고를 보거나 곤충젤리로도 채울 수 있습니다.
+→ 오래 붙잡고 돌린 사람이 아니라, 강한 곤충을 키운 사람이 위로 올라가도록 바꿨습니다.
+
+📢 공지사항
+게임 소식을 앱 안에서 바로 볼 수 있어요. 새 글이 오면 표시가 뜹니다.
+
+🎁 운영자 우편 · 선물코드
+점검 보상 같은 선물을 편지함에서 받을 수 있고, 설정에서 선물코드를 입력할 수 있어요.
+
+📺 광고 제거를 구매하셨다면
+이제 보상형 광고도 건너뛰고 보상을 바로 받습니다.
+
+🔧 개선
+· 안내 문구가 화면 가운데에 보입니다
+· 랭킹 맨 아래가 가려지던 문제를 고쳤습니다
+</ko-KR>
+<en-US>
+⚔️ Duel tickets
+Duels now cost a ticket. One refills every 30 min, up to 10 — or top up with an ad or jelly.
+→ Trophies now reflect how strong your bugs are, not how long you grinded.
+
+📢 Notices
+Game news inside the app, with a dot for new posts.
+
+🎁 Mail & gift codes
+Claim gifts from your mailbox, redeem codes in Settings.
+
+📺 Remove Ads owners
+Rewarded ads are skipped — rewards come right away.
+
+🔧 Fixes
+· Messages now show mid-screen
+· Last ranking row no longer cut off
+</en-US>
+<ja-JP>
+⚔️ 決闘チケットが登場
+決闘にはチケットが1枚必要になります。30分ごとに1枚回復し、最大10枚まで貯まります。広告視聴や昆虫ゼリーでも補充できます。
+→ 長く回した人ではなく、強い昆虫を育てた人が上位に来るようにしました。
+
+📢 お知らせ
+ゲームの最新情報をアプリ内で確認できます。新着があると印が付きます。
+
+🎁 運営メール・ギフトコード
+メンテナンス報酬などのギフトをメールボックスで受け取れます。設定からギフトコードも入力できます。
+
+📺 広告除去をご購入の方へ
+リワード広告もスキップして、報酬をすぐ受け取れるようになりました。
+
+🔧 改善
+・案内メッセージが画面中央に表示されます
+・ランキングの最下行が隠れる問題を修正しました
+</ja-JP>

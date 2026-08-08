@@ -30,6 +30,30 @@ workflows:
     integrations:
       app_store_connect: codemagic   # Codemagic UI 의 기존 통합 이름(Developer Portal)
     scripts:
+      - name: 필수 환경변수 검사 (빠뜨린 채 출시되는 것을 여기서 막는다)
+        script: |
+          # ⚠️ 이 검사가 없으면 변수가 비어도 빌드는 **조용히 성공**한다.
+          #    GAME_SERVER_URL 이 비면 서버에 안 붙는 앱이 스토어로 나가고
+          #    (티켓·공지·우편·코드가 전부 죽는다), ADMOB 키가 비면 테스트
+          #    광고가 나간다. 실제로 안드로이드에서 URL 누락으로 겪은 사고다.
+          fail=0
+          for v in SUPABASE_URL SUPABASE_ANON_KEY GOOGLE_WEB_CLIENT_ID \
+                   GAME_SERVER_URL ADMOB_REWARDED_IOS; do
+            eval "value=\$$v"
+            if [ -z "$value" ]; then
+              echo "❌ $v 가 비어 있다 (Codemagic → Environment variables → bugchamp_ios)"
+              fail=1
+            else
+              # 값은 찍지 않는다(비밀). 길이만 남겨 '넣긴 넣었다'를 확인한다.
+              echo "✅ $v (${#value}자)"
+            fi
+          done
+          # 서버 주소만은 형식까지 본다 — 오타 하나로 앱 전체가 오프라인이 된다.
+          case "$GAME_SERVER_URL" in
+            https://*) echo "✅ GAME_SERVER_URL 형식 정상" ;;
+            *) echo "❌ GAME_SERVER_URL 이 https:// 로 시작하지 않는다"; fail=1 ;;
+          esac
+          [ "$fail" = "0" ] || { echo "필수 변수 누락 — 빌드를 중단한다"; exit 1; }
       - name: Flutter 의존성(워크스페이스 루트에서 먼저)
         script: |
           flutter --version
@@ -55,7 +79,12 @@ workflows:
             --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
             --dart-define=GAME_SERVER_URL="$GAME_SERVER_URL" \
             --dart-define=ADMOB_REWARDED_IOS="$ADMOB_REWARDED_IOS" \
+            --dart-define=APP_STORE_ID="$APP_STORE_ID" \
             --export-options-plist=/Users/builder/export_options.plist
+          # APP_STORE_ID(선택): App Store Connect 의 숫자 Apple ID.
+          # 넣으면 설정의 "게임 평가하기"가 리뷰 페이지를 바로 연다.
+          # 비어 있으면 시스템 리뷰창으로 대체된다(iOS 는 id 없이 스토어를
+          # 열 수 없어, 넣지 않으면 버튼이 아무 반응도 없는 것처럼 보인다).
     artifacts:
       - packages/app/build/ios/ipa/*.ipa
     publishing:
