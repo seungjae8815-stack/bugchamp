@@ -1778,4 +1778,27 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatAdminBadge => '運営';
+
+  @override
+  String get autoEquip => '自動装着';
+
+  @override
+  String get autoEquipDone => '最も強い虫を装着しました';
+
+  @override
+  String get autoEquipAlready => 'すでに最適な組み合わせです';
+
+  @override
+  String get autoTeam => '自動編成';
+
+  @override
+  String get autoTeamDone => '最も強いチームを編成しました';
+
+  @override
+  String get autoTeamAlready => 'すでに最適なチームです';
+
+  @override
+  String teamPower(String power) {
+    return 'チーム戦力 $power';
+  }
 }

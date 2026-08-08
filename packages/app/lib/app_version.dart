@@ -38,5 +38,4 @@ Future<void> loadAppVersion() async {
 const String kBuildDate = '2026-08-08';
 
 /// 이 빌드에 새로 들어간 것 — 설치 후 무엇을 확인하면 되는지 힌트.
-const String kBuildHighlights =
-    '운영자 채팅 배지 · 사칭 닉네임 차단 · 스토어 링크/버전안내 플랫폼별';
+const String kBuildHighlights = '운영자 채팅 배지 · 사칭 닉네임 차단 · 스토어 링크/버전안내 플랫폼별';

@@ -603,11 +603,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final progress = cfg.leagueProgress(trophies);
     final claimable = cfg.claimableLeagues(trophies, save.claimedLeagues);
     final (label, color, emoji) = _leagueStyle(l, cur.id);
-    // 시즌 종료 = 시작 + seasonDays. 시작 미기록이면 지금을 시작으로 간주.
-    final seasonStart = save.seasonStartedAt ?? now;
-    final seasonRemaining = seasonStart
-        .add(Duration(days: cfg.seasonDays))
-        .difference(now);
+    // 시즌 종료 = 다음 리셋(요일·시각 앵커). 모든 유저가 같은 순간에 끝난다.
+    final seasonRemaining = seasonEndAt(now, cfg).difference(now);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -1016,8 +1013,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ) {
     final cur = cfg.leagueFor(save.pvpTrophies);
     final (label, color, emoji) = _leagueStyle(l, cur.id);
-    final start = save.seasonStartedAt ?? now;
-    final left = start.add(Duration(days: cfg.seasonDays)).difference(now);
+    final left = seasonEndAt(now, cfg).difference(now);
     final hasReward = cfg
         .claimableLeagues(save.pvpTrophies, save.claimedLeagues)
         .isNotEmpty;
@@ -1180,7 +1176,32 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   fontSize: 13,
                 ),
               ),
+              const SizedBox(width: 8),
+              // 팀 전투력 — 편성을 바꿀 때마다 즉시 반영된다.
+              Text(
+                l.teamPower(formatCompact(_myTeamPowerSum(data, save, locale))),
+                style: const TextStyle(
+                  color: _honey,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
               const Spacer(),
+              TextButton.icon(
+                onPressed: () => _autoTeam(data, save, locale),
+                icon: const Icon(Icons.auto_awesome, size: 14),
+                label: Text(l.autoTeam, style: const TextStyle(fontSize: 11.5)),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFBFE3A6),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: const Size(0, 28),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
               const Icon(
                 Icons.drag_indicator_rounded,
                 color: Color(0x77FFFFFF),
@@ -1629,13 +1650,29 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l.battlePickTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      l.battlePickTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const Spacer(),
+                    // 지금 편성의 전투력 — 무엇을 바꿔야 세지는지 바로 보인다.
+                    Text(
+                      l.teamPower(
+                        formatCompact(_myTeamPowerSum(data, save, locale)),
+                      ),
+                      style: const TextStyle(
+                        color: _honey,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 ConstrainedBox(
@@ -1645,7 +1682,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        for (final b in adults)
+                        // 강한 순으로 보여준다 — 고르려고 여는 화면이다.
+                        for (final b in _byPower(data, save, locale, adults))
                           _pickTile(ctx, data, save, locale, now, b, slot),
                       ],
                     ),
@@ -1713,11 +1751,39 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   skin: ref.watch(skinOfProvider)(bug.speciesId),
                 ),
                 const SizedBox(height: 2),
+                // 등급은 테두리 색만으로는 구분이 어렵다 — 글자로 못 박는다.
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: gradeColor(sp.grade).withValues(alpha: 0.28),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    gradeLabel(AppLocalizations.of(ctx), sp.grade),
+                    style: TextStyle(
+                      color: gradeColor(sp.grade),
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 1),
                 Text(
                   sp.name.resolve(locale),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontSize: 10),
+                ),
+                Text(
+                  '⚔ ${formatCompact(_power(_toBattleBug(bug, data, locale)))}',
+                  style: const TextStyle(
+                    color: Color(0xFFEBD24A),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 injured
                     ? Text(
@@ -1741,6 +1807,68 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       ),
     );
+  }
+
+  /// 현재 편성의 전투력 **합**(빈 슬롯은 0).
+  ///
+  /// `_teamPower` 는 상대 스케일 계산용 **평균**이라 용도가 다르다 — 화면에는
+  /// "팀 전체가 얼마나 센가"인 합이 맞다.
+  double _myTeamPowerSum(GameData data, SaveGame save, String locale) {
+    var sum = 0.0;
+    for (final id in _team.whereType<String>()) {
+      final bug = save.bugs.cast<IndividualBug?>().firstWhere(
+        (b) => b!.id == id,
+        orElse: () => null,
+      );
+      if (bug != null) sum += _power(_toBattleBug(bug, data, locale));
+    }
+    return sum;
+  }
+
+  /// 전투력이 높은 순으로 정렬한 사본.
+  List<IndividualBug> _byPower(
+    GameData data,
+    SaveGame save,
+    String locale,
+    List<IndividualBug> bugs,
+  ) => [...bugs]
+    ..sort((a, b) {
+      final d = _power(
+        _toBattleBug(b, data, locale),
+      ).compareTo(_power(_toBattleBug(a, data, locale)));
+      return d != 0 ? d : a.id.compareTo(b.id); // 동점이어도 순서가 흔들리지 않게
+    });
+
+  /// 자동 편성 — 부상이 아닌 성충 중 전투력 상위 3마리.
+  ///
+  /// 오행 상생(순서 보너스)까지 최적화하지는 않는다. 그건 플레이어가 직접
+  /// 짜는 재미의 핵심이라(§2.3 "순서가 전략") 자동이 대신해버리면 안 된다.
+  /// 여기서는 "일단 센 놈들로 채워주는" 역할만 한다.
+  void _autoTeam(GameData data, SaveGame save, String locale) {
+    final now = ref.read(clockProvider).now().toUtc();
+    final pool = _byPower(data, save, locale, [
+      for (final b in _adults(save, data, now))
+        if (!save.isInjured(b.id, now)) b,
+    ]);
+    final picked = [for (final b in pool.take(3)) b.id];
+    final l = AppLocalizations.of(context);
+    final same =
+        picked.length == _team.whereType<String>().length &&
+        List.generate(
+          picked.length,
+          (i) => picked[i] == _team[i],
+        ).every((x) => x);
+    if (same) {
+      showCenterToast(context, l.autoTeamAlready);
+      return;
+    }
+    setState(() {
+      _team = [
+        for (var i = 0; i < 3; i++) i < picked.length ? picked[i] : null,
+      ];
+    });
+    AudioService.instance.sfxReward();
+    showCenterToast(context, l.autoTeamDone);
   }
 
   /// 편성된 팀 + 선택한 스카우트 상대 → 전투용 팀·표시용 종 맵·시드.

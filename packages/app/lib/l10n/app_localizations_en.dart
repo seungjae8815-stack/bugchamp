@@ -1811,4 +1811,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatAdminBadge => 'STAFF';
+
+  @override
+  String get autoEquip => 'Auto';
+
+  @override
+  String get autoEquipDone => 'Equipped your strongest bugs';
+
+  @override
+  String get autoEquipAlready => 'Already the best line-up';
+
+  @override
+  String get autoTeam => 'Auto';
+
+  @override
+  String get autoTeamDone => 'Picked your strongest team';
+
+  @override
+  String get autoTeamAlready => 'Already the best team';
+
+  @override
+  String teamPower(String power) {
+    return 'Team power $power';
+  }
 }

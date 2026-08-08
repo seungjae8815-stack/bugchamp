@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:core_save/core_save.dart';
+import '../data/game_data.dart';
 import '../data/save_repository.dart';
 import 'gather_service.dart';
 import 'game_server.dart';
@@ -68,52 +69,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final now = clock.now().toUtc();
 
     // 오프라인 정산 — 기기가 계산한다(기기 권위). 서버는 세이브를 저장만 한다.
-    final config = data.runConfig;
-    if (config != null) {
-      final elapsed = now.difference(save.lastSeen);
-      if (elapsed.inSeconds > 60) {
-        final stats = deriveStats(
-          config,
-          upgradeLevels: save.upgradeLevels,
-          characterLevel: save.level,
-          bugsCollected: save.bugs.length,
-        );
-        // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(iap.json §6).
-        final iap = data.iapConfig;
-        final passOn = save.passActive(now);
-        final raw = computeOfflineReward(
-          config: config,
-          stageNumber: save.stageNumber,
-          stats: stats,
-          elapsed: elapsed,
-          efficiency: config.offlineEfficiency,
-          maxAccrual: passOn
-              ? Duration(hours: iap?.passOfflineCapHours ?? 12)
-              : kMaxOfflineAccrual,
-        );
-        final report = passOn
-            ? OfflineReport(
-                gold: (raw.gold * (iap?.passIdleGoldMult ?? 1.2)).round(),
-                xp: raw.xp,
-                accrued: raw.accrued,
-              )
-            : raw;
-        if (!report.isEmpty) {
-          var xp = save.xp + report.xp;
-          var level = save.level;
-          while (xp >= xpForNextLevel(level)) {
-            xp -= xpForNextLevel(level);
-            level++;
-          }
-          save = save.copyWith(
-            gold: save.gold + report.gold,
-            xp: xp,
-            level: level,
-          );
-          pendingOffline = report;
-        }
-      }
-    }
+    save = _applyOffline(save, data, now);
 
     // 결제 혜택 일일 젤리(로컬 날짜 기준 1회). 패스가 광고제거보다 우선(중복 지급 금지).
     final iapCfg = data.iapConfig;
@@ -171,11 +127,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 시즌: 시작시각 초기화 + 만료 시 소프트리셋·보상.
     final battleCfg = data.battleConfig;
     if (battleCfg != null) {
+      // 시즌 경계는 요일·시각 앵커로 **모두에게 같은 순간**이다(주간).
+      // 저장된 값은 "내가 마지막으로 정산한 시즌의 시작". 그보다 최근 경계가
+      // 지나갔으면 시즌이 끝난 것 — 여러 주를 비워도 한 번만 정산된다.
+      final curStart = seasonStartAt(now, battleCfg);
       if (save.seasonStartedAt == null) {
-        save = save.copyWith(seasonStartedAt: now);
+        save = save.copyWith(seasonStartedAt: curStart);
       }
-      final start = save.seasonStartedAt!;
-      if (now.difference(start).inDays >= battleCfg.seasonDays) {
+      if (save.seasonStartedAt!.isBefore(curStart)) {
         final peak = save.seasonPeakTrophies > save.pvpTrophies
             ? save.seasonPeakTrophies
             : save.pvpTrophies;
@@ -196,7 +155,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           materials: mats,
           pvpTrophies: reset,
           seasonPeakTrophies: reset,
-          seasonStartedAt: now,
+          seasonStartedAt: curStart,
         );
       }
     }
@@ -204,6 +163,72 @@ class SaveController extends AsyncNotifier<SaveGame> {
     save = save.copyWith(lastSeen: now);
     await repo.save(save);
     return save;
+  }
+
+  /// [save.lastSeen] 이후 흐른 시간만큼 방치 보상을 얹은 세이브를 돌려준다.
+  /// 보상이 있으면 [pendingOffline] 에 담는다(화면이 1회 팝업으로 보여준다).
+  ///
+  /// 앱 시작([build])과 **백그라운드 복귀**([settleOffline]) 양쪽에서 쓴다 —
+  /// 시작할 때만 정산하면, 앱을 내려놨다가 다시 열었을 때 그 시간이 통째로
+  /// 사라진다(실제로 그 버그가 있었다).
+  SaveGame _applyOffline(SaveGame save, GameData data, DateTime now) {
+    final config = data.runConfig;
+    if (config == null) return save;
+    final elapsed = now.difference(save.lastSeen);
+    if (elapsed.inSeconds <= 60) return save;
+
+    final stats = deriveStats(
+      config,
+      upgradeLevels: save.upgradeLevels,
+      characterLevel: save.level,
+      bugsCollected: save.bugs.length,
+    );
+    // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(iap.json §6).
+    final iap = data.iapConfig;
+    final passOn = save.passActive(now);
+    final raw = computeOfflineReward(
+      config: config,
+      stageNumber: save.stageNumber,
+      stats: stats,
+      elapsed: elapsed,
+      efficiency: config.offlineEfficiency,
+      maxAccrual: passOn
+          ? Duration(hours: iap?.passOfflineCapHours ?? 12)
+          : kMaxOfflineAccrual,
+    );
+    final report = passOn
+        ? OfflineReport(
+            gold: (raw.gold * (iap?.passIdleGoldMult ?? 1.2)).round(),
+            xp: raw.xp,
+            accrued: raw.accrued,
+          )
+        : raw;
+    if (report.isEmpty) return save;
+
+    var xp = save.xp + report.xp;
+    var level = save.level;
+    while (xp >= xpForNextLevel(level)) {
+      xp -= xpForNextLevel(level);
+      level++;
+    }
+    pendingOffline = report;
+    return save.copyWith(gold: save.gold + report.gold, xp: xp, level: level);
+  }
+
+  /// 백그라운드에서 돌아왔을 때 그동안의 방치 보상을 정산한다.
+  /// 보상이 생겼으면 true — 호출부가 [pendingOffline] 을 팝업으로 보여준다.
+  ///
+  /// `_commit` 이 저장할 때마다 `lastSeen` 을 지금으로 찍으므로, 앱이 떠 있는
+  /// 동안에는 경과가 쌓이지 않는다(중복 지급 없음).
+  Future<bool> settleOffline() async {
+    final data = ref.read(gameDataProvider).value;
+    final s = state.value;
+    if (data == null || s == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final settled = _applyOffline(s, data, now);
+    if (identical(settled, s)) return false;
+    await _commit(settled);
+    return pendingOffline != null;
   }
 
   void consumeOffline() => pendingOffline = null;
@@ -1633,6 +1658,53 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (s.equippedBugIds.length >= maxEquip) return;
     if (!s.bugs.any((b) => b.id == bugId)) return;
     await _commit(s.copyWith(equippedBugIds: [...s.equippedBugIds, bugId]));
+  }
+
+  /// 보유 곤충 중 **가장 보너스가 큰 순서**로 자동 장착한다.
+  ///
+  /// "상위 곤충"을 등급이나 레벨 같은 한 축으로 고르지 않는다 — 실제 이득은
+  /// 등급·포텐셜·사이즈·강화·성장단계·레벨이 곱해진 값이고, 그 계산은 이미
+  /// `petContribution` 에 있다. 화면에 뜨는 보너스와 **같은 식**을 써야
+  /// "자동으로 맞췄는데 수치가 더 낮다"가 안 생긴다.
+  ///
+  /// 이미 최적이면 아무것도 저장하지 않는다(불필요한 업로드 방지).
+  Future<bool> autoEquipBest() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+
+    final scored = <({String id, double score})>[];
+    for (final b in s.bugs) {
+      final sp = data.speciesById[b.speciesId];
+      if (sp == null) continue;
+      final c = petContribution((
+        grade: sp.grade,
+        sizeMult: b.statMultiplier(sp),
+        potential: b.potential,
+        enhanceTotal: b.enhancement.total,
+        stage: effectiveStage(b.stage, b.stageSince, now, cfg),
+        level: b.level,
+      ), cfg);
+      scored.add((id: b.id, score: c.attack + c.hp));
+    }
+    if (scored.isEmpty) return false;
+    scored.sort((a, b) {
+      final d = b.score.compareTo(a.score);
+      return d != 0 ? d : a.id.compareTo(b.id); // 동점이어도 결과가 흔들리지 않게
+    });
+    final best = [for (final e in scored.take(cfg.maxEquip)) e.id];
+    // 순서까지 같으면 바꿀 게 없다.
+    if (best.length == s.equippedBugIds.length &&
+        List.generate(
+          best.length,
+          (i) => best[i] == s.equippedBugIds[i],
+        ).every((x) => x)) {
+      return false;
+    }
+    await _commit(s.copyWith(equippedBugIds: best));
+    return true;
   }
 
   /// 장착 해제.

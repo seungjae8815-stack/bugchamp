@@ -71,7 +71,9 @@ class BattleConfig {
     this.trophyLose = -8,
     this.scoutTiers = _defaultTiers,
     this.leagues = _defaultLeagues,
-    this.seasonDays = 14,
+    this.seasonResetWeekday = DateTime.monday,
+    this.seasonResetHour = 9,
+    this.seasonTzOffsetMinutes = 540,
     this.seasonResetFactor = 0.5,
     this.seasonRewardMult = 3.0,
     this.locationAffinityBonus = 0.2,
@@ -100,8 +102,23 @@ class BattleConfig {
   /// 트로피 등급(오름차순, 최소 1개).
   final List<League> leagues;
 
-  /// 시즌 길이(일). 만료 시 트로피 소프트리셋 + 시즌 보상.
-  final int seasonDays;
+  // ── 시즌 경계(2026-08 개편: 주간 · 요일 고정) ──
+  //
+  // 예전엔 "각 세이브의 시작 시각 + N일" 이었다. 그러면 **유저마다 시즌 끝이
+  // 달라** 같은 시즌을 겨루는 게 아니게 된다. 이제 요일·시각으로 못 박아
+  // 전 세계가 같은 순간에 리셋된다.
+
+  /// 리셋 요일(1=월 … 7=일, `DateTime.monday` 기준).
+  final int seasonResetWeekday;
+
+  /// 리셋 시각(0~23). [seasonTzOffsetMinutes] 기준의 시.
+  final int seasonResetHour;
+
+  /// 리셋 기준 시간대의 UTC 오프셋(분). 기본 540 = KST(UTC+9).
+  ///
+  /// 고정 오프셋을 쓰는 이유: **모두에게 같은 순간**이어야 하고, 기기 시간대를
+  /// 따르면 시간대를 바꿔 시즌을 늘리거나 보상을 두 번 받을 수 있다.
+  final int seasonTzOffsetMinutes;
 
   /// 시즌 종료 시 트로피 유지 비율(0.5 = 절반으로 강등).
   final double seasonResetFactor;
@@ -236,7 +253,11 @@ class BattleConfig {
               for (final lg in (json['leagues'] as List))
                 League.fromJson(lg as Map<String, dynamic>),
             ],
-      seasonDays: (season?['days'] as num?)?.toInt() ?? 14,
+      seasonResetWeekday:
+          (season?['resetWeekday'] as num?)?.toInt() ?? DateTime.monday,
+      seasonResetHour: (season?['resetHour'] as num?)?.toInt() ?? 9,
+      seasonTzOffsetMinutes:
+          (season?['tzOffsetMinutes'] as num?)?.toInt() ?? 540,
       seasonResetFactor: (season?['resetFactor'] as num?)?.toDouble() ?? 0.5,
       seasonRewardMult: (season?['rewardMult'] as num?)?.toDouble() ?? 3.0,
       locationAffinityBonus:
@@ -250,6 +271,32 @@ class BattleConfig {
     );
   }
 }
+
+/// [now] 가 속한 시즌의 **시작 시각**(가장 최근 리셋 시점, UTC).
+///
+/// 요일·시각 앵커로 계산하므로 **모든 유저가 같은 경계**를 공유한다.
+/// 기기 시간대와 무관하다(고정 오프셋 기준) — 시간대를 바꿔 시즌을 늘리거나
+/// 보상을 두 번 받는 우회를 막는다.
+DateTime seasonStartAt(DateTime now, BattleConfig cfg) {
+  final off = Duration(minutes: cfg.seasonTzOffsetMinutes);
+  // 기준 시간대의 벽시계(UTC 플래그를 단 채 오프셋만 더한 값).
+  final local = now.toUtc().add(off);
+  var back = (local.weekday - cfg.seasonResetWeekday) % 7;
+  if (back < 0) back += 7;
+  var start = DateTime.utc(
+    local.year,
+    local.month,
+    local.day,
+    cfg.seasonResetHour,
+  ).subtract(Duration(days: back));
+  // 오늘이 리셋 요일이어도 아직 리셋 시각 전이면 지난주가 이번 시즌이다.
+  if (local.isBefore(start)) start = start.subtract(const Duration(days: 7));
+  return start.subtract(off);
+}
+
+/// [now] 가 속한 시즌의 **종료(=다음 리셋) 시각**, UTC.
+DateTime seasonEndAt(DateTime now, BattleConfig cfg) =>
+    seasonStartAt(now, cfg).add(const Duration(days: 7));
 
 /// 티켓 잔량과 **다음 충전 기준시각**. 세이브에 이 둘만 저장하고, 화면에
 /// 보이는 수는 언제나 [regenTickets] 로 파생한다 — 앱과 서버가 같은 함수로

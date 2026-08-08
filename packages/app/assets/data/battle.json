@@ -21,7 +21,14 @@
     { "id": "platinum", "minTrophy": 700, "reward": { "gold": 40000, "jelly": 20 } },
     { "id": "diamond", "minTrophy": 1500, "reward": { "gold": 100000, "jelly": 40 } }
   ],
-  "season": { "days": 14, "resetFactor": 0.5, "rewardMult": 3 },
+  "_seasonComment": "시즌은 주간. 모두에게 같은 순간에 끝나도록 요일·시각으로 못 박는다(tzOffsetMinutes=540 → KST 월요일 09:00).",
+  "season": {
+    "resetWeekday": 1,
+    "resetHour": 9,
+    "tzOffsetMinutes": 540,
+    "resetFactor": 0.5,
+    "rewardMult": 3
+  },
   "_ticketsComment": "결투 티켓 = 하루 판수 제한(랭킹을 '전력'으로 되돌린다). adDailyLimit 은 광고제거 구매자에게도 동일 적용.",
   "tickets": {
     "max": 10,

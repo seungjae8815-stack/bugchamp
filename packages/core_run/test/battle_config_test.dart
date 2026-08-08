@@ -84,6 +84,53 @@ void main() {
       expect(cfg.seasonReward(50), (gold: 0, jelly: 0));
     });
 
+    test('시즌 경계는 KST 월요일 09:00 — 모두에게 같은 순간', () {
+      // 2026-08-08(토) 12:00 UTC = KST 21:00 토요일 → 이번 시즌은 8/3(월) 09:00 KST.
+      const cfg = BattleConfig();
+      final sat = DateTime.utc(2026, 8, 8, 12);
+      // KST 09:00 = UTC 00:00
+      expect(seasonStartAt(sat, cfg), DateTime.utc(2026, 8, 3, 0));
+      expect(seasonEndAt(sat, cfg), DateTime.utc(2026, 8, 10, 0));
+    });
+
+    test('리셋 직전과 직후로 시즌이 갈린다', () {
+      const cfg = BattleConfig();
+      // 2026-08-10(월) 09:00 KST = 2026-08-10 00:00 UTC
+      final justBefore = DateTime.utc(2026, 8, 9, 23, 59);
+      final justAfter = DateTime.utc(2026, 8, 10, 0, 1);
+      expect(seasonStartAt(justBefore, cfg), DateTime.utc(2026, 8, 3, 0));
+      expect(seasonStartAt(justAfter, cfg), DateTime.utc(2026, 8, 10, 0));
+    });
+
+    test('시간대가 달라도 경계는 하나다', () {
+      const cfg = BattleConfig();
+      // 같은 순간을 서로 다른 표현으로 줘도 결과가 같아야 한다.
+      final utc = DateTime.utc(2026, 8, 8, 12);
+      final shifted = utc.add(const Duration(hours: 0)).toUtc();
+      expect(seasonStartAt(shifted, cfg), seasonStartAt(utc, cfg));
+    });
+
+    test('한 시즌 길이는 7일', () {
+      const cfg = BattleConfig();
+      final now = DateTime.utc(2026, 8, 8, 12);
+      expect(
+        seasonEndAt(now, cfg).difference(seasonStartAt(now, cfg)),
+        const Duration(days: 7),
+      );
+    });
+
+    test('요일·시각·시간대를 JSON 으로 바꿀 수 있다(§6)', () {
+      final c = BattleConfig.fromJson({
+        'season': {'resetWeekday': 5, 'resetHour': 0, 'tzOffsetMinutes': 0},
+      });
+      expect(c.seasonResetWeekday, DateTime.friday);
+      // UTC 금요일 00:00 앵커 — 2026-08-08(토) → 직전 금요일 8/7 00:00.
+      expect(
+        seasonStartAt(DateTime.utc(2026, 8, 8, 12), c),
+        DateTime.utc(2026, 8, 7, 0),
+      );
+    });
+
     test('시즌 리셋 트로피 = 절반(내림)', () {
       expect(cfg.seasonResetTrophies(1001), 500);
       expect(cfg.seasonResetTrophies(0), 0);

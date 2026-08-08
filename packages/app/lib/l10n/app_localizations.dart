@@ -3315,6 +3315,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'STAFF'**
   String get chatAdminBadge;
+
+  /// No description provided for @autoEquip.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get autoEquip;
+
+  /// No description provided for @autoEquipDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped your strongest bugs'**
+  String get autoEquipDone;
+
+  /// No description provided for @autoEquipAlready.
+  ///
+  /// In en, this message translates to:
+  /// **'Already the best line-up'**
+  String get autoEquipAlready;
+
+  /// No description provided for @autoTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get autoTeam;
+
+  /// No description provided for @autoTeamDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Picked your strongest team'**
+  String get autoTeamDone;
+
+  /// No description provided for @autoTeamAlready.
+  ///
+  /// In en, this message translates to:
+  /// **'Already the best team'**
+  String get autoTeamAlready;
+
+  /// No description provided for @teamPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Team power {power}'**
+  String teamPower(String power);
 }
 
 class _AppLocalizationsDelegate

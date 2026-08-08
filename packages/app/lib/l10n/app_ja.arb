@@ -535,5 +535,12 @@
   "giftCodeUsed": "すでに使用済みです",
   "giftCodeFailed": "サーバーに接続できませんでした。しばらくしてからお試しください",
   "reviewAction": "ゲームを評価する",
-  "chatAdminBadge": "運営"
+  "chatAdminBadge": "運営",
+  "autoEquip": "自動装着",
+  "autoEquipDone": "最も強い虫を装着しました",
+  "autoEquipAlready": "すでに最適な組み合わせです",
+  "autoTeam": "自動編成",
+  "autoTeamDone": "最も強いチームを編成しました",
+  "autoTeamAlready": "すでに最適なチームです",
+  "teamPower": "チーム戦力 {power}"
 }

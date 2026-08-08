@@ -1777,4 +1777,27 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatAdminBadge => '운영자';
+
+  @override
+  String get autoEquip => '자동장착';
+
+  @override
+  String get autoEquipDone => '가장 강한 곤충으로 장착했어요';
+
+  @override
+  String get autoEquipAlready => '이미 최고 조합이에요';
+
+  @override
+  String get autoTeam => '자동편성';
+
+  @override
+  String get autoTeamDone => '가장 강한 팀으로 편성했어요';
+
+  @override
+  String get autoTeamAlready => '이미 최고 팀이에요';
+
+  @override
+  String teamPower(String power) {
+    return '팀 전투력 $power';
+  }
 }

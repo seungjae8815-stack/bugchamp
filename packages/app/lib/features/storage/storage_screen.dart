@@ -1271,7 +1271,10 @@ class StorageScreen extends ConsumerWidget {
     LifeStage.egg => 0,
   };
 
-  /// (성충↑ 알↓) + 티어(포텐셜)↑ + 같은 종끼리 묶고 + 레벨↑ 순. 장착은 맨 앞.
+  /// 장착 → **등급↑** → 성장단계↑ → 포텐셜↑ → 레벨↑ → 종 순.
+  ///
+  /// 등급을 맨 앞에 두는 이유: 채집함을 여는 목적이 대부분 "좋은 놈 찾기"다.
+  /// `Grade` enum 의 선언 순서(일반→전설)가 곧 등급 순서라 index 로 비교한다.
   List<({IndividualBug bug, LifeStage stage, bool equipped})> _sorted(
     GameData data,
     SaveGame save,
@@ -1284,16 +1287,19 @@ class StorageScreen extends ConsumerWidget {
           : effectiveStage(b.stage, b.stageSince, now, cfg);
       return (bug: b, stage: st, equipped: save.isEquipped(b.id));
     }).toList();
+    int gradeRank(IndividualBug b) =>
+        data.speciesById[b.speciesId]?.grade.index ?? -1;
     list.sort((a, b) {
       if (a.equipped != b.equipped) return a.equipped ? -1 : 1;
+      final gr = gradeRank(b.bug) - gradeRank(a.bug);
+      if (gr != 0) return gr;
       final sr = _stageRank(b.stage) - _stageRank(a.stage);
       if (sr != 0) return sr;
       if (a.bug.potential != b.bug.potential) {
         return b.bug.potential - a.bug.potential;
       }
-      final sp = a.bug.speciesId.compareTo(b.bug.speciesId);
-      if (sp != 0) return sp;
-      return b.bug.level - a.bug.level;
+      if (a.bug.level != b.bug.level) return b.bug.level - a.bug.level;
+      return a.bug.speciesId.compareTo(b.bug.speciesId);
     });
     return list;
   }
@@ -1353,6 +1359,14 @@ class StorageScreen extends ConsumerWidget {
       onTap: () => _showBugDetail(context, ref, data, bug.id),
       child: Container(
         decoration: _gradeFrame(species.grade, equipped: equipped),
+        foregroundDecoration: injured
+            ? BoxDecoration(
+                // 회색조 + 어둡게 = "지금은 쓸 수 없다"가 한눈에 읽힌다.
+                color: const Color(0x99000000),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xAAE07A5F), width: 1.6),
+              )
+            : null,
         child: Column(
           children: [
             const SizedBox(height: 3),
@@ -1407,11 +1421,13 @@ class StorageScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  // 부상 표시는 칸 한가운데 크게 — 구석의 작은 이모지는
+                  // 그리드에서 눈에 들어오지 않았다.
                   if (injured)
-                    const Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Text('🩹', style: TextStyle(fontSize: 13)),
+                    const Positioned.fill(
+                      child: Center(
+                        child: Text('🩹', style: TextStyle(fontSize: 30)),
+                      ),
                     ),
                 ],
               ),
@@ -1531,20 +1547,31 @@ class StorageScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.pets, size: 15, color: _honey),
               const SizedBox(width: 5),
+              // 색을 명시한다 — 기본 텍스트색이 어두워 배경에 묻혀 안 보였다.
               Text(
                 l.equipTitle,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
               ),
+              const SizedBox(width: 8),
+              // 보너스는 제목 옆에 — 무엇을 얻고 있는지가 제목보다 중요하다.
+              Expanded(
+                child: Text(
+                  l.petBonus(atkPct, hpPct),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _honey,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              _autoEquipButton(context, ref, data, l, save),
             ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            l.petBonus(atkPct, hpPct),
-            style: const TextStyle(
-              color: _honey,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
           ),
           const SizedBox(height: 8),
           Row(
@@ -1627,8 +1654,25 @@ class StorageScreen extends ConsumerWidget {
                         skin: ref.watch(skinOfProvider)(bug.speciesId),
                       ),
                     ),
+                    // 어떤 곤충을 끼웠는지 그림만으로는 헷갈린다 — 이름을 적는다.
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Text(
+                        species.name.resolve(
+                          Localizations.localeOf(context).languageCode,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6, top: 1),
                       child: _stars(bug.potential, 11),
                     ),
                   ],
@@ -1637,6 +1681,41 @@ class StorageScreen extends ConsumerWidget {
       ),
     );
   }
+
+  /// 자동 장착 — 보너스가 가장 큰 곤충으로 슬롯을 채운다.
+  ///
+  /// 재화가 드는 일이 아니라 되돌리기 쉬우므로 확인 없이 바로 적용하고,
+  /// 결과만 알린다(이미 최적이면 그렇다고 알린다 — 눌렀는데 아무 반응이
+  /// 없으면 고장으로 보인다).
+  Widget _autoEquipButton(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+    SaveGame save,
+  ) => TextButton.icon(
+    onPressed: save.bugs.isEmpty
+        ? null
+        : () async {
+            final changed = await ref
+                .read(saveControllerProvider.notifier)
+                .autoEquipBest();
+            if (!context.mounted) return;
+            if (changed) AudioService.instance.sfxReward();
+            showCenterToast(
+              context,
+              changed ? l.autoEquipDone : l.autoEquipAlready,
+            );
+          },
+    icon: const Icon(Icons.auto_awesome, size: 15),
+    label: Text(l.autoEquip, style: const TextStyle(fontSize: 11.5)),
+    style: TextButton.styleFrom(
+      foregroundColor: const Color(0xFFBFE3A6),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      minimumSize: const Size(0, 30),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+  );
 
   // ── 재화 스트립(용도 캡션 + 탭 → 상세) ─────────────────────────
   Widget _materialsStrip(

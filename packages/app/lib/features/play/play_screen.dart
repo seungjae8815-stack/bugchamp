@@ -366,7 +366,7 @@ class PlayScreen extends ConsumerStatefulWidget {
 }
 
 class _PlayScreenState extends ConsumerState<PlayScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final GameData _data;
   late final RunConfig _config;
   late final Ticker _ticker;
@@ -430,6 +430,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   @override
   void initState() {
     super.initState();
+    // 백그라운드에 있던 시간도 방치 보상으로 쳐야 한다 — 복귀를 직접 듣는다.
+    WidgetsBinding.instance.addObserver(this);
     _cracks = _makeCracks();
     _clock = ref.read(clockProvider);
     _data = ref.read(gameDataProvider).requireValue;
@@ -478,10 +480,37 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     // 챕터 보스전 도중에 화면을 떠나도 보스 배경음이 남지 않게 되돌린다.
     unawaited(AudioService.instance.restoreBgm());
     super.dispose();
+  }
+
+  /// 백그라운드 → 복귀. 그동안의 방치 보상을 정산하고 팝업으로 알린다.
+  ///
+  /// 예전엔 **앱 시작 때만** 정산해서, 앱을 내려놨다가 다시 열면 그 시간이
+  /// 통째로 사라졌다. 방치형 게임에서 가장 손해가 큰 구간이다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    unawaited(_settleOnResume());
+  }
+
+  Future<void> _settleOnResume() async {
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    if (!await ctrl.settleOffline()) return;
+    final report = ctrl.pendingOffline;
+    if (report == null || !mounted) return;
+    ctrl.consumeOffline();
+    // 복귀 직후 진행 상태(스테이지·체력)도 세이브에 맞춰 다시 잡는다.
+    final save = ref.read(saveControllerProvider).requireValue;
+    final stats = _stats(save);
+    setState(() {
+      _playerHpMax = stats.maxHp;
+      if (_playerHp > _playerHpMax) _playerHp = _playerHpMax;
+    });
+    _showOfflineReward(report);
   }
 
   // 유리 깨짐 균열 패턴을 한 번 생성(시드 고정 → 프레임마다 안 흔들림).

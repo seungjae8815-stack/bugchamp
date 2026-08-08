@@ -570,5 +570,12 @@
   "giftCodeUsed": "이미 사용했어요",
   "giftCodeFailed": "서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요",
   "reviewAction": "게임 평가하기",
-  "chatAdminBadge": "운영자"
+  "chatAdminBadge": "운영자",
+  "autoEquip": "자동장착",
+  "autoEquipDone": "가장 강한 곤충으로 장착했어요",
+  "autoEquipAlready": "이미 최고 조합이에요",
+  "autoTeam": "자동편성",
+  "autoTeamDone": "가장 강한 팀으로 편성했어요",
+  "autoTeamAlready": "이미 최고 팀이에요",
+  "teamPower": "팀 전투력 {power}"
 }
