@@ -122,42 +122,60 @@ def cutout(img):
     그물의 크림색 같은 **안쪽 밝은 부분까지 뚫린다** — 바깥에서 이어진 것만
     지워야 안전하다.
     """
+    from collections import Counter
+
     from PIL import Image, ImageFilter
 
     w, h = img.size
-    px = img.convert("RGB").load()
+    rgb = img.convert("RGB")
+    px = rgb.load()
 
-    def is_bg(x, y):
-        r, g, b = px[x, y]
-        # 체크무늬는 밝고 채도가 없다(235~250 회색). 아이템의 밝은 부분은
-        # 대개 색이 살짝 있어(크림·베이지) 채도로 걸러진다.
-        return max(r, g, b) - min(r, g, b) < 24 and min(r, g, b) > 195
+    # 1) 체크무늬가 **무슨 색인지** 테두리에서 알아낸다.
+    #    실측: 흰색(255,255,255) 과 밝은 회색(240~244) 이 번갈아 칠해져 있다.
+    edge = Counter()
+    for x in range(0, w, 2):
+        edge[px[x, 1]] += 1
+        edge[px[x, h - 2]] += 1
+    for y in range(0, h, 2):
+        edge[px[1, y]] += 1
+        edge[px[w - 2, y]] += 1
+    bg_colors = [
+        c for c, _ in edge.most_common(6)
+        if max(c) - min(c) < 20 and min(c) > 195
+    ]
+    if not bg_colors:
+        return img  # 배경이 밝은 무채색이 아니다 — 건드리지 않는다.
 
-    # 테두리에서 시작하는 플러드 필(반복문 — 재귀는 깊이 제한에 걸린다).
-    mask = bytearray(w * h)
-    stack = []
-    for x in range(w):
-        for y in (0, h - 1):
-            if is_bg(x, y):
-                stack.append((x, y))
+    # 2) **전역**으로 지운다. 테두리에서 이어진 것만 지우면 닫힌 고리 안쪽
+    #    (무쇠 집게·황금 고리의 구멍)에 체크무늬가 그대로 남는다 — 실제로 남았다.
+    #
+    #    색을 정확히 맞추는 방식은 못 쓴다. 체크무늬가 흰색(255)과 회색(240)
+    #    두 가지인데 좁은 허용치로는 한쪽만 잡혀 오히려 나빠졌다(무쇠 71%→56%).
+    #    **"밝고 무채색"** 이라는 성질로 잡는 게 안정적이다(전 파일 73~80%).
+    #
+    # 3) 두 축 모두 **부드러운 경사**를 준다. 딱 잘라내면 빛번짐(호박·황금)이
+    #    흰 테를 남긴다. 어둡거나 색이 있으면 아이템 — 둘 중 더 강한 쪽을 쓴다.
+    def ramp(v, lo, hi):
+        if v <= lo:
+            return 0
+        if v >= hi:
+            return 255
+        return int((v - lo) * 255 / (hi - lo))
+
+    a = bytearray(w * h)
+    i = 0
     for y in range(h):
-        for x in (0, w - 1):
-            if is_bg(x, y):
-                stack.append((x, y))
-    while stack:
-        x, y = stack.pop()
-        i = y * w + x
-        if mask[i]:
-            continue
-        mask[i] = 1
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            nx, ny = x + dx, y + dy
-            if 0 <= nx < w and 0 <= ny < h and not mask[ny * w + nx] and is_bg(nx, ny):
-                stack.append((nx, ny))
+        for x in range(w):
+            r, g, b = px[x, y]
+            lum = min(r, g, b)
+            sat = max(r, g, b) - lum
+            # 어두울수록 아이템 / 채도가 있을수록 아이템.
+            a[i] = max(255 - ramp(lum, 185, 208), ramp(sat, 18, 34))
+            i += 1
 
-    alpha = Image.frombytes("L", (w, h), bytes(255 if not m else 0 for m in mask))
-    # 가장자리를 아주 살짝 부드럽게 — 안 하면 계단이 보인다.
-    alpha = alpha.filter(ImageFilter.GaussianBlur(0.6))
+    alpha = Image.frombytes("L", (w, h), bytes(a))
+    # 계단을 없애는 정도로만 아주 살짝.
+    alpha = alpha.filter(ImageFilter.GaussianBlur(0.5))
     out = img.copy()
     out.putalpha(alpha)
     return out
