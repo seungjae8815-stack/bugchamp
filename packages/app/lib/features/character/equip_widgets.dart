@@ -59,12 +59,19 @@ String optionLabel(AppLocalizations l, ItemOptionKind k) => switch (k) {
 ///
 /// ⚠️ **그림에 색을 입히지 않는다.** 등급색은 칸 테두리가 이미 칠하고 있어서,
 /// 그림까지 물들이면 재질(구리·은·호박)이 뭉개진다.
-Widget itemImage(EquipItem item, {required double size, Color? tint}) =>
-    gameImageChain(
-      ['assets/images/items/${item.slot.key}_${_tierId(item.tier)}.webp'],
-      size: size,
-      fallback: Icon(slotIcon(item.slot), size: size * 0.9, color: tint),
-    );
+Widget itemImage(EquipItem item, {required double size, Color? tint}) {
+  final id = '${item.slot.key}_${_tierId(item.tier)}';
+  return gameImageChain(
+    [
+      'assets/images/items/$id.webp',
+      // **png 도 그대로 읽는다** — 생성한 그림을 webp 로 변환하는 수고를 없앤다.
+      // webp 가 더 가벼우니 출시 전에는 변환하는 게 좋지만, 작업 중에 막히지 않게.
+      'assets/images/items/$id.png',
+    ],
+    size: size,
+    fallback: Icon(slotIcon(item.slot), size: size * 0.9, color: tint),
+  );
+}
 
 /// 등급 인덱스 → JSON id. 파일명이 이 값을 그대로 쓴다.
 String _tierId(int tier) => const [
