@@ -763,7 +763,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
     // 적 반격 — 보스·일반 서식지 모두 주기적으로 달려들어(공격 모션) 그 순간 피해.
     final depth = _stage - 1;
-    final threat = habitatThreat(_config, depth, boss: _isBoss);
+    // ⚠️ 기준은 **영구 전력(업그레이드+펫)** 이다. 장비·버프를 넣으면 좋은 옷을
+    // 입을수록 몬스터가 세져 **입은 보람이 사라진다** — 체력에서 겪은 그대로다.
+    // 회복은 이 식에 없으므로 올린 만큼 그대로 버틴다.
+    final threat = habitatThreat(
+      _config,
+      depth,
+      boss: _isBoss,
+      playerToughness: toughnessOf(
+        _petStats(ref.read(saveControllerProvider).requireValue),
+      ),
+    );
     final incoming = threat * 100 / (100 + stats.defense);
     // 회복은 상시 적용.
     _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * dt);

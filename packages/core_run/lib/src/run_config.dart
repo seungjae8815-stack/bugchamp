@@ -104,6 +104,10 @@ class RunConfig {
     this.onlineGoldBonus = 0,
     this.materialAmountGrowth = 1.0,
     this.hpAdaptTargetHits = 0,
+    this.threatAdaptTargetPct = 0,
+    this.threatAdaptPower = 0.85,
+    this.threatAdaptMinRatio = 0.5,
+    this.threatAdaptMaxRatio = 1000,
     this.hpAdaptPower = 0,
     this.hpAdaptMinRatio = 0.5,
     this.hpAdaptMaxRatio = 1000,
@@ -149,6 +153,22 @@ class RunConfig {
   /// **켜두는 것보다 꺼두는 게 이득**이었다. 방치 보상을 깎으면 "안 켜도
   /// 벌린다"를 보고 온 유저가 이탈하므로, 대신 온라인에 얹는다.
   final double onlineGoldBonus;
+
+  /// 몬스터 한 대가 가져가야 할 **내 최대체력 비율**(0.015 = 1.5%).
+  ///
+  /// 0 이면 적응형 위협을 끈다(기존 동작).
+  ///
+  /// 체력에 적응형을 넣고 위협은 고정으로 뒀더니, 방어 전력이 지수로 커지는
+  /// 동안 몬스터 공격은 스테이지당 ×1.025 라 **한 대가 체력의 0.0006%**(스테이지
+  /// 50 실측)가 됐다. 절대 죽지 않으니 체력·방어·회복 업그레이드와 옷·바지
+  /// 장비, 방어 스킬이 **전부 죽은 투자**였다.
+  final double threatAdaptTargetPct;
+
+  /// 위협 보정 지수. **1 미만**이라 방어에 투자할수록 상대적으로 안전해진다
+  /// (1.0 이면 아무리 올려도 제자리라 투자할 이유가 사라진다).
+  final double threatAdaptPower;
+  final double threatAdaptMinRatio;
+  final double threatAdaptMaxRatio;
 
   // ── 적응형 체력(§7, 2026-08) ──
   // 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.015 로 자라 공격이
@@ -267,6 +287,13 @@ class RunConfig {
       onlineGoldBonus: (json['onlineGoldBonus'] as num?)?.toDouble() ?? 0,
       materialAmountGrowth:
           (json['materialAmountGrowth'] as num?)?.toDouble() ?? 1.0,
+      threatAdaptTargetPct:
+          (json['threatAdaptTargetPct'] as num?)?.toDouble() ?? 0,
+      threatAdaptPower: (json['threatAdaptPower'] as num?)?.toDouble() ?? 0.85,
+      threatAdaptMinRatio:
+          (json['threatAdaptMinRatio'] as num?)?.toDouble() ?? 0.5,
+      threatAdaptMaxRatio:
+          (json['threatAdaptMaxRatio'] as num?)?.toDouble() ?? 1000,
       hpAdaptTargetHits: (json['hpAdaptTargetHits'] as num?)?.toDouble() ?? 0,
       hpAdaptPower: (json['hpAdaptPower'] as num?)?.toDouble() ?? 0,
       hpAdaptMinRatio: (json['hpAdaptMinRatio'] as num?)?.toDouble() ?? 0.5,

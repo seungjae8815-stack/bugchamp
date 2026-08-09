@@ -487,4 +487,84 @@ void main() {
       expect(materialAmountMult(c, 300), 1.0);
     });
   });
+
+  group('적응형 위협 — 몬스터가 실제로 아파야 한다', () {
+    final c = RunConfig.fromJson({
+      ..._baseJson(),
+      'threatBase': 2.0,
+      'threatGrowth': 1.025,
+      'bossThreatMult': 3.0,
+      'threatAdaptTargetPct': 0.015,
+    });
+
+    test('기준을 안 주면 기존 동작(고정 곡선) 그대로다', () {
+      final a = habitatThreat(c, 100);
+      expect(a, greaterThan(0));
+      expect(habitatThreat(c, 100, playerToughness: null), a);
+    });
+
+    test('한 대가 가져가는 체력 비율이 **깊이와 무관하게 일정**하다', () {
+      // 방어 전력이 지수로 커지는 동안 위협이 고정이면 한 대가 0.0006% 가 된다
+      // (실측). 그러면 체력·방어·회복 투자가 전부 죽는다.
+      double pct(int depth, double maxHp) {
+        final t = habitatThreat(
+          c,
+          depth,
+          playerToughness: maxHp, // 방어 0 가정 → toughness = maxHp
+        );
+        return t / maxHp;
+      }
+
+      expect(pct(10, 1e3), closeTo(pct(900, 1e40), 1e-9));
+    });
+
+    test('보스는 훨씬 아프다', () {
+      final n = habitatThreat(c, 100, playerToughness: 1e6);
+      final b = habitatThreat(c, 100, boss: true, playerToughness: 1e6);
+      expect(b / n, closeTo(3.0, 1e-9));
+    });
+
+    test('초반에는 곡선 절대값이 바닥을 잡아준다(전력이 미미할 때)', () {
+      // 전력이 0에 가까우면 비례식이 0 이 되어 아예 안 아프게 된다.
+      expect(habitatThreat(c, 0, playerToughness: 0), greaterThan(0));
+    });
+
+    test('회복은 이 식에 없다 — 올린 만큼 그대로 버틴다', () {
+      // toughness 는 체력×방어만 본다. 회복이 위협을 키우지 않아야
+      // "회복력 투자"가 순수 이득이 된다.
+      const s1 = CharacterStats(
+        attack: 1,
+        attackSpeed: 1,
+        rewardMultiplier: 1,
+        critChance: 0,
+        critDamage: 1,
+        bossDamage: 1,
+        maxHp: 1000,
+        defense: 100,
+        hpRegen: 0,
+        xpMultiplier: 1,
+        bugFind: 1,
+        materialFind: 1,
+        moveSpeed: 1,
+        boostBonus: 1,
+      );
+      final s2 = CharacterStats(
+        attack: s1.attack,
+        attackSpeed: s1.attackSpeed,
+        rewardMultiplier: s1.rewardMultiplier,
+        critChance: s1.critChance,
+        critDamage: s1.critDamage,
+        bossDamage: s1.bossDamage,
+        maxHp: s1.maxHp,
+        defense: s1.defense,
+        hpRegen: 999, // 회복만 다르다
+        xpMultiplier: s1.xpMultiplier,
+        bugFind: s1.bugFind,
+        materialFind: s1.materialFind,
+        moveSpeed: s1.moveSpeed,
+        boostBonus: s1.boostBonus,
+      );
+      expect(toughnessOf(s2), toughnessOf(s1));
+    });
+  });
 }

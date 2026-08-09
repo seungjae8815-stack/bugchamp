@@ -243,6 +243,24 @@ void main(List<String> args) {
   }
   stdout.writeln('');
 
+  stdout.writeln('── 보스전 생존(위협이 실제로 위협인가) ──');
+  stdout.writeln('  스테이지 | 잡는 시간 | 버티는 시간 | 판정');
+  for (final m in const [10, 50, 100, 200, 400, 700, 1000]) {
+    final v = sim.survivalAt[m];
+    if (v == null) continue;
+    final verdict = v.live.isInfinite
+        ? '위협 없음'
+        : (v.live > v.kill * 2
+              ? '여유'
+              : (v.live > v.kill ? '빠듯 — 좋다' : '못 잡음(벽)'));
+    stdout.writeln(
+      '  ${m.toString().padLeft(7)} | ${v.kill.toStringAsFixed(1).padLeft(8)}초 |'
+      ' ${(v.live.isInfinite ? "무한" : "${v.live.toStringAsFixed(0)}초").padLeft(10)} |'
+      ' $verdict',
+    );
+  }
+  stdout.writeln('');
+
   stdout.writeln('── 업그레이드가 막힌 이유(구간별) ──');
   stdout.writeln('  재료가 100% 면 재료만 모으는 게임, 0% 면 재료가 장식이다.');
   for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
@@ -325,6 +343,9 @@ class _Player {
   /// 방치 게임의 '타격감'은 이 값이 결정한다. 1이면 스치기만 해도 죽어서
   /// 성장할 이유가 안 느껴지고, 너무 크면 진행이 답답하다.
   final Map<int, int> hitsToKill = {};
+
+  /// 스테이지별 생존 지표 — (보스 잡는 시간, 버티는 시간).
+  final Map<int, ({double kill, double live})> survivalAt = {};
 
   /// 날짜별 누적 골드 획득 — 공방 같은 새 소비처의 규모를 정할 때 쓴다.
   final Map<int, double> goldEarnedByDay = {};
@@ -445,6 +466,26 @@ class _Player {
           final hp = habitatMaxHp(config, s - 1, playerAttack: st.attack);
           final dmg = st.attack <= 0 ? 1.0 : st.attack;
           return (hp / dmg).ceil();
+        });
+        survivalAt.putIfAbsent(s, () {
+          final st = stats; // 펫·버프 포함한 실제 전투 능력치
+          final hp = bossMaxHp(
+            config,
+            s - 1,
+            playerAttack: st.attack,
+          ).toDouble();
+          final dps = st.attack * st.attackSpeed * st.bossDamage;
+          // 위협 기준은 **영구 전력**(버프 제외) — 앱과 같은 규칙.
+          final tough = toughnessOf(_baseStats);
+          final inc =
+              habitatThreat(config, s - 1, boss: true, playerToughness: tough) *
+              100 /
+              (100 + st.defense);
+          final net = inc - st.hpRegen;
+          return (
+            kill: dps <= 0 ? 0.0 : hp / dps,
+            live: net <= 0 ? double.infinity : st.maxHp / net,
+          );
         });
         secPerKill.putIfAbsent(s, () {
           final st = stats;

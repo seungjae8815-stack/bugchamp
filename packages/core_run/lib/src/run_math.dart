@@ -117,13 +117,37 @@ int xpForNextLevel(int level) => (25 * math.pow(1.45, level - 1)).round();
 
 /// 서식지 곤충의 반격 위협도(초당 피해). 보스면 [c.bossThreatMult] 배.
 /// 적 HP 와 같은 월드 점프를 따른다(플레이어 체력 업그레이드도 곱연산이므로).
-double habitatThreat(RunConfig c, int depth, {bool boss = false}) {
+double habitatThreat(
+  RunConfig c,
+  int depth, {
+  bool boss = false,
+  double? playerToughness,
+}) {
   final base =
       c.threatBase *
       math.pow(c.threatGrowth, depth) *
       c.worldMult(c.worldHpMult, depth);
-  return base * (boss ? c.bossThreatMult : 1.0);
+  final bossMult = boss ? c.bossThreatMult : 1.0;
+  if (playerToughness == null || c.threatAdaptTargetPct <= 0) {
+    return base * bossMult;
+  }
+  // 몬스터 공격을 **내 방어 전력에 비례**시킨다. 한 대가 늘 체력의 일정
+  // 비율을 가져가므로, 깊이와 무관하게 "맞으면 아프다"가 유지된다.
+  //
+  // ⚠️ 지수를 1 이 아닌 값으로 두면 못 쓴다. 방어 축은 **제곱으로** 작동해서
+  // (체력으로 한 번, 방어력 나눗셈으로 또 한 번) 지수를 0.1 만 바꿔도 결과가
+  // 수십~수만 배로 흔들린다(1.6 → 0%, 1.8 → 265%). 튜닝 손잡이로 쓸 수 없다.
+  //
+  // 대신 **기준에서 무엇을 빼느냐**로 투자 보람을 만든다(§6 과 같은 원칙):
+  //   기준에 넣는 것   업그레이드·펫의 체력·방어 → 곡선을 따라가는 유지비
+  //   기준 밖(순수 이득) 회복 · 장비(옷·바지) · 방어 스킬 · 버프
+  // 회복은 애초에 이 식에 없으므로 올린 만큼 그대로 버틴다.
+  final threat = playerToughness * c.threatAdaptTargetPct;
+  // 초반(전력이 미미할 때)에는 곡선 절대값이 더 크면 그쪽을 쓴다.
+  return math.max(base, threat) * bossMult;
 }
+
+double toughnessOf(CharacterStats s) => s.maxHp * (1 + s.defense / 100);
 
 /// 업그레이드 레벨 + 캐릭터 레벨 + 곤충 수로부터 유효 능력치 파생.
 /// 설정에 없는 업그레이드는 **중립값**으로 대체(부분 설정 안전).
