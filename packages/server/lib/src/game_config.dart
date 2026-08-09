@@ -20,6 +20,7 @@ class GameConfig implements GameConfigLike {
     required this.run,
     required this.pet,
     this.enhance,
+    this.forge,
     this.mission,
     this.gift,
     this.daily,
@@ -33,6 +34,9 @@ class GameConfig implements GameConfigLike {
   final BattleConfig battle;
   @override
   final RunConfig run;
+
+  @override
+  final ForgeConfig? forge;
   @override
   final PetConfig pet;
 
@@ -79,6 +83,7 @@ class GameConfig implements GameConfigLike {
         .cast<Map<String, dynamic>>()
         .map(Species.fromJson);
 
+    final forgeJson = await readOpt('forge.json');
     final missionJson = await readOpt('missions.json');
     final giftJson = await readOpt('gifts.json');
     final dailyJson = await readOpt('daily.json');
@@ -89,6 +94,7 @@ class GameConfig implements GameConfigLike {
       iap: IapConfig.fromJson(await read('iap.json')),
       battle: BattleConfig.fromJson(await read('battle.json')),
       run: RunConfig.fromJson(await read('run_config.json')),
+      forge: forgeJson == null ? null : ForgeConfig.fromJson(forgeJson),
       pet: PetConfig.fromJson(await read('pets.json')),
       enhance: EnhanceConfig.fromJson(await read('enhance.json')),
       mission: missionJson == null ? null : MissionConfig.fromJson(missionJson),

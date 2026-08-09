@@ -141,13 +141,20 @@ class GameActions {
   /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
   static const _jellySanityFloor = 1000;
 
-  /// 화석 조각(제련용) 급증 상한의 바닥 — 업로드 1회(60초) 기준.
+  /// 화석 조각(제련용) 증가 상한의 **바닥**. 실질 상한은 여기에
+  /// `초당 획득 × 경과시간 × [_fossilSlack]` 을 더한 값이다.
   ///
-  /// 정상 획득은 **초당 0.056개**(온라인)라 60초면 4개 남짓이고, 오래 비웠다
-  /// 돌아와도 오프라인 상한(8h)에 묶여 550개를 넘지 않는다. 넉넉히 잡아도
-  /// 세이브 편집으로 수만 개를 넣는 건 막힌다 — 그러면 지금 공방 등급에서
-  /// 뽑을 수 있는 최상급 장비를 몇 시간 만에 쓸어담는다.
-  static const _fossilSanityFloor = 3000;
+  /// ⚠️ **보유 상한이 아니라 업로드 1회당 증가 상한이다.** 모아뒀다 한 번에
+  /// 쓰는 건 아무 제약이 없다(감소는 검사하지 않는다).
+  ///
+  /// 상수로 두면 안 되는 이유: 네트워크가 오래 끊긴 채 플레이하면 정상 유저도
+  /// 상수를 넘긴다. 경과시간은 **서버 시각으로 계산**하므로(마지막 업로드
+  /// 시각도 서버가 찍는다) 조작할 수 없다 — 골드 상한과 같은 방식이다.
+  static const _fossilSanityFloor = 60;
+
+  /// 화석 조각 상한의 여유 배수. 정상 획득의 몇 배까지 봐줄 것인가.
+  /// 방어보다 **오탐이 더 나쁘다** — 정상 유저의 재화가 잘리면 안 된다.
+  static const _fossilSlack = 3.0;
 
   /// 상한 계산용 넉넉한 방치 효율(액티브 플레이 여유 포함 — 절대치만 잡는다).
   ///
@@ -257,8 +264,13 @@ class GameActions {
           (mats['fossil'] as num?)?.toInt() ??
           stored.materialCount(MaterialKind.fossil);
       final storedFossil = stored.materialCount(MaterialKind.fossil);
-      if (clientFossil - storedFossil > _fossilSanityFloor) {
-        mats['fossil'] = storedFossil + _fossilSanityFloor;
+      final maxFossilGain =
+          _fossilSanityFloor +
+          (config.forge?.fossilPerSecond ?? 0.06) *
+              elapsed.inSeconds *
+              _fossilSlack;
+      if (clientFossil - storedFossil > maxFossilGain) {
+        mats['fossil'] = storedFossil + maxFossilGain.round();
         clamped = true;
       }
     }
@@ -1509,6 +1521,9 @@ abstract interface class GameConfigLike {
   RunConfig get run;
   PetConfig get pet;
   EnhanceConfig? get enhance;
+
+  /// 공방 — 화석 조각 증가 상한 계산에만 쓴다(제련 자체는 기기 권위).
+  ForgeConfig? get forge;
 
   /// 미션·선물·일일보상·로드맵 — 방치 보상 루프. 없으면 해당 기능은 서버가 건너뛴다.
   MissionConfig? get mission;

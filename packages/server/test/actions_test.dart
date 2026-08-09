@@ -71,6 +71,12 @@ class _Config implements GameConfigLike {
   );
 
   @override
+  final ForgeConfig? forge = ForgeConfig.fromJson(
+    jsonDecode(File('../app/assets/data/forge.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+
+  @override
   final RunConfig run = RunConfig.fromJson(
     jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
         as Map<String, dynamic>,
@@ -1508,11 +1514,38 @@ void main() {
       expect(r.extra['clamped'], isTrue);
     });
 
-    test('정상 범위 화석 조각 증가는 통과한다(오래 비웠다 돌아온 경우)', () {
-      final st = stored();
-      final ok = st.copyWith(materials: {MaterialKind.fossil: 550}).toJson();
-      final r = actions.mergeSave(st, ok);
-      expect(r.save!.materialCount(MaterialKind.fossil), 550);
+    test('오프라인 8시간을 꽉 채우고 돌아와도 통과한다 — 오탐이 더 나쁘다', () {
+      // 마지막 업로드가 8시간 전. 그동안 쌓인 정상 획득은 약 533개.
+      final st = stored().copyWith(
+        lastSeen: t0.subtract(const Duration(hours: 8)),
+        materials: {MaterialKind.fossil: 0},
+      );
+      final back = st.copyWith(materials: {MaterialKind.fossil: 533}).toJson();
+      final r = actions.mergeSave(st, back);
+      expect(r.save!.materialCount(MaterialKind.fossil), 533);
+      expect(r.extra['clamped'], isFalse);
+    });
+
+    test('상한은 보유가 아니라 **증가분**에만 걸린다 — 모아뒀다 한 번에 쓸 수 있다', () {
+      var save = stored().copyWith(materials: {MaterialKind.fossil: 0});
+      // 업로드를 거듭하며 쌓는다(각 회차는 상한 안).
+      for (var i = 0; i < 20; i++) {
+        final client = save
+            .copyWith(
+              materials: {
+                MaterialKind.fossil:
+                    save.materialCount(MaterialKind.fossil) + 50,
+              },
+            )
+            .toJson();
+        save = actions.mergeSave(save, client).save!;
+      }
+      expect(save.materialCount(MaterialKind.fossil), 1000);
+      // 한 번에 전부 소비 — 감소는 검사하지 않는다.
+      final spent = save.copyWith(materials: {MaterialKind.fossil: 0}).toJson();
+      final r = actions.mergeSave(save, spent);
+      expect(r.save!.materialCount(MaterialKind.fossil), 0);
+      expect(r.extra['clamped'], isFalse);
     });
 
     test('장비·공방 진행은 기기 권위 — 서버가 덮지 않는다', () {
