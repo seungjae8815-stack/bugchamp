@@ -1496,6 +1496,46 @@ void main() {
       expect(r.extra['clamped'], isTrue);
     });
 
+    test('화석 조각 급증은 상한으로 잘린다 — 제련 무한 우회 차단', () {
+      final st = stored();
+      final forged = st
+          .copyWith(materials: {MaterialKind.fossil: 999999})
+          .toJson();
+      final r = actions.mergeSave(st, forged);
+      expect(r.isOk, isTrue);
+      // 정상 획득은 초당 0.056개라 60초에 4개 남짓 — 3000 이면 넉넉하다.
+      expect(r.save!.materialCount(MaterialKind.fossil), lessThan(999999));
+      expect(r.extra['clamped'], isTrue);
+    });
+
+    test('정상 범위 화석 조각 증가는 통과한다(오래 비웠다 돌아온 경우)', () {
+      final st = stored();
+      final ok = st.copyWith(materials: {MaterialKind.fossil: 550}).toJson();
+      final r = actions.mergeSave(st, ok);
+      expect(r.save!.materialCount(MaterialKind.fossil), 550);
+    });
+
+    test('장비·공방 진행은 기기 권위 — 서버가 덮지 않는다', () {
+      final st = stored();
+      final client = st
+          .copyWith(
+            forgeLevel: 9,
+            forgeSteps: 6,
+            equippedItems: {
+              EquipSlot.tool: const EquipItem(
+                slot: EquipSlot.tool,
+                tier: 7,
+                options: [],
+              ),
+            },
+          )
+          .toJson();
+      final r = actions.mergeSave(st, client);
+      expect(r.save!.forgeLevel, 9);
+      expect(r.save!.forgeSteps, 6);
+      expect(r.save!.equippedItems[EquipSlot.tool]?.tier, 7);
+    });
+
     test('트로피 위조는 무시하고 서버 값을 유지한다', () {
       final cheat = stored().copyWith(pvpTrophies: 999999);
       final r = actions.mergeSave(stored(trophies: 500), cheat.toJson());

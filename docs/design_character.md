@@ -476,7 +476,11 @@ autoForge      : {opts:[...], stopOnHit: true}
    `applyEquipment`. 앱 로더 연결. 테스트 26개 + 검증 도구 `tool/forge_sim.dart`.
    - 확정 수치: 망치질 3초 · 온라인 시간당 200개 · 공방 35레벨 = **35.0일**
      (전체 진행 목표와 일치) · `centerPerLevel` 0.27 · `levelUp.growth` 1.148.
-2. **세이브** — 필드 추가 + 상한(앱·서버). 마이그레이션 테스트.
+2. ~~**세이브**~~ ✅ **완료**(2026-08-09) — `equippedItems`(8부위)·`skillLevels`·
+   `equippedSkills`·`forgeLevel`·`forgeSteps`·`forgeUpAt`·`autoForge*` 추가,
+   `MaterialKind.fossil`(화석 조각) 신설. **`kSaveSchemaVersion` 은 18 그대로.**
+   빈 값은 JSON 에 싣지 않는다(60초마다 올리는 세이브라 빈 맵도 이그레스다).
+   서버에 화석 조각 상식 상한(3,000/업로드) 추가. 테스트 13개.
 3. **캐릭터 탭** — 5탭 전환, 장비/펫/스킬 슬롯 UI, 펫을 채집함에서 이동.
 4. **홈 스킬 바** — 액티브 발동·쿨타임·자동발동, 만석 배너 재배치.
 5. **획득** — 보스 드롭 + 제작 탭 부활.

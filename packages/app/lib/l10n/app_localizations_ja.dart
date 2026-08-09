@@ -1396,6 +1396,12 @@ class AppLocalizationsJa extends AppLocalizations {
       '特別なプレミアム通貨。ショップのクラフト（オールインワンポーション）と特別商品に使われます。';
 
   @override
+  String get materialFossil => '化石のかけら';
+
+  @override
+  String get materialFossilDesc => '昆虫が固まって残ったかけら。工房で一振りにつき一つ使う。';
+
+  @override
   String get materialsHint => '素材 — ステータス・部位強化とクラフトに使用（タップで詳細）';
 
   @override

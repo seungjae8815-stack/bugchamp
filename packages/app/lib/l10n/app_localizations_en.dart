@@ -1415,6 +1415,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'A special premium currency. Used for crafting (All-in-One Potion) and special goods.';
 
   @override
+  String get materialFossil => 'Fossil Shard';
+
+  @override
+  String get materialFossilDesc =>
+      'A shard of petrified insect. One is spent per hammer strike at the workshop.';
+
+  @override
   String get materialsHint =>
       'Materials — used for upgrades, part enhancement & crafting (tap for details)';
 

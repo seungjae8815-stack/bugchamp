@@ -1395,6 +1395,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get materialJellyDesc => '특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다.';
 
   @override
+  String get materialFossil => '화석 조각';
+
+  @override
+  String get materialFossilDesc => '곤충이 굳어 남은 조각. 공방에서 망치질 한 번에 하나씩 쓴다.';
+
+  @override
   String get materialsHint => '재료 — 능력치·부위 강화와 제작에 사용해요 (탭하면 상세)';
 
   @override

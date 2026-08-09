@@ -910,6 +910,8 @@
   "materialMineralDesc": "A hard mined mineral. Used for advanced upgrade costs and cuticle enhancement.",
   "materialSapDesc": "Hardened crystallized tree sap. Used for advanced upgrade costs and wing enhancement.",
   "materialJellyDesc": "A special premium currency. Used for crafting (All-in-One Potion) and special goods.",
+  "materialFossil": "Fossil Shard",
+  "materialFossilDesc": "A shard of petrified insect. One is spent per hammer strike at the workshop.",
   "materialsHint": "Materials — used for upgrades, part enhancement & crafting (tap for details)",
   "chatHint": "Type a message",
   "chatSend": "Send",

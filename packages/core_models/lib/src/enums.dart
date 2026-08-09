@@ -174,7 +174,13 @@ enum MaterialKind {
   chitin('chitin'), // 키틴조각
   mineral('mineral'), // 미네랄
   sap('sap'), // 수액결정
-  jelly('jelly'); // 곤충젤리
+  jelly('jelly'), // 곤충젤리
+  /// 화석 조각 — **제련 전용**. 1개 = 망치질 1번 = 장비 1개.
+  ///
+  /// 기존 재료와 통을 나눈 이유: 강화·연마와 소비처가 겹치면 어느 쪽도
+  /// 조절이 안 된다. 제련은 무한히 도는 축이라 자기 재화를 가져야 한다.
+  /// 처치당 **잡는 데 걸린 시간에 비례**해 쌓인다(스테이지를 보지 않는다).
+  fossil('fossil');
 
   const MaterialKind(this.key);
   final String key;

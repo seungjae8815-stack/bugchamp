@@ -213,6 +213,14 @@ class SaveGame {
     this.ownedSkins = const {},
     this.passExpiresAt,
     this.redeemedPurchases = const {},
+    this.equippedItems = const {},
+    this.skillLevels = const {},
+    this.equippedSkills = const [],
+    this.forgeLevel = 0,
+    this.forgeSteps = 0,
+    this.forgeUpAt,
+    this.autoForgeOptions = const {},
+    this.autoForgeStopOnHit = true,
     this.blockedUserIds = const {},
     this.nicknameSet = false,
   });
@@ -377,6 +385,40 @@ class SaveGame {
   /// 자연 충전 기준시각(UTC). null이면 "지금부터" 로 취급한다.
   final DateTime? ticketsAt;
 
+  // ── 장비 · 공방 · 스킬 (2026-08) ─────────────────────────────
+  //
+  // **스키마 버전을 올리지 않는다.** 없으면 기본값으로 읽히는 호환 필드다 —
+  // 올리면 서버가 새 세이브를 저장하는 순간 스토어의 구버전 앱이
+  // "다운그레이드 불가"로 죽는다.
+
+  /// 부위별로 **낀 것 1개**. 가방이 없으므로 세이브에 남는 장비는 최대 8개다
+  /// — 제련은 초당 수십 개를 찍어낼 수 있어, 다 저장했다면 2026-07 의
+  /// 세이브 비대화(곤충 3만 마리 = 13.6MB)가 그대로 재현됐을 것이다.
+  final Map<EquipSlot, EquipItem> equippedItems;
+
+  /// 보유한 스킬의 레벨(`skillId` → 레벨). 없으면 미보유.
+  final Map<String, int> skillLevels;
+
+  /// 장착한 스킬 id 5칸. **액티브·패시브 공용** — 칸을 나누면 선택이 사라진다.
+  final List<String> equippedSkills;
+
+  /// 공방 등급(0부터). 등급 확률 창의 위치를 정한다.
+  final int forgeLevel;
+
+  /// 다음 등급업에 부어둔 골드 **칸 수**(0~`levelUpSteps`).
+  /// 한 번에 다 못 내도 조금씩 부어둘 수 있게 나눠 받는다.
+  final int forgeSteps;
+
+  /// 칸을 다 채운 뒤 등급업이 끝나는 시각(UTC). null 이면 진행 중이 아니다.
+  final DateTime? forgeUpAt;
+
+  /// 자동 제련이 노리는 옵션. 비어 있으면 전투력 비교만 한다.
+  final Set<ItemOptionKind> autoForgeOptions;
+
+  /// 목표를 찾으면 멈춘다. **기본값 true** — 아니면 원하는 걸 뽑고도
+  /// 화석 조각을 계속 태운다.
+  final bool autoForgeStopOnHit;
+
   /// 하루 상한이 걸린 광고의 기능별 오늘 시청 횟수([kAdFeaturePvpTicket] 등).
   /// [adUseDate] 가 오늘이 아니면 전부 0으로 본다(날짜가 바뀌면 자동 리셋).
   final Map<String, int> adUseCounts;
@@ -490,6 +532,13 @@ class SaveGame {
     pvpTickets: kDefaultPvpTickets,
     ticketsAt: (createdAt ?? DateTime.now()).toUtc(),
     adUseCounts: const {},
+    equippedItems: const {},
+    skillLevels: const {},
+    equippedSkills: const [],
+    forgeLevel: 0,
+    forgeSteps: 0,
+    autoForgeOptions: const {},
+    autoForgeStopOnHit: true,
     adsRemoved: false,
     starterBought: false,
     ownedSkins: const {},
@@ -532,6 +581,15 @@ class SaveGame {
     DateTime? ticketsAt,
     Map<String, int>? adUseCounts,
     String? adUseDate,
+    Map<EquipSlot, EquipItem>? equippedItems,
+    Map<String, int>? skillLevels,
+    List<String>? equippedSkills,
+    int? forgeLevel,
+    int? forgeSteps,
+    DateTime? forgeUpAt,
+    bool clearForgeUpAt = false,
+    Set<ItemOptionKind>? autoForgeOptions,
+    bool? autoForgeStopOnHit,
     int? lastReadNoticeId,
     bool? reviewAsked,
     bool? adsRemoved,
@@ -577,6 +635,15 @@ class SaveGame {
     ticketsAt: ticketsAt ?? this.ticketsAt,
     adUseCounts: adUseCounts ?? this.adUseCounts,
     adUseDate: adUseDate ?? this.adUseDate,
+    equippedItems: equippedItems ?? this.equippedItems,
+    skillLevels: skillLevels ?? this.skillLevels,
+    equippedSkills: equippedSkills ?? this.equippedSkills,
+    forgeLevel: forgeLevel ?? this.forgeLevel,
+    forgeSteps: forgeSteps ?? this.forgeSteps,
+    // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
+    forgeUpAt: clearForgeUpAt ? null : (forgeUpAt ?? this.forgeUpAt),
+    autoForgeOptions: autoForgeOptions ?? this.autoForgeOptions,
+    autoForgeStopOnHit: autoForgeStopOnHit ?? this.autoForgeStopOnHit,
     lastReadNoticeId: lastReadNoticeId ?? this.lastReadNoticeId,
     reviewAsked: reviewAsked ?? this.reviewAsked,
     adsRemoved: adsRemoved ?? this.adsRemoved,
@@ -700,6 +767,31 @@ class SaveGame {
     adUseCounts: _intMapFromJson(
       json['adUseCounts'] as Map<String, dynamic>? ?? const {},
     ),
+    equippedItems: {
+      for (final e
+          in (json['equippedItems'] as Map<String, dynamic>? ?? const {})
+              .entries)
+        EquipSlot.fromKey(e.key): EquipItem.fromJson(
+          Map<String, dynamic>.from(e.value as Map),
+        ),
+    },
+    skillLevels: _intMapFromJson(
+      json['skillLevels'] as Map<String, dynamic>? ?? const {},
+    ),
+    equippedSkills: [
+      for (final v in (json['equippedSkills'] as List? ?? const []))
+        v as String,
+    ],
+    forgeLevel: (json['forgeLevel'] as num?)?.toInt() ?? 0,
+    forgeSteps: (json['forgeSteps'] as num?)?.toInt() ?? 0,
+    forgeUpAt: json['forgeUpAt'] == null
+        ? null
+        : DateTime.parse(json['forgeUpAt'] as String).toUtc(),
+    autoForgeOptions: {
+      for (final v in (json['autoForgeOptions'] as List? ?? const []))
+        ItemOptionKind.fromKey(v as String),
+    },
+    autoForgeStopOnHit: json['autoForgeStopOnHit'] as bool? ?? true,
     adUseDate: json['adUseDate'] as String?,
     lastReadNoticeId: (json['lastReadNoticeId'] as num?)?.toInt() ?? 0,
     reviewAsked: json['reviewAsked'] as bool? ?? false,
@@ -764,6 +856,20 @@ class SaveGame {
     'pvpTickets': pvpTickets,
     if (ticketsAt != null) 'ticketsAt': ticketsAt!.toUtc().toIso8601String(),
     'adUseCounts': adUseCounts,
+    // 빈 값은 **아예 안 싣는다** — 60초마다 올리는 세이브라 빈 맵/리스트도
+    // 쌓이면 이그레스가 된다(구버전 앱은 어차피 기본값으로 읽는다).
+    if (equippedItems.isNotEmpty)
+      'equippedItems': {
+        for (final e in equippedItems.entries) e.key.key: e.value.toJson(),
+      },
+    if (skillLevels.isNotEmpty) 'skillLevels': skillLevels,
+    if (equippedSkills.isNotEmpty) 'equippedSkills': equippedSkills,
+    if (forgeLevel != 0) 'forgeLevel': forgeLevel,
+    if (forgeSteps != 0) 'forgeSteps': forgeSteps,
+    if (forgeUpAt != null) 'forgeUpAt': forgeUpAt!.toUtc().toIso8601String(),
+    if (autoForgeOptions.isNotEmpty)
+      'autoForgeOptions': [for (final o in autoForgeOptions) o.key],
+    if (!autoForgeStopOnHit) 'autoForgeStopOnHit': false,
     if (adUseDate != null) 'adUseDate': adUseDate,
     'lastReadNoticeId': lastReadNoticeId,
     'reviewAsked': reviewAsked,

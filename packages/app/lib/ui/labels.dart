@@ -167,6 +167,7 @@ String materialLabel(AppLocalizations l, MaterialKind k) => switch (k) {
   MaterialKind.mineral => l.materialMineral,
   MaterialKind.sap => l.materialSap,
   MaterialKind.jelly => l.materialJelly,
+  MaterialKind.fossil => l.materialFossil,
 };
 
 String stageLabel(AppLocalizations l, LifeStage s) => switch (s) {
@@ -181,6 +182,7 @@ String materialDesc(AppLocalizations l, MaterialKind k) => switch (k) {
   MaterialKind.mineral => l.materialMineralDesc,
   MaterialKind.sap => l.materialSapDesc,
   MaterialKind.jelly => l.materialJellyDesc,
+  MaterialKind.fossil => l.materialFossilDesc,
 };
 
 /// 재화 분류 태그(일반 재료 / 프리미엄).
@@ -192,4 +194,5 @@ IconData materialIcon(MaterialKind k) => switch (k) {
   MaterialKind.mineral => Icons.diamond_outlined,
   MaterialKind.sap => Icons.water_drop_outlined,
   MaterialKind.jelly => Icons.bubble_chart_outlined,
+  MaterialKind.fossil => Icons.hardware_outlined,
 };

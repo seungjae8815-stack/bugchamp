@@ -2620,6 +2620,18 @@ abstract class AppLocalizations {
   /// **'A special premium currency. Used for crafting (All-in-One Potion) and special goods.'**
   String get materialJellyDesc;
 
+  /// No description provided for @materialFossil.
+  ///
+  /// In en, this message translates to:
+  /// **'Fossil Shard'**
+  String get materialFossil;
+
+  /// No description provided for @materialFossilDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'A shard of petrified insect. One is spent per hammer strike at the workshop.'**
+  String get materialFossilDesc;
+
   /// No description provided for @materialsHint.
   ///
   /// In en, this message translates to:

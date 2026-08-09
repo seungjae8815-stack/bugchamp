@@ -427,6 +427,8 @@
   "materialMineralDesc": "땅에서 캔 단단한 광물. 고급 능력치 강화의 추가 비용과 부위 강화(표피)에 사용됩니다.",
   "materialSapDesc": "굳어 결정이 된 나무 수액. 고급 능력치 강화의 추가 비용과 부위 강화(날개)에 사용됩니다.",
   "materialJellyDesc": "특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다.",
+  "materialFossil": "화석 조각",
+  "materialFossilDesc": "곤충이 굳어 남은 조각. 공방에서 망치질 한 번에 하나씩 쓴다.",
   "materialsHint": "재료 — 능력치·부위 강화와 제작에 사용해요 (탭하면 상세)",
   "chatHint": "메시지를 입력하세요",
   "chatSend": "보내기",

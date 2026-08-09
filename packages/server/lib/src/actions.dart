@@ -141,6 +141,14 @@ class GameActions {
   /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
   static const _jellySanityFloor = 1000;
 
+  /// 화석 조각(제련용) 급증 상한의 바닥 — 업로드 1회(60초) 기준.
+  ///
+  /// 정상 획득은 **초당 0.056개**(온라인)라 60초면 4개 남짓이고, 오래 비웠다
+  /// 돌아와도 오프라인 상한(8h)에 묶여 550개를 넘지 않는다. 넉넉히 잡아도
+  /// 세이브 편집으로 수만 개를 넣는 건 막힌다 — 그러면 지금 공방 등급에서
+  /// 뽑을 수 있는 최상급 장비를 몇 시간 만에 쓸어담는다.
+  static const _fossilSanityFloor = 3000;
+
   /// 상한 계산용 넉넉한 방치 효율(액티브 플레이 여유 포함 — 절대치만 잡는다).
   ///
   /// ⚠️ **탭 부스트 상한과 함께 움직여야 한다.** 부스트는 연타로 배율이 쌓여
@@ -242,6 +250,15 @@ class GameActions {
       final storedJelly = stored.materialCount(MaterialKind.jelly);
       if (clientJelly - storedJelly > _jellySanityFloor) {
         mats['jelly'] = storedJelly + _jellySanityFloor;
+        clamped = true;
+      }
+
+      final clientFossil =
+          (mats['fossil'] as num?)?.toInt() ??
+          stored.materialCount(MaterialKind.fossil);
+      final storedFossil = stored.materialCount(MaterialKind.fossil);
+      if (clientFossil - storedFossil > _fossilSanityFloor) {
+        mats['fossil'] = storedFossil + _fossilSanityFloor;
         clamped = true;
       }
     }
