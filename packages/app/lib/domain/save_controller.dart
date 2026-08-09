@@ -1146,10 +1146,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(buffExpiry: active));
   }
 
+  /// [recipe] 를 지금 만드는 데 드는 재료(스테이지에 따라 오른다).
+  ///
+  /// 화면·차감이 **같은 값**을 쓰도록 한곳에서 계산한다 — 어긋나면
+  /// "만들 수 있다고 떠서 눌렀는데 실패"가 된다.
+  Map<MaterialKind, int> craftInputs(CraftRecipe recipe) {
+    final cfg = ref.read(gameDataProvider).value?.craftConfig;
+    final stage = state.value?.stageNumber ?? 1;
+    return cfg?.inputsAt(recipe, stage) ?? recipe.inputs;
+  }
+
   /// 레시피 재료가 충분한지.
   bool canCraft(CraftRecipe recipe) {
     final s = state.requireValue;
-    for (final e in recipe.inputs.entries) {
+    for (final e in craftInputs(recipe).entries) {
       if (s.materialCount(e.key) < e.value) return false;
     }
     return true;
@@ -1161,12 +1171,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (buffs == null) return false;
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
-    for (final e in recipe.inputs.entries) {
+    final inputs = craftInputs(recipe);
+    for (final e in inputs.entries) {
       if (s.materialCount(e.key) < e.value) return false;
     }
     // 재료 차감.
     final mats = Map<MaterialKind, int>.from(s.materials);
-    for (final e in recipe.inputs.entries) {
+    for (final e in inputs.entries) {
       mats[e.key] = (mats[e.key] ?? 0) - e.value;
     }
     // 발동할 버프 목록.
@@ -1202,7 +1213,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final bug = s.bugs[idx];
     if (bug.enhancement.total >= bug.maxLevel) return false; // 상한 도달
     final spec = cfg.spec(part);
-    final cost = spec.costAt(bug.enhancement.levelOf(part));
+    // 등급이 높을수록 비싸다 — 강화 총량이 유한해서 배수가 없으면 후반엔
+    // 전설도 사실상 공짜로 만렙이 된다.
+    final grade = ref
+        .read(gameDataProvider)
+        .requireValue
+        .speciesById[bug.speciesId]
+        ?.grade;
+    final cost = grade == null
+        ? spec.costAt(bug.enhancement.levelOf(part))
+        : cfg.costFor(part, bug.enhancement.levelOf(part), grade);
     final have = s.materials[spec.material] ?? 0;
     if (have < cost) return false;
     final mats = Map<MaterialKind, int>.from(s.materials)

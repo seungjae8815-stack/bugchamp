@@ -1,11 +1,51 @@
 {
   "schemaVersion": 1,
   "recipes": [
-    { "id": "potion_gold", "buff": "goldRush", "inputs": { "chitin": 20 } },
-    { "id": "potion_xp", "buff": "xpBoost", "inputs": { "sap": 20 } },
-    { "id": "potion_frenzy", "buff": "frenzy", "inputs": { "mineral": 20 } },
-    { "id": "potion_gather", "buff": "gatherer", "inputs": { "chitin": 15, "sap": 15 } },
-    { "id": "potion_luck", "buff": "luckyWind", "inputs": { "mineral": 15, "sap": 15 } },
-    { "id": "potion_all", "allBuffs": true, "inputs": { "jelly": 5 } }
-  ]
+    {
+      "id": "potion_gold",
+      "buff": "goldRush",
+      "inputs": {
+        "chitin": 20
+      }
+    },
+    {
+      "id": "potion_xp",
+      "buff": "xpBoost",
+      "inputs": {
+        "sap": 20
+      }
+    },
+    {
+      "id": "potion_frenzy",
+      "buff": "frenzy",
+      "inputs": {
+        "mineral": 20
+      }
+    },
+    {
+      "id": "potion_gather",
+      "buff": "gatherer",
+      "inputs": {
+        "chitin": 15,
+        "sap": 15
+      }
+    },
+    {
+      "id": "potion_luck",
+      "buff": "luckyWind",
+      "inputs": {
+        "mineral": 15,
+        "sap": 15
+      }
+    },
+    {
+      "id": "potion_all",
+      "allBuffs": true,
+      "inputs": {
+        "jelly": 5
+      }
+    }
+  ],
+  "_comment": "제작은 소모품이라 유일한 **무한** 재료 소비처다. inputGrowth 를 재료 수입 성장률(run_config.materialAmountGrowth)과 맞춰 \"한 번에 몇 개 만드나\"를 일정하게 유지한다.",
+  "inputGrowth": 1.01
 }

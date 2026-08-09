@@ -41,16 +41,38 @@ class EnhancePartSpec {
 /// 부위 강화 설정 전체 (assets/data/enhance.json 에서 로드).
 @immutable
 class EnhanceConfig {
-  const EnhanceConfig({required this.parts});
+  const EnhanceConfig({required this.parts, this.gradeMult = const {}});
 
   final Map<BugPart, EnhancePartSpec> parts;
 
+  /// 등급별 재료비 배수 — **좋은 곤충일수록 강화가 비싸다**.
+  ///
+  /// 강화 총량은 `maxLevel`(포텐셜×10) 로 유한해서, 이 배수가 없으면 재료가
+  /// 커지는 후반엔 전설 곤충도 사실상 공짜로 만렙이 된다. 비어 있으면 1배
+  /// (구버전 JSON 호환).
+  final Map<Grade, double> gradeMult;
+
   EnhancePartSpec spec(BugPart part) => parts[part]!;
+
+  /// [grade] 곤충의 [part] 를 [level] → [level]+1 로 올릴 때 드는 재료 수.
+  int costFor(BugPart part, int level, Grade grade) {
+    final base = spec(part).costAt(level);
+    final m = gradeMult[grade] ?? 1.0;
+    return (base * m).round().clamp(1, 1 << 30);
+  }
 
   factory EnhanceConfig.fromJson(Map<String, dynamic> json) {
     final list = (json['parts'] as List).cast<Map<String, dynamic>>().map(
       EnhancePartSpec.fromJson,
     );
-    return EnhanceConfig(parts: {for (final s in list) s.part: s});
+    final gm = json['gradeMult'] as Map<String, dynamic>?;
+    return EnhanceConfig(
+      parts: {for (final s in list) s.part: s},
+      gradeMult: {
+        if (gm != null)
+          for (final e in gm.entries)
+            Grade.fromKey(e.key): (e.value as num).toDouble(),
+      },
+    );
   }
 }

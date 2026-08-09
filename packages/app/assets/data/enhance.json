@@ -1,9 +1,41 @@
 {
   "schemaVersion": 1,
   "parts": [
-    { "part": "hornJaw", "material": "chitin", "baseCost": 2, "costGrowth": 1.12, "effectPerLevel": 0.04 },
-    { "part": "cuticle", "material": "mineral", "baseCost": 2, "costGrowth": 1.12, "effectPerLevel": 0.04 },
-    { "part": "wing", "material": "sap", "baseCost": 2, "costGrowth": 1.12, "effectPerLevel": 0.03 },
-    { "part": "build", "material": "chitin", "baseCost": 3, "costGrowth": 1.13, "effectPerLevel": 0.05 }
-  ]
+    {
+      "part": "hornJaw",
+      "material": "chitin",
+      "baseCost": 2,
+      "costGrowth": 1.12,
+      "effectPerLevel": 0.04
+    },
+    {
+      "part": "cuticle",
+      "material": "mineral",
+      "baseCost": 2,
+      "costGrowth": 1.12,
+      "effectPerLevel": 0.04
+    },
+    {
+      "part": "wing",
+      "material": "sap",
+      "baseCost": 2,
+      "costGrowth": 1.12,
+      "effectPerLevel": 0.03
+    },
+    {
+      "part": "build",
+      "material": "chitin",
+      "baseCost": 3,
+      "costGrowth": 1.13,
+      "effectPerLevel": 0.05
+    }
+  ],
+  "_comment": "부위강화는 곤충의 maxLevel(포텐셜x10)까지라 **총량이 유한**하다. 등급 배수가 없으면 재료 수입이 커지는 후반에 전설도 공짜로 만렙이 된다.",
+  "gradeMult": {
+    "common": 1,
+    "uncommon": 2,
+    "rare": 4,
+    "epic": 8,
+    "legendary": 16
+  }
 }

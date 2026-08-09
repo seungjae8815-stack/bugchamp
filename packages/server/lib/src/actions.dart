@@ -873,7 +873,15 @@ class GameActions {
       return const ActionResult.fail('at_cap');
     }
     final spec = enhance.spec(part);
-    final cost = spec.costAt(bug.enhancement.levelOf(part));
+    // 등급 배수까지 **앱과 같은 계산**을 써야 한다. 여기만 옛 가격이면
+    // 조작한 클라이언트가 이 엔드포인트로 싸게 강화하는 우회로가 된다.
+    final grade = config.speciesList
+        .where((s) => s.id == bug.speciesId)
+        .firstOrNull
+        ?.grade;
+    final cost = grade == null
+        ? spec.costAt(bug.enhancement.levelOf(part))
+        : enhance.costFor(part, bug.enhancement.levelOf(part), grade);
     final have = save.materialCount(spec.material);
     if (have < cost) return const ActionResult.fail('insufficient_material');
 

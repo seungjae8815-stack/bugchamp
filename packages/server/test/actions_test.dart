@@ -1345,6 +1345,60 @@ void main() {
     });
   });
 
+  group('부위강화 비용', () {
+    test('서버도 등급 배수를 적용한다 (앱만 올리면 서버가 우회로가 된다)', () {
+      // testSpecies 는 common — 배수 1배라 기본값 그대로여야 한다.
+      final enh = EnhanceConfig.fromJson({
+        'parts': [
+          {
+            'part': 'hornJaw',
+            'material': 'chitin',
+            'baseCost': 2,
+            'costGrowth': 1.12,
+            'effectPerLevel': 0.04,
+          },
+        ],
+        'gradeMult': {'common': 1, 'legendary': 16},
+      });
+      final bug = IndividualBug.roll(
+        id: 'b1',
+        species: testSpecies,
+        rng: Random(1),
+        potential: 3,
+      ).copyWith(stage: LifeStage.adult);
+      final save = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(bugs: [bug], materials: {MaterialKind.chitin: 100});
+
+      final r = actions.enhancePart(save, 'b1', BugPart.hornJaw, enhance: enh);
+      expect(r.isOk, isTrue);
+      expect(r.save!.materialCount(MaterialKind.chitin), 98); // 2 x 1배
+
+      // 재료가 배수만큼 없으면 거부된다(전설 기준 32 필요).
+      final legendary = EnhanceConfig.fromJson({
+        'parts': [
+          {
+            'part': 'hornJaw',
+            'material': 'chitin',
+            'baseCost': 2,
+            'costGrowth': 1.12,
+            'effectPerLevel': 0.04,
+          },
+        ],
+        'gradeMult': {'common': 50},
+      });
+      final poor = save.copyWith(materials: {MaterialKind.chitin: 10});
+      final r2 = actions.enhancePart(
+        poor,
+        'b1',
+        BugPart.hornJaw,
+        enhance: legendary,
+      );
+      expect(r2.isOk, isFalse);
+      expect(r2.error, 'insufficient_material');
+    });
+  });
+
   group('기기 권위 세이브 업로드(mergeSave)', () {
     final cfg = _Config();
 

@@ -2598,7 +2598,16 @@ class StorageScreen extends ConsumerWidget {
     final l = AppLocalizations.of(ctx);
     final spec = cfg.spec(part);
     final level = bug.enhancement.levelOf(part);
-    final cost = spec.costAt(level);
+    // 차감(`enhancePart`)과 **같은 계산**을 써야 한다 — 어긋나면 "살 수 있다고
+    // 떠서 눌렀는데 실패"가 된다. 등급 배수가 여기 빠져 있었다.
+    final grade = r
+        .read(gameDataProvider)
+        .value
+        ?.speciesById[bug.speciesId]
+        ?.grade;
+    final cost = grade == null
+        ? spec.costAt(level)
+        : cfg.costFor(part, level, grade);
     final have = save.materialCount(spec.material);
     final atCap = bug.enhancement.total >= bug.maxLevel;
     final canBuy = !atCap && have >= cost;
