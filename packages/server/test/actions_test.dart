@@ -1514,8 +1514,9 @@ void main() {
       expect(r.extra['clamped'], isTrue);
     });
 
-    test('오프라인 8시간을 꽉 채우고 돌아와도 통과한다 — 오탐이 더 나쁘다', () {
-      // 마지막 업로드가 8시간 전. 그동안 쌓인 정상 획득은 약 533개.
+    test('오프라인 8시간을 꽉 채우고 돌아와도 통과한다 — 이게 상한의 존재 이유다', () {
+      // 앱을 내려뒀다 8시간 뒤에 열면 정산분이 **한 번의 업로드에 실린다**.
+      // 매일 일어나는 정상 경로이고, 60초(3개) 기준 상한이면 여기서 잘린다.
       final st = stored().copyWith(
         lastSeen: t0.subtract(const Duration(hours: 8)),
         materials: {MaterialKind.fossil: 0},
