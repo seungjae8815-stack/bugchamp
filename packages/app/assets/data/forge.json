@@ -1,0 +1,27 @@
+{
+  "_comment": "공방(제련) 설정. 망치질 1번 = 화석 조각 1개 = 장비 1개. 수치는 여기서만 바꾼다(§6).",
+  "schemaVersion": 1,
+  "_hammerComment": "3초에 한 번 땅! 연출이자 속도 제한이다. 1시간 = 1,200개.",
+  "hammerSeconds": 3.0,
+  "_tierComment": "등급 확률 창. 레벨마다 표를 적지 않고 중심·폭만 둔다 — 등급을 11·12로 늘려도 여기 두 값만 만진다. lowDecay 가 중심보다 아래 등급을 빠르게 0%로 만든다.",
+  "tier": {
+    "centerPerLevel": 0.27,
+    "spread": 1.05,
+    "lowDecay": 0.25,
+    "lowDecayOffset": 1.2
+  },
+  "maxLevel": 35,
+  "_levelUpComment": "등급업은 시간이 든다. 제련은 재료만 있으면 무한히 도니, 확률까지 재화로 올리면 하루 만에 끝나는 축이 된다. 부화기·돌파와 같은 구조(젤리 즉시완료).",
+  "levelUp": {
+    "baseSeconds": 3600,
+    "growth": 1.148,
+    "jellyPerHour": 2,
+    "jellyMin": 5
+  },
+  "_fossilComment": "화석 조각 = 망치. 처치당 **잡는 데 걸린 시간에 비례**해 쌓인다 — 스테이지를 보지 않으므로 낮은 난이도로 내려가도 시간당 획득이 같다. ⚠️ 재료처럼 지수로 키우면 안 된다(소비가 영원히 1개 고정이라 무한 잉여). 온라인 1시간 = 200개(제련 10분치), 오프라인 3시간 = 200개.",
+  "fossil": {
+    "perSecondOnline": 0.0556,
+    "offlineRatio": 0.333,
+    "minPerDrop": 1
+  }
+}

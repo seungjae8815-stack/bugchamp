@@ -211,6 +211,23 @@ void main(List<String> args) {
   }
   stdout.writeln('');
 
+  stdout.writeln('── 처치 속도(화석 조각이 시간당 얼마나 들어오나) ──');
+  stdout.writeln('  스테이지 |  타격 |    공속 | 마리당 |  처치/시간 | 고정 드롭 시');
+  for (final m in const [10, 50, 100, 200, 400, 700, 1000]) {
+    final sec = sim.secPerKill[m];
+    final h = sim.hitsToKill[m];
+    if (sec == null || h == null) continue;
+    final perHour = 3600 / sec;
+    final spd = h / (sec - 0.6);
+    stdout.writeln(
+      '  ${m.toString().padLeft(7)}  | ${h.toString().padLeft(4)}대 |'
+      ' x${spd.toStringAsFixed(1).padLeft(5)} | ${sec.toStringAsFixed(1).padLeft(5)}초 |'
+      ' ${perHour.toStringAsFixed(0).padLeft(9)} |'
+      ' ${(perHour * 0.2).toStringAsFixed(0).padLeft(6)}개',
+    );
+  }
+  stdout.writeln('');
+
   stdout.writeln('── 업그레이드가 막힌 이유(구간별) ──');
   stdout.writeln('  재료가 100% 면 재료만 모으는 게임, 0% 면 재료가 장식이다.');
   for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
@@ -293,6 +310,10 @@ class _Player {
   /// 방치 게임의 '타격감'은 이 값이 결정한다. 1이면 스치기만 해도 죽어서
   /// 성장할 이유가 안 느껴지고, 너무 크면 진행이 답답하다.
   final Map<int, int> hitsToKill = {};
+
+  /// 그 스테이지에서 **한 마리를 잡는 데 걸리는 초**(공속·걷기 포함).
+  /// 화석 조각처럼 "처치당 지급"하는 재화가 시간당 얼마나 들어오는지의 기준.
+  final Map<int, double> secPerKill = {};
 
   /// 지금까지 흘린 시뮬레이션 시간(일). 하루 = 활동 + 오프라인.
   double elapsedDays = 0;
@@ -404,6 +425,12 @@ class _Player {
           final hp = habitatMaxHp(config, s - 1, playerAttack: st.attack);
           final dmg = st.attack <= 0 ? 1.0 : st.attack;
           return (hp / dmg).ceil();
+        });
+        secPerKill.putIfAbsent(s, () {
+          final st = stats;
+          final hp = habitatMaxHp(config, s - 1, playerAttack: st.attack);
+          final dps = st.attack * st.attackSpeed;
+          return (dps <= 0 ? 0.0 : hp / dps) + 0.6; // 0.6 = 걷는 시간
         });
       }
       for (final m in const [10, 30, 50, 100, 200, 400, 700]) {

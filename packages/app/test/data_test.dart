@@ -284,4 +284,27 @@ void main() {
       }
     });
   });
+
+  group('장비·공방·스킬 (신규)', () {
+    final items = ItemConfig.fromJson(_readJson('assets/data/items.json'));
+    final forge = ForgeConfig.fromJson(_readJson('assets/data/forge.json'));
+    final skills = SkillConfig.fromJson(_readJson('assets/data/skills.json'));
+
+    test('부위 8 × 등급 10 = 80종, 스킬 16종', () {
+      expect(items.slots.length, 8);
+      expect(items.tierCount, 10);
+      expect(skills.skills.length, 16);
+    });
+
+    test('pubspec 이 자동 로드하는 assets/data 안에 있다', () {
+      for (final f in ['items.json', 'forge.json', 'skills.json']) {
+        expect(File('assets/data/$f').existsSync(), isTrue, reason: f);
+      }
+    });
+
+    test('공방 최고 레벨에서 최상위 등급에 닿는다(창이 헛돌지 않게)', () {
+      final w = forge.tierWeights(forge.maxLevel, items.tierCount);
+      expect(w.last, greaterThan(0.5));
+    });
+  });
 }

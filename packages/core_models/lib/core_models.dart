@@ -7,6 +7,7 @@ library;
 export 'src/chat.dart';
 export 'src/clock.dart';
 export 'src/enums.dart';
+export 'src/equipment.dart';
 export 'src/field.dart';
 export 'src/game_rules.dart';
 export 'src/individual_bug.dart';

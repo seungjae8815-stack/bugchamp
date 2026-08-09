@@ -16,6 +16,9 @@ class GameData {
     this.buffConfig,
     this.enhanceConfig,
     this.craftConfig,
+    this.itemConfig,
+    this.forgeConfig,
+    this.skillConfig,
     this.missionConfig,
     this.petConfig,
     this.dailyConfig,
@@ -42,6 +45,12 @@ class GameData {
 
   /// 제작 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final CraftConfig? craftConfig;
+
+  /// 장비(부위 8 × 등급 10)·공방(제련)·스킬. 없으면 해당 기능이 꺼진다 —
+  /// 구버전 애셋으로도 앱이 뜨게 한다.
+  final ItemConfig? itemConfig;
+  final ForgeConfig? forgeConfig;
+  final SkillConfig? skillConfig;
 
   /// 미션 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final MissionConfig? missionConfig;
@@ -92,6 +101,9 @@ class GameData {
     Map<String, dynamic>? buffConfig,
     Map<String, dynamic>? enhanceConfig,
     Map<String, dynamic>? craftConfig,
+    Map<String, dynamic>? itemConfig,
+    Map<String, dynamic>? forgeConfig,
+    Map<String, dynamic>? skillConfig,
     Map<String, dynamic>? missionConfig,
     Map<String, dynamic>? petConfig,
     Map<String, dynamic>? dailyConfig,
@@ -126,6 +138,13 @@ class GameData {
       craftConfig: craftConfig == null
           ? null
           : CraftConfig.fromJson(craftConfig),
+      itemConfig: itemConfig == null ? null : ItemConfig.fromJson(itemConfig),
+      forgeConfig: forgeConfig == null
+          ? null
+          : ForgeConfig.fromJson(forgeConfig),
+      skillConfig: skillConfig == null
+          ? null
+          : SkillConfig.fromJson(skillConfig),
       missionConfig: missionConfig == null
           ? null
           : MissionConfig.fromJson(missionConfig),
@@ -167,6 +186,9 @@ class GameData {
       read('battle.json'),
       read('iap.json'),
       read('chat.json'),
+      read('items.json'),
+      read('forge.json'),
+      read('skills.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -185,6 +207,9 @@ class GameData {
       battleConfig: results[13],
       iapConfig: results[14],
       chatRules: results[15],
+      itemConfig: results[16],
+      forgeConfig: results[17],
+      skillConfig: results[18],
     );
   }
 }

@@ -1,0 +1,225 @@
+{
+  "_comment": "스킬 — 액티브·패시브 공용 5칸. 업그레이드 15종에 **없는 축**을 우선한다. ⚠️ 재화를 그냥 주는 액티브는 만들지 않는다(쿨타임이 기기 시계 기준이라 시계를 돌리면 무한 발동). 전부 처치를 거쳐야 이득이 되는 형태다.",
+  "schemaVersion": 1,
+  "equipSlots": 5,
+  "_autoComment": "방치 중 자동발동. 효율을 낮춰 직접 누를 이유는 남기고 피로는 없앤다.",
+  "autoEfficiency": 0.7,
+  "levelUp": {
+    "goldBase": 5000,
+    "goldGrowth": 1.35,
+    "materialBase": 20,
+    "materialGrowth": 1.25,
+    "maxLevel": 20
+  },
+  "skills": [
+    {
+      "id": "crit_strike",
+      "kind": "active",
+      "name": {
+        "ko": "회심의 일격",
+        "en": "Decisive Strike",
+        "ja": "会心の一撃"
+      },
+      "effect": "burstDamage",
+      "base": 8.0,
+      "perLevel": 1.2,
+      "cooldown": 60,
+      "duration": 0
+    },
+    {
+      "id": "gale_hunt",
+      "kind": "active",
+      "name": {
+        "ko": "질풍 채집",
+        "en": "Gale Hunt",
+        "ja": "疾風採集"
+      },
+      "effect": "attackSpeed",
+      "base": 2.0,
+      "perLevel": 0.1,
+      "cooldown": 90,
+      "duration": 10
+    },
+    {
+      "id": "net_sweep",
+      "kind": "active",
+      "name": {
+        "ko": "포충망 휘두르기",
+        "en": "Net Sweep",
+        "ja": "捕虫網の一振り"
+      },
+      "effect": "areaDamage",
+      "base": 4.0,
+      "perLevel": 0.6,
+      "cooldown": 75,
+      "duration": 0
+    },
+    {
+      "id": "focus_eye",
+      "kind": "active",
+      "name": {
+        "ko": "겹눈 집중",
+        "en": "Compound Focus",
+        "ja": "複眼集中"
+      },
+      "effect": "critChance",
+      "base": 0.5,
+      "perLevel": 0.03,
+      "cooldown": 100,
+      "duration": 15
+    },
+    {
+      "id": "lure_sap",
+      "kind": "active",
+      "name": {
+        "ko": "유인 수액",
+        "en": "Luring Sap",
+        "ja": "誘引樹液"
+      },
+      "effect": "materialFind",
+      "base": 3.0,
+      "perLevel": 0.2,
+      "cooldown": 120,
+      "duration": 20
+    },
+    {
+      "id": "pheromone",
+      "kind": "active",
+      "name": {
+        "ko": "페로몬 유인",
+        "en": "Pheromone Call",
+        "ja": "フェロモン誘引"
+      },
+      "effect": "bugFind",
+      "base": 3.0,
+      "perLevel": 0.2,
+      "cooldown": 150,
+      "duration": 15
+    },
+    {
+      "id": "queen_call",
+      "kind": "active",
+      "name": {
+        "ko": "여왕의 부름",
+        "en": "Queen's Call",
+        "ja": "女王の呼び声"
+      },
+      "effect": "petPower",
+      "base": 2.0,
+      "perLevel": 0.1,
+      "cooldown": 180,
+      "duration": 15
+    },
+    {
+      "id": "pupa_guard",
+      "kind": "active",
+      "name": {
+        "ko": "번데기 방벽",
+        "en": "Pupa Guard",
+        "ja": "蛹の防壁"
+      },
+      "effect": "invulnerable",
+      "base": 1.0,
+      "perLevel": 0.0,
+      "cooldown": 120,
+      "duration": 8
+    },
+    {
+      "id": "gatherer_hand",
+      "kind": "passive",
+      "name": {
+        "ko": "채집가의 손",
+        "en": "Gatherer's Hand",
+        "ja": "採集者の手"
+      },
+      "effect": "materialFind",
+      "base": 0.1,
+      "perLevel": 0.02
+    },
+    {
+      "id": "scholar_eye",
+      "kind": "passive",
+      "name": {
+        "ko": "곤충학자의 눈",
+        "en": "Entomologist's Eye",
+        "ja": "昆虫学者の目"
+      },
+      "effect": "bugFind",
+      "base": 0.1,
+      "perLevel": 0.02
+    },
+    {
+      "id": "sap_sense",
+      "kind": "passive",
+      "name": {
+        "ko": "수액 감별",
+        "en": "Sap Sense",
+        "ja": "樹液の目利き"
+      },
+      "effect": "gold",
+      "base": 0.1,
+      "perLevel": 0.02
+    },
+    {
+      "id": "tenacity",
+      "kind": "passive",
+      "name": {
+        "ko": "끈기",
+        "en": "Tenacity",
+        "ja": "粘り強さ"
+      },
+      "effect": "bossDamage",
+      "base": 0.15,
+      "perLevel": 0.03
+    },
+    {
+      "id": "nocturnal",
+      "kind": "passive",
+      "name": {
+        "ko": "야행성",
+        "en": "Nocturnal",
+        "ja": "夜行性"
+      },
+      "effect": "offline",
+      "base": 0.1,
+      "perLevel": 0.02
+    },
+    {
+      "id": "molting",
+      "kind": "passive",
+      "name": {
+        "ko": "탈피",
+        "en": "Molting",
+        "ja": "脱皮"
+      },
+      "effect": "revive",
+      "base": 1.0,
+      "perLevel": 0.0,
+      "cooldown": 180
+    },
+    {
+      "id": "swarm",
+      "kind": "passive",
+      "name": {
+        "ko": "군집",
+        "en": "Swarm",
+        "ja": "群れ"
+      },
+      "effect": "perPetAttack",
+      "base": 0.06,
+      "perLevel": 0.01
+    },
+    {
+      "id": "tidy_case",
+      "kind": "passive",
+      "name": {
+        "ko": "표본 정리",
+        "en": "Tidy Case",
+        "ja": "標本整理"
+      },
+      "effect": "storageSlots",
+      "base": 3.0,
+      "perLevel": 1.0
+    }
+  ]
+}

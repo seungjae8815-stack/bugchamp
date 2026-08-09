@@ -1,0 +1,664 @@
+{
+  "_comment": "장비 — 부위 8 × 등급 10 = 80종. 수치는 여기서만 바꾼다(§6). 기본 스탯은 baseValue(%) × 등급 statMult, 하위 옵션은 등급 options 개수만큼 optionPool 에서 중복 없이 굴린다.",
+  "schemaVersion": 1,
+  "tiers": [
+    {
+      "id": "grass",
+      "name": {
+        "ko": "풀잎",
+        "en": "Grass",
+        "ja": "草の葉"
+      },
+      "statMult": 1.0,
+      "options": 1,
+      "color": "FF9E9E9E"
+    },
+    {
+      "id": "wood",
+      "name": {
+        "ko": "나무",
+        "en": "Wooden",
+        "ja": "木"
+      },
+      "statMult": 1.4,
+      "options": 1,
+      "color": "FF8D6E63"
+    },
+    {
+      "id": "leather",
+      "name": {
+        "ko": "가죽",
+        "en": "Leather",
+        "ja": "革"
+      },
+      "statMult": 1.9,
+      "options": 2,
+      "color": "FFA1887F"
+    },
+    {
+      "id": "copper",
+      "name": {
+        "ko": "구리",
+        "en": "Copper",
+        "ja": "銅"
+      },
+      "statMult": 2.6,
+      "options": 2,
+      "color": "FFBF6A3A"
+    },
+    {
+      "id": "iron",
+      "name": {
+        "ko": "무쇠",
+        "en": "Iron",
+        "ja": "鉄"
+      },
+      "statMult": 3.5,
+      "options": 3,
+      "color": "FF90A4AE"
+    },
+    {
+      "id": "silver",
+      "name": {
+        "ko": "은",
+        "en": "Silver",
+        "ja": "銀"
+      },
+      "statMult": 4.8,
+      "options": 3,
+      "color": "FF64B5F6"
+    },
+    {
+      "id": "gold",
+      "name": {
+        "ko": "황금",
+        "en": "Golden",
+        "ja": "黄金"
+      },
+      "statMult": 6.5,
+      "options": 4,
+      "color": "FFFFD54F"
+    },
+    {
+      "id": "chitin",
+      "name": {
+        "ko": "키틴",
+        "en": "Chitin",
+        "ja": "キチン"
+      },
+      "statMult": 9.0,
+      "options": 4,
+      "color": "FF4DB6AC"
+    },
+    {
+      "id": "carapace",
+      "name": {
+        "ko": "갑충",
+        "en": "Carapace",
+        "ja": "甲殻"
+      },
+      "statMult": 12.0,
+      "options": 5,
+      "color": "FF9575CD"
+    },
+    {
+      "id": "amber",
+      "name": {
+        "ko": "호박",
+        "en": "Amber",
+        "ja": "琥珀"
+      },
+      "statMult": 17.0,
+      "options": 5,
+      "color": "FFFF9800"
+    }
+  ],
+  "_optionComment": "값은 % 다. skillCooldown 만 \"감소%\" 로 읽는다(값이 클수록 좋다). 이동속도는 넣지 않는다 — 뽑으면 실망하는 옵션이 굴림 전체를 김빠지게 한다.",
+  "optionPool": [
+    {
+      "kind": "attack",
+      "min": 1,
+      "max": 15
+    },
+    {
+      "kind": "attackSpeed",
+      "min": 1,
+      "max": 40
+    },
+    {
+      "kind": "critChance",
+      "min": 1,
+      "max": 12
+    },
+    {
+      "kind": "critDamage",
+      "min": 1,
+      "max": 80
+    },
+    {
+      "kind": "maxHp",
+      "min": 1,
+      "max": 20
+    },
+    {
+      "kind": "defense",
+      "min": 1,
+      "max": 25
+    },
+    {
+      "kind": "gold",
+      "min": 1,
+      "max": 30
+    },
+    {
+      "kind": "material",
+      "min": 1,
+      "max": 30
+    },
+    {
+      "kind": "bugFind",
+      "min": 1,
+      "max": 20
+    },
+    {
+      "kind": "bossDamage",
+      "min": 1,
+      "max": 50
+    },
+    {
+      "kind": "skillDamage",
+      "min": 1,
+      "max": 30
+    },
+    {
+      "kind": "skillCooldown",
+      "min": 1,
+      "max": 15
+    },
+    {
+      "kind": "boost",
+      "min": 1,
+      "max": 25
+    },
+    {
+      "kind": "offline",
+      "min": 1,
+      "max": 20
+    },
+    {
+      "kind": "pet",
+      "min": 1,
+      "max": 25
+    }
+  ],
+  "slots": [
+    {
+      "slot": "tool",
+      "baseStat": "attack",
+      "baseValue": 8.0,
+      "names": [
+        {
+          "ko": "풀잎 잠자리채",
+          "en": "Grass Net",
+          "ja": "草の葉の捕虫網"
+        },
+        {
+          "ko": "나무 잠자리채",
+          "en": "Wooden Net",
+          "ja": "木の捕虫網"
+        },
+        {
+          "ko": "가죽 포충망",
+          "en": "Leather Net",
+          "ja": "革の捕虫網"
+        },
+        {
+          "ko": "구리 핀셋",
+          "en": "Copper Net",
+          "ja": "銅の捕虫網"
+        },
+        {
+          "ko": "무쇠 집게",
+          "en": "Iron Net",
+          "ja": "鉄の捕虫網"
+        },
+        {
+          "ko": "은빛 포충망",
+          "en": "Silver Net",
+          "ja": "銀の捕虫網"
+        },
+        {
+          "ko": "황금 유인봉",
+          "en": "Golden Net",
+          "ja": "黄金の捕虫網"
+        },
+        {
+          "ko": "키틴 집게",
+          "en": "Chitin Net",
+          "ja": "キチンの捕虫網"
+        },
+        {
+          "ko": "갑충 창",
+          "en": "Carapace Net",
+          "ja": "甲殻の捕虫網"
+        },
+        {
+          "ko": "호박 지휘봉",
+          "en": "Amber Net",
+          "ja": "琥珀の捕虫網"
+        }
+      ]
+    },
+    {
+      "slot": "hat",
+      "baseStat": "bugFind",
+      "baseValue": 6.0,
+      "names": [
+        {
+          "ko": "풀잎 두건",
+          "en": "Grass Hat",
+          "ja": "草の葉の帽子"
+        },
+        {
+          "ko": "밀짚모자",
+          "en": "Wooden Hat",
+          "ja": "木の帽子"
+        },
+        {
+          "ko": "가죽 모자",
+          "en": "Leather Hat",
+          "ja": "革の帽子"
+        },
+        {
+          "ko": "구리 투구",
+          "en": "Copper Hat",
+          "ja": "銅の帽子"
+        },
+        {
+          "ko": "무쇠 투구",
+          "en": "Iron Hat",
+          "ja": "鉄の帽子"
+        },
+        {
+          "ko": "은빛 삿갓",
+          "en": "Silver Hat",
+          "ja": "銀の帽子"
+        },
+        {
+          "ko": "황금 관",
+          "en": "Golden Hat",
+          "ja": "黄金の帽子"
+        },
+        {
+          "ko": "키틴 두건",
+          "en": "Chitin Hat",
+          "ja": "キチンの帽子"
+        },
+        {
+          "ko": "갑충 투구",
+          "en": "Carapace Hat",
+          "ja": "甲殻の帽子"
+        },
+        {
+          "ko": "호박 면류관",
+          "en": "Amber Hat",
+          "ja": "琥珀の帽子"
+        }
+      ]
+    },
+    {
+      "slot": "top",
+      "baseStat": "maxHp",
+      "baseValue": 10.0,
+      "names": [
+        {
+          "ko": "풀잎 조끼",
+          "en": "Grass Vest",
+          "ja": "草の葉の上着"
+        },
+        {
+          "ko": "무명 조끼",
+          "en": "Wooden Vest",
+          "ja": "木の上着"
+        },
+        {
+          "ko": "가죽 자켓",
+          "en": "Leather Vest",
+          "ja": "革の上着"
+        },
+        {
+          "ko": "구리 흉갑",
+          "en": "Copper Vest",
+          "ja": "銅の上着"
+        },
+        {
+          "ko": "무쇠 흉갑",
+          "en": "Iron Vest",
+          "ja": "鉄の上着"
+        },
+        {
+          "ko": "은빛 예복",
+          "en": "Silver Vest",
+          "ja": "銀の上着"
+        },
+        {
+          "ko": "황금 예복",
+          "en": "Golden Vest",
+          "ja": "黄金の上着"
+        },
+        {
+          "ko": "키틴 자켓",
+          "en": "Chitin Vest",
+          "ja": "キチンの上着"
+        },
+        {
+          "ko": "갑충 흉갑",
+          "en": "Carapace Vest",
+          "ja": "甲殻の上着"
+        },
+        {
+          "ko": "호박 로브",
+          "en": "Amber Vest",
+          "ja": "琥珀の上着"
+        }
+      ]
+    },
+    {
+      "slot": "bottom",
+      "baseStat": "defense",
+      "baseValue": 8.0,
+      "names": [
+        {
+          "ko": "풀잎 치마",
+          "en": "Grass Legwear",
+          "ja": "草の葉の脚衣"
+        },
+        {
+          "ko": "작업 반바지",
+          "en": "Wooden Legwear",
+          "ja": "木の脚衣"
+        },
+        {
+          "ko": "가죽 각반",
+          "en": "Leather Legwear",
+          "ja": "革の脚衣"
+        },
+        {
+          "ko": "구리 정강이받이",
+          "en": "Copper Legwear",
+          "ja": "銅の脚衣"
+        },
+        {
+          "ko": "무쇠 정강이받이",
+          "en": "Iron Legwear",
+          "ja": "鉄の脚衣"
+        },
+        {
+          "ko": "은빛 하의",
+          "en": "Silver Legwear",
+          "ja": "銀の脚衣"
+        },
+        {
+          "ko": "황금 하의",
+          "en": "Golden Legwear",
+          "ja": "黄金の脚衣"
+        },
+        {
+          "ko": "키틴 바지",
+          "en": "Chitin Legwear",
+          "ja": "キチンの脚衣"
+        },
+        {
+          "ko": "갑충 다리보호대",
+          "en": "Carapace Legwear",
+          "ja": "甲殻の脚衣"
+        },
+        {
+          "ko": "호박 다리갑옷",
+          "en": "Amber Legwear",
+          "ja": "琥珀の脚衣"
+        }
+      ]
+    },
+    {
+      "slot": "shoes",
+      "baseStat": "attackSpeed",
+      "baseValue": 5.0,
+      "names": [
+        {
+          "ko": "짚신",
+          "en": "Grass Boots",
+          "ja": "草の葉の靴"
+        },
+        {
+          "ko": "나무 나막신",
+          "en": "Wooden Boots",
+          "ja": "木の靴"
+        },
+        {
+          "ko": "가죽 부츠",
+          "en": "Leather Boots",
+          "ja": "革の靴"
+        },
+        {
+          "ko": "구리 군화",
+          "en": "Copper Boots",
+          "ja": "銅の靴"
+        },
+        {
+          "ko": "무쇠 군화",
+          "en": "Iron Boots",
+          "ja": "鉄の靴"
+        },
+        {
+          "ko": "은빛 샌들",
+          "en": "Silver Boots",
+          "ja": "銀の靴"
+        },
+        {
+          "ko": "황금 장화",
+          "en": "Golden Boots",
+          "ja": "黄金の靴"
+        },
+        {
+          "ko": "키틴 부츠",
+          "en": "Chitin Boots",
+          "ja": "キチンの靴"
+        },
+        {
+          "ko": "갑충 발톱신",
+          "en": "Carapace Boots",
+          "ja": "甲殻の靴"
+        },
+        {
+          "ko": "호박 신발",
+          "en": "Amber Boots",
+          "ja": "琥珀の靴"
+        }
+      ]
+    },
+    {
+      "slot": "necklace",
+      "baseStat": "gold",
+      "baseValue": 8.0,
+      "names": [
+        {
+          "ko": "풀잎 목걸이",
+          "en": "Grass Necklace",
+          "ja": "草の葉の首飾り"
+        },
+        {
+          "ko": "씨앗 목걸이",
+          "en": "Wooden Necklace",
+          "ja": "木の首飾り"
+        },
+        {
+          "ko": "가죽끈 목걸이",
+          "en": "Leather Necklace",
+          "ja": "革の首飾り"
+        },
+        {
+          "ko": "구리 사슬",
+          "en": "Copper Necklace",
+          "ja": "銅の首飾り"
+        },
+        {
+          "ko": "무쇠 사슬",
+          "en": "Iron Necklace",
+          "ja": "鉄の首飾り"
+        },
+        {
+          "ko": "은빛 목걸이",
+          "en": "Silver Necklace",
+          "ja": "銀の首飾り"
+        },
+        {
+          "ko": "황금풍뎅이 목걸이",
+          "en": "Golden Necklace",
+          "ja": "黄金の首飾り"
+        },
+        {
+          "ko": "키틴 목걸이",
+          "en": "Chitin Necklace",
+          "ja": "キチンの首飾り"
+        },
+        {
+          "ko": "갑충 목가리개",
+          "en": "Carapace Necklace",
+          "ja": "甲殻の首飾り"
+        },
+        {
+          "ko": "호박 펜던트",
+          "en": "Amber Necklace",
+          "ja": "琥珀の首飾り"
+        }
+      ]
+    },
+    {
+      "slot": "ring",
+      "baseStat": "critChance",
+      "baseValue": 2.0,
+      "names": [
+        {
+          "ko": "풀 매듭 반지",
+          "en": "Grass Ring",
+          "ja": "草の葉の指輪"
+        },
+        {
+          "ko": "나무 반지",
+          "en": "Wooden Ring",
+          "ja": "木の指輪"
+        },
+        {
+          "ko": "가죽 고리",
+          "en": "Leather Ring",
+          "ja": "革の指輪"
+        },
+        {
+          "ko": "구리 반지",
+          "en": "Copper Ring",
+          "ja": "銅の指輪"
+        },
+        {
+          "ko": "무쇠 반지",
+          "en": "Iron Ring",
+          "ja": "鉄の指輪"
+        },
+        {
+          "ko": "은빛 반지",
+          "en": "Silver Ring",
+          "ja": "銀の指輪"
+        },
+        {
+          "ko": "황금 반지",
+          "en": "Golden Ring",
+          "ja": "黄金の指輪"
+        },
+        {
+          "ko": "키틴 반지",
+          "en": "Chitin Ring",
+          "ja": "キチンの指輪"
+        },
+        {
+          "ko": "갑충 인장",
+          "en": "Carapace Ring",
+          "ja": "甲殻の指輪"
+        },
+        {
+          "ko": "호박 반지",
+          "en": "Amber Ring",
+          "ja": "琥珀の指輪"
+        }
+      ]
+    },
+    {
+      "slot": "box",
+      "baseStat": "material",
+      "baseValue": 8.0,
+      "names": [
+        {
+          "ko": "풀잎 바구니",
+          "en": "Grass Case",
+          "ja": "草の葉の標本箱"
+        },
+        {
+          "ko": "종이 표본함",
+          "en": "Wooden Case",
+          "ja": "木の標本箱"
+        },
+        {
+          "ko": "가죽 채집가방",
+          "en": "Leather Case",
+          "ja": "革の標本箱"
+        },
+        {
+          "ko": "구리 상자",
+          "en": "Copper Case",
+          "ja": "銅の標本箱"
+        },
+        {
+          "ko": "무쇠 상자",
+          "en": "Iron Case",
+          "ja": "鉄の標本箱"
+        },
+        {
+          "ko": "은빛 진열장",
+          "en": "Silver Case",
+          "ja": "銀の標本箱"
+        },
+        {
+          "ko": "황금 진열장",
+          "en": "Golden Case",
+          "ja": "黄金の標本箱"
+        },
+        {
+          "ko": "키틴 사육통",
+          "en": "Chitin Case",
+          "ja": "キチンの標本箱"
+        },
+        {
+          "ko": "갑충 표본함",
+          "en": "Carapace Case",
+          "ja": "甲殻の標本箱"
+        },
+        {
+          "ko": "호박 보관함",
+          "en": "Amber Case",
+          "ja": "琥珀の標本箱"
+        }
+      ],
+      "storageSlots": [
+        1,
+        1,
+        2,
+        2,
+        3,
+        3,
+        4,
+        4,
+        5,
+        5
+      ]
+    }
+  ]
+}
