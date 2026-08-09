@@ -1167,5 +1167,81 @@
         "type": "String"
       }
     }
+  },
+  "navCharacter": "Character",
+  "slotTool": "Tool",
+  "slotHat": "Hat",
+  "slotTop": "Top",
+  "slotBottom": "Legwear",
+  "slotShoes": "Boots",
+  "slotNecklace": "Necklace",
+  "slotRing": "Ring",
+  "slotBox": "Case",
+  "optAttack": "Attack",
+  "optAttackSpeed": "Attack Speed",
+  "optCritChance": "Crit Chance",
+  "optCritDamage": "Crit Damage",
+  "optMaxHp": "Health",
+  "optDefense": "Defense",
+  "optGold": "Gold Gain",
+  "optMaterial": "Material Gain",
+  "optBugFind": "Bug Find",
+  "optBossDamage": "Boss Damage",
+  "optSkillDamage": "Skill Damage",
+  "optSkillCooldown": "Skill Cooldown",
+  "optBoost": "Tap Boost",
+  "optOffline": "Idle Efficiency",
+  "optPet": "Pet Power",
+  "charEquipment": "Equipment",
+  "charPets": "Pets",
+  "charSkills": "Skills",
+  "charPower": "Power",
+  "charEmptySlot": "Empty",
+  "forgeTitle": "Workshop",
+  "forgeHammer": "Forge",
+  "forgeAuto": "Auto forge",
+  "forgeResultKeep": "Equip",
+  "forgeResultDrop": "Discard",
+  "forgeCurrent": "Equipped",
+  "forgeNoFossil": "No fossil shards",
+  "forgeLevel": "Workshop Lv.{lv}",
+  "forgeStep": "Gold {cur}/{max}",
+  "forgeUpgrading": "Upgrading",
+  "forgeRush": "Finish now",
+  "forgeClaim": "Claim",
+  "forgeNext": "Next level odds",
+  "forgeMaxLevel": "Max level",
+  "forgeAutoTarget": "Wanted options",
+  "forgeStopOnHit": "Stop when found",
+  "skillLearn": "Learn",
+  "skillLevelUp": "Lv.{lv} → {next}",
+  "skillEquipped": "Equipped",
+  "skillSlotsFull": "Skill slots are full",
+  "@forgeLevel": {
+    "placeholders": {
+      "lv": {
+        "type": "int"
+      }
+    }
+  },
+  "@forgeStep": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@skillLevelUp": {
+    "placeholders": {
+      "lv": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
   }
 }

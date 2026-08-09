@@ -18,6 +18,7 @@ import '../ui/game_dialog.dart';
 import '../ui/rank_popup.dart';
 import 'battle/battle_screen.dart';
 import 'play/play_screen.dart';
+import 'character/character_screen.dart';
 import 'shop/craft_screen.dart';
 import 'title/title_screen.dart';
 import 'storage/storage_screen.dart';
@@ -200,6 +201,8 @@ class _AppShellState extends ConsumerState<AppShell>
                 index: index,
                 children: [
                   const PlayScreen(),
+                  // 홈과 채집함 사이 — **전력을 조립하는 곳**.
+                  const CharacterScreen(),
                   StorageScreen(save: save),
                   const BattleScreen(),
                   const CraftScreen(),
@@ -270,6 +273,7 @@ class _GameNavBar extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final items = <(IconData, String)>[
       (Icons.home_rounded, l.navHome),
+      (Icons.person_rounded, l.navCharacter),
       (Icons.menu_book_rounded, l.navStorage),
       (Icons.sports_mma_rounded, l.navBattle),
       (Icons.storefront_rounded, l.navShop),

@@ -403,6 +403,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 탭 연타로 쌓이는 공격 배율(1.0 = 부스트 없음). 안 누르면 초당 감소한다.
   double _boostMult = 1.0;
 
+  /// 이번 몬스터를 잡는 데 걸린 시간(초). 화석 조각을 시간에 비례해 주기 위함.
+  double _killSeconds = 0;
+
+  /// 화석 조각의 소수점 이월분 — 반올림으로 새거나 덜 주지 않게 누적한다.
+  double _fossilPending = 0;
+
   /// 탭 순간의 화면 파동(1 → 0). 눌렀다는 시각 피드백.
   double _tapFlash = 0;
 
@@ -658,9 +664,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         boostBonus: s.boostBonus,
       );
 
-  /// 펫 + 활성 버프까지 반영한 유효 능력치 — 전투/보상 계산에 사용.
+  /// 펫 + **장비** + 활성 버프까지 반영한 유효 능력치 — 전투/보상 계산에 사용.
+  ///
+  /// ⚠️ 이 값은 **적응형 몬스터 체력의 기준으로 쓰지 않는다**(기준은 `_petStats`).
+  /// 장비를 기준에 넣으면 좋은 걸 껴도 몬스터가 같이 세져 **모으는 맛이
+  /// 사라진다** — 전설 장비를 껴도 체감이 1.7배밖에 안 됐다(실측).
+  /// 장비는 순수 이득이어야 관문을 뚫는 수단이 된다.
   CharacterStats _stats(SaveGame save) => applyBuffs(
-    _petStats(save),
+    applyEquipment(
+      _petStats(save),
+      equipmentBonus(save.equippedItems.values, _data.itemConfig),
+    ),
     save.activeBuffs(_clock.now().toUtc()),
     _data.buffConfig,
   );
@@ -670,6 +684,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _lastElapsed = elapsed;
     final dt = raw.clamp(0.0, 0.05);
     if (dt <= 0) return;
+    _killSeconds += dt;
     setState(() => _step(dt));
     // 온라인 중 주기적으로 깜짝 선물 스폰 체크(20초마다).
     _giftCheckAcc += dt;
@@ -874,13 +889,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       }
     }
 
+    // 화석 조각(제련용) — **잡는 데 걸린 시간에 비례**해 쌓는다.
+    // 스테이지를 보지 않으므로 낮은 난이도로 내려가도 시간당 획득이 같고,
+    // 관문에서 느려질 때도 시간당은 그대로다(막혔는데 장비도 못 만드는 일 방지).
     Map<MaterialKind, int>? mats;
+    final forgeCfg = _data.forgeConfig;
+    if (forgeCfg != null) {
+      _fossilPending += _killSeconds * forgeCfg.fossilPerSecond;
+      if (_fossilPending >= 1) {
+        final give = _fossilPending.floor();
+        _fossilPending -= give;
+        mats = {MaterialKind.fossil: give};
+      }
+    }
+    _killSeconds = 0;
     if (_rng.nextDouble() < _config.materialDropChance * stats.materialFind) {
       final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
+      mats ??= {};
       // 수량도 깊이에 따라 자란다 — 골드만 지수로 커지면 재료는 중반에
       // 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 된다.
       final amount = (1 + _rng.nextInt(2)) * materialAmountMult(_config, depth);
-      mats = {kind: math.max(1, amount.round())};
+      mats[kind] = math.max(1, amount.round());
     }
 
     ref

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:core_gathering/core_gathering.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:core_run/core_run.dart' as forge_lib show forgeOnce;
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -235,7 +236,27 @@ class SaveController extends AsyncNotifier<SaveGame> {
       level++;
     }
     pendingOffline = report;
-    return save.copyWith(gold: save.gold + report.gold, xp: xp, level: level);
+    // 화석 조각은 **시간 비례**라 정산된 시간(오프라인 상한이 걸린 값)에 맞춰
+    // 준다. 오프라인은 온라인의 1/3 — 켜두는 쪽이 이득이어야 한다.
+    var mats = save.materials;
+    final forge = data.forgeConfig;
+    if (forge != null) {
+      final give =
+          (report.accrued.inSeconds *
+                  forge.fossilPerSecond *
+                  forge.fossilOfflineRatio)
+              .floor();
+      if (give > 0) {
+        mats = Map<MaterialKind, int>.from(mats)
+          ..[MaterialKind.fossil] = (mats[MaterialKind.fossil] ?? 0) + give;
+      }
+    }
+    return save.copyWith(
+      gold: save.gold + report.gold,
+      xp: xp,
+      level: level,
+      materials: mats,
+    );
   }
 
   /// 백그라운드에서 돌아왔을 때 그동안의 방치 보상을 정산한다.
@@ -1472,6 +1493,178 @@ class SaveController extends AsyncNotifier<SaveGame> {
       ..[MaterialKind.jelly] = have - cfg.incubatorExpandJelly;
     await _commit(
       s.copyWith(incubatorCapacity: s.incubatorCapacity + 1, materials: mats),
+    );
+    return true;
+  }
+
+  // ── 장비 · 공방 · 스킬 (2026-08) ─────────────────────────────
+
+  /// 부위에 장비를 낀다. **가방이 없으므로 기존 것은 사라진다**(§3.4) —
+  /// 창고·보유상한·자동분해가 통째로 필요 없어지고, 세이브에 남는 장비는 8개뿐이다.
+  Future<void> equipItem(EquipItem item) async {
+    final s = state.requireValue;
+    await _commit(
+      s.copyWith(equippedItems: {...s.equippedItems, item.slot: item}),
+    );
+  }
+
+  /// 제련 1회 — 화석 조각 1개를 태워 장비 하나를 뽑는다.
+  ///
+  /// 화석이 없으면 null. **결과를 낄지는 호출부가 정한다**(비교 후 교체/폐기).
+  Future<EquipItem?> forgeOnce() async {
+    final data = ref.read(gameDataProvider).value;
+    final items = data?.itemConfig;
+    final forge = data?.forgeConfig;
+    if (items == null || forge == null) return null;
+    final s = state.requireValue;
+    final have = s.materialCount(MaterialKind.fossil);
+    if (have < 1) return null;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.fossil] = have - 1;
+    await _commit(s.copyWith(materials: mats));
+    return forge_lib.forgeOnce(
+      rng: math.Random(),
+      items: items,
+      forge: forge,
+      forgeLevel: s.forgeLevel,
+    );
+  }
+
+  /// 지금 낀 것보다 나은지 — 자동 제련의 교체 판단.
+  ///
+  /// 목표 옵션을 지정했으면 **그 옵션이 붙었는지**가 우선이고, 없으면 등급으로 본다.
+  bool isBetterItem(EquipItem candidate) {
+    final s = state.requireValue;
+    final cur = s.equippedItems[candidate.slot];
+    if (cur == null) return true;
+    final want = s.autoForgeOptions;
+    if (want.isNotEmpty) {
+      int hits(EquipItem i) =>
+          i.options.where((o) => want.contains(o.kind)).length;
+      final a = hits(candidate);
+      final b = hits(cur);
+      if (a != b) return a > b;
+    }
+    return candidate.tier > cur.tier;
+  }
+
+  /// 공방 등급업에 골드 한 칸을 붓는다. 골드 부족·이미 진행 중이면 false.
+  ///
+  /// 칸으로 나눠 받는 이유: 한 번에 다 못 내도 조금씩 부어둘 수 있고, 얼마나
+  /// 남았는지가 눈에 보인다.
+  Future<bool> payForgeStep() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return false;
+    final s = state.requireValue;
+    if (s.forgeUpAt != null) return false; // 이미 업그레이드 중
+    if (s.forgeLevel >= forge.maxLevel) return false;
+    if (s.forgeSteps >= forge.levelUpSteps) return false;
+    final cost = forge.levelUpStepGold(s.forgeLevel);
+    if (s.gold < cost) return false;
+
+    final steps = s.forgeSteps + 1;
+    final full = steps >= forge.levelUpSteps;
+    final now = ref.read(clockProvider).now().toUtc();
+    await _commit(
+      s.copyWith(
+        gold: s.gold - cost,
+        forgeSteps: steps,
+        // 칸을 다 채우면 그때 업그레이드(시간)가 시작된다.
+        forgeUpAt: full ? now.add(forge.levelUpDuration(s.forgeLevel)) : null,
+      ),
+    );
+    return true;
+  }
+
+  /// 등급업 완료 수령(시간이 다 됐을 때). 아직이면 false.
+  Future<bool> claimForgeUpgrade() async {
+    final s = state.requireValue;
+    final at = s.forgeUpAt;
+    if (at == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    if (now.isBefore(at)) return false;
+    await _commit(
+      s.copyWith(
+        forgeLevel: s.forgeLevel + 1,
+        forgeSteps: 0,
+        clearForgeUpAt: true,
+      ),
+    );
+    return true;
+  }
+
+  /// 등급업 남은 시간을 젤리로 즉시 끝낸다.
+  ///
+  /// ⚠️ **시간만 산다.** 골드 칸은 젤리로 팔지 않는다 — 파는 순간 전력을
+  /// 돈으로 사는 게 되어 헌법 §2.6 위반이다.
+  Future<bool> rushForgeUpgrade() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return false;
+    final s = state.requireValue;
+    final at = s.forgeUpAt;
+    if (at == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final cost = forge.levelUpJelly(at.difference(now));
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cost) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cost;
+    await _commit(
+      s.copyWith(
+        materials: mats,
+        forgeLevel: s.forgeLevel + 1,
+        forgeSteps: 0,
+        clearForgeUpAt: true,
+      ),
+    );
+    return true;
+  }
+
+  /// 자동 제련 설정 저장.
+  Future<void> setAutoForge({
+    Set<ItemOptionKind>? options,
+    bool? stopOnHit,
+  }) async {
+    final s = state.requireValue;
+    await _commit(
+      s.copyWith(autoForgeOptions: options, autoForgeStopOnHit: stopOnHit),
+    );
+  }
+
+  /// 스킬 장착/해제. 칸(기본 5)을 넘으면 무시한다.
+  Future<void> toggleSkill(String id) async {
+    final cfg = ref.read(gameDataProvider).value?.skillConfig;
+    final s = state.requireValue;
+    final next = [...s.equippedSkills];
+    if (next.remove(id)) {
+      await _commit(s.copyWith(equippedSkills: next));
+      return;
+    }
+    if (next.length >= (cfg?.equipSlots ?? 5)) return;
+    if (!s.skillLevels.containsKey(id)) return; // 미보유
+    next.add(id);
+    await _commit(s.copyWith(equippedSkills: next));
+  }
+
+  /// 스킬 레벨업(골드+재료). 미보유면 **레벨 1로 습득**한다.
+  Future<bool> levelUpSkill(String id) async {
+    final cfg = ref.read(gameDataProvider).value?.skillConfig;
+    if (cfg == null || cfg.byId(id) == null) return false;
+    final s = state.requireValue;
+    final lv = s.skillLevels[id] ?? 0;
+    if (lv >= cfg.maxLevel) return false;
+    final cost = cfg.levelUpCost(lv + 1);
+    if (s.gold < cost.gold) return false;
+    final have = s.materialCount(MaterialKind.chitin);
+    if (have < cost.material) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.chitin] = have - cost.material;
+    await _commit(
+      s.copyWith(
+        gold: s.gold - cost.gold,
+        materials: mats,
+        skillLevels: {...s.skillLevels, id: lv + 1},
+      ),
     );
     return true;
   }

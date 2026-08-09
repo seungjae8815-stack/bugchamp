@@ -3399,6 +3399,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Team power {power}'**
   String teamPower(String power);
+
+  /// No description provided for @navCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Character'**
+  String get navCharacter;
+
+  /// No description provided for @slotTool.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool'**
+  String get slotTool;
+
+  /// No description provided for @slotHat.
+  ///
+  /// In en, this message translates to:
+  /// **'Hat'**
+  String get slotHat;
+
+  /// No description provided for @slotTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get slotTop;
+
+  /// No description provided for @slotBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'Legwear'**
+  String get slotBottom;
+
+  /// No description provided for @slotShoes.
+  ///
+  /// In en, this message translates to:
+  /// **'Boots'**
+  String get slotShoes;
+
+  /// No description provided for @slotNecklace.
+  ///
+  /// In en, this message translates to:
+  /// **'Necklace'**
+  String get slotNecklace;
+
+  /// No description provided for @slotRing.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring'**
+  String get slotRing;
+
+  /// No description provided for @slotBox.
+  ///
+  /// In en, this message translates to:
+  /// **'Case'**
+  String get slotBox;
+
+  /// No description provided for @optAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get optAttack;
+
+  /// No description provided for @optAttackSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack Speed'**
+  String get optAttackSpeed;
+
+  /// No description provided for @optCritChance.
+  ///
+  /// In en, this message translates to:
+  /// **'Crit Chance'**
+  String get optCritChance;
+
+  /// No description provided for @optCritDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Crit Damage'**
+  String get optCritDamage;
+
+  /// No description provided for @optMaxHp.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get optMaxHp;
+
+  /// No description provided for @optDefense.
+  ///
+  /// In en, this message translates to:
+  /// **'Defense'**
+  String get optDefense;
+
+  /// No description provided for @optGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold Gain'**
+  String get optGold;
+
+  /// No description provided for @optMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material Gain'**
+  String get optMaterial;
+
+  /// No description provided for @optBugFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Find'**
+  String get optBugFind;
+
+  /// No description provided for @optBossDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss Damage'**
+  String get optBossDamage;
+
+  /// No description provided for @optSkillDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill Damage'**
+  String get optSkillDamage;
+
+  /// No description provided for @optSkillCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill Cooldown'**
+  String get optSkillCooldown;
+
+  /// No description provided for @optBoost.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Boost'**
+  String get optBoost;
+
+  /// No description provided for @optOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle Efficiency'**
+  String get optOffline;
+
+  /// No description provided for @optPet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet Power'**
+  String get optPet;
+
+  /// No description provided for @charEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get charEquipment;
+
+  /// No description provided for @charPets.
+  ///
+  /// In en, this message translates to:
+  /// **'Pets'**
+  String get charPets;
+
+  /// No description provided for @charSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get charSkills;
+
+  /// No description provided for @charPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Power'**
+  String get charPower;
+
+  /// No description provided for @charEmptySlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get charEmptySlot;
+
+  /// No description provided for @forgeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop'**
+  String get forgeTitle;
+
+  /// No description provided for @forgeHammer.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge'**
+  String get forgeHammer;
+
+  /// No description provided for @forgeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto forge'**
+  String get forgeAuto;
+
+  /// No description provided for @forgeResultKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip'**
+  String get forgeResultKeep;
+
+  /// No description provided for @forgeResultDrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get forgeResultDrop;
+
+  /// No description provided for @forgeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped'**
+  String get forgeCurrent;
+
+  /// No description provided for @forgeNoFossil.
+  ///
+  /// In en, this message translates to:
+  /// **'No fossil shards'**
+  String get forgeNoFossil;
+
+  /// No description provided for @forgeLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop Lv.{lv}'**
+  String forgeLevel(int lv);
+
+  /// No description provided for @forgeStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold {cur}/{max}'**
+  String forgeStep(int cur, int max);
+
+  /// No description provided for @forgeUpgrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrading'**
+  String get forgeUpgrading;
+
+  /// No description provided for @forgeRush.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish now'**
+  String get forgeRush;
+
+  /// No description provided for @forgeClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get forgeClaim;
+
+  /// No description provided for @forgeNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next level odds'**
+  String get forgeNext;
+
+  /// No description provided for @forgeMaxLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Max level'**
+  String get forgeMaxLevel;
+
+  /// No description provided for @forgeAutoTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Wanted options'**
+  String get forgeAutoTarget;
+
+  /// No description provided for @forgeStopOnHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop when found'**
+  String get forgeStopOnHit;
+
+  /// No description provided for @skillLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get skillLearn;
+
+  /// No description provided for @skillLevelUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.{lv} → {next}'**
+  String skillLevelUp(int lv, int next);
+
+  /// No description provided for @skillEquipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped'**
+  String get skillEquipped;
+
+  /// No description provided for @skillSlotsFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill slots are full'**
+  String get skillSlotsFull;
 }
 
 class _AppLocalizationsDelegate

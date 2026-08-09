@@ -1857,4 +1857,157 @@ class AppLocalizationsEn extends AppLocalizations {
   String teamPower(String power) {
     return 'Team power $power';
   }
+
+  @override
+  String get navCharacter => 'Character';
+
+  @override
+  String get slotTool => 'Tool';
+
+  @override
+  String get slotHat => 'Hat';
+
+  @override
+  String get slotTop => 'Top';
+
+  @override
+  String get slotBottom => 'Legwear';
+
+  @override
+  String get slotShoes => 'Boots';
+
+  @override
+  String get slotNecklace => 'Necklace';
+
+  @override
+  String get slotRing => 'Ring';
+
+  @override
+  String get slotBox => 'Case';
+
+  @override
+  String get optAttack => 'Attack';
+
+  @override
+  String get optAttackSpeed => 'Attack Speed';
+
+  @override
+  String get optCritChance => 'Crit Chance';
+
+  @override
+  String get optCritDamage => 'Crit Damage';
+
+  @override
+  String get optMaxHp => 'Health';
+
+  @override
+  String get optDefense => 'Defense';
+
+  @override
+  String get optGold => 'Gold Gain';
+
+  @override
+  String get optMaterial => 'Material Gain';
+
+  @override
+  String get optBugFind => 'Bug Find';
+
+  @override
+  String get optBossDamage => 'Boss Damage';
+
+  @override
+  String get optSkillDamage => 'Skill Damage';
+
+  @override
+  String get optSkillCooldown => 'Skill Cooldown';
+
+  @override
+  String get optBoost => 'Tap Boost';
+
+  @override
+  String get optOffline => 'Idle Efficiency';
+
+  @override
+  String get optPet => 'Pet Power';
+
+  @override
+  String get charEquipment => 'Equipment';
+
+  @override
+  String get charPets => 'Pets';
+
+  @override
+  String get charSkills => 'Skills';
+
+  @override
+  String get charPower => 'Power';
+
+  @override
+  String get charEmptySlot => 'Empty';
+
+  @override
+  String get forgeTitle => 'Workshop';
+
+  @override
+  String get forgeHammer => 'Forge';
+
+  @override
+  String get forgeAuto => 'Auto forge';
+
+  @override
+  String get forgeResultKeep => 'Equip';
+
+  @override
+  String get forgeResultDrop => 'Discard';
+
+  @override
+  String get forgeCurrent => 'Equipped';
+
+  @override
+  String get forgeNoFossil => 'No fossil shards';
+
+  @override
+  String forgeLevel(int lv) {
+    return 'Workshop Lv.$lv';
+  }
+
+  @override
+  String forgeStep(int cur, int max) {
+    return 'Gold $cur/$max';
+  }
+
+  @override
+  String get forgeUpgrading => 'Upgrading';
+
+  @override
+  String get forgeRush => 'Finish now';
+
+  @override
+  String get forgeClaim => 'Claim';
+
+  @override
+  String get forgeNext => 'Next level odds';
+
+  @override
+  String get forgeMaxLevel => 'Max level';
+
+  @override
+  String get forgeAutoTarget => 'Wanted options';
+
+  @override
+  String get forgeStopOnHit => 'Stop when found';
+
+  @override
+  String get skillLearn => 'Learn';
+
+  @override
+  String skillLevelUp(int lv, int next) {
+    return 'Lv.$lv → $next';
+  }
+
+  @override
+  String get skillEquipped => 'Equipped';
+
+  @override
+  String get skillSlotsFull => 'Skill slots are full';
 }

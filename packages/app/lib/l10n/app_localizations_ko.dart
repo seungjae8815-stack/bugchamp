@@ -1821,4 +1821,157 @@ class AppLocalizationsKo extends AppLocalizations {
   String teamPower(String power) {
     return '팀 전투력 $power';
   }
+
+  @override
+  String get navCharacter => '캐릭터';
+
+  @override
+  String get slotTool => '채집도구';
+
+  @override
+  String get slotHat => '모자';
+
+  @override
+  String get slotTop => '옷';
+
+  @override
+  String get slotBottom => '바지';
+
+  @override
+  String get slotShoes => '신발';
+
+  @override
+  String get slotNecklace => '목걸이';
+
+  @override
+  String get slotRing => '반지';
+
+  @override
+  String get slotBox => '채집함';
+
+  @override
+  String get optAttack => '공격력';
+
+  @override
+  String get optAttackSpeed => '공격속도';
+
+  @override
+  String get optCritChance => '치명타 확률';
+
+  @override
+  String get optCritDamage => '치명타 피해';
+
+  @override
+  String get optMaxHp => '체력';
+
+  @override
+  String get optDefense => '방어';
+
+  @override
+  String get optGold => '골드 획득';
+
+  @override
+  String get optMaterial => '재료 획득';
+
+  @override
+  String get optBugFind => '곤충 발견율';
+
+  @override
+  String get optBossDamage => '보스 피해';
+
+  @override
+  String get optSkillDamage => '스킬 피해';
+
+  @override
+  String get optSkillCooldown => '스킬 쿨타임 감소';
+
+  @override
+  String get optBoost => '탭 부스트';
+
+  @override
+  String get optOffline => '오프라인 효율';
+
+  @override
+  String get optPet => '펫 효과';
+
+  @override
+  String get charEquipment => '장비';
+
+  @override
+  String get charPets => '펫';
+
+  @override
+  String get charSkills => '스킬';
+
+  @override
+  String get charPower => '전투력';
+
+  @override
+  String get charEmptySlot => '비어 있음';
+
+  @override
+  String get forgeTitle => '공방';
+
+  @override
+  String get forgeHammer => '제련';
+
+  @override
+  String get forgeAuto => '자동 제련';
+
+  @override
+  String get forgeResultKeep => '교체';
+
+  @override
+  String get forgeResultDrop => '버리기';
+
+  @override
+  String get forgeCurrent => '지금 낀 것';
+
+  @override
+  String get forgeNoFossil => '화석 조각이 없어요';
+
+  @override
+  String forgeLevel(int lv) {
+    return '공방 등급 $lv';
+  }
+
+  @override
+  String forgeStep(int cur, int max) {
+    return '골드 $cur/$max칸';
+  }
+
+  @override
+  String get forgeUpgrading => '업그레이드 중';
+
+  @override
+  String get forgeRush => '즉시 완료';
+
+  @override
+  String get forgeClaim => '완료 받기';
+
+  @override
+  String get forgeNext => '다음 등급 확률';
+
+  @override
+  String get forgeMaxLevel => '최고 등급';
+
+  @override
+  String get forgeAutoTarget => '원하는 옵션';
+
+  @override
+  String get forgeStopOnHit => '찾으면 멈춤';
+
+  @override
+  String get skillLearn => '습득';
+
+  @override
+  String skillLevelUp(int lv, int next) {
+    return '레벨 $lv → $next';
+  }
+
+  @override
+  String get skillEquipped => '장착 중';
+
+  @override
+  String get skillSlotsFull => '스킬 칸이 가득 찼어요';
 }

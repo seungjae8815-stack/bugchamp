@@ -1822,4 +1822,157 @@ class AppLocalizationsJa extends AppLocalizations {
   String teamPower(String power) {
     return 'チーム戦力 $power';
   }
+
+  @override
+  String get navCharacter => 'キャラ';
+
+  @override
+  String get slotTool => '採集道具';
+
+  @override
+  String get slotHat => '帽子';
+
+  @override
+  String get slotTop => '上着';
+
+  @override
+  String get slotBottom => '脚衣';
+
+  @override
+  String get slotShoes => '靴';
+
+  @override
+  String get slotNecklace => '首飾り';
+
+  @override
+  String get slotRing => '指輪';
+
+  @override
+  String get slotBox => '標本箱';
+
+  @override
+  String get optAttack => '攻撃力';
+
+  @override
+  String get optAttackSpeed => '攻撃速度';
+
+  @override
+  String get optCritChance => '会心率';
+
+  @override
+  String get optCritDamage => '会心ダメージ';
+
+  @override
+  String get optMaxHp => '体力';
+
+  @override
+  String get optDefense => '防御';
+
+  @override
+  String get optGold => '金貨獲得';
+
+  @override
+  String get optMaterial => '素材獲得';
+
+  @override
+  String get optBugFind => '昆虫発見率';
+
+  @override
+  String get optBossDamage => 'ボスダメージ';
+
+  @override
+  String get optSkillDamage => 'スキルダメージ';
+
+  @override
+  String get optSkillCooldown => 'スキル再使用短縮';
+
+  @override
+  String get optBoost => 'タップブースト';
+
+  @override
+  String get optOffline => '放置効率';
+
+  @override
+  String get optPet => 'ペット効果';
+
+  @override
+  String get charEquipment => '装備';
+
+  @override
+  String get charPets => 'ペット';
+
+  @override
+  String get charSkills => 'スキル';
+
+  @override
+  String get charPower => '戦闘力';
+
+  @override
+  String get charEmptySlot => '空き';
+
+  @override
+  String get forgeTitle => '工房';
+
+  @override
+  String get forgeHammer => '製錬';
+
+  @override
+  String get forgeAuto => '自動製錬';
+
+  @override
+  String get forgeResultKeep => '装備';
+
+  @override
+  String get forgeResultDrop => '捨てる';
+
+  @override
+  String get forgeCurrent => '装備中';
+
+  @override
+  String get forgeNoFossil => '化石のかけらがありません';
+
+  @override
+  String forgeLevel(int lv) {
+    return '工房レベル $lv';
+  }
+
+  @override
+  String forgeStep(int cur, int max) {
+    return '金貨 $cur/$max';
+  }
+
+  @override
+  String get forgeUpgrading => 'アップグレード中';
+
+  @override
+  String get forgeRush => '今すぐ完了';
+
+  @override
+  String get forgeClaim => '受け取る';
+
+  @override
+  String get forgeNext => '次のレベルの確率';
+
+  @override
+  String get forgeMaxLevel => '最高レベル';
+
+  @override
+  String get forgeAutoTarget => '希望オプション';
+
+  @override
+  String get forgeStopOnHit => '見つけたら停止';
+
+  @override
+  String get skillLearn => '習得';
+
+  @override
+  String skillLevelUp(int lv, int next) {
+    return 'レベル $lv → $next';
+  }
+
+  @override
+  String get skillEquipped => '装備中';
+
+  @override
+  String get skillSlotsFull => 'スキル枠がいっぱいです';
 }
