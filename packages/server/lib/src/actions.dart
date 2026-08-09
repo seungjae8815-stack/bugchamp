@@ -129,6 +129,22 @@ class GameActions {
     'adUseDate',
   };
 
+  /// 한 번의 업로드에 실릴 수 있는 화석 조각의 **정상 최대치**.
+  ///
+  /// 가장 큰 정상 버스트는 **오프라인 정산 복귀**다 — 앱을 내려뒀다 열면
+  /// 오프라인 상한(패스 12시간)만큼 쌓인 분이 한꺼번에 들어온다(약 800개).
+  /// 여기에 여유를 곱해, 입장 후 네트워크가 끊긴 채 몇 시간 논 경우까지 덮는다.
+  /// 상수를 손으로 박지 않는 이유: `fossilPerSecond` 를 JSON 에서 바꾸면
+  /// 상한이 저절로 따라와야 한다(안 그러면 조용히 정상 유저를 자른다).
+  int get _maxFossilGain {
+    final f = config.forge;
+    if (f == null) return 3000;
+    const maxOfflineHours = 12; // 곤충학자 패스 기준
+    final burst =
+        f.fossilPerSecond * f.fossilOfflineRatio * maxOfflineHours * 3600;
+    return (burst * _fossilSlack).round();
+  }
+
   /// 골드 급증 상식 상한의 바닥 — 전투·미션·광고 등 **소소한 보상**만 덮는다.
   ///
   /// 예전엔 2,000,000 이었다. 큰 챕터 보상까지 이 값 하나로 덮으려다 보니
@@ -141,25 +157,16 @@ class GameActions {
   /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
   static const _jellySanityFloor = 1000;
 
-  /// 화석 조각(제련용) 증가 상한의 **바닥**. 실질 상한은 여기에
-  /// `초당 획득 × 경과시간 × [_fossilSlack]` 을 더한 값이다.
+  /// 화석 조각(제련용) 증가 상한의 여유 배수.
   ///
   /// ⚠️ **보유 상한이 아니라 업로드 1회당 증가 상한이다.** 모아뒀다 한 번에
   /// 쓰는 건 아무 제약이 없다(감소는 검사하지 않는다).
   ///
-  /// 상수로 두면 안 되는 이유는 **오프라인 정산 복귀**다. 앱을 내려뒀다 8시간
-  /// 뒤에 열면 화석 조각 약 533개가 한 번에 들어와 **한 번의 업로드에 실린다**
-  /// — 60초(3개) 기준으로 상한을 잡으면 매일 일어나는 정상 경로가 잘린다.
-  /// (앱은 입장할 때만 네트워크를 확인하므로, 입장 후 끊긴 채 플레이하는
-  /// 경로도 있긴 하나 몇 시간 단위라 부수적이다.)
-  ///
-  /// 경과시간은 **서버 시각으로 계산**하므로(마지막 업로드 시각도 서버가 찍는다)
-  /// 조작할 수 없다 — 골드 상한과 같은 방식이다.
-  static const _fossilSanityFloor = 60;
-
-  /// 화석 조각 상한의 여유 배수. 정상 획득의 몇 배까지 봐줄 것인가.
-  /// 방어보다 **오탐이 더 나쁘다** — 정상 유저의 재화가 잘리면 안 된다.
-  static const _fossilSlack = 3.0;
+  /// ⚠️ **경과시간에 비례시키면 안 된다.** 오프라인 정산이 8시간(패스 12시간)
+  /// 에서 멈추므로, 오래 비울수록 **상한만 부풀고 정상 획득은 그대로**다
+  /// (3일 비우면 상한 4만인데 정상은 여전히 533). 긴 공백에서는 고정 상한이
+  /// 오히려 더 촘촘하다.
+  static const _fossilSlack = 4.0;
 
   /// 상한 계산용 넉넉한 방치 효율(액티브 플레이 여유 포함 — 절대치만 잡는다).
   ///
@@ -269,13 +276,8 @@ class GameActions {
           (mats['fossil'] as num?)?.toInt() ??
           stored.materialCount(MaterialKind.fossil);
       final storedFossil = stored.materialCount(MaterialKind.fossil);
-      final maxFossilGain =
-          _fossilSanityFloor +
-          (config.forge?.fossilPerSecond ?? 0.06) *
-              elapsed.inSeconds *
-              _fossilSlack;
-      if (clientFossil - storedFossil > maxFossilGain) {
-        mats['fossil'] = storedFossil + maxFossilGain.round();
+      if (clientFossil - storedFossil > _maxFossilGain) {
+        mats['fossil'] = storedFossil + _maxFossilGain;
         clamped = true;
       }
     }

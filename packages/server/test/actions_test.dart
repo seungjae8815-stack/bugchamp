@@ -1514,17 +1514,43 @@ void main() {
       expect(r.extra['clamped'], isTrue);
     });
 
-    test('오프라인 8시간을 꽉 채우고 돌아와도 통과한다 — 이게 상한의 존재 이유다', () {
-      // 앱을 내려뒀다 8시간 뒤에 열면 정산분이 **한 번의 업로드에 실린다**.
-      // 매일 일어나는 정상 경로이고, 60초(3개) 기준 상한이면 여기서 잘린다.
+    test('오프라인을 꽉 채우고 돌아와도 통과한다 — 이게 상한의 존재 이유다', () {
+      // 앱을 내려뒀다 열면 정산분이 **한 번의 업로드에 실린다**. 매일 일어나는
+      // 정상 경로다. 패스(12h)까지 꽉 채워도 800개를 넘지 않는다.
       final st = stored().copyWith(
-        lastSeen: t0.subtract(const Duration(hours: 8)),
+        lastSeen: t0.subtract(const Duration(hours: 12)),
         materials: {MaterialKind.fossil: 0},
       );
-      final back = st.copyWith(materials: {MaterialKind.fossil: 533}).toJson();
+      final back = st.copyWith(materials: {MaterialKind.fossil: 800}).toJson();
       final r = actions.mergeSave(st, back);
-      expect(r.save!.materialCount(MaterialKind.fossil), 533);
+      expect(r.save!.materialCount(MaterialKind.fossil), 800);
       expect(r.extra['clamped'], isFalse);
+    });
+
+    test('오래 비워도 상한이 부풀지 않는다 — 오프라인 정산이 12h 에서 멈추므로', () {
+      // 3일을 비워도 정상 획득은 여전히 800 남짓이다. 경과시간에 비례시키면
+      // 상한만 4만으로 커지고 방어가 헐거워진다.
+      final long = stored().copyWith(
+        lastSeen: t0.subtract(const Duration(days: 3)),
+        materials: {MaterialKind.fossil: 0},
+      );
+      final short = stored().copyWith(
+        lastSeen: t0.subtract(const Duration(minutes: 1)),
+        materials: {MaterialKind.fossil: 0},
+      );
+      final cheat = {MaterialKind.fossil: 50000};
+      final a = actions.mergeSave(
+        long,
+        long.copyWith(materials: cheat).toJson(),
+      );
+      final b = actions.mergeSave(
+        short,
+        short.copyWith(materials: cheat).toJson(),
+      );
+      expect(
+        a.save!.materialCount(MaterialKind.fossil),
+        b.save!.materialCount(MaterialKind.fossil),
+      );
     });
 
     test('상한은 보유가 아니라 **증가분**에만 걸린다 — 모아뒀다 한 번에 쓸 수 있다', () {
