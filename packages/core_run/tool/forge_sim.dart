@@ -42,7 +42,7 @@ void _tierTable(ForgeConfig forge, ItemConfig items) {
     head.write(t.name.ko.padLeft(7));
   }
   stdout.writeln(head);
-  for (final lv in const [1, 5, 10, 15, 20, 25, 30, 35, 40]) {
+  for (var lv = 1; lv <= forge.maxLevel; lv++) {
     final w = forge.tierWeights(lv, items.tierCount);
     final row = StringBuffer('  ${lv.toString().padLeft(4)} ');
     for (final v in w) {
@@ -122,20 +122,35 @@ void _timeToTier(ItemConfig items, ForgeConfig forge) {
   stdout.writeln('');
 }
 
-/// 공방 등급업에 걸리는 시간 — 장비 성장의 **총 속도**를 결정한다.
+/// 공방 등급업 — **골드 10칸을 채우면 업그레이드가 시작된다**.
+/// 장비 성장의 총 속도를 결정하는 표라 눈으로 확인하고 만진다.
 void _levelUpTable(ForgeConfig forge) {
-  stdout.writeln('── 공방 등급업 누적 시간 ──');
+  stdout.writeln('── 공방 등급업(골드 ${forge.levelUpSteps}칸 + 시간) ──');
+  stdout.writeln('  레벨 |    총 골드 |   칸당 골드 |  업그레이드 시간 | 누적 시간');
   var acc = Duration.zero;
   for (var lv = 0; lv < forge.maxLevel; lv++) {
-    acc += forge.levelUpDuration(lv);
-    if ((lv + 1) % 5 == 0 || lv == 0) {
-      stdout.writeln(
-        '  레벨 ${(lv + 1).toString().padLeft(2)} 까지: '
-        '${_days(acc)}  (다음 한 칸 ${_days(forge.levelUpDuration(lv + 1))})',
-      );
-    }
+    final d = forge.levelUpDuration(lv);
+    acc += d;
+    stdout.writeln(
+      '  ${(lv + 1).toString().padLeft(4)} |'
+      ' ${_gold(forge.levelUpGold(lv)).padLeft(10)} |'
+      ' ${_gold(forge.levelUpStepGold(lv)).padLeft(11)} |'
+      ' ${_days(d).padLeft(16)} |'
+      ' ${_days(acc).padLeft(9)}',
+    );
   }
+  stdout.writeln('  * 시간만 젤리로 즉시완료된다 — 골드는 젤리로 사지 않는다(P2W 금지).');
   stdout.writeln('');
+}
+
+/// 큰 골드를 한국식 단위로 — 억/조 단위가 아니면 규모가 안 읽힌다.
+String _gold(int v) {
+  final d = v.toDouble();
+  if (d >= 1e16) return '${(d / 1e16).toStringAsFixed(1)}경';
+  if (d >= 1e12) return '${(d / 1e12).toStringAsFixed(1)}조';
+  if (d >= 1e8) return '${(d / 1e8).toStringAsFixed(1)}억';
+  if (d >= 1e4) return '${(d / 1e4).toStringAsFixed(1)}만';
+  return '$v';
 }
 
 String _mins(double seconds) {

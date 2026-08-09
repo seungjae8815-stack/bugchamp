@@ -68,7 +68,7 @@ void main() {
     final forge = _forge();
 
     test('합이 항상 1', () {
-      for (final lv in [0, 1, 7, 15, 30, 40]) {
+      for (final lv in [0, 1, 7, 15, 20]) {
         final w = forge.tierWeights(lv, 10);
         expect(w.reduce((a, b) => a + b), closeTo(1.0, 1e-9));
       }
@@ -76,9 +76,9 @@ void main() {
 
     test('레벨이 오르면 하위 등급은 **아예** 안 나온다', () {
       final low = forge.tierWeights(1, 10);
-      final high = forge.tierWeights(25, 10);
+      final high = forge.tierWeights(forge.maxLevel, 10);
       expect(low[0], greaterThan(0.3)); // 레벨1 은 풀잎이 주력
-      expect(high[0], lessThan(0.0001)); // 레벨25 면 풀잎은 사실상 0
+      expect(high[0], lessThan(0.0001)); // 최고 레벨이면 풀잎은 사실상 0
       expect(high[1], lessThan(0.0001));
     });
 
@@ -92,13 +92,14 @@ void main() {
         return best;
       }
 
-      expect(peak(1), lessThan(peak(10)));
-      expect(peak(10), lessThan(peak(20)));
-      expect(peak(20), lessThan(peak(30)));
+      // 레벨 상한이 20 이므로 그 안에서 본다 — 한 칸이 약 반 등급씩 민다.
+      expect(peak(1), lessThan(peak(7)));
+      expect(peak(7), lessThan(peak(14)));
+      expect(peak(14), lessThan(peak(20)));
     });
 
     test('한 번에 나오는 등급은 3~4개뿐(창이 좁다)', () {
-      for (final lv in [5, 15, 25]) {
+      for (final lv in [5, 12, 19]) {
         final live = forge.tierWeights(lv, 10).where((w) => w >= 0.01).length;
         expect(live, lessThanOrEqualTo(4), reason: '레벨 $lv');
       }
@@ -288,12 +289,33 @@ void main() {
         forge.levelUpJelly(forge.levelUpDuration(1)),
         forge.levelUpJellyMin,
       );
-      // 뒤로 갈수록 실제 시간에 비례해 오른다.
       final j10 = forge.levelUpJelly(forge.levelUpDuration(10));
-      final j25 = forge.levelUpJelly(forge.levelUpDuration(25));
-      expect(j25, greaterThan(j10));
+      final j18 = forge.levelUpJelly(forge.levelUpDuration(18));
+      expect(j18, greaterThan(j10));
       expect(j10, greaterThan(forge.levelUpJellyMin));
       expect(forge.levelUpJelly(Duration.zero), 0);
+    });
+
+    test('등급업 골드는 10칸으로 나뉘고, 칸 × 10 이 총액을 덮는다', () {
+      expect(forge.levelUpSteps, 10);
+      for (final lv in [0, 5, 10, 19]) {
+        final total = forge.levelUpGold(lv);
+        final step = forge.levelUpStepGold(lv);
+        // 올림이라 칸 합이 총액보다 조금 클 수는 있어도 모자라면 안 된다.
+        expect(step * forge.levelUpSteps, greaterThanOrEqualTo(total));
+        expect(step * forge.levelUpSteps, lessThan(total + forge.levelUpSteps));
+      }
+    });
+
+    test('골드는 레벨마다 오른다 — 업그레이드 15종과 경쟁시키는 축이다', () {
+      expect(forge.levelUpGold(10), greaterThan(forge.levelUpGold(0)));
+      expect(forge.levelUpGold(19), greaterThan(forge.levelUpGold(10)));
+    });
+
+    test('최고 레벨은 20 이고 거기서 최상위 등급이 주력이 된다', () {
+      expect(forge.maxLevel, 20);
+      final w = forge.tierWeights(forge.maxLevel, 10);
+      expect(w.last, greaterThan(0.8));
     });
   });
 }

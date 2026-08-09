@@ -211,6 +211,21 @@ void main(List<String> args) {
   }
   stdout.writeln('');
 
+  stdout.writeln('── 골드 수입(공방 같은 새 소비처의 규모 기준) ──');
+  stdout.writeln('  날짜 |     누적 골드 |    그날 하루 수입');
+  var prevCum = 0.0;
+  for (final d in const [1, 3, 5, 8, 12, 16, 20, 25, 30, 35]) {
+    final cum = sim.goldEarnedByDay[d];
+    if (cum == null) continue;
+    final perDay = cum - prevCum;
+    prevCum = cum;
+    stdout.writeln(
+      '  ${d.toString().padLeft(4)} | ${_num(cum).padLeft(13)} |'
+      ' ${_num(perDay).padLeft(17)}',
+    );
+  }
+  stdout.writeln('');
+
   stdout.writeln('── 처치 속도(화석 조각이 시간당 얼마나 들어오나) ──');
   stdout.writeln('  스테이지 |  타격 |    공속 | 마리당 |  처치/시간 | 고정 드롭 시');
   for (final m in const [10, 50, 100, 200, 400, 700, 1000]) {
@@ -311,6 +326,10 @@ class _Player {
   /// 성장할 이유가 안 느껴지고, 너무 크면 진행이 답답하다.
   final Map<int, int> hitsToKill = {};
 
+  /// 날짜별 누적 골드 획득 — 공방 같은 새 소비처의 규모를 정할 때 쓴다.
+  final Map<int, double> goldEarnedByDay = {};
+  double _goldEarned = 0;
+
   /// 그 스테이지에서 **한 마리를 잡는 데 걸리는 초**(공속·걷기 포함).
   /// 화석 조각처럼 "처치당 지급"하는 재화가 시간당 얼마나 들어오는지의 기준.
   final Map<int, double> secPerKill = {};
@@ -386,6 +405,7 @@ class _Player {
   void playDay() {
     // 전투 밖 보상(일일·선물·미션·결투)은 하루 한 번 정액으로 넣는다.
     gold += _dailyBonusGold;
+    _goldEarned += _dailyBonusGold;
     for (final k in const [
       MaterialKind.chitin,
       MaterialKind.mineral,
@@ -447,10 +467,13 @@ class _Player {
       }
       prevStage = stage;
       stage = prog.newStage;
-      gold +=
+      final earned =
           prog.gold *
           _buffGoldMult *
           (_online ? 1 + config.onlineGoldBonus : 1.0);
+      gold += earned;
+      _goldEarned += earned;
+      goldEarnedByDay[elapsedDays.floor()] = _goldEarned;
       _gainXp(prog.xp);
       // 재료: 처치당 materialDropChance 확률로 평균 1.5개, 3종에 고르게.
       //
