@@ -985,12 +985,22 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<void> adoptServerSave(Map<String, dynamic> json) async {
     final migrated = migrateToCurrent(json);
     var save = SaveGame.fromJson(migrated);
-    // 채택한 세이브가 **아직 정산 전 시즌**일 수 있다(서버는 다음 업로드에서
-    // 확정한다). 여기서 한 번 더 돌리지 않으면 시작 직후 트로피가 되돌아간
-    // 것처럼 보이고, 60초 뒤 서버 정산이 오면서 팝업이 두 번 뜬다.
     final data = ref.read(gameDataProvider).value;
     if (data != null) {
-      save = _applySeason(save, data, ref.read(clockProvider).now().toUtc());
+      final now = ref.read(clockProvider).now().toUtc();
+      // 채택한 세이브가 **아직 정산 전 시즌**일 수 있다(서버는 다음 업로드에서
+      // 확정한다). 여기서 한 번 더 돌리지 않으면 시작 직후 트로피가 되돌아간
+      // 것처럼 보이고, 60초 뒤 서버 정산이 오면서 팝업이 두 번 뜬다.
+      save = _applySeason(save, data, now);
+      // ⚠️ **방치 보상도 다시 정산해야 한다.**
+      //
+      // 서버 세이브의 `lastSeen` 은 마지막 업로드 시점이라 여기도 과거다.
+      // 안 돌리면 시작할 때 `build()` 가 계산한 보상이 이 채택으로 통째로
+      // 지워지는데(골드가 원래대로 돌아간다), `pendingOffline` 은 남아 있어
+      // **받지도 않은 금액을 팝업이 보여준다**(실측: +1,358 표시, 실제 0).
+      // `_commit` 이 `lastSeen` 을 지금으로 찍으므로 여기서 놓치면 그 구간은
+      // 영영 정산되지 않는다.
+      save = _applyOffline(save, data, now);
     }
     await _commit(save);
   }

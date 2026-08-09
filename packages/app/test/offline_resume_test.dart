@@ -143,4 +143,38 @@ void main() {
     expect(await ctrl.settleOffline(), isFalse);
     expect(c.read(saveControllerProvider).requireValue.gold, goldOnce);
   });
+
+  test('서버 세이브를 채택해도 방치 보상이 사라지지 않는다', () async {
+    // 앱을 켜면 build() 가 방치 보상을 얹고, 곧바로 서버 세이브를 채택한다.
+    // 채택이 그걸 지워버리면 **받지도 않은 금액을 팝업이 보여준다**
+    // (실측: 골드 2,358 → 1,000 으로 되돌아가는데 팝업은 +1,358).
+    final now = DateTime.utc(2026, 8, 9, 12);
+    final seed = SaveGame.initial(
+      createdAt: now.subtract(const Duration(days: 1)),
+    ).copyWith(lastSeen: now.subtract(const Duration(hours: 8)), gold: 1000);
+
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FakeRepo(seed)),
+        clockProvider.overrideWithValue(FixedClock(now)),
+      ],
+    );
+    addTearDown(c.dispose);
+
+    await c.read(saveControllerProvider.future);
+    final earned = c.read(saveControllerProvider).requireValue.gold;
+    expect(earned, greaterThan(1000)); // 방치 보상이 들어왔다
+
+    // 서버에는 방치 전(마지막 업로드 시점) 세이브가 있다.
+    await c
+        .read(saveControllerProvider.notifier)
+        .adoptServerSave(seed.toJson());
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.gold, earned); // 채택해도 그대로여야 한다
+
+    // 팝업이 보여줄 금액과 실제 지급액이 맞는지.
+    final report = c.read(saveControllerProvider.notifier).pendingOffline!;
+    expect(after.gold, 1000 + report.gold);
+  });
 }

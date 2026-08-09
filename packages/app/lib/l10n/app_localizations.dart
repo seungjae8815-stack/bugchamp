@@ -2632,6 +2632,36 @@ abstract class AppLocalizations {
   /// **'A shard of petrified insect. One is spent per hammer strike at the workshop.'**
   String get materialFossilDesc;
 
+  /// No description provided for @netLostTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection lost'**
+  String get netLostTitle;
+
+  /// No description provided for @netLostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection.\nProgress is only saved while connected.'**
+  String get netLostBody;
+
+  /// No description provided for @netRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get netRetry;
+
+  /// No description provided for @netToTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to title'**
+  String get netToTitle;
+
+  /// No description provided for @netStillDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Still not connected'**
+  String get netStillDown;
+
   /// No description provided for @materialsHint.
   ///
   /// In en, this message translates to:

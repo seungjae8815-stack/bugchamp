@@ -19,6 +19,7 @@ import '../ui/rank_popup.dart';
 import 'battle/battle_screen.dart';
 import 'play/play_screen.dart';
 import 'shop/craft_screen.dart';
+import 'title/title_screen.dart';
 import 'storage/storage_screen.dart';
 
 /// 하단 4탭 셸: 홈 · 채집함 · 전투 · 상점. 세이브 로드 완료 후 표시.
@@ -193,13 +194,26 @@ class _AppShellState extends ConsumerState<AppShell>
           if (exit) await SystemNavigator.pop();
         },
         child: Scaffold(
-          body: IndexedStack(
-            index: index,
+          body: Stack(
             children: [
-              const PlayScreen(),
-              StorageScreen(save: save),
-              const BattleScreen(),
-              const CraftScreen(),
+              IndexedStack(
+                index: index,
+                children: [
+                  const PlayScreen(),
+                  StorageScreen(save: save),
+                  const BattleScreen(),
+                  const CraftScreen(),
+                ],
+              ),
+              // 연결이 끊기면 **게임 위를 통째로 덮는다.** 오프라인 플레이를
+              // 허용하지 않으므로(타이틀에서도 입장을 막는다) 들어온 뒤에도
+              // 같은 기준을 적용한다.
+              ValueListenableBuilder<bool>(
+                valueListenable: serverDisconnected,
+                builder: (context, lost, _) => lost
+                    ? _DisconnectedOverlay(uploader: _uploader)
+                    : const SizedBox.shrink(),
+              ),
             ],
           ),
           bottomNavigationBar: _GameNavBar(
@@ -326,6 +340,108 @@ class _NavTab extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 연결이 끊겼을 때 게임 위를 덮는 화면. 닫을 수 없다 — 재접속하거나
+/// 타이틀로 돌아가야 한다.
+class _DisconnectedOverlay extends StatefulWidget {
+  const _DisconnectedOverlay({required this.uploader});
+
+  final ServerSaveUploader uploader;
+
+  @override
+  State<_DisconnectedOverlay> createState() => _DisconnectedOverlayState();
+}
+
+class _DisconnectedOverlayState extends State<_DisconnectedOverlay> {
+  bool _trying = false;
+  bool _failedOnce = false;
+
+  Future<void> _retry() async {
+    setState(() => _trying = true);
+    final ok = await widget.uploader.reconnect();
+    if (!mounted) return;
+    setState(() {
+      _trying = false;
+      _failedOnce = !ok;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Positioned.fill(
+      child: ColoredBox(
+        color: const Color(0xF20A1206),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 54,
+                  color: Color(0xFFFF8A65),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  l.netLostTitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l.netLostBody,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 13.5,
+                    height: 1.4,
+                  ),
+                ),
+                if (_failedOnce) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    l.netStillDown,
+                    style: const TextStyle(
+                      color: Color(0xFFEF9A9A),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    gameDialogButton(
+                      l.netToTitle,
+                      () => Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TitleScreen(),
+                        ),
+                        (r) => false,
+                      ),
+                      primary: false,
+                    ),
+                    const SizedBox(width: 10),
+                    gameDialogButton(
+                      _trying ? '...' : l.netRetry,
+                      _trying ? () {} : _retry,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

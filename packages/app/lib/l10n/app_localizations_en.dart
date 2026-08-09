@@ -1422,6 +1422,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'A shard of petrified insect. One is spent per hammer strike at the workshop.';
 
   @override
+  String get netLostTitle => 'Connection lost';
+
+  @override
+  String get netLostBody =>
+      'Check your internet connection.\nProgress is only saved while connected.';
+
+  @override
+  String get netRetry => 'Retry';
+
+  @override
+  String get netToTitle => 'Back to title';
+
+  @override
+  String get netStillDown => 'Still not connected';
+
+  @override
   String get materialsHint =>
       'Materials — used for upgrades, part enhancement & crafting (tap for details)';
 

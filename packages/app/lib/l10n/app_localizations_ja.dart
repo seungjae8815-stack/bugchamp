@@ -1402,6 +1402,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get materialFossilDesc => '昆虫が固まって残ったかけら。工房で一振りにつき一つ使う。';
 
   @override
+  String get netLostTitle => '接続が切れました';
+
+  @override
+  String get netLostBody => 'インターネット接続を確認してください。\n接続中のみ進行が保存されます。';
+
+  @override
+  String get netRetry => '再試行';
+
+  @override
+  String get netToTitle => 'タイトルへ';
+
+  @override
+  String get netStillDown => 'まだ接続できていません';
+
+  @override
   String get materialsHint => '素材 — ステータス・部位強化とクラフトに使用（タップで詳細）';
 
   @override

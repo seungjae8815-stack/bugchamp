@@ -1401,6 +1401,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get materialFossilDesc => '곤충이 굳어 남은 조각. 공방에서 망치질 한 번에 하나씩 쓴다.';
 
   @override
+  String get netLostTitle => '연결이 끊겼어요';
+
+  @override
+  String get netLostBody => '인터넷 연결을 확인해 주세요.\n연결되어야 진행이 저장됩니다.';
+
+  @override
+  String get netRetry => '다시 시도';
+
+  @override
+  String get netToTitle => '타이틀로';
+
+  @override
+  String get netStillDown => '아직 연결되지 않았어요';
+
+  @override
   String get materialsHint => '재료 — 능력치·부위 강화와 제작에 사용해요 (탭하면 상세)';
 
   @override

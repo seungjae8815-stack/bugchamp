@@ -97,6 +97,14 @@ Future<ServerResult> fetchStateWithAuthRetry(
   return state;
 }
 
+/// 서버 연결이 끊겼는지. 화면(앱 셸)이 듣고 **게임을 멈춘 뒤 재접속을 요구**한다.
+///
+/// 이 게임은 오프라인 플레이를 허용하지 않는다 — 타이틀에서 네트워크가 없으면
+/// 입장 자체를 막는다. 그런데 **입장 뒤에는** 감시가 없어서, 끊긴 채 계속 놀다가
+/// 앱을 껐다 켜면 서버의 낡은 세이브를 채택하며 그동안의 진행이 사라졌다.
+/// 들어온 뒤에도 같은 기준을 적용한다.
+final serverDisconnected = ValueNotifier<bool>(false);
+
 /// 기기 권위 세이브를 **주기적으로 서버에 올린다**(저장·백업).
 ///
 /// 솔로 루프는 기기가 즉시 처리하고, 이 업로더가 변경분이 있을 때만
@@ -113,6 +121,20 @@ class ServerSaveUploader {
   /// 마지막으로 올린 세이브의 직렬화(변경 감지용).
   String? _lastUploaded;
   bool _inFlight = false;
+
+  /// 연속 실패 횟수. [_failThreshold] 를 넘으면 끊긴 것으로 본다.
+  int _fails = 0;
+
+  /// 몇 번 연속 실패해야 "끊김"인가. 한 번의 실패로 튕기면 지하철에서
+  /// 잠깐 끊길 때마다 쫓겨난다 — 짧게 재시도해 보고 판단한다.
+  @visibleForTesting
+  static const failThreshold = 3;
+
+  /// 실패 뒤 재시도 간격. 60초를 그대로 기다리면 유저가 3분 동안
+  /// **저장되지 않는 줄 모르고** 논다.
+  static const retryDelay = Duration(seconds: 10);
+
+  Timer? _retry;
 
   /// 업로드 주기. 세이브 **전체**를 올리는 호출이라 짧을수록 트래픽·서버
   /// 인스턴스 시간이 그대로 늘어난다(10초였을 때 하루 8 vCPU-시간까지 갔다).
@@ -164,16 +186,51 @@ class ServerSaveUploader {
         final boot = await server.bootstrap(json);
         if (boot.isOk) _lastUploaded = encoded;
       } else {
-        debugPrint('[save] 업로드 실패(다음 주기 재시도): ${res.error}');
+        debugPrint('[save] 업로드 실패(재시도 예약): ${res.error}');
+        _onFail();
+        return;
       }
+      _onOk();
+    } catch (e) {
+      debugPrint('[save] 업로드 예외(재시도 예약): $e');
+      _onFail();
     } finally {
       _inFlight = false;
     }
   }
 
+  void _onOk() {
+    _fails = 0;
+    _retry?.cancel();
+    _retry = null;
+    serverDisconnected.value = false;
+  }
+
+  void _onFail() {
+    _fails++;
+    if (_fails >= failThreshold) {
+      serverDisconnected.value = true;
+      return; // 화면이 재접속을 요구한다 — 여기서 계속 두드리지 않는다.
+    }
+    _retry?.cancel();
+    _retry = Timer(retryDelay, flush);
+  }
+
+  /// 재접속 시도(끊김 화면의 "다시 시도"). 성공하면 true.
+  Future<bool> reconnect() async {
+    _fails = 0;
+    // 변경 감지를 무력화해 **반드시 한 번 올려본다** — 안 그러면 올릴 게
+    // 없을 때 실패인지 성공인지 알 수 없다.
+    _lastUploaded = null;
+    await flush();
+    return !serverDisconnected.value;
+  }
+
   void stop() {
     _timer?.cancel();
     _timer = null;
+    _retry?.cancel();
+    _retry = null;
   }
 }
 
