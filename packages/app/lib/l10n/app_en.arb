@@ -522,7 +522,7 @@
   "chatPlaceholder": "Global chat — tap to open",
   "characterTitle": "My Character",
   "statCombatPower": "Combat Power",
-  "statCrit": "Crit",
+  "statCrit": "Critical",
   "statMaxHp": "Max HP",
   "statDefense": "Defense",
   "rankingTitle": "Ranking",
@@ -1243,5 +1243,15 @@
         "type": "int"
       }
     }
-  }
+  },
+  "charTabStats": "Stats",
+  "charTabPets": "Pets",
+  "charTabSkills": "Skills",
+  "forgeGradeButton": "Workshop grade",
+  "statHp": "Health",
+  "statGoldGain": "Gold Gain",
+  "statMaterialGain": "Material Gain",
+  "statBugFind": "Bug Find",
+  "charNoPet": "No pet",
+  "charPetHint": "Manage pets in the collection box"
 }

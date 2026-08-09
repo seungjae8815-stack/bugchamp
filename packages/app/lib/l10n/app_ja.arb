@@ -241,9 +241,9 @@
   "chatPlaceholder": "全体チャット — タップで開く",
   "characterTitle": "マイキャラクター",
   "statCombatPower": "戦闘力",
-  "statCrit": "クリティカル",
+  "statCrit": "会心",
   "statMaxHp": "最大体力",
-  "statDefense": "防御力",
+  "statDefense": "防御",
   "rankingTitle": "ランキング",
   "roadmapTitle": "ロードマップ",
   "roadmapStageRange": "STAGE {start}–{end}",
@@ -598,5 +598,15 @@
   "skillLearn": "習得",
   "skillLevelUp": "レベル {lv} → {next}",
   "skillEquipped": "装備中",
-  "skillSlotsFull": "スキル枠がいっぱいです"
+  "skillSlotsFull": "スキル枠がいっぱいです",
+  "charTabStats": "能力値",
+  "charTabPets": "ペット",
+  "charTabSkills": "スキル",
+  "forgeGradeButton": "工房グレード",
+  "statHp": "体力",
+  "statGoldGain": "金貨獲得",
+  "statMaterialGain": "素材獲得",
+  "statBugFind": "昆虫発見率",
+  "charNoPet": "ペットなし",
+  "charPetHint": "ペットの編成は採集箱で行います"
 }

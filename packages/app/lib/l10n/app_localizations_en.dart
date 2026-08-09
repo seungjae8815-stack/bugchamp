@@ -818,7 +818,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statCombatPower => 'Combat Power';
 
   @override
-  String get statCrit => 'Crit';
+  String get statCrit => 'Critical';
 
   @override
   String get statMaxHp => 'Max HP';
@@ -2010,4 +2010,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillSlotsFull => 'Skill slots are full';
+
+  @override
+  String get charTabStats => 'Stats';
+
+  @override
+  String get charTabPets => 'Pets';
+
+  @override
+  String get charTabSkills => 'Skills';
+
+  @override
+  String get forgeGradeButton => 'Workshop grade';
+
+  @override
+  String get statHp => 'Health';
+
+  @override
+  String get statGoldGain => 'Gold Gain';
+
+  @override
+  String get statMaterialGain => 'Material Gain';
+
+  @override
+  String get statBugFind => 'Bug Find';
+
+  @override
+  String get charNoPet => 'No pet';
+
+  @override
+  String get charPetHint => 'Manage pets in the collection box';
 }

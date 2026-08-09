@@ -803,13 +803,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statCombatPower => '戦闘力';
 
   @override
-  String get statCrit => 'クリティカル';
+  String get statCrit => '会心';
 
   @override
   String get statMaxHp => '最大体力';
 
   @override
-  String get statDefense => '防御力';
+  String get statDefense => '防御';
 
   @override
   String get rankingTitle => 'ランキング';
@@ -1975,4 +1975,34 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get skillSlotsFull => 'スキル枠がいっぱいです';
+
+  @override
+  String get charTabStats => '能力値';
+
+  @override
+  String get charTabPets => 'ペット';
+
+  @override
+  String get charTabSkills => 'スキル';
+
+  @override
+  String get forgeGradeButton => '工房グレード';
+
+  @override
+  String get statHp => '体力';
+
+  @override
+  String get statGoldGain => '金貨獲得';
+
+  @override
+  String get statMaterialGain => '素材獲得';
+
+  @override
+  String get statBugFind => '昆虫発見率';
+
+  @override
+  String get charNoPet => 'ペットなし';
+
+  @override
+  String get charPetHint => 'ペットの編成は採集箱で行います';
 }

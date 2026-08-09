@@ -1549,7 +1549,7 @@ abstract class AppLocalizations {
   /// No description provided for @statCrit.
   ///
   /// In en, this message translates to:
-  /// **'Crit'**
+  /// **'Critical'**
   String get statCrit;
 
   /// No description provided for @statMaxHp.
@@ -3693,6 +3693,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skill slots are full'**
   String get skillSlotsFull;
+
+  /// No description provided for @charTabStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats'**
+  String get charTabStats;
+
+  /// No description provided for @charTabPets.
+  ///
+  /// In en, this message translates to:
+  /// **'Pets'**
+  String get charTabPets;
+
+  /// No description provided for @charTabSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get charTabSkills;
+
+  /// No description provided for @forgeGradeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop grade'**
+  String get forgeGradeButton;
+
+  /// No description provided for @statHp.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get statHp;
+
+  /// No description provided for @statGoldGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold Gain'**
+  String get statGoldGain;
+
+  /// No description provided for @statMaterialGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Material Gain'**
+  String get statMaterialGain;
+
+  /// No description provided for @statBugFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Find'**
+  String get statBugFind;
+
+  /// No description provided for @charNoPet.
+  ///
+  /// In en, this message translates to:
+  /// **'No pet'**
+  String get charNoPet;
+
+  /// No description provided for @charPetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage pets in the collection box'**
+  String get charPetHint;
 }
 
 class _AppLocalizationsDelegate

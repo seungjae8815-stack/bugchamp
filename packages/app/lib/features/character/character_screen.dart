@@ -4,68 +4,244 @@ import 'package:core_save/core_save.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/game_data.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'equip_widgets.dart';
-import 'forge_screen.dart';
+import 'forge_panel.dart';
 
 const _honey = Color(0xFFFFD54F);
 
+/// 상단 3버튼이 무엇을 보여줄지.
+enum _Panel { stats, pets, skills }
+
 /// 캐릭터 탭 — **내 전력을 조립하는 곳**.
 ///
-/// 장비 8부위 · 펫 3마리 · 스킬 5칸이 한 화면에 모인다. 채집함은 "곤충 목록"
-/// 으로 역할이 갈린다 — 예전엔 채집함 상단에 펫 슬롯이 얹혀 있어 목록과
-/// 전력 조립이 섞여 있었다.
-class CharacterScreen extends ConsumerWidget {
+/// 위 → 아래: [능력치][펫][스킬] 버튼 · 메인 캐릭터와 곁에 선 곤충들 ·
+/// 고른 패널 · 장비 8칸 · **제련/자동** · **공방 등급**.
+class CharacterScreen extends ConsumerStatefulWidget {
   const CharacterScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CharacterScreen> createState() => _CharacterScreenState();
+}
+
+class _CharacterScreenState extends ConsumerState<CharacterScreen> {
+  _Panel _panel = _Panel.stats;
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
-    final data = ref.watch(gameDataProvider).value;
-    final items = data?.itemConfig;
+    final items = ref.watch(gameDataProvider).value?.itemConfig;
 
     return Scaffold(
       appBar: AppBar(title: Text(l.navCharacter)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 24),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 24),
         children: [
-          _PowerHeader(save: save),
+          _tabs(l),
           const SizedBox(height: 10),
+          _Portrait(save: save),
+          const SizedBox(height: 10),
+          switch (_panel) {
+            _Panel.stats => _StatsPanel(save: save),
+            _Panel.pets => _PetsPanel(save: save),
+            _Panel.skills => _SkillsPanel(save: save),
+          },
+          const SizedBox(height: 12),
           if (items != null) ...[
-            _section(l.charEquipment),
             _EquipGrid(save: save, config: items),
-            const SizedBox(height: 8),
-            _ForgeEntry(save: save),
+            const SizedBox(height: 10),
+            // 장비 **바로 밑** — 가운데 제련, 옆에 자동. 그 밑에 공방 등급.
+            const ForgeBar(),
           ],
-          const SizedBox(height: 14),
-          _section(l.charSkills),
-          _SkillPanel(save: save),
         ],
       ),
     );
   }
 
-  Widget _section(String title) => Padding(
-    padding: const EdgeInsets.only(bottom: 6, top: 2),
-    child: Text(
-      title,
-      style: const TextStyle(
-        color: _honey,
-        fontWeight: FontWeight.w900,
-        fontSize: 14,
-      ),
-    ),
+  Widget _tabs(AppLocalizations l) => Row(
+    children: [
+      _tab(l.charTabStats, Icons.person_rounded, _Panel.stats),
+      const SizedBox(width: 6),
+      _tab(l.charTabPets, Icons.pets_rounded, _Panel.pets),
+      const SizedBox(width: 6),
+      _tab(l.charTabSkills, Icons.auto_awesome_rounded, _Panel.skills),
+    ],
   );
+
+  Widget _tab(String text, IconData icon, _Panel p) {
+    final on = _panel == p;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _panel = p),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: on ? const Color(0x33FFD54F) : const Color(0x33121A10),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: on ? _honey : const Color(0x22FFFFFF),
+              width: on ? 1.6 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 15, color: on ? _honey : Colors.white70),
+              const SizedBox(width: 5),
+              Text(
+                text,
+                style: TextStyle(
+                  color: on ? _honey : Colors.white70,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _PowerHeader extends ConsumerWidget {
-  const _PowerHeader({required this.save});
+/// 메인 캐릭터 + 곁에 선 장착 곤충들.
+class _Portrait extends ConsumerWidget {
+  const _Portrait({required this.save});
+  final SaveGame save;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final data = ref.watch(gameDataProvider).value;
+    final locale = Localizations.localeOf(context).languageCode;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x88243016), Color(0x66121A10)],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x33FFFFFF)),
+      ),
+      child: Row(
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 66,
+                height: 66,
+                decoration: BoxDecoration(
+                  color: const Color(0x33FFD54F),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _honey, width: 2),
+                ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  size: 40,
+                  color: _honey,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Lv.${save.level}',
+                style: const TextStyle(
+                  color: _honey,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Row(
+              children: [
+                for (var i = 0; i < 3; i++)
+                  Expanded(
+                    child: _petFace(
+                      l,
+                      data,
+                      locale,
+                      i < save.equippedBugIds.length
+                          ? save.equippedBugIds[i]
+                          : null,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _petFace(
+    AppLocalizations l,
+    GameData? data,
+    String locale,
+    String? bugId,
+  ) {
+    IndividualBug? bug;
+    if (bugId != null) {
+      for (final b in save.bugs) {
+        if (b.id == bugId) {
+          bug = b;
+          break;
+        }
+      }
+    }
+    final species = bug == null ? null : data?.speciesById[bug.speciesId];
+    final color = species == null
+        ? const Color(0x33FFFFFF)
+        : gradeColor(species.grade);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Column(
+        children: [
+          Container(
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0x33121A10),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color),
+            ),
+            alignment: Alignment.center,
+            child: Icon(Icons.bug_report_rounded, size: 24, color: color),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            species?.name.resolve(locale) ?? l.charNoPet,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: species == null
+                  ? const Color(0x66FFFFFF)
+                  : const Color(0xCCFFFFFF),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 능력치 — 장비까지 반영된 **지금 값**.
+class _StatsPanel extends ConsumerWidget {
+  const _StatsPanel({required this.save});
   final SaveGame save;
 
   @override
@@ -73,40 +249,115 @@ class _PowerHeader extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final data = ref.watch(gameDataProvider).value;
     final run = data?.runConfig;
-    var power = 0.0;
-    if (run != null) {
-      final base = deriveStats(
+    if (run == null) return const SizedBox.shrink();
+
+    final s = applyEquipment(
+      deriveStats(
         run,
         upgradeLevels: save.upgradeLevels,
         characterLevel: save.level,
         bugsCollected: save.bugs.length,
-      );
-      final withGear = applyEquipment(
-        base,
-        equipmentBonus(save.equippedItems.values, data?.itemConfig),
-      );
-      power = withGear.attack * withGear.attackSpeed;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0x66121A10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x33FFFFFF)),
       ),
-      child: Column(
+      equipmentBonus(save.equippedItems.values, data?.itemConfig),
+    );
+
+    return _box(
+      Column(
+        children: [
+          _row(l.statAttack, formatCompact(s.attack)),
+          _row(l.statAttackSpeed, '×${s.attackSpeed.toStringAsFixed(2)}'),
+          _row(
+            l.statCrit,
+            '${(s.critChance * 100).toStringAsFixed(1)}% · '
+            '×${s.critDamage.toStringAsFixed(2)}',
+          ),
+          _row(l.statHp, formatCompact(s.maxHp)),
+          _row(l.statDefense, formatCompact(s.defense)),
+          _row(l.statGoldGain, '×${s.rewardMultiplier.toStringAsFixed(2)}'),
+          _row(l.statMaterialGain, '×${s.materialFind.toStringAsFixed(2)}'),
+          _row(l.statBugFind, '×${s.bugFind.toStringAsFixed(2)}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String k, String v) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            k,
+            style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 12.5),
+          ),
+        ),
+        Text(
+          v,
+          style: const TextStyle(
+            color: _honey,
+            fontWeight: FontWeight.w900,
+            fontSize: 12.5,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// 펫 — 지금 받고 있는 보너스. 편성은 아직 채집함에서 한다(이동은 별도 단계).
+class _PetsPanel extends ConsumerWidget {
+  const _PetsPanel({required this.save});
+  final SaveGame save;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final data = ref.watch(gameDataProvider).value;
+    final cfg = data?.petConfig;
+    var atk = '0';
+    var hp = '0';
+    if (cfg != null) {
+      final now = ref.read(clockProvider).now().toUtc();
+      final pets = <PetStat>[];
+      for (final id in save.equippedBugIds) {
+        IndividualBug? bug;
+        for (final b in save.bugs) {
+          if (b.id == id) {
+            bug = b;
+            break;
+          }
+        }
+        final sp = bug == null ? null : data?.speciesById[bug.speciesId];
+        if (bug == null || sp == null) continue;
+        pets.add((
+          grade: sp.grade,
+          sizeMult: bug.statMultiplier(sp),
+          potential: bug.potential,
+          enhanceTotal: bug.enhancement.total,
+          stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
+          level: bug.level,
+        ));
+      }
+      final pb = computePetBonus(pets, cfg);
+      atk = ((pb.attackMult - 1) * 100).toStringAsFixed(0);
+      hp = ((pb.hpMult - 1) * 100).toStringAsFixed(0);
+    }
+    return _box(
+      Column(
         children: [
           Text(
-            l.charPower,
-            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
-          ),
-          Text(
-            formatCompact(power),
+            l.petBonus(atk, hp),
             style: const TextStyle(
               color: _honey,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
             ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l.charPetHint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
           ),
         ],
       ),
@@ -114,176 +365,9 @@ class _PowerHeader extends ConsumerWidget {
   }
 }
 
-/// 장비 8칸 — 부위마다 **낀 것 1개**. 가방이 없다.
-class _EquipGrid extends ConsumerWidget {
-  const _EquipGrid({required this.save, required this.config});
-  final SaveGame save;
-  final ItemConfig config;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return GridView.count(
-      crossAxisCount: 4,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      childAspectRatio: 0.78,
-      children: [
-        for (final slot in EquipSlot.values)
-          _EquipCell(
-            slot: slot,
-            item: save.equippedItems[slot],
-            config: config,
-          ),
-      ],
-    );
-  }
-}
-
-class _EquipCell extends ConsumerWidget {
-  const _EquipCell({
-    required this.slot,
-    required this.item,
-    required this.config,
-  });
-
-  final EquipSlot slot;
-  final EquipItem? item;
-  final ItemConfig config;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
-    final color = item == null
-        ? const Color(0x33FFFFFF)
-        : tierColor(config, item!.tier);
-    return InkWell(
-      onTap: item == null ? null : () => _showDetail(context, ref, locale),
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0x55121A10),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color, width: item == null ? 1 : 1.8),
-        ),
-        padding: const EdgeInsets.all(5),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(slotIcon(slot), size: 22, color: color),
-            const SizedBox(height: 4),
-            Text(
-              slotLabel(l, slot),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0x99FFFFFF),
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              item == null
-                  ? l.charEmptySlot
-                  : config.tier(item!.tier).name.resolve(locale),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: item == null ? const Color(0x66FFFFFF) : color,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDetail(BuildContext context, WidgetRef ref, String locale) {
-    final l = AppLocalizations.of(context);
-    showGameDialog<void>(
-      context,
-      title: itemName(config, l, locale, item!),
-      icon: slotIcon(slot),
-      content: ItemOptionList(item: item!, config: config),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
-    );
-  }
-}
-
-/// 공방 진입 — 캐릭터 탭 하단의 모루.
-class _ForgeEntry extends ConsumerWidget {
-  const _ForgeEntry({required this.save});
-  final SaveGame save;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final fossil = save.materialCount(MaterialKind.fossil);
-    return InkWell(
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const ForgeScreen())),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4A3420), Color(0xFF2A1D12)],
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0x55FFD54F)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.hardware_rounded, color: _honey, size: 26),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.forgeTitle,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    l.forgeLevel(save.forgeLevel + 1),
-                    style: const TextStyle(
-                      color: Color(0x99FFFFFF),
-                      fontSize: 11.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              formatCompact(fossil),
-              style: const TextStyle(
-                color: _honey,
-                fontWeight: FontWeight.w900,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, color: Color(0x99FFFFFF)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 스킬 — **액티브·패시브 공용 5칸**. 나누면 선택이 사라진다.
-class _SkillPanel extends ConsumerWidget {
-  const _SkillPanel({required this.save});
+/// 스킬 — 액티브·패시브 **공용 5칸**.
+class _SkillsPanel extends ConsumerWidget {
+  const _SkillsPanel({required this.save});
   final SaveGame save;
 
   @override
@@ -296,12 +380,12 @@ class _SkillPanel extends ConsumerWidget {
 
     return Column(
       children: [
-        for (final s in cfg.skills) _skillRow(context, l, locale, ctrl, cfg, s),
+        for (final def in cfg.skills) _row(context, l, locale, ctrl, cfg, def),
       ],
     );
   }
 
-  Widget _skillRow(
+  Widget _row(
     BuildContext context,
     AppLocalizations l,
     String locale,
@@ -360,18 +444,17 @@ class _SkillPanel extends ConsumerWidget {
             ),
           ),
           if (owned)
-            _miniButton(equipped ? l.skillEquipped : l.charEquipment, () async {
-              final before = save.equippedSkills.length;
+            _mini(equipped ? l.skillEquipped : l.charEquipment, () async {
+              final wasFull = save.equippedSkills.length >= cfg.equipSlots;
               await ctrl.toggleSkill(def.id);
-              if (!context.mounted) return;
-              // 칸이 가득 차 무시됐으면 이유를 알려준다 — 눌렀는데 아무 일도
+              // 칸이 차서 무시됐으면 이유를 알려준다 — 눌렀는데 아무 일도
               // 없으면 고장으로 보인다.
-              if (!equipped && before >= cfg.equipSlots) {
+              if (!equipped && wasFull && context.mounted) {
                 showCenterToast(context, l.skillSlotsFull);
               }
             }, on: equipped),
           const SizedBox(width: 6),
-          _miniButton(
+          _mini(
             owned ? '+' : l.skillLearn,
             canLevel
                 ? () => ctrl.levelUpSkill(def.id)
@@ -384,7 +467,7 @@ class _SkillPanel extends ConsumerWidget {
     );
   }
 
-  Widget _miniButton(
+  Widget _mini(
     String text,
     VoidCallback onTap, {
     required bool on,
@@ -410,3 +493,107 @@ class _SkillPanel extends ConsumerWidget {
     ),
   );
 }
+
+/// 장비 8칸 — 부위마다 **낀 것 1개**. 가방이 없다.
+class _EquipGrid extends StatelessWidget {
+  const _EquipGrid({required this.save, required this.config});
+  final SaveGame save;
+  final ItemConfig config;
+
+  @override
+  Widget build(BuildContext context) => GridView.count(
+    crossAxisCount: 4,
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    mainAxisSpacing: 6,
+    crossAxisSpacing: 6,
+    childAspectRatio: 0.82,
+    children: [
+      for (final slot in EquipSlot.values)
+        _EquipCell(slot: slot, item: save.equippedItems[slot], config: config),
+    ],
+  );
+}
+
+class _EquipCell extends StatelessWidget {
+  const _EquipCell({
+    required this.slot,
+    required this.item,
+    required this.config,
+  });
+
+  final EquipSlot slot;
+  final EquipItem? item;
+  final ItemConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final color = item == null
+        ? const Color(0x33FFFFFF)
+        : tierColor(config, item!.tier);
+    return InkWell(
+      onTap: item == null ? null : () => _detail(context, locale),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0x55121A10),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color, width: item == null ? 1 : 1.8),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(slotIcon(slot), size: 21, color: color),
+            const SizedBox(height: 3),
+            Text(
+              slotLabel(l, slot),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0x99FFFFFF),
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              item == null
+                  ? l.charEmptySlot
+                  : config.tier(item!.tier).name.resolve(locale),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: item == null ? const Color(0x66FFFFFF) : color,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _detail(BuildContext context, String locale) {
+    final l = AppLocalizations.of(context);
+    showGameDialog<void>(
+      context,
+      title: itemName(config, l, locale, item!),
+      icon: slotIcon(slot),
+      content: ItemOptionList(item: item!, config: config),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    );
+  }
+}
+
+Widget _box(Widget child) => Container(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  decoration: BoxDecoration(
+    color: const Color(0x55121A10),
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: const Color(0x22FFFFFF)),
+  ),
+  child: child,
+);

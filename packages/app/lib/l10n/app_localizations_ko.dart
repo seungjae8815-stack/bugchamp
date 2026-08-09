@@ -809,7 +809,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get statMaxHp => '최대 체력';
 
   @override
-  String get statDefense => '방어력';
+  String get statDefense => '방어';
 
   @override
   String get rankingTitle => '랭킹';
@@ -1974,4 +1974,34 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get skillSlotsFull => '스킬 칸이 가득 찼어요';
+
+  @override
+  String get charTabStats => '능력치';
+
+  @override
+  String get charTabPets => '펫';
+
+  @override
+  String get charTabSkills => '스킬';
+
+  @override
+  String get forgeGradeButton => '공방 등급';
+
+  @override
+  String get statHp => '체력';
+
+  @override
+  String get statGoldGain => '골드 획득';
+
+  @override
+  String get statMaterialGain => '재료 획득';
+
+  @override
+  String get statBugFind => '곤충 발견율';
+
+  @override
+  String get charNoPet => '펫 없음';
+
+  @override
+  String get charPetHint => '펫 편성은 채집함에서 해요';
 }

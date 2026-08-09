@@ -250,7 +250,7 @@
   "statCombatPower": "전투력",
   "statCrit": "치명타",
   "statMaxHp": "최대 체력",
-  "statDefense": "방어력",
+  "statDefense": "방어",
   "rankingTitle": "랭킹",
   "roadmapTitle": "로드맵",
   "roadmapStageRange": "STAGE {start}–{end}",
@@ -633,5 +633,15 @@
   "skillLearn": "습득",
   "skillLevelUp": "레벨 {lv} → {next}",
   "skillEquipped": "장착 중",
-  "skillSlotsFull": "스킬 칸이 가득 찼어요"
+  "skillSlotsFull": "스킬 칸이 가득 찼어요",
+  "charTabStats": "능력치",
+  "charTabPets": "펫",
+  "charTabSkills": "스킬",
+  "forgeGradeButton": "공방 등급",
+  "statHp": "체력",
+  "statGoldGain": "골드 획득",
+  "statMaterialGain": "재료 획득",
+  "statBugFind": "곤충 발견율",
+  "charNoPet": "펫 없음",
+  "charPetHint": "펫 편성은 채집함에서 해요"
 }
