@@ -49,6 +49,19 @@ const _buffDpsMult = 1.4;
 /// 그래서 정액으로 둔다(day1 골드의 25% 수준, day25 엔 반올림 오차).
 const _dailyBonusGold = 100000.0;
 
+/// 전투 밖에서 하루에 들어오는 **재료**(3종 각각).
+///
+/// 일일보상 80(점심30+저녁50) + 깜짝선물 약 11회 × 평균 36 = 약 480.
+/// 처치 드롭만 세면 재료가 **덜 남는 것처럼** 보인다 — 실제로는 이만큼이
+/// 매일 더 들어온다(고정값이라 후반일수록 비중은 줄어든다).
+const _dailyBonusMaterials = 480.0;
+
+/// `--mat-cost-growth=` 로 모든 업그레이드의 재료비 증가율을 덮어쓴다(탐색용).
+double? _matCostGrowth;
+
+/// `--mat-base-mult=` 로 재료 기본비용을 일괄 배수한다(탐색용).
+double _matBaseMult = 1.0;
+
 /// 펫을 다 갖췄을 때의 추가 공격 배율(+150% = x2.5).
 /// pets.json 의 상한(전설3 만렙 x4.04)이 아니라 **평균적인 유저**를 가정한다.
 /// `--pet-bonus=` 로 덮어쓸 수 있다(펫 상한을 바꿔볼 때).
@@ -176,6 +189,42 @@ void main(List<String> args) {
   }
 
   stdout.writeln('');
+  // ── 재료 수지 ──
+  //
+  // 재료가 남아돈다는 건 **골드가 병목**이라는 뜻이다. 업그레이드 골드값은
+  // 레벨당 1.15~1.30 으로 폭증하는데 재료값은 1.09~1.11 이라 격차가 벌어진다.
+  // ── 재료 수지 ──
+  //
+  // 재료가 남아돈다는 건 **골드가 병목**이라는 뜻이다. 업그레이드 골드값은
+  // 레벨당 1.15~1.30 으로 폭증하는데 재료값은 1.09~1.11 이라 격차가 벌어진다.
+  stdout.writeln('── 재료 수지(키틴 기준) ──');
+  stdout.writeln('  스테이지 |     번 것 |    남은 것 | 미사용 | 남은골드');
+  for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
+    final v = sim.matAt[m];
+    if (v == null) continue;
+    final pct = v.earned <= 0 ? 0.0 : v.mat / v.earned * 100;
+    stdout.writeln(
+      '  ${m.toString().padLeft(7)}  | ${_num(v.earned).padLeft(9)} |'
+      ' ${_num(v.mat).padLeft(10)} | ${pct.toStringAsFixed(0).padLeft(5)}% |'
+      ' ${_num(v.gold).padLeft(8)}',
+    );
+  }
+  stdout.writeln('');
+
+  stdout.writeln('── 업그레이드가 막힌 이유(구간별) ──');
+  stdout.writeln('  재료가 100% 면 재료만 모으는 게임, 0% 면 재료가 장식이다.');
+  for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
+    final b = sim.blockedAt[m];
+    if (b == null) continue;
+    final tot = b.gold + b.mat;
+    final pct = tot == 0 ? 0.0 : b.mat / tot * 100;
+    stdout.writeln(
+      '  스테이지 ${m.toString().padLeft(4)} : 재료 때문 '
+      '${pct.toStringAsFixed(0).padLeft(3)}%  (골드 ${b.gold} · 재료 ${b.mat})',
+    );
+  }
+  stdout.writeln('');
+
   stdout.writeln('── 결과 ──');
   for (final m in marks) {
     final d = sim.reached[m];
@@ -194,6 +243,14 @@ void main(List<String> args) {
 }
 
 /// 하루 = 활동 + 오프라인 시간. 소수 일수를 사람이 읽는 표기로.
+/// 큰 수를 읽기 쉽게(1234567 → 1.2M).
+String _num(double v) {
+  if (v >= 1e9) return '${(v / 1e9).toStringAsFixed(1)}B';
+  if (v >= 1e6) return '${(v / 1e6).toStringAsFixed(1)}M';
+  if (v >= 1e3) return '${(v / 1e3).toStringAsFixed(1)}K';
+  return v.toStringAsFixed(0);
+}
+
 String _days(double d) {
   if (d < 1) return '${(d * 24).toStringAsFixed(1)}시간';
   return '${d.toStringAsFixed(1)}일';
@@ -253,6 +310,18 @@ class _Player {
   final Map<UpgradeKind, int> levels = {};
   final Map<MaterialKind, double> materials = {};
 
+  /// 지금까지 **번** 재료 누계(남은 양과 비교해 미사용 비율을 본다).
+  final Map<MaterialKind, double> earnedMaterials = {};
+
+  /// 업그레이드를 못 산 이유 집계 — **체감**은 재고가 아니라 "뭐가 막았나"다.
+  /// 재고 스냅샷은 방금 지른 직후냐 아니냐로 크게 튀어 지표로 못 쓴다.
+  final Map<int, ({int gold, int mat})> blockedAt = {};
+  int _blockGold = 0;
+  int _blockMat = 0;
+
+  /// 스테이지 체크포인트에서의 (남은 재료, 남은 골드) — 어디서 남아도는지 본다.
+  final Map<int, ({double mat, double gold, double earned})> matAt = {};
+
   /// 진행도에 따른 **펫 공격 배율**.
   ///
   /// 예전엔 펫을 통째로 빼고 계산했다("맨몸 = 가장 느린 경로"). 그런데 실제
@@ -296,6 +365,14 @@ class _Player {
   void playDay() {
     // 전투 밖 보상(일일·선물·미션·결투)은 하루 한 번 정액으로 넣는다.
     gold += _dailyBonusGold;
+    for (final k in const [
+      MaterialKind.chitin,
+      MaterialKind.mineral,
+      MaterialKind.sap,
+    ]) {
+      materials[k] = (materials[k] ?? 0) + _dailyBonusMaterials;
+      earnedMaterials[k] = (earnedMaterials[k] ?? 0) + _dailyBonusMaterials;
+    }
     // 접속 보너스는 **활동 구간에만** — 켜두는 쪽이 이득이어야 한다.
     _online = true;
     _run(_activeHoursPerDay * 3600, 1.0);
@@ -329,6 +406,18 @@ class _Player {
           return (hp / dmg).ceil();
         });
       }
+      for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
+        if (prevStage < m && stage >= m) {
+          blockedAt[m] = (gold: _blockGold, mat: _blockMat);
+          _blockGold = 0;
+          _blockMat = 0;
+          matAt[m] = (
+            mat: materials[MaterialKind.chitin] ?? 0,
+            gold: gold,
+            earned: earnedMaterials[MaterialKind.chitin] ?? 0,
+          );
+        }
+      }
       prevStage = stage;
       stage = prog.newStage;
       gold +=
@@ -337,17 +426,24 @@ class _Player {
           (_online ? 1 + config.onlineGoldBonus : 1.0);
       _gainXp(prog.xp);
       // 재료: 처치당 materialDropChance 확률로 평균 1.5개, 3종에 고르게.
-      final mats =
-          prog.habitatClears *
-          config.materialDropChance *
-          stats.materialFind *
-          1.5;
+      //
+      // ⚠️ **접속 중에만** 떨어진다. 오프라인 정산(`computeOfflineReward`)은
+      // 골드·경험치만 준다 — 여기서 오프라인까지 세면 재료 수입을 40% 넘게
+      // 과다 계상한다(실제로 그렇게 재서 "재료가 빠듯하다"는 결론이 나왔다).
+      final mats = _online
+          ? prog.habitatClears *
+                config.materialDropChance *
+                stats.materialFind *
+                1.5 *
+                materialAmountMult(config, prevStage - 1)
+          : 0.0;
       for (final k in const [
         MaterialKind.chitin,
         MaterialKind.mineral,
         MaterialKind.sap,
       ]) {
         materials[k] = (materials[k] ?? 0) + mats / 3;
+        earnedMaterials[k] = (earnedMaterials[k] ?? 0) + mats / 3;
       }
       _buyUpgrades();
     }
@@ -361,31 +457,55 @@ class _Player {
     }
   }
 
+  /// 재료비 — `--mat-cost-growth=` 가 있으면 그 증가율로 계산한다(탐색용).
+  double _matCost(UpgradeSpec spec, int lv) {
+    final g = _matCostGrowth ?? spec.materialCostGrowth;
+    return (spec.materialBaseCost * _matBaseMult * math.pow(g, lv))
+        .ceilToDouble();
+  }
+
   /// 살 수 있는 것 중 **가장 싼** 업그레이드를 계속 산다(고르게 성장하는 플레이어).
   void _buyUpgrades() {
     for (var guard = 0; guard < 10000; guard++) {
       UpgradeKind? best;
       var bestCost = double.infinity;
+      var goldBlocked = false;
+      var matBlocked = false;
       for (final kind in config.upgrades.keys) {
         final spec = config.upgrade(kind);
         final lv = levels[kind] ?? 0;
         final cost = upgradeCost(spec, lv).toDouble();
-        if (cost > gold || cost >= bestCost) continue;
         final mk = spec.materialKind;
-        if (mk != null &&
-            upgradeMaterialCost(spec, lv) > (materials[mk] ?? 0)) {
+        final matShort =
+            mk != null && _matCost(spec, lv) > (materials[mk] ?? 0);
+        if (cost > gold) {
+          // 골드가 모자란다 — 재료까지 모자라면 그건 재료 탓이 아니다.
+          if (!matShort) goldBlocked = true;
           continue;
         }
+        if (matShort) {
+          // 골드는 있는데 재료가 없어서 못 산다 = **재료가 병목**.
+          matBlocked = true;
+          continue;
+        }
+        if (cost >= bestCost) continue;
         best = kind;
         bestCost = cost;
       }
-      if (best == null) return;
+      if (best == null) {
+        if (matBlocked) {
+          _blockMat++;
+        } else if (goldBlocked) {
+          _blockGold++;
+        }
+        return;
+      }
       final spec = config.upgrade(best);
       final lv = levels[best] ?? 0;
       gold -= bestCost;
       final mk = spec.materialKind;
       if (mk != null) {
-        materials[mk] = (materials[mk] ?? 0) - upgradeMaterialCost(spec, lv);
+        materials[mk] = (materials[mk] ?? 0) - _matCost(spec, lv);
       }
       levels[best] = lv + 1;
     }
@@ -427,6 +547,7 @@ _Opts _parseArgs(List<String> args) {
     'world-hp': 'worldHpMult',
     'world-gold': 'worldGoldMult',
     'world-boss': 'worldBossHpMult',
+    'mat-amt-growth': 'materialAmountGrowth',
   };
   final out = <String, dynamic>{};
   double? mult;
@@ -435,6 +556,16 @@ _Opts _parseArgs(List<String> args) {
     final pb = RegExp(r'^--pet-bonus=(.+)$').firstMatch(a);
     if (pb != null) {
       _petMaxBonus = double.parse(pb.group(1)!);
+      continue;
+    }
+    final mb = RegExp(r'^--mat-base-mult=(.+)$').firstMatch(a);
+    if (mb != null) {
+      _matBaseMult = double.parse(mb.group(1)!);
+      continue;
+    }
+    final mc = RegExp(r'^--mat-cost-growth=(.+)$').firstMatch(a);
+    if (mc != null) {
+      _matCostGrowth = double.parse(mc.group(1)!);
       continue;
     }
     final m = RegExp(r'^--([a-z-]+)=(.+)$').firstMatch(a);

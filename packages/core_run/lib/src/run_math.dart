@@ -66,6 +66,15 @@ int rewardGold(
 }
 
 /// 파괴 보상 경험치. 골드와 같은 월드 점프를 따른다.
+/// 깊이 [depth] 에서 처치당 재료 수량에 곱할 배율.
+///
+/// 골드처럼 지수 성장시켜 **재료:골드 비율이 구간마다 뒤집히지 않게** 한다.
+/// `materialAmountGrowth` 가 1.0 이면 1.0 을 돌려줘 기존 동작 그대로다.
+double materialAmountMult(RunConfig c, int depth) =>
+    c.materialAmountGrowth <= 1.0
+    ? 1.0
+    : math.pow(c.materialAmountGrowth, depth).toDouble();
+
 int rewardXp(RunConfig c, int depth, {bool boss = false}) {
   final base =
       c.xpBase *

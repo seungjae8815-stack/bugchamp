@@ -862,7 +862,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     Map<MaterialKind, int>? mats;
     if (_rng.nextDouble() < _config.materialDropChance * stats.materialFind) {
       final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
-      mats = {kind: 1 + _rng.nextInt(2)};
+      // 수량도 깊이에 따라 자란다 — 골드만 지수로 커지면 재료는 중반에
+      // 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 된다.
+      final amount = (1 + _rng.nextInt(2)) * materialAmountMult(_config, depth);
+      mats = {kind: math.max(1, amount.round())};
     }
 
     ref

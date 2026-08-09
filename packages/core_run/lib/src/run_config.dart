@@ -102,6 +102,7 @@ class RunConfig {
     required this.hpBase,
     required this.hpGrowth,
     this.onlineGoldBonus = 0,
+    this.materialAmountGrowth = 1.0,
     this.hpAdaptTargetHits = 0,
     this.hpAdaptPower = 0,
     this.hpAdaptMinRatio = 0.5,
@@ -133,6 +134,14 @@ class RunConfig {
   });
 
   final double hpBase;
+
+  /// 처치당 재료 **수량**의 깊이당 성장률(1.0 = 고정 수량, 기존 동작).
+  ///
+  /// 골드는 `goldGrowth^depth` 로 지수 성장하는데 재료만 고정이면, 중반엔
+  /// 재료가 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 돼
+  /// 골드가 남아돈다 — 실측으로 스테이지 400 까지 **재료의 90% 가 미사용**,
+  /// 700 부터 뒤집혔다. 재료도 같이 자라게 해서 비율을 일정하게 유지한다.
+  final double materialAmountGrowth;
 
   /// **접속 중에만** 붙는 골드 보너스(0.5 = +50%).
   ///
@@ -256,6 +265,8 @@ class RunConfig {
     return RunConfig(
       hpBase: (json['hpBase'] as num).toDouble(),
       onlineGoldBonus: (json['onlineGoldBonus'] as num?)?.toDouble() ?? 0,
+      materialAmountGrowth:
+          (json['materialAmountGrowth'] as num?)?.toDouble() ?? 1.0,
       hpAdaptTargetHits: (json['hpAdaptTargetHits'] as num?)?.toDouble() ?? 0,
       hpAdaptPower: (json['hpAdaptPower'] as num?)?.toDouble() ?? 0,
       hpAdaptMinRatio: (json['hpAdaptMinRatio'] as num?)?.toDouble() ?? 0.5,

@@ -122,8 +122,8 @@
       "baseValue": 1.0,
       "perLevel": 0.05,
       "materialKind": "chitin",
-      "materialBaseCost": 1,
-      "materialCostGrowth": 1.09
+      "materialBaseCost": 6,
+      "materialCostGrowth": 1.13
     },
     {
       "kind": "crit",
@@ -132,8 +132,8 @@
       "baseValue": 0.0,
       "perLevel": 0.01,
       "materialKind": "sap",
-      "materialBaseCost": 1,
-      "materialCostGrowth": 1.1
+      "materialBaseCost": 6,
+      "materialCostGrowth": 1.13
     },
     {
       "kind": "critDamage",
@@ -142,8 +142,8 @@
       "baseValue": 2.0,
       "perLevel": 0.15,
       "materialKind": "mineral",
-      "materialBaseCost": 1,
-      "materialCostGrowth": 1.1
+      "materialBaseCost": 6,
+      "materialCostGrowth": 1.13
     },
     {
       "kind": "bossDamage",
@@ -152,8 +152,8 @@
       "baseValue": 1.0,
       "perLevel": 0.1,
       "materialKind": "chitin",
-      "materialBaseCost": 2,
-      "materialCostGrowth": 1.11
+      "materialBaseCost": 12,
+      "materialCostGrowth": 1.13
     },
     {
       "kind": "maxHp",
@@ -234,5 +234,7 @@
   "worldGoldMult": 2.2,
   "worldBossHpMult": 3.0,
   "_onlineComment": "접속 중에만 붙는 골드 보너스. 방치(효율 0.3 x 8h)가 활동 2h보다 커서 켜둘 이유가 없던 문제를 방치를 깎지 않고 해결한다.",
-  "onlineGoldBonus": 0.6
+  "onlineGoldBonus": 0.6,
+  "_materialComment": "재료 수량은 깊이에 따라 자란다. 고정이면 중반엔 재료가 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 돼 골드가 남아돈다.",
+  "materialAmountGrowth": 1.01
 }

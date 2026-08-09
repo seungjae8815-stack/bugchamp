@@ -1,7 +1,7 @@
 import 'package:core_run/core_run.dart';
 import 'package:test/test.dart';
 
-RunConfig _config() => RunConfig.fromJson({
+Map<String, dynamic> _baseJson() => {
   'hpBase': 20.0,
   'hpGrowth': 1.2,
   'bossHpMult': 5.0,
@@ -42,7 +42,9 @@ RunConfig _config() => RunConfig.fromJson({
       'perLevel': 0.08,
     },
   ],
-});
+};
+
+RunConfig _config() => RunConfig.fromJson(_baseJson());
 
 void main() {
   final c = _config();
@@ -451,6 +453,38 @@ void main() {
       // 기준 체력보다 커지지는 않는다.
       final base = habitatMaxHp(c, 30);
       expect(habitatMaxHp(c, 30, playerAttack: 1), lessThan(base));
+    });
+  });
+
+  group('재료 수량 성장(materialAmountMult)', () {
+    test('성장률 1.0 이면 항상 1배 — 기존 세이브·서버 동작 그대로', () {
+      final c = RunConfig.fromJson({
+        ..._baseJson(),
+        'materialAmountGrowth': 1.0,
+      });
+      expect(materialAmountMult(c, 0), 1.0);
+      expect(materialAmountMult(c, 500), 1.0);
+    });
+
+    test('설정하면 깊이에 따라 지수로 자란다', () {
+      final c = RunConfig.fromJson({
+        ..._baseJson(),
+        'materialAmountGrowth': 1.01,
+      });
+      expect(materialAmountMult(c, 0), 1.0);
+      expect(materialAmountMult(c, 100), closeTo(2.70, 0.01)); // 1.01^100
+      // 골드만 지수로 크고 재료가 고정이면 중반엔 재료가 쌓이기만 하고
+      // 후반엔 반대로 재료가 병목이 된다 — 그래서 같이 자라야 한다.
+      expect(
+        materialAmountMult(c, 300),
+        greaterThan(materialAmountMult(c, 200)),
+      );
+    });
+
+    test('키가 없으면 1.0 (구버전 JSON 호환)', () {
+      final c = RunConfig.fromJson(_baseJson());
+      expect(c.materialAmountGrowth, 1.0);
+      expect(materialAmountMult(c, 300), 1.0);
     });
   });
 }
