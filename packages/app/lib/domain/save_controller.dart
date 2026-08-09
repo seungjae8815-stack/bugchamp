@@ -1127,6 +1127,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     int mineral = 0,
     int sap = 0,
     int jelly = 0,
+    int fossil = 0,
     int xp = 0,
   }) async {
     final s = state.requireValue;
@@ -1134,6 +1135,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     void bump(MaterialKind k, int v) {
       if (v != 0) mats[k] = ((mats[k] ?? 0) + v).clamp(0, 1 << 40);
     }
+
+    bump(MaterialKind.fossil, fossil);
 
     bump(MaterialKind.chitin, chitin);
     bump(MaterialKind.mineral, mineral);

@@ -562,6 +562,8 @@ soft radial glow overlay for a game item rarity frame, bright amber orange color
 
 ## 4. 넣은 뒤 확인
 
-1. `pubspec.yaml` 은 `assets/images/` 를 **디렉터리째** 선언하므로 파일만 넣으면 된다.
+1. ⚠️ `pubspec.yaml` 은 **폴더마다 한 줄씩** 등록해야 한다(`assets/images/items/` 처럼).
+   새 폴더를 만들었으면 등록부터 — 안 하면 파일이 앱에 **아예 안 실린다**.
+   `items/` 는 등록해뒀다.
 2. 캐릭터 탭에서 아이콘이 그림으로 바뀌는지 확인. **안 바뀌면 파일명 오타**다.
 3. 8×10 을 한 화면에서 보고 **크기·여백이 균일한지** 확인.

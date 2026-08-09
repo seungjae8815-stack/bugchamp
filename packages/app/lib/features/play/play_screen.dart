@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -38,6 +38,7 @@ import '../../ui/nickname_gate.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
+import '../character/item_gallery.dart';
 import '../roadmap/roadmap_screen.dart';
 import '../notice/notice_screen.dart';
 import '../../domain/review_service.dart';
@@ -3287,8 +3288,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 개발자 모드는 디버그 빌드 전용(릴리즈 노출 방지).
-          if (kDebugMode) ...[
+          // 개발자 모드는 **릴리즈만** 숨긴다. 예전엔 kDebugMode 전용이라
+          // 폰에 넣는 profile 빌드(.dev)에서 열리지 않아 확인을 못 했다.
+          if (!kReleaseMode) ...[
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -4063,6 +4065,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     _devBtn('경험치 +10K', () {
                       ctrl.devAddResources(xp: 10000);
                       toast('경험치 +10K');
+                    }),
+                    _devBtn('화석 조각 +1000', () {
+                      ctrl.devAddResources(fossil: 1000);
+                      toast('화석 조각 +1000 (제련 50분치)');
+                    }),
+                  ]),
+                  // 아트 확인용 — 제련은 부위가 랜덤이라 특정 그림을 보려면
+                  // 수십 번 돌려야 한다. 격자로 한 번에 본다.
+                  _devSection('장비', [
+                    _devBtn('장비 그림 80종 보기', () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ItemGalleryScreen(),
+                        ),
+                      );
                     }),
                   ]),
                 ],
