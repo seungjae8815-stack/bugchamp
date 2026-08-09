@@ -3,6 +3,7 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 
 /// 등급 색 — `items.json` 의 ARGB 문자열을 그대로 쓴다(코드에 색 하드코딩 금지).
 Color tierColor(ItemConfig cfg, int tier) {
@@ -50,6 +51,34 @@ String optionLabel(AppLocalizations l, ItemOptionKind k) => switch (k) {
   ItemOptionKind.offline => l.optOffline,
   ItemOptionKind.pet => l.optPet,
 };
+
+/// 장비 그림. 파일이 없으면 부위 아이콘으로 폴백한다(§6 — 애셋 없으면 아이콘).
+///
+/// 경로는 `items/{부위}_{등급id}.webp` 로 **JSON 의 id 와 정확히 일치**해야 한다.
+/// 오타면 에러 없이 조용히 아이콘으로 떨어지므로 눈으로 확인해야 한다.
+///
+/// ⚠️ **그림에 색을 입히지 않는다.** 등급색은 칸 테두리가 이미 칠하고 있어서,
+/// 그림까지 물들이면 재질(구리·은·호박)이 뭉개진다.
+Widget itemImage(EquipItem item, {required double size, Color? tint}) =>
+    gameImageChain(
+      ['assets/images/items/${item.slot.key}_${_tierId(item.tier)}.webp'],
+      size: size,
+      fallback: Icon(slotIcon(item.slot), size: size * 0.9, color: tint),
+    );
+
+/// 등급 인덱스 → JSON id. 파일명이 이 값을 그대로 쓴다.
+String _tierId(int tier) => const [
+  'grass',
+  'wood',
+  'leather',
+  'copper',
+  'iron',
+  'silver',
+  'gold',
+  'chitin',
+  'carapace',
+  'amber',
+][tier.clamp(0, 9)];
 
 /// `[호박] 지휘봉` — 등급 접두사 + 부위 이름.
 String itemName(

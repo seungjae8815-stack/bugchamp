@@ -12,6 +12,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import 'character_scene.dart';
 import 'equip_widgets.dart';
 import 'forge_panel.dart';
 
@@ -47,7 +48,7 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
         children: [
           _tabs(l),
           const SizedBox(height: 10),
-          _Portrait(save: save),
+          CharacterScene(save: save),
           const SizedBox(height: 10),
           switch (_panel) {
             _Panel.stats => _StatsPanel(save: save),
@@ -108,132 +109,6 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// 메인 캐릭터 + 곁에 선 장착 곤충들.
-class _Portrait extends ConsumerWidget {
-  const _Portrait({required this.save});
-  final SaveGame save;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final data = ref.watch(gameDataProvider).value;
-    final locale = Localizations.localeOf(context).languageCode;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0x88243016), Color(0x66121A10)],
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x33FFFFFF)),
-      ),
-      child: Row(
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFD54F),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _honey, width: 2),
-                ),
-                child: const Icon(
-                  Icons.person_rounded,
-                  size: 40,
-                  color: _honey,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Lv.${save.level}',
-                style: const TextStyle(
-                  color: _honey,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Row(
-              children: [
-                for (var i = 0; i < 3; i++)
-                  Expanded(
-                    child: _petFace(
-                      l,
-                      data,
-                      locale,
-                      i < save.equippedBugIds.length
-                          ? save.equippedBugIds[i]
-                          : null,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _petFace(
-    AppLocalizations l,
-    GameData? data,
-    String locale,
-    String? bugId,
-  ) {
-    IndividualBug? bug;
-    if (bugId != null) {
-      for (final b in save.bugs) {
-        if (b.id == bugId) {
-          bug = b;
-          break;
-        }
-      }
-    }
-    final species = bug == null ? null : data?.speciesById[bug.speciesId];
-    final color = species == null
-        ? const Color(0x33FFFFFF)
-        : gradeColor(species.grade);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: Column(
-        children: [
-          Container(
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0x33121A10),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color),
-            ),
-            alignment: Alignment.center,
-            child: Icon(Icons.bug_report_rounded, size: 24, color: color),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            species?.name.resolve(locale) ?? l.charNoPet,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: species == null
-                  ? const Color(0x66FFFFFF)
-                  : const Color(0xCCFFFFFF),
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -546,7 +421,10 @@ class _EquipCell extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(slotIcon(slot), size: 21, color: color),
+            if (item == null)
+              Icon(slotIcon(slot), size: 21, color: color)
+            else
+              itemImage(item!, size: 26, tint: color),
             const SizedBox(height: 3),
             Text(
               slotLabel(l, slot),
