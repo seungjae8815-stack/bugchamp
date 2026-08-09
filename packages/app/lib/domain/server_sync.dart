@@ -97,6 +97,14 @@ Future<ServerResult> fetchStateWithAuthRetry(
   return state;
 }
 
+/// 이 실패를 **연결 끊김**으로 볼 것인가.
+///
+/// `status == 0` 은 요청이 서버에 닿지도 못한 경우(네트워크 오류)다. 그 외에는
+/// **응답을 받았다는 뜻이므로 네트워크는 멀쩡하다** — 막으면 안 된다.
+/// 특히 `401 no_session` 은 **게스트라 세션이 없는 정상 상태**이고, 이걸 끊김으로
+/// 세면 로그인 안 한 유저가 게임을 아예 못 한다.
+bool countsAsDisconnect(int status) => status == 0;
+
 /// 서버 연결이 끊겼는지. 화면(앱 셸)이 듣고 **게임을 멈춘 뒤 재접속을 요구**한다.
 ///
 /// 이 게임은 오프라인 플레이를 허용하지 않는다 — 타이틀에서 네트워크가 없으면
@@ -186,14 +194,14 @@ class ServerSaveUploader {
         final boot = await server.bootstrap(json);
         if (boot.isOk) _lastUploaded = encoded;
       } else {
-        debugPrint('[save] 업로드 실패(재시도 예약): ${res.error}');
-        _onFail();
+        debugPrint('[save] 업로드 실패(${res.status}): ${res.error}');
+        _onFail(res.status);
         return;
       }
       _onOk();
     } catch (e) {
-      debugPrint('[save] 업로드 예외(재시도 예약): $e');
-      _onFail();
+      debugPrint('[save] 업로드 예외: $e');
+      _onFail(0);
     } finally {
       _inFlight = false;
     }
@@ -206,7 +214,22 @@ class ServerSaveUploader {
     serverDisconnected.value = false;
   }
 
-  void _onFail() {
+  /// 실패를 끊김으로 셀지 판단한다.
+  ///
+  /// ⚠️ **`status == 0`(네트워크 오류)만 끊김이다.** 다른 실패는 연결 문제가
+  /// 아니라 막으면 안 된다:
+  ///  - `401 no_session` — **게스트는 세션이 없어 업로드가 항상 실패한다.**
+  ///    이걸 세면 로그인 안 한 유저는 게임을 아예 못 한다(실제로 그랬다).
+  ///  - `4xx` — 서버가 요청을 거절한 것이지 연결은 멀쩡하다.
+  ///  - `5xx` — 서버 문제다. 유저 네트워크를 탓하며 가둘 일이 아니다.
+  void _onFail(int status) {
+    if (!countsAsDisconnect(status)) {
+      // **HTTP 응답을 받았다는 건 네트워크가 살아 있다는 뜻이다.**
+      // 끊김 화면이 떠 있었다면 걷어주고, 조용히 다음 주기에 다시 시도한다.
+      _fails = 0;
+      serverDisconnected.value = false;
+      return;
+    }
     _fails++;
     if (_fails >= failThreshold) {
       serverDisconnected.value = true;

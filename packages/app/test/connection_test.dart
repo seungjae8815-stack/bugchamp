@@ -17,6 +17,20 @@ void main() {
       );
     });
 
+    test('네트워크 오류(status 0)만 끊김이다', () {
+      expect(countsAsDisconnect(0), isTrue);
+    });
+
+    test('게스트의 401(no_session)은 끊김이 아니다 — 세면 로그인 안 한 유저가 못 논다', () {
+      expect(countsAsDisconnect(401), isFalse);
+    });
+
+    test('서버가 응답했다면 네트워크는 멀쩡하다 — 4xx·5xx 도 끊김이 아니다', () {
+      for (final s in [400, 403, 409, 413, 500, 502, 503]) {
+        expect(countsAsDisconnect(s), isFalse, reason: 'status $s');
+      }
+    });
+
     test('끊김 상태는 앱 어디서나 하나로 공유된다(게임 정지 + 화면 덮기)', () {
       expect(serverDisconnected.value, isFalse);
       serverDisconnected.value = true;
