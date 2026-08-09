@@ -9,7 +9,6 @@ import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
-import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'character_scene.dart';
 import 'equip_widgets.dart';
@@ -458,7 +457,7 @@ class _EquipCell extends StatelessWidget {
     showGameDialog<void>(
       context,
       title: itemName(config, l, locale, item!),
-      icon: slotIcon(slot),
+      iconWidget: itemImage(item!, size: 40),
       content: ItemOptionList(item: item!, config: config),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );

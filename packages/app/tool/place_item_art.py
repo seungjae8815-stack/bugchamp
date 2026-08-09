@@ -82,14 +82,39 @@ def main():
     if not files:
         sys.exit(f"{a.src} 에 이미지가 없습니다")
 
+    # 이미 올바른 이름(tool_amber.png 등)으로 저장했으면 **순서를 무시하고**
+    # 이름으로 짝짓는다. 순서 짝짓기는 하나만 어긋나도 전부 밀리므로,
+    # 이름이 맞으면 그쪽이 훨씬 안전하다.
+    valid = {n for n, _ in targets()}
+    named = [f for f in files if os.path.splitext(f)[0] in valid]
+    if named:
+        if len(named) != len(files):
+            skipped = [f for f in files if f not in named]
+            names = ", ".join(skipped[:5])
+            print("⚠️ 이름이 안 맞는 파일 %d개는 건너뜁니다: %s"
+                  % (len(skipped), names))
+            print("")
+        ko_of = dict(targets())
+        pairs = [(f, (os.path.splitext(f)[0], ko_of[os.path.splitext(f)[0]]))
+                 for f in named]
+        _place(a, pairs)
+        return
+
     if len(files) != len(plan):
         # 멈추지 않는다 — 부위 하나만 뽑아본 경우가 흔하다. 다만 짝이 어긋나면
         # **엉뚱한 이름으로 들어가므로** 반드시 눈으로 확인시킨다.
         print(f"⚠️ 파일 {len(files)}개 · 필요 {len(plan)}개 — 앞에서부터 짝을 맞춥니다.")
         print("   순서가 어긋나면 엉뚱한 이름으로 들어갑니다. --dry 로 먼저 확인하세요.\n")
 
+    _place(a, list(zip(files, plan)))
+
+
+def _place(a, pairs):
+    """(원본파일, (대상이름, 설명)) 짝을 실제로 배치한다."""
+    from PIL import Image
+
     os.makedirs(DEST, exist_ok=True)
-    for src_name, (name, ko) in zip(files, plan):
+    for src_name, (name, ko) in pairs:
         dst = os.path.normpath(os.path.join(DEST, f"{name}.webp"))
         print(f"  {src_name:<24} → {name}.webp   ({ko})")
         if a.dry:

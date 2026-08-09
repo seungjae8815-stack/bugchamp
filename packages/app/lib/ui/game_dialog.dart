@@ -14,6 +14,9 @@ Future<T?> showGameDialog<T>(
   BuildContext context, {
   required String title,
   IconData? icon,
+
+  /// 아이콘 대신 그림을 넣고 싶을 때(장비 등). [icon] 보다 우선한다.
+  Widget? iconWidget,
   String? subtitle,
   required Widget content,
   List<Widget> actions = const [],
@@ -26,6 +29,7 @@ Future<T?> showGameDialog<T>(
     builder: (ctx) => GameDialog(
       title: title,
       icon: icon,
+      iconWidget: iconWidget,
       subtitle: subtitle,
       actions: actions,
       child: content,
@@ -39,12 +43,14 @@ class GameDialog extends StatelessWidget {
     required this.title,
     required this.child,
     this.icon,
+    this.iconWidget,
     this.subtitle,
     this.actions = const [],
   });
 
   final String title;
   final IconData? icon;
+  final Widget? iconWidget;
   final String? subtitle;
   final Widget child;
   final List<Widget> actions;
@@ -79,7 +85,10 @@ class GameDialog extends StatelessWidget {
           children: [
             Row(
               children: [
-                if (icon != null) ...[
+                if (iconWidget != null) ...[
+                  SizedBox(width: 40, height: 40, child: iconWidget),
+                  const SizedBox(width: 10),
+                ] else if (icon != null) ...[
                   Container(
                     width: 34,
                     height: 34,

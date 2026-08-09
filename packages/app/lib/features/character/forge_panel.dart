@@ -243,7 +243,7 @@ Future<void> showForgeResult(
   await showGameDialog<void>(
     context,
     title: itemName(items, l, locale, item),
-    icon: slotIcon(item.slot),
+    iconWidget: itemImage(item, size: 40),
     content: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
