@@ -31,7 +31,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 SLOTS = ["tool", "hat", "top", "bottom", "shoes", "necklace", "ring", "box"]
 SLOT_KO = {
-    "tool": "채집도구", "hat": "모자", "top": "옷", "bottom": "바지",
+    "tool": "채집도구", "hat": "모자", "top": "상의", "bottom": "하의",
     "shoes": "신발", "necklace": "목걸이", "ring": "반지", "box": "채집함",
 }
 TIERS = ["grass", "wood", "leather", "copper", "iron",
@@ -109,6 +109,24 @@ def main():
         print("   순서가 어긋나면 엉뚱한 이름으로 들어갑니다. --dry 로 먼저 확인하세요.\n")
 
     _place(a, list(zip(files, plan)))
+
+
+def _light_checker(img):
+    """배경이 **밝은 체크무늬**인가 — 누끼를 뜰 수 있는 그림인가.
+
+    생성기에서 내려받은 그림은 밝은 회색 체크판(235~255)이 깔린다.
+    화면을 캡처하면 어두운 배경(0~120)에 UI 까지 찍혀 이 검사에 걸린다.
+    """
+    px = img.convert("RGB").load()
+    w, h = img.size
+    pts = [(1, 1), (w - 2, 1), (1, h - 2), (w - 2, h - 2),
+           (w // 2, 1), (w // 2, h - 2)]
+    light = 0
+    for x, y in pts:
+        r, g, b = px[x, y]
+        if min(r, g, b) > 195 and max(r, g, b) - min(r, g, b) < 20:
+            light += 1
+    return light >= 4
 
 
 def cutout(img):
@@ -193,9 +211,16 @@ def _place(a, pairs):
             continue
         img = Image.open(os.path.join(a.src, src_name)).convert("RGBA")
 
-        # 이미 투명한 그림이면 건드리지 않는다. 아니면 누끼를 딴다.
+        # ⚠️ **스크린샷을 걸러낸다.** 생성 결과를 내려받지 않고 화면을 캡처하면
+        # 배경이 어두운 체크판이 되고 UI 요소까지 같이 찍힌다. 게다가 아이템이
+        # 넓은 캔버스의 일부라 확대하면 뭉개진다. 조용히 망치느니 건너뛴다.
         before = sum(1 for a2 in img.getchannel("A").getdata() if a2 < 10)
         if not a.no_cutout and before < img.width * img.height * 0.02:
+            if not _light_checker(img):
+                print(f"  {src_name:<24} ⏭  건너뜀 — 배경이 밝은 체크무늬가 아님"
+                      f" ({img.width}×{img.height})")
+                print("     생성기에서 **내려받기**로 저장하세요(화면 캡처 X).")
+                continue
             img = cutout(img)
         after = sum(1 for a2 in img.getchannel("A").getdata() if a2 < 10)
         pct = after / (img.width * img.height) * 100

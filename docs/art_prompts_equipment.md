@@ -169,7 +169,7 @@ game item icon of an amber diadem crown, translucent glowing amber resin with a 
 
 ---
 
-### 옷 (`top`)
+### 상의 (`top`)
 
 **풀잎 조끼** — `assets/images/items/top_grass.webp` · 등급색 `FF9E9E9E`
 ```
@@ -223,7 +223,7 @@ game item icon of a flowing amber robe, translucent glowing amber resin with a f
 
 ---
 
-### 바지 (`bottom`)
+### 하의 (`bottom`)
 
 **풀잎 치마** — `assets/images/items/bottom_grass.webp` · 등급색 `FF9E9E9E`
 ```

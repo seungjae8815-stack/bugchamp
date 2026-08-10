@@ -1832,10 +1832,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get slotHat => '모자';
 
   @override
-  String get slotTop => '옷';
+  String get slotTop => '상의';
 
   @override
-  String get slotBottom => '바지';
+  String get slotBottom => '하의';
 
   @override
   String get slotShoes => '신발';
