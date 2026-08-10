@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
@@ -122,10 +123,15 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.hardware_rounded,
-                        color: _honey,
-                        size: 22,
+                      // 모루 그림. 없으면 아이콘으로 폴백한다(§6).
+                      gameImageChain(
+                        const ['assets/images/ui/anvil.webp'],
+                        size: 30,
+                        fallback: const Icon(
+                          Icons.hardware_rounded,
+                          color: _honey,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(

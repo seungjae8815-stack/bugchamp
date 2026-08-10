@@ -124,7 +124,9 @@ def _light_checker(img):
     light = 0
     for x, y in pts:
         r, g, b = px[x, y]
-        if min(r, g, b) > 195 and max(r, g, b) - min(r, g, b) < 20:
+        # 체크판 톤은 생성기마다 다르다 — 흰색(255/240) 도 있고
+        # 회색(213/193) 도 있다. 스크린샷(0~120)만 걸러내면 된다.
+        if min(r, g, b) > 170 and max(r, g, b) - min(r, g, b) < 20:
             light += 1
     return light >= 4
 
@@ -159,7 +161,7 @@ def cutout(img):
         edge[px[w - 2, y]] += 1
     bg_colors = [
         c for c, _ in edge.most_common(6)
-        if max(c) - min(c) < 20 and min(c) > 195
+        if max(c) - min(c) < 20 and min(c) > 170
     ]
     if not bg_colors:
         return img  # 배경이 밝은 무채색이 아니다 — 건드리지 않는다.
@@ -180,6 +182,12 @@ def cutout(img):
             return 255
         return int((v - lo) * 255 / (hi - lo))
 
+    # 체크판 중 **가장 어두운 칸** 바로 아래에서 자른다. 고정값(185~208)으로
+    # 두면 회색 체크판(193/213)이 그대로 남는다 — 실제로 남았다.
+    bg_min = min(min(c) for c in bg_colors)
+    dark_hi = bg_min - 4
+    dark_lo = bg_min - 30
+
     a = bytearray(w * h)
     i = 0
     for y in range(h):
@@ -188,7 +196,7 @@ def cutout(img):
             lum = min(r, g, b)
             sat = max(r, g, b) - lum
             # 어두울수록 아이템 / 채도가 있을수록 아이템.
-            a[i] = max(255 - ramp(lum, 185, 208), ramp(sat, 18, 34))
+            a[i] = max(255 - ramp(lum, dark_lo, dark_hi), ramp(sat, 18, 34))
             i += 1
 
     alpha = Image.frombytes("L", (w, h), bytes(a))
