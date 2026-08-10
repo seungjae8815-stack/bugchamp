@@ -134,13 +134,21 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
                   // (idle/attack/death 뿐) 위치와 기울기로 움직임을 만든다.
                   Positioned(
                     left: 16 + _hero.x * 26,
-                    bottom: 22 + _hero.hop * 0.6,
+                    bottom: 22 + (_hero.moving ? _hero.hop * 0.7 : 0),
+                    // 걷기 스프라이트(`walk_1`·`walk_2`)가 있으면 **번갈아** 쓰고,
+                    // 없으면 idle 한 장을 **코드로 걷는 것처럼** 흔든다.
+                    // 그림이 없다고 화면이 죽어 있으면 안 된다(§6 폴백 원칙).
                     child: Transform.rotate(
-                      angle: math.sin(_t * 3.0) * 0.035,
+                      angle: _hero.moving ? math.sin(_t * 6.0) * 0.045 : 0,
                       child: Transform.scale(
                         scaleX: _hero.facingRight ? 1 : -1,
+                        // 발이 땅에 닿을 때 살짝 눌린다 — 이것만으로 걸음이 읽힌다.
+                        scaleY: _hero.moving
+                            ? 1 + math.sin(_t * 12.0) * 0.03
+                            : 1,
                         child: gameImageChain(
-                          const [
+                          [
+                            'assets/images/character/walk_${(_t * 5).floor() % 2 + 1}.webp',
                             'assets/images/character/idle_1.webp',
                             'assets/images/character/idle.webp',
                           ],
@@ -191,18 +199,22 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
       bottom: 20 + w.hop,
       child: Transform.scale(
         scaleX: w.facingRight ? 1 : -1,
-        child: gameImageChain(
-          [if (species != null) 'assets/images/species/${species.id}.webp'],
-          size: 34,
-          byHeight: true,
-          fallback: Text(
-            '🐛',
-            style: TextStyle(
-              fontSize: 24,
-              color: species == null ? null : gradeColor(species.grade),
-            ),
-          ),
-        ),
+        // ⚠️ 경로 규약은 `bugs/{id}_adult.webp` 다(`species/` 가 아니다).
+        // 틀린 경로는 에러 없이 조용히 폴백해서 **곤충이 영영 안 보였다**.
+        child: bug == null
+            ? const Text('🐛', style: TextStyle(fontSize: 24))
+            : bugStageImage(
+                bug.speciesId,
+                bug.stage,
+                size: 34,
+                fallback: Text(
+                  '🐛',
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: species == null ? null : gradeColor(species.grade),
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -227,6 +239,9 @@ class _Wanderer {
   double _speed = 0.1;
   double _hopPhase = 0;
   double _pause = 0;
+
+  /// 지금 걷는 중인가 — 멈춰 섰을 땐 흔들지 않아야 자연스럽다.
+  bool get moving => _pause <= 0;
 
   void step(double dt) {
     // 가끔 멈춰 선다 — 계속 왕복만 하면 기계처럼 보인다.

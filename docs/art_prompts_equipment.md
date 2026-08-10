@@ -504,13 +504,30 @@ game item icon of an amber storage case, translucent glowing amber resin with a 
 character portrait of a friendly young bug collector, upper body, straw hat, satchel strap, holding a butterfly net over the shoulder, warm smile, facing viewer, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
+## 2-2. 캐릭터 걷기 (씬 애니메이션)
+
+> ⚠️ **두 장을 같은 프롬프트·같은 시드로** 뽑는다. 옷·모자·비율이 조금만
+> 달라져도 번갈아 보여줄 때 **덜덜 떨린다**. `walk_1` 을 레퍼런스로 넣고
+> `walk_2` 를 만드는 것이 가장 안전하다.
+>
+> 지금 있는 스프라이트는 `idle` · `attack` · `death` 뿐이라 캐릭터가 서 있기만 한다.
+
+**walk_1** — `assets/images/character/walk_1.webp` · 512×512
+```
+side view full body of a friendly young bug collector walking, left leg forward mid-stride, right arm swung forward, body at its lowest point, straw hat, shoulder satchel, butterfly net carried over the right shoulder, short brown hair, facing right, full body from head to feet inside frame, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+```
+
+**walk_2** — `assets/images/character/walk_2.webp` · 512×512
+```
+side view full body of a friendly young bug collector walking, right leg forward mid-stride, left arm swung forward, body bobbed slightly up, straw hat, shoulder satchel, butterfly net carried over the right shoulder, short brown hair, facing right, full body from head to feet inside frame, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+```
 **공방 모루** — `assets/images/ui/anvil.webp` · 256×256
 ```
 game ui icon of a blacksmith anvil on a worn wooden stump, a small hammer resting on top, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-> 걸어다니는 씬은 **홈 화면 스프라이트를 그대로 재사용**하므로 새로 만들 것이 없다
-> (`assets/images/character/idle_1.webp` 등 — 이미 쓰는 규약).
+> 씬은 홈 화면과 **같은 파일 규약**(`{상태}_{프레임}.webp`)을 쓴다.
+> `walk_1`·`walk_2` 를 넣으면 코드 수정 없이 걷기 애니메이션이 붙는다.
 
 ---
 
