@@ -98,7 +98,7 @@ game item icon of a wide butterfly net with a silver rim, polished silversmith w
 game item icon of a golden lure rod dripping with sweet sap, ornate gold, warm rich luster, delicate scrollwork, small gem accents, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**키틴 집게** — `assets/images/items/tool_chitin.webp` · 등급색 `FF4DB6AC`
+**키틴 집게발** — `assets/images/items/tool_chitin.webp` · 등급색 `FF4DB6AC`
 ```
 game item icon of a pair of chitin pincers shaped like beetle mandibles, made from teal insect chitin exoskeleton plates, tougher than metal, glossy segmented shell, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
@@ -162,7 +162,7 @@ game item icon of a chitin hood with antenna-like ridges, made from teal insect 
 game item icon of a beetle carapace helmet with a horn crest, master-crafted purple beetle carapace, iridescent shifting sheen, layered armored plates, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**호박 면류관** — `assets/images/items/hat_amber.webp` · 등급색 `FFFF9800`
+**호박 왕관** — `assets/images/items/hat_amber.webp` · 등급색 `FFFF9800`
 ```
 game item icon of an amber diadem crown, translucent glowing amber resin with a fossilized insect sealed inside, warm orange inner light, legendary artifact, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
@@ -176,7 +176,7 @@ game item icon of an amber diadem crown, translucent glowing amber resin with a 
 game item icon of a woven grass vest, woven from dried grass blades, humble and rustic, frayed edges, plain twine binding, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**무명 조끼** — `assets/images/items/top_wood.webp` · 등급색 `FF8D6E63`
+**나무껍질 조끼** — `assets/images/items/top_wood.webp` · 등급색 `FF8D6E63`
 ```
 game item icon of a plain cotton vest, carved from pale wood, visible grain, simple hand-tooled finish, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
@@ -225,56 +225,60 @@ game item icon of a flowing amber robe, translucent glowing amber resin with a f
 
 ### 하의 (`bottom`)
 
-**풀잎 치마** — `assets/images/items/bottom_grass.webp` · 등급색 `FF9E9E9E`
+> ⚠️ **10개 모두 바지(trousers) 실루엣이다.** 한 줄에 다른 형태가 섞이면
+> "같은 부위인가?" 싶어진다 — 등급 차이는 **재질로만** 낸다.
+> 모든 프롬프트에 "both legs visible, waist at top and two leg openings at bottom"
+> 이 들어가 있어 형태가 흔들리지 않는다.
+
+**풀잎 바지** — `assets/images/items/bottom_grass.webp` · 등급색 `FF9E9E9E`
 ```
-game item icon of a grass skirt wrap, woven from dried grass blades, humble and rustic, frayed edges, plain twine binding, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game item icon of trousers woven from dried grass blades, frayed hems, twine waistband, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**작업 반바지** — `assets/images/items/bottom_wood.webp` · 등급색 `FF8D6E63`
+**나무껍질 반바지** — `assets/images/items/bottom_wood.webp` · 등급색 `FF8D6E63`
 ```
-game item icon of work shorts, carved from pale wood, visible grain, simple hand-tooled finish, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
-```
-
-**가죽 각반** — `assets/images/items/bottom_leather.webp` · 등급색 `FFA1887F`
-```
-game item icon of leather leg wraps, tanned brown leather, hand-stitched seams, worn soft edges, brass rivets, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game item icon of short work trousers of pale wood-fiber cloth with visible wood grain, wooden button, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**구리 정강이받이** — `assets/images/items/bottom_copper.webp` · 등급색 `FFBF6A3A`
+**가죽 바지** — `assets/images/items/bottom_leather.webp` · 등급색 `FFA1887F`
 ```
-game item icon of copper shin guards, hammered copper, warm reddish metal with faint green patina spots, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
-```
-
-**무쇠 정강이받이** — `assets/images/items/bottom_iron.webp` · 등급색 `FF90A4AE`
-```
-game item icon of iron shin guards, dark forged iron, hammer marks, sturdy and heavy, matte finish, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game item icon of brown tanned leather trousers, hand-stitched seams, small brass rivets, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**은빛 하의** — `assets/images/items/bottom_silver.webp` · 등급색 `FF64B5F6`
+**구리 갑옷바지** — `assets/images/items/bottom_copper.webp` · 등급색 `FFBF6A3A`
 ```
-game item icon of silver-trimmed trousers, polished silversmith work, cool bright reflections, fine engraved filigree, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game item icon of armored trousers plated with hammered copper, warm reddish metal, faint green patina, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**황금 하의** — `assets/images/items/bottom_gold.webp` · 등급색 `FFFFD54F`
+**무쇠 갑옷바지** — `assets/images/items/bottom_iron.webp` · 등급색 `FF90A4AE`
 ```
-game item icon of golden trousers, ornate gold, warm rich luster, delicate scrollwork, small gem accents, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game item icon of armored trousers plated with dark forged iron, hammer marks, sturdy and heavy, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+```
+
+**은빛 바지** — `assets/images/items/bottom_silver.webp` · 등급색 `FF64B5F6`
+```
+game item icon of silver-trimmed trousers, cool bright reflections, fine engraved filigree along the seams, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+```
+
+**황금 예복바지** — `assets/images/items/bottom_gold.webp` · 등급색 `FFFFD54F`
+```
+game item icon of golden ceremonial trousers, rich warm luster, delicate scrollwork, small gem accents, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
 **키틴 바지** — `assets/images/items/bottom_chitin.webp` · 등급색 `FF4DB6AC`
 ```
-game item icon of chitin trousers, made from teal insect chitin exoskeleton plates, tougher than metal, glossy segmented shell, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game item icon of trousers plated with teal insect chitin, glossy segmented shell, tougher than metal, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
-**갑충 다리보호대** — `assets/images/items/bottom_carapace.webp` · 등급색 `FF9575CD`
+**갑충 갑옷바지** — `assets/images/items/bottom_carapace.webp` · 등급색 `FF9575CD`
 ```
-game item icon of beetle carapace leg armor, master-crafted purple beetle carapace, iridescent shifting sheen, layered armored plates, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
-```
-
-**호박 다리갑옷** — `assets/images/items/bottom_amber.webp` · 등급색 `FFFF9800`
-```
-game item icon of amber leg armor, translucent glowing amber resin with a fossilized insect sealed inside, warm orange inner light, legendary artifact, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game item icon of armored trousers of purple beetle carapace, iridescent shifting sheen, layered plates, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
 
+**호박 바지** — `assets/images/items/bottom_amber.webp` · 등급색 `FFFF9800`
+```
+game item icon of trousers of translucent glowing amber resin with a fossilized insect sealed inside, warm orange inner light, legendary artifact, empty trousers laid flat facing the viewer, both legs visible, waist at top and two leg openings at bottom, no character wearing them, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+```
 ---
 
 ### 신발 (`shoes`)

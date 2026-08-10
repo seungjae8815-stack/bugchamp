@@ -131,6 +131,16 @@ def _light_checker(img):
     return light >= 4
 
 
+def _edge_pixels(px, w, h):
+    """테두리 한 줄의 픽셀들 — 체크판 색을 알아내는 표본."""
+    for x in range(0, w, 2):
+        yield px[x, 1]
+        yield px[x, h - 2]
+    for y in range(0, h, 2):
+        yield px[1, y]
+        yield px[w - 2, y]
+
+
 def cutout(img):
     """배경을 지워 진짜 투명으로 만든다(누끼).
 
@@ -184,7 +194,18 @@ def cutout(img):
 
     # 체크판 중 **가장 어두운 칸** 바로 아래에서 자른다. 고정값(185~208)으로
     # 두면 회색 체크판(193/213)이 그대로 남는다 — 실제로 남았다.
-    bg_min = min(min(c) for c in bg_colors)
+    #
+    # ⚠️ 최빈색 몇 개로 정하면 안 된다. 테두리가 흰 칸에 주로 걸리면 **회색 칸이
+    # 최빈에 안 들어와** 기준이 254 로 잡히고, 239 짜리 회색 칸이 반투명하게
+    # 남는다(상의 황금·채집함 구리에서 실제로 그랬다).
+    # 테두리의 무채색 픽셀 **전부**를 모아 아래쪽 백분위를 쓴다.
+    lums = sorted(
+        min(c) for c in _edge_pixels(px, w, h)
+        if max(c) - min(c) < 20 and min(c) > 170
+    )
+    bg_min = lums[max(0, len(lums) * 2 // 100)] if lums else min(
+        min(c) for c in bg_colors
+    )
     dark_hi = bg_min - 4
     dark_lo = bg_min - 30
 

@@ -369,37 +369,37 @@
       "baseValue": 8.0,
       "names": [
         {
-          "ko": "풀잎 치마",
+          "ko": "풀잎 바지",
           "en": "Grass Legwear",
           "ja": "草の葉の脚衣"
         },
         {
-          "ko": "작업 반바지",
+          "ko": "나무껍질 반바지",
           "en": "Wooden Legwear",
           "ja": "木の脚衣"
         },
         {
-          "ko": "가죽 각반",
+          "ko": "가죽 바지",
           "en": "Leather Legwear",
           "ja": "革の脚衣"
         },
         {
-          "ko": "구리 정강이받이",
+          "ko": "구리 갑옷바지",
           "en": "Copper Legwear",
           "ja": "銅の脚衣"
         },
         {
-          "ko": "무쇠 정강이받이",
+          "ko": "무쇠 갑옷바지",
           "en": "Iron Legwear",
           "ja": "鉄の脚衣"
         },
         {
-          "ko": "은빛 하의",
+          "ko": "은빛 바지",
           "en": "Silver Legwear",
           "ja": "銀の脚衣"
         },
         {
-          "ko": "황금 하의",
+          "ko": "황금 예복바지",
           "en": "Golden Legwear",
           "ja": "黄金の脚衣"
         },
@@ -409,12 +409,12 @@
           "ja": "キチンの脚衣"
         },
         {
-          "ko": "갑충 다리보호대",
+          "ko": "갑충 갑옷바지",
           "en": "Carapace Legwear",
           "ja": "甲殻の脚衣"
         },
         {
-          "ko": "호박 다리갑옷",
+          "ko": "호박 바지",
           "en": "Amber Legwear",
           "ja": "琥珀の脚衣"
         }

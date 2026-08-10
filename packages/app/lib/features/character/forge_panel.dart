@@ -107,33 +107,35 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
         Row(
           children: [
             // 가운데가 제련 — 가장 자주 누르는 버튼이라 가장 크다.
+            // 모루 그림 자체가 버튼이고, 아래에 이름과 남은 화석 조각을 쌓는다.
             Expanded(
               child: InkWell(
                 onTap: _busy ? null : _forgeOnce,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                       colors: [Color(0xFF6B4A28), Color(0xFF3A2716)],
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: _honey, width: 1.4),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 모루 그림. 없으면 아이콘으로 폴백한다(§6).
                       gameImageChain(
                         const ['assets/images/ui/anvil.webp'],
-                        size: 30,
+                        size: 64,
                         fallback: const Icon(
                           Icons.hardware_rounded,
                           color: _honey,
-                          size: 22,
+                          size: 52,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(height: 4),
                       Text(
                         l.forgeHammer,
                         style: const TextStyle(
@@ -142,14 +144,25 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                           fontSize: 15,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        formatCompact(fossil),
-                        style: const TextStyle(
-                          color: _honey,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                        ),
+                      const SizedBox(height: 2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.hardware_outlined,
+                            size: 13,
+                            color: _honey,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            formatCompact(fossil),
+                            style: const TextStyle(
+                              color: _honey,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -163,8 +176,8 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
               onLongPress: () => showAutoForgeSettings(context, ref),
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                width: 54,
-                height: 50,
+                width: 58,
+                height: 122,
                 decoration: BoxDecoration(
                   color: _autoOn
                       ? const Color(0x44FFD54F)
@@ -402,10 +415,10 @@ class _GradeBody extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          // 다음 레벨 확률을 **나란히** — 무엇이 좋아지는지 보여야 올릴 마음이 든다.
+          // **전체 등급을 다 보여준다.** 지금 나오는 것만 추리면 "위에 뭐가
+          // 남았는지"가 안 보여서 올릴 이유가 흐려진다. 0% 도 0.0% 로 적는다.
           for (var i = 0; i < items.tierCount; i++)
-            if (cur[i] >= 0.005 || next[i] >= 0.005)
-              _oddsRow(locale, i, cur[i], next[i], maxed),
+            _oddsRow(locale, i, cur[i], next[i], maxed),
           const SizedBox(height: 12),
           if (maxed)
             Text(
@@ -484,7 +497,10 @@ class _GradeBody extends ConsumerWidget {
               child: Text(
                 '${(now * 100).toStringAsFixed(1)}%',
                 textAlign: TextAlign.right,
-                style: const TextStyle(color: Colors.white, fontSize: 11.5),
+                style: TextStyle(
+                  color: now < 0.0005 ? const Color(0x55FFFFFF) : Colors.white,
+                  fontSize: 11.5,
+                ),
               ),
             ),
             if (!maxed) ...[

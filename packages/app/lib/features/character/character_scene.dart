@@ -33,6 +33,9 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
 
   /// 곤충 한 마리의 배회 상태. 화면 밖으로 안 나가게 좌우 끝에서 되돌아온다.
   final List<_Wanderer> _bugs = [];
+
+  /// 캐릭터도 제자리에 서 있지 않고 조금씩 거닌다.
+  final _hero = _Wanderer(seed: 3);
   double _t = 0;
 
   @override
@@ -55,6 +58,7 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
     if (dt <= 0) return;
     setState(() {
       _t += dt;
+      _hero.step(dt);
       for (final b in _bugs) {
         b.step(dt);
       }
@@ -91,38 +95,72 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
             colors: [Color(0xFF2A3D1C), Color(0xFF15200E)],
           ),
         ),
-        child: LayoutBuilder(
-          builder: (context, c) => Stack(
-            children: [
-              // 바닥선 — 캐릭터와 곤충이 같은 지면에 선 것처럼 보이게.
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 26,
-                child: Container(height: 1, color: const Color(0x22FFFFFF)),
+        child: Stack(
+          children: [
+            // 배경 — 홈 화면과 같은 지역 그림을 쓴다. 없으면 그라데이션만.
+            Positioned.fill(
+              child: gameImageChain(
+                const [
+                  'assets/images/regions/oak_forest.webp',
+                  'assets/images/biomes/oak_forest.webp',
+                ],
+                size: 999,
+                fit: BoxFit.cover,
+                fallback: const SizedBox.shrink(),
               ),
-              // 캐릭터는 왼쪽에 고정. 숨쉬듯 위아래로만 흔들린다.
-              Positioned(
-                left: 18,
-                bottom: 22,
-                child: Transform.translate(
-                  offset: Offset(0, math.sin(_t * 2.2) * 2),
-                  child: gameImageChain(
-                    const [
-                      'assets/images/character/idle_1.webp',
-                      'assets/images/character/idle.webp',
-                    ],
-                    size: 62,
-                    byHeight: true,
-                    fallback: const Text('🧍', style: TextStyle(fontSize: 44)),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [const Color(0x00000000), const Color(0x66000000)],
                   ),
                 ),
               ),
-              // 곤충들 — 캐릭터 오른쪽 공간을 자유롭게 배회한다.
-              for (var i = 0; i < ids.length && i < _bugs.length; i++)
-                _bugSprite(context, data, ids[i], _bugs[i], c.maxWidth),
-            ],
-          ),
+            ),
+            LayoutBuilder(
+              builder: (context, c) => Stack(
+                children: [
+                  // 바닥선 — 캐릭터와 곤충이 같은 지면에 선 것처럼 보이게.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 26,
+                    child: Container(height: 1, color: const Color(0x22FFFFFF)),
+                  ),
+                  // 캐릭터도 곤충들처럼 **거닌다**. 걷기 스프라이트가 없어서
+                  // (idle/attack/death 뿐) 위치와 기울기로 움직임을 만든다.
+                  Positioned(
+                    left: 16 + _hero.x * 26,
+                    bottom: 22 + _hero.hop * 0.6,
+                    child: Transform.rotate(
+                      angle: math.sin(_t * 3.0) * 0.035,
+                      child: Transform.scale(
+                        scaleX: _hero.facingRight ? 1 : -1,
+                        child: gameImageChain(
+                          const [
+                            'assets/images/character/idle_1.webp',
+                            'assets/images/character/idle.webp',
+                          ],
+                          size: 62,
+                          byHeight: true,
+                          fallback: const Text(
+                            '🧍',
+                            style: TextStyle(fontSize: 44),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // 곤충들 — 캐릭터 오른쪽 공간을 자유롭게 배회한다.
+                  for (var i = 0; i < ids.length && i < _bugs.length; i++)
+                    _bugSprite(context, data, ids[i], _bugs[i], c.maxWidth),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
