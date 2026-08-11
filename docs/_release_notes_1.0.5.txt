@@ -1,58 +1,46 @@
 ========================================
- Google Play — 출시 노트 (1.0.5 / 20260809)
+ Google Play — 출시 노트 (1.0.5 / 20260810)
 ========================================
-※ Play Console 은 아래 태그 블록을 **통째로** 붙여넣는다(언어별 분리 불필요).
-※ 한 언어당 500자 한도.
+※ 1.0.5 는 스토어에 나간 적이 없어 **1.0.4 이후 전부**를 담는다.
+※ Play Console 은 아래 태그 블록을 통째로 붙여넣는다. 한 언어당 500자 한도.
 ※ iOS 용 노트는 _appstore_whatsnew_1.0.5.txt (이모지 금지).
 
 <ko-KR>
-⚔️ 성장이 느껴지는 전투로 바꿨어요
-몬스터 체력이 내 전력에 맞춰 함께 오릅니다. 한 방에 쓸려나가지 않고, 강해질수록 잡는 속도가 빨라져요.
-→ 월드 관문에서는 확실히 막힙니다. 업그레이드와 펫에 투자해서 뚫는 재미를 살렸습니다.
+🐛 곤충 키우기 업데이트!
 
-🎮 켜두고 하면 더 이득이에요
-직접 잡은 골드에 접속 보너스가 붙습니다. 깜짝선물도 더 자주 찾아와요.
-방치 보상은 그대로입니다 — 줄이지 않았습니다.
+• 캐릭터 탭 신설 — 채집꾼을 8부위 장비로 꾸며요 (풀잎~호박 10등급, 전부 새 일러스트)
+• 공방 제련 — 곤충화석으로 장비 제작, 자동 제련·옵션 필터·공방 등급 업그레이드
+• 캐릭터 화면에서 야생 곤충 직접 채집 — "지금 탭!"이 뜨면 눌러 보세요
+• 몬스터 체력이 내 전력에 맞춰 올라 성장이 그대로 느껴져요
+• 직접 잡은 골드에 접속 보너스 (방치 보상은 그대로)
+• 결투 시즌이 매주 월요일 오전 9시에 모두 함께 종료
+• 방치 보상 미지급·첫 설치 멈춤·부화기 칸 사라짐 수정
 
-🏆 결투 시즌이 매주 월요일에 끝나요
-월요일 오전 9시에 모두 함께 시즌이 종료되고 트로피가 조정됩니다.
-
-🔧 이런 것들을 고쳤어요
-· 앱을 다시 열었을 때 방치 보상이 들어오지 않던 문제
-· 처음 설치했을 때 로딩에서 멈추던 문제
-· 젤리로 늘린 부화기 칸이 사라지던 문제
-· 채집함 정렬·펫 장착·편성 화면을 보기 쉽게 다듬었습니다
+재미있게 즐겨주세요! 😊
 </ko-KR>
 <en-US>
-⚔️ Growth you can feel
-Monster HP scales with your power — nothing dies in one hit, and the stronger you get, the faster they fall.
-→ World gates still stop you cold. Invest to break through.
+🐛 Bug Champ update!
 
-🎮 Playing beats idling
-Your own kills now pay an online bonus, and gifts arrive more often. Idle rewards are untouched.
+• New Character tab — 8 gear slots, 10 tiers, all-new art
+• Forge gear from insect fossils — auto-forge, stat filters, workshop upgrades
+• Catch wild bugs on the character screen with a timed tap
+• Monster HP scales with your power, so growth always shows
+• Your own kills pay an online bonus (idle rewards untouched)
+• Duel seasons end every Monday, 9 AM KST
+• Fixed missing idle rewards, first-launch freeze, vanishing incubator slots
 
-🏆 Seasons end every Monday, 9 AM KST.
-
-🔧 Fixes
-· Idle rewards missing on reopen
-· Stuck on loading after a fresh install
-· Jelly-bought incubator slots vanishing
+Thanks for playing! 😊
 </en-US>
 <ja-JP>
-⚔️ 成長を実感できる戦闘へ
-モンスターの体力が自分の戦力に合わせて上がります。一撃で消えることがなくなり、強くなるほど早く倒せます。
-ワールドの関門ではしっかり詰まります。強化とペットに投資して突破する手応えを残しました。
+🐛 昆虫育成アップデート！
 
-🎮 起動しておくほど得になります
-自分で倒して得た金貨にオンラインボーナスが付きます。サプライズギフトの間隔も短くなりました。
-放置報酬はそのままです。減らしていません。
+• キャラクタータブ新登場 — 採集家を8部位の装備で飾れます（10等級、すべて新規イラスト）
+• 工房で装備を鍛冶 — 昆虫化石から製作、自動鍛冶・オプションフィルタ・工房アップグレード
+• キャラクター画面で野生の昆虫を直接捕獲 — 「今タップ！」が出たらタップ
+• モンスターの体力が自分の戦力に合わせて上がり、成長を実感できます
+• 自分で倒した金貨にオンラインボーナス（放置報酬はそのまま）
+• 決闘シーズンが毎週月曜午前9時（韓国時間）に全員同時終了
+• 放置報酬の未支給・初回起動の停止・孵化器の枠が消える問題を修正
 
-🏆 決闘シーズンが毎週月曜に終わります
-月曜午前9時（韓国時間）に全員同時にシーズンが終了し、トロフィーが調整されます。
-
-🔧 修正
-・アプリを開き直したときに放置報酬が入らない問題
-・新規インストール後、読み込みで止まる問題
-・ゼリーで増やした孵化器の枠が消える問題
-・採集箱の並び替え、ペット装着、編成画面を見やすく調整
+お楽しみください！😊
 </ja-JP>
