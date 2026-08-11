@@ -1205,7 +1205,7 @@
   "forgeCurrent": "Equipped",
   "forgeNoFossil": "No fossil shards",
   "forgeLevel": "Workshop Lv.{lv}",
-  "forgeStep": "Gold {cur}/{max}",
+  "forgeStep": "Workshop upgrade {cur}/{max}",
   "forgeUpgrading": "Upgrading",
   "forgeRush": "Finish now",
   "forgeClaim": "Claim",
@@ -1253,5 +1253,13 @@
   "statMaterialGain": "Material Gain",
   "statBugFind": "Bug Find",
   "charNoPet": "No pet",
-  "charPetHint": "Manage pets in the collection box"
+  "charPetHint": "Manage pets in the collection box",
+  "forgeAutoShort": "Auto",
+  "forgeStackFull": "The anvil is full",
+  "forgeStackHint": "Tap to open",
+  "sceneCatchTap": "Tap now!",
+  "forgeResultNew": "New",
+  "forgeFilter": "Filter",
+  "forgeFilterHint": "Only results with at least one checked stat are kept.",
+  "forgeFiltered": "Discarded — no matching stat"
 }

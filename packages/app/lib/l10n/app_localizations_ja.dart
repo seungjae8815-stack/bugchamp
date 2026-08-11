@@ -1938,7 +1938,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String forgeStep(int cur, int max) {
-    return '金貨 $cur/$max';
+    return '工房アップグレード $cur/$max';
   }
 
   @override
@@ -2005,4 +2005,28 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get charPetHint => 'ペットの編成は採集箱で行います';
+
+  @override
+  String get forgeAutoShort => '自動';
+
+  @override
+  String get forgeStackFull => '金床がいっぱいです';
+
+  @override
+  String get forgeStackHint => 'タップで確認';
+
+  @override
+  String get sceneCatchTap => '今タップ！';
+
+  @override
+  String get forgeResultNew => '新しい装備';
+
+  @override
+  String get forgeFilter => 'フィルタ';
+
+  @override
+  String get forgeFilterHint => 'チェックした能力が1つ以上付いたものだけ残します。';
+
+  @override
+  String get forgeFiltered => '条件に合わず破棄しました';
 }

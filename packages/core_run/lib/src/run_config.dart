@@ -102,6 +102,9 @@ class RunConfig {
     required this.hpBase,
     required this.hpGrowth,
     this.onlineGoldBonus = 0,
+    this.sceneCatchChance = 0.35,
+    this.sceneCatchWindow = 1.4,
+    this.sceneCatchCooldown = 25,
     this.materialAmountGrowth = 1.0,
     this.hpAdaptTargetHits = 0,
     this.threatAdaptTargetPct = 0,
@@ -153,6 +156,19 @@ class RunConfig {
   /// **켜두는 것보다 꺼두는 게 이득**이었다. 방치 보상을 깎으면 "안 켜도
   /// 벌린다"를 보고 온 유저가 이탈하므로, 대신 온라인에 얹는다.
   final double onlineGoldBonus;
+
+  /// 캐릭터 화면 씬에서 채집망을 휘둘렀을 때 **잡을 기회가 열릴 확률**.
+  ///
+  /// 씬은 화면을 보고 있을 때만 돌아가므로 §2.4 의 "접속 보너스" 계열이다.
+  /// ⚠️ 여기를 올리면 채집함(50칸)이 몇 분 만에 차고, 포텐셜 좋은 개체를
+  /// 무한히 리롤할 수 있게 된다 — 방치 드롭률과 함께 봐야 한다.
+  final double sceneCatchChance;
+
+  /// 기회가 열렸을 때 **탭할 수 있는 시간**(초).
+  final double sceneCatchWindow;
+
+  /// 한 번 잡은 뒤 다음 기회까지 쉬는 시간(초).
+  final double sceneCatchCooldown;
 
   /// 몬스터 한 대가 가져가야 할 **내 최대체력 비율**(0.015 = 1.5%).
   ///
@@ -285,6 +301,10 @@ class RunConfig {
     return RunConfig(
       hpBase: (json['hpBase'] as num).toDouble(),
       onlineGoldBonus: (json['onlineGoldBonus'] as num?)?.toDouble() ?? 0,
+      sceneCatchChance: (json['sceneCatchChance'] as num?)?.toDouble() ?? 0.35,
+      sceneCatchWindow: (json['sceneCatchWindow'] as num?)?.toDouble() ?? 1.4,
+      sceneCatchCooldown:
+          (json['sceneCatchCooldown'] as num?)?.toDouble() ?? 25,
       materialAmountGrowth:
           (json['materialAmountGrowth'] as num?)?.toDouble() ?? 1.0,
       threatAdaptTargetPct:

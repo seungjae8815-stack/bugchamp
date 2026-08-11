@@ -587,7 +587,7 @@
   "forgeCurrent": "装備中",
   "forgeNoFossil": "化石のかけらがありません",
   "forgeLevel": "工房レベル {lv}",
-  "forgeStep": "金貨 {cur}/{max}",
+  "forgeStep": "工房アップグレード {cur}/{max}",
   "forgeUpgrading": "アップグレード中",
   "forgeRush": "今すぐ完了",
   "forgeClaim": "受け取る",
@@ -608,5 +608,13 @@
   "statMaterialGain": "素材獲得",
   "statBugFind": "昆虫発見率",
   "charNoPet": "ペットなし",
-  "charPetHint": "ペットの編成は採集箱で行います"
+  "charPetHint": "ペットの編成は採集箱で行います",
+  "forgeAutoShort": "自動",
+  "forgeStackFull": "金床がいっぱいです",
+  "forgeStackHint": "タップで確認",
+  "sceneCatchTap": "今タップ！",
+  "forgeResultNew": "新しい装備",
+  "forgeFilter": "フィルタ",
+  "forgeFilterHint": "チェックした能力が1つ以上付いたものだけ残します。",
+  "forgeFiltered": "条件に合わず破棄しました"
 }

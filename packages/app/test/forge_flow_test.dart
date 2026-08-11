@@ -64,8 +64,9 @@ void main() {
       await c.read(saveControllerProvider.future);
       final ctrl = c.read(saveControllerProvider.notifier);
 
-      final item = await ctrl.forgeOnce();
-      expect(item, isNotNull);
+      final r = await ctrl.forgeOnce();
+      expect(r.item, isNotNull);
+      expect(r.kept, isTrue);
       expect(
         c
             .read(saveControllerProvider)
@@ -78,7 +79,72 @@ void main() {
     test('화석 조각이 없으면 못 뽑는다(자동 제련이 여기서 멈춘다)', () async {
       final c = make(seed());
       await c.read(saveControllerProvider.future);
-      expect(await c.read(saveControllerProvider.notifier).forgeOnce(), isNull);
+      expect(
+        (await c.read(saveControllerProvider.notifier).forgeOnce()).item,
+        isNull,
+      );
+    });
+
+    test('뽑은 것은 **모루 위에 쌓인다** — 10칸이 차면 더 안 나온다', () async {
+      final c = make(seed().copyWith(materials: {MaterialKind.fossil: 30}));
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+
+      for (var i = 0; i < kMaxForgeStack; i++) {
+        expect((await ctrl.forgeOnce()).item, isNotNull);
+      }
+      final full = c.read(saveControllerProvider).requireValue;
+      expect(full.forgeStack.length, kMaxForgeStack);
+      // 가득 찬 뒤엔 화석도 안 태운다 — 태우면 그냥 손해다.
+      final left = full.materialCount(MaterialKind.fossil);
+      expect((await ctrl.forgeOnce()).item, isNull);
+      expect(
+        c
+            .read(saveControllerProvider)
+            .requireValue
+            .materialCount(MaterialKind.fossil),
+        left,
+      );
+
+      // 맨 위(마지막)부터 하나씩 집는다.
+      final top = await ctrl.takeForgeItem();
+      expect(top, full.forgeStack.last);
+      expect(
+        c.read(saveControllerProvider).requireValue.forgeStack.length,
+        kMaxForgeStack - 1,
+      );
+    });
+
+    test('필터에 안 맞으면 화석만 쓰고 **안 쌓인다**', () async {
+      const want = {ItemOptionKind.critDamage};
+      final c = make(
+        seed().copyWith(
+          materials: {MaterialKind.fossil: 40},
+          autoForgeOptions: want,
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+
+      var filtered = 0;
+      for (var i = 0; i < 40; i++) {
+        final r = await ctrl.forgeOnce();
+        if (r.item == null) break; // 10칸이 찼다
+        if (!r.kept) filtered++;
+      }
+      final after = c.read(saveControllerProvider).requireValue;
+
+      // 규칙 자체를 본다 — 쌓인 것은 **전부** 필터에 걸린 옵션을 갖고 있다.
+      for (final item in after.forgeStack) {
+        expect(
+          item.options.any((o) => want.contains(o.kind)),
+          isTrue,
+          reason: '필터에 없는 옵션만 가진 게 쌓였다',
+        );
+      }
+      // 걸러진 것도 화석은 태웠다 — 그래야 자동이 무한히 안 돈다.
+      expect(filtered, greaterThan(0), reason: '40번 굴려 하나도 안 걸러졌다');
+      expect(after.materialCount(MaterialKind.fossil), lessThan(40));
     });
 
     test('장착은 **교체**다 — 가방이 없어 부위마다 1개만 남는다', () async {

@@ -3625,7 +3625,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeStep.
   ///
   /// In en, this message translates to:
-  /// **'Gold {cur}/{max}'**
+  /// **'Workshop upgrade {cur}/{max}'**
   String forgeStep(int cur, int max);
 
   /// No description provided for @forgeUpgrading.
@@ -3753,6 +3753,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage pets in the collection box'**
   String get charPetHint;
+
+  /// No description provided for @forgeAutoShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get forgeAutoShort;
+
+  /// No description provided for @forgeStackFull.
+  ///
+  /// In en, this message translates to:
+  /// **'The anvil is full'**
+  String get forgeStackFull;
+
+  /// No description provided for @forgeStackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open'**
+  String get forgeStackHint;
+
+  /// No description provided for @sceneCatchTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap now!'**
+  String get sceneCatchTap;
+
+  /// No description provided for @forgeResultNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get forgeResultNew;
+
+  /// No description provided for @forgeFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get forgeFilter;
+
+  /// No description provided for @forgeFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only results with at least one checked stat are kept.'**
+  String get forgeFilterHint;
+
+  /// No description provided for @forgeFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'Discarded — no matching stat'**
+  String get forgeFiltered;
 }
 
 class _AppLocalizationsDelegate

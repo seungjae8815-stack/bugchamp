@@ -521,10 +521,26 @@ side view full body of a friendly young bug collector walking, left leg forward 
 ```
 side view full body of a friendly young bug collector walking, right leg forward mid-stride, left arm swung forward, body bobbed slightly up, straw hat, shoulder satchel, butterfly net carried over the right shoulder, short brown hair, facing right, full body from head to feet inside frame, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
-**공방 모루** — `assets/images/ui/anvil.webp` · 256×256
+### 공방 — 모루와 망치를 **따로** 뽑는다
+
+> ⚠️ 지금 `anvil.webp` 에는 망치가 **얹혀 있다**. 그 위에서 망치를 또 휘두르면
+> 망치가 두 개로 보인다. 두 장으로 나눠야 내리치는 연출이 된다.
+>
+> 두 장을 뽑으면 코드가 자동으로 새 파일을 쓴다(없으면 지금 그림으로 폴백).
+> **크기 감각을 맞춰서** 뽑을 것 — 망치 머리가 모루 상판 폭의 절반쯤이면 좋다.
+
+**모루(망치 없음)** — `assets/images/ui/anvil_base.webp` · 256×256
 ```
-game ui icon of a blacksmith anvil on a worn wooden stump, a small hammer resting on top, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+game ui icon of a blacksmith anvil on a worn wooden stump, nothing resting on the anvil, empty clean anvil top surface, no hammer, no tools, front three-quarter view, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
 ```
+
+**망치(단독)** — `assets/images/ui/hammer.webp` · 256×256
+```
+game ui icon of a single blacksmith hammer with a wooden handle and a chunky metal head, diagonal pose with the head at the upper left and the handle running to the lower right, handle end at the bottom right corner of the frame, whole hammer inside frame, centered, isolated on transparent background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature
+```
+
+> 망치는 **자루 끝을 축으로** 회전한다. 그래서 자루가 오른쪽 아래로 뻗고
+> 머리가 왼쪽 위에 있는 자세여야 자연스럽게 내리친다.
 
 > 씬은 홈 화면과 **같은 파일 규약**(`{상태}_{프레임}.webp`)을 쓴다.
 > `walk_1`·`walk_2` 를 넣으면 코드 수정 없이 걷기 애니메이션이 붙는다.

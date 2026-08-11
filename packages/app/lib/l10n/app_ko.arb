@@ -622,7 +622,7 @@
   "forgeCurrent": "지금 낀 것",
   "forgeNoFossil": "화석 조각이 없어요",
   "forgeLevel": "공방 등급 {lv}",
-  "forgeStep": "골드 {cur}/{max}칸",
+  "forgeStep": "공방 업그레이드 {cur}/{max}",
   "forgeUpgrading": "업그레이드 중",
   "forgeRush": "즉시 완료",
   "forgeClaim": "완료 받기",
@@ -643,5 +643,13 @@
   "statMaterialGain": "재료 획득",
   "statBugFind": "곤충 발견율",
   "charNoPet": "펫 없음",
-  "charPetHint": "펫 편성은 채집함에서 해요"
+  "charPetHint": "펫 편성은 채집함에서 해요",
+  "forgeAutoShort": "자동",
+  "forgeStackFull": "모루가 가득 찼습니다",
+  "forgeStackHint": "눌러서 확인",
+  "sceneCatchTap": "지금 탭!",
+  "forgeResultNew": "새로 뽑은 것",
+  "forgeFilter": "필터",
+  "forgeFilterHint": "체크한 능력치가 하나라도 붙은 것만 모루에 쌓입니다.",
+  "forgeFiltered": "필터에 안 맞아 버렸습니다"
 }

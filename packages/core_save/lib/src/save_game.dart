@@ -24,6 +24,13 @@ const int kSaveSchemaVersion = 18;
 /// **업로드 시 서버 강제**(GameActions.enforceStorage)로 처리한다.
 const int kDefaultStorageCapacity = 50;
 
+/// 모루 위에 쌓아 둘 수 있는 제련 결과 수.
+///
+/// ⚠️ 이건 **가방이 아니다.** 자동 제련은 3초에 하나씩 찍어내므로 상한이
+/// 없으면 세이브가 무한히 커진다 — 2026-07 의 곤충 3만 마리(13.6MB) 와
+/// 같은 사고다. 가득 차면 자동 제련이 멈춘다.
+const int kMaxForgeStack = 10;
+
 /// 닉네임 기본값(설정에서 변경 가능).
 const String kDefaultNickname = '채집가';
 
@@ -214,6 +221,7 @@ class SaveGame {
     this.passExpiresAt,
     this.redeemedPurchases = const {},
     this.equippedItems = const {},
+    this.forgeStack = const [],
     this.skillLevels = const {},
     this.equippedSkills = const [],
     this.forgeLevel = 0,
@@ -396,6 +404,9 @@ class SaveGame {
   /// 세이브 비대화(곤충 3만 마리 = 13.6MB)가 그대로 재현됐을 것이다.
   final Map<EquipSlot, EquipItem> equippedItems;
 
+  /// 모루 위에 쌓인 **아직 안 본** 제련 결과. 최대 [kMaxForgeStack] 개.
+  final List<EquipItem> forgeStack;
+
   /// 보유한 스킬의 레벨(`skillId` → 레벨). 없으면 미보유.
   final Map<String, int> skillLevels;
 
@@ -533,6 +544,7 @@ class SaveGame {
     ticketsAt: (createdAt ?? DateTime.now()).toUtc(),
     adUseCounts: const {},
     equippedItems: const {},
+    forgeStack: const [],
     skillLevels: const {},
     equippedSkills: const [],
     forgeLevel: 0,
@@ -582,6 +594,7 @@ class SaveGame {
     Map<String, int>? adUseCounts,
     String? adUseDate,
     Map<EquipSlot, EquipItem>? equippedItems,
+    List<EquipItem>? forgeStack,
     Map<String, int>? skillLevels,
     List<String>? equippedSkills,
     int? forgeLevel,
@@ -636,6 +649,7 @@ class SaveGame {
     adUseCounts: adUseCounts ?? this.adUseCounts,
     adUseDate: adUseDate ?? this.adUseDate,
     equippedItems: equippedItems ?? this.equippedItems,
+    forgeStack: forgeStack ?? this.forgeStack,
     skillLevels: skillLevels ?? this.skillLevels,
     equippedSkills: equippedSkills ?? this.equippedSkills,
     forgeLevel: forgeLevel ?? this.forgeLevel,
@@ -775,6 +789,10 @@ class SaveGame {
           Map<String, dynamic>.from(e.value as Map),
         ),
     },
+    forgeStack: [
+      for (final e in json['forgeStack'] as List<dynamic>? ?? const [])
+        EquipItem.fromJson(Map<String, dynamic>.from(e as Map)),
+    ],
     skillLevels: _intMapFromJson(
       json['skillLevels'] as Map<String, dynamic>? ?? const {},
     ),
@@ -862,6 +880,8 @@ class SaveGame {
       'equippedItems': {
         for (final e in equippedItems.entries) e.key.key: e.value.toJson(),
       },
+    if (forgeStack.isNotEmpty)
+      'forgeStack': [for (final i in forgeStack) i.toJson()],
     if (skillLevels.isNotEmpty) 'skillLevels': skillLevels,
     if (equippedSkills.isNotEmpty) 'equippedSkills': equippedSkills,
     if (forgeLevel != 0) 'forgeLevel': forgeLevel,

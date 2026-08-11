@@ -11,17 +11,37 @@ Color tierColor(ItemConfig cfg, int tier) {
   return Color(int.parse(hex, radix: 16));
 }
 
-/// 부위 아이콘. 아트가 붙기 전까지의 폴백이다(§6 — 애셋 없으면 아이콘).
+/// 부위 아이콘. **그림도 없을 때**의 마지막 폴백이다(§6 — 애셋 없으면 아이콘).
+///
+/// ⚠️ 사람 모양(운동하는 사람·앉은 사람)을 쓰면 안 된다 — 장비 칸에
+/// 사람이 들어가 있어 무슨 부위인지 안 읽힌다. 실제로 그래 보였다.
 IconData slotIcon(EquipSlot s) => switch (s) {
-  EquipSlot.tool => Icons.sports_martial_arts_rounded,
-  EquipSlot.hat => Icons.emoji_people_rounded,
+  EquipSlot.tool => Icons.sports_tennis_rounded, // 라켓 ≈ 채집망
+  EquipSlot.hat => Icons.school_rounded, // 챙 있는 모자
   EquipSlot.top => Icons.checkroom_rounded,
-  EquipSlot.bottom => Icons.airline_seat_legroom_normal_rounded,
-  EquipSlot.shoes => Icons.directions_walk_rounded,
-  EquipSlot.necklace => Icons.workspace_premium_rounded,
+  EquipSlot.bottom => Icons.dry_cleaning_rounded,
+  EquipSlot.shoes => Icons.ice_skating_rounded, // 발에 신는 것
+  EquipSlot.necklace => Icons.diamond_rounded,
   EquipSlot.ring => Icons.circle_outlined,
   EquipSlot.box => Icons.inventory_2_rounded,
 };
+
+/// 빈 칸에 깔리는 **흐린 밑그림**.
+///
+/// 아이콘으로 무슨 부위인지 알리려니 마땅한 그림이 없다(채집도구가 사람
+/// 모양으로 보였다). 대신 **가장 낮은 등급의 실제 장비 그림**을 흐리게 깔면
+/// 어떤 부위인지 정확히 읽히고, 끼면 같은 자리에 선명한 그림이 들어온다.
+Widget slotGhost(EquipSlot slot, {required double size, Color? tint}) {
+  final id = '${slot.key}_${_tierId(0)}';
+  return Opacity(
+    opacity: 0.30,
+    child: gameImageChain(
+      ['assets/images/items/$id.webp', 'assets/images/items/$id.png'],
+      size: size,
+      fallback: Icon(slotIcon(slot), size: size * 0.5, color: tint),
+    ),
+  );
+}
 
 String slotLabel(AppLocalizations l, EquipSlot s) => switch (s) {
   EquipSlot.tool => l.slotTool,
@@ -165,14 +185,24 @@ class ItemOptionList extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          if (up)
-            const Icon(Icons.arrow_drop_up, size: 16, color: Color(0xFF9CCC65)),
-          if (down)
-            const Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: Color(0xFFEF9A9A),
-            ),
+          // 화살표 자리는 **있든 없든 늘 잡아 둔다.** 조건부로 붙이면 화살표가
+          // 있는 줄만 값이 왼쪽으로 밀려 숫자 열이 삐뚤어진다.
+          SizedBox(
+            width: 16,
+            child: up
+                ? const Icon(
+                    Icons.arrow_drop_up,
+                    size: 16,
+                    color: Color(0xFF9CCC65),
+                  )
+                : down
+                ? const Icon(
+                    Icons.arrow_drop_down,
+                    size: 16,
+                    color: Color(0xFFEF9A9A),
+                  )
+                : null,
+          ),
         ],
       ),
     );

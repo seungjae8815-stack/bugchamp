@@ -1973,7 +1973,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String forgeStep(int cur, int max) {
-    return 'Gold $cur/$max';
+    return 'Workshop upgrade $cur/$max';
   }
 
   @override
@@ -2040,4 +2040,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get charPetHint => 'Manage pets in the collection box';
+
+  @override
+  String get forgeAutoShort => 'Auto';
+
+  @override
+  String get forgeStackFull => 'The anvil is full';
+
+  @override
+  String get forgeStackHint => 'Tap to open';
+
+  @override
+  String get sceneCatchTap => 'Tap now!';
+
+  @override
+  String get forgeResultNew => 'New';
+
+  @override
+  String get forgeFilter => 'Filter';
+
+  @override
+  String get forgeFilterHint =>
+      'Only results with at least one checked stat are kept.';
+
+  @override
+  String get forgeFiltered => 'Discarded — no matching stat';
 }

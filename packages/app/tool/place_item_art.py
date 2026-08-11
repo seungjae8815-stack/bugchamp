@@ -112,23 +112,114 @@ def main():
 
 
 def _light_checker(img):
-    """배경이 **밝은 체크무늬**인가 — 누끼를 뜰 수 있는 그림인가.
+    """배경을 **지워도 되는 그림**인가(스크린샷·사진이 아닌가)."""
+    return bool(_background(img)[1])
 
-    생성기에서 내려받은 그림은 밝은 회색 체크판(235~255)이 깔린다.
-    화면을 캡처하면 어두운 배경(0~120)에 UI 까지 찍혀 이 검사에 걸린다.
+
+def _background(img):
+    """`(누끼를 뜰 이미지, 지울 배경 톤들, 액자색)`.
+
+    톤이 비면 건드리면 안 되는 그림이다.
+
+    생성기가 그림을 **단색 액자**에 넣어 주는 경우가 있다(하의 구리 = 검은
+    여백 안에 흰 체크판 카드). 액자색이 테두리를 100% 덮으면 "체크판이 아님"
+    으로 통째로 건너뛰므로, 그때만 액자를 잘라내고 한 번 더 본다.
+
+    ⚠️ **먼저 자르면 안 된다.** 흰 여백이 넓은 그림(무쇠 집게)은 여백째
+    잘려 테두리가 그림에 딱 붙고, 그러면 배경 톤을 못 찾는다.
+    """
+    tones = _checker_tones(img.convert("RGB").load(), *img.size)
+    if tones:
+        return img, tones, None
+    inner, frame = _trim_frame(img)
+    if frame is None:
+        return img, [], None
+    # 액자색은 표본에서 **뺀다**. 카드 모서리가 둥글면 잘라낸 뒤에도 테두리
+    # 한 줄이 액자색으로 뒤덮여 있어(하의 구리: 100% 검정) 체크판을 못 본다.
+    tones = _checker_tones(inner.convert("RGB").load(), *inner.size, ignore=frame)
+    return inner, tones, frame
+
+
+def _trim_frame(img):
+    """단색 액자를 잘라낸 `(그림, 액자색)`. 액자가 없으면 `(원본, None)`.
+
+    카드 모서리가 둥글면 잘라내고도 네 귀퉁이에 액자색이 남는다 — 그건
+    `cutout` 이 테두리에서 이어진 액자색을 마저 지운다.
     """
     px = img.convert("RGB").load()
     w, h = img.size
-    pts = [(1, 1), (w - 2, 1), (1, h - 2), (w - 2, h - 2),
-           (w // 2, 1), (w // 2, h - 2)]
-    light = 0
-    for x, y in pts:
-        r, g, b = px[x, y]
-        # 체크판 톤은 생성기마다 다르다 — 흰색(255/240) 도 있고
-        # 회색(213/193) 도 있다. 스크린샷(0~120)만 걸러내면 된다.
-        if min(r, g, b) > 170 and max(r, g, b) - min(r, g, b) < 20:
-            light += 1
-    return light >= 4
+    edge = list(_edge_pixels(px, w, h))
+    base = edge[0]
+    if sum(1 for p in edge if _near(p, base, 12)) < len(edge) * 0.98:
+        return img, None
+
+    # 액자색이 **아닌** 픽셀들의 외곽 상자. 줄 단위로 훑으면 둥근 모서리에서
+    # 멈춰 액자가 잔뜩 남는다(하의 구리: 1024→766×875 에서 멈췄다).
+    box = None
+    for y in range(0, h, 2):
+        for x in range(0, w, 2):
+            if not _near(px[x, y], base, 20):
+                box = (x, y, x, y) if box is None else (
+                    min(box[0], x), min(box[1], y),
+                    max(box[2], x), max(box[3], y))
+    if box is None:
+        return img, None
+    left, top, right, bot = box
+    if (top, left, bot, right) == (0, 0, h - 1, w - 1):
+        return img, None
+    return img.crop((left, top, right + 1, bot + 1)), base
+
+
+def _near(p, q, tol):
+    return all(abs(a - b) <= tol for a, b in zip(p, q))
+
+
+def _checker_tones(px, w, h, ignore=None):
+    """테두리에서 알아낸 **지워야 할 배경 톤들**. 아니면 빈 리스트.
+
+    배경은 두 종류로 온다 —
+      · **체크무늬**: 무채색 두 톤이 번갈아 나온다(대략 50:50).
+      · **단색 카드**: 흰 배경 한 톤이 테두리를 거의 다 덮는다.
+
+    ⚠️ 밝기만으로 판정하면 안 된다. 체크판 톤이 생성기마다 크게 다르다 —
+    흰색(255/240) · 회색(213/193) · **중간 회색(151/122)** 까지 봤다.
+    밝기 기준(>170)을 두면 어두운 체크판이 통째로 안 지워진다(실제로 그랬다).
+
+    ⚠️ 반대로 밝기를 완전히 버리면 **어두운 스크린샷**이 배경으로 오인된다.
+    그래서 어두운 배경은 "두 톤이 번갈아 나올 때"(= 체크판이 확실할 때)만
+    인정한다. 단색 어두운 테두리는 지우지 않는다.
+    """
+    from collections import Counter
+
+    c = Counter()
+    total = 0
+    for p in _edge_pixels(px, w, h):
+        if ignore is not None and _near(p, ignore, 20):
+            continue  # 액자색 — 표본이 아니다
+        total += 1
+        if max(p) - min(p) < 20:  # 무채색만
+            c[min(p) // 6 * 6] += 1  # 6단위로 뭉쳐 노이즈를 흡수
+    if not total or sum(c.values()) / total < 0.90:
+        return []  # 테두리에 색이 섞였다 — 사진·스크린샷이다.
+
+    major = [v for v, n in c.most_common(4) if n / total >= 0.10]
+    if not major or (len(major) < 2 and max(major) <= 200):
+        return []
+
+    # 지울 톤은 **그림 전체**에서 다시 모은다. 테두리가 흰 칸(252)에만 걸리면
+    # 안쪽의 체크칸(240)이 표본에 안 들어와 반투명하게 남는다 — 무쇠 집게에서
+    # 실제로 그랬다(반투명 18%). 테두리는 "지워도 되는가"만 판정하고,
+    # 실제 색은 전체에서 찾는다. 배경색과 40 이상 떨어진 무채색은 그림이다.
+    top = c.most_common(1)[0][0]
+    inner = Counter()
+    n_inner = 0
+    for y in range(0, h, 4):
+        for x in range(0, w, 4):
+            p = px[x, y]
+            n_inner += 1
+            if max(p) - min(p) < 20 and abs(min(p) // 6 * 6 - top) <= 40:
+                inner[min(p) // 6 * 6] += 1
+    return [v for v, n in inner.items() if n / n_inner >= 0.01]
 
 
 def _edge_pixels(px, w, h):
@@ -148,43 +239,29 @@ def cutout(img):
     그려넣는 경우가 많다**(실측: 완전투명 픽셀 0%, 모서리 알파 255). 그대로
     쓰면 게임에서 회색 체크판 사각형이 그대로 보인다.
 
-    가장자리에서 **연결된 밝은 무채색 영역만** 지운다. 전체를 밝기로 자르면
-    그물의 크림색 같은 **안쪽 밝은 부분까지 뚫린다** — 바깥에서 이어진 것만
-    지워야 안전하다.
+    체크판 **색 구간(band)** 에 든 무채색 픽셀만 지운다. "이 밝기보다 밝으면
+    배경" 으로 자르면 체크판이 어두울 때(회색 122/151) 그보다 밝은 **그림 속
+    밝은 부분까지 뚫린다** — 실제로 배지·유리병이 뚫렸다.
     """
-    from collections import Counter
-
     from PIL import Image, ImageFilter
 
-    w, h = img.size
-    rgb = img.convert("RGB")
-    px = rgb.load()
+    # 1) 체크무늬가 **무슨 톤인지** 테두리에서 알아낸다(필요하면 액자를 벗긴다).
+    #    밝기 하한을 두면 안 된다 — 흰색(255/240)·회색(213/193)·중간
+    #    회색(151/122) 까지 봤다. 무채색 톤 분포로만 잡는다.
+    img, tones, frame = _background(img)
+    if not tones:
+        return img  # 지울 배경이 아니다 — 건드리지 않는다.
 
-    # 1) 체크무늬가 **무슨 색인지** 테두리에서 알아낸다.
-    #    실측: 흰색(255,255,255) 과 밝은 회색(240~244) 이 번갈아 칠해져 있다.
-    edge = Counter()
-    for x in range(0, w, 2):
-        edge[px[x, 1]] += 1
-        edge[px[x, h - 2]] += 1
-    for y in range(0, h, 2):
-        edge[px[1, y]] += 1
-        edge[px[w - 2, y]] += 1
-    bg_colors = [
-        c for c, _ in edge.most_common(6)
-        if max(c) - min(c) < 20 and min(c) > 170
-    ]
-    if not bg_colors:
-        return img  # 배경이 밝은 무채색이 아니다 — 건드리지 않는다.
+    w, h = img.size
+    px = img.convert("RGB").load()
 
     # 2) **전역**으로 지운다. 테두리에서 이어진 것만 지우면 닫힌 고리 안쪽
     #    (무쇠 집게·황금 고리의 구멍)에 체크무늬가 그대로 남는다 — 실제로 남았다.
     #
-    #    색을 정확히 맞추는 방식은 못 쓴다. 체크무늬가 흰색(255)과 회색(240)
-    #    두 가지인데 좁은 허용치로는 한쪽만 잡혀 오히려 나빠졌다(무쇠 71%→56%).
-    #    **"밝고 무채색"** 이라는 성질로 잡는 게 안정적이다(전 파일 73~80%).
-    #
-    # 3) 두 축 모두 **부드러운 경사**를 준다. 딱 잘라내면 빛번짐(호박·황금)이
-    #    흰 테를 남긴다. 어둡거나 색이 있으면 아이템 — 둘 중 더 강한 쪽을 쓴다.
+    # 3) 지우는 기준은 **체크판 색 구간 안인가**다. "이보다 밝으면 배경" 은 못
+    #    쓴다 — 체크판이 회색(122/151)이면 그보다 밝은 배지·유리병까지 뚫린다.
+    #    구간 바깥은 **부드러운 경사**로 되살린다. 딱 잘라내면 빛번짐(호박·황금)
+    #    가장자리에 흰 테가 남는다. 채도가 있으면 그림 — 둘 중 강한 쪽을 쓴다.
     def ramp(v, lo, hi):
         if v <= lo:
             return 0
@@ -192,22 +269,13 @@ def cutout(img):
             return 255
         return int((v - lo) * 255 / (hi - lo))
 
-    # 체크판 중 **가장 어두운 칸** 바로 아래에서 자른다. 고정값(185~208)으로
-    # 두면 회색 체크판(193/213)이 그대로 남는다 — 실제로 남았다.
-    #
-    # ⚠️ 최빈색 몇 개로 정하면 안 된다. 테두리가 흰 칸에 주로 걸리면 **회색 칸이
-    # 최빈에 안 들어와** 기준이 254 로 잡히고, 239 짜리 회색 칸이 반투명하게
-    # 남는다(상의 황금·채집함 구리에서 실제로 그랬다).
-    # 테두리의 무채색 픽셀 **전부**를 모아 아래쪽 백분위를 쓴다.
-    lums = sorted(
-        min(c) for c in _edge_pixels(px, w, h)
-        if max(c) - min(c) < 20 and min(c) > 170
-    )
-    bg_min = lums[max(0, len(lums) * 2 // 100)] if lums else min(
-        min(c) for c in bg_colors
-    )
-    dark_hi = bg_min - 4
-    dark_lo = bg_min - 30
+    # 체크판 두 칸의 톤을 모두 감싸는 구간. 흰 체크판이면 [240,252] 처럼
+    # 좁고, 회색 체크판이면 [122,151] 처럼 아래에 있다.
+    band_lo, band_hi = min(tones) - 4, max(tones) + 4
+    # 되살아나는 폭. **위쪽은 좁게** — 회색 체크판(122/151)에서 폭을 넓게 잡으면
+    # 밝은 카키(모자 챙)가 반투명해져 배경이 비친다(실제로 비쳤다).
+    # 아래쪽은 어두운 그림과 배경 사이 안티에일리어싱이라 넉넉해야 테가 안 남는다.
+    fade_dn, fade_up = 30, 10
 
     a = bytearray(w * h)
     i = 0
@@ -216,9 +284,20 @@ def cutout(img):
             r, g, b = px[x, y]
             lum = min(r, g, b)
             sat = max(r, g, b) - lum
-            # 어두울수록 아이템 / 채도가 있을수록 아이템.
-            a[i] = max(255 - ramp(lum, dark_lo, dark_hi), ramp(sat, 18, 34))
+            # 구간보다 어둡거나 / 밝으면 그림. 채도가 있어도 그림.
+            by_lum = max(
+                255 - ramp(lum, band_lo - fade_dn, band_lo),
+                ramp(lum, band_hi, band_hi + fade_up),
+            )
+            a[i] = max(by_lum, ramp(sat, 18, 34))
             i += 1
+
+    # 둥근 카드 모서리에 남은 액자색을 마저 지운다. **테두리에서 이어진 것만**
+    # — 그림 안의 검은 외곽선까지 지우면 아이템이 갉아먹힌다.
+    if frame is not None:
+        _erase_connected(a, px, w, h, frame)
+
+    _eat_glow(a, px, w, h, band_lo)
 
     alpha = Image.frombytes("L", (w, h), bytes(a))
     # 계단을 없애는 정도로만 아주 살짝.
@@ -226,6 +305,102 @@ def cutout(img):
     out = img.copy()
     out.putalpha(alpha)
     return out
+
+
+def _eat_glow(a, px, w, h, band_lo, drop=50, limit=1.0):
+    """아이템 둘레의 **하얀 발광**을 지운다.
+
+    생성기가 스티커처럼 흰 후광을 그려 넣는 경우가 있다(채집도구 호박·하의
+    호박·채집함 구리). 체크판 색 구간에는 안 들어가서 남고, 게임에서 흰 테로
+    보인다. 후광은 **모든 채널이 밝고**(크림색) 바깥과 이어져 있다. 아이템
+    색은 한 채널이라도 어두워서(구리 98 · 호박 120) 여기 안 걸리고, 검은
+    외곽선에서 저절로 멈춘다.
+
+    ⚠️ 밝은 아이템(은 갑옷·은 반지)도 같은 조건에 걸린다. 그래서 **바깥에서
+    이어진 것만** 훑고, 지워질 양이 *그러고도 남는 그림*에 비해 `limit` 을
+    넘으면 "후광이 아니라 아이템"으로 보고 통째로 되돌린다.
+    ⚠️ 기준을 **그림 전체 넓이**로 잡으면 안 된다 — 작은 은반지는 통째로
+    지워져도 전체의 8% 밖에 안 돼 그냥 통과한다.
+
+    실측(원본 81장): 후광이 있는 4장만 크게 줄고(채집도구 호박 −36% · 채집함
+    구리 −28% · 채집도구 황금 −23% · 하의 호박 −15%) 나머지는 −0.2% 안쪽이다.
+    아이템마다 검은 외곽선이 그려져 있어 거기서 멈추기 때문이다.
+    """
+    from collections import deque
+
+    lo = band_lo - drop
+    seen = bytearray(w * h)
+    hit = []
+    q = deque()
+
+    def push(x, y):
+        i = y * w + x
+        if seen[i]:
+            return
+        seen[i] = 1
+        if a[i] == 0:  # 이미 배경
+            q.append((x, y))
+            return
+        r, g, b = px[x, y]
+        if min(r, g, b) >= lo:
+            hit.append(i)
+            q.append((x, y))
+
+    for x in range(w):
+        push(x, 0)
+        push(x, h - 1)
+    for y in range(h):
+        push(0, y)
+        push(w - 1, y)
+    while q:
+        x, y = q.popleft()
+        if x > 0:
+            push(x - 1, y)
+        if x < w - 1:
+            push(x + 1, y)
+        if y > 0:
+            push(x, y - 1)
+        if y < h - 1:
+            push(x, y + 1)
+
+    kept = sum(1 for v in a if v > 128) - len(hit)
+    if len(hit) > max(kept, 1) * limit:
+        return 0  # 후광이 아니라 밝은 아이템이다 — 건드리지 않는다.
+    for i in hit:
+        a[i] = 0
+    return len(hit)
+
+
+def _erase_connected(a, px, w, h, color):
+    """테두리에서 이어진 `color` 영역의 알파를 0으로 만든다(제자리 수정)."""
+    from collections import deque
+
+    seen = bytearray(w * h)
+    q = deque()
+
+    def push(x, y):
+        i = y * w + x
+        if not seen[i] and _near(px[x, y], color, 20):
+            seen[i] = 1
+            a[i] = 0
+            q.append((x, y))
+
+    for x in range(w):
+        push(x, 0)
+        push(x, h - 1)
+    for y in range(h):
+        push(0, y)
+        push(w - 1, y)
+    while q:
+        x, y = q.popleft()
+        if x > 0:
+            push(x - 1, y)
+        if x < w - 1:
+            push(x + 1, y)
+        if y > 0:
+            push(x, y - 1)
+        if y < h - 1:
+            push(x, y + 1)
 
 
 def _place(a, pairs):

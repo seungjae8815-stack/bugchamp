@@ -1937,7 +1937,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String forgeStep(int cur, int max) {
-    return '골드 $cur/$max칸';
+    return '공방 업그레이드 $cur/$max';
   }
 
   @override
@@ -2004,4 +2004,28 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get charPetHint => '펫 편성은 채집함에서 해요';
+
+  @override
+  String get forgeAutoShort => '자동';
+
+  @override
+  String get forgeStackFull => '모루가 가득 찼습니다';
+
+  @override
+  String get forgeStackHint => '눌러서 확인';
+
+  @override
+  String get sceneCatchTap => '지금 탭!';
+
+  @override
+  String get forgeResultNew => '새로 뽑은 것';
+
+  @override
+  String get forgeFilter => '필터';
+
+  @override
+  String get forgeFilterHint => '체크한 능력치가 하나라도 붙은 것만 모루에 쌓입니다.';
+
+  @override
+  String get forgeFiltered => '필터에 안 맞아 버렸습니다';
 }

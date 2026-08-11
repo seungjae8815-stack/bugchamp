@@ -1511,26 +1511,52 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
-  /// 제련 1회 — 화석 조각 1개를 태워 장비 하나를 뽑는다.
+  /// 제련 1회 — 화석 조각 1개를 태워 장비 하나를 뽑아 **모루 위에 쌓는다**.
   ///
-  /// 화석이 없으면 null. **결과를 낄지는 호출부가 정한다**(비교 후 교체/폐기).
-  Future<EquipItem?> forgeOnce() async {
+  /// 화석이 없거나 자리가 없으면 `item` 이 null.
+  /// 결과를 낄지는 나중에 정한다 — 뽑을 때마다 창이 뜨면 자동을 돌릴 수 없다.
+  ///
+  /// 필터([SaveGame.autoForgeOptions])를 걸어 두면 **그 능력치가 하나도 없는
+  /// 건 쌓지 않고 버린다**(`kept == false`). 10칸이 금방 차 버리면 자동이
+  /// 멈춰서, 원하는 것만 골라 받는 게 필터의 목적이다.
+  Future<({EquipItem? item, bool kept})> forgeOnce() async {
+    const nothing = (item: null, kept: false);
     final data = ref.read(gameDataProvider).value;
     final items = data?.itemConfig;
     final forge = data?.forgeConfig;
-    if (items == null || forge == null) return null;
+    if (items == null || forge == null) return nothing;
     final s = state.requireValue;
+    if (s.forgeStack.length >= kMaxForgeStack) return nothing;
     final have = s.materialCount(MaterialKind.fossil);
-    if (have < 1) return null;
-    final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.fossil] = have - 1;
-    await _commit(s.copyWith(materials: mats));
-    return forge_lib.forgeOnce(
+    if (have < 1) return nothing;
+    final item = forge_lib.forgeOnce(
       rng: math.Random(),
       items: items,
       forge: forge,
       forgeLevel: s.forgeLevel,
     );
+    final want = s.autoForgeOptions;
+    final kept = want.isEmpty || item.options.any((o) => want.contains(o.kind));
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.fossil] = have - 1;
+    await _commit(
+      s.copyWith(
+        materials: mats,
+        forgeStack: kept ? [...s.forgeStack, item] : null,
+      ),
+    );
+    return (item: item, kept: kept);
+  }
+
+  /// 모루 위에서 **맨 위 하나**를 집는다. 비었으면 null.
+  Future<EquipItem?> takeForgeItem() async {
+    final s = state.requireValue;
+    if (s.forgeStack.isEmpty) return null;
+    final item = s.forgeStack.last;
+    await _commit(
+      s.copyWith(forgeStack: s.forgeStack.sublist(0, s.forgeStack.length - 1)),
+    );
+    return item;
   }
 
   /// 지금 낀 것보다 나은지 — 자동 제련의 교체 판단.

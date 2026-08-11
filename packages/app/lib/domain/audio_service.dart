@@ -233,6 +233,12 @@ class AudioService {
 
   // ── 육성 ────────────────────────────────────────────────────────────────
   void sfxEnhance() => _playSfx('enhance');
+
+  /// 모루 망치질. **한 번 칠 때마다** 부른다.
+  ///
+  /// ⚠️ 파일은 반드시 **한 방짜리**여야 한다. 받은 원본이 15초짜리 연속
+  /// 망치질이라 그대로 넣었더니 화면을 떠나도 계속 울렸다(0.135초로 잘랐다).
+  void sfxForge() => _playSfx('forge');
   void sfxHatch() => _playSfx('hatch');
   void sfxBreed() => _playSfx('breed');
   void sfxMission() => _playSfx('mission');
