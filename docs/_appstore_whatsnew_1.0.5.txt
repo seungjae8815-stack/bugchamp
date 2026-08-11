@@ -1,33 +1,40 @@
 ========================================
  App Store — 새로운 기능 (1.0.5)
 ========================================
-※ 이모지 금지(심사 리젝 사유). Play 노트와 같은 내용의 무이모지판.
-※ iOS 는 1.0.4 심사 통과 **후** 이 1.0.5 를 올린다(release_cadence.md §1).
-   올릴 때의 빌드번호는 그 시점 최신으로.
+※ 이모지 금지, 심사 1.1 지뢰 단어 금지(짝짓기·교배·브리딩·breed 등 — 부제·키워드·심사메모까지).
+※ iOS 는 1.0.4 가 출시되지 못했으므로(심사 취소) **1.0.4 내용까지 합본**이다.
+※ 심사 중인 1.0.4 는 "개발자가 취소함" 후 1.0.5 로 재제출 — 취소된 버전의 문구는
+   버전 번호만 바꿔 재사용 가능(앱스토어 규칙 메모 참조).
 
 <ko-KR>
 곤충 키우기 업데이트!
 
 - 캐릭터 탭 신설 - 채집꾼을 8부위 장비로 꾸며요 (풀잎~호박 10등급, 전부 새 일러스트)
-- 공방 제련 - 곤충화석으로 장비 제작, 자동 제련과 옵션 필터, 공방 등급 업그레이드
-- 캐릭터 화면에서 야생 곤충 직접 채집 - "지금 탭!"이 뜨면 눌러 보세요
+- 공방 - 곤충화석으로 장비를 만들어요. 자동 제작과 옵션 필터, 공방 등급 업그레이드
+- 캐릭터 화면에서 야생 곤충 채집 - "지금 탭!"이 뜨면 눌러서 잡아 보세요
 - 몬스터 체력이 내 전력에 맞춰 올라 성장이 그대로 느껴져요
 - 직접 잡은 골드에 접속 보너스 (방치 보상은 그대로)
-- 결투 시즌이 매주 월요일 오전 9시에 모두 함께 종료
-- 방치 보상 미지급, 첫 설치 멈춤, 부화기 칸 사라짐 수정
+- 결투 시즌이 매주 월요일 오전 9시에 종료, 결투 입장권 제도 도입
+- Google, Apple 로그인 - 폰을 바꿔도 진행 상황을 이어가요
+- 소식, 운영 우편, 선물 코드 기능 추가
+- 성장 버튼을 꾹 누르면 연속 강화
+- 인앱 상점 안정화, 여러 버그 수정과 성능 개선
 
 재미있게 즐겨주세요!
 </ko-KR>
 <en-US>
 Bug Champ update!
 
-- New Character tab - 8 gear slots, 10 tiers, all-new art
-- Forge gear from insect fossils - auto-forge, stat filters, workshop upgrades
+- New Character tab - 8 gear slots, 10 tiers from Grass to Amber, all-new art
+- Workshop - craft gear from insect fossils, with auto-craft and stat filters
 - Catch wild bugs on the character screen with a timed tap
 - Monster HP scales with your power, so growth always shows
 - Your own kills pay an online bonus (idle rewards untouched)
-- Duel seasons end every Monday, 9 AM KST
-- Fixed missing idle rewards, first-launch freeze, vanishing incubator slots
+- Duel seasons end every Monday 9 AM KST, with a duel ticket system
+- Google and Apple sign-in - keep your progress across phones
+- News, operator mail, and gift codes
+- Hold the upgrade button to level up continuously
+- More stable in-app store, plus bug fixes and performance improvements
 
 Thanks for playing!
 </en-US>
@@ -35,12 +42,15 @@ Thanks for playing!
 昆虫育成アップデート！
 
 - キャラクタータブ新登場 - 採集家を8部位の装備で飾れます（10等級、すべて新規イラスト）
-- 工房で装備を鍛冶 - 昆虫化石から製作、自動鍛冶・オプションフィルタ・工房アップグレード
-- キャラクター画面で野生の昆虫を直接捕獲 - 「今タップ！」が出たらタップ
+- 工房 - 昆虫化石から装備を作成。自動作成とオプションフィルタ、工房の等級アップ
+- キャラクター画面で野生の昆虫を捕獲 - 「今タップ！」が出たらタップ
 - モンスターの体力が自分の戦力に合わせて上がり、成長を実感できます
 - 自分で倒した金貨にオンラインボーナス（放置報酬はそのまま）
-- 決闘シーズンが毎週月曜午前9時（韓国時間）に全員同時終了
-- 放置報酬の未支給、初回起動の停止、孵化器の枠が消える問題を修正
+- 決闘シーズンが毎週月曜午前9時に終了、決闘チケット制を導入
+- Google・Appleログイン対応 - 機種変更しても進行状況を引き継げます
+- お知らせ・運営メール・ギフトコード機能を追加
+- 強化ボタン長押しで連続強化
+- アプリ内ストアの安定化、各種バグ修正とパフォーマンス改善
 
 お楽しみください！
 </ja-JP>
