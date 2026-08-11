@@ -2,7 +2,9 @@
 
 > 이 문서는 "지금까지 뭘 만들었고, 다음에 뭘 하면 되는지"를 담은 **작업 재개용 스냅샷**이다.
 > 게임 규칙의 원본(헌법)은 `CLAUDE.md` (2026-07-15 현행화 완료 — 전투·신규 시스템 반영). 이 문서는 상세 현황·다음 작업 스냅샷.
-> 마지막 갱신: 2026-08-08 (**성장 밸런스 개편** — 적응형 몬스터 체력·주간 시즌·접속 보너스·체력 숫자 숨김. 그 전 2026-08-06 (**결투 티켓** — PvP 하루 판수 제한. 그 전 2026-07-18 (**Phase 4 Inc.2 — 진짜 비동기 대전**: 방어팀 등록 `registerDefender` + 스카우트 보드가 실 유저 방어팀 `fetchOpponents`. 그 전 2026-07-15: 수동 배틀·부상/회복·PvP 보상 JSON화·스카우트 보드·리그/티어·시즌 리셋·아레나 폴리시. 그 전: PvP 아레나 + 오행 전투엔진))).
+> 마지막 갱신: 2026-08-11 (**1.0.5 안드로이드 출시** — 캐릭터 탭(장비 8부위·공방 제련·씬 채집 미니게임)·서버 위조 개체 차단·구버전 하드컷.
+> ⚠️ 20260810 빌드가 **dart-define 없이 나가는 사고**(로그인·채팅·동기화 전멸) → 20260811 로 재출시. 재발 방지는 release_cadence.md §5 체크리스트.
+> 그 전 2026-08-08 (**성장 밸런스 개편** — 적응형 몬스터 체력·주간 시즌·접속 보너스·체력 숫자 숨김. 그 전 2026-08-06 (**결투 티켓** — PvP 하루 판수 제한. 그 전 2026-07-18 (**Phase 4 Inc.2 — 진짜 비동기 대전**: 방어팀 등록 `registerDefender` + 스카우트 보드가 실 유저 방어팀 `fetchOpponents`. 그 전 2026-07-15: 수동 배틀·부상/회복·PvP 보상 JSON화·스카우트 보드·리그/티어·시즌 리셋·아레나 폴리시. 그 전: PvP 아레나 + 오행 전투엔진))).
 
 ---
 
@@ -15,8 +17,10 @@
   - `core_run` — 방치 수학(오프라인 보상), `PetConfig`(수련·돌파·부화기·**부상회복**), buff/craft/enhance/mission/daily/gift/roadmap 설정.
   - `core_gathering` — 레거시 트랩 채집(v1, 현재 UI 미사용).
   - `app` — UI·저장·데이터·다국어.
-- **검증 상태**: 순수패키지 테스트(core_models 34·core_battle 7·core_run 31) + 앱 68개 통과(총 140), 5개 패키지 analyze 무결, 데이터 정합성 통과(battle.json 포함).
-- **세이브 스키마**: `kSaveSchemaVersion = 15` (마이그레이션 v0→v15 전부 존재).
+- **검증 상태**(2026-08-11): core_models 58 · core_battle 10 · core_run 124 · core_save 41 · **server 241** · 앱 137 = **총 611 통과**, 전 패키지 analyze 무결.
+- **세이브 스키마**: `kSaveSchemaVersion = 18` — 이후 추가 필드는 **버전을 올리지 않는 호환 필드**(§4).
+- **출시 상태**: 안드로이드 **1.0.5+20260811**(프로덕션) · iOS 1.0.4 심사 중(통과 시 1.0.5 제출).
+  버전 게이트: 공용 min=20260810(1.0.4 이하 하드컷), `LATEST_VERSION_ANDROID` 는 프로덕션 반영본과 일치시킨다.
 
 ---
 
@@ -50,6 +54,8 @@
 | **스토어 리뷰 유도(2026-08-07)** | 챕터 클리어 직후 1회 + 설정 버튼. **보상 없음** — 스토어 API 가 작성 여부·별점을 알려주지 않아 검증이 불가능하고, 플레이·앱스토어 정책이 평점 대가 보상을 금지한다 | `domain/review_service.dart`, save `reviewAsked` |
 | **결투 티켓(2026-08-06)** | 결투 1판=티켓 1장. 최대 10, **30분당 1장** 자연충전, 광고 +3장(**하루 30회**), 젤리 10=만땅. 무제한 결투 탓에 트로피 랭킹이 "많이 돌린 사람" 순이 되던 문제를 막는다(실측: 스테이지 86 유저가 스테이지 413 유저의 3.5배 트로피). **서버 소유 필드** — 세이브 편집·구버전 앱으로 못 늘린다 | `battle.json → tickets`, `core_run/battle_config.dart`(`regenTickets`/`consumeTicket`/`grantTickets`/`refillTickets`), save `pvpTickets`·`ticketsAt`·`adUseCounts`·`adUseDate`, `GameActions.consumePvpTicket`/`grantAdTicket`/`refillPvpTickets` + `/pvp/ticket/ad`·`/pvp/ticket/refill`, battle_screen `TicketBar` |
 | **부상/회복** | 결투에서 KO된 내 곤충 → 등급별 회복 타이머(부상 중 편성 불가), **젤리 즉시회복**, 채집함 🩹배지·상세카드, 편성 피커 비활성 | `save_game.injured`(v12), `applyBattleResult(koedBugIds:)`/`healInjury`, `pet_config.injuryDuration/Jelly`, `pets.json` |
+| **캐릭터 탭(2026-08-11)** | 장비 8부위×10등급(옵션 15종), **공방 제련**(곤충화석→모루 스택 10칸·자동·옵션 필터·망치질 3연타 사운드 동기), 씬에서 **야생 곤충 탭 채집** 미니게임(알로 획득·쿨다운), 한 화면 레이아웃. 펫·스킬 탭은 준비 중 패널 | `features/character/*`, `items.json`·`forge.json`·`skills.json`, `run_config.json` sceneCatch*, save `equippedItems`/`forgeStack` 등 |
+| **서버 위조 차단(2026-08-11)** | PvP 편성 시 `IndividualBug.integrityError` 로 스탯 상한 검증(사이즈 종범위·포텐셜·강화총량·수련/돌파, NaN 거름) → `bug_forged:*` 거부. `forgeStack` 서버 상한 10 | core_models `individual_bug.dart`, server `actions.dart` validateTeam/enforceStorage |
 | 공용 팝업 테마 | 다크그린+허니, 보상 나열 | `ui/game_dialog.dart` |
 | 시스템 | 뒤로가기(탭→홈/홈→종료), 데이터 초기화, 개발자 모드(**디버그 전용**) | app_shell, play_screen |
 | 이미지 | 곤충 38장(누끼·측면), 버프 5, 부화기 캡슐 | `assets/images/` |
@@ -77,11 +83,15 @@ CLAUDE.md는 아직 "치기/집기/던지기"로 적혀 있으나 **실제 구�
 - v4 닉네임·버프 / v5 미션 / v6 장착 / v7 일일보상 / v8 선물 / v9 클리어챕터 / v10 부화기 / v11 PvP 트로피 / v12 부상(injured) / v13 승급보상(claimedLeagues) / v14 시즌(seasonStartedAt·seasonPeakTrophies) / **v15 브리딩(breeding·breedingCapacity)**.
 - `seasonStartedAt` 은 마이그레이션에서 미표기 → 로드 시 컨트롤러가 now로 초기화(시간을 만들지 않는 원칙).
 - **v16 결제(adsRemoved·starterBought·ownedSkins·passExpiresAt) / v17 구매원장(redeemedPurchases) / v18 채팅차단(blockedUserIds)**.
-- ⚠️ **버전을 올리지 않는 필드**(호환 필드): `storageCapacity`(채집함 상한, 2026-08-03) 와
-  `pvpTickets`·`ticketsAt`·`adUseCounts`·`adUseDate`(결투 티켓, 2026-08-06). 없으면 기본값으로
-  읽히므로 구/신 버전이 서로의 세이브를 그대로 읽는다. 버전을 올리면 서버가 새 세이브를
-  저장하는 순간 **스토어의 구버전 앱이 "다운그레이드 불가"로 죽는다**. 새 필드가 단순 추가라면
-  이 방식을 쓴다.
+- ⚠️ **버전을 올리지 않는 필드**(호환 필드): `storageCapacity`(2026-08-03),
+  `pvpTickets`·`ticketsAt`·`adUseCounts`·`adUseDate`(결투 티켓, 2026-08-06),
+  **장비/공방(2026-08-10)**: `equippedItems`·`forgeStack`·`skillLevels`·`equippedSkills`·
+  `forgeLevel`·`forgeSteps`·`forgeUpAt`·`autoForgeOptions`·`autoForgeStopOnHit`.
+  없으면 기본값으로 읽히므로 구/신 버전이 서로의 세이브를 그대로 읽는다. 버전을 올리면
+  서버가 새 세이브를 저장하는 순간 **스토어의 구버전 앱이 "다운그레이드 불가"로 죽는다**.
+- ⚠️ **중첩 enum 키는 이 정책의 구멍이다**: `materials` 맵에 새 `MaterialKind`(예: 1.0.5 의
+  `fossil`)를 넣으면 **그 재료를 모르는 구버전 앱이 파싱에서 죽는다**(`fromKey` 가 throw).
+  → **1.0.6 첫 작업 = 파서 방어**(모르는 키 건너뛰기). 메모: bugchamp-save-parser-hardening.
 - 로드 시 **자가치유**: 존재하지 않는 곤충을 가리키는 `incubating`·`injured` 항목 자동 정리(슬롯 누수 방지). `injured` 는 **회복 완료된 항목도 프룬**.
 
 ---
@@ -127,7 +137,24 @@ CLAUDE.md는 아직 "치기/집기/던지기"로 적혀 있으나 **실제 구�
 13. ~~**로그인 + 클라우드 세이브**~~ ✅ — 구글 로그인 + Supabase `saves` 백업/복원(결제 선행조건).
 14. ~~**스킨 실제 적용**~~ ✅ (2026-07-20) — ColorFilter 방식. 상세는 `docs/monetization.md` ④.
 
-### 남은 큰 축
+### 다음 작업 (1.0.6 — 순서대로)
+
+1. **세이브 파서 방어** ⭐ 첫 작업 — `_materialsFromJson` 이 모르는 재료 키를 건너뛰게.
+   새 기능(새 재료·enum)보다 **먼저** 넣어야 1.0.7 에서 재료를 추가해도 1.0.6 이 안 죽는다.
+2. **Play Billing 8.0.0** ⭐ **마감 2026-08-31** — 지금은 in_app_purchase 3.1.13 →
+   android 0.3.6(Billing **6.2.0**)이라 이후 업데이트가 거부된다. 해법은 in_app_purchase
+   3.3.0(→ android 0.5.0 = Billing 8.0.0)인데, **3.2+ 는 iOS 가 StoreKit2 로 바뀌어**
+   `serverVerificationData` 가 JWS 가 되고 서버 verifyReceipt(base64)가 21002 로 거부한다
+   (pubspec 의 `<3.2.0` 고정 사유). 선택지: ⓐ 3.3.0 올리고 iOS 영수증 검증을 JWS 로 전환(정공법),
+   ⓑ `dependency_overrides` 로 android 구현만 0.5.0 강제(StoreKit1 유지 — 플랫폼 인터페이스
+   호환 확인 필요). 어느 쪽이든 **결제 실기 테스트 동반**.
+3. **iOS 1.0.4 통과 즉시 1.0.5 제출** — 공용 min=20260810 하드컷 때문에 iOS 1.0.4 는
+   라이브되는 순간 막힌 채 시작한다. Codemagic `ios-release` 워크플로.
+4. **펫·스킬 탭 완성** — 지금은 준비 중 패널(`_PetsPanel`/`_SkillsPanel` 코드는 보존,
+   `character_screen.dart` 분기만 되돌리면 복구). 펫 슬롯 채집함→캐릭터 이동도 이때.
+5. 캐릭터 씬 폴리시 — 하의 아트 반영 확인, 걷기/공격 스프라이트 추가 프레임.
+
+### 남은 큰 축 (기존)
 - ~~**in_app_purchase 실연동**~~ ✅ 코드 완료(2026-07-20) — `StoreIapService`·세이브 v17 구매 원장·
   스토어 현지가격 표시·릴리즈 자동 스토어모드. **다음은 사장님의 Play Console 작업** → `docs/play_console_iap.md`.
 - **영수증 서버 검증** ⭐ — 매출 나기 전 필수. `docs/monetization.md` §6.
@@ -182,5 +209,8 @@ flutter run -d <device-id>   # 예: R3CX5075YNT (SM S928N)
   - **아레나 폴리시**: 곤충 KO/교대 시 **슬라이드 인/아웃**, 오행 克 히트에 **링 버스트** + **햅틱 진동**(폰 실기에서만 체감), 수동 배틀 수 선택 시 가벼운 햅틱
 - [ ] **출시**: 안드로이드 우선 · iOS 는 통과할 때마다 따라잡기 → `docs/release_cadence.md`
       (버전·빌드번호 규칙, 플랫폼별 `LATEST_VERSION_*` 갱신 시점)
-- [ ] 위 §7에서 다음 작업 1개 선택 (추천: **in_app_purchase 실연동** — 단, Play Console 상품 등록이 선행)
+- [ ] **1.0.5 실기 확인(캐릭터 탭)**: 장비 8칸 그림·등급 바탕색, 모루 두드리기(3연타 소리 동기·연타 차단),
+      자동 제련(만석/화석 소진 시 정지), 필터, 쌓인 아이템 열기(바깥 탭=보존), 씬 채집("지금 탭!"→알 획득),
+      **백그라운드 복귀 시 연결 확인**(끊김 배너 즉시 갱신)
+- [ ] 위 "다음 작업(1.0.6)" 순서대로 — ① 파서 방어 ② **Billing 8(마감 8/31)**
 - [ ] 실기 확인은 `docs/DEVICE_CHECKLIST.md` 를 볼 것 (그동안 쌓인 항목 정리됨)

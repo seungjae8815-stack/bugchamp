@@ -139,6 +139,12 @@ class _AppShellState extends ConsumerState<AppShell>
       svc.cancelOfflineFull();
       unawaited(svc.cancelHatches());
       unawaited(svc.cancelGift());
+      // 복귀 즉시 서버와 통신을 확인한다. 안 하면 다음 60초 주기까지
+      // **백그라운드에서 끊긴 줄 모르고** 놀고, 반대로 백그라운드에서
+      // 회복됐는데 "연결 끊김" 배너가 계속 떠 있기도 한다.
+      // reconnect 는 변경 감지를 무력화해 반드시 한 번 올려본다 —
+      // flush 만 부르면 세이브가 안 변했을 때 서버에 닿지 않아 확인이 안 된다.
+      unawaited(_uploader.reconnect());
     }
   }
 

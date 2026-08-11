@@ -55,6 +55,8 @@ flutter build appbundle `
   --dart-define-from-file=supabase.env.json `
   --dart-define-from-file=admob.env.json `
   --dart-define=GAME_SERVER_URL=https://bugchamp-server-867649520275.asia-northeast3.run.app
+# 2.5) 빌드 검증 — define 이 정말 들어갔는지 (빠져도 빌드는 성공하므로 필수)
+python -c "import zipfile; so=zipfile.ZipFile('build/app/outputs/bundle/release/app-release.aab').read('base/lib/arm64-v8a/libapp.so'); print('server URL:', 'OK' if b'bugchamp-server-867649520275' in so else 'MISSING!'); print('supabase:', 'OK' if b'supabase.co' in so else 'MISSING!')"
 # 3) build\app\outputs\bundle\release\app-release.aab 업로드
 # 4) 출시 노트 = docs\_release_notes_<버전>.txt 를 통째로 붙여넣기
 # 5) 프로덕션 반영 확인 후 LATEST_VERSION_ANDROID 갱신(§2)
@@ -88,6 +90,11 @@ Codemagic `ios-release` 워크플로가 IPA 를 빌드해 **TestFlight 까지** 
       회귀 확인: `packages/server` 테스트의 "위조 개체 차단" 그룹.
       ⚠️ **이 검증이 포함된 서버를 앱보다 먼저 배포할 것.**
 - [ ] `pubspec.yaml` 빌드번호 +1 (직전 출시본과 겹치지 않는지 눈으로 확인)
+- [ ] ⚠️ **AAB 는 반드시 §3 명령으로** — dart-define 3종(supabase.env.json ·
+      admob.env.json · GAME_SERVER_URL) 빠지면 **로그인·채팅·서버 동기화가 통째로
+      죽은 빌드**가 나간다(1.0.5/20260810 실제 사고 — 20260811 로 재출시).
+      업로드 전 확인: AAB 의 `libapp.so` 에 서버 주소 문자열이 있는지
+      (`python -c "...zipfile..."` — §3 아래 검증 스니펫).
 - [ ] 서버 변경이 있으면 서버 먼저 배포
 - [ ] `flutter test` · `flutter analyze` 통과
 - [ ] 출시 노트 3개 언어 (ko 500자 / en 500자 / ja 500자 한도)
