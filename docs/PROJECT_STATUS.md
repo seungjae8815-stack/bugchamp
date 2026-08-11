@@ -141,13 +141,11 @@ CLAUDE.md는 아직 "치기/집기/던지기"로 적혀 있으나 **실제 구�
 
 1. **세이브 파서 방어** ⭐ 첫 작업 — `_materialsFromJson` 이 모르는 재료 키를 건너뛰게.
    새 기능(새 재료·enum)보다 **먼저** 넣어야 1.0.7 에서 재료를 추가해도 1.0.6 이 안 죽는다.
-2. **Play Billing 8.0.0** ⭐ **마감 2026-08-31** — 지금은 in_app_purchase 3.1.13 →
-   android 0.3.6(Billing **6.2.0**)이라 이후 업데이트가 거부된다. 해법은 in_app_purchase
-   3.3.0(→ android 0.5.0 = Billing 8.0.0)인데, **3.2+ 는 iOS 가 StoreKit2 로 바뀌어**
-   `serverVerificationData` 가 JWS 가 되고 서버 verifyReceipt(base64)가 21002 로 거부한다
-   (pubspec 의 `<3.2.0` 고정 사유). 선택지: ⓐ 3.3.0 올리고 iOS 영수증 검증을 JWS 로 전환(정공법),
-   ⓑ `dependency_overrides` 로 android 구현만 0.5.0 강제(StoreKit1 유지 — 플랫폼 인터페이스
-   호환 확인 필요). 어느 쪽이든 **결제 실기 테스트 동반**.
+2. ~~**Play Billing 8.0.0**~~ ✅ **완료(2026-08-11, 20260811 에 포함)** — `dependency_overrides`
+   로 android 구현만 0.5.0(Billing 8.0.0) 강제. iOS 는 StoreKit1 유지(서버 verifyReceipt 호환).
+   gradle 해석으로 `billingclient:billing:8.0.0` 확인. **남은 정리**: iOS 영수증을 JWS 검증으로
+   전환하면 오버라이드를 지우고 in_app_purchase 3.3.0 으로 — pubspec 주석 참조.
+   ⚠️ **결제 실기 확인 필요**: 20260811 프로덕션에서 젤리 구매 1건 테스트(Billing 6→8 전환 검증).
 3. **iOS 1.0.4 통과 즉시 1.0.5 제출** — 공용 min=20260810 하드컷 때문에 iOS 1.0.4 는
    라이브되는 순간 막힌 채 시작한다. Codemagic `ios-release` 워크플로.
 4. **펫·스킬 탭 완성** — 지금은 준비 중 패널(`_PetsPanel`/`_SkillsPanel` 코드는 보존,
