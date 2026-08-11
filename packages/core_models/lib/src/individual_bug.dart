@@ -79,6 +79,47 @@ class IndividualBug {
   /// 강화 상한 레벨 (§2.1).
   int get maxLevel => potential * kLevelsPerPotential;
 
+  /// 이 개체가 **정상 플레이로 만들어질 수 있는 값인지** 검사한다.
+  ///
+  /// 위반이 없으면 null, 있으면 짧은 사유 코드(로그·에러 응답용).
+  ///
+  /// 서버 PvP 편성 검증이 쓴다 — 드롭 롤이 기기 권위라 세이브 편집으로
+  /// 5성 만렙 전설을 위조할 수 있는데, 소유 여부만 보면 그 곤충으로 트로피를
+  /// 쌓아 **랭킹이 오염**된다. 위조 자체는 못 막아도 *효과*는 여기서 막는다.
+  ///
+  /// ⚠️ 생성자 `assert` 는 릴리스에서 **꺼진다** — 서버 컨테이너는 릴리스로
+  /// 돌므로 assert 를 믿으면 안 되고, 반드시 이 함수로 검사해야 한다.
+  ///
+  /// [levelCap] 은 **이 개체의 돌파 티어**에 해당하는 수련 상한
+  /// (`PetConfig.levelCap(breakthroughTier)`), [maxBreakthroughTier] 는
+  /// 설정의 최대 티어. core_models 는 core_run 을 모르므로 값으로 받는다.
+  String? integrityError(
+    Species species, {
+    required int levelCap,
+    required int maxBreakthroughTier,
+  }) {
+    // ⚠️ NaN 은 모든 비교가 false 라 범위 검사를 **통과해 버린다** — 먼저 거른다.
+    if (!sizeMm.isFinite) return 'size_not_finite';
+    // 롤·브리딩 모두 종 범위로 clamp 하므로 범위 밖 = 위조다.
+    // 부동소수 저장/파싱 오차만 허용한다.
+    if (sizeMm < species.sizeMinMm - 0.001 ||
+        sizeMm > species.sizeMaxMm + 0.001) {
+      return 'size_out_of_range';
+    }
+    if (potential < kPotentialMin || potential > kPotentialMax) {
+      return 'potential_out_of_range';
+    }
+    for (final part in BugPart.values) {
+      if (enhancement.levelOf(part) < 0) return 'enhance_negative';
+    }
+    if (enhancement.total > maxLevel) return 'enhance_over_cap';
+    if (breakthroughTier < 0 || breakthroughTier > maxBreakthroughTier) {
+      return 'breakthrough_out_of_range';
+    }
+    if (level < 1 || level > levelCap) return 'level_over_cap';
+    return null;
+  }
+
   /// 이 개체의 사이즈에 대응하는 스탯 배율 (종 사이즈 범위 기준).
   double statMultiplier(Species species) =>
       sizeToStatMultiplier(sizeMm, species.sizeMinMm, species.sizeMaxMm);

@@ -298,6 +298,73 @@ void main() {
       expect(run(s, ['mine-1']).error, 'bug_injured');
     });
 
+    group('위조 개체 차단 — 세이브 편집으로 만든 값은 편성 거부', () {
+      // 드롭 롤이 기기 권위라 위조 자체는 막을 수 없다. 여기서 *효과*를
+      // 막는다 — 통과하면 위조 곤충으로 트로피를 쌓아 랭킹이 오염된다.
+      SaveGame forged(IndividualBug b) =>
+          SaveGame.initial(createdAt: t0).copyWith(bugs: [b]);
+
+      test('종 사이즈 범위 밖(거대화)', () {
+        final b = bug('mine-1').copyWith(sizeMm: 999);
+        expect(
+          run(forged(b), ['mine-1']).error,
+          'bug_forged:size_out_of_range',
+        );
+      });
+
+      test('NaN 사이즈 — 비교가 전부 false 라 범위 검사를 통과해 버린다', () {
+        final b = bug('mine-1').copyWith(sizeMm: double.nan);
+        expect(run(forged(b), ['mine-1']).error, 'bug_forged:size_not_finite');
+      });
+
+      test('포텐셜 5 초과', () {
+        // 생성자 assert 는 릴리스에서 꺼지므로 fromJson 경로로 만든다.
+        final b = IndividualBug.fromJson(
+          bug('mine-1').toJson()..['potential'] = 9,
+        );
+        expect(
+          run(forged(b), ['mine-1']).error,
+          'bug_forged:potential_out_of_range',
+        );
+      });
+
+      test('부위 강화 총량이 포텐셜×10 초과', () {
+        final b = bug('mine-1').copyWith(
+          enhancement: const PartLevels(
+            hornJaw: 20,
+            cuticle: 20,
+            wing: 20,
+            build: 20,
+          ),
+        );
+        expect(run(forged(b), ['mine-1']).error, 'bug_forged:enhance_over_cap');
+      });
+
+      test('수련 레벨이 돌파 티어 상한 초과', () {
+        final b = bug('mine-1').copyWith(level: 999);
+        expect(run(forged(b), ['mine-1']).error, 'bug_forged:level_over_cap');
+      });
+
+      test('돌파 티어가 설정 최대 초과', () {
+        final b = bug('mine-1').copyWith(breakthroughTier: 99);
+        expect(
+          run(forged(b), ['mine-1']).error,
+          'bug_forged:breakthrough_out_of_range',
+        );
+      });
+
+      test('정상 상한값(경계)은 통과한다 — 진짜 만렙 유저를 막으면 안 된다', () {
+        final cap = petCfg.levelCap(petCfg.maxTier);
+        final b = bug('mine-1').copyWith(
+          sizeMm: 60, // 종 최대
+          level: cap,
+          breakthroughTier: petCfg.maxTier,
+          enhancement: const PartLevels(hornJaw: 10, cuticle: 10, wing: 10),
+        ); // potential 3 → 강화 상한 30 = 딱 상한
+        expect(run(forged(b), ['mine-1']).isOk, isTrue);
+      });
+    });
+
     test('전투가 성립하면 결과와 보상이 확정된다', () {
       final r = run(saveWith(['mine-1']), ['mine-1']);
       expect(r.isOk, isTrue);
@@ -1427,6 +1494,21 @@ void main() {
       expect(r.isOk, isTrue);
       expect(r.save!.gold, 5000);
       expect(r.save!.upgradeLevel(UpgradeKind.attack), 10);
+    });
+
+    test('모루 스택은 서버가 상한(10)으로 자른다 — 세이브 비대화 차단', () {
+      // 앱은 kMaxForgeStack 에서 멈추지만 조작 업로드는 수천 개를 실을 수
+      // 있다. 곤충 3만 마리 13.6MB 사고와 같은 경로라 서버가 자른다.
+      final client = stored().copyWith(
+        forgeStack: [
+          for (var i = 0; i < 50; i++)
+            EquipItem(slot: EquipSlot.tool, tier: i % 10, options: const []),
+        ],
+      );
+      final r = actions.mergeSave(stored(), client.toJson());
+      expect(r.save!.forgeStack.length, kMaxForgeStack);
+      // **최근 것**(뒤쪽)이 남아야 한다 — 방금 뽑은 게 사라지면 안 된다.
+      expect(r.save!.forgeStack.last.tier, 49 % 10);
     });
 
     // t0 = 2026-07-20(월) 12:00 UTC → 이번 시즌 시작은 같은 날 09:00 KST(=00:00 UTC).

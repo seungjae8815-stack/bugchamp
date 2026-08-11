@@ -331,9 +331,19 @@ class GameActions {
     final inc = save.incubatorCapacity > incMax
         ? incMax
         : save.incubatorCapacity;
-    final out = (cap == save.storageCapacity && inc == save.incubatorCapacity)
+    var out = (cap == save.storageCapacity && inc == save.incubatorCapacity)
         ? save
         : save.copyWith(storageCapacity: cap, incubatorCapacity: inc);
+    // 모루 위 제련 결과도 상한을 강제한다. 앱은 [kMaxForgeStack] 에서 멈추지만
+    // 조작 업로드가 수천 개를 실으면 세이브가 비대해진다 — 곤충 3만 마리
+    // 13.6MB 사고(§2.1)와 같은 경로다. 최근 것부터 남긴다.
+    if (out.forgeStack.length > kMaxForgeStack) {
+      out = out.copyWith(
+        forgeStack: out.forgeStack.sublist(
+          out.forgeStack.length - kMaxForgeStack,
+        ),
+      );
+    }
     return out.trimmedToStorage();
   }
 
@@ -453,6 +463,16 @@ class GameActions {
           LifeStage.adult) {
         return (team: const [], error: 'not_adult');
       }
+      // **스탯 상한 검증** — 드롭 롤이 기기 권위라 세이브 편집으로 위조한
+      // 5성 만렙 개체가 올라올 수 있다. 소유만 보면 그 곤충으로 트로피를
+      // 쌓아 랭킹이 오염된다(⚠️ 2026-08-09 확인된 구멍). 정상 플레이로
+      // 불가능한 값이면 편성 자체를 거부한다.
+      final forged = bug.integrityError(
+        sp,
+        levelCap: petConfig.levelCap(bug.breakthroughTier),
+        maxBreakthroughTier: petConfig.maxTier,
+      );
+      if (forged != null) return (team: const [], error: 'bug_forged:$forged');
       team.add(
         buildBattleBug(
           bug: bug,
