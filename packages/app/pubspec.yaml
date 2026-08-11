@@ -56,6 +56,16 @@ dependencies:
   audioplayers: ^6.1.0
   shared_preferences: ^2.3.0
 
+# ── Play Billing 8.0.0 (Google Play 요구, 2026-08-31 마감) ──
+# in_app_purchase 3.1.x 는 android 구현 ^0.3.x(Billing 6.2.0)를 쓴다. 3.3.0 으로
+# 올리면 해결되지만 iOS 가 StoreKit2 로 바뀌어 서버 verifyReceipt 가 깨진다
+# (위 `<3.2.0` 고정 사유). 그래서 **안드로이드 구현만** 0.5.0(Billing 8.0.0)으로
+# 강제한다 — 0.3.6 과 0.5.0 은 같은 platform_interface ^1.4.0 을 구현하고,
+# 앱은 android 전용 API 를 안 쓰므로 Dart 계약이 그대로다.
+# iOS 영수증을 JWS 검증으로 전환하면 이 오버라이드를 지우고 3.3.0 으로 올린다.
+dependency_overrides:
+  in_app_purchase_android: 0.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
