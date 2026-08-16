@@ -632,6 +632,41 @@ void main() {
       expect(r.extra['clears'] as int, lessThanOrEqualTo(300));
     });
 
+    test('등급 필터를 서버도 건다 — 클라만 거르면 구버전 앱이 우회한다', () {
+      // 테스트 종은 common 하나뿐이라, 기준을 rare 로 올리면 전부 걸린다.
+      final filtered = aged(
+        const Duration(hours: 8),
+      ).copyWith(bugFilterMinGrade: Grade.rare);
+      final r = seeded(3).sync(filtered);
+      expect(r.save!.bugs, isEmpty);
+      expect(r.extra['bugsGained'], 0);
+    });
+
+    test('필터에 걸린 곤충은 재료로 환산된다(자동 방생) — 젤리가 아니다', () {
+      final base = aged(const Duration(hours: 8));
+      final filtered = base.copyWith(bugFilterMinGrade: Grade.legendary);
+
+      final plain = seeded(3).sync(base).save!;
+      final released = seeded(3).sync(filtered).save!;
+
+      // 곤충 대신 일반 재료가 더 들어온다.
+      int mats(SaveGame s) => const [
+        MaterialKind.chitin,
+        MaterialKind.mineral,
+        MaterialKind.sap,
+      ].fold(0, (a, k) => a + s.materialCount(k));
+      expect(plain.bugs, isNotEmpty, reason: '기준 케이스에 곤충이 있어야 비교가 성립한다');
+      expect(released.bugs, isEmpty);
+      expect(mats(released), greaterThan(mats(plain)));
+      // ⚠️ 프리미엄 재화(젤리)는 자동 통로로 절대 새면 안 된다(§2.6).
+      expect(released.materialCount(MaterialKind.jelly), 0);
+    });
+
+    test('필터가 기본값이면 예전 그대로 곤충이 들어온다', () {
+      final r = seeded(3).sync(aged(const Duration(hours: 8)));
+      expect(r.save!.bugs, isNotEmpty);
+    });
+
     test('얻은 곤충은 알 단계로 들어온다', () {
       final r = seeded(3).sync(aged(const Duration(hours: 8)));
       final gained = r.save!.bugs;
@@ -987,6 +1022,45 @@ void main() {
     test('슬롯이 없으면 거부', () {
       final s = pair().copyWith(breedingCapacity: 0);
       expect(start(actions, s).error, 'no_slot');
+    });
+
+    // ── 짝짓기 텀(§2.5) ────────────────────────────────────────────
+    // 부모는 잠기지 않으므로(스냅샷 저장) 텀이 없으면 잘 뽑힌 한 쌍으로
+    // 같은 급 자식을 무한히 찍어낼 수 있다. **서버도** 막아야 구버전 앱이나
+    // 세이브를 고친 요청이 우회하지 못한다.
+    test('시작하면 부모 둘 다 쿨다운이 걸린다 — 수령이 아니라 시작 시점', () {
+      final r = start(actions, pair());
+      expect(r.isOk, isTrue);
+      final cool = r.save!.breedCooldowns;
+      expect(cool.keys.toSet(), {'mom', 'dad'});
+      expect(cool['mom']!.isAfter(t0), isTrue);
+      expect(r.save!.breedOnCooldown('mom', t0), isTrue);
+    });
+
+    test('쿨다운 중인 부모로 다시 시작하면 거부', () {
+      final started = start(actions, pair()).save!;
+      // 슬롯을 비워 "슬롯 없음"이 아니라 쿨다운으로 걸리는지 확인한다.
+      final free = started.copyWith(breeding: const [], breedingCapacity: 1);
+      expect(start(actions, free).error, 'breed_cooldown');
+    });
+
+    test('쿨다운이 지나면 다시 짝짓기할 수 있다', () {
+      final started = start(actions, pair()).save!;
+      final free = started.copyWith(breeding: const [], breedingCapacity: 1);
+      final later = GameActions(
+        config: cfg,
+        now: () => t0.add(const Duration(days: 2)),
+      );
+      final r = later.startBreeding(
+        free,
+        motherId: 'mom',
+        fatherId: 'dad',
+        speciesById: speciesById,
+        petConfig: cfg.pet,
+      );
+      expect(r.isOk, isTrue);
+      // 지난 쿨다운은 걷어낸다 — 안 그러면 세이브가 계속 커진다.
+      expect(r.save!.breedCooldowns.length, 2);
     });
 
     test('산란 중에는 수령할 수 없다 (젤리 없이)', () {

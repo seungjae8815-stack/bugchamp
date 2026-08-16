@@ -482,6 +482,13 @@ class GameActions {
           cuticlePerLevel: per(BugPart.cuticle, 0.04),
           wingPerLevel: per(BugPart.wing, 0.03),
           buildPerLevel: per(BugPart.build, 0.05),
+          // 혈통 특성(§2.5)도 전투에 실린다 — 앱과 **같은 배율**이어야 한다.
+          //
+          // ⚠️ 특성 자체는 위조를 막을 수단이 없다(곤충 롤이 기기 권위).
+          // 다만 위조 가능한 다른 값보다 효과가 작고, `integrityError` 가
+          // 나머지 상한을 이미 막는다. 서버 발급 전환 시 함께 봉인한다.
+          traitAtkBonus: petConfig.traitBattleAtk(bug.trait),
+          traitHpBonus: petConfig.traitBattleHp(bug.trait),
         ),
       );
     }
@@ -657,25 +664,35 @@ class GameActions {
     final species = config.speciesList;
 
     // 채집함 여유분까지만 받는다(가득 차면 곤충 획득 차단 — 재료·골드는 계속).
-    // 롤 자체는 그대로 굴려 RNG 소비 순서를 유지한다(결정론).
     var bugRoom = save.storageFree;
 
     for (var i = 0; i < rolls; i++) {
       if (species.isNotEmpty &&
-          rng.nextDouble() < run.bugDropChance * stats.bugFind &&
-          bugRoom > 0) {
+          rng.nextDouble() < run.bugDropChance * stats.bugFind) {
         final sp = species[rng.nextInt(species.length)];
         // 앱과 같은 분포: rng*rng 라 고포텐셜이 드물다.
         final potential = 1 + (rng.nextDouble() * rng.nextDouble() * 4).floor();
-        newBugs.add(
-          IndividualBug.roll(
-            id: _uuid.v4(),
-            species: sp,
-            rng: rng,
-            potential: potential.clamp(1, 5),
-          ).copyWith(stage: LifeStage.egg, stageSince: t),
-        );
-        bugRoom--;
+        // 등급 필터(§2.1)를 **서버도 건다.** 클라이언트만 거르면 구버전 앱·
+        // 조작 업로드가 필터를 우회해 칸을 채운다.
+        if (!save.acceptsGrade(sp.grade)) {
+          // 자동 방생 → 일반 재료. 젤리를 주지 않는 이유는 pets.json 참조.
+          final give = config.pet.releaseMaterial(sp.grade);
+          if (give > 0) {
+            final kind =
+                _regularMaterials[rng.nextInt(_regularMaterials.length)];
+            mats[kind] = (mats[kind] ?? 0) + give;
+          }
+        } else if (bugRoom > 0) {
+          newBugs.add(
+            IndividualBug.roll(
+              id: _uuid.v4(),
+              species: sp,
+              rng: rng,
+              potential: potential.clamp(1, 5),
+            ).copyWith(stage: LifeStage.egg, stageSince: t),
+          );
+          bugRoom--;
+        }
       }
       if (rng.nextDouble() < run.materialDropChance * stats.materialFind) {
         final kind = _regularMaterials[rng.nextInt(_regularMaterials.length)];
@@ -982,12 +999,9 @@ class GameActions {
     );
   }
 
-  /// 돌파에 쓰는 재료 3종(젤리 제외).
-  static const _breakMats = [
-    MaterialKind.chitin,
-    MaterialKind.mineral,
-    MaterialKind.sap,
-  ];
+  /// 돌파에 쓰는 재료 3종(젤리 제외). 앱·UI 와 **같은 목록**을 써야 한다
+  /// — 어긋나면 "화면엔 3종인데 서버는 2종만 차감"이 조용히 생긴다.
+  static const _breakMats = kBreakthroughMaterials;
 
   /// 돌파 시작 — 티어 상한을 채운 성충의 레벨 상한을 올린다(타이머 시작).
   ///
@@ -1270,20 +1284,37 @@ class GameActions {
     }
     final sp = speciesById[mother.speciesId];
     if (sp == null) return const ActionResult.fail('unknown_species');
+    // 짝짓기 텀(§2.5) — 앱과 **같은 규칙**으로 서버도 막는다. 구버전 앱이나
+    // 세이브를 고친 요청이 같은 부모를 계속 돌리지 못하게 한다.
+    if (save.breedOnCooldown(motherId, t) ||
+        save.breedOnCooldown(fatherId, t)) {
+      return const ActionResult.fail('breed_cooldown');
+    }
 
     final rng = (rngFactory ?? Random.new)();
-    final slot = BreedingSlot(
+    // 부모의 오행·기질·특성까지 스냅샷한다(§2.5 상속). 앱과 **같은 생성자**를
+    // 써야 한쪽만 값을 빠뜨려 "상속이 안 되는 유저"가 생기지 않는다.
+    final slot = BreedingSlot.from(
       id: _uuid.v4(),
-      speciesId: mother.speciesId,
-      parentAvgSizeMm: (mother.sizeMm + father.sizeMm) / 2,
-      motherPotential: mother.potential,
-      fatherPotential: father.potential,
+      mother: mother,
+      father: father,
       endsAt: t.add(Duration(seconds: petConfig.breedingDuration(sp.grade))),
       // 서버가 정한다 — 클라이언트가 고를 수 없다.
       seed: rng.nextInt(1 << 31),
     );
+    // 쿨다운은 **시작 시점**에 건다 — 수령을 미뤄 텀을 피할 수 없게.
+    final cool = petConfig.breedingCooldown(sp.grade);
+    final cooldowns = save.prunedBreedCooldowns(t);
+    if (cool > 0) {
+      final until = t.add(Duration(seconds: cool));
+      cooldowns[motherId] = until;
+      cooldowns[fatherId] = until;
+    }
     return ActionResult.ok(
-      save.copyWith(breeding: [...save.breeding, slot]),
+      save.copyWith(
+        breeding: [...save.breeding, slot],
+        breedCooldowns: cooldowns,
+      ),
       extra: {'slotId': slot.id, 'endsAt': slot.endsAt.toIso8601String()},
     );
   }
@@ -1318,19 +1349,10 @@ class GameActions {
     }
 
     // 자식 롤 — 슬롯에 박힌 서버 시드로 결정론적으로 굴린다.
-    final egg = IndividualBug.breed(
-      id: _uuid.v4(),
-      species: sp,
-      rng: Random(slot.seed),
-      parentAvgSizeMm: slot.parentAvgSizeMm,
-      motherPotential: slot.motherPotential,
-      fatherPotential: slot.fatherPotential,
-      sizeVariancePct: petConfig.breedingSizeVariancePct,
-      mutationChance: petConfig.breedingMutationChance,
-      mutationBonusPct: petConfig.breedingMutationBonusPct,
-      potUpChance: petConfig.breedingPotUpChance,
-      potDownChance: petConfig.breedingPotDownChance,
-    ).copyWith(stageSince: t);
+    // 공식은 슬롯이 들고 있다(앱과 **같은 함수**).
+    final egg = slot
+        .hatch(id: _uuid.v4(), species: sp, cfg: petConfig)
+        .copyWith(stageSince: t);
 
     final breeding = List<BreedingSlot>.from(save.breeding)..removeAt(idx);
     return ActionResult.ok(
@@ -1379,13 +1401,29 @@ class GameActions {
     }
 
     final bug = save.bugs[idx];
+    // 앱과 **같은 규칙**: 재료는 항상, 젤리는 문턱(포텐셜)을 넘는 개체만.
+    // 곤충은 무한히 나오므로 분해에 젤리를 무제한으로 붙이면 프리미엄 재화가
+    // 파밍으로 뽑힌다(§2.6). 규칙이 두 벌이면 "앱에선 젤리를 줬는데 서버가 안 준다"가 된다.
     final reward = petConfig.disassembleJelly(bug.potential);
-    final mats = Map<MaterialKind, int>.from(save.materials)
-      ..[MaterialKind.jelly] = save.materialCount(MaterialKind.jelly) + reward;
+    final grade = config.speciesList
+        .where((s) => s.id == bug.speciesId)
+        .map((s) => s.grade)
+        .firstOrNull;
+    final matGain = grade == null ? 0 : petConfig.releaseMaterial(grade);
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    if (reward > 0) {
+      mats[MaterialKind.jelly] =
+          save.materialCount(MaterialKind.jelly) + reward;
+    }
+    if (matGain > 0) {
+      final rng = (rngFactory ?? Random.new)();
+      final kind = _regularMaterials[rng.nextInt(_regularMaterials.length)];
+      mats[kind] = (mats[kind] ?? 0) + matGain;
+    }
     final bugs = List<IndividualBug>.from(save.bugs)..removeAt(idx);
     return ActionResult.ok(
       save.copyWith(bugs: bugs, materials: mats),
-      extra: {'jelly': reward},
+      extra: {'jelly': reward, 'material': matGain},
     );
   }
 
@@ -1563,8 +1601,5 @@ abstract interface class GameConfigLike {
 }
 
 /// 일반 채집으로 나오는 재료(젤리는 프리미엄이라 제외 — 앱과 동일).
-const _regularMaterials = [
-  MaterialKind.chitin,
-  MaterialKind.mineral,
-  MaterialKind.sap,
-];
+/// 일반 재료 3종은 `game_rules.dart` 한 곳에 있다(앱과 같은 목록이어야 한다).
+const _regularMaterials = kRegularMaterials;
