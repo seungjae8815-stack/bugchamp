@@ -42,6 +42,7 @@ class BuffConfig {
     required this.durationSeconds,
     required this.maxSeconds,
     required this.specs,
+    this.adJelly = 0,
   });
 
   /// 광고 1회 시청으로 부여되는 지속시간(초).
@@ -52,6 +53,13 @@ class BuffConfig {
 
   final Map<BuffKind, BuffSpec> specs;
 
+  /// 광고로 버프를 켤 때 **덤으로** 주는 젤리(0 = 없음).
+  ///
+  /// 예전엔 코드에 1로 박혀 있었다(§6 위반). 누적 상한이 6시간이라
+  /// 하루 12회까지 볼 수 있어서, 덤만으로 12젤리/일이 새고 있었다.
+  /// 광고의 보상은 **버프 자체**다 — 프리미엄 재화를 얹으면 이중 지급이다.
+  final int adJelly;
+
   BuffSpec? spec(BuffKind kind) => specs[kind];
 
   factory BuffConfig.fromJson(Map<String, dynamic> json) {
@@ -61,6 +69,7 @@ class BuffConfig {
     return BuffConfig(
       durationSeconds: (json['durationSeconds'] as num).toInt(),
       maxSeconds: (json['maxSeconds'] as num).toInt(),
+      adJelly: (json['adJelly'] as num?)?.toInt() ?? 0,
       specs: {for (final s in list) s.kind: s},
     );
   }

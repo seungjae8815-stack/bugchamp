@@ -2,6 +2,8 @@
   "schemaVersion": 1,
   "durationSeconds": 1800,
   "maxSeconds": 21600,
+  "_adJellyComment": "광고로 버프를 켤 때 덤으로 주는 젤리. 예전엔 코드에 1로 박혀 있었고, 누적 상한 6시간 = 하루 12회라 덤만으로 12젤리/일이 샜다. 광고의 보상은 버프 자체다 — 프리미엄 재화를 얹으면 이중 지급이라 0 으로 둔다. 검증: core_run/tool/jelly_sim.dart",
+  "adJelly": 0,
   "buffs": [
     { "kind": "goldRush", "gold": 2.0 },
     { "kind": "xpBoost", "xp": 2.0 },
