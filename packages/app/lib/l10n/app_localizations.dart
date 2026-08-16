@@ -868,6 +868,12 @@ abstract class AppLocalizations {
   /// **'Breeding'**
   String get breedingInProgress;
 
+  /// No description provided for @breedCooldownLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready in {time}'**
+  String breedCooldownLeft(Object time);
+
   /// No description provided for @breedingGotEgg.
   ///
   /// In en, this message translates to:
@@ -909,6 +915,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Build {label}'**
   String settingsBuildLabel(String label);
+
+  /// No description provided for @rankKindTrophies.
+  ///
+  /// In en, this message translates to:
+  /// **'Trophies'**
+  String get rankKindTrophies;
+
+  /// No description provided for @rankKindLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get rankKindLevel;
+
+  /// No description provided for @rankKindStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get rankKindStage;
 
   /// No description provided for @leaderboardMyRank.
   ///
@@ -1378,6 +1402,222 @@ abstract class AppLocalizations {
   /// **'+{n} 💎{jelly}'**
   String storageExpand(int n, int jelly);
 
+  /// No description provided for @dexTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug Dex'**
+  String get dexTitle;
+
+  /// No description provided for @dexDiscovered.
+  ///
+  /// In en, this message translates to:
+  /// **'Found'**
+  String get dexDiscovered;
+
+  /// No description provided for @dexConquered.
+  ///
+  /// In en, this message translates to:
+  /// **'Raised'**
+  String get dexConquered;
+
+  /// No description provided for @dexConqueredYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get dexConqueredYes;
+
+  /// No description provided for @dexConqueredNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet'**
+  String get dexConqueredNo;
+
+  /// No description provided for @dexMaxSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Largest'**
+  String get dexMaxSize;
+
+  /// No description provided for @dexMaxPotential.
+  ///
+  /// In en, this message translates to:
+  /// **'Best potential'**
+  String get dexMaxPotential;
+
+  /// No description provided for @dexNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t met this bug yet. Go find one!'**
+  String get dexNotFound;
+
+  /// No description provided for @dexClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim {n} dex reward(s)'**
+  String dexClaim(Object n);
+
+  /// No description provided for @dexClaimedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Dex reward! 💰{gold} · 💎{jelly}'**
+  String dexClaimedSnack(Object gold, Object jelly);
+
+  /// No description provided for @dexBonusSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Dex bonus — ATK +{atk}% · HP +{hp}% · Gold +{gold}%'**
+  String dexBonusSummary(Object atk, Object gold, Object hp);
+
+  /// No description provided for @speciesPassiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Species ability'**
+  String get speciesPassiveTitle;
+
+  /// No description provided for @speciesPassiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies while this bug is equipped as a pet. Equipping several of the same species stacks it.'**
+  String get speciesPassiveHint;
+
+  /// No description provided for @storageFilterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get storageFilterLabel;
+
+  /// No description provided for @storageFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get storageFilterAll;
+
+  /// No description provided for @storageFilterSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Below {grade} is released automatically and turned into materials'**
+  String storageFilterSnack(Object grade);
+
+  /// No description provided for @autoSynthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto fuse'**
+  String get autoSynthTitle;
+
+  /// No description provided for @autoSynthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuses automatically whenever {n} of the same species pile up. Equipped and incubating bugs are never used.'**
+  String autoSynthHint(Object n);
+
+  /// No description provided for @autoSynthNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing can be fused right now'**
+  String get autoSynthNone;
+
+  /// No description provided for @autoSynthPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} will be fused (uses {used})'**
+  String autoSynthPreview(Object count, Object used);
+
+  /// No description provided for @autoSynthDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Fused {count} time(s) ({used} used)'**
+  String autoSynthDone(Object count, Object used);
+
+  /// No description provided for @autoSynthRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto fuse'**
+  String get autoSynthRun;
+
+  /// No description provided for @storageFilterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get storageFilterButton;
+
+  /// No description provided for @storageFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose minimum grade'**
+  String get storageFilterTitle;
+
+  /// No description provided for @autoReleaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto release'**
+  String get autoReleaseTitle;
+
+  /// No description provided for @autoReleaseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases every bug matching the filter at once and turns it into materials. Equipped, incubating and trained bugs (training, breakthrough, enhancement) are never touched.'**
+  String get autoReleaseHint;
+
+  /// No description provided for @autoReleaseNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No bugs match the filter'**
+  String get autoReleaseNone;
+
+  /// No description provided for @autoReleaseDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Released {count} bugs for {mats} materials'**
+  String autoReleaseDone(Object count, Object mats);
+
+  /// No description provided for @autoReleasePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} bugs will be released for {mats} materials'**
+  String autoReleasePreview(Object count, Object mats);
+
+  /// No description provided for @autoReleaseRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Release'**
+  String get autoReleaseRun;
+
+  /// No description provided for @autoFilterGrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Target grades'**
+  String get autoFilterGrades;
+
+  /// No description provided for @autoFilterPotential.
+  ///
+  /// In en, this message translates to:
+  /// **'Potential {n}★ or lower'**
+  String autoFilterPotential(Object n);
+
+  /// No description provided for @autoFilterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one grade'**
+  String get autoFilterEmpty;
+
+  /// No description provided for @autoPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs that will be gone'**
+  String get autoPreviewTitle;
+
+  /// No description provided for @autoPreviewMore.
+  ///
+  /// In en, this message translates to:
+  /// **'and {n} more'**
+  String autoPreviewMore(Object n);
+
+  /// No description provided for @autoPreviewLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ×{count}'**
+  String autoPreviewLine(Object count, Object name);
+
   /// No description provided for @storageExpandMaxed.
   ///
   /// In en, this message translates to:
@@ -1479,6 +1719,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fickle'**
   String get temperamentFickle;
+
+  /// No description provided for @traitFierce.
+  ///
+  /// In en, this message translates to:
+  /// **'Fierce'**
+  String get traitFierce;
+
+  /// No description provided for @traitSturdy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sturdy'**
+  String get traitSturdy;
+
+  /// No description provided for @traitVital.
+  ///
+  /// In en, this message translates to:
+  /// **'Vital'**
+  String get traitVital;
+
+  /// No description provided for @traitNoble.
+  ///
+  /// In en, this message translates to:
+  /// **'Noble'**
+  String get traitNoble;
+
+  /// No description provided for @traitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bloodline trait'**
+  String get traitTitle;
+
+  /// No description provided for @traitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only bred bugs can have one. Matching parents always pass it on.'**
+  String get traitHint;
+
+  /// No description provided for @breedInheritTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherited'**
+  String get breedInheritTitle;
+
+  /// No description provided for @breedInheritHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Element, temperament and bloodline trait pass from the parents. Pair parents that match to lock it in.'**
+  String get breedInheritHint;
 
   /// No description provided for @sexMale.
   ///
@@ -3633,6 +3921,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upgrading'**
   String get forgeUpgrading;
+
+  /// No description provided for @forgeReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Done!'**
+  String get forgeReady;
 
   /// No description provided for @forgeRush.
   ///

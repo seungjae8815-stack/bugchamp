@@ -422,6 +422,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get breedingInProgress => '産卵中';
 
   @override
+  String breedCooldownLeft(Object time) {
+    return '$time後に可能';
+  }
+
+  @override
   String get breedingGotEgg => '卵が生まれました！孵化器に入れて育てましょう';
 
   @override
@@ -443,6 +448,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String settingsBuildLabel(String label) {
     return 'ビルド $label';
   }
+
+  @override
+  String get rankKindTrophies => 'トロフィー';
+
+  @override
+  String get rankKindLevel => 'レベル';
+
+  @override
+  String get rankKindStage => '進行度';
 
   @override
   String leaderboardMyRank(int n) {
@@ -715,6 +729,139 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get dexTitle => '昆虫図鑑';
+
+  @override
+  String get dexDiscovered => '発見';
+
+  @override
+  String get dexConquered => '制覇';
+
+  @override
+  String get dexConqueredYes => '完了';
+
+  @override
+  String get dexConqueredNo => 'まだ';
+
+  @override
+  String get dexMaxSize => '最大サイズ';
+
+  @override
+  String get dexMaxPotential => '最高ポテンシャル';
+
+  @override
+  String get dexNotFound => 'まだ出会っていない虫です。採集で探してみましょう！';
+
+  @override
+  String dexClaim(Object n) {
+    return '図鑑報酬 $n件を受け取る';
+  }
+
+  @override
+  String dexClaimedSnack(Object gold, Object jelly) {
+    return '図鑑報酬を獲得！💰$gold · 💎$jelly';
+  }
+
+  @override
+  String dexBonusSummary(Object atk, Object gold, Object hp) {
+    return '図鑑ボーナス — 攻撃 +$atk% · 体力 +$hp% · ゴールド +$gold%';
+  }
+
+  @override
+  String get speciesPassiveTitle => '種族固有能力';
+
+  @override
+  String get speciesPassiveHint => 'この虫をペットとして装備すると付きます。同じ種を複数装備すると重なります。';
+
+  @override
+  String get storageFilterLabel => '受け取る等級';
+
+  @override
+  String get storageFilterAll => 'すべて';
+
+  @override
+  String storageFilterSnack(Object grade) {
+    return '$grade 未満は自動で逃がして素材に変えます';
+  }
+
+  @override
+  String get autoSynthTitle => '自動合成';
+
+  @override
+  String autoSynthHint(Object n) {
+    return '同じ種が $n 匹たまると自動で合成してポテンシャルを上げます。装備中・孵化中の虫は使いません。';
+  }
+
+  @override
+  String get autoSynthNone => '合成できる虫がありません';
+
+  @override
+  String autoSynthPreview(Object count, Object used) {
+    return '$count体が合成されます（$used匹使用）';
+  }
+
+  @override
+  String autoSynthDone(Object count, Object used) {
+    return '$count 回合成しました（$used 匹使用）';
+  }
+
+  @override
+  String get autoSynthRun => '自動合成';
+
+  @override
+  String get storageFilterButton => 'フィルター';
+
+  @override
+  String get storageFilterTitle => '受け取る等級を選ぶ';
+
+  @override
+  String get autoReleaseTitle => '自動分解';
+
+  @override
+  String get autoReleaseHint =>
+      '条件に合う虫をまとめて分解し、素材に変えます。装着中・孵化中・育てた虫（修練・突破・強化）は対象外です。';
+
+  @override
+  String get autoReleaseNone => '条件に合う虫がいません';
+
+  @override
+  String autoReleaseDone(Object count, Object mats) {
+    return '$count匹を分解して素材$mats個を獲得しました';
+  }
+
+  @override
+  String autoReleasePreview(Object count, Object mats) {
+    return '$count匹を分解して素材$mats個を獲得します';
+  }
+
+  @override
+  String get autoReleaseRun => '分解する';
+
+  @override
+  String get autoFilterGrades => '対象の等級';
+
+  @override
+  String autoFilterPotential(Object n) {
+    return 'ポテンシャル$n★以下のみ';
+  }
+
+  @override
+  String get autoFilterEmpty => '等級を1つ以上選んでください';
+
+  @override
+  String get autoPreviewTitle => '今回いなくなる虫';
+
+  @override
+  String autoPreviewMore(Object n) {
+    return 'ほか$n匹';
+  }
+
+  @override
+  String autoPreviewLine(Object count, Object name) {
+    return '$name $count匹';
+  }
+
+  @override
   String get storageExpandMaxed => '拡張上限';
 
   @override
@@ -768,6 +915,30 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get temperamentFickle => '気まぐれ';
+
+  @override
+  String get traitFierce => '猛烈';
+
+  @override
+  String get traitSturdy => '強靭';
+
+  @override
+  String get traitVital => '強健';
+
+  @override
+  String get traitNoble => '高貴';
+
+  @override
+  String get traitTitle => '血統特性';
+
+  @override
+  String get traitHint => '交配で生まれた虫だけが持てます。両親が同じ特性なら必ず受け継ぎます。';
+
+  @override
+  String get breedInheritTitle => '受け継ぐもの';
+
+  @override
+  String get breedInheritHint => '両親の五行・気質・血統特性を受け継ぎます。同じ値の親同士を組ませると確実になります。';
 
   @override
   String get sexMale => 'オス';
@@ -1943,6 +2114,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get forgeUpgrading => 'アップグレード中';
+
+  @override
+  String get forgeReady => '完了！';
 
   @override
   String get forgeRush => '今すぐ完了';

@@ -435,6 +435,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get breedingInProgress => 'Breeding';
 
   @override
+  String breedCooldownLeft(Object time) {
+    return 'Ready in $time';
+  }
+
+  @override
   String get breedingGotEgg => 'Got an egg! Raise it in the incubator';
 
   @override
@@ -456,6 +461,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String settingsBuildLabel(String label) {
     return 'Build $label';
   }
+
+  @override
+  String get rankKindTrophies => 'Trophies';
+
+  @override
+  String get rankKindLevel => 'Level';
+
+  @override
+  String get rankKindStage => 'Progress';
 
   @override
   String leaderboardMyRank(int n) {
@@ -730,6 +744,140 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dexTitle => 'Bug Dex';
+
+  @override
+  String get dexDiscovered => 'Found';
+
+  @override
+  String get dexConquered => 'Raised';
+
+  @override
+  String get dexConqueredYes => 'Done';
+
+  @override
+  String get dexConqueredNo => 'Not yet';
+
+  @override
+  String get dexMaxSize => 'Largest';
+
+  @override
+  String get dexMaxPotential => 'Best potential';
+
+  @override
+  String get dexNotFound => 'You haven\'t met this bug yet. Go find one!';
+
+  @override
+  String dexClaim(Object n) {
+    return 'Claim $n dex reward(s)';
+  }
+
+  @override
+  String dexClaimedSnack(Object gold, Object jelly) {
+    return 'Dex reward! 💰$gold · 💎$jelly';
+  }
+
+  @override
+  String dexBonusSummary(Object atk, Object gold, Object hp) {
+    return 'Dex bonus — ATK +$atk% · HP +$hp% · Gold +$gold%';
+  }
+
+  @override
+  String get speciesPassiveTitle => 'Species ability';
+
+  @override
+  String get speciesPassiveHint =>
+      'Applies while this bug is equipped as a pet. Equipping several of the same species stacks it.';
+
+  @override
+  String get storageFilterLabel => 'Keep';
+
+  @override
+  String get storageFilterAll => 'All';
+
+  @override
+  String storageFilterSnack(Object grade) {
+    return 'Below $grade is released automatically and turned into materials';
+  }
+
+  @override
+  String get autoSynthTitle => 'Auto fuse';
+
+  @override
+  String autoSynthHint(Object n) {
+    return 'Fuses automatically whenever $n of the same species pile up. Equipped and incubating bugs are never used.';
+  }
+
+  @override
+  String get autoSynthNone => 'Nothing can be fused right now';
+
+  @override
+  String autoSynthPreview(Object count, Object used) {
+    return '$count will be fused (uses $used)';
+  }
+
+  @override
+  String autoSynthDone(Object count, Object used) {
+    return 'Fused $count time(s) ($used used)';
+  }
+
+  @override
+  String get autoSynthRun => 'Auto fuse';
+
+  @override
+  String get storageFilterButton => 'Filter';
+
+  @override
+  String get storageFilterTitle => 'Choose minimum grade';
+
+  @override
+  String get autoReleaseTitle => 'Auto release';
+
+  @override
+  String get autoReleaseHint =>
+      'Releases every bug matching the filter at once and turns it into materials. Equipped, incubating and trained bugs (training, breakthrough, enhancement) are never touched.';
+
+  @override
+  String get autoReleaseNone => 'No bugs match the filter';
+
+  @override
+  String autoReleaseDone(Object count, Object mats) {
+    return 'Released $count bugs for $mats materials';
+  }
+
+  @override
+  String autoReleasePreview(Object count, Object mats) {
+    return '$count bugs will be released for $mats materials';
+  }
+
+  @override
+  String get autoReleaseRun => 'Release';
+
+  @override
+  String get autoFilterGrades => 'Target grades';
+
+  @override
+  String autoFilterPotential(Object n) {
+    return 'Potential $n★ or lower';
+  }
+
+  @override
+  String get autoFilterEmpty => 'Pick at least one grade';
+
+  @override
+  String get autoPreviewTitle => 'Bugs that will be gone';
+
+  @override
+  String autoPreviewMore(Object n) {
+    return 'and $n more';
+  }
+
+  @override
+  String autoPreviewLine(Object count, Object name) {
+    return '$name ×$count';
+  }
+
+  @override
   String get storageExpandMaxed => 'Max size';
 
   @override
@@ -783,6 +931,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get temperamentFickle => 'Fickle';
+
+  @override
+  String get traitFierce => 'Fierce';
+
+  @override
+  String get traitSturdy => 'Sturdy';
+
+  @override
+  String get traitVital => 'Vital';
+
+  @override
+  String get traitNoble => 'Noble';
+
+  @override
+  String get traitTitle => 'Bloodline trait';
+
+  @override
+  String get traitHint =>
+      'Only bred bugs can have one. Matching parents always pass it on.';
+
+  @override
+  String get breedInheritTitle => 'Inherited';
+
+  @override
+  String get breedInheritHint =>
+      'Element, temperament and bloodline trait pass from the parents. Pair parents that match to lock it in.';
 
   @override
   String get sexMale => 'Male';
@@ -1978,6 +2152,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgeUpgrading => 'Upgrading';
+
+  @override
+  String get forgeReady => 'Done!';
 
   @override
   String get forgeRush => 'Finish now';

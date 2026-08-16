@@ -105,6 +105,97 @@ void main() {
         );
       }
     });
+
+    // ── 종 고유 패시브(§2.1) ───────────────────────────────────
+    //
+    // `stat` 은 문자열이라(core_models 가 UpgradeKind 를 모른다) 오타가 나면
+    // 로딩은 통과하고 **패시브만 조용히 사라진다**. 그걸 여기서 잡는다.
+    group('종 고유 패시브', () {
+      test('모든 종이 패시브를 가진다 — 하나라도 없으면 그 종만 매력이 없다', () {
+        for (final s in species) {
+          expect(s.passive, isNotNull, reason: s.id);
+        }
+      });
+
+      test('stat 키가 전부 실재하는 UpgradeKind 다 (오타 = 조용한 무효화)', () {
+        for (final s in species) {
+          expect(
+            UpgradeKind.fromKeyOrNull(s.passive!.statKey),
+            isNotNull,
+            reason: '${s.id}: 알 수 없는 stat "${s.passive!.statKey}"',
+          );
+        }
+      });
+
+      test('값이 0보다 크다 — 0 이면 패시브가 있는 척만 하는 셈', () {
+        for (final s in species) {
+          expect(s.passive!.value, greaterThan(0), reason: s.id);
+        }
+      });
+
+      test('등급이 높을수록 패시브도 세다(평균 기준)', () {
+        // crit 은 확률(%p)이라 단위가 달라 평균에서 뺀다.
+        double avg(Grade g) {
+          final vs = species
+              .where((s) => s.grade == g && s.passive!.statKey != 'crit')
+              .map((s) => s.passive!.value)
+              .toList();
+          return vs.isEmpty ? 0 : vs.reduce((a, b) => a + b) / vs.length;
+        }
+
+        const order = [
+          Grade.common,
+          Grade.uncommon,
+          Grade.rare,
+          Grade.epic,
+          Grade.legendary,
+        ];
+        for (var i = 1; i < order.length; i++) {
+          expect(
+            avg(order[i]),
+            greaterThan(avg(order[i - 1])),
+            reason: '${order[i].key} > ${order[i - 1].key}',
+          );
+        }
+      });
+
+      test('패시브 축이 한쪽에 쏠리지 않는다 — 쏠리면 종 선택이 사라진다', () {
+        final kinds = species.map((s) => s.passive!.statKey).toSet();
+        expect(kinds.length, greaterThanOrEqualTo(8), reason: '서로 다른 축 수');
+      });
+    });
+  });
+
+  group('dex.json', () {
+    final cfg = DexConfig.fromJson(_readJson('assets/data/dex.json'));
+    final speciesCount =
+        (_readJson('assets/data/species.json')['species'] as List).length;
+
+    test('마일스톤이 종 수를 넘지 않는다 — 못 받는 보상이 있으면 안 된다', () {
+      for (final m in [...cfg.discoverMilestones, ...cfg.conquerMilestones]) {
+        expect(m.count, lessThanOrEqualTo(speciesCount), reason: m.id);
+      }
+    });
+
+    test('마지막 마일스톤은 도감 완성(전 종)이다', () {
+      expect(cfg.discoverMilestones.last.count, speciesCount);
+      expect(cfg.conquerMilestones.last.count, speciesCount);
+    });
+
+    test('마일스톤 보상이 뒤로 갈수록 커진다', () {
+      for (final list in [cfg.discoverMilestones, cfg.conquerMilestones]) {
+        for (var i = 1; i < list.length; i++) {
+          expect(list[i].gold, greaterThan(list[i - 1].gold));
+        }
+      }
+    });
+
+    test('전 종 정복 보너스가 과하지 않다 — 도감이 진행의 지름길이 되면 안 된다', () {
+      // 업그레이드가 레벨당 x1.15 곱연산이라, 도감 전체가 두어 레벨 수준을
+      // 넘으면 방치 루프를 밀어낸다.
+      expect(cfg.attackPerConquer * speciesCount, lessThanOrEqualTo(0.5));
+      expect(cfg.hpPerConquer * speciesCount, lessThanOrEqualTo(0.6));
+    });
   });
 
   group('traps.json', () {

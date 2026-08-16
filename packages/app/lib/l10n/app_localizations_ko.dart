@@ -422,6 +422,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get breedingInProgress => '알 낳는 중';
 
   @override
+  String breedCooldownLeft(Object time) {
+    return '$time 후 가능';
+  }
+
+  @override
   String get breedingGotEgg => '알이 나왔어요! 부화기에 넣어 키우세요';
 
   @override
@@ -443,6 +448,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String settingsBuildLabel(String label) {
     return '빌드 $label';
   }
+
+  @override
+  String get rankKindTrophies => '트로피';
+
+  @override
+  String get rankKindLevel => '레벨';
+
+  @override
+  String get rankKindStage => '진행도';
 
   @override
   String leaderboardMyRank(int n) {
@@ -715,6 +729,140 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get dexTitle => '곤충 도감';
+
+  @override
+  String get dexDiscovered => '발견';
+
+  @override
+  String get dexConquered => '정복';
+
+  @override
+  String get dexConqueredYes => '완료';
+
+  @override
+  String get dexConqueredNo => '아직';
+
+  @override
+  String get dexMaxSize => '최대 크기';
+
+  @override
+  String get dexMaxPotential => '최고 포텐셜';
+
+  @override
+  String get dexNotFound => '아직 만나지 못한 곤충이에요. 채집으로 찾아보세요!';
+
+  @override
+  String dexClaim(Object n) {
+    return '도감 보상 $n개 받기';
+  }
+
+  @override
+  String dexClaimedSnack(Object gold, Object jelly) {
+    return '도감 보상 획득! 💰$gold · 💎$jelly';
+  }
+
+  @override
+  String dexBonusSummary(Object atk, Object gold, Object hp) {
+    return '지금 도감 보너스 — 공격 +$atk% · 체력 +$hp% · 골드 +$gold%';
+  }
+
+  @override
+  String get speciesPassiveTitle => '종 고유 능력';
+
+  @override
+  String get speciesPassiveHint =>
+      '이 곤충을 애완펫으로 장착하면 붙어요. 같은 종을 여러 마리 장착하면 합쳐져요.';
+
+  @override
+  String get storageFilterLabel => '받을 등급';
+
+  @override
+  String get storageFilterAll => '전부';
+
+  @override
+  String storageFilterSnack(Object grade) {
+    return '$grade 미만은 자동으로 놓아주고 재료로 바꿔요';
+  }
+
+  @override
+  String get autoSynthTitle => '자동 합성';
+
+  @override
+  String autoSynthHint(Object n) {
+    return '같은 종이 $n마리 모이면 자동으로 합성해 포텐셜을 올려요. 장착 중·부화 중인 곤충은 쓰지 않아요.';
+  }
+
+  @override
+  String get autoSynthNone => '합성할 수 있는 곤충이 없어요';
+
+  @override
+  String autoSynthPreview(Object count, Object used) {
+    return '$count개체 합성됩니다 ($used마리 사용)';
+  }
+
+  @override
+  String autoSynthDone(Object count, Object used) {
+    return '$count개체 합성했어요 ($used마리 사용)';
+  }
+
+  @override
+  String get autoSynthRun => '자동 합성';
+
+  @override
+  String get storageFilterButton => '필터';
+
+  @override
+  String get storageFilterTitle => '받을 등급 고르기';
+
+  @override
+  String get autoReleaseTitle => '자동 분해';
+
+  @override
+  String get autoReleaseHint =>
+      '고른 조건에 맞는 곤충을 한 번에 분해해 재료로 바꿔요. 장착 중·부화 중·키운 곤충(수련·돌파·강화)은 건드리지 않아요.';
+
+  @override
+  String get autoReleaseNone => '조건에 맞는 곤충이 없어요';
+
+  @override
+  String autoReleaseDone(Object count, Object mats) {
+    return '$count마리를 분해해 재료 $mats개를 얻었어요';
+  }
+
+  @override
+  String autoReleasePreview(Object count, Object mats) {
+    return '$count마리를 분해해 재료 $mats개를 얻게 됩니다';
+  }
+
+  @override
+  String get autoReleaseRun => '분해하기';
+
+  @override
+  String get autoFilterGrades => '대상 등급';
+
+  @override
+  String autoFilterPotential(Object n) {
+    return '포텐셜 $n★ 이하만';
+  }
+
+  @override
+  String get autoFilterEmpty => '등급을 하나 이상 골라주세요';
+
+  @override
+  String get autoPreviewTitle => '이번에 사라지는 곤충';
+
+  @override
+  String autoPreviewMore(Object n) {
+    return '외 $n마리';
+  }
+
+  @override
+  String autoPreviewLine(Object count, Object name) {
+    return '$name $count마리';
+  }
+
+  @override
   String get storageExpandMaxed => '최대 확장';
 
   @override
@@ -768,6 +916,31 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get temperamentFickle => '변덕';
+
+  @override
+  String get traitFierce => '맹렬';
+
+  @override
+  String get traitSturdy => '강인';
+
+  @override
+  String get traitVital => '강건';
+
+  @override
+  String get traitNoble => '고귀';
+
+  @override
+  String get traitTitle => '혈통 특성';
+
+  @override
+  String get traitHint => '짝짓기로 태어난 곤충만 가질 수 있어요. 부모가 같은 특성이면 반드시 물려받아요.';
+
+  @override
+  String get breedInheritTitle => '물려받는 것';
+
+  @override
+  String get breedInheritHint =>
+      '부모의 오행·기질·혈통 특성을 물려받아요. 같은 값을 가진 부모끼리 붙이면 확실해져요.';
 
   @override
   String get sexMale => '수컷';
@@ -1942,6 +2115,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get forgeUpgrading => '업그레이드 중';
+
+  @override
+  String get forgeReady => '완료!';
 
   @override
   String get forgeRush => '즉시 완료';
