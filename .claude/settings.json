@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter test)",
+      "Bash(flutter test *)",
+      "Bash(dart analyze)",
+      "Bash(dart analyze *)",
+      "Bash(dart test)",
+      "Bash(flutter devices)",
+      "Bash(flutter devices *)",
+      "Bash(gcloud logging read *)",
+      "Bash(gcloud run services describe *)"
+    ]
+  }
+}

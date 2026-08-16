@@ -98,7 +98,7 @@ plain soft pastel background, {STYLE} --ar 1:1 --style raw --sref <key> --sw 100
 | `light_trap` | UV lantern light trap, softly glowing bulb on a stand |
 | `pitfall_trap` | buried cup pitfall trap set in soil with leaf litter rim |
 
-## 4. 재료 아이콘 ×4 (`assets/images/materials/`)
+## 4. 재료 아이콘 ×5 (`assets/images/materials/`)
 
 공통: `glossy game item icon, single object, centered, plain background, {STYLE} --ar 1:1 --style raw`
 
@@ -108,6 +108,12 @@ plain soft pastel background, {STYLE} --ar 1:1 --style raw --sref <key> --sw 100
 | `mineral` | rough mineral crystal cluster, teal-blue |
 | `sap` | golden sap crystal droplet, glowing honey amber |
 | `jelly` | cute insect jelly cup, translucent, colorful |
+| `fossil` | chipped wedge of pale sandstone rock with an amber-glowing beetle imprint embedded in its polished face, cracked edges |
+
+> `fossil`(화석 조각)은 제련 전용 재료다(§2.7 공방). **곤충 화석**이어야 한다 —
+> 암모나이트 같은 일반 화석으로 뽑으면 이 게임의 재료로 안 읽힌다.
+> 규격: 배경 제거 후 최대변 660px, RGBA WebP(quality 92). 기존 4종과 같은
+> **굵은 갈색 외곽선 + 크림색 림라이트**가 있어야 14px 아이콘에서 구분된다.
 
 ## 4b. 버프 아이콘 ×5 (`assets/images/buffs/`)
 
@@ -124,6 +130,44 @@ plain soft pastel background, {STYLE} --ar 1:1 --style raw --sref <key> --sw 100
 | `luckyWind` | violet `#7E57C2` | glowing four-leaf clover in a gentle breeze with one small lucky butterfly and drifting leaf motes |
 
 > `no text, no letters, no frame border` 는 STYLE에 이미 포함. 투명 배경은 단색으로 뽑고 `rembg` 로 컷아웃.
+
+## 4c. UI 버튼 아이콘 ×4 (`assets/images/ui/`)
+
+채집함·랭킹의 도구 버튼(2026-08-16). **20~26px로 그려진다** — 버프 아이콘(40px)보다
+훨씬 작으므로 디테일보다 **실루엣 하나**로 승부해야 한다. 요소를 두 개 이상 넣으면
+그 크기에서 뭉개진다.
+
+아래 4개는 **그대로 복붙**하면 되는 완성 프롬프트다(공통 규칙 + STYLE 접미사 포함).
+`<key>` 자리에만 §0에서 정한 스타일 키 이미지 URL을 넣는다. 키가 없으면
+`--sref <key> --sw 100` 부분만 지우고 쓴다.
+
+**① `dex.webp`** — 채집함 앱바(도감)
+```
+closed leather-bound field guide book with a brass beetle emblem on the cover, warm amber page edges, glossy game UI button icon, single centered object, bold simple silhouette readable at 24px, thick warm brown outline, cream rim light, honey amber accent, plain background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**② `auto_synth.webp`** — 장착 펫 아래 도구 줄(자동 합성)
+```
+three small glowing amber orbs merging into one larger radiant orb, upward spark trail, glossy game UI button icon, single centered object, bold simple silhouette readable at 24px, thick warm brown outline, cream rim light, honey amber accent, plain background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**③ `auto_release.webp`** — 자동 합성 옆(자동 분해)
+```
+open hand releasing a beetle upward into light, two crafting material shards falling back down, glossy game UI button icon, single centered object, bold simple silhouette readable at 24px, thick warm brown outline, cream rim light, honey amber accent, plain background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature, no hammer, no anvil --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**④ `rank_stage.webp`** — 랭킹 '진행도' 축
+```
+pennant flag planted on a small rocky summit, honey amber cloth, upward motion, glossy game UI button icon, single centered object, bold simple silhouette readable at 24px, thick warm brown outline, cream rim light, honey amber accent, plain background, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature, no map pin, no location marker --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+> **규격**: 배경 제거 후 정사각 256×256 이상, RGBA WebP(quality 92), 파일명 그대로.
+> 넣기만 하면 코드 수정 없이 자동으로 그림으로 바뀐다(없으면 Material 아이콘 폴백 —
+> `gameImage(path, fallback:)` 구조라 파일이 없어도 앱은 정상 동작한다).
+>
+> ⚠️ `auto_release`(자동 분해)는 **분해를 놓아주는 것으로 표현**한다. 부수는 그림
+> (망치·조각남)으로 뽑으면 공방 제련(`hammer`·`anvil`)과 헷갈린다.
+> `rank_stage`는 지도 핀 모양을 피한다 — 원래 📍였는데 "위치"로 읽혀 진행도로 안 보였다.
 
 ## 5. 등급 프레임 ×5 (`assets/images/frames/`)
 
