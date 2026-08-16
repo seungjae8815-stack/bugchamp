@@ -22,6 +22,10 @@
         "ko": "몸집은 작지만 단단한 검은 사슴벌레. 짧고 야무진 큰턱으로 상대를 집어 던진다.",
         "en": "A small but sturdy black stag beetle that grips and throws foes.",
         "ja": "몸집은 작지만 단단한 검은 사슴벌레. 짧고 야무진 큰턱으로 상대를 집어 던진다."
+      },
+      "passive": {
+        "stat": "defense",
+        "value": 0.08
       }
     },
     {
@@ -45,6 +49,10 @@
         "ko": "길고 톱니 같은 큰턱이 특징인 사슴벌레. 굽은 턱으로 상대를 걸어 넘긴다.",
         "en": "A stag beetle with long saw-toothed jaws to hook opponents.",
         "ja": "길고 톱니 같은 큰턱이 특징인 사슴벌레. 굽은 턱으로 상대를 걸어 넘긴다."
+      },
+      "passive": {
+        "stat": "reward",
+        "value": 0.06
       }
     },
     {
@@ -68,6 +76,10 @@
         "ko": "이마에 짧은 외뿔이 난 작은 장수풍뎅이. 힘차게 들이받는다.",
         "en": "A small rhinoceros beetle with one short horn; charges hard.",
         "ja": "이마에 짧은 외뿔이 난 작은 장수풍뎅이. 힘차게 들이받는다."
+      },
+      "passive": {
+        "stat": "bossDamage",
+        "value": 0.06
       }
     },
     {
@@ -91,6 +103,10 @@
         "ko": "몸이 가는 작은 갈색 사마귀. 재빠른 앞다리로 순식간에 낚아챈다.",
         "en": "A slender brown mantis with lightning-fast forelegs.",
         "ja": "몸이 가는 작은 갈색 사마귀. 재빠른 앞다리로 순식간에 낚아챈다."
+      },
+      "passive": {
+        "stat": "crit",
+        "value": 0.02
       }
     },
     {
@@ -114,6 +130,10 @@
         "ko": "톱니 더듬이를 가진 갈색 하늘소. 단단한 겉날개가 방패가 된다.",
         "en": "A brown longhorn beetle with serrated antennae and a tough shell.",
         "ja": "톱니 더듬이를 가진 갈색 하늘소. 단단한 겉날개가 방패가 된다."
+      },
+      "passive": {
+        "stat": "materialFind",
+        "value": 0.08
       }
     },
     {
@@ -137,6 +157,10 @@
         "ko": "머리가 길쭉한 초록 메뚜기. 긴 뒷다리로 멀리 도약한다.",
         "en": "A long-headed green grasshopper that leaps far.",
         "ja": "머리가 길쭉한 초록 메뚜기. 긴 뒷다리로 멀리 도약한다."
+      },
+      "passive": {
+        "stat": "moveSpeed",
+        "value": 0.08
       }
     },
     {
@@ -160,6 +184,10 @@
         "ko": "넓고 납작한 몸에 강한 큰턱을 지닌 사슴벌레. 힘이 세다.",
         "en": "A broad flat stag beetle with powerful jaws.",
         "ja": "넓고 납작한 몸에 강한 큰턱을 지닌 사슴벌레. 힘이 세다."
+      },
+      "passive": {
+        "stat": "defense",
+        "value": 0.12
       }
     },
     {
@@ -183,6 +211,10 @@
         "ko": "Y자 뿔이 위풍당당한 장수풍뎅이. 곤충계의 대표 장사.",
         "en": "A mighty rhinoceros beetle with a proud Y-horn.",
         "ja": "Y자 뿔이 위풍당당한 장수풍뎅이. 곤충계의 대표 장사."
+      },
+      "passive": {
+        "stat": "bossDamage",
+        "value": 0.1
       }
     },
     {
@@ -206,6 +238,10 @@
         "ko": "배가 넓은 초록 사마귀. 낫 같은 앞다리 공격이 매섭다.",
         "en": "A wide-bellied green mantis with fierce scythe arms.",
         "ja": "배가 넓은 초록 사마귀. 낫 같은 앞다리 공격이 매섭다."
+      },
+      "passive": {
+        "stat": "critDamage",
+        "value": 0.1
       }
     },
     {
@@ -229,6 +265,10 @@
         "ko": "흰 점무늬와 아주 긴 더듬이를 가진 검은 하늘소.",
         "en": "A black longhorn beetle with white speckles and very long antennae.",
         "ja": "흰 점무늬와 아주 긴 더듬이를 가진 검은 하늘소."
+      },
+      "passive": {
+        "stat": "materialFind",
+        "value": 0.12
       }
     },
     {
@@ -252,6 +292,10 @@
         "ko": "통통한 초록 여치. 긴 더듬이로 주변을 살핀다.",
         "en": "A plump green katydid with long antennae.",
         "ja": "통통한 초록 여치. 긴 더듬이로 주변을 살핀다."
+      },
+      "passive": {
+        "stat": "attackSpeed",
+        "value": 0.08
       }
     },
     {
@@ -275,6 +319,10 @@
         "ko": "머리에 황금빛 귀 모양 돌기가 난 산지의 사슴벌레. 크고 우아한 큰턱.",
         "en": "A mountain stag beetle with golden head flanges and elegant jaws.",
         "ja": "머리에 황금빛 귀 모양 돌기가 난 산지의 사슴벌레. 크고 우아한 큰턱."
+      },
+      "passive": {
+        "stat": "maxHp",
+        "value": 0.15
       }
     },
     {
@@ -298,6 +346,10 @@
         "ko": "크고 위엄 있는 초록 사마귀. 사냥의 제왕.",
         "en": "A large, majestic green mantis; king of the hunt.",
         "ja": "크고 위엄 있는 초록 사마귀. 사냥의 제왕."
+      },
+      "passive": {
+        "stat": "crit",
+        "value": 0.04
       }
     },
     {
@@ -321,6 +373,10 @@
         "ko": "아주 긴 줄무늬 더듬이를 가진 큰 갈색 하늘소. 참나무의 주인.",
         "en": "A big brown oak longhorn with extra-long banded antennae.",
         "ja": "아주 긴 줄무늬 더듬이를 가진 큰 갈색 하늘소. 참나무의 주인."
+      },
+      "passive": {
+        "stat": "regen",
+        "value": 0.18
       }
     },
     {
@@ -344,6 +400,10 @@
         "ko": "금속빛 초록·청동색으로 빛나는 꽃무지. 화려한 겉날개가 아름답다.",
         "en": "A flower chafer shining in metallic green-bronze.",
         "ja": "금속빛 초록·청동색으로 빛나는 꽃무지. 화려한 겉날개가 아름답다."
+      },
+      "passive": {
+        "stat": "bugFind",
+        "value": 0.15
       }
     },
     {
@@ -367,6 +427,10 @@
         "ko": "두껍고 힘센 큰턱을 가진 거대한 검은 사슴벌레. 왕의 품격.",
         "en": "A giant black stag beetle with thick, powerful jaws.",
         "ja": "두껍고 힘센 큰턱을 가진 거대한 검은 사슴벌레. 왕의 품격."
+      },
+      "passive": {
+        "stat": "attack",
+        "value": 0.22
       }
     },
     {
@@ -390,6 +454,10 @@
         "ko": "납작한 갈색 몸에 강력한 앞다리를 지닌 물속의 포식자.",
         "en": "A flat brown predator of the water with strong forelegs.",
         "ja": "납작한 갈색 몸에 강력한 앞다리를 지닌 물속의 포식자."
+      },
+      "passive": {
+        "stat": "bossDamage",
+        "value": 0.25
       }
     },
     {
@@ -413,6 +481,10 @@
         "ko": "붉은 갈색 몸에 밝은 두 점이 박힌 희귀한 사슴벌레.",
         "en": "A rare reddish-brown stag beetle with two bright spots.",
         "ja": "붉은 갈색 몸에 밝은 두 점이 박힌 희귀한 사슴벌레."
+      },
+      "passive": {
+        "stat": "xp",
+        "value": 0.22
       }
     },
     {
@@ -436,6 +508,10 @@
         "ko": "길고 우아한 몸을 지닌 전설의 거대 하늘소. 영웅의 기품이 감돈다.",
         "en": "A legendary giant longhorn with a long, elegant, heroic body.",
         "ja": "길고 우아한 몸을 지닌 전설의 거대 하늘소. 영웅의 기품이 감돈다."
+      },
+      "passive": {
+        "stat": "maxHp",
+        "value": 0.35
       }
     },
     {
@@ -459,7 +535,12 @@
         "ko": "노란 머리의 거대 말벌. 빠르고 강력한 전설의 사냥꾼.",
         "en": "A giant yellow-headed hornet; a fast, powerful legendary hunter.",
         "ja": "노란 머리의 거대 말벌. 빠르고 강력한 전설의 사냥꾼."
+      },
+      "passive": {
+        "stat": "attack",
+        "value": 0.35
       }
     }
-  ]
+  ],
+  "_passiveComment": "종 고유 패시브(§2.1) — 그 종을 애완펫으로 장착했을 때만 붙는다. 20종이 등급 말고는 구분이 없어서 \"장수풍뎅이를 갖고 싶다\"가 아니라 \"전설을 갖고 싶다\"가 됐던 문제를 푼다. stat 은 UpgradeKind.key 이고, 오타는 data_test 의 패시브 키 유효성 검사가 잡는다. 값은 등급대로 올라간다(일반 0.06~0.08 → 전설 0.30~0.35). crit 만 확률(%p)이라 한 자릿수다. ⚠️ 패시브는 적응형 몬스터 체력 기준(§7) 밖이다 — 기준에 넣으면 어떤 종을 껴도 같아져 종 구분이 사라진다."
 }

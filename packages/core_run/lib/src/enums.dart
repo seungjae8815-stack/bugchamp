@@ -48,6 +48,15 @@ enum UpgradeKind {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown UpgradeKind key: $key'),
   );
+
+  /// 모르는 키면 null. **데이터에서 온 키**(종 패시브 등)를 읽을 때 쓴다 —
+  /// JSON 오타로 게임이 통째로 죽으면 안 되고, 오타는 테스트가 잡는다.
+  static UpgradeKind? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 광고 시청으로 일정 시간 활성화되는 일시 버프 종류.

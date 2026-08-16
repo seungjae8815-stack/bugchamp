@@ -23,6 +23,7 @@ class GameData {
     this.petConfig,
     this.dailyConfig,
     this.giftConfig,
+    this.dexConfig,
     this.roadmapConfig,
     this.battleConfig,
     this.iapConfig,
@@ -63,6 +64,9 @@ class GameData {
 
   /// 깜짝 선물 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final GiftConfig? giftConfig;
+
+  /// 도감 보상 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
+  final DexConfig? dexConfig;
 
   /// 로드맵(난이도 챕터) 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final RoadmapConfig? roadmapConfig;
@@ -108,6 +112,7 @@ class GameData {
     Map<String, dynamic>? petConfig,
     Map<String, dynamic>? dailyConfig,
     Map<String, dynamic>? giftConfig,
+    Map<String, dynamic>? dexConfig,
     Map<String, dynamic>? roadmapConfig,
     Map<String, dynamic>? battleConfig,
     Map<String, dynamic>? iapConfig,
@@ -153,6 +158,7 @@ class GameData {
           ? null
           : DailyConfig.fromJson(dailyConfig),
       giftConfig: giftConfig == null ? null : GiftConfig.fromJson(giftConfig),
+      dexConfig: dexConfig == null ? null : DexConfig.fromJson(dexConfig),
       roadmapConfig: roadmapConfig == null
           ? null
           : RoadmapConfig.fromJson(roadmapConfig),
@@ -189,6 +195,7 @@ class GameData {
       read('items.json'),
       read('forge.json'),
       read('skills.json'),
+      read('dex.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -210,6 +217,7 @@ class GameData {
       itemConfig: results[16],
       forgeConfig: results[17],
       skillConfig: results[18],
+      dexConfig: results[19],
     );
   }
 }
