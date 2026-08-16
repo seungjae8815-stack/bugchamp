@@ -256,14 +256,7 @@ class _PetsPanel extends ConsumerWidget {
         }
         final sp = bug == null ? null : data?.speciesById[bug.speciesId];
         if (bug == null || sp == null) continue;
-        pets.add((
-          grade: sp.grade,
-          sizeMult: bug.statMultiplier(sp),
-          potential: bug.potential,
-          enhanceTotal: bug.enhancement.total,
-          stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
-          level: bug.level,
-        ));
+        pets.add(petStatOf(bug, sp, cfg, now));
       }
       final pb = computePetBonus(pets, cfg);
       atk = ((pb.attackMult - 1) * 100).toStringAsFixed(0);

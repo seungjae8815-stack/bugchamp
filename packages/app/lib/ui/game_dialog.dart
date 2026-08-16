@@ -132,17 +132,19 @@ class GameDialog extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Divider(height: 1, color: Color(0x33EBA52F)),
             ),
-            child,
+            // 본문은 **스크롤 가능**해야 한다 — 설정·계정처럼 줄이 많은 창은
+            // 작은 화면에서 다이얼로그가 화면보다 커진다(세로 오버플로우).
+            // 머리말·버튼은 고정하고 본문만 흐르게 둔다.
+            Flexible(child: SingleChildScrollView(child: child)),
             if (actions.isNotEmpty) ...[
               const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  for (var i = 0; i < actions.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    actions[i],
-                  ],
-                ],
+              // 버튼은 **줄바꿈**한다. 한 줄 고정이면 버튼이 3개만 넘어도
+              // 가로로 넘쳐 잘린다(계정 창 = 닫기·로그인·삭제·약관).
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
+                children: actions,
               ),
             ],
           ],

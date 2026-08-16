@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
@@ -14,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'equip_widgets.dart';
 
@@ -143,10 +145,17 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.hardware_outlined,
-                      size: 12,
-                      color: _honey,
+                    // 화석 조각은 제련의 **유일한 소모품**이다 — 여기가 그걸
+                    // 확인하는 자리이므로 실제 재료 아이콘을 쓴다(범용 망치
+                    // 아이콘은 모루 버튼과 헷갈렸다).
+                    materialImage(
+                      MaterialKind.fossil,
+                      size: 14,
+                      fallback: const Icon(
+                        Icons.hardware_outlined,
+                        size: 12,
+                        color: _honey,
+                      ),
                     ),
                     const SizedBox(width: 3),
                     Text(
@@ -826,13 +835,42 @@ Future<void> showForgeGrade(BuildContext context, WidgetRef ref) async {
   );
 }
 
-class _GradeBody extends ConsumerWidget {
+class _GradeBody extends ConsumerStatefulWidget {
   const _GradeBody({required this.forge, required this.items});
   final ForgeConfig forge;
   final ItemConfig items;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_GradeBody> createState() => _GradeBodyState();
+}
+
+class _GradeBodyState extends ConsumerState<_GradeBody> {
+  /// 업그레이드 남은 시간을 **초 단위로 갱신**하기 위한 티커.
+  ///
+  /// 예전엔 남은 시간이 아예 없었다 — "업그레이드 중"만 떠서 얼마나 더
+  /// 기다려야 하는지 알 수 없었고, 즉시완료 젤리값만 보였다. 시간을 넣으려면
+  /// 다시 그려야 하므로 상태 위젯이 필요하다(세이브가 안 바뀌면 리빌드가 없다).
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  ForgeConfig get forge => widget.forge;
+  ItemConfig get items => widget.items;
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     final save = ref.watch(saveControllerProvider).requireValue;
@@ -870,9 +908,34 @@ class _GradeBody extends ConsumerWidget {
               style: const TextStyle(color: Color(0x99FFFFFF)),
             )
           else if (upAt != null) ...[
-            Text(
-              l.forgeUpgrading,
-              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+            Row(
+              children: [
+                const Icon(
+                  Icons.timer_outlined,
+                  size: 14,
+                  color: Color(0x99FFFFFF),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  l.forgeUpgrading,
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 12,
+                  ),
+                ),
+                const Spacer(),
+                // 남은 시간 — 1초마다 갱신된다(위 `_tick`).
+                Text(
+                  now.isAfter(upAt)
+                      ? l.forgeReady
+                      : remainLabel(l, upAt.difference(now)),
+                  style: TextStyle(
+                    color: now.isAfter(upAt) ? _honey : Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 6),
             if (now.isAfter(upAt))
