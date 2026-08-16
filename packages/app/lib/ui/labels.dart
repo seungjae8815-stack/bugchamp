@@ -96,6 +96,33 @@ String temperamentLabel(AppLocalizations l, Temperament t) => switch (t) {
   Temperament.fickle => l.temperamentFickle,
 };
 
+/// 혈통 특성(§2.5) 이름. 짝짓기 자식만 가진다.
+String traitLabel(AppLocalizations l, BugTrait t) => switch (t) {
+  BugTrait.none => '',
+  BugTrait.fierce => l.traitFierce,
+  BugTrait.sturdy => l.traitSturdy,
+  BugTrait.vital => l.traitVital,
+  BugTrait.noble => l.traitNoble,
+};
+
+/// 특성 색 — 무엇에 특화됐는지 색으로 먼저 읽히게 한다
+/// (공격 계열=붉은색, 방어 계열=푸른색, 양쪽=보라).
+Color traitColor(BugTrait t) => switch (t) {
+  BugTrait.none => const Color(0x66FFFFFF),
+  BugTrait.fierce => const Color(0xFFFF7043),
+  BugTrait.sturdy => const Color(0xFF42A5F5),
+  BugTrait.vital => const Color(0xFF66BB6A),
+  BugTrait.noble => const Color(0xFFBA68C8),
+};
+
+String traitGlyph(BugTrait t) => switch (t) {
+  BugTrait.none => '',
+  BugTrait.fierce => '🔥',
+  BugTrait.sturdy => '🛡',
+  BugTrait.vital => '🌿',
+  BugTrait.noble => '👑',
+};
+
 String sexLabel(AppLocalizations l, Sex s) =>
     s == Sex.male ? l.sexMale : l.sexFemale;
 
@@ -196,3 +223,49 @@ IconData materialIcon(MaterialKind k) => switch (k) {
   MaterialKind.jelly => Icons.bubble_chart_outlined,
   MaterialKind.fossil => Icons.hardware_outlined,
 };
+
+/// 능력치(업그레이드) 이름. 강화 패널·도감의 종 패시브가 **같은 이름**을
+/// 써야 "이 패시브가 무슨 능력치를 올리는지"가 바로 연결된다.
+String upgradeLabel(AppLocalizations l, UpgradeKind k) => switch (k) {
+  UpgradeKind.attack => l.upAttack,
+  UpgradeKind.attackSpeed => l.upAttackSpeed,
+  UpgradeKind.crit => l.upCrit,
+  UpgradeKind.critDamage => l.upCritDamage,
+  UpgradeKind.bossDamage => l.upBossDamage,
+  UpgradeKind.maxHp => l.upMaxHp,
+  UpgradeKind.defense => l.upDefense,
+  UpgradeKind.regen => l.upRegen,
+  UpgradeKind.reward => l.upReward,
+  UpgradeKind.xp => l.upXp,
+  UpgradeKind.bugFind => l.upBugFind,
+  UpgradeKind.materialFind => l.upMaterialFind,
+  UpgradeKind.moveSpeed => l.upMoveSpeed,
+  UpgradeKind.boost => l.upBoost,
+  UpgradeKind.bugBuff => l.upBugBuff,
+};
+
+/// 종 패시브(§2.1) 한 줄 — "투지 +25%" 처럼 읽히게 만든다.
+///
+/// 치명타 확률만 **%p** 다(0.04 = +4%p). 배율 스탯과 같은 '%' 로 쓰면
+/// "치명타 +4%" 가 상대 증가로 읽혀 실제보다 작아 보인다.
+String passiveText(AppLocalizations l, SpeciesPassive p) {
+  final kind = UpgradeKind.fromKeyOrNull(p.statKey);
+  if (kind == null) return '';
+  final pct = (p.value * 100);
+  final num = pct == pct.roundToDouble()
+      ? pct.toStringAsFixed(0)
+      : pct.toStringAsFixed(1);
+  final unit = kind == UpgradeKind.crit ? '%p' : '%';
+  return '${upgradeLabel(l, kind)} +$num$unit';
+}
+
+/// 타이머 남은 시간 라벨(1시간↑ "N시간 M분" / 1분↑ "N분" / 그 미만 "N초").
+///
+/// 부화기·돌파·부상·짝짓기·공방이 전부 같은 모양으로 보여야 한다 —
+/// 화면마다 제 나름대로 포맷하면 같은 "3분"이 어디선 "180초"로 뜬다.
+String remainLabel(AppLocalizations l, Duration d) {
+  final s = d.inSeconds <= 0 ? 0 : d.inSeconds;
+  if (s >= 3600) return l.durationHm(s ~/ 3600, (s % 3600) ~/ 60);
+  if (s >= 60) return l.durationM(s ~/ 60);
+  return l.durationS(s);
+}

@@ -176,4 +176,202 @@ void main() {
       expect(breed(Random(1), mom: 2, dad: 4, up: 0.0, down: 0.0).potential, 4);
     });
   });
+
+  group('짝짓기 상속 — 오행·기질·혈통 특성 (§2.5)', () {
+    IndividualBug breed(
+      Random rng, {
+      Element? momEl,
+      Element? dadEl,
+      Temperament? momTemp,
+      Temperament? dadTemp,
+      BugTrait momTrait = BugTrait.none,
+      BugTrait dadTrait = BugTrait.none,
+      double elIn = 0,
+      double tempIn = 0,
+      double traitIn = 0,
+      double traitNew = 0,
+      Map<BugTrait, double> weights = const {},
+    }) => IndividualBug.breed(
+      id: 'egg',
+      species: _species,
+      rng: rng,
+      parentAvgSizeMm: 50,
+      motherPotential: 3,
+      fatherPotential: 3,
+      sizeVariancePct: 0.08,
+      mutationChance: 0,
+      mutationBonusPct: 0.15,
+      potUpChance: 0.1,
+      potDownChance: 0.3,
+      motherElement: momEl,
+      fatherElement: dadEl,
+      motherTemperament: momTemp,
+      fatherTemperament: dadTemp,
+      motherTrait: momTrait,
+      fatherTrait: dadTrait,
+      elementInheritChance: elIn,
+      temperamentInheritChance: tempIn,
+      traitInheritChance: traitIn,
+      traitNewChance: traitNew,
+      traitWeights: weights,
+    );
+
+    test('부모가 같은 오행이면 자식도 그 오행 — 계통 육성의 근거', () {
+      // 확률 1.0 이면 어느 부모를 고르든 결과가 같다.
+      final rng = Random(3);
+      for (var i = 0; i < 200; i++) {
+        final e = breed(
+          rng,
+          momEl: Element.fire,
+          dadEl: Element.fire,
+          elIn: 1.0,
+        );
+        expect(e.element, Element.fire);
+      }
+    });
+
+    test('부모 오행이 다르면 둘 중 하나 — 제3의 값이 나오지 않는다', () {
+      final rng = Random(5);
+      for (var i = 0; i < 300; i++) {
+        final e = breed(
+          rng,
+          momEl: Element.water,
+          dadEl: Element.metal,
+          elIn: 1.0,
+        );
+        expect(e.element, anyOf(Element.water, Element.metal));
+      }
+    });
+
+    test('기질도 같은 규칙으로 상속된다', () {
+      final rng = Random(11);
+      for (var i = 0; i < 200; i++) {
+        final e = breed(
+          rng,
+          momTemp: Temperament.cunning,
+          dadTemp: Temperament.cunning,
+          tempIn: 1.0,
+        );
+        expect(e.temperament, Temperament.cunning);
+      }
+    });
+
+    test('상속 확률 0(= 구버전 JSON)이면 예전처럼 랜덤 — 한 값에 고정되지 않는다', () {
+      final rng = Random(13);
+      final seen = <Element>{};
+      for (var i = 0; i < 300; i++) {
+        seen.add(breed(rng, momEl: Element.fire, dadEl: Element.fire).element);
+      }
+      expect(seen.length, greaterThan(1));
+    });
+
+    test('부모 값이 없으면(구버전 슬롯) 상속을 건너뛰고 랜덤 — 수령이 깨지지 않는다', () {
+      final rng = Random(17);
+      final seen = <Element>{};
+      for (var i = 0; i < 300; i++) {
+        seen.add(breed(rng, elIn: 1.0).element); // 부모 오행 null
+      }
+      expect(seen.length, greaterThan(1));
+    });
+
+    test('부모가 같은 특성이면 자식도 그 특성(확률 1.0)', () {
+      final rng = Random(19);
+      for (var i = 0; i < 200; i++) {
+        final e = breed(
+          rng,
+          momTrait: BugTrait.noble,
+          dadTrait: BugTrait.noble,
+          traitIn: 1.0,
+        );
+        expect(e.trait, BugTrait.noble);
+      }
+    });
+
+    test('부모 한쪽만 특성이 있으면 그 특성이거나 없음 — 다른 특성은 안 나온다', () {
+      final rng = Random(23);
+      for (var i = 0; i < 300; i++) {
+        final e = breed(rng, momTrait: BugTrait.fierce, traitIn: 0.5);
+        expect(e.trait, anyOf(BugTrait.fierce, BugTrait.none));
+      }
+    });
+
+    test('부모가 둘 다 특성이 없으면 신규 특성 확률로만 열린다(1세대 진입로)', () {
+      final rng = Random(29);
+      // 신규 확률 0 → 절대 안 열린다.
+      for (var i = 0; i < 200; i++) {
+        expect(
+          breed(rng, traitNew: 0, weights: {BugTrait.vital: 1}).trait,
+          BugTrait.none,
+        );
+      }
+      // 신규 확률 1 + 가중치 1종 → 그 특성으로 확정.
+      for (var i = 0; i < 200; i++) {
+        expect(
+          breed(rng, traitNew: 1.0, weights: {BugTrait.vital: 1}).trait,
+          BugTrait.vital,
+        );
+      }
+    });
+
+    test('가중치가 비어 있으면 특성이 열리지 않는다(JSON 미설정 안전)', () {
+      final rng = Random(31);
+      expect(breed(rng, traitNew: 1.0).trait, BugTrait.none);
+    });
+
+    test('야생 롤은 항상 특성 없음 — 특성은 짝짓기의 표식이다', () {
+      final rng = Random(37);
+      for (var i = 0; i < 200; i++) {
+        final b = IndividualBug.roll(
+          id: 'w$i',
+          species: _species,
+          rng: rng,
+          potential: 3,
+        );
+        expect(b.trait, BugTrait.none);
+      }
+    });
+
+    test('결정론: 같은 seed+인자 → 같은 오행·기질·특성', () {
+      IndividualBug make() => breed(
+        Random(101),
+        momEl: Element.wood,
+        dadEl: Element.earth,
+        momTemp: Temperament.fickle,
+        dadTemp: Temperament.steadfast,
+        momTrait: BugTrait.fierce,
+        dadTrait: BugTrait.sturdy,
+        elIn: 0.8,
+        tempIn: 0.65,
+        traitIn: 0.55,
+        traitNew: 0.2,
+        weights: {BugTrait.vital: 1, BugTrait.noble: 1},
+      );
+      final a = make();
+      final b = make();
+      expect(a.element, b.element);
+      expect(a.temperament, b.temperament);
+      expect(a.trait, b.trait);
+      expect(a.sizeMm, b.sizeMm);
+    });
+
+    test('특성은 JSON 왕복에서 보존되고, 없으면 키를 싣지 않는다(세이브 크기)', () {
+      final withTrait = breed(
+        Random(3),
+        momTrait: BugTrait.noble,
+        dadTrait: BugTrait.noble,
+        traitIn: 1.0,
+      );
+      expect(withTrait.toJson()['trait'], 'noble');
+      expect(IndividualBug.fromJson(withTrait.toJson()).trait, BugTrait.noble);
+
+      final plain = breed(Random(3));
+      expect(plain.toJson().containsKey('trait'), isFalse);
+      expect(IndividualBug.fromJson(plain.toJson()).trait, BugTrait.none);
+    });
+
+    test('모르는 특성 키는 none 으로 떨어진다 — 구버전 앱이 세이브를 읽어야 한다', () {
+      final json = breed(Random(3)).toJson()..['trait'] = 'from_the_future';
+      expect(IndividualBug.fromJson(json).trait, BugTrait.none);
+    });
+  });
 }

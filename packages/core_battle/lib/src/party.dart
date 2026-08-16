@@ -17,6 +17,10 @@ Stance preferredStanceOf(Specialty s) => switch (s) {
 /// 부위 강화 계수는 `enhance.json`(core_run) 에 있지만, core_battle 은
 /// core_run 을 모르므로(형제 관계) **호출부가 값을 넘긴다**.
 /// 기본값은 §2.2 표와 같다.
+/// [traitAtkBonus] / [traitHpBonus] 는 **혈통 특성**(§2.5)의 전투 보정이다
+/// (0.35 = +35%). 계수는 `pets.json → traitAttackBonus/traitHpBonus` ×
+/// `traitBattleScale` 이며, core_battle 은 core_run 을 모르므로 호출부가 넘긴다.
+/// 0 이면 특성이 전투에 영향을 주지 않는다(구버전 동작).
 BattleBug buildBattleBug({
   required IndividualBug bug,
   required Species species,
@@ -25,9 +29,14 @@ BattleBug buildBattleBug({
   double cuticlePerLevel = 0.04,
   double wingPerLevel = 0.03,
   double buildPerLevel = 0.05,
+  double traitAtkBonus = 0,
+  double traitHpBonus = 0,
 }) {
   final sm = bug.statMultiplier(species);
   final e = bug.enhancement;
+  // 특성은 **부위 강화와 곱해진다** — 강화가 이미 최대 +200%(5성 만렙)라
+  // 덧셈으로 붙이면 후반에 체감이 사라진다. 짝짓기 세대를 쌓은 보람이
+  // 후반에도 남아야 계통 육성이 죽은 시스템이 되지 않는다.
   return BattleBug(
     id: bug.id,
     name: species.name.resolve(locale),
@@ -37,11 +46,13 @@ BattleBug buildBattleBug({
     maxHp:
         species.baseStats.hp *
         sm *
-        (1 + e.levelOf(BugPart.build) * buildPerLevel),
+        (1 + e.levelOf(BugPart.build) * buildPerLevel) *
+        (1 + traitHpBonus),
     atk:
         species.baseStats.atk *
         sm *
-        (1 + e.levelOf(BugPart.hornJaw) * hornJawPerLevel),
+        (1 + e.levelOf(BugPart.hornJaw) * hornJawPerLevel) *
+        (1 + traitAtkBonus),
     def:
         species.baseStats.def *
         sm *

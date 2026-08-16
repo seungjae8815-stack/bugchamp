@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
+import 'character_stats.dart';
+import 'enums.dart';
+
 /// 애완펫(장착 곤충) 보너스·진화·합성·수련 설정 (JSON, §6).
 @immutable
 class PetConfig {
@@ -19,6 +22,8 @@ class PetConfig {
     this.synthMaxPotential = 5,
     this.disassembleJellyBase = 0,
     this.disassembleJellyPerPotential = 1.0,
+    this.disassembleJellyMinPotential = 0,
+    this.releaseMaterialByGrade = const {},
     this.levelBonus = 0.06,
     this.trainBaseCost = 200,
     this.trainCostGrowth = 1.18,
@@ -47,6 +52,15 @@ class PetConfig {
     this.breedingMutationBonusPct = 0.15,
     this.breedingPotUpChance = 0.10,
     this.breedingPotDownChance = 0.30,
+    this.breedingElementInherit = 0,
+    this.breedingTemperamentInherit = 0,
+    this.breedingTraitInherit = 0,
+    this.breedingTraitNew = 0,
+    this.breedingCooldownMult = 0,
+    this.traitWeights = const {},
+    this.traitAttackBonus = const {},
+    this.traitHpBonus = const {},
+    this.traitBattleScale = 0,
     this.storageSlotsMax = 100,
     this.storageExpandJelly = 50,
     this.storageExpandAmount = 10,
@@ -87,11 +101,36 @@ class PetConfig {
   final int disassembleJellyBase;
   final double disassembleJellyPerPotential;
 
+  /// **이 포텐셜 이상**일 때만 젤리를 돌려준다(0 = 제한 없음, 구버전 동작).
+  ///
+  /// 왜 문턱이 필요한가: 곤충은 무한히 나오는데 분해에 상한이 없어서,
+  /// 분해가 **젤리 수입의 절반**을 차지했다(하루 97개 = 전체 193개 중 50%,
+  /// `tool/jelly_sim.dart` 실측). 프리미엄 재화가 파밍으로 무한히 나오면
+  /// IAP 가 의미를 잃는다(§2.6).
+  ///
+  /// 문턱을 두면 **드문 개체를 분해할 때만** 젤리가 나와서, 수입이 줄면서도
+  /// "좋은 걸 분해하는 순간"의 가치는 오히려 올라간다. 일반 개체 분해는
+  /// [releaseMaterial] 로 재료를 돌려받으므로 여전히 할 이유가 있다.
+  final int disassembleJellyMinPotential;
+
   /// 곤충 분해 시 돌려받는 젤리(포텐셜 [potential] 기준). 0 미만은 0으로 클램프.
-  int disassembleJelly(int potential) =>
-      (disassembleJellyBase + disassembleJellyPerPotential * potential)
-          .round()
-          .clamp(0, 1 << 30);
+  /// [disassembleJellyMinPotential] 미만이면 0.
+  int disassembleJelly(int potential) {
+    if (potential < disassembleJellyMinPotential) return 0;
+    return (disassembleJellyBase + disassembleJellyPerPotential * potential)
+        .round()
+        .clamp(0, 1 << 30);
+  }
+
+  /// 등급 필터에 걸려 **자동 방생**된 곤충이 주는 재료 수(§2.1).
+  ///
+  /// ⚠️ 손으로 하는 분해(`disassembleJelly`)와 **일부러 재화를 다르게** 뒀다.
+  /// 자동 방생은 방치 중에도 계속 돌아가므로 젤리(프리미엄 재화)를 주면
+  /// 켜두기만 해도 젤리가 쌓여 IAP 가 무의미해진다. 그래서 일반 재료만 준다.
+  final Map<Grade, int> releaseMaterialByGrade;
+
+  /// 등급 [g] 곤충을 자동 방생했을 때 주는 재료 수(설정 없으면 0 = 보상 없음).
+  int releaseMaterial(Grade g) => releaseMaterialByGrade[g] ?? 0;
 
   /// 레벨 1당 그 펫 기여의 증폭(0.06 = 레벨당 +6%p).
   final double levelBonus;
@@ -154,6 +193,57 @@ class PetConfig {
   final double breedingPotUpChance; // 포텐셜 상승 확률
   final double breedingPotDownChance; // 포텐셜 하락 확률(나머지=유지)
 
+  // ── 짝짓기 상속(2026-08-15) ─────────────────────────────────────
+  //
+  // 예전엔 오행·기질이 **균등 재추첨**이라 짝짓기 자식이 야생 드롭과 구분되지
+  // 않았다. 오행 상생 순서가 편성 전략의 핵심인데(§2.3) 원하는 속성을 노릴
+  // 수단이 없어서, 짝짓기를 돌릴 이유 자체가 없었다.
+  //
+  // ⚠️ 0 으로 두면 **예전 동작(전부 랜덤)** 그대로다 — 구버전 JSON 호환.
+
+  /// 부모에게서 오행을 물려받을 확률. 부모가 같은 오행이면 사실상 확정.
+  final double breedingElementInherit;
+
+  /// 부모에게서 기질을 물려받을 확률.
+  final double breedingTemperamentInherit;
+
+  /// 부모에게 혈통 특성이 있을 때 물려받을 확률.
+  final double breedingTraitInherit;
+
+  /// 부모가 **둘 다 특성이 없을 때** 새 특성이 열릴 확률(1세대 진입로).
+  final double breedingTraitNew;
+
+  /// 짝짓기 쿨다운 = 산란 시간 × 이 값. 0 이면 쿨다운 없음(구버전 동작).
+  final double breedingCooldownMult;
+
+  /// 새 특성 추첨 가중치(BugTrait.none 은 무시).
+  final Map<BugTrait, double> traitWeights;
+
+  /// 특성별 **펫 공격 기여** 가산(0.3 = +30%).
+  final Map<BugTrait, double> traitAttackBonus;
+
+  /// 특성별 **펫 체력 기여** 가산.
+  final Map<BugTrait, double> traitHpBonus;
+
+  /// 특성 보너스가 **PvP 전투 스탯**에 실리는 비율(0 = 전투에는 영향 없음).
+  ///
+  /// 방치 펫 기여와 전투를 **한 손잡이로 묶지 않는다** — 둘은 상한이 다르다.
+  /// 전투 쪽은 부위 강화가 이미 최대 +200%(5성 만렙)라 같은 %가 다르게 느껴지고,
+  /// 무엇보다 문제가 생겼을 때 **전투만 0으로 끌 수 있어야** 한다.
+  ///
+  /// ⚠️ 이 값을 0보다 크게 두면 특성이 트로피 랭킹에 영향을 준다. 곤충 롤이
+  /// 아직 기기 권위라(§2.1) 세이브를 편집해 특성을 찍는 우회가 가능하다 —
+  /// 다만 위조 가능한 다른 값(포텐셜 5 → 강화 상한 50레벨 = +200%)보다 작아
+  /// **기존 구멍을 조금 넓히는 수준**이다. 서버 발급으로 전환할 때 함께 막는다.
+  final double traitBattleScale;
+
+  /// 전투용 특성 공격 보정(= 펫 계수 × [traitBattleScale]).
+  double traitBattleAtk(BugTrait t) =>
+      (traitAttackBonus[t] ?? 0) * traitBattleScale;
+
+  /// 전투용 특성 체력 보정.
+  double traitBattleHp(BugTrait t) => (traitHpBonus[t] ?? 0) * traitBattleScale;
+
   /// 채집함 확장(젤리) — 1회 확장으로 [storageExpandAmount] 칸을
   /// [storageExpandJelly] 젤리에 늘리고, [storageSlotsMax] 에서 멈춘다.
   ///
@@ -199,6 +289,19 @@ class PetConfig {
 
   /// 등급별 산란(임신) 시간(초). 미설정이면 20분.
   int breedingDuration(Grade g) => breedingDurationsSec[g] ?? 1200;
+
+  /// 짝짓기에 쓴 **부모가 다시 짝짓기할 수 있게 되기까지**(초).
+  ///
+  /// 산란 시간의 배수로 잡는다 — 등급 스케일(일반 10분 ~ 전설 160분)이
+  /// 그대로 따라와, 값 하나로 전 등급을 조절할 수 있다.
+  ///
+  /// 왜 필요한가: 부모는 짝짓기 중에도 잠기지 않는다(스냅샷 저장). 그래서
+  /// **잘 뽑힌 한 쌍만 만들어 두면 같은 급 자식을 슬롯이 도는 속도만큼 계속
+  /// 찍어낼 수 있었다.** 스탯이 무한히 오르는 건 아니지만(사이즈는 종 상한에서
+  /// clamp, 포텐셜은 5성이 천장) **희소성이 사라진다** — 천장 개체가 소모품이 된다.
+  /// 0 이면 제한 없음(구버전 동작).
+  int breedingCooldown(Grade g) =>
+      (breedingDuration(g) * breedingCooldownMult).round();
 
   /// 남은 시간 비례 브리딩 즉시완료 젤리 비용(최소 1).
   int breedingJelly(Duration remaining) {
@@ -320,19 +423,79 @@ class PetConfig {
           (json['breedingPotUpChance'] as num?)?.toDouble() ?? 0.10,
       breedingPotDownChance:
           (json['breedingPotDownChance'] as num?)?.toDouble() ?? 0.30,
+      breedingElementInherit:
+          (json['breedingElementInherit'] as num?)?.toDouble() ?? 0,
+      breedingTemperamentInherit:
+          (json['breedingTemperamentInherit'] as num?)?.toDouble() ?? 0,
+      breedingTraitInherit:
+          (json['breedingTraitInherit'] as num?)?.toDouble() ?? 0,
+      breedingTraitNew: (json['breedingTraitNew'] as num?)?.toDouble() ?? 0,
+      breedingCooldownMult:
+          (json['breedingCooldownMult'] as num?)?.toDouble() ?? 0,
+      traitWeights: _traitMap(json['traitWeights']),
+      traitAttackBonus: _traitMap(json['traitAttackBonus']),
+      traitHpBonus: _traitMap(json['traitHpBonus']),
+      traitBattleScale: (json['traitBattleScale'] as num?)?.toDouble() ?? 0,
+      disassembleJellyMinPotential:
+          (json['disassembleJellyMinPotential'] as num?)?.toInt() ?? 0,
+      releaseMaterialByGrade: _gradeIntMap(json['releaseMaterialByGrade']),
       storageSlotsMax: (json['storageSlotsMax'] as num?)?.toInt() ?? 100,
       storageExpandJelly: (json['storageExpandJelly'] as num?)?.toInt() ?? 50,
       storageExpandAmount: (json['storageExpandAmount'] as num?)?.toInt() ?? 10,
     );
+  }
+
+  /// `{"common": 3, ...}` → `{Grade.common: 3}`. 모르는 키는 버린다.
+  static Map<Grade, int> _gradeIntMap(Object? raw) {
+    if (raw is! Map) return const {};
+    final out = <Grade, int>{};
+    for (final e in raw.entries) {
+      for (final g in Grade.values) {
+        if (g.key != e.key) continue;
+        final v = e.value;
+        if (v is num) out[g] = v.toInt();
+      }
+    }
+    return out;
+  }
+
+  /// `{"fierce": 0.3, ...}` → `{BugTrait.fierce: 0.3}`.
+  /// 모르는 키는 [BugTrait.none] 으로 떨어지므로 조용히 버린다 — JSON 에
+  /// 오타가 있어도 로딩이 통째로 실패하지 않아야 한다.
+  static Map<BugTrait, double> _traitMap(Object? raw) {
+    if (raw is! Map) return const {};
+    final out = <BugTrait, double>{};
+    for (final e in raw.entries) {
+      final t = BugTrait.fromKey(e.key as String);
+      if (t.isNone) continue;
+      final v = e.value;
+      if (v is num) out[t] = v.toDouble();
+    }
+    return out;
   }
 }
 
 /// 장착 펫이 캐릭터에 주는 최종 배율.
 @immutable
 class PetBonus {
-  const PetBonus({required this.attackMult, required this.hpMult});
+  const PetBonus({
+    required this.attackMult,
+    required this.hpMult,
+    this.passives = const {},
+  });
+
+  /// 등급·포텐셜·사이즈·강화·단계·레벨·특성에서 오는 배율(§2.7).
   final double attackMult;
   final double hpMult;
+
+  /// **종 고유 패시브** 합산(§2.1). 능력치별 가산치.
+  ///
+  /// ⚠️ [attackMult]/[hpMult] 와 **적용 위치가 다르다.** 배율 둘은 적응형
+  /// 몬스터 체력의 기준(§7)에 들어가는 '영구 전력'이고, 패시브는 기준 **밖**
+  /// (순수 이득)이다 — 기준에 넣으면 어떤 종을 껴도 결과가 같아져서
+  /// 종을 고르는 의미가 통째로 사라진다.
+  final Map<UpgradeKind, double> passives;
+
   static const none = PetBonus(attackMult: 1, hpMult: 1);
 }
 
@@ -344,7 +507,34 @@ typedef PetStat = ({
   int enhanceTotal,
   LifeStage stage,
   int level,
+
+  /// 혈통 특성(§2.5). 야생 개체는 [BugTrait.none].
+  BugTrait trait,
+
+  /// 종 고유 패시브(§2.1). 없으면 null.
+  SpeciesPassive? passive,
 });
+
+/// 개체 + 종 → [PetStat]. **조립을 한 곳에 모은다.**
+///
+/// 예전엔 화면 6곳이 각자 이 레코드를 손으로 채웠다. 필드를 하나 늘릴 때마다
+/// 어느 한 곳을 빠뜨리기 쉽고, 빠뜨리면 "보관함에서 본 보너스와 실제 전투력이
+/// 다르다"로 나타난다(수치가 아니라 조립이 틀린 거라 추적이 어렵다).
+PetStat petStatOf(
+  IndividualBug bug,
+  Species species,
+  PetConfig cfg,
+  DateTime now,
+) => (
+  grade: species.grade,
+  sizeMult: bug.statMultiplier(species),
+  potential: bug.potential,
+  enhanceTotal: bug.enhancement.total,
+  stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
+  level: bug.level,
+  trait: bug.trait,
+  passive: species.passive,
+);
 
 /// 펫 1마리가 기여하는 공격/체력 배율(장착 효과 표시·합산 공용).
 ({double attack, double hp}) petContribution(PetStat p, PetConfig cfg) {
@@ -354,9 +544,14 @@ typedef PetStat = ({
       (1 + p.enhanceTotal * cfg.enhanceScale) *
       (cfg.stageMult[p.stage] ?? 1.0) *
       (1 + (p.level - 1) * cfg.levelBonus);
+  // 혈통 특성은 **곱이 아니라 축별 가산**이다 — 맹렬은 공격만, 강인은 체력만
+  // 올려야 "무엇을 노리고 교배했는지"가 수치로 보인다. scale 에 곱해버리면
+  // 두 축이 같이 올라 특성끼리 구분이 사라진다.
+  final tAtk = 1 + (cfg.traitAttackBonus[p.trait] ?? 0);
+  final tHp = 1 + (cfg.traitHpBonus[p.trait] ?? 0);
   return (
-    attack: (cfg.gradeAttackPct[p.grade] ?? 0) * scale,
-    hp: (cfg.gradeHpPct[p.grade] ?? 0) * scale,
+    attack: (cfg.gradeAttackPct[p.grade] ?? 0) * scale * tAtk,
+    hp: (cfg.gradeHpPct[p.grade] ?? 0) * scale * tHp,
   );
 }
 
@@ -364,12 +559,57 @@ typedef PetStat = ({
 PetBonus computePetBonus(Iterable<PetStat> pets, PetConfig cfg) {
   var atk = 0.0;
   var hp = 0.0;
+  // 종 패시브는 **합산**한다. 같은 종을 둘 끼면 두 배 — 특화 편성이 성립해야
+  // "이 종을 모은다"가 전략이 된다.
+  final passives = <UpgradeKind, double>{};
   for (final p in pets) {
     final c = petContribution(p, cfg);
     atk += c.attack;
     hp += c.hp;
+    final sp = p.passive;
+    if (sp == null) continue;
+    final kind = UpgradeKind.fromKeyOrNull(sp.statKey);
+    // 모르는 키는 조용히 버린다 — JSON 오타로 게임이 죽으면 안 된다.
+    // (오타 자체는 `data_test` 의 패시브 키 유효성 검사가 잡는다.)
+    if (kind == null) continue;
+    passives[kind] = (passives[kind] ?? 0) + sp.value;
   }
-  return PetBonus(attackMult: 1 + atk, hpMult: 1 + hp);
+  return PetBonus(attackMult: 1 + atk, hpMult: 1 + hp, passives: passives);
+}
+
+/// 종 패시브 가산치를 능력치에 실제로 얹는다.
+///
+/// **적응형 몬스터 체력(§7)의 기준 밖에서 호출해야 한다** — 장비·버프와 같은
+/// 층이다. 기준 안에 넣으면 어떤 종을 껴도 몬스터가 같이 세져서 종을 고르는
+/// 의미가 사라진다(= 종 패시브를 넣은 이유 자체가 무너진다).
+///
+/// 곱연산이 아니라 **가산**인 이유: 이미 업그레이드가 곱연산(valueGrowth)이라
+/// 후반엔 +22% 를 곱해도 티가 안 난다. `bossDamage` 처럼 기본값이 1.0 인
+/// 배율 스탯에 0.22 를 더하면 1.0 → 1.22 로 정확히 22% 가 된다.
+CharacterStats applySpeciesPassives(
+  CharacterStats s,
+  Map<UpgradeKind, double> passives,
+) {
+  if (passives.isEmpty) return s;
+  double v(UpgradeKind k) => passives[k] ?? 0;
+  return CharacterStats(
+    // 공격·체력은 **비율**로 얹는다(절대값을 더하면 초반엔 과하고 후반엔 무의미).
+    attack: s.attack * (1 + v(UpgradeKind.attack)),
+    maxHp: s.maxHp * (1 + v(UpgradeKind.maxHp)),
+    attackSpeed: s.attackSpeed * (1 + v(UpgradeKind.attackSpeed)),
+    moveSpeed: s.moveSpeed * (1 + v(UpgradeKind.moveSpeed)),
+    // 아래는 원래 배율·확률·계수라 그대로 더한다.
+    rewardMultiplier: s.rewardMultiplier + v(UpgradeKind.reward),
+    critChance: (s.critChance + v(UpgradeKind.crit)).clamp(0.0, 0.95),
+    critDamage: s.critDamage + v(UpgradeKind.critDamage),
+    bossDamage: s.bossDamage + v(UpgradeKind.bossDamage),
+    defense: s.defense + v(UpgradeKind.defense) * 100,
+    hpRegen: s.hpRegen * (1 + v(UpgradeKind.regen)),
+    xpMultiplier: s.xpMultiplier + v(UpgradeKind.xp),
+    bugFind: s.bugFind + v(UpgradeKind.bugFind),
+    materialFind: s.materialFind + v(UpgradeKind.materialFind),
+    boostBonus: s.boostBonus + v(UpgradeKind.boost),
+  );
 }
 
 /// 저장된 단계·시각으로부터 [now] 기준 **실제 도달 단계**를 계산(경과분 자동 진화).

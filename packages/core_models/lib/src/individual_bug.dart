@@ -28,6 +28,7 @@ class IndividualBug {
     this.level = 1,
     this.breakthroughTier = 0,
     this.breakthroughEndsAt,
+    this.trait = BugTrait.none,
     Element? element,
   }) : _element = element;
 
@@ -70,6 +71,9 @@ class IndividualBug {
 
   /// 돌파 진행 종료 UTC 시각(진행 중이면 non-null). 도달 후 수령하면 티어 상승.
   final DateTime? breakthroughEndsAt;
+
+  /// 혈통 특성 (§2.5) — 짝짓기 자식만 가진다. 야생 롤은 항상 [BugTrait.none].
+  final BugTrait trait;
 
   final Element? _element;
 
@@ -169,9 +173,20 @@ class IndividualBug {
   ///   최종적으로 종 범위로 clamp.
   /// - 포텐셜: 부모 중 **높은 쪽**을 기준으로 상속 — [potUpChance] 상승(+1) /
   ///   [potDownChance] 하락(−1) / 나머지 유지. [kPotentialMin]~[kPotentialMax] clamp.
-  /// - 기질/성별/오행: 균등 랜덤. 생애주기: **알**.
+  /// - **오행·기질: 부모에게서 상속**([elementInheritChance]/[temperamentInheritChance]).
+  /// - **혈통 특성**: 부모 특성을 상속하거나 새로 얻는다([traitWeights] 참조).
+  /// - 성별: 균등 랜덤. 생애주기: **알**.
+  ///
+  /// ## 오행·기질을 상속시키는 이유 (2026-08-15 개편)
+  /// 예전엔 둘 다 **균등 재추첨**이라, 짝짓기 자식이 야생 드롭과 구분되지 않았다.
+  /// 오행 상생 순서가 편성 전략의 핵심(§2.3)인데 원하는 속성을 노릴 수단이
+  /// 없어서, 짝짓기를 돌릴 이유 자체가 없었다. 부모에게서 물려받게 하면
+  /// **같은 오행 부모를 모아 계통을 만든다**는 목표가 생긴다.
   ///
   /// 계수는 밸런스라 **인자로 주입**(모델에 상수 박지 않음). 결정론: 같은 [rng]+인자 → 같은 자식.
+  ///
+  /// ⚠️ rng 소비 순서를 바꾸면 **같은 seed 의 기존 브리딩 슬롯 결과가 달라진다**.
+  /// 새 롤은 반드시 기존 롤 **뒤에** 붙인다(사이즈 → 포텐셜 → 오행 → 기질 → 특성 → 성별).
   factory IndividualBug.breed({
     required String id,
     required Species species,
@@ -184,6 +199,17 @@ class IndividualBug {
     required double mutationBonusPct,
     required double potUpChance,
     required double potDownChance,
+    Element? motherElement,
+    Element? fatherElement,
+    Temperament? motherTemperament,
+    Temperament? fatherTemperament,
+    BugTrait motherTrait = BugTrait.none,
+    BugTrait fatherTrait = BugTrait.none,
+    double elementInheritChance = 0,
+    double temperamentInheritChance = 0,
+    double traitInheritChance = 0,
+    double traitNewChance = 0,
+    Map<BugTrait, double> traitWeights = const {},
   }) {
     var size = parentAvgSizeMm * (1 + nextGaussian(rng) * sizeVariancePct);
     if (rng.nextDouble() < mutationChance) size *= (1 + mutationBonusPct);
@@ -201,16 +227,110 @@ class IndividualBug {
     }
     pot = pot.clamp(kPotentialMin, kPotentialMax);
 
+    // 부모 값이 하나라도 없으면(구버전 슬롯) 상속을 건너뛰고 예전처럼 랜덤 —
+    // 이미 돌고 있던 짝짓기가 수령 시점에 터지지 않게 한다.
+    final element = _inherit<Element>(
+      rng,
+      motherElement,
+      fatherElement,
+      elementInheritChance,
+      Element.values,
+    );
+    final temperament = _inherit<Temperament>(
+      rng,
+      motherTemperament,
+      fatherTemperament,
+      temperamentInheritChance,
+      Temperament.values,
+    );
+    final trait = _rollTrait(
+      rng,
+      motherTrait,
+      fatherTrait,
+      traitInheritChance,
+      traitNewChance,
+      traitWeights,
+    );
+
     return IndividualBug(
       id: id,
       speciesId: species.id,
       sizeMm: size,
       potential: pot,
-      temperament: Temperament.values[rng.nextInt(Temperament.values.length)],
+      temperament: temperament,
       sex: rng.nextBool() ? Sex.male : Sex.female,
-      element: Element.values[rng.nextInt(Element.values.length)],
+      element: element,
+      trait: trait,
       stage: LifeStage.egg,
     );
+  }
+
+  /// 부모 둘 중 하나에게서 물려받거나([chance]), 실패하면 [all] 중 균등 랜덤.
+  ///
+  /// **부모가 같은 값이면 그 값이 확정**이다(둘 중 무엇을 고르든 같으므로).
+  /// 이게 계통 육성의 핵심 — 같은 오행 부모를 모으면 자식도 그 오행이 된다.
+  static T _inherit<T>(
+    Random rng,
+    T? mother,
+    T? father,
+    double chance,
+    List<T> all,
+  ) {
+    // rng 소비 횟수를 분기마다 다르게 하면 결정론이 깨지기 쉬우므로
+    // **항상 두 번** 뽑고(상속 판정 + 선택) 쓰지 않는 쪽만 버린다.
+    final roll = rng.nextDouble();
+    final pick = rng.nextDouble();
+    if (mother != null && father != null && roll < chance) {
+      return pick < 0.5 ? mother : father;
+    }
+    return all[(pick * all.length).floor().clamp(0, all.length - 1)];
+  }
+
+  /// 혈통 특성 롤.
+  ///
+  /// 1. 부모 중 특성 보유자가 있으면 [inheritChance] 로 물려받는다
+  ///    (둘 다 있고 같으면 그 특성 확정, 다르면 50/50).
+  /// 2. 상속에 실패했고 부모가 특성이 없으면 [newChance] 로 새 특성이 열린다
+  ///    — 1세대에서도 특성이 나올 수 있어야 시작할 동기가 생긴다.
+  /// 3. 그 외에는 [BugTrait.none].
+  static BugTrait _rollTrait(
+    Random rng,
+    BugTrait mother,
+    BugTrait father,
+    double inheritChance,
+    double newChance,
+    Map<BugTrait, double> weights,
+  ) {
+    final roll = rng.nextDouble();
+    final pick = rng.nextDouble();
+    final parents = [if (!mother.isNone) mother, if (!father.isNone) father];
+    if (parents.isNotEmpty) {
+      if (roll >= inheritChance) return BugTrait.none;
+      return parents[(pick * parents.length).floor().clamp(
+        0,
+        parents.length - 1,
+      )];
+    }
+    if (roll >= newChance) return BugTrait.none;
+    return _weightedTrait(pick, weights);
+  }
+
+  /// [t] (0~1) 위치로 가중 추첨. 가중치가 비어 있으면 특성 없음.
+  static BugTrait _weightedTrait(double t, Map<BugTrait, double> weights) {
+    var total = 0.0;
+    for (final e in weights.entries) {
+      if (e.key.isNone || e.value <= 0) continue;
+      total += e.value;
+    }
+    if (total <= 0) return BugTrait.none;
+    var acc = 0.0;
+    final target = t * total;
+    for (final e in weights.entries) {
+      if (e.key.isNone || e.value <= 0) continue;
+      acc += e.value;
+      if (target < acc) return e.key;
+    }
+    return BugTrait.none;
   }
 
   IndividualBug copyWith({
@@ -227,6 +347,7 @@ class IndividualBug {
     int? breakthroughTier,
     DateTime? breakthroughEndsAt,
     bool clearBreakthrough = false,
+    BugTrait? trait,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -243,6 +364,7 @@ class IndividualBug {
     breakthroughEndsAt: clearBreakthrough
         ? null
         : (breakthroughEndsAt ?? this.breakthroughEndsAt),
+    trait: trait ?? this.trait,
     element: element ?? this.element,
   );
 
@@ -267,6 +389,11 @@ class IndividualBug {
     breakthroughEndsAt: json['breakthroughEndsAt'] == null
         ? null
         : DateTime.parse(json['breakthroughEndsAt'] as String).toUtc(),
+    // 모르는 특성 키는 none 으로 떨어진다(BugTrait.fromKey) — 신규 특성이
+    // 추가돼도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+    trait: json['trait'] == null
+        ? BugTrait.none
+        : BugTrait.fromKey(json['trait'] as String),
     element: json['element'] == null
         ? null
         : Element.fromKey(json['element'] as String),
@@ -286,6 +413,9 @@ class IndividualBug {
     'breakthroughTier': breakthroughTier,
     if (breakthroughEndsAt != null)
       'breakthroughEndsAt': breakthroughEndsAt!.toUtc().toIso8601String(),
+    // 특성 없는 개체(야생 = 대다수)는 키를 아예 싣지 않는다 — 세이브 크기가
+    // 곧 업로드 비용이라, 곤충 100마리 × 상시 필드는 그냥 낭비다(§3).
+    if (trait != BugTrait.none) 'trait': trait.key,
     'element': element.key,
   };
 
