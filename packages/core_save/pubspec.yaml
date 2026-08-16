@@ -13,6 +13,8 @@ dependencies:
     path: ../core_models
   core_run:
     path: ../core_run
+  # @immutable — core_models 를 통해 딸려 오지만, 직접 쓰므로 명시한다.
+  meta: ^1.15.0
 
 dev_dependencies:
   lints: ^6.0.0

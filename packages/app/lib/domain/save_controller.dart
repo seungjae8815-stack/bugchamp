@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:core_save/core_save.dart';
 import '../data/game_data.dart';
 import '../data/save_repository.dart';
+import 'bug_auto_filter.dart';
 import 'gather_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
@@ -285,11 +286,32 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 채집함 상한은 **저장되는 모든 경로**에서 지켜져야 한다. 획득 지점마다
     // 막아두긴 했지만, 여기서 한 번 더 자르면 새 획득 경로가 생겨도 세이브가
     // 비대해지지 않는다(상한 이하면 그대로 통과 — 비용 없음).
-    final stamped = save.trimmedToStorage().copyWith(
-      lastSeen: ref.read(clockProvider).now().toUtc(),
-    );
+    final now = ref.read(clockProvider).now().toUtc();
+    // 도감(§2.1)도 여기서 갱신한다. 보유 곤충에서 파생되는 **집계**라
+    // 획득 지점마다 손으로 기록하면 반드시 한 곳을 빠뜨린다(실시간 처치·
+    // 오프라인 정산·짝짓기 수령·서버 세이브 채택 — 경로가 넷이다).
+    // 저장 직전에 한 번 훑으면 어느 경로로 들어와도 남는다.
+    //
+    // ⚠️ 곤충이 **사라지기 전에** 기록되는 게 요점이다 — 상한 정리(trim)와
+    // 분해로 개체는 없어지지만 도감 기록은 남아야 한다. 그래서 trim **전에**
+    // 훑는다.
+    final withDex = _withUpdatedDex(save, now);
+    final stamped = withDex.trimmedToStorage().copyWith(lastSeen: now);
     state = AsyncData(stamped);
     await _repo.save(stamped);
+  }
+
+  /// 보유 곤충을 훑어 도감을 갱신한 세이브. 바뀐 게 없으면 [save] 그대로.
+  SaveGame _withUpdatedDex(SaveGame save, DateTime now) {
+    final cfg = ref.read(gameDataProvider).value?.petConfig;
+    if (cfg == null || save.bugs.isEmpty) return save;
+    final next = updatedDex(
+      current: save.dex,
+      bugs: save.bugs,
+      stageOf: (b) => effectiveStage(b.stage, b.stageSince, now, cfg),
+    );
+    // identical 이면 저장할 게 없다 — 불필요한 업로드를 만들지 않는다.
+    return identical(next, save.dex) ? save : save.copyWith(dex: next);
   }
 
   /// 슬롯에 트랩 설치/교체 후 저장.
@@ -1296,11 +1318,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
-  static const _breakMats = [
-    MaterialKind.chitin,
-    MaterialKind.mineral,
-    MaterialKind.sap,
-  ];
+  /// 돌파 재료 종류는 §2.7 의 시스템 규칙이라 `game_rules.dart` 한 곳에 있다
+  /// — 앱·서버·비용 표시가 각자 목록을 들면 조용히 어긋난다.
+  static const _breakMats = kBreakthroughMaterials;
 
   /// 돌파 시작: 티어 상한을 채운 성충의 레벨 상한을 올리는 업그레이드(타이머 시작).
   /// 재화(골드+재료) 소비. 조건 미달이면 false.
@@ -1735,16 +1755,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     final sp = data.speciesById[mother.speciesId];
     if (sp == null) return false;
-    final slot = BreedingSlot(
+    // 짝짓기 텀 — 방금 쓴 부모는 잠시 다시 쓸 수 없다(§2.5).
+    if (s.breedOnCooldown(motherId, now) || s.breedOnCooldown(fatherId, now)) {
+      return false;
+    }
+    // 부모의 오행·기질·특성까지 찍어 둔다(§2.5 상속) — 부모를 잠그지 않는
+    // 설계라 수령 시점엔 이미 없을 수 있다.
+    final slot = BreedingSlot.from(
       id: _uuid.v4(),
-      speciesId: mother.speciesId,
-      parentAvgSizeMm: (mother.sizeMm + father.sizeMm) / 2,
-      motherPotential: mother.potential,
-      fatherPotential: father.potential,
+      mother: mother,
+      father: father,
       endsAt: now.add(Duration(seconds: cfg.breedingDuration(sp.grade))),
       seed: seed,
     );
-    await _commit(s.copyWith(breeding: [...s.breeding, slot]));
+    // 쿨다운은 **시작할 때** 건다(수령이 아니라). 수령을 미루는 것으로 텀을
+    // 피할 수 있으면 제한이 없는 것과 같다.
+    final cool = cfg.breedingCooldown(sp.grade);
+    final cooldowns = s.prunedBreedCooldowns(now);
+    if (cool > 0) {
+      final until = now.add(Duration(seconds: cool));
+      cooldowns[motherId] = until;
+      cooldowns[fatherId] = until;
+    }
+    await _commit(
+      s.copyWith(breeding: [...s.breeding, slot], breedCooldowns: cooldowns),
+    );
     return true;
   }
 
@@ -1782,19 +1817,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     } else if (now.isBefore(slot.endsAt)) {
       return false; // 아직 산란 중
     }
-    final egg = IndividualBug.breed(
-      id: _uuid.v4(),
-      species: sp,
-      rng: math.Random(slot.seed),
-      parentAvgSizeMm: slot.parentAvgSizeMm,
-      motherPotential: slot.motherPotential,
-      fatherPotential: slot.fatherPotential,
-      sizeVariancePct: cfg.breedingSizeVariancePct,
-      mutationChance: cfg.breedingMutationChance,
-      mutationBonusPct: cfg.breedingMutationBonusPct,
-      potUpChance: cfg.breedingPotUpChance,
-      potDownChance: cfg.breedingPotDownChance,
-    ).copyWith(stageSince: now);
+    // 롤 공식은 슬롯이 들고 있다 — 서버(`GameActions.collectBreeding`)와
+    // **같은 함수**를 써야 같은 seed 에서 같은 자식이 나온다.
+    final egg = slot
+        .hatch(id: _uuid.v4(), species: sp, cfg: cfg)
+        .copyWith(stageSince: now);
     final breeding = List<BreedingSlot>.from(s.breeding)..removeAt(idx);
     await _commit(
       s.copyWith(bugs: [...s.bugs, egg], breeding: breeding, materials: mats),
@@ -1816,6 +1843,51 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.copyWith(breedingCapacity: s.breedingCapacity + 1, materials: mats),
     );
     return true;
+  }
+
+  /// 도감(§2.1) 마일스톤 **일괄 수령**. 받은 게 있으면 그 목록을 돌려준다.
+  ///
+  /// 하나씩 누르게 하지 않는 이유: 마일스톤은 발견/정복이 오를 때 **여러 개가
+  /// 동시에** 열릴 수 있고(예: 5종 발견과 3종 정복이 같은 곤충으로 동시 달성),
+  /// 그때마다 팝업을 여러 번 띄우면 성가시다.
+  Future<List<DexMilestone>> claimDexMilestones() async {
+    final cfg = ref.read(gameDataProvider).requireValue.dexConfig;
+    if (cfg == null) return const [];
+    final s = state.requireValue;
+    final claimable = cfg.claimable(
+      s.dexDiscovered,
+      s.dexConquered,
+      s.claimedDex,
+    );
+    if (claimable.isEmpty) return const [];
+
+    var gold = s.gold;
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final m in claimable) {
+      gold += m.gold;
+      if (m.jelly > 0) {
+        mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + m.jelly;
+      }
+    }
+    await _commit(
+      s.copyWith(
+        gold: gold,
+        materials: mats,
+        claimedDex: {...s.claimedDex, for (final m in claimable) m.id},
+      ),
+    );
+    return claimable;
+  }
+
+  /// 채집함 등급 필터 설정(§2.1). [Grade.common] = 필터 없음(전부 받음).
+  ///
+  /// 미달 등급은 채집함에 들어오지 않고 재료로 환산된다(자동 방생).
+  /// 강제 지점은 획득 지점 **및 서버**(`GameActions.settle`) — 클라이언트만
+  /// 거르면 구버전 앱·조작 업로드가 필터를 우회한다.
+  Future<void> setBugFilterMinGrade(Grade g) async {
+    final s = state.requireValue;
+    if (s.bugFilterMinGrade == g) return; // 불필요한 업로드 방지
+    await _commit(s.copyWith(bugFilterMinGrade: g));
   }
 
   /// 채집함 확장(젤리). 최대치·젤리부족이면 false.
@@ -1852,11 +1924,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final idx = s.bugs.indexWhere((b) => b.id == bugId);
     if (idx < 0) return false;
     final bug = s.bugs[idx];
-    // 분해 보상(젤리)은 pets.json 의 PetConfig 계수로 결정(§6). config 없으면 포텐셜만큼.
-    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    // 분해 보상은 pets.json 의 PetConfig 계수로 결정(§6).
+    //
+    // **재료는 항상, 젤리는 드문 개체만.** 곤충은 무한히 나오므로 분해에
+    // 젤리를 무제한으로 붙이면 프리미엄 재화가 파밍으로 뽑히고 IAP 가 죽는다
+    // (실측: 젤리 수입의 50%가 분해였다 — `core_run/tool/jelly_sim.dart`).
+    // 문턱(`disassembleJellyMinPotential`)을 넘는 개체만 젤리를 주면,
+    // 수입은 줄면서 "좋은 걸 분해하는 순간"의 가치는 오히려 올라간다.
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
     final reward = cfg?.disassembleJelly(bug.potential) ?? bug.potential;
-    final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.jelly] = (s.materials[MaterialKind.jelly] ?? 0) + reward;
+    final grade = data.speciesById[bug.speciesId]?.grade;
+    final matGain = (cfg == null || grade == null)
+        ? 0
+        : cfg.releaseMaterial(grade);
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    if (reward > 0) {
+      mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + reward;
+    }
+    if (matGain > 0) {
+      // 자동 방생과 **같은 재료표**를 쓴다 — 분해와 방생의 가치가 갈리면
+      // "필터에 걸리게 두는 게 이득"처럼 이상한 최적 전략이 생긴다.
+      final kind =
+          kRegularMaterials[math.Random().nextInt(kRegularMaterials.length)];
+      mats[kind] = (mats[kind] ?? 0) + matGain;
+    }
     final bugs = List<IndividualBug>.from(s.bugs)..removeAt(idx);
     await _commit(s.copyWith(bugs: bugs, materials: mats));
     return true;
@@ -1924,6 +2016,183 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 자동 합성 한 번의 결과 — 몇 번 합성했고 어떤 개체를 썼는지.
+  /// [consumed] 는 미리보기에서 "무엇이 사라지는지"를 보여주기 위해 싣는다.
+  static ({int fused, int used, List<String> consumed}) _emptySynth() =>
+      (fused: 0, used: 0, consumed: const []);
+
+  /// **자동 합성**: 같은 종이 충분히 쌓인 곳을 전부 합성해 포텐셜을 올린다.
+  ///
+  /// 손으로 하면 종을 찾아 들어가 3마리씩 골라 누르길 반복해야 한다 —
+  /// 채집함이 50~100칸이라 이 반복이 곧 관리 비용이다.
+  ///
+  /// **재료로 쓰지 않는 것**(안전장치):
+  ///  - 장착 중 · 부화 중 곤충
+  ///  - **투자한 곤충** — 수련 레벨 2 이상, 돌파 티어 1 이상, 부위 강화가
+  ///    하나라도 있는 개체. 골드·재료를 쏟은 개체가 조용히 사라지면 그게 곧
+  ///    클레임이다(채집함 상한 정리 `trimBugsTo` 와 같은 원칙).
+  ///
+  /// 타깃은 **가장 많이 투자된 개체**, 재료는 가장 안 쓴 개체부터 쓴다.
+  /// [dryRun] 이면 세이브를 건드리지 않고 예상 결과만 돌려준다(확인 다이얼로그용).
+  ///
+  /// [filter] 를 주면 **재료로 쓸 후보**를 그 조건으로 더 좁힌다(등급·포텐셜).
+  /// 타깃(포텐셜이 오르는 개체)은 필터와 무관하다 — 좋은 개체를 올리는 게 목적이다.
+  Future<({int fused, int used, List<String> consumed})> autoSynthesize({
+    bool dryRun = false,
+    BugAutoFilter? filter,
+  }) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null || cfg.synthFodder <= 0) return _emptySynth();
+    final s = state.requireValue;
+
+    // 재료로 쓸 수 있는 개체인지 — 위 안전장치 + 사용자가 고른 필터.
+    bool isFodder(IndividualBug b) {
+      if (s.isEquipped(b.id) ||
+          s.incubating.containsKey(b.id) ||
+          b.level > 1 ||
+          b.breakthroughTier > 0 ||
+          b.enhancement.total > 0) {
+        return false;
+      }
+      if (filter == null) return true;
+      final grade = data.speciesById[b.speciesId]?.grade;
+      // 종을 모르면 건드리지 않는다 — 정체를 모르는 개체를 지우는 쪽보다
+      // 남기는 쪽이 안전하다.
+      return grade != null && filter.accepts(grade, b.potential);
+    }
+
+    // 투자 점수(높을수록 남긴다) — trimBugsTo 와 같은 우선순위.
+    int invested(IndividualBug b) =>
+        b.level * 1000000 + b.breakthroughTier * 10000 + b.enhancement.total;
+
+    final bySpecies = <String, List<IndividualBug>>{};
+    for (final b in s.bugs) {
+      bySpecies.putIfAbsent(b.speciesId, () => []).add(b);
+    }
+
+    final consumed = <String>{};
+    final upgraded = <String, int>{}; // bugId → 오른 포텐셜
+    var fused = 0;
+
+    for (final group in bySpecies.values) {
+      // 이 종에서 남길 후보(투자 많은 순) / 재료 후보(투자 적은 순).
+      final alive = group.where((b) => !consumed.contains(b.id)).toList()
+        ..sort((a, b) {
+          final inv = invested(b).compareTo(invested(a));
+          if (inv != 0) return inv;
+          final pot = b.potential.compareTo(a.potential);
+          if (pot != 0) return pot;
+          return b.sizeMm.compareTo(a.sizeMm);
+        });
+      if (alive.isEmpty) continue;
+
+      // 타깃 = 목록 맨 앞(가장 많이 투자된 개체). 재료 = 뒤에서부터.
+      var targetIdx = 0;
+      var tail = alive.length - 1;
+      while (targetIdx < alive.length) {
+        final target = alive[targetIdx];
+        var pot = upgraded[target.id] ?? target.potential;
+        if (pot >= cfg.synthMaxPotential) {
+          targetIdx++; // 이미 만렙이면 다음 후보를 올린다
+          continue;
+        }
+        // 뒤에서부터 재료를 모은다(타깃 자신은 제외).
+        final picked = <String>[];
+        while (picked.length < cfg.synthFodder && tail > targetIdx) {
+          final b = alive[tail--];
+          if (consumed.contains(b.id) || !isFodder(b)) continue;
+          picked.add(b.id);
+        }
+        if (picked.length < cfg.synthFodder) break; // 이 종은 재료가 모자란다
+        consumed.addAll(picked);
+        pot += 1;
+        upgraded[target.id] = pot;
+        fused++;
+      }
+    }
+
+    if (fused == 0) return _emptySynth();
+    final result = (
+      fused: fused,
+      used: consumed.length,
+      consumed: consumed.toList(),
+    );
+    if (dryRun) return result;
+
+    final bugs = <IndividualBug>[];
+    for (final b in s.bugs) {
+      if (consumed.contains(b.id)) continue;
+      final pot = upgraded[b.id];
+      bugs.add(pot == null ? b : b.copyWith(potential: pot));
+    }
+    await _commit(s.copyWith(bugs: bugs));
+    return result;
+  }
+
+  /// **자동 분해**: 필터에 맞는 개체를 한 번에 정리해 재료로 바꾼다.
+  ///
+  /// 보호 대상은 자동 합성과 같다 — 장착 중 · 부화 중 · 투자한 개체
+  /// (수련 2↑ · 돌파 1↑ · 부위 강화 1↑)는 필터에 걸려도 건드리지 않는다.
+  ///
+  /// ⚠️ **젤리는 주지 않는다.** 수동 분해는 포텐셜 문턱(4성↑) 위에서 젤리를
+  /// 주지만, 그건 "한 마리씩 손으로 누른다"가 병목이라 안전한 것이다. 일괄
+  /// 분해엔 그 병목이 없어 돌릴수록 젤리가 쌓인다 — **무한히 늘어나는 통로에는
+  /// 젤리를 붙이지 않는다**(§2.6). 자동 방생이 재료만 주는 것과 같은 이유다.
+  ///
+  /// [dryRun] 이면 세이브를 건드리지 않고 예상 결과만 돌려준다.
+  Future<({int released, int materials, List<String> consumed})> autoRelease({
+    bool dryRun = false,
+    BugAutoFilter? filter,
+  }) async {
+    const empty = (released: 0, materials: 0, consumed: <String>[]);
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null) return empty;
+    final s = state.requireValue;
+
+    final targets = <IndividualBug>[];
+    var gain = 0;
+    for (final b in s.bugs) {
+      if (s.isEquipped(b.id) || s.incubating.containsKey(b.id)) continue;
+      if (b.level > 1 || b.breakthroughTier > 0 || b.enhancement.total > 0) {
+        continue;
+      }
+      final grade = data.speciesById[b.speciesId]?.grade;
+      if (grade == null) continue; // 종을 모르면 건드리지 않는다
+      if (filter != null && !filter.accepts(grade, b.potential)) continue;
+      targets.add(b);
+      gain += cfg.releaseMaterial(grade);
+    }
+    if (targets.isEmpty) return empty;
+
+    final result = (
+      released: targets.length,
+      materials: gain,
+      consumed: [for (final b in targets) b.id],
+    );
+    if (dryRun) return result;
+
+    // 재료 종류는 개체마다 하나씩 굴린다 — 수동 분해·자동 방생과 같은 규칙이라
+    // "어느 경로로 없애는 게 이득"이라는 이상한 최적 전략이 생기지 않는다.
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    final rng = math.Random();
+    for (final b in targets) {
+      final grade = data.speciesById[b.speciesId]!.grade;
+      final amount = cfg.releaseMaterial(grade);
+      if (amount <= 0) continue;
+      final kind = kRegularMaterials[rng.nextInt(kRegularMaterials.length)];
+      mats[kind] = (mats[kind] ?? 0) + amount;
+    }
+    final gone = result.consumed.toSet();
+    final bugs = [
+      for (final b in s.bugs)
+        if (!gone.contains(b.id)) b,
+    ];
+    await _commit(s.copyWith(bugs: bugs, materials: mats));
+    return result;
+  }
+
   /// [target] 종으로 합성 가능한(미장착·타깃 제외) 같은 종 재료 수.
   int synthFodderCount(SaveGame s, String targetId, String speciesId) => s.bugs
       .where(
@@ -1962,14 +2231,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (final b in s.bugs) {
       final sp = data.speciesById[b.speciesId];
       if (sp == null) continue;
-      final c = petContribution((
-        grade: sp.grade,
-        sizeMult: b.statMultiplier(sp),
-        potential: b.potential,
-        enhanceTotal: b.enhancement.total,
-        stage: effectiveStage(b.stage, b.stageSince, now, cfg),
-        level: b.level,
-      ), cfg);
+      final c = petContribution(petStatOf(b, sp, cfg, now), cfg);
       scored.add((id: b.id, score: c.attack + c.hp));
     }
     if (scored.isEmpty) return false;

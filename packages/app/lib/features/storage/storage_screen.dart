@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../ui/toast.dart';
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
+import '../../domain/bug_auto_filter.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
@@ -19,6 +20,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
+import 'dex_screen.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -34,7 +36,26 @@ class StorageScreen extends ConsumerWidget {
     final data = ref.watch(gameDataProvider).requireValue;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.storageTitle)),
+      appBar: AppBar(
+        title: Text(l.storageTitle),
+        actions: [
+          // 도감 — 채집함은 '지금 가진 것', 도감은 '지금까지 잡은 것'이라
+          // 같은 화면 계열에 둔다(탭을 하나 더 늘리면 하단바가 6개가 된다).
+          // 애셋(ui/dex.webp)이 들어오면 자동으로 그림으로 바뀐다.
+          IconButton(
+            tooltip: l.dexTitle,
+            icon: gameImage(
+              'assets/images/ui/dex.webp',
+              width: 26,
+              height: 26,
+              fallback: const Icon(Icons.menu_book_rounded),
+            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const DexScreen())),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // 재료는 **칸 수 바보다 위**에 둔다 — 강화·제작에 쓸 재고를 가장 먼저
@@ -42,6 +63,9 @@ class StorageScreen extends ConsumerWidget {
           _materialsStrip(context, l, save),
           _capacityBar(context, ref, data, l, save),
           _equipStrip(context, ref, data, l, save),
+          // 정리 도구 — 장착 펫 **바로 아래**. 왼쪽은 무엇을 받을지(필터),
+          // 오른쪽은 이미 가진 것을 어떻게 정리할지(합성·분해)로 나눈다.
+          _toolBar(context, ref, data, l, save),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
           Expanded(child: _grid(context, ref, data, l, save)),
           _breedingBar(context, ref, data, l, save),
@@ -174,6 +198,486 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 
+  /// 정리 도구 줄 — 왼쪽 **필터**(무엇을 받을지) / 오른쪽 **자동 합성·자동 분해**
+  /// (이미 가진 것을 어떻게 정리할지). 셋 다 채집함 칸을 다루는 도구라
+  /// 한 줄에 모으고, 성격만 좌우로 갈라 둔다.
+  Widget _toolBar(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+    SaveGame save,
+  ) {
+    final min = save.bugFilterMinGrade;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Row(
+        children: [
+          _toolButton(
+            label: l.storageFilterButton,
+            // 지금 기준을 버튼에 달아 둔다 — 열어보지 않아도 무엇을 받는지 보인다.
+            badge: min == Grade.common
+                ? l.storageFilterAll
+                : gradeLabel(l, min),
+            badgeColor: min == Grade.common
+                ? const Color(0x66FFFFFF)
+                : gradeColor(min),
+            fallbackIcon: Icons.filter_alt_outlined,
+            onTap: () => _showBugFilter(context, ref, l),
+          ),
+          const Spacer(),
+          _toolButton(
+            label: l.autoSynthTitle,
+            asset: 'assets/images/ui/auto_synth.webp',
+            fallbackIcon: Icons.auto_awesome_motion_outlined,
+            onTap: () => _runAutoSynth(context, ref, data, l),
+          ),
+          const SizedBox(width: 8),
+          _toolButton(
+            label: l.autoReleaseTitle,
+            asset: 'assets/images/ui/auto_release.webp',
+            fallbackIcon: Icons.recycling_rounded,
+            onTap: () => _runAutoRelease(context, ref, data, l),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 도구 버튼 한 개. [asset] 이 있으면 그림, 없으면 [fallbackIcon] 으로 그린다.
+  Widget _toolButton({
+    required String label,
+    required IconData fallbackIcon,
+    required VoidCallback onTap,
+    String? asset,
+    String? badge,
+    Color? badgeColor,
+  }) {
+    // 아이콘 그림은 **자체 타일 프레임**을 갖고 있다(art_prompts §4c).
+    // 그 위에 버튼 배경까지 그리면 테두리가 두 겹이 되므로, 그림이 있는
+    // 버튼은 배경을 지우고 그림을 키워 그림 자체가 버튼이 되게 한다.
+    final hasArt = asset != null;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: hasArt ? 4 : 10,
+          vertical: hasArt ? 0 : 6,
+        ),
+        decoration: hasArt
+            ? null
+            : BoxDecoration(
+                color: const Color(0x18FFFFFF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x33FFFFFF)),
+              ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (asset != null)
+              gameImage(
+                asset,
+                width: 30,
+                height: 30,
+                fallback: Icon(fallbackIcon, size: 17, color: _honey),
+              )
+            else
+              Icon(fallbackIcon, size: 17, color: _honey),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xDDFFFFFF),
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: (badgeColor ?? _honey).withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: badgeColor ?? _honey),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 받을 등급 고르기 — 기준 미만은 채집함에 **안 들어오고 재료로 환산**된다(§2.1).
+  /// 칸이 50~100개뿐이라 필터가 없으면 후반엔 일반 곤충이 칸을 채우고,
+  /// 정작 쓸 개체가 드롭 차단에 걸린다.
+  Future<void> _showBugFilter(
+    BuildContext ctx,
+    WidgetRef ref,
+    AppLocalizations l,
+  ) => showGameDialog<void>(
+    ctx,
+    title: l.storageFilterTitle,
+    icon: Icons.filter_alt_outlined,
+    content: Consumer(
+      builder: (context, r, _) {
+        final save = r.watch(saveControllerProvider).requireValue;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final g in Grade.values)
+                  _gradeChip(
+                    // 일반 = 필터 없음(전부 받음)이라 이름을 따로 쓴다.
+                    label: g == Grade.common
+                        ? l.storageFilterAll
+                        : gradeLabel(l, g),
+                    color: gradeColor(g),
+                    selected: save.bugFilterMinGrade == g,
+                    onTap: () => r
+                        .read(saveControllerProvider.notifier)
+                        .setBugFilterMinGrade(g),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              save.bugFilterMinGrade == Grade.common
+                  ? l.storageFilterAll
+                  : l.storageFilterSnack(gradeLabel(l, save.bugFilterMinGrade)),
+              style: const TextStyle(
+                color: Color(0x99FFFFFF),
+                fontSize: 11.5,
+                height: 1.35,
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(ctx))],
+  );
+
+  /// 등급 칩 하나(선택 표시 포함).
+  Widget _gradeChip({
+    required String label,
+    required Color color,
+    required bool selected,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: selected
+            ? color.withValues(alpha: 0.45)
+            : const Color(0x18FFFFFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: selected ? color : const Color(0x33FFFFFF)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: selected ? Colors.white : const Color(0x99FFFFFF),
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  );
+
+  /// 자동 합성 실행: 대상 조건을 고르고, **예상 결과를 보여준 뒤** 확인받는다.
+  ///
+  /// 곤충이 사라지는 동작이라 되돌릴 수 없다 — 무엇이 없어지는지 모르고
+  /// 누르게 두면 안 된다.
+  Future<void> _runAutoSynth(
+    BuildContext ctx,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+  ) async {
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final fodder = data.petConfig?.synthFodder ?? 3;
+    final ok = await showGameDialog<bool>(
+      ctx,
+      title: l.autoSynthTitle,
+      icon: Icons.auto_awesome_motion_outlined,
+      content: _cleanupPanel(
+        ctx: ctx,
+        data: data,
+        l: l,
+        filterProvider: autoSynthFilterProvider,
+        hint: l.autoSynthHint(fodder),
+        preview: (f) async {
+          final p = await ctrl.autoSynthesize(dryRun: true, filter: f);
+          // 아직 실행 전이므로 **예정형**으로 적는다 — 완료 문구를 그대로 쓰면
+          // 이미 합성된 줄 알고 창을 닫는다.
+          return (
+            summary: p.fused == 0 ? null : l.autoSynthPreview(p.fused, p.used),
+            consumed: p.consumed,
+          );
+        },
+      ),
+      actions: [
+        gameDialogButton(l.actionClose, () => Navigator.pop(ctx, false)),
+        gameDialogButton(l.autoSynthRun, () => Navigator.pop(ctx, true)),
+      ],
+    );
+    if (ok != true) return;
+    final done = await ctrl.autoSynthesize(
+      filter: ref.read(autoSynthFilterProvider),
+    );
+    if (!ctx.mounted) return;
+    _snack(
+      ctx,
+      done.fused == 0
+          ? l.autoSynthNone
+          : l.autoSynthDone(done.fused, done.used),
+    );
+  }
+
+  /// 자동 분해 실행 — 조건에 맞는 곤충을 한 번에 재료로 바꾼다.
+  ///
+  /// ⚠️ 젤리는 나오지 않는다(§2.6, 자동으로 굴러가는 통로에 젤리 금지).
+  /// 4성↑ 을 대상에 넣으면 손해라, 그 사실을 패널에 적어 둔다.
+  Future<void> _runAutoRelease(
+    BuildContext ctx,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+  ) async {
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final ok = await showGameDialog<bool>(
+      ctx,
+      title: l.autoReleaseTitle,
+      icon: Icons.recycling_rounded,
+      content: _cleanupPanel(
+        ctx: ctx,
+        data: data,
+        l: l,
+        filterProvider: autoReleaseFilterProvider,
+        hint: l.autoReleaseHint,
+        preview: (f) async {
+          final p = await ctrl.autoRelease(dryRun: true, filter: f);
+          return (
+            summary: p.released == 0
+                ? null
+                : l.autoReleasePreview(p.released, p.materials),
+            consumed: p.consumed,
+          );
+        },
+      ),
+      actions: [
+        gameDialogButton(l.actionClose, () => Navigator.pop(ctx, false)),
+        gameDialogButton(l.autoReleaseRun, () => Navigator.pop(ctx, true)),
+      ],
+    );
+    if (ok != true) return;
+    final done = await ctrl.autoRelease(
+      filter: ref.read(autoReleaseFilterProvider),
+    );
+    if (!ctx.mounted) return;
+    _snack(
+      ctx,
+      done.released == 0
+          ? l.autoReleaseNone
+          : l.autoReleaseDone(done.released, done.materials),
+    );
+  }
+
+  /// 자동 합성·자동 분해가 함께 쓰는 패널 — 대상 조건 + **사라지는 것 미리보기**.
+  ///
+  /// 조건을 바꿀 때마다 다시 계산한다. 총 마리 수만 보여주면 "몇 마리"는 알아도
+  /// "무엇이" 없어지는지는 모른다 — 그래서 종 이름까지 적는다.
+  Widget _cleanupPanel({
+    required BuildContext ctx,
+    required GameData data,
+    required AppLocalizations l,
+    required BugAutoFilterProvider filterProvider,
+    required String hint,
+    required Future<({String? summary, List<String> consumed})> Function(
+      BugAutoFilter filter,
+    )
+    preview,
+  }) => Consumer(
+    builder: (context, r, _) {
+      final filter = r.watch(filterProvider);
+      final save = r.watch(saveControllerProvider).requireValue;
+      final locale = Localizations.localeOf(context).languageCode;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            hint,
+            style: const TextStyle(
+              color: Color(0xDDFFFFFF),
+              fontSize: 12.5,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l.autoFilterGrades,
+            style: const TextStyle(
+              color: _honey,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final g in Grade.values)
+                _gradeChip(
+                  label: gradeLabel(l, g),
+                  color: gradeColor(g),
+                  selected: filter.grades.contains(g),
+                  onTap: () =>
+                      r.read(filterProvider.notifier).set(filter.toggled(g)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l.autoFilterPotential(filter.maxPotential),
+            style: const TextStyle(
+              color: _honey,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            children: [
+              for (var p = 1; p <= 5; p++)
+                _gradeChip(
+                  label: '$p★',
+                  color: _honey,
+                  selected: filter.maxPotential == p,
+                  onTap: () => r
+                      .read(filterProvider.notifier)
+                      .set(filter.copyWith(maxPotential: p)),
+                ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1, color: Color(0x22FFFFFF)),
+          ),
+          if (filter.grades.isEmpty)
+            Text(
+              l.autoFilterEmpty,
+              style: const TextStyle(color: Color(0xFFFF8A65), fontSize: 12),
+            )
+          else
+            FutureBuilder<({String? summary, List<String> consumed})>(
+              // 필터가 바뀌면 다시 계산한다(키가 없으면 옛 결과가 남는다).
+              key: ValueKey('${filter.grades.length}_${filter.maxPotential}'),
+              future: preview(filter),
+              builder: (context, snap) {
+                if (!snap.hasData) {
+                  return const SizedBox(
+                    height: 40,
+                    child: Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                }
+                final res = snap.data!;
+                if (res.summary == null) {
+                  return Text(
+                    l.autoReleaseNone,
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 12,
+                    ),
+                  );
+                }
+                // 사라지는 개체를 종별로 묶어 이름과 마리 수로 보여준다.
+                final byId = {for (final b in save.bugs) b.id: b};
+                final counts = <String, int>{};
+                for (final id in res.consumed) {
+                  final sp = byId[id]?.speciesId;
+                  if (sp == null) continue;
+                  counts[sp] = (counts[sp] ?? 0) + 1;
+                }
+                final lines = counts.entries.toList()
+                  ..sort((a, b) => b.value.compareTo(a.value));
+                const shown = 5;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      res.summary!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l.autoPreviewTitle,
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    for (final e in lines.take(shown))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          l.autoPreviewLine(
+                            data.speciesById[e.key]?.name.resolve(locale) ??
+                                e.key,
+                            e.value,
+                          ),
+                          style: const TextStyle(
+                            color: Color(0xDDFFFFFF),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    if (lines.length > shown)
+                      Text(
+                        l.autoPreviewMore(lines.length - shown),
+                        style: const TextStyle(
+                          color: Color(0x99FFFFFF),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+        ],
+      );
+    },
+  );
+
   /// 브리딩 진입 바(슬롯 수·완료 알림 점).
   Widget _breedingBar(
     BuildContext context,
@@ -259,13 +763,28 @@ class StorageScreen extends ConsumerWidget {
     Sex sex,
   ) {
     final cfg = data.petConfig;
-    return save.bugs.where((b) {
+    final list = save.bugs.where((b) {
       if (b.sex != sex) return false;
       final st = cfg == null
           ? b.stage
           : effectiveStage(b.stage, b.stageSince, now, cfg);
       return st == LifeStage.adult;
     }).toList();
+    // 좋은 개체가 위로 오게 정렬한다 — 목록이 길어지면 등급이 섞여 있는 것만으로
+    // 짝을 고르는 게 일이 된다. 쿨다운 중인 개체는 지금 못 쓰므로 맨 뒤로.
+    int gradeIdx(IndividualBug b) =>
+        data.speciesById[b.speciesId]?.grade.index ?? -1;
+    list.sort((a, b) {
+      final ac = save.breedOnCooldown(a.id, now) ? 1 : 0;
+      final bc = save.breedOnCooldown(b.id, now) ? 1 : 0;
+      if (ac != bc) return ac - bc;
+      final g = gradeIdx(b).compareTo(gradeIdx(a));
+      if (g != 0) return g;
+      final p = b.potential.compareTo(a.potential);
+      if (p != 0) return p;
+      return b.sizeMm.compareTo(a.sizeMm);
+    });
+    return list;
   }
 
   /// 브리딩 시트: 진행 슬롯(산란중/수령) + 슬롯 확장 + 새 브리딩(짝 선택).
@@ -541,6 +1060,17 @@ class StorageScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 4),
+                    // 무엇이 상속되는지 여기서 말하지 않으면, 짝짓기가 그냥
+                    // "알 뽑기"로 보인다 — 개편의 요점이 안 전달된다.
+                    Text(
+                      l.breedInheritHint,
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     if (list.isEmpty)
                       Padding(
@@ -566,11 +1096,15 @@ class StorageScreen extends ConsumerWidget {
                           itemCount: list.length,
                           itemBuilder: (c, i) {
                             final b = list[i];
+                            final until = save.breedCooldowns[b.id];
                             return _breedPickTile(
                               ctx,
                               data,
                               locale,
                               b,
+                              cooldown: until == null || !now.isBefore(until)
+                                  ? null
+                                  : until.difference(now),
                               () async {
                                 if (picking) {
                                   setSheet(() => mother = b);
@@ -601,56 +1135,113 @@ class StorageScreen extends ConsumerWidget {
     GameData data,
     String locale,
     IndividualBug bug,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    Duration? cooldown,
+  }) {
     final sp = data.species(bug.speciesId);
+    final waiting = cooldown != null && cooldown > Duration.zero;
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0x22000000),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: gradeColor(sp.grade).withValues(alpha: 0.7),
-            width: 1.4,
+      // 쿨다운 중이면 눌러도 실패하므로 아예 막고, 왜 못 쓰는지 보여준다.
+      onTap: waiting ? null : onTap,
+      child: Opacity(
+        opacity: waiting ? 0.45 : 1,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0x22000000),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: gradeColor(sp.grade).withValues(alpha: 0.7),
+              width: 1.4,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            bugStageImage(
-              bug.speciesId,
-              LifeStage.adult,
-              size: 60,
-              fallback: bugAvatar(sp, size: 50),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              sp.name.resolve(locale),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 쿨다운 표시는 **그림 위에 겹친다.** 줄을 하나 더 쌓으면
+              // 타일 비율(0.82)이 고정이라 세로가 넘친다(실측 10px).
+              Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  bugStageImage(
+                    bug.speciesId,
+                    LifeStage.adult,
+                    size: 60,
+                    fallback: bugAvatar(sp, size: 50),
+                  ),
+                  if (waiting)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xCC1A1005),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0x88FFB0A0)),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(ctx).breedCooldownLeft(
+                          remainLabel(AppLocalizations.of(ctx), cooldown),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFFFB0A0),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  sexIcon(bug.sex),
-                  size: 12,
-                  color: const Color(0xCCFFFFFF),
+              const SizedBox(height: 4),
+              Text(
+                sp.name.resolve(locale),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(width: 3),
-                _stars(bug.potential, 9),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    sexIcon(bug.sex),
+                    size: 12,
+                    color: const Color(0xCCFFFFFF),
+                  ),
+                  const SizedBox(width: 3),
+                  _stars(bug.potential, 9),
+                ],
+              ),
+              // 오행·특성은 이제 **상속되는 값**이라(§2.5) 짝을 고르는 기준이다.
+              // 여기 안 보이면 보관함을 오가며 확인해야 해서 계통 육성이 안 된다.
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    elementGlyph(bug.element),
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  if (!bug.trait.isNone) ...[
+                    const SizedBox(width: 3),
+                    Text(
+                      traitGlyph(bug.trait),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1181,6 +1772,17 @@ class StorageScreen extends ConsumerWidget {
               !save.incubating.containsKey(b.id),
         )
         .toList();
+    // 좋은 알부터 보여준다 — 슬롯이 1~3개뿐이라 **무엇을 먼저 넣을지**가
+    // 이 화면의 유일한 결정이다. 획득 순서로 늘어놓으면 전설 알이 스크롤
+    // 아래에 묻혀 일반 알을 먼저 돌리게 된다.
+    // 등급 → 포텐셜 → 사이즈 순(보관함 목록과 같은 기준).
+    eggs.sort((a, b) {
+      final ga = data.species(a.speciesId).grade.index;
+      final gb = data.species(b.speciesId).grade.index;
+      if (ga != gb) return gb.compareTo(ga);
+      if (a.potential != b.potential) return b.potential.compareTo(a.potential);
+      return b.sizeMm.compareTo(a.sizeMm);
+    });
     showGameDialog<void>(
       ctx,
       title: l.incubatorPick,
@@ -1429,6 +2031,42 @@ class StorageScreen extends ConsumerWidget {
                         child: Text('🩹', style: TextStyle(fontSize: 30)),
                       ),
                     ),
+                  // 혈통 특성 표식 — 짝짓기로 만든 개체를 그리드에서 바로
+                  // 골라낼 수 있어야 "키운 것"과 "주운 것"이 구분된다.
+                  //
+                  // **이름을 적는다.** 색깔 원은 색을 외우기 전엔 아무 뜻이
+                  // 없어서, 알 위에 점 하나가 찍힌 것으로만 보였다.
+                  // 장착 뱃지(좌상단)와 겹치지 않게 아래쪽에 둔다.
+                  if (!bug.trait.isNone)
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: traitColor(bug.trait).withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(
+                            color: const Color(0xAA000000),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Text(
+                          traitLabel(AppLocalizations.of(context), bug.trait),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                            shadows: [
+                              Shadow(color: Colors.black, blurRadius: 2),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1525,14 +2163,7 @@ class StorageScreen extends ConsumerWidget {
         if (bug == null) continue;
         final sp = data.speciesById[bug.speciesId];
         if (sp == null) continue;
-        pets.add((
-          grade: sp.grade,
-          sizeMult: bug.statMultiplier(sp),
-          potential: bug.potential,
-          enhanceTotal: bug.enhancement.total,
-          stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
-          level: bug.level,
-        ));
+        pets.add(petStatOf(bug, sp, cfg, now));
       }
       final pb = computePetBonus(pets, cfg);
       atkPct = ((pb.attackMult - 1) * 100).toStringAsFixed(0);
@@ -1730,42 +2361,49 @@ class StorageScreen extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
+            // 재료마다 **같은 폭**을 나눠 갖고, 그 안에서 축소한다.
+            // 자연 크기로 두면 수량이 K·M 단위로 올라갈 때 줄이 넘쳐 잘렸다.
             for (final k in MaterialKind.values)
-              InkWell(
-                onTap: () => _showMaterialInfo(context, l, k),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      materialImage(
-                        k,
-                        size: 26,
-                        fallback: Icon(materialIcon(k), size: 22),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        formatCompact(save.materialCount(k)),
-                        // 색을 안 주면 테마 기본색을 상속해 어두운 배경에 묻힌다.
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          shadows: [
-                            Shadow(color: Colors.black, blurRadius: 3),
-                            Shadow(
-                              color: Color(0xCC000000),
-                              offset: Offset(0, 1),
-                              blurRadius: 2,
+              Expanded(
+                child: InkWell(
+                  onTap: () => _showMaterialInfo(context, l, k),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 2,
+                      vertical: 2,
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          materialImage(
+                            k,
+                            size: 26,
+                            fallback: Icon(materialIcon(k), size: 22),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            formatCompact(save.materialCount(k)),
+                            // 색을 안 주면 테마 기본색을 상속해 어두운 배경에 묻힌다.
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                              shadows: [
+                                Shadow(color: Colors.black, blurRadius: 3),
+                                Shadow(
+                                  color: Color(0xCC000000),
+                                  offset: Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -1918,6 +2556,13 @@ class StorageScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             _stars(bug.potential, 13),
+                            // 혈통 특성(§2.5) — 짝짓기 자식만 가진다.
+                            // 야생 개체와 구분되는 유일한 표식이라 이름 바로
+                            // 아래, 포텐셜과 같은 줄 높이에 둔다.
+                            if (!bug.trait.isNone) ...[
+                              const SizedBox(height: 4),
+                              _traitBadge(l, bug.trait),
+                            ],
                           ],
                         ),
                       ),
@@ -2094,6 +2739,8 @@ class StorageScreen extends ConsumerWidget {
     LifeStage stage,
     PetConfig cfg,
   ) {
+    // 여기만 `petStatOf` 를 안 쓴다 — 호출부가 **이미 해석한 단계**를 넘기므로
+    // (다시 계산하면 같은 화면 안에서 한 프레임 어긋날 수 있다) 단계만 갈아끼운다.
     final c = petContribution((
       grade: sp.grade,
       sizeMult: bug.statMultiplier(sp),
@@ -2101,6 +2748,8 @@ class StorageScreen extends ConsumerWidget {
       enhanceTotal: bug.enhancement.total,
       stage: stage,
       level: bug.level,
+      trait: bug.trait,
+      passive: sp.passive,
     ), cfg);
     return _sectionBox(
       child: Column(
@@ -2135,6 +2784,67 @@ class StorageScreen extends ConsumerWidget {
   );
   static const _rowSub = TextStyle(color: Color(0xB3FFFFFF), fontSize: 11.5);
 
+  /// 혈통 특성 배지. 색으로 계열(공격/방어/양쪽)이 먼저 읽히게 한다.
+  Widget _traitBadge(AppLocalizations l, BugTrait t) {
+    final c = traitColor(t);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.withValues(alpha: 0.75)),
+      ),
+      child: Text(
+        '${traitGlyph(t)} ${traitLabel(l, t)}',
+        style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  /// 돌파 비용 한 줄: 골드 + 재료 종류별 아이콘·수량.
+  ///
+  /// 재료가 **여러 종류**라는 게 요점이다. 하나로 묶어 '×3' 이라 적으면
+  /// 무엇을 모아야 하는지 알 수 없다. 모자란 항목은 빨갛게 칠해, 버튼을
+  /// 눌러보기 전에 **무엇이 부족한지** 바로 보이게 한다.
+  Widget _breakthroughCost(SaveGame save, int gold, int mat) => Wrap(
+    spacing: 10,
+    runSpacing: 3,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      _costChip(
+        goldIcon(size: 14),
+        formatCompact(gold),
+        enough: save.gold >= gold,
+      ),
+      for (final k in kBreakthroughMaterials)
+        _costChip(
+          materialImage(
+            k,
+            size: 14,
+            fallback: Icon(materialIcon(k), size: 13, color: Colors.white70),
+          ),
+          formatCompact(mat),
+          enough: save.materialCount(k) >= mat,
+        ),
+    ],
+  );
+
+  Widget _costChip(Widget icon, String amount, {required bool enough}) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      icon,
+      const SizedBox(width: 3),
+      Text(
+        amount,
+        style: TextStyle(
+          color: enough ? const Color(0xE6FFFFFF) : const Color(0xFFFF6B6B),
+          fontSize: 11.5,
+          fontWeight: enough ? FontWeight.w600 : FontWeight.w800,
+        ),
+      ),
+    ],
+  );
+
   ButtonStyle _pillStyle(Color bg, {Color fg = Colors.white}) =>
       FilledButton.styleFrom(
         backgroundColor: bg,
@@ -2148,12 +2858,8 @@ class StorageScreen extends ConsumerWidget {
         textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
       );
 
-  String _remainLabel(AppLocalizations l, Duration d) {
-    final s = d.inSeconds <= 0 ? 0 : d.inSeconds;
-    if (s >= 3600) return l.durationHm(s ~/ 3600, (s % 3600) ~/ 60);
-    if (s >= 60) return l.durationM(s ~/ 60); // 1분 이상 → 분
-    return l.durationS(s); // 1분 미만 → 초
-  }
+  /// 공용 포맷(`ui/labels.dart`) 로 위임 — 공방·부화기와 모양이 같아야 한다.
+  String _remainLabel(AppLocalizations l, Duration d) => remainLabel(l, d);
 
   void _snack(BuildContext ctx, String text) => showCenterToast(ctx, text);
 
@@ -2302,11 +3008,7 @@ class StorageScreen extends ConsumerWidget {
     final mat = cfg.breakthroughMatCost(tier);
     final canBreak =
         save.gold >= gold &&
-        const [
-          MaterialKind.chitin,
-          MaterialKind.mineral,
-          MaterialKind.sap,
-        ].every((k) => save.materialCount(k) >= mat);
+        kBreakthroughMaterials.every((k) => save.materialCount(k) >= mat);
     return _sectionBox(
       child: Row(
         children: [
@@ -2320,8 +3022,14 @@ class StorageScreen extends ConsumerWidget {
                   '${l.breakthroughTitle} → ${l.breakthroughTier(tier + 2)}',
                   style: _rowTitle,
                 ),
+                const SizedBox(height: 3),
+                // 재료를 이모지 하나로 묶어 '×3' 이라 적으면 **무엇이 3인지**
+                // 알 수 없다(실제로는 키틴·미네랄·수액 각 mat 개). 종류마다
+                // 아이콘과 수량을 따로 그리고, 모자란 건 빨갛게 표시한다.
+                _breakthroughCost(save, gold, mat),
+                const SizedBox(height: 2),
                 Text(
-                  '💰${formatCompact(gold)} · 🧪${formatCompact(mat)}×3 · ⏱${_remainLabel(l, Duration(seconds: cfg.breakthroughDuration(tier)))}',
+                  '⏱${_remainLabel(l, Duration(seconds: cfg.breakthroughDuration(tier)))}',
                   style: _rowSub,
                 ),
               ],

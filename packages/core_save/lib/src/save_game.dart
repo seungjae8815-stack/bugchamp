@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:meta/meta.dart';
 
 import 'gift_mail.dart';
 
@@ -93,6 +96,12 @@ class BreedingSlot {
     required this.fatherPotential,
     required this.endsAt,
     required this.seed,
+    this.motherElement,
+    this.fatherElement,
+    this.motherTemperament,
+    this.fatherTemperament,
+    this.motherTrait = BugTrait.none,
+    this.fatherTrait = BugTrait.none,
   });
 
   final String id;
@@ -103,6 +112,20 @@ class BreedingSlot {
   final DateTime endsAt;
   final int seed;
 
+  // ── 부모 스냅샷(2026-08-15) ───────────────────────────────────
+  //
+  // 오행·기질·특성 상속(§2.5)에 필요하다. 부모를 잠그지 않는 설계라
+  // 수령 시점엔 부모가 이미 없을 수 있으므로 **시작할 때 찍어 둔다**.
+  //
+  // ⚠️ null 이면 상속을 건너뛰고 예전처럼 랜덤이 된다 — 개편 전에 시작해
+  // 아직 돌고 있는 슬롯이 수령 시점에 깨지지 않게 하기 위한 폴백이다.
+  final Element? motherElement;
+  final Element? fatherElement;
+  final Temperament? motherTemperament;
+  final Temperament? fatherTemperament;
+  final BugTrait motherTrait;
+  final BugTrait fatherTrait;
+
   factory BreedingSlot.fromJson(Map<String, dynamic> json) => BreedingSlot(
     id: json['id'] as String,
     speciesId: json['speciesId'] as String,
@@ -111,7 +134,30 @@ class BreedingSlot {
     fatherPotential: (json['fatherPotential'] as num).toInt(),
     endsAt: DateTime.parse(json['endsAt'] as String).toUtc(),
     seed: (json['seed'] as num).toInt(),
+    motherElement: _element(json['motherElement']),
+    fatherElement: _element(json['fatherElement']),
+    motherTemperament: _temperament(json['motherTemperament']),
+    fatherTemperament: _temperament(json['fatherTemperament']),
+    motherTrait: BugTrait.fromKey(json['motherTrait'] as String? ?? 'none'),
+    fatherTrait: BugTrait.fromKey(json['fatherTrait'] as String? ?? 'none'),
   );
+
+  /// 모르는 키는 null 로 — 구버전 앱이 신규 값을 만나도 세이브가 죽지 않는다.
+  static Element? _element(Object? raw) {
+    if (raw is! String) return null;
+    for (final e in Element.values) {
+      if (e.key == raw) return e;
+    }
+    return null;
+  }
+
+  static Temperament? _temperament(Object? raw) {
+    if (raw is! String) return null;
+    for (final t in Temperament.values) {
+      if (t.key == raw) return t;
+    }
+    return null;
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -121,7 +167,151 @@ class BreedingSlot {
     'fatherPotential': fatherPotential,
     'endsAt': endsAt.toUtc().toIso8601String(),
     'seed': seed,
+    if (motherElement != null) 'motherElement': motherElement!.key,
+    if (fatherElement != null) 'fatherElement': fatherElement!.key,
+    if (motherTemperament != null) 'motherTemperament': motherTemperament!.key,
+    if (fatherTemperament != null) 'fatherTemperament': fatherTemperament!.key,
+    if (motherTrait != BugTrait.none) 'motherTrait': motherTrait.key,
+    if (fatherTrait != BugTrait.none) 'fatherTrait': fatherTrait.key,
   };
+
+  /// 부모 스냅샷([mother]/[father])을 그대로 담은 슬롯을 만든다.
+  ///
+  /// 앱·서버가 각자 필드를 채우면 한쪽만 오행을 안 찍는 사고가 난다
+  /// — 그러면 그 유저는 영원히 "상속이 안 되는" 짝짓기를 하게 된다.
+  factory BreedingSlot.from({
+    required String id,
+    required IndividualBug mother,
+    required IndividualBug father,
+    required DateTime endsAt,
+    required int seed,
+  }) => BreedingSlot(
+    id: id,
+    speciesId: mother.speciesId,
+    parentAvgSizeMm: (mother.sizeMm + father.sizeMm) / 2,
+    motherPotential: mother.potential,
+    fatherPotential: father.potential,
+    endsAt: endsAt,
+    seed: seed,
+    motherElement: mother.element,
+    fatherElement: father.element,
+    motherTemperament: mother.temperament,
+    fatherTemperament: father.temperament,
+    motherTrait: mother.trait,
+    fatherTrait: father.trait,
+  );
+
+  /// 이 슬롯에서 자식(알) 하나를 롤한다.
+  ///
+  /// **앱과 서버가 같은 함수를 쓴다** — 공식이 두 벌이면 "앱에선 화 속성인데
+  /// 서버가 준 건 수 속성"처럼 조용히 갈린다. 결정론: 같은 [seed] → 같은 자식.
+  IndividualBug hatch({
+    required String id,
+    required Species species,
+    required PetConfig cfg,
+  }) => IndividualBug.breed(
+    id: id,
+    species: species,
+    rng: Random(seed),
+    parentAvgSizeMm: parentAvgSizeMm,
+    motherPotential: motherPotential,
+    fatherPotential: fatherPotential,
+    sizeVariancePct: cfg.breedingSizeVariancePct,
+    mutationChance: cfg.breedingMutationChance,
+    mutationBonusPct: cfg.breedingMutationBonusPct,
+    potUpChance: cfg.breedingPotUpChance,
+    potDownChance: cfg.breedingPotDownChance,
+    motherElement: motherElement,
+    fatherElement: fatherElement,
+    motherTemperament: motherTemperament,
+    fatherTemperament: fatherTemperament,
+    motherTrait: motherTrait,
+    fatherTrait: fatherTrait,
+    elementInheritChance: cfg.breedingElementInherit,
+    temperamentInheritChance: cfg.breedingTemperamentInherit,
+    traitInheritChance: cfg.breedingTraitInherit,
+    traitNewChance: cfg.breedingTraitNew,
+    traitWeights: cfg.traitWeights,
+  );
+}
+
+/// 도감(§2.1) 한 종의 기록.
+///
+/// 왜 세이브에 두는가: 곤충은 분해·방생으로 **사라진다**. 보유 곤충만 보면
+/// "예전에 100mm 짜리를 잡았다"가 남지 않아, 수집 게임인데 수집한 흔적이
+/// 없어진다. 도감은 곤충이 없어져도 남는 **영구 기록**이다.
+///
+/// 크기: 20종 × 이 레코드라 세이브 부담이 없다(§2.1 의 3만 마리 사고와 다름).
+/// 발견하지 않은 종은 아예 저장하지 않는다.
+@immutable
+class DexEntry {
+  const DexEntry({
+    this.maxSizeMm = 0,
+    this.maxPotential = 0,
+    this.raisedToAdult = false,
+  });
+
+  /// 이 종으로 잡은 **역대 최대 크기**(mm). 곤충 게임의 원초적 자랑거리다.
+  final double maxSizeMm;
+
+  /// 역대 최고 포텐셜.
+  final int maxPotential;
+
+  /// 성충까지 키운 적이 있는가(= '정복'). 도감 보상의 기준.
+  final bool raisedToAdult;
+
+  /// 이 기록을 [other] 로 갱신한 결과(각 항목의 최대치만 남긴다).
+  DexEntry merge({double sizeMm = 0, int potential = 0, bool adult = false}) =>
+      DexEntry(
+        maxSizeMm: sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
+        maxPotential: potential > maxPotential ? potential : maxPotential,
+        raisedToAdult: raisedToAdult || adult,
+      );
+
+  factory DexEntry.fromJson(Map<String, dynamic> json) => DexEntry(
+    maxSizeMm: (json['s'] as num?)?.toDouble() ?? 0,
+    maxPotential: (json['p'] as num?)?.toInt() ?? 0,
+    raisedToAdult: json['a'] as bool? ?? false,
+  );
+
+  /// 키를 한 글자로 줄인다 — 20종 × 3필드라 작지만, 세이브는 60초마다
+  /// 통째로 업로드되므로 습관적으로 아낀다(§3).
+  Map<String, dynamic> toJson() => {
+    if (maxSizeMm > 0) 's': maxSizeMm,
+    if (maxPotential > 0) 'p': maxPotential,
+    if (raisedToAdult) 'a': true,
+  };
+}
+
+/// 보유 곤충 전체를 훑어 도감을 갱신한 결과. 바뀐 게 없으면 [current] 를 **그대로**
+/// 돌려준다(같은 인스턴스) — 호출부가 `identical` 로 불필요한 저장·업로드를 건너뛴다.
+///
+/// [stageOf] 는 개체의 **실제 도달 단계**를 주는 콜백이다. 단계 계산은 경과시간
+/// 기반이라 `core_run`(PetConfig) 이 필요한데, core_save 는 그 시각·설정을
+/// 갖고 있지 않으므로 호출부가 넘긴다.
+Map<String, DexEntry> updatedDex({
+  required Map<String, DexEntry> current,
+  required Iterable<IndividualBug> bugs,
+  required LifeStage Function(IndividualBug) stageOf,
+}) {
+  Map<String, DexEntry>? next;
+  for (final b in bugs) {
+    final before = (next ?? current)[b.speciesId] ?? const DexEntry();
+    final after = before.merge(
+      sizeMm: b.sizeMm,
+      potential: b.potential,
+      adult: stageOf(b) == LifeStage.adult,
+    );
+    if (after.maxSizeMm == before.maxSizeMm &&
+        after.maxPotential == before.maxPotential &&
+        after.raisedToAdult == before.raisedToAdult &&
+        current.containsKey(b.speciesId)) {
+      continue; // 이미 기록된 것보다 나을 게 없다
+    }
+    next ??= Map<String, DexEntry>.from(current);
+    next[b.speciesId] = after;
+  }
+  return next ?? current;
 }
 
 /// 채집함 상한 정리에 필요한 곤충 1마리의 최소 정보.
@@ -198,8 +388,11 @@ class SaveGame {
     required this.dailyClaims,
     required this.gifts,
     required this.clearedChapters,
+    this.dex = const {},
+    this.claimedDex = const {},
     required this.incubatorCapacity,
     required this.incubating,
+    this.breedCooldowns = const {},
     required this.pvpTrophies,
     required this.injured,
     required this.claimedLeagues,
@@ -230,6 +423,7 @@ class SaveGame {
     this.autoForgeOptions = const {},
     this.autoForgeStopOnHit = true,
     this.blockedUserIds = const {},
+    this.bugFilterMinGrade = Grade.common,
     this.nicknameSet = false,
   });
 
@@ -303,11 +497,60 @@ class SaveGame {
   /// 첫 클리어 보상을 이미 받은 로드맵 챕터 id 집합.
   final Set<String> clearedChapters;
 
+  /// 도감(§2.1) — 종 id → 역대 기록. **발견한 종만** 들어 있다.
+  ///
+  /// 보유 곤충에서 파생되는 집계라 별도 갱신 지점이 없다 —
+  /// `SaveController._commit` 이 저장할 때마다 훑어서 채운다. 그래서
+  /// 획득 경로(실시간 처치·오프라인 정산·짝짓기·서버 세이브 채택)를
+  /// 하나도 빠뜨리지 않는다.
+  final Map<String, DexEntry> dex;
+
+  /// 이미 받은 도감 마일스톤 id 집합(`DexMilestone.id`). 중복 수령 방지.
+  final Set<String> claimedDex;
+
+  /// 도감에 등록된(=한 번이라도 보유한) 종 수.
+  int get dexDiscovered => dex.length;
+
+  /// 성충까지 키운 종 수(= '정복'). 도감 보상의 기준.
+  int get dexConquered => dex.values.where((e) => e.raisedToAdult).length;
+
+  /// 도감 전체에서의 **역대 최대 크기**(mm). 사이즈 랭킹의 근거.
+  double get dexBestSizeMm {
+    var best = 0.0;
+    for (final e in dex.values) {
+      if (e.maxSizeMm > best) best = e.maxSizeMm;
+    }
+    return best;
+  }
+
   /// 부화기 슬롯 개수(젤리로 확장).
   final int incubatorCapacity;
 
   /// 부화기에서 부화 중인 알: bugId → 부화 완료 UTC 시각.
   final Map<String, DateTime> incubating;
+
+  /// 짝짓기에 쓴 부모의 **재사용 가능 시각**: bugId → UTC.
+  ///
+  /// 부모는 짝짓기 중에도 잠기지 않으므로(스냅샷 저장), 텀이 없으면 잘 뽑힌
+  /// 한 쌍만 만들어 두고 같은 급 자식을 슬롯이 도는 속도만큼 계속 찍어낼 수
+  /// 있다. 스탯이 무한히 오르진 않지만(사이즈는 종 상한, 포텐셜은 5성 천장)
+  /// 천장 개체가 소모품이 되어 **희소성이 사라진다**.
+  ///
+  /// 기본값 `{}` 인 **호환 필드**라 스키마 버전을 올리지 않는다 — 구버전 앱은
+  /// 이 값을 모른 채 그대로 보존한다.
+  final Map<String, DateTime> breedCooldowns;
+
+  /// [bugId] 가 [now] 기준으로 아직 짝짓기 쿨다운 중인가.
+  bool breedOnCooldown(String bugId, DateTime now) {
+    final until = breedCooldowns[bugId];
+    return until != null && now.isBefore(until);
+  }
+
+  /// 만료된 쿨다운을 걷어낸 맵 — 세이브가 무한히 커지지 않게 한다.
+  Map<String, DateTime> prunedBreedCooldowns(DateTime now) => {
+    for (final e in breedCooldowns.entries)
+      if (now.isBefore(e.value)) e.key: e.value,
+  };
 
   /// 비동기 PvP(곤충 결투) 트로피 점수.
   final int pvpTrophies;
@@ -343,6 +586,44 @@ class SaveGame {
   int get storageFree {
     final free = storageCapacity - bugs.length;
     return free < 0 ? 0 : free;
+  }
+
+  /// 채집함에 **받을 최소 등급**. [Grade.common] 이면 전부 받는다(기본).
+  ///
+  /// 미달 등급은 채집함에 들어오지 않고 **자동 방생**되어 재료로 환산된다
+  /// (§2.1). 칸이 50~100개뿐이라, 필터가 없으면 후반에 일반 곤충이 칸을
+  /// 채워 정작 쓸 개체가 안 들어온다 — 그때마다 손으로 분해해야 했다.
+  ///
+  /// ⚠️ 보상을 **젤리로 주지 않는다.** 젤리는 프리미엄 재화(§2.6)라, 자동으로
+  /// 찍히면 방치만 해도 젤리가 쌓여 IAP 가 무의미해진다. 손으로 하는 분해
+  /// (`disassembleBug`)는 젤리 그대로 — 그쪽은 사람의 손이 병목이라 안전하다.
+  final Grade bugFilterMinGrade;
+
+  /// 이 등급의 곤충을 채집함에 넣을지. false 면 자동 방생 대상.
+  bool acceptsGrade(Grade g) => g.index >= bugFilterMinGrade.index;
+
+  /// 도감 JSON → 맵. 모양이 어긋난 항목은 조용히 버린다 — 도감은 **파생
+  /// 집계**라 잘못 저장돼도 다음 커밋에 다시 채워진다. 세이브가 안 열리는
+  /// 것보다 낫다([[bugchamp-save-parser-hardening]] 과 같은 원칙).
+  static Map<String, DexEntry> _dexFromJson(Object? raw) {
+    if (raw is! Map) return const {};
+    final out = <String, DexEntry>{};
+    for (final e in raw.entries) {
+      final k = e.key;
+      final v = e.value;
+      if (k is! String || v is! Map) continue;
+      out[k] = DexEntry.fromJson(Map<String, dynamic>.from(v));
+    }
+    return out;
+  }
+
+  /// 등급 키 → [Grade]. 모르는 값이면 [Grade.common](= 필터 없음).
+  static Grade _gradeOrCommon(Object? raw) {
+    if (raw is! String) return Grade.common;
+    for (final g in Grade.values) {
+      if (g.key == raw) return g;
+    }
+    return Grade.common;
   }
 
   /// 장착 중이거나 부화기에 들어 있어 **상한 정리에서 보호되는** 곤충 id.
@@ -530,8 +811,11 @@ class SaveGame {
     dailyClaims: const {},
     gifts: const [],
     clearedChapters: const {},
+    dex: const {},
+    claimedDex: const {},
     incubatorCapacity: 1,
     incubating: const {},
+    breedCooldowns: const {},
     pvpTrophies: 0,
     injured: const {},
     claimedLeagues: const {},
@@ -556,6 +840,7 @@ class SaveGame {
     ownedSkins: const {},
     redeemedPurchases: const {},
     blockedUserIds: const {},
+    bugFilterMinGrade: Grade.common,
   );
 
   SaveGame copyWith({
@@ -579,8 +864,11 @@ class SaveGame {
     List<GiftMail>? gifts,
     DateTime? nextGiftAt,
     Set<String>? clearedChapters,
+    Map<String, DexEntry>? dex,
+    Set<String>? claimedDex,
     int? incubatorCapacity,
     Map<String, DateTime>? incubating,
+    Map<String, DateTime>? breedCooldowns,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
     Set<String>? claimedLeagues,
@@ -611,6 +899,7 @@ class SaveGame {
     DateTime? passExpiresAt,
     Set<String>? redeemedPurchases,
     Set<String>? blockedUserIds,
+    Grade? bugFilterMinGrade,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -634,8 +923,11 @@ class SaveGame {
     gifts: gifts ?? this.gifts,
     nextGiftAt: nextGiftAt ?? this.nextGiftAt,
     clearedChapters: clearedChapters ?? this.clearedChapters,
+    dex: dex ?? this.dex,
+    claimedDex: claimedDex ?? this.claimedDex,
     incubatorCapacity: incubatorCapacity ?? this.incubatorCapacity,
     incubating: incubating ?? this.incubating,
+    breedCooldowns: breedCooldowns ?? this.breedCooldowns,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
@@ -666,6 +958,7 @@ class SaveGame {
     passExpiresAt: passExpiresAt ?? this.passExpiresAt,
     redeemedPurchases: redeemedPurchases ?? this.redeemedPurchases,
     blockedUserIds: blockedUserIds ?? this.blockedUserIds,
+    bugFilterMinGrade: bugFilterMinGrade ?? this.bugFilterMinGrade,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -747,9 +1040,17 @@ class SaveGame {
         : DateTime.parse(json['nextGiftAt'] as String).toUtc(),
     clearedChapters:
         (json['clearedChapters'] as List?)?.cast<String>().toSet() ?? const {},
+    dex: _dexFromJson(json['dex']),
+    claimedDex:
+        (json['claimedDex'] as List?)?.cast<String>().toSet() ?? const {},
     incubatorCapacity: (json['incubatorCapacity'] as num?)?.toInt() ?? 1,
     incubating:
         (json['incubating'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, DateTime.parse(v as String).toUtc()),
+        ) ??
+        const {},
+    breedCooldowns:
+        (json['breedCooldowns'] as Map<String, dynamic>?)?.map(
           (k, v) => MapEntry(k, DateTime.parse(v as String).toUtc()),
         ) ??
         const {},
@@ -822,6 +1123,9 @@ class SaveGame {
         const {},
     blockedUserIds:
         (json['blockedUserIds'] as List?)?.cast<String>().toSet() ?? const {},
+    // 모르는 등급 키는 common(=필터 없음)으로 — 필터 때문에 세이브가 안 열리는
+    // 일이 있어선 안 된다. 최악이라도 '전부 받는' 안전한 쪽으로 떨어진다.
+    bugFilterMinGrade: _gradeOrCommon(json['bugFilterMinGrade']),
     passExpiresAt: json['passExpiresAt'] == null
         ? null
         : DateTime.parse(json['passExpiresAt'] as String).toUtc(),
@@ -855,11 +1159,20 @@ class SaveGame {
     'gifts': gifts.map((g) => g.toJson()).toList(),
     if (nextGiftAt != null) 'nextGiftAt': nextGiftAt!.toUtc().toIso8601String(),
     'clearedChapters': clearedChapters.toList(),
+    // 빈 도감은 키를 싣지 않는다 — 신규 유저 세이브가 괜히 커지지 않게.
+    if (dex.isNotEmpty)
+      'dex': {for (final e in dex.entries) e.key: e.value.toJson()},
+    if (claimedDex.isNotEmpty) 'claimedDex': claimedDex.toList(),
     'incubatorCapacity': incubatorCapacity,
     'incubating': {
       for (final e in incubating.entries)
         e.key: e.value.toUtc().toIso8601String(),
     },
+    if (breedCooldowns.isNotEmpty)
+      'breedCooldowns': {
+        for (final e in breedCooldowns.entries)
+          e.key: e.value.toUtc().toIso8601String(),
+      },
     'pvpTrophies': pvpTrophies,
     'injured': {
       for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),
@@ -898,6 +1211,8 @@ class SaveGame {
     'ownedSkins': ownedSkins.toList(),
     'redeemedPurchases': redeemedPurchases.toList(),
     'blockedUserIds': blockedUserIds.toList(),
+    if (bugFilterMinGrade != Grade.common)
+      'bugFilterMinGrade': bugFilterMinGrade.key,
     'passExpiresAt': passExpiresAt?.toIso8601String(),
   };
 

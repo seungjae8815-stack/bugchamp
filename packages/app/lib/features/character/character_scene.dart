@@ -256,7 +256,17 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
 
   _Wild _rollWild(int seed) {
     final all = ref.read(gameDataProvider).value?.allSpecies ?? const [];
-    final sp = all.isEmpty ? null : all[_rng.nextInt(all.length)];
+    // 등급 필터(§2.1)는 **여기서** 건다 — 채집망은 눈에 보이는 놈을 직접
+    // 골라 휘두르는 조작이라, 잡고 나서 방생하면 "잡았는데 없어졌다"가 된다.
+    // 아예 나타나지 않게 하면 헛스윙 자체가 없다.
+    final save = ref.read(saveControllerProvider).value;
+    final pool = save == null
+        ? all
+        : all.where((s) => save.acceptsGrade(s.grade)).toList();
+    // 필터가 너무 세서 아무것도 안 남으면 씬이 텅 빈다 — 그때는 필터를 무시하고
+    // 전체에서 세운다(잡히면 방생되지만, 빈 화면보다는 낫다).
+    final src = pool.isEmpty ? all : pool;
+    final sp = src.isEmpty ? null : src[_rng.nextInt(src.length)];
     return _Wild(
       speciesId: sp?.id ?? '',
       bug: _Wanderer(seed: seed * 37 + _rng.nextInt(9999)),
