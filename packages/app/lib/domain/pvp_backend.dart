@@ -10,17 +10,50 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// [SupabasePvpBackend] 같은 구현으로 [pvpBackendProvider] 를 오버라이드한다.
 /// (Supabase 스키마·연동 절차: docs/backend_supabase.md)
 
+/// 랭킹 종류 — 무엇으로 줄을 세우는가.
+///
+/// 트로피 하나만 있으면 **결투를 안 하는 유저에게는 랭킹이 없다**. 이 게임의
+/// 주된 플레이는 방치 런(레벨·스테이지)이라, 그쪽 진행도 겨룰 자리가 필요하다.
+enum RankingKind {
+  /// 결투 트로피(§2.7) — 전투 실력.
+  trophies('trophies'),
+
+  /// 캐릭터 레벨 — 누적 플레이.
+  level('level'),
+
+  /// 도달 스테이지 — 진행도.
+  stage('stage');
+
+  const RankingKind(this.key);
+  final String key;
+}
+
 /// PvP 플레이어 프로필(리더보드 표시 단위).
 class PvpProfile {
   const PvpProfile({
     required this.id,
     required this.nickname,
     required this.trophies,
+    this.level = 1,
+    this.stageNumber = 1,
   });
 
   final String id;
   final String nickname;
   final int trophies;
+
+  /// 캐릭터 레벨([RankingKind.level] 정렬 기준).
+  final int level;
+
+  /// 도달 스테이지([RankingKind.stage] 정렬 기준).
+  final int stageNumber;
+
+  /// 이 랭킹 종류에서 줄 세우기에 쓰는 점수.
+  int scoreFor(RankingKind kind) => switch (kind) {
+    RankingKind.trophies => trophies,
+    RankingKind.level => level,
+    RankingKind.stage => stageNumber,
+  };
 }
 
 /// 리더보드 한 줄.
@@ -121,7 +154,14 @@ abstract interface class PvpBackend {
   /// 반환값의 [Leaderboard.live] 가 **실제로 서버에서 받아온 것인지**를 말한다.
   /// [isRemote] 와 다르다 — 서버 백엔드라도 조회에 실패하면 화면이 비지 않게
   /// NPC 사다리로 폴백하는데, 그때 "온라인 랭킹"이라고 쓰면 거짓말이 된다.
-  Future<Leaderboard> leaderboard({required PvpProfile me, int limit});
+  ///
+  /// [kind] 는 줄 세우는 기준(트로피/레벨/진행도). 기본은 트로피라
+  /// 기존 호출부는 그대로 동작한다.
+  Future<Leaderboard> leaderboard({
+    required PvpProfile me,
+    int limit,
+    RankingKind kind,
+  });
 
   /// 내 방어팀 스냅샷([team])을 서버에 등록(업서트)한다.
   /// 로컬 백엔드는 no-op. 네트워크 실패는 조용히 무시(앱 흐름을 막지 않음).
@@ -196,19 +236,33 @@ class LocalPvpBackend implements PvpBackend {
   Future<Leaderboard> leaderboard({
     required PvpProfile me,
     int limit = 50,
+    RankingKind kind = RankingKind.trophies,
   }) async {
-    // 고정 seed → 안정적인 사다리. 최상단은 내 점수보다 항상 높게 잡아 몰입 유지.
-    final topBound = max(3200, me.trophies + 400);
+    // 고정 곡선 → 안정적인 사다리. 최상단은 내 점수보다 항상 높게 잡아 몰입 유지.
+    // 축마다 단위가 다르므로(트로피 수천 / 레벨 수십 / 스테이지 수백)
+    // **기준선도 축마다** 잡는다 — 하나로 쓰면 레벨 랭킹이 전부 999가 된다.
+    final myScore = me.scoreFor(kind);
+    final topBound = switch (kind) {
+      RankingKind.trophies => max(3200, myScore + 400),
+      RankingKind.level => max(60, myScore + 8),
+      RankingKind.stage => max(600, (myScore * 1.3).round() + 40),
+    };
+    int scoreAt(int i) =>
+        (topBound * pow(1 - i / _npcCount, 1.7)).round().clamp(1, 1 << 30);
     final npcs = <PvpProfile>[
       for (var i = 0; i < _npcCount; i++)
         PvpProfile(
           id: 'npc$i',
           nickname: _npcName(i),
           // 상위일수록 촘촘, 하위로 갈수록 완만한 하강 곡선.
-          trophies: (topBound * pow(1 - i / _npcCount, 1.7)).round(),
+          // 보고 있는 축만 곡선을 태우고 나머지는 대략값을 채운다(표시용).
+          trophies: kind == RankingKind.trophies ? scoreAt(i) : 0,
+          level: kind == RankingKind.level ? scoreAt(i) : 1,
+          stageNumber: kind == RankingKind.stage ? scoreAt(i) : 1,
         ),
     ];
-    final all = [...npcs, me]..sort((a, b) => b.trophies.compareTo(a.trophies));
+    final all = [...npcs, me]
+      ..sort((a, b) => b.scoreFor(kind).compareTo(a.scoreFor(kind)));
     final ranked = [
       for (var i = 0; i < all.length; i++)
         LeaderboardEntry(

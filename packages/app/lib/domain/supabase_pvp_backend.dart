@@ -19,19 +19,29 @@ class SupabasePvpBackend implements PvpBackend {
   Future<Leaderboard> leaderboard({
     required PvpProfile me,
     int limit = 50,
+    RankingKind kind = RankingKind.trophies,
   }) async {
     final uid = _client.auth.currentUser?.id;
-    if (uid == null) return fallback.leaderboard(me: me, limit: limit);
+    if (uid == null) {
+      return fallback.leaderboard(me: me, limit: limit, kind: kind);
+    }
     try {
-      // 1) 내 프로필 upsert(닉네임·트로피).
+      // 1) 내 프로필 upsert(닉네임·트로피·레벨·진행도).
+      //    레벨/스테이지도 올려야 그 축의 랭킹이 성립한다.
       await _client.from('profiles').upsert({
         'id': uid,
         'nickname': me.nickname,
         'trophies': me.trophies,
+        'level': me.level,
+        'stage': me.stageNumber,
       });
-      // 2) 상위 N 조회(RPC).
+      // 2) 상위 N 조회(RPC). 정렬 축은 서버가 받는다 — 클라가 받아서
+      //    다시 정렬하면 상위 N 이 트로피 기준으로 잘린 뒤라 틀린 목록이 된다.
       final rows =
-          (await _client.rpc('leaderboard_top', params: {'lim': limit}))
+          (await _client.rpc(
+                'leaderboard_top',
+                params: {'lim': limit, 'sort': kind.key},
+              ))
               as List;
       final entries = <LeaderboardEntry>[
         for (final r in rows.cast<Map<String, dynamic>>())
@@ -42,6 +52,8 @@ class SupabasePvpBackend implements PvpBackend {
               id: r['id'] as String,
               nickname: (r['nickname'] as String?) ?? '',
               trophies: (r['trophies'] as num?)?.toInt() ?? 0,
+              level: (r['level'] as num?)?.toInt() ?? 1,
+              stageNumber: (r['stage'] as num?)?.toInt() ?? 1,
             ),
           ),
       ];
@@ -54,7 +66,7 @@ class SupabasePvpBackend implements PvpBackend {
       return Leaderboard(entries: entries, live: true);
     } catch (_) {
       // 화면이 비지 않게 NPC 사다리로 폴백하되, live=false 로 **사실대로** 알린다.
-      return fallback.leaderboard(me: me, limit: limit);
+      return fallback.leaderboard(me: me, limit: limit, kind: kind);
     }
   }
 

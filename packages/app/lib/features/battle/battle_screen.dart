@@ -306,6 +306,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// **서버도 같은 함수를 쓴다**(결과가 어긋나면 승패가 갈린다).
   BattleBug _toBattleBug(IndividualBug bug, GameData data, String locale) {
     final enh = data.enhanceConfig;
+    final pet = data.petConfig;
     double per(BugPart p, double d) => enh?.spec(p).effectPerLevel ?? d;
     return buildBattleBug(
       bug: bug,
@@ -315,6 +316,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       cuticlePerLevel: per(BugPart.cuticle, 0.04),
       wingPerLevel: per(BugPart.wing, 0.03),
       buildPerLevel: per(BugPart.build, 0.05),
+      // 혈통 특성(§2.5)은 전투에도 실린다. 배율은 `traitBattleScale` —
+      // 서버(`GameActions._buildTeam`)와 **같은 값**이어야 승패가 안 갈린다.
+      traitAtkBonus: pet?.traitBattleAtk(bug.trait) ?? 0,
+      traitHpBonus: pet?.traitBattleHp(bug.trait) ?? 0,
     );
   }
 

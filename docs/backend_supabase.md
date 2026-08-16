@@ -43,7 +43,7 @@ flutter run -d <device> ^
 
 ## 3. 데이터 모델(계획)
 
-- **profiles**: 유저 1명 = 닉네임 + 트로피 + 등급(파생). 리더보드 소스.
+- **profiles**: 유저 1명 = 닉네임 + 트로피/레벨/진행도 + 등급(파생). 리더보드 소스(랭킹 3축).
 - **defenders**: 유저의 **방어팀 스냅샷**(성충3의 종·오행·스탯·기질). 다른 유저가 이걸 상대함.
 - 매칭: 내 트로피 근처의 defenders 를 N개 뽑아 스카우트 보드에 노출(현재 로컬 생성 → 교체).
 
@@ -58,8 +58,15 @@ create table if not exists profiles (
   id         uuid primary key references auth.users(id) on delete cascade,
   nickname   text not null,
   trophies   int  not null default 0,
+  -- 랭킹 3축(§2.7). 트로피만 두면 **결투를 안 하는 유저에겐 랭킹이 없다**.
+  level      int  not null default 1,   -- 캐릭터 레벨
+  stage      int  not null default 1,   -- 도달 스테이지(진행도)
   updated_at timestamptz not null default now()
 );
+
+-- 기존 프로젝트에 컬럼만 추가할 때(재실행 안전).
+alter table profiles add column if not exists level int not null default 1;
+alter table profiles add column if not exists stage int not null default 1;
 
 create table if not exists defenders (
   id         uuid primary key references auth.users(id) on delete cascade,
@@ -69,6 +76,8 @@ create table if not exists defenders (
 );
 
 create index if not exists profiles_trophies_idx on profiles (trophies desc);
+create index if not exists profiles_level_idx    on profiles (level desc);
+create index if not exists profiles_stage_idx    on profiles (stage desc);
 create index if not exists defenders_trophies_idx on defenders (trophies desc);
 
 -- RLS: **본인 행만** 접근(테이블 전체는 비공개). 랭킹은 아래 SECURITY DEFINER 함수로만 노출.
@@ -86,14 +95,34 @@ create policy own_defender on defenders
   for all using (auth.uid() = id) with check (auth.uid() = id);
 
 -- 리더보드 상위 N(순위 포함): SECURITY DEFINER 로 RLS 우회 → 전체 랭킹 반환.
--- 민감정보 없이 rank/nickname/trophies 만 노출. search_path 고정(보안).
-create or replace function leaderboard_top(lim int)
-returns table(rank bigint, id uuid, nickname text, trophies int)
+-- 민감정보 없이 rank/nickname/점수만 노출. search_path 고정(보안).
+--
+-- ⚠️ **정렬은 반드시 서버가 한다.** 상위 N 을 트로피 기준으로 잘라 보낸 뒤
+-- 클라가 레벨로 다시 정렬하면, 이미 잘린 목록이라 레벨 상위권이 통째로 빠진다.
+-- `sort` 는 화이트리스트로만 받는다(문자열을 order by 에 그대로 끼우면 SQL 주입).
+create or replace function leaderboard_top(lim int, sort text default 'trophies')
+returns table(rank bigint, id uuid, nickname text,
+              trophies int, level int, stage int)
 language sql stable security definer set search_path = public as $$
-  select row_number() over (order by trophies desc) as rank,
-         id, nickname, trophies
-  from profiles order by trophies desc limit lim;
+  select row_number() over (
+           order by case sort
+                      when 'level' then p.level
+                      when 'stage' then p.stage
+                      else p.trophies
+                    end desc
+         ) as rank,
+         p.id, p.nickname, p.trophies, p.level, p.stage
+  from profiles p
+  order by case sort
+             when 'level' then p.level
+             when 'stage' then p.stage
+             else p.trophies
+           end desc
+  limit lim;
 $$;
+
+-- 구버전 시그니처(lim 만 받는 것)가 남아 있으면 호출이 모호해진다 — 정리한다.
+drop function if exists leaderboard_top(int);
 
 -- 비동기 매칭(Inc.2): 내 트로피 근처의 **다른 유저** 방어팀 N개.
 -- defenders 는 RLS 로 본인 행만 보이므로, 남의 방어팀은 이 SECURITY DEFINER 로만 노출.

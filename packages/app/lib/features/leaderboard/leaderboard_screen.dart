@@ -8,6 +8,7 @@ import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/format.dart';
 
 const _honey = Color(0xFFEBA52F);
@@ -38,8 +39,18 @@ final myRankProvider = FutureProvider<int?>((ref) async {
 });
 
 /// 랭킹(리더보드) 화면. [PvpBackend] 를 통해 순위를 가져온다(로컬→추후 Supabase).
-class LeaderboardScreen extends ConsumerWidget {
+///
+/// 축이 셋이다(트로피/레벨/진행도). 트로피 하나만 두면 **결투를 안 하는
+/// 유저에겐 랭킹이 없다** — 이 게임의 주된 플레이는 방치 런이다.
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
+
+  @override
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
+  RankingKind _kind = RankingKind.trophies;
 
   static String _leagueEmoji(String id) => switch (id) {
     'bronze' => '🥉',
@@ -50,8 +61,79 @@ class LeaderboardScreen extends ConsumerWidget {
     _ => '🏅',
   };
 
+  String _kindLabel(AppLocalizations l, RankingKind k) => switch (k) {
+    RankingKind.trophies => l.rankKindTrophies,
+    RankingKind.level => l.rankKindLevel,
+    RankingKind.stage => l.rankKindStage,
+  };
+
+  /// 축 아이콘. 애셋이 있으면 그림, 없으면 글리프로 폴백한다(§6 아트 규칙).
+  Widget _kindIcon(RankingKind k, {double size = 15}) => switch (k) {
+    RankingKind.trophies => Text('🏆', style: TextStyle(fontSize: size)),
+    RankingKind.level => Text(
+      'Lv',
+      style: TextStyle(
+        fontSize: size - 2,
+        color: _honey,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+    // 진행도(도달 스테이지) — 핀 이모지는 "위치"로 읽혀 진행도로 안 보인다.
+    // 애셋을 넣으면 자동으로 그림으로 바뀐다.
+    RankingKind.stage => gameImage(
+      'assets/images/ui/rank_stage.webp',
+      width: size,
+      height: size,
+      fallback: Icon(Icons.flag_rounded, size: size, color: _honey),
+    ),
+  };
+
+  /// 축마다 점수 표기가 다르다 — 전부 🏆 로 쓰면 레벨 랭킹이 트로피처럼 보인다.
+  String _scoreText(AppLocalizations l, PvpProfile p, RankingKind k) =>
+      switch (k) {
+        RankingKind.trophies => formatCompact(p.trophies),
+        RankingKind.level => formatCompact(p.level),
+        RankingKind.stage => formatCompact(p.stageNumber),
+      };
+
+  /// 점수 칸 — **고정 폭**. 자연 크기로 두면 줄마다 아이콘·숫자 위치가
+  /// 제각각이라 "내 순위" 줄과도 안 맞는다(세로로 흐트러져 읽힌다).
+  Widget _scoreCell(
+    AppLocalizations l,
+    PvpProfile p,
+    RankingKind k, {
+    required bool emphasize,
+  }) => SizedBox(
+    width: 96,
+    child: Row(
+      children: [
+        // 진행도 아이콘은 그림(타일 프레임 포함)이라 글리프보다 여백이 필요하다.
+        SizedBox(
+          width: 24,
+          child: Center(
+            child: _kindIcon(k, size: k == RankingKind.stage ? 22 : 15),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            _scoreText(l, p, k),
+            textAlign: TextAlign.right,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: emphasize ? _honey : const Color(0xCCFFFFFF),
+              fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+              fontSize: emphasize ? 14 : 12.5,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
     final data = ref.watch(gameDataProvider).requireValue;
@@ -62,19 +144,32 @@ class LeaderboardScreen extends ConsumerWidget {
       id: 'me',
       nickname: save.nickname,
       trophies: save.pvpTrophies,
+      level: save.level,
+      stageNumber: save.stageNumber,
     );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.rankingTitle)),
       body: FutureBuilder<Leaderboard>(
-        future: backend.leaderboard(me: me, limit: 50),
+        // 축을 바꾸면 다시 조회한다 — key 가 없으면 FutureBuilder 가 이전
+        // 결과를 그대로 들고 있어 탭만 바뀌고 목록은 그대로다.
+        key: ValueKey(_kind),
+        future: backend.leaderboard(me: me, limit: 50, kind: _kind),
         builder: (context, snap) {
           if (!snap.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return Column(
+              children: [
+                _kindTabs(l),
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ],
+            );
           }
           final board = snap.data!;
           return Column(
             children: [
+              _kindTabs(l),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -108,7 +203,10 @@ class LeaderboardScreen extends ConsumerWidget {
                     return Column(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                          // 좌우 여백은 **목록 줄과 같은 24**(margin 12 +
+                          // padding 12). 다르면 내 점수와 목록 점수가
+                          // 세로로 어긋나 보인다.
+                          padding: const EdgeInsets.fromLTRB(24, 10, 24, 6),
                           child: Row(
                             children: [
                               const Icon(
@@ -117,23 +215,19 @@ class LeaderboardScreen extends ConsumerWidget {
                                 size: 18,
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                l.leaderboardMyRank(myRank),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 14,
+                              Expanded(
+                                child: Text(
+                                  l.leaderboardMyRank(myRank),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
-                              const Spacer(),
-                              Text(
-                                '🏆 ${save.pvpTrophies}',
-                                style: const TextStyle(
-                                  color: _honey,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 14,
-                                ),
-                              ),
+                              _scoreCell(l, me, _kind, emphasize: true),
                             ],
                           ),
                         ),
@@ -164,6 +258,45 @@ class LeaderboardScreen extends ConsumerWidget {
       ),
     );
   }
+
+  /// 랭킹 축 선택 탭.
+  Widget _kindTabs(AppLocalizations l) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+    child: Row(
+      children: [
+        for (final k in RankingKind.values)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: GestureDetector(
+                onTap: () => setState(() => _kind = k),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _kind == k
+                        ? _honey.withValues(alpha: 0.22)
+                        : const Color(0x18FFFFFF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _kind == k ? _honey : const Color(0x22FFFFFF),
+                    ),
+                  ),
+                  child: Text(
+                    _kindLabel(l, k),
+                    style: TextStyle(
+                      color: _kind == k ? _honey : const Color(0x99FFFFFF),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _row(
     BattleConfig cfg,
@@ -205,8 +338,12 @@ class LeaderboardScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(_leagueEmoji(league.id), style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 8),
+          // 리그 뱃지는 **트로피 랭킹에서만** 의미가 있다 — 레벨/진행도 줄에
+          // 붙이면 그 유저의 결투 등급인 것처럼 읽힌다.
+          if (_kind == RankingKind.trophies) ...[
+            Text(_leagueEmoji(league.id), style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Text(
               // 부적절한 닉네임은 표시 단계에서 대체(채팅과 같은 기준).
@@ -223,14 +360,7 @@ class LeaderboardScreen extends ConsumerWidget {
               ),
             ),
           ),
-          Text(
-            '🏆 ${formatCompact(e.profile.trophies)}',
-            style: const TextStyle(
-              color: Color(0xCCFFFFFF),
-              fontWeight: FontWeight.w700,
-              fontSize: 12.5,
-            ),
-          ),
+          _scoreCell(l, e.profile, _kind, emphasize: e.isMe),
         ],
       ),
     );
