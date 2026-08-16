@@ -261,6 +261,33 @@ void main(List<String> args) {
   }
   stdout.writeln('');
 
+  stdout.writeln('── 서식지 수지(한 스테이지에서 피가 닳나) ──');
+  stdout.writeln('  맞은 양 · 회복한 양 모두 **최대 체력 대비 %**.');
+  stdout.writeln('  회복이 크면 위협도를 올려도 안 닳아 체력·방어·회복 투자가 죽는다.');
+  stdout.writeln('  스테이지 |   맞은 양 |   회복한 양 |   수지 | 판정');
+  for (final m in const [10, 50, 100, 200, 400, 700, 1000]) {
+    final v = sim.habitatBudget[m];
+    if (v == null) continue;
+    final net = v.heal - v.dmg;
+    // 판정 기준은 **수지**(최대 체력 몇 개분이 남거나 모자라나)다.
+    //   0 근처  = 한 스테이지를 지나도 체력이 안 줄어든다 → 방어·회복이 죽는다
+    //   -0.2~-1.2 = 스테이지 하나에 체력 0.2~1.2개분이 빈다. 순항에선 버티고
+    //               벽(관문 직후)에서는 죽는다 — 이게 목표다
+    //   -1.5 미만 = 순항 구간에서도 반복해 죽어 진행이 막힌다
+    final verdict = v.dmg <= 0
+        ? '위협 없음'
+        : (net > -0.05
+              ? '안 닳음 ← 문제'
+              : (net >= -1.2 ? '빠듯 — 좋다' : '너무 닳음 ← 벽'));
+    stdout.writeln(
+      '  ${m.toString().padLeft(7)} |'
+      ' ${(v.dmg * 100).toStringAsFixed(0).padLeft(7)}% |'
+      ' ${(v.heal * 100).toStringAsFixed(0).padLeft(9)}% |'
+      ' ${(net * 100).toStringAsFixed(0).padLeft(5)}% | $verdict',
+    );
+  }
+  stdout.writeln('');
+
   stdout.writeln('── 업그레이드가 막힌 이유(구간별) ──');
   stdout.writeln('  재료가 100% 면 재료만 모으는 게임, 0% 면 재료가 장식이다.');
   for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
@@ -346,6 +373,15 @@ class _Player {
 
   /// 스테이지별 생존 지표 — (보스 잡는 시간, 버티는 시간).
   final Map<int, ({double kill, double live})> survivalAt = {};
+
+  /// 스테이지별 **서식지 수지** — 한 스테이지를 지나는 동안 맞은 양과 회복한 양
+  /// (최대 체력 대비 비율). 보스가 아니라 **일반 몬스터 구간**을 잰다.
+  ///
+  /// 여기가 균형의 핵심이다: 회복이 피격보다 크면 위협도를 아무리 올려도
+  /// 체력이 안 닳아 체력·방어·회복 업그레이드가 통째로 죽는다. 반대로 너무
+  /// 크면 순항 구간에서도 계속 죽는다. 목표는 **순항에선 안 죽고 벽에서는
+  /// 죽는다** — 즉 피격이 회복보다 조금 크다.
+  final Map<int, ({double dmg, double heal})> habitatBudget = {};
 
   /// 날짜별 누적 골드 획득 — 공방 같은 새 소비처의 규모를 정할 때 쓴다.
   final Map<int, double> goldEarnedByDay = {};
@@ -463,18 +499,17 @@ class _Player {
         // 그 스테이지를 지날 때 **실제 스탯으로** 몇 대에 죽었는지.
         hitsToKill.putIfAbsent(s, () {
           final st = stats;
-          final hp = habitatMaxHp(config, s - 1, playerAttack: st.attack);
-          final dmg = st.attack <= 0 ? 1.0 : st.attack;
-          return (hp / dmg).ceil();
+          // 기준·실제 모두 **치명타 포함 1타**로 잰다. 화면에서 체감하는
+          // "몇 대에 죽나"가 바로 이 값이다(생 attack 으로 재면 과대평가).
+          final hit = baselineHitPower(st);
+          final hp = habitatMaxHp(config, s - 1, playerAttack: hit);
+          return (hp / (hit <= 0 ? 1.0 : hit)).ceil();
         });
         survivalAt.putIfAbsent(s, () {
           final st = stats; // 펫·버프 포함한 실제 전투 능력치
-          final hp = bossMaxHp(
-            config,
-            s - 1,
-            playerAttack: st.attack,
-          ).toDouble();
-          final dps = st.attack * st.attackSpeed * st.bossDamage;
+          final bossHit = baselineHitPower(st, boss: true);
+          final hp = bossMaxHp(config, s - 1, playerAttack: bossHit).toDouble();
+          final dps = bossHit * st.attackSpeed;
           // 위협 기준은 **영구 전력**(버프 제외) — 앱과 같은 규칙.
           final tough = toughnessOf(_baseStats);
           final inc =
@@ -487,10 +522,45 @@ class _Player {
             live: net <= 0 ? double.infinity : st.maxHp / net,
           );
         });
+        // 서식지 한 스테이지(일반 몬스터 N마리 + 보스)의 피격/회복 수지.
+        // 앱과 같은 규칙으로 잰다: 걷는 동안은 **무피해 + 회복 2배**,
+        // 처치 회복은 마리마다 최대 체력의 killHealPct.
+        habitatBudget.putIfAbsent(s, () {
+          final st = stats;
+          final hit = baselineHitPower(st);
+          final hp = habitatMaxHp(config, s - 1, playerAttack: hit);
+          final dps = hit * st.attackSpeed;
+          final fight = dps <= 0 ? 0.0 : hp / dps;
+          final walk = 0.6 / (st.moveSpeed <= 0 ? 1.0 : st.moveSpeed);
+          final tough = toughnessOf(_baseStats);
+          final inc =
+              habitatThreat(config, s - 1, playerToughness: tough) *
+              100 /
+              (100 + st.defense);
+          final bossHit = baselineHitPower(st, boss: true);
+          final bossHp = bossMaxHp(config, s - 1, playerAttack: bossHit);
+          final bossDps = bossHit * st.attackSpeed;
+          final bossFight = bossDps <= 0 ? 0.0 : bossHp / bossDps;
+          final bossInc =
+              habitatThreat(config, s - 1, boss: true, playerToughness: tough) *
+              100 /
+              (100 + st.defense) *
+              1.4; // 보스 한 대는 1.4배(앱과 동일)
+          final n = config.habitatsPerStage;
+          final dmg = inc * fight * n + bossInc * bossFight;
+          final heal =
+              (st.hpRegen * fight + st.hpRegen * 2 * walk) * n +
+              st.maxHp * config.killHealPct * n +
+              st.hpRegen * bossFight +
+              st.maxHp * config.bossKillHealPct;
+          final max = st.maxHp <= 0 ? 1.0 : st.maxHp;
+          return (dmg: dmg / max, heal: heal / max);
+        });
         secPerKill.putIfAbsent(s, () {
           final st = stats;
-          final hp = habitatMaxHp(config, s - 1, playerAttack: st.attack);
-          final dps = st.attack * st.attackSpeed;
+          final hit = baselineHitPower(st);
+          final hp = habitatMaxHp(config, s - 1, playerAttack: hit);
+          final dps = hit * st.attackSpeed;
           return (dps <= 0 ? 0.0 : hp / dps) + 0.6; // 0.6 = 걷는 시간
         });
       }
@@ -639,6 +709,11 @@ _Opts _parseArgs(List<String> args) {
     'world-gold': 'worldGoldMult',
     'world-boss': 'worldBossHpMult',
     'mat-amt-growth': 'materialAmountGrowth',
+    // 적응형 손잡이 — "몇 대에 죽나"를 JSON 고치기 전에 쓸어보기 위한 것.
+    'hits': 'hpAdaptTargetHits',
+    'hp-adapt-power': 'hpAdaptPower',
+    'hp-adapt-max': 'hpAdaptMaxRatio',
+    'threat-pct': 'threatAdaptTargetPct',
   };
   final out = <String, dynamic>{};
   double? mult;

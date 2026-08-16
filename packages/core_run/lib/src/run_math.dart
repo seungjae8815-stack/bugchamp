@@ -11,9 +11,29 @@ import 'run_config.dart';
 ///
 /// [depth] = 진행 깊이(0-based). 지역1에서는 depth = stageNumber - 1.
 
+/// 적응형 체력·타격 수 계산의 기준이 되는 **1타 데미지**(영구 전력만).
+///
+/// 왜 `attack` 만으로는 안 되는가: [RunConfig.hpAdaptTargetHits] 는 "몇 대에
+/// 죽나"인데, 치명타는 그 타격 수를 그대로 나눠버린다. 치명타 30% × 배수 4 면
+/// 실제 타격 수가 기준의 **절반**이라, 6대로 맞춰도 화면에선 2~3대다(실측).
+/// 그래서 치명타 기대값을 기준에 넣는다 — 그래야 설정값이 화면과 일치한다.
+///
+/// ⚠️ 들어가는 것: **공격 계열 영구 전력**(공격력·치명타·보스데미지, 펫 포함).
+///    빠지는 것:
+///      - 공격속도 — 타격 *수*가 아니라 시간이다. 넣으면 공속 업그레이드가
+///        체력을 밀어올려 아무 효과가 없어진다.
+///      - 버프·탭 부스트·장비 — §6. 기준에 넣으면 켜거나 입은 보람이 사라진다.
+double baselineHitPower(CharacterStats s, {bool boss = false}) {
+  final crit =
+      1 + s.critChance.clamp(0.0, 1.0) * math.max(0.0, s.critDamage - 1);
+  final bossMul = boss ? math.max(1.0, s.bossDamage) : 1.0;
+  return s.attack * crit * bossMul;
+}
+
 /// 서식지 최대 HP. 월드 경계마다 [RunConfig.worldHpMult] 점프(벽).
 ///
 /// [playerAttack] 을 주면 **적응형 보정**이 걸린다(§7 밸런스, 2026-08).
+/// 넘길 값은 [baselineHitPower] — 생 `attack` 이 아니다.
 ///
 /// 왜 필요한가: 몬스터 체력은 스테이지당 x1.015 로 자라는데 공격 업그레이드는
 /// 레벨당 x1.15 로 자란다. 한 스테이지에 레벨을 여러 개 사므로 공격이 항상
@@ -298,13 +318,17 @@ IdleProgress simulateIdleProgress({
   if (elapsed <= Duration.zero) {
     return IdleProgress.empty.copyStage(startStage);
   }
-  final dps = stats.attack * stats.attackSpeed;
+  // 1타 데미지는 화면과 같은 기준(치명타 포함)을 쓴다 — 여기서 치명타를 빼면
+  // 체력에는 반영되고 화력에는 안 실려 방치 수입이 이중으로 깎인다.
+  final hit = baselineHitPower(stats);
+  final bossHit = baselineHitPower(stats, boss: true);
+  final dps = hit * stats.attackSpeed;
   if (dps <= 0) return IdleProgress.empty.copyStage(startStage);
 
   final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
   var budget = capped.inMilliseconds / 1000.0;
   final eff = efficiency <= 0 ? 1.0 : efficiency;
-  final bossDps = dps * (stats.bossDamage <= 0 ? 1.0 : stats.bossDamage);
+  final bossDps = bossHit * stats.attackSpeed;
 
   var stage = startStage;
   var gold = 0.0;
@@ -315,16 +339,8 @@ IdleProgress simulateIdleProgress({
 
   while (budget > 0 && advanced < maxStageAdvance) {
     final depth = stage - 1;
-    final habHp = habitatMaxHp(
-      config,
-      depth,
-      playerAttack: stats.attack,
-    ).toDouble();
-    final bossHp = bossMaxHp(
-      config,
-      depth,
-      playerAttack: stats.attack,
-    ).toDouble();
+    final habHp = habitatMaxHp(config, depth, playerAttack: hit).toDouble();
+    final bossHp = bossMaxHp(config, depth, playerAttack: bossHit).toDouble();
     // 효율을 시간에 반영: 실제로 한 번 처치하는 데 드는 예산(초).
     final habTime = (habHp / dps + 0.6) / eff;
     final bossTime = (bossHp / bossDps + 0.6) / eff;
@@ -386,12 +402,13 @@ double estimateClears({
   if (elapsed <= Duration.zero) return 0;
   final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
   final secs = capped.inMilliseconds / 1000.0;
-  final dps = stats.attack * stats.attackSpeed;
+  final hit = baselineHitPower(stats);
+  final dps = hit * stats.attackSpeed;
   if (dps <= 0) return 0;
   final hp = habitatMaxHp(
     config,
     stageNumber - 1,
-    playerAttack: stats.attack,
+    playerAttack: hit,
   ).toDouble();
   final timePerClear = hp / dps + 0.6; // + 이동시간 근사
   if (timePerClear <= 0) return 0;

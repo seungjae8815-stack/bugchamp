@@ -49,11 +49,8 @@ const _honey = Color(0xFFEBA52F);
 const _onScene = Color(0xFFFFFFFF);
 
 /// 일반 강화 재료(처치/채집 드롭 대상). 젤리는 프리미엄이라 제외(§E).
-const _regularMaterials = [
-  MaterialKind.chitin,
-  MaterialKind.mineral,
-  MaterialKind.sap,
-];
+/// 일반 재료 3종은 `game_rules.dart` 한 곳에 있다(앱·서버 공용).
+const _regularMaterials = kRegularMaterials;
 const _walkDuration = 0.6;
 // 부스트 지속시간·속도계수는 밸런스라 run_config.json 에 있다(§6).
 const _deathDuration = 0.4;
@@ -65,23 +62,9 @@ BoxDecoration _glass([double r = 999]) => BoxDecoration(
   border: Border.all(color: const Color(0x28FFFFFF)),
 );
 
-String _statLabel(AppLocalizations l, UpgradeKind k) => switch (k) {
-  UpgradeKind.attack => l.upAttack,
-  UpgradeKind.attackSpeed => l.upAttackSpeed,
-  UpgradeKind.crit => l.upCrit,
-  UpgradeKind.critDamage => l.upCritDamage,
-  UpgradeKind.bossDamage => l.upBossDamage,
-  UpgradeKind.maxHp => l.upMaxHp,
-  UpgradeKind.defense => l.upDefense,
-  UpgradeKind.regen => l.upRegen,
-  UpgradeKind.reward => l.upReward,
-  UpgradeKind.xp => l.upXp,
-  UpgradeKind.bugFind => l.upBugFind,
-  UpgradeKind.materialFind => l.upMaterialFind,
-  UpgradeKind.moveSpeed => l.upMoveSpeed,
-  UpgradeKind.boost => l.upBoost,
-  UpgradeKind.bugBuff => l.upBugBuff,
-};
+/// 공용 라벨(`ui/labels.dart`)로 위임 — 도감의 종 패시브와 **같은 이름**이어야
+/// "이 패시브가 무슨 능력치인지"가 연결된다.
+String _statLabel(AppLocalizations l, UpgradeKind k) => upgradeLabel(l, k);
 
 String _statDesc(AppLocalizations l, UpgradeKind k) => switch (k) {
   UpgradeKind.attack => l.upAttackDesc,
@@ -592,18 +575,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 값이라 그걸 쓰면 광폭화를 켤 때마다 몬스터 체력도 같이 올라
     // **버프 효과가 상쇄된다**(버프가 끝나면 반대로 쉬워진다).
     // 탭 부스트도 같은 이유로 여기 들어오면 안 된다 — 데미지 계산에만 실린다.
-    final atk = _petStats(ref.read(saveControllerProvider).requireValue).attack;
+    //
+    // 기준값은 생 `attack` 이 아니라 `baselineHitPower` — 치명타까지 센 1타
+    // 데미지다. 치명타를 빼고 잡으면 설정이 "6대"여도 화면은 2~3대가 된다.
+    final perm = _petStats(ref.read(saveControllerProvider).requireValue);
     _hpMax =
         (_isBoss
-                ? bossMaxHp(_config, depth, playerAttack: atk)
-                : habitatMaxHp(_config, depth, playerAttack: atk))
+                ? bossMaxHp(
+                    _config,
+                    depth,
+                    playerAttack: baselineHitPower(perm, boss: true),
+                  )
+                : habitatMaxHp(
+                    _config,
+                    depth,
+                    playerAttack: baselineHitPower(perm),
+                  ))
             .toDouble();
     _hp = _hpMax;
     _kind = habitatKindAt(_config, _stage, _isBoss ? 0 : _habitatIndex);
     _walking = false;
     _walkT = 0;
     _attackAcc = 0;
-    _enemyAtkAcc = 0;
+    // ⚠️ `_enemyAtkAcc` 는 **일부러 리셋하지 않는다.** 리셋하면 몬스터가 공격
+    // 주기(1.5초)를 채우기 전에 죽는 구간에서 **평생 한 대도 못 때린다** —
+    // 위협도를 아무리 올려도 체력이 안 닳던 진짜 원인이었다. 이월시키면
+    // 처치가 빨라도 "몇 마리에 한 번"으로 결국 같은 DPS 가 들어온다.
     _enemyLunge = 0;
     _dying = false;
   }
@@ -635,14 +632,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (bug == null) continue;
       final sp = _data.speciesById[bug.speciesId];
       if (sp == null) continue;
-      pets.add((
-        grade: sp.grade,
-        sizeMult: bug.statMultiplier(sp),
-        potential: bug.potential,
-        enhanceTotal: bug.enhancement.total,
-        stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
-        level: bug.level,
-      ));
+      pets.add(petStatOf(bug, sp, cfg, now));
     }
     return _applyPetBonus(base, computePetBonus(pets, cfg));
   }
@@ -665,20 +655,58 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         boostBonus: s.boostBonus,
       );
 
-  /// 펫 + **장비** + 활성 버프까지 반영한 유효 능력치 — 전투/보상 계산에 사용.
+  /// 장착 펫들의 **종 고유 패시브** 합산(§2.1).
+  ///
+  /// `_petStats` 안이 아니라 밖에서 쓰는 이유는 `_stats` 주석 참조.
+  Map<UpgradeKind, double> _speciesPassives(SaveGame save) {
+    final cfg = _data.petConfig;
+    if (cfg == null || save.equippedBugIds.isEmpty) return const {};
+    final now = _clock.now().toUtc();
+    final pets = <PetStat>[];
+    for (final id in save.equippedBugIds) {
+      IndividualBug? bug;
+      for (final b in save.bugs) {
+        if (b.id == id) {
+          bug = b;
+          break;
+        }
+      }
+      if (bug == null) continue;
+      final sp = _data.speciesById[bug.speciesId];
+      if (sp == null) continue;
+      pets.add(petStatOf(bug, sp, cfg, now));
+    }
+    return computePetBonus(pets, cfg).passives;
+  }
+
+  /// 펫 + **종 패시브 + 도감 + 장비** + 활성 버프까지 반영한 유효 능력치
+  /// — 전투/보상 계산에 사용.
   ///
   /// ⚠️ 이 값은 **적응형 몬스터 체력의 기준으로 쓰지 않는다**(기준은 `_petStats`).
   /// 장비를 기준에 넣으면 좋은 걸 껴도 몬스터가 같이 세져 **모으는 맛이
   /// 사라진다** — 전설 장비를 껴도 체감이 1.7배밖에 안 됐다(실측).
   /// 장비는 순수 이득이어야 관문을 뚫는 수단이 된다.
-  CharacterStats _stats(SaveGame save) => applyBuffs(
-    applyEquipment(
+  ///
+  /// **종 패시브·도감도 같은 이유로 여기(기준 밖)에 있다**:
+  ///  - 종 패시브를 기준에 넣으면 어떤 종을 껴도 결과가 같아져서, 종을 고르는
+  ///    의미가 통째로 사라진다(= 종 패시브를 만든 이유가 무너진다).
+  ///  - 도감을 기준에 넣으면 채울수록 몬스터도 세져서 모을 이유가 없어진다.
+  CharacterStats _stats(SaveGame save) {
+    var s = applyEquipment(
       _petStats(save),
       equipmentBonus(save.equippedItems.values, _data.itemConfig),
-    ),
-    save.activeBuffs(_clock.now().toUtc()),
-    _data.buffConfig,
-  );
+    );
+    s = applySpeciesPassives(s, _speciesPassives(save));
+    final dex = _data.dexConfig;
+    if (dex != null) {
+      s = dex.apply(s, save.dexDiscovered, save.dexConquered);
+    }
+    return applyBuffs(
+      s,
+      save.activeBuffs(_clock.now().toUtc()),
+      _data.buffConfig,
+    );
+  }
 
   void _tick(Duration elapsed) {
     final raw = (elapsed - _lastElapsed).inMicroseconds / 1000000.0;
@@ -873,30 +901,34 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final xp = (rewardXp(_config, depth, boss: _isBoss) * stats.xpMultiplier)
         .round();
 
-    // 채집함이 가득 차면 곤충 롤 자체를 건너뛴다 — 굴려서 버리면 연출만 뜨고
-    // 실제로는 안 들어와 버그로 보인다.
-    final storageFull = ref
-        .read(saveControllerProvider)
-        .requireValue
-        .storageFull;
+    final save = ref.read(saveControllerProvider).requireValue;
     IndividualBug? bug;
-    final bugChance = storageFull
-        ? 0.0
-        : (_isBoss ? 1.0 : _config.bugDropChance * stats.bugFind);
+    // 등급 필터에 걸린 곤충은 **칸을 쓰지 않는다**(자동 방생) — 그래서 종을
+    // 뽑기 전에는 가득 찼는지로 롤을 막을 수 없다. 종을 먼저 정하고,
+    // 필터 → 칸 순으로 판정한다.
+    Grade? released;
+    final bugChance = _isBoss ? 1.0 : _config.bugDropChance * stats.bugFind;
     if (_rng.nextDouble() < bugChance) {
       final sp = _data.allSpecies[_rng.nextInt(_data.allSpecies.length)];
-      final potential = 1 + (_rng.nextDouble() * _rng.nextDouble() * 4).floor();
-      bug = IndividualBug.roll(
-        id: _uuid.v4(),
-        species: sp,
-        rng: _rng,
-        potential: potential.clamp(1, 5),
-      ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
-      // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
-      if (sp.grade.index >= Grade.rare.index) {
-        AudioService.instance.sfxRare();
-      } else {
-        AudioService.instance.sfxCatch();
+      if (!save.acceptsGrade(sp.grade)) {
+        released = sp.grade; // 재료로 환산(아래 mats 에서 합산)
+      } else if (!save.storageFull) {
+        // 채집함이 가득 차면 개체 롤 자체를 건너뛴다 — 굴려서 버리면
+        // 연출만 뜨고 실제로는 안 들어와 버그로 보인다.
+        final potential =
+            1 + (_rng.nextDouble() * _rng.nextDouble() * 4).floor();
+        bug = IndividualBug.roll(
+          id: _uuid.v4(),
+          species: sp,
+          rng: _rng,
+          potential: potential.clamp(1, 5),
+        ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
+        // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
+        if (sp.grade.index >= Grade.rare.index) {
+          AudioService.instance.sfxRare();
+        } else {
+          AudioService.instance.sfxCatch();
+        }
       }
     }
 
@@ -921,6 +953,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       // 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 된다.
       final amount = (1 + _rng.nextInt(2)) * materialAmountMult(_config, depth);
       mats[kind] = math.max(1, amount.round());
+    }
+    // 등급 필터에 걸린 곤충 → 재료 환산(§2.1). 젤리가 아니라 일반 재료다 —
+    // 자동으로 굴러가는 통로에 프리미엄 재화를 흘리면 IAP 가 무의미해진다.
+    final petCfg = _data.petConfig;
+    if (released != null && petCfg != null) {
+      final give = petCfg.releaseMaterial(released);
+      if (give > 0) {
+        final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
+        mats ??= {};
+        mats[kind] = (mats[kind] ?? 0) + give;
+      }
     }
 
     ref
@@ -1016,7 +1059,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   void _advanceAfterDeath() {
     _dying = false;
-    _playerHp = math.min(_playerHpMax, _playerHp + _playerHpMax * 0.3);
+    // 처치 회복은 데이터에서 온다(§6). 서식지 20마리 × 30% 였던 시절엔
+    // 스테이지마다 최대체력의 600% 를 회복해 **피가 절대 안 닳았다**.
+    _playerHp = math.min(
+      _playerHpMax,
+      _playerHp +
+          _playerHpMax *
+              (_isBoss ? _config.bossKillHealPct : _config.killHealPct),
+    );
     if (_isBoss) {
       _stage++;
       _stageMax = math.max(_stageMax, _stage);
@@ -1044,6 +1094,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _stage = math.max(1, _stage - 1); // 한 스테이지 뒤로
     _habitatIndex = 0;
     _playerHp = _playerHpMax;
+    // 이월되는 공격 게이지(§_spawn)를 여기서만 비운다 — 부활하자마자 맞고
+    // 시작하면 후퇴 패널티가 두 번 붙는다.
+    _enemyAtkAcc = 0;
     _spawn();
   }
 
@@ -4532,12 +4585,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               if (!mounted) return;
               final ctrl = r.read(saveControllerProvider.notifier);
               await ctrl.activateBuff(k);
-              // 광고 보상: 프리미엄 재화 젤리 1개 지급.
-              await ctrl.applyReward(
-                gold: 0,
-                xp: 0,
-                materials: const {MaterialKind.jelly: 1},
-              );
+              // 광고 덤 젤리는 **데이터에서 온다**(§6). 예전엔 여기 1이 박혀
+              // 있었고, 누적 상한 6시간 = 하루 12회라 덤만으로 12젤리/일이 샜다.
+              // 광고의 보상은 버프 자체 — 프리미엄 재화를 얹으면 이중 지급이다.
+              final bonus = _data.buffConfig?.adJelly ?? 0;
+              if (bonus > 0) {
+                await ctrl.applyReward(
+                  gold: 0,
+                  xp: 0,
+                  materials: {MaterialKind.jelly: bonus},
+                );
+              }
               if (!mounted) return;
               showCenterToast(
                 context,

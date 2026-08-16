@@ -47,11 +47,12 @@ void main() {
         ).gold;
 
     // 실제 유저: 펫이 공격에 실리고, 적응형 체력도 그만큼 오른다.
-    final atk = serverStats.attack * petAtk;
-    final dps = atk * serverStats.attackSpeed * frenzy * run.boostMultMax;
+    // 기준 1타는 `baselineHitPower`(치명타 포함) — 앱·서버와 같은 식이어야 한다.
+    final hit = baselineHitPower(serverStats) * petAtk;
+    final dps = hit * serverStats.attackSpeed * frenzy * run.boostMultMax;
     final speedMul = 1 + (run.boostMultMax - 1) * run.boostSpeedFactor;
     final depth = stage - 1;
-    final hp = habitatMaxHp(run, depth, playerAttack: atk).toDouble();
+    final hp = habitatMaxHp(run, depth, playerAttack: hit).toDouble();
     final perKill = hp / dps + 0.6 / speedMul;
     final goldPerKill =
         rewardGold(run, depth, goldRush) * (1 + run.onlineGoldBonus);

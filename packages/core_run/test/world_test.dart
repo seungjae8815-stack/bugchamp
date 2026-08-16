@@ -119,6 +119,48 @@ void main() {
       expect(maxHp, lessThan(9.2e18));
       expect(maxHp, greaterThan(1e15)); // 실제로 지수 성장이 일어났는지도 확인
     });
+
+    test('적응형 상한까지 붙은 최강 계정도 int64 를 넘지 않는다', () {
+      // 실제 run_config.json 과 같은 모양(hpBase 150 · hpGrowth 1.0092 ·
+      // worldHpMult 8 · 적응형 상한 3000)에서 재는 **진짜 최댓값**.
+      // ⚠️ hpAdaptMaxRatio 를 올리면 여기가 먼저 터진다 — 캠페인 종료 전에
+      //    HP 가 포화하면 후반 보스가 전부 같은 체력이 되어 벽이 사라진다.
+      final live = RunConfig.fromJson({
+        'hpBase': 150,
+        'hpGrowth': 1.0092,
+        'bossHpMult': 5.0,
+        'goldBase': 1.5,
+        'goldGrowth': 1.0165,
+        'xpBase': 5,
+        'xpGrowth': 1.005,
+        'bossRewardMult': 8.0,
+        'habitatsPerStage': 20,
+        'bugDropChance': 0.03,
+        'materialDropChance': 0.5,
+        'stagesPerRegion': 25,
+        'worldSize': 100,
+        'worldHpMult': 8.0,
+        'worldGoldMult': 2.2,
+        'worldBossHpMult': 3.0,
+        'hpAdaptTargetHits': 12,
+        'hpAdaptPower': 0.88,
+        'hpAdaptMinRatio': 0.6,
+        'hpAdaptMaxRatio': 3000,
+        'regions': [
+          {
+            'id': 'a',
+            'name': {'ko': 'a', 'en': 'a', 'ja': 'a'},
+            'bossName': {'ko': 'a', 'en': 'a', 'ja': 'a'},
+            'habitatKinds': ['tree'],
+          },
+        ],
+        'upgrades': <Map<String, dynamic>>[],
+      });
+      // 공격력을 무한대에 가깝게 줘도 ratio 는 상한에서 잘린다.
+      final worst = bossMaxHp(live, 999, playerAttack: 1e300);
+      expect(worst, lessThan(9.2e18));
+      expect(worst, greaterThan(1e18)); // 상한이 실제로 걸렸는지(여유가 얼마 없다)
+    });
   });
 
   group('지역 순환', () {

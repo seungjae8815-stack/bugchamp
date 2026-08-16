@@ -567,4 +567,77 @@ void main() {
       expect(toughnessOf(s2), toughnessOf(s1));
     });
   });
+
+  group('baselineHitPower — 적응형 체력의 기준 1타', () {
+    CharacterStats stats({
+      double attack = 100,
+      double attackSpeed = 2,
+      double critChance = 0,
+      double critDamage = 2,
+      double bossDamage = 1,
+    }) => CharacterStats(
+      attack: attack,
+      attackSpeed: attackSpeed,
+      rewardMultiplier: 1,
+      critChance: critChance,
+      critDamage: critDamage,
+      bossDamage: bossDamage,
+      maxHp: 1000,
+      defense: 0,
+      hpRegen: 0,
+      xpMultiplier: 1,
+      bugFind: 1,
+      materialFind: 1,
+      moveSpeed: 1,
+      boostBonus: 1,
+    );
+
+    test('치명타가 없으면 공격력 그대로', () {
+      expect(baselineHitPower(stats()), 100);
+    });
+
+    test('치명타 기대값이 실린다 — 이게 빠져서 6대가 화면에선 2~3대였다', () {
+      // 30% 확률 × 4배 = 기대 1타 1.9배.
+      expect(
+        baselineHitPower(stats(critChance: 0.3, critDamage: 4)),
+        closeTo(190, 0.001),
+      );
+    });
+
+    test('공격속도는 들어가지 않는다 — 타격 *수*가 아니라 시간이다', () {
+      expect(
+        baselineHitPower(stats(attackSpeed: 10)),
+        baselineHitPower(stats(attackSpeed: 1)),
+      );
+    });
+
+    test('보스데미지는 boss:true 일 때만', () {
+      final s = stats(bossDamage: 3);
+      expect(baselineHitPower(s), 100);
+      expect(baselineHitPower(s, boss: true), 300);
+    });
+
+    test('타격 수가 설정값과 맞는다 — 치명타를 올려도 안 무너진다', () {
+      final c = RunConfig.fromJson({
+        ..._baseJson(),
+        'hpBase': 1000.0,
+        'hpGrowth': 1.0,
+        'hpAdaptTargetHits': 12.0,
+        'hpAdaptPower': 0.88,
+        'hpAdaptMinRatio': 0.6,
+        'hpAdaptMaxRatio': 3000.0,
+      });
+      int hits(CharacterStats s) {
+        final hit = baselineHitPower(s);
+        return (habitatMaxHp(c, 40, playerAttack: hit) / hit).ceil();
+      }
+
+      final plain = hits(stats(attack: 5000));
+      // 치명타를 잔뜩 올려도 타격 수가 절반으로 무너지지 않는다(기준에 포함되므로).
+      final critty = hits(stats(attack: 5000, critChance: 0.5, critDamage: 5));
+      expect(plain, greaterThan(2));
+      expect(critty, greaterThan(2));
+      expect((plain - critty).abs(), lessThanOrEqualTo(2));
+    });
+  });
 }

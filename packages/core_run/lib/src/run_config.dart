@@ -133,6 +133,8 @@ class RunConfig {
     this.threatBase = 3.0,
     this.threatGrowth = 1.12,
     this.bossThreatMult = 4.0,
+    this.killHealPct = 0.05,
+    this.bossKillHealPct = 0.3,
     this.offlineEfficiency = 0.3,
     this.worldSize = 0,
     this.worldHpMult = 1.0,
@@ -242,6 +244,18 @@ class RunConfig {
   final double threatGrowth;
   final double bossThreatMult;
 
+  /// 서식지 곤충 **1마리를 잡을 때** 회복되는 최대체력 비율.
+  ///
+  /// 예전엔 코드에 30% 로 박혀 있었다. 한 스테이지가 서식지 20마리라
+  /// **처치 회복만 600%** — 몬스터가 아무리 때려도 체력이 절대 안 닳았다.
+  /// 한 스테이지의 총 피격량(대략 최대체력의 1.3배)과 균형이 맞는 값이어야
+  /// "벽에서는 죽고, 순항 구간에서는 안 죽는다"가 성립한다.
+  final double killHealPct;
+
+  /// 보스를 잡을 때 회복되는 최대체력 비율. 보스전은 크게 깎이므로
+  /// 다음 스테이지를 시작할 밑천을 여기서 돌려준다(서식지보다 크다).
+  final double bossKillHealPct;
+
   /// 오프라인 파밍 효율(실시간 대비). 온라인이 훨씬 유리하도록 <1.
   final double offlineEfficiency;
 
@@ -343,6 +357,8 @@ class RunConfig {
       threatBase: (json['threatBase'] as num?)?.toDouble() ?? 3.0,
       threatGrowth: (json['threatGrowth'] as num?)?.toDouble() ?? 1.12,
       bossThreatMult: (json['bossThreatMult'] as num?)?.toDouble() ?? 4.0,
+      killHealPct: (json['killHealPct'] as num?)?.toDouble() ?? 0.05,
+      bossKillHealPct: (json['bossKillHealPct'] as num?)?.toDouble() ?? 0.3,
       offlineEfficiency: (json['offlineEfficiency'] as num?)?.toDouble() ?? 0.3,
       worldSize: (json['worldSize'] as num?)?.toInt() ?? 0,
       worldHpMult: (json['worldHpMult'] as num?)?.toDouble() ?? 1.0,
