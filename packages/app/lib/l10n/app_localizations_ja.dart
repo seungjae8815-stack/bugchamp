@@ -2470,7 +2470,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get elementWheelHint => '編成は緑の矢印に沿って並べます。木 → 火 → 土 なら連結2つで+20%。';
 
   @override
-  String get leagueRewardListTitle => 'リーグ昇格報酬（アカウントにつき1回）';
+  String get leagueRewardListTitle => '初回達成報酬（等級ごと1回）';
 
   @override
   String get sideMine => '自分';
@@ -2491,4 +2491,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String leagueNeedTrophy(int n) {
     return 'トロフィー$n';
   }
+
+  @override
+  String seasonRewardNow(String league) {
+    return 'シーズン報酬・現在 $league';
+  }
+
+  @override
+  String get seasonRewardHint => '毎週月曜9時にその時の等級で支給されます。等級を上げるほど増えます。';
 }

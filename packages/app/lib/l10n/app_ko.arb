@@ -780,11 +780,13 @@
   "elementWheelGenerate": "상생 — 편성에서 바로 앞자리가 초록 화살표로 나를 가리키면 팀 전체 공격·회복 +10%",
   "traitNoneBadge": "특성 없음",
   "elementWheelHint": "편성은 초록 화살표를 따라가게 짜세요. 예) 목 → 화 → 토 로 세우면 연결 2개라 +20%.",
-  "leagueRewardListTitle": "리그 승급 보상 (계정당 1회)",
+  "leagueRewardListTitle": "최초 달성 보상 (등급마다 1회)",
   "sideMine": "나",
   "sideFoe": "상대",
   "battleStarting": "결투 시작!",
   "sideMineTeam": "나의 팀",
   "sideFoeTeam": "상대 팀",
-  "leagueNeedTrophy": "트로피 {n}"
+  "leagueNeedTrophy": "트로피 {n}",
+  "seasonRewardNow": "시즌 종료 보상 · 지금 {league}",
+  "seasonRewardHint": "매주 월요일 09시에 그때 등급으로 지급돼요. 등급을 올리면 더 커져요."
 }

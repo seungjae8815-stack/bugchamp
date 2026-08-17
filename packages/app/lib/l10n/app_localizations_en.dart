@@ -2521,8 +2521,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.';
 
   @override
-  String get leagueRewardListTitle =>
-      'League promotion rewards (once per account)';
+  String get leagueRewardListTitle => 'First-time reward (once per rank)';
 
   @override
   String get sideMine => 'YOU';
@@ -2543,4 +2542,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String leagueNeedTrophy(int n) {
     return '$n trophies';
   }
+
+  @override
+  String seasonRewardNow(String league) {
+    return 'Season reward · now $league';
+  }
+
+  @override
+  String get seasonRewardHint =>
+      'Paid every Monday 09:00 at your rank then. Climb higher for more.';
 }

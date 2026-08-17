@@ -2474,7 +2474,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '편성은 초록 화살표를 따라가게 짜세요. 예) 목 → 화 → 토 로 세우면 연결 2개라 +20%.';
 
   @override
-  String get leagueRewardListTitle => '리그 승급 보상 (계정당 1회)';
+  String get leagueRewardListTitle => '최초 달성 보상 (등급마다 1회)';
 
   @override
   String get sideMine => '나';
@@ -2495,4 +2495,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String leagueNeedTrophy(int n) {
     return '트로피 $n';
   }
+
+  @override
+  String seasonRewardNow(String league) {
+    return '시즌 종료 보상 · 지금 $league';
+  }
+
+  @override
+  String get seasonRewardHint => '매주 월요일 09시에 그때 등급으로 지급돼요. 등급을 올리면 더 커져요.';
 }

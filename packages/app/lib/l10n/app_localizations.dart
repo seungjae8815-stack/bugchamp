@@ -4573,7 +4573,7 @@ abstract class AppLocalizations {
   /// No description provided for @leagueRewardListTitle.
   ///
   /// In en, this message translates to:
-  /// **'League promotion rewards (once per account)'**
+  /// **'First-time reward (once per rank)'**
   String get leagueRewardListTitle;
 
   /// No description provided for @sideMine.
@@ -4611,6 +4611,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} trophies'**
   String leagueNeedTrophy(int n);
+
+  /// No description provided for @seasonRewardNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Season reward · now {league}'**
+  String seasonRewardNow(String league);
+
+  /// No description provided for @seasonRewardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid every Monday 09:00 at your rank then. Climb higher for more.'**
+  String get seasonRewardHint;
 }
 
 class _AppLocalizationsDelegate

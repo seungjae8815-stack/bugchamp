@@ -844,6 +844,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       );
     }
+    // 보상은 **두 종류**다. 화면에 하나(최초 달성)만 있어서 "브론즈면 아무것도
+    // 못 받나?"로 읽혔다(실기 지적) — 실은 시즌 종료 보상이 매주 나온다.
+    final season = cfg.seasonReward(trophies);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -854,6 +857,61 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ① 매주 나오는 것 — 지금 내 등급 기준이라 "지금 끝나면 얼마"가 보인다.
+          Row(
+            children: [
+              const Icon(
+                Icons.event_repeat_rounded,
+                size: 14,
+                color: Color(0xFF7CE38B),
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  l.seasonRewardNow(_leagueStyle(l, here.id).$1),
+                  style: const TextStyle(
+                    color: Color(0xFF7CE38B),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              goldIcon(size: 13),
+              const SizedBox(width: 2),
+              Text(
+                formatCompact(season.gold),
+                style: const TextStyle(
+                  color: Color(0xFFEBD24A),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              if (season.jelly > 0) ...[
+                const SizedBox(width: 6),
+                materialImage(
+                  MaterialKind.jelly,
+                  size: 13,
+                  fallback: const SizedBox(width: 13),
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  '${season.jelly}',
+                  style: const TextStyle(
+                    color: Color(0xFF9BE7FF),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            l.seasonRewardHint,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10),
+          ),
+          const Divider(color: Color(0x22FFFFFF), height: 14),
+          // ② 처음 그 리그에 닿았을 때 한 번 — 목표판이다.
           Text(
             l.leagueRewardListTitle,
             style: const TextStyle(
@@ -1211,10 +1269,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ),
           // 그림 위에 글자가 얹히므로 어둡게 깔아 준다.
           const Positioned.fill(child: ColoredBox(color: Color(0x66000000))),
-          // 내 팀 — 왼쪽 아래(아레나와 같은 구도).
+          // 두 팀을 **같은 선 위에 같은 크기로** 세운다(아레나와 같은 규칙).
+          // 원근을 주면 크기가 전력 차이로 오해된다.
           Positioned(
             left: 10,
-            bottom: 8,
+            right: 10,
+            bottom: 10,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -1224,38 +1284,30 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     child: bugStageImage(
                       b.speciesId,
                       LifeStage.adult,
-                      size: 52,
-                      fallback: const SizedBox(width: 52, height: 52),
+                      size: 46,
+                      fallback: const SizedBox(width: 46, height: 46),
                       skin: ref.read(skinOfProvider)(b.speciesId),
                     ),
                   ),
-              ],
-            ),
-          ),
-          // 상대 팀 — 오른쪽 위, 작게. 좌우 반전해 서로 마주 본다.
-          if (scout != null)
-            Positioned(
-              right: 10,
-              top: 26,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
+                const Spacer(),
+                if (scout != null)
                   for (final e in scout.team.take(3))
                     Padding(
                       padding: const EdgeInsets.only(left: 2),
+                      // 좌우 반전해 서로 마주 본다.
                       child: Transform.flip(
                         flipX: true,
                         child: bugStageImage(
                           e.speciesId,
                           LifeStage.adult,
-                          size: 38,
-                          fallback: const SizedBox(width: 38, height: 38),
+                          size: 46,
+                          fallback: const SizedBox(width: 46, height: 46),
                         ),
                       ),
                     ),
-                ],
-              ),
+              ],
             ),
+          ),
           // 내 전투력(왼쪽 위) / 상대(오른쪽 아래) — 비교가 이 화면의 핵심이다.
           Positioned(
             left: 10,
@@ -1269,7 +1321,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           if (scout != null)
             Positioned(
               right: 10,
-              bottom: 8,
+              top: 8,
               child: Row(
                 children: [
                   if (scout.ownerName != null) ...[
@@ -2319,14 +2371,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     GameData data,
     String locale,
     _Scout scout,
+    // ↓ 아레나로 넘어가기 직전에 부른다("결투 시작!" 오버레이 닫기).
     ({
       List<BattleBug> mine,
       List<BattleBug> foe,
       Map<String, String> speciesOf,
       int seed,
     })
-    m,
-  ) async {
+    m, {
+    VoidCallback? onReady,
+  }) async {
     final l = AppLocalizations.of(context);
     // 이번 요청의 결과로만 판단하도록 **매번 초기화**한다. 남겨두면 세이브
     // 업로드 실패(티켓과 무관)로 돌아왔을 때 직전의 '티켓 없음' 값이 남아
@@ -2382,6 +2436,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       location: location,
       locationBonus: cfg.locationAffinityBonus,
     );
+    onReady?.call();
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => BattleArenaScreen(
@@ -2436,12 +2491,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// Cloud Run 왕복만큼 기다린다. 예전엔 그동안 **아무 일도 안 일어나서** 버튼이
   /// 안 먹은 줄 알았다(실기 지적). 없앨 수 없는 대기라면 **기다림을 연출로 덮는다**.
   ///
-  /// 돌려주는 함수를 부르면 닫힌다. 반드시 `finally` 에서 부를 것 —
-  /// 서버가 거부해도 오버레이가 남으면 화면이 잠긴다.
+  /// 돌려주는 함수를 부르면 닫힌다. **아레나로 넘어가기 직전**에 부르고,
+  /// 실패 경로를 위해 `finally` 에서도 부른다 — 두 번 불러도 안전하다.
+  ///
+  /// ⚠️ `finally` 에만 두면 안 된다. 전투 진입은 `await Navigator.push` 라
+  /// **전투가 끝날 때까지 반환되지 않는다** — 그동안 "결투 시작!" 이 화면에
+  /// 그대로 떠 있었다(실기 지적).
   VoidCallback _showStartOverlay(AppLocalizations l) {
     final entry = OverlayEntry(builder: (_) => const _BattleStartOverlay());
     Overlay.of(context, rootOverlay: true).insert(entry);
-    return entry.remove;
+    var closed = false;
+    return () {
+      if (closed) return;
+      closed = true;
+      entry.remove();
+    };
   }
 
   Future<void> _battle(
@@ -2467,7 +2531,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       // 맞춰 놓았으므로 되돌리면 안 된다.
       final close = _showStartOverlay(l);
       try {
-        final ok = await _serverBattle(data, locale, scout, m);
+        final ok = await _serverBattle(data, locale, scout, m, onReady: close);
         if (!ok && !_lastRejectedForTickets) await _returnTicket();
       } finally {
         close();
@@ -2528,82 +2592,90 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     // (돌려주면 불리한 판을 나가버리는 것으로 무한 재시도가 된다).
     if (!await _takeTicket(l)) return;
 
-    // 권위 서버가 붙어 있으면 서버 세션이 매 수를 확정한다(야생 포함).
-    ManualBattleDriver? driver;
-    var foe = m.foe;
-    var speciesOf = m.speciesOf;
-    var location = scout.location;
+    // 수동도 서버 세션을 여는 동안 기다린다 — 오토와 같은 전환으로 덮는다.
+    // 실패로 빠져나가는 길이 여럿이라 `try/finally` 로 반드시 닫는다.
+    final closeStart = _showStartOverlay(l);
+    try {
+      // 권위 서버가 붙어 있으면 서버 세션이 매 수를 확정한다(야생 포함).
+      ManualBattleDriver? driver;
+      var foe = m.foe;
+      var speciesOf = m.speciesOf;
+      var location = scout.location;
 
-    final server = ref.read(gameServerProvider);
-    if (server.available) {
-      // 전투 전 최신 세이브 업로드(기기 권위 진행이 묻히지 않게).
-      // 실패 시 시작하지 않는다 — 낡은 세이브로 세션을 열면 진행이 사라진다.
-      if (!await _flushSave()) {
-        await _returnTicket();
-        if (!mounted) return;
-        showCenterToast(context, l.battleServerFailed);
-        return;
-      }
-      final res = await server.startManualBattle(
-        teamBugIds: [for (final b in m.mine) b.id],
-        opponentUserId: scout.ownerId,
-        tierId: scout.ownerId == null ? scout.tier.id : null,
-      );
-      if (!res.isOk || res.data?['sessionId'] == null) {
-        // 서버가 "티켓 없음"이라 했으면 되돌리지 않는다 — 서버가 진실이다.
-        final noTicket = await _syncTicketRejection(res);
-        if (!noTicket) await _returnTicket();
-        if (!mounted) return;
-        showCenterToast(
-          context,
-          noTicket ? l.pvpTicketNone : l.battleServerFailed,
+      final server = ref.read(gameServerProvider);
+      if (server.available) {
+        // 전투 전 최신 세이브 업로드(기기 권위 진행이 묻히지 않게).
+        // 실패 시 시작하지 않는다 — 낡은 세이브로 세션을 열면 진행이 사라진다.
+        if (!await _flushSave()) {
+          await _returnTicket();
+          if (!mounted) return;
+          showCenterToast(context, l.battleServerFailed);
+          return;
+        }
+        final res = await server.startManualBattle(
+          teamBugIds: [for (final b in m.mine) b.id],
+          opponentUserId: scout.ownerId,
+          tierId: scout.ownerId == null ? scout.tier.id : null,
         );
-        return; // 로컬로 폴백하지 않는다 — 폴백하면 서버 권위가 무의미해진다.
+        if (!res.isOk || res.data?['sessionId'] == null) {
+          // 서버가 "티켓 없음"이라 했으면 되돌리지 않는다 — 서버가 진실이다.
+          final noTicket = await _syncTicketRejection(res);
+          if (!noTicket) await _returnTicket();
+          if (!mounted) return;
+          showCenterToast(
+            context,
+            noTicket ? l.pvpTicketNone : l.battleServerFailed,
+          );
+          return; // 로컬로 폴백하지 않는다 — 폴백하면 서버 권위가 무의미해진다.
+        }
+        // 서버가 확정한 티켓 잔량으로 맞춘다(낙관 차감과 어긋나지 않게).
+        // 세이브 전체가 아니라 몇 바이트만 온다 — 이그레스 절약.
+        await ref
+            .read(saveControllerProvider.notifier)
+            .adoptTicketState(res.data!);
+        driver = ServerManualDriver(
+          server: server,
+          sessionId: res.data!['sessionId'].toString(),
+          startEnergy: (res.data!['energyA'] as num?)?.toInt() ?? 1,
+        );
+        // 서버가 싸울 상대를 그대로 그린다.
+        final srvFoe = foeTeamFromServer(res.data!['foe']);
+        if (srvFoe.isNotEmpty) {
+          foe = [for (final e in srvFoe) e.bug];
+          speciesOf = {
+            ...m.speciesOf,
+            for (final e in srvFoe) e.bug.id: e.speciesId,
+          };
+          location = foe.first.element;
+        }
       }
-      // 서버가 확정한 티켓 잔량으로 맞춘다(낙관 차감과 어긋나지 않게).
-      // 세이브 전체가 아니라 몇 바이트만 온다 — 이그레스 절약.
-      await ref
-          .read(saveControllerProvider.notifier)
-          .adoptTicketState(res.data!);
-      driver = ServerManualDriver(
-        server: server,
-        sessionId: res.data!['sessionId'].toString(),
-        startEnergy: (res.data!['energyA'] as num?)?.toInt() ?? 1,
-      );
-      // 서버가 싸울 상대를 그대로 그린다.
-      final srvFoe = foeTeamFromServer(res.data!['foe']);
-      if (srvFoe.isNotEmpty) {
-        foe = [for (final e in srvFoe) e.bug];
-        speciesOf = {
-          ...m.speciesOf,
-          for (final e in srvFoe) e.bug.id: e.speciesId,
-        };
-        location = foe.first.element;
-      }
-    }
-    if (!mounted) return;
+      if (!mounted) return;
 
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ManualBattleScreen(
-          driver: driver,
-          onAdoptSave: (srv) =>
-              ref.read(saveControllerProvider.notifier).adoptServerSave(srv),
-          data: data,
-          myTeam: m.mine,
-          foeTeam: foe,
-          speciesOf: speciesOf,
-          seed: m.seed,
-          trophiesAtStart: save.pvpTrophies,
-          config: data.battleConfig ?? const BattleConfig(),
-          rewardMult: scout.tier.rewardMult,
-          onApply: _applyReward,
-          location: location,
-          skinOf: ref.read(skinOfProvider),
-          arenaTheme: ref.read(arenaThemeOwnedProvider),
+      closeStart();
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ManualBattleScreen(
+            driver: driver,
+            onAdoptSave: (srv) =>
+                ref.read(saveControllerProvider.notifier).adoptServerSave(srv),
+            data: data,
+            myTeam: m.mine,
+            foeTeam: foe,
+            speciesOf: speciesOf,
+            seed: m.seed,
+            trophiesAtStart: save.pvpTrophies,
+            config: data.battleConfig ?? const BattleConfig(),
+            rewardMult: scout.tier.rewardMult,
+            onApply: _applyReward,
+            location: location,
+            skinOf: ref.read(skinOfProvider),
+            arenaTheme: ref.read(arenaThemeOwnedProvider),
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      closeStart();
+    }
   }
 
   /// 스카우트 카드 — 난이도 배지·상대 3마리 미리보기·승리 보상, 탭하면 선택.

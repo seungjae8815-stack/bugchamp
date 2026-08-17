@@ -9,17 +9,64 @@
   "manualTurnSeconds": 10,
   "scout": {
     "tiers": [
-      { "id": "easy", "powerMult": 0.82, "rewardMult": 0.7 },
-      { "id": "even", "powerMult": 1.0, "rewardMult": 1.0 },
-      { "id": "hard", "powerMult": 1.22, "rewardMult": 1.6 }
+      {
+        "id": "easy",
+        "powerMult": 0.82,
+        "rewardMult": 0.7
+      },
+      {
+        "id": "even",
+        "powerMult": 1.0,
+        "rewardMult": 1.0
+      },
+      {
+        "id": "hard",
+        "powerMult": 1.22,
+        "rewardMult": 1.6
+      }
     ]
   },
   "leagues": [
-    { "id": "bronze", "minTrophy": 0 },
-    { "id": "silver", "minTrophy": 100, "reward": { "gold": 5000, "jelly": 3 } },
-    { "id": "gold", "minTrophy": 300, "reward": { "gold": 15000, "jelly": 6 } },
-    { "id": "platinum", "minTrophy": 700, "reward": { "gold": 40000, "jelly": 12 } },
-    { "id": "diamond", "minTrophy": 1500, "reward": { "gold": 100000, "jelly": 20 } }
+    {
+      "id": "bronze",
+      "minTrophy": 0,
+      "reward": {
+        "gold": 1500,
+        "jelly": 1
+      }
+    },
+    {
+      "id": "silver",
+      "minTrophy": 100,
+      "reward": {
+        "gold": 5000,
+        "jelly": 3
+      }
+    },
+    {
+      "id": "gold",
+      "minTrophy": 300,
+      "reward": {
+        "gold": 15000,
+        "jelly": 6
+      }
+    },
+    {
+      "id": "platinum",
+      "minTrophy": 700,
+      "reward": {
+        "gold": 40000,
+        "jelly": 12
+      }
+    },
+    {
+      "id": "diamond",
+      "minTrophy": 1500,
+      "reward": {
+        "gold": 100000,
+        "jelly": 20
+      }
+    }
   ],
   "_seasonComment": "시즌은 주간. 모두에게 같은 순간에 끝나도록 요일·시각으로 못 박는다(tzOffsetMinutes=540 → KST 월요일 09:00).",
   "season": {
