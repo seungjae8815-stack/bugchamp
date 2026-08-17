@@ -753,5 +753,11 @@
   "sideFoeTeam": "相手チーム",
   "leagueNeedTrophy": "トロフィー{n}",
   "seasonRewardNow": "シーズン報酬・現在 {league}",
-  "seasonRewardHint": "毎週月曜9時、その瞬間の等級で支給されます。終わる前に上げておきましょう。"
+  "seasonRewardHint": "毎週月曜9時、その瞬間の等級で支給されます。終わる前に上げておきましょう。",
+  "eventOpensOn": "{m}月{d}日に開幕",
+  "eventOpensInDays": "D-{n}",
+  "eventOpensInHours": "{n}時間後に開始",
+  "eventOpensInMinutes": "{n}分後に開始",
+  "eventSeeFlyer": "大会案内を見る",
+  "eventSoonBanner": "王蟲選抜大会・{when} 開幕"
 }

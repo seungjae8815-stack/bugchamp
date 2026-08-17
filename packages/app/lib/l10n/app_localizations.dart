@@ -4623,6 +4623,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paid every Monday 09:00 at your rank at that moment. Climb before it ends.'**
   String get seasonRewardHint;
+
+  /// No description provided for @eventOpensOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens on {m}/{d}'**
+  String eventOpensOn(String m, String d);
+
+  /// No description provided for @eventOpensInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'D-{n}'**
+  String eventOpensInDays(int n);
+
+  /// No description provided for @eventOpensInHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {n}h'**
+  String eventOpensInHours(int n);
+
+  /// No description provided for @eventOpensInMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {n}m'**
+  String eventOpensInMinutes(int n);
+
+  /// No description provided for @eventSeeFlyer.
+  ///
+  /// In en, this message translates to:
+  /// **'See the flyer'**
+  String get eventSeeFlyer;
+
+  /// No description provided for @eventSoonBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug King Championship · opens {when}'**
+  String eventSoonBanner(String when);
 }
 
 class _AppLocalizationsDelegate

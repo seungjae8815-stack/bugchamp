@@ -788,5 +788,11 @@
   "sideFoeTeam": "상대 팀",
   "leagueNeedTrophy": "트로피 {n}",
   "seasonRewardNow": "시즌 종료 보상 · 지금 {league}",
-  "seasonRewardHint": "매주 월요일 09시, 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요."
+  "seasonRewardHint": "매주 월요일 09시, 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요.",
+  "eventOpensOn": "{m}월 {d}일에 열려요",
+  "eventOpensInDays": "D-{n}",
+  "eventOpensInHours": "{n}시간 뒤 시작",
+  "eventOpensInMinutes": "{n}분 뒤 시작",
+  "eventSeeFlyer": "대회 안내 보기",
+  "eventSoonBanner": "왕충 선발대회 · {when} 개막"
 }

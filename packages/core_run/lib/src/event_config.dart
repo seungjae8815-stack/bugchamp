@@ -116,6 +116,19 @@ class EventConfig {
   final DateTime? endsAt;
 
   /// [utc] 시점에 대회가 열려 있는가.
+  /// **아직 시작 전**인가. 끝난 것과 구분해야 한다 —
+  /// 끝난 회차는 감추면 되지만, 시작 전이면 "언제 열리는지"를 알려야 사람이 기다린다.
+  bool notYetOpen(DateTime utc) =>
+      startsAt != null && utc.toUtc().isBefore(startsAt!);
+
+  /// 시작까지 남은 시간(시작 전이 아니면 null).
+  Duration? untilOpen(DateTime utc) {
+    final s = startsAt;
+    if (s == null) return null;
+    final t = utc.toUtc();
+    return t.isBefore(s) ? s.difference(t) : null;
+  }
+
   bool isOpen(DateTime utc) {
     final t = utc.toUtc();
     if (startsAt != null && t.isBefore(startsAt!)) return false;

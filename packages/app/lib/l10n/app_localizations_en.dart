@@ -2551,4 +2551,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get seasonRewardHint =>
       'Paid every Monday 09:00 at your rank at that moment. Climb before it ends.';
+
+  @override
+  String eventOpensOn(String m, String d) {
+    return 'Opens on $m/$d';
+  }
+
+  @override
+  String eventOpensInDays(int n) {
+    return 'D-$n';
+  }
+
+  @override
+  String eventOpensInHours(int n) {
+    return 'Starts in ${n}h';
+  }
+
+  @override
+  String eventOpensInMinutes(int n) {
+    return 'Starts in ${n}m';
+  }
+
+  @override
+  String get eventSeeFlyer => 'See the flyer';
+
+  @override
+  String eventSoonBanner(String when) {
+    return 'Bug King Championship · opens $when';
+  }
 }

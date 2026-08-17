@@ -189,16 +189,74 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     );
   }
 
-  Widget _closed(AppLocalizations l) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Text(
-        _error == 'no_server' ? l.eventNeedServer : l.eventClosed,
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: Color(0x99FFFFFF), height: 1.4),
+  /// 못 들어가는 상태. **"아직 안 열림"과 "끝남"은 다른 화면**이어야 한다 —
+  /// 끝난 건 닫으면 그만이지만, 시작 전이면 언제 열리는지 알려야 사람이 기다린다.
+  Widget _closed(AppLocalizations l) {
+    final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
+    final now = ref.read(clockProvider).now().toUtc();
+    final left = cfg?.untilOpen(now);
+    if (left != null && _error != 'no_server') {
+      final open = cfg!.startsAt!.toLocal();
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.hourglass_top_rounded, size: 40, color: _honey),
+              const SizedBox(height: 10),
+              Text(
+                l.eventOpensOn('${open.month}', '${open.day}'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _untilText(l, left),
+                style: const TextStyle(
+                  color: _honey,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 14),
+              // 기다리는 동안 **뭘 준비해야 하는지**는 전단지에 다 있다.
+              OutlinedButton.icon(
+                onPressed: _showIntro,
+                icon: const Icon(Icons.article_rounded, size: 16),
+                label: Text(l.eventSeeFlyer),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _honey,
+                  side: const BorderSide(color: Color(0x66EBA52F)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          _error == 'no_server' ? l.eventNeedServer : l.eventClosed,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0x99FFFFFF), height: 1.4),
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  /// "3일 12시간 뒤" — 하루 넘게 남으면 날짜 단위로만 말한다(분까지 세면 조급하다).
+  String _untilText(AppLocalizations l, Duration d) {
+    if (d.inDays >= 1) return l.eventOpensInDays(d.inDays + 1);
+    if (d.inHours >= 1) return l.eventOpensInHours(d.inHours);
+    return l.eventOpensInMinutes(d.inMinutes + 1);
+  }
 
   Widget _header(AppLocalizations l) {
     final tickets = (_state?['tickets'] as num?)?.toInt() ?? 0;

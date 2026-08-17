@@ -2503,4 +2503,32 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get seasonRewardHint => '매주 월요일 09시, 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요.';
+
+  @override
+  String eventOpensOn(String m, String d) {
+    return '$m월 $d일에 열려요';
+  }
+
+  @override
+  String eventOpensInDays(int n) {
+    return 'D-$n';
+  }
+
+  @override
+  String eventOpensInHours(int n) {
+    return '$n시간 뒤 시작';
+  }
+
+  @override
+  String eventOpensInMinutes(int n) {
+    return '$n분 뒤 시작';
+  }
+
+  @override
+  String get eventSeeFlyer => '대회 안내 보기';
+
+  @override
+  String eventSoonBanner(String when) {
+    return '왕충 선발대회 · $when 개막';
+  }
 }

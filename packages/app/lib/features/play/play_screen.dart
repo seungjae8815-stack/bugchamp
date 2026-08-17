@@ -1598,13 +1598,79 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     ),
   );
 
-  /// 이벤트(왕충 선발대회) 배너 — 열려 있을 때만 뜬다.
+  /// 개막 전 예고 배너 — 눌러서 전단지를 볼 수 있다.
+  ///
+  /// 서버가 닫혀 있는 동안에도 떠야 하므로 **로컬 설정만** 본다.
+  Widget _eventSoonBanner(AppLocalizations l, Duration left) {
+    final when = left.inDays >= 1
+        ? l.eventOpensInDays(left.inDays + 1)
+        : (left.inHours >= 1
+              ? l.eventOpensInHours(left.inHours)
+              : l.eventOpensInMinutes(left.inMinutes + 1));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (_) => const EventScreen())),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0x22EBA52F),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0x55EBA52F)),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.hourglass_top_rounded,
+                size: 15,
+                color: Color(0xFFEBA52F),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  l.eventSoonBanner(when),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFEBA52F),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: Color(0x99EBA52F),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 이벤트(왕충 선발대회) 배너.
   ///
   /// 한시적 이벤트라 하단 탭을 늘리지 않고 홈 상단에 둔다. 탭은 이미 5개이고,
   /// 회차가 끝나면 배너만 사라지면 된다.
+  ///
+  /// **개막 전에도 띄운다.** 서버는 기간 밖이면 `event_closed` 로 아무것도 안 주는데,
+  /// 그 상태를 "없음"으로 처리하니 시작 전날까지 대회의 존재 자체가 화면에 없었다.
+  /// 시작 전 예고는 **로컬 설정(`event.json`)만 보고** 그린다.
   Widget _eventBanner(AppLocalizations l) {
     final st = ref.watch(eventStateProvider).asData?.value;
-    if (st == null) return const SizedBox.shrink();
+    final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
+    final now = ref.read(clockProvider).now().toUtc();
+    if (st == null) {
+      final left = cfg?.untilOpen(now);
+      if (left == null) return const SizedBox.shrink();
+      return _eventSoonBanner(l, left);
+    }
     final tickets = (st['tickets'] as num?)?.toInt() ?? 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),

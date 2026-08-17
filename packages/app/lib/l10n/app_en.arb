@@ -1455,5 +1455,49 @@
         "type": "String"
       }
     }
+  },
+  "eventOpensOn": "Opens on {m}/{d}",
+  "eventOpensInDays": "D-{n}",
+  "eventOpensInHours": "Starts in {n}h",
+  "eventOpensInMinutes": "Starts in {n}m",
+  "eventSeeFlyer": "See the flyer",
+  "eventSoonBanner": "Bug King Championship · opens {when}",
+  "@eventOpensOn": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      },
+      "d": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventOpensInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@eventOpensInHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@eventOpensInMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@eventSoonBanner": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
   }
 }

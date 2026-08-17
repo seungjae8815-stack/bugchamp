@@ -2499,4 +2499,32 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get seasonRewardHint => '毎週月曜9時、その瞬間の等級で支給されます。終わる前に上げておきましょう。';
+
+  @override
+  String eventOpensOn(String m, String d) {
+    return '$m月$d日に開幕';
+  }
+
+  @override
+  String eventOpensInDays(int n) {
+    return 'D-$n';
+  }
+
+  @override
+  String eventOpensInHours(int n) {
+    return '$n時間後に開始';
+  }
+
+  @override
+  String eventOpensInMinutes(int n) {
+    return '$n分後に開始';
+  }
+
+  @override
+  String get eventSeeFlyer => '大会案内を見る';
+
+  @override
+  String eventSoonBanner(String when) {
+    return '王蟲選抜大会・$when 開幕';
+  }
 }
