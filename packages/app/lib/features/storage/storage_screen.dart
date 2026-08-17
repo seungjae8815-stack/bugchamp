@@ -1211,11 +1211,7 @@ class StorageScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    sexIcon(bug.sex),
-                    size: 12,
-                    color: const Color(0xCCFFFFFF),
-                  ),
+                  sexArt(bug.sex, size: 12),
                   const SizedBox(width: 3),
                   _stars(bug.potential, 9),
                 ],
@@ -1230,10 +1226,7 @@ class StorageScreen extends ConsumerWidget {
                   elementIcon(bug.element, size: 12),
                   if (!bug.trait.isNone) ...[
                     const SizedBox(width: 3),
-                    Text(
-                      traitGlyph(bug.trait),
-                      style: const TextStyle(fontSize: 11),
-                    ),
+                    traitIcon(bug.trait, size: 12),
                   ],
                 ],
               ),
@@ -2791,9 +2784,20 @@ class StorageScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: c.withValues(alpha: 0.75)),
       ),
-      child: Text(
-        '${traitGlyph(t)} ${traitLabel(l, t)}',
-        style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w800),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          traitIcon(t, size: 13),
+          const SizedBox(width: 3),
+          Text(
+            traitLabel(l, t),
+            style: TextStyle(
+              color: c,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }

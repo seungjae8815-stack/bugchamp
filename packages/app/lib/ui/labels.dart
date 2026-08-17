@@ -68,6 +68,47 @@ Widget temperamentIcon(Temperament t, {double size = 14}) => Image.asset(
   errorBuilder: (_, _, _) => const SizedBox.shrink(),
 );
 
+/// 혈통 특성 그림. 없으면 이모지로 폴백(§6).
+///
+/// 특성은 **짝짓기 자식만** 가지는 표식이다(§2.5) — 키운 것과 주운 것을 가르는
+/// 유일한 표시라, 남의 이모지를 빌려 쓰면 그 무게가 안 산다.
+Widget traitIcon(BugTrait t, {double size = 14}) => t.isNone
+    ? const SizedBox.shrink()
+    : Image.asset(
+        'assets/images/ui/trait/${t.name}.png',
+        width: size,
+        height: size,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (_, _, _) =>
+            Text(traitGlyph(t), style: TextStyle(fontSize: size * 0.85)),
+      );
+
+/// 성별 그림. 없으면 머티리얼 아이콘으로 폴백.
+Widget sexArt(Sex s, {double size = 14}) => Image.asset(
+  'assets/images/ui/sex/${s.name}.png',
+  width: size,
+  height: size,
+  filterQuality: FilterQuality.medium,
+  errorBuilder: (_, _, _) =>
+      Icon(sexIcon(s), size: size, color: const Color(0xCCFFFFFF)),
+);
+
+/// 리그 뱃지. 없으면 메달 이모지로 폴백.
+Widget leagueIcon(String id, {double size = 16}) => Image.asset(
+  'assets/images/ui/league/$id.png',
+  width: size,
+  height: size,
+  filterQuality: FilterQuality.medium,
+  errorBuilder: (_, _, _) => Text(switch (id) {
+    'bronze' => '🥉',
+    'silver' => '🥈',
+    'gold' => '🥇',
+    'platinum' => '💠',
+    'diamond' => '💎',
+    _ => '🏅',
+  }, style: TextStyle(fontSize: size * 0.85)),
+);
+
 Color elementColor(Element e) => switch (e) {
   Element.fire => const Color(0xFFFF6B4A),
   Element.water => const Color(0xFF4AA8FF),

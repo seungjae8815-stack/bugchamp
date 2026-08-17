@@ -10,6 +10,7 @@ import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
+import '../../ui/labels.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -51,15 +52,6 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   RankingKind _kind = RankingKind.trophies;
-
-  static String _leagueEmoji(String id) => switch (id) {
-    'bronze' => '🥉',
-    'silver' => '🥈',
-    'gold' => '🥇',
-    'platinum' => '💠',
-    'diamond' => '💎',
-    _ => '🏅',
-  };
 
   String _kindLabel(AppLocalizations l, RankingKind k) => switch (k) {
     RankingKind.trophies => l.rankKindTrophies,
@@ -341,7 +333,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // 리그 뱃지는 **트로피 랭킹에서만** 의미가 있다 — 레벨/진행도 줄에
           // 붙이면 그 유저의 결투 등급인 것처럼 읽힌다.
           if (_kind == RankingKind.trophies) ...[
-            Text(_leagueEmoji(league.id), style: const TextStyle(fontSize: 16)),
+            leagueIcon(league.id),
             const SizedBox(width: 8),
           ],
           Expanded(

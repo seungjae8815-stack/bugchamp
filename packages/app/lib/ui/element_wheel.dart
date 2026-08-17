@@ -205,11 +205,14 @@ Future<void> showElementWheel(BuildContext context, {Element? highlight}) {
     icon: Icons.hub_rounded,
     content: Column(
       mainAxisSize: MainAxisSize.min,
+      // 범례는 **왼쪽 끝을 맞춘다.** 가운데 정렬이면 두 줄의 길이가 달라
+      // 색 막대가 서로 어긋나 보인다(실기 지적).
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ElementWheel(highlight: highlight),
-        const SizedBox(height: 10),
+        Center(child: ElementWheel(highlight: highlight)),
+        const SizedBox(height: 12),
         _legend(const Color(0xFFFF6B6B), l.elementWheelRestrain),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         _legend(const Color(0xFF7CE38B), l.elementWheelGenerate),
       ],
     ),
@@ -218,14 +221,22 @@ Future<void> showElementWheel(BuildContext context, {Element? highlight}) {
 }
 
 Widget _legend(Color c, String text) => Row(
-  mainAxisSize: MainAxisSize.min,
+  // 두 줄 모두 색 막대가 **같은 x**에서 시작하고, 글자는 첫 줄에 맞춰 정렬된다.
+  crossAxisAlignment: CrossAxisAlignment.start,
   children: [
-    Container(width: 18, height: 3, color: c),
-    const SizedBox(width: 6),
-    Flexible(
+    Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Container(width: 18, height: 3, color: c),
+    ),
+    const SizedBox(width: 8),
+    Expanded(
       child: Text(
         text,
-        style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 12),
+        style: const TextStyle(
+          color: Color(0xDDFFFFFF),
+          fontSize: 12,
+          height: 1.35,
+        ),
       ),
     ),
   ],

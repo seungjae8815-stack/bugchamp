@@ -88,6 +88,11 @@ def cutout(img):
     # 지우면 너트가 뚫린다 — **두 톤이 섞여 있는 덩어리만** 체크판으로 본다.
     # 매끈한 금속 하이라이트는 한쪽 톤에만 쏠린다.
     lo, hi = min(tones), max(tones)
+    # 체크무늬가 아니라 **민무늬 배경**인 경우도 있다(생성기마다 다르다). 그때는
+    # 두 톤이 거의 같으므로 "반반" 판정이 성립하지 않는다 — 대신 **넓은** 덩어리만
+    # 지운다(작은 건 그림 속 흰 하이라이트다).
+    flat = hi - lo < 10
+    area = rgb.shape[0] * rgb.shape[1]
     for i in range(1, n + 1):
         if i in edge:
             continue
@@ -95,6 +100,10 @@ def cutout(img):
         if m.sum() < 64:
             continue
         vv = v[m]
+        if flat:
+            if m.sum() >= area * 0.005 and abs(vv.mean() - (lo + hi) / 2) < 12:
+                bg |= m
+            continue
         share_lo = (vv < (lo + hi) / 2).mean()
         if 0.25 < share_lo < 0.75:  # 밝은 칸·어두운 칸이 반반 = 체크판
             bg |= m
