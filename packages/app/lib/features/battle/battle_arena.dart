@@ -65,7 +65,12 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
   double _tgtA = 0, _tgtB = 0;
   final List<FloatText> _floats = [];
   final List<BurstFx> _bursts = [];
-  int _lungeSide = 0; // -1 왼쪽(내팀) 공격, 1 오른쪽(상대) 공격
+
+  /// 이번 라운드에 **누가 때렸는가**. 때린 쪽이 달려든다(둘 다면 서로 부딪친다).
+  ///
+  /// 예전엔 `_lungeSide` 하나로 "더 크게 때린 쪽만" 움직였다. 그런데 이 전투는
+  /// 한 라운드에 보통 양쪽이 다 때리므로, 피해량이 비슷하면 **아무도 안 움직였다**.
+  bool _strikeL = false, _strikeR = false;
   double _flashL = 0, _flashR = 0, _shake = 0;
   bool _finished = false;
   bool _resultShown = false;
@@ -101,7 +106,8 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     _accum = 0;
     _clashT = 0;
     final dmgA = ev.dmgToA, dmgB = ev.dmgToB, hA = ev.healToA, hB = ev.healToB;
-    _lungeSide = dmgB > dmgA + 0.5 ? -1 : (dmgA > dmgB + 0.5 ? 1 : 0);
+    _strikeL = dmgB >= 1;
+    _strikeR = dmgA >= 1;
     if (dmgA >= 1) {
       _floats.add(FloatText('-${dmgA.round()}', const Color(0xFFFF6B6B), true));
       _flashL = 1;
@@ -216,9 +222,11 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     final round = ev?.round ?? widget.result.rounds;
     final shakeDx = _shake > 0 ? math.sin(_shake * 40) * _shake * 6 : 0.0;
 
-    final lunge = _lungeSide != 0
-        ? math.sin((_clashT / kRoundDur).clamp(0.0, 1.0) * math.pi) * 26
-        : 0.0;
+    // 예전엔 `sin(t*pi)` 라 정점이 라운드 한가운데였다 — 때리는 게 아니라 몸을
+    // 천천히 흔드는 것처럼 보였다. 빠르게 뻗었다 천천히 돌아와야 타격로 읽힌다.
+    final lungeT = arenaLungeCurve((_clashT / kRoundDur).clamp(0.0, 1.0)) * 26;
+    final lungeL = _strikeL ? lungeT : 0.0;
+    final lungeR = _strikeR ? lungeT : 0.0;
 
     return Scaffold(
       body: SafeArea(
@@ -292,7 +300,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                                   flip: false,
                                   stance: ev?.aStance,
                                   flash: _flashL,
-                                  dx: _lungeSide == -1 ? lunge : 0.0,
+                                  dx: lungeL,
                                   skin: widget.skinOf(
                                     widget.speciesOf[widget.myTeam[_a].id] ??
                                         '',
@@ -312,7 +320,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                                   flip: true,
                                   stance: ev?.bStance,
                                   flash: _flashR,
-                                  dx: _lungeSide == 1 ? -lunge : 0.0,
+                                  dx: -lungeR,
                                 )
                               : const SizedBox.shrink(),
                         ),

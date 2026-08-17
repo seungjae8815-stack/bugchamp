@@ -39,6 +39,7 @@ Widget gameImageChain(
   required Widget fallback,
   BoxFit fit = BoxFit.contain,
   bool byHeight = false,
+  Alignment alignment = Alignment.center,
 }) {
   if (paths.isEmpty) return fallback;
   return Image.asset(
@@ -46,6 +47,7 @@ Widget gameImageChain(
     width: byHeight ? null : size,
     height: size,
     fit: byHeight ? BoxFit.fitHeight : fit,
+    alignment: alignment,
     filterQuality: FilterQuality.medium,
     errorBuilder: (_, _, _) => gameImageChain(
       paths.sublist(1),
@@ -53,6 +55,7 @@ Widget gameImageChain(
       fallback: fallback,
       fit: fit,
       byHeight: byHeight,
+      alignment: alignment,
     ),
   );
 }
@@ -209,6 +212,12 @@ enum BugPose {
 
 /// 자세별 성충 이미지. **없으면 기본 성충 그림으로 조용히 내려간다** —
 /// 20종을 한 번에 다 그릴 수 없으므로, 종 하나씩 넣어도 화면이 깨지지 않아야 한다.
+///
+/// **아래쪽에 붙여 그린다.** 프레임 캔버스의 높이는 세 자세 중 가장 높은 것에
+/// 맞춰져 있고(대개 공격 자세), 대기 자세는 그 아래쪽에만 있다. 그 여백이 종마다
+/// 0~41% 로 제각각이라(사마귀는 대기가 제일 높고, 톱사슴벌레는 공격이 훨씬 높다)
+/// 가운데 정렬로 그리면 **종마다 발 높이가 달라진다** — 같은 통나무 위에 서 있는데
+/// 누구는 뜨고 누구는 박힌다. 캔버스 바닥 = 발이므로 바닥끼리 맞춘다.
 Widget bugPoseImage(
   String speciesId,
   BugPose pose, {

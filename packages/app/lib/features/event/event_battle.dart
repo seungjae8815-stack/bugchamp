@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart' hide Element;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
@@ -48,7 +50,8 @@ class EventBattleScreen extends ConsumerStatefulWidget {
   ConsumerState<EventBattleScreen> createState() => _EventBattleScreenState();
 }
 
-class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
+class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
+    with SingleTickerProviderStateMixin {
   late Map<String, dynamic> _res;
 
   /// 화면에 그릴 팀 — **서버가 정한 순서**를 따른다. 선봉을 바꾸면 서버가 순서를
@@ -62,18 +65,34 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
   // 연출 상태 — PvP 아레나와 같은 이펙트 위젯을 쓴다.
   final List<FloatText> _floats = [];
   final List<BurstFx> _bursts = [];
-  double _flashL = 0, _flashR = 0, _lunge = 0, _shake = 0;
+  double _flashL = 0, _flashR = 0, _shake = 0;
 
-  /// 이번 라운드에 **누가 돌진하는가**(-1 왼쪽 / 1 오른쪽 / 0 없음).
-  /// 둘 다 움직이면 서로 스쳐 지나가는 것처럼 보여 때린 느낌이 안 난다.
-  int _lungeSide = 0;
+  /// 이번 라운드에 **누가 때렸는가**. 때린 쪽이 달려든다(둘 다면 서로 부딪친다).
+  bool _strikeL = false, _strikeR = false;
+
+  /// 라운드 안에서의 경과(초). 0 에서 시작해 [_roundDur] 에 다음 라운드로 넘어간다.
+  double _roundT = 0;
+
+  /// 아직 꽂히지 않은 이번 라운드 결과. 타격 시점([arenaImpactAt])에 터뜨린다.
+  BattleEvent? _pending;
+
+  /// [_pending] 이 벌어진 시점의 적 번호. 라운드가 끝나며 적이 교체될 수 있어,
+  /// 이펙트(오행 상극 판정)는 **그때 싸우던 적**을 봐야 한다.
+  int _pendingFoe = 0;
+
+  /// 체력 바가 따라갈 목표(타격이 꽂히는 순간 갱신).
+  List<double> _hpTarget = const [];
 
   /// 카드를 고를 때 함께 정하는 **다음 웨이브 선봉**. null 이면 순서 유지.
   String? _lead;
   bool _replaying = false;
   bool _busy = false;
   bool _fast = false;
-  Timer? _timer;
+  late final Ticker _ticker;
+  Duration _last = Duration.zero;
+
+  /// 한 라운드의 길이(초).
+  double get _roundDur => _fast ? 0.16 : 0.62;
 
   EventConfig get _cfg => widget.data.eventConfig ?? const EventConfig();
   int get _seed => (_res['seed'] as num?)?.toInt() ?? 0;
@@ -88,12 +107,17 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     _res = widget.first;
     _team = [...widget.team];
     _syncTeamOrder();
+    // 60fps 로 돈다. 예전엔 `Timer.periodic(620ms)` 한 번에 **라운드 하나**를
+    // 통째로 처리해서, 애니메이션이 초당 1.6 프레임이었다 — 자세가 라운드당 한 번
+    // 바뀌고 그대로 멈춰 있으니 때리는 것도 맞는 것도 보일 수가 없었다
+    // (실기: "전투하는 느낌이 안 든다"). 전투 진행과 그림 갱신을 분리한다.
+    _ticker = createTicker(_onFrame)..start();
     _replayCurrentWave();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _ticker.dispose();
     super.dispose();
   }
 
@@ -161,11 +185,14 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         _hpShown[i] = from[i];
       }
     }
+    _hpTarget = [..._hpShown];
     setState(() {
       _replaying = true;
       _enemyIdx = 0;
+      _roundT = 0;
+      _pending = null;
+      _strikeL = _strikeR = false;
     });
-    _loop();
   }
 
   /// 서버가 준 순서로 팀을 재배치한다(선봉 교체 반영).
@@ -186,43 +213,22 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     for (final v in ((_res['hp'] as List?) ?? const [])) (v as num).toDouble(),
   ];
 
-  void _loop() {
-    _timer?.cancel();
-    _timer = Timer.periodic(
-      Duration(milliseconds: _fast ? 160 : 620),
-      (_) => _tick(),
-    );
-  }
-
-  void _tick() {
+  /// 매 프레임. **그림만** 굴리고, 전투는 라운드 경계에서만 한 칸 나간다.
+  void _onFrame(Duration elapsed) {
+    final raw = (elapsed - _last).inMicroseconds / 1e6;
+    _last = elapsed;
+    if (!_replaying) return;
     final st = _battle;
     if (st == null) return;
-    if (st.done) {
-      _timer?.cancel();
-      setState(() {
-        _replaying = false;
-        // 재생이 끝나면 **서버가 준 체력**으로 맞춘다(클리어 회복까지 반영된 값).
-        _hpShown = _serverHp();
-        // ⚠️ 이펙트를 반드시 비운다 — 타이머가 멈추면 age 가 늘지 않아
-        // 데미지 숫자가 화면에 **영원히 붙어 있는다**(실기에서 발견).
-        _floats.clear();
-        _bursts.clear();
-        _flashL = _flashR = _lunge = _shake = 0;
-        _lungeSide = 0;
-      });
-      return;
-    }
-    final before = st.events.length;
-    st.step();
+    // 프레임이 튀어도(앱 복귀 등) 한 번에 몰아서 진행하지 않는다.
+    final dt = raw.clamp(0.0, 0.05);
+    if (dt <= 0) return;
+
     setState(() {
-      for (var i = 0; i < _hpShown.length && i < st.hpA.length; i++) {
-        _hpShown[i] = st.hpA[i];
-      }
-      _enemyIdx = st.b;
-      if (st.events.length > before) _playEffects(st, st.events.last);
-      // 이펙트는 시간이 지나면 사라진다(수명은 위젯이 안다).
-      // 수명은 초 단위다 — 재생 간격만큼 늘려야 제때 사라진다.
-      final dt = (_fast ? 160 : 620) / 1000.0;
+      // 감쇠·수명은 **실제 시간**으로 — 프레임 수로 깎으면 배속에 따라 달라진다.
+      _flashL = math.max(0, _flashL - dt * 3);
+      _flashR = math.max(0, _flashR - dt * 3);
+      _shake = math.max(0, _shake - dt * 2.5);
       for (final f in _floats) {
         f.age += dt;
       }
@@ -231,18 +237,63 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
       }
       _floats.removeWhere((f) => f.age >= FloatText.life);
       _bursts.removeWhere((b) => b.age >= BurstFx.life);
-      _flashL = (_flashL - 0.5).clamp(0.0, 1.0);
-      _flashR = (_flashR - 0.5).clamp(0.0, 1.0);
-      _lunge = (_lunge - 8).clamp(0.0, 40.0);
-      _shake = (_shake - 0.5).clamp(0.0, 1.0);
+
+      // 체력 바는 목표를 향해 따라간다 — 뚝 떨어지면 얼마나 깎였는지 안 보인다.
+      for (var i = 0; i < _hpShown.length && i < _hpTarget.length; i++) {
+        _hpShown[i] += (_hpTarget[i] - _hpShown[i]) * (dt * 9).clamp(0.0, 1.0);
+      }
+
+      _roundT += dt;
+      // 돌진이 꽂히는 순간에 맞춰 데미지·번쩍임·소리를 함께 터뜨린다.
+      // 예전엔 라운드가 시작하자마자 다 나와서, 숫자가 뜬 뒤에 몸이 움직였다.
+      if (_pending != null && _roundT >= _roundDur * arenaImpactAt) {
+        _applyImpact(st, _pending!);
+        _pending = null;
+      }
+      if (_roundT >= _roundDur) {
+        _roundT -= _roundDur;
+        _advance(st);
+      }
     });
+  }
+
+  /// 라운드를 한 칸 진행하고, 이번 라운드에 **누가 때리는지**만 먼저 정한다.
+  /// (데미지 표시는 [_applyImpact] 가 타격 시점에 한다.)
+  void _advance(BattleState st) {
+    if (st.done) {
+      _replaying = false;
+      // 재생이 끝나면 **서버가 준 체력**으로 맞춘다(클리어 회복까지 반영된 값).
+      _hpShown = _serverHp();
+      _hpTarget = [..._hpShown];
+      // ⚠️ 이펙트를 반드시 비운다 — 재생이 멈추면 age 가 늘지 않아
+      // 데미지 숫자가 화면에 **영원히 붙어 있는다**(실기에서 발견).
+      _floats.clear();
+      _bursts.clear();
+      _flashL = _flashR = _shake = 0;
+      _strikeL = _strikeR = false;
+      return;
+    }
+    final before = st.events.length;
+    // 적 교체는 라운드가 끝난 **뒤**에 반영한다 — 쓰러지는 라운드는 쓰러지는
+    // 놈이 화면에 있어야 한다.
+    _enemyIdx = st.b;
+    st.step();
+    if (st.events.length <= before) return;
+    final ev = st.events.last;
+    _pending = ev;
+    _pendingFoe = _enemyIdx;
+    _strikeL = ev.dmgToB >= 1;
+    _strikeR = ev.dmgToA >= 1;
   }
 
   /// 한 라운드의 결과를 **화면 신호**로 바꾼다. 숫자만 바뀌면 오행을 맞춘 보람이
   /// 화면에 남지 않는다 — 상극이 터질 때만 흔들고 링을 터뜨린다.
-  void _playEffects(BattleState st, BattleEvent ev) {
+  void _applyImpact(BattleState st, BattleEvent ev) {
+    for (var i = 0; i < _hpTarget.length && i < st.hpA.length; i++) {
+      _hpTarget[i] = st.hpA[i];
+    }
     final mine = st.a < _units.length ? _units[st.a] : null;
-    final foe = _enemyIdx < _enemies.length ? _enemies[_enemyIdx] : null;
+    final foe = _pendingFoe < _enemies.length ? _enemies[_pendingFoe] : null;
     if (ev.dmgToA >= 1) {
       _floats.add(
         FloatText('-${ev.dmgToA.round()}', const Color(0xFFFF6B6B), true),
@@ -267,11 +318,6 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         FloatText('+${ev.healToB.round()}', const Color(0xFF7CE38B), false),
       );
     }
-    // **더 크게 때린 쪽만** 달려든다.
-    _lungeSide = ev.dmgToB > ev.dmgToA + 0.5
-        ? -1
-        : (ev.dmgToA > ev.dmgToB + 0.5 ? 1 : 0);
-    _lunge = _lungeSide == 0 ? 0 : 16;
     if (mine != null && foe != null) {
       final foeHit = ev.dmgToB >= 1 && mine.element.restrains(foe.element);
       final selfHit = ev.dmgToA >= 1 && foe.element.restrains(mine.element);
@@ -448,8 +494,8 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
               stanceFoe: ev?.bStance,
               flashL: _flashL,
               flashR: _flashR,
-              lungeDx:
-                  _lunge * (_lungeSide == 0 ? 0 : (_lungeSide < 0 ? 1 : -1)),
+              lungeL: _strikeL ? arenaLungeCurve(_roundT / _roundDur) * 22 : 0,
+              lungeR: _strikeR ? arenaLungeCurve(_roundT / _roundDur) * 22 : 0,
               shake: _shake,
               floats: _floats,
               bursts: _bursts,
@@ -621,7 +667,6 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
       child: OutlinedButton.icon(
         onPressed: () {
           setState(() => _fast = !_fast);
-          _loop();
         },
         icon: const Icon(Icons.fast_forward_rounded),
         label: Text(l.eventFastForward),

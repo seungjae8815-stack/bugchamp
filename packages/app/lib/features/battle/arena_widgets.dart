@@ -100,9 +100,15 @@ class ArenaFighter extends StatelessWidget {
     final sp = data.speciesById[speciesId ?? ''];
     // 자세는 이미 들고 있는 상태에서 나온다 — 맞는 중이면 피격, 돌진 중이면 공격.
     // 자세 프레임이 없는 종은 로더가 대기 그림으로 내려가므로 그냥 안 바뀔 뿐이다.
-    final pose = flash > 0
-        ? BugPose.hurt
-        : (dx.abs() > 2 ? BugPose.attack : BugPose.idle);
+    // **돌진이 피격을 이긴다.** 예전엔 피격을 먼저 봤는데, 이 전투는 한 라운드에
+    // 보통 **양쪽이 다 맞으므로** 둘 다 피격 자세가 되고 공격 자세는 아예 안
+    // 나왔다(실기: "공격 모션이 안 보인다"). 달려드는 쪽 = 때리는 쪽이다.
+    //
+    // 피격은 **번쩍임이 셀 때만** — 끝까지 물고 있으면 다음 라운드까지 맞는
+    // 자세로 서 있어서, 돌아오는 순간이 없으니 맞은 것으로 안 읽힌다.
+    final pose = dx.abs() > 1.5
+        ? BugPose.attack
+        : (flash > 0.4 ? BugPose.hurt : BugPose.idle);
     Widget img = sp == null
         ? const Icon(Icons.bug_report, color: Colors.white, size: 60)
         : bugPoseImage(
@@ -442,6 +448,21 @@ class _StanceRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _StanceRingPainter old) => old.radius != radius;
+}
+
+/// 라운드 안에서 **타격이 꽂히는 시점**(0~1 진행도).
+const double arenaImpactAt = 0.16;
+
+/// 라운드 진행도(0..1) → 돌진 정도(0..1).
+///
+/// **빠르게 뻗었다 천천히 돌아온다.** 예전엔 `sin(t*pi)` 였는데 정점이 라운드
+/// 한가운데라, 때리는 게 아니라 **몸을 천천히 흔드는 것**처럼 보였다
+/// (실기: "공격 모션이 제대로 안 보인다"). 타격은 빨라야 타격으로 읽힌다.
+double arenaLungeCurve(double t) {
+  if (t <= 0) return 0;
+  if (t < arenaImpactAt) return t / arenaImpactAt;
+  final back = (t - arenaImpactAt) / 0.42;
+  return back >= 1 ? 0 : 1 - back * back;
 }
 
 /// 떠오르는 데미지/회복 숫자 위젯.

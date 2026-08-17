@@ -28,7 +28,8 @@ class EventArena extends StatelessWidget {
     required this.stanceFoe,
     required this.flashL,
     required this.flashR,
-    required this.lungeDx,
+    required this.lungeL,
+    required this.lungeR,
     required this.shake,
     required this.floats,
     required this.bursts,
@@ -48,8 +49,14 @@ class EventArena extends StatelessWidget {
   final double flashL;
   final double flashR;
 
-  /// 방향이 반영된 돌진 오프셋(왼쪽 파이터 기준, 오른쪽은 부호 반전).
-  final double lungeDx;
+  /// 돌진 오프셋 — **양쪽이 따로**다(부호는 아레나가 붙인다).
+  ///
+  /// 예전엔 하나였고 "더 크게 때린 쪽만" 움직였다. 그런데 이 전투는 한 라운드에
+  /// 보통 양쪽이 다 때리므로 피해량이 비슷하면 **아무도 안 움직였다** — 화면이
+  /// 통째로 멈춘 것처럼 보였다(실기: "전투하는 느낌이 안 든다").
+  /// 때린 쪽은 때린 만큼 달려든다. 둘 다면 서로 부딪친다.
+  final double lungeL;
+  final double lungeR;
   final double shake;
   final List<FloatText> floats;
   final List<BurstFx> bursts;
@@ -100,7 +107,7 @@ class EventArena extends StatelessWidget {
                           flip: false,
                           stance: stanceMine,
                           flash: flashL,
-                          dx: lungeDx,
+                          dx: lungeL,
                         ),
                 ),
                 Expanded(
@@ -116,7 +123,7 @@ class EventArena extends StatelessWidget {
                           flip: true,
                           stance: stanceFoe,
                           flash: flashR,
-                          dx: -lungeDx,
+                          dx: -lungeR,
                         ),
                 ),
               ],

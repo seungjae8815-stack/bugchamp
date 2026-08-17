@@ -93,7 +93,10 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   double _tgtA = 0, _tgtB = 0;
 
   double _accum = 0, _clashT = 0;
-  int _lungeSide = 0;
+
+  /// 이번 라운드에 **누가 때렸는가**. 때린 쪽이 달려든다(둘 다면 서로 부딪친다).
+  /// 한쪽만 움직이면 피해량이 비슷한 라운드에서 아무도 안 움직여 화면이 멎는다.
+  bool _strikeL = false, _strikeR = false;
   double _flashL = 0, _flashR = 0, _shake = 0;
   final List<FloatText> _floats = [];
   final List<BurstFx> _bursts = [];
@@ -171,7 +174,8 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     _accum = 0;
     _clashT = 0;
     final dmgA = ev.dmgToA, dmgB = ev.dmgToB, hA = ev.healToA, hB = ev.healToB;
-    _lungeSide = dmgB > dmgA + 0.5 ? -1 : (dmgA > dmgB + 0.5 ? 1 : 0);
+    _strikeL = dmgB >= 1;
+    _strikeR = dmgA >= 1;
     if (dmgA >= 1) {
       _floats.add(FloatText('-${dmgA.round()}', const Color(0xFFFF6B6B), true));
       _flashL = 1;
@@ -235,7 +239,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
           final ev = _lastEvent!;
           if (ev.aDown) _dispA++;
           if (ev.bDown) _dispB++;
-          _lungeSide = 0;
+          _strikeL = _strikeR = false;
           _phase = _driver.done ? _Phase.done : _Phase.input;
           // 다음 입력 턴 제한시간 리셋.
           _turnLeft = widget.config.manualTurnSeconds.toDouble();
@@ -313,9 +317,10 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
         ? math.min(_driver.round + 1, kMaxBattleRounds)
         : _driver.round;
     final shakeDx = _shake > 0 ? math.sin(_shake * 40) * _shake * 6 : 0.0;
-    final lunge = _lungeSide != 0
-        ? math.sin((_clashT / kRoundDur).clamp(0.0, 1.0) * math.pi) * 26
-        : 0.0;
+    // 사인 곡선은 정점이 라운드 한가운데라 **흔드는 것**처럼 보인다(오토 아레나와 동일).
+    final lungeT = arenaLungeCurve((_clashT / kRoundDur).clamp(0.0, 1.0)) * 26;
+    final lungeL = _strikeL ? lungeT : 0.0;
+    final lungeR = _strikeR ? lungeT : 0.0;
 
     return Scaffold(
       body: SafeArea(
@@ -411,7 +416,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                   flip: false,
                                   stance: reveal ? ev?.aStance : null,
                                   flash: _flashL,
-                                  dx: _lungeSide == -1 ? lunge : 0.0,
+                                  dx: lungeL,
                                   skin: widget.skinOf(
                                     widget.speciesOf[widget
                                             .myTeam[_dispA]
@@ -436,7 +441,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                   stance: reveal ? ev?.bStance : null,
                                   stanceHidden: !reveal,
                                   flash: _flashR,
-                                  dx: _lungeSide == 1 ? -lunge : 0.0,
+                                  dx: -lungeR,
                                 )
                               : const SizedBox.shrink(),
                         ),
