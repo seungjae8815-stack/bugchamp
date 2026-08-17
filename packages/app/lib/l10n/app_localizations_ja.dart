@@ -2458,8 +2458,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get elementWheelTitle => '五行相性';
 
   @override
-  String get elementWheelRestrain => '相克 — 矢印の先にダメージ1.5倍';
+  String get elementWheelRestrain => '相克 — 赤い矢印が指す相手を攻撃するとダメージ1.5倍';
 
   @override
-  String get elementWheelGenerate => '相生 — 編成で前が後を生かすとチーム倍率+10%';
+  String get elementWheelGenerate => '相生 — 編成で直前の枠が緑の矢印で自分を指すとチーム全体の攻撃・回復+10%';
+
+  @override
+  String get traitNoneBadge => '特性なし';
+
+  @override
+  String get elementWheelHint => '編成は緑の矢印に沿って並べます。木 → 火 → 土 なら連結2つで+20%。';
 }

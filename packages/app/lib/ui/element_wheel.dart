@@ -214,6 +214,16 @@ Future<void> showElementWheel(BuildContext context, {Element? highlight}) {
         _legend(const Color(0xFFFF6B6B), l.elementWheelRestrain),
         const SizedBox(height: 6),
         _legend(const Color(0xFF7CE38B), l.elementWheelGenerate),
+        const SizedBox(height: 10),
+        // 규칙을 읽고도 **뭘 하라는 건지** 모르면 그림이 소용없다.
+        Text(
+          l.elementWheelHint,
+          style: const TextStyle(
+            color: Color(0x99FFFFFF),
+            fontSize: 11.5,
+            height: 1.35,
+          ),
+        ),
       ],
     ),
     actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],

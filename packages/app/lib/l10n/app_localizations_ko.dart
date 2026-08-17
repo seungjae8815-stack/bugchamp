@@ -2460,8 +2460,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get elementWheelTitle => '오행 상성';
 
   @override
-  String get elementWheelRestrain => '상극(克) — 화살표 쪽에 데미지 1.5배';
+  String get elementWheelRestrain => '상극 — 빨간 화살표가 가리키는 상대를 때리면 데미지 1.5배';
 
   @override
-  String get elementWheelGenerate => '상생(生) — 편성에서 앞이 뒤를 生하면 팀 배율 +10%';
+  String get elementWheelGenerate =>
+      '상생 — 편성에서 바로 앞자리가 초록 화살표로 나를 가리키면 팀 전체 공격·회복 +10%';
+
+  @override
+  String get traitNoneBadge => '특성 없음';
+
+  @override
+  String get elementWheelHint =>
+      '편성은 초록 화살표를 따라가게 짜세요. 예) 목 → 화 → 토 로 세우면 연결 2개라 +20%.';
 }

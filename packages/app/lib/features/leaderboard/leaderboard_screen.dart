@@ -303,16 +303,31 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       3 => const Color(0xFFB87333),
       _ => const Color(0x99FFFFFF),
     };
+    // 상위 3위는 **줄 자체가 달라야** 한다. 숫자 색만 바꿔서는 스크롤하며
+    // 훑을 때 1등이 어디인지 안 보인다 — 순위표의 목적이 "누가 위인가"다.
+    final top = e.rank <= 3;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: top ? 12 : 9),
       decoration: BoxDecoration(
         color: e.isMe
             ? _honey.withValues(alpha: 0.16)
-            : const Color(0x18000000),
+            : (top
+                  ? rankColor.withValues(alpha: 0.13)
+                  : const Color(0x18000000)),
         borderRadius: BorderRadius.circular(10),
         border: e.isMe
             ? Border.all(color: _honey.withValues(alpha: 0.7))
+            : (top
+                  ? Border.all(color: rankColor.withValues(alpha: 0.55))
+                  : null),
+        boxShadow: top
+            ? [
+                BoxShadow(
+                  color: rankColor.withValues(alpha: 0.22),
+                  blurRadius: 10,
+                ),
+              ]
             : null,
       ),
       child: Row(
@@ -325,7 +340,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               style: TextStyle(
                 color: rankColor,
                 fontWeight: FontWeight.w900,
-                fontSize: 15,
+                fontSize: top ? 19 : 15,
+                shadows: top
+                    ? [
+                        Shadow(
+                          color: rankColor.withValues(alpha: 0.6),
+                          blurRadius: 8,
+                        ),
+                      ]
+                    : null,
               ),
             ),
           ),
@@ -333,7 +356,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // 리그 뱃지는 **트로피 랭킹에서만** 의미가 있다 — 레벨/진행도 줄에
           // 붙이면 그 유저의 결투 등급인 것처럼 읽힌다.
           if (_kind == RankingKind.trophies) ...[
-            leagueIcon(league.id),
+            leagueIcon(league.id, size: top ? 24 : 16),
             const SizedBox(width: 8),
           ],
           Expanded(
@@ -347,8 +370,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white,
-                fontWeight: e.isMe ? FontWeight.w900 : FontWeight.w600,
-                fontSize: 13.5,
+                fontWeight: (e.isMe || top) ? FontWeight.w900 : FontWeight.w600,
+                fontSize: top ? 15 : 13.5,
               ),
             ),
           ),

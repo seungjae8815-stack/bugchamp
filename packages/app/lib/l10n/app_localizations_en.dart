@@ -2506,9 +2506,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get elementWheelTitle => 'Elemental Chart';
 
   @override
-  String get elementWheelRestrain => 'Overcomes — 1.5x damage toward the arrow';
+  String get elementWheelRestrain =>
+      'Overcome — 1.5x damage when you hit whoever the red arrow points at';
 
   @override
   String get elementWheelGenerate =>
-      'Generates — +10% team multiplier when the front slot feeds the next';
+      'Generate — +10% team attack and healing when the slot right before points at you with a green arrow';
+
+  @override
+  String get traitNoneBadge => 'No trait';
+
+  @override
+  String get elementWheelHint =>
+      'Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.';
 }

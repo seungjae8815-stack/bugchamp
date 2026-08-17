@@ -1429,6 +1429,8 @@
   "forgeFilterHint": "Only results with at least one checked stat are kept.",
   "forgeFiltered": "Discarded — no matching stat",
   "elementWheelTitle": "Elemental Chart",
-  "elementWheelRestrain": "Overcomes — 1.5x damage toward the arrow",
-  "elementWheelGenerate": "Generates — +10% team multiplier when the front slot feeds the next"
+  "elementWheelRestrain": "Overcome — 1.5x damage when you hit whoever the red arrow points at",
+  "elementWheelGenerate": "Generate — +10% team attack and healing when the slot right before points at you with a green arrow",
+  "traitNoneBadge": "No trait",
+  "elementWheelHint": "Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%."
 }

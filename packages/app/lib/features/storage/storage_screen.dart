@@ -2060,10 +2060,23 @@ class StorageScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            // 티어(별)
+            // 티어(별) + 성별.
+            //
+            // 성별은 **짝짓기의 전제 조건**인데(§2.5 같은 종 ♂+♀) 그리드에
+            // 안 보여서, 짝을 지으려면 칸을 하나씩 열어 봐야 했다. 알·유충은
+            // 아직 성별이 정해져 봐야 쓸 데가 없으므로 성충에만 붙인다.
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: _stars(bug.potential, 8.5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (stage == LifeStage.adult) ...[
+                    sexArt(bug.sex, size: 10),
+                    const SizedBox(width: 3),
+                  ],
+                  _stars(bug.potential, 8.5),
+                ],
+              ),
             ),
           ],
         ),
@@ -2549,10 +2562,11 @@ class StorageScreen extends ConsumerWidget {
                             // 혈통 특성(§2.5) — 짝짓기 자식만 가진다.
                             // 야생 개체와 구분되는 유일한 표식이라 이름 바로
                             // 아래, 포텐셜과 같은 줄 높이에 둔다.
-                            if (!bug.trait.isNone) ...[
-                              const SizedBox(height: 4),
-                              _traitBadge(l, bug.trait),
-                            ],
+                            // 특성이 없어도 **줄을 남긴다.** 아무것도 안 뜨면
+                            // "이 곤충은 특성이 없다"인지 "화면이 빠뜨렸다"인지
+                            // 구분이 안 된다 — 없다는 것도 정보다.
+                            const SizedBox(height: 4),
+                            _traitBadge(l, bug.trait),
                           ],
                         ),
                       ),
@@ -2776,6 +2790,24 @@ class StorageScreen extends ConsumerWidget {
 
   /// 혈통 특성 배지. 색으로 계열(공격/방어/양쪽)이 먼저 읽히게 한다.
   Widget _traitBadge(AppLocalizations l, BugTrait t) {
+    if (t.isNone) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0x22FFFFFF),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0x33FFFFFF)),
+        ),
+        child: Text(
+          l.traitNoneBadge,
+          style: const TextStyle(
+            color: Color(0x99FFFFFF),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
     final c = traitColor(t);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),

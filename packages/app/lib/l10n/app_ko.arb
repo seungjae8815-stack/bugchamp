@@ -776,6 +776,8 @@
   "forgeFilterHint": "체크한 능력치가 하나라도 붙은 것만 모루에 쌓입니다.",
   "forgeFiltered": "필터에 안 맞아 버렸습니다",
   "elementWheelTitle": "오행 상성",
-  "elementWheelRestrain": "상극(克) — 화살표 쪽에 데미지 1.5배",
-  "elementWheelGenerate": "상생(生) — 편성에서 앞이 뒤를 生하면 팀 배율 +10%"
+  "elementWheelRestrain": "상극 — 빨간 화살표가 가리키는 상대를 때리면 데미지 1.5배",
+  "elementWheelGenerate": "상생 — 편성에서 바로 앞자리가 초록 화살표로 나를 가리키면 팀 전체 공격·회복 +10%",
+  "traitNoneBadge": "특성 없음",
+  "elementWheelHint": "편성은 초록 화살표를 따라가게 짜세요. 예) 목 → 화 → 토 로 세우면 연결 2개라 +20%."
 }

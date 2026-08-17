@@ -4549,14 +4549,26 @@ abstract class AppLocalizations {
   /// No description provided for @elementWheelRestrain.
   ///
   /// In en, this message translates to:
-  /// **'Overcomes — 1.5x damage toward the arrow'**
+  /// **'Overcome — 1.5x damage when you hit whoever the red arrow points at'**
   String get elementWheelRestrain;
 
   /// No description provided for @elementWheelGenerate.
   ///
   /// In en, this message translates to:
-  /// **'Generates — +10% team multiplier when the front slot feeds the next'**
+  /// **'Generate — +10% team attack and healing when the slot right before points at you with a green arrow'**
   String get elementWheelGenerate;
+
+  /// No description provided for @traitNoneBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'No trait'**
+  String get traitNoneBadge;
+
+  /// No description provided for @elementWheelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.'**
+  String get elementWheelHint;
 }
 
 class _AppLocalizationsDelegate
