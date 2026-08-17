@@ -627,6 +627,76 @@ Future<void> main() async {
         );
       }
 
+      // 앱이 실제로 쓰는 경로는 **세션형**이다(start → pick). 카드가 실서버에서
+      // 제시되고, 고른 카드가 다음 웨이브로 이어지는지 끝까지 확인한다.
+      final sAuth = await freshUserWithBugs();
+      if (sAuth != null) {
+        final st2 = await post('/event/start', {
+          'teamIds': ['v-1', 'v-2', 'v-3'],
+        }, sAuth);
+        check(
+          '/event/start 200',
+          st2.statusCode == 200,
+          'HTTP ${st2.statusCode} ${st2.body}',
+        );
+        if (st2.statusCode == 200) {
+          var body = jsonDecode(st2.body) as Map<String, dynamic>;
+          check('세션 id 발급', body['sessionId'] != null);
+          check('1웨이브만 치른다', body['wave'] == 1, '${body['wave']}');
+          final sid = '${body['sessionId']}';
+
+          // 제시되지 않은 카드는 거부해야 한다(치트 차단).
+          final bad = await post('/event/pick', {
+            'sessionId': sid,
+            'cardId': 'no_such_card',
+          }, sAuth);
+          check(
+            '제시 안 된 카드는 거부',
+            bad.statusCode != 200 && bad.body.contains('bad_card'),
+            'HTTP ${bad.statusCode} ${bad.body}',
+          );
+
+          // 카드를 고르며 판이 끝날 때까지 진행.
+          var picks = 0;
+          while (body['done'] != true && picks < 40) {
+            final cards = (body['cards'] as List?) ?? const [];
+            if (cards.isEmpty) break;
+            final cid = '${(cards.first as Map)['id']}';
+            final pk = await post('/event/pick', {
+              'sessionId': sid,
+              'cardId': cid,
+            }, sAuth);
+            if (pk.statusCode != 200) {
+              check('카드 선택 200', false, 'HTTP ${pk.statusCode} ${pk.body}');
+              break;
+            }
+            body = jsonDecode(pk.body) as Map<String, dynamic>;
+            picks++;
+          }
+          check('카드를 고르며 웨이브가 이어진다', picks > 0, '$picks 회');
+          check('판이 끝나면 done', body['done'] == true, '${body['done']}');
+          check(
+            '끝나면 점수가 확정된다',
+            (body['score'] as num? ?? 0) > 0,
+            '${body['score']}',
+          );
+
+          // 남의 세션은 진행할 수 없다.
+          final other = await freshUserWithBugs();
+          if (other != null) {
+            final steal = await post('/event/pick', {
+              'sessionId': sid,
+              'cardId': 'heal_s',
+            }, other);
+            check(
+              '남의 세션은 진행 불가(403)',
+              steal.statusCode == 403,
+              'HTTP ${steal.statusCode}',
+            );
+          }
+        }
+      }
+
       // 순위 조회 — Supabase 에 event_scores/RPC 가 없으면 여기서 드러난다.
       final lb = await get('/event/leaderboard', eAuth);
       check(
