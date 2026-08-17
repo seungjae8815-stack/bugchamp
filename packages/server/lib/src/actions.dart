@@ -1594,7 +1594,17 @@ class GameActions {
   // 앱은 그 seed 로 같은 판을 **재생만** 한다(core_battle 결정론 §2.3).
 
   /// 지금 시각이 속한 회차 키.
-  String eventRoundId() => EventConfig.roundIdOf(now().toUtc());
+  String eventRoundId() {
+    final cfg = config.event;
+    final t = now().toUtc();
+    return cfg == null ? EventConfig.roundIdOf(t) : cfg.roundIdAt(t);
+  }
+
+  /// 지금 대회가 열려 있는가(기간 밖이면 도전·기록을 받지 않는다).
+  bool get eventOpen {
+    final cfg = config.event;
+    return cfg != null && cfg.isOpen(now().toUtc());
+  }
 
   /// 참가권 일일 지급 경계(KST 09:00). 시즌·이벤트가 같은 앵커를 쓴다 —
   /// 기기 타임존을 바꿔 하루에 두 번 받는 우회를 막으려면 고정 오프셋이어야 한다.
@@ -1748,6 +1758,9 @@ class GameActions {
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
     final t = now().toUtc();
+    // 기간 밖이면 시작할 수 없다 — 진행 중이던 판은 끝까지 갈 수 있게 둔다
+    // (마지막 순간에 시작한 유저의 판을 중간에 끊으면 참가권만 날아간다).
+    if (!cfg.isOpen(t)) return const ActionResult.fail('event_closed');
 
     if (teamIds.length != 3 || teamIds.toSet().length != 3) {
       return const ActionResult.fail('bad_team');
@@ -1772,7 +1785,7 @@ class GameActions {
     final built = _eventUnits(save, teamIds, speciesById, cfg, buffs);
     if (built.error != null) return ActionResult.fail(built.error!);
 
-    final roundId = EventConfig.roundIdOf(t);
+    final roundId = cfg.roundIdAt(t);
     final seed = EventConfig.roundSeedOf(roundId);
     final w = _runOneWave(cfg, seed, 1, built.units, null);
 
@@ -2053,7 +2066,7 @@ class GameActions {
       );
     }
 
-    final roundId = EventConfig.roundIdOf(t);
+    final roundId = cfg.roundIdAt(t);
     final seed = EventConfig.roundSeedOf(roundId);
     final spec = WaveEnemySpec(
       baseHp: cfg.enemyBaseHp,

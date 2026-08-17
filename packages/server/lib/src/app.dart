@@ -574,7 +574,10 @@ Handler buildHandler({
     authed.get('/event', (Request req) async {
       final user = userOf(req);
       final ev = cfg.event;
-      if (ev == null) return _json({'error': 'event_closed'}, status: 404);
+      // 기간 밖이면 닫힌 것으로 본다 — 앱은 이 응답을 보고 배너·화면을 감춘다.
+      if (ev == null || !actions.eventOpen) {
+        return _json({'error': 'event_closed'}, status: 404);
+      }
       try {
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
@@ -589,6 +592,8 @@ Handler buildHandler({
           'bestScore': save.eventBestScoreIn(roundId),
           // 익명 계정은 도전은 되지만 **순위에 오르지 않는다**(다계정이 무료·무제한).
           'rankEligible': !user.isAnonymous,
+          if (ev.startsAt != null) 'startsAt': ev.startsAt!.toIso8601String(),
+          if (ev.endsAt != null) 'endsAt': ev.endsAt!.toIso8601String(),
         });
       } on StateStoreException catch (e) {
         stderr.writeln('[event] ${user.id}: $e');

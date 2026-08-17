@@ -179,4 +179,25 @@ void main() {
     );
     expect(again.error, 'session_done');
   });
+
+  test('회차 기간 밖에서는 시작할 수 없다', () {
+    // 종료 직후 — 기간이 명시돼 있으면 서버가 닫는다.
+    final after = GameActions(
+      config: cfg,
+      now: () => ev.endsAt!.add(const Duration(minutes: 1)),
+    );
+    final r = after.eventStart(
+      seed(),
+      teamIds: ['a', 'b', 'c'],
+      speciesById: species,
+    );
+    expect(r.error, 'event_closed');
+  });
+
+  test('회차 키는 시작일로 고정된다 — 지난 회차 기록과 섞이지 않는다', () {
+    final a = ev.roundIdAt(ev.startsAt!);
+    final b = ev.roundIdAt(ev.startsAt!.add(const Duration(days: 10)));
+    expect(a, b, reason: '같은 회차 안에서는 키가 같아야 한다');
+    expect(a, contains('0817'));
+  });
 }

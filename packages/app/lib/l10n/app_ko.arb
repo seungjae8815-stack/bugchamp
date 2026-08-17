@@ -267,6 +267,8 @@
   "cardReviveDesc": "쓰러진 곤충 하나를 절반 체력으로 되살려요",
   "cardSkip": "우회로",
   "cardSkipDesc": "다음 웨이브를 싸우지 않고 통과해요",
+  "eventFlyerPeriod": "{start} ~ {end}",
+  "eventPeriodLabel": "대회 기간",
   "eventFlyerHeadline": "가장 멀리 간 곤충 조련사를 찾습니다",
   "eventFlyerPrize": "1등에게 진짜 곤충을 보내드려요",
   "eventFlyerPrizeNote": "국내 배송 · 판매처에서 직접 발송",

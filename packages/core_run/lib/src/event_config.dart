@@ -72,6 +72,8 @@ class EventConfig {
     this.roundDays = 14,
     this.anchorWeekday = DateTime.monday,
     this.anchorHourKst = 9,
+    this.startsAt,
+    this.endsAt,
     this.ticketMax = 5,
     this.ticketDailyGrant = 3,
     this.ticketAdGrant = 1,
@@ -104,6 +106,33 @@ class EventConfig {
   final int roundDays;
   final int anchorWeekday;
   final int anchorHourKst;
+
+  /// 이번 회차의 시작·종료(UTC). 둘 다 없으면 **상시 진행**(구버전 동작).
+  ///
+  /// 회차를 명시하는 이유: 실물 경품 대회는 "언제부터 언제까지"가 규칙의 일부다.
+  /// 다음 회차를 열 때 이 두 값만 바꾸면 `roundId` 가 함께 바뀌므로, 지난 회차의
+  /// 기록·순위와 섞이지 않는다.
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+
+  /// [utc] 시점에 대회가 열려 있는가.
+  bool isOpen(DateTime utc) {
+    final t = utc.toUtc();
+    if (startsAt != null && t.isBefore(startsAt!)) return false;
+    if (endsAt != null && !t.isBefore(endsAt!)) return false;
+    return true;
+  }
+
+  /// 회차 키. 기간이 명시돼 있으면 **시작일(KST)** 로 고정한다 —
+  /// 주차 계산과 달리 회차 경계가 사람이 정한 날짜와 정확히 일치한다.
+  String roundIdAt(DateTime utc) {
+    final s = startsAt;
+    if (s == null) return roundIdOf(utc);
+    final kst = s.toUtc().add(const Duration(hours: 9));
+    final mm = kst.month.toString().padLeft(2, '0');
+    final dd = kst.day.toString().padLeft(2, '0');
+    return '${kst.year}-$mm$dd';
+  }
 
   /// 참가권. ❌ 젤리로 사지 못한다(사행성·P2W — `event.json` 주석 참조).
   final int ticketMax;
@@ -235,6 +264,12 @@ class EventConfig {
       roundDays: (round['days'] as num?)?.toInt() ?? 14,
       anchorWeekday: (round['anchorWeekday'] as num?)?.toInt() ?? 1,
       anchorHourKst: (round['anchorHourKst'] as num?)?.toInt() ?? 9,
+      startsAt: round['startsAt'] == null
+          ? null
+          : DateTime.parse(round['startsAt'] as String).toUtc(),
+      endsAt: round['endsAt'] == null
+          ? null
+          : DateTime.parse(round['endsAt'] as String).toUtc(),
       ticketMax: (tickets['max'] as num?)?.toInt() ?? 5,
       ticketDailyGrant: (tickets['dailyGrant'] as num?)?.toInt() ?? 3,
       ticketAdGrant: (tickets['adGrant'] as num?)?.toInt() ?? 1,

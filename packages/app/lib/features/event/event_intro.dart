@@ -1,5 +1,8 @@
+import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 
@@ -14,11 +17,21 @@ const _paper = Color(0xFF1B2A11);
 /// 다르므로(스탯 평준화·출전 피로) 그게 곧 문의가 된다.
 ///
 /// 배경 그림(`ui/event/flyer_bg.webp`)이 들어오면 자동으로 깔린다.
-class EventIntroScreen extends StatelessWidget {
+class EventIntroScreen extends ConsumerWidget {
   const EventIntroScreen({super.key});
 
+  /// 'M월 d일' — 회차 기간 표시용. 연도는 넣지 않는다(같은 해 안에서 도는 대회다).
+  static String _kstDate(AppLocalizations l, DateTime utc, String locale) {
+    final k = utc.toUtc().add(const Duration(hours: 9));
+    return switch (locale) {
+      'ko' => '${k.month}월 ${k.day}일',
+      'ja' => '${k.month}月${k.day}日',
+      _ => '${k.month}/${k.day}',
+    };
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFF0C1408),
@@ -32,7 +45,11 @@ class EventIntroScreen extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
-                child: _flyer(context, l),
+                child: _flyer(
+                  context,
+                  l,
+                  ref.watch(gameDataProvider).asData?.value.eventConfig,
+                ),
               ),
             ),
             Padding(
@@ -62,7 +79,11 @@ class EventIntroScreen extends StatelessWidget {
     );
   }
 
-  Widget _flyer(BuildContext context, AppLocalizations l) => Container(
+  Widget _flyer(
+    BuildContext context,
+    AppLocalizations l,
+    EventConfig? cfg,
+  ) => Container(
     decoration: BoxDecoration(
       color: _paper,
       borderRadius: BorderRadius.circular(16),
@@ -105,6 +126,41 @@ class EventIntroScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
+              if (cfg?.startsAt != null && cfg?.endsAt != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _honey.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _honey.withValues(alpha: 0.7)),
+                  ),
+                  child: Text(
+                    // 종료는 **자정 직전**까지다. endsAt 은 다음 날 00:00 이므로
+                    // 하루를 빼서 보여줘야 "30일까지"로 읽힌다.
+                    l.eventFlyerPeriod(
+                      _kstDate(
+                        l,
+                        cfg!.startsAt!,
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                      _kstDate(
+                        l,
+                        cfg.endsAt!.subtract(const Duration(minutes: 1)),
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                    ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(
                 l.eventFlyerHeadline,
                 textAlign: TextAlign.center,

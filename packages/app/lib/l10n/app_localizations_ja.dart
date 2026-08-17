@@ -874,6 +874,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cardSkipDesc => '次のウェーブを戦わずに通過します';
 
   @override
+  String eventFlyerPeriod(Object end, Object start) {
+    return '$start ~ $end';
+  }
+
+  @override
+  String get eventPeriodLabel => '大会期間';
+
+  @override
   String get eventFlyerHeadline => '最も遠くまで進む虫使いを探しています';
 
   @override

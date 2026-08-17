@@ -1660,6 +1660,18 @@ abstract class AppLocalizations {
   /// **'Skip the next wave without fighting'**
   String get cardSkipDesc;
 
+  /// No description provided for @eventFlyerPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} – {end}'**
+  String eventFlyerPeriod(Object end, Object start);
+
+  /// No description provided for @eventPeriodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Event period'**
+  String get eventPeriodLabel;
+
   /// No description provided for @eventFlyerHeadline.
   ///
   /// In en, this message translates to:

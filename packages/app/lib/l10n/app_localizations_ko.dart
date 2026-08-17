@@ -875,6 +875,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cardSkipDesc => '다음 웨이브를 싸우지 않고 통과해요';
 
   @override
+  String eventFlyerPeriod(Object end, Object start) {
+    return '$start ~ $end';
+  }
+
+  @override
+  String get eventPeriodLabel => '대회 기간';
+
+  @override
   String get eventFlyerHeadline => '가장 멀리 간 곤충 조련사를 찾습니다';
 
   @override

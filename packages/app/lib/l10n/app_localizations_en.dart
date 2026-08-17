@@ -890,6 +890,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cardSkipDesc => 'Skip the next wave without fighting';
 
   @override
+  String eventFlyerPeriod(Object end, Object start) {
+    return '$start – $end';
+  }
+
+  @override
+  String get eventPeriodLabel => 'Event period';
+
+  @override
   String get eventFlyerHeadline =>
       'Looking for the bug handler who goes furthest';
 

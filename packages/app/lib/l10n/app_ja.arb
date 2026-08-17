@@ -260,6 +260,8 @@
   "cardReviveDesc": "倒れた虫1匹を半分の体力で復活させます",
   "cardSkip": "迂回路",
   "cardSkipDesc": "次のウェーブを戦わずに通過します",
+  "eventFlyerPeriod": "{start} ~ {end}",
+  "eventPeriodLabel": "大会期間",
   "eventFlyerHeadline": "最も遠くまで進む虫使いを探しています",
   "eventFlyerPrize": "1位には本物の昆虫をお届けします",
   "eventFlyerPrizeNote": "韓国国内配送・販売店から直接発送",

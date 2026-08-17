@@ -527,6 +527,8 @@
   "cardReviveDesc": "Revive one fallen bug at half HP",
   "cardSkip": "Detour",
   "cardSkipDesc": "Skip the next wave without fighting",
+  "eventFlyerPeriod": "{start} – {end}",
+  "eventPeriodLabel": "Event period",
   "eventFlyerHeadline": "Looking for the bug handler who goes furthest",
   "eventFlyerPrize": "1st place gets a real live beetle",
   "eventFlyerPrizeNote": "Ships within Korea, sent directly by the seller",
