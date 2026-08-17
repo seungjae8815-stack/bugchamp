@@ -400,52 +400,65 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                         widget.arenaTheme ? arenaThemeFilter : null,
                       ),
                     ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _dispA < widget.myTeam.length
-                              ? ArenaFighter(
-                                  data: widget.data,
-                                  bug: widget.myTeam[_dispA],
-                                  speciesId: widget
-                                      .speciesOf[widget.myTeam[_dispA].id],
-                                  hpFrac:
-                                      (_hpA[_dispA] /
-                                              widget.myTeam[_dispA].maxHp)
-                                          .clamp(0.0, 1.0),
-                                  flip: false,
-                                  stance: reveal ? ev?.aStance : null,
-                                  flash: _flashL,
-                                  dx: lungeL,
-                                  skin: widget.skinOf(
-                                    widget.speciesOf[widget
-                                            .myTeam[_dispA]
-                                            .id] ??
-                                        '',
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                        Expanded(
-                          child: _dispB < widget.foeTeam.length
-                              ? ArenaFighter(
-                                  data: widget.data,
-                                  bug: widget.foeTeam[_dispB],
-                                  speciesId: widget
-                                      .speciesOf[widget.foeTeam[_dispB].id],
-                                  hpFrac:
-                                      (_hpB[_dispB] /
-                                              widget.foeTeam[_dispB].maxHp)
-                                          .clamp(0.0, 1.0),
-                                  flip: true,
-                                  stance: reveal ? ev?.bStance : null,
-                                  stanceHidden: !reveal,
-                                  flash: _flashR,
-                                  dx: -lungeR,
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
+                    // 대각 구도 — 오토 아레나와 **같은 배치**여야 한다.
+                    // 수동만 다르게 두면 같은 전투가 두 얼굴이 된다.
+                    Align(
+                      alignment: const Alignment(0.62, -0.30),
+                      child: _dispB < widget.foeTeam.length
+                          ? ArenaBody(
+                              data: widget.data,
+                              bug: widget.foeTeam[_dispB],
+                              speciesId:
+                                  widget.speciesOf[widget.foeTeam[_dispB].id],
+                              flip: true,
+                              stance: reveal ? ev?.bStance : null,
+                              stanceHidden: !reveal,
+                              flash: _flashR,
+                              dx: -lungeR,
+                              size: 82,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Align(
+                      alignment: const Alignment(-0.60, 0.86),
+                      child: _dispA < widget.myTeam.length
+                          ? ArenaBody(
+                              data: widget.data,
+                              bug: widget.myTeam[_dispA],
+                              speciesId:
+                                  widget.speciesOf[widget.myTeam[_dispA].id],
+                              flip: false,
+                              stance: reveal ? ev?.aStance : null,
+                              flash: _flashL,
+                              dx: lungeL,
+                              size: 116,
+                              skin: widget.skinOf(
+                                widget.speciesOf[widget.myTeam[_dispA].id] ??
+                                    '',
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Align(
+                      alignment: const Alignment(-0.94, -0.86),
+                      child: _dispB < widget.foeTeam.length
+                          ? ArenaPlate(
+                              bug: widget.foeTeam[_dispB],
+                              hpFrac:
+                                  _hpB[_dispB] / widget.foeTeam[_dispB].maxHp,
+                              compact: true,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Align(
+                      alignment: const Alignment(0.94, 0.92),
+                      child: _dispA < widget.myTeam.length
+                          ? ArenaPlate(
+                              bug: widget.myTeam[_dispA],
+                              hpFrac:
+                                  _hpA[_dispA] / widget.myTeam[_dispA].maxHp,
+                            )
+                          : const SizedBox.shrink(),
                     ),
                     // 라운드 판정 배너(심리전 결과)
                     if (resolving && ev != null)

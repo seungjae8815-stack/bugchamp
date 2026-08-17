@@ -20,6 +20,7 @@ import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import 'arena_widgets.dart';
 import '../../ui/skins.dart';
 import 'battle_arena.dart';
 import 'manual_battle_screen.dart';
@@ -846,27 +847,43 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       appBar: AppBar(
         title: Text(l.battleTitle),
         actions: [
+          // 이모지는 기기 폰트마다 모양이 달라 앱바처럼 작은 자리에서 안 읽힌다.
           Center(
-            child: Text(
-              '⚔️ ${ref.read(saveControllerProvider.notifier).ticketsNow}'
-              '/${battleCfg.ticketMax}',
-              style: const TextStyle(
-                color: Color(0xFFBFE3A6),
-                fontWeight: FontWeight.w900,
-                fontSize: 13.5,
-              ),
+            child: Row(
+              children: [
+                stanceArt(Stance.attack, size: 15),
+                const SizedBox(width: 4),
+                Text(
+                  '${ref.read(saveControllerProvider.notifier).ticketsNow}'
+                  '/${battleCfg.ticketMax}',
+                  style: const TextStyle(
+                    color: Color(0xFFBFE3A6),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Center(
-              child: Text(
-                '🏆 ${save.pvpTrophies}',
-                style: const TextStyle(
-                  color: _honey,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                ),
+              child: Row(
+                children: [
+                  leagueIcon(
+                    battleCfg.leagueFor(save.pvpTrophies).id,
+                    size: 17,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${save.pvpTrophies}',
+                    style: const TextStyle(
+                      color: _honey,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -886,6 +903,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           : SingleChildScrollView(
               child: Column(
                 children: [
+                  // **무대가 먼저 온다.** 예전엔 리그·티켓·설정 카드가 줄줄이
+                  // 먼저 나오고 상대는 한참 아래에 있어서, 결투 탭이 전투가
+                  // 아니라 설정 화면처럼 읽혔다(실기: "끌리는 게 없다").
+                  _matchupBanner(l, data, battleCfg, save, locale),
                   const SizedBox(height: 10),
                   _leagueStrip(l, battleCfg, save, now),
                   const SizedBox(height: 8),
@@ -960,13 +981,245 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  _battleControls(l, data, save, locale, canBattle),
+                  _modeToggle(l),
+                  // 결투 버튼은 하단 고정이라 여기선 자리만 비운다.
                   const SizedBox(height: 20),
                 ],
               ),
             ),
+      // 결투 버튼은 **항상 보인다.** 스크롤 끝에 있으면 상대를 고른 뒤 또
+      // 내려야 해서, 정작 이 화면에서 제일 중요한 행동이 화면 밖에 있었다.
+      bottomNavigationBar: adults.isEmpty
+          ? null
+          : _battleBar(l, data, save, locale, canBattle),
     );
   }
+
+  /// 매치업 무대 — 내 팀과 상대 팀이 **실제로 마주 선 그림**.
+  ///
+  /// 예전엔 팀 편성도 상대도 회색 카드 안의 목록이라, 누구와 싸우는지가
+  /// 정보로만 있고 장면으로는 없었다.
+  Widget _matchupBanner(
+    AppLocalizations l,
+    GameData data,
+    BattleConfig cfg,
+    SaveGame save,
+    String locale,
+  ) {
+    final scout = (_scouts.isNotEmpty && _selectedScout < _scouts.length)
+        ? _scouts[_selectedScout]
+        : null;
+    final mine = [
+      for (final id in _team.whereType<String>())
+        save.bugs.cast<IndividualBug?>().firstWhere(
+          (b) => b!.id == id,
+          orElse: () => null,
+        ),
+    ].whereType<IndividualBug>().toList();
+    return Container(
+      height: 168,
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _honey.withValues(alpha: 0.45)),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: scout == null
+                ? const ColoredBox(color: Color(0xFF1E3B28))
+                : biomeBackground(
+                    scout.location,
+                    fallback: const ColoredBox(color: Color(0xFF1E3B28)),
+                  ),
+          ),
+          // 그림 위에 글자가 얹히므로 어둡게 깔아 준다.
+          const Positioned.fill(child: ColoredBox(color: Color(0x66000000))),
+          // 내 팀 — 왼쪽 아래(아레나와 같은 구도).
+          Positioned(
+            left: 10,
+            bottom: 8,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (final b in mine.take(3))
+                  Padding(
+                    padding: const EdgeInsets.only(right: 2),
+                    child: bugStageImage(
+                      b.speciesId,
+                      LifeStage.adult,
+                      size: 52,
+                      fallback: const SizedBox(width: 52, height: 52),
+                      skin: ref.read(skinOfProvider)(b.speciesId),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // 상대 팀 — 오른쪽 위, 작게. 좌우 반전해 서로 마주 본다.
+          if (scout != null)
+            Positioned(
+              right: 10,
+              top: 26,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (final e in scout.team.take(3))
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2),
+                      child: Transform.flip(
+                        flipX: true,
+                        child: bugStageImage(
+                          e.speciesId,
+                          LifeStage.adult,
+                          size: 38,
+                          fallback: const SizedBox(width: 38, height: 38),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          // 내 전투력(왼쪽 위) / 상대(오른쪽 아래) — 비교가 이 화면의 핵심이다.
+          Positioned(
+            left: 10,
+            top: 8,
+            child: _powerTag(
+              l.teamPower(formatCompact(_myTeamPowerSum(data, save, locale))),
+              const Color(0xFF7CE38B),
+            ),
+          ),
+          if (scout != null)
+            Positioned(
+              right: 10,
+              bottom: 8,
+              child: Row(
+                children: [
+                  if (scout.ownerName != null) ...[
+                    Text(
+                      _maskName(scout.ownerName!),
+                      style: const TextStyle(
+                        color: Color(0xCCE9D9A6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                  ],
+                  _powerTag(
+                    formatCompact(
+                      scout.team.fold<double>(0, (a, e) => a + _power(e.bug)),
+                    ),
+                    const Color(0xFFFF8A6B),
+                  ),
+                ],
+              ),
+            ),
+          Center(
+            child: Text(
+              'VS',
+              style: const TextStyle(
+                color: arenaHoney,
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+                shadows: [
+                  Shadow(color: Colors.black, blurRadius: 8),
+                  Shadow(color: Color(0x99EBA52F), blurRadius: 18),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _powerTag(String text, Color c) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+    decoration: BoxDecoration(
+      color: const Color(0xB30E1408),
+      borderRadius: BorderRadius.circular(7),
+      border: Border.all(color: c.withValues(alpha: 0.7)),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w900),
+    ),
+  );
+
+  /// 오토/수동 전환만 남긴 줄(버튼은 하단 고정으로 갔다).
+  Widget _modeToggle(AppLocalizations l) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 24),
+    child: Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x33FFFFFF)),
+      ),
+      child: Row(
+        children: [
+          _modeTab(
+            l.modeManual,
+            Icons.psychology_rounded,
+            _manual,
+            () => setState(() => _manual = true),
+          ),
+          _modeTab(
+            l.modeAuto,
+            Icons.fast_forward_rounded,
+            !_manual,
+            () => setState(() => _manual = false),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  /// 하단 고정 결투 바.
+  Widget _battleBar(
+    AppLocalizations l,
+    GameData data,
+    SaveGame save,
+    String locale,
+    bool canBattle,
+  ) => SafeArea(
+    top: false,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      child: SizedBox(
+        height: 56,
+        child: FilledButton.icon(
+          onPressed: canBattle
+              ? () {
+                  final scout = _scouts[_selectedScout];
+                  if (_manual) {
+                    _battleManual(data, save, locale, scout);
+                  } else {
+                    _battle(data, save, locale, scout);
+                  }
+                }
+              : null,
+          icon: const Icon(Icons.sports_mma_rounded),
+          label: Text(
+            l.battleStart,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: _manual
+                ? const Color(0xFFC1502E)
+                : const Color(0xFF3E7D4F),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 
   /// 다른 유저 닉네임 표시용 — 부적절한 이름은 중립 이름으로 대체.
   /// 이미 서버에 등록된 이름은 되돌릴 수 없으므로 보여줄 때 가린다.
@@ -1357,79 +1610,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   /// 수동/자동 토글 + 큰 전투 시작 버튼.
-  Widget _battleControls(
-    AppLocalizations l,
-    GameData data,
-    SaveGame save,
-    String locale,
-    bool canBattle,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: const Color(0x22000000),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x33FFFFFF)),
-            ),
-            child: Row(
-              children: [
-                _modeTab(
-                  l.modeManual,
-                  Icons.psychology_rounded,
-                  _manual,
-                  () => setState(() => _manual = true),
-                ),
-                _modeTab(
-                  l.modeAuto,
-                  Icons.fast_forward_rounded,
-                  !_manual,
-                  () => setState(() => _manual = false),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: FilledButton.icon(
-              onPressed: canBattle
-                  ? () {
-                      final scout = _scouts[_selectedScout];
-                      if (_manual) {
-                        _battleManual(data, save, locale, scout);
-                      } else {
-                        _battle(data, save, locale, scout);
-                      }
-                    }
-                  : null,
-              icon: const Icon(Icons.sports_mma_rounded),
-              label: Text(
-                l.battleStart,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: _manual
-                    ? const Color(0xFFC1502E)
-                    : const Color(0xFF3E7D4F),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _teamSlot(GameData data, SaveGame save, String locale, int index) {
     final id = _team[index];
     final bug = id == null

@@ -76,6 +76,19 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
   bool _resultShown = false;
   double _endWait = 0;
 
+  /// 시작 인트로 진행도(0→1). 끝나기 전엔 라운드가 진행되지 않는다.
+  double _introT = 0;
+
+  /// 히트스톱 남은 시간(초). **맞는 순간 화면을 잠깐 멈춘다** — 이게 없으면
+  /// 아무리 세게 때려도 타격이 그냥 지나간다(격투 게임의 기본 문법).
+  double _hitStop = 0;
+
+  /// 이번 라운드에 쓰러지는 쪽. 넘어가는 연출이 끝난 뒤 교체된다.
+  bool _downL = false, _downR = false;
+
+  /// 승패 배너 진행도(0→1).
+  double _bannerT = 0;
+
   List<BattleEvent> get _events => widget.result.events;
 
   @override
@@ -108,6 +121,8 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     final dmgA = ev.dmgToA, dmgB = ev.dmgToB, hA = ev.healToA, hB = ev.healToB;
     _strikeL = dmgB >= 1;
     _strikeR = dmgA >= 1;
+    _downL = ev.aDown;
+    _downR = ev.bDown;
     if (dmgA >= 1) {
       _floats.add(FloatText('-${dmgA.round()}', const Color(0xFFFF6B6B), true));
       _flashL = 1;
@@ -139,6 +154,16 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
       _shake = 1;
       HapticFeedback.mediumImpact();
     }
+    // 쓰러지는 라운드는 **더 길게 멈춘다** — 한 마리가 끝나는 순간이 다른
+    // 라운드와 같은 속도로 지나가면 무엇이 끝났는지 안 읽힌다.
+    if (ev.aDown || ev.bDown) {
+      _hitStop = 0.34;
+      HapticFeedback.heavyImpact();
+    } else if (foeRestrained || selfRestrained) {
+      _hitStop = 0.13;
+    } else if (dmgA >= 1 || dmgB >= 1) {
+      _hitStop = 0.06;
+    }
   }
 
   double _lerp(double a, double b, double t) => a + (b - a) * t.clamp(0.0, 1.0);
@@ -148,6 +173,17 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     _last = elapsed;
     var dt = raw.clamp(0.0, 0.05) * _speed;
     if (dt <= 0) return;
+    // 인트로가 도는 동안은 전투를 멈춰 둔다 — VS 가 찍히기도 전에 첫 라운드가
+    // 지나가면 인트로를 넣은 의미가 없다.
+    if (_introT < 1) {
+      setState(() => _introT = math.min(1, _introT + dt / 1.15));
+      return;
+    }
+    // 히트스톱: 그림만 멈춘다(수명·감쇠도 같이 멈춰야 번쩍임이 유지된다).
+    if (_hitStop > 0) {
+      setState(() => _hitStop = math.max(0, _hitStop - raw.clamp(0.0, 0.05)));
+      return;
+    }
     setState(() {
       _flashL = math.max(0, _flashL - dt * 3);
       _flashR = math.max(0, _flashR - dt * 3);
@@ -181,7 +217,9 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
         }
       } else if (!_resultShown) {
         _endWait += dt;
-        if (_endWait > 0.5) {
+        _bannerT = math.min(1, _bannerT + dt * 2.2);
+        // 배너를 보여 준 뒤에 결과 시트를 연다 — 바로 열면 배너가 안 보인다.
+        if (_endWait > 1.5) {
           _resultShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) => _showResult());
         }
@@ -271,66 +309,94 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                   ],
                 ),
               ),
-              // 아레나
+              // 아레나 — 대각 구도(내 곤충 왼쪽 아래 크게 / 상대 오른쪽 위 작게).
               Expanded(
-                child: Stack(
-                  children: [
-                    // 전투 씬 배경 — 이 영역(상단)에만 깐다.
-                    Positioned.fill(
-                      child: withSkin(
-                        biomeBackground(
-                          widget.location,
-                          fallback: const SizedBox.shrink(),
-                        ),
-                        // 아레나 테마 스킨 보유 시 배경 색보정.
-                        widget.arenaTheme ? arenaThemeFilter : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: ArenaStage(
+                    background: withSkin(
+                      biomeBackground(
+                        widget.location,
+                        fallback: const ColoredBox(color: Color(0xFF1E3B28)),
                       ),
+                      // 아레나 테마 스킨 보유 시 배경 색보정.
+                      widget.arenaTheme ? arenaThemeFilter : null,
                     ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _a < widget.myTeam.length
-                              ? ArenaFighter(
-                                  data: widget.data,
-                                  bug: widget.myTeam[_a],
-                                  speciesId:
-                                      widget.speciesOf[widget.myTeam[_a].id],
-                                  hpFrac: (_hpA[_a] / widget.myTeam[_a].maxHp)
-                                      .clamp(0.0, 1.0),
-                                  flip: false,
-                                  stance: ev?.aStance,
-                                  flash: _flashL,
-                                  dx: lungeL,
-                                  skin: widget.skinOf(
-                                    widget.speciesOf[widget.myTeam[_a].id] ??
-                                        '',
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
+                    shake: 0,
+                    mineBody: _a < widget.myTeam.length
+                        ? ArenaBody(
+                            data: widget.data,
+                            bug: widget.myTeam[_a],
+                            speciesId: widget.speciesOf[widget.myTeam[_a].id],
+                            flip: false,
+                            stance: ev?.aStance,
+                            flash: _flashL,
+                            dx: lungeL,
+                            size: 116,
+                            down: _downL,
+                            skin: widget.skinOf(
+                              widget.speciesOf[widget.myTeam[_a].id] ?? '',
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                    foeBody: _b < widget.foeTeam.length
+                        ? ArenaBody(
+                            data: widget.data,
+                            bug: widget.foeTeam[_b],
+                            speciesId: widget.speciesOf[widget.foeTeam[_b].id],
+                            flip: true,
+                            stance: ev?.bStance,
+                            flash: _flashR,
+                            dx: -lungeR,
+                            size: 82,
+                            down: _downR,
+                          )
+                        : const SizedBox.shrink(),
+                    minePlate: _a < widget.myTeam.length
+                        ? ArenaPlate(
+                            bug: widget.myTeam[_a],
+                            hpFrac: _hpA[_a] / widget.myTeam[_a].maxHp,
+                          )
+                        : const SizedBox.shrink(),
+                    foePlate: _b < widget.foeTeam.length
+                        ? ArenaPlate(
+                            bug: widget.foeTeam[_b],
+                            hpFrac: _hpB[_b] / widget.foeTeam[_b].maxHp,
+                            compact: true,
+                          )
+                        : const SizedBox.shrink(),
+                    overlays: [
+                      // 오행 克 버스트
+                      for (final b in _bursts) ArenaBurst(fx: b),
+                      // 데미지/회복 숫자
+                      for (final f in _floats) ArenaFloat(f: f),
+                      if (_introT < 1)
+                        ArenaIntro(
+                          t: _introT,
+                          mineName: widget.myTeam.isEmpty
+                              ? ''
+                              : widget.myTeam.first.name,
+                          foeName: widget.foeTeam.isEmpty
+                              ? ''
+                              : widget.foeTeam.first.name,
                         ),
-                        Expanded(
-                          child: _b < widget.foeTeam.length
-                              ? ArenaFighter(
-                                  data: widget.data,
-                                  bug: widget.foeTeam[_b],
-                                  speciesId:
-                                      widget.speciesOf[widget.foeTeam[_b].id],
-                                  hpFrac: (_hpB[_b] / widget.foeTeam[_b].maxHp)
-                                      .clamp(0.0, 1.0),
-                                  flip: true,
-                                  stance: ev?.bStance,
-                                  flash: _flashR,
-                                  dx: -lungeR,
-                                )
-                              : const SizedBox.shrink(),
+                      if (_bannerT > 0)
+                        ArenaResultBanner(
+                          t: _bannerT,
+                          // teamA = 나. 엔진은 "누구의 팀"으로만 말한다.
+                          win: widget.result.outcome == BattleOutcome.teamA,
+                          text: switch (widget.result.outcome) {
+                            BattleOutcome.teamA => l.battleWin,
+                            BattleOutcome.teamB => l.battleLose,
+                            BattleOutcome.draw => l.battleDraw,
+                          },
+                          sub: widget.trophyDelta == 0
+                              ? null
+                              : '${widget.trophyDelta > 0 ? '+' : ''}'
+                                    '${widget.trophyDelta}',
                         ),
-                      ],
-                    ),
-                    // 오행 克 버스트
-                    for (final b in _bursts) ArenaBurst(fx: b),
-                    // 데미지/회복 숫자
-                    for (final f in _floats) ArenaFloat(f: f),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               // 하단: 상성 휠(표시 전용 — 현재 내 수 강조) + 속도 컨트롤

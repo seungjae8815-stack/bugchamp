@@ -80,6 +80,217 @@ class BurstFx {
   static const life = 0.45;
 }
 
+/// 파이터 **몸만** — 캐릭터 그림 + 타격 모션 + 스탠스 표시.
+///
+/// 이름·HP 바와 분리한 이유: 대각 구도([ArenaStage])에서는 몸과 이름표가
+/// **화면의 반대쪽 구석**에 놓인다(포켓몬식). 한 덩어리로 묶여 있으면 그 배치가
+/// 불가능하고, 몸 크기를 좌우 다르게 주는 것도 안 된다.
+class ArenaBody extends StatelessWidget {
+  const ArenaBody({
+    super.key,
+    required this.data,
+    required this.bug,
+    required this.speciesId,
+    required this.flip,
+    required this.stance,
+    required this.flash,
+    required this.dx,
+    this.size = 96,
+    this.stanceHidden = false,
+    this.skin,
+    this.down = false,
+  });
+
+  final GameData data;
+  final BattleBug bug;
+  final String? speciesId;
+  final bool flip;
+  final Stance? stance;
+  final double flash;
+  final double dx;
+  final double size;
+  final bool stanceHidden;
+  final ColorFilter? skin;
+
+  /// 쓰러지는 중. 넘어가며 사라진다 — KO 가 그냥 "다음 곤충으로 바뀜"이면
+  /// 무엇이 끝났는지 안 읽힌다.
+  final bool down;
+
+  @override
+  Widget build(BuildContext context) {
+    final sp = data.speciesById[speciesId ?? ''];
+    // 자세는 이미 들고 있는 상태에서 나온다 — 맞는 중이면 피격, 돌진 중이면 공격.
+    // **돌진이 피격을 이긴다**(한 라운드에 보통 양쪽이 다 맞으므로).
+    final pose = dx.abs() > 1.5
+        ? BugPose.attack
+        : (flash > 0.4 ? BugPose.hurt : BugPose.idle);
+    Widget img = sp == null
+        ? Icon(Icons.bug_report, color: Colors.white, size: size * 0.6)
+        : bugPoseImage(
+            sp.id,
+            down ? BugPose.hurt : pose,
+            size: size,
+            fallback: bugAvatar(sp, size: size * 0.85),
+            skin: skin,
+          );
+    if (flip) img = Transform.flip(flipX: true, child: img);
+
+    return SizedBox(
+      height: size * 1.25,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        clipBehavior: Clip.none,
+        children: [
+          // 정지 그림 하나로도 **때리고 맞는 것처럼** 보이게 한다.
+          //   · 돌진하는 쪽: 앞으로 밀리며 그 방향으로 기운다
+          //   · 맞는 쪽: 살짝 납작해졌다 돌아온다(스쿼시)
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 260),
+            opacity: down ? 0 : 1,
+            child: Transform(
+              alignment: Alignment.bottomCenter,
+              transform: Matrix4.identity()
+                ..translateByDouble(dx, flash * 3.0, 0, 1)
+                // 쓰러질 땐 뒤로 넘어간다(방향은 바라보는 쪽 반대).
+                ..rotateZ(
+                  dx * 0.0045 * (flip ? -1 : 1) +
+                      (down ? (flip ? 1.1 : -1.1) : 0),
+                )
+                ..scaleByDouble(1 + flash * 0.10, 1 - flash * 0.14, 1, 1),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                switchInCurve: Curves.easeOutBack,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: Tween(
+                      begin: Offset(flip ? 0.7 : -0.7, 0),
+                      end: Offset.zero,
+                    ).animate(anim),
+                    child: child,
+                  ),
+                ),
+                child: KeyedSubtree(
+                  key: ValueKey(bug.id),
+                  // 맞는 순간 **곤충 실루엣 자체를 하얗게 태운다**(빨간 판을
+                  // 덮으면 타격이 아니라 오류 표시처럼 읽힌다).
+                  child: flash <= 0
+                      ? img
+                      : ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            Colors.white.withValues(
+                              alpha: (flash * 0.9).clamp(0.0, 1.0),
+                            ),
+                            BlendMode.srcATop,
+                          ),
+                          child: img,
+                        ),
+                ),
+              ),
+            ),
+          ),
+          if ((stance != null || stanceHidden) && !down)
+            Positioned(
+              top: 0,
+              child: stanceHidden
+                  ? Text('❓', style: TextStyle(fontSize: size * 0.21))
+                  : stanceArt(stance!, size: size * 0.21),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 이름표 — 이름·오행·HP 바. 대각 구도에서 **몸의 반대쪽 구석**에 놓인다.
+class ArenaPlate extends StatelessWidget {
+  const ArenaPlate({
+    super.key,
+    required this.bug,
+    required this.hpFrac,
+    this.nameOverride,
+    this.compact = false,
+  });
+
+  final BattleBug bug;
+  final double hpFrac;
+  final String? nameOverride;
+
+  /// 상대 쪽(작게). 화면 위쪽은 정보가 적을수록 무대가 넓어 보인다.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = compact ? 118.0 : 138.0;
+    return Container(
+      width: w,
+      padding: const EdgeInsets.fromLTRB(8, 5, 8, 6),
+      decoration: BoxDecoration(
+        // 무대 그림 위에 얹히므로 **자기 바닥**이 있어야 글자가 읽힌다.
+        color: const Color(0xB30E1408),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0x33FFFFFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              elementIcon(bug.element, size: compact ? 11 : 13),
+              const SizedBox(width: 3),
+              Flexible(
+                child: Text(
+                  nameOverride ?? bug.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  // 이름은 **흰색**이다. 오행색으로 칠했더니 통나무 배경 위에서
+                  // 초록·황토가 묻혀 안 읽혔다 — 색은 옆 아이콘이 이미 말한다.
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: compact ? 10.5 : 12,
+                    shadows: const [
+                      Shadow(color: Colors.black87, blurRadius: 3),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Stack(
+              children: [
+                Container(
+                  height: compact ? 9 : 11,
+                  color: const Color(0x66000000),
+                ),
+                FractionallySizedBox(
+                  widthFactor: hpFrac.clamp(0.0, 1.0),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: compact ? 9 : 11,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: hpFrac > 0.3
+                            ? const [Color(0xFF7CE38B), Color(0xFF3FA84E)]
+                            : const [Color(0xFFFF8A6B), Color(0xFFD84A2E)],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 아레나 한쪽 파이터: 이름·오행·HP바·캐릭터·스탠스 글리프.
 /// [dx] 는 이미 방향이 반영된 최종 돌진 오프셋. [stanceHidden] 이면 스탠스를 ❓로 가림(심리전).
 class ArenaFighter extends StatelessWidget {
@@ -660,4 +871,236 @@ Future<void> showBattleResultDialog(
     ),
     actions: [gameDialogButton(l.actionClose, onClose)],
   );
+}
+
+/// 대각 무대 — 포켓몬식 구도. **내 곤충은 왼쪽 아래 크게, 상대는 오른쪽 위 작게.**
+///
+/// 예전엔 둘을 같은 크기로 수평선 위에 마주 세웠다. 그러면 화면이 대칭이라
+/// **누가 내 편인지 한눈에 안 들어오고**, 깊이도 없어 배경 그림 위에 스티커 두 장을
+/// 붙여 놓은 것처럼 보였다(실기: "인터페이스가 끌리는 게 없다").
+///
+/// 이름표는 몸의 **대각선 반대쪽**에 둔다 — 몸 바로 위에 얹으면 곤충을 가리고,
+/// 같은 쪽에 몰면 한쪽 구석만 빽빽해진다.
+class ArenaStage extends StatelessWidget {
+  const ArenaStage({
+    super.key,
+    required this.background,
+    required this.mineBody,
+    required this.foeBody,
+    required this.minePlate,
+    required this.foePlate,
+    this.shake = 0,
+    this.overlays = const [],
+  });
+
+  final Widget background;
+  final Widget mineBody;
+  final Widget foeBody;
+  final Widget minePlate;
+  final Widget foePlate;
+  final double shake;
+
+  /// 데미지 숫자·버스트·인트로 등 무대 위에 뜨는 것들.
+  final List<Widget> overlays;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      // 상극이 터질 때만 흔든다 — 매 라운드 흔들면 멀미가 나고 "이번 한 방이
+      // 컸다"는 신호도 죽는다.
+      offset: Offset(shake * 6 * (shake > 0.5 ? 1 : -1), 0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Stack(
+          children: [
+            Positioned.fill(child: background),
+            // 상대 — 오른쪽 **위**, 작게(멀리 있다).
+            Align(alignment: const Alignment(0.62, -0.30), child: foeBody),
+            // 나 — 왼쪽 **아래**, 크게(가까이 있다).
+            Align(alignment: const Alignment(-0.60, 0.86), child: mineBody),
+            // 이름표는 각자의 대각선 반대쪽 구석.
+            Align(alignment: const Alignment(-0.94, -0.86), child: foePlate),
+            Align(alignment: const Alignment(0.94, 0.92), child: minePlate),
+            ...overlays,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 전투 시작 인트로 — 양 팀이 좌우에서 밀려 들어오고 가운데 VS 가 찍힌다.
+///
+/// 시작이 없으면 화면이 뜨자마자 이미 싸우고 있어서 **"시작했다"는 마디**가 없다.
+/// [t] 는 0→1 진행도. 1 에 도달하면 사라진다.
+class ArenaIntro extends StatelessWidget {
+  const ArenaIntro({
+    super.key,
+    required this.t,
+    required this.mineName,
+    required this.foeName,
+  });
+
+  final double t;
+  final String mineName;
+  final String foeName;
+
+  @override
+  Widget build(BuildContext context) {
+    if (t >= 1) return const SizedBox.shrink();
+    // 마지막 20% 는 사라지는 구간 — 글자가 남아 있으면 첫 라운드를 가린다.
+    final fade = t > 0.8 ? (1 - (t - 0.8) / 0.2) : 1.0;
+    final slide = Curves.easeOutCubic.transform((t / 0.45).clamp(0.0, 1.0));
+    final stamp = Curves.easeOutBack.transform(
+      ((t - 0.25) / 0.35).clamp(0.0, 1.0),
+    );
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: fade.clamp(0.0, 1.0),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(color: Colors.black.withValues(alpha: 0.34 * fade)),
+              Align(
+                alignment: const Alignment(-0.9, -0.18),
+                child: Transform.translate(
+                  offset: Offset(-260 * (1 - slide), 0),
+                  child: _tag(mineName, const Color(0xFF7CE38B)),
+                ),
+              ),
+              Align(
+                alignment: const Alignment(0.9, 0.18),
+                child: Transform.translate(
+                  offset: Offset(260 * (1 - slide), 0),
+                  child: _tag(foeName, const Color(0xFFFF8A6B)),
+                ),
+              ),
+              Transform.scale(
+                scale: 0.4 + stamp * 0.6,
+                child: Opacity(
+                  opacity: stamp,
+                  child: const Text(
+                    'VS',
+                    style: TextStyle(
+                      color: arenaHoney,
+                      fontSize: 54,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                      shadows: [
+                        Shadow(color: Colors.black, blurRadius: 10),
+                        Shadow(color: Color(0xAAEBA52F), blurRadius: 22),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tag(String name, Color c) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: const Color(0xCC0E1408),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: c.withValues(alpha: 0.8), width: 1.5),
+    ),
+    child: Text(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(color: c, fontWeight: FontWeight.w900, fontSize: 15),
+    ),
+  );
+}
+
+/// 승패 배너 — 다이얼로그 대신 화면을 가로지르는 띠.
+///
+/// 다이얼로그는 "알림"이라 이겼는지 졌는지가 **사건**으로 안 남는다. 띠가
+/// 밀려 들어오고 트로피가 올라가는 게 보여야 한 판이 끝난 느낌이 든다.
+class ArenaResultBanner extends StatelessWidget {
+  const ArenaResultBanner({
+    super.key,
+    required this.t,
+    required this.text,
+    required this.win,
+    this.sub,
+  });
+
+  final double t;
+  final String text;
+  final bool win;
+  final String? sub;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Curves.easeOutCubic.transform(t.clamp(0.0, 1.0));
+    final c = win ? const Color(0xFFEBC24A) : const Color(0xFF8FA0B5);
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Center(
+          child: Transform.translate(
+            offset: Offset((1 - p) * 420, 0),
+            child: Opacity(
+              opacity: p,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      c.withValues(alpha: 0.30),
+                      c.withValues(alpha: 0.30),
+                      Colors.transparent,
+                    ],
+                  ),
+                  border: Border(
+                    top: BorderSide(color: c.withValues(alpha: 0.8), width: 2),
+                    bottom: BorderSide(
+                      color: c.withValues(alpha: 0.8),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      text,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: c,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 3,
+                        shadows: const [
+                          Shadow(color: Colors.black, blurRadius: 8),
+                        ],
+                      ),
+                    ),
+                    if (sub != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        sub!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
