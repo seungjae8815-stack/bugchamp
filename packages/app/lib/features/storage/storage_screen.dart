@@ -1227,10 +1227,7 @@ class StorageScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    elementGlyph(bug.element),
-                    style: const TextStyle(fontSize: 11),
-                  ),
+                  elementIcon(bug.element, size: 12),
                   if (!bug.trait.isNone) ...[
                     const SizedBox(width: 3),
                     Text(

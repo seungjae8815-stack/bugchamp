@@ -435,6 +435,35 @@ void main() {
     );
   });
 
+  // 오행 표시는 **한 군데(`elementIcon`)로만** 나가야 한다.
+  //
+  // 이모지(🔥💧🌿⚙️⛰️)는 기기 폰트마다 모양·색이 달라 작게 쓰면 안 읽힌다.
+  // 그림으로 바꿨는데 화면이 여덟 군데라, 처음에 세 군데만 바꾸고 나머지는
+  // 그대로 뒀다 — 실기에서 "결투랑 대회에는 예전 게 그대로 나온다"로 돌아왔다
+  // (2026-08-17). 새 화면을 만들 때 또 `elementGlyph` 를 부르면 여기서 걸린다.
+  test('오행은 elementIcon 으로만 그린다 (이모지 직접 호출 금지)', () {
+    final offenders = <String>[];
+    for (final f
+        in Directory('lib')
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.dart'))) {
+      // 정의와 폴백이 있는 곳은 예외 — elementIcon 이 여기 산다.
+      if (f.path.replaceAll(r'\', '/').endsWith('lib/ui/labels.dart')) continue;
+      if (f.readAsStringSync().contains('elementGlyph(')) {
+        offenders.add(f.path.replaceAll(r'\', '/'));
+      }
+    }
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'elementGlyph 를 직접 부르는 곳: $offenders — '
+          'elementIcon(element, size: ...) 을 쓸 것. '
+          '애셋이 없으면 elementIcon 이 알아서 이모지로 내려간다.',
+    );
+  });
+
   // ARB 플레이스홀더 순서 — **문자열에 나타난 순서 = 파라미터 순서**.
   //
   // `gen-l10n` 은 메타데이터가 없으면 파라미터를 **알파벳 순**으로 만든다.

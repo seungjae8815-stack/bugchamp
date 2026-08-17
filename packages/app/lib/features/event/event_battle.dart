@@ -567,7 +567,8 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         children: [
           _infoRow(l.battleHpPct(((hp / unit.maxHp) * 100).round().toString())),
           _infoRow(
-            '${elementGlyph(bug.element)} ${elementLabel(l, bug.element)}',
+            elementLabel(l, bug.element),
+            icon: elementIcon(bug.element, size: 14),
           ),
           _infoRow(temperamentLabel(l, bug.temperament)),
           _infoRow(
@@ -589,11 +590,17 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     );
   }
 
-  Widget _infoRow(String text) => Padding(
+  Widget _infoRow(String text, {Widget? icon}) => Padding(
     padding: const EdgeInsets.only(bottom: 4),
-    child: Text(
-      text,
-      style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 13),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[icon, const SizedBox(width: 4)],
+        Text(
+          text,
+          style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 13),
+        ),
+      ],
     ),
   );
 

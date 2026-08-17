@@ -1107,16 +1107,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           e.speciesId,
           LifeStage.adult,
           size: 46,
-          fallback: Text(
-            elementGlyph(e.bug.element),
-            style: const TextStyle(fontSize: 24),
-          ),
+          fallback: elementIcon(e.bug.element, size: 30),
         ),
         const SizedBox(height: 2),
-        Text(
-          elementGlyph(e.bug.element),
-          style: TextStyle(color: elementColor(e.bug.element), fontSize: 13),
-        ),
+        elementIcon(e.bug.element, size: 15),
       ],
     ),
   );
@@ -1488,13 +1482,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       color: elementColor(bug.element).withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(
-                      '${elementGlyph(bug.element)} ${elementLabel(AppLocalizations.of(context), bug.element)}',
-                      style: TextStyle(
-                        color: elementColor(bug.element),
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        elementIcon(bug.element, size: 11),
+                        const SizedBox(width: 3),
+                        Text(
+                          elementLabel(
+                            AppLocalizations.of(context),
+                            bug.element,
+                          ),
+                          style: TextStyle(
+                            color: elementColor(bug.element),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Padding(
@@ -1600,10 +1604,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       children: [
         for (var i = 0; i < mine.length; i++) ...[
           if (i > 0) _linkGlyph(mine[i - 1].element.generates(mine[i].element)),
-          Text(
-            elementGlyph(mine[i].element),
-            style: const TextStyle(fontSize: 15),
-          ),
+          elementIcon(mine[i].element, size: 16),
         ],
         const SizedBox(width: 10),
         Container(
@@ -2283,10 +2284,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       e.speciesId,
                       LifeStage.adult,
                       size: 26,
-                      fallback: Text(
-                        elementGlyph(e.bug.element),
-                        style: const TextStyle(fontSize: 16),
-                      ),
+                      fallback: elementIcon(e.bug.element, size: 18),
                     ),
                   ),
               ],

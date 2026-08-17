@@ -460,22 +460,21 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               ),
               // 타일이 좁아서(86px) "23시간 45분 후 출전 가능"은 들어가지 않는다.
               // 여기선 **얼마나 남았는지만** 보여주고, 이유는 눌렀을 때 알린다.
-              Text(
-                resting == null
-                    ? elementGlyph(bug.element)
-                    : (resting.inHours >= 1
-                          ? l.eventRestHours(resting.inHours)
-                          : l.eventRestMinutes(resting.inMinutes + 1)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: resting == null
-                      ? const Color(0xCCFFFFFF)
-                      : const Color(0xFFFFB0A0),
-                  fontSize: resting == null ? 12 : 10.5,
-                  fontWeight: FontWeight.w800,
+              if (resting == null)
+                elementIcon(bug.element, size: 14)
+              else
+                Text(
+                  resting.inHours >= 1
+                      ? l.eventRestHours(resting.inHours)
+                      : l.eventRestMinutes(resting.inMinutes + 1),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFFFB0A0),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
