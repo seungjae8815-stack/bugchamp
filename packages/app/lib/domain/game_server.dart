@@ -329,6 +329,8 @@ class HttpGameServer implements GameServer {
     String method,
     String path, [
     Map<String, dynamic>? body,
+    // 운영 라우트(`x-admin-key`)처럼 인증 헤더가 더 필요한 경우에만 쓴다.
+    Map<String, String>? extraHeaders,
   ]) async {
     final token = _token;
     if (token == null) return const ServerResult.fail('no_session', 401);
@@ -337,6 +339,7 @@ class HttpGameServer implements GameServer {
       final headers = {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
+        ...?extraHeaders,
       };
       final res = method == 'GET'
           ? await _http.get(uri, headers: headers)
@@ -451,8 +454,7 @@ class HttpGameServer implements GameServer {
       _send('POST', '/event/ad-ticket', const {});
 
   @override
-  Future<ServerResult> eventLeaderboard() =>
-      _send('GET', '/event/leaderboard');
+  Future<ServerResult> eventLeaderboard() => _send('GET', '/event/leaderboard');
 
   @override
   Future<ServerResult> collectBreeding(

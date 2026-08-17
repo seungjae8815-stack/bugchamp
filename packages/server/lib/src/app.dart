@@ -1573,6 +1573,39 @@ Handler buildHandler({
       }
     });
 
+    /// 이벤트 참가권 지급(테스트·운영용).
+    ///
+    /// ⚠️ 참가권은 **서버 소유 필드**라 앱이 세이브를 고쳐 늘릴 수 없다 —
+    /// 그래서 개발자 모드도 이 경로로 받아야 한다. 아무나 부르면 순위가 무너지므로
+    /// **운영 키(`x-admin-key`)** 로만 연다. 상한도 둔다(오타 한 번으로 참가권
+    /// 수천 장이 나가면 그 회차 순위는 그대로 무효다).
+    public.post('/admin/event-ticket', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final userId = clean(b!['userId'], 64);
+      if (userId == null) return _json({'error': 'user_required'}, status: 400);
+      final want = (b['amount'] is num) ? (b['amount'] as num).toInt() : 1;
+      if (want < 1 || want > 20) {
+        return _json({'error': 'amount_out_of_range'}, status: 400);
+      }
+      final ev = cfg.event;
+      if (ev == null) return _json({'error': 'event_closed'}, status: 404);
+      try {
+        final raw = await store.load(userId);
+        if (raw == null) return _json({'error': 'no_save'}, status: 404);
+        final save = SaveGame.fromJson(migrateToCurrent(raw));
+        final now = actions.eventTicketsNow(save);
+        // 상한을 넘겨서 주지 않는다 — 상한이 곧 하루 판수 제한이다.
+        final next = (now.tickets + want).clamp(0, ev.ticketMax);
+        final out = save.copyWith(eventTickets: next, eventTicketsAt: now.at);
+        await store.save(userId, out.toJson());
+        return _json({'ok': true, 'tickets': next, 'max': ev.ticketMax});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/event-ticket] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     public.post('/admin/code', (Request req) async {
       final (b, err) = await adminBody(req);
       if (err != null) return err;

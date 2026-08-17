@@ -23,6 +23,10 @@ abstract interface class AuthService {
   /// 익명이 아닌 실제 계정으로 로그인돼 있는지.
   bool get isSignedIn;
 
+  /// 서버가 쓰는 계정 id(익명 포함). 미로그인이면 null.
+  /// 개발자 모드의 운영 요청처럼 **내 계정을 지목**해야 할 때 쓴다.
+  String? get userId;
+
   /// 표시용 계정 이름(이메일). 미로그인/익명이면 null.
   String? get accountLabel;
 
@@ -57,6 +61,8 @@ class NoAuthService implements AuthService {
   @override
   bool get available => false;
   @override
+  String? get userId => null;
+  @override
   bool get isSignedIn => false;
   @override
   String? get accountLabel => null;
@@ -85,6 +91,9 @@ class SupabaseAuthService implements AuthService {
   final SupabaseClient _client;
   final String _webClientId;
   bool _initialized = false;
+
+  @override
+  String? get userId => _client.auth.currentUser?.id;
 
   // 로그인 가능 여부 = 애플(iOS) 또는 구글(웹 클라이언트 ID 주입) 중 하나라도 가능.
   // 이 서비스는 Supabase 초기화됐을 때만 생성되므로, iOS 면 애플 로그인은 항상 가능.
