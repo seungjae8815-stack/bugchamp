@@ -72,7 +72,9 @@ void main() {
   }
 
   test('승급 보상: 도달한 리그 보상 일괄 지급 후 재수령 없음', () async {
-    // 400 트로피 → silver(5000골드+5젤리) + gold(15000골드+10젤리) 수령 가능.
+    // 400 트로피 → bronze(1500+2) + silver(5000+5) + gold(15000+10) 수령 가능.
+    // 브론즈에도 보상이 생겼다 — 시즌 보상이 리그 보상에서 파생되는데
+    // 브론즈가 0 이면 브론즈에 머무는 유저는 매주 아무것도 못 받는다.
     final seed = SaveGame.initial(
       createdAt: t0,
     ).copyWith(lastSeen: t0, pvpTrophies: 400);
@@ -82,28 +84,35 @@ void main() {
 
     final r = await ctrl.claimLeagueRewards();
     expect(r, isNotNull);
-    expect(r!.gold, 20000); // 5000 + 15000
-    expect(r.jelly, 15); // 5 + 10
+    expect(r!.gold, 21500); // 1500 + 5000 + 15000
+    expect(r.jelly, 17); // 2 + 5 + 10
 
     final s = c.read(saveControllerProvider).requireValue;
-    expect(s.gold, 20000);
-    expect(s.materialCount(MaterialKind.jelly), 15);
-    expect(s.claimedLeagues, {'silver', 'gold'});
+    expect(s.gold, 21500);
+    expect(s.materialCount(MaterialKind.jelly), 17);
+    expect(s.claimedLeagues, {'bronze', 'silver', 'gold'});
 
     // 재수령 불가(추가 트로피 없음).
     expect(await ctrl.claimLeagueRewards(), isNull);
   });
 
-  test('보상 없는 리그(bronze)만 도달 시 수령 불가', () async {
+  test('브론즈에 머물러도 보상이 있다 — 매주 0원이면 안 된다', () async {
+    // 예전엔 브론즈 보상이 0 이라, 브론즈에 머무는 유저는 시즌이 끝나도
+    // 아무것도 못 받았다(실기 지적 2026-08-18). 시즌 보상이 리그 보상에서
+    // 파생되므로 브론즈가 0 이면 **매주 0원**이 된다.
     final seed = SaveGame.initial(createdAt: t0).copyWith(
       lastSeen: t0,
       pvpTrophies: 50, // bronze
     );
     final c = container(seed);
     await c.read(saveControllerProvider.future);
-    expect(
-      await c.read(saveControllerProvider.notifier).claimLeagueRewards(),
-      isNull,
-    );
+    final ctrl = c.read(saveControllerProvider.notifier);
+
+    final r = await ctrl.claimLeagueRewards();
+    expect(r, isNotNull);
+    expect(r!.gold, 1500);
+    expect(r.jelly, 2);
+    // 승급 보상은 등급마다 1회 — 두 번은 없다.
+    expect(await ctrl.claimLeagueRewards(), isNull);
   });
 }

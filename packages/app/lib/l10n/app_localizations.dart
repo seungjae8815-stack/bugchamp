@@ -415,7 +415,7 @@ abstract class AppLocalizations {
   /// No description provided for @seasonPeak.
   ///
   /// In en, this message translates to:
-  /// **'Peak rank: {name}'**
+  /// **'Rank at close: {name}'**
   String seasonPeak(String name);
 
   /// No description provided for @seasonTrophyReset.
@@ -4621,7 +4621,7 @@ abstract class AppLocalizations {
   /// No description provided for @seasonRewardHint.
   ///
   /// In en, this message translates to:
-  /// **'Paid every Monday 09:00 at your rank then. Climb higher for more.'**
+  /// **'Paid every Monday 09:00 at your rank at that moment. Climb before it ends.'**
   String get seasonRewardHint;
 }
 

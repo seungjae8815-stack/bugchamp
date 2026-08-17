@@ -168,7 +168,9 @@ class BattleConfig {
   ];
 
   static const _defaultLeagues = [
-    League(id: 'bronze', minTrophy: 0),
+    // 브론즈도 시즌 보상이 있어야 한다 — 0 이면 브론즈에 머무는 유저는
+    // 매주 아무것도 못 받는다. 실제 수치는 battle.json 이 정한다(§6).
+    League(id: 'bronze', minTrophy: 0, rewardGold: 1500, rewardJelly: 2),
     League(id: 'silver', minTrophy: 100, rewardGold: 5000, rewardJelly: 5),
     League(id: 'gold', minTrophy: 300, rewardGold: 15000, rewardJelly: 10),
     League(id: 'platinum', minTrophy: 700, rewardGold: 40000, rewardJelly: 20),

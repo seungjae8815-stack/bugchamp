@@ -174,7 +174,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String seasonPeak(String name) {
-    return '최고 등급: $name';
+    return '종료 시 등급: $name';
   }
 
   @override
@@ -2502,5 +2502,5 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get seasonRewardHint => '매주 월요일 09시에 그때 등급으로 지급돼요. 등급을 올리면 더 커져요.';
+  String get seasonRewardHint => '매주 월요일 09시, 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요.';
 }

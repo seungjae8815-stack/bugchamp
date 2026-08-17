@@ -174,7 +174,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String seasonPeak(String name) {
-    return '最高ランク: $name';
+    return '終了時の等級: $name';
   }
 
   @override
@@ -2498,5 +2498,5 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get seasonRewardHint => '毎週月曜9時にその時の等級で支給されます。等級を上げるほど増えます。';
+  String get seasonRewardHint => '毎週月曜9時、その瞬間の等級で支給されます。終わる前に上げておきましょう。';
 }

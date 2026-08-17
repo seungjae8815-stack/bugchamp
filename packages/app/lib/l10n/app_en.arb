@@ -86,7 +86,7 @@
   "leagueClaimReward": "Claim promotion",
   "leaguePromoTitle": "Promotion Reward",
   "seasonEndTitle": "Season Over!",
-  "seasonPeak": "Peak rank: {name}",
+  "seasonPeak": "Rank at close: {name}",
   "@seasonPeak": {
     "placeholders": {
       "name": {
@@ -1448,7 +1448,7 @@
     }
   },
   "seasonRewardNow": "Season reward · now {league}",
-  "seasonRewardHint": "Paid every Monday 09:00 at your rank then. Climb higher for more.",
+  "seasonRewardHint": "Paid every Monday 09:00 at your rank at that moment. Climb before it ends.",
   "@seasonRewardNow": {
     "placeholders": {
       "league": {

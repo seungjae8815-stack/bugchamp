@@ -174,7 +174,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String seasonPeak(String name) {
-    return 'Peak rank: $name';
+    return 'Rank at close: $name';
   }
 
   @override
@@ -2550,5 +2550,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get seasonRewardHint =>
-      'Paid every Monday 09:00 at your rank then. Climb higher for more.';
+      'Paid every Monday 09:00 at your rank at that moment. Climb before it ends.';
 }

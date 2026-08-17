@@ -403,10 +403,11 @@ class GameActions {
     final appPaid = clientStart != null && !clientStart.isBefore(curStart);
     if (appPaid) return (save: out, report: null);
 
-    final peak = stored.seasonPeakTrophies > stored.pvpTrophies
-        ? stored.seasonPeakTrophies
-        : stored.pvpTrophies;
-    final rw = cfg.seasonReward(peak);
+    // **끝나는 순간의 등급**으로 준다(앱 `_applySeason` 과 같은 규칙).
+    // 최고 기록으로 주던 시절이 있었는데, 화면에 뜨는 "지금 등급"과 실제 보상이
+    // 달라 설명할 수가 없었다(2026-08-18 변경).
+    final endTrophies = stored.pvpTrophies;
+    final rw = cfg.seasonReward(endTrophies);
     if (rw.gold > 0 || rw.jelly > 0) {
       final mats = Map<MaterialKind, int>.from(out.materials);
       mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + rw.jelly;
@@ -415,7 +416,9 @@ class GameActions {
     return (
       save: out,
       report: {
-        'peakTrophies': peak,
+        'endTrophies': endTrophies,
+        // 구버전 앱은 `peakTrophies` 만 읽는다 — 당분간 둘 다 보낸다.
+        'peakTrophies': endTrophies,
         'rewardGold': rw.gold,
         'rewardJelly': rw.jelly,
         'fromTrophies': stored.pvpTrophies,

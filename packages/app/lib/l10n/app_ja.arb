@@ -52,7 +52,7 @@
   "leagueClaimReward": "昇格報酬を受け取る",
   "leaguePromoTitle": "昇格報酬",
   "seasonEndTitle": "シーズン終了！",
-  "seasonPeak": "最高ランク: {name}",
+  "seasonPeak": "終了時の等級: {name}",
   "seasonTrophyReset": "トロフィー {from} → {to}",
   "seasonEndsIn": "シーズン残り {time}",
   "synergyLabel": "相生",
@@ -753,5 +753,5 @@
   "sideFoeTeam": "相手チーム",
   "leagueNeedTrophy": "トロフィー{n}",
   "seasonRewardNow": "シーズン報酬・現在 {league}",
-  "seasonRewardHint": "毎週月曜9時にその時の等級で支給されます。等級を上げるほど増えます。"
+  "seasonRewardHint": "毎週月曜9時、その瞬間の等級で支給されます。終わる前に上げておきましょう。"
 }

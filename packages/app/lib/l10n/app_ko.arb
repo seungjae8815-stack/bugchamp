@@ -52,7 +52,7 @@
   "leagueClaimReward": "승급 보상 수령",
   "leaguePromoTitle": "승급 보상",
   "seasonEndTitle": "시즌 종료!",
-  "seasonPeak": "최고 등급: {name}",
+  "seasonPeak": "종료 시 등급: {name}",
   "seasonTrophyReset": "트로피 {from} → {to}",
   "seasonEndsIn": "시즌 {time} 남음",
   "synergyLabel": "상생",
@@ -788,5 +788,5 @@
   "sideFoeTeam": "상대 팀",
   "leagueNeedTrophy": "트로피 {n}",
   "seasonRewardNow": "시즌 종료 보상 · 지금 {league}",
-  "seasonRewardHint": "매주 월요일 09시에 그때 등급으로 지급돼요. 등급을 올리면 더 커져요."
+  "seasonRewardHint": "매주 월요일 09시, 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요."
 }

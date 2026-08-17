@@ -76,9 +76,9 @@ void main() {
   // t0 = 2026-02-01(일) → 이번 시즌 시작은 1/26(월) 00:00 UTC.
   final curSeasonStart = DateTime.utc(2026, 1, 26);
 
-  test('시즌 만료: 최고 등급 보상 + 트로피 소프트리셋', () async {
+  test('시즌 만료: 종료 시 등급 보상 + 트로피 소프트리셋', () async {
     // 지난 시즌에 멈춰 있던 세이브 → 경계를 넘겼으므로 정산된다.
-    // peak 800(platinum) → 보상 120000골드·60젤리, 리셋 400.
+    // 종료 시 800(platinum) → 보상 120000골드·60젤리, 리셋 400.
     final seed = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).copyWith(
       lastSeen: t0,
       pvpTrophies: 800,
@@ -99,9 +99,34 @@ void main() {
 
     final report = c.read(saveControllerProvider.notifier).pendingSeason;
     expect(report, isNotNull);
-    expect(report!.peakTrophies, 800);
+    expect(report!.endTrophies, 800);
     expect(report.fromTrophies, 800);
     expect(report.toTrophies, 400);
+  });
+
+  test('시즌 보상은 최고 기록이 아니라 **종료 시 등급**으로 준다', () async {
+    // 주중에 플래티넘(800)까지 갔다가 실버(150)로 떨어진 채 시즌이 끝난 경우.
+    //
+    // 예전에는 최고 기록으로 줬다(플래티넘 보상). 지금은 끝나는 순간의 등급이다
+    // — 화면에 뜨는 "지금 등급"과 실제 보상이 달라 설명할 수가 없었다.
+    final seed = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1)).copyWith(
+      lastSeen: t0,
+      pvpTrophies: 150, // 실버
+      seasonPeakTrophies: 800, // 한때 플래티넘
+      seasonStartedAt: DateTime.utc(2026, 1, 19),
+    );
+    final c = container(seed);
+    await c.read(saveControllerProvider.future);
+
+    final s = c.read(saveControllerProvider).requireValue;
+    expect(s.gold, 15000); // silver 5000 × 3 (platinum 120000 이 아니다)
+    // 테스트는 코드 기본값(`_defaultLeagues`)을 쓴다 — 실버 젤리 5.
+    // 실제 수치는 battle.json 이 정한다(§6).
+    expect(s.materialCount(MaterialKind.jelly), 15); // silver 5 × 3
+    expect(s.pvpTrophies, 75); // 150 × 0.5
+
+    final report = c.read(saveControllerProvider.notifier).pendingSeason;
+    expect(report!.endTrophies, 150);
   });
 
   test('시즌 미만료: 변화 없음', () async {

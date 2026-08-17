@@ -19,7 +19,7 @@ import 'providers.dart';
 /// 시즌 종료 정산 결과(UI 가 1회 표시). 트로피 소프트리셋 + 보상.
 class SeasonReport {
   const SeasonReport({
-    required this.peakTrophies,
+    required this.endTrophies,
     required this.rewardGold,
     required this.rewardJelly,
     required this.fromTrophies,
@@ -31,14 +31,24 @@ class SeasonReport {
   /// 앱이 먼저 정산하면 로컬에서 만들지만, 켜둔 채 월요일 09시를 넘기면
   /// **서버가 먼저** 확정한다. 그때도 같은 다이얼로그를 띄우려고 받아온다.
   factory SeasonReport.fromJson(Map<String, dynamic> json) => SeasonReport(
-    peakTrophies: (json['peakTrophies'] as num?)?.toInt() ?? 0,
+    // 서버는 아직 `peakTrophies` 라는 이름으로 보낼 수 있다(구버전 서버).
+    // 둘 다 읽어서 어느 쪽이 와도 화면이 비지 않게 한다.
+    endTrophies:
+        (json['endTrophies'] as num?)?.toInt() ??
+        (json['peakTrophies'] as num?)?.toInt() ??
+        0,
     rewardGold: (json['rewardGold'] as num?)?.toInt() ?? 0,
     rewardJelly: (json['rewardJelly'] as num?)?.toInt() ?? 0,
     fromTrophies: (json['fromTrophies'] as num?)?.toInt() ?? 0,
     toTrophies: (json['toTrophies'] as num?)?.toInt() ?? 0,
   );
 
-  final int peakTrophies;
+  /// **시즌이 끝난 순간의** 트로피. 보상은 이 등급으로 계산된다.
+  ///
+  /// 예전엔 시즌 최고 기록(`seasonPeakTrophies`)으로 줬다. 마지막 날 지는 게
+  /// 무섭지 않다는 장점이 있었지만, "지금 내 등급"과 받는 보상이 달라서
+  /// 화면으로 설명할 수가 없었다 — 끝나는 순간의 등급으로 통일한다(2026-08-18).
+  final int endTrophies;
   final int rewardGold;
   final int rewardJelly;
   final int fromTrophies;
@@ -162,16 +172,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
         save = save.copyWith(seasonStartedAt: curStart);
       }
       if (save.seasonStartedAt!.isBefore(curStart)) {
-        final peak = save.seasonPeakTrophies > save.pvpTrophies
-            ? save.seasonPeakTrophies
-            : save.pvpTrophies;
-        final rw = battleCfg.seasonReward(peak);
+        // **끝나는 순간의 등급**으로 준다. 최고 기록이 아니다.
+        final endTrophies = save.pvpTrophies;
+        final rw = battleCfg.seasonReward(endTrophies);
         final reset = battleCfg.seasonResetTrophies(save.pvpTrophies);
         final mats = Map<MaterialKind, int>.from(save.materials)
           ..[MaterialKind.jelly] =
               (save.materials[MaterialKind.jelly] ?? 0) + rw.jelly;
         pendingSeason = SeasonReport(
-          peakTrophies: peak,
+          endTrophies: endTrophies,
           rewardGold: rw.gold,
           rewardJelly: rw.jelly,
           fromTrophies: save.pvpTrophies,

@@ -977,7 +977,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final cfg =
         ref.read(gameDataProvider).requireValue.battleConfig ??
         const BattleConfig();
-    final peakLabel = _leagueStyle(l, cfg.leagueFor(r.peakTrophies).id).$1;
+    final endLabel = _leagueStyle(l, cfg.leagueFor(r.endTrophies).id).$1;
     final hasReward = r.rewardGold > 0 || r.rewardJelly > 0;
     await showGameDialog<void>(
       context,
@@ -988,7 +988,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            l.seasonPeak(peakLabel),
+            l.seasonPeak(endLabel),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
