@@ -740,6 +740,10 @@ Handler buildHandler({
         }
 
         final out = Map<String, dynamic>.from(r.extra)..remove('session');
+        // 선봉 교체로 **순서가 바뀌었을 수 있다.** 앱이 모르면 재생이 옛 순서로
+        // 그려져 "바꿨는데 안 나온다"가 된다(세션 전체는 주지 않는다 — 앱이
+        // 들고 있으면 고쳐 보낼 수 있다).
+        out['teamIds'] = next['teamIds'];
         return _json({
           'save': r.save!.toJson(),
           ...out,

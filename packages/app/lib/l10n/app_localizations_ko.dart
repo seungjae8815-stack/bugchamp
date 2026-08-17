@@ -686,7 +686,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get collectPickSlot => '슬롯 선택';
 
   @override
-  String collectInstalledSnack(String field, String trap) {
+  String collectInstalledSnack(String trap, String field) {
     return '$field에 $trap 설치 완료';
   }
 
@@ -763,7 +763,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String dexBonusSummary(Object atk, Object gold, Object hp) {
+  String dexBonusSummary(String atk, String hp, String gold) {
     return '지금 도감 보너스 — 공격 +$atk% · 체력 +$hp% · 골드 +$gold%';
   }
 
@@ -875,7 +875,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cardSkipDesc => '다음 웨이브를 싸우지 않고 통과해요';
 
   @override
-  String eventFlyerPeriod(Object end, Object start) {
+  String eventFlyerPeriod(String start, String end) {
     return '$start ~ $end';
   }
 
@@ -1523,7 +1523,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get evolveTitle => '진화';
 
   @override
-  String evolveNext(String next, String time) {
+  String evolveNext(String time, String next) {
     return '$next까지 $time';
   }
 

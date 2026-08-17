@@ -7,6 +7,7 @@ import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
+import '../../domain/audio_service.dart';
 import '../../domain/game_server.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
@@ -49,6 +50,10 @@ class EventBattleScreen extends ConsumerStatefulWidget {
 
 class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
   late Map<String, dynamic> _res;
+
+  /// 화면에 그릴 팀 — **서버가 정한 순서**를 따른다. 선봉을 바꾸면 서버가 순서를
+  /// 재배치하므로, 앱이 처음 편성 순서를 계속 쓰면 "바꿨는데 안 나온다"가 된다.
+  late List<IndividualBug> _team;
   BattleState? _battle;
   List<BattleBug> _units = const [];
   List<BattleBug> _enemies = const [];
@@ -81,6 +86,8 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
   void initState() {
     super.initState();
     _res = widget.first;
+    _team = [...widget.team];
+    _syncTeamOrder();
     _replayCurrentWave();
   }
 
@@ -100,7 +107,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
       (_res['buffs'] as Map?)?.cast<String, dynamic>(),
     );
     _units = [
-      for (final bug in widget.team)
+      for (final bug in _team)
         if (widget.data.speciesById[bug.speciesId] != null)
           () {
             final sp = widget.data.speciesById[bug.speciesId]!;
@@ -116,7 +123,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
             );
           }(),
     ];
-    if (_units.length != widget.team.length) {
+    if (_units.length != _team.length) {
       // 종을 못 찾으면 재생만 건너뛴다 — 점수는 서버 것이 이미 확정돼 있다.
       setState(() => _replaying = false);
       return;
@@ -161,6 +168,20 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     _loop();
   }
 
+  /// 서버가 준 순서로 팀을 재배치한다(선봉 교체 반영).
+  void _syncTeamOrder() {
+    final ids = (_res['teamIds'] as List?)?.map((e) => '$e').toList();
+    if (ids == null || ids.length != _team.length) return;
+    final byId = {for (final b in _team) b.id: b};
+    final next = <IndividualBug>[];
+    for (final id in ids) {
+      final b = byId[id];
+      if (b == null) return; // 모르는 id 면 건드리지 않는다
+      next.add(b);
+    }
+    _team = next;
+  }
+
   List<double> _serverHp() => [
     for (final v in ((_res['hp'] as List?) ?? const [])) (v as num).toDouble(),
   ];
@@ -168,7 +189,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
   void _loop() {
     _timer?.cancel();
     _timer = Timer.periodic(
-      Duration(milliseconds: _fast ? 70 : 300),
+      Duration(milliseconds: _fast ? 160 : 620),
       (_) => _tick(),
     );
   }
@@ -200,18 +221,20 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
       _enemyIdx = st.b;
       if (st.events.length > before) _playEffects(st, st.events.last);
       // 이펙트는 시간이 지나면 사라진다(수명은 위젯이 안다).
+      // 수명은 초 단위다 — 재생 간격만큼 늘려야 제때 사라진다.
+      final dt = (_fast ? 160 : 620) / 1000.0;
       for (final f in _floats) {
-        f.age += 0.12;
+        f.age += dt;
       }
       for (final b in _bursts) {
-        b.age += 0.12;
+        b.age += dt;
       }
       _floats.removeWhere((f) => f.age >= FloatText.life);
       _bursts.removeWhere((b) => b.age >= BurstFx.life);
-      _flashL = (_flashL - 0.25).clamp(0.0, 1.0);
-      _flashR = (_flashR - 0.25).clamp(0.0, 1.0);
-      _lunge = (_lunge - 3.5).clamp(0.0, 40.0);
-      _shake = (_shake - 0.3).clamp(0.0, 1.0);
+      _flashL = (_flashL - 0.5).clamp(0.0, 1.0);
+      _flashR = (_flashR - 0.5).clamp(0.0, 1.0);
+      _lunge = (_lunge - 8).clamp(0.0, 40.0);
+      _shake = (_shake - 0.5).clamp(0.0, 1.0);
     });
   }
 
@@ -225,6 +248,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         FloatText('-${ev.dmgToA.round()}', const Color(0xFFFF6B6B), true),
       );
       _flashL = 1;
+      AudioService.instance.sfxHurt(); // 내가 맞았다
     }
     if (ev.healToA >= 1) {
       _floats.add(
@@ -236,6 +260,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         FloatText('-${ev.dmgToB.round()}', const Color(0xFFFF6B6B), false),
       );
       _flashR = 1;
+      AudioService.instance.sfxHit(); // 내가 때렸다
     }
     if (ev.healToB >= 1) {
       _floats.add(
@@ -282,6 +307,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     setState(() {
       _res = {..._res, ...?r.data};
       _lead = null;
+      _syncTeamOrder();
     });
     _replayCurrentWave(from: before);
   }
@@ -389,8 +415,8 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
               data: widget.data,
               mine: _replaying ? mine : null,
               foe: _replaying ? foe : null,
-              mineSpeciesId: mineIdx < widget.team.length
-                  ? widget.team[mineIdx].speciesId
+              mineSpeciesId: mineIdx < _team.length
+                  ? _team[mineIdx].speciesId
                   : null,
               foeSpeciesId: _foeSpeciesId(_enemyIdx),
               mineHpFrac: (mine == null || mine.maxHp <= 0)
@@ -429,7 +455,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
 
   Widget _teamChip(int i) {
     final u = _units[i];
-    final bug = i < widget.team.length ? widget.team[i] : null;
+    final bug = i < _team.length ? _team[i] : null;
     final sp = bug == null ? null : widget.data.speciesById[bug.speciesId];
     final hp = i < _hpShown.length ? _hpShown[i] : 0.0;
     final down = hp <= 0;

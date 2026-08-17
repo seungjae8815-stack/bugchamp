@@ -686,7 +686,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get collectPickSlot => 'スロット選択';
 
   @override
-  String collectInstalledSnack(String field, String trap) {
+  String collectInstalledSnack(String trap, String field) {
     return '$fieldに$trapを設置しました';
   }
 
@@ -763,7 +763,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String dexBonusSummary(Object atk, Object gold, Object hp) {
+  String dexBonusSummary(String atk, String hp, String gold) {
     return '図鑑ボーナス — 攻撃 +$atk% · 体力 +$hp% · ゴールド +$gold%';
   }
 
@@ -874,7 +874,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cardSkipDesc => '次のウェーブを戦わずに通過します';
 
   @override
-  String eventFlyerPeriod(Object end, Object start) {
+  String eventFlyerPeriod(String start, String end) {
     return '$start ~ $end';
   }
 
@@ -1521,7 +1521,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get evolveTitle => '進化';
 
   @override
-  String evolveNext(String next, String time) {
+  String evolveNext(String time, String next) {
     return '$nextまで $time';
   }
 

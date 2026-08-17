@@ -1340,7 +1340,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Installed {trap} at {field}'**
-  String collectInstalledSnack(String field, String trap);
+  String collectInstalledSnack(String trap, String field);
 
   /// No description provided for @locked.
   ///
@@ -1466,7 +1466,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Dex bonus — ATK +{atk}% · HP +{hp}% · Gold +{gold}%'**
-  String dexBonusSummary(Object atk, Object gold, Object hp);
+  String dexBonusSummary(String atk, String hp, String gold);
 
   /// No description provided for @speciesPassiveTitle.
   ///
@@ -1664,7 +1664,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{start} – {end}'**
-  String eventFlyerPeriod(Object end, Object start);
+  String eventFlyerPeriod(String start, String end);
 
   /// No description provided for @eventPeriodLabel.
   ///
@@ -2834,7 +2834,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{time} to {next}'**
-  String evolveNext(String next, String time);
+  String evolveNext(String time, String next);
 
   /// No description provided for @evolveReady.
   ///

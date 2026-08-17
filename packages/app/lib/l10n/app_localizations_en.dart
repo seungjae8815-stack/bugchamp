@@ -699,7 +699,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get collectPickSlot => 'Choose a slot';
 
   @override
-  String collectInstalledSnack(String field, String trap) {
+  String collectInstalledSnack(String trap, String field) {
     return 'Installed $trap at $field';
   }
 
@@ -778,7 +778,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String dexBonusSummary(Object atk, Object gold, Object hp) {
+  String dexBonusSummary(String atk, String hp, String gold) {
     return 'Dex bonus — ATK +$atk% · HP +$hp% · Gold +$gold%';
   }
 
@@ -890,7 +890,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cardSkipDesc => 'Skip the next wave without fighting';
 
   @override
-  String eventFlyerPeriod(Object end, Object start) {
+  String eventFlyerPeriod(String start, String end) {
     return '$start – $end';
   }
 
@@ -1549,7 +1549,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get evolveTitle => 'Evolve';
 
   @override
-  String evolveNext(String next, String time) {
+  String evolveNext(String time, String next) {
     return '$time to $next';
   }
 

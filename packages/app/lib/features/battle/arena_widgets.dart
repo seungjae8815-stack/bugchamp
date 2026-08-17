@@ -188,25 +188,20 @@ class ArenaFighter extends StatelessWidget {
                       ),
                       child: KeyedSubtree(
                         key: ValueKey(bug.id),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            img,
-                            if (flash > 0)
-                              Positioned.fill(
-                                child: IgnorePointer(
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFFFF3B3B,
-                                      ).withValues(alpha: flash * 0.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                        // 맞는 순간 **곤충 실루엣 자체를 하얗게 태운다**.
+                        // 빨간 사각형을 덮으면 곤충 위에 판을 얹은 것처럼 보여
+                        // 타격이 아니라 오류 표시처럼 읽힌다(실기 지적).
+                        child: flash <= 0
+                            ? img
+                            : ColorFiltered(
+                                colorFilter: ColorFilter.mode(
+                                  Colors.white.withValues(
+                                    alpha: (flash * 0.9).clamp(0.0, 1.0),
                                   ),
+                                  BlendMode.srcATop,
                                 ),
+                                child: img,
                               ),
-                          ],
-                        ),
                       ),
                     ),
                   ),

@@ -84,7 +84,9 @@ class EventArena extends StatelessWidget {
           // 파이터를 그 위에 세워야 "무대에서 싸운다"로 읽힌다 —
           // 가운데 띄우면 공중에 뜬 것처럼 보인다.
           Align(
-            alignment: const Alignment(0, 0.42),
+            // 배경의 통나무 **윗면**에 발이 닿는 높이. 위젯이 이름·HP바까지 포함한
+            // 세로 묶음이라, 그림 아래쪽이 무대에 오도록 조금 더 내린다.
+            alignment: const Alignment(0, 0.62),
             child: Row(
               children: [
                 Expanded(

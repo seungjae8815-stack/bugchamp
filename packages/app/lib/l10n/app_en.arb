@@ -429,10 +429,10 @@
   "collectInstalledSnack": "Installed {trap} at {field}",
   "@collectInstalledSnack": {
     "placeholders": {
-      "field": {
+      "trap": {
         "type": "String"
       },
-      "trap": {
+      "field": {
         "type": "String"
       }
     }
@@ -495,6 +495,13 @@
   "dexClaim": "Claim {n} dex reward(s)",
   "dexClaimedSnack": "Dex reward! 💰{gold} · 💎{jelly}",
   "dexBonusSummary": "Dex bonus — ATK +{atk}% · HP +{hp}% · Gold +{gold}%",
+  "@dexBonusSummary": {
+    "placeholders": {
+      "atk": {"type": "String"},
+      "hp": {"type": "String"},
+      "gold": {"type": "String"}
+    }
+  },
   "speciesPassiveTitle": "Species ability",
   "speciesPassiveHint": "Applies while this bug is equipped as a pet. Equipping several of the same species stacks it.",
   "storageFilterLabel": "Keep",
@@ -528,6 +535,12 @@
   "cardSkip": "Detour",
   "cardSkipDesc": "Skip the next wave without fighting",
   "eventFlyerPeriod": "{start} – {end}",
+  "@eventFlyerPeriod": {
+    "placeholders": {
+      "start": {"type": "String"},
+      "end": {"type": "String"}
+    }
+  },
   "eventPeriodLabel": "Event period",
   "eventFlyerHeadline": "Looking for the bug handler who goes furthest",
   "eventFlyerPrize": "1st place gets a real live beetle",
@@ -829,10 +842,10 @@
   "evolveNext": "{time} to {next}",
   "@evolveNext": {
     "placeholders": {
-      "next": {
+      "time": {
         "type": "String"
       },
-      "time": {
+      "next": {
         "type": "String"
       }
     }

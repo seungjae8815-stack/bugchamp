@@ -434,4 +434,56 @@ void main() {
           'Flutter 는 하위 폴더를 자동 포함하지 않으므로 한 줄씩 적어야 한다.',
     );
   });
+
+  // ARB 플레이스홀더 순서 — **문자열에 나타난 순서 = 파라미터 순서**.
+  //
+  // `gen-l10n` 은 메타데이터가 없으면 파라미터를 **알파벳 순**으로 만든다.
+  // 그래서 "{start} ~ {end}" 가 `(end, start)` 시그니처가 되고, 쓰인 대로 넘긴
+  // 호출부는 **조용히 뒤바뀐 값**을 출력한다 — 전부 String 이라 컴파일러도 못 잡는다.
+  // 실제로 두 건 발생했다: 참가권 "5/2", 전단지 기간 "8월30일 ~ 8월17일".
+  test('ARB 플레이스홀더 순서가 문자열 순서와 일치한다', () {
+    final arb =
+        jsonDecode(File('lib/l10n/app_en.arb').readAsStringSync())
+            as Map<String, dynamic>;
+    final gen = File('lib/l10n/app_localizations.dart').readAsStringSync();
+    final bad = <String>[];
+    for (final e in arb.entries) {
+      if (e.key.startsWith('@') || e.value is! String) continue;
+      final order = RegExp(
+        r'\{(\w+)\}',
+      ).allMatches(e.value as String).map((m) => m.group(1)!).toSet().toList();
+      if (order.length < 2) continue;
+      final sig = RegExp(
+        r'\b'
+        '${e.key}'
+        r'\((.*?)\);',
+        dotAll: true,
+      ).firstMatch(gen)?.group(1);
+      if (sig == null) continue;
+      final params = sig
+          .split(',')
+          .map((p) => p.trim())
+          .where((p) => p.isNotEmpty)
+          .map((p) => p.split(' ').last)
+          .toList();
+      if (!_sameOrder(params, order)) {
+        bad.add('${e.key}: 문자열 $order vs 시그니처 $params');
+      }
+    }
+    expect(
+      bad,
+      isEmpty,
+      reason:
+          '순서가 어긋난 문구: $bad — '
+          'app_en.arb 에 @키의 placeholders 를 문자열 순서대로 적어 고정한다.',
+    );
+  });
+}
+
+bool _sameOrder(List<String> a, List<String> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }

@@ -3091,8 +3091,8 @@ class StorageScreen extends ConsumerWidget {
                       : (rem <= Duration.zero
                             ? l.evolveReady
                             : l.evolveNext(
-                                stageLabel(l, effStage.next),
                                 _mmss(rem),
+                                stageLabel(l, effStage.next),
                               )),
                   style: const TextStyle(
                     color: Color(0xB3FFFFFF),
