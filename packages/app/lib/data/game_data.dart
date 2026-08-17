@@ -24,6 +24,7 @@ class GameData {
     this.dailyConfig,
     this.giftConfig,
     this.dexConfig,
+    this.eventConfig,
     this.roadmapConfig,
     this.battleConfig,
     this.iapConfig,
@@ -67,6 +68,11 @@ class GameData {
 
   /// 도감 보상 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final DexConfig? dexConfig;
+
+  /// 실물 경품 랭킹 이벤트 설정. **점수는 서버가 확정**하고, 앱은 이 값으로
+  /// 서버가 준 seed 를 재생만 한다(docs/event_ranking_prize.md).
+  /// 이벤트가 닫혀 있으면 null.
+  final EventConfig? eventConfig;
 
   /// 로드맵(난이도 챕터) 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final RoadmapConfig? roadmapConfig;
@@ -113,6 +119,7 @@ class GameData {
     Map<String, dynamic>? dailyConfig,
     Map<String, dynamic>? giftConfig,
     Map<String, dynamic>? dexConfig,
+    Map<String, dynamic>? eventConfig,
     Map<String, dynamic>? roadmapConfig,
     Map<String, dynamic>? battleConfig,
     Map<String, dynamic>? iapConfig,
@@ -159,6 +166,9 @@ class GameData {
           : DailyConfig.fromJson(dailyConfig),
       giftConfig: giftConfig == null ? null : GiftConfig.fromJson(giftConfig),
       dexConfig: dexConfig == null ? null : DexConfig.fromJson(dexConfig),
+      eventConfig: eventConfig == null
+          ? null
+          : EventConfig.fromJson(eventConfig),
       roadmapConfig: roadmapConfig == null
           ? null
           : RoadmapConfig.fromJson(roadmapConfig),
@@ -196,6 +206,7 @@ class GameData {
       read('forge.json'),
       read('skills.json'),
       read('dex.json'),
+      read('event.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -218,6 +229,7 @@ class GameData {
       forgeConfig: results[17],
       skillConfig: results[18],
       dexConfig: results[19],
+      eventConfig: results[20],
     );
   }
 }

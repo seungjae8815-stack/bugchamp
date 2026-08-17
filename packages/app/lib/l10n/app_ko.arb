@@ -269,6 +269,8 @@
   "eventResultTitle": "{n}웨이브 도달!",
   "eventNewBest": "최고 기록 갱신!",
   "eventKeptBest": "최고 기록은 {n}웨이브예요",
+  "eventWaveCleared": "{n}웨이브 돌파!",
+  "eventFastForward": "빨리감기",
   "eventRanking": "순위",
   "eventRankEmpty": "아직 순위가 없어요",
   "eventAnonWarn": "게스트 계정은 순위에 오르지 않아요. 로그인하면 참여할 수 있어요.",

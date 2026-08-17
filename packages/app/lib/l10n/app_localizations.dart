@@ -1672,6 +1672,18 @@ abstract class AppLocalizations {
   /// **'Your best is wave {n}'**
   String eventKeptBest(Object n);
 
+  /// No description provided for @eventWaveCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave {n} cleared!'**
+  String eventWaveCleared(Object n);
+
+  /// No description provided for @eventFastForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast forward'**
+  String get eventFastForward;
+
   /// No description provided for @eventRanking.
   ///
   /// In en, this message translates to:

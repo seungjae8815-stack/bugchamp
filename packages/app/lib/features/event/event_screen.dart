@@ -14,6 +14,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import 'event_replay.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -93,11 +94,43 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       await ref.read(saveControllerProvider.notifier).adoptServerSave(save);
     }
     final wave = (r.data?['wave'] as num?)?.toInt() ?? 0;
+    final score = (r.data?['score'] as num?)?.toInt() ?? 0;
     final isBest = r.data?['isBest'] == true;
-    final best = (r.data?['best'] as num?)?.toInt() ?? 0;
+    final seed = (r.data?['seed'] as num?)?.toInt();
+
+    // 출전한 곤충을 **순서 그대로** 넘겨 재생한다. 세이브가 서버 값으로 바뀐
+    // 뒤에도 개체는 그대로 남아 있다(피로만 붙는다).
+    final current = ref.read(saveControllerProvider).requireValue;
+    final byId = {for (final b in current.bugs) b.id: b};
+    final team = [
+      for (final id in _team)
+        if (byId[id] != null) byId[id]!,
+    ];
+    final data = ref.read(gameDataProvider).requireValue;
     _team.clear();
     await _refresh();
     if (!mounted) return;
+
+    // seed 가 있고 팀이 온전하면 **판을 다시 그린다**(결정론이라 서버와 같은 판).
+    // 화면에 쓰는 숫자는 서버 값 그대로다 — 앱 데이터가 낡았을 때 갈리면 안 된다.
+    if (seed != null && team.length == 3) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => EventReplayScreen(
+            data: data,
+            seed: seed,
+            team: team,
+            serverWave: wave,
+            serverScore: score,
+            isBest: isBest,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 재생할 수 없으면(구버전 서버 등) 결과만 알린다.
+    final best = (r.data?['best'] as num?)?.toInt() ?? 0;
     await showGameDialog<void>(
       context,
       title: l.eventResultTitle(wave),

@@ -896,6 +896,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String eventWaveCleared(Object n) {
+    return '$n웨이브 돌파!';
+  }
+
+  @override
+  String get eventFastForward => '빨리감기';
+
+  @override
   String get eventRanking => '순위';
 
   @override

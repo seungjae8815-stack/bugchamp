@@ -912,6 +912,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String eventWaveCleared(Object n) {
+    return 'Wave $n cleared!';
+  }
+
+  @override
+  String get eventFastForward => 'Fast forward';
+
+  @override
   String get eventRanking => 'Ranking';
 
   @override

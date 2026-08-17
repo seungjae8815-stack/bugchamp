@@ -895,6 +895,14 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String eventWaveCleared(Object n) {
+    return '$nウェーブ突破！';
+  }
+
+  @override
+  String get eventFastForward => '早送り';
+
+  @override
   String get eventRanking => '順位';
 
   @override

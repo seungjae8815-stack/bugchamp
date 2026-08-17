@@ -529,6 +529,8 @@
   "eventResultTitle": "Reached wave {n}!",
   "eventNewBest": "New best!",
   "eventKeptBest": "Your best is wave {n}",
+  "eventWaveCleared": "Wave {n} cleared!",
+  "eventFastForward": "Fast forward",
   "eventRanking": "Ranking",
   "eventRankEmpty": "No entries yet",
   "eventAnonWarn": "Guest accounts don't appear in the ranking. Sign in to take part.",
