@@ -2468,4 +2468,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get elementWheelHint => '編成は緑の矢印に沿って並べます。木 → 火 → 土 なら連結2つで+20%。';
+
+  @override
+  String get leagueRewardListTitle => 'リーグ昇格報酬（アカウントにつき1回）';
 }

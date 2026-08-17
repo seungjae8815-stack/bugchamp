@@ -2472,4 +2472,7 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get elementWheelHint =>
       '편성은 초록 화살표를 따라가게 짜세요. 예) 목 → 화 → 토 로 세우면 연결 2개라 +20%.';
+
+  @override
+  String get leagueRewardListTitle => '리그 승급 보상 (계정당 1회)';
 }

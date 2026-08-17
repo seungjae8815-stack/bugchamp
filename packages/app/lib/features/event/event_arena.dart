@@ -68,85 +68,67 @@ class EventArena extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Transform.translate(
-      // 오행 상극이 터질 때만 흔든다 — 매 라운드 흔들면 멀미가 나고,
-      // "이번 한 방이 컸다"는 신호도 죽는다.
-      offset: Offset(shake * 6 * (shake > 0.5 ? 1 : -1), 0),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              // 배경은 영역을 꽉 채워야 해서 `gameImage`(고정 크기)가 아니라
-              // Image.asset 을 직접 쓴다. 없으면 오행 서식지 배경으로 폴백.
-              child: Image.asset(
-                'assets/images/ui/event/arena_bg.webp',
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.medium,
-                errorBuilder: (_, _, _) => foe == null
-                    ? const ColoredBox(color: Color(0xFF1E3B28))
-                    : biomeBackground(
-                        foe!.element,
-                        fallback: const ColoredBox(color: Color(0xFF1E3B28)),
-                      ),
-              ),
-            ),
-          ),
-          // 대각 구도 — PvP 아레나와 **같은 배치**. 대회만 다르게 두면
-          // 같은 전투가 두 얼굴이 된다.
-          Align(
-            alignment: const Alignment(0.62, -0.30),
-            child: foe == null
-                ? const SizedBox.shrink()
-                : ArenaBody(
-                    data: data,
-                    // 적은 이벤트가 만든 유닛이라 종 그림이 없다 —
-                    // `speciesId` 를 주지 않으면 위젯이 기본 아이콘으로 그린다.
-                    bug: foe!,
-                    speciesId: foeSpeciesId,
-                    flip: true,
-                    stance: stanceFoe,
-                    flash: flashR,
-                    dx: -lungeR,
-                    size: 82,
-                  ),
-          ),
-          Align(
-            alignment: const Alignment(-0.60, 0.86),
-            child: mine == null
-                ? const SizedBox.shrink()
-                : ArenaBody(
-                    data: data,
-                    bug: mine!,
-                    speciesId: mineSpeciesId,
-                    flip: false,
-                    stance: stanceMine,
-                    flash: flashL,
-                    dx: lungeL,
-                    size: 116,
-                  ),
-          ),
-          Align(
-            alignment: const Alignment(-0.94, -0.86),
-            child: foe == null
-                ? const SizedBox.shrink()
-                : ArenaPlate(
-                    bug: foe!,
-                    hpFrac: foeHpFrac,
-                    nameOverride: foeName,
-                    compact: true,
-                  ),
-          ),
-          Align(
-            alignment: const Alignment(0.94, 0.92),
-            child: mine == null
-                ? const SizedBox.shrink()
-                : ArenaPlate(bug: mine!, hpFrac: mineHpFrac),
-          ),
-          for (final b in bursts) ArenaBurst(fx: b),
-          for (final f in floats) ArenaFloat(f: f),
-        ],
+    // 대각 구도·이름표 위치·흔들림은 `ArenaStage` 가 정한다 —
+    // PvP 아레나와 **같은 배치**여야 같은 전투로 읽힌다.
+    return ArenaStage(
+      shake: shake,
+      background: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        // 배경은 영역을 꽉 채워야 해서 `gameImage`(고정 크기)가 아니라
+        // Image.asset 을 직접 쓴다. 없으면 오행 서식지 배경으로 폴백.
+        child: Image.asset(
+          'assets/images/ui/event/arena_bg.webp',
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (_, _, _) => foe == null
+              ? const ColoredBox(color: Color(0xFF1E3B28))
+              : biomeBackground(
+                  foe!.element,
+                  fallback: const ColoredBox(color: Color(0xFF1E3B28)),
+                ),
+        ),
       ),
+      mineBody: mine == null
+          ? const SizedBox.shrink()
+          : ArenaBody(
+              data: data,
+              bug: mine!,
+              speciesId: mineSpeciesId,
+              flip: false,
+              stance: stanceMine,
+              flash: flashL,
+              dx: lungeL,
+              size: 116,
+            ),
+      foeBody: foe == null
+          ? const SizedBox.shrink()
+          : ArenaBody(
+              data: data,
+              // 적은 이벤트가 만든 유닛이라 종 그림이 없다 — `speciesId` 를
+              // 주지 않으면 위젯이 기본 아이콘으로 그린다.
+              bug: foe!,
+              speciesId: foeSpeciesId,
+              flip: true,
+              stance: stanceFoe,
+              flash: flashR,
+              dx: -lungeR,
+              size: 82,
+            ),
+      minePlate: mine == null
+          ? const SizedBox.shrink()
+          : ArenaPlate(bug: mine!, hpFrac: mineHpFrac),
+      foePlate: foe == null
+          ? const SizedBox.shrink()
+          : ArenaPlate(
+              bug: foe!,
+              hpFrac: foeHpFrac,
+              nameOverride: foeName,
+              compact: true,
+            ),
+      overlays: [
+        for (final b in bursts) ArenaBurst(fx: b),
+        for (final f in floats) ArenaFloat(f: f),
+      ],
     );
   }
 }

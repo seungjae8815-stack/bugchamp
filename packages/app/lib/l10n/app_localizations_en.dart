@@ -2519,4 +2519,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get elementWheelHint =>
       'Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.';
+
+  @override
+  String get leagueRewardListTitle =>
+      'League promotion rewards (once per account)';
 }

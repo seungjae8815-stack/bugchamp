@@ -161,14 +161,22 @@ class ArenaBody extends StatelessWidget {
                 duration: const Duration(milliseconds: 300),
                 switchInCurve: Curves.easeOutBack,
                 switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, anim) => FadeTransition(
-                  opacity: anim,
-                  child: SlideTransition(
-                    position: Tween(
-                      begin: Offset(flip ? 0.7 : -0.7, 0),
-                      end: Offset.zero,
-                    ).animate(anim),
-                    child: child,
+                // ⚠️ `FadeTransition(opacity: anim)` 을 쓰면 안 된다 —
+                // `easeOutBack` 이 1.0 을 넘겨 단언에 걸린다(위와 같은 함정).
+                // 곤충이 교대될 때마다 오류 화면이 스쳤다.
+                transitionBuilder: (child, anim) => AnimatedBuilder(
+                  animation: anim,
+                  child: child,
+                  builder: (_, c) => Opacity(
+                    opacity: anim.value.clamp(0.0, 1.0),
+                    child: Transform.translate(
+                      // 튕김은 **위치에만** 남긴다.
+                      offset: Offset(
+                        (flip ? 0.7 : -0.7) * (1 - anim.value) * 70,
+                        0,
+                      ),
+                      child: c,
+                    ),
                   ),
                 ),
                 child: KeyedSubtree(
@@ -879,8 +887,9 @@ Future<void> showBattleResultDialog(
 /// **누가 내 편인지 한눈에 안 들어오고**, 깊이도 없어 배경 그림 위에 스티커 두 장을
 /// 붙여 놓은 것처럼 보였다(실기: "인터페이스가 끌리는 게 없다").
 ///
-/// 이름표는 몸의 **대각선 반대쪽**에 둔다 — 몸 바로 위에 얹으면 곤충을 가리고,
-/// 같은 쪽에 몰면 한쪽 구석만 빽빽해진다.
+/// 이름표는 **자기 몸 바로 위**에 붙인다. 처음엔 대각선 반대쪽 구석에 뒀는데
+/// "어느 HP 바가 내 것인지" 헷갈렸다(실기 지적) — 포켓몬은 화면에 그 둘뿐이라
+/// 대각 배치가 통하지만, 여기는 오행·스탠스 표시가 더 있어 연결이 끊긴다.
 class ArenaStage extends StatelessWidget {
   const ArenaStage({
     super.key,
@@ -914,13 +923,22 @@ class ArenaStage extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(child: background),
-            // 상대 — 오른쪽 **위**, 작게(멀리 있다).
-            Align(alignment: const Alignment(0.62, -0.30), child: foeBody),
+            // 상대 — 오른쪽 **위**, 작게(멀리 있다). 이름표는 **자기 몸 위**.
+            Align(
+              alignment: const Alignment(0.62, -0.34),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [foePlate, const SizedBox(height: 4), foeBody],
+              ),
+            ),
             // 나 — 왼쪽 **아래**, 크게(가까이 있다).
-            Align(alignment: const Alignment(-0.60, 0.86), child: mineBody),
-            // 이름표는 각자의 대각선 반대쪽 구석.
-            Align(alignment: const Alignment(-0.94, -0.86), child: foePlate),
-            Align(alignment: const Alignment(0.94, 0.92), child: minePlate),
+            Align(
+              alignment: const Alignment(-0.58, 0.94),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [minePlate, const SizedBox(height: 4), mineBody],
+              ),
+            ),
             ...overlays,
           ],
         ),
@@ -979,7 +997,11 @@ class ArenaIntro extends StatelessWidget {
               Transform.scale(
                 scale: 0.4 + stamp * 0.6,
                 child: Opacity(
-                  opacity: stamp,
+                  // ⚠️ `easeOutBack` 은 **1.0 을 넘겼다 돌아온다**(그게 "톡" 하고
+                  // 찍히는 맛이다). 그 값을 그대로 Opacity 에 주면 단언에 걸려
+                  // **빨간 오류 화면**이 잠깐 떴다 사라진다(실기 지적).
+                  // 튕김은 scale 에만 남기고 투명도는 자른다.
+                  opacity: stamp.clamp(0.0, 1.0),
                   child: const Text(
                     'VS',
                     style: TextStyle(

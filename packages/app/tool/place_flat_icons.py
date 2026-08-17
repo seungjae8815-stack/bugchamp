@@ -108,6 +108,24 @@ def cutout(img):
         if 0.25 < share_lo < 0.75:  # 밝은 칸·어두운 칸이 반반 = 체크판
             bg |= m
 
+    # ── 2차: 헤일로(발광) 제거 ───────────────────────────────────
+    # 생성기가 아이콘 둘레에 **부드러운 빛**을 그려 넣으면 그 빛이 체크무늬와
+    # 섞여, "정확히 체크판 색"이 아니게 되어 위 판정을 통과한다 → 화면에서는
+    # **회색 후광**으로 보인다(실측: 회복 아이콘).
+    #
+    # 그래서 **더 느슨한 기준**으로 한 번 더 번져 들어간다. 여전히 바깥에서
+    # 이어진 것만 지우므로, 그림의 진한 외곽선에서 멈춘다 — 색이 진한 부분은
+    # 애초에 이 기준에 안 걸린다(회색기 + 체크판 밝기대 안이어야 한다).
+    spread = rgb.max(axis=2) - rgb.min(axis=2)
+    loose = (spread < 34) & (v > lo - 46) & (v < hi + 46)
+    lab2, n2 = ndimage.label(loose | bg)
+    if n2:
+        edge2 = set(lab2[0].tolist()) | set(lab2[-1].tolist())
+        edge2 |= set(lab2[:, 0].tolist()) | set(lab2[:, -1].tolist())
+        edge2.discard(0)
+        if edge2:
+            bg |= np.isin(lab2, list(edge2)) & loose
+
     a = np.where(bg, 0, 255).astype("uint8")
     out = img.convert("RGBA")
     alpha = Image.fromarray(a)

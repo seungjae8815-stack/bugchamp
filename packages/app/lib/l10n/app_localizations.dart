@@ -4569,6 +4569,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.'**
   String get elementWheelHint;
+
+  /// No description provided for @leagueRewardListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'League promotion rewards (once per account)'**
+  String get leagueRewardListTitle;
 }
 
 class _AppLocalizationsDelegate

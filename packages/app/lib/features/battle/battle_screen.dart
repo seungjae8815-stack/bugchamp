@@ -623,7 +623,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         children: [
           Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 22)),
+              leagueIcon(cur.id, size: 26),
               const SizedBox(width: 8),
               Text(
                 label,
@@ -635,7 +635,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
               const Spacer(),
               Text(
-                '🏆 $trophies',
+                '$trophies',
                 style: const TextStyle(
                   color: _honey,
                   fontWeight: FontWeight.w900,
@@ -654,7 +654,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 5),
+          // ⚠️ 예전엔 "시즌 종료"와 "다음 리그까지"를 **한 줄에** 넣고 둘 다
+          // `Flexible`+생략 처리했다. 그래서 "실버까지 7..." 처럼 정작 중요한
+          // 숫자가 잘렸다(실기 지적). 각자 한 줄씩 준다.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              next == null
+                  ? l.leagueMaxRank
+                  : l.leagueToNext(
+                      next.minTrophy - trophies,
+                      _leagueStyle(l, next.id).$1,
+                    ),
+              style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 3),
           Row(
             children: [
               const Icon(
@@ -663,22 +679,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 color: Color(0x99FFFFFF),
               ),
               const SizedBox(width: 3),
-              Text(
-                l.seasonEndsIn(_seasonLeft(seasonRemaining)),
-                style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
-              ),
-              const Spacer(),
               Flexible(
                 child: Text(
-                  next == null
-                      ? l.leagueMaxRank
-                      : l.leagueToNext(
-                          next.minTrophy - trophies,
-                          _leagueStyle(l, next.id).$1,
-                        ),
-                  textAlign: TextAlign.right,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  l.seasonEndsIn(_seasonLeft(seasonRemaining)),
                   style: const TextStyle(
                     color: Color(0x99FFFFFF),
                     fontSize: 11,
@@ -687,6 +690,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          // **보상이 무엇인지 화면에 없었다**(실기 지적). 승급 보상은 리그마다
+          // 다르고 계정당 1회뿐이라(§2.6), 목록으로 보여야 목표가 생긴다.
+          _leagueRewardList(l, cfg, save, trophies),
           if (claimable.isNotEmpty) ...[
             const SizedBox(height: 8),
             SizedBox(
@@ -716,6 +723,133 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  /// 리그별 승급 보상 목록 — 받은 것/받을 수 있는 것/아직 먼 것을 한눈에.
+  ///
+  /// 승급 보상은 **계정당 1회**다(§2.6 — `claimedLeagues` 는 시즌 리셋에서
+  /// 초기화되지 않는다). 그래서 "이번 시즌에 또 받는 것"으로 오해하지 않게
+  /// 받은 리그는 확실히 지워 표시한다.
+  Widget _leagueRewardList(
+    AppLocalizations l,
+    BattleConfig cfg,
+    SaveGame save,
+    int trophies,
+  ) {
+    final rows = <Widget>[];
+    for (final lg in cfg.leagues) {
+      if (!lg.hasReward) continue; // 브론즈는 시작 리그라 보상이 없다
+      final claimed = save.claimedLeagues.contains(lg.id);
+      final reached = trophies >= lg.minTrophy;
+      final canClaim = reached && !claimed;
+      final (name, color, _) = _leagueStyle(l, lg.id);
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Opacity(
+            opacity: reached ? 1 : 0.45,
+            child: Row(
+              children: [
+                leagueIcon(lg.id, size: 18),
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 58,
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${lg.minTrophy}',
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 10.5,
+                  ),
+                ),
+                const Spacer(),
+                goldIcon(size: 13),
+                const SizedBox(width: 3),
+                Text(
+                  formatCompact(lg.rewardGold),
+                  style: const TextStyle(
+                    color: Color(0xFFEBD24A),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (lg.rewardJelly > 0) ...[
+                  const SizedBox(width: 8),
+                  materialImage(
+                    MaterialKind.jelly,
+                    size: 13,
+                    fallback: const SizedBox(width: 13),
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    '${lg.rewardJelly}',
+                    style: const TextStyle(
+                      color: Color(0xFF9BE7FF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 16,
+                  child: claimed
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          size: 14,
+                          color: Color(0xFF7CE38B),
+                        )
+                      : (canClaim
+                            ? const Icon(
+                                Icons.card_giftcard_rounded,
+                                size: 14,
+                                color: Color(0xFFEBC24A),
+                              )
+                            : const Icon(
+                                Icons.lock_rounded,
+                                size: 12,
+                                color: Color(0x66FFFFFF),
+                              )),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0x18000000),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0x22FFFFFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.leagueRewardListTitle,
+            style: const TextStyle(
+              color: Color(0xCCFFFFFF),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
   Future<void> _claimLeague(AppLocalizations l) async {
     final r = await ref
         .read(saveControllerProvider.notifier)
@@ -726,13 +860,35 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       context,
       title: l.leaguePromoTitle,
       icon: Icons.military_tech_rounded,
-      content: Text(
-        '💰 ${formatCompact(r.gold)}    💎 ${r.jelly}',
-        style: const TextStyle(
-          color: Color(0xFFEBD24A),
-          fontWeight: FontWeight.w900,
-          fontSize: 18,
-        ),
+      content: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          goldIcon(size: 20),
+          const SizedBox(width: 5),
+          Text(
+            formatCompact(r.gold),
+            style: const TextStyle(
+              color: Color(0xFFEBD24A),
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(width: 14),
+          materialImage(
+            MaterialKind.jelly,
+            size: 20,
+            fallback: const SizedBox(width: 20),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            '${r.jelly}',
+            style: const TextStyle(
+              color: Color(0xFF9BE7FF),
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+        ],
       ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );
@@ -1287,7 +1443,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             child: Row(
               children: [
-                Text(emoji, style: const TextStyle(fontSize: 17)),
+                leagueIcon(cur.id, size: 20),
                 const SizedBox(width: 6),
                 Text(
                   label,
