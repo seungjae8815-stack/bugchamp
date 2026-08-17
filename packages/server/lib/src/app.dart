@@ -565,6 +565,136 @@ Handler buildHandler({
     });
 
     /// 짝짓기 시작 — 조건 검사와 **자식 롤 시드 생성**을 서버가 한다.
+    // ── 실물 경품 랭킹 이벤트 ────────────────────────────────────
+    //
+    // docs/event_ranking_prize.md. 순위가 그대로 실물 상품이 되므로 **앱이
+    // 점수를 올리는 경로는 없다.** 서버가 참가권을 깎고 웨이브를 돌려 확정한다.
+
+    /// 이벤트 현황 — 회차·참가권·내 최고 기록.
+    authed.get('/event', (Request req) async {
+      final user = userOf(req);
+      final ev = cfg.event;
+      if (ev == null) return _json({'error': 'event_closed'}, status: 404);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final roundId = actions.eventRoundId();
+        final t = actions.eventTicketsNow(save);
+        return _json({
+          'roundId': roundId,
+          'tickets': t.tickets,
+          'ticketMax': ev.ticketMax,
+          'fatigueHours': ev.fatigueHours,
+          'bestWave': save.eventRoundId == roundId ? save.eventBestWave : 0,
+          'bestScore': save.eventBestScoreIn(roundId),
+          // 익명 계정은 도전은 되지만 **순위에 오르지 않는다**(다계정이 무료·무제한).
+          'rankEligible': !user.isAnonymous,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 이벤트 순위 — 상위 N + 내 순위(목록 안에 있으면 `isMe`).
+    authed.get('/event/leaderboard', (Request req) async {
+      final user = userOf(req);
+      if (cfg.event == null)
+        return _json({'error': 'event_closed'}, status: 404);
+      final roundId = actions.eventRoundId();
+      try {
+        final rows = await store.eventTop(roundId, 100);
+        return _json({
+          'roundId': roundId,
+          'entries': [
+            for (final r in rows)
+              {
+                'rank': r['rank'],
+                'nickname': r['nickname'],
+                'score': r['score'],
+                'wave': r['wave'],
+                'isMe': r['user_id'] == user.id,
+              },
+          ],
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event/leaderboard] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 이벤트 도전 1회.
+    authed.post('/event/challenge', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final ids = (body['teamIds'] as List?)?.map((e) => '$e').toList();
+      if (ids == null || ids.length != 3) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.eventChallenge(
+          save,
+          teamIds: ids,
+          speciesById: species,
+        );
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+
+        // 순위 기록은 **로그인 계정만**. 익명은 다계정을 막을 수 없어서
+        // 실물 경품 대상이 될 수 없다(기획 §4).
+        var recorded = false;
+        if (!user.isAnonymous && r.extra['isBest'] == true) {
+          try {
+            await store.submitEventScore(
+              roundId: '${r.extra['roundId']}',
+              userId: user.id,
+              nickname: r.save!.nickname,
+              score: r.extra['score'] as int,
+              wave: r.extra['wave'] as int,
+              team: {'ids': ids},
+            );
+            recorded = true;
+          } catch (e) {
+            // 기록 실패로 판을 무르지 않는다 — 참가권은 이미 나갔다.
+            // 다음 도전에서 최고 기록이면 다시 올라간다.
+            stderr.writeln('[event/submit] ${user.id}: $e');
+          }
+        }
+        return _json({
+          'save': r.save!.toJson(),
+          ...r.extra,
+          'rankEligible': !user.isAnonymous,
+          'recorded': recorded,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event/challenge] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 광고 시청 → 참가권 1장(하루 상한은 event.json).
+    authed.post('/event/ad-ticket', (Request req) async {
+      final user = userOf(req);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.grantEventAdTicket(save);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event/ad-ticket] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     authed.post('/breed', (Request req) async {
       final user = userOf(req);
       final Map<String, dynamic> body;

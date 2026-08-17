@@ -109,6 +109,55 @@ class StateStore {
     }
   }
 
+  /// 이벤트 최고 기록 기록(실물 경품 랭킹 이벤트).
+  ///
+  /// ⚠️ **이 테이블은 앱이 쓰지 못한다** — RLS 로 읽기만 열고 쓰기는
+  /// service_role(=서버)만. 순위가 그대로 실물 상품이 되므로, 앱이 점수를
+  /// 올리는 경로가 있으면 그게 곧 구멍이다(docs/event_ranking_prize.md §3).
+  ///
+  /// 갱신은 **더 높을 때만** 한다 — SQL 함수 `event_submit` 이 판단한다
+  /// (여기서 읽고-비교-쓰기를 하면 동시 요청에 낮은 점수가 덮을 수 있다).
+  Future<void> submitEventScore({
+    required String roundId,
+    required String userId,
+    required String nickname,
+    required int score,
+    required int wave,
+    required Map<String, dynamic> team,
+  }) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/event_submit'),
+      headers: _headers,
+      body: jsonEncode({
+        'p_round': roundId,
+        'p_user': userId,
+        'p_nick': nickname,
+        'p_score': score,
+        'p_wave': wave,
+        'p_team': team,
+      }),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('event 기록 실패: ${res.statusCode} ${res.body}');
+    }
+  }
+
+  /// 이벤트 순위 상위 [limit] 명.
+  ///
+  /// 앱에 Supabase RPC 권한을 열지 않고 **서버가 대신 읽어** 준다 —
+  /// `event_scores` 는 RLS 정책이 없어 클라이언트가 직접 접근할 수 없다.
+  Future<List<Map<String, dynamic>>> eventTop(String roundId, int limit) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/event_top'),
+      headers: _headers,
+      body: jsonEncode({'p_round': roundId, 'lim': limit}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('event 순위 실패: ${res.statusCode}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
+  }
+
   /// 수동 전투 세션 조회. 없으면 null.
   Future<Map<String, dynamic>?> loadSession(String id) async {
     final uri = Uri.parse(

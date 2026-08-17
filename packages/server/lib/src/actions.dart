@@ -127,6 +127,15 @@ class GameActions {
     'ticketsAt',
     'adUseCounts',
     'adUseDate',
+    // 이벤트(실물 경품) — 순위가 그대로 상품이 되므로 참가권·피로·기록을 전부
+    // 서버가 소유한다. 세이브를 고쳐 참가권을 채우거나 피로를 지우면 최강
+    // 3마리로 무한히 도전할 수 있어 제한이 통째로 무의미해진다.
+    'eventTickets',
+    'eventTicketsAt',
+    'eventFatigue',
+    'eventRoundId',
+    'eventBestWave',
+    'eventBestScore',
   };
 
   /// 한 번의 업로드에 실릴 수 있는 화석 조각의 **정상 최대치**.
@@ -1576,6 +1585,183 @@ class GameActions {
       ..[MaterialKind.jelly] = have - amount;
     return ActionResult.ok(save.copyWith(materials: mats));
   }
+
+  // ── 실물 경품 랭킹 이벤트 — 웨이브 방어전 ────────────────────────
+  //
+  // docs/event_ranking_prize.md. 이 모드의 순위는 **그대로 실물 상품**이 되므로,
+  // 앱이 계산한 값을 받아 적는 경로를 아예 만들지 않는다. 서버가 참가권을 깎고,
+  // 편성을 검증하고, seed 를 정하고, 웨이브를 돌려 점수를 확정한다.
+  // 앱은 그 seed 로 같은 판을 **재생만** 한다(core_battle 결정론 §2.3).
+
+  /// 지금 시각이 속한 회차 키.
+  String eventRoundId() => EventConfig.roundIdOf(now().toUtc());
+
+  /// 참가권 일일 지급 경계(KST 09:00). 시즌·이벤트가 같은 앵커를 쓴다 —
+  /// 기기 타임존을 바꿔 하루에 두 번 받는 우회를 막으려면 고정 오프셋이어야 한다.
+  static String _eventGrantDayKey(DateTime utc, int anchorHourKst) {
+    final kst = utc.toUtc().add(const Duration(hours: 9));
+    final shifted = kst.subtract(Duration(hours: anchorHourKst));
+    return '${shifted.year}-${shifted.month}-${shifted.day}';
+  }
+
+  /// [save] 의 참가권을 지금 시각 기준으로 정산한다(일일 지급 반영).
+  ({int tickets, DateTime at}) eventTicketsNow(SaveGame save) {
+    final cfg = config.event;
+    final t = now().toUtc();
+    if (cfg == null) return (tickets: save.eventTickets, at: t);
+    final last = save.eventTicketsAt;
+    final today = _eventGrantDayKey(t, cfg.anchorHourKst);
+    if (last != null && _eventGrantDayKey(last, cfg.anchorHourKst) == today) {
+      return (tickets: save.eventTickets, at: last);
+    }
+    // 하루치 지급 — 여러 날 비웠어도 **한 번만** 준다(모아두는 게임이 아니다).
+    final next = save.eventTickets + cfg.ticketDailyGrant;
+    return (tickets: next > cfg.ticketMax ? cfg.ticketMax : next, at: t);
+  }
+
+  /// 광고로 참가권 1장. 하루 상한을 넘으면 `ad_limit`.
+  /// 상한은 광고제거·패스 구매자에게도 **동일**하다(§2.6 P2W 금지).
+  ActionResult grantEventAdTicket(SaveGame save) {
+    final cfg = config.event;
+    if (cfg == null) return const ActionResult.fail('event_closed');
+    if (cfg.ticketAdGrant <= 0) return const ActionResult.fail('disabled');
+    final t = now().toUtc();
+    final today = dailyDateKey(t);
+    final used = save.adUseCount(kAdFeatureEventTicket, today);
+    if (cfg.ticketAdDailyLimit > 0 && used >= cfg.ticketAdDailyLimit) {
+      return const ActionResult.fail('ad_limit');
+    }
+    final cur = eventTicketsNow(save);
+    if (cur.tickets >= cfg.ticketMax) {
+      return const ActionResult.fail('ticket_full');
+    }
+    final counts = save.adUseDate == today
+        ? Map<String, int>.from(save.adUseCounts)
+        : <String, int>{};
+    counts[kAdFeatureEventTicket] = used + 1;
+    final next = cur.tickets + cfg.ticketAdGrant;
+    return ActionResult.ok(
+      save.copyWith(
+        eventTickets: next > cfg.ticketMax ? cfg.ticketMax : next,
+        eventTicketsAt: cur.at,
+        adUseCounts: counts,
+        adUseDate: today,
+      ),
+      extra: {'tickets': next, 'adUsed': used + 1},
+    );
+  }
+
+  /// **이벤트 도전 1회.** 참가권을 깎고, 웨이브를 돌려 점수를 확정한다.
+  ///
+  /// 거부 사유: `event_closed` · `no_ticket` · `bad_team`(3마리·중복·미보유) ·
+  /// `not_adult` · `fatigued`(출전 피로).
+  ActionResult eventChallenge(
+    SaveGame save, {
+    required List<String> teamIds,
+    required Map<String, Species> speciesById,
+  }) {
+    final cfg = config.event;
+    if (cfg == null) return const ActionResult.fail('event_closed');
+    final t = now().toUtc();
+
+    if (teamIds.length != 3 || teamIds.toSet().length != 3) {
+      return const ActionResult.fail('bad_team');
+    }
+
+    final byId = {for (final b in save.bugs) b.id: b};
+    final team = <IndividualBug>[];
+    for (final id in teamIds) {
+      final bug = byId[id];
+      if (bug == null) return const ActionResult.fail('bad_team');
+      if (effectiveStage(bug.stage, bug.stageSince, t, config.pet) !=
+          LifeStage.adult) {
+        return const ActionResult.fail('not_adult');
+      }
+      // 출전 피로 — 같은 3마리로 계속 도전하지 못하게 한다(기획 §3-1).
+      if (save.eventOnFatigue(id, t)) {
+        return const ActionResult.fail('fatigued');
+      }
+      team.add(bug);
+    }
+
+    final cur = eventTicketsNow(save);
+    if (cur.tickets <= 0) return const ActionResult.fail('no_ticket');
+
+    // 정규화 — 개체 스탯을 쓰지 않는다. 앱과 **같은 함수**(buildEventBug).
+    final units = <BattleBug>[];
+    for (final bug in team) {
+      final sp = speciesById[bug.speciesId];
+      if (sp == null) return const ActionResult.fail('unknown_species');
+      final n = cfg.normalized(sp.grade);
+      units.add(
+        buildEventBug(
+          bug: bug,
+          species: sp,
+          locale: 'ko',
+          hp: n.hp,
+          atk: n.atk,
+          def: n.def,
+          spd: n.spd,
+        ),
+      );
+    }
+
+    final roundId = EventConfig.roundIdOf(t);
+    final seed = EventConfig.roundSeedOf(roundId);
+    final spec = WaveEnemySpec(
+      baseHp: cfg.enemyBaseHp,
+      baseAtk: cfg.enemyBaseAtk,
+      baseDef: cfg.enemyBaseDef,
+      baseSpd: cfg.enemyBaseSpd,
+      growth: cfg.enemyGrowth,
+      count: cfg.enemyCount,
+    );
+    final run = simulateWaveRun(
+      seed: seed,
+      team: units,
+      enemyOf: (w) => eventWaveEnemies(seed, w, spec),
+      maxWave: cfg.maxWave,
+      waveHealPct: cfg.waveHealPct,
+    );
+    final score = cfg.score(
+      clearedWaves: run.clearedWaves,
+      hpPct: run.hpPctAtLastWave,
+      survivors: run.survivors,
+      totalRounds: run.totalRounds,
+    );
+
+    // 출전 피로 — 이긴 판이든 진 판이든 나갔으면 쉰다.
+    final fatigue = save.prunedEventFatigue(t);
+    final until = t.add(Duration(hours: cfg.fatigueHours));
+    for (final id in teamIds) {
+      fatigue[id] = until;
+    }
+
+    // 회차가 바뀌었으면 지난 기록을 끌고 오지 않는다.
+    final prevBest = save.eventBestScoreIn(roundId);
+    final isBest = score > prevBest;
+
+    return ActionResult.ok(
+      save.copyWith(
+        eventTickets: cur.tickets - 1,
+        eventTicketsAt: cur.at,
+        eventFatigue: fatigue,
+        eventRoundId: roundId,
+        eventBestWave: isBest ? run.clearedWaves : save.eventBestWave,
+        eventBestScore: isBest ? score : prevBest,
+      ),
+      extra: {
+        'roundId': roundId,
+        'seed': seed,
+        'wave': run.clearedWaves,
+        'score': score,
+        'best': isBest ? score : prevBest,
+        'isBest': isBest,
+        'tickets': cur.tickets - 1,
+        'fatigueUntil': until.toIso8601String(),
+      },
+    );
+  }
 }
 
 /// [GameActions] 가 필요로 하는 설정만 추린 인터페이스 —
@@ -1595,6 +1781,9 @@ abstract interface class GameConfigLike {
   GiftConfig? get gift;
   DailyConfig? get daily;
   RoadmapConfig? get roadmap;
+
+  /// 실물 경품 랭킹 이벤트. 없으면 이벤트 API 는 닫힌다.
+  EventConfig? get event;
 
   /// 드롭 롤 대상 종 목록.
   List<Species> get speciesList;

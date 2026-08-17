@@ -105,6 +105,12 @@ class _Config implements GameConfigLike {
     jsonDecode(File('../app/assets/data/roadmap.json').readAsStringSync())
         as Map<String, dynamic>,
   );
+
+  @override
+  final EventConfig? event = EventConfig.fromJson(
+    jsonDecode(File('../app/assets/data/event.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
 }
 
 void main() {

@@ -48,6 +48,9 @@ const int kDefaultPvpTickets = 10;
 /// (버프=누적 6h, 부화단축=알이 다 부화하면 끝, 일일보상=자체 제한).
 const String kAdFeaturePvpTicket = 'pvpTicket';
 
+/// 이벤트 참가권 광고(실물 경품 랭킹 이벤트). 상한은 event.json.
+const String kAdFeatureEventTicket = 'eventTicket';
+
 /// 설치된 트랩 1개 (레거시 v1 채집 시스템. v2 에서는 미사용이나 세이브 호환 위해 유지).
 class TrapInstallation {
   const TrapInstallation({
@@ -393,6 +396,12 @@ class SaveGame {
     required this.incubatorCapacity,
     required this.incubating,
     this.breedCooldowns = const {},
+    this.eventTickets = 0,
+    this.eventTicketsAt,
+    this.eventFatigue = const {},
+    this.eventRoundId,
+    this.eventBestWave = 0,
+    this.eventBestScore = 0,
     required this.pvpTrophies,
     required this.injured,
     required this.claimedLeagues,
@@ -539,6 +548,45 @@ class SaveGame {
   /// 기본값 `{}` 인 **호환 필드**라 스키마 버전을 올리지 않는다 — 구버전 앱은
   /// 이 값을 모른 채 그대로 보존한다.
   final Map<String, DateTime> breedCooldowns;
+
+  // ── 실물 경품 랭킹 이벤트(웨이브 방어전) ──────────────────────
+  //
+  // ⚠️ 아래 6개는 전부 **서버 소유 필드**다(`GameActions._serverOwnedKeys`).
+  // 순위가 그대로 실물 상품이 되므로, 세이브를 고쳐 참가권을 채우거나 피로를
+  // 지우면 이벤트가 통째로 무의미해진다 — 결투 티켓과 같은 이유(§2.7).
+  // 앱에 있는 값은 **화면에 보여주기 위한 사본**이고, 어긋나면 서버가 옳다.
+
+  /// 남은 대회 참가권.
+  final int eventTickets;
+
+  /// 마지막으로 일일 참가권을 지급받은 시각(UTC).
+  final DateTime? eventTicketsAt;
+
+  /// 출전 피로: bugId → **재출전 가능 시각**(UTC).
+  final Map<String, DateTime> eventFatigue;
+
+  /// 지금 기록이 속한 회차 키(`2026-W34`). 회차가 바뀌면 기록을 0 으로 본다.
+  final String? eventRoundId;
+
+  /// 이번 회차 최고 도달 웨이브 / 최고 점수(표시용 사본).
+  final int eventBestWave;
+  final int eventBestScore;
+
+  /// [bugId] 가 [now] 기준으로 아직 출전 피로 중인가.
+  bool eventOnFatigue(String bugId, DateTime now) {
+    final until = eventFatigue[bugId];
+    return until != null && now.isBefore(until);
+  }
+
+  /// 만료된 피로를 걷어낸 맵 — 세이브가 무한히 커지지 않게 한다.
+  Map<String, DateTime> prunedEventFatigue(DateTime now) => {
+    for (final e in eventFatigue.entries)
+      if (now.isBefore(e.value)) e.key: e.value,
+  };
+
+  /// [roundId] 기준 최고 기록(회차가 다르면 0 — 지난 회차 기록을 끌고 오지 않는다).
+  int eventBestScoreIn(String roundId) =>
+      eventRoundId == roundId ? eventBestScore : 0;
 
   /// [bugId] 가 [now] 기준으로 아직 짝짓기 쿨다운 중인가.
   bool breedOnCooldown(String bugId, DateTime now) {
@@ -816,6 +864,8 @@ class SaveGame {
     incubatorCapacity: 1,
     incubating: const {},
     breedCooldowns: const {},
+    eventTickets: 0,
+    eventFatigue: const {},
     pvpTrophies: 0,
     injured: const {},
     claimedLeagues: const {},
@@ -869,6 +919,12 @@ class SaveGame {
     int? incubatorCapacity,
     Map<String, DateTime>? incubating,
     Map<String, DateTime>? breedCooldowns,
+    int? eventTickets,
+    DateTime? eventTicketsAt,
+    Map<String, DateTime>? eventFatigue,
+    String? eventRoundId,
+    int? eventBestWave,
+    int? eventBestScore,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
     Set<String>? claimedLeagues,
@@ -928,6 +984,12 @@ class SaveGame {
     incubatorCapacity: incubatorCapacity ?? this.incubatorCapacity,
     incubating: incubating ?? this.incubating,
     breedCooldowns: breedCooldowns ?? this.breedCooldowns,
+    eventTickets: eventTickets ?? this.eventTickets,
+    eventTicketsAt: eventTicketsAt ?? this.eventTicketsAt,
+    eventFatigue: eventFatigue ?? this.eventFatigue,
+    eventRoundId: eventRoundId ?? this.eventRoundId,
+    eventBestWave: eventBestWave ?? this.eventBestWave,
+    eventBestScore: eventBestScore ?? this.eventBestScore,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
@@ -1054,6 +1116,18 @@ class SaveGame {
           (k, v) => MapEntry(k, DateTime.parse(v as String).toUtc()),
         ) ??
         const {},
+    eventTickets: (json['eventTickets'] as num?)?.toInt() ?? 0,
+    eventTicketsAt: json['eventTicketsAt'] == null
+        ? null
+        : DateTime.parse(json['eventTicketsAt'] as String).toUtc(),
+    eventFatigue:
+        (json['eventFatigue'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, DateTime.parse(v as String).toUtc()),
+        ) ??
+        const {},
+    eventRoundId: json['eventRoundId'] as String?,
+    eventBestWave: (json['eventBestWave'] as num?)?.toInt() ?? 0,
+    eventBestScore: (json['eventBestScore'] as num?)?.toInt() ?? 0,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
         (json['injured'] as Map<String, dynamic>?)?.map(
@@ -1173,6 +1247,18 @@ class SaveGame {
         for (final e in breedCooldowns.entries)
           e.key: e.value.toUtc().toIso8601String(),
       },
+    // 이벤트 필드는 **참여자만** 싣는다 — 안 하는 유저의 세이브를 키우지 않는다.
+    if (eventTickets > 0) 'eventTickets': eventTickets,
+    if (eventTicketsAt != null)
+      'eventTicketsAt': eventTicketsAt!.toUtc().toIso8601String(),
+    if (eventFatigue.isNotEmpty)
+      'eventFatigue': {
+        for (final e in eventFatigue.entries)
+          e.key: e.value.toUtc().toIso8601String(),
+      },
+    if (eventRoundId != null) 'eventRoundId': eventRoundId,
+    if (eventBestWave > 0) 'eventBestWave': eventBestWave,
+    if (eventBestScore > 0) 'eventBestScore': eventBestScore,
     'pvpTrophies': pvpTrophies,
     'injured': {
       for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),
