@@ -763,3 +763,118 @@ gcloud run services update bugchamp-server --region asia-northeast3 `
 지금은 운영자 메시지가 **일반 메시지처럼** 보인다(닉네임만 "운영자").
 1.0.5 에서 `ChatMessage.isAdmin` 을 읽어 배지·색을 주고, 차단·신고 대상에서
 제외하고, "운영자" 계열 닉네임을 예약어로 막는다.
+
+---
+
+## 15. 실물 경품 랭킹 이벤트 — 웨이브 방어전 (2026-08-17)
+
+기획·운영 규칙은 `docs/event_ranking_prize.md`. 여기는 **DB 계약**만 적는다.
+
+### 왜 앱이 이 테이블을 못 만지게 하나
+
+순위가 **그대로 실물 상품**이 된다. `profiles`(랭킹 3축)는 앱이 직접 업서트하는데,
+그 방식을 이벤트에 쓰면 조작 앱이 아무 점수나 올릴 수 있다. 그래서
+`event_scores` 는 **정책을 하나도 만들지 않는다** — anon/authenticated 는 직접
+읽지도 쓰지도 못하고, 서버(service_role)와 `SECURITY DEFINER` 함수만 접근한다.
+직접 `select` 를 열면 남의 편성 스냅샷(`team`)까지 노출된다.
+
+### SQL (1회 실행 — 재실행 안전)
+
+```sql
+create table if not exists event_scores (
+  round_id   text  not null,                       -- '2026-W34'
+  user_id    uuid  not null references auth.users(id) on delete cascade,
+  nickname   text  not null default '',
+  score      bigint not null default 0,
+  wave       int   not null default 0,
+  team       jsonb,                                -- 검증용 편성 스냅샷
+  tries      int   not null default 0,             -- 이상치 탐지용(점수/시도 비율)
+  updated_at timestamptz not null default now(),
+  primary key (round_id, user_id)
+);
+
+-- 동점은 **먼저 도달한 쪽이 위**다(기획 §3-1) — 정렬 인덱스도 그 순서로.
+create index if not exists event_scores_rank_idx
+  on event_scores (round_id, score desc, updated_at asc);
+
+alter table event_scores enable row level security;
+-- ⚠️ 정책을 만들지 않는다 = 클라이언트는 접근 불가(service_role 은 RLS 우회).
+
+-- 점수 제출: **서버만** 호출한다.
+-- 읽고-비교-쓰기를 서버에서 하면 동시 요청에 낮은 점수가 덮을 수 있으므로,
+-- 갱신 판단을 SQL 한 문장 안에서 한다.
+create or replace function event_submit(
+  p_round text, p_user uuid, p_nick text,
+  p_score bigint, p_wave int, p_team jsonb
+) returns void
+language sql security definer set search_path = public as $$
+  insert into event_scores
+    (round_id, user_id, nickname, score, wave, team, tries, updated_at)
+  values (p_round, p_user, p_nick, p_score, p_wave, p_team, 1, now())
+  on conflict (round_id, user_id) do update set
+    tries      = event_scores.tries + 1,
+    nickname   = excluded.nickname,
+    score      = greatest(event_scores.score, excluded.score),
+    wave       = case when excluded.score > event_scores.score
+                      then excluded.wave else event_scores.wave end,
+    team       = case when excluded.score > event_scores.score
+                      then excluded.team else event_scores.team end,
+    -- 기록을 갱신했을 때만 시각을 올린다 — 동점자 순서(먼저 도달한 쪽이 위)를
+    -- 나중 도전이 밀어내면 안 된다.
+    updated_at = case when excluded.score > event_scores.score
+                      then now() else event_scores.updated_at end;
+$$;
+revoke execute on function event_submit(text, uuid, text, bigint, int, jsonb)
+  from anon, authenticated;
+
+-- 순위 조회(앱이 본다). 민감정보 없이 rank/nickname/score/wave 만.
+create or replace function event_top(p_round text, lim int)
+returns table(rank bigint, user_id uuid, nickname text, score bigint, wave int)
+language sql stable security definer set search_path = public as $$
+  select row_number() over (order by score desc, updated_at asc) as rank,
+         user_id, nickname, score, wave
+  from event_scores
+  where round_id = p_round
+  order by score desc, updated_at asc
+  limit lim;
+$$;
+
+-- 내 순위(상위 N 밖이어도 보이게).
+create or replace function event_my_rank(p_round text)
+returns table(rank bigint, score bigint, wave int)
+language sql stable security definer set search_path = public as $$
+  select r.rank, r.score, r.wave from (
+    select user_id,
+           row_number() over (order by score desc, updated_at asc) as rank,
+           score, wave
+    from event_scores where round_id = p_round
+  ) r
+  where r.user_id = auth.uid();
+$$;
+```
+
+### 엔드포인트 (권위 서버)
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `GET  /event` | 회차·참가권·내 최고 기록·`rankEligible`(익명이면 false) |
+| `POST /event/challenge` | `{teamIds:[3]}` — 참가권 차감 → 편성·피로 검증 → 웨이브 확정 |
+| `POST /event/ad-ticket` | 광고 시청 보상 참가권(하루 상한은 `event.json`) |
+
+거부 코드: `event_closed` · `no_ticket` · `bad_team` · `not_adult` · `fatigued` ·
+`ad_limit` · `ticket_full`.
+
+### 운영 — 회차 종료 후
+
+```sql
+-- 상위 30명 + 이상치 판단 재료(시도 수 대비 점수)
+select rank, nickname, score, wave, tries
+from event_top('2026-W34', 30) t
+join event_scores s using (user_id)
+where s.round_id = '2026-W34'
+order by rank;
+```
+
+⚠️ **자동 순위만으로 실물을 지급하지 않는다.** 상위 후보는 계정 이력(플레이 시간,
+곤충 획득 경로, `clamped` 플래그)을 사람이 확인하고, 검증 실패 시 차순위로 승계한다.
+이 규칙은 **사전 공지에 반드시 넣는다**(기획 §4).
