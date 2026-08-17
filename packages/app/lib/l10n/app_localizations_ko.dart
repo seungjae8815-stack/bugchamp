@@ -1027,6 +1027,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventFastForward => '빨리감기';
 
   @override
+  String get eventNextWave => '다음';
+
+  @override
   String get eventRanking => '순위';
 
   @override

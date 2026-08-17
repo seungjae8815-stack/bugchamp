@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
@@ -14,6 +14,8 @@ import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import '../battle/arena_widgets.dart';
+import 'event_arena.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -51,6 +53,10 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
   List<BattleBug> _enemies = const [];
   List<double> _hpShown = const [];
   int _enemyIdx = 0;
+  // 연출 상태 — PvP 아레나와 같은 이펙트 위젯을 쓴다.
+  final List<FloatText> _floats = [];
+  final List<BurstFx> _bursts = [];
+  double _flashL = 0, _flashR = 0, _lunge = 0, _shake = 0;
   bool _replaying = false;
   bool _busy = false;
   bool _fast = false;
@@ -171,13 +177,70 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
       });
       return;
     }
+    final before = st.events.length;
     st.step();
     setState(() {
       for (var i = 0; i < _hpShown.length && i < st.hpA.length; i++) {
         _hpShown[i] = st.hpA[i];
       }
       _enemyIdx = st.b;
+      if (st.events.length > before) _playEffects(st, st.events.last);
+      // 이펙트는 시간이 지나면 사라진다(수명은 위젯이 안다).
+      for (final f in _floats) {
+        f.age += 0.12;
+      }
+      for (final b in _bursts) {
+        b.age += 0.12;
+      }
+      _floats.removeWhere((f) => f.age >= FloatText.life);
+      _bursts.removeWhere((b) => b.age >= BurstFx.life);
+      _flashL = (_flashL - 0.25).clamp(0.0, 1.0);
+      _flashR = (_flashR - 0.25).clamp(0.0, 1.0);
+      _lunge = (_lunge - 4).clamp(0.0, 40.0);
+      _shake = (_shake - 0.3).clamp(0.0, 1.0);
     });
+  }
+
+  /// 한 라운드의 결과를 **화면 신호**로 바꾼다. 숫자만 바뀌면 오행을 맞춘 보람이
+  /// 화면에 남지 않는다 — 상극이 터질 때만 흔들고 링을 터뜨린다.
+  void _playEffects(BattleState st, BattleEvent ev) {
+    final mine = st.a < _units.length ? _units[st.a] : null;
+    final foe = _enemyIdx < _enemies.length ? _enemies[_enemyIdx] : null;
+    if (ev.dmgToA >= 1) {
+      _floats.add(
+        FloatText('-${ev.dmgToA.round()}', const Color(0xFFFF6B6B), true),
+      );
+      _flashL = 1;
+    }
+    if (ev.healToA >= 1) {
+      _floats.add(
+        FloatText('+${ev.healToA.round()}', const Color(0xFF7CE38B), true),
+      );
+    }
+    if (ev.dmgToB >= 1) {
+      _floats.add(
+        FloatText('-${ev.dmgToB.round()}', const Color(0xFFFF6B6B), false),
+      );
+      _flashR = 1;
+    }
+    if (ev.healToB >= 1) {
+      _floats.add(
+        FloatText('+${ev.healToB.round()}', const Color(0xFF7CE38B), false),
+      );
+    }
+    // 더 크게 때린 쪽이 달려든다.
+    _lunge = (ev.dmgToB - ev.dmgToA).abs() >= 1 ? 14 : 0;
+    if (mine != null && foe != null) {
+      final foeHit = ev.dmgToB >= 1 && mine.element.restrains(foe.element);
+      final selfHit = ev.dmgToA >= 1 && foe.element.restrains(mine.element);
+      if (foeHit) {
+        _bursts.add(BurstFx(left: false, color: elementColor(mine.element)));
+      }
+      if (selfHit) {
+        _bursts.add(BurstFx(left: true, color: elementColor(foe.element)));
+      }
+      if (foeHit || selfHit) _shake = 1;
+    }
   }
 
   Future<void> _pick(String cardId) async {
@@ -210,7 +273,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         child: Column(
           children: [
             _header(l),
-            Expanded(child: _arena(l)),
+            Expanded(child: _stage(l)),
             if (_replaying)
               _speedButton(l)
             else if (_done)
@@ -233,19 +296,18 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
       if (buffs.maxHp > 0) '❤ +${(buffs.maxHp * 100).round()}%',
     ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l.eventWaveRecord(_wave),
-            style: const TextStyle(
-              color: _honey,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-            ),
+          WaveProgress(
+            wave: _wave,
+            maxWave: _cfg.maxWave,
+            // 다음 웨이브의 오행을 미리 알려준다 — 카드 선택에 계획이 생긴다.
+            nextElement: _replaying || _done ? null : _nextWaveElement(),
           ),
-          const Spacer(),
-          if (parts.isNotEmpty)
+          if (parts.isNotEmpty) ...[
+            const SizedBox(height: 4),
             Text(
               parts.join('  '),
               style: const TextStyle(
@@ -254,116 +316,131 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
                 fontSize: 12,
               ),
             ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _arena(AppLocalizations l) {
+  /// 다음 웨이브의 **대표 오행**(첫 적 기준). 카드를 고르는 시점에만 쓴다.
+  Element? _nextWaveElement() {
+    final next = eventWaveEnemies(
+      _seed,
+      _wave + 1,
+      WaveEnemySpec(
+        baseHp: _cfg.enemyBaseHp,
+        baseAtk: _cfg.enemyBaseAtk,
+        baseDef: _cfg.enemyBaseDef,
+        baseSpd: _cfg.enemyBaseSpd,
+        growth: _cfg.enemyGrowth,
+        count: _cfg.enemyCount,
+      ),
+    );
+    return next.isEmpty ? null : next.first.element;
+  }
+
+  /// 무대(위) + 내 팀 미니 체력(아래).
+  ///
+  /// 전에는 세로 리스트만 있어서 "전투가 벌어지고 있다"가 안 보였다. 대치 구도로
+  /// 바꾸고 팀 상태는 아래로 내린다 — 지금 누가 싸우는지가 먼저 읽혀야 한다.
+  Widget _stage(AppLocalizations l) {
     final st = _battle;
-    final foe = (_replaying && _enemyIdx < _enemies.length)
-        ? _enemies[_enemyIdx]
-        : null;
+    final ev = (st != null && st.events.isNotEmpty) ? st.events.last : null;
+    final mineIdx = st?.a ?? 0;
+    final mine = mineIdx < _units.length ? _units[mineIdx] : null;
+    final foe = _enemyIdx < _enemies.length ? _enemies[_enemyIdx] : null;
+    final mineHp = mineIdx < _hpShown.length ? _hpShown[mineIdx] : 0.0;
     return Column(
       children: [
-        SizedBox(
-          height: 96,
-          child: foe == null
-              ? const SizedBox.shrink()
-              : Column(
-                  children: [
-                    Text(
-                      elementGlyph(foe.element),
-                      style: const TextStyle(fontSize: 38),
-                    ),
-                    Text(
-                      '${l.battleFoe} ${_enemyIdx + 1}/${_enemies.length}',
-                      style: const TextStyle(
-                        color: Color(0x99FFFFFF),
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 150,
-                      child: _bar(
-                        st != null && _enemyIdx < st.hpB.length
-                            ? st.hpB[_enemyIdx] / foe.maxHp
-                            : 1,
-                        const Color(0xFFFF8A65),
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-        const Divider(color: Color(0x22FFFFFF)),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            itemCount: _units.length,
-            itemBuilder: (c, i) {
-              final u = _units[i];
-              final bug = i < widget.team.length ? widget.team[i] : null;
-              final sp = bug == null
-                  ? null
-                  : widget.data.speciesById[bug.speciesId];
-              final hp = i < _hpShown.length ? _hpShown[i] : 0.0;
-              final down = hp <= 0;
-              final fighting = _replaying && _battle?.a == i && !down;
-              return Opacity(
-                opacity: down ? 0.35 : 1,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 3),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: fighting
-                        ? _honey.withValues(alpha: 0.14)
-                        : const Color(0x18000000),
-                    borderRadius: BorderRadius.circular(10),
-                    border: fighting
-                        ? Border.all(color: _honey.withValues(alpha: 0.7))
-                        : null,
-                  ),
-                  child: Row(
-                    children: [
-                      if (bug != null && sp != null)
-                        bugStageImage(
-                          bug.speciesId,
-                          LifeStage.adult,
-                          size: 32,
-                          fallback: bugAvatar(sp, size: 28),
-                        ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${i + 1}. ${u.name} ${elementGlyph(u.element)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12.5,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            _bar(
-                              u.maxHp <= 0 ? 0 : hp / u.maxHp,
-                              const Color(0xFF7BC96F),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: EventArena(
+              data: widget.data,
+              mine: _replaying ? mine : null,
+              foe: _replaying ? foe : null,
+              mineSpeciesId: mineIdx < widget.team.length
+                  ? widget.team[mineIdx].speciesId
+                  : null,
+              mineHpFrac: (mine == null || mine.maxHp <= 0)
+                  ? 0
+                  : mineHp / mine.maxHp,
+              foeHpFrac: (st == null || foe == null || foe.maxHp <= 0)
+                  ? 1
+                  : (_enemyIdx < st.hpB.length ? st.hpB[_enemyIdx] : 0) /
+                        foe.maxHp,
+              stanceMine: ev?.aStance,
+              stanceFoe: ev?.bStance,
+              flashL: _flashL,
+              flashR: _flashR,
+              lungeDx: _lunge,
+              shake: _shake,
+              floats: _floats,
+              bursts: _bursts,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // 내 팀 3마리 — 누가 쓰러졌는지가 다음 편성의 근거가 된다.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              for (var i = 0; i < _units.length; i++)
+                Expanded(child: _teamChip(i)),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _teamChip(int i) {
+    final u = _units[i];
+    final bug = i < widget.team.length ? widget.team[i] : null;
+    final sp = bug == null ? null : widget.data.speciesById[bug.speciesId];
+    final hp = i < _hpShown.length ? _hpShown[i] : 0.0;
+    final down = hp <= 0;
+    final fighting = _replaying && _battle?.a == i && !down;
+    return Opacity(
+      opacity: down ? 0.35 : 1,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: BoxDecoration(
+          color: fighting
+              ? _honey.withValues(alpha: 0.16)
+              : const Color(0x33000000),
+          borderRadius: BorderRadius.circular(10),
+          border: fighting
+              ? Border.all(color: _honey.withValues(alpha: 0.8))
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (bug != null && sp != null)
+                  bugStageImage(
+                    bug.speciesId,
+                    LifeStage.adult,
+                    size: 22,
+                    fallback: bugAvatar(sp, size: 20),
+                  ),
+                const SizedBox(width: 3),
+                Text(
+                  elementGlyph(u.element),
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            _bar(u.maxHp <= 0 ? 0 : hp / u.maxHp, const Color(0xFF7BC96F)),
+          ],
+        ),
+      ),
     );
   }
 

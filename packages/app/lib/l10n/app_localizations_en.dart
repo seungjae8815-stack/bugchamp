@@ -1049,6 +1049,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventFastForward => 'Fast forward';
 
   @override
+  String get eventNextWave => 'Next';
+
+  @override
   String get eventRanking => 'Ranking';
 
   @override

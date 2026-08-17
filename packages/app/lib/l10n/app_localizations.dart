@@ -1912,6 +1912,12 @@ abstract class AppLocalizations {
   /// **'Fast forward'**
   String get eventFastForward;
 
+  /// No description provided for @eventNextWave.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get eventNextWave;
+
   /// No description provided for @eventRanking.
   ///
   /// In en, this message translates to:

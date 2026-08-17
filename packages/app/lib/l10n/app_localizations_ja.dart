@@ -1026,6 +1026,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventFastForward => '早送り';
 
   @override
+  String get eventNextWave => '次';
+
+  @override
   String get eventRanking => '順位';
 
   @override

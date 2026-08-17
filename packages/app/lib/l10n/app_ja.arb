@@ -302,6 +302,7 @@
   "eventKeptBest": "自己ベストは{n}ウェーブです",
   "eventWaveCleared": "{n}ウェーブ突破！",
   "eventFastForward": "早送り",
+  "eventNextWave": "次",
   "eventRanking": "順位",
   "eventRankEmpty": "まだ順位がありません",
   "eventAnonWarn": "ゲストアカウントは順位に載りません。ログインすると参加できます。",
