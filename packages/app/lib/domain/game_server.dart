@@ -122,6 +122,24 @@ abstract interface class GameServer {
   /// 짝짓기 시작 — **시드는 서버가 정한다**(클라가 고를 수 없다).
   Future<ServerResult> breed(String motherId, String fatherId);
 
+  // ── 실물 경품 랭킹 이벤트(웨이브 방어전) ────────────────────────
+  //
+  // ⚠️ 이 모드는 **서버 없이는 성립하지 않는다.** 순위가 그대로 실물 상품이라
+  // 로컬 계산으로 점수를 만들 수 있으면 안 된다 — `available` 이 false 면
+  // 앱은 이벤트 진입 자체를 막는다(docs/event_ranking_prize.md §3).
+
+  /// 이벤트 현황(회차·참가권·내 최고 기록).
+  Future<ServerResult> eventState();
+
+  /// 이벤트 도전 1회. 서버가 참가권을 깎고 웨이브를 확정한다.
+  Future<ServerResult> eventChallenge(List<String> teamBugIds);
+
+  /// 광고 시청 보상 참가권.
+  Future<ServerResult> eventAdTicket();
+
+  /// 이벤트 순위(상위 100). 서버가 대신 읽어 준다 — 앱에는 RPC 권한이 없다.
+  Future<ServerResult> eventLeaderboard();
+
   /// 산란 완료 수령.
   Future<ServerResult> collectBreeding(String slotId, {bool viaJelly});
 
@@ -200,6 +218,18 @@ class NoGameServer implements GameServer {
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> breed(String motherId, String fatherId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventState() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventChallenge(List<String> teamBugIds) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventAdTicket() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventLeaderboard() async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> collectBreeding(
@@ -371,6 +401,21 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> breed(String motherId, String fatherId) =>
       _send('POST', '/breed', {'motherId': motherId, 'fatherId': fatherId});
+
+  @override
+  Future<ServerResult> eventState() => _send('GET', '/event');
+
+  @override
+  Future<ServerResult> eventChallenge(List<String> teamBugIds) =>
+      _send('POST', '/event/challenge', {'teamIds': teamBugIds});
+
+  @override
+  Future<ServerResult> eventAdTicket() =>
+      _send('POST', '/event/ad-ticket', const {});
+
+  @override
+  Future<ServerResult> eventLeaderboard() =>
+      _send('GET', '/event/leaderboard');
 
   @override
   Future<ServerResult> collectBreeding(

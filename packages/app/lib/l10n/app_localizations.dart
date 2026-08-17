@@ -1534,6 +1534,174 @@ abstract class AppLocalizations {
   /// **'Auto fuse'**
   String get autoSynthRun;
 
+  /// No description provided for @eventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug King Trials'**
+  String get eventTitle;
+
+  /// No description provided for @eventBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug King Trials · {n} tickets'**
+  String eventBanner(Object n);
+
+  /// No description provided for @eventClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'No event is running'**
+  String get eventClosed;
+
+  /// No description provided for @eventNeedServer.
+  ///
+  /// In en, this message translates to:
+  /// **'The event needs an online connection'**
+  String get eventNeedServer;
+
+  /// No description provided for @eventTickets.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets {n}/{max}'**
+  String eventTickets(Object max, Object n);
+
+  /// No description provided for @eventBestRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Your best'**
+  String get eventBestRecord;
+
+  /// No description provided for @eventNoRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'No attempt yet'**
+  String get eventNoRecord;
+
+  /// No description provided for @eventWaveRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave {n}'**
+  String eventWaveRecord(Object n);
+
+  /// No description provided for @eventScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} pts'**
+  String eventScore(Object n);
+
+  /// No description provided for @eventMyRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rank #{n}'**
+  String eventMyRank(Object n);
+
+  /// No description provided for @eventPickTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick 3 bugs to enter'**
+  String get eventPickTeam;
+
+  /// No description provided for @eventPickOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'They fight left to right — a bug generating the next one grants synergy'**
+  String get eventPickOrder;
+
+  /// No description provided for @eventNormalizeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats are equalized in this event'**
+  String get eventNormalizeTitle;
+
+  /// No description provided for @eventNormalizeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only species, element, temperament and specialty count. Training, breakthrough, part enhancement, potential and size do not apply — everyone competes on formation alone.'**
+  String get eventNormalizeBody;
+
+  /// No description provided for @eventFatigueLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready in {time}'**
+  String eventFatigueLeft(Object time);
+
+  /// No description provided for @eventChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter (1 ticket)'**
+  String get eventChallenge;
+
+  /// No description provided for @eventNoTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'No tickets left'**
+  String get eventNoTicket;
+
+  /// No description provided for @eventAdTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch an ad for a ticket'**
+  String get eventAdTicket;
+
+  /// No description provided for @eventAdLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve claimed every ad reward today'**
+  String get eventAdLimit;
+
+  /// No description provided for @eventTicketFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets are full'**
+  String get eventTicketFull;
+
+  /// No description provided for @eventResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached wave {n}!'**
+  String eventResultTitle(Object n);
+
+  /// No description provided for @eventNewBest.
+  ///
+  /// In en, this message translates to:
+  /// **'New best!'**
+  String get eventNewBest;
+
+  /// No description provided for @eventKeptBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Your best is wave {n}'**
+  String eventKeptBest(Object n);
+
+  /// No description provided for @eventRanking.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranking'**
+  String get eventRanking;
+
+  /// No description provided for @eventRankEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries yet'**
+  String get eventRankEmpty;
+
+  /// No description provided for @eventAnonWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest accounts don\'t appear in the ranking. Sign in to take part.'**
+  String get eventAnonWarn;
+
+  /// No description provided for @eventKoreaOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical prizes ship within Korea only. Rankings and in-game rewards are open to everyone.'**
+  String get eventKoreaOnly;
+
+  /// No description provided for @eventRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Event rules'**
+  String get eventRules;
+
   /// No description provided for @storageFilterButton.
   ///
   /// In en, this message translates to:

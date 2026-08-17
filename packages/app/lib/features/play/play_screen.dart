@@ -39,6 +39,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../character/item_gallery.dart';
+import '../event/event_screen.dart';
 import '../roadmap/roadmap_screen.dart';
 import '../notice/notice_screen.dart';
 import '../../domain/review_service.dart';
@@ -1587,9 +1588,73 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     color: const Color(0xF20B1206),
     child: Column(
       mainAxisSize: MainAxisSize.min,
-      children: [_topBar(l, save), _loginNudge(l), _chatBar(l)],
+      children: [
+        _topBar(l, save),
+        _eventBanner(l),
+        _loginNudge(l),
+        _chatBar(l),
+      ],
     ),
   );
+
+  /// 이벤트(왕충 선발대회) 배너 — 열려 있을 때만 뜬다.
+  ///
+  /// 한시적 이벤트라 하단 탭을 늘리지 않고 홈 상단에 둔다. 탭은 이미 5개이고,
+  /// 회차가 끝나면 배너만 사라지면 된다.
+  Widget _eventBanner(AppLocalizations l) {
+    final st = ref.watch(eventStateProvider).asData?.value;
+    if (st == null) return const SizedBox.shrink();
+    final tickets = (st['tickets'] as num?)?.toInt() ?? 0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () async {
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (_) => const EventScreen()));
+          // 돌아오면 참가권·기록이 바뀌었을 수 있다.
+          ref.invalidate(eventStateProvider);
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0x267E57C2),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xAA7E57C2)),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.emoji_events_rounded,
+                color: Color(0xFFD7BCFF),
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  l.eventBanner(tickets),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFD7BCFF),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFFD7BCFF),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   /// 게스트(익명) 상태에서만 뜨는 로그인 유도 배너 — 눌러서 계정 시트를 연다.
   /// 로그인하지 않은 유저는 기기 변경·앱 삭제 시 진행도를 복구할 수 없으므로,

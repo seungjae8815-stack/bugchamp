@@ -810,6 +810,108 @@ class AppLocalizationsKo extends AppLocalizations {
   String get autoSynthRun => '자동 합성';
 
   @override
+  String get eventTitle => '왕충 선발대회';
+
+  @override
+  String eventBanner(Object n) {
+    return '왕충 선발대회 진행 중 · 참가권 $n장';
+  }
+
+  @override
+  String get eventClosed => '지금은 열린 대회가 없어요';
+
+  @override
+  String get eventNeedServer => '대회는 온라인 연결이 필요해요';
+
+  @override
+  String eventTickets(Object max, Object n) {
+    return '참가권 $n/$max';
+  }
+
+  @override
+  String get eventBestRecord => '내 최고 기록';
+
+  @override
+  String get eventNoRecord => '아직 도전하지 않았어요';
+
+  @override
+  String eventWaveRecord(Object n) {
+    return '$n웨이브';
+  }
+
+  @override
+  String eventScore(Object n) {
+    return '$n점';
+  }
+
+  @override
+  String eventMyRank(Object n) {
+    return '내 순위 #$n';
+  }
+
+  @override
+  String get eventPickTeam => '출전 곤충 3마리를 고르세요';
+
+  @override
+  String get eventPickOrder => '왼쪽부터 순서대로 나가요 · 앞이 뒤를 生하면 시너지';
+
+  @override
+  String get eventNormalizeTitle => '이 대회는 스탯이 평준화돼요';
+
+  @override
+  String get eventNormalizeBody =>
+      '종·오행·기질·주특기만 반영돼요. 수련·돌파·부위 강화·포텐셜·크기는 적용되지 않아요 — 모두 같은 조건에서 편성으로 겨루는 대회예요.';
+
+  @override
+  String eventFatigueLeft(Object time) {
+    return '$time 후 출전 가능';
+  }
+
+  @override
+  String get eventChallenge => '도전 (참가권 1장)';
+
+  @override
+  String get eventNoTicket => '참가권이 없어요';
+
+  @override
+  String get eventAdTicket => '광고 보고 참가권 받기';
+
+  @override
+  String get eventAdLimit => '오늘 광고 보상을 모두 받았어요';
+
+  @override
+  String get eventTicketFull => '참가권이 가득 찼어요';
+
+  @override
+  String eventResultTitle(Object n) {
+    return '$n웨이브 도달!';
+  }
+
+  @override
+  String get eventNewBest => '최고 기록 갱신!';
+
+  @override
+  String eventKeptBest(Object n) {
+    return '최고 기록은 $n웨이브예요';
+  }
+
+  @override
+  String get eventRanking => '순위';
+
+  @override
+  String get eventRankEmpty => '아직 순위가 없어요';
+
+  @override
+  String get eventAnonWarn => '게스트 계정은 순위에 오르지 않아요. 로그인하면 참여할 수 있어요.';
+
+  @override
+  String get eventKoreaOnly =>
+      '실물 경품은 국내 거주자에게만 배송돼요. 순위와 게임 내 보상은 누구나 참여할 수 있어요.';
+
+  @override
+  String get eventRules => '대회 규칙';
+
+  @override
   String get storageFilterButton => '필터';
 
   @override

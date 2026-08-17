@@ -809,6 +809,107 @@ class AppLocalizationsJa extends AppLocalizations {
   String get autoSynthRun => '自動合成';
 
   @override
+  String get eventTitle => '王虫選抜大会';
+
+  @override
+  String eventBanner(Object n) {
+    return '王虫選抜大会 開催中・参加券$n枚';
+  }
+
+  @override
+  String get eventClosed => '現在開催中の大会はありません';
+
+  @override
+  String get eventNeedServer => '大会にはオンライン接続が必要です';
+
+  @override
+  String eventTickets(Object max, Object n) {
+    return '参加券 $n/$max';
+  }
+
+  @override
+  String get eventBestRecord => '自己ベスト';
+
+  @override
+  String get eventNoRecord => 'まだ挑戦していません';
+
+  @override
+  String eventWaveRecord(Object n) {
+    return '$nウェーブ';
+  }
+
+  @override
+  String eventScore(Object n) {
+    return '$n点';
+  }
+
+  @override
+  String eventMyRank(Object n) {
+    return '自分の順位 #$n';
+  }
+
+  @override
+  String get eventPickTeam => '出場する虫を3匹選んでください';
+
+  @override
+  String get eventPickOrder => '左から順に出ます・前が後ろを生じるとシナジー';
+
+  @override
+  String get eventNormalizeTitle => 'この大会はステータスが平準化されます';
+
+  @override
+  String get eventNormalizeBody =>
+      '種・五行・気質・得意技だけが反映されます。修練・突破・部位強化・ポテンシャル・サイズは適用されません — 同じ条件で編成の巧さを競う大会です。';
+
+  @override
+  String eventFatigueLeft(Object time) {
+    return '$time後に出場可能';
+  }
+
+  @override
+  String get eventChallenge => '挑戦（参加券1枚）';
+
+  @override
+  String get eventNoTicket => '参加券がありません';
+
+  @override
+  String get eventAdTicket => '広告を見て参加券を受け取る';
+
+  @override
+  String get eventAdLimit => '本日の広告報酬はすべて受け取りました';
+
+  @override
+  String get eventTicketFull => '参加券が満杯です';
+
+  @override
+  String eventResultTitle(Object n) {
+    return '$nウェーブ到達！';
+  }
+
+  @override
+  String get eventNewBest => '自己ベスト更新！';
+
+  @override
+  String eventKeptBest(Object n) {
+    return '自己ベストは$nウェーブです';
+  }
+
+  @override
+  String get eventRanking => '順位';
+
+  @override
+  String get eventRankEmpty => 'まだ順位がありません';
+
+  @override
+  String get eventAnonWarn => 'ゲストアカウントは順位に載りません。ログインすると参加できます。';
+
+  @override
+  String get eventKoreaOnly => '実物賞品は韓国国内のみ配送されます。順位とゲーム内報酬は誰でも参加できます。';
+
+  @override
+  String get eventRules => '大会ルール';
+
+  @override
   String get storageFilterButton => 'フィルター';
 
   @override

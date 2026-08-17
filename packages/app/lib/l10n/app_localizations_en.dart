@@ -825,6 +825,110 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSynthRun => 'Auto fuse';
 
   @override
+  String get eventTitle => 'Bug King Trials';
+
+  @override
+  String eventBanner(Object n) {
+    return 'Bug King Trials · $n tickets';
+  }
+
+  @override
+  String get eventClosed => 'No event is running';
+
+  @override
+  String get eventNeedServer => 'The event needs an online connection';
+
+  @override
+  String eventTickets(Object max, Object n) {
+    return 'Tickets $n/$max';
+  }
+
+  @override
+  String get eventBestRecord => 'Your best';
+
+  @override
+  String get eventNoRecord => 'No attempt yet';
+
+  @override
+  String eventWaveRecord(Object n) {
+    return 'Wave $n';
+  }
+
+  @override
+  String eventScore(Object n) {
+    return '$n pts';
+  }
+
+  @override
+  String eventMyRank(Object n) {
+    return 'Your rank #$n';
+  }
+
+  @override
+  String get eventPickTeam => 'Pick 3 bugs to enter';
+
+  @override
+  String get eventPickOrder =>
+      'They fight left to right — a bug generating the next one grants synergy';
+
+  @override
+  String get eventNormalizeTitle => 'Stats are equalized in this event';
+
+  @override
+  String get eventNormalizeBody =>
+      'Only species, element, temperament and specialty count. Training, breakthrough, part enhancement, potential and size do not apply — everyone competes on formation alone.';
+
+  @override
+  String eventFatigueLeft(Object time) {
+    return 'Ready in $time';
+  }
+
+  @override
+  String get eventChallenge => 'Enter (1 ticket)';
+
+  @override
+  String get eventNoTicket => 'No tickets left';
+
+  @override
+  String get eventAdTicket => 'Watch an ad for a ticket';
+
+  @override
+  String get eventAdLimit => 'You\'ve claimed every ad reward today';
+
+  @override
+  String get eventTicketFull => 'Tickets are full';
+
+  @override
+  String eventResultTitle(Object n) {
+    return 'Reached wave $n!';
+  }
+
+  @override
+  String get eventNewBest => 'New best!';
+
+  @override
+  String eventKeptBest(Object n) {
+    return 'Your best is wave $n';
+  }
+
+  @override
+  String get eventRanking => 'Ranking';
+
+  @override
+  String get eventRankEmpty => 'No entries yet';
+
+  @override
+  String get eventAnonWarn =>
+      'Guest accounts don\'t appear in the ranking. Sign in to take part.';
+
+  @override
+  String get eventKoreaOnly =>
+      'Physical prizes ship within Korea only. Rankings and in-game rewards are open to everyone.';
+
+  @override
+  String get eventRules => 'Event rules';
+
+  @override
   String get storageFilterButton => 'Filter';
 
   @override
