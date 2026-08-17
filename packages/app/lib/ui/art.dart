@@ -196,6 +196,45 @@ String bugFamily(String speciesId) {
   return 'scarab'; // 사슴벌레·장수풍뎅이·꽃무지 등 기본
 }
 
+/// 성충의 **전투 자세**. 프레임 시트에서 잘라 낸 순서 그대로다(§2b).
+///
+/// 한 장짜리 그림을 코드로 밀고 기울여도 "때린다"는 딱 거기까지다 — 다리가
+/// 안 움직이고 턱이 안 벌어지니 결국 미끄러지는 판때기로 보인다. 자세가 바뀌어야
+/// 타격이 된다.
+enum BugPose {
+  idle, // 1 — 대기
+  attack, // 2 — 공격
+  hurt, // 3 — 피격
+}
+
+/// 자세별 성충 이미지. **없으면 기본 성충 그림으로 조용히 내려간다** —
+/// 20종을 한 번에 다 그릴 수 없으므로, 종 하나씩 넣어도 화면이 깨지지 않아야 한다.
+Widget bugPoseImage(
+  String speciesId,
+  BugPose pose, {
+  required double size,
+  required Widget fallback,
+  ColorFilter? skin,
+}) {
+  final n = pose.index + 1;
+  final img = gameImageChain(
+    [
+      'assets/images/bugs/${speciesId}_adult_$n.webp',
+      'assets/images/bugs/${speciesId}_adult_$n.png',
+      // 자세가 없으면 대기 프레임 → 예전 한 장짜리 순으로 내려간다.
+      'assets/images/bugs/${speciesId}_adult_1.webp',
+      'assets/images/bugs/${speciesId}_adult_1.png',
+      'assets/images/bugs/${speciesId}_adult.webp',
+      'assets/images/bugs/${speciesId}_adult.png',
+      'assets/images/bugs/$speciesId.webp',
+      'assets/images/bugs/$speciesId.png',
+    ],
+    size: size,
+    fallback: fallback,
+  );
+  return skin == null ? img : ColorFiltered(colorFilter: skin, child: img);
+}
+
 /// 생애주기 단계별 곤충 이미지.
 /// - 성충: 종별 `bugs/{id}_adult.webp` → `bugs/{id}.webp`
 /// - 알/유충/번데기: 종별 override 있으면 우선 → **그룹 공통** `bugs/stage_{family}_{stage}.webp`

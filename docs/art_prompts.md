@@ -15,7 +15,7 @@
    - Stable Diffusion: IP-Adapter / reference-only, 또는 같은 LoRA·체크포인트 고정
 3. **스타일 접미사(아래 STYLE)를 모든 프롬프트에 그대로** 붙인다.
 4. 한 배치 안에서는 `--seed` 고정 → 재현·비교 용이.
-5. 곤충은 **동일 앵글(3/4 탑다운) · 중앙 정렬 · 동일 여백**. 등급 차이는 곤충 자체가 아니라 **프레임/오라**로 표현.
+5. 곤충은 **동일 앵글(측면·오른쪽 향 — 전투에서 마주 봐야 한다) · 동일 바닥선 · 동일 여백**. 등급 차이는 곤충 자체가 아니라 **프레임/오라**로 표현.
 
 ### STYLE (공통 접미사 — 그대로 복붙)
 ```
@@ -84,6 +84,184 @@ plain soft pastel background, {STYLE} --ar 1:1 --style raw --sref <key> --sw 100
 | `hornet_giant` | 장수말벌 | 전설 | stylized asian giant hornet, orange-yellow head, bold but not scary, dynamic |
 
 > 등급 오라(선택): 프롬프트에 `soft {color} glow rim` 추가 — 일반 gray · 고급 green · 희귀 blue · 영웅 purple · 전설 gold. 단, **등급색은 프레임(§4)으로 처리 권장**(곤충 색 왜곡 방지).
+
+---
+
+## 2b. 곤충 전투 프레임 ×20 (`assets/images/bugs/`)
+
+한 장짜리 그림을 코드로 밀고 기울여도 "때린다"는 딱 거기까지다 — 다리가 안 움직이고
+턱이 안 벌어지니 결국 **미끄러지는 판때기**로 보인다. 자세가 바뀌어야 타격이 된다.
+
+### 왜 한 장에 세 자세를 같이 그리나
+
+자세를 **따로** 뽑으면 같은 레퍼런스를 줘도 비율·색·광택이 미묘하게 달라져,
+번갈아 보여줄 때 **덜덜 떨린다**. 한 장 안에 나란히 그리게 하면 같은 붓질로 그려지므로
+흔들림이 없다. 캐릭터 걷기에서 이미 겪고 정한 방식이다(`tool/split_sprite_sheet.py`).
+
+**종당 프롬프트 1개 = 시트 1장(가로 3칸)**. 20장이면 끝난다.
+
+| 칸 | 자세 | 쓰이는 순간 |
+|---|---|---|
+| 왼쪽 | 대기 | 평소 |
+| 가운데 | 공격 | 내가 때릴 때 |
+| 오른쪽 | 피격 | 내가 맞을 때 |
+
+공격 자세는 **주특기에 맞춘다**(§2.1) — 치기는 들이받고, 집기는 벌려 물고, 던지기는
+퍼올린다. 화면의 움직임과 그 곤충의 주특기가 같은 말을 해야 한다.
+
+### 자르기 (필수)
+
+```powershell
+cd packages\app
+python tool/split_sprite_sheet.py --from C:\art\stag_giant.png --name stag_giant_adult --sub bugs --frames 3
+# → assets/images/bugs/stag_giant_adult_1.webp (대기) / _2 (공격) / _3 (피격)
+```
+
+이 도구가 **세 칸을 같은 캔버스에 발을 바닥에 맞춰** 놓는다. 칸마다 따로 여백을 자르면
+자세가 바뀔 때 곤충이 위아래로 튄다 — 손으로 자르지 말 것.
+
+> **한 종만 먼저 해 보고 폰에서 확인할 것.** 프레임이 없는 종은 예전 한 장짜리 그림으로
+> 조용히 내려가므로(`bugPoseImage`), 20종을 다 그리기 전에 한 종으로 판단할 수 있다.
+
+### 지금 그림의 문제 두 가지
+
+- **해상도가 낮다** — 지금 256px 인데 아레나에서 96pt(고밀도 폰에서 288px)로 그린다.
+  거의 등배라 흐릿하다. 시트를 **1536×512 이상**으로 뽑을 것(칸당 512).
+- **일부는 정면에 가깝다** — 옆에서 본 모습이어야 마주 본 둘이 서로를 향한다.
+  프롬프트에 `strict side profile facing right` 를 넣어 둔 이유다 — 지우지 말 것.
+
+### 프롬프트 (종당 1개, 그대로 붙여넣기)
+
+`<REF>` 자리에 **그 종의 지금 성충 그림 URL** 을 넣는다(`--cref`). 스타일이 아니라
+**그 곤충 자체**를 유지하는 옵션이라, 이게 있어야 "같은 애사슴벌레"가 나온다.
+
+**`stag_dorcus`** — 애사슴벌레 (일반, grip)
+
+```
+character pose sheet of the same small glossy black stag beetle, short modest mandibles, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`stag_saw`** — 톱사슴벌레 (일반, toss)
+
+```
+character pose sheet of the same stag beetle with long curved saw-toothed mandibles, amber-brown, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, saw-toothed mandibles scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`rhino_lesser`** — 외뿔장수풍뎅이 (일반, strike)
+
+```
+character pose sheet of the same small rhinoceros beetle with a single short horn, dark brown, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, single short horn driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`mantis_jumping`** — 좀사마귀 (일반, strike)
+
+```
+character pose sheet of the same small slender brown praying mantis, alert pose, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, raptorial forelegs driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`longhorn_saw`** — 톱하늘소 (일반, grip)
+
+```
+character pose sheet of the same brown longhorn beetle, serrated antennae, matte shell, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, jaws and serrated antennae thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`grasshopper_longheaded`** — 방아깨비 (일반, toss)
+
+```
+character pose sheet of the same long-headed green grasshopper, pointed face, long hind legs, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, powerful hind legs scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`stag_flat`** — 넓적사슴벌레 (고급, grip)
+
+```
+character pose sheet of the same broad flat wide-jawed stag beetle, glossy jet black, powerful, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, broad flat mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`rhino_japanese`** — 장수풍뎅이 (고급, strike)
+
+```
+character pose sheet of the same classic rhinoceros beetle, Y-shaped horn, sturdy brown shell, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, Y-shaped horn driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`mantis_widebelly`** — 넓적배사마귀 (고급, grip)
+
+```
+character pose sheet of the same wide-bellied bright green praying mantis, raptorial arms, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, raptorial forelegs thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`longhorn_whitespot`** — 알락하늘소 (고급, grip)
+
+```
+character pose sheet of the same black longhorn beetle with white speckles, very long antennae, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, jaws and very long antennae thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`katydid`** — 여치 (고급, strike)
+
+```
+character pose sheet of the same plump green katydid bush-cricket, long antennae, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, powerful hind legs driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`stag_miyama`** — 사슴벌레(미야마) (희귀, toss)
+
+```
+character pose sheet of the same miyama stag beetle, fuzzy golden head flanges, large arched mandibles, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, large arched mandibles scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`mantis_giant`** — 왕사마귀 (희귀, strike)
+
+```
+character pose sheet of the same large imposing green praying mantis, majestic stance, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, raptorial forelegs driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`longhorn_oak`** — 참나무하늘소 (희귀, grip)
+
+```
+character pose sheet of the same large brown oak longhorn beetle, extra-long banded antennae, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, jaws and extra-long banded antennae thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`chafer_flower`** — 장수꽃무지 (희귀, strike)
+
+```
+character pose sheet of the same iridescent flower chafer beetle, metallic green-bronze shell, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, armored head shield driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`stag_giant`** — 왕사슴벌레 (영웅, grip)
+
+```
+character pose sheet of the same giant black stag beetle, thick powerful curved mandibles, regal, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, thick curved mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`water_bug_giant`** — 물장군 (영웅, grip)
+
+```
+character pose sheet of the same giant water bug, flat brown body, strong raptorial forelegs, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, raptorial forelegs thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`stag_twospot`** — 두점박이사슴벌레 (영웅, toss)
+
+```
+character pose sheet of the same reddish-brown stag beetle with two bright spots on shell, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, mandibles scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`longhorn_relict`** — 장수하늘소 (전설, grip)
+
+```
+character pose sheet of the same colossal majestic relict longhorn beetle, long elegant body, heroic aura, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, jaws and long elegant antennae thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+**`hornet_giant`** — 장수말벌 (전설, strike)
+
+```
+character pose sheet of the same stylized asian giant hornet, orange-yellow head, bold but not scary, dynamic, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, stinger and jaws driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+> **규격**: 시트 1536×512↑, 배경 단색 → `split_sprite_sheet.py` 가 누끼·정렬·WebP 까지 한다.
+>
+> ⚠️ 미드저니가 칸 사이에 **선이나 숫자를 그려 넣는 일**이 잦다. 나오면 다시 뽑는 게 빠르다 —
+> 지우고 쓰면 그 칸만 여백이 달라져 자세가 바뀔 때 튄다.
+>
+> ⚠️ `--cref` 없이 뽑으면 종마다 다른 곤충이 나온다. 지금 성충 그림을 어딘가에 올려
+> URL 을 받아 쓸 것(디스코드에 그냥 올려도 URL 이 나온다).
 
 ---
 

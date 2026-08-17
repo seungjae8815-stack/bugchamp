@@ -98,11 +98,16 @@ class ArenaFighter extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = bug;
     final sp = data.speciesById[speciesId ?? ''];
+    // 자세는 이미 들고 있는 상태에서 나온다 — 맞는 중이면 피격, 돌진 중이면 공격.
+    // 자세 프레임이 없는 종은 로더가 대기 그림으로 내려가므로 그냥 안 바뀔 뿐이다.
+    final pose = flash > 0
+        ? BugPose.hurt
+        : (dx.abs() > 2 ? BugPose.attack : BugPose.idle);
     Widget img = sp == null
         ? const Icon(Icons.bug_report, color: Colors.white, size: 60)
-        : bugStageImage(
+        : bugPoseImage(
             sp.id,
-            LifeStage.adult,
+            pose,
             size: 96,
             fallback: bugAvatar(sp, size: 84),
             skin: skin,
