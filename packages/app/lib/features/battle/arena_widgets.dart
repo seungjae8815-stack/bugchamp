@@ -42,6 +42,22 @@ IconData stanceIcon(Stance s) => switch (s) {
   Stance.heal => Icons.favorite_rounded,
 };
 
+/// 스탠스 그림. 애셋(`assets/images/ui/stance/<name>.png`)이 있으면 그림을,
+/// 없으면 머티리얼 아이콘으로 폴백한다 — 오행과 같은 규칙(§6).
+///
+/// 스탠스는 **심리전의 핵심 정보**다(공>회>방>공). 매 라운드 눈으로 훑는 자리라
+/// 한눈에 구분돼야 한다.
+///
+/// 이름이 `stanceIcon` 이 아닌 이유: 위의 `IconData` 판이 이미 그 이름을 쓴다.
+Widget stanceArt(Stance s, {double size = 20}) => Image.asset(
+  'assets/images/ui/stance/${s.name}.png',
+  width: size,
+  height: size,
+  filterQuality: FilterQuality.medium,
+  errorBuilder: (_, _, _) =>
+      Icon(stanceIcon(s), size: size * 0.9, color: Colors.white),
+);
+
 /// 떠오르는 데미지/회복 숫자(가변 age 를 가진 애니메이션 상태).
 class FloatText {
   FloatText(this.text, this.color, this.left, {this.element});
@@ -228,10 +244,9 @@ class ArenaFighter extends StatelessWidget {
                   if (stance != null || stanceHidden)
                     Positioned(
                       top: -14,
-                      child: Text(
-                        stanceHidden ? '❓' : stanceGlyph(stance!),
-                        style: const TextStyle(fontSize: 20),
-                      ),
+                      child: stanceHidden
+                          ? const Text('❓', style: TextStyle(fontSize: 20))
+                          : stanceArt(stance!),
                     ),
                 ],
               ),
@@ -373,11 +388,9 @@ class StanceWheel extends StatelessWidget {
                       ]
                     : null,
               ),
-              child: Icon(
-                stanceIcon(s),
-                size: size * 0.44,
-                color: Colors.white,
-              ),
+              // 같은 화면에서 그림과 머티리얼 아이콘이 섞이면 같은 개념이
+              // 둘로 보인다 — 선택 버튼도 아레나와 같은 그림을 쓴다.
+              child: stanceArt(s, size: size * 0.44),
             ),
             const SizedBox(height: 4),
             Text(

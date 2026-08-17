@@ -104,6 +104,8 @@ flutter:
     # 여기에 한 줄 더 적어야 번들에 들어간다(안 적으면 이미지가 조용히 폴백된다).
     - assets/images/ui/cards/
     - assets/images/ui/element/
+    - assets/images/ui/stance/
+    - assets/images/ui/temperament/
     - assets/images/ui/event/
     - assets/sounds/
 

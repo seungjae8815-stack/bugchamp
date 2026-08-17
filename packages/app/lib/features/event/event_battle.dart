@@ -616,10 +616,13 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
             elementLabel(l, bug.element),
             icon: elementIcon(bug.element, size: 14),
           ),
-          _infoRow(temperamentLabel(l, bug.temperament)),
           _infoRow(
-            '${stanceGlyph(unit.preferredStance)} '
-            '${stanceLabel(l, unit.preferredStance)}',
+            temperamentLabel(l, bug.temperament),
+            icon: temperamentIcon(bug.temperament),
+          ),
+          _infoRow(
+            stanceLabel(l, unit.preferredStance),
+            icon: stanceArt(unit.preferredStance, size: 14),
           ),
           const SizedBox(height: 8),
           Text(

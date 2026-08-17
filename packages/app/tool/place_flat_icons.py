@@ -20,10 +20,16 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DEST = os.path.normpath(
-    os.path.join(ROOT, "..", "assets", "images", "ui", "element")
-)
-NAMES = ["wood", "fire", "earth", "metal", "water"]
+UI = os.path.normpath(os.path.join(ROOT, "..", "assets", "images", "ui"))
+# 세트 이름 → (enum 이름 목록, assets/images 아래 폴더)
+SETS = {
+    "element": (["wood", "fire", "earth", "metal", "water"], "element"),
+    "temperament": (
+        ["aggressive", "cautious", "cunning", "steadfast", "fickle"],
+        "temperament",
+    ),
+    "stance": (["attack", "defend", "heal"], "stance"),
+}
 SIZE = 256
 
 
@@ -99,16 +105,25 @@ def cutout(img):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="src", required=True)
+    ap.add_argument("--set", dest="only", choices=sorted(SETS))
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
 
     from PIL import Image
 
-    os.makedirs(DEST, exist_ok=True)
-    for n in NAMES:
+    for set_name in [a.only] if a.only else sorted(SETS):
+        names, folder = SETS[set_name]
+        dest = os.path.join(UI, folder)
+        os.makedirs(dest, exist_ok=True)
+        print(f"[{set_name}]")
+        run(a, names, dest, Image)
+
+
+def run(a, names, dest, Image):
+    for n in names:
         src = os.path.join(a.src, n + ".png")
         if not os.path.exists(src):
-            print(f"  {n:8s} 없음 — 이모지로 폴백됩니다")
+            print(f"  {n:11s} 없음 — 그림 없이 폴백됩니다")
             continue
         img = cutout(Image.open(src).convert("RGBA"))
         box = img.getbbox()
@@ -124,7 +139,7 @@ def main():
         )
         print(f"  {n:8s} {box[2] - box[0]}x{box[3] - box[1]} → {SIZE}x{SIZE}")
         if not a.dry:
-            canvas.save(os.path.join(DEST, n + ".png"))
+            canvas.save(os.path.join(dest, n + ".png"))
     if a.dry:
         print("\n(--dry 라 저장하지 않았습니다)")
 

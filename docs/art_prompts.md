@@ -455,8 +455,9 @@ three heroic beetles standing shoulder to shoulder on a mossy log facing an onco
 | `metal.png` | 은회 `#CBD3DA` | `a polished hexagonal metal nut with a bright specular streak, cool silver steel,` |
 | `water.png` | 파랑 `#4AA8FF` | `a single water droplet with a crescent highlight, deep to light blue gradient,` |
 
-> **규격**: 배경 제거 후 256×256 RGBA PNG — `tool/place_element_art.py --from <폴더>`
+> **규격**: 배경 제거 후 256×256 RGBA PNG — `tool/place_flat_icons.py --from <폴더>`
 > 가 누끼·정사각 정렬까지 한다. 파일명은 enum 이름 그대로.
+> (같은 도구가 기질 §4h·스탠스 §4g 도 처리한다.)
 >
 > ⚠️ 생성기는 "transparent background" 를 줘도 **투명을 안 만들고 체크무늬를 그려
 > 넣는다**(실측: 5장 모두 완전투명 0%). 그대로 넣으면 게임에 회색 체크판이 보인다.
@@ -472,6 +473,59 @@ three heroic beetles standing shoulder to shoulder on a mossy log facing an onco
 >
 > ⚠️ 다섯 장을 **한 번에 같은 조건으로** 뽑을 것. 하나씩 뽑으면 굵기·광택이 갈려
 > 나란히 놓았을 때 한 세트로 안 보인다(재료 아이콘에서 겪은 문제 §4).
+
+## 4g. 스탠스 아이콘 ×3 (`assets/images/ui/stance/`)
+
+스탠스는 **심리전의 핵심 정보**다 — 공격 > 회복 > 방어 > 공격(§2.3). 수동 배틀에서
+매 라운드 이걸 보고 고르는데, 지금은 곤충 머리 위엔 이모지(⚔️🛡️💚)·선택 버튼엔
+머티리얼 아이콘이라 **같은 개념이 두 얼굴**이었다. 하나로 합친다.
+
+파일명 = enum 이름: `attack.png` `defend.png` `heal.png`
+
+⚠️ **선택 버튼에서는 색 원 위에 얹힌다**(공격 `#C1502E` · 방어 `#2E6DA4` · 회복
+`#3E7D4F`). 그 위에서도 읽히도록 **굵은 흰색 하이라이트 + 진한 테두리**로 뽑을 것.
+
+공통 꼬리: `flat vector game icon, bold simple silhouette, thick dark outline, strong white highlight, centered on transparent background, high contrast, readable at 16px on a colored circle, no text, no watermark --ar 1:1 --style raw --v 7`
+
+| 파일 | 뜻 | 앞부분 프롬프트 |
+|---|---|---|
+| `attack.png` | 공격 | `a pair of crossed beetle mandibles forming an X like crossed swords, warm red-orange,` |
+| `defend.png` | 방어 | `a rounded beetle carapace shield seen from the front, segmented plates, steel blue,` |
+| `heal.png` | 회복 | `a glossy amber sap droplet with a small green leaf, soft glow, healing green and honey,` |
+
+> 곤충 게임이니 **칼·방패·하트를 그대로 쓰지 않는다** — 큰턱·등껍질·수액으로 바꾼다.
+> 그래야 이 게임의 물건으로 보인다.
+
+## 4h. 기질 아이콘 ×5 (`assets/images/ui/temperament/`)
+
+기질은 오토 전투의 **스탠스 선택 성향**이다(§2.1). 지금까지 글자로만 보여줬는데,
+곤충 카드가 좁아 이름이 잘리는 자리가 많다. 그림이 있으면 한 칸으로 끝난다.
+
+파일명 = enum 이름: `aggressive.png` `cautious.png` `cunning.png` `steadfast.png` `fickle.png`
+
+**성격을 그리는 거라 사물로 은유한다** — 곤충을 그리면 종 그림과 헷갈린다.
+애셋이 없으면 **아무것도 안 그린다**(이모지 폴백 없음). 다섯 장을 한 번에 뽑을 것.
+
+공통 꼬리: `flat vector game icon, bold simple silhouette, thick dark outline, centered on transparent background, high contrast, readable at 16px, no text, no watermark --ar 1:1 --style raw --v 7`
+
+| 파일 | 한글 | 성향 | 앞부분 프롬프트 |
+|---|---|---|---|
+| `aggressive.png` | 호전적 | 공격을 자주 | `a jagged flame-shaped arrow pointing forward, fiery red and orange,` |
+| `cautious.png` | 신중 | 방어를 자주 | `a small round shield with a steady horizontal bar across it, calm steel blue,` |
+| `cunning.png` | 교활 | 상대 허를 찌름 | `a curved crescent hook with a sly glinting spark at its tip, deep violet,` |
+| `steadfast.png` | 우직 | 한 자세를 고수 | `a squat heavy anvil-like block planted firmly, earthy brown and stone grey,` |
+| `fickle.png` | 변덕 | 매번 바뀜 | `two curved arrows chasing each other in a loop, playful teal and yellow,` |
+
+### 두 세트 모두 — 넣는 법
+
+```powershell
+cd packages\app
+python tool/place_flat_icons.py --from C:\Users\Lenovo\Downloads              # 있는 것 전부
+python tool/place_flat_icons.py --from C:\Users\Lenovo\Downloads --set stance # 한 세트만
+```
+
+오행 아이콘과 **같은 도구**다(예전 `place_element_art.py`). 생성기가 투명 대신
+체크무늬를 그려 넣는 문제(§4f)를 그대로 처리한다.
 
 ## 5. 등급 프레임 ×5 (`assets/images/frames/`)
 

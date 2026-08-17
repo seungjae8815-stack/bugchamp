@@ -58,6 +58,16 @@ Widget elementIcon(Element e, {double size = 16}) => Image.asset(
       Text(elementGlyph(e), style: TextStyle(fontSize: size * 0.85)),
 );
 
+/// 기질 아이콘. 애셋이 없으면 **아무것도 안 그린다** — 기질은 지금까지 글자로만
+/// 보여줬으므로, 그림이 없다고 이상한 대체 기호가 끼어들면 안 된다.
+Widget temperamentIcon(Temperament t, {double size = 14}) => Image.asset(
+  'assets/images/ui/temperament/${t.key}.png',
+  width: size,
+  height: size,
+  filterQuality: FilterQuality.medium,
+  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+);
+
 Color elementColor(Element e) => switch (e) {
   Element.fire => const Color(0xFFFF6B4A),
   Element.water => const Color(0xFF4AA8FF),
