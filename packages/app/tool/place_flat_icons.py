@@ -29,6 +29,12 @@ SETS = {
         "temperament",
     ),
     "stance": (["attack", "defend", "heal"], "stance"),
+    "trait": (["fierce", "sturdy", "vital", "noble"], "trait"),
+    "league": (
+        ["bronze", "silver", "gold", "platinum", "diamond"],
+        "league",
+    ),
+    "sex": (["male", "female"], "sex"),
 }
 SIZE = 256
 

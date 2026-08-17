@@ -739,5 +739,8 @@
   "forgeResultNew": "新しい装備",
   "forgeFilter": "フィルタ",
   "forgeFilterHint": "チェックした能力が1つ以上付いたものだけ残します。",
-  "forgeFiltered": "条件に合わず破棄しました"
+  "forgeFiltered": "条件に合わず破棄しました",
+  "elementWheelTitle": "五行相性",
+  "elementWheelRestrain": "相克 — 矢印の先にダメージ1.5倍",
+  "elementWheelGenerate": "相生 — 編成で前が後を生かすとチーム倍率+10%"
 }

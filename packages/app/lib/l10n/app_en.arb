@@ -498,9 +498,15 @@
   "dexBonusSummary": "Dex bonus — ATK +{atk}% · HP +{hp}% · Gold +{gold}%",
   "@dexBonusSummary": {
     "placeholders": {
-      "atk": {"type": "String"},
-      "hp": {"type": "String"},
-      "gold": {"type": "String"}
+      "atk": {
+        "type": "String"
+      },
+      "hp": {
+        "type": "String"
+      },
+      "gold": {
+        "type": "String"
+      }
     }
   },
   "speciesPassiveTitle": "Species ability",
@@ -538,8 +544,12 @@
   "eventFlyerPeriod": "{start} – {end}",
   "@eventFlyerPeriod": {
     "placeholders": {
-      "start": {"type": "String"},
-      "end": {"type": "String"}
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
     }
   },
   "eventPeriodLabel": "Event period",
@@ -563,8 +573,12 @@
   "eventTickets": "Tickets {n}/{max}",
   "@eventTickets": {
     "placeholders": {
-      "n": {"type": "int"},
-      "max": {"type": "int"}
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
     }
   },
   "eventBestRecord": "Your best",
@@ -600,8 +614,12 @@
   "eventRules": "Event rules",
   "@autoPreviewLine": {
     "placeholders": {
-      "name": {"type": "String"},
-      "count": {"type": "int"}
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
     }
   },
   "storageFilterButton": "Filter",
@@ -1409,5 +1427,8 @@
   "forgeResultNew": "New",
   "forgeFilter": "Filter",
   "forgeFilterHint": "Only results with at least one checked stat are kept.",
-  "forgeFiltered": "Discarded — no matching stat"
+  "forgeFiltered": "Discarded — no matching stat",
+  "elementWheelTitle": "Elemental Chart",
+  "elementWheelRestrain": "Overcomes — 1.5x damage toward the arrow",
+  "elementWheelGenerate": "Generates — +10% team multiplier when the front slot feeds the next"
 }

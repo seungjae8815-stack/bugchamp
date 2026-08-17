@@ -14,6 +14,7 @@ import '../../domain/game_server.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/element_wheel.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/game_dialog.dart';
@@ -417,6 +418,10 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
             maxWave: _cfg.maxWave,
             // 다음 웨이브의 오행을 미리 알려준다 — 카드 선택에 계획이 생긴다.
             nextElement: _replaying || _done ? null : _nextWaveElement(),
+            // 속성 이름만 알려줘 봐야 **뭘로 받아야 하는지** 모르면 예고가
+            // 무용지물이다. 눌러서 관계도를 보게 한다.
+            onTapElement: () =>
+                showElementWheel(context, highlight: _nextWaveElement()),
           ),
           if (parts.isNotEmpty) ...[
             const SizedBox(height: 4),
@@ -483,6 +488,13 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
                   ? _team[mineIdx].speciesId
                   : null,
               foeSpeciesId: _foeSpeciesId(_enemyIdx),
+              // 전투 엔진이 지은 이름은 `W3-1` 이다(순수 패키지라 다국어를
+              // 모른다). 화면에는 그 모습으로 쓰는 **종의 이름**을 보여준다.
+              foeName: widget
+                  .data
+                  .speciesById[_foeSpeciesId(_enemyIdx) ?? '']
+                  ?.name
+                  .resolve(Localizations.localeOf(context).languageCode),
               mineHpFrac: (mine == null || mine.maxHp <= 0)
                   ? 0
                   : mineHp / mine.maxHp,

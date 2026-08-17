@@ -22,6 +22,7 @@ class EventArena extends StatelessWidget {
     required this.foe,
     required this.mineSpeciesId,
     required this.foeSpeciesId,
+    required this.foeName,
     required this.mineHpFrac,
     required this.foeHpFrac,
     required this.stanceMine,
@@ -42,6 +43,10 @@ class EventArena extends StatelessWidget {
 
   /// 적의 모습으로 쓸 종(이미 있는 20종을 돌려쓴다).
   final String? foeSpeciesId;
+
+  /// 적 이름 — **그 종의 이름**을 쓴다. 전투 엔진이 지은 `W3-1` 은 내부용이다
+  /// (엔진은 순수 패키지라 다국어를 모른다).
+  final String? foeName;
   final double mineHpFrac;
   final double foeHpFrac;
   final Stance? stanceMine;
@@ -122,6 +127,7 @@ class EventArena extends StatelessWidget {
                           hpFrac: foeHpFrac.clamp(0.0, 1.0),
                           flip: true,
                           stance: stanceFoe,
+                          nameOverride: foeName,
                           flash: flashR,
                           dx: -lungeR,
                         ),
@@ -145,6 +151,7 @@ class WaveProgress extends StatelessWidget {
     required this.wave,
     required this.maxWave,
     this.nextElement,
+    this.onTapElement,
   });
 
   final int wave;
@@ -153,6 +160,10 @@ class WaveProgress extends StatelessWidget {
   /// 다음 웨이브의 대표 오행 — 미리 알려주면 카드 선택에 계획이 생긴다
   /// ("다음이 불이니 이번엔 방어를 챙기자").
   final Element? nextElement;
+
+  /// 예고를 눌렀을 때. 오행 관계도를 띄운다 — 속성 이름만 알려줘 봐야
+  /// **뭘로 받아야 하는지** 모르면 예고가 무용지물이다.
+  final VoidCallback? onTapElement;
 
   @override
   Widget build(BuildContext context) {
@@ -173,40 +184,54 @@ class WaveProgress extends StatelessWidget {
             ),
             const Spacer(),
             if (nextElement != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0x33000000),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: elementColor(nextElement!).withValues(alpha: 0.8),
+              GestureDetector(
+                onTap: onTapElement,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
                   ),
-                ),
-                // **웨이브 하나 = 오행 하나**라, 이 예고 하나로 그 웨이브 전체에
-                // 대응할 수 있다. 그래서 이름까지 붙여 확실히 읽히게 한다.
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l.eventNextWave,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x33000000),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: elementColor(nextElement!).withValues(alpha: 0.8),
                     ),
-                    const SizedBox(width: 4),
-                    elementIcon(nextElement!, size: 14),
-                    const SizedBox(width: 2),
-                    Text(
-                      elementLabel(l, nextElement!),
-                      style: TextStyle(
-                        color: elementColor(nextElement!),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
+                  ),
+                  // **웨이브 하나 = 오행 하나**라, 이 예고 하나로 그 웨이브 전체에
+                  // 대응할 수 있다. 그래서 이름까지 붙여 확실히 읽히게 한다.
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l.eventNextWave,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      elementIcon(nextElement!, size: 14),
+                      const SizedBox(width: 2),
+                      Text(
+                        elementLabel(l, nextElement!),
+                        style: TextStyle(
+                          color: elementColor(nextElement!),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      if (onTapElement != null) ...[
+                        const SizedBox(width: 3),
+                        const Icon(
+                          Icons.help_outline_rounded,
+                          size: 12,
+                          color: Color(0x99FFFFFF),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
           ],

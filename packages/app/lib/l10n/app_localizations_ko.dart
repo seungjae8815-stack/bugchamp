@@ -2455,4 +2455,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get forgeFiltered => '필터에 안 맞아 버렸습니다';
+
+  @override
+  String get elementWheelTitle => '오행 상성';
+
+  @override
+  String get elementWheelRestrain => '상극(克) — 화살표 쪽에 데미지 1.5배';
+
+  @override
+  String get elementWheelGenerate => '상생(生) — 편성에서 앞이 뒤를 生하면 팀 배율 +10%';
 }

@@ -2501,4 +2501,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgeFiltered => 'Discarded — no matching stat';
+
+  @override
+  String get elementWheelTitle => 'Elemental Chart';
+
+  @override
+  String get elementWheelRestrain => 'Overcomes — 1.5x damage toward the arrow';
+
+  @override
+  String get elementWheelGenerate =>
+      'Generates — +10% team multiplier when the front slot feeds the next';
 }

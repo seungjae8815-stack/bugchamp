@@ -4539,6 +4539,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discarded — no matching stat'**
   String get forgeFiltered;
+
+  /// No description provided for @elementWheelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Elemental Chart'**
+  String get elementWheelTitle;
+
+  /// No description provided for @elementWheelRestrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Overcomes — 1.5x damage toward the arrow'**
+  String get elementWheelRestrain;
+
+  /// No description provided for @elementWheelGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generates — +10% team multiplier when the front slot feeds the next'**
+  String get elementWheelGenerate;
 }
 
 class _AppLocalizationsDelegate

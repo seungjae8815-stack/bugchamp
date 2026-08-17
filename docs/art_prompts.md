@@ -527,6 +527,71 @@ python tool/place_flat_icons.py --from C:\Users\Lenovo\Downloads --set stance # 
 오행 아이콘과 **같은 도구**다(예전 `place_element_art.py`). 생성기가 투명 대신
 체크무늬를 그려 넣는 문제(§4f)를 그대로 처리한다.
 
+## 4i. 코드로 그린 기호 전수조사 (2026-08-17)
+
+`lib` 안의 이모지·머티리얼 아이콘을 전부 훑었다. **서로 다른 기호 69종**.
+다만 대부분은 이미 그림 뒤의 **폴백**이라 새로 만들 게 아니다. 셋으로 나뉜다.
+
+### A. 이미 그림이 있고 배선도 끝 — 할 일 없음
+
+| 세트 | 개수 | 폴더 |
+|---|---|---|
+| 버프 | 5 | `buffs/` |
+| 서식지 | 5 | `habitats/` |
+| 이벤트 강화 카드 | 8 | `ui/cards/` |
+| 재료·재화(젤리·골드 포함) | 6 | `materials/` |
+| 업그레이드 | 14 | `upgrades/` |
+| 오행 | 5 | `ui/element/` |
+| 스탠스 | 3 | `ui/stance/` |
+| 곤충·생애단계·보스·지역 | 다수 | `bugs/` `bosses/` `regions/` |
+
+이모지가 남아 있어도 **애셋이 없을 때만** 나온다. 굳이 손댈 필요 없다.
+
+### B. 그림이 없다 — 만들면 되는 것 (우선순위 순)
+
+| # | 세트 | 개수 | 지금 | 왜 필요한가 |
+|---|---|---|---|---|
+| 1 | **기질** | 5 | 글자만 | 프롬프트는 §4h 에 있다. 곤충 카드가 좁아 이름이 잘린다 |
+| 2 | **혈통 특성** | 4 | 🔥🛡🌿👑 | 짝짓기로만 나오는 **표식**인데(§2.5) 남의 이모지를 빌려 쓰고 있다 |
+| 3 | **리그 뱃지** | 5 | 🥉🥈🥇🏅💠 | 시즌 보상의 얼굴. 메달 이모지라 등급 차이가 안 느껴진다 |
+| 4 | **성별** | 2 | ♂♀ | 짝짓기 화면의 핵심 구분인데 글꼴 기호라 작으면 안 보인다 |
+| 5 | **전투 장소** | 5 | 🌲🌋🏜🏙🌊 | 배경 그림은 있지만 **작은 아이콘**이 없다 |
+| 6 | 상태 표시 | 4 | 🩹⏳📺🔐 | 부상·대기·광고·잠김. 급하지 않다 |
+
+공통 꼬리(§4f·§4g 와 동일): `flat vector game icon, bold simple silhouette, thick dark outline, centered on transparent background, high contrast, readable at 16px, no text, no watermark --ar 1:1 --style raw --v 7`
+
+**혈통 특성 4** (`assets/images/ui/trait/` — 파일명 = enum 이름)
+
+| 파일 | 한글 | 앞부분 프롬프트 |
+|---|---|---|
+| `fierce.png` | 맹렬 | `a clenched beetle claw wreathed in a small flame, fierce red-orange,` |
+| `sturdy.png` | 강인 | `a thick layered carapace plate seen edge-on, solid slate blue,` |
+| `vital.png` | 강건 | `a sprouting seed with a heartbeat pulse line through it, vivid green,` |
+| `noble.png` | 고귀 | `a small ornate crown resting on a beetle horn, radiant gold,` |
+
+**리그 뱃지 5** (`assets/images/ui/league/` — 파일명 = 리그 id)
+
+공통: `a heraldic shield badge with a beetle horn crest, {색}, ornate metal rim, glossy, game rank emblem,`
+브론즈 `warm bronze` · 실버 `cool silver` · 골드 `bright gold` · 플래티넘 `pale platinum with cyan sheen` · 다이아 `brilliant diamond blue with facets`
+
+> ⚠️ **다섯 장을 한 번에 같은 조건으로.** 등급 차이는 **테두리 장식과 광택**으로 내고
+> 형태는 같게 — 형태가 다르면 승급했을 때 "올라갔다"가 아니라 "바뀌었다"로 읽힌다.
+
+**성별 2** (`assets/images/ui/sex/`): `male.png` = `a beetle mandible pair forming a bold male symbol, cool blue,` · `female.png` = `a rounded egg silhouette forming a bold female symbol, warm pink,`
+
+### C. 문장 속 이모지 31개 — **바꾸지 않는 게 낫다**
+
+`app_ko.arb` 의 31개 문자열이 이모지를 **문장 안에** 품고 있다
+(`"돌아왔어요! 💰{gold} · 🔷{xp} 획득"`, `"{name}까지 {n}🏆"` 등).
+
+그림으로 바꾸려면 문자열을 쪼개 `Row` 로 조립해야 하는데, **3개 언어 × 31개**를
+고쳐야 하고 언어마다 어순이 달라 조각 순서도 달라진다(§ARB 플레이스홀더 순서 사고
+참조 — 같은 이유로 이미 두 번 틀렸다).
+
+대신 **보상 다이얼로그·상점처럼 재화가 주인공인 자리만** 골라 `goldIcon()`·
+`materialIcon()` 을 쓴다. 거긴 이미 그림으로 나온다. 문장 속 이모지는 보조 표기라
+그대로 둔다.
+
 ## 5. 등급 프레임 ×5 (`assets/images/frames/`)
 
 공통: `ornate rounded card frame border, gem accents, empty transparent center, mobile gacha rarity frame, {STYLE} --ar 1:1`

@@ -2453,4 +2453,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get forgeFiltered => '条件に合わず破棄しました';
+
+  @override
+  String get elementWheelTitle => '五行相性';
+
+  @override
+  String get elementWheelRestrain => '相克 — 矢印の先にダメージ1.5倍';
+
+  @override
+  String get elementWheelGenerate => '相生 — 編成で前が後を生かすとチーム倍率+10%';
 }

@@ -95,6 +95,7 @@ class ArenaFighter extends StatelessWidget {
     required this.dx,
     this.stanceHidden = false,
     this.skin,
+    this.nameOverride,
   });
 
   final GameData data;
@@ -109,6 +110,10 @@ class ArenaFighter extends StatelessWidget {
 
   /// 구매한 스킨의 색 필터. **내 쪽 파이터에만** 준다(상대 곤충은 상대의 외형).
   final ColorFilter? skin;
+
+  /// 화면에 쓸 이름. 이벤트 적처럼 **전투 엔진이 지은 내부 이름**(`W3-1`)을
+  /// 그대로 보여주면 안 되는 경우에 준다 — 엔진은 순수 패키지라 다국어를 모른다.
+  final String? nameOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -152,13 +157,18 @@ class ArenaFighter extends StatelessWidget {
                 const SizedBox(width: 3),
                 Flexible(
                   child: Text(
-                    u.name,
+                    nameOverride ?? u.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: elementColor(u.element),
+                    // 이름은 **흰색**이다. 오행색으로 칠했더니 나무(#855A31)·
+                    // 통나무 배경 위에서 초록·황토가 묻혀 안 읽혔다(실기 지적).
+                    // 색은 바로 옆 오행 아이콘이 이미 말해 준다 — 글자까지
+                    // 색을 지면 정보가 늘지 않고 가독성만 잃는다.
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 12,
+                      shadows: [Shadow(color: Colors.black87, blurRadius: 3)],
                     ),
                   ),
                 ),
@@ -372,10 +382,14 @@ class StanceWheel extends StatelessWidget {
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: base,
+                // 원을 **어둡게** 채우고 테두리로만 스탠스 색을 말한다.
+                // 예전엔 원을 스탠스 색으로 꽉 채웠는데, 그림을 얹으니 공격
+                // (빨간 원 + 빨간 큰턱)이 통째로 묻혔다 — 그림 자체가 이미
+                // 색을 들고 있으므로 배경까지 같은 색이면 형태가 사라진다.
+                color: Color.lerp(base, const Color(0xFF14181E), 0.72),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: highlight == s ? Colors.white : Colors.white24,
+                  color: highlight == s ? Colors.white : base,
                   width: highlight == s ? 3.5 : 2.5,
                 ),
                 boxShadow: active
