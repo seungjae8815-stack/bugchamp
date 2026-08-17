@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../ui/toast.dart';
@@ -4093,6 +4094,69 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 개발자(테스트) 도구 시트 — 채집함/스테이지/재화 조작. (개발 전용, 하드코딩 허용)
+  /// 개발자 모드: 이벤트 참가권 지급을 **서버에 요청**한다.
+  ///
+  /// 참가권은 서버 소유 필드라 로컬로 못 늘린다(`_serverOwnedKeys`) — 세이브를
+  /// 고쳐 봐야 다음 업로드에 서버 값으로 덮인다. 그래서 운영 라우트
+  /// (`/admin/event-ticket`)를 쓰며, 키는 기기에 저장해 두고 없을 때만 한 번
+  /// 묻는다(손으로 옮기는 값이라 매번 입력하면 오타가 난다).
+  Future<String> _devGrantEventTickets(int amount) async {
+    final server = ref.read(gameServerProvider);
+    if (!server.available) return '서버 연결이 없어요 (GAME_SERVER_URL 필요)';
+    final uid = ref.read(authServiceProvider).userId;
+    if (uid == null) return '로그인 정보가 없어요';
+
+    final prefs = await SharedPreferences.getInstance();
+    var key = prefs.getString('dev_admin_key') ?? '';
+    if (key.isEmpty) {
+      if (!mounted) return '';
+      final ctrl = TextEditingController();
+      final ok = await showGameDialog<bool>(
+        context,
+        title: '운영 키 입력',
+        icon: Icons.key_rounded,
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          obscureText: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'ADMIN_KEY',
+            hintStyle: TextStyle(color: Color(0x66FFFFFF)),
+          ),
+        ),
+        actions: [
+          gameDialogButton(
+            '취소',
+            () => Navigator.pop(context, false),
+            primary: false,
+          ),
+          gameDialogButton('저장', () => Navigator.pop(context, true)),
+        ],
+      );
+      if (ok != true) return '';
+      key = ctrl.text.trim();
+      if (key.isEmpty) return '키가 비어 있어요';
+      await prefs.setString('dev_admin_key', key);
+    }
+
+    final r = await server.adminEventTicket(
+      adminKey: key,
+      userId: uid,
+      amount: amount,
+    );
+    if (!r.isOk) {
+      // 키가 틀리면 저장분을 지워 다시 물어볼 수 있게 한다.
+      if (r.status == 401 || r.status == 403) {
+        await prefs.remove('dev_admin_key');
+        return '운영 키가 틀렸어요 (다시 입력해 주세요)';
+      }
+      return '실패: ${r.error ?? r.status}';
+    }
+    ref.invalidate(eventStateProvider);
+    return '참가권 ${r.data?['tickets']}/${r.data?['max']}';
+  }
+
   void _showDevTools(AppLocalizations l) {
     final stageCtrl = TextEditingController();
     void toast(String m) => showCenterToast(context, m);
@@ -4170,6 +4234,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         _devJumpStage(n);
                         toast('스테이지 $n 이동');
                       }
+                    }),
+                  ]),
+                  // 이벤트 참가권은 **서버 소유 필드**라 로컬로 늘려도 다음
+                  // 업로드에 서버 값으로 덮인다. 그래서 서버에 요청해야 하고,
+                  // 아무나 부르면 순위가 무너지므로 **운영 키**로 보호한다.
+                  _devSection('이벤트', [
+                    _devBtn('참가권 +5', () async {
+                      final msg = await _devGrantEventTickets(5);
+                      if (msg.isNotEmpty) toast(msg);
                     }),
                   ]),
                   _devSection('재화 추가', [

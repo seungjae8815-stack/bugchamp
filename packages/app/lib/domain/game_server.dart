@@ -152,6 +152,16 @@ abstract interface class GameServer {
   /// 이벤트 순위(상위 100). 서버가 대신 읽어 준다 — 앱에는 RPC 권한이 없다.
   Future<ServerResult> eventLeaderboard();
 
+  /// **개발자 모드 전용** — 이벤트 참가권 지급. 운영 키가 있어야 한다.
+  ///
+  /// 참가권은 서버 소유 필드라 앱이 세이브를 고쳐 늘릴 수 없다. 아무나 부르면
+  /// 그 회차 순위가 통째로 무효가 되므로 서버가 `x-admin-key` 를 검사한다.
+  Future<ServerResult> adminEventTicket({
+    required String adminKey,
+    required String userId,
+    required int amount,
+  });
+
   /// 산란 완료 수령.
   Future<ServerResult> collectBreeding(String slotId, {bool viaJelly});
 
@@ -252,6 +262,12 @@ class NoGameServer implements GameServer {
   @override
   Future<ServerResult> eventLeaderboard() async =>
       const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> adminEventTicket({
+    required String adminKey,
+    required String userId,
+    required int amount,
+  }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> collectBreeding(
     String slotId, {
@@ -455,6 +471,18 @@ class HttpGameServer implements GameServer {
 
   @override
   Future<ServerResult> eventLeaderboard() => _send('GET', '/event/leaderboard');
+
+  @override
+  Future<ServerResult> adminEventTicket({
+    required String adminKey,
+    required String userId,
+    required int amount,
+  }) => _send(
+    'POST',
+    '/admin/event-ticket',
+    {'userId': userId, 'amount': amount},
+    {'x-admin-key': adminKey},
+  );
 
   @override
   Future<ServerResult> collectBreeding(
