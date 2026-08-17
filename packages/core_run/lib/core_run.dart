@@ -9,6 +9,7 @@ export 'src/character_stats.dart';
 export 'src/craft_config.dart';
 export 'src/daily_config.dart';
 export 'src/dex_config.dart';
+export 'src/event_config.dart';
 export 'src/gift_config.dart';
 export 'src/roadmap_config.dart';
 export 'src/enhance_config.dart';

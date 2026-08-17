@@ -117,15 +117,32 @@ class BattleState {
     this._rng, {
     this.location,
     double locationBonus = 0.0,
+
+    /// A 팀의 **시작 체력**(생략하면 전원 최대 체력).
+    ///
+    /// 이벤트 웨이브 방어전처럼 **체력을 이월**해야 하는 모드에서 쓴다.
+    /// 0 이하면 그 자리는 이미 쓰러진 것으로 취급된다.
+    List<double>? initialHpA,
   }) : _locBonus = locationBonus,
-       hpA = [for (final u in teamA) u.maxHp],
+       hpA = [
+         for (var i = 0; i < teamA.length; i++)
+           (initialHpA != null && i < initialHpA.length)
+               ? initialHpA[i].clamp(0.0, teamA[i].maxHp)
+               : teamA[i].maxHp,
+       ],
        hpB = [for (final u in teamB) u.maxHp],
        enA = [for (final _ in teamA) _startEnergy],
        enB = [for (final _ in teamB) _startEnergy],
        synA = teamSynergy(teamA),
        synB = teamSynergy(teamB),
        _maxA = teamA.fold(0.0, (s, u) => s + u.maxHp),
-       _maxB = teamB.fold(0.0, (s, u) => s + u.maxHp);
+       _maxB = teamB.fold(0.0, (s, u) => s + u.maxHp) {
+    // 시작부터 쓰러져 있는 자리는 **건너뛴다**(웨이브 이월로 HP 0 을 받은 경우).
+    // 안 그러면 죽은 곤충이 전투원으로 나와, 회복 스탠스를 고르는 순간 되살아난다.
+    while (a < teamA.length && hpA[a] <= 0) {
+      a++;
+    }
+  }
 
   final List<BattleBug> teamA;
   final List<BattleBug> teamB;
@@ -345,12 +362,14 @@ BattleState initBattle(
   List<BattleBug> teamB, {
   Element? location,
   double locationBonus = 0.0,
+  List<double>? initialHpA,
 }) => BattleState._(
   teamA,
   teamB,
   Random(seed),
   location: location,
   locationBonus: locationBonus,
+  initialHpA: initialHpA,
 );
 
 /// 오토 전투(양쪽 AI). 같은 seed·팀·장소 → 같은 결과 (§2.3, 결정론).
@@ -360,6 +379,7 @@ BattleResult simulate(
   List<BattleBug> teamB, {
   Element? location,
   double locationBonus = 0.0,
+  List<double>? initialHpA,
 }) {
   final st = initBattle(
     seed,
@@ -367,6 +387,7 @@ BattleResult simulate(
     teamB,
     location: location,
     locationBonus: locationBonus,
+    initialHpA: initialHpA,
   );
   var guard = 0;
   while (!st.done && guard < 200) {

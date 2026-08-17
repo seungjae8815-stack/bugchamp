@@ -72,3 +72,33 @@ List<String> koedTeamAIds(List<BattleBug> teamA, List<BattleEvent> events) {
   final n = events.where((e) => e.aDown).length;
   return [for (var i = 0; i < n && i < teamA.length; i++) teamA[i].id];
 }
+
+/// 이벤트(웨이브 방어전) 규격으로 변환한다 — **개체 스탯을 쓰지 않는다.**
+///
+/// 반영하는 것: 종의 주특기(→선호 스탠스)·오행·기질. 스탯은 호출부가 넘긴
+/// 정규화 값([hp]/[atk]/[def]/[spd])을 그대로 쓴다.
+///
+/// 왜 버리는가: 수련·돌파·부위 강화·포텐셜·사이즈는 **전부 위조 가능한 축**
+/// (곤충 롤이 기기 권위 §2.1)이자 **오래 한 사람만 유리한 축**이다. 순위가
+/// 실물 상품으로 이어지는 모드에서는 둘 다 곤란하다 — 버리면 한 번에 풀린다.
+///
+/// `buildBattleBug` 와 마찬가지로 **앱과 서버가 같은 함수**를 써야 한다.
+BattleBug buildEventBug({
+  required IndividualBug bug,
+  required Species species,
+  required String locale,
+  required double hp,
+  required double atk,
+  required double def,
+  required double spd,
+}) => BattleBug(
+  id: bug.id,
+  name: species.name.resolve(locale),
+  element: bug.element,
+  temperament: bug.temperament,
+  preferredStance: preferredStanceOf(species.specialty),
+  maxHp: hp,
+  atk: atk,
+  def: def,
+  spd: spd,
+);

@@ -4,4 +4,5 @@
 library;
 
 export 'src/core_battle_base.dart';
+export 'src/event_wave.dart';
 export 'src/party.dart';
