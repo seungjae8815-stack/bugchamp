@@ -234,6 +234,35 @@ three heroic beetles standing shoulder to shoulder on a mossy log facing an onco
 > 배경 제거는 §4c 의 교훈 그대로 — **문턱 60 + 알파 1px 침식**이 필요하다
 > (크림 림라이트가 배경과 채널차 33 이라 32 에서는 한 끗 차이로 안 지워진다).
 
+## 4f. 오행 아이콘 ×5 (`assets/images/ui/element/`)
+
+지금은 이모지(🔥💧🌿⚙️⛰️)를 쓴다. **기기 폰트마다 모양·색이 제각각**이라
+"상극!" 처럼 순간적으로 읽혀야 하는 자리에서 눈에 안 들어온다. 그림으로 바꾸면
+전투 이름표·다음 적 속성 예고·상극 표시가 **전부 같은 언어**로 통일된다.
+
+파일명 = enum 이름 그대로: `wood.png` `fire.png` `earth.png` `metal.png` `water.png`
+(없으면 이모지로 자동 폴백하므로 한 장씩 넣어도 된다).
+
+**작게(13~20px) 쓰이므로 디테일보다 실루엣과 색이다.** 곤충을 그리지 말 것 —
+곤충 그림 옆에 붙는 아이콘이라 같이 있으면 뭉친다.
+
+공통 꼬리: `flat vector game icon, bold simple silhouette, thick clean outline, centered on transparent background, high contrast, readable at 16px, no text, no watermark --ar 1:1 --style raw --v 7`
+
+| 파일 | 색 | 앞부분 프롬프트 |
+|---|---|---|
+| `wood.png` | 초록 `#6FCF6F` | `a single curled young leaf sprout, fresh spring green, glossy highlight,` |
+| `fire.png` | 주황 `#FF6B4A` | `a single teardrop flame, orange to yellow gradient core, warm glow,` |
+| `earth.png` | 황토 `#D2A56A` | `a rounded mountain rock with a flat top and one crack, ochre and warm brown,` |
+| `metal.png` | 은회 `#CBD3DA` | `a polished hexagonal metal nut with a bright specular streak, cool silver steel,` |
+| `water.png` | 파랑 `#4AA8FF` | `a single water droplet with a crescent highlight, deep to light blue gradient,` |
+
+> **규격**: 배경 제거 후 128×128↑ RGBA PNG. 색은 표의 HEX 에 맞춘다 — 앱이 같은
+> 색으로 이름·테두리를 칠하므로(`labels.dart → elementColor`) 그림만 다른 색이면
+> 따로 논다.
+>
+> ⚠️ 다섯 장을 **한 번에 같은 조건으로** 뽑을 것. 하나씩 뽑으면 굵기·광택이 갈려
+> 나란히 놓았을 때 한 세트로 안 보인다(재료 아이콘에서 겪은 문제 §4).
+
 ## 5. 등급 프레임 ×5 (`assets/images/frames/`)
 
 공통: `ornate rounded card frame border, gem accents, empty transparent center, mobile gacha rarity frame, {STYLE} --ar 1:1`

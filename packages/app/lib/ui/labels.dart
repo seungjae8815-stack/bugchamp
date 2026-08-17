@@ -44,6 +44,20 @@ String elementGlyph(Element e) => switch (e) {
   Element.earth => '⛰️',
 };
 
+/// 오행 아이콘. 애셋(`assets/images/ui/element/<key>.png`)이 있으면 그림을,
+/// 없으면 이모지로 폴백한다 — 아트가 늦게 들어와도 화면이 비지 않는다(§6).
+///
+/// 이모지는 기기 폰트에 따라 모양·색이 제각각이라, 상극처럼 **한눈에 읽혀야
+/// 하는 자리**에서는 그림이 필요하다.
+Widget elementIcon(Element e, {double size = 16}) => Image.asset(
+  'assets/images/ui/element/${e.name}.png',
+  width: size,
+  height: size,
+  filterQuality: FilterQuality.medium,
+  errorBuilder: (_, _, _) =>
+      Text(elementGlyph(e), style: TextStyle(fontSize: size * 0.85)),
+);
+
 Color elementColor(Element e) => switch (e) {
   Element.fire => const Color(0xFFFF6B4A),
   Element.water => const Color(0xFF4AA8FF),

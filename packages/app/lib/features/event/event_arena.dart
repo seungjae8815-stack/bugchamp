@@ -175,13 +175,31 @@ class WaveProgress extends StatelessWidget {
                     color: elementColor(nextElement!).withValues(alpha: 0.8),
                   ),
                 ),
-                child: Text(
-                  '${l.eventNextWave} ${elementGlyph(nextElement!)}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
+                // **웨이브 하나 = 오행 하나**라, 이 예고 하나로 그 웨이브 전체에
+                // 대응할 수 있다. 그래서 이름까지 붙여 확실히 읽히게 한다.
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l.eventNextWave,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    elementIcon(nextElement!, size: 14),
+                    const SizedBox(width: 2),
+                    Text(
+                      elementLabel(l, nextElement!),
+                      style: TextStyle(
+                        color: elementColor(nextElement!),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],

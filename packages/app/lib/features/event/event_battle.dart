@@ -281,9 +281,10 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         _bursts.add(BurstFx(left: false, color: elementColor(mine.element)));
         _floats.add(
           FloatText(
-            '${elementGlyph(mine.element)} ${AppLocalizations.of(context).battleRestrain}',
+            AppLocalizations.of(context).battleRestrain,
             elementColor(mine.element),
             false,
+            element: mine.element,
           ),
         );
       }
@@ -291,9 +292,10 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         _bursts.add(BurstFx(left: true, color: elementColor(foe.element)));
         _floats.add(
           FloatText(
-            '${elementGlyph(foe.element)} ${AppLocalizations.of(context).battleRestrain}',
+            AppLocalizations.of(context).battleRestrain,
             elementColor(foe.element),
             true,
+            element: foe.element,
           ),
         );
       }
@@ -517,10 +519,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
                       fallback: bugAvatar(sp, size: 20),
                     ),
                   const SizedBox(width: 3),
-                  Text(
-                    elementGlyph(u.element),
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  elementIcon(u.element, size: 13),
                 ],
               ),
               const SizedBox(height: 4),

@@ -44,10 +44,13 @@ IconData stanceIcon(Stance s) => switch (s) {
 
 /// 떠오르는 데미지/회복 숫자(가변 age 를 가진 애니메이션 상태).
 class FloatText {
-  FloatText(this.text, this.color, this.left);
+  FloatText(this.text, this.color, this.left, {this.element});
   final String text;
   final Color color;
   final bool left;
+
+  /// 있으면 글자 앞에 오행 아이콘을 붙인다(상극 표시). 숫자 데미지는 null.
+  final Element? element;
   double age = 0;
   static const life = 0.9;
 }
@@ -118,10 +121,7 @@ class ArenaFighter extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  elementGlyph(u.element),
-                  style: const TextStyle(fontSize: 12),
-                ),
+                elementIcon(u.element, size: 13),
                 const SizedBox(width: 3),
                 Flexible(
                   child: Text(
@@ -454,14 +454,23 @@ class ArenaFloat extends StatelessWidget {
       top: 150 - t * 60,
       child: Opacity(
         opacity: (1 - t).clamp(0.0, 1.0),
-        child: Text(
-          f.text,
-          style: TextStyle(
-            color: f.color,
-            fontWeight: FontWeight.w900,
-            fontSize: 22,
-            shadows: const [Shadow(color: Colors.black, blurRadius: 4)],
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (f.element != null) ...[
+              elementIcon(f.element!, size: 20),
+              const SizedBox(width: 3),
+            ],
+            Text(
+              f.text,
+              style: TextStyle(
+                color: f.color,
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                shadows: const [Shadow(color: Colors.black, blurRadius: 4)],
+              ),
+            ),
+          ],
         ),
       ),
     );
