@@ -17,5 +17,9 @@
   {species_id}_adult_3.webp   피격
 
 가로 3칸 시트 한 장으로 뽑아 잘라 넣는다(프롬프트: docs/art_prompts.md §2b):
-  python tool/split_sprite_sheet.py --from <시트> --name {species_id}_adult --sub bugs --frames 3
-칸마다 손으로 자르면 자세가 바뀔 때 곤충이 튄다 — 반드시 이 도구를 쓸 것.
+  python tool/place_bug_frames.py --from <시트가 든 폴더>
+파일명은 종 id 그대로(stag_giant.png). 손으로 자르거나 split_sprite_sheet.py 를
+쓰면 안 된다 — 정확히 1/3 에서 자르면 큰턱이 잘리고, 칸마다 따로 맞추면 자세가
+바뀔 때 곤충이 커졌다 작아졌다 하며 위아래로 튄다.
+
+{species_id}_adult.webp 도 같은 도구가 만든다(대기 프레임을 딱 맞게 자른 것).

@@ -113,20 +113,41 @@ plain soft pastel background, {STYLE} --ar 1:1 --style raw --sref <key> --sw 100
 
 ```powershell
 cd packages\app
-python tool/split_sprite_sheet.py --from C:\art\stag_giant.png --name stag_giant_adult --sub bugs --frames 3
-# → assets/images/bugs/stag_giant_adult_1.webp (대기) / _2 (공격) / _3 (피격)
+python tool/place_bug_frames.py --from C:\Users\Lenovo\Downloads --dry   # 먼저 확인
+python tool/place_bug_frames.py --from C:\Users\Lenovo\Downloads         # 실제 배치
+python tool/place_bug_frames.py --from ... --only stag_giant             # 한 종만
 ```
 
-이 도구가 **세 칸을 같은 캔버스에 발을 바닥에 맞춰** 놓는다. 칸마다 따로 여백을 자르면
-자세가 바뀔 때 곤충이 위아래로 튄다 — 손으로 자르지 말 것.
+파일명은 **종 id 그대로**(`stag_giant.png`) — 도구가 `species.json` 과 대조하므로
+오타는 여기서 걸린다(§6: 오타는 에러 없이 조용히 폴백된다).
+
+`split_sprite_sheet.py`(캐릭터 걷기용)를 **쓰면 안 된다.** 그건 정확히 1/N 로 자르는데,
+곤충은 큰턱·더듬이가 옆 칸까지 뻗는다 — 왕사슴벌레 대기 자세는 정확히 1/3 지점이
+**큰턱 한복판**이라 집게가 잘려 나간다(실측 알파합 6350). 새 도구는 칸 사이 **빈
+세로줄**을 찾아 자른다(실측 오차: 좀사마귀 195px, 왕사마귀 192px).
+
+도구가 하는 일:
+1. **rembg 로 배경 제거**(아래 참고). 시트를 **통째로** 한 번에 지운다.
+2. 빈 세로줄에서 3칸으로 자르고, 옆 칸에서 넘어온 다리 끝 부스러기를 지운다.
+3. 세 칸의 **배율과 발 높이를 공통**으로 맞춘다. 가로는 **알파 무게중심** 기준 —
+   큰턱이 앞으로 뻗어도 몸통이 뒤로 안 밀린다.
+4. `{id}_adult_1/2/3.webp`(프레임) + `{id}_adult.webp`(채집함·도감용 딱 맞는 대기컷).
+
+> ⚠️ **"plain flat pastel background" 는 안 지켜진다.** 생성기가 이끼·흙 바닥을
+> 그려 넣는다(20장 전부). 밝기 문턱으로는 못 지운다 — 갈색 곤충과 갈색 흙이 같은
+> 색이다. 그래서 rembg(AI 분할)를 쓴다. 프롬프트로 싸우지 말고 도구에 맡길 것.
+>
+> ⚠️ **칸을 먼저 자르고 배경을 지우면 안 된다.** 벌어진 큰턱 안쪽이 배경색으로 찬다.
+> 시트 전체를 한 번에 지워야 큰턱 사이가 뚫린다.
 
 > **한 종만 먼저 해 보고 폰에서 확인할 것.** 프레임이 없는 종은 예전 한 장짜리 그림으로
 > 조용히 내려가므로(`bugPoseImage`), 20종을 다 그리기 전에 한 종으로 판단할 수 있다.
 
 ### 지금 그림의 문제 두 가지
 
-- **해상도가 낮다** — 지금 256px 인데 아레나에서 96pt(고밀도 폰에서 288px)로 그린다.
-  거의 등배라 흐릿하다. 시트를 **1536×512 이상**으로 뽑을 것(칸당 512).
+- **해상도가 낮았다** — 예전 그림이 256px 인데 아레나에서 96pt(고밀도 폰에서 288px)로
+  그렸다. 거의 등배라 흐릿했다. 시트는 **3584×1184**(칸당 ~1190) 정도가 좋다 —
+  도구가 640px 로 줄여 저장한다. 무손실이면 60장에 8.4MB 라 q92 로 저장한다(3.0MB).
 - **일부는 정면에 가깝다** — 옆에서 본 모습이어야 마주 본 둘이 서로를 향한다.
   프롬프트에 `strict side profile facing right` 를 넣어 둔 이유다 — 지우지 말 것.
 
@@ -434,6 +455,17 @@ three heroic beetles standing shoulder to shoulder on a mossy log facing an onco
 | `metal.png` | 은회 `#CBD3DA` | `a polished hexagonal metal nut with a bright specular streak, cool silver steel,` |
 | `water.png` | 파랑 `#4AA8FF` | `a single water droplet with a crescent highlight, deep to light blue gradient,` |
 
+> **규격**: 배경 제거 후 256×256 RGBA PNG — `tool/place_element_art.py --from <폴더>`
+> 가 누끼·정사각 정렬까지 한다. 파일명은 enum 이름 그대로.
+>
+> ⚠️ 생성기는 "transparent background" 를 줘도 **투명을 안 만들고 체크무늬를 그려
+> 넣는다**(실측: 5장 모두 완전투명 0%). 그대로 넣으면 게임에 회색 체크판이 보인다.
+>
+> ⚠️ `place_item_art.cutout`(무채색 문턱 방식)은 여기 못 쓴다 — 쇠 아이콘은 **그림
+> 자체가 무채색**이고 하이라이트가 흰색(250+)이라 체크판 밝은 칸(253)과 겹쳐 너트가
+> 뚫린다. 오행 아이콘 전용 도구는 **테두리에서 번져 들어가는** 방식이라 안 뚫린다
+> (너트 나사 구멍처럼 갇힌 체크판은 "두 톤이 반반"인 덩어리만 따로 지운다).
+>
 > **규격**: 배경 제거 후 128×128↑ RGBA PNG. 색은 표의 HEX 에 맞춘다 — 앱이 같은
 > 색으로 이름·테두리를 칠하므로(`labels.dart → elementColor`) 그림만 다른 색이면
 > 따로 논다.
