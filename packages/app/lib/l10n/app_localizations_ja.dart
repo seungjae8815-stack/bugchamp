@@ -812,34 +812,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventIntroTitle => '王虫選抜大会とは？';
 
   @override
-  String get eventIntro1Title => '虫3匹で何ウェーブまで';
-
-  @override
-  String get eventIntro1Body =>
-      '敵が波のように押し寄せます。体力はウェーブをまたいで引き継がれ、1つ突破するごとに少しだけ回復します。より遠くまで進んだ人の勝ちです。';
-
-  @override
-  String get eventIntro2Title => '力ではなく編成が勝つ';
-
-  @override
-  String get eventIntro2Body =>
-      '修練・強化・ポテンシャル・サイズは反映されません。種・五行・気質だけが使われるので、全員が同じ条件です。敵の五行はウェーブごとに変わるため、一属性だけではいずれ詰まります。';
-
-  @override
-  String get eventIntro3Title => '順番こそ実力';
-
-  @override
-  String get eventIntro3Body =>
-      '左から順に出ます。前の虫が後ろの虫を生じるとチーム全体が強くなり（木→火→土→金→水→木）、相手を克す属性はダメージ1.5倍です。';
-
-  @override
-  String get eventIntro4Title => '参加券と出場疲労';
-
-  @override
-  String get eventIntro4Body =>
-      '参加券は毎朝補充され、広告でも受け取れます。一度出た虫は1日休みます — 良い虫を多く揃えるほど有利です。';
-
-  @override
   String get eventIntroStart => 'はじめる';
 
   @override
@@ -900,6 +872,46 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cardSkipDesc => '次のウェーブを戦わずに通過します';
+
+  @override
+  String get eventFlyerHeadline => '最も遠くまで進む虫使いを探しています';
+
+  @override
+  String get eventFlyerPrize => '1位には本物の昆虫をお届けします';
+
+  @override
+  String get eventFlyerPrizeNote => '韓国国内配送・販売店から直接発送';
+
+  @override
+  String get eventFlyerHow => '参加方法';
+
+  @override
+  String get eventFlyerHow1 => '成虫3匹を選んで出場';
+
+  @override
+  String get eventFlyerHow2 => 'ウェーブ突破ごとに強化カードを1枚選択';
+
+  @override
+  String get eventFlyerHow3 => 'より遠くまで進んだ人が上位';
+
+  @override
+  String get eventFlyerRules => '必ずご確認ください';
+
+  @override
+  String get eventFlyerRule1 =>
+      'この大会は**ステータスが平準化**されます — 種・五行・気質のみ反映され、修練・強化・サイズは適用されません';
+
+  @override
+  String get eventFlyerRule2 => '敵の五行はウェーブごとに変わります — 一属性だけでは詰まります';
+
+  @override
+  String get eventFlyerRule3 => '出場した虫は1日休みます — 良い虫を多く揃えると有利です';
+
+  @override
+  String get eventFlyerRule4 => '参加券は毎朝補充され、広告で1日2枚まで追加できます';
+
+  @override
+  String get eventFlyerLogin => '順位に載るにはログインが必要です（ゲストは参加のみ可能）';
 
   @override
   String get eventTitle => '王虫選抜大会';

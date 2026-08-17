@@ -1540,54 +1540,6 @@ abstract class AppLocalizations {
   /// **'What is the Bug King Trials?'**
   String get eventIntroTitle;
 
-  /// No description provided for @eventIntro1Title.
-  ///
-  /// In en, this message translates to:
-  /// **'How far can 3 bugs go?'**
-  String get eventIntro1Title;
-
-  /// No description provided for @eventIntro1Body.
-  ///
-  /// In en, this message translates to:
-  /// **'Enemies come in waves. HP carries over between waves and you only recover a little after each clear. Whoever gets further wins.'**
-  String get eventIntro1Body;
-
-  /// No description provided for @eventIntro2Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Formation wins, not power'**
-  String get eventIntro2Title;
-
-  /// No description provided for @eventIntro2Body.
-  ///
-  /// In en, this message translates to:
-  /// **'Training, enhancement, potential and size don\'t apply. Only species, element and temperament count, so everyone is on equal footing. Enemy elements rotate each wave, so a single-element team will hit a wall.'**
-  String get eventIntro2Body;
-
-  /// No description provided for @eventIntro3Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Order is skill'**
-  String get eventIntro3Title;
-
-  /// No description provided for @eventIntro3Body.
-  ///
-  /// In en, this message translates to:
-  /// **'They fight left to right. A bug that generates the next one strengthens the team (wood→fire→earth→metal→water→wood), and an element that restrains the enemy deals 1.5x damage.'**
-  String get eventIntro3Body;
-
-  /// No description provided for @eventIntro4Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Tickets and fatigue'**
-  String get eventIntro4Title;
-
-  /// No description provided for @eventIntro4Body.
-  ///
-  /// In en, this message translates to:
-  /// **'Tickets refill each morning and ads give more. A bug that entered rests for a day — so keeping several good bugs pays off.'**
-  String get eventIntro4Body;
-
   /// No description provided for @eventIntroStart.
   ///
   /// In en, this message translates to:
@@ -1707,6 +1659,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip the next wave without fighting'**
   String get cardSkipDesc;
+
+  /// No description provided for @eventFlyerHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for the bug handler who goes furthest'**
+  String get eventFlyerHeadline;
+
+  /// No description provided for @eventFlyerPrize.
+  ///
+  /// In en, this message translates to:
+  /// **'1st place gets a real live beetle'**
+  String get eventFlyerPrize;
+
+  /// No description provided for @eventFlyerPrizeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Ships within Korea, sent directly by the seller'**
+  String get eventFlyerPrizeNote;
+
+  /// No description provided for @eventFlyerHow.
+  ///
+  /// In en, this message translates to:
+  /// **'How to enter'**
+  String get eventFlyerHow;
+
+  /// No description provided for @eventFlyerHow1.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick 3 adult bugs and enter'**
+  String get eventFlyerHow1;
+
+  /// No description provided for @eventFlyerHow2.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one boost card after each wave'**
+  String get eventFlyerHow2;
+
+  /// No description provided for @eventFlyerHow3.
+  ///
+  /// In en, this message translates to:
+  /// **'The further you get, the higher you rank'**
+  String get eventFlyerHow3;
+
+  /// No description provided for @eventFlyerRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Good to know'**
+  String get eventFlyerRules;
+
+  /// No description provided for @eventFlyerRule1.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats are **equalized** — only species, element and temperament count; training, enhancement and size do not apply'**
+  String get eventFlyerRule1;
+
+  /// No description provided for @eventFlyerRule2.
+  ///
+  /// In en, this message translates to:
+  /// **'Enemy elements rotate every wave — a single-element team will hit a wall'**
+  String get eventFlyerRule2;
+
+  /// No description provided for @eventFlyerRule3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs that entered rest for a day — keeping several good bugs pays off'**
+  String get eventFlyerRule3;
+
+  /// No description provided for @eventFlyerRule4.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets refill each morning, plus up to 2 more per day from ads'**
+  String get eventFlyerRule4;
+
+  /// No description provided for @eventFlyerLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to appear in the ranking (guests can still play)'**
+  String get eventFlyerLogin;
 
   /// No description provided for @eventTitle.
   ///

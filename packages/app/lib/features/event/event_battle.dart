@@ -423,11 +423,16 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
             style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              for (final c in cards)
-                Expanded(child: _card(l, '${c['id']}', '${c['kind']}')),
-            ],
+          // 설명 줄 수가 카드마다 달라(예: "우회로"는 2줄) 높이가 어긋난다.
+          // IntrinsicHeight 로 **가장 높은 카드에 맞춰** 셋을 같은 높이로 만든다.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final c in cards)
+                  Expanded(child: _card(l, '${c['id']}', '${c['kind']}')),
+              ],
+            ),
           ),
         ],
       ),
@@ -447,7 +452,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
           border: Border.all(color: _honey.withValues(alpha: 0.6), width: 1.4),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             // 애셋(ui/cards/{id}.webp)이 들어오면 자동으로 그림이 된다.
             gameImage(

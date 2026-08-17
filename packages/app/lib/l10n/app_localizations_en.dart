@@ -828,34 +828,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventIntroTitle => 'What is the Bug King Trials?';
 
   @override
-  String get eventIntro1Title => 'How far can 3 bugs go?';
-
-  @override
-  String get eventIntro1Body =>
-      'Enemies come in waves. HP carries over between waves and you only recover a little after each clear. Whoever gets further wins.';
-
-  @override
-  String get eventIntro2Title => 'Formation wins, not power';
-
-  @override
-  String get eventIntro2Body =>
-      'Training, enhancement, potential and size don\'t apply. Only species, element and temperament count, so everyone is on equal footing. Enemy elements rotate each wave, so a single-element team will hit a wall.';
-
-  @override
-  String get eventIntro3Title => 'Order is skill';
-
-  @override
-  String get eventIntro3Body =>
-      'They fight left to right. A bug that generates the next one strengthens the team (wood→fire→earth→metal→water→wood), and an element that restrains the enemy deals 1.5x damage.';
-
-  @override
-  String get eventIntro4Title => 'Tickets and fatigue';
-
-  @override
-  String get eventIntro4Body =>
-      'Tickets refill each morning and ads give more. A bug that entered rests for a day — so keeping several good bugs pays off.';
-
-  @override
   String get eventIntroStart => 'Start';
 
   @override
@@ -916,6 +888,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cardSkipDesc => 'Skip the next wave without fighting';
+
+  @override
+  String get eventFlyerHeadline =>
+      'Looking for the bug handler who goes furthest';
+
+  @override
+  String get eventFlyerPrize => '1st place gets a real live beetle';
+
+  @override
+  String get eventFlyerPrizeNote =>
+      'Ships within Korea, sent directly by the seller';
+
+  @override
+  String get eventFlyerHow => 'How to enter';
+
+  @override
+  String get eventFlyerHow1 => 'Pick 3 adult bugs and enter';
+
+  @override
+  String get eventFlyerHow2 => 'Choose one boost card after each wave';
+
+  @override
+  String get eventFlyerHow3 => 'The further you get, the higher you rank';
+
+  @override
+  String get eventFlyerRules => 'Good to know';
+
+  @override
+  String get eventFlyerRule1 =>
+      'Stats are **equalized** — only species, element and temperament count; training, enhancement and size do not apply';
+
+  @override
+  String get eventFlyerRule2 =>
+      'Enemy elements rotate every wave — a single-element team will hit a wall';
+
+  @override
+  String get eventFlyerRule3 =>
+      'Bugs that entered rest for a day — keeping several good bugs pays off';
+
+  @override
+  String get eventFlyerRule4 =>
+      'Tickets refill each morning, plus up to 2 more per day from ads';
+
+  @override
+  String get eventFlyerLogin =>
+      'Sign in to appear in the ranking (guests can still play)';
 
   @override
   String get eventTitle => 'Bug King Trials';

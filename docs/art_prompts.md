@@ -218,33 +218,19 @@ a single luminous dewdrop falling onto a curled sleeping larva, soft golden resu
 a swirling spiral of wind and drifting leaves forming a portal, cool teal glow, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
 ```
 
-## 4e. 이벤트 설명 일러스트 ×4 (`assets/images/ui/event/`)
+## 4e. 이벤트 전단지 머리그림 ×1 (`assets/images/ui/event/flyer_bg.webp`)
 
-첫 진입 때 뜨는 4장짜리 설명(`features/event/event_intro.dart`). 지금은 큰 이모지가
-자리를 지키고 있고, 이 파일들을 넣으면 그림으로 바뀐다.
-**가로로 넓게 보여주므로 `--ar 4:3`** 이고, 글자는 앱이 얹으니 **그림에 텍스트를 넣지 않는다.**
+이벤트를 누르면 뜨는 **전단지 한 장**의 머리그림(`features/event/event_intro.dart`).
+페이지를 넘기는 방식이었다가 전단지로 바꿨다 — 대회 안내는 상품·참가법·주의사항을
+**한눈에 훑는** 정보라, 넘겨야 보이면 마지막 장의 주의사항을 아무도 안 읽는다.
 
-**`intro_wave.webp`** — 1장 — 웨이브
-```
-a small team of three friendly beetles standing shoulder to shoulder facing a dark tide of oncoming insect silhouettes, dramatic wide shot, hopeful heroic mood, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
-```
+**가로로 넓게(220×110 안팎) 들어가고 글자는 앱이 얹으므로, 그림에 텍스트를 넣지 않는다.**
 
-**`intro_equal.webp`** — 2장 — 평준화
 ```
-a balance scale with an identical beetle on each pan resting perfectly level, warm light from above, fairness and equality, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
+three heroic beetles standing shoulder to shoulder on a mossy log facing an oncoming tide of insect silhouettes, a golden trophy glowing behind them, wide banner composition, empty space at the edges, tournament poster mood, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 2:1 --style raw --v 7 --sref <key> --sw 100
 ```
 
-**`intro_order.webp`** — 3장 — 오행 순서
-```
-three beetles in a row connected by a flowing ribbon of light passing from one to the next, each glowing a different elemental color (green, red, amber), showing a chain of energy, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
-```
-
-**`intro_ticket.webp`** — 4장 — 참가권과 피로
-```
-an ornate paper entry ticket beside a beetle sleeping peacefully on a leaf bed, small crescent moon, restful mood, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
-```
-
-> **규격**: 카드는 배경 제거 후 256×256↑, 설명 일러스트는 1024×768↑, 둘 다 RGBA WebP(quality 92).
+> **규격**: 카드는 배경 제거 후 256×256↑, 전단지 머리그림은 1024×512↑, 둘 다 RGBA WebP(quality 92).
 > 배경 제거는 §4c 의 교훈 그대로 — **문턱 60 + 알파 1px 침식**이 필요하다
 > (크림 림라이트가 배경과 채널차 33 이라 32 에서는 한 끗 차이로 안 지워진다).
 
