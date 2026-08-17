@@ -208,6 +208,12 @@ abstract class AppLocalizations {
   /// **'VS'**
   String get battleVs;
 
+  /// No description provided for @battleRestrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Super effective!'**
+  String get battleRestrain;
+
   /// No description provided for @battleFoe.
   ///
   /// In en, this message translates to:

@@ -65,6 +65,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get battleVs => 'VS';
 
   @override
+  String get battleRestrain => '상극!';
+
+  @override
   String get battleFoe => '상대';
 
   @override

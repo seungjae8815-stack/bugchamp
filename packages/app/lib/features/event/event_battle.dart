@@ -275,11 +275,27 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     if (mine != null && foe != null) {
       final foeHit = ev.dmgToB >= 1 && mine.element.restrains(foe.element);
       final selfHit = ev.dmgToA >= 1 && foe.element.restrains(mine.element);
+      // 상극은 데미지 1.5배다. 링만 터뜨리면 **왜 컸는지**가 안 읽히므로
+      // 어느 오행이 어느 오행을 눌렀는지 글자로 남긴다.
       if (foeHit) {
         _bursts.add(BurstFx(left: false, color: elementColor(mine.element)));
+        _floats.add(
+          FloatText(
+            '${elementGlyph(mine.element)} ${AppLocalizations.of(context).battleRestrain}',
+            elementColor(mine.element),
+            false,
+          ),
+        );
       }
       if (selfHit) {
         _bursts.add(BurstFx(left: true, color: elementColor(foe.element)));
+        _floats.add(
+          FloatText(
+            '${elementGlyph(foe.element)} ${AppLocalizations.of(context).battleRestrain}',
+            elementColor(foe.element),
+            true,
+          ),
+        );
       }
       if (foeHit || selfHit) _shake = 1;
     }

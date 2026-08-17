@@ -65,6 +65,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get battleVs => 'VS';
 
   @override
+  String get battleRestrain => '相克！';
+
+  @override
   String get battleFoe => '相手';
 
   @override

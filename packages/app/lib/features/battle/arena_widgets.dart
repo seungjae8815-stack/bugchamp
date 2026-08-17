@@ -169,8 +169,17 @@ class ArenaFighter extends StatelessWidget {
                 alignment: Alignment.center,
                 clipBehavior: Clip.none,
                 children: [
-                  Transform.translate(
-                    offset: Offset(dx, 0),
+                  // 정지 그림 하나로도 **때리고 맞는 것처럼** 보이게 한다.
+                  //   · 돌진하는 쪽: 앞으로 밀리며 그 방향으로 기운다
+                  //   · 맞는 쪽: 살짝 납작해졌다 돌아온다(스쿼시)
+                  // 프레임 아트가 없어도 이 둘만으로 타격감이 생긴다 —
+                  // 오프셋만 있으면 그냥 미끄러지는 것처럼 보였다(실기 지적).
+                  Transform(
+                    alignment: Alignment.bottomCenter,
+                    transform: Matrix4.identity()
+                      ..translateByDouble(dx, flash * 3.0, 0, 1)
+                      ..rotateZ(dx * 0.0045 * (flip ? -1 : 1))
+                      ..scaleByDouble(1 + flash * 0.10, 1 - flash * 0.14, 1, 1),
                     // 교대 시 슬라이드-인/아웃(KO 퇴장 + 다음 파이터 등장).
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),

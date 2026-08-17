@@ -65,6 +65,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get battleVs => 'VS';
 
   @override
+  String get battleRestrain => 'Super effective!';
+
+  @override
   String get battleFoe => 'Opponent';
 
   @override

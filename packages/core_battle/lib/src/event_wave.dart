@@ -37,19 +37,27 @@ class WaveEnemySpec {
 /// "좋은 적이 나올 때까지 돌리는" 운 게임이 되고, 그건 실물 경품에 쓸 수 없는
 /// 구조다(기획 §1).
 ///
-/// 오행은 웨이브마다 회전시킨다. 한 속성으로 몰아 짠 팀이 어느 웨이브에서는
-/// 반드시 상극을 만나야, 편성이 실력이 된다(§2.3).
+/// **한 웨이브 = 하나의 오행.** 웨이브마다 색이 바뀐다.
+///
+/// 예전엔 한 웨이브 안에서 적마다 오행이 달랐다. 그러면 "다음 웨이브는 불"이라고
+/// 예고해도 2·3번째 적에는 대응할 수 없어, **선봉을 고르는 선택이 무의미**해진다
+/// (실기 지적). 웨이브가 한 색이어야 "이번엔 물을 앞세우자"가 성립하고,
+/// 그때 비로소 오행 상성이 전략이 된다(§2.3).
+///
+/// 대신 한 속성으로 몰아 짠 팀은 **자기가 약한 색의 웨이브에서 통째로 무너진다** —
+/// 그게 편성을 고르게 만드는 압력이다.
 List<BattleBug> eventWaveEnemies(int roundSeed, int wave, WaveEnemySpec spec) {
   final rng = Random(roundSeed * 100003 + wave);
   final mult = pow(spec.growth, wave - 1).toDouble();
   final elements = Element.values;
+  // 회차 seed 로 시작 색을 섞어, 회차마다 순서가 달라지게 한다.
+  final element = elements[(roundSeed + wave) % elements.length];
   return [
     for (var i = 0; i < spec.count; i++)
       BattleBug(
         id: 'w${wave}_$i',
         name: 'W$wave-${i + 1}',
-        // 웨이브 번호로 시작 오행을 밀어 회전시키고, 자리마다 한 칸씩 어긋낸다.
-        element: elements[(wave + i * 2) % elements.length],
+        element: element,
         temperament: Temperament.values[rng.nextInt(Temperament.values.length)],
         preferredStance: Stance.values[rng.nextInt(Stance.values.length)],
         maxHp: spec.baseHp * mult,

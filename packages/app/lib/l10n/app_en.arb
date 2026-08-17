@@ -28,6 +28,7 @@
   "battleDraw": "Draw",
   "battleReward": "Reward",
   "battleVs": "VS",
+  "battleRestrain": "Super effective!",
   "battleFoe": "Opponent",
   "battleLog": "Battle log",
   "battleAgain": "Duel again",
