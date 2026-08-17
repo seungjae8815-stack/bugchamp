@@ -100,6 +100,10 @@ flutter:
     - assets/images/biomes/
     - assets/images/items/
     - assets/images/ui/
+    # ⚠️ Flutter 는 **하위 디렉토리를 자동 포함하지 않는다.** 폴더를 새로 만들면
+    # 여기에 한 줄 더 적어야 번들에 들어간다(안 적으면 이미지가 조용히 폴백된다).
+    - assets/images/ui/cards/
+    - assets/images/ui/event/
     - assets/sounds/
 
   # 타이틀 제목용. Jua (SIL OFL 1.1 — 상업 이용·번들 배포 가능, Jua-OFL.txt 동봉).

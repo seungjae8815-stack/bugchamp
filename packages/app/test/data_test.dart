@@ -398,4 +398,40 @@ void main() {
       expect(w.last, greaterThan(0.5));
     });
   });
+
+  // pubspec 애셋 등록 — **Flutter 는 하위 디렉토리를 자동 포함하지 않는다.**
+  //
+  // `assets/images/ui/` 만 적혀 있으면 `ui/cards/` 는 번들에 안 들어가고,
+  // 앱은 에러 없이 **조용히 폴백 아이콘**을 그린다. 눈으로 보기 전엔 모르고,
+  // 실기에서 "이미지가 적용이 안 됐다"로 돌아온다(2026-08-17 실제 발생).
+  test('이미지 폴더가 전부 pubspec 에 등록돼 있다', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final missing = <String>[];
+    for (final d in Directory(
+      'assets/images',
+    ).listSync(recursive: true).whereType<Directory>()) {
+      // `_` 로 시작하는 폴더는 **일부러 번들에서 뺀 것**이다(원본 백업 등).
+      // 넣으면 앱 용량만 커진다.
+      if (d.path.split(RegExp(r'[\\/]')).any((p) => p.startsWith('_'))) {
+        continue;
+      }
+      final hasImage = d.listSync().whereType<File>().any(
+        (f) =>
+            f.path.endsWith('.webp') ||
+            f.path.endsWith('.png') ||
+            f.path.endsWith('.jpg'),
+      );
+      if (!hasImage) continue;
+      // 윈도우 경로 구분자를 pubspec 표기(`/`)에 맞춘다.
+      final rel = '${d.path.replaceAll(r'\', '/')}/';
+      if (!pubspec.contains('- $rel')) missing.add(rel);
+    }
+    expect(
+      missing,
+      isEmpty,
+      reason:
+          'pubspec.yaml 의 assets 목록에 없는 폴더: $missing — '
+          'Flutter 는 하위 폴더를 자동 포함하지 않으므로 한 줄씩 적어야 한다.',
+    );
+  });
 }
