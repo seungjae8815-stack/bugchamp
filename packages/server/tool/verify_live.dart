@@ -43,22 +43,30 @@ Future<void> main() async {
   // 성충 3마리를 편성한 검증용 세이브(전투마다 이걸로 새 유저를 만든다).
   final now = DateTime.now().toUtc();
   final long = now.subtract(const Duration(days: 30));
-  IndividualBug adult(String id, String sp, Element el) => IndividualBug(
-    id: id,
-    speciesId: sp,
-    sizeMm: 45,
-    potential: 3,
-    temperament: Temperament.aggressive,
-    sex: Sex.male,
-    element: el,
-    stage: LifeStage.adult,
-    stageSince: long,
-  );
+
+  /// 검증용 성충. [sizeMm] 은 **그 종의 범위 안**이어야 한다 —
+  /// 서버는 범위 밖 사이즈를 위조로 보고 편성을 거부한다
+  /// (`integrityError` → `bug_forged:size_out_of_range`).
+  /// 45 로 고정해 뒀더니 `rhino_lesser`(15~28mm)에서 전투 검증이 통째로
+  /// 빨간불이었다 — 서버가 옳고 툴이 틀렸던 것이다.
+  IndividualBug adult(String id, String sp, Element el, double sizeMm) =>
+      IndividualBug(
+        id: id,
+        speciesId: sp,
+        sizeMm: sizeMm,
+        potential: 3,
+        temperament: Temperament.aggressive,
+        sex: Sex.male,
+        element: el,
+        stage: LifeStage.adult,
+        stageSince: long,
+      );
   final save = SaveGame.initial(createdAt: now).copyWith(
     bugs: [
-      adult('v-1', 'stag_dorcus', Element.wood),
-      adult('v-2', 'stag_saw', Element.fire),
-      adult('v-3', 'rhino_lesser', Element.earth),
+      // 사이즈는 종 범위 안(species.json): 20~55 / 25~75 / 15~28.
+      adult('v-1', 'stag_dorcus', Element.wood, 45),
+      adult('v-2', 'stag_saw', Element.fire, 50),
+      adult('v-3', 'rhino_lesser', Element.earth, 22),
     ],
     equippedBugIds: ['v-1', 'v-2', 'v-3'],
     gold: 5000,
@@ -262,7 +270,9 @@ Future<void> main() async {
   check('돌파 검증용 새 유저 준비', bAuth != null);
   if (bAuth != null) {
     final ready = SaveGame.initial(createdAt: now).copyWith(
-      bugs: [adult('bt-1', 'stag_dorcus', Element.wood).copyWith(level: 10)],
+      bugs: [
+        adult('bt-1', 'stag_dorcus', Element.wood, 45).copyWith(level: 10),
+      ],
       gold: 50000,
       materials: {
         MaterialKind.chitin: 200,
@@ -562,6 +572,79 @@ Future<void> main() async {
       check('티켓 위조 업로드는 서버 값으로 덮인다', (saved['pvpTickets'] as num) < 999);
     } else {
       check('티켓 위조 업로드 200', false, 'HTTP ${up.statusCode}');
+    }
+  }
+
+  // ── 이벤트(실물 경품 랭킹) ───────────────────────────────────
+  //
+  // 여기서 세 가지가 한꺼번에 드러난다:
+  //   1. 새 라우트가 배포됐는가
+  //   2. 서버가 event.json 을 읽었는가(없으면 event_closed)
+  //   3. Supabase 에 event_scores + RPC 가 만들어졌는가(순위 조회로)
+  print('\n[이벤트] 왕충 선발대회');
+  final eAuth = await freshUserWithBugs();
+  check('이벤트 검증용 새 유저 준비', eAuth != null);
+  if (eAuth != null) {
+    final est = await get('/event', eAuth);
+    check(
+      '/event 200 (라우트 배포 + event.json 로드)',
+      est.statusCode == 200,
+      'HTTP ${est.statusCode} ${est.body}',
+    );
+    if (est.statusCode == 200) {
+      final eb = jsonDecode(est.body) as Map<String, dynamic>;
+      check('회차 키 발급', eb['roundId'] != null, '${eb['roundId']}');
+      check('참가권 일일 지급', (eb['tickets'] as num? ?? 0) > 0, '${eb['tickets']}');
+      check(
+        '익명은 순위 대상이 아니다',
+        eb['rankEligible'] == false,
+        '${eb['rankEligible']}',
+      );
+
+      final ch = await post('/event/challenge', {
+        'teamIds': ['v-1', 'v-2', 'v-3'],
+      }, eAuth);
+      check('도전 200', ch.statusCode == 200, 'HTTP ${ch.statusCode} ${ch.body}');
+      if (ch.statusCode == 200) {
+        final cr = jsonDecode(ch.body) as Map<String, dynamic>;
+        check('도달 웨이브 확정', (cr['wave'] as num? ?? 0) > 0, '${cr['wave']}');
+        check('점수 확정', (cr['score'] as num? ?? 0) > 0, '${cr['score']}');
+        check('재생용 시드를 준다', cr['seed'] != null);
+        check(
+          '참가권이 깎였다',
+          (cr['tickets'] as num? ?? 99) < 3,
+          '${cr['tickets']}',
+        );
+
+        // 같은 3마리로 다시 → 출전 피로에 걸려야 한다.
+        final again = await post('/event/challenge', {
+          'teamIds': ['v-1', 'v-2', 'v-3'],
+        }, eAuth);
+        check(
+          '같은 곤충 재출전은 피로로 거부',
+          again.statusCode != 200 && again.body.contains('fatigued'),
+          'HTTP ${again.statusCode} ${again.body}',
+        );
+      }
+
+      // 순위 조회 — Supabase 에 event_scores/RPC 가 없으면 여기서 드러난다.
+      final lb = await get('/event/leaderboard', eAuth);
+      check(
+        '/event/leaderboard 200 (Supabase 테이블·RPC 생성됨)',
+        lb.statusCode == 200,
+        'HTTP ${lb.statusCode} ${lb.body}',
+      );
+
+      // 세이브를 고쳐 참가권을 채우려는 시도 → 서버 값이 이긴다.
+      final eCheat = save.copyWith(eventTickets: 99);
+      final eUp = await post('/save', {'save': eCheat.toJson()}, eAuth);
+      if (eUp.statusCode == 200) {
+        final back = await get('/event', eAuth);
+        final t = (jsonDecode(back.body) as Map)['tickets'] as num? ?? 99;
+        check('참가권 위조 업로드는 서버 값으로 덮인다', t < 99, '$t');
+      } else {
+        check('참가권 위조 업로드 200', false, 'HTTP ${eUp.statusCode}');
+      }
     }
   }
 
