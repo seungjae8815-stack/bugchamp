@@ -200,4 +200,52 @@ void main() {
     expect(a, b, reason: '같은 회차 안에서는 키가 같아야 한다');
     expect(a, contains('0817'));
   });
+
+  test('선봉을 바꾸면 순서와 체력이 함께 따라간다', () {
+    final r = start(seed());
+    final session = r.extra['session'] as Map<String, dynamic>;
+    final cards = r.extra['cards'] as List;
+    if (cards.isEmpty) return; // 1웨이브에서 진 판이면 볼 게 없다
+    final pick = actions.eventPick(
+      r.save!,
+      session: session,
+      cardId: '${(cards.first as Map)['id']}',
+      speciesById: species,
+      leadBugId: 'c',
+    );
+    expect(pick.isOk, isTrue);
+    final next = pick.extra['session'] as Map<String, dynamic>;
+    expect(
+      (next['teamIds'] as List).first,
+      'c',
+      reason: '지정한 곤충이 선봉으로 와야 한다',
+    );
+  });
+
+  test('쓰러진 곤충은 선봉으로 세울 수 없다', () {
+    final r = start(seed());
+    final session = Map<String, dynamic>.from(
+      r.extra['session'] as Map<String, dynamic>,
+    );
+    final cards = r.extra['cards'] as List;
+    if (cards.isEmpty) return;
+    // 3번 곤충이 쓰러진 상태로 만든다.
+    final hp = (session['hp'] as List).map((e) => (e as num).toDouble()).toList();
+    hp[2] = 0;
+    session['hp'] = hp;
+    final pick = actions.eventPick(
+      r.save!,
+      session: session,
+      cardId: '${(cards.first as Map)['id']}',
+      speciesById: species,
+      leadBugId: 'c',
+    );
+    expect(pick.isOk, isTrue);
+    final next = pick.extra['session'] as Map<String, dynamic>;
+    expect(
+      (next['teamIds'] as List).first,
+      isNot('c'),
+      reason: '쓰러진 곤충을 앞세우면 즉시 다음으로 넘어가 순서만 꼬인다',
+    );
+  });
 }

@@ -1877,6 +1877,12 @@ class GameActions {
     required Map<String, dynamic> session,
     required String cardId,
     required Map<String, Species> speciesById,
+
+    /// 다음 웨이브에 **앞세울 곤충**(세션 팀 안의 id). 생략하면 순서 유지.
+    ///
+    /// 웨이브 사이에 선봉을 바꿀 수 있어야 상성 대응이 된다 — 다음 적 속성을
+    /// 미리 보여주는데 편성을 못 바꾸면 그 정보가 쓸모가 없다.
+    String? leadBugId,
   }) {
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
@@ -1886,6 +1892,22 @@ class GameActions {
     final wave = (session['wave'] as num).toInt();
     final teamIds = (session['teamIds'] as List).map((e) => '$e').toList();
     final roundId = '${session['roundId']}';
+
+    // 선봉 교체 — **순서만 바꾼다.** 곤충을 새로 넣을 수는 없다(출전 피로를
+    // 우회해 쉬는 곤충을 끌어오는 길이 되면 안 된다).
+    var hpOrder = (session['hp'] as List)
+        .map((e) => (e as num).toDouble())
+        .toList();
+    if (leadBugId != null && leadBugId != teamIds.first) {
+      final at = teamIds.indexOf(leadBugId);
+      // 없는 id 이거나 이미 쓰러진 자리는 무시한다.
+      if (at > 0 && at < hpOrder.length && hpOrder[at] > 0) {
+        final id = teamIds.removeAt(at);
+        teamIds.insert(0, id);
+        final hp = hpOrder.removeAt(at);
+        hpOrder.insert(0, hp);
+      }
+    }
 
     // 이번 웨이브에 실제로 제시된 카드만 받는다.
     EventCard? card;
@@ -1897,7 +1919,7 @@ class GameActions {
     var buffs = EventBuffs.fromJson(
       (session['buffs'] as Map?)?.cast<String, dynamic>(),
     );
-    var hp = (session['hp'] as List).map((e) => (e as num).toDouble()).toList();
+    var hp = hpOrder;
     var cleared = (session['cleared'] as num).toInt();
     var rounds = (session['rounds'] as num).toInt();
 
@@ -1993,6 +2015,7 @@ class GameActions {
         'buffs': buffs.toJson(),
         'session': {
           ...session,
+          'teamIds': teamIds,
           'wave': nextWave,
           'hp': hp,
           'cleared': cleared,

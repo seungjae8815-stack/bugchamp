@@ -13,6 +13,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
+import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 import '../battle/arena_widgets.dart';
 import 'event_arena.dart';
@@ -57,6 +58,13 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
   final List<FloatText> _floats = [];
   final List<BurstFx> _bursts = [];
   double _flashL = 0, _flashR = 0, _lunge = 0, _shake = 0;
+
+  /// 이번 라운드에 **누가 돌진하는가**(-1 왼쪽 / 1 오른쪽 / 0 없음).
+  /// 둘 다 움직이면 서로 스쳐 지나가는 것처럼 보여 때린 느낌이 안 난다.
+  int _lungeSide = 0;
+
+  /// 카드를 고를 때 함께 정하는 **다음 웨이브 선봉**. null 이면 순서 유지.
+  String? _lead;
   bool _replaying = false;
   bool _busy = false;
   bool _fast = false;
@@ -174,6 +182,12 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         _replaying = false;
         // 재생이 끝나면 **서버가 준 체력**으로 맞춘다(클리어 회복까지 반영된 값).
         _hpShown = _serverHp();
+        // ⚠️ 이펙트를 반드시 비운다 — 타이머가 멈추면 age 가 늘지 않아
+        // 데미지 숫자가 화면에 **영원히 붙어 있는다**(실기에서 발견).
+        _floats.clear();
+        _bursts.clear();
+        _flashL = _flashR = _lunge = _shake = 0;
+        _lungeSide = 0;
       });
       return;
     }
@@ -196,7 +210,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
       _bursts.removeWhere((b) => b.age >= BurstFx.life);
       _flashL = (_flashL - 0.25).clamp(0.0, 1.0);
       _flashR = (_flashR - 0.25).clamp(0.0, 1.0);
-      _lunge = (_lunge - 4).clamp(0.0, 40.0);
+      _lunge = (_lunge - 3.5).clamp(0.0, 40.0);
       _shake = (_shake - 0.3).clamp(0.0, 1.0);
     });
   }
@@ -228,8 +242,11 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
         FloatText('+${ev.healToB.round()}', const Color(0xFF7CE38B), false),
       );
     }
-    // 더 크게 때린 쪽이 달려든다.
-    _lunge = (ev.dmgToB - ev.dmgToA).abs() >= 1 ? 14 : 0;
+    // **더 크게 때린 쪽만** 달려든다.
+    _lungeSide = ev.dmgToB > ev.dmgToA + 0.5
+        ? -1
+        : (ev.dmgToA > ev.dmgToB + 0.5 ? 1 : 0);
+    _lunge = _lungeSide == 0 ? 0 : 16;
     if (mine != null && foe != null) {
       final foeHit = ev.dmgToB >= 1 && mine.element.restrains(foe.element);
       final selfHit = ev.dmgToA >= 1 && foe.element.restrains(mine.element);
@@ -247,7 +264,9 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     if (_busy) return;
     setState(() => _busy = true);
     final sid = '${_res['sessionId']}';
-    final r = await ref.read(gameServerProvider).eventPick(sid, cardId);
+    final r = await ref
+        .read(gameServerProvider)
+        .eventPick(sid, cardId, leadBugId: _lead);
     if (!mounted) return;
     setState(() => _busy = false);
     if (!r.isOk) {
@@ -260,7 +279,10 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     }
     if (!mounted) return;
     final before = _hpShown;
-    setState(() => _res = {..._res, ...?r.data});
+    setState(() {
+      _res = {..._res, ...?r.data};
+      _lead = null;
+    });
     _replayCurrentWave(from: before);
   }
 
@@ -322,6 +344,14 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     );
   }
 
+  /// 적의 모습으로 쓸 종. 새 아트를 그리지 않고 **이미 있는 20종을 돌려쓴다**.
+  String? _foeSpeciesId(int index) => eventWaveSpeciesId(
+    _seed,
+    _wave,
+    index,
+    widget.data.speciesById.keys.toList()..sort(),
+  );
+
   /// 다음 웨이브의 **대표 오행**(첫 적 기준). 카드를 고르는 시점에만 쓴다.
   Element? _nextWaveElement() {
     final next = eventWaveEnemies(
@@ -362,6 +392,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
               mineSpeciesId: mineIdx < widget.team.length
                   ? widget.team[mineIdx].speciesId
                   : null,
+              foeSpeciesId: _foeSpeciesId(_enemyIdx),
               mineHpFrac: (mine == null || mine.maxHp <= 0)
                   ? 0
                   : mineHp / mine.maxHp,
@@ -373,7 +404,8 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
               stanceFoe: ev?.bStance,
               flashL: _flashL,
               flashR: _flashR,
-              lungeDx: _lunge,
+              lungeDx:
+                  _lunge * (_lungeSide == 0 ? 0 : (_lungeSide < 0 ? 1 : -1)),
               shake: _shake,
               floats: _floats,
               bursts: _bursts,
@@ -402,47 +434,127 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
     final hp = i < _hpShown.length ? _hpShown[i] : 0.0;
     final down = hp <= 0;
     final fighting = _replaying && _battle?.a == i && !down;
-    return Opacity(
-      opacity: down ? 0.35 : 1,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        decoration: BoxDecoration(
-          color: fighting
-              ? _honey.withValues(alpha: 0.16)
-              : const Color(0x33000000),
-          borderRadius: BorderRadius.circular(10),
-          border: fighting
-              ? Border.all(color: _honey.withValues(alpha: 0.8))
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (bug != null && sp != null)
-                  bugStageImage(
-                    bug.speciesId,
-                    LifeStage.adult,
-                    size: 22,
-                    fallback: bugAvatar(sp, size: 20),
+    // 카드를 고르는 동안에는 탭이 **선봉 지정**이 된다(전투 중엔 상세 보기).
+    final picking = !_replaying && !_done && _cards.isNotEmpty;
+    final isLead = _lead == bug?.id || (_lead == null && i == 0);
+    return GestureDetector(
+      onTap: bug == null || sp == null
+          ? null
+          : () {
+              if (picking && !down) {
+                setState(() => _lead = bug.id);
+              } else {
+                _showBugInfo(bug, sp, u, hp);
+              }
+            },
+      child: Opacity(
+        opacity: down ? 0.35 : 1,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: (fighting || (picking && isLead && !down))
+                ? _honey.withValues(alpha: 0.16)
+                : const Color(0x33000000),
+            borderRadius: BorderRadius.circular(10),
+            border: (fighting || (picking && isLead && !down))
+                ? Border.all(color: _honey.withValues(alpha: 0.8))
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (bug != null && sp != null)
+                    bugStageImage(
+                      bug.speciesId,
+                      LifeStage.adult,
+                      size: 22,
+                      fallback: bugAvatar(sp, size: 20),
+                    ),
+                  const SizedBox(width: 3),
+                  Text(
+                    elementGlyph(u.element),
+                    style: const TextStyle(fontSize: 12),
                   ),
-                const SizedBox(width: 3),
+                ],
+              ),
+              const SizedBox(height: 4),
+              _bar(u.maxHp <= 0 ? 0 : hp / u.maxHp, const Color(0xFF7BC96F)),
+              if (picking && !down) ...[
+                const SizedBox(height: 3),
                 Text(
-                  elementGlyph(u.element),
-                  style: const TextStyle(fontSize: 12),
+                  isLead
+                      ? AppLocalizations.of(context).eventLead
+                      : AppLocalizations.of(context).eventSetLead,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isLead ? _honey : const Color(0x99FFFFFF),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 4),
-            _bar(u.maxHp <= 0 ? 0 : hp / u.maxHp, const Color(0xFF7BC96F)),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+
+  /// 대기 중인 곤충을 눌렀을 때 — **왜 이 곤충을 넣었는지** 다시 확인하는 창.
+  /// 이벤트는 스탯이 평준화되므로 종·오행·기질·주특기만 보여준다.
+  void _showBugInfo(IndividualBug bug, Species sp, BattleBug unit, double hp) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    showGameDialog<void>(
+      context,
+      title: sp.name.resolve(locale),
+      iconWidget: bugStageImage(
+        sp.id,
+        LifeStage.adult,
+        size: 40,
+        fallback: bugAvatar(sp, size: 36),
+      ),
+      subtitle: gradeLabel(l, sp.grade),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _infoRow(l.battleHpPct(((hp / unit.maxHp) * 100).round().toString())),
+          _infoRow(
+            '${elementGlyph(bug.element)} ${elementLabel(l, bug.element)}',
+          ),
+          _infoRow(temperamentLabel(l, bug.temperament)),
+          _infoRow(
+            '${stanceGlyph(unit.preferredStance)} '
+            '${stanceLabel(l, unit.preferredStance)}',
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l.eventNormalizeBody,
+            style: const TextStyle(
+              color: Color(0x99FFFFFF),
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    );
+  }
+
+  Widget _infoRow(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Text(
+      text,
+      style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 13),
+    ),
+  );
 
   Widget _bar(double r, Color c) => ClipRRect(
     borderRadius: BorderRadius.circular(999),
@@ -496,7 +608,8 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen> {
           ),
           const SizedBox(height: 2),
           Text(
-            l.eventCardHint,
+            '${l.eventCardHint} · ${l.eventLeadHint}',
+            textAlign: TextAlign.center,
             style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
           ),
           const SizedBox(height: 10),

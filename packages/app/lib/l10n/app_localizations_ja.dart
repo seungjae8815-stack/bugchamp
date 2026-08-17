@@ -1026,7 +1026,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventFastForward => '早送り';
 
   @override
-  String get eventNextWave => '次';
+  String get eventNextWave => '次の敵の属性';
+
+  @override
+  String get eventLead => '先鋒';
+
+  @override
+  String get eventSetLead => '先鋒に';
+
+  @override
+  String get eventLeadHint => '虫をタップして次の先鋒を決めます';
 
   @override
   String get eventRanking => '順位';

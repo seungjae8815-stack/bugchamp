@@ -1027,7 +1027,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventFastForward => '빨리감기';
 
   @override
-  String get eventNextWave => '다음';
+  String get eventNextWave => '다음 적 속성';
+
+  @override
+  String get eventLead => '선봉';
+
+  @override
+  String get eventSetLead => '선봉으로';
+
+  @override
+  String get eventLeadHint => '곤충을 눌러 다음 선봉을 정해요';
 
   @override
   String get eventRanking => '순위';

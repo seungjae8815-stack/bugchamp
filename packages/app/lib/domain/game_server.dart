@@ -139,7 +139,12 @@ abstract interface class GameServer {
   Future<ServerResult> eventStart(List<String> teamBugIds);
 
   /// 카드를 고르고 다음 웨이브로. 판이 끝나면 점수가 확정된다.
-  Future<ServerResult> eventPick(String sessionId, String cardId);
+  /// [leadBugId] 를 주면 다음 웨이브에 그 곤충을 앞세운다(순서 교체).
+  Future<ServerResult> eventPick(
+    String sessionId,
+    String cardId, {
+    String? leadBugId,
+  });
 
   /// 광고 시청 보상 참가권.
   Future<ServerResult> eventAdTicket();
@@ -236,8 +241,11 @@ class NoGameServer implements GameServer {
   Future<ServerResult> eventStart(List<String> teamBugIds) async =>
       const ServerResult.fail('unavailable', 0);
   @override
-  Future<ServerResult> eventPick(String sessionId, String cardId) async =>
-      const ServerResult.fail('unavailable', 0);
+  Future<ServerResult> eventPick(
+    String sessionId,
+    String cardId, {
+    String? leadBugId,
+  }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> eventAdTicket() async =>
       const ServerResult.fail('unavailable', 0);
@@ -427,8 +435,16 @@ class HttpGameServer implements GameServer {
       _send('POST', '/event/start', {'teamIds': teamBugIds});
 
   @override
-  Future<ServerResult> eventPick(String sessionId, String cardId) =>
-      _send('POST', '/event/pick', {'sessionId': sessionId, 'cardId': cardId});
+  Future<ServerResult> eventPick(
+    String sessionId,
+    String cardId, {
+    String? leadBugId,
+  }) => _send('POST', '/event/pick', {
+    'sessionId': sessionId,
+    'cardId': cardId,
+    // 값이 null 이면 키 자체를 빼서, 서버가 "순서 유지"로 받게 한다.
+    'leadBugId': ?leadBugId,
+  });
 
   @override
   Future<ServerResult> eventAdTicket() =>

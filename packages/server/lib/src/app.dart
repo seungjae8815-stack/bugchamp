@@ -718,6 +718,7 @@ Handler buildHandler({
           session: data,
           cardId: cardId,
           speciesById: species,
+          leadBugId: body['leadBugId']?.toString(),
         );
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
 

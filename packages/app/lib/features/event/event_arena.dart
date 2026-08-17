@@ -21,6 +21,7 @@ class EventArena extends StatelessWidget {
     required this.mine,
     required this.foe,
     required this.mineSpeciesId,
+    required this.foeSpeciesId,
     required this.mineHpFrac,
     required this.foeHpFrac,
     required this.stanceMine,
@@ -37,6 +38,9 @@ class EventArena extends StatelessWidget {
   final BattleBug? mine;
   final BattleBug? foe;
   final String? mineSpeciesId;
+
+  /// 적의 모습으로 쓸 종(이미 있는 20종을 돌려쓴다).
+  final String? foeSpeciesId;
   final double mineHpFrac;
   final double foeHpFrac;
   final Stance? stanceMine;
@@ -76,39 +80,45 @@ class EventArena extends StatelessWidget {
               ),
             ),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: mine == null
-                    ? const SizedBox.shrink()
-                    : ArenaFighter(
-                        data: data,
-                        bug: mine!,
-                        speciesId: mineSpeciesId,
-                        hpFrac: mineHpFrac.clamp(0.0, 1.0),
-                        flip: false,
-                        stance: stanceMine,
-                        flash: flashL,
-                        dx: lungeDx,
-                      ),
-              ),
-              Expanded(
-                child: foe == null
-                    ? const SizedBox.shrink()
-                    : ArenaFighter(
-                        data: data,
-                        // 적은 이벤트가 만든 유닛이라 종 그림이 없다 —
-                        // `speciesId` 를 주지 않으면 위젯이 기본 아이콘으로 그린다.
-                        bug: foe!,
-                        speciesId: null,
-                        hpFrac: foeHpFrac.clamp(0.0, 1.0),
-                        flip: true,
-                        stance: stanceFoe,
-                        flash: flashR,
-                        dx: -lungeDx,
-                      ),
-              ),
-            ],
+          // 배경 그림의 **통나무 무대**가 아래쪽 55~75% 높이에 있다.
+          // 파이터를 그 위에 세워야 "무대에서 싸운다"로 읽힌다 —
+          // 가운데 띄우면 공중에 뜬 것처럼 보인다.
+          Align(
+            alignment: const Alignment(0, 0.42),
+            child: Row(
+              children: [
+                Expanded(
+                  child: mine == null
+                      ? const SizedBox.shrink()
+                      : ArenaFighter(
+                          data: data,
+                          bug: mine!,
+                          speciesId: mineSpeciesId,
+                          hpFrac: mineHpFrac.clamp(0.0, 1.0),
+                          flip: false,
+                          stance: stanceMine,
+                          flash: flashL,
+                          dx: lungeDx,
+                        ),
+                ),
+                Expanded(
+                  child: foe == null
+                      ? const SizedBox.shrink()
+                      : ArenaFighter(
+                          data: data,
+                          // 적은 이벤트가 만든 유닛이라 종 그림이 없다 —
+                          // `speciesId` 를 주지 않으면 위젯이 기본 아이콘으로 그린다.
+                          bug: foe!,
+                          speciesId: foeSpeciesId,
+                          hpFrac: foeHpFrac.clamp(0.0, 1.0),
+                          flip: true,
+                          stance: stanceFoe,
+                          flash: flashR,
+                          dx: -lungeDx,
+                        ),
+                ),
+              ],
+            ),
           ),
           for (final b in bursts) ArenaBurst(fx: b),
           for (final f in floats) ArenaFloat(f: f),

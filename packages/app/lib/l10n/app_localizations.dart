@@ -1915,8 +1915,26 @@ abstract class AppLocalizations {
   /// No description provided for @eventNextWave.
   ///
   /// In en, this message translates to:
-  /// **'Next'**
+  /// **'Next enemy'**
   String get eventNextWave;
+
+  /// No description provided for @eventLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Lead'**
+  String get eventLead;
+
+  /// No description provided for @eventSetLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Set lead'**
+  String get eventSetLead;
+
+  /// No description provided for @eventLeadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a bug to send it in first'**
+  String get eventLeadHint;
 
   /// No description provided for @eventRanking.
   ///

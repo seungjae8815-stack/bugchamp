@@ -163,3 +163,21 @@ WaveRunResult simulateWaveRun({
     waves: waves,
   );
 }
+
+/// 웨이브 [wave] 의 [index] 번째 적이 **어떤 종의 모습인가**.
+///
+/// 적 스탯은 `eventWaveEnemies` 가 만들지만 그림은 종에서 온다. 새 아트를 그리지
+/// 않고 **이미 있는 곤충 20종을 돌려쓴다** — 대회 적도 결국 이 숲의 곤충이다.
+///
+/// 앱만 쓰는 함수다(서버는 그림을 모른다). 그래도 여기 두는 이유는 **같은 seed 로
+/// 같은 종**이 나와야 재생이 서버 판과 어긋나 보이지 않기 때문이다.
+String? eventWaveSpeciesId(
+  int roundSeed,
+  int wave,
+  int index,
+  List<String> speciesIds,
+) {
+  if (speciesIds.isEmpty) return null;
+  final rng = Random(roundSeed * 100003 + wave * 31 + index * 7);
+  return speciesIds[rng.nextInt(speciesIds.length)];
+}

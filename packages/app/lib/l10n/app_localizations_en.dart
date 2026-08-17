@@ -1049,7 +1049,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventFastForward => 'Fast forward';
 
   @override
-  String get eventNextWave => 'Next';
+  String get eventNextWave => 'Next enemy';
+
+  @override
+  String get eventLead => 'Lead';
+
+  @override
+  String get eventSetLead => 'Set lead';
+
+  @override
+  String get eventLeadHint => 'Tap a bug to send it in first';
 
   @override
   String get eventRanking => 'Ranking';
