@@ -148,10 +148,7 @@ void main() {
     );
 
     expect(r.released, 1);
-    expect(
-      c.read(saveControllerProvider).requireValue.bugs.single.id,
-      'a2',
-    );
+    expect(c.read(saveControllerProvider).requireValue.bugs.single.id, 'a2');
   });
 
   test('장착·부화 중·투자한 개체는 필터에 걸려도 건드리지 않는다', () async {
@@ -183,9 +180,7 @@ void main() {
   test('젤리는 절대 나오지 않는다 — 5성 전설을 분해해도 재료만', () async {
     final seed = SaveGame.initial(createdAt: t0).copyWith(
       lastSeen: t0,
-      bugs: [
-        for (var i = 0; i < 20; i++) bug('g$i', 'gamma', potential: 5),
-      ],
+      bugs: [for (var i = 0; i < 20; i++) bug('g$i', 'gamma', potential: 5)],
     );
     final c = container(seed);
     final k = await ctrl(c);
@@ -211,10 +206,9 @@ void main() {
   });
 
   test('dryRun 은 세이브를 건드리지 않는다 — 확인 다이얼로그에 쓰는 값', () async {
-    final seed = SaveGame.initial(createdAt: t0).copyWith(
-      lastSeen: t0,
-      bugs: [bug('a1', 'alpha'), bug('a2', 'alpha')],
-    );
+    final seed = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(lastSeen: t0, bugs: [bug('a1', 'alpha'), bug('a2', 'alpha')]);
     final c = container(seed);
     final k = await ctrl(c);
     final r = await k.autoRelease(dryRun: true, filter: all);
@@ -225,10 +219,9 @@ void main() {
   });
 
   test('등급을 하나도 고르지 않으면 아무것도 하지 않는다', () async {
-    final seed = SaveGame.initial(createdAt: t0).copyWith(
-      lastSeen: t0,
-      bugs: [bug('a1', 'alpha')],
-    );
+    final seed = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(lastSeen: t0, bugs: [bug('a1', 'alpha')]);
     final c = container(seed);
     final k = await ctrl(c);
     final r = await k.autoRelease(

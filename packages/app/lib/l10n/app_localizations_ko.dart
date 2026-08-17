@@ -2475,4 +2475,24 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get leagueRewardListTitle => '리그 승급 보상 (계정당 1회)';
+
+  @override
+  String get sideMine => '나';
+
+  @override
+  String get sideFoe => '상대';
+
+  @override
+  String get battleStarting => '결투 시작!';
+
+  @override
+  String get sideMineTeam => '나의 팀';
+
+  @override
+  String get sideFoeTeam => '상대 팀';
+
+  @override
+  String leagueNeedTrophy(int n) {
+    return '트로피 $n';
+  }
 }

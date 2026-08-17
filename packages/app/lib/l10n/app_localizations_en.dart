@@ -2523,4 +2523,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get leagueRewardListTitle =>
       'League promotion rewards (once per account)';
+
+  @override
+  String get sideMine => 'YOU';
+
+  @override
+  String get sideFoe => 'FOE';
+
+  @override
+  String get battleStarting => 'Battle start!';
+
+  @override
+  String get sideMineTeam => 'My team';
+
+  @override
+  String get sideFoeTeam => 'Opponent';
+
+  @override
+  String leagueNeedTrophy(int n) {
+    return '$n trophies';
+  }
 }

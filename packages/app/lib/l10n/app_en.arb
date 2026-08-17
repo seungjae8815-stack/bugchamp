@@ -1433,5 +1433,18 @@
   "elementWheelGenerate": "Generate — +10% team attack and healing when the slot right before points at you with a green arrow",
   "traitNoneBadge": "No trait",
   "elementWheelHint": "Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.",
-  "leagueRewardListTitle": "League promotion rewards (once per account)"
+  "leagueRewardListTitle": "League promotion rewards (once per account)",
+  "sideMine": "YOU",
+  "sideFoe": "FOE",
+  "battleStarting": "Battle start!",
+  "sideMineTeam": "My team",
+  "sideFoeTeam": "Opponent",
+  "leagueNeedTrophy": "{n} trophies",
+  "@leagueNeedTrophy": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

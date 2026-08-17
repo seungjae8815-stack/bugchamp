@@ -411,7 +411,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                 stance: reveal ? ev?.aStance : null,
                                 flash: _flashL,
                                 dx: lungeL,
-                                size: 116,
+                                size: 104,
                                 skin: widget.skinOf(
                                   widget.speciesOf[widget.myTeam[_dispA].id] ??
                                       '',
@@ -429,7 +429,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                 stanceHidden: !reveal,
                                 flash: _flashR,
                                 dx: -lungeR,
-                                size: 82,
+                                size: 104,
                               )
                             : const SizedBox.shrink(),
                         minePlate: _dispA < widget.myTeam.length
@@ -437,6 +437,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                 bug: widget.myTeam[_dispA],
                                 hpFrac:
                                     _hpA[_dispA] / widget.myTeam[_dispA].maxHp,
+                                mine: true,
                               )
                             : const SizedBox.shrink(),
                         foePlate: _dispB < widget.foeTeam.length
@@ -444,7 +445,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                 bug: widget.foeTeam[_dispB],
                                 hpFrac:
                                     _hpB[_dispB] / widget.foeTeam[_dispB].maxHp,
-                                compact: true,
+                                mine: false,
                               )
                             : const SizedBox.shrink(),
                       ),

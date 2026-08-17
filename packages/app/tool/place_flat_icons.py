@@ -39,6 +39,42 @@ SETS = {
 SIZE = 256
 
 
+# 그림 **바깥 발광**까지 잘라야 하는 아이콘.
+#
+# 생성기가 둘레에 빛을 그려 넣으면 그 빛이 체크무늬와 섞여, 색 판정만으로는
+# 안 지워진다(실측: 회복 아이콘의 체크 대비가 24 밖에 안 돼서 주파수 판정도
+# 그림을 갈아 먹었다). 이 아이콘들은 **진한 외곽선이 닫혀 있으므로**
+# "외곽선 바깥은 전부 배경"이라는 더 센 규칙을 쓸 수 있다.
+#
+# ⚠️ 전체에 적용하면 안 된다 — 강건(vital)처럼 **밝은 선이 본체 밖으로 삐져나온**
+# 그림은 그 선까지 잘려 나간다. 그래서 이름을 적어 옵트인한다.
+OUTLINE_CUT = {"heal"}
+
+
+def cut_outside_outline(img, dark_at=0.42):
+    """닫힌 **진한 외곽선 바깥**을 전부 지운다(발광 제거용)."""
+    import numpy as np
+    from PIL import Image
+    from scipy import ndimage
+
+    v = np.array(img.convert("RGB")).astype(float).mean(axis=2)
+    dark = v < v.max() * dark_at
+    lab, n = ndimage.label(~dark)
+    if n == 0:
+        return img
+    edge = set(lab[0].tolist()) | set(lab[-1].tolist())
+    edge |= set(lab[:, 0].tolist()) | set(lab[:, -1].tolist())
+    edge.discard(0)
+    if not edge:
+        return img
+    outside = np.isin(lab, list(edge))
+    a = np.array(img.getchannel("A"))
+    a[outside] = 0
+    out = img.copy()
+    out.putalpha(Image.fromarray(a))
+    return out
+
+
 def cutout(img):
     """체크무늬 배경을 지운다 — **테두리에서 이어진 것만**.
 
@@ -159,6 +195,8 @@ def run(a, names, dest, Image):
             print(f"  {n:11s} 없음 — 그림 없이 폴백됩니다")
             continue
         img = cutout(Image.open(src).convert("RGBA"))
+        if n in OUTLINE_CUT:
+            img = cut_outside_outline(img)
         box = img.getbbox()
         if box is None:
             print(f"  ! {n}: 다 지워졌습니다 — 체크무늬 판정을 확인하세요")

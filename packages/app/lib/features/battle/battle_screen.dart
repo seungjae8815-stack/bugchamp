@@ -735,90 +735,109 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     int trophies,
   ) {
     final rows = <Widget>[];
-    for (final lg in cfg.leagues) {
+    final here = cfg.leagueFor(trophies);
+    // **위에서 아래로 다이아 → 실버.** 목표가 위에 있어야 "저기까지 가자"가 된다
+    // (실기 지적). 오름차순이면 이미 지난 리그부터 읽게 된다.
+    for (final lg in cfg.leagues.reversed) {
       if (!lg.hasReward) continue; // 브론즈는 시작 리그라 보상이 없다
       final claimed = save.claimedLeagues.contains(lg.id);
       final reached = trophies >= lg.minTrophy;
       final canClaim = reached && !claimed;
+      final isHere = lg.id == here.id;
       final (name, color, _) = _leagueStyle(l, lg.id);
       rows.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+          decoration: isHere
+              // 지금 내 리그 — 목록에서 **내 위치**가 보여야 남은 거리가 읽힌다.
+              ? BoxDecoration(
+                  color: color.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(color: color.withValues(alpha: 0.6)),
+                )
+              : null,
           child: Opacity(
-            opacity: reached ? 1 : 0.45,
+            opacity: reached ? 1 : 0.5,
+            // ⚠️ 예전엔 한 Row 에 아이콘·이름·트로피·골드·젤리·상태를 전부
+            // 넣어서 좁은 화면에서 **넘쳤다**(실기 지적). 이름/트로피는 왼쪽에서
+            // 줄어들 수 있게 Expanded 로 감싸고, 보상은 Wrap 으로 흘린다.
             child: Row(
               children: [
-                leagueIcon(lg.id, size: 18),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 58,
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                    ),
+                leagueIcon(lg.id, size: 17),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        l.leagueNeedTrophy(lg.minTrophy),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0x99FFFFFF),
+                          fontSize: 9.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  '${lg.minTrophy}',
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 10.5,
-                  ),
-                ),
-                const Spacer(),
-                goldIcon(size: 13),
-                const SizedBox(width: 3),
+                goldIcon(size: 12),
+                const SizedBox(width: 2),
                 Text(
                   formatCompact(lg.rewardGold),
                   style: const TextStyle(
                     color: Color(0xFFEBD24A),
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 if (lg.rewardJelly > 0) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   materialImage(
                     MaterialKind.jelly,
-                    size: 13,
-                    fallback: const SizedBox(width: 13),
+                    size: 12,
+                    fallback: const SizedBox(width: 12),
                   ),
-                  const SizedBox(width: 3),
+                  const SizedBox(width: 2),
                   Text(
                     '${lg.rewardJelly}',
                     style: const TextStyle(
                       color: Color(0xFF9BE7FF),
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 16,
-                  child: claimed
-                      ? const Icon(
-                          Icons.check_circle_rounded,
-                          size: 14,
-                          color: Color(0xFF7CE38B),
-                        )
-                      : (canClaim
-                            ? const Icon(
-                                Icons.card_giftcard_rounded,
-                                size: 14,
-                                color: Color(0xFFEBC24A),
-                              )
-                            : const Icon(
-                                Icons.lock_rounded,
-                                size: 12,
-                                color: Color(0x66FFFFFF),
-                              )),
-                ),
+                const SizedBox(width: 4),
+                claimed
+                    ? const Icon(
+                        Icons.check_circle_rounded,
+                        size: 13,
+                        color: Color(0xFF7CE38B),
+                      )
+                    : (canClaim
+                          ? const Icon(
+                              Icons.card_giftcard_rounded,
+                              size: 13,
+                              color: Color(0xFFEBC24A),
+                            )
+                          : const Icon(
+                              Icons.lock_rounded,
+                              size: 11,
+                              color: Color(0x66FFFFFF),
+                            )),
               ],
             ),
           ),
@@ -1242,7 +1261,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             left: 10,
             top: 8,
             child: _powerTag(
-              l.teamPower(formatCompact(_myTeamPowerSum(data, save, locale))),
+              l.sideMineTeam,
+              formatCompact(_myTeamPowerSum(data, save, locale)),
               const Color(0xFF7CE38B),
             ),
           ),
@@ -1264,6 +1284,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     const SizedBox(width: 5),
                   ],
                   _powerTag(
+                    l.sideFoeTeam,
                     formatCompact(
                       scout.team.fold<double>(0, (a, e) => a + _power(e.bug)),
                     ),
@@ -1292,16 +1313,36 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
-  Widget _powerTag(String text, Color c) => Container(
+  /// 전투력 태그 — **누구 것인지**를 먼저 쓰고 숫자를 뒤에 둔다.
+  /// 숫자만 있으면 둘 중 어느 쪽이 내 것인지 위치로 추측해야 했다(실기 지적).
+  Widget _powerTag(String who, String power, Color c) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
     decoration: BoxDecoration(
       color: const Color(0xB30E1408),
       borderRadius: BorderRadius.circular(7),
       border: Border.all(color: c.withValues(alpha: 0.7)),
     ),
-    child: Text(
-      text,
-      style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w900),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          who,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          power,
+          style: TextStyle(
+            color: c,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
     ),
   );
 
@@ -2389,6 +2430,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   /// 자동 전투 — 결정론 simulate 후 아레나 재생.
+  /// "결투 시작!" 전환 — **서버 왕복을 덮는다**.
+  ///
+  /// 서버가 붙어 있으면 승패를 서버가 확정하므로(§3 기기 권위 아님) 버튼을 누른 뒤
+  /// Cloud Run 왕복만큼 기다린다. 예전엔 그동안 **아무 일도 안 일어나서** 버튼이
+  /// 안 먹은 줄 알았다(실기 지적). 없앨 수 없는 대기라면 **기다림을 연출로 덮는다**.
+  ///
+  /// 돌려주는 함수를 부르면 닫힌다. 반드시 `finally` 에서 부를 것 —
+  /// 서버가 거부해도 오버레이가 남으면 화면이 잠긴다.
+  VoidCallback _showStartOverlay(AppLocalizations l) {
+    final entry = OverlayEntry(builder: (_) => const _BattleStartOverlay());
+    Overlay.of(context, rootOverlay: true).insert(entry);
+    return entry.remove;
+  }
+
   Future<void> _battle(
     GameData data,
     SaveGame save,
@@ -2410,8 +2465,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       // 낙관 차감한 티켓은 돌려준다(성공 시엔 서버 값이 덮어쓴다).
       // 단 "티켓 없음"으로 거절당한 경우는 _serverBattle 이 서버 잔량으로
       // 맞춰 놓았으므로 되돌리면 안 된다.
-      final ok = await _serverBattle(data, locale, scout, m);
-      if (!ok && !_lastRejectedForTickets) await _returnTicket();
+      final close = _showStartOverlay(l);
+      try {
+        final ok = await _serverBattle(data, locale, scout, m);
+        if (!ok && !_lastRejectedForTickets) await _returnTicket();
+      } finally {
+        close();
+      }
       return;
     }
 
@@ -2645,6 +2705,68 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// "결투 시작!" 전환 화면. 서버가 승패를 확정하는 동안(왕복 0.3~2초) 덮는다.
+///
+/// 스피너 대신 **글자가 튀어 들어오게** 한 이유: 스피너는 "로딩 중"이라 기다림을
+/// 드러내지만, 이건 전투의 시작으로 읽혀서 같은 시간이 짧게 느껴진다.
+class _BattleStartOverlay extends StatefulWidget {
+  const _BattleStartOverlay();
+
+  @override
+  State<_BattleStartOverlay> createState() => _BattleStartOverlayState();
+}
+
+class _BattleStartOverlayState extends State<_BattleStartOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 420),
+  )..forward();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (_, _) {
+        final t = Curves.easeOutBack.transform(_c.value);
+        return Material(
+          color: Colors.black.withValues(alpha: 0.62 * _c.value),
+          child: Center(
+            child: Transform.scale(
+              scale: 0.5 + t * 0.5,
+              // ⚠️ easeOutBack 은 1.0 을 넘긴다 — Opacity 에 그대로 주면
+              // 단언에 걸려 빨간 오류 화면이 뜬다(아레나에서 겪은 것).
+              child: Opacity(
+                opacity: _c.value.clamp(0.0, 1.0),
+                child: Text(
+                  l.battleStarting,
+                  style: const TextStyle(
+                    color: _honey,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                    shadows: [
+                      Shadow(color: Colors.black, blurRadius: 10),
+                      Shadow(color: Color(0xAAEBA52F), blurRadius: 24),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

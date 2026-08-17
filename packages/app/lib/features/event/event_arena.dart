@@ -98,7 +98,7 @@ class EventArena extends StatelessWidget {
               stance: stanceMine,
               flash: flashL,
               dx: lungeL,
-              size: 116,
+              size: 104,
             ),
       foeBody: foe == null
           ? const SizedBox.shrink()
@@ -112,18 +112,18 @@ class EventArena extends StatelessWidget {
               stance: stanceFoe,
               flash: flashR,
               dx: -lungeR,
-              size: 82,
+              size: 104,
             ),
       minePlate: mine == null
           ? const SizedBox.shrink()
-          : ArenaPlate(bug: mine!, hpFrac: mineHpFrac),
+          : ArenaPlate(bug: mine!, hpFrac: mineHpFrac, mine: true),
       foePlate: foe == null
           ? const SizedBox.shrink()
           : ArenaPlate(
               bug: foe!,
               hpFrac: foeHpFrac,
               nameOverride: foeName,
-              compact: true,
+              mine: false,
             ),
       overlays: [
         for (final b in bursts) ArenaBurst(fx: b),

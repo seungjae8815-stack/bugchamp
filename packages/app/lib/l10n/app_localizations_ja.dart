@@ -2471,4 +2471,24 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get leagueRewardListTitle => 'リーグ昇格報酬（アカウントにつき1回）';
+
+  @override
+  String get sideMine => '自分';
+
+  @override
+  String get sideFoe => '相手';
+
+  @override
+  String get battleStarting => '決闘開始！';
+
+  @override
+  String get sideMineTeam => '自分のチーム';
+
+  @override
+  String get sideFoeTeam => '相手チーム';
+
+  @override
+  String leagueNeedTrophy(int n) {
+    return 'トロフィー$n';
+  }
 }

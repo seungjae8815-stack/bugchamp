@@ -332,7 +332,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                             stance: ev?.aStance,
                             flash: _flashL,
                             dx: lungeL,
-                            size: 116,
+                            size: 104,
                             down: _downL,
                             skin: widget.skinOf(
                               widget.speciesOf[widget.myTeam[_a].id] ?? '',
@@ -348,7 +348,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                             stance: ev?.bStance,
                             flash: _flashR,
                             dx: -lungeR,
-                            size: 82,
+                            size: 104,
                             down: _downR,
                           )
                         : const SizedBox.shrink(),
@@ -356,13 +356,14 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                         ? ArenaPlate(
                             bug: widget.myTeam[_a],
                             hpFrac: _hpA[_a] / widget.myTeam[_a].maxHp,
+                            mine: true,
                           )
                         : const SizedBox.shrink(),
                     foePlate: _b < widget.foeTeam.length
                         ? ArenaPlate(
                             bug: widget.foeTeam[_b],
                             hpFrac: _hpB[_b] / widget.foeTeam[_b].maxHp,
-                            compact: true,
+                            mine: false,
                           )
                         : const SizedBox.shrink(),
                     overlays: [

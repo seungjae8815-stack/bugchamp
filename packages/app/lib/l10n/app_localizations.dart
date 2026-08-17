@@ -4575,6 +4575,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'League promotion rewards (once per account)'**
   String get leagueRewardListTitle;
+
+  /// No description provided for @sideMine.
+  ///
+  /// In en, this message translates to:
+  /// **'YOU'**
+  String get sideMine;
+
+  /// No description provided for @sideFoe.
+  ///
+  /// In en, this message translates to:
+  /// **'FOE'**
+  String get sideFoe;
+
+  /// No description provided for @battleStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Battle start!'**
+  String get battleStarting;
+
+  /// No description provided for @sideMineTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'My team'**
+  String get sideMineTeam;
+
+  /// No description provided for @sideFoeTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Opponent'**
+  String get sideFoeTeam;
+
+  /// No description provided for @leagueNeedTrophy.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} trophies'**
+  String leagueNeedTrophy(int n);
 }
 
 class _AppLocalizationsDelegate

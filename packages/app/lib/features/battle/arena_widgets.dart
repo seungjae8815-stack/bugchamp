@@ -219,6 +219,7 @@ class ArenaPlate extends StatelessWidget {
     required this.hpFrac,
     this.nameOverride,
     this.compact = false,
+    this.mine,
   });
 
   final BattleBug bug;
@@ -228,11 +229,16 @@ class ArenaPlate extends StatelessWidget {
   /// 상대 쪽(작게). 화면 위쪽은 정보가 적을수록 무대가 넓어 보인다.
   final bool compact;
 
+  /// true=내 곤충 / false=상대 / null=표시 안 함.
+  ///
+  /// 둘을 같은 크기로 세우면서 **이게 유일한 구분**이 됐다 — 색만으로는
+  /// 오행색과 헷갈린다.
+  final bool? mine;
+
   @override
   Widget build(BuildContext context) {
-    final w = compact ? 118.0 : 138.0;
     return Container(
-      width: w,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
       padding: const EdgeInsets.fromLTRB(8, 5, 8, 6),
       decoration: BoxDecoration(
         // 무대 그림 위에 얹히므로 **자기 바닥**이 있어야 글자가 읽힌다.
@@ -246,6 +252,33 @@ class ArenaPlate extends StatelessWidget {
         children: [
           Row(
             children: [
+              if (mine != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: mine!
+                        ? const Color(0xFF3E7D4F)
+                        : const Color(0xFFA8442B),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    // 표시할 때만 찾는다 — 이름표는 다국어 없이도 그려져야
+                    // 테스트에서 무대만 따로 펌프할 수 있다.
+                    mine!
+                        ? AppLocalizations.of(context).sideMine
+                        : AppLocalizations.of(context).sideFoe,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
               elementIcon(bug.element, size: compact ? 11 : 13),
               const SizedBox(width: 3),
               Flexible(
@@ -881,15 +914,15 @@ Future<void> showBattleResultDialog(
   );
 }
 
-/// 대각 무대 — 포켓몬식 구도. **내 곤충은 왼쪽 아래 크게, 상대는 오른쪽 위 작게.**
+/// 전투 무대 — **둘을 같은 선 위에, 같은 크기로** 세운다.
 ///
-/// 예전엔 둘을 같은 크기로 수평선 위에 마주 세웠다. 그러면 화면이 대칭이라
-/// **누가 내 편인지 한눈에 안 들어오고**, 깊이도 없어 배경 그림 위에 스티커 두 장을
-/// 붙여 놓은 것처럼 보였다(실기: "인터페이스가 끌리는 게 없다").
+/// 한때 원근(내 곤충 크게·상대 작게)을 줬다가 되돌렸다(실기 지적). 크기가 다르면
+/// 전력 차이로 오해되고, 상대가 작아서 무슨 일이 벌어지는지 보기 어려웠다.
+/// **누가 내 편인지**는 크기가 아니라 이름표의 "나/상대" 표시로 말한다 — 그게
+/// 오해의 여지가 없다.
 ///
-/// 이름표는 **자기 몸 바로 위**에 붙인다. 처음엔 대각선 반대쪽 구석에 뒀는데
-/// "어느 HP 바가 내 것인지" 헷갈렸다(실기 지적) — 포켓몬은 화면에 그 둘뿐이라
-/// 대각 배치가 통하지만, 여기는 오행·스탠스 표시가 더 있어 연결이 끊긴다.
+/// 이름표는 **자기 몸 바로 위**다. 반대쪽 구석에 뒀더니 "어느 HP 바가 내 것인지"
+/// 헷갈렸다.
 class ArenaStage extends StatelessWidget {
   const ArenaStage({
     super.key,
@@ -923,20 +956,29 @@ class ArenaStage extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(child: background),
-            // 상대 — 오른쪽 **위**, 작게(멀리 있다). 이름표는 **자기 몸 위**.
+            // 같은 선 위에 나란히. 발이 같은 높이라 "마주 섰다"가 읽힌다.
             Align(
-              alignment: const Alignment(0.62, -0.34),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [foePlate, const SizedBox(height: 4), foeBody],
-              ),
-            ),
-            // 나 — 왼쪽 **아래**, 크게(가까이 있다).
-            Align(
-              alignment: const Alignment(-0.58, 0.94),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [minePlate, const SizedBox(height: 4), mineBody],
+              alignment: const Alignment(0, 0.92),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        minePlate,
+                        const SizedBox(height: 4),
+                        mineBody,
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [foePlate, const SizedBox(height: 4), foeBody],
+                    ),
+                  ),
+                ],
               ),
             ),
             ...overlays,

@@ -5,6 +5,8 @@ import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:app/l10n/app_localizations.dart';
+
 /// 아레나 배치가 **좁은 화면에서 넘치지 않는지** 검증.
 ///
 /// 대각 구도로 바꾸면서 한 무대 안에 곤충(116)·이름표(138)·스탠스 그림이 겹쳐
@@ -30,13 +32,21 @@ const _data = GameData(
   spawnTable: SpawnTable([]),
 );
 
-Widget _stage(Size size, {double flash = 0, double dx = 0, bool intro = false}) {
+Widget _stage(
+  Size size, {
+  double flash = 0,
+  double dx = 0,
+  bool intro = false,
+}) {
   final mine = _bug('a', Element.wood);
   final foe = _bug('b', Element.fire);
-  return MediaQuery(
-    data: MediaQueryData(size: size),
-    child: Directionality(
-      textDirection: TextDirection.ltr,
+  // 이름표의 "나/상대" 칩이 다국어를 쓰므로 델리게이트가 필요하다.
+  return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    locale: const Locale('ko'),
+    home: MediaQuery(
+      data: MediaQueryData(size: size),
       child: Align(
         alignment: Alignment.topLeft,
         child: SizedBox(
@@ -53,7 +63,7 @@ Widget _stage(Size size, {double flash = 0, double dx = 0, bool intro = false}) 
               stance: Stance.attack,
               flash: flash,
               dx: dx,
-              size: 116,
+              size: 104,
             ),
             foeBody: ArenaBody(
               data: _data,
@@ -63,10 +73,10 @@ Widget _stage(Size size, {double flash = 0, double dx = 0, bool intro = false}) 
               stance: Stance.defend,
               flash: flash,
               dx: -dx,
-              size: 82,
+              size: 104,
             ),
-            minePlate: ArenaPlate(bug: mine, hpFrac: 0.6),
-            foePlate: ArenaPlate(bug: foe, hpFrac: 0.3, compact: true),
+            minePlate: ArenaPlate(bug: mine, hpFrac: 0.6, mine: true),
+            foePlate: ArenaPlate(bug: foe, hpFrac: 0.3, mine: false),
             overlays: [
               if (intro)
                 const ArenaIntro(t: 0.5, mineName: '내팀곤충', foeName: '상대팀곤충'),
