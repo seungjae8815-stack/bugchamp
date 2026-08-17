@@ -269,3 +269,30 @@ String remainLabel(AppLocalizations l, Duration d) {
   if (s >= 60) return l.durationM(s ~/ 60);
   return l.durationS(s);
 }
+
+/// 이벤트 강화 카드의 이름·설명. 카드 id 는 `event.json → cards.list` 의 것.
+///
+/// 모르는 id 면 빈 문자열이 아니라 id 를 그대로 보여준다 — JSON 에 카드를
+/// 추가하고 ARB 를 깜빡했을 때 화면이 비어 보이는 대신 눈에 띄게 만든다.
+(String, String) cardText(AppLocalizations l, String id) => switch (id) {
+  'heal_s' => (l.cardHeal_s, l.cardHeal_sDesc),
+  'heal_l' => (l.cardHeal_l, l.cardHeal_lDesc),
+  'atk_s' => (l.cardAtk_s, l.cardAtk_sDesc),
+  'atk_l' => (l.cardAtk_l, l.cardAtk_lDesc),
+  'def_s' => (l.cardDef_s, l.cardDef_sDesc),
+  'hp_s' => (l.cardHp_s, l.cardHp_sDesc),
+  'revive' => (l.cardRevive, l.cardReviveDesc),
+  'skip' => (l.cardSkip, l.cardSkipDesc),
+  _ => (id, ''),
+};
+
+/// 카드 아이콘 폴백 글리프(애셋이 없을 때).
+String cardGlyph(String kind) => switch (kind) {
+  'heal' => '💚',
+  'atk' => '⚔️',
+  'def' => '🛡️',
+  'maxHp' => '❤️',
+  'revive' => '✨',
+  'skip' => '🌀',
+  _ => '🃏',
+};

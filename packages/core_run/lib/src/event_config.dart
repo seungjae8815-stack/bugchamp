@@ -1,5 +1,65 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
+
+/// 웨이브를 깰 때마다 고르는 강화 카드(로그라이크).
+///
+/// 이게 없으면 편성을 짜고 도전을 누른 뒤엔 **개입할 지점이 없어** 재생만 보게
+/// 된다. 실물 경품이 걸린 대회에서는 운이 아니라 판단이 순위를 갈라야 한다.
+@immutable
+class EventCard {
+  const EventCard({
+    required this.id,
+    required this.kind,
+    required this.value,
+    this.weight = 10,
+  });
+
+  final String id;
+
+  /// `heal`(즉시 회복) · `atk`/`def`/`maxHp`(판 끝까지 배율) ·
+  /// `revive`(쓰러진 1마리 부활) · `skip`(다음 웨이브 건너뛰기).
+  final String kind;
+
+  /// 효과 크기. 배율 카드면 0.12 = +12%, `heal`/`revive` 면 최대 체력 대비 비율.
+  final double value;
+
+  /// 뽑힐 가중치.
+  final int weight;
+
+  factory EventCard.fromJson(Map<String, dynamic> json) => EventCard(
+    id: json['id'] as String,
+    kind: json['kind'] as String,
+    value: (json['value'] as num).toDouble(),
+    weight: (json['weight'] as num?)?.toInt() ?? 10,
+  );
+}
+
+/// 판이 진행되며 쌓이는 강화(카드 선택의 누적 결과).
+@immutable
+class EventBuffs {
+  const EventBuffs({this.atk = 0, this.def = 0, this.maxHp = 0});
+
+  final double atk;
+  final double def;
+  final double maxHp;
+
+  EventBuffs plus(String kind, double v) => switch (kind) {
+    'atk' => EventBuffs(atk: atk + v, def: def, maxHp: maxHp),
+    'def' => EventBuffs(atk: atk, def: def + v, maxHp: maxHp),
+    'maxHp' => EventBuffs(atk: atk, def: def, maxHp: maxHp + v),
+    _ => this,
+  };
+
+  Map<String, dynamic> toJson() => {'atk': atk, 'def': def, 'maxHp': maxHp};
+
+  factory EventBuffs.fromJson(Map<String, dynamic>? json) => EventBuffs(
+    atk: (json?['atk'] as num?)?.toDouble() ?? 0,
+    def: (json?['def'] as num?)?.toDouble() ?? 0,
+    maxHp: (json?['maxHp'] as num?)?.toDouble() ?? 0,
+  );
+}
 
 /// 실물 경품 랭킹 이벤트(웨이브 방어전) 설정. 값은 전부 `event.json`(§6).
 ///
@@ -34,6 +94,8 @@ class EventConfig {
     this.hpPoint = 1000,
     this.survivorPoint = 100,
     this.speedBase = 500,
+    this.cardPicks = 3,
+    this.cards = const [],
   });
 
   /// 회차 길이(일)와 리셋 앵커. 시즌과 같은 KST 월요일 09:00 을 쓴다 —
@@ -75,6 +137,42 @@ class EventConfig {
   final int hpPoint;
   final int survivorPoint;
   final int speedBase;
+
+  /// 웨이브를 깰 때마다 보여줄 카드 수(0 이면 카드 없음 — 구버전 동작).
+  final int cardPicks;
+  final List<EventCard> cards;
+
+  /// 웨이브 [wave] 클리어 보상으로 보여줄 카드 [cardPicks] 장.
+  ///
+  /// **회차 seed + 웨이브**로 뽑으므로 서버·앱이 같은 결과를 낸다. 판마다
+  /// 새로 굴리면 "좋은 카드가 나올 때까지 다시 도전"이 되어 운 게임이 된다.
+  List<EventCard> drawCards(int roundSeed, int wave) {
+    if (cards.isEmpty || cardPicks <= 0) return const [];
+    final rng = math.Random(roundSeed * 7717 + wave * 131);
+    final pool = [...cards];
+    final picked = <EventCard>[];
+    for (var i = 0; i < cardPicks && pool.isNotEmpty; i++) {
+      final total = pool.fold(0, (s, c) => s + c.weight);
+      var r = rng.nextInt(total <= 0 ? 1 : total);
+      var idx = 0;
+      for (var j = 0; j < pool.length; j++) {
+        r -= pool[j].weight;
+        if (r < 0) {
+          idx = j;
+          break;
+        }
+      }
+      picked.add(pool.removeAt(idx));
+    }
+    return picked;
+  }
+
+  EventCard? cardById(String id) {
+    for (final c in cards) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
 
   /// 등급 [g] 의 정규화 배율(설정이 없으면 보너스 없음).
   double gradeMult(Grade g) => 1 + (gradeBonus[g] ?? 0);
@@ -163,6 +261,16 @@ class EventConfig {
       hpPoint: (score['hpPoint'] as num?)?.toInt() ?? 1000,
       survivorPoint: (score['survivorPoint'] as num?)?.toInt() ?? 100,
       speedBase: (score['speedBase'] as num?)?.toInt() ?? 500,
+      cardPicks:
+          ((json['cards'] as Map<String, dynamic>?)?['picks'] as num?)
+              ?.toInt() ??
+          3,
+      cards: [
+        for (final c
+            in ((json['cards'] as Map<String, dynamic>?)?['list'] as List?) ??
+                const [])
+          EventCard.fromJson(c as Map<String, dynamic>),
+      ],
     );
   }
 }

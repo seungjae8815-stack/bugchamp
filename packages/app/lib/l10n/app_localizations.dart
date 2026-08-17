@@ -1534,6 +1534,180 @@ abstract class AppLocalizations {
   /// **'Auto fuse'**
   String get autoSynthRun;
 
+  /// No description provided for @eventIntroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is the Bug King Trials?'**
+  String get eventIntroTitle;
+
+  /// No description provided for @eventIntro1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'How far can 3 bugs go?'**
+  String get eventIntro1Title;
+
+  /// No description provided for @eventIntro1Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Enemies come in waves. HP carries over between waves and you only recover a little after each clear. Whoever gets further wins.'**
+  String get eventIntro1Body;
+
+  /// No description provided for @eventIntro2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Formation wins, not power'**
+  String get eventIntro2Title;
+
+  /// No description provided for @eventIntro2Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Training, enhancement, potential and size don\'t apply. Only species, element and temperament count, so everyone is on equal footing. Enemy elements rotate each wave, so a single-element team will hit a wall.'**
+  String get eventIntro2Body;
+
+  /// No description provided for @eventIntro3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Order is skill'**
+  String get eventIntro3Title;
+
+  /// No description provided for @eventIntro3Body.
+  ///
+  /// In en, this message translates to:
+  /// **'They fight left to right. A bug that generates the next one strengthens the team (wood→fire→earth→metal→water→wood), and an element that restrains the enemy deals 1.5x damage.'**
+  String get eventIntro3Body;
+
+  /// No description provided for @eventIntro4Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets and fatigue'**
+  String get eventIntro4Title;
+
+  /// No description provided for @eventIntro4Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets refill each morning and ads give more. A bug that entered rests for a day — so keeping several good bugs pays off.'**
+  String get eventIntro4Body;
+
+  /// No description provided for @eventIntroStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get eventIntroStart;
+
+  /// No description provided for @eventHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'How it works'**
+  String get eventHelp;
+
+  /// No description provided for @eventCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave {n} cleared! Choose one'**
+  String eventCardTitle(Object n);
+
+  /// No description provided for @eventCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The boost lasts for the rest of this run'**
+  String get eventCardHint;
+
+  /// No description provided for @cardHeal_s.
+  ///
+  /// In en, this message translates to:
+  /// **'First Aid'**
+  String get cardHeal_s;
+
+  /// No description provided for @cardHeal_sDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore 30% HP'**
+  String get cardHeal_sDesc;
+
+  /// No description provided for @cardHeal_l.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Recovery'**
+  String get cardHeal_l;
+
+  /// No description provided for @cardHeal_lDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore 70% HP'**
+  String get cardHeal_lDesc;
+
+  /// No description provided for @cardAtk_s.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp Mandibles'**
+  String get cardAtk_s;
+
+  /// No description provided for @cardAtk_sDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack +12%'**
+  String get cardAtk_sDesc;
+
+  /// No description provided for @cardAtk_l.
+  ///
+  /// In en, this message translates to:
+  /// **'Onslaught'**
+  String get cardAtk_l;
+
+  /// No description provided for @cardAtk_lDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack +28%'**
+  String get cardAtk_lDesc;
+
+  /// No description provided for @cardDef_s.
+  ///
+  /// In en, this message translates to:
+  /// **'Hardened Shell'**
+  String get cardDef_s;
+
+  /// No description provided for @cardDef_sDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Defense +18%'**
+  String get cardDef_sDesc;
+
+  /// No description provided for @cardHp_s.
+  ///
+  /// In en, this message translates to:
+  /// **'Sturdy Build'**
+  String get cardHp_s;
+
+  /// No description provided for @cardHp_sDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Max HP +15%'**
+  String get cardHp_sDesc;
+
+  /// No description provided for @cardRevive.
+  ///
+  /// In en, this message translates to:
+  /// **'Dew of Life'**
+  String get cardRevive;
+
+  /// No description provided for @cardReviveDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Revive one fallen bug at half HP'**
+  String get cardReviveDesc;
+
+  /// No description provided for @cardSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Detour'**
+  String get cardSkip;
+
+  /// No description provided for @cardSkipDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip the next wave without fighting'**
+  String get cardSkipDesc;
+
   /// No description provided for @eventTitle.
   ///
   /// In en, this message translates to:
@@ -1562,7 +1736,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Tickets {n}/{max}'**
-  String eventTickets(Object max, Object n);
+  String eventTickets(int n, int max);
 
   /// No description provided for @eventBestRecord.
   ///
@@ -1623,6 +1797,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ready in {time}'**
   String eventFatigueLeft(Object time);
+
+  /// No description provided for @eventRestHours.
+  ///
+  /// In en, this message translates to:
+  /// **'⏳{h}h'**
+  String eventRestHours(Object h);
+
+  /// No description provided for @eventRestMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'⏳{m}m'**
+  String eventRestMinutes(Object m);
 
   /// No description provided for @eventChallenge.
   ///
@@ -1796,7 +1982,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{name} ×{count}'**
-  String autoPreviewLine(Object count, Object name);
+  String autoPreviewLine(String name, int count);
 
   /// No description provided for @storageExpandMaxed.
   ///
@@ -2307,6 +2493,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get actionCancel;
+
+  /// No description provided for @actionNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get actionNext;
 
   /// No description provided for @actionClose.
   ///

@@ -131,8 +131,15 @@ abstract interface class GameServer {
   /// 이벤트 현황(회차·참가권·내 최고 기록).
   Future<ServerResult> eventState();
 
-  /// 이벤트 도전 1회. 서버가 참가권을 깎고 웨이브를 확정한다.
+  /// 이벤트 도전 1회(구버전 — 판을 한 번에 확정). 카드 방식을 못 쓸 때의 폴백.
   Future<ServerResult> eventChallenge(List<String> teamBugIds);
+
+  /// 이벤트 도전 시작 — 참가권을 깎고 **1웨이브만** 치른다.
+  /// 응답에 세션 id 와 다음 카드 후보가 온다.
+  Future<ServerResult> eventStart(List<String> teamBugIds);
+
+  /// 카드를 고르고 다음 웨이브로. 판이 끝나면 점수가 확정된다.
+  Future<ServerResult> eventPick(String sessionId, String cardId);
 
   /// 광고 시청 보상 참가권.
   Future<ServerResult> eventAdTicket();
@@ -224,6 +231,12 @@ class NoGameServer implements GameServer {
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> eventChallenge(List<String> teamBugIds) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventStart(List<String> teamBugIds) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventPick(String sessionId, String cardId) async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> eventAdTicket() async =>
@@ -408,6 +421,14 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> eventChallenge(List<String> teamBugIds) =>
       _send('POST', '/event/challenge', {'teamIds': teamBugIds});
+
+  @override
+  Future<ServerResult> eventStart(List<String> teamBugIds) =>
+      _send('POST', '/event/start', {'teamIds': teamBugIds});
+
+  @override
+  Future<ServerResult> eventPick(String sessionId, String cardId) =>
+      _send('POST', '/event/pick', {'sessionId': sessionId, 'cardId': cardId});
 
   @override
   Future<ServerResult> eventAdTicket() =>

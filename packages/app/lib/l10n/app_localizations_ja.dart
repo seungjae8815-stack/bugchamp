@@ -809,6 +809,99 @@ class AppLocalizationsJa extends AppLocalizations {
   String get autoSynthRun => '自動合成';
 
   @override
+  String get eventIntroTitle => '王虫選抜大会とは？';
+
+  @override
+  String get eventIntro1Title => '虫3匹で何ウェーブまで';
+
+  @override
+  String get eventIntro1Body =>
+      '敵が波のように押し寄せます。体力はウェーブをまたいで引き継がれ、1つ突破するごとに少しだけ回復します。より遠くまで進んだ人の勝ちです。';
+
+  @override
+  String get eventIntro2Title => '力ではなく編成が勝つ';
+
+  @override
+  String get eventIntro2Body =>
+      '修練・強化・ポテンシャル・サイズは反映されません。種・五行・気質だけが使われるので、全員が同じ条件です。敵の五行はウェーブごとに変わるため、一属性だけではいずれ詰まります。';
+
+  @override
+  String get eventIntro3Title => '順番こそ実力';
+
+  @override
+  String get eventIntro3Body =>
+      '左から順に出ます。前の虫が後ろの虫を生じるとチーム全体が強くなり（木→火→土→金→水→木）、相手を克す属性はダメージ1.5倍です。';
+
+  @override
+  String get eventIntro4Title => '参加券と出場疲労';
+
+  @override
+  String get eventIntro4Body =>
+      '参加券は毎朝補充され、広告でも受け取れます。一度出た虫は1日休みます — 良い虫を多く揃えるほど有利です。';
+
+  @override
+  String get eventIntroStart => 'はじめる';
+
+  @override
+  String get eventHelp => '大会の説明を見る';
+
+  @override
+  String eventCardTitle(Object n) {
+    return '$nウェーブ突破！1つ選んでください';
+  }
+
+  @override
+  String get eventCardHint => '選んだ強化はこの挑戦が終わるまで残ります';
+
+  @override
+  String get cardHeal_s => '応急処置';
+
+  @override
+  String get cardHeal_sDesc => '体力を30%回復します';
+
+  @override
+  String get cardHeal_l => '完全回復';
+
+  @override
+  String get cardHeal_lDesc => '体力を70%回復します';
+
+  @override
+  String get cardAtk_s => '鋭い顎';
+
+  @override
+  String get cardAtk_sDesc => '攻撃力 +12%';
+
+  @override
+  String get cardAtk_l => '猛攻';
+
+  @override
+  String get cardAtk_lDesc => '攻撃力 +28%';
+
+  @override
+  String get cardDef_s => '硬い外皮';
+
+  @override
+  String get cardDef_sDesc => '防御力 +18%';
+
+  @override
+  String get cardHp_s => '強靭な体格';
+
+  @override
+  String get cardHp_sDesc => '最大体力 +15%';
+
+  @override
+  String get cardRevive => '命の露';
+
+  @override
+  String get cardReviveDesc => '倒れた虫1匹を半分の体力で復活させます';
+
+  @override
+  String get cardSkip => '迂回路';
+
+  @override
+  String get cardSkipDesc => '次のウェーブを戦わずに通過します';
+
+  @override
   String get eventTitle => '王虫選抜大会';
 
   @override
@@ -823,7 +916,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventNeedServer => '大会にはオンライン接続が必要です';
 
   @override
-  String eventTickets(Object max, Object n) {
+  String eventTickets(int n, int max) {
     return '参加券 $n/$max';
   }
 
@@ -864,6 +957,16 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String eventFatigueLeft(Object time) {
     return '$time後に出場可能';
+  }
+
+  @override
+  String eventRestHours(Object h) {
+    return '⏳$h時間';
+  }
+
+  @override
+  String eventRestMinutes(Object m) {
+    return '⏳$m分';
   }
 
   @override
@@ -966,7 +1069,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String autoPreviewLine(Object count, Object name) {
+  String autoPreviewLine(String name, int count) {
     return '$name $count匹';
   }
 
@@ -1238,6 +1341,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get actionCancel => 'キャンセル';
+
+  @override
+  String get actionNext => '次へ';
 
   @override
   String get actionClose => '閉じる';

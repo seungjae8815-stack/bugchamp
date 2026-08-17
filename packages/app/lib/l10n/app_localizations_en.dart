@@ -825,6 +825,99 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSynthRun => 'Auto fuse';
 
   @override
+  String get eventIntroTitle => 'What is the Bug King Trials?';
+
+  @override
+  String get eventIntro1Title => 'How far can 3 bugs go?';
+
+  @override
+  String get eventIntro1Body =>
+      'Enemies come in waves. HP carries over between waves and you only recover a little after each clear. Whoever gets further wins.';
+
+  @override
+  String get eventIntro2Title => 'Formation wins, not power';
+
+  @override
+  String get eventIntro2Body =>
+      'Training, enhancement, potential and size don\'t apply. Only species, element and temperament count, so everyone is on equal footing. Enemy elements rotate each wave, so a single-element team will hit a wall.';
+
+  @override
+  String get eventIntro3Title => 'Order is skill';
+
+  @override
+  String get eventIntro3Body =>
+      'They fight left to right. A bug that generates the next one strengthens the team (wood→fire→earth→metal→water→wood), and an element that restrains the enemy deals 1.5x damage.';
+
+  @override
+  String get eventIntro4Title => 'Tickets and fatigue';
+
+  @override
+  String get eventIntro4Body =>
+      'Tickets refill each morning and ads give more. A bug that entered rests for a day — so keeping several good bugs pays off.';
+
+  @override
+  String get eventIntroStart => 'Start';
+
+  @override
+  String get eventHelp => 'How it works';
+
+  @override
+  String eventCardTitle(Object n) {
+    return 'Wave $n cleared! Choose one';
+  }
+
+  @override
+  String get eventCardHint => 'The boost lasts for the rest of this run';
+
+  @override
+  String get cardHeal_s => 'First Aid';
+
+  @override
+  String get cardHeal_sDesc => 'Restore 30% HP';
+
+  @override
+  String get cardHeal_l => 'Full Recovery';
+
+  @override
+  String get cardHeal_lDesc => 'Restore 70% HP';
+
+  @override
+  String get cardAtk_s => 'Sharp Mandibles';
+
+  @override
+  String get cardAtk_sDesc => 'Attack +12%';
+
+  @override
+  String get cardAtk_l => 'Onslaught';
+
+  @override
+  String get cardAtk_lDesc => 'Attack +28%';
+
+  @override
+  String get cardDef_s => 'Hardened Shell';
+
+  @override
+  String get cardDef_sDesc => 'Defense +18%';
+
+  @override
+  String get cardHp_s => 'Sturdy Build';
+
+  @override
+  String get cardHp_sDesc => 'Max HP +15%';
+
+  @override
+  String get cardRevive => 'Dew of Life';
+
+  @override
+  String get cardReviveDesc => 'Revive one fallen bug at half HP';
+
+  @override
+  String get cardSkip => 'Detour';
+
+  @override
+  String get cardSkipDesc => 'Skip the next wave without fighting';
+
+  @override
   String get eventTitle => 'Bug King Trials';
 
   @override
@@ -839,7 +932,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventNeedServer => 'The event needs an online connection';
 
   @override
-  String eventTickets(Object max, Object n) {
+  String eventTickets(int n, int max) {
     return 'Tickets $n/$max';
   }
 
@@ -881,6 +974,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String eventFatigueLeft(Object time) {
     return 'Ready in $time';
+  }
+
+  @override
+  String eventRestHours(Object h) {
+    return '⏳${h}h';
+  }
+
+  @override
+  String eventRestMinutes(Object m) {
+    return '⏳${m}m';
   }
 
   @override
@@ -985,7 +1088,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String autoPreviewLine(Object count, Object name) {
+  String autoPreviewLine(String name, int count) {
     return '$name ×$count';
   }
 
@@ -1260,6 +1363,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionCancel => 'Cancel';
+
+  @override
+  String get actionNext => 'Next';
 
   @override
   String get actionClose => 'Close';

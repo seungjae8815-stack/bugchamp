@@ -169,6 +169,85 @@ pennant flag planted on a small rocky summit, honey amber cloth, upward motion, 
 > (망치·조각남)으로 뽑으면 공방 제련(`hammer`·`anvil`)과 헷갈린다.
 > `rank_stage`는 지도 핀 모양을 피한다 — 원래 📍였는데 "위치"로 읽혀 진행도로 안 보였다.
 
+## 4d. 이벤트 강화 카드 ×8 (`assets/images/ui/cards/`)
+
+「왕충 선발대회」에서 웨이브를 깰 때마다 고르는 카드(docs/event_ranking_prize.md).
+**40px 정도로 그려진다** — 카드 프레임은 앱이 그리므로 **오브젝트만** 뽑는다.
+파일명 = `event.json → cards.list[].id`. 없으면 이모지로 폴백하므로 급하지 않다.
+
+> ⚠️ 프롬프트에 `no card frame, no border` 를 넣는다. 카드 테두리까지 그려 오면
+> 앱이 그리는 테두리와 이중이 된다(UI 아이콘에서 이미 겪었다 — §4c).
+
+**`heal_s.webp`** — 응급 처치
+```
+a single glowing green dewdrop with a soft cross-shaped light inside, gentle healing sparkles, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`heal_l.webp`** — 완전 회복
+```
+a large radiant emerald droplet overflowing with green light, ring of healing motes around it, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`atk_s.webp`** — 예리한 턱
+```
+a pair of sharp beetle mandibles angled like blades, honey amber highlights on the edges, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`atk_l.webp`** — 맹공
+```
+crossed beetle horns wreathed in fierce warm-red flame aura, aggressive and heavy, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`def_s.webp`** — 단단한 표피
+```
+a thick layered chitin shield plate, hexagonal armor texture, steel-blue sheen over brown, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`hp_s.webp`** — 강인한 체격
+```
+a stout armored beetle thorax seen head-on, broad and heavy, warm red heart glow at its center, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`revive.webp`** — 생명의 이슬
+```
+a single luminous dewdrop falling onto a curled sleeping larva, soft golden resurrection glow, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`skip.webp`** — 우회로
+```
+a swirling spiral of wind and drifting leaves forming a portal, cool teal glow, glossy game reward card icon, single centered object on a plain background, bold simple silhouette readable at 40px, thick warm brown outline, cream rim light, no card frame, no border, no UI panel, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1 --style raw --v 7 --sref <key> --sw 100
+```
+
+## 4e. 이벤트 설명 일러스트 ×4 (`assets/images/ui/event/`)
+
+첫 진입 때 뜨는 4장짜리 설명(`features/event/event_intro.dart`). 지금은 큰 이모지가
+자리를 지키고 있고, 이 파일들을 넣으면 그림으로 바뀐다.
+**가로로 넓게 보여주므로 `--ar 4:3`** 이고, 글자는 앱이 얹으니 **그림에 텍스트를 넣지 않는다.**
+
+**`intro_wave.webp`** — 1장 — 웨이브
+```
+a small team of three friendly beetles standing shoulder to shoulder facing a dark tide of oncoming insect silhouettes, dramatic wide shot, hopeful heroic mood, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`intro_equal.webp`** — 2장 — 평준화
+```
+a balance scale with an identical beetle on each pan resting perfectly level, warm light from above, fairness and equality, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`intro_order.webp`** — 3장 — 오행 순서
+```
+three beetles in a row connected by a flowing ribbon of light passing from one to the next, each glowing a different elemental color (green, red, amber), showing a chain of energy, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
+```
+
+**`intro_ticket.webp`** — 4장 — 참가권과 피로
+```
+an ornate paper entry ticket beside a beetle sleeping peacefully on a leaf bed, small crescent moon, restful mood, storybook illustration, no text, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 4:3 --style raw --v 7 --sref <key> --sw 100
+```
+
+> **규격**: 카드는 배경 제거 후 256×256↑, 설명 일러스트는 1024×768↑, 둘 다 RGBA WebP(quality 92).
+> 배경 제거는 §4c 의 교훈 그대로 — **문턱 60 + 알파 1px 침식**이 필요하다
+> (크림 림라이트가 배경과 채널차 33 이라 32 에서는 한 끗 차이로 안 지워진다).
+
 ## 5. 등급 프레임 ×5 (`assets/images/frames/`)
 
 공통: `ornate rounded card frame border, gem accents, empty transparent center, mobile gacha rarity frame, {STYLE} --ar 1:1`

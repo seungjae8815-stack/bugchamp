@@ -3519,8 +3519,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  // 빌드 라벨 + 상태 칩(온라인/서버권위)은 **줄바꿈**한다.
+                  // 한 줄 고정이면 서버권위 칩이 붙는 순간 넘친다(실측 7.3px).
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 5,
+                    runSpacing: 4,
                     children: [
                       InkResponse(
                         onTap: () => setLocal(

@@ -1651,6 +1651,353 @@ class GameActions {
     );
   }
 
+  /// 이벤트 팀을 **이벤트 규격**으로 환산한다(개체 스탯은 쓰지 않는다).
+  /// [buffs] 는 카드로 쌓인 강화.
+  ({List<BattleBug> units, String? error}) _eventUnits(
+    SaveGame save,
+    List<String> teamIds,
+    Map<String, Species> speciesById,
+    EventConfig cfg,
+    EventBuffs buffs,
+  ) {
+    final byId = {for (final b in save.bugs) b.id: b};
+    final units = <BattleBug>[];
+    for (final id in teamIds) {
+      final bug = byId[id];
+      if (bug == null) return (units: const [], error: 'bad_team');
+      final sp = speciesById[bug.speciesId];
+      if (sp == null) return (units: const [], error: 'unknown_species');
+      final n = cfg.normalized(sp.grade);
+      units.add(
+        buildEventBug(
+          bug: bug,
+          species: sp,
+          locale: 'ko',
+          hp: n.hp * (1 + buffs.maxHp),
+          atk: n.atk * (1 + buffs.atk),
+          def: n.def * (1 + buffs.def),
+          spd: n.spd,
+        ),
+      );
+    }
+    return (units: units, error: null);
+  }
+
+  WaveEnemySpec _eventSpec(EventConfig cfg) => WaveEnemySpec(
+    baseHp: cfg.enemyBaseHp,
+    baseAtk: cfg.enemyBaseAtk,
+    baseDef: cfg.enemyBaseDef,
+    baseSpd: cfg.enemyBaseSpd,
+    growth: cfg.enemyGrowth,
+    count: cfg.enemyCount,
+  );
+
+  /// 웨이브 하나를 치른다. [hpIn] 이 null 이면 만피로 시작.
+  ({bool won, List<double> hp, int rounds}) _runOneWave(
+    EventConfig cfg,
+    int seed,
+    int wave,
+    List<BattleBug> units,
+    List<double>? hpIn,
+  ) {
+    final st = initBattle(
+      seed + wave * 7919,
+      units,
+      eventWaveEnemies(seed, wave, _eventSpec(cfg)),
+      initialHpA: hpIn,
+    );
+    var guard = 0;
+    while (!st.done && guard < 200) {
+      st.step();
+      guard++;
+    }
+    final r = st.toResult();
+    return (
+      won: r.outcome == BattleOutcome.teamA,
+      hp: [...st.hpA],
+      rounds: r.rounds,
+    );
+  }
+
+  static double _hpPct(List<double> hp, List<BattleBug> units) {
+    var max = 0.0;
+    for (final u in units) {
+      max += u.maxHp;
+    }
+    if (max <= 0) return 0;
+    var cur = 0.0;
+    for (final v in hp) {
+      cur += v;
+    }
+    final r = cur / max;
+    return r < 0 ? 0 : (r > 1 ? 1 : r);
+  }
+
+  /// **이벤트 도전 시작.** 참가권을 깎고 **1웨이브만** 치른다.
+  ///
+  /// 판 전체를 한 번에 돌리지 않는 이유: 웨이브를 깰 때마다 **카드를 고르게**
+  /// 하기 때문이다(로그라이크). 그 선택이 다음 웨이브 계산에 들어가므로
+  /// 서버가 진행 상태를 세션으로 들고 있어야 한다.
+  ///
+  /// 거부: `event_closed` · `no_ticket` · `bad_team` · `not_adult` · `fatigued`.
+  ActionResult eventStart(
+    SaveGame save, {
+    required List<String> teamIds,
+    required Map<String, Species> speciesById,
+  }) {
+    final cfg = config.event;
+    if (cfg == null) return const ActionResult.fail('event_closed');
+    final t = now().toUtc();
+
+    if (teamIds.length != 3 || teamIds.toSet().length != 3) {
+      return const ActionResult.fail('bad_team');
+    }
+    final byId = {for (final b in save.bugs) b.id: b};
+    for (final id in teamIds) {
+      final bug = byId[id];
+      if (bug == null) return const ActionResult.fail('bad_team');
+      if (effectiveStage(bug.stage, bug.stageSince, t, config.pet) !=
+          LifeStage.adult) {
+        return const ActionResult.fail('not_adult');
+      }
+      if (save.eventOnFatigue(id, t)) {
+        return const ActionResult.fail('fatigued');
+      }
+    }
+
+    final cur = eventTicketsNow(save);
+    if (cur.tickets <= 0) return const ActionResult.fail('no_ticket');
+
+    const buffs = EventBuffs();
+    final built = _eventUnits(save, teamIds, speciesById, cfg, buffs);
+    if (built.error != null) return ActionResult.fail(built.error!);
+
+    final roundId = EventConfig.roundIdOf(t);
+    final seed = EventConfig.roundSeedOf(roundId);
+    final w = _runOneWave(cfg, seed, 1, built.units, null);
+
+    // 클리어 회복은 다음 웨이브로 넘어갈 때 적용한다(엔진과 같은 규칙).
+    final hp = [...w.hp];
+    if (w.won && cfg.waveHealPct > 0) {
+      for (var i = 0; i < hp.length && i < built.units.length; i++) {
+        if (hp[i] > 0) {
+          final m = built.units[i].maxHp;
+          final v = hp[i] + m * cfg.waveHealPct;
+          hp[i] = v > m ? m : v;
+        }
+      }
+    }
+
+    // 출전 피로는 **시작 시점**에 건다 — 도중에 앱을 꺼서 피하지 못하게.
+    final fatigue = save.prunedEventFatigue(t);
+    final until = t.add(Duration(hours: cfg.fatigueHours));
+    for (final id in teamIds) {
+      fatigue[id] = until;
+    }
+
+    final cleared = w.won ? 1 : 0;
+    final done = !w.won;
+    final score = cfg.score(
+      clearedWaves: cleared,
+      hpPct: 1,
+      survivors: hp.where((v) => v > 0).length,
+      totalRounds: w.rounds,
+    );
+
+    var out = save.copyWith(
+      eventTickets: cur.tickets - 1,
+      eventTicketsAt: cur.at,
+      eventFatigue: fatigue,
+      eventRoundId: roundId,
+    );
+    var isBest = false;
+    if (done) {
+      final prevBest = save.eventBestScoreIn(roundId);
+      isBest = score > prevBest;
+      out = out.copyWith(
+        eventBestWave: isBest ? cleared : save.eventBestWave,
+        eventBestScore: isBest ? score : prevBest,
+      );
+    }
+
+    return ActionResult.ok(
+      out,
+      extra: {
+        'roundId': roundId,
+        'seed': seed,
+        'wave': 1,
+        'won': w.won,
+        'hp': hp,
+        'cleared': cleared,
+        'done': done,
+        'score': score,
+        'isBest': isBest,
+        'session': {
+          'roundId': roundId,
+          'seed': seed,
+          'teamIds': teamIds,
+          'hp': hp,
+          'wave': 1,
+          'cleared': cleared,
+          'rounds': w.rounds,
+          'hpPct': 1.0,
+          'buffs': buffs.toJson(),
+          'done': done,
+        },
+        'cards': w.won
+            ? [
+                for (final c in cfg.drawCards(seed, 1))
+                  {'id': c.id, 'kind': c.kind, 'value': c.value},
+              ]
+            : const [],
+        'tickets': cur.tickets - 1,
+      },
+    );
+  }
+
+  /// **카드를 고르고 다음 웨이브로.** 판이 끝나면 점수를 확정한다.
+  ///
+  /// [cardId] 가 이번 웨이브의 후보에 없으면 거부한다 — 원하는 카드를 아무거나
+  /// 보낼 수 있으면 로그라이크가 아니라 치트가 된다.
+  ActionResult eventPick(
+    SaveGame save, {
+    required Map<String, dynamic> session,
+    required String cardId,
+    required Map<String, Species> speciesById,
+  }) {
+    final cfg = config.event;
+    if (cfg == null) return const ActionResult.fail('event_closed');
+    if (session['done'] == true) return const ActionResult.fail('session_done');
+
+    final seed = (session['seed'] as num).toInt();
+    final wave = (session['wave'] as num).toInt();
+    final teamIds = (session['teamIds'] as List).map((e) => '$e').toList();
+    final roundId = '${session['roundId']}';
+
+    // 이번 웨이브에 실제로 제시된 카드만 받는다.
+    EventCard? card;
+    for (final c in cfg.drawCards(seed, wave)) {
+      if (c.id == cardId) card = c;
+    }
+    if (card == null) return const ActionResult.fail('bad_card');
+
+    var buffs = EventBuffs.fromJson(
+      (session['buffs'] as Map?)?.cast<String, dynamic>(),
+    );
+    var hp = (session['hp'] as List).map((e) => (e as num).toDouble()).toList();
+    var cleared = (session['cleared'] as num).toInt();
+    var rounds = (session['rounds'] as num).toInt();
+
+    final skipNext = card.kind == 'skip';
+    if (!skipNext && card.kind != 'heal' && card.kind != 'revive') {
+      buffs = buffs.plus(card.kind, card.value);
+    }
+
+    final built = _eventUnits(save, teamIds, speciesById, cfg, buffs);
+    if (built.error != null) return ActionResult.fail(built.error!);
+    final units = built.units;
+
+    // maxHp 를 올렸으면 현재 체력도 같은 비율로 늘린다 — 안 그러면
+    // "최대치만 늘고 지금은 그대로"라 체감이 없다.
+    if (card.kind == 'maxHp') {
+      for (var i = 0; i < hp.length; i++) {
+        if (hp[i] > 0) hp[i] = hp[i] * (1 + card.value);
+      }
+    }
+    if (card.kind == 'heal') {
+      for (var i = 0; i < hp.length && i < units.length; i++) {
+        if (hp[i] > 0) {
+          final m = units[i].maxHp;
+          final v = hp[i] + m * card.value;
+          hp[i] = v > m ? m : v;
+        }
+      }
+    }
+    if (card.kind == 'revive') {
+      for (var i = 0; i < hp.length && i < units.length; i++) {
+        if (hp[i] <= 0) {
+          hp[i] = units[i].maxHp * card.value;
+          break; // 한 마리만
+        }
+      }
+    }
+
+    final nextWave = wave + 1;
+    final hpPctAtEntry = _hpPct(hp, units);
+
+    bool won;
+    if (skipNext) {
+      won = true; // 건너뛴 웨이브는 클리어로 친다
+    } else {
+      final r = _runOneWave(cfg, seed, nextWave, units, hp);
+      won = r.won;
+      hp = r.hp;
+      rounds += r.rounds;
+    }
+    if (won) cleared = nextWave;
+
+    if (won && cfg.waveHealPct > 0) {
+      for (var i = 0; i < hp.length && i < units.length; i++) {
+        if (hp[i] > 0) {
+          final m = units[i].maxHp;
+          final v = hp[i] + m * cfg.waveHealPct;
+          hp[i] = v > m ? m : v;
+        }
+      }
+    }
+
+    final done = !won || nextWave >= cfg.maxWave;
+    final score = cfg.score(
+      clearedWaves: cleared,
+      hpPct: hpPctAtEntry,
+      survivors: hp.where((v) => v > 0).length,
+      totalRounds: rounds,
+    );
+
+    var out = save;
+    var isBest = false;
+    if (done) {
+      final prevBest = save.eventBestScoreIn(roundId);
+      isBest = score > prevBest;
+      out = save.copyWith(
+        eventRoundId: roundId,
+        eventBestWave: isBest ? cleared : save.eventBestWave,
+        eventBestScore: isBest ? score : prevBest,
+      );
+    }
+
+    return ActionResult.ok(
+      out,
+      extra: {
+        'wave': nextWave,
+        'won': won,
+        'skipped': skipNext,
+        'hp': hp,
+        'cleared': cleared,
+        'done': done,
+        'score': score,
+        'isBest': isBest,
+        'buffs': buffs.toJson(),
+        'session': {
+          ...session,
+          'wave': nextWave,
+          'hp': hp,
+          'cleared': cleared,
+          'rounds': rounds,
+          'hpPct': hpPctAtEntry,
+          'buffs': buffs.toJson(),
+          'done': done,
+        },
+        'cards': (!done && won)
+            ? [
+                for (final c in cfg.drawCards(seed, nextWave))
+                  {'id': c.id, 'kind': c.kind, 'value': c.value},
+              ]
+            : const [],
+      },
+    );
+  }
+
   /// **이벤트 도전 1회.** 참가권을 깎고, 웨이브를 돌려 점수를 확정한다.
   ///
   /// 거부 사유: `event_closed` · `no_ticket` · `bad_team`(3마리·중복·미보유) ·

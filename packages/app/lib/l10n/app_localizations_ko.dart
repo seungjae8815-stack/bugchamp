@@ -810,6 +810,99 @@ class AppLocalizationsKo extends AppLocalizations {
   String get autoSynthRun => '자동 합성';
 
   @override
+  String get eventIntroTitle => '왕충 선발대회란?';
+
+  @override
+  String get eventIntro1Title => '곤충 3마리로 몇 웨이브까지';
+
+  @override
+  String get eventIntro1Body =>
+      '적이 파도처럼 계속 밀려와요. 체력은 웨이브가 넘어가도 이어지고, 한 웨이브를 깰 때마다 조금만 회복돼요. 더 멀리 간 사람이 이겨요.';
+
+  @override
+  String get eventIntro2Title => '힘이 아니라 편성이 이겨요';
+
+  @override
+  String get eventIntro2Body =>
+      '수련·강화·포텐셜·크기는 반영되지 않아요. 종·오행·기질만 쓰이니 모두 같은 조건이에요. 적의 오행은 웨이브마다 바뀌니, 한 속성만 모으면 언젠가 막혀요.';
+
+  @override
+  String get eventIntro3Title => '순서가 곧 실력';
+
+  @override
+  String get eventIntro3Body =>
+      '왼쪽부터 차례로 나가요. 앞 곤충이 뒤 곤충을 生하면 팀 전체가 강해지고(목→화→토→금→수→목), 상대를 克하는 속성은 피해가 1.5배예요.';
+
+  @override
+  String get eventIntro4Title => '참가권과 출전 피로';
+
+  @override
+  String get eventIntro4Body =>
+      '참가권은 매일 아침 채워지고 광고로도 받아요. 한 번 나간 곤충은 하루 동안 쉬어요 — 그래서 좋은 곤충을 여러 마리 모아둘수록 유리해요.';
+
+  @override
+  String get eventIntroStart => '시작하기';
+
+  @override
+  String get eventHelp => '대회 설명 다시 보기';
+
+  @override
+  String eventCardTitle(Object n) {
+    return '$n웨이브 돌파! 하나를 고르세요';
+  }
+
+  @override
+  String get eventCardHint => '고른 강화는 이번 판이 끝날 때까지 남아요';
+
+  @override
+  String get cardHeal_s => '응급 처치';
+
+  @override
+  String get cardHeal_sDesc => '체력을 30% 회복해요';
+
+  @override
+  String get cardHeal_l => '완전 회복';
+
+  @override
+  String get cardHeal_lDesc => '체력을 70% 회복해요';
+
+  @override
+  String get cardAtk_s => '예리한 턱';
+
+  @override
+  String get cardAtk_sDesc => '공격력 +12%';
+
+  @override
+  String get cardAtk_l => '맹공';
+
+  @override
+  String get cardAtk_lDesc => '공격력 +28%';
+
+  @override
+  String get cardDef_s => '단단한 표피';
+
+  @override
+  String get cardDef_sDesc => '방어력 +18%';
+
+  @override
+  String get cardHp_s => '강인한 체격';
+
+  @override
+  String get cardHp_sDesc => '최대 체력 +15%';
+
+  @override
+  String get cardRevive => '생명의 이슬';
+
+  @override
+  String get cardReviveDesc => '쓰러진 곤충 하나를 절반 체력으로 되살려요';
+
+  @override
+  String get cardSkip => '우회로';
+
+  @override
+  String get cardSkipDesc => '다음 웨이브를 싸우지 않고 통과해요';
+
+  @override
   String get eventTitle => '왕충 선발대회';
 
   @override
@@ -824,7 +917,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventNeedServer => '대회는 온라인 연결이 필요해요';
 
   @override
-  String eventTickets(Object max, Object n) {
+  String eventTickets(int n, int max) {
     return '참가권 $n/$max';
   }
 
@@ -865,6 +958,16 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String eventFatigueLeft(Object time) {
     return '$time 후 출전 가능';
+  }
+
+  @override
+  String eventRestHours(Object h) {
+    return '⏳$h시간';
+  }
+
+  @override
+  String eventRestMinutes(Object m) {
+    return '⏳$m분';
   }
 
   @override
@@ -968,7 +1071,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String autoPreviewLine(Object count, Object name) {
+  String autoPreviewLine(String name, int count) {
     return '$name $count마리';
   }
 
@@ -1241,6 +1344,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get actionCancel => '취소';
+
+  @override
+  String get actionNext => '다음';
 
   @override
   String get actionClose => '닫기';

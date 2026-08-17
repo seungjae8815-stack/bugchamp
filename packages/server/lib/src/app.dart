@@ -623,6 +623,130 @@ Handler buildHandler({
       }
     });
 
+    /// **이벤트 도전 시작** — 참가권을 깎고 1웨이브를 치른다.
+    ///
+    /// 판을 통째로 돌리지 않고 세션으로 쪼개는 이유는 웨이브마다 **카드를
+    /// 고르게** 하기 위해서다(로그라이크). 진행 상태는 서버가 들고 있고,
+    /// 앱에는 세션 id 만 준다 — 앱이 상태를 들고 있으면 고쳐 보낼 수 있다.
+    authed.post('/event/start', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final ids = (body['teamIds'] as List?)?.map((e) => '$e').toList();
+      if (ids == null || ids.length != 3) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.eventStart(save, teamIds: ids, speciesById: species);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+
+        final sessionId = _newSessionId();
+        await store.saveSession(sessionId, user.id, {
+          'kind': 'event',
+          ...(r.extra['session'] as Map<String, dynamic>),
+        });
+
+        final out = Map<String, dynamic>.from(r.extra)..remove('session');
+        // 판이 1웨이브에서 끝났으면 점수를 바로 기록한다.
+        var recorded = false;
+        if (r.extra['done'] == true &&
+            !user.isAnonymous &&
+            r.extra['isBest'] == true) {
+          recorded = await _submitEventScore(
+            store,
+            user.id,
+            r.save!,
+            r.extra,
+            ids,
+          );
+        }
+        return _json({
+          'save': r.save!.toJson(),
+          ...out,
+          'sessionId': sessionId,
+          'rankEligible': !user.isAnonymous,
+          'recorded': recorded,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event/start] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// **카드 선택 → 다음 웨이브.** 판이 끝나면 점수를 확정·기록한다.
+    authed.post('/event/pick', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final sessionId = body['sessionId']?.toString() ?? '';
+      final cardId = body['cardId']?.toString() ?? '';
+      if (sessionId.isEmpty || cardId.isEmpty) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final row = await store.loadSession(sessionId);
+        if (row == null) return _json({'error': 'no_session'}, status: 404);
+        // 남의 세션을 진행시키지 못하게 한다.
+        if (row['user_id'] != user.id) {
+          return _json({'error': 'forbidden'}, status: 403);
+        }
+        final data = (row['data'] as Map).cast<String, dynamic>();
+        if (data['kind'] != 'event') {
+          return _json({'error': 'no_session'}, status: 404);
+        }
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+
+        final r = actions.eventPick(
+          save,
+          session: data,
+          cardId: cardId,
+          speciesById: species,
+        );
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+
+        final next = (r.extra['session'] as Map<String, dynamic>);
+        await store.saveSession(sessionId, user.id, {'kind': 'event', ...next});
+        if (r.save != save) await store.save(user.id, r.save!.toJson());
+
+        var recorded = false;
+        if (r.extra['done'] == true &&
+            !user.isAnonymous &&
+            r.extra['isBest'] == true) {
+          recorded = await _submitEventScore(
+            store,
+            user.id,
+            r.save!,
+            r.extra,
+            (data['teamIds'] as List).map((e) => '$e').toList(),
+          );
+        }
+
+        final out = Map<String, dynamic>.from(r.extra)..remove('session');
+        return _json({
+          'save': r.save!.toJson(),
+          ...out,
+          'sessionId': sessionId,
+          'rankEligible': !user.isAnonymous,
+          'recorded': recorded,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event/pick] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     /// 이벤트 도전 1회.
     authed.post('/event/challenge', (Request req) async {
       final user = userOf(req);
@@ -1609,4 +1733,29 @@ Middleware limitBodySize({int maxBytes = kMaxRequestBytes}) {
       }
     };
   };
+}
+
+/// 이벤트 점수 기록. 실패해도 판을 무르지 않는다 — 참가권은 이미 나갔고,
+/// 다음 도전에서 최고 기록이면 다시 올라간다.
+Future<bool> _submitEventScore(
+  StateStore store,
+  String userId,
+  SaveGame save,
+  Map<String, dynamic> extra,
+  List<String> teamIds,
+) async {
+  try {
+    await store.submitEventScore(
+      roundId: '${save.eventRoundId}',
+      userId: userId,
+      nickname: save.nickname,
+      score: (extra['score'] as num).toInt(),
+      wave: (extra['cleared'] as num).toInt(),
+      team: {'ids': teamIds},
+    );
+    return true;
+  } catch (e) {
+    stderr.writeln('[event/submit] $userId: $e');
+    return false;
+  }
 }

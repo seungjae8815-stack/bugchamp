@@ -53,6 +53,9 @@ class _Cfg implements GameConfigLike {
   List<Species> get speciesList => [testSpecies];
 }
 
+/// 다른 이벤트 테스트도 같은 설정을 쓴다(실제 event.json 로드).
+GameConfigLike buildEventCfg() => _Cfg();
+
 void main() {
   final t0 = DateTime.utc(2026, 8, 17, 3); // KST 12:00 — 일일 지급 경계 이후
   final species = {'test_bug': testSpecies};

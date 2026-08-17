@@ -1,4 +1,5 @@
 import 'package:core_models/core_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter/material.dart';
@@ -11,10 +12,10 @@ import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
-import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
-import 'event_replay.dart';
+import 'event_battle.dart';
+import 'event_intro.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -47,11 +48,30 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   bool _busy = false;
   String? _error;
 
+  /// 설명을 이미 봤는지(기기 단위). 세이브가 아니라 로컬 설정이다 —
+  /// 서버에 올릴 값도, 계정을 옮길 값도 아니다.
+  static const _seenIntroKey = 'event_intro_seen_v1';
+
   @override
   void initState() {
     super.initState();
     _refresh();
+    // 첫 진입이면 설명을 먼저 보여준다. 이 대회는 평소와 규칙이 두 군데
+    // 다르므로(스탯 평준화·출전 피로), 설명 없이 들여보내면 문의가 온다.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowIntro());
   }
+
+  Future<void> _maybeShowIntro() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_seenIntroKey) == true) return;
+    if (!mounted) return;
+    await _showIntro();
+    await prefs.setBool(_seenIntroKey, true);
+  }
+
+  Future<void> _showIntro() => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => const EventIntroScreen()));
 
   Future<void> _refresh() async {
     final server = ref.read(gameServerProvider);
@@ -76,30 +96,26 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     });
   }
 
+  /// 도전 — 서버가 참가권을 깎고 **1웨이브**를 치른 뒤, 이후는 전투 화면에서
+  /// 카드를 고르며 이어간다(로그라이크). 판 전체를 한 번에 돌리지 않는다.
   Future<void> _challenge(AppLocalizations l) async {
     if (_team.length != 3 || _busy) return;
     setState(() => _busy = true);
     final server = ref.read(gameServerProvider);
-    final r = await server.eventChallenge(List<String>.from(_team));
+    final r = await server.eventStart(List<String>.from(_team));
     if (!mounted) return;
     setState(() => _busy = false);
     if (!r.isOk) {
       showCenterToast(context, _errorText(l, r.error));
       return;
     }
-    // 서버가 세이브를 돌려주므로 로컬도 그 값으로 맞춘다 — 참가권·피로는
-    // 서버 소유라 여기서 받아야 화면이 맞는다.
     final save = r.save;
     if (save != null) {
       await ref.read(saveControllerProvider.notifier).adoptServerSave(save);
     }
-    final wave = (r.data?['wave'] as num?)?.toInt() ?? 0;
-    final score = (r.data?['score'] as num?)?.toInt() ?? 0;
-    final isBest = r.data?['isBest'] == true;
-    final seed = (r.data?['seed'] as num?)?.toInt();
 
-    // 출전한 곤충을 **순서 그대로** 넘겨 재생한다. 세이브가 서버 값으로 바뀐
-    // 뒤에도 개체는 그대로 남아 있다(피로만 붙는다).
+    // 출전한 곤충을 순서 그대로 넘긴다(재생용). 세이브가 서버 값으로 바뀐
+    // 뒤에도 개체는 남아 있다 — 피로만 붙는다.
     final current = ref.read(saveControllerProvider).requireValue;
     final byId = {for (final b in current.bugs) b.id: b};
     final team = [
@@ -108,39 +124,17 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     ];
     final data = ref.read(gameDataProvider).requireValue;
     _team.clear();
-    await _refresh();
     if (!mounted) return;
 
-    // seed 가 있고 팀이 온전하면 **판을 다시 그린다**(결정론이라 서버와 같은 판).
-    // 화면에 쓰는 숫자는 서버 값 그대로다 — 앱 데이터가 낡았을 때 갈리면 안 된다.
-    if (seed != null && team.length == 3) {
+    if (team.length == 3 && r.data != null) {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => EventReplayScreen(
-            data: data,
-            seed: seed,
-            team: team,
-            serverWave: wave,
-            serverScore: score,
-            isBest: isBest,
-          ),
+          builder: (_) =>
+              EventBattleScreen(data: data, team: team, first: r.data!),
         ),
       );
-      return;
     }
-
-    // 재생할 수 없으면(구버전 서버 등) 결과만 알린다.
-    final best = (r.data?['best'] as num?)?.toInt() ?? 0;
-    await showGameDialog<void>(
-      context,
-      title: l.eventResultTitle(wave),
-      icon: Icons.emoji_events_rounded,
-      content: Text(
-        isBest ? l.eventNewBest : l.eventKeptBest(best),
-        style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.4),
-      ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
-    );
+    await _refresh();
   }
 
   String _errorText(AppLocalizations l, String? code) => switch (code) {
@@ -160,7 +154,16 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     final now = ref.read(clockProvider).now().toUtc();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.eventTitle)),
+      appBar: AppBar(
+        title: Text(l.eventTitle),
+        actions: [
+          IconButton(
+            tooltip: l.eventHelp,
+            icon: const Icon(Icons.help_outline_rounded),
+            onPressed: _showIntro,
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -401,7 +404,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       child: Opacity(
         opacity: resting == null ? 1 : 0.4,
         child: Container(
-          width: 86,
+          width: 92,
           margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
@@ -455,17 +458,21 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.white, fontSize: 10.5),
               ),
+              // 타일이 좁아서(86px) "23시간 45분 후 출전 가능"은 들어가지 않는다.
+              // 여기선 **얼마나 남았는지만** 보여주고, 이유는 눌렀을 때 알린다.
               Text(
                 resting == null
                     ? elementGlyph(bug.element)
-                    : l.eventFatigueLeft(remainLabel(l, resting)),
+                    : (resting.inHours >= 1
+                          ? l.eventRestHours(resting.inHours)
+                          : l.eventRestMinutes(resting.inMinutes + 1)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: resting == null
                       ? const Color(0xCCFFFFFF)
                       : const Color(0xFFFFB0A0),
-                  fontSize: resting == null ? 12 : 9,
+                  fontSize: resting == null ? 12 : 10.5,
                   fontWeight: FontWeight.w800,
                 ),
               ),

@@ -47,6 +47,21 @@
     "growth": 1.05
   },
 
+  "_cardsComment": "웨이브를 깰 때마다 카드 3장 중 1장을 고른다(로그라이크). 이게 없으면 편성을 짜고 도전을 누른 뒤에는 **개입할 지점이 아예 없어** 재생만 보게 된다 — 실물 경품이 걸린 대회라면 운이 아니라 판단이 순위를 갈라야 한다. 카드는 회차 seed + 웨이브로 뽑으므로 조작할 수 없고, 같은 편성이라도 고른 카드에 따라 판이 달라진다. weight = 뽑힐 가중치.",
+  "cards": {
+    "picks": 3,
+    "list": [
+      { "id": "heal_s", "kind": "heal", "value": 0.3, "weight": 20 },
+      { "id": "heal_l", "kind": "heal", "value": 0.7, "weight": 7 },
+      { "id": "atk_s", "kind": "atk", "value": 0.12, "weight": 20 },
+      { "id": "atk_l", "kind": "atk", "value": 0.28, "weight": 7 },
+      { "id": "def_s", "kind": "def", "value": 0.18, "weight": 18 },
+      { "id": "hp_s", "kind": "maxHp", "value": 0.15, "weight": 16 },
+      { "id": "revive", "kind": "revive", "value": 0.5, "weight": 6 },
+      { "id": "skip", "kind": "skip", "value": 1, "weight": 4 }
+    ]
+  },
+
   "_scoreComment": "동점을 최대한 없앤다 — 실물 경품에서 동점은 분쟁 소지다. 완전 동점이면 먼저 그 점수에 도달한 계정이 우선(서버 기록 시각).",
   "score": {
     "wavePoint": 1000000,
