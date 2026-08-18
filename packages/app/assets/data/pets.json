@@ -1,144 +1,146 @@
 {
-  "schemaVersion": 1,
-  "maxEquip": 3,
-  "potentialScale": 0.06,
-  "enhanceScale": 0.005,
-  "gradeAttackPct": {
-    "common": 0.03,
-    "uncommon": 0.05,
-    "rare": 0.09,
-    "epic": 0.15,
-    "legendary": 0.25
-  },
-  "gradeHpPct": {
-    "common": 0.03,
-    "uncommon": 0.05,
-    "rare": 0.09,
-    "epic": 0.15,
-    "legendary": 0.25
-  },
-  "stageMult": {
-    "egg": 0.4,
-    "larva": 0.6,
-    "pupa": 0.8,
-    "adult": 1.0
-  },
-  "stageDurationsSec": {
-    "egg": 300,
-    "larva": 600,
-    "pupa": 900
-  },
-  "accelerateJelly": 2,
-  "synthFodder": 3,
-  "synthMaxPotential": 5,
-  "_disassembleComment": "분해 보상. 재료는 항상(releaseMaterialByGrade), 젤리는 포텐셜 4성 이상만. 곤충은 무한히 나와서 예전엔 분해가 젤리 수입의 50%(하루 97개)를 차지했다 — 프리미엄 재화가 파밍으로 무한히 뽑히면 IAP 가 죽는다(§2.6). 문턱을 두면 수입은 줄면서 '좋은 걸 분해하는 순간'의 가치는 오히려 올라간다. 검증: core_run/tool/jelly_sim.dart",
-  "disassembleJellyBase": -2,
-  "disassembleJellyPerPotential": 1,
-  "disassembleJellyMinPotential": 4,
-  "levelBonus": 0.015,
-  "trainBaseCost": 200,
-  "trainCostGrowth": 1.18,
-  "trainJellyCost": 3,
-  "trainJellyLevels": 5,
-  "tierCaps": [
-    10,
-    20,
-    35,
-    55,
-    80
-  ],
-  "breakthroughDurationsSec": [
-    600,
-    1800,
-    5400,
-    14400
-  ],
-  "breakthroughGold": [
-    20000,
-    60000,
-    200000,
-    600000
-  ],
-  "breakthroughMaterial": [
-    100,
-    250,
-    600,
-    1500
-  ],
-  "breakthroughJellyPerMinute": 0.5,
-  "incubatorSlotsInitial": 1,
-  "incubatorSlotsMax": 3,
-  "incubatorExpandJelly": 30,
-  "incubateDurationsSec": {
-    "common": 300,
-    "uncommon": 600,
-    "rare": 1200,
-    "epic": 2400,
-    "legendary": 4800
-  },
-  "injuryDurationsSec": {
-    "common": 300,
-    "uncommon": 600,
-    "rare": 1200,
-    "epic": 2400,
-    "legendary": 4800
-  },
-  "injuryJellyPerMinute": 0.5,
-  "breedingDurationsSec": {
-    "common": 600,
-    "uncommon": 1200,
-    "rare": 2400,
-    "epic": 4800,
-    "legendary": 9600
-  },
-  "breedingJellyPerMinute": 0.5,
-  "breedingSlotsInitial": 1,
-  "breedingSlotsMax": 3,
-  "breedingExpandJelly": 40,
-  "storageSlotsMax": 100,
-  "storageExpandJelly": 50,
-  "storageExpandAmount": 10,
-  "breedingSizeVariancePct": 0.08,
-  "breedingMutationChance": 0.05,
-  "breedingMutationBonusPct": 0.15,
-  "breedingPotUpChance": 0.1,
-  "breedingPotDownChance": 0.3,
-  "_breedingInheritComment": "짝짓기 상속(2026-08-15). 예전엔 오행·기질이 균등 재추첨이라 짝짓기 자식이 야생 드롭과 구분되지 않았다 — 오행 상생 순서가 편성 전략의 핵심인데(§2.3) 원하는 속성을 노릴 수단이 없어 짝짓기를 돌릴 이유가 없었다. 부모가 같은 오행이면 사실상 확정 상속되므로 '계통을 만든다'가 성립한다. 0 으로 두면 예전 동작(전부 랜덤).",
-  "breedingElementInherit": 0.8,
-  "breedingTemperamentInherit": 0.65,
-  "_traitComment": "혈통 특성 — 짝짓기 자식만 가진다. 부모에게 특성이 있으면 breedingTraitInherit 로 물려받고(둘 다 같은 특성이면 그 특성 확정), 부모가 둘 다 없으면 breedingTraitNew 로 새로 열린다(1세대 진입로). traitAttackBonus/traitHpBonus 는 방치 펫 기여에 그대로 실리고, PvP 전투에는 traitBattleScale 을 곱해 실린다.",
-  "breedingTraitInherit": 0.55,
-  "breedingTraitNew": 0.2,
-  "_breedingCooldownComment": "짝짓기 쿨다운 = 산란 시간 × 이 값(등급 스케일이 그대로 따라온다). 부모는 짝짓기 중에도 잠기지 않으므로(스냅샷 저장), 잘 뽑힌 한 쌍만 만들어 두면 같은 급 자식을 슬롯이 도는 속도만큼 계속 찍어낼 수 있었다. 스탯이 무한히 오르진 않지만(사이즈는 종 상한에서 clamp, 포텐셜은 5성이 천장) 천장 개체가 소모품이 되어 희소성이 사라진다. 2.0 = 일반 20분 · 전설 5.3시간. 0 이면 쿨다운 없음(구버전 동작).",
-  "breedingCooldownMult": 2.0,
-  "traitWeights": {
-    "fierce": 34,
-    "sturdy": 34,
-    "vital": 22,
-    "noble": 10
-  },
-  "traitAttackBonus": {
-    "fierce": 0.35,
-    "sturdy": 0.0,
-    "vital": 0.15,
-    "noble": 0.3
-  },
-  "_traitBattleComment": "특성이 PvP 전투 스탯에 실리는 비율. 방치 펫 기여와 손잡이를 나눈 이유: 전투 쪽은 부위 강화가 이미 최대 +200%(5성 만렙)라 같은 %가 다르게 느껴지고, 문제가 생기면 전투만 0으로 끌 수 있어야 한다. 0 이면 전투에 영향 없음.",
-  "traitBattleScale": 1.0,
-  "traitHpBonus": {
-    "fierce": 0.0,
-    "sturdy": 0.35,
-    "vital": 0.15,
-    "noble": 0.3
-  },
-  "_releaseComment": "채집함 등급 필터에 걸린 곤충의 자동 방생 보상(§2.1). 손으로 하는 분해는 젤리를 주지만 여기는 일반 재료다 — 자동 방생은 방치 중에도 계속 돌아가서, 젤리를 주면 켜두기만 해도 프리미엄 재화가 쌓여 IAP 가 무의미해진다. 수치는 처치 드롭 재료(평균 1.5개)보다 약간 나은 정도로 둔다.",
-  "releaseMaterialByGrade": {
-    "common": 2,
-    "uncommon": 4,
-    "rare": 8,
-    "epic": 16,
-    "legendary": 32
-  },
-  "incubateAdSkipRatio": 0.2,
-  "incubateJellyPerMinute": 0.5
+ "schemaVersion": 1,
+ "maxEquip": 3,
+ "potentialScale": 0.06,
+ "enhanceScale": 0.005,
+ "gradeAttackPct": {
+  "common": 0.03,
+  "uncommon": 0.05,
+  "rare": 0.09,
+  "epic": 0.15,
+  "legendary": 0.25
+ },
+ "gradeHpPct": {
+  "common": 0.03,
+  "uncommon": 0.05,
+  "rare": 0.09,
+  "epic": 0.15,
+  "legendary": 0.25
+ },
+ "stageMult": {
+  "egg": 0.4,
+  "larva": 0.6,
+  "pupa": 0.8,
+  "adult": 1.0
+ },
+ "stageDurationsSec": {
+  "egg": 300,
+  "larva": 600,
+  "pupa": 900
+ },
+ "accelerateJelly": 2,
+ "synthFodder": 3,
+ "synthMaxPotential": 5,
+ "_disassembleComment": "분해 보상. 재료는 항상(releaseMaterialByGrade), 젤리는 포텐셜 4성 이상만. 곤충은 무한히 나와서 예전엔 분해가 젤리 수입의 50%(하루 97개)를 차지했다 — 프리미엄 재화가 파밍으로 무한히 뽑히면 IAP 가 죽는다(§2.6). 문턱을 두면 수입은 줄면서 '좋은 걸 분해하는 순간'의 가치는 오히려 올라간다. 검증: core_run/tool/jelly_sim.dart",
+ "disassembleJellyBase": -2,
+ "disassembleJellyPerPotential": 1,
+ "disassembleJellyMinPotential": 4,
+ "levelBonus": 0.015,
+ "trainBaseCost": 200,
+ "trainCostGrowth": 1.18,
+ "trainJellyCost": 3,
+ "trainJellyLevels": 5,
+ "tierCaps": [
+  10,
+  20,
+  35,
+  55,
+  80
+ ],
+ "breakthroughDurationsSec": [
+  600,
+  1800,
+  5400,
+  14400
+ ],
+ "breakthroughGold": [
+  20000,
+  60000,
+  200000,
+  600000
+ ],
+ "breakthroughMaterial": [
+  100,
+  250,
+  600,
+  1500
+ ],
+ "breakthroughJellyPerMinute": 0.5,
+ "incubatorSlotsInitial": 1,
+ "incubatorSlotsMax": 5,
+ "incubatorExpandJelly": 30,
+ "incubateDurationsSec": {
+  "common": 300,
+  "uncommon": 600,
+  "rare": 1200,
+  "epic": 2400,
+  "legendary": 4800
+ },
+ "injuryDurationsSec": {
+  "common": 300,
+  "uncommon": 600,
+  "rare": 1200,
+  "epic": 2400,
+  "legendary": 4800
+ },
+ "injuryJellyPerMinute": 0.5,
+ "breedingDurationsSec": {
+  "common": 600,
+  "uncommon": 1200,
+  "rare": 2400,
+  "epic": 4800,
+  "legendary": 9600
+ },
+ "breedingJellyPerMinute": 0.5,
+ "breedingSlotsInitial": 1,
+ "breedingSlotsMax": 5,
+ "breedingExpandJelly": 40,
+ "storageSlotsMax": 300,
+ "storageExpandJelly": 50,
+ "storageExpandAmount": 10,
+ "breedingSizeVariancePct": 0.08,
+ "breedingMutationChance": 0.05,
+ "breedingMutationBonusPct": 0.15,
+ "breedingPotUpChance": 0.1,
+ "breedingPotDownChance": 0.3,
+ "_breedingInheritComment": "짝짓기 상속(2026-08-15). 예전엔 오행·기질이 균등 재추첨이라 짝짓기 자식이 야생 드롭과 구분되지 않았다 — 오행 상생 순서가 편성 전략의 핵심인데(§2.3) 원하는 속성을 노릴 수단이 없어 짝짓기를 돌릴 이유가 없었다. 부모가 같은 오행이면 사실상 확정 상속되므로 '계통을 만든다'가 성립한다. 0 으로 두면 예전 동작(전부 랜덤).",
+ "breedingElementInherit": 0.8,
+ "breedingTemperamentInherit": 0.65,
+ "_traitComment": "혈통 특성 — 짝짓기 자식만 가진다. 부모에게 특성이 있으면 breedingTraitInherit 로 물려받고(둘 다 같은 특성이면 그 특성 확정), 부모가 둘 다 없으면 breedingTraitNew 로 새로 열린다(1세대 진입로). traitAttackBonus/traitHpBonus 는 방치 펫 기여에 그대로 실리고, PvP 전투에는 traitBattleScale 을 곱해 실린다.",
+ "breedingTraitInherit": 0.55,
+ "breedingTraitNew": 0.2,
+ "_breedingCooldownComment": "짝짓기 쿨다운 = 산란 시간 × 이 값(등급 스케일이 그대로 따라온다). 부모는 짝짓기 중에도 잠기지 않으므로(스냅샷 저장), 잘 뽑힌 한 쌍만 만들어 두면 같은 급 자식을 슬롯이 도는 속도만큼 계속 찍어낼 수 있었다. 스탯이 무한히 오르진 않지만(사이즈는 종 상한에서 clamp, 포텐셜은 5성이 천장) 천장 개체가 소모품이 되어 희소성이 사라진다. 2.0 = 일반 20분 · 전설 5.3시간. 0 이면 쿨다운 없음(구버전 동작).",
+ "breedingCooldownMult": 2.0,
+ "traitWeights": {
+  "fierce": 34,
+  "sturdy": 34,
+  "vital": 22,
+  "noble": 10
+ },
+ "traitAttackBonus": {
+  "fierce": 0.35,
+  "sturdy": 0.0,
+  "vital": 0.15,
+  "noble": 0.3
+ },
+ "_traitBattleComment": "특성이 PvP 전투 스탯에 실리는 비율. 방치 펫 기여와 손잡이를 나눈 이유: 전투 쪽은 부위 강화가 이미 최대 +200%(5성 만렙)라 같은 %가 다르게 느껴지고, 문제가 생기면 전투만 0으로 끌 수 있어야 한다. 0 이면 전투에 영향 없음.",
+ "traitBattleScale": 1.0,
+ "traitHpBonus": {
+  "fierce": 0.0,
+  "sturdy": 0.35,
+  "vital": 0.15,
+  "noble": 0.3
+ },
+ "_releaseComment": "채집함 등급 필터에 걸린 곤충의 자동 방생 보상(§2.1). 손으로 하는 분해는 젤리를 주지만 여기는 일반 재료다 — 자동 방생은 방치 중에도 계속 돌아가서, 젤리를 주면 켜두기만 해도 프리미엄 재화가 쌓여 IAP 가 무의미해진다. 수치는 처치 드롭 재료(평균 1.5개)보다 약간 나은 정도로 둔다.",
+ "releaseMaterialByGrade": {
+  "common": 2,
+  "uncommon": 4,
+  "rare": 8,
+  "epic": 16,
+  "legendary": 32
+ },
+ "incubateAdSkipRatio": 0.2,
+ "incubateJellyPerMinute": 0.5,
+ "expandCostGrowth": 1.12,
+ "_expandComment": "확장은 살수록 비싸진다(expandCostGrowth^이미 늘린 횟수). 예전엔 정액이라 390젤리면 전부 사고 끝이었다 — 그 뒤로 젤리 쓸 데가 없어서 팩이 안 팔렸다. ⚠️ 채집함 상한은 §2.1 의 세이브 크기 방어선이기도 하다. 300칸 ≈ 135KB 로 2026-07 장애(3만 마리 13.6MB)와는 자릿수가 다르지만, 더 올릴 땐 반드시 세이브 크기·업로드 트래픽을 함께 본다."
 }

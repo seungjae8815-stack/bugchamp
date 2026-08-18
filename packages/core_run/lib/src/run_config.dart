@@ -140,6 +140,10 @@ class RunConfig {
     this.worldHpMult = 1.0,
     this.worldGoldMult = 1.0,
     this.worldBossHpMult = 1.0,
+    this.exchangeJellyPerTrade = 10,
+    this.exchangeGoldHours = 1.0,
+    this.exchangeMaterialHours = 1.0,
+    this.exchangeKillsPerHour = 900,
   });
 
   final double hpBase;
@@ -308,6 +312,15 @@ class RunConfig {
 
   UpgradeSpec upgrade(UpgradeKind kind) => upgrades[kind]!;
 
+  /// 교환소 — 젤리 [exchangeJellyPerTrade] 개당 방치 몇 시간치를 주는가.
+  ///
+  /// 지급량을 현재 스테이지 산출에 비례시키는 이유: 정액이면 후반엔 껌값이라
+  /// 아무도 안 쓴다. 정작 젤리가 남아도는 시점이 후반이다.
+  final int exchangeJellyPerTrade;
+  final double exchangeGoldHours;
+  final double exchangeMaterialHours;
+  final int exchangeKillsPerHour;
+
   factory RunConfig.fromJson(Map<String, dynamic> json) {
     final upgradeList = (json['upgrades'] as List)
         .cast<Map<String, dynamic>>()
@@ -315,6 +328,24 @@ class RunConfig {
     return RunConfig(
       hpBase: (json['hpBase'] as num).toDouble(),
       onlineGoldBonus: (json['onlineGoldBonus'] as num?)?.toDouble() ?? 0,
+      exchangeJellyPerTrade:
+          ((json['exchange'] as Map<String, dynamic>?)?['jellyPerTrade']
+                  as num?)
+              ?.toInt() ??
+          10,
+      exchangeGoldHours:
+          ((json['exchange'] as Map<String, dynamic>?)?['goldHours'] as num?)
+              ?.toDouble() ??
+          1.0,
+      exchangeMaterialHours:
+          ((json['exchange'] as Map<String, dynamic>?)?['materialHours']
+                  as num?)
+              ?.toDouble() ??
+          1.0,
+      exchangeKillsPerHour:
+          ((json['exchange'] as Map<String, dynamic>?)?['killsPerHour'] as num?)
+              ?.toInt() ??
+          900,
       sceneCatchChance: (json['sceneCatchChance'] as num?)?.toDouble() ?? 0.35,
       sceneCatchWindow: (json['sceneCatchWindow'] as num?)?.toDouble() ?? 1.4,
       sceneCatchCooldown:

@@ -1,254 +1,261 @@
 {
-  "schemaVersion": 1,
-  "hpBase": 150,
-  "hpGrowth": 1.0092,
-  "_hpAdaptComment": "적응형 체력(§7). 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.015 라 공격이 항상 이겨 스테이지 100부터 한 방이 됐다. 기준선 대비 세진 만큼을 체력에 일부 반영한다. power<1 이라 강해질수록 타격 수는 줄어든다. 월드 관문(worldHpMult)에는 걸지 않는다 — 벽이 뭉개지면 뚫는 맛이 사라진다. 기준 1타는 baselineHitPower(치명타 포함) 다 — 생 attack 으로 재면 여기 적은 타격 수의 절반이 나온다.",
-  "_hpAdaptTuning20260815": "6 -> 12. 치명타를 기준에 넣기 전엔 '6대'가 화면에서 2~3대였다. 12 로 올려야 실제로 6~7대가 된다(balance_sim: 스테이지 10~100 에서 7대).",
-  "hpAdaptTargetHits": 12,
-  "hpAdaptPower": 0.88,
-  "hpAdaptMinRatio": 0.6,
-  "_hpAdaptMaxRatioComment": "상한은 '월드 벽을 뚫는 밸브' 다. 무한대로 두면 관문 배율(x8/월드)이 타격 수에 영구히 곱해져 4월드부터 100대씩 때려야 한다(실측 660일). 반대로 너무 낮으면 벽 직후부터 오버킬로 melt 한다. 3000 이 '벽 -> 순항' 리듬이 사는 지점.",
-  "hpAdaptMaxRatio": 3000,
-  "bossHpMult": 5.0,
-  "goldBase": 1.5,
-  "goldGrowth": 1.0165,
-  "xpBase": 5,
-  "xpGrowth": 1.005,
-  "bossRewardMult": 8.0,
-  "habitatsPerStage": 20,
-  "bugDropChance": 0.03,
-  "materialDropChance": 0.5,
-  "threatBase": 2.0,
-  "threatGrowth": 1.025,
-  "bossThreatMult": 3.0,
-  "_killHealComment": "처치 회복. ⚠️ **고정 %라 타격 수와 무관**한 게 함정이다 — 피격은 전투 시간(=타격 수)에 비례하는데 회복은 마리당 고정이라, 7대에 잡는 초중반에는 회복이 항상 이겨 피가 한 번도 안 닳았다(실측: 스테이지 10~50 수지 +6~8%). 그래서 회복의 축을 처치 회복에서 **상시 회복(regen, 시간 비례)** 으로 옮겼다. 둘 다 시간에 비례하면 구간 편차가 사라진다. 20260815-2 조정: 0.05 -> 0.008, 보스 0.3 -> 0.08.",
-  "killHealPct": 0.008,
-  "bossKillHealPct": 0.08,
-  "stagesPerRegion": 25,
-  "boostStepPerTap": 0.15,
-  "boostMultMax": 5.0,
-  "boostDecayPerSec": 0.4,
-  "boostSpeedFactor": 1.0,
-  "regions": [
-    {
-      "id": "oak_forest",
-      "name": {
-        "ko": "참나무 숲",
-        "en": "Oak Forest",
-        "ja": "ナラの森"
-      },
-      "bossName": {
-        "ko": "숲의 지배자",
-        "en": "Forest Warden",
-        "ja": "森の主"
-      },
-      "bossFlip": false,
-      "habitatKinds": [
-        "tree",
-        "rock",
-        "flower",
-        "stump",
-        "mushroom"
-      ]
-    },
-    {
-      "id": "valley_stream",
-      "name": {
-        "ko": "계곡 물가",
-        "en": "Valley Stream",
-        "ja": "渓谷の水辺"
-      },
-      "bossName": {
-        "ko": "물가의 포식자",
-        "en": "Stream Stalker",
-        "ja": "水辺の捕食者"
-      },
-      "bossFlip": true,
-      "habitatKinds": [
-        "rock",
-        "mushroom",
-        "stump",
-        "flower"
-      ]
-    },
-    {
-      "id": "grass_field",
-      "name": {
-        "ko": "풀숲 초원",
-        "en": "Grassland",
-        "ja": "草原"
-      },
-      "bossName": {
-        "ko": "초원의 여왕",
-        "en": "Meadow Queen",
-        "ja": "草原の女王"
-      },
-      "bossFlip": false,
-      "habitatKinds": [
-        "flower",
-        "tree",
-        "mushroom"
-      ]
-    },
-    {
-      "id": "night_mountain",
-      "name": {
-        "ko": "야산 밤숲",
-        "en": "Night Mountain",
-        "ja": "夜の山林"
-      },
-      "bossName": {
-        "ko": "밤의 군주",
-        "en": "Night Sovereign",
-        "ja": "夜の君主"
-      },
-      "bossFlip": true,
-      "habitatKinds": [
-        "tree",
-        "rock",
-        "stump",
-        "mushroom"
-      ]
-    }
-  ],
-  "upgrades": [
-    {
-      "kind": "attack",
-      "baseCost": 15,
-      "costGrowth": 1.15,
-      "baseValue": 8,
-      "perLevel": 4,
-      "valueGrowth": 1.15
-    },
-    {
-      "kind": "attackSpeed",
-      "baseCost": 40,
-      "costGrowth": 1.25,
-      "baseValue": 1.0,
-      "perLevel": 0.05,
-      "materialKind": "chitin",
-      "materialBaseCost": 6,
-      "materialCostGrowth": 1.13
-    },
-    {
-      "kind": "crit",
-      "baseCost": 60,
-      "costGrowth": 1.28,
-      "baseValue": 0.0,
-      "perLevel": 0.01,
-      "materialKind": "sap",
-      "materialBaseCost": 6,
-      "materialCostGrowth": 1.13
-    },
-    {
-      "kind": "critDamage",
-      "baseCost": 80,
-      "costGrowth": 1.3,
-      "baseValue": 2.0,
-      "perLevel": 0.15,
-      "materialKind": "mineral",
-      "materialBaseCost": 6,
-      "materialCostGrowth": 1.13
-    },
-    {
-      "kind": "bossDamage",
-      "baseCost": 100,
-      "costGrowth": 1.3,
-      "baseValue": 1.0,
-      "perLevel": 0.1,
-      "materialKind": "chitin",
-      "materialBaseCost": 12,
-      "materialCostGrowth": 1.13
-    },
-    {
-      "kind": "maxHp",
-      "baseCost": 20,
-      "costGrowth": 1.16,
-      "baseValue": 100,
-      "perLevel": 25,
-      "valueGrowth": 1.15
-    },
-    {
-      "kind": "defense",
-      "baseCost": 25,
-      "costGrowth": 1.18,
-      "baseValue": 4,
-      "perLevel": 3,
-      "valueGrowth": 1.15
-    },
-    {
-      "kind": "regen",
-      "_comment": "상시 회복(초당 HP). ⚠️ **maxHp 는 지수(valueGrowth 1.15)인데 회복만 덧셈이라 후반에 최대 체력 대비 0 으로 수렴**했다 — 회복을 아무리 사도 의미가 없었다. 같은 지수로 맞추고(1.15), 비용 곡선도 체력과 나란히 뒀다(1.22 -> 1.16). 이제 회복은 \"사면 버티고 안 사면 죽는\" 실제 선택지다. baseValue 1.0 -> 0.5 = 0레벨에서 최대 체력의 0.5%/초(예전 1%/초 는 안 사도 안 죽는 값이었다).",
-      "baseCost": 30,
-      "costGrowth": 1.16,
-      "baseValue": 0.3,
-      "perLevel": 0.6,
-      "valueGrowth": 1.15
-    },
-    {
-      "kind": "reward",
-      "baseCost": 45,
-      "costGrowth": 1.25,
-      "baseValue": 1.0,
-      "perLevel": 0.08
-    },
-    {
-      "kind": "xp",
-      "baseCost": 40,
-      "costGrowth": 1.22,
-      "baseValue": 1.0,
-      "perLevel": 0.06
-    },
-    {
-      "kind": "bugFind",
-      "baseCost": 70,
-      "costGrowth": 1.26,
-      "baseValue": 1.0,
-      "perLevel": 0.1
-    },
-    {
-      "kind": "materialFind",
-      "baseCost": 55,
-      "costGrowth": 1.24,
-      "baseValue": 1.0,
-      "perLevel": 0.1
-    },
-    {
-      "kind": "moveSpeed",
-      "baseCost": 35,
-      "costGrowth": 1.2,
-      "baseValue": 1.0,
-      "perLevel": 0.05
-    },
-    {
-      "kind": "boost",
-      "baseCost": 90,
-      "costGrowth": 1.28,
-      "baseValue": 1.0,
-      "perLevel": 0.1
-    },
-    {
-      "kind": "bugBuff",
-      "baseCost": 120,
-      "costGrowth": 1.3,
-      "baseValue": 1.0,
-      "perLevel": 0.1
-    }
-  ],
-  "offlineEfficiency": 0.3,
-  "worldSize": 100,
-  "worldHpMult": 8.0,
-  "worldGoldMult": 2.2,
-  "worldBossHpMult": 3.0,
-  "_onlineComment": "접속 중에만 붙는 골드 보너스. 방치(효율 0.3 x 8h)가 활동 2h보다 커서 켜둘 이유가 없던 문제를 방치를 깎지 않고 해결한다.",
-  "onlineGoldBonus": 0.6,
-  "sceneCatchChance": 0.35,
-  "sceneCatchWindow": 1.4,
-  "sceneCatchCooldown": 25,
-  "_materialComment": "재료 수량은 깊이에 따라 자란다. 고정이면 중반엔 재료가 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 돼 골드가 남아돈다.",
-  "materialAmountGrowth": 1.01,
-  "_threatComment": "적응형 위협 — 몬스터 공격이 내 방어 전력(체력x방어)에 맞춰 오른다. 고정으로 두면 방어 전력이 지수로 커지는 동안 한 대가 체력의 0.0006% 가 되어 체력/방어/회복 투자가 전부 죽는다. 기준에는 업그레이드/펫만 넣는다(장비/버프는 순수 이득). 초당 비율이라 한 대(1.5초)는 이 값의 1.5배다.",
-  "_threatTuning20260815": "0.015 -> 0.010. 예전엔 몬스터 공격 게이지가 스폰마다 0 으로 리셋돼 1.5초 안에 죽는 몬스터는 한 대도 못 때렸다 — 위협도가 얼마든 피가 안 닳았다.",
-  "_threatTuning20260815b": "0.010 -> 0.006. 처치 회복을 상시 회복으로 옮기면서 총량을 다시 잡았다. 기준은 `balance_sim` 의 **서식지 수지**(스테이지 하나를 지나며 최대 체력 몇 개분이 비는가): 순항 -0.2~-0.4, 벽(관문 직후) -0.9~-1.1. 0 근처면 체력·방어·회복 업그레이드가 통째로 죽는다.",
-  "threatAdaptTargetPct": 0.005
+ "schemaVersion": 1,
+ "hpBase": 150,
+ "hpGrowth": 1.0092,
+ "_hpAdaptComment": "적응형 체력(§7). 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.015 라 공격이 항상 이겨 스테이지 100부터 한 방이 됐다. 기준선 대비 세진 만큼을 체력에 일부 반영한다. power<1 이라 강해질수록 타격 수는 줄어든다. 월드 관문(worldHpMult)에는 걸지 않는다 — 벽이 뭉개지면 뚫는 맛이 사라진다. 기준 1타는 baselineHitPower(치명타 포함) 다 — 생 attack 으로 재면 여기 적은 타격 수의 절반이 나온다.",
+ "_hpAdaptTuning20260815": "6 -> 12. 치명타를 기준에 넣기 전엔 '6대'가 화면에서 2~3대였다. 12 로 올려야 실제로 6~7대가 된다(balance_sim: 스테이지 10~100 에서 7대).",
+ "hpAdaptTargetHits": 12,
+ "hpAdaptPower": 0.88,
+ "hpAdaptMinRatio": 0.6,
+ "_hpAdaptMaxRatioComment": "상한은 '월드 벽을 뚫는 밸브' 다. 무한대로 두면 관문 배율(x8/월드)이 타격 수에 영구히 곱해져 4월드부터 100대씩 때려야 한다(실측 660일). 반대로 너무 낮으면 벽 직후부터 오버킬로 melt 한다. 3000 이 '벽 -> 순항' 리듬이 사는 지점.",
+ "hpAdaptMaxRatio": 3000,
+ "bossHpMult": 5.0,
+ "goldBase": 1.5,
+ "goldGrowth": 1.0165,
+ "xpBase": 5,
+ "xpGrowth": 1.005,
+ "bossRewardMult": 8.0,
+ "habitatsPerStage": 20,
+ "bugDropChance": 0.03,
+ "materialDropChance": 0.5,
+ "threatBase": 2.0,
+ "threatGrowth": 1.025,
+ "bossThreatMult": 3.0,
+ "_killHealComment": "처치 회복. ⚠️ **고정 %라 타격 수와 무관**한 게 함정이다 — 피격은 전투 시간(=타격 수)에 비례하는데 회복은 마리당 고정이라, 7대에 잡는 초중반에는 회복이 항상 이겨 피가 한 번도 안 닳았다(실측: 스테이지 10~50 수지 +6~8%). 그래서 회복의 축을 처치 회복에서 **상시 회복(regen, 시간 비례)** 으로 옮겼다. 둘 다 시간에 비례하면 구간 편차가 사라진다. 20260815-2 조정: 0.05 -> 0.008, 보스 0.3 -> 0.08.",
+ "killHealPct": 0.008,
+ "bossKillHealPct": 0.08,
+ "stagesPerRegion": 25,
+ "boostStepPerTap": 0.15,
+ "boostMultMax": 5.0,
+ "boostDecayPerSec": 0.4,
+ "boostSpeedFactor": 1.0,
+ "regions": [
+  {
+   "id": "oak_forest",
+   "name": {
+    "ko": "참나무 숲",
+    "en": "Oak Forest",
+    "ja": "ナラの森"
+   },
+   "bossName": {
+    "ko": "숲의 지배자",
+    "en": "Forest Warden",
+    "ja": "森の主"
+   },
+   "bossFlip": false,
+   "habitatKinds": [
+    "tree",
+    "rock",
+    "flower",
+    "stump",
+    "mushroom"
+   ]
+  },
+  {
+   "id": "valley_stream",
+   "name": {
+    "ko": "계곡 물가",
+    "en": "Valley Stream",
+    "ja": "渓谷の水辺"
+   },
+   "bossName": {
+    "ko": "물가의 포식자",
+    "en": "Stream Stalker",
+    "ja": "水辺の捕食者"
+   },
+   "bossFlip": true,
+   "habitatKinds": [
+    "rock",
+    "mushroom",
+    "stump",
+    "flower"
+   ]
+  },
+  {
+   "id": "grass_field",
+   "name": {
+    "ko": "풀숲 초원",
+    "en": "Grassland",
+    "ja": "草原"
+   },
+   "bossName": {
+    "ko": "초원의 여왕",
+    "en": "Meadow Queen",
+    "ja": "草原の女王"
+   },
+   "bossFlip": false,
+   "habitatKinds": [
+    "flower",
+    "tree",
+    "mushroom"
+   ]
+  },
+  {
+   "id": "night_mountain",
+   "name": {
+    "ko": "야산 밤숲",
+    "en": "Night Mountain",
+    "ja": "夜の山林"
+   },
+   "bossName": {
+    "ko": "밤의 군주",
+    "en": "Night Sovereign",
+    "ja": "夜の君主"
+   },
+   "bossFlip": true,
+   "habitatKinds": [
+    "tree",
+    "rock",
+    "stump",
+    "mushroom"
+   ]
+  }
+ ],
+ "upgrades": [
+  {
+   "kind": "attack",
+   "baseCost": 15,
+   "costGrowth": 1.15,
+   "baseValue": 8,
+   "perLevel": 4,
+   "valueGrowth": 1.15
+  },
+  {
+   "kind": "attackSpeed",
+   "baseCost": 40,
+   "costGrowth": 1.25,
+   "baseValue": 1.0,
+   "perLevel": 0.05,
+   "materialKind": "chitin",
+   "materialBaseCost": 6,
+   "materialCostGrowth": 1.13
+  },
+  {
+   "kind": "crit",
+   "baseCost": 60,
+   "costGrowth": 1.28,
+   "baseValue": 0.0,
+   "perLevel": 0.01,
+   "materialKind": "sap",
+   "materialBaseCost": 6,
+   "materialCostGrowth": 1.13
+  },
+  {
+   "kind": "critDamage",
+   "baseCost": 80,
+   "costGrowth": 1.3,
+   "baseValue": 2.0,
+   "perLevel": 0.15,
+   "materialKind": "mineral",
+   "materialBaseCost": 6,
+   "materialCostGrowth": 1.13
+  },
+  {
+   "kind": "bossDamage",
+   "baseCost": 100,
+   "costGrowth": 1.3,
+   "baseValue": 1.0,
+   "perLevel": 0.1,
+   "materialKind": "chitin",
+   "materialBaseCost": 12,
+   "materialCostGrowth": 1.13
+  },
+  {
+   "kind": "maxHp",
+   "baseCost": 20,
+   "costGrowth": 1.16,
+   "baseValue": 100,
+   "perLevel": 25,
+   "valueGrowth": 1.15
+  },
+  {
+   "kind": "defense",
+   "baseCost": 25,
+   "costGrowth": 1.18,
+   "baseValue": 4,
+   "perLevel": 3,
+   "valueGrowth": 1.15
+  },
+  {
+   "kind": "regen",
+   "_comment": "상시 회복(초당 HP). ⚠️ **maxHp 는 지수(valueGrowth 1.15)인데 회복만 덧셈이라 후반에 최대 체력 대비 0 으로 수렴**했다 — 회복을 아무리 사도 의미가 없었다. 같은 지수로 맞추고(1.15), 비용 곡선도 체력과 나란히 뒀다(1.22 -> 1.16). 이제 회복은 \"사면 버티고 안 사면 죽는\" 실제 선택지다. baseValue 1.0 -> 0.5 = 0레벨에서 최대 체력의 0.5%/초(예전 1%/초 는 안 사도 안 죽는 값이었다).",
+   "baseCost": 30,
+   "costGrowth": 1.16,
+   "baseValue": 0.3,
+   "perLevel": 0.6,
+   "valueGrowth": 1.15
+  },
+  {
+   "kind": "reward",
+   "baseCost": 45,
+   "costGrowth": 1.25,
+   "baseValue": 1.0,
+   "perLevel": 0.08
+  },
+  {
+   "kind": "xp",
+   "baseCost": 40,
+   "costGrowth": 1.22,
+   "baseValue": 1.0,
+   "perLevel": 0.06
+  },
+  {
+   "kind": "bugFind",
+   "baseCost": 70,
+   "costGrowth": 1.26,
+   "baseValue": 1.0,
+   "perLevel": 0.1
+  },
+  {
+   "kind": "materialFind",
+   "baseCost": 55,
+   "costGrowth": 1.24,
+   "baseValue": 1.0,
+   "perLevel": 0.1
+  },
+  {
+   "kind": "moveSpeed",
+   "baseCost": 35,
+   "costGrowth": 1.2,
+   "baseValue": 1.0,
+   "perLevel": 0.05
+  },
+  {
+   "kind": "boost",
+   "baseCost": 90,
+   "costGrowth": 1.28,
+   "baseValue": 1.0,
+   "perLevel": 0.1
+  },
+  {
+   "kind": "bugBuff",
+   "baseCost": 120,
+   "costGrowth": 1.3,
+   "baseValue": 1.0,
+   "perLevel": 0.1
+  }
+ ],
+ "offlineEfficiency": 0.3,
+ "worldSize": 100,
+ "worldHpMult": 8.0,
+ "worldGoldMult": 2.2,
+ "worldBossHpMult": 3.0,
+ "_onlineComment": "접속 중에만 붙는 골드 보너스. 방치(효율 0.3 x 8h)가 활동 2h보다 커서 켜둘 이유가 없던 문제를 방치를 깎지 않고 해결한다.",
+ "onlineGoldBonus": 0.6,
+ "sceneCatchChance": 0.35,
+ "sceneCatchWindow": 1.4,
+ "sceneCatchCooldown": 25,
+ "_materialComment": "재료 수량은 깊이에 따라 자란다. 고정이면 중반엔 재료가 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 돼 골드가 남아돈다.",
+ "materialAmountGrowth": 1.01,
+ "_threatComment": "적응형 위협 — 몬스터 공격이 내 방어 전력(체력x방어)에 맞춰 오른다. 고정으로 두면 방어 전력이 지수로 커지는 동안 한 대가 체력의 0.0006% 가 되어 체력/방어/회복 투자가 전부 죽는다. 기준에는 업그레이드/펫만 넣는다(장비/버프는 순수 이득). 초당 비율이라 한 대(1.5초)는 이 값의 1.5배다.",
+ "_threatTuning20260815": "0.015 -> 0.010. 예전엔 몬스터 공격 게이지가 스폰마다 0 으로 리셋돼 1.5초 안에 죽는 몬스터는 한 대도 못 때렸다 — 위협도가 얼마든 피가 안 닳았다.",
+ "_threatTuning20260815b": "0.010 -> 0.006. 처치 회복을 상시 회복으로 옮기면서 총량을 다시 잡았다. 기준은 `balance_sim` 의 **서식지 수지**(스테이지 하나를 지나며 최대 체력 몇 개분이 비는가): 순항 -0.2~-0.4, 벽(관문 직후) -0.9~-1.1. 0 근처면 체력·방어·회복 업그레이드가 통째로 죽는다.",
+ "threatAdaptTargetPct": 0.005,
+ "exchange": {
+  "_comment": "젤리 → 골드·재료 교환소. 지급량을 **현재 스테이지 산출에 비례**시킨다 — 정액이면 후반엔 껌값이라 아무도 안 쓴다(정작 젤리가 남는 시점이 후반이다). \"젤리 N개 = 방치 H시간치\"라 설명도 이대로 된다. 반대 방향(골드→젤리)은 만들지 않는다 — 골드는 방치로 무한히 벌리므로 §2.6 의 \"무한히 늘어나는 통로에 젤리 금지\"를 정면으로 위반한다.",
+  "jellyPerTrade": 10,
+  "goldHours": 1.0,
+  "materialHours": 1.0,
+  "killsPerHour": 900
+ }
 }

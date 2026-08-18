@@ -61,7 +61,8 @@ class PetConfig {
     this.traitAttackBonus = const {},
     this.traitHpBonus = const {},
     this.traitBattleScale = 0,
-    this.storageSlotsMax = 100,
+    this.storageSlotsMax = 300,
+    this.expandCostGrowth = 1.12,
     this.storageExpandJelly = 50,
     this.storageExpandAmount = 10,
   });
@@ -251,6 +252,32 @@ class PetConfig {
   /// **상한은 세이브 크기의 방어선이기도 하다** — 상한 100마리 ≈ 세이브 60KB.
   /// 이 값을 크게 올리면 업로드 트래픽이 그대로 따라 오른다.
   final int storageSlotsMax;
+
+  /// 확장 1회마다 비용이 곱해지는 비율(1.0 = 정액).
+  ///
+  /// 정액이면 영구 소비처가 **총 390젤리에서 끝난다** — 다 사고 나면 젤리를
+  /// 쓸 데가 없어서 팩이 안 팔린다(2026-08-18 분석). 계단식이면 끝이 없다.
+  final double expandCostGrowth;
+
+  /// [done] 번 늘린 뒤의 다음 확장 비용.
+  int _stepCost(int base, int done) =>
+      (base * math.pow(expandCostGrowth, done)).round();
+
+  /// 부화기: 현재 [capacity] 에서 다음 칸을 늘리는 비용.
+  int incubatorExpandCost(int capacity) =>
+      _stepCost(incubatorExpandJelly, (capacity - 1).clamp(0, 999));
+
+  /// 짝짓기: 현재 [capacity] 에서 다음 칸을 늘리는 비용.
+  int breedingExpandCost(int capacity) =>
+      _stepCost(breedingExpandJelly, (capacity - 1).clamp(0, 999));
+
+  /// 채집함: 현재 [capacity] 에서 다음 [storageExpandAmount] 칸의 비용.
+  ///
+  /// 기준은 **기본 50칸**이다 — 거기서 몇 번 늘렸는지로 센다.
+  int storageExpandCost(int capacity) => _stepCost(
+    storageExpandJelly,
+    ((capacity - 50) ~/ storageExpandAmount).clamp(0, 999),
+  );
   final int storageExpandJelly;
   final int storageExpandAmount;
 
@@ -439,7 +466,8 @@ class PetConfig {
       disassembleJellyMinPotential:
           (json['disassembleJellyMinPotential'] as num?)?.toInt() ?? 0,
       releaseMaterialByGrade: _gradeIntMap(json['releaseMaterialByGrade']),
-      storageSlotsMax: (json['storageSlotsMax'] as num?)?.toInt() ?? 100,
+      storageSlotsMax: (json['storageSlotsMax'] as num?)?.toInt() ?? 300,
+      expandCostGrowth: (json['expandCostGrowth'] as num?)?.toDouble() ?? 1.12,
       storageExpandJelly: (json['storageExpandJelly'] as num?)?.toInt() ?? 50,
       storageExpandAmount: (json['storageExpandAmount'] as num?)?.toInt() ?? 10,
     );

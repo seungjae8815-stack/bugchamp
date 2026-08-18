@@ -1262,6 +1262,71 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
+  /// 교환소 — 젤리를 **지금 스테이지 기준 방치 산출**로 바꾼다.
+  ///
+  /// 지급량을 현재 스테이지에 비례시키는 이유: 정액이면 후반엔 껌값이라 아무도
+  /// 안 쓴다. 정작 젤리가 남아도는 시점이 후반이다(영구 소비처를 다 산 뒤).
+  ///
+  /// ⚠️ **반대 방향(골드→젤리)은 만들지 않는다.** 골드는 방치로 무한히 벌리므로
+  /// §2.6 의 "무한히 늘어나는 통로에 젤리를 붙이지 않는다"를 정면으로 위반한다.
+  ///
+  /// P2W 여부: 골드는 업그레이드로 가는데, 업그레이드는 **적응형 몬스터 체력의
+  /// 기준 안**에 있다(§7). 즉 사서 올려도 몬스터가 같이 세져 콘텐츠가 뭉개지지
+  /// 않는다 — 사는 것은 진행 속도(시간)이지 난이도 우회가 아니다.
+  ///
+  /// [trades] 회 교환. 성공하면 지급된 (gold, materials) 를 돌려준다.
+  ({int gold, int materials})? exchangeJelly({
+    required int trades,
+    required bool wantGold,
+  }) {
+    if (trades <= 0) return null;
+    final cfg = ref.read(gameDataProvider).requireValue.runConfig;
+    if (cfg == null) return null;
+    final s = state.requireValue;
+    final cost = cfg.exchangeJellyPerTrade * trades;
+    if (s.materialCount(MaterialKind.jelly) < cost) return null;
+
+    // 현재 스테이지의 처치 1회 산출 × 시간당 처치 수 × 시간.
+    final depth = s.stageNumber;
+    final kills = cfg.exchangeKillsPerHour;
+    final gold = wantGold
+        ? (rewardGold(cfg, depth, 1.0) * kills * cfg.exchangeGoldHours * trades)
+              .round()
+        : 0;
+    // 재료는 3종을 고루 준다 — 한 종만 주면 부족한 종을 노려 반복 교환하게 된다.
+    final matEach = wantGold
+        ? 0
+        : (materialAmountMult(cfg, depth) *
+                  kills *
+                  cfg.exchangeMaterialHours *
+                  trades /
+                  3)
+              .round();
+    return (gold: gold, materials: matEach);
+  }
+
+  /// 교환 실행. 미리보기는 [exchangeJelly] 로 같은 값을 얻는다.
+  Future<bool> tradeJelly({required int trades, required bool wantGold}) async {
+    final out = exchangeJelly(trades: trades, wantGold: wantGold);
+    if (out == null) return false;
+    final cfg = ref.read(gameDataProvider).requireValue.runConfig!;
+    final s = state.requireValue;
+    final cost = cfg.exchangeJellyPerTrade * trades;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = s.materialCount(MaterialKind.jelly) - cost;
+    if (out.materials > 0) {
+      for (final k in [
+        MaterialKind.chitin,
+        MaterialKind.mineral,
+        MaterialKind.sap,
+      ]) {
+        mats[k] = (mats[k] ?? 0) + out.materials;
+      }
+    }
+    await _commit(s.copyWith(gold: s.gold + out.gold, materials: mats));
+    return true;
+  }
+
   /// 젤리 [cost] 를 차감한다. 부족하면 false(차감 없음).
   ///
   /// 소액 편의 지출(스카우트 새로고침·버프 젤리 발동)용 공용 경로 —
@@ -1617,10 +1682,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (cfg == null) return false;
     final s = state.requireValue;
     if (s.incubatorCapacity >= cfg.incubatorSlotsMax) return false;
+    final cost = cfg.incubatorExpandCost(s.incubatorCapacity);
     final have = s.materials[MaterialKind.jelly] ?? 0;
-    if (have < cfg.incubatorExpandJelly) return false;
+    if (have < cost) return false;
     final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.jelly] = have - cfg.incubatorExpandJelly;
+      ..[MaterialKind.jelly] = have - cost;
     await _commit(
       s.copyWith(incubatorCapacity: s.incubatorCapacity + 1, materials: mats),
     );
@@ -1942,10 +2008,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (cfg == null) return false;
     final s = state.requireValue;
     if (s.breedingCapacity >= cfg.breedingSlotsMax) return false;
+    final cost = cfg.breedingExpandCost(s.breedingCapacity);
     final have = s.materials[MaterialKind.jelly] ?? 0;
-    if (have < cfg.breedingExpandJelly) return false;
+    if (have < cost) return false;
     final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.jelly] = have - cfg.breedingExpandJelly;
+      ..[MaterialKind.jelly] = have - cost;
     await _commit(
       s.copyWith(breedingCapacity: s.breedingCapacity + 1, materials: mats),
     );
@@ -2006,14 +2073,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (cfg == null) return false;
     final s = state.requireValue;
     if (s.storageCapacity >= cfg.storageSlotsMax) return false;
+    final cost = cfg.storageExpandCost(s.storageCapacity);
     final have = s.materials[MaterialKind.jelly] ?? 0;
-    if (have < cfg.storageExpandJelly) return false;
+    if (have < cost) return false;
     final next = (s.storageCapacity + cfg.storageExpandAmount).clamp(
       0,
       cfg.storageSlotsMax,
     );
     final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.jelly] = have - cfg.storageExpandJelly;
+      ..[MaterialKind.jelly] = have - cost;
     await _commit(s.copyWith(storageCapacity: next, materials: mats));
     return true;
   }

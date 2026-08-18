@@ -295,26 +295,39 @@ void main(List<String> args) {
   final breedingBuys = pets.breedingSlotsMax - pets.breedingSlotsInitial;
   final storageBuys =
       ((pets.storageSlotsMax - startStorage) / pets.storageExpandAmount).ceil();
-  final permanent =
-      incubatorBuys * pets.incubatorExpandJelly +
-      breedingBuys * pets.breedingExpandJelly +
-      storageBuys * pets.storageExpandJelly;
+  // ⚠️ **정액으로 곱하면 안 된다.** 확장은 살수록 비싸진다(expandCostGrowth).
+  // 정액으로 세던 시절엔 총액을 1530 으로 보고했는데 실제는 7003 이었다 —
+  // 도구가 실제보다 4.6배 싸게 보고하고 있었다(2026-08-18).
+  var incubatorCost = 0;
+  for (var c = pets.incubatorSlotsInitial; c < pets.incubatorSlotsMax; c++) {
+    incubatorCost += pets.incubatorExpandCost(c);
+  }
+  var breedingCost = 0;
+  for (var c = pets.breedingSlotsInitial; c < pets.breedingSlotsMax; c++) {
+    breedingCost += pets.breedingExpandCost(c);
+  }
+  var storageCost = 0;
+  for (
+    var cap = startStorage;
+    cap < pets.storageSlotsMax;
+    cap += pets.storageExpandAmount
+  ) {
+    storageCost += pets.storageExpandCost(cap);
+  }
+  final permanent = incubatorCost + breedingCost + storageCost;
 
   stdout.writeln('── 영구 소비처(한 번 사면 끝) ──');
   stdout.writeln(
     '  부화기 슬롯 ${pets.incubatorSlotsInitial}→${pets.incubatorSlotsMax}'
-    ' : $incubatorBuys회 × ${pets.incubatorExpandJelly}'
-    ' = ${incubatorBuys * pets.incubatorExpandJelly}젤리',
+    ' : $incubatorBuys회 = $incubatorCost젤리',
   );
   stdout.writeln(
     '  짝짓기 슬롯 ${pets.breedingSlotsInitial}→${pets.breedingSlotsMax}'
-    ' : $breedingBuys회 × ${pets.breedingExpandJelly}'
-    ' = ${breedingBuys * pets.breedingExpandJelly}젤리',
+    ' : $breedingBuys회 = $breedingCost젤리',
   );
   stdout.writeln(
     '  채집함 $startStorage→${pets.storageSlotsMax}칸'
-    ' : $storageBuys회 × ${pets.storageExpandJelly}'
-    ' = ${storageBuys * pets.storageExpandJelly}젤리',
+    ' : $storageBuys회 = $storageCost젤리 (살수록 비싸짐)',
   );
   stdout.writeln(
     '  합계 $permanent젤리 → 무과금으로 '
