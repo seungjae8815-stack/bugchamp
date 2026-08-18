@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../domain/store_iap_service.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/toast.dart';
 
@@ -53,11 +55,16 @@ class _StoreSection extends ConsumerWidget {
 
     return ListView.separated(
       padding: const EdgeInsets.all(12),
-      itemCount: products.length + (devMode ? 2 : 1),
+      // +1 = 교환소(맨 위), +1 = 복원 줄, 개발자 모드면 배너까지.
+      itemCount: products.length + 2 + (devMode ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         if (devMode && i == 0) return _devBanner(l);
-        final idx = devMode ? i - 1 : i;
+        final j = devMode ? i - 1 : i;
+        // 교환소를 상품보다 **위**에 둔다 — 젤리를 이미 가진 사람이 쓸 곳을
+        // 먼저 보여줘야, 젤리가 남아서 안 사는 상태를 끊는다.
+        if (j == 0) return const _ExchangeCard();
+        final idx = j - 1;
         if (idx == products.length) return _restoreRow(context, ref, l);
         return _ProductCard(
           product: products[idx],
@@ -312,5 +319,231 @@ class _ProductCard extends ConsumerWidget {
       PurchaseOutcome.failed => l.storeFailed,
     };
     showCenterToast(ctx, msg);
+  }
+}
+
+/// 교환소 — 젤리를 **지금 스테이지 기준** 골드·재료로 바꾼다.
+///
+/// 상점 맨 위에 두는 이유: 영구 소비처를 다 산 유저는 젤리가 남아서 팩을 안
+/// 산다. 쓸 곳을 먼저 보여줘야 그 상태가 끊긴다(2026-08-18 경제 분석).
+class _ExchangeCard extends ConsumerStatefulWidget {
+  const _ExchangeCard();
+
+  @override
+  ConsumerState<_ExchangeCard> createState() => _ExchangeCardState();
+}
+
+class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
+  /// 한 번에 몇 묶음 교환할지. 후반엔 10개씩 바꾸는 게 답답해서 배수를 둔다.
+  int _trades = 1;
+  bool _wantGold = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).requireValue.runConfig;
+    if (cfg == null) return const SizedBox.shrink();
+
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final out = ctrl.exchangeJelly(trades: _trades, wantGold: _wantGold);
+    final cost = cfg.exchangeJellyPerTrade * _trades;
+    final have = save.materialCount(MaterialKind.jelly);
+    final enough = have >= cost;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x559BE7FF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.swap_horiz_rounded,
+                color: Color(0xFF9BE7FF),
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                l.exchangeTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
+              ),
+              const Spacer(),
+              materialImage(
+                MaterialKind.jelly,
+                size: 15,
+                fallback: const SizedBox(width: 15),
+              ),
+              const SizedBox(width: 3),
+              Text(
+                formatCompact(have),
+                style: const TextStyle(
+                  color: Color(0xFF9BE7FF),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l.exchangeHint,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _pick(
+                  l.exchangeToGold,
+                  _wantGold,
+                  Icons.paid_rounded,
+                  () => setState(() => _wantGold = true),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _pick(
+                  l.exchangeToMaterial,
+                  !_wantGold,
+                  Icons.science_rounded,
+                  () => setState(() => _wantGold = false),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (final n in const [1, 5, 10])
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: _qty(n),
+                ),
+              const Spacer(),
+              Text(
+                l.exchangeCost(cost),
+                style: TextStyle(
+                  color: enough
+                      ? const Color(0xFF9BE7FF)
+                      : const Color(0xFFFF8A6B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: FilledButton.icon(
+              onPressed: (out == null || !enough)
+                  ? null
+                  : () async {
+                      final ok = await ctrl.tradeJelly(
+                        trades: _trades,
+                        wantGold: _wantGold,
+                      );
+                      if (!context.mounted) return;
+                      showCenterToast(
+                        context,
+                        ok ? l.exchangeDone : l.notEnoughJelly,
+                      );
+                    },
+              icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+              label: Text(
+                out == null
+                    ? l.notEnoughJelly
+                    : (_wantGold
+                          ? l.exchangeGetGold(formatCompact(out.gold))
+                          : l.exchangeGetMaterial(
+                              formatCompact(out.materials),
+                            )),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2E6DA4),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pick(String label, bool on, IconData icon, VoidCallback onTap) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: on ? const Color(0x332E6DA4) : const Color(0x18000000),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: on ? const Color(0xFF9BE7FF) : const Color(0x22FFFFFF),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: on ? const Color(0xFF9BE7FF) : const Color(0x99FFFFFF),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: on ? Colors.white : const Color(0x99FFFFFF),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _qty(int n) {
+    final on = _trades == n;
+    return GestureDetector(
+      onTap: () => setState(() => _trades = n),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: on ? const Color(0xFF2E6DA4) : const Color(0x18000000),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: on ? const Color(0xFF9BE7FF) : const Color(0x22FFFFFF),
+          ),
+        ),
+        child: Text(
+          '×$n',
+          style: TextStyle(
+            color: on ? Colors.white : const Color(0x99FFFFFF),
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
   }
 }

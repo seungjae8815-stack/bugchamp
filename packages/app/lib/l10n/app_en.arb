@@ -1520,5 +1520,34 @@
     }
   },
   "giftDoubleCapTitle": "That's all the doubles today",
-  "giftDoubleCapBody": "You've used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically."
+  "giftDoubleCapBody": "You've used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.",
+  "exchangeTitle": "Exchange",
+  "exchangeHint": "Trade jelly for one hour of idle output at your stage",
+  "exchangeToGold": "To gold",
+  "exchangeToMaterial": "To materials",
+  "exchangeCost": "{n} jelly",
+  "exchangeGetGold": "Get {amount} gold",
+  "exchangeGetMaterial": "Get {amount} of each material",
+  "exchangeDone": "Exchanged!",
+  "@exchangeCost": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@exchangeGetGold": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@exchangeGetMaterial": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
 }

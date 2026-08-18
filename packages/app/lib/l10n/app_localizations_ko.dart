@@ -2557,4 +2557,34 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get giftDoubleCapBody =>
       '무료 2배를 모두 썼어요.\n패스를 가지고 있으면 2배가 무제한이고, 선물도 자동으로 받아져요.';
+
+  @override
+  String get exchangeTitle => '교환소';
+
+  @override
+  String get exchangeHint => '젤리를 지금 스테이지 기준 방치 1시간치로 바꿔요';
+
+  @override
+  String get exchangeToGold => '골드로';
+
+  @override
+  String get exchangeToMaterial => '재료로';
+
+  @override
+  String exchangeCost(int n) {
+    return '젤리 $n';
+  }
+
+  @override
+  String exchangeGetGold(String amount) {
+    return '$amount 골드 받기';
+  }
+
+  @override
+  String exchangeGetMaterial(String amount) {
+    return '재료 3종 각 $amount 받기';
+  }
+
+  @override
+  String get exchangeDone => '교환했어요!';
 }

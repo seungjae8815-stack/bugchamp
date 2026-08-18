@@ -766,5 +766,13 @@
   "jellyContinueAsk": "本日の無料回数を使い切りました。ゼリー{n}個で続けますか？",
   "jellyContinueYes": "ゼリーを使う",
   "giftDoubleCapTitle": "本日の2倍はここまで",
-  "giftDoubleCapBody": "無料の2倍を使い切りました。\nパスがあれば2倍は無制限、プレゼントも自動で受け取れます。"
+  "giftDoubleCapBody": "無料の2倍を使い切りました。\nパスがあれば2倍は無制限、プレゼントも自動で受け取れます。",
+  "exchangeTitle": "交換所",
+  "exchangeHint": "ゼリーを現在ステージの放置1時間分に交換します",
+  "exchangeToGold": "ゴールドへ",
+  "exchangeToMaterial": "素材へ",
+  "exchangeCost": "ゼリー{n}",
+  "exchangeGetGold": "{amount} ゴールド獲得",
+  "exchangeGetMaterial": "素材3種を各{amount}獲得",
+  "exchangeDone": "交換しました！"
 }

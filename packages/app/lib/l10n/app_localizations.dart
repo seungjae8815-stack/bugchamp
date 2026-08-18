@@ -4701,6 +4701,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'ve used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.'**
   String get giftDoubleCapBody;
+
+  /// No description provided for @exchangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange'**
+  String get exchangeTitle;
+
+  /// No description provided for @exchangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Trade jelly for one hour of idle output at your stage'**
+  String get exchangeHint;
+
+  /// No description provided for @exchangeToGold.
+  ///
+  /// In en, this message translates to:
+  /// **'To gold'**
+  String get exchangeToGold;
+
+  /// No description provided for @exchangeToMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'To materials'**
+  String get exchangeToMaterial;
+
+  /// No description provided for @exchangeCost.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} jelly'**
+  String exchangeCost(int n);
+
+  /// No description provided for @exchangeGetGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Get {amount} gold'**
+  String exchangeGetGold(String amount);
+
+  /// No description provided for @exchangeGetMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Get {amount} of each material'**
+  String exchangeGetMaterial(String amount);
+
+  /// No description provided for @exchangeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchanged!'**
+  String get exchangeDone;
 }
 
 class _AppLocalizationsDelegate

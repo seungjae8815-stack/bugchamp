@@ -2553,4 +2553,34 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get giftDoubleCapBody =>
       '無料の2倍を使い切りました。\nパスがあれば2倍は無制限、プレゼントも自動で受け取れます。';
+
+  @override
+  String get exchangeTitle => '交換所';
+
+  @override
+  String get exchangeHint => 'ゼリーを現在ステージの放置1時間分に交換します';
+
+  @override
+  String get exchangeToGold => 'ゴールドへ';
+
+  @override
+  String get exchangeToMaterial => '素材へ';
+
+  @override
+  String exchangeCost(int n) {
+    return 'ゼリー$n';
+  }
+
+  @override
+  String exchangeGetGold(String amount) {
+    return '$amount ゴールド獲得';
+  }
+
+  @override
+  String exchangeGetMaterial(String amount) {
+    return '素材3種を各$amount獲得';
+  }
+
+  @override
+  String get exchangeDone => '交換しました！';
 }

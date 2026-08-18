@@ -801,5 +801,13 @@
   "jellyContinueAsk": "오늘 무료 횟수를 다 썼어요. 젤리 {n}개로 계속할까요?",
   "jellyContinueYes": "젤리 사용",
   "giftDoubleCapTitle": "오늘 2배는 여기까지",
-  "giftDoubleCapBody": "무료 2배를 모두 썼어요.\n패스를 가지고 있으면 2배가 무제한이고, 선물도 자동으로 받아져요."
+  "giftDoubleCapBody": "무료 2배를 모두 썼어요.\n패스를 가지고 있으면 2배가 무제한이고, 선물도 자동으로 받아져요.",
+  "exchangeTitle": "교환소",
+  "exchangeHint": "젤리를 지금 스테이지 기준 방치 1시간치로 바꿔요",
+  "exchangeToGold": "골드로",
+  "exchangeToMaterial": "재료로",
+  "exchangeCost": "젤리 {n}",
+  "exchangeGetGold": "{amount} 골드 받기",
+  "exchangeGetMaterial": "재료 3종 각 {amount} 받기",
+  "exchangeDone": "교환했어요!"
 }

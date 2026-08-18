@@ -2605,4 +2605,35 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get giftDoubleCapBody =>
       'You\'ve used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.';
+
+  @override
+  String get exchangeTitle => 'Exchange';
+
+  @override
+  String get exchangeHint =>
+      'Trade jelly for one hour of idle output at your stage';
+
+  @override
+  String get exchangeToGold => 'To gold';
+
+  @override
+  String get exchangeToMaterial => 'To materials';
+
+  @override
+  String exchangeCost(int n) {
+    return '$n jelly';
+  }
+
+  @override
+  String exchangeGetGold(String amount) {
+    return 'Get $amount gold';
+  }
+
+  @override
+  String exchangeGetMaterial(String amount) {
+    return 'Get $amount of each material';
+  }
+
+  @override
+  String get exchangeDone => 'Exchanged!';
 }
