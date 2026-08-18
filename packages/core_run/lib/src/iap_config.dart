@@ -165,7 +165,6 @@ class IapConfig {
     this.passDailyJelly = 30,
     this.passOfflineCapHours = 12,
     this.passIdleGoldMult = 1.2,
-    this.removeAdsDailyJelly = 10,
     this.buffPassDurationDays = 30,
   });
 
@@ -198,9 +197,6 @@ class IapConfig {
   final int passDailyJelly;
   final int passOfflineCapHours;
   final double passIdleGoldMult;
-
-  /// 광고 제거 구매자의 매일 젤리.
-  final int removeAdsDailyJelly;
 
   /// 무한 버프 패스 기간(일).
   final int buffPassDurationDays;
@@ -236,7 +232,6 @@ class IapConfig {
     passDailyJelly: (json['passDailyJelly'] as num?)?.toInt() ?? 30,
     passOfflineCapHours: (json['passOfflineCapHours'] as num?)?.toInt() ?? 12,
     passIdleGoldMult: (json['passIdleGoldMult'] as num?)?.toDouble() ?? 1.2,
-    removeAdsDailyJelly: (json['removeAdsDailyJelly'] as num?)?.toInt() ?? 10,
     buffPassDurationDays: (json['buffPassDurationDays'] as num?)?.toInt() ?? 30,
   );
 }

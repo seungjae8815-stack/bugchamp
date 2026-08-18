@@ -6,27 +6,7 @@
  "passDailyJelly": 30,
  "passOfflineCapHours": 12,
  "passIdleGoldMult": 1.2,
- "removeAdsDailyJelly": 10,
  "products": [
-  {
-   "id": "remove_ads",
-   "kind": "nonConsumable",
-   "type": "removeAds",
-   "priceKrw": 7700,
-   "sort": 10,
-   "name": {
-    "ko": "광고 제거 패스",
-    "en": "Remove Ads",
-    "ja": "広告除去パス"
-   },
-   "desc": {
-    "ko": "광고 완전 제거(보상형도 즉시 지급) + 매일 젤리 10",
-    "en": "No ads at all — rewarded ads pay out instantly + 10 jelly daily",
-    "ja": "広告を完全除去（リワード広告も即時付与）＋毎日ゼリー10"
-   },
-   "hidden": true,
-   "_hiddenComment": "2026-08-18 광고 없는 운영 전환으로 판매 중단. 정의를 지우면 기보유자의 매일 젤리 10 지급이 끊기므로 hidden 으로만 감춘다."
-  },
   {
    "id": "starter_pack",
    "kind": "nonConsumable",

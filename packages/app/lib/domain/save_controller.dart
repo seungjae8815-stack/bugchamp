@@ -95,14 +95,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 오프라인 정산 — 기기가 계산한다(기기 권위). 서버는 세이브를 저장만 한다.
     save = _applyOffline(save, data, now);
 
-    // 결제 혜택 일일 젤리(로컬 날짜 기준 1회). 패스가 광고제거보다 우선(중복 지급 금지).
+    // 패스 일일 젤리(로컬 날짜 기준 1회).
+    //
+    // 광고 제거 패스는 삭제했다(2026-08-18) — 1회 결제로 **매일 젤리 10개를
+    // 영구히** 주는 구조라 §2.6("무한히 늘어나는 통로에 젤리 금지")을 정면으로
+    // 위반했다. 12개월 보유 시 실질 단가가 젤리 1개당 ₩2.1 까지 떨어졌다.
+    // 구매자가 0명이라 회수 문제 없이 지웠다.
     final iapCfg = data.iapConfig;
     if (iapCfg != null) {
       final today = dailyDateKey(ref.read(clockProvider).now());
       if (save.dailyClaims[_iapDailyKey] != today) {
-        final jelly = save.passActive(now)
-            ? iapCfg.passDailyJelly
-            : (save.adsRemoved ? iapCfg.removeAdsDailyJelly : 0);
+        final jelly = save.passActive(now) ? iapCfg.passDailyJelly : 0;
         if (jelly > 0) {
           final mats = Map<MaterialKind, int>.from(save.materials)
             ..[MaterialKind.jelly] =

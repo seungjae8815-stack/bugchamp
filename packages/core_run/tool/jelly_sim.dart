@@ -206,15 +206,63 @@ void main(List<String> args) {
   stdout.writeln('  ※ 승급 보상 $promo젤리는 **계정당 1회**라 위 합계에 없다(첫 도달 시 일시금).');
   stdout.writeln('');
 
+  // ── 패스 보유자 — **여기가 오래 비어 있었다.**
+  //
+  // 시뮬이 무과금만 재고 있어서, 패스가 매일 주는 젤리가 어느 장부에도
+  // 안 잡혔다. §2.6 이 "손으로 더하면 반드시 틀린다"고 경고한 자리에 도구
+  // 자체가 빠져 있던 셈이다(2026-08-18 발견).
+  final passJelly = iap.passDailyJelly.toDouble();
+  final passTotal = total + passJelly;
+  stdout.writeln('── 패스 보유자 ──');
+  stdout.writeln(
+    '  무과금 ${total.toStringAsFixed(1)} + 패스 일일 ${passJelly.toStringAsFixed(0)}'
+    ' = ${passTotal.toStringAsFixed(1)} 젤리/일',
+  );
+  final passProd = iap.products.where((p) => p.type == IapType.pass);
+  for (final p in passProd) {
+    final per = iap.passDurationDays * iap.passDailyJelly;
+    if (per <= 0) continue;
+    stdout.writeln(
+      '  ${p.id}: ₩${p.priceKrw} / ${iap.passDurationDays}일 = $per젤리'
+      ' → ₩${(p.priceKrw / per).toStringAsFixed(1)}/젤리',
+    );
+  }
+  stdout.writeln('');
+
   stdout.writeln('── IAP 대비(이게 핵심 지표) ──');
+  // 젤리 팩의 **단가**가 패스보다 비싸면 아무도 팩을 안 산다 — 매출 상한이
+  // 패스 가격에 묶인다. 그래서 단가를 나란히 찍는다.
+  double? cheapestPack;
   for (final p in iap.products) {
     final j = p.grant.jelly;
     if (j <= 0) continue;
+    final unit = p.priceKrw / j;
+    if (p.type == IapType.jelly) {
+      cheapestPack = (cheapestPack == null || unit < cheapestPack!)
+          ? unit
+          : cheapestPack;
+    }
     final days = total <= 0 ? double.infinity : j / total;
     stdout.writeln(
       '  ${p.id.padRight(16)} ₩${p.priceKrw.toString().padLeft(6)} = '
-      '${j.toString().padLeft(5)}젤리 → 공짜로 모으는 데 '
-      '${days.toStringAsFixed(1)}일',
+      '${j.toString().padLeft(5)}젤리 → ₩${unit.toStringAsFixed(1)}/젤리'
+      ' · 공짜로 모으는 데 ${days.toStringAsFixed(1)}일',
+    );
+  }
+  final passUnit = iap.passDurationDays * iap.passDailyJelly > 0
+      ? (passProd.isEmpty
+            ? null
+            : passProd.first.priceKrw /
+                  (iap.passDurationDays * iap.passDailyJelly))
+      : null;
+  if (cheapestPack != null && passUnit != null) {
+    final verdict = passUnit < cheapestPack!
+        ? '⚠️ 패스가 더 싸다 → 젤리 팩이 안 팔린다(매출 상한이 패스에 묶임)'
+        : 'OK — 팩이 패스보다 싸거나 비슷하다';
+    stdout.writeln('');
+    stdout.writeln(
+      '  최저가 팩 ₩${cheapestPack!.toStringAsFixed(1)}/젤리 vs '
+      '패스 ₩${passUnit.toStringAsFixed(1)}/젤리 → $verdict',
     );
   }
   stdout.writeln('');
