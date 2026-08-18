@@ -1,0 +1,50 @@
+========================================
+ Google Play — 출시 노트 (1.0.6 / 20260812)
+========================================
+※ Play Console 은 아래 태그 블록을 통째로 붙여넣는다. 한 언어당 500자 한도.
+※ iOS 용 노트는 _appstore_whatsnew_1.0.6.txt (이모지 금지 · 심사 지뢰 단어 주의).
+※ 1.0.5 이후: 왕충 선발대회(실물 경품) 신설 + 결투 화면 전면 개편 + 아이콘 전면 교체.
+
+<ko-KR>
+🏆 왕충 선발대회 시작!
+
+• 실물 곤충 경품 이벤트 — 8월 19일 개막 (국내 배송)
+• 웨이브 방어전 + 강화 카드 선택, 참가 곤충 스탯은 모두 평준화돼 편성 실력으로 겨뤄요
+• 결투 화면 새단장 — VS 연출, 타격감, 승패 배너, 곤충별 공격·피격 그림
+• 곤충 20종에 전투 자세 그림 추가 (대기·공격·피격)
+• 오행·기질·특성·리그·성별 아이콘을 전부 새 그림으로
+• "다음 적 속성"을 누르면 오행 관계도를 볼 수 있어요
+• 채집함에 성별 표시, 순위표 상위 3위 강조
+• 시즌 보상이 종료 시점 등급 기준으로 지급돼요 (브론즈도 보상 추가)
+
+즐거운 채집 되세요! 😊
+</ko-KR>
+
+<en-US>
+🏆 Bug King Championship!
+
+• Real-prize ranking event — opens Aug 19 (Korea shipping)
+• Wave defense with upgrade cards; stats normalized, formation decides
+• Revamped duel screen — VS intro, hit feedback, result banner
+• Battle poses for all 20 species (idle / attack / hurt)
+• New icons for element, temperament, trait, league, sex
+• Tap "next foe element" for the elemental chart
+• Season rewards use your rank at close (Bronze included)
+
+Happy collecting! 😊
+</en-US>
+
+<ja-JP>
+🏆 王蟲選抜大会、開幕！
+
+• 実物賞品ランキングイベント — 8月19日開始（韓国国内配送）
+• ウェーブ防衛＋強化カード。ステータスは平準化され、編成の腕で競います
+• 決闘画面を刷新 — VS演出、打撃感、勝敗バナー
+• 20種すべてに戦闘ポーズ（待機・攻撃・被弾）
+• 五行・気質・特性・リーグ・性別アイコンを一新
+• 「次の敵の属性」をタップすると五行相性図が見られます
+• 採集箱に性別表示、ランキング上位3位を強調
+• シーズン報酬が終了時の等級で支給されます（ブロンズにも報酬）
+
+楽しい採集を！😊
+</ja-JP>
