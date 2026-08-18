@@ -27,7 +27,23 @@ class CraftScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l.tabStore)),
-      body: _StoreSection(save: save),
+      // 상점 배경 — 숲속 좌판. 목록이 그 위에 얹힌다.
+      // 없으면 기본 배경이라 화면이 깨지지 않는다(§6).
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/ui/shop_bg.webp',
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.medium,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+          // 글자가 읽히도록 어둡게 깐다.
+          const Positioned.fill(child: ColoredBox(color: Color(0xCC0E1408))),
+          _StoreSection(save: save),
+        ],
+      ),
     );
   }
 }
@@ -352,7 +368,7 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
     final enough = have >= cost;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: const Color(0x22000000),
         borderRadius: BorderRadius.circular(14),
@@ -361,126 +377,146 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.swap_horiz_rounded,
-                color: Color(0xFF9BE7FF),
-                size: 18,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                l.exchangeTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                ),
-              ),
-              const Spacer(),
-              materialImage(
-                MaterialKind.jelly,
-                size: 15,
-                fallback: const SizedBox(width: 15),
-              ),
-              const SizedBox(width: 3),
-              Text(
-                formatCompact(have),
-                style: const TextStyle(
-                  color: Color(0xFF9BE7FF),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            l.exchangeHint,
-            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _pick(
-                  l.exchangeToGold,
-                  _wantGold,
-                  Icons.paid_rounded,
-                  () => setState(() => _wantGold = true),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _pick(
-                  l.exchangeToMaterial,
-                  !_wantGold,
-                  Icons.science_rounded,
-                  () => setState(() => _wantGold = false),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              for (final n in const [1, 5, 10])
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: _qty(n),
-                ),
-              const Spacer(),
-              Text(
-                l.exchangeCost(cost),
-                style: TextStyle(
-                  color: enough
-                      ? const Color(0xFF9BE7FF)
-                      : const Color(0xFFFF8A6B),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
+          // 머리그림 — 없으면 그냥 안 나온다(§6 폴백).
+          Image.asset(
+            'assets/images/ui/exchange.webp',
+            height: 96,
             width: double.infinity,
-            height: 44,
-            child: FilledButton.icon(
-              onPressed: (out == null || !enough)
-                  ? null
-                  : () async {
-                      final ok = await ctrl.tradeJelly(
-                        trades: _trades,
-                        wantGold: _wantGold,
-                      );
-                      if (!context.mounted) return;
-                      showCenterToast(
-                        context,
-                        ok ? l.exchangeDone : l.notEnoughJelly,
-                      );
-                    },
-              icon: const Icon(Icons.swap_horiz_rounded, size: 18),
-              label: Text(
-                out == null
-                    ? l.notEnoughJelly
-                    : (_wantGold
-                          ? l.exchangeGetGold(formatCompact(out.gold))
-                          : l.exchangeGetMaterial(
-                              formatCompact(out.materials),
-                            )),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.medium,
+            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.swap_horiz_rounded,
+                      color: Color(0xFF9BE7FF),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      l.exchangeTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const Spacer(),
+                    materialImage(
+                      MaterialKind.jelly,
+                      size: 15,
+                      fallback: const SizedBox(width: 15),
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      formatCompact(have),
+                      style: const TextStyle(
+                        color: Color(0xFF9BE7FF),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2E6DA4),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 2),
+                Text(
+                  l.exchangeHint,
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 11,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _pick(
+                        l.exchangeToGold,
+                        _wantGold,
+                        Icons.paid_rounded,
+                        () => setState(() => _wantGold = true),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _pick(
+                        l.exchangeToMaterial,
+                        !_wantGold,
+                        Icons.science_rounded,
+                        () => setState(() => _wantGold = false),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    for (final n in const [1, 5, 10])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: _qty(n),
+                      ),
+                    const Spacer(),
+                    Text(
+                      l.exchangeCost(cost),
+                      style: TextStyle(
+                        color: enough
+                            ? const Color(0xFF9BE7FF)
+                            : const Color(0xFFFF8A6B),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: FilledButton.icon(
+                    onPressed: (out == null || !enough)
+                        ? null
+                        : () async {
+                            final ok = await ctrl.tradeJelly(
+                              trades: _trades,
+                              wantGold: _wantGold,
+                            );
+                            if (!context.mounted) return;
+                            showCenterToast(
+                              context,
+                              ok ? l.exchangeDone : l.notEnoughJelly,
+                            );
+                          },
+                    icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                    label: Text(
+                      out == null
+                          ? l.notEnoughJelly
+                          : (_wantGold
+                                ? l.exchangeGetGold(formatCompact(out.gold))
+                                : l.exchangeGetMaterial(
+                                    formatCompact(out.materials),
+                                  )),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E6DA4),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
