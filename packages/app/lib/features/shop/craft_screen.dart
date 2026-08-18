@@ -138,6 +138,8 @@ class _ProductCard extends ConsumerWidget {
   /// 이미 보유해서 다시 살 수 없는 상품인지.
   bool get _owned => switch (product.type) {
     IapType.removeAds => save.adsRemoved,
+    // 기간제라 '보유'로 잠그지 않는다 — 재구매로 기간을 잇는다.
+    IapType.buffPass => false,
     IapType.starter => save.starterBought,
     IapType.skin => save.ownedSkins.contains(product.skinId),
     _ => false, // 젤리·패스는 반복 구매 가능
@@ -145,6 +147,7 @@ class _ProductCard extends ConsumerWidget {
 
   (IconData, Color) get _style => switch (product.type) {
     IapType.removeAds => (Icons.block_rounded, const Color(0xFF5FD3C8)),
+    IapType.buffPass => (Icons.auto_awesome_rounded, const Color(0xFFEBA52F)),
     IapType.starter => (Icons.card_giftcard_rounded, const Color(0xFFEBA52F)),
     IapType.pass => (Icons.workspace_premium_rounded, const Color(0xFFB98BFF)),
     IapType.jelly => (Icons.bubble_chart_rounded, const Color(0xFF7FD3F5)),

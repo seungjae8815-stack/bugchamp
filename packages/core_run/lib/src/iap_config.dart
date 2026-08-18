@@ -18,6 +18,7 @@ enum IapKind {
 enum IapType {
   jelly('jelly'), // 젤리 지급
   removeAds('removeAds'), // 광고 제거
+  buffPass('buffPass'), // 무한 버프 패스(기간제)
   starter('starter'), // 스타터 패키지(1회 묶음)
   pass('pass'), // 기간제 패스
   skin('skin'); // 코스메틱
@@ -165,6 +166,7 @@ class IapConfig {
     this.passOfflineCapHours = 12,
     this.passIdleGoldMult = 1.2,
     this.removeAdsDailyJelly = 10,
+    this.buffPassDurationDays = 30,
   });
 
   final List<IapProduct> products;
@@ -200,6 +202,9 @@ class IapConfig {
   /// 광고 제거 구매자의 매일 젤리.
   final int removeAdsDailyJelly;
 
+  /// 무한 버프 패스 기간(일).
+  final int buffPassDurationDays;
+
   /// 정렬된 상품 목록(sort 오름차순).
   /// 상점 표시용 — 판매 중단(hidden) 상품은 뺀다.
   List<IapProduct> get sorted =>
@@ -232,5 +237,6 @@ class IapConfig {
     passOfflineCapHours: (json['passOfflineCapHours'] as num?)?.toInt() ?? 12,
     passIdleGoldMult: (json['passIdleGoldMult'] as num?)?.toDouble() ?? 1.2,
     removeAdsDailyJelly: (json['removeAdsDailyJelly'] as num?)?.toInt() ?? 10,
+    buffPassDurationDays: (json['buffPassDurationDays'] as num?)?.toInt() ?? 30,
   );
 }

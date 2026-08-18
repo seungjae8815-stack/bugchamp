@@ -227,6 +227,23 @@
     "en": "Battle backgrounds get a vivid grade. Cosmetic only.",
     "ja": "バトル背景が鮮やかなトーンに。見た目のみ。"
    }
+  },
+  {
+   "id": "buff_pass",
+   "kind": "timed",
+   "type": "buffPass",
+   "priceKrw": 6600,
+   "sort": 35,
+   "name": {
+    "ko": "무한 버프 패스 (30일)",
+    "en": "Endless Buff Pass (30d)",
+    "ja": "無限バフパス（30日）"
+   },
+   "desc": {
+    "ko": "5가지 버프가 항상 켜져 있어요 (골드·경험치 2배, 공격 강화, 재료·곤충 발견 2배)",
+    "en": "All 5 buffs stay on: 2x gold & XP, stronger attacks, 2x materials & bug finds",
+    "ja": "5種のバフが常時発動（ゴールド・経験値2倍、攻撃強化、素材・虫の発見2倍）"
+   }
   }
  ],
  "skins": [
@@ -244,5 +261,6 @@
    "id": "arena_theme",
    "effect": "arenaTheme"
   }
- ]
+ ],
+ "buffPassDurationDays": 30
 }

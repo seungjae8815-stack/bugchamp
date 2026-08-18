@@ -4726,6 +4726,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 기기 단위 카운트다. 버프는 PvE 편의라 서버 소유까지는 과하다 —
   /// 몬스터 적응 체력 기준에서도 버프는 빠져 있다(§7).
   Future<bool> _takeBuffActivation(AppLocalizations l) async {
+    // 무한 버프 패스 보유 중이면 발동 자체가 필요 없다(항상 켜져 있다).
+    final save = ref.read(saveControllerProvider).requireValue;
+    if (save.buffPassActive(ref.read(clockProvider).now().toUtc())) return true;
     final cfg = _data.buffConfig;
     final free = cfg?.freeDaily ?? 12;
     final cost = cfg?.jellyActivate ?? 2;

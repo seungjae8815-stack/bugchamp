@@ -674,6 +674,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
           : now;
       passExpiry = base.add(Duration(days: days));
     }
+    // 무한 버프 패스도 같은 규칙으로 이어 붙인다(칸만 다르다).
+    DateTime? buffPassExpiry = s.buffPassExpiresAt;
+    if (p.type == IapType.buffPass) {
+      final days = cfg?.buffPassDurationDays ?? 30;
+      final base = (buffPassExpiry != null && buffPassExpiry.isAfter(now))
+          ? buffPassExpiry
+          : now;
+      buffPassExpiry = base.add(Duration(days: days));
+    }
 
     await _commit(
       s.copyWith(
@@ -681,6 +690,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         materials: mats,
         incubatorCapacity: s.incubatorCapacity + g.incubatorSlots,
         adsRemoved: s.adsRemoved || p.type == IapType.removeAds,
+        buffPassExpiresAt: buffPassExpiry,
         starterBought: s.starterBought || p.type == IapType.starter,
         ownedSkins: p.skinId == null
             ? s.ownedSkins

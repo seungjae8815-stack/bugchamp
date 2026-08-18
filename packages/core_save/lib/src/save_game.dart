@@ -418,6 +418,7 @@ class SaveGame {
     this.lastReadNoticeId = 0,
     this.reviewAsked = false,
     this.adsRemoved = false,
+    this.buffPassExpiresAt,
     this.starterBought = false,
     this.ownedSkins = const {},
     this.passExpiresAt,
@@ -792,6 +793,12 @@ class SaveGame {
   /// 광고 제거 구매 여부(강제 광고만 제거, 보상형 광고는 유지).
   final bool adsRemoved;
 
+  /// 무한 버프 패스 만료 시각(UTC). null/과거면 없음.
+  ///
+  /// 곤충학자 패스(`passExpiresAt`)와 **별도 상품**이라 칸을 나눈다 — 하나로
+  /// 합치면 한쪽만 산 사람에게 다른 쪽 혜택이 딸려간다.
+  final DateTime? buffPassExpiresAt;
+
   /// 스타터 패키지 구매 여부(계정당 1회).
   final bool starterBought;
 
@@ -825,6 +832,10 @@ class SaveGame {
 
   /// 강제 광고를 숨겨야 하는지(광고제거 구매 또는 패스 보유).
   bool adsHidden(DateTime now) => adsRemoved || passActive(now);
+
+  /// 무한 버프 패스가 살아 있는가.
+  bool buffPassActive(DateTime now) =>
+      buffPassExpiresAt != null && buffPassExpiresAt!.isAfter(now);
 
   int missionClaimCount(String id) => missionClaims[id] ?? 0;
   int missionProgressCount(String id) => missionProgress[id] ?? 0;
@@ -886,6 +897,7 @@ class SaveGame {
     autoForgeOptions: const {},
     autoForgeStopOnHit: true,
     adsRemoved: false,
+    buffPassExpiresAt: null,
     starterBought: false,
     ownedSkins: const {},
     redeemedPurchases: const {},
@@ -950,6 +962,7 @@ class SaveGame {
     int? lastReadNoticeId,
     bool? reviewAsked,
     bool? adsRemoved,
+    DateTime? buffPassExpiresAt,
     bool? starterBought,
     Set<String>? ownedSkins,
     DateTime? passExpiresAt,
@@ -1015,6 +1028,7 @@ class SaveGame {
     lastReadNoticeId: lastReadNoticeId ?? this.lastReadNoticeId,
     reviewAsked: reviewAsked ?? this.reviewAsked,
     adsRemoved: adsRemoved ?? this.adsRemoved,
+    buffPassExpiresAt: buffPassExpiresAt ?? this.buffPassExpiresAt,
     starterBought: starterBought ?? this.starterBought,
     ownedSkins: ownedSkins ?? this.ownedSkins,
     passExpiresAt: passExpiresAt ?? this.passExpiresAt,
@@ -1028,13 +1042,23 @@ class SaveGame {
   int upgradeLevel(UpgradeKind kind) => upgradeLevels[kind] ?? 0;
 
   /// [now] 기준 활성(만료 전) 버프 종류들.
-  Set<BuffKind> activeBuffs(DateTime now) => {
-    for (final e in buffExpiry.entries)
-      if (e.value.isAfter(now)) e.key,
-  };
+  ///
+  /// **무한 버프 패스 보유 중이면 전부 활성**이다. 버프 효과를 읽는 곳이
+  /// 여기 하나뿐이라(§ 화면·방치 계산 모두 이걸 본다), 여기서 한 번에 처리하면
+  /// 지급 경로가 갈리지 않는다.
+  Set<BuffKind> activeBuffs(DateTime now) => buffPassActive(now)
+      ? BuffKind.values.toSet()
+      : {
+          for (final e in buffExpiry.entries)
+            if (e.value.isAfter(now)) e.key,
+        };
 
   /// [kind] 버프의 남은 시간([now] 기준). 비활성이면 null.
+  ///
+  /// 무한 패스 중에는 **패스 남은 기간**을 돌려준다 — 화면이 "무한"을 표현할
+  /// 방법이 없으면 30분짜리처럼 보여서 계속 눌러 켜려 하게 된다.
   Duration? buffRemaining(BuffKind kind, DateTime now) {
+    if (buffPassActive(now)) return buffPassExpiresAt!.difference(now);
     final exp = buffExpiry[kind];
     if (exp == null || !exp.isAfter(now)) return null;
     return exp.difference(now);
@@ -1189,6 +1213,9 @@ class SaveGame {
     lastReadNoticeId: (json['lastReadNoticeId'] as num?)?.toInt() ?? 0,
     reviewAsked: json['reviewAsked'] as bool? ?? false,
     adsRemoved: json['adsRemoved'] as bool? ?? false,
+    buffPassExpiresAt: json['buffPassExpiresAt'] == null
+        ? null
+        : DateTime.parse(json['buffPassExpiresAt'] as String).toUtc(),
     starterBought: json['starterBought'] as bool? ?? false,
     ownedSkins:
         (json['ownedSkins'] as List?)?.cast<String>().toSet() ?? const {},
@@ -1293,6 +1320,7 @@ class SaveGame {
     'lastReadNoticeId': lastReadNoticeId,
     'reviewAsked': reviewAsked,
     'adsRemoved': adsRemoved,
+    'buffPassExpiresAt': buffPassExpiresAt?.toIso8601String(),
     'starterBought': starterBought,
     'ownedSkins': ownedSkins.toList(),
     'redeemedPurchases': redeemedPurchases.toList(),
