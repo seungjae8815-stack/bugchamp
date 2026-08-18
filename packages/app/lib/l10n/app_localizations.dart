@@ -4659,6 +4659,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bug King Championship · opens {when}'**
   String eventSoonBanner(String when);
+
+  /// No description provided for @eventFlyerPrizeTag.
+  ///
+  /// In en, this message translates to:
+  /// **'1st place prize'**
+  String get eventFlyerPrizeTag;
 }
 
 class _AppLocalizationsDelegate

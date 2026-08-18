@@ -2579,4 +2579,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String eventSoonBanner(String when) {
     return 'Bug King Championship · opens $when';
   }
+
+  @override
+  String get eventFlyerPrizeTag => '1st place prize';
 }

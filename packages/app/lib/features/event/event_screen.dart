@@ -48,9 +48,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   bool _busy = false;
   String? _error;
 
-  /// 설명을 이미 봤는지(기기 단위). 세이브가 아니라 로컬 설정이다 —
-  /// 서버에 올릴 값도, 계정을 옮길 값도 아니다.
-  static const _seenIntroKey = 'event_intro_seen_v1';
+  /// 전단지를 **오늘** 봤는지(기기 단위, 값은 KST 날짜). 세이브가 아니라 로컬
+  /// 설정이다 — 서버에 올릴 값도, 계정을 옮길 값도 아니다.
+  ///
+  /// 예전엔 "한 번이라도 봤으면 끝"이었다. 그런데 이 대회는 회차가 짧고 상품이
+  /// 실물이라, **매일 한 번은 상기시켜야** 기간·상품·응모 조건을 잊지 않는다.
+  /// 하루에 여러 번 들락거려도 한 번만 뜬다 — 매번 뜨면 방해가 된다.
+  static const _seenIntroKey = 'event_intro_seen_date';
 
   @override
   void initState() {
@@ -63,10 +67,17 @@ class _EventScreenState extends ConsumerState<EventScreen> {
 
   Future<void> _maybeShowIntro() async {
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_seenIntroKey) == true) return;
+    // KST 기준 날짜 — 기기 시간대를 그대로 쓰면 해외 유저는 경계가 달라진다.
+    final kst = ref
+        .read(clockProvider)
+        .now()
+        .toUtc()
+        .add(const Duration(hours: 9));
+    final today = '${kst.year}-${kst.month}-${kst.day}';
+    if (prefs.getString(_seenIntroKey) == today) return;
     if (!mounted) return;
     await _showIntro();
-    await prefs.setBool(_seenIntroKey, true);
+    await prefs.setString(_seenIntroKey, today);
   }
 
   Future<void> _showIntro() => Navigator.of(

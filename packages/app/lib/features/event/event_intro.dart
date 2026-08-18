@@ -175,30 +175,88 @@ class EventIntroScreen extends ConsumerWidget {
         ),
         _rule(),
         // ── 상품 ──
+        //
+        // **전단지에서 제일 큰 글씨여야 한다.** 사람들이 이 대회를 도는 이유가
+        // 실물 곤충이라, 다른 안내와 같은 톤이면 "그래서 뭘 주는데"가 안 남는다
+        // (실기 지적: "상품이 명확하게 잘 안 보여").
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          child: Column(
-            children: [
-              Text(
-                l.eventFlyerPrize,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 17,
-                  height: 1.35,
-                ),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _honey.withValues(alpha: 0.26),
+                  _honey.withValues(alpha: 0.10),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 4),
-              Text(
-                l.eventFlyerPrizeNote,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFFFD08A),
-                  fontSize: 11.5,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _honey, width: 1.6),
+              boxShadow: [
+                BoxShadow(
+                  color: _honey.withValues(alpha: 0.28),
+                  blurRadius: 16,
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Column(
+              children: [
+                // 상품이라는 걸 글자 없이도 알리는 머리표.
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _honey,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.emoji_events_rounded,
+                        size: 13,
+                        color: Color(0xFF3A2600),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        l.eventFlyerPrizeTag,
+                        style: const TextStyle(
+                          color: Color(0xFF3A2600),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l.eventFlyerPrize,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 21,
+                    height: 1.3,
+                    shadows: [Shadow(color: Colors.black54, blurRadius: 6)],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l.eventFlyerPrizeNote,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFFFD08A),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         _rule(),

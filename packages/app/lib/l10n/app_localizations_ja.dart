@@ -2527,4 +2527,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String eventSoonBanner(String when) {
     return '王蟲選抜大会・$when 開幕';
   }
+
+  @override
+  String get eventFlyerPrizeTag => '1位の賞品';
 }

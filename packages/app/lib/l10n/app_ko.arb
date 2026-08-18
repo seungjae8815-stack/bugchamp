@@ -794,5 +794,6 @@
   "eventOpensInHours": "{n}시간 뒤 시작",
   "eventOpensInMinutes": "{n}분 뒤 시작",
   "eventSeeFlyer": "대회 안내 보기",
-  "eventSoonBanner": "왕충 선발대회 · {when} 개막"
+  "eventSoonBanner": "왕충 선발대회 · {when} 개막",
+  "eventFlyerPrizeTag": "1등 상품"
 }

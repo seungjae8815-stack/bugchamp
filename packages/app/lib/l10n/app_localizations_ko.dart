@@ -2531,4 +2531,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String eventSoonBanner(String when) {
     return '왕충 선발대회 · $when 개막';
   }
+
+  @override
+  String get eventFlyerPrizeTag => '1등 상품';
 }
