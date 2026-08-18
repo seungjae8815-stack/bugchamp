@@ -1,5 +1,5 @@
 ========================================
- Google Play — 출시 노트 (1.0.6 / 20260813)
+ Google Play — 출시 노트 (1.0.6 / 20260814)
 ========================================
 ※ Play Console 은 아래 태그 블록을 통째로 붙여넣는다. 한 언어당 500자 한도.
 ※ iOS 용 노트는 _appstore_whatsnew_1.0.6.txt (이모지 금지 · 심사 지뢰 단어 주의).
@@ -16,6 +16,7 @@
 • "다음 적 속성"을 누르면 오행 관계도를 볼 수 있어요
 • 채집함에 성별 표시, 순위표 상위 3위 강조
 • 시즌 보상이 종료 시점 등급 기준으로 지급돼요 (브론즈도 보상 추가)
+• 광고가 사라졌어요 — 광고 보상은 전부 무료 지급으로 바뀌었어요
 
 즐거운 채집 되세요! 😊
 </ko-KR>
@@ -30,6 +31,7 @@
 • New icons for element, temperament, trait, league, sex
 • Tap "next foe element" for the elemental chart
 • Season rewards use your rank at close (Bronze included)
+• Ads are gone — all ad rewards are now free claims
 
 Happy collecting! 😊
 </en-US>
@@ -45,6 +47,7 @@ Happy collecting! 😊
 • 「次の敵の属性」をタップすると五行相性図が見られます
 • 採集箱に性別表示、ランキング上位3位を強調
 • シーズン報酬が終了時の等級で支給されます（ブロンズにも報酬）
+• 広告を廃止 — 広告報酬はすべて無料受け取りになりました
 
 楽しい採集を！😊
 </ja-JP>
