@@ -1,87 +1,88 @@
 {
-  "_comment": "PvP(곤충 결투) 보상·스카우트 밸런스. 코드 하드코딩 금지(§6).",
-  "winGoldBase": 4000,
-  "winGoldPerTrophy": 30,
-  "trophyWin": 12,
-  "trophyDraw": 0,
-  "trophyLose": -8,
-  "locationAffinityBonus": 0.2,
-  "manualTurnSeconds": 10,
-  "scout": {
-    "tiers": [
-      {
-        "id": "easy",
-        "powerMult": 0.82,
-        "rewardMult": 0.7
-      },
-      {
-        "id": "even",
-        "powerMult": 1.0,
-        "rewardMult": 1.0
-      },
-      {
-        "id": "hard",
-        "powerMult": 1.22,
-        "rewardMult": 1.6
-      }
-    ]
+ "_comment": "PvP(곤충 결투) 보상·스카우트 밸런스. 코드 하드코딩 금지(§6).",
+ "winGoldBase": 4000,
+ "winGoldPerTrophy": 30,
+ "trophyWin": 12,
+ "trophyDraw": 0,
+ "trophyLose": -8,
+ "locationAffinityBonus": 0.2,
+ "manualTurnSeconds": 10,
+ "scout": {
+  "tiers": [
+   {
+    "id": "easy",
+    "powerMult": 0.82,
+    "rewardMult": 0.7
+   },
+   {
+    "id": "even",
+    "powerMult": 1.0,
+    "rewardMult": 1.0
+   },
+   {
+    "id": "hard",
+    "powerMult": 1.22,
+    "rewardMult": 1.6
+   }
+  ]
+ },
+ "leagues": [
+  {
+   "id": "bronze",
+   "minTrophy": 0,
+   "reward": {
+    "gold": 1500,
+    "jelly": 1
+   }
   },
-  "leagues": [
-    {
-      "id": "bronze",
-      "minTrophy": 0,
-      "reward": {
-        "gold": 1500,
-        "jelly": 1
-      }
-    },
-    {
-      "id": "silver",
-      "minTrophy": 100,
-      "reward": {
-        "gold": 5000,
-        "jelly": 3
-      }
-    },
-    {
-      "id": "gold",
-      "minTrophy": 300,
-      "reward": {
-        "gold": 15000,
-        "jelly": 6
-      }
-    },
-    {
-      "id": "platinum",
-      "minTrophy": 700,
-      "reward": {
-        "gold": 40000,
-        "jelly": 12
-      }
-    },
-    {
-      "id": "diamond",
-      "minTrophy": 1500,
-      "reward": {
-        "gold": 100000,
-        "jelly": 20
-      }
-    }
-  ],
-  "_seasonComment": "시즌은 주간. 모두에게 같은 순간에 끝나도록 요일·시각으로 못 박는다(tzOffsetMinutes=540 → KST 월요일 09:00).",
-  "season": {
-    "resetWeekday": 1,
-    "resetHour": 9,
-    "tzOffsetMinutes": 540,
-    "resetFactor": 0.5,
-    "rewardMult": 2
+  {
+   "id": "silver",
+   "minTrophy": 100,
+   "reward": {
+    "gold": 5000,
+    "jelly": 3
+   }
   },
-  "_ticketsComment": "결투 티켓 = 하루 판수 제한(랭킹을 '전력'으로 되돌린다). adDailyLimit 은 광고제거 구매자에게도 동일 적용.",
-  "tickets": {
-    "max": 10,
-    "regenSeconds": 1800,
-    "adGrant": 3,
-    "adDailyLimit": 30,
-    "refillJelly": 10
+  {
+   "id": "gold",
+   "minTrophy": 300,
+   "reward": {
+    "gold": 15000,
+    "jelly": 6
+   }
+  },
+  {
+   "id": "platinum",
+   "minTrophy": 700,
+   "reward": {
+    "gold": 40000,
+    "jelly": 12
+   }
+  },
+  {
+   "id": "diamond",
+   "minTrophy": 1500,
+   "reward": {
+    "gold": 100000,
+    "jelly": 20
+   }
   }
+ ],
+ "_seasonComment": "시즌은 주간. 모두에게 같은 순간에 끝나도록 요일·시각으로 못 박는다(tzOffsetMinutes=540 → KST 월요일 09:00).",
+ "season": {
+  "resetWeekday": 1,
+  "resetHour": 9,
+  "tzOffsetMinutes": 540,
+  "resetFactor": 0.5,
+  "rewardMult": 2
+ },
+ "_ticketsComment": "결투 티켓 = 하루 판수 제한(랭킹을 '전력'으로 되돌린다). adDailyLimit 은 광고제거 구매자에게도 동일 적용.",
+ "tickets": {
+  "max": 10,
+  "regenSeconds": 1800,
+  "adGrant": 3,
+  "adDailyLimit": 5,
+  "refillJelly": 10,
+  "_adComment": "광고 없는 운영(2026-08-18): adGrant/adDailyLimit 는 이제 '무료 충전' 버튼이다. 광고 시청 30초가 비용이던 시절의 30회를 그대로 두면 공짜 무제한이 되므로 5회(+15장)로 줄였다. 서버도 이 파일을 읽는다 — 바꾸면 재배포."
+ }
 }

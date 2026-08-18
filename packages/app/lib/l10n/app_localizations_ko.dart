@@ -920,7 +920,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventFlyerRule3 => '출전한 곤충은 하루 쉬어요 — 좋은 곤충을 여러 마리 모아두면 유리해요';
 
   @override
-  String get eventFlyerRule4 => '참가권은 매일 아침 채워지고, 광고로 하루 2장까지 더 받을 수 있어요';
+  String get eventFlyerRule4 => '참가권은 매일 아침 채워지고, 무료 충전으로 하루 2장까지 더 받을 수 있어요';
 
   @override
   String get eventFlyerLogin => '순위에 오르려면 로그인이 필요해요 (게스트는 참여만 가능)';
@@ -1000,10 +1000,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventNoTicket => '참가권이 없어요';
 
   @override
-  String get eventAdTicket => '광고 보고 참가권 받기';
+  String get eventAdTicket => '무료 참가권 받기';
 
   @override
-  String get eventAdLimit => '오늘 광고 보상을 모두 받았어요';
+  String get eventAdLimit => '오늘 무료 보상을 모두 받았어요';
 
   @override
   String get eventTicketFull => '참가권이 가득 찼어요';
@@ -1313,7 +1313,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftClaim => '받기';
 
   @override
-  String get giftClaimAd => '광고 2배';
+  String get giftClaimAd => '2배 받기';
 
   @override
   String giftExpiresIn(String time) {
@@ -1324,16 +1324,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftClaimedSnack => '선물을 받았어요!';
 
   @override
-  String get giftDoubledSnack => '광고 보상 2배 획득!';
+  String get giftDoubledSnack => '보상 2배 획득!';
 
   @override
-  String get giftAdMoreTitle => '광고 보고 한 번 더?';
+  String get giftAdMoreTitle => '한 번 더 받을까요?';
 
   @override
-  String get giftAdMoreBody => '광고를 보면 같은 보상을 한 번 더 받아요';
+  String get giftAdMoreBody => '같은 보상을 한 번 더 받을 수 있어요';
 
   @override
-  String get giftAdMoreYes => '광고 보고 받기';
+  String get giftAdMoreYes => '한 번 더 받기';
 
   @override
   String get giftAdMoreLater => '괜찮아요';
@@ -1414,7 +1414,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get buffSheetTitle => '버프 활성화';
 
   @override
-  String get buffWatchAd => '광고 보기';
+  String get buffWatchAd => '무료로 켜기';
 
   @override
   String buffMinutes(int minutes) {
@@ -2057,7 +2057,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String incubatorAdSkip(int pct) {
-    return '📺 광고보고 $pct% 단축';
+    return '⏩ 무료 $pct% 단축';
   }
 
   @override
@@ -2093,7 +2093,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get incubatorInstant => '즉시 부화';
 
   @override
-  String get incubatorAdSkipBtn => '광고 보고 단축';
+  String get incubatorAdSkipBtn => '무료로 단축';
 
   @override
   String get notifyAll => '알림 받기';
@@ -2134,7 +2134,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String pvpTicketAdBtn(int amount) {
-    return '광고 보고 +$amount장';
+    return '무료 충전 +$amount장';
   }
 
   @override
@@ -2166,7 +2166,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String adDailyLimit(int limit) {
-    return '오늘 볼 수 있는 광고를 모두 봤어요 (하루 $limit회)';
+    return '오늘 무료 보상을 모두 받았어요 (하루 $limit회)';
   }
 
   @override

@@ -564,7 +564,7 @@
   "eventFlyerRule1": "Stats are **equalized** — only species, element and temperament count; training, enhancement and size do not apply",
   "eventFlyerRule2": "Enemy elements rotate every wave — a single-element team will hit a wall",
   "eventFlyerRule3": "Bugs that entered rest for a day — keeping several good bugs pays off",
-  "eventFlyerRule4": "Tickets refill each morning, plus up to 2 more per day from ads",
+  "eventFlyerRule4": "Tickets refill every morning; free top-ups add up to 2 more per day",
   "eventFlyerLogin": "Sign in to appear in the ranking (guests can still play)",
   "eventTitle": "Bug King Trials",
   "eventBanner": "Bug King Trials · {n} tickets",
@@ -595,8 +595,8 @@
   "eventRestMinutes": "⏳{m}m",
   "eventChallenge": "Enter (1 ticket)",
   "eventNoTicket": "No tickets left",
-  "eventAdTicket": "Watch an ad for a ticket",
-  "eventAdLimit": "You've claimed every ad reward today",
+  "eventAdTicket": "Claim free ticket",
+  "eventAdLimit": "Today's free rewards are used up",
   "eventTicketFull": "Tickets are full",
   "eventResultTitle": "Reached wave {n}!",
   "eventNewBest": "New best!",
@@ -750,7 +750,7 @@
   "dailyRewardSnack": "Daily reward claimed!",
   "giftSectionTitle": "Surprise gifts (claim within 3h)",
   "giftClaim": "Claim",
-  "giftClaimAd": "Ad ×2",
+  "giftClaimAd": "Claim x2",
   "giftExpiresIn": "expires in {time}",
   "@giftExpiresIn": {
     "placeholders": {
@@ -760,10 +760,10 @@
     }
   },
   "giftClaimedSnack": "Gift claimed!",
-  "giftDoubledSnack": "Ad reward ×2!",
-  "giftAdMoreTitle": "Watch an ad for one more?",
-  "giftAdMoreBody": "Watch an ad to get the same reward once more",
-  "giftAdMoreYes": "Watch ad",
+  "giftDoubledSnack": "Double reward claimed!",
+  "giftAdMoreTitle": "Claim once more?",
+  "giftAdMoreBody": "You can claim the same reward one more time",
+  "giftAdMoreYes": "Claim again",
   "giftAdMoreLater": "No thanks",
   "notifLunchTitle": "Lunch reward is ready 🍱",
   "notifDinnerTitle": "Dinner reward is ready 🌙",
@@ -790,7 +790,7 @@
   "questHunt": "Monster Hunt",
   "buffTitle": "Buffs",
   "buffSheetTitle": "Activate a buff",
-  "buffWatchAd": "Watch ad",
+  "buffWatchAd": "Activate free",
   "buffMinutes": "{minutes}m",
   "@buffMinutes": {
     "placeholders": {
@@ -1200,7 +1200,7 @@
       }
     }
   },
-  "incubatorAdSkip": "📺 Watch ad: -{pct}%",
+  "incubatorAdSkip": "⏩ Free {pct}% skip",
   "incubatorAdSkipDone": "Hatching time reduced!",
   "@incubatorAdSkip": {
     "placeholders": {
@@ -1225,7 +1225,7 @@
   "notifyHatchDone": "Hatching complete",
   "notifyDaily": "Daily reward time",
   "incubatorInstant": "Hatch now",
-  "incubatorAdSkipBtn": "Watch ad to speed up",
+  "incubatorAdSkipBtn": "Skip for free",
   "notifyAll": "Enable notifications",
   "notEnoughMaterials": "Not enough materials",
   "notifGiftTitle": "A gift arrived!",
@@ -1254,7 +1254,7 @@
   },
   "pvpTicketFullLabel": "Full",
   "pvpTicketNone": "You need a duel ticket to fight. Charge one below.",
-  "pvpTicketAdBtn": "Watch ad +{amount}",
+  "pvpTicketAdBtn": "Free refill +{amount}",
   "@pvpTicketAdBtn": {
     "placeholders": {
       "amount": {
@@ -1293,7 +1293,7 @@
   "pvpTicketAlreadyFull": "Tickets are already full",
   "pvpTicketChargeFailed": "Could not charge tickets. Try again in a moment.",
   "pvpTicketWhy": "Tickets keep the trophy ranking about strength, not how many matches you grind.",
-  "adDailyLimit": "You've watched all of today's ads ({limit}/day)",
+  "adDailyLimit": "Today's free rewards are used up ({limit}/day)",
   "@adDailyLimit": {
     "placeholders": {
       "limit": {

@@ -919,7 +919,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventFlyerRule3 => '出場した虫は1日休みます — 良い虫を多く揃えると有利です';
 
   @override
-  String get eventFlyerRule4 => '参加券は毎朝補充され、広告で1日2枚まで追加できます';
+  String get eventFlyerRule4 => '参加券は毎朝補充され、無料チャージで1日2枚まで追加できます';
 
   @override
   String get eventFlyerLogin => '順位に載るにはログインが必要です（ゲストは参加のみ可能）';
@@ -999,10 +999,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventNoTicket => '参加券がありません';
 
   @override
-  String get eventAdTicket => '広告を見て参加券を受け取る';
+  String get eventAdTicket => '無料参加券を受け取る';
 
   @override
-  String get eventAdLimit => '本日の広告報酬はすべて受け取りました';
+  String get eventAdLimit => '本日の無料報酬は受け取り済みです';
 
   @override
   String get eventTicketFull => '参加券が満杯です';
@@ -1310,7 +1310,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftClaim => '受け取る';
 
   @override
-  String get giftClaimAd => '広告×2';
+  String get giftClaimAd => '2倍受け取る';
 
   @override
   String giftExpiresIn(String time) {
@@ -1321,16 +1321,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftClaimedSnack => 'ギフトを受け取りました！';
 
   @override
-  String get giftDoubledSnack => '広告報酬2倍を獲得！';
+  String get giftDoubledSnack => '報酬2倍獲得！';
 
   @override
-  String get giftAdMoreTitle => '広告を見てもう1回？';
+  String get giftAdMoreTitle => 'もう一度受け取りますか？';
 
   @override
-  String get giftAdMoreBody => '広告を見ると同じ報酬をもう1回受け取れます';
+  String get giftAdMoreBody => '同じ報酬をもう一度受け取れます';
 
   @override
-  String get giftAdMoreYes => '広告を見て受け取る';
+  String get giftAdMoreYes => 'もう一度受け取る';
 
   @override
   String get giftAdMoreLater => 'いいえ、結構です';
@@ -1412,7 +1412,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get buffSheetTitle => 'バフを発動';
 
   @override
-  String get buffWatchAd => '広告を見る';
+  String get buffWatchAd => '無料で発動';
 
   @override
   String buffMinutes(int minutes) {
@@ -2055,7 +2055,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String incubatorAdSkip(int pct) {
-    return '📺 広告で$pct%短縮';
+    return '⏩ 無料$pct%短縮';
   }
 
   @override
@@ -2091,7 +2091,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get incubatorInstant => 'すぐ孵化';
 
   @override
-  String get incubatorAdSkipBtn => '広告で短縮';
+  String get incubatorAdSkipBtn => '無料で短縮';
 
   @override
   String get notifyAll => '通知を受け取る';
@@ -2132,7 +2132,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String pvpTicketAdBtn(int amount) {
-    return '広告で+$amount枚';
+    return '無料チャージ+$amount枚';
   }
 
   @override
@@ -2164,7 +2164,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String adDailyLimit(int limit) {
-    return '本日分の広告はすべて視聴済みです（1日$limit回）';
+    return '本日の無料報酬は受け取り済みです（1日$limit回）';
   }
 
   @override

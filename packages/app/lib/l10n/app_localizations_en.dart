@@ -940,7 +940,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventFlyerRule4 =>
-      'Tickets refill each morning, plus up to 2 more per day from ads';
+      'Tickets refill every morning; free top-ups add up to 2 more per day';
 
   @override
   String get eventFlyerLogin =>
@@ -1022,10 +1022,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventNoTicket => 'No tickets left';
 
   @override
-  String get eventAdTicket => 'Watch an ad for a ticket';
+  String get eventAdTicket => 'Claim free ticket';
 
   @override
-  String get eventAdLimit => 'You\'ve claimed every ad reward today';
+  String get eventAdLimit => 'Today\'s free rewards are used up';
 
   @override
   String get eventTicketFull => 'Tickets are full';
@@ -1337,7 +1337,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftClaim => 'Claim';
 
   @override
-  String get giftClaimAd => 'Ad ×2';
+  String get giftClaimAd => 'Claim x2';
 
   @override
   String giftExpiresIn(String time) {
@@ -1348,16 +1348,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftClaimedSnack => 'Gift claimed!';
 
   @override
-  String get giftDoubledSnack => 'Ad reward ×2!';
+  String get giftDoubledSnack => 'Double reward claimed!';
 
   @override
-  String get giftAdMoreTitle => 'Watch an ad for one more?';
+  String get giftAdMoreTitle => 'Claim once more?';
 
   @override
-  String get giftAdMoreBody => 'Watch an ad to get the same reward once more';
+  String get giftAdMoreBody => 'You can claim the same reward one more time';
 
   @override
-  String get giftAdMoreYes => 'Watch ad';
+  String get giftAdMoreYes => 'Claim again';
 
   @override
   String get giftAdMoreLater => 'No thanks';
@@ -1440,7 +1440,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buffSheetTitle => 'Activate a buff';
 
   @override
-  String get buffWatchAd => 'Watch ad';
+  String get buffWatchAd => 'Activate free';
 
   @override
   String buffMinutes(int minutes) {
@@ -2097,7 +2097,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String incubatorAdSkip(int pct) {
-    return '📺 Watch ad: -$pct%';
+    return '⏩ Free $pct% skip';
   }
 
   @override
@@ -2133,7 +2133,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incubatorInstant => 'Hatch now';
 
   @override
-  String get incubatorAdSkipBtn => 'Watch ad to speed up';
+  String get incubatorAdSkipBtn => 'Skip for free';
 
   @override
   String get notifyAll => 'Enable notifications';
@@ -2176,7 +2176,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pvpTicketAdBtn(int amount) {
-    return 'Watch ad +$amount';
+    return 'Free refill +$amount';
   }
 
   @override
@@ -2210,7 +2210,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String adDailyLimit(int limit) {
-    return 'You\'ve watched all of today\'s ads ($limit/day)';
+    return 'Today\'s free rewards are used up ($limit/day)';
   }
 
   @override

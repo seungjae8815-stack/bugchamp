@@ -1747,7 +1747,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventFlyerRule4.
   ///
   /// In en, this message translates to:
-  /// **'Tickets refill each morning, plus up to 2 more per day from ads'**
+  /// **'Tickets refill every morning; free top-ups add up to 2 more per day'**
   String get eventFlyerRule4;
 
   /// No description provided for @eventFlyerLogin.
@@ -1873,13 +1873,13 @@ abstract class AppLocalizations {
   /// No description provided for @eventAdTicket.
   ///
   /// In en, this message translates to:
-  /// **'Watch an ad for a ticket'**
+  /// **'Claim free ticket'**
   String get eventAdTicket;
 
   /// No description provided for @eventAdLimit.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve claimed every ad reward today'**
+  /// **'Today\'s free rewards are used up'**
   String get eventAdLimit;
 
   /// No description provided for @eventTicketFull.
@@ -2437,7 +2437,7 @@ abstract class AppLocalizations {
   /// No description provided for @giftClaimAd.
   ///
   /// In en, this message translates to:
-  /// **'Ad ×2'**
+  /// **'Claim x2'**
   String get giftClaimAd;
 
   /// No description provided for @giftExpiresIn.
@@ -2455,25 +2455,25 @@ abstract class AppLocalizations {
   /// No description provided for @giftDoubledSnack.
   ///
   /// In en, this message translates to:
-  /// **'Ad reward ×2!'**
+  /// **'Double reward claimed!'**
   String get giftDoubledSnack;
 
   /// No description provided for @giftAdMoreTitle.
   ///
   /// In en, this message translates to:
-  /// **'Watch an ad for one more?'**
+  /// **'Claim once more?'**
   String get giftAdMoreTitle;
 
   /// No description provided for @giftAdMoreBody.
   ///
   /// In en, this message translates to:
-  /// **'Watch an ad to get the same reward once more'**
+  /// **'You can claim the same reward one more time'**
   String get giftAdMoreBody;
 
   /// No description provided for @giftAdMoreYes.
   ///
   /// In en, this message translates to:
-  /// **'Watch ad'**
+  /// **'Claim again'**
   String get giftAdMoreYes;
 
   /// No description provided for @giftAdMoreLater.
@@ -2635,7 +2635,7 @@ abstract class AppLocalizations {
   /// No description provided for @buffWatchAd.
   ///
   /// In en, this message translates to:
-  /// **'Watch ad'**
+  /// **'Activate free'**
   String get buffWatchAd;
 
   /// No description provided for @buffMinutes.
@@ -3793,7 +3793,7 @@ abstract class AppLocalizations {
   /// No description provided for @incubatorAdSkip.
   ///
   /// In en, this message translates to:
-  /// **'📺 Watch ad: -{pct}%'**
+  /// **'⏩ Free {pct}% skip'**
   String incubatorAdSkip(int pct);
 
   /// No description provided for @incubatorAdSkipDone.
@@ -3859,7 +3859,7 @@ abstract class AppLocalizations {
   /// No description provided for @incubatorAdSkipBtn.
   ///
   /// In en, this message translates to:
-  /// **'Watch ad to speed up'**
+  /// **'Skip for free'**
   String get incubatorAdSkipBtn;
 
   /// No description provided for @notifyAll.
@@ -3931,7 +3931,7 @@ abstract class AppLocalizations {
   /// No description provided for @pvpTicketAdBtn.
   ///
   /// In en, this message translates to:
-  /// **'Watch ad +{amount}'**
+  /// **'Free refill +{amount}'**
   String pvpTicketAdBtn(int amount);
 
   /// No description provided for @pvpTicketAdLeft.
@@ -3979,7 +3979,7 @@ abstract class AppLocalizations {
   /// No description provided for @adDailyLimit.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve watched all of today\'s ads ({limit}/day)'**
+  /// **'Today\'s free rewards are used up ({limit}/day)'**
   String adDailyLimit(int limit);
 
   /// No description provided for @noticeTitle.

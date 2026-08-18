@@ -82,6 +82,7 @@ class IapProduct {
     this.bonusPct = 0,
     this.skinId,
     this.grant = const IapGrant(),
+    this.hidden = false,
   });
 
   /// 스토어 상품 ID(구글 플레이 콘솔에 동일하게 등록).
@@ -94,6 +95,11 @@ class IapProduct {
   final IapType type;
   final int priceKrw;
   final int sort;
+
+  /// 상점에서 감춘다(판매 중단). 상품 정의는 남긴다 — **이미 산 사람의 혜택
+  /// 지급 로직이 상품 정의를 참조**하므로, 지우면 보유자 혜택까지 사라진다.
+  /// (광고 제거 패스: 광고 없는 운영 전환으로 핵심 가치가 소멸 → 판매 중단.)
+  final bool hidden;
 
   /// 젤리 팩 보너스 표기(%). 0이면 미표기.
   final int bonusPct;
@@ -115,6 +121,7 @@ class IapProduct {
     type: IapType.fromKey(json['type'] as String? ?? 'jelly'),
     priceKrw: (json['priceKrw'] as num?)?.toInt() ?? 0,
     sort: (json['sort'] as num?)?.toInt() ?? 0,
+    hidden: json['hidden'] == true,
     bonusPct: (json['bonusPct'] as num?)?.toInt() ?? 0,
     skinId: json['skinId'] as String?,
     grant: json['grant'] == null
@@ -194,8 +201,10 @@ class IapConfig {
   final int removeAdsDailyJelly;
 
   /// 정렬된 상품 목록(sort 오름차순).
+  /// 상점 표시용 — 판매 중단(hidden) 상품은 뺀다.
   List<IapProduct> get sorted =>
-      [...products]..sort((a, b) => a.sort.compareTo(b.sort));
+      [...products.where((p) => !p.hidden)]
+        ..sort((a, b) => a.sort.compareTo(b.sort));
 
   /// [type] 에 해당하는 상품들(정렬 유지).
   List<IapProduct> byType(IapType type) =>

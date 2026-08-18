@@ -1,246 +1,248 @@
 {
-  "_comment": "인앱결제 상품 카탈로그 (§6 — 가격·구성은 여기서만 수정). 기획: docs/monetization.md",
-  "schemaVersion": 1,
-  "currency": "KRW",
-  "passDurationDays": 30,
-  "passDailyJelly": 30,
-  "passOfflineCapHours": 12,
-  "passIdleGoldMult": 1.2,
-  "removeAdsDailyJelly": 10,
-  "products": [
-    {
-      "id": "remove_ads",
-      "kind": "nonConsumable",
-      "type": "removeAds",
-      "priceKrw": 7700,
-      "sort": 10,
-      "name": {
-        "ko": "광고 제거 패스",
-        "en": "Remove Ads",
-        "ja": "広告除去パス"
-      },
-      "desc": {
-        "ko": "광고 완전 제거(보상형도 즉시 지급) + 매일 젤리 10",
-        "en": "No ads at all — rewarded ads pay out instantly + 10 jelly daily",
-        "ja": "広告を完全除去（リワード広告も即時付与）＋毎日ゼリー10"
-      }
-    },
-    {
-      "id": "starter_pack",
-      "kind": "nonConsumable",
-      "type": "starter",
-      "priceKrw": 5500,
-      "sort": 20,
-      "grant": {
-        "jelly": 300,
-        "gold": 200000,
-        "chitin": 500,
-        "mineral": 500,
-        "sap": 500,
-        "incubatorSlots": 1
-      },
-      "name": {
-        "ko": "스타터 패키지",
-        "en": "Starter Pack",
-        "ja": "スターターパック"
-      },
-      "desc": {
-        "ko": "젤리·골드·재료 + 부화기 슬롯 (계정당 1회)",
-        "en": "Jelly, gold, materials + incubator slot (once)",
-        "ja": "ゼリー・ゴールド・素材＋孵化器スロット（1回限り）"
-      }
-    },
-    {
-      "id": "idle_pass",
-      "kind": "timed",
-      "type": "pass",
-      "priceKrw": 9900,
-      "sort": 30,
-      "name": {
-        "ko": "곤충학자 패스 (30일)",
-        "en": "Entomologist Pass (30d)",
-        "ja": "昆虫学者パス（30日）"
-      },
-      "desc": {
-        "ko": "오프라인 12시간 · 방치 골드 +20% · 매일 젤리 30 · 광고 제거",
-        "en": "12h offline cap, +20% idle gold, 30 jelly daily, no ads",
-        "ja": "オフライン12時間・放置ゴールド+20%・毎日ゼリー30・広告除去"
-      }
-    },
-    {
-      "id": "jelly_s",
-      "kind": "consumable",
-      "type": "jelly",
-      "priceKrw": 1200,
-      "sort": 100,
-      "grant": {
-        "jelly": 60
-      },
-      "name": {
-        "ko": "곤충젤리 소",
-        "en": "Jelly Pouch",
-        "ja": "昆虫ゼリー 小"
-      },
-      "desc": {
-        "ko": "곤충젤리 60개",
-        "en": "60 jelly",
-        "ja": "昆虫ゼリー60個"
-      },
-      "bonusPct": 0
-    },
-    {
-      "id": "jelly_m",
-      "kind": "consumable",
-      "type": "jelly",
-      "priceKrw": 5500,
-      "sort": 110,
-      "bonusPct": 10,
-      "grant": {
-        "jelly": 300
-      },
-      "name": {
-        "ko": "곤충젤리 중",
-        "en": "Jelly Bag",
-        "ja": "昆虫ゼリー 中"
-      },
-      "desc": {
-        "ko": "곤충젤리 300개 (보너스 +10%)",
-        "en": "300 jelly (+10% bonus)",
-        "ja": "昆虫ゼリー300個（+10%）"
-      }
-    },
-    {
-      "id": "jelly_l",
-      "kind": "consumable",
-      "type": "jelly",
-      "priceKrw": 11000,
-      "sort": 120,
-      "bonusPct": 20,
-      "grant": {
-        "jelly": 660
-      },
-      "name": {
-        "ko": "곤충젤리 대",
-        "en": "Jelly Box",
-        "ja": "昆虫ゼリー 大"
-      },
-      "desc": {
-        "ko": "곤충젤리 660개 (보너스 +20%)",
-        "en": "660 jelly (+20% bonus)",
-        "ja": "昆虫ゼリー660個（+20%）"
-      }
-    },
-    {
-      "id": "jelly_xl",
-      "kind": "consumable",
-      "type": "jelly",
-      "priceKrw": 29000,
-      "sort": 130,
-      "bonusPct": 31,
-      "grant": {
-        "jelly": 1900
-      },
-      "name": {
-        "ko": "곤충젤리 특대",
-        "en": "Jelly Crate",
-        "ja": "昆虫ゼリー 特大"
-      },
-      "desc": {
-        "ko": "곤충젤리 1,900개 (보너스 +31%)",
-        "en": "1,900 jelly (+31% bonus)",
-        "ja": "昆虫ゼリー1,900個（+31%）"
-      }
-    },
-    {
-      "id": "jelly_xxl",
-      "kind": "consumable",
-      "type": "jelly",
-      "priceKrw": 59000,
-      "sort": 140,
-      "bonusPct": 42,
-      "grant": {
-        "jelly": 4200
-      },
-      "name": {
-        "ko": "곤충젤리 최대",
-        "en": "Jelly Vault",
-        "ja": "昆虫ゼリー 最大"
-      },
-      "desc": {
-        "ko": "곤충젤리 4,200개 (보너스 +42%)",
-        "en": "4,200 jelly (+42% bonus)",
-        "ja": "昆虫ゼリー4,200個（+42%）"
-      }
-    },
-    {
-      "id": "skin_gold_rhino",
-      "kind": "nonConsumable",
-      "type": "skin",
-      "priceKrw": 3300,
-      "sort": 200,
-      "skinId": "gold_rhino",
-      "name": {
-        "ko": "황금 장수풍뎅이",
-        "en": "Golden Rhino Beetle",
-        "ja": "黄金カブトムシ"
-      },
-      "desc": {
-        "ko": "장수풍뎅이 계열 전체가 황금빛으로 · 외형 전용, 능력치 영향 없음",
-        "en": "All rhinoceros beetles turn gold. Cosmetic only — no stat effect.",
-        "ja": "カブトムシ系がすべて黄金色に。見た目のみ・能力に影響なし。"
-      }
-    },
-    {
-      "id": "skin_albino_stag",
-      "kind": "nonConsumable",
-      "type": "skin",
-      "priceKrw": 3300,
-      "sort": 210,
-      "skinId": "albino_stag",
-      "name": {
-        "ko": "알비노 사슴벌레",
-        "en": "Albino Stag Beetle",
-        "ja": "アルビノクワガタ"
-      },
-      "desc": {
-        "ko": "사슴벌레 계열 전체가 알비노(백화)로 · 외형 전용, 능력치 영향 없음",
-        "en": "All stag beetles turn albino. Cosmetic only — no stat effect.",
-        "ja": "クワガタ系がすべてアルビノに。見た目のみ・能力に影響なし。"
-      }
-    },
-    {
-      "id": "theme_arena",
-      "kind": "nonConsumable",
-      "type": "skin",
-      "priceKrw": 2200,
-      "sort": 220,
-      "skinId": "arena_theme",
-      "name": {
-        "ko": "아레나 테마",
-        "en": "Arena Theme",
-        "ja": "アリーナテーマ"
-      },
-      "desc": {
-        "ko": "전투 장소 배경이 선명한 톤으로 · 외형 전용, 능력치 영향 없음",
-        "en": "Battle backgrounds get a vivid grade. Cosmetic only.",
-        "ja": "バトル背景が鮮やかなトーンに。見た目のみ。"
-      }
-    }
-  ],
-  "skins": [
-    {
-      "id": "gold_rhino",
-      "speciesPrefix": "rhino_",
-      "effect": "gold"
-    },
-    {
-      "id": "albino_stag",
-      "speciesPrefix": "stag_",
-      "effect": "albino"
-    },
-    {
-      "id": "arena_theme",
-      "effect": "arenaTheme"
-    }
-  ]
+ "_comment": "인앱결제 상품 카탈로그 (§6 — 가격·구성은 여기서만 수정). 기획: docs/monetization.md",
+ "schemaVersion": 1,
+ "currency": "KRW",
+ "passDurationDays": 30,
+ "passDailyJelly": 30,
+ "passOfflineCapHours": 12,
+ "passIdleGoldMult": 1.2,
+ "removeAdsDailyJelly": 10,
+ "products": [
+  {
+   "id": "remove_ads",
+   "kind": "nonConsumable",
+   "type": "removeAds",
+   "priceKrw": 7700,
+   "sort": 10,
+   "name": {
+    "ko": "광고 제거 패스",
+    "en": "Remove Ads",
+    "ja": "広告除去パス"
+   },
+   "desc": {
+    "ko": "광고 완전 제거(보상형도 즉시 지급) + 매일 젤리 10",
+    "en": "No ads at all — rewarded ads pay out instantly + 10 jelly daily",
+    "ja": "広告を完全除去（リワード広告も即時付与）＋毎日ゼリー10"
+   },
+   "hidden": true,
+   "_hiddenComment": "2026-08-18 광고 없는 운영 전환으로 판매 중단. 정의를 지우면 기보유자의 매일 젤리 10 지급이 끊기므로 hidden 으로만 감춘다."
+  },
+  {
+   "id": "starter_pack",
+   "kind": "nonConsumable",
+   "type": "starter",
+   "priceKrw": 5500,
+   "sort": 20,
+   "grant": {
+    "jelly": 300,
+    "gold": 200000,
+    "chitin": 500,
+    "mineral": 500,
+    "sap": 500,
+    "incubatorSlots": 1
+   },
+   "name": {
+    "ko": "스타터 패키지",
+    "en": "Starter Pack",
+    "ja": "スターターパック"
+   },
+   "desc": {
+    "ko": "젤리·골드·재료 + 부화기 슬롯 (계정당 1회)",
+    "en": "Jelly, gold, materials + incubator slot (once)",
+    "ja": "ゼリー・ゴールド・素材＋孵化器スロット（1回限り）"
+   }
+  },
+  {
+   "id": "idle_pass",
+   "kind": "timed",
+   "type": "pass",
+   "priceKrw": 9900,
+   "sort": 30,
+   "name": {
+    "ko": "곤충학자 패스 (30일)",
+    "en": "Entomologist Pass (30d)",
+    "ja": "昆虫学者パス（30日）"
+   },
+   "desc": {
+    "ko": "오프라인 12시간 · 방치 골드 +20% · 매일 젤리 30",
+    "en": "12h offline cap, +20% idle gold, 30 jelly daily",
+    "ja": "オフライン12時間・放置ゴールド+20%・毎日ゼリー30"
+   }
+  },
+  {
+   "id": "jelly_s",
+   "kind": "consumable",
+   "type": "jelly",
+   "priceKrw": 1200,
+   "sort": 100,
+   "grant": {
+    "jelly": 60
+   },
+   "name": {
+    "ko": "곤충젤리 소",
+    "en": "Jelly Pouch",
+    "ja": "昆虫ゼリー 小"
+   },
+   "desc": {
+    "ko": "곤충젤리 60개",
+    "en": "60 jelly",
+    "ja": "昆虫ゼリー60個"
+   },
+   "bonusPct": 0
+  },
+  {
+   "id": "jelly_m",
+   "kind": "consumable",
+   "type": "jelly",
+   "priceKrw": 5500,
+   "sort": 110,
+   "bonusPct": 10,
+   "grant": {
+    "jelly": 300
+   },
+   "name": {
+    "ko": "곤충젤리 중",
+    "en": "Jelly Bag",
+    "ja": "昆虫ゼリー 中"
+   },
+   "desc": {
+    "ko": "곤충젤리 300개 (보너스 +10%)",
+    "en": "300 jelly (+10% bonus)",
+    "ja": "昆虫ゼリー300個（+10%）"
+   }
+  },
+  {
+   "id": "jelly_l",
+   "kind": "consumable",
+   "type": "jelly",
+   "priceKrw": 11000,
+   "sort": 120,
+   "bonusPct": 20,
+   "grant": {
+    "jelly": 660
+   },
+   "name": {
+    "ko": "곤충젤리 대",
+    "en": "Jelly Box",
+    "ja": "昆虫ゼリー 大"
+   },
+   "desc": {
+    "ko": "곤충젤리 660개 (보너스 +20%)",
+    "en": "660 jelly (+20% bonus)",
+    "ja": "昆虫ゼリー660個（+20%）"
+   }
+  },
+  {
+   "id": "jelly_xl",
+   "kind": "consumable",
+   "type": "jelly",
+   "priceKrw": 29000,
+   "sort": 130,
+   "bonusPct": 31,
+   "grant": {
+    "jelly": 1900
+   },
+   "name": {
+    "ko": "곤충젤리 특대",
+    "en": "Jelly Crate",
+    "ja": "昆虫ゼリー 特大"
+   },
+   "desc": {
+    "ko": "곤충젤리 1,900개 (보너스 +31%)",
+    "en": "1,900 jelly (+31% bonus)",
+    "ja": "昆虫ゼリー1,900個（+31%）"
+   }
+  },
+  {
+   "id": "jelly_xxl",
+   "kind": "consumable",
+   "type": "jelly",
+   "priceKrw": 59000,
+   "sort": 140,
+   "bonusPct": 42,
+   "grant": {
+    "jelly": 4200
+   },
+   "name": {
+    "ko": "곤충젤리 최대",
+    "en": "Jelly Vault",
+    "ja": "昆虫ゼリー 最大"
+   },
+   "desc": {
+    "ko": "곤충젤리 4,200개 (보너스 +42%)",
+    "en": "4,200 jelly (+42% bonus)",
+    "ja": "昆虫ゼリー4,200個（+42%）"
+   }
+  },
+  {
+   "id": "skin_gold_rhino",
+   "kind": "nonConsumable",
+   "type": "skin",
+   "priceKrw": 3300,
+   "sort": 200,
+   "skinId": "gold_rhino",
+   "name": {
+    "ko": "황금 장수풍뎅이",
+    "en": "Golden Rhino Beetle",
+    "ja": "黄金カブトムシ"
+   },
+   "desc": {
+    "ko": "장수풍뎅이 계열 전체가 황금빛으로 · 외형 전용, 능력치 영향 없음",
+    "en": "All rhinoceros beetles turn gold. Cosmetic only — no stat effect.",
+    "ja": "カブトムシ系がすべて黄金色に。見た目のみ・能力に影響なし。"
+   }
+  },
+  {
+   "id": "skin_albino_stag",
+   "kind": "nonConsumable",
+   "type": "skin",
+   "priceKrw": 3300,
+   "sort": 210,
+   "skinId": "albino_stag",
+   "name": {
+    "ko": "알비노 사슴벌레",
+    "en": "Albino Stag Beetle",
+    "ja": "アルビノクワガタ"
+   },
+   "desc": {
+    "ko": "사슴벌레 계열 전체가 알비노(백화)로 · 외형 전용, 능력치 영향 없음",
+    "en": "All stag beetles turn albino. Cosmetic only — no stat effect.",
+    "ja": "クワガタ系がすべてアルビノに。見た目のみ・能力に影響なし。"
+   }
+  },
+  {
+   "id": "theme_arena",
+   "kind": "nonConsumable",
+   "type": "skin",
+   "priceKrw": 2200,
+   "sort": 220,
+   "skinId": "arena_theme",
+   "name": {
+    "ko": "아레나 테마",
+    "en": "Arena Theme",
+    "ja": "アリーナテーマ"
+   },
+   "desc": {
+    "ko": "전투 장소 배경이 선명한 톤으로 · 외형 전용, 능력치 영향 없음",
+    "en": "Battle backgrounds get a vivid grade. Cosmetic only.",
+    "ja": "バトル背景が鮮やかなトーンに。見た目のみ。"
+   }
+  }
+ ],
+ "skins": [
+  {
+   "id": "gold_rhino",
+   "speciesPrefix": "rhino_",
+   "effect": "gold"
+  },
+  {
+   "id": "albino_stag",
+   "speciesPrefix": "stag_",
+   "effect": "albino"
+  },
+  {
+   "id": "arena_theme",
+   "effect": "arenaTheme"
+  }
+ ]
 }

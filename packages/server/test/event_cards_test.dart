@@ -18,7 +18,9 @@ import 'event_test.dart' show buildEventCfg;
 ///  3. 고른 카드가 실제로 다음 웨이브 계산에 반영된다.
 ///  4. 판이 끝나야 점수가 확정된다.
 void main() {
-  final t0 = DateTime.utc(2026, 8, 17, 3);
+  // 개막일 정오(KST). **달력이 아니라 설정에서 계산**한다 — 회차 날짜를 옮길
+  // 때마다 테스트가 깨지면 안 된다(8/17→8/28 이동 때 실제로 깨졌다).
+  final t0 = buildEventCfg().event!.startsAt!.add(const Duration(hours: 12));
   final species = {'test_bug': testSpecies};
   final cfg = buildEventCfg();
   final actions = GameActions(config: cfg, now: () => t0);
@@ -196,9 +198,18 @@ void main() {
 
   test('회차 키는 시작일로 고정된다 — 지난 회차 기록과 섞이지 않는다', () {
     final a = ev.roundIdAt(ev.startsAt!);
-    final b = ev.roundIdAt(ev.startsAt!.add(const Duration(days: 10)));
+    // 회차 **안**의 시점이어야 한다 — 날짜를 하드코딩하면 회차를 옮길 때마다
+    // 깨진다(8/17→8/28 이동 때 실제로 깨졌다). 길이도 설정에서 가져온다.
+    final b = ev.roundIdAt(
+      ev.startsAt!.add(Duration(days: ev.roundDays - 2)),
+    );
     expect(a, b, reason: '같은 회차 안에서는 키가 같아야 한다');
-    expect(a, contains('0817'));
+    final st = ev.startsAt!.add(const Duration(hours: 9)).toUtc();
+    final kst = st.add(const Duration(minutes: 540));
+    final mmdd =
+        '${kst.month.toString().padLeft(2, '0')}'
+        '${kst.day.toString().padLeft(2, '0')}';
+    expect(a, contains(mmdd));
   });
 
   test('선봉을 바꾸면 순서와 체력이 함께 따라간다', () {

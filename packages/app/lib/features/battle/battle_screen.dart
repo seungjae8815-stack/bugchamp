@@ -6,6 +6,7 @@ import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
@@ -1171,24 +1172,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           onPressed: avg == null
                               ? null
                               : () async {
-                                  // 새로고침도 광고 보상 — 끝까지 본 경우에만.
-                                  if (!await watchAdForReward(
-                                    context,
-                                    ref,
-                                    l,
-                                  )) {
-                                    return;
-                                  }
+                                  // 광고가 없어진 대신 **하루 상한**을 건다.
+                                  // 예전엔 광고 시청 30초가 비용이었는데, 공짜
+                                  // 무제한이면 제일 약한 상대가 나올 때까지
+                                  // 무한 리롤하게 된다.
+                                  if (!await _takeFreeRefresh(l)) return;
                                   if (!mounted) return;
                                   setState(
                                     () => _rollScouts(data, locale, avg),
                                   );
                                   _fetchRealScouts(data, locale, avg, save);
                                 },
-                          icon: const Icon(
-                            Icons.smart_display_rounded,
-                            size: 16,
-                          ),
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
                           label: Text(l.scoutRefresh),
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFFE9D9A6),
@@ -1469,6 +1464,25 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ),
     ),
   );
+
+  /// 스카우트 무료 새로고침 사용권(기기 단위, 하루 10회).
+  ///
+  /// 서버 소유 값이 아니어도 된다 — 새로고침은 상대 **선택**일 뿐이고 승패·보상
+  /// 확정은 어차피 서버가 한다. 세이브 채택으로 초기화되지 않게 기기에 둔다.
+  Future<bool> _takeFreeRefresh(AppLocalizations l) async {
+    const cap = 10;
+    final prefs = await SharedPreferences.getInstance();
+    final now = ref.read(clockProvider).now().toUtc();
+    final today = dailyDateKey(now);
+    final parts = (prefs.getString('scout_refresh_v1') ?? '|').split('|');
+    final used = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
+    if (used >= cap) {
+      if (mounted) showCenterToast(context, l.adDailyLimit(cap));
+      return false;
+    }
+    await prefs.setString('scout_refresh_v1', '$today|${used + 1}');
+    return true;
+  }
 
   /// 다른 유저 닉네임 표시용 — 부적절한 이름은 중립 이름으로 대체.
   /// 이미 서버에 등록된 이름은 되돌릴 수 없으므로 보여줄 때 가린다.

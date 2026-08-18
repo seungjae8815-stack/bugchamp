@@ -57,7 +57,9 @@ class _Cfg implements GameConfigLike {
 GameConfigLike buildEventCfg() => _Cfg();
 
 void main() {
-  final t0 = DateTime.utc(2026, 8, 17, 3); // KST 12:00 — 일일 지급 경계 이후
+  // 개막일 정오(KST). **달력이 아니라 설정에서 계산**한다 — 회차 날짜를 옮길
+  // 때마다 테스트가 깨지면 안 된다(8/17→8/28 이동 때 실제로 깨졌다).
+  final t0 = buildEventCfg().event!.startsAt!.add(const Duration(hours: 12));
   final species = {'test_bug': testSpecies};
   final cfg = _Cfg();
   final actions = GameActions(config: cfg, now: () => t0);

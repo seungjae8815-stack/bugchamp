@@ -51,15 +51,17 @@ bool get _useStoreIap => switch (_storeIapFlag) {
   _ => kReleaseMode,
 };
 
-/// 실광고 사용 여부. `--dart-define=REAL_ADS=on|off`, 기본은 릴리즈에서만 켬.
+/// 실광고 사용 여부. `--dart-define=REAL_ADS=on|off`, **기본 off**.
 ///
-/// 개발용 `NoAdService` 는 광고 없이 보상을 주므로, 릴리즈에 딸려 나가면
-/// "광고 보기"가 공짜 재화 버튼이 된다 — 결제와 같은 이유로 기본값을 릴리즈로 둔다.
+/// 2026-08-18 광고 없는 운영으로 전환(사장님 결정 — 애드몹 무효 트래픽 정지 후,
+/// 수익은 인앱결제로). `NoAdService` 가 모든 "무료로 받기"를 즉시 지급한다.
+/// 예전 기본값은 릴리즈=실광고였다. 광고를 되살릴 땐 REAL_ADS=on 으로 빌드하고,
+/// **그 전에 ARB 문구를 광고용으로 되돌려야 한다** — 지금 문구는 광고를 언급하지
+/// 않는다(광고 없이 "광고 보기"라고 쓰면 기만이라 전부 "무료" 계열로 바꿨다).
 const _realAdsFlag = String.fromEnvironment('REAL_ADS');
 bool get _useRealAds => switch (_realAdsFlag) {
   'on' => true,
-  'off' => false,
-  _ => kReleaseMode,
+  _ => false,
 };
 
 Future<void> main() async {

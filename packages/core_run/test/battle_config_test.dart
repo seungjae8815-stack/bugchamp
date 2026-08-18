@@ -61,14 +61,18 @@ void main() {
       expect(cfg.leagueProgress(2000), 1.0);
     });
 
-    test('도달·미수령 승급 보상만 반환(bronze는 보상 없음)', () {
-      // 400 트로피 → bronze/silver/gold 도달, bronze는 보상 없음
+    test('도달·미수령 승급 보상만 반환 — 브론즈도 보상이 있다', () {
+      // 브론즈 보상 0 시절엔 브론즈에 머무는 유저가 매주 아무것도 못 받았다
+      // (시즌 보상이 리그 보상에서 파생되므로). 2026-08-18 브론즈에도 넣었다.
       final claim = cfg.claimableLeagues(400, {});
-      expect(claim.map((l) => l.id), ['silver', 'gold']);
-      // silver 이미 수령 시 gold 만
-      expect(cfg.claimableLeagues(400, {'silver'}).map((l) => l.id), ['gold']);
-      // 트로피 부족이면 없음
-      expect(cfg.claimableLeagues(50, {}), isEmpty);
+      expect(claim.map((l) => l.id), ['bronze', 'silver', 'gold']);
+      // 수령한 리그는 빠진다
+      expect(
+        cfg.claimableLeagues(400, {'bronze', 'silver'}).map((l) => l.id),
+        ['gold'],
+      );
+      // 브론즈만 도달해도 브론즈 보상은 있다
+      expect(cfg.claimableLeagues(50, {}).map((l) => l.id), ['bronze']);
     });
   });
 
@@ -80,8 +84,8 @@ void main() {
       final r = cfg.seasonReward(800);
       expect(r.gold, 120000);
       expect(r.jelly, 60);
-      // bronze 피크(0 보상)면 시즌 보상도 0
-      expect(cfg.seasonReward(50), (gold: 0, jelly: 0));
+      // 브론즈여도 시즌 보상이 있다(1500골드·젤리2 × 3) — 매주 0원이면 안 된다.
+      expect(cfg.seasonReward(50), (gold: 4500, jelly: 6));
     });
 
     test('시즌 경계는 KST 월요일 09:00 — 모두에게 같은 순간', () {
