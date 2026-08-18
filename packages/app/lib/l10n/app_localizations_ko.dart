@@ -2539,4 +2539,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String adCooldown(int n) {
     return '잠시 후 다시 볼 수 있어요 ($n초)';
   }
+
+  @override
+  String get jellyContinueTitle => '젤리 사용';
+
+  @override
+  String jellyContinueAsk(int n) {
+    return '오늘 무료 횟수를 다 썼어요. 젤리 $n개로 계속할까요?';
+  }
+
+  @override
+  String get jellyContinueYes => '젤리 사용';
 }

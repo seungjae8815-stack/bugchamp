@@ -796,5 +796,8 @@
   "eventSeeFlyer": "대회 안내 보기",
   "eventSoonBanner": "왕충 선발대회 · {when} 개막",
   "eventFlyerPrizeTag": "1등 상품",
-  "adCooldown": "잠시 후 다시 볼 수 있어요 ({n}초)"
+  "adCooldown": "잠시 후 다시 볼 수 있어요 ({n}초)",
+  "jellyContinueTitle": "젤리 사용",
+  "jellyContinueAsk": "오늘 무료 횟수를 다 썼어요. 젤리 {n}개로 계속할까요?",
+  "jellyContinueYes": "젤리 사용"
 }

@@ -2535,4 +2535,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String adCooldown(int n) {
     return '次の広告まで$n秒';
   }
+
+  @override
+  String get jellyContinueTitle => 'ゼリーを使う';
+
+  @override
+  String jellyContinueAsk(int n) {
+    return '本日の無料回数を使い切りました。ゼリー$n個で続けますか？';
+  }
+
+  @override
+  String get jellyContinueYes => 'ゼリーを使う';
 }

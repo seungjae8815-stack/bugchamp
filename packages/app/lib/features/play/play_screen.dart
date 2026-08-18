@@ -4721,6 +4721,54 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
+  /// 버프 발동권 — 무료(buffs.json `freeDaily`회/일) 소진 후엔 젤리.
+  ///
+  /// 기기 단위 카운트다. 버프는 PvE 편의라 서버 소유까지는 과하다 —
+  /// 몬스터 적응 체력 기준에서도 버프는 빠져 있다(§7).
+  Future<bool> _takeBuffActivation(AppLocalizations l) async {
+    final cfg = _data.buffConfig;
+    final free = cfg?.freeDaily ?? 12;
+    final cost = cfg?.jellyActivate ?? 2;
+    final prefs = await SharedPreferences.getInstance();
+    final now = ref.read(clockProvider).now().toUtc();
+    final today = dailyDateKey(now);
+    final parts = (prefs.getString('buff_free_v1') ?? '|').split('|');
+    final used = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
+    if (used < free) {
+      await prefs.setString('buff_free_v1', '$today|${used + 1}');
+      return true;
+    }
+    // 무료 소진 — **먼저 묻는다**(말없이 젤리를 깎지 않는다).
+    if (!mounted) return false;
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.jellyContinueTitle,
+      icon: Icons.water_drop_rounded,
+      content: Text(
+        l.jellyContinueAsk(cost),
+        style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.4),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.jellyContinueYes,
+          () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (ok != true) return false;
+    if (!await ref.read(saveControllerProvider.notifier).trySpendJelly(cost)) {
+      if (mounted) showCenterToast(context, l.notEnoughJelly);
+      return false;
+    }
+    // 젤리 발동은 무료 카운트를 늘리지 않는다.
+    return true;
+  }
+
   Widget _buffSheetRow(
     AppLocalizations l,
     WidgetRef r,
@@ -4789,8 +4837,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           const SizedBox(width: 8),
           FilledButton.icon(
             onPressed: () async {
-              // 광고를 끝까지 본 경우에만 버프·보상이 나간다.
-              if (!await watchAdForReward(context, r, l)) return;
+              // 무료 발동 소진 후엔 젤리(사장님 결정 2026-08-18). 광고가
+              // 비용이던 자리라, 무료 무제한이면 버프가 사실상 상시화된다.
+              if (!await _takeBuffActivation(l)) return;
               if (!mounted) return;
               final ctrl = r.read(saveControllerProvider.notifier);
               await ctrl.activateBuff(k);

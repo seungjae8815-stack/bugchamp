@@ -1,14 +1,33 @@
 {
-  "schemaVersion": 1,
-  "durationSeconds": 1800,
-  "maxSeconds": 21600,
-  "_adJellyComment": "광고로 버프를 켤 때 덤으로 주는 젤리. 예전엔 코드에 1로 박혀 있었고, 누적 상한 6시간 = 하루 12회라 덤만으로 12젤리/일이 샜다. 광고의 보상은 버프 자체다 — 프리미엄 재화를 얹으면 이중 지급이라 0 으로 둔다. 검증: core_run/tool/jelly_sim.dart",
-  "adJelly": 0,
-  "buffs": [
-    { "kind": "goldRush", "gold": 2.0 },
-    { "kind": "xpBoost", "xp": 2.0 },
-    { "kind": "frenzy", "attack": 1.2, "attackSpeed": 1.5 },
-    { "kind": "gatherer", "materialFind": 2.0 },
-    { "kind": "luckyWind", "bugFind": 2.0 }
-  ]
+ "schemaVersion": 1,
+ "durationSeconds": 1800,
+ "maxSeconds": 21600,
+ "_adJellyComment": "광고로 버프를 켤 때 덤으로 주는 젤리. 예전엔 코드에 1로 박혀 있었고, 누적 상한 6시간 = 하루 12회라 덤만으로 12젤리/일이 샜다. 광고의 보상은 버프 자체다 — 프리미엄 재화를 얹으면 이중 지급이라 0 으로 둔다. 검증: core_run/tool/jelly_sim.dart",
+ "adJelly": 0,
+ "buffs": [
+  {
+   "kind": "goldRush",
+   "gold": 2.0
+  },
+  {
+   "kind": "xpBoost",
+   "xp": 2.0
+  },
+  {
+   "kind": "frenzy",
+   "attack": 1.2,
+   "attackSpeed": 1.5
+  },
+  {
+   "kind": "gatherer",
+   "materialFind": 2.0
+  },
+  {
+   "kind": "luckyWind",
+   "bugFind": 2.0
+  }
+ ],
+ "freeDaily": 12,
+ "jellyActivate": 2,
+ "_freeComment": "무료 발동 12회/일(광고 시절 리듬 유지), 소진 후엔 젤리 2개/발동 (사장님 결정 2026-08-18). 광고가 비용이던 자리라 무료 무제한이면 버프가 사실상 상시화된다. 누적 상한(maxSeconds)은 그대로."
 }

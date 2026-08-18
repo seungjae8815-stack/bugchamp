@@ -83,6 +83,9 @@ class BattleConfig {
     this.ticketAdGrant = 3,
     this.ticketAdDailyLimit = 30,
     this.ticketRefillJelly = 10,
+    this.scoutFreeRefreshDaily = 10,
+    this.scoutRefreshJelly = 1,
+    this.scoutRefreshDailyMax = 30,
   });
 
   /// 승리 기본 골드.
@@ -125,6 +128,12 @@ class BattleConfig {
 
   /// 시즌 보상 = 최고 리그 승급보상 × 이 배율.
   final double seasonRewardMult;
+
+  /// 스카우트 새로고침 — 무료 횟수/일, 소진 후 젤리 비용, 젤리 포함 총량/일.
+  /// 총량이 없으면 젤리로 무한 리롤해 제일 약한 상대만 골라 트로피를 캔다.
+  final int scoutFreeRefreshDaily;
+  final int scoutRefreshJelly;
+  final int scoutRefreshDailyMax;
 
   /// 장소 상성: 전투 장소 오행과 같은 곤충의 데미지 강화 비율(0.2 = +20%).
   final double locationAffinityBonus;
@@ -270,6 +279,19 @@ class BattleConfig {
       ticketAdGrant: (tickets?['adGrant'] as num?)?.toInt() ?? 3,
       ticketAdDailyLimit: (tickets?['adDailyLimit'] as num?)?.toInt() ?? 30,
       ticketRefillJelly: (tickets?['refillJelly'] as num?)?.toInt() ?? 10,
+      scoutFreeRefreshDaily:
+          ((json['scout'] as Map<String, dynamic>?)?['freeRefreshDaily']
+                  as num?)
+              ?.toInt() ??
+          10,
+      scoutRefreshJelly:
+          ((json['scout'] as Map<String, dynamic>?)?['refreshJelly'] as num?)
+              ?.toInt() ??
+          1,
+      scoutRefreshDailyMax:
+          ((json['scout'] as Map<String, dynamic>?)?['refreshDailyMax'] as num?)
+              ?.toInt() ??
+          30,
     );
   }
 }

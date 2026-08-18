@@ -4671,6 +4671,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next ad available in {n}s'**
   String adCooldown(int n);
+
+  /// No description provided for @jellyContinueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend jelly'**
+  String get jellyContinueTitle;
+
+  /// No description provided for @jellyContinueAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s free uses are gone. Continue for {n} jelly?'**
+  String jellyContinueAsk(int n);
+
+  /// No description provided for @jellyContinueYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Use jelly'**
+  String get jellyContinueYes;
 }
 
 class _AppLocalizationsDelegate

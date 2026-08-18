@@ -1508,5 +1508,15 @@
         "type": "int"
       }
     }
+  },
+  "jellyContinueTitle": "Spend jelly",
+  "jellyContinueAsk": "Today's free uses are gone. Continue for {n} jelly?",
+  "jellyContinueYes": "Use jelly",
+  "@jellyContinueAsk": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }

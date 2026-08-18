@@ -1182,6 +1182,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
+  /// 젤리 [cost] 를 차감한다. 부족하면 false(차감 없음).
+  ///
+  /// 소액 편의 지출(스카우트 새로고침·버프 젤리 발동)용 공용 경로 —
+  /// 기능마다 차감 코드를 복제하면 하나만 검증을 빠뜨리는 날이 온다.
+  Future<bool> trySpendJelly(int cost) async {
+    if (cost <= 0) return true;
+    final s = state.requireValue;
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cost) return false;
+    await _commit(
+      s.copyWith(
+        materials: Map<MaterialKind, int>.from(s.materials)
+          ..[MaterialKind.jelly] = have - cost,
+      ),
+    );
+    return true;
+  }
+
   /// 광고 시청 등으로 버프를 활성화/연장. 남은 시간에 duration 을 더하되
   /// buffs.json 의 maxSeconds 상한까지만 누적된다.
   Future<void> activateBuff(BuffKind kind) async {

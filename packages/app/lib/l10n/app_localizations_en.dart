@@ -2587,4 +2587,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String adCooldown(int n) {
     return 'Next ad available in ${n}s';
   }
+
+  @override
+  String get jellyContinueTitle => 'Spend jelly';
+
+  @override
+  String jellyContinueAsk(int n) {
+    return 'Today\'s free uses are gone. Continue for $n jelly?';
+  }
+
+  @override
+  String get jellyContinueYes => 'Use jelly';
 }

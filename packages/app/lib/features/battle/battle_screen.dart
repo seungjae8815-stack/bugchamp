@@ -1465,24 +1465,64 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ),
   );
 
-  /// 스카우트 무료 새로고침 사용권(기기 단위, 하루 10회).
+  /// 스카우트 새로고침 사용권 — 무료 소진 후엔 **젤리**로(사장님 결정 2026-08-18).
   ///
-  /// 서버 소유 값이 아니어도 된다 — 새로고침은 상대 **선택**일 뿐이고 승패·보상
-  /// 확정은 어차피 서버가 한다. 세이브 채택으로 초기화되지 않게 기기에 둔다.
+  /// 기기 단위 카운트다. 서버 소유 값이 아니어도 된다 — 새로고침은 상대
+  /// **선택**일 뿐이고 승패·보상 확정은 어차피 서버가 한다.
+  /// 젤리를 포함해도 하루 총량(refreshDailyMax)은 못 넘는다 — 무한 리롤로
+  /// 제일 약한 상대만 골라 트로피를 캐는 걸 막는 상한이라, 지불 수단과 무관하다.
   Future<bool> _takeFreeRefresh(AppLocalizations l) async {
-    const cap = 10;
+    final cfg =
+        ref.read(gameDataProvider).requireValue.battleConfig ??
+        const BattleConfig();
     final prefs = await SharedPreferences.getInstance();
     final now = ref.read(clockProvider).now().toUtc();
     final today = dailyDateKey(now);
     final parts = (prefs.getString('scout_refresh_v1') ?? '|').split('|');
     final used = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
-    if (used >= cap) {
-      if (mounted) showCenterToast(context, l.adDailyLimit(cap));
+
+    if (used >= cfg.scoutRefreshDailyMax) {
+      if (mounted) {
+        showCenterToast(context, l.adDailyLimit(cfg.scoutRefreshDailyMax));
+      }
       return false;
+    }
+    if (used >= cfg.scoutFreeRefreshDaily) {
+      // 무료 소진 — 젤리로 계속할지 **먼저 묻는다**(말없이 차감하지 않는다).
+      final ok = await _confirmJelly(l, cfg.scoutRefreshJelly);
+      if (ok != true) return false;
+      if (!await ref
+          .read(saveControllerProvider.notifier)
+          .trySpendJelly(cfg.scoutRefreshJelly)) {
+        if (mounted) showCenterToast(context, l.notEnoughJelly);
+        return false;
+      }
     }
     await prefs.setString('scout_refresh_v1', '$today|${used + 1}');
     return true;
   }
+
+  Future<bool?> _confirmJelly(AppLocalizations l, int cost) =>
+      showGameDialog<bool>(
+        context,
+        title: l.jellyContinueTitle,
+        icon: Icons.water_drop_rounded,
+        content: Text(
+          l.jellyContinueAsk(cost),
+          style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.4),
+        ),
+        actions: [
+          gameDialogButton(
+            l.actionCancel,
+            () => Navigator.pop(context, false),
+            primary: false,
+          ),
+          gameDialogButton(
+            l.jellyContinueYes,
+            () => Navigator.pop(context, true),
+          ),
+        ],
+      );
 
   /// 다른 유저 닉네임 표시용 — 부적절한 이름은 중립 이름으로 대체.
   /// 이미 서버에 등록된 이름은 되돌릴 수 없으므로 보여줄 때 가린다.
