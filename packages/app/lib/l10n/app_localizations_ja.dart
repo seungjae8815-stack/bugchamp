@@ -2546,4 +2546,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get jellyContinueYes => 'ゼリーを使う';
+
+  @override
+  String get giftDoubleCapTitle => '本日の2倍はここまで';
+
+  @override
+  String get giftDoubleCapBody =>
+      '無料の2倍を使い切りました。\nパスがあれば2倍は無制限、プレゼントも自動で受け取れます。';
 }

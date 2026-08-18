@@ -799,5 +799,7 @@
   "adCooldown": "잠시 후 다시 볼 수 있어요 ({n}초)",
   "jellyContinueTitle": "젤리 사용",
   "jellyContinueAsk": "오늘 무료 횟수를 다 썼어요. 젤리 {n}개로 계속할까요?",
-  "jellyContinueYes": "젤리 사용"
+  "jellyContinueYes": "젤리 사용",
+  "giftDoubleCapTitle": "오늘 2배는 여기까지",
+  "giftDoubleCapBody": "무료 2배를 모두 썼어요.\n패스를 가지고 있으면 2배가 무제한이고, 선물도 자동으로 받아져요."
 }

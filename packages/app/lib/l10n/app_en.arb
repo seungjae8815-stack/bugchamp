@@ -1518,5 +1518,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "giftDoubleCapTitle": "That's all the doubles today",
+  "giftDoubleCapBody": "You've used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically."
 }

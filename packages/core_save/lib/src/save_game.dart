@@ -837,6 +837,12 @@ class SaveGame {
   bool buffPassActive(DateTime now) =>
       buffPassExpiresAt != null && buffPassExpiresAt!.isAfter(now);
 
+  /// 패스(곤충학자 또는 무한버프) 보유자인가.
+  ///
+  /// 깜짝선물 **자동수령 + 2배 무제한**의 기준이다. 둘 중 아무거나 있으면
+  /// 적용한다 — 하나만 산 사람이 "왜 나는 안 되지"를 겪지 않게.
+  bool anyPassActive(DateTime now) => passActive(now) || buffPassActive(now);
+
   int missionClaimCount(String id) => missionClaims[id] ?? 0;
   int missionProgressCount(String id) => missionProgress[id] ?? 0;
 

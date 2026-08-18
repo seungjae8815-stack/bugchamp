@@ -2550,4 +2550,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get jellyContinueYes => '젤리 사용';
+
+  @override
+  String get giftDoubleCapTitle => '오늘 2배는 여기까지';
+
+  @override
+  String get giftDoubleCapBody =>
+      '무료 2배를 모두 썼어요.\n패스를 가지고 있으면 2배가 무제한이고, 선물도 자동으로 받아져요.';
 }

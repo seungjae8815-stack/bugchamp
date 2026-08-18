@@ -4689,6 +4689,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use jelly'**
   String get jellyContinueYes;
+
+  /// No description provided for @giftDoubleCapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s all the doubles today'**
+  String get giftDoubleCapTitle;
+
+  /// No description provided for @giftDoubleCapBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.'**
+  String get giftDoubleCapBody;
 }
 
 class _AppLocalizationsDelegate

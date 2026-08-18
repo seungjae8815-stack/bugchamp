@@ -2598,4 +2598,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jellyContinueYes => 'Use jelly';
+
+  @override
+  String get giftDoubleCapTitle => 'That\'s all the doubles today';
+
+  @override
+  String get giftDoubleCapBody =>
+      'You\'ve used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.';
 }

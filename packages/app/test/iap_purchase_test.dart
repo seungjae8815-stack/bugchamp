@@ -201,7 +201,11 @@ void main() {
     expect(second.materialCount(MaterialKind.jelly), 30);
   });
 
-  test('일일 젤리: 광고제거만 있으면 10 (패스보다 적음)', () async {
+  test('일일 젤리: 광고제거 보유자에게도 이제 안 나간다', () async {
+    // 광고 제거 패스는 삭제됐다(2026-08-18). ₩7,700 **1회** 결제로 매일 젤리
+    // 10개를 **영구히** 주는 구조라 §2.6 을 정면으로 위반했다(12개월이면
+    // 젤리당 ₩2.1). 세이브 필드는 호환을 위해 남아 있으므로, 옛 세이브에
+    // adsRemoved=true 가 있어도 **젤리는 안 나가야** 한다.
     final seed = SaveGame.initial(
       createdAt: t0,
     ).copyWith(lastSeen: t0, adsRemoved: true);
@@ -214,7 +218,7 @@ void main() {
     );
     addTearDown(c.dispose);
     final s = await c.read(saveControllerProvider.future);
-    expect(s.materialCount(MaterialKind.jelly), 10);
+    expect(s.materialCount(MaterialKind.jelly), 0);
   });
 
   test('미구매는 일일 젤리 없음', () async {

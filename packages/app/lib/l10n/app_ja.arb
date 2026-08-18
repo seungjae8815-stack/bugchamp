@@ -764,5 +764,7 @@
   "adCooldown": "次の広告まで{n}秒",
   "jellyContinueTitle": "ゼリーを使う",
   "jellyContinueAsk": "本日の無料回数を使い切りました。ゼリー{n}個で続けますか？",
-  "jellyContinueYes": "ゼリーを使う"
+  "jellyContinueYes": "ゼリーを使う",
+  "giftDoubleCapTitle": "本日の2倍はここまで",
+  "giftDoubleCapBody": "無料の2倍を使い切りました。\nパスがあれば2倍は無制限、プレゼントも自動で受け取れます。"
 }

@@ -42,6 +42,7 @@ class GiftConfig {
     this.expiryHours = 3,
     this.maxActive = 5,
     this.adMultiplier = 2,
+    this.freeDoubleDaily = 5,
   });
 
   /// 첫 선물까지 지연(초).
@@ -59,6 +60,12 @@ class GiftConfig {
 
   /// 광고 시청 시 보상 배수.
   final int adMultiplier;
+
+  /// 무료 2배 수령 횟수/일. 패스 보유자는 무제한(앱이 판단).
+  ///
+  /// 광고가 비용이던 자리다 — 광고를 없애면서 제동이 통째로 빠졌다.
+  /// 접속 1시간당 선물이 약 5.5개 나오므로, 5회면 첫 1시간은 전부 2배다.
+  final int freeDoubleDaily;
 
   final List<GiftTier> tiers;
 
@@ -89,6 +96,7 @@ class GiftConfig {
     expiryHours: (json['expiryHours'] as num?)?.toInt() ?? 3,
     maxActive: (json['maxActive'] as num?)?.toInt() ?? 5,
     adMultiplier: (json['adMultiplier'] as num?)?.toInt() ?? 2,
+    freeDoubleDaily: (json['freeDoubleDaily'] as num?)?.toInt() ?? 5,
     tiers: (json['tiers'] as List? ?? const [])
         .cast<Map<String, dynamic>>()
         .map(GiftTier.fromJson)

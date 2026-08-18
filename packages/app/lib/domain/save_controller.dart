@@ -592,7 +592,25 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(gifts: [...alive, gift], nextGiftAt: reschedule));
   }
 
-  /// 깜짝 선물 수령. [doubled]=광고 시청 시 배수. 만료/없음이면 false.
+  /// 오늘 무료 2배를 몇 번 썼는지(패스 미보유자용 카운터).
+  static const _giftDoubleKey = 'giftDouble';
+
+  /// 지금 2배로 받을 수 있는가. (false 면 1배로만 수령된다)
+  ///
+  /// 패스 보유자는 무제한 — 나머지는 하루 [GiftConfig.freeDoubleDaily] 회.
+  bool canDoubleGift() {
+    final s = state.requireValue;
+    final now = ref.read(clockProvider).now().toUtc();
+    if (s.anyPassActive(now)) return true;
+    final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
+    final cap = cfg?.freeDoubleDaily ?? 5;
+    return s.adUseCount(_giftDoubleKey, dailyDateKey(now)) < cap;
+  }
+
+  /// 깜짝 선물 수령. [doubled]=2배 요청. 만료/없음이면 false.
+  ///
+  /// 2배는 **요청해도 자격이 없으면 1배로** 나간다(수령 자체는 막지 않는다) —
+  /// 이미 뜬 보상을 못 받게 하면 불만이 크고, 유도는 화면에서 하면 된다.
   Future<bool> claimGift(String id, {bool doubled = false}) async {
     final viaServer = await _viaServer(
       () => ref.read(gameServerProvider).claimGift(id, doubled: doubled),
@@ -610,15 +628,46 @@ class SaveController extends AsyncNotifier<SaveGame> {
       await _commit(s.copyWith(gifts: gifts));
       return false;
     }
-    final mult = doubled ? (cfg?.adMultiplier ?? 2) : 1;
+    // 자격이 없으면 1배로 나간다(수령 자체는 막지 않는다).
+    final wantDouble = doubled && canDoubleGift();
+    final mult = wantDouble ? (cfg?.adMultiplier ?? 2) : 1;
+    final today = dailyDateKey(now);
+    final counted = wantDouble && !s.anyPassActive(now);
     final mats = Map<MaterialKind, int>.from(s.materials);
     for (final e in g.materials.entries) {
       mats[e.key] = (mats[e.key] ?? 0) + e.value * mult;
     }
     await _commit(
-      s.copyWith(gold: s.gold + g.gold * mult, materials: mats, gifts: gifts),
+      s.copyWith(
+        gold: s.gold + g.gold * mult,
+        materials: mats,
+        gifts: gifts,
+        adUseDate: counted ? today : s.adUseDate,
+        adUseCounts: counted
+            ? {
+                ...(s.adUseDate == today ? s.adUseCounts : const {}),
+                _giftDoubleKey: s.adUseCount(_giftDoubleKey, today) + 1,
+              }
+            : s.adUseCounts,
+      ),
     );
     return true;
+  }
+
+  /// 패스 보유자용 **자동수령** — 쌓인 선물을 전부 2배로 받는다.
+  ///
+  /// 선물은 접속 1시간에 5.5개씩 나와서 탭 노동이 만만치 않다. 그 노동을
+  /// 없애는 게 패스의 값어치다(젤리를 더 주는 것보다 상품성이 좋다).
+  /// 만료된 선물은 그냥 버린다(수령 로직과 같은 규칙).
+  Future<int> autoClaimGifts() async {
+    final now = ref.read(clockProvider).now().toUtc();
+    if (!state.requireValue.anyPassActive(now)) return 0;
+    var n = 0;
+    // id 목록을 먼저 뜬다 — 수령할 때마다 목록이 바뀐다.
+    for (final id in [...state.requireValue.gifts.map((g) => g.id)]) {
+      if (await claimGift(id, doubled: true)) n++;
+    }
+    return n;
   }
 
   /// 클라우드에서 받은 세이브 JSON 으로 **덮어쓰기** 복원.
@@ -709,13 +758,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 이미 수령한 선물 [g] 를 광고 보상으로 **한 번 더**(추가 1배) 지급.
   /// "그냥 받기" 후 광고 보고 한 번 더 받기 흐름용(선물은 이미 목록에서 제거됨).
-  Future<void> grantGiftBonus(GiftMail g) async {
+  Future<bool> grantGiftBonus(GiftMail g) async {
+    if (!canDoubleGift()) return false;
     final s = state.requireValue;
+    final now = ref.read(clockProvider).now().toUtc();
+    final today = dailyDateKey(now);
+    // 패스 보유자는 무제한 — 카운터를 쓰지 않는다.
+    final counted = !s.anyPassActive(now);
     final mats = Map<MaterialKind, int>.from(s.materials);
     for (final e in g.materials.entries) {
       mats[e.key] = (mats[e.key] ?? 0) + e.value;
     }
-    await _commit(s.copyWith(gold: s.gold + g.gold, materials: mats));
+    await _commit(
+      s.copyWith(
+        gold: s.gold + g.gold,
+        materials: mats,
+        adUseDate: counted ? today : s.adUseDate,
+        adUseCounts: counted
+            ? {
+                ...(s.adUseDate == today ? s.adUseCounts : const {}),
+                _giftDoubleKey: s.adUseCount(_giftDoubleKey, today) + 1,
+              }
+            : s.adUseCounts,
+      ),
+    );
+    return true;
   }
 
   /// 이미 수령한 일일보상 [reward] 를 광고 보상으로 **한 번 더**(추가 1배) 지급.

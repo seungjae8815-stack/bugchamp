@@ -506,6 +506,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   Future<void> _settleOnResume() async {
     final ctrl = ref.read(saveControllerProvider.notifier);
+    // 패스 보유자는 쌓인 선물을 **자동으로** 받는다(2배). 선물은 접속 1시간에
+    // 5.5개씩 나와서 탭 노동이 만만치 않다 — 그 노동을 없애는 게 패스의 값이다.
+    unawaited(ctrl.autoClaimGifts());
     if (!await ctrl.settleOffline()) return;
     final report = ctrl.pendingOffline;
     if (report == null || !mounted) return;
@@ -3040,6 +3043,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         materials: g.materials,
       );
       if (!ctx.mounted) return;
+      // 무료 2배를 다 썼으면 **패스를 안내한다**(2배 제안 대신).
+      // 이미 뜬 보상은 1배로 받았으므로 손해는 없다 — 여기서 막는 건 덤뿐이다.
+      if (!notifier.canDoubleGift()) {
+        await showGameDialog<void>(
+          ctx,
+          title: l.giftDoubleCapTitle,
+          icon: Icons.workspace_premium_rounded,
+          content: Text(
+            l.giftDoubleCapBody,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xD9FFFFFF),
+              fontSize: 13.5,
+              height: 1.4,
+            ),
+          ),
+          actions: [gameDialogButton(l.actionClose, () => Navigator.pop(ctx))],
+        );
+        return;
+      }
       final more = await showGameDialog<bool>(
         ctx,
         title: l.giftAdMoreTitle,
@@ -3065,7 +3088,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (more == true && ctx.mounted) {
         if (!await watchAdForReward(ctx, r, l)) return;
         if (!ctx.mounted) return;
-        await notifier.grantGiftBonus(g);
+        if (!await notifier.grantGiftBonus(g)) return;
         if (!ctx.mounted) return;
         await showRewardPopup(
           ctx,

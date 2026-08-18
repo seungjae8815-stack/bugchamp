@@ -1,34 +1,36 @@
 {
-  "schemaVersion": 1,
-  "_jellyComment": "젤리는 최상위 티어에만 둔다. 예전엔 중간 티어에도 2개가 있어 선물만으로 하루 32젤리(수입의 16%)가 들어왔다 — 접속 시간에 비례해 무한히 늘어나는 통로라 프리미엄 재화를 얹으면 안 된다. 검증: core_run/tool/jelly_sim.dart",
-  "firstDelaySec": 90,
-  "intervalMinSec": 420,
-  "intervalMaxSec": 900,
-  "expiryHours": 3,
-  "maxActive": 5,
-  "adMultiplier": 2,
-  "tiers": [
-    {
-      "weight": 50,
-      "gold": 3000,
-      "chitin": 20,
-      "mineral": 20,
-      "sap": 20
-    },
-    {
-      "weight": 35,
-      "gold": 6000,
-      "chitin": 40,
-      "mineral": 40,
-      "sap": 40
-    },
-    {
-      "weight": 15,
-      "gold": 12000,
-      "jelly": 3,
-      "chitin": 80,
-      "mineral": 80,
-      "sap": 80
-    }
-  ]
+ "schemaVersion": 1,
+ "_jellyComment": "젤리는 최상위 티어에만 둔다. 예전엔 중간 티어에도 2개가 있어 선물만으로 하루 32젤리(수입의 16%)가 들어왔다 — 접속 시간에 비례해 무한히 늘어나는 통로라 프리미엄 재화를 얹으면 안 된다. 검증: core_run/tool/jelly_sim.dart",
+ "firstDelaySec": 90,
+ "intervalMinSec": 420,
+ "intervalMaxSec": 900,
+ "expiryHours": 3,
+ "maxActive": 5,
+ "adMultiplier": 2,
+ "tiers": [
+  {
+   "weight": 50,
+   "gold": 3000,
+   "chitin": 20,
+   "mineral": 20,
+   "sap": 20
+  },
+  {
+   "weight": 35,
+   "gold": 6000,
+   "chitin": 40,
+   "mineral": 40,
+   "sap": 40
+  },
+  {
+   "weight": 15,
+   "gold": 12000,
+   "jelly": 3,
+   "chitin": 80,
+   "mineral": 80,
+   "sap": 80
+  }
+ ],
+ "freeDoubleDaily": 5,
+ "_doubleComment": "2배는 원래 광고가 비용이었다. 광고를 없애면서(2026-08-18) 제동이 사라져 하루 상한을 둔다. 접속 1시간당 선물 5.5개가 나오므로 5회면 초반 1시간은 전부 2배로 받는 셈이다. 패스(곤충학자·무한버프) 보유자는 무제한 + 자동수령."
 }
