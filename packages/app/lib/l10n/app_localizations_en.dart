@@ -2582,4 +2582,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventFlyerPrizeTag => '1st place prize';
+
+  @override
+  String adCooldown(int n) {
+    return 'Next ad available in ${n}s';
+  }
 }

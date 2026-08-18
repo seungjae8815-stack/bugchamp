@@ -43,6 +43,15 @@ class AdMobAdService implements AdService {
   @override
   bool get isReal => true;
 
+  /// 테스트 기기 등록. `--dart-define=AD_TEST_DEVICES=해시1,해시2`
+  ///
+  /// 등록된 기기는 **릴리즈 빌드·실광고 단위여도 테스트 광고**가 나온다.
+  /// 무효 트래픽 정지(2026-08-18)의 핵심 예방책이다 — 개발자·지인 기기에서
+  /// 실광고를 보면, 기기 수가 적은 초기에는 그 몇 대가 트래픽의 대부분이라
+  /// 곧바로 무효 트래픽으로 잡힌다. 기기 해시는 실기기에서 광고를 한 번
+  /// 요청하면 logcat 에 "RequestConfiguration.Builder..." 로 찍힌다.
+  static const _testDevices = String.fromEnvironment('AD_TEST_DEVICES');
+
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
@@ -50,6 +59,16 @@ class AdMobAdService implements AdService {
     // 이 프롬프트가 없으면 심사에서 거절될 수 있다(5.1.2). 거부해도 광고는
     // 나가되(비맞춤), 요청 자체는 반드시 해야 한다.
     await _requestTrackingIfNeeded();
+    if (_testDevices.trim().isNotEmpty) {
+      await MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(
+          testDeviceIds: [
+            for (final id in _testDevices.split(','))
+              if (id.trim().isNotEmpty) id.trim(),
+          ],
+        ),
+      );
+    }
     await MobileAds.instance.initialize();
     preload();
   }

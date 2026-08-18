@@ -795,5 +795,6 @@
   "eventOpensInMinutes": "{n}분 뒤 시작",
   "eventSeeFlyer": "대회 안내 보기",
   "eventSoonBanner": "왕충 선발대회 · {when} 개막",
-  "eventFlyerPrizeTag": "1등 상품"
+  "eventFlyerPrizeTag": "1등 상품",
+  "adCooldown": "잠시 후 다시 볼 수 있어요 ({n}초)"
 }

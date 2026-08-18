@@ -2530,4 +2530,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get eventFlyerPrizeTag => '1位の賞品';
+
+  @override
+  String adCooldown(int n) {
+    return '次の広告まで$n秒';
+  }
 }

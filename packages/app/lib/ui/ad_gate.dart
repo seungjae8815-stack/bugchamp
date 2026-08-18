@@ -1,12 +1,31 @@
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/ad_service.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'toast.dart';
+
+// ── 무효 트래픽 방어 (2026-08-18 애드몹 정지 후 도입) ─────────────────
+//
+// 초기 앱은 기기 수가 적어서, **한 기기가 하루 수십 번** 보상형을 끝까지 보면
+// 그 몇 대가 트래픽의 대부분이 된다 — 광고망이 보기엔 전형적인 무효 트래픽이다.
+// (기능별 상한 합계가 광고 40회+/일 이었다: 티켓 30 + 버프 12 + 새로고침 등.)
+//
+// 그래서 기능별 상한과 **별도로**, 기기 전체에 두 겹을 더 깐다:
+//   · 연속 시청 쿨다운 — 사람이 아니라 기계처럼 보이는 패턴을 끊는다
+//   · 기기 일일 총량 — 어떤 기능 조합으로도 이 위를 못 넘는다
+//
+// 광고망을 바꿔도(유니티·앱러빈…) 이 관문은 그대로 쓴다 — `AdService` 구현만
+// 갈아끼우면 되고, 방어는 구현이 아니라 이 관문에 있다.
+//
+// 수치는 밸런스가 아니라 **계정 생존 조건**이라 JSON 이 아닌 여기 둔다(§6 예외).
+const _adCooldown = Duration(seconds: 45);
+const _adDeviceDailyCap = 20;
+const _adGuardKey = 'ad_guard_v1'; // "날짜|횟수|마지막epoch초"
 
 /// 보상형 광고를 보여주고 **보상을 줘도 되는지** 돌려준다.
 ///
@@ -51,8 +70,44 @@ Future<bool> watchAdForReward(
   // 결제로 판수를 더 사는 것이 아니라 **시간만** 아끼는 게 된다.
   if (save != null && save.adsHidden(now)) return true;
 
-  final result = await ref.read(adServiceProvider).showRewarded();
-  if (result == AdResult.rewarded) return true;
+  final svc = ref.read(adServiceProvider);
+
+  // 무효 트래픽 방어 — **실광고일 때만**. 개발용 더미(NoAdService)는 광고
+  // 요청이 없으므로 막을 트래픽도 없고, 막으면 개발만 번거로워진다.
+  SharedPreferences? prefs;
+  if (svc.isReal) {
+    prefs = await SharedPreferences.getInstance();
+    final parts = (prefs.getString(_adGuardKey) ?? '||').split('|');
+    final today = dailyDateKey(now);
+    final count = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
+    final lastEpoch = int.tryParse(parts.length > 2 ? parts[2] : '') ?? 0;
+    final sinceLast = now.difference(
+      DateTime.fromMillisecondsSinceEpoch(lastEpoch * 1000, isUtc: true),
+    );
+    if (count >= _adDeviceDailyCap) {
+      snack(l.adDailyLimit(_adDeviceDailyCap));
+      return false;
+    }
+    if (sinceLast < _adCooldown) {
+      snack(l.adCooldown((_adCooldown - sinceLast).inSeconds + 1));
+      return false;
+    }
+  }
+
+  final result = await svc.showRewarded();
+  if (result == AdResult.rewarded) {
+    // 끝까지 본 것만 센다 — 실패·중도 이탈은 트래픽으로 안 잡힌다.
+    if (prefs != null) {
+      final today = dailyDateKey(now);
+      final parts = (prefs.getString(_adGuardKey) ?? '||').split('|');
+      final count = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
+      await prefs.setString(
+        _adGuardKey,
+        '$today|${count + 1}|${now.millisecondsSinceEpoch ~/ 1000}',
+      );
+    }
+    return true;
+  }
 
   final msg = switch (result) {
     AdResult.dismissed => l.adDismissed,

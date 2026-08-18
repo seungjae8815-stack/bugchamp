@@ -4665,6 +4665,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'1st place prize'**
   String get eventFlyerPrizeTag;
+
+  /// No description provided for @adCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Next ad available in {n}s'**
+  String adCooldown(int n);
 }
 
 class _AppLocalizationsDelegate

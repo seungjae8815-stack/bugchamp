@@ -1500,5 +1500,13 @@
       }
     }
   },
-  "eventFlyerPrizeTag": "1st place prize"
+  "eventFlyerPrizeTag": "1st place prize",
+  "adCooldown": "Next ad available in {n}s",
+  "@adCooldown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

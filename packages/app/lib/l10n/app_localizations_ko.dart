@@ -2534,4 +2534,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eventFlyerPrizeTag => '1등 상품';
+
+  @override
+  String adCooldown(int n) {
+    return '잠시 후 다시 볼 수 있어요 ($n초)';
+  }
 }

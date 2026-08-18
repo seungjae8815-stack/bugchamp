@@ -760,5 +760,6 @@
   "eventOpensInMinutes": "{n}分後に開始",
   "eventSeeFlyer": "大会案内を見る",
   "eventSoonBanner": "王蟲選抜大会・{when} 開幕",
-  "eventFlyerPrizeTag": "1位の賞品"
+  "eventFlyerPrizeTag": "1位の賞品",
+  "adCooldown": "次の広告まで{n}秒"
 }
