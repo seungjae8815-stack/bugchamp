@@ -100,8 +100,14 @@ class StoreIapService implements IapService {
 
     final param = PurchaseParam(productDetails: details);
     try {
-      // 소모성(젤리)은 consume 해야 다시 살 수 있다. 나머지는 비소모성.
-      final started = product.kind == IapKind.consumable
+      // 소모성(젤리)과 **기간제 패스**는 consume 경로로 산다 — 비소모성으로
+      // 사면 스토어가 "이미 보유한 상품"으로 막아 **30일 만료 후 연장 재구매가
+      // 영영 불가능**해진다(출시 전 감사에서 발견 2026-08-20). 패스 상태는
+      // 스토어 소유 목록이 아니라 서버 세이브(passExpiresAt, 서버 소유)가
+      // 들고 있으므로, 소모 처리해도 재설치·복원에서 잃는 게 없다.
+      final consumeFlow =
+          product.kind == IapKind.consumable || product.kind == IapKind.timed;
+      final started = consumeFlow
           ? await _store.buyConsumable(purchaseParam: param)
           : await _store.buyNonConsumable(purchaseParam: param);
       if (!started) {
