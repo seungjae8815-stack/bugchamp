@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -66,6 +67,10 @@ bool get _useRealAds => switch (_realAdsFlag) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // 세로 고정 — 모든 화면이 세로 설계라 가로로 돌면 레이아웃이 깨진다
+  // (실기 지적 2026-08-20). 매니페스트/Info.plist 잠금과 삼중이지만,
+  // 하나만 믿으면 플랫폼별로 새는 구멍이 생긴다.
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // 설정 화면에 보여줄 버전 — pubspec 값을 그대로 읽는다(표시 전용).
   await loadAppVersion();
   await Hive.initFlutter();
