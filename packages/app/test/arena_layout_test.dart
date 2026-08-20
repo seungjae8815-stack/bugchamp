@@ -1,5 +1,6 @@
 import 'package:app/data/game_data.dart';
 import 'package:app/features/battle/arena_widgets.dart';
+import 'package:app/ui/art.dart';
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart' hide Element;
@@ -77,10 +78,7 @@ Widget _stage(
             ),
             minePlate: ArenaPlate(bug: mine, hpFrac: 0.6, mine: true),
             foePlate: ArenaPlate(bug: foe, hpFrac: 0.3, mine: false),
-            overlays: [
-              if (intro)
-                const ArenaIntro(t: 0.5, mineName: '내팀곤충', foeName: '상대팀곤충'),
-            ],
+            overlays: [if (intro) const ArenaIntro(t: 0.5)],
           ),
         ),
       ),
@@ -108,5 +106,50 @@ void main() {
     await t.pumpWidget(_stage(size, flash: 1, dx: 24, intro: true));
     await t.pump(const Duration(milliseconds: 16));
     expect(t.takeException(), isNull);
+  });
+
+  group('라운드 3박자 자세', () {
+    // 스탠스 특성상 대부분의 라운드는 **양쪽이 다 때린다**. 예전 규칙
+    // ("돌진 중이면 공격")에서는 그때 피격 자세가 아예 안 나왔다.
+    test('때리고 맞은 곤충도 공격 → 피격 → 대기를 다 보여준다', () {
+      BugPose at(double t) => arenaPose(clash: t, struck: true, damaged: true);
+      expect(at(0.05), BugPose.attack, reason: '뻗는 중');
+      expect(at(0.25), BugPose.hurt, reason: '맞는 중 — 뻗기를 이긴다');
+      expect(at(0.60), BugPose.idle, reason: '되돌아오는 중');
+    });
+
+    test('때리기만 한 곤충은 피격이 안 나온다', () {
+      expect(
+        arenaPose(clash: 0.25, struck: true, damaged: false),
+        BugPose.attack,
+      );
+    });
+
+    test('맞기만 한 곤충은 공격이 안 나온다', () {
+      expect(
+        arenaPose(clash: 0.05, struck: false, damaged: true),
+        BugPose.idle,
+      );
+      expect(
+        arenaPose(clash: 0.25, struck: false, damaged: true),
+        BugPose.hurt,
+      );
+    });
+
+    test('방어·회복만 한 라운드는 계속 대기', () {
+      for (final t in const [0.0, 0.2, 0.5, 0.9]) {
+        expect(
+          arenaPose(clash: t, struck: false, damaged: false),
+          BugPose.idle,
+        );
+      }
+    });
+
+    test('쓰러지는 중이면 무조건 피격', () {
+      expect(
+        arenaPose(clash: 0.9, struck: true, damaged: false, down: true),
+        BugPose.hurt,
+      );
+    });
   });
 }

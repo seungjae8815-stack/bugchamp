@@ -119,7 +119,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String injuryHealJelly(int n) {
-    return '💎$n 即時回復';
+    return 'ゼリー$nで即時回復';
   }
 
   @override
@@ -191,7 +191,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get synergyLabel => '相生';
 
   @override
-  String get synergyHint => '虫を2匹以上配置・前のスロットが後ろを生じるとシナジー（順番が重要）';
+  String get synergyHint => '虫を2匹以上配置・前の虫が後ろの虫を強めるとチームが強くなります（順番が大事）';
 
   @override
   String get teamReorderHint => 'ドラッグで並び替え';
@@ -728,7 +728,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String storageExpand(int n, int jelly) {
-    return '+$n枠 💎$jelly';
+    return '+$n枠・ゼリー$jelly';
   }
 
   @override
@@ -762,7 +762,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dexClaimedSnack(Object gold, Object jelly) {
-    return '図鑑報酬を獲得！💰$gold · 💎$jelly';
+    return '図鑑報酬獲得！ゴールド$gold・ゼリー$jelly';
   }
 
   @override
@@ -968,7 +968,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventPickTeam => '出場する虫を3匹選んでください';
 
   @override
-  String get eventPickOrder => '左から順に出ます・前が後ろを生じるとシナジー';
+  String get eventPickOrder => '左から順に出ます・前の虫が後ろの虫を強めるとさらに強くなります';
 
   @override
   String get eventNormalizeTitle => 'この大会はステータスが平準化されます';
@@ -1584,12 +1584,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trainJelly(int n) {
-    return '💎$n';
+    return 'ゼリー$n';
   }
 
   @override
   String trainJellySnack(int lv) {
-    return '💎 即時修練！レベル +$lv';
+    return '即時修練！レベル+$lv';
   }
 
   @override
@@ -1622,7 +1622,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String breakthroughInstant(int n) {
-    return '即時 💎$n';
+    return '即完了・ゼリー$n';
   }
 
   @override
@@ -1658,7 +1658,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String incubatorExpand(int n) {
-    return 'スロット拡張 💎$n';
+    return 'スロット拡張・ゼリー$n';
   }
 
   @override
@@ -2050,7 +2050,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nicknameChangeCostHint(int cost) {
-    return '変更に💎$cost消費';
+    return '変更にゼリー$cost消費';
   }
 
   @override
@@ -2066,7 +2066,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nicknameEditActionCost(int cost) {
-    return '💎$costで変更';
+    return 'ゼリー$costで変更';
   }
 
   @override
@@ -2142,7 +2142,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String pvpTicketJellyBtn(int cost) {
-    return '💎$costで満タン';
+    return 'ゼリー$costで満タン';
   }
 
   @override
@@ -2583,4 +2583,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get exchangeDone => '交換しました！';
+
+  @override
+  String get curJelly => 'ゼリー';
+
+  @override
+  String get exchangeHoldings => '所持状況';
+
+  @override
+  String get elementGuideBtn => '五行の相性';
 }

@@ -119,7 +119,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String injuryHealJelly(int n) {
-    return '💎$n 즉시회복';
+    return '젤리 $n로 즉시회복';
   }
 
   @override
@@ -191,7 +191,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get synergyLabel => '상생';
 
   @override
-  String get synergyHint => '곤충 2마리 이상 배치 · 앞 슬롯이 뒤를 生하면 시너지(순서 중요)';
+  String get synergyHint =>
+      '곤충 2마리 이상 배치 · 앞 곤충이 뒤 곤충의 기운을 북돋우면 팀이 강해져요 (순서 중요)';
 
   @override
   String get teamReorderHint => '끌어서 순서 변경';
@@ -728,7 +729,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String storageExpand(int n, int jelly) {
-    return '+$n칸 💎$jelly';
+    return '+$n칸 · 젤리 $jelly';
   }
 
   @override
@@ -762,7 +763,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String dexClaimedSnack(Object gold, Object jelly) {
-    return '도감 보상 획득! 💰$gold · 💎$jelly';
+    return '도감 보상 획득! 골드 $gold · 젤리 $jelly';
   }
 
   @override
@@ -969,7 +970,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventPickTeam => '출전 곤충 3마리를 고르세요';
 
   @override
-  String get eventPickOrder => '왼쪽부터 순서대로 나가요 · 앞이 뒤를 生하면 시너지';
+  String get eventPickOrder => '왼쪽부터 순서대로 나가요 · 앞 곤충이 뒤 곤충의 기운을 북돋우면 더 강해져요';
 
   @override
   String get eventNormalizeTitle => '이 대회는 스탯이 평준화돼요';
@@ -1586,12 +1587,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String trainJelly(int n) {
-    return '💎$n';
+    return '젤리 $n';
   }
 
   @override
   String trainJellySnack(int lv) {
-    return '💎 즉시 수련! 레벨 +$lv';
+    return '즉시 수련! 레벨 +$lv';
   }
 
   @override
@@ -1624,7 +1625,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String breakthroughInstant(int n) {
-    return '즉시 💎$n';
+    return '즉시 완료 · 젤리 $n';
   }
 
   @override
@@ -1660,7 +1661,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String incubatorExpand(int n) {
-    return '슬롯 확장 💎$n';
+    return '슬롯 확장 · 젤리 $n';
   }
 
   @override
@@ -2052,7 +2053,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String nicknameChangeCostHint(int cost) {
-    return '변경 시 💎$cost 소모';
+    return '변경 시 젤리 $cost 소모';
   }
 
   @override
@@ -2068,7 +2069,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String nicknameEditActionCost(int cost) {
-    return '💎$cost 변경';
+    return '젤리 $cost 변경';
   }
 
   @override
@@ -2144,7 +2145,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String pvpTicketJellyBtn(int cost) {
-    return '💎$cost 만땅 충전';
+    return '젤리 $cost 만땅 충전';
   }
 
   @override
@@ -2587,4 +2588,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get exchangeDone => '교환했어요!';
+
+  @override
+  String get curJelly => '젤리';
+
+  @override
+  String get exchangeHoldings => '보유 현황';
+
+  @override
+  String get elementGuideBtn => '오행 관계도';
 }

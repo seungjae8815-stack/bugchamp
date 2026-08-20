@@ -8,6 +8,7 @@ import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/skins.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
@@ -97,6 +98,8 @@ class ArenaBody extends StatelessWidget {
     required this.dx,
     this.size = 96,
     this.stanceHidden = false,
+    this.clash = 0,
+    this.damaged = false,
     this.skin,
     this.down = false,
   });
@@ -110,7 +113,16 @@ class ArenaBody extends StatelessWidget {
   final double dx;
   final double size;
   final bool stanceHidden;
-  final ColorFilter? skin;
+
+  /// 이번 라운드 진행도(0..1). 자세를 **시간 순서로** 바꾸는 기준이다.
+  final double clash;
+
+  /// 이번 라운드에 이 곤충이 **맞았는가**.
+  ///
+  /// `flash` 로 대신하면 안 된다 — 번쩍임은 0.33초면 꺼지는데 피격 자세는
+  /// 그보다 오래 잡고 있어야 읽힌다.
+  final bool damaged;
+  final SkinView? skin;
 
   /// 쓰러지는 중. 넘어가며 사라진다 — KO 가 그냥 "다음 곤충으로 바뀜"이면
   /// 무엇이 끝났는지 안 읽힌다.
@@ -119,16 +131,17 @@ class ArenaBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sp = data.speciesById[speciesId ?? ''];
-    // 자세는 이미 들고 있는 상태에서 나온다 — 맞는 중이면 피격, 돌진 중이면 공격.
-    // **돌진이 피격을 이긴다**(한 라운드에 보통 양쪽이 다 맞으므로).
-    final pose = dx.abs() > 1.5
-        ? BugPose.attack
-        : (flash > 0.4 ? BugPose.hurt : BugPose.idle);
+    final pose = arenaPose(
+      clash: clash,
+      struck: dx.abs() > 0.01, // 돌진값은 때린 쪽에만 들어온다
+      damaged: damaged,
+      down: down,
+    );
     Widget img = sp == null
         ? Icon(Icons.bug_report, color: Colors.white, size: size * 0.6)
         : bugPoseImage(
             sp.id,
-            down ? BugPose.hurt : pose,
+            pose,
             size: size,
             fallback: bugAvatar(sp, size: size * 0.85),
             skin: skin,
@@ -360,8 +373,9 @@ class ArenaFighter extends StatelessWidget {
   final double dx;
   final bool stanceHidden;
 
-  /// 구매한 스킨의 색 필터. **내 쪽 파이터에만** 준다(상대 곤충은 상대의 외형).
-  final ColorFilter? skin;
+  /// 이 곤충에 걸린 스킨(색·빛·전용 그림). 상대 곤충에는 **상대가 산** 스킨이
+  /// 들어온다 — 남이 봐야 사고 싶어지므로 양쪽 다 그린다(2026-08-19).
+  final SkinView? skin;
 
   /// 화면에 쓸 이름. 이벤트 적처럼 **전투 엔진이 지은 내부 이름**(`W3-1`)을
   /// 그대로 보여주면 안 되는 경우에 준다 — 엔진은 순수 패키지라 다국어를 모른다.
@@ -732,6 +746,34 @@ class _StanceRingPainter extends CustomPainter {
 /// 라운드 안에서 **타격이 꽂히는 시점**(0~1 진행도).
 const double arenaImpactAt = 0.16;
 
+/// 피격 자세를 붙잡고 있는 구간의 끝(라운드 진행도).
+const double arenaHurtEnd = arenaImpactAt + 0.26;
+
+/// 한 라운드의 **세 박자** → 곤충 자세. 뻗기 → 맞기 → 되돌아오기.
+///
+/// 예전엔 "돌진 중이면 공격, 아니면 피격"이었다. 스탠스 특성상 대부분의
+/// 라운드는 **양쪽이 다 때리므로**, 돌진이 피격을 이기는 규칙 아래에서는
+/// 피격 자세가 아예 안 나왔다(실기 지적 2026-08-19). 반대로 방어·회복만 한
+/// 라운드는 계속 대기라, 어느 쪽이든 세 그림 중 둘만 보였다.
+///
+/// 시간으로 끊으면 때린 쪽도 맞은 쪽도 자기 자세를 한 번씩 보여준다.
+///   `0 ~ 0.16`     뻗기(공격) — 때린 쪽
+///   `0.16 ~ 0.42`  맞기(피격) — 맞은 쪽. **뻗기를 이긴다**(타격이 읽혀야 한다)
+///   `0.42 ~`       되돌아오기(대기)
+BugPose arenaPose({
+  required double clash,
+  required bool struck,
+  required bool damaged,
+  bool down = false,
+}) {
+  if (down) return BugPose.hurt; // 쓰러지는 중이면 무조건 피격
+  if (damaged && clash >= arenaImpactAt && clash < arenaHurtEnd) {
+    return BugPose.hurt;
+  }
+  if (struck && clash < arenaHurtEnd) return BugPose.attack;
+  return BugPose.idle;
+}
+
 /// 라운드 진행도(0..1) → 돌진 정도(0..1).
 ///
 /// **빠르게 뻗었다 천천히 돌아온다.** 예전엔 `sin(t*pi)` 였는데 정점이 라운드
@@ -994,23 +1036,15 @@ class ArenaStage extends StatelessWidget {
 /// 시작이 없으면 화면이 뜨자마자 이미 싸우고 있어서 **"시작했다"는 마디**가 없다.
 /// [t] 는 0→1 진행도. 1 에 도달하면 사라진다.
 class ArenaIntro extends StatelessWidget {
-  const ArenaIntro({
-    super.key,
-    required this.t,
-    required this.mineName,
-    required this.foeName,
-  });
+  const ArenaIntro({super.key, required this.t});
 
   final double t;
-  final String mineName;
-  final String foeName;
 
   @override
   Widget build(BuildContext context) {
     if (t >= 1) return const SizedBox.shrink();
     // 마지막 20% 는 사라지는 구간 — 글자가 남아 있으면 첫 라운드를 가린다.
     final fade = t > 0.8 ? (1 - (t - 0.8) / 0.2) : 1.0;
-    final slide = Curves.easeOutCubic.transform((t / 0.45).clamp(0.0, 1.0));
     final stamp = Curves.easeOutBack.transform(
       ((t - 0.25) / 0.35).clamp(0.0, 1.0),
     );
@@ -1022,20 +1056,9 @@ class ArenaIntro extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               Container(color: Colors.black.withValues(alpha: 0.34 * fade)),
-              Align(
-                alignment: const Alignment(-0.9, -0.18),
-                child: Transform.translate(
-                  offset: Offset(-260 * (1 - slide), 0),
-                  child: _tag(mineName, const Color(0xFF7CE38B)),
-                ),
-              ),
-              Align(
-                alignment: const Alignment(0.9, 0.18),
-                child: Transform.translate(
-                  offset: Offset(260 * (1 - slide), 0),
-                  child: _tag(foeName, const Color(0xFFFF8A6B)),
-                ),
-              ),
+              // 이름표는 없앴다(2026-08-19). 수동 전투에는 원래 안 나와서
+              // 오토에서만 뜨는 연출이었고, 이름은 곧바로 이름표(ArenaPlate)에
+              // 다시 나오므로 인트로에서 한 번 더 보여줄 값어치가 없었다.
               Transform.scale(
                 scale: 0.4 + stamp * 0.6,
                 child: Opacity(
@@ -1065,27 +1088,9 @@ class ArenaIntro extends StatelessWidget {
       ),
     );
   }
-
-  Widget _tag(String name, Color c) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: const Color(0xCC0E1408),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: c.withValues(alpha: 0.8), width: 1.5),
-    ),
-    child: Text(
-      name,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(color: c, fontWeight: FontWeight.w900, fontSize: 15),
-    ),
-  );
 }
 
-/// 승패 배너 — 다이얼로그 대신 화면을 가로지르는 띠.
-///
-/// 다이얼로그는 "알림"이라 이겼는지 졌는지가 **사건**으로 안 남는다. 띠가
-/// 밀려 들어오고 트로피가 올라가는 게 보여야 한 판이 끝난 느낌이 든다.
+/// 결과 배너(승리/패배/무승부).
 class ArenaResultBanner extends StatelessWidget {
   const ArenaResultBanner({
     super.key,

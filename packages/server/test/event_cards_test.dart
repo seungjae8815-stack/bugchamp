@@ -200,9 +200,7 @@ void main() {
     final a = ev.roundIdAt(ev.startsAt!);
     // 회차 **안**의 시점이어야 한다 — 날짜를 하드코딩하면 회차를 옮길 때마다
     // 깨진다(8/17→8/28 이동 때 실제로 깨졌다). 길이도 설정에서 가져온다.
-    final b = ev.roundIdAt(
-      ev.startsAt!.add(Duration(days: ev.roundDays - 2)),
-    );
+    final b = ev.roundIdAt(ev.startsAt!.add(Duration(days: ev.roundDays - 2)));
     expect(a, b, reason: '같은 회차 안에서는 키가 같아야 한다');
     final st = ev.startsAt!.add(const Duration(hours: 9)).toUtc();
     final kst = st.add(const Duration(minutes: 540));
@@ -226,11 +224,7 @@ void main() {
     );
     expect(pick.isOk, isTrue);
     final next = pick.extra['session'] as Map<String, dynamic>;
-    expect(
-      (next['teamIds'] as List).first,
-      'c',
-      reason: '지정한 곤충이 선봉으로 와야 한다',
-    );
+    expect((next['teamIds'] as List).first, 'c', reason: '지정한 곤충이 선봉으로 와야 한다');
   });
 
   test('쓰러진 곤충은 선봉으로 세울 수 없다', () {
@@ -241,7 +235,9 @@ void main() {
     final cards = r.extra['cards'] as List;
     if (cards.isEmpty) return;
     // 3번 곤충이 쓰러진 상태로 만든다.
-    final hp = (session['hp'] as List).map((e) => (e as num).toDouble()).toList();
+    final hp = (session['hp'] as List)
+        .map((e) => (e as num).toDouble())
+        .toList();
     hp[2] = 0;
     session['hp'] = hp;
     final pick = actions.eventPick(

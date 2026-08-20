@@ -211,9 +211,11 @@ class ServerManualDriver implements ManualBattleDriver {
 ///
 /// 야생 상대는 **서버가 만든다**. 앱이 따로 만들면 화면에 보이는 상대와
 /// 서버가 실제로 싸운 상대가 달라져, 연출이 승패와 어긋난다.
-List<({BattleBug bug, String speciesId})> foeTeamFromServer(Object? raw) {
+List<({BattleBug bug, String speciesId, String? skin})> foeTeamFromServer(
+  Object? raw,
+) {
   if (raw is! List) return const [];
-  final out = <({BattleBug bug, String speciesId})>[];
+  final out = <({BattleBug bug, String speciesId, String? skin})>[];
   for (var i = 0; i < raw.length; i++) {
     final j = raw[i];
     if (j is! Map) continue;
@@ -234,6 +236,7 @@ List<({BattleBug bug, String speciesId})> foeTeamFromServer(Object? raw) {
         spd: (j['spd'] as num?)?.toDouble() ?? 10,
       ),
       speciesId: j['sp']?.toString() ?? '',
+      skin: j['skin']?.toString(),
     ));
   }
   return out;

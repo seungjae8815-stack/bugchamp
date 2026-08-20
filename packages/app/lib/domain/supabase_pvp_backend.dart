@@ -108,6 +108,11 @@ class SupabasePvpBackend implements PvpBackend {
               as List;
       final teams = <DefenderTeam>[];
       for (final r in rows.cast<Map<String, dynamic>>()) {
+        // ⚠️ **나 자신은 상대로 뜨면 안 된다.** RPC 가 걸러 주길 기대하지 말고
+        // 여기서도 막는다. 유저가 적을 땐 근처 트로피 방어팀이 내 것뿐이라
+        // 내가 나와 싸우게 되는데, 스킨이 붙고 나서야 그게 드러났다
+        // ("왜 상대도 내 스킨이 보이지?" — 실기 지적 2026-08-19).
+        if (r['id'] == uid) continue;
         final raw = (r['team'] as List?) ?? const [];
         final bugs = <DefenderBug>[
           for (final b in raw)

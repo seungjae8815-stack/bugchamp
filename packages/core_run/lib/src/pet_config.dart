@@ -6,6 +6,26 @@ import 'package:meta/meta.dart';
 import 'character_stats.dart';
 import 'enums.dart';
 
+/// 확장 비용 반올림 눈금의 기본값 — `[상한, 눈금]`, 상한 0 은 그 이상 전부.
+const kDefaultExpandCostRound = <List<int>>[
+  [100, 5],
+  [200, 10],
+  [500, 25],
+  [1000, 50],
+  [0, 100],
+];
+
+/// `[[100,5],...]` → 눈금 목록. 형식이 깨지면 기본값(조용히 죽지 않게).
+List<List<int>> _round(Object? json) {
+  if (json is! List || json.isEmpty) return kDefaultExpandCostRound;
+  final out = <List<int>>[];
+  for (final e in json) {
+    if (e is! List || e.length < 2) return kDefaultExpandCostRound;
+    out.add([(e[0] as num).toInt(), (e[1] as num).toInt()]);
+  }
+  return out;
+}
+
 /// 애완펫(장착 곤충) 보너스·진화·합성·수련 설정 (JSON, §6).
 @immutable
 class PetConfig {
@@ -61,8 +81,9 @@ class PetConfig {
     this.traitAttackBonus = const {},
     this.traitHpBonus = const {},
     this.traitBattleScale = 0,
-    this.storageSlotsMax = 300,
+    this.storageSlotsMax = 100,
     this.expandCostGrowth = 1.12,
+    this.expandCostRound = kDefaultExpandCostRound,
     this.storageExpandJelly = 50,
     this.storageExpandAmount = 10,
   });
@@ -259,9 +280,27 @@ class PetConfig {
   /// 쓸 데가 없어서 팩이 안 팔린다(2026-08-18 분석). 계단식이면 끝이 없다.
   final double expandCostGrowth;
 
-  /// [done] 번 늘린 뒤의 다음 확장 비용.
-  int _stepCost(int base, int done) =>
-      (base * math.pow(expandCostGrowth, done)).round();
+  /// 자릿수별 반올림 눈금 `[상한, 눈금]` 목록. 상한 0 = 그 이상 전부.
+  ///
+  /// 곡선(=[expandCostGrowth])은 그대로 두고 **표시되는 숫자만** 떨어지게
+  /// 만든다. 50/56/63/70 은 읽는 순간 "얼마를 더 모아야 하지"가 계산되지
+  /// 않는다 — 50/60/65/75 면 바로 읽힌다.
+  final List<List<int>> expandCostRound;
+
+  /// [done] 번 늘린 뒤의 다음 확장 비용. 눈금에 맞춰 **올린다**.
+  ///
+  /// ⚠️ 반올림이 아니라 올림이다. 반올림하면 37.6과 42.1이 둘 다 40이 되어
+  /// **연달아 같은 가격**이 나온다(부화기 3→4칸과 4→5칸에서 실제로 그랬다).
+  /// 올림은 곡선이 단조증가인 한 결과도 단조증가다.
+  int _stepCost(int base, int done) {
+    final raw = base * math.pow(expandCostGrowth, done);
+    var step = 1;
+    for (final tier in expandCostRound) {
+      step = tier[1];
+      if (tier[0] == 0 || raw < tier[0]) break;
+    }
+    return (raw / step).ceil() * step;
+  }
 
   /// 부화기: 현재 [capacity] 에서 다음 칸을 늘리는 비용.
   int incubatorExpandCost(int capacity) =>
@@ -466,8 +505,9 @@ class PetConfig {
       disassembleJellyMinPotential:
           (json['disassembleJellyMinPotential'] as num?)?.toInt() ?? 0,
       releaseMaterialByGrade: _gradeIntMap(json['releaseMaterialByGrade']),
-      storageSlotsMax: (json['storageSlotsMax'] as num?)?.toInt() ?? 300,
+      storageSlotsMax: (json['storageSlotsMax'] as num?)?.toInt() ?? 100,
       expandCostGrowth: (json['expandCostGrowth'] as num?)?.toDouble() ?? 1.12,
+      expandCostRound: _round(json['expandCostRound']),
       storageExpandJelly: (json['storageExpandJelly'] as num?)?.toInt() ?? 50,
       storageExpandAmount: (json['storageExpandAmount'] as num?)?.toInt() ?? 10,
     );

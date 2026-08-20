@@ -104,18 +104,30 @@ BattleBug _defenderToBattleBug(
 
 /// 상대 1마리 직렬화 — 앱이 **서버가 싸운 것과 똑같은 상대**를 그려야 한다.
 /// 야생은 서버가 만들므로 앱이 따로 만들면 연출과 결과가 갈린다.
-Map<String, dynamic> _foeJson(BattleBug b, String speciesId) => {
-  'id': b.id,
-  'sp': speciesId,
-  'name': b.name,
-  'el': b.element.key,
-  'tm': b.temperament.key,
-  'stance': b.preferredStance.name,
-  'hp': b.maxHp,
-  'atk': b.atk,
-  'def': b.def,
-  'spd': b.spd,
-};
+/// 상대 1마리의 표시 정보. [skin] 은 그 유저가 산 스킨 효과 키.
+///
+/// 스킨은 남이 봐야 사고 싶어진다(2026-08-19) — 그림에만 쓰는 값이라
+/// 전투 계산에는 일절 들어가지 않는다.
+Map<String, dynamic> _foeJson(BattleBug b, String speciesId, {String? skin}) =>
+    {
+      'id': b.id,
+      'sp': speciesId,
+      if (skin != null) 'skin': skin,
+      'name': b.name,
+      'el': b.element.key,
+      'tm': b.temperament.key,
+      'stance': b.preferredStance.name,
+      'hp': b.maxHp,
+      'atk': b.atk,
+      'def': b.def,
+      'spd': b.spd,
+    };
+
+/// 방어팀 행의 스킨 효과 키(`gold`/`albino`). 없으면 null.
+///
+/// 앱이 등록할 때 실어 보낸 값을 그대로 돌려준다 — **그림에만 쓴다.**
+/// 클라가 주장하는 값이라 위조할 수 있지만 이득이 0 이라 위조할 이유가 없다.
+String? _defenderSkin(Map<String, dynamic> d) => d['skin']?.toString();
 
 /// 세션 id — 추측 불가능해야 한다(남의 세션을 찍어보지 못하게).
 String _newSessionId() {
@@ -942,7 +954,14 @@ Handler buildHandler({
 
         final List<BattleBug> foe;
         final List<String> foeSpecies;
+        // 상대가 산 스킨(그림용). 야생은 전부 null.
+        final List<String?> foeSkins;
         final double rewardMult;
+        // ⚠️ 자기 자신과는 싸울 수 없다. 앱이 걸러 주지만 서버도 막는다 —
+        // 내 방어팀은 내 전력과 똑같아 승률 조작에 쓰기 딱 좋다.
+        if (opponentId == user.id) {
+          return _json({'error': 'self_opponent'}, status: 400);
+        }
         if (opponentId.isNotEmpty) {
           final rows = await store.loadDefenderTeam(opponentId);
           if (rows == null || rows.isEmpty) {
@@ -953,6 +972,7 @@ Handler buildHandler({
               _defenderToBattleBug(rows[i], i, species),
           ];
           foeSpecies = [for (final d in rows) d['sp']?.toString() ?? ''];
+          foeSkins = [for (final d in rows) _defenderSkin(d)];
           rewardMult = 1.0;
         } else {
           final wild = actions.buildWildTeam(
@@ -966,8 +986,47 @@ Handler buildHandler({
           }
           foe = wild.team;
           foeSpecies = wild.speciesIds;
+          foeSkins = List<String?>.filled(wild.team.length, null);
           rewardMult = wild.tier.rewardMult;
         }
+
+        // ⚠️ **시작할 때 먼저 지고 들어간다.** 수동 전투는 결착까지 시간이
+        // 걸려서, 지고 있으면 앱을 강제 종료해 트로피를 지키는 치트가 가능했다
+        // (티켓만 날아가고 점수는 그대로 — 2026-08-19 지적). 이기면 결착에서
+        // 차액으로 되돌려준다. 중간에 사라지면 패배가 그대로 남는다.
+        final startSave = ticketed.save!;
+        final prepaid = pvpReward(
+          won: false,
+          draw: false,
+          trophies: startSave.pvpTrophies,
+          cfg: cfg.battle,
+          rewardMult: rewardMult,
+        ).trophyDelta;
+        // ⚠️ **부상도 선차감한다.** 트로피만 미리 깎으면 곤충은 멀쩡히
+        // 빠져나간다 — 지고 있을 때 이탈하면 KO 대가(회복 타이머)를 통째로
+        // 피할 수 있었다(감사 후 보완 2026-08-20). 결착에서 살아남은 곤충은
+        // 되돌려준다. 시작 검증이 진짜 부상을 거부하므로 여기서 걸리는 건
+        // 전부 이 선차감분이다.
+        final tNow = DateTime.now().toUtc();
+        final preInjured = Map<String, DateTime>.from(startSave.injured);
+        for (final b in built.team) {
+          final bug = startSave.bugs.where((x) => x.id == b.id).firstOrNull;
+          final sp = bug == null ? null : species[bug.speciesId];
+          if (sp == null) continue;
+          preInjured[b.id] = tNow.add(
+            Duration(seconds: cfg.pet.injuryDuration(sp.grade)),
+          );
+        }
+
+        final prepaidSave = startSave.copyWith(
+          pvpTrophies: (startSave.pvpTrophies + prepaid).clamp(0, 1 << 30),
+          injured: preInjured,
+        );
+        // ⚠️ 세션에는 **실제로 깎인 만큼**을 적는다. 트로피가 12 미만이면
+        // 차감이 0 에서 잘리는데, 결착에서 원래 액수(-12)를 되돌려주면
+        // 그 차이만큼 공짜 트로피가 된다(0 근처 유저가 이길수록 이득 — 감사에서
+        // 발견 2026-08-20).
+        final effPrepaid = prepaidSave.pvpTrophies - startSave.pvpTrophies;
 
         final sessionId = _newSessionId();
         final session = BattleSession(
@@ -980,9 +1039,11 @@ Handler buildHandler({
           rewardMult: rewardMult,
           stances: const [],
           finished: false,
+          trophiesAtStart: startSave.pvpTrophies,
+          trophyPrepaid: effPrepaid,
         );
         await store.saveSession(sessionId, user.id, session.toJson());
-        await store.save(user.id, ticketed.save!.toJson());
+        await store.save(user.id, prepaidSave.toJson());
 
         // 상대 스탯은 화면 표시에 필요하므로 준다. 시드는 주지 않는다.
         // 세이브는 싣지 않는다(이그레스 비용) — 바뀐 티켓 값만 돌려준다.
@@ -993,7 +1054,11 @@ Handler buildHandler({
           ...ticketed.extra,
           'foe': [
             for (var i = 0; i < foe.length; i++)
-              _foeJson(foe[i], i < foeSpecies.length ? foeSpecies[i] : ''),
+              _foeJson(
+                foe[i],
+                i < foeSpecies.length ? foeSpecies[i] : '',
+                skin: i < foeSkins.length ? foeSkins[i] : null,
+              ),
           ],
         });
       } on StateStoreException catch (e) {
@@ -1044,6 +1109,8 @@ Handler buildHandler({
           speciesById: species,
           petConfig: cfg.pet,
           enhance: cfg.enhance,
+          // 시작 때 선차감한 부상에 자기가 걸리면 안 된다(위 선차감 주석).
+          allowInjured: true,
         );
         if (built.error != null) {
           return _json({'error': built.error}, status: 400);
@@ -1098,6 +1165,12 @@ Handler buildHandler({
           rewardMult: session.rewardMult,
           speciesById: species,
           petConfig: cfg.pet,
+          // 시작할 때 패배분을 미리 깎았다 — 차액만 반영한다.
+          trophiesAtStart: session.trophiesAtStart == 0
+              ? null
+              : session.trophiesAtStart,
+          trophyPrepaid: session.trophyPrepaid,
+          healSurvivors: true,
         );
         await store.saveSession(
           sessionId,
@@ -1240,7 +1313,13 @@ Handler buildHandler({
 
         final List<BattleBug> foe;
         final List<String> foeSpecies;
+        // 상대가 산 스킨(그림용). 야생은 전부 null.
+        final List<String?> foeSkins;
         final double rewardMult;
+        // ⚠️ 자기 자신과는 싸울 수 없다(수동 전투와 같은 규칙).
+        if (opponentId == user.id) {
+          return _json({'error': 'self_opponent'}, status: 400);
+        }
         if (opponentId.isNotEmpty) {
           // 실 유저 상대 — 방어팀을 서버가 DB 에서 직접 읽는다.
           final rows = await store.loadDefenderTeam(opponentId);
@@ -1252,6 +1331,7 @@ Handler buildHandler({
               _defenderToBattleBug(rows[i], i, species),
           ];
           foeSpecies = [for (final d in rows) d['sp']?.toString() ?? ''];
+          foeSkins = [for (final d in rows) _defenderSkin(d)];
           rewardMult = 1.0;
         } else {
           // 야생 상대 — 서버가 내 로스터 기준으로 만든다.
@@ -1266,6 +1346,7 @@ Handler buildHandler({
           }
           foe = wild.team;
           foeSpecies = wild.speciesIds;
+          foeSkins = List<String?>.filled(wild.team.length, null);
           rewardMult = wild.tier.rewardMult;
         }
 
@@ -1292,7 +1373,11 @@ Handler buildHandler({
           // 연출이 서버 결과와 일치한다.
           'foe': [
             for (var i = 0; i < foe.length; i++)
-              _foeJson(foe[i], i < foeSpecies.length ? foeSpecies[i] : ''),
+              _foeJson(
+                foe[i],
+                i < foeSpecies.length ? foeSpecies[i] : '',
+                skin: i < foeSkins.length ? foeSkins[i] : null,
+              ),
           ],
         });
       } on StateStoreException catch (e) {

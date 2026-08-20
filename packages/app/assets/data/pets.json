@@ -68,7 +68,7 @@
  "breakthroughJellyPerMinute": 0.5,
  "incubatorSlotsInitial": 1,
  "incubatorSlotsMax": 5,
- "incubatorExpandJelly": 30,
+ "incubatorExpandJelly": 100,
  "incubateDurationsSec": {
   "common": 300,
   "uncommon": 600,
@@ -94,9 +94,9 @@
  "breedingJellyPerMinute": 0.5,
  "breedingSlotsInitial": 1,
  "breedingSlotsMax": 5,
- "breedingExpandJelly": 40,
- "storageSlotsMax": 300,
- "storageExpandJelly": 50,
+ "breedingExpandJelly": 100,
+ "storageSlotsMax": 100,
+ "storageExpandJelly": 100,
  "storageExpandAmount": 10,
  "breedingSizeVariancePct": 0.08,
  "breedingMutationChance": 0.05,
@@ -142,5 +142,28 @@
  "incubateAdSkipRatio": 0.2,
  "incubateJellyPerMinute": 0.5,
  "expandCostGrowth": 1.12,
- "_expandComment": "확장은 살수록 비싸진다(expandCostGrowth^이미 늘린 횟수). 예전엔 정액이라 390젤리면 전부 사고 끝이었다 — 그 뒤로 젤리 쓸 데가 없어서 팩이 안 팔렸다. ⚠️ 채집함 상한은 §2.1 의 세이브 크기 방어선이기도 하다. 300칸 ≈ 135KB 로 2026-07 장애(3만 마리 13.6MB)와는 자릿수가 다르지만, 더 올릴 땐 반드시 세이브 크기·업로드 트래픽을 함께 본다."
+ "_expandComment": "확장은 살수록 비싸진다(expandCostGrowth^이미 늘린 횟수, 눈금 올림). 세 확장 모두 **첫 개방 100젤리**로 맞췄다 — 첫 칸이 싸면 \"그냥 사는 것\"이 되어 젤리를 쓰는 결정이 아니게 된다(2026-08-18 사장님 결정). ⚠️ 채집함 상한 100칸은 §2.1 의 세이브 크기 방어선이다. 2026-07 장애(3만 마리 = 13.6MB 세이브 → 업로드마다 DB 타임아웃)가 여기서 나왔다. 올릴 땐 반드시 세이브 크기·업로드 트래픽을 함께 검토한다. 무한 소비처는 확장이 아니라 **교환소**(run_config.json → exchange)가 맡는다 — 확장은 끝이 있어도 되지만 교환소는 끝이 없다.",
+ "expandCostRound": [
+  [
+   100,
+   5
+  ],
+  [
+   200,
+   10
+  ],
+  [
+   500,
+   25
+  ],
+  [
+   1000,
+   50
+  ],
+  [
+   0,
+   100
+  ]
+ ],
+ "_expandRoundComment": "확장 비용을 자릿수에 맞는 눈금으로 **올림**한다. [상한, 눈금] 목록이며 상한 0 은 \"그 이상 전부\". 50/56/63/70 처럼 나오면 값을 읽는 순간 \"얼마 모아야 하지\"가 계산이 안 된다 — 50/60/65/75 면 바로 읽힌다. ⚠️ 반드시 올림(ceil)이다. 반올림하면 37.6과 42.1이 둘 다 40이 되어 가격이 두 번 같아진다(부화기에서 실제로 그랬다)."
 }

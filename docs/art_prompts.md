@@ -624,3 +624,114 @@ python tool/place_flat_icons.py --from C:\Users\Lenovo\Downloads --set stance # 
 - 파일명은 **JSON id와 동일**하게 (`stag_dorcus.webp` ↔ species.json `id:"stag_dorcus"`).
 - 데이터에 경로 필드 추가 예정: `species.json→"image"`, `fields.json→"bg"`, `traps.json→"icon"`.
 - 애셋이 아직 없으면 **현재 아이콘/색으로 자동 폴백** → 하나씩 채워 넣으면 점진적으로 게임이 살아난다.
+
+---
+
+## 2c. 스킨 전투 프레임 (`assets/images/bugs/`, 2026-08-19)
+
+황금(`gold`) 2종 · 알비노(`albino`) 6종. **2b 와 같은 골격**을 쓴다 —
+재질을 화려하게 쓰려고 골격을 바꿔봤더니 세 칸이 전부 같은 그림으로 나왔다
+(실측). `left:`/`right:` 절이 칸을 갈라놓는 장치이므로 **그대로 두고**,
+재질은 맨 앞 주제 한 줄 안에서만 바꾼다.
+
+`<REF>` = 그 종의 **기존 성충 그림**. 같은 곤충이어야 스킨으로 읽힌다.
+
+처리:
+```powershell
+python tool\place_bug_frames.py --from <다운로드폴더> --skin gold
+python tool\place_bug_frames.py --from <다운로드폴더> --skin albino
+```
+→ `{종}_adult_{1,2,3}_{gold|albino}.webp`. 그다음 `iap.json → skins[].artSpecies`
+에 종 id 를 넣으면 켜진다(없으면 색 필터로 폴백하므로 화면은 안 깨진다).
+
+### `rhino_japanese.png` — 황금 일본장수풍뎅이
+
+```
+character pose sheet of the same classic rhinoceros beetle cast in polished gold, Y-shaped horn, filigree-engraved shell, a ruby set at the horn base, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, Y-shaped horn driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, rich gold palette (bright gold, deep bronze, warm amber, dark umber shadow), mirror-bright specular highlights, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `rhino_lesser.png` — 황금 애기장수풍뎅이
+
+```
+character pose sheet of the same small rhinoceros beetle cast in polished gold, single short horn, filigree-engraved shell, an amber gem at the horn base, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: charging strike, body pitched low and thrust forward, single short horn driving straight ahead, rear legs kicking off the ground; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, rich gold palette (bright gold, deep bronze, warm amber, dark umber shadow), mirror-bright specular highlights, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_giant.png` — 크리스탈 왕사슴벌레
+
+```
+character pose sheet of the same giant stag beetle of translucent pearl-white crystal, thick powerful curved mandibles, iridescent sheen, pale ruby eyes, regal, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, thick curved mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_dorcus.png` — 크리스탈 도르쿠스사슴벌레
+
+```
+character pose sheet of the same small stag beetle of translucent pearl-white crystal, short modest mandibles, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_flat.png` — 크리스탈 넓적사슴벌레
+
+```
+character pose sheet of the same broad flat wide-jawed stag beetle of translucent pearl-white crystal, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, broad flat mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_saw.png` — 크리스탈 톱사슴벌레
+
+```
+character pose sheet of the same stag beetle of translucent pearl-white crystal, long curved saw-toothed mandibles, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, saw-toothed mandibles scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_miyama.png` — 크리스탈 미야마사슴벌레
+
+```
+character pose sheet of the same miyama stag beetle of translucent pearl-white crystal, frosted head flanges, large arched mandibles, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, large arched mandibles scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_twospot.png` — 크리스탈 두점박이사슴벌레
+
+```
+character pose sheet of the same two-spot stag beetle of translucent pearl-white crystal, two ruby cabochons on the back, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat pastel background; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+
+> ⚠️ **알비노는 배경을 어둡게, 그림자 없이 뽑는다**(2026-08-19 재생성).
+> 밝은 연보라 배경 + 창백한 몸 + 그려 넣은 바닥 그림자 세 가지가 겹쳐서
+> 누끼가 알고리즘으로 안 갈렸다 — 다리 사이 그림자의 선화 비율이 0.0000
+> 이라 색으로도 형태로도 구분할 단서가 원본에 없었다. 배경을 어둡게 하고
+> 그림자를 안 그리면 한 번에 깨끗해진다. 황금은 몸이 진해서 문제없다.
+
+### `stag_giant.png` — 크리스탈 왕사슴벌레
+
+```
+character pose sheet of the same giant stag beetle of translucent pearl-white crystal, thick powerful curved mandibles, iridescent sheen, pale ruby eyes, regal, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat dark charcoal background, no ground line, no cast shadow, the beetle floats with nothing beneath it; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, thick curved mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_dorcus.png` — 크리스탈 도르쿠스사슴벌레
+
+```
+character pose sheet of the same small stag beetle of translucent pearl-white crystal, short modest mandibles, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat dark charcoal background, no ground line, no cast shadow, the beetle floats with nothing beneath it; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_flat.png` — 크리스탈 넓적사슴벌레
+
+```
+character pose sheet of the same broad flat wide-jawed stag beetle of translucent pearl-white crystal, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat dark charcoal background, no ground line, no cast shadow, the beetle floats with nothing beneath it; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, broad flat mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_saw.png` — 크리스탈 톱사슴벌레
+
+```
+character pose sheet of the same stag beetle of translucent pearl-white crystal, long curved saw-toothed mandibles, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat dark charcoal background, no ground line, no cast shadow, the beetle floats with nothing beneath it; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, saw-toothed mandibles scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_miyama.png` — 크리스탈 미야마사슴벌레
+
+```
+character pose sheet of the same miyama stag beetle of translucent pearl-white crystal, frosted head flanges, large arched mandibles, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat dark charcoal background, no ground line, no cast shadow, the beetle floats with nothing beneath it; left: standing idle, weight settled, all legs planted, calm ready stance; center: heaving throw, large arched mandibles scooping upward, front of the body lifted high, rear legs braced and coiled; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+
+### `stag_twospot.png` — 크리스탈 두점박이사슴벌레
+
+```
+character pose sheet of the same two-spot stag beetle of translucent pearl-white crystal, two ruby cabochons on the back, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat dark charcoal background, no ground line, no cast shadow, the beetle floats with nothing beneath it; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
+```
+

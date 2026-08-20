@@ -52,7 +52,7 @@
   "battleClashEven": "Feeling it out",
   "injuryTitle": "Recovering",
   "injuryDesc": "Can't be fielded in a duel until healed",
-  "injuryHealJelly": "💎{n} Heal now",
+  "injuryHealJelly": "Heal now for {n} jelly",
   "@injuryHealJelly": {
     "placeholders": {
       "n": {
@@ -114,7 +114,7 @@
     }
   },
   "synergyLabel": "Synergy",
-  "synergyHint": "Place 2+ bugs so a front slot generates the next (order matters)",
+  "synergyHint": "Place 2+ bugs · when a bug powers up the one behind it your team gets stronger (order matters)",
   "teamReorderHint": "Drag to reorder",
   "leagueSeasonTitle": "League · Season",
   "modeManual": "Manual",
@@ -474,7 +474,7 @@
   },
   "storageFullBanner": "Your collection is full\nNo new bugs will be added",
   "storageFullSnack": "Storage is full. Release a bug or expand your storage.",
-  "storageExpand": "+{n} 💎{jelly}",
+  "storageExpand": "+{n} slots · {jelly} jelly",
   "@storageExpand": {
     "placeholders": {
       "n": {
@@ -494,7 +494,7 @@
   "dexMaxPotential": "Best potential",
   "dexNotFound": "You haven't met this bug yet. Go find one!",
   "dexClaim": "Claim {n} dex reward(s)",
-  "dexClaimedSnack": "Dex reward! 💰{gold} · 💎{jelly}",
+  "dexClaimedSnack": "Dex reward! {gold} gold · {jelly} jelly",
   "dexBonusSummary": "Dex bonus — ATK +{atk}% · HP +{hp}% · Gold +{gold}%",
   "@dexBonusSummary": {
     "placeholders": {
@@ -587,7 +587,7 @@
   "eventScore": "{n} pts",
   "eventMyRank": "Your rank #{n}",
   "eventPickTeam": "Pick 3 bugs to enter",
-  "eventPickOrder": "They fight left to right — a bug generating the next one grants synergy",
+  "eventPickOrder": "They fight left to right · a bug that powers up the one behind it makes the team stronger",
   "eventNormalizeTitle": "Stats are equalized in this event",
   "eventNormalizeBody": "Only species, element, temperament and specialty count. Training, breakthrough, part enhancement, potential and size do not apply — everyone competes on formation alone.",
   "eventFatigueLeft": "Ready in {time}",
@@ -909,7 +909,7 @@
   "trainAction": "Train",
   "trainMaxed": "Max level",
   "trainSnack": "Trained! Level +1",
-  "trainJelly": "💎{n}",
+  "trainJelly": "{n} jelly",
   "@trainJelly": {
     "placeholders": {
       "n": {
@@ -917,7 +917,7 @@
       }
     }
   },
-  "trainJellySnack": "Instant train! Level +{lv}",
+  "trainJellySnack": "Instant training! Level +{lv}",
   "@trainJellySnack": {
     "placeholders": {
       "lv": {
@@ -947,7 +947,7 @@
   "breakthroughMaxed": "Max tier reached",
   "breakthroughDo": "Break",
   "breakthroughCollect": "Collect",
-  "breakthroughInstant": "Now 💎{n}",
+  "breakthroughInstant": "Finish now · {n} jelly",
   "@breakthroughInstant": {
     "placeholders": {
       "n": {
@@ -981,7 +981,7 @@
   "incubatorReady": "Hatched!",
   "incubatorCollect": "Collect",
   "incubatorFull": "Incubator full",
-  "incubatorExpand": "Expand 💎{n}",
+  "incubatorExpand": "Expand slot · {n} jelly",
   "@incubatorExpand": {
     "placeholders": {
       "n": {
@@ -1192,7 +1192,7 @@
   "guestWarnBody": "This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.",
   "titleStoreName": "Bug Champ",
   "titleStoreTagline": "Idle Insect RPG",
-  "nicknameChangeCostHint": "Costs 💎{cost} to change",
+  "nicknameChangeCostHint": "Costs {cost} jelly to change",
   "@nicknameChangeCostHint": {
     "placeholders": {
       "cost": {
@@ -1210,7 +1210,7 @@
     }
   },
   "nicknameEditAction": "Change nickname",
-  "nicknameEditActionCost": "Change 💎{cost}",
+  "nicknameEditActionCost": "Change for {cost} jelly",
   "@nicknameEditActionCost": {
     "placeholders": {
       "cost": {
@@ -1273,7 +1273,7 @@
       }
     }
   },
-  "pvpTicketJellyBtn": "Fill up 💎{cost}",
+  "pvpTicketJellyBtn": "Refill for {cost} jelly",
   "@pvpTicketJellyBtn": {
     "placeholders": {
       "cost": {
@@ -1549,5 +1549,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "curJelly": "Jelly",
+  "exchangeHoldings": "Your holdings",
+  "elementGuideBtn": "Element chart"
 }

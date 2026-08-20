@@ -456,6 +456,14 @@ class GameActions {
     required Map<String, Species> speciesById,
     required PetConfig petConfig,
     EnhanceConfig? enhance,
+
+    /// 부상 곤충을 허용한다 — **수동 세션의 step/finish 전용.**
+    ///
+    /// 수동 전투는 시작할 때 팀 전체에 부상을 선차감한다(중도 이탈 = KO 와
+    /// 같은 대가). 그 상태가 주기 업로드로 서버 세이브에 실리므로, 진행 중
+    /// 재검증이 부상을 거부하면 **자기 선차감에 자기가 걸려** 스텝이 죽는다.
+    /// 시작 시 검증은 기본값(false)으로 진짜 부상을 걸러낸다.
+    bool allowInjured = false,
   }) {
     if (bugIds.isEmpty) return (team: const [], error: 'empty_team');
     final t = now().toUtc();
@@ -466,7 +474,7 @@ class GameActions {
     for (final id in bugIds) {
       final bug = byId[id];
       if (bug == null) return (team: const [], error: 'bug_not_owned');
-      if (save.isInjured(bug.id, t)) {
+      if (!allowInjured && save.isInjured(bug.id, t)) {
         return (team: const [], error: 'bug_injured');
       }
       final sp = speciesById[bug.speciesId];
@@ -515,18 +523,38 @@ class GameActions {
     required double rewardMult,
     required Map<String, Species> speciesById,
     required PetConfig petConfig,
+
+    /// 보상 계산 기준 트로피. 수동 전투는 시작할 때 패배분을 미리 깎으므로
+    /// 현재 값으로 계산하면 보상이 낮게 잡힌다. null 이면 현재 값.
+    int? trophiesAtStart,
+
+    /// 시작할 때 이미 반영한 트로피 변동(음수). 결착에서 **차액만** 더한다.
+    int trophyPrepaid = 0,
+
+    /// KO 되지 않은 팀원의 부상을 **지운다** — 수동 전투 결착 전용.
+    ///
+    /// 수동은 시작할 때 팀 전체에 부상을 선차감하므로, 끝까지 살아남은
+    /// 곤충은 여기서 되돌려야 한다. 시작 검증이 진짜 부상을 거부하므로
+    /// 이 시점의 팀원 부상은 전부 선차감분이다 — 지워도 잃는 게 없다.
+    bool healSurvivors = false,
   }) {
     final t = now().toUtc();
     final rw = pvpReward(
       won: result.outcome == BattleOutcome.teamA,
       draw: result.outcome == BattleOutcome.draw,
-      trophies: save.pvpTrophies,
+      trophies: trophiesAtStart ?? save.pvpTrophies,
       cfg: config.battle,
       rewardMult: rewardMult,
     );
 
     final byId = {for (final b in save.bugs) b.id: b};
     final injured = Map<String, DateTime>.from(save.injured);
+    if (healSurvivors) {
+      final koed = koedTeamAIds(myTeam, result.events).toSet();
+      for (final b in myTeam) {
+        if (!koed.contains(b.id)) injured.remove(b.id);
+      }
+    }
     for (final koedId in koedTeamAIds(myTeam, result.events)) {
       final bug = byId[koedId];
       if (bug == null) continue;
@@ -539,7 +567,9 @@ class GameActions {
       injured[koedId] = (prev != null && prev.isAfter(until)) ? prev : until;
     }
 
-    final newTrophies = (save.pvpTrophies + rw.trophyDelta).clamp(0, 1 << 30);
+    // 선차감분을 빼고 **차액만** 반영한다. 두 번 깎으면 이겨도 손해다.
+    final newTrophies = (save.pvpTrophies + rw.trophyDelta - trophyPrepaid)
+        .clamp(0, 1 << 30);
     return ActionResult.ok(
       save.copyWith(
         gold: save.gold + rw.gold,
@@ -688,7 +718,13 @@ class GameActions {
         // 조작 업로드가 필터를 우회해 칸을 채운다.
         if (!save.acceptsGrade(sp.grade)) {
           // 자동 방생 → 일반 재료. 젤리를 주지 않는 이유는 pets.json 참조.
-          final give = config.pet.releaseMaterial(sp.grade);
+          // 스킨 계열 보너스(§2.6 — 재료만, 전투 스탯 아님).
+          // 근거는 ownedSkins = **서버 소유 필드**라 위조할 수 없다.
+          final give = config.iap.skinnedReleaseMaterial(
+            config.pet.releaseMaterial(sp.grade),
+            save.ownedSkins,
+            sp.id,
+          );
           if (give > 0) {
             final kind =
                 _regularMaterials[rng.nextInt(_regularMaterials.length)];
@@ -1421,7 +1457,13 @@ class GameActions {
         .where((s) => s.id == bug.speciesId)
         .map((s) => s.grade)
         .firstOrNull;
-    final matGain = grade == null ? 0 : petConfig.releaseMaterial(grade);
+    final matGain = grade == null
+        ? 0
+        : config.iap.skinnedReleaseMaterial(
+            petConfig.releaseMaterial(grade),
+            save.ownedSkins,
+            bug.speciesId,
+          );
     final mats = Map<MaterialKind, int>.from(save.materials);
     if (reward > 0) {
       mats[MaterialKind.jelly] =

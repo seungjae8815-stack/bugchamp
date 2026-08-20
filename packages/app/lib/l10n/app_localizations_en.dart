@@ -119,7 +119,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String injuryHealJelly(int n) {
-    return '💎$n Heal now';
+    return 'Heal now for $n jelly';
   }
 
   @override
@@ -192,7 +192,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get synergyHint =>
-      'Place 2+ bugs so a front slot generates the next (order matters)';
+      'Place 2+ bugs · when a bug powers up the one behind it your team gets stronger (order matters)';
 
   @override
   String get teamReorderHint => 'Drag to reorder';
@@ -743,7 +743,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String storageExpand(int n, int jelly) {
-    return '+$n 💎$jelly';
+    return '+$n slots · $jelly jelly';
   }
 
   @override
@@ -777,7 +777,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dexClaimedSnack(Object gold, Object jelly) {
-    return 'Dex reward! 💰$gold · 💎$jelly';
+    return 'Dex reward! $gold gold · $jelly jelly';
   }
 
   @override
@@ -991,7 +991,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventPickOrder =>
-      'They fight left to right — a bug generating the next one grants synergy';
+      'They fight left to right · a bug that powers up the one behind it makes the team stronger';
 
   @override
   String get eventNormalizeTitle => 'Stats are equalized in this event';
@@ -1612,12 +1612,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String trainJelly(int n) {
-    return '💎$n';
+    return '$n jelly';
   }
 
   @override
   String trainJellySnack(int lv) {
-    return 'Instant train! Level +$lv';
+    return 'Instant training! Level +$lv';
   }
 
   @override
@@ -1650,7 +1650,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String breakthroughInstant(int n) {
-    return 'Now 💎$n';
+    return 'Finish now · $n jelly';
   }
 
   @override
@@ -1686,7 +1686,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String incubatorExpand(int n) {
-    return 'Expand 💎$n';
+    return 'Expand slot · $n jelly';
   }
 
   @override
@@ -2092,7 +2092,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nicknameChangeCostHint(int cost) {
-    return 'Costs 💎$cost to change';
+    return 'Costs $cost jelly to change';
   }
 
   @override
@@ -2108,7 +2108,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nicknameEditActionCost(int cost) {
-    return 'Change 💎$cost';
+    return 'Change for $cost jelly';
   }
 
   @override
@@ -2186,7 +2186,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pvpTicketJellyBtn(int cost) {
-    return 'Fill up 💎$cost';
+    return 'Refill for $cost jelly';
   }
 
   @override
@@ -2636,4 +2636,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exchangeDone => 'Exchanged!';
+
+  @override
+  String get curJelly => 'Jelly';
+
+  @override
+  String get exchangeHoldings => 'Your holdings';
+
+  @override
+  String get elementGuideBtn => 'Element chart';
 }

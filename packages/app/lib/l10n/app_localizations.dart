@@ -313,7 +313,7 @@ abstract class AppLocalizations {
   /// No description provided for @injuryHealJelly.
   ///
   /// In en, this message translates to:
-  /// **'💎{n} Heal now'**
+  /// **'Heal now for {n} jelly'**
   String injuryHealJelly(int n);
 
   /// No description provided for @notEnoughJelly.
@@ -439,7 +439,7 @@ abstract class AppLocalizations {
   /// No description provided for @synergyHint.
   ///
   /// In en, this message translates to:
-  /// **'Place 2+ bugs so a front slot generates the next (order matters)'**
+  /// **'Place 2+ bugs · when a bug powers up the one behind it your team gets stronger (order matters)'**
   String get synergyHint;
 
   /// No description provided for @teamReorderHint.
@@ -1405,7 +1405,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageExpand.
   ///
   /// In en, this message translates to:
-  /// **'+{n} 💎{jelly}'**
+  /// **'+{n} slots · {jelly} jelly'**
   String storageExpand(int n, int jelly);
 
   /// No description provided for @dexTitle.
@@ -1465,7 +1465,7 @@ abstract class AppLocalizations {
   /// No description provided for @dexClaimedSnack.
   ///
   /// In en, this message translates to:
-  /// **'Dex reward! 💰{gold} · 💎{jelly}'**
+  /// **'Dex reward! {gold} gold · {jelly} jelly'**
   String dexClaimedSnack(Object gold, Object jelly);
 
   /// No description provided for @dexBonusSummary.
@@ -1825,7 +1825,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventPickOrder.
   ///
   /// In en, this message translates to:
-  /// **'They fight left to right — a bug generating the next one grants synergy'**
+  /// **'They fight left to right · a bug that powers up the one behind it makes the team stronger'**
   String get eventPickOrder;
 
   /// No description provided for @eventNormalizeTitle.
@@ -2941,13 +2941,13 @@ abstract class AppLocalizations {
   /// No description provided for @trainJelly.
   ///
   /// In en, this message translates to:
-  /// **'💎{n}'**
+  /// **'{n} jelly'**
   String trainJelly(int n);
 
   /// No description provided for @trainJellySnack.
   ///
   /// In en, this message translates to:
-  /// **'Instant train! Level +{lv}'**
+  /// **'Instant training! Level +{lv}'**
   String trainJellySnack(int lv);
 
   /// No description provided for @breakthroughTitle.
@@ -3001,7 +3001,7 @@ abstract class AppLocalizations {
   /// No description provided for @breakthroughInstant.
   ///
   /// In en, this message translates to:
-  /// **'Now 💎{n}'**
+  /// **'Finish now · {n} jelly'**
   String breakthroughInstant(int n);
 
   /// No description provided for @breakthroughStartedSnack.
@@ -3061,7 +3061,7 @@ abstract class AppLocalizations {
   /// No description provided for @incubatorExpand.
   ///
   /// In en, this message translates to:
-  /// **'Expand 💎{n}'**
+  /// **'Expand slot · {n} jelly'**
   String incubatorExpand(int n);
 
   /// No description provided for @incubatorPlacedSnack.
@@ -3787,7 +3787,7 @@ abstract class AppLocalizations {
   /// No description provided for @nicknameChangeCostHint.
   ///
   /// In en, this message translates to:
-  /// **'Costs 💎{cost} to change'**
+  /// **'Costs {cost} jelly to change'**
   String nicknameChangeCostHint(int cost);
 
   /// No description provided for @incubatorAdSkip.
@@ -3811,7 +3811,7 @@ abstract class AppLocalizations {
   /// No description provided for @nicknameEditActionCost.
   ///
   /// In en, this message translates to:
-  /// **'Change 💎{cost}'**
+  /// **'Change for {cost} jelly'**
   String nicknameEditActionCost(int cost);
 
   /// No description provided for @notifHatchTitle.
@@ -3943,7 +3943,7 @@ abstract class AppLocalizations {
   /// No description provided for @pvpTicketJellyBtn.
   ///
   /// In en, this message translates to:
-  /// **'Fill up 💎{cost}'**
+  /// **'Refill for {cost} jelly'**
   String pvpTicketJellyBtn(int cost);
 
   /// No description provided for @pvpTicketCharged.
@@ -4749,6 +4749,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exchanged!'**
   String get exchangeDone;
+
+  /// No description provided for @curJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly'**
+  String get curJelly;
+
+  /// No description provided for @exchangeHoldings.
+  ///
+  /// In en, this message translates to:
+  /// **'Your holdings'**
+  String get exchangeHoldings;
+
+  /// No description provided for @elementGuideBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Element chart'**
+  String get elementGuideBtn;
 }
 
 class _AppLocalizationsDelegate

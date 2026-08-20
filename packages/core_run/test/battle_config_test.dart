@@ -67,10 +67,9 @@ void main() {
       final claim = cfg.claimableLeagues(400, {});
       expect(claim.map((l) => l.id), ['bronze', 'silver', 'gold']);
       // 수령한 리그는 빠진다
-      expect(
-        cfg.claimableLeagues(400, {'bronze', 'silver'}).map((l) => l.id),
-        ['gold'],
-      );
+      expect(cfg.claimableLeagues(400, {'bronze', 'silver'}).map((l) => l.id), [
+        'gold',
+      ]);
       // 브론즈만 도달해도 브론즈 보상은 있다
       expect(cfg.claimableLeagues(50, {}).map((l) => l.id), ['bronze']);
     });

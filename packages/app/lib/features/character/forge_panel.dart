@@ -942,7 +942,7 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
               _wide(l.forgeClaim, () => ctrl.claimForgeUpgrade())
             else
               _wide(
-                '${l.forgeRush} · 💎${forge.levelUpJelly(upAt.difference(now))}',
+                '${l.forgeRush} · ${forge.levelUpJelly(upAt.difference(now))}',
                 () async {
                   if (!await ctrl.rushForgeUpgrade() && context.mounted) {
                     showCenterToast(context, l.notEnoughJelly);

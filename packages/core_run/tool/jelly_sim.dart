@@ -238,7 +238,7 @@ void main(List<String> args) {
     if (j <= 0) continue;
     final unit = p.priceKrw / j;
     if (p.type == IapType.jelly) {
-      cheapestPack = (cheapestPack == null || unit < cheapestPack!)
+      cheapestPack = (cheapestPack == null || unit < cheapestPack)
           ? unit
           : cheapestPack;
     }
@@ -256,12 +256,12 @@ void main(List<String> args) {
                   (iap.passDurationDays * iap.passDailyJelly))
       : null;
   if (cheapestPack != null && passUnit != null) {
-    final verdict = passUnit < cheapestPack!
+    final verdict = passUnit < cheapestPack
         ? '⚠️ 패스가 더 싸다 → 젤리 팩이 안 팔린다(매출 상한이 패스에 묶임)'
         : 'OK — 팩이 패스보다 싸거나 비슷하다';
     stdout.writeln('');
     stdout.writeln(
-      '  최저가 팩 ₩${cheapestPack!.toStringAsFixed(1)}/젤리 vs '
+      '  최저가 팩 ₩${cheapestPack.toStringAsFixed(1)}/젤리 vs '
       '패스 ₩${passUnit.toStringAsFixed(1)}/젤리 → $verdict',
     );
   }

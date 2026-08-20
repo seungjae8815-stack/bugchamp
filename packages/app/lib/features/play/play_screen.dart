@@ -40,6 +40,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../character/item_gallery.dart';
+import '../storage/skin_gallery.dart';
 import '../event/event_screen.dart';
 import '../roadmap/roadmap_screen.dart';
 import '../notice/notice_screen.dart';
@@ -912,11 +913,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 뽑기 전에는 가득 찼는지로 롤을 막을 수 없다. 종을 먼저 정하고,
     // 필터 → 칸 순으로 판정한다.
     Grade? released;
+    String? releasedSpeciesId;
     final bugChance = _isBoss ? 1.0 : _config.bugDropChance * stats.bugFind;
     if (_rng.nextDouble() < bugChance) {
       final sp = _data.allSpecies[_rng.nextInt(_data.allSpecies.length)];
       if (!save.acceptsGrade(sp.grade)) {
         released = sp.grade; // 재료로 환산(아래 mats 에서 합산)
+        releasedSpeciesId = sp.id; // 스킨 계열 보너스 판정용
       } else if (!save.storageFull) {
         // 채집함이 가득 차면 개체 롤 자체를 건너뛴다 — 굴려서 버리면
         // 연출만 뜨고 실제로는 안 들어와 버그로 보인다.
@@ -963,7 +966,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 자동으로 굴러가는 통로에 프리미엄 재화를 흘리면 IAP 가 무의미해진다.
     final petCfg = _data.petConfig;
     if (released != null && petCfg != null) {
-      final give = petCfg.releaseMaterial(released);
+      // 스킨 계열 편의 보너스(§2.6 — 재료만).
+      final give =
+          _data.iapConfig?.skinnedReleaseMaterial(
+            petCfg.releaseMaterial(released),
+            save.ownedSkins,
+            releasedSpeciesId ?? '',
+          ) ??
+          petCfg.releaseMaterial(released);
       if (give > 0) {
         final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
         mats ??= {};
@@ -2891,7 +2901,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ) {
     final parts = <String>[
       if (m.gold > 0) '💰${formatCompact(m.gold)}',
-      if (m.jelly > 0) '💎${m.jelly}',
+      if (m.jelly > 0) '${l.curJelly} ${m.jelly}',
       if (m.chitin + m.mineral + m.sap > 0)
         '🧪${formatCompact(m.chitin + m.mineral + m.sap)}',
     ];
@@ -3025,7 +3035,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final timeStr = h > 0 ? l.durationHm(h, m) : l.durationM(m);
     final parts = <String>[
       if (g.gold > 0) '💰${formatCompact(g.gold)}',
-      if (g.jelly > 0) '💎${g.jelly}',
+      if (g.jelly > 0) '${l.curJelly} ${g.jelly}',
       if (g.chitin + g.mineral + g.sap > 0)
         '🧪${formatCompact(g.chitin + g.mineral + g.sap)}',
     ];
@@ -3188,7 +3198,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 보상 요약
     final parts = <String>[
       if (rw.gold > 0) '💰${formatCompact(rw.gold)}',
-      if (rw.jelly > 0) '💎${rw.jelly}',
+      if (rw.jelly > 0) '${l.curJelly} ${rw.jelly}',
       if (rw.chitin + rw.mineral + rw.sap > 0)
         '🧪${formatCompact(rw.chitin + rw.mineral + rw.sap)}',
     ];
@@ -4261,6 +4271,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         child: Consumer(
           builder: (ctx, r, _) {
             final ctrl = r.read(saveControllerProvider.notifier);
+            // 스킨 버튼 라벨(켜기/끄기)이 바로 바뀌도록 watch 한다.
+            final skins = r.watch(
+              saveControllerProvider.select(
+                (v) => v.value?.ownedSkins ?? const <String>{},
+              ),
+            );
             return Padding(
               padding: EdgeInsets.fromLTRB(
                 16,
@@ -4355,6 +4371,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       ctrl.devAddResources(fossil: 1000);
                       toast('화석 조각 +1000 (제련 50분치)');
                     }),
+                  ]),
+                  // 스킨은 IAP 전용이라 사이드로드 빌드에선 살 수가 없다.
+                  // 색 필터가 종마다 어떻게 나오는지는 실기로 봐야 한다.
+                  _devSection('스킨(코스메틱)', [
+                    _devBtn('스킨 그림 확인(확대)', () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SkinGalleryScreen(),
+                        ),
+                      );
+                    }),
+                    for (final (id, name) in const [
+                      ('gold_rhino', '황금 장수풍뎅이'),
+                      ('albino_stag', '알비노 사슴벌레'),
+                      ('arena_theme', '아레나 테마'),
+                    ])
+                      _devBtn(
+                        '$name ${skins.contains(id) ? '끄기' : '켜기'}',
+                        () async {
+                          final on = await ctrl.devToggleSkin(id);
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          toast('$name ${on ? '적용' : '해제'}');
+                        },
+                      ),
                   ]),
                   // 아트 확인용 — 제련은 부위가 랜덤이라 특정 그림을 보려면
                   // 수십 번 돌려야 한다. 격자로 한 번에 본다.
@@ -4573,7 +4615,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         ),
                         child: Text(
                           save.nicknameSet
-                              ? '${l.nicknameEditAction} 💎'
+                              ? l.nicknameEditAction
                               : l.nicknameEditAction,
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,

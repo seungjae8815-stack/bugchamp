@@ -592,19 +592,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(gifts: [...alive, gift], nextGiftAt: reschedule));
   }
 
-  /// 오늘 무료 2배를 몇 번 썼는지(패스 미보유자용 카운터).
-  static const _giftDoubleKey = 'giftDouble';
-
   /// 지금 2배로 받을 수 있는가. (false 면 1배로만 수령된다)
   ///
   /// 패스 보유자는 무제한 — 나머지는 하루 [GiftConfig.freeDoubleDaily] 회.
+  /// 카운터는 전용 필드([SaveGame.giftDoubleCount])다 — `adUseCounts` 는 서버
+  /// 소유라 업로드마다 덮여 상한이 리셋됐다(감사에서 발견 2026-08-20).
   bool canDoubleGift() {
     final s = state.requireValue;
     final now = ref.read(clockProvider).now().toUtc();
     if (s.anyPassActive(now)) return true;
     final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
     final cap = cfg?.freeDoubleDaily ?? 5;
-    return s.adUseCount(_giftDoubleKey, dailyDateKey(now)) < cap;
+    return s.giftDoublesUsed(dailyDateKey(now)) < cap;
   }
 
   /// 깜짝 선물 수령. [doubled]=2배 요청. 만료/없음이면 false.
@@ -642,13 +641,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
         gold: s.gold + g.gold * mult,
         materials: mats,
         gifts: gifts,
-        adUseDate: counted ? today : s.adUseDate,
-        adUseCounts: counted
-            ? {
-                ...(s.adUseDate == today ? s.adUseCounts : const {}),
-                _giftDoubleKey: s.adUseCount(_giftDoubleKey, today) + 1,
-              }
-            : s.adUseCounts,
+        giftDoubleDate: counted ? today : s.giftDoubleDate,
+        giftDoubleCount: counted
+            ? s.giftDoublesUsed(today) + 1
+            : s.giftDoubleCount,
       ),
     );
     return true;
@@ -773,13 +769,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.copyWith(
         gold: s.gold + g.gold,
         materials: mats,
-        adUseDate: counted ? today : s.adUseDate,
-        adUseCounts: counted
-            ? {
-                ...(s.adUseDate == today ? s.adUseCounts : const {}),
-                _giftDoubleKey: s.adUseCount(_giftDoubleKey, today) + 1,
-              }
-            : s.adUseCounts,
+        giftDoubleDate: counted ? today : s.giftDoubleDate,
+        giftDoubleCount: counted
+            ? s.giftDoublesUsed(today) + 1
+            : s.giftDoubleCount,
       ),
     );
     return true;
@@ -798,16 +791,48 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
   /// 결투 결과 반영: 골드·트로피 정산 + KO된 내 곤충([koedBugIds])에 부상 회복 타이머 부여.
+  /// (수동 전투) **부상 선차감** — 팀 전체에 회복 타이머를 미리 건다.
+  ///
+  /// 트로피만 미리 깎으면 곤충은 멀쩡히 빠져나간다 — 지고 있을 때 이탈하면
+  /// KO 대가(회복 타이머)를 통째로 피할 수 있었다(감사 후 보완 2026-08-20).
+  /// 결착에서 살아남은 곤충은 [applyBattleResult] 의 healBugIds 로 되돌린다.
+  /// 편성 검증이 부상 곤충을 거부하므로, 이 시점의 팀은 전부 무부상이다.
+  Future<void> preInjureTeam(List<String> bugIds) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null) return;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final injured = Map<String, DateTime>.from(s.injured);
+    for (final id in bugIds) {
+      final bug = s.bugs.cast<IndividualBug?>().firstWhere(
+        (b) => b!.id == id,
+        orElse: () => null,
+      );
+      final sp = bug == null ? null : data.speciesById[bug.speciesId];
+      if (sp == null) continue;
+      injured[id] = now.add(Duration(seconds: cfg.injuryDuration(sp.grade)));
+    }
+    await _commit(s.copyWith(injured: injured));
+  }
+
   Future<void> applyBattleResult({
     required int gold,
     required int trophyDelta,
     List<String> koedBugIds = const [],
+
+    /// 부상을 **지울** 곤충(수동 결착의 생존자). 선차감(preInjureTeam)을
+    /// 되돌리는 용도다 — KO 목록보다 먼저 처리되므로 KO 는 그대로 걸린다.
+    List<String> healBugIds = const [],
   }) async {
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
     final injured = Map<String, DateTime>.from(s.injured);
+    for (final id in healBugIds) {
+      injured.remove(id);
+    }
     if (cfg != null) {
       for (final id in koedBugIds) {
         final bug = s.bugs.cast<IndividualBug?>().firstWhere(
@@ -1225,6 +1250,26 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(bugs: bugs));
   }
 
+  /// (개발) 스킨 보유를 켜고 끈다.
+  ///
+  /// 스킨은 IAP 로만 얻는데 사이드로드 빌드에서는 Play Billing 이 동작하지
+  /// 않아 **실기에서 확인할 방법이 없었다**. 색 필터가 종마다 어떻게 나오는지는
+  /// 실기로 봐야 하므로(2026-08-18 알비노가 회색이던 사고) 여기서 넣고 뺀다.
+  /// ⚠️ `ownedSkins` 는 서버 소유 필드라 **업로드하면 서버 값으로 되돌아간다**
+  /// — 로컬에서 보는 용도다.
+  Future<bool> devToggleSkin(String skinId) async {
+    final s = state.requireValue;
+    final on = !s.ownedSkins.contains(skinId);
+    await _commit(
+      s.copyWith(
+        ownedSkins: on
+            ? {...s.ownedSkins, skinId}
+            : (s.ownedSkins.toSet()..remove(skinId)),
+      ),
+    );
+    return on;
+  }
+
   /// (개발) 스테이지 세이브 기록. 라이브 점프는 PlayScreen 에서 처리.
   Future<void> devSetStage(int stage) async {
     final n = stage < 1 ? 1 : stage;
@@ -1596,7 +1641,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     final sp = data.speciesById[bug.speciesId];
     if (sp == null) return false;
-    final endsAt = now.add(Duration(seconds: cfg.incubateDuration(sp.grade)));
+    // 스킨 계열 편의 보너스(§2.6 — 시간만, 전투 스탯 아님).
+    final sec =
+        data.iapConfig?.skinnedIncubateSeconds(
+          cfg.incubateDuration(sp.grade),
+          s.ownedSkins,
+          bug.speciesId,
+        ) ??
+        cfg.incubateDuration(sp.grade);
+    final endsAt = now.add(Duration(seconds: sec));
     final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = endsAt;
     await _commit(s.copyWith(incubating: inc));
     return true;
@@ -1642,7 +1695,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
       orElse: () => throw StateError('bug not found'),
     );
     final grade = data.speciesById[bug.speciesId]?.grade ?? Grade.common;
-    final fullSec = cfg.incubateDuration(grade); // 등급별 전체 부화시간(초)
+    // 스킨으로 줄어든 시간을 기준으로 깎는다 — 원래 시간을 쓰면 스킨
+    // 보유자가 비율 이상으로 이득을 본다.
+    final fullSec =
+        data.iapConfig?.skinnedIncubateSeconds(
+          cfg.incubateDuration(grade),
+          s.ownedSkins,
+          bug.speciesId,
+        ) ??
+        cfg.incubateDuration(grade);
     final cut = Duration(seconds: (fullSec * cfg.incubateAdSkipRatio).round());
     if (cut <= Duration.zero) return false;
 
@@ -2112,7 +2173,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final grade = data.speciesById[bug.speciesId]?.grade;
     final matGain = (cfg == null || grade == null)
         ? 0
-        : cfg.releaseMaterial(grade);
+        : data.iapConfig?.skinnedReleaseMaterial(
+                cfg.releaseMaterial(grade),
+                s.ownedSkins,
+                bug.speciesId,
+              ) ??
+              cfg.releaseMaterial(grade);
     final mats = Map<MaterialKind, int>.from(s.materials);
     if (reward > 0) {
       mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + reward;
@@ -2337,7 +2403,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
       if (grade == null) continue; // 종을 모르면 건드리지 않는다
       if (filter != null && !filter.accepts(grade, b.potential)) continue;
       targets.add(b);
-      gain += cfg.releaseMaterial(grade);
+      gain +=
+          data.iapConfig?.skinnedReleaseMaterial(
+            cfg.releaseMaterial(grade),
+            s.ownedSkins,
+            b.speciesId,
+          ) ??
+          cfg.releaseMaterial(grade);
     }
     if (targets.isEmpty) return empty;
 
@@ -2354,7 +2426,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final rng = math.Random();
     for (final b in targets) {
       final grade = data.speciesById[b.speciesId]!.grade;
-      final amount = cfg.releaseMaterial(grade);
+      final amount =
+          data.iapConfig?.skinnedReleaseMaterial(
+            cfg.releaseMaterial(grade),
+            s.ownedSkins,
+            b.speciesId,
+          ) ??
+          cfg.releaseMaterial(grade);
       if (amount <= 0) continue;
       final kind = kRegularMaterials[rng.nextInt(kRegularMaterials.length)];
       mats[kind] = (mats[kind] ?? 0) + amount;

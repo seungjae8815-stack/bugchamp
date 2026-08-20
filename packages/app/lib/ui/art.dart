@@ -3,6 +3,7 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 
 import 'labels.dart';
+import 'skins.dart';
 
 /// 아트 플레이스홀더 + **AI 교체 훅**.
 /// 지정 경로에 이미지 파일이 있으면 표시하고, 없으면 이모지/그라데이션으로 폴백한다.
@@ -105,6 +106,17 @@ Widget buffImage(
   ],
   size: size,
   fallback: fallback,
+);
+
+/// 곤충젤리(프리미엄 재화) 아이콘.
+///
+/// ⚠️ 화면 곳곳에서 **💎(다이아)** 로 쓰이고 있었다(16군데). 실제 그림은
+/// 초록 젤리병이라 "다이아가 젤리"라는 게 안 읽혔고, 다이아 리그와도 헷갈렸다
+/// (실기 지적 2026-08-18). 젤리를 그리는 곳은 전부 이걸 쓴다.
+Widget jellyIcon({required double size}) => materialImage(
+  MaterialKind.jelly,
+  size: size,
+  fallback: Text('🍯', style: TextStyle(fontSize: size * 0.85)),
 );
 
 /// 골드(화폐) 아이콘. `assets/images/materials/gold.webp` (없으면 이모지)
@@ -223,11 +235,18 @@ Widget bugPoseImage(
   BugPose pose, {
   required double size,
   required Widget fallback,
-  ColorFilter? skin,
+  SkinView? skin,
 }) {
   final n = pose.index + 1;
+  final sk = skin != null && skin.hasArt ? '_${skin.effect}' : '';
   final img = gameImageChain(
     [
+      // 전용 스킨 그림이 있으면 그걸 먼저. 없으면 기본 그림으로 조용히 떨어져
+      // 색 필터가 대신 입혀진다 — 그림이 한 종씩 들어와도 화면이 안 깨진다.
+      if (sk.isNotEmpty) ...[
+        'assets/images/bugs/${speciesId}_adult_$n$sk.webp',
+        'assets/images/bugs/${speciesId}_adult_1$sk.webp',
+      ],
       'assets/images/bugs/${speciesId}_adult_$n.webp',
       'assets/images/bugs/${speciesId}_adult_$n.png',
       // 자세가 없으면 대기 프레임 → 예전 한 장짜리 순으로 내려간다.
@@ -241,24 +260,43 @@ Widget bugPoseImage(
     size: size,
     fallback: fallback,
   );
-  return skin == null ? img : ColorFiltered(colorFilter: skin, child: img);
+  return _skinned(img, skin, size);
+}
+
+/// 스킨 → **색 필터(전용 그림이 없을 때만) + 후광·반짝임**을 입힌 위젯.
+///
+/// 한 곳에 모은다 — 성충 프레임과 생애주기 그림이 갈리면 채집함에서는
+/// 반짝이는데 전투에서는 안 반짝이는 식이 된다.
+Widget _skinned(Widget img, SkinView? skin, double size) {
+  if (skin == null) return img;
+  // ⚠️ 전용 그림에는 필터를 얹지 않는다 — 이미 그 색이라 두 번 물들면 뭉갠다.
+  final f = skin.hasArt ? null : bugSkinFilter(skin.effect);
+  final tinted = f == null ? img : ColorFiltered(colorFilter: f, child: img);
+  return SkinAura(effect: skin.effect, size: size, child: tinted);
 }
 
 /// 생애주기 단계별 곤충 이미지.
 /// - 성충: 종별 `bugs/{id}_adult.webp` → `bugs/{id}.webp`
 /// - 알/유충/번데기: 종별 override 있으면 우선 → **그룹 공통** `bugs/stage_{family}_{stage}.webp`
 ///   → 전체 공통 `bugs/stage_{stage}.webp` → 폴백.
-/// [skin] 이 있으면 구매한 코스메틱 색 필터를 입힌다(§2.6 — 외형만, 스탯 무관).
+/// [skin] 은 스킨 **효과 키** — 색과 빛을 함께 입힌다(§2.6 외형만, 스탯 무관).
 Widget bugStageImage(
   String speciesId,
   LifeStage stage, {
   required double size,
   required Widget fallback,
-  ColorFilter? skin,
+  SkinView? skin,
 }) {
+  final sk = skin != null && skin.hasArt ? '_${skin.effect}' : '';
   final List<String> paths;
   if (stage == LifeStage.adult) {
     paths = [
+      // 전용 스킨 그림 우선. 알·유충·번데기는 스킨 그림을 따로 두지 않는다
+      // (성충이 되어야 보이는 게 스킨의 값어치다).
+      if (sk.isNotEmpty) ...[
+        'assets/images/bugs/${speciesId}_adult_1$sk.webp',
+        'assets/images/bugs/${speciesId}_adult$sk.webp',
+      ],
       'assets/images/bugs/${speciesId}_adult.webp',
       'assets/images/bugs/${speciesId}_adult.png',
       'assets/images/bugs/$speciesId.webp',
@@ -277,11 +315,11 @@ Widget bugStageImage(
     ];
   }
   final img = gameImageChain(paths, size: size, fallback: fallback);
-  return skin == null ? img : ColorFiltered(colorFilter: skin, child: img);
+  return _skinned(img, skin, size);
 }
 
 /// 곤충 아바타. species.imageAsset 없으면 등급색 원 + 이모지 폴백.
-Widget bugAvatar(Species s, {double size = 44, ColorFilter? skin}) {
+Widget bugAvatar(Species s, {double size = 44, SkinView? skin}) {
   final placeholder = Container(
     width: size,
     height: size,
@@ -317,9 +355,7 @@ Widget bugAvatar(Species s, {double size = 44, ColorFilter? skin}) {
       errorBuilder: (_, _, _) => placeholder,
     ),
   );
-  return skin == null
-      ? avatar
-      : ColorFiltered(colorFilter: skin, child: avatar);
+  return _skinned(avatar, skin, size);
 }
 
 /// 서식지 표시용 이모지 폴백.

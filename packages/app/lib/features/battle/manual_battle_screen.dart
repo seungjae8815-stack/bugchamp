@@ -37,8 +37,10 @@ class ManualBattleScreen extends StatefulWidget {
     required this.onApply,
     required this.location,
     this.skinOf = noSkin,
+    this.foeSkinOf = const {},
     this.arenaTheme = false,
     this.rewardMult = 1.0,
+    this.trophyPrepaid = 0,
     this.driver,
     this.onAdoptSave,
   });
@@ -52,11 +54,26 @@ class ManualBattleScreen extends StatefulWidget {
   final BattleConfig config;
   final double rewardMult;
 
+  /// 시작할 때 이미 반영한 트로피 변동(패배분, 음수).
+  ///
+  /// ⚠️ 수동 전투는 결착까지 시간이 걸려서, 지고 있으면 앱을 강제 종료해
+  /// **트로피를 지키는 치트**가 가능했다(2026-08-19 지적). 티켓만 날아가고
+  /// 점수는 그대로였다. 그래서 시작할 때 먼저 지고 들어가고, 결착에서
+  /// **차액만** 반영한다. 서버 드라이버일 땐 서버가 같은 일을 하므로 0 이다.
+  final int trophyPrepaid;
+
   /// 전투 장소 오행(같은 오행 곤충 강화 + 배경).
   final Element location;
 
   /// 내 곤충의 종 id → 구매한 스킨 색 필터. 상대에는 적용하지 않는다.
   final SkinOf skinOf;
+
+  /// 상대 곤충 id → 그 유저가 산 스킨의 색 필터.
+  ///
+  /// 내 스킨(`skinOf`)과 **따로** 받는다. 상대의 스킨은 상대가 산 것이고
+  /// 종이 같아도 나는 안 샀을 수 있다 — 종으로 풀면 남의 스킨이 내 것처럼
+  /// 붙는다. 남이 봐야 사고 싶어지므로 상대에게도 그린다(2026-08-19).
+  final Map<String, SkinView> foeSkinOf;
 
   /// 아레나 테마 스킨 보유 여부(배경 색보정).
   final bool arenaTheme;
@@ -97,6 +114,11 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   /// 이번 라운드에 **누가 때렸는가**. 때린 쪽이 달려든다(둘 다면 서로 부딪친다).
   /// 한쪽만 움직이면 피해량이 비슷한 라운드에서 아무도 안 움직여 화면이 멎는다.
   bool _strikeL = false, _strikeR = false;
+
+  /// 이번 라운드의 타격이 이미 들어갔는가. 오토 아레나와 같은 규칙 —
+  /// ⚠️ 데미지·KO 를 라운드 **시작에** 반영하면 맞기도 전에 쓰러진다
+  /// (실기 지적 2026-08-19).
+  bool _impacted = false;
   double _flashL = 0, _flashR = 0, _shake = 0;
   final List<FloatText> _floats = [];
   final List<BurstFx> _bursts = [];
@@ -108,6 +130,12 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   /// 이번 수를 고를 남은 시간(초). 0 이하가 되면 공격이 자동 선택된다.
   /// config 가 0 이하면 무제한(카운터 미표시).
   late double _turnLeft = widget.config.manualTurnSeconds.toDouble();
+
+  /// VS 인트로 진행도(0→1). 1 이 되면 사라지고 첫 수를 고를 수 있다.
+  ///
+  /// 오토에만 있고 수동엔 없었다 — 화면이 뜨자마자 이미 싸울 준비가 끝나
+  /// **"시작했다"는 마디**가 없었다(실기 지적 2026-08-20).
+  double _introT = 0;
   bool get _timed => widget.config.manualTurnSeconds > 0;
 
   @override
@@ -141,6 +169,8 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
   int get _myEnergy => _driver.energyA;
 
   Future<void> _choose(Stance s) async {
+    // 인트로는 `IgnorePointer` 라 탭이 통과한다 — 여기서 막는다.
+    if (_introT < 1) return;
     if (_phase != _Phase.input || _driver.done || _stepping) return;
     // 기력 부족 시 공격 외 선택 불가(엔진과 동일 규칙).
     if (_myEnergy < 1 && s != Stance.attack) return;
@@ -167,15 +197,29 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     Navigator.pop(context);
   }
 
+  /// 라운드 진입 — **돌진만** 시작한다. 데미지 반영은 [_impact] 에서.
   void _enterResolve(BattleEvent ev) {
     _lastEvent = ev;
-    _tgtA = ev.aHp;
-    _tgtB = ev.bHp;
     _accum = 0;
     _clashT = 0;
+    _impacted = false;
+    _strikeL = ev.dmgToB >= 1;
+    _strikeR = ev.dmgToA >= 1;
+    // ⚠️ 타격 전까지는 체력바가 **지금 값에 머물러야** 한다(초기값 0 으로
+    // 흘러내리면 맞기도 전에 빈 바가 된다).
+    _tgtA = _hpA[_dispA];
+    _tgtB = _hpB[_dispB];
+    // ⚠️ 위상 전환은 **진입에서** 해야 한다. 타격 시점으로 밀면 라운드가
+    // 시작조차 안 되어 화면이 멈춘다(실측 2026-08-19: 수동 배틀 테스트 정지).
+    setState(() => _phase = _Phase.resolving);
+  }
+
+  /// 타격이 닿는 순간 — 피·숫자·화면흔들림이 **여기서** 터진다.
+  void _impact() {
+    final ev = _lastEvent!;
+    _tgtA = ev.aHp;
+    _tgtB = ev.bHp;
     final dmgA = ev.dmgToA, dmgB = ev.dmgToB, hA = ev.healToA, hB = ev.healToB;
-    _strikeL = dmgB >= 1;
-    _strikeR = dmgA >= 1;
     if (dmgA >= 1) {
       _floats.add(FloatText('-${dmgA.round()}', const Color(0xFFFF6B6B), true));
       _flashL = 1;
@@ -205,7 +249,6 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
       _shake = 1;
       HapticFeedback.mediumImpact();
     }
-    setState(() => _phase = _Phase.resolving);
   }
 
   double _lerp(double a, double b, double t) => a + (b - a) * t.clamp(0.0, 1.0);
@@ -215,6 +258,12 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     _last = elapsed;
     final dt = raw.clamp(0.0, 0.05);
     if (dt <= 0) return;
+    // 인트로가 도는 동안은 판을 멈춘다 — VS 가 찍히기도 전에 제한시간이
+    // 흐르면 인트로를 넣은 의미가 없다(오토 아레나와 같은 규칙).
+    if (_introT < 1) {
+      setState(() => _introT = math.min(1, _introT + dt / 1.15));
+      return;
+    }
     setState(() {
       _flashL = math.max(0, _flashL - dt * 3);
       _flashR = math.max(0, _flashR - dt * 3);
@@ -231,6 +280,11 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
       if (_phase == _Phase.resolving) {
         _accum += dt;
         _clashT += dt;
+        // 돌진이 닿는 순간에 데미지를 반영한다(연출이 원인을 앞지르지 않게).
+        if (!_impacted && _clashT >= arenaImpactAt * kRoundDur) {
+          _impacted = true;
+          _impact();
+        }
         _hpA[_dispA] = _lerp(_hpA[_dispA], _tgtA, dt * 7);
         _hpB[_dispB] = _lerp(_hpB[_dispB], _tgtB, dt * 7);
         if (_accum >= kRoundDur) {
@@ -288,9 +342,11 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
       );
       gold = rw.gold;
       trophyDelta = rw.trophyDelta;
+      // 화면에는 **실제 증감**(trophyDelta)을 보여주고, 세이브에는 선차감을
+      // 뺀 차액만 반영한다. 두 번 깎으면 이겨도 손해가 된다.
       await widget.onApply(
         gold,
-        trophyDelta,
+        trophyDelta - widget.trophyPrepaid,
         koedTeamAIds(widget.myTeam, r.events),
       );
     }
@@ -318,7 +374,8 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
         : _driver.round;
     final shakeDx = _shake > 0 ? math.sin(_shake * 40) * _shake * 6 : 0.0;
     // 사인 곡선은 정점이 라운드 한가운데라 **흔드는 것**처럼 보인다(오토 아레나와 동일).
-    final lungeT = arenaLungeCurve((_clashT / kRoundDur).clamp(0.0, 1.0)) * 26;
+    final clashT = (_clashT / kRoundDur).clamp(0.0, 1.0);
+    final lungeT = arenaLungeCurve(clashT) * 26;
     final lungeL = _strikeL ? lungeT : 0.0;
     final lungeR = _strikeR ? lungeT : 0.0;
 
@@ -411,6 +468,8 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                 stance: reveal ? ev?.aStance : null,
                                 flash: _flashL,
                                 dx: lungeL,
+                                clash: clashT,
+                                damaged: _strikeR,
                                 size: 104,
                                 skin: widget.skinOf(
                                   widget.speciesOf[widget.myTeam[_dispA].id] ??
@@ -429,7 +488,11 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                                 stanceHidden: !reveal,
                                 flash: _flashR,
                                 dx: -lungeR,
+                                clash: clashT,
+                                damaged: _strikeL,
                                 size: 104,
+                                skin:
+                                    widget.foeSkinOf[widget.foeTeam[_dispB].id],
                               )
                             : const SizedBox.shrink(),
                         minePlate: _dispA < widget.myTeam.length
@@ -460,6 +523,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                     for (final b in _bursts) ArenaBurst(fx: b),
                     // 데미지/회복 숫자
                     for (final f in _floats) ArenaFloat(f: f),
+                    if (_introT < 1) ArenaIntro(t: _introT),
                   ],
                 ),
               ),

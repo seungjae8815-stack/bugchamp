@@ -76,8 +76,8 @@ void main() {
     stageSince: t0.subtract(const Duration(days: 30)),
   );
 
-  SaveGame withTeam({int tickets = 3}) => SaveGame.initial(createdAt: t0)
-      .copyWith(
+  SaveGame withTeam({int tickets = 3}) =>
+      SaveGame.initial(createdAt: t0).copyWith(
         bugs: [
           adult('a', el: Element.wood),
           adult('b', el: Element.fire),

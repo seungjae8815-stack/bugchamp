@@ -11,6 +11,8 @@ import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
+import '../../ui/labels.dart';
+import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 
 /// 상점 탭 — 인앱결제 카탈로그(iap.json).
@@ -205,7 +207,20 @@ class _ProductCard extends ConsumerWidget {
               color: color.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 24),
+            // 상품 그림(assets/images/shop/). 없으면 타입 아이콘.
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: gameImageChain(
+                [
+                  if (product.image != null)
+                    'assets/images/shop/${product.image}.webp',
+                  'assets/images/shop/${product.id}.webp',
+                ],
+                size: 44,
+                fit: BoxFit.cover,
+                fallback: Icon(icon, color: color, size: 24),
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -262,17 +277,23 @@ class _ProductCard extends ConsumerWidget {
                 ],
                 if (product.grant.jelly > 0 || product.grant.gold > 0) ...[
                   const SizedBox(height: 3),
-                  Text(
-                    [
-                      if (product.grant.jelly > 0) '💎${product.grant.jelly}',
-                      if (product.grant.gold > 0)
-                        '💰${formatCompact(product.grant.gold)}',
-                    ].join('  '),
-                    style: const TextStyle(
-                      color: Color(0xFFEBD24A),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  Row(
+                    children: [
+                      if (product.grant.jelly > 0) ...[
+                        jellyIcon(size: 14),
+                        const SizedBox(width: 3),
+                        Text('${product.grant.jelly}', style: _grantStyle),
+                        const SizedBox(width: 8),
+                      ],
+                      if (product.grant.gold > 0) ...[
+                        goldIcon(size: 14),
+                        const SizedBox(width: 3),
+                        Text(
+                          formatCompact(product.grant.gold),
+                          style: _grantStyle,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
                 if (passLeft != null) ...[
@@ -408,18 +429,30 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                       ),
                     ),
                     const Spacer(),
-                    materialImage(
-                      MaterialKind.jelly,
-                      size: 15,
-                      fallback: const SizedBox(width: 15),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      formatCompact(have),
-                      style: const TextStyle(
-                        color: Color(0xFF9BE7FF),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
+                    // 눌러서 **보유 재화·재료 전부**를 본다. 교환 결과가 재료로
+                    // 가는데 지금 뭘 얼마나 가졌는지 모르면 얼마를 바꿀지 못 정한다.
+                    GestureDetector(
+                      onTap: () => _showHoldings(context, l, save),
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        children: [
+                          jellyIcon(size: 15),
+                          const SizedBox(width: 3),
+                          Text(
+                            formatCompact(have),
+                            style: const TextStyle(
+                              color: Color(0xFF9BE7FF),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            size: 13,
+                            color: Color(0x99FFFFFF),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -439,7 +472,7 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                       child: _pick(
                         l.exchangeToGold,
                         _wantGold,
-                        Icons.paid_rounded,
+                        goldIcon(size: 16),
                         () => setState(() => _wantGold = true),
                       ),
                     ),
@@ -448,7 +481,12 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                       child: _pick(
                         l.exchangeToMaterial,
                         !_wantGold,
-                        Icons.science_rounded,
+                        // 재료는 3종을 고루 주므로 대표로 키틴을 보인다.
+                        materialImage(
+                          MaterialKind.chitin,
+                          size: 16,
+                          fallback: const Icon(Icons.science_rounded, size: 15),
+                        ),
                         () => setState(() => _wantGold = false),
                       ),
                     ),
@@ -463,8 +501,10 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                         child: _qty(n),
                       ),
                     const Spacer(),
+                    jellyIcon(size: 14),
+                    const SizedBox(width: 3),
                     Text(
-                      l.exchangeCost(cost),
+                      '$cost',
                       style: TextStyle(
                         color: enough
                             ? const Color(0xFF9BE7FF)
@@ -524,7 +564,7 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
     );
   }
 
-  Widget _pick(String label, bool on, IconData icon, VoidCallback onTap) =>
+  Widget _pick(String label, bool on, Widget icon, VoidCallback onTap) =>
       GestureDetector(
         onTap: onTap,
         child: Container(
@@ -539,11 +579,8 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 15,
-                color: on ? const Color(0xFF9BE7FF) : const Color(0x99FFFFFF),
-              ),
+              // 켜졌을 때만 또렷하게 — 아이콘은 색을 못 바꾸므로 투명도로.
+              Opacity(opacity: on ? 1 : 0.55, child: icon),
               const SizedBox(width: 5),
               Text(
                 label,
@@ -583,3 +620,57 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
     );
   }
 }
+
+/// 보유 재화·재료 전부를 한눈에. 교환소의 젤리 수치를 누르면 뜬다.
+Future<void> _showHoldings(
+  BuildContext context,
+  AppLocalizations l,
+  SaveGame save,
+) => showGameDialog<void>(
+  context,
+  title: l.exchangeHoldings,
+  icon: Icons.inventory_2_rounded,
+  content: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _holdRow(goldIcon(size: 20), l.curGold, formatCompact(save.gold)),
+      for (final k in MaterialKind.values)
+        _holdRow(
+          materialImage(k, size: 20, fallback: const SizedBox(width: 20)),
+          materialLabel(l, k),
+          formatCompact(save.materialCount(k)),
+        ),
+    ],
+  ),
+  actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+);
+
+Widget _holdRow(Widget icon, String name, String amount) => Padding(
+  padding: const EdgeInsets.symmetric(vertical: 4),
+  child: Row(
+    children: [
+      icon,
+      const SizedBox(width: 8),
+      Text(
+        name,
+        style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 13),
+      ),
+      const Spacer(),
+      Text(
+        amount,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 13.5,
+        ),
+      ),
+    ],
+  ),
+);
+
+/// 상품 카드의 지급량 글자(젤리·골드 공통).
+const _grantStyle = TextStyle(
+  color: Color(0xFFEBD24A),
+  fontSize: 12,
+  fontWeight: FontWeight.w800,
+);

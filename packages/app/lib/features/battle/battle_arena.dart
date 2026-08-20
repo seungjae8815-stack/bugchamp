@@ -27,6 +27,7 @@ class BattleArenaScreen extends StatefulWidget {
     required this.trophyDelta,
     required this.location,
     this.skinOf = noSkin,
+    this.foeSkinOf = const {},
     this.arenaTheme = false,
   });
 
@@ -43,6 +44,13 @@ class BattleArenaScreen extends StatefulWidget {
 
   /// 내 곤충의 종 id → 구매한 스킨 색 필터. 상대에는 적용하지 않는다.
   final SkinOf skinOf;
+
+  /// 상대 곤충 id → 그 유저가 산 스킨의 색 필터.
+  ///
+  /// 내 스킨(`skinOf`)과 **따로** 받는다. 상대의 스킨은 상대가 산 것이고
+  /// 종이 같아도 나는 안 샀을 수 있다 — 종으로 풀면 남의 스킨이 내 것처럼
+  /// 붙는다. 남이 봐야 사고 싶어지므로 상대에게도 그린다(2026-08-19).
+  final Map<String, SkinView> foeSkinOf;
 
   /// 아레나 테마 스킨 보유 여부(배경 색보정).
   final bool arenaTheme;
@@ -71,6 +79,13 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
   /// 예전엔 `_lungeSide` 하나로 "더 크게 때린 쪽만" 움직였다. 그런데 이 전투는
   /// 한 라운드에 보통 양쪽이 다 때리므로, 피해량이 비슷하면 **아무도 안 움직였다**.
   bool _strikeL = false, _strikeR = false;
+
+  /// 이번 라운드의 **타격이 이미 들어갔는가**.
+  ///
+  /// ⚠️ 예전엔 데미지·KO·체력바를 **라운드 시작에** 전부 반영했다. 그래서
+  /// 돌진이 닿기도 전에 피가 깎이고, 마지막 라운드에서는 **맞기도 전에 쓰러졌다**
+  /// (실기 지적 2026-08-19). 연출이 원인을 앞질러 버리면 전투로 안 읽힌다.
+  bool _impacted = false;
   double _flashL = 0, _flashR = 0, _shake = 0;
   bool _finished = false;
   bool _resultShown = false;
@@ -112,15 +127,26 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     super.dispose();
   }
 
+  /// 라운드 진입 — **돌진만** 시작한다. 데미지 반영은 [_impact] 에서.
   void _enterEvent(int idx) {
     final ev = _events[idx];
-    _tgtA = ev.aHp;
-    _tgtB = ev.bHp;
     _accum = 0;
     _clashT = 0;
+    _impacted = false;
+    _strikeL = ev.dmgToB >= 1;
+    _strikeR = ev.dmgToA >= 1;
+    // ⚠️ 타격 전까지는 체력바가 **지금 값에 머물러야** 한다. 목표를 안 잡아
+    // 두면 초기값 0 으로 흘러내려 맞기도 전에 빈 바가 된다.
+    _tgtA = _hpA[_a];
+    _tgtB = _hpB[_b];
+  }
+
+  /// 타격이 닿는 순간 — 피·숫자·기절·화면흔들림이 **여기서** 터진다.
+  void _impact() {
+    final ev = _events[_ei];
+    _tgtA = ev.aHp;
+    _tgtB = ev.bHp;
     final dmgA = ev.dmgToA, dmgB = ev.dmgToB, hA = ev.healToA, hB = ev.healToB;
-    _strikeL = dmgB >= 1;
-    _strikeR = dmgA >= 1;
     _downL = ev.aDown;
     _downR = ev.bDown;
     if (dmgA >= 1) {
@@ -200,6 +226,11 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
       if (!_finished) {
         _accum += dt;
         _clashT += dt;
+        // 돌진이 닿는 순간에 데미지를 반영한다(연출이 원인을 앞지르지 않게).
+        if (!_impacted && _clashT >= arenaImpactAt * kRoundDur) {
+          _impacted = true;
+          _impact();
+        }
         _hpA[_a] = _lerp(_hpA[_a], _tgtA, dt * 7);
         _hpB[_b] = _lerp(_hpB[_b], _tgtB, dt * 7);
         if (_accum >= kRoundDur) {
@@ -262,7 +293,8 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
 
     // 예전엔 `sin(t*pi)` 라 정점이 라운드 한가운데였다 — 때리는 게 아니라 몸을
     // 천천히 흔드는 것처럼 보였다. 빠르게 뻗었다 천천히 돌아와야 타격로 읽힌다.
-    final lungeT = arenaLungeCurve((_clashT / kRoundDur).clamp(0.0, 1.0)) * 26;
+    final clashT = (_clashT / kRoundDur).clamp(0.0, 1.0);
+    final lungeT = arenaLungeCurve(clashT) * 26;
     final lungeL = _strikeL ? lungeT : 0.0;
     final lungeR = _strikeR ? lungeT : 0.0;
 
@@ -332,6 +364,8 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                             stance: ev?.aStance,
                             flash: _flashL,
                             dx: lungeL,
+                            clash: clashT,
+                            damaged: _strikeR,
                             size: 104,
                             down: _downL,
                             skin: widget.skinOf(
@@ -348,8 +382,11 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                             stance: ev?.bStance,
                             flash: _flashR,
                             dx: -lungeR,
+                            clash: clashT,
+                            damaged: _strikeL,
                             size: 104,
                             down: _downR,
+                            skin: widget.foeSkinOf[widget.foeTeam[_b].id],
                           )
                         : const SizedBox.shrink(),
                     minePlate: _a < widget.myTeam.length
@@ -371,16 +408,7 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
                       for (final b in _bursts) ArenaBurst(fx: b),
                       // 데미지/회복 숫자
                       for (final f in _floats) ArenaFloat(f: f),
-                      if (_introT < 1)
-                        ArenaIntro(
-                          t: _introT,
-                          mineName: widget.myTeam.isEmpty
-                              ? ''
-                              : widget.myTeam.first.name,
-                          foeName: widget.foeTeam.isEmpty
-                              ? ''
-                              : widget.foeTeam.first.name,
-                        ),
+                      if (_introT < 1) ArenaIntro(t: _introT),
                       if (_bannerT > 0)
                         ArenaResultBanner(
                           t: _bannerT,

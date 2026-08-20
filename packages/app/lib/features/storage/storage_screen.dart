@@ -92,7 +92,10 @@ class StorageScreen extends ConsumerWidget {
     final full = save.storageFull;
     final atMax = cap >= cfg.storageSlotsMax;
     final jelly = save.materialCount(MaterialKind.jelly);
-    final canExpand = !atMax && jelly >= cfg.storageExpandJelly;
+    // ⚠️ 확장은 살수록 비싸진다(2026-08-18). UI 가 정액을 보여주면 실제
+    // 차감액과 어긋나 "가격이 다르다"가 된다.
+    final expandCost = cfg.storageExpandCost(cap);
+    final canExpand = !atMax && jelly >= expandCost;
 
     return Container(
       color: const Color(0xFF15200D),
@@ -182,10 +185,7 @@ class StorageScreen extends ConsumerWidget {
               // 가로 아이콘+글씨는 폭이 모자라 글씨가 잘려 아이콘만 보였다.
               icon: const SizedBox.shrink(),
               label: Text(
-                l.storageExpand(
-                  cfg.storageExpandAmount,
-                  cfg.storageExpandJelly,
-                ),
+                l.storageExpand(cfg.storageExpandAmount, expandCost),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontWeight: FontWeight.w900,
@@ -869,7 +869,8 @@ class StorageScreen extends ConsumerWidget {
                       width: double.infinity,
                       child: FilledButton.icon(
                         onPressed: () {
-                          if (jellyHave < cfg.breedingExpandJelly) {
+                          if (jellyHave <
+                              cfg.breedingExpandCost(save.breedingCapacity)) {
                             _snack(ctx, l.notEnoughJelly);
                             return;
                           }
@@ -878,7 +879,16 @@ class StorageScreen extends ConsumerWidget {
                               .expandBreedingSlots();
                         },
                         icon: const Icon(Icons.add_box_rounded, size: 18),
-                        label: Text('💎${cfg.breedingExpandJelly}'),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            jellyIcon(size: 14),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${cfg.breedingExpandCost(save.breedingCapacity)}',
+                            ),
+                          ],
+                        ),
                         style: _pillStyle(const Color(0xFF7E57C2)),
                       ),
                     ),
@@ -989,7 +999,14 @@ class StorageScreen extends ConsumerWidget {
                     if (ctx.mounted) _snack(ctx, l.breedingGotEgg);
                   },
                   style: _pillStyle(const Color(0xFF7E57C2)),
-                  child: Text('💎$jelly'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      jellyIcon(size: 13),
+                      const SizedBox(width: 3),
+                      Text('$jelly'),
+                    ],
+                  ),
                 ),
         ],
       ),
@@ -1429,7 +1446,6 @@ class StorageScreen extends ConsumerWidget {
     final isNextUnlock = slotIndex == save.incubatorCapacity;
 
     late final Widget center; // 캡슐 안 콘텐츠(그림 뒤 → 유리로 은은히 비침)
-    Widget? bottomTag; // 하단 라벨(💎 확장 비용)
     VoidCallback? onTap;
     double fill = 0;
     var done = false;
@@ -1438,23 +1454,43 @@ class StorageScreen extends ConsumerWidget {
     String? hatchBugId;
 
     if (!unlocked) {
-      // 잠긴 캡슐: 자물쇠 아이콘(코드) + 회색 처리(그림). 다음 슬롯이면 💎 확장.
-      center = const Icon(
-        Icons.lock_rounded,
-        color: Color(0xCCFFFFFF),
-        size: 26,
+      // 잠긴 캡슐: 자물쇠 아이콘(코드) + 회색 처리(그림). 다음 슬롯이면 젤리 확장.
+      final expCost = cfg.incubatorExpandCost(save.incubatorCapacity);
+      final canExp = save.materialCount(MaterialKind.jelly) >= expCost;
+      // 자물쇠 **바로 밑**에 값을 붙인다. 예전엔 캡슐 아래쪽(y=0.68)에 따로
+      // 떠 있어서 자물쇠와 무관한 표시로 읽혔다(실기 지적 2026-08-19).
+      center = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.lock_rounded, color: Color(0xCCFFFFFF), size: 26),
+          const SizedBox(height: 5),
+          // ⚠️ 값이 있든 없든 **같은 높이**를 차지한다. 안 그러면 값이 붙은
+          // 캡슐만 Column 이 길어져 자물쇠가 위로 밀리고, 잠긴 캡슐들끼리
+          // 자물쇠 높이가 어긋난다(실기 지적 2026-08-19).
+          SizedBox(
+            height: 16,
+            child: isNextUnlock
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      jellyIcon(size: 13),
+                      const SizedBox(width: 3),
+                      Text(
+                        '$expCost',
+                        style: TextStyle(
+                          color: canExp ? _honey : const Color(0x99FFFFFF),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  )
+                : null,
+          ),
+        ],
       );
       if (isNextUnlock) {
-        final canExp =
-            save.materialCount(MaterialKind.jelly) >= cfg.incubatorExpandJelly;
-        bottomTag = Text(
-          '💎${cfg.incubatorExpandJelly}',
-          style: TextStyle(
-            color: canExp ? _honey : const Color(0x99FFFFFF),
-            fontWeight: FontWeight.w900,
-            fontSize: 12.5,
-          ),
-        );
         onTap = () async {
           if (!canExp) {
             _snack(ctx, l.notEnoughJelly);
@@ -1484,7 +1520,16 @@ class StorageScreen extends ConsumerWidget {
     } else {
       final bug = _findBug(save, occupant.key);
       final sp = bug == null ? null : data.species(bug.speciesId);
-      final total = sp == null ? 1 : cfg.incubateDuration(sp.grade);
+      // 스킨으로 줄어든 시간을 총시간으로 쓴다 — 원래 시간을 쓰면 바가
+      // 끝까지 안 찬 채로 부화가 끝난다.
+      final total = sp == null
+          ? 1
+          : (data.iapConfig?.skinnedIncubateSeconds(
+                  cfg.incubateDuration(sp.grade),
+                  save.ownedSkins,
+                  sp.id,
+                ) ??
+                cfg.incubateDuration(sp.grade));
       final rem = occupant.value.difference(now);
       done = rem <= Duration.zero;
       fill = total > 0 ? (1 - rem.inSeconds / total).clamp(0.0, 1.0) : 1.0;
@@ -1632,12 +1677,6 @@ class StorageScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    // 하단 태그(💎 확장) — 그림 위.
-                    if (bottomTag != null)
-                      Align(
-                        alignment: const Alignment(0, 0.68),
-                        child: bottomTag,
-                      ),
                   ],
                 ),
               ),
@@ -1698,8 +1737,9 @@ class StorageScreen extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _hatchBtn(
-          '💎$cost  ${l.incubatorInstant}',
+          '$cost  ${l.incubatorInstant}',
           const Color(0xFF7E57C2),
+          icon: jellyIcon(size: 13),
           () async {
             if (!canPay) {
               _snack(ctx, l.notEnoughJelly);
@@ -1725,7 +1765,12 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 
-  Widget _hatchBtn(String label, Color bg, VoidCallback? onTap) => SizedBox(
+  Widget _hatchBtn(
+    String label,
+    Color bg,
+    VoidCallback? onTap, {
+    Widget? icon,
+  }) => SizedBox(
     width: double.infinity,
     height: 29,
     child: FilledButton(
@@ -1737,11 +1782,23 @@ class StorageScreen extends ConsumerWidget {
         minimumSize: const Size(0, 28),
         visualDensity: VisualDensity.compact,
       ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[icon, const SizedBox(width: 3)],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 11.5,
+              ),
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -3146,8 +3203,8 @@ class StorageScreen extends ConsumerWidget {
                     .read(saveControllerProvider.notifier)
                     .accelerateEvolution(bug.id);
               },
-              icon: const Icon(Icons.bolt, size: 16),
-              label: Text('${l.accelerateAction} 💎${petCfg.accelerateJelly}'),
+              icon: jellyIcon(size: 16),
+              label: Text('${l.accelerateAction} ${petCfg.accelerateJelly}'),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF2E6DA4),
                 minimumSize: const Size(0, 36),

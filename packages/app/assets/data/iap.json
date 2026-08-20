@@ -30,7 +30,8 @@
     "ko": "젤리·골드·재료 + 부화기 슬롯 (계정당 1회)",
     "en": "Jelly, gold, materials + incubator slot (once)",
     "ja": "ゼリー・ゴールド・素材＋孵化器スロット（1回限り）"
-   }
+   },
+   "image": "starter_pack"
   },
   {
    "id": "idle_pass",
@@ -47,7 +48,8 @@
     "ko": "오프라인 12시간 · 방치 골드 +20% · 매일 젤리 30",
     "en": "12h offline cap, +20% idle gold, 30 jelly daily",
     "ja": "オフライン12時間・放置ゴールド+20%・毎日ゼリー30"
-   }
+   },
+   "image": "idle_pass"
   },
   {
    "id": "jelly_s",
@@ -68,7 +70,8 @@
     "en": "60 jelly",
     "ja": "昆虫ゼリー60個"
    },
-   "bonusPct": 0
+   "bonusPct": 0,
+   "image": "jelly_s"
   },
   {
    "id": "jelly_m",
@@ -89,7 +92,8 @@
     "ko": "곤충젤리 300개 (보너스 +10%)",
     "en": "300 jelly (+10% bonus)",
     "ja": "昆虫ゼリー300個（+10%）"
-   }
+   },
+   "image": "jelly_m"
   },
   {
    "id": "jelly_l",
@@ -110,7 +114,8 @@
     "ko": "곤충젤리 660개 (보너스 +20%)",
     "en": "660 jelly (+20% bonus)",
     "ja": "昆虫ゼリー660個（+20%）"
-   }
+   },
+   "image": "jelly_l"
   },
   {
    "id": "jelly_xl",
@@ -131,7 +136,8 @@
     "ko": "곤충젤리 1,900개 (보너스 +31%)",
     "en": "1,900 jelly (+31% bonus)",
     "ja": "昆虫ゼリー1,900個（+31%）"
-   }
+   },
+   "image": "jelly_xl"
   },
   {
    "id": "jelly_xxl",
@@ -152,7 +158,8 @@
     "ko": "곤충젤리 4,200개 (보너스 +42%)",
     "en": "4,200 jelly (+42% bonus)",
     "ja": "昆虫ゼリー4,200個（+42%）"
-   }
+   },
+   "image": "jelly_xxl"
   },
   {
    "id": "skin_gold_rhino",
@@ -167,10 +174,11 @@
     "ja": "黄金カブトムシ"
    },
    "desc": {
-    "ko": "장수풍뎅이 계열 전체가 황금빛으로 · 외형 전용, 능력치 영향 없음",
-    "en": "All rhinoceros beetles turn gold. Cosmetic only — no stat effect.",
-    "ja": "カブトムシ系がすべて黄金色に。見た目のみ・能力に影響なし。"
-   }
+    "ko": "장수풍뎅이 계열이 황금빛으로 · 그 계열 분해·방생 재료 +15%",
+    "en": "Rhinoceros beetles turn gold · +15% materials from that family",
+    "ja": "カブトムシ系が黄金色に・その系統の分解・放生素材+15%"
+   },
+   "image": "skin_gold_rhino"
   },
   {
    "id": "skin_albino_stag",
@@ -185,10 +193,11 @@
     "ja": "アルビノクワガタ"
    },
    "desc": {
-    "ko": "사슴벌레 계열 전체가 알비노(백화)로 · 외형 전용, 능력치 영향 없음",
-    "en": "All stag beetles turn albino. Cosmetic only — no stat effect.",
-    "ja": "クワガタ系がすべてアルビノに。見た目のみ・能力に影響なし。"
-   }
+    "ko": "사슴벌레 계열이 알비노로 · 그 계열 알 부화 시간 −10%",
+    "en": "Stag beetles turn albino · −10% egg incubation time for that family",
+    "ja": "クワガタ系がアルビノに・その系統の卵の孵化時間−10%"
+   },
+   "image": "skin_albino_stag"
   },
   {
    "id": "theme_arena",
@@ -206,7 +215,9 @@
     "ko": "전투 장소 배경이 선명한 톤으로 · 외형 전용, 능력치 영향 없음",
     "en": "Battle backgrounds get a vivid grade. Cosmetic only.",
     "ja": "バトル背景が鮮やかなトーンに。見た目のみ。"
-   }
+   },
+   "image": "theme_arena",
+   "hidden": true
   },
   {
    "id": "buff_pass",
@@ -223,24 +234,43 @@
     "ko": "5가지 버프가 항상 켜져 있어요 (골드·경험치 2배, 공격 강화, 재료·곤충 발견 2배)",
     "en": "All 5 buffs stay on: 2x gold & XP, stronger attacks, 2x materials & bug finds",
     "ja": "5種のバフが常時発動（ゴールド・経験値2倍、攻撃強化、素材・虫の発見2倍）"
-   }
+   },
+   "image": "buff_pass"
   }
  ],
  "skins": [
   {
    "id": "gold_rhino",
    "speciesPrefix": "rhino_",
-   "effect": "gold"
+   "effect": "gold",
+   "releaseBonusPct": 15,
+   "artSpecies": [
+    "rhino_japanese",
+    "rhino_lesser"
+   ]
   },
   {
    "id": "albino_stag",
    "speciesPrefix": "stag_",
-   "effect": "albino"
+   "effect": "albino",
+   "incubateSpeedPct": 10,
+   "artSpecies": [
+    "stag_giant",
+    "stag_dorcus",
+    "stag_flat",
+    "stag_saw",
+    "stag_miyama",
+    "stag_twospot"
+   ]
   },
   {
    "id": "arena_theme",
    "effect": "arenaTheme"
   }
  ],
- "buffPassDurationDays": 30
+ "buffPassDurationDays": 30,
+ "_imageComment": "상품 그림은 assets/images/shop/{image}.webp. 파일이 없으면 UI 가 타입별 아이콘으로 폴백하므로, 아트가 늦어도 화면은 깨지지 않는다.",
+ "_skinPerkComment": "스킨 계열 **편의** 보너스(2026-08-19 사장님 결정). releaseBonusPct = 그 계열을 분해·방생할 때 재료 +N%. incubateSpeedPct = 그 계열 알의 부화 시간 −N%. ⚠️ §2.6 \"스탯 직접 판매 금지\"를 지키기 위해 **전투 스탯은 절대 붙이지 않는다**. 왕충 선발대회가 실물 경품이라 결제로 순위가 바뀌면 도박성 시비가 된다. 시간·재료는 전력이 아니라 편의라서 트로피·대회 순위에 영향이 없다. 적용 근거는 세이브의 ownedSkins — **서버 소유 필드**라 위조할 수 없다. (방어팀 행의 skin 값은 그림 전용이고 이 보너스와 무관하다.)",
+ "_arenaThemeComment": "아레나 테마는 판매 중단(2026-08-19). 비대칭 PvP 라 **상대는 내 배경을 볼 수 없고**(각자 자기 화면에서 싸운다), 배경은 곤충 뒤에 깔려서 산 사람조차 뭐가 바뀌었는지 모른다 — 채도를 1.45배까지 올려도 체감이 없었다. 정의는 남긴다: 이미 산 사람에게는 계속 적용된다(remove_ads 와 같은 방식).",
+ "_skinArtComment": "artSpecies = 그 스킨의 **전용 그림이 있는 종**. 여기 적힌 종은 bugs/{종}_adult_{n}_{effect}.webp 를 쓰고 **색 필터를 입히지 않는다**(그림이 이미 그 색이라 두 번 물들면 뭉갠다). 목록에 없는 종은 예전처럼 색 필터 + 후광. 그림이 나오는 대로 한 종씩 추가하면 되고, 파일이 없으면 자동으로 필터로 떨어지므로 순서가 어긋나도 화면은 안 깨진다."
 }

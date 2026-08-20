@@ -415,6 +415,8 @@ class SaveGame {
     this.ticketsAt,
     this.adUseCounts = const {},
     this.adUseDate,
+    this.giftDoubleDate,
+    this.giftDoubleCount = 0,
     this.lastReadNoticeId = 0,
     this.reviewAsked = false,
     this.adsRemoved = false,
@@ -767,6 +769,19 @@ class SaveGame {
   /// [adUseCounts] 가 기록된 날짜('yyyy-MM-dd', 로컬 기준 `dailyDateKey`).
   final String? adUseDate;
 
+  /// 깜짝선물 **무료 2배**를 오늘 몇 번 썼는지 — [giftDoubleDate] 기준.
+  ///
+  /// ⚠️ [adUseCounts] 에 넣으면 안 된다. 그 맵은 **서버 소유 필드**라(티켓 광고
+  /// 위조 방지) 업로드 병합 때 서버 값으로 통째로 덮이는데, 선물 수령은 서버를
+  /// 거치지 않아 서버가 이 카운트를 모른다 — 매 업로드마다 리셋되어 하루 상한이
+  /// 무력해진다(출시 전 감사에서 발견 2026-08-20).
+  final String? giftDoubleDate;
+  final int giftDoubleCount;
+
+  /// 오늘 무료 2배를 몇 번 썼는가(날짜가 다르면 0).
+  int giftDoublesUsed(String today) =>
+      giftDoubleDate == today ? giftDoubleCount : 0;
+
   /// [today] 기준 [feature] 광고를 오늘 몇 번 봤는지(날짜가 다르면 0).
   int adUseCount(String feature, String today) =>
       adUseDate == today ? (adUseCounts[feature] ?? 0) : 0;
@@ -894,6 +909,7 @@ class SaveGame {
     pvpTickets: kDefaultPvpTickets,
     ticketsAt: (createdAt ?? DateTime.now()).toUtc(),
     adUseCounts: const {},
+    giftDoubleCount: 0,
     equippedItems: const {},
     forgeStack: const [],
     skillLevels: const {},
@@ -954,6 +970,8 @@ class SaveGame {
     int? pvpTickets,
     DateTime? ticketsAt,
     Map<String, int>? adUseCounts,
+    String? giftDoubleDate,
+    int? giftDoubleCount,
     String? adUseDate,
     Map<EquipSlot, EquipItem>? equippedItems,
     List<EquipItem>? forgeStack,
@@ -1020,6 +1038,8 @@ class SaveGame {
     pvpTickets: pvpTickets ?? this.pvpTickets,
     ticketsAt: ticketsAt ?? this.ticketsAt,
     adUseCounts: adUseCounts ?? this.adUseCounts,
+    giftDoubleDate: giftDoubleDate ?? this.giftDoubleDate,
+    giftDoubleCount: giftDoubleCount ?? this.giftDoubleCount,
     adUseDate: adUseDate ?? this.adUseDate,
     equippedItems: equippedItems ?? this.equippedItems,
     forgeStack: forgeStack ?? this.forgeStack,
@@ -1216,6 +1236,8 @@ class SaveGame {
     },
     autoForgeStopOnHit: json['autoForgeStopOnHit'] as bool? ?? true,
     adUseDate: json['adUseDate'] as String?,
+    giftDoubleDate: json['giftDoubleDate'] as String?,
+    giftDoubleCount: (json['giftDoubleCount'] as num?)?.toInt() ?? 0,
     lastReadNoticeId: (json['lastReadNoticeId'] as num?)?.toInt() ?? 0,
     reviewAsked: json['reviewAsked'] as bool? ?? false,
     adsRemoved: json['adsRemoved'] as bool? ?? false,
@@ -1323,6 +1345,8 @@ class SaveGame {
       'autoForgeOptions': [for (final o in autoForgeOptions) o.key],
     if (!autoForgeStopOnHit) 'autoForgeStopOnHit': false,
     if (adUseDate != null) 'adUseDate': adUseDate,
+    if (giftDoubleDate != null) 'giftDoubleDate': giftDoubleDate,
+    if (giftDoubleCount != 0) 'giftDoubleCount': giftDoubleCount,
     'lastReadNoticeId': lastReadNoticeId,
     'reviewAsked': reviewAsked,
     'adsRemoved': adsRemoved,

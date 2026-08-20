@@ -18,6 +18,7 @@ import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
+import '../../ui/element_wheel.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
@@ -255,7 +256,10 @@ class _Scout {
     this.ownerId,
   });
   final ScoutTier tier;
-  final List<({BattleBug bug, String speciesId})> team;
+
+  /// 상대 3마리. [skin] 은 그 유저가 산 스킨의 효과 키(`gold`/`albino`).
+  /// 남의 스킨이 내 화면에도 보여야 "나도 사고 싶다"가 생긴다(2026-08-19).
+  final List<({BattleBug bug, String speciesId, String? skin})> team;
   final Element location;
   final String? ownerName;
 
@@ -345,7 +349,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   /// 기준 평균 × [powerMult] 로 상대 3마리 생성. [salt] 로 id 충돌 방지.
-  List<({BattleBug bug, String speciesId})> _genFoeTeam(
+  List<({BattleBug bug, String speciesId, String? skin})> _genFoeTeam(
     ({double hp, double atk, double def, double spd}) avg,
     double powerMult,
     GameData data,
@@ -358,6 +362,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       final f = (0.9 + _rng.nextDouble() * 0.2) * powerMult;
       return (
         speciesId: sp.id,
+        skin: null,
         bug: BattleBug(
           id: 'opp${salt}_$i',
           name: sp.name.resolve(locale),
@@ -377,7 +382,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// 팀·티어 → 스카우트(장소 = 리드 곤충 오행).
   _Scout _scoutOf(
     ScoutTier tier,
-    List<({BattleBug bug, String speciesId})> team, {
+    List<({BattleBug bug, String speciesId, String? skin})> team, {
     String? owner,
     String? ownerId,
   }) => _Scout(
@@ -419,19 +424,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   /// 방어팀 스냅샷([dt]) → 전투용 팀. 종을 못 찾으면(데이터 변경) null 로 스킵.
-  List<({BattleBug bug, String speciesId})>? _defenderTeam(
+  List<({BattleBug bug, String speciesId, String? skin})>? _defenderTeam(
     DefenderTeam dt,
     GameData data,
     String locale,
     int salt,
   ) {
-    final out = <({BattleBug bug, String speciesId})>[];
+    final out = <({BattleBug bug, String speciesId, String? skin})>[];
     for (var i = 0; i < dt.bugs.length; i++) {
       final d = dt.bugs[i];
       final sp = _speciesOrNull(data, d.speciesId);
       if (sp == null) return null;
       out.add((
         speciesId: d.speciesId,
+        skin: d.skin,
         bug: BattleBug(
           id: 'def${salt}_$i',
           name: sp.name.resolve(locale),
@@ -449,10 +455,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   /// 내 편성([_team]) → 방어팀 스냅샷(서버 등록용).
-  DefenderBug _defenderBugOf(IndividualBug bug, GameData data, String locale) {
+  DefenderBug _defenderBugOf(
+    IndividualBug bug,
+    GameData data,
+    SaveGame save,
+    String locale,
+  ) {
     final bb = _toBattleBug(bug, data, locale);
     return DefenderBug(
       speciesId: bug.speciesId,
+      // 내가 산 스킨을 상대 화면에도 보이게 실어 보낸다.
+      skin: data.iapConfig?.skinEffectFor(save.ownedSkins, bug.speciesId),
       element: bb.element,
       temperament: bb.temperament,
       maxHp: bb.maxHp,
@@ -467,12 +480,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   void _maybeRegisterDefender(GameData data, SaveGame save, String locale) {
     final ids = _team.whereType<String>().toList();
     if (ids.isEmpty) return;
-    final sig = '${ids.join(',')}|${save.pvpTrophies}';
+    // ⚠️ 스킨도 시그니처에 넣는다. 안 넣으면 스킨을 사도 편성이 그대로라
+    // 재등록이 스킵되어 **산 스킨이 남에게 영영 안 보인다**.
+    final sig =
+        '${ids.join(',')}|${save.pvpTrophies}|${(save.ownedSkins.toList()..sort()).join(',')}';
     if (sig == _registeredSig) return;
     _registeredSig = sig;
     final team = [
       for (final id in ids)
-        _defenderBugOf(save.bugs.firstWhere((b) => b.id == id), data, locale),
+        _defenderBugOf(
+          save.bugs.firstWhere((b) => b.id == id),
+          data,
+          save,
+          locale,
+        ),
     ];
     ref.read(pvpBackendProvider).registerDefender(me: _me(save), team: team);
   }
@@ -519,7 +540,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final built =
         <
           ({
-            List<({BattleBug bug, String speciesId})> team,
+            List<({BattleBug bug, String speciesId, String? skin})> team,
             double ratio,
             String owner,
             String ownerId,
@@ -575,16 +596,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     _ => (id, const Color(0xFFBFC4CC)),
   };
 
-  /// 리그 id → 현지화 라벨·색·엠블럼.
-  (String, Color, String) _leagueStyle(AppLocalizations l, String id) =>
-      switch (id) {
-        'bronze' => (l.leagueBronze, const Color(0xFFB87333), '🥉'),
-        'silver' => (l.leagueSilver, const Color(0xFFB8C4CE), '🥈'),
-        'gold' => (l.leagueGold, const Color(0xFFEBC24A), '🥇'),
-        'platinum' => (l.leaguePlatinum, const Color(0xFF5FD3C8), '💠'),
-        'diamond' => (l.leagueDiamond, const Color(0xFF6FA8FF), '💎'),
-        _ => (id, const Color(0xFFBFC4CC), '🏅'),
-      };
+  /// 리그 id → 현지화 라벨·색.
+  ///
+  /// 엠블럼은 여기서 주지 않는다 — 그리는 곳은 전부 `leagueIcon()`(그림)이고,
+  /// 예전에 같이 넘기던 이모지(🥉🥈🥇💠💎)는 아무도 안 쓰는 죽은 값이었다.
+  /// 남겨두면 "다이아 리그 = 💎 = 젤리"라는 옛 오해가 다시 살아난다.
+  (String, Color) _leagueStyle(AppLocalizations l, String id) => switch (id) {
+    'bronze' => (l.leagueBronze, const Color(0xFFB87333)),
+    'silver' => (l.leagueSilver, const Color(0xFFB8C4CE)),
+    'gold' => (l.leagueGold, const Color(0xFFEBC24A)),
+    'platinum' => (l.leaguePlatinum, const Color(0xFF5FD3C8)),
+    'diamond' => (l.leagueDiamond, const Color(0xFF6FA8FF)),
+    _ => (id, const Color(0xFFBFC4CC)),
+  };
 
   /// 시즌 종료까지 남은 시간 표기(일 포함). "13d 04:22" / "04:22".
   String _seasonLeft(Duration d) {
@@ -609,7 +633,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final next = cfg.nextLeagueAfter(cur);
     final progress = cfg.leagueProgress(trophies);
     final claimable = cfg.claimableLeagues(trophies, save.claimedLeagues);
-    final (label, color, emoji) = _leagueStyle(l, cur.id);
+    final (label, color) = _leagueStyle(l, cur.id);
     // 시즌 종료 = 다음 리셋(요일·시각 앵커). 모든 유저가 같은 순간에 끝난다.
     final seasonRemaining = seasonEndAt(now, cfg).difference(now);
     return Container(
@@ -745,7 +769,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       final reached = trophies >= lg.minTrophy;
       final canClaim = reached && !claimed;
       final isHere = lg.id == here.id;
-      final (name, color, _) = _leagueStyle(l, lg.id);
+      final (name, color) = _leagueStyle(l, lg.id);
       rows.add(
         Container(
           margin: const EdgeInsets.symmetric(vertical: 1),
@@ -1004,7 +1028,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           if (hasReward) ...[
             const SizedBox(height: 12),
             Text(
-              '💰 ${formatCompact(r.rewardGold)}    💎 ${r.rewardJelly}',
+              formatCompact(r.rewardGold),
               style: const TextStyle(
                 color: Color(0xFFEBD24A),
                 fontWeight: FontWeight.w900,
@@ -1297,6 +1321,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           LifeStage.adult,
                           size: 46,
                           fallback: const SizedBox(width: 46, height: 46),
+                          // **상대가 산** 스킨이다(내 것이 아니다).
+                          skin: _viewOf(e.skin, e.speciesId),
                         ),
                       ),
                     ),
@@ -1573,7 +1599,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     DateTime now,
   ) {
     final cur = cfg.leagueFor(save.pvpTrophies);
-    final (label, color, emoji) = _leagueStyle(l, cur.id);
+    final (label, color) = _leagueStyle(l, cur.id);
     final left = seasonEndAt(now, cfg).difference(now);
     final hasReward = cfg
         .claimableLeagues(save.pvpTrophies, save.claimedLeagues)
@@ -1655,21 +1681,24 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   );
 
   /// 상대(선택된 스카우트) 1마리 포트레이트 — 이미지 + 오행 글리프.
-  Widget _oppPortrait(({BattleBug bug, String speciesId}) e) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 3),
-    child: Column(
-      children: [
-        bugStageImage(
-          e.speciesId,
-          LifeStage.adult,
-          size: 46,
-          fallback: elementIcon(e.bug.element, size: 30),
+  Widget _oppPortrait(({BattleBug bug, String speciesId, String? skin}) e) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: Column(
+          children: [
+            bugStageImage(
+              e.speciesId,
+              LifeStage.adult,
+              size: 46,
+              fallback: elementIcon(e.bug.element, size: 30),
+              // 스카우트 보드에서부터 보여야 "저 사람 금색이네"가 된다.
+              skin: _viewOf(e.skin, e.speciesId),
+            ),
+            const SizedBox(height: 2),
+            elementIcon(e.bug.element, size: 15),
+          ],
         ),
-        const SizedBox(height: 2),
-        elementIcon(e.bug.element, size: 15),
-      ],
-    ),
-  );
+      );
 
   /// 전투 장소 칩 — 장소 이모지·이름 + 상성(그 오행 곤충 강화).
   Widget _locationChip(AppLocalizations l, Element loc) => Center(
@@ -2071,11 +2100,22 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ];
     if (mine.length < 2) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Text(
-          l.synergyHint,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0x77FFFFFF), fontSize: 10.5),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                l.synergyHint,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0x77FFFFFF),
+                  fontSize: 10.5,
+                ),
+              ),
+            ),
+            _elementGuideBtn(l),
+          ],
         ),
       );
     }
@@ -2105,9 +2145,26 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             ),
           ),
         ),
+        // 상생이 뭔지 **여기서** 궁금해진다 — 편성을 짜는 화면이니까.
+        const SizedBox(width: 4),
+        _elementGuideBtn(l),
       ],
     );
   }
+
+  /// 오행 관계도 열기(상생·상극). 결투 화면 어디서든 같은 그림을 본다.
+  Widget _elementGuideBtn(AppLocalizations l) => IconButton(
+    tooltip: l.elementGuideBtn,
+    onPressed: () => showElementWheel(context),
+    visualDensity: VisualDensity.compact,
+    padding: EdgeInsets.zero,
+    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+    icon: const Icon(
+      Icons.help_outline_rounded,
+      size: 16,
+      color: Color(0x99FFFFFF),
+    ),
+  );
 
   Widget _linkGlyph(bool gen) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2388,6 +2445,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  /// 스카우트 팀 → **상대 곤충 id별** 스킨 필터.
+  ///
+  /// 종이 아니라 id 로 푼다 — 같은 종이라도 상대가 샀는지 여부가 다르다.
+  /// 상대 스킨 효과 키 → 그리기 정보. 전용 그림 유무는 iap.json 이 정한다.
+  SkinView? _viewOf(String? effect, String speciesId) {
+    if (effect == null) return null;
+    final cfg = ref.read(gameDataProvider).value?.iapConfig;
+    return SkinView(
+      effect,
+      hasArt: cfg?.skinHasArt(effect, speciesId) ?? false,
+    );
+  }
+
+  Map<String, SkinView> _foeSkins(_Scout scout) => {
+    for (final e in scout.team) e.bug.id: ?_viewOf(e.skin, e.speciesId),
+  };
+
   Future<void> _applyReward(
     int gold,
     int trophyDelta,
@@ -2481,6 +2555,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ...m.speciesOf,
       for (final e in srvFoe) e.bug.id: e.speciesId,
     };
+    // 상대를 서버가 그렸으면 스킨도 서버 값이다(id 가 달라져 스카우트 것과 안 맞는다).
+    final foeSkins = srvFoe.isEmpty
+        ? _foeSkins(scout)
+        : {for (final e in srvFoe) e.bug.id: ?_viewOf(e.skin, e.speciesId)};
     // 장소 = 상대 리드 곤충의 오행(서버와 같은 규칙).
     final location = foe.isEmpty ? scout.location : foe.first.element;
     final result = simulate(
@@ -2504,6 +2582,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           location: location,
           skinOf: ref.read(skinOfProvider),
           arenaTheme: ref.read(arenaThemeOwnedProvider),
+          foeSkinOf: foeSkins,
         ),
       ),
     );
@@ -2627,6 +2706,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           location: scout.location,
           skinOf: ref.read(skinOfProvider),
           arenaTheme: ref.read(arenaThemeOwnedProvider),
+          foeSkinOf: _foeSkins(scout),
         ),
       ),
     );
@@ -2646,6 +2726,34 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     // (돌려주면 불리한 판을 나가버리는 것으로 무한 재시도가 된다).
     if (!await _takeTicket(l)) return;
 
+    // ⚠️ **먼저 지고 들어간다.** 티켓만으로는 부족했다 — 지고 있을 때 뒤로
+    // 나가거나 앱을 끄면 트로피가 그대로 남아, 수동 전투로는 절대 안 지는
+    // 치트가 됐다(2026-08-19 지적). 이기면 결착에서 차액으로 되돌려준다.
+    //
+    // **서버가 붙어 있어도 화면에서 먼저 깎는다.** 서버는 `manual/start` 에서
+    // 자기 세이브를 깎지만 그 값이 앱에 오는 건 다음 동기화 때다 — 그 사이에
+    // 나가면 "안 깎였다"로 보여서 치트가 안 막힌 것처럼 읽힌다(실기 지적).
+    // 트로피는 서버 소유 필드라 어긋나도 다음 업로드에 서버 값이 이긴다.
+    final cfgNow = data.battleConfig ?? const BattleConfig();
+    final serverAuth = ref.read(gameServerProvider).available;
+    final rawPrepaid = pvpReward(
+      won: false,
+      draw: false,
+      trophies: save.pvpTrophies,
+      cfg: cfgNow,
+      rewardMult: scout.tier.rewardMult,
+    ).trophyDelta;
+    // ⚠️ **실제로 깎인 만큼**만 기억한다. 트로피가 12 미만이면 차감이 0 에서
+    // 잘리는데, 결착에서 원래 액수를 되돌려주면 차이만큼 공짜 트로피가 된다.
+    final prepaid =
+        (save.pvpTrophies + rawPrepaid).clamp(0, 1 << 30) - save.pvpTrophies;
+    if (prepaid != 0) await _applyReward(0, prepaid, const []);
+    // 부상도 선차감한다(트로피와 같은 이유 — 이탈이 KO 대가를 피하면 안 된다).
+    // 서버 경로는 서버가 자기 세이브에 걸지만, 앱에도 걸어야 주기 업로드가
+    // 그 상태를 싣고 가서 이탈 후에도 남는다. 결착에서 생존자는 되돌린다.
+    final teamIds = _team.whereType<String>().toList();
+    await ref.read(saveControllerProvider.notifier).preInjureTeam(teamIds);
+
     // 수동도 서버 세션을 여는 동안 기다린다 — 오토와 같은 전환으로 덮는다.
     // 실패로 빠져나가는 길이 여럿이라 `try/finally` 로 반드시 닫는다.
     final closeStart = _showStartOverlay(l);
@@ -2655,12 +2763,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       var foe = m.foe;
       var speciesOf = m.speciesOf;
       var location = scout.location;
+      // 서버가 상대를 그리면 id 가 달라지므로 스킨 맵도 서버 값으로 갈아탄다.
+      var foeSkins = _foeSkins(scout);
 
       final server = ref.read(gameServerProvider);
       if (server.available) {
         // 전투 전 최신 세이브 업로드(기기 권위 진행이 묻히지 않게).
         // 실패 시 시작하지 않는다 — 낡은 세이브로 세션을 열면 진행이 사라진다.
         if (!await _flushSave()) {
+          if (prepaid != 0) await _applyReward(0, -prepaid, const []);
+          await ref
+              .read(saveControllerProvider.notifier)
+              .applyBattleResult(gold: 0, trophyDelta: 0, healBugIds: teamIds);
           await _returnTicket();
           if (!mounted) return;
           showCenterToast(context, l.battleServerFailed);
@@ -2672,6 +2786,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           tierId: scout.ownerId == null ? scout.tier.id : null,
         );
         if (!res.isOk || res.data?['sessionId'] == null) {
+          // 싸우지도 못했으니 선차감한 트로피·부상은 돌려준다(서버도 안 깎았다).
+          if (prepaid != 0) await _applyReward(0, -prepaid, const []);
+          await ref
+              .read(saveControllerProvider.notifier)
+              .applyBattleResult(gold: 0, trophyDelta: 0, healBugIds: teamIds);
           // 서버가 "티켓 없음"이라 했으면 되돌리지 않는다 — 서버가 진실이다.
           final noTicket = await _syncTicketRejection(res);
           if (!noTicket) await _returnTicket();
@@ -2701,6 +2820,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             for (final e in srvFoe) e.bug.id: e.speciesId,
           };
           location = foe.first.element;
+          foeSkins = {
+            for (final e in srvFoe) e.bug.id: ?_viewOf(e.skin, e.speciesId),
+          };
         }
       }
       if (!mounted) return;
@@ -2718,12 +2840,31 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             speciesOf: speciesOf,
             seed: m.seed,
             trophiesAtStart: save.pvpTrophies,
-            config: data.battleConfig ?? const BattleConfig(),
+            // 서버 경로는 결착에서 **서버 세이브를 통째로 채택**하므로 앱이
+            // 차액을 따로 되돌릴 필요가 없다(이중 보정 방지).
+            trophyPrepaid: serverAuth ? 0 : prepaid,
+            config: cfgNow,
             rewardMult: scout.tier.rewardMult,
-            onApply: _applyReward,
+            onApply: (g, t, koed) async {
+              // 선차감 부상 중 **살아남은 곤충**만 되돌린다(KO 는 그대로).
+              await ref
+                  .read(saveControllerProvider.notifier)
+                  .applyBattleResult(
+                    gold: g,
+                    trophyDelta: t,
+                    koedBugIds: koed,
+                    healBugIds: [
+                      for (final id in teamIds)
+                        if (!koed.contains(id)) id,
+                    ],
+                  );
+              final s2 = ref.read(saveControllerProvider).requireValue;
+              unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(s2)));
+            },
             location: location,
             skinOf: ref.read(skinOfProvider),
             arenaTheme: ref.read(arenaThemeOwnedProvider),
+            foeSkinOf: foeSkins,
           ),
         ),
       );

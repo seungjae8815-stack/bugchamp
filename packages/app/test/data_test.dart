@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// assets/data/*.json 이 core_models 로 무결하게 파싱되고 기획 제약을 지키는지 검증.
@@ -397,6 +399,34 @@ void main() {
       final w = forge.tierWeights(forge.maxLevel, items.tierCount);
       expect(w.last, greaterThan(0.5));
     });
+  });
+
+  // 곤충 그림에 **배경이 딸려 오지 않았는지** — 누끼 실패 감지.
+  //
+  // 2026-08-19: 스킨 처리가 기본 대기컷을 덮어써서 `_raw_backup`(=누끼 **전**
+  // 원본)에서 복구했는데, 그게 배경이 통째로 붙은 파일이라 8종이 사각형
+  // 그림으로 나갔다. 눈으로 보기 전엔 모른다 — 불투명 비율로 잡는다.
+  test('곤충 그림에 배경이 남아 있지 않다(누끼 확인)', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final bad = <String>[];
+    for (final f in Directory(
+      'assets/images/bugs',
+    ).listSync().whereType<File>().where((f) => f.path.endsWith('.webp'))) {
+      final img = await decodeImageFromList(f.readAsBytesSync());
+      final data = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (data == null) continue;
+      final b = data.buffer.asUint8List();
+      var opaque = 0;
+      for (var i = 3; i < b.length; i += 4) {
+        if (b[i] > 8) opaque++;
+      }
+      final ratio = opaque / (b.length / 4);
+      // 곤충은 사각형이 아니다 — 92% 를 넘으면 배경이 붙어 있다는 뜻이다.
+      if (ratio > 0.92) {
+        bad.add('${f.uri.pathSegments.last} ${(ratio * 100).round()}%');
+      }
+    }
+    expect(bad, isEmpty, reason: '배경이 안 지워진 그림: ${bad.join(', ')}');
   });
 
   // pubspec 애셋 등록 — **Flutter 는 하위 디렉토리를 자동 포함하지 않는다.**

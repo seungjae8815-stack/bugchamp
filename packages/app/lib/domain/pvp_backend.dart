@@ -82,6 +82,7 @@ class DefenderBug {
     required this.atk,
     required this.def,
     required this.spd,
+    this.skin,
   });
 
   final String speciesId;
@@ -92,8 +93,19 @@ class DefenderBug {
   final double def;
   final double spd;
 
+  /// 이 곤충에 걸린 스킨 **효과 키**(`gold`/`albino`). 없으면 null.
+  ///
+  /// 스킨을 산 사람만 보면 살 이유가 약하다 — 남이 봐야 사고 싶어진다
+  /// (2026-08-19). 그래서 방어팀 스냅샷에 함께 싣는다.
+  /// ⚠️ 순수 표시용이다. 보유 여부는 클라가 주장하는 값이라 위조할 수 있지만
+  /// **이득이 0** 이라 위조할 이유가 없다. 스킨에 효과를 붙이는 날에는
+  /// 그 효과를 **소유자 세이브**(서버 검증)에만 적용하고, 이 필드는 계속
+  /// 그림에만 쓴다.
+  final String? skin;
+
   Map<String, dynamic> toJson() => {
     'sp': speciesId,
+    if (skin != null) 'skin': skin,
     'el': element.key,
     'tm': temperament.key,
     'hp': maxHp,
@@ -110,6 +122,7 @@ class DefenderBug {
     atk: (j['atk'] as num).toDouble(),
     def: (j['def'] as num).toDouble(),
     spd: (j['spd'] as num).toDouble(),
+    skin: j['skin'] as String?,
   );
 }
 

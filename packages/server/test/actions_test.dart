@@ -117,6 +117,8 @@ void main() {
   final actions = GameActions(config: _Config(), now: () => t0);
   final base = SaveGame.initial(createdAt: t0);
 
+  _forfeitTests(actions, base);
+
   group('구매 지급', () {
     test('젤리 팩은 재화만 지급한다', () {
       final r = actions.grantPurchase(
@@ -1895,6 +1897,195 @@ void main() {
       expect(clean.ownedSkins, isEmpty);
       expect(clean.redeemedPurchases, isEmpty);
       expect(clean.passActive(t0), isFalse);
+    });
+  });
+}
+
+/// 수동 전투 **중도 이탈 치트** 방지 — 시작할 때 패배분을 먼저 깎고,
+/// 결착에서 차액만 반영한다. 두 번 깎이면 이겨도 손해가 된다.
+void _forfeitTests(GameActions actions, SaveGame base) {
+  final petCfg = actions.config.pet;
+  group('수동 전투 선차감(중도 이탈 방지)', () {
+    BattleResult res(BattleOutcome o) => BattleResult(
+      outcome: o,
+      rounds: 3,
+      teamAHpPct: o == BattleOutcome.teamA ? 0.6 : 0,
+      teamBHpPct: o == BattleOutcome.teamA ? 0 : 0.6,
+      events: const [],
+    );
+
+    final start = base.copyWith(pvpTrophies: 500);
+    final cfg = actions.config.battle;
+    final lose = pvpReward(
+      won: false,
+      draw: false,
+      trophies: 500,
+      cfg: cfg,
+      rewardMult: 1.0,
+    ).trophyDelta;
+    final win = pvpReward(
+      won: true,
+      draw: false,
+      trophies: 500,
+      cfg: cfg,
+      rewardMult: 1.0,
+    ).trophyDelta;
+
+    test('선차감 액수가 실제 패배분과 같다', () {
+      expect(lose, lessThan(0), reason: '패배는 트로피가 줄어야 한다');
+    });
+
+    test('이기면 선차감이 되돌아온다 — 최종은 승리분만큼만 오른다', () {
+      // 시작: 500 + lose. 결착: 차액(win - lose)을 더한다.
+      final afterStart = start.copyWith(pvpTrophies: 500 + lose);
+      final r = actions.applyBattleOutcome(
+        afterStart,
+        result: res(BattleOutcome.teamA),
+        myTeam: const [],
+        rewardMult: 1.0,
+        speciesById: const {},
+        petConfig: petCfg,
+        trophiesAtStart: 500,
+        trophyPrepaid: lose,
+      );
+      expect(r.save!.pvpTrophies, 500 + win);
+    });
+
+    test('지면 선차감만 남는다 — 두 번 깎이지 않는다', () {
+      final afterStart = start.copyWith(pvpTrophies: 500 + lose);
+      final r = actions.applyBattleOutcome(
+        afterStart,
+        result: res(BattleOutcome.teamB),
+        myTeam: const [],
+        rewardMult: 1.0,
+        speciesById: const {},
+        petConfig: petCfg,
+        trophiesAtStart: 500,
+        trophyPrepaid: lose,
+      );
+      expect(r.save!.pvpTrophies, 500 + lose);
+    });
+
+    test('중도 이탈 = 패배 확정 — 시작 차감이 그대로 남는다', () {
+      // 결착 요청이 영영 안 오는 경우. 세이브에는 이미 패배가 반영돼 있다.
+      expect(500 + lose, lessThan(500));
+    });
+
+    test('0 근처 트로피 — 선차감이 잘려도 과지급되지 않는다', () {
+      // 트로피 5, 패배분 -12: 실제 차감은 -5 뿐이다. 세션에 원래 액수(-12)를
+      // 적으면 승리 시 5+12 가 아니라 +19 가 된다(감사에서 발견 2026-08-20).
+      const start = 5;
+      final effPrepaid = (start + lose).clamp(0, 1 << 30) - start; // -5
+      final afterStart = base.copyWith(
+        pvpTrophies: (start + lose).clamp(0, 1 << 30),
+      );
+      final w = actions.applyBattleOutcome(
+        afterStart,
+        result: res(BattleOutcome.teamA),
+        myTeam: const [],
+        rewardMult: 1.0,
+        speciesById: const {},
+        petConfig: petCfg,
+        trophiesAtStart: start,
+        trophyPrepaid: effPrepaid,
+      );
+      // 시작 5 에서 이겼으니 최종은 5 + win 이어야 한다.
+      final winAt5 = pvpReward(
+        won: true,
+        draw: false,
+        trophies: start,
+        cfg: cfg,
+        rewardMult: 1.0,
+      ).trophyDelta;
+      expect(w.save!.pvpTrophies, start + winAt5);
+
+      final l = actions.applyBattleOutcome(
+        afterStart,
+        result: res(BattleOutcome.teamB),
+        myTeam: const [],
+        rewardMult: 1.0,
+        speciesById: const {},
+        petConfig: petCfg,
+        trophiesAtStart: start,
+        trophyPrepaid: effPrepaid,
+      );
+      expect(l.save!.pvpTrophies, 0, reason: '지면 0 밑으로는 안 내려간다');
+    });
+
+    test('부상 선차감 — 생존자는 되돌리고 KO 는 그대로 남는다', () {
+      // 수동 시작 때 팀 전체에 부상을 미리 건 상태를 흉내 낸다.
+      final until = t0.add(const Duration(hours: 1));
+      final team = [
+        for (final id in ['a', 'b'])
+          BattleBug(
+            id: id,
+            name: id,
+            element: Element.wood,
+            temperament: Temperament.steadfast,
+            preferredStance: Stance.attack,
+            maxHp: 100,
+            atk: 10,
+            def: 10,
+            spd: 10,
+          ),
+      ];
+      final preInjured = base.copyWith(injured: {'a': until, 'b': until});
+      // a 만 KO 된 결과.
+      final r = BattleResult(
+        outcome: BattleOutcome.teamB,
+        rounds: 3,
+        teamAHpPct: 0,
+        teamBHpPct: 0.5,
+        events: [
+          BattleEvent(
+            round: 1,
+            aName: 'a',
+            bName: 'x',
+            aStance: Stance.attack,
+            bStance: Stance.attack,
+            rps: 0,
+            dmgToA: 100,
+            dmgToB: 0,
+            healToA: 0,
+            healToB: 0,
+            aHp: 0,
+            bHp: 50,
+            aDown: true,
+            bDown: false,
+          ),
+        ],
+      );
+      final out = actions.applyBattleOutcome(
+        preInjured,
+        result: r,
+        myTeam: team,
+        rewardMult: 1.0,
+        speciesById: const {},
+        petConfig: petCfg,
+        healSurvivors: true,
+      );
+      expect(
+        out.save!.injured.containsKey('b'),
+        isFalse,
+        reason: '생존자의 선차감은 되돌아가야 한다',
+      );
+      expect(
+        out.save!.injured.containsKey('a'),
+        isTrue,
+        reason: 'KO 는 부상이 걸려야 한다',
+      );
+    });
+
+    test('예전 세션(선차감 0)은 그대로 동작한다', () {
+      final r = actions.applyBattleOutcome(
+        start,
+        result: res(BattleOutcome.teamA),
+        myTeam: const [],
+        rewardMult: 1.0,
+        speciesById: const {},
+        petConfig: petCfg,
+      );
+      expect(r.save!.pvpTrophies, 500 + win);
     });
   });
 }

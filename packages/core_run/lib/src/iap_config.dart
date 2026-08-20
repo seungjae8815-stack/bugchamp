@@ -83,6 +83,7 @@ class IapProduct {
     this.bonusPct = 0,
     this.skinId,
     this.grant = const IapGrant(),
+    this.image,
     this.hidden = false,
   });
 
@@ -101,6 +102,12 @@ class IapProduct {
   /// 지급 로직이 상품 정의를 참조**하므로, 지우면 보유자 혜택까지 사라진다.
   /// (광고 제거 패스: 광고 없는 운영 전환으로 핵심 가치가 소멸 → 판매 중단.)
   final bool hidden;
+
+  /// 상품 그림 파일명(확장자 없이). `assets/images/shop/{image}.webp`.
+  ///
+  /// 코드에 경로를 박지 않는다(§6) — 상품을 늘릴 때 JSON 만 고치면 된다.
+  /// 파일이 없으면 UI 가 타입별 아이콘으로 떨어지므로 화면은 깨지지 않는다.
+  final String? image;
 
   /// 젤리 팩 보너스 표기(%). 0이면 미표기.
   final int bonusPct;
@@ -125,6 +132,7 @@ class IapProduct {
     hidden: json['hidden'] == true,
     bonusPct: (json['bonusPct'] as num?)?.toInt() ?? 0,
     skinId: json['skinId'] as String?,
+    image: json['image'] as String?,
     grant: json['grant'] == null
         ? const IapGrant()
         : IapGrant.fromJson(json['grant'] as Map<String, dynamic>),
@@ -137,7 +145,14 @@ class IapProduct {
 /// prefix 가 없으면 곤충이 아닌 곳(예: 아레나 테마)에 쓰는 스킨.
 @immutable
 class SkinDef {
-  const SkinDef({required this.id, required this.effect, this.speciesPrefix});
+  const SkinDef({
+    required this.id,
+    required this.effect,
+    this.speciesPrefix,
+    this.releaseBonusPct = 0,
+    this.incubateSpeedPct = 0,
+    this.artSpecies = const {},
+  });
 
   final String id;
 
@@ -147,10 +162,29 @@ class SkinDef {
   /// 적용 대상 종 접두사(예: 'rhino_' = 장수풍뎅이 계열).
   final String? speciesPrefix;
 
+  /// 이 계열을 분해·방생할 때 재료 +N%.
+  ///
+  /// ⚠️ **전투 스탯은 절대 붙이지 않는다**(§2.6 스탯 직접 판매 금지).
+  /// 대회 경품이 실물이라 결제로 순위가 바뀌면 도박성 시비가 된다.
+  /// 시간·재료는 편의지 전력이 아니라 트로피·대회 순위에 영향이 없다.
+  final int releaseBonusPct;
+
+  /// 이 계열 알의 부화 시간 −N%.
+  final int incubateSpeedPct;
+
+  /// **전용 그림이 있는 종**. 여기 있는 종은 `{종}_adult_{n}_{effect}.webp` 를
+  /// 쓰고 색 필터를 입히지 않는다 — 그림이 이미 그 색이라 두 번 물들면 뭉갠다.
+  final Set<String> artSpecies;
+
   factory SkinDef.fromJson(Map<String, dynamic> json) => SkinDef(
     id: json['id'] as String,
     effect: json['effect'] as String? ?? 'gold',
     speciesPrefix: json['speciesPrefix'] as String?,
+    releaseBonusPct: (json['releaseBonusPct'] as num?)?.toInt() ?? 0,
+    incubateSpeedPct: (json['incubateSpeedPct'] as num?)?.toInt() ?? 0,
+    artSpecies: {
+      for (final x in (json['artSpecies'] as List? ?? const [])) '$x',
+    },
   );
 }
 
@@ -184,6 +218,50 @@ class IapConfig {
       if (speciesId.startsWith(p)) return s.effect;
     }
     return null;
+  }
+
+  /// [speciesId] 에 **전용 스킨 그림**이 있는가(= 색 필터를 입히면 안 되는가).
+  bool skinHasArt(String effect, String speciesId) {
+    for (final s in skins) {
+      if (s.effect == effect) return s.artSpecies.contains(speciesId);
+    }
+    return false;
+  }
+
+  /// [speciesId] 에 걸린 스킨의 **계열 편의 보너스**. 미보유면 0.
+  ///
+  /// ⚠️ 근거는 세이브의 `ownedSkins` — **서버 소유 필드**라 위조할 수 없다.
+  /// 방어팀 행에 실어 보내는 `skin` 값(그림용)과 혼동하지 말 것. 그쪽은
+  /// 클라가 주장하는 값이고, 이 보너스와 아무 상관이 없다.
+  ({int releaseBonusPct, int incubateSpeedPct}) skinPerkFor(
+    Set<String> owned,
+    String speciesId,
+  ) {
+    for (final s in skins) {
+      final p = s.speciesPrefix;
+      if (p == null || !owned.contains(s.id)) continue;
+      if (speciesId.startsWith(p)) {
+        return (
+          releaseBonusPct: s.releaseBonusPct,
+          incubateSpeedPct: s.incubateSpeedPct,
+        );
+      }
+    }
+    return (releaseBonusPct: 0, incubateSpeedPct: 0);
+  }
+
+  /// 계열 보너스를 적용한 분해·방생 재료량.
+  int skinnedReleaseMaterial(int base, Set<String> owned, String speciesId) {
+    final pct = skinPerkFor(owned, speciesId).releaseBonusPct;
+    return pct <= 0 ? base : (base * (100 + pct) / 100).round();
+  }
+
+  /// 계열 보너스를 적용한 부화 시간(초). **1초 밑으로는 안 내려간다.**
+  int skinnedIncubateSeconds(int base, Set<String> owned, String speciesId) {
+    final pct = skinPerkFor(owned, speciesId).incubateSpeedPct;
+    if (pct <= 0) return base;
+    final v = (base * (100 - pct) / 100).round();
+    return v < 1 ? 1 : v;
   }
 
   /// 보유한 스킨 중 곤충이 아닌 대상(아레나 테마 등)의 효과들.
