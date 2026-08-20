@@ -3088,8 +3088,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             gameDialogButton(l.giftGoPassBtn, () => Navigator.pop(ctx, true)),
           ],
         );
-        if (goShop == true) {
-          // 상점 탭(패스가 있는 곳)으로.
+        if (goShop == true && ctx.mounted) {
+          // ⚠️ 편지함 시트도 같이 닫는다 — 탭만 바꾸면 상점 **위에** 시트가
+          // 그대로 떠 있어 이동한 게 안 보인다(실기 지적 2026-08-20).
+          Navigator.of(ctx).pop();
           r.read(tabIndexProvider.notifier).set(4);
         }
         return;
