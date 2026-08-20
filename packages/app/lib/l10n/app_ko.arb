@@ -401,7 +401,7 @@
   "giftClaimedSnack": "선물을 받았어요!",
   "giftDoubledSnack": "보상 2배 획득!",
   "giftAdMoreTitle": "오늘의 무료 2배!",
-  "giftAdMoreBody": "같은 보상을 한 번 더 받을 수 있어요.\n오늘의 무료 2배는 1회 — 패스가 있으면 언제나 2배로 받아요.",
+  "giftAdMoreBody": "같은 보상을 한 번 더 받을 수 있어요.",
   "giftAdMoreYes": "한 번 더 받기",
   "giftAdMoreLater": "괜찮아요",
   "notifLunchTitle": "점심 보상이 도착했어요 🍱",
@@ -801,7 +801,7 @@
   "jellyContinueAsk": "오늘 무료 횟수를 다 썼어요. 젤리 {n}개로 계속할까요?",
   "jellyContinueYes": "젤리 사용",
   "giftDoubleCapTitle": "오늘의 무료 2배를 이미 받았어요",
-  "giftDoubleCapBody": "패스가 있으면 모든 선물을 계속 2배로 받고, 자동으로 수령까지 해드려요.",
+  "giftDoubleCapBody": "패스가 있으면 모든 선물을 계속 2배로 받고,\n자동으로 수령까지 해드려요.",
   "exchangeTitle": "교환소",
   "exchangeHint": "젤리를 지금 스테이지 기준 방치 1시간치로 바꿔요",
   "exchangeToGold": "골드로",
@@ -812,5 +812,8 @@
   "exchangeDone": "교환했어요!",
   "curJelly": "젤리",
   "exchangeHoldings": "보유 현황",
-  "elementGuideBtn": "오행 관계도"
+  "elementGuideBtn": "오행 관계도",
+  "giftAdMoreFreeLine": "오늘의 무료 2배는 1회!",
+  "giftAdMorePassLine": "패스가 있으면 언제나 2배로 받아요",
+  "giftGoPassBtn": "패스 보러 가기"
 }

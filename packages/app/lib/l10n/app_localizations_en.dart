@@ -1354,8 +1354,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftAdMoreTitle => 'Today\'s free double!';
 
   @override
-  String get giftAdMoreBody =>
-      'Claim the same reward once more.\nFree double is once a day — with a Pass, every gift is doubled.';
+  String get giftAdMoreBody => 'Claim the same reward once more.';
 
   @override
   String get giftAdMoreYes => 'Claim again';
@@ -2605,7 +2604,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get giftDoubleCapBody =>
-      'With a Pass, every gift stays doubled and gets claimed automatically.';
+      'With a Pass, every gift stays doubled\nand gets claimed automatically.';
 
   @override
   String get exchangeTitle => 'Exchange';
@@ -2646,4 +2645,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get elementGuideBtn => 'Element chart';
+
+  @override
+  String get giftAdMoreFreeLine => 'Free double: once a day!';
+
+  @override
+  String get giftAdMorePassLine => 'With a Pass, every gift is doubled';
+
+  @override
+  String get giftGoPassBtn => 'See the Pass';
 }

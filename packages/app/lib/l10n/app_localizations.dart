@@ -2467,7 +2467,7 @@ abstract class AppLocalizations {
   /// No description provided for @giftAdMoreBody.
   ///
   /// In en, this message translates to:
-  /// **'Claim the same reward once more.\nFree double is once a day — with a Pass, every gift is doubled.'**
+  /// **'Claim the same reward once more.'**
   String get giftAdMoreBody;
 
   /// No description provided for @giftAdMoreYes.
@@ -4699,7 +4699,7 @@ abstract class AppLocalizations {
   /// No description provided for @giftDoubleCapBody.
   ///
   /// In en, this message translates to:
-  /// **'With a Pass, every gift stays doubled and gets claimed automatically.'**
+  /// **'With a Pass, every gift stays doubled\nand gets claimed automatically.'**
   String get giftDoubleCapBody;
 
   /// No description provided for @exchangeTitle.
@@ -4767,6 +4767,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Element chart'**
   String get elementGuideBtn;
+
+  /// No description provided for @giftAdMoreFreeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Free double: once a day!'**
+  String get giftAdMoreFreeLine;
+
+  /// No description provided for @giftAdMorePassLine.
+  ///
+  /// In en, this message translates to:
+  /// **'With a Pass, every gift is doubled'**
+  String get giftAdMorePassLine;
+
+  /// No description provided for @giftGoPassBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'See the Pass'**
+  String get giftGoPassBtn;
 }
 
 class _AppLocalizationsDelegate

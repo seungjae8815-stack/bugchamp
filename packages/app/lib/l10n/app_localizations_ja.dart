@@ -1327,7 +1327,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftAdMoreTitle => '本日の無料2倍！';
 
   @override
-  String get giftAdMoreBody => '同じ報酬をもう一度受け取れます。\n無料2倍は1日1回 — パスがあればいつでも2倍です。';
+  String get giftAdMoreBody => '同じ報酬をもう一度受け取れます。';
 
   @override
   String get giftAdMoreYes => 'もう一度受け取る';
@@ -2551,7 +2551,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftDoubleCapTitle => '本日の無料2倍は受け取り済み';
 
   @override
-  String get giftDoubleCapBody => 'パスがあればすべてのギフトがずっと2倍、受け取りも自動です。';
+  String get giftDoubleCapBody => 'パスがあればすべてのギフトがずっと2倍、\n受け取りも自動です。';
 
   @override
   String get exchangeTitle => '交換所';
@@ -2591,4 +2591,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get elementGuideBtn => '五行の相性';
+
+  @override
+  String get giftAdMoreFreeLine => '無料2倍は1日1回！';
+
+  @override
+  String get giftAdMorePassLine => 'パスがあればいつでも2倍';
+
+  @override
+  String get giftGoPassBtn => 'パスを見る';
 }

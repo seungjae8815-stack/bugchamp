@@ -3056,35 +3056,92 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       // 무료 2배를 다 썼으면 **패스를 안내한다**(2배 제안 대신).
       // 이미 뜬 보상은 1배로 받았으므로 손해는 없다 — 여기서 막는 건 덤뿐이다.
       if (!notifier.canDoubleGift()) {
-        await showGameDialog<void>(
+        final goShop = await showGameDialog<bool>(
           ctx,
           title: l.giftDoubleCapTitle,
           icon: Icons.workspace_premium_rounded,
-          content: Text(
-            l.giftDoubleCapBody,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xD9FFFFFF),
-              fontSize: 13.5,
-              height: 1.4,
+          content: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0x33EBA52F),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              l.giftDoubleCapBody,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFFFD54F),
+                fontSize: 14.5,
+                fontWeight: FontWeight.w900,
+                height: 1.4,
+              ),
             ),
           ),
-          actions: [gameDialogButton(l.actionClose, () => Navigator.pop(ctx))],
+          actions: [
+            gameDialogButton(
+              l.actionClose,
+              () => Navigator.pop(ctx, false),
+              primary: false,
+            ),
+            // 구매 유도는 **이름 붙은 버튼**으로 한다 — 닫기를 눌렀는데 상점이
+            // 열리면 낚였다는 인상만 남는다(같은 유도, 반감 없이).
+            gameDialogButton(l.giftGoPassBtn, () => Navigator.pop(ctx, true)),
+          ],
         );
+        if (goShop == true) {
+          // 상점 탭(패스가 있는 곳)으로.
+          r.read(tabIndexProvider.notifier).set(4);
+        }
         return;
       }
       final more = await showGameDialog<bool>(
         ctx,
         title: l.giftAdMoreTitle,
         icon: Icons.play_circle_fill_rounded,
-        content: Text(
-          l.giftAdMoreBody,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xD9FFFFFF),
-            fontSize: 13.5,
-            height: 1.4,
-          ),
+        // 이 다이얼로그가 곧 패스 광고판이다 — "1회뿐"과 "패스면 무제한"을
+        // 받는 순간에 같이 보여준다(2026-08-20 문구·강조 사장님 지시).
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l.giftAdMoreBody,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xD9FFFFFF),
+                fontSize: 13.5,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              l.giftAdMoreFreeLine,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14.5,
+                fontWeight: FontWeight.w900,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0x33EBA52F),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                l.giftAdMorePassLine,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFFFD54F),
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w900,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           gameDialogButton(

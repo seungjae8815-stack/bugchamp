@@ -394,7 +394,7 @@
   "giftClaimedSnack": "ギフトを受け取りました！",
   "giftDoubledSnack": "報酬2倍獲得！",
   "giftAdMoreTitle": "本日の無料2倍！",
-  "giftAdMoreBody": "同じ報酬をもう一度受け取れます。\n無料2倍は1日1回 — パスがあればいつでも2倍です。",
+  "giftAdMoreBody": "同じ報酬をもう一度受け取れます。",
   "giftAdMoreYes": "もう一度受け取る",
   "giftAdMoreLater": "いいえ、結構です",
   "notifLunchTitle": "ランチ報酬が届きました 🍱",
@@ -766,7 +766,7 @@
   "jellyContinueAsk": "本日の無料回数を使い切りました。ゼリー{n}個で続けますか？",
   "jellyContinueYes": "ゼリーを使う",
   "giftDoubleCapTitle": "本日の無料2倍は受け取り済み",
-  "giftDoubleCapBody": "パスがあればすべてのギフトがずっと2倍、受け取りも自動です。",
+  "giftDoubleCapBody": "パスがあればすべてのギフトがずっと2倍、\n受け取りも自動です。",
   "exchangeTitle": "交換所",
   "exchangeHint": "ゼリーを現在ステージの放置1時間分に交換します",
   "exchangeToGold": "ゴールドへ",
@@ -777,5 +777,8 @@
   "exchangeDone": "交換しました！",
   "curJelly": "ゼリー",
   "exchangeHoldings": "所持状況",
-  "elementGuideBtn": "五行の相性"
+  "elementGuideBtn": "五行の相性",
+  "giftAdMoreFreeLine": "無料2倍は1日1回！",
+  "giftAdMorePassLine": "パスがあればいつでも2倍",
+  "giftGoPassBtn": "パスを見る"
 }

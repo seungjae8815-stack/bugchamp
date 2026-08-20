@@ -1331,8 +1331,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftAdMoreTitle => '오늘의 무료 2배!';
 
   @override
-  String get giftAdMoreBody =>
-      '같은 보상을 한 번 더 받을 수 있어요.\n오늘의 무료 2배는 1회 — 패스가 있으면 언제나 2배로 받아요.';
+  String get giftAdMoreBody => '같은 보상을 한 번 더 받을 수 있어요.';
 
   @override
   String get giftAdMoreYes => '한 번 더 받기';
@@ -2557,7 +2556,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftDoubleCapTitle => '오늘의 무료 2배를 이미 받았어요';
 
   @override
-  String get giftDoubleCapBody => '패스가 있으면 모든 선물을 계속 2배로 받고, 자동으로 수령까지 해드려요.';
+  String get giftDoubleCapBody => '패스가 있으면 모든 선물을 계속 2배로 받고,\n자동으로 수령까지 해드려요.';
 
   @override
   String get exchangeTitle => '교환소';
@@ -2597,4 +2596,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get elementGuideBtn => '오행 관계도';
+
+  @override
+  String get giftAdMoreFreeLine => '오늘의 무료 2배는 1회!';
+
+  @override
+  String get giftAdMorePassLine => '패스가 있으면 언제나 2배로 받아요';
+
+  @override
+  String get giftGoPassBtn => '패스 보러 가기';
 }
