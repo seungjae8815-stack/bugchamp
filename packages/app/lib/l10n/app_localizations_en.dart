@@ -2654,4 +2654,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get giftGoPassBtn => 'See the Pass';
+
+  @override
+  String get eventLegalTitle => 'Contest terms';
+
+  @override
+  String get eventLegalHost =>
+      'This contest is hosted and run by the Bug Champ team (the developer), who is solely responsible for providing and shipping the prize.';
+
+  @override
+  String get eventLegalStores =>
+      'Apple and Google are not sponsors of this contest and are not involved in any way.';
+
+  @override
+  String get eventLegalPrize =>
+      'Rankings are finalized at the end of the contest. The winner will be contacted in-app about prize delivery (a shipping address may be requested). No purchase is necessary to participate or win.';
+
+  @override
+  String get eventLegalFair =>
+      'Entries involving cheating (tampered data or abnormal access) may be excluded from rankings and prizes.';
 }

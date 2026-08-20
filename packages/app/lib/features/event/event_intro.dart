@@ -332,6 +332,51 @@ class EventIntroScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              // ── 공식 규정·고지 ────────────────────────────────
+              // 실물 경품 이벤트는 심사 요건이다(Apple 5.3 / Play 콘테스트
+              // 정책): 주최자 명시 + "스토어 무관" 고지 + 규정. 빠지면
+              // 심사에서 걸리고, 있으면 분쟁 때 운영팀을 지켜준다.
+              const SizedBox(height: 12),
+              Text(
+                l.eventLegalTitle,
+                style: const TextStyle(
+                  color: Color(0x99FFFFFF),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              for (final t in [
+                l.eventLegalHost,
+                l.eventLegalStores,
+                l.eventLegalPrize,
+                l.eventLegalFair,
+              ])
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '· ',
+                        style: TextStyle(
+                          color: Color(0x77FFFFFF),
+                          fontSize: 11,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          t,
+                          style: const TextStyle(
+                            color: Color(0x99FFFFFF),
+                            fontSize: 10.5,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

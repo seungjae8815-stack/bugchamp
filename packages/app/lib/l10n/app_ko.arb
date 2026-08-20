@@ -815,5 +815,10 @@
   "elementGuideBtn": "오행 관계도",
   "giftAdMoreFreeLine": "오늘의 무료 2배는 1회!",
   "giftAdMorePassLine": "패스가 있으면 언제나 2배로 받아요",
-  "giftGoPassBtn": "패스 보러 가기"
+  "giftGoPassBtn": "패스 보러 가기",
+  "eventLegalTitle": "대회 안내 및 규정",
+  "eventLegalHost": "본 대회는 Bug Champ 운영팀(개발사)이 직접 주최·운영하며, 경품 제공·발송의 책임도 운영팀에 있어요.",
+  "eventLegalStores": "Apple 과 Google 은 본 대회의 후원자가 아니며, 어떤 방식으로도 관여하지 않아요.",
+  "eventLegalPrize": "순위는 대회 종료 시점 기록으로 확정되고, 1등에게는 앱 내 공지로 경품 수령 방법을 안내해요(수령을 위해 배송지 연락이 필요할 수 있어요). 경품은 구매 없이 참가만으로 받을 수 있어요.",
+  "eventLegalFair": "부정 행위(조작된 데이터·비정상 접근)가 확인되면 순위와 경품 대상에서 제외될 수 있어요."
 }

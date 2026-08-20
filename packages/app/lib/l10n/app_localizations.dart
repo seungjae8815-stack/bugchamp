@@ -4785,6 +4785,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See the Pass'**
   String get giftGoPassBtn;
+
+  /// No description provided for @eventLegalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contest terms'**
+  String get eventLegalTitle;
+
+  /// No description provided for @eventLegalHost.
+  ///
+  /// In en, this message translates to:
+  /// **'This contest is hosted and run by the Bug Champ team (the developer), who is solely responsible for providing and shipping the prize.'**
+  String get eventLegalHost;
+
+  /// No description provided for @eventLegalStores.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple and Google are not sponsors of this contest and are not involved in any way.'**
+  String get eventLegalStores;
+
+  /// No description provided for @eventLegalPrize.
+  ///
+  /// In en, this message translates to:
+  /// **'Rankings are finalized at the end of the contest. The winner will be contacted in-app about prize delivery (a shipping address may be requested). No purchase is necessary to participate or win.'**
+  String get eventLegalPrize;
+
+  /// No description provided for @eventLegalFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries involving cheating (tampered data or abnormal access) may be excluded from rankings and prizes.'**
+  String get eventLegalFair;
 }
 
 class _AppLocalizationsDelegate
