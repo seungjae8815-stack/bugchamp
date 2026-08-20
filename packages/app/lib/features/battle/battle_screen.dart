@@ -184,7 +184,8 @@ class _TicketBarState extends ConsumerState<TicketBar> {
                 Expanded(
                   child: _chargeBtn(
                     // 광고제거·패스는 광고를 건너뛰고 즉시 받는다(ad_gate).
-                    '📺 ${l.pvpTicketAdBtn(cfg.ticketAdGrant)}',
+                    // 📺 는 광고 시절 잔재 — 문구는 이미 "무료 충전"이다.
+                    l.pvpTicketAdBtn(cfg.ticketAdGrant),
                     l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
                     const Color(0xFF3E7D4F),
                     () => _watchAd(l),
@@ -224,11 +225,15 @@ class _TicketBarState extends ConsumerState<TicketBar> {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+        // 좁은 폰에서 말줄임 대신 **통째로 축소** — 버튼 라벨이 잘리면
+        // 무슨 버튼인지 모른다(부화기 즉시부화와 같은 규칙, 2026-08-20).
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+          ),
         ),
         if (sub != null)
           Text(

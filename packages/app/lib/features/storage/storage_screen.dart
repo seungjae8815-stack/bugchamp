@@ -14,7 +14,6 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
-import '../../ui/ad_gate.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
@@ -1720,7 +1719,10 @@ class StorageScreen extends ConsumerWidget {
     ],
   );
 
-  /// 캡슐 아래 가속 버튼 두 개 — 젤리(즉시) / 광고(일부 단축).
+  /// 캡슐 아래 가속 버튼 — 젤리 즉시부화.
+  ///
+  /// "무료로 단축"(광고 자리)은 제거했다(2026-08-20). 광고가 비용이던 시절의
+  /// 잔재라, 광고 없는 운영에서는 젤리 즉시부화의 값어치를 공짜로 깎기만 했다.
   Widget _hatchActions(
     BuildContext ctx,
     WidgetRef r,
@@ -1750,17 +1752,6 @@ class StorageScreen extends ConsumerWidget {
             if (ctx.mounted) _snack(ctx, l.incubatorReady);
           },
         ),
-        const SizedBox(height: 4),
-        _hatchBtn(
-          '📺  ${l.incubatorAdSkipBtn}',
-          const Color(0xFF3E7D4F),
-          () async {
-            if (!await watchAdForReward(ctx, r, l)) return;
-            if (!await ctrl.adSkipIncubation(bugId)) return;
-            AudioService.instance.sfxReward();
-            if (ctx.mounted) _snack(ctx, l.incubatorAdSkipDone);
-          },
-        ),
       ],
     );
   }
@@ -1782,23 +1773,24 @@ class StorageScreen extends ConsumerWidget {
         minimumSize: const Size(0, 28),
         visualDensity: VisualDensity.compact,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (icon != null) ...[icon, const SizedBox(width: 3)],
-          Flexible(
-            child: Text(
+      // 좁은 캡슐에서 "…즉시 부"로 잘렸다(실기 지적 2026-08-20).
+      // 말줄임 대신 **통째로 축소**한다 — 짧은 라벨은 원래 크기 그대로다.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[icon, const SizedBox(width: 3)],
+            Text(
               label,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 fontSize: 11.5,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );
