@@ -761,8 +761,8 @@
   },
   "giftClaimedSnack": "Gift claimed!",
   "giftDoubledSnack": "Double reward claimed!",
-  "giftAdMoreTitle": "Claim once more?",
-  "giftAdMoreBody": "You can claim the same reward one more time",
+  "giftAdMoreTitle": "Today's free double!",
+  "giftAdMoreBody": "Claim the same reward once more.\nFree double is once a day — with a Pass, every gift is doubled.",
   "giftAdMoreYes": "Claim again",
   "giftAdMoreLater": "No thanks",
   "notifLunchTitle": "Lunch reward is ready 🍱",
@@ -1519,8 +1519,8 @@
       }
     }
   },
-  "giftDoubleCapTitle": "That's all the doubles today",
-  "giftDoubleCapBody": "You've used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.",
+  "giftDoubleCapTitle": "Free double already used today",
+  "giftDoubleCapBody": "With a Pass, every gift stays doubled and gets claimed automatically.",
   "exchangeTitle": "Exchange",
   "exchangeHint": "Trade jelly for one hour of idle output at your stage",
   "exchangeToGold": "To gold",

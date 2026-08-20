@@ -1351,10 +1351,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftDoubledSnack => 'Double reward claimed!';
 
   @override
-  String get giftAdMoreTitle => 'Claim once more?';
+  String get giftAdMoreTitle => 'Today\'s free double!';
 
   @override
-  String get giftAdMoreBody => 'You can claim the same reward one more time';
+  String get giftAdMoreBody =>
+      'Claim the same reward once more.\nFree double is once a day — with a Pass, every gift is doubled.';
 
   @override
   String get giftAdMoreYes => 'Claim again';
@@ -2600,11 +2601,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyContinueYes => 'Use jelly';
 
   @override
-  String get giftDoubleCapTitle => 'That\'s all the doubles today';
+  String get giftDoubleCapTitle => 'Free double already used today';
 
   @override
   String get giftDoubleCapBody =>
-      'You\'ve used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.';
+      'With a Pass, every gift stays doubled and gets claimed automatically.';
 
   @override
   String get exchangeTitle => 'Exchange';

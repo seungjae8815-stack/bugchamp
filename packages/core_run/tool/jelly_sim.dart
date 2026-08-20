@@ -106,15 +106,17 @@ void main(List<String> args) {
             totalWeight;
   final avgIntervalSec = (gifts.intervalMinSec + gifts.intervalMaxSec) / 2;
   final giftsPerDay = _activeHours * 3600 / avgIntervalSec;
-  // 광고를 보면 adMultiplier 배.
-  final giftMult = 1 + (gifts.adMultiplier - 1) * _adRate;
+  // 무료 2배는 하루 [freeDoubleDaily] 회뿐이다(2026-08-20 — 1회).
+  // 예전처럼 전량 ×2 로 세면 무과금 수입이 두 배 가까이 과대계상된다.
+  // 무제한 2배는 패스 몫이라 아래 "패스 보유자" 줄에서 따로 본다.
+  final freeDoubles = gifts.freeDoubleDaily.toDouble().clamp(0, giftsPerDay);
   rows.add((
     name: '깜짝선물',
-    perDay: giftsPerDay * avgGiftJelly * giftMult,
+    perDay: (giftsPerDay + freeDoubles) * avgGiftJelly,
     note:
         '${giftsPerDay.toStringAsFixed(1)}개/일 × 평균 '
-        '${avgGiftJelly.toStringAsFixed(2)} × 광고 ×'
-        '${giftMult.toStringAsFixed(1)}',
+        '${avgGiftJelly.toStringAsFixed(2)} + 무료 2배 '
+        '${freeDoubles.toStringAsFixed(0)}회',
   ));
 
   // ── 3. 미션 — 젤리 보상 미션의 현재 티어값. 하루 몇 번 도느냐는 진행도에

@@ -1328,10 +1328,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftDoubledSnack => '보상 2배 획득!';
 
   @override
-  String get giftAdMoreTitle => '한 번 더 받을까요?';
+  String get giftAdMoreTitle => '오늘의 무료 2배!';
 
   @override
-  String get giftAdMoreBody => '같은 보상을 한 번 더 받을 수 있어요';
+  String get giftAdMoreBody =>
+      '같은 보상을 한 번 더 받을 수 있어요.\n오늘의 무료 2배는 1회 — 패스가 있으면 언제나 2배로 받아요.';
 
   @override
   String get giftAdMoreYes => '한 번 더 받기';
@@ -2553,11 +2554,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get jellyContinueYes => '젤리 사용';
 
   @override
-  String get giftDoubleCapTitle => '오늘 2배는 여기까지';
+  String get giftDoubleCapTitle => '오늘의 무료 2배를 이미 받았어요';
 
   @override
-  String get giftDoubleCapBody =>
-      '무료 2배를 모두 썼어요.\n패스를 가지고 있으면 2배가 무제한이고, 선물도 자동으로 받아져요.';
+  String get giftDoubleCapBody => '패스가 있으면 모든 선물을 계속 2배로 받고, 자동으로 수령까지 해드려요.';
 
   @override
   String get exchangeTitle => '교환소';

@@ -1324,10 +1324,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftDoubledSnack => '報酬2倍獲得！';
 
   @override
-  String get giftAdMoreTitle => 'もう一度受け取りますか？';
+  String get giftAdMoreTitle => '本日の無料2倍！';
 
   @override
-  String get giftAdMoreBody => '同じ報酬をもう一度受け取れます';
+  String get giftAdMoreBody => '同じ報酬をもう一度受け取れます。\n無料2倍は1日1回 — パスがあればいつでも2倍です。';
 
   @override
   String get giftAdMoreYes => 'もう一度受け取る';
@@ -2548,11 +2548,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get jellyContinueYes => 'ゼリーを使う';
 
   @override
-  String get giftDoubleCapTitle => '本日の2倍はここまで';
+  String get giftDoubleCapTitle => '本日の無料2倍は受け取り済み';
 
   @override
-  String get giftDoubleCapBody =>
-      '無料の2倍を使い切りました。\nパスがあれば2倍は無制限、プレゼントも自動で受け取れます。';
+  String get giftDoubleCapBody => 'パスがあればすべてのギフトがずっと2倍、受け取りも自動です。';
 
   @override
   String get exchangeTitle => '交換所';

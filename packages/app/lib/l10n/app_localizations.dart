@@ -2461,13 +2461,13 @@ abstract class AppLocalizations {
   /// No description provided for @giftAdMoreTitle.
   ///
   /// In en, this message translates to:
-  /// **'Claim once more?'**
+  /// **'Today\'s free double!'**
   String get giftAdMoreTitle;
 
   /// No description provided for @giftAdMoreBody.
   ///
   /// In en, this message translates to:
-  /// **'You can claim the same reward one more time'**
+  /// **'Claim the same reward once more.\nFree double is once a day — with a Pass, every gift is doubled.'**
   String get giftAdMoreBody;
 
   /// No description provided for @giftAdMoreYes.
@@ -4693,13 +4693,13 @@ abstract class AppLocalizations {
   /// No description provided for @giftDoubleCapTitle.
   ///
   /// In en, this message translates to:
-  /// **'That\'s all the doubles today'**
+  /// **'Free double already used today'**
   String get giftDoubleCapTitle;
 
   /// No description provided for @giftDoubleCapBody.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve used every free double.\nWith a pass, doubling is unlimited and gifts are claimed automatically.'**
+  /// **'With a Pass, every gift stays doubled and gets claimed automatically.'**
   String get giftDoubleCapBody;
 
   /// No description provided for @exchangeTitle.

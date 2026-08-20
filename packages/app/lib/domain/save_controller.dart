@@ -602,7 +602,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final now = ref.read(clockProvider).now().toUtc();
     if (s.anyPassActive(now)) return true;
     final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
-    final cap = cfg?.freeDoubleDaily ?? 5;
+    final cap = cfg?.freeDoubleDaily ?? 1;
     return s.giftDoublesUsed(dailyDateKey(now)) < cap;
   }
 
