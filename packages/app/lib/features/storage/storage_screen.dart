@@ -1738,59 +1738,65 @@ class StorageScreen extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _hatchBtn(
-          '$cost  ${l.incubatorInstant}',
-          const Color(0xFF7E57C2),
-          icon: jellyIcon(size: 13),
-          () async {
-            if (!canPay) {
-              _snack(ctx, l.notEnoughJelly);
-              return;
-            }
-            if (!await ctrl.instantIncubate(bugId)) return;
-            AudioService.instance.sfxHatch();
-            if (ctx.mounted) _snack(ctx, l.incubatorReady);
-          },
-        ),
+        _hatchBtn(cost, const Color(0xFF7E57C2), l, () async {
+          if (!canPay) {
+            _snack(ctx, l.notEnoughJelly);
+            return;
+          }
+          if (!await ctrl.instantIncubate(bugId)) return;
+          AudioService.instance.sfxHatch();
+          if (ctx.mounted) _snack(ctx, l.incubatorReady);
+        }),
       ],
     );
   }
 
+  /// 즉시부화 버튼 — **두 줄**(윗줄 젤리 비용 / 아랫줄 "즉시 부화").
+  ///
+  /// 한 줄에 다 넣으면 좁은 캡슐에서 잘리거나(말줄임) 깨알만 해진다
+  /// (FittedBox 축소 — 둘 다 실기에서 지적당했다 2026-08-20). 캡슐 아래
+  /// 공간은 세로 여유(62px)가 있으니 세로로 푼다.
   Widget _hatchBtn(
-    String label,
+    int cost,
     Color bg,
-    VoidCallback? onTap, {
-    Widget? icon,
-  }) => SizedBox(
+    AppLocalizations l,
+    VoidCallback? onTap,
+  ) => SizedBox(
     width: double.infinity,
-    height: 29,
+    height: 44,
     child: FilledButton(
       onPressed: onTap,
       style: FilledButton.styleFrom(
         backgroundColor: bg,
         disabledBackgroundColor: const Color(0x33FFFFFF),
         padding: EdgeInsets.zero,
-        minimumSize: const Size(0, 28),
+        minimumSize: const Size(0, 44),
         visualDensity: VisualDensity.compact,
       ),
-      // 좁은 캡슐에서 "…즉시 부"로 잘렸다(실기 지적 2026-08-20).
-      // 말줄임 대신 **통째로 축소**한다 — 짧은 라벨은 원래 크기 그대로다.
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[icon, const SizedBox(width: 3)],
-            Text(
-              label,
-              maxLines: 1,
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 11.5,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              jellyIcon(size: 12),
+              const SizedBox(width: 3),
+              Text(
+                '$cost',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11.5,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 1),
+          Text(
+            l.incubatorInstant,
+            maxLines: 1,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11),
+          ),
+        ],
       ),
     ),
   );

@@ -2624,4 +2624,7 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get eventLegalFair =>
       '부정 행위(조작된 데이터·비정상 접근)가 확인되면 순위와 경품 대상에서 제외될 수 있어요.';
+
+  @override
+  String get giftBuyPassBtn => '패스 구입하기';
 }

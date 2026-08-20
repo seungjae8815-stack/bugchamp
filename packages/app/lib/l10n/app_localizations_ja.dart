@@ -2619,4 +2619,7 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get eventLegalFair =>
       '不正行為（改ざんデータ・異常なアクセス）が確認された場合、順位および賞品の対象から除外されることがあります。';
+
+  @override
+  String get giftBuyPassBtn => 'パスを購入';
 }

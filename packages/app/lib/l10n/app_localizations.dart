@@ -4815,6 +4815,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Entries involving cheating (tampered data or abnormal access) may be excluded from rankings and prizes.'**
   String get eventLegalFair;
+
+  /// No description provided for @giftBuyPassBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy the Pass'**
+  String get giftBuyPassBtn;
 }
 
 class _AppLocalizationsDelegate

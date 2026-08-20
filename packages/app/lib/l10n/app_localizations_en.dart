@@ -2673,4 +2673,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get eventLegalFair =>
       'Entries involving cheating (tampered data or abnormal access) may be excluded from rankings and prizes.';
+
+  @override
+  String get giftBuyPassBtn => 'Buy the Pass';
 }

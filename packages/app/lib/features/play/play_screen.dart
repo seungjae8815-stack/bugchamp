@@ -15,6 +15,7 @@ import 'package:uuid/uuid.dart';
 import '../../ui/toast.dart';
 import '../../app_version.dart';
 import '../../data/game_data.dart';
+import '../../domain/iap_service.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/audio_service.dart';
 import '../../domain/chat_service.dart';
@@ -3056,7 +3057,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       // 무료 2배를 다 썼으면 **패스를 안내한다**(2배 제안 대신).
       // 이미 뜬 보상은 1배로 받았으므로 손해는 없다 — 여기서 막는 건 덤뿐이다.
       if (!notifier.canDoubleGift()) {
-        final goShop = await showGameDialog<bool>(
+        final capAction = await showGameDialog<_CapAction>(
           ctx,
           title: l.giftDoubleCapTitle,
           icon: Icons.workspace_premium_rounded,
@@ -3077,22 +3078,47 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
           ),
+          // [패스 구입하기] = 결제창 바로 / [닫기] = 상점 탭으로
+          // (2026-08-20 사장님 재확인 — 어느 쪽을 눌러도 패스 앞에 서게 한다.
+          //  그냥 빠져나가는 길은 바깥 탭·뒤로가기로 남아 있다.)
           actions: [
             gameDialogButton(
               l.actionClose,
-              () => Navigator.pop(ctx, false),
+              () => Navigator.pop(ctx, _CapAction.shop),
               primary: false,
             ),
-            // 구매 유도는 **이름 붙은 버튼**으로 한다 — 닫기를 눌렀는데 상점이
-            // 열리면 낚였다는 인상만 남는다(같은 유도, 반감 없이).
-            gameDialogButton(l.giftGoPassBtn, () => Navigator.pop(ctx, true)),
+            gameDialogButton(
+              l.giftBuyPassBtn,
+              () => Navigator.pop(ctx, _CapAction.buy),
+            ),
           ],
         );
-        if (goShop == true && ctx.mounted) {
-          // ⚠️ 편지함 시트도 같이 닫는다 — 탭만 바꾸면 상점 **위에** 시트가
-          // 그대로 떠 있어 이동한 게 안 보인다(실기 지적 2026-08-20).
-          Navigator.of(ctx).pop();
-          r.read(tabIndexProvider.notifier).set(4);
+        if (!ctx.mounted || capAction == null) return;
+        // ⚠️ 편지함 시트도 같이 닫는다 — 탭만 바꾸면 상점 **위에** 시트가
+        // 그대로 떠 있어 이동한 게 안 보인다(실기 지적 2026-08-20).
+        Navigator.of(ctx).pop();
+        r.read(tabIndexProvider.notifier).set(4);
+        if (capAction == _CapAction.buy) {
+          // 곤충학자 패스 결제창을 바로 연다(간판 패스 — 자동수령+2배가 이 값어치다).
+          final data = r.read(gameDataProvider).value;
+          final pass = data?.iapConfig?.products
+              .where((p) => p.id == 'idle_pass')
+              .firstOrNull;
+          if (pass != null) {
+            final outcome = await r.read(iapServiceProvider).buy(pass);
+            if (!mounted) return;
+            if (outcome == PurchaseOutcome.success) {
+              showCenterToast(
+                context,
+                l.storeBought(
+                  pass.name?.resolve(
+                        Localizations.localeOf(context).languageCode,
+                      ) ??
+                      pass.id,
+                ),
+              );
+            }
+          }
         }
         return;
       }
@@ -5569,3 +5595,6 @@ class _NotifySectionState extends State<_NotifySection> {
     ),
   );
 }
+
+/// 무료 2배 소진 다이얼로그의 선택지.
+enum _CapAction { shop, buy }
