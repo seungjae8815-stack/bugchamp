@@ -62,10 +62,18 @@ class StoreIapService implements IapService {
 
   /// `iap.json` 의 상품 id 로 스토어 상세를 조회한다.
   /// 스토어에 등록되지 않은 id 는 `notFoundIDs` 로 돌아온다 — 그 상품은 구매 불가.
+  /// 이 플랫폼의 스토어에서 쓰는 제품 ID.
+  ///
+  /// iOS 는 ASC 유형 사고(비소모품 idle_pass) 때문에 일부 상품이 전용 ID 를
+  /// 쓴다(`iap.json → iosId`). 조회·구매·대기표·가격 전부 이 ID 기준이어야
+  /// 스토어가 돌려주는 productID 와 어긋나지 않는다.
+  String _storeIdOf(IapProduct p) =>
+      defaultTargetPlatform == TargetPlatform.iOS ? (p.iosId ?? p.id) : p.id;
+
   Future<void> _loadDetails() async {
     final cfg = _ref.read(gameDataProvider).value?.iapConfig;
     if (cfg == null || cfg.products.isEmpty) return;
-    final ids = cfg.products.map((p) => p.id).toSet();
+    final ids = cfg.products.map(_storeIdOf).toSet();
     final res = await _store.queryProductDetails(ids);
     for (final d in res.productDetails) {
       _details[d.id] = d;
@@ -78,25 +86,32 @@ class StoreIapService implements IapService {
   }
 
   @override
-  Map<String, String> get storePrices => {
-    for (final e in _details.entries) e.key: e.value.price,
-  };
+  Map<String, String> get storePrices {
+    // 화면은 **대표 id** 로 찾는다(craft_screen) — 스토어 id 를 대표 id 로
+    // 되돌려 키를 맞춘다(iOS 전용 id 사고의 뒤처리).
+    final cfg = _ref.read(gameDataProvider).value?.iapConfig;
+    return {
+      for (final e in _details.entries)
+        (cfg?.byId(e.key)?.id ?? e.key): e.value.price,
+    };
+  }
 
   @override
   Future<PurchaseOutcome> buy(IapProduct product) async {
     if (!_available) return PurchaseOutcome.unavailable;
 
     // 상세를 아직 못 받았으면 한 번 더 시도(네트워크 지연·늦은 상품 등록 대비).
-    if (!_details.containsKey(product.id)) await _loadDetails();
-    final details = _details[product.id];
+    final storeId = _storeIdOf(product);
+    if (!_details.containsKey(storeId)) await _loadDetails();
+    final details = _details[storeId];
     if (details == null) return PurchaseOutcome.notInStore;
 
     // 같은 상품을 두 번 누르면 앞선 대기표를 그대로 쓴다.
-    final existing = _pending[product.id];
+    final existing = _pending[storeId];
     if (existing != null) return existing.future;
 
     final completer = Completer<PurchaseOutcome>();
-    _pending[product.id] = completer;
+    _pending[storeId] = completer;
 
     final param = PurchaseParam(productDetails: details);
     try {
@@ -111,12 +126,12 @@ class StoreIapService implements IapService {
           ? await _store.buyConsumable(purchaseParam: param)
           : await _store.buyNonConsumable(purchaseParam: param);
       if (!started) {
-        _pending.remove(product.id);
+        _pending.remove(storeId);
         return PurchaseOutcome.failed;
       }
     } catch (e) {
       debugPrint('[iap] buy 실패: $e');
-      _pending.remove(product.id);
+      _pending.remove(storeId);
       return PurchaseOutcome.failed;
     }
 
@@ -125,7 +140,7 @@ class StoreIapService implements IapService {
     return completer.future.timeout(
       const Duration(minutes: 5),
       onTimeout: () {
-        _pending.remove(product.id);
+        _pending.remove(storeId);
         return PurchaseOutcome.pending;
       },
     );

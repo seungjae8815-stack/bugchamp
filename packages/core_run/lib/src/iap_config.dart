@@ -84,6 +84,7 @@ class IapProduct {
     this.skinId,
     this.grant = const IapGrant(),
     this.image,
+    this.iosId,
     this.hidden = false,
   });
 
@@ -102,6 +103,15 @@ class IapProduct {
   /// 지급 로직이 상품 정의를 참조**하므로, 지우면 보유자 혜택까지 사라진다.
   /// (광고 제거 패스: 광고 없는 운영 전환으로 핵심 가치가 소멸 → 판매 중단.)
   final bool hidden;
+
+  /// iOS(App Store) 전용 제품 ID. null 이면 [id] 그대로.
+  ///
+  /// ⚠️ idle_pass 가 ASC 에 **비소모품으로 잘못 생성**돼 있었다(2026-08-20
+  /// 발견). iOS 는 재구매 가능 여부를 ASC 유형이 정하는데 유형은 생성 후
+  /// 변경 불가, 제품 ID 는 재사용 불가 — 그래서 iOS 만 새 ID(소모품)를 쓴다.
+  /// Play 는 기존 ID 그대로다(consume 방식이라 유형 문제가 없다).
+  /// 서버·앱의 상품 해석은 [IapConfig.byId] 가 별칭까지 매칭한다.
+  final String? iosId;
 
   /// 상품 그림 파일명(확장자 없이). `assets/images/shop/{image}.webp`.
   ///
@@ -133,6 +143,7 @@ class IapProduct {
     bonusPct: (json['bonusPct'] as num?)?.toInt() ?? 0,
     skinId: json['skinId'] as String?,
     image: json['image'] as String?,
+    iosId: json['iosId'] as String?,
     grant: json['grant'] == null
         ? const IapGrant()
         : IapGrant.fromJson(json['grant'] as Map<String, dynamic>),
@@ -289,9 +300,13 @@ class IapConfig {
   List<IapProduct> byType(IapType type) =>
       sorted.where((p) => p.type == type).toList();
 
+  /// 대표 ID **또는 iOS 전용 ID**로 상품을 찾는다.
+  ///
+  /// 스토어(영수증·구매 스트림)가 돌려주는 ID 는 플랫폼에 따라 다를 수 있다 —
+  /// 서버 지급([grantPurchase])과 앱 지급이 같은 해석을 쓰도록 여기 한 곳에 둔다.
   IapProduct? byId(String id) {
     for (final p in products) {
-      if (p.id == id) return p;
+      if (p.id == id || p.iosId == id) return p;
     }
     return null;
   }

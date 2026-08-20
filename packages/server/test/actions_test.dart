@@ -41,7 +41,13 @@ class _Config implements GameConfigLike {
         'priceKrw': 5500,
         'grant': {'jelly': 300, 'gold': 200000, 'incubatorSlots': 1},
       },
-      {'id': 'idle_pass', 'kind': 'timed', 'type': 'pass', 'priceKrw': 9900},
+      {
+        'id': 'idle_pass',
+        'iosId': 'idle_pass_c',
+        'kind': 'timed',
+        'type': 'pass',
+        'priceKrw': 9900,
+      },
       {
         'id': 'skin_gold_rhino',
         'kind': 'nonConsumable',
@@ -120,6 +126,18 @@ void main() {
   _forfeitTests(actions, base);
 
   group('구매 지급', () {
+    test('iOS 전용 ID(idle_pass_c)로도 곤충학자 패스가 지급된다', () {
+      // ASC 유형 사고로 iOS 만 새 ID 를 쓴다(iap.json → iosId).
+      // 서버가 별칭을 못 풀면 iOS 결제가 전부 unknown_product 로 죽는다.
+      final r = actions.grantPurchase(
+        base,
+        productId: 'idle_pass_c',
+        purchaseId: 'GPA-ios-1',
+      );
+      expect(r.isOk, isTrue);
+      expect(r.save!.passExpiresAt, isNotNull);
+    });
+
     test('젤리 팩은 재화만 지급한다', () {
       final r = actions.grantPurchase(
         base,
