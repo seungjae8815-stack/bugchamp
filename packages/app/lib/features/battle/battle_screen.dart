@@ -2535,7 +2535,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       if (!mounted) return false;
       showCenterToast(
         context,
-        noTicket ? l.pvpTicketNone : l.battleServerFailed,
+        noTicket
+            ? l.pvpTicketNone
+            : (res.error == 'bug_injured'
+                  ? l.injuryDesc
+                  : l.battleServerFailed),
       );
       return false;
     }
@@ -2748,11 +2752,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final prepaid =
         (save.pvpTrophies + rawPrepaid).clamp(0, 1 << 30) - save.pvpTrophies;
     if (prepaid != 0) await _applyReward(0, prepaid, const []);
-    // 부상도 선차감한다(트로피와 같은 이유 — 이탈이 KO 대가를 피하면 안 된다).
-    // 서버 경로는 서버가 자기 세이브에 걸지만, 앱에도 걸어야 주기 업로드가
-    // 그 상태를 싣고 가서 이탈 후에도 남는다. 결착에서 생존자는 되돌린다.
     final teamIds = _team.whereType<String>().toList();
-    await ref.read(saveControllerProvider.notifier).preInjureTeam(teamIds);
+    // ⚠️ 부상 선차감은 **여기서 하면 안 된다.** 서버 시작 전에 걸면 직전
+    // 세이브 업로드에 부상이 실리고, 서버의 시작 검증(bug_injured)이 그걸
+    // 거부해 **모든 수동 결투가 400 으로 죽는다**(실기 장애 2026-08-20).
+    // 서버 세션이 확정된 뒤(아래) / 로컬은 화면 진입 직전에 건다.
 
     // 수동도 서버 세션을 여는 동안 기다린다 — 오토와 같은 전환으로 덮는다.
     // 실패로 빠져나가는 길이 여럿이라 `try/finally` 로 반드시 닫는다.
@@ -2772,9 +2776,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         // 실패 시 시작하지 않는다 — 낡은 세이브로 세션을 열면 진행이 사라진다.
         if (!await _flushSave()) {
           if (prepaid != 0) await _applyReward(0, -prepaid, const []);
-          await ref
-              .read(saveControllerProvider.notifier)
-              .applyBattleResult(gold: 0, trophyDelta: 0, healBugIds: teamIds);
           await _returnTicket();
           if (!mounted) return;
           showCenterToast(context, l.battleServerFailed);
@@ -2786,18 +2787,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           tierId: scout.ownerId == null ? scout.tier.id : null,
         );
         if (!res.isOk || res.data?['sessionId'] == null) {
-          // 싸우지도 못했으니 선차감한 트로피·부상은 돌려준다(서버도 안 깎았다).
+          // 싸우지도 못했으니 선차감한 트로피는 돌려준다(서버도 안 깎았다).
           if (prepaid != 0) await _applyReward(0, -prepaid, const []);
-          await ref
-              .read(saveControllerProvider.notifier)
-              .applyBattleResult(gold: 0, trophyDelta: 0, healBugIds: teamIds);
           // 서버가 "티켓 없음"이라 했으면 되돌리지 않는다 — 서버가 진실이다.
           final noTicket = await _syncTicketRejection(res);
           if (!noTicket) await _returnTicket();
           if (!mounted) return;
+          // 거절 **사유**를 보여준다 — 부상 거절이 "연결을 확인하세요"로 뜨면
+          // 유저는 네트워크를 의심한다(실기 혼란 2026-08-20).
           showCenterToast(
             context,
-            noTicket ? l.pvpTicketNone : l.battleServerFailed,
+            noTicket
+                ? l.pvpTicketNone
+                : (res.error == 'bug_injured'
+                      ? l.injuryDesc
+                      : l.battleServerFailed),
           );
           return; // 로컬로 폴백하지 않는다 — 폴백하면 서버 권위가 무의미해진다.
         }
@@ -2806,6 +2810,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         await ref
             .read(saveControllerProvider.notifier)
             .adoptTicketState(res.data!);
+        // 세션이 열렸다 — 이제 이탈해도 패배다. 부상 선차감을 앱 세이브에도
+        // 걸어 주기 업로드가 싣고 가게 한다(서버 세이브에는 이미 걸려 있다).
+        await ref.read(saveControllerProvider.notifier).preInjureTeam(teamIds);
         driver = ServerManualDriver(
           server: server,
           sessionId: res.data!['sessionId'].toString(),
@@ -2824,6 +2831,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             for (final e in srvFoe) e.bug.id: ?_viewOf(e.skin, e.speciesId),
           };
         }
+      }
+      if (driver == null) {
+        // 로컬 경로 — 여기서부터는 실패 경로가 없다. 이탈 = 패배 확정.
+        await ref.read(saveControllerProvider.notifier).preInjureTeam(teamIds);
       }
       if (!mounted) return;
 
