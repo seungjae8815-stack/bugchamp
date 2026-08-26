@@ -3394,6 +3394,42 @@ abstract class AppLocalizations {
   /// **'Contact support'**
   String get saveBrokenSupport;
 
+  /// No description provided for @eventRewardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Championship results are in'**
+  String get eventRewardTitle;
+
+  /// No description provided for @eventRewardRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {round} — rank {rank}'**
+  String eventRewardRank(String round, int rank);
+
+  /// No description provided for @eventRewardNone.
+  ///
+  /// In en, this message translates to:
+  /// **'You didn\'t place this round. Here\'s your entry reward!'**
+  String get eventRewardNone;
+
+  /// No description provided for @eventRewardPhysical.
+  ///
+  /// In en, this message translates to:
+  /// **'You placed for a real prize! Fill in the form below. Physical prizes ship to Korean addresses only — outside Korea you receive the in-game rewards.'**
+  String get eventRewardPhysical;
+
+  /// No description provided for @eventRewardApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim prize'**
+  String get eventRewardApply;
+
+  /// No description provided for @eventRewardClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect'**
+  String get eventRewardClaim;
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

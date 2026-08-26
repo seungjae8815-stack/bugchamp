@@ -1,7 +1,7 @@
 // 젤리(프리미엄 재화) 수급 감사 — "하루에 젤리가 몇 개 들어오나"를 JSON 으로 잰다.
 //
-// 왜 필요한가: 젤리 수도꼭지가 **여섯 군데**(일일보상·깜짝선물·미션·리그/시즌·
-// 광고버프·분해)로 흩어져 있어, 하나씩 보면 다 적어 보이는데 합치면 IAP 최대
+// 왜 필요한가: 젤리 수도꼭지가 **일곱 군데**(일일보상·깜짝선물·미션·리그/시즌·
+// 광고버프·분해·대회 회차보상)로 흩어져 있어, 하나씩 보면 다 적어 보이는데 합치면 IAP 최대
 // 패키지(₩5,500 = 300젤리)를 이틀에 하나씩 공짜로 주는 상태가 된다.
 // 손으로 더하면 반드시 틀리므로 실제 config 를 읽어 합산한다.
 //
@@ -56,6 +56,9 @@ double _avgDisassembleJelly(PetConfig pets) {
 /// 도달 리그(승급·시즌 보상 규모). `--league=` 로 바꾼다.
 String _leagueId = 'diamond';
 
+/// 대회 회차에서 이 유저가 드는 순위(0 = 순위권 밖·참가만). `--event-rank=` 로 바꾼다.
+int _eventRank = 100;
+
 /// 미션 순환 티어(보상이 `rewardGrowth^claims` 로 자라므로 진행도에 따라 커진다).
 /// `--mission-tier=` 로 바꾼다.
 int _missionClaims = 20;
@@ -71,6 +74,8 @@ void main(List<String> args) {
         _adRate = double.parse(m.group(2)!);
       case 'league':
         _leagueId = m.group(2)!;
+      case 'event-rank':
+        _eventRank = int.parse(m.group(2)!);
       case 'mission-tier':
         _missionClaims = int.parse(m.group(2)!);
     }
@@ -87,6 +92,7 @@ void main(List<String> args) {
   final pets = PetConfig.fromJson(load('pets.json'));
   final buffs = BuffConfig.fromJson(load('buffs.json'));
   final iap = IapConfig.fromJson(load('iap.json'));
+  final event = EventConfig.fromJson(load('event.json'));
 
   final rows = <({String name, double perDay, String note})>[];
 
@@ -184,10 +190,31 @@ void main(List<String> args) {
         '문턱 ${pets.disassembleJellyMinPotential}성)',
   ));
 
+  // ── 7. 대회(왕충 선발대회) 회차 보상 — **순위에 따라 사람마다 다르다.**
+  //
+  // ⚠️ 하나의 숫자로 말하면 안 된다. 상위 3위와 100위의 차이가 6배다.
+  // `--event-rank=` 로 재고, 기본값은 "순위권에 겨우 드는 사람"(100위)이다 —
+  // 그 사람이 받는 양이 곧 **넓게 퍼지는 양**이기 때문이다.
+  final eventTier = event.tierForRank(_eventRank);
+  final roundDays = event.startsAt != null && event.endsAt != null
+      ? event.endsAt!.difference(event.startsAt!).inHours / 24
+      : event.roundDays.toDouble();
+  final eventJelly = (eventTier?.jelly ?? 0) / (roundDays <= 0 ? 1 : roundDays);
+  rows.add((
+    name: '대회 보상',
+    perDay: eventJelly,
+    note: _eventRank <= 0
+        ? '참가만(젤리 없음 — 참가는 회차마다 반복되는 통로다)'
+        : '$_eventRank위 ${eventTier?.jelly ?? 0}젤리 '
+              '(${roundDays.toStringAsFixed(0)}일 회차 → ÷${roundDays.toStringAsFixed(0)})',
+  ));
+
   final total = rows.fold<double>(0, (a, r) => a + r.perDay);
 
   stdout.writeln('── 가정 ──');
-  stdout.writeln('  활동 ${_activeHours}h/일 · 광고 시청률 $_adRate · 리그 $_leagueId');
+  stdout.writeln(
+    '  활동 ${_activeHours}h/일 · 광고 시청률 $_adRate · 리그 $_leagueId · 대회 $_eventRank위',
+  );
   stdout.writeln('');
   stdout.writeln('── 젤리 수급(하루) ──');
   stdout.writeln('  ${'출처'.padRight(10)} | ${'젤리/일'.padLeft(8)} | 비중 | 근거');

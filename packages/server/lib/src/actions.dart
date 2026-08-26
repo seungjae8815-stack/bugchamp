@@ -136,6 +136,8 @@ class GameActions {
     'eventRoundId',
     'eventBestWave',
     'eventBestScore',
+    // 회차 보상 수령 기록. 지우면 같은 회차 보상을 반복해서 받는다.
+    'eventRewardRound',
   };
 
   /// 한 번의 업로드에 실릴 수 있는 화석 조각의 **정상 최대치**.

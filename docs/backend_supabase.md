@@ -839,7 +839,30 @@ language sql stable security definer set search_path = public as $$
   limit lim;
 $$;
 
--- 내 순위(상위 N 밖이어도 보이게).
+-- 회차 종료 보상 판정용 — **권위 서버가 부른다**.
+--
+-- ⚠️ 아래 `event_my_rank` 를 재사용할 수 없다. 그건 `auth.uid()` 를 보는데,
+-- 서버는 service key 로 부르므로 `auth.uid()` 가 null 이다. 유저를 인자로 받는
+-- 판이 따로 있어야 한다.
+--
+-- 총 인원(`total`)을 함께 주는 이유: "100위 안"인지 판정하려면 순위만으로는
+-- 부족한 경우가 있고(참가자가 100명 미만), 화면에 "N명 중 K위"를 보여준다.
+create or replace function event_rank_of(p_round text, p_user uuid)
+returns table(rank bigint, score bigint, wave int, total bigint)
+language sql stable security definer set search_path = public as $$
+  select r.rank, r.score, r.wave, (select count(*) from event_scores
+                                   where round_id = p_round) as total
+  from (
+    select user_id,
+           row_number() over (order by score desc, updated_at asc) as rank,
+           score, wave
+    from event_scores where round_id = p_round
+  ) r
+  where r.user_id = p_user;
+$$;
+revoke execute on function event_rank_of(text, uuid) from anon, authenticated;
+
+-- 내 순위(상위 N 밖이어도 보이게) — **앱이 직접** 부르는 판.
 create or replace function event_my_rank(p_round text)
 returns table(rank bigint, score bigint, wave int)
 language sql stable security definer set search_path = public as $$
@@ -860,6 +883,28 @@ $$;
 | `GET  /event` | 회차·참가권·내 최고 기록·`rankEligible`(익명이면 false) |
 | `POST /event/challenge` | `{teamIds:[3]}` — 참가권 차감 → 편성·피로 검증 → 웨이브 확정 |
 | `POST /event/ad-ticket` | 광고 시청 보상 참가권(하루 상한은 `event.json`) |
+| `GET  /event` | (겸) **지난 회차 보상 판정** — 아래 참조 |
+
+#### 회차 종료 보상 — cron 없이 "접속 시 판정"
+
+회차가 끝나면 점수가 더 이상 바뀌지 않으므로(기간 밖은 서버가 닫는다),
+**종료 후에 조회한 순위는 그 자체로 확정값**이다. 그래서 정해진 시각에 도는
+배치가 필요 없다 — 유저가 다음에 접속했을 때 판정하면 된다.
+
+1. `/event` 처리 중 **지난 회차 id** 를 구한다(현재 회차와 다르고, 이미 끝난 것).
+2. `save.eventRewardRound` 가 그 회차면 → 이미 받았다. 끝.
+3. 아니면 `event_rank_of(지난회차, user)` → 순위.
+4. `EventConfig.tierForRank(rank)` 로 구간을 찾아 지급하고
+   `eventRewardRound` 를 그 회차로 찍는다. 순위권 밖이면 참가 보상만.
+5. 응답에 결과를 실어 앱이 수령 다이얼로그를 띄운다.
+
+⚠️ `eventRewardRound` 는 **서버 소유 필드**다(`GameActions._serverOwnedKeys`).
+세이브를 고쳐 지우면 같은 회차 보상을 반복해 받을 수 있다.
+
+⚠️ **지역은 서버가 판정하지 않는다.** 최상위 구간(`physical: true`)은 실물
+*안내*를 띄우라는 표시일 뿐이고, 국내 거주 여부는 신청 폼에서 운영이 가른다 —
+기기 로케일은 바꾸면 그만이라 자격의 근거가 될 수 없다. 해외 이용자도 게임 내
+보상은 똑같이 받는다(ARB `eventKoreaOnly` 가 그렇게 약속했다).
 
 거부 코드: `event_closed` · `no_ticket` · `bad_team` · `not_adult` · `fatigued` ·
 `ad_limit` · `ticket_full`.

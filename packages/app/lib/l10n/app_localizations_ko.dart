@@ -1844,6 +1844,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get saveBrokenSupport => '문의하기';
 
   @override
+  String get eventRewardTitle => '대회 결과가 나왔어요';
+
+  @override
+  String eventRewardRank(String round, int rank) {
+    return '$round 회차 $rank위';
+  }
+
+  @override
+  String get eventRewardNone => '이번 회차는 순위권에 들지 못했어요. 참가 보상을 받았어요!';
+
+  @override
+  String get eventRewardPhysical =>
+      '실물 경품 대상이에요! 아래 신청서를 작성해 주세요. 실물 배송은 국내 주소만 가능하고, 해외에 계시면 게임 내 보상만 지급돼요.';
+
+  @override
+  String get eventRewardApply => '경품 신청하기';
+
+  @override
+  String get eventRewardClaim => '받기';
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

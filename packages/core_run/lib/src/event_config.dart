@@ -61,6 +61,53 @@ class EventBuffs {
   );
 }
 
+/// 회차 종료 보상 한 구간. `event.json → rewards.tiers`.
+///
+/// ⚠️ **지역을 코드가 판정하지 않는다.** [physical] 은 "실물 안내를 띄운다"는
+/// 뜻일 뿐이고, 국내 거주 여부는 신청 폼에서 운영이 가른다 — 기기 로케일은
+/// 바꾸면 그만이라 실물 자격의 근거가 될 수 없다. 해외 이용자도 게임 내
+/// 보상은 **똑같이** 받는다(ARB `eventKoreaOnly` 가 그렇게 약속했다).
+@immutable
+class EventRewardTier {
+  const EventRewardTier({
+    required this.maxRank,
+    this.jelly = 0,
+    this.materials = const {},
+    this.physical = false,
+  });
+
+  /// 이 구간의 마지막 순위(이하). 위에서부터 **먼저 맞는 구간 하나만** 적용된다.
+  final int maxRank;
+
+  final int jelly;
+
+  /// 젤리 외 재료. 키는 [MaterialKind.key].
+  final Map<MaterialKind, int> materials;
+
+  /// 실물 경품 안내 대상인가.
+  final bool physical;
+
+  factory EventRewardTier.fromJson(Map<String, dynamic> json) =>
+      EventRewardTier(
+        maxRank: (json['maxRank'] as num?)?.toInt() ?? 0,
+        jelly: (json['jelly'] as num?)?.toInt() ?? 0,
+        materials: _materials(json),
+        physical: json['physical'] as bool? ?? false,
+      );
+
+  static Map<MaterialKind, int> _materials(Map<String, dynamic> json) {
+    final out = <MaterialKind, int>{};
+    for (final e in json.entries) {
+      // 모르는 키는 건너뛴다 — 이 파일은 앱과 서버가 함께 읽고, 서로 배포
+      // 시점이 다를 수 있다.
+      final kind = MaterialKind.fromKeyOrNull(e.key);
+      if (kind == null || kind == MaterialKind.jelly) continue;
+      out[kind] = (e.value as num).toInt();
+    }
+    return out;
+  }
+}
+
 /// 실물 경품 랭킹 이벤트(웨이브 방어전) 설정. 값은 전부 `event.json`(§6).
 ///
 /// ⚠️ 이 설정은 **숫자만** 담는다. 웨이브 적을 실제로 만드는 것은
@@ -98,6 +145,8 @@ class EventConfig {
     this.speedBase = 500,
     this.cardPicks = 3,
     this.cards = const [],
+    this.rewardTiers = const [],
+    this.participationMaterials = const {},
   });
 
   /// 회차 길이(일)와 리셋 앵커. 시즌과 같은 KST 월요일 09:00 을 쓴다 —
@@ -179,6 +228,22 @@ class EventConfig {
   final int hpPoint;
   final int survivorPoint;
   final int speedBase;
+
+  /// 회차 종료 보상 구간. 비어 있으면 **지급하지 않는다**(구버전 동작).
+  final List<EventRewardTier> rewardTiers;
+
+  /// 한 판이라도 뛴 사람에게 주는 참가 보상. ❌ 젤리는 넣지 않는다 —
+  /// 참가는 회차마다 반복되는 통로다(§2.6).
+  final Map<MaterialKind, int> participationMaterials;
+
+  /// [rank] (1 부터) 에 해당하는 보상 구간. 순위권 밖이면 null.
+  EventRewardTier? tierForRank(int rank) {
+    if (rank < 1) return null;
+    for (final t in rewardTiers) {
+      if (rank <= t.maxRank) return t;
+    }
+    return null;
+  }
 
   /// 웨이브를 깰 때마다 보여줄 카드 수(0 이면 카드 없음 — 구버전 동작).
   final int cardPicks;
@@ -319,6 +384,18 @@ class EventConfig {
                 const [])
           EventCard.fromJson(c as Map<String, dynamic>),
       ],
+      rewardTiers: [
+        for (final t
+            in ((json['rewards'] as Map<String, dynamic>?)?['tiers']
+                    as List?) ??
+                const [])
+          EventRewardTier.fromJson(t as Map<String, dynamic>),
+      ],
+      participationMaterials: EventRewardTier._materials(
+        ((json['rewards'] as Map<String, dynamic>?)?['participation']
+                as Map<String, dynamic>?) ??
+            const {},
+      ),
     );
   }
 }

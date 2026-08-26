@@ -1839,6 +1839,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get saveBrokenSupport => 'お問い合わせ';
 
   @override
+  String get eventRewardTitle => '大会の結果が出ました';
+
+  @override
+  String eventRewardRank(String round, int rank) {
+    return '$round 回 $rank位';
+  }
+
+  @override
+  String get eventRewardNone => '今回は入賞できませんでした。参加報酬をお受け取りください！';
+
+  @override
+  String get eventRewardPhysical =>
+      '実物賞品の対象です！下の申込フォームをご記入ください。実物の配送は韓国国内の住所のみで、海外の方はゲーム内報酬のみとなります。';
+
+  @override
+  String get eventRewardApply => '賞品を申し込む';
+
+  @override
+  String get eventRewardClaim => '受け取る';
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

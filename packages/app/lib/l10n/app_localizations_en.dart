@@ -1873,6 +1873,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveBrokenSupport => 'Contact support';
 
   @override
+  String get eventRewardTitle => 'Championship results are in';
+
+  @override
+  String eventRewardRank(String round, int rank) {
+    return 'Round $round — rank $rank';
+  }
+
+  @override
+  String get eventRewardNone =>
+      'You didn\'t place this round. Here\'s your entry reward!';
+
+  @override
+  String get eventRewardPhysical =>
+      'You placed for a real prize! Fill in the form below. Physical prizes ship to Korean addresses only — outside Korea you receive the in-game rewards.';
+
+  @override
+  String get eventRewardApply => 'Claim prize';
+
+  @override
+  String get eventRewardClaim => 'Collect';
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override

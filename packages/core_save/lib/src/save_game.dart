@@ -437,6 +437,7 @@ class SaveGame {
     this.blockedUserIds = const {},
     this.bugFilterMinGrade = Grade.common,
     this.nicknameSet = false,
+    this.eventRewardRound,
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
   });
@@ -587,6 +588,16 @@ class SaveGame {
   /// 이번 회차 최고 도달 웨이브 / 최고 점수(표시용 사본).
   final int eventBestWave;
   final int eventBestScore;
+
+  /// **회차 종료 보상을 받은** 회차 id. 같은 회차를 두 번 받지 못하게 한다.
+  ///
+  /// 회차마다 하나씩만 기억하면 되는 이유: 지난 회차 보상은 **다음 회차가 열리기
+  /// 전에** 받게 되어 있고(접속하면 바로 판정), 그보다 더 오래 안 켠 사람은
+  /// 그 사이 회차가 이미 지나가 순위 조회 대상이 아니다.
+  ///
+  /// ⚠️ **서버 소유 필드**여야 한다 — 세이브를 고쳐 지우면 같은 회차 보상을
+  /// 반복해서 받을 수 있다(`GameActions._serverOwnedKeys`).
+  final String? eventRewardRound;
 
   /// [bugId] 가 [now] 기준으로 아직 출전 피로 중인가.
   bool eventOnFatigue(String bugId, DateTime now) {
@@ -972,6 +983,7 @@ class SaveGame {
     String? eventRoundId,
     int? eventBestWave,
     int? eventBestScore,
+    String? eventRewardRound,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
     Set<String>? claimedLeagues,
@@ -1042,6 +1054,7 @@ class SaveGame {
     eventRoundId: eventRoundId ?? this.eventRoundId,
     eventBestWave: eventBestWave ?? this.eventBestWave,
     eventBestScore: eventBestScore ?? this.eventBestScore,
+    eventRewardRound: eventRewardRound ?? this.eventRewardRound,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
@@ -1203,6 +1216,7 @@ class SaveGame {
     eventRoundId: json['eventRoundId'] as String?,
     eventBestWave: (json['eventBestWave'] as num?)?.toInt() ?? 0,
     eventBestScore: (json['eventBestScore'] as num?)?.toInt() ?? 0,
+    eventRewardRound: json['eventRewardRound'] as String?,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
         (json['injured'] as Map<String, dynamic>?)?.map(
@@ -1347,6 +1361,7 @@ class SaveGame {
     if (eventRoundId != null) 'eventRoundId': eventRoundId,
     if (eventBestWave > 0) 'eventBestWave': eventBestWave,
     if (eventBestScore > 0) 'eventBestScore': eventBestScore,
+    if (eventRewardRound != null) 'eventRewardRound': eventRewardRound,
     'pvpTrophies': pvpTrophies,
     'injured': {
       for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),
