@@ -437,6 +437,8 @@ class SaveGame {
     this.blockedUserIds = const {},
     this.bugFilterMinGrade = Grade.common,
     this.nicknameSet = false,
+    this.unknownMaterials = const {},
+    this.unknownUpgrades = const {},
   });
 
   final int schemaVersion;
@@ -446,6 +448,17 @@ class SaveGame {
 
   /// 재료 인벤토리.
   final Map<MaterialKind, int> materials;
+
+  /// **이 버전이 모르는** 재료 키 → 수량. 신버전이 재료를 추가한 세이브를
+  /// 구버전 앱이 읽었을 때 그 수량을 잃지 않기 위한 통이다.
+  ///
+  /// ⚠️ 그냥 건너뛰면 크래시는 막지만, 60초 뒤 전체 업로드(`ServerSaveUploader`)가
+  /// **없는 상태를 서버에 덮어써** 재료가 영구 소실된다. 읽어서 그대로 다시 쓴다.
+  /// 게임 로직은 이 통을 보지 않는다 — 오직 보존용이다.
+  final Map<String, int> unknownMaterials;
+
+  /// **이 버전이 모르는** 업그레이드 키 → 레벨. 이유는 [unknownMaterials] 와 같다.
+  final Map<String, int> unknownUpgrades;
 
   /// (레거시 v1) 설치된 트랩.
   final List<TrapInstallation> installations;
@@ -993,6 +1006,8 @@ class SaveGame {
     Set<String>? redeemedPurchases,
     Set<String>? blockedUserIds,
     Grade? bugFilterMinGrade,
+    Map<String, int>? unknownMaterials,
+    Map<String, int>? unknownUpgrades,
   }) => SaveGame(
     schemaVersion: schemaVersion,
     bugs: bugs ?? this.bugs,
@@ -1061,6 +1076,8 @@ class SaveGame {
     redeemedPurchases: redeemedPurchases ?? this.redeemedPurchases,
     blockedUserIds: blockedUserIds ?? this.blockedUserIds,
     bugFilterMinGrade: bugFilterMinGrade ?? this.bugFilterMinGrade,
+    unknownMaterials: unknownMaterials ?? this.unknownMaterials,
+    unknownUpgrades: unknownUpgrades ?? this.unknownUpgrades,
   );
 
   int materialCount(MaterialKind kind) => materials[kind] ?? 0;
@@ -1104,6 +1121,10 @@ class SaveGame {
         .map(IndividualBug.fromJson)
         .toList(),
     materials: _materialsFromJson(json['materials'] as Map<String, dynamic>),
+    unknownMaterials: _unknownIntsFromJson(
+      json['materials'] as Map<String, dynamic>,
+      (k) => MaterialKind.fromKeyOrNull(k) != null,
+    ),
     installations: (json['installations'] as List)
         .cast<Map<String, dynamic>>()
         .map(TrapInstallation.fromJson)
@@ -1118,6 +1139,10 @@ class SaveGame {
     level: (json['level'] as num).toInt(),
     upgradeLevels: _upgradesFromJson(
       json['upgradeLevels'] as Map<String, dynamic>,
+    ),
+    unknownUpgrades: _unknownIntsFromJson(
+      json['upgradeLevels'] as Map<String, dynamic>,
+      (k) => UpgradeKind.fromKeyOrNull(k) != null,
     ),
     stageNumber: (json['stageNumber'] as num).toInt(),
     nickname: json['nickname'] as String? ?? kDefaultNickname,
@@ -1206,17 +1231,19 @@ class SaveGame {
     adUseCounts: _intMapFromJson(
       json['adUseCounts'] as Map<String, dynamic>? ?? const {},
     ),
+    // 모르는 부위·옵션은 건너뛴다(구버전이 신버전 세이브를 읽어도 안 죽는다).
     equippedItems: {
       for (final e
           in (json['equippedItems'] as Map<String, dynamic>? ?? const {})
               .entries)
-        EquipSlot.fromKey(e.key): EquipItem.fromJson(
-          Map<String, dynamic>.from(e.value as Map),
-        ),
+        if (EquipSlot.fromKeyOrNull(e.key) case final slot?)
+          if (EquipItem.tryFromJson(Map<String, dynamic>.from(e.value as Map))
+              case final item?)
+            slot: item,
     },
     forgeStack: [
       for (final e in json['forgeStack'] as List<dynamic>? ?? const [])
-        EquipItem.fromJson(Map<String, dynamic>.from(e as Map)),
+        ?EquipItem.tryFromJson(Map<String, dynamic>.from(e as Map)),
     ],
     skillLevels: _intMapFromJson(
       json['skillLevels'] as Map<String, dynamic>? ?? const {},
@@ -1232,7 +1259,7 @@ class SaveGame {
         : DateTime.parse(json['forgeUpAt'] as String).toUtc(),
     autoForgeOptions: {
       for (final v in (json['autoForgeOptions'] as List? ?? const []))
-        ItemOptionKind.fromKey(v as String),
+        ?ItemOptionKind.fromKeyOrNull(v as String),
     },
     autoForgeStopOnHit: json['autoForgeStopOnHit'] as bool? ?? true,
     adUseDate: json['adUseDate'] as String?,
@@ -1263,7 +1290,12 @@ class SaveGame {
   Map<String, dynamic> toJson() => {
     'schemaVersion': schemaVersion,
     'bugs': bugs.map((b) => b.toJson()).toList(),
-    'materials': {for (final e in materials.entries) e.key.key: e.value},
+    // 모르는 키도 그대로 되돌려준다 — 구버전이 신버전 세이브를 덮어써
+    // 재료가 사라지는 걸 막는다(§unknownMaterials).
+    'materials': {
+      for (final e in materials.entries) e.key.key: e.value,
+      ...unknownMaterials,
+    },
     'installations': installations.map((i) => i.toJson()).toList(),
     'unlockedFieldIds': unlockedFieldIds.toList(),
     'createdAt': createdAt.toUtc().toIso8601String(),
@@ -1273,6 +1305,7 @@ class SaveGame {
     'level': level,
     'upgradeLevels': {
       for (final e in upgradeLevels.entries) e.key.key: e.value,
+      ...unknownUpgrades,
     },
     'stageNumber': stageNumber,
     'nickname': nickname,
@@ -1360,18 +1393,42 @@ class SaveGame {
     'passExpiresAt': passExpiresAt?.toIso8601String(),
   };
 
+  /// 모르는 재료 키는 **던지지 않고 건너뛴다** — 신버전이 재료를 하나만 추가해도
+  /// 구버전 앱이 그 세이브에서 통째로 죽던 구멍(2026-08-26). 건너뛴 키는
+  /// [_unknownIntsFromJson] 이 따로 담아 toJson 이 그대로 되돌려준다.
   static Map<MaterialKind, int> _materialsFromJson(Map<String, dynamic> json) {
-    return {
-      for (final e in json.entries)
-        MaterialKind.fromKey(e.key): (e.value as num).toInt(),
-    };
+    final out = <MaterialKind, int>{};
+    for (final e in json.entries) {
+      final kind = MaterialKind.fromKeyOrNull(e.key);
+      if (kind == null) continue;
+      out[kind] = (e.value as num?)?.toInt() ?? 0;
+    }
+    return out;
   }
 
+  /// 모르는 업그레이드 키도 마찬가지로 건너뛴다.
   static Map<UpgradeKind, int> _upgradesFromJson(Map<String, dynamic> json) {
-    return {
-      for (final e in json.entries)
-        UpgradeKind.fromKey(e.key): (e.value as num).toInt(),
-    };
+    final out = <UpgradeKind, int>{};
+    for (final e in json.entries) {
+      final kind = UpgradeKind.fromKeyOrNull(e.key);
+      if (kind == null) continue;
+      out[kind] = (e.value as num?)?.toInt() ?? 0;
+    }
+    return out;
+  }
+
+  /// [json] 에서 [isKnown] 이 false 인 항목만 원본 문자열 키 그대로 담는다(보존용).
+  static Map<String, int> _unknownIntsFromJson(
+    Map<String, dynamic> json,
+    bool Function(String key) isKnown,
+  ) {
+    final out = <String, int>{};
+    for (final e in json.entries) {
+      if (isKnown(e.key)) continue;
+      final v = e.value;
+      if (v is num) out[e.key] = v.toInt();
+    }
+    return out;
   }
 
   static Map<String, int> _intMapFromJson(Map<String, dynamic> json) => {

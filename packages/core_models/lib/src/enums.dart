@@ -19,6 +19,16 @@ enum Grade {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown Grade key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static Grade? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 주특기 / 기술 종류 (§2.3). 치기(strike)/집기(grip)/던지기(toss).
@@ -35,6 +45,16 @@ enum Specialty {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown Specialty key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static Specialty? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 
   /// this 가 [other] 를 상성으로 이기면 true.
   bool beats(Specialty other) => switch (this) {
@@ -59,6 +79,16 @@ enum Temperament {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown Temperament key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static Temperament? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 혈통 특성 (§2.5) — **짝짓기로 태어난 개체만** 가질 수 있다.
@@ -115,6 +145,16 @@ enum Element {
     orElse: () => throw ArgumentError('Unknown Element key: $key'),
   );
 
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static Element? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
+
   /// this 가 [other] 를 상극(克)하면 true.
   bool restrains(Element other) => switch (this) {
     Element.water => other == Element.fire, // 水克火
@@ -146,6 +186,16 @@ enum Sex {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown Sex key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static Sex? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 곤충 생애주기 단계 (§2.5). 알 → 유충 → 번데기 → 성충.
@@ -204,6 +254,16 @@ enum BugPart {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown BugPart key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static BugPart? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 채집 부산물 재료 종류 (§2.2). 키틴조각/미네랄/수액결정/곤충젤리.
@@ -226,4 +286,14 @@ enum MaterialKind {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown MaterialKind key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static MaterialKind? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }

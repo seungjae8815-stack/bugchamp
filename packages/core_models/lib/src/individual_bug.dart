@@ -373,8 +373,13 @@ class IndividualBug {
     speciesId: json['speciesId'] as String,
     sizeMm: (json['sizeMm'] as num).toDouble(),
     potential: (json['potential'] as num).toInt(),
-    temperament: Temperament.fromKey(json['temperament'] as String),
-    sex: Sex.fromKey(json['sex'] as String),
+    // 모르는 기질·성별·오행 키는 **던지지 않고 기본값으로 떨어뜨린다** —
+    // 신버전이 값을 추가해도 구버전 앱이 세이브를 통째로 못 읽으면 안 된다
+    // (BugTrait·LifeStage 가 이미 쓰던 방식을 나머지에도 맞췄다).
+    temperament:
+        Temperament.fromKeyOrNull(json['temperament'] as String? ?? '') ??
+        Temperament.steadfast,
+    sex: Sex.fromKeyOrNull(json['sex'] as String? ?? '') ?? Sex.male,
     enhancement: json['enhancement'] == null
         ? PartLevels.zero
         : PartLevels.fromJson(json['enhancement'] as Map<String, dynamic>),
@@ -396,7 +401,7 @@ class IndividualBug {
         : BugTrait.fromKey(json['trait'] as String),
     element: json['element'] == null
         ? null
-        : Element.fromKey(json['element'] as String),
+        : Element.fromKeyOrNull(json['element'] as String),
   );
 
   Map<String, dynamic> toJson() => {

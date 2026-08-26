@@ -34,6 +34,16 @@ enum EquipSlot {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown EquipSlot key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static EquipSlot? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 장비 옵션 축. 기본 스탯과 하위 옵션이 **같은 축을 공유**한다 —
@@ -85,6 +95,16 @@ enum ItemOptionKind {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown ItemOptionKind key: $key'),
   );
+
+  /// 모르는 키면 null. **세이브에서 온 키**를 읽을 때 쓴다 — 신버전이 값을
+  /// 추가해도 구버전 앱이 세이브를 통째로 못 읽는 일이 없어야 한다.
+  /// (애셋 JSON 은 [fromKey] 로 읽어 오타를 로딩에서 잡는다.)
+  static ItemOptionKind? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 제련으로 굴려진 하위 옵션 하나. [value] 는 **퍼센트**(12.0 = +12%).
@@ -104,6 +124,14 @@ class ItemOption {
     kind: ItemOptionKind.fromKey(json['k'] as String),
     value: (json['v'] as num).toDouble(),
   );
+
+  /// 모르는 옵션 축이면 null — 세이브에서 읽을 때 쓴다. 신버전이 옵션을 추가해도
+  /// 구버전 앱이 장비를 통째로 못 읽는 일이 없어야 한다(옵션 하나만 빠진다).
+  static ItemOption? tryFromJson(Map<String, dynamic> json) {
+    final kind = ItemOptionKind.fromKeyOrNull(json['k'] as String? ?? '');
+    if (kind == null) return null;
+    return ItemOption(kind: kind, value: (json['v'] as num?)?.toDouble() ?? 0);
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -159,6 +187,25 @@ class EquipItem {
         ItemOption.fromJson(Map<String, dynamic>.from(o as Map)),
     ],
   );
+
+  /// 모르는 **부위**면 null — 세이브에서 읽을 때 쓴다. 모르는 **옵션**은
+  /// 그 옵션만 빼고 장비는 살린다([ItemOption.tryFromJson]).
+  ///
+  /// ⚠️ 여기서 걸러진 장비·옵션은 다시 저장되지 않아 **되돌아가면 사라진다**.
+  /// 재료·업그레이드(`SaveGame.unknownMaterials`)처럼 보존하지 않는 이유 =
+  /// 장비는 부위마다 1개뿐이라 구버전에서 교체하면 어차피 덮어써진다.
+  static EquipItem? tryFromJson(Map<String, dynamic> json) {
+    final slot = EquipSlot.fromKeyOrNull(json['s'] as String? ?? '');
+    if (slot == null) return null;
+    return EquipItem(
+      slot: slot,
+      tier: (json['t'] as num?)?.toInt() ?? 0,
+      options: [
+        for (final o in (json['o'] as List? ?? const []))
+          ?ItemOption.tryFromJson(Map<String, dynamic>.from(o as Map)),
+      ],
+    );
+  }
 
   @override
   String toString() => 'EquipItem(${slot.key}, t$tier, $options)';
