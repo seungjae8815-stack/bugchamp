@@ -276,9 +276,7 @@ void main(List<String> args) {
     //   -1.5 미만 = 순항 구간에서도 반복해 죽어 진행이 막힌다
     final verdict = v.dmg <= 0
         ? '위협 없음'
-        : (net > -0.05
-              ? '안 닳음 ← 문제'
-              : (net >= -1.2 ? '빠듯 — 좋다' : '너무 닳음 ← 벽'));
+        : (net > -0.05 ? '안 닳음 ← 문제' : (net >= -1.2 ? '빠듯 — 좋다' : '너무 닳음 ← 벽'));
     stdout.writeln(
       '  ${m.toString().padLeft(7)} |'
       ' ${(v.dmg * 100).toStringAsFixed(0).padLeft(7)}% |'

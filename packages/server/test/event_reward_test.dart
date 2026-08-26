@@ -86,9 +86,27 @@ void main() {
       expect((r.extra['eventReward'] as Map)['physical'], isFalse);
     });
 
-    test('순위권 밖(101위)은 구간이 없다 — 참가 보상만', () {
-      final r = a.grantEventReward(played(closed), round, 101);
+    /// 젤리는 10위까지만 나간다(2026-08-26). 그 아래는 참가 재료뿐이다.
+    test('11위는 젤리가 없다 — 참가 보상만', () {
+      final r = a.grantEventReward(played(closed), round, 11);
       expect(r.save!.materialCount(MaterialKind.jelly), 0);
+      expect(
+        r.save!.materialCount(ev.participationMaterials.keys.first),
+        ev.participationMaterials.values.first,
+      );
+    });
+
+    /// 실물은 **1위 한 명**뿐이다(2026-08-26). 2위는 젤리는 같지만 실물이 없다.
+    test('2위는 실물 안내를 받지 않는다', () {
+      final first = a.grantEventReward(played(closed), round, 1);
+      final second = a.grantEventReward(played(closed), round, 2);
+      expect((first.extra['eventReward'] as Map)['physical'], isTrue);
+      expect((second.extra['eventReward'] as Map)['physical'], isFalse);
+      expect(
+        second.save!.materialCount(MaterialKind.jelly),
+        first.save!.materialCount(MaterialKind.jelly),
+        reason: '2~3위는 젤리를 1위와 같이 받는다',
+      );
     });
 
     test('지급하면 회차가 찍혀 두 번째 판정에서 걸러진다', () {
@@ -108,6 +126,15 @@ void main() {
       expect(
         (r.extra['eventReward'] as Map)['badge'],
         'champion:${ev.roundNo}',
+      );
+    });
+
+    /// champion 은 회차당 **딱 1명**이다 — 흔하면 표식이 아니다.
+    test('2위는 champion 이 아니라 finalist 다', () {
+      final r = a.grantEventReward(played(closed), round, 2);
+      expect(
+        (r.extra['eventReward'] as Map)['badge'],
+        'finalist:${ev.roundNo}',
       );
     });
 

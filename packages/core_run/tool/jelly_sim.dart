@@ -57,7 +57,9 @@ double _avgDisassembleJelly(PetConfig pets) {
 String _leagueId = 'diamond';
 
 /// 대회 회차에서 이 유저가 드는 순위(0 = 순위권 밖·참가만). `--event-rank=` 로 바꾼다.
-int _eventRank = 100;
+/// 기본값은 **젤리를 받는 마지막 순위**(10위) — 그 사람이 받는 양이 곧
+/// 넓게 퍼지는 양이다. 11위 이하는 참가 재료만 받아 젤리가 0 이다.
+int _eventRank = 10;
 
 /// 미션 순환 티어(보상이 `rewardGrowth^claims` 로 자라므로 진행도에 따라 커진다).
 /// `--mission-tier=` 로 바꾼다.
@@ -193,8 +195,9 @@ void main(List<String> args) {
   // ── 7. 대회(왕충 선발대회) 회차 보상 — **순위에 따라 사람마다 다르다.**
   //
   // ⚠️ 하나의 숫자로 말하면 안 된다. 상위 3위와 100위의 차이가 6배다.
-  // `--event-rank=` 로 재고, 기본값은 "순위권에 겨우 드는 사람"(100위)이다 —
+  // `--event-rank=` 로 재고, 기본값은 "젤리를 받는 마지막 순위"(10위)다 —
   // 그 사람이 받는 양이 곧 **넓게 퍼지는 양**이기 때문이다.
+  // ⚠️ 11위 이하는 젤리가 0 이다(참가 보상은 재료뿐 — §2.6).
   final eventTier = event.tierForRank(_eventRank);
   final roundDays = event.startsAt != null && event.endsAt != null
       ? event.endsAt!.difference(event.startsAt!).inHours / 24

@@ -14,15 +14,26 @@ void main() {
   );
 
   test('순위 구간은 위에서부터 먼저 맞는 하나만 적용된다', () {
-    expect(cfg.tierForRank(1)!.maxRank, 3);
-    expect(cfg.tierForRank(3)!.maxRank, 3);
+    expect(cfg.tierForRank(1)!.maxRank, 1);
+    expect(cfg.tierForRank(2)!.maxRank, 3);
     expect(cfg.tierForRank(4)!.maxRank, 10);
-    expect(cfg.tierForRank(100)!.maxRank, 100);
   });
 
+  /// 젤리는 **10위까지만** 나간다(2026-08-26). 그 아래는 참가 보상(재료)뿐이라
+  /// 젤리가 넓게 퍼지지 않고, 상위권 경쟁에도 의미가 생긴다.
   test('순위권 밖·0 이하는 구간이 없다', () {
-    expect(cfg.tierForRank(101), isNull);
+    expect(cfg.tierForRank(11), isNull);
     expect(cfg.tierForRank(0), isNull);
+  });
+
+  /// 실물은 1위 한 명뿐이다 — 그렇다고 2위가 1위보다 많이 받으면 안 된다.
+  test('보상은 누적이다 (순위가 높은데 덜 받는 역전이 없다)', () {
+    for (var r = 2; r <= 10; r++) {
+      expect(
+        cfg.tierForRank(r)!.jelly,
+        lessThanOrEqualTo(cfg.tierForRank(r - 1)!.jelly),
+      );
+    }
   });
 
   test('구간은 순위가 낮아질수록 젤리가 줄어든다 (역전 금지)', () {
@@ -67,9 +78,10 @@ void main() {
 
   /// 실물은 **안내 대상**을 고르는 표시일 뿐이다 — 지역 판정은 코드가 하지
   /// 않는다(신청 폼에서 운영이 가른다).
-  test('실물 안내는 최상위 구간에만 붙는다', () {
+  test('실물 안내는 1위 한 명에게만 간다', () {
     final physical = cfg.rewardTiers.where((t) => t.physical).toList();
     expect(physical.length, 1);
-    expect(physical.first.maxRank, cfg.rewardTiers.first.maxRank);
+    expect(physical.first.maxRank, 1, reason: '2026-08-26 — 실물은 1위만');
+    expect(cfg.tierForRank(2)!.physical, isFalse);
   });
 }
