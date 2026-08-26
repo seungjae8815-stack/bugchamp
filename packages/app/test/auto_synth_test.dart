@@ -16,6 +16,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// 개체(수련/돌파/강화)는 절대 재료로 쓰지 않는다. 하나라도 무너지면
 /// "골드 쏟은 곤충이 조용히 없어졌다"가 되고, 그건 되돌릴 수 없다.
 class _FakeRepo implements SaveRepository {
+  @override
+  SaveLoadFailure? get lastFailure => null;
+
   _FakeRepo(this._game);
   SaveGame _game;
   @override

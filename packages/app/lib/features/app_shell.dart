@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/audio_service.dart';
 import '../domain/notification_service.dart';
 import '../domain/notify_prefs.dart';
+import '../data/save_repository.dart';
 import '../domain/server_sync.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
@@ -222,6 +223,16 @@ class _AppShellState extends ConsumerState<AppShell>
                 builder: (context, lost, _) => lost
                     ? _DisconnectedOverlay(uploader: _uploader)
                     : const SizedBox.shrink(),
+              ),
+              // 세이브를 못 읽었으면 **끊김보다도 위**를 덮는다. 이 상태로 놀면
+              // 초기 세이브 위에 진행이 쌓이고, 그게 서버로 올라가 계정을
+              // 덮어쓴다(2026-08-26). 재시도 버튼을 두지 않는 이유 = 다시
+              // 읽어도 같은 결과이고, 유저가 할 일은 앱 업데이트나 문의다.
+              ValueListenableBuilder<SaveLoadFailure?>(
+                valueListenable: saveUnreadable,
+                builder: (context, why, _) => why == null
+                    ? const SizedBox.shrink()
+                    : _SaveBrokenOverlay(why: why),
               ),
             ],
           ),
@@ -447,6 +458,75 @@ class _DisconnectedOverlayState extends State<_DisconnectedOverlay> {
                       _trying ? () {} : _retry,
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 세이브를 읽지 못했을 때 게임을 통째로 덮는 화면.
+///
+/// **나가는 문을 주지 않는다** — 닫을 수 있으면 유저는 닫고 계속 논다.
+/// 그동안 쌓인 진행은 저장되지 않고, 저장되지 않는다는 사실도 모른다.
+class _SaveBrokenOverlay extends StatelessWidget {
+  const _SaveBrokenOverlay({required this.why});
+
+  final SaveLoadFailure why;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final needsUpdate = why == SaveLoadFailure.needsUpdate;
+    return Positioned.fill(
+      child: ColoredBox(
+        color: const Color(0xF60A1206),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  needsUpdate
+                      ? Icons.system_update_alt_rounded
+                      : Icons.report_gmailerrorred_rounded,
+                  size: 54,
+                  color: const Color(0xFFFFB74D),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  l.saveBrokenTitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  needsUpdate ? l.saveBrokenUpdate : l.saveBrokenCorrupt,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 13.5,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l.saveBrokenKeep,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFEF9A9A),
+                    fontSize: 12.5,
+                    height: 1.35,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),

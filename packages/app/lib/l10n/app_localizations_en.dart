@@ -1855,6 +1855,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'A shard of petrified insect. One is spent per hammer strike at the workshop.';
 
   @override
+  String get saveBrokenTitle => 'Couldn\'t open your save';
+
+  @override
+  String get saveBrokenUpdate =>
+      'This account’s save is newer than the app.\nUpdate to the latest version to continue where you left off.';
+
+  @override
+  String get saveBrokenCorrupt =>
+      'Your save couldn\'t be read.\nThe original is kept safely on this device and was not overwritten.';
+
+  @override
+  String get saveBrokenKeep =>
+      'The game is paused to protect your progress. Continuing could erase your save.';
+
+  @override
+  String get saveBrokenSupport => 'Contact support';
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override

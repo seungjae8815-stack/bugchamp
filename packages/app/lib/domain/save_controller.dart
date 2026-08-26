@@ -90,6 +90,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final repo = ref.watch(saveRepositoryProvider);
     final clock = ref.read(clockProvider);
     var save = await repo.load();
+    // 못 읽었으면 화면이 게임을 덮는다(`saveUnreadable`). 아래 정산·자가치유는
+    // 초기 세이브 위에서 돌지만 **저장도 업로드도 되지 않으므로** 흔적이 남지 않는다.
+    saveUnreadable.value = repo.lastFailure;
     final now = clock.now().toUtc();
 
     // 오프라인 정산 — 기기가 계산한다(기기 권위). 서버는 세이브를 저장만 한다.

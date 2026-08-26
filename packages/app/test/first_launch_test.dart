@@ -11,6 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// 아직 세이브가 없는 **완전 신규 설치**를 흉내낸다.
 class _FreshRepo implements SaveRepository {
+  @override
+  SaveLoadFailure? get lastFailure => null;
+
   SaveGame? _game;
   @override
   Future<SaveGame> load() async {

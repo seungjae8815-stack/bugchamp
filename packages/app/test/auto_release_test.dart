@@ -21,6 +21,9 @@ import 'package:flutter_test/flutter_test.dart';
 ///     젤리를 붙이지 않는다(§2.6). 이건 수치가 아니라 **구조 규칙**이라
 ///     계수를 바꿔도 깨지면 안 된다.
 class _FakeRepo implements SaveRepository {
+  @override
+  SaveLoadFailure? get lastFailure => null;
+
   _FakeRepo(this._game);
   SaveGame _game;
   @override

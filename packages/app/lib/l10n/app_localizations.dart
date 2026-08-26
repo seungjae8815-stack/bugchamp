@@ -3364,6 +3364,36 @@ abstract class AppLocalizations {
   /// **'A shard of petrified insect. One is spent per hammer strike at the workshop.'**
   String get materialFossilDesc;
 
+  /// No description provided for @saveBrokenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open your save'**
+  String get saveBrokenTitle;
+
+  /// No description provided for @saveBrokenUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'This account’s save is newer than the app.\nUpdate to the latest version to continue where you left off.'**
+  String get saveBrokenUpdate;
+
+  /// No description provided for @saveBrokenCorrupt.
+  ///
+  /// In en, this message translates to:
+  /// **'Your save couldn\'t be read.\nThe original is kept safely on this device and was not overwritten.'**
+  String get saveBrokenCorrupt;
+
+  /// No description provided for @saveBrokenKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'The game is paused to protect your progress. Continuing could erase your save.'**
+  String get saveBrokenKeep;
+
+  /// No description provided for @saveBrokenSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact support'**
+  String get saveBrokenSupport;
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

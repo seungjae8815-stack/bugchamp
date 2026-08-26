@@ -1826,6 +1826,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get materialFossilDesc => '곤충이 굳어 남은 조각. 공방에서 망치질 한 번에 하나씩 쓴다.';
 
   @override
+  String get saveBrokenTitle => '세이브를 열지 못했어요';
+
+  @override
+  String get saveBrokenUpdate =>
+      '이 계정의 저장 자료가 지금 앱보다 최신이에요.\n앱을 최신 버전으로 업데이트하면 그대로 이어집니다.';
+
+  @override
+  String get saveBrokenCorrupt =>
+      '저장 자료를 읽을 수 없어요.\n원본은 기기에 안전하게 보관했고, 덮어쓰지 않았어요.';
+
+  @override
+  String get saveBrokenKeep =>
+      '진행을 지키기 위해 게임을 멈췄어요. 이대로 계속하면 저장 자료가 지워질 수 있어요.';
+
+  @override
+  String get saveBrokenSupport => '문의하기';
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

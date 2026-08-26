@@ -1823,6 +1823,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get materialFossilDesc => '昆虫が固まって残ったかけら。工房で一振りにつき一つ使う。';
 
   @override
+  String get saveBrokenTitle => 'セーブを開けませんでした';
+
+  @override
+  String get saveBrokenUpdate => 'このアカウントのセーブがアプリより新しいです。\n最新版に更新すると続きから遊べます。';
+
+  @override
+  String get saveBrokenCorrupt =>
+      'セーブを読み込めませんでした。\n元のデータは端末に安全に保管され、上書きしていません。';
+
+  @override
+  String get saveBrokenKeep => '進行を守るためにゲームを停止しました。このまま続けるとセーブが消える可能性があります。';
+
+  @override
+  String get saveBrokenSupport => 'お問い合わせ';
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

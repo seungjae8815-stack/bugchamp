@@ -6,6 +6,7 @@ import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'game_server.dart';
+import 'providers.dart';
 import 'save_controller.dart';
 
 /// 앱 시작 시 서버와 세이브를 맞춘다.
@@ -159,6 +160,9 @@ class ServerSaveUploader {
   Future<void> flush() async {
     final server = _ref.read(gameServerProvider);
     if (!server.available || _inFlight) return;
+    // ⚠️ 세이브를 못 읽은 상태의 화면값은 **초기 세이브**다. 올리면 서버의
+    // 멀쩡한 계정을 그걸로 덮어쓴다. 사람이 고칠 때까지 올리지 않는다.
+    if (_ref.read(saveRepositoryProvider).lastFailure != null) return;
     final save = _ref.read(saveControllerProvider).value;
     if (save == null) return;
 

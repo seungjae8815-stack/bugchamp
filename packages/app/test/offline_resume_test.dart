@@ -11,6 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeRepo implements SaveRepository {
+  @override
+  SaveLoadFailure? get lastFailure => null;
+
   _FakeRepo(this._game);
   SaveGame _game;
   @override
