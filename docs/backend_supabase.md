@@ -841,6 +841,13 @@ revoke execute on function event_submit(text, uuid, text, bigint, int, jsonb)
   from anon, authenticated;
 
 -- 순위 조회(앱이 본다). 민감정보 없이 rank/nickname/score/wave 만.
+-- ⚠️ **먼저 지운다.** 반환 컬럼(badge)이 늘었는데 `create or replace` 는
+-- 반환 타입 변경을 거부한다(42P13 cannot change return type).
+-- 인자 순서까지 정확해야 한다 — `leaderboard_top` 은 (lim int, sort text) 다.
+-- 틀리면 `if exists` 라 조용히 넘어간 뒤 아래 create 가 그대로 실패한다.
+drop function if exists event_top(text, int);
+drop function if exists leaderboard_top(int, text);
+
 create or replace function event_top(p_round text, lim int)
 returns table(rank bigint, user_id uuid, nickname text, score bigint,
               wave int, badge text)
@@ -855,13 +862,6 @@ language sql stable security definer set search_path = public as $$
   limit lim;
 $$;
 
--- ⚠️ 반환 컬럼을 바꿨으므로 **기존 함수를 먼저 지워야** 한다
--- (`create or replace` 는 반환 타입 변경을 거부한다):
---   drop function if exists event_top(text, int);
---   drop function if exists leaderboard_top(int, text);
--- ⚠️ 인자 순서까지 정확해야 한다. `leaderboard_top` 은 (lim int, sort text) 다 —
--- (text, int) 로 적으면 `if exists` 라 조용히 넘어간 뒤 재정의가
--- "cannot change return type" 으로 실패한다.
 -- 지운 뒤 위 정의를 다시 실행한다.
 
 -- 회차 종료 보상 판정용 — **권위 서버가 부른다**.
