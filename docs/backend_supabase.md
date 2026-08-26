@@ -891,12 +891,20 @@ $$;
 **종료 후에 조회한 순위는 그 자체로 확정값**이다. 그래서 정해진 시각에 도는
 배치가 필요 없다 — 유저가 다음에 접속했을 때 판정하면 된다.
 
-1. `/event` 처리 중 **지난 회차 id** 를 구한다(현재 회차와 다르고, 이미 끝난 것).
+⚠️ 지급은 **`/save` 에서 돈다. `/event` 가 아니다** — `/event` 는 대회가 닫히면
+404 라 회차가 끝난 뒤에는 호출되지 않는다. 거기 두면 아무도 못 받는다.
+
+1. `/save` 처리 중 `eventRewardDueRound(save)` 로 **아직 못 받은 끝난 회차**를 찾는다.
+   기준은 config 가 아니라 **`save.eventRoundId`(그 유저가 실제로 뛴 회차)** 다 —
+   다음 회차를 열면 config 의 회차 id 가 바뀌어 지난 회차 id 를 알 방법이 사라진다.
 2. `save.eventRewardRound` 가 그 회차면 → 이미 받았다. 끝.
-3. 아니면 `event_rank_of(지난회차, user)` → 순위.
+3. `event_rank_of(지난회차, user)` → 순위. **받을 게 있는 사람만** 타므로
+   회차당 1인 1회다(주기 업로드마다 도는 쿼리가 아니다).
 4. `EventConfig.tierForRank(rank)` 로 구간을 찾아 지급하고
    `eventRewardRound` 를 그 회차로 찍는다. 순위권 밖이면 참가 보상만.
-5. 응답에 결과를 실어 앱이 수령 다이얼로그를 띄운다.
+5. 응답에 `eventReward` 와 세이브를 실어 앱이 채택하고 수령 다이얼로그를 띄운다
+   (`clamped`·`season` 과 같은 경로). ⚠️ 앱의 채택 조건(`server_sync.dart`)에도
+   사유를 추가해야 한다 — 빠뜨리면 서버는 지급했는데 앱이 안 받는다.
 
 ⚠️ `eventRewardRound` 는 **서버 소유 필드**다(`GameActions._serverOwnedKeys`).
 세이브를 고쳐 지우면 같은 회차 보상을 반복해 받을 수 있다.

@@ -1676,6 +1676,85 @@ class GameActions {
     return (tickets: next > cfg.ticketMax ? cfg.ticketMax : next, at: t);
   }
 
+  // ── 회차 종료 보상 ────────────────────────────────────────────────
+  //
+  // **cron 이 필요 없다.** 회차가 끝나면 점수가 더 이상 바뀌지 않으므로
+  // (기간 밖은 도전을 받지 않는다) 종료 후에 조회한 순위는 그 자체로 확정값이다.
+  // 유저가 다음에 접속했을 때 판정하면 된다.
+  //
+  // ⚠️ `/event` 가 아니라 `/save` 에서 돈다. `/event` 는 대회가 닫히면 404 라
+  // **끝난 뒤에는 영영 호출되지 않는다** — 지급을 거기 두면 아무도 못 받는다.
+
+  /// 이 세이브가 **아직 못 받은 끝난 회차**가 있으면 그 회차 id, 없으면 null.
+  ///
+  /// 기준을 `config` 가 아니라 **`save.eventRoundId`(그 유저가 실제로 뛴 회차)**
+  /// 로 잡는다. 다음 회차를 열면 `config` 의 회차 id 가 바뀌어 **지난 회차 id 를
+  /// 알 방법이 사라지기** 때문이다 — 그 사이 접속하지 않은 사람이 통째로 누락된다.
+  String? eventRewardDueRound(SaveGame save) {
+    final cfg = config.event;
+    if (cfg == null || cfg.rewardTiers.isEmpty) return null;
+    final played = save.eventRoundId;
+    // 한 판도 안 뛰었으면 줄 것이 없다(참가 보상도 참가한 사람 몫이다).
+    if (played == null || played.isEmpty) return null;
+    if (save.eventRewardRound == played) return null; // 이미 받았다
+
+    final current = eventRoundId();
+    // 다른 회차를 뛴 기록이면 그 회차는 이미 끝났다.
+    if (played != current) return played;
+    // 같은 회차면 **끝났을 때만** 준다(진행 중에 주면 안 된다).
+    return eventOpen ? null : played;
+  }
+
+  /// 회차 보상 지급. [rank] 는 순위(1 부터), 순위권 밖이거나 익명이면 null.
+  ///
+  /// 순위가 없어도 **참가 보상은 준다** — 대회에 나온 사람이 빈손으로 끝나면
+  /// 다음 회차에 안 나온다.
+  ActionResult grantEventReward(SaveGame save, String roundId, int? rank) {
+    final cfg = config.event;
+    if (cfg == null) return const ActionResult.fail('event_closed');
+    final tier = rank == null ? null : cfg.tierForRank(rank);
+
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    void add(MaterialKind k, int n) {
+      if (n <= 0) return;
+      mats[k] = (mats[k] ?? 0) + n;
+    }
+
+    add(MaterialKind.jelly, tier?.jelly ?? 0);
+    for (final e in (tier?.materials ?? const <MaterialKind, int>{}).entries) {
+      add(e.key, e.value);
+    }
+    // 참가 보상은 순위와 무관하게 누구나. ❌ 젤리는 없다(§2.6 — 참가는
+    // 회차마다 반복되는 통로다).
+    for (final e in cfg.participationMaterials.entries) {
+      add(e.key, e.value);
+    }
+
+    return ActionResult.ok(
+      save.copyWith(materials: mats, eventRewardRound: roundId),
+      extra: {
+        'eventReward': {
+          'roundId': roundId,
+          if (rank != null) 'rank': rank,
+          'jelly': tier?.jelly ?? 0,
+          // 실물은 **안내 대상**이라는 표시일 뿐이다. 국내 거주 여부는 신청
+          // 폼에서 운영이 가른다 — 기기 로케일은 바꾸면 그만이라 자격의
+          // 근거가 될 수 없다(해외 이용자도 게임 내 보상은 똑같이 받는다).
+          'physical': tier?.physical ?? false,
+          'materials': {
+            for (final e in {
+              ...?tier?.materials,
+              ...cfg.participationMaterials,
+            }.entries)
+              e.key.key:
+                  (tier?.materials[e.key] ?? 0) +
+                  (cfg.participationMaterials[e.key] ?? 0),
+          },
+        },
+      },
+    );
+  }
+
   /// 광고로 참가권 1장. 하루 상한을 넘으면 `ad_limit`.
   /// 상한은 광고제거·패스 구매자에게도 **동일**하다(§2.6 P2W 금지).
   ActionResult grantEventAdTicket(SaveGame save) {

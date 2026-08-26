@@ -16,6 +16,41 @@ import 'gather_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
 
+/// 대회 회차 종료 보상(서버가 확정, UI 가 1회 표시).
+///
+/// ⚠️ **지역 정보가 없다.** [physical] 은 "실물 안내를 띄워라"는 표시일 뿐이고,
+/// 국내 거주 여부는 신청 폼에서 운영이 가른다 — 기기 로케일은 바꾸면 그만이라
+/// 실물 자격의 근거가 될 수 없다. 해외 이용자도 게임 내 보상은 똑같이 받는다.
+class EventRewardReport {
+  const EventRewardReport({
+    required this.roundId,
+    required this.rank,
+    required this.jelly,
+    required this.physical,
+    required this.materials,
+  });
+
+  final String roundId;
+
+  /// 순위. 익명 계정이거나 순위권 밖이면 null(참가 보상만 받는다).
+  final int? rank;
+  final int jelly;
+  final bool physical;
+  final Map<String, int> materials;
+
+  factory EventRewardReport.fromJson(Map<String, dynamic> json) =>
+      EventRewardReport(
+        roundId: '${json['roundId']}',
+        rank: (json['rank'] as num?)?.toInt(),
+        jelly: (json['jelly'] as num?)?.toInt() ?? 0,
+        physical: json['physical'] as bool? ?? false,
+        materials: {
+          for (final e in ((json['materials'] as Map?) ?? const {}).entries)
+            '${e.key}': (e.value as num).toInt(),
+        },
+      );
+}
+
 /// 시즌 종료 정산 결과(UI 가 1회 표시). 트로피 소프트리셋 + 보상.
 class SeasonReport {
   const SeasonReport({
@@ -83,6 +118,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 마지막 로드 시 정산된 시즌 종료(UI 가 1회 표시 후 [consumeSeason]).
   SeasonReport? pendingSeason;
+
+  /// 서버가 지급한 대회 회차 보상(UI 가 1회 표시 후 [consumeEventReward]).
+  EventRewardReport? pendingEventReward;
 
   @override
   Future<SaveGame> build() async {
@@ -293,6 +331,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   void consumeOffline() => pendingOffline = null;
   void consumeSeason() => pendingSeason = null;
+  void consumeEventReward() => pendingEventReward = null;
 
   GatherService get _service => ref.read(gatherServiceProvider);
   SaveRepository get _repo => ref.read(saveRepositoryProvider);

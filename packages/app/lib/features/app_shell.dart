@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
-import 'package:core_models/core_models.dart' show kMaxOfflineAccrual;
+import 'package:core_models/core_models.dart'
+    show kMaxOfflineAccrual, MaterialKind;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../domain/audio_service.dart';
 import '../domain/notification_service.dart';
@@ -185,6 +187,19 @@ class _AppShellState extends ConsumerState<AppShell>
     final index = ref.watch(tabIndexProvider);
     final saveAsync = ref.watch(saveControllerProvider);
 
+    // 대회 회차 보상(서버가 지급) → 1회 다이얼로그.
+    //
+    // ⚠️ **대회 화면이 아니라 여기서 띄운다.** 보상은 회차가 끝난 뒤에 지급되는데
+    // 그때는 대회가 닫혀 화면·배너가 감춰져 있어, 거기 두면 아무도 못 본다.
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final reward = ctrl.pendingEventReward;
+    if (reward != null) {
+      ctrl.consumeEventReward();
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showEventReward(reward),
+      );
+    }
+
     return saveAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -245,6 +260,77 @@ class _AppShellState extends ConsumerState<AppShell>
           ),
         ),
       ),
+    );
+  }
+
+  /// 회차 종료 보상 수령 안내.
+  Future<void> _showEventReward(EventRewardReport r) async {
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    final formUrl = ref.read(gameDataProvider).value?.eventConfig?.prizeFormUrl;
+    // 실물 안내는 **폼이 있을 때만** 띄운다. 링크 없는 버튼은
+    // "당첨됐는데 신청을 못 한다"가 된다.
+    final showForm = r.physical && formUrl != null && formUrl.isNotEmpty;
+
+    await showGameDialog<void>(
+      context,
+      title: l.eventRewardTitle,
+      icon: Icons.emoji_events_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            r.rank == null
+                ? l.eventRewardNone
+                : l.eventRewardRank(r.roundId, r.rank!),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          gameRewardList(
+            context,
+            materials: {
+              for (final k in MaterialKind.values)
+                if (((k == MaterialKind.jelly ? r.jelly : 0) +
+                        (r.materials[k.key] ?? 0)) >
+                    0)
+                  k:
+                      (k == MaterialKind.jelly ? r.jelly : 0) +
+                      (r.materials[k.key] ?? 0),
+            },
+          ),
+          if (r.physical) ...[
+            const SizedBox(height: 12),
+            Text(
+              l.eventRewardPhysical,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFFFCC80),
+                fontSize: 12.5,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        if (showForm)
+          gameDialogButton(
+            l.eventRewardApply,
+            () => launchUrl(
+              Uri.parse(formUrl),
+              mode: LaunchMode.externalApplication,
+            ),
+            primary: false,
+          ),
+        gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
+      ],
     );
   }
 

@@ -158,6 +158,33 @@ class StateStore {
     return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
   }
 
+  /// 회차 종료 보상 판정용 — [userId] 의 [roundId] 순위. 기록이 없으면 null.
+  ///
+  /// ⚠️ `event_my_rank` 를 쓸 수 없다. 그건 `auth.uid()` 를 보는데 서버는
+  /// service key 로 부르므로 null 이다(docs/backend_supabase.md).
+  Future<({int rank, int score, int wave, int total})?> eventRankOf(
+    String roundId,
+    String userId,
+  ) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/event_rank_of'),
+      headers: _headers,
+      body: jsonEncode({'p_round': roundId, 'p_user': userId}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('event 순위 조회 실패: ${res.statusCode}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    final r = rows.first as Map<String, dynamic>;
+    return (
+      rank: (r['rank'] as num).toInt(),
+      score: (r['score'] as num?)?.toInt() ?? 0,
+      wave: (r['wave'] as num?)?.toInt() ?? 0,
+      total: (r['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   /// 수동 전투 세션 조회. 없으면 null.
   Future<Map<String, dynamic>?> loadSession(String id) async {
     final uri = Uri.parse(

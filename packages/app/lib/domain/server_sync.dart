@@ -175,16 +175,29 @@ class ServerSaveUploader {
       final res = await server.uploadSave(json);
       if (res.isOk) {
         _lastUploaded = encoded;
-        // 서버가 값을 고쳤으면 채택해 화면과 맞춘다. 두 경우다 —
+        // 서버가 값을 고쳤으면 채택해 화면과 맞춘다. 세 경우다 —
         //  · `clamped`: 골드·칸수를 잘랐다(치팅 의심).
         //  · `season`: 앱을 켜둔 채 주간 경계를 넘겨 **서버가 시즌을 정산**했다.
-        //    이때만 세이브가 실려 온다(주 1회라 이그레스 부담 없음).
+        //  · `eventReward`: 대회 회차 보상을 지급했다(회차당 1회).
+        // 이때만 세이브가 실려 온다(전부 드물어 이그레스 부담이 없다).
+        // ⚠️ 새 사유를 서버에 추가하면 **여기 조건도 같이** 넓혀야 한다 —
+        // 안 그러면 서버는 지급했는데 앱은 채택하지 않아, 화면에 안 보이다가
+        // 다음 업로드에서 낡은 값이 덮어쓴다.
         final data = res.data;
         final season = data?['season'] == true;
-        if ((data?['clamped'] == true || season) && res.save != null) {
+        final rewarded = data?['eventReward'] is Map;
+        if ((data?['clamped'] == true || season || rewarded) &&
+            res.save != null) {
           final ctrl = _ref.read(saveControllerProvider.notifier);
           await ctrl.adoptServerSave(res.save!);
           _lastUploaded = jsonEncode(res.save);
+          // 대회 회차 보상 — 서버가 지급했다. 회차당 1회다.
+          final reward = data?['eventReward'];
+          if (reward is Map) {
+            ctrl.pendingEventReward = EventRewardReport.fromJson(
+              Map<String, dynamic>.from(reward),
+            );
+          }
           final report = data?['seasonReport'];
           if (season && report is Map) {
             // 전투 탭이 다음 빌드에서 "시즌 종료" 다이얼로그로 보여준다.

@@ -147,6 +147,7 @@ class EventConfig {
     this.cards = const [],
     this.rewardTiers = const [],
     this.participationMaterials = const {},
+    this.prizeFormUrl = '',
   });
 
   /// 회차 길이(일)와 리셋 앵커. 시즌과 같은 KST 월요일 09:00 을 쓴다 —
@@ -235,6 +236,9 @@ class EventConfig {
   /// 한 판이라도 뛴 사람에게 주는 참가 보상. ❌ 젤리는 넣지 않는다 —
   /// 참가는 회차마다 반복되는 통로다(§2.6).
   final Map<MaterialKind, int> participationMaterials;
+
+  /// 실물 경품 신청 폼 주소. 비어 있으면 앱이 버튼을 감춘다.
+  final String prizeFormUrl;
 
   /// [rank] (1 부터) 에 해당하는 보상 구간. 순위권 밖이면 null.
   EventRewardTier? tierForRank(int rank) {
@@ -391,6 +395,10 @@ class EventConfig {
                 const [])
           EventRewardTier.fromJson(t as Map<String, dynamic>),
       ],
+      prizeFormUrl:
+          ((json['rewards'] as Map<String, dynamic>?)?['prizeFormUrl']
+              as String?) ??
+          '',
       participationMaterials: EventRewardTier._materials(
         ((json['rewards'] as Map<String, dynamic>?)?['participation']
                 as Map<String, dynamic>?) ??
