@@ -332,6 +332,16 @@ Handler buildHandler({
               granted.save,
               extra: {...r.extra, ...granted.extra},
             );
+            // 대표 뱃지를 순위표(profiles)에 싣는다. 실패해도 보상 지급은
+            // 되돌리지 않는다 — 뱃지는 표시용이고 재화가 더 중요하다.
+            final badge = (granted.extra['eventReward'] as Map?)?['badge'];
+            if (badge is String && badge.isNotEmpty) {
+              try {
+                await store.setBadge(user.id, badge);
+              } on StateStoreException catch (e) {
+                stderr.writeln('[save] badge 저장 실패 ${user.id}: $e');
+              }
+            }
           }
         }
 
@@ -655,6 +665,7 @@ Handler buildHandler({
                 'nickname': r['nickname'],
                 'score': r['score'],
                 'wave': r['wave'],
+                'badge': r['badge'] ?? '',
                 'isMe': r['user_id'] == user.id,
               },
           ],

@@ -1860,6 +1860,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventRewardClaim => '受け取る';
 
   @override
+  String badgeChampion(int round) {
+    return '$round回 チャンピオン';
+  }
+
+  @override
+  String badgeFinalist(int round) {
+    return '$round回 入賞';
+  }
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

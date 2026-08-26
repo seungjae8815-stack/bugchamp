@@ -98,6 +98,44 @@ void main() {
     });
   });
 
+  group('회차 뱃지', () {
+    final a = at(closed);
+    final round = roundOf(closed);
+
+    test('1위는 챔피언 뱃지를 받는다', () {
+      final r = a.grantEventReward(played(closed), round, 1);
+      expect(r.save!.eventBadges, contains('champion:${ev.roundNo}'));
+      expect(
+        (r.extra['eventReward'] as Map)['badge'],
+        'champion:${ev.roundNo}',
+      );
+    });
+
+    test('순위권 밖은 뱃지가 없다', () {
+      final r = a.grantEventReward(played(closed), round, 101);
+      expect(r.save!.eventBadges, isEmpty);
+      expect((r.extra['eventReward'] as Map).containsKey('badge'), isFalse);
+    });
+
+    test('지난 회차 뱃지는 남는다 (누적)', () {
+      final old = played(closed).copyWith(eventBadges: {'champion:0'});
+      final r = a.grantEventReward(old, round, 1);
+      expect(
+        r.save!.eventBadges,
+        containsAll(['champion:0', 'champion:${ev.roundNo}']),
+      );
+    });
+
+    /// 세이브를 고쳐 챔피언을 달 수 있으면 표식의 값어치가 통째로 사라진다.
+    test('eventBadges 는 서버 소유 필드다', () {
+      final server = a.grantEventReward(played(closed), round, 50).save!;
+      final forged = server.toJson()
+        ..['eventBadges'] = ['champion:${ev.roundNo}'];
+      final merged = a.mergeSave(server, forged);
+      expect(merged.save!.eventBadges, isEmpty);
+    });
+  });
+
   /// 세이브를 고쳐 수령 기록을 지우면 같은 회차를 반복해서 받을 수 있다.
   test('eventRewardRound 는 서버 소유 필드다', () {
     final a = at(closed);

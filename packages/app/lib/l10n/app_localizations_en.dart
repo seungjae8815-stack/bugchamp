@@ -1895,6 +1895,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventRewardClaim => 'Collect';
 
   @override
+  String badgeChampion(int round) {
+    return 'R$round Champion';
+  }
+
+  @override
+  String badgeFinalist(int round) {
+    return 'R$round Finalist';
+  }
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override

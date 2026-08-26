@@ -74,6 +74,7 @@ class EventRewardTier {
     this.jelly = 0,
     this.materials = const {},
     this.physical = false,
+    this.badge = '',
   });
 
   /// 이 구간의 마지막 순위(이하). 위에서부터 **먼저 맞는 구간 하나만** 적용된다.
@@ -87,12 +88,21 @@ class EventRewardTier {
   /// 실물 경품 안내 대상인가.
   final bool physical;
 
+  /// 순위표에서 닉네임 옆에 붙는 회차 한정 표식(`champion`·`finalist`).
+  /// 빈 문자열이면 없다.
+  ///
+  /// **실물을 받을 수 없는 해외 이용자에게 등가를 맞추는 축이 이것**이다 —
+  /// 젤리로 맞추면 그 유저의 경제가 끝난다(§2.6). 자랑거리는 남이 봐야
+  /// 자랑거리라, 세이브에만 있으면 의미가 없고 순위표에 실려야 한다.
+  final String badge;
+
   factory EventRewardTier.fromJson(Map<String, dynamic> json) =>
       EventRewardTier(
         maxRank: (json['maxRank'] as num?)?.toInt() ?? 0,
         jelly: (json['jelly'] as num?)?.toInt() ?? 0,
         materials: _materials(json),
         physical: json['physical'] as bool? ?? false,
+        badge: json['badge'] as String? ?? '',
       );
 
   static Map<MaterialKind, int> _materials(Map<String, dynamic> json) {
@@ -119,6 +129,7 @@ class EventConfig {
     this.roundDays = 14,
     this.anchorWeekday = DateTime.monday,
     this.anchorHourKst = 9,
+    this.roundNo = 0,
     this.startsAt,
     this.endsAt,
     this.ticketMax = 5,
@@ -156,6 +167,10 @@ class EventConfig {
   final int roundDays;
   final int anchorWeekday;
   final int anchorHourKst;
+
+  /// 회차 번호(표시용). 0 이면 모른다.
+  /// ⚠️ 다음 회차를 열 때 기간과 **함께** 올려야 뱃지가 겹치지 않는다.
+  final int roundNo;
 
   /// 이번 회차의 시작·종료(UTC). 둘 다 없으면 **상시 진행**(구버전 동작).
   ///
@@ -239,6 +254,16 @@ class EventConfig {
 
   /// 실물 경품 신청 폼 주소. 비어 있으면 앱이 버튼을 감춘다.
   final String prizeFormUrl;
+
+  /// [rank] 가 받는 뱃지 id(`champion:1`). 없으면 null.
+  ///
+  /// 회차 번호를 붙이는 이유 = **같은 뱃지를 두 번 받아도 따로 남아야** 한다.
+  /// 1회차 챔피언과 3회차 챔피언은 다른 자랑거리다.
+  String? badgeIdForRank(int rank) {
+    final t = tierForRank(rank);
+    if (t == null || t.badge.isEmpty) return null;
+    return '${t.badge}:$roundNo';
+  }
 
   /// [rank] (1 부터) 에 해당하는 보상 구간. 순위권 밖이면 null.
   EventRewardTier? tierForRank(int rank) {
@@ -346,6 +371,7 @@ class EventConfig {
       roundDays: (round['days'] as num?)?.toInt() ?? 14,
       anchorWeekday: (round['anchorWeekday'] as num?)?.toInt() ?? 1,
       anchorHourKst: (round['anchorHourKst'] as num?)?.toInt() ?? 9,
+      roundNo: (round['no'] as num?)?.toInt() ?? 0,
       startsAt: round['startsAt'] == null
           ? null
           : DateTime.parse(round['startsAt'] as String).toUtc(),

@@ -3430,6 +3430,18 @@ abstract class AppLocalizations {
   /// **'Collect'**
   String get eventRewardClaim;
 
+  /// No description provided for @badgeChampion.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round} Champion'**
+  String badgeChampion(int round);
+
+  /// No description provided for @badgeFinalist.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round} Finalist'**
+  String badgeFinalist(int round);
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

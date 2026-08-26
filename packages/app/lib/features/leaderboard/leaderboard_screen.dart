@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
+import '../../ui/event_badge.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -359,7 +360,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             leagueIcon(league.id, size: top ? 24 : 16),
             const SizedBox(width: 8),
           ],
-          Expanded(
+          Flexible(
             child: Text(
               // 부적절한 닉네임은 표시 단계에서 대체(채팅과 같은 기준).
               rules.maskNickname(
@@ -375,6 +376,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               ),
             ),
           ),
+          // 대회 회차 뱃지 — 리그 뱃지와 달리 **모든 축**에 붙는다.
+          // 결투를 안 하는 유저도 대회에는 나가고, 그게 이 표식의 요지다.
+          EventBadgeChip(id: e.badge, size: top ? 12 : 10.5),
+          const Spacer(),
           _scoreCell(l, e.profile, _kind, emphasize: e.isMe),
         ],
       ),

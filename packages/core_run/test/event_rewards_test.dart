@@ -47,6 +47,24 @@ void main() {
     expect(cfg.participationMaterials, isNotEmpty);
   });
 
+  group('회차 뱃지', () {
+    /// 뱃지는 실물을 못 받는 해외 이용자에게 **등가를 맞추는 축**이다.
+    /// 젤리로 맞추면 그 유저의 경제가 끝난다(§2.6).
+    test('상위 구간에만 붙는다', () {
+      expect(cfg.badgeIdForRank(1), isNotNull);
+      expect(cfg.badgeIdForRank(10), isNotNull);
+      expect(cfg.badgeIdForRank(50), isNull, reason: '흔하면 자랑거리가 아니다');
+      expect(cfg.badgeIdForRank(101), isNull);
+    });
+
+    /// 1회차 챔피언과 3회차 챔피언은 **다른** 자랑거리다.
+    test('id 에 회차 번호가 붙는다', () {
+      expect(cfg.roundNo, greaterThan(0), reason: 'event.json round.no 누락');
+      expect(cfg.badgeIdForRank(1), 'champion:${cfg.roundNo}');
+      expect(cfg.badgeIdForRank(1), isNot(cfg.badgeIdForRank(10)));
+    });
+  });
+
   /// 실물은 **안내 대상**을 고르는 표시일 뿐이다 — 지역 판정은 코드가 하지
   /// 않는다(신청 폼에서 운영이 가른다).
   test('실물 안내는 최상위 구간에만 붙는다', () {

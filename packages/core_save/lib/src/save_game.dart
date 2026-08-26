@@ -438,6 +438,7 @@ class SaveGame {
     this.bugFilterMinGrade = Grade.common,
     this.nicknameSet = false,
     this.eventRewardRound,
+    this.eventBadges = const {},
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
   });
@@ -598,6 +599,16 @@ class SaveGame {
   /// ⚠️ **서버 소유 필드**여야 한다 — 세이브를 고쳐 지우면 같은 회차 보상을
   /// 반복해서 받을 수 있다(`GameActions._serverOwnedKeys`).
   final String? eventRewardRound;
+
+  /// 대회 회차 뱃지(`champion:1`). 순위표에서 닉네임 옆에 붙는 표식이다.
+  ///
+  /// **실물을 받을 수 없는 해외 이용자에게 등가를 맞추는 축**이라, 세이브에만
+  /// 있으면 의미가 없다 — 남이 봐야 자랑거리다. 서버가 지급하면서 `profiles`
+  /// 에도 대표 뱃지를 써 순위표에 실린다.
+  ///
+  /// ⚠️ **서버 소유 필드**다. 세이브를 고쳐 챔피언 뱃지를 달 수 있으면
+  /// 표식의 값어치가 통째로 사라진다.
+  final Set<String> eventBadges;
 
   /// [bugId] 가 [now] 기준으로 아직 출전 피로 중인가.
   bool eventOnFatigue(String bugId, DateTime now) {
@@ -984,6 +995,7 @@ class SaveGame {
     int? eventBestWave,
     int? eventBestScore,
     String? eventRewardRound,
+    Set<String>? eventBadges,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
     Set<String>? claimedLeagues,
@@ -1055,6 +1067,7 @@ class SaveGame {
     eventBestWave: eventBestWave ?? this.eventBestWave,
     eventBestScore: eventBestScore ?? this.eventBestScore,
     eventRewardRound: eventRewardRound ?? this.eventRewardRound,
+    eventBadges: eventBadges ?? this.eventBadges,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
@@ -1217,6 +1230,8 @@ class SaveGame {
     eventBestWave: (json['eventBestWave'] as num?)?.toInt() ?? 0,
     eventBestScore: (json['eventBestScore'] as num?)?.toInt() ?? 0,
     eventRewardRound: json['eventRewardRound'] as String?,
+    eventBadges:
+        (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
         (json['injured'] as Map<String, dynamic>?)?.map(
@@ -1362,6 +1377,7 @@ class SaveGame {
     if (eventBestWave > 0) 'eventBestWave': eventBestWave,
     if (eventBestScore > 0) 'eventBestScore': eventBestScore,
     if (eventRewardRound != null) 'eventRewardRound': eventRewardRound,
+    if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     'pvpTrophies': pvpTrophies,
     'injured': {
       for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),

@@ -48,6 +48,7 @@ class SupabasePvpBackend implements PvpBackend {
           LeaderboardEntry(
             rank: (r['rank'] as num).toInt(),
             isMe: r['id'] == uid,
+            badge: (r['badge'] as String?) ?? '',
             profile: PvpProfile(
               id: r['id'] as String,
               nickname: (r['nickname'] as String?) ?? '',

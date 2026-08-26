@@ -16,6 +16,7 @@ import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'event_battle.dart';
 import 'event_intro.dart';
+import '../../ui/event_badge.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -655,7 +656,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Expanded(
+                Flexible(
                   child: Text(
                     '${e['nickname']}',
                     maxLines: 1,
@@ -663,6 +664,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                     style: const TextStyle(color: Colors.white, fontSize: 13.5),
                   ),
                 ),
+                EventBadgeChip(id: '${e['badge'] ?? ''}'),
+                const Spacer(),
                 Text(
                   l.eventWaveRecord((e['wave'] as num?)?.toInt() ?? 0),
                   style: const TextStyle(

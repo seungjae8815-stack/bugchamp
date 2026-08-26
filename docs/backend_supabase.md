@@ -68,6 +68,18 @@ create table if not exists profiles (
 alter table profiles add column if not exists level int not null default 1;
 alter table profiles add column if not exists stage int not null default 1;
 
+-- 대회 회차 뱃지(`champion:1`). 순위표에서 닉네임 옆에 붙는 표식.
+-- 실물을 받을 수 없는 해외 이용자에게 등가를 맞추는 축이라, 세이브에만 있으면
+-- 의미가 없다 — 남이 봐야 자랑거리다.
+alter table profiles add column if not exists badge text not null default '';
+
+-- ⚠️ **뱃지는 서버만 쓴다.** `profiles` 는 앱도 upsert 하는 테이블이고
+-- `own_profile` 정책이 본인 행 UPDATE 를 허용하므로, 그냥 두면 누구나
+-- 챔피언 뱃지를 달 수 있다. RLS 는 컬럼을 가리지 못하니 **컬럼 권한**으로 막는다.
+-- (권위 서버는 service key 라 이 GRANT 의 영향을 받지 않는다.)
+revoke update on profiles from authenticated;
+grant  update (nickname, trophies, level, stage) on profiles to authenticated;
+
 create table if not exists defenders (
   id         uuid primary key references auth.users(id) on delete cascade,
   team       jsonb not null,           -- 성충3 스냅샷(종·오행·스탯·기질·사이즈)
@@ -102,7 +114,7 @@ create policy own_defender on defenders
 -- `sort` 는 화이트리스트로만 받는다(문자열을 order by 에 그대로 끼우면 SQL 주입).
 create or replace function leaderboard_top(lim int, sort text default 'trophies')
 returns table(rank bigint, id uuid, nickname text,
-              trophies int, level int, stage int)
+              trophies int, level int, stage int, badge text)
 language sql stable security definer set search_path = public as $$
   select row_number() over (
            order by case sort
@@ -111,7 +123,8 @@ language sql stable security definer set search_path = public as $$
                       else p.trophies
                     end desc
          ) as rank,
-         p.id, p.nickname, p.trophies, p.level, p.stage
+         p.id, p.nickname, p.trophies, p.level, p.stage,
+         coalesce(p.badge, '') as badge
   from profiles p
   order by case sort
              when 'level' then p.level
@@ -829,15 +842,24 @@ revoke execute on function event_submit(text, uuid, text, bigint, int, jsonb)
 
 -- 순위 조회(앱이 본다). 민감정보 없이 rank/nickname/score/wave 만.
 create or replace function event_top(p_round text, lim int)
-returns table(rank bigint, user_id uuid, nickname text, score bigint, wave int)
+returns table(rank bigint, user_id uuid, nickname text, score bigint,
+              wave int, badge text)
 language sql stable security definer set search_path = public as $$
-  select row_number() over (order by score desc, updated_at asc) as rank,
-         user_id, nickname, score, wave
-  from event_scores
-  where round_id = p_round
-  order by score desc, updated_at asc
+  select row_number() over (order by e.score desc, e.updated_at asc) as rank,
+         e.user_id, e.nickname, e.score, e.wave,
+         coalesce(p.badge, '') as badge
+  from event_scores e
+  left join profiles p on p.id = e.user_id
+  where e.round_id = p_round
+  order by e.score desc, e.updated_at asc
   limit lim;
 $$;
+
+-- ⚠️ 반환 컬럼을 바꿨으므로 **기존 함수를 먼저 지워야** 한다
+-- (`create or replace` 는 반환 타입 변경을 거부한다):
+--   drop function if exists event_top(text, int);
+--   drop function if exists leaderboard_top(text, int);
+-- 지운 뒤 위 정의를 다시 실행한다.
 
 -- 회차 종료 보상 판정용 — **권위 서버가 부른다**.
 --

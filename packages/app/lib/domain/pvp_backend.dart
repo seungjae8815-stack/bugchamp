@@ -62,11 +62,16 @@ class LeaderboardEntry {
     required this.rank,
     required this.profile,
     required this.isMe,
+    this.badge = '',
   });
 
   final int rank;
   final PvpProfile profile;
   final bool isMe;
+
+  /// 대회 회차 뱃지(`champion:1`). 없으면 빈 문자열.
+  /// **서버가 쓴 값**이다(앱은 `profiles.badge` 를 쓸 권한이 없다).
+  final String badge;
 }
 
 /// 방어팀 스냅샷 속 곤충 한 마리(비동기 PvP 매칭용).

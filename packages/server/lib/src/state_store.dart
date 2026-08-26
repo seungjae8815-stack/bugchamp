@@ -158,6 +158,26 @@ class StateStore {
     return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
   }
 
+  /// [userId] 의 **대표 뱃지**를 `profiles` 에 쓴다(순위표에 실린다).
+  ///
+  /// ⚠️ 앱이 쓰면 안 된다 — `profiles` 는 앱도 upsert 하는 테이블이라
+  /// 뱃지까지 열어 두면 누구나 챔피언을 달 수 있다. 컬럼 UPDATE 권한을
+  /// `authenticated` 에서 회수해 두고(docs/backend_supabase.md) 여기서만 쓴다.
+  ///
+  /// 프로필 행이 아직 없으면(닉네임 미설정) 조용히 넘어간다 — 뱃지 때문에
+  /// 빈 닉네임 행을 만들면 순위표에 이름 없는 유령이 생긴다.
+  Future<void> setBadge(String userId, String badge) async {
+    final uri = Uri.parse('$supabaseUrl/rest/v1/profiles?id=eq.$userId');
+    final res = await _http.patch(
+      uri,
+      headers: _headers,
+      body: jsonEncode({'badge': badge}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('badge 저장 실패: ${res.statusCode}');
+    }
+  }
+
   /// 회차 종료 보상 판정용 — [userId] 의 [roundId] 순위. 기록이 없으면 null.
   ///
   /// ⚠️ `event_my_rank` 를 쓸 수 없다. 그건 `auth.uid()` 를 보는데 서버는

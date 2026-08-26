@@ -1865,6 +1865,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventRewardClaim => '받기';
 
   @override
+  String badgeChampion(int round) {
+    return '$round회차 챔피언';
+  }
+
+  @override
+  String badgeFinalist(int round) {
+    return '$round회차 입상';
+  }
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

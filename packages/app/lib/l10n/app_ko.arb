@@ -562,6 +562,8 @@
   "eventRewardPhysical": "실물 경품 대상이에요! 아래 신청서를 작성해 주세요. 실물 배송은 국내 주소만 가능하고, 해외에 계시면 게임 내 보상만 지급돼요.",
   "eventRewardApply": "경품 신청하기",
   "eventRewardClaim": "받기",
+  "badgeChampion": "{round}회차 챔피언",
+  "badgeFinalist": "{round}회차 입상",
   "netLostTitle": "연결이 끊겼어요",
   "netLostBody": "인터넷 연결을 확인해 주세요.\n연결되어야 진행이 저장됩니다.",
   "netRetry": "다시 시도",

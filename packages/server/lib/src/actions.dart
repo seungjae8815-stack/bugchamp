@@ -138,6 +138,8 @@ class GameActions {
     'eventBestScore',
     // 회차 보상 수령 기록. 지우면 같은 회차 보상을 반복해서 받는다.
     'eventRewardRound',
+    // 회차 뱃지. 세이브를 고쳐 챔피언을 달 수 있으면 표식이 무의미해진다.
+    'eventBadges',
   };
 
   /// 한 번의 업로드에 실릴 수 있는 화석 조각의 **정상 최대치**.
@@ -1730,8 +1732,16 @@ class GameActions {
       add(e.key, e.value);
     }
 
+    final badge = rank == null ? null : cfg.badgeIdForRank(rank);
+
     return ActionResult.ok(
-      save.copyWith(materials: mats, eventRewardRound: roundId),
+      save.copyWith(
+        materials: mats,
+        eventRewardRound: roundId,
+        eventBadges: badge == null
+            ? save.eventBadges
+            : {...save.eventBadges, badge},
+      ),
       extra: {
         'eventReward': {
           'roundId': roundId,
@@ -1741,6 +1751,8 @@ class GameActions {
           // 폼에서 운영이 가른다 — 기기 로케일은 바꾸면 그만이라 자격의
           // 근거가 될 수 없다(해외 이용자도 게임 내 보상은 똑같이 받는다).
           'physical': tier?.physical ?? false,
+          if (badge != null) 'badge': badge,
+          if (cfg.roundNo > 0) 'roundNo': cfg.roundNo,
           'materials': {
             for (final e in {
               ...?tier?.materials,
