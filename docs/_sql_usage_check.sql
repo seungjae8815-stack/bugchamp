@@ -11,10 +11,11 @@
 select pg_size_pretty(pg_database_size(current_database())) as db_total;
 
 -- ② 어느 테이블이 먹고 있나 (큰 순)
-select relname as table_name,
+-- ⚠️ `relname` 은 pg_class 와 pg_stat_user_tables 양쪽에 있다 — 반드시 c. 를 붙인다.
+select c.relname as table_name,
        pg_size_pretty(pg_total_relation_size(c.oid)) as total,
-       pg_size_pretty(pg_relation_size(c.oid))       as data,
-       n_live_tup as rows
+       pg_size_pretty(pg_relation_size(c.oid))       as data_only,
+       s.n_live_tup as rows
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 left join pg_stat_user_tables s on s.relid = c.oid
