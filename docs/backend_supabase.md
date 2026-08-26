@@ -858,7 +858,10 @@ $$;
 -- ⚠️ 반환 컬럼을 바꿨으므로 **기존 함수를 먼저 지워야** 한다
 -- (`create or replace` 는 반환 타입 변경을 거부한다):
 --   drop function if exists event_top(text, int);
---   drop function if exists leaderboard_top(text, int);
+--   drop function if exists leaderboard_top(int, text);
+-- ⚠️ 인자 순서까지 정확해야 한다. `leaderboard_top` 은 (lim int, sort text) 다 —
+-- (text, int) 로 적으면 `if exists` 라 조용히 넘어간 뒤 재정의가
+-- "cannot change return type" 으로 실패한다.
 -- 지운 뒤 위 정의를 다시 실행한다.
 
 -- 회차 종료 보상 판정용 — **권위 서버가 부른다**.
