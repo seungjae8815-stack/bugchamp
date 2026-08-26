@@ -25,7 +25,14 @@ $$;
 revoke execute on function event_rank_of(text, uuid) from anon, authenticated;
 
 
--- ② 회차 뱃지 컬럼
+-- ② profiles 컬럼
+--
+-- ⚠️ `level`·`stage` 는 **랭킹 3축**(§2.7)에 필요한데 실서버에 아직 없었다
+-- (2026-08-26 확인). 없으면 앱의 profiles upsert 와 leaderboard_top 이 통째로
+-- 실패하고, 랭킹 화면은 조용히 로컬 NPC 사다리로 폴백한다 — **화면은 멀쩡한데
+-- 실제 유저 순위가 아니다.** 여기서 같이 만든다.
+alter table profiles add column if not exists level int  not null default 1;
+alter table profiles add column if not exists stage int  not null default 1;
 alter table profiles add column if not exists badge text not null default '';
 
 -- ③ ⚠️ 가장 중요 — 뱃지 쓰기 권한 회수
