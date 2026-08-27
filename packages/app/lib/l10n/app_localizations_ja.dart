@@ -1895,13 +1895,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventRewardParticipationRow => '参加（1回以上）';
 
   @override
-  String buffCooldownChip(String t) {
+  String buffCooldownAsk(String t, int n) {
+    return '次の無料起動まで $t。\nゼリー $n個で今すぐ起動しますか？';
+  }
+
+  @override
+  String buffBtnFreeLeft(String t) {
     return '無料まで $t';
   }
 
   @override
-  String buffCooldownAsk(String t, int n) {
-    return '次の無料起動まで $t。\nゼリー $n個で今すぐ起動しますか？';
+  String buffBtnJelly(int n) {
+    return 'ゼリー$n個で起動';
   }
 
   @override

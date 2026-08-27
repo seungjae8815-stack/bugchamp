@@ -4989,11 +4989,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     Map<BuffKind, DateTime> freeAt,
   ) {
     final active = remaining != null;
+    final now = _clock.now().toUtc();
+    // 패스 보유 중엔 쿨다운 표시가 무의미하다(항상 켜져 있고 무료 발동을 안 쓴다).
+    final hasPass = r
+        .read(saveControllerProvider)
+        .requireValue
+        .buffPassActive(now);
     final cd = Duration(seconds: _data.buffConfig?.freeCooldownSeconds ?? 0);
     final last = freeAt[k];
     var coolLeft = Duration.zero;
-    if (last != null && cd > Duration.zero) {
-      final left = cd - _clock.now().toUtc().difference(last);
+    if (!hasPass && last != null && cd > Duration.zero) {
+      final left = cd - now.difference(last);
       if (left > Duration.zero) coolLeft = left;
     }
     return Padding(
@@ -5041,29 +5047,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         ),
                       ),
                     ],
-                    // 무료 쿨다운 중이면 언제 다시 되는지 보여준다 — 안 보이면
-                    // 눌렀다가 젤리 다이얼로그를 만나는 게 첫 안내가 된다.
-                    if (coolLeft > Duration.zero) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x33FFFFFF),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          l.buffCooldownChip(_hmm(coolLeft)),
-                          style: const TextStyle(
-                            color: Color(0xB3FFFFFF),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 10.5,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
                 Text(
@@ -5102,10 +5085,43 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 l.buffActivatedSnack(buffLabel(l, k), minutes),
               );
             },
-            icon: const Icon(Icons.play_arrow_rounded, size: 18),
-            label: Text(l.buffWatchAd),
+            // 쿨다운 중엔 버튼이 스스로 설명한다 — "무료 h:mm 남음" 위에,
+            // "젤리 n개로 켜기"를 아래에(2026-08-27 지적). 칩으로 옆에 두면
+            // 버튼은 여전히 "무료로 켜기"라고 거짓말하는 셈이다.
+            icon: Icon(
+              coolLeft > Duration.zero
+                  ? Icons.water_drop_rounded
+                  : Icons.play_arrow_rounded,
+              size: 18,
+            ),
+            label: coolLeft > Duration.zero
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l.buffBtnFreeLeft(_hmm(coolLeft)),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xCCFFFFFF),
+                        ),
+                      ),
+                      Text(
+                        l.buffBtnJelly(_data.buffConfig?.jellyActivate ?? 2),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(l.buffWatchAd),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
+              backgroundColor: coolLeft > Duration.zero
+                  ? const Color(0xFF1E6091)
+                  : const Color(0xFF2E7D32),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             ),
           ),
         ],
