@@ -42,7 +42,12 @@ alter table profiles add column if not exists badge text not null default '';
 -- RLS 는 컬럼을 못 가리므로 **컬럼 권한**으로 막는다.
 -- (권위 서버는 service key 라 이 GRANT 의 영향을 받지 않는다.)
 revoke update on profiles from authenticated;
-grant  update (nickname, trophies, level, stage) on profiles to authenticated;
+-- ⚠️ `id` 도 목록에 있어야 한다. 앱은 upsert 를 쓰는데, PostgREST 는 upsert 를
+-- `on conflict do update set` 으로 바꾸면서 **payload 의 모든 컬럼(id 포함)** 을
+-- UPDATE 절에 넣는다. id 가 빠지면 upsert 전체가 권한 오류로 죽고, 앱 랭킹이
+-- 로컬 폴백으로 떨어진다(2026-08-27 실기에서 발견). id 허용은 안전하다 —
+-- RLS 가 본인 행만 허용하고 같은 값으로 덮을 뿐이다. badge 만 막으면 된다.
+grant  update (id, nickname, trophies, level, stage) on profiles to authenticated;
 
 
 -- ④ 순위표가 뱃지를 함께 반환하도록 재정의
