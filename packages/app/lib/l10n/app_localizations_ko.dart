@@ -1915,6 +1915,12 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get settingsLanguage => '언어';
+
+  @override
+  String get languageSystem => '기기 설정';
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

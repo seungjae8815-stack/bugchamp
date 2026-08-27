@@ -574,6 +574,8 @@
   "buffCooldownAsk": "무료 켜기는 {t} 후에 다시 할 수 있어요.\n젤리 {n}개로 바로 켤까요?",
   "buffBtnFreeLeft": "무료 {t} 남음",
   "buffBtnJelly": "{n}개로 켜기",
+  "settingsLanguage": "언어",
+  "languageSystem": "기기 설정",
   "netLostTitle": "연결이 끊겼어요",
   "netLostBody": "인터넷 연결을 확인해 주세요.\n연결되어야 진행이 저장됩니다.",
   "netRetry": "다시 시도",

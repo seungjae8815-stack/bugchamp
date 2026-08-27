@@ -1910,6 +1910,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get settingsLanguage => '言語';
+
+  @override
+  String get languageSystem => '端末の設定';
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

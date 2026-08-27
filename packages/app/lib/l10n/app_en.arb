@@ -1108,6 +1108,8 @@
   "@buffBtnFreeLeft": {"placeholders": {"t": {"type": "String"}}},
   "buffBtnJelly": "Use {n}",
   "@buffBtnJelly": {"placeholders": {"n": {"type": "int"}}},
+  "settingsLanguage": "Language",
+  "languageSystem": "System",
   "netLostTitle": "Connection lost",
   "netLostBody": "Check your internet connection.\nProgress is only saved while connected.",
   "netRetry": "Retry",

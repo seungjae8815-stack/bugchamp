@@ -17,6 +17,7 @@ import 'domain/chat_service.dart';
 import 'domain/game_server.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/notification_service.dart';
+import 'domain/locale_prefs.dart';
 import 'domain/providers.dart';
 import 'domain/iap_service.dart';
 import 'domain/purchase_verifier.dart';
@@ -103,10 +104,15 @@ Future<void> main() async {
     }
   }
 
+  // 저장된 표시 언어를 **첫 프레임 전에** 읽는다(안 그러면 기기 언어로 한 번
+  // 그려졌다가 바뀌어 깜빡인다).
+  final savedLocale = await loadSavedLocale();
+
   runApp(
     ProviderScope(
       overrides: [
         saveRepositoryProvider.overrideWithValue(repository),
+        initialLocaleProvider.overrideWithValue(savedLocale),
         if (_useRealAds)
           adServiceProvider.overrideWith((ref) {
             final s = AdMobAdService();
@@ -146,11 +152,11 @@ Future<void> main() async {
 }
 
 /// 앱 루트. 실제 화면(홈/채집/보관함)은 Phase 1 UI 단계에서 features/ 아래에 구현한다.
-class BugChampApp extends StatelessWidget {
+class BugChampApp extends ConsumerWidget {
   const BugChampApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
@@ -189,6 +195,12 @@ class BugChampApp extends StatelessWidget {
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      // null 이면 기기 설정을 따른다(기본). 설정에서 고르면 그 언어로 고정.
+      //
+      // ⚠️ 지원하지 않는 언어(예: 프랑스어) 기기는 Flutter 가
+      // `supportedLocales` 의 **첫 항목(en)** 으로 떨어뜨린다. 한국어를
+      // 원하는 사람에게 방법이 없었던 이유다.
+      locale: ref.watch(localePrefsProvider),
       navigatorObservers: [_SheetSound()],
       // 대문 → (게이트·로그인·동기화·닉네임) → AppShell.
       home: const TitleScreen(),

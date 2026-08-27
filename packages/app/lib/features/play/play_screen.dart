@@ -23,6 +23,7 @@ import '../../domain/notify_prefs.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
 import '../../domain/game_server.dart';
+import '../../domain/locale_prefs.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
@@ -3612,6 +3613,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ],
           _audioSettings(l),
           const SizedBox(height: 10),
+          const _LanguageSection(),
+          const SizedBox(height: 10),
           const _NotifySection(),
           // ⚠️ "게임 데이터 초기화" 버튼을 여기 두지 말 것.
           //    확인 다이얼로그가 있어도 **되돌릴 수 없고**, 초기화된 세이브가
@@ -5720,3 +5723,85 @@ class _NotifySectionState extends State<_NotifySection> {
 
 /// 무료 2배 소진 다이얼로그의 선택지.
 enum _CapAction { shop, buy }
+
+/// 표시 언어 — **기기 설정 / 한국어 / English / 日本語**.
+///
+/// 기본은 기기 설정을 따르는 것이고, 그게 맞는 동작이다. 그래도 고를 수 있어야
+/// 하는 이유가 둘 있다:
+///  - 기기가 한국어인데 영어로 하고 싶은 사람이 있다.
+///  - 지원하지 않는 언어(프랑스어 등) 기기는 `supportedLocales` 의 첫 항목인
+///    **영어**로 떨어진다 — 한국어를 원해도 방법이 없었다.
+///
+/// 각 언어 이름은 **그 언어로** 적는다(`日本語`). 지금 화면이 못 읽는 언어로
+/// 되어 있어도 자기 언어는 찾을 수 있어야 한다 — 이게 언어 설정의 요점이다.
+class _LanguageSection extends ConsumerWidget {
+  const _LanguageSection();
+
+  static const _options = <(String?, String)>[
+    (null, ''), // 기기 설정 — 라벨은 현지화 문자열을 쓴다
+    ('ko', '한국어'),
+    ('en', 'English'),
+    ('ja', '日本語'),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final current = ref.watch(localePrefsProvider)?.languageCode;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.language_rounded,
+              size: 16,
+              color: Color(0xCCFFFFFF),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              l.settingsLanguage,
+              style: const TextStyle(
+                color: Color(0xDDFFFFFF),
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final (code, name) in _options)
+              ChoiceChip(
+                label: Text(
+                  code == null ? l.languageSystem : name,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                selected: current == code,
+                onSelected: (_) => ref
+                    .read(localePrefsProvider.notifier)
+                    .set(code == null ? null : Locale(code)),
+                showCheckmark: false,
+                selectedColor: const Color(0xFF3B7A2A),
+                backgroundColor: const Color(0x22FFFFFF),
+                labelStyle: TextStyle(
+                  color: current == code
+                      ? Colors.white
+                      : const Color(0xB3FFFFFF),
+                  fontWeight: FontWeight.w700,
+                ),
+                side: BorderSide(
+                  color: current == code
+                      ? const Color(0xFF6BBF4E)
+                      : const Color(0x33FFFFFF),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}

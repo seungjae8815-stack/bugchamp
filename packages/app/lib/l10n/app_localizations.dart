@@ -3502,6 +3502,18 @@ abstract class AppLocalizations {
   /// **'Use {n}'**
   String buffBtnJelly(int n);
 
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get languageSystem;
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

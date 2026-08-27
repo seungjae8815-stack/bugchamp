@@ -1946,6 +1946,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get languageSystem => 'System';
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override
