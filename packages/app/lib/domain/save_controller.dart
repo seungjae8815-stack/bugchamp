@@ -28,6 +28,7 @@ class EventRewardReport {
     required this.jelly,
     required this.physical,
     required this.materials,
+    required this.prizeFormUrl,
   });
 
   final String roundId;
@@ -37,6 +38,10 @@ class EventRewardReport {
   final int jelly;
   final bool physical;
   final Map<String, int> materials;
+
+  /// 실물 경품 신청 폼 주소. **서버가 내려준다** — 앱 번들에만 있으면 주소를
+  /// 넣으려고 스토어 심사를 기다려야 한다. 비어 있으면 버튼을 감춘다.
+  final String prizeFormUrl;
 
   factory EventRewardReport.fromJson(Map<String, dynamic> json) =>
       EventRewardReport(
@@ -48,6 +53,7 @@ class EventRewardReport {
           for (final e in ((json['materials'] as Map?) ?? const {}).entries)
             '${e.key}': (e.value as num).toInt(),
         },
+        prizeFormUrl: (json['prizeFormUrl'] as String?) ?? '',
       );
 }
 

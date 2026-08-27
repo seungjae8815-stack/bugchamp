@@ -1751,6 +1751,12 @@ class GameActions {
           // 폼에서 운영이 가른다 — 기기 로케일은 바꾸면 그만이라 자격의
           // 근거가 될 수 없다(해외 이용자도 게임 내 보상은 똑같이 받는다).
           'physical': tier?.physical ?? false,
+          // ⚠️ 폼 주소를 **서버가 내려준다.** 앱 번들의 event.json 에만 있으면
+          // 주소를 넣으려고 스토어 배포·심사를 기다려야 한다(iOS 는 며칠).
+          // 서버 재배포만으로 바꿀 수 있어야 한다 — 당첨자가 신청을 못 하는
+          // 상황을 빌드 일정에 걸어둘 수는 없다.
+          if ((tier?.physical ?? false) && cfg.prizeFormUrl.isNotEmpty)
+            'prizeFormUrl': cfg.prizeFormUrl,
           if (badge != null) 'badge': badge,
           if (cfg.roundNo > 0) 'roundNo': cfg.roundNo,
           'materials': {

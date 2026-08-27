@@ -96,6 +96,29 @@ void main() {
       );
     });
 
+    /// 폼 주소는 **서버가 내려준다** — 앱 번들에만 있으면 주소를 넣으려고
+    /// 스토어 심사를 기다려야 한다. 당첨자가 신청을 못 하는 상황을 빌드
+    /// 일정에 걸어둘 수 없다.
+    test('실물 대상에게만 폼 주소가 실린다', () {
+      final first =
+          a.grantEventReward(played(closed), round, 1).extra['eventReward']
+              as Map;
+      final second =
+          a.grantEventReward(played(closed), round, 2).extra['eventReward']
+              as Map;
+      // 설정이 비어 있으면 키 자체를 싣지 않는다(앱이 버튼을 감춘다).
+      expect(
+        first.containsKey('prizeFormUrl'),
+        ev.prizeFormUrl.isNotEmpty,
+        reason: '폼 주소가 설정돼 있으면 1위에게 실려야 한다',
+      );
+      expect(
+        second.containsKey('prizeFormUrl'),
+        isFalse,
+        reason: '2위는 실물이 아니다',
+      );
+    });
+
     /// 실물은 **1위 한 명**뿐이다(2026-08-26). 2위는 젤리는 같지만 실물이 없다.
     test('2위는 실물 안내를 받지 않는다', () {
       final first = a.grantEventReward(played(closed), round, 1);

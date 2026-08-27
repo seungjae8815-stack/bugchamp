@@ -267,10 +267,14 @@ class _AppShellState extends ConsumerState<AppShell>
   Future<void> _showEventReward(EventRewardReport r) async {
     if (!mounted) return;
     final l = AppLocalizations.of(context);
-    final formUrl = ref.read(gameDataProvider).value?.eventConfig?.prizeFormUrl;
+    // 서버가 준 주소를 **먼저** 쓴다. 앱 번들 값은 서버가 구버전일 때의 폴백이다 —
+    // 폼 주소를 스토어 배포 없이 바꿀 수 있어야 한다.
+    final formUrl = r.prizeFormUrl.isNotEmpty
+        ? r.prizeFormUrl
+        : (ref.read(gameDataProvider).value?.eventConfig?.prizeFormUrl ?? '');
     // 실물 안내는 **폼이 있을 때만** 띄운다. 링크 없는 버튼은
     // "당첨됐는데 신청을 못 한다"가 된다.
-    final showForm = r.physical && formUrl != null && formUrl.isNotEmpty;
+    final showForm = r.physical && formUrl.isNotEmpty;
 
     await showGameDialog<void>(
       context,
