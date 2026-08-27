@@ -1,37 +1,41 @@
 ========================================
- Google Play — 출시 노트 (1.0.6 / 20260814)
+ Google Play — 출시 노트 (1.0.6 / 20260827)
 ========================================
 ※ Play Console 은 아래 태그 블록을 통째로 붙여넣는다. 한 언어당 500자 한도.
-※ iOS 용 노트는 _appstore_whatsnew_1.0.6.txt (이모지 금지 · 심사 지뢰 단어 주의).
-※ 1.0.5 이후: 왕충 선발대회(실물 경품) 신설 + 결투 화면 전면 개편 + 아이콘 전면 교체.
+※ iOS 용 노트는 _appstore_whatsnew_1.0.6.txt (이모지 금지 · 심사 1.1 지뢰 단어 주의).
+※ 범위: 1.0.5(20260811) 이후 전부 — 46개 변경. 대회 1회차는 9/1~9/15 (14일).
+※ ⚠️ 이전 초안(20260814)은 "8월 28일 개막(7일간)"이라 낡았다. 일정이 두 번 밀렸다.
 
 <ko-KR>
-🏆 왕충 선발대회 시작!
+🏆 왕충 선발대회 개막!
 
-• 실물 곤충 경품 이벤트 — 8월 28일 개막 (7일간) (국내 배송)
-• 웨이브 방어전 + 강화 카드 선택, 참가 곤충 스탯은 모두 평준화돼 편성 실력으로 겨뤄요
-• 결투 화면 새단장 — VS 연출, 타격감, 승패 배너, 곤충별 공격·피격 그림
-• 곤충 20종에 전투 자세 그림 추가 (대기·공격·피격)
-• 오행·기질·특성·리그·성별 아이콘을 전부 새 그림으로
-• "다음 적 속성"을 누르면 오행 관계도를 볼 수 있어요
-• 채집함에 성별 표시, 순위표 상위 3위 강조
-• 시즌 보상이 종료 시점 등급 기준으로 지급돼요 (브론즈도 보상 추가)
-• 광고가 사라졌어요 — 광고 보상은 전부 무료 지급으로 바뀌었어요
+• 실물 곤충 경품 — 9월 1일~15일 (1등, 국내 배송)
+• 2~10위도 젤리 보상 + 순위표에 남는 한정 뱃지
+• 웨이브 방어전 - 스탯이 평준화돼 편성 실력으로 겨뤄요
+• 도감 신설 - 종마다 고유 능력, 최대 크기·정복 기록에 영구 보너스
+• 결투 화면 새단장 - VS 연출, 타격감, 곤충 20종 전투 그림
+• 랭킹 3종 - 트로피·레벨·진행도
+• 교환소 - 젤리를 골드·재료로 바꿔요
+• 채집함 등급 필터, 자동 합성·분해
+• 알 부화 개편 - 부모의 속성·기질을 물려받아요
+• 광고가 사라졌어요 - 광고 보상은 전부 무료 지급으로
 
 즐거운 채집 되세요! 😊
 </ko-KR>
 
 <en-US>
-🏆 Bug King Championship!
+🏆 Bug King Championship is live!
 
-• Real-prize ranking event — opens Aug 28 (7 days) (Korea shipping)
-• Wave defense with upgrade cards; stats normalized, formation decides
-• Revamped duel screen — VS intro, hit feedback, result banner
-• Battle poses for all 20 species (idle / attack / hurt)
-• New icons for element, temperament, trait, league, sex
-• Tap "next foe element" for the elemental chart
-• Season rewards use your rank at close (Bronze included)
-• Ads are gone — all ad rewards are now free claims
+• Real beetle prize — Sep 1–15 (1st, ships in Korea)
+• Ranks 2–10: jelly + limited leaderboard badge
+• Wave defense — stats normalized, formation wins
+• Field Guide — unique ability per species
+• Revamped duels — art for all 20 species
+• Three rankings — trophies, level, progress
+• Exchange jelly for gold and materials
+• Storage filter, auto-merge, auto-release
+• Eggs inherit element and temperament
+• Ads are gone — rewards are free now
 
 Happy collecting! 😊
 </en-US>
@@ -39,15 +43,16 @@ Happy collecting! 😊
 <ja-JP>
 🏆 王蟲選抜大会、開幕！
 
-• 実物賞品ランキングイベント — 8月28日開始（7日間）（韓国国内配送）
-• ウェーブ防衛＋強化カード。ステータスは平準化され、編成の腕で競います
-• 決闘画面を刷新 — VS演出、打撃感、勝敗バナー
-• 20種すべてに戦闘ポーズ（待機・攻撃・被弾）
-• 五行・気質・特性・リーグ・性別アイコンを一新
-• 「次の敵の属性」をタップすると五行相性図が見られます
-• 採集箱に性別表示、ランキング上位3位を強調
-• シーズン報酬が終了時の等級で支給されます（ブロンズにも報酬）
-• 広告を廃止 — 広告報酬はすべて無料受け取りになりました
+• 実物の昆虫賞品 — 9月1日〜15日（1位・韓国国内配送）
+• 2〜10位もゼリー報酬＋ランキングに残る限定バッジ
+• ウェーブ防衛戦 — ステータスは平準化、編成の腕で競います
+• 図鑑を新設 — 種ごとの固有能力、最大サイズ記録に永久ボーナス
+• 決闘画面を刷新 — VS演出、打撃感、20種の戦闘グラフィック
+• ランキング3種 — トロフィー・レベル・進行度
+• 交換所 — ゼリーをゴールドや素材に交換
+• 採集箱の等級フィルター、自動合成・自動リリース
+• 孵化を改編 — 親の属性・気質を受け継ぎます
+• 広告を廃止 — 広告報酬はすべて無料受け取りに
 
 楽しい採集を！😊
 </ja-JP>

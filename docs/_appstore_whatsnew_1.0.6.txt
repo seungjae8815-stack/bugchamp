@@ -1,0 +1,61 @@
+========================================
+ App Store — 새로운 기능 (1.0.6)
+========================================
+※ 이모지 금지(불릿 기호 · 는 허용). App Store 메타데이터 전 필드에 적용.
+※ 심사 1.1 지뢰 단어 금지: Sex / breed / breeding / 짝짓기 / 교배 / 交配 / 繁殖
+   → 대체: a pair / raise / hatch / 한 쌍 / 부화 / 孵化
+   ⚠️ 본문뿐 아니라 부제 · 키워드 · 프로모션 텍스트 · 심사 메모까지 확인할 것.
+※ 범위: iOS 1.0.5 가 출시됐으므로 1.0.6 내용만(합본 아님).
+※ 길이: App Store 는 4,000자 한도(Play 의 500자와 다르다) — 현재 ko 344 / en 636 / ja 323.
+※ 실물 경품은 국내 배송 한정 — 앱 내 대회 화면과 전단지에 상시 표시된다.
+
+<ko-KR>
+왕충 선발대회 개막!
+
+- 실물 곤충 경품 - 9월 1일부터 15일까지 (1등, 국내 배송)
+- 2위부터 10위까지 젤리 보상과 순위표에 남는 한정 뱃지
+- 웨이브 방어전 - 능력치가 평준화돼 편성 실력으로 겨뤄요
+- 도감 신설 - 종마다 고유 능력, 최대 크기 기록에 영구 보너스
+- 결투 화면 새단장 - VS 연출과 타격감, 곤충 20종 전투 그림
+- 랭킹 3종 - 트로피, 레벨, 진행도
+- 교환소 - 젤리를 골드와 재료로 바꿔요
+- 채집함 등급 필터, 자동 합성과 자동 방생
+- 알 부화 개편 - 부모의 속성과 기질을 물려받아요
+- 광고가 사라졌어요 - 광고 보상은 전부 무료 지급으로
+
+즐거운 채집 되세요!
+</ko-KR>
+
+<en-US>
+Bug King Championship is live!
+
+- Real beetle prize, September 1-15 (1st place, ships within Korea)
+- Ranks 2 to 10 receive jelly and a limited leaderboard badge
+- Wave defense with normalized stats, so your formation decides
+- New Field Guide with a unique ability for every species
+- Revamped duel screen with VS intro and art for all 20 species
+- Three rankings: trophies, level, and progress
+- Exchange turns jelly into gold and materials
+- Storage grade filter, auto merge, and auto release
+- Eggs now inherit the element and temperament of the pair
+- Ads are gone, and every former ad reward is now a free claim
+
+Happy collecting!
+</en-US>
+
+<ja-JP>
+王蟲選抜大会、開幕!
+
+- 実物の昆虫賞品 - 9月1日から15日まで (1位・韓国国内配送)
+- 2位から10位までゼリー報酬とランキングに残る限定バッジ
+- ウェーブ防衛戦 - ステータスが平準化され編成の腕で競います
+- 図鑑を新設 - 種ごとの固有能力、最大サイズ記録に永久ボーナス
+- 決闘画面を刷新 - VS演出と打撃感、20種の戦闘グラフィック
+- ランキング3種 - トロフィー、レベル、進行度
+- 交換所 - ゼリーをゴールドや素材に交換できます
+- 採集箱の等級フィルター、自動合成と自動リリース
+- 孵化を改編 - 親の属性と気質を受け継ぎます
+- 広告を廃止 - 広告報酬はすべて無料受け取りになりました
+
+楽しい採集を!
+</ja-JP>
