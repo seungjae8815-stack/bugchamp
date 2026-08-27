@@ -3442,6 +3442,12 @@ abstract class AppLocalizations {
   /// **'R{round} Finalist'**
   String badgeFinalist(int round);
 
+  /// No description provided for @nicknameBadChars.
+  ///
+  /// In en, this message translates to:
+  /// **'Letters and numbers only (no emoji or stray marks)'**
+  String get nicknameBadChars;
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

@@ -1905,6 +1905,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get nicknameBadChars =>
+      'Letters and numbers only (no emoji or stray marks)';
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override

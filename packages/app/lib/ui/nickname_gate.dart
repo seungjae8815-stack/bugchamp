@@ -22,6 +22,9 @@ Future<String?> validateNickname(
   if (trimmed.isEmpty) return l.nicknameRequiredBody;
   final rules =
       ref.read(gameDataProvider).value?.chatRules ?? const ChatRules();
+  // 문자 구성과 금칙어를 **따로 안내한다** — 한 문구로 뭉치면 유저가 뭘
+  // 고쳐야 할지 모른다(이모지를 넣었는데 "표현이 부적절"이라고 나온다).
+  if (!rules.nicknameCharsOk(trimmed)) return l.nicknameBadChars;
   if (!rules.nicknameAllowed(trimmed)) return l.nicknameBlockedWord;
   // 내 현재 닉네임 그대로면 중복 검사 불필요(변경 아님).
   final save = ref.read(saveControllerProvider).value;

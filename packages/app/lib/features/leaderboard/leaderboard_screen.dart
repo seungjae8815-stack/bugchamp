@@ -357,29 +357,48 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // 리그 뱃지는 **트로피 랭킹에서만** 의미가 있다 — 레벨/진행도 줄에
           // 붙이면 그 유저의 결투 등급인 것처럼 읽힌다.
           if (_kind == RankingKind.trophies) ...[
-            leagueIcon(league.id, size: top ? 24 : 16),
-            const SizedBox(width: 8),
+            // 아이콘 **칸**은 고정폭이다. 그림 크기(24/16)만 다르게 두면
+            // 닉네임 시작점이 줄마다 어긋나 표 전체가 흐트러져 보인다.
+            SizedBox(
+              width: 26,
+              child: Center(child: leagueIcon(league.id, size: top ? 24 : 16)),
+            ),
+            const SizedBox(width: 6),
           ],
-          Flexible(
-            child: Text(
-              // 부적절한 닉네임은 표시 단계에서 대체(채팅과 같은 기준).
-              rules.maskNickname(
-                e.profile.nickname,
-                fallback: l.nicknameFallback,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: (e.isMe || top) ? FontWeight.w900 : FontWeight.w600,
-                fontSize: top ? 15 : 13.5,
-              ),
+          // ⚠️ 이름+뱃지를 **하나의 Expanded** 로 묶는다.
+          //
+          // `Flexible(이름) + Spacer()` 로 두면 둘 다 flex 1 이라 남은 공간을
+          // 반씩 나눠 갖는다. 이름이 짧을수록 안 쓴 공간이 **줄 끝에 남아**
+          // 점수 칸이 왼쪽으로 딸려온다 — 줄마다 트로피 위치가 달라 보이던
+          // 원인이다(2026-08-27 실기). Expanded 하나면 남는 공간이 전부
+          // 이름 칸으로 가고 점수는 항상 오른쪽 끝에 붙는다.
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    // 부적절한 닉네임은 표시 단계에서 대체(채팅과 같은 기준).
+                    rules.maskNickname(
+                      e.profile.nickname,
+                      fallback: l.nicknameFallback,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: (e.isMe || top)
+                          ? FontWeight.w900
+                          : FontWeight.w600,
+                      fontSize: top ? 15 : 13.5,
+                    ),
+                  ),
+                ),
+                // 대회 회차 뱃지 — 리그 뱃지와 달리 **모든 축**에 붙는다.
+                // 결투를 안 하는 유저도 대회에는 나가고, 그게 이 표식의 요지다.
+                EventBadgeChip(id: e.badge, size: top ? 12 : 10.5),
+              ],
             ),
           ),
-          // 대회 회차 뱃지 — 리그 뱃지와 달리 **모든 축**에 붙는다.
-          // 결투를 안 하는 유저도 대회에는 나가고, 그게 이 표식의 요지다.
-          EventBadgeChip(id: e.badge, size: top ? 12 : 10.5),
-          const Spacer(),
           _scoreCell(l, e.profile, _kind, emphasize: e.isMe),
         ],
       ),

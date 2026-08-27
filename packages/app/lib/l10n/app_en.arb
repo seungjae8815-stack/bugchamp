@@ -1093,6 +1093,7 @@
   "@badgeChampion": {"placeholders": {"round": {"type": "int"}}},
   "badgeFinalist": "R{round} Finalist",
   "@badgeFinalist": {"placeholders": {"round": {"type": "int"}}},
+  "nicknameBadChars": "Letters and numbers only (no emoji or stray marks)",
   "netLostTitle": "Connection lost",
   "netLostBody": "Check your internet connection.\nProgress is only saved while connected.",
   "netRetry": "Retry",

@@ -155,10 +155,46 @@ class ChatRules {
     return false;
   }
 
+  /// 닉네임에 **쓸 수 있는 문자**인지. 허용 목록 방식이다 —
+  /// 금지 목록으로 두면 유니코드에 새 결합 문자가 생길 때마다 뚫린다.
+  ///
+  /// 허용: 한글 완성형(가~힣) · 라틴 문자 · 숫자 · 히라가나 · 가타카나 ·
+  /// 한자(CJK) · 공백 · `_ - .`
+  ///
+  /// ⚠️ **글로벌 출시(ko/en/ja)라 가나·한자를 반드시 허용해야 한다.**
+  /// 일본 유저 닉네임을 막는 건 깨진 닉네임보다 훨씬 큰 사고다.
+  ///
+  /// 막는 것 = **조합 안 된 한글 자모**(ㅃ·ㄸ 낱자, U+1100~U+11FF 등)와
+  /// **결합 문자**(U+0300~U+036F 등). 이것들은 세로로 쌓여 `maxLines: 1` 을
+  /// 뚫고 줄 높이를 밀어낸다 — 순위표·채팅·전투 화면이 통째로 흐트러진다
+  /// (2026-08-27 실기에서 발견). 길이 제한이 8자여도 자모 8개면 충분히 뭉갠다.
+  static final RegExp _nicknameCharset = RegExp(
+    r'^['
+    r'가-힣' // 한글 완성형
+    r'A-Za-z0-9'
+    r'぀-ゟ' // 히라가나
+    r'゠-ヿ' // 가타카나
+    r'一-鿿' // 한자(CJK 통합)
+    // 반각 가타카나 — **탁점·반탁점(ﾞﾟ U+FF9E~FF9F)까지** 포함해야 한다.
+    // ｶﾌﾞﾄ 처럼 흔한 이름이 탁점 하나 때문에 막힌다(2026-08-27 테스트에서 잡힘).
+    r'ｦ-ﾟ'
+    r' _\-\.'
+    r']+$',
+  );
+
+  /// 닉네임 문자 구성이 정상인지. [nicknameAllowed] 와 [maskNickname] 이 함께 쓴다.
+  bool nicknameCharsOk(String name) {
+    final t = name.trim();
+    return t.isNotEmpty && _nicknameCharset.hasMatch(t);
+  }
+
   /// 닉네임으로 쓸 수 있는지. 채팅과 **같은 금칙어 목록**을 공유한다
   /// (닉네임은 랭킹·스카우트·채팅에 그대로 노출되므로 기준이 같아야 한다).
   bool nicknameAllowed(String name) =>
-      name.trim().isNotEmpty && !hasBannedWord(name) && !isReservedName(name);
+      name.trim().isNotEmpty &&
+      nicknameCharsOk(name) &&
+      !hasBannedWord(name) &&
+      !isReservedName(name);
 
   /// 표시용 닉네임. 금칙어가 든 이름은 [fallback] 으로 대체한다.
   ///
@@ -174,7 +210,13 @@ class ChatRules {
     bool isAdmin = false,
   }) {
     if (isAdmin) return name;
-    return (hasBannedWord(name) || isReservedName(name)) ? fallback : name;
+    // 문자 구성이 깨진 이름도 가린다. 등록을 막기 **전에** 만들어진 이름은
+    // 되돌릴 수 없으므로, 금칙어와 같은 원칙으로 보여줄 때 대체한다.
+    return (hasBannedWord(name) ||
+            isReservedName(name) ||
+            !nicknameCharsOk(name))
+        ? fallback
+        : name;
   }
 
   /// 전송 전 검사. [lastSentAt] 이 null 이면 첫 전송.

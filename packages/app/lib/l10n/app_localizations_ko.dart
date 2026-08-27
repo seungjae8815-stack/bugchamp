@@ -1875,6 +1875,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get nicknameBadChars => '한글·영문·숫자만 쓸 수 있어요 (이모지·자음/모음 하나는 안 돼요)';
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

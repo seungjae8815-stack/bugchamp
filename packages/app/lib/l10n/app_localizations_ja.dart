@@ -1870,6 +1870,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get nicknameBadChars => '文字と数字のみ使えます（絵文字・単独の記号は不可）';
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override
