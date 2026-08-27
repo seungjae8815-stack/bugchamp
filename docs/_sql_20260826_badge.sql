@@ -92,12 +92,27 @@ $$;
 
 
 -- ────────────────────────────────────────────────────────────────
--- 확인 — 넷 다 결과가 나오면 성공
+-- 확인 — 이 한 문장만 실행하면 넷 다 본다. `ok` 가 전부 true 여야 한다.
 -- ────────────────────────────────────────────────────────────────
--- select count(*) from information_schema.columns
---   where table_name='profiles' and column_name='badge';            -- 1
--- select * from leaderboard_top(5, 'trophies');                     -- badge 컬럼 보임
--- select proname from pg_proc where proname = 'event_rank_of';      -- 1행
--- select privilege_type, column_name from information_schema.column_privileges
---   where table_name='profiles' and grantee='authenticated'
---     and privilege_type='UPDATE';   -- nickname/trophies/level/stage 만 (badge 없어야 함)
+select '① badge 컬럼' as check, exists(
+         select 1 from information_schema.columns
+         where table_name='profiles' and column_name='badge') as ok
+union all
+select '② level·stage 컬럼', (
+         select count(*) = 2 from information_schema.columns
+         where table_name='profiles' and column_name in ('level','stage'))
+union all
+select '③ badge 쓰기 차단', not exists(
+         select 1 from information_schema.column_privileges
+         where table_name='profiles' and grantee='authenticated'
+           and privilege_type='UPDATE' and column_name='badge')
+union all
+select '④ event_rank_of', exists(
+         select 1 from pg_proc where proname='event_rank_of')
+union all
+select '⑤ 순위표가 badge 반환', (
+         select count(*) = 2 from pg_proc p
+         where p.proname in ('event_top','leaderboard_top')
+           and pg_get_function_result(p.oid) like '%badge%');
+
+-- ③ 이 false 면 **누구나 챔피언 뱃지를 달 수 있는 상태**다. ③번 GRANT 를 다시 확인할 것.
