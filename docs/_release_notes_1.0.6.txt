@@ -2,6 +2,8 @@
  Google Play — 출시 노트 (1.0.6 / 20260827)
 ========================================
 ※ Play Console 은 아래 태그 블록을 통째로 붙여넣는다. 한 언어당 500자 한도.
+※ ⚠️ 길이는 **줄바꿈을 2자(CRLF)로** 세어야 한다. LF 기준 495자가 콘솔에서
+   508자로 잡혀 거부됐다(2026-08-27). 줄 수가 많으면 그만큼 손해다.
 ※ iOS 용 노트는 _appstore_whatsnew_1.0.6.txt (이모지 금지 · 심사 1.1 지뢰 단어 주의).
 ※ 범위: 1.0.5(20260811) 이후 전부 — 46개 변경. 대회 1회차는 9/1~9/15 (14일).
 ※ ⚠️ 이전 초안(20260814)은 "8월 28일 개막(7일간)"이라 낡았다. 일정이 두 번 밀렸다.
@@ -26,18 +28,18 @@
 <en-US>
 🏆 Bug King Championship is live!
 
-• Real beetle prize — Sep 1–15 (1st, ships in Korea)
-• Ranks 2–10: jelly + limited leaderboard badge
-• Wave defense — stats normalized, formation wins
+• Real beetle prize — Sep 1-15 (1st, Korea only)
+• Ranks 2-10: jelly + limited leaderboard badge
+• Wave defense — stats normalized, skill decides
 • Field Guide — unique ability per species
 • Revamped duels — art for all 20 species
-• Three rankings — trophies, level, progress
+• Rankings by trophies, level and progress
 • Exchange jelly for gold and materials
 • Storage filter, auto-merge, auto-release
 • Eggs inherit element and temperament
-• Ads are gone — rewards are free now
+• Ads gone — rewards are free now
 
-Happy collecting! 😊
+Happy collecting!
 </en-US>
 
 <ja-JP>
