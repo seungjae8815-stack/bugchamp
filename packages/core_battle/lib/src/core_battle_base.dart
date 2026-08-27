@@ -34,6 +34,23 @@ class BattleBug {
   final double atk;
   final double def;
   final double spd;
+
+  /// 표시 이름만 갈아끼운다 — **언어를 바꿨을 때** 쓴다.
+  ///
+  /// 이름은 팀을 만들 때 로케일로 한 번 해석해 굽는다(전투 로그가 이 값을
+  /// 쓴다). 그래서 설정에서 언어를 바꾸면 이미 만들어 둔 상대 팀 이름이
+  /// 예전 언어로 남는다 — 스탯·시드를 건드리지 않고 이름만 바꾼다.
+  BattleBug copyWith({String? name}) => BattleBug(
+    id: id,
+    name: name ?? this.name,
+    element: element,
+    temperament: temperament,
+    preferredStance: preferredStance,
+    maxHp: maxHp,
+    atk: atk,
+    def: def,
+    spd: spd,
+  );
 }
 
 enum BattleOutcome { teamA, teamB, draw }

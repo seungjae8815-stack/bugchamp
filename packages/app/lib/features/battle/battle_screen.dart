@@ -288,6 +288,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   bool _initialized = false;
 
   List<_Scout> _scouts = [];
+
+  /// [_scouts] 의 이름을 구울 때 쓴 로케일. 설정에서 언어를 바꾸면 달라진다.
+  String? _scoutLocale;
   int _selectedScout = 1; // 기본 '대등' 티어
   bool _manual = true; // 전투 모드 토글(수동/자동), 기본 수동(심리전)
   bool _scoutsFetched = false; // 실 유저 방어팀 fetch 를 이번 세션에 시도했는지
@@ -412,7 +415,24 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           _genFoeTeam(avg, cfg.scoutTiers[i].powerMult, data, locale, i),
         ),
     ];
+    _scoutLocale = locale;
     if (_selectedScout >= _scouts.length) _selectedScout = _scouts.length ~/ 2;
+  }
+
+  /// 상대 팀의 **표시 이름만** 현재 언어로 다시 굽는다.
+  void _relabelScouts(GameData data, String locale) {
+    _scoutLocale = locale;
+    for (final sc in _scouts) {
+      for (var i = 0; i < sc.team.length; i++) {
+        final sp = _speciesOrNull(data, sc.team[i].speciesId);
+        if (sp == null) continue;
+        sc.team[i] = (
+          bug: sc.team[i].bug.copyWith(name: sp.name.resolve(locale)),
+          speciesId: sc.team[i].speciesId,
+          skin: sc.team[i].skin,
+        );
+      }
+    }
   }
 
   Species? _speciesOrNull(GameData data, String id) {
@@ -587,6 +607,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     }
     setState(() {
       _scouts = [for (final s in slots) s!];
+      _scoutLocale = locale;
       if (_selectedScout >= _scouts.length) {
         _selectedScout = _scouts.length ~/ 2;
       }
@@ -1088,6 +1109,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final battleCfg = data.battleConfig ?? const BattleConfig();
     final avg = _rosterAvg(adults, data, locale);
     if (avg != null && _scouts.isEmpty) _rollScouts(data, locale, avg);
+    // 설정에서 언어를 바꾸면 이미 구워 둔 상대 이름이 예전 언어로 남는다
+    // (이름은 팀을 만들 때 한 번 해석해 넣는다 — 전투 로그가 그 값을 쓴다).
+    // ⚠️ **다시 뽑지 않는다.** 재추첨하면 언어를 바꿨다는 이유로 상대가
+    // 바뀌어, 고르던 판이 사라진다. 스탯·시드는 그대로 두고 이름만 갈아끼운다.
+    if (_scouts.isNotEmpty && _scoutLocale != locale) {
+      _relabelScouts(data, locale);
+    }
     if (avg != null && !_scoutsFetched) {
       _scoutsFetched = true;
       _fetchRealScouts(data, locale, avg, save);
