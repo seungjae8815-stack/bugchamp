@@ -5770,33 +5770,49 @@ class _LanguageSection extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 6),
+        // ⚠️ Material3 `ChoiceChip` 을 쓰면 안 된다 — 어두운 다이얼로그 위에서
+        // 흰 알약으로 떠서 글씨가 안 읽힌다(실기 지적). 게다가 `label` 의 Text
+        // 에 style 을 주면 chip 의 `labelStyle` 색이 덮여 더 나빠진다.
+        // 앱의 다른 선택 버튼(`_AmountButton`)과 같은 손그림 스타일로 맞춘다.
         Wrap(
           spacing: 6,
           runSpacing: 6,
           children: [
             for (final (code, name) in _options)
-              ChoiceChip(
-                label: Text(
-                  code == null ? l.languageSystem : name,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                selected: current == code,
-                onSelected: (_) => ref
+              InkWell(
+                onTap: () => ref
                     .read(localePrefsProvider.notifier)
                     .set(code == null ? null : Locale(code)),
-                showCheckmark: false,
-                selectedColor: const Color(0xFF3B7A2A),
-                backgroundColor: const Color(0x22FFFFFF),
-                labelStyle: TextStyle(
-                  color: current == code
-                      ? Colors.white
-                      : const Color(0xB3FFFFFF),
-                  fontWeight: FontWeight.w700,
-                ),
-                side: BorderSide(
-                  color: current == code
-                      ? const Color(0xFF6BBF4E)
-                      : const Color(0x33FFFFFF),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: current == code
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFFD977), Color(0xFFEBA52F)],
+                          )
+                        : null,
+                    color: current == code ? null : const Color(0x22FFFFFF),
+                    border: Border.all(
+                      color: current == code
+                          ? Colors.transparent
+                          : const Color(0x33FFFFFF),
+                    ),
+                  ),
+                  child: Text(
+                    code == null ? l.languageSystem : name,
+                    style: TextStyle(
+                      color: current == code
+                          ? const Color(0xFF3A2600)
+                          : const Color(0xCCFFFFFF),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12.5,
+                    ),
+                  ),
                 ),
               ),
           ],
