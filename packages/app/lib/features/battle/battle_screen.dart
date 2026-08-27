@@ -2543,6 +2543,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     VoidCallback? onReady,
   }) async {
     final l = AppLocalizations.of(context);
+    // 표시 언어는 **await 전에** 읽는다(async gap 뒤의 context 사용 금지).
+    // 서버가 전투 로그의 상대 이름을 이 언어로 굽는다.
+    final locale = Localizations.localeOf(context).languageCode;
     // 이번 요청의 결과로만 판단하도록 **매번 초기화**한다. 남겨두면 세이브
     // 업로드 실패(티켓과 무관)로 돌아왔을 때 직전의 '티켓 없음' 값이 남아
     // 낙관 차감한 티켓을 되돌리지 않는다 = 티켓 1장이 그냥 사라진다.
@@ -2562,6 +2565,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           teamBugIds: [for (final b in m.mine) b.id],
           opponentUserId: scout.ownerId,
           tierId: scout.ownerId == null ? scout.tier.id : null,
+          locale: locale,
         );
     if (!res.isOk || res.save == null) {
       final noTicket = await _syncTicketRejection(res);
@@ -2757,6 +2761,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     _Scout scout,
   ) async {
     final l = AppLocalizations.of(context);
+    // 표시 언어는 **await 전에** 읽는다(async gap 뒤 context 사용 금지).
+    final locale = Localizations.localeOf(context).languageCode;
     final m = _buildMatch(data, save, locale, scout);
     if (m.mine.isEmpty) return;
     // 수동 전투도 **시작할 때** 한 장. 중간에 나가도 돌려주지 않는다
@@ -2818,6 +2824,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           teamBugIds: [for (final b in m.mine) b.id],
           opponentUserId: scout.ownerId,
           tierId: scout.ownerId == null ? scout.tier.id : null,
+          locale: locale,
         );
         if (!res.isOk || res.data?['sessionId'] == null) {
           // 싸우지도 못했으니 선차감한 트로피는 돌려준다(서버도 안 깎았다).

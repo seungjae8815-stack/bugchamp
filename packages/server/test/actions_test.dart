@@ -823,6 +823,37 @@ void main() {
       expect(r, isNull);
     });
 
+    /// ⚠️ 예전엔 `sp.name.resolve('ko')` 로 하드코딩돼 있었다 — 앱을 영어로
+    /// 바꿔도 **상대 이름만 한글**로 나왔다(2026-08-27 실기). 서버가 전투
+    /// 로그의 이름을 굽기 때문에 앱에서 고칠 수 없는 자리였다.
+    test('상대 이름을 앱이 보낸 언어로 굽는다', () {
+      ({String? name}) build(String? locale) {
+        final r = locale == null
+            ? actions.buildWildTeam(
+                withRoster(3),
+                tierId: tiers.first.id,
+                speciesById: {'a': testSpecies},
+                petConfig: petCfg,
+                rng: Random(7),
+              )
+            : actions.buildWildTeam(
+                withRoster(3),
+                tierId: tiers.first.id,
+                speciesById: {'a': testSpecies},
+                petConfig: petCfg,
+                rng: Random(7),
+                locale: locale,
+              );
+        return (name: r?.team.first.name);
+      }
+
+      expect(build('ko').name, '테스트벌레');
+      expect(build('en').name, 'T');
+      expect(build('ja').name, 'T');
+      // 구버전 앱은 locale 을 안 보낸다 → 예전 동작(ko)을 유지한다.
+      expect(build(null).name, '테스트벌레');
+    });
+
     test('유효한 티어면 3마리를 만든다', () {
       final r = actions.buildWildTeam(
         withRoster(3),

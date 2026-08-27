@@ -914,6 +914,7 @@ class GameActions {
     required PetConfig petConfig,
     EnhanceConfig? enhance,
     Random? rng,
+    String locale = 'ko',
   }) {
     final tier = config.battle.scoutTiers
         .where((t) => t.id == tierId)
@@ -968,7 +969,9 @@ class GameActions {
       final f = (0.9 + r.nextDouble() * 0.2) * tier.powerMult;
       return BattleBug(
         id: 'wild_$i',
-        name: sp.name.resolve('ko'),
+        // ⚠️ 하드코딩하지 않는다 — 앱이 자기 표시 언어를 보낸다. 예전엔 'ko'
+        // 고정이라 영어로 바꿔도 상대 이름만 한글로 나왔다(2026-08-27).
+        name: sp.name.resolve(locale),
         element: Element.values[r.nextInt(Element.values.length)],
         temperament: Temperament.values[r.nextInt(Temperament.values.length)],
         preferredStance: preferredStanceOf(sp.specialty),

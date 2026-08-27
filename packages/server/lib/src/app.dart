@@ -85,11 +85,14 @@ BattleBug _defenderToBattleBug(
   Map<String, dynamic> d,
   int index,
   Map<String, Species> speciesById,
+  String locale,
 ) {
   final sp = speciesById[d['sp']?.toString() ?? ''];
   return BattleBug(
     id: 'foe-$index',
-    name: sp?.name.resolve('ko') ?? '상대',
+    // ⚠️ 앱이 보낸 표시 언어로 굽는다. 'ko' 고정이면 영어·일본어 유저에게
+    // 상대 이름만 한글로 나간다(2026-08-27 수정).
+    name: sp?.name.resolve(locale) ?? '???',
     element: Element.fromKey(d['el']?.toString() ?? 'wood'),
     temperament: Temperament.fromKey(d['tm']?.toString() ?? 'steadfast'),
     preferredStance: sp == null
@@ -956,6 +959,9 @@ Handler buildHandler({
           id.toString(),
       ];
       final opponentId = body['opponentUserId']?.toString() ?? '';
+      // 전투 로그의 곤충 이름을 어느 언어로 구울지. 구버전 앱은 안 보내므로
+      // 'ko' 로 떨어뜨린다(예전 동작 유지).
+      final locale = body['locale']?.toString() ?? 'ko';
       final tierId = body['tierId']?.toString() ?? '';
       if (teamIds.isEmpty || (opponentId.isEmpty && tierId.isEmpty)) {
         return _json({'error': 'bad_request'}, status: 400);
@@ -1005,7 +1011,7 @@ Handler buildHandler({
           }
           foe = [
             for (var i = 0; i < rows.length; i++)
-              _defenderToBattleBug(rows[i], i, species),
+              _defenderToBattleBug(rows[i], i, species, locale),
           ];
           foeSpecies = [for (final d in rows) d['sp']?.toString() ?? ''];
           foeSkins = [for (final d in rows) _defenderSkin(d)];
@@ -1013,6 +1019,7 @@ Handler buildHandler({
         } else {
           final wild = actions.buildWildTeam(
             save,
+            locale: locale,
             tierId: tierId,
             speciesById: species,
             petConfig: cfg.pet,
@@ -1337,6 +1344,9 @@ Handler buildHandler({
           id.toString(),
       ];
       final opponentId = body['opponentUserId']?.toString() ?? '';
+      // 전투 로그의 곤충 이름을 어느 언어로 구울지. 구버전 앱은 안 보내므로
+      // 'ko' 로 떨어뜨린다(예전 동작 유지).
+      final locale = body['locale']?.toString() ?? 'ko';
       // 야생(합성) 상대는 티어 id 만 받는다 — 배율은 서버가 config 에서 고른다.
       final tierId = body['tierId']?.toString() ?? '';
       if (teamIds.isEmpty || (opponentId.isEmpty && tierId.isEmpty)) {
@@ -1364,7 +1374,7 @@ Handler buildHandler({
           }
           foe = [
             for (var i = 0; i < rows.length; i++)
-              _defenderToBattleBug(rows[i], i, species),
+              _defenderToBattleBug(rows[i], i, species, locale),
           ];
           foeSpecies = [for (final d in rows) d['sp']?.toString() ?? ''];
           foeSkins = [for (final d in rows) _defenderSkin(d)];
@@ -1373,6 +1383,7 @@ Handler buildHandler({
           // 야생 상대 — 서버가 내 로스터 기준으로 만든다.
           final wild = actions.buildWildTeam(
             save,
+            locale: locale,
             tierId: tierId,
             speciesById: species,
             petConfig: cfg.pet,

@@ -53,10 +53,14 @@ abstract interface class GameServer {
   /// [opponentUserId] 는 실제 유저 상대, [tierId] 는 야생(합성) 상대.
   /// 야생은 **서버가 상대를 만들어** 응답의 `foe` 로 돌려준다 — 앱이 따로
   /// 만들면 연출과 서버 결과가 갈린다.
+  /// [locale] = 화면 표시 언어('ko'/'en'/'ja'). 서버가 전투 로그의 곤충
+  /// 이름을 이 언어로 굽는다 — 예전엔 서버가 'ko' 로 하드코딩해서, 영어로
+  /// 바꿔도 상대 이름만 한글로 나왔다(2026-08-27).
   Future<ServerResult> battle({
     required List<String> teamBugIds,
     String? opponentUserId,
     String? tierId,
+    String? locale,
   });
 
   /// 수동 전투 시작 — 세션을 열고 상대 스탯을 받는다.
@@ -65,6 +69,7 @@ abstract interface class GameServer {
     required List<String> teamBugIds,
     String? opponentUserId,
     String? tierId,
+    String? locale,
   });
 
   /// 수동 전투 한 수 — 이번 라운드 결과만 돌아온다.
@@ -211,6 +216,7 @@ class NoGameServer implements GameServer {
     required List<String> teamBugIds,
     String? opponentUserId,
     String? tierId,
+    String? locale,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> bootstrap(Map<String, dynamic> save) async =>
@@ -296,6 +302,7 @@ class NoGameServer implements GameServer {
     required List<String> teamBugIds,
     String? opponentUserId,
     String? tierId,
+    String? locale,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> stepManualBattle({
@@ -396,10 +403,12 @@ class HttpGameServer implements GameServer {
     required List<String> teamBugIds,
     String? opponentUserId,
     String? tierId,
+    String? locale,
   }) => _send('POST', '/battle', {
     'teamBugIds': teamBugIds,
     'opponentUserId': ?opponentUserId,
     'tierId': ?tierId,
+    'locale': ?locale,
   });
 
   @override
@@ -520,10 +529,12 @@ class HttpGameServer implements GameServer {
     required List<String> teamBugIds,
     String? opponentUserId,
     String? tierId,
+    String? locale,
   }) => _send('POST', '/battle/manual/start', {
     'teamBugIds': teamBugIds,
     'opponentUserId': ?opponentUserId,
     'tierId': ?tierId,
+    'locale': ?locale,
   });
 
   @override
