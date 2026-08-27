@@ -1900,6 +1900,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventRewardParticipationRow => '참가 (1판 이상)';
 
   @override
+  String buffCooldownChip(String t) {
+    return '무료 $t 후';
+  }
+
+  @override
+  String buffCooldownAsk(String t, int n) {
+    return '무료 켜기는 $t 후에 다시 할 수 있어요.\n젤리 $n개로 바로 켤까요?';
+  }
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

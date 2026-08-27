@@ -4830,10 +4830,45 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
-  void _showBuffSheet(AppLocalizations l) {
+  /// 기기 단위 무료 발동 기록. `buff_free_cd_v1` = `kind=iso8601;...`.
+  /// 서버 소유까지는 과하다 — 버프는 PvE 편의고 적응 체력 기준에서도 빠져 있다(§7).
+  static Future<Map<BuffKind, DateTime>> _loadBuffFreeAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final out = <BuffKind, DateTime>{};
+    for (final part in (prefs.getString('buff_free_cd_v1') ?? '').split(';')) {
+      final i = part.indexOf('=');
+      if (i <= 0) continue;
+      final kind = BuffKind.fromKey(part.substring(0, i));
+      final at = DateTime.tryParse(part.substring(i + 1));
+      if (kind != null && at != null) out[kind] = at.toUtc();
+    }
+    return out;
+  }
+
+  static Future<void> _saveBuffFreeAt(Map<BuffKind, DateTime> m) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'buff_free_cd_v1',
+      [
+        for (final e in m.entries) '${e.key.key}=${e.value.toIso8601String()}',
+      ].join(';'),
+    );
+  }
+
+  /// 'h:mm' — 쿨다운 표시용(초 단위까지는 필요 없다).
+  static String _hmm(Duration d) {
+    final m = d.inMinutes.clamp(0, 24 * 60);
+    return '${m ~/ 60}:${(m % 60).toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _showBuffSheet(AppLocalizations l) async {
     final buffs = _data.buffConfig;
     if (buffs == null) return;
     final minutes = (buffs.durationSeconds / 60).round();
+    // 시트를 열기 **전에** 읽는다 — 행마다 async 로 읽으면 첫 프레임에
+    // 쿨다운 칩이 늦게 떠서 깜빡인다. 맵은 발동 시 제자리 갱신된다.
+    final freeAt = await _loadBuffFreeAt();
+    if (!mounted) return;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xF2141F0E),
@@ -4861,7 +4896,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                   const SizedBox(height: 12),
                   for (final k in BuffKind.values)
-                    _buffSheetRow(l, r, k, save.buffRemaining(k, now), minutes),
+                    _buffSheetRow(
+                      l,
+                      r,
+                      k,
+                      save.buffRemaining(k, now),
+                      minutes,
+                      freeAt,
+                    ),
                 ],
               ),
             );
@@ -4875,30 +4917,46 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ///
   /// 기기 단위 카운트다. 버프는 PvE 편의라 서버 소유까지는 과하다 —
   /// 몬스터 적응 체력 기준에서도 버프는 빠져 있다(§7).
-  Future<bool> _takeBuffActivation(AppLocalizations l) async {
+  Future<bool> _takeBuffActivation(
+    AppLocalizations l,
+    BuffKind kind,
+    Map<BuffKind, DateTime> freeAt,
+  ) async {
     // 무한 버프 패스 보유 중이면 발동 자체가 필요 없다(항상 켜져 있다).
     final save = ref.read(saveControllerProvider).requireValue;
     if (save.buffPassActive(ref.read(clockProvider).now().toUtc())) return true;
     final cfg = _data.buffConfig;
     final free = cfg?.freeDaily ?? 12;
     final cost = cfg?.jellyActivate ?? 2;
+    final cd = Duration(seconds: cfg?.freeCooldownSeconds ?? 0);
     final prefs = await SharedPreferences.getInstance();
     final now = ref.read(clockProvider).now().toUtc();
     final today = dailyDateKey(now);
     final parts = (prefs.getString('buff_free_v1') ?? '|').split('|');
     final used = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
-    if (used < free) {
+    // 같은 버프의 무료 발동은 [cd] 텀을 둔다(2026-08-27) — 예전엔 하루치
+    // 12회를 한자리에서 연달아 눌러 6시간을 공짜로 쌓을 수 있었다.
+    final last = freeAt[kind];
+    final coolLeft = (last == null || cd == Duration.zero)
+        ? Duration.zero
+        : cd - now.difference(last);
+    if (used < free && coolLeft <= Duration.zero) {
       await prefs.setString('buff_free_v1', '$today|${used + 1}');
+      freeAt[kind] = now; // 시트가 이 맵을 그대로 보므로 제자리 갱신
+      await _saveBuffFreeAt(freeAt);
       return true;
     }
-    // 무료 소진 — **먼저 묻는다**(말없이 젤리를 깎지 않는다).
+    // 무료 불가(쿨다운 또는 소진) — **먼저 묻는다**(말없이 젤리를 깎지 않는다).
+    // 젤리 발동은 쿨다운을 소모하지도, 걸지도 않는다 — 결제는 시간만 절약(§2.6).
     if (!mounted) return false;
     final ok = await showGameDialog<bool>(
       context,
       title: l.jellyContinueTitle,
       icon: Icons.water_drop_rounded,
       content: Text(
-        l.jellyContinueAsk(cost),
+        coolLeft > Duration.zero
+            ? l.buffCooldownAsk(_hmm(coolLeft), cost)
+            : l.jellyContinueAsk(cost),
         style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.4),
       ),
       actions: [
@@ -4928,8 +4986,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     BuffKind k,
     Duration? remaining,
     int minutes,
+    Map<BuffKind, DateTime> freeAt,
   ) {
     final active = remaining != null;
+    final cd = Duration(seconds: _data.buffConfig?.freeCooldownSeconds ?? 0);
+    final last = freeAt[k];
+    var coolLeft = Duration.zero;
+    if (last != null && cd > Duration.zero) {
+      final left = cd - _clock.now().toUtc().difference(last);
+      if (left > Duration.zero) coolLeft = left;
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -4975,6 +5041,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         ),
                       ),
                     ],
+                    // 무료 쿨다운 중이면 언제 다시 되는지 보여준다 — 안 보이면
+                    // 눌렀다가 젤리 다이얼로그를 만나는 게 첫 안내가 된다.
+                    if (coolLeft > Duration.zero) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x33FFFFFF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          l.buffCooldownChip(_hmm(coolLeft)),
+                          style: const TextStyle(
+                            color: Color(0xB3FFFFFF),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10.5,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 Text(
@@ -4992,7 +5081,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             onPressed: () async {
               // 무료 발동 소진 후엔 젤리(사장님 결정 2026-08-18). 광고가
               // 비용이던 자리라, 무료 무제한이면 버프가 사실상 상시화된다.
-              if (!await _takeBuffActivation(l)) return;
+              if (!await _takeBuffActivation(l, k, freeAt)) return;
               if (!mounted) return;
               final ctrl = r.read(saveControllerProvider.notifier);
               await ctrl.activateBuff(k);

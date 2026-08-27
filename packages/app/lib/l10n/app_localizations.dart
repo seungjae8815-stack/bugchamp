@@ -3484,6 +3484,18 @@ abstract class AppLocalizations {
   /// **'Entry (1+ runs)'**
   String get eventRewardParticipationRow;
 
+  /// No description provided for @buffCooldownChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Free in {t}'**
+  String buffCooldownChip(String t);
+
+  /// No description provided for @buffCooldownAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Next free activation in {t}.\nActivate now for {n} jelly?'**
+  String buffCooldownAsk(String t, int n);
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

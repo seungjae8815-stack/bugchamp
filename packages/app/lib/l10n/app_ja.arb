@@ -564,6 +564,8 @@
   "eventRewardRealBug": "本物の昆虫（韓国国内配送）",
   "eventRewardJelly": "ゼリー {n}",
   "eventRewardParticipationRow": "参加（1回以上）",
+  "buffCooldownChip": "無料まで {t}",
+  "buffCooldownAsk": "次の無料起動まで {t}。\nゼリー {n}個で今すぐ起動しますか？",
   "netLostTitle": "接続が切れました",
   "netLostBody": "インターネット接続を確認してください。\n接続中のみ進行が保存されます。",
   "netRetry": "再試行",

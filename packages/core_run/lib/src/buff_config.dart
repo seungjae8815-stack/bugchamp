@@ -45,6 +45,7 @@ class BuffConfig {
     this.adJelly = 0,
     this.freeDaily = 12,
     this.jellyActivate = 2,
+    this.freeCooldownSeconds = 0,
   });
 
   /// 광고 1회 시청으로 부여되는 지속시간(초).
@@ -68,6 +69,14 @@ class BuffConfig {
   final int freeDaily;
   final int jellyActivate;
 
+  /// 같은 버프를 **무료로** 다시 켜기까지의 텀(초). 0 = 텀 없음(구버전 동작).
+  ///
+  /// 광고 시절엔 광고 시청이 발동의 비용이었는데, 광고 폐지(2026-08-18) 후
+  /// 무료 버튼만 남아 하루치 12회를 한자리에서 연달아 눌러 6시간을 공짜로
+  /// 쌓을 수 있었다. 쿨다운 중에도 젤리로는 바로 켤 수 있다 —
+  /// 결제는 시간만 절약한다(§2.6).
+  final int freeCooldownSeconds;
+
   BuffSpec? spec(BuffKind kind) => specs[kind];
 
   factory BuffConfig.fromJson(Map<String, dynamic> json) {
@@ -79,6 +88,7 @@ class BuffConfig {
       maxSeconds: (json['maxSeconds'] as num).toInt(),
       adJelly: (json['adJelly'] as num?)?.toInt() ?? 0,
       freeDaily: (json['freeDaily'] as num?)?.toInt() ?? 12,
+      freeCooldownSeconds: (json['freeCooldownSeconds'] as num?)?.toInt() ?? 0,
       jellyActivate: (json['jellyActivate'] as num?)?.toInt() ?? 2,
       specs: {for (final s in list) s.kind: s},
     );

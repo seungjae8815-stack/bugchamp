@@ -1931,6 +1931,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventRewardParticipationRow => 'Entry (1+ runs)';
 
   @override
+  String buffCooldownChip(String t) {
+    return 'Free in $t';
+  }
+
+  @override
+  String buffCooldownAsk(String t, int n) {
+    return 'Next free activation in $t.\nActivate now for $n jelly?';
+  }
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override
