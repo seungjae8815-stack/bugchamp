@@ -3448,6 +3448,48 @@ abstract class AppLocalizations {
   /// **'Letters and numbers only (no emoji or stray marks)'**
   String get nicknameBadChars;
 
+  /// No description provided for @eventRewardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rank rewards'**
+  String get eventRewardsTitle;
+
+  /// No description provided for @eventRankOne.
+  ///
+  /// In en, this message translates to:
+  /// **'1st'**
+  String get eventRankOne;
+
+  /// No description provided for @eventRankRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{a}–{b}'**
+  String eventRankRange(int a, int b);
+
+  /// No description provided for @eventRewardRealBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Real beetle (ships in Korea)'**
+  String get eventRewardRealBug;
+
+  /// No description provided for @eventRewardJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly ×{n}'**
+  String eventRewardJelly(int n);
+
+  /// No description provided for @eventRewardParticipationRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry (1+ runs)'**
+  String get eventRewardParticipationRow;
+
+  /// No description provided for @eventFlyerSubPrize.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards down to 10th — jelly prizes plus leaderboard badges for top ranks!'**
+  String get eventFlyerSubPrize;
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

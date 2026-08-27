@@ -1873,6 +1873,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nicknameBadChars => '文字と数字のみ使えます（絵文字・単独の記号は不可）';
 
   @override
+  String get eventRewardsTitle => '順位報酬';
+
+  @override
+  String get eventRankOne => '1位';
+
+  @override
+  String eventRankRange(int a, int b) {
+    return '$a~$b位';
+  }
+
+  @override
+  String get eventRewardRealBug => '本物の昆虫（韓国国内配送）';
+
+  @override
+  String eventRewardJelly(int n) {
+    return 'ゼリー $n';
+  }
+
+  @override
+  String get eventRewardParticipationRow => '参加（1回以上）';
+
+  @override
+  String get eventFlyerSubPrize => '2位以下も豪華 — 10位までゼリー、上位にはランキングバッジ！';
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

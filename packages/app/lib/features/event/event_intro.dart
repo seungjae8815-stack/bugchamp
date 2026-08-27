@@ -255,6 +255,19 @@ class EventIntroScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 4),
+                // 1등 실물만 크게 적으면 "그 밖엔 아무것도 없다"로 읽힌다
+                // (2026-08-27 지적) — 2~10위 보상도 한 줄 알린다.
+                // 상세 표는 대회 화면의 _rewardsCard 가 JSON 그대로 그린다.
+                Text(
+                  l.eventFlyerSubPrize,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFFFE9C2),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
           ),

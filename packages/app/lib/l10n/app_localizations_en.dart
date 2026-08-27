@@ -1909,6 +1909,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'Letters and numbers only (no emoji or stray marks)';
 
   @override
+  String get eventRewardsTitle => 'Rank rewards';
+
+  @override
+  String get eventRankOne => '1st';
+
+  @override
+  String eventRankRange(int a, int b) {
+    return '$a–$b';
+  }
+
+  @override
+  String get eventRewardRealBug => 'Real beetle (ships in Korea)';
+
+  @override
+  String eventRewardJelly(int n) {
+    return 'Jelly ×$n';
+  }
+
+  @override
+  String get eventRewardParticipationRow => 'Entry (1+ runs)';
+
+  @override
+  String get eventFlyerSubPrize =>
+      'Rewards down to 10th — jelly prizes plus leaderboard badges for top ranks!';
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override

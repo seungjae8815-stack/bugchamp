@@ -189,6 +189,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                 // 실물 배송 범위는 **상시 표시**한다. 공지 한 줄로는 부족하다 —
                 // 해외 유저가 1등을 하고 못 받는 게 가장 나쁜 그림이다.
                 _notice(l.eventKoreaOnly, const Color(0xFFFFD08A)),
+                _rewardsCard(l, data.eventConfig),
                 if (_state?['rankEligible'] == false)
                   _notice(l.eventAnonWarn, const Color(0xFFFF8A65)),
                 _normalizeCard(l),
@@ -326,6 +327,157 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// 순위 보상 표 — `event.json → rewards` 를 **그대로 그린다**(§6).
+  ///
+  /// 전단지가 1등 실물만 강조해서 "그 밖엔 아무것도 없다"로 읽혔다
+  /// (2026-08-27 지적). 젤리·뱃지가 몇 위까지 나가는지 보여야 4~10위권
+  /// 유저에게도 참가할 이유가 생긴다.
+  Widget _rewardsCard(AppLocalizations l, EventConfig? cfg) {
+    if (cfg == null || cfg.rewardTiers.isEmpty) return const SizedBox.shrink();
+
+    String rankLabel(int from, int to) =>
+        from == to && from == 1 ? l.eventRankOne : l.eventRankRange(from, to);
+
+    Widget row({
+      required String rank,
+      required List<Widget> rewards,
+      bool highlight = false,
+    }) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 62,
+            child: Text(
+              rank,
+              style: TextStyle(
+                color: highlight ? const Color(0xFFEBC24A) : Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 12.5,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: rewards,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Widget jelly(int n) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        jellyIcon(size: 15),
+        const SizedBox(width: 3),
+        Text(
+          l.eventRewardJelly(n),
+          style: const TextStyle(
+            color: Color(0xDDFFFFFF),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+
+    final rows = <Widget>[];
+    var from = 1;
+    for (final t in cfg.rewardTiers) {
+      rows.add(
+        row(
+          rank: rankLabel(from, t.maxRank),
+          highlight: t.physical,
+          rewards: [
+            if (t.physical)
+              Text(
+                l.eventRewardRealBug,
+                style: const TextStyle(
+                  color: Color(0xFFEBC24A),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            if (t.jelly > 0) jelly(t.jelly),
+            if (t.badge.isNotEmpty)
+              EventBadgeChip(id: '${t.badge}:${cfg.roundNo}', size: 10),
+          ],
+        ),
+      );
+      from = t.maxRank + 1;
+    }
+    // 참가 보상 — 순위 밖이어도 빈손이 아니라는 걸 보여준다.
+    if (cfg.participationMaterials.isNotEmpty) {
+      rows.add(
+        row(
+          rank: l.eventRewardParticipationRow,
+          rewards: [
+            for (final e in cfg.participationMaterials.entries)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  materialImage(
+                    e.key,
+                    size: 15,
+                    fallback: Icon(materialIcon(e.key), size: 13),
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    formatCompact(e.value),
+                    style: const TextStyle(
+                      color: Color(0xBBFFFFFF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      decoration: BoxDecoration(
+        color: const Color(0x1AEBC24A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x55EBC24A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.emoji_events_rounded,
+                size: 16,
+                color: Color(0xFFEBC24A),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                l.eventRewardsTitle,
+                style: const TextStyle(
+                  color: Color(0xFFEBC24A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ...rows,
         ],
       ),
     );

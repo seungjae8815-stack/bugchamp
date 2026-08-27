@@ -1878,6 +1878,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get nicknameBadChars => '한글·영문·숫자만 쓸 수 있어요 (이모지·자음/모음 하나는 안 돼요)';
 
   @override
+  String get eventRewardsTitle => '순위 보상';
+
+  @override
+  String get eventRankOne => '1위';
+
+  @override
+  String eventRankRange(int a, int b) {
+    return '$a~$b위';
+  }
+
+  @override
+  String get eventRewardRealBug => '진짜 곤충 (국내 배송)';
+
+  @override
+  String eventRewardJelly(int n) {
+    return '젤리 $n';
+  }
+
+  @override
+  String get eventRewardParticipationRow => '참가 (1판 이상)';
+
+  @override
+  String get eventFlyerSubPrize => '2위부터도 푸짐해요 — 10위까지 젤리, 상위권엔 순위표 뱃지!';
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override
