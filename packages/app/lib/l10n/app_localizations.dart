@@ -3484,12 +3484,6 @@ abstract class AppLocalizations {
   /// **'Entry (1+ runs)'**
   String get eventRewardParticipationRow;
 
-  /// No description provided for @eventFlyerSubPrize.
-  ///
-  /// In en, this message translates to:
-  /// **'Rewards down to 10th — jelly prizes plus leaderboard badges for top ranks!'**
-  String get eventFlyerSubPrize;
-
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

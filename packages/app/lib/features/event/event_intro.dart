@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/event_badge.dart';
+import '../../ui/labels.dart';
 
 const _honey = Color(0xFFEBA52F);
 const _paper = Color(0xFF1B2A11);
@@ -19,6 +21,117 @@ const _paper = Color(0xFF1B2A11);
 /// 배경 그림(`ui/event/flyer_bg.webp`)이 들어오면 자동으로 깔린다.
 class EventIntroScreen extends ConsumerWidget {
   const EventIntroScreen({super.key});
+
+  /// 순위 보상 표 — `event.json → rewards` 를 그대로 그린다.
+  /// 전단지는 대회의 공식 안내라, 여기 적힌 것과 실제 지급이 어긋나면
+  /// 그게 곧 클레임이다 — 하드코딩하지 않는 이유다.
+  static Widget _prizeTable(AppLocalizations l, EventConfig cfg) {
+    String rankLabel(int from, int to) =>
+        from == to && from == 1 ? l.eventRankOne : l.eventRankRange(from, to);
+
+    Widget row(String rank, List<Widget> rewards, {bool highlight = false}) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 64,
+                child: Text(
+                  rank,
+                  style: TextStyle(
+                    color: highlight ? _honey : Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 3,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: rewards,
+                ),
+              ),
+            ],
+          ),
+        );
+
+    Widget jelly(int n) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        jellyIcon(size: 14),
+        const SizedBox(width: 3),
+        Text(
+          l.eventRewardJelly(n),
+          style: const TextStyle(
+            color: Color(0xDDFFFFFF),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+
+    final rows = <Widget>[];
+    var from = 1;
+    for (final t in cfg.rewardTiers) {
+      rows.add(
+        row(rankLabel(from, t.maxRank), highlight: t.physical, [
+          if (t.physical)
+            Text(
+              l.eventRewardRealBug,
+              style: const TextStyle(
+                color: _honey,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          if (t.jelly > 0) jelly(t.jelly),
+          if (t.badge.isNotEmpty)
+            EventBadgeChip(id: '${t.badge}:${cfg.roundNo}', size: 9.5),
+        ]),
+      );
+      from = t.maxRank + 1;
+    }
+    if (cfg.participationMaterials.isNotEmpty) {
+      rows.add(
+        row(l.eventRewardParticipationRow, [
+          for (final e in cfg.participationMaterials.entries)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                materialImage(
+                  e.key,
+                  size: 14,
+                  fallback: Icon(materialIcon(e.key), size: 12),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  '${e.value}',
+                  style: const TextStyle(
+                    color: Color(0xBBFFFFFF),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+        ]),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      decoration: BoxDecoration(
+        color: const Color(0x33000000),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _honey.withValues(alpha: 0.35)),
+      ),
+      child: Column(children: rows),
+    );
+  }
 
   /// 'M월 d일' — 회차 기간 표시용. 연도는 넣지 않는다(같은 해 안에서 도는 대회다).
   static String _kstDate(AppLocalizations l, DateTime utc, String locale) {
@@ -255,19 +368,11 @@ class EventIntroScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 10),
                 // 1등 실물만 크게 적으면 "그 밖엔 아무것도 없다"로 읽힌다
-                // (2026-08-27 지적) — 2~10위 보상도 한 줄 알린다.
-                // 상세 표는 대회 화면의 _rewardsCard 가 JSON 그대로 그린다.
-                Text(
-                  l.eventFlyerSubPrize,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFFFFE9C2),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                // (2026-08-27 지적) — 2~10위까지 **표로 명시**한다.
+                // 수치는 event.json → rewards 를 그대로 그린다(§6).
+                if (cfg != null) _prizeTable(l, cfg),
               ],
             ),
           ),

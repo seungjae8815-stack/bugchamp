@@ -1895,9 +1895,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventRewardParticipationRow => '参加（1回以上）';
 
   @override
-  String get eventFlyerSubPrize => '2位以下も豪華 — 10位までゼリー、上位にはランキングバッジ！';
-
-  @override
   String get netLostTitle => '接続が切れました';
 
   @override

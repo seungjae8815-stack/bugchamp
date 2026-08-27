@@ -1931,10 +1931,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventRewardParticipationRow => 'Entry (1+ runs)';
 
   @override
-  String get eventFlyerSubPrize =>
-      'Rewards down to 10th — jelly prizes plus leaderboard badges for top ranks!';
-
-  @override
   String get netLostTitle => 'Connection lost';
 
   @override

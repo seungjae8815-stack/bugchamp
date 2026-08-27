@@ -571,7 +571,6 @@
   "eventRewardRealBug": "진짜 곤충 (국내 배송)",
   "eventRewardJelly": "젤리 {n}",
   "eventRewardParticipationRow": "참가 (1판 이상)",
-  "eventFlyerSubPrize": "2위부터도 푸짐해요 — 10위까지 젤리, 상위권엔 순위표 뱃지!",
   "netLostTitle": "연결이 끊겼어요",
   "netLostBody": "인터넷 연결을 확인해 주세요.\n연결되어야 진행이 저장됩니다.",
   "netRetry": "다시 시도",

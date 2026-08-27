@@ -1900,9 +1900,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventRewardParticipationRow => '참가 (1판 이상)';
 
   @override
-  String get eventFlyerSubPrize => '2위부터도 푸짐해요 — 10위까지 젤리, 상위권엔 순위표 뱃지!';
-
-  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override
