@@ -5065,7 +5065,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           SizedBox(
             width: 132,
             height: 48,
-            child: FilledButton.icon(
+            // ⚠️ `FilledButton.icon` 은 아이콘을 **라벨 두 줄 전체 왼쪽**에
+            // 건다. 젤리 그림은 아랫줄("2개로 켜기")에만 붙어야 하므로
+            // 일반 `FilledButton` 에 직접 구성한다(2026-08-27).
+            child: FilledButton(
               onPressed: () async {
                 // 무료 발동 소진 후엔 젤리(사장님 결정 2026-08-18). 광고가
                 // 비용이던 자리라, 무료 무제한이면 버프가 사실상 상시화된다.
@@ -5090,19 +5093,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   l.buffActivatedSnack(buffLabel(l, k), minutes),
                 );
               },
-              // 쿨다운 중엔 버튼이 스스로 설명한다 — "무료 h:mm 남음" 위에,
-              // "n개로 켜기"를 아래에(2026-08-27 지적). 칩으로 옆에 두면
-              // 버튼은 여전히 "무료로 켜기"라고 거짓말하는 셈이다.
-              //
-              // ⚠️ 젤리는 **실제 젤리 그림**을 쓴다(`jellyIcon`). 물방울 글리프는
-              // 다른 재화처럼 보여서, 무엇을 쓰는지가 버튼에서 안 읽힌다.
-              icon: coolLeft > Duration.zero
-                  ? jellyIcon(size: 17)
-                  : const Icon(Icons.play_arrow_rounded, size: 18),
-              label: coolLeft > Duration.zero
+              style: FilledButton.styleFrom(
+                backgroundColor: coolLeft > Duration.zero
+                    ? const Color(0xFF1E6091)
+                    : const Color(0xFF2E7D32),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: coolLeft > Duration.zero
+                  // 윗줄 = 언제 무료가 되는지, 아랫줄 = 지금 켜는 값.
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           l.buffBtnFreeLeft(_hmm(coolLeft)),
@@ -5112,22 +5112,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             color: Color(0xCCFFFFFF),
                           ),
                         ),
-                        Text(
-                          l.buffBtnJelly(_data.buffConfig?.jellyActivate ?? 2),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                          ),
+                        const SizedBox(height: 2),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            jellyIcon(size: 15),
+                            const SizedBox(width: 4),
+                            Text(
+                              l.buffBtnJelly(
+                                _data.buffConfig?.jellyActivate ?? 2,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     )
-                  : Text(l.buffWatchAd),
-              style: FilledButton.styleFrom(
-                backgroundColor: coolLeft > Duration.zero
-                    ? const Color(0xFF1E6091)
-                    : const Color(0xFF2E7D32),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-              ),
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.play_arrow_rounded, size: 18),
+                        const SizedBox(width: 6),
+                        Text(l.buffWatchAd),
+                      ],
+                    ),
             ),
           ),
         ],
