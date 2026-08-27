@@ -5060,68 +5060,74 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
           ),
           const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: () async {
-              // 무료 발동 소진 후엔 젤리(사장님 결정 2026-08-18). 광고가
-              // 비용이던 자리라, 무료 무제한이면 버프가 사실상 상시화된다.
-              if (!await _takeBuffActivation(l, k, freeAt)) return;
-              if (!mounted) return;
-              final ctrl = r.read(saveControllerProvider.notifier);
-              await ctrl.activateBuff(k);
-              // 광고 덤 젤리는 **데이터에서 온다**(§6). 예전엔 여기 1이 박혀
-              // 있었고, 누적 상한 6시간 = 하루 12회라 덤만으로 12젤리/일이 샜다.
-              // 광고의 보상은 버프 자체 — 프리미엄 재화를 얹으면 이중 지급이다.
-              final bonus = _data.buffConfig?.adJelly ?? 0;
-              if (bonus > 0) {
-                await ctrl.applyReward(
-                  gold: 0,
-                  xp: 0,
-                  materials: {MaterialKind.jelly: bonus},
+          // 두 상태(무료 / 젤리)의 **크기를 고정**한다. 라벨 길이에 맡기면
+          // 무료→쿨다운으로 바뀔 때 버튼이 커졌다 작아졌다 해서 줄이 흔들린다.
+          SizedBox(
+            width: 132,
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: () async {
+                // 무료 발동 소진 후엔 젤리(사장님 결정 2026-08-18). 광고가
+                // 비용이던 자리라, 무료 무제한이면 버프가 사실상 상시화된다.
+                if (!await _takeBuffActivation(l, k, freeAt)) return;
+                if (!mounted) return;
+                final ctrl = r.read(saveControllerProvider.notifier);
+                await ctrl.activateBuff(k);
+                // 광고 덤 젤리는 **데이터에서 온다**(§6). 예전엔 여기 1이 박혀
+                // 있었고, 누적 상한 6시간 = 하루 12회라 덤만으로 12젤리/일이 샜다.
+                // 광고의 보상은 버프 자체 — 프리미엄 재화를 얹으면 이중 지급이다.
+                final bonus = _data.buffConfig?.adJelly ?? 0;
+                if (bonus > 0) {
+                  await ctrl.applyReward(
+                    gold: 0,
+                    xp: 0,
+                    materials: {MaterialKind.jelly: bonus},
+                  );
+                }
+                if (!mounted) return;
+                showCenterToast(
+                  context,
+                  l.buffActivatedSnack(buffLabel(l, k), minutes),
                 );
-              }
-              if (!mounted) return;
-              showCenterToast(
-                context,
-                l.buffActivatedSnack(buffLabel(l, k), minutes),
-              );
-            },
-            // 쿨다운 중엔 버튼이 스스로 설명한다 — "무료 h:mm 남음" 위에,
-            // "젤리 n개로 켜기"를 아래에(2026-08-27 지적). 칩으로 옆에 두면
-            // 버튼은 여전히 "무료로 켜기"라고 거짓말하는 셈이다.
-            icon: Icon(
-              coolLeft > Duration.zero
-                  ? Icons.water_drop_rounded
-                  : Icons.play_arrow_rounded,
-              size: 18,
-            ),
-            label: coolLeft > Duration.zero
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l.buffBtnFreeLeft(_hmm(coolLeft)),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xCCFFFFFF),
+              },
+              // 쿨다운 중엔 버튼이 스스로 설명한다 — "무료 h:mm 남음" 위에,
+              // "n개로 켜기"를 아래에(2026-08-27 지적). 칩으로 옆에 두면
+              // 버튼은 여전히 "무료로 켜기"라고 거짓말하는 셈이다.
+              //
+              // ⚠️ 젤리는 **실제 젤리 그림**을 쓴다(`jellyIcon`). 물방울 글리프는
+              // 다른 재화처럼 보여서, 무엇을 쓰는지가 버튼에서 안 읽힌다.
+              icon: coolLeft > Duration.zero
+                  ? jellyIcon(size: 17)
+                  : const Icon(Icons.play_arrow_rounded, size: 18),
+              label: coolLeft > Duration.zero
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.buffBtnFreeLeft(_hmm(coolLeft)),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xCCFFFFFF),
+                          ),
                         ),
-                      ),
-                      Text(
-                        l.buffBtnJelly(_data.buffConfig?.jellyActivate ?? 2),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
+                        Text(
+                          l.buffBtnJelly(_data.buffConfig?.jellyActivate ?? 2),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                      ),
-                    ],
-                  )
-                : Text(l.buffWatchAd),
-            style: FilledButton.styleFrom(
-              backgroundColor: coolLeft > Duration.zero
-                  ? const Color(0xFF1E6091)
-                  : const Color(0xFF2E7D32),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      ],
+                    )
+                  : Text(l.buffWatchAd),
+              style: FilledButton.styleFrom(
+                backgroundColor: coolLeft > Duration.zero
+                    ? const Color(0xFF1E6091)
+                    : const Color(0xFF2E7D32),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+              ),
             ),
           ),
         ],

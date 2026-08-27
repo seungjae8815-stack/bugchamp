@@ -3499,7 +3499,7 @@ abstract class AppLocalizations {
   /// No description provided for @buffBtnJelly.
   ///
   /// In en, this message translates to:
-  /// **'Use {n} jelly'**
+  /// **'Use {n}'**
   String buffBtnJelly(int n);
 
   /// No description provided for @netLostTitle.

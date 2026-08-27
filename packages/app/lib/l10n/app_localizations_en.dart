@@ -1942,7 +1942,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String buffBtnJelly(int n) {
-    return 'Use $n jelly';
+    return 'Use $n';
   }
 
   @override

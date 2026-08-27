@@ -1911,7 +1911,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String buffBtnJelly(int n) {
-    return '젤리 $n개로 켜기';
+    return '$n개로 켜기';
   }
 
   @override

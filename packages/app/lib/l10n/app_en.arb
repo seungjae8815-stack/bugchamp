@@ -1106,7 +1106,7 @@
   "@buffCooldownAsk": {"placeholders": {"t": {"type": "String"}, "n": {"type": "int"}}},
   "buffBtnFreeLeft": "Free in {t}",
   "@buffBtnFreeLeft": {"placeholders": {"t": {"type": "String"}}},
-  "buffBtnJelly": "Use {n} jelly",
+  "buffBtnJelly": "Use {n}",
   "@buffBtnJelly": {"placeholders": {"n": {"type": "int"}}},
   "netLostTitle": "Connection lost",
   "netLostBody": "Check your internet connection.\nProgress is only saved while connected.",

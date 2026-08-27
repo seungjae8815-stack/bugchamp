@@ -1906,7 +1906,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String buffBtnJelly(int n) {
-    return 'ゼリー$n個で起動';
+    return '$n個で起動';
   }
 
   @override
