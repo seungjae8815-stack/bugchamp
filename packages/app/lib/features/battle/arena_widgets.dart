@@ -606,15 +606,22 @@ class StanceWheel extends StatelessWidget {
                 left: 0,
                 top: s / 2 - 9,
                 width: s,
-                child: Text(
-                  centerLabel ?? '공 › 회 › 방 › 공',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: centerLabel == null
-                        ? const Color(0x66FFFFFF)
-                        : arenaHoney,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                // ⚠️ 상성 문구를 하드코딩하지 않는다 — 영어·일본어 화면에도
+                // '공 › 회 › 방 › 공' 이 그대로 나왔다(2026-08-29 지적).
+                // 언어마다 줄임말 길이가 다르므로(ko/ja 는 1자, en 은 ATK/HEAL)
+                // `FittedBox` 로 줄여 담는다. 자르면 상성이 안 읽힌다.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    centerLabel ?? l.stanceCycle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: centerLabel == null
+                          ? const Color(0x66FFFFFF)
+                          : arenaHoney,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),

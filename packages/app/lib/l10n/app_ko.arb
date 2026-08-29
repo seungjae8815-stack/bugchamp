@@ -577,6 +577,7 @@
   "settingsLanguage": "언어",
   "languageSystem": "기기 설정",
   "eventRewardTitleAward": "칭호 「{name}」",
+  "stanceCycle": "공 › 회 › 방 › 공",
   "netLostTitle": "연결이 끊겼어요",
   "netLostBody": "인터넷 연결을 확인해 주세요.\n연결되어야 진행이 저장됩니다.",
   "netRetry": "다시 시도",

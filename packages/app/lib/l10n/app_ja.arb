@@ -570,6 +570,7 @@
   "settingsLanguage": "言語",
   "languageSystem": "端末の設定",
   "eventRewardTitleAward": "称号「{name}」",
+  "stanceCycle": "攻 › 回 › 防 › 攻",
   "netLostTitle": "接続が切れました",
   "netLostBody": "インターネット接続を確認してください。\n接続中のみ進行が保存されます。",
   "netRetry": "再試行",

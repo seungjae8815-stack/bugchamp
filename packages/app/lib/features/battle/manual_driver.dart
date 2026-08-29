@@ -222,7 +222,9 @@ List<({BattleBug bug, String speciesId, String? skin})> foeTeamFromServer(
     out.add((
       bug: BattleBug(
         id: j['id']?.toString() ?? 'foe-$i',
-        name: j['name']?.toString() ?? '상대',
+        // 서버가 이름을 안 보낸 경우의 폴백. **한국어를 쓰지 않는다** —
+        // 영어·일본어 화면에 그대로 나간다(서버 쪽 폴백과 같은 값).
+        name: j['name']?.toString() ?? '???',
         element: Element.fromKey(j['el']?.toString() ?? 'wood'),
         temperament: Temperament.fromKey(j['tm']?.toString() ?? 'steadfast'),
         preferredStance:

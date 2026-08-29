@@ -3520,6 +3520,12 @@ abstract class AppLocalizations {
   /// **'Title “{name}”'**
   String eventRewardTitleAward(String name);
 
+  /// No description provided for @stanceCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'ATK › HEAL › DEF › ATK'**
+  String get stanceCycle;
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

@@ -1112,6 +1112,7 @@
   "languageSystem": "System",
   "eventRewardTitleAward": "Title “{name}”",
   "@eventRewardTitleAward": {"placeholders": {"name": {"type": "String"}}},
+  "stanceCycle": "ATK › HEAL › DEF › ATK",
   "netLostTitle": "Connection lost",
   "netLostBody": "Check your internet connection.\nProgress is only saved while connected.",
   "netRetry": "Retry",

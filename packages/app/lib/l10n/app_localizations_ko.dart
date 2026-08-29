@@ -1926,6 +1926,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get stanceCycle => '공 › 회 › 방 › 공';
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

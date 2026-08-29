@@ -1921,6 +1921,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get stanceCycle => '攻 › 回 › 防 › 攻';
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

@@ -1957,6 +1957,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get stanceCycle => 'ATK › HEAL › DEF › ATK';
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override
