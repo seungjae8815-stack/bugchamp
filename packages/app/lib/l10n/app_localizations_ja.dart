@@ -1916,6 +1916,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get languageSystem => '端末の設定';
 
   @override
+  String eventRewardTitleAward(String name) {
+    return '称号「$name」';
+  }
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

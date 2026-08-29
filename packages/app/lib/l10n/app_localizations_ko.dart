@@ -1921,6 +1921,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get languageSystem => '기기 설정';
 
   @override
+  String eventRewardTitleAward(String name) {
+    return '칭호 「$name」';
+  }
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override

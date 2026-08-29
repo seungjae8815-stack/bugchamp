@@ -3514,6 +3514,12 @@ abstract class AppLocalizations {
   /// **'System'**
   String get languageSystem;
 
+  /// No description provided for @eventRewardTitleAward.
+  ///
+  /// In en, this message translates to:
+  /// **'Title “{name}”'**
+  String eventRewardTitleAward(String name);
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

@@ -29,28 +29,59 @@ class EventIntroScreen extends ConsumerWidget {
     String rankLabel(int from, int to) =>
         from == to && from == 1 ? l.eventRankOne : l.eventRankRange(from, to);
 
+    /// 보상 한 줄. **아이콘 칸을 고정폭**으로 잡는다 — 그림 크기가 제각각이면
+    /// 글자 시작점이 줄마다 어긋나 표가 흐트러져 보인다(2026-08-29 지적).
+    Widget item(Widget icon, String text, {Color? color, bool bold = false}) =>
+        Padding(
+          padding: const EdgeInsets.only(bottom: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(width: 18, child: Center(child: icon)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color ?? const Color(0xDDFFFFFF),
+                    fontSize: 11.5,
+                    height: 1.25,
+                    fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    /// 순위 한 칸. 보상은 **세로로 쌓는다** — Wrap 으로 흘리면 줄마다
+    /// 개수가 달라 높이가 들쭉날쭉해진다.
     Widget row(String rank, List<Widget> rewards, {bool highlight = false}) =>
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.symmetric(vertical: 5),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 순위 칸은 **가장 긴 라벨**("참가 (1판 이상)")이 한 줄에 들어가는
+              // 폭이어야 한다. 좁으면 그 줄만 두 줄로 접혀 표가 어긋난다
+              // (2026-08-29 지적). 글씨를 줄이는 대신 칸을 넓힌다.
               SizedBox(
-                width: 64,
+                width: 96,
                 child: Text(
                   rank,
+                  maxLines: 1,
                   style: TextStyle(
                     color: highlight ? _honey : Colors.white,
                     fontWeight: FontWeight.w900,
-                    fontSize: 12,
+                    fontSize: 12.5,
                   ),
                 ),
               ),
               Expanded(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 3,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: rewards,
                 ),
               ),
@@ -58,39 +89,45 @@ class EventIntroScreen extends ConsumerWidget {
           ),
         );
 
-    Widget jelly(int n) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        jellyIcon(size: 14),
-        const SizedBox(width: 3),
-        Text(
-          l.eventRewardJelly(n),
-          style: const TextStyle(
-            color: Color(0xDDFFFFFF),
-            fontSize: 11.5,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
+    /// 칭호는 **뱃지 칩이 아니라 "무엇을 받는지"로** 적는다.
+    /// 칩만 두면 그게 상품인지 장식인지 안 읽힌다(2026-08-29 지적).
+    String titleName(String badgeId) {
+      final b = parseEventBadge(badgeId);
+      if (b == null) return '';
+      return switch (b.kind) {
+        'champion' => l.badgeChampion(b.round),
+        'finalist' => l.badgeFinalist(b.round),
+        _ => '',
+      };
+    }
 
     final rows = <Widget>[];
     var from = 1;
     for (final t in cfg.rewardTiers) {
+      final name = t.badge.isEmpty
+          ? ''
+          : titleName('${t.badge}:${cfg.roundNo}');
       rows.add(
         row(rankLabel(from, t.maxRank), highlight: t.physical, [
           if (t.physical)
-            Text(
+            item(
+              const Icon(Icons.emoji_nature_rounded, size: 15, color: _honey),
               l.eventRewardRealBug,
-              style: const TextStyle(
-                color: _honey,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w900,
-              ),
+              color: _honey,
+              bold: true,
             ),
-          if (t.jelly > 0) jelly(t.jelly),
-          if (t.badge.isNotEmpty)
-            EventBadgeChip(id: '${t.badge}:${cfg.roundNo}', size: 9.5),
+          if (t.jelly > 0)
+            item(jellyIcon(size: 15), l.eventRewardJelly(t.jelly)),
+          if (name.isNotEmpty)
+            item(
+              const Icon(
+                Icons.workspace_premium_rounded,
+                size: 15,
+                color: Color(0xFFFFC24D),
+              ),
+              l.eventRewardTitleAward(name),
+              color: const Color(0xFFFFD98A),
+            ),
         ]),
       );
       from = t.maxRank + 1;
@@ -99,37 +136,41 @@ class EventIntroScreen extends ConsumerWidget {
       rows.add(
         row(l.eventRewardParticipationRow, [
           for (final e in cfg.participationMaterials.entries)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                materialImage(
-                  e.key,
-                  size: 14,
-                  fallback: Icon(materialIcon(e.key), size: 12),
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  '${e.value}',
-                  style: const TextStyle(
-                    color: Color(0xBBFFFFFF),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            item(
+              materialImage(
+                e.key,
+                size: 15,
+                fallback: Icon(materialIcon(e.key), size: 13),
+              ),
+              '${materialLabel(l, e.key)} ${e.value}',
+              color: const Color(0xBBFFFFFF),
             ),
         ]),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
       decoration: BoxDecoration(
         color: const Color(0x33000000),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: _honey.withValues(alpha: 0.35)),
       ),
-      child: Column(children: rows),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.eventRewardsTitle,
+            style: const TextStyle(
+              color: _honey,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          ...rows,
+        ],
+      ),
     );
   }
 

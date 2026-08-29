@@ -1110,6 +1110,8 @@
   "@buffBtnJelly": {"placeholders": {"n": {"type": "int"}}},
   "settingsLanguage": "Language",
   "languageSystem": "System",
+  "eventRewardTitleAward": "Title “{name}”",
+  "@eventRewardTitleAward": {"placeholders": {"name": {"type": "String"}}},
   "netLostTitle": "Connection lost",
   "netLostBody": "Check your internet connection.\nProgress is only saved while connected.",
   "netRetry": "Retry",

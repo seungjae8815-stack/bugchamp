@@ -1952,6 +1952,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageSystem => 'System';
 
   @override
+  String eventRewardTitleAward(String name) {
+    return 'Title “$name”';
+  }
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override

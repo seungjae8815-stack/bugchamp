@@ -337,119 +337,138 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   /// 전단지가 1등 실물만 강조해서 "그 밖엔 아무것도 없다"로 읽혔다
   /// (2026-08-27 지적). 젤리·뱃지가 몇 위까지 나가는지 보여야 4~10위권
   /// 유저에게도 참가할 이유가 생긴다.
+  /// 순위 보상 표 — `event.json → rewards` 를 **그대로 그린다**(§6).
+  /// 전단지(`event_intro.dart`)와 같은 규칙으로 그린다 — 두 곳이 다르게
+  /// 보이면 어느 쪽이 진짜인지 유저가 헷갈린다.
   Widget _rewardsCard(AppLocalizations l, EventConfig? cfg) {
     if (cfg == null || cfg.rewardTiers.isEmpty) return const SizedBox.shrink();
 
     String rankLabel(int from, int to) =>
         from == to && from == 1 ? l.eventRankOne : l.eventRankRange(from, to);
 
-    Widget row({
-      required String rank,
-      required List<Widget> rewards,
-      bool highlight = false,
-    }) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 62,
-            child: Text(
-              rank,
-              style: TextStyle(
-                color: highlight ? const Color(0xFFEBC24A) : Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 12.5,
+    /// 보상 한 줄. 아이콘 칸은 **고정폭** — 그림 크기가 제각각이면 글자
+    /// 시작점이 줄마다 어긋난다.
+    Widget item(Widget icon, String text, {Color? color, bool bold = false}) =>
+        Padding(
+          padding: const EdgeInsets.only(bottom: 3),
+          child: Row(
+            children: [
+              SizedBox(width: 18, child: Center(child: icon)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color ?? const Color(0xDDFFFFFF),
+                    fontSize: 12,
+                    height: 1.25,
+                    fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-          Expanded(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: rewards,
-            ),
-          ),
-        ],
-      ),
-    );
+        );
 
-    Widget jelly(int n) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        jellyIcon(size: 15),
-        const SizedBox(width: 3),
-        Text(
-          l.eventRewardJelly(n),
-          style: const TextStyle(
-            color: Color(0xDDFFFFFF),
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
+    /// 순위 칸의 폭은 **가장 긴 라벨**("참가 (1판 이상)") 기준이다.
+    /// 좁으면 그 줄만 접혀 표가 어긋난다.
+    Widget row(String rank, List<Widget> rewards, {bool highlight = false}) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 96,
+                child: Text(
+                  rank,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: highlight ? const Color(0xFFEBC24A) : Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12.5,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: rewards,
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
-    );
+        );
+
+    /// 칭호는 칩이 아니라 **"무엇을 받는지"** 로 적는다 — 칩만 두면 그게
+    /// 상품인지 장식인지 안 읽힌다.
+    String titleName(String badgeId) {
+      final b = parseEventBadge(badgeId);
+      if (b == null) return '';
+      return switch (b.kind) {
+        'champion' => l.badgeChampion(b.round),
+        'finalist' => l.badgeFinalist(b.round),
+        _ => '',
+      };
+    }
 
     final rows = <Widget>[];
     var from = 1;
     for (final t in cfg.rewardTiers) {
+      final name = t.badge.isEmpty
+          ? ''
+          : titleName('${t.badge}:${cfg.roundNo}');
       rows.add(
-        row(
-          rank: rankLabel(from, t.maxRank),
-          highlight: t.physical,
-          rewards: [
-            if (t.physical)
-              Text(
-                l.eventRewardRealBug,
-                style: const TextStyle(
-                  color: Color(0xFFEBC24A),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                ),
+        row(rankLabel(from, t.maxRank), highlight: t.physical, [
+          if (t.physical)
+            item(
+              const Icon(
+                Icons.emoji_nature_rounded,
+                size: 15,
+                color: Color(0xFFEBC24A),
               ),
-            if (t.jelly > 0) jelly(t.jelly),
-            if (t.badge.isNotEmpty)
-              EventBadgeChip(id: '${t.badge}:${cfg.roundNo}', size: 10),
-          ],
-        ),
+              l.eventRewardRealBug,
+              color: const Color(0xFFEBC24A),
+              bold: true,
+            ),
+          if (t.jelly > 0)
+            item(jellyIcon(size: 15), l.eventRewardJelly(t.jelly)),
+          if (name.isNotEmpty)
+            item(
+              const Icon(
+                Icons.workspace_premium_rounded,
+                size: 15,
+                color: Color(0xFFFFC24D),
+              ),
+              l.eventRewardTitleAward(name),
+              color: const Color(0xFFFFD98A),
+            ),
+        ]),
       );
       from = t.maxRank + 1;
     }
-    // 참가 보상 — 순위 밖이어도 빈손이 아니라는 걸 보여준다.
     if (cfg.participationMaterials.isNotEmpty) {
       rows.add(
-        row(
-          rank: l.eventRewardParticipationRow,
-          rewards: [
-            for (final e in cfg.participationMaterials.entries)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  materialImage(
-                    e.key,
-                    size: 15,
-                    fallback: Icon(materialIcon(e.key), size: 13),
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    formatCompact(e.value),
-                    style: const TextStyle(
-                      color: Color(0xBBFFFFFF),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+        row(l.eventRewardParticipationRow, [
+          for (final e in cfg.participationMaterials.entries)
+            item(
+              materialImage(
+                e.key,
+                size: 15,
+                fallback: Icon(materialIcon(e.key), size: 13),
               ),
-          ],
-        ),
+              '${materialLabel(l, e.key)} ${e.value}',
+              color: const Color(0xBBFFFFFF),
+            ),
+        ]),
       );
     }
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
       decoration: BoxDecoration(
         color: const Color(0x1AEBC24A),
         borderRadius: BorderRadius.circular(12),
