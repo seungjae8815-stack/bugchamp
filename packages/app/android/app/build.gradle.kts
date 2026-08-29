@@ -90,6 +90,14 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // ⚠️ R8 유지 규칙을 **반드시** 건다. 없으면 flutter_local_notifications
+            //     의 Gson 제네릭 서명이 지워져, 부팅 리시버가 도는 순간
+            //     "Missing type parameter." 로 앱이 켜지지도 않는다
+            //     (2026-08-29, 1.0.6+20260830 프로덕션 사고).
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
