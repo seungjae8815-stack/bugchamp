@@ -31,15 +31,11 @@ New Difficulty Tiers!
 • Bugs, gear, field guide, and currency all carry over
 • Progress ranking compares difficulty first
 
-Important fixes
-• Progress could roll back on reopening the app (lost gold, lower stage, missing hatched bugs)
+Fixed: progress could roll back when reopening the app
 
-Contact support
-• New button above global chat to report issues
+New: contact support from the top of global chat
 
-Difficulty and growth
-• Monsters hit harder, so defense and health matter
-• Stat upgrades now also cost materials
+Monsters hit harder, and stat upgrades now cost materials too
 </en-US>
 
 <ja-JP>
