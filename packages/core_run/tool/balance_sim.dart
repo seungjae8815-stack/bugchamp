@@ -818,6 +818,9 @@ _Opts _parseArgs(List<String> args) {
     'hp-adapt-max': 'hpAdaptMaxRatio',
     'threat-pct': 'threatAdaptTargetPct',
     'boost-speed': 'boostSpeedFactor',
+    // 회복 축 — 처치 회복(킬 속도에 좌우)과 상시 회복(시간 비례)의 비중.
+    'kill-heal': 'killHealPct',
+    'boss-kill-heal': 'bossKillHealPct',
   };
   final out = <String, dynamic>{};
   double? mult;
