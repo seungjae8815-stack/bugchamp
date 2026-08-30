@@ -116,15 +116,22 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         ),
         const SizedBox(width: 4),
         Expanded(
-          child: Text(
-            _scoreText(l, p, k),
-            textAlign: TextAlign.right,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: emphasize ? _honey : const Color(0xCCFFFFFF),
-              fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
-              fontSize: emphasize ? 14 : 12.5,
+          // 진행도(`쉬움 4-100`)는 길이가 제각각이라 말줄임표를 쓰면 정작
+          // 숫자 끝이 잘려 줄마다 다르게 보인다(2026-09-01 실기 지적).
+          // 잘라내는 대신 **줄여서 다 보여준다** — 오른쪽 끝을 맞춘다.
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _scoreText(l, p, k),
+                maxLines: 1,
+                style: TextStyle(
+                  color: emphasize ? _honey : const Color(0xCCFFFFFF),
+                  fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+                  fontSize: emphasize ? 14 : 12.5,
+                ),
+              ),
             ),
           ),
         ),
