@@ -15,7 +15,13 @@ class SupportNotifier {
   SupportNotifier({http.Client? client, String? botToken, String? chatId})
     : _http = client ?? http.Client(),
       _token = botToken ?? Platform.environment['TELEGRAM_BOT_TOKEN'] ?? '',
-      _chat = chatId ?? Platform.environment['TELEGRAM_CHAT_ID'] ?? '';
+      _chat =
+          chatId ?? Platform.environment['TELEGRAM_CHAT_ID'] ?? _defaultChat;
+
+  /// 일일 리포트(Edge Function)와 **같은 방**. 기본값을 두는 이유는 사장님이
+  /// 배포 때 넣을 것을 **토큰 하나로 줄이기** 위해서다 — 채팅방 ID 는 비밀이
+  /// 아니고, 빠뜨리면 기능이 통째로 꺼진다.
+  static const _defaultChat = '1025640548';
 
   final http.Client _http;
   final String _token;
@@ -55,8 +61,7 @@ class SupportNotifier {
 
     final ctx = [
       for (final e in context.entries)
-        if (e.value != null && '${e.value}'.isNotEmpty)
-          '${e.key}: ${e.value}',
+        if (e.value != null && '${e.value}'.isNotEmpty) '${e.key}: ${e.value}',
     ].join('\n');
 
     // ⚠️ 유저가 쓴 글을 **그대로** 넣는다(마크다운 파싱 안 함). 서식 문자를

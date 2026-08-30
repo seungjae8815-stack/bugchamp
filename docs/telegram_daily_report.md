@@ -214,19 +214,31 @@ curl -X POST "https://rvmpwyycivmtrbbynjyy.supabase.co/functions/v1/daily-report
 
 ### 설정 — 사장님 작업 (1회)
 
-Cloud Run 서버에 봇 토큰을 넣는다. `TELEGRAM_CHAT_ID` 는 리포트와 같은 값이다.
+⚠️ **일일 리포트와 다른 곳**이다. 리포트는 Supabase Edge Function 이라 토큰이
+`supabase secrets` 에 있고, 문의는 **Cloud Run 권위 서버**가 보낸다. 같은 봇을
+쓰지만 **사는 집이 달라서 토큰을 양쪽에 각각 넣어야 한다**.
 
 ```powershell
-# 토큰을 Secret Manager 에 (이미 있으면 건너뛴다)
-gcloud secrets create bugchamp-telegram-token --data-file=-   # 값 붙여넣고 Ctrl+Z
-
 gcloud run services update bugchamp-server --region asia-northeast3 `
-  --update-secrets TELEGRAM_BOT_TOKEN=bugchamp-telegram-token:latest `
-  --update-env-vars TELEGRAM_CHAT_ID=1025640548
+  --update-env-vars TELEGRAM_BOT_TOKEN="<아스트레일과 같은 봇 토큰>"
+```
+
+`TELEGRAM_CHAT_ID` 는 코드 기본값이 `1025640548`(리포트와 같은 방)이라 **안
+넣어도 된다**. 다른 방으로 받고 싶을 때만 함께 넣는다.
+
+토큰을 콘솔에 평문으로 두는 게 걸리면 Secret Manager 로:
+
+```powershell
+gcloud secrets create bugchamp-telegram-token --data-file=-   # 값 붙여넣고 Ctrl+Z, Enter
+gcloud run services update bugchamp-server --region asia-northeast3 `
+  --update-secrets TELEGRAM_BOT_TOKEN=bugchamp-telegram-token:latest
 ```
 
 ⚠️ **토큰이 없으면 기능이 조용히 꺼진다**(버튼을 눌러도 503). 기본값을 두지
 않았다 — 잘못된 곳으로 유저 문의가 새는 것보다 안 가는 게 낫다.
+
+확인: 앱에서 문의를 한 번 보내 텔레그램에 오는지 본다. 안 오면
+`gcloud run services logs read bugchamp-server --region asia-northeast3 --limit 50`.
 
 ### 받는 메시지
 
