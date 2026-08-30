@@ -123,9 +123,15 @@ cd packages\server ; dart test
 ### 코드만 다시 올릴 때 (평소)
 
 ```powershell
-# 워크스페이스 루트에서
+# ⚠️ **반드시 워크스페이스 루트에서.** cd 를 명령에 붙여 통째로 복사한다.
+cd C:\Users\Lenovo\Desktop\coding\BugChamp
 gcloud run deploy bugchamp-server --source . --region asia-northeast3
 ```
+
+`packages\\app` 같은 하위 폴더에서 실행하면 루트의 `Dockerfile` 이 안 보여
+**Buildpack 으로 넘어가고 빌드가 실패한다**(로그 첫 줄이
+`Building using Buildpacks` 면 이 경우다). Dockerfile 로 빌드될 때는
+`Building using Dockerfile` 이라고 뜼다.
 
 ⚠️ **`--set-env-vars`·`--set-secrets` 를 붙이지 않는다.** `set` 계열은 덧붙이는
 게 아니라 **목록을 통째로 갈아끼운다** — 한 번이라도 붙이면 거기 안 적힌
