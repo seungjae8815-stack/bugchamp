@@ -4516,6 +4516,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         toast('스테이지 $n 이동');
                       }
                     }),
+                    // 회차 전환은 1000 보스를 실제로 잡아야 재현되는데,
+                    // 적응형 체력(§7) 때문에 업그레이드를 아무리 쥐여줘도
+                    // 몬스터가 같이 세져 테스트 캐릭터로는 며칠 걸린다.
+                    // "1000 보스를 방금 잡은 상태"로 바로 보낸다 —
+                    // 이후 흐름(안내 → 전환 → 유지 확인)은 전부 실제 코드다.
+                    _devBtn('회차 전환 테스트(1000 클리어)', () {
+                      final last = _data.roadmapConfig?.finalStage ?? 0;
+                      if (last <= 0) {
+                        toast('로드맵 없음');
+                        return;
+                      }
+                      _devJumpStage(last);
+                      _tierClearPending = true;
+                      Navigator.pop(context);
+                      setState(() {});
+                      toast('스테이지 $last — 회차 전환 안내');
+                    }),
                   ]),
                   // 이벤트 참가권은 **서버 소유 필드**라 로컬로 늘려도 다음
                   // 업로드에 서버 값으로 덮인다. 그래서 서버에 요청해야 하고,
