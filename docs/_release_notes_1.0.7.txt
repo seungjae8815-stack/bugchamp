@@ -1,5 +1,5 @@
 ========================================
- Google Play — 출시 노트 (1.0.6 / 20260901)
+ Google Play — 출시 노트 (1.0.7 / 20260901)
 ========================================
 ※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
    이 설명 줄들은 붙여넣지 않는다.
@@ -8,8 +8,8 @@
    줄여야 한다. 현재 합계 473자(CRLF 기준).
 ※ ⚠️ 길이는 **줄바꿈을 2자(CRLF)로** 세어야 한다(2026-08-27 거부 이력).
 ※ 재계산: python tool 없이 아래 한 줄로 —
-   python -c "import io;s=io.open('docs/_release_notes_1.0.6_20260901.txt',encoding='utf-8').read();b=s[s.index('<ko-KR>'):].rstrip();print(len(b)+b.count(chr(10)))"
-※ iOS 용 노트는 _appstore_whatsnew_1.0.6_20260901.txt (4,000자 한도라 여유 있음).
+   python -c "import io;s=io.open('docs/_release_notes_1.0.7.txt',encoding='utf-8').read();b=s[s.index('<ko-KR>'):].rstrip();print(len(b)+b.count(chr(10)))"
+※ iOS 용 노트는 _appstore_whatsnew_1.0.7.txt (4,000자 한도라 여유 있음).
 ※ 범위: 20260831 이후 — 난이도 회차 · 진행 유실 수정 · 운영자 문의.
 ----------------------------------------
 <ko-KR>
