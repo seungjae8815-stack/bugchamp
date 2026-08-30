@@ -83,6 +83,21 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   };
 
   /// 축마다 점수 표기가 다르다 — 전부 🏆 로 쓰면 레벨 랭킹이 트로피처럼 보인다.
+  /// 진행도 두 열 표기 — 왼쪽 열(난이도 이름).
+  String _scoreTierName(AppLocalizations l, PvpProfile p) =>
+      tierName(l, p.difficultyTier);
+
+  /// 진행도 두 열 표기 — 오른쪽 열(월드-스테이지 숫자만).
+  String _scoreStageDigits(PvpProfile p) {
+    final pos = ref
+        .read(gameDataProvider)
+        .value
+        ?.roadmapConfig
+        ?.stageLabel(p.stageNumber);
+    if (pos == null) return '${p.stageNumber}';
+    return '${pos.world}-${pos.inWorld}';
+  }
+
   String _scoreText(AppLocalizations l, PvpProfile p, RankingKind k) =>
       switch (k) {
         RankingKind.trophies => formatCompact(p.trophies),
@@ -115,26 +130,55 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           ),
         ),
         const SizedBox(width: 4),
-        Expanded(
-          // 진행도(`쉬움 4-100`)는 길이가 제각각이라 말줄임표를 쓰면 정작
-          // 숫자 끝이 잘려 줄마다 다르게 보인다(2026-09-01 실기 지적).
-          // 잘라내는 대신 **줄여서 다 보여준다** — 오른쪽 끝을 맞춘다.
-          child: Align(
-            alignment: Alignment.centerRight,
+        // 진행도(`쉬움 6-100`)는 자릿수가 줄마다 달라 한 덩어리로는 어떻게
+        // 정렬해도 삐뚤어 보인다(2026-09-01 실기 지적 2회). 두 열로 가른다 —
+        // 난이도 이름은 왼쪽 열, 숫자는 오른쪽 열에 **같은 폭 숫자**로.
+        if (k == RankingKind.stage) ...[
+          Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
               child: Text(
-                _scoreText(l, p, k),
+                _scoreTierName(l, p),
                 maxLines: 1,
                 style: TextStyle(
                   color: emphasize ? _honey : const Color(0xCCFFFFFF),
                   fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
-                  fontSize: emphasize ? 14 : 12.5,
+                  fontSize: emphasize ? 13 : 12,
                 ),
               ),
             ),
           ),
-        ),
+          SizedBox(
+            width: 44,
+            child: Text(
+              _scoreStageDigits(p),
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              style: TextStyle(
+                color: emphasize ? _honey : const Color(0xCCFFFFFF),
+                fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+                fontSize: emphasize ? 14 : 12.5,
+                // 숫자를 모두 같은 폭으로 — 자릿수가 달라도 세로줄이 맞는다.
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ] else
+          Expanded(
+            child: Text(
+              _scoreText(l, p, k),
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: emphasize ? _honey : const Color(0xCCFFFFFF),
+                fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+                fontSize: emphasize ? 14 : 12.5,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
       ],
     ),
   );
