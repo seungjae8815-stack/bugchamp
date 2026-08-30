@@ -516,8 +516,10 @@ class _Player {
           _buffDpsMult *
           _outsideBaselineAttack *
           _tapBoostAvg,
-      // 부스트는 공속에도 실린다(boostSpeedFactor=1.0) — DPS 가 제곱으로 오른다.
-      attackSpeed: s.attackSpeed * _tapBoostAvg,
+      // 부스트는 공속에도 실린다 — 얼마나 실리는지는 `boostSpeedFactor` 다.
+      // 1.0 이면 DPS 가 배율의 **제곱**(x2 → x4), 0.5 면 완만해진다(x2 → x2.8).
+      attackSpeed:
+          s.attackSpeed * (1 + (_tapBoostAvg - 1) * config.boostSpeedFactor),
       rewardMultiplier: s.rewardMultiplier,
       critChance:
           (s.critChance +
@@ -815,6 +817,7 @@ _Opts _parseArgs(List<String> args) {
     'hp-adapt-power': 'hpAdaptPower',
     'hp-adapt-max': 'hpAdaptMaxRatio',
     'threat-pct': 'threatAdaptTargetPct',
+    'boost-speed': 'boostSpeedFactor',
   };
   final out = <String, dynamic>{};
   double? mult;

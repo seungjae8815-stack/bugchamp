@@ -28,7 +28,7 @@
  "boostStepPerTap": 0.15,
  "boostMultMax": 5.0,
  "boostDecayPerSec": 0.4,
- "boostSpeedFactor": 1.0,
+ "boostSpeedFactor": 0.4,
  "regions": [
   {
    "id": "oak_forest",
