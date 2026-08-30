@@ -1,0 +1,61 @@
+========================================
+ Google Play — 출시 노트 (1.0.6 / 20260901)
+========================================
+※ Play Console 은 아래 태그 블록을 통째로 붙여넣는다. 한 언어당 500자 한도.
+※ ⚠️ 길이는 **줄바꿈을 2자(CRLF)로** 세어야 한다(2026-08-27 거부 이력).
+※ iOS 용 노트는 _appstore_whatsnew_1.0.6_20260901.txt (이모지 금지).
+※ 범위: 20260831 이후 — 난이도 회차 · 진행 유실 수정 · 운영자 문의.
+
+<ko-KR>
+🔥 새로운 난이도, 회차 시스템!
+
+• 마지막 스테이지를 깨면 더 강력한 몬스터와 함께 다시 시작
+• 곤충·장비·도감·재화는 그대로 — 몬스터만 강해져요
+• 진행도 순위가 난이도부터 비교돼요
+
+🐛 중요한 버그 수정
+• 앱을 껐다 켤 때 진행이 되돌아가던 문제 (골드 감소, 스테이지 하락, 부화한 곤충 사라짐)
+
+💬 운영자에게 문의
+• 전체 채팅 위쪽 버튼으로 바로 제보할 수 있어요
+
+⚔ 난이도와 성장
+• 몬스터가 더 만만치 않아요 — 방어와 체력이 값어치를 합니다
+• 능력치 강화에 재료가 함께 들어가요
+</ko-KR>
+
+<en-US>
+New Difficulty Tiers!
+
+• Clear the final stage to restart with far stronger monsters
+• Bugs, gear, field guide, and currency all carry over
+• Progress ranking compares difficulty first
+
+Important fixes
+• Progress could roll back on reopening the app (lost gold, lower stage, missing hatched bugs)
+
+Contact support
+• New button above global chat to report issues
+
+Difficulty and growth
+• Monsters hit harder, so defense and health matter
+• Stat upgrades now also cost materials
+</en-US>
+
+<ja-JP>
+新難易度、周回システム!
+
+・最終ステージを突破すると、より強い敵と共に再スタート
+・虫、装備、図鑑、通貨はそのまま引き継ぎ
+・進行度ランキングは難易度から比較
+
+重要な修正
+・アプリ再起動で進行が巻き戻る問題(所持金の減少、ステージの後退、孵化した虫の消失)
+
+運営へのお問い合わせ
+・全体チャット上部のボタンから直接報告できます
+
+難易度と成長
+・敵が手強くなり、防御と体力が活きます
+・能力強化に素材も必要になりました
+</ja-JP>
