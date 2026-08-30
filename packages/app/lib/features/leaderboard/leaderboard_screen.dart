@@ -88,6 +88,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       tierName(l, p.difficultyTier);
 
   /// 진행도 두 열 표기 — 오른쪽 열(월드-스테이지 숫자만).
+  ///
+  /// 스테이지는 항상 세 자리로 채운다(`6-098`, `6-002`) — 자릿수가 줄마다
+  /// 다르면 어떻게 정렬해도 삐뚤어 보인다(사장님 확정 2026-09-01).
+  /// 월드는 한 자리(챕터 4개)라 채우지 않는다.
   String _scoreStageDigits(PvpProfile p) {
     final pos = ref
         .read(gameDataProvider)
@@ -95,7 +99,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         ?.roadmapConfig
         ?.stageLabel(p.stageNumber);
     if (pos == null) return '${p.stageNumber}';
-    return '${pos.world}-${pos.inWorld}';
+    return '${pos.world}-${pos.inWorld.toString().padLeft(3, '0')}';
   }
 
   String _scoreText(AppLocalizations l, PvpProfile p, RankingKind k) =>
