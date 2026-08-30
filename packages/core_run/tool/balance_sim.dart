@@ -44,6 +44,40 @@ const _buffGoldMult = 1.5;
 /// DPS 배율 — `frenzy` 버프(공격 x1.2, 공속 x1.5 = DPS x1.8)를 활동 시간 평균으로.
 const _buffDpsMult = 1.4;
 
+// ── ★ 적응형 체력 **기준 밖** 전력 (2026-08-30 추가) ──────────────────
+//
+// 이 도구가 오래 틀린 지점이다. 실제 앱의 사슬은 두 갈래다:
+//
+//   _petStats = 업그레이드 + 캐릭터레벨 + 곤충수 + 펫   ← 몬스터가 맞추는 **기준**
+//   _stats    = _petStats + 장비 + 종패시브 + 도감 + 버프 ← 실제 **전투력**
+//
+// 몬스터 체력은 앞쪽만 보고 자란다(§7). 뒤에 붙는 것은 전부 **순수 이득**이라,
+// 그 시스템이 늘어날수록 게임이 조용히 쉬워진다. 1.0.4 엔 버프뿐이었는데
+// 1.0.5 에 장비·공방, 1.0.6 에 종 패시브·도감이 붙었다.
+//
+// ⚠️ 예전 이 도구는 **양쪽에 같은 값**을 넘겼다(`playerAttack: hit` 에 버프
+// 포함). 그러면 시뮬 안에서는 버프가 스스로 상쇄돼 "빠듯하다"고 나온다 —
+// 실제로는 그만큼 쉬워지는데도. 그래서 체감과 계속 어긋났다.
+
+/// 장비 8부위의 **공격 배율**(옵션 attack%). 최고등급 5옵션까지 붙지만
+/// 평균 유저는 등급이 섞인다 — 상한이 아니라 중간을 잡는다.
+const _equipAttackMult = 1.35;
+
+/// 장비가 주는 치명 확률·피해 가산(옵션 critChance/critDamage).
+const _equipCritChance = 0.12;
+const _equipCritDamage = 0.6;
+
+/// 장비 공격 옵션이 다 붙기까지 걸리는 스테이지(공방을 돌려 갖춘다).
+const _equipFullStage = 300;
+
+/// 종 고유 패시브 — 펫 3마리 장착분. 능력치가 갈리므로 공격 기여는 일부다.
+const _passiveAttackMult = 1.08;
+
+/// 도감 영구 보너스 — 정복 20종이면 공격 +30%(`dex.json` attackPerConquer 0.015).
+/// 다 채우는 데 오래 걸리므로 진행에 따라 오른다.
+const _dexAttackMult = 1.30;
+const _dexFullStage = 600;
+
 /// 전투 밖에서 하루에 들어오는 골드(일일보상 13,000 + 깜짝선물 약 32,000 +
 /// 미션·결투 보상). **초반에 결정적**이고 후반엔 무의미해진다 —
 /// 그래서 정액으로 둔다(day1 골드의 25% 수준, day25 엔 반올림 오차).
@@ -429,14 +463,53 @@ class _Player {
   double get petAttackMult =>
       1 + _petMaxBonus * math.min(1.0, stage / _petFullStage);
 
-  CharacterStats get stats {
+  /// 기준 밖 전력이 진행에 따라 붙는 배율(장비·종패시브·도감).
+  double get _outsideBaselineAttack {
+    final equip =
+        1 +
+        (_equipAttackMult - 1) * math.min(1.0, stage / _equipFullStage);
+    final dex =
+        1 + (_dexAttackMult - 1) * math.min(1.0, stage / _dexFullStage);
+    return equip * _passiveAttackMult * dex;
+  }
+
+  /// **적응형 체력이 맞추는 기준**(앱의 `_petStats`).
+  /// 장비·종패시브·도감·버프는 **들어가지 않는다** — 그게 이 게임의 설계다(§7).
+  CharacterStats get baselineStats {
     final s = _baseStats;
     return CharacterStats(
-      attack: s.attack * petAttackMult * _buffDpsMult,
+      attack: s.attack * petAttackMult,
       attackSpeed: s.attackSpeed,
       rewardMultiplier: s.rewardMultiplier,
       critChance: s.critChance,
       critDamage: s.critDamage,
+      bossDamage: s.bossDamage,
+      maxHp: s.maxHp,
+      defense: s.defense,
+      hpRegen: s.hpRegen,
+      xpMultiplier: s.xpMultiplier,
+      bugFind: s.bugFind,
+      materialFind: s.materialFind,
+      moveSpeed: s.moveSpeed,
+      boostBonus: s.boostBonus,
+    );
+  }
+
+  /// 실제로 몬스터를 때리는 능력치(앱의 `_stats`).
+  CharacterStats get stats {
+    final s = _baseStats;
+    return CharacterStats(
+      attack:
+          s.attack * petAttackMult * _buffDpsMult * _outsideBaselineAttack,
+      attackSpeed: s.attackSpeed,
+      rewardMultiplier: s.rewardMultiplier,
+      critChance:
+          (s.critChance +
+                  _equipCritChance * math.min(1.0, stage / _equipFullStage))
+              .clamp(0.0, 1.0),
+      critDamage:
+          s.critDamage +
+          _equipCritDamage * math.min(1.0, stage / _equipFullStage),
       bossDamage: s.bossDamage,
       maxHp: s.maxHp,
       defense: s.defense,
@@ -496,17 +569,19 @@ class _Player {
         reached.putIfAbsent(s, () => elapsedDays);
         // 그 스테이지를 지날 때 **실제 스탯으로** 몇 대에 죽었는지.
         hitsToKill.putIfAbsent(s, () {
-          final st = stats;
-          // 기준·실제 모두 **치명타 포함 1타**로 잰다. 화면에서 체감하는
-          // "몇 대에 죽나"가 바로 이 값이다(생 attack 으로 재면 과대평가).
-          final hit = baselineHitPower(st);
-          final hp = habitatMaxHp(config, s - 1, playerAttack: hit);
+          // ⚠️ **두 값을 갈라 쓴다.** 몬스터 체력은 기준(장비·버프 제외)으로
+          // 자라고, 실제로 때리는 건 그 전부가 실린 값이다. 예전에는 양쪽에
+          // 같은 값을 넘겨 버프·장비가 시뮬 안에서 스스로 상쇄됐다.
+          final base = baselineHitPower(baselineStats);
+          final hit = baselineHitPower(stats);
+          final hp = habitatMaxHp(config, s - 1, playerAttack: base);
           return (hp / (hit <= 0 ? 1.0 : hit)).ceil();
         });
         survivalAt.putIfAbsent(s, () {
-          final st = stats; // 펫·버프 포함한 실제 전투 능력치
+          final st = stats; // 장비·패시브·도감·버프 포함한 실제 전투 능력치
           final bossHit = baselineHitPower(st, boss: true);
-          final hp = bossMaxHp(config, s - 1, playerAttack: bossHit).toDouble();
+          final baseBoss = baselineHitPower(baselineStats, boss: true);
+          final hp = bossMaxHp(config, s - 1, playerAttack: baseBoss).toDouble();
           final dps = bossHit * st.attackSpeed;
           // 위협 기준은 **영구 전력**(버프 제외) — 앱과 같은 규칙.
           final tough = toughnessOf(_baseStats);
@@ -526,7 +601,11 @@ class _Player {
         habitatBudget.putIfAbsent(s, () {
           final st = stats;
           final hit = baselineHitPower(st);
-          final hp = habitatMaxHp(config, s - 1, playerAttack: hit);
+          final hp = habitatMaxHp(
+            config,
+            s - 1,
+            playerAttack: baselineHitPower(baselineStats),
+          );
           final dps = hit * st.attackSpeed;
           final fight = dps <= 0 ? 0.0 : hp / dps;
           final walk = 0.6 / (st.moveSpeed <= 0 ? 1.0 : st.moveSpeed);
@@ -536,7 +615,11 @@ class _Player {
               100 /
               (100 + st.defense);
           final bossHit = baselineHitPower(st, boss: true);
-          final bossHp = bossMaxHp(config, s - 1, playerAttack: bossHit);
+          final bossHp = bossMaxHp(
+            config,
+            s - 1,
+            playerAttack: baselineHitPower(baselineStats, boss: true),
+          );
           final bossDps = bossHit * st.attackSpeed;
           final bossFight = bossDps <= 0 ? 0.0 : bossHp / bossDps;
           final bossInc =
@@ -557,7 +640,11 @@ class _Player {
         secPerKill.putIfAbsent(s, () {
           final st = stats;
           final hit = baselineHitPower(st);
-          final hp = habitatMaxHp(config, s - 1, playerAttack: hit);
+          final hp = habitatMaxHp(
+            config,
+            s - 1,
+            playerAttack: baselineHitPower(baselineStats),
+          );
           final dps = hit * st.attackSpeed;
           return (dps <= 0 ? 0.0 : hp / dps) + 0.6; // 0.6 = 걷는 시간
         });
