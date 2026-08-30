@@ -96,6 +96,9 @@ double _tapBoostAvg = 1.6;
 /// 이 도구는 그게 실제로 성립하는지 재는 데 쓴다.
 int _tier = 0;
 
+/// `--tiers=N` — 회차 N 개를 **연속으로**(이월하며) 돌린다.
+int _tierRuns = 1;
+
 /// 전투 밖에서 하루에 들어오는 골드(일일보상 13,000 + 깜짝선물 약 32,000 +
 /// 미션·결투 보상). **초반에 결정적**이고 후반엔 무의미해진다 —
 /// 그래서 정액으로 둔다(day1 골드의 25% 수준, day25 엔 반올림 오차).
@@ -178,6 +181,50 @@ void main(List<String> args) {
           for (var i = 1; i <= config.regions.length; i++)
             i * config.stagesPerRegion,
         ];
+  // ── 회차 이월 모드(`--tiers=N`) ──────────────────────────────────
+  //
+  // 회차를 **연속으로** 돌린다. `--tier=` 는 그 회차를 **맨몸으로** 재는 것이라
+  // (업그레이드·재화가 0) 실제 경험과 다르다 — 실제로는 1000 을 깬 전력을
+  // 그대로 들고 다음 회차 1스테이지로 간다(docs/design_difficulty_loop.md).
+  // 그래서 2회차부터는 초반이 훨씬 빠르다. 캠페인 전체 일수를 알려면 이월을
+  // 모델링해야 한다.
+  if (_tierRuns > 1) {
+    final sim = _Player(config, marks);
+    var day = 0;
+    var total = 0;
+    stdout.writeln('── 회차 이월(업그레이드·재화를 그대로 들고 간다) ──');
+    for (var t = 0; t < _tierRuns; t++) {
+      _tier = t;
+      // ⚠️ **프레스티지다.** 성장 축(강화·레벨·경험치)을 처음으로 되돌리고
+      // 자산(재화)만 남긴다. 전력을 그대로 들고 가면 2회차부터 이틀이면
+      // 끝난다 — 적응형 체력은 "그 스테이지의 기본 체력"을 기준으로 잡아서,
+      // 스테이지 1 은 배율을 아무리 곱해도 한 방이 되기 때문이다(실측).
+      sim.stage = 1;
+      if (t > 0) {
+        sim.levels.clear();
+        sim.level = 1;
+        sim.xp = 0;
+      }
+      final from = day;
+      while (day < _maxDays && sim.stage <= finalStage) {
+        day++;
+        sim.playDay();
+      }
+      total = day;
+      stdout.writeln(
+        '  회차 $t : ${(day - from).toString().padLeft(4)}일'
+        ' (누적 ${day}일) · 마지막 CP ${_short(combatPower(sim.stats))}',
+      );
+      if (day >= _maxDays) {
+        stdout.writeln('  ⚠️ ${_maxDays}일 상한에 걸렸다 — 더 걸린다는 뜻이다.');
+        break;
+      }
+    }
+    stdout.writeln('');
+    stdout.writeln('  ★ 전 회차 합계: $total일');
+    return;
+  }
+
   final sim = _Player(config, marks);
   var day = 0;
 
@@ -587,6 +634,10 @@ class _Player {
         elapsed: Duration(milliseconds: (slice * 1000).round()),
         maxAccrual: const Duration(days: 1), // 상한은 호출부가 이미 반영
         efficiency: efficiency,
+        // ⚠️ **진행을 결정하는 건 이 호출이다.** 여기 회차를 안 넘기면
+        // 통계만 회차를 반영하고 실제 속도는 그대로여서, 배율을 아무리
+        // 바꿔도 결과가 안 변한다(2026-08-30 에 실제로 그랬다).
+        tier: _tier,
       );
       elapsedDays += slice / 3600 / (_activeHoursPerDay + _offlineHoursPerDay);
       // 모든 스테이지의 클리어 시각을 남긴다 — 곡선 모양(스테이지당 소요)을 보기 위해.
@@ -842,6 +893,11 @@ _Opts _parseArgs(List<String> args) {
       _equipAttackMult = 1 + (_equipAttackMult - 1) * k;
       _equipCritChance *= k;
       _equipCritDamage *= k;
+      continue;
+    }
+    final trs = RegExp(r'^--tiers=(.+)$').firstMatch(a);
+    if (trs != null) {
+      _tierRuns = int.parse(trs.group(1)!);
       continue;
     }
     final tr = RegExp(r'^--tier=(.+)$').firstMatch(a);

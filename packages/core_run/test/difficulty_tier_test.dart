@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:test/test.dart';
 
@@ -21,28 +22,27 @@ void main() {
     expect(cfg.tierRewardMult, greaterThan(1.0));
   });
 
-  /// ⚠️ **이게 이 설계의 핵심이다.** 적응형 체력은 이미 "몇 대에 죽나"를
-  /// 목표치로 맞춘다. 거기에 배율을 곱하면 타격 수가 그대로 배가 되어
-  /// 극한에서 몬스터 하나에 13,777대가 됐다(2026-08-30 실측). 지루한
-  /// 스펀지지 어려운 게 아니다.
+  /// ⚠️ **회차는 실제로 어려워져야 한다.**
   ///
-  /// 난이도는 **위험**에서 나와야 한다 — 그래야 체력·방어·회복과 장비
-  /// 옵션이 실제 선택이 된다.
-  test('회차가 올라도 타격 수가 폭주하지 않는다', () {
+  /// 처음엔 목표 타격 수만 올렸는데 `hpAdaptMaxRatio`(3000)가 **먼저 걸려**
+  /// 체력이 전 회차 동일했다 — 목표를 14→504 로 올려도 아무 일이 없었다
+  /// (2026-08-30 실측). 보정 상한도 회차와 함께 열어야 작동한다.
+  test('회차가 오르면 몬스터가 실제로 세진다', () {
     for (final atk in [1e3, 1e6, 1e9]) {
-      final easy = habitatMaxHp(cfg, 199, playerAttack: atk) / atk;
-      final extreme = habitatMaxHp(cfg, 199, playerAttack: atk, tier: 3) / atk;
-      // 극한이라도 쉬움의 5배를 넘지 않는다(예전 설계는 **1000배**였다).
-      expect(extreme / easy, lessThan(5.0), reason: 'atk=$atk');
-      expect(extreme, greaterThanOrEqualTo(easy), reason: 'atk=$atk');
+      final easy = habitatMaxHp(cfg, 199, playerAttack: atk);
+      final extreme = habitatMaxHp(cfg, 199, playerAttack: atk, tier: 3);
+      expect(extreme, greaterThan(easy), reason: 'atk=$atk');
     }
-    // 보정이 상한(hpAdaptMaxRatio)에 닿지 않은 구간에서는 실제로 길어진다.
-    // ⚠️ 닿은 구간(공격력이 아주 큰 후반)에서는 회차가 체력을 못 바꾼다 —
-    // 그때 난이도는 **위협도**가 만든다(아래 테스트).
-    expect(
-      habitatMaxHp(cfg, 199, playerAttack: 1e3, tier: 3),
-      greaterThan(habitatMaxHp(cfg, 199, playerAttack: 1e3)),
-    );
+  });
+
+  /// ⚠️ 그렇다고 무한정 세지면 안 된다. int64 를 넘으면 `.round()` 가 조용히
+  /// 포화시키고, 그 체력으로 나눈 타격 수·소요 시간이 전부 틀어진다.
+  test('체력은 int64 상한 안에서 멈춘다', () {
+    final hp = bossMaxHp(cfg, 999, playerAttack: double.maxFinite, tier: 3);
+    expect(hp, greaterThan(0), reason: '음수면 이미 넘친 것이다');
+    expect(hp, lessThanOrEqualTo(kMaxMonsterHp));
+    // 곱셈이 한 번 더 일어나도 넘치지 않을 여유가 있어야 한다.
+    expect(kMaxMonsterHp, lessThan(9223372036854775807 ~/ 2));
   });
 
   test('난이도는 위협도(맞는 아픔)로 온다', () {

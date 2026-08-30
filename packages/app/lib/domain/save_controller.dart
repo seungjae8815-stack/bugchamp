@@ -339,18 +339,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
   void consumeSeason() => pendingSeason = null;
   void consumeEventReward() => pendingEventReward = null;
 
-  /// 다음 난이도 회차로 진입한다 — **스테이지만 1 로** 돌리고 회차를 1 올린다.
+  /// 다음 난이도 회차로 진입한다 — **성장 축을 리셋하고 자산은 남긴다**
+  /// (프레스티지, `docs/design_difficulty_loop.md`).
   ///
-  /// 업그레이드·장비·곤충·도감·재화는 **그대로 둔다**
-  /// (`docs/design_difficulty_loop.md`). 초기화하면 회차 전환이 손실로 느껴져
-  /// 아무도 안 넘어간다 — 이어지는 재화가 곧 더 센 몬스터를 상대할 밑천이다.
+  /// ⚠️ 처음엔 "스테이지만 1 로" 설계했다가 **실측으로 뒤집었다**(2026-08-30).
+  /// 전력을 그대로 들고 가면 2회차부터 **이틀이면 끝난다**. 적응형 체력은
+  /// "그 스테이지의 기본 체력"에 배율을 곱하는 구조라, 스테이지 1 은 기본
+  /// 체력이 150 이라 3000배를 곱해도 20만이다 — 공격력이 1조든 100경이든
+  /// **똑같이 한 방**이다. 배율로는 못 고친다.
   ///
-  /// 최고 기록(`stageMax`)도 건드리지 않는다. 그건 "가장 멀리 간 지점"이라
-  /// 회차와 별개로 남아야 한다.
+  /// 그래서 **다시 약해져야** 회차가 길어진다:
+  ///  - 리셋: 스테이지 · 능력치 강화(업그레이드) · 캐릭터 레벨/경험치
+  ///  - 유지: 곤충 · 장비 · 도감 · 재화(골드·재료·젤리) · 부화기/짝짓기
+  ///
+  /// 남는 자산이 곧 "이번엔 훨씬 수월하다"는 성장 실감이다.
   Future<void> enterNextTier() async {
     final s = state.requireValue;
     await _commit(
-      s.copyWith(stageNumber: 1, difficultyTier: s.difficultyTier + 1),
+      s.copyWith(
+        stageNumber: 1,
+        difficultyTier: s.difficultyTier + 1,
+        // 성장 축을 처음으로 — 이게 없으면 회차가 이틀 만에 끝난다.
+        upgradeLevels: const {},
+        level: 1,
+        xp: 0,
+      ),
     );
   }
 

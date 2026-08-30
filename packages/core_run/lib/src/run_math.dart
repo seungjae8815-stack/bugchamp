@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
-import 'package:core_models/core_models.dart' show kMaxOfflineAccrual;
+import 'package:core_models/core_models.dart'
+    show kMaxOfflineAccrual, kMaxMonsterHp;
 import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
@@ -48,12 +49,7 @@ double baselineHitPower(CharacterStats s, {bool boss = false}) {
 /// [tier] = 난이도 회차(0=쉬움). 회차가 오르면 몬스터가 통째로 세진다
 /// (`docs/design_difficulty_loop.md`). **적응형 보정 밖에 곱한다** —
 /// 안쪽에 넣으면 보정이 회차 상승을 그대로 상쇄해 아무 일도 안 일어난다.
-int habitatMaxHp(
-  RunConfig c,
-  int depth, {
-  double? playerAttack,
-  int tier = 0,
-}) {
+int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
   final base = c.hpBase * math.pow(c.hpGrowth, depth);
   final gate = c.worldMult(c.worldHpMult, depth);
   if (playerAttack == null || c.hpAdaptPower <= 0 || c.hpAdaptTargetHits <= 0) {
@@ -64,21 +60,32 @@ int habitatMaxHp(
   // ⚠️ 회차는 **목표 타격 수**를 늘려서 반영한다. 체력에 직접 곱하면 타격
   // 수가 그대로 배가 되어(극한에서 13,777대) 지루한 스펀지가 된다.
   final onCurve = base / c.tierTargetHits(tier);
+  // ⚠️ 상한도 회차와 함께 열어야 한다. 안 그러면 목표 타격 수를 아무리
+  // 올려도 **상한이 먼저 걸려** 체력이 전 회차 동일해진다(2026-08-30 실측:
+  // 목표 14→504 인데 체력은 그대로였다). 회차 난이도가 통째로 무효가 된다.
   final ratio = (playerAttack / onCurve).clamp(
     c.hpAdaptMinRatio,
-    c.hpAdaptMaxRatio,
+    c.hpAdaptMaxRatio * c.tierHits(tier),
   );
-  return (base * math.pow(ratio, c.hpAdaptPower) * gate).round();
+  final hp = base * math.pow(ratio, c.hpAdaptPower) * gate;
+  // ⚠️ int64 포화 방어. 회차마다 보정 상한을 열어 주므로(위) 극한 회차의
+  // 월드보스가 한계(9.22e18)에 **딱 닿는다**(2026-08-30 실측 여유 1.00배).
+  // 넘으면 `.round()` 가 포화시켜 조용히 이상한 값이 되고, 그 체력으로
+  // 나눈 타격 수·시간이 전부 틀어진다. 여유를 두고 자른다.
+  return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
 }
 
 /// 보스 최대 HP. 월드 마지막 보스(1-100)는 [RunConfig.worldBossHpMult] 추가
 /// — 다음 월드로 가는 관문 벽.
 int bossMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
   final worldFinal = c.isWorldFinal(depth + 1) ? c.worldBossHpMult : 1.0;
-  return (habitatMaxHp(c, depth, playerAttack: playerAttack, tier: tier) *
-          c.bossHpMult *
-          worldFinal)
-      .round();
+  // ⚠️ 서식지 체력에 **또 곱하므로** 여기서도 상한을 본다. 서식지 쪽만
+  // 막으면 보스에서 넘친다(2026-08-30 실측: 9.22e18 로 포화).
+  final hp =
+      habitatMaxHp(c, depth, playerAttack: playerAttack, tier: tier) *
+      c.bossHpMult *
+      worldFinal;
+  return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
 }
 
 /// 파괴 보상 골드. 보스면 [c.bossRewardMult] 배. 월드마다 [c.worldGoldMult] 점프.
@@ -360,21 +367,42 @@ IdleProgress simulateIdleProgress({
 
   while (budget > 0 && advanced < maxStageAdvance) {
     final depth = stage - 1;
-    final habHp = habitatMaxHp(config, depth, playerAttack: hit, tier: tier).toDouble();
-    final bossHp = bossMaxHp(config, depth, playerAttack: bossHit, tier: tier).toDouble();
+    final habHp = habitatMaxHp(
+      config,
+      depth,
+      playerAttack: hit,
+      tier: tier,
+    ).toDouble();
+    final bossHp = bossMaxHp(
+      config,
+      depth,
+      playerAttack: bossHit,
+      tier: tier,
+    ).toDouble();
     // 효율을 시간에 반영: 실제로 한 번 처치하는 데 드는 예산(초).
     final habTime = (habHp / dps + 0.6) / eff;
     final bossTime = (bossHp / bossDps + 0.6) / eff;
     final stageTime = config.habitatsPerStage * habTime + bossTime;
 
-    final goldHab = rewardGold(config, depth, stats.rewardMultiplier, tier: tier);
+    final goldHab = rewardGold(
+      config,
+      depth,
+      stats.rewardMultiplier,
+      tier: tier,
+    );
     final xpHab = rewardXp(config, depth);
 
     if (budget >= stageTime) {
       // 스테이지 전체(서식지들 + 보스)를 밀고 다음 스테이지로.
       gold +=
           config.habitatsPerStage * goldHab +
-          rewardGold(config, depth, stats.rewardMultiplier, boss: true, tier: tier);
+          rewardGold(
+            config,
+            depth,
+            stats.rewardMultiplier,
+            boss: true,
+            tier: tier,
+          );
       xp +=
           config.habitatsPerStage * xpHab + rewardXp(config, depth, boss: true);
       habitatClears += config.habitatsPerStage;

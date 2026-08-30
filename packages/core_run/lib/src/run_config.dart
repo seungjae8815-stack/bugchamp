@@ -294,10 +294,12 @@ class RunConfig {
   final double tierHitsMult;
   final double tierThreatMult;
 
+  /// 회차 [tier] 의 타격 배율(목표 타격 수·보정 상한에 함께 곱한다).
+  double tierHits(int tier) =>
+      tier <= 0 ? 1.0 : math.pow(tierHitsMult, tier).toDouble();
+
   /// 회차 [tier] 의 목표 타격 수(적응형 기준).
-  double tierTargetHits(int tier) =>
-      hpAdaptTargetHits *
-      (tier <= 0 ? 1.0 : math.pow(tierHitsMult, tier).toDouble());
+  double tierTargetHits(int tier) => hpAdaptTargetHits * tierHits(tier);
 
   /// 회차 [tier] 의 위협도 배율.
   double tierThreat(int tier) =>
