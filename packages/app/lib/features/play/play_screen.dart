@@ -1863,7 +1863,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
                 const SizedBox(height: 4),
                 _resourcePill(
-                  const Icon(Icons.diamond, size: 13, color: Color(0xFF4FC3F7)),
+                  // ⚠️ 다이아 글리프가 아니라 **실제 곤충젤리 그림**이다.
+                  // 프리미엄 재화를 보석으로 그리면 다른 재화처럼 읽힌다.
+                  jellyIcon(size: 14),
                   formatCompact(save.materialCount(MaterialKind.jelly)),
                   tint: const Color(0x3355C7F2),
                 ),
@@ -2531,7 +2533,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           Padding(
             padding: const EdgeInsets.only(top: 3),
             child: _resRow(
-              const Icon(Icons.diamond, size: 13, color: Color(0xFF4FC3F7)),
+              jellyIcon(size: 14),
               formatCompact(save.materialCount(MaterialKind.jelly)),
               valueColor: const Color(0xFF81D4FA),
             ),

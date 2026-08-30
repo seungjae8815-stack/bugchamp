@@ -782,19 +782,45 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
               child: ListView(
                 shrinkWrap: true,
                 children: [
+                  // ⚠️ `CheckboxListTile` 을 쓰면 `dense` 여도 최소 높이가
+                  // 48px 이라(터치 타깃 규격) 15줄이 세로로 훌쩍 벌어진다
+                  // (2026-08-30 지적). 목록이 길어 한눈에 훑어야 하는
+                  // 화면이라, 직접 그려 줄 간격을 좁힌다.
                   for (final k in ItemOptionKind.values)
-                    CheckboxListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      value: want.contains(k),
-                      onChanged: (v) => setLocal(() {
-                        v == true ? want.add(k) : want.remove(k);
+                    InkWell(
+                      onTap: () => setLocal(() {
+                        want.contains(k) ? want.remove(k) : want.add(k);
                       }),
-                      title: Text(
-                        optionLabel(l, k),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.5,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: Checkbox(
+                                value: want.contains(k),
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                onChanged: (v) => setLocal(() {
+                                  v == true ? want.add(k) : want.remove(k);
+                                }),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                optionLabel(l, k),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

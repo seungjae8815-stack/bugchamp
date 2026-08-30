@@ -4,6 +4,7 @@ import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/auth_service.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
@@ -38,6 +39,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _loading = true;
   bool _sending = false;
 
+  /// 낙관적으로 먼저 띄운 메시지의 id 접두어. 서버가 준 id 와 구분한다.
+  static const _localPrefix = 'local:';
+
+  /// 아직 서버 id 를 못 받은(임시) 메시지인가. `local:`(내가 즉시 띄운 것)과
+  /// `echo:`(서비스가 넣자마자 방송한 것) 둘 다 임시다.
+  static bool _isTemp(String id) =>
+      id.startsWith(_localPrefix) || id.startsWith('echo:');
+
   ChatRules get _rules =>
       ref.read(gameDataProvider).value?.chatRules ?? const ChatRules();
 
@@ -61,7 +70,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _sub = svc.subscribe().listen((m) {
       if (!mounted) return;
       setState(() {
-        _messages.add(m);
+        // 같은 글이 세 경로로 들어올 수 있다 —
+        //  ① 내가 즉시 띄운 것(`local:`)  ② 서비스가 보낸 자체 방송(`echo:`)
+        //  ③ 서버 실시간 브로드캐스트(진짜 id)
+        // 셋을 합쳐 **한 줄만** 남긴다. 안 그러면 같은 말이 두세 번 보인다.
+        final dup = _messages.any(
+          (x) =>
+              !_isTemp(x.id) &&
+              x.userId == m.userId &&
+              x.body == m.body &&
+              m.createdAt.difference(x.createdAt).abs() <
+                  const Duration(seconds: 20),
+        );
+        _messages.removeWhere(
+          (x) => _isTemp(x.id) && x.userId == m.userId && x.body == m.body,
+        );
+        // ③ 이 이미 들어와 있으면 ②(에코)는 버린다.
+        if (!(dup && _isTemp(m.id))) _messages.add(m);
         // 화면에 무한정 쌓이지 않게 상한 유지.
         if (_messages.length > _rules.historyLimit) {
           _messages.removeRange(0, _messages.length - _rules.historyLimit);
@@ -105,17 +130,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
 
-    setState(() => _sending = true);
     final save = ref.read(saveControllerProvider).requireValue;
+    // ⚠️ **먼저 화면에 띄운다.** 예전에는 서버에 넣고 그 브로드캐스트가
+    // 되돌아올 때까지 기다렸다 — 왕복(insert → Postgres → realtime → 앱)이
+    // 통째로 지연으로 보였다(2026-08-30 지적). 내가 쓴 글이 내 화면에 늦게
+    // 뜨는 건 네트워크가 아니라 설계 문제다.
+    //
+    // 실패하면 되돌린다(아래). 티켓 낙관 차감과 같은 원칙이다.
+    final localId = '$_localPrefix${now.microsecondsSinceEpoch}';
+    setState(() {
+      _sending = true;
+      _messages.add(
+        ChatMessage(
+          id: localId,
+          userId: ref.read(authServiceProvider).userId ?? '',
+          nickname: save.nickname,
+          body: body,
+          createdAt: now,
+        ),
+      );
+    });
+    _input.clear();
+    _jumpToBottom();
+
     final ok = await ref
         .read(chatServiceProvider)
         .send(nickname: save.nickname, body: body);
     if (!mounted) return;
-    setState(() => _sending = false);
+    setState(() {
+      _sending = false;
+      if (!ok) {
+        // 못 보냈으면 화면에서도 지운다 — 보낸 줄 알고 넘어가면 안 된다.
+        _messages.removeWhere((x) => x.id == localId);
+      }
+    });
     if (ok) {
       _lastSentAt = now;
-      _input.clear();
     } else {
+      _input.text = body; // 다시 쓰게 하지 않는다
       _snack(l.chatSendFailed);
     }
   }

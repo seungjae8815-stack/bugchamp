@@ -978,7 +978,7 @@ class StorageScreen extends ConsumerWidget {
                     if (ctx.mounted) _snack(ctx, l.breedingGotEgg);
                   },
                   style: _pillStyle(const Color(0xFF3E7D4F)),
-                  child: Text(l.incubatorCollect),
+                  child: _pillText(l.incubatorCollect),
                 )
               : FilledButton(
                   onPressed: () async {
@@ -1547,13 +1547,24 @@ class StorageScreen extends ConsumerWidget {
               fallback: bugAvatar(sp!, size: 40),
             ),
           const SizedBox(height: 4),
-          Text(
-            done ? l.incubatorReady : _remainLabel(l, rem),
-            style: TextStyle(
-              color: done ? _honey : Colors.white,
-              fontWeight: done ? FontWeight.w900 : FontWeight.w700,
-              fontSize: 10.5,
-              shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
+          // ⚠️ 캡슐 폭이 좁아 1시간을 넘으면(`1시간 12분`) 두 줄로 접혔고,
+          // `부화 완료!` 도 마찬가지였다(2026-08-30 지적). 자르면 남은 시간의
+          // 뜻이 사라지므로(`1시간 1…`) **줄여서** 한 줄에 담는다.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                done ? l.incubatorReady : _remainLabel(l, rem),
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: done ? _honey : Colors.white,
+                  fontWeight: done ? FontWeight.w900 : FontWeight.w700,
+                  fontSize: 10.5,
+                  shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
+                ),
+              ),
             ),
           ),
         ],
@@ -2783,7 +2794,7 @@ class StorageScreen extends ConsumerWidget {
                 if (ctx.mounted && !ok) _snack(ctx, l.notEnoughJelly);
               },
               style: _pillStyle(const Color(0xFF7E57C2)),
-              child: Text(l.injuryHealJelly(jelly)),
+              child: _pillText(l.injuryHealJelly(jelly)),
             ),
           ],
         ),
@@ -2941,10 +2952,23 @@ class StorageScreen extends ConsumerWidget {
         //    깔려 "재화가 모자란다"를 알려야 할 글씨가 통째로 안 보인다.
         disabledBackgroundColor: bg.withValues(alpha: 0.30),
         disabledForegroundColor: const Color(0x99FFFFFF),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         minimumSize: const Size(0, 36),
         textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
       );
+
+  /// 알약 버튼 안의 글자 — **줄바꿈 금지**.
+  ///
+  /// 남은 시간이 1시간을 넘으면 문구가 길어져(`1시간 12분`) 버튼 안에서 두 줄로
+  /// 접혔다. 부화 완료(`부화 완료!`)도 마찬가지다(2026-08-30 지적).
+  /// 버튼은 높이가 36 고정이라 두 줄이 되면 글자가 잘리고 줄 높이가 흔들린다.
+  ///
+  /// 자르지 않고 **줄여서** 담는다 — 남은 시간은 잘리면 뜻이 사라진다
+  /// ("1시간 1..."). `FittedBox` 가 폭에 맞춰 글꼴만 줄인다.
+  Widget _pillText(String text) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Text(text, maxLines: 1, softWrap: false),
+  );
 
   /// 공용 포맷(`ui/labels.dart`) 로 위임 — 공방·부화기와 모양이 같아야 한다.
   String _remainLabel(AppLocalizations l, Duration d) => remainLabel(l, d);
@@ -3001,7 +3025,7 @@ class StorageScreen extends ConsumerWidget {
                       }
                     },
                     style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
-                    child: Text(l.breakthroughCollect),
+                    child: _pillText(l.breakthroughCollect),
                   )
                 : FilledButton.icon(
                     onPressed: () async {
@@ -3066,7 +3090,7 @@ class StorageScreen extends ConsumerWidget {
                 if (ctx.mounted) _snack(ctx, l.trainSnack);
               },
               style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
-              child: Text(l.trainAction),
+              child: _pillText(l.trainAction),
             ),
           ],
         ),
@@ -3135,7 +3159,7 @@ class StorageScreen extends ConsumerWidget {
               }
             },
             style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
-            child: Text(l.breakthroughDo),
+            child: _pillText(l.breakthroughDo),
           ),
         ],
       ),

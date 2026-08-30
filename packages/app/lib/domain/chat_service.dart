@@ -137,6 +137,22 @@ class SupabaseChatService implements ChatService {
         'nickname': nickname,
         'body': body,
       });
+      // ⚠️ **넣자마자 스스로 방송한다.** 예전에는 Postgres → realtime →
+      // 앱 왕복이 돌아올 때까지 기다렸고, 그 시간이 그대로 "내가 쓴 글이 늦게
+      // 뜬다"로 보였다(2026-08-30 지적). 홈 상단 채팅 바도 같은 스트림을
+      // 보므로 여기서 한 번 방송하면 두 화면이 함께 즉시 갱신된다.
+      //
+      // 실제 브로드캐스트가 뒤따라 오면 같은 내용이 한 번 더 들어온다 —
+      // 받는 쪽이 **내가 먼저 띄운 것과 같은 글이면 대체**한다(chat_screen).
+      _events?.add(
+        ChatMessage(
+          id: 'echo:${DateTime.now().microsecondsSinceEpoch}',
+          userId: uid,
+          nickname: nickname,
+          body: body,
+          createdAt: DateTime.now().toUtc(),
+        ),
+      );
       return true;
     } catch (e) {
       // 서버 도배 제한(트리거)에 걸리면 여기로 온다.
