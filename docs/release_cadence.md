@@ -117,7 +117,10 @@ Codemagic `ios-release` 워크플로가 IPA 를 빌드해 **TestFlight 까지** 
       `adb shell am broadcast -a android.intent.action.BOOT_COMPLETED -p com.bugchamp.app`
 - [ ] 서버 변경이 있으면 서버 먼저 배포
 - [ ] `flutter test` · `flutter analyze` 통과
-- [ ] 출시 노트 3개 언어 (ko 500자 / en 500자 / ja 500자 한도)
+- [ ] 출시 노트 3개 언어 — ⚠️ **500자는 세 언어 합계**다(2026-09-01 확인).
+      언어당 500 이 아니다. 태그(`<ko-KR>`…)까지 포함해 세고, 줄바꿈은
+      2자(CRLF)다. 한 언어를 늘리면 다른 언어를 줄여야 한다.
+      확인: `python -c "import io;s=io.open('docs/_release_notes_<버전>.txt',encoding='utf-8').read();b=s[s.index('<ko-KR>'):].rstrip();print(len(b)+b.count(chr(10)))"`
 - [ ] AAB 업로드 → 프로덕션 반영
 - [ ] `LATEST_VERSION_ANDROID` 갱신
 - [ ] iOS 를 같이 낼 차례인지 판단 (§4)
