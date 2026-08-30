@@ -439,6 +439,7 @@ class SaveGame {
     this.nicknameSet = false,
     this.eventRewardRound,
     this.eventBadges = const {},
+    this.difficultyTier = 0,
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
   });
@@ -609,6 +610,17 @@ class SaveGame {
   /// ⚠️ **서버 소유 필드**다. 세이브를 고쳐 챔피언 뱃지를 달 수 있으면
   /// 표식의 값어치가 통째로 사라진다.
   final Set<String> eventBadges;
+
+  /// 난이도 회차. **0 = 쉬움**, 1 = 보통, 2 = 어려움, 3 = 극한.
+  ///
+  /// 스테이지 1000 을 깨면 스테이지만 1 로 돌아가고 이 값이 1 오른다
+  /// (`docs/design_difficulty_loop.md`). 업그레이드·장비·곤충·재화는 그대로
+  /// 이어진다 — 초기화하면 회차 전환이 손실로 느껴져 아무도 안 넘어간다.
+  ///
+  /// ⚠️ 기본값이 있는 **호환 필드**라 스키마 버전을 올리지 않는다(§4).
+  /// 구버전 앱이 이 세이브를 읽으면 0(쉬움)으로 보고 스테이지만 이어간다 —
+  /// 진행이 깨지지는 않는다.
+  final int difficultyTier;
 
   /// [bugId] 가 [now] 기준으로 아직 출전 피로 중인가.
   bool eventOnFatigue(String bugId, DateTime now) {
@@ -996,6 +1008,7 @@ class SaveGame {
     int? eventBestScore,
     String? eventRewardRound,
     Set<String>? eventBadges,
+    int? difficultyTier,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
     Set<String>? claimedLeagues,
@@ -1068,6 +1081,7 @@ class SaveGame {
     eventBestScore: eventBestScore ?? this.eventBestScore,
     eventRewardRound: eventRewardRound ?? this.eventRewardRound,
     eventBadges: eventBadges ?? this.eventBadges,
+    difficultyTier: difficultyTier ?? this.difficultyTier,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
@@ -1235,6 +1249,7 @@ class SaveGame {
     eventRewardRound: json['eventRewardRound'] as String?,
     eventBadges:
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
+    difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
         (json['injured'] as Map<String, dynamic>?)?.map(
@@ -1381,6 +1396,7 @@ class SaveGame {
     if (eventBestScore > 0) 'eventBestScore': eventBestScore,
     if (eventRewardRound != null) 'eventRewardRound': eventRewardRound,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
+    if (difficultyTier > 0) 'difficultyTier': difficultyTier,
     'pvpTrophies': pvpTrophies,
     'injured': {
       for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),

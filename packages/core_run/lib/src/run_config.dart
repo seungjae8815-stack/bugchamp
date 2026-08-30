@@ -138,6 +138,8 @@ class RunConfig {
     this.offlineEfficiency = 0.3,
     this.worldSize = 0,
     this.worldHpMult = 1.0,
+    this.tierHpMult = 1.0,
+    this.tierRewardMult = 1.0,
     this.worldGoldMult = 1.0,
     this.worldBossHpMult = 1.0,
     this.exchangeJellyPerTrade = 10,
@@ -274,6 +276,26 @@ class RunConfig {
   /// 월드가 하나 넘어갈 때마다 적 HP(·위협도)에 곱해지는 점프.
   final double worldHpMult;
 
+  /// 난이도 회차 **한 단계당** 몬스터 체력·공격 배율
+  /// (`docs/design_difficulty_loop.md`). 회차 n 이면 `tierHpMult^n`.
+  ///
+  /// 1.0 이면 회차 기능이 꺼진 것과 같다(구버전 동작).
+  final double tierHpMult;
+
+  /// 난이도 회차 한 단계당 **보상**(골드·재료) 배율. 회차 n 이면 `^n`.
+  ///
+  /// ⚠️ [tierHpMult] 와 같은 폭으로 올려야 한다. 몬스터만 세지면 회차를
+  /// 넘어갈 이유가 없고, 보상만 세지면 넘어가는 게 공짜가 된다.
+  final double tierRewardMult;
+
+  /// 회차 [tier] 의 몬스터 배율.
+  double tierHp(int tier) =>
+      tier <= 0 ? 1.0 : math.pow(tierHpMult, tier).toDouble();
+
+  /// 회차 [tier] 의 보상 배율.
+  double tierReward(int tier) =>
+      tier <= 0 ? 1.0 : math.pow(tierRewardMult, tier).toDouble();
+
   /// 월드가 하나 넘어갈 때마다 골드·경험치 보상에 곱해지는 점프.
   /// [worldHpMult] 보다 작아야 벽이 생긴다(같으면 벽이 없다).
   final double worldGoldMult;
@@ -393,6 +415,8 @@ class RunConfig {
       offlineEfficiency: (json['offlineEfficiency'] as num?)?.toDouble() ?? 0.3,
       worldSize: (json['worldSize'] as num?)?.toInt() ?? 0,
       worldHpMult: (json['worldHpMult'] as num?)?.toDouble() ?? 1.0,
+      tierHpMult: (json['tierHpMult'] as num?)?.toDouble() ?? 1.0,
+      tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
     );

@@ -48,6 +48,7 @@ import '../roadmap/roadmap_screen.dart';
 import '../notice/notice_screen.dart';
 import '../../domain/review_service.dart';
 import '../../domain/notice_service.dart';
+import '../../ui/tier_label.dart';
 
 const _uuid = Uuid();
 const _honey = Color(0xFFEBA52F);
@@ -368,6 +369,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   int _stage = 1;
 
+  /// 캠페인 끝을 깼다 — 다음 빌드에서 회차 전환 안내를 띄운다.
+  bool _tierClearPending = false;
+
   /// 스크롤러가 로컬에서 도달한 **최고** 스테이지. 실패 후퇴(_stage↓)와 무관하게
   /// 유지된다 — 시작 시 서버 세이브 채택(다른 기기 진행)을 따라잡을지 판단하는
   /// 기준으로만 쓴다. 이게 없으면 후퇴할 때마다 최고기록으로 튕겨 올라간다.
@@ -587,17 +591,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 기준값은 생 `attack` 이 아니라 `baselineHitPower` — 치명타까지 센 1타
     // 데미지다. 치명타를 빼고 잡으면 설정이 "6대"여도 화면은 2~3대가 된다.
     final perm = _petStats(ref.read(saveControllerProvider).requireValue);
+    // 회차(난이도)가 오르면 몬스터가 통째로 세진다
+    // (docs/design_difficulty_loop.md). 적응형 보정 **밖**에 곱해진다 —
+    // 안쪽이면 보정이 회차 상승을 그대로 상쇄해 아무 일도 안 일어난다.
+    final tier = ref.read(saveControllerProvider).requireValue.difficultyTier;
     _hpMax =
         (_isBoss
                 ? bossMaxHp(
                     _config,
                     depth,
                     playerAttack: baselineHitPower(perm, boss: true),
+                    tier: tier,
                   )
                 : habitatMaxHp(
                     _config,
                     depth,
                     playerAttack: baselineHitPower(perm),
+                    tier: tier,
                   ))
             .toDouble();
     _hp = _hpMax;
@@ -903,7 +913,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 접속 보너스 — **직접 잡았을 때만** 붙는다(방치 정산에는 안 붙는다).
     // 켜두는 쪽이 이득이어야 자주 들어오고, 그래야 업그레이드·채팅도 돈다.
     final gold =
-        (rewardGold(_config, depth, stats.rewardMultiplier, boss: _isBoss) *
+        (rewardGold(
+                  _config,
+                  depth,
+                  stats.rewardMultiplier,
+                  boss: _isBoss,
+                  // 보상도 회차와 함께 오른다 — 몬스터만 세지면 넘어갈 이유가 없다.
+                  tier: ref
+                      .read(saveControllerProvider)
+                      .requireValue
+                      .difficultyTier,
+                ) *
                 (1 + _config.onlineGoldBonus))
             .round();
     final xp = (rewardXp(_config, depth, boss: _isBoss) * stats.xpMultiplier)
@@ -1085,6 +1105,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               (_isBoss ? _config.bossKillHealPct : _config.killHealPct),
     );
     if (_isBoss) {
+      // 캠페인 끝(로드맵 마지막 스테이지)에 닿으면 **더 나아가지 않는다**.
+      // 예전에는 상한이 없어 1708 같은 값까지 흘러갔고, 그 구간은 저항이
+      // 없어 의미가 없으며 골드가 int64 를 넘겨 음수가 됐다
+      // (docs/design_difficulty_loop.md). 여기서 멈추고 회차 전환을 제안한다.
+      final last = _data.roadmapConfig?.finalStage ?? 0;
+      if (last > 0 && _stage >= last) {
+        _habitatIndex = 0;
+        _tierClearPending = true; // 화면이 다음 빌드에서 안내를 띄운다
+        _spawn();
+        return;
+      }
       _stage++;
       _stageMax = math.max(_stageMax, _stage);
       _habitatIndex = 0;
@@ -1117,6 +1148,52 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _spawn();
   }
 
+  /// 캠페인 끝을 깼을 때의 안내 — **자동으로 넘기지 않는다.**
+  ///
+  /// 회차가 오르면 스테이지가 1 로 돌아가므로, 유저가 모르는 사이 넘어가면
+  /// "진행이 초기화됐다"로 읽힌다. 무엇이 이어지고 무엇이 돌아가는지 적어
+  /// 두고 **직접 누르게** 한다.
+  ///
+  /// ⚠️ 몬스터가 얼마나 세지는지 **수치를 쓰지 않는다**(사장님 지시
+  /// 2026-08-30). 배율은 JSON 이라 언제든 바뀌는데 문구에 박아 두면 거짓이
+  /// 되고, 유저는 숫자보다 체감으로 판단한다.
+  Future<void> _showTierClear(AppLocalizations l, SaveGame save) async {
+    final tier = save.difficultyTier;
+    final last = tier >= kTierCount - 1;
+    final go = await showGameDialog<bool>(
+      context,
+      title: l.tierClearTitle(tierName(l, tier)),
+      icon: Icons.military_tech_rounded,
+      content: Text(
+        last ? l.tierAllClear : l.tierNextBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.45),
+      ),
+      actions: [
+        if (!last)
+          gameDialogButton(
+            l.tierStayHere,
+            () => Navigator.pop(context, false),
+            primary: false,
+          ),
+        gameDialogButton(
+          last ? l.actionClose : l.tierNextGo,
+          () => Navigator.pop(context, !last),
+        ),
+      ],
+    );
+    if (go != true || !mounted) return;
+    await ref.read(saveControllerProvider.notifier).enterNextTier();
+    if (!mounted) return;
+    setState(() {
+      _stage = 1;
+      _habitatIndex = 0;
+      _playerHp = _playerHpMax;
+      _spawn();
+    });
+    showCenterToast(context, l.tierNextTitle(tierName(l, tier + 1)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -1129,6 +1206,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           _applyStageJump(save.stageNumber);
         }
       });
+    }
+    // 캠페인 끝을 깼다 → 다음 회차 안내(한 번만).
+    if (_tierClearPending) {
+      _tierClearPending = false;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showTierClear(l, save),
+      );
     }
     return Column(
       children: [

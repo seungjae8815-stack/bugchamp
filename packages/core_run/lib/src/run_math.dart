@@ -45,11 +45,20 @@ double baselineHitPower(CharacterStats s, {bool boss = false}) {
 ///     같이 뭉개져 "뚫는 맛"이 사라진다 — 관문 배율은 보정 밖에 곱한다.
 ///  2. 지수 [RunConfig.hpAdaptPower] < 1 이라 **강해질수록 타격 수는 줄어든다**.
 ///     1.0 이면 항상 같은 횟수가 되어 성장 실감이 사라진다.
-int habitatMaxHp(RunConfig c, int depth, {double? playerAttack}) {
+/// [tier] = 난이도 회차(0=쉬움). 회차가 오르면 몬스터가 통째로 세진다
+/// (`docs/design_difficulty_loop.md`). **적응형 보정 밖에 곱한다** —
+/// 안쪽에 넣으면 보정이 회차 상승을 그대로 상쇄해 아무 일도 안 일어난다.
+int habitatMaxHp(
+  RunConfig c,
+  int depth, {
+  double? playerAttack,
+  int tier = 0,
+}) {
   final base = c.hpBase * math.pow(c.hpGrowth, depth);
   final gate = c.worldMult(c.worldHpMult, depth);
+  final tierMul = c.tierHp(tier);
   if (playerAttack == null || c.hpAdaptPower <= 0 || c.hpAdaptTargetHits <= 0) {
-    return (base * gate).round();
+    return (base * gate * tierMul).round();
   }
   // 기준선 = 이 깊이에서 목표 타격 수로 잡으려면 필요한 공격력.
   final onCurve = base / c.hpAdaptTargetHits;
@@ -57,14 +66,14 @@ int habitatMaxHp(RunConfig c, int depth, {double? playerAttack}) {
     c.hpAdaptMinRatio,
     c.hpAdaptMaxRatio,
   );
-  return (base * math.pow(ratio, c.hpAdaptPower) * gate).round();
+  return (base * math.pow(ratio, c.hpAdaptPower) * gate * tierMul).round();
 }
 
 /// 보스 최대 HP. 월드 마지막 보스(1-100)는 [RunConfig.worldBossHpMult] 추가
 /// — 다음 월드로 가는 관문 벽.
-int bossMaxHp(RunConfig c, int depth, {double? playerAttack}) {
+int bossMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
   final worldFinal = c.isWorldFinal(depth + 1) ? c.worldBossHpMult : 1.0;
-  return (habitatMaxHp(c, depth, playerAttack: playerAttack) *
+  return (habitatMaxHp(c, depth, playerAttack: playerAttack, tier: tier) *
           c.bossHpMult *
           worldFinal)
       .round();
@@ -76,12 +85,16 @@ int rewardGold(
   int depth,
   double rewardMultiplier, {
   bool boss = false,
+  int tier = 0,
 }) {
   final base =
       c.goldBase *
       math.pow(c.goldGrowth, depth) *
       c.worldMult(c.worldGoldMult, depth) *
-      rewardMultiplier;
+      rewardMultiplier *
+      // ⚠️ 보상도 회차와 함께 오른다. 몬스터만 세지면 회차를 넘어갈 이유가
+      // 없다 — 더 오래 걸리고 덜 버는 선택지가 되기 때문이다.
+      c.tierReward(tier);
   return (base * (boss ? c.bossRewardMult : 1.0)).round();
 }
 
@@ -314,6 +327,8 @@ IdleProgress simulateIdleProgress({
   Duration maxAccrual = kMaxOfflineAccrual,
   double efficiency = 0.5,
   int maxStageAdvance = 500,
+  int tier = 0,
+  int? finalStage,
 }) {
   if (elapsed <= Duration.zero) {
     return IdleProgress.empty.copyStage(startStage);
@@ -339,21 +354,21 @@ IdleProgress simulateIdleProgress({
 
   while (budget > 0 && advanced < maxStageAdvance) {
     final depth = stage - 1;
-    final habHp = habitatMaxHp(config, depth, playerAttack: hit).toDouble();
-    final bossHp = bossMaxHp(config, depth, playerAttack: bossHit).toDouble();
+    final habHp = habitatMaxHp(config, depth, playerAttack: hit, tier: tier).toDouble();
+    final bossHp = bossMaxHp(config, depth, playerAttack: bossHit, tier: tier).toDouble();
     // 효율을 시간에 반영: 실제로 한 번 처치하는 데 드는 예산(초).
     final habTime = (habHp / dps + 0.6) / eff;
     final bossTime = (bossHp / bossDps + 0.6) / eff;
     final stageTime = config.habitatsPerStage * habTime + bossTime;
 
-    final goldHab = rewardGold(config, depth, stats.rewardMultiplier);
+    final goldHab = rewardGold(config, depth, stats.rewardMultiplier, tier: tier);
     final xpHab = rewardXp(config, depth);
 
     if (budget >= stageTime) {
       // 스테이지 전체(서식지들 + 보스)를 밀고 다음 스테이지로.
       gold +=
           config.habitatsPerStage * goldHab +
-          rewardGold(config, depth, stats.rewardMultiplier, boss: true);
+          rewardGold(config, depth, stats.rewardMultiplier, boss: true, tier: tier);
       xp +=
           config.habitatsPerStage * xpHab + rewardXp(config, depth, boss: true);
       habitatClears += config.habitatsPerStage;
@@ -422,6 +437,7 @@ OfflineReport computeOfflineReward({
   required Duration elapsed,
   Duration maxAccrual = kMaxOfflineAccrual,
   double efficiency = 0.5,
+  int tier = 0,
 }) {
   if (elapsed <= Duration.zero) return OfflineReport.empty;
   final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
@@ -436,7 +452,7 @@ OfflineReport computeOfflineReward({
   if (clears <= 0) return OfflineReport.empty;
 
   final depth = stageNumber - 1;
-  final goldPer = rewardGold(config, depth, stats.rewardMultiplier);
+  final goldPer = rewardGold(config, depth, stats.rewardMultiplier, tier: tier);
   final xpPer = (rewardXp(config, depth) * stats.xpMultiplier).round();
 
   return OfflineReport(

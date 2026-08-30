@@ -3526,6 +3526,66 @@ abstract class AppLocalizations {
   /// **'ATK › HEAL › DEF › ATK'**
   String get stanceCycle;
 
+  /// No description provided for @tierClearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} difficulty cleared!'**
+  String tierClearTitle(String name);
+
+  /// No description provided for @tierNextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Entering {name} difficulty'**
+  String tierNextTitle(String name);
+
+  /// No description provided for @tierNextBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your stage resets to 1, but upgrades, gear, bugs and currency all carry over.\nMonsters grow far stronger.'**
+  String get tierNextBody;
+
+  /// No description provided for @tierNextGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get tierNextGo;
+
+  /// No description provided for @tierStayHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay a while'**
+  String get tierStayHere;
+
+  /// No description provided for @tierAllClear.
+  ///
+  /// In en, this message translates to:
+  /// **'You conquered every difficulty. A true entomologist!'**
+  String get tierAllClear;
+
+  /// No description provided for @tierEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get tierEasy;
+
+  /// No description provided for @tierNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get tierNormal;
+
+  /// No description provided for @tierHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get tierHard;
+
+  /// No description provided for @tierExtreme.
+  ///
+  /// In en, this message translates to:
+  /// **'Extreme'**
+  String get tierExtreme;
+
   /// No description provided for @netLostTitle.
   ///
   /// In en, this message translates to:

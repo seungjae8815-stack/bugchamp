@@ -12,6 +12,7 @@ import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/event_badge.dart';
+import '../../ui/tier_label.dart';
 
 const _honey = Color(0xFFEBA52F);
 
@@ -86,7 +87,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       switch (k) {
         RankingKind.trophies => formatCompact(p.trophies),
         RankingKind.level => formatCompact(p.level),
-        RankingKind.stage => formatCompact(p.stageNumber),
+        // 숫자만 보여주면 어느 구간인지 모른다 — `보통 5-32` 로 보여준다.
+        RankingKind.stage => progressLabel(
+          l,
+          ref.read(gameDataProvider).value?.roadmapConfig,
+          p.difficultyTier,
+          p.stageNumber,
+        ),
       };
 
   /// 점수 칸 — **고정 폭**. 자연 크기로 두면 줄마다 아이콘·숫자 위치가

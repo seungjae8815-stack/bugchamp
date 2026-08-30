@@ -337,7 +337,27 @@ class GameActions {
   /// 소유(덮어쓰기)가 아니라 **상한 강제**다 — 둘 다 젤리로 사는 편의 칸이라
   /// 상한만 지키면 경제·랭킹에 영향이 없다. 소유했다가 젤리로 산 슬롯이
   /// 사라지는 사고가 있었다.
+  /// 캠페인 끝(로드맵 마지막 스테이지)을 넘은 스테이지를 접는다.
+  ///
+  /// 스테이지에 상한이 없던 시절(2026-08 이전) 세이브에는 1708 같은 값이
+  /// 실제로 있다. 그 구간은 저항이 없어 의미가 없고, 지수 골드가 int64 를
+  /// 넘겨 음수가 됐다(docs/design_difficulty_loop.md).
+  ///
+  /// ⚠️ 초과분을 **다음 회차로 환산하지 않는다.** 1708 → 보통 708 로 보내면
+  /// 그 유저만 보통 난이도를 700스테이지 건너뛴다 — 회차의 의미가 첫 유저부터
+  /// 무너진다. 끝(1000)으로 맞추고, 다음 회차는 본인이 1 부터 시작한다.
+  ///
+  /// ⚠️ 서버가 **앱보다 먼저** 이걸 갖고 있어야 한다. 앱만 먼저 나가면
+  /// 구버전이 초과 스테이지를 계속 올려 보낸다.
+  SaveGame _enforceCampaignEnd(SaveGame save) {
+    final last = config.roadmap?.finalStage ?? 0;
+    if (last <= 0) return save;
+    if (save.stageNumber <= last) return save;
+    return save.copyWith(stageNumber: last);
+  }
+
   SaveGame enforceStorage(SaveGame save) {
+    save = _enforceCampaignEnd(save);
     final max = config.pet.storageSlotsMax;
     final cap = save.storageCapacity > max ? max : save.storageCapacity;
     final incMax = config.pet.incubatorSlotsMax;

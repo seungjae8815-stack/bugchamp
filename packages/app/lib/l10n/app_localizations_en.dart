@@ -1960,6 +1960,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stanceCycle => 'ATK › HEAL › DEF › ATK';
 
   @override
+  String tierClearTitle(String name) {
+    return '$name difficulty cleared!';
+  }
+
+  @override
+  String tierNextTitle(String name) {
+    return 'Entering $name difficulty';
+  }
+
+  @override
+  String get tierNextBody =>
+      'Your stage resets to 1, but upgrades, gear, bugs and currency all carry over.\nMonsters grow far stronger.';
+
+  @override
+  String get tierNextGo => 'Enter';
+
+  @override
+  String get tierStayHere => 'Stay a while';
+
+  @override
+  String get tierAllClear =>
+      'You conquered every difficulty. A true entomologist!';
+
+  @override
+  String get tierEasy => 'Easy';
+
+  @override
+  String get tierNormal => 'Normal';
+
+  @override
+  String get tierHard => 'Hard';
+
+  @override
+  String get tierExtreme => 'Extreme';
+
+  @override
   String get netLostTitle => 'Connection lost';
 
   @override

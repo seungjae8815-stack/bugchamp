@@ -97,6 +97,27 @@ class RoadmapConfig {
   /// 캠페인 총 스테이지(마지막 챕터 endStage). 이후는 확장.
   int get finalStage => chapters.isEmpty ? 0 : chapters.last.endStage;
 
+  /// 진행도 표기용 위치 — **월드 번호 + 월드 안에서의 스테이지**.
+  ///
+  /// 월드 번호는 챕터 순서(w1 → 1)다. 챕터가 100스테이지 단위라
+  /// `stage - startStage + 1` 이 월드 안 위치가 된다.
+  /// 캠페인 끝을 넘은 값은 마지막 월드의 끝으로 접는다.
+  ({int world, int inWorld})? stageLabel(int stage) {
+    if (chapters.isEmpty) return null;
+    final s = stage < 1 ? 1 : stage;
+    for (var i = 0; i < chapters.length; i++) {
+      final c = chapters[i];
+      if (c.contains(s)) {
+        return (world: i + 1, inWorld: s - c.startStage + 1);
+      }
+    }
+    final last = chapters.last;
+    return (
+      world: chapters.length,
+      inWorld: last.endStage - last.startStage + 1,
+    );
+  }
+
   RoadmapChapter? chapterForStage(int stage) {
     for (final c in chapters) {
       if (c.contains(stage)) return c;

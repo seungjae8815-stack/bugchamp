@@ -1924,6 +1924,41 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stanceCycle => '攻 › 回 › 防 › 攻';
 
   @override
+  String tierClearTitle(String name) {
+    return '$name難易度をすべてクリア！';
+  }
+
+  @override
+  String tierNextTitle(String name) {
+    return '$name難易度に進みます';
+  }
+
+  @override
+  String get tierNextBody =>
+      'ステージは1に戻りますが、強化・装備・昆虫・資材はそのまま引き継がれます。\nモンスターがさらに強力になります。';
+
+  @override
+  String get tierNextGo => '進む';
+
+  @override
+  String get tierStayHere => 'もう少し残る';
+
+  @override
+  String get tierAllClear => 'すべての難易度を制覇しました！最高の昆虫学者です。';
+
+  @override
+  String get tierEasy => 'やさしい';
+
+  @override
+  String get tierNormal => 'ふつう';
+
+  @override
+  String get tierHard => 'むずかしい';
+
+  @override
+  String get tierExtreme => '極限';
+
+  @override
   String get netLostTitle => '接続が切れました';
 
   @override

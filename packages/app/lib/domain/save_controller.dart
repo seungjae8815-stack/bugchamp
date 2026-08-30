@@ -339,6 +339,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
   void consumeSeason() => pendingSeason = null;
   void consumeEventReward() => pendingEventReward = null;
 
+  /// 다음 난이도 회차로 진입한다 — **스테이지만 1 로** 돌리고 회차를 1 올린다.
+  ///
+  /// 업그레이드·장비·곤충·도감·재화는 **그대로 둔다**
+  /// (`docs/design_difficulty_loop.md`). 초기화하면 회차 전환이 손실로 느껴져
+  /// 아무도 안 넘어간다 — 이어지는 재화가 곧 더 센 몬스터를 상대할 밑천이다.
+  ///
+  /// 최고 기록(`stageMax`)도 건드리지 않는다. 그건 "가장 멀리 간 지점"이라
+  /// 회차와 별개로 남아야 한다.
+  Future<void> enterNextTier() async {
+    final s = state.requireValue;
+    await _commit(
+      s.copyWith(stageNumber: 1, difficultyTier: s.difficultyTier + 1),
+    );
+  }
+
   GatherService get _service => ref.read(gatherServiceProvider);
   SaveRepository get _repo => ref.read(saveRepositoryProvider);
 
@@ -834,7 +849,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (final e in reward.materials.entries) {
       mats[e.key] = (mats[e.key] ?? 0) + e.value;
     }
-    await _commit(s.copyWith(gold: addCurrency(s.gold, reward.gold), materials: mats));
+    await _commit(
+      s.copyWith(gold: addCurrency(s.gold, reward.gold), materials: mats),
+    );
   }
 
   /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
@@ -1134,7 +1151,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
       ..[MaterialKind.jelly] = (s.materials[MaterialKind.jelly] ?? 0) + jelly;
     final claimed = {...s.claimedLeagues, for (final lg in claimable) lg.id};
     await _commit(
-      s.copyWith(gold: addCurrency(s.gold, gold), materials: mats, claimedLeagues: claimed),
+      s.copyWith(
+        gold: addCurrency(s.gold, gold),
+        materials: mats,
+        claimedLeagues: claimed,
+      ),
     );
     return (gold: gold, jelly: jelly);
   }
@@ -1416,7 +1437,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
         mats[k] = (mats[k] ?? 0) + out.materials;
       }
     }
-    await _commit(s.copyWith(gold: addCurrency(s.gold, out.gold), materials: mats));
+    await _commit(
+      s.copyWith(gold: addCurrency(s.gold, out.gold), materials: mats),
+    );
     return true;
   }
 

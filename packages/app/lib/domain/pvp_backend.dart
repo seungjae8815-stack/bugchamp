@@ -36,6 +36,7 @@ class PvpProfile {
     required this.trophies,
     this.level = 1,
     this.stageNumber = 1,
+    this.difficultyTier = 0,
   });
 
   final String id;
@@ -48,11 +49,17 @@ class PvpProfile {
   /// 도달 스테이지([RankingKind.stage] 정렬 기준).
   final int stageNumber;
 
+  /// 난이도 회차(0=쉬움). 진행도 랭킹은 **회차가 먼저**다 —
+  /// 보통 1스테이지가 쉬움 1000스테이지보다 위다.
+  final int difficultyTier;
+
   /// 이 랭킹 종류에서 줄 세우기에 쓰는 점수.
   int scoreFor(RankingKind kind) => switch (kind) {
     RankingKind.trophies => trophies,
     RankingKind.level => level,
-    RankingKind.stage => stageNumber,
+    // ⚠️ 회차를 위에 얹는다. 스테이지만 비교하면 회차를 넘어간 유저가
+    // 1 로 돌아가는 순간 꼴찌가 된다 — 넘어갈 이유가 사라진다.
+    RankingKind.stage => difficultyTier * 100000 + stageNumber,
   };
 }
 

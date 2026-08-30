@@ -1929,6 +1929,41 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stanceCycle => '공 › 회 › 방 › 공';
 
   @override
+  String tierClearTitle(String name) {
+    return '$name 난이도를 모두 깼어요!';
+  }
+
+  @override
+  String tierNextTitle(String name) {
+    return '$name 난이도로 진입합니다';
+  }
+
+  @override
+  String get tierNextBody =>
+      '스테이지가 1로 돌아가지만 업그레이드·장비·곤충·재화는 그대로 이어집니다.\n몬스터가 더욱 더 강력해집니다.';
+
+  @override
+  String get tierNextGo => '진입하기';
+
+  @override
+  String get tierStayHere => '조금 더 있기';
+
+  @override
+  String get tierAllClear => '모든 난이도를 정복했어요! 최고의 곤충학자예요.';
+
+  @override
+  String get tierEasy => '쉬움';
+
+  @override
+  String get tierNormal => '보통';
+
+  @override
+  String get tierHard => '어려움';
+
+  @override
+  String get tierExtreme => '극한';
+
+  @override
   String get netLostTitle => '연결이 끊겼어요';
 
   @override
