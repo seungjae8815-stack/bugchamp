@@ -1935,7 +1935,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'ステージは1に戻りますが、強化・装備・昆虫・資材はそのまま引き継がれます。\nモンスターがさらに強力になります。';
+      'ステージと能力強化が最初に戻ります。\n昆虫・装備・図鑑・資材はそのまま残ります。\nモンスターがさらに強力になります。';
 
   @override
   String get tierNextGo => '進む';

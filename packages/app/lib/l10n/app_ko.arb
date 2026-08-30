@@ -580,7 +580,7 @@
   "stanceCycle": "공 › 회 › 방 › 공",
   "tierClearTitle": "{name} 난이도를 모두 깼어요!",
   "tierNextTitle": "{name} 난이도로 진입합니다",
-  "tierNextBody": "스테이지가 1로 돌아가지만 업그레이드·장비·곤충·재화는 그대로 이어집니다.\n몬스터가 더욱 더 강력해집니다.",
+  "tierNextBody": "스테이지와 능력치 강화가 처음으로 돌아갑니다.\n곤충·장비·도감·재화는 그대로 남아요.\n몬스터가 더욱 더 강력해집니다.",
   "tierNextGo": "진입하기",
   "tierStayHere": "조금 더 있기",
   "tierAllClear": "모든 난이도를 정복했어요! 최고의 곤충학자예요.",

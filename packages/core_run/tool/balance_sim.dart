@@ -199,7 +199,7 @@ void main(List<String> args) {
       // 자산(재화)만 남긴다. 전력을 그대로 들고 가면 2회차부터 이틀이면
       // 끝난다 — 적응형 체력은 "그 스테이지의 기본 체력"을 기준으로 잡아서,
       // 스테이지 1 은 배율을 아무리 곱해도 한 방이 되기 때문이다(실측).
-      sim.stage = 1;
+      sim.stage = 1; // careerStage 는 그대로 — 장비·도감·펫은 남는다
       if (t > 0) {
         sim.levels.clear();
         sim.level = 1;
@@ -213,10 +213,10 @@ void main(List<String> args) {
       total = day;
       stdout.writeln(
         '  회차 $t : ${(day - from).toString().padLeft(4)}일'
-        ' (누적 ${day}일) · 마지막 CP ${_short(combatPower(sim.stats))}',
+        ' (누적 $day일) · 마지막 CP ${_short(combatPower(sim.stats))}',
       );
       if (day >= _maxDays) {
-        stdout.writeln('  ⚠️ ${_maxDays}일 상한에 걸렸다 — 더 걸린다는 뜻이다.');
+        stdout.writeln('  ⚠️ $_maxDays일 상한에 걸렸다 — 더 걸린다는 뜻이다.');
         break;
       }
     }
@@ -500,6 +500,14 @@ class _Player {
   int prevStage = 1;
   double gold = 0;
   int level = 1;
+
+  /// **여태 가장 멀리 간 스테이지**(회차를 넘어가도 안 줄어든다).
+  ///
+  /// ⚠️ 장비·도감·펫은 프레스티지에서 **남는 자산**이다. 그런데 이 모델은
+  /// 그것들을 `stage` 에 비례해 붙이고 있어서, 회차가 스테이지를 1 로
+  /// 되돌리면 **장비를 잃은 것처럼** 계산됐다(2026-08-30). 남는 것은 남는
+  /// 진행도를 기준으로 세야 한다.
+  int careerStage = 1;
   int xp = 0;
   final Map<UpgradeKind, int> levels = {};
   final Map<MaterialKind, double> materials = {};
@@ -526,15 +534,15 @@ class _Player {
   /// [_petMaxBonus] 까지 오른다. 최대치(전설3 만렙)가 아니라 **평균적인 유저**를
   /// 가정한다 — 상한을 기준으로 맞추면 대다수가 너무 어려워진다.
   double get petAttackMult =>
-      1 + _petMaxBonus * math.min(1.0, stage / _petFullStage);
+      1 + _petMaxBonus * math.min(1.0, careerStage / _petFullStage);
 
   /// 기준 밖 전력이 진행에 따라 붙는 배율(장비·종패시브·도감).
   double get _outsideBaselineAttack {
     final equip =
         1 +
-        (_equipAttackMult - 1) * math.min(1.0, stage / _equipFullStage);
+        (_equipAttackMult - 1) * math.min(1.0, careerStage / _equipFullStage);
     final dex =
-        1 + (_dexAttackMult - 1) * math.min(1.0, stage / _dexFullStage);
+        1 + (_dexAttackMult - 1) * math.min(1.0, careerStage / _dexFullStage);
     return equip * _passiveAttackMult * dex;
   }
 
@@ -650,14 +658,24 @@ class _Player {
           // 같은 값을 넘겨 버프·장비가 시뮬 안에서 스스로 상쇄됐다.
           final base = baselineHitPower(baselineStats);
           final hit = baselineHitPower(stats);
-          final hp = habitatMaxHp(config, s - 1, playerAttack: base, tier: _tier);
+          final hp = habitatMaxHp(
+            config,
+            s - 1,
+            playerAttack: base,
+            tier: _tier,
+          );
           return (hp / (hit <= 0 ? 1.0 : hit)).ceil();
         });
         survivalAt.putIfAbsent(s, () {
           final st = stats; // 장비·패시브·도감·버프 포함한 실제 전투 능력치
           final bossHit = baselineHitPower(st, boss: true);
           final baseBoss = baselineHitPower(baselineStats, boss: true);
-          final hp = bossMaxHp(config, s - 1, playerAttack: baseBoss, tier: _tier).toDouble();
+          final hp = bossMaxHp(
+            config,
+            s - 1,
+            playerAttack: baseBoss,
+            tier: _tier,
+          ).toDouble();
           final dps = bossHit * st.attackSpeed;
           // 위협 기준은 **영구 전력**(버프 제외) — 앱과 같은 규칙.
           final tough = toughnessOf(_baseStats);
@@ -741,6 +759,7 @@ class _Player {
       }
       prevStage = stage;
       stage = prog.newStage;
+      if (stage > careerStage) careerStage = stage;
       final earned =
           prog.gold *
           _buffGoldMult *

@@ -1971,7 +1971,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'Your stage resets to 1, but upgrades, gear, bugs and currency all carry over.\nMonsters grow far stronger.';
+      'Your stage and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all remain.\nMonsters grow far stronger.';
 
   @override
   String get tierNextGo => 'Enter';

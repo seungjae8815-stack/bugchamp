@@ -1940,7 +1940,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      '스테이지가 1로 돌아가지만 업그레이드·장비·곤충·재화는 그대로 이어집니다.\n몬스터가 더욱 더 강력해집니다.';
+      '스테이지와 능력치 강화가 처음으로 돌아갑니다.\n곤충·장비·도감·재화는 그대로 남아요.\n몬스터가 더욱 더 강력해집니다.';
 
   @override
   String get tierNextGo => '진입하기';

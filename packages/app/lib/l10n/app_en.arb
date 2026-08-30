@@ -1084,40 +1084,115 @@
   "saveBrokenSupport": "Contact support",
   "eventRewardTitle": "Championship results are in",
   "eventRewardRank": "Round {round} — rank {rank}",
-  "@eventRewardRank": {"placeholders": {"round": {"type": "String"}, "rank": {"type": "int"}}},
+  "@eventRewardRank": {
+    "placeholders": {
+      "round": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
   "eventRewardNone": "You didn't place this round. Here's your entry reward!",
   "eventRewardPhysical": "You placed for a real prize! Fill in the form below. Physical prizes ship to Korean addresses only — outside Korea you receive the in-game rewards.",
   "eventRewardApply": "Claim prize",
   "eventRewardClaim": "Collect",
   "badgeChampion": "R{round} Champion",
-  "@badgeChampion": {"placeholders": {"round": {"type": "int"}}},
+  "@badgeChampion": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
   "badgeFinalist": "R{round} Finalist",
-  "@badgeFinalist": {"placeholders": {"round": {"type": "int"}}},
+  "@badgeFinalist": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
   "nicknameBadChars": "Letters and numbers only (no emoji or stray marks)",
   "eventRewardsTitle": "Rank rewards",
   "eventRankOne": "1st",
   "eventRankRange": "{a}–{b}",
-  "@eventRankRange": {"placeholders": {"a": {"type": "int"}, "b": {"type": "int"}}},
+  "@eventRankRange": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      }
+    }
+  },
   "eventRewardRealBug": "Real beetle (ships in Korea)",
   "eventRewardJelly": "Jelly ×{n}",
-  "@eventRewardJelly": {"placeholders": {"n": {"type": "int"}}},
+  "@eventRewardJelly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "eventRewardParticipationRow": "Entry (1+ runs)",
   "buffCooldownAsk": "Next free activation in {t}.\nActivate now for {n} jelly?",
-  "@buffCooldownAsk": {"placeholders": {"t": {"type": "String"}, "n": {"type": "int"}}},
+  "@buffCooldownAsk": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "buffBtnFreeLeft": "Free in {t}",
-  "@buffBtnFreeLeft": {"placeholders": {"t": {"type": "String"}}},
+  "@buffBtnFreeLeft": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
   "buffBtnJelly": "Use {n}",
-  "@buffBtnJelly": {"placeholders": {"n": {"type": "int"}}},
+  "@buffBtnJelly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "settingsLanguage": "Language",
   "languageSystem": "System",
   "eventRewardTitleAward": "Title “{name}”",
-  "@eventRewardTitleAward": {"placeholders": {"name": {"type": "String"}}},
+  "@eventRewardTitleAward": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "stanceCycle": "ATK › HEAL › DEF › ATK",
   "tierClearTitle": "{name} difficulty cleared!",
-  "@tierClearTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@tierClearTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "tierNextTitle": "Entering {name} difficulty",
-  "@tierNextTitle": {"placeholders": {"name": {"type": "String"}}},
-  "tierNextBody": "Your stage resets to 1, but upgrades, gear, bugs and currency all carry over.\nMonsters grow far stronger.",
+  "@tierNextTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tierNextBody": "Your stage and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all remain.\nMonsters grow far stronger.",
   "tierNextGo": "Enter",
   "tierStayHere": "Stay a while",
   "tierAllClear": "You conquered every difficulty. A true entomologist!",
