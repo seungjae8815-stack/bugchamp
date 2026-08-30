@@ -91,7 +91,7 @@ class GameActions {
 
     return ActionResult.ok(
       save.copyWith(
-        gold: clampCurrency(save.gold + g.gold),
+        gold: addCurrency(save.gold, g.gold),
         materials: mats,
         incubatorCapacity: save.incubatorCapacity + g.incubatorSlots,
         adsRemoved: save.adsRemoved || product.type == IapType.removeAds,
@@ -415,7 +415,7 @@ class GameActions {
     if (rw.gold > 0 || rw.jelly > 0) {
       final mats = Map<MaterialKind, int>.from(out.materials);
       mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + rw.jelly;
-      out = out.copyWith(gold: clampCurrency(out.gold + rw.gold), materials: mats);
+      out = out.copyWith(gold: addCurrency(out.gold, rw.gold), materials: mats);
     }
     return (
       save: out,
@@ -576,7 +576,7 @@ class GameActions {
         .clamp(0, 1 << 30);
     return ActionResult.ok(
       save.copyWith(
-        gold: clampCurrency(save.gold + rw.gold),
+        gold: addCurrency(save.gold, rw.gold),
         pvpTrophies: newTrophies,
         seasonPeakTrophies: newTrophies > save.seasonPeakTrophies
             ? newTrophies
@@ -767,7 +767,7 @@ class GameActions {
 
     return ActionResult.ok(
       save.copyWith(
-        gold: clampCurrency(save.gold + goldGain),
+        gold: addCurrency(save.gold, goldGain),
         xp: xp,
         level: level,
         lastSeen: t,
@@ -1222,7 +1222,7 @@ class GameActions {
     }
     return ActionResult.ok(
       save.copyWith(
-        gold: clampCurrency(save.gold + g.gold * mult),
+        gold: addCurrency(save.gold, g.gold * mult),
         materials: mats,
         gifts: gifts,
       ),
@@ -1259,7 +1259,7 @@ class GameActions {
       ..[rewardId] = today;
     return ActionResult.ok(
       save.copyWith(
-        gold: clampCurrency(save.gold + reward.gold),
+        gold: addCurrency(save.gold, reward.gold),
         materials: mats,
         dailyClaims: claims,
       ),
@@ -1617,7 +1617,7 @@ class GameActions {
       if (e.value > 0) mats[e.key] = save.materialCount(e.key) + e.value;
     }
     return ActionResult.ok(
-      save.copyWith(gold: clampCurrency(save.gold + gold), materials: mats),
+      save.copyWith(gold: addCurrency(save.gold, gold), materials: mats),
       extra: {
         'granted': {
           'gold': gold,

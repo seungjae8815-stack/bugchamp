@@ -18,12 +18,6 @@ void main() {
     expect(max + 1, isNegative, reason: '예외 없이 음수가 된다');
   });
 
-  test('상한은 int64 최대값보다 한참 아래다 (덧셈 여유)', () {
-    expect(kMaxCurrency, lessThan(9223372036854775807 ~/ 8));
-    // 상한에서 한 번 더 더해도 안 넘친다.
-    expect(kMaxCurrency + kMaxCurrency, isPositive);
-  });
-
   test('clampCurrency 는 음수·초과·NaN 을 막는다', () {
     expect(clampCurrency(-1), 0);
     expect(clampCurrency(-9223372036854775808), 0);
@@ -41,6 +35,26 @@ void main() {
     final s = SaveGame.fromJson(json);
     expect(s.gold, 0);
     expect(s.xp, 0);
+  });
+
+  /// ⚠️ `clampCurrency(a + b)` 는 **틀렸다** — int 덧셈이 먼저 감싼다.
+  /// 이 게임은 스테이지 1708 유저가 9.289e18 까지 모았다(자연 누적).
+  test('addCurrency 는 더하는 순간의 오버플로도 막는다', () {
+    // 상한 근처 + 큰 보상 → int 로 더했으면 음수가 됐을 조합.
+    expect(addCurrency(kMaxCurrency, 5e18), kMaxCurrency);
+    expect(addCurrency(9000000000000000000, 9000000000000000000),
+        kMaxCurrency);
+    // 평범한 덧셈은 그대로.
+    expect(addCurrency(1000, 234), 1234);
+    // 음수 보상(차감)도 0 아래로 안 내려간다.
+    expect(addCurrency(100, -500), 0);
+  });
+
+  /// 낮게 잡으면 후반 유저의 자산을 통째로 깎고 업그레이드를 막는다 —
+  /// 오버플로를 막으려다 진행을 막는 셈이다.
+  test('상한은 후반 유저의 실제 자산을 담을 만큼 크다', () {
+    expect(kMaxCurrency, greaterThan(9000000000000000000 ~/ 2));
+    expect(kMaxCurrency, lessThan(9223372036854775807));
   });
 
   test('상한을 넘는 세이브는 상한으로 잘린다', () {
