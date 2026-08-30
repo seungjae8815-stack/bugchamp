@@ -50,6 +50,24 @@ Future<void> syncSaveWith({
 
   final remote = state.save;
   if (remote != null) {
+    // ⚠️ **서버를 조건 없이 따르면 안 된다.**
+    //
+    // 예전에는 그렇게 했다. 마지막 업로드가 실패했거나(크래시·네트워크 끊김)
+    // 서버 저장본이 더 오래됐으면, 앱을 켤 때마다 **그 사이 진행이 통째로
+    // 사라졌다** — "돈이 줄어든다 · 스테이지가 되돌아간다 · 부화한 곤충이
+    // 없어진다"가 전부 이 한 경로였다(2026-08-30 유저 제보).
+    // 특히 20260830 은 실행 즉시 죽던 빌드라(R8) 크래시로 flush 를 못 하고,
+    // 다음 실행에 되돌아가는 일이 반복됐다.
+    //
+    // 그래서 **더 진행된 쪽**을 남긴다. 판단 기준은 `lastSeen` 이 아니라
+    // **진행도**다 — 시계는 기기마다 틀어질 수 있지만 스테이지·레벨은
+    // 되돌아갈 이유가 없다.
+    final local = await localSave();
+    if (_localIsAhead(local, remote)) {
+      debugPrint('[sync] 로컬이 더 진행됨 — 서버 채택을 건너뛴다');
+      // 다음 주기 업로드가 서버를 따라잡게 둔다(여기서 올리면 중복 경로가 된다).
+      return;
+    }
     await ctrl.adoptServerSave(remote);
     return;
   }
@@ -304,4 +322,38 @@ Future<bool> flushSaveBeforeServerAction(
   // 저장본이 없다 = 최초 이관이 먼저.
   if (res.status == 409) return (await server.bootstrap(json)).isOk;
   return false;
+}
+
+/// 로컬 세이브가 서버 저장본보다 **더 진행됐는가**.
+///
+/// 시계(`lastSeen`)로 판단하지 않는다 — 기기 시간대가 틀어지면 멀쩡한 진행이
+/// 묻힌다. 되돌아갈 이유가 없는 값들만 본다.
+///
+/// 하나라도 로컬이 앞서고 뒤처지는 게 없으면 로컬이 앞선 것으로 본다.
+/// 애매하면(서로 엇갈리면) **서버를 따른다** — 서버가 진실이라는 기본 원칙은
+/// 유지하고, 명백한 되돌림만 막는 게 목적이다.
+bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
+  final SaveGame remote;
+  try {
+    remote = SaveGame.fromJson(migrateToCurrent(remoteJson));
+  } catch (_) {
+    // 서버 것을 못 읽으면 로컬을 지킨다.
+    return true;
+  }
+  var ahead = false;
+  bool cmp(num l, num r) {
+    if (l > r) ahead = true;
+    return l < r; // 뒤처지는 항목이 하나라도 있으면 애매한 것
+  }
+
+  final behind = [
+    cmp(local.stageNumber, remote.stageNumber),
+    cmp(local.level, remote.level),
+    cmp(local.bugs.length, remote.bugs.length),
+    cmp(
+      local.upgradeLevels.values.fold<int>(0, (a, b) => a + b),
+      remote.upgradeLevels.values.fold<int>(0, (a, b) => a + b),
+    ),
+  ].any((x) => x);
+  return ahead && !behind;
 }

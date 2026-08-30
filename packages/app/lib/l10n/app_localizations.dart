@@ -5043,6 +5043,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Buy the Pass'**
   String get giftBuyPassBtn;
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get supportTitle;
+
+  /// No description provided for @supportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us about a bug or anything inconvenient. Your nickname and progress are sent along automatically.'**
+  String get supportHint;
+
+  /// No description provided for @supportSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get supportSend;
+
+  /// No description provided for @supportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent. We will look into it!'**
+  String get supportSent;
+
+  /// No description provided for @supportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send. Please try again shortly.'**
+  String get supportFailed;
+
+  /// No description provided for @supportTooFast.
+  ///
+  /// In en, this message translates to:
+  /// **'You can send another one in a moment.'**
+  String get supportTooFast;
 }
 
 class _AppLocalizationsDelegate

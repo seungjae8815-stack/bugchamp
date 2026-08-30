@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/auth_service.dart';
 import '../../domain/chat_service.dart';
+import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
@@ -172,6 +173,74 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  /// 운영자에게 문의 — 서버가 텔레그램으로 밀어 준다.
+  ///
+  /// 닉네임·스테이지 같은 상황 값은 **서버가 세이브에서 읽는다**. 앱이
+  /// 보내면 조작할 수 있고, 무엇보다 앱이 빠뜨리면 운영자가 아무것도 못 본다.
+  Future<void> _showSupport() async {
+    final l = AppLocalizations.of(context);
+    final input = TextEditingController();
+    var sending = false;
+
+    await showGameDialog<void>(
+      context,
+      title: l.supportTitle,
+      icon: Icons.support_agent_rounded,
+      content: StatefulBuilder(
+        builder: (ctx, setLocal) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l.supportHint,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: input,
+              enabled: !sending,
+              maxLines: 4,
+              maxLength: 500,
+              style: const TextStyle(color: Colors.white, fontSize: 13.5),
+              decoration: const InputDecoration(
+                filled: true,
+                fillColor: Color(0x22000000),
+                border: OutlineInputBorder(),
+                counterStyle: TextStyle(color: Color(0x66FFFFFF)),
+              ),
+            ),
+            const SizedBox(height: 6),
+            FilledButton(
+              onPressed: sending
+                  ? null
+                  : () async {
+                      final body = input.text.trim();
+                      if (body.isEmpty) return;
+                      setLocal(() => sending = true);
+                      final r = await ref
+                          .read(gameServerProvider)
+                          .sendSupport(message: body);
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                      if (!mounted) return;
+                      _snack(
+                        r.isOk
+                            ? l.supportSent
+                            : (r.status == 429
+                                  ? l.supportTooFast
+                                  : l.supportFailed),
+                      );
+                    },
+              child: Text(sending ? '...' : l.supportSend),
+            ),
+          ],
+        ),
+      ),
+      actions: const [],
+    );
+    input.dispose();
+  }
+
   void _snack(String msg) {
     showCenterToast(context, msg);
   }
@@ -297,7 +366,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final myId = ref.watch(chatMyUserIdProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.chatTitle)),
+      appBar: AppBar(
+        title: Text(l.chatTitle),
+        actions: [
+          // 채팅으로 버그를 알리는 유저가 많은데(2026-08-30) 채팅은 흘러가서
+          // 운영자가 놓친다. 놓치면 안 되는 신호는 따로 받는다.
+          TextButton.icon(
+            onPressed: _showSupport,
+            icon: const Icon(Icons.support_agent_rounded, size: 18),
+            label: Text(l.supportTitle),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFEBC24A),
+              textStyle: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: Column(
         children: [
           // 대화 규칙 안내 — UGC 정책상 이용 기준을 명시해 둔다.

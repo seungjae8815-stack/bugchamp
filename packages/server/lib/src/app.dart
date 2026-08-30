@@ -16,6 +16,7 @@ import 'auth.dart';
 import 'battle_session.dart';
 import 'game_config.dart';
 import 'state_store.dart';
+import 'support.dart';
 import 'verifier.dart';
 
 /// 서버 설정. 전부 환경변수에서 온다 — 코드·저장소에 비밀을 두지 않는다.
@@ -166,7 +167,12 @@ Handler buildHandler({
 
   /// 운영자 채팅을 보낼 계정 uuid. 생략하면 환경변수 `ADMIN_CHAT_USER_ID`.
   String? adminChatUserId,
+
+  /// 문의를 텔레그램으로 밀어 주는 알림기. 생략하면 환경변수에서 만든다
+  /// (`TELEGRAM_BOT_TOKEN`·`TELEGRAM_CHAT_ID`). 토큰이 없으면 조용히 꺼진다.
+  SupportNotifier? supportNotifier,
 }) {
+  final support = supportNotifier ?? SupportNotifier();
   final verifier =
       jwtVerifier ?? SupabaseJwtVerifier.forProject(config.supabaseUrl);
 
@@ -1464,6 +1470,62 @@ Handler buildHandler({
     // 다음 업로드에서 골드 급증 상한에 걸려 정당한 보상이 잘린다.
 
     /// 진행 중인 공지 목록. 보상이 아니라 읽을거리라 세이브를 건드리지 않는다.
+    /// 운영자에게 문의 — 텔레그램으로 밀어 준다.
+    ///
+    /// 게임 내 채팅으로 버그를 알리는 유저가 많은데(2026-08-30 제보 다수),
+    /// 채팅은 흘러가서 운영자가 놓친다. 문의는 놓치면 안 되는 신호다.
+    authed.post('/support', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final msg = (body['message'] as String?)?.trim() ?? '';
+      if (msg.isEmpty) return _json({'error': 'empty'}, status: 400);
+      if (!support.available) {
+        return _json({'error': 'unavailable'}, status: 503);
+      }
+      final t = actions.now().toUtc();
+      final left = support.remainingCooldown(user.id, t);
+      if (left > Duration.zero) {
+        // 도배 방지 — 남은 시간을 알려 준다(앱이 안내에 쓴다).
+        return _json({
+          'error': 'too_fast',
+          'retryAfterSec': left.inSeconds,
+        }, status: 429);
+      }
+      // 상황 파악에 필요한 값은 **서버가 세이브에서 읽는다** — 앱이 보내면
+      // 조작할 수 있고, 무엇보다 앱이 빠뜨리면 아무것도 못 본다.
+      SaveGame? save;
+      try {
+        save = await loadSave(user.id);
+      } on StateStoreException {
+        save = null; // 세이브를 못 읽어도 문의는 전달한다
+      }
+      final ok = await support.send(
+        userId: user.id,
+        message: msg.length > SupportNotifier.maxLength
+            ? msg.substring(0, SupportNotifier.maxLength)
+            : msg,
+        context: {
+          '닉네임': save?.nickname,
+          '스테이지': save?.stageNumber,
+          '회차': save?.difficultyTier,
+          '레벨': save?.level,
+          '골드': save?.gold,
+          '곤충': save?.bugs.length,
+          '앱버전': body['appVersion'],
+          '기기': body['device'],
+        },
+        now: t,
+      );
+      return ok
+          ? _json({'ok': true})
+          : _json({'error': 'send_failed'}, status: 502);
+    });
+
     authed.get('/notices', (Request req) async {
       try {
         final rows = await store.loadNotices(now: actions.now().toUtc());

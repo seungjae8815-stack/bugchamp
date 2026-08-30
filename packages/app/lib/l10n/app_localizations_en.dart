@@ -2817,4 +2817,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get giftBuyPassBtn => 'Buy the Pass';
+
+  @override
+  String get supportTitle => 'Contact us';
+
+  @override
+  String get supportHint =>
+      'Tell us about a bug or anything inconvenient. Your nickname and progress are sent along automatically.';
+
+  @override
+  String get supportSend => 'Send';
+
+  @override
+  String get supportSent => 'Sent. We will look into it!';
+
+  @override
+  String get supportFailed => 'Could not send. Please try again shortly.';
+
+  @override
+  String get supportTooFast => 'You can send another one in a moment.';
 }

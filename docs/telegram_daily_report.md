@@ -195,3 +195,61 @@ curl -X POST "https://rvmpwyycivmtrbbynjyy.supabase.co/functions/v1/daily-report
 - **최근 크론 실행 로그**: `select * from cron.job_run_details order by start_time desc limit 10;`
 - **받는 사람 추가**: 다른 chat_id 로도 보내려면 함수의 `sendTelegram` 를 여러 chat_id 반복 호출로 확장.
 - **봇 토큰 보안**: 토큰은 Supabase 시크릿에만 존재. 저장소·앱에 넣지 않는다.
+
+---
+
+## 유저 문의 → 텔레그램 (2026-08-30 신설)
+
+게임 내 채팅으로 버그를 알리는 유저가 많은데, **채팅은 흘러가서 운영자가
+놓친다**(2026-08-30 제보 다수). 놓치면 안 되는 신호는 따로 받는다.
+
+전체 채팅 상단의 **"운영자에게 문의"** 버튼 → 권위 서버 `POST /support` →
+텔레그램. 일일 리포트와 **같은 봇**을 쓴다.
+
+### 왜 앱이 직접 안 보내나
+
+봇 토큰은 비밀이다. 앱에 넣으면 누구나 꺼내 아무 메시지나 보낼 수 있다
+(스팸·사칭). 서버는 이미 토큰을 안전하게 쥐고 있고, **누가 보냈는지도
+인증으로 안다**.
+
+### 설정 — 사장님 작업 (1회)
+
+Cloud Run 서버에 봇 토큰을 넣는다. `TELEGRAM_CHAT_ID` 는 리포트와 같은 값이다.
+
+```powershell
+# 토큰을 Secret Manager 에 (이미 있으면 건너뛴다)
+gcloud secrets create bugchamp-telegram-token --data-file=-   # 값 붙여넣고 Ctrl+Z
+
+gcloud run services update bugchamp-server --region asia-northeast3 `
+  --update-secrets TELEGRAM_BOT_TOKEN=bugchamp-telegram-token:latest `
+  --update-env-vars TELEGRAM_CHAT_ID=1025640548
+```
+
+⚠️ **토큰이 없으면 기능이 조용히 꺼진다**(버튼을 눌러도 503). 기본값을 두지
+않았다 — 잘못된 곳으로 유저 문의가 새는 것보다 안 가는 게 낫다.
+
+### 받는 메시지
+
+```
+🐛 문의
+
+부화했는데 곤충이 없어져요
+
+──────
+닉네임: 크론병
+스테이지: 812
+회차: 0
+레벨: 77
+골드: 3921847...
+곤충: 63
+앱버전: 1.0.6+20260831
+uid: 3f2a...
+```
+
+상황 값은 **서버가 세이브에서 읽는다** — 앱이 보내면 조작할 수 있고,
+무엇보다 앱이 빠뜨리면 "버그예요"라는 한 줄만 받고 아무것도 못 한다.
+
+### 도배 방지
+
+유저당 **1분에 한 번**. 넘으면 429 와 남은 시간을 돌려주고 앱이 안내한다.
+본문은 500자에서 자른다(텔레그램이 잘라 버리면 뒷부분이 사라진다).

@@ -2758,4 +2758,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get giftBuyPassBtn => 'パスを購入';
+
+  @override
+  String get supportTitle => '運営に問い合わせ';
+
+  @override
+  String get supportHint => '不具合や不便な点を教えてください。ニックネームと進行状況も自動で送られます。';
+
+  @override
+  String get supportSend => '送信';
+
+  @override
+  String get supportSent => '送信しました。確認して対応します！';
+
+  @override
+  String get supportFailed => '送信できませんでした。しばらくしてからお試しください。';
+
+  @override
+  String get supportTooFast => '少し経ってからもう一度送れます。';
 }

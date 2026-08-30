@@ -2765,4 +2765,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get giftBuyPassBtn => '패스 구입하기';
+
+  @override
+  String get supportTitle => '운영자에게 문의';
+
+  @override
+  String get supportHint => '불편한 점이나 버그를 알려주세요. 닉네임·진행 상황은 자동으로 함께 전달돼요.';
+
+  @override
+  String get supportSend => '보내기';
+
+  @override
+  String get supportSent => '전달했어요. 확인 후 반영할게요!';
+
+  @override
+  String get supportFailed => '전송에 실패했어요. 잠시 후 다시 시도해 주세요.';
+
+  @override
+  String get supportTooFast => '조금 뒤에 다시 보낼 수 있어요.';
 }

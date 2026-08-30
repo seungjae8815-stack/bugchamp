@@ -195,6 +195,14 @@ abstract interface class GameServer {
   /// 로컬 세이브를 서버로 **최초 1회 이관**한다.
   /// 서버에 이미 세이브가 있으면 409 와 함께 서버 것을 돌려준다.
   Future<ServerResult> bootstrap(Map<String, dynamic> save);
+
+  /// 운영자에게 문의 — 서버가 텔레그램으로 밀어 준다.
+  /// 상황 값(닉네임·스테이지 등)은 **서버가 세이브에서 읽으므로** 보내지 않는다.
+  Future<ServerResult> sendSupport({
+    required String message,
+    String? appVersion,
+    String? device,
+  });
 }
 
 /// 서버 미설정 — 항상 사용 불가.
@@ -217,6 +225,12 @@ class NoGameServer implements GameServer {
     String? opponentUserId,
     String? tierId,
     String? locale,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> sendSupport({
+    required String message,
+    String? appVersion,
+    String? device,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> bootstrap(Map<String, dynamic> save) async =>
@@ -409,6 +423,17 @@ class HttpGameServer implements GameServer {
     'opponentUserId': ?opponentUserId,
     'tierId': ?tierId,
     'locale': ?locale,
+  });
+
+  @override
+  Future<ServerResult> sendSupport({
+    required String message,
+    String? appVersion,
+    String? device,
+  }) => _send('POST', '/support', {
+    'message': message,
+    'appVersion': ?appVersion,
+    'device': ?device,
   });
 
   @override
