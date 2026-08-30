@@ -98,6 +98,12 @@ Codemagic `ios-release` 워크플로가 IPA 를 빌드해 **TestFlight 까지** 
 - [ ] ⚠️ **AAB 는 반드시 §3 명령으로** — dart-define 3종(supabase.env.json ·
       admob.env.json · GAME_SERVER_URL) 빠지면 **로그인·채팅·서버 동기화가 통째로
       죽은 빌드**가 나간다(1.0.5/20260810 실제 사고 — 20260811 로 재출시).
+      > 셋 중 **실제로 앱을 죽이는 건 supabase 와 GAME_SERVER_URL** 이다.
+      > `admob.env.json` 은 광고 단위 ID 뿐이고, 광고 없는 운영(§2.6, 2026-08-18)
+      > 이라 `REAL_ADS` 기본값 off 에서는 **읽히지도 않는다** — 빠뜨려도 지금은
+      > 아무 차이가 없다. 그래도 명령에 남겨 둔다: 광고를 되살리는 날
+      > (`REAL_ADS=on`) 이 줄이 없으면 ID 없는 빌드가 나가고, 그때는 "광고가
+      > 안 뜬다"로만 보여서 원인을 찾기 어렵다.
       업로드 전 확인: AAB 의 `libapp.so` 에 서버 주소 문자열이 있는지
       (`python -c "...zipfile..."` — §3 아래 검증 스니펫).
 - [ ] **R8 검증**(§3 의 2.6) — `proguard-rules.pro` 가 살아 있는지.
