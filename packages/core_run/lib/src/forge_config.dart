@@ -179,7 +179,10 @@ EquipItem forgeOnce({
   final options = <ItemOption>[];
   for (var i = 0; i < count && pool.isNotEmpty; i++) {
     final r = pool.removeAt(rng.nextInt(pool.length));
-    final v = r.min + rng.nextDouble() * (r.max - r.min);
+    // ⚠️ 균등분포가 아니다. `optionCurve` 로 값을 아래로 몰아 **높은 롤을
+    // 귀하게** 만든다(1.0 이면 예전처럼 균등). 자세한 이유는 ItemConfig 참조.
+    final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
+    final v = r.min + roll * (r.max - r.min);
     // 소수 한 자리까지만 — 화면에서 읽기 쉬우라고.
     options.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
   }

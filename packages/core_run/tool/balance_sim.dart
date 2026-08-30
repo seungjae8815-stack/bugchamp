@@ -61,11 +61,11 @@ const _buffDpsMult = 1.4;
 
 /// 장비 8부위의 **공격 배율**(옵션 attack%). 최고등급 5옵션까지 붙지만
 /// 평균 유저는 등급이 섞인다 — 상한이 아니라 중간을 잡는다.
-const _equipAttackMult = 1.35;
+double _equipAttackMult = 1.35;
 
 /// 장비가 주는 치명 확률·피해 가산(옵션 critChance/critDamage).
-const _equipCritChance = 0.12;
-const _equipCritDamage = 0.6;
+double _equipCritChance = 0.12;
+double _equipCritDamage = 0.6;
 
 /// 장비 공격 옵션이 다 붙기까지 걸리는 스테이지(공방을 돌려 갖춘다).
 const _equipFullStage = 300;
@@ -826,6 +826,15 @@ _Opts _parseArgs(List<String> args) {
   double? mult;
   var worlds = 10;
   for (final a in args) {
+    // 장비 옵션 **평균**을 배율로 조절한다(분포를 바꿀 때 난이도 영향을 잰다).
+    final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
+    if (es != null) {
+      final k = double.parse(es.group(1)!);
+      _equipAttackMult = 1 + (_equipAttackMult - 1) * k;
+      _equipCritChance *= k;
+      _equipCritDamage *= k;
+      continue;
+    }
     final tb = RegExp(r'^--boost=(.+)$').firstMatch(a);
     if (tb != null) {
       _tapBoostAvg = double.parse(tb.group(1)!);

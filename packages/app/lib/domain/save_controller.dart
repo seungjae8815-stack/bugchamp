@@ -237,7 +237,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           toTrophies: reset,
         );
         save = save.copyWith(
-          gold: save.gold + rw.gold,
+          gold: clampCurrency(save.gold + rw.gold),
           materials: mats,
           pvpTrophies: reset,
           seasonPeakTrophies: reset,
@@ -312,7 +312,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
     return save.copyWith(
-      gold: save.gold + report.gold,
+      gold: clampCurrency(save.gold + report.gold),
       xp: xp,
       level: level,
       materials: mats,
@@ -429,7 +429,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final accepted = bug != null && !s.storageFull ? bug : null;
     await _commit(
       s.copyWith(
-        gold: s.gold + gold,
+        gold: clampCurrency(s.gold + gold),
         xp: newXp,
         level: newLevel,
         materials: newMaterials,
@@ -686,7 +686,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     await _commit(
       s.copyWith(
-        gold: s.gold + g.gold * mult,
+        gold: clampCurrency(s.gold + g.gold * mult),
         materials: mats,
         gifts: gifts,
         giftDoubleDate: counted ? today : s.giftDoubleDate,
@@ -782,7 +782,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
     await _commit(
       s.copyWith(
-        gold: s.gold + g.gold,
+        gold: clampCurrency(s.gold + g.gold),
         materials: mats,
         incubatorCapacity: s.incubatorCapacity + g.incubatorSlots,
         adsRemoved: s.adsRemoved || p.type == IapType.removeAds,
@@ -815,7 +815,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     await _commit(
       s.copyWith(
-        gold: s.gold + g.gold,
+        gold: clampCurrency(s.gold + g.gold),
         materials: mats,
         giftDoubleDate: counted ? today : s.giftDoubleDate,
         giftDoubleCount: counted
@@ -834,7 +834,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (final e in reward.materials.entries) {
       mats[e.key] = (mats[e.key] ?? 0) + e.value;
     }
-    await _commit(s.copyWith(gold: s.gold + reward.gold, materials: mats));
+    await _commit(s.copyWith(gold: clampCurrency(s.gold + reward.gold), materials: mats));
   }
 
   /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
@@ -899,7 +899,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final newTrophies = (s.pvpTrophies + trophyDelta).clamp(0, 1 << 30);
     await _commit(
       s.copyWith(
-        gold: s.gold + (gold < 0 ? 0 : gold),
+        gold: clampCurrency(s.gold + (gold < 0 ? 0 : gold)),
         pvpTrophies: newTrophies,
         seasonPeakTrophies: newTrophies > s.seasonPeakTrophies
             ? newTrophies
@@ -1134,7 +1134,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       ..[MaterialKind.jelly] = (s.materials[MaterialKind.jelly] ?? 0) + jelly;
     final claimed = {...s.claimedLeagues, for (final lg in claimable) lg.id};
     await _commit(
-      s.copyWith(gold: s.gold + gold, materials: mats, claimedLeagues: claimed),
+      s.copyWith(gold: clampCurrency(s.gold + gold), materials: mats, claimedLeagues: claimed),
     );
     return (gold: gold, jelly: jelly);
   }
@@ -1258,7 +1258,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final claims = Map<String, String>.from(s.dailyClaims)..[reward.id] = today;
     await _commit(
       s.copyWith(
-        gold: s.gold + reward.gold,
+        gold: clampCurrency(s.gold + reward.gold),
         materials: mats,
         dailyClaims: claims,
       ),
@@ -1416,7 +1416,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         mats[k] = (mats[k] ?? 0) + out.materials;
       }
     }
-    await _commit(s.copyWith(gold: s.gold + out.gold, materials: mats));
+    await _commit(s.copyWith(gold: clampCurrency(s.gold + out.gold), materials: mats));
     return true;
   }
 

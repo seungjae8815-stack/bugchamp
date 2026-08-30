@@ -116,11 +116,27 @@ class ItemConfig {
     required this.tiers,
     required this.slots,
     required this.optionPool,
+    this.optionCurve = 1.0,
   });
 
   final List<ItemTierDef> tiers;
   final Map<EquipSlot, ItemSlotDef> slots;
   final List<ItemOptionRange> optionPool;
+
+  /// 옵션 값 뽑기 곡선. `v = min + (max-min) × r^optionCurve` (r 은 0~1 균등).
+  ///
+  /// **1.0 = 균등분포**(예전 동작). 크면 값이 아래로 몰려 **낮은 롤이 흔하고
+  /// 높은 롤이 귀해진다** — 그래야 계속 돌릴 이유가 생긴다.
+  ///
+  /// 균등분포였을 때는 치명피해 1~80 에서 56 이상이 **30%** 로 나와
+  /// "잘 뽑았다"가 흔했고, 상위 5% 롤이 평균의 1.88배뿐이었다. 평균 장비로
+  /// 충분하니 아무도 더 안 돌렸다(2026-08-30 사장님 지적).
+  ///
+  /// ⚠️ 지수를 올리면 **평균도 함께 내려간다**(평균 = min + (max-min)/(k+1)).
+  /// 그게 의도다 — 평균이 그대로면 "평균에 만족하고 그만두는" 구간이 남는다.
+  /// 다만 장비 평균이 내려가면 진행이 느려지므로 `balance_sim --equip-scale`
+  /// 로 함께 확인한다.
+  final double optionCurve;
 
   int get tierCount => tiers.length;
 
@@ -150,6 +166,7 @@ class ItemConfig {
           .cast<Map<String, dynamic>>()
           .map(ItemOptionRange.fromJson)
           .toList(growable: false),
+      optionCurve: (json['optionCurve'] as num?)?.toDouble() ?? 1.0,
     );
   }
 }

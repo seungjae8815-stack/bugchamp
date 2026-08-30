@@ -1160,8 +1160,11 @@ class SaveGame {
     lastSeen: json['lastSeen'] != null
         ? DateTime.parse(json['lastSeen'] as String).toUtc()
         : DateTime.parse(json['createdAt'] as String).toUtc(),
-    gold: (json['gold'] as num).toInt(),
-    xp: (json['xp'] as num).toInt(),
+    // ⚠️ 재화는 읽을 때 **자른다**. int64 가 넘쳐 음수가 된 세이브(2026-08-30
+    // 제보)를 그대로 읽으면 화면에 마이너스가 그대로 뜨고, 거기서 또 더하면
+    // 계속 음수다. 여기서 0 으로 되돌려야 스스로 회복된다.
+    gold: clampCurrency(json['gold'] as num),
+    xp: clampCurrency(json['xp'] as num),
     level: (json['level'] as num).toInt(),
     upgradeLevels: _upgradesFromJson(
       json['upgradeLevels'] as Map<String, dynamic>,
