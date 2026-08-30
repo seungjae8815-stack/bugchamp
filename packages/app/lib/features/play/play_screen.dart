@@ -820,6 +820,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       playerToughness: toughnessOf(
         _petStats(ref.read(saveControllerProvider).requireValue),
       ),
+      // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
+      tier: ref.read(saveControllerProvider).requireValue.difficultyTier,
     );
     final incoming = threat * 100 / (100 + stats.defense);
     // 회복은 상시 적용.

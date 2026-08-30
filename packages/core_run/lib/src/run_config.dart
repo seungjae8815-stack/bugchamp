@@ -138,7 +138,8 @@ class RunConfig {
     this.offlineEfficiency = 0.3,
     this.worldSize = 0,
     this.worldHpMult = 1.0,
-    this.tierHpMult = 1.0,
+    this.tierHitsMult = 1.0,
+    this.tierThreatMult = 1.0,
     this.tierRewardMult = 1.0,
     this.worldGoldMult = 1.0,
     this.worldBossHpMult = 1.0,
@@ -276,21 +277,35 @@ class RunConfig {
   /// 월드가 하나 넘어갈 때마다 적 HP(·위협도)에 곱해지는 점프.
   final double worldHpMult;
 
-  /// 난이도 회차 **한 단계당** 몬스터 체력·공격 배율
-  /// (`docs/design_difficulty_loop.md`). 회차 n 이면 `tierHpMult^n`.
+  /// 난이도 회차 **한 단계당** 곱해지는 값들
+  /// (`docs/design_difficulty_loop.md`). 회차 n 이면 `^n`.
   ///
-  /// 1.0 이면 회차 기능이 꺼진 것과 같다(구버전 동작).
-  final double tierHpMult;
+  /// ⚠️ **체력에 직접 곱하지 않는다.** 적응형 체력은 이미 "몇 대에 죽나"를
+  /// [hpAdaptTargetHits] 로 맞추고 있어서, 거기에 배율을 곱하면 **타격 수가
+  /// 그대로 배가 된다** — 실측 극한 회차에서 몬스터 하나에 13,777대였다
+  /// (2026-08-30). 그건 어려운 게 아니라 지루한 스펀지다.
+  ///
+  /// 대신 두 축으로 나눈다:
+  ///  - [tierHitsMult] : 목표 타격 수를 늘린다(전투가 **조금** 길어진다).
+  ///  - [tierThreatMult] : 몬스터 공격을 올린다(**죽을 수 있게** 만든다).
+  ///
+  /// 난이도는 "때리는 횟수"가 아니라 **위험**에서 나와야 한다 — 그래야
+  /// 체력·방어·회복과 장비 옵션이 실제 선택이 된다.
+  final double tierHitsMult;
+  final double tierThreatMult;
 
-  /// 난이도 회차 한 단계당 **보상**(골드·재료) 배율. 회차 n 이면 `^n`.
-  ///
-  /// ⚠️ [tierHpMult] 와 같은 폭으로 올려야 한다. 몬스터만 세지면 회차를
-  /// 넘어갈 이유가 없고, 보상만 세지면 넘어가는 게 공짜가 된다.
+  /// 회차 [tier] 의 목표 타격 수(적응형 기준).
+  double tierTargetHits(int tier) =>
+      hpAdaptTargetHits *
+      (tier <= 0 ? 1.0 : math.pow(tierHitsMult, tier).toDouble());
+
+  /// 회차 [tier] 의 위협도 배율.
+  double tierThreat(int tier) =>
+      tier <= 0 ? 1.0 : math.pow(tierThreatMult, tier).toDouble();
+
+  /// 회차 한 단계당 **보상** 배율. 몬스터가 세지는 만큼 벌이도 올라야
+  /// 회차를 넘어갈 이유가 생긴다.
   final double tierRewardMult;
-
-  /// 회차 [tier] 의 몬스터 배율.
-  double tierHp(int tier) =>
-      tier <= 0 ? 1.0 : math.pow(tierHpMult, tier).toDouble();
 
   /// 회차 [tier] 의 보상 배율.
   double tierReward(int tier) =>
@@ -415,7 +430,8 @@ class RunConfig {
       offlineEfficiency: (json['offlineEfficiency'] as num?)?.toDouble() ?? 0.3,
       worldSize: (json['worldSize'] as num?)?.toInt() ?? 0,
       worldHpMult: (json['worldHpMult'] as num?)?.toDouble() ?? 1.0,
-      tierHpMult: (json['tierHpMult'] as num?)?.toDouble() ?? 1.0,
+      tierHitsMult: (json['tierHitsMult'] as num?)?.toDouble() ?? 1.0,
+      tierThreatMult: (json['tierThreatMult'] as num?)?.toDouble() ?? 1.0,
       tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,

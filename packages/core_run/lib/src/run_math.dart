@@ -56,17 +56,19 @@ int habitatMaxHp(
 }) {
   final base = c.hpBase * math.pow(c.hpGrowth, depth);
   final gate = c.worldMult(c.worldHpMult, depth);
-  final tierMul = c.tierHp(tier);
   if (playerAttack == null || c.hpAdaptPower <= 0 || c.hpAdaptTargetHits <= 0) {
-    return (base * gate * tierMul).round();
+    return (base * gate).round();
   }
   // 기준선 = 이 깊이에서 목표 타격 수로 잡으려면 필요한 공격력.
-  final onCurve = base / c.hpAdaptTargetHits;
+  //
+  // ⚠️ 회차는 **목표 타격 수**를 늘려서 반영한다. 체력에 직접 곱하면 타격
+  // 수가 그대로 배가 되어(극한에서 13,777대) 지루한 스펀지가 된다.
+  final onCurve = base / c.tierTargetHits(tier);
   final ratio = (playerAttack / onCurve).clamp(
     c.hpAdaptMinRatio,
     c.hpAdaptMaxRatio,
   );
-  return (base * math.pow(ratio, c.hpAdaptPower) * gate * tierMul).round();
+  return (base * math.pow(ratio, c.hpAdaptPower) * gate).round();
 }
 
 /// 보스 최대 HP. 월드 마지막 보스(1-100)는 [RunConfig.worldBossHpMult] 추가
@@ -155,12 +157,16 @@ double habitatThreat(
   int depth, {
   bool boss = false,
   double? playerToughness,
+  int tier = 0,
 }) {
   final base =
       c.threatBase *
       math.pow(c.threatGrowth, depth) *
       c.worldMult(c.worldHpMult, depth);
-  final bossMult = boss ? c.bossThreatMult : 1.0;
+  // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다. 체력을
+  // 부풀리면 타격 수만 늘어 지루해지지만, 공격이 세지면 체력·방어·회복과
+  // 장비 옵션이 실제 선택이 된다(docs/design_difficulty_loop.md).
+  final bossMult = (boss ? c.bossThreatMult : 1.0) * c.tierThreat(tier);
   if (playerToughness == null || c.threatAdaptTargetPct <= 0) {
     return base * bossMult;
   }

@@ -16,50 +16,56 @@ void main() {
   );
 
   test('회차 기능이 켜져 있다', () {
-    expect(cfg.tierHpMult, greaterThan(1.0));
+    expect(cfg.tierHitsMult, greaterThan(1.0));
+    expect(cfg.tierThreatMult, greaterThan(1.0));
     expect(cfg.tierRewardMult, greaterThan(1.0));
   });
 
-  /// ⚠️ 몬스터만 세지면 회차를 넘어갈 이유가 없다 — 더 오래 걸리고 덜 번다.
-  /// 보상만 세지면 넘어가는 게 공짜가 된다.
-  test('몬스터와 보상이 같은 폭으로 오른다', () {
-    expect(cfg.tierRewardMult, cfg.tierHpMult);
-    for (final t in [1, 2, 3]) {
-      expect(cfg.tierReward(t), closeTo(cfg.tierHp(t), 1e-6));
+  /// ⚠️ **이게 이 설계의 핵심이다.** 적응형 체력은 이미 "몇 대에 죽나"를
+  /// 목표치로 맞춘다. 거기에 배율을 곱하면 타격 수가 그대로 배가 되어
+  /// 극한에서 몬스터 하나에 13,777대가 됐다(2026-08-30 실측). 지루한
+  /// 스펀지지 어려운 게 아니다.
+  ///
+  /// 난이도는 **위험**에서 나와야 한다 — 그래야 체력·방어·회복과 장비
+  /// 옵션이 실제 선택이 된다.
+  test('회차가 올라도 타격 수가 폭주하지 않는다', () {
+    for (final atk in [1e3, 1e6, 1e9]) {
+      final easy = habitatMaxHp(cfg, 199, playerAttack: atk) / atk;
+      final extreme = habitatMaxHp(cfg, 199, playerAttack: atk, tier: 3) / atk;
+      // 극한이라도 쉬움의 5배를 넘지 않는다(예전 설계는 **1000배**였다).
+      expect(extreme / easy, lessThan(5.0), reason: 'atk=$atk');
+      expect(extreme, greaterThanOrEqualTo(easy), reason: 'atk=$atk');
     }
+    // 보정이 상한(hpAdaptMaxRatio)에 닿지 않은 구간에서는 실제로 길어진다.
+    // ⚠️ 닿은 구간(공격력이 아주 큰 후반)에서는 회차가 체력을 못 바꾼다 —
+    // 그때 난이도는 **위협도**가 만든다(아래 테스트).
+    expect(
+      habitatMaxHp(cfg, 199, playerAttack: 1e3, tier: 3),
+      greaterThan(habitatMaxHp(cfg, 199, playerAttack: 1e3)),
+    );
   });
 
-  test('회차 0(쉬움)은 아무것도 바꾸지 않는다 — 구버전과 같다', () {
-    expect(cfg.tierHp(0), 1.0);
-    expect(cfg.tierReward(0), 1.0);
-    expect(habitatMaxHp(cfg, 100, tier: 0), habitatMaxHp(cfg, 100));
-  });
-
-  test('회차가 오르면 몬스터 체력이 오른다', () {
-    final easy = habitatMaxHp(cfg, 100, playerAttack: 1000);
-    final normal = habitatMaxHp(cfg, 100, playerAttack: 1000, tier: 1);
-    expect(normal, greaterThan(easy));
-    expect(normal / easy, closeTo(cfg.tierHpMult, 0.01));
-  });
-
-  /// ⚠️ 회차 배율은 **적응형 보정 밖**에 곱해야 한다. 안쪽에 넣으면 보정이
-  /// 회차 상승을 그대로 상쇄해 아무 일도 일어나지 않는다.
-  test('적응형 보정이 회차 상승을 상쇄하지 않는다', () {
-    for (final atk in [100.0, 1e6, 1e12]) {
-      final easy = habitatMaxHp(cfg, 300, playerAttack: atk);
-      final hard = habitatMaxHp(cfg, 300, playerAttack: atk, tier: 2);
-      expect(hard / easy, closeTo(cfg.tierHp(2), 0.01), reason: 'atk=$atk');
-    }
+  test('난이도는 위협도(맞는 아픔)로 온다', () {
+    final easy = habitatThreat(cfg, 199, playerToughness: 1e6);
+    final extreme = habitatThreat(cfg, 199, playerToughness: 1e6, tier: 3);
+    expect(extreme / easy, closeTo(cfg.tierThreat(3), 0.01));
+    expect(cfg.tierThreat(3), greaterThan(5.0), reason: '확실히 위험해야 한다');
   });
 
   test('보상도 회차와 함께 오른다', () {
     final easy = rewardGold(cfg, 200, 1.0);
     final extreme = rewardGold(cfg, 200, 1.0, tier: 3);
-    // 정수 반올림 때문에 비율이 소수점에서 흔들린다 — 0.5% 안이면 같다고 본다.
     expect(
       extreme / easy,
       closeTo(cfg.tierReward(3), cfg.tierReward(3) * 0.005),
     );
+  });
+
+  test('회차 0(쉬움)은 아무것도 바꾸지 않는다 — 구버전과 같다', () {
+    expect(cfg.tierThreat(0), 1.0);
+    expect(cfg.tierReward(0), 1.0);
+    expect(cfg.tierTargetHits(0), cfg.hpAdaptTargetHits);
+    expect(habitatMaxHp(cfg, 100, tier: 0), habitatMaxHp(cfg, 100));
   });
 
   /// 마지막 회차까지 가도 골드가 int64 안에 있어야 한다 — 그러라고 회차로

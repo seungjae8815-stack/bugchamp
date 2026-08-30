@@ -89,6 +89,13 @@ const _dexFullStage = 600;
 /// `--boost=1.0` 으로 끄면 "탭을 전혀 안 하는 유저"가 된다.
 double _tapBoostAvg = 1.6;
 
+/// 난이도 회차(0=쉬움). `--tier=` 로 바꾼다.
+///
+/// 회차가 오르면 몬스터도 보상도 함께 오른다(`tierHpMult`/`tierRewardMult`).
+/// **둘이 같은 폭이면 진행 일수는 크게 안 변해야 한다** — 그게 설계 의도다.
+/// 이 도구는 그게 실제로 성립하는지 재는 데 쓴다.
+int _tier = 0;
+
 /// 전투 밖에서 하루에 들어오는 골드(일일보상 13,000 + 깜짝선물 약 32,000 +
 /// 미션·결투 보상). **초반에 결정적**이고 후반엔 무의미해진다 —
 /// 그래서 정액으로 둔다(day1 골드의 25% 수준, day25 엔 반올림 오차).
@@ -592,14 +599,14 @@ class _Player {
           // 같은 값을 넘겨 버프·장비가 시뮬 안에서 스스로 상쇄됐다.
           final base = baselineHitPower(baselineStats);
           final hit = baselineHitPower(stats);
-          final hp = habitatMaxHp(config, s - 1, playerAttack: base);
+          final hp = habitatMaxHp(config, s - 1, playerAttack: base, tier: _tier);
           return (hp / (hit <= 0 ? 1.0 : hit)).ceil();
         });
         survivalAt.putIfAbsent(s, () {
           final st = stats; // 장비·패시브·도감·버프 포함한 실제 전투 능력치
           final bossHit = baselineHitPower(st, boss: true);
           final baseBoss = baselineHitPower(baselineStats, boss: true);
-          final hp = bossMaxHp(config, s - 1, playerAttack: baseBoss).toDouble();
+          final hp = bossMaxHp(config, s - 1, playerAttack: baseBoss, tier: _tier).toDouble();
           final dps = bossHit * st.attackSpeed;
           // 위협 기준은 **영구 전력**(버프 제외) — 앱과 같은 규칙.
           final tough = toughnessOf(_baseStats);
@@ -623,6 +630,7 @@ class _Player {
             config,
             s - 1,
             playerAttack: baselineHitPower(baselineStats),
+            tier: _tier,
           );
           final dps = hit * st.attackSpeed;
           final fight = dps <= 0 ? 0.0 : hp / dps;
@@ -662,6 +670,7 @@ class _Player {
             config,
             s - 1,
             playerAttack: baselineHitPower(baselineStats),
+            tier: _tier,
           );
           final dps = hit * st.attackSpeed;
           return (dps <= 0 ? 0.0 : hp / dps) + 0.6; // 0.6 = 걷는 시간
@@ -833,6 +842,11 @@ _Opts _parseArgs(List<String> args) {
       _equipAttackMult = 1 + (_equipAttackMult - 1) * k;
       _equipCritChance *= k;
       _equipCritDamage *= k;
+      continue;
+    }
+    final tr = RegExp(r'^--tier=(.+)$').firstMatch(a);
+    if (tr != null) {
+      _tier = int.parse(tr.group(1)!);
       continue;
     }
     final tb = RegExp(r'^--boost=(.+)$').firstMatch(a);
