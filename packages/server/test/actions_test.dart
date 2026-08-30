@@ -576,8 +576,14 @@ void main() {
   });
 
   group('업그레이드', () {
-    test('골드가 충분하면 레벨이 오르고 비용이 빠진다', () {
-      final rich = SaveGame.initial(createdAt: t0).copyWith(gold: 1000000);
+    /// ⚠️ 공격·체력·방어도 **재료를 쓴다**(2026-08-30). 예전엔 골드만 있으면
+    /// 됐는데, 재료가 중반에 절반 넘게 남아돌아 소비처를 만들었다.
+    /// 골드만 넣으면 `insufficient_material` 로 막힌다.
+    test('골드·재료가 충분하면 레벨이 오르고 비용이 빠진다', () {
+      final rich = SaveGame.initial(createdAt: t0).copyWith(
+        gold: 1000000,
+        materials: {for (final k in MaterialKind.values) k: 100000},
+      );
       final r = actions.upgrade(rich, UpgradeKind.attack);
       expect(r.isOk, isTrue);
       expect(r.save!.upgradeLevel(UpgradeKind.attack), 1);
@@ -596,9 +602,11 @@ void main() {
     test('일괄 구매는 살 수 있는 만큼만 사고 멈춘다', () {
       // 1단계 값만 겨우 되는 골드로 10단계를 요청.
       final spec = _Config().run.upgrades[UpgradeKind.attack]!;
-      final justOne = SaveGame.initial(
-        createdAt: t0,
-      ).copyWith(gold: upgradeCost(spec, 0));
+      // 재료는 넉넉히 — 이 테스트가 보는 건 **골드**로 멈추는지다.
+      final justOne = SaveGame.initial(createdAt: t0).copyWith(
+        gold: upgradeCost(spec, 0),
+        materials: {for (final k in MaterialKind.values) k: 100000},
+      );
       final r = actions.upgrade(justOne, UpgradeKind.attack, count: 10);
       expect(r.isOk, isTrue);
       expect(r.extra['bought'], 1);
@@ -614,7 +622,10 @@ void main() {
     });
 
     test('레벨이 오를수록 비용이 비싸진다', () {
-      var s = SaveGame.initial(createdAt: t0).copyWith(gold: 100000000);
+      var s = SaveGame.initial(createdAt: t0).copyWith(
+        gold: 100000000,
+        materials: {for (final k in MaterialKind.values) k: 100000},
+      );
       final first = actions.upgrade(s, UpgradeKind.attack);
       s = first.save!;
       final second = actions.upgrade(s, UpgradeKind.attack);
@@ -1202,12 +1213,29 @@ void main() {
       expect(r.save!.incubating, isEmpty);
     });
 
-    test('분해하면 젤리를 주고 곤충이 사라진다', () {
-      final s = SaveGame.initial(createdAt: t0).copyWith(bugs: [egg('e')]);
+    /// ⚠️ 젤리는 **포텐셜 문턱**(`disassembleJellyMinPotential`) 이상에서만
+    /// 나온다. 분해는 곤충이 무한히 나오는 통로라 §2.6("무한히 늘어나는
+    /// 통로에는 젤리를 붙이지 않는다")에 걸린다 — 2026-08-30 에 문턱을
+    /// 4성 → 5성으로 올렸다.
+    test('문턱 이상 포텐셜을 분해하면 젤리를 주고 곤충이 사라진다', () {
+      final top = egg(
+        'e',
+      ).copyWith(potential: cfg.pet.disassembleJellyMinPotential);
+      final s = SaveGame.initial(createdAt: t0).copyWith(bugs: [top]);
       final r = actions.disassembleBug(s, 'e', petConfig: cfg.pet);
       expect(r.isOk, isTrue);
       expect(r.save!.bugs, isEmpty);
       expect(r.save!.materialCount(MaterialKind.jelly), greaterThan(0));
+    });
+
+    test('문턱 미만은 분해해도 젤리가 없다 — 재료만', () {
+      final low = egg(
+        'e',
+      ).copyWith(potential: cfg.pet.disassembleJellyMinPotential - 1);
+      final s = SaveGame.initial(createdAt: t0).copyWith(bugs: [low]);
+      final r = actions.disassembleBug(s, 'e', petConfig: cfg.pet);
+      expect(r.isOk, isTrue);
+      expect(r.save!.materialCount(MaterialKind.jelly), 0);
     });
 
     test('편성 중인 곤충은 분해 불가', () {

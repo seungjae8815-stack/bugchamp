@@ -34,7 +34,7 @@
  "_disassembleComment": "분해 보상. 재료는 항상(releaseMaterialByGrade), 젤리는 포텐셜 4성 이상만. 곤충은 무한히 나와서 예전엔 분해가 젤리 수입의 50%(하루 97개)를 차지했다 — 프리미엄 재화가 파밍으로 무한히 뽑히면 IAP 가 죽는다(§2.6). 문턱을 두면 수입은 줄면서 '좋은 걸 분해하는 순간'의 가치는 오히려 올라간다. 검증: core_run/tool/jelly_sim.dart",
  "disassembleJellyBase": -2,
  "disassembleJellyPerPotential": 1,
- "disassembleJellyMinPotential": 4,
+ "disassembleJellyMinPotential": 5,
  "levelBonus": 0.015,
  "trainBaseCost": 200,
  "trainCostGrowth": 1.18,

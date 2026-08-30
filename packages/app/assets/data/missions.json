@@ -3,7 +3,7 @@
   "_jellyComment": "젤리 보상 미션에는 rewardMax 를 반드시 둔다. rewardGrowth 1.15 는 지수라 20티어에서 16개, 40티어면 268개가 된다 — 프리미엄 재화(§2.6)에 무한 성장 곡선을 붙이면 후반 유저에게 젤리가 무제한으로 흘러간다. 검증: core_run/tool/jelly_sim.dart",
   "missions": [
     { "id": "hunt", "type": "killMonsters", "goalBase": 20, "goalGrowth": 1.25, "reward": "gold", "rewardBase": 200, "rewardGrowth": 1.6 },
-    { "id": "boss", "type": "killBosses", "goalBase": 3, "goalGrowth": 1.3, "reward": "jelly", "rewardBase": 1, "rewardGrowth": 1.15, "rewardMax": 5 },
+    { "id": "boss", "type": "killBosses", "goalBase": 3, "goalGrowth": 1.3, "reward": "jelly", "rewardBase": 1, "rewardGrowth": 1.15, "rewardMax": 3 },
     { "id": "power", "type": "buyUpgrades", "goalBase": 15, "goalGrowth": 1.3, "reward": "material", "rewardMaterial": "chitin", "rewardBase": 5, "rewardGrowth": 1.4 }
   ]
 }
