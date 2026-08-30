@@ -248,6 +248,9 @@ class GameActions {
       stats: stats,
       elapsed: elapsed,
       efficiency: _saveBoundEfficiency,
+      // 회차는 처치 속도(÷3)와 보상(×3)에 서로 반대로 실려 대략 상쇄되지만,
+      // 정확히는 아니다 — 봉투가 회차를 모른 채 좁아지면 정당한 수입이 잘린다.
+      tier: stored.difficultyTier,
     ).gold;
     final maxGain =
         _goldSanityFloor +
@@ -710,6 +713,9 @@ class GameActions {
       elapsed: elapsed,
       efficiency: run.offlineEfficiency,
       maxAccrual: maxAccrual,
+      tier: save.difficultyTier,
+      // 캠페인 끝을 넘겨 전진시키지 않는다 — 회차 전환은 유저가 직접 누른다.
+      finalStage: config.roadmap?.finalStage,
     );
     final goldGain = passOn
         ? (prog.gold * config.iap.passIdleGoldMult).round()

@@ -408,8 +408,13 @@ IdleProgress simulateIdleProgress({
       habitatClears += config.habitatsPerStage;
       bossClears += 1;
       budget -= stageTime;
-      stage += 1;
-      advanced += 1;
+      // 캠페인 끝에서는 전진하지 않고 그 자리에서 파밍한다 — 앱의 실시간
+      // 루프와 같은 규칙. 이 가드가 없으면 서버 정산이 1000 을 지나 전진해
+      // 회차 전환 전에 스테이지가 앞서 나간다(1708 사고의 서버판).
+      if (finalStage == null || finalStage <= 0 || stage < finalStage) {
+        stage += 1;
+      }
+      advanced += 1; // 반복 상한은 그대로 소모한다(무한 루프 방지).
     } else {
       // 남은 예산으로 서식지만(보스 못 잡으면 스테이지는 안 넘어간다).
       final n = budget / habTime;
@@ -447,6 +452,7 @@ double estimateClears({
   required Duration elapsed,
   Duration maxAccrual = kMaxOfflineAccrual,
   double efficiency = 0.5,
+  int tier = 0,
 }) {
   if (elapsed <= Duration.zero) return 0;
   final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
@@ -454,10 +460,14 @@ double estimateClears({
   final hit = baselineHitPower(stats);
   final dps = hit * stats.attackSpeed;
   if (dps <= 0) return 0;
+  // ⚠️ 회차를 빼먹으면 몬스터가 회차당 3배씩 약하게 잡혀 처치 수가 그만큼
+  // 부풀고, 보상 쪽만 회차 배율이 실려 **오프라인 골드가 회차당 3배 과지급**
+  // 된다(3^회차). 처치 수와 보상은 반드시 같은 회차로 잰다.
   final hp = habitatMaxHp(
     config,
     stageNumber - 1,
     playerAttack: hit,
+    tier: tier,
   ).toDouble();
   final timePerClear = hp / dps + 0.6; // + 이동시간 근사
   if (timePerClear <= 0) return 0;
@@ -482,6 +492,7 @@ OfflineReport computeOfflineReward({
     elapsed: elapsed,
     maxAccrual: maxAccrual,
     efficiency: efficiency,
+    tier: tier,
   );
   if (clears <= 0) return OfflineReport.empty;
 

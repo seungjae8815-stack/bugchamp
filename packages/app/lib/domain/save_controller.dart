@@ -275,6 +275,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       stageNumber: save.stageNumber,
       stats: stats,
       elapsed: elapsed,
+      tier: save.difficultyTier,
       efficiency: config.offlineEfficiency,
       maxAccrual: passOn
           ? Duration(hours: iap?.passOfflineCapHours ?? 12)

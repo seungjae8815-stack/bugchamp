@@ -340,6 +340,14 @@ bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
     // 서버 것을 못 읽으면 로컬을 지킨다.
     return true;
   }
+  // ⚠️ 회차가 다르면 **회차만으로 판정을 끝낸다.** 회차 전환은 스테이지 1·
+  // 레벨 1·업그레이드 0 으로 일부러 되돌리는 동작이라, 아래 축들로 재면
+  // 전환 직후의 로컬이 항상 "뒤처짐"으로 보인다 — 전환하고 60초(업로드 주기)
+  // 안에 앱을 끄면 다음 실행에서 전환 전 서버 세이브를 채택해 회차가 조용히
+  // 취소된다. 반대 방향(다른 기기가 전환)도 마찬가지다.
+  if (local.difficultyTier != remote.difficultyTier) {
+    return local.difficultyTier > remote.difficultyTier;
+  }
   var ahead = false;
   bool cmp(num l, num r) {
     if (l > r) ahead = true;

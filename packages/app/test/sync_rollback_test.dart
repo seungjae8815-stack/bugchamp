@@ -149,4 +149,66 @@ void main() {
     );
     expect(c.read(saveControllerProvider).requireValue.stageNumber, 700);
   });
+
+  /// 회차 전환은 스테이지 1·레벨 1·업그레이드 0 으로 **일부러** 되돌리는
+  /// 동작이라, 진행도 축으로만 재면 전환 직후 로컬이 "뒤처짐"으로 보인다.
+  /// 전환 후 60초(업로드 주기) 안에 앱을 끄면 전환 전 서버 세이브가 채택돼
+  /// **회차가 조용히 취소**된다 — 회차가 다르면 회차만으로 판정한다.
+  test('회차를 전환한 로컬은 전환 전 서버 세이브에 덮이지 않는다', () async {
+    final local = SaveGame.initial(createdAt: t0).copyWith(
+      difficultyTier: 1,
+      stageNumber: 1,
+      level: 1,
+      upgradeLevels: const {},
+    );
+    final preTier = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(stageNumber: 1000, level: 80);
+    final server = _StaleServer(preTier);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.difficultyTier, 1, reason: '회차 전환이 취소되면 안 된다');
+  });
+
+  /// 반대 방향 — 다른 기기가 회차를 전환했으면 이쪽 로컬(쉬움 1000)이
+  /// 스테이지 숫자로는 앞서 보여도 서버를 따라야 한다.
+  test('다른 기기가 회차를 전환했으면 그걸 따른다', () async {
+    final local = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(stageNumber: 1000, level: 80);
+    final tiered = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(difficultyTier: 1, stageNumber: 3, level: 2);
+    final server = _StaleServer(tiered);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    expect(c.read(saveControllerProvider).requireValue.difficultyTier, 1);
+  });
 }
