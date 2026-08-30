@@ -59,9 +59,13 @@ class PvpProfile {
     RankingKind.level => level,
     // ⚠️ 회차를 위에 얹는다. 스테이지만 비교하면 회차를 넘어간 유저가
     // 1 로 돌아가는 순간 꼴찌가 된다 — 넘어갈 이유가 사라진다.
-    RankingKind.stage => difficultyTier * 100000 + stageNumber,
+    RankingKind.stage => difficultyTier * _tierScoreStep + stageNumber,
   };
 }
+
+/// 진행도 점수에서 회차 한 칸의 크기. 한 회차의 스테이지 수(1000)보다 넉넉히
+/// 커야 **회차가 항상 이긴다** — 작으면 앞 회차 고스테이지가 뒤 회차를 넘는다.
+const int _tierScoreStep = 100000;
 
 /// 리더보드 한 줄.
 class LeaderboardEntry {
@@ -283,7 +287,14 @@ class LocalPvpBackend implements PvpBackend {
           // 보고 있는 축만 곡선을 태우고 나머지는 대략값을 채운다(표시용).
           trophies: kind == RankingKind.trophies ? scoreAt(i) : 0,
           level: kind == RankingKind.level ? scoreAt(i) : 1,
-          stageNumber: kind == RankingKind.stage ? scoreAt(i) : 1,
+          // 진행도 점수는 `회차*100000 + 스테이지` 합성값이라 그대로 넣으면
+          // 화면에 `쉬움 1000-32` 같은 없는 구간이 뜬다 — 도로 쪼갠다.
+          stageNumber: kind == RankingKind.stage
+              ? scoreAt(i) % _tierScoreStep
+              : 1,
+          difficultyTier: kind == RankingKind.stage
+              ? scoreAt(i) ~/ _tierScoreStep
+              : 0,
         ),
     ];
     final all = [...npcs, me]

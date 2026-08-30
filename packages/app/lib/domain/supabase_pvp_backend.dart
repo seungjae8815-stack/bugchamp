@@ -34,6 +34,9 @@ class SupabasePvpBackend implements PvpBackend {
         'trophies': me.trophies,
         'level': me.level,
         'stage': me.stageNumber,
+        // 회차를 안 올리면 서버는 회차를 넘어간 유저를 스테이지 1 로 본다 —
+        // 넘어가는 순간 진행도 랭킹 꼴찌가 되어 넘어갈 이유가 사라진다.
+        'tier': me.difficultyTier,
       });
       // 2) 상위 N 조회(RPC). 정렬 축은 서버가 받는다 — 클라가 받아서
       //    다시 정렬하면 상위 N 이 트로피 기준으로 잘린 뒤라 틀린 목록이 된다.
@@ -55,6 +58,7 @@ class SupabasePvpBackend implements PvpBackend {
               trophies: (r['trophies'] as num?)?.toInt() ?? 0,
               level: (r['level'] as num?)?.toInt() ?? 1,
               stageNumber: (r['stage'] as num?)?.toInt() ?? 1,
+              difficultyTier: (r['tier'] as num?)?.toInt() ?? 0,
             ),
           ),
       ];

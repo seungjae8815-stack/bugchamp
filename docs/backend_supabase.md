@@ -72,6 +72,8 @@ alter table profiles add column if not exists stage int not null default 1;
 -- 실물을 받을 수 없는 해외 이용자에게 등가를 맞추는 축이라, 세이브에만 있으면
 -- 의미가 없다 — 남이 봐야 자랑거리다.
 alter table profiles add column if not exists badge text not null default '';
+-- 난이도 회차(0=쉬움). 진행도 랭킹의 **1차 정렬 키**.
+alter table profiles add column if not exists tier  int  not null default 0;
 
 -- ⚠️ **뱃지는 서버만 쓴다.** `profiles` 는 앱도 upsert 하는 테이블이고
 -- `own_profile` 정책이 본인 행 UPDATE 를 허용하므로, 그냥 두면 누구나
@@ -83,7 +85,7 @@ revoke update on profiles from authenticated;
 -- UPDATE 절에 넣는다. id 가 빠지면 upsert 전체가 권한 오류로 죽고, 앱 랭킹이
 -- 로컬 폴백으로 떨어진다(2026-08-27 실기에서 발견). id 허용은 안전하다 —
 -- RLS 가 본인 행만 허용하고 같은 값으로 덮을 뿐이다. badge 만 막으면 된다.
-grant  update (id, nickname, trophies, level, stage) on profiles to authenticated;
+grant  update (id, nickname, trophies, level, stage, tier) on profiles to authenticated;
 
 create table if not exists defenders (
   id         uuid primary key references auth.users(id) on delete cascade,
@@ -119,23 +121,28 @@ create policy own_defender on defenders
 -- `sort` 는 화이트리스트로만 받는다(문자열을 order by 에 그대로 끼우면 SQL 주입).
 create or replace function leaderboard_top(lim int, sort text default 'trophies')
 returns table(rank bigint, id uuid, nickname text,
-              trophies int, level int, stage int, badge text)
+              trophies int, level int, stage int, tier int, badge text)
 language sql stable security definer set search_path = public as $$
   select row_number() over (
            order by case sort
                       when 'level' then p.level
-                      when 'stage' then p.stage
+                      -- ⚠️ 진행도는 **회차가 먼저**다. 스테이지만 보면 회차를
+                      -- 넘어간 유저가 1 로 돌아가는 순간 꼴찌가 되어,
+                      -- 아무도 넘어가지 않는다.
+                      when 'stage' then p.tier
                       else p.trophies
-                    end desc
+                    end desc,
+                    case when sort = 'stage' then p.stage else 0 end desc
          ) as rank,
-         p.id, p.nickname, p.trophies, p.level, p.stage,
+         p.id, p.nickname, p.trophies, p.level, p.stage, p.tier,
          coalesce(p.badge, '') as badge
   from profiles p
   order by case sort
              when 'level' then p.level
-             when 'stage' then p.stage
+             when 'stage' then p.tier
              else p.trophies
-           end desc
+           end desc,
+           case when sort = 'stage' then p.stage else 0 end desc
   limit lim;
 $$;
 

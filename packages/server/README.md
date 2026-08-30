@@ -120,8 +120,23 @@ cd packages\server ; dart test
 
 ## 배포 (Cloud Run)
 
+### 코드만 다시 올릴 때 (평소)
+
 ```powershell
 # 워크스페이스 루트에서
+gcloud run deploy bugchamp-server --source . --region asia-northeast3
+```
+
+⚠️ **`--set-env-vars`·`--set-secrets` 를 붙이지 않는다.** `set` 계열은 덧붙이는
+게 아니라 **목록을 통째로 갈아끼운다** — 한 번이라도 붙이면 거기 안 적힌
+`LATEST_VERSION_*`·`MIN_SUPPORTED_VERSION_*`·`TELEGRAM_BOT_TOKEN` 이 전부
+날아가고, 강제 업데이트 게이트가 풀리거나 문의가 조용히 죽는다.
+환경변수를 바꿀 땐 배포와 분리해 `services update --update-env-vars` 를 쓴다
+(`update` 는 지정한 것만 바꾼다).
+
+### 최초 1회 (서비스 생성)
+
+```powershell
 gcloud run deploy bugchamp-server `
   --source . `
   --region asia-northeast3 `
@@ -130,3 +145,11 @@ gcloud run deploy bugchamp-server `
 ```
 
 비밀은 **Secret Manager** 로 주입한다(`--set-env-vars` 로 넣으면 콘솔에 노출된다).
+
+### 배포 후 확인
+
+```powershell
+gcloud run services describe bugchamp-server --region asia-northeast3 `
+  --format="value(spec.template.spec.containers[0].env)"
+```
+`LATEST_VERSION_*`·`TELEGRAM_BOT_TOKEN` 이 그대로 있는지 본다.

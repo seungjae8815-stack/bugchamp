@@ -146,6 +146,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       trophies: save.pvpTrophies,
       level: save.level,
       stageNumber: save.stageNumber,
+      difficultyTier: save.difficultyTier,
     );
 
     return Scaffold(
