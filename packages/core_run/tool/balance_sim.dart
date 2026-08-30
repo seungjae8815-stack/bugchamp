@@ -78,6 +78,17 @@ const _passiveAttackMult = 1.08;
 const _dexAttackMult = 1.30;
 const _dexFullStage = 600;
 
+/// 탭 부스트 — **활동 시간에만** 걸리는 평균 배율.
+///
+/// ⚠️ `boostSpeedFactor = 1.0` 이라 데미지와 공속에 **둘 다** 실린다
+/// = 실질 DPS 가 배율의 **제곱**이다(x2 면 DPS x4, 상한 x5 면 x25).
+/// 이것도 적응형 기준 **밖**이다(§7: "탭 부스트도 여기 들어오면 안 된다").
+///
+/// 상한(x5)을 유지하려면 초당 2.7회를 계속 두드려야 한다 — 아무도 2시간
+/// 내내 그러지 않는다. 보스전에서만 올리는 **평균**을 잡는다.
+/// `--boost=1.0` 으로 끄면 "탭을 전혀 안 하는 유저"가 된다.
+double _tapBoostAvg = 1.6;
+
 /// 전투 밖에서 하루에 들어오는 골드(일일보상 13,000 + 깜짝선물 약 32,000 +
 /// 미션·결투 보상). **초반에 결정적**이고 후반엔 무의미해진다 —
 /// 그래서 정액으로 둔다(day1 골드의 25% 수준, day25 엔 반올림 오차).
@@ -500,8 +511,13 @@ class _Player {
     final s = _baseStats;
     return CharacterStats(
       attack:
-          s.attack * petAttackMult * _buffDpsMult * _outsideBaselineAttack,
-      attackSpeed: s.attackSpeed,
+          s.attack *
+          petAttackMult *
+          _buffDpsMult *
+          _outsideBaselineAttack *
+          _tapBoostAvg,
+      // 부스트는 공속에도 실린다(boostSpeedFactor=1.0) — DPS 가 제곱으로 오른다.
+      attackSpeed: s.attackSpeed * _tapBoostAvg,
       rewardMultiplier: s.rewardMultiplier,
       critChance:
           (s.critChance +
@@ -804,6 +820,11 @@ _Opts _parseArgs(List<String> args) {
   double? mult;
   var worlds = 10;
   for (final a in args) {
+    final tb = RegExp(r'^--boost=(.+)$').firstMatch(a);
+    if (tb != null) {
+      _tapBoostAvg = double.parse(tb.group(1)!);
+      continue;
+    }
     final pb = RegExp(r'^--pet-bonus=(.+)$').firstMatch(a);
     if (pb != null) {
       _petMaxBonus = double.parse(pb.group(1)!);
