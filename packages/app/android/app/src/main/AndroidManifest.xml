@@ -56,6 +56,25 @@
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
+        <!-- ⚠️ Impeller(Vulkan) 끄기 — 켜 두면 **앱이 네이티브에서 죽는다**.
+             2026-08-31, 1.0.7+20260902 프로덕션: 탭을 계속하면 몇 초 만에
+             SIGSEGV 로 종료됐다. 실기 크래시 로그:
+
+               pid 21283, tid 21320, name: 1.raster
+               signal 11 (SIGSEGV) ... Cause: null pointer dereference
+               #04 vulkan.adreno.so  qglinternal::vkCmdBeginRenderPass
+               #05 libflutter.so
+
+             우리 Dart 코드가 아니라 **Adreno GPU 드라이버 안**에서 터진다
+             (삼성 S928N/스냅드래곤). 화면에 그릴 게 몰리는 순간 —
+             탭 부스트 이펙트가 쏟아질 때 — 재현된다.
+
+             Skia 로 되돌리면 사라진다. 나중에 Impeller 로 돌리려면
+             **반드시 릴리즈 빌드로 스냅드래곤 실기에서 연타 테스트**를 할 것
+             (디버그·프로필로는 안 잡히는 종류다). -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

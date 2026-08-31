@@ -118,6 +118,13 @@ Codemagic `ios-release` 워크플로가 IPA 를 빌드해 **TestFlight 까지** 
       2026-08-29 에 이 규칙이 없어 **프로덕션 앱이 실행 즉시 죽었다**.
       `-keep` 만으로는 부족하고 **`-keepattributes Signature`** 가 세트다
       (Gson 이 제네릭 타입을 읽는다).
+- [ ] ⚠️ **탭 연타 스트레스** — 릴리즈로 스냅드래곤(Adreno) 실기에서
+      전투 화면을 수백 번 연타해 본다. 2026-08-31, 1.0.7+20260902 가
+      **탭을 계속하면 몇 초 만에 종료**됐다: Impeller(Vulkan)가 Adreno
+      드라이버 안에서 SIGSEGV(`vkCmdBeginRenderPass`, 1.raster 스레드).
+      우리 Dart 코드가 아니라 GPU 드라이버라 **테스트로는 절대 안 잡힌다**.
+      → 매니페스트에서 Impeller 를 끈 상태(Skia)를 유지할 것.
+      확인: `adb logcat | grep "Impeller opt-out"` 이 보이면 꺼진 것.
 - [ ] 릴리즈 APK 를 실기에 설치해 **한 번 켜 본다**.
       디버그·프로필 빌드는 R8 을 돌리지 않아 이 사고를 재현하지 못한다 —
       그래서 "폰에서 확인했다"가 안전을 보장하지 않는다.
