@@ -4577,174 +4577,190 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 (v) => v.value?.ownedSkins ?? const <String>{},
               ),
             );
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                14,
-                16,
-                16 + MediaQuery.of(ctx).viewInsets.bottom,
+            // ⚠️ **스크롤**. 항목이 늘어날 때마다 아래가 잘려 안 보인다
+            // (2026-08-31 실기 지적 — 이색 섹션을 넣자 바로 잘렸다).
+            // 화면의 85% 까지만 쓰고 그 안에서 스크롤한다.
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.85,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '🛠 개발자 모드',
-                    style: TextStyle(
-                      color: _onScene,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // 설정 화면에서 옮겨온 것 — 유저가 잘못 눌러 진행도를 통째로
-                  // 잃는 사고가 나서, 개발자 모드 안으로만 남긴다.
-                  _devSection('세이브', [
-                    _devBtn('게임 데이터 초기화', () {
-                      Navigator.pop(context);
-                      _confirmReset(AppLocalizations.of(context));
-                    }),
-                  ]),
-                  _devSection('채집함', [
-                    _devBtn('채우기(종별 3)', () async {
-                      await ctrl.devFillBugs();
-                      toast('채집함 채움');
-                    }),
-                    _devBtn('초기화', () async {
-                      await ctrl.devClearBugs();
-                      toast('채집함 초기화');
-                    }, danger: true),
-                  ]),
-                  _devSection('스테이지 (현재 $_stage)', [
-                    _devBtn('초기화(1)', () {
-                      _devJumpStage(1);
-                      toast('스테이지 1');
-                    }, danger: true),
-                    SizedBox(
-                      width: 90,
-                      child: TextField(
-                        controller: stageCtrl,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          isDense: true,
-                          hintText: '스테이지',
-                          hintStyle: TextStyle(color: Color(0x66FFFFFF)),
-                        ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  14,
+                  16,
+                  16 + MediaQuery.of(ctx).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '🛠 개발자 모드',
+                      style: TextStyle(
+                        color: _onScene,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
                       ),
                     ),
-                    _devBtn('이동', () {
-                      final n = int.tryParse(stageCtrl.text.trim());
-                      if (n != null && n >= 1) {
-                        _devJumpStage(n);
-                        toast('스테이지 $n 이동');
-                      }
-                    }),
-                    // 회차 전환은 1000 보스를 실제로 잡아야 재현되는데,
-                    // 적응형 체력(§7) 때문에 업그레이드를 아무리 쥐여줘도
-                    // 몬스터가 같이 세져 테스트 캐릭터로는 며칠 걸린다.
-                    // "1000 보스를 방금 잡은 상태"로 바로 보낸다 —
-                    // 이후 흐름(안내 → 전환 → 유지 확인)은 전부 실제 코드다.
-                    _devBtn('회차 전환 테스트(1000 클리어)', () {
-                      final last = _data.roadmapConfig?.finalStage ?? 0;
-                      if (last <= 0) {
-                        toast('로드맵 없음');
-                        return;
-                      }
-                      _devJumpStage(last);
-                      _tierClearPending = true;
-                      Navigator.pop(context);
-                      setState(() {});
-                      toast('스테이지 $last — 회차 전환 안내');
-                    }),
-                  ]),
-                  // 이벤트 참가권은 **서버 소유 필드**라 로컬로 늘려도 다음
-                  // 업로드에 서버 값으로 덮인다. 그래서 서버에 요청해야 하고,
-                  // 아무나 부르면 순위가 무너지므로 **운영 키**로 보호한다.
-                  // 이색은 1/300 이라 실기에서 자연히 나오길 기다릴 수 없다.
-                  // 확인용으로 **보유 곤충 하나를 이색으로 바꾼다**(새로 만들지
-                  // 않는다 — 채집함 상한·도감 경로를 그대로 타야 진짜 확인이다).
-                  _devSection('이색(변이)', [
-                    _devBtn('무지개로 바꾸기', () async {
-                      final msg = await ctrl.devMakeVariant(BugVariant.rainbow);
-                      toast(msg);
-                    }),
-                    _devBtn('알비노로 바꾸기', () async {
-                      final msg = await ctrl.devMakeVariant(BugVariant.albino);
-                      toast(msg);
-                    }),
-                    _devBtn('전부 보통으로', () async {
-                      final msg = await ctrl.devMakeVariant(BugVariant.none);
-                      toast(msg);
-                    }, danger: true),
-                  ]),
-                  _devSection('이벤트', [
-                    _devBtn('참가권 +5', () async {
-                      final msg = await _devGrantEventTickets(5);
-                      if (msg.isNotEmpty) toast(msg);
-                    }),
-                  ]),
-                  _devSection('재화 추가', [
-                    _devBtn('골드 +100K', () {
-                      ctrl.devAddResources(gold: 100000);
-                      toast('골드 +100K');
-                    }),
-                    _devBtn('재료 +500', () {
-                      ctrl.devAddResources(chitin: 500, mineral: 500, sap: 500);
-                      toast('재료 +500');
-                    }),
-                    _devBtn('젤리 +100', () {
-                      ctrl.devAddResources(jelly: 100);
-                      toast('젤리 +100');
-                    }),
-                    _devBtn('경험치 +10K', () {
-                      ctrl.devAddResources(xp: 10000);
-                      toast('경험치 +10K');
-                    }),
-                    _devBtn('화석 조각 +1000', () {
-                      ctrl.devAddResources(fossil: 1000);
-                      toast('화석 조각 +1000 (제련 50분치)');
-                    }),
-                  ]),
-                  // 스킨은 IAP 전용이라 사이드로드 빌드에선 살 수가 없다.
-                  // 색 필터가 종마다 어떻게 나오는지는 실기로 봐야 한다.
-                  _devSection('스킨(코스메틱)', [
-                    _devBtn('스킨 그림 확인(확대)', () {
-                      Navigator.pop(context);
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SkinGalleryScreen(),
+                    const SizedBox(height: 12),
+                    // 설정 화면에서 옮겨온 것 — 유저가 잘못 눌러 진행도를 통째로
+                    // 잃는 사고가 나서, 개발자 모드 안으로만 남긴다.
+                    _devSection('세이브', [
+                      _devBtn('게임 데이터 초기화', () {
+                        Navigator.pop(context);
+                        _confirmReset(AppLocalizations.of(context));
+                      }),
+                    ]),
+                    _devSection('채집함', [
+                      _devBtn('채우기(종별 3)', () async {
+                        await ctrl.devFillBugs();
+                        toast('채집함 채움');
+                      }),
+                      _devBtn('초기화', () async {
+                        await ctrl.devClearBugs();
+                        toast('채집함 초기화');
+                      }, danger: true),
+                    ]),
+                    _devSection('스테이지 (현재 $_stage)', [
+                      _devBtn('초기화(1)', () {
+                        _devJumpStage(1);
+                        toast('스테이지 1');
+                      }, danger: true),
+                      SizedBox(
+                        width: 90,
+                        child: TextField(
+                          controller: stageCtrl,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            hintText: '스테이지',
+                            hintStyle: TextStyle(color: Color(0x66FFFFFF)),
+                          ),
                         ),
-                      );
-                    }),
-                    for (final (id, name) in const [
-                      ('gold_rhino', '황금 장수풍뎅이'),
-                      ('albino_stag', '알비노 사슴벌레'),
-                      ('arena_theme', '아레나 테마'),
-                    ])
-                      _devBtn(
-                        '$name ${skins.contains(id) ? '끄기' : '켜기'}',
-                        () async {
-                          final on = await ctrl.devToggleSkin(id);
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                          toast('$name ${on ? '적용' : '해제'}');
-                        },
                       ),
-                  ]),
-                  // 아트 확인용 — 제련은 부위가 랜덤이라 특정 그림을 보려면
-                  // 수십 번 돌려야 한다. 격자로 한 번에 본다.
-                  _devSection('장비', [
-                    _devBtn('장비 그림 80종 보기', () {
-                      Navigator.pop(context);
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const ItemGalleryScreen(),
+                      _devBtn('이동', () {
+                        final n = int.tryParse(stageCtrl.text.trim());
+                        if (n != null && n >= 1) {
+                          _devJumpStage(n);
+                          toast('스테이지 $n 이동');
+                        }
+                      }),
+                      // 회차 전환은 1000 보스를 실제로 잡아야 재현되는데,
+                      // 적응형 체력(§7) 때문에 업그레이드를 아무리 쥐여줘도
+                      // 몬스터가 같이 세져 테스트 캐릭터로는 며칠 걸린다.
+                      // "1000 보스를 방금 잡은 상태"로 바로 보낸다 —
+                      // 이후 흐름(안내 → 전환 → 유지 확인)은 전부 실제 코드다.
+                      _devBtn('회차 전환 테스트(1000 클리어)', () {
+                        final last = _data.roadmapConfig?.finalStage ?? 0;
+                        if (last <= 0) {
+                          toast('로드맵 없음');
+                          return;
+                        }
+                        _devJumpStage(last);
+                        _tierClearPending = true;
+                        Navigator.pop(context);
+                        setState(() {});
+                        toast('스테이지 $last — 회차 전환 안내');
+                      }),
+                    ]),
+                    // 이벤트 참가권은 **서버 소유 필드**라 로컬로 늘려도 다음
+                    // 업로드에 서버 값으로 덮인다. 그래서 서버에 요청해야 하고,
+                    // 아무나 부르면 순위가 무너지므로 **운영 키**로 보호한다.
+                    // 이색은 1/300 이라 실기에서 자연히 나오길 기다릴 수 없다.
+                    // 확인용으로 **보유 곤충 하나를 이색으로 바꾼다**(새로 만들지
+                    // 않는다 — 채집함 상한·도감 경로를 그대로 타야 진짜 확인이다).
+                    _devSection('이색(변이)', [
+                      _devBtn('무지개로 바꾸기', () async {
+                        final msg = await ctrl.devMakeVariant(
+                          BugVariant.rainbow,
+                        );
+                        toast(msg);
+                      }),
+                      _devBtn('알비노로 바꾸기', () async {
+                        final msg = await ctrl.devMakeVariant(
+                          BugVariant.albino,
+                        );
+                        toast(msg);
+                      }),
+                      _devBtn('전부 보통으로', () async {
+                        final msg = await ctrl.devMakeVariant(BugVariant.none);
+                        toast(msg);
+                      }, danger: true),
+                    ]),
+                    _devSection('이벤트', [
+                      _devBtn('참가권 +5', () async {
+                        final msg = await _devGrantEventTickets(5);
+                        if (msg.isNotEmpty) toast(msg);
+                      }),
+                    ]),
+                    _devSection('재화 추가', [
+                      _devBtn('골드 +100K', () {
+                        ctrl.devAddResources(gold: 100000);
+                        toast('골드 +100K');
+                      }),
+                      _devBtn('재료 +500', () {
+                        ctrl.devAddResources(
+                          chitin: 500,
+                          mineral: 500,
+                          sap: 500,
+                        );
+                        toast('재료 +500');
+                      }),
+                      _devBtn('젤리 +100', () {
+                        ctrl.devAddResources(jelly: 100);
+                        toast('젤리 +100');
+                      }),
+                      _devBtn('경험치 +10K', () {
+                        ctrl.devAddResources(xp: 10000);
+                        toast('경험치 +10K');
+                      }),
+                      _devBtn('화석 조각 +1000', () {
+                        ctrl.devAddResources(fossil: 1000);
+                        toast('화석 조각 +1000 (제련 50분치)');
+                      }),
+                    ]),
+                    // 스킨은 IAP 전용이라 사이드로드 빌드에선 살 수가 없다.
+                    // 색 필터가 종마다 어떻게 나오는지는 실기로 봐야 한다.
+                    _devSection('스킨(코스메틱)', [
+                      _devBtn('스킨 그림 확인(확대)', () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const SkinGalleryScreen(),
+                          ),
+                        );
+                      }),
+                      for (final (id, name) in const [
+                        ('gold_rhino', '황금 장수풍뎅이'),
+                        ('albino_stag', '알비노 사슴벌레'),
+                        ('arena_theme', '아레나 테마'),
+                      ])
+                        _devBtn(
+                          '$name ${skins.contains(id) ? '끄기' : '켜기'}',
+                          () async {
+                            final on = await ctrl.devToggleSkin(id);
+                            if (!ctx.mounted) return;
+                            Navigator.pop(ctx);
+                            toast('$name ${on ? '적용' : '해제'}');
+                          },
                         ),
-                      );
-                    }),
-                  ]),
-                ],
+                    ]),
+                    // 아트 확인용 — 제련은 부위가 랜덤이라 특정 그림을 보려면
+                    // 수십 번 돌려야 한다. 격자로 한 번에 본다.
+                    _devSection('장비', [
+                      _devBtn('장비 그림 80종 보기', () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const ItemGalleryScreen(),
+                          ),
+                        );
+                      }),
+                    ]),
+                  ],
+                ),
               ),
             );
           },

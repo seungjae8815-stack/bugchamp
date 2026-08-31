@@ -39,6 +39,16 @@
   "notEnoughJelly": "昆虫ゼリーが足りません",
   "scoutBoard": "スカウトボード",
   "scoutRefresh": "更新",
+  "scoutRefreshFree": "更新 (無料)",
+  "scoutRefreshJelly": "更新 (ゼリー{n})",
+  "@scoutRefreshJelly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scoutRefreshDone": "本日の更新は終了",
   "scoutEasy": "弱い",
   "scoutEven": "互角",
   "scoutHard": "強い",

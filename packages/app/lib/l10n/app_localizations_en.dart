@@ -132,6 +132,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scoutRefresh => 'Refresh';
 
   @override
+  String get scoutRefreshFree => 'Refresh (free)';
+
+  @override
+  String scoutRefreshJelly(int n) {
+    return 'Refresh ($n jelly)';
+  }
+
+  @override
+  String get scoutRefreshDone => 'No refreshes left';
+
+  @override
   String get scoutEasy => 'Weak';
 
   @override

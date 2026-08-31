@@ -39,6 +39,16 @@
   "notEnoughJelly": "곤충젤리가 부족해요",
   "scoutBoard": "스카우트 보드",
   "scoutRefresh": "새로고침",
+  "scoutRefreshFree": "새로고침 (무료)",
+  "scoutRefreshJelly": "새로고침 (젤리 {n})",
+  "@scoutRefreshJelly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scoutRefreshDone": "오늘 새로고침 끝",
   "scoutEasy": "약함",
   "scoutEven": "대등",
   "scoutHard": "강함",

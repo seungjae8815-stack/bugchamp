@@ -334,6 +334,24 @@ abstract class AppLocalizations {
   /// **'Refresh'**
   String get scoutRefresh;
 
+  /// No description provided for @scoutRefreshFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh (free)'**
+  String get scoutRefreshFree;
+
+  /// No description provided for @scoutRefreshJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh ({n} jelly)'**
+  String scoutRefreshJelly(int n);
+
+  /// No description provided for @scoutRefreshDone.
+  ///
+  /// In en, this message translates to:
+  /// **'No refreshes left'**
+  String get scoutRefreshDone;
+
   /// No description provided for @scoutEasy.
   ///
   /// In en, this message translates to:

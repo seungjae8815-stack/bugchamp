@@ -132,6 +132,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get scoutRefresh => '更新';
 
   @override
+  String get scoutRefreshFree => '更新 (無料)';
+
+  @override
+  String scoutRefreshJelly(int n) {
+    return '更新 (ゼリー$n)';
+  }
+
+  @override
+  String get scoutRefreshDone => '本日の更新は終了';
+
+  @override
   String get scoutEasy => '弱い';
 
   @override

@@ -132,6 +132,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get scoutRefresh => '새로고침';
 
   @override
+  String get scoutRefreshFree => '새로고침 (무료)';
+
+  @override
+  String scoutRefreshJelly(int n) {
+    return '새로고침 (젤리 $n)';
+  }
+
+  @override
+  String get scoutRefreshDone => '오늘 새로고침 끝';
+
+  @override
   String get scoutEasy => '약함';
 
   @override

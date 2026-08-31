@@ -63,6 +63,16 @@
   "notEnoughJelly": "Not enough jelly",
   "scoutBoard": "Scout Board",
   "scoutRefresh": "Refresh",
+  "scoutRefreshFree": "Refresh (free)",
+  "scoutRefreshJelly": "Refresh ({n} jelly)",
+  "@scoutRefreshJelly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scoutRefreshDone": "No refreshes left",
   "scoutEasy": "Weak",
   "scoutEven": "Even",
   "scoutHard": "Strong",

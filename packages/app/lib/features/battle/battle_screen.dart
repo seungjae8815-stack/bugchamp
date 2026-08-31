@@ -305,6 +305,25 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// 때까지 무한 리롤"을 막으려는 것인데, 전투 뒤 갱신은 티켓을 이미 한 장
   /// 쓴 결과라 그 남용 경로가 아니다.
   bool _rerollScouts = false;
+
+  /// 오늘 쓴 스카우트 새로고침 횟수. **버튼에 값을 보여주려고** 들고 있다 —
+  /// 누르기 전에는 무료인지 젤리인지 알 수 없으면, 유저는 눌러 보고 나서야
+  /// 비용을 안다(2026-08-31 실기 지적).
+  int _refreshUsed = 0;
+  bool _refreshLoaded = false;
+
+  Future<void> _loadRefreshUsed() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = dailyDateKey(ref.read(clockProvider).now().toUtc());
+    final parts = (prefs.getString('scout_refresh_v1') ?? '|').split('|');
+    final used = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
+    if (!mounted) return;
+    setState(() {
+      _refreshUsed = used;
+      _refreshLoaded = true;
+    });
+  }
+
   String? _registeredSig; // 마지막으로 등록한 방어팀 시그니처(중복 업서트 방지)
 
   /// 직전 서버 전투 요청이 **티켓 부족**으로 거절됐는지.
@@ -1242,27 +1261,61 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           ),
                         ),
                         const Spacer(),
-                        TextButton.icon(
-                          onPressed: avg == null
-                              ? null
-                              : () async {
-                                  // 광고가 없어진 대신 **하루 상한**을 건다.
-                                  // 예전엔 광고 시청 30초가 비용이었는데, 공짜
-                                  // 무제한이면 제일 약한 상대가 나올 때까지
-                                  // 무한 리롤하게 된다.
-                                  if (!await _takeFreeRefresh(l)) return;
-                                  if (!mounted) return;
-                                  setState(
-                                    () => _rollScouts(data, locale, avg),
-                                  );
-                                  _fetchRealScouts(data, locale, avg, save);
-                                },
-                          icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: Text(l.scoutRefresh),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFE9D9A6),
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                          ),
+                        // 무료가 남았는지 · 젤리가 얼마인지를 **누르기 전에**
+                        // 보여준다. 예전엔 라벨이 '새로고침' 하나뿐이라
+                        // 눌러 보고 나서야 비용을 알았다.
+                        Builder(
+                          builder: (_) {
+                            if (!_refreshLoaded) {
+                              // 첫 프레임에 한 번만 읽는다(SharedPreferences).
+                              WidgetsBinding.instance.addPostFrameCallback(
+                                (_) => _loadRefreshUsed(),
+                              );
+                            }
+                            final free =
+                                _refreshUsed < battleCfg.scoutFreeRefreshDaily;
+                            final over =
+                                _refreshUsed >= battleCfg.scoutRefreshDailyMax;
+                            return TextButton.icon(
+                              onPressed: (avg == null || over)
+                                  ? null
+                                  : () async {
+                                      // 광고가 없어진 대신 **하루 상한**을 건다.
+                                      // 공짜 무제한이면 제일 약한 상대가 나올
+                                      // 때까지 무한 리롤하게 된다.
+                                      if (!await _takeFreeRefresh(l)) return;
+                                      if (!mounted) return;
+                                      setState(
+                                        () => _rollScouts(data, locale, avg),
+                                      );
+                                      _fetchRealScouts(data, locale, avg, save);
+                                    },
+                              icon: Icon(
+                                over
+                                    ? Icons.block_rounded
+                                    : Icons.refresh_rounded,
+                                size: 16,
+                              ),
+                              label: Text(
+                                over
+                                    ? l.scoutRefreshDone
+                                    : free
+                                    ? l.scoutRefreshFree
+                                    : l.scoutRefreshJelly(
+                                        battleCfg.scoutRefreshJelly,
+                                      ),
+                              ),
+                              style: TextButton.styleFrom(
+                                // 무료는 초록(공짜라는 신호), 젤리는 젤리색.
+                                foregroundColor: free
+                                    ? const Color(0xFF8FE08F)
+                                    : const Color(0xFF9BE7FF),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -1575,6 +1628,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       }
     }
     await prefs.setString('scout_refresh_v1', '$today|${used + 1}');
+    if (mounted) setState(() => _refreshUsed = used + 1);
     return true;
   }
 
@@ -2644,6 +2698,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       ),
     );
+    // ⚠️ **서버 권위 경로에도** 리롤을 건다. 실제 전투는 대부분 여기로 흐르는데
+    // 로컬 경로에만 붙여 놔서 "싸워도 상대가 그대로"였다(2026-08-31 실기 지적).
+    if (mounted) setState(() => _rerollScouts = true);
     return true;
   }
 
