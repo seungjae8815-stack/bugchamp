@@ -2338,7 +2338,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gachaTitle => '虫のタマゴガチャ';
 
   @override
-  String get gachaDesc => '高級以上確定 · 色違い確率10倍 · 天井が貯まります';
+  String get gachaDesc => 'ポテンシャル3★以上確定 (野生では5★が出ません) · 色違い確率10倍';
 
   @override
   String gachaPityLeft(int n) {

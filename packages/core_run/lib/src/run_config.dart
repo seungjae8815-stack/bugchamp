@@ -143,6 +143,7 @@ class RunConfig {
     this.tierRewardMult = 1.0,
     this.endParkedRewardMult = 1.0,
     this.rarePityKills = 0,
+    this.dropGradeWeights = const {},
     this.worldGoldMult = 1.0,
     this.worldBossHpMult = 1.0,
     this.exchangeJellyPerTrade = 10,
@@ -323,6 +324,11 @@ class RunConfig {
   /// 희귀 이상으로 보장한다. 0 = 꺼짐.
   final int rarePityKills;
 
+  /// 야생 드롭의 **등급 가중치**. 비어 있으면 전 종 균등(구버전 동작).
+  ///
+  /// 없으면 희소성이 종 개수 비율로만 정해져 전설이 드롭의 10% 가 된다.
+  final Map<Grade, double> dropGradeWeights;
+
   /// 회차 [tier] 의 보상 배율.
   double tierReward(int tier) =>
       tier <= 0 ? 1.0 : math.pow(tierRewardMult, tier).toDouble();
@@ -451,6 +457,13 @@ class RunConfig {
       endParkedRewardMult:
           (json['endParkedRewardMult'] as num?)?.toDouble() ?? 1.0,
       rarePityKills: (json['rarePityKills'] as num?)?.toInt() ?? 0,
+      dropGradeWeights: {
+        if (json['dropGradeWeights'] is Map)
+          for (final e in (json['dropGradeWeights'] as Map).entries)
+            if (Grade.fromKeyOrNull(e.key as String) != null)
+              Grade.fromKeyOrNull(e.key as String)!: (e.value as num)
+                  .toDouble(),
+      },
       tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,

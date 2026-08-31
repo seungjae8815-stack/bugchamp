@@ -755,24 +755,21 @@ class GameActions {
     // 희귀 천장(§2.1) — 앱과 같은 규칙. 서버가 안 굴리면 방치 정산은
     // 천장이 없는 셈이 되어, 켜 두는 쪽이 손해가 된다.
     var pity = save.rarePity;
-    // 한정 종은 기간 안에만 드롭 풀에 — 앱과 같은 규칙(안 거르면 방치 정산이
-    // 기간 지난 종을 계속 준다).
-    final pool = [
-      for (final x in species)
-        if (x.availableAt(t)) x,
-    ];
-    final rarePool = [
-      for (final x in pool)
-        if (x.grade.index >= Grade.rare.index) x,
-    ];
+
     for (var i = 0; i < rolls; i++) {
       final pityDue = run.rarePityKills > 0 && pity >= run.rarePityKills;
       pity++;
-      if (pool.isNotEmpty &&
+      if (species.isNotEmpty &&
           (pityDue || rng.nextDouble() < run.bugDropChance * stats.bugFind)) {
-        final sp = pityDue && rarePool.isNotEmpty
-            ? rarePool[rng.nextInt(rarePool.length)]
-            : pool[rng.nextInt(pool.length)];
+        // 등급 가중치·한정 종 모두 앱과 **같은 함수**로 고른다.
+        final sp = pickDropSpecies(
+          rng,
+          species,
+          weights: run.dropGradeWeights,
+          now: t,
+          minGrade: pityDue ? Grade.rare : null,
+        );
+        if (sp == null) continue;
         // 되감기는 아래 분기에서 — 실제로 받았거나 필터로 재료가 됐을 때만.
         // 채집함이 가득 차 버려진 롤로 되감으면 천장이 허공에 쓰인다.
         final rarePlus = sp.grade.index >= Grade.rare.index;

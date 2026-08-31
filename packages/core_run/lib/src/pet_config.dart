@@ -60,6 +60,7 @@ class PetConfig {
     this.incubateDurationsSec = const {},
     this.incubateAdSkipRatio = 0.2,
     this.incubateJellyPerMinute = 0.5,
+    this.instantJellyExponent = 1.0,
     this.injuryDurationsSec = const {},
     this.injuryJellyPerMinute = 0.5,
     this.breedingDurationsSec = const {},
@@ -78,6 +79,7 @@ class PetConfig {
     this.gachaVariantChance = 0,
     this.gachaEpicPity = 0,
     this.gachaWeights = const {},
+    this.gachaPotentialWeights = const {},
     this.variantBreedChance = 0,
     this.variantBreedParentChance = 0,
     this.breedingTemperamentInherit = 0,
@@ -204,6 +206,13 @@ class PetConfig {
   /// 부화 즉시완료 젤리 비용의 분당 계수(산란과 같은 방식 — 남은 시간 비례).
   final double incubateJellyPerMinute;
 
+  /// 즉시완료 젤리 비용의 **시간 지수**. 1.0 = 분에 정비례(구버전 동작).
+  ///
+  /// 등급별 타이머를 가파르게 만들면(전설 산란 36시간) 정비례 비용은
+  /// 수백~수천 젤리가 되어 아무도 안 쓴다 — 소비처가 아니라 장식이 된다.
+  /// 1 미만이면 긴 대기일수록 **분당 단가가 싸져** 큰 건도 지를 만해진다.
+  final double instantJellyExponent;
+
   /// 등급별 KO 후 부상 회복 시간(초). 높은 등급일수록 회복이 오래 걸린다.
   final Map<Grade, int> injuryDurationsSec;
 
@@ -251,6 +260,26 @@ class PetConfig {
 
   /// 등급 가중치(합이 1일 필요는 없다 — 비율로 쓴다).
   final Map<Grade, double> gachaWeights;
+
+  /// 뽑기 **포텐셜** 가중치(성 → 비율). 여기가 뽑기의 존재 이유다.
+  ///
+  /// 야생 드롭 공식(`1 + floor(r*r*4)`)은 **5성이 수학적으로 불가능**하고
+  /// 4성도 3.4% 뿐이다. 곤충 자체는 1분에 한 마리씩 나오므로 등급을 팔아 봐야
+  /// 값이 안 나온다 — 야생에 없는 것(5성)을 파는 게 유일하게 성립하는 축이다.
+  final Map<int, double> gachaPotentialWeights;
+
+  /// 뽑기 포텐셜 롤. 표가 비어 있으면 0(호출부가 야생 공식으로 폴백).
+  int rollGachaPotential(double roll) {
+    if (gachaPotentialWeights.isEmpty) return 0;
+    final total = gachaPotentialWeights.values.fold<double>(0, (a, b) => a + b);
+    if (total <= 0) return 0;
+    var pick = roll * total;
+    for (final e in gachaPotentialWeights.entries) {
+      pick -= e.value;
+      if (pick <= 0) return e.key;
+    }
+    return gachaPotentialWeights.keys.last;
+  }
 
   /// 이색 확률 — 짝짓기 자식(부모 중 이색 없음).
   /// 야생보다 높게 둔다 — 짝짓기가 "이색을 노리는 길"이어야 돌릴 이유가 생긴다.
@@ -404,16 +433,18 @@ class PetConfig {
       (breedingDuration(g) * breedingCooldownMult).round();
 
   /// 남은 시간 비례 브리딩 즉시완료 젤리 비용(최소 1).
-  int breedingJelly(Duration remaining) {
-    if (remaining <= Duration.zero) return 0;
-    final v = (remaining.inSeconds / 60 * breedingJellyPerMinute).ceil();
-    return v < 1 ? 1 : v;
-  }
+  int breedingJelly(Duration remaining) =>
+      _instantJelly(remaining, breedingJellyPerMinute);
 
   /// 남은 시간 비례 부화 즉시완료 젤리 비용(최소 1).
-  int incubateJelly(Duration remaining) {
+  int incubateJelly(Duration remaining) =>
+      _instantJelly(remaining, incubateJellyPerMinute);
+
+  /// `계수 x 남은분^지수`. 지수 1.0 이면 예전과 완전히 같다.
+  int _instantJelly(Duration remaining, double coef) {
     if (remaining <= Duration.zero) return 0;
-    final v = (remaining.inSeconds / 60 * incubateJellyPerMinute).ceil();
+    final minutes = remaining.inSeconds / 60;
+    final v = (coef * math.pow(minutes, instantJellyExponent)).ceil();
     return v < 1 ? 1 : v;
   }
 
@@ -484,6 +515,8 @@ class PetConfig {
           (json['incubateAdSkipRatio'] as num?)?.toDouble() ?? 0.2,
       incubateJellyPerMinute:
           (json['incubateJellyPerMinute'] as num?)?.toDouble() ?? 0.5,
+      instantJellyExponent:
+          (json['instantJellyExponent'] as num?)?.toDouble() ?? 1.0,
       incubateDurationsSec: {
         for (final e
             in ((json['incubateDurationsSec'] as Map<String, dynamic>?) ??
@@ -529,6 +562,12 @@ class PetConfig {
       gachaJellyCost: (json['gachaJellyCost'] as num?)?.toInt() ?? 0,
       gachaVariantChance: (json['gachaVariantChance'] as num?)?.toDouble() ?? 0,
       gachaEpicPity: (json['gachaEpicPity'] as num?)?.toInt() ?? 0,
+      gachaPotentialWeights: {
+        if (json['gachaPotentialWeights'] is Map)
+          for (final e in (json['gachaPotentialWeights'] as Map).entries)
+            if (int.tryParse(e.key as String) != null)
+              int.parse(e.key as String): (e.value as num).toDouble(),
+      },
       gachaWeights: {
         if (json['gachaWeights'] is Map)
           for (final e in (json['gachaWeights'] as Map).entries)

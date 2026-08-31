@@ -2390,7 +2390,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gachaDesc =>
-      'Uncommon+ guaranteed · 10x variant odds · pity builds up';
+      'Potential 3★+ guaranteed (wild never gives 5★) · 10x variant odds';
 
   @override
   String gachaPityLeft(int n) {

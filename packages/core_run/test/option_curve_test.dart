@@ -47,11 +47,7 @@ void main() {
     final mean = vals.reduce((a, b) => a + b) / vals.length;
     final top5 = vals[(vals.length * 0.95).floor()];
     expect(mean, lessThan(0.40), reason: '균등이면 0.5 근처다');
-    expect(
-      top5 / mean,
-      greaterThan(2.5),
-      reason: '상위 롤이 평균보다 확실히 좋아야 계속 돌린다',
-    );
+    expect(top5 / mean, greaterThan(2.5), reason: '상위 롤이 평균보다 확실히 좋아야 계속 돌린다');
   });
 
   test('값은 항상 범위 안이다', () {

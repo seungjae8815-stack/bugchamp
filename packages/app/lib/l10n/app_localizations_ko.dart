@@ -2343,7 +2343,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get gachaTitle => '곤충 알 뽑기';
 
   @override
-  String get gachaDesc => '고급 이상 보장 · 이색 확률 10배 · 뽑을수록 천장이 쌓여요';
+  String get gachaDesc => '포텐셜 3★ 이상 보장 (야생은 5★이 안 나와요) · 이색 확률 10배';
 
   @override
   String gachaPityLeft(int n) {

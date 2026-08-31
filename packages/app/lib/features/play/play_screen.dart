@@ -954,40 +954,40 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final pityDue =
         _config.rarePityKills > 0 && save.rarePity >= _config.rarePityKills;
     if (pityDue || _rng.nextDouble() < bugChance) {
-      // 한정 종(라이브옵스)은 기간 안에만 드롭 풀에 들어간다. 기간이 끝나도
-      // 종 정의는 남는다 — 이미 잡은 개체·도감이 계속 동작해야 한다.
+      // 등급 가중치 + 한정 종(기간)을 한 함수가 처리한다 — 앱과 서버가
+      // **같은 함수**를 써야 "화면에선 전설인데 정산은 일반"이 안 생긴다.
       final now = _clock.now().toUtc();
-      final pool = [
-        for (final x in _data.allSpecies)
-          if (x.availableAt(now)) x,
-      ];
-      final rarePool = [
-        for (final x in pool)
-          if (x.grade.index >= Grade.rare.index) x,
-      ];
-      final sp = pityDue && rarePool.isNotEmpty
-          ? rarePool[_rng.nextInt(rarePool.length)]
-          : pool[_rng.nextInt(pool.length)];
-      if (!save.acceptsGrade(sp.grade)) {
-        released = sp.grade; // 재료로 환산(아래 mats 에서 합산)
-        releasedSpeciesId = sp.id; // 스킨 계열 보너스 판정용
-      } else if (!save.storageFull) {
-        // 채집함이 가득 차면 개체 롤 자체를 건너뛴다 — 굴려서 버리면
-        // 연출만 뜨고 실제로는 안 들어와 버그로 보인다.
-        final potential =
-            1 + (_rng.nextDouble() * _rng.nextDouble() * 4).floor();
-        bug = IndividualBug.roll(
-          id: _uuid.v4(),
-          species: sp,
-          rng: _rng,
-          potential: potential.clamp(1, 5),
-          variantChance: _data.petConfig?.variantWildChance ?? 0,
-        ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
-        // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
-        if (sp.grade.index >= Grade.rare.index) {
-          AudioService.instance.sfxRare();
-        } else {
-          AudioService.instance.sfxCatch();
+      final sp = pickDropSpecies(
+        _rng,
+        _data.allSpecies,
+        weights: _config.dropGradeWeights,
+        now: now,
+        minGrade: pityDue ? Grade.rare : null,
+      );
+      // 종을 못 고르면(전부 기간 밖 등) **곤충만** 건너뛴다 — 여기서
+      // return 하면 골드·재료·경험치까지 통째로 날아간다.
+      if (sp != null) {
+        if (!save.acceptsGrade(sp.grade)) {
+          released = sp.grade; // 재료로 환산(아래 mats 에서 합산)
+          releasedSpeciesId = sp.id; // 스킨 계열 보너스 판정용
+        } else if (!save.storageFull) {
+          // 채집함이 가득 차면 개체 롤 자체를 건너뛴다 — 굴려서 버리면
+          // 연출만 뜨고 실제로는 안 들어와 버그로 보인다.
+          final potential =
+              1 + (_rng.nextDouble() * _rng.nextDouble() * 4).floor();
+          bug = IndividualBug.roll(
+            id: _uuid.v4(),
+            species: sp,
+            rng: _rng,
+            potential: potential.clamp(1, 5),
+            variantChance: _data.petConfig?.variantWildChance ?? 0,
+          ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
+          // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
+          if (sp.grade.index >= Grade.rare.index) {
+            AudioService.instance.sfxRare();
+          } else {
+            AudioService.instance.sfxCatch();
+          }
         }
       }
     }

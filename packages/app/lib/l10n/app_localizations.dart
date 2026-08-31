@@ -4267,7 +4267,7 @@ abstract class AppLocalizations {
   /// No description provided for @gachaDesc.
   ///
   /// In en, this message translates to:
-  /// **'Uncommon+ guaranteed · 10x variant odds · pity builds up'**
+  /// **'Potential 3★+ guaranteed (wild never gives 5★) · 10x variant odds'**
   String get gachaDesc;
 
   /// No description provided for @gachaPityLeft.

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -266,7 +267,16 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
     // 필터가 너무 세서 아무것도 안 남으면 씬이 텅 빈다 — 그때는 필터를 무시하고
     // 전체에서 세운다(잡히면 방생되지만, 빈 화면보다는 낫다).
     final src = pool.isEmpty ? all : pool;
-    final sp = src.isEmpty ? null : src[_rng.nextInt(src.length)];
+    // 등급 가중치를 여기도 건다 — 안 걸면 채집망만 전 종 균등이라
+    // **전설이 20종 중 2종 = 10%** 로 쏟아진다(방치 드롭과 규칙이 갈린다).
+    final sp = pickDropSpecies(
+      _rng,
+      src,
+      weights:
+          ref.read(gameDataProvider).value?.runConfig?.dropGradeWeights ??
+          const {},
+      now: ref.read(clockProvider).now().toUtc(),
+    );
     return _Wild(
       speciesId: sp?.id ?? '',
       bug: _Wanderer(seed: seed * 37 + _rng.nextInt(9999)),

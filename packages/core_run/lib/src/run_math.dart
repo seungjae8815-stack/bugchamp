@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart'
-    show kMaxOfflineAccrual, kMaxMonsterHp;
+    show kMaxOfflineAccrual, kMaxMonsterHp, Species, Grade;
 import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
@@ -531,4 +531,48 @@ OfflineReport computeOfflineReward({
     xp: (clears * xpPer).round(),
     accrued: capped,
   );
+}
+
+/// 드롭할 종을 고른다 — **등급 가중치**를 먼저 굴리고 그 등급 안에서 균등.
+///
+/// ⚠️ 예전에는 종 20개에서 그냥 균등하게 뽑았다. 그러면 등급 희소성이 오직
+/// **종 개수 비율**에서만 나온다: 전설이 2종이라 전설이 드롭의 10% 였고,
+/// 활동 중이면 13분에 한 마리씩 나왔다(2026-08-31 지적 "너무 쉽게 나온다").
+/// 등급을 올리는 의미가 없고, 뽑기로 팔 것도 없어진다.
+///
+/// [weights] 가 비어 있으면 예전처럼 전 종 균등(구버전 데이터 호환).
+/// [now] 가 주어지면 한정 종(기간)을 거른다.
+Species? pickDropSpecies(
+  math.Random rng,
+  List<Species> all, {
+  Map<Grade, double> weights = const {},
+  DateTime? now,
+  Grade? minGrade,
+}) {
+  final pool = [
+    for (final s in all)
+      if ((now == null || s.availableAt(now)) &&
+          (minGrade == null || s.grade.index >= minGrade.index))
+        s,
+  ];
+  if (pool.isEmpty) return null;
+  if (weights.isEmpty) return pool[rng.nextInt(pool.length)];
+
+  // 풀에 실제로 있는 등급만 후보로 — 없는 등급에 가중치가 걸리면 그만큼
+  // 아무것도 안 나오는 구간이 생긴다(한정 종이 빠졌을 때 특히).
+  final byGrade = <Grade, List<Species>>{};
+  for (final s in pool) {
+    (byGrade[s.grade] ??= []).add(s);
+  }
+  var total = 0.0;
+  for (final g in byGrade.keys) {
+    total += weights[g] ?? 0;
+  }
+  if (total <= 0) return pool[rng.nextInt(pool.length)];
+  var pick = rng.nextDouble() * total;
+  for (final e in byGrade.entries) {
+    pick -= weights[e.key] ?? 0;
+    if (pick <= 0) return e.value[rng.nextInt(e.value.length)];
+  }
+  return pool[rng.nextInt(pool.length)];
 }

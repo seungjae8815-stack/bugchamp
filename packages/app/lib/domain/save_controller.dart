@@ -1800,11 +1800,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
       id: const Uuid().v4(),
       species: sp,
       rng: rng,
-      // 야생과 같은 분포 — 뽑기가 포텐셜까지 좋으면 야생 드롭이 죽는다.
-      potential: (1 + (rng.nextDouble() * rng.nextDouble() * 4).floor()).clamp(
-        1,
-        5,
-      ),
+      // ⚠️ **여기가 뽑기의 존재 이유다.** 야생 공식은 5성이 수학적으로
+      // 불가능하고 4성도 3.4% 뿐이다(1 + floor(r*r*4) → 1~4). 곤충 자체는
+      // 1분에 한 마리씩 나오므로 등급만 팔아서는 젤리 값이 안 나온다 —
+      // 야생에 없는 것(5성)을 파는 게 유일하게 성립하는 축이다.
+      // 표가 비어 있으면 야생 공식으로 떨어진다(구버전 데이터 호환).
+      potential: () {
+        final p = cfg.rollGachaPotential(rng.nextDouble());
+        return p > 0
+            ? p.clamp(1, 5)
+            : (1 + (rng.nextDouble() * rng.nextDouble() * 4).floor()).clamp(
+                1,
+                5,
+              );
+      }(),
       variantChance: cfg.gachaVariantChance,
     ).copyWith(stage: LifeStage.egg, stageSince: now);
 

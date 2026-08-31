@@ -71,10 +71,10 @@
  "incubatorExpandJelly": 100,
  "incubateDurationsSec": {
   "common": 300,
-  "uncommon": 600,
-  "rare": 1200,
-  "epic": 2400,
-  "legendary": 4800
+  "uncommon": 1200,
+  "rare": 5400,
+  "epic": 18000,
+  "legendary": 57600
  },
  "injuryDurationsSec": {
   "common": 300,
@@ -84,14 +84,15 @@
   "legendary": 4800
  },
  "injuryJellyPerMinute": 0.5,
+ "_timeComment": "등급별 시간(2026-08-31 재정비). 예전엔 전설 산란 160분/부화 80분이라 '등급이 올라가도 기다림이 비슷'했고, 젤리로 당길 이유가 없었다. 이제 등급마다 약 3~4배씩 가팔라진다 — 전설 산란 36시간·부화 16시간(쿨다운 x2 포함하면 한 쌍이 다음 산란까지 72시간). ⚠️ 이 타이머는 즉시완료 젤리와 한 세트다. 정비례 비용(구식 0.5/분)이면 전설 산란이 1,080젤리라 아무도 안 쓴다 — instantJellyExponent 0.58 로 긴 대기일수록 분당 단가가 싸지게 한다. 지금 값: 전설 산란 즉시 약 86젤리 · 부화 약 54젤리(합 140), 일반은 각 5·3젤리. 타이머를 만질 때 이 지수와 실제 젤리 값을 **반드시 함께** 확인할 것.",
  "breedingDurationsSec": {
-  "common": 600,
-  "uncommon": 1200,
-  "rare": 2400,
-  "epic": 4800,
-  "legendary": 9600
+  "common": 900,
+  "uncommon": 3600,
+  "rare": 14400,
+  "epic": 43200,
+  "legendary": 129600
  },
- "breedingJellyPerMinute": 0.5,
+ "breedingJellyPerMinute": 1.0,
  "breedingSlotsInitial": 1,
  "breedingSlotsMax": 5,
  "breedingExpandJelly": 100,
@@ -104,11 +105,22 @@
  "breedingPotUpChance": 0.1,
  "breedingPotDownChance": 0.3,
  "_breedingInheritComment": "짝짓기 상속(2026-08-15). 예전엔 오행·기질이 균등 재추첨이라 짝짓기 자식이 야생 드롭과 구분되지 않았다 — 오행 상생 순서가 편성 전략의 핵심인데(§2.3) 원하는 속성을 노릴 수단이 없어 짝짓기를 돌릴 이유가 없었다. 부모가 같은 오행이면 사실상 확정 상속되므로 '계통을 만든다'가 성립한다. 0 으로 두면 예전 동작(전부 랜덤).",
- "_gachaComment": "곤충 알 뽑기(2026-08-31, 사장님 확정). 젤리 30 = 알 1개. 고급 이상 보장(일반 없음), 이색 1/30(야생의 10배), 10회마다 영웅+ 천장(gachaPity 는 세이브). 스탯 직접 판매가 아니라 드롭의 시간 절약 — PvP 는 서버 검증·적응형 체력이 완충(§2.6 각주). 젤리 수도꼭지 규칙과의 관계: 이것은 수도꼭지가 아니라 **배수구**다 — 소비처가 늘수록 젤리 IAP 가 팔린다.",
+ "_gachaComment": "곤충 알 뽑기(2026-08-31 확정 · 같은 날 재설계). 젤리 30 = 알 1개. ⚠️ **파는 것은 등급이 아니라 포텐셜이다.** 곤충 자체는 안 귀하다 — 시간당 1500처치 x 드롭 3% = 1분에 1마리, 전설조차 13분에 1마리(전설이 20종 중 2종). 젤리 30 은 신규 유저 이틀치 수입인데 이틀치를 내고 13분어치를 주면 계산이 안 맞는다. 진짜 희소한 건 포텐셜이다: 야생 공식 1+floor(r*r*4) 는 **5성이 수학적으로 불가능**하고 4성도 3.4%뿐이며, 5성은 짝짓기 상승으로만 닿는다. 그래서 뽑기는 3성 이상을 보장하고 5성을 8% 준다 — 야생에 없는 것을 파는 유일한 축이다. 등급도 야생보다 나아야 한다(야생 = 종 개수 비율: 일반30 고급25 희귀20 영웅15 전설10). 전설 17% = 야생의 1.7배. ⚠️ 여기를 야생보다 낮게 두면 **돈 내고 확률이 나빠지는** 상품이 된다 — 초안이 실제로 그랬다(전설 3%).",
  "gachaJellyCost": 30,
  "gachaVariantChance": 0.033,
  "gachaEpicPity": 10,
- "gachaWeights": { "uncommon": 0.55, "rare": 0.3, "epic": 0.12, "legendary": 0.03 },
+ "gachaWeights": {
+  "uncommon": 0.25,
+  "rare": 0.3,
+  "epic": 0.28,
+  "legendary": 0.17
+ },
+ "_gachaPotentialComment": "뽑기 포텐셜 분포. 합이 1이어야 한다. 야생은 5성이 0% 이므로 이 표가 뽑기의 존재 이유다.",
+ "gachaPotentialWeights": {
+  "3": 0.62,
+  "4": 0.3,
+  "5": 0.08
+ },
  "_variantComment": "이색 개체(2026-08-31, §2.1). 순수 외형 — 스탯 없음(적응형 기준·위조 문제를 아예 안 만든다). 야생 1/300, 짝짓기 1/60, 부모가 이색이면 1/12 — 짝짓기가 이색을 노리는 길이고, 얻은 뒤엔 계통을 잇는 게 목표가 된다(Bugtopia 식). 걸리면 무지개/알비노 반반.",
  "variantWildChance": 0.0033,
  "variantBreedChance": 0.0167,
@@ -149,7 +161,8 @@
   "legendary": 32
  },
  "incubateAdSkipRatio": 0.2,
- "incubateJellyPerMinute": 0.5,
+ "incubateJellyPerMinute": 1.0,
+ "instantJellyExponent": 0.58,
  "expandCostGrowth": 1.12,
  "_expandComment": "확장은 살수록 비싸진다(expandCostGrowth^이미 늘린 횟수, 눈금 올림). 세 확장 모두 **첫 개방 100젤리**로 맞췄다 — 첫 칸이 싸면 \"그냥 사는 것\"이 되어 젤리를 쓰는 결정이 아니게 된다(2026-08-18 사장님 결정). ⚠️ 채집함 상한 100칸은 §2.1 의 세이브 크기 방어선이다. 2026-07 장애(3만 마리 = 13.6MB 세이브 → 업로드마다 DB 타임아웃)가 여기서 나왔다. 올릴 땐 반드시 세이브 크기·업로드 트래픽을 함께 검토한다. 무한 소비처는 확장이 아니라 **교환소**(run_config.json → exchange)가 맡는다 — 확장은 끝이 있어도 되지만 교환소는 끝이 없다.",
  "expandCostRound": [
