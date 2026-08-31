@@ -45,7 +45,7 @@ class PvpProfile {
 
   /// 캐릭터 레벨([RankingKind.level] 정렬 기준).
   ///
-  /// ⚠️ 여기 들어가는 값은 **누적 레벨**(`SaveGame.totalLevel`)이다. 회차
+  /// ⚠️ 여기 들어가는 값은 **역대 최고 레벨**(`SaveGame.rankLevel`)이다. 회차
   /// 전환이 레벨을 1 로 되돌리므로(§2.4), 현재 레벨로 줄을 세우면 회차를
   /// 넘긴 유저가 꼴찌가 된다 — 진행도 랭킹에서 회차를 1차 키로 둔 것과 같은 문제.
   final int level;

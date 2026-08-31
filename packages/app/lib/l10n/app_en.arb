@@ -265,7 +265,7 @@
     }
   },
   "rankKindTrophies": "Trophies",
-  "rankKindLevel": "Total level",
+  "rankKindLevel": "Level",
   "rankKindStage": "Progress",
   "leaderboardMyRank": "My rank #{n}",
   "@leaderboardMyRank": {
@@ -1240,7 +1240,7 @@
       }
     }
   },
-  "tierNextBody": "Stage, level and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all stay.\nThe levels you have earned stay on the leaderboard.\nMonsters become far more powerful.",
+  "tierNextBody": "Stage, level and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all stay.\nYour level ranking keeps your best record.\nMonsters become far more powerful.",
   "tierNextGo": "Enter",
   "tierStayHere": "Stay a while",
   "tierAllClear": "You conquered every difficulty. A true entomologist!",

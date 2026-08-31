@@ -199,9 +199,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       id: 'me',
       nickname: save.nickname,
       trophies: save.pvpTrophies,
-      // 랭킹은 **누적 레벨**로 줄을 세운다 — 회차 전환으로 레벨이 1 로
-      // 돌아가도 지금까지 올린 것이 사라지지 않아야 한다.
-      level: save.totalLevel,
+      // 랭킹은 **역대 최고 레벨**로 줄을 세운다 — 회차 전환으로 레벨이 1 로
+      // 돌아가도 올려 둔 자리에서 내려가지 않는다.
+      level: save.rankLevel,
       stageNumber: save.stageNumber,
       difficultyTier: save.difficultyTier,
     );
