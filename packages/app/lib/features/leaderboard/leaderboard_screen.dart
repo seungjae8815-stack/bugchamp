@@ -102,12 +102,20 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     return '${pos.world}-${pos.inWorld.toString().padLeft(3, '0')}';
   }
 
+  /// 레벨 표기 — 스테이지와 같은 이유로 **세 자리로 채운다**
+  /// (`Lv100` · `Lv080` · `Lv001`). 자릿수가 줄마다 다르면 어떻게 정렬해도
+  /// 삐뚤어 보인다(2026-09-01 지적 — 진행도에서 이미 같은 결론).
+  /// 네 자리를 넘으면 채우지 않고 그대로 쓴다.
+  String _scoreLevelDigits(PvpProfile p) =>
+      'Lv${p.level.toString().padLeft(3, '0')}';
+
   String _scoreText(AppLocalizations l, PvpProfile p, RankingKind k) =>
       switch (k) {
         RankingKind.trophies => formatCompact(p.trophies),
         // 레벨도 회차를 앞에 붙인다 — `쉬움 Lv70` 과 `보통 Lv1` 이 한눈에
         // 구분돼야 "왜 저 사람이 위에 있지"가 설명된다.
-        RankingKind.level => '${tierName(l, p.difficultyTier)} Lv${p.level}',
+        RankingKind.level =>
+          '${tierName(l, p.difficultyTier)} ${_scoreLevelDigits(p)}',
         // 숫자만 보여주면 어느 구간인지 모른다 — `보통 5-32` 로 보여준다.
         RankingKind.stage => progressLabel(
           l,
@@ -139,7 +147,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         // 진행도(`쉬움 6-100`)는 자릿수가 줄마다 달라 한 덩어리로는 어떻게
         // 정렬해도 삐뚤어 보인다(2026-09-01 실기 지적 2회). 두 열로 가른다 —
         // 난이도 이름은 왼쪽 열, 숫자는 오른쪽 열에 **같은 폭 숫자**로.
-        if (k == RankingKind.stage) ...[
+        if (k == RankingKind.stage || k == RankingKind.level) ...[
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -158,7 +166,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           SizedBox(
             width: 44,
             child: Text(
-              _scoreStageDigits(p),
+              k == RankingKind.stage
+                  ? _scoreStageDigits(p)
+                  : _scoreLevelDigits(p),
               textAlign: TextAlign.right,
               maxLines: 1,
               style: TextStyle(
