@@ -537,6 +537,60 @@ void main() {
           'app_en.arb 에 @키의 placeholders 를 문자열 순서대로 적어 고정한다.',
     );
   });
+
+  /// 등급·포텐셜 가중치는 **모르는 키를 조용히 버린다**(`Grade.fromKeyOrNull`).
+  /// 오타 하나면 그 등급이 확률표에서 사라지는데, 로딩은 통과하고 화면도
+  /// 멀쩡하다 — 종 패시브 stat 키와 똑같은 함정이라 같은 방식으로 막는다.
+  group('확률표 키 유효성', () {
+    Map<String, dynamic> read(String f) =>
+        jsonDecode(File('assets/data/$f').readAsStringSync())
+            as Map<String, dynamic>;
+
+    test('dropGradeWeights — 5등급이 빠짐없이, 값이 전부 양수', () {
+      final w = read('run_config.json')['dropGradeWeights'] as Map;
+      for (final g in Grade.values) {
+        expect(w.containsKey(g.key), isTrue, reason: '${g.key} 누락');
+        expect((w[g.key] as num) > 0, isTrue, reason: '${g.key} 가 0 이하');
+      }
+      expect(w.length, Grade.values.length, reason: '모르는 키가 섞였다');
+    });
+
+    test('가챠 등급 확률이 야생보다 좋다 — 돈 내고 나빠지면 안 된다', () {
+      final wild = (read('run_config.json')['dropGradeWeights'] as Map).map(
+        (k, v) => MapEntry(k as String, (v as num).toDouble()),
+      );
+      final gacha = (read('pets.json')['gachaWeights'] as Map).map(
+        (k, v) => MapEntry(k as String, (v as num).toDouble()),
+      );
+      double share(Map<String, double> m, String k) {
+        final total = m.values.fold<double>(0, (a, b) => a + b);
+        return total <= 0 ? 0 : (m[k] ?? 0) / total;
+      }
+
+      for (final g in [Grade.rare, Grade.epic, Grade.legendary]) {
+        expect(
+          share(gacha, g.key),
+          greaterThan(share(wild, g.key)),
+          reason: '${g.key}: 뽑기가 야생보다 나쁘다',
+        );
+      }
+      // 일반은 뽑기에 아예 없어야 한다(일반이 나오는 뽑기는 젤리 모욕).
+      expect(gacha.containsKey(Grade.common.key), isFalse);
+    });
+
+    test('가챠 포텐셜 표 — 합이 1, 야생에 없는 5성이 들어 있다', () {
+      final p = (read('pets.json')['gachaPotentialWeights'] as Map).map(
+        (k, v) => MapEntry(int.parse(k as String), (v as num).toDouble()),
+      );
+      final total = p.values.fold<double>(0, (a, b) => a + b);
+      expect(total, closeTo(1.0, 0.001));
+      expect(p.keys.every((k) => k >= 1 && k <= 5), isTrue);
+      // 야생 공식(1+floor(r*r*4))은 5성이 불가능하다 — 그게 뽑기의 존재 이유다.
+      expect((p[5] ?? 0) > 0, isTrue, reason: '5성이 없으면 뽑기가 팔 게 없다');
+      // 3성 미만은 넣지 않는다(뽑기는 3성 이상 보장).
+      expect(p.keys.every((k) => k >= 3), isTrue);
+    });
+  });
 }
 
 bool _sameOrder(List<String> a, List<String> b) {

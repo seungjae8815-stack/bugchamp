@@ -597,6 +597,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String durationH(int h) {
+    return '$h시간';
+  }
+
+  @override
   String durationM(int m) {
     return '$m분';
   }

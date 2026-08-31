@@ -367,6 +367,14 @@
   "offlineGoldLabel": "Gold",
   "offlineXpLabel": "XP",
   "durationHm": "{h}h {m}m",
+  "durationH": "{h}h",
+  "@durationH": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
   "@durationHm": {
     "placeholders": {
       "h": {

@@ -596,6 +596,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String durationH(int h) {
+    return '$h時間';
+  }
+
+  @override
   String durationM(int m) {
     return '$m分';
   }

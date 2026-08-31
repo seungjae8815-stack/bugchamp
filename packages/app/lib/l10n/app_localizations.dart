@@ -1168,6 +1168,12 @@ abstract class AppLocalizations {
   /// **'{h}h {m}m'**
   String durationHm(int h, int m);
 
+  /// No description provided for @durationH.
+  ///
+  /// In en, this message translates to:
+  /// **'{h}h'**
+  String durationH(int h);
+
   /// No description provided for @durationM.
   ///
   /// In en, this message translates to:

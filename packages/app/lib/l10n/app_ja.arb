@@ -178,6 +178,14 @@
   "offlineGoldLabel": "ゴールド",
   "offlineXpLabel": "経験値",
   "durationHm": "{h}時間 {m}分",
+  "durationH": "{h}時間",
+  "@durationH": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
   "durationM": "{m}分",
   "durationS": "{s}秒",
   "upAttack": "採集力",

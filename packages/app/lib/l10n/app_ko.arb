@@ -185,6 +185,14 @@
   "offlineGoldLabel": "골드",
   "offlineXpLabel": "경험치",
   "durationHm": "{h}시간 {m}분",
+  "durationH": "{h}시간",
+  "@durationH": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
   "durationM": "{m}분",
   "durationS": "{s}초",
   "upAttack": "채집력",

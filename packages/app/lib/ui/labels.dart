@@ -330,6 +330,11 @@ String passiveText(AppLocalizations l, SpeciesPassive p) {
 /// 화면마다 제 나름대로 포맷하면 같은 "3분"이 어디선 "180초"로 뜬다.
 String remainLabel(AppLocalizations l, Duration d) {
   final s = d.inSeconds <= 0 ? 0 : d.inSeconds;
+  // 10시간을 넘으면 **분을 뗀다**. 등급별 타이머가 가팔라지면서(전설 산란
+  // 36시간) `36시간 0분` 처럼 길어졌는데, 부화기 캡슐은 화면을 5칸으로 나눈
+  // 좁은 칸이라 그대로 넘친다(2026-08 부화기 줄바꿈 사고와 같은 자리).
+  // 그 길이에서는 분 단위가 정보 가치도 없다.
+  if (s >= 36000) return l.durationH(s ~/ 3600);
   if (s >= 3600) return l.durationHm(s ~/ 3600, (s % 3600) ~/ 60);
   if (s >= 60) return l.durationM(s ~/ 60);
   return l.durationS(s);

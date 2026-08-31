@@ -609,6 +609,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String durationH(int h) {
+    return '${h}h';
+  }
+
+  @override
   String durationM(int m) {
     return '${m}m';
   }
