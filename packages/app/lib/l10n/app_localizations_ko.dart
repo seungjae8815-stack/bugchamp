@@ -764,10 +764,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dexComplete => '이 종은 완료했어요';
 
   @override
+  String get dexCompleteShort => '수집완료';
+
+  @override
   String get dexConqueredYes => '완료';
 
   @override
   String get dexConqueredNo => '아직';
+
+  @override
+  String dexConquerNeed(int need, int now) {
+    return '$need레벨 필요 (지금 $now)';
+  }
 
   @override
   String get dexMaxSize => '최대 크기';

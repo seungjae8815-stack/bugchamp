@@ -763,10 +763,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dexComplete => 'この種はコンプリート';
 
   @override
+  String get dexCompleteShort => 'コンプ';
+
+  @override
   String get dexConqueredYes => '完了';
 
   @override
   String get dexConqueredNo => 'まだ';
+
+  @override
+  String dexConquerNeed(int need, int now) {
+    return 'Lv$need必要 (現在$now)';
+  }
 
   @override
   String get dexMaxSize => '最大サイズ';

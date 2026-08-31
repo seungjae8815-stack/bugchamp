@@ -508,8 +508,20 @@
   "dexConquered": "Raised",
   "dexVariant": "Variant",
   "dexComplete": "This species is complete",
+  "dexCompleteShort": "Complete",
   "dexConqueredYes": "Done",
   "dexConqueredNo": "Not yet",
+  "dexConquerNeed": "Needs Lv{need} (now {now})",
+  "@dexConquerNeed": {
+    "placeholders": {
+      "need": {
+        "type": "int"
+      },
+      "now": {
+        "type": "int"
+      }
+    }
+  },
   "dexMaxSize": "Largest",
   "dexMaxPotential": "Best potential",
   "dexNotFound": "You haven't met this bug yet. Go find one!",

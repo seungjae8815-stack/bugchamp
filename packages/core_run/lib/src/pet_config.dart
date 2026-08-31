@@ -433,8 +433,10 @@ class PetConfig {
   int breakthroughMatCost(int tier) => _atOrLast(breakthroughMaterial, tier);
 
   /// 남은 시간 비례 즉시완료 젤리 비용.
+  /// 돌파도 산란·부화와 **같은 곡선**을 쓴다(계수 × 남은분^지수).
+  /// 정비례로 두면 돌파 시간을 올린 만큼 비용이 수백 젤리로 튄다.
   int breakthroughJelly(Duration remaining) =>
-      roundJellyCost(remaining.inSeconds / 60 * breakthroughJellyPerMinute);
+      _instantJelly(remaining, breakthroughJellyPerMinute);
 
   int incubateDuration(Grade g) => incubateDurationsSec[g] ?? 300;
 

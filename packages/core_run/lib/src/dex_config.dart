@@ -23,10 +23,17 @@ class DexConfig {
     this.attackPerConquer = 0,
     this.hpPerConquer = 0,
     this.rewardPerDiscover = 0,
+    this.conquerLevel = 1,
   });
 
   /// 발견(한 번이라도 보유) 마일스톤.
   final List<DexMilestone> discoverMilestones;
+
+  /// 정복으로 인정할 **수련 레벨**(2026-08-31). 1 이면 예전 기준(성충만).
+  ///
+  /// 예전엔 부화만 시키면 자동으로 성충이 돼서, 도감 정복이 "알 20개를
+  /// 부화했다"의 다른 이름이었다. 수련은 골드가 실제로 드는 행동이다.
+  final int conquerLevel;
 
   /// 정복(성충까지 키움) 마일스톤.
   final List<DexMilestone> conquerMilestones;
@@ -83,6 +90,7 @@ class DexConfig {
     attackPerConquer: (json['attackPerConquer'] as num?)?.toDouble() ?? 0,
     hpPerConquer: (json['hpPerConquer'] as num?)?.toDouble() ?? 0,
     rewardPerDiscover: (json['rewardPerDiscover'] as num?)?.toDouble() ?? 0,
+    conquerLevel: (json['conquerLevel'] as num?)?.toInt() ?? 1,
   );
 
   static List<DexMilestone> _milestones(Object? raw, String prefix) {

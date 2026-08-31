@@ -681,8 +681,18 @@ class _GachaPickerState extends State<_GachaPicker>
                           ]
                         : null,
                   ),
+                  clipBehavior: Clip.antiAlias,
                   alignment: Alignment.center,
-                  child: const Text('🥚', style: TextStyle(fontSize: 34)),
+                  // 카드 뒷면 그림이 있으면 그걸 쓰고, 없으면 이모지 폴백(§6).
+                  child: Image.asset(
+                    'assets/images/ui/gacha_card_back.webp',
+                    fit: BoxFit.cover,
+                    width: 82,
+                    height: 120,
+                    filterQuality: FilterQuality.medium,
+                    errorBuilder: (_, _, _) =>
+                        const Text('🥚', style: TextStyle(fontSize: 34)),
+                  ),
                 ),
               ),
             ),

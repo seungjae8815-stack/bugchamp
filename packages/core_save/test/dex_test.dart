@@ -108,11 +108,23 @@ void main() {
     test('발견·정복 수와 역대 최대 크기', () {
       final s = withDex(const {
         'a': DexEntry(maxSizeMm: 30, maxPotential: 2),
-        'b': DexEntry(maxSizeMm: 88, maxPotential: 4, raisedToAdult: true),
-        'c': DexEntry(maxSizeMm: 51, maxPotential: 1, raisedToAdult: true),
+        'b': DexEntry(
+          maxSizeMm: 88,
+          maxPotential: 4,
+          raisedToAdult: true,
+          maxLevel: 12,
+        ),
+        // 기준을 올리기 **전에** 만든 기록 — lv 는 0 이지만 인정된다.
+        // 안 그러면 업데이트 순간 기존 유저의 도감 보너스가 사라진다.
+        'c': DexEntry(
+          maxSizeMm: 51,
+          maxPotential: 1,
+          raisedToAdult: true,
+          legacyConquered: true,
+        ),
       });
       expect(s.dexDiscovered, 3);
-      expect(s.dexConquered, 2);
+      expect(s.dexConqueredWith(10), 2);
       expect(s.dexBestSizeMm, 88);
     });
 
@@ -242,6 +254,34 @@ void main() {
       final out = cfg.apply(base, 0, 0);
       expect(out.attack, 7);
       expect(out.maxHp, 9);
+    });
+  });
+
+  group('정복 기준(수련 레벨)', () {
+    test('새 기록은 수련 레벨이 기준에 닿아야 정복이다', () {
+      const grown = DexEntry(raisedToAdult: true, maxLevel: 10);
+      const young = DexEntry(raisedToAdult: true, maxLevel: 3);
+      expect(grown.conquered(10), isTrue);
+      expect(young.conquered(10), isFalse);
+      // 성충이 아니면 레벨이 높아도 정복이 아니다(있을 수 없는 조합이지만
+      // 세이브 편집으로는 만들 수 있다).
+      expect(const DexEntry(maxLevel: 99).conquered(10), isFalse);
+    });
+
+    test('lv 키가 없는 옛 기록은 정복으로 인정하고, 저장하면 g 로 굳는다', () {
+      final old = DexEntry.fromJson({'s': 40.0, 'a': true});
+      expect(old.legacyConquered, isTrue);
+      expect(old.conquered(10), isTrue);
+      final back = DexEntry.fromJson(old.toJson());
+      expect(back.legacyConquered, isTrue, reason: 'g 플래그로 굳어야 한다');
+    });
+
+    test('lv 를 항상 쓴다 — 생략하면 새 기록이 옛 기록으로 오해된다', () {
+      const fresh = DexEntry(raisedToAdult: true);
+      expect(fresh.toJson().containsKey('lv'), isTrue);
+      final back = DexEntry.fromJson(fresh.toJson());
+      expect(back.legacyConquered, isFalse);
+      expect(back.conquered(10), isFalse, reason: '공짜 정복이 되면 안 된다');
     });
   });
 }

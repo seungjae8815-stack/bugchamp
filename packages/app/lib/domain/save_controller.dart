@@ -2255,7 +2255,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     final claimable = cfg.claimable(
       s.dexDiscovered,
-      s.dexConquered,
+      s.dexConqueredWith(cfg.conquerLevel),
       s.claimedDex,
     );
     if (claimable.isEmpty) return const [];

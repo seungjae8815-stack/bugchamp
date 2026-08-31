@@ -241,8 +241,20 @@
   "dexConquered": "制覇",
   "dexVariant": "色違い",
   "dexComplete": "この種はコンプリート",
+  "dexCompleteShort": "コンプ",
   "dexConqueredYes": "完了",
   "dexConqueredNo": "まだ",
+  "dexConquerNeed": "Lv{need}必要 (現在{now})",
+  "@dexConquerNeed": {
+    "placeholders": {
+      "need": {
+        "type": "int"
+      },
+      "now": {
+        "type": "int"
+      }
+    }
+  },
   "dexMaxSize": "最大サイズ",
   "dexMaxPotential": "最高ポテンシャル",
   "dexNotFound": "まだ出会っていない虫です。採集で探してみましょう！",

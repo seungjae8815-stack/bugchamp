@@ -1462,6 +1462,12 @@ abstract class AppLocalizations {
   /// **'This species is complete'**
   String get dexComplete;
 
+  /// No description provided for @dexCompleteShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get dexCompleteShort;
+
   /// No description provided for @dexConqueredYes.
   ///
   /// In en, this message translates to:
@@ -1473,6 +1479,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not yet'**
   String get dexConqueredNo;
+
+  /// No description provided for @dexConquerNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Lv{need} (now {now})'**
+  String dexConquerNeed(int need, int now);
 
   /// No description provided for @dexMaxSize.
   ///

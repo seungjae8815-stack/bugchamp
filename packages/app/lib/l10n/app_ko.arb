@@ -248,8 +248,20 @@
   "dexConquered": "정복",
   "dexVariant": "이색",
   "dexComplete": "이 종은 완료했어요",
+  "dexCompleteShort": "수집완료",
   "dexConqueredYes": "완료",
   "dexConqueredNo": "아직",
+  "dexConquerNeed": "{need}레벨 필요 (지금 {now})",
+  "@dexConquerNeed": {
+    "placeholders": {
+      "need": {
+        "type": "int"
+      },
+      "now": {
+        "type": "int"
+      }
+    }
+  },
   "dexMaxSize": "최대 크기",
   "dexMaxPotential": "최고 포텐셜",
   "dexNotFound": "아직 만나지 못한 곤충이에요. 채집으로 찾아보세요!",

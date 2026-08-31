@@ -717,7 +717,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     s = applySpeciesPassives(s, _speciesPassives(save));
     final dex = _data.dexConfig;
     if (dex != null) {
-      s = dex.apply(s, save.dexDiscovered, save.dexConquered);
+      s = dex.apply(
+        s,
+        save.dexDiscovered,
+        save.dexConqueredWith(dex.conquerLevel),
+      );
     }
     return applyBuffs(
       s,

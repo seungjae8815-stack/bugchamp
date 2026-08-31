@@ -54,11 +54,7 @@ void main() {
           {'k': 'timeWarp_v2', 'v': 99.0},
         ],
       },
-      'halo_v2': {
-        's': 'halo_v2',
-        't': 9,
-        'o': const [],
-      },
+      'halo_v2': {'s': 'halo_v2', 't': 9, 'o': const []},
     };
     json['autoForgeOptions'] = ['attack', 'timeWarp_v2'];
 

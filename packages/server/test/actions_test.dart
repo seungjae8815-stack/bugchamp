@@ -1270,10 +1270,11 @@ void main() {
 
   group('돌파(breakthrough)', () {
     final cfg = _Config();
-    // pets.json: tierCaps[0]=10, breakthroughGold[0]=20000, material[0]=100.
-    const capL0 = 10;
-    const gold0 = 20000;
-    const mat0 = 100;
+    // pets.json 실값을 그대로 따라간다 — 상수를 박아 두면 밸런스를 조일
+    // 때마다 이 테스트가 "기능이 깨진 것처럼" 실패한다(2026-08-31 돌파 상향).
+    final capL0 = cfg.pet.levelCap(0);
+    final gold0 = cfg.pet.breakthroughGoldCost(0);
+    final mat0 = cfg.pet.breakthroughMatCost(0);
 
     IndividualBug bug(
       String id, {

@@ -270,6 +270,8 @@ class DexEntry {
     this.maxPotential = 0,
     this.raisedToAdult = false,
     this.variantFound = false,
+    this.maxLevel = 0,
+    this.legacyConquered = false,
   });
 
   /// 이 종으로 잡은 **역대 최대 크기**(mm). 곤충 게임의 원초적 자랑거리다.
@@ -280,6 +282,21 @@ class DexEntry {
 
   /// 성충까지 키운 적이 있는가(= '정복'). 도감 보상의 기준.
   final bool raisedToAdult;
+
+  /// 이 종으로 도달한 **최고 수련 레벨**. 정복 판정의 기준(2026-08-31).
+  ///
+  /// 예전 기준(성충까지 키움)은 부화만 시키면 자동으로 달성돼서, 도감이
+  /// "알 20개를 부화했다"의 다른 이름이었다. 수련은 골드가 실제로 드는
+  /// 행동이라 여기가 걸려야 도감이 목표가 된다.
+  final int maxLevel;
+
+  /// 기준을 올리기 **전에** 이미 정복해 둔 종인가.
+  ///
+  /// ⚠️ 이게 없으면 업데이트하는 순간 기존 유저의 정복이 전부 0 이 되고,
+  /// 도감 영구 보너스가 같이 사라져 **"내 공격력이 줄었다"** 가 된다.
+  /// 세이브 스키마를 올리지 않고(구버전 앱이 새 세이브를 못 읽는다) 파싱에서
+  /// 유도한다 — `a:true` 인데 `lv` 키가 아예 없으면 옛 기록이다.
+  final bool legacyConquered;
 
   /// 이색(무지개·알비노)을 얻은 적이 있는가 — 곤충이 사라져도 남는 기록.
   /// 이게 없으면 이색을 분해한 순간 흔적이 사라져, 제일 긴 수집 목표가
@@ -292,18 +309,31 @@ class DexEntry {
     int potential = 0,
     bool adult = false,
     bool variant = false,
+    int level = 0,
   }) => DexEntry(
     maxSizeMm: sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
     maxPotential: potential > maxPotential ? potential : maxPotential,
     raisedToAdult: raisedToAdult || adult,
     variantFound: variantFound || variant,
+    maxLevel: level > maxLevel ? level : maxLevel,
+    legacyConquered: legacyConquered,
   );
+
+  /// 정복 판정 — [needLevel] 이상 키웠거나, 기준을 올리기 전에 이미 정복했거나.
+  bool conquered(int needLevel) =>
+      legacyConquered || (raisedToAdult && maxLevel >= needLevel);
 
   factory DexEntry.fromJson(Map<String, dynamic> json) => DexEntry(
     maxSizeMm: (json['s'] as num?)?.toDouble() ?? 0,
     maxPotential: (json['p'] as num?)?.toInt() ?? 0,
     raisedToAdult: json['a'] as bool? ?? false,
     variantFound: json['v'] as bool? ?? false,
+    maxLevel: (json['lv'] as num?)?.toInt() ?? 0,
+    // `lv` 키가 아예 없는 정복 기록 = 기준을 올리기 전의 것 → 인정한다.
+    // (한 번 저장되면 `g:true` 로 굳는다 — `lv` 는 이제 항상 쓰기 때문에
+    //  새로 만든 기록이 여기에 잘못 걸리는 일은 없다.)
+    legacyConquered:
+        json['g'] as bool? ?? (json['a'] == true && !json.containsKey('lv')),
   );
 
   /// 키를 한 글자로 줄인다 — 20종 × 3필드라 작지만, 세이브는 60초마다
@@ -313,6 +343,10 @@ class DexEntry {
     if (maxPotential > 0) 'p': maxPotential,
     if (raisedToAdult) 'a': true,
     if (variantFound) 'v': true,
+    // ⚠️ `lv` 는 0 이어도 **항상 쓴다.** 생략하면 다시 읽을 때 "옛 기록"으로
+    // 오해돼(위 legacyConquered) 정복이 공짜로 인정된다.
+    'lv': maxLevel,
+    if (legacyConquered) 'g': true,
   };
 }
 
@@ -335,11 +369,13 @@ Map<String, DexEntry> updatedDex({
       potential: b.potential,
       adult: stageOf(b) == LifeStage.adult,
       variant: b.variant != BugVariant.none,
+      level: b.level,
     );
     if (after.maxSizeMm == before.maxSizeMm &&
         after.maxPotential == before.maxPotential &&
         after.raisedToAdult == before.raisedToAdult &&
         after.variantFound == before.variantFound &&
+        after.maxLevel == before.maxLevel &&
         current.containsKey(b.speciesId)) {
       continue; // 이미 기록된 것보다 나을 게 없다
     }
@@ -573,8 +609,10 @@ class SaveGame {
   /// 도감에 등록된(=한 번이라도 보유한) 종 수.
   int get dexDiscovered => dex.length;
 
-  /// 성충까지 키운 종 수(= '정복'). 도감 보상의 기준.
-  int get dexConquered => dex.values.where((e) => e.raisedToAdult).length;
+  /// 정복한 종 수. [needLevel] 은 `dex.json → conquerLevel`(설정을 모르므로
+  /// 호출부가 넘긴다). 기준을 올리기 전 기록은 그대로 인정된다.
+  int dexConqueredWith(int needLevel) =>
+      dex.values.where((e) => e.conquered(needLevel)).length;
 
   /// 이색을 얻어 본 종 수. 수집 게임의 **제일 긴 목표**라 도감 머리에 띄운다.
   int get dexVariants => dex.values.where((e) => e.variantFound).length;

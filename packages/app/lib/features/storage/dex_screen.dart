@@ -36,7 +36,11 @@ class DexScreen extends ConsumerWidget {
 
     final claimable = cfg == null
         ? const <DexMilestone>[]
-        : cfg.claimable(save.dexDiscovered, save.dexConquered, save.claimedDex);
+        : cfg.claimable(
+            save.dexDiscovered,
+            save.dexConqueredWith(cfg.conquerLevel),
+            save.claimedDex,
+          );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.dexTitle)),
@@ -79,7 +83,7 @@ class DexScreen extends ConsumerWidget {
     List<DexMilestone> claimable,
   ) {
     final discovered = save.dexDiscovered;
-    final conquered = save.dexConquered;
+    final conquered = save.dexConqueredWith(cfg?.conquerLevel ?? 1);
     return Container(
       color: const Color(0xFF15200D),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -187,6 +191,13 @@ class DexScreen extends ConsumerWidget {
     ],
   );
 
+  /// 정복 기준 수련 레벨(`dex.json → conquerLevel`). 설정을 못 읽으면 1(옛 기준).
+  int _needLevel(BuildContext context) =>
+      ProviderScope.containerOf(
+        context,
+      ).read(gameDataProvider).value?.dexConfig?.conquerLevel ??
+      1;
+
   /// 종 칸 하나. 미발견은 **실루엣**으로 — 뭐가 남았는지는 보이되 정체는 감춘다.
   Widget _tile(
     BuildContext context,
@@ -196,7 +207,7 @@ class DexScreen extends ConsumerWidget {
     DexEntry? entry,
   ) {
     final found = entry != null;
-    final conquered = entry?.raisedToAdult ?? false;
+    final conquered = entry?.conquered(_needLevel(context)) ?? false;
     final variant = entry?.variantFound ?? false;
     // 한 종을 **끝까지** 모았는가 = 발견 + 정복 + 이색. 하나씩 채워 나가는
     // 느낌을 주려면 "완료"라는 종착점이 눈에 보여야 한다(2026-08-31 지시).
@@ -287,18 +298,17 @@ class DexScreen extends ConsumerWidget {
             SizedBox(
               height: 14,
               child: complete
-                  ? const Row(
+                  ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('👑', style: TextStyle(fontSize: 11)),
-                        SizedBox(width: 2),
+                        const Text('👑', style: TextStyle(fontSize: 11)),
+                        const SizedBox(width: 2),
                         Text(
-                          'COMPLETE',
-                          style: TextStyle(
+                          l.dexCompleteShort,
+                          style: const TextStyle(
                             color: Color(0xFFCE7AE0),
-                            fontSize: 8,
+                            fontSize: 8.5,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 0.3,
                           ),
                         ),
                       ],
@@ -331,6 +341,7 @@ class DexScreen extends ConsumerWidget {
     DexEntry? entry,
   ) {
     final found = entry != null;
+    final need = _needLevel(context);
     showGameDialog<void>(
       context,
       title: found ? sp.name.resolve(locale) : '???',
@@ -367,15 +378,19 @@ class DexScreen extends ConsumerWidget {
             const SizedBox(height: 10),
             _row(l.dexMaxSize, formatSizeMm(entry.maxSizeMm)),
             _row(l.dexMaxPotential, '${entry.maxPotential}★'),
+            // 미달이면 **얼마나 남았는지** 보여준다 — "아니오"만 뜨면 무엇을
+            // 해야 하는지 알 수 없다(수련 레벨이 기준이라는 걸 화면에서 처음 본다).
             _row(
               l.dexConquered,
-              entry.raisedToAdult ? l.dexConqueredYes : l.dexConqueredNo,
+              entry.conquered(need)
+                  ? l.dexConqueredYes
+                  : l.dexConquerNeed(need, entry.maxLevel),
             ),
             _row(
               l.dexVariant,
               entry.variantFound ? l.dexConqueredYes : l.dexConqueredNo,
             ),
-            if (entry.raisedToAdult && entry.variantFound) ...[
+            if (entry.conquered(need) && entry.variantFound) ...[
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,

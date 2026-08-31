@@ -42,8 +42,7 @@ void main() {
   test('addCurrency 는 더하는 순간의 오버플로도 막는다', () {
     // 상한 근처 + 큰 보상 → int 로 더했으면 음수가 됐을 조합.
     expect(addCurrency(kMaxCurrency, 5e18), kMaxCurrency);
-    expect(addCurrency(9000000000000000000, 9000000000000000000),
-        kMaxCurrency);
+    expect(addCurrency(9000000000000000000, 9000000000000000000), kMaxCurrency);
     // 평범한 덧셈은 그대로.
     expect(addCurrency(1000, 234), 1234);
     // 음수 보상(차감)도 0 아래로 안 내려간다.

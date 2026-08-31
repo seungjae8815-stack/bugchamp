@@ -196,6 +196,7 @@ void main() {
 
     PetStat stat(BugTrait t) => (
       grade: Grade.common,
+      variant: BugVariant.none,
       sizeMult: 1.0,
       potential: 0,
       enhanceTotal: 0,

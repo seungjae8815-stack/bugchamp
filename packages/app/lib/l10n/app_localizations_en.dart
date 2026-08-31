@@ -778,10 +778,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dexComplete => 'This species is complete';
 
   @override
+  String get dexCompleteShort => 'Complete';
+
+  @override
   String get dexConqueredYes => 'Done';
 
   @override
   String get dexConqueredNo => 'Not yet';
+
+  @override
+  String dexConquerNeed(int need, int now) {
+    return 'Needs Lv$need (now $now)';
+  }
 
   @override
   String get dexMaxSize => 'Largest';
