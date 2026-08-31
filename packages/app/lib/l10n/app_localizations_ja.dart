@@ -2335,6 +2335,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mailClaimAll => 'すべて受け取る';
 
   @override
+  String get gachaTitle => '虫のタマゴガチャ';
+
+  @override
+  String get gachaDesc => '高級以上確定 · 色違い確率10倍 · 天井が貯まります';
+
+  @override
+  String gachaPityLeft(int n) {
+    return 'あと$n回で英雄以上確定';
+  }
+
+  @override
+  String gachaDraw(int n) {
+    return 'ゼリー$n個で引く';
+  }
+
+  @override
+  String get gachaResultTitle => 'タマゴから出たのは…';
+
+  @override
+  String get gachaResultHint => 'タマゴは孵化器で育てましょう';
+
+  @override
+  String get gachaStorageFull => 'コレクションがいっぱいです';
+
+  @override
+  String get gachaOff => '現在利用できません';
+
+  @override
   String get giftCodeTitle => 'ギフトコード';
 
   @override

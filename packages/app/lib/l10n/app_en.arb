@@ -1447,6 +1447,28 @@
   "mailNoticeSection": "From the team",
   "mailClaim": "Claim",
   "mailClaimAll": "Claim all",
+  "gachaTitle": "Egg Draw",
+  "gachaDesc": "Uncommon+ guaranteed · 10x variant odds · pity builds up",
+  "gachaPityLeft": "Epic+ guaranteed within {n} draws",
+  "@gachaPityLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gachaDraw": "Draw for {n} jelly",
+  "@gachaDraw": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gachaResultTitle": "From the egg...",
+  "gachaResultHint": "Put the egg in an incubator to raise it",
+  "gachaStorageFull": "Storage is full",
+  "gachaOff": "Not available right now",
   "giftCodeTitle": "Gift code",
   "giftCodeHint": "Enter a code from an event or announcement.",
   "giftCodeField": "CODE",

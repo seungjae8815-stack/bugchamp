@@ -742,6 +742,28 @@
   "mailNoticeSection": "운영자 우편",
   "mailClaim": "받기",
   "mailClaimAll": "모두 받기",
+  "gachaTitle": "곤충 알 뽑기",
+  "gachaDesc": "고급 이상 보장 · 이색 확률 10배 · 뽑을수록 천장이 쌓여요",
+  "gachaPityLeft": "{n}회 안에 영웅 이상 확정",
+  "@gachaPityLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gachaDraw": "젤리 {n}개로 뽑기",
+  "@gachaDraw": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gachaResultTitle": "알에서 나온 것은…",
+  "gachaResultHint": "알은 부화기에 넣어 키워요",
+  "gachaStorageFull": "채집함이 가득 찼어요",
+  "gachaOff": "지금은 이용할 수 없어요",
   "giftCodeTitle": "선물코드",
   "giftCodeHint": "이벤트·공지에서 받은 코드를 입력하세요.",
   "giftCodeField": "코드 입력",

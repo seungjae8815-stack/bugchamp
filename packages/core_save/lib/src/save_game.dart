@@ -473,6 +473,7 @@ class SaveGame {
     this.eventBadges = const {},
     this.difficultyTier = 0,
     this.rarePity = 0,
+    this.gachaPity = 0,
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
   });
@@ -659,6 +660,9 @@ class SaveGame {
   /// `RunConfig.rarePityKills` 에 닿으면 다음 드롭이 희귀 이상으로 보장된다.
   /// 순수 RNG 만 두면 운 나쁜 유저는 전설을 영영 못 본다(수집 게임의 최악).
   final int rarePity;
+
+  /// 알 뽑기 천장 — 영웅+ 없이 뽑은 횟수(`PetConfig.gachaEpicPity`).
+  final int gachaPity;
 
   /// [bugId] 가 [now] 기준으로 아직 출전 피로 중인가.
   bool eventOnFatigue(String bugId, DateTime now) {
@@ -1048,6 +1052,7 @@ class SaveGame {
     Set<String>? eventBadges,
     int? difficultyTier,
     int? rarePity,
+    int? gachaPity,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
     Set<String>? claimedLeagues,
@@ -1122,6 +1127,7 @@ class SaveGame {
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
     rarePity: rarePity ?? this.rarePity,
+    gachaPity: gachaPity ?? this.gachaPity,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
@@ -1291,6 +1297,7 @@ class SaveGame {
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
     rarePity: (json['rarePity'] as num?)?.toInt() ?? 0,
+    gachaPity: (json['gachaPity'] as num?)?.toInt() ?? 0,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
         (json['injured'] as Map<String, dynamic>?)?.map(
@@ -1439,6 +1446,7 @@ class SaveGame {
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
     if (rarePity > 0) 'rarePity': rarePity,
+    if (gachaPity > 0) 'gachaPity': gachaPity,
     'pvpTrophies': pvpTrophies,
     'injured': {
       for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),

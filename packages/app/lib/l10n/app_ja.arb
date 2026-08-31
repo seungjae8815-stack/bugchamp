@@ -707,6 +707,28 @@
   "mailNoticeSection": "運営からのメール",
   "mailClaim": "受け取る",
   "mailClaimAll": "すべて受け取る",
+  "gachaTitle": "虫のタマゴガチャ",
+  "gachaDesc": "高級以上確定 · 色違い確率10倍 · 天井が貯まります",
+  "gachaPityLeft": "あと{n}回で英雄以上確定",
+  "@gachaPityLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gachaDraw": "ゼリー{n}個で引く",
+  "@gachaDraw": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gachaResultTitle": "タマゴから出たのは…",
+  "gachaResultHint": "タマゴは孵化器で育てましょう",
+  "gachaStorageFull": "コレクションがいっぱいです",
+  "gachaOff": "現在利用できません",
   "giftCodeTitle": "ギフトコード",
   "giftCodeHint": "イベント・お知らせで配布されたコードを入力してください。",
   "giftCodeField": "コード入力",

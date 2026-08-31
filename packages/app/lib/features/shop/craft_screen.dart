@@ -12,6 +12,8 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
+import '../../domain/audio_service.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 
@@ -73,16 +75,17 @@ class _StoreSection extends ConsumerWidget {
 
     return ListView.separated(
       padding: const EdgeInsets.all(12),
-      // +1 = 교환소(맨 위), +1 = 복원 줄, 개발자 모드면 배너까지.
-      itemCount: products.length + 2 + (devMode ? 1 : 0),
+      // +1 = 알 뽑기, +1 = 교환소, +1 = 복원 줄, 개발자 모드면 배너까지.
+      itemCount: products.length + 3 + (devMode ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         if (devMode && i == 0) return _devBanner(l);
         final j = devMode ? i - 1 : i;
-        // 교환소를 상품보다 **위**에 둔다 — 젤리를 이미 가진 사람이 쓸 곳을
-        // 먼저 보여줘야, 젤리가 남아서 안 사는 상태를 끊는다.
-        if (j == 0) return const _ExchangeCard();
-        final idx = j - 1;
+        // 젤리 소비처(뽑기·교환소)를 상품보다 **위**에 둔다 — 젤리를 이미
+        // 가진 사람이 쓸 곳을 먼저 봐야, 젤리가 남아서 안 사는 상태가 끊긴다.
+        if (j == 0) return const _GachaCard();
+        if (j == 1) return const _ExchangeCard();
+        final idx = j - 2;
         if (idx == products.length) return _restoreRow(context, ref, l);
         return _ProductCard(
           product: products[idx],
@@ -356,6 +359,164 @@ class _ProductCard extends ConsumerWidget {
       PurchaseOutcome.failed => l.storeFailed,
     };
     showCenterToast(ctx, msg);
+  }
+}
+
+/// 곤충 알 뽑기(가챠) — 젤리의 제1 소비처(§2.6 각주, 2026-08-31 확정).
+///
+/// 파는 것: 고급+ 보장 · 이색 1/30 · 10회 천장(영웅+). **스탯이 아니라
+/// 드롭의 시간 절약**이다 — 야생과 같은 포텐셜 분포를 쓴다.
+class _GachaCard extends ConsumerWidget {
+  const _GachaCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).requireValue.petConfig;
+    if (cfg == null || cfg.gachaJellyCost <= 0) return const SizedBox.shrink();
+    final have = save.materialCount(MaterialKind.jelly);
+    final enough = have >= cfg.gachaJellyCost;
+    final toPity = cfg.gachaEpicPity <= 0
+        ? 0
+        : cfg.gachaEpicPity - save.gachaPity;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x66E9A6FF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🥚', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(
+                l.gachaTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
+              ),
+              const Spacer(),
+              jellyIcon(size: 15),
+              const SizedBox(width: 3),
+              Text(
+                formatCompact(have),
+                style: const TextStyle(
+                  color: Color(0xFFBFE3FF),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l.gachaDesc,
+            style: const TextStyle(
+              color: Color(0xB3FFFFFF),
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+          ),
+          if (toPity > 0) ...[
+            const SizedBox(height: 4),
+            Text(
+              l.gachaPityLeft(toPity),
+              style: const TextStyle(
+                color: Color(0xFFE9A6FF),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: enough ? () => _draw(context, ref, l) : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF8E4DA8),
+              ),
+              child: Text(
+                l.gachaDraw(cfg.gachaJellyCost),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _draw(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l,
+  ) async {
+    final r = await ref.read(saveControllerProvider.notifier).gachaDraw();
+    if (!context.mounted) return;
+    if (r.bug == null) {
+      showCenterToast(context, switch (r.error) {
+        'storage_full' => l.gachaStorageFull,
+        'no_jelly' => l.notEnoughJelly,
+        _ => l.gachaOff,
+      });
+      return;
+    }
+    final bug = r.bug!;
+    final data = ref.read(gameDataProvider).requireValue;
+    final sp = data.speciesById[bug.speciesId];
+    if (sp == null) return;
+    final locale = Localizations.localeOf(context).languageCode;
+    AudioService.instance.sfxRare();
+    await showGameDialog<void>(
+      context,
+      title: l.gachaResultTitle,
+      icon: Icons.egg_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          bugStageImage(
+            bug.speciesId,
+            LifeStage.adult,
+            size: 96,
+            fallback: bugAvatar(sp, size: 84),
+            skin: bug.variant == BugVariant.none
+                ? null
+                : SkinView(bug.variant.key),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            sp.name.resolve(locale),
+            style: TextStyle(
+              color: gradeColor(sp.grade),
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '${gradeLabel(l, sp.grade)} · ${bug.potential}★'
+            '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
+            style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 12.5),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l.gachaResultHint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+          ),
+        ],
+      ),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    );
   }
 }
 

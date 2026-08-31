@@ -2340,6 +2340,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get mailClaimAll => '모두 받기';
 
   @override
+  String get gachaTitle => '곤충 알 뽑기';
+
+  @override
+  String get gachaDesc => '고급 이상 보장 · 이색 확률 10배 · 뽑을수록 천장이 쌓여요';
+
+  @override
+  String gachaPityLeft(int n) {
+    return '$n회 안에 영웅 이상 확정';
+  }
+
+  @override
+  String gachaDraw(int n) {
+    return '젤리 $n개로 뽑기';
+  }
+
+  @override
+  String get gachaResultTitle => '알에서 나온 것은…';
+
+  @override
+  String get gachaResultHint => '알은 부화기에 넣어 키워요';
+
+  @override
+  String get gachaStorageFull => '채집함이 가득 찼어요';
+
+  @override
+  String get gachaOff => '지금은 이용할 수 없어요';
+
+  @override
   String get giftCodeTitle => '선물코드';
 
   @override

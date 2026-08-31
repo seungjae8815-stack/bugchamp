@@ -4258,6 +4258,54 @@ abstract class AppLocalizations {
   /// **'Claim all'**
   String get mailClaimAll;
 
+  /// No description provided for @gachaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg Draw'**
+  String get gachaTitle;
+
+  /// No description provided for @gachaDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncommon+ guaranteed · 10x variant odds · pity builds up'**
+  String get gachaDesc;
+
+  /// No description provided for @gachaPityLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic+ guaranteed within {n} draws'**
+  String gachaPityLeft(int n);
+
+  /// No description provided for @gachaDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw for {n} jelly'**
+  String gachaDraw(int n);
+
+  /// No description provided for @gachaResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'From the egg...'**
+  String get gachaResultTitle;
+
+  /// No description provided for @gachaResultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Put the egg in an incubator to raise it'**
+  String get gachaResultHint;
+
+  /// No description provided for @gachaStorageFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage is full'**
+  String get gachaStorageFull;
+
+  /// No description provided for @gachaOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available right now'**
+  String get gachaOff;
+
   /// No description provided for @giftCodeTitle.
   ///
   /// In en, this message translates to:

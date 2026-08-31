@@ -1744,6 +1744,83 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 곤충 알 뽑기(가챠, §2.6 각주) — 젤리를 태워 알 하나를 뽑는다.
+  ///
+  /// - 고급 이상 보장(일반 없음) — 일반이 나오는 뽑기는 젤리 모욕이다.
+  /// - 이색 확률 1/30(야생의 10배) — 뽑기의 값어치 축.
+  /// - [PetConfig.gachaEpicPity] 회마다 영웅+ 천장(세이브 `gachaPity`).
+  /// - 스탯 직접 판매가 아니다: 드롭이 주는 것과 같은 물건을 **더 빨리** 줄
+  ///   뿐이고, PvP 는 서버 편성 검증·적응형 체력이 이미 완충한다.
+  ///
+  /// 실패 사유를 돌려준다 — "안 된다"만 뜨면 유저는 버그로 읽는다.
+  Future<({IndividualBug? bug, String? error})> gachaDraw() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.petConfig;
+    if (cfg == null || cfg.gachaJellyCost <= 0) {
+      return (bug: null, error: 'off');
+    }
+    final s = state.requireValue;
+    if (s.storageFull) return (bug: null, error: 'storage_full');
+    if (s.materialCount(MaterialKind.jelly) < cfg.gachaJellyCost) {
+      return (bug: null, error: 'no_jelly');
+    }
+    final now = ref.read(clockProvider).now().toUtc();
+    final rng = math.Random();
+    final pityDue =
+        cfg.gachaEpicPity > 0 && s.gachaPity >= cfg.gachaEpicPity - 1;
+
+    // 등급: 가중치 롤. 천장이면 영웅 미만을 잘라낸다.
+    var weights = Map<Grade, double>.from(cfg.gachaWeights);
+    weights.remove(Grade.common); // 어떤 설정이 와도 일반은 안 나온다
+    if (pityDue) {
+      weights = {
+        for (final e in weights.entries)
+          if (e.key.index >= Grade.epic.index) e.key: e.value,
+      };
+    }
+    if (weights.isEmpty) return (bug: null, error: 'off');
+    final total = weights.values.fold<double>(0, (a, b) => a + b);
+    var pick = rng.nextDouble() * total;
+    var grade = weights.keys.last;
+    for (final e in weights.entries) {
+      pick -= e.value;
+      if (pick <= 0) {
+        grade = e.key;
+        break;
+      }
+    }
+    // 그 등급의 종 중에서(한정 종은 기간 안에만).
+    final pool = [
+      for (final sp in data.allSpecies)
+        if (sp.grade == grade && sp.availableAt(now)) sp,
+    ];
+    if (pool.isEmpty) return (bug: null, error: 'off');
+    final sp = pool[rng.nextInt(pool.length)];
+    final bug = IndividualBug.roll(
+      id: const Uuid().v4(),
+      species: sp,
+      rng: rng,
+      // 야생과 같은 분포 — 뽑기가 포텐셜까지 좋으면 야생 드롭이 죽는다.
+      potential: (1 + (rng.nextDouble() * rng.nextDouble() * 4).floor()).clamp(
+        1,
+        5,
+      ),
+      variantChance: cfg.gachaVariantChance,
+    ).copyWith(stage: LifeStage.egg, stageSince: now);
+
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    mats[MaterialKind.jelly] =
+        (mats[MaterialKind.jelly] ?? 0) - cfg.gachaJellyCost;
+    await _commit(
+      s.copyWith(
+        materials: mats,
+        bugs: [...s.bugs, bug],
+        gachaPity: grade.index >= Grade.epic.index ? 0 : s.gachaPity + 1,
+      ),
+    );
+    return (bug: bug, error: null);
+  }
+
   /// 부화 완료된 알을 수령 → 유충으로. 미완료/없음이면 false.
   Future<bool> collectIncubated(String bugId) async {
     final viaServer = await _viaServer(

@@ -2386,6 +2386,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailClaimAll => 'Claim all';
 
   @override
+  String get gachaTitle => 'Egg Draw';
+
+  @override
+  String get gachaDesc =>
+      'Uncommon+ guaranteed · 10x variant odds · pity builds up';
+
+  @override
+  String gachaPityLeft(int n) {
+    return 'Epic+ guaranteed within $n draws';
+  }
+
+  @override
+  String gachaDraw(int n) {
+    return 'Draw for $n jelly';
+  }
+
+  @override
+  String get gachaResultTitle => 'From the egg...';
+
+  @override
+  String get gachaResultHint => 'Put the egg in an incubator to raise it';
+
+  @override
+  String get gachaStorageFull => 'Storage is full';
+
+  @override
+  String get gachaOff => 'Not available right now';
+
+  @override
   String get giftCodeTitle => 'Gift code';
 
   @override

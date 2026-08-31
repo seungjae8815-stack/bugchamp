@@ -74,6 +74,10 @@ class PetConfig {
     this.breedingPotDownChance = 0.30,
     this.breedingElementInherit = 0,
     this.variantWildChance = 0,
+    this.gachaJellyCost = 0,
+    this.gachaVariantChance = 0,
+    this.gachaEpicPity = 0,
+    this.gachaWeights = const {},
     this.variantBreedChance = 0,
     this.variantBreedParentChance = 0,
     this.breedingTemperamentInherit = 0,
@@ -231,6 +235,22 @@ class PetConfig {
 
   /// 이색(무지개·알비노) 확률 — 야생 드롭.
   final double variantWildChance;
+
+  /// 곤충 알 뽑기(가챠, 2026-08-31) — 젤리 비용. 0 = 기능 꺼짐.
+  ///
+  /// §2.6 각주: 스탯을 직접 팔지 않는다는 원칙은 유지된다 — 뽑기는 게임이
+  /// 이미 주는 것(드롭)을 **더 빨리** 얻는 시간 절약이고, PvP 는 서버 편성
+  /// 검증·적응형 체력이 이미 완충한다.
+  final int gachaJellyCost;
+
+  /// 뽑기의 이색 확률 — 야생(1/300)보다 훨씬 높다(1/30). 뽑기의 값어치 축.
+  final double gachaVariantChance;
+
+  /// N회 뽑을 때마다 영웅+ 보장(천장). 0 = 천장 없음.
+  final int gachaEpicPity;
+
+  /// 등급 가중치(합이 1일 필요는 없다 — 비율로 쓴다).
+  final Map<Grade, double> gachaWeights;
 
   /// 이색 확률 — 짝짓기 자식(부모 중 이색 없음).
   /// 야생보다 높게 둔다 — 짝짓기가 "이색을 노리는 길"이어야 돌릴 이유가 생긴다.
@@ -506,6 +526,18 @@ class PetConfig {
       breedingElementInherit:
           (json['breedingElementInherit'] as num?)?.toDouble() ?? 0,
       variantWildChance: (json['variantWildChance'] as num?)?.toDouble() ?? 0,
+      gachaJellyCost: (json['gachaJellyCost'] as num?)?.toInt() ?? 0,
+      gachaVariantChance: (json['gachaVariantChance'] as num?)?.toDouble() ?? 0,
+      gachaEpicPity: (json['gachaEpicPity'] as num?)?.toInt() ?? 0,
+      gachaWeights: {
+        if (json['gachaWeights'] is Map)
+          for (final e in (json['gachaWeights'] as Map).entries)
+            // 모르는 등급 키는 조용히 버리지 않고 로딩에서 걸리게 두고 싶지만,
+            // 구버전 호환이 우선이다 — data_test 가 키 유효성을 잡는다.
+            if (Grade.fromKeyOrNull(e.key as String) != null)
+              Grade.fromKeyOrNull(e.key as String)!: (e.value as num)
+                  .toDouble(),
+      },
       variantBreedChance: (json['variantBreedChance'] as num?)?.toDouble() ?? 0,
       variantBreedParentChance:
           (json['variantBreedParentChance'] as num?)?.toDouble() ?? 0,
