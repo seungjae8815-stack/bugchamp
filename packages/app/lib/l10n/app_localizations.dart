@@ -949,7 +949,7 @@ abstract class AppLocalizations {
   /// No description provided for @rankKindLevel.
   ///
   /// In en, this message translates to:
-  /// **'Level'**
+  /// **'Total level'**
   String get rankKindLevel;
 
   /// No description provided for @rankKindStage.
@@ -3601,7 +3601,7 @@ abstract class AppLocalizations {
   /// No description provided for @tierNextBody.
   ///
   /// In en, this message translates to:
-  /// **'Your stage and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all remain.\nMonsters grow far stronger.'**
+  /// **'Stage, level and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all stay.\nThe levels you have earned stay on the leaderboard.\nMonsters become far more powerful.'**
   String get tierNextBody;
 
   /// No description provided for @tierNextGo.

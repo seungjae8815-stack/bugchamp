@@ -366,6 +366,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
         upgradeLevels: const {},
         level: 1,
         xp: 0,
+        // ⚠️ 레벨은 되돌리되 **랭킹에서는 잃지 않는다.** 지금까지 올린 레벨을
+        // 누적에 옮겨 둔다 — 안 그러면 회차를 넘긴 유저가 레벨 랭킹 꼴찌가 된다.
+        careerLevel: s.careerLevel + s.level,
       ),
     );
   }

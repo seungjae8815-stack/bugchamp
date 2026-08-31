@@ -468,7 +468,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rankKindTrophies => '트로피';
 
   @override
-  String get rankKindLevel => '레벨';
+  String get rankKindLevel => '누적 레벨';
 
   @override
   String get rankKindStage => '진행도';
@@ -1980,7 +1980,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      '스테이지와 능력치 강화가 처음으로 돌아갑니다.\n곤충·장비·도감·재화는 그대로 남아요.\n몬스터가 더욱 더 강력해집니다.';
+      '스테이지·레벨·능력치 강화가 처음으로 돌아갑니다.\n곤충·장비·도감·재화는 그대로 남아요.\n지금까지 올린 레벨은 랭킹에 그대로 남습니다.\n몬스터가 훨씬 더 강력해집니다.';
 
   @override
   String get tierNextGo => '진입하기';

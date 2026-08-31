@@ -480,7 +480,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankKindTrophies => 'Trophies';
 
   @override
-  String get rankKindLevel => 'Level';
+  String get rankKindLevel => 'Total level';
 
   @override
   String get rankKindStage => 'Progress';
@@ -2011,7 +2011,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'Your stage and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all remain.\nMonsters grow far stronger.';
+      'Stage, level and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all stay.\nThe levels you have earned stay on the leaderboard.\nMonsters become far more powerful.';
 
   @override
   String get tierNextGo => 'Enter';

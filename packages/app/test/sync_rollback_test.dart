@@ -211,4 +211,32 @@ void main() {
     );
     expect(c.read(saveControllerProvider).requireValue.difficultyTier, 1);
   });
+
+  /// 회차 전환은 레벨을 1 로 되돌린다 — 그런데 레벨 랭킹이 현재 레벨만 보면
+  /// **회차를 넘긴 유저가 꼴찌**가 된다. 누적으로 세는지 고정한다.
+  test('회차를 넘겨도 누적 레벨은 잃지 않는다', () async {
+    final local = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(stageNumber: 1000, level: 80);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+    await c.read(saveControllerProvider.future);
+    expect(c.read(saveControllerProvider).requireValue.totalLevel, 80);
+
+    await c.read(saveControllerProvider.notifier).enterNextTier();
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.level, 1, reason: '현재 레벨은 되돌아간다');
+    expect(after.careerLevel, 80);
+    expect(after.totalLevel, 81, reason: '랭킹 점수는 줄지 않는다');
+
+    // 두 번째 전환도 누적된다.
+    await c.read(saveControllerProvider.notifier).enterNextTier();
+    expect(c.read(saveControllerProvider).requireValue.careerLevel, 81);
+  });
 }

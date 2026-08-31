@@ -509,6 +509,7 @@ class SaveGame {
     this.eventBadges = const {},
     this.difficultyTier = 0,
     this.rarePity = 0,
+    this.careerLevel = 0,
     this.gachaPity = 0,
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
@@ -696,6 +697,16 @@ class SaveGame {
   /// 구버전 앱이 이 세이브를 읽으면 0(쉬움)으로 보고 스테이지만 이어간다 —
   /// 진행이 깨지지는 않는다.
   final int difficultyTier;
+
+  /// **이전 회차들에서 도달한 레벨의 합**(2026-08-31).
+  ///
+  /// 회차 전환은 캐릭터 레벨을 1 로 되돌린다(§2.4 프레스티지) — 그래야 레벨업이
+  /// 다시 성장 축이 된다. 그런데 레벨 랭킹이 현재 레벨만 보면 **회차를 넘긴
+  /// 유저가 꼴찌**가 된다. 진행도 랭킹에서 회차를 1차 키로 둔 것과 같은 문제라
+  /// 같은 방식으로 푼다: 랭킹은 `careerLevel + level`(누적)로 줄을 세운다.
+  int get totalLevel => careerLevel + level;
+
+  final int careerLevel;
 
   /// 희귀 천장(§2.1, 2026-08-31) — 희귀 이상을 얻지 못한 채 처치한 몬스터 수.
   /// `RunConfig.rarePityKills` 에 닿으면 다음 드롭이 희귀 이상으로 보장된다.
@@ -1093,6 +1104,7 @@ class SaveGame {
     Set<String>? eventBadges,
     int? difficultyTier,
     int? rarePity,
+    int? careerLevel,
     int? gachaPity,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
@@ -1168,6 +1180,7 @@ class SaveGame {
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
     rarePity: rarePity ?? this.rarePity,
+    careerLevel: careerLevel ?? this.careerLevel,
     gachaPity: gachaPity ?? this.gachaPity,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
@@ -1338,6 +1351,7 @@ class SaveGame {
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
     rarePity: (json['rarePity'] as num?)?.toInt() ?? 0,
+    careerLevel: (json['careerLevel'] as num?)?.toInt() ?? 0,
     gachaPity: (json['gachaPity'] as num?)?.toInt() ?? 0,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
@@ -1487,6 +1501,7 @@ class SaveGame {
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
     if (rarePity > 0) 'rarePity': rarePity,
+    if (careerLevel > 0) 'careerLevel': careerLevel,
     if (gachaPity > 0) 'gachaPity': gachaPity,
     'pvpTrophies': pvpTrophies,
     'injured': {

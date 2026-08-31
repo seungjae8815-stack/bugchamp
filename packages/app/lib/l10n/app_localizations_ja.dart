@@ -467,7 +467,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rankKindTrophies => 'トロフィー';
 
   @override
-  String get rankKindLevel => 'レベル';
+  String get rankKindLevel => '累計レベル';
 
   @override
   String get rankKindStage => '進行度';
@@ -1975,7 +1975,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'ステージと能力強化が最初に戻ります。\n昆虫・装備・図鑑・資材はそのまま残ります。\nモンスターがさらに強力になります。';
+      'ステージ・レベル・能力強化が最初に戻ります。\n虫・装備・図鑑・通貨はそのまま残ります。\nこれまでのレベルはランキングに残ります。\n敵がさらに強力になります。';
 
   @override
   String get tierNextGo => '進む';
