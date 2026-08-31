@@ -3019,6 +3019,61 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ),
       ),
       const SizedBox(height: 10),
+      // 2통 이상이면 한 번에 — 보상 팝업을 통마다 닫게 하는 건 노동이다.
+      if (mails.length >= 2)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () async {
+                var gold = 0;
+                final mats = <MaterialKind, int>{};
+                var got = 0;
+                for (final m in List<ServerMail>.from(mails)) {
+                  final res = await r
+                      .read(rewardClaimerProvider)
+                      .claimMail(m.id);
+                  if (res != RedeemResult.ok) continue;
+                  got++;
+                  gold += m.gold;
+                  if (m.jelly > 0) {
+                    mats[MaterialKind.jelly] =
+                        (mats[MaterialKind.jelly] ?? 0) + m.jelly;
+                  }
+                  if (m.chitin > 0) {
+                    mats[MaterialKind.chitin] =
+                        (mats[MaterialKind.chitin] ?? 0) + m.chitin;
+                  }
+                  if (m.mineral > 0) {
+                    mats[MaterialKind.mineral] =
+                        (mats[MaterialKind.mineral] ?? 0) + m.mineral;
+                  }
+                  if (m.sap > 0) {
+                    mats[MaterialKind.sap] =
+                        (mats[MaterialKind.sap] ?? 0) + m.sap;
+                  }
+                }
+                if (!ctx.mounted || got == 0) return;
+                AudioService.instance.sfxReward();
+                // 합산 한 번만 보여준다 — 통마다 팝업이면 일괄의 의미가 없다.
+                await showRewardPopup(
+                  ctx,
+                  title: l.mailClaimAll,
+                  subtitle: l.rewardGained,
+                  icon: Icons.campaign_rounded,
+                  gold: gold,
+                  materials: mats,
+                );
+              },
+              icon: const Icon(Icons.done_all_rounded, size: 17),
+              label: Text(l.mailClaimAll),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF3E7D4F),
+              ),
+            ),
+          ),
+        ),
       for (final m in mails) _serverMailRow(ctx, r, l, m),
     ];
   }

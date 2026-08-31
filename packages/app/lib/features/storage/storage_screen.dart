@@ -1407,6 +1407,49 @@ class StorageScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
+                  // 완료가 2개 이상이면 한 번에 — 캡슐을 하나씩 두드리게 하는 건
+                  // 확장 슬롯을 팔아 놓고 그만큼 손가락 노동을 파는 셈이다.
+                  Builder(
+                    builder: (_) {
+                      final now2 = r.read(clockProvider).now().toUtc();
+                      final doneIds = [
+                        for (final e in incing)
+                          if (!now2.isBefore(e.value)) e.key,
+                      ];
+                      if (doneIds.length < 2) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Center(
+                          child: FilledButton.icon(
+                            onPressed: () async {
+                              var got = 0;
+                              for (final id in doneIds) {
+                                if (await r
+                                    .read(saveControllerProvider.notifier)
+                                    .collectIncubated(id)) {
+                                  got++;
+                                }
+                              }
+                              if (got == 0) return;
+                              AudioService.instance.sfxHatch();
+                              if (ctx.mounted) {
+                                _snack(ctx, l.incubatorCollectAllDone(got));
+                              }
+                            },
+                            icon: const Icon(Icons.done_all_rounded, size: 17),
+                            label: Text(l.incubatorCollectAll(doneIds.length)),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _honey,
+                              foregroundColor: const Color(0xFF3A2600),
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   Center(
                     child: Text(
                       l.incubatorHint,

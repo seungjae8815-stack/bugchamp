@@ -1004,6 +1004,22 @@
   },
   "incubatorNoEggs": "No eggs to hatch",
   "incubatorHint": "Tap an empty capsule to add an egg; tap a ready one to collect.",
+  "incubatorCollectAll": "Collect all ({n})",
+  "@incubatorCollectAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "incubatorCollectAllDone": "Collected {n} bugs",
+  "@incubatorCollectAllDone": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "incubatorPick": "Choose an egg",
   "disassembleTitle": "Disassemble",
   "disassembleDesc": "Convert to {n} jelly",
@@ -1430,6 +1446,7 @@
   "noticeFailed": "Couldn't load notices. Check your connection.",
   "mailNoticeSection": "From the team",
   "mailClaim": "Claim",
+  "mailClaimAll": "Claim all",
   "giftCodeTitle": "Gift code",
   "giftCodeHint": "Enter a code from an event or announcement.",
   "giftCodeField": "CODE",

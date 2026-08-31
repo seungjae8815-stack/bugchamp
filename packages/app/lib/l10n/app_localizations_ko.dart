@@ -1691,6 +1691,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get incubatorHint => '빈 캡슐을 눌러 알을 넣고, 완료되면 눌러 수령하세요';
 
   @override
+  String incubatorCollectAll(int n) {
+    return '모두 수령 ($n)';
+  }
+
+  @override
+  String incubatorCollectAllDone(int n) {
+    return '$n마리를 수령했어요';
+  }
+
+  @override
   String get incubatorPick => '부화할 알 선택';
 
   @override
@@ -2325,6 +2335,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mailClaim => '받기';
+
+  @override
+  String get mailClaimAll => '모두 받기';
 
   @override
   String get giftCodeTitle => '선물코드';

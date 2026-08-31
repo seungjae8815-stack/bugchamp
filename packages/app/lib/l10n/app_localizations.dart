@@ -3112,6 +3112,18 @@ abstract class AppLocalizations {
   /// **'Tap an empty capsule to add an egg; tap a ready one to collect.'**
   String get incubatorHint;
 
+  /// No description provided for @incubatorCollectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect all ({n})'**
+  String incubatorCollectAll(int n);
+
+  /// No description provided for @incubatorCollectAllDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Collected {n} bugs'**
+  String incubatorCollectAllDone(int n);
+
   /// No description provided for @incubatorPick.
   ///
   /// In en, this message translates to:
@@ -4239,6 +4251,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Claim'**
   String get mailClaim;
+
+  /// No description provided for @mailClaimAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim all'**
+  String get mailClaimAll;
 
   /// No description provided for @giftCodeTitle.
   ///

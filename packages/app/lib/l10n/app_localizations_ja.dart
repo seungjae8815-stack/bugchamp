@@ -1688,6 +1688,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get incubatorHint => '空のカプセルをタップして卵を入れ、完了したらタップして受け取りましょう';
 
   @override
+  String incubatorCollectAll(int n) {
+    return 'すべて受け取る ($n)';
+  }
+
+  @override
+  String incubatorCollectAllDone(int n) {
+    return '$n匹を受け取りました';
+  }
+
+  @override
   String get incubatorPick => '孵化する卵を選択';
 
   @override
@@ -2320,6 +2330,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mailClaim => '受け取る';
+
+  @override
+  String get mailClaimAll => 'すべて受け取る';
 
   @override
   String get giftCodeTitle => 'ギフトコード';

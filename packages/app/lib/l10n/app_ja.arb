@@ -502,6 +502,22 @@
   "incubatorWaitingEggs": "待機中の卵 {n}",
   "incubatorNoEggs": "孵化する卵がありません",
   "incubatorHint": "空のカプセルをタップして卵を入れ、完了したらタップして受け取りましょう",
+  "incubatorCollectAll": "すべて受け取る ({n})",
+  "@incubatorCollectAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "incubatorCollectAllDone": "{n}匹を受け取りました",
+  "@incubatorCollectAllDone": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "incubatorPick": "孵化する卵を選択",
   "disassembleTitle": "分解",
   "disassembleDesc": "ゼリー {n}個に還元",
@@ -690,6 +706,7 @@
   "noticeFailed": "お知らせを読み込めませんでした。接続を確認してください。",
   "mailNoticeSection": "運営からのメール",
   "mailClaim": "受け取る",
+  "mailClaimAll": "すべて受け取る",
   "giftCodeTitle": "ギフトコード",
   "giftCodeHint": "イベント・お知らせで配布されたコードを入力してください。",
   "giftCodeField": "コード入力",

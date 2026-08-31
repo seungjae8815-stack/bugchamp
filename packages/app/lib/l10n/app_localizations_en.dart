@@ -1717,6 +1717,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap an empty capsule to add an egg; tap a ready one to collect.';
 
   @override
+  String incubatorCollectAll(int n) {
+    return 'Collect all ($n)';
+  }
+
+  @override
+  String incubatorCollectAllDone(int n) {
+    return 'Collected $n bugs';
+  }
+
+  @override
   String get incubatorPick => 'Choose an egg';
 
   @override
@@ -2371,6 +2381,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailClaim => 'Claim';
+
+  @override
+  String get mailClaimAll => 'Claim all';
 
   @override
   String get giftCodeTitle => 'Gift code';
