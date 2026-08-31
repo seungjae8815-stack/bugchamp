@@ -735,3 +735,44 @@ character pose sheet of the same miyama stag beetle of translucent pearl-white c
 character pose sheet of the same two-spot stag beetle of translucent pearl-white crystal, two ruby cabochons on the back, iridescent sheen, pale ruby eyes, three poses in one horizontal row, identical creature at identical size standing on the same ground line, strict side profile facing right, evenly spaced with wide even gaps, no dividing lines, no panel borders, no frames, no numbers, no labels, plain flat dark charcoal background, no ground line, no cast shadow, the beetle floats with nothing beneath it; left: standing idle, weight settled, all legs planted, calm ready stance; center: lunging seize, mandibles thrown wide open and reaching out to clamp, front of the body reared up; right: recoiling from a heavy hit, knocked backward and tilted up, legs buckling underneath, head thrown back, off balance; cozy naturalist cartoon, semi-realistic stylized, soft cool moonlight, gentle rim light, hand-painted storybook texture, rounded friendly forms, cold pearl palette (pearl white, pale ice blue, soft lilac, faint rose), subsurface glow through the thin shell plates, subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1 --style raw --v 7 --cref <REF> --cw 100
 ```
 
+
+---
+
+## 4e. 알 뽑기 카드 뒷면 ×1 (`assets/images/ui/gacha_card_back.webp`)
+
+곤충 알 뽑기(§2.6)에서 **3장 중 하나를 고르는** 화면의 카드 뒷면.
+지금은 보라 그라데이션 + 🥚 이모지로 그리고 있고, 이 파일이 있으면 대체된다
+(없으면 지금 모습 그대로 — 급하지 않다).
+
+**화면에서의 크기: 82×120px.** 작게 그려지므로 잔detail 은 뭉갠다 —
+가운데 큰 실루엣 하나가 멀리서도 읽혀야 한다.
+
+> ⚠️ **세로 카드 한 장**을 통째로 그린다(4d 의 강화 카드와 반대다 — 거기선
+> 프레임을 앱이 그리지만 여기선 카드 자체가 그림이다). 카드 **모서리는 앱이
+> 12px 라운드로 자르므로** 네 귀퉁이에 중요한 것을 두지 않는다.
+
+```
+tarot-sized vertical card back for a mobile game, ornate botanical border frame,
+centered glowing insect egg cocoon silhouette wrapped in soft leaf veins,
+deep amethyst purple to dark plum vertical gradient, faint golden filigree scrollwork,
+subtle radial glow behind the egg, symmetrical composition, mysterious inviting mood,
+no face, no eyes, no creature visible, flat front-facing view, no perspective tilt,
+{STYLE}
+--ar 2:3 --style raw --v 7 --sref <key> --sw 100
+```
+
+**변형 2종(선택)** — 있으면 카드 3장이 미묘하게 달라져 "고르는 맛"이 산다.
+같은 프롬프트에서 `--seed` 만 바꿔 3장을 뽑고 파일명을
+`gacha_card_back.webp` · `gacha_card_back_2.webp` · `gacha_card_back_3.webp`
+로 저장한다(앱은 없으면 1번을 3장 다 쓴다).
+
+### 후처리
+- 1024×1536 → **WebP**, 품질 85.
+- 배경 투명 아님(카드 자체가 불투명한 물건).
+- 네 귀퉁이 12px 은 잘려 나간다 — 최종본에서 미리 확인할 것.
+
+### 함께 있으면 좋은 것(선택)
+| 파일 | 쓰임 | 프롬프트 힌트 |
+|---|---|---|
+| `gacha_card_glow.webp` | 고른 카드 뒤 후광 | `radial golden light burst, transparent background, no card` |
+| `gacha_egg_open.webp` | 카드가 열릴 때 알 껍질 | `cracked glowing egg shell halves, transparent background` |
