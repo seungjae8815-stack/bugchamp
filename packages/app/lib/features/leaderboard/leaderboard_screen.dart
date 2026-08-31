@@ -105,7 +105,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   String _scoreText(AppLocalizations l, PvpProfile p, RankingKind k) =>
       switch (k) {
         RankingKind.trophies => formatCompact(p.trophies),
-        RankingKind.level => formatCompact(p.level),
+        // 레벨도 회차를 앞에 붙인다 — `쉬움 Lv70` 과 `보통 Lv1` 이 한눈에
+        // 구분돼야 "왜 저 사람이 위에 있지"가 설명된다.
+        RankingKind.level => '${tierName(l, p.difficultyTier)} Lv${p.level}',
         // 숫자만 보여주면 어느 구간인지 모른다 — `보통 5-32` 로 보여준다.
         RankingKind.stage => progressLabel(
           l,
@@ -199,9 +201,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       id: 'me',
       nickname: save.nickname,
       trophies: save.pvpTrophies,
-      // 랭킹은 **역대 최고 레벨**로 줄을 세운다 — 회차 전환으로 레벨이 1 로
-      // 돌아가도 올려 둔 자리에서 내려가지 않는다.
-      level: save.rankLevel,
+      level: save.level,
       stageNumber: save.stageNumber,
       difficultyTier: save.difficultyTier,
     );

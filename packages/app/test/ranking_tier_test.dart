@@ -43,4 +43,27 @@ void main() {
       );
     }
   });
+
+  /// 회차 전환은 레벨을 1 로 되돌린다 — 그런데 레벨 랭킹이 **현재 레벨만**
+  /// 보면 회차를 넘긴 유저가 꼴찌가 되고, **최고 기록**으로 보면 이번엔
+  /// "쉬움에 눌러앉아 레벨만 올리는 것"이 최적이 된다(2026-08-31 지적).
+  /// 진행도와 같은 규칙(회차가 1차 키)이 둘 다 막는다.
+  test('레벨 랭킹은 회차가 먼저 — 보통 Lv1 이 쉬움 Lv70 보다 위', () {
+    PvpProfile p(int tier, int lv) => PvpProfile(
+      id: 't$tier',
+      nickname: 'n',
+      trophies: 0,
+      level: lv,
+      difficultyTier: tier,
+    );
+    expect(
+      p(1, 1).scoreFor(RankingKind.level),
+      greaterThan(p(0, 70).scoreFor(RankingKind.level)),
+    );
+    // 같은 회차 안에서는 레벨이 가른다.
+    expect(
+      p(1, 30).scoreFor(RankingKind.level),
+      greaterThan(p(1, 29).scoreFor(RankingKind.level)),
+    );
+  });
 }

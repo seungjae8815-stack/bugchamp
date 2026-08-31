@@ -43,11 +43,8 @@ class PvpProfile {
   final String nickname;
   final int trophies;
 
-  /// 캐릭터 레벨([RankingKind.level] 정렬 기준).
-  ///
-  /// ⚠️ 여기 들어가는 값은 **역대 최고 레벨**(`SaveGame.rankLevel`)이다. 회차
-  /// 전환이 레벨을 1 로 되돌리므로(§2.4), 현재 레벨로 줄을 세우면 회차를
-  /// 넘긴 유저가 꼴찌가 된다 — 진행도 랭킹에서 회차를 1차 키로 둔 것과 같은 문제.
+  /// 캐릭터 레벨([RankingKind.level] 정렬 기준). **현재 회차의 레벨** 그대로다 —
+  /// 순서는 [difficultyTier] 와 묶어서 정한다([scoreFor]).
   final int level;
 
   /// 도달 스테이지([RankingKind.stage] 정렬 기준).
@@ -60,15 +57,19 @@ class PvpProfile {
   /// 이 랭킹 종류에서 줄 세우기에 쓰는 점수.
   int scoreFor(RankingKind kind) => switch (kind) {
     RankingKind.trophies => trophies,
-    RankingKind.level => level,
+    // ⚠️ 레벨도 **회차가 먼저**다. 최고 기록으로 세면 '쉬움에 눌러앉아 레벨만
+    // 올리는 것'이 최적이 되고(2026-08-31 지적), 현재 레벨만 세면 회차를
+    // 넘긴 유저가 꼴찌가 된다. 진행도와 같은 규칙으로 둘 다 막는다.
+    RankingKind.level => difficultyTier * _tierScoreStep + level,
     // ⚠️ 회차를 위에 얹는다. 스테이지만 비교하면 회차를 넘어간 유저가
     // 1 로 돌아가는 순간 꼴찌가 된다 — 넘어갈 이유가 사라진다.
     RankingKind.stage => difficultyTier * _tierScoreStep + stageNumber,
   };
 }
 
-/// 진행도 점수에서 회차 한 칸의 크기. 한 회차의 스테이지 수(1000)보다 넉넉히
-/// 커야 **회차가 항상 이긴다** — 작으면 앞 회차 고스테이지가 뒤 회차를 넘는다.
+/// 랭킹 점수에서 회차 한 칸의 크기. 진행도(스테이지 1000)와 레벨 양쪽에 쓴다.
+/// 한 회차에서 도달 가능한 값보다 넉넉히 커야 **회차가 항상 이긴다** —
+/// 작으면 앞 회차의 높은 값이 뒤 회차를 넘는다.
 const int _tierScoreStep = 100000;
 
 /// 리더보드 한 줄.

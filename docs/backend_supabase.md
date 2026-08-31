@@ -125,24 +125,34 @@ returns table(rank bigint, id uuid, nickname text,
 language sql stable security definer set search_path = public as $$
   select row_number() over (
            order by case sort
-                      when 'level' then p.level
-                      -- ⚠️ 진행도는 **회차가 먼저**다. 스테이지만 보면 회차를
-                      -- 넘어간 유저가 1 로 돌아가는 순간 꼴찌가 되어,
-                      -- 아무도 넘어가지 않는다.
+                      -- ⚠️ 레벨·진행도 모두 **회차가 먼저**다. 회차 전환이
+                      -- 스테이지와 레벨을 1 로 되돌리므로, 그 값만 보면 회차를
+                      -- 넘어간 유저가 꼴찌가 되어 아무도 넘어가지 않는다.
+                      -- 반대로 '최고 기록'으로 세면 쉬움에 눌러앉아 레벨만
+                      -- 올리는 것이 최적이 된다(2026-09-01).
+                      when 'level' then p.tier
                       when 'stage' then p.tier
                       else p.trophies
                     end desc,
-                    case when sort = 'stage' then p.stage else 0 end desc
+                    case sort
+                      when 'level' then p.level
+                      when 'stage' then p.stage
+                      else 0
+                    end desc
          ) as rank,
          p.id, p.nickname, p.trophies, p.level, p.stage, p.tier,
          coalesce(p.badge, '') as badge
   from profiles p
   order by case sort
-             when 'level' then p.level
+             when 'level' then p.tier
              when 'stage' then p.tier
              else p.trophies
            end desc,
-           case when sort = 'stage' then p.stage else 0 end desc
+           case sort
+             when 'level' then p.level
+             when 'stage' then p.stage
+             else 0
+           end desc
   limit lim;
 $$;
 
