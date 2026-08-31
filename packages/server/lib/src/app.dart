@@ -1814,6 +1814,25 @@ Handler buildHandler({
     /// (멱등)에 쓰이면서, 나중에 세이브만 보고도 **결제가 아니라 지급**임을
     /// 구분할 수 있다. 같은 사유로 두 번 부르면 두 번째는 조용히 무시된다 —
     /// 연장해서 더 주려면 사유를 바꾼다(`admin:pass:2026-09-보상2`).
+    /// 운영 패널의 "지급" 탭이 상품 목록을 채울 때 부른다.
+    ///
+    /// 목록을 HTML 에 박아 두지 않는 이유: `iap.json` 이 바뀌면 화면이 조용히
+    /// 낡는다. id 를 손으로 치게 두는 것도 안 된다 — 오타는 404 로만 보인다.
+    public.get('/admin/products', (Request req) {
+      if (!adminOk(req)) return _json({'error': 'unauthorized'}, status: 401);
+      return _json({
+        'products': [
+          for (final p in cfg.iap.products)
+            {
+              'id': p.id,
+              'type': p.type.key,
+              'name': p.name?.resolve('ko') ?? p.id,
+              'hidden': p.hidden,
+            },
+        ],
+      });
+    });
+
     public.post('/admin/grant', (Request req) async {
       final (b, err) = await adminBody(req);
       if (err != null) return err;

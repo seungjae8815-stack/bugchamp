@@ -82,6 +82,7 @@ const String adminHtml = r'''<!doctype html>
     <button id="t-mail" onclick="tab('mail')">우편</button>
     <button id="t-code" onclick="tab('code')">선물코드</button>
     <button id="t-chat" onclick="tab('chat')">채팅</button>
+    <button id="t-grant" onclick="tab('grant')">지급</button>
   </div>
 
   <section id="s-notice" class="on">
@@ -151,6 +152,23 @@ const String adminHtml = r'''<!doctype html>
     <div class="card"><h2>만든 코드</h2><div id="list-code"></div></div>
   </section>
 
+  <section id="s-grant">
+    <div class="card">
+      <h2>상품 지급</h2>
+      <p class="hint">결제와 <b>같은 경로</b>로 넣습니다 — 패스 연장·스타터 1회 제한이 결제와 똑같이 적용됩니다.</p>
+      <label>유저 uuid</label><input id="g-uid" placeholder="00000000-0000-...">
+      <label>상품</label><select id="g-product"></select>
+      <label>사유 (중복 지급을 막는 열쇠)</label>
+      <input id="g-reason" maxlength="48" placeholder="2026-09-보상">
+      <button class="act warn" onclick="grantProduct()">지급하기</button>
+      <p class="hint">
+        같은 유저 · 같은 상품 · 같은 사유로 두 번 누르면 두 번째는 무시됩니다(중복 방지).
+        일부러 더 주려면 사유를 바꾸세요 — 예: <b>2026-09-보상2</b>.
+      </p>
+      <div id="g-result" class="sub"></div>
+    </div>
+  </section>
+
   <section id="s-chat">
     <div class="card">
       <h2>운영자로 보내기</h2>
@@ -201,7 +219,8 @@ async function login() {
 }
 function logout() { sessionStorage.removeItem('adminKey'); location.reload(); }
 function tab(name) {
-  for (const n of ['notice','mail','code','chat']) {
+  if (name === 'grant') loadProducts();
+  for (const n of ['notice','mail','code','chat','grant']) {
     document.getElementById('s-' + n).className = n === name ? 'on' : '';
     document.getElementById('t-' + n).className = n === name ? 'on' : '';
   }
@@ -266,6 +285,44 @@ async function sendChat() {
   } catch (e) {
     toast(e.message === 'admin_chat_user_id_missing'
       ? 'ADMIN_CHAT_USER_ID 가 설정되지 않았습니다' : e.message);
+  }
+}
+
+async function loadProducts() {
+  const sel = document.getElementById('g-product');
+  if (sel.options.length) return;              // 한 번만 채운다
+  try {
+    const d = await api('/admin/products');
+    sel.innerHTML = (d.products || []).map(p =>
+      '<option value="' + esc(p.id) + '">' + esc(p.name) +
+      ' (' + esc(p.id) + ')' + (p.hidden ? ' · 판매중단' : '') + '</option>'
+    ).join('');
+  } catch (e) { toast(e.message); }
+}
+
+async function grantProduct() {
+  const uid = val('g-uid');
+  if (!uid) return toast('유저 uuid 를 입력하세요');
+  const pid = document.getElementById('g-product').value;
+  const reason = val('g-reason');
+  if (!reason) return toast('사유를 입력하세요');
+  if (!confirm(pid + ' 를 이 유저에게 지급합니다. 계속할까요?')) return;
+  try {
+    const r = await api('/admin/grant', { userId: uid, productId: pid, reason: reason });
+    // "이미 줬음"과 "방금 줬음"을 구분해서 보여준다 — 같은 초록 토스트로
+    // 뭉치면 두 번 눌러 놓고 두 배로 들어간 줄 안다.
+    document.getElementById('g-result').innerHTML =
+      (r.alreadyGranted
+        ? '<b>이미 지급된 건입니다</b> (같은 사유 — 새로 들어가지 않았습니다)'
+        : '<b>지급 완료</b>') +
+      '<div>곤충학자 패스: ' + esc(r.passExpiresAt ? r.passExpiresAt.slice(0,10) + ' 까지' : '없음') + '</div>' +
+      '<div>무한 버프 패스: ' + esc(r.buffPassExpiresAt ? r.buffPassExpiresAt.slice(0,10) + ' 까지' : '없음') + '</div>' +
+      '<div>스타터 구매됨: ' + (r.starterBought ? '예' : '아니오') + '</div>';
+    toast(r.alreadyGranted ? '이미 지급된 건입니다' : '지급했습니다');
+  } catch (e) {
+    toast(e.message === 'no_save' ? '그 uuid 의 세이브가 없습니다'
+        : e.message === 'already_owned' ? '스타터는 계정당 1회입니다'
+        : e.message);
   }
 }
 
