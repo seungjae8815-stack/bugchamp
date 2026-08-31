@@ -95,6 +95,7 @@ int rewardGold(
   double rewardMultiplier, {
   bool boss = false,
   int tier = 0,
+  bool parked = false,
 }) {
   final base =
       c.goldBase *
@@ -104,7 +105,10 @@ int rewardGold(
       // ⚠️ 보상도 회차와 함께 오른다. 몬스터만 세지면 회차를 넘어갈 이유가
       // 없다 — 더 오래 걸리고 덜 버는 선택지가 되기 때문이다.
       c.tierReward(tier);
-  return (base * (boss ? c.bossRewardMult : 1.0)).round();
+  return (base *
+          (boss ? c.bossRewardMult : 1.0) *
+          (parked ? c.endParkedRewardMult : 1.0))
+      .round();
 }
 
 /// 파괴 보상 경험치. 골드와 같은 월드 점프를 따른다.
@@ -117,12 +121,17 @@ double materialAmountMult(RunConfig c, int depth) =>
     ? 1.0
     : math.pow(c.materialAmountGrowth, depth).toDouble();
 
-int rewardXp(RunConfig c, int depth, {bool boss = false}) {
+int rewardXp(RunConfig c, int depth, {bool boss = false, bool parked = false}) {
   final base =
       c.xpBase *
       math.pow(c.xpGrowth, depth) *
       c.worldMult(c.worldGoldMult, depth);
-  return (base * (boss ? c.bossRewardMult : 1.0)).round();
+  // 경험치도 함께 깎는다. 골드만 깎으면 눌러앉아 레벨을 올리는 길이 남아,
+  // "회차를 넘기는 쪽이 늘 이득"이 깨진다.
+  return (base *
+          (boss ? c.bossRewardMult : 1.0) *
+          (parked ? c.endParkedRewardMult : 1.0))
+      .round();
 }
 
 /// 업그레이드 [level] → 다음 레벨 구매 비용(골드).
@@ -367,6 +376,8 @@ IdleProgress simulateIdleProgress({
 
   while (budget > 0 && advanced < maxStageAdvance) {
     final depth = stage - 1;
+    // 캠페인 끝에 눌러앉은 상태인가 — 보상이 깎인다(회차를 넘기게 만든다).
+    final parked = finalStage != null && finalStage > 0 && stage >= finalStage;
     final habHp = habitatMaxHp(
       config,
       depth,
@@ -389,8 +400,9 @@ IdleProgress simulateIdleProgress({
       depth,
       stats.rewardMultiplier,
       tier: tier,
+      parked: parked,
     );
-    final xpHab = rewardXp(config, depth);
+    final xpHab = rewardXp(config, depth, parked: parked);
 
     if (budget >= stageTime) {
       // 스테이지 전체(서식지들 + 보스)를 밀고 다음 스테이지로.
@@ -402,9 +414,11 @@ IdleProgress simulateIdleProgress({
             stats.rewardMultiplier,
             boss: true,
             tier: tier,
+            parked: parked,
           );
       xp +=
-          config.habitatsPerStage * xpHab + rewardXp(config, depth, boss: true);
+          config.habitatsPerStage * xpHab +
+          rewardXp(config, depth, boss: true, parked: parked);
       habitatClears += config.habitatsPerStage;
       bossClears += 1;
       budget -= stageTime;
@@ -482,6 +496,7 @@ OfflineReport computeOfflineReward({
   Duration maxAccrual = kMaxOfflineAccrual,
   double efficiency = 0.5,
   int tier = 0,
+  int? finalStage,
 }) {
   if (elapsed <= Duration.zero) return OfflineReport.empty;
   final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
@@ -497,8 +512,19 @@ OfflineReport computeOfflineReward({
   if (clears <= 0) return OfflineReport.empty;
 
   final depth = stageNumber - 1;
-  final goldPer = rewardGold(config, depth, stats.rewardMultiplier, tier: tier);
-  final xpPer = (rewardXp(config, depth) * stats.xpMultiplier).round();
+  // 온라인과 같은 규칙 — 끝에 눌러앉으면 방치 수입도 깎인다. 여기만 빼면
+  // "켜 두면 손해, 꺼 두면 이득"이 되어 눌러앉기가 오히려 최적이 된다.
+  final parked =
+      finalStage != null && finalStage > 0 && stageNumber >= finalStage;
+  final goldPer = rewardGold(
+    config,
+    depth,
+    stats.rewardMultiplier,
+    tier: tier,
+    parked: parked,
+  );
+  final xpPer = (rewardXp(config, depth, parked: parked) * stats.xpMultiplier)
+      .round();
 
   return OfflineReport(
     gold: (clears * goldPer).round(),

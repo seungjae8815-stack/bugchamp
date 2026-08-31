@@ -276,6 +276,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
       stats: stats,
       elapsed: elapsed,
       tier: save.difficultyTier,
+      // 끝에 눌러앉으면 방치 수입도 깎인다(온라인과 같은 규칙).
+      finalStage: data.roadmapConfig?.finalStage,
       efficiency: config.offlineEfficiency,
       maxAccrual: passOn
           ? Duration(hours: iap?.passOfflineCapHours ?? 12)

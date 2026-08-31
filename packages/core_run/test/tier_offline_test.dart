@@ -51,4 +51,40 @@ void main() {
     // 끝에 멈춰도 파밍은 계속돼야 한다(보상 0 이면 상한이 벌이 된다).
     expect(prog.gold, greaterThan(0));
   });
+
+  /// 끝에 눌러앉아 파밍하는 게 회차를 넘기는 것보다 이득이면, 회차 시스템은
+  /// 아무도 쓰지 않는다. 온라인·방치 **양쪽 모두** 깎여야 한다 — 한쪽만
+  /// 깎으면 "켜 두면 손해"가 되어 눌러앉기가 오히려 최적이 된다.
+  test('끝에 눌러앉으면 방치 보상이 깎인다', () {
+    OfflineReport at({int? finalStage}) => computeOfflineReward(
+      config: config,
+      // 이 스탯으로 실제 클리어가 되는 깊이라야 0 이 아닌 값이 나온다.
+      stageNumber: 300,
+      stats: stats(),
+      elapsed: const Duration(hours: 4),
+      finalStage: finalStage,
+    );
+    final normal = at().gold;
+    expect(normal, greaterThan(0), reason: '테스트 전제: 이 구간은 클리어된다');
+    final parked = at(finalStage: 300).gold;
+    expect(parked, lessThan(normal ~/ 2), reason: '눌러앉기 페널티가 안 걸렸다');
+    expect(at(finalStage: 300).xp, lessThan(at().xp));
+  });
+
+  test('끝 직전 스테이지는 깎이지 않는다', () {
+    final before = computeOfflineReward(
+      config: config,
+      stageNumber: 299,
+      stats: stats(),
+      elapsed: const Duration(hours: 4),
+      finalStage: 300,
+    ).gold;
+    final noCap = computeOfflineReward(
+      config: config,
+      stageNumber: 299,
+      stats: stats(),
+      elapsed: const Duration(hours: 4),
+    ).gold;
+    expect(before, noCap, reason: '정상 진행 구간까지 깎으면 안 된다');
+  });
 }

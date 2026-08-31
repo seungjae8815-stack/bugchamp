@@ -1804,6 +1804,60 @@ Handler buildHandler({
       }
     });
 
+    /// 특정 계정에 **IAP 상품을 그냥 지급**한다(보상·보상금·테스트).
+    ///
+    /// 결제 경로(`grantPurchase`)를 **그대로 재사용한다** — 지급 로직을 따로
+    /// 쓰면 "산 사람과 받은 사람의 상태가 다른" 버그가 조용히 생긴다.
+    /// 패스 연장·스타터 1회 제한·스킨 소유까지 결제와 똑같이 처리된다.
+    ///
+    /// `purchaseId` 는 `admin:<상품>:<사유>` 형태로 남긴다. 중복 지급 방지
+    /// (멱등)에 쓰이면서, 나중에 세이브만 보고도 **결제가 아니라 지급**임을
+    /// 구분할 수 있다. 같은 사유로 두 번 부르면 두 번째는 조용히 무시된다 —
+    /// 연장해서 더 주려면 사유를 바꾼다(`admin:pass:2026-09-보상2`).
+    public.post('/admin/grant', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final userId = clean(b!['userId'], 64);
+      if (userId == null) return _json({'error': 'user_required'}, status: 400);
+      final productId = clean(b['productId'], 64);
+      if (productId == null) {
+        return _json({'error': 'product_required'}, status: 400);
+      }
+      if (cfg.iap.byId(productId) == null) {
+        // 어떤 id 가 있는지 함께 알려준다 — 오타를 눈으로 못 잡는 값이다.
+        return _json({
+          'error': 'unknown_product',
+          'known': [for (final p in cfg.iap.products) p.id],
+        }, status: 404);
+      }
+      final reason = clean(b['reason'], 48) ?? 'grant';
+      try {
+        final raw = await store.load(userId);
+        if (raw == null) return _json({'error': 'no_save'}, status: 404);
+        final save = SaveGame.fromJson(migrateToCurrent(raw));
+        final res = actions.grantPurchase(
+          save,
+          productId: productId,
+          purchaseId: 'admin:$productId:$reason',
+        );
+        if (!res.isOk) {
+          return _json({'error': res.error}, status: res.status);
+        }
+        await store.save(userId, res.save!.toJson());
+        return _json({
+          'ok': true,
+          'productId': productId,
+          'alreadyGranted': res.extra['alreadyGranted'] == true,
+          'passExpiresAt': res.save!.passExpiresAt?.toIso8601String(),
+          'buffPassExpiresAt': res.save!.buffPassExpiresAt?.toIso8601String(),
+          'starterBought': res.save!.starterBought,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/grant] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     public.post('/admin/code', (Request req) async {
       final (b, err) = await adminBody(req);
       if (err != null) return err;

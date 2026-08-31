@@ -912,6 +912,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _beginDeath(CharacterStats stats) {
     AudioService.instance.sfxDie(); // 몬스터 처치음
     final depth = _stage - 1;
+    // 캠페인 끝에 눌러앉아 파밍 중인가. 끝에 닿으면 더 나아가지 않고 계속
+    // 잡을 수 있는데, 그 구간은 이미 자기 전력에 한참 못 미친다. 그대로 두면
+    // **회차를 넘기지 않는 게 최적**이 된다(다음 회차는 몬스터가 세지니까).
+    final lastStage = _data.roadmapConfig?.finalStage ?? 0;
+    final parked = lastStage > 0 && _stage >= lastStage;
     // 접속 보너스 — **직접 잡았을 때만** 붙는다(방치 정산에는 안 붙는다).
     // 켜두는 쪽이 이득이어야 자주 들어오고, 그래야 업그레이드·채팅도 돈다.
     final gold =
@@ -925,11 +930,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       .read(saveControllerProvider)
                       .requireValue
                       .difficultyTier,
+                  parked: parked,
                 ) *
                 (1 + _config.onlineGoldBonus))
             .round();
-    final xp = (rewardXp(_config, depth, boss: _isBoss) * stats.xpMultiplier)
-        .round();
+    final xp =
+        (rewardXp(_config, depth, boss: _isBoss, parked: parked) *
+                stats.xpMultiplier)
+            .round();
 
     final save = ref.read(saveControllerProvider).requireValue;
     IndividualBug? bug;

@@ -88,6 +88,19 @@ class GameActions {
           : t;
       passExpiry = base.add(Duration(days: config.iap.passDurationDays));
     }
+    // ⚠️ 무한 버프 패스는 오래 서버 쪽에 빠져 있었다 — 앱만 지급하고 있었다
+    // (`SaveController.grantPurchase`). 서버 경로로 지급하면 칸이 비어 있어
+    // **결제했는데 아무것도 안 켜지는** 상태가 된다. 앱과 같은 규칙으로 맞춘다:
+    // 남은 기간이 있으면 이어 붙인다(중복 구매 시 손해 없게).
+    DateTime? buffPassExpiry = save.buffPassExpiresAt;
+    if (product.type == IapType.buffPass) {
+      final base = (buffPassExpiry != null && buffPassExpiry.isAfter(t))
+          ? buffPassExpiry
+          : t;
+      buffPassExpiry = base.add(
+        Duration(days: config.iap.buffPassDurationDays),
+      );
+    }
 
     return ActionResult.ok(
       save.copyWith(
@@ -100,6 +113,7 @@ class GameActions {
             ? save.ownedSkins
             : {...save.ownedSkins, product.skinId!},
         passExpiresAt: passExpiry,
+        buffPassExpiresAt: buffPassExpiry,
         redeemedPurchases: {...save.redeemedPurchases, purchaseId},
       ),
     );

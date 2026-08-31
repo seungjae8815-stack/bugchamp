@@ -141,6 +141,7 @@ class RunConfig {
     this.tierHitsMult = 1.0,
     this.tierThreatMult = 1.0,
     this.tierRewardMult = 1.0,
+    this.endParkedRewardMult = 1.0,
     this.worldGoldMult = 1.0,
     this.worldBossHpMult = 1.0,
     this.exchangeJellyPerTrade = 10,
@@ -309,6 +310,14 @@ class RunConfig {
   /// 회차를 넘어갈 이유가 생긴다.
   final double tierRewardMult;
 
+  /// 캠페인 **끝(마지막 스테이지)에 눌러앉아** 파밍할 때 곱하는 보상 배율.
+  ///
+  /// 끝에 닿으면 더 나아가지 않고 그 자리에서 계속 잡을 수 있는데, 그 구간은
+  /// 이미 자기 전력에 한참 못 미치는 난이도다. 그대로 두면 **회차를 넘기지
+  /// 않고 눌러앉는 게 최적**이 된다 — 다음 회차는 몬스터가 세지니까.
+  /// 회차를 넘기는 쪽이 늘 이득이어야 회차 시스템이 성립한다.
+  final double endParkedRewardMult;
+
   /// 회차 [tier] 의 보상 배율.
   double tierReward(int tier) =>
       tier <= 0 ? 1.0 : math.pow(tierRewardMult, tier).toDouble();
@@ -434,6 +443,8 @@ class RunConfig {
       worldHpMult: (json['worldHpMult'] as num?)?.toDouble() ?? 1.0,
       tierHitsMult: (json['tierHitsMult'] as num?)?.toDouble() ?? 1.0,
       tierThreatMult: (json['tierThreatMult'] as num?)?.toDouble() ?? 1.0,
+      endParkedRewardMult:
+          (json['endParkedRewardMult'] as num?)?.toDouble() ?? 1.0,
       tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,

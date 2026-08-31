@@ -294,6 +294,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   int _selectedScout = 1; // 기본 '대등' 티어
   bool _manual = true; // 전투 모드 토글(수동/자동), 기본 수동(심리전)
   bool _scoutsFetched = false; // 실 유저 방어팀 fetch 를 이번 세션에 시도했는지
+
+  /// 전투가 끝났으니 보드를 다시 뽑아야 한다는 표시.
+  ///
+  /// 예전에는 보드가 **처음 한 번**과 새로고침 버튼으로만 갱신돼서, 한 상대를
+  /// 이기고 나와도 같은 상대가 그대로 있었다(2026-08-31 지적). 티켓을 쓰며
+  /// 같은 얼굴만 계속 때리는 화면이 된다.
+  ///
+  /// ⚠️ 새로고침 **하루 상한을 쓰지 않는다.** 상한은 "제일 약한 상대가 나올
+  /// 때까지 무한 리롤"을 막으려는 것인데, 전투 뒤 갱신은 티켓을 이미 한 장
+  /// 쓴 결과라 그 남용 경로가 아니다.
+  bool _rerollScouts = false;
   String? _registeredSig; // 마지막으로 등록한 방어팀 시그니처(중복 업서트 방지)
 
   /// 직전 서버 전투 요청이 **티켓 부족**으로 거절됐는지.
@@ -1109,6 +1120,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final battleCfg = data.battleConfig ?? const BattleConfig();
     final avg = _rosterAvg(adults, data, locale);
     if (avg != null && _scouts.isEmpty) _rollScouts(data, locale, avg);
+    // 전투를 마치고 돌아왔다 → 상대를 새로 뽑는다(같은 상대 반복 방지).
+    if (_rerollScouts && avg != null) {
+      _rerollScouts = false;
+      _rollScouts(data, locale, avg);
+      _fetchRealScouts(data, locale, avg, save);
+    }
     // 설정에서 언어를 바꾸면 이미 구워 둔 상대 이름이 예전 언어로 남는다
     // (이름은 팀을 만들 때 한 번 해석해 넣는다 — 전투 로그가 그 값을 쓴다).
     // ⚠️ **다시 뽑지 않는다.** 재추첨하면 언어를 바꿨다는 이유로 상대가
@@ -2751,6 +2768,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       ),
     );
+    // 싸운 상대는 보드에서 물러난다 — 다음 판은 새 상대로.
+    if (mounted) setState(() => _rerollScouts = true);
   }
 
   /// 수동 전투 — 심리전. 보상은 결착 후 적용(승패가 그때 결정).
@@ -2919,6 +2938,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ),
         ),
       );
+      // 오토와 같은 규칙 — 싸운 뒤에는 새 상대를 뽑는다.
+      if (mounted) setState(() => _rerollScouts = true);
     } finally {
       closeStart();
     }
