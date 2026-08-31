@@ -28,7 +28,7 @@
   "larva": 600,
   "pupa": 900
  },
- "accelerateJelly": 2,
+ "accelerateJelly": 5,
  "synthFodder": 3,
  "synthMaxPotential": 5,
  "_disassembleComment": "분해 보상. 재료는 항상(releaseMaterialByGrade), 젤리는 포텐셜 4성 이상만. 곤충은 무한히 나와서 예전엔 분해가 젤리 수입의 50%(하루 97개)를 차지했다 — 프리미엄 재화가 파밍으로 무한히 뽑히면 IAP 가 죽는다(§2.6). 문턱을 두면 수입은 줄면서 '좋은 걸 분해하는 순간'의 가치는 오히려 올라간다. 검증: core_run/tool/jelly_sim.dart",
@@ -38,7 +38,7 @@
  "levelBonus": 0.015,
  "trainBaseCost": 200,
  "trainCostGrowth": 1.18,
- "trainJellyCost": 3,
+ "trainJellyCost": 5,
  "trainJellyLevels": 5,
  "tierCaps": [
   10,
@@ -84,7 +84,7 @@
   "legendary": 4800
  },
  "injuryJellyPerMinute": 0.5,
- "_timeComment": "등급별 시간(2026-08-31 재정비). 예전엔 전설 산란 160분/부화 80분이라 '등급이 올라가도 기다림이 비슷'했고, 젤리로 당길 이유가 없었다. 이제 등급마다 약 3~4배씩 가팔라진다 — 전설 산란 36시간·부화 16시간(쿨다운 x2 포함하면 한 쌍이 다음 산란까지 72시간). ⚠️ 이 타이머는 즉시완료 젤리와 한 세트다. 정비례 비용(구식 0.5/분)이면 전설 산란이 1,080젤리라 아무도 안 쓴다 — instantJellyExponent 0.58 로 긴 대기일수록 분당 단가가 싸지게 한다. 지금 값: 전설 산란 즉시 약 86젤리 · 부화 약 54젤리(합 140), 일반은 각 5·3젤리. 타이머를 만질 때 이 지수와 실제 젤리 값을 **반드시 함께** 확인할 것.",
+ "_timeComment": "등급별 시간(2026-08-31 재정비). 예전엔 전설 산란 160분/부화 80분이라 '등급이 올라가도 기다림이 비슷'했고 젤리로 당길 이유가 없었다. 이제 등급마다 약 3~4배씩 가팔라진다 — 전설 산란 36시간·부화 16시간(쿨다운 x2 포함하면 한 쌍이 다음 산란까지 72시간). ⚠️ 이 타이머는 즉시완료 젤리와 한 세트다. 분 정비례(구식 0.5/분)면 전설 산란이 1,080젤리라 아무도 안 쓴다 — instantJellyExponent 0.58 로 긴 대기일수록 분당 단가가 싸지게 하고, roundJellyCost 로 5·10 단위에 맞춘다. 지금 값(계수 0.93): 전설 산란 80 · 부화 50, 영웅 40·25, 희귀 20·15, 고급 10·5, 일반 5·5. 타이머를 만질 때 실제 젤리 값을 **반드시 함께** 확인할 것.",
  "breedingDurationsSec": {
   "common": 900,
   "uncommon": 3600,
@@ -92,7 +92,7 @@
   "epic": 43200,
   "legendary": 129600
  },
- "breedingJellyPerMinute": 1.0,
+ "breedingJellyPerMinute": 0.93,
  "breedingSlotsInitial": 1,
  "breedingSlotsMax": 5,
  "breedingExpandJelly": 100,
@@ -161,7 +161,7 @@
   "legendary": 32
  },
  "incubateAdSkipRatio": 0.2,
- "incubateJellyPerMinute": 1.0,
+ "incubateJellyPerMinute": 0.93,
  "instantJellyExponent": 0.58,
  "expandCostGrowth": 1.12,
  "_expandComment": "확장은 살수록 비싸진다(expandCostGrowth^이미 늘린 횟수, 눈금 올림). 세 확장 모두 **첫 개방 100젤리**로 맞췄다 — 첫 칸이 싸면 \"그냥 사는 것\"이 되어 젤리를 쓰는 결정이 아니게 된다(2026-08-18 사장님 결정). ⚠️ 채집함 상한 100칸은 §2.1 의 세이브 크기 방어선이다. 2026-07 장애(3만 마리 = 13.6MB 세이브 → 업로드마다 DB 타임아웃)가 여기서 나왔다. 올릴 땐 반드시 세이브 크기·업로드 트래픽을 함께 검토한다. 무한 소비처는 확장이 아니라 **교환소**(run_config.json → exchange)가 맡는다 — 확장은 끝이 있어도 되지만 교환소는 끝이 없다.",

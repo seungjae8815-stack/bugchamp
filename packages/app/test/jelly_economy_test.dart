@@ -124,6 +124,70 @@ void main() {
       expect(pets.traitBattleHp(BugTrait.none), 0);
     });
   });
+
+  /// 젤리 **소비 금액**은 5·10 단위로만 떨어진다(§2.6, 사장님 확정
+  /// 2026-08-31). 실데이터가 그 규칙을 지키는지 — 계수를 만지면 여기서 걸린다.
+  ///
+  /// 수입(보상)은 검사하지 않는다. 보상을 반올림하면 하루 수입이 바뀌어
+  /// `jelly_sim` 결과가 통째로 어긋난다.
+  test('젤리 소비 금액은 전부 5의 배수다', () {
+    final pet = pets;
+    final run = RunConfig.fromJson(_readJson('assets/data/run_config.json'));
+    final battle = BattleConfig.fromJson(_readJson('assets/data/battle.json'));
+    final forge = ForgeConfig.fromJson(_readJson('assets/data/forge.json'));
+
+    final flat = <String, int>{
+      'accelerateJelly': pet.accelerateJelly,
+      'trainJellyCost': pet.trainJellyCost,
+      'gachaJellyCost': pet.gachaJellyCost,
+      'storageExpandJelly': pet.storageExpandJelly,
+      'incubatorExpandJelly': pet.incubatorExpandJelly,
+      'breedingExpandJelly': pet.breedingExpandJelly,
+      'scoutRefreshJelly': battle.scoutRefreshJelly,
+      'ticketRefillJelly': battle.ticketRefillJelly,
+      'exchangeJellyPerTrade': run.exchangeJellyPerTrade,
+    };
+    flat.forEach((k, v) {
+      expect(v % 5, 0, reason: '$k = $v — 젤리 소비는 5 단위여야 한다');
+    });
+
+    // 시간 비례 비용도 어떤 남은 시간에서든 5 단위여야 한다.
+    for (var m = 1; m <= 3000; m += 7) {
+      final d = Duration(minutes: m);
+      expect(pet.breedingJelly(d) % 5, 0, reason: '산란 $m분');
+      expect(pet.incubateJelly(d) % 5, 0, reason: '부화 $m분');
+      expect(pet.injuryJelly(d) % 5, 0, reason: '부상 $m분');
+      expect(pet.breakthroughJelly(d) % 5, 0, reason: '돌파 $m분');
+      expect(forge.levelUpJelly(d) % 5, 0, reason: '공방 $m분');
+    }
+  });
+
+  /// 사장님이 정한 가격표 — 등급이 오를수록 확실히 비싸야 한다.
+  test('전설 산란 80 · 부화 50, 등급마다 단조 증가', () {
+    final pet = pets;
+    expect(
+      pet.breedingJelly(
+        Duration(seconds: pet.breedingDuration(Grade.legendary)),
+      ),
+      80,
+    );
+    expect(
+      pet.incubateJelly(
+        Duration(seconds: pet.incubateDuration(Grade.legendary)),
+      ),
+      50,
+    );
+    var prevB = 0;
+    var prevI = 0;
+    for (final g in Grade.values) {
+      final b = pet.breedingJelly(Duration(seconds: pet.breedingDuration(g)));
+      final i = pet.incubateJelly(Duration(seconds: pet.incubateDuration(g)));
+      expect(b, greaterThanOrEqualTo(prevB), reason: '산란 ${g.key}');
+      expect(i, greaterThanOrEqualTo(prevI), reason: '부화 ${g.key}');
+      prevB = b;
+      prevI = i;
+    }
+  });
 }
 
 /// 테스트 안에서 재현 가능한 난수(전역 Random 금지 §5).

@@ -115,12 +115,13 @@ void main() {
     final ctrl = c.read(saveControllerProvider.notifier);
     await ctrl.applyBattleResult(gold: 0, trophyDelta: -8, koedBugIds: ['b1']);
 
-    // 남은 300초 → ceil(300/60 × 0.5) = 3 젤리
+    // 남은 300초 → 5분 × 0.5 = 2.5 → roundJellyCost → 5 젤리
+    // (§2.6 — 젤리 소비는 5·10 단위로만 떨어진다)
     final ok = await ctrl.healInjury('b1', viaJelly: true);
     expect(ok, isTrue);
     final s = c.read(saveControllerProvider).requireValue;
     expect(s.isInjured('b1', t0), isFalse);
-    expect(s.materialCount(MaterialKind.jelly), 2); // 5 − 3
+    expect(s.materialCount(MaterialKind.jelly), 0); // 5 − 5
   });
 
   test('젤리 부족이면 즉시회복 실패(부상 유지)', () async {

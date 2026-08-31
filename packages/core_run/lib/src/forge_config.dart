@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'jelly_cost.dart';
+
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
@@ -94,7 +96,8 @@ class ForgeConfig {
   int levelUpJelly(Duration remaining) {
     if (remaining <= Duration.zero) return 0;
     final hours = remaining.inSeconds / 3600.0;
-    final v = (hours * levelUpJellyPerHour).ceil();
+    // 가격표로 읽히게 5·10 단위로 맞춘다(§2.6) — 하한은 그대로.
+    final v = roundJellyCost(hours * levelUpJellyPerHour);
     return v < levelUpJellyMin ? levelUpJellyMin : v;
   }
 

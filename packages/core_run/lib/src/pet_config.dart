@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'jelly_cost.dart';
+
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
@@ -398,11 +400,8 @@ class PetConfig {
   int breakthroughMatCost(int tier) => _atOrLast(breakthroughMaterial, tier);
 
   /// 남은 시간 비례 즉시완료 젤리 비용.
-  int breakthroughJelly(Duration remaining) {
-    if (remaining <= Duration.zero) return 0;
-    final v = (remaining.inSeconds / 60 * breakthroughJellyPerMinute).ceil();
-    return v < 1 ? 1 : v;
-  }
+  int breakthroughJelly(Duration remaining) =>
+      roundJellyCost(remaining.inSeconds / 60 * breakthroughJellyPerMinute);
 
   int incubateDuration(Grade g) => incubateDurationsSec[g] ?? 300;
 
@@ -410,11 +409,8 @@ class PetConfig {
   int injuryDuration(Grade g) => injuryDurationsSec[g] ?? 600;
 
   /// 남은 시간 비례 부상 즉시회복 젤리 비용(최소 1).
-  int injuryJelly(Duration remaining) {
-    if (remaining <= Duration.zero) return 0;
-    final v = (remaining.inSeconds / 60 * injuryJellyPerMinute).ceil();
-    return v < 1 ? 1 : v;
-  }
+  int injuryJelly(Duration remaining) =>
+      roundJellyCost(remaining.inSeconds / 60 * injuryJellyPerMinute);
 
   /// 등급별 산란(임신) 시간(초). 미설정이면 20분.
   int breedingDuration(Grade g) => breedingDurationsSec[g] ?? 1200;
@@ -444,8 +440,7 @@ class PetConfig {
   int _instantJelly(Duration remaining, double coef) {
     if (remaining <= Duration.zero) return 0;
     final minutes = remaining.inSeconds / 60;
-    final v = (coef * math.pow(minutes, instantJellyExponent)).ceil();
-    return v < 1 ? 1 : v;
+    return roundJellyCost(coef * math.pow(minutes, instantJellyExponent));
   }
 
   /// [level] → [level]+1 수련 비용(골드).

@@ -28,7 +28,7 @@
   }
  ],
  "freeDaily": 12,
- "jellyActivate": 2,
+ "jellyActivate": 5,
  "freeCooldownSeconds": 14400,
  "_freeComment": "무료 발동 규칙 (사장님 결정 2026-08-27): 버프마다 무료 발동 1회 후 freeCooldownSeconds(4시간) 텀. 예전엔 하루 12회를 연달아 눌러 한자리에서 6시간을 공짜로 쌓을 수 있었다 — 광고 시절엔 광고 시청이 비용이었는데 그 비용이 사라진 자리라 텀이 필요하다. 쿨다운 중엔 젤리(jellyActivate)로 바로 켤 수 있다(결제는 시간만 절약 — §2.6 원칙 그대로). freeDaily 는 하루 총량 백스톱으로 유지. 0 이면 쿨다운 없음(구버전 동작)."
 }

@@ -19,9 +19,10 @@ void main() {
       expect(cfg.injuryDuration(Grade.rare), 600);
     });
 
-    test('즉시회복 젤리 = 남은분 × rate, 올림·최소 1', () {
+    test('즉시회복 젤리 = 남은분 × rate, **5 단위**로 맞춘다', () {
       expect(cfg.injuryJelly(const Duration(minutes: 10)), 5); // 10 × 0.5
-      expect(cfg.injuryJelly(const Duration(seconds: 30)), 1); // 올림 + 최소 1
+      // 아주 짧아도 최소 5 — 1~2젤리는 가격표로 안 읽힌다(§2.6, roundJellyCost).
+      expect(cfg.injuryJelly(const Duration(seconds: 30)), 5);
       expect(cfg.injuryJelly(Duration.zero), 0);
     });
   });
@@ -42,9 +43,9 @@ void main() {
       expect(cfg.breedingDuration(Grade.rare), 1200);
     });
 
-    test('즉시완료 젤리 = 남은분 × rate, 올림·최소 1', () {
+    test('즉시완료 젤리 = 남은분 × rate, **5 단위**로 맞춘다', () {
       expect(cfg.breedingJelly(const Duration(minutes: 20)), 10);
-      expect(cfg.breedingJelly(const Duration(seconds: 10)), 1);
+      expect(cfg.breedingJelly(const Duration(seconds: 10)), 5);
       expect(cfg.breedingJelly(Duration.zero), 0);
     });
 

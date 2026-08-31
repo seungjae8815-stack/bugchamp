@@ -118,9 +118,9 @@ void main() {
       expect(old.breedingJelly(const Duration(minutes: 60)), 30);
     });
 
-    test('남은 시간이 없으면 0, 아주 짧아도 최소 1', () {
+    test('남은 시간이 없으면 0, 아주 짧아도 최소 5(§2.6 가격 단위)', () {
       expect(cfg.breedingJelly(Duration.zero), 0);
-      expect(cfg.incubateJelly(const Duration(seconds: 1)), 1);
+      expect(cfg.incubateJelly(const Duration(seconds: 1)), 5);
     });
   });
 }
