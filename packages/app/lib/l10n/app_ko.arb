@@ -752,7 +752,7 @@
   "mailClaimAll": "모두 받기",
   "gachaTitle": "곤충 알 뽑기",
   "gachaDesc": "포텐셜 3★ 이상 보장 (야생은 5★이 안 나와요) · 이색 확률 10배",
-  "gachaPityLeft": "{n}회 안에 영웅 이상 확정",
+  "gachaPityLeft": "{n}회 안에 전설 확정",
   "@gachaPityLeft": {
     "placeholders": {
       "n": {

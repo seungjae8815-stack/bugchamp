@@ -717,7 +717,7 @@
   "mailClaimAll": "すべて受け取る",
   "gachaTitle": "虫のタマゴガチャ",
   "gachaDesc": "ポテンシャル3★以上確定 (野生では5★が出ません) · 色違い確率10倍",
-  "gachaPityLeft": "あと{n}回で英雄以上確定",
+  "gachaPityLeft": "あと{n}回で伝説確定",
   "@gachaPityLeft": {
     "placeholders": {
       "n": {

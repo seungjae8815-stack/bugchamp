@@ -80,6 +80,7 @@ class PetConfig {
     this.gachaJellyCost = 0,
     this.gachaVariantChance = 0,
     this.gachaEpicPity = 0,
+    this.gachaPityGrade = Grade.legendary,
     this.gachaWeights = const {},
     this.gachaPotentialWeights = const {},
     this.variantBreedChance = 0,
@@ -257,8 +258,15 @@ class PetConfig {
   /// 뽑기의 이색 확률 — 야생(1/300)보다 훨씬 높다(1/30). 뽑기의 값어치 축.
   final double gachaVariantChance;
 
-  /// N회 뽑을 때마다 영웅+ 보장(천장). 0 = 천장 없음.
+  /// N회 뽑을 때마다 [gachaPityGrade] 이상 보장(천장). 0 = 천장 없음.
   final int gachaEpicPity;
+
+  /// 천장이 보장하는 **최소 등급**(2026-08-31: 영웅 → 전설).
+  ///
+  /// 영웅으로 두면 전설을 노리고 도는 유저의 카운터가 영웅에서 계속 초기화돼,
+  /// "10회 안에 확정"이라는 약속이 정작 목표에는 닿지 않는다. 유저가 세는
+  /// 것은 자기가 원하는 등급까지의 횟수다.
+  final Grade gachaPityGrade;
 
   /// 등급 가중치(합이 1일 필요는 없다 — 비율로 쓴다).
   final Map<Grade, double> gachaWeights;
@@ -557,6 +565,9 @@ class PetConfig {
       gachaJellyCost: (json['gachaJellyCost'] as num?)?.toInt() ?? 0,
       gachaVariantChance: (json['gachaVariantChance'] as num?)?.toDouble() ?? 0,
       gachaEpicPity: (json['gachaEpicPity'] as num?)?.toInt() ?? 0,
+      gachaPityGrade:
+          Grade.fromKeyOrNull(json['gachaPityGrade'] as String? ?? '') ??
+          Grade.legendary,
       gachaPotentialWeights: {
         if (json['gachaPotentialWeights'] is Map)
           for (final e in (json['gachaPotentialWeights'] as Map).entries)

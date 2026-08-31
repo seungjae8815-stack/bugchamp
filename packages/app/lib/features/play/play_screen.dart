@@ -3569,32 +3569,61 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
             const SizedBox(width: 8),
+            // 받음·잠김 문구도 **버튼과 같은 폭**을 차지한다 — 폭이 다르면
+            // 왼쪽 보상 문구의 줄바꿈 지점이 카드마다 달라진다.
             if (claimedToday)
-              Text(
-                l.dailyClaimedToday,
-                style: const TextStyle(
-                  color: Color(0x88FFFFFF),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
+              SizedBox(
+                width: 104,
+                height: 40,
+                child: Center(
+                  child: Text(
+                    l.dailyClaimedToday,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0x88FFFFFF),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               )
             else if (!unlocked)
-              Text(
-                l.dailyLockedUntil(rw.hour),
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
-                  fontSize: 11.5,
+              SizedBox(
+                width: 104,
+                height: 40,
+                child: Center(
+                  child: Text(
+                    l.dailyLockedUntil(rw.hour),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 11.5,
+                    ),
+                  ),
                 ),
               )
             else
-              FilledButton(
-                onPressed: claimDailyThenOffer,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFEBA52F),
-                  foregroundColor: const Color(0xFF3A2600),
-                  minimumSize: const Size(0, 36),
+              // 깜짝선물 '받기'와 **같은 상자**(104x40). 크기가 다르면 두 카드가
+              // 같은 목록에 붙어 있을 때 줄이 어긋나 보인다(실기 지적).
+              SizedBox(
+                width: 104,
+                height: 40,
+                child: FilledButton(
+                  onPressed: claimDailyThenOffer,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFEBA52F),
+                    foregroundColor: const Color(0xFF3A2600),
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 40),
+                  ),
+                  child: Text(
+                    l.dailyClaim,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
-                child: Text(l.dailyClaim),
               ),
           ],
         ),
@@ -4632,6 +4661,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   // 이벤트 참가권은 **서버 소유 필드**라 로컬로 늘려도 다음
                   // 업로드에 서버 값으로 덮인다. 그래서 서버에 요청해야 하고,
                   // 아무나 부르면 순위가 무너지므로 **운영 키**로 보호한다.
+                  // 이색은 1/300 이라 실기에서 자연히 나오길 기다릴 수 없다.
+                  // 확인용으로 **보유 곤충 하나를 이색으로 바꾼다**(새로 만들지
+                  // 않는다 — 채집함 상한·도감 경로를 그대로 타야 진짜 확인이다).
+                  _devSection('이색(변이)', [
+                    _devBtn('무지개로 바꾸기', () async {
+                      final msg = await ctrl.devMakeVariant(BugVariant.rainbow);
+                      toast(msg);
+                    }),
+                    _devBtn('알비노로 바꾸기', () async {
+                      final msg = await ctrl.devMakeVariant(BugVariant.albino);
+                      toast(msg);
+                    }),
+                    _devBtn('전부 보통으로', () async {
+                      final msg = await ctrl.devMakeVariant(BugVariant.none);
+                      toast(msg);
+                    }, danger: true),
+                  ]),
                   _devSection('이벤트', [
                     _devBtn('참가권 +5', () async {
                       final msg = await _devGrantEventTickets(5);

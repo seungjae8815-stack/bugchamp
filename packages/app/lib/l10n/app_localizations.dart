@@ -4279,7 +4279,7 @@ abstract class AppLocalizations {
   /// No description provided for @gachaPityLeft.
   ///
   /// In en, this message translates to:
-  /// **'Epic+ guaranteed within {n} draws'**
+  /// **'Legendary guaranteed within {n} draws'**
   String gachaPityLeft(int n);
 
   /// No description provided for @gachaDraw.

@@ -2352,7 +2352,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String gachaPityLeft(int n) {
-    return '$n회 안에 영웅 이상 확정';
+    return '$n회 안에 전설 확정';
   }
 
   @override

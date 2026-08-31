@@ -1363,6 +1363,29 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(state.requireValue.copyWith(stageNumber: n));
   }
 
+  /// (개발) 보유 곤충의 이색을 바꾼다 — 1/300 을 실기에서 기다릴 수 없어서.
+  ///
+  /// 새로 만들지 않고 **가진 것을 바꾼다**: 채집함 상한·도감 갱신 경로를
+  /// 그대로 타야 "이색이 도감에 남는가"까지 진짜로 확인된다.
+  /// [v] 가 none 이면 전부 보통으로 되돌린다.
+  Future<String> devMakeVariant(BugVariant v) async {
+    final s = state.requireValue;
+    if (s.bugs.isEmpty) return '곤충이 없다';
+    if (v == BugVariant.none) {
+      await _commit(
+        s.copyWith(bugs: [for (final b in s.bugs) b.copyWith(variant: v)]),
+      );
+      return '전부 보통으로';
+    }
+    // 이미 그 이색이 아닌 첫 마리를 바꾼다 — 누르는 만큼 늘어난다.
+    final idx = s.bugs.indexWhere((b) => b.variant != v);
+    if (idx < 0) return '전부 이미 ${v.key}';
+    final bugs = List<IndividualBug>.from(s.bugs);
+    bugs[idx] = bugs[idx].copyWith(variant: v);
+    await _commit(s.copyWith(bugs: bugs));
+    return '${bugs[idx].speciesId} → ${v.key}';
+  }
+
   /// (개발) 재화 추가(음수면 차감).
   Future<void> devAddResources({
     int gold = 0,
@@ -1769,13 +1792,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final pityDue =
         cfg.gachaEpicPity > 0 && s.gachaPity >= cfg.gachaEpicPity - 1;
 
-    // 등급: 가중치 롤. 천장이면 영웅 미만을 잘라낸다.
+    // 등급: 가중치 롤. 천장이면 보장 등급 미만을 잘라낸다.
     var weights = Map<Grade, double>.from(cfg.gachaWeights);
     weights.remove(Grade.common); // 어떤 설정이 와도 일반은 안 나온다
     if (pityDue) {
       weights = {
         for (final e in weights.entries)
-          if (e.key.index >= Grade.epic.index) e.key: e.value,
+          if (e.key.index >= cfg.gachaPityGrade.index) e.key: e.value,
       };
     }
     if (weights.isEmpty) return (bug: null, error: 'off');
@@ -1824,7 +1847,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.copyWith(
         materials: mats,
         bugs: [...s.bugs, bug],
-        gachaPity: grade.index >= Grade.epic.index ? 0 : s.gachaPity + 1,
+        // ⚠️ **보장 등급이 나왔을 때만** 되감는다. 영웅에서 초기화하면
+        // 전설을 노리는 유저의 카운터가 계속 리셋돼, "N회 안에 확정"이
+        // 정작 목표에는 닿지 않는다.
+        gachaPity: grade.index >= cfg.gachaPityGrade.index
+            ? 0
+            : s.gachaPity + 1,
       ),
     );
     return (bug: bug, error: null);

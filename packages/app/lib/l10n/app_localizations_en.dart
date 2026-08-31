@@ -2399,7 +2399,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gachaPityLeft(int n) {
-    return 'Epic+ guaranteed within $n draws';
+    return 'Legendary guaranteed within $n draws';
   }
 
   @override

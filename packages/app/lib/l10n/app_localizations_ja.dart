@@ -2347,7 +2347,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String gachaPityLeft(int n) {
-    return 'あと$n回で英雄以上確定';
+    return 'あと$n回で伝説確定';
   }
 
   @override
