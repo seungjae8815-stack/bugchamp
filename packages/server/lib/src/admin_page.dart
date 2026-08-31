@@ -78,12 +78,26 @@ const String adminHtml = r'''<!doctype html>
 </header>
 <main>
   <div class="tabs">
+    <button id="t-user" onclick="tab('user')">유저</button>
     <button id="t-notice" class="on" onclick="tab('notice')">공지</button>
     <button id="t-mail" onclick="tab('mail')">우편</button>
     <button id="t-code" onclick="tab('code')">선물코드</button>
     <button id="t-chat" onclick="tab('chat')">채팅</button>
     <button id="t-grant" onclick="tab('grant')">지급</button>
   </div>
+
+  <section id="s-user">
+    <div class="card">
+      <h2>유저 상태 보기</h2>
+      <p class="hint">닉네임이나 uuid 로 찾습니다. 문의를 받으면 여기부터 보세요.</p>
+      <div class="row">
+        <div><label>닉네임</label><input id="u-nick" placeholder="크론병"></div>
+        <div><label>또는 uuid</label><input id="u-uid" placeholder="00000000-0000-..."></div>
+      </div>
+      <button class="act" onclick="findUser()">찾기</button>
+      <div id="u-result"></div>
+    </div>
+  </section>
 
   <section id="s-notice" class="on">
     <div class="card">
@@ -220,7 +234,7 @@ async function login() {
 function logout() { sessionStorage.removeItem('adminKey'); location.reload(); }
 function tab(name) {
   if (name === 'grant') loadProducts();
-  for (const n of ['notice','mail','code','chat','grant']) {
+  for (const n of ['user','notice','mail','code','chat','grant']) {
     document.getElementById('s-' + n).className = n === name ? 'on' : '';
     document.getElementById('t-' + n).className = n === name ? 'on' : '';
   }
@@ -286,6 +300,76 @@ async function sendChat() {
     toast(e.message === 'admin_chat_user_id_missing'
       ? 'ADMIN_CHAT_USER_ID 가 설정되지 않았습니다' : e.message);
   }
+}
+
+function ago(iso) {
+  if (!iso) return '기록 없음';
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return '방금';
+  if (m < 60) return m + '분 전';
+  if (m < 1440) return Math.floor(m / 60) + '시간 전';
+  return Math.floor(m / 1440) + '일 전';
+}
+function n(v) { return (v == null) ? '-' : Number(v).toLocaleString(); }
+function row(k, v) {
+  return '<div class="item"><div class="body"><span class="sub">' + esc(k) +
+         '</span><div><b>' + v + '</b></div></div></div>';
+}
+
+async function findUser() {
+  const uid = val('u-uid'), nick = val('u-nick');
+  if (!uid && !nick) return toast('닉네임이나 uuid 를 입력하세요');
+  const box = document.getElementById('u-result');
+  box.innerHTML = '<div class="sub">찾는 중...</div>';
+  try {
+    const r = await api('/admin/user', uid ? { userId: uid } : { nickname: nick });
+    // 닉네임이 겹치면 고르게 한다 — 임의로 하나를 집으면 엉뚱한 계정을 본다.
+    if (r.ambiguous) {
+      box.innerHTML = '<div class="sub">같은 닉네임이 여럿입니다 — 고르세요</div>' +
+        r.candidates.map(c =>
+          '<div class="item"><div class="body"><b>' + esc(c.nickname) + '</b>' +
+          '<div class="sub">Lv ' + n(c.level) + ' · 스테이지 ' + n(c.stage) +
+          ' · 트로피 ' + n(c.trophies) + '</div>' +
+          '<div class="sub">' + esc(c.id) + '</div></div>' +
+          '<button onclick="pickUser(\'' + c.id + '\')">보기</button></div>'
+        ).join('');
+      return;
+    }
+    const pass = r.passActive ? '켜짐 (' + r.passExpiresAt.slice(0,10) + ' 까지)'
+                              : (r.passExpiresAt ? '만료됨' : '없음');
+    const bpass = r.buffPassActive ? '켜짐 (' + r.buffPassExpiresAt.slice(0,10) + ' 까지)'
+                                   : (r.buffPassExpiresAt ? '만료됨' : '없음');
+    box.innerHTML =
+      row('닉네임', esc(r.nickname) + ' <span class="sub">' + esc(r.id) + '</span>') +
+      row('진행', '회차 ' + n(r.tier) + ' · 스테이지 ' + n(r.stage) + ' · Lv ' + n(r.level)) +
+      row('재화', '골드 ' + n(r.gold) + ' · 젤리 ' + n(r.jelly)) +
+      row('재료', '키틴 ' + n(r.chitin) + ' · 미네랄 ' + n(r.mineral) + ' · 수액 ' + n(r.sap)) +
+      row('채집함', n(r.bugs) + ' / ' + n(r.storage) + ' 마리') +
+      row('결투', '트로피 ' + n(r.trophies) + ' · 티켓 ' + n(r.tickets) +
+          (r.eventTickets == null ? '' : ' · 대회 참가권 ' + n(r.eventTickets))) +
+      row('곤충학자 패스', pass) +
+      row('무한 버프 패스', bpass) +
+      row('스타터', r.starterBought ? '구매함' : '없음') +
+      row('결제 건수', n(r.purchases) + '건') +
+      row('마지막 접속', ago(r.lastSeen)) +
+      '<button class="act" onclick="toGrant(\'' + r.id + '\')">이 유저에게 지급하기</button>';
+    document.getElementById('u-uid').value = r.id;
+  } catch (e) {
+    box.innerHTML = '';
+    toast(e.message === 'not_found' ? '그 닉네임의 유저가 없습니다'
+        : e.message === 'no_save' ? '세이브가 없습니다'
+        : e.message);
+  }
+}
+function pickUser(id) {
+  document.getElementById('u-uid').value = id;
+  document.getElementById('u-nick').value = '';
+  findUser();
+}
+// 상태를 보고 바로 지급으로 넘어간다 — uuid 를 손으로 옮기면 오타가 난다.
+function toGrant(id) {
+  document.getElementById('g-uid').value = id;
+  tab('grant');
 }
 
 async function loadProducts() {

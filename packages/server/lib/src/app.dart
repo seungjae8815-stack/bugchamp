@@ -1814,6 +1814,72 @@ Handler buildHandler({
     /// (멱등)에 쓰이면서, 나중에 세이브만 보고도 **결제가 아니라 지급**임을
     /// 구분할 수 있다. 같은 사유로 두 번 부르면 두 번째는 조용히 무시된다 —
     /// 연장해서 더 주려면 사유를 바꾼다(`admin:pass:2026-09-보상2`).
+    /// 유저 현재 상태 조회 — 문의를 받았을 때 **먼저 보는 화면**.
+    ///
+    /// 닉네임으로도 찾을 수 있게 한다. 유저는 uuid 를 모르고 닉네임으로
+    /// 말하는데, 매번 SQL 편집기를 열어 uuid 를 찾아 오는 건 운영 도구가
+    /// 아니다. 닉네임은 중복될 수 있으므로 **여러 명이면 목록을 돌려준다**.
+    ///
+    /// ⚠️ 세이브 전체를 그대로 뱉지 않는다. 곤충 수천 마리가 실린 세이브는
+    /// 수 MB 라 브라우저가 멈추고, 화면에서 읽을 수도 없다. 문의 대응에 실제로
+    /// 쓰는 값만 추린다.
+    public.post('/admin/user', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      var userId = clean(b!['userId'], 64);
+      final nickname = clean(b['nickname'], 32);
+      if (userId == null && nickname == null) {
+        return _json({'error': 'user_or_nickname_required'}, status: 400);
+      }
+      try {
+        if (userId == null) {
+          final rows = await store.findProfilesByNickname(nickname!);
+          if (rows.isEmpty) return _json({'error': 'not_found'}, status: 404);
+          if (rows.length > 1) {
+            // 고르라고 돌려준다 — 임의로 하나를 집으면 엉뚱한 계정에 지급한다.
+            return _json({'ambiguous': true, 'candidates': rows});
+          }
+          userId = rows.first['id'] as String;
+        }
+        final raw = await store.load(userId);
+        if (raw == null) return _json({'error': 'no_save'}, status: 404);
+        final save = SaveGame.fromJson(migrateToCurrent(raw));
+        final t = actions.now().toUtc();
+        final tk = actions.ticketsNow(save);
+        final ev = cfg.event == null ? null : actions.eventTicketsNow(save);
+        return _json({
+          'ok': true,
+          'id': userId,
+          'nickname': save.nickname,
+          'level': save.level,
+          'stage': save.stageNumber,
+          'tier': save.difficultyTier,
+          'gold': save.gold,
+          'jelly': save.materialCount(MaterialKind.jelly),
+          'chitin': save.materialCount(MaterialKind.chitin),
+          'mineral': save.materialCount(MaterialKind.mineral),
+          'sap': save.materialCount(MaterialKind.sap),
+          'bugs': save.bugs.length,
+          'storage': save.storageCapacity,
+          'trophies': save.pvpTrophies,
+          'tickets': tk.tickets,
+          'eventTickets': ev?.tickets,
+          // 결제 상태 — "샀는데 안 들어왔다" 문의의 답이 여기 있다.
+          'starterBought': save.starterBought,
+          'adsRemoved': save.adsRemoved,
+          'passExpiresAt': save.passExpiresAt?.toIso8601String(),
+          'buffPassExpiresAt': save.buffPassExpiresAt?.toIso8601String(),
+          'passActive': save.passActive(t),
+          'buffPassActive': save.buffPassActive(t),
+          'purchases': save.redeemedPurchases.length,
+          'lastSeen': save.lastSeen.toIso8601String(),
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/user] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     /// 운영 패널의 "지급" 탭이 상품 목록을 채울 때 부른다.
     ///
     /// 목록을 HTML 에 박아 두지 않는 이유: `iap.json` 이 바뀌면 화면이 조용히

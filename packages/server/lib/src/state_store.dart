@@ -340,6 +340,32 @@ class StateStore {
   // 조회는 **기간 필터 없이 전부** 준다 — 운영자는 지난 공지·만료된 코드도
   // 봐야 관리가 된다(유저용 loadNotices/loadMail 과 다른 이유).
 
+  /// 닉네임으로 프로필 찾기(운영 패널). 유저는 uuid 를 모르고 닉네임으로
+  /// 말한다 — 매번 SQL 편집기를 여는 건 운영 도구가 아니다.
+  ///
+  /// ⚠️ 닉네임은 **중복될 수 있다.** 호출부가 여러 명이면 고르게 해야 한다 —
+  /// 임의로 하나를 집으면 엉뚱한 계정에 상품을 지급한다.
+  Future<List<Map<String, dynamic>>> findProfilesByNickname(
+    String nickname, {
+    int limit = 10,
+  }) async {
+    // PostgREST 값은 URL 인코딩한다 — 닉네임에 & 나 , 가 들어가면 질의가
+    // 통째로 어긋난다(한글도 인코딩이 필요하다).
+    final v = Uri.encodeQueryComponent(nickname);
+    final res = await _http.get(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/profiles'
+        '?select=id,nickname,level,stage,tier,trophies'
+        '&nickname=eq.$v&limit=$limit',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw StateStoreException('프로필 조회 실패: ${res.statusCode} ${res.body}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
+  }
+
   /// 관리 패널용 전체 조회(공지·우편·코드).
   Future<Map<String, List<Map<String, dynamic>>>> adminData({
     int limit = 100,
