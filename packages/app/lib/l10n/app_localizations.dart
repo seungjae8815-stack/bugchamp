@@ -1456,6 +1456,12 @@ abstract class AppLocalizations {
   /// **'Variant'**
   String get dexVariant;
 
+  /// No description provided for @dexComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'This species is complete'**
+  String get dexComplete;
+
   /// No description provided for @dexConqueredYes.
   ///
   /// In en, this message translates to:

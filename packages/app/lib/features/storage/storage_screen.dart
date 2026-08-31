@@ -2862,6 +2862,7 @@ class StorageScreen extends ConsumerWidget {
       stage: stage,
       level: bug.level,
       trait: bug.trait,
+      variant: bug.variant,
       passive: sp.passive,
     ), cfg);
     return _sectionBox(

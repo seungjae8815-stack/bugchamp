@@ -549,6 +549,8 @@ class GameActions {
           // 다만 위조 가능한 다른 값보다 효과가 작고, `integrityError` 가
           // 나머지 상한을 이미 막는다. 서버 발급 전환 시 함께 봉인한다.
           traitAtkBonus: petConfig.traitBattleAtk(bug.trait),
+          variantAtkBonus: petConfig.variantBattleAtk(bug.variant),
+          variantHpBonus: petConfig.variantBattleHp(bug.variant),
           traitHpBonus: petConfig.traitBattleHp(bug.trait),
         ),
       );

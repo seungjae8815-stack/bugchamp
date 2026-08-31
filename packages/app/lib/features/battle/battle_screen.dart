@@ -363,6 +363,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       // 혈통 특성(§2.5)은 전투에도 실린다. 배율은 `traitBattleScale` —
       // 서버(`GameActions._buildTeam`)와 **같은 값**이어야 승패가 안 갈린다.
       traitAtkBonus: pet?.traitBattleAtk(bug.trait) ?? 0,
+      variantAtkBonus: pet?.variantBattleAtk(bug.variant) ?? 0,
+      variantHpBonus: pet?.variantBattleHp(bug.variant) ?? 0,
       traitHpBonus: pet?.traitBattleHp(bug.trait) ?? 0,
     );
   }

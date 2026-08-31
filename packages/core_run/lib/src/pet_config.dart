@@ -93,6 +93,9 @@ class PetConfig {
     this.traitAttackBonus = const {},
     this.traitHpBonus = const {},
     this.traitBattleScale = 0,
+    this.variantAttackBonus = 0,
+    this.variantHpBonus = 0,
+    this.variantBattleScale = 0,
     this.storageSlotsMax = 100,
     this.expandCostGrowth = 1.12,
     this.expandCostRound = kDefaultExpandCostRound,
@@ -331,6 +334,28 @@ class PetConfig {
   /// 다만 위조 가능한 다른 값(포텐셜 5 → 강화 상한 50레벨 = +200%)보다 작아
   /// **기존 구멍을 조금 넓히는 수준**이다. 서버 발급으로 전환할 때 함께 막는다.
   final double traitBattleScale;
+
+  /// 이색(§2.1) 개체의 **펫 기여** 보정(0.6 = +60%).
+  ///
+  /// 2026-08-31 사장님 확정: 이색을 외형만 두면 계속 도전할 이유가 약하다.
+  /// 확률이 1/300 이라 흔해질 위험은 없고, 목표가 눈에 보이는 편이 낫다.
+  ///
+  /// ⚠️ 대가: 곤충 롤은 기기 권위라 **이색은 위조를 막을 수 없다**(§2.5 특성과
+  /// 같은 구멍). 그래서 전투 쪽은 [variantBattleScale] 로 **따로** 조절한다 —
+  /// PvP 에서 문제가 생기면 전투만 0 으로 끌 수 있어야 한다.
+  final double variantAttackBonus;
+  final double variantHpBonus;
+
+  /// 이색의 **전투(PvP)** 반영 배율. 0 이면 전투에는 전혀 안 실린다.
+  final double variantBattleScale;
+
+  /// 전투용 이색 공격 보정(= 펫 계수 × [variantBattleScale]).
+  double variantBattleAtk(BugVariant v) =>
+      v == BugVariant.none ? 0 : variantAttackBonus * variantBattleScale;
+
+  /// 전투용 이색 체력 보정.
+  double variantBattleHp(BugVariant v) =>
+      v == BugVariant.none ? 0 : variantHpBonus * variantBattleScale;
 
   /// 전투용 특성 공격 보정(= 펫 계수 × [traitBattleScale]).
   double traitBattleAtk(BugTrait t) =>
@@ -597,6 +622,9 @@ class PetConfig {
       traitAttackBonus: _traitMap(json['traitAttackBonus']),
       traitHpBonus: _traitMap(json['traitHpBonus']),
       traitBattleScale: (json['traitBattleScale'] as num?)?.toDouble() ?? 0,
+      variantAttackBonus: (json['variantAttackBonus'] as num?)?.toDouble() ?? 0,
+      variantHpBonus: (json['variantHpBonus'] as num?)?.toDouble() ?? 0,
+      variantBattleScale: (json['variantBattleScale'] as num?)?.toDouble() ?? 0,
       disassembleJellyMinPotential:
           (json['disassembleJellyMinPotential'] as num?)?.toInt() ?? 0,
       releaseMaterialByGrade: _gradeIntMap(json['releaseMaterialByGrade']),
@@ -674,6 +702,9 @@ typedef PetStat = ({
   /// 혈통 특성(§2.5). 야생 개체는 [BugTrait.none].
   BugTrait trait,
 
+  /// 이색(§2.1). 보통 개체는 [BugVariant.none].
+  BugVariant variant,
+
   /// 종 고유 패시브(§2.1). 없으면 null.
   SpeciesPassive? passive,
 });
@@ -696,6 +727,7 @@ PetStat petStatOf(
   stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
   level: bug.level,
   trait: bug.trait,
+  variant: bug.variant,
   passive: species.passive,
 );
 
@@ -712,9 +744,13 @@ PetStat petStatOf(
   // 두 축이 같이 올라 특성끼리 구분이 사라진다.
   final tAtk = 1 + (cfg.traitAttackBonus[p.trait] ?? 0);
   final tHp = 1 + (cfg.traitHpBonus[p.trait] ?? 0);
+  // 이색도 특성과 같은 자리에 **가산**으로 붙는다(scale 에 곱하면 두 축이 같이
+  // 올라 무엇 때문에 세졌는지 화면에서 구분이 안 된다).
+  final vAtk = p.variant == BugVariant.none ? 1.0 : 1 + cfg.variantAttackBonus;
+  final vHp = p.variant == BugVariant.none ? 1.0 : 1 + cfg.variantHpBonus;
   return (
-    attack: (cfg.gradeAttackPct[p.grade] ?? 0) * scale * tAtk,
-    hp: (cfg.gradeHpPct[p.grade] ?? 0) * scale * tHp,
+    attack: (cfg.gradeAttackPct[p.grade] ?? 0) * scale * tAtk * vAtk,
+    hp: (cfg.gradeHpPct[p.grade] ?? 0) * scale * tHp * vHp,
   );
 }
 

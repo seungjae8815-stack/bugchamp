@@ -507,6 +507,7 @@
   "dexDiscovered": "Found",
   "dexConquered": "Raised",
   "dexVariant": "Variant",
+  "dexComplete": "This species is complete",
   "dexConqueredYes": "Done",
   "dexConqueredNo": "Not yet",
   "dexMaxSize": "Largest",

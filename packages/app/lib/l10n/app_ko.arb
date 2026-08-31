@@ -247,6 +247,7 @@
   "dexDiscovered": "발견",
   "dexConquered": "정복",
   "dexVariant": "이색",
+  "dexComplete": "이 종은 완료했어요",
   "dexConqueredYes": "완료",
   "dexConqueredNo": "아직",
   "dexMaxSize": "최대 크기",

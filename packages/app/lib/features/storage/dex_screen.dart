@@ -197,6 +197,10 @@ class DexScreen extends ConsumerWidget {
   ) {
     final found = entry != null;
     final conquered = entry?.raisedToAdult ?? false;
+    final variant = entry?.variantFound ?? false;
+    // 한 종을 **끝까지** 모았는가 = 발견 + 정복 + 이색. 하나씩 채워 나가는
+    // 느낌을 주려면 "완료"라는 종착점이 눈에 보여야 한다(2026-08-31 지시).
+    final complete = found && conquered && variant;
     final art = bugStageImage(
       sp.id,
       LifeStage.adult,
@@ -208,14 +212,25 @@ class DexScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: const Color(0x22000000),
+          // 완료 칸은 배경까지 바꾼다 — 테두리만으로는 격자에서 안 읽힌다.
+          color: complete ? const Color(0x33CE7AE0) : const Color(0x22000000),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: conquered
+            color: complete
+                ? const Color(0xFFCE7AE0)
+                : conquered
                 ? _honey
                 : gradeColor(sp.grade).withValues(alpha: found ? 0.7 : 0.18),
-            width: conquered ? 1.6 : 1.2,
+            width: complete ? 2 : (conquered ? 1.6 : 1.2),
           ),
+          boxShadow: complete
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFCE7AE0).withValues(alpha: 0.35),
+                    blurRadius: 10,
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -225,25 +240,16 @@ class DexScreen extends ConsumerWidget {
               child: found
                   // 이색을 얻은 종은 도감 그림도 그 색으로 — 곤충이 사라져도
                   // "이 종의 이색을 가졌었다"가 눈에 남는다.
-                  ? (entry.variantFound
-                        ? Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              ColorFiltered(
-                                colorFilter: bugSkinFilter('rainbow')!,
-                                child: art,
-                              ),
-                              // 색만 바꾸면 '그림이 이상하다'로 읽힌다 —
-                              // 이색 기록임을 알리는 표식을 함께 얹는다.
-                              const Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Text(
-                                  '✨',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ],
+                  ? (variant
+                        // 이색 기록이 있으면 **스킨과 같은 연출**(색+후광+반짝임)로
+                        // 그린다 — 색만 바꾸면 "그림이 이상하다"로 읽힌다.
+                        ? SkinAura(
+                            effect: 'rainbow',
+                            size: 54,
+                            child: ColorFiltered(
+                              colorFilter: bugSkinFilter('rainbow')!,
+                              child: art,
+                            ),
                           )
                         : art)
                   // 미발견: 같은 실루엣을 까맣게 칠한다. 크기·형태만 보이고
@@ -276,8 +282,41 @@ class DexScreen extends ConsumerWidget {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            if (conquered)
-              const Icon(Icons.verified_rounded, size: 12, color: _honey),
+            // 진행 표식 — 무엇이 남았는지가 칸에서 바로 읽혀야 "하나씩
+            // 모아 가는" 느낌이 난다. 완료는 왕관 하나로 갈음한다.
+            SizedBox(
+              height: 14,
+              child: complete
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('👑', style: TextStyle(fontSize: 11)),
+                        SizedBox(width: 2),
+                        Text(
+                          'COMPLETE',
+                          style: TextStyle(
+                            color: Color(0xFFCE7AE0),
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (conquered)
+                          const Icon(
+                            Icons.verified_rounded,
+                            size: 12,
+                            color: _honey,
+                          ),
+                        if (variant)
+                          const Text('✨', style: TextStyle(fontSize: 10)),
+                      ],
+                    ),
+            ),
           ],
         ),
       ),
@@ -336,6 +375,30 @@ class DexScreen extends ConsumerWidget {
               l.dexVariant,
               entry.variantFound ? l.dexConqueredYes : l.dexConqueredNo,
             ),
+            if (entry.raisedToAdult && entry.variantFound) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0x33CE7AE0),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFCE7AE0)),
+                ),
+                child: Text(
+                  '👑 ${l.dexComplete}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFE9C2FF),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12.5,
+                  ),
+                ),
+              ),
+            ],
           ],
           // 패시브는 **미발견이어도 보여준다** — "이 종을 잡으면 뭐가 좋은지"가
           // 보여야 도감이 목표가 된다. 정체(이름·생김새)만 감춘다.

@@ -21,6 +21,10 @@ Stance preferredStanceOf(Specialty s) => switch (s) {
 /// (0.35 = +35%). 계수는 `pets.json → traitAttackBonus/traitHpBonus` ×
 /// `traitBattleScale` 이며, core_battle 은 core_run 을 모르므로 호출부가 넘긴다.
 /// 0 이면 특성이 전투에 영향을 주지 않는다(구버전 동작).
+/// [variantAtkBonus] / [variantHpBonus] 는 **이색**(§2.1)의 전투 보정이다.
+/// 계수는 `pets.json → variantAttackBonus/variantHpBonus × variantBattleScale`.
+/// ⚠️ 이색은 위조를 막을 수 없으므로(기기 권위 롤) 문제가 생기면
+/// `variantBattleScale` 을 0 으로 내려 **전투만** 끌 수 있어야 한다.
 BattleBug buildBattleBug({
   required IndividualBug bug,
   required Species species,
@@ -31,6 +35,8 @@ BattleBug buildBattleBug({
   double buildPerLevel = 0.05,
   double traitAtkBonus = 0,
   double traitHpBonus = 0,
+  double variantAtkBonus = 0,
+  double variantHpBonus = 0,
 }) {
   final sm = bug.statMultiplier(species);
   final e = bug.enhancement;
@@ -47,12 +53,14 @@ BattleBug buildBattleBug({
         species.baseStats.hp *
         sm *
         (1 + e.levelOf(BugPart.build) * buildPerLevel) *
-        (1 + traitHpBonus),
+        (1 + traitHpBonus) *
+        (1 + variantHpBonus),
     atk:
         species.baseStats.atk *
         sm *
         (1 + e.levelOf(BugPart.hornJaw) * hornJawPerLevel) *
-        (1 + traitAtkBonus),
+        (1 + traitAtkBonus) *
+        (1 + variantAtkBonus),
     def:
         species.baseStats.def *
         sm *

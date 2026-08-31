@@ -760,6 +760,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dexVariant => '色違い';
 
   @override
+  String get dexComplete => 'この種はコンプリート';
+
+  @override
   String get dexConqueredYes => '完了';
 
   @override
