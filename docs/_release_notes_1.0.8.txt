@@ -1,0 +1,36 @@
+========================================
+ Google Play — 출시 노트 (1.0.8 / 20260904)
+========================================
+※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
+   이 설명 줄들은 붙여넣지 않는다.
+※ ⚠️ **한도 500자는 세 언어 합계에 걸린다** — 언어당 500 이 아니다(2026-09-01 확인).
+   태그까지 포함해 세고, 줄바꿈은 2자(CRLF)다. 한 언어를 늘리면 다른 언어를 줄여야 한다.
+※ 재계산:
+   python -c "import io;s=io.open('docs/_release_notes_1.0.8.txt',encoding='utf-8').read();b=s[s.index('<ko-KR>'):].rstrip();print(len(b)+b.count(chr(10)))"
+※ iOS 용 노트는 _appstore_whatsnew_1.0.8.txt (4,000자 한도라 여유 있음).
+※ 범위: 20260903 이후 — 알 뽑기 · 이색 개체 · 도감 개편 · 희소성/난이도 재정비.
+----------------------------------------
+<ko-KR>
+🥚 곤충 알 뽑기!
+카드 3장 중 하나를 골라요. 야생에 없는 높은 포텐셜
+
+✨ 이색 개체 — 능력치가 월등한 희귀 개체
+📖 도감 개편 — 발견·정복·이색을 다 채우면 완료
+⚔ 높은 등급일수록 귀하고, 보스가 강해졌어요
+</ko-KR>
+<en-US>
+🥚 Egg Draw!
+Pick 1 of 3 cards. Potential you cannot find in the wild
+
+✨ Variants — rare recolored bugs, far stronger
+📖 Field Guide: discover, conquer, variant
+⚔ Higher grades are rarer. Bosses hit harder
+</en-US>
+<ja-JP>
+🥚 タマゴガチャ!
+3枚から1枚を選択。野生にない高ポテンシャル
+
+✨ 色違い — 能力が段違いの希少個体
+📖 図鑑改編 — 発見・制覇・色違い
+⚔ 高レア度ほど希少に。ボス強化
+</ja-JP>

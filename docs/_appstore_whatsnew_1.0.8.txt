@@ -1,0 +1,99 @@
+========================================
+ App Store — 새로운 기능 (1.0.8 / 20260904)
+========================================
+※ 이모지 금지(불릿 기호 - 는 허용). App Store 메타데이터 전 필드에 적용.
+※ 심사 1.1 지뢰 단어 금지: Sex / breed / breeding / 짝짓기 / 교배 / 交配 / 繁殖
+   → 대체: a pair / raise / hatch / 한 쌍 / 부화 / 孵化
+※ ⚠️ iOS 는 1.0.7 트레인이 닫혔다(이미 승인·출시) — 1.0.8 로만 제출된다.
+※ 범위: iOS 직전 출시본(1.0.7 / 20260902) 이후 전부.
+※ 길이: App Store 는 4,000자 한도(Play 의 500자 합계와 다르다).
+
+<ko-KR>
+곤충 알 뽑기가 열렸어요!
+
+- 카드 3장 중 하나를 골라 알을 뽑습니다
+- 야생에서는 나오지 않는 높은 포텐셜
+- 이색 개체가 나올 확률이 10배
+
+이색 개체 - 색이 다른 희귀 개체
+- 능력치가 월등히 높아요
+- 곤충이 사라져도 도감에 영구 기록
+
+도감 개편
+- 발견, 정복, 이색 세 단계로 채웁니다
+- 세 가지를 다 채우면 수집완료
+- 정복 기준이 수련 10레벨로 올라갔어요
+
+희소성과 난이도 재정비
+- 높은 등급일수록 훨씬 귀해졌어요
+- 등급이 높을수록 부화와 한 쌍 맞추기에 시간이 더 걸립니다
+- 보스가 확실히 강해졌어요
+- 돌파에 드는 재화와 시간이 늘었어요
+
+편의 개선
+- 부화 완료를 한 번에 받기
+- 운영 우편 모두 받기
+- 결투를 마치면 상대가 새로 뽑힙니다
+
+즐거운 채집 되세요!
+</ko-KR>
+
+<en-US>
+Egg Draw is here!
+
+- Pick 1 of 3 cards to open an egg
+- Potential you cannot find in the wild
+- 10x the odds of a variant
+
+Variants - rare recolored bugs
+- Far stronger than normal
+- Recorded in the Field Guide forever
+
+Field Guide rework
+- Three steps: discover, conquer, variant
+- Fill all three to mark a species Complete
+- Conquering now needs training level 10
+
+Rarity and difficulty retuned
+- Higher grades are much rarer now
+- Higher grades take longer to hatch and to match a pair
+- Bosses hit noticeably harder
+- Breakthrough costs more time and resources
+
+Quality of life
+- Collect all finished hatches at once
+- Claim all support mail at once
+- New opponents are drawn after each duel
+
+Happy collecting!
+</en-US>
+
+<ja-JP>
+タマゴガチャが登場!
+
+- 3枚のカードから1枚を選んでタマゴを開けます
+- 野生では出ない高いポテンシャル
+- 色違いの確率が10倍
+
+色違い - 色の異なる希少個体
+- 能力値が段違いに高い
+- 虫がいなくなっても図鑑に永久記録
+
+図鑑の改編
+- 発見、制覇、色違いの3段階で埋めます
+- すべて埋めるとコンプリート
+- 制覇の基準が修練レベル10になりました
+
+レア度と難易度の再調整
+- 高レア度ほど格段に希少になりました
+- 高レア度ほど孵化と一組そろえに時間がかかります
+- ボスが明確に強くなりました
+- 突破に必要な資源と時間が増えました
+
+便利機能
+- 孵化完了をまとめて受け取り
+- 運営メールをまとめて受け取り
+- 決闘のあと相手が新しく選ばれます
+
+よい採集を!
+</ja-JP>
