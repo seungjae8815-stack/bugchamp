@@ -29,6 +29,7 @@ class IndividualBug {
     this.breakthroughTier = 0,
     this.breakthroughEndsAt,
     this.trait = BugTrait.none,
+    this.variant = BugVariant.none,
     Element? element,
   }) : _element = element;
 
@@ -74,6 +75,9 @@ class IndividualBug {
 
   /// 혈통 특성 (§2.5) — 짝짓기 자식만 가진다. 야생 롤은 항상 [BugTrait.none].
   final BugTrait trait;
+
+  /// 이색(무지개·알비노) — 순수 외형. 스탯을 붙이지 않는 이유는 [BugVariant].
+  final BugVariant variant;
 
   final Element? _element;
 
@@ -146,6 +150,7 @@ class IndividualBug {
     required int potential,
     Temperament? temperament,
     Sex? sex,
+    double variantChance = 0,
   }) {
     assert(
       potential >= kPotentialMin && potential <= kPotentialMax,
@@ -156,6 +161,9 @@ class IndividualBug {
         temperament ??
         Temperament.values[rng.nextInt(Temperament.values.length)];
     final resolvedSex = sex ?? (rng.nextBool() ? Sex.male : Sex.female);
+    final element = Element.values[rng.nextInt(Element.values.length)];
+    // 이색 롤은 **맨 마지막** — 앞의 rng 소비 순서를 바꾸면 같은 seed 의
+    // 기존 롤 결과가 달라진다(breed 와 같은 규칙).
     return IndividualBug(
       id: id,
       speciesId: species.id,
@@ -163,8 +171,15 @@ class IndividualBug {
       potential: potential,
       temperament: temp,
       sex: resolvedSex,
-      element: Element.values[rng.nextInt(Element.values.length)],
+      element: element,
+      variant: _rollVariant(rng, variantChance),
     );
+  }
+
+  /// 이색 롤. 걸리면 무지개/알비노를 절반씩.
+  static BugVariant _rollVariant(Random rng, double chance) {
+    if (chance <= 0 || rng.nextDouble() >= chance) return BugVariant.none;
+    return rng.nextBool() ? BugVariant.rainbow : BugVariant.albino;
   }
 
   /// 브리딩(§2.5)으로 자식 개체(**알**)를 롤한다.
@@ -210,6 +225,7 @@ class IndividualBug {
     double traitInheritChance = 0,
     double traitNewChance = 0,
     Map<BugTrait, double> traitWeights = const {},
+    double variantChance = 0,
   }) {
     var size = parentAvgSizeMm * (1 + nextGaussian(rng) * sizeVariancePct);
     if (rng.nextDouble() < mutationChance) size *= (1 + mutationBonusPct);
@@ -252,16 +268,21 @@ class IndividualBug {
       traitWeights,
     );
 
+    final sex = rng.nextBool() ? Sex.male : Sex.female;
+    // ⚠️ 이색 롤은 기존 롤(사이즈→포텐셜→오행→기질→특성→성별) **뒤에** 붙는다 —
+    // 순서를 바꾸면 돌고 있던 슬롯의 결과가 달라진다.
+    final variant = _rollVariant(rng, variantChance);
     return IndividualBug(
       id: id,
       speciesId: species.id,
       sizeMm: size,
       potential: pot,
       temperament: temperament,
-      sex: rng.nextBool() ? Sex.male : Sex.female,
+      sex: sex,
       element: element,
       trait: trait,
       stage: LifeStage.egg,
+      variant: variant,
     );
   }
 
@@ -348,6 +369,7 @@ class IndividualBug {
     DateTime? breakthroughEndsAt,
     bool clearBreakthrough = false,
     BugTrait? trait,
+    BugVariant? variant,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -365,6 +387,7 @@ class IndividualBug {
         ? null
         : (breakthroughEndsAt ?? this.breakthroughEndsAt),
     trait: trait ?? this.trait,
+    variant: variant ?? this.variant,
     element: element ?? this.element,
   );
 
@@ -399,6 +422,10 @@ class IndividualBug {
     trait: json['trait'] == null
         ? BugTrait.none
         : BugTrait.fromKey(json['trait'] as String),
+    // 이색도 모르는 키는 none(구버전 호환). 없는 키 = 평범한 개체(대다수).
+    variant: json['variant'] == null
+        ? BugVariant.none
+        : BugVariant.fromKey(json['variant'] as String),
     element: json['element'] == null
         ? null
         : Element.fromKeyOrNull(json['element'] as String),
@@ -421,6 +448,8 @@ class IndividualBug {
     // 특성 없는 개체(야생 = 대다수)는 키를 아예 싣지 않는다 — 세이브 크기가
     // 곧 업로드 비용이라, 곤충 100마리 × 상시 필드는 그냥 낭비다(§3).
     if (trait != BugTrait.none) 'trait': trait.key,
+    // 이색 아닌 개체(대다수)는 키를 싣지 않는다 — trait 와 같은 이유(§3).
+    if (variant != BugVariant.none) 'variant': variant.key,
     'element': element.key,
   };
 

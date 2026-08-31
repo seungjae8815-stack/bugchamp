@@ -46,6 +46,8 @@ class Species {
     this.imageAsset,
     this.desc,
     this.passive,
+    this.availableFrom,
+    this.availableUntil,
   });
 
   /// 안정적 식별자 (예: 'stag_beetle_common').
@@ -76,6 +78,18 @@ class Species {
   /// 종 고유 패시브. 장착 시 캐릭터 능력치에 붙는다. 없으면 null.
   final SpeciesPassive? passive;
 
+  /// 한정 출현 기간(§2.1, 2026-08-31) — 라이브옵스용. 없으면 상시.
+  ///
+  /// 기간이 지나도 **종 정의는 남는다** — 이미 잡은 개체·도감·합성이
+  /// 계속 동작해야 한다. 기간은 오직 **드롭 풀**([availableAt])만 거른다.
+  final DateTime? availableFrom;
+  final DateTime? availableUntil;
+
+  /// 이 시각에 드롭 풀에 들어가는가.
+  bool availableAt(DateTime now) =>
+      (availableFrom == null || !now.isBefore(availableFrom!)) &&
+      (availableUntil == null || now.isBefore(availableUntil!));
+
   factory Species.fromJson(Map<String, dynamic> json) => Species(
     id: json['id'] as String,
     name: LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
@@ -91,6 +105,12 @@ class Species {
     passive: json['passive'] == null
         ? null
         : SpeciesPassive.fromJson(json['passive'] as Map<String, dynamic>),
+    availableFrom: json['from'] == null
+        ? null
+        : DateTime.parse(json['from'] as String).toUtc(),
+    availableUntil: json['until'] == null
+        ? null
+        : DateTime.parse(json['until'] as String).toUtc(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -104,6 +124,8 @@ class Species {
     if (imageAsset != null) 'image': imageAsset,
     if (desc != null) 'desc': desc!.toJson(),
     if (passive != null) 'passive': passive!.toJson(),
+    if (availableFrom != null) 'from': availableFrom!.toIso8601String(),
+    if (availableUntil != null) 'until': availableUntil!.toIso8601String(),
   };
 
   @override

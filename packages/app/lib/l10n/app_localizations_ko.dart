@@ -742,6 +742,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dexConquered => '정복';
 
   @override
+  String get dexVariant => '이색';
+
+  @override
   String get dexConqueredYes => '완료';
 
   @override

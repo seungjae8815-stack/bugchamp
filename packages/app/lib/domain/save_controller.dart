@@ -439,6 +439,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     Map<MaterialKind, int>? materials,
     MissionType? mission,
     bool idle = false,
+    int? rarePity,
   }) async {
     // 기기 권위 — 아이들 처치 보상도 로컬에서 즉시 반영(재화 즉각 누적).
     // 세이브는 [ServerSaveUploader] 가 주기적으로 올린다. [idle] 은 이제 표시용.
@@ -468,6 +469,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         missionProgress: mission == null
             ? null
             : _bumpMissions(s.missionProgress, mission, 1),
+        rarePity: rarePity,
       ),
     );
   }

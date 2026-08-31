@@ -1426,6 +1426,12 @@ abstract class AppLocalizations {
   /// **'Raised'**
   String get dexConquered;
 
+  /// No description provided for @dexVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant'**
+  String get dexVariant;
+
   /// No description provided for @dexConqueredYes.
   ///
   /// In en, this message translates to:

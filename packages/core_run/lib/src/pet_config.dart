@@ -73,6 +73,9 @@ class PetConfig {
     this.breedingPotUpChance = 0.10,
     this.breedingPotDownChance = 0.30,
     this.breedingElementInherit = 0,
+    this.variantWildChance = 0,
+    this.variantBreedChance = 0,
+    this.variantBreedParentChance = 0,
     this.breedingTemperamentInherit = 0,
     this.breedingTraitInherit = 0,
     this.breedingTraitNew = 0,
@@ -225,6 +228,17 @@ class PetConfig {
 
   /// 부모에게서 오행을 물려받을 확률. 부모가 같은 오행이면 사실상 확정.
   final double breedingElementInherit;
+
+  /// 이색(무지개·알비노) 확률 — 야생 드롭.
+  final double variantWildChance;
+
+  /// 이색 확률 — 짝짓기 자식(부모 중 이색 없음).
+  /// 야생보다 높게 둔다 — 짝짓기가 "이색을 노리는 길"이어야 돌릴 이유가 생긴다.
+  final double variantBreedChance;
+
+  /// 이색 확률 — **부모 중 이색이 있을 때**. 이색을 얻으면 다음 목표가
+  /// "이 계통을 잇는다"가 되도록 크게 높인다(Bugtopia 식 브리딩 복권).
+  final double variantBreedParentChance;
 
   /// 부모에게서 기질을 물려받을 확률.
   final double breedingTemperamentInherit;
@@ -491,6 +505,10 @@ class PetConfig {
           (json['breedingPotDownChance'] as num?)?.toDouble() ?? 0.30,
       breedingElementInherit:
           (json['breedingElementInherit'] as num?)?.toDouble() ?? 0,
+      variantWildChance: (json['variantWildChance'] as num?)?.toDouble() ?? 0,
+      variantBreedChance: (json['variantBreedChance'] as num?)?.toDouble() ?? 0,
+      variantBreedParentChance:
+          (json['variantBreedParentChance'] as num?)?.toDouble() ?? 0,
       breedingTemperamentInherit:
           (json['breedingTemperamentInherit'] as num?)?.toDouble() ?? 0,
       breedingTraitInherit:

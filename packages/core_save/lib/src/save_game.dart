@@ -105,6 +105,8 @@ class BreedingSlot {
     this.fatherTemperament,
     this.motherTrait = BugTrait.none,
     this.fatherTrait = BugTrait.none,
+    this.motherVariant = BugVariant.none,
+    this.fatherVariant = BugVariant.none,
   });
 
   final String id;
@@ -129,6 +131,11 @@ class BreedingSlot {
   final BugTrait motherTrait;
   final BugTrait fatherTrait;
 
+  /// 부모 이색 스냅샷 — 부모 중 이색이 있으면 자식의 이색 확률이 크게 오른다
+  /// (`PetConfig.variantBreedParentChance`). 계통을 잇는 동기.
+  final BugVariant motherVariant;
+  final BugVariant fatherVariant;
+
   factory BreedingSlot.fromJson(Map<String, dynamic> json) => BreedingSlot(
     id: json['id'] as String,
     speciesId: json['speciesId'] as String,
@@ -143,6 +150,8 @@ class BreedingSlot {
     fatherTemperament: _temperament(json['fatherTemperament']),
     motherTrait: BugTrait.fromKey(json['motherTrait'] as String? ?? 'none'),
     fatherTrait: BugTrait.fromKey(json['fatherTrait'] as String? ?? 'none'),
+    motherVariant: BugVariant.fromKey(json['motherVariant'] as String? ?? ''),
+    fatherVariant: BugVariant.fromKey(json['fatherVariant'] as String? ?? ''),
   );
 
   /// 모르는 키는 null 로 — 구버전 앱이 신규 값을 만나도 세이브가 죽지 않는다.
@@ -176,6 +185,8 @@ class BreedingSlot {
     if (fatherTemperament != null) 'fatherTemperament': fatherTemperament!.key,
     if (motherTrait != BugTrait.none) 'motherTrait': motherTrait.key,
     if (fatherTrait != BugTrait.none) 'fatherTrait': fatherTrait.key,
+    if (motherVariant != BugVariant.none) 'motherVariant': motherVariant.key,
+    if (fatherVariant != BugVariant.none) 'fatherVariant': fatherVariant.key,
   };
 
   /// 부모 스냅샷([mother]/[father])을 그대로 담은 슬롯을 만든다.
@@ -202,6 +213,8 @@ class BreedingSlot {
     fatherTemperament: father.temperament,
     motherTrait: mother.trait,
     fatherTrait: father.trait,
+    motherVariant: mother.variant,
+    fatherVariant: father.variant,
   );
 
   /// 이 슬롯에서 자식(알) 하나를 롤한다.
@@ -235,6 +248,10 @@ class BreedingSlot {
     traitInheritChance: cfg.breedingTraitInherit,
     traitNewChance: cfg.breedingTraitNew,
     traitWeights: cfg.traitWeights,
+    variantChance:
+        (motherVariant != BugVariant.none || fatherVariant != BugVariant.none)
+        ? cfg.variantBreedParentChance
+        : cfg.variantBreedChance,
   );
 }
 
@@ -252,6 +269,7 @@ class DexEntry {
     this.maxSizeMm = 0,
     this.maxPotential = 0,
     this.raisedToAdult = false,
+    this.variantFound = false,
   });
 
   /// 이 종으로 잡은 **역대 최대 크기**(mm). 곤충 게임의 원초적 자랑거리다.
@@ -263,18 +281,29 @@ class DexEntry {
   /// 성충까지 키운 적이 있는가(= '정복'). 도감 보상의 기준.
   final bool raisedToAdult;
 
+  /// 이색(무지개·알비노)을 얻은 적이 있는가 — 곤충이 사라져도 남는 기록.
+  /// 이게 없으면 이색을 분해한 순간 흔적이 사라져, 제일 긴 수집 목표가
+  /// 보상되지 않는다(도감을 만든 이유 §2.1 그대로).
+  final bool variantFound;
+
   /// 이 기록을 [other] 로 갱신한 결과(각 항목의 최대치만 남긴다).
-  DexEntry merge({double sizeMm = 0, int potential = 0, bool adult = false}) =>
-      DexEntry(
-        maxSizeMm: sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
-        maxPotential: potential > maxPotential ? potential : maxPotential,
-        raisedToAdult: raisedToAdult || adult,
-      );
+  DexEntry merge({
+    double sizeMm = 0,
+    int potential = 0,
+    bool adult = false,
+    bool variant = false,
+  }) => DexEntry(
+    maxSizeMm: sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
+    maxPotential: potential > maxPotential ? potential : maxPotential,
+    raisedToAdult: raisedToAdult || adult,
+    variantFound: variantFound || variant,
+  );
 
   factory DexEntry.fromJson(Map<String, dynamic> json) => DexEntry(
     maxSizeMm: (json['s'] as num?)?.toDouble() ?? 0,
     maxPotential: (json['p'] as num?)?.toInt() ?? 0,
     raisedToAdult: json['a'] as bool? ?? false,
+    variantFound: json['v'] as bool? ?? false,
   );
 
   /// 키를 한 글자로 줄인다 — 20종 × 3필드라 작지만, 세이브는 60초마다
@@ -283,6 +312,7 @@ class DexEntry {
     if (maxSizeMm > 0) 's': maxSizeMm,
     if (maxPotential > 0) 'p': maxPotential,
     if (raisedToAdult) 'a': true,
+    if (variantFound) 'v': true,
   };
 }
 
@@ -304,10 +334,12 @@ Map<String, DexEntry> updatedDex({
       sizeMm: b.sizeMm,
       potential: b.potential,
       adult: stageOf(b) == LifeStage.adult,
+      variant: b.variant != BugVariant.none,
     );
     if (after.maxSizeMm == before.maxSizeMm &&
         after.maxPotential == before.maxPotential &&
         after.raisedToAdult == before.raisedToAdult &&
+        after.variantFound == before.variantFound &&
         current.containsKey(b.speciesId)) {
       continue; // 이미 기록된 것보다 나을 게 없다
     }
@@ -440,6 +472,7 @@ class SaveGame {
     this.eventRewardRound,
     this.eventBadges = const {},
     this.difficultyTier = 0,
+    this.rarePity = 0,
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
   });
@@ -621,6 +654,11 @@ class SaveGame {
   /// 구버전 앱이 이 세이브를 읽으면 0(쉬움)으로 보고 스테이지만 이어간다 —
   /// 진행이 깨지지는 않는다.
   final int difficultyTier;
+
+  /// 희귀 천장(§2.1, 2026-08-31) — 희귀 이상을 얻지 못한 채 처치한 몬스터 수.
+  /// `RunConfig.rarePityKills` 에 닿으면 다음 드롭이 희귀 이상으로 보장된다.
+  /// 순수 RNG 만 두면 운 나쁜 유저는 전설을 영영 못 본다(수집 게임의 최악).
+  final int rarePity;
 
   /// [bugId] 가 [now] 기준으로 아직 출전 피로 중인가.
   bool eventOnFatigue(String bugId, DateTime now) {
@@ -1009,6 +1047,7 @@ class SaveGame {
     String? eventRewardRound,
     Set<String>? eventBadges,
     int? difficultyTier,
+    int? rarePity,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
     Set<String>? claimedLeagues,
@@ -1082,6 +1121,7 @@ class SaveGame {
     eventRewardRound: eventRewardRound ?? this.eventRewardRound,
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
+    rarePity: rarePity ?? this.rarePity,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
     claimedLeagues: claimedLeagues ?? this.claimedLeagues,
@@ -1250,6 +1290,7 @@ class SaveGame {
     eventBadges:
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
+    rarePity: (json['rarePity'] as num?)?.toInt() ?? 0,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
         (json['injured'] as Map<String, dynamic>?)?.map(
@@ -1397,6 +1438,7 @@ class SaveGame {
     if (eventRewardRound != null) 'eventRewardRound': eventRewardRound,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
+    if (rarePity > 0) 'rarePity': rarePity,
     'pvpTrophies': pvpTrophies,
     'injured': {
       for (final e in injured.entries) e.key: e.value.toUtc().toIso8601String(),

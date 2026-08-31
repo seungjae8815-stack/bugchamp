@@ -947,8 +947,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     Grade? released;
     String? releasedSpeciesId;
     final bugChance = _isBoss ? 1.0 : _config.bugDropChance * stats.bugFind;
-    if (_rng.nextDouble() < bugChance) {
-      final sp = _data.allSpecies[_rng.nextInt(_data.allSpecies.length)];
+    // 희귀 천장(§2.1) — 순수 RNG 만 두면 운 나쁜 유저는 전설을 영영 못 본다.
+    // 천장에 닿으면 **드롭 확률 관문도 건너뛰고** 희귀+ 를 강제로 준다.
+    // 확률만 강제하고 관문을 남기면 천장 뒤에도 수십 마리를 더 잡아야 한다.
+    var pity = save.rarePity + 1;
+    final pityDue =
+        _config.rarePityKills > 0 && save.rarePity >= _config.rarePityKills;
+    if (pityDue || _rng.nextDouble() < bugChance) {
+      // 한정 종(라이브옵스)은 기간 안에만 드롭 풀에 들어간다. 기간이 끝나도
+      // 종 정의는 남는다 — 이미 잡은 개체·도감이 계속 동작해야 한다.
+      final now = _clock.now().toUtc();
+      final pool = [
+        for (final x in _data.allSpecies)
+          if (x.availableAt(now)) x,
+      ];
+      final rarePool = [
+        for (final x in pool)
+          if (x.grade.index >= Grade.rare.index) x,
+      ];
+      final sp = pityDue && rarePool.isNotEmpty
+          ? rarePool[_rng.nextInt(rarePool.length)]
+          : pool[_rng.nextInt(pool.length)];
       if (!save.acceptsGrade(sp.grade)) {
         released = sp.grade; // 재료로 환산(아래 mats 에서 합산)
         releasedSpeciesId = sp.id; // 스킨 계열 보너스 판정용
@@ -962,6 +981,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           species: sp,
           rng: _rng,
           potential: potential.clamp(1, 5),
+          variantChance: _data.petConfig?.variantWildChance ?? 0,
         ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
         // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
         if (sp.grade.index >= Grade.rare.index) {
@@ -970,6 +990,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           AudioService.instance.sfxCatch();
         }
       }
+    }
+
+    // 희귀+ 가 실제로 **나왔을 때만**(받았든 필터로 재료가 됐든) 천장을
+    // 되감는다. 채집함이 가득 차 버려진 롤로 되감으면, 천장이 허공에 쓰인다.
+    // 필터 방생은 유저의 선택이라 "나온 것"으로 친다.
+    final caughtGrade = bug == null
+        ? null
+        : _data.speciesById[bug.speciesId]?.grade;
+    if ((caughtGrade != null && caughtGrade.index >= Grade.rare.index) ||
+        (released != null && released.index >= Grade.rare.index)) {
+      pity = 0;
     }
 
     // 화석 조각(제련용) — **잡는 데 걸린 시간에 비례**해 쌓는다.
@@ -1022,6 +1053,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           materials: mats,
           mission: _isBoss ? MissionType.killBosses : MissionType.killMonsters,
           idle: true, // 표시용 힌트(현재 로직에서 분기 없음)
+          rarePity: pity,
         );
 
     // 재화 드롭 연출: 처치 지점에서 코인/재료가 튀어나와 캐릭터로 빨려 들어간다.
@@ -2865,7 +2897,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   stage,
                   size: size,
                   fallback: bugAvatar(sp, size: size),
-                  skin: ref.watch(skinOfProvider)(bug.speciesId),
+                  skin: bugView(ref.watch(skinOfProvider), bug),
                 ),
               ),
             ),

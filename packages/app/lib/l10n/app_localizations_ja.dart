@@ -741,6 +741,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dexConquered => '制覇';
 
   @override
+  String get dexVariant => '色違い';
+
+  @override
   String get dexConqueredYes => '完了';
 
   @override

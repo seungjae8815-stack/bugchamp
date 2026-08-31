@@ -752,10 +752,30 @@ class GameActions {
     // 채집함 여유분까지만 받는다(가득 차면 곤충 획득 차단 — 재료·골드는 계속).
     var bugRoom = save.storageFree;
 
+    // 희귀 천장(§2.1) — 앱과 같은 규칙. 서버가 안 굴리면 방치 정산은
+    // 천장이 없는 셈이 되어, 켜 두는 쪽이 손해가 된다.
+    var pity = save.rarePity;
+    // 한정 종은 기간 안에만 드롭 풀에 — 앱과 같은 규칙(안 거르면 방치 정산이
+    // 기간 지난 종을 계속 준다).
+    final pool = [
+      for (final x in species)
+        if (x.availableAt(t)) x,
+    ];
+    final rarePool = [
+      for (final x in pool)
+        if (x.grade.index >= Grade.rare.index) x,
+    ];
     for (var i = 0; i < rolls; i++) {
-      if (species.isNotEmpty &&
-          rng.nextDouble() < run.bugDropChance * stats.bugFind) {
-        final sp = species[rng.nextInt(species.length)];
+      final pityDue = run.rarePityKills > 0 && pity >= run.rarePityKills;
+      pity++;
+      if (pool.isNotEmpty &&
+          (pityDue || rng.nextDouble() < run.bugDropChance * stats.bugFind)) {
+        final sp = pityDue && rarePool.isNotEmpty
+            ? rarePool[rng.nextInt(rarePool.length)]
+            : pool[rng.nextInt(pool.length)];
+        // 되감기는 아래 분기에서 — 실제로 받았거나 필터로 재료가 됐을 때만.
+        // 채집함이 가득 차 버려진 롤로 되감으면 천장이 허공에 쓰인다.
+        final rarePlus = sp.grade.index >= Grade.rare.index;
         // 앱과 같은 분포: rng*rng 라 고포텐셜이 드물다.
         final potential = 1 + (rng.nextDouble() * rng.nextDouble() * 4).floor();
         // 등급 필터(§2.1)를 **서버도 건다.** 클라이언트만 거르면 구버전 앱·
@@ -774,6 +794,7 @@ class GameActions {
                 _regularMaterials[rng.nextInt(_regularMaterials.length)];
             mats[kind] = (mats[kind] ?? 0) + give;
           }
+          if (rarePlus) pity = 0; // 필터 방생은 유저의 선택 — "나온 것"으로 친다
         } else if (bugRoom > 0) {
           newBugs.add(
             IndividualBug.roll(
@@ -781,9 +802,13 @@ class GameActions {
               species: sp,
               rng: rng,
               potential: potential.clamp(1, 5),
+              // 이색도 서버가 같은 확률로 굴린다 — 안 굴리면 방치 정산으로
+              // 받은 곤충만 이색이 안 나와, 방치가 손해가 된다.
+              variantChance: config.pet.variantWildChance,
             ).copyWith(stage: LifeStage.egg, stageSince: t),
           );
           bugRoom--;
+          if (rarePlus) pity = 0;
         }
       }
       if (rng.nextDouble() < run.materialDropChance * stats.materialFind) {
@@ -812,6 +837,7 @@ class GameActions {
         level: level,
         lastSeen: t,
         stageNumber: prog.newStage,
+        rarePity: pity,
         bugs: newBugs.isEmpty ? null : [...save.bugs, ...newBugs],
         materials: mats,
         missionProgress: mp,

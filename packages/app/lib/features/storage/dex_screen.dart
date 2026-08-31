@@ -11,6 +11,7 @@ import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
 import '../../ui/toast.dart';
 
 const _honey = Color(0xFFEBA52F);
@@ -211,7 +212,14 @@ class DexScreen extends ConsumerWidget {
             SizedBox(
               height: 54,
               child: found
-                  ? art
+                  // 이색을 얻은 종은 도감 그림도 그 색으로 — 곤충이 사라져도
+                  // "이 종의 이색을 가졌었다"가 눈에 남는다.
+                  ? (entry.variantFound
+                        ? ColorFiltered(
+                            colorFilter: bugSkinFilter('rainbow')!,
+                            child: art,
+                          )
+                        : art)
                   // 미발견: 같은 실루엣을 까맣게 칠한다. 크기·형태만 보이고
                   // 무슨 곤충인지는 모른다 — "뭐가 남았지"를 궁금하게 만든다.
                   : ColorFiltered(
@@ -297,6 +305,10 @@ class DexScreen extends ConsumerWidget {
             _row(
               l.dexConquered,
               entry.raisedToAdult ? l.dexConqueredYes : l.dexConqueredNo,
+            ),
+            _row(
+              l.dexVariant,
+              entry.variantFound ? l.dexConqueredYes : l.dexConqueredNo,
             ),
           ],
           // 패시브는 **미발견이어도 보여준다** — "이 종을 잡으면 뭐가 좋은지"가

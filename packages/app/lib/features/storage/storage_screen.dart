@@ -2053,7 +2053,7 @@ class StorageScreen extends ConsumerWidget {
                       stage,
                       size: 48,
                       fallback: bugAvatar(species, size: 44),
-                      skin: ref.watch(skinOfProvider)(bug.speciesId),
+                      skin: bugView(ref.watch(skinOfProvider), bug),
                     ),
                   ),
                   if (equipped)
@@ -2351,7 +2351,7 @@ class StorageScreen extends ConsumerWidget {
                         stage,
                         size: 58,
                         fallback: bugAvatar(species!, size: 52),
-                        skin: ref.watch(skinOfProvider)(bug.speciesId),
+                        skin: bugView(ref.watch(skinOfProvider), bug),
                       ),
                     ),
                     // 어떤 곤충을 끼웠는지 그림만으로는 헷갈린다 — 이름을 적는다.
@@ -2585,7 +2585,7 @@ class StorageScreen extends ConsumerWidget {
                           effStage,
                           size: 54,
                           fallback: bugAvatar(species, size: 50),
-                          skin: r.watch(skinOfProvider)(bug.speciesId),
+                          skin: bugView(r.watch(skinOfProvider), bug),
                         ),
                       ),
                       const SizedBox(width: 12),

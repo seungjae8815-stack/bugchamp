@@ -488,6 +488,7 @@
   "dexTitle": "Bug Dex",
   "dexDiscovered": "Found",
   "dexConquered": "Raised",
+  "dexVariant": "Variant",
   "dexConqueredYes": "Done",
   "dexConqueredNo": "Not yet",
   "dexMaxSize": "Largest",

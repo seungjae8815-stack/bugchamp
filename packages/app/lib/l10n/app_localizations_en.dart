@@ -756,6 +756,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dexConquered => 'Raised';
 
   @override
+  String get dexVariant => 'Variant';
+
+  @override
   String get dexConqueredYes => 'Done';
 
   @override

@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,6 +38,14 @@ ColorFilter? bugSkinFilter(String? effect) => switch (effect) {
     0.1256, 0.2465, 0.1979, 0, 142, //
     0, 0, 0, 1, 0, //
   ]),
+  // 무지개(이색 개체 §2.1): 색상환을 160° 돌리고 채도를 1.55배 —
+  // 원본이 무슨 색이든 "본 적 없는 색"이 되는 게 목적이다.
+  'rainbow' => const ColorFilter.matrix(<double>[
+    -1.0462, 1.3775, 0.6687, 0, 0, //
+    0.5990, 0.3742, 0.0267, 0, 0, //
+    0.1060, 2.1356, -1.2416, 0, 0, //
+    0, 0, 0, 1, 0, //
+  ]),
   _ => null,
 };
 
@@ -61,6 +70,17 @@ SkinView? myBugSkin(IapConfig? cfg, Set<String> ownedSkins, String speciesId) {
   final e = cfg.skinEffectFor(ownedSkins, speciesId);
   return e == null ? null : SkinView(e, hasArt: cfg.skinHasArt(e, speciesId));
 }
+
+/// 곤충 하나의 **그리기 정보** — 이색(변이)과 스킨을 합쳐 정한다.
+///
+/// 이색이 스킨보다 우선한다: 이색은 1/300 복권이고 스킨은 언제든 살 수 있다.
+/// 산 것이 뽑은 것을 덮으면 "무지개가 사라졌다"는 문의가 된다.
+/// (알비노 이색은 유료 알비노 스킨과 같은 색 처리를 쓴다 — 스킨 쪽은
+/// 확률이 아니라 **확정 구매 + 전용 그림**이 값어치다.)
+SkinView? bugView(SkinOf skinOf, IndividualBug bug) =>
+    bug.variant != BugVariant.none
+    ? SkinView(bug.variant.key)
+    : skinOf(bug.speciesId);
 
 /// 아레나 테마 스킨을 보유했는지.
 bool hasArenaTheme(IapConfig? cfg, Set<String> ownedSkins) =>
@@ -244,6 +264,19 @@ class _SkinAuraState extends State<SkinAura>
           Color(0xFFFFF3A0), // 연노랑
           Color(0xFFE0552B), // 구릿빛
           Color(0xFFFFE07A), // 금
+        ],
+      ),
+      'rainbow' => (
+        inner: const Color(0xFFE0FFE8),
+        outer: const Color(0xFF9C27B0),
+        sparks: const [
+          Color(0xFFFF5C8A), // 진분홍
+          Color(0xFFFFC24A), // 호박
+          Color(0xFF7CF07C), // 초록
+          Color(0xFF5FD8FF), // 시안
+          Color(0xFFB388FF), // 보라
+          Color(0xFFFFFFFF), // 흰빛
+          Color(0xFFFFF07A), // 노랑
         ],
       ),
       'albino' => (

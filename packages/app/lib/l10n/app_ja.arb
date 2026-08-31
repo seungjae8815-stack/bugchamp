@@ -221,6 +221,7 @@
   "dexTitle": "昆虫図鑑",
   "dexDiscovered": "発見",
   "dexConquered": "制覇",
+  "dexVariant": "色違い",
   "dexConqueredYes": "完了",
   "dexConqueredNo": "まだ",
   "dexMaxSize": "最大サイズ",

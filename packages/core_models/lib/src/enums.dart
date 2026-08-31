@@ -297,3 +297,28 @@ enum MaterialKind {
     return null;
   }
 }
+
+/// 이색 개체(§2.1, 2026-08-31 신설) — 아주 낮은 확률로 나오는 **색이 다른**
+/// 개체. 순수 외형이다(스탯 없음).
+///
+/// 스탯을 붙이지 않는 이유 둘:
+/// - 적응형 체력(§7) 기준 안팎 문제를 아예 만들지 않는다.
+/// - 곤충 롤은 기기 권위라 위조를 못 막는데(§2.5 특성과 같은 구멍),
+///   외형뿐이면 위조해 봐야 자랑거리 하나다 — 랭킹이 오염되지 않는다.
+enum BugVariant {
+  none('none'),
+
+  /// 무지개 — 최상급 이색.
+  rainbow('rainbow'),
+
+  /// 알비노(백화).
+  albino('albino');
+
+  const BugVariant(this.key);
+  final String key;
+
+  /// 모르는 키는 none — 신버전이 이색을 추가해도 구버전 앱이 세이브를
+  /// 통째로 못 읽으면 안 된다(기질·성별과 같은 방침).
+  static BugVariant fromKey(String k) =>
+      values.firstWhere((e) => e.key == k, orElse: () => none);
+}

@@ -142,6 +142,7 @@ class RunConfig {
     this.tierThreatMult = 1.0,
     this.tierRewardMult = 1.0,
     this.endParkedRewardMult = 1.0,
+    this.rarePityKills = 0,
     this.worldGoldMult = 1.0,
     this.worldBossHpMult = 1.0,
     this.exchangeJellyPerTrade = 10,
@@ -318,6 +319,10 @@ class RunConfig {
   /// 회차를 넘기는 쪽이 늘 이득이어야 회차 시스템이 성립한다.
   final double endParkedRewardMult;
 
+  /// 희귀 천장 — 희귀 이상을 얻지 못한 처치가 이 수에 닿으면 다음 드롭을
+  /// 희귀 이상으로 보장한다. 0 = 꺼짐.
+  final int rarePityKills;
+
   /// 회차 [tier] 의 보상 배율.
   double tierReward(int tier) =>
       tier <= 0 ? 1.0 : math.pow(tierRewardMult, tier).toDouble();
@@ -445,6 +450,7 @@ class RunConfig {
       tierThreatMult: (json['tierThreatMult'] as num?)?.toDouble() ?? 1.0,
       endParkedRewardMult:
           (json['endParkedRewardMult'] as num?)?.toDouble() ?? 1.0,
+      rarePityKills: (json['rarePityKills'] as num?)?.toInt() ?? 0,
       tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
