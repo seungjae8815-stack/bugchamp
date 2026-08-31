@@ -2422,6 +2422,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gachaResultTitle => 'From the egg...';
 
   @override
+  String get gachaPickTitle => 'Pick a card';
+
+  @override
+  String get gachaPickHint => 'One of three. You only find out by opening it';
+
+  @override
   String get gachaResultHint => 'Put the egg in an incubator to raise it';
 
   @override

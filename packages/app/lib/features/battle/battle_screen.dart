@@ -1296,15 +1296,27 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                                     : Icons.refresh_rounded,
                                 size: 16,
                               ),
-                              label: Text(
-                                over
-                                    ? l.scoutRefreshDone
-                                    : free
-                                    ? l.scoutRefreshFree
-                                    : l.scoutRefreshJelly(
-                                        battleCfg.scoutRefreshJelly,
-                                      ),
-                              ),
+                              // 젤리는 **아이콘으로** 보여준다 — 글자 '젤리'는
+                              // 다른 재화와 눈으로 안 갈린다(§ 재화 표기 통일).
+                              label: over
+                                  ? Text(l.scoutRefreshDone)
+                                  : free
+                                  ? Text(l.scoutRefreshFree)
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(l.scoutRefresh),
+                                        const SizedBox(width: 4),
+                                        jellyIcon(size: 14),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          '${battleCfg.scoutRefreshJelly}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                               style: TextButton.styleFrom(
                                 // 무료는 초록(공짜라는 신호), 젤리는 젤리색.
                                 foregroundColor: free

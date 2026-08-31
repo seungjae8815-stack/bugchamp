@@ -744,6 +744,8 @@
     }
   },
   "gachaResultTitle": "タマゴから出たのは…",
+  "gachaPickTitle": "カードを選んでください",
+  "gachaPickHint": "3枚から1枚。開けるまで分かりません",
   "gachaResultHint": "タマゴは孵化器で育てましょう",
   "gachaStorageFull": "コレクションがいっぱいです",
   "gachaOff": "現在利用できません",

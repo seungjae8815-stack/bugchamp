@@ -779,6 +779,8 @@
     }
   },
   "gachaResultTitle": "알에서 나온 것은…",
+  "gachaPickTitle": "카드를 고르세요",
+  "gachaPickHint": "세 장 중 하나. 무엇이 들었는지는 열어야 압니다",
   "gachaResultHint": "알은 부화기에 넣어 키워요",
   "gachaStorageFull": "채집함이 가득 찼어요",
   "gachaOff": "지금은 이용할 수 없어요",

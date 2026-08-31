@@ -4312,6 +4312,18 @@ abstract class AppLocalizations {
   /// **'From the egg...'**
   String get gachaResultTitle;
 
+  /// No description provided for @gachaPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a card'**
+  String get gachaPickTitle;
+
+  /// No description provided for @gachaPickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One of three. You only find out by opening it'**
+  String get gachaPickHint;
+
   /// No description provided for @gachaResultHint.
   ///
   /// In en, this message translates to:

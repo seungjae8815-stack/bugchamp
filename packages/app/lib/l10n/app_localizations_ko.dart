@@ -2375,6 +2375,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get gachaResultTitle => '알에서 나온 것은…';
 
   @override
+  String get gachaPickTitle => '카드를 고르세요';
+
+  @override
+  String get gachaPickHint => '세 장 중 하나. 무엇이 들었는지는 열어야 압니다';
+
+  @override
   String get gachaResultHint => '알은 부화기에 넣어 키워요';
 
   @override

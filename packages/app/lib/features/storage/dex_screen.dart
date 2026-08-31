@@ -98,6 +98,17 @@ class DexScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 10),
               Expanded(child: _bar(l.dexConquered, conquered, total, _honey)),
+              const SizedBox(width: 10),
+              // 이색은 1/300 이라 정복보다 훨씬 긴 목표다 — 머리에 띄워야
+              // "아직 0/20 이네"가 계속 눈에 밟힌다(수집 게임의 제일 긴 축).
+              Expanded(
+                child: _bar(
+                  l.dexVariant,
+                  save.dexVariants,
+                  total,
+                  const Color(0xFFCE7AE0),
+                ),
+              ),
             ],
           ),
           if (cfg != null) ...[
@@ -215,9 +226,24 @@ class DexScreen extends ConsumerWidget {
                   // 이색을 얻은 종은 도감 그림도 그 색으로 — 곤충이 사라져도
                   // "이 종의 이색을 가졌었다"가 눈에 남는다.
                   ? (entry.variantFound
-                        ? ColorFiltered(
-                            colorFilter: bugSkinFilter('rainbow')!,
-                            child: art,
+                        ? Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              ColorFiltered(
+                                colorFilter: bugSkinFilter('rainbow')!,
+                                child: art,
+                              ),
+                              // 색만 바꾸면 '그림이 이상하다'로 읽힌다 —
+                              // 이색 기록임을 알리는 표식을 함께 얹는다.
+                              const Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Text(
+                                  '✨',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
                           )
                         : art)
                   // 미발견: 같은 실루엣을 까맣게 칠한다. 크기·형태만 보이고

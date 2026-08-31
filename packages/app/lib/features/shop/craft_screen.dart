@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
@@ -460,6 +461,32 @@ class _GachaCard extends ConsumerWidget {
     WidgetRef ref,
     AppLocalizations l,
   ) async {
+    // ⚠️ **뽑기(젤리 차감·결과 확정)는 카드를 고른 뒤에 한다.**
+    // 먼저 뽑아 두고 카드만 뒤집는 연출이면, 어느 카드를 골라도 같은 결과라
+    // 고르는 행위가 거짓말이 된다. 실패(젤리 부족·채집함 가득)도 카드를
+    // 고르기 전에 알려야 한다 — 그래서 사전 검사만 여기서 한다.
+    final save = ref.read(saveControllerProvider).requireValue;
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return;
+    if (save.storageFull) {
+      showCenterToast(context, l.gachaStorageFull);
+      return;
+    }
+    if (save.materialCount(MaterialKind.jelly) < cfg.gachaJellyCost) {
+      showCenterToast(context, l.notEnoughJelly);
+      return;
+    }
+
+    final picked = await showGameDialog<bool>(
+      context,
+      title: l.gachaPickTitle,
+      icon: Icons.style_rounded,
+      barrierDismissible: false,
+      content: _GachaPicker(cost: cfg.gachaJellyCost, hint: l.gachaPickHint),
+      actions: const [],
+    );
+    if (picked != true || !context.mounted) return;
+
     final r = await ref.read(saveControllerProvider.notifier).gachaDraw();
     if (!context.mounted) return;
     if (r.bug == null) {
@@ -516,6 +543,152 @@ class _GachaCard extends ConsumerWidget {
         ],
       ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    );
+  }
+}
+
+/// 알 카드 3장 중 하나를 고르는 연출.
+///
+/// ⚠️ **결과를 정하지 않는다.** 고른 뒤에 진짜 뽑기가 돌아간다 — 미리 뽑아
+/// 두고 카드만 뒤집으면 어느 카드를 골라도 같은 결과라, 고르는 행위가
+/// 거짓말이 된다. 여기서 파는 건 결과가 아니라 **고르는 순간의 긴장**이다.
+class _GachaPicker extends StatefulWidget {
+  const _GachaPicker({required this.cost, required this.hint});
+
+  final int cost;
+  final String hint;
+
+  @override
+  State<_GachaPicker> createState() => _GachaPickerState();
+}
+
+class _GachaPickerState extends State<_GachaPicker>
+    with SingleTickerProviderStateMixin {
+  /// 고른 카드. null 이면 아직 고르는 중.
+  int? _chosen;
+
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pick(int i) async {
+    if (_chosen != null) return;
+    setState(() => _chosen = i);
+    AudioService.instance.sfxCatch();
+    // 고른 카드가 떠오르며 흔들리는 동안 기다린다 — 이 0.9초가 연출의 전부다.
+    await _c.forward();
+    if (!mounted) return;
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          widget.hint,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 132,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < 3; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: _card(i),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            jellyIcon(size: 14),
+            const SizedBox(width: 3),
+            Text(
+              '${widget.cost}',
+              style: const TextStyle(
+                color: Color(0xFFBFE3FF),
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _card(int i) {
+    final chosen = _chosen == i;
+    final dimmed = _chosen != null && !chosen;
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value;
+        // 고른 카드는 떠오르며 커지고, 나머지는 흐려진다.
+        final lift = chosen ? -14.0 * t : 0.0;
+        final scale = chosen ? 1 + 0.12 * t : (dimmed ? 1 - 0.08 * t : 1.0);
+        // 마지막 0.3 구간에서 좌우로 떤다 — "무엇이 나올까"의 긴장.
+        final shake = chosen && t > 0.55
+            ? math.sin((t - 0.55) * 40) * 3 * (1 - t)
+            : 0.0;
+        return Opacity(
+          opacity: dimmed ? 1 - 0.6 * t : 1,
+          child: Transform.translate(
+            offset: Offset(shake, lift),
+            child: Transform.scale(
+              scale: scale,
+              child: GestureDetector(
+                onTap: () => _pick(i),
+                child: Container(
+                  width: 82,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF6C3A80), Color(0xFF2E1740)],
+                    ),
+                    border: Border.all(
+                      color: chosen
+                          ? const Color(0xFFEBC24A)
+                          : const Color(0x66E9A6FF),
+                      width: chosen ? 2 : 1.2,
+                    ),
+                    boxShadow: chosen
+                        ? [
+                            BoxShadow(
+                              color: const Color(
+                                0xFFEBC24A,
+                              ).withValues(alpha: 0.45 * t),
+                              blurRadius: 18,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('🥚', style: TextStyle(fontSize: 34)),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

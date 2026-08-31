@@ -576,6 +576,9 @@ class SaveGame {
   /// 성충까지 키운 종 수(= '정복'). 도감 보상의 기준.
   int get dexConquered => dex.values.where((e) => e.raisedToAdult).length;
 
+  /// 이색을 얻어 본 종 수. 수집 게임의 **제일 긴 목표**라 도감 머리에 띄운다.
+  int get dexVariants => dex.values.where((e) => e.variantFound).length;
+
   /// 도감 전체에서의 **역대 최대 크기**(mm). 사이즈 랭킹의 근거.
   double get dexBestSizeMm {
     var best = 0.0;

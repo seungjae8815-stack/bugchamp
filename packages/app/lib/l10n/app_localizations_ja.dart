@@ -2370,6 +2370,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gachaResultTitle => 'タマゴから出たのは…';
 
   @override
+  String get gachaPickTitle => 'カードを選んでください';
+
+  @override
+  String get gachaPickHint => '3枚から1枚。開けるまで分かりません';
+
+  @override
   String get gachaResultHint => 'タマゴは孵化器で育てましょう';
 
   @override

@@ -1484,6 +1484,8 @@
     }
   },
   "gachaResultTitle": "From the egg...",
+  "gachaPickTitle": "Pick a card",
+  "gachaPickHint": "One of three. You only find out by opening it",
   "gachaResultHint": "Put the egg in an incubator to raise it",
   "gachaStorageFull": "Storage is full",
   "gachaOff": "Not available right now",
