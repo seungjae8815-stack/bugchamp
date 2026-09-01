@@ -133,6 +133,7 @@ void main(List<String> args) {
     final waves = <int>[];
     final scores = <int>[];
     var timeout = 0, wipe = 0;
+    final totalRounds = <int>[];
     for (final r in rounds) {
       final seed = EventConfig.roundSeedOf(r);
       final run = simulateWaveRun(
@@ -143,6 +144,7 @@ void main(List<String> args) {
         waveHealPct: cfg.waveHealPct,
       );
       waves.add(run.clearedWaves);
+      totalRounds.add(run.totalRounds);
       final last = run.waves.isEmpty ? null : run.waves.last;
       if (last != null) {
         if (last.rounds >= kMaxEventRounds) {
@@ -168,7 +170,15 @@ void main(List<String> args) {
       '  ${e.key.padRight(26)} ${avg.toStringAsFixed(1).padLeft(5)}   '
       '${'$lo~$hi'.padLeft(7)}   ${sAvg.toString().padLeft(10)}',
     );
-    stdout.writeln('     끝난 이유: 전멸 $wipe · 판정패 $timeout');
+    final rAvg = totalRounds.reduce((a, b) => a + b) / totalRounds.length;
+    // 속도 항목(speedBase - totalRounds)은 라운드가 speedBase 를 넘는 순간
+    // 전원 0 이 되어 **타이브레이커로서 죽는다**. 어디서 죽는지 보여준다.
+    final speedAlive = rAvg < cfg.speedBase;
+    stdout.writeln(
+      '     끝난 이유: 전멸 $wipe · 판정패 $timeout · '
+      '평균 라운드 ${rAvg.toStringAsFixed(0)}'
+      '${speedAlive ? '' : ' ⚠️속도 타이브레이커 사망'}',
+    );
     if (hi >= cfg.maxWave) {
       stdout.writeln('     ⚠️ 상한 도달 — 동점이 쏟아져 순위를 못 매긴다');
     }
