@@ -1,33 +1,35 @@
 ========================================
- Google Play — 출시 노트 (1.0.9 / 20260905)
+ Google Play — 출시 노트 (1.0.9 / 20260906)
 ========================================
 ※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
 ※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
 ※ 재계산:
-   python -c "import io;s=io.open('docs/_release_notes_1.0.9.txt',encoding='utf-8').read();b=s[s.index('<ko-KR>'):].rstrip();print(len(b)+b.count(chr(10)))"
+   python -c "import io;s=io.open('docs/_release_notes_1.0.9.txt',encoding='utf-8').read();b=s.split('-'*40,1)[1].strip();print(len(b)+b.count(chr(10)))"
+   (⚠️ 예전 명령은 `<ko-KR>` 을 찾았는데, 이 설명문에도 그 글자가 있어 헤더까지
+    세었다 — 구분선 기준으로 자른다.)
 ※ iOS 노트는 _appstore_whatsnew_1.0.9.txt.
 ※ ⚠️ iOS 는 1.0.8 트레인이 닫혀(이미 출시) **1.0.9 로 올렸다** — 빌드번호만
    올리면 업로드가 거부된다(90062/90186).
-※ 범위: 20260904 이후 — 표시 오류 수정.
+※ 범위: 20260904 이후 — 표시 오류 수정 + 탭 부스트·난이도 표기.
 ----------------------------------------
 <ko-KR>
-🐛 표시 오류를 고쳤어요
+🐛 표시와 균형 다듬기
 
-• 무한 버프 패스의 남은 기간이 상점과 버프 창에 표시돼요
-• 버프 남은 시간이 짧게(1h22m) 나오고, 패스 중엔 ∞
-• 버프 시간이 길어도 전투력·재화 칸을 가리지 않아요
+• 무한 버프 패스 남은 기간 표시 (패스 중엔 ∞)
+• 버프 시간이 전투력·재화를 가리지 않아요
+• 탭 부스트 완화 · 챕터 난이도는 지금 회차로
 </ko-KR>
 <en-US>
-🐛 Display fixes
+🐛 Display and balance polish
 
-• Endless Buff Pass now shows its remaining days
-• Buff timers are short (1h22m), and ∞ while the pass is on
-• Long buff timers no longer overlap power and currency
+• Buff Pass shows remaining days (∞ while active)
+• Buff timers no longer overlap other readouts
+• Tap boost toned down; chapter difficulty follows your tier
 </en-US>
 <ja-JP>
-🐛 表示の修正
+🐛 表示とバランス調整
 
-・無限バフパスの残り日数が表示されます
-・バフ残り時間を短く表示(1h22m)、パス中は ∞
-・戦闘力や通貨の表示が隠れなくなりました
+・無限バフパスの残り日数を表示(使用中は ∞)
+・バフ時間が他の表示を隠しません
+・タップブースト緩和・章の難易度は現在の周回に
 </ja-JP>
