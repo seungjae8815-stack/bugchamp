@@ -1736,6 +1736,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         _topBar(l, save),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 2, 10, 0),
+          child: _buffStrip(l, save, _clock.now().toUtc()),
+        ),
         _eventBanner(l),
         _loginNudge(l),
         _chatBar(l),
@@ -1915,7 +1919,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Widget _topBar(AppLocalizations l, SaveGame save) {
     final xpNeed = xpForNextLevel(save.level);
     final cp = combatPower(_petStats(save));
-    final now = _clock.now().toUtc();
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
       child: Row(
@@ -2052,33 +2055,37 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   _iconBtn(Icons.settings_rounded, () => _showSettings(l)),
                 ],
               ),
-              const SizedBox(height: 3),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _showBuffSheet(l),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final k in BuffKind.values)
-                      Padding(
-                        // 칸이 고정 폭을 갖게 되면서 좌우 여백은 줄인다 —
-                        // 그대로 두면 버프 줄이 통째로 넓어져 같은 문제가 난다.
-                        padding: const EdgeInsets.only(left: 1),
-                        child: _buffMini(
-                          k,
-                          save.buffRemaining(k, now),
-                          hasPass: save.buffPassActive(now),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
             ],
           ),
         ],
       ),
     );
   }
+
+  /// 버프 5칸 — **한 줄을 통째로 쓴다**.
+  ///
+  /// ⚠️ 예전엔 아이콘 줄 아래(오른쪽 칸 안)에 있었다. 그러면 버프 줄 폭이
+  /// 오른쪽 칸의 폭을 정하고, 그만큼 왼쪽(닉네임·전투력)이 좁아져 **둘 다
+  /// 잘렸다**(2026-09-01 지적, 세 번째). 자리를 다투지 않게 아예 분리한다.
+  Widget _buffStrip(AppLocalizations l, SaveGame save, DateTime now) =>
+      GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _showBuffSheet(l),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            for (final k in BuffKind.values)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: _buffMini(
+                  k,
+                  save.buffRemaining(k, now),
+                  hasPass: save.buffPassActive(now),
+                ),
+              ),
+          ],
+        ),
+      );
 
   /// 상단 우측 미니 버프 아이콘 + 아래 남은시간. 탭 시 버프 시트.
   /// 버프 칸 하나의 **고정 폭**. 남은 시간 글자가 길어져도 이 폭을 넘지 않으므로

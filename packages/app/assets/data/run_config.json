@@ -31,10 +31,11 @@
  "killHealPct": 0.004,
  "bossKillHealPct": 0.04,
  "stagesPerRegion": 25,
- "boostStepPerTap": 0.15,
+ "_boostCurveComment": "탭 부스트 곡선(2026-09-01 재조정). 예전 값(step 0.15 · decay 0.4)은 상한 x2 에 **7탭**이면 닿았고, 집중력 업그레이드를 조금만 올려도 2~3탭이면 꽉 찼다 — '쌓이는 느낌'이 없고 그냥 켜졌다 꺼졌다 한다. step 0.06 이면 기본 17탭, 집중력 x2 면 9탭, x3 면 6탭이라 **올리는 과정이 보인다**. 감쇠도 0.4 -> 0.18 로 낮춘다 — 안 그러면 쌓기 전에 흘러내려 상한에 영영 못 닿는다(유지에 필요한 탭: 기본 초당 3회, 집중력 x2 면 1.5회).",
+  "boostStepPerTap": 0.06,
  "_boostMaxComment": "탭 부스트 상한(2026-09-01 하향 5.0 -> 2.0, 사장님 지시). x5 는 데미지 x5 에 공속 x2.6 이 겹쳐 **실질 DPS x13** 이었다 — 탭할 때와 안 할 때의 차이가 너무 커서, 방치 게임인데 손으로 두드리는 게 정답이 된다. x2 면 실질 DPS x2.8 로 '거들어 주는 정도'가 된다. ⚠️ 이 값은 balance_sim 의 --boost 기본값과 함께 본다 — 부스트는 캠페인 일수를 절반으로 줄인 축이었다(2026-08-30).",
   "boostMultMax": 2.0,
- "boostDecayPerSec": 0.4,
+ "boostDecayPerSec": 0.18,
  "boostSpeedFactor": 0.4,
  "regions": [
   {

@@ -2751,13 +2751,34 @@ class StorageScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         OutlinedButton.icon(
                           onPressed: () async {
-                            final ok = await r
+                            final res = await r
                                 .read(saveControllerProvider.notifier)
                                 .disassembleBug(bug.id);
-                            if (ok && ctx.mounted) {
-                              Navigator.pop(ctx);
-                              showCenterToast(context, l.disassembleSnack);
+                            if (!ctx.mounted) return;
+                            if (!res.ok) {
+                              // 실패를 침묵으로 두면 "전설 알이 분해가 안 된다"가
+                              // 버그로 읽힌다 — 사유를 말해 준다.
+                              showCenterToast(context, switch (res.error) {
+                                'equipped' => l.disassembleEquipped,
+                                'incubating' => l.disassembleIncubating,
+                                _ => l.disassembleFailed,
+                              });
+                              return;
                             }
+                            Navigator.pop(ctx);
+                            // 무엇이 얼마나 들어왔는지 보여준다 — 재료가 2~32 개라
+                            // "분해 완료"만으로는 아무것도 안 들어온 것 같다.
+                            final parts = <String>[
+                              if (res.kind != null)
+                                '${materialLabel(l, res.kind!)} +${res.amount}',
+                              if (res.jelly > 0) '${l.curJelly} +${res.jelly}',
+                            ];
+                            showCenterToast(
+                              context,
+                              parts.isEmpty
+                                  ? l.disassembleSnack
+                                  : '${l.disassembleSnack} · ${parts.join(' · ')}',
+                            );
                           },
                           icon: const Icon(Icons.call_split, size: 18),
                           label: Text(l.disassembleAction),

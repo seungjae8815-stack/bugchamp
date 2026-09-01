@@ -3196,6 +3196,24 @@ abstract class AppLocalizations {
   /// **'Disassembled'**
   String get disassembleSnack;
 
+  /// No description provided for @disassembleEquipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped bugs cannot be disassembled'**
+  String get disassembleEquipped;
+
+  /// No description provided for @disassembleIncubating.
+  ///
+  /// In en, this message translates to:
+  /// **'Eggs in the incubator cannot be disassembled'**
+  String get disassembleIncubating;
+
+  /// No description provided for @disassembleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot disassemble'**
+  String get disassembleFailed;
+
   /// No description provided for @bugDescTitle.
   ///
   /// In en, this message translates to:

@@ -306,6 +306,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// 쓴 결과라 그 남용 경로가 아니다.
   bool _rerollScouts = false;
 
+  /// 직전에 싸운 상대(실 유저)의 id. 유저가 적으면 `nearby_defenders` 가
+  /// 늘 같은 한두 명을 돌려줘서, 리롤을 해도 **같은 상대가 다시 온다**
+  /// (2026-09-01 지적). 방금 싸운 상대만 한 번 걸러 준다 —
+  /// ⚠️ 그것 말고 아무도 없으면 걸러내지 않는다(빈 보드보다 낫다).
+  String? _lastFoughtOwnerId;
+
   /// 오늘 쓴 스카우트 새로고침 횟수. **버튼에 값을 보여주려고** 들고 있다 —
   /// 누르기 전에는 무료인지 젤리인지 알 수 없으면, 유저는 눌러 보고 나서야
   /// 비용을 안다(2026-08-31 실기 지적).
@@ -591,6 +597,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       count: tiers.length,
     );
     if (!mounted || reals.isEmpty) return;
+    // 방금 싸운 상대를 뺀다. 뺐더니 아무도 안 남으면 그대로 쓴다.
+    final fresh = [
+      for (final r in reals)
+        if (r.ownerId != _lastFoughtOwnerId) r,
+    ];
+    final pool = fresh.isEmpty ? reals : fresh;
 
     final myPower = avg.atk + avg.def + avg.spd + avg.hp * 0.15;
     // 실 방어팀 → (전투팀, 파워비율). 종을 못 찾으면 스킵.
@@ -603,16 +615,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             String ownerId,
           })
         >[];
-    for (var r = 0; r < reals.length; r++) {
-      final team = _defenderTeam(reals[r], data, locale, r);
+    for (var r = 0; r < pool.length; r++) {
+      final team = _defenderTeam(pool[r], data, locale, r);
       if (team == null) continue;
       final ratio =
           _teamPower(team.map((e) => e.bug)) / (myPower <= 0 ? 1 : myPower);
       built.add((
         team: team,
         ratio: ratio,
-        owner: reals[r].ownerName,
-        ownerId: reals[r].ownerId,
+        owner: pool[r].ownerName,
+        ownerId: pool[r].ownerId,
       ));
     }
     if (built.isEmpty) return;
@@ -2712,6 +2724,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       ),
     );
+    _lastFoughtOwnerId = scout.ownerId;
     // ⚠️ **서버 권위 경로에도** 리롤을 건다. 실제 전투는 대부분 여기로 흐르는데
     // 로컬 경로에만 붙여 놔서 "싸워도 상대가 그대로"였다(2026-08-31 실기 지적).
     if (mounted) setState(() => _rerollScouts = true);
@@ -2840,6 +2853,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ),
     );
     // 싸운 상대는 보드에서 물러난다 — 다음 판은 새 상대로.
+    _lastFoughtOwnerId = scout.ownerId;
     if (mounted) setState(() => _rerollScouts = true);
   }
 
@@ -3010,6 +3024,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       );
       // 오토와 같은 규칙 — 싸운 뒤에는 새 상대를 뽑는다.
+      _lastFoughtOwnerId = scout.ownerId;
       if (mounted) setState(() => _rerollScouts = true);
     } finally {
       closeStart();

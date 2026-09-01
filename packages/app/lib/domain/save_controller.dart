@@ -2326,17 +2326,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 분해: 미장착 곤충 [bugId] 를 없애고 젤리로 환원. 장착/없음이면 false.
-  Future<bool> disassembleBug(String bugId) async {
-    final viaServer = await _viaServer(
-      () => ref.read(gameServerProvider).disassemble(bugId),
-    );
-    if (viaServer != null) return viaServer;
-
+  /// 분해 결과 — **무엇이 얼마나 들어왔는지**를 돌려준다.
+  ///
+  /// 예전엔 bool 이라 화면이 "분해 완료"만 띄웠다. 재료가 2~32 개라 큰 수
+  /// 사이에 묻혀 **아무것도 안 들어온 것처럼 보였고**, 실패했을 때도 같은
+  /// 침묵이라 "전설 알이 분해가 안 된다"를 구분할 수 없었다(2026-09-01 지적).
+  Future<({bool ok, String? error, int jelly, MaterialKind? kind, int amount})>
+  disassembleBug(String bugId) async {
+    const fail = (ok: false, error: 'unknown', jelly: 0, kind: null, amount: 0);
     final s = state.requireValue;
-    if (s.isEquipped(bugId)) return false;
-    if (s.incubating.containsKey(bugId)) return false; // 부화 중 보호
+    // 실패 사유를 갈라 준다 — 같은 침묵이면 유저는 버그로 읽는다.
+    if (s.isEquipped(bugId)) {
+      return (ok: false, error: 'equipped', jelly: 0, kind: null, amount: 0);
+    }
+    if (s.incubating.containsKey(bugId)) {
+      return (ok: false, error: 'incubating', jelly: 0, kind: null, amount: 0);
+    }
     final idx = s.bugs.indexWhere((b) => b.id == bugId);
-    if (idx < 0) return false;
+    if (idx < 0) return fail;
     final bug = s.bugs[idx];
     // 분해 보상은 pets.json 의 PetConfig 계수로 결정(§6).
     //
@@ -2361,16 +2368,23 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (reward > 0) {
       mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + reward;
     }
+    MaterialKind? gainedKind;
     if (matGain > 0) {
       // 자동 방생과 **같은 재료표**를 쓴다 — 분해와 방생의 가치가 갈리면
       // "필터에 걸리게 두는 게 이득"처럼 이상한 최적 전략이 생긴다.
-      final kind =
+      gainedKind =
           kRegularMaterials[math.Random().nextInt(kRegularMaterials.length)];
-      mats[kind] = (mats[kind] ?? 0) + matGain;
+      mats[gainedKind] = (mats[gainedKind] ?? 0) + matGain;
     }
     final bugs = List<IndividualBug>.from(s.bugs)..removeAt(idx);
     await _commit(s.copyWith(bugs: bugs, materials: mats));
-    return true;
+    return (
+      ok: true,
+      error: null,
+      jelly: reward > 0 ? reward : 0,
+      kind: matGain > 0 ? gainedKind : null,
+      amount: matGain,
+    );
   }
 
   /// 진화 촉진: 젤리를 소비해 [bugId] 를 다음 단계로. 성충/젤리부족/없음이면 false.

@@ -14,6 +14,7 @@ import '../domain/notification_service.dart';
 import '../domain/notify_prefs.dart';
 import '../data/save_repository.dart';
 import '../domain/server_sync.dart';
+import '../domain/update_checker.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
@@ -148,7 +149,29 @@ class _AppShellState extends ConsumerState<AppShell>
       // reconnect 는 변경 감지를 무력화해 반드시 한 번 올려본다 —
       // flush 만 부르면 세이브가 안 변했을 때 서버에 닿지 않아 확인이 안 된다.
       unawaited(_uploader.reconnect());
+      // 백그라운드에 오래 두면 그 사이 강제 업데이트·점검이 걸릴 수 있다.
+      // 앱을 껐다 켜지 않는 한 게이트를 **다시 보지 않아서**, 차단된 버전으로
+      // 계속 노는 상태가 됐다(2026-09-01 지적).
+      unawaited(_recheckGateOnResume());
     }
+  }
+
+  /// 복귀 시 버전·점검 게이트를 다시 본다. 막혔으면 타이틀로 되돌린다.
+  ///
+  /// ⚠️ 타이틀이 그 판정을 다시 하므로 여기서는 **되돌리기만** 한다 —
+  /// 게임 화면 위에 차단 다이얼로그를 얹지 않는다(초기화 경합의 원인이었다).
+  ///
+  /// soft(권장)는 되돌리지 않는다. 잠깐 다른 앱을 봤다고 게임이 끊기면
+  /// 그게 더 나쁘다.
+  Future<void> _recheckGateOnResume() async {
+    final verdict = await checkAppVersion();
+    if (!mounted) return;
+    if (verdict == UpdateVerdict.none || verdict == UpdateVerdict.soft) return;
+    // offline 도 되돌린다 — 시작 시 온라인 필수 규칙(2026-08)과 같은 자리다.
+    await Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const TitleScreen()),
+      (_) => false,
+    );
   }
 
   /// 첫 프레임 후 1회: 알림 권한 요청 + 일일 보상 시각(daily.json)마다 반복 예약.

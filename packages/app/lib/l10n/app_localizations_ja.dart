@@ -1742,6 +1742,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get disassembleSnack => '分解完了';
 
   @override
+  String get disassembleEquipped => '装備中の虫は分解できません';
+
+  @override
+  String get disassembleIncubating => '孵化中のタマゴは分解できません';
+
+  @override
+  String get disassembleFailed => '分解できません';
+
+  @override
   String get bugDescTitle => '説明';
 
   @override

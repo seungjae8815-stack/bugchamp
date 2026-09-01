@@ -1063,6 +1063,9 @@
   },
   "disassembleAction": "Disassemble",
   "disassembleSnack": "Disassembled",
+  "disassembleEquipped": "Equipped bugs cannot be disassembled",
+  "disassembleIncubating": "Eggs in the incubator cannot be disassembled",
+  "disassembleFailed": "Cannot disassemble",
   "bugDescTitle": "About",
   "onlyAdultTrain": "Only adults can be trained",
   "@petBonus": {

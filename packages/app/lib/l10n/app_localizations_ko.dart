@@ -1745,6 +1745,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get disassembleSnack => '분해 완료';
 
   @override
+  String get disassembleEquipped => '장착 중인 곤충은 분해할 수 없어요';
+
+  @override
+  String get disassembleIncubating => '부화 중인 알은 분해할 수 없어요';
+
+  @override
+  String get disassembleFailed => '분해할 수 없어요';
+
+  @override
   String get bugDescTitle => '설명';
 
   @override

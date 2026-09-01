@@ -1771,6 +1771,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disassembleSnack => 'Disassembled';
 
   @override
+  String get disassembleEquipped => 'Equipped bugs cannot be disassembled';
+
+  @override
+  String get disassembleIncubating =>
+      'Eggs in the incubator cannot be disassembled';
+
+  @override
+  String get disassembleFailed => 'Cannot disassemble';
+
+  @override
   String get bugDescTitle => 'About';
 
   @override
