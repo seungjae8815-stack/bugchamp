@@ -1,5 +1,5 @@
 ========================================
- App Store — 새로운 기능 (1.0.9 / 20260906)
+ App Store — 새로운 기능 (1.0.9 / 20260907)
 ========================================
 ※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
 ※ ⚠️ 1.0.8 트레인이 닫혔다(이미 출시) — 1.0.9 로만 제출된다.
@@ -15,6 +15,10 @@
 - 운영자가 보낸 보상은 우편함에서 받을 수 있습니다
 - 탭 부스트가 너무 강하던 것을 완화했습니다
 - 챕터 난이도를 현재 회차에 맞춰 보여줍니다
+- 버프를 사냥 화면 옆으로 옮겨 이름과 전투력이 가려지지 않습니다
+- 탭 부스트가 한 번에 차지 않고 천천히 쌓입니다
+- 분해로 무엇을 얼마나 얻었는지 아이콘으로 보여줍니다
+- 부화 중인 알은 분해 버튼이 이유를 알려줍니다
 </ko-KR>
 
 <en-US>
@@ -27,6 +31,10 @@ Display fixes
 - Rewards sent by the operator arrive in your mailbox
 - Tap boost has been toned down
 - Chapter difficulty now follows your current tier
+- Buffs moved beside the hunt view so nothing is covered
+- Tap boost now builds up gradually instead of filling at once
+- Disassembly shows what you gained, with icons
+- Eggs in the incubator explain why they cannot be disassembled
 </en-US>
 
 <ja-JP>
@@ -39,4 +47,8 @@ Display fixes
 - 運営から届いた報酬はメールボックスで受け取れます
 - タップブーストが強すぎたのを緩和しました
 - 章の難易度が現在の周回に合わせて表示されます
+- バフを狩り画面の横に移し、名前と戦闘力が隠れません
+- タップブーストが一度に満ちず徐々に貯まります
+- 分解で何をどれだけ得たかをアイコンで表示します
+- 孵化中のタマゴは分解できない理由を表示します
 </ja-JP>

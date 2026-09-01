@@ -1,5 +1,5 @@
 ========================================
- Google Play — 출시 노트 (1.0.9 / 20260906)
+ Google Play — 출시 노트 (1.0.9 / 20260907)
 ========================================
 ※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
 ※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
@@ -16,20 +16,22 @@
 🐛 표시와 균형 다듬기
 
 • 무한 버프 패스 남은 기간 표시 (패스 중엔 ∞)
-• 버프 시간이 전투력·재화를 가리지 않아요
-• 탭 부스트 완화 · 챕터 난이도는 지금 회차로
+• 버프를 사냥 화면 옆으로 — 이름·전투력이 안 가려요
+• 탭 부스트가 천천히 쌓이게 · 챕터 난이도는 지금 회차로
+• 분해 결과를 아이콘으로 보여줘요
 </ko-KR>
 <en-US>
 🐛 Display and balance polish
 
 • Buff Pass shows remaining days (∞ while active)
-• Buff timers no longer overlap other readouts
-• Tap boost toned down; chapter difficulty follows your tier
+• Buffs moved beside the hunt view; nothing overlaps
+• Tap boost now builds up gradually
+• Disassembly shows what you gained
 </en-US>
 <ja-JP>
 🐛 表示とバランス調整
 
 ・無限バフパスの残り日数を表示(使用中は ∞)
-・バフ時間が他の表示を隠しません
-・タップブースト緩和・章の難易度は現在の周回に
-</ja-JP>
+・バフを狩り画面の横へ。表示が重なりません
+・タップブーストが徐々に貯まるように
+・分解の獲得物をアイコン表示</ja-JP>

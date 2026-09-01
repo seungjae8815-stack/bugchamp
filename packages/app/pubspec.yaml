@@ -4,7 +4,7 @@ publish_to: 'none'
 # 빌드번호는 **매 빌드 +1 하는 단조 증가 숫자**다(날짜처럼 생겼을 뿐).
 # 하루에 두 번 빌드해도 겹치면 안 된다 — 1.0.4 와 1.0.5 가 둘 다 20260808 이라
 # 그대로 올렸으면 두 스토어 모두 거부했다. 출시 리듬은 docs/release_cadence.md.
-version: 1.0.9+20260906
+version: 1.0.9+20260907
 resolution: workspace
 
 environment:
