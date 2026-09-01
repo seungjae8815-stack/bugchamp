@@ -352,7 +352,33 @@ async function findUser() {
       row('스타터', r.starterBought ? '구매함' : '없음') +
       row('결제 건수', n(r.purchases) + '건') +
       row('마지막 접속', ago(r.lastSeen)) +
-      '<button class="act" onclick="toGrant(\'' + r.id + '\')">이 유저에게 지급하기</button>';
+      '<button class="act" onclick="toGrant(\'' + r.id + '\')">이 유저에게 지급하기</button>' +
+      '<div class="card" style="margin-top:10px">' +
+      '<h2>재화 정상화</h2>' +
+      '<p class="hint">지난 규칙에서 쌓여 <b>지금은 도달 불가능한</b> 값을 맞춥니다. ' +
+      '비운 칸은 <b>건드리지 않습니다</b>. 지금보다 큰 값은 무시됩니다 — ' +
+      '정상화 도구지 지급 도구가 아닙니다.</p>' +
+      '<p class="hint" style="color:#FFD98A">⚠ 앱에 옛 값이 남아 있어 다음 업로드 때 ' +
+      '<b>1회 상한만큼 되올라간 뒤 멈춥니다</b>. 그래서 <b>착지값 = 입력값 + 상한</b>이고, ' +
+      '상한은 젤리 1,000 · 재료 2,000만 · 골드 20만입니다. ' +
+      '예) 젤리를 1,500 으로 만들려면 <b>500</b> 을 입력하세요.</p>' +
+      (r.purchases > 0
+        ? '<p class="hint" style="color:#FFB4A2"><b>결제 이력 ' + r.purchases +
+          '건</b> — 산 젤리를 깎으면 환불 사유입니다. 젤리 칸은 비워 두세요.</p>'
+        : '<p class="hint">결제 이력 없음</p>') +
+      '<div class="row">' +
+      '<div><label>골드 (지금 ' + n(r.gold) + ')</label><input id="cur-gold" type="number" min="0"></div>' +
+      '<div><label>젤리 (지금 ' + n(r.jelly) + ')</label><input id="cur-jelly" type="number" min="0"></div>' +
+      '</div><div class="row">' +
+      '<div><label>키틴 (' + n(r.chitin) + ')</label><input id="cur-chitin" type="number" min="0"></div>' +
+      '<div><label>미네랄 (' + n(r.mineral) + ')</label><input id="cur-mineral" type="number" min="0"></div>' +
+      '<div><label>수액 (' + n(r.sap) + ')</label><input id="cur-sap" type="number" min="0"></div>' +
+      '</div>' +
+      '<label>사유 (서버 로그에 남습니다)</label>' +
+      '<input id="cur-reason" maxlength="64" placeholder="2026-09-01 구버전 수도꼭지 정상화">' +
+      '<button class="act warn" onclick="normalizeCurrency(\'' + r.id + '\')">정상화</button>' +
+      '<div id="cur-result" class="sub"></div>' +
+      '</div>';
     document.getElementById('u-uid').value = r.id;
   } catch (e) {
     box.innerHTML = '';
@@ -370,6 +396,32 @@ function pickUser(id) {
 function toGrant(id) {
   document.getElementById('g-uid').value = id;
   tab('grant');
+}
+
+async function normalizeCurrency(id) {
+  const reason = val('cur-reason');
+  if (!reason) return toast('사유를 입력하세요');
+  const body = { userId: id, reason: reason };
+  // 비운 칸은 **보내지 않는다** — 0 으로 보내면 그 재화를 0 으로 만든다.
+  const fields = [['gold','cur-gold'],['jelly','cur-jelly'],['chitin','cur-chitin'],
+                  ['mineral','cur-mineral'],['sap','cur-sap']];
+  for (const f of fields) {
+    const v = document.getElementById(f[1]).value.trim();
+    if (v !== '') body[f[0]] = parseInt(v, 10);
+  }
+  if (Object.keys(body).length <= 2) return toast('맞출 값을 하나 이상 입력하세요');
+  if (!confirm('이 유저의 재화를 줄입니다. 되돌릴 수 없습니다. 계속할까요?')) return;
+  try {
+    const r = await api('/admin/currency', body);
+    const box = document.getElementById('cur-result');
+    if (!r.changed) { box.textContent = '바뀐 것이 없습니다(지금 값보다 크거나 같음)'; return; }
+    let html = '<b>정상화 완료</b>';
+    for (const k in r.changes) {
+      html += '<div>' + esc(k) + ': ' + n(r.changes[k].from) + ' → ' + n(r.changes[k].to) + '</div>';
+    }
+    box.innerHTML = html;
+    toast('정상화했습니다');
+  } catch (e) { toast(e.message); }
 }
 
 async function loadProducts() {
