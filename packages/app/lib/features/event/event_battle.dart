@@ -377,7 +377,12 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
       _lead = null;
       _syncTeamOrder();
     });
-    _replayCurrentWave(from: before);
+    // 카드(회복·부활·최대체력)가 반영된 **진입 체력**을 서버가 준다. 없으면
+    // (구버전 서버) 예전처럼 화면 체력에서 시작한다.
+    final entry = (_res['hpEntry'] as List?)
+        ?.map((e) => (e as num).toDouble())
+        .toList();
+    _replayCurrentWave(from: entry ?? before);
   }
 
   @override
@@ -465,6 +470,15 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
       ),
     );
     return next.isEmpty ? null : next.first.element;
+  }
+
+  /// 다음 웨이브 색과의 상성: 1=내가 克한다 · -1=내가 당한다 · 0=중립.
+  int _matchup(Element mine) {
+    final next = _nextWaveElement();
+    if (next == null) return 0;
+    if (mine.restrains(next)) return 1;
+    if (next.restrains(mine)) return -1;
+    return 0;
   }
 
   /// 무대(위) + 내 팀 미니 체력(아래).
@@ -585,6 +599,26 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
               ),
               const SizedBox(height: 4),
               _bar(u.maxHp <= 0 ? 0 : hp / u.maxHp, const Color(0xFF7BC96F)),
+              // 다음 웨이브 색과의 상성. 실측상 **매 웨이브 상극을 앞세우면
+              // 도달 웨이브가 +28~35%** 인데, 화면이 그걸 말해 주지 않아
+              // 유저에겐 "오행이 아무 의미 없다"로 보였다(2026-09-02 제보).
+              // 웨이브 색은 다섯 색을 한 바퀴 돌아 **어떤 색을 데려오느냐**는
+              // 상쇄된다 — 오행이 실제로 갈리는 지점은 여기 하나뿐이다.
+              if (picking && !down && _matchup(u.element) != 0) ...[
+                const SizedBox(height: 3),
+                Text(
+                  _matchup(u.element) > 0
+                      ? AppLocalizations.of(context).eventLeadStrong
+                      : AppLocalizations.of(context).eventLeadWeak,
+                  style: TextStyle(
+                    color: _matchup(u.element) > 0
+                        ? const Color(0xFF9CE37D)
+                        : const Color(0xFFE38080),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
               if (picking && !down) ...[
                 const SizedBox(height: 3),
                 Text(

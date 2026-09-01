@@ -173,4 +173,79 @@ void main(List<String> args) {
       stdout.writeln('     ⚠️ 상한 도달 — 동점이 쏟아져 순위를 못 매긴다');
     }
   }
+
+  stdout.writeln('');
+  stdout.writeln('── 선봉 오행 선택이 값어치가 있는가 ──');
+  stdout.writeln('  편성                        고정    상극선봉    차이');
+  for (final e in teams.entries) {
+    var dumb = 0.0, smart = 0.0;
+    for (final r in rounds) {
+      final seed = EventConfig.roundSeedOf(r);
+      dumb += _runWithLead(cfg, seed, e.value, spec, smartLead: false);
+      smart += _runWithLead(cfg, seed, e.value, spec, smartLead: true);
+    }
+    dumb /= rounds.length;
+    smart /= rounds.length;
+    final pct = dumb <= 0 ? 0.0 : (smart - dumb) / dumb * 100;
+    stdout.writeln(
+      '  ${e.key.padRight(26)} ${dumb.toStringAsFixed(1).padLeft(5)}   '
+      '${smart.toStringAsFixed(1).padLeft(7)}   '
+      '${'${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(0)}%'.padLeft(6)}',
+    );
+  }
+}
+
+/// 오행이 **실제로 보상되는지** 재는 실험(2026-09-02).
+///
+/// 웨이브 색은 `(seed + wave) % 5` 로 한 칸씩 돈다 — 어떤 팀이든 5웨이브면
+/// 다섯 색을 한 번씩 만난다. 그래서 **어떤 색을 들고 오느냐**는 구조적으로
+/// 상쇄된다. 남는 유일한 오행 선택은 **웨이브마다 선봉을 누구로 두느냐**다.
+/// 이 함수는 그 선택의 값어치를 잰다: 매 웨이브 상극을 아는 곤충을 앞에
+/// 세우는 플레이 vs 그냥 두는 플레이.
+int _runWithLead(
+  EventConfig cfg,
+  int seed,
+  List<BattleBug> team,
+  WaveEnemySpec spec, {
+  required bool smartLead,
+}) {
+  var order = [...team];
+  var hp = [for (final u in order) u.maxHp];
+  var cleared = 0;
+  for (var w = 1; w <= cfg.maxWave; w++) {
+    final foes = eventWaveEnemies(seed, w, spec);
+    if (smartLead && foes.isNotEmpty) {
+      // 이번 웨이브 색을 克하는 살아 있는 곤충을 앞으로.
+      final foeEl = foes.first.element;
+      for (var i = 1; i < order.length; i++) {
+        if (hp[i] > 0 && order[i].element.restrains(foeEl)) {
+          order.insert(0, order.removeAt(i));
+          hp.insert(0, hp.removeAt(i));
+          break;
+        }
+      }
+    }
+    final st = initBattle(
+      seed + w * 7919,
+      order,
+      foes,
+      initialHpA: hp,
+      maxRounds: kMaxEventRounds,
+    );
+    var guard = 0;
+    while (!st.done && guard++ < kMaxEventRounds * 2) {
+      st.step();
+    }
+    if (st.toResult().outcome != BattleOutcome.teamA) break;
+    cleared = w;
+    hp = [...st.hpA];
+    for (var i = 0; i < hp.length; i++) {
+      if (hp[i] > 0) {
+        final m = order[i].maxHp;
+        final v = hp[i] + m * cfg.waveHealPct;
+        hp[i] = v > m ? m : v;
+      }
+    }
+  }
+  return cleared;
 }

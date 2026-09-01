@@ -1954,6 +1954,18 @@ abstract class AppLocalizations {
   /// **'Reached wave {n}!'**
   String eventResultTitle(Object n);
 
+  /// No description provided for @eventLeadStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get eventLeadStrong;
+
+  /// No description provided for @eventLeadWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak'**
+  String get eventLeadWeak;
+
   /// No description provided for @eventStopWipe.
   ///
   /// In en, this message translates to:

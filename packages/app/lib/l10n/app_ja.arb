@@ -334,6 +334,8 @@
   "eventTicketFull": "参加券が満杯です",
   "eventResultTitle": "{n}ウェーブ到達！",
 
+  "eventLeadStrong": "有利",
+  "eventLeadWeak": "不利",
   "eventStopWipe": "チームが全滅したのでここで終了です。",
   "eventStopJudge": "20ラウンドが過ぎ、残りHPの判定で及ばずでした。虫が残っていてもここで終了します。",
   "eventStopMax": "最後のウェーブまですべてクリアしました！",

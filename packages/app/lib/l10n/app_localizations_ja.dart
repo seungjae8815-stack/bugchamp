@@ -1049,6 +1049,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get eventLeadStrong => '有利';
+
+  @override
+  String get eventLeadWeak => '不利';
+
+  @override
   String get eventStopWipe => 'チームが全滅したのでここで終了です。';
 
   @override

@@ -182,6 +182,59 @@ void main() {
     expect(again.error, 'session_done');
   });
 
+  test('hpEntry 는 카드까지 반영된 진입 체력이다 (앱 재생의 시작점)', () {
+    // 앱은 이 값에서 재생을 시작한다. 직전 웨이브 **종료** 체력에서 시작하면
+    // 회복·부활·최대체력 카드가 재생에서 통째로 빠져, "살린다를 골랐는데
+    // 안 살아난다"가 되고 전투 자체가 서버와 갈린다(2026-09-02 제보).
+    var r = start(seed());
+    var sv = r.save!;
+    var guard = 0;
+    while (r.isOk && r.extra['done'] != true && guard < 40) {
+      final cards = r.extra['cards'] as List;
+      if (cards.isEmpty) break;
+      final session = r.extra['session'] as Map<String, dynamic>;
+      final before = (session['hp'] as List)
+          .map((e) => (e as num).toDouble())
+          .toList();
+      final card = cards.first as Map;
+      r = actions.eventPick(
+        sv,
+        session: session,
+        cardId: '${card['id']}',
+        speciesById: species,
+      );
+      if (!r.isOk) break;
+      sv = r.save!;
+      final entry = r.extra['hpEntry'] as List?;
+      expect(entry, isNotNull, reason: '앱이 재생을 맞출 근거가 없어진다');
+      expect(entry!.length, before.length);
+
+      final kind = '${card['kind']}';
+      if (kind == 'heal' || kind == 'maxHp') {
+        // 살아 있는 자리는 카드만큼 **늘어야** 한다(줄면 안 된다).
+        for (var i = 0; i < entry.length; i++) {
+          if (before[i] > 0) {
+            expect(
+              (entry[i] as num).toDouble(),
+              greaterThanOrEqualTo(before[i]),
+            );
+          }
+        }
+      }
+      if (kind == 'revive' && before.any((v) => v <= 0)) {
+        expect(
+          entry.any((v) => (v as num) > 0),
+          isTrue,
+          reason: '부활 카드를 골랐으면 쓰러진 자리 하나는 살아 있어야 한다',
+        );
+        final downBefore = before.where((v) => v <= 0).length;
+        final downAfter = entry.where((v) => (v as num) <= 0).length;
+        expect(downAfter, lessThan(downBefore));
+      }
+      guard++;
+    }
+  });
+
   test('회차 기간 밖에서는 시작할 수 없다', () {
     // 종료 직후 — 기간이 명시돼 있으면 서버가 닫는다.
     final after = GameActions(

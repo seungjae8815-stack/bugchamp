@@ -2254,6 +2254,12 @@ class GameActions {
     final nextWave = wave + 1;
     final hpPctAtEntry = _hpPct(hp, units);
 
+    // ⚠️ 카드까지 반영된 **웨이브 진입 체력**. 앱은 이 값에서 재생을 시작해야
+    // 한다 — 직전 웨이브 종료 체력에서 시작하면 회복·부활·최대체력 카드가
+    // 재생에 빠져 "살린다를 골랐는데 안 살아난다"가 된다(2026-09-02 제보).
+    // 그러면 그림만 어긋나는 게 아니라 **전투 자체가 서버와 갈린다**.
+    final entryHp = [...hp];
+
     bool won;
     if (skipNext) {
       won = true; // 건너뛴 웨이브는 클리어로 친다
@@ -2302,6 +2308,7 @@ class GameActions {
         'won': won,
         'skipped': skipNext,
         'hp': hp,
+        'hpEntry': entryHp,
         'cleared': cleared,
         'done': done,
         'score': score,

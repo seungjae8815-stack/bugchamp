@@ -1072,6 +1072,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get eventLeadStrong => 'Strong';
+
+  @override
+  String get eventLeadWeak => 'Weak';
+
+  @override
   String get eventStopWipe => 'Your team was wiped out, so the run ends here.';
 
   @override

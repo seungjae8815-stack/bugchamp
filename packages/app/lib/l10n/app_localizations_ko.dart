@@ -1051,6 +1051,12 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get eventLeadStrong => '유리';
+
+  @override
+  String get eventLeadWeak => '불리';
+
+  @override
   String get eventStopWipe => '팀이 전멸해서 여기서 끝났어요.';
 
   @override
