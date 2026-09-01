@@ -1954,6 +1954,24 @@ abstract class AppLocalizations {
   /// **'Reached wave {n}!'**
   String eventResultTitle(Object n);
 
+  /// No description provided for @eventStopWipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Your team was wiped out, so the run ends here.'**
+  String get eventStopWipe;
+
+  /// No description provided for @eventStopJudge.
+  ///
+  /// In en, this message translates to:
+  /// **'Round 20 passed, so the wave was decided on remaining HP and you came up short. The run ends here even with bugs still standing.'**
+  String get eventStopJudge;
+
+  /// No description provided for @eventStopMax.
+  ///
+  /// In en, this message translates to:
+  /// **'You cleared every wave to the last one!'**
+  String get eventStopMax;
+
   /// No description provided for @eventNewBest.
   ///
   /// In en, this message translates to:

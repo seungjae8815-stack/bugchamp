@@ -340,6 +340,10 @@
   "eventAdLimit": "오늘 무료 보상을 모두 받았어요",
   "eventTicketFull": "참가권이 가득 찼어요",
   "eventResultTitle": "{n}웨이브 도달!",
+
+  "eventStopWipe": "팀이 전멸해서 여기서 끝났어요.",
+  "eventStopJudge": "20라운드가 지나 체력 비율 판정에서 밀렸어요. 곤충이 남아 있어도 여기서 끝납니다.",
+  "eventStopMax": "마지막 웨이브까지 모두 클리어했어요!",
   "eventNewBest": "최고 기록 갱신!",
   "eventKeptBest": "최고 기록은 {n}웨이브예요",
   "eventWaveCleared": "{n}웨이브 돌파!",

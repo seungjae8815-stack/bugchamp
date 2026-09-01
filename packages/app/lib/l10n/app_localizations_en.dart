@@ -1072,6 +1072,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get eventStopWipe => 'Your team was wiped out, so the run ends here.';
+
+  @override
+  String get eventStopJudge =>
+      'Round 20 passed, so the wave was decided on remaining HP and you came up short. The run ends here even with bugs still standing.';
+
+  @override
+  String get eventStopMax => 'You cleared every wave to the last one!';
+
+  @override
   String get eventNewBest => 'New best!';
 
   @override

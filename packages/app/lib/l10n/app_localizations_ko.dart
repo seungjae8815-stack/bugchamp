@@ -1051,6 +1051,16 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get eventStopWipe => '팀이 전멸해서 여기서 끝났어요.';
+
+  @override
+  String get eventStopJudge =>
+      '20라운드가 지나 체력 비율 판정에서 밀렸어요. 곤충이 남아 있어도 여기서 끝납니다.';
+
+  @override
+  String get eventStopMax => '마지막 웨이브까지 모두 클리어했어요!';
+
+  @override
   String get eventNewBest => '최고 기록 갱신!';
 
   @override

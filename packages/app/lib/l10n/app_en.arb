@@ -633,6 +633,10 @@
   "eventAdLimit": "Today's free rewards are used up",
   "eventTicketFull": "Tickets are full",
   "eventResultTitle": "Reached wave {n}!",
+
+  "eventStopWipe": "Your team was wiped out, so the run ends here.",
+  "eventStopJudge": "Round 20 passed, so the wave was decided on remaining HP and you came up short. The run ends here even with bugs still standing.",
+  "eventStopMax": "You cleared every wave to the last one!",
   "eventNewBest": "New best!",
   "eventKeptBest": "Your best is wave {n}",
   "eventWaveCleared": "Wave {n} cleared!",

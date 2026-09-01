@@ -795,6 +795,13 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
     final cleared = (_res['cleared'] as num?)?.toInt() ?? 0;
     final score = (_res['score'] as num?)?.toInt() ?? 0;
     final isBest = _res['isBest'] == true;
+    // 왜 끝났는지 한 줄. 20라운드 판정패(§2.3)로 지면 **곤충이 살아 있는 채로**
+    // 결과가 뜬다 — 이유가 없으면 화면이 고장 난 것처럼 보인다(실기 제보).
+    final won = _res['won'] == true;
+    final wiped = _hpShown.every((v) => v <= 0.5);
+    final reason = won
+        ? l.eventStopMax
+        : (wiped ? l.eventStopWipe : l.eventStopJudge);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(14),
@@ -814,7 +821,18 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
               fontSize: 18,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
+          Text(
+            reason,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFCBD8BE),
+              fontSize: 12,
+              height: 1.35,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
           Text(
             l.eventScore(formatCompact(score)),
             style: const TextStyle(color: _honey, fontWeight: FontWeight.w800),

@@ -1049,6 +1049,15 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get eventStopWipe => 'チームが全滅したのでここで終了です。';
+
+  @override
+  String get eventStopJudge => '20ラウンドが過ぎ、残りHPの判定で及ばずでした。虫が残っていてもここで終了します。';
+
+  @override
+  String get eventStopMax => '最後のウェーブまですべてクリアしました！';
+
+  @override
   String get eventNewBest => '自己ベスト更新！';
 
   @override

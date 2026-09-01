@@ -333,6 +333,10 @@
   "eventAdLimit": "本日の無料報酬は受け取り済みです",
   "eventTicketFull": "参加券が満杯です",
   "eventResultTitle": "{n}ウェーブ到達！",
+
+  "eventStopWipe": "チームが全滅したのでここで終了です。",
+  "eventStopJudge": "20ラウンドが過ぎ、残りHPの判定で及ばずでした。虫が残っていてもここで終了します。",
+  "eventStopMax": "最後のウェーブまですべてクリアしました！",
   "eventNewBest": "自己ベスト更新！",
   "eventKeptBest": "自己ベストは{n}ウェーブです",
   "eventWaveCleared": "{n}ウェーブ突破！",
