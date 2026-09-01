@@ -1986,6 +1986,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String buffBtnPassLeft(int n) {
+    return 'Pass: ${n}d left';
+  }
+
+  @override
   String get settingsLanguage => 'Language';
 
   @override

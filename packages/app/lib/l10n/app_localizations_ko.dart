@@ -1955,6 +1955,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String buffBtnPassLeft(int n) {
+    return '패스 $n일 남음';
+  }
+
+  @override
   String get settingsLanguage => '언어';
 
   @override

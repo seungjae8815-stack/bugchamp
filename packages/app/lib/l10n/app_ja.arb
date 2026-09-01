@@ -615,6 +615,14 @@
   "buffCooldownAsk": "次の無料起動まで {t}。\nゼリー {n}個で今すぐ起動しますか？",
   "buffBtnFreeLeft": "無料まで {t}",
   "buffBtnJelly": "{n}個で起動",
+  "buffBtnPassLeft": "パス残り{n}日",
+  "@buffBtnPassLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "settingsLanguage": "言語",
   "languageSystem": "端末の設定",
   "eventRewardTitleAward": "称号「{name}」",

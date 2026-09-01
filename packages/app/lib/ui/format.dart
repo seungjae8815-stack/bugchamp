@@ -19,6 +19,25 @@ String formatClock(Duration d) {
   return '$m:$ss';
 }
 
+/// 남은 시간 → **두 단위까지만** 축약(`11d12h` · `1h22m` · `22m23s` · `12s`).
+///
+/// ⚠️ `formatClock` 을 HUD 에 쓰면 안 된다. 버프 시간이 길어지면
+/// `43193:14` 같은 문자열이 되어 옆 칸(젤리·재화·전투력)을 밀어낸다
+/// (2026-09-01 실기 지적). 여기서는 **길이가 자라지 않는 표기**가 필요하다.
+///
+/// 두 단위인 이유: `11d`만 쓰면 하루 안쪽에서 정보가 사라지고, 세 단위를 쓰면
+/// 다시 길어진다.
+String formatShortDuration(Duration d) {
+  final s = d.inSeconds <= 0 ? 0 : d.inSeconds;
+  final days = s ~/ 86400;
+  if (days > 0) return '${days}d${(s % 86400) ~/ 3600}h';
+  final h = s ~/ 3600;
+  if (h > 0) return '${h}h${(s % 3600) ~/ 60}m';
+  final m = s ~/ 60;
+  if (m > 0) return '${m}m${s % 60}s';
+  return '${s}s';
+}
+
 /// 사이즈(mm) → 소수 1자리.
 String formatSizeMm(double mm) => mm.toStringAsFixed(1);
 

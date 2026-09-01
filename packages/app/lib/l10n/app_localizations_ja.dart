@@ -1950,6 +1950,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String buffBtnPassLeft(int n) {
+    return 'パス残り$n日';
+  }
+
+  @override
   String get settingsLanguage => '言語';
 
   @override

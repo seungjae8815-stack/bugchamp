@@ -3562,6 +3562,12 @@ abstract class AppLocalizations {
   /// **'Use {n}'**
   String buffBtnJelly(int n);
 
+  /// No description provided for @buffBtnPassLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass: {n}d left'**
+  String buffBtnPassLeft(int n);
+
   /// No description provided for @settingsLanguage.
   ///
   /// In en, this message translates to:

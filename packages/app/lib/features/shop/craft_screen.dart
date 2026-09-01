@@ -191,9 +191,17 @@ class _ProductCard extends ConsumerWidget {
     final desc = product.desc?.resolve(locale);
     final owned = _owned;
     // 패스는 남은 기간을 보여준다.
-    final passLeft = product.type == IapType.pass && save.passActive(now)
-        ? save.passExpiresAt!.difference(now).inDays
-        : null;
+    //
+    // ⚠️ 곤충학자 패스와 **무한 버프 패스는 칸이 다르다**(`passExpiresAt` /
+    // `buffPassExpiresAt`). 예전엔 곤충학자 패스만 봐서, 무한 버프 패스는
+    // 사고 나서도 남은 기간이 안 보였다(2026-09-01 실기 지적).
+    final passEndsAt = switch (product.type) {
+      IapType.pass => save.passActive(now) ? save.passExpiresAt : null,
+      IapType.buffPass =>
+        save.buffPassActive(now) ? save.buffPassExpiresAt : null,
+      _ => null,
+    };
+    final passLeft = passEndsAt?.difference(now).inDays;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),

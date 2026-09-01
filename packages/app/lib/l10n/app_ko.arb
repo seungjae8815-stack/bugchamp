@@ -622,6 +622,14 @@
   "buffCooldownAsk": "무료 켜기는 {t} 후에 다시 할 수 있어요.\n젤리 {n}개로 바로 켤까요?",
   "buffBtnFreeLeft": "무료 {t} 남음",
   "buffBtnJelly": "{n}개로 켜기",
+  "buffBtnPassLeft": "패스 {n}일 남음",
+  "@buffBtnPassLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "settingsLanguage": "언어",
   "languageSystem": "기기 설정",
   "eventRewardTitleAward": "칭호 「{name}」",

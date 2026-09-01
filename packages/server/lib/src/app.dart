@@ -1804,9 +1804,12 @@ Handler buildHandler({
       }
     });
 
-    /// 운영 지급 우편의 제목·본문. 유저는 왜 받았는지 모르면 버그로 읽는다.
-    const grantMailTitle = '운영자 지급';
-    const grantMailBody = '운영자가 보낸 선물입니다. 받기를 눌러 수령하세요.';
+    /// 지급 우편의 제목·본문 — **상품 이름을 넣는다**.
+    ///
+    /// "운영자 지급"이라고만 쓰면, 상점에서 산 것을 운영자가 준 것처럼 읽힌다
+    /// (2026-09-01 지적). 유저는 자기가 무엇을 받는지로 우편을 판단한다.
+    String grantMailTitle(String productName) => productName;
+    const grantMailBody = '상점 구입분입니다. 받기를 눌러 수령하세요.';
 
     /// 특정 계정에 **IAP 상품을 그냥 지급**한다(보상·보상금·테스트).
     ///
@@ -2022,7 +2025,9 @@ Handler buildHandler({
           try {
             await store.insertRow('user_mail', {
               'user_id': userId,
-              'title': grantMailTitle,
+              'title': grantMailTitle(
+                cfg.iap.byId(productId)!.name?.resolve('ko') ?? productId,
+              ),
               'body': grantMailBody,
               'gold': g.gold,
               'jelly': g.jelly,

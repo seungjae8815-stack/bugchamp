@@ -1206,6 +1206,14 @@
     }
   },
   "buffBtnJelly": "Use {n}",
+  "buffBtnPassLeft": "Pass: {n}d left",
+  "@buffBtnPassLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "@buffBtnJelly": {
     "placeholders": {
       "n": {

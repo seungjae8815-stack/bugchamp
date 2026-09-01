@@ -2055,7 +2055,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     for (final k in BuffKind.values)
                       Padding(
                         padding: const EdgeInsets.only(left: 3),
-                        child: _buffMini(k, save.buffRemaining(k, now)),
+                        child: _buffMini(
+                          k,
+                          save.buffRemaining(k, now),
+                          hasPass: save.buffPassActive(now),
+                        ),
                       ),
                   ],
                 ),
@@ -2068,7 +2072,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 상단 우측 미니 버프 아이콘 + 아래 남은시간. 탭 시 버프 시트.
-  Widget _buffMini(BuffKind k, Duration? remaining) {
+  Widget _buffMini(BuffKind k, Duration? remaining, {bool hasPass = false}) {
     final active = remaining != null;
     // 비활성 버프는 부드럽게 맥동하는 글로우 + "!" 로 활성화를 유도한다.
     final pulse = 0.5 + 0.5 * math.sin(_tapHint * 3.2);
@@ -2135,9 +2139,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ),
         SizedBox(
           height: 10,
+          // 패스 보유 중엔 시간이 아니라 **무한대**다. 남은 초를 그리면
+          // 패스가 끝나가는 것처럼 보이고, 숫자도 계속 길어진다.
           child: active
               ? Text(
-                  _mmss(remaining),
+                  hasPass ? '∞' : formatShortDuration(remaining),
                   style: const TextStyle(
                     color: _honey,
                     fontSize: 7.5,
@@ -2911,9 +2917,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     return Stack(children: followers);
   }
-
-  String _mmss(Duration d) =>
-      '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
   // ── 다이얼로그/시트 ──────────────────────────────────────────
 
@@ -5249,6 +5252,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return true;
   }
 
+  /// 무한 버프 패스의 남은 날짜(올림). 0.5일 남았는데 "0일"이면 만료로 읽힌다.
+  int _passDaysLeft(WidgetRef r, DateTime now) {
+    final until = r.read(saveControllerProvider).requireValue.buffPassExpiresAt;
+    if (until == null) return 0;
+    final left = until.difference(now);
+    return left.isNegative ? 0 : (left.inHours / 24).ceil();
+  }
+
   Widget _buffSheetRow(
     AppLocalizations l,
     WidgetRef r,
@@ -5307,7 +5318,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          _mmss(remaining),
+                          hasPass ? '∞' : formatShortDuration(remaining),
                           style: const TextStyle(
                             color: _honey,
                             fontWeight: FontWeight.w800,
@@ -5368,7 +5379,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     : const Color(0xFF2E7D32),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
-              child: coolLeft > Duration.zero
+              child: hasPass
+                  // 무한 버프 패스 보유 중 — 무료/젤리 문구는 거짓말이다.
+                  // 남은 기간을 보여줘야 "내가 뭘 샀는지"가 화면에 남는다.
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.all_inclusive_rounded, size: 16),
+                        const SizedBox(width: 5),
+                        Text(
+                          l.buffBtnPassLeft(_passDaysLeft(r, now)),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    )
+                  : coolLeft > Duration.zero
                   // 윗줄 = 언제 무료가 되는지, 아랫줄 = 지금 켜는 값.
                   ? Column(
                       mainAxisSize: MainAxisSize.min,
