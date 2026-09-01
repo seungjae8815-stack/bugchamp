@@ -1796,6 +1796,15 @@ Handler buildHandler({
         final raw = await store.load(userId);
         if (raw == null) return _json({'error': 'no_save'}, status: 404);
         final save = SaveGame.fromJson(migrateToCurrent(raw));
+        // 하루 충전 카운터 초기화(개발자 모드 확인용). 카운터는 서버 소유라
+        // 앱이 세이브를 고쳐도 다음 병합에서 되돌아온다 — 이 경로뿐이다.
+        if (b['resetDaily'] == true) {
+          final counts = Map<String, int>.from(save.adUseCounts)
+            ..remove(kAdFeatureEventTicket);
+          final out = save.copyWith(adUseCounts: counts);
+          await store.save(userId, out.toJson());
+          return _json({'ok': true, 'resetDaily': true});
+        }
         final now = actions.eventTicketsNow(save);
         // 상한을 넘겨서 주지 않는다 — 상한이 곧 하루 판수 제한이다.
         final next = (now.tickets + want).clamp(0, ev.ticketMax);

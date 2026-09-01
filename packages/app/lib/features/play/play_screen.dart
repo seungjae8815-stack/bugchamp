@@ -4577,7 +4577,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 고쳐 봐야 다음 업로드에 서버 값으로 덮인다. 그래서 운영 라우트
   /// (`/admin/event-ticket`)를 쓰며, 키는 기기에 저장해 두고 없을 때만 한 번
   /// 묻는다(손으로 옮기는 값이라 매번 입력하면 오타가 난다).
-  Future<String> _devGrantEventTickets(int amount) async {
+  Future<String> _devGrantEventTickets(
+    int amount, {
+    bool resetDaily = false,
+  }) async {
     final server = ref.read(gameServerProvider);
     if (!server.available) return '서버 연결이 없어요 (GAME_SERVER_URL 필요)';
     final uid = ref.read(authServiceProvider).userId;
@@ -4621,6 +4624,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       adminKey: key,
       userId: uid,
       amount: amount,
+      resetDaily: resetDaily,
     );
     if (!r.isOk) {
       // 키가 틀리면 저장분을 지워 다시 물어볼 수 있게 한다.
@@ -4631,6 +4635,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       return '실패: ${r.error ?? r.status}';
     }
     ref.invalidate(eventStateProvider);
+    if (resetDaily) {
+      // 카운터는 서버 소유 필드라, 서버가 지운 값을 **다시 받아 채택**해야
+      // 화면이 바뀐다 — 로컬 세이브만 봐서는 초기화가 안 보인다.
+      final st = await server.fetchState();
+      final sv = st.save;
+      if (st.isOk && sv != null) {
+        await ref.read(saveControllerProvider.notifier).adoptServerSave(sv);
+      }
+      return '오늘 충전 횟수 초기화';
+    }
     return '참가권 ${r.data?['tickets']}/${r.data?['max']}';
   }
 
@@ -4796,6 +4810,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     _devSection('이벤트', [
                       _devBtn('참가권 +5', () async {
                         final msg = await _devGrantEventTickets(5);
+                        if (msg.isNotEmpty) toast(msg);
+                      }),
+                      _devBtn('충전 하루한도 초기화', () async {
+                        final msg = await _devGrantEventTickets(
+                          1,
+                          resetDaily: true,
+                        );
                         if (msg.isNotEmpty) toast(msg);
                       }),
                     ]),

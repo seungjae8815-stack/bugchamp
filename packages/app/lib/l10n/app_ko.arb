@@ -345,6 +345,8 @@
   "eventLeadWeak": "불리",
   "eventTicketBought": "참가권 {n}장을 충전했어요",
   "@eventTicketBought": {"placeholders": {"n": {"type": "int"}}},
+  "eventTicketDaily": "오늘 {used}/{max}",
+  "@eventTicketDaily": {"placeholders": {"used": {"type": "int"}, "max": {"type": "int"}}},
   "eventStopWipe": "팀이 전멸해서 여기서 끝났어요.",
   "eventStopJudge": "20라운드가 지나 체력 비율 판정에서 밀렸어요. 곤충이 남아 있어도 여기서 끝납니다.",
   "eventStopMax": "마지막 웨이브까지 모두 클리어했어요!",

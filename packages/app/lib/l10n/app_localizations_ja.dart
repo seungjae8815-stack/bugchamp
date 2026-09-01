@@ -1060,6 +1060,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String eventTicketDaily(int used, int max) {
+    return '本日 $used/$max';
+  }
+
+  @override
   String get eventStopWipe => 'チームが全滅したのでここで終了です。';
 
   @override

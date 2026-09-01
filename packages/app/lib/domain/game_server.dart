@@ -165,6 +165,7 @@ abstract interface class GameServer {
     required String adminKey,
     required String userId,
     required int amount,
+    bool resetDaily = false,
   });
 
   /// 산란 완료 수령.
@@ -287,6 +288,7 @@ class NoGameServer implements GameServer {
     required String adminKey,
     required String userId,
     required int amount,
+    bool resetDaily = false,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> collectBreeding(
@@ -511,10 +513,11 @@ class HttpGameServer implements GameServer {
     required String adminKey,
     required String userId,
     required int amount,
+    bool resetDaily = false,
   }) => _send(
     'POST',
     '/admin/event-ticket',
-    {'userId': userId, 'amount': amount},
+    {'userId': userId, 'amount': amount, if (resetDaily) 'resetDaily': true},
     {'x-admin-key': adminKey},
   );
 

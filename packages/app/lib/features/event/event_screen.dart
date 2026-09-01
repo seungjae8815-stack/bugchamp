@@ -800,6 +800,25 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   '(${cfg?.ticketJelly ?? 0})',
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
+                const SizedBox(width: 6),
+                // 하루 한도를 **누르기 전에** 보여준다. 값(젤리)만 있고 한도가
+                // 안 보이면 세 번째에 ad_limit 로 거절당하고서야 알게 된다
+                // (2026-09-02 실기 지적). 날짜 경계는 서버와 같은 UTC 키다 —
+                // 기기 자정으로 세면 리셋 시각이 서버와 어긋난다.
+                Text(
+                  l.eventTicketDaily(
+                    save.adUseCount(
+                      kAdFeatureEventTicket,
+                      dailyDateKey(ref.read(clockProvider).now().toUtc()),
+                    ),
+                    cfg?.ticketAdDailyLimit ?? 0,
+                  ),
+                  style: const TextStyle(
+                    color: Color(0x88FFFFFF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
             style: TextButton.styleFrom(

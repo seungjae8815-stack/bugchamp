@@ -1972,6 +1972,12 @@ abstract class AppLocalizations {
   /// **'Charged {n} entry ticket(s)'**
   String eventTicketBought(int n);
 
+  /// No description provided for @eventTicketDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'today {used}/{max}'**
+  String eventTicketDaily(int used, int max);
+
   /// No description provided for @eventStopWipe.
   ///
   /// In en, this message translates to:
