@@ -1742,6 +1742,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get disassembleAction => '분해';
 
   @override
+  String get incubatingLabel => '부화 중';
+
+  @override
   String get disassembleSnack => '분해 완료';
 
   @override

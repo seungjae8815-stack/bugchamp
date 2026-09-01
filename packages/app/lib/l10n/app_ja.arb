@@ -553,6 +553,7 @@
   "disassembleTitle": "分解",
   "disassembleDesc": "ゼリー {n}個に還元",
   "disassembleAction": "分解",
+  "incubatingLabel": "孵化中",
   "disassembleSnack": "分解完了",
   "disassembleEquipped": "装備中の虫は分解できません",
   "disassembleIncubating": "孵化中のタマゴは分解できません",

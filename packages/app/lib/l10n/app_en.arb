@@ -1062,6 +1062,7 @@
     }
   },
   "disassembleAction": "Disassemble",
+  "incubatingLabel": "Incubating",
   "disassembleSnack": "Disassembled",
   "disassembleEquipped": "Equipped bugs cannot be disassembled",
   "disassembleIncubating": "Eggs in the incubator cannot be disassembled",

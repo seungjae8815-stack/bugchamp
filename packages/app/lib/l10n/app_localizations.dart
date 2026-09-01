@@ -3190,6 +3190,12 @@ abstract class AppLocalizations {
   /// **'Disassemble'**
   String get disassembleAction;
 
+  /// No description provided for @incubatingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubating'**
+  String get incubatingLabel;
+
   /// No description provided for @disassembleSnack.
   ///
   /// In en, this message translates to:

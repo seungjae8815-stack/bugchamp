@@ -1768,6 +1768,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disassembleAction => 'Disassemble';
 
   @override
+  String get incubatingLabel => 'Incubating';
+
+  @override
   String get disassembleSnack => 'Disassembled';
 
   @override

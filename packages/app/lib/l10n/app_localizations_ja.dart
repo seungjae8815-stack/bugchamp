@@ -1739,6 +1739,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get disassembleAction => '分解';
 
   @override
+  String get incubatingLabel => '孵化中';
+
+  @override
   String get disassembleSnack => '分解完了';
 
   @override

@@ -560,6 +560,7 @@
   "disassembleTitle": "분해",
   "disassembleDesc": "젤리 {n}개로 환원",
   "disassembleAction": "분해",
+  "incubatingLabel": "부화 중",
   "disassembleSnack": "분해 완료",
   "disassembleEquipped": "장착 중인 곤충은 분해할 수 없어요",
   "disassembleIncubating": "부화 중인 알은 분해할 수 없어요",

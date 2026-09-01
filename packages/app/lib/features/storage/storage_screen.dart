@@ -2733,62 +2733,97 @@ class StorageScreen extends ConsumerWidget {
                         ),
                       ),
                     )
-                  else
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () => r
-                                .read(saveControllerProvider.notifier)
-                                .equipBug(bug.id),
-                            icon: const Icon(Icons.pets, size: 18),
-                            label: Text(l.equipAction),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E7D32),
+                  else ...[
+                    Builder(
+                      builder: (_) {
+                        final hatching = save.incubating.containsKey(bug.id);
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () => r
+                                    .read(saveControllerProvider.notifier)
+                                    .equipBug(bug.id),
+                                icon: const Icon(Icons.pets, size: 18),
+                                label: Text(l.equipAction),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2E7D32),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            final res = await r
-                                .read(saveControllerProvider.notifier)
-                                .disassembleBug(bug.id);
-                            if (!ctx.mounted) return;
-                            if (!res.ok) {
-                              // 실패를 침묵으로 두면 "전설 알이 분해가 안 된다"가
-                              // 버그로 읽힌다 — 사유를 말해 준다.
-                              showCenterToast(context, switch (res.error) {
-                                'equipped' => l.disassembleEquipped,
-                                'incubating' => l.disassembleIncubating,
-                                _ => l.disassembleFailed,
-                              });
-                              return;
-                            }
-                            Navigator.pop(ctx);
-                            // 무엇이 얼마나 들어왔는지 보여준다 — 재료가 2~32 개라
-                            // "분해 완료"만으로는 아무것도 안 들어온 것 같다.
-                            final parts = <String>[
-                              if (res.kind != null)
-                                '${materialLabel(l, res.kind!)} +${res.amount}',
-                              if (res.jelly > 0) '${l.curJelly} +${res.jelly}',
-                            ];
-                            showCenterToast(
-                              context,
-                              parts.isEmpty
-                                  ? l.disassembleSnack
-                                  : '${l.disassembleSnack} · ${parts.join(' · ')}',
-                            );
-                          },
-                          icon: const Icon(Icons.call_split, size: 18),
-                          label: Text(l.disassembleAction),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFEF9A9A),
-                            side: const BorderSide(color: Color(0x55EF9A9A)),
-                          ),
-                        ),
-                      ],
+                            const SizedBox(width: 8),
+                            // 부화 중이면 **버튼이 스스로 말한다** — 눌러서 토스트로
+                            // 알게 하는 건 한 번 더 헛걸음시키는 것이다(2026-09-01).
+                            OutlinedButton.icon(
+                              onPressed: hatching
+                                  ? null
+                                  : () async {
+                                      final res = await r
+                                          .read(saveControllerProvider.notifier)
+                                          .disassembleBug(bug.id);
+                                      if (!ctx.mounted) return;
+                                      if (!res.ok) {
+                                        // 실패를 침묵으로 두면 "전설 알이 분해가 안 된다"가
+                                        // 버그로 읽힌다 — 사유를 말해 준다.
+                                        showCenterToast(
+                                          context,
+                                          switch (res.error) {
+                                            'equipped' => l.disassembleEquipped,
+                                            'incubating' =>
+                                              l.disassembleIncubating,
+                                            _ => l.disassembleFailed,
+                                          },
+                                        );
+                                        return;
+                                      }
+                                      Navigator.pop(ctx);
+                                      // 무엇이 얼마나 들어왔는지 **아이콘으로** 보여준다 —
+                                      // 재료가 2~32 개라 "분해 완료"만으로는 아무것도 안
+                                      // 들어온 것처럼 보인다(2026-09-01 지적).
+                                      // 글자보다 아이콘이 어느 재화인지 즉시 갈린다.
+                                      final gained = <MaterialKind, int>{
+                                        if (res.kind != null)
+                                          res.kind!: res.amount,
+                                        if (res.jelly > 0)
+                                          MaterialKind.jelly: res.jelly,
+                                      };
+                                      if (gained.isEmpty) {
+                                        showCenterToast(
+                                          context,
+                                          l.disassembleSnack,
+                                        );
+                                        return;
+                                      }
+                                      await showRewardPopup(
+                                        context,
+                                        title: l.disassembleSnack,
+                                        icon: Icons.call_split,
+                                        materials: gained,
+                                      );
+                                    },
+                              icon: Icon(
+                                hatching
+                                    ? Icons.hourglass_bottom_rounded
+                                    : Icons.call_split,
+                                size: 18,
+                              ),
+                              label: Text(
+                                hatching
+                                    ? l.incubatingLabel
+                                    : l.disassembleAction,
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFEF9A9A),
+                                side: const BorderSide(
+                                  color: Color(0x55EF9A9A),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
+                  ],
                 ],
               ),
             );

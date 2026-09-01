@@ -1404,6 +1404,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
               // 상단 중앙 오버레이: 스테이지 배너
               Positioned(top: 8, left: 0, right: 0, child: _stageOverlay(l)),
+              // 버프 — **사냥 화면 오른쪽에 세로 한 줄**(사장님 지시 2026-09-01).
+              // HUD 안에 두면 닉네임·전투력·재화와 가로 폭을 다투고, 아래 한 줄로
+              // 빼면 사냥 화면이 그만큼 낮아진다. 여기는 원래 비어 있는 자리다.
+              Positioned(
+                right: 4,
+                top: 44,
+                child: _buffColumn(
+                  l,
+                  ref.watch(saveControllerProvider).requireValue,
+                ),
+              ),
               // 적/서식지 (하단=발 기준 정렬)
               Align(
                 alignment: const Alignment(0.45, 1.0),
@@ -1736,10 +1747,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         _topBar(l, save),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(10, 2, 10, 0),
-          child: _buffStrip(l, save, _clock.now().toUtc()),
-        ),
         _eventBanner(l),
         _loginNudge(l),
         _chatBar(l),
@@ -2067,25 +2074,37 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// ⚠️ 예전엔 아이콘 줄 아래(오른쪽 칸 안)에 있었다. 그러면 버프 줄 폭이
   /// 오른쪽 칸의 폭을 정하고, 그만큼 왼쪽(닉네임·전투력)이 좁아져 **둘 다
   /// 잘렸다**(2026-09-01 지적, 세 번째). 자리를 다투지 않게 아예 분리한다.
-  Widget _buffStrip(AppLocalizations l, SaveGame save, DateTime now) =>
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _showBuffSheet(l),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+  Widget _buffColumn(AppLocalizations l, SaveGame save) {
+    final now = _clock.now().toUtc();
+    final hasPass = save.buffPassActive(now);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showBuffSheet(l),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+        decoration: BoxDecoration(
+          // 사냥 배경 위에 얹히므로 옅은 판을 깐다 — 밝은 서식지에서 아이콘이
+          // 배경에 묻힌다.
+          color: const Color(0x55101A0A),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             for (final k in BuffKind.values)
               Padding(
-                padding: const EdgeInsets.only(left: 4),
+                padding: const EdgeInsets.symmetric(vertical: 2),
                 child: _buffMini(
                   k,
                   save.buffRemaining(k, now),
-                  hasPass: save.buffPassActive(now),
+                  hasPass: hasPass,
                 ),
               ),
           ],
         ),
-      );
+      ),
+    );
+  }
 
   /// 상단 우측 미니 버프 아이콘 + 아래 남은시간. 탭 시 버프 시트.
   /// 버프 칸 하나의 **고정 폭**. 남은 시간 글자가 길어져도 이 폭을 넘지 않으므로
