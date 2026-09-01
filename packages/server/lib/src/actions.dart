@@ -201,6 +201,21 @@ class GameActions {
   /// 2000만이면 교환 3회분을 덮으면서도 "수십억 주입"은 막는다.
   static const _materialSanityFloor = 20000000;
 
+  /// 업로드 1회당 증가 상한을 **밖에서도** 볼 수 있게 연다.
+  ///
+  /// 운영 정상화(`/admin/currency`)가 "원하는 최종 값"에서 이 값을 빼서
+  /// 저장한다 — 앱에 남은 옛 값이 상한만큼 되올라간 뒤 멈추기 때문이다.
+  /// 상수를 두 곳에 적으면 한쪽만 고쳐 조용히 어긋난다.
+  static const goldUploadCap = _goldSanityFloor;
+
+  static int uploadCapFor(MaterialKind k) => switch (k) {
+    MaterialKind.jelly => _jellySanityFloor,
+    // 화석은 설정에서 파생되므로 인스턴스 값이 필요하다 — 정상화 대상이
+    // 아니라서 보수적으로 0(= 뺄셈 없음)을 준다.
+    MaterialKind.fossil => 0,
+    _ => _materialSanityFloor,
+  };
+
   /// 화석 조각(제련용) 증가 상한의 여유 배수.
   ///
   /// ⚠️ **보유 상한이 아니라 업로드 1회당 증가 상한이다.** 모아뒀다 한 번에
