@@ -2155,6 +2155,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nicknameRequiredBody => '他の採集者に表示される名前です。最初の一度だけ設定します。';
 
   @override
+  String get renameForcedTitle => 'ニックネームを変更してください';
+
+  @override
+  String get renameForcedBody =>
+      '運営がニックネームの変更を求めています。\n他のプレイヤーに表示される名前のため、ルールに沿う必要があります。\n今回の変更は無料です。';
+
+  @override
   String get nicknameChangeTitle => 'ニックネーム変更';
 
   @override

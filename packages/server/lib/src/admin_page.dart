@@ -353,6 +353,9 @@ async function findUser() {
       row('결제 건수', n(r.purchases) + '건') +
       row('마지막 접속', ago(r.lastSeen)) +
       '<button class="act" onclick="toGrant(\'' + r.id + '\')">이 유저에게 지급하기</button>' +
+      '<button class="act warn" style="margin-top:6px" onclick="askRename(\'' + r.id + '\')">닉네임 변경 요구</button>' +
+      '<p class="hint">부적절한 닉네임 조치. 유저 앱에 <b>닫을 수 없는 변경 창</b>이 뜨고, ' +
+      '변경은 무료입니다. 새 이름이 올라오면 요구가 자동으로 풀립니다.</p>' +
       '<div class="card" style="margin-top:10px">' +
       '<h2>재화 정상화</h2>' +
       '<p class="hint">지난 규칙에서 쌓여 <b>지금은 도달 불가능한</b> 값을 맞춥니다. ' +
@@ -397,6 +400,14 @@ function pickUser(id) {
 function toGrant(id) {
   document.getElementById('g-uid').value = id;
   tab('grant');
+}
+
+async function askRename(id) {
+  if (!confirm('이 유저에게 닉네임 변경을 요구합니다. 계속할까요?')) return;
+  try {
+    const r = await api('/admin/rename', { userId: id });
+    toast('요구했습니다 (현재 이름: ' + r.nickname + ')');
+  } catch (e) { toast(e.message); }
 }
 
 async function normalizeCurrency(id) {

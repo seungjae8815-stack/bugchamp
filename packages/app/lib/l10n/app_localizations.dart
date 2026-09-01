@@ -3928,6 +3928,18 @@ abstract class AppLocalizations {
   /// **'This is the name other collectors will see. You only set it once.'**
   String get nicknameRequiredBody;
 
+  /// No description provided for @renameForcedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please change your nickname'**
+  String get renameForcedTitle;
+
+  /// No description provided for @renameForcedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An operator asked you to change your nickname.\nIt is shown to other players, so it must follow the rules.\nThis change is free.'**
+  String get renameForcedBody;
+
   /// No description provided for @nicknameChangeTitle.
   ///
   /// In en, this message translates to:

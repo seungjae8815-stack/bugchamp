@@ -134,6 +134,9 @@ class GameActions {
     // (2026-09-01 실기: /admin/grant 로 줬는데 적용 안 됨).
     // 유저가 스스로 얻는 경로가 없는(=결제 전용) 필드는 전부 서버 소유다.
     'buffPassExpiresAt',
+    // 닉네임 변경 요구(2026-09-02). 닉네임 자체는 서버 소유가 아니라서,
+    // 이 플래그를 서버가 쥐고 있어야 앱이 옛 이름을 다시 올려도 요구가 남는다.
+    'renameRequired',
     'ownedSkins',
     // ⚠️ `incubatorCapacity` 는 여기 두면 안 된다. 부화기 슬롯은 IAP 뿐 아니라
     // **젤리로도 산다**(`expandIncubator`). 서버가 소유하면 젤리는 빠지고
@@ -362,6 +365,16 @@ class GameActions {
       parsed = SaveGame.fromJson(merged);
     } catch (_) {
       return const ActionResult.fail('bad_save');
+    }
+
+    // 닉네임 변경 요구는 **새 이름이 실제로 올라오면** 내린다.
+    // 규칙 검사까지 하지 않는 이유: 앱이 이미 같은 `ChatRules` 로 막고,
+    // 서버가 규칙을 두 벌로 들고 있으면 갈렸을 때 유저가 영영 못 벗어난다.
+    if (stored.renameRequired) {
+      final newName = (merged['nickname'] as String?)?.trim() ?? '';
+      if (newName.isNotEmpty && newName != stored.nickname) {
+        merged['renameRequired'] = false;
+      }
     }
 
     // 채집함 상한 강제 — **세이브 비대화의 마지막 방어선**.

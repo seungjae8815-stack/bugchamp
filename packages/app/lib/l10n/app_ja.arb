@@ -683,6 +683,8 @@
   "rankTopStreak": "1位を{days}日連続キープ 👑",
   "nicknameRequiredTitle": "ニックネームを決めてください",
   "nicknameRequiredBody": "他の採集者に表示される名前です。最初の一度だけ設定します。",
+  "renameForcedTitle": "ニックネームを変更してください",
+  "renameForcedBody": "運営がニックネームの変更を求めています。\n他のプレイヤーに表示される名前のため、ルールに沿う必要があります。\n今回の変更は無料です。",
   "nicknameChangeTitle": "ニックネーム変更",
   "nicknameChangeBody": "ニックネームの変更には昆虫ゼリーが必要です。変更しますか？",
   "nicknameChangeConfirm": "変更",

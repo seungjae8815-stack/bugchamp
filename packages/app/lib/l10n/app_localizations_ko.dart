@@ -2160,6 +2160,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get nicknameRequiredBody => '다른 채집가들에게 표시될 이름이에요. 처음 한 번만 정하면 됩니다.';
 
   @override
+  String get renameForcedTitle => '닉네임을 변경해 주세요';
+
+  @override
+  String get renameForcedBody =>
+      '운영자가 닉네임 변경을 요청했어요.\n다른 이용자에게 표시되는 이름이라 규칙에 맞아야 합니다.\n이번 변경은 무료예요.';
+
+  @override
   String get nicknameChangeTitle => '닉네임 변경';
 
   @override

@@ -2199,6 +2199,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is the name other collectors will see. You only set it once.';
 
   @override
+  String get renameForcedTitle => 'Please change your nickname';
+
+  @override
+  String get renameForcedBody =>
+      'An operator asked you to change your nickname.\nIt is shown to other players, so it must follow the rules.\nThis change is free.';
+
+  @override
   String get nicknameChangeTitle => 'Change nickname';
 
   @override

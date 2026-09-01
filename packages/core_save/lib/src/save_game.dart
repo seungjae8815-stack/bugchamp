@@ -509,6 +509,7 @@ class SaveGame {
     this.eventBadges = const {},
     this.difficultyTier = 0,
     this.rarePity = 0,
+    this.renameRequired = false,
     this.gachaPity = 0,
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
@@ -696,6 +697,18 @@ class SaveGame {
   /// 구버전 앱이 이 세이브를 읽으면 0(쉬움)으로 보고 스테이지만 이어간다 —
   /// 진행이 깨지지는 않는다.
   final int difficultyTier;
+
+  /// 운영자가 **닉네임 변경을 요구**했는가(2026-09-02).
+  ///
+  /// 부적절한 닉네임은 등록을 막기 **전에** 만들어진 것이 남아 있고, 화면에서
+  /// 가려도(`ChatRules.maskNickname` → "이용자") 그 유저 자신은 계속 쓴다.
+  /// 이 플래그가 서면 앱이 **닫을 수 없는 변경 창**을 띄우고, 변경은 무료다.
+  ///
+  /// ⚠️ **서버 소유 필드**(`GameActions._serverOwnedKeys`)여야 한다 — 닉네임
+  /// 자체는 서버 소유가 아니라서, 서버가 지워 봐야 앱이 다음 업로드에 옛
+  /// 이름을 다시 올린다. 플래그를 서버가 쥐고 있어야 요구가 유지된다.
+  /// 새 이름이 규칙을 통과해 올라오면 서버가 플래그를 내린다.
+  final bool renameRequired;
 
   /// 희귀 천장(§2.1, 2026-08-31) — 희귀 이상을 얻지 못한 채 처치한 몬스터 수.
   /// `RunConfig.rarePityKills` 에 닿으면 다음 드롭이 희귀 이상으로 보장된다.
@@ -1093,6 +1106,7 @@ class SaveGame {
     Set<String>? eventBadges,
     int? difficultyTier,
     int? rarePity,
+    bool? renameRequired,
     int? gachaPity,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
@@ -1168,6 +1182,7 @@ class SaveGame {
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
     rarePity: rarePity ?? this.rarePity,
+    renameRequired: renameRequired ?? this.renameRequired,
     gachaPity: gachaPity ?? this.gachaPity,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
@@ -1338,6 +1353,7 @@ class SaveGame {
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
     rarePity: (json['rarePity'] as num?)?.toInt() ?? 0,
+    renameRequired: json['renameRequired'] as bool? ?? false,
     gachaPity: (json['gachaPity'] as num?)?.toInt() ?? 0,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
@@ -1487,6 +1503,7 @@ class SaveGame {
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
     if (rarePity > 0) 'rarePity': rarePity,
+    if (renameRequired) 'renameRequired': true,
     if (gachaPity > 0) 'gachaPity': gachaPity,
     'pvpTrophies': pvpTrophies,
     'injured': {

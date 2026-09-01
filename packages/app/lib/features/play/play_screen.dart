@@ -372,6 +372,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 캠페인 끝을 깼다 — 다음 빌드에서 회차 전환 안내를 띄운다.
   bool _tierClearPending = false;
 
+  /// 강제 닉네임 변경 창을 이번 세션에 띄웠는지(매 빌드마다 뜨면 안 된다).
+  bool _renamePrompted = false;
+
   /// 스크롤러가 로컬에서 도달한 **최고** 스테이지. 실패 후퇴(_stage↓)와 무관하게
   /// 유지된다 — 시작 시 서버 세이브 채택(다른 기기 진행)을 따라잡을지 판단하는
   /// 기준으로만 쓴다. 이게 없으면 후퇴할 때마다 최고기록으로 튕겨 올라간다.
@@ -1252,6 +1255,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           _applyStageJump(save.stageNumber);
         }
       });
+    }
+    // 운영자가 닉네임 변경을 요구했다 → **닫을 수 없는 창**을 띄운다.
+    // 화면에서 가리는 것(maskNickname)만으로는 본인이 계속 쓰므로,
+    // 본인에게 직접 바꾸게 해야 실제로 사라진다(2026-09-02).
+    if (save.renameRequired && !_renamePrompted) {
+      _renamePrompted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showForcedRename(l));
     }
     // 캠페인 끝을 깼다 → 다음 회차 안내(한 번만).
     if (_tierClearPending) {
@@ -4927,6 +4937,79 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 초상화 탭 → 현재 능력치 카드 + 닉네임 설정.
   /// 닉네임은 전투력 표기보다 길어지지 않도록 8자로 제한.
+  /// 운영자가 요구한 닉네임 변경 — **닫을 수 없다**. 바꿔야 나간다.
+  ///
+  /// 변경은 무료다(`SaveController.renamePlayer` 가 요구 상태를 보고 면제).
+  /// 이유를 함께 적는다 — 갑자기 창이 뜨면 해킹으로 읽힌다.
+  Future<void> _showForcedRename(AppLocalizations l) async {
+    final controller = TextEditingController();
+    var busy = false;
+    await showGameDialog<void>(
+      context,
+      title: l.renameForcedTitle,
+      icon: Icons.badge_rounded,
+      barrierDismissible: false,
+      content: StatefulBuilder(
+        builder: (ctx, setD) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l.renameForcedBody,
+              style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              enabled: !busy,
+              maxLength: 8,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                filled: true,
+                fillColor: Color(0x22000000),
+                border: OutlineInputBorder(),
+                counterStyle: TextStyle(color: Color(0x66FFFFFF)),
+              ),
+            ),
+            FilledButton(
+              onPressed: busy
+                  ? null
+                  : () async {
+                      final name = controller.text.trim();
+                      if (name.isEmpty) return;
+                      final rules = _data.chatRules ?? const ChatRules();
+                      // 앱이 먼저 막는다 — 서버까지 갔다 와서 거절당하면
+                      // 무엇이 문제인지 알 수 없다.
+                      if (!rules.nicknameAllowed(name)) {
+                        showCenterToast(context, l.nicknameBadChars);
+                        return;
+                      }
+                      setD(() => busy = true);
+                      final r = await ref
+                          .read(saveControllerProvider.notifier)
+                          .renamePlayer(name);
+                      if (!ctx.mounted) return;
+                      if (r != RenameResult.ok) {
+                        setD(() => busy = false);
+                        showCenterToast(ctx, l.nicknameBadChars);
+                        return;
+                      }
+                      // 지금 바로 올린다 — 60초를 기다리면 그동안 서버는
+                      // 여전히 변경을 요구하는 상태다.
+                      await pushSaveNow(ref);
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                    },
+              child: Text(l.actionSave),
+            ),
+          ],
+        ),
+      ),
+      actions: const [],
+    );
+    controller.dispose();
+  }
+
   void _showCharacterCard(AppLocalizations l, SaveGame save) {
     final controller = TextEditingController(text: save.nickname);
     // 닉네임 편집 모드. 처음엔 잠겨 있고, 옆 버튼을 눌러야 열린다.

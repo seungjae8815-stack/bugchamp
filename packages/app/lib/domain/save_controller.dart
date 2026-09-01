@@ -2718,6 +2718,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (trimmed.isEmpty) return RenameResult.noChange;
     final s = state.requireValue;
     if (trimmed == s.nickname && s.nicknameSet) return RenameResult.noChange;
+    // 운영자가 변경을 요구한 경우엔 **무료**다 — 부적절한 이름을 고치라면서
+    // 돈을 받으면 그건 벌금이지 조치가 아니다. 플래그는 여기서 내리지만
+    // 서버가 새 이름을 보고 다시 내린다(서버 소유라 앱이 못 내린다).
+    if (s.renameRequired) {
+      await _commit(
+        s.copyWith(nickname: trimmed, nicknameSet: true, renameRequired: false),
+      );
+      return RenameResult.ok;
+    }
     if (s.nicknameSet) {
       // 이미 한 번 확정한 뒤의 변경 → 젤리 소비.
       final have = s.materials[MaterialKind.jelly] ?? 0;

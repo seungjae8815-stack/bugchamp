@@ -1831,6 +1831,40 @@ Handler buildHandler({
     /// (멱등)에 쓰이면서, 나중에 세이브만 보고도 **결제가 아니라 지급**임을
     /// 구분할 수 있다. 같은 사유로 두 번 부르면 두 번째는 조용히 무시된다 —
     /// 연장해서 더 주려면 사유를 바꾼다(`admin:pass:2026-09-보상2`).
+    /// 특정 계정에 **닉네임 변경을 요구**한다(부적절한 이름 조치).
+    ///
+    /// 등록 검사를 넣기 전에 만들어진 이름은 되돌릴 수 없고, 화면에서 가려도
+    /// (`maskNickname` → "이용자") 그 유저 자신은 계속 쓴다. 이 요구가 서면
+    /// 앱이 **닫을 수 없는 변경 창**을 띄우고, 변경은 무료다.
+    ///
+    /// 새 이름이 올라오면 서버가 플래그를 내린다(`mergeSave`).
+    /// `clear: true` 로 요구를 취소할 수도 있다(잘못 걸었을 때).
+    public.post('/admin/rename', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final userId = clean(b!['userId'], 64);
+      if (userId == null) return _json({'error': 'user_required'}, status: 400);
+      final clear = b['clear'] == true;
+      try {
+        final raw = await store.load(userId);
+        if (raw == null) return _json({'error': 'no_save'}, status: 404);
+        final save = SaveGame.fromJson(migrateToCurrent(raw));
+        final next = save.copyWith(renameRequired: !clear);
+        await store.save(userId, next.toJson());
+        stderr.writeln(
+          '[admin/rename] $userId nickname="${save.nickname}" required=${!clear}',
+        );
+        return _json({
+          'ok': true,
+          'nickname': save.nickname,
+          'renameRequired': !clear,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/rename] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     /// 특정 계정의 재화를 **정해진 값으로 맞춘다**(정상화).
     ///
     /// 언제 쓰나: 지난 규칙에서 쌓인 값이 현재 규칙으로는 도달 불가능할 때.
