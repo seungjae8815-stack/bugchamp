@@ -6,6 +6,7 @@ import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'game_server.dart';
+import 'pvp_backend.dart';
 import 'providers.dart';
 import 'save_controller.dart';
 
@@ -163,6 +164,19 @@ class ServerSaveUploader {
 
   Timer? _retry;
 
+  /// 랭킹 프로필을 마지막으로 올린 시각. 세이브(60초)와 **다른 주기**다.
+  DateTime? _rankPushedAt;
+
+  /// 랭킹 프로필 갱신 주기.
+  ///
+  /// 예전엔 **랭킹 화면을 열 때만** 올렸다 — 랭킹을 안 여는 유저는 값이
+  /// 영영 낡은 채로 남아, 랭킹판이 실제 진행도와 어긋났다(2026-09-01 지적).
+  ///
+  /// 그렇다고 세이브 업로드(60초)마다 올리면 DB 쓰기가 유저당 하루 120회다
+  /// (1,000명이면 월 360만). 4시간이면 유저당 하루 0.5회 — **랭킹 화면을
+  /// 열 때마다 쓰던 지금보다 오히려 적으면서** 항상 4시간 이내로 최신이다.
+  static const rankPushPeriod = Duration(hours: 4);
+
   /// 업로드 주기. 세이브 **전체**를 올리는 호출이라 짧을수록 트래픽·서버
   /// 인스턴스 시간이 그대로 늘어난다(10초였을 때 하루 8 vCPU-시간까지 갔다).
   /// 백그라운드 전환 때도 [flush] 하므로 진행도 손실 위험은 낮다.
@@ -172,6 +186,31 @@ class ServerSaveUploader {
     if (!_ref.read(gameServerProvider).available) return;
     _timer?.cancel();
     _timer = Timer.periodic(period, (_) => flush());
+  }
+
+  /// 랭킹 프로필을 주기적으로 올린다([rankPushPeriod]).
+  ///
+  /// 실패해도 재시도하지 않는다 — 다음 주기에 다시 온다. 세이브 업로드를
+  /// 막지 않도록 기다리지도 않는다(fire-and-forget).
+  void _maybePushRank(SaveGame save) {
+    final now = _ref.read(clockProvider).now().toUtc();
+    final last = _rankPushedAt;
+    if (last != null && now.difference(last) < rankPushPeriod) return;
+    _rankPushedAt = now;
+    final backend = _ref.read(pvpBackendProvider);
+    if (!backend.isRemote) return;
+    unawaited(
+      backend.pushTrophies(
+        me: PvpProfile(
+          id: 'me',
+          nickname: save.nickname,
+          trophies: save.pvpTrophies,
+          level: save.level,
+          stageNumber: save.stageNumber,
+          difficultyTier: save.difficultyTier,
+        ),
+      ),
+    );
   }
 
   /// 변경분이 있으면 서버에 올린다. 이미 올린 상태면 건너뛴다.
@@ -193,6 +232,7 @@ class ServerSaveUploader {
       final res = await server.uploadSave(json);
       if (res.isOk) {
         _lastUploaded = encoded;
+        _maybePushRank(save);
         // 서버가 값을 고쳤으면 채택해 화면과 맞춘다. 세 경우다 —
         //  · `clamped`: 골드·칸수를 잘랐다(치팅 의심).
         //  · `season`: 앱을 켜둔 채 주간 경계를 넘겨 **서버가 시즌을 정산**했다.

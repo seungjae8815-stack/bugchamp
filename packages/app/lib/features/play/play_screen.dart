@@ -2486,9 +2486,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final stageInRegion = _config.worldSize > 0
         ? _config.stageInWorld(_stage)
         : (_stage - 1) % _config.stagesPerRegion + 1;
-    final rmChapter = _data.roadmapConfig?.chapterForStage(_stage);
-    final diff = rmChapter?.difficulty.resolve(
-      Localizations.localeOf(context).languageCode,
+    // ⚠️ 챕터에 박힌 고정 난이도(`chapter.difficulty` — w1~w3 쉬움, w4~w6 보통…)를
+    // 쓰지 않는다. 회차 이름과 **같은 단어**라, 회차 1(보통)인 유저가 w1 에
+    // 있으면 "참나무 숲 · 쉬움"이 떠서 지금 난이도가 뭔지 헷갈린다
+    // (2026-09-01 지적). 화면에 난이도 단어는 **하나만** 있어야 한다.
+    final diff = tierName(
+      AppLocalizations.of(context),
+      ref.read(saveControllerProvider).requireValue.difficultyTier,
     );
     return Center(
       child: GestureDetector(
@@ -2507,7 +2511,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    diff == null ? '🌳 $name' : '🗺 $name · $diff',
+                    '🗺 $name · $diff',
                     style: const TextStyle(
                       color: _onScene,
                       fontWeight: FontWeight.w800,
@@ -2562,12 +2566,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Future<void> _showChapterClearDialog(RoadmapChapter ch) {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
+    final save = ref.read(saveControllerProvider).requireValue;
     final color = Color(ch.color);
     return showGameDialog<void>(
       context,
       title: l.chapterClearTitle,
+      // 챕터 고정 난이도 대신 **현재 회차**(위와 같은 이유).
       subtitle:
-          '${ch.difficulty.resolve(locale)} · 👑 ${ch.boss.resolve(locale)}',
+          '${tierName(l, save.difficultyTier)} · 👑 ${ch.boss.resolve(locale)}',
       icon: Icons.emoji_events_rounded,
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -2588,7 +2594,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
             child: Text(
               l.chapterClearMsg(
-                ch.difficulty.resolve(locale),
+                tierName(l, save.difficultyTier),
                 ch.boss.resolve(locale),
               ),
               style: const TextStyle(

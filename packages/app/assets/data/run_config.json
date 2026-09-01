@@ -32,7 +32,8 @@
  "bossKillHealPct": 0.04,
  "stagesPerRegion": 25,
  "boostStepPerTap": 0.15,
- "boostMultMax": 5.0,
+ "_boostMaxComment": "탭 부스트 상한(2026-09-01 하향 5.0 -> 2.0, 사장님 지시). x5 는 데미지 x5 에 공속 x2.6 이 겹쳐 **실질 DPS x13** 이었다 — 탭할 때와 안 할 때의 차이가 너무 커서, 방치 게임인데 손으로 두드리는 게 정답이 된다. x2 면 실질 DPS x2.8 로 '거들어 주는 정도'가 된다. ⚠️ 이 값은 balance_sim 의 --boost 기본값과 함께 본다 — 부스트는 캠페인 일수를 절반으로 줄인 축이었다(2026-08-30).",
+  "boostMultMax": 2.0,
  "boostDecayPerSec": 0.4,
  "boostSpeedFactor": 0.4,
  "regions": [
