@@ -2054,7 +2054,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   children: [
                     for (final k in BuffKind.values)
                       Padding(
-                        padding: const EdgeInsets.only(left: 3),
+                        // 칸이 고정 폭을 갖게 되면서 좌우 여백은 줄인다 —
+                        // 그대로 두면 버프 줄이 통째로 넓어져 같은 문제가 난다.
+                        padding: const EdgeInsets.only(left: 1),
                         child: _buffMini(
                           k,
                           save.buffRemaining(k, now),
@@ -2072,87 +2074,103 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 상단 우측 미니 버프 아이콘 + 아래 남은시간. 탭 시 버프 시트.
+  /// 버프 칸 하나의 **고정 폭**. 남은 시간 글자가 길어져도 이 폭을 넘지 않으므로
+  /// 옆 칸(재화·전투력)이 밀리지 않는다 — 예전엔 자연 크기라 `43193:14` 가
+  /// 뜨는 순간 HUD 전체가 어긋났다(2026-09-01 실기 지적, 두 번째).
+  /// 34 = 아이콘 24 + 좌우 여백. `11d12h`(6자)가 7.5px 로 들어간다.
+  static const _buffMiniWidth = 34.0;
+
   Widget _buffMini(BuffKind k, Duration? remaining, {bool hasPass = false}) {
     final active = remaining != null;
     // 비활성 버프는 부드럽게 맥동하는 글로우 + "!" 로 활성화를 유도한다.
     final pulse = 0.5 + 0.5 * math.sin(_tapHint * 3.2);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              if (!active)
-                // 맥동 글로우(활성화 유도)
-                Container(
-                  width: 20 + pulse * 6,
-                  height: 20 + pulse * 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: _honey.withValues(alpha: 0.35 + pulse * 0.4),
-                        blurRadius: 6 + pulse * 6,
-                        spreadRadius: 0.5 + pulse * 1.5,
-                      ),
-                    ],
-                  ),
-                ),
-              Opacity(
-                opacity: active ? 1.0 : 0.55 + pulse * 0.3,
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: _buffIconCircle(k, 20),
-                ),
-              ),
-              if (!active)
-                // 우상단 "!" 배지
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: _honey,
+    return SizedBox(
+      width: _buffMiniWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                if (!active)
+                  // 맥동 글로우(활성화 유도)
+                  Container(
+                    width: 20 + pulse * 6,
+                    height: 20 + pulse * 6,
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _honey.withValues(alpha: 0.35 + pulse * 0.4),
+                          blurRadius: 6 + pulse * 6,
+                          spreadRadius: 0.5 + pulse * 1.5,
+                        ),
+                      ],
                     ),
-                    child: const Text(
-                      '!',
-                      style: TextStyle(
-                        color: Color(0xFF3A2600),
-                        fontSize: 7.5,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,
+                  ),
+                Opacity(
+                  opacity: active ? 1.0 : 0.55 + pulse * 0.3,
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: _buffIconCircle(k, 20),
+                  ),
+                ),
+                if (!active)
+                  // 우상단 "!" 배지
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: _honey,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        '!',
+                        style: TextStyle(
+                          color: Color(0xFF3A2600),
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-        SizedBox(
-          height: 10,
-          // 패스 보유 중엔 시간이 아니라 **무한대**다. 남은 초를 그리면
-          // 패스가 끝나가는 것처럼 보이고, 숫자도 계속 길어진다.
-          child: active
-              ? Text(
-                  hasPass ? '∞' : formatShortDuration(remaining),
-                  style: const TextStyle(
-                    color: _honey,
-                    fontSize: 7.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                )
-              : null,
-        ),
-      ],
+          SizedBox(
+            height: 10,
+            // 패스 보유 중엔 시간이 아니라 **무한대**다. 남은 초를 그리면
+            // 패스가 끝나가는 것처럼 보이고, 숫자도 계속 길어진다.
+            //
+            // ⚠️ 고정 폭 안에서 **줄여서** 그린다. 잘라내면(ellipsis) 값이
+            // 틀리게 보이고, 그대로 두면 칸이 밀린다.
+            child: active
+                ? FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      hasPass ? '∞' : formatShortDuration(remaining),
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: _honey,
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+        ],
+      ),
     );
   }
 
@@ -4678,6 +4696,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     // 이색은 1/300 이라 실기에서 자연히 나오길 기다릴 수 없다.
                     // 확인용으로 **보유 곤충 하나를 이색으로 바꾼다**(새로 만들지
                     // 않는다 — 채집함 상한·도감 경로를 그대로 타야 진짜 확인이다).
+                    // 결제 없이 상품을 적용해 본다 — 패스·스타터가 화면에
+                    // 제대로 뜨는지, 버프 ∞ 표기가 도는지 확인용.
+                    // 서버 지급(/admin/grant)과 달리 **로컬 세이브에 바로** 넣는다:
+                    // 소모품이 우편으로 도는 경로를 거치지 않아 즉시 확인된다.
+                    _devSection('상품 적용(결제 없이)', [
+                      for (final id in const [
+                        'starter_pack',
+                        'idle_pass',
+                        'buff_pass',
+                        'jelly_l',
+                      ])
+                        _devBtn(id, () async {
+                          final cfg = _data.iapConfig;
+                          final p = cfg?.byId(id);
+                          if (p == null) {
+                            toast('$id 없음');
+                            return;
+                          }
+                          final ok = await ctrl.applyPurchase(p);
+                          toast(ok ? '$id 적용' : '$id 실패(이미 보유?)');
+                        }),
+                      _devBtn('패스 전부 끄기', () async {
+                        await ctrl.devClearPasses();
+                        toast('패스 해제');
+                      }, danger: true),
+                    ]),
                     _devSection('이색(변이)', [
                       _devBtn('무지개로 바꾸기', () async {
                         final msg = await ctrl.devMakeVariant(

@@ -1363,6 +1363,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(state.requireValue.copyWith(stageNumber: n));
   }
 
+  /// (개발) 패스를 전부 해제한다 — 켠 뒤 **끄고 다시 보는** 확인이 필요하다.
+  ///
+  /// ⚠️ 서버 권위 모드에서는 `passExpiresAt`·`buffPassExpiresAt` 가 서버 소유라
+  /// 다음 업로드에 서버 값으로 되돌아온다. 로컬 확인용이다.
+  Future<void> devClearPasses() async {
+    final s = state.requireValue;
+    await _commit(
+      s.copyWith(
+        passExpiresAt: DateTime.fromMillisecondsSinceEpoch(0).toUtc(),
+        buffPassExpiresAt: DateTime.fromMillisecondsSinceEpoch(0).toUtc(),
+      ),
+    );
+  }
+
   /// (개발) 보유 곤충의 이색을 바꾼다 — 1/300 을 실기에서 기다릴 수 없어서.
   ///
   /// 새로 만들지 않고 **가진 것을 바꾼다**: 채집함 상한·도감 갱신 경로를
