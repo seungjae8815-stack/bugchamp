@@ -2008,9 +2008,10 @@ class GameActions {
       units,
       eventWaveEnemies(seed, wave, _eventSpec(cfg)),
       initialHpA: hpIn,
+      maxRounds: kMaxEventRounds,
     );
     var guard = 0;
-    while (!st.done && guard < 200) {
+    while (!st.done && guard < kMaxEventRounds * 2) {
       st.step();
       guard++;
     }

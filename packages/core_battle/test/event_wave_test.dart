@@ -29,6 +29,7 @@ BattleBug bug(
 );
 
 void main() {
+  _capTests();
   List<BattleBug> team() => [bug('a'), bug('b'), bug('c')];
 
   // 약한 적 — 반드시 이긴다. 웨이브가 계속 이어지는지 보는 데 쓴다.
@@ -63,7 +64,9 @@ void main() {
       maxWave: 40,
       waveHealPct: 0.15,
     ).clearedWaves;
-    final results = {for (final s in [1, 2, 3, 4, 5, 6, 7, 8]) wavesFor(s)};
+    final results = {
+      for (final s in [1, 2, 3, 4, 5, 6, 7, 8]) wavesFor(s),
+    };
     expect(results.length, greaterThan(1));
   });
 
@@ -153,5 +156,39 @@ void main() {
       greaterThan(0),
       reason: '전멸한 웨이브의 종료 체력(0)이 아니라 진입 체력을 써야 동점이 줄어든다',
     );
+  });
+}
+
+/// 웨이브전의 라운드 상한은 **결투와 달라야 한다**(2026-09-02).
+///
+/// 결투는 양쪽이 만피로 시작하므로 20R HP% 판정이 공평하다. 웨이브전은
+/// 적만 매번 만피로 새로 나오고 내 체력은 이월되므로, 같은 판정이 걸리면
+/// 이월로 깎인 쪽이 거의 항상 진다 — 화면엔 "곤충이 멀쩡한데 졌다"로 보인다.
+void _capTests() {
+  group('라운드 상한', () {
+    test('결투는 20R 그대로다 — 웨이브전 상한이 새어 나오면 안 된다', () {
+      expect(kMaxBattleRounds, 20);
+      // 서로 못 죽이는 단단한 팀을 붙여 상한까지 끌고 간다.
+      final tank = [bug('a', hp: 1e9, atk: 0)];
+      final wall = [bug('b', hp: 1e9, atk: 0)];
+      final st = initBattle(1, tank, wall);
+      var guard = 0;
+      while (!st.done && guard++ < 1000) {
+        st.step();
+      }
+      expect(st.toResult().rounds, kMaxBattleRounds);
+    });
+
+    test('웨이브전은 더 긴 상한을 쓴다 — 판정패가 아니라 전멸로 결판나야 한다', () {
+      expect(kMaxEventRounds, greaterThan(kMaxBattleRounds));
+      final tank = [bug('a', hp: 1e9, atk: 0)];
+      final wall = [bug('b', hp: 1e9, atk: 0)];
+      final st = initBattle(1, tank, wall, maxRounds: kMaxEventRounds);
+      var guard = 0;
+      while (!st.done && guard++ < 1000) {
+        st.step();
+      }
+      expect(st.toResult().rounds, kMaxEventRounds);
+    });
   });
 }

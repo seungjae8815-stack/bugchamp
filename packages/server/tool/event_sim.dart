@@ -26,9 +26,7 @@ void main(List<String> args) {
   }
 
   final raw =
-      jsonDecode(
-            File('../app/assets/data/event.json').readAsStringSync(),
-          )
+      jsonDecode(File('../app/assets/data/event.json').readAsStringSync())
           as Map<String, dynamic>;
   var cfg = EventConfig.fromJson(raw);
   if (overrides.isNotEmpty) {
@@ -134,6 +132,7 @@ void main(List<String> args) {
   for (final e in teams.entries) {
     final waves = <int>[];
     final scores = <int>[];
+    var timeout = 0, wipe = 0;
     for (final r in rounds) {
       final seed = EventConfig.roundSeedOf(r);
       final run = simulateWaveRun(
@@ -144,6 +143,14 @@ void main(List<String> args) {
         waveHealPct: cfg.waveHealPct,
       );
       waves.add(run.clearedWaves);
+      final last = run.waves.isEmpty ? null : run.waves.last;
+      if (last != null) {
+        if (last.rounds >= kMaxEventRounds) {
+          timeout++;
+        } else {
+          wipe++;
+        }
+      }
       scores.add(
         cfg.score(
           clearedWaves: run.clearedWaves,
@@ -161,6 +168,7 @@ void main(List<String> args) {
       '  ${e.key.padRight(26)} ${avg.toStringAsFixed(1).padLeft(5)}   '
       '${'$lo~$hi'.padLeft(7)}   ${sAvg.toString().padLeft(10)}',
     );
+    stdout.writeln('     끝난 이유: 전멸 $wipe · 판정패 $timeout');
     if (hi >= cfg.maxWave) {
       stdout.writeln('     ⚠️ 상한 도달 — 동점이 쏟아져 순위를 못 매긴다');
     }

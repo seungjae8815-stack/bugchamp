@@ -137,9 +137,15 @@ WaveRunResult simulateWaveRun({
     //
     // `simulate` 대신 상태를 직접 굴린다 — 결과와 **개체별 체력**이 둘 다
     // 필요한데(체력 이월), `BattleResult` 는 팀 합계 비율만 준다.
-    final st = initBattle(seed + w * 7919, team, enemyOf(w), initialHpA: hp);
+    final st = initBattle(
+      seed + w * 7919,
+      team,
+      enemyOf(w),
+      initialHpA: hp,
+      maxRounds: kMaxEventRounds,
+    );
     var guard = 0;
-    while (!st.done && guard < 200) {
+    while (!st.done && guard < kMaxEventRounds * 2) {
       st.step();
       guard++;
     }

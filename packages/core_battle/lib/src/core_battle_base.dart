@@ -140,7 +140,12 @@ class BattleState {
     /// 이벤트 웨이브 방어전처럼 **체력을 이월**해야 하는 모드에서 쓴다.
     /// 0 이하면 그 자리는 이미 쓰러진 것으로 취급된다.
     List<double>? initialHpA,
+
+    /// 이 전투의 최대 라운드. 결투는 [kMaxBattleRounds], 이벤트 웨이브전은
+    /// [kMaxEventRounds] 를 쓴다 — 규칙이 다른 모드다(상수 주석 참조).
+    int maxRounds = kMaxBattleRounds,
   }) : _locBonus = locationBonus,
+       _maxRounds = maxRounds,
        hpA = [
          for (var i = 0; i < teamA.length; i++)
            (initialHpA != null && i < initialHpA.length)
@@ -164,6 +169,9 @@ class BattleState {
   final List<BattleBug> teamA;
   final List<BattleBug> teamB;
   final Random _rng;
+
+  /// 이 전투의 라운드 상한.
+  final int _maxRounds;
 
   /// 전투 장소 오행(null=장소 없음). 같은 오행 곤충은 데미지 [_locBonus] 만큼 강화.
   final Element? location;
@@ -331,7 +339,7 @@ class BattleState {
     if (aDown) a++;
     if (bDown) b++;
 
-    if (round >= kMaxBattleRounds || a >= teamA.length || b >= teamB.length) {
+    if (round >= _maxRounds || a >= teamA.length || b >= teamB.length) {
       _finish();
     }
   }
@@ -380,6 +388,7 @@ BattleState initBattle(
   Element? location,
   double locationBonus = 0.0,
   List<double>? initialHpA,
+  int maxRounds = kMaxBattleRounds,
 }) => BattleState._(
   teamA,
   teamB,
@@ -387,6 +396,7 @@ BattleState initBattle(
   location: location,
   locationBonus: locationBonus,
   initialHpA: initialHpA,
+  maxRounds: maxRounds,
 );
 
 /// 오토 전투(양쪽 AI). 같은 seed·팀·장소 → 같은 결과 (§2.3, 결정론).

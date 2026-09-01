@@ -179,6 +179,9 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
       _units,
       _enemies,
       initialHpA: from,
+      // 웨이브전은 결투와 라운드 상한이 다르다 — 서버와 **같은 값**을 써야
+      // 재생이 서버 결과와 어긋나지 않는다.
+      maxRounds: kMaxEventRounds,
     );
     _hpShown = [for (final u in _units) from == null ? u.maxHp : 0];
     if (from != null) {
