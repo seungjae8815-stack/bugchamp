@@ -752,6 +752,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
             onPressed: _busy
                 ? null
                 : () async {
+                    // 젤리를 쓴 행동이라 **결과를 말해 줘야 한다** — 조용히
+                    // 끝나면 빠졌는지 안 빠졌는지 알 수 없다. 몇 장 늘었는지는
+                    // 서버 세이브 차이로 센다(지급량이 바뀌어도 따라간다).
+                    final before = ref
+                        .read(saveControllerProvider)
+                        .requireValue
+                        .eventTickets;
                     final r = await ref
                         .read(gameServerProvider)
                         .eventAdTicket();
@@ -766,6 +773,16 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                           .read(saveControllerProvider.notifier)
                           .adoptServerSave(save);
                     }
+                    if (!mounted) return;
+                    final after = ref
+                        .read(saveControllerProvider)
+                        .requireValue
+                        .eventTickets;
+                    final gained = after - before;
+                    showCenterToast(
+                      context,
+                      l.eventTicketBought(gained > 0 ? gained : 1),
+                    );
                     await _refresh();
                   },
             icon: const SizedBox.shrink(),

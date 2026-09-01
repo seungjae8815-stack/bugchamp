@@ -1078,6 +1078,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventLeadWeak => 'Weak';
 
   @override
+  String eventTicketBought(int n) {
+    return 'Charged $n entry ticket(s)';
+  }
+
+  @override
   String get eventStopWipe => 'Your team was wiped out, so the run ends here.';
 
   @override

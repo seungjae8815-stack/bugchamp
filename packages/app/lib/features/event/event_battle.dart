@@ -556,6 +556,19 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
     // 카드를 고르는 동안에는 탭이 **선봉 지정**이 된다(전투 중엔 상세 보기).
     final picking = !_replaying && !_done && _cards.isNotEmpty;
     final isLead = _lead == bug?.id || (_lead == null && i == 0);
+    // 다음 웨이브 색과의 상성. 실측상 **매 웨이브 상극을 앞세우면 도달
+    // 웨이브가 +28~35%** 인데, 화면이 그걸 말해 주지 않아 유저에겐 "오행이
+    // 아무 의미 없다"로 보였다(2026-09-02 제보). 웨이브 색은 다섯 색을 한
+    // 바퀴 돌아 **어떤 색을 데려오느냐**는 상쇄된다 — 오행이 실제로 갈리는
+    // 지점은 여기 하나뿐이다.
+    //
+    // ⚠️ 글자를 **줄로 추가하면 안 된다**. 유리/불리가 붙은 칩만 키가 커져
+    // 옆 칩과 행이 어긋난다(첫 시도에서 실기 지적). 색으로 칩 전체를 물들이고,
+    // 글자는 **이미 있는 아이콘 줄**에 얹어 높이를 그대로 둔다.
+    final mu = picking && !down ? _matchup(u.element) : 0;
+    final muColor = mu > 0
+        ? const Color(0xFF9CE37D)
+        : (mu < 0 ? const Color(0xFFE38080) : null);
     return GestureDetector(
       onTap: bug == null || sp == null
           ? null
@@ -574,11 +587,13 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
           decoration: BoxDecoration(
             color: (fighting || (picking && isLead && !down))
                 ? _honey.withValues(alpha: 0.16)
-                : const Color(0x33000000),
+                : (muColor?.withValues(alpha: 0.12) ?? const Color(0x33000000)),
             borderRadius: BorderRadius.circular(10),
             border: (fighting || (picking && isLead && !down))
                 ? Border.all(color: _honey.withValues(alpha: 0.8))
-                : null,
+                : (muColor == null
+                      ? null
+                      : Border.all(color: muColor.withValues(alpha: 0.7))),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -595,30 +610,23 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
                     ),
                   const SizedBox(width: 3),
                   elementIcon(u.element, size: 13),
+                  if (muColor != null) ...[
+                    const SizedBox(width: 2),
+                    Text(
+                      mu > 0
+                          ? AppLocalizations.of(context).eventLeadStrong
+                          : AppLocalizations.of(context).eventLeadWeak,
+                      style: TextStyle(
+                        color: muColor,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 4),
               _bar(u.maxHp <= 0 ? 0 : hp / u.maxHp, const Color(0xFF7BC96F)),
-              // 다음 웨이브 색과의 상성. 실측상 **매 웨이브 상극을 앞세우면
-              // 도달 웨이브가 +28~35%** 인데, 화면이 그걸 말해 주지 않아
-              // 유저에겐 "오행이 아무 의미 없다"로 보였다(2026-09-02 제보).
-              // 웨이브 색은 다섯 색을 한 바퀴 돌아 **어떤 색을 데려오느냐**는
-              // 상쇄된다 — 오행이 실제로 갈리는 지점은 여기 하나뿐이다.
-              if (picking && !down && _matchup(u.element) != 0) ...[
-                const SizedBox(height: 3),
-                Text(
-                  _matchup(u.element) > 0
-                      ? AppLocalizations.of(context).eventLeadStrong
-                      : AppLocalizations.of(context).eventLeadWeak,
-                  style: TextStyle(
-                    color: _matchup(u.element) > 0
-                        ? const Color(0xFF9CE37D)
-                        : const Color(0xFFE38080),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
               if (picking && !down) ...[
                 const SizedBox(height: 3),
                 Text(

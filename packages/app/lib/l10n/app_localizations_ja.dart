@@ -1055,6 +1055,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventLeadWeak => '不利';
 
   @override
+  String eventTicketBought(int n) {
+    return '参加券を$n枚チャージしました';
+  }
+
+  @override
   String get eventStopWipe => 'チームが全滅したのでここで終了です。';
 
   @override

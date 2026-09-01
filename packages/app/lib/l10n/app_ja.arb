@@ -336,6 +336,8 @@
 
   "eventLeadStrong": "有利",
   "eventLeadWeak": "不利",
+  "eventTicketBought": "参加券を{n}枚チャージしました",
+  "@eventTicketBought": {"placeholders": {"n": {"type": "int"}}},
   "eventStopWipe": "チームが全滅したのでここで終了です。",
   "eventStopJudge": "20ラウンドが過ぎ、残りHPの判定で及ばずでした。虫が残っていてもここで終了します。",
   "eventStopMax": "最後のウェーブまですべてクリアしました！",

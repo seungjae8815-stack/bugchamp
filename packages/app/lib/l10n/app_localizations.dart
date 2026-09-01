@@ -1966,6 +1966,12 @@ abstract class AppLocalizations {
   /// **'Weak'**
   String get eventLeadWeak;
 
+  /// No description provided for @eventTicketBought.
+  ///
+  /// In en, this message translates to:
+  /// **'Charged {n} entry ticket(s)'**
+  String eventTicketBought(int n);
+
   /// No description provided for @eventStopWipe.
   ///
   /// In en, this message translates to:

@@ -1057,6 +1057,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventLeadWeak => '불리';
 
   @override
+  String eventTicketBought(int n) {
+    return '참가권 $n장을 충전했어요';
+  }
+
+  @override
   String get eventStopWipe => '팀이 전멸해서 여기서 끝났어요.';
 
   @override
