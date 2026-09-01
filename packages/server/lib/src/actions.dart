@@ -129,6 +129,11 @@ class GameActions {
     'starterBought',
     'adsRemoved',
     'passExpiresAt',
+    // ⚠️ 무한 버프 패스도 **서버 소유**여야 한다. 여기 없던 탓에 서버가
+    // 지급해도 다음 업로드에서 클라 값(null)으로 덮여 **아무 일도 안 일어났다**
+    // (2026-09-01 실기: /admin/grant 로 줬는데 적용 안 됨).
+    // 유저가 스스로 얻는 경로가 없는(=결제 전용) 필드는 전부 서버 소유다.
+    'buffPassExpiresAt',
     'ownedSkins',
     // ⚠️ `incubatorCapacity` 는 여기 두면 안 된다. 부화기 슬롯은 IAP 뿐 아니라
     // **젤리로도 산다**(`expandIncubator`). 서버가 소유하면 젤리는 빠지고
@@ -183,6 +188,18 @@ class GameActions {
   /// 젤리(프리미엄 재화) 급증 상한의 바닥. 솔로 획득(선물·분해)은 소량이라
   /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
   static const _jellySanityFloor = 1000;
+
+  /// 일반 재료(키틴·미네랄·수액) **업로드 1회당** 증가 상한.
+  ///
+  /// ⚠️ 예전엔 이 검사가 아예 없었다 — 젤리·화석만 막고 일반 재료는 통과였다
+  /// (2026-09-01 발견). 세이브를 고쳐 올리면 수십억이 그대로 들어간다.
+  ///
+  /// 값의 근거: 재료는 처치당 드롭이고 수량이 깊이에 따라 자란다
+  /// (`materialAmountMult`, 스테이지당 x1.01). 캠페인 끝(1000)의 시간당
+  /// 수입이 약 140만이므로, 업로드 주기(60초)의 정상 최대는 약 2.4만이다.
+  /// 오프라인 정산 복귀·교환소 한 번(628만)까지 덮으려면 여유가 크게 필요하다.
+  /// 2000만이면 교환 3회분을 덮으면서도 "수십억 주입"은 막는다.
+  static const _materialSanityFloor = 20000000;
 
   /// 화석 조각(제련용) 증가 상한의 여유 배수.
   ///
@@ -300,6 +317,18 @@ class GameActions {
       if (clientJelly - storedJelly > _jellySanityFloor) {
         mats['jelly'] = storedJelly + _jellySanityFloor;
         clamped = true;
+      }
+
+      // 일반 재료도 급증을 막는다 — 여기가 비어 있던 탓에 조작 업로드가
+      // 그대로 들어갔다. 감소는 검사하지 않는다(쓰는 건 자유).
+      for (final k in _regularMaterials) {
+        final client =
+            (mats[k.key] as num?)?.toInt() ?? stored.materialCount(k);
+        final have = stored.materialCount(k);
+        if (client - have > _materialSanityFloor) {
+          mats[k.key] = have + _materialSanityFloor;
+          clamped = true;
+        }
       }
 
       final clientFossil =

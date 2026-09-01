@@ -1804,6 +1804,10 @@ Handler buildHandler({
       }
     });
 
+    /// 운영 지급 우편의 제목·본문. 유저는 왜 받았는지 모르면 버그로 읽는다.
+    const grantMailTitle = '운영자 지급';
+    const grantMailBody = '운영자가 보낸 선물입니다. 받기를 눌러 수령하세요.';
+
     /// 특정 계정에 **IAP 상품을 그냥 지급**한다(보상·보상금·테스트).
     ///
     /// 결제 경로(`grantPurchase`)를 **그대로 재사용한다** — 지급 로직을 따로
@@ -1814,6 +1818,76 @@ Handler buildHandler({
     /// (멱등)에 쓰이면서, 나중에 세이브만 보고도 **결제가 아니라 지급**임을
     /// 구분할 수 있다. 같은 사유로 두 번 부르면 두 번째는 조용히 무시된다 —
     /// 연장해서 더 주려면 사유를 바꾼다(`admin:pass:2026-09-보상2`).
+    /// 특정 계정의 재화를 **정해진 값으로 맞춘다**(정상화).
+    ///
+    /// 언제 쓰나: 지난 규칙에서 쌓인 값이 현재 규칙으로는 도달 불가능할 때.
+    /// 실제 사례(2026-09-01) — 8/15 이전 젤리 수도꼭지(하루 193개)로 모은
+    /// 젤리 5,983, 스테이지 상한이 없던 시절 교환소로 만든 재료 450억.
+    /// 둘 다 **조작이 아니라 당시 규칙대로 얻은 것**이다.
+    ///
+    /// ⚠️ **올리지 못한다.** 지정한 값이 지금 값보다 크면 그 항목은 건너뛴다 —
+    /// 이 라우트는 정상화 도구지 지급 도구가 아니다(지급은 `/admin/grant`).
+    /// 실수로 재화를 뿌려 경제가 무너지는 경로를 아예 만들지 않는다.
+    ///
+    /// ⚠️ **결제한 젤리는 깎으면 안 된다.** 응답에 `purchases` 를 실어 주니
+    /// 호출 전에 반드시 확인할 것(운영 패널은 화면에 띄운다).
+    public.post('/admin/currency', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final userId = clean(b!['userId'], 64);
+      if (userId == null) return _json({'error': 'user_required'}, status: 400);
+      final reason = clean(b['reason'], 64);
+      if (reason == null)
+        return _json({'error': 'reason_required'}, status: 400);
+      try {
+        final raw = await store.load(userId);
+        if (raw == null) return _json({'error': 'no_save'}, status: 404);
+        var save = SaveGame.fromJson(migrateToCurrent(raw));
+        final before = {
+          'gold': save.gold,
+          for (final k in MaterialKind.values) k.key: save.materialCount(k),
+        };
+
+        final changes = <String, dynamic>{};
+        int? want(String key) {
+          final v = b[key];
+          return v is num ? v.toInt() : null;
+        }
+
+        final wantGold = want('gold');
+        if (wantGold != null && wantGold >= 0 && wantGold < save.gold) {
+          changes['gold'] = {'from': save.gold, 'to': wantGold};
+          save = save.copyWith(gold: wantGold);
+        }
+        final mats = Map<MaterialKind, int>.from(save.materials);
+        for (final k in MaterialKind.values) {
+          final v = want(k.key);
+          if (v == null || v < 0) continue;
+          final have = save.materialCount(k);
+          if (v >= have) continue; // 올리지 않는다
+          changes[k.key] = {'from': have, 'to': v};
+          mats[k] = v;
+        }
+        if (changes.isEmpty) {
+          return _json({'ok': true, 'changed': false, 'before': before});
+        }
+        save = save.copyWith(materials: mats);
+        await store.save(userId, save.toJson());
+        // 무엇을 왜 깎았는지 남긴다 — 나중에 문의가 오면 이 로그가 근거다.
+        stderr.writeln('[admin/currency] $userId reason=$reason $changes');
+        return _json({
+          'ok': true,
+          'changed': true,
+          'reason': reason,
+          'changes': changes,
+          'purchases': save.redeemedPurchases.length,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/currency] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     /// 유저 현재 상태 조회 — 문의를 받았을 때 **먼저 보는 화면**.
     ///
     /// 닉네임으로도 찾을 수 있게 한다. 유저는 uuid 를 모르고 닉네임으로
@@ -1929,10 +2003,49 @@ Handler buildHandler({
           return _json({'error': res.error}, status: res.status);
         }
         await store.save(userId, res.save!.toJson());
+
+        // ⚠️ **소모품은 세이브에 써도 사라진다.** 골드·젤리·재료·부화기 슬롯은
+        // 서버 소유 필드가 아니라서(유저가 스스로 버는 값이라 소유할 수 없다),
+        // 앱이 다음에 올리는 세이브의 값으로 덮인다 — 2026-09-01 실기에서
+        // "젤리 팩을 줬는데 안 들어왔다"가 이것이었다.
+        // 그래서 소모품 부분은 **우편으로** 보낸다. 우편은 앱이 수령해
+        // 로컬에 더하므로 덮이지 않는다.
+        final g = cfg.iap.byId(productId)!.grant;
+        final consumable =
+            g.gold > 0 ||
+            g.jelly > 0 ||
+            g.chitin > 0 ||
+            g.mineral > 0 ||
+            g.sap > 0;
+        var mailed = false;
+        if (consumable && res.extra['alreadyGranted'] != true) {
+          try {
+            await store.insertRow('user_mail', {
+              'user_id': userId,
+              'title': grantMailTitle,
+              'body': grantMailBody,
+              'gold': g.gold,
+              'jelly': g.jelly,
+              'chitin': g.chitin,
+              'mineral': g.mineral,
+              'sap': g.sap,
+            });
+            mailed = true;
+          } on StateStoreException catch (e) {
+            // 우편이 실패해도 패스·스킨 지급은 이미 됐다 — 사실대로 알린다.
+            stderr.writeln('[admin/grant] 우편 실패: $e');
+          }
+        }
         return _json({
           'ok': true,
           'productId': productId,
           'alreadyGranted': res.extra['alreadyGranted'] == true,
+          // 소모품이 우편으로 갔는지. false 인데 consumable 이면 실패한 것.
+          'mailed': mailed,
+          'consumable': consumable,
+          // 부화기 슬롯도 서버 소유가 아니다(젤리로도 사는 값이라 소유할 수
+          // 없다 — §2.1). 세이브에 써도 덮이므로 **손으로 확인**해야 한다.
+          'incubatorSlotsNeedsCheck': g.incubatorSlots > 0,
           'passExpiresAt': res.save!.passExpiresAt?.toIso8601String(),
           'buffPassExpiresAt': res.save!.buffPassExpiresAt?.toIso8601String(),
           'starterBought': res.save!.starterBought,

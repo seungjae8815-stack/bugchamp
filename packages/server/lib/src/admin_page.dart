@@ -399,6 +399,16 @@ async function grantProduct() {
       (r.alreadyGranted
         ? '<b>이미 지급된 건입니다</b> (같은 사유 — 새로 들어가지 않았습니다)'
         : '<b>지급 완료</b>') +
+      // 소모품(젤리·골드·재료)은 세이브에 쓰면 앱 업로드에 덮인다 —
+      // 우편으로 보냈고, 유저가 **받기를 눌러야** 들어간다.
+      (r.consumable
+        ? (r.mailed
+            ? '<div style="color:#8FE08F">젤리·재화는 <b>우편</b>으로 보냈습니다 — 유저가 받기를 눌러야 들어갑니다</div>'
+            : '<div style="color:#FFB4A2">⚠ 우편 발송 실패 — 젤리·재화가 안 갔습니다. 우편 탭에서 수동으로 보내세요</div>')
+        : '') +
+      (r.incubatorSlotsNeedsCheck
+        ? '<div class="sub">부화기 슬롯은 앱 세이브가 이깁니다 — 안 늘었으면 우편/젤리로 처리하세요</div>'
+        : '') +
       '<div>곤충학자 패스: ' + esc(r.passExpiresAt ? r.passExpiresAt.slice(0,10) + ' 까지' : '없음') + '</div>' +
       '<div>무한 버프 패스: ' + esc(r.buffPassExpiresAt ? r.buffPassExpiresAt.slice(0,10) + ' 까지' : '없음') + '</div>' +
       '<div>스타터 구매됨: ' + (r.starterBought ? '예' : '아니오') + '</div>';
