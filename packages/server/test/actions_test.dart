@@ -1656,6 +1656,30 @@ void main() {
       expect(r.save!.upgradeLevel(UpgradeKind.attack), 10);
     });
 
+    /// 캠페인 끝(로드맵 마지막 스테이지)을 넘긴 값은 접는다. 그런데 접기만
+    /// 하고 `clamped` 를 안 세우면 앱이 **채택하지 않는다** — 서버는 1000 으로
+    /// 접었는데 앱은 계속 1078 을 들고 60초마다 다시 올리고, 화면에도 접히지
+    /// 않은 값이 그대로 보인다(2026-09-01 실기에서 발견).
+    test('캠페인 끝을 넘긴 스테이지를 접고, clamped 로 알린다', () {
+      final last = cfg.roadmap!.finalStage;
+      final client = stored().copyWith(stageNumber: last + 78);
+      final r = actions.mergeSave(stored(), client.toJson());
+      expect(r.isOk, isTrue);
+      expect(r.save!.stageNumber, last, reason: '끝으로 접어야 한다');
+      expect(
+        r.extra['clamped'],
+        isTrue,
+        reason: 'clamped 가 없으면 앱이 접힌 값을 채택하지 않는다',
+      );
+    });
+
+    test('끝 이하의 스테이지는 접지도, clamped 를 세우지도 않는다', () {
+      final client = stored().copyWith(stageNumber: 500);
+      final r = actions.mergeSave(stored(), client.toJson());
+      expect(r.save!.stageNumber, 500);
+      expect(r.extra['clamped'], isFalse);
+    });
+
     test('모루 스택은 서버가 상한(10)으로 자른다 — 세이브 비대화 차단', () {
       // 앱은 kMaxForgeStack 에서 멈추지만 조작 업로드는 수천 개를 실을 수
       // 있다. 곤충 3만 마리 13.6MB 사고와 같은 경로라 서버가 자른다.

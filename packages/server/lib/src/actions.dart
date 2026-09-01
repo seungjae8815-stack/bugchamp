@@ -373,7 +373,12 @@ class GameActions {
     final capped = enforceStorage(parsed);
     if (capped.bugs.length != parsed.bugs.length ||
         capped.storageCapacity != parsed.storageCapacity ||
-        capped.incubatorCapacity != parsed.incubatorCapacity) {
+        capped.incubatorCapacity != parsed.incubatorCapacity ||
+        // ⚠️ 캠페인 끝 접기(`_enforceCampaignEnd`)가 빠져 있었다
+        // (2026-09-01 발견). 서버는 1000 으로 접는데 앱은 계속 1078 을 들고
+        // 60초마다 다시 올린다 — 화면에도 접히지 않은 값이 그대로 보이고,
+        // 서버는 매 업로드마다 같은 일을 반복한다.
+        capped.stageNumber != parsed.stageNumber) {
       clamped = true;
     }
 
