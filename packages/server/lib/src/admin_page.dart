@@ -358,10 +358,9 @@ async function findUser() {
       '<p class="hint">지난 규칙에서 쌓여 <b>지금은 도달 불가능한</b> 값을 맞춥니다. ' +
       '비운 칸은 <b>건드리지 않습니다</b>. 지금보다 큰 값은 무시됩니다 — ' +
       '정상화 도구지 지급 도구가 아닙니다.</p>' +
-      '<p class="hint" style="color:#FFD98A">여기에는 <b>원하는 최종 값</b>을 그대로 넣으세요. ' +
-      '앱에 남은 옛 값이 다음 업로드에 되올라오므로 서버가 알아서 그만큼 빼서 저장합니다 ' +
-      '(젤리 1,000 · 재료 2,000만 · 골드 20만). 결과에 실제 착지값이 표시됩니다.<br>' +
-      '⚠ 그래서 <b>최종 값이 상한보다 작을 수는 없습니다</b> — 재료에 0 을 넣어도 2,000만이 남습니다.</p>' +
+      '<p class="hint" style="color:#FFD98A"><b>원하는 최종 값</b>을 그대로 넣으세요 — 그 값이 그대로 저장됩니다.<br>' +
+      '⚠ 유저가 <b>지금 접속 중</b>이면, 앱에 남은 옛 값이 업로드 1회 상한만큼 되올라간 뒤 멈춥니다 ' +
+      '(젤리 +1,000 · 재료 +2,000만 · 골드 +20만). 결과에 그 상한선이 함께 표시됩니다.</p>' +
       (r.purchases > 0
         ? '<p class="hint" style="color:#FFB4A2"><b>결제 이력 ' + r.purchases +
           '건</b> — 산 젤리를 깎으면 환불 사유입니다. 젤리 칸은 비워 두세요.</p>'
@@ -375,6 +374,7 @@ async function findUser() {
       '<div><label>수액 (' + n(r.sap) + ')</label><input id="cur-sap" type="number" min="0"></div>' +
       '</div>' +
       '<p class="hint">입력 예: 젤리 <b>1500</b> · 재료 <b>20000000</b> (골드는 비워 두기)</p>' +
+      '<p class="hint">⚠ 이 도구는 <b>낮추기만</b> 합니다. 되돌리려면 우편으로 차액을 보내세요.</p>' +
       '<label>사유 (서버 로그에 남습니다)</label>' +
       '<input id="cur-reason" maxlength="64" placeholder="2026-09-01 구버전 수도꼭지 정상화">' +
       '<button class="act warn" onclick="normalizeCurrency(\'' + r.id + '\')">정상화</button>' +
@@ -419,8 +419,8 @@ async function normalizeCurrency(id) {
     let html = '<b>정상화 완료</b>';
     for (const k in r.changes) {
       const c = r.changes[k];
-      html += '<div>' + esc(k) + ': ' + n(c.from) + ' → <b>' + n(c.lands) +
-              '</b> <span class="sub">(저장 ' + n(c.to) + ' + 업로드 상한)</span></div>';
+      html += '<div>' + esc(k) + ': ' + n(c.from) + ' → <b>' + n(c.to) +
+              '</b> <span class="sub">(접속 중이면 최대 ' + n(c.mayRiseTo) + ' 까지 되올라감)</span></div>';
     }
     box.innerHTML = html;
     toast('정상화했습니다');

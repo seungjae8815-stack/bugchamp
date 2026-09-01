@@ -1668,7 +1668,11 @@ Handler buildHandler({
     /// 나가는 사고를 코드로 막는다(UI 검증만으로는 못 막는다).
     const adminMaxGold = 10000000;
     const adminMaxJelly = 10000;
-    const adminMaxMaterial = 100000;
+    // ⚠️ 10만이었는데 **정상화 되돌리기가 불가능했다**(2026-09-01):
+    // 재료를 2,000만으로 맞추려면 우편을 200번 보내야 했다.
+    // 이건 밸런스 규칙이 아니라 **오타 방어선**이다 — 자릿수 하나 더 친 것을
+    // 잡으면 되고, 운영자가 실제로 해야 하는 값은 통과시켜야 한다.
+    const adminMaxMaterial = 50000000;
 
     /// 지급 필드 정규화 + 상한 검사.
     ///
@@ -1838,12 +1842,15 @@ Handler buildHandler({
     /// 이 라우트는 정상화 도구지 지급 도구가 아니다(지급은 `/admin/grant`).
     /// 실수로 재화를 뿌려 경제가 무너지는 경로를 아예 만들지 않는다.
     ///
-    /// ⚠️ **받는 값은 "원하는 최종 값"이다.** 서버는 거기서 업로드 1회 증가
-    /// 상한을 빼서 저장한다 — 앱에 남아 있는 옛 값이 다음 업로드에 올라오고,
-    /// 서버가 상한만큼만 통과시킨 뒤 `clamped` 로 알리면 앱이 그 값을 채택하고
-    /// 멈추기 때문이다. 즉 **저장값 + 상한 = 최종 값**이 된다.
-    /// 운영자에게 빼기를 시키면 반드시 틀린다(2026-09-01: "0을 넣으라는 거냐"
-    /// 되물음). 도구가 계산한다.
+    /// ⚠️ **받는 값을 그대로 저장한다.** 한때 업로드 1회 상한만큼 빼서
+    /// 저장했는데(앱이 되올릴 것을 예상해서) **틀렸다** — 유저가 접속 중이
+    /// 아니면 다음 실행의 `syncSaveWith` 가 서버 값을 **그대로 채택**하므로,
+    /// 뺀 만큼이 그냥 사라진다(2026-09-01: 젤리 1,500 을 넣었는데 500 이 됐다).
+    ///
+    /// 대신 유저가 **접속 중일 때**는 앱에 남은 옛 값이 올라와 상한만큼
+    /// 되올라간 뒤 멈춘다 — 그때는 최종값이 `입력 + 상한`까지 커질 수 있다.
+    /// 후하게 틀리는 쪽이라 받아들인다(깎는 도구가 예상보다 더 깎는 것보다
+    /// 덜 깎는 게 낫다). 응답의 `mayRiseTo` 가 그 상한을 알려 준다.
     ///
     /// ⚠️ **결제한 젤리는 깎으면 안 된다.** 응답에 `purchases` 를 실어 주니
     /// 호출 전에 반드시 확인할 것(운영 패널은 화면에 띄운다).
@@ -1866,33 +1873,34 @@ Handler buildHandler({
 
         final changes = <String, dynamic>{};
 
-        /// 원하는 최종 값 → **저장할 값**. 상한만큼 빼 둔다(위 설명).
-        int? want(String key, int uploadCap) {
+        /// 원하는 최종 값. **그대로** 저장한다(위 설명).
+        int? want(String key) {
           final v = b[key];
           if (v is! num) return null;
           final target = v.toInt();
-          if (target < 0) return null;
-          final store = target - uploadCap;
-          return store < 0 ? 0 : store;
+          return target < 0 ? null : target;
         }
 
-        final wantGold = want('gold', GameActions.goldUploadCap);
+        final wantGold = want('gold');
         if (wantGold != null && wantGold < save.gold) {
           changes['gold'] = {
             'from': save.gold,
             'to': wantGold,
-            'lands': wantGold + GameActions.goldUploadCap,
+            'mayRiseTo': wantGold + GameActions.goldUploadCap,
           };
           save = save.copyWith(gold: wantGold);
         }
         final mats = Map<MaterialKind, int>.from(save.materials);
         for (final k in MaterialKind.values) {
-          final cap = GameActions.uploadCapFor(k);
-          final v = want(k.key, cap);
+          final v = want(k.key);
           if (v == null) continue;
           final have = save.materialCount(k);
           if (v >= have) continue; // 올리지 않는다
-          changes[k.key] = {'from': have, 'to': v, 'lands': v + cap};
+          changes[k.key] = {
+            'from': have,
+            'to': v,
+            'mayRiseTo': v + GameActions.uploadCapFor(k),
+          };
           mats[k] = v;
         }
         if (changes.isEmpty) {
