@@ -206,15 +206,56 @@ void main() {
     expect(actions.eventTicketsNow(s).tickets, cfg.event!.ticketMax);
   });
 
-  test('광고 참가권은 하루 상한이 있다 — 광고제거 구매자도 동일', () {
-    var s = SaveGame.initial(
-      createdAt: t0,
-    ).copyWith(eventTickets: 0, eventTicketsAt: t0, adsRemoved: true);
+  test('참가권 충전은 하루 상한이 있다 — 결제자도 동일', () {
+    final cost = cfg.event!.ticketJelly;
+    var s = SaveGame.initial(createdAt: t0).copyWith(
+      eventTickets: 0,
+      eventTicketsAt: t0,
+      adsRemoved: true,
+      // 젤리로 사는 방식이라(2026-09-01) 충분히 쥐여 준 상태에서 상한만 본다.
+      materials: {MaterialKind.jelly: cost * 10},
+    );
     for (var i = 0; i < cfg.event!.ticketAdDailyLimit; i++) {
       final r = actions.grantEventAdTicket(s);
-      expect(r.isOk, isTrue, reason: '${i + 1}번째 광고는 되어야 한다');
+      expect(r.isOk, isTrue, reason: '${i + 1}번째 충전은 되어야 한다');
       s = r.save!;
     }
     expect(actions.grantEventAdTicket(s).error, 'ad_limit');
+  });
+
+  /// ⚠️ 하루 상한을 젤리로 우회할 수 없어야 한다 — 실물 경품이 걸린 대회에서
+  /// "젤리만 있으면 무한 도전"이면 순위를 돈으로 사는 구조가 된다.
+  test('젤리가 아무리 많아도 하루 상한은 못 넘는다', () {
+    var s = SaveGame.initial(createdAt: t0).copyWith(
+      eventTickets: 0,
+      eventTicketsAt: t0,
+      materials: const {MaterialKind.jelly: 999999},
+    );
+    for (var i = 0; i < cfg.event!.ticketAdDailyLimit; i++) {
+      s = actions.grantEventAdTicket(s).save!;
+    }
+    expect(actions.grantEventAdTicket(s).error, 'ad_limit');
+  });
+
+  test('젤리가 모자라면 충전이 거부된다', () {
+    final cost = cfg.event!.ticketJelly;
+    final s = SaveGame.initial(createdAt: t0).copyWith(
+      eventTickets: 0,
+      eventTicketsAt: t0,
+      materials: {MaterialKind.jelly: cost - 1},
+    );
+    expect(actions.grantEventAdTicket(s).error, 'no_jelly');
+  });
+
+  test('충전하면 젤리가 실제로 빠진다', () {
+    final cost = cfg.event!.ticketJelly;
+    final s = SaveGame.initial(createdAt: t0).copyWith(
+      eventTickets: 0,
+      eventTicketsAt: t0,
+      materials: {MaterialKind.jelly: cost + 5},
+    );
+    final r = actions.grantEventAdTicket(s);
+    expect(r.isOk, isTrue);
+    expect(r.save!.materialCount(MaterialKind.jelly), 5);
   });
 }

@@ -328,6 +328,15 @@
   "eventChallenge": "挑戦（参加券1枚）",
   "eventNoTicket": "参加券がありません",
   "eventAdTicket": "無料参加券を受け取る",
+  "eventJellyTicket": "参加券を購入 ({n})",
+  "@eventJellyTicket": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "eventNoJelly": "ゼリーが足りません",
   "eventAdLimit": "本日の無料報酬は受け取り済みです",
   "eventTicketFull": "参加券が満杯です",
   "eventResultTitle": "{n}ウェーブ到達！",
@@ -914,5 +923,12 @@
   "supportSend": "送信",
   "supportSent": "送信しました。確認して対応します！",
   "supportFailed": "送信できませんでした。しばらくしてからお試しください。",
-  "supportTooFast": "少し経ってからもう一度送れます。"
+  "supportTooFast": "少し経ってからもう一度送れます。",
+  "@eventWaveRecord": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  }
 }

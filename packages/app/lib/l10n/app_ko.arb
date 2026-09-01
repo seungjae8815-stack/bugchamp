@@ -335,6 +335,15 @@
   "eventChallenge": "도전 (참가권 1장)",
   "eventNoTicket": "참가권이 없어요",
   "eventAdTicket": "무료 참가권 받기",
+  "eventJellyTicket": "참가권 충전 ({n})",
+  "@eventJellyTicket": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "eventNoJelly": "젤리가 부족해요",
   "eventAdLimit": "오늘 무료 보상을 모두 받았어요",
   "eventTicketFull": "참가권이 가득 찼어요",
   "eventResultTitle": "{n}웨이브 도달!",
@@ -949,5 +958,12 @@
   "supportSend": "보내기",
   "supportSent": "전달했어요. 확인 후 반영할게요!",
   "supportFailed": "전송에 실패했어요. 잠시 후 다시 시도해 주세요.",
-  "supportTooFast": "조금 뒤에 다시 보낼 수 있어요."
+  "supportTooFast": "조금 뒤에 다시 보낼 수 있어요.",
+  "@eventWaveRecord": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  }
 }

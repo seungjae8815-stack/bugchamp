@@ -1850,7 +1850,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Wave {n}'**
-  String eventWaveRecord(Object n);
+  String eventWaveRecord(String n);
 
   /// No description provided for @eventScore.
   ///
@@ -1923,6 +1923,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Claim free ticket'**
   String get eventAdTicket;
+
+  /// No description provided for @eventJellyTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy ticket ({n})'**
+  String eventJellyTicket(int n);
+
+  /// No description provided for @eventNoJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough jelly'**
+  String get eventNoJelly;
 
   /// No description provided for @eventAdLimit.
   ///

@@ -1002,7 +1002,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventNoRecord => 'No attempt yet';
 
   @override
-  String eventWaveRecord(Object n) {
+  String eventWaveRecord(String n) {
     return 'Wave $n';
   }
 
@@ -1053,6 +1053,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventAdTicket => 'Claim free ticket';
+
+  @override
+  String eventJellyTicket(int n) {
+    return 'Buy ticket ($n)';
+  }
+
+  @override
+  String get eventNoJelly => 'Not enough jelly';
 
   @override
   String get eventAdLimit => 'Today\'s free rewards are used up';

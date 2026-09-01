@@ -1890,8 +1890,19 @@ class GameActions {
     );
   }
 
-  /// 광고로 참가권 1장. 하루 상한을 넘으면 `ad_limit`.
-  /// 상한은 광고제거·패스 구매자에게도 **동일**하다(§2.6 P2W 금지).
+  /// **젤리로** 참가권 [EventConfig.ticketAdGrant] 장(2026-09-01 전환).
+  ///
+  /// 예전엔 무료(하루 상한만)였다 — 상한만 걸린 공짜라 대회 참가가 사실상
+  /// 무제한이었고, 순위가 "얼마나 자주 켰나"로 갈렸다. 젤리를 쓰게 하면
+  /// 도전 한 번이 선택이 되고, 젤리에 소비처가 하나 더 생긴다(§2.6).
+  ///
+  /// 하루 상한은 **그대로 둔다** — 젤리만 있으면 무한히 도전해 순위를
+  /// 돈으로 사는 구조가 되면 실물 경품이 걸린 대회로서 성립하지 않는다.
+  /// 상한은 결제자에게도 동일하다(§2.6 P2W 금지).
+  ///
+  /// ⚠️ 젤리는 서버 소유 필드가 아니다(유저가 버는 값이라 소유할 수 없다).
+  /// 그래서 **차감분을 세이브에 써서 돌려주고**, 앱이 그 세이브를 채택한다 —
+  /// 참가권(서버 소유)과 젤리(클라 소유)를 한 응답에 같이 실어야 어긋나지 않는다.
   ActionResult grantEventAdTicket(SaveGame save) {
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
@@ -1906,6 +1917,13 @@ class GameActions {
     if (cur.tickets >= cfg.ticketMax) {
       return const ActionResult.fail('ticket_full');
     }
+    final cost = cfg.ticketJelly;
+    final have = save.materialCount(MaterialKind.jelly);
+    if (cost > 0 && have < cost) {
+      return const ActionResult.fail('no_jelly');
+    }
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    if (cost > 0) mats[MaterialKind.jelly] = have - cost;
     final counts = save.adUseDate == today
         ? Map<String, int>.from(save.adUseCounts)
         : <String, int>{};
@@ -1915,10 +1933,11 @@ class GameActions {
       save.copyWith(
         eventTickets: next > cfg.ticketMax ? cfg.ticketMax : next,
         eventTicketsAt: cur.at,
+        materials: mats,
         adUseCounts: counts,
         adUseDate: today,
       ),
-      extra: {'tickets': next, 'adUsed': used + 1},
+      extra: {'tickets': next, 'adUsed': used + 1, 'jellySpent': cost},
     );
   }
 

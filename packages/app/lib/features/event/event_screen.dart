@@ -154,6 +154,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     'fatigued' => l.eventFatigueLeft(''),
     'ad_limit' => l.eventAdLimit,
     'ticket_full' => l.eventTicketFull,
+    'no_jelly' => l.eventNoJelly,
     'event_closed' => l.eventClosed,
     _ => l.cloudFailed,
   };
@@ -301,7 +302,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                 Text(
                   bestWave <= 0
                       ? l.eventNoRecord
-                      : '${l.eventWaveRecord(bestWave)} · ${l.eventScore(formatCompact(bestScore))}',
+                      : '${l.eventWaveRecord('$bestWave')} · ${l.eventScore(formatCompact(bestScore))}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -724,6 +725,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   }
 
   Widget _challengeButton(AppLocalizations l, SaveGame save) {
+    final cfg = ref.watch(gameDataProvider).value?.eventConfig;
     final tickets = (_state?['tickets'] as num?)?.toInt() ?? 0;
     final ready = _team.length == 3 && tickets > 0 && !_busy;
     return Padding(
@@ -766,10 +768,11 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                     }
                     await _refresh();
                   },
-            icon: const Icon(Icons.play_circle_outline, size: 18),
-            label: Text(l.eventAdTicket),
+            icon: jellyIcon(size: 16),
+            // 무료가 아니라 **젤리**다 — 누르기 전에 값이 보여야 한다.
+            label: Text(l.eventJellyTicket(cfg?.ticketJelly ?? 0)),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xCCFFFFFF),
+              foregroundColor: const Color(0xFF9BE7FF),
             ),
           ),
         ],
@@ -777,77 +780,99 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     );
   }
 
-  Widget _rankList(AppLocalizations l) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
-        child: Text(
-          l.eventRanking,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
+  Widget _rankList(AppLocalizations l) {
+    // 닉네임 규칙(마스킹)은 다른 랭킹·채팅과 같은 곳에서 온다.
+    final rules =
+        ref.watch(gameDataProvider).value?.chatRules ?? const ChatRules();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+          child: Text(
+            l.eventRanking,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
+            ),
           ),
         ),
-      ),
-      if (_ranks.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Text(
-            l.eventRankEmpty,
-            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
-          ),
-        )
-      else
-        for (final e in _ranks)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: e['isMe'] == true
-                  ? _honey.withValues(alpha: 0.16)
-                  : const Color(0x18000000),
-              borderRadius: BorderRadius.circular(10),
-              border: e['isMe'] == true
-                  ? Border.all(color: _honey.withValues(alpha: 0.7))
-                  : null,
+        if (_ranks.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Text(
+              l.eventRankEmpty,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
             ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 30,
-                  child: Text(
-                    '${e['rank']}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xCCFFFFFF),
-                      fontWeight: FontWeight.w900,
+          )
+        else
+          for (final e in _ranks)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: e['isMe'] == true
+                    ? _honey.withValues(alpha: 0.16)
+                    : const Color(0x18000000),
+                borderRadius: BorderRadius.circular(10),
+                border: e['isMe'] == true
+                    ? Border.all(color: _honey.withValues(alpha: 0.7))
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 30,
+                    child: Text(
+                      '${e['rank']}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xCCFFFFFF),
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    '${e['nickname']}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 13.5),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    // 닉네임은 **마스킹해서** 쓴다 — 다른 랭킹·채팅과 같은 규칙.
+                    // 여기만 원문을 쓰고 있어서 깨진 글자가 그대로 떴다
+                    // (2026-09-01 실기: 2위 아이디가 깨져 보임).
+                    child: Text(
+                      rules.maskNickname(
+                        '${e['nickname'] ?? ''}',
+                        fallback: l.nicknameFallback,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.5,
+                      ),
+                    ),
                   ),
-                ),
-                EventBadgeChip(id: '${e['badge'] ?? ''}'),
-                const Spacer(),
-                Text(
-                  l.eventWaveRecord((e['wave'] as num?)?.toInt() ?? 0),
-                  style: const TextStyle(
-                    color: _honey,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12.5,
+                  EventBadgeChip(id: '${e['badge'] ?? ''}'),
+                  const Spacer(),
+                  // 웨이브 숫자는 **세 자리로 채운다** — 자릿수가 줄마다 다르면
+                  // 오른쪽 끝이 삐뚤어 보인다(진행도·레벨 랭킹과 같은 결론).
+                  Text(
+                    l.eventWaveRecord(
+                      ((e['wave'] as num?)?.toInt() ?? 0).toString().padLeft(
+                        3,
+                        '0',
+                      ),
+                    ),
+                    style: const TextStyle(
+                      color: _honey,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12.5,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-    ],
-  );
+      ],
+    );
+  }
 }

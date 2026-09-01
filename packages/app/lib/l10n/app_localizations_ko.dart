@@ -982,7 +982,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventNoRecord => '아직 도전하지 않았어요';
 
   @override
-  String eventWaveRecord(Object n) {
+  String eventWaveRecord(String n) {
     return '$n웨이브';
   }
 
@@ -1032,6 +1032,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eventAdTicket => '무료 참가권 받기';
+
+  @override
+  String eventJellyTicket(int n) {
+    return '참가권 충전 ($n)';
+  }
+
+  @override
+  String get eventNoJelly => '젤리가 부족해요';
 
   @override
   String get eventAdLimit => '오늘 무료 보상을 모두 받았어요';

@@ -154,6 +154,7 @@ class EventConfig {
     this.hpPoint = 1000,
     this.survivorPoint = 100,
     this.speedBase = 500,
+    this.ticketJelly = 0,
     this.cardPicks = 3,
     this.cards = const [],
     this.rewardTiers = const [],
@@ -275,6 +276,9 @@ class EventConfig {
   }
 
   /// 웨이브를 깰 때마다 보여줄 카드 수(0 이면 카드 없음 — 구버전 동작).
+  /// 참가권 1회 충전에 드는 젤리(2026-09-01). 0 이면 무료(예전 동작).
+  final int ticketJelly;
+
   final int cardPicks;
   final List<EventCard> cards;
 
@@ -382,6 +386,7 @@ class EventConfig {
       ticketDailyGrant: (tickets['dailyGrant'] as num?)?.toInt() ?? 3,
       ticketAdGrant: (tickets['adGrant'] as num?)?.toInt() ?? 1,
       ticketAdDailyLimit: (tickets['adDailyLimit'] as num?)?.toInt() ?? 2,
+      ticketJelly: (tickets['jelly'] as num?)?.toInt() ?? 0,
       fatigueHours: (json['fatigueHours'] as num?)?.toInt() ?? 24,
       normBaseHp: (norm['baseHp'] as num?)?.toDouble() ?? 120,
       normBaseAtk: (norm['baseAtk'] as num?)?.toDouble() ?? 55,

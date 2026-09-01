@@ -628,6 +628,15 @@
   "eventChallenge": "Enter (1 ticket)",
   "eventNoTicket": "No tickets left",
   "eventAdTicket": "Claim free ticket",
+  "eventJellyTicket": "Buy ticket ({n})",
+  "@eventJellyTicket": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "eventNoJelly": "Not enough jelly",
   "eventAdLimit": "Today's free rewards are used up",
   "eventTicketFull": "Tickets are full",
   "eventResultTitle": "Reached wave {n}!",
@@ -1775,5 +1784,12 @@
   "supportSend": "Send",
   "supportSent": "Sent. We will look into it!",
   "supportFailed": "Could not send. Please try again shortly.",
-  "supportTooFast": "You can send another one in a moment."
+  "supportTooFast": "You can send another one in a moment.",
+  "@eventWaveRecord": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  }
 }

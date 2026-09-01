@@ -165,7 +165,7 @@ class WaveProgress extends StatelessWidget {
         Row(
           children: [
             Text(
-              l.eventWaveRecord(wave),
+              l.eventWaveRecord('$wave'),
               style: const TextStyle(
                 color: _honey,
                 fontWeight: FontWeight.w900,
