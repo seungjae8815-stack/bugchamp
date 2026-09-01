@@ -888,22 +888,46 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   // 웨이브 — **고정 폭 + 세 자리 채움 + 같은 폭 숫자**.
                   // 셋이 다 있어야 이름 길이와 무관하게 같은 자리에 선다.
                   SizedBox(
-                    width: 74,
-                    child: Text(
-                      l.eventWaveRecord(
-                        ((e['wave'] as num?)?.toInt() ?? 0).toString().padLeft(
-                          3,
-                          '0',
+                    width: 96,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l.eventWaveRecord(
+                            ((e['wave'] as num?)?.toInt() ?? 0)
+                                .toString()
+                                .padLeft(3, '0'),
+                          ),
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            color: _honey,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12.5,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
                         ),
-                      ),
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      style: const TextStyle(
-                        color: _honey,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12.5,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
+                        // 같은 웨이브인데 순위가 갈리는 **이유**를 보여준다.
+                        // 웨이브만 있으면 "왜 저 사람이 나보다 위지?"에 답이
+                        // 없다 — 갈리는 건 진입 체력·생존 수·속도이고, 그게
+                        // 전부 이 숫자에 들어 있다.
+                        //
+                        // ⚠️ 축약(1,002만)하면 안 된다. 동률을 가르는 자리가
+                        // **아래 여섯 자리**라, 축약하는 순간 두 사람이 같은
+                        // 숫자로 보여 이걸 붙인 이유가 사라진다.
+                        Text(
+                          formatThousands((e['score'] as num?)?.toInt() ?? 0),
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            color: Color(0x99FFFFFF),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
