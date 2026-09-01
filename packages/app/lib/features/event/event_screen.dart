@@ -768,9 +768,23 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                     }
                     await _refresh();
                   },
-            icon: jellyIcon(size: 16),
+            icon: const SizedBox.shrink(),
             // 무료가 아니라 **젤리**다 — 누르기 전에 값이 보여야 한다.
-            label: Text(l.eventJellyTicket(cfg?.ticketJelly ?? 0)),
+            // "참가권 충전" 뒤에 아이콘+숫자를 붙인다(글자 '젤리'는 다른
+            // 재화와 눈으로 안 갈린다 — 결투 새로고침과 같은 표기).
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(l.eventJellyTicket),
+                const SizedBox(width: 5),
+                jellyIcon(size: 15),
+                const SizedBox(width: 2),
+                Text(
+                  '(${cfg?.ticketJelly ?? 0})',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFF9BE7FF),
             ),
@@ -834,10 +848,11 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Flexible(
+                  // 이름 칸이 **남는 폭을 전부** 가져간다(Expanded). Flexible +
+                  // Spacer 로 두면 이름 길이에 따라 웨이브 칸의 시작점이 줄마다
+                  // 달라진다(2026-09-02 지적).
+                  Expanded(
                     // 닉네임은 **마스킹해서** 쓴다 — 다른 랭킹·채팅과 같은 규칙.
-                    // 여기만 원문을 쓰고 있어서 깨진 글자가 그대로 떴다
-                    // (2026-09-01 실기: 2위 아이디가 깨져 보임).
                     child: Text(
                       rules.maskNickname(
                         '${e['nickname'] ?? ''}',
@@ -852,21 +867,26 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                     ),
                   ),
                   EventBadgeChip(id: '${e['badge'] ?? ''}'),
-                  const Spacer(),
-                  // 웨이브 숫자는 **세 자리로 채운다** — 자릿수가 줄마다 다르면
-                  // 오른쪽 끝이 삐뚤어 보인다(진행도·레벨 랭킹과 같은 결론).
-                  Text(
-                    l.eventWaveRecord(
-                      ((e['wave'] as num?)?.toInt() ?? 0).toString().padLeft(
-                        3,
-                        '0',
+                  const SizedBox(width: 6),
+                  // 웨이브 — **고정 폭 + 세 자리 채움 + 같은 폭 숫자**.
+                  // 셋이 다 있어야 이름 길이와 무관하게 같은 자리에 선다.
+                  SizedBox(
+                    width: 74,
+                    child: Text(
+                      l.eventWaveRecord(
+                        ((e['wave'] as num?)?.toInt() ?? 0).toString().padLeft(
+                          3,
+                          '0',
+                        ),
                       ),
-                    ),
-                    style: const TextStyle(
-                      color: _honey,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
-                      fontFeatures: [FontFeature.tabularFigures()],
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: _honey,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ],

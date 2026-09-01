@@ -1034,9 +1034,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventAdTicket => '무료 참가권 받기';
 
   @override
-  String eventJellyTicket(int n) {
-    return '참가권 충전 ($n)';
-  }
+  String get eventJellyTicket => '참가권 충전';
 
   @override
   String get eventNoJelly => '젤리가 부족해요';

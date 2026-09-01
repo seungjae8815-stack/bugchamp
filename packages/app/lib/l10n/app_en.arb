@@ -628,14 +628,7 @@
   "eventChallenge": "Enter (1 ticket)",
   "eventNoTicket": "No tickets left",
   "eventAdTicket": "Claim free ticket",
-  "eventJellyTicket": "Buy ticket ({n})",
-  "@eventJellyTicket": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
+  "eventJellyTicket": "Buy ticket",
   "eventNoJelly": "Not enough jelly",
   "eventAdLimit": "Today's free rewards are used up",
   "eventTicketFull": "Tickets are full",

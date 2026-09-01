@@ -1055,9 +1055,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventAdTicket => 'Claim free ticket';
 
   @override
-  String eventJellyTicket(int n) {
-    return 'Buy ticket ($n)';
-  }
+  String get eventJellyTicket => 'Buy ticket';
 
   @override
   String get eventNoJelly => 'Not enough jelly';

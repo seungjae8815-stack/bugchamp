@@ -1927,8 +1927,8 @@ abstract class AppLocalizations {
   /// No description provided for @eventJellyTicket.
   ///
   /// In en, this message translates to:
-  /// **'Buy ticket ({n})'**
-  String eventJellyTicket(int n);
+  /// **'Buy ticket'**
+  String get eventJellyTicket;
 
   /// No description provided for @eventNoJelly.
   ///

@@ -1032,9 +1032,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventAdTicket => '無料参加券を受け取る';
 
   @override
-  String eventJellyTicket(int n) {
-    return '参加券を購入 ($n)';
-  }
+  String get eventJellyTicket => '参加券を購入';
 
   @override
   String get eventNoJelly => 'ゼリーが足りません';

@@ -328,14 +328,7 @@
   "eventChallenge": "挑戦（参加券1枚）",
   "eventNoTicket": "参加券がありません",
   "eventAdTicket": "無料参加券を受け取る",
-  "eventJellyTicket": "参加券を購入 ({n})",
-  "@eventJellyTicket": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
+  "eventJellyTicket": "参加券を購入",
   "eventNoJelly": "ゼリーが足りません",
   "eventAdLimit": "本日の無料報酬は受け取り済みです",
   "eventTicketFull": "参加券が満杯です",
