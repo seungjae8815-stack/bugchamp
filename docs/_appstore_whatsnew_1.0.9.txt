@@ -1,0 +1,36 @@
+========================================
+ App Store — 새로운 기능 (1.0.9 / 20260905)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
+※ ⚠️ 1.0.8 트레인이 닫혔다(이미 출시) — 1.0.9 로만 제출된다.
+※ 범위: 1.0.8(20260904) 이후.
+
+<ko-KR>
+표시 오류를 고쳤어요
+
+- 무한 버프 패스의 남은 기간이 상점과 버프 창에 나옵니다
+- 버프 남은 시간을 짧게 표시합니다 (예: 1h22m)
+- 패스를 쓰는 동안에는 무한 표시가 나옵니다
+- 버프 시간이 길어져도 전투력과 재화 칸을 가리지 않습니다
+- 운영자가 보낸 보상은 우편함에서 받을 수 있습니다
+</ko-KR>
+
+<en-US>
+Display fixes
+
+- The Endless Buff Pass now shows its remaining days in the shop and buff panel
+- Buff timers are shown in a short form (for example 1h22m)
+- While the pass is active the timer shows the infinity mark
+- Long buff timers no longer cover the power and currency readouts
+- Rewards sent by the operator arrive in your mailbox
+</en-US>
+
+<ja-JP>
+表示の修正
+
+- 無限バフパスの残り日数がショップとバフ画面に表示されます
+- バフの残り時間を短く表示します (例: 1h22m)
+- パス使用中は無限の記号が表示されます
+- バフ時間が長くなっても戦闘力や通貨の表示を隠しません
+- 運営から届いた報酬はメールボックスで受け取れます
+</ja-JP>

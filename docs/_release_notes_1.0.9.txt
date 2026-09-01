@@ -1,0 +1,33 @@
+========================================
+ Google Play — 출시 노트 (1.0.9 / 20260905)
+========================================
+※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
+※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
+※ 재계산:
+   python -c "import io;s=io.open('docs/_release_notes_1.0.9.txt',encoding='utf-8').read();b=s[s.index('<ko-KR>'):].rstrip();print(len(b)+b.count(chr(10)))"
+※ iOS 노트는 _appstore_whatsnew_1.0.9.txt.
+※ ⚠️ iOS 는 1.0.8 트레인이 닫혀(이미 출시) **1.0.9 로 올렸다** — 빌드번호만
+   올리면 업로드가 거부된다(90062/90186).
+※ 범위: 20260904 이후 — 표시 오류 수정.
+----------------------------------------
+<ko-KR>
+🐛 표시 오류를 고쳤어요
+
+• 무한 버프 패스의 남은 기간이 상점과 버프 창에 표시돼요
+• 버프 남은 시간이 짧게(1h22m) 나오고, 패스 중엔 ∞
+• 버프 시간이 길어도 전투력·재화 칸을 가리지 않아요
+</ko-KR>
+<en-US>
+🐛 Display fixes
+
+• Endless Buff Pass now shows its remaining days
+• Buff timers are short (1h22m), and ∞ while the pass is on
+• Long buff timers no longer overlap power and currency
+</en-US>
+<ja-JP>
+🐛 表示の修正
+
+・無限バフパスの残り日数が表示されます
+・バフ残り時間を短く表示(1h22m)、パス中は ∞
+・戦闘力や通貨の表示が隠れなくなりました
+</ja-JP>
