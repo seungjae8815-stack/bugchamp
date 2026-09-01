@@ -1953,12 +1953,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       size: 13,
                     ),
                     const SizedBox(width: 3),
-                    Text(
-                      '${l.combatPowerLabel} ${formatCompact(cp)}',
-                      style: const TextStyle(
-                        color: _honey,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
+                    // ⚠️ **줄어들 수 있어야 한다.** 오른쪽(버프 줄)이 넓어지면
+                    // 이 칸이 좁아지는데, 자연 크기로 두면 넘쳐서 젤리 칸 위로
+                    // 글자가 겹친다(2026-09-01 지적). 넘칠 땐 말줄임.
+                    Flexible(
+                      child: Text(
+                        '${l.combatPowerLabel} ${formatCompact(cp)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _honey,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                     // (2026-08) 랭킹은 여기서 빼고 **앱 시작 팝업**으로 옮겼다
@@ -2077,8 +2084,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 버프 칸 하나의 **고정 폭**. 남은 시간 글자가 길어져도 이 폭을 넘지 않으므로
   /// 옆 칸(재화·전투력)이 밀리지 않는다 — 예전엔 자연 크기라 `43193:14` 가
   /// 뜨는 순간 HUD 전체가 어긋났다(2026-09-01 실기 지적, 두 번째).
-  /// 34 = 아이콘 24 + 좌우 여백. `11d12h`(6자)가 7.5px 로 들어간다.
-  static const _buffMiniWidth = 34.0;
+  /// 30 = 아이콘 24 + 좌우 여백 3씩. 글자는 이 안에서 줄여 그린다.
+  ///
+  /// ⚠️ 이 값을 키우면 버프 5칸 x 폭만큼 오른쪽이 넓어지고, 그만큼 왼쪽
+  /// (닉네임·전투력)이 좁아진다. 전투력은 말줄임으로 버티지만 결국 읽기가
+  /// 나빠지므로, 넓히기 전에 실기에서 전투력 칸을 확인할 것.
+  static const _buffMiniWidth = 30.0;
 
   Widget _buffMini(BuffKind k, Duration? remaining, {bool hasPass = false}) {
     final active = remaining != null;
