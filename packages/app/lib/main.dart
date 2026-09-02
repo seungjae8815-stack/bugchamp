@@ -16,6 +16,7 @@ import 'domain/auth_service.dart';
 import 'domain/chat_service.dart';
 import 'domain/game_server.dart';
 import 'domain/cloud_save_service.dart';
+import 'domain/marketing_service.dart';
 import 'domain/notification_service.dart';
 import 'domain/locale_prefs.dart';
 import 'domain/providers.dart';
@@ -80,6 +81,9 @@ Future<void> main() async {
 
   // 로컬 알림 초기화(실패해도 앱은 정상). 권한 요청·예약은 AppShell 에서.
   await NotificationService.instance.init();
+  // Meta 앱 설치 광고 측정(UA). 실패해도 게임은 그대로 돌아야 하므로
+  // 서비스 내부에서 삼킨다 — 여기서 await 해도 앱 시작을 막지 않는다.
+  await MarketingService.instance.init();
 
   // Supabase: 키가 주입됐을 때만 초기화 + 익명 로그인. 실패 시 client=null → 로컬 유지.
   // 값 끝의 공백/개행이 있으면 URL·키가 무효가 되므로 trim 한다(CI 붙여넣기 방어).

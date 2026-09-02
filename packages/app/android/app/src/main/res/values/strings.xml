@@ -2,4 +2,8 @@
 <resources>
     <!-- 기본(영어권 등). 한국어는 values-ko, 일본어는 values-ja 로 자동 분기. -->
     <string name="app_name">Bug Champ</string>
+    <!-- Meta(페북) 앱 설치 광고 측정. 클라이언트 토큰은 **공개돼도 되는 값**이다
+         (앱 시크릿과 다르다 — 시크릿은 서버 전용이라 앱에 넣지 않는다). -->
+    <string name="facebook_app_id">1772544183771300</string>
+    <string name="facebook_client_token">a3205f2042dd73a4c06a08d5e3ad5205</string>
 </resources>

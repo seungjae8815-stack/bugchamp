@@ -8,6 +8,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'game_server.dart';
 import 'iap_service.dart';
 import 'providers.dart';
+import 'marketing_service.dart';
 import 'purchase_verifier.dart';
 import 'save_controller.dart';
 
@@ -185,6 +186,9 @@ class StoreIapService implements IapService {
               if (granted && p.pendingCompletePurchase) {
                 await _store.completePurchase(p);
               }
+              // 광고 전환 신호는 **지급까지 끝난 뒤에만** 보낸다. 검증 실패·
+              // 취소까지 세면 메타가 가짜 구매자를 닮은 사람에게 광고를 돌린다.
+              if (granted) _logPurchase(p);
               _finish(
                 p.productID,
                 granted ? PurchaseOutcome.success : PurchaseOutcome.failed,
@@ -228,6 +232,20 @@ class StoreIapService implements IapService {
   /// **권위 서버가 붙어 있으면 서버가 지급한다** — 클라이언트가 자기 세이브에
   /// 재화를 쓰면 앱을 개조해 결제 없이 넣을 수 있기 때문이다.
   /// 서버가 없으면(전환 중·오프라인 빌드) 기존 로컬 경로로 폴백한다.
+  /// 결제 금액을 스토어가 준 값 그대로 메타에 넘긴다 — JSON 의 원화 정가가
+  /// 아니라 **유저가 실제로 낸 통화·금액**이어야 국가별 ROAS 가 맞는다.
+  void _logPurchase(PurchaseDetails p) {
+    final d = _details[p.productID];
+    if (d == null) return;
+    final amount = double.tryParse(d.rawPrice.toString());
+    if (amount == null || amount <= 0) return;
+    MarketingService.instance.logPurchase(
+      amount: amount,
+      currency: d.currencyCode,
+      productId: p.productID,
+    );
+  }
+
   Future<bool> _grantViaServer(PurchaseDetails p) async {
     final server = _ref.read(gameServerProvider);
     if (!server.available) return false; // 로컬 경로로

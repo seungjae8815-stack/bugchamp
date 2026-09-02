@@ -4,7 +4,7 @@ publish_to: 'none'
 # 빌드번호는 **매 빌드 +1 하는 단조 증가 숫자**다(날짜처럼 생겼을 뿐).
 # 하루에 두 번 빌드해도 겹치면 안 된다 — 1.0.4 와 1.0.5 가 둘 다 20260808 이라
 # 그대로 올렸으면 두 스토어 모두 거부했다. 출시 리듬은 docs/release_cadence.md.
-version: 1.0.9+20260908
+version: 1.0.9+20260909
 resolution: workspace
 
 environment:
@@ -52,6 +52,9 @@ dependencies:
   # 3.1.x 는 storekit 0.3.x(StoreKit1)라 base64 영수증 → 서버 검증(verifyReceipt) 동작.
   in_app_purchase: '>=3.1.0 <3.2.0'
   google_mobile_ads: ^5.3.1
+  # Meta(인스타/페북) 앱 설치 광고용. 이 SDK 가 없으면 메타가 "광고를 보고
+  # 설치했는지"를 셀 수 없어 캠페인 최적화 자체가 돌지 않는다(UA, 2026-09-02).
+  facebook_app_events: ^0.19.2
   audioplayers: ^6.1.0
   shared_preferences: ^2.3.0
 

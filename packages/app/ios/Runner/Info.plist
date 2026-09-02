@@ -84,6 +84,26 @@
 	<key>NSUserTrackingUsageDescription</key>
 	<string>맞춤형 광고를 제공하고 광고 성과를 측정하기 위해 사용됩니다.</string>
 
+	<!-- Meta(페북/인스타) 앱 설치 광고 측정. 클라이언트 토큰은 **공개돼도 되는
+	     값**이다(앱 시크릿과 다르다 — 시크릿은 서버 전용이라 앱에 넣지 않는다).
+	     ⚠️ SKAdNetworkItems 에 메타 ID(v9wttpbfk9·n38lu8286q)가 이미 있어야
+	     ATT 를 거부한 유저의 설치도 집계된다(아래 목록에 포함돼 있다). -->
+	<key>FacebookAppID</key>
+	<string>1772544183771300</string>
+	<key>FacebookClientToken</key>
+	<string>a3205f2042dd73a4c06a08d5e3ad5205</string>
+	<key>FacebookDisplayName</key>
+	<string>Bug Champ</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<true/>
+	<!-- 설치된 페북/인스타 앱으로 출처를 잇는다. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+		<string>instagram</string>
+	</array>
+
 	<!-- AdMob iOS 앱 ID. ⚠️ 지금은 구글 테스트 앱 ID(플레이스홀더)다.
 	     AdMob 에서 **iOS 앱을 별도 생성**해 실제 ID 로 교체해야 실광고가 나간다
 	     (안드로이드 ID 와 다르다). docs/APPSTORE_CHECKLIST.md 참조. -->
