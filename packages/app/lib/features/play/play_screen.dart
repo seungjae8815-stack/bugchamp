@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
@@ -3950,22 +3951,35 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
           ),
           // ── 선물코드 ──
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _showGiftCode(l);
-              },
-              icon: const Icon(Icons.confirmation_number_rounded, size: 18),
-              label: Text(l.giftCodeTitle),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFEBC24A),
-                side: const BorderSide(color: Color(0x55EBC24A)),
+          //
+          // ⚠️ **iOS 에서는 내보내지 않는다**(2026-09-02 심사 거절, 3.1.1).
+          // 애플은 "앱 내 디지털 아이템·기능을 IAP 아닌 수단으로 열어 주는 것"을
+          // 금지한다. 코드가 무료 지급이어도, **여는 대상이 디지털 재화면**
+          // 걸린다 — 할인·무료 제공은 App Store 의 오퍼 코드로만 가능하다.
+          //
+          // 안드로이드는 그대로 둔다. 같은 규정이 아니고, 코드는 공지·이벤트
+          // 운영의 실제 수단이라 두 플랫폼을 함께 없앨 이유가 없다.
+          //
+          // 서버 엔드포인트(`/code/redeem`)는 **남긴다** — 안드로이드가 쓰고,
+          // 지우면 이미 뿌린 코드가 죽는다. 막는 지점은 입구 하나다.
+          if (!Platform.isIOS) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showGiftCode(l);
+                },
+                icon: const Icon(Icons.confirmation_number_rounded, size: 18),
+                label: Text(l.giftCodeTitle),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFEBC24A),
+                  side: const BorderSide(color: Color(0x55EBC24A)),
+                ),
               ),
             ),
-          ),
+          ],
           // ── 리뷰 남기기 ──
           //
           // **보상을 걸지 않는다.** 스토어 API 는 리뷰 작성 여부·별점을 앱에
