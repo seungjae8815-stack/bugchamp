@@ -153,14 +153,19 @@ class _StatsPanel extends ConsumerWidget {
     final run = data?.runConfig;
     if (run == null) return const SizedBox.shrink();
 
-    final s = applyEquipment(
-      deriveStats(
-        run,
-        upgradeLevels: save.upgradeLevels,
-        characterLevel: save.level,
-        bugsCollected: save.bugs.length,
+    // 상한을 씌운 값을 보여준다 — 화면이 100%라고 하는데 실제로는 85%로
+    // 굴러가면 그게 곧 버그 제보가 된다(넘친 만큼은 치명피해로 옮겨간다).
+    final s = capCritChance(
+      applyEquipment(
+        deriveStats(
+          run,
+          upgradeLevels: save.upgradeLevels,
+          characterLevel: save.level,
+          bugsCollected: save.bugs.length,
+        ),
+        equipmentBonus(save.equippedItems.values, data?.itemConfig),
       ),
-      equipmentBonus(save.equippedItems.values, data?.itemConfig),
+      run.critChanceMax,
     );
 
     // 8줄을 세로로 세우면 화면의 3분의 1을 먹는다 — **두 줄씩 좌우로** 접어

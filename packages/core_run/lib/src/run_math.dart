@@ -12,6 +12,43 @@ import 'run_config.dart';
 ///
 /// [depth] = 진행 깊이(0-based). 지역1에서는 depth = stageNumber - 1.
 
+/// 치명확률 상한을 씌우고, **넘친 만큼은 치명피해로 돌린다**.
+///
+/// 왜 상한이 필요한가 (2026-09-07 제보): 치명타는 연출이 다르다 — 노란 숫자·
+/// 큰 글씨·강한 화면 흔들림(0.7 vs 0.4). 확률이 100%가 되면 **모든 타격이
+/// 그렇게 되어** 특별한 연출이 기본값이 된다. 대비가 사라지면서 때리는
+/// 손맛이 통째로 죽는다. 변동이 있어야 한 방이 특별하다.
+///
+/// 왜 버리지 않고 돌리는가: 그냥 자르면 상한 뒤의 투자가 **전부 낭비**가 된다.
+/// 확률이 못 올라간 만큼 한 방을 키워 준다.
+///
+/// ⚠️ 변환은 **전력 중립**이다 — `1 + raw x (cd-1)` 이 그대로 보존된다
+/// (증명: 새 배율 = 1 + cap x (raw x (cd-1) / cap) = 1 + raw x (cd-1)).
+/// 그래서 적응형 몬스터 체력 기준([baselineHitPower], §7)이 흔들리지 않는다.
+/// 이 성질이 깨지면 상한을 만지는 순간 전 구간 난이도가 같이 움직인다.
+CharacterStats capCritChance(CharacterStats s, double cap) {
+  if (cap <= 0 || cap >= 1) return s;
+  final raw = s.critChance;
+  if (raw <= cap) return s;
+  final over = math.max(0.0, s.critDamage - 1) * raw / cap;
+  return CharacterStats(
+    attack: s.attack,
+    attackSpeed: s.attackSpeed,
+    rewardMultiplier: s.rewardMultiplier,
+    critChance: cap,
+    critDamage: 1 + over,
+    bossDamage: s.bossDamage,
+    maxHp: s.maxHp,
+    defense: s.defense,
+    hpRegen: s.hpRegen,
+    xpMultiplier: s.xpMultiplier,
+    bugFind: s.bugFind,
+    materialFind: s.materialFind,
+    moveSpeed: s.moveSpeed,
+    boostBonus: s.boostBonus,
+  );
+}
+
 /// 적응형 체력·타격 수 계산의 기준이 되는 **1타 데미지**(영구 전력만).
 ///
 /// 왜 `attack` 만으로는 안 되는가: [RunConfig.hpAdaptTargetHits] 는 "몇 대에

@@ -21,6 +21,7 @@ SkillConfig _skills() => SkillConfig.fromJson(
 );
 
 void main() {
+  _critCapTests();
   _optionTierTests();
   _autoStrikeTests();
   group('장비 데이터(items.json)', () {
@@ -476,6 +477,109 @@ void _optionTierTests() {
         options: [ItemOption(kind: ItemOptionKind.attack, value: 5)],
       );
       expect(identical(trimItemOptions(item, cfg), item), isTrue);
+    });
+  });
+}
+
+/// 치명확률 상한(2026-09-07) — 100%면 손맛이 죽는다.
+void _critCapTests() {
+  const base = CharacterStats(
+    attack: 100,
+    attackSpeed: 1,
+    rewardMultiplier: 1,
+    critChance: 1.0,
+    critDamage: 3.0,
+    bossDamage: 1,
+    maxHp: 100,
+    defense: 0,
+    hpRegen: 0,
+    xpMultiplier: 1,
+    bugFind: 1,
+    materialFind: 1,
+    moveSpeed: 1,
+    boostBonus: 1,
+  );
+
+  double dpsMult(CharacterStats s) => 1 + s.critChance * (s.critDamage - 1);
+
+  group('치명확률 상한', () {
+    test('상한 아래면 아무것도 바뀌지 않는다', () {
+      final s = capCritChance(base, 1.0);
+      expect(identical(s, base), isTrue);
+    });
+
+    test('상한을 넘으면 확률은 상한까지, 넘친 만큼은 치명피해로', () {
+      final s = capCritChance(base, 0.85);
+      expect(s.critChance, 0.85);
+      expect(s.critDamage, greaterThan(base.critDamage));
+    });
+
+    test('⚠️ 변환은 전력 중립이다 — 깨지면 상한을 만지는 순간 난이도가 움직인다', () {
+      for (final raw in [0.9, 0.95, 1.0]) {
+        for (final cd in [1.5, 2.0, 3.0, 5.0]) {
+          final src = CharacterStats(
+            attack: base.attack,
+            attackSpeed: 1,
+            rewardMultiplier: 1,
+            critChance: raw,
+            critDamage: cd,
+            bossDamage: 1,
+            maxHp: 100,
+            defense: 0,
+            hpRegen: 0,
+            xpMultiplier: 1,
+            bugFind: 1,
+            materialFind: 1,
+            moveSpeed: 1,
+            boostBonus: 1,
+          );
+          final out = capCritChance(src, 0.85);
+          expect(
+            dpsMult(out),
+            closeTo(dpsMult(src), 1e-9),
+            reason: 'raw=$raw cd=$cd',
+          );
+          // 적응형 몬스터 체력 기준도 같이 안 움직여야 한다(§7).
+          expect(
+            baselineHitPower(out),
+            closeTo(baselineHitPower(src), 1e-6),
+            reason: 'raw=$raw cd=$cd 기준이 움직였다',
+          );
+        }
+      }
+    });
+
+    test('상한 뒤 투자도 값어치가 있다 — 더 넣을수록 치명피해가 커진다', () {
+      CharacterStats at(double raw) => CharacterStats(
+        attack: 100,
+        attackSpeed: 1,
+        rewardMultiplier: 1,
+        critChance: raw,
+        critDamage: 3.0,
+        bossDamage: 1,
+        maxHp: 100,
+        defense: 0,
+        hpRegen: 0,
+        xpMultiplier: 1,
+        bugFind: 1,
+        materialFind: 1,
+        moveSpeed: 1,
+        boostBonus: 1,
+      );
+      final a = capCritChance(at(0.90), 0.85);
+      final b = capCritChance(at(1.00), 0.85);
+      expect(b.critDamage, greaterThan(a.critDamage));
+    });
+
+    test('실데이터 상한은 1.0 미만이다 — 1.0 이면 이 시스템이 꺼진 것과 같다', () {
+      final cfg = RunConfig.fromJson(
+        jsonDecode(
+              File('../app/assets/data/run_config.json').readAsStringSync(),
+            )
+            as Map<String, dynamic>,
+      );
+      expect(cfg.critChanceMax, lessThan(1.0));
+      expect(cfg.critChanceMax, greaterThan(0.5));
     });
   });
 }

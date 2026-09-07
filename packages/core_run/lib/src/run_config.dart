@@ -128,6 +128,7 @@ class RunConfig {
     this.stagesPerRegion = 10,
     this.boostStepPerTap = 0.15,
     this.boostMultMax = 5.0,
+    this.critChanceMax = 0.85,
     this.boostDecayPerSec = 0.4,
     this.boostSpeedFactor = 1.0,
     this.threatBase = 3.0,
@@ -242,6 +243,12 @@ class RunConfig {
 
   /// 배율 상한. 데미지 `×배율`, 공격속도 `×(1 + (배율-1) × [boostSpeedFactor])`.
   final double boostMultMax;
+
+  /// 치명확률 상한. 넘친 만큼은 **치명피해로 돌아간다**(`capCritChance`).
+  ///
+  /// 1.0 이면 모든 타격이 치명타가 되어 노란 숫자·큰 흔들림이 기본값이 되고,
+  /// 때리는 손맛이 통째로 죽는다(2026-09-07). 변동이 있어야 한 방이 특별하다.
+  final double critChanceMax;
 
   /// 탭을 멈췄을 때 초당 떨어지는 배율.
   final double boostDecayPerSec;
@@ -441,6 +448,7 @@ class RunConfig {
       stagesPerRegion: (json['stagesPerRegion'] as num?)?.toInt() ?? 10,
       boostStepPerTap: (json['boostStepPerTap'] as num?)?.toDouble() ?? 0.15,
       boostMultMax: (json['boostMultMax'] as num?)?.toDouble() ?? 5.0,
+      critChanceMax: (json['critChanceMax'] as num?)?.toDouble() ?? 0.85,
       boostDecayPerSec: (json['boostDecayPerSec'] as num?)?.toDouble() ?? 0.4,
       boostSpeedFactor: (json['boostSpeedFactor'] as num?)?.toDouble() ?? 1.0,
       upgrades: {for (final u in upgradeList) u.kind: u},

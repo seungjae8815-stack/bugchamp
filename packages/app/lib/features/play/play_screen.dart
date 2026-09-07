@@ -727,11 +727,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         save.dexConqueredWith(dex.conquerLevel),
       );
     }
-    return applyBuffs(
-      s,
-      save.activeBuffs(_clock.now().toUtc()),
-      _data.buffConfig,
-    );
+    s = applyBuffs(s, save.activeBuffs(_clock.now().toUtc()), _data.buffConfig);
+    // 맨 마지막에 치명확률 상한을 씌운다 — 업그레이드·펫·장비·버프가 **다
+    // 더해진 뒤**의 값이라야 실제로 100%에 닿았는지 알 수 있다.
+    // 넘친 만큼은 치명피해로 돌아가므로 전력은 그대로다.
+    return capCritChance(s, _config.critChanceMax);
   }
 
   void _tick(Duration elapsed) {
