@@ -4978,6 +4978,36 @@ abstract class AppLocalizations {
   /// **'Only results with at least one checked stat are kept.'**
   String get forgeFilterHint;
 
+  /// No description provided for @forgeFilterGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Min grade'**
+  String get forgeFilterGrade;
+
+  /// No description provided for @forgeFilterGradeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Anything below this grade is discarded.'**
+  String get forgeFilterGradeHint;
+
+  /// No description provided for @forgeFilterGradeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get forgeFilterGradeAll;
+
+  /// No description provided for @forgeFilterOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats'**
+  String get forgeFilterOption;
+
+  /// No description provided for @forgeStrikes.
+  ///
+  /// In en, this message translates to:
+  /// **'x{n}'**
+  String forgeStrikes(int n);
+
   /// No description provided for @forgeFiltered.
   ///
   /// In en, this message translates to:

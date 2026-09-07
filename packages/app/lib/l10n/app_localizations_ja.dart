@@ -2720,6 +2720,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeFilterHint => 'チェックした能力が1つ以上付いたものだけ残します。';
 
   @override
+  String get forgeFilterGrade => '最低グレード';
+
+  @override
+  String get forgeFilterGradeHint => 'このグレード未満は捨てます。';
+
+  @override
+  String get forgeFilterGradeAll => 'すべて';
+
+  @override
+  String get forgeFilterOption => '能力値';
+
+  @override
+  String forgeStrikes(int n) {
+    return 'x$n';
+  }
+
+  @override
   String get forgeFiltered => '条件に合わず破棄しました';
 
   @override

@@ -21,6 +21,7 @@ SkillConfig _skills() => SkillConfig.fromJson(
 );
 
 void main() {
+  _autoStrikeTests();
   group('장비 데이터(items.json)', () {
     final items = _items();
 
@@ -316,6 +317,39 @@ void main() {
       expect(forge.maxLevel, 20);
       final w = forge.tierWeights(forge.maxLevel, 10);
       expect(w.last, greaterThan(0.8));
+    });
+  });
+}
+
+/// 자동 제련 배수(2026-09-07). 챕터가 곧 개수이고, 회차를 넘겼으면 처음부터 상한.
+void _autoStrikeTests() {
+  const f = ForgeConfig(autoStrikeMax: 10, autoStrikeFullFromTier: 1);
+
+  group('자동 제련 배수', () {
+    test('쉬움 회차는 챕터 수만큼 — 1챕터 1개, 10챕터 10개', () {
+      expect(f.autoStrikes(difficultyTier: 0, chapter: 1), 1);
+      expect(f.autoStrikes(difficultyTier: 0, chapter: 5), 5);
+      expect(f.autoStrikes(difficultyTier: 0, chapter: 10), 10);
+    });
+
+    test('상한을 넘지 않는다 — 캠페인 밖(11챕터 이상)도 10개', () {
+      expect(f.autoStrikes(difficultyTier: 0, chapter: 99), 10);
+    });
+
+    test('0·음수 챕터도 최소 1개다 — 0개면 자동이 영영 안 돈다', () {
+      expect(f.autoStrikes(difficultyTier: 0, chapter: 0), 1);
+      expect(f.autoStrikes(difficultyTier: 0, chapter: -3), 1);
+    });
+
+    test('보통 회차부터는 1챕터에서도 상한이다', () {
+      // ⚠️ 이게 깨지면 회차 전환(스테이지 1 리셋)이 **손해**가 된다 —
+      // 2회차 시작이 1회차 끝보다 느려져 넘어갈 이유가 사라진다.
+      expect(f.autoStrikes(difficultyTier: 1, chapter: 1), 10);
+      expect(f.autoStrikes(difficultyTier: 3, chapter: 1), 10);
+    });
+
+    test('회차가 올라가도 배수는 더 커지지 않는다', () {
+      expect(f.autoStrikes(difficultyTier: 9, chapter: 10), 10);
     });
   });
 }

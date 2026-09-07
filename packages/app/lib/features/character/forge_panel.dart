@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:core_save/core_save.dart' show kMaxForgeStack;
+import 'package:core_save/core_save.dart' show kMaxForgeStack, SaveGame;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,18 +45,34 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   Duration _cycle(ForgeConfig f) =>
       Duration(milliseconds: (f.hammerSeconds * 1000).round());
 
-  /// 망치가 마지막으로 내리친 순간 — 여기서 한 개가 나온다.
+  /// 망치질 한 번에 뽑는 개수 — **진행한 만큼 빨라진다**(§6, `forge.json`).
+  ///
+  /// 챕터가 곧 개수이고, 회차를 한 번이라도 넘겼으면 처음부터 상한이다.
+  /// 회차 전환은 스테이지를 1로 되돌리므로, 챕터만 보면 2회차 시작이 1회차
+  /// 끝보다 느려진다 — 넘어갈 이유를 없애면 안 된다.
+  int _strikes(ForgeConfig f, SaveGame save, RoadmapConfig? roadmap) {
+    final world = roadmap?.stageLabel(save.stageNumber)?.world ?? 1;
+    return f.autoStrikes(difficultyTier: save.difficultyTier, chapter: world);
+  }
+
+  /// 망치가 마지막으로 내리친 순간 — 여기서 [_strikes] 개가 나온다.
   Future<void> _onStrikeDone() async {
     if (_busy) return;
     _busy = true;
-    final full =
-        ref.read(saveControllerProvider).requireValue.forgeStack.length >=
-        kMaxForgeStack;
-    final r = await ref.read(saveControllerProvider.notifier).forgeOnce();
+    final data = ref.read(gameDataProvider).value;
+    final forge = data?.forgeConfig;
+    final save = ref.read(saveControllerProvider).requireValue;
+    if (forge == null) {
+      _busy = false;
+      return;
+    }
+    final full = save.forgeStack.length >= kMaxForgeStack;
+    final n = _strikes(forge, save, data?.roadmapConfig);
+    final r = await ref.read(saveControllerProvider.notifier).forgeMany(n);
     if (!mounted) return;
     _busy = false;
     final l = AppLocalizations.of(context);
-    if (r.item == null) {
+    if (r.forged == 0) {
       // 화석이 떨어졌거나 모루가 가득 찼다 — 자동이면 여기서 멈춘다.
       setState(() => _autoOn = false);
       showCenterToast(context, full ? l.forgeStackFull : l.forgeNoFossil);
@@ -64,9 +80,15 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     }
     // 걸러진 것도 화석은 줄었으니 다시 그린다.
     setState(() {});
-    if (!r.kept && !_autoOn) {
+    if (r.kept == 0 && !_autoOn) {
       // 손으로 두드렸는데 아무것도 안 쌓이면 고장으로 보인다 — 이유를 말한다.
       showCenterToast(context, l.forgeFiltered);
+    }
+    // 배수로 뽑다 보면 도중에 모루가 찬다. 자동이면 여기서 멈춰야 한다 —
+    // 안 그러면 다음 망치질이 0개를 뽑고 그제서야 멈춰 한 박자가 비어 보인다.
+    if (r.full && _autoOn) {
+      setState(() => _autoOn = false);
+      showCenterToast(context, l.forgeStackFull);
     }
   }
 
@@ -100,6 +122,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     final items = data?.itemConfig;
     if (forge == null || items == null) return const SizedBox.shrink();
     final fossil = save.materialCount(MaterialKind.fossil);
+    final strikes = _strikes(forge, save, data?.roadmapConfig);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -134,13 +157,31 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                   onStrike: _onStrikeDone,
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  l.forgeHammer,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      l.forgeHammer,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
+                    // 배수가 화면에 없으면 "왜 갑자기 여러 개가 나오지?"가
+                    // 된다. 한 번에 몇 개인지는 눌러 보기 전에 보여야 한다.
+                    if (strikes > 1) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        l.forgeStrikes(strikes),
+                        style: const TextStyle(
+                          color: _honey,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -180,10 +221,17 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
             _SquareButton(
               icon: Icons.tune_rounded,
               label: l.forgeFilter,
+              // 등급 필터만 걸어 둔 경우에도 켜진 것으로 보여야 한다 —
+              // 능력치 개수만 세면 "필터를 걸었는데 꺼져 보인다"가 된다.
               sub: save.autoForgeOptions.isEmpty
-                  ? null
+                  ? (save.autoForgeMinTier > 0
+                        ? items
+                              .tier(save.autoForgeMinTier)
+                              .name
+                              .resolve(l.localeName)
+                        : null)
                   : '${save.autoForgeOptions.length}',
-              on: save.autoForgeOptions.isNotEmpty,
+              on: save.autoForgeOptions.isNotEmpty || save.autoForgeMinTier > 0,
               onTap: () async {
                 await showForgeFilter(context, ref);
                 if (mounted) setState(() {});
@@ -760,7 +808,9 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
   final l = AppLocalizations.of(context);
   final ctrl = ref.read(saveControllerProvider.notifier);
   final save = ref.read(saveControllerProvider).requireValue;
+  final items = ref.read(gameDataProvider).value?.itemConfig;
   final want = {...save.autoForgeOptions};
+  var minTier = save.autoForgeMinTier;
 
   await showGameDialog<void>(
     context,
@@ -772,13 +822,65 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              l.forgeFilterHint,
-              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+            // ── 등급 축 ──
+            //
+            // 능력치만 있던 시절엔 원하는 옵션이 붙은 **풀잎**이 10칸을
+            // 채웠다(2026-09-07 지적). 옵션은 맞는데 수치가 등급 배율(x1.0)에
+            // 눌려 쓸모가 없다 — 거를 축이 없었던 것이다.
+            //
+            // 가로 스크롤 칩으로 둔다. 10등급을 세로로 늘어놓으면 능력치
+            // 목록을 밀어내고, 어차피 **하나만 고르는** 축이다.
+            if (items != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${l.forgeFilterGrade} · ${l.forgeFilterGradeHint}',
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 11.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 5),
+              SizedBox(
+                height: 30,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (var t = 0; t < items.tierCount; t++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 5),
+                        child: _TierChip(
+                          // 0 은 등급 이름이 아니라 **"전부"** 다. 풀잎을
+                          // 골라도 결과가 같지만, 필터를 안 걸었다는 뜻이
+                          // 이름으로 보여야 한다.
+                          label: t == 0
+                              ? l.forgeFilterGradeAll
+                              : items.tier(t).name.resolve(l.localeName),
+                          color: _tierColor(items.tier(t).color),
+                          on: minTier == t,
+                          onTap: () => setLocal(() => minTier = t),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            // ── 능력치 축 ──
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${l.forgeFilterOption} · ${l.forgeFilterHint}',
+                style: const TextStyle(
+                  color: Color(0x99FFFFFF),
+                  fontSize: 11.5,
+                ),
+              ),
             ),
             const SizedBox(height: 6),
             SizedBox(
-              height: 260,
+              height: 210,
               child: ListView(
                 shrinkWrap: true,
                 children: [
@@ -833,7 +935,11 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
     ),
     actions: [
       gameDialogButton(l.actionClose, () {
-        ctrl.setAutoForge(options: want, stopOnHit: save.autoForgeStopOnHit);
+        ctrl.setAutoForge(
+          options: want,
+          minTier: minTier,
+          stopOnHit: save.autoForgeStopOnHit,
+        );
         Navigator.pop(context);
       }),
     ],
@@ -1076,6 +1182,50 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
       child: Text(
         text,
         style: const TextStyle(color: _honey, fontWeight: FontWeight.w900),
+      ),
+    ),
+  );
+}
+
+/// 등급 색 문자열(ARGB 16진) → Color. 못 읽으면 회색.
+Color _tierColor(String hex) =>
+    Color(int.tryParse(hex, radix: 16) ?? 0xFF9E9E9E);
+
+/// 최소 등급 칩 — 한 번에 **하나만** 켜진다(라디오).
+class _TierChip extends StatelessWidget {
+  const _TierChip({
+    required this.label,
+    required this.color,
+    required this.on,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final bool on;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: on ? color.withValues(alpha: 0.28) : const Color(0x22000000),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: on ? color : const Color(0x33FFFFFF),
+          width: on ? 1.6 : 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: on ? Colors.white : const Color(0xBBFFFFFF),
+          fontWeight: on ? FontWeight.w900 : FontWeight.w700,
+          fontSize: 12,
+        ),
       ),
     ),
   );

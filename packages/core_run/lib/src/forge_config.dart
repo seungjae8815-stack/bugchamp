@@ -27,6 +27,8 @@ class ForgeConfig {
     this.fossilPerSecond = 0.0556,
     this.fossilOfflineRatio = 0.333,
     this.fossilMinPerDrop = 1,
+    this.autoStrikeMax = 10,
+    this.autoStrikeFullFromTier = 1,
   });
 
   /// 망치질 간격(초). 3초에 한 번 땅! — 연출이자 **속도 제한**이다.
@@ -76,6 +78,26 @@ class ForgeConfig {
   final double fossilOfflineRatio;
 
   final int fossilMinPerDrop;
+
+  /// 자동 제련 **한 번의 망치질로 뽑는 개수**의 상한.
+  final int autoStrikeMax;
+
+  /// 이 회차([SaveGame.difficultyTier]) 부터는 챕터와 무관하게 [autoStrikeMax].
+  ///
+  /// 회차를 넘기면 스테이지가 1로 돌아가므로(§랭킹 3축), 챕터만 보면
+  /// **2회차 시작이 1회차 끝보다 느려진다** — 넘어갈 이유가 사라진다.
+  final int autoStrikeFullFromTier;
+
+  /// 망치질 한 번에 뽑는 개수. 챕터가 곧 개수이고, [autoStrikeFullFromTier]
+  /// 이상의 회차면 처음부터 상한이다.
+  ///
+  /// 필터와 **한 세트**다 — 모루는 10칸뿐이라 거르지 않으면 한 번에 차서
+  /// 자동이 곧바로 멈춘다. 거르고 돌릴 때 비로소 빨라진다.
+  int autoStrikes({required int difficultyTier, required int chapter}) {
+    if (difficultyTier >= autoStrikeFullFromTier) return autoStrikeMax;
+    final n = chapter < 1 ? 1 : chapter;
+    return n > autoStrikeMax ? autoStrikeMax : n;
+  }
 
   /// 현재 레벨 [level] → [level]+1 에 드는 **총** 골드.
   int levelUpGold(int level) =>
@@ -146,6 +168,9 @@ class ForgeConfig {
       fossilPerSecond: (fs['perSecondOnline'] as num?)?.toDouble() ?? 0.0556,
       fossilOfflineRatio: (fs['offlineRatio'] as num?)?.toDouble() ?? 0.333,
       fossilMinPerDrop: (fs['minPerDrop'] as num?)?.toInt() ?? 1,
+      autoStrikeMax: (json['autoStrikeMax'] as num?)?.toInt() ?? 10,
+      autoStrikeFullFromTier:
+          (json['autoStrikeFullFromTier'] as num?)?.toInt() ?? 1,
     );
   }
 }

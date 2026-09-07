@@ -501,6 +501,7 @@ class SaveGame {
     this.forgeSteps = 0,
     this.forgeUpAt,
     this.autoForgeOptions = const {},
+    this.autoForgeMinTier = 0,
     this.autoForgeStopOnHit = true,
     this.blockedUserIds = const {},
     this.bugFilterMinGrade = Grade.common,
@@ -901,6 +902,12 @@ class SaveGame {
   /// 자동 제련이 노리는 옵션. 비어 있으면 전투력 비교만 한다.
   final Set<ItemOptionKind> autoForgeOptions;
 
+  /// 제련 필터 — **받을 최소 등급**(0=전부). 미만은 모루에 쌓지 않고 버린다.
+  ///
+  /// 능력치 필터만 있던 시절엔 원하는 옵션이 붙은 **풀잎**이 10칸을 채웠다.
+  /// 옵션은 맞는데 수치가 배율(x1.0)에 눌려 쓸모가 없다 — 거를 축이 없었다.
+  final int autoForgeMinTier;
+
   /// 목표를 찾으면 멈춘다. **기본값 true** — 아니면 원하는 걸 뽑고도
   /// 화석 조각을 계속 태운다.
   final bool autoForgeStopOnHit;
@@ -1060,6 +1067,7 @@ class SaveGame {
     forgeLevel: 0,
     forgeSteps: 0,
     autoForgeOptions: const {},
+    autoForgeMinTier: 0,
     autoForgeStopOnHit: true,
     adsRemoved: false,
     buffPassExpiresAt: null,
@@ -1131,6 +1139,7 @@ class SaveGame {
     DateTime? forgeUpAt,
     bool clearForgeUpAt = false,
     Set<ItemOptionKind>? autoForgeOptions,
+    int? autoForgeMinTier,
     bool? autoForgeStopOnHit,
     int? lastReadNoticeId,
     bool? reviewAsked,
@@ -1207,6 +1216,7 @@ class SaveGame {
     // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
     forgeUpAt: clearForgeUpAt ? null : (forgeUpAt ?? this.forgeUpAt),
     autoForgeOptions: autoForgeOptions ?? this.autoForgeOptions,
+    autoForgeMinTier: autoForgeMinTier ?? this.autoForgeMinTier,
     autoForgeStopOnHit: autoForgeStopOnHit ?? this.autoForgeStopOnHit,
     lastReadNoticeId: lastReadNoticeId ?? this.lastReadNoticeId,
     reviewAsked: reviewAsked ?? this.reviewAsked,
@@ -1413,6 +1423,7 @@ class SaveGame {
       for (final v in (json['autoForgeOptions'] as List? ?? const []))
         ?ItemOptionKind.fromKeyOrNull(v as String),
     },
+    autoForgeMinTier: (json['autoForgeMinTier'] as num?)?.toInt() ?? 0,
     autoForgeStopOnHit: json['autoForgeStopOnHit'] as bool? ?? true,
     adUseDate: json['adUseDate'] as String?,
     giftDoubleDate: json['giftDoubleDate'] as String?,
@@ -1534,6 +1545,7 @@ class SaveGame {
     if (forgeUpAt != null) 'forgeUpAt': forgeUpAt!.toUtc().toIso8601String(),
     if (autoForgeOptions.isNotEmpty)
       'autoForgeOptions': [for (final o in autoForgeOptions) o.key],
+    if (autoForgeMinTier > 0) 'autoForgeMinTier': autoForgeMinTier,
     if (!autoForgeStopOnHit) 'autoForgeStopOnHit': false,
     if (adUseDate != null) 'adUseDate': adUseDate,
     if (giftDoubleDate != null) 'giftDoubleDate': giftDoubleDate,

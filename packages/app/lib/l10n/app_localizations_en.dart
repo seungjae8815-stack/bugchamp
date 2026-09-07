@@ -2776,6 +2776,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Only results with at least one checked stat are kept.';
 
   @override
+  String get forgeFilterGrade => 'Min grade';
+
+  @override
+  String get forgeFilterGradeHint => 'Anything below this grade is discarded.';
+
+  @override
+  String get forgeFilterGradeAll => 'All';
+
+  @override
+  String get forgeFilterOption => 'Stats';
+
+  @override
+  String forgeStrikes(int n) {
+    return 'x$n';
+  }
+
+  @override
   String get forgeFiltered => 'Discarded — no matching stat';
 
   @override

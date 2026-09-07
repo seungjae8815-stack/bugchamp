@@ -2726,6 +2726,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeFilterHint => '체크한 능력치가 하나라도 붙은 것만 모루에 쌓입니다.';
 
   @override
+  String get forgeFilterGrade => '최소 등급';
+
+  @override
+  String get forgeFilterGradeHint => '이 등급 미만은 버립니다.';
+
+  @override
+  String get forgeFilterGradeAll => '전부';
+
+  @override
+  String get forgeFilterOption => '능력치';
+
+  @override
+  String forgeStrikes(int n) {
+    return 'x$n';
+  }
+
+  @override
   String get forgeFiltered => '필터에 안 맞아 버렸습니다';
 
   @override

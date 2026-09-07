@@ -1952,32 +1952,74 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 건 쌓지 않고 버린다**(`kept == false`). 10칸이 금방 차 버리면 자동이
   /// 멈춰서, 원하는 것만 골라 받는 게 필터의 목적이다.
   Future<({EquipItem? item, bool kept})> forgeOnce() async {
-    const nothing = (item: null, kept: false);
+    final r = await forgeMany(1);
+    return (item: r.last, kept: r.kept > 0);
+  }
+
+  /// 망치질 **한 번**에 [times] 개를 뽑는다(§자동 제련 배수).
+  ///
+  /// 화석은 뽑은 만큼 든다 — 배수는 **시간을 줄여 줄 뿐 공짜가 아니다**.
+  /// 필터에 걸려 버려진 것도 화석은 이미 탔다(그게 거르는 값이다).
+  ///
+  /// 모루가 차면 거기서 멈춘다. ⚠️ **화석은 그만큼만 태운다** — 남은 횟수를
+  /// 마저 돌려 버리면 쌓이지도 않은 것에 재료를 쓴 셈이 된다.
+  Future<({EquipItem? last, int forged, int kept, bool full, bool dry})>
+  forgeMany(int times) async {
+    const nothing = (last: null, forged: 0, kept: 0, full: false, dry: false);
     final data = ref.read(gameDataProvider).value;
     final items = data?.itemConfig;
     final forge = data?.forgeConfig;
     if (items == null || forge == null) return nothing;
     final s = state.requireValue;
-    if (s.forgeStack.length >= kMaxForgeStack) return nothing;
-    final have = s.materialCount(MaterialKind.fossil);
-    if (have < 1) return nothing;
-    final item = forge_lib.forgeOnce(
-      rng: math.Random(),
-      items: items,
-      forge: forge,
-      forgeLevel: s.forgeLevel,
-    );
+    if (s.forgeStack.length >= kMaxForgeStack) {
+      return (last: null, forged: 0, kept: 0, full: true, dry: false);
+    }
+    var have = s.materialCount(MaterialKind.fossil);
+    if (have < 1) {
+      return (last: null, forged: 0, kept: 0, full: false, dry: true);
+    }
+
     final want = s.autoForgeOptions;
-    final kept = want.isEmpty || item.options.any((o) => want.contains(o.kind));
+    final minTier = s.autoForgeMinTier;
+    final rng = math.Random();
+    final stack = [...s.forgeStack];
+    EquipItem? last;
+    var forged = 0, kept = 0;
+    var full = false, dry = false;
+
+    for (var i = 0; i < times; i++) {
+      if (have < 1) {
+        dry = true;
+        break;
+      }
+      if (stack.length >= kMaxForgeStack) {
+        full = true;
+        break;
+      }
+      final item = forge_lib.forgeOnce(
+        rng: rng,
+        items: items,
+        forge: forge,
+        forgeLevel: s.forgeLevel,
+      );
+      have--;
+      forged++;
+      last = item;
+      // 두 축을 **모두** 넘어야 쌓인다. 등급이 먼저다 — 옵션이 맞아도 등급이
+      // 낮으면 수치가 배율에 눌려 쓸모가 없다.
+      final okTier = item.tier >= minTier;
+      final okOption =
+          want.isEmpty || item.options.any((o) => want.contains(o.kind));
+      if (okTier && okOption) {
+        stack.add(item);
+        kept++;
+      }
+    }
+
     final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.fossil] = have - 1;
-    await _commit(
-      s.copyWith(
-        materials: mats,
-        forgeStack: kept ? [...s.forgeStack, item] : null,
-      ),
-    );
-    return (item: item, kept: kept);
+      ..[MaterialKind.fossil] = have;
+    await _commit(s.copyWith(materials: mats, forgeStack: stack));
+    return (last: last, forged: forged, kept: kept, full: full, dry: dry);
   }
 
   /// 모루 위에서 **맨 위 하나**를 집는다. 비었으면 null.
@@ -2084,11 +2126,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 자동 제련 설정 저장.
   Future<void> setAutoForge({
     Set<ItemOptionKind>? options,
+    int? minTier,
     bool? stopOnHit,
   }) async {
     final s = state.requireValue;
     await _commit(
-      s.copyWith(autoForgeOptions: options, autoForgeStopOnHit: stopOnHit),
+      s.copyWith(
+        autoForgeOptions: options,
+        autoForgeMinTier: minTier,
+        autoForgeStopOnHit: stopOnHit,
+      ),
     );
   }
 
