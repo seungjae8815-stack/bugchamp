@@ -67,6 +67,18 @@ double _equipAttackMult = 1.35;
 double _equipCritChance = 0.12;
 double _equipCritDamage = 0.6;
 
+/// 장비가 주는 **최대 체력·방어** 배율(옵션 maxHp/defense).
+///
+/// ⚠️ 예전엔 이 두 축을 아예 안 태웠다(2026-09-07 발견). 그래서 시뮬은
+/// "피가 너무 닳는다"고 하는데 실기는 "안 닳는다"였다 — 방어 축만 맨몸으로
+/// 재고 있었던 것이다. CLAUDE.md 가 경고한 그 실수(§밸런스 시뮬)가 공격
+/// 쪽만 고쳐지고 방어 쪽에 남아 있었다.
+///
+/// **이 두 값은 기준 밖(§7)이라 순수 이득이다** — 위협도는 기준 전력에
+/// 비례하는데 실제 체력·방어는 이만큼 더 크니, 그 비만큼 안 닳는다.
+double _equipHpMult = 1.30;
+double _equipDefenseMult = 1.35;
+
 /// 장비 공격 옵션이 다 붙기까지 걸리는 스테이지(공방을 돌려 갖춘다).
 const _equipFullStage = 300;
 
@@ -594,8 +606,10 @@ class _Player {
           s.critDamage +
           _equipCritDamage * math.min(1.0, stage / _equipFullStage),
       bossDamage: s.bossDamage,
-      maxHp: s.maxHp,
-      defense: s.defense,
+      // ⚠️ 장비의 체력·방어를 **반드시** 태운다. 빼면 시뮬이 "피가 닳는다"고
+      // 하는데 실기는 안 닳는다 — 방어 축만 맨몸으로 재는 셈이다.
+      maxHp: s.maxHp * _equipRamp(_equipHpMult),
+      defense: s.defense * _equipRamp(_equipDefenseMult),
       hpRegen: s.hpRegen,
       xpMultiplier: s.xpMultiplier,
       bugFind: s.bugFind,
@@ -604,6 +618,10 @@ class _Player {
       boostBonus: s.boostBonus,
     );
   }
+
+  /// 장비 배율이 [_equipFullStage] 까지 서서히 붙는다(공방을 돌려 갖춘다).
+  double _equipRamp(double mult) =>
+      1 + (mult - 1) * math.min(1.0, stage / _equipFullStage);
 
   CharacterStats get _baseStats => deriveStats(
     config,
@@ -915,6 +933,8 @@ _Opts _parseArgs(List<String> args) {
       _equipAttackMult = 1 + (_equipAttackMult - 1) * k;
       _equipCritChance *= k;
       _equipCritDamage *= k;
+      _equipHpMult = 1 + (_equipHpMult - 1) * k;
+      _equipDefenseMult = 1 + (_equipDefenseMult - 1) * k;
       continue;
     }
     final trs = RegExp(r'^--tiers=(.+)$').firstMatch(a);
