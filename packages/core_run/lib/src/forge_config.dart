@@ -210,7 +210,11 @@ EquipItem forgeOnce({
     // ⚠️ 균등분포가 아니다. `optionCurve` 로 값을 아래로 몰아 **높은 롤을
     // 귀하게** 만든다(1.0 이면 예전처럼 균등). 자세한 이유는 ItemConfig 참조.
     final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
-    final v = r.min + roll * (r.max - r.min);
+    // 최대치는 **등급별**이다 — 예전엔 모든 등급이 같은 풀에서 굴려,
+    // 풀잎이 호박과 똑같은 15% 공격을 뽑을 수 있었다(2026-09-07). 그러면
+    // 상위 등급의 이점이 "같은 숫자를 더 많이"뿐이라 모을 이유가 없다.
+    final hi = r.maxAt(tier);
+    final v = r.min + roll * (hi - r.min);
     // 소수 한 자리까지만 — 화면에서 읽기 쉬우라고.
     options.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
   }

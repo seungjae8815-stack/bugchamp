@@ -387,9 +387,36 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 분해로 개체는 없어지지만 도감 기록은 남아야 한다. 그래서 trim **전에**
     // 훑는다.
     final withDex = _withUpdatedDex(save, now);
-    final stamped = withDex.trimmedToStorage().copyWith(lastSeen: now);
+    // 장비 옵션 정리(§제련 개편)도 여기서 한다 — 낀 8개 + 모루 10개뿐이라
+    // 비용이 없고, **어느 경로로 들어온 장비든** 지금 규칙을 따르게 된다
+    // (서버 세이브 채택·구버전 세이브 로드까지 한 곳에서 걸린다).
+    final stamped = _withTrimmedItems(
+      withDex,
+    ).trimmedToStorage().copyWith(lastSeen: now);
     state = AsyncData(stamped);
     await _repo.save(stamped);
+  }
+
+  /// 낀 장비·모루의 옵션을 지금 규칙(개수 상한·살아 있는 축)으로 정리한다.
+  /// 바뀐 게 없으면 [save] 그대로 — 매 저장마다 도는 자리라 새 객체를 만들지 않는다.
+  SaveGame _withTrimmedItems(SaveGame save) {
+    final cfg = ref.read(gameDataProvider).value?.itemConfig;
+    if (cfg == null) return save;
+    var changed = false;
+    final equipped = <EquipSlot, EquipItem>{};
+    for (final e in save.equippedItems.entries) {
+      final t = trimItemOptions(e.value, cfg);
+      if (!identical(t, e.value)) changed = true;
+      equipped[e.key] = t;
+    }
+    final stack = <EquipItem>[];
+    for (final i in save.forgeStack) {
+      final t = trimItemOptions(i, cfg);
+      if (!identical(t, i)) changed = true;
+      stack.add(t);
+    }
+    if (!changed) return save;
+    return save.copyWith(equippedItems: equipped, forgeStack: stack);
   }
 
   /// 보유 곤충을 훑어 도감을 갱신한 세이브. 바뀐 게 없으면 [save] 그대로.
@@ -1963,6 +1990,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ///
   /// 모루가 차면 거기서 멈춘다. ⚠️ **화석은 그만큼만 태운다** — 남은 횟수를
   /// 마저 돌려 버리면 쌓이지도 않은 것에 재료를 쓴 셈이 된다.
+  /// 제련 전용 난수 — **컨트롤러가 오래 들고 있는다**.
+  ///
+  /// 예전엔 뽑을 때마다 `Random()` 을 새로 만들었다. 새 인스턴스는 시각으로
+  /// 씨앗을 잡는데, 망치질이 잇달으면 같은 씨앗이 잡혀 **같은 장비가 연달아
+  /// 나왔다**(2026-09-07 제보). 하나를 계속 쓰면 수열이 이어져 그럴 일이 없다.
+  final math.Random _forgeRng = math.Random();
+
   Future<({EquipItem? last, int forged, int kept, bool full, bool dry})>
   forgeMany(int times) async {
     const nothing = (last: null, forged: 0, kept: 0, full: false, dry: false);
@@ -1981,7 +2015,6 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
     final want = s.autoForgeOptions;
     final minTier = s.autoForgeMinTier;
-    final rng = math.Random();
     final stack = [...s.forgeStack];
     EquipItem? last;
     var forged = 0, kept = 0;
@@ -1997,7 +2030,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         break;
       }
       final item = forge_lib.forgeOnce(
-        rng: rng,
+        rng: _forgeRng,
         items: items,
         forge: forge,
         forgeLevel: s.forgeLevel,

@@ -21,6 +21,7 @@ SkillConfig _skills() => SkillConfig.fromJson(
 );
 
 void main() {
+  _optionTierTests();
   _autoStrikeTests();
   group('장비 데이터(items.json)', () {
     final items = _items();
@@ -156,7 +157,8 @@ void main() {
         for (final o in it.options) {
           final r = ranges[o.kind]!;
           expect(o.value, greaterThanOrEqualTo(r.min - 0.05));
-          expect(o.value, lessThanOrEqualTo(r.max + 0.05));
+          // 최대치는 **그 장비 등급의** 값이다(2026-09-07 개편).
+          expect(o.value, lessThanOrEqualTo(r.maxAt(it.tier) + 0.05));
         }
       }
     });
@@ -350,6 +352,130 @@ void _autoStrikeTests() {
 
     test('회차가 올라가도 배수는 더 커지지 않는다', () {
       expect(f.autoStrikes(difficultyTier: 9, chapter: 10), 10);
+    });
+  });
+}
+
+/// 옵션 개편(2026-09-07) — 등급별 최대치 · 2개 상한 · 죽은 축 제거.
+void _optionTierTests() {
+  final cfg = ItemConfig.fromJson(
+    jsonDecode(File('../app/assets/data/items.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+
+  group('옵션 등급별 최대치', () {
+    test('모든 축이 등급 표를 갖는다 — 하나라도 없으면 그 축만 평평해진다', () {
+      for (final r in cfg.optionPool) {
+        expect(
+          r.maxByTier.length,
+          cfg.tierCount,
+          reason: '${r.kind.key} 의 maxByTier 가 등급 수와 다르다',
+        );
+      }
+    });
+
+    test('등급이 오르면 최대치도 오른다(같은 값은 허용, 내려가면 안 된다)', () {
+      for (final r in cfg.optionPool) {
+        for (var t = 1; t < cfg.tierCount; t++) {
+          expect(
+            r.maxAt(t),
+            greaterThanOrEqualTo(r.maxAt(t - 1)),
+            reason: '${r.kind.key} 가 $t 등급에서 내려간다',
+          );
+        }
+      }
+    });
+
+    test('최상위가 최하위보다 확실히 세다 — 여기가 모으는 이유다', () {
+      for (final r in cfg.optionPool) {
+        expect(
+          r.maxAt(cfg.tierCount - 1),
+          greaterThan(r.maxAt(0)),
+          reason: '${r.kind.key} 는 등급을 올려도 이득이 없다',
+        );
+      }
+    });
+
+    test('옵션은 최대 2개다', () {
+      for (var t = 0; t < cfg.tierCount; t++) {
+        expect(cfg.tier(t).options, lessThanOrEqualTo(2));
+        expect(cfg.tier(t).options, greaterThanOrEqualTo(1));
+      }
+    });
+
+    test('효과가 구현되지 않은 축은 풀에 없다 — 2칸 중 하나가 꽝이 된다', () {
+      // ⚠️ 나중에 구현하면 그때 풀에 되돌린다(equipment_stats 에 반영 후).
+      const dead = {'skillDamage', 'skillCooldown', 'offline', 'pet'};
+      for (final r in cfg.optionPool) {
+        expect(dead.contains(r.kind.key), isFalse, reason: '${r.kind.key}');
+      }
+    });
+
+    test('제련 결과가 그 등급 최대치를 넘지 않는다', () {
+      final forge = ForgeConfig.fromJson(
+        jsonDecode(File('../app/assets/data/forge.json').readAsStringSync())
+            as Map<String, dynamic>,
+      );
+      final byKind = {for (final r in cfg.optionPool) r.kind: r};
+      final rng = Random(1234);
+      for (var i = 0; i < 3000; i++) {
+        final item = forgeOnce(
+          rng: rng,
+          items: cfg,
+          forge: forge,
+          forgeLevel: rng.nextInt(forge.maxLevel + 1),
+        );
+        expect(item.options.length, lessThanOrEqualTo(2));
+        for (final o in item.options) {
+          expect(o.value, lessThanOrEqualTo(byKind[o.kind]!.maxAt(item.tier)));
+        }
+      }
+    });
+  });
+
+  group('기존 장비 정리(trimItemOptions)', () {
+    test('죽은 축은 버리고 2개까지만 남긴다', () {
+      final item = EquipItem(
+        slot: EquipSlot.tool,
+        tier: 9,
+        options: const [
+          ItemOption(kind: ItemOptionKind.pet, value: 25),
+          ItemOption(kind: ItemOptionKind.attack, value: 15),
+          ItemOption(kind: ItemOptionKind.critDamage, value: 80),
+          ItemOption(kind: ItemOptionKind.maxHp, value: 2),
+        ],
+      );
+      final out = trimItemOptions(item, cfg);
+      expect(out.options.length, 2);
+      expect(
+        out.options.map((o) => o.kind),
+        isNot(contains(ItemOptionKind.pet)),
+      );
+      // 최대치 대비 비율로 고른다 — 날값이면 치명피해(80)가 항상 이기고
+      // 공격(15)은 영영 안 남는다. 공격 15/30=0.50 vs 치명피해 80/150=0.53.
+      expect(out.options.map((o) => o.kind), contains(ItemOptionKind.attack));
+      expect(
+        out.options.map((o) => o.kind),
+        isNot(contains(ItemOptionKind.maxHp)),
+      );
+    });
+
+    test('값은 깎지 않는다 — 가만있는데 약해지면 안 된다', () {
+      const opt = ItemOption(kind: ItemOptionKind.attack, value: 15);
+      final out = trimItemOptions(
+        const EquipItem(slot: EquipSlot.tool, tier: 0, options: [opt]),
+        cfg,
+      );
+      expect(out.options.single.value, 15);
+    });
+
+    test('이미 규칙에 맞으면 같은 객체를 돌려준다(매 저장마다 도는 자리다)', () {
+      const item = EquipItem(
+        slot: EquipSlot.tool,
+        tier: 9,
+        options: [ItemOption(kind: ItemOptionKind.attack, value: 5)],
+      );
+      expect(identical(trimItemOptions(item, cfg), item), isTrue);
     });
   });
 }

@@ -95,17 +95,42 @@ class ItemOptionRange {
     required this.kind,
     required this.min,
     required this.max,
+    this.maxByTier = const [],
   });
 
   final ItemOptionKind kind;
   final double min;
+
+  /// 등급별 최대치가 없을 때 쓰는 값(구버전 데이터 호환).
   final double max;
+
+  /// **등급별** 최대치. 옵션마다 성격이 달라 배율 하나로 못 묶는다
+  /// (2026-09-07): 치명확률은 더하기 + 100% 상한이라 가파르게 올리면 상위
+  /// 등급에서 **그 옵션만 버려지고**, 치명피해는 곱하기라 같은 배율이 훨씬
+  /// 크게 먹힌다. 그래서 축마다 곡선을 따로 잡는다.
+  final List<double> maxByTier;
+
+  /// 등급 [tier] 에서의 최대치. 표가 없으면 [max] 로 떨어진다.
+  double maxAt(int tier) {
+    if (maxByTier.isEmpty) return max;
+    return maxByTier[tier.clamp(0, maxByTier.length - 1)];
+  }
 
   factory ItemOptionRange.fromJson(Map<String, dynamic> json) =>
       ItemOptionRange(
         kind: ItemOptionKind.fromKey(json['kind'] as String),
         min: (json['min'] as num).toDouble(),
-        max: (json['max'] as num).toDouble(),
+        // 표가 있으면 `max` 는 그 마지막 값이다. 0 으로 두면 표를 안 보는
+        // 옛 코드에서 범위가 1~0 이 되어 조용히 최소치만 나온다.
+        max:
+            (json['max'] as num?)?.toDouble() ??
+            ((json['maxByTier'] as List?)?.isNotEmpty == true
+                ? ((json['maxByTier'] as List).last as num).toDouble()
+                : 0),
+        maxByTier: [
+          for (final v in (json['maxByTier'] as List? ?? const []))
+            (v as num).toDouble(),
+        ],
       );
 }
 
@@ -169,4 +194,36 @@ class ItemConfig {
       optionCurve: (json['optionCurve'] as num?)?.toDouble() ?? 1.0,
     );
   }
+}
+
+/// 장비 하나를 **지금 규칙에 맞게** 정리한다.
+///
+/// 하는 일 두 가지 (2026-09-07 개편):
+///  1. 풀에서 빠진 옵션 축을 버린다 — 효과가 구현되지 않은 4종(스킬피해·
+///     스킬쿨감·오프라인·펫)을 뺐다. 남겨 두면 **아무 일도 안 하는 옵션**이
+///     2칸 중 한 칸을 차지한다.
+///  2. 옵션을 그 등급의 개수까지 자른다. 무엇을 남길지는 **그 등급 최대치
+///     대비 비율**로 고른다 — 축마다 눈금이 달라(치명피해 150 vs 공격 30)
+///     날값으로 줄 세우면 치명피해가 항상 이긴다.
+///
+/// ⚠️ 값을 **깎지는 않는다**. 개편 전 옵션은 옛 최대치(공격 15)로 굴려져
+/// 새 최대치(30)보다 낮다 — 깎을 이유가 없고, 건드리면 "가만있는데 약해졌다"가 된다.
+EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
+  final live = {for (final r in config.optionPool) r.kind: r};
+  final keep = [
+    for (final o in item.options)
+      if (live.containsKey(o.kind)) o,
+  ];
+  final limit = config.tier(item.tier).options;
+  if (keep.length == item.options.length && keep.length <= limit) return item;
+  if (keep.length > limit) {
+    double score(ItemOption o) {
+      final hi = live[o.kind]!.maxAt(item.tier);
+      return hi <= 0 ? 0 : o.value / hi;
+    }
+
+    keep.sort((a, b) => score(b).compareTo(score(a)));
+    keep.removeRange(limit, keep.length);
+  }
+  return item.copyWith(options: keep);
 }
