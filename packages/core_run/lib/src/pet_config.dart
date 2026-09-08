@@ -101,6 +101,9 @@ class PetConfig {
     this.expandCostRound = kDefaultExpandCostRound,
     this.storageExpandJelly = 50,
     this.storageExpandAmount = 10,
+    this.attackSpdReference = 100,
+    this.attackIntervalMin = 0.25,
+    this.attackIntervalMax = 2.5,
   });
 
   /// 등급별 공격력 기여(0.05 = +5%).
@@ -418,6 +421,13 @@ class PetConfig {
   final int storageExpandJelly;
   final int storageExpandAmount;
 
+  /// 곤충 타격 간격의 기준 SPD. 종 SPD 가 이 값이면 플레이어와 같은 간격이다.
+  final double attackSpdReference;
+
+  /// 곤충 타격 간격 상하한(초). 프레임마다 때리거나 영영 안 때리는 걸 막는다.
+  final double attackIntervalMin;
+  final double attackIntervalMax;
+
   /// 돌파 최대 티어(마지막 인덱스).
   int get maxTier => tierCaps.length - 1;
 
@@ -635,6 +645,11 @@ class PetConfig {
       expandCostRound: _round(json['expandCostRound']),
       storageExpandJelly: (json['storageExpandJelly'] as num?)?.toInt() ?? 50,
       storageExpandAmount: (json['storageExpandAmount'] as num?)?.toInt() ?? 10,
+      attackSpdReference:
+          (json['attackSpdReference'] as num?)?.toDouble() ?? 100,
+      attackIntervalMin:
+          (json['attackIntervalMin'] as num?)?.toDouble() ?? 0.25,
+      attackIntervalMax: (json['attackIntervalMax'] as num?)?.toDouble() ?? 2.5,
     );
   }
 

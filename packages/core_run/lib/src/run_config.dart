@@ -165,6 +165,7 @@ class RunConfig {
     this.exchangeGoldHours = 1.0,
     this.exchangeMaterialHours = 1.0,
     this.exchangeKillsPerHour = 900,
+    this.petRestrainMult = 1.5,
   });
 
   final double hpBase;
@@ -408,6 +409,17 @@ class RunConfig {
   final double exchangeMaterialHours;
   final int exchangeKillsPerHour;
 
+  /// 곤충 속성이 몬스터를 克할 때 **그 곤충의 타격에만** 곱하는 배율(§2.3).
+  ///
+  /// 이것이 이 시스템의 **유일한 §7 기준 밖 이득**이다. 3마리 다 상극이어도
+  /// 총 DPS 는 `1 + petShare x (이 값 - 1)` 을 넘지 않는다 — 전설 3마리 기준
+  /// x1.21. 올리기 전에 `balance_sim --pet-restrain` 을 반드시 돌린다.
+  ///
+  /// "편성을 맞췄는데 체감이 약하다"면 이 값이 아니라 **곤충 지분**
+  /// (`pets.json → gradeAttackPct`)을 키운다 — 여기만 올리면 편성을 못 맞춘
+  /// 유저와의 격차만 벌어지고 총량은 별로 안 는다.
+  final double petRestrainMult;
+
   factory RunConfig.fromJson(Map<String, dynamic> json) {
     final upgradeList = (json['upgrades'] as List)
         .cast<Map<String, dynamic>>()
@@ -497,6 +509,7 @@ class RunConfig {
       tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
+      petRestrainMult: (json['petRestrainMult'] as num?)?.toDouble() ?? 1.5,
     );
   }
 }

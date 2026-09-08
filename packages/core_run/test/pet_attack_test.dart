@@ -1,6 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:test/test.dart';
+
+/// `packages/app/assets/data/$f` 를 읽는다. `RunConfig`/`PetConfig` 는 다른
+/// 필드가 required 라 빈 맵으로 `fromJson` 을 못 돌린다 — 실데이터로 키가
+/// 실제로 박혀 있는지를 검사한다(`packages/app/test/forge_flow_test.dart` 패턴).
+Map<String, dynamic> _readAppData(String f) =>
+    jsonDecode(File('../app/assets/data/$f').readAsStringSync())
+        as Map<String, dynamic>;
 
 /// 한 세트의 총 DPS(플레이어 + 곤충들). 오늘의 한 대를 1.0 으로 본다.
 double _totalDps(({double playerMult, List<PetAttacker> pets}) r, double pInt) {
@@ -115,6 +125,23 @@ void main() {
       final petShare = 0.75 / 1.75;
       expect(dps * pInt, closeTo(1 + petShare * 0.5, 1e-9));
       expect(dps * pInt, lessThan(1.25)); // 업그레이드 한 레벨 반쯤
+    });
+  });
+
+  group('설정 기본값', () {
+    // `RunConfig.fromJson(const {})` / `PetConfig.fromJson(const {})` 는 다른
+    // 필드가 required 라 빈 맵에서 던진다. 대신 실데이터(§6)에 값이 실제로
+    // 박혀 있는지를 검사한다.
+    test('상극 배율이 run_config.json 에 있다', () {
+      final json = _readAppData('run_config.json');
+      expect(json['petRestrainMult'], 1.5);
+    });
+
+    test('곤충 타격 간격 설정이 pets.json 에 있다', () {
+      final json = _readAppData('pets.json');
+      expect(json['attackSpdReference'], 100);
+      expect(json['attackIntervalMin'], 0.25);
+      expect(json['attackIntervalMax'], 2.5);
     });
   });
 }
