@@ -744,7 +744,11 @@ class _Player {
               (100 + st.defense) *
               1.4; // 보스 한 대는 1.4배(앱과 동일)
           final n = config.habitatsPerStage;
-          final dmg = inc * fight * n + bossInc * bossFight;
+          // 이동 중에도 위협이 붙는다(§walkThreatMult). 예전엔 이동이 완전
+          // 공짜여서, 몹이 서너 대에 죽는 구간에서 판의 절반이 안전지대였다.
+          final dmg =
+              inc * (fight + walk * config.walkThreatMult) * n +
+              bossInc * bossFight;
           final heal =
               (st.hpRegen * fight + st.hpRegen * 2 * walk) * n +
               st.maxHp * config.killHealPct * n +
@@ -919,6 +923,7 @@ _Opts _parseArgs(List<String> args) {
     'threat-pct': 'threatAdaptTargetPct',
     'boost-speed': 'boostSpeedFactor',
     // 회복 축 — 처치 회복(킬 속도에 좌우)과 상시 회복(시간 비례)의 비중.
+    'walk-threat': 'walkThreatMult',
     'kill-heal': 'killHealPct',
     'boss-kill-heal': 'bossKillHealPct',
   };

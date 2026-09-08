@@ -734,6 +734,58 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return capCritChance(s, _config.critChanceMax);
   }
 
+  /// 서식지 반격 — 게이지가 차면 한 번에 문다.
+  ///
+  /// 전투와 이동이 **같은 게이지**(`_enemyAtkAcc`)를 쓴다. 따로 두면 이동에서
+  /// 찬 게 버려져 "걸어도 안 맞는다"가 그대로 남는다. 게이지를 스폰마다
+  /// 리셋하지 않는 것도 같은 이유다(§_spawn) — 몹이 1.5초 안에 죽는 구간에서
+  /// 몬스터가 평생 한 대도 못 때리게 된다.
+  void _applyHabitatThreat(
+    CharacterStats stats,
+    double dt, {
+    bool walking = false,
+  }) {
+    // ⚠️ 기준은 **영구 전력(업그레이드+펫)** 이다. 장비·버프를 넣으면 좋은 옷을
+    // 입을수록 몬스터가 세져 **입은 보람이 사라진다** — 체력에서 겪은 그대로다.
+    // 회복은 이 식에 없으므로 올린 만큼 그대로 버틴다.
+    final save = ref.read(saveControllerProvider).requireValue;
+    final boss = _isBoss && !walking;
+    final threat = habitatThreat(
+      _config,
+      _stage - 1,
+      boss: boss,
+      playerToughness: toughnessOf(_petStats(save)),
+      // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
+      tier: save.difficultyTier,
+    );
+    final walkMul = walking ? _config.walkThreatMult : 1.0;
+    if (walkMul <= 0) return;
+    final incoming = threat * 100 / (100 + stats.defense) * walkMul;
+    _enemyAtkAcc += dt;
+    final atkInterval = boss ? 1.3 : 1.5;
+    if (_enemyAtkAcc < atkInterval) return;
+    _enemyAtkAcc -= atkInterval;
+    // 이전 상시 피해와 평균 DPS 가 같도록 interval 만큼 묶어서 준다.
+    final burst = incoming * atkInterval * (boss ? 1.4 : 1.0);
+    if (burst <= 0) return;
+    _playerHp -= burst;
+    // 이동 중에는 달려드는 몬스터가 화면에 없다 — 돌진 모션은 빼고
+    // 피격 표시만 남긴다(없는 적이 무는 것처럼 보이면 그게 버그로 읽힌다).
+    if (!walking) _enemyLunge = 1;
+    _playerHitFlash = boss ? 1.0 : 0.6;
+    AudioService.instance.sfxHurt();
+    _pops.add(
+      _Pop(
+        '-${formatCompact(burst)}',
+        (_rng.nextDouble() - 0.5) * 0.2,
+        const Color(0xFFFF5252),
+        boss ? 18 : 15,
+        baseX: -0.55,
+        baseY: 0.3,
+      ),
+    );
+  }
+
   void _tick(Duration elapsed) {
     final raw = (elapsed - _lastElapsed).inMicroseconds / 1000000.0;
     _lastElapsed = elapsed;
@@ -812,52 +864,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _walkT += dt * boostMove;
       _bgOffset += dt * 130 * boostMove;
       _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * 2 * dt);
+      // 이동 중에도 **서식지가 위협한다**(§walkThreatMult).
+      //
+      // 예전엔 여기서 그냥 return 해서 이동이 완전 공짜였다 — 무피해에 회복은
+      // 2배. 몹이 서너 대에 죽는 구간에서는 전투보다 이동이 길어 **판의 절반이
+      // 안전지대**가 되고, 처치 회복만 쌓여 피가 안 닳았다(2026-09-07 제보).
+      //
+      // 게이지는 전투와 **공유한다** — 따로 두면 이동에서 찬 게 버려져
+      // "걸어도 안 맞는다"가 그대로 남는다.
+      _applyHabitatThreat(stats, dt, walking: true);
+      if (_playerHp <= 0) {
+        _beginDefeat();
+        return;
+      }
       if (_walkT >= _walkDuration / stats.moveSpeed) _spawn();
       return;
     }
 
-    // 적 반격 — 보스·일반 서식지 모두 주기적으로 달려들어(공격 모션) 그 순간 피해.
-    final depth = _stage - 1;
-    // ⚠️ 기준은 **영구 전력(업그레이드+펫)** 이다. 장비·버프를 넣으면 좋은 옷을
-    // 입을수록 몬스터가 세져 **입은 보람이 사라진다** — 체력에서 겪은 그대로다.
-    // 회복은 이 식에 없으므로 올린 만큼 그대로 버틴다.
-    final threat = habitatThreat(
-      _config,
-      depth,
-      boss: _isBoss,
-      playerToughness: toughnessOf(
-        _petStats(ref.read(saveControllerProvider).requireValue),
-      ),
-      // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
-      tier: ref.read(saveControllerProvider).requireValue.difficultyTier,
-    );
-    final incoming = threat * 100 / (100 + stats.defense);
     // 회복은 상시 적용.
     _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * dt);
-    _enemyAtkAcc += dt;
-    final atkInterval = _isBoss ? 1.3 : 1.5;
-    if (_enemyAtkAcc >= atkInterval) {
-      _enemyAtkAcc -= atkInterval;
-      // 서식지는 이전 상시 피해와 평균 DPS가 같도록 interval 만큼 묶어서 준다.
-      final burst = incoming * atkInterval * (_isBoss ? 1.4 : 1.0);
-      if (burst > 0) {
-        _playerHp -= burst;
-        _enemyLunge = 1; // 공격 모션(캐릭터 쪽으로 달려듦)
-        _playerHitFlash = _isBoss ? 1.0 : 0.6;
-        AudioService.instance.sfxHurt(); // 플레이어 피격음
-
-        _pops.add(
-          _Pop(
-            '-${formatCompact(burst)}',
-            (_rng.nextDouble() - 0.5) * 0.2,
-            const Color(0xFFFF5252),
-            _isBoss ? 18 : 15,
-            baseX: -0.55,
-            baseY: 0.3,
-          ),
-        );
-      }
-    }
+    _applyHabitatThreat(stats, dt);
     if (_playerHp <= 0) {
       _beginDefeat();
       return;

@@ -129,6 +129,7 @@ class RunConfig {
     this.boostStepPerTap = 0.15,
     this.boostMultMax = 5.0,
     this.critChanceMax = 0.85,
+    this.walkThreatMult = 0.0,
     this.boostDecayPerSec = 0.4,
     this.boostSpeedFactor = 1.0,
     this.threatBase = 3.0,
@@ -243,6 +244,13 @@ class RunConfig {
 
   /// 배율 상한. 데미지 `×배율`, 공격속도 `×(1 + (배율-1) × [boostSpeedFactor])`.
   final double boostMultMax;
+
+  /// 몬스터 사이를 **걷는 동안** 받는 위협도 비율(0=무피해).
+  ///
+  /// 예전엔 이동 중이 완전 공짜였다(무피해 + 회복 2배). 몹이 몇 대에 죽는
+  /// 구간에서는 전투 시간보다 이동 시간이 길어, **판의 절반이 안전지대**가
+  /// 되고 처치 회복만 쌓여 피가 안 닳았다(2026-09-07 제보).
+  final double walkThreatMult;
 
   /// 치명확률 상한. 넘친 만큼은 **치명피해로 돌아간다**(`capCritChance`).
   ///
@@ -449,6 +457,7 @@ class RunConfig {
       boostStepPerTap: (json['boostStepPerTap'] as num?)?.toDouble() ?? 0.15,
       boostMultMax: (json['boostMultMax'] as num?)?.toDouble() ?? 5.0,
       critChanceMax: (json['critChanceMax'] as num?)?.toDouble() ?? 0.85,
+      walkThreatMult: (json['walkThreatMult'] as num?)?.toDouble() ?? 0.0,
       boostDecayPerSec: (json['boostDecayPerSec'] as num?)?.toDouble() ?? 0.4,
       boostSpeedFactor: (json['boostSpeedFactor'] as num?)?.toDouble() ?? 1.0,
       upgrades: {for (final u in upgradeList) u.kind: u},
