@@ -1,6 +1,7 @@
 {
  "schemaVersion": 1,
  "attackSpdReference": 100,
+ "petReviveSeconds": 12,
  "attackIntervalMin": 0.25,
  "attackIntervalMax": 2.5,
  "_attackIntervalComment": "곤충 타격 간격은 종 SPD 로 정하되 DPS 는 중립이다(느린 종은 한 대가 크다). 연출 리듬만 바꾸고 총량은 안 바꾼다.",

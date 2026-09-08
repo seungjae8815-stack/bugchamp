@@ -410,6 +410,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 곤충별 데미지 팝업 쿨다운 — 4주체가 각자 팝업을 띄우면 화면이 숫자로
   /// 덮인다. 플레이어 `_dmgCooldown = 0.12` 와 같은 방식.
   final Map<String, double> _petPopCd = {};
+
+  /// 곤충별 현재 체력. 팀 최대체력을 `hpMult` 로 나눠 가진 몫이다.
+  ///
+  /// 팀 총 체력은 오늘과 **정확히 같다** — 캐릭터 몫이 그만큼 줄어든다.
+  /// 위협도(§7) 기준은 안 바뀌므로 몬스터가 세지지도 약해지지도 않는다.
+  final Map<String, double> _petHp = {};
+
+  /// 쓰러진 곤충의 남은 부활 시간(초). 여기 있으면 **때리지도, 맞지도** 않는다.
+  ///
+  /// 맞지도 않는 게 중요하다 — 쓰러진 곤충이 계속 맞으면 부활하자마자 다시
+  /// 쓰러져 영영 못 일어난다.
+  final Map<String, double> _petDown = {};
+
+  /// 곤충별 피격 점멸(0~1). 플레이어 `_playerHitFlash` 와 같은 자리.
+  final Map<String, double> _petHitFlash = {};
   double _giftCheckAcc = 0; // 깜짝 선물 스폰 체크 누적(초)
   double _attackPulse = 0;
   double _hitFlash = 0;
@@ -460,6 +475,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _stage = save.stageNumber;
     _stageMax = save.stageNumber;
     final stats = _stats(save);
+    // 분배는 첫 `_step` 이 잡는다. 여기선 팀 전체를 만피로만 둔다.
+    _teamHpMax = stats.maxHp;
     _playerHpMax = stats.maxHp;
     _playerHp = stats.maxHp;
     _spawn(announce: false);
@@ -545,8 +562,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final save = ref.read(saveControllerProvider).requireValue;
     final stats = _stats(save);
     setState(() {
-      _playerHpMax = stats.maxHp;
-      if (_playerHp > _playerHpMax) _playerHp = _playerHpMax;
+      _resyncTeamHp(stats.maxHp, _split?.playerHpMult ?? 1.0);
     });
     _showOfflineReward(report);
   }
@@ -693,11 +709,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (bug == null) continue;
       final sp = _data.speciesById[bug.speciesId];
       if (sp == null) continue;
+      final c = petContribution(petStatOf(bug, sp, cfg, now), cfg);
       out.add((
         bugId: bug.id,
         element: bug.element,
         spd: sp.baseStats.spd,
-        attack: petContribution(petStatOf(bug, sp, cfg, now), cfg).attack,
+        attack: c.attack,
+        hp: c.hp,
       ));
     }
     return out;
@@ -720,6 +738,102 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         moveSpeed: s.moveSpeed,
         boostBonus: s.boostBonus,
       );
+
+  /// 이번 프레임의 타격자 분배. `_step` 이 채우고 피격·연출·렌더가 함께 본다.
+  ///
+  /// 한 프레임에 여러 번 다시 계산하지 않으려고 들고 있는다.
+  ({double playerMult, double playerHpMult, List<PetAttacker> pets})? _split;
+
+  /// 곤충 하나의 최대 체력 — 팀 최대체력 중 제 몫.
+  double _petMaxHp(PetAttacker p) => _teamHpMax * p.hpMult;
+
+  /// 팀 전체(캐릭터+곤충) 최대 체력. `_playerHpMax` 는 이 중 **캐릭터 몫**이다.
+  double _teamHpMax = 100;
+
+  /// 쓰러져 있지 않은 곤충들.
+  Iterable<PetAttacker> get _alivePets =>
+      (_split?.pets ?? const <PetAttacker>[]).where(
+        (p) => !_petDown.containsKey(p.bugId) && p.hpMult > 0,
+      );
+
+  /// 팀 체력을 새 최대치에 맞춰 다시 잡는다(장착 변경·복귀·부팅).
+  ///
+  /// 비율을 유지한다 — 절대값으로 두면 펫을 갈아 끼울 때마다 체력이 튄다.
+  void _resyncTeamHp(double teamMax, double playerShare) {
+    final ratio = _playerHpMax <= 0
+        ? 1.0
+        : (_playerHp / _playerHpMax).clamp(0.0, 1.0);
+    _teamHpMax = teamMax;
+    _playerHpMax = teamMax * playerShare;
+    _playerHp = _playerHpMax * ratio;
+    for (final p in _split?.pets ?? const <PetAttacker>[]) {
+      final max = _petMaxHp(p);
+      final cur = _petHp[p.bugId];
+      _petHp[p.bugId] = cur == null ? max : math.min(cur, max);
+    }
+    // 이제 없는 곤충(장착 해제)의 흔적은 지운다.
+    final ids = {
+      for (final p in _split?.pets ?? const <PetAttacker>[]) p.bugId,
+    };
+    _petHp.removeWhere((k, _) => !ids.contains(k));
+    _petDown.removeWhere((k, _) => !ids.contains(k));
+    _petAcc.removeWhere((k, _) => !ids.contains(k));
+  }
+
+  /// 팀 전원 만피(스테이지 이동·패배 후 재시작·부팅).
+  void _healTeamFull() {
+    _playerHp = _playerHpMax;
+    _petDown.clear();
+    for (final p in _split?.pets ?? const <PetAttacker>[]) {
+      _petHp[p.bugId] = _petMaxHp(p);
+    }
+  }
+
+  /// 팀 전원을 **각자 최대치의 [frac] 만큼** 회복(처치 회복·상시 재생).
+  ///
+  /// 쓰러진 곤충도 회복시키지 않는다 — 부활은 시간이 정하지 회복이 정하지
+  /// 않는다. 두 축이 섞이면 "왜 어떤 땐 금방 일어나지"가 된다.
+  void _healTeamFraction(double frac) {
+    if (frac <= 0) return;
+    _playerHp = math.min(_playerHpMax, _playerHp + _playerHpMax * frac);
+    for (final p in _alivePets) {
+      final max = _petMaxHp(p);
+      _petHp[p.bugId] = math.min((_petHp[p.bugId] ?? max) + max * frac, max);
+    }
+  }
+
+  /// 들어온 피해 [burst] 를 팀에 나눠 준다. **총량은 오늘과 같다.**
+  ///
+  /// 쓰러진 곤충의 몫은 남은 식구에게 넘어간다 — 안 넘기면 곤충이 쓰러질수록
+  /// 팀이 받는 총 피해가 줄어 오히려 안전해진다(긴장을 넣으려다 정반대가 된다).
+  ///
+  /// 곤충이 0 이 되면 [_petDown] 에 부활 시간을 걸고 넘친 피해는 버린다 —
+  /// 넘긴 만큼 캐릭터에 얹으면 한 방에 팀이 통째로 무너진다.
+  void _spreadDamage(double burst) {
+    final alive = _alivePets.toList();
+    var weight = _split?.playerHpMult ?? 1.0;
+    for (final p in alive) {
+      weight += p.hpMult;
+    }
+    if (weight <= 0) {
+      _playerHp -= burst;
+      return;
+    }
+    final revive = _data.petConfig?.petReviveSeconds ?? 12;
+    for (final p in alive) {
+      final part = burst * (p.hpMult / weight);
+      if (part <= 0) continue;
+      final left = (_petHp[p.bugId] ?? _petMaxHp(p)) - part;
+      _petHitFlash[p.bugId] = 0.8;
+      if (left <= 0) {
+        _petHp[p.bugId] = 0;
+        _petDown[p.bugId] = revive;
+      } else {
+        _petHp[p.bugId] = left;
+      }
+    }
+    _playerHp -= burst * ((_split?.playerHpMult ?? 1.0) / weight);
+  }
 
   /// 지역 속성 설명 — 배지를 눌렀을 때. 무엇을 끼면 세지는지 한 줄로만 말한다.
   /// ⚠️ 매개변수 타입을 `Element` 로 쓰면 안 된다 — `core_models` 의 오행
@@ -831,7 +945,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 이전 상시 피해와 평균 DPS 가 같도록 interval 만큼 묶어서 준다.
     final burst = incoming * atkInterval * (boss ? 1.4 : 1.0);
     if (burst <= 0) return;
-    _playerHp -= burst;
+    // 팀에 나눠 준다 — 총량은 오늘과 같고, 곤충이 쓰러지면 그 몫이 넘어온다.
+    _spreadDamage(burst);
     // 이동 중에는 달려드는 몬스터가 화면에 없다 — 돌진 모션은 빼고
     // 피격 표시만 남긴다(없는 적이 무는 것처럼 보이면 그게 버그로 읽힌다).
     if (!walking) _enemyLunge = 1;
@@ -927,7 +1042,40 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
     final save = ref.read(saveControllerProvider).requireValue;
     final stats = _stats(save);
-    _playerHpMax = stats.maxHp;
+    // 분배를 **타격부보다 먼저** 잡는다. 피격(이동 중 포함)도 곤충 체력 몫을
+    // 알아야 나눠 줄 수 있기 때문이다.
+    //
+    // ⚠️ 간격은 **부스트가 실린 값**이어야 한다. 생 `attackSpeed` 로 잡으면
+    // 곤충 몫이 실제 타격 간격과 어긋나 총 DPS 중립성이 깨진다.
+    // ⚠️ `PetConfig.fromJson(const {})` 는 필수 키가 없어 던진다 — 설정이 아직
+    // 안 실렸으면 분배 자체를 건너뛴다(플레이어가 전부 때린다).
+    final speedMul = 1 + (_boostMult - 1) * _config.boostSpeedFactor;
+    final atkSpeed = stats.attackSpeed * speedMul;
+    final interval = 1.0 / math.max(0.0001, atkSpeed);
+    final petCfg = _data.petConfig;
+    _split = petCfg == null
+        ? null
+        : buildPetAttackers(
+            equipped: _equippedAttackerInputs(save),
+            playerInterval: interval,
+            petConfig: petCfg,
+          );
+    _resyncTeamHp(stats.maxHp, _split?.playerHpMult ?? 1.0);
+    // 쓰러진 곤충의 부활 카운트다운.
+    for (final k in _petDown.keys.toList()) {
+      final v = _petDown[k]! - dt;
+      if (v <= 0) {
+        _petDown.remove(k);
+        final p = _split?.pets.where((x) => x.bugId == k).firstOrNull;
+        if (p != null) _petHp[k] = _petMaxHp(p);
+      } else {
+        _petDown[k] = v;
+      }
+    }
+    for (final k in _petHitFlash.keys.toList()) {
+      final v = _petHitFlash[k]! - dt * 3;
+      v <= 0 ? _petHitFlash.remove(k) : _petHitFlash[k] = v;
+    }
 
     if (_walking) {
       // 부스트는 이동에도 실린다 — 때리는 속도만 빨라지고 다음 몬스터를 만나는
@@ -935,7 +1083,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       final boostMove = 1 + (_boostMult - 1) * _config.boostSpeedFactor;
       _walkT += dt * boostMove;
       _bgOffset += dt * 130 * boostMove;
-      _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * 2 * dt);
+      // 회복도 팀 전원에게. 캐릭터만 회복하면 곤충은 한 번 깎인 채 영영
+      // 안 차서 벽을 두 번 만나면 반드시 쓰러진다.
+      _healTeamFraction(
+        _playerHpMax <= 0 ? 0 : stats.hpRegen * 2 * dt / _playerHpMax,
+      );
       // 이동 중에도 **서식지가 위협한다**(§walkThreatMult).
       //
       // 예전엔 여기서 그냥 return 해서 이동이 완전 공짜였다 — 무피해에 회복은
@@ -954,7 +1106,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
 
     // 회복은 상시 적용.
-    _playerHp = math.min(_playerHpMax, _playerHp + stats.hpRegen * dt);
+    _healTeamFraction(
+      _playerHpMax <= 0 ? 0 : stats.hpRegen * dt / _playerHpMax,
+    );
     _applyHabitatThreat(stats, dt);
     if (_playerHp <= 0) {
       _beginDefeat();
@@ -964,26 +1118,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 플레이어 공격
     // ⚠️ 부스트는 **플레이어 공격에만** 실린다(몬스터 공격은 아래에서 따로).
     final dmgMul = _boostMult;
-    final speedMul = 1 + (_boostMult - 1) * _config.boostSpeedFactor;
-    final atkSpeed = stats.attackSpeed * speedMul;
     var perHit = stats.attack * dmgMul;
     if (_isBoss) perHit *= stats.bossDamage;
 
-    final interval = 1.0 / atkSpeed;
-
-    // 오늘의 한 대를 플레이어와 곤충이 나눠 갖는다. 총량은 그대로다 —
-    // §7 기준(`_petStats`)은 이 아래로 내려오지 않는다.
-    // ⚠️ `PetConfig.fromJson(const {})` 는 필수 키가 없어 던진다 — 설정이 아직
-    // 안 실렸으면 분배 자체를 건너뛴다(플레이어가 전부 때린다).
+    // 분배는 `_step` 머리에서 이미 잡았다(피격도 써야 하므로).
     final region = _config.regionForStage(_stage);
-    final petCfg = _data.petConfig;
-    final split = petCfg == null
-        ? (playerMult: 1.0, pets: const <PetAttacker>[])
-        : buildPetAttackers(
-            equipped: _equippedAttackerInputs(save),
-            playerInterval: interval,
-            petConfig: petCfg,
-          );
+    final split =
+        _split ??
+        (playerMult: 1.0, playerHpMult: 1.0, pets: const <PetAttacker>[]);
     // 곤충 데미지는 **나누기 전** 값을 기준으로 한다. 나눈 값을 쓰면 플레이어
     // 지분만큼 한 번 더 깎인다(가장 흔한 실수다).
     final perHitFull = perHit;
@@ -1037,6 +1179,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _petHits.clear();
     for (var i = 0; i < split.pets.length; i++) {
       final p = split.pets[i];
+      // 쓰러진 곤충은 때리지 않는다 — 빠진 몫이 곧 순항의 긴장이다.
+      // 누산기는 그대로 둔다(일어나면 이어서 친다).
+      if (_petDown.containsKey(p.bugId)) continue;
       // 처음 보는 곤충은 누산기를 **슬롯마다 어긋나게** 시작한다.
       //
       // 0 에서 다 같이 출발하면 같은 종 3마리는 간격도 같아 **완전히
@@ -1331,12 +1476,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _dying = false;
     // 처치 회복은 데이터에서 온다(§6). 서식지 20마리 × 30% 였던 시절엔
     // 스테이지마다 최대체력의 600% 를 회복해 **피가 절대 안 닳았다**.
-    _playerHp = math.min(
-      _playerHpMax,
-      _playerHp +
-          _playerHpMax *
-              (_isBoss ? _config.bossKillHealPct : _config.killHealPct),
-    );
+    _healTeamFraction(_isBoss ? _config.bossKillHealPct : _config.killHealPct);
     if (_isBoss) {
       // 캠페인 끝(로드맵 마지막 스테이지)에 닿으면 **더 나아가지 않는다**.
       // 예전에는 상한이 없어 1708 같은 값까지 흘러갔고, 그 구간은 저항이
@@ -1374,7 +1514,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _retreatFlash = 0;
     _stage = math.max(1, _stage - 1); // 한 스테이지 뒤로
     _habitatIndex = 0;
-    _playerHp = _playerHpMax;
+    // 곤충도 함께 일으켜 세운다 — 캐릭터만 살아나면 부활 직후가
+    // 죽기 직전보다 약해서 같은 자리에서 또 죽는다.
+    _healTeamFull();
     // 이월되는 공격 게이지(§_spawn)를 여기서만 비운다 — 부활하자마자 맞고
     // 시작하면 후퇴 패널티가 두 번 붙는다.
     _enemyAtkAcc = 0;
@@ -1421,7 +1563,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     setState(() {
       _stage = 1;
       _habitatIndex = 0;
-      _playerHp = _playerHpMax;
+      // 곤충도 함께 일으켜 세운다 — 캐릭터만 살아나면 부활 직후가
+      // 죽기 직전보다 약해서 같은 자리에서 또 죽는다.
+      _healTeamFull();
       _spawn();
     });
     showCenterToast(context, l.tierNextTitle(tierName(l, tier + 1)));
@@ -1637,46 +1781,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        // 지역 속성 — **안 보이면 편성을 바꿀 이유가 안 생긴다.**
-                        // 곤충 타격이 상극일 때만 세지는데, 무엇을 克해야
-                        // 하는지 화면에 없으면 그 시스템이 통째로 죽는다.
-                        // 눌러서 설명을 볼 수 있게 둔다(방치 화면이라 긴 글은
-                        // 아무도 안 읽지만, 궁금할 때 찾을 자리는 있어야 한다).
-                        if (region.element != null)
-                          GestureDetector(
-                            onTap: () => _showRegionElement(l, region),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 3),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0x66000000),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: elementColor(
-                                    region.element!,
-                                  ).withValues(alpha: 0.8),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  elementIcon(region.element!, size: 14),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    elementLabel(l, region.element!),
-                                    style: TextStyle(
-                                      color: elementColor(region.element!),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),
@@ -2779,6 +2883,50 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       fontSize: 13,
                     ),
                   ),
+                  // 지역 오행 — **지역 이름 바로 옆**이 제자리다.
+                  //
+                  // 예전엔 몬스터 체력바 위에 뒀는데, 거긴 스폰마다 다시
+                  // 그려지는 자리라 "이 몬스터의 속성"으로 읽혔다. 실제로는
+                  // 지역 전체(25스테이지)가 같은 속성이다 — 지역 이름 옆에
+                  // 붙어야 그게 무엇에 딸린 값인지 오해가 없다.
+                  if (region.element != null) ...[
+                    const SizedBox(width: 5),
+                    GestureDetector(
+                      onTap: () => _showRegionElement(l, region),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: elementColor(
+                            region.element!,
+                          ).withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(
+                            color: elementColor(
+                              region.element!,
+                            ).withValues(alpha: 0.75),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            elementIcon(region.element!, size: 12),
+                            const SizedBox(width: 2),
+                            Text(
+                              elementLabel(l, region.element!),
+                              style: TextStyle(
+                                color: elementColor(region.element!),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   if (_data.roadmapConfig != null) ...[
                     const SizedBox(width: 4),
                     const Icon(
@@ -3187,7 +3335,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ? bug.stage
           : effectiveStage(bug.stage, bug.stageSince, now, cfg);
       final (align, size) = spots[i];
-      final bob = math.sin(_tapHint * 3 + i * 2.1) * 4;
+      // ⚠️ 지역 변수로 뽑는다 — 클로저 안에서는 `bug` 의 null 승격이 풀린다.
+      final bugId = bug.id;
+      final down = _petDown[bugId];
+      // 쓰러진 곤충은 **부유를 멈추고 누워** 있는다 — 움직이면 살아 있는
+      // 것처럼 보여 "왜 얘만 안 때리지"가 된다.
+      final bob = down != null ? 0.0 : math.sin(_tapHint * 3 + i * 2.1) * 4;
+      final attacker = _split?.pets.where((x) => x.bugId == bugId).firstOrNull;
+      final maxHp = attacker == null ? 0.0 : _petMaxHp(attacker);
+      final hpFrac = maxHp <= 0
+          ? 1.0
+          : ((_petHp[bugId] ?? maxHp) / maxHp).clamp(0.0, 1.0);
       followers.add(
         Align(
           alignment: align,
@@ -3199,7 +3357,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             child: Transform.translate(
               offset: Offset((_petPulse[bug.id] ?? 0) * 14, bob),
               child: Opacity(
-                opacity: 0.92,
+                // 쓰러졌으면 흐리게. 피격 순간엔 잠깐 밝아진다.
+                opacity: down != null ? 0.34 : 0.92,
                 child: stage == LifeStage.adult
                     ? bugPoseImage(
                         bug.speciesId,
@@ -3222,6 +3381,56 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ),
         ),
       );
+      // 곤충 체력바 — 그림 **바로 위**에 아주 얇게. 안 보이면 왜 갑자기
+      // 안 때리는지 알 수 없고, 크게 그리면 셋이 화면을 잡아먹는다.
+      if (maxHp > 0) {
+        followers.add(
+          Align(
+            alignment: Alignment(align.x, align.y - 0.055),
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 16 + size * 0.62),
+              child: down != null
+                  // 남은 시간을 숫자로 준다 — "언제 일어나지"가 유일한 질문이다.
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xCC1A1A1A),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0x88FF8A80)),
+                      ),
+                      child: Text(
+                        '${down.ceil()}',
+                        style: const TextStyle(
+                          color: Color(0xFFFF8A80),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    )
+                  : SizedBox(
+                      width: size * 0.8,
+                      height: 3,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: hpFrac,
+                          minHeight: 3,
+                          backgroundColor: const Color(0x66000000),
+                          valueColor: AlwaysStoppedAnimation(
+                            hpFrac > 0.35
+                                ? const Color(0xFF81C784)
+                                : const Color(0xFFFF7043),
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        );
+      }
     }
     return Stack(children: followers);
   }
@@ -5197,7 +5406,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _dying = false;
       _walking = false;
       _spawn(announce: false);
-      _playerHp = _playerHpMax;
+      // 곤충도 함께 일으켜 세운다 — 캐릭터만 살아나면 부활 직후가
+      // 죽기 직전보다 약해서 같은 자리에서 또 죽는다.
+      _healTeamFull();
     });
   }
 

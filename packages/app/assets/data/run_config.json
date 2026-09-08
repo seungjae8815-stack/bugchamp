@@ -142,7 +142,7 @@
     "en": "Ember Sovereign",
     "ja": "熾火の君主"
    },
-   "bossFlip": true,
+   "bossFlip": false,
    "habitatKinds": [
     "rock",
     "stump",

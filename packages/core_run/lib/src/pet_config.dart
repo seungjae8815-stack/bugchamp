@@ -102,6 +102,7 @@ class PetConfig {
     this.storageExpandJelly = 50,
     this.storageExpandAmount = 10,
     this.attackSpdReference = 100,
+    this.petReviveSeconds = 12,
     this.attackIntervalMin = 0.25,
     this.attackIntervalMax = 2.5,
   });
@@ -424,6 +425,13 @@ class PetConfig {
   /// 곤충 타격 간격의 기준 SPD. 종 SPD 가 이 값이면 플레이어와 같은 간격이다.
   final double attackSpdReference;
 
+  /// 쓰러진 곤충이 다시 일어나는 데 걸리는 시간(초).
+  ///
+  /// 짧으면 긴장이 안 생기고, 길면 방치해 둔 사이 삼인방이 통째로 누워
+  /// **자기 전에 껐다가 아침에 보니 안 나가 있는** 상황이 된다.
+  /// 순항에서는 거의 안 쓰러지고 벽에서만 쓰러지는 값이어야 한다.
+  final double petReviveSeconds;
+
   /// 곤충 타격 간격 상하한(초). 프레임마다 때리거나 영영 안 때리는 걸 막는다.
   final double attackIntervalMin;
   final double attackIntervalMax;
@@ -647,6 +655,7 @@ class PetConfig {
       storageExpandAmount: (json['storageExpandAmount'] as num?)?.toInt() ?? 10,
       attackSpdReference:
           (json['attackSpdReference'] as num?)?.toDouble() ?? 100,
+      petReviveSeconds: (json['petReviveSeconds'] as num?)?.toDouble() ?? 12,
       attackIntervalMin:
           (json['attackIntervalMin'] as num?)?.toDouble() ?? 0.25,
       attackIntervalMax: (json['attackIntervalMax'] as num?)?.toDouble() ?? 2.5,

@@ -49,13 +49,14 @@ mobile game art, crisp high detail, no text, no watermark, no signature
 | `valley_stream` | mountain valley stream, clear shallow water over smooth stones, mossy rocks, cool fresh light |
 | `grass_field` | sunny grassland meadow, tall swaying grass, scattered wildflowers, bright open sky, warm afternoon |
 | `night_mountain` | moonlit mountain forest at night, drifting fireflies, cool blue shadows with warm lantern glow, mysterious |
-| `ember_ridge` ⚠️**미제작** | volcanic ridge at dusk, cooling lava cracks glowing orange between dark basalt rocks, drifting ash and heat haze, scorched sparse shrubs |
+| `ember_ridge` ✅ | volcanic ridge at dusk, cooling lava cracks glowing orange between dark basalt rocks, drifting ash and heat haze, scorched sparse shrubs |
 
-> ⚠️ **`ember_ridge` 는 아직 그림이 없다**(2026-09-08 추가). 오행 5개 중 화(火)를
-> 맡는 지역이 없어서 불 속성 곤충이 방치 런에서 영영 상극이 안 걸렸기에 추가했다.
-> 배경(`regions/ember_ridge.webp`)과 보스(`bosses/ember_ridge*.webp`)가 없으면
-> 그라데이션·이모지로 폴백되므로 화면은 안 깨지지만, **101~125 스테이지 구간이
-> 다른 지역보다 밋밋해 보인다.** 우선순위 높은 아트 작업이다.
+> **`ember_ridge`**(2026-09-08 추가) — 오행 5개 중 화(火)를 맡는 지역이 없어서
+> 불 속성 곤충이 방치 런에서 영영 상극이 안 걸렸기에 추가했다.
+> 배경은 **들어왔다**(`regions/ember_ridge.webp`).
+> ⚠️ **보스 그림이 아직 없다**(`bosses/ember_ridge*.webp` 5장 — 기본·공격2·사망2).
+> 없으면 이모지로 폴백되므로 화면은 안 깨지지만 101~125 스테이지의 보스만
+> 다른 지역과 결이 다르다. 프롬프트는 `art_prompts_v2.md` STEP 16.
 
 ---
 
