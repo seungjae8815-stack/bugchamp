@@ -1660,6 +1660,8 @@
   "forgeStrikeLocked": "Needs chapter {n}",
   "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
   "forgeStrikeAuto": "Max",
+  "regionElementTitle": "Region element",
+  "regionElementHint": "Equip bugs whose element overcomes it and their hits get stronger. Bugs attack on their own timing, separately from you.",
   "forgeStrikeStart": "Start",
   "forgeStopOnHit": "Stop when a match appears",
   "forgeStopOnHitHint": "Stops the auto-forge as soon as one passes your filter, saving the rest of your fossils.",

@@ -2757,6 +2757,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeStrikeAuto => '최대';
 
   @override
+  String get regionElementTitle => '지역 속성';
+
+  @override
+  String get regionElementHint =>
+      '이 속성을 克하는 곤충을 끼면 그 곤충의 타격이 세져요. 곤충은 캐릭터와 따로, 자기 속도로 때립니다.';
+
+  @override
   String get forgeStrikeStart => '시작';
 
   @override

@@ -2808,6 +2808,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeStrikeAuto => 'Max';
 
   @override
+  String get regionElementTitle => 'Region element';
+
+  @override
+  String get regionElementHint =>
+      'Equip bugs whose element overcomes it and their hits get stronger. Bugs attack on their own timing, separately from you.';
+
+  @override
   String get forgeStrikeStart => 'Start';
 
   @override

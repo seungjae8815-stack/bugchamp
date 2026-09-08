@@ -1,7 +1,11 @@
+// ⚠️ `as cm` 접두사가 필요하다 — core_models 의 오행 `Element` 와 Flutter
+// 위젯 트리의 `Element` 가 이름이 겹쳐, 그냥 import 하면 모호해진다.
+import 'package:core_models/core_models.dart' as cm;
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../ui/labels.dart';
 
 /// 스테이지 로드맵 — **아래(하위) → 위(상위)** 로 올라가는 징검다리.
 ///
@@ -279,6 +283,9 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         unlocked: widget.highestStage >= node.stage,
         isHere: _isHere(node),
         bossName: node.chapter.boss.resolve(locale),
+        // 이 칸의 지역 속성 — **다음에 갈 곳의 속성을 미리 보고** 편성을
+        // 준비할 수 있어야 한다. 전투 화면에 도착해서야 알면 이미 늦다.
+        element: widget.runConfig.regionForStage(node.stage).element,
         onTap: () => Navigator.pop(context, node.stage),
       ),
     );
@@ -303,6 +310,7 @@ class _NodeTile extends StatelessWidget {
     required this.unlocked,
     required this.isHere,
     required this.bossName,
+    required this.element,
     required this.onTap,
   });
 
@@ -314,6 +322,10 @@ class _NodeTile extends StatelessWidget {
   final bool unlocked;
   final bool isHere;
   final String bossName;
+
+  /// 이 칸이 속한 지역의 오행. null 이면 무속성(뱃지를 안 그린다).
+  final cm.Element? element;
+
   final VoidCallback onTap;
 
   static const _gold = Color(0xFFFFD24A);
@@ -387,7 +399,38 @@ class _NodeTile extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(width: size, height: size, child: tile),
+          SizedBox(
+            width: size,
+            height: size,
+            child: element == null
+                ? tile
+                : Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned.fill(child: tile),
+                      // 오른쪽 위 구석 — 칸 안의 챕터 그림·보스 뿔과 안 겹친다.
+                      // 잠긴 칸에서도 보여준다. 어디를 뚫으면 무슨 속성이
+                      // 나오는지가 곧 편성을 준비할 이유다.
+                      Positioned(
+                        right: -3,
+                        top: -3,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xCC000000),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: elementColor(
+                                element!,
+                              ).withValues(alpha: 0.9),
+                            ),
+                          ),
+                          child: elementIcon(element!, size: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
           const SizedBox(height: 2),
           // 배경 일러스트 위에 흰 글씨만 얹으면 밝은 부분에서 사라진다 —
           // 어두운 알약을 깔아 배경과 무관하게 읽히게 한다.

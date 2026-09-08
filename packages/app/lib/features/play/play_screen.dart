@@ -721,6 +721,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         boostBonus: s.boostBonus,
       );
 
+  /// 지역 속성 설명 — 배지를 눌렀을 때. 무엇을 끼면 세지는지 한 줄로만 말한다.
+  /// ⚠️ 매개변수 타입을 `Element` 로 쓰면 안 된다 — `core_models` 의 오행
+  /// `Element` 와 Flutter 위젯 트리의 `Element` 가 이름이 겹쳐 모호해진다.
+  /// 지역을 통째로 받아 `region.element!` 로 추론시킨다.
+  void _showRegionElement(AppLocalizations l, RegionConfig region) {
+    final e = region.element!;
+    showGameDialog<void>(
+      context,
+      title: l.regionElementTitle,
+      iconWidget: elementIcon(e, size: 22),
+      subtitle: elementLabel(l, e),
+      content: Text(
+        l.regionElementHint,
+        style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12.5),
+      ),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    );
+  }
+
   /// 장착 펫들의 **종 고유 패시브** 합산(§2.1).
   ///
   /// `_petStats` 안이 아니라 밖에서 쓰는 이유는 `_stats` 주석 참조.
@@ -1442,7 +1461,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       math.cos(_screenShake * 70) * _screenShake * 3.5,
     );
 
-    final regionId = _config.regionForStage(_stage).id;
+    final region = _config.regionForStage(_stage);
+    final regionId = region.id;
     final deathP = _dying
         ? (1 - _dyingT / _deathDuration).clamp(0.0, 1.0)
         : 0.0;
@@ -1601,6 +1621,46 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        // 지역 속성 — **안 보이면 편성을 바꿀 이유가 안 생긴다.**
+                        // 곤충 타격이 상극일 때만 세지는데, 무엇을 克해야
+                        // 하는지 화면에 없으면 그 시스템이 통째로 죽는다.
+                        // 눌러서 설명을 볼 수 있게 둔다(방치 화면이라 긴 글은
+                        // 아무도 안 읽지만, 궁금할 때 찾을 자리는 있어야 한다).
+                        if (region.element != null)
+                          GestureDetector(
+                            onTap: () => _showRegionElement(l, region),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x66000000),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: elementColor(
+                                    region.element!,
+                                  ).withValues(alpha: 0.8),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  elementIcon(region.element!, size: 14),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    elementLabel(l, region.element!),
+                                    style: TextStyle(
+                                      color: elementColor(region.element!),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

@@ -5032,6 +5032,18 @@ abstract class AppLocalizations {
   /// **'Max'**
   String get forgeStrikeAuto;
 
+  /// No description provided for @regionElementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Region element'**
+  String get regionElementTitle;
+
+  /// No description provided for @regionElementHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip bugs whose element overcomes it and their hits get stronger. Bugs attack on their own timing, separately from you.'**
+  String get regionElementHint;
+
   /// No description provided for @forgeStrikeStart.
   ///
   /// In en, this message translates to:

@@ -2751,6 +2751,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeStrikeAuto => '最大';
 
   @override
+  String get regionElementTitle => '地域の属性';
+
+  @override
+  String get regionElementHint =>
+      'この属性を克する昆虫を装備すると、その攻撃が強くなります。昆虫はキャラクターとは別に、自分の速さで攻撃します。';
+
+  @override
   String get forgeStrikeStart => '開始';
 
   @override

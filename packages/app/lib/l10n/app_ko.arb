@@ -922,6 +922,8 @@
   "forgeStrikeLocked": "챕터 {n} 필요",
   "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
   "forgeStrikeAuto": "최대",
+  "regionElementTitle": "지역 속성",
+  "regionElementHint": "이 속성을 克하는 곤충을 끼면 그 곤충의 타격이 세져요. 곤충은 캐릭터와 따로, 자기 속도로 때립니다.",
   "forgeStrikeStart": "시작",
   "forgeStopOnHit": "원하는 게 나오면 멈추기",
   "forgeStopOnHitHint": "필터에 맞는 걸 뽑으면 거기서 자동을 멈춰요. 남은 화석을 안 태웁니다.",
