@@ -399,3 +399,23 @@ cd packages\app ; flutter run -d <device-id>
 **진행 원칙**
 - 각 단계 완료 시 **실행·테스트 방법을 보고하고 사용자 승인 후** 다음 단계 진행(단계별 게이트).
 - 기능은 **한국어로 먼저 완성**, 타 언어(en/ja)는 나중(영어 폴백).
+
+---
+
+## 10. 개발 자동화 (Claude Code 설정)
+
+이 저장소는 위 규칙 중 **자동으로 강제할 수 있는 것**을 훅·에이전트·스킬로 묶어 두었다.
+규칙이 문서에만 있으면 사람도 모델도 잊는다.
+
+| 무엇 | 어디 | 하는 일 |
+|---|---|---|
+| 아키텍처 가드(훅) | `tool/hook_arch_guard.dart` | 순수 패키지의 Flutter import·시드 없는 `Random()`·`DateTime.now()` 를 **편집 전에** 차단(§5) |
+| 편집 후 훅 | `tool/hook_post_edit.dart` | `.dart` 자동 포맷 + 밸런스 JSON 을 고치면 돌려야 할 시뮬을 알려 줌(§6) |
+| `balance-guardian` | `.claude/agents/` | 수치 변경의 결과를 시뮬로 재고 §2.6·§7 불변 조건과 대조 |
+| `save-compat-reviewer` | `.claude/agents/` | 세이브 스키마·서버 동기화 변경의 구버전 호환·세이브 크기 검사 |
+| `/balance-tune` | `.claude/skills/` | 밸런스 조정 절차(전 측정 → JSON 수정 → 후 측정 → 회귀 테스트) |
+| `/sql-migration` | `.claude/skills/` | Supabase SQL 작성 규칙 + 적용 대장(`docs/sql_migrations.md`) |
+| CI | `.github/workflows/ci.yaml` | 포맷·정적분석·전 패키지 테스트 + 의존 방향 검사. iOS/Android 실빌드는 Codemagic 담당 |
+
+훅은 `.claude/settings.json` 에 등록되어 있다. 훅이 막은 편집이 **의도한 예외**라면
+사용자 승인을 먼저 받고 가드 스크립트의 예외 목록을 고친다 — 우회하지 않는다.

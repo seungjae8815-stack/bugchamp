@@ -1,0 +1,74 @@
+# 푸시·PR 마다 정적분석과 테스트를 돌린다.
+# iOS/Android 실빌드는 Codemagic 이 맡는다 — 여기서는 겹치지 않게 검사만 한다.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 의존성 설치 (워크스페이스 루트에서 1회)
+        run: flutter pub get
+
+      # ARB 를 고치고 생성 코드를 안 갱신하면 앱이 컴파일되지 않는다.
+      - name: 다국어 생성
+        working-directory: packages/app
+        run: flutter gen-l10n
+
+      # 경로를 소스로 좁힌다 — 루트에서 통째로 돌리면 로컬 build/ 산출물까지 훑는다.
+      - name: 포맷 검사
+        run: |
+          dart format --output=none --set-exit-if-changed             $(ls -d packages/*/lib packages/*/test packages/*/bin packages/*/tool tool 2>/dev/null)
+
+      - name: 정적분석
+        run: flutter analyze
+
+      - name: 순수 패키지 테스트
+        run: |
+          for p in core_models core_battle core_run core_gathering core_save; do
+            echo "=== $p ==="
+            (cd "packages/$p" && dart test)
+          done
+
+      - name: 서버 테스트
+        working-directory: packages/server
+        run: dart test
+
+      - name: 앱 테스트
+        working-directory: packages/app
+        run: flutter test
+
+  # 순수 패키지가 Flutter 를 import 하면 의존 방향이 무너진다(CLAUDE.md §5).
+  # 편집 시점에는 훅이 막지만, 훅 없이 들어온 커밋은 여기서 잡는다.
+  architecture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 순수 패키지의 Flutter 의존 검사
+        run: |
+          fail=0
+          for p in core_models core_battle core_run core_gathering core_save; do
+            if grep -rnE "^\s*(import|export) '(package:(flutter|hive|flutter_riverpod|riverpod)|dart:ui)" \
+                 "packages/$p/lib" 2>/dev/null; then
+              echo "::error::packages/$p 가 Flutter 계열을 import 합니다 (CLAUDE.md §5)"
+              fail=1
+            fi
+          done
+          if grep -rn "package:core_battle" packages/core_run/lib 2>/dev/null; then
+            echo "::error::core_run 은 core_battle 을 모릅니다 (형제 패키지)"
+            fail=1
+          fi
+          exit $fail
