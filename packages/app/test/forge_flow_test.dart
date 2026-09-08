@@ -118,6 +118,55 @@ void main() {
       );
     });
 
+    test('원하는 게 나오면 멈춘다 — 남은 횟수만큼 화석을 안 태운다', () async {
+      // 배수가 10인데 3개째에서 맞으면, 안 멈출 경우 화석 7개를 더 태운다.
+      // 등급 0 = 전부 통과라 **첫 개에서 맞는다**.
+      final c = make(
+        seed().copyWith(
+          materials: {MaterialKind.fossil: 40},
+          autoForgeMinTier: 1,
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+
+      final r = await ctrl.forgeMany(10);
+      expect(r.kept, 1, reason: '맞은 순간 멈추므로 하나만 쌓인다');
+      expect(r.hit, isTrue);
+      expect(r.forged, lessThanOrEqualTo(10));
+      expect(
+        c
+            .read(saveControllerProvider)
+            .requireValue
+            .materialCount(MaterialKind.fossil),
+        40 - r.forged,
+        reason: '태운 만큼만 줄어든다',
+      );
+    });
+
+    test('멈춤을 꺼 두면 배수를 끝까지 돌린다', () async {
+      final c = make(
+        seed().copyWith(
+          materials: {MaterialKind.fossil: 40},
+          autoForgeMinTier: 1,
+          autoForgeStopOnHit: false,
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final r = await c.read(saveControllerProvider.notifier).forgeMany(6);
+      expect(r.forged, 6);
+      expect(r.hit, isFalse);
+    });
+
+    test('필터가 비어 있으면 멈추지 않는다 — 전부가 목표라 첫 개에서 죽는다', () async {
+      // ⚠️ 이게 깨지면 필터를 안 건 유저의 배수가 통째로 1이 된다.
+      final c = make(seed().copyWith(materials: {MaterialKind.fossil: 40}));
+      await c.read(saveControllerProvider.future);
+      final r = await c.read(saveControllerProvider.notifier).forgeMany(5);
+      expect(r.forged, 5);
+      expect(r.hit, isFalse);
+    });
+
     test('필터에 안 맞으면 화석만 쓰고 **안 쌓인다**', () async {
       const want = {ItemOptionKind.critDamage};
       final c = make(

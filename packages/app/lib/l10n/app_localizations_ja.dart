@@ -2652,7 +2652,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeAutoTarget => '希望オプション';
 
   @override
-  String get forgeStopOnHit => '見つけたら停止';
+  String get forgeStopOnHit => '目当てが出たら止める';
 
   @override
   String get skillLearn => '習得';
@@ -2749,6 +2749,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get forgeStrikeAuto => '最大';
+
+  @override
+  String get forgeStrikeStart => '開始';
+
+  @override
+  String get forgeStopOnHitHint => 'フィルターに合うものが出たら自動を止めます。残りの化石を使いません。';
+
+  @override
+  String get forgeStopOnHitNoFilter => '先にフィルターを設定してください';
+
+  @override
+  String get forgeStoppedOnHit => '目当ての装備が出ました';
 
   @override
   String get forgeStrikeAutoHint => 'チャプターを進めると自動で増えます';

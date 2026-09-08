@@ -2658,7 +2658,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeAutoTarget => '원하는 옵션';
 
   @override
-  String get forgeStopOnHit => '찾으면 멈춤';
+  String get forgeStopOnHit => '원하는 게 나오면 멈추기';
 
   @override
   String get skillLearn => '습득';
@@ -2755,6 +2755,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get forgeStrikeAuto => '최대';
+
+  @override
+  String get forgeStrikeStart => '시작';
+
+  @override
+  String get forgeStopOnHitHint => '필터에 맞는 걸 뽑으면 거기서 자동을 멈춰요. 남은 화석을 안 태웁니다.';
+
+  @override
+  String get forgeStopOnHitNoFilter => '먼저 필터를 걸어야 멈출 기준이 생겨요';
+
+  @override
+  String get forgeStoppedOnHit => '원하는 장비를 찾았습니다';
 
   @override
   String get forgeStrikeAutoHint => '챕터를 깰 때마다 자동으로 늘어나요';

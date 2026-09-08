@@ -4849,7 +4849,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeStopOnHit.
   ///
   /// In en, this message translates to:
-  /// **'Stop when found'**
+  /// **'Stop when a match appears'**
   String get forgeStopOnHit;
 
   /// No description provided for @skillLearn.
@@ -5031,6 +5031,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Max'**
   String get forgeStrikeAuto;
+
+  /// No description provided for @forgeStrikeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get forgeStrikeStart;
+
+  /// No description provided for @forgeStopOnHitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops the auto-forge as soon as one passes your filter, saving the rest of your fossils.'**
+  String get forgeStopOnHitHint;
+
+  /// No description provided for @forgeStopOnHitNoFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a filter first so there is something to stop on'**
+  String get forgeStopOnHitNoFilter;
+
+  /// No description provided for @forgeStoppedOnHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Found what you were after'**
+  String get forgeStoppedOnHit;
 
   /// No description provided for @forgeStrikeAutoHint.
   ///

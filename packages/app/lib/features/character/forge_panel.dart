@@ -102,6 +102,13 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     if (r.full && _autoOn) {
       setState(() => _autoOn = false);
       showCenterToast(context, l.forgeStackFull);
+      return;
+    }
+    // 원하는 걸 찾았다 — 자동을 세운다. 안 세우면 다음 망치질이 곧바로
+    // 돌아 화석을 계속 태우고, 찾았다는 사실도 흘러가 버린다.
+    if (r.hit && _autoOn) {
+      setState(() => _autoOn = false);
+      showCenterToast(context, l.forgeStoppedOnHit);
     }
   }
 
@@ -836,11 +843,8 @@ Future<bool> showForgeResult(
 ///
 /// 예전엔 개수가 **챕터에서 자동으로 정해져** 유저가 손댈 수 없었다. 그래서
 /// 두 가지가 안 보였다: 지금 몇 개씩 나오는지 고를 수 없다는 것과, **더 열려면
-/// 무엇을 해야 하는지**. 잠긴 칸을 지우지 않고 `챕터 N 필요`로 남겨 두는 이유다 —
-/// 안 보이면 열린 게 전부인 줄 안다.
-///
-/// 고르면 곧바로 저장하고 닫는다(`true` 반환 = 자동 시작). 한 번 더 눌러
-/// 확인시키면 자동을 켜는 데 세 번을 눌러야 한다.
+/// 무엇을 해야 하는지**. 잠긴 항목을 목록에서 지우지 않고 `챕터 N 필요`로
+/// 남겨 두는 이유다 — 안 보이면 열린 게 전부인 줄 안다.
 ///
 /// [max] = 지금 해금된 최대, [cap] = 영원한 상한(`forge.json → autoStrikeMax`).
 Future<bool> showForgeStrikePick(
@@ -851,147 +855,176 @@ Future<bool> showForgeStrikePick(
 }) async {
   final l = AppLocalizations.of(context);
   final ctrl = ref.read(saveControllerProvider.notifier);
-  final chosen = ref.read(saveControllerProvider).requireValue.autoForgeStrikes;
-
-  Future<void> pick(int n) async {
-    await ctrl.setAutoForge(strikes: n);
-    if (context.mounted) Navigator.pop(context, true);
-  }
+  final save = ref.read(saveControllerProvider).requireValue;
+  var chosen = save.autoForgeStrikes;
+  var stopOnHit = save.autoForgeStopOnHit;
+  // 멈출 기준이 없으면 체크해도 아무 일이 없다 — 켤 수 있게 두면 "켰는데
+  // 안 멈춘다"가 된다. 필터를 먼저 걸라고 말해 준다.
+  final hasFilter = save.autoForgeOptions.isNotEmpty || save.autoForgeMinTier > 0;
 
   final done = await showGameDialog<bool>(
     context,
     title: l.forgeStrikePick,
     icon: Icons.hardware_outlined,
-    content: SizedBox(
-      width: double.maxFinite,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l.forgeStrikePickHint,
-            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              // `최대` 는 숫자를 고정하지 않는다 — 챕터를 깨면 따라 오른다.
-              // 이걸 안 두면 유저가 한 번 고른 뒤로는 상한이 올라도 그대로라
-              // "챕터를 깼는데 안 빨라진다"가 된다.
-              _StrikeChip(
-                label: l.forgeStrikeAuto,
-                sub: l.forgeStrikeAutoHint,
-                wide: true,
-                on: chosen <= 0,
-                locked: false,
-                onTap: () => pick(0),
+    content: StatefulBuilder(
+      builder: (context, setLocal) => SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.forgeStrikePickHint,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: const Color(0x22000000),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0x33FFFFFF)),
               ),
-              for (var n = 1; n <= cap; n++)
-                _StrikeChip(
-                  label: 'x$n',
-                  // 잠긴 칸만 조건을 말한다 — 열린 칸에 붙이면 글자가 배로
-                  // 늘어 무엇이 잠겼는지가 오히려 안 보인다.
-                  sub: n > max ? l.forgeStrikeLocked(n) : null,
-                  on: chosen == n,
-                  locked: n > max,
-                  onTap: n > max ? null : () => pick(n),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: chosen > max ? 0 : chosen,
+                  isExpanded: true,
+                  dropdownColor: const Color(0xFF2A1B08),
+                  iconEnabledColor: _honey,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  items: [
+                    // `최대` 는 숫자를 고정하지 않는다 — 챕터를 깨면 따라
+                    // 오른다. 이걸 안 두면 한 번 고른 뒤로는 상한이 올라도
+                    // 그대로라 "챕터를 깼는데 안 빨라진다"가 된다.
+                    DropdownMenuItem(
+                      value: 0,
+                      child: _strikeRow(
+                        '${l.forgeStrikeAuto} (x$max)',
+                        l.forgeStrikeAutoHint,
+                        false,
+                      ),
+                    ),
+                    for (var n = 1; n <= cap; n++)
+                      DropdownMenuItem(
+                        value: n,
+                        // 잠긴 건 고를 수 없게 두되 **목록에는 남긴다** —
+                        // 지우면 무엇을 깨야 열리는지 알 방법이 없다.
+                        enabled: n <= max,
+                        child: _strikeRow(
+                          'x$n',
+                          n > max ? l.forgeStrikeLocked(n) : null,
+                          n > max,
+                        ),
+                      ),
+                  ],
+                  onChanged: (v) => setLocal(() => chosen = v ?? 0),
                 ),
-            ],
-          ),
-        ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            // 원하는 걸 뽑고도 남은 횟수만큼 화석을 더 태우면, 배수를 올릴수록
+            // 손해가 커진다. 멈춤이 배수와 **한 세트**인 이유다.
+            InkWell(
+              onTap: hasFilter
+                  ? () => setLocal(() => stopOnHit = !stopOnHit)
+                  : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: Checkbox(
+                        value: stopOnHit && hasFilter,
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                        onChanged: hasFilter
+                            ? (v) => setLocal(() => stopOnHit = v == true)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l.forgeStopOnHit,
+                            style: TextStyle(
+                              color: hasFilter
+                                  ? Colors.white
+                                  : const Color(0x66FFFFFF),
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          Text(
+                            hasFilter
+                                ? l.forgeStopOnHitHint
+                                : l.forgeStopOnHitNoFilter,
+                            style: const TextStyle(
+                              color: Color(0x99FFFFFF),
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
     actions: [
       gameDialogButton(l.actionClose, () => Navigator.pop(context, false)),
+      // 시작이 곧 저장이다. 닫기로 나가면 아무것도 안 바뀐다 — 고르다 말고
+      // 나갔는데 설정이 바뀌어 있으면 그게 더 놀랍다.
+      gameDialogButton(l.forgeStrikeStart, () {
+        ctrl.setAutoForge(strikes: chosen > max ? 0 : chosen, stopOnHit: stopOnHit);
+        Navigator.pop(context, true);
+      }),
     ],
   );
   return done ?? false;
 }
 
-/// 개수 칸 하나. 잠긴 것도 **지우지 않고 흐리게** 남겨 조건을 적는다.
-class _StrikeChip extends StatelessWidget {
-  const _StrikeChip({
-    required this.label,
-    required this.on,
-    required this.locked,
-    required this.onTap,
-    this.sub,
-    this.wide = false,
-  });
-
-  final String label;
-  final String? sub;
-  final bool on;
-  final bool locked;
-  final bool wide;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = locked
-        ? const Color(0x66FFFFFF)
-        : (on ? Colors.white : const Color(0xBBFFFFFF));
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: wide ? 154 : 74,
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        decoration: BoxDecoration(
-          color: on ? _honey.withValues(alpha: 0.28) : const Color(0x22000000),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: on
-                ? _honey
-                : (locked ? const Color(0x22FFFFFF) : const Color(0x33FFFFFF)),
-            width: on ? 1.6 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (locked) ...[
-                  const Icon(
-                    Icons.lock_outline_rounded,
-                    size: 11,
-                    color: Color(0x66FFFFFF),
-                  ),
-                  const SizedBox(width: 2),
-                ],
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: fg,
-                    fontWeight: on ? FontWeight.w900 : FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-            if (sub != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 1),
-                child: Text(
-                  sub!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0x77FFFFFF),
-                    fontSize: 9,
-                  ),
-                ),
-              ),
-          ],
+/// 드롭다운 한 줄 — `x3` 옆에 조건/설명을 흐리게 붙인다.
+Widget _strikeRow(String label, String? sub, bool locked) => Row(
+  children: [
+    if (locked) ...[
+      const Icon(
+        Icons.lock_outline_rounded,
+        size: 12,
+        color: Color(0x66FFFFFF),
+      ),
+      const SizedBox(width: 3),
+    ],
+    Text(
+      label,
+      style: TextStyle(
+        color: locked ? const Color(0x66FFFFFF) : Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+    if (sub != null) ...[
+      const SizedBox(width: 6),
+      Flexible(
+        child: Text(
+          sub,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Color(0x77FFFFFF), fontSize: 10),
         ),
       ),
-    );
-  }
-}
+    ],
+  ],
+);
 
 /// 제련 필터 — **원하는 능력치**. 하나라도 붙은 것만 모루에 쌓는다.
 ///

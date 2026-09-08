@@ -2707,7 +2707,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeAutoTarget => 'Wanted options';
 
   @override
-  String get forgeStopOnHit => 'Stop when found';
+  String get forgeStopOnHit => 'Stop when a match appears';
 
   @override
   String get skillLearn => 'Learn';
@@ -2806,6 +2806,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgeStrikeAuto => 'Max';
+
+  @override
+  String get forgeStrikeStart => 'Start';
+
+  @override
+  String get forgeStopOnHitHint =>
+      'Stops the auto-forge as soon as one passes your filter, saving the rest of your fossils.';
+
+  @override
+  String get forgeStopOnHitNoFilter =>
+      'Set a filter first so there is something to stop on';
+
+  @override
+  String get forgeStoppedOnHit => 'Found what you were after';
 
   @override
   String get forgeStrikeAutoHint => 'Grows automatically as you clear chapters';

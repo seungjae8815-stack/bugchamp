@@ -1997,28 +1997,56 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 나왔다**(2026-09-07 제보). 하나를 계속 쓰면 수열이 이어져 그럴 일이 없다.
   final math.Random _forgeRng = math.Random();
 
-  Future<({EquipItem? last, int forged, int kept, bool full, bool dry})>
+  /// [hit] = 필터에 맞는 걸 뽑아서 **일부러 멈췄다**([SaveGame.autoForgeStopOnHit]).
+  Future<
+    ({EquipItem? last, int forged, int kept, bool full, bool dry, bool hit})
+  >
   forgeMany(int times) async {
-    const nothing = (last: null, forged: 0, kept: 0, full: false, dry: false);
+    const nothing = (
+      last: null,
+      forged: 0,
+      kept: 0,
+      full: false,
+      dry: false,
+      hit: false,
+    );
     final data = ref.read(gameDataProvider).value;
     final items = data?.itemConfig;
     final forge = data?.forgeConfig;
     if (items == null || forge == null) return nothing;
     final s = state.requireValue;
     if (s.forgeStack.length >= kMaxForgeStack) {
-      return (last: null, forged: 0, kept: 0, full: true, dry: false);
+      return (
+        last: null,
+        forged: 0,
+        kept: 0,
+        full: true,
+        dry: false,
+        hit: false,
+      );
     }
     var have = s.materialCount(MaterialKind.fossil);
     if (have < 1) {
-      return (last: null, forged: 0, kept: 0, full: false, dry: true);
+      return (
+        last: null,
+        forged: 0,
+        kept: 0,
+        full: false,
+        dry: true,
+        hit: false,
+      );
     }
 
     final want = s.autoForgeOptions;
     final minTier = s.autoForgeMinTier;
     final stack = [...s.forgeStack];
+    // 멈출 기준이 있을 때만 멈춘다. 필터가 비어 있으면 **전부가 목표**라
+    // 첫 개에서 멈춰 배수가 통째로 죽는다.
+    final stopOnHit =
+        s.autoForgeStopOnHit && (want.isNotEmpty || minTier > 0);
     EquipItem? last;
     var forged = 0, kept = 0;
-    var full = false, dry = false;
+    var full = false, dry = false, hit = false;
 
     for (var i = 0; i < times; i++) {
       if (have < 1) {
@@ -2046,13 +2074,26 @@ class SaveController extends AsyncNotifier<SaveGame> {
       if (okTier && okOption) {
         stack.add(item);
         kept++;
+        // 원하는 걸 찾았으면 남은 횟수를 안 돌린다 — 배수가 10이면 뽑고도
+        // 화석 9개를 더 태우게 된다.
+        if (stopOnHit) {
+          hit = true;
+          break;
+        }
       }
     }
 
     final mats = Map<MaterialKind, int>.from(s.materials)
       ..[MaterialKind.fossil] = have;
     await _commit(s.copyWith(materials: mats, forgeStack: stack));
-    return (last: last, forged: forged, kept: kept, full: full, dry: dry);
+    return (
+      last: last,
+      forged: forged,
+      kept: kept,
+      full: full,
+      dry: dry,
+      hit: hit,
+    );
   }
 
   /// 모루 위에서 **맨 위 하나**를 집는다. 비었으면 null.

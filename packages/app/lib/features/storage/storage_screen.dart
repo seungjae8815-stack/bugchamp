@@ -1895,15 +1895,22 @@ class StorageScreen extends ConsumerWidget {
               constraints: const BoxConstraints(maxHeight: 320),
               child: SizedBox(
                 width: double.maxFinite,
-                child: SingleChildScrollView(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final b in eggs)
-                        _eggPickTile(ctx, r, data, l, locale, b),
-                    ],
-                  ),
+                // ⚠️ `Wrap` 은 타일 폭(고정 96)으로 줄당 개수를 정하므로 좁은
+                // 폰에서는 두 칸밖에 안 들어갔다. 3칸을 못 박고 **폭을 화면에
+                // 맞춰 나눈다** — 알이 많을수록 스크롤이 줄어야 고르기 쉽다.
+                child: GridView.builder(
+                  padding: EdgeInsets.zero,
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        // 알 42 + 이름 + 포텐셜·속성 줄이 들어가는 비율.
+                        childAspectRatio: 0.86,
+                      ),
+                  itemCount: eggs.length,
+                  itemBuilder: (_, i) =>
+                      _eggPickTile(ctx, r, data, l, locale, eggs[i]),
                 ),
               ),
             ),
@@ -1932,9 +1939,9 @@ class StorageScreen extends ConsumerWidget {
         }
       },
       child: SizedBox(
-        // 84 → 96. 알 이름 밑에 포텐셜·속성 줄이 들어가면서, 좁은 폭에선
-        // 종 이름이 두 글자만에 잘렸다.
-        width: 96,
+        // 폭은 **격자가 정한다**(3칸). 고정 폭을 주면 좁은 폰에서 칸을
+        // 넘쳐 이름이 잘린다.
+        width: double.infinity,
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
