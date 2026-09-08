@@ -138,6 +138,13 @@ double _matBaseMult = 1.0;
 const _petMaxBonusDefault = 1.5;
 double _petMaxBonus = _petMaxBonusDefault;
 
+/// 오행 **상극이 걸린 곤충 수**(0~3). `--pet-restrain=N`.
+///
+/// 곤충은 캐릭터와 따로 때리고, 지역 속성을 克하는 곤충의 타격만 배율을 받는다.
+/// 배율 자체(`petRestrainMult`)는 CLI 가 아니라 **run_config.json 에서 읽는다** —
+/// CLI 로도 받게 하면 JSON 과 시뮬이 갈려 "시뮬은 통과했는데 게임은 다르다"가 된다.
+int _petRestrainCount = 0;
+
 /// 펫이 위 배율에 도달하는 스테이지(그 전까지는 선형으로 오른다).
 const _petFullStage = 600.0;
 
@@ -180,6 +187,10 @@ void main(List<String> args) {
       ' · 월드보스 ×${config.worldBossHpMult}',
     );
   }
+  stdout.writeln(
+    '  오행 상극        : 곤충 $_petRestrainCount/3 마리'
+    ' · 타격 ×${config.petRestrainMult}',
+  );
   stdout.writeln('  hpGrowth         : ${config.hpGrowth}');
   stdout.writeln('  goldGrowth       : ${config.goldGrowth}');
   stdout.writeln('  offlineEfficiency: ${config.offlineEfficiency}');
@@ -558,7 +569,16 @@ class _Player {
         (_equipAttackMult - 1) * math.min(1.0, careerStage / _equipFullStage);
     final dex =
         1 + (_dexAttackMult - 1) * math.min(1.0, careerStage / _dexFullStage);
-    return equip * _passiveAttackMult * dex;
+    // 오행 상극 — **§7 기준 밖**이다. 곤충 지분 중 상극이 걸린 몫만큼만 늘어난다.
+    //
+    // ⚠️ `baselineStats` 에는 절대 넣지 마라. 넣으면 몬스터 체력이 같이 올라
+    // 시뮬 안에서 스스로 상쇄되어 효과가 0 으로 나온다(이 파일 머리말의 사고).
+    final petShare = petAttackMult <= 1
+        ? 0.0
+        : (petAttackMult - 1) / petAttackMult;
+    final restrained = petShare * (_petRestrainCount.clamp(0, 3) / 3.0);
+    final restrain = 1 + restrained * (config.petRestrainMult - 1);
+    return equip * _passiveAttackMult * dex * restrain;
   }
 
   /// **적응형 체력이 맞추는 기준**(앱의 `_petStats`).
@@ -950,6 +970,11 @@ _Opts _parseArgs(List<String> args) {
     final tr = RegExp(r'^--tier=(.+)$').firstMatch(a);
     if (tr != null) {
       _tier = int.parse(tr.group(1)!);
+      continue;
+    }
+    final prc = RegExp(r'^--pet-restrain=(.+)$').firstMatch(a);
+    if (prc != null) {
+      _petRestrainCount = int.parse(prc.group(1)!);
       continue;
     }
     final tb = RegExp(r'^--boost=(.+)$').firstMatch(a);
