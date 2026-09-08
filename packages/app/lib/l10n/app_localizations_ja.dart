@@ -2737,6 +2737,23 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get forgeStrikePick => 'ハンマーごとの個数';
+
+  @override
+  String get forgeStrikePickHint => '一度叩くたびに作る個数です。手動タップにも適用されます。';
+
+  @override
+  String forgeStrikeLocked(int n) {
+    return 'チャプター$nが必要';
+  }
+
+  @override
+  String get forgeStrikeAuto => '最大';
+
+  @override
+  String get forgeStrikeAutoHint => 'チャプターを進めると自動で増えます';
+
+  @override
   String get forgeFiltered => '条件に合わず破棄しました';
 
   @override

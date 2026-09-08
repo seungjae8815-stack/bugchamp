@@ -2743,6 +2743,23 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get forgeStrikePick => '망치질 개수';
+
+  @override
+  String get forgeStrikePickHint => '한 번 두드릴 때 뽑을 개수예요. 손으로 두드려도 같이 적용됩니다.';
+
+  @override
+  String forgeStrikeLocked(int n) {
+    return '챕터 $n 필요';
+  }
+
+  @override
+  String get forgeStrikeAuto => '최대';
+
+  @override
+  String get forgeStrikeAutoHint => '챕터를 깰 때마다 자동으로 늘어나요';
+
+  @override
   String get forgeFiltered => '필터에 안 맞아 버렸습니다';
 
   @override

@@ -502,6 +502,7 @@ class SaveGame {
     this.forgeUpAt,
     this.autoForgeOptions = const {},
     this.autoForgeMinTier = 0,
+    this.autoForgeStrikes = 0,
     this.autoForgeStopOnHit = true,
     this.blockedUserIds = const {},
     this.bugFilterMinGrade = Grade.common,
@@ -908,6 +909,15 @@ class SaveGame {
   /// 옵션은 맞는데 수치가 배율(x1.0)에 눌려 쓸모가 없다 — 거를 축이 없었다.
   final int autoForgeMinTier;
 
+  /// 망치질 한 번에 뽑을 개수 — 유저가 고른 값. **0 = 해금된 최대**.
+  ///
+  /// 실제 개수는 `min(이 값, ForgeConfig.autoStrikes(...))` 다. 상한은 챕터로
+  /// 열리므로 여기에 큰 값을 적어 두어도 해금 전에는 늘지 않는다 —
+  /// 세이브를 손으로 고쳐도 챕터를 건너뛸 수 없다.
+  ///
+  /// 기본이 0(=상한)인 이유: 고른 적 없는 기존 유저의 체감이 바뀌면 안 된다.
+  final int autoForgeStrikes;
+
   /// 목표를 찾으면 멈춘다. **기본값 true** — 아니면 원하는 걸 뽑고도
   /// 화석 조각을 계속 태운다.
   final bool autoForgeStopOnHit;
@@ -1068,6 +1078,7 @@ class SaveGame {
     forgeSteps: 0,
     autoForgeOptions: const {},
     autoForgeMinTier: 0,
+    autoForgeStrikes: 0,
     autoForgeStopOnHit: true,
     adsRemoved: false,
     buffPassExpiresAt: null,
@@ -1140,6 +1151,7 @@ class SaveGame {
     bool clearForgeUpAt = false,
     Set<ItemOptionKind>? autoForgeOptions,
     int? autoForgeMinTier,
+    int? autoForgeStrikes,
     bool? autoForgeStopOnHit,
     int? lastReadNoticeId,
     bool? reviewAsked,
@@ -1217,6 +1229,7 @@ class SaveGame {
     forgeUpAt: clearForgeUpAt ? null : (forgeUpAt ?? this.forgeUpAt),
     autoForgeOptions: autoForgeOptions ?? this.autoForgeOptions,
     autoForgeMinTier: autoForgeMinTier ?? this.autoForgeMinTier,
+    autoForgeStrikes: autoForgeStrikes ?? this.autoForgeStrikes,
     autoForgeStopOnHit: autoForgeStopOnHit ?? this.autoForgeStopOnHit,
     lastReadNoticeId: lastReadNoticeId ?? this.lastReadNoticeId,
     reviewAsked: reviewAsked ?? this.reviewAsked,
@@ -1424,6 +1437,7 @@ class SaveGame {
         ?ItemOptionKind.fromKeyOrNull(v as String),
     },
     autoForgeMinTier: (json['autoForgeMinTier'] as num?)?.toInt() ?? 0,
+    autoForgeStrikes: (json['autoForgeStrikes'] as num?)?.toInt() ?? 0,
     autoForgeStopOnHit: json['autoForgeStopOnHit'] as bool? ?? true,
     adUseDate: json['adUseDate'] as String?,
     giftDoubleDate: json['giftDoubleDate'] as String?,
@@ -1546,6 +1560,7 @@ class SaveGame {
     if (autoForgeOptions.isNotEmpty)
       'autoForgeOptions': [for (final o in autoForgeOptions) o.key],
     if (autoForgeMinTier > 0) 'autoForgeMinTier': autoForgeMinTier,
+    if (autoForgeStrikes > 0) 'autoForgeStrikes': autoForgeStrikes,
     if (!autoForgeStopOnHit) 'autoForgeStopOnHit': false,
     if (adUseDate != null) 'adUseDate': adUseDate,
     if (giftDoubleDate != null) 'giftDoubleDate': giftDoubleDate,

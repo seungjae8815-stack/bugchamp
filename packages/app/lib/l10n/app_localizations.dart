@@ -5008,6 +5008,36 @@ abstract class AppLocalizations {
   /// **'x{n}'**
   String forgeStrikes(int n);
 
+  /// No description provided for @forgeStrikePick.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikes per hammer'**
+  String get forgeStrikePick;
+
+  /// No description provided for @forgeStrikePickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How many to forge per hammer blow. Applies to manual taps too.'**
+  String get forgeStrikePickHint;
+
+  /// No description provided for @forgeStrikeLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs chapter {n}'**
+  String forgeStrikeLocked(int n);
+
+  /// No description provided for @forgeStrikeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get forgeStrikeAuto;
+
+  /// No description provided for @forgeStrikeAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Grows automatically as you clear chapters'**
+  String get forgeStrikeAutoHint;
+
   /// No description provided for @forgeFiltered.
   ///
   /// In en, this message translates to:

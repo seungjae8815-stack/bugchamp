@@ -355,6 +355,36 @@ void _autoStrikeTests() {
       expect(f.autoStrikes(difficultyTier: 9, chapter: 10), 10);
     });
   });
+
+  group('고른 배수(2026-09-08)', () {
+    int eff(int chosen, {int chapter = 5, int tier = 0}) => f.effectiveStrikes(
+      difficultyTier: tier,
+      chapter: chapter,
+      chosen: chosen,
+    );
+
+    test('0 이면 해금 상한 그대로 — 고른 적 없는 유저의 체감이 안 바뀐다', () {
+      expect(eff(0), 5);
+      expect(eff(0, chapter: 2), 2);
+      expect(eff(0, chapter: 1, tier: 1), 10);
+    });
+
+    test('상한 안에서 고르면 그 값 — 적게도 고를 수 있다', () {
+      expect(eff(1), 1);
+      expect(eff(3), 3);
+      expect(eff(5), 5);
+    });
+
+    test('상한을 넘겨 고르면 상한으로 잘린다 — 세이브를 고쳐도 챕터를 못 건너뛴다', () {
+      expect(eff(9, chapter: 5), 5);
+      expect(eff(999, chapter: 5), 5);
+      expect(eff(999, chapter: 1, tier: 1), 10);
+    });
+
+    test('음수도 상한으로 — 0개면 자동이 영영 안 돈다', () {
+      expect(eff(-4), 5);
+    });
+  });
 }
 
 /// 옵션 개편(2026-09-07) — 등급별 최대치 · 2개 상한 · 죽은 축 제거.

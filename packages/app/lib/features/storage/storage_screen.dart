@@ -1920,6 +1920,7 @@ class StorageScreen extends ConsumerWidget {
     IndividualBug bug,
   ) {
     final sp = data.species(bug.speciesId);
+    final variant = bug.variant != BugVariant.none;
     return GestureDetector(
       onTap: () async {
         final ok = await r
@@ -1931,24 +1932,56 @@ class StorageScreen extends ConsumerWidget {
         }
       },
       child: SizedBox(
-        width: 84,
+        // 84 → 96. 알 이름 밑에 포텐셜·속성 줄이 들어가면서, 좁은 폭에선
+        // 종 이름이 두 글자만에 잘렸다.
+        width: 96,
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: const Color(0x22000000),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: gradeColor(sp.grade).withValues(alpha: 0.7),
+              // 이색은 **테두리부터** 다르다 — 1/300 이라 목록에서 놓치면
+              // 일반 알을 먼저 돌려 버린다.
+              color: variant
+                  ? const Color(0xFFFFD54F)
+                  : gradeColor(sp.grade).withValues(alpha: 0.7),
+              width: variant ? 1.8 : 1,
             ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              bugStageImage(
-                bug.speciesId,
-                LifeStage.egg,
-                size: 42,
-                fallback: bugAvatar(sp, size: 36),
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  bugStageImage(
+                    bug.speciesId,
+                    LifeStage.egg,
+                    size: 42,
+                    fallback: bugAvatar(sp, size: 36),
+                  ),
+                  // 혈통 특성 — **알 단계에서 안 보이던 것**이 여기 있다.
+                  // 짝짓기로 만든 알과 주운 알을 못 가르면 무엇을 먼저
+                  // 부화할지 정할 수 없다. 보관함 그리드와 같은 표식(이름
+                  // 뱃지)을 쓴다 — 색깔 점은 색을 외우기 전엔 뜻이 없다.
+                  if (!bug.trait.isNone)
+                    Positioned(
+                      left: -4,
+                      bottom: -2,
+                      child: _eggBadge(
+                        traitLabel(l, bug.trait),
+                        traitColor(bug.trait),
+                      ),
+                    ),
+                  if (variant)
+                    Positioned(
+                      right: -4,
+                      top: -2,
+                      child: _eggBadge(l.dexVariant, const Color(0xFFE0A020)),
+                    ),
+                ],
               ),
               const SizedBox(height: 3),
               Text(
@@ -1957,12 +1990,52 @@ class StorageScreen extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.white, fontSize: 10),
               ),
+              const SizedBox(height: 2),
+              // 포텐셜 + 오행. 목록이 이미 **등급 → 포텐셜 → 사이즈** 순으로
+              // 정렬돼 있는데 화면에는 그 근거가 하나도 없었다 — 왜 이 순서인지
+              // 보이지 않으면 정렬이 없는 것과 같다.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.star_rounded, size: 11, color: Color(0xFFFFE24A)),
+                  Text(
+                    '${bug.potential}',
+                    style: const TextStyle(
+                      color: Color(0xFFFFE24A),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  elementIcon(bug.element, size: 11),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  /// 알 위에 얹는 작은 이름표(특성·이색). 알 그림이 42px 뿐이라 글자를
+  /// 8px 까지 줄이고 테두리를 넣어 배경과 안 섞이게 한다.
+  Widget _eggBadge(String text, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(4),
+      border: Border.all(color: const Color(0xAA000000), width: 0.5),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 8,
+        fontWeight: FontWeight.w900,
+        shadows: [Shadow(color: Colors.black, blurRadius: 2)],
+      ),
+    ),
+  );
 
   // ── 정렬 ──────────────────────────────────────────────────────
   int _stageRank(LifeStage s) => switch (s) {

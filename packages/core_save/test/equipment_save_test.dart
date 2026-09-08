@@ -119,6 +119,22 @@ void main() {
     });
   });
 
+  group('고른 망치질 배수(2026-09-08)', () {
+    test('저장·복원된다', () {
+      final s = fresh().copyWith(autoForgeStrikes: 4);
+      expect(SaveGame.fromJson(s.toJson()).autoForgeStrikes, 4);
+    });
+
+    test('고른 적 없으면 키를 안 쓴다 — 세이브 크기를 공짜로 늘리지 않는다', () {
+      expect(fresh().toJson().containsKey('autoForgeStrikes'), isFalse);
+    });
+
+    test('구버전 세이브(키 없음)는 0 = 해금 상한으로 읽힌다', () {
+      final json = fresh().toJson()..remove('autoForgeStrikes');
+      expect(SaveGame.fromJson(json).autoForgeStrikes, 0);
+    });
+  });
+
   group('화석 조각(제련 전용 재화)', () {
     test('재료로 저장·복원된다', () {
       final s = fresh().copyWith(materials: {MaterialKind.fossil: 1234});

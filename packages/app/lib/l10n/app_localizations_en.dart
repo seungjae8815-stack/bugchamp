@@ -2793,6 +2793,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get forgeStrikePick => 'Strikes per hammer';
+
+  @override
+  String get forgeStrikePickHint =>
+      'How many to forge per hammer blow. Applies to manual taps too.';
+
+  @override
+  String forgeStrikeLocked(int n) {
+    return 'Needs chapter $n';
+  }
+
+  @override
+  String get forgeStrikeAuto => 'Max';
+
+  @override
+  String get forgeStrikeAutoHint => 'Grows automatically as you clear chapters';
+
+  @override
   String get forgeFiltered => 'Discarded — no matching stat';
 
   @override

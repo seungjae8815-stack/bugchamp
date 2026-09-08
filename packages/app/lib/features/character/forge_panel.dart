@@ -50,10 +50,23 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   /// 챕터가 곧 개수이고, 회차를 한 번이라도 넘겼으면 처음부터 상한이다.
   /// 회차 전환은 스테이지를 1로 되돌리므로, 챕터만 보면 2회차 시작이 1회차
   /// 끝보다 느려진다 — 넘어갈 이유를 없애면 안 된다.
-  int _strikes(ForgeConfig f, SaveGame save, RoadmapConfig? roadmap) {
-    final world = roadmap?.stageLabel(save.stageNumber)?.world ?? 1;
-    return f.autoStrikes(difficultyTier: save.difficultyTier, chapter: world);
-  }
+  /// 고른 값이 있으면 그걸 쓰되 **해금 상한으로 잘린다**(0 = 상한 그대로).
+  int _strikes(ForgeConfig f, SaveGame save, RoadmapConfig? roadmap) =>
+      f.effectiveStrikes(
+        difficultyTier: save.difficultyTier,
+        chapter: _chapter(save, roadmap),
+        chosen: save.autoForgeStrikes,
+      );
+
+  /// 지금 해금된 **최대** 개수 — 선택 시트의 잠금 경계.
+  int _strikeMax(ForgeConfig f, SaveGame save, RoadmapConfig? roadmap) =>
+      f.autoStrikes(
+        difficultyTier: save.difficultyTier,
+        chapter: _chapter(save, roadmap),
+      );
+
+  int _chapter(SaveGame save, RoadmapConfig? roadmap) =>
+      roadmap?.stageLabel(save.stageNumber)?.world ?? 1;
 
   /// 망치가 마지막으로 내리친 순간 — 여기서 [_strikes] 개가 나온다.
   Future<void> _onStrikeDone() async {
@@ -99,7 +112,26 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   ///
   /// 좋은 게 나왔다고 **중간에 멈추지 않는다.** 어차피 쌓아 두고 나중에 보는
   /// 구조라 멈출 이유가 없다. 화석이 떨어지거나 10칸이 다 차면 멈춘다.
-  void _toggleAuto() => setState(() => _autoOn = !_autoOn);
+  /// 켜기 전에 **몇 개씩 뽑을지** 먼저 고른다. 끌 때는 곧바로 멈춘다 —
+  /// 멈추려고 눌렀는데 창이 뜨면 그 사이에도 망치가 계속 돈다.
+  Future<void> _toggleAuto() async {
+    if (_autoOn) {
+      setState(() => _autoOn = false);
+      return;
+    }
+    final data = ref.read(gameDataProvider).value;
+    final forge = data?.forgeConfig;
+    if (forge == null) return;
+    final save = ref.read(saveControllerProvider).requireValue;
+    final ok = await showForgeStrikePick(
+      context,
+      ref,
+      max: _strikeMax(forge, save, data?.roadmapConfig),
+      cap: forge.autoStrikeMax,
+    );
+    if (!mounted || !ok) return;
+    setState(() => _autoOn = true);
+  }
 
   /// 쌓인 것 중 **맨 위 하나**를 열어 본다.
   ///
@@ -798,6 +830,167 @@ Future<bool> showForgeResult(
     ],
   );
   return done ?? false;
+}
+
+/// 망치질 개수 고르기 — 자동을 켜기 전에 뜬다.
+///
+/// 예전엔 개수가 **챕터에서 자동으로 정해져** 유저가 손댈 수 없었다. 그래서
+/// 두 가지가 안 보였다: 지금 몇 개씩 나오는지 고를 수 없다는 것과, **더 열려면
+/// 무엇을 해야 하는지**. 잠긴 칸을 지우지 않고 `챕터 N 필요`로 남겨 두는 이유다 —
+/// 안 보이면 열린 게 전부인 줄 안다.
+///
+/// 고르면 곧바로 저장하고 닫는다(`true` 반환 = 자동 시작). 한 번 더 눌러
+/// 확인시키면 자동을 켜는 데 세 번을 눌러야 한다.
+///
+/// [max] = 지금 해금된 최대, [cap] = 영원한 상한(`forge.json → autoStrikeMax`).
+Future<bool> showForgeStrikePick(
+  BuildContext context,
+  WidgetRef ref, {
+  required int max,
+  required int cap,
+}) async {
+  final l = AppLocalizations.of(context);
+  final ctrl = ref.read(saveControllerProvider.notifier);
+  final chosen = ref.read(saveControllerProvider).requireValue.autoForgeStrikes;
+
+  Future<void> pick(int n) async {
+    await ctrl.setAutoForge(strikes: n);
+    if (context.mounted) Navigator.pop(context, true);
+  }
+
+  final done = await showGameDialog<bool>(
+    context,
+    title: l.forgeStrikePick,
+    icon: Icons.hardware_outlined,
+    content: SizedBox(
+      width: double.maxFinite,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.forgeStrikePickHint,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              // `최대` 는 숫자를 고정하지 않는다 — 챕터를 깨면 따라 오른다.
+              // 이걸 안 두면 유저가 한 번 고른 뒤로는 상한이 올라도 그대로라
+              // "챕터를 깼는데 안 빨라진다"가 된다.
+              _StrikeChip(
+                label: l.forgeStrikeAuto,
+                sub: l.forgeStrikeAutoHint,
+                wide: true,
+                on: chosen <= 0,
+                locked: false,
+                onTap: () => pick(0),
+              ),
+              for (var n = 1; n <= cap; n++)
+                _StrikeChip(
+                  label: 'x$n',
+                  // 잠긴 칸만 조건을 말한다 — 열린 칸에 붙이면 글자가 배로
+                  // 늘어 무엇이 잠겼는지가 오히려 안 보인다.
+                  sub: n > max ? l.forgeStrikeLocked(n) : null,
+                  on: chosen == n,
+                  locked: n > max,
+                  onTap: n > max ? null : () => pick(n),
+                ),
+            ],
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      gameDialogButton(l.actionClose, () => Navigator.pop(context, false)),
+    ],
+  );
+  return done ?? false;
+}
+
+/// 개수 칸 하나. 잠긴 것도 **지우지 않고 흐리게** 남겨 조건을 적는다.
+class _StrikeChip extends StatelessWidget {
+  const _StrikeChip({
+    required this.label,
+    required this.on,
+    required this.locked,
+    required this.onTap,
+    this.sub,
+    this.wide = false,
+  });
+
+  final String label;
+  final String? sub;
+  final bool on;
+  final bool locked;
+  final bool wide;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = locked
+        ? const Color(0x66FFFFFF)
+        : (on ? Colors.white : const Color(0xBBFFFFFF));
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: wide ? 154 : 74,
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        decoration: BoxDecoration(
+          color: on ? _honey.withValues(alpha: 0.28) : const Color(0x22000000),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: on
+                ? _honey
+                : (locked ? const Color(0x22FFFFFF) : const Color(0x33FFFFFF)),
+            width: on ? 1.6 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (locked) ...[
+                  const Icon(
+                    Icons.lock_outline_rounded,
+                    size: 11,
+                    color: Color(0x66FFFFFF),
+                  ),
+                  const SizedBox(width: 2),
+                ],
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: on ? FontWeight.w900 : FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+            if (sub != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Text(
+                  sub!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0x77FFFFFF),
+                    fontSize: 9,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// 제련 필터 — **원하는 능력치**. 하나라도 붙은 것만 모루에 쌓는다.

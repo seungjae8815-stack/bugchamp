@@ -99,6 +99,23 @@ class ForgeConfig {
     return n > autoStrikeMax ? autoStrikeMax : n;
   }
 
+  /// 실제로 뽑을 개수 — 유저가 고른 [chosen] 을 해금 상한으로 자른다.
+  ///
+  /// [chosen] 이 0 이하면 **상한 그대로**다. 고른 적 없는 유저(기본값 0)의
+  /// 체감이 바뀌면 안 되고, 챕터를 깨서 상한이 오르면 자동으로 따라 오른다.
+  ///
+  /// ⚠️ 상한으로 자르는 건 여기 한 곳이다 — 세이브의 [chosen] 은 손으로
+  /// 고칠 수 있으므로 화면이 아니라 계산에서 잘라야 챕터를 건너뛸 수 없다.
+  int effectiveStrikes({
+    required int difficultyTier,
+    required int chapter,
+    required int chosen,
+  }) {
+    final max = autoStrikes(difficultyTier: difficultyTier, chapter: chapter);
+    if (chosen <= 0 || chosen > max) return max;
+    return chosen;
+  }
+
   /// 현재 레벨 [level] → [level]+1 에 드는 **총** 골드.
   int levelUpGold(int level) =>
       (levelUpGoldBase * math.pow(levelUpGoldGrowth, level)).round();

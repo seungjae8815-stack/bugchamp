@@ -2160,6 +2160,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<void> setAutoForge({
     Set<ItemOptionKind>? options,
     int? minTier,
+    int? strikes,
     bool? stopOnHit,
   }) async {
     final s = state.requireValue;
@@ -2167,6 +2168,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.copyWith(
         autoForgeOptions: options,
         autoForgeMinTier: minTier,
+        autoForgeStrikes: strikes,
         autoForgeStopOnHit: stopOnHit,
       ),
     );
