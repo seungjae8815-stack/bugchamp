@@ -129,6 +129,26 @@
     "mushroom"
    ],
    "element": "metal"
+  },
+  {
+   "id": "ember_ridge",
+   "name": {
+    "ko": "잿불 능선",
+    "en": "Ember Ridge",
+    "ja": "熾火の尾根"
+   },
+   "bossName": {
+    "ko": "잿불의 군주",
+    "en": "Ember Sovereign",
+    "ja": "熾火の君主"
+   },
+   "bossFlip": true,
+   "habitatKinds": [
+    "rock",
+    "stump",
+    "tree"
+   ],
+   "element": "fire"
   }
  ],
  "upgrades": [

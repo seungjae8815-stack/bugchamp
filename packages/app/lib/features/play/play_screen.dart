@@ -1035,8 +1035,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 곤충 타격 — 각자 자기 간격으로. 플레이어와 같은 누산기 방식이라
     // 프레임이 튀어도 넣어야 할 대수가 안 사라진다.
     _petHits.clear();
-    for (final p in split.pets) {
-      var left = (_petAcc[p.bugId] ?? 0) + dt;
+    for (var i = 0; i < split.pets.length; i++) {
+      final p = split.pets[i];
+      // 처음 보는 곤충은 누산기를 **슬롯마다 어긋나게** 시작한다.
+      //
+      // 0 에서 다 같이 출발하면 같은 종 3마리는 간격도 같아 **완전히
+      // 동기화**되어 한 몸처럼 때린다(2026-09-08 제보). 같은 종을 모아
+      // 끼우는 편성이 오히려 밋밋해지는 셈이다.
+      // 위상만 밀 뿐 간격은 그대로라 DPS 는 안 변한다.
+      final phase = p.interval * i / split.pets.length;
+      var left = (_petAcc[p.bugId] ?? phase) + dt;
       // ⚠️ 몬스터가 이미 죽었어도 이번 프레임의 dt 는 누산기에 저장해야 한다.
       // 여기서 그냥 break/continue 하면 남은 곤충들의 dt 가 통째로 사라져
       // 빨리 죽는 구간에서 곤충 DPS 가 설계보다 낮게 나온다.
@@ -1069,13 +1077,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (_petPopCd.containsKey(h.bugId)) continue;
       _petPopCd[h.bugId] = 0.12;
       final idx = split.pets.indexWhere((p) => p.bugId == h.bugId);
+      final slot = idx < 0 ? 0 : idx;
+      // 플레이어 팝업(baseX 0.4 · baseY 0.0 · 20~26px · 순백)과 **자리와
+      // 높이를 둘 다 갈라 놓는다**. 예전엔 같은 자리에서 같은 높이로 떠서
+      // 큰 흰 숫자에 그대로 묻혔다(2026-09-08 제보).
+      //
+      // 곤충 몫은 전력의 일부라 숫자 자체가 작다 — 작은 숫자일수록 겹치면
+      // 안 보인다. 아래에서 떠오르게 하고 좌우로도 벌린다.
       _pops.add(
         _Pop(
           formatCompact(h.damage),
-          (_rng.nextDouble() - 0.5) * 0.4,
-          h.restrained ? const Color(0xFF7CFF9E) : Colors.white70,
-          15,
-          baseX: 0.4 + (idx < 0 ? 0 : idx) * 0.08,
+          (_rng.nextDouble() - 0.5) * 0.24,
+          h.restrained ? const Color(0xFF69F0AE) : Colors.white,
+          18,
+          baseX: 0.18 + slot * 0.22,
+          baseY: 0.34,
         ),
       );
     }
