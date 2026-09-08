@@ -130,18 +130,19 @@ void main() {
 
   group('설정 기본값', () {
     // `RunConfig.fromJson(const {})` / `PetConfig.fromJson(const {})` 는 다른
-    // 필드가 required 라 빈 맵에서 던진다. 대신 실데이터(§6)에 값이 실제로
-    // 박혀 있는지를 검사한다.
-    test('상극 배율이 run_config.json 에 있다', () {
-      final json = _readAppData('run_config.json');
-      expect(json['petRestrainMult'], 1.5);
+    // 필드가 required 라 빈 맵에서 던진다. 대신 실데이터(§6)를 **실제 파서에
+    // 그대로 먹여서** 키 매핑까지 검증한다 — 원시 키만 보면 파서 쪽의 오타
+    // (예: `petRestrainMultiplier`)를 못 잡는다.
+    test('상극 배율이 run_config.json 에서 RunConfig 로 파싱된다', () {
+      final run = RunConfig.fromJson(_readAppData('run_config.json'));
+      expect(run.petRestrainMult, 1.5);
     });
 
-    test('곤충 타격 간격 설정이 pets.json 에 있다', () {
-      final json = _readAppData('pets.json');
-      expect(json['attackSpdReference'], 100);
-      expect(json['attackIntervalMin'], 0.25);
-      expect(json['attackIntervalMax'], 2.5);
+    test('곤충 타격 간격 설정이 pets.json 에서 PetConfig 로 파싱된다', () {
+      final pets = PetConfig.fromJson(_readAppData('pets.json'));
+      expect(pets.attackSpdReference, 100);
+      expect(pets.attackIntervalMin, 0.25);
+      expect(pets.attackIntervalMax, 2.5);
     });
   });
 }
