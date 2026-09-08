@@ -860,7 +860,8 @@ Future<bool> showForgeStrikePick(
   var stopOnHit = save.autoForgeStopOnHit;
   // 멈출 기준이 없으면 체크해도 아무 일이 없다 — 켤 수 있게 두면 "켰는데
   // 안 멈춘다"가 된다. 필터를 먼저 걸라고 말해 준다.
-  final hasFilter = save.autoForgeOptions.isNotEmpty || save.autoForgeMinTier > 0;
+  final hasFilter =
+      save.autoForgeOptions.isNotEmpty || save.autoForgeMinTier > 0;
 
   final done = await showGameDialog<bool>(
     context,
@@ -944,8 +945,7 @@ Future<bool> showForgeStrikePick(
                       child: Checkbox(
                         value: stopOnHit && hasFilter,
                         visualDensity: VisualDensity.compact,
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         onChanged: hasFilter
                             ? (v) => setLocal(() => stopOnHit = v == true)
                             : null,
@@ -990,7 +990,10 @@ Future<bool> showForgeStrikePick(
       // 시작이 곧 저장이다. 닫기로 나가면 아무것도 안 바뀐다 — 고르다 말고
       // 나갔는데 설정이 바뀌어 있으면 그게 더 놀랍다.
       gameDialogButton(l.forgeStrikeStart, () {
-        ctrl.setAutoForge(strikes: chosen > max ? 0 : chosen, stopOnHit: stopOnHit);
+        ctrl.setAutoForge(
+          strikes: chosen > max ? 0 : chosen,
+          stopOnHit: stopOnHit,
+        );
         Navigator.pop(context, true);
       }),
     ],

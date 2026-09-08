@@ -1900,14 +1900,13 @@ class StorageScreen extends ConsumerWidget {
                 // 맞춰 나눈다** — 알이 많을수록 스크롤이 줄어야 고르기 쉽다.
                 child: GridView.builder(
                   padding: EdgeInsets.zero,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
-                        // 알 42 + 이름 + 포텐셜·속성 줄이 들어가는 비율.
-                        childAspectRatio: 0.86,
-                      ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    // 알 42 + 이름 + 포텐셜·속성 줄이 들어가는 비율.
+                    childAspectRatio: 0.86,
+                  ),
                   itemCount: eggs.length,
                   itemBuilder: (_, i) =>
                       _eggPickTile(ctx, r, data, l, locale, eggs[i]),
@@ -2004,7 +2003,11 @@ class StorageScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.star_rounded, size: 11, color: Color(0xFFFFE24A)),
+                  const Icon(
+                    Icons.star_rounded,
+                    size: 11,
+                    color: Color(0xFFFFE24A),
+                  ),
                   Text(
                     '${bug.potential}',
                     style: const TextStyle(

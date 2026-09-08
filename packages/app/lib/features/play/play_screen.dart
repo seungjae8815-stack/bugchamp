@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import 'pet_attackers.dart';
 import '../../ui/toast.dart';
 import '../../app_version.dart';
 import '../../data/game_data.dart';
@@ -393,6 +394,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   bool _walking = false;
   double _walkT = 0;
   double _attackAcc = 0;
+
+  /// 곤충별 타격 누산기(bugId → 쌓인 초). 플레이어 `_attackAcc` 와 같은 방식.
+  ///
+  /// 스폰마다 리셋하지 않는다 — `_enemyAtkAcc` 와 같은 이유로, 빨리 죽는
+  /// 구간에서 곤충이 영영 한 대도 못 때리게 된다.
+  final Map<String, double> _petAcc = {};
+
+  /// 이번 프레임에 곤충이 낸 타격(연출용). `_step` 이 채우고 Task 5 가 비운다.
+  final List<({String bugId, double damage, bool restrained})> _petHits = [];
   double _giftCheckAcc = 0; // 깜짝 선물 스폰 체크 누적(초)
   double _attackPulse = 0;
   double _hitFlash = 0;
@@ -659,6 +669,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return _applyPetBonus(base, computePetBonus(pets, cfg));
   }
 
+  /// 장착 곤충 → 분배 입력. `_petStats` 와 같은 목록을 훑되 **기준은 안 건드린다**.
+  List<PetAttackerInput> _equippedAttackerInputs(SaveGame save) {
+    final cfg = _data.petConfig;
+    if (cfg == null || save.equippedBugIds.isEmpty) return const [];
+    final now = _clock.now().toUtc();
+    final out = <PetAttackerInput>[];
+    for (final id in save.equippedBugIds) {
+      IndividualBug? bug;
+      for (final b in save.bugs) {
+        if (b.id == id) {
+          bug = b;
+          break;
+        }
+      }
+      if (bug == null) continue;
+      final sp = _data.speciesById[bug.speciesId];
+      if (sp == null) continue;
+      out.add((
+        bugId: bug.id,
+        element: bug.element,
+        spd: sp.baseStats.spd,
+        attack: petContribution(petStatOf(bug, sp, cfg, now), cfg).attack,
+      ));
+    }
+    return out;
+  }
+
   CharacterStats _applyPetBonus(CharacterStats s, PetBonus pb) =>
       CharacterStats(
         attack: s.attack * pb.attackMult,
@@ -854,7 +891,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       return;
     }
 
-    final stats = _stats(ref.read(saveControllerProvider).requireValue);
+    final save = ref.read(saveControllerProvider).requireValue;
+    final stats = _stats(save);
     _playerHpMax = stats.maxHp;
 
     if (_walking) {
@@ -898,6 +936,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (_isBoss) perHit *= stats.bossDamage;
 
     final interval = 1.0 / atkSpeed;
+
+    // 오늘의 한 대를 플레이어와 곤충이 나눠 갖는다. 총량은 그대로다 —
+    // §7 기준(`_petStats`)은 이 아래로 내려오지 않는다.
+    // ⚠️ `PetConfig.fromJson(const {})` 는 필수 키가 없어 던진다 — 설정이 아직
+    // 안 실렸으면 분배 자체를 건너뛴다(플레이어가 전부 때린다).
+    final region = _config.regionForStage(_stage);
+    final petCfg = _data.petConfig;
+    final split = petCfg == null
+        ? (playerMult: 1.0, pets: const <PetAttacker>[])
+        : buildPetAttackers(
+            equipped: _equippedAttackerInputs(save),
+            playerInterval: interval,
+            petConfig: petCfg,
+          );
+    // 곤충 데미지는 **나누기 전** 값을 기준으로 한다. 나눈 값을 쓰면 플레이어
+    // 지분만큼 한 번 더 깎인다(가장 흔한 실수다).
+    final perHitFull = perHit;
+    perHit *= split.playerMult;
+
     _attackAcc += dt;
     var guard = 0;
     while (_attackAcc >= interval && _hp > 0 && guard < 20) {
@@ -940,6 +997,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       }
       guard++;
     }
+
+    // 곤충 타격 — 각자 자기 간격으로. 플레이어와 같은 누산기 방식이라
+    // 프레임이 튀어도 넣어야 할 대수가 안 사라진다.
+    _petHits.clear();
+    for (final p in split.pets) {
+      if (_hp <= 0) break;
+      var left = (_petAcc[p.bugId] ?? 0) + dt;
+      var petGuard = 0;
+      final rest = petRestrainMult(
+        p.element,
+        region.element,
+        _config.petRestrainMult,
+      );
+      while (left >= p.interval && _hp > 0 && petGuard < 20) {
+        left -= p.interval;
+        petGuard++;
+        // 곤충 타격에는 치명타를 굴리지 않는다 — 굴리면 화면이 노란 숫자로
+        // 덮이고, 무엇보다 치명 기대값이 분배에 이미 들어 있어 **총량이
+        // 어긋난다**.
+        final dmg = perHitFull * p.damageMult * rest;
+        _hp -= dmg;
+        _petHits.add((bugId: p.bugId, damage: dmg, restrained: rest > 1));
+      }
+      _petAcc[p.bugId] = left;
+    }
+
     if (_hp <= 0) _beginDeath(stats);
   }
 

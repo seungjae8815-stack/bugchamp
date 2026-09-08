@@ -2042,8 +2042,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final stack = [...s.forgeStack];
     // 멈출 기준이 있을 때만 멈춘다. 필터가 비어 있으면 **전부가 목표**라
     // 첫 개에서 멈춰 배수가 통째로 죽는다.
-    final stopOnHit =
-        s.autoForgeStopOnHit && (want.isNotEmpty || minTier > 0);
+    final stopOnHit = s.autoForgeStopOnHit && (want.isNotEmpty || minTier > 0);
     EquipItem? last;
     var forged = 0, kept = 0;
     var full = false, dry = false, hit = false;
