@@ -891,6 +891,11 @@ Future<bool> showForgeStrikePick(
                   isExpanded: true,
                   dropdownColor: const Color(0xFF2A1B08),
                   iconEnabledColor: _honey,
+                  // ⚠️ 안 자르면 항목 11개를 **한 번에 다 펼쳐서** 다이얼로그
+                  // 위로 화면 밖까지 넘어간다(2026-09-08 제보). 네 줄쯤만
+                  // 보이게 잘라 나머지는 스크롤로 넘긴다.
+                  menuMaxHeight: 220,
+                  itemHeight: 48,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   items: [
                     // `최대` 는 숫자를 고정하지 않는다 — 챕터를 깨면 따라
