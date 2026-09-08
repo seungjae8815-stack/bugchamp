@@ -403,6 +403,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 이번 프레임에 곤충이 낸 타격(연출용). `_step` 이 채우고 Task 5 가 비운다.
   final List<({String bugId, double damage, bool restrained})> _petHits = [];
+
+  /// 곤충별 공격 모션 펄스(0~1). 플레이어 `_attackPulse` 와 같은 감쇠.
+  final Map<String, double> _petPulse = {};
+
+  /// 곤충별 데미지 팝업 쿨다운 — 4주체가 각자 팝업을 띄우면 화면이 숫자로
+  /// 덮인다. 플레이어 `_dmgCooldown = 0.12` 와 같은 방식.
+  final Map<String, double> _petPopCd = {};
   double _giftCheckAcc = 0; // 깜짝 선물 스폰 체크 누적(초)
   double _attackPulse = 0;
   double _hitFlash = 0;
@@ -847,6 +854,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _boostMult = math.max(1.0, _boostMult - _config.boostDecayPerSec * dt);
     }
     if (_attackPulse > 0) _attackPulse = math.max(0, _attackPulse - dt * 2.6);
+    for (final k in _petPulse.keys.toList()) {
+      final v = _petPulse[k]! - dt * 2.6;
+      v <= 0 ? _petPulse.remove(k) : _petPulse[k] = v;
+    }
+    for (final k in _petPopCd.keys.toList()) {
+      final v = _petPopCd[k]! - dt;
+      v <= 0 ? _petPopCd.remove(k) : _petPopCd[k] = v;
+    }
     if (_hitFlash > 0) _hitFlash = math.max(0, _hitFlash - dt * 7);
     if (_retreatFlash > 0) _retreatFlash = math.max(0, _retreatFlash - dt);
     if (_enemyLunge > 0) _enemyLunge = math.max(0, _enemyLunge - dt * 3);
@@ -1002,26 +1017,50 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 프레임이 튀어도 넣어야 할 대수가 안 사라진다.
     _petHits.clear();
     for (final p in split.pets) {
-      if (_hp <= 0) break;
       var left = (_petAcc[p.bugId] ?? 0) + dt;
-      var petGuard = 0;
-      final rest = petRestrainMult(
-        p.element,
-        region.element,
-        _config.petRestrainMult,
-      );
-      while (left >= p.interval && _hp > 0 && petGuard < 20) {
-        left -= p.interval;
-        petGuard++;
-        // 곤충 타격에는 치명타를 굴리지 않는다 — 굴리면 화면이 노란 숫자로
-        // 덮이고, 무엇보다 치명 기대값이 분배에 이미 들어 있어 **총량이
-        // 어긋난다**.
-        final dmg = perHitFull * p.damageMult * rest;
-        _hp -= dmg;
-        _petHits.add((bugId: p.bugId, damage: dmg, restrained: rest > 1));
+      // ⚠️ 몬스터가 이미 죽었어도 이번 프레임의 dt 는 누산기에 저장해야 한다.
+      // 여기서 그냥 break/continue 하면 남은 곤충들의 dt 가 통째로 사라져
+      // 빨리 죽는 구간에서 곤충 DPS 가 설계보다 낮게 나온다.
+      if (_hp > 0) {
+        var petGuard = 0;
+        final rest = petRestrainMult(
+          p.element,
+          region.element,
+          _config.petRestrainMult,
+        );
+        while (left >= p.interval && _hp > 0 && petGuard < 20) {
+          left -= p.interval;
+          petGuard++;
+          // 곤충 타격에는 치명타를 굴리지 않는다 — 굴리면 화면이 노란 숫자로
+          // 덮이고, 무엇보다 치명 기대값이 분배에 이미 들어 있어 **총량이
+          // 어긋난다**.
+          final dmg = perHitFull * p.damageMult * rest;
+          _hp -= dmg;
+          _petHits.add((bugId: p.bugId, damage: dmg, restrained: rest > 1));
+        }
       }
       _petAcc[p.bugId] = left;
     }
+
+    // 곤충 타격 연출 — 펄스(공격 자세·앞으로 튐)와 데미지 팝업.
+    // ⚠️ 여기서만 소비한다. `_walking`/`_dying`/`_defeated` 이른 return 프레임에
+    // 걸리면 지난 히트가 다음 프레임에 다시 재생되어 곤충이 헛스윙으로 보인다.
+    for (final h in _petHits) {
+      _petPulse[h.bugId] = 1;
+      if (_petPopCd.containsKey(h.bugId)) continue;
+      _petPopCd[h.bugId] = 0.12;
+      final idx = split.pets.indexWhere((p) => p.bugId == h.bugId);
+      _pops.add(
+        _Pop(
+          formatCompact(h.damage),
+          (_rng.nextDouble() - 0.5) * 0.4,
+          h.restrained ? const Color(0xFF7CFF9E) : Colors.white70,
+          15,
+          baseX: 0.4 + (idx < 0 ? 0 : idx) * 0.08,
+        ),
+      );
+    }
+    _petHits.clear();
 
     if (_hp <= 0) _beginDeath(stats);
   }
@@ -3078,18 +3117,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           alignment: align,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            // 캐릭터 공격 시 살짝 같이 앞으로 튀며 동행감.
+            // 캐릭터를 따라 움직이던 것을 **자기 타격**에 반응하게 바꾼다.
+            // 캐릭터 펄스를 그대로 쓰면 곤충이 자기 리듬으로 때리는 게
+            // 화면에 안 보인다.
             child: Transform.translate(
-              offset: Offset(_attackPulse * 8, bob),
+              offset: Offset((_petPulse[bug.id] ?? 0) * 14, bob),
               child: Opacity(
                 opacity: 0.92,
-                child: bugStageImage(
-                  bug.speciesId,
-                  stage,
-                  size: size,
-                  fallback: bugAvatar(sp, size: size),
-                  skin: bugView(ref.watch(skinOfProvider), bug),
-                ),
+                child: stage == LifeStage.adult
+                    ? bugPoseImage(
+                        bug.speciesId,
+                        (_petPulse[bug.id] ?? 0) > 0.12
+                            ? BugPose.attack
+                            : BugPose.idle,
+                        size: size,
+                        fallback: bugAvatar(sp, size: size - 4),
+                        skin: bugView(ref.watch(skinOfProvider), bug),
+                      )
+                    : bugStageImage(
+                        bug.speciesId,
+                        stage,
+                        size: size,
+                        fallback: bugAvatar(sp, size: size),
+                        skin: bugView(ref.watch(skinOfProvider), bug),
+                      ),
               ),
             ),
           ),
