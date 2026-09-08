@@ -63,7 +63,8 @@
     "flower",
     "stump",
     "mushroom"
-   ]
+   ],
+   "element": "earth"
   },
   {
    "id": "valley_stream",
@@ -83,7 +84,8 @@
     "mushroom",
     "stump",
     "flower"
-   ]
+   ],
+   "element": "water"
   },
   {
    "id": "grass_field",
@@ -102,7 +104,8 @@
     "flower",
     "tree",
     "mushroom"
-   ]
+   ],
+   "element": "wood"
   },
   {
    "id": "night_mountain",
@@ -122,7 +125,8 @@
     "rock",
     "stump",
     "mushroom"
-   ]
+   ],
+   "element": "metal"
   }
  ],
  "upgrades": [

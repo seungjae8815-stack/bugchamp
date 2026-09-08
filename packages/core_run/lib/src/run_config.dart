@@ -71,6 +71,7 @@ class RegionConfig {
     required this.bossName,
     required this.habitatKinds,
     this.bossFlip = true,
+    this.element,
   });
 
   /// 기존 필드 id 재활용 가능 (예: 'oak_forest').
@@ -83,6 +84,13 @@ class RegionConfig {
   /// 원본 아트가 오른쪽을 보면 true, 이미 왼쪽을 보면 false.
   final bool bossFlip;
 
+  /// 이 지역 몬스터의 오행 속성. **null 이면 무속성**(상극이 안 걸린다).
+  ///
+  /// 지역 단위인 이유: 지역마다 편성을 바꾸는 것이 이 시스템이 만들려는
+  /// 행동이다. 몬스터 개체마다 무작위로 주면 편성을 미리 고를 수 없어
+  /// **판단 자체가 사라진다**.
+  final Element? element;
+
   factory RegionConfig.fromJson(Map<String, dynamic> json) => RegionConfig(
     id: json['id'] as String,
     name: LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
@@ -92,6 +100,11 @@ class RegionConfig {
         .map(HabitatKind.fromKey)
         .toList(),
     bossFlip: json['bossFlip'] as bool? ?? true,
+    // `fromKey` 가 아니라 `fromKeyOrNull` 이다. 애셋 오타를 로딩에서 잡는
+    // 다른 필드와 달리, 이건 **없어도 정상**(무속성)이라 던지면 안 된다.
+    element: json['element'] == null
+        ? null
+        : Element.fromKeyOrNull(json['element'] as String),
   );
 }
 
