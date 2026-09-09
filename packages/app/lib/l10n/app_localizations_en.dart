@@ -2817,6 +2817,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eliteLabel => 'ELITE';
 
   @override
+  String todoInjured(int n) {
+    return 'Hurt $n';
+  }
+
+  @override
+  String get todoHatch => 'Hatched';
+
+  @override
+  String get todoBreed => 'Egg ready';
+
+  @override
+  String get todoBuffOff => 'Buffs off';
+
+  @override
+  String get todoStorageFull => 'Box full';
+
+  @override
+  String todoTickets(int n) {
+    return 'Duel $n';
+  }
+
+  @override
+  String get todoReward => 'Claim';
+
+  @override
   String gateGearHint(String cur, String need) {
     return 'Gear ×$cur · suggested ×$need';
   }

@@ -2760,6 +2760,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eliteLabel => '精鋭';
 
   @override
+  String todoInjured(int n) {
+    return '負傷 $n';
+  }
+
+  @override
+  String get todoHatch => '孵化完了';
+
+  @override
+  String get todoBreed => '卵の受取';
+
+  @override
+  String get todoBuffOff => 'バフ切れ';
+
+  @override
+  String get todoStorageFull => '収集箱が満杯';
+
+  @override
+  String todoTickets(int n) {
+    return '決闘 $n';
+  }
+
+  @override
+  String get todoReward => '受け取る';
+
+  @override
   String gateGearHint(String cur, String need) {
     return '装備 ×$cur · 推奨 ×$need';
   }

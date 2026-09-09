@@ -5050,6 +5050,48 @@ abstract class AppLocalizations {
   /// **'ELITE'**
   String get eliteLabel;
 
+  /// No description provided for @todoInjured.
+  ///
+  /// In en, this message translates to:
+  /// **'Hurt {n}'**
+  String todoInjured(int n);
+
+  /// No description provided for @todoHatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatched'**
+  String get todoHatch;
+
+  /// No description provided for @todoBreed.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg ready'**
+  String get todoBreed;
+
+  /// No description provided for @todoBuffOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffs off'**
+  String get todoBuffOff;
+
+  /// No description provided for @todoStorageFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Box full'**
+  String get todoStorageFull;
+
+  /// No description provided for @todoTickets.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel {n}'**
+  String todoTickets(int n);
+
+  /// No description provided for @todoReward.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get todoReward;
+
   /// No description provided for @gateGearHint.
   ///
   /// In en, this message translates to:

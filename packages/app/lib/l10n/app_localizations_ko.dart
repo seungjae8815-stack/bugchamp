@@ -2766,6 +2766,31 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eliteLabel => '정예';
 
   @override
+  String todoInjured(int n) {
+    return '부상 $n';
+  }
+
+  @override
+  String get todoHatch => '부화 완료';
+
+  @override
+  String get todoBreed => '알 수령';
+
+  @override
+  String get todoBuffOff => '버프 꺼짐';
+
+  @override
+  String get todoStorageFull => '채집함 가득';
+
+  @override
+  String todoTickets(int n) {
+    return '결투 $n';
+  }
+
+  @override
+  String get todoReward => '보상 받기';
+
+  @override
   String gateGearHint(String cur, String need) {
     return '장비 ×$cur · 권장 ×$need';
   }
