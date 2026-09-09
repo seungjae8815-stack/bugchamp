@@ -253,6 +253,40 @@ EquipItem rerollOptions({
   return EquipItem(slot: item.slot, tier: item.tier, options: options);
 }
 
+/// 옵션 **한 칸만** 다시 굴린다(0-based [index]).
+///
+/// 사장님 확정(2026-09-09): 옵션 두 개를 **각각** 바꿀 수 있어야 한다. 통째로
+/// 굴리면 마음에 드는 한 줄까지 같이 날아가서, 원하는 조합을 맞추는 게
+/// 사실상 불가능하다.
+///
+/// ⚠️ **같은 종류가 겹치면 안 된다** — 나머지 칸에 이미 있는 종류를 빼고
+/// 뽑는다. 공격력 두 줄이 붙으면 합산이라 한 줄과 다를 바가 없고,
+/// 무엇보다 그 장비의 축이 하나로 줄어든다.
+/// 등급·부위는 그대로다(등급을 젤리로 바꾸면 §2.6 P2W 금지선을 넘는다).
+EquipItem rerollOptionAt({
+  required math.Random rng,
+  required ItemConfig items,
+  required EquipItem item,
+  required int index,
+}) {
+  if (index < 0 || index >= item.options.length) return item;
+  final others = {
+    for (var i = 0; i < item.options.length; i++)
+      if (i != index) item.options[i].kind,
+  };
+  final pool = items.optionPool
+      .where((r) => !others.contains(r.kind))
+      .toList(growable: false);
+  if (pool.isEmpty) return item;
+  final r = pool[rng.nextInt(pool.length)];
+  final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
+  final hi = r.maxAt(item.tier);
+  final v = r.min + roll * (hi - r.min);
+  final next = [...item.options];
+  next[index] = ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10);
+  return EquipItem(slot: item.slot, tier: item.tier, options: next);
+}
+
 EquipItem forgeOnce({
   required math.Random rng,
   required ItemConfig items,

@@ -2130,6 +2130,53 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 옵션 **한 칸만** 다시 굴린다 — 모루 맨 위(`equipped: false`) 또는
+  /// 이미 낀 장비(`equipped: true`, 부위를 [slot] 으로 지정).
+  ///
+  /// 사장님 확정(2026-09-09): 두 옵션을 각각 바꿀 수 있어야 하고, **이미 낀
+  /// 장비도** 바꿀 수 있어야 한다. 낀 것을 못 바꾸면 좋은 등급을 뽑고도
+  /// 옵션이 나쁘면 버려야 해서, 등급을 모으는 의미가 줄어든다.
+  Future<bool> rerollOption({
+    required int index,
+    bool equipped = false,
+    EquipSlot? slot,
+  }) async {
+    final data = ref.read(gameDataProvider).value;
+    final items = data?.itemConfig;
+    final forge = data?.forgeConfig;
+    if (items == null || forge == null) return false;
+    final s = state.requireValue;
+
+    final target = equipped
+        ? (slot == null ? null : s.equippedItems[slot])
+        : (s.forgeStack.isEmpty ? null : s.forgeStack.last);
+    if (target == null || index >= target.options.length) return false;
+
+    final cost = forge.rerollJelly;
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cost) return false;
+
+    final next = rerollOptionAt(
+      rng: _forgeRng,
+      items: items,
+      item: target,
+      index: index,
+    );
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cost;
+
+    if (equipped) {
+      final eq = Map<EquipSlot, EquipItem>.from(s.equippedItems)
+        ..[slot!] = next;
+      await _commit(s.copyWith(equippedItems: eq, materials: mats));
+    } else {
+      final stack = [...s.forgeStack];
+      stack[stack.length - 1] = next;
+      await _commit(s.copyWith(forgeStack: stack, materials: mats));
+    }
+    return true;
+  }
+
   /// 망치질 가속(젤리) — 이미 켜져 있으면 남은 시간에 **이어 붙인다**.
   ///
   /// 덮어쓰면 남은 시간을 산 사람이 손해를 본다.

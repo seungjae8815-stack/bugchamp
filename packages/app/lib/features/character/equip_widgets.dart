@@ -126,12 +126,23 @@ class ItemOptionList extends StatelessWidget {
     required this.config,
     this.compare,
     this.dense = false,
+    this.rerollCost,
+    this.onReroll,
   });
 
   final EquipItem item;
   final ItemConfig config;
   final EquipItem? compare;
   final bool dense;
+
+  /// 옵션 한 칸을 다시 굴리는 젤리 값. null 이면 버튼을 안 그린다.
+  ///
+  /// **부위 기본 스탯 줄에는 안 붙인다** — 그건 옵션이 아니라 그 부위의
+  /// 고정 성능이라 바꿀 수 있는 값이 아니다(바꾸면 부위의 정체가 사라진다).
+  final int? rerollCost;
+
+  /// 옵션 인덱스(0-based)를 받아 재굴림을 실행한다.
+  final void Function(int index)? onReroll;
 
   @override
   Widget build(BuildContext context) {
@@ -152,13 +163,28 @@ class ItemOptionList extends StatelessWidget {
         ),
       );
     }
-    for (final o in item.options) {
-      rows.add(_row(optionLabel(l, o.kind), o.value));
+    for (var i = 0; i < item.options.length; i++) {
+      final o = item.options[i];
+      rows.add(
+        _row(
+          optionLabel(l, o.kind),
+          o.value,
+          // 옵션마다 따로 굴린다 — 통째로 굴리면 마음에 드는 한 줄까지
+          // 같이 날아가서 원하는 조합을 못 맞춘다(2026-09-09 확정).
+          onReroll: onReroll == null ? null : () => onReroll!(i),
+        ),
+      );
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
   }
 
-  Widget _row(String label, double value, {bool bold = false, double? delta}) {
+  Widget _row(
+    String label,
+    double value, {
+    bool bold = false,
+    double? delta,
+    VoidCallback? onReroll,
+  }) {
     final up = delta != null && delta > 0.01;
     final down = delta != null && delta < -0.01;
     return Padding(
@@ -203,6 +229,49 @@ class ItemOptionList extends StatelessWidget {
                   )
                 : null,
           ),
+          // 옵션 줄 오른쪽에 **새로고침 + 젤리 + 값**. 눌러 보기 전에
+          // 무엇을 얼마에 바꾸는지 보여야 한다(2026-09-09 확정).
+          if (onReroll != null && rerollCost != null)
+            GestureDetector(
+              onTap: onReroll,
+              child: Container(
+                margin: const EdgeInsets.only(left: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0x337E57C2),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: const Color(0x887E57C2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.refresh_rounded,
+                      size: 11,
+                      color: Color(0xFFCE93D8),
+                    ),
+                    const SizedBox(width: 1),
+                    materialImage(
+                      MaterialKind.jelly,
+                      size: 10,
+                      fallback: const Icon(
+                        Icons.bubble_chart,
+                        size: 9,
+                        color: Color(0xFFCE93D8),
+                      ),
+                    ),
+                    Text(
+                      '$rerollCost',
+                      style: const TextStyle(
+                        color: Color(0xFFCE93D8),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -921,6 +921,8 @@ class _CompareSide extends StatelessWidget {
     required this.locale,
     this.compare,
     this.highlight = false,
+    this.rerollCost,
+    this.onReroll,
   });
 
   final String label;
@@ -929,6 +931,8 @@ class _CompareSide extends StatelessWidget {
   final String locale;
   final EquipItem? compare;
   final bool highlight;
+  final int? rerollCost;
+  final void Function(int index)? onReroll;
 
   @override
   Widget build(BuildContext context) {
@@ -990,6 +994,8 @@ class _CompareSide extends StatelessWidget {
             config: config,
             compare: compare,
             dense: true,
+            rerollCost: rerollCost,
+            onReroll: onReroll,
           ),
       ],
     );
@@ -1056,44 +1062,35 @@ Future<bool> showForgeResult(
                     locale: locale,
                     compare: cur,
                     highlight: true,
+                    rerollCost: forge?.rerollJelly,
+                    onReroll: forge == null
+                        ? null
+                        : (i) async {
+                            final ok = await ref
+                                .read(saveControllerProvider.notifier)
+                                .rerollOption(index: i);
+                            if (!ctx.mounted) return;
+                            if (!ok) {
+                              showCenterToast(ctx, l.forgeNoJelly);
+                              return;
+                            }
+                            final stack = ref
+                                .read(saveControllerProvider)
+                                .requireValue
+                                .forgeStack;
+                            if (stack.isNotEmpty) {
+                              setLocal(() => shown = stack.last);
+                            }
+                          },
                   ),
                 ),
               ],
             ),
-            // 재굴림은 **옵션 바로 아래**가 제자리다. 모루 줄에 두면 무엇이
-            // 굴려지는지 안 보인 채로 눌러야 했다(2026-09-09 지적).
-            if (forge != null) ...[
-              const SizedBox(height: 10),
-              _JellyChip(
-                icon: Icons.casino_rounded,
-                label: l.forgeReroll,
-                cost: forge.rerollJelly,
-                enabled: true,
-                onTap: () async {
-                  final ok = await ref
-                      .read(saveControllerProvider.notifier)
-                      .rerollForgeTop();
-                  if (!ctx.mounted) return;
-                  if (!ok) {
-                    showCenterToast(ctx, l.forgeNoJelly);
-                    return;
-                  }
-                  final stack = ref
-                      .read(saveControllerProvider)
-                      .requireValue
-                      .forgeStack;
-                  if (stack.isNotEmpty) setLocal(() => shown = stack.last);
-                },
-              ),
-              const SizedBox(height: 2),
-              Text(
-                l.forgeRerollHint,
-                style: const TextStyle(
-                  color: Color(0x88FFFFFF),
-                  fontSize: 10.5,
-                ),
-              ),
-            ],
+            const SizedBox(height: 4),
+            Text(
+              l.forgeRerollHint,
+              style: const TextStyle(color: Color(0x88FFFFFF), fontSize: 10.5),
+            ),
           ],
         ),
       ),

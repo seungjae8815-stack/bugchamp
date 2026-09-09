@@ -680,6 +680,87 @@ void _forgeSinkTests() {
     });
   });
 
+  group('옵션 한 칸만 재굴림', () {
+    EquipItem two() => EquipItem(
+      slot: EquipSlot.tool,
+      tier: top,
+      options: const [
+        ItemOption(kind: ItemOptionKind.attack, value: 5.0),
+        ItemOption(kind: ItemOptionKind.maxHp, value: 3.0),
+      ],
+    );
+
+    test('지목한 칸만 바뀌고 나머지는 그대로다', () {
+      // 통째로 굴리면 마음에 드는 한 줄까지 날아가 조합을 못 맞춘다.
+      final item = two();
+      for (var seed = 0; seed < 40; seed++) {
+        final out = rerollOptionAt(
+          rng: Random(seed),
+          items: items,
+          item: item,
+          index: 0,
+        );
+        expect(out.options[1].kind, item.options[1].kind);
+        expect(out.options[1].value, item.options[1].value);
+        expect(out.options.length, 2);
+      }
+    });
+
+    test('⚠️ 나머지 칸과 종류가 겹치지 않는다', () {
+      // 공격력 두 줄은 합산이라 한 줄과 다를 바가 없고, 그 장비의 축이
+      // 하나로 줄어든다.
+      final item = two();
+      for (var seed = 0; seed < 200; seed++) {
+        final out = rerollOptionAt(
+          rng: Random(seed),
+          items: items,
+          item: item,
+          index: 0,
+        );
+        expect(out.options[0].kind, isNot(out.options[1].kind));
+      }
+    });
+
+    test('등급·부위는 그대로다 — 등급을 사면 §2.6 위반', () {
+      final item = two();
+      final out = rerollOptionAt(
+        rng: Random(3),
+        items: items,
+        item: item,
+        index: 1,
+      );
+      expect(out.tier, item.tier);
+      expect(out.slot, item.slot);
+    });
+
+    test('굴릴 때마다 달라진다', () {
+      final item = two();
+      final seen = <String>{};
+      for (var seed = 0; seed < 40; seed++) {
+        final out = rerollOptionAt(
+          rng: Random(seed),
+          items: items,
+          item: item,
+          index: 0,
+        );
+        seen.add('${out.options[0].kind}:${out.options[0].value}');
+      }
+      expect(seen.length, greaterThan(5));
+    });
+
+    test('범위 밖 인덱스는 원본을 그대로 돌려준다 — 젤리만 쓰고 끝나면 안 된다', () {
+      final item = two();
+      expect(
+        rerollOptionAt(rng: Random(1), items: items, item: item, index: 5),
+        item,
+      );
+      expect(
+        rerollOptionAt(rng: Random(1), items: items, item: item, index: -1),
+        item,
+      );
+    });
+  });
+
   group('모루 칸 확장', () {
     const f = ForgeConfig(stackExpandJelly: 100, stackExpandStep: 2);
 

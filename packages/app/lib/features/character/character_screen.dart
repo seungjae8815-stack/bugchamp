@@ -465,7 +465,7 @@ class _EquipGrid extends StatelessWidget {
   );
 }
 
-class _EquipCell extends StatelessWidget {
+class _EquipCell extends ConsumerWidget {
   const _EquipCell({
     required this.slot,
     required this.item,
@@ -477,7 +477,7 @@ class _EquipCell extends StatelessWidget {
   final ItemConfig config;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     final color = item == null
@@ -487,7 +487,7 @@ class _EquipCell extends StatelessWidget {
     // 쌓아서 정작 아이템이 제일 작았다 — 뭘 꼈는지 한눈에 안 들어왔다.
     // 글씨는 아래에 겹쳐 얹고, 등급은 테두리 색이 이미 말해 준다.
     return InkWell(
-      onTap: item == null ? null : () => _detail(context, locale),
+      onTap: item == null ? null : () => _detail(context, ref, locale),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         clipBehavior: Clip.antiAlias,
@@ -568,13 +568,44 @@ class _EquipCell extends StatelessWidget {
     );
   }
 
-  void _detail(BuildContext context, String locale) {
+  /// 낀 장비의 상세 — **여기서도 옵션을 바꿀 수 있다**.
+  ///
+  /// 낀 것을 못 바꾸면 좋은 등급을 뽑고도 옵션이 나쁘면 버려야 해서,
+  /// 등급을 모으는 의미가 줄어든다(2026-09-09 확정).
+  void _detail(BuildContext context, WidgetRef ref, String locale) {
     final l = AppLocalizations.of(context);
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
     showGameDialog<void>(
       context,
       title: itemName(config, l, locale, item!),
       iconWidget: itemImage(item!, size: 40),
-      content: ItemOptionList(item: item!, config: config),
+      content: StatefulBuilder(
+        builder: (ctx, setLocal) {
+          // 굴린 뒤 값이 바뀌므로 **세이브에서 다시 읽는다** — 생성자로 받은
+          // item 은 창을 연 순간의 사본이라 갱신되지 않는다.
+          final now =
+              ref.read(saveControllerProvider).value?.equippedItems[slot] ??
+              item!;
+          return ItemOptionList(
+            item: now,
+            config: config,
+            rerollCost: forge?.rerollJelly,
+            onReroll: forge == null
+                ? null
+                : (i) async {
+                    final ok = await ref
+                        .read(saveControllerProvider.notifier)
+                        .rerollOption(index: i, equipped: true, slot: slot);
+                    if (!ctx.mounted) return;
+                    if (!ok) {
+                      showCenterToast(ctx, l.forgeNoJelly);
+                      return;
+                    }
+                    setLocal(() {});
+                  },
+          );
+        },
+      ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );
   }
