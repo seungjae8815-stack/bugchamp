@@ -45,6 +45,23 @@ Consistent creature in all four, plain background, no text, no logo, no watermar
 ```
 > 다른 지역 보스도 같은 방식(잘린 파일 앞에 지역 id: `valley_stream_` 등).
 
+### 2-1. 잿불의 군주 (`ember_ridge`) — ⚠️ 미제작
+> 2026-09-09 추가된 화(火) 지역의 보스. idle 은 `art_prompts_v2.md` STEP 16 으로
+> 먼저 만들고, **그 이미지를 첨부**해서 아래를 넣는다.
+> 결과 → `bosses/ember_ridge_attack_1.webp`·`_attack_2.webp`·`_death_1.webp`·`_death_2.webp`.
+
+```
+Using this exact boss creature (giant volcanic fire beetle with charcoal-black armored shell and glowing molten orange cracks, same design and colors), create a 2x2 sprite sheet on a plain flat background, clear even spacing between the four cells, boss at the same size and position in each cell. Side view facing left. Four poses:
+- top-left: lunging forward and slamming its red-hot mandibles down, ember sparks bursting from the impact
+- top-right: rearing up with its shell cracks flaring bright molten orange, heat haze rising, menacing
+- bottom-left: staggering and wounded, the glow in its cracks dimming to dull red, smoke trailing
+- bottom-right: flipped over on its back with legs up, cracks gone dark and cooled to grey ash, defeated
+Consistent creature in all four, plain background, no text, no logo, no watermark.
+```
+
+> 💡 이 보스는 **빛(용암 균열)이 상태를 말한다** — 다른 보스와 달리 죽는 포즈에서
+> 빛이 꺼지게 잡았다. 자세만 바꾸고 빛을 그대로 두면 쓰러졌는데 멀쩡해 보인다.
+
 ---
 
 ## 3. (선택) 서식지 파괴 시트
