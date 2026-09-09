@@ -44,6 +44,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../character/item_gallery.dart';
+import 'monster_gallery.dart';
 import '../storage/skin_gallery.dart';
 import '../event/event_screen.dart';
 import '../roadmap/roadmap_screen.dart';
@@ -5432,6 +5433,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) => const ItemGalleryScreen(),
+                          ),
+                        );
+                      }),
+                    ]),
+                    // 몬스터도 같은 이유 — 스테이지를 실제로 밟아야 나오고,
+                    // 타격·피격 자세는 찰나에만 스친다. 좌우반전이 틀렸는지도
+                    // 게임 안에서는 지나가 버려 못 잡는다.
+                    _devSection('몬스터', [
+                      _devBtn('몬스터·보스 그림/모션 보기', () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const MonsterGalleryScreen(),
                           ),
                         );
                       }),
