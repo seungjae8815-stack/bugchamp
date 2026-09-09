@@ -64,9 +64,38 @@ Consistent creature in all four, plain background, no text, no logo, no watermar
 
 ---
 
-## 3. (선택) 서식지 파괴 시트
-서식지는 지금도 넘어지며 사라지는 코드 연출이 있어 없어도 됩니다. 원하면 **1×2 또는 2×2**로 정상→균열→파괴 포즈를 만들면
-제가 잘라 `habitats/<종류>_death_1.webp`·`_death_2.webp` 로 넣습니다.
+## 3. 몬스터 타격 모션 (2026-09-09) — 20종 각각
+
+몬스터(`habitats/`)도 **자기 타격 모션**이 필요하다. 지금은 플레이어를 때릴 때
+앞으로 튀어나오는 이동만 있고 자세는 그대로라, 무는 건지 밀리는 건지 안 보인다.
+코드는 이미 `habitats/<id>_attack_1.webp` · `_attack_2.webp` 를 찾는다 —
+**그림만 넣으면 바로 재생된다**(`play_screen.dart` 의 `_enemyLunge`).
+
+### 재생 순서 ⚠️ 먼저 읽을 것
+`_enemyLunge` 가 1 에서 0 으로 줄면서 **`attack_1` → `attack_2`** 순으로 넘어간다.
+즉 **1번이 먼저 나가는 타격**이고 **2번이 되돌아오는 자세**다.
+보스 시트(§2)는 `1=내리치기 / 2=곧추서기` 로 잡혀 있어 헷갈리기 쉽다 —
+몬스터는 **1=덤벼듦 / 2=물러남** 으로 잡는다.
+
+### 만드는 법
+종별 idle(STEP 17 로 만든 `habitats/<id>.webp`)을 **첨부**하고 아래를 넣는다.
+20종 모두 같은 프롬프트를 쓴다 — 첨부한 그림이 종을 정한다.
+
+```
+Using this exact creature (same design, colors and proportions), create a 1x2 sprite sheet on a plain flat background, clear even spacing between the two cells, the creature at the same size and position in both cells. Side view facing left. Two poses:
+- left cell: lunging forward to attack, body stretched toward the left, mouth open, limbs thrown forward, aggressive
+- right cell: pulling back after the strike, body coiled and leaning away to the right, recovering
+Consistent creature in both, plain background, no text, no logo, no watermark.
+```
+
+> 결과 → 제가 반으로 잘라 `habitats/<id>_attack_1.webp`(덤벼듦)·`_attack_2.webp`(물러남) 로 저장.
+> ⚠️ 두 칸을 **각자 트림하면 안 된다** — 여백이 달라 재생할 때 몬스터가 튄다.
+> 합집합 bbox 로 함께 자른다(잿불 보스에서 그렇게 했다).
+
+### 사망 프레임은 **안 만들어도 된다**
+쓰러질 때 코드가 **회전(1.3rad) + 아래로 밀기 + 페이드**를 준다. 그림 없이도
+넘어가며 사라진다. 굳이 `_death_1/2` 를 넣으면 그 회전이 **위에 겹쳐** 두 번
+쓰러지는 것처럼 보인다 — 넣을 거면 그림에서는 자세를 거의 안 눕히는 게 낫다.
 
 ---
 
