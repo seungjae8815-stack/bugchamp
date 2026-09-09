@@ -1691,6 +1691,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     } else if (_enemyLunge > 0) {
       eState = 'attack';
       eFrame = _enemyLunge > 0.5 ? 1 : 2;
+    } else if (!_isBoss && _hitFlash > 0.35) {
+      // 맞는 순간 **움찔하는 자세**. 지금까지는 눌리는 변형(_EnemyArt)과 흰
+      // 섬광만 있어서, 정물일 땐 그럴듯했지만 생물이 되면 "때렸는데 가만히
+      // 있다"로 읽힌다.
+      //
+      // 그림이 없으면 조용히 기본 그림으로 내려가므로(gameImageChain) 넣지
+      // 않은 종도 지금과 똑같이 나온다.
+      // 보스는 시트에 이 자세가 없다 — 넣으면 매 타격마다 기본 그림으로
+      // 떨어져 오히려 깜빡인다.
+      eState = 'hurt';
+      eFrame = 1;
     } else {
       eState = 'idle';
       eFrame = 1;
