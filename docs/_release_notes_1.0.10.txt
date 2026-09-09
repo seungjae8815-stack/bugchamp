@@ -1,0 +1,36 @@
+========================================
+ Google Play — 출시 노트 (1.0.10 / 20260911)
+========================================
+※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
+※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
+※ 재계산:
+   python -c "import io;s=io.open('docs/_release_notes_1.0.10.txt',encoding='utf-8').read();b=s.split('-'*40,1)[1].strip();print(len(b)+b.count(chr(10)))"
+※ iOS 노트는 _appstore_whatsnew_1.0.10.txt (내용이 더 길다 — 한도가 다르다).
+※ ⚠️ 곤충학자 패스 혜택이 바뀌었다 → Play Console 의 idle_pass 설명(ko/en/ja)도
+   같이 고친다. 가격·상품 ID 는 그대로.
+※ 범위: 20260908 이후 — 곤충 참전 · 몬스터 개편 · 장비 옵션 개편.
+----------------------------------------
+<ko-KR>
+🐛 곤충이 함께 싸웁니다
+
+• 곤충이 직접 때려요. 지역 속성과 맞으면 피해 급증
+• 몬스터 20종 새 그림 · 정예 · 새 지역 잿불 능선
+• 장비가 무작위 옵션 2줄. 한 줄씩 다시 굴려요
+• 순위표를 열면 진행도가 지워지던 문제 수정
+</ko-KR>
+<en-US>
+🐛 Your bugs fight too
+
+• Match the region element for big damage
+• 20 new monsters, elites, new region
+• Gear rolls 2 options; reroll each one
+• Fixed: leaderboard reset your progress
+</en-US>
+<ja-JP>
+🐛 昆虫も一緒に戦います
+
+• 地域の属性と合うと威力が上がります
+• モンスター20種刷新・精鋭・新地域
+• 装備はランダム2オプション。1行ずつ引き直せます
+• 順位表で進行度が消える不具合を修正
+</ja-JP>

@@ -1,0 +1,106 @@
+========================================
+ App Store — 새로운 기능 (1.0.10 / 20260911)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
+※ 범위: 1.0.9(20260908) 이후 — 큰 업데이트다(곤충 참전·몬스터 개편·장비 개편).
+※ 함께 볼 것: 곤충학자 패스 혜택이 바뀌었다 → App Store Connect 의
+   idle_pass_c 설명(ko/en/ja)도 같이 고쳐야 한다. 가격은 그대로.
+
+<ko-KR>
+곤충이 함께 싸웁니다
+
+- 데리고 다니는 곤충이 직접 몬스터를 때립니다. 각자 자기 리듬으로 공격해요
+- 지역마다 오행 속성이 생겼어요. 상성이 맞는 곤충을 데려가면 피해가 크게 늘어납니다
+- 곤충도 피해를 입고 쓰러지며, 잠시 뒤 다시 일어납니다
+- 몬스터 20종을 새로 그렸습니다. 이름이 붙고 공격과 피격 동작이 생겼어요
+- 가끔 나오는 정예 몬스터는 튼튼한 대신 보상이 큽니다
+- 새 지역 잿불 능선과 보스 잿불의 군주가 등장합니다
+
+장비를 고르는 재미
+
+- 장비의 고정 능력치를 없애고 무작위 옵션 두 줄로 바꿨습니다
+- 옵션은 한 줄씩 따로 다시 굴릴 수 있어요. 이미 착용한 장비도 됩니다
+- 제련에 등급 필터와 자동 망치질 횟수 선택이 생겼습니다
+- 원하는 장비가 나오면 자동으로 멈추게 할 수 있어요
+- 망치질 가속과 모루 칸 확장을 추가했습니다
+
+고친 것
+
+- 순위표를 여는 것만으로 내 진행도가 처음으로 되돌아가던 문제
+- 50위 밖인데 51위라고 잘못 보여 주던 문제
+- 아주 큰 숫자가 화면을 벗어나던 표기
+- 급소와 재료 발견을 아무리 올려도 효과가 없던 구간
+- 능력치 강화에 상한을 표시합니다
+- 부화기 알 목록에서 특성과 잠재력, 속성을 바로 볼 수 있어요
+- 지금 할 일을 화면 위에 모아 보여줍니다
+
+곤충학자 패스가 바뀌었습니다
+
+- 오프라인 16시간, 방치 골드 30퍼센트 증가, 매일 젤리 20개
+</ko-KR>
+
+<en-US>
+Your bugs fight with you
+
+- Bugs on your team now strike monsters themselves, each at its own pace
+- Every region has an element. Bring bugs with the winning element for much bigger damage
+- Bugs take damage and go down, then get back up after a while
+- Twenty monsters were redrawn, with names and attack and hurt motions
+- Elite monsters appear now and then: tougher, but far better rewards
+- New region Ember Ridge and its boss, the Ember Lord
+
+Gear worth choosing
+
+- Fixed gear stats are gone. Every piece now rolls two random options
+- Each option can be rerolled on its own, including on gear you already wear
+- Forging gained a grade filter and a strike-count picker
+- Auto forging can stop as soon as the gear you want appears
+- Added hammer speed-up and more anvil slots
+
+Fixes
+
+- Opening the leaderboard reset your own progress to the start
+- Players outside the top 50 were shown as rank 51
+- Very large numbers ran off the screen
+- Critical and material find did nothing past a certain level
+- Stat upgrades now show their cap
+- The egg list shows traits, potential and element at a glance
+- What needs your attention is now collected at the top of the screen
+
+Entomologist Pass changed
+
+- 16h offline cap, +30% idle gold, 20 jelly daily
+</en-US>
+
+<ja-JP>
+昆虫が一緒に戦います
+
+- 連れている昆虫が自分でモンスターを攻撃します。それぞれ自分のリズムで動きます
+- 地域ごとに五行の属性がつきました。相性の良い昆虫を連れて行くと威力が大きく上がります
+- 昆虫もダメージを受けて倒れ、しばらくすると起き上がります
+- モンスター20種を描き直しました。名前がつき、攻撃と被弾の動きが加わりました
+- ときどき現れる精鋭モンスターは硬い代わりに報酬が大きいです
+- 新地域の燠火の尾根とボスの燠火の王が登場します
+
+装備を選ぶ楽しさ
+
+- 装備の固定能力をなくし、ランダムな2つのオプションに変えました
+- オプションは1行ずつ引き直せます。すでに装備中のものも可能です
+- 製錬に等級フィルターと自動ハンマー回数の選択がつきました
+- ほしい装備が出たら自動で止められます
+- ハンマーの加速と金床の枠拡張を追加しました
+
+修正
+
+- 順位表を開くだけで自分の進行度が最初に戻る問題
+- 50位圏外なのに51位と表示される問題
+- 非常に大きい数字が画面からはみ出す表記
+- 急所と素材発見が一定以上で効かなくなっていた区間
+- 能力強化に上限を表示します
+- 孵化器のタマゴ一覧で特性と潜在能力、属性が見えます
+- 今やることを画面の上にまとめて表示します
+
+昆虫学者パスが変わりました
+
+- オフライン16時間・放置ゴールド+30パーセント・毎日ゼリー20
+</ja-JP>
