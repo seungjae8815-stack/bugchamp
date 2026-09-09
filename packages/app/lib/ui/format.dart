@@ -52,19 +52,38 @@ String formatThousands(int value) {
   return value < 0 ? '-$b' : b.toString();
 }
 
-const _suffixes = ['', 'K', 'M', 'B', 'T', 'aa', 'ab', 'ac'];
+const _shortSuffixes = ['', 'K', 'M', 'B', 'T'];
+
+/// 단계 [tier] 의 접미사. 5단계(10^15)부터는 `aa ab ac … az ba …` 로 **만들어 쓴다**.
+///
+/// ⚠️ 예전엔 `ac`(10^21)까지만 표에 적어 두고 거기서 멈췄다. 그 위의 값은
+/// 나누기를 멈춘 채 `1000000ac` 처럼 **길이가 계속 자랐다**(2026-09-09 지적).
+/// 재화는 9e18 에서 잘리지만 **능력치·전투력은 상한이 없어** 그 위로 간다.
+/// 두 글자면 10^2040 까지 덮으므로 double 이 무한대가 되기 전엔 안 떨어진다.
+String _suffixFor(int tier) {
+  if (tier < _shortSuffixes.length) return _shortSuffixes[tier];
+  final n = tier - _shortSuffixes.length;
+  final first = n ~/ 26;
+  final second = n % 26;
+  if (first >= 26) return 'e$tier'; // 여기까지 오면 표기보다 사고를 알리는 게 낫다
+  return String.fromCharCode(97 + first) + String.fromCharCode(97 + second);
+}
 
 /// 큰 수를 방치형 표기(1.2K, 3.4M, 2.4B…)로. 1000 미만은 그대로.
+///
+/// **길이가 자라지 않는다** — 어떤 값이 와도 `숫자 3~4자 + 접미사 2자` 안이다.
 String formatCompact(num value) {
+  if (value.isNaN) return '0';
+  if (value.isInfinite) return value.isNegative ? '-∞' : '∞';
   if (value < 1000) return value.round().toString();
   var v = value.toDouble();
   var tier = 0;
-  while (v >= 1000 && tier < _suffixes.length - 1) {
+  while (v >= 1000 && tier < 700) {
     v /= 1000;
     tier++;
   }
   final s = v >= 100
       ? v.toStringAsFixed(0)
       : (v >= 10 ? v.toStringAsFixed(1) : v.toStringAsFixed(2));
-  return '$s${_suffixes[tier]}';
+  return '$s${_suffixFor(tier)}';
 }

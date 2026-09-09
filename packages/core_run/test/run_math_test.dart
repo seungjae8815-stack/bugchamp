@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart' show kMaxCurrency;
 import 'package:core_run/core_run.dart';
 import 'package:test/test.dart';
 
@@ -638,6 +639,32 @@ void main() {
       expect(plain, greaterThan(2));
       expect(critty, greaterThan(2));
       expect((plain - critty).abs(), lessThanOrEqualTo(2));
+    });
+  });
+
+  group('업그레이드 비용 — 상한 밖에서 죽지 않는다', () {
+    const spec = UpgradeSpec(
+      kind: UpgradeKind.attack,
+      baseCost: 15,
+      costGrowth: 1.15,
+      baseValue: 1,
+      perLevel: 1,
+    );
+
+    test('레벨이 커져도 재화 상한에서 멈춘다', () {
+      // ⚠️ 예전엔 `double.round()` 를 그대로 썼다. 레벨 300 쯤에서 int64 를
+      // 넘고, 5400 쯤에서 무한대가 되어 **예외를 던졌다** — 화면은 살 수 없는
+      // 레벨의 비용도 그려야 하므로 강화 화면이 통째로 죽는다.
+      expect(upgradeCost(spec, 300), kMaxCurrency);
+      expect(upgradeCost(spec, 1000), kMaxCurrency);
+      expect(upgradeCost(spec, 5400), kMaxCurrency);
+      expect(upgradeCost(spec, 100000), kMaxCurrency);
+    });
+
+    test('상한 아래에서는 그대로 지수로 오른다', () {
+      expect(upgradeCost(spec, 0), 15);
+      expect(upgradeCost(spec, 1), 17);
+      expect(upgradeCost(spec, 10), greaterThan(upgradeCost(spec, 9)));
     });
   });
 }

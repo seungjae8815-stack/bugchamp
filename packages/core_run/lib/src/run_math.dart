@@ -1,7 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart'
-    show kMaxOfflineAccrual, kMaxMonsterHp, Species, Grade;
+    show
+        kMaxOfflineAccrual,
+        kMaxMonsterHp,
+        Species,
+        Grade,
+        clampCurrency,
+        kMaxCurrency;
 import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
@@ -173,8 +179,18 @@ int rewardXp(RunConfig c, int depth, {bool boss = false, bool parked = false}) {
 }
 
 /// 업그레이드 [level] → 다음 레벨 구매 비용(골드).
-int upgradeCost(UpgradeSpec spec, int level) =>
-    (spec.baseCost * math.pow(spec.costGrowth, level)).round();
+/// 업그레이드 [level] → 다음 레벨 구매에 드는 골드.
+///
+/// ⚠️ **재화 상한으로 자른다.** 비용은 지수라 레벨 300 쯤에서 int64 를 넘고,
+/// 그 뒤 `double.round()` 는 무한대에서 **예외를 던진다**(레벨 5400 부근).
+/// 화면은 살 수 없는 레벨의 비용도 그려야 하므로 여기서 막지 않으면
+/// 강화 화면이 통째로 죽는다.
+int upgradeCost(UpgradeSpec spec, int level) {
+  final v = spec.baseCost * math.pow(spec.costGrowth, level);
+  // ⚠️ **반올림을 유지한 채** 자른다. `clampCurrency` 는 버림이라 그대로
+  // 넘기면 낮은 레벨의 비용이 1 씩 달라져 성장 곡선 검사가 어긋난다.
+  return v >= kMaxCurrency ? kMaxCurrency : clampCurrency(v.roundToDouble());
+}
 
 /// [level] 부터 [count] 레벨 연속 구매 총비용(배치 구매 ×10/×100 용).
 int bulkUpgradeCost(UpgradeSpec spec, int level, int count) {
