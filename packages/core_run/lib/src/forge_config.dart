@@ -29,6 +29,12 @@ class ForgeConfig {
     this.fossilMinPerDrop = 1,
     this.autoStrikeMax = 10,
     this.autoStrikeFullFromTier = 1,
+    this.rerollJelly = 15,
+    this.rushSeconds = 60,
+    this.rushJelly = 10,
+    this.stackExpandJelly = 100,
+    this.stackExpandStep = 2,
+    this.stackExpandMax = 20,
   });
 
   /// 망치질 간격(초). 3초에 한 번 땅! — 연출이자 **속도 제한**이다.
@@ -116,6 +122,27 @@ class ForgeConfig {
     return chosen;
   }
 
+  /// 모루 위 장비의 **옵션만** 다시 굴리는 값(§2.6).
+  ///
+  /// 등급은 안 바뀐다 — 등급을 젤리로 바꾸면 그건 물건을 사는 것이다.
+  /// 옵션은 제련을 계속 돌리면 언젠가 나오는 조합이라, 파는 것은 시간 절약이다.
+  final int rerollJelly;
+
+  /// 망치질 가속 — [rushJelly] 젤리로 [rushSeconds] 초 동안 간격 절반.
+  final int rushSeconds;
+  final int rushJelly;
+
+  /// 모루 칸 확장 — 첫 값 [stackExpandJelly], [stackExpandStep] 칸씩,
+  /// [stackExpandMax] 까지. 비용은 **살수록 오른다**(계단식).
+  final int stackExpandJelly;
+  final int stackExpandStep;
+  final int stackExpandMax;
+
+  /// [bought] 번째 확장(0-based)의 젤리 값. 채집함과 같은 계단식이다 —
+  /// 정액이면 다 사고 나서 젤리 쓸 데가 없어진다(§2.6).
+  int stackExpandCost(int bought) =>
+      roundJellyCost(stackExpandJelly * math.pow(1.35, bought).toDouble());
+
   /// 현재 레벨 [level] → [level]+1 에 드는 **총** 골드.
   int levelUpGold(int level) =>
       (levelUpGoldBase * math.pow(levelUpGoldGrowth, level)).round();
@@ -186,6 +213,12 @@ class ForgeConfig {
       fossilOfflineRatio: (fs['offlineRatio'] as num?)?.toDouble() ?? 0.333,
       fossilMinPerDrop: (fs['minPerDrop'] as num?)?.toInt() ?? 1,
       autoStrikeMax: (json['autoStrikeMax'] as num?)?.toInt() ?? 10,
+      rerollJelly: (json['rerollJelly'] as num?)?.toInt() ?? 15,
+      rushSeconds: (json['rushSeconds'] as num?)?.toInt() ?? 60,
+      rushJelly: (json['rushJelly'] as num?)?.toInt() ?? 10,
+      stackExpandJelly: (json['stackExpandJelly'] as num?)?.toInt() ?? 100,
+      stackExpandStep: (json['stackExpandStep'] as num?)?.toInt() ?? 2,
+      stackExpandMax: (json['stackExpandMax'] as num?)?.toInt() ?? 20,
       autoStrikeFullFromTier:
           (json['autoStrikeFullFromTier'] as num?)?.toInt() ?? 1,
     );
@@ -195,6 +228,31 @@ class ForgeConfig {
 /// 제련 1회 — 망치질 한 번으로 장비 하나가 나온다.
 ///
 /// **완전 결정론**: 같은 [rng] 상태 + 같은 인자 → 같은 장비(헌법 §5).
+/// 장비의 **옵션만** 다시 굴린다. 부위·등급은 그대로.
+///
+/// ⚠️ 등급을 건드리면 안 된다 — 등급을 젤리로 올리는 건 물건을 사는 것이라
+/// §2.6 P2W 금지선을 넘는다. 옵션은 제련을 계속 돌리면 언젠가 나오는 조합이라
+/// 파는 것이 **시간 절약**이다(곤충 알 뽑기 각주와 같은 논리).
+///
+/// 옵션 개수·최대치는 **그 등급의 규칙**을 그대로 따른다(`forgeOnce` 와 같은 코드).
+EquipItem rerollOptions({
+  required math.Random rng,
+  required ItemConfig items,
+  required EquipItem item,
+}) {
+  final count = items.tier(item.tier).options;
+  final pool = List<ItemOptionRange>.from(items.optionPool);
+  final options = <ItemOption>[];
+  for (var i = 0; i < count && pool.isNotEmpty; i++) {
+    final r = pool.removeAt(rng.nextInt(pool.length));
+    final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
+    final hi = r.maxAt(item.tier);
+    final v = r.min + roll * (hi - r.min);
+    options.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
+  }
+  return EquipItem(slot: item.slot, tier: item.tier, options: options);
+}
+
 EquipItem forgeOnce({
   required math.Random rng,
   required ItemConfig items,

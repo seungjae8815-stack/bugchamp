@@ -135,6 +135,40 @@ void main() {
     });
   });
 
+  group('제련 젤리 소비처 필드(2026-09-09)', () {
+    test('모루 확장 횟수가 저장·복원된다', () {
+      final s = fresh().copyWith(forgeStackBought: 3);
+      expect(SaveGame.fromJson(s.toJson()).forgeStackBought, 3);
+    });
+
+    test('가속 만료 시각이 저장·복원된다', () {
+      final t = DateTime.utc(2026, 9, 9, 12, 34);
+      final s = fresh().copyWith(forgeRushUntil: t);
+      expect(SaveGame.fromJson(s.toJson()).forgeRushUntil, t);
+    });
+
+    test('안 산 상태면 키를 안 쓴다 — 세이브 크기를 공짜로 늘리지 않는다', () {
+      final j = fresh().toJson();
+      expect(j.containsKey('forgeStackBought'), isFalse);
+      expect(j.containsKey('forgeRushUntil'), isFalse);
+    });
+
+    test('구버전 세이브(키 없음)도 읽힌다', () {
+      final j = fresh().toJson()
+        ..remove('forgeStackBought')
+        ..remove('forgeRushUntil');
+      final back = SaveGame.fromJson(j);
+      expect(back.forgeStackBought, 0);
+      expect(back.forgeRushUntil, isNull);
+    });
+
+    test('가속은 clearForgeRush 로 지운다 — copyWith 의 null 은 "안 바꿈"이다', () {
+      final s = fresh().copyWith(forgeRushUntil: DateTime.utc(2026));
+      expect(s.copyWith().forgeRushUntil, isNotNull);
+      expect(s.copyWith(clearForgeRush: true).forgeRushUntil, isNull);
+    });
+  });
+
   group('화석 조각(제련 전용 재화)', () {
     test('재료로 저장·복원된다', () {
       final s = fresh().copyWith(materials: {MaterialKind.fossil: 1234});

@@ -2018,7 +2018,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final forge = data?.forgeConfig;
     if (items == null || forge == null) return nothing;
     final s = state.requireValue;
-    if (s.forgeStack.length >= kMaxForgeStack) {
+    if (s.forgeStack.length >= _forgeCap(s, forge)) {
       return (
         last: null,
         forged: 0,
@@ -2055,7 +2055,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         dry = true;
         break;
       }
-      if (stack.length >= kMaxForgeStack) {
+      if (stack.length >= _forgeCap(s, forge)) {
         full = true;
         break;
       }
@@ -2096,6 +2096,80 @@ class SaveController extends AsyncNotifier<SaveGame> {
       dry: dry,
       hit: hit,
     );
+  }
+
+  /// 지금 모루 칸 수 = 기본 + 젤리로 넓힌 만큼(상한은 설정이 정한다).
+  int _forgeCap(SaveGame s, ForgeConfig forge) {
+    final cap = kMaxForgeStack + s.forgeStackBought * forge.stackExpandStep;
+    return cap > forge.stackExpandMax ? forge.stackExpandMax : cap;
+  }
+
+  /// 모루 맨 위 장비의 **옵션만** 다시 굴린다(젤리). 등급·부위는 그대로.
+  ///
+  /// 등급을 바꾸면 물건을 파는 것이라 §2.6 을 넘는다 — 옵션은 제련을 계속
+  /// 돌리면 언젠가 나오는 조합이라 파는 것이 시간 절약이다.
+  Future<bool> rerollForgeTop() async {
+    final data = ref.read(gameDataProvider).value;
+    final items = data?.itemConfig;
+    final forge = data?.forgeConfig;
+    if (items == null || forge == null) return false;
+    final s = state.requireValue;
+    if (s.forgeStack.isEmpty) return false;
+    final cost = forge.rerollJelly;
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cost) return false;
+    final stack = [...s.forgeStack];
+    stack[stack.length - 1] = rerollOptions(
+      rng: _forgeRng,
+      items: items,
+      item: stack.last,
+    );
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cost;
+    await _commit(s.copyWith(forgeStack: stack, materials: mats));
+    return true;
+  }
+
+  /// 망치질 가속(젤리) — 이미 켜져 있으면 남은 시간에 **이어 붙인다**.
+  ///
+  /// 덮어쓰면 남은 시간을 산 사람이 손해를 본다.
+  Future<bool> rushForgeHammer() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return false;
+    final s = state.requireValue;
+    final cost = forge.rushJelly;
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cost) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final base = (s.forgeRushUntil?.isAfter(now) ?? false)
+        ? s.forgeRushUntil!
+        : now;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cost;
+    await _commit(
+      s.copyWith(
+        materials: mats,
+        forgeRushUntil: base.add(Duration(seconds: forge.rushSeconds)),
+      ),
+    );
+    return true;
+  }
+
+  /// 모루 칸 확장(젤리). 비용은 살수록 오른다.
+  Future<bool> expandForgeStack() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return false;
+    final s = state.requireValue;
+    if (_forgeCap(s, forge) >= forge.stackExpandMax) return false;
+    final cost = forge.stackExpandCost(s.forgeStackBought);
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cost) return false;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cost;
+    await _commit(
+      s.copyWith(materials: mats, forgeStackBought: s.forgeStackBought + 1),
+    );
+    return true;
   }
 
   /// 모루 위에서 **맨 위 하나**를 집는다. 비었으면 null.

@@ -42,8 +42,44 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   ///
   /// 손으로 눌러도 **같은 시간**이 걸린다. 즉시 뽑히면 손가락만 빠르면 화석을
   /// 몇 초 만에 다 태울 수 있어서, 뽑는 재미도 머무는 시간도 사라진다.
-  Duration _cycle(ForgeConfig f) =>
-      Duration(milliseconds: (f.hammerSeconds * 1000).round());
+  Duration _cycle(ForgeConfig f) {
+    final save = ref.read(saveControllerProvider).requireValue;
+    final until = save.forgeRushUntil;
+    final now = ref.read(clockProvider).now().toUtc();
+    // 가속 중이면 간격이 절반이다. 애니메이션이 박자를 잡으므로 여기만 바꾸면
+    // 뽑는 속도까지 같이 빨라진다.
+    final rushing = until != null && until.isAfter(now);
+    final sec = rushing ? f.hammerSeconds / 2 : f.hammerSeconds;
+    return Duration(milliseconds: (sec * 1000).round());
+  }
+
+  /// 젤리 액션 공통 — 실패하면 이유를 말한다.
+  ///
+  /// ⚠️ 콜백을 위젯 트리 안에 인라인으로 두면 `context` 를 async 경계 너머로
+  /// 들고 가게 되어 분석기가 막는다. State 메서드로 빼야 `mounted` 가 이
+  /// State 의 것으로 읽힌다.
+  Future<void> _spendJelly(Future<bool> Function() run) async {
+    final ok = await run();
+    if (!mounted) return;
+    if (!ok) {
+      showCenterToast(context, AppLocalizations.of(context).forgeNoJelly);
+    }
+    setState(() {});
+  }
+
+  /// 가속 남은 초(없으면 0). 버튼 라벨과 재빌드 판단에 쓴다.
+  int _rushLeft(SaveGame save) {
+    final until = save.forgeRushUntil;
+    if (until == null) return 0;
+    final left = until.difference(ref.read(clockProvider).now().toUtc());
+    return left.isNegative ? 0 : left.inSeconds;
+  }
+
+  /// 지금 모루 칸 수(기본 + 젤리 확장, 설정 상한까지).
+  int _stackCap(SaveGame save, ForgeConfig f) {
+    final cap = kMaxForgeStack + save.forgeStackBought * f.stackExpandStep;
+    return cap > f.stackExpandMax ? f.stackExpandMax : cap;
+  }
 
   /// 망치질 한 번에 뽑는 개수 — **진행한 만큼 빨라진다**(§6, `forge.json`).
   ///
@@ -79,7 +115,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
       _busy = false;
       return;
     }
-    final full = save.forgeStack.length >= kMaxForgeStack;
+    final full = save.forgeStack.length >= _stackCap(save, forge);
     final n = _strikes(forge, save, data?.roadmapConfig);
     final r = await ref.read(saveControllerProvider.notifier).forgeMany(n);
     if (!mounted) return;
@@ -161,6 +197,8 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     final items = data?.itemConfig;
     if (forge == null || items == null) return const SizedBox.shrink();
     final fossil = save.materialCount(MaterialKind.fossil);
+    final rushLeft = _rushLeft(save);
+    final cap = _stackCap(save, forge);
     final strikes = _strikes(forge, save, data?.roadmapConfig);
 
     return Row(
@@ -246,6 +284,47 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                         fontSize: 13,
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    // 모루가 몇 칸 남았는지 — 확장을 살지 판단하는 근거다.
+                    Text(
+                      l.forgeStackCount(save.forgeStack.length, cap),
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                // 젤리 소비처 두 개. 제련은 유저가 가장 오래 붙잡는 무한
+                // 루프인데 젤리 통로가 하나도 없었다(2026-09-09).
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _JellyChip(
+                      icon: Icons.casino_rounded,
+                      label: l.forgeReroll,
+                      cost: forge.rerollJelly,
+                      // 모루가 비면 굴릴 대상이 없다.
+                      enabled: save.forgeStack.isNotEmpty,
+                      onTap: () => _spendJelly(
+                        () => ref
+                            .read(saveControllerProvider.notifier)
+                            .rerollForgeTop(),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _JellyChip(
+                      icon: Icons.add_box_rounded,
+                      label: l.forgeExpand,
+                      cost: forge.stackExpandCost(save.forgeStackBought),
+                      enabled: cap < forge.stackExpandMax,
+                      onTap: () => _spendJelly(
+                        () => ref
+                            .read(saveControllerProvider.notifier)
+                            .expandForgeStack(),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -277,6 +356,19 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
               },
             ),
             const SizedBox(height: 6),
+            // 망치질 가속 — **젤리 소비처**. 순수 시간 절약이라 P2W 위험이 없다.
+            // 남은 시간을 라벨에 띄워, 켜져 있는 동안 다시 안 사게 한다.
+            _SquareButton(
+              icon: Icons.fast_forward_rounded,
+              label: l.forgeRush,
+              sub: rushLeft > 0 ? '$rushLeft' : '${forge.rushJelly}',
+              on: rushLeft > 0,
+              onTap: () => _spendJelly(
+                () =>
+                    ref.read(saveControllerProvider.notifier).rushForgeHammer(),
+              ),
+            ),
+            const SizedBox(height: 6),
             _SquareButton(
               icon: _autoOn ? Icons.stop_rounded : Icons.autorenew_rounded,
               label: l.forgeAutoShort,
@@ -286,6 +378,73 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// 젤리를 쓰는 작은 칩(재굴림·칸 확장).
+///
+/// 값을 **항상 보여준다** — 눌러 봐야 값을 아는 버튼은 안 눌린다.
+class _JellyChip extends StatelessWidget {
+  const _JellyChip({
+    required this.icon,
+    required this.label,
+    required this.cost,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final int cost;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = enabled ? const Color(0xFFCE93D8) : const Color(0x55FFFFFF);
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        decoration: BoxDecoration(
+          color: enabled ? const Color(0x337E57C2) : const Color(0x22000000),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: enabled ? const Color(0x887E57C2) : const Color(0x22FFFFFF),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: fg),
+            const SizedBox(width: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: fg,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 4),
+            materialImage(
+              MaterialKind.jelly,
+              size: 11,
+              fallback: Icon(Icons.bubble_chart, size: 10, color: fg),
+            ),
+            const SizedBox(width: 2),
+            Text(
+              '$cost',
+              style: TextStyle(
+                color: fg,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

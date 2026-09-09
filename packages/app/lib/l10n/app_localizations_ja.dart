@@ -2640,7 +2640,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeReady => '完了！';
 
   @override
-  String get forgeRush => '今すぐ完了';
+  String get forgeRush => '加速';
 
   @override
   String get forgeClaim => '受け取る';
@@ -2754,35 +2754,29 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeStrikeAuto => '最大';
 
   @override
+  String get forgeReroll => '再抽選';
+
+  @override
+  String get forgeExpand => '枠拡張';
+
+  @override
+  String forgeRushOn(int s) {
+    return '加速 $s秒';
+  }
+
+  @override
+  String forgeStackCount(int n, int max) {
+    return '金床 $n/$max';
+  }
+
+  @override
+  String get forgeNoJelly => 'ゼリーが足りません';
+
+  @override
   String get upgradeMaxed => '最大';
 
   @override
   String get eliteLabel => '精鋭';
-
-  @override
-  String todoInjured(int n) {
-    return '負傷 $n';
-  }
-
-  @override
-  String get todoHatch => '孵化完了';
-
-  @override
-  String get todoBreed => '卵の受取';
-
-  @override
-  String get todoBuffOff => 'バフ切れ';
-
-  @override
-  String get todoStorageFull => '収集箱が満杯';
-
-  @override
-  String todoTickets(int n) {
-    return '決闘 $n';
-  }
-
-  @override
-  String get todoReward => '受け取る';
 
   @override
   String gateGearHint(String cur, String need) {

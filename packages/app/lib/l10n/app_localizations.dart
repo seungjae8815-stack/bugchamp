@@ -4825,7 +4825,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeRush.
   ///
   /// In en, this message translates to:
-  /// **'Finish now'**
+  /// **'Rush'**
   String get forgeRush;
 
   /// No description provided for @forgeClaim.
@@ -5038,6 +5038,36 @@ abstract class AppLocalizations {
   /// **'Max'**
   String get forgeStrikeAuto;
 
+  /// No description provided for @forgeReroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll'**
+  String get forgeReroll;
+
+  /// No description provided for @forgeExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get forgeExpand;
+
+  /// No description provided for @forgeRushOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Rush {s}s'**
+  String forgeRushOn(int s);
+
+  /// No description provided for @forgeStackCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Anvil {n}/{max}'**
+  String forgeStackCount(int n, int max);
+
+  /// No description provided for @forgeNoJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough jelly'**
+  String get forgeNoJelly;
+
   /// No description provided for @upgradeMaxed.
   ///
   /// In en, this message translates to:
@@ -5049,48 +5079,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ELITE'**
   String get eliteLabel;
-
-  /// No description provided for @todoInjured.
-  ///
-  /// In en, this message translates to:
-  /// **'Hurt {n}'**
-  String todoInjured(int n);
-
-  /// No description provided for @todoHatch.
-  ///
-  /// In en, this message translates to:
-  /// **'Hatched'**
-  String get todoHatch;
-
-  /// No description provided for @todoBreed.
-  ///
-  /// In en, this message translates to:
-  /// **'Egg ready'**
-  String get todoBreed;
-
-  /// No description provided for @todoBuffOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Buffs off'**
-  String get todoBuffOff;
-
-  /// No description provided for @todoStorageFull.
-  ///
-  /// In en, this message translates to:
-  /// **'Box full'**
-  String get todoStorageFull;
-
-  /// No description provided for @todoTickets.
-  ///
-  /// In en, this message translates to:
-  /// **'Duel {n}'**
-  String todoTickets(int n);
-
-  /// No description provided for @todoReward.
-  ///
-  /// In en, this message translates to:
-  /// **'Claim'**
-  String get todoReward;
 
   /// No description provided for @gateGearHint.
   ///

@@ -2695,7 +2695,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeReady => 'Done!';
 
   @override
-  String get forgeRush => 'Finish now';
+  String get forgeRush => 'Rush';
 
   @override
   String get forgeClaim => 'Claim';
@@ -2811,35 +2811,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeStrikeAuto => 'Max';
 
   @override
+  String get forgeReroll => 'Reroll';
+
+  @override
+  String get forgeExpand => 'Expand';
+
+  @override
+  String forgeRushOn(int s) {
+    return 'Rush ${s}s';
+  }
+
+  @override
+  String forgeStackCount(int n, int max) {
+    return 'Anvil $n/$max';
+  }
+
+  @override
+  String get forgeNoJelly => 'Not enough jelly';
+
+  @override
   String get upgradeMaxed => 'MAX';
 
   @override
   String get eliteLabel => 'ELITE';
-
-  @override
-  String todoInjured(int n) {
-    return 'Hurt $n';
-  }
-
-  @override
-  String get todoHatch => 'Hatched';
-
-  @override
-  String get todoBreed => 'Egg ready';
-
-  @override
-  String get todoBuffOff => 'Buffs off';
-
-  @override
-  String get todoStorageFull => 'Box full';
-
-  @override
-  String todoTickets(int n) {
-    return 'Duel $n';
-  }
-
-  @override
-  String get todoReward => 'Claim';
 
   @override
   String gateGearHint(String cur, String need) {

@@ -21,6 +21,7 @@ SkillConfig _skills() => SkillConfig.fromJson(
 );
 
 void main() {
+  _forgeSinkTests();
   _critCapTests();
   _optionTierTests();
   _autoStrikeTests();
@@ -610,6 +611,95 @@ void _critCapTests() {
       );
       expect(cfg.critChanceMax, lessThan(1.0));
       expect(cfg.critChanceMax, greaterThan(0.5));
+    });
+  });
+}
+
+/// 제련 젤리 소비처(2026-09-09). 제련은 유저가 가장 오래 붙잡는 **무한 루프**인데
+/// 젤리 통로가 하나도 없었다 — 확장(유한 1,660젤리)만으로는 살 게 금방 떨어진다.
+void _forgeSinkTests() {
+  // 실데이터로 돈다 — 등급별 최대치가 JSON 에 있으므로 JSON 을 고치면 여기서 보인다.
+  final items = ItemConfig.fromJson(
+    jsonDecode(File('../app/assets/data/items.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+  final top = items.tierCount - 1;
+
+  group('옵션 재굴림', () {
+    test('부위와 등급은 그대로다 — 등급을 사면 물건을 사는 것이라 §2.6 위반', () {
+      final item = EquipItem(
+        slot: EquipSlot.tool,
+        tier: top,
+        options: const [ItemOption(kind: ItemOptionKind.attack, value: 3.0)],
+      );
+      for (var seed = 0; seed < 50; seed++) {
+        final out = rerollOptions(rng: Random(seed), items: items, item: item);
+        expect(out.slot, item.slot);
+        expect(out.tier, item.tier);
+      }
+    });
+
+    test('옵션 개수는 그 등급의 규칙을 따른다', () {
+      for (final tier in [0, top]) {
+        final out = rerollOptions(
+          rng: Random(7),
+          items: items,
+          item: EquipItem(slot: EquipSlot.ring, tier: tier, options: const []),
+        );
+        expect(out.options.length, items.tier(tier).options);
+      }
+    });
+
+    test('옵션 값이 그 등급 최대치를 안 넘는다', () {
+      for (var seed = 0; seed < 200; seed++) {
+        final out = rerollOptions(
+          rng: Random(seed),
+          items: items,
+          item: EquipItem(slot: EquipSlot.tool, tier: top, options: const []),
+        );
+        for (final o in out.options) {
+          final r = items.optionPool.firstWhere((x) => x.kind == o.kind);
+          expect(o.value, lessThanOrEqualTo(r.maxAt(top).toDouble() + 1e-9));
+          expect(o.value, greaterThanOrEqualTo(r.min - 1e-9));
+        }
+      }
+    });
+
+    test('굴릴 때마다 달라진다 — 같은 결과만 나오면 살 이유가 없다', () {
+      final item = EquipItem(
+        slot: EquipSlot.tool,
+        tier: top,
+        options: const [],
+      );
+      final seen = <String>{};
+      for (var seed = 0; seed < 30; seed++) {
+        final out = rerollOptions(rng: Random(seed), items: items, item: item);
+        seen.add(out.options.map((o) => '${o.kind}:${o.value}').join(','));
+      }
+      expect(seen.length, greaterThan(5));
+    });
+  });
+
+  group('모루 칸 확장', () {
+    const f = ForgeConfig(stackExpandJelly: 100, stackExpandStep: 2);
+
+    test('살수록 비싸진다 — 정액이면 다 사고 나서 젤리 쓸 데가 없어진다(§2.6)', () {
+      var prev = 0;
+      for (var i = 0; i < 5; i++) {
+        final c = f.stackExpandCost(i);
+        expect(c, greaterThan(prev));
+        prev = c;
+      }
+    });
+
+    test('첫 값은 설정 그대로', () {
+      expect(f.stackExpandCost(0), 100);
+    });
+
+    test('젤리 값은 5 단위로 떨어진다(§2.6 가격 단위)', () {
+      for (var i = 0; i < 8; i++) {
+        expect(f.stackExpandCost(i) % 5, 0);
+      }
     });
   });
 }

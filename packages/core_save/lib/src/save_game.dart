@@ -503,6 +503,8 @@ class SaveGame {
     this.autoForgeOptions = const {},
     this.autoForgeMinTier = 0,
     this.autoForgeStrikes = 0,
+    this.forgeStackBought = 0,
+    this.forgeRushUntil,
     this.autoForgeStopOnHit = true,
     this.blockedUserIds = const {},
     this.bugFilterMinGrade = Grade.common,
@@ -918,6 +920,15 @@ class SaveGame {
   /// 기본이 0(=상한)인 이유: 고른 적 없는 기존 유저의 체감이 바뀌면 안 된다.
   final int autoForgeStrikes;
 
+  /// 모루 칸을 젤리로 몇 번 넓혔나(0 = 기본 10칸).
+  ///
+  /// ⚠️ 모루는 **가방이 아니다** — 넓힐수록 세이브가 커진다(장비 1개 ≈ 옵션 2개).
+  /// `ForgeConfig.stackExpandMax` 가 방어선이고, 앱·서버 양쪽이 그걸 본다.
+  final int forgeStackBought;
+
+  /// 망치질 가속이 끝나는 시각(없으면 가속 중이 아님).
+  final DateTime? forgeRushUntil;
+
   /// 목표를 찾으면 멈춘다. **기본값 true** — 아니면 원하는 걸 뽑고도
   /// 화석 조각을 계속 태운다.
   final bool autoForgeStopOnHit;
@@ -1079,6 +1090,7 @@ class SaveGame {
     autoForgeOptions: const {},
     autoForgeMinTier: 0,
     autoForgeStrikes: 0,
+    forgeStackBought: 0,
     autoForgeStopOnHit: true,
     adsRemoved: false,
     buffPassExpiresAt: null,
@@ -1152,6 +1164,9 @@ class SaveGame {
     Set<ItemOptionKind>? autoForgeOptions,
     int? autoForgeMinTier,
     int? autoForgeStrikes,
+    int? forgeStackBought,
+    DateTime? forgeRushUntil,
+    bool clearForgeRush = false,
     bool? autoForgeStopOnHit,
     int? lastReadNoticeId,
     bool? reviewAsked,
@@ -1230,6 +1245,12 @@ class SaveGame {
     autoForgeOptions: autoForgeOptions ?? this.autoForgeOptions,
     autoForgeMinTier: autoForgeMinTier ?? this.autoForgeMinTier,
     autoForgeStrikes: autoForgeStrikes ?? this.autoForgeStrikes,
+    forgeStackBought: forgeStackBought ?? this.forgeStackBought,
+    // 가속은 **끝나면 지워야** 한다 — null 을 "안 바꿈"으로 읽는 copyWith 에서
+    // 지우려면 별도 플래그가 필요하다(다른 타이머 필드와 같은 방식).
+    forgeRushUntil: clearForgeRush
+        ? null
+        : (forgeRushUntil ?? this.forgeRushUntil),
     autoForgeStopOnHit: autoForgeStopOnHit ?? this.autoForgeStopOnHit,
     lastReadNoticeId: lastReadNoticeId ?? this.lastReadNoticeId,
     reviewAsked: reviewAsked ?? this.reviewAsked,
@@ -1438,6 +1459,10 @@ class SaveGame {
     },
     autoForgeMinTier: (json['autoForgeMinTier'] as num?)?.toInt() ?? 0,
     autoForgeStrikes: (json['autoForgeStrikes'] as num?)?.toInt() ?? 0,
+    forgeStackBought: (json['forgeStackBought'] as num?)?.toInt() ?? 0,
+    forgeRushUntil: json['forgeRushUntil'] == null
+        ? null
+        : DateTime.parse(json['forgeRushUntil'] as String).toUtc(),
     autoForgeStopOnHit: json['autoForgeStopOnHit'] as bool? ?? true,
     adUseDate: json['adUseDate'] as String?,
     giftDoubleDate: json['giftDoubleDate'] as String?,
@@ -1561,6 +1586,9 @@ class SaveGame {
       'autoForgeOptions': [for (final o in autoForgeOptions) o.key],
     if (autoForgeMinTier > 0) 'autoForgeMinTier': autoForgeMinTier,
     if (autoForgeStrikes > 0) 'autoForgeStrikes': autoForgeStrikes,
+    if (forgeStackBought > 0) 'forgeStackBought': forgeStackBought,
+    if (forgeRushUntil != null)
+      'forgeRushUntil': forgeRushUntil!.toIso8601String(),
     if (!autoForgeStopOnHit) 'autoForgeStopOnHit': false,
     if (adUseDate != null) 'adUseDate': adUseDate,
     if (giftDoubleDate != null) 'giftDoubleDate': giftDoubleDate,

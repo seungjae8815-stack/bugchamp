@@ -2646,7 +2646,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeReady => '완료!';
 
   @override
-  String get forgeRush => '즉시 완료';
+  String get forgeRush => '가속';
 
   @override
   String get forgeClaim => '완료 받기';
@@ -2760,35 +2760,29 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeStrikeAuto => '최대';
 
   @override
+  String get forgeReroll => '옵션 재굴림';
+
+  @override
+  String get forgeExpand => '칸 확장';
+
+  @override
+  String forgeRushOn(int s) {
+    return '가속 $s초';
+  }
+
+  @override
+  String forgeStackCount(int n, int max) {
+    return '모루 $n/$max';
+  }
+
+  @override
+  String get forgeNoJelly => '젤리가 모자라요';
+
+  @override
   String get upgradeMaxed => '최대';
 
   @override
   String get eliteLabel => '정예';
-
-  @override
-  String todoInjured(int n) {
-    return '부상 $n';
-  }
-
-  @override
-  String get todoHatch => '부화 완료';
-
-  @override
-  String get todoBreed => '알 수령';
-
-  @override
-  String get todoBuffOff => '버프 꺼짐';
-
-  @override
-  String get todoStorageFull => '채집함 가득';
-
-  @override
-  String todoTickets(int n) {
-    return '결투 $n';
-  }
-
-  @override
-  String get todoReward => '보상 받기';
 
   @override
   String gateGearHint(String cur, String need) {
