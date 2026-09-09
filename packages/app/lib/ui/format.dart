@@ -52,17 +52,36 @@ String formatThousands(int value) {
   return value < 0 ? '-$b' : b.toString();
 }
 
-const _shortSuffixes = ['', 'K', 'M', 'B', 'T'];
+/// 단위 접미사. 방치형에서 널리 쓰는 짧은눈금(short scale) 약칭이다.
+///
+/// `K(10^3) M B T Qa(10^15) Qi Sx Sp Oc No Dc(10^33)`.
+/// 전부 **두 글자 이하**라 어느 값이 와도 칸을 밀지 않는다.
+/// (Qa=quadrillion, Qi=quintillion, Sx=sextillion, Sp=septillion,
+///  Oc=octillion, No=nonillion, Dc=decillion)
+const _suffixes = [
+  '',
+  'K',
+  'M',
+  'B',
+  'T',
+  'Qa',
+  'Qi',
+  'Sx',
+  'Sp',
+  'Oc',
+  'No',
+  'Dc',
+];
 
-/// 단계 [tier] 의 접미사. 5단계(10^15)부터는 `aa ab ac … az ba …` 로 **만들어 쓴다**.
+/// 단계 [tier] 의 접미사. 표를 넘어가면 `aa ab … az ba …` 로 **만들어 쓴다**.
 ///
 /// ⚠️ 예전엔 `ac`(10^21)까지만 표에 적어 두고 거기서 멈췄다. 그 위의 값은
 /// 나누기를 멈춘 채 `1000000ac` 처럼 **길이가 계속 자랐다**(2026-09-09 지적).
 /// 재화는 9e18 에서 잘리지만 **능력치·전투력은 상한이 없어** 그 위로 간다.
-/// 두 글자면 10^2040 까지 덮으므로 double 이 무한대가 되기 전엔 안 떨어진다.
+/// 실제로 닿는 범위는 표 안(Dc=10^33)이고, 생성 규칙은 그 밖의 안전망이다.
 String _suffixFor(int tier) {
-  if (tier < _shortSuffixes.length) return _shortSuffixes[tier];
-  final n = tier - _shortSuffixes.length;
+  if (tier < _suffixes.length) return _suffixes[tier];
+  final n = tier - _suffixes.length;
   final first = n ~/ 26;
   final second = n % 26;
   if (first >= 26) return 'e$tier'; // 여기까지 오면 표기보다 사고를 알리는 게 낫다
@@ -78,7 +97,10 @@ String formatCompact(num value) {
   if (value < 1000) return value.round().toString();
   var v = value.toDouble();
   var tier = 0;
-  while (v >= 1000 && tier < 700) {
+  // ⚠️ 문턱이 1000 이면 안 된다. 부동소수 오차로 `1e33 / 1000^10` 이
+  // 999.9999… 가 되어 나누기가 한 단계 일찍 멈추고 **`1000No`** 로 찍혔다.
+  // 표시할 때 반올림해서 1000 이 될 값은 애초에 다음 단위로 넘긴다.
+  while (v >= 999.5 && tier < 700) {
     v /= 1000;
     tier++;
   }

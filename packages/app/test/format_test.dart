@@ -17,11 +17,19 @@ void main() {
       expect(formatCompact(3.1e12), '3.10T');
     });
 
-    test('T 위로는 aa·ab·ac… 로 이어진다', () {
-      expect(formatCompact(1e15), '1.00aa');
-      expect(formatCompact(1e18), '1.00ab');
-      expect(formatCompact(1e21), '1.00ac');
-      expect(formatCompact(1e24), '1.00ad');
+    test('T 위로는 방치형 약칭(Qa·Qi·Sx…)으로 이어진다', () {
+      expect(formatCompact(1e15), '1.00Qa'); // quadrillion
+      expect(formatCompact(1e18), '1.00Qi'); // quintillion
+      expect(formatCompact(1e21), '1.00Sx'); // sextillion
+      expect(formatCompact(1e24), '1.00Sp'); // septillion
+      expect(formatCompact(1e27), '1.00Oc');
+      expect(formatCompact(1e30), '1.00No');
+      expect(formatCompact(1e33), '1.00Dc');
+    });
+
+    test('표를 넘어가면 생성 규칙으로 이어진다(안전망)', () {
+      expect(formatCompact(1e36), '1.00aa');
+      expect(formatCompact(1e39), '1.00ab');
     });
 
     test('⚠️ 어떤 값이 와도 길이가 자라지 않는다', () {
@@ -33,6 +41,19 @@ void main() {
           s.length,
           lessThanOrEqualTo(8),
           reason: '1e$e 가 "$s" (${s.length}자) 로 나왔다',
+        );
+      }
+    });
+
+    test('⚠️ 999.9…가 1000 으로 찍히지 않는다 — 부동소수 오차 경계', () {
+      // `1e33 / 1000^10` 은 999.9999… 라 나누기가 한 단계 일찍 멈춰
+      // **`1000No`** 로 찍혔다. 단위마다 이 경계를 밟는다.
+      for (var e = 3; e <= 99; e += 3) {
+        final s = formatCompact(double.parse('1e$e'));
+        expect(
+          s.startsWith('1000'),
+          isFalse,
+          reason: '1e\$e 가 "\$s" 로 나왔다 — 다음 단위로 넘어갔어야 한다',
         );
       }
     });
