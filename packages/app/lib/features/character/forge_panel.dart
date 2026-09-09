@@ -923,14 +923,21 @@ class _AnvilButtonState extends State<_AnvilButton>
 }
 
 /// 비교 창의 한쪽 — 그림 · 이름 · 능력치를 세로로 쌓는다.
-class _CompareSide extends StatelessWidget {
-  const _CompareSide({
+/// 비교 카드 하나 — **가로로 눕힌다**(그림 왼쪽, 이름·옵션 오른쪽).
+///
+/// 예전 `_CompareSide` 는 세로 카드를 좌우 2열로 놓았는데, 한 열이 113px 뿐이라
+/// 옵션 이름이 잘리고 재굴림 버튼도 못 들어갔다(2026-09-10 지적).
+/// 위아래로 쌓고 각 카드를 눕히면 **폭을 다 쓴다**.
+class _StackSide extends StatelessWidget {
+  const _StackSide({
     required this.label,
     required this.item,
     required this.config,
     required this.locale,
     this.compare,
     this.highlight = false,
+    this.rerollCost,
+    this.onReroll,
   });
 
   final String label;
@@ -938,7 +945,11 @@ class _CompareSide extends StatelessWidget {
   final ItemConfig config;
   final String locale;
   final EquipItem? compare;
+
+  /// 새로 뽑은 쪽인가 — 테두리·이름표를 꿀색으로 세워 **낀 것과 확실히 가른다**.
   final bool highlight;
+  final int? rerollCost;
+  final void Function(int index)? onReroll;
 
   @override
   Widget build(BuildContext context) {
@@ -946,62 +957,103 @@ class _CompareSide extends StatelessWidget {
     final color = item == null
         ? const Color(0x33FFFFFF)
         : tierColor(config, item!.tier);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: highlight ? _honey : const Color(0x99FFFFFF),
-            fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-          ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        // 새로 뽑은 쪽만 바탕을 옅게 깔고 테두리를 굵게 — 두 칸이 같은 모양이면
+        // 이름표를 읽기 전에는 어느 쪽이 어느 쪽인지 모른다.
+        color: highlight ? const Color(0x22EBA52F) : const Color(0x14FFFFFF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: highlight ? _honey : const Color(0x33FFFFFF),
+          width: highlight ? 1.6 : 1,
         ),
-        const SizedBox(height: 6),
-        Center(
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              // 등급색을 여기서도 깔아 준다 — 칸에서 보던 색과 같아야 한다.
-              gradient: item == null
-                  ? null
-                  : LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        color.withValues(alpha: 0.34),
-                        color.withValues(alpha: 0.10),
-                      ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: highlight ? _honey : const Color(0x33FFFFFF),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: highlight ? const Color(0xFF2A1B08) : Colors.white,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  gradient: item == null
+                      ? null
+                      : LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            color.withValues(alpha: 0.34),
+                            color.withValues(alpha: 0.10),
+                          ],
+                        ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: color,
+                    width: item == null ? 1 : 1.6,
+                  ),
+                ),
+                child: item == null
+                    ? const SizedBox(width: 44, height: 44)
+                    : itemImage(item!, size: 44),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      item == null
+                          ? l.charEmptySlot
+                          : itemName(config, l, locale, item!),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: item == null ? const Color(0x66FFFFFF) : color,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color, width: item == null ? 1 : 1.6),
-            ),
-            child: item == null
-                ? const SizedBox(width: 56, height: 56)
-                : itemImage(item!, size: 56),
+                    const SizedBox(height: 3),
+                    if (item != null)
+                      ItemOptionList(
+                        item: item!,
+                        config: config,
+                        compare: compare,
+                        rerollCost: rerollCost,
+                        onReroll: onReroll,
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          item == null ? l.charEmptySlot : itemName(config, l, locale, item!),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: item == null ? const Color(0x66FFFFFF) : color,
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 6),
-        if (item != null)
-          ItemOptionList(
-            item: item!,
-            config: config,
-            compare: compare,
-            dense: true,
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1032,81 +1084,57 @@ Future<bool> showForgeResult(
     context,
     title: itemName(items, l, locale, item),
     iconWidget: itemImage(item, size: 40),
-    // **왼쪽 = 지금 낀 것, 오른쪽 = 새로 뽑은 것.** 위아래로 쌓으면 두 값을
-    // 번갈아 보느라 눈이 왕복한다 — 나란히 두어야 한 줄씩 바로 비교된다.
+    // **위 = 지금 낀 것, 아래 = 새로 뽑은 것.** 예전엔 좌우 2열이었는데,
+    // 한 쪽이 113px 뿐이라 옵션 이름이 잘리고 재굴림 버튼도 못 넣었다
+    // (2026-09-10 지적). 세로로 쌓으면 폭을 다 쓰므로 둘 다 해결된다.
     content: StatefulBuilder(
       builder: (ctx, setLocal) => SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _CompareSide(
-                    label: l.forgeCurrent,
-                    item: cur,
-                    config: items,
-                    locale: locale,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 18,
-                  color: Color(0x66FFFFFF),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _CompareSide(
-                    label: l.forgeResultNew,
-                    item: shown,
-                    config: items,
-                    locale: locale,
-                    compare: cur,
-                    highlight: true,
-                  ),
-                ),
-              ],
+            _StackSide(
+              label: l.forgeCurrent,
+              item: cur,
+              config: items,
+              locale: locale,
             ),
-            // 재굴림은 **비교창 아래 전용 줄**이다. 2열 안에 넣으면 한 쪽이
-            // 113px 뿐이라 옵션 이름이 잘린다(2026-09-10 지적).
-            // 여기서는 폭을 다 쓰므로 **어느 옵션을 바꾸는지** 이름으로 말한다.
-            if (forge != null) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                alignment: WrapAlignment.center,
-                children: [
-                  for (var i = 0; i < shown.options.length; i++)
-                    _JellyChip(
-                      icon: Icons.refresh_rounded,
-                      label: optionLabel(l, shown.options[i].kind),
-                      cost: forge.rerollJelly,
-                      enabled: true,
-                      onTap: () async {
-                        final ok = await ref
-                            .read(saveControllerProvider.notifier)
-                            .rerollOption(index: i);
-                        if (!ctx.mounted) return;
-                        if (!ok) {
-                          showCenterToast(ctx, l.forgeNoJelly);
-                          return;
-                        }
-                        final stack = ref
-                            .read(saveControllerProvider)
-                            .requireValue
-                            .forgeStack;
-                        if (stack.isNotEmpty) {
-                          setLocal(() => shown = stack.last);
-                        }
-                      },
-                    ),
-                ],
+            // 두 칸 사이에 **아래 화살표**. 무엇이 무엇으로 바뀌는지가
+            // 이름표만으로는 덜 읽힌다.
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Icon(
+                Icons.arrow_downward_rounded,
+                size: 16,
+                color: Color(0x66FFFFFF),
               ),
-            ],
+            ),
+            _StackSide(
+              label: l.forgeResultNew,
+              item: shown,
+              config: items,
+              locale: locale,
+              compare: cur,
+              highlight: true,
+              rerollCost: forge?.rerollJelly,
+              onReroll: forge == null
+                  ? null
+                  : (i) async {
+                      final ok = await ref
+                          .read(saveControllerProvider.notifier)
+                          .rerollOption(index: i);
+                      if (!ctx.mounted) return;
+                      if (!ok) {
+                        showCenterToast(ctx, l.forgeNoJelly);
+                        return;
+                      }
+                      final stack = ref
+                          .read(saveControllerProvider)
+                          .requireValue
+                          .forgeStack;
+                      if (stack.isNotEmpty) setLocal(() => shown = stack.last);
+                    },
+            ),
             const SizedBox(height: 4),
             Text(
               l.forgeRerollHint,
