@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:core_models/core_models.dart';
+import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 비동기 PvP·리더보드 백엔드 추상화 (Phase 4).
@@ -38,6 +39,21 @@ class PvpProfile {
     this.stageNumber = 1,
     this.difficultyTier = 0,
   });
+
+  /// 내 세이브에서 랭킹 프로필을 만든다.
+  ///
+  /// ⚠️ **손으로 채우지 말 것.** 세 축(트로피·레벨·진행도)을 각 호출부가
+  /// 따로 채우던 시절, 빠뜨린 축이 기본값(레벨 1·스테이지 1)으로 서버를
+  /// 덮어썼다 — 랭킹 화면을 여는 것만으로 자기 진행도가 1 이 됐다
+  /// (2026-09-09). 축을 늘릴 때 고칠 자리도 여기 하나여야 한다.
+  factory PvpProfile.me(SaveGame save) => PvpProfile(
+    id: 'me',
+    nickname: save.nickname,
+    trophies: save.pvpTrophies,
+    level: save.level,
+    stageNumber: save.stageNumber,
+    difficultyTier: save.difficultyTier,
+  );
 
   final String id;
   final String nickname;

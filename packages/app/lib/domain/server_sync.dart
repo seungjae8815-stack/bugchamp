@@ -199,18 +199,7 @@ class ServerSaveUploader {
     _rankPushedAt = now;
     final backend = _ref.read(pvpBackendProvider);
     if (!backend.isRemote) return;
-    unawaited(
-      backend.pushTrophies(
-        me: PvpProfile(
-          id: 'me',
-          nickname: save.nickname,
-          trophies: save.pvpTrophies,
-          level: save.level,
-          stageNumber: save.stageNumber,
-          difficultyTier: save.difficultyTier,
-        ),
-      ),
-    );
+    unawaited(backend.pushTrophies(me: PvpProfile.me(save)));
   }
 
   /// 변경분이 있으면 서버에 올린다. 이미 올린 상태면 건너뛴다.

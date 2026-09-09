@@ -23,13 +23,7 @@ Future<void> showRankPopupOnStart(BuildContext context, WidgetRef ref) async {
   final backend = ref.read(pvpBackendProvider);
   if (!backend.isRemote) return;
 
-  final rank = await backend.myRank(
-    me: PvpProfile(
-      id: 'me',
-      nickname: save.nickname,
-      trophies: save.pvpTrophies,
-    ),
-  );
+  final rank = await backend.myRank(me: PvpProfile.me(save));
   if (rank == null || !context.mounted) return;
 
   final report = await RankHistory.instance.record(

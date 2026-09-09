@@ -1,4 +1,5 @@
 import 'package:app/domain/pvp_backend.dart';
+import 'package:core_save/core_save.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// 회차제(쉬움 1-1000 → 보통 1부터)를 넣으면서, 진행도 랭킹이 스테이지 숫자만
@@ -65,5 +66,43 @@ void main() {
       p(1, 30).scoreFor(RankingKind.level),
       greaterThan(p(1, 29).scoreFor(RankingKind.level)),
     );
+  });
+
+  group('PvpProfile.me — 세 축을 빠뜨리지 않는다', () {
+    // ⚠️ 이 검사가 지키는 사고: 랭킹 프로필을 호출부마다 손으로 채우던 시절,
+    // 빠뜨린 축이 기본값(레벨 1·스테이지 1)으로 **서버를 덮어썼다**.
+    // 랭킹 화면을 여는 것만으로 자기 진행도가 1 이 되어, 채팅에는 있는
+    // 사람이 진행도 랭킹에서 사라졌다(2026-09-09).
+    SaveGame sample() =>
+        SaveGame.initial(createdAt: DateTime.utc(2026)).copyWith(
+          nickname: '나',
+          pvpTrophies: 1234,
+          level: 42,
+          stageNumber: 777,
+          difficultyTier: 2,
+        );
+
+    test('세이브의 값이 그대로 실린다', () {
+      final me = PvpProfile.me(sample());
+      expect(me.nickname, '나');
+      expect(me.trophies, 1234);
+      expect(me.level, 42);
+      expect(me.stageNumber, 777);
+      expect(me.difficultyTier, 2);
+    });
+
+    test('기본값(1·1·0)으로 떨어지지 않는다 — 서버를 덮어쓰면 진행도가 지워진다', () {
+      final me = PvpProfile.me(sample());
+      expect(me.level, isNot(1));
+      expect(me.stageNumber, isNot(1));
+      expect(me.difficultyTier, isNot(0));
+    });
+
+    test('세 축 모두 랭킹 점수에 반영된다', () {
+      final me = PvpProfile.me(sample());
+      expect(me.scoreFor(RankingKind.trophies), 1234);
+      expect(me.scoreFor(RankingKind.level), greaterThan(0));
+      expect(me.scoreFor(RankingKind.stage), greaterThan(0));
+    });
   });
 }

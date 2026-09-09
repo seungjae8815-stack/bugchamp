@@ -18,6 +18,11 @@ const _honey = Color(0xFFEBA52F);
 
 /// 로그인(비익명) 시 내 현재 랭킹. 미로그인·실패·미확정이면 null.
 /// 트로피/닉네임이 바뀔 때만 재조회(select) — 매 세이브마다 네트워크 호출 방지.
+///
+/// ⚠️ **레벨·진행도까지 넘겨야 한다.** `leaderboard()` 는 조회 전에 내 프로필을
+/// upsert 하는데, 여기서 안 넘기면 `PvpProfile` 기본값(레벨 1·스테이지 1·회차 0)이
+/// 그대로 서버를 덮어쓴다. 랭킹 화면을 여는 것만으로 자기 진행도가 1 로
+/// 지워져서, 채팅에는 있는 사람이 진행도 랭킹에서는 사라졌다(2026-09-09 제보).
 final myRankProvider = FutureProvider<int?>((ref) async {
   final auth = ref.watch(authServiceProvider);
   if (!auth.available || !auth.isSignedIn) return null;
@@ -27,10 +32,13 @@ final myRankProvider = FutureProvider<int?>((ref) async {
   final nickname = ref.watch(
     saveControllerProvider.select((s) => s.asData?.value.nickname ?? ''),
   );
+  final save = ref.read(saveControllerProvider).value;
   final backend = ref.watch(pvpBackendProvider);
   try {
     final board = await backend.leaderboard(
-      me: PvpProfile(id: 'me', nickname: nickname, trophies: trophies),
+      me: save == null
+          ? PvpProfile(id: 'me', nickname: nickname, trophies: trophies)
+          : PvpProfile.me(save),
       limit: 50,
     );
     if (!board.live) return null; // 폴백(NPC)은 순위로 쓰지 않는다
@@ -207,14 +215,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final cfg = data.battleConfig ?? const BattleConfig();
     final rules = data.chatRules ?? const ChatRules();
     final backend = ref.watch(pvpBackendProvider);
-    final me = PvpProfile(
-      id: 'me',
-      nickname: save.nickname,
-      trophies: save.pvpTrophies,
-      level: save.level,
-      stageNumber: save.stageNumber,
-      difficultyTier: save.difficultyTier,
-    );
+    final me = PvpProfile.me(save);
 
     return Scaffold(
       appBar: AppBar(title: Text(l.rankingTitle)),

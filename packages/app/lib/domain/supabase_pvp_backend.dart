@@ -147,10 +147,16 @@ class SupabasePvpBackend implements PvpBackend {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return;
     try {
+      // ⚠️ **세 축을 모두** 올린다. 트로피만 올리던 시절엔 결투를 안 하는 유저의
+      // 레벨·진행도가 서버에서 낡은 채(또는 기본값 1) 남아 진행도 랭킹에서
+      // 사실상 사라졌다 — 랭킹 3축을 만든 이유가 무너진다(2026-09-09 제보).
       await _client.from('profiles').upsert({
         'id': uid,
         'nickname': me.nickname,
         'trophies': me.trophies,
+        'level': me.level,
+        'stage': me.stageNumber,
+        'tier': me.difficultyTier,
       });
       await _client
           .from('defenders')
@@ -174,6 +180,9 @@ class SupabasePvpBackend implements PvpBackend {
         'id': uid,
         'nickname': me.nickname,
         'trophies': me.trophies,
+        'level': me.level,
+        'stage': me.stageNumber,
+        'tier': me.difficultyTier,
       });
       final rows =
           (await _client.rpc(

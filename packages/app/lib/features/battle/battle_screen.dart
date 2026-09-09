@@ -338,8 +338,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   double _power(BattleBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
 
-  PvpProfile _me(SaveGame save) =>
-      PvpProfile(id: 'me', nickname: save.nickname, trophies: save.pvpTrophies);
+  PvpProfile _me(SaveGame save) => PvpProfile.me(save);
 
   /// 성충 개체 목록.
   List<IndividualBug> _adults(SaveGame save, GameData data, DateTime now) {

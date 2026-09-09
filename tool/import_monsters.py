@@ -64,6 +64,11 @@ SHADOW_OFF = {'rock', 'pebble'}
 # (그림자 187,157,133 vs 다리 131,109,93 — 거리 144). 색 하나로 가른다.
 FLAT_SHADOW = {'pebble'}
 
+# 색 규칙을 끄면 **팔 사이처럼 둘러싸인 배경**이 남는다(모서리에서 흘려보내기로는
+# 못 닿는다). 돌 몬스터는 몸의 밝은 면도 배경색에 가깝지만, 그건 **작고 흩어져**
+# 있고 둘러싸인 배경은 **크고 이어져** 있다. 크기로 가른다.
+POCKET = {'rock': 1500, 'pebble': 1500}
+
 # basalt 시트만 액자형 회색 패널 위에 그려져 있다 — 흰 여백에서 패널로
 # 이어 흘려보내야 해서 문턱을 크게 잡는다(몸은 훨씬 어두워 거기서 멈춘다).
 FLOOD_THRESH = {
@@ -121,6 +126,49 @@ def bg_like(a, bg, same_thresh=40, shadow=True):
     if not shadow:
         shade = np.zeros(same.shape, bool)
     return same | shade
+
+
+def pockets(a, bg, keep, min_area, tol=30, grid=256):
+    """둘러싸인 배경(팔 사이 등)만 골라 지운다.
+
+    배경색에 가까운 픽셀 중 **크게 이어진 덩어리**만 배경으로 본다.
+    몸의 밝은 면은 배경색에 가까워도 잘게 흩어져 있어 살아남는다.
+    """
+    near = (np.abs(a - bg).sum(axis=2) < tol) & keep
+    h, w = near.shape
+    small = np.array(
+        Image.fromarray((near * 255).astype(np.uint8), 'L').resize(
+            (grid, grid), Image.NEAREST
+        )
+    ) > 0
+    seen = np.zeros((grid, grid), bool)
+    out = np.zeros((grid, grid), bool)
+    scale = (h / grid) * (w / grid)
+    for sy in range(grid):
+        for sx in range(grid):
+            if not small[sy, sx] or seen[sy, sx]:
+                continue
+            q = deque([(sy, sx)])
+            seen[sy, sx] = True
+            cells = []
+            while q:
+                y, x = q.popleft()
+                cells.append((y, x))
+                for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    ny, nx = y + dy, x + dx
+                    if (0 <= ny < grid and 0 <= nx < grid
+                            and small[ny, nx] and not seen[ny, nx]):
+                        seen[ny, nx] = True
+                        q.append((ny, nx))
+            if len(cells) * scale >= min_area:
+                for y, x in cells:
+                    out[y, x] = True
+    up = np.array(
+        Image.fromarray((out * 255).astype(np.uint8), 'L').resize(
+            (w, h), Image.NEAREST
+        )
+    ) > 0
+    return up & near
 
 
 def flat_shadow(a, keep, band=0.30, tol=8, min_area=3000):
@@ -210,6 +258,8 @@ def cut(path, mid):
         a = np.array(q).astype(int)
         keep &= ~bg_like(a, bg_of(a), SAME_THRESH.get(mid, 40),
                          shadow=mid not in SHADOW_OFF)
+        if mid in POCKET:
+            keep &= ~pockets(a, bg_of(a), keep, POCKET[mid])
         if mid in FLAT_SHADOW:
             keep &= ~flat_shadow(a, keep)
         if mid in DROP_ISLANDS:
