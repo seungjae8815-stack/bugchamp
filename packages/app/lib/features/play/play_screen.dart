@@ -1804,6 +1804,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // 몬스터 이름 — **이름이 있어야 몬스터로 읽힌다.**
+                        // 정물(나무 덩어리)을 생물로 바꾸면서, 화면에도
+                        // "무엇과 싸우는지"가 있어야 한다(2026-09-09).
+                        // 보스는 자기 이름표가 따로 있으므로 일반 몬스터만.
+                        if (!_isBoss && mon != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Text(
+                              mon.name.resolve(l.localeName),
+                              style: const TextStyle(
+                                color: Color(0xE6FFFFFF),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 10.5,
+                                shadows: [
+                                  Shadow(color: Colors.black, blurRadius: 3),
+                                ],
+                              ),
+                            ),
+                          ),
                         // 정예 이름표 — 한눈에 "저건 다르다"가 보여야
                         // 사건이 된다. 보스 이름표와 같은 자리·같은 모양이되
                         // 색을 갈라 놓는다(보스=핏빛, 정예=보랏빛).

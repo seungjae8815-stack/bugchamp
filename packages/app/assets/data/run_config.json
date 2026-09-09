@@ -53,121 +53,121 @@
  "monsters": [
   {
    "id": "tree",
-   "name": { "ko": "고목", "en": "Old Tree", "ja": "古木" },
+   "name": { "ko": "나무깨비", "en": "Treeling", "ja": "木の精" },
    "glyph": "🌳",
    "scale": 1.0
   },
   {
    "id": "flower",
-   "name": { "ko": "들꽃 무리", "en": "Wildflowers", "ja": "野花" },
+   "name": { "ko": "꽃깨비", "en": "Bloomling", "ja": "花の精" },
    "glyph": "🌸",
    "scale": 0.92
   },
   {
    "id": "rock",
-   "name": { "ko": "이끼 바위", "en": "Mossy Rock", "ja": "苔むした岩" },
+   "name": { "ko": "바위깨비", "en": "Rockling", "ja": "岩の精" },
    "glyph": "🪨",
    "scale": 1.0
   },
   {
    "id": "stump",
-   "name": { "ko": "썩은 그루터기", "en": "Rotting Stump", "ja": "朽ちた切株" },
+   "name": { "ko": "그루터기깨비", "en": "Stumpling", "ja": "切株の精" },
    "glyph": "🪵",
    "scale": 1.0
   },
   {
    "id": "mushroom",
-   "name": { "ko": "독버섯", "en": "Toadstool", "ja": "毒キノコ" },
+   "name": { "ko": "버섯깨비", "en": "Shroomling", "ja": "キノコの精" },
    "glyph": "🍄",
    "scale": 0.9
   },
   {
    "id": "log_pile",
-   "name": { "ko": "통나무 더미", "en": "Log Pile", "ja": "丸太の山" },
+   "name": { "ko": "통나무깨비", "en": "Logling", "ja": "丸太の精" },
    "glyph": "🪵",
    "scale": 1.08
   },
   {
    "id": "fern",
-   "name": { "ko": "고사리 덤불", "en": "Fern Thicket", "ja": "シダの茂み" },
+   "name": { "ko": "고사리깨비", "en": "Fernling", "ja": "シダの精" },
    "glyph": "🌿",
    "scale": 0.95
   },
   {
    "id": "acorn",
-   "name": { "ko": "도토리 무더기", "en": "Acorn Mound", "ja": "どんぐりの山" },
+   "name": { "ko": "도토리깨비", "en": "Acornling", "ja": "どんぐりの精" },
    "glyph": "🌰",
    "scale": 0.85
   },
   {
    "id": "reed",
-   "name": { "ko": "갈대밭", "en": "Reed Bed", "ja": "葦原" },
+   "name": { "ko": "갈대깨비", "en": "Reedling", "ja": "葦の精" },
    "glyph": "🎋",
    "scale": 1.0
   },
   {
    "id": "pebble",
-   "name": { "ko": "자갈 여울", "en": "Pebble Shoal", "ja": "小石の瀬" },
+   "name": { "ko": "자갈깨비", "en": "Pebbling", "ja": "小石の精" },
    "glyph": "🪨",
    "scale": 0.88
   },
   {
    "id": "driftwood",
-   "name": { "ko": "떠내려온 나무", "en": "Driftwood", "ja": "流木" },
+   "name": { "ko": "유목깨비", "en": "Driftling", "ja": "流木の精" },
    "glyph": "🪵",
    "scale": 1.05
   },
   {
    "id": "tall_grass",
-   "name": { "ko": "억새 수풀", "en": "Tall Grass", "ja": "ススキの茂み" },
+   "name": { "ko": "억새깨비", "en": "Grassling", "ja": "ススキの精" },
    "glyph": "🌾",
    "scale": 1.0
   },
   {
    "id": "clover",
-   "name": { "ko": "토끼풀 덤불", "en": "Clover Patch", "ja": "クローバー" },
+   "name": { "ko": "토끼풀깨비", "en": "Cloverling", "ja": "クローバーの精" },
    "glyph": "☘️",
    "scale": 0.86
   },
   {
    "id": "dandelion",
-   "name": { "ko": "민들레 군락", "en": "Dandelions", "ja": "タンポポ" },
+   "name": { "ko": "민들레깨비", "en": "Dandeling", "ja": "タンポポの精" },
    "glyph": "🌼",
    "scale": 0.9
   },
   {
    "id": "crystal_rock",
-   "name": { "ko": "수정 바위", "en": "Crystal Rock", "ja": "水晶の岩" },
+   "name": { "ko": "수정깨비", "en": "Crystalling", "ja": "水晶の精" },
    "glyph": "💎",
    "scale": 1.05
   },
   {
    "id": "dead_tree",
-   "name": { "ko": "고사목", "en": "Dead Tree", "ja": "枯れ木" },
+   "name": { "ko": "고사목깨비", "en": "Witherling", "ja": "枯れ木の精" },
    "glyph": "🥀",
    "scale": 1.12
   },
   {
    "id": "moss_boulder",
-   "name": { "ko": "이끼 덮인 바위", "en": "Moss Boulder", "ja": "苔の巨石" },
+   "name": { "ko": "이끼깨비", "en": "Mossling", "ja": "苔の精" },
    "glyph": "🗿",
    "scale": 1.1
   },
   {
    "id": "basalt",
-   "name": { "ko": "현무암 기둥", "en": "Basalt Column", "ja": "玄武岩の柱" },
+   "name": { "ko": "현무암깨비", "en": "Basaltling", "ja": "玄武岩の精" },
    "glyph": "🪨",
    "scale": 1.15
   },
   {
    "id": "ember_vent",
-   "name": { "ko": "불티 분출구", "en": "Ember Vent", "ja": "熾火の噴気孔" },
+   "name": { "ko": "불티깨비", "en": "Emberling", "ja": "熾火の精" },
    "glyph": "🔥",
    "scale": 1.0
   },
   {
    "id": "ash_mound",
-   "name": { "ko": "잿더미", "en": "Ash Mound", "ja": "灰の山" },
+   "name": { "ko": "잿더미깨비", "en": "Ashling", "ja": "灰の精" },
    "glyph": "🌋",
    "scale": 0.95
   }

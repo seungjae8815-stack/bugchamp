@@ -139,99 +139,128 @@ Square 1:1 image. A giant volcanic fire beetle sovereign boss, heavy charcoal-bl
 
 ---
 
-## STEP 17 · 새 서식지(몬스터) 15종 ⚠️ **미제작 — 다음 우선순위**
+## STEP 17 · 몬스터 20종 — **생물로 다시** ⚠️ 미제작
 
-> 2026-09-09 추가. 그때까지 몬스터 그림이 **게임 전체에 5장**뿐이라 20마리가
-> 같은 고리를 네 번 돌았다("매번 비슷해서 단조롭다"). 종류는 이제 `run_config.json →
-> monsters` 에 **데이터로** 있으므로, 그림만 넣으면 코드를 안 고쳐도 바로 나온다.
-> 그림이 없는 동안에는 이모지로 폴백된다(화면은 안 깨지지만 결이 다르다).
+> 2026-09-09 확정. 그전까지 때리는 대상이 **나무 덩어리·수풀 덩어리**(정물)였다.
+> 그런데 화면에서 벌어지는 일은 전부 전투다 — 체력바가 붙고, 반격을 하고,
+> 치명타가 터지고, 정예가 나오고, 곤충 셋이 달려들어 두들긴다.
+> **행동은 전투인데 대상만 정물**이라 "몬스터가 아닌데?"로 읽혔다.
+> 나무·바위라는 정체성은 그대로 두고 **눈·입·팔다리를 달아 생물로** 만든다.
+> 이름도 「~깨비」(ko) / 「~ling」(en) / 「~の精」(ja) 로 통일했다.
 
-> 저장 위치는 모두 `packages/app/assets/images/habitats/<id>.webp` · 비율 **1:1**.
-> 공격·사망 프레임(`<id>_attack_1/2`, `<id>_death_1/2`)은 선택 — 없으면 기본 한 장을 쓴다.
+> 저장: `packages/app/assets/images/habitats/<id>.webp` · 비율 **1:1** · 배경 제거.
+> ⚠️ 기존 5종(`tree` `flower` `rock` `stump` `mushroom`)도 **덮어쓴다** — 정물 5장과
+> 생물 15장이 섞이면 그게 더 이상하다. STEP 3~7 의 옛 프롬프트는 폐기다.
+> 공격·사망 프레임은 선택(코드에 쓰러지는 연출이 이미 있다).
 
 ### 참나무 숲
 
-**통나무 더미** — `habitats/log_pile.webp`
+**나무깨비** — `habitats/tree.webp`
 ```
-Square 1:1 image. A stack of three cut logs with visible bark and pale cut ends, a few leaves resting on top, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
-```
-
-**고사리 덤불** — `habitats/fern.webp`
-```
-Square 1:1 image. A lush cluster of curling green fern fronds spreading from a low base, side view, growing from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A small round tree spirit creature: a leafy oak sapling whose trunk is its body, bark face, two stubby root legs, leafy crown like hair, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
-**도토리 무더기** — `habitats/acorn.webp`
+**그루터기깨비** — `habitats/stump.webp`
 ```
-Square 1:1 image. A small mound of plump brown acorns with textured caps, a couple of oak leaves tucked between them, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A tree stump spirit creature: a mossy stump body with growth rings forming a face pattern, short root arms, tiny mushrooms on its shoulder, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**통나무깨비** — `habitats/log_pile.webp`
+```
+Square 1:1 image. A stacked-log spirit creature: three cut logs balanced as head, torso and legs, pale cut ends like eyes and mouth, bark skin, wobbling, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**고사리깨비** — `habitats/fern.webp`
+```
+Square 1:1 image. A fern spirit creature: a round mossy body crowned with curling fern fronds, frond arms unfurling, leafy tail, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**도토리깨비** — `habitats/acorn.webp`
+```
+Square 1:1 image. A tiny acorn spirit creature: a plump acorn body with its textured cap worn as a hat, oak-leaf wings on its back, small and cheeky, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
 ### 계곡 물가
 
-**갈대밭** — `habitats/reed.webp`
+**바위깨비** — `habitats/rock.webp`
 ```
-Square 1:1 image. A tight bundle of tall slender reeds with fluffy brown seed heads, bending slightly, side view, growing from wet ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
-```
-
-**자갈 여울** — `habitats/pebble.webp`
-```
-Square 1:1 image. A low spread of smooth rounded river pebbles in grey and warm tan, a thin film of clear water over them, side view, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A mossy boulder spirit creature: a rounded grey stone body with green moss patches like eyebrows and hair, stubby pebble limbs, sturdy, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
-**떠내려온 나무** — `habitats/driftwood.webp`
+**갈대깨비** — `habitats/reed.webp`
 ```
-Square 1:1 image. A bleached twisted piece of driftwood with smooth weathered grain, resting on damp sand, side view, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A reed spirit creature: a slender bundle of reeds forming a swaying body, fluffy brown seed heads as its head, thin grass arms, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**자갈깨비** — `habitats/pebble.webp`
+```
+Square 1:1 image. A pebble spirit creature: a cluster of smooth river stones stacked into a small round body, wet glossy sheen, water dripping, stubby stone limbs, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**유목깨비** — `habitats/driftwood.webp`
+```
+Square 1:1 image. A driftwood spirit creature: a bleached twisted branch body with smooth weathered grain, knot-hole eyes, long crooked driftwood arms, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
 ### 풀숲 초원
 
-**억새 수풀** — `habitats/tall_grass.webp`
+**꽃깨비** — `habitats/flower.webp`
 ```
-Square 1:1 image. A dense tuft of tall silver-tipped pampas grass swaying, warm straw tones, side view, growing from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
-```
-
-**토끼풀 덤불** — `habitats/clover.webp`
-```
-Square 1:1 image. A round low patch of bright green clover leaves with a few small white flower puffs, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A wildflower spirit creature: a bushy round body of colorful blossoms, green leaf arms, a flower crown, cheerful, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
-**민들레 군락** — `habitats/dandelion.webp`
+**버섯깨비** — `habitats/mushroom.webp`
 ```
-Square 1:1 image. A small group of dandelions, two yellow blooms and one white seed head with drifting seeds, side view, growing from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A toadstool spirit creature: a big red white-spotted mushroom cap as its head over a plump pale stalk body, stubby legs, mischievous, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**억새깨비** — `habitats/tall_grass.webp`
+```
+Square 1:1 image. A pampas grass spirit creature: a tall tuft of silver-tipped grass forming a shaggy body, straw-toned, swaying, thin grass-blade arms, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**토끼풀깨비** — `habitats/clover.webp`
+```
+Square 1:1 image. A clover spirit creature: a small round body of bright green clover leaves, one white clover flower on its head like a puff, hopping, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**민들레깨비** — `habitats/dandelion.webp`
+```
+Square 1:1 image. A dandelion spirit creature: a yellow bloom face on a slim green stem body, a white seed-head puff shoulder, seeds drifting off it, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
 ### 야산 밤숲
 
-**수정 바위** — `habitats/crystal_rock.webp`
+**수정깨비** — `habitats/crystal_rock.webp`
 ```
-Square 1:1 image. A dark grey boulder with pale blue crystal shards jutting from its cracks, faint inner glow, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
-```
-
-**고사목** — `habitats/dead_tree.webp`
-```
-Square 1:1 image. A bare dead tree with twisted leafless branches and peeling grey bark, side view, rooted on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A crystal rock spirit creature: a dark grey stone body with pale blue crystal shards growing from its back and brow, faint inner glow in its eyes, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
-**이끼 덮인 바위** — `habitats/moss_boulder.webp`
+**고사목깨비** — `habitats/dead_tree.webp`
 ```
-Square 1:1 image. A large rounded boulder almost fully blanketed in thick deep-green moss, small ferns at its base, side view, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A dead tree spirit creature: a bare twisted trunk body with peeling grey bark, leafless branch arms like claws, hollow glowing eyes, gaunt, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**이끼깨비** — `habitats/moss_boulder.webp`
+```
+Square 1:1 image. A moss-covered boulder spirit creature: a big round stone almost fully blanketed in thick deep-green moss, small ferns sprouting on its head, slow and heavy, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
 ### 잿불 능선
 
-**현무암 기둥** — `habitats/basalt.webp`
+**현무암깨비** — `habitats/basalt.webp`
 ```
-Square 1:1 image. A cluster of hexagonal dark basalt columns of uneven height, sharp geometric edges, side view, rising from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
-```
-
-**불티 분출구** — `habitats/ember_vent.webp`
-```
-Square 1:1 image. A small crack in charred black rock with molten orange glow inside and rising ember sparks, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. A basalt spirit creature: a body built of hexagonal dark basalt columns of uneven height, sharp geometric shoulders, blocky stone limbs, stoic, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
-**잿더미** — `habitats/ash_mound.webp`
+**불티깨비** — `habitats/ember_vent.webp`
 ```
-Square 1:1 image. A soft grey mound of ash with a few glowing orange embers buried in it and a thin wisp of smoke, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+Square 1:1 image. An ember spirit creature: a charred black rock body split by molten orange cracks, ember sparks rising from its shoulders, glowing eyes, restless, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**잿더미깨비** — `habitats/ash_mound.webp`
+```
+Square 1:1 image. An ash spirit creature: a soft grey mound of ash forming a slouched body, a few glowing orange embers buried in it, a thin wisp of smoke from its head, drowsy, side view facing left, standing on stubby little legs, two big expressive eyes, a small simple mouth, alive and alert, a creature not an object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy palette, clean readable silhouette, mobile game enemy art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
 ---
