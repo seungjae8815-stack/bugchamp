@@ -16,6 +16,16 @@ enum HabitatKind {
     (e) => e.key == key,
     orElse: () => throw ArgumentError('Unknown HabitatKind key: $key'),
   );
+
+  /// 모르는 키면 null. **몬스터가 JSON 으로 넘어간 뒤**로는 이 enum 에 없는
+  /// id 가 정상이다(§6) — 던지면 새 몬스터를 하나 추가할 때마다 구버전 앱이
+  /// 로딩에서 죽는다.
+  static HabitatKind? fromKeyOrNull(String key) {
+    for (final e in values) {
+      if (e.key == key) return e;
+    }
+    return null;
+  }
 }
 
 /// 캐릭터 능력치 업그레이드 종류 (테마명은 UI/ARB 에서).

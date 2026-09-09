@@ -922,6 +922,7 @@
   "forgeStrikeLocked": "챕터 {n} 필요",
   "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
   "forgeStrikeAuto": "최대",
+  "eliteLabel": "정예",
   "regionElementTitle": "지역 속성",
   "regionElementHint": "이 속성을 克하는 곤충을 끼면 그 곤충의 타격이 세져요. 곤충은 캐릭터와 따로, 자기 속도로 때립니다.",
   "forgeStrikeStart": "시작",

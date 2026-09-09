@@ -5032,6 +5032,12 @@ abstract class AppLocalizations {
   /// **'Max'**
   String get forgeStrikeAuto;
 
+  /// No description provided for @eliteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ELITE'**
+  String get eliteLabel;
+
   /// No description provided for @regionElementTitle.
   ///
   /// In en, this message translates to:

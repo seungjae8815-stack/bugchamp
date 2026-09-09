@@ -2751,6 +2751,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeStrikeAuto => '最大';
 
   @override
+  String get eliteLabel => '精鋭';
+
+  @override
   String get regionElementTitle => '地域の属性';
 
   @override

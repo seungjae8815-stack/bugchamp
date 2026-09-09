@@ -4,6 +4,7 @@ import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
 import 'enums.dart';
+import 'monster_config.dart';
 
 /// 능력치 업그레이드 1종의 곡선 정의 (JSON).
 @immutable
@@ -70,6 +71,7 @@ class RegionConfig {
     required this.name,
     required this.bossName,
     required this.habitatKinds,
+    this.monsterIds = const [],
     this.bossFlip = true,
     this.element,
   });
@@ -78,7 +80,19 @@ class RegionConfig {
   final String id;
   final LocalizedText name;
   final LocalizedText bossName;
+
+  /// 구버전 필드(enum 5종). 새 `monsters` 를 안 쓰는 JSON 을 위해 남긴다.
   final List<HabitatKind> habitatKinds;
+
+  /// 이 지역에 나오는 몬스터 id 목록(`RunConfig.monsters` 의 키).
+  ///
+  /// 비어 있으면 [habitatKinds] 를 그대로 쓴다 — 구버전 JSON 이 그대로 돈다.
+  final List<String> monsterIds;
+
+  /// 실제로 쓸 목록. 새 필드가 있으면 그것을, 없으면 옛 enum 을 문자열로.
+  List<String> get monsterKeys => monsterIds.isNotEmpty
+      ? monsterIds
+      : habitatKinds.map((k) => k.key).toList();
 
   /// 보스 스프라이트를 좌우 반전해 캐릭터(좌측)를 바라보게 할지.
   /// 원본 아트가 오른쪽을 보면 true, 이미 왼쪽을 보면 false.
@@ -95,10 +109,17 @@ class RegionConfig {
     id: json['id'] as String,
     name: LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
     bossName: LocalizedText.fromJson(json['bossName'] as Map<String, dynamic>),
-    habitatKinds: (json['habitatKinds'] as List)
+    // ⚠️ 새 몬스터 id 는 enum 에 없다. `habitatKinds` 는 **enum 으로 읽히는
+    // 것만** 담는다 — 아니면 `fromKey` 가 던져 로딩이 통째로 죽는다.
+    habitatKinds: (json['habitatKinds'] as List? ?? const [])
         .cast<String>()
-        .map(HabitatKind.fromKey)
+        .map(HabitatKind.fromKeyOrNull)
+        .whereType<HabitatKind>()
         .toList(),
+    monsterIds:
+        (json['monsters'] as List? ?? json['habitatKinds'] as List? ?? const [])
+            .cast<String>()
+            .toList(),
     bossFlip: json['bossFlip'] as bool? ?? true,
     // `fromKey` 가 아니라 `fromKeyOrNull` 이다. 애셋 오타를 로딩에서 잡는
     // 다른 필드와 달리, 이건 **없어도 정상**(무속성)이라 던지면 안 된다.
@@ -165,6 +186,11 @@ class RunConfig {
     this.exchangeGoldHours = 1.0,
     this.exchangeMaterialHours = 1.0,
     this.exchangeKillsPerHour = 900,
+    this.monsters = const {},
+    this.eliteChance = 0.06,
+    this.eliteHpMult = 3.0,
+    this.eliteRewardMult = 4.0,
+    this.eliteScale = 1.45,
     this.petRestrainMult = 1.5,
   });
 
@@ -409,6 +435,31 @@ class RunConfig {
   final double exchangeMaterialHours;
   final int exchangeKillsPerHour;
 
+  /// 몬스터 도감(id → 정의). JSON `monsters` 배열에서 읽는다.
+  ///
+  /// 비어 있으면 지역의 옛 `habitatKinds` 가 그대로 쓰인다(구버전 호환).
+  final Map<String, MonsterDef> monsters;
+
+  /// 엘리트가 나올 확률(서식지 한 칸당). 보스 칸에는 안 걸린다.
+  final double eliteChance;
+
+  /// 엘리트 체력 배율. **적응형 체력 위에** 곱한다 — 월드 관문(worldHpMult)과
+  /// 같은 층이다. 기준(§7)에 넣으면 안 된다: 넣는 순간 일반 몬스터까지
+  /// 같이 세져서 엘리트가 "특별한 놈"이 아니라 그냥 인플레가 된다.
+  final double eliteHpMult;
+
+  /// 엘리트 보상 배율(골드·재료·경험치).
+  ///
+  /// ⚠️ **이 값이 [eliteHpMult] 보다 커야 한다.** 안 그러면 엘리트가 시간만
+  /// 먹는 **세금**이 된다: 시간은 `1-c+c*hp` 배, 수입은 `1-c+c*reward` 배로
+  /// 늘어나므로 `reward < hp` 면 시간당 수입이 **줄어든다**.
+  /// (초안 체력 x4 · 보상 x3 이 정확히 그랬다 — 시간당 -5.1%.)
+  /// 지금 값: 시간 +12% · 수입 +18% · **시간당 +5.4%**.
+  final double eliteRewardMult;
+
+  /// 엘리트 크기 배율(연출). 한눈에 달라 보여야 사건이 된다.
+  final double eliteScale;
+
   /// 곤충 속성이 몬스터를 克할 때 **그 곤충의 타격에만** 곱하는 배율(§2.3).
   ///
   /// 이것이 이 시스템의 **유일한 §7 기준 밖 이득**이다. 3마리 다 상극이어도
@@ -509,6 +560,14 @@ class RunConfig {
       tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
+      monsters: {
+        for (final m in (json['monsters'] as List? ?? const []))
+          (m as Map<String, dynamic>)['id'] as String: MonsterDef.fromJson(m),
+      },
+      eliteChance: (json['eliteChance'] as num?)?.toDouble() ?? 0.06,
+      eliteHpMult: (json['eliteHpMult'] as num?)?.toDouble() ?? 3.0,
+      eliteRewardMult: (json['eliteRewardMult'] as num?)?.toDouble() ?? 4.0,
+      eliteScale: (json['eliteScale'] as num?)?.toDouble() ?? 1.45,
       petRestrainMult: (json['petRestrainMult'] as num?)?.toDouble() ?? 1.5,
     );
   }

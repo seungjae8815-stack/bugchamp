@@ -135,6 +135,102 @@ Square 1:1 image. A giant volcanic fire beetle sovereign boss, heavy charcoal-bl
 
 ---
 
+## STEP 17 · 새 서식지(몬스터) 15종 ⚠️ **미제작 — 다음 우선순위**
+
+> 2026-09-09 추가. 그때까지 몬스터 그림이 **게임 전체에 5장**뿐이라 20마리가
+> 같은 고리를 네 번 돌았다("매번 비슷해서 단조롭다"). 종류는 이제 `run_config.json →
+> monsters` 에 **데이터로** 있으므로, 그림만 넣으면 코드를 안 고쳐도 바로 나온다.
+> 그림이 없는 동안에는 이모지로 폴백된다(화면은 안 깨지지만 결이 다르다).
+
+> 저장 위치는 모두 `packages/app/assets/images/habitats/<id>.webp` · 비율 **1:1**.
+> 공격·사망 프레임(`<id>_attack_1/2`, `<id>_death_1/2`)은 선택 — 없으면 기본 한 장을 쓴다.
+
+### 참나무 숲
+
+**통나무 더미** — `habitats/log_pile.webp`
+```
+Square 1:1 image. A stack of three cut logs with visible bark and pale cut ends, a few leaves resting on top, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**고사리 덤불** — `habitats/fern.webp`
+```
+Square 1:1 image. A lush cluster of curling green fern fronds spreading from a low base, side view, growing from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**도토리 무더기** — `habitats/acorn.webp`
+```
+Square 1:1 image. A small mound of plump brown acorns with textured caps, a couple of oak leaves tucked between them, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+### 계곡 물가
+
+**갈대밭** — `habitats/reed.webp`
+```
+Square 1:1 image. A tight bundle of tall slender reeds with fluffy brown seed heads, bending slightly, side view, growing from wet ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**자갈 여울** — `habitats/pebble.webp`
+```
+Square 1:1 image. A low spread of smooth rounded river pebbles in grey and warm tan, a thin film of clear water over them, side view, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**떠내려온 나무** — `habitats/driftwood.webp`
+```
+Square 1:1 image. A bleached twisted piece of driftwood with smooth weathered grain, resting on damp sand, side view, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+### 풀숲 초원
+
+**억새 수풀** — `habitats/tall_grass.webp`
+```
+Square 1:1 image. A dense tuft of tall silver-tipped pampas grass swaying, warm straw tones, side view, growing from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**토끼풀 덤불** — `habitats/clover.webp`
+```
+Square 1:1 image. A round low patch of bright green clover leaves with a few small white flower puffs, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**민들레 군락** — `habitats/dandelion.webp`
+```
+Square 1:1 image. A small group of dandelions, two yellow blooms and one white seed head with drifting seeds, side view, growing from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+### 야산 밤숲
+
+**수정 바위** — `habitats/crystal_rock.webp`
+```
+Square 1:1 image. A dark grey boulder with pale blue crystal shards jutting from its cracks, faint inner glow, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**고사목** — `habitats/dead_tree.webp`
+```
+Square 1:1 image. A bare dead tree with twisted leafless branches and peeling grey bark, side view, rooted on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**이끼 덮인 바위** — `habitats/moss_boulder.webp`
+```
+Square 1:1 image. A large rounded boulder almost fully blanketed in thick deep-green moss, small ferns at its base, side view, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+### 잿불 능선
+
+**현무암 기둥** — `habitats/basalt.webp`
+```
+Square 1:1 image. A cluster of hexagonal dark basalt columns of uneven height, sharp geometric edges, side view, rising from the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**불티 분출구** — `habitats/ember_vent.webp`
+```
+Square 1:1 image. A small crack in charred black rock with molten orange glow inside and rising ember sparks, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+**잿더미** — `habitats/ash_mound.webp`
+```
+Square 1:1 image. A soft grey mound of ash with a few glowing orange embers buried in it and a thin wisp of smoke, side view, on the ground, a game object, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette, clean readable silhouette, mobile game art, high detail. no text, no watermark, no logo, no signature, no UI.
+```
+
+---
 ## (선택) 나중에 — 도감 곤충 카드 20종
 게임 화면엔 필수 아님. 도감/보관함 꾸밀 때 곤충 20종을 **3/4 위에서 본 뷰**로 만들어
 `packages/app/assets/images/bugs/<종id>.webp` 로 넣고, `species.json` 각 항목에 `"image": "<종id>.webp"` 추가하면 표시됩니다.

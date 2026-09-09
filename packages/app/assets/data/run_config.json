@@ -45,6 +45,133 @@
  "boostMultMax": 2.0,
  "boostDecayPerSec": 0.18,
  "boostSpeedFactor": 0.4,
+ "eliteChance": 0.06,
+ "eliteHpMult": 3.0,
+ "eliteRewardMult": 4.0,
+ "eliteScale": 1.45,
+ "_eliteComment": "엘리트 = 가끔 나오는 크고 단단한 개체. 체력은 적응형 위에 곱한다(월드 관문과 같은 층 — §7 기준 밖). ⚠️ 보상 배율이 체력 배율보다 커야 한다. 안 그러면 엘리트가 시간만 먹는 세금이 된다: 시간 x(1-c+c*hp), 수입 x(1-c+c*reward). 지금 값 = 시간 +12% / 수입 +18% / 시간당 +5.4%. 만질 땐 balance_sim --elite 로 다시 잴 것.",
+ "monsters": [
+  {
+   "id": "tree",
+   "name": { "ko": "고목", "en": "Old Tree", "ja": "古木" },
+   "glyph": "🌳",
+   "scale": 1.0
+  },
+  {
+   "id": "flower",
+   "name": { "ko": "들꽃 무리", "en": "Wildflowers", "ja": "野花" },
+   "glyph": "🌸",
+   "scale": 0.92
+  },
+  {
+   "id": "rock",
+   "name": { "ko": "이끼 바위", "en": "Mossy Rock", "ja": "苔むした岩" },
+   "glyph": "🪨",
+   "scale": 1.0
+  },
+  {
+   "id": "stump",
+   "name": { "ko": "썩은 그루터기", "en": "Rotting Stump", "ja": "朽ちた切株" },
+   "glyph": "🪵",
+   "scale": 1.0
+  },
+  {
+   "id": "mushroom",
+   "name": { "ko": "독버섯", "en": "Toadstool", "ja": "毒キノコ" },
+   "glyph": "🍄",
+   "scale": 0.9
+  },
+  {
+   "id": "log_pile",
+   "name": { "ko": "통나무 더미", "en": "Log Pile", "ja": "丸太の山" },
+   "glyph": "🪵",
+   "scale": 1.08
+  },
+  {
+   "id": "fern",
+   "name": { "ko": "고사리 덤불", "en": "Fern Thicket", "ja": "シダの茂み" },
+   "glyph": "🌿",
+   "scale": 0.95
+  },
+  {
+   "id": "acorn",
+   "name": { "ko": "도토리 무더기", "en": "Acorn Mound", "ja": "どんぐりの山" },
+   "glyph": "🌰",
+   "scale": 0.85
+  },
+  {
+   "id": "reed",
+   "name": { "ko": "갈대밭", "en": "Reed Bed", "ja": "葦原" },
+   "glyph": "🎋",
+   "scale": 1.0
+  },
+  {
+   "id": "pebble",
+   "name": { "ko": "자갈 여울", "en": "Pebble Shoal", "ja": "小石の瀬" },
+   "glyph": "🪨",
+   "scale": 0.88
+  },
+  {
+   "id": "driftwood",
+   "name": { "ko": "떠내려온 나무", "en": "Driftwood", "ja": "流木" },
+   "glyph": "🪵",
+   "scale": 1.05
+  },
+  {
+   "id": "tall_grass",
+   "name": { "ko": "억새 수풀", "en": "Tall Grass", "ja": "ススキの茂み" },
+   "glyph": "🌾",
+   "scale": 1.0
+  },
+  {
+   "id": "clover",
+   "name": { "ko": "토끼풀 덤불", "en": "Clover Patch", "ja": "クローバー" },
+   "glyph": "☘️",
+   "scale": 0.86
+  },
+  {
+   "id": "dandelion",
+   "name": { "ko": "민들레 군락", "en": "Dandelions", "ja": "タンポポ" },
+   "glyph": "🌼",
+   "scale": 0.9
+  },
+  {
+   "id": "crystal_rock",
+   "name": { "ko": "수정 바위", "en": "Crystal Rock", "ja": "水晶の岩" },
+   "glyph": "💎",
+   "scale": 1.05
+  },
+  {
+   "id": "dead_tree",
+   "name": { "ko": "고사목", "en": "Dead Tree", "ja": "枯れ木" },
+   "glyph": "🥀",
+   "scale": 1.12
+  },
+  {
+   "id": "moss_boulder",
+   "name": { "ko": "이끼 덮인 바위", "en": "Moss Boulder", "ja": "苔の巨石" },
+   "glyph": "🗿",
+   "scale": 1.1
+  },
+  {
+   "id": "basalt",
+   "name": { "ko": "현무암 기둥", "en": "Basalt Column", "ja": "玄武岩の柱" },
+   "glyph": "🪨",
+   "scale": 1.15
+  },
+  {
+   "id": "ember_vent",
+   "name": { "ko": "불티 분출구", "en": "Ember Vent", "ja": "熾火の噴気孔" },
+   "glyph": "🔥",
+   "scale": 1.0
+  },
+  {
+   "id": "ash_mound",
+   "name": { "ko": "잿더미", "en": "Ash Mound", "ja": "灰の山" },
+   "glyph": "🌋",
+   "scale": 0.95
+  }
+ ],
  "regions": [
   {
    "id": "oak_forest",
@@ -65,6 +192,16 @@
     "flower",
     "stump",
     "mushroom"
+   ],
+   "monsters": [
+    "tree",
+    "rock",
+    "flower",
+    "stump",
+    "mushroom",
+    "log_pile",
+    "fern",
+    "acorn"
    ],
    "element": "earth"
   },
@@ -87,6 +224,16 @@
     "stump",
     "flower"
    ],
+   "monsters": [
+    "rock",
+    "mushroom",
+    "stump",
+    "flower",
+    "reed",
+    "pebble",
+    "driftwood",
+    "fern"
+   ],
    "element": "water"
   },
   {
@@ -106,6 +253,15 @@
     "flower",
     "tree",
     "mushroom"
+   ],
+   "monsters": [
+    "flower",
+    "tree",
+    "mushroom",
+    "tall_grass",
+    "clover",
+    "dandelion",
+    "acorn"
    ],
    "element": "wood"
   },
@@ -128,6 +284,15 @@
     "stump",
     "mushroom"
    ],
+   "monsters": [
+    "tree",
+    "rock",
+    "stump",
+    "mushroom",
+    "crystal_rock",
+    "dead_tree",
+    "moss_boulder"
+   ],
    "element": "metal"
   },
   {
@@ -147,6 +312,15 @@
     "rock",
     "stump",
     "tree"
+   ],
+   "monsters": [
+    "rock",
+    "stump",
+    "tree",
+    "basalt",
+    "ember_vent",
+    "ash_mound",
+    "dead_tree"
    ],
    "element": "fire"
   }

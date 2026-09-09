@@ -384,6 +384,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   int _habitatIndex = 0;
   bool _isBoss = false;
   HabitatKind _kind = HabitatKind.tree;
+
+  /// 지금 몬스터의 id(`run_config.json → monsters`). 그림·이름·크기가 여기서 온다.
+  String _monsterId = HabitatKind.tree.key;
+
+  /// 지금 몬스터가 엘리트인가 — 크고 단단하고 보상이 크다.
+  bool _isElite = false;
   double _hpMax = 1;
   double _hp = 1;
 
@@ -647,8 +653,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     tier: tier,
                   ))
             .toDouble();
+    // 엘리트는 **적응형 체력 위에** 곱한다(월드 관문과 같은 층 — §7 기준 밖).
+    // 기준에 넣으면 일반 몬스터까지 같이 세져 엘리트가 사건이 아니라 인플레가 된다.
+    _isElite = isEliteAt(
+      stageNumber: _stage,
+      habitatIndex: _habitatIndex,
+      chance: _config.eliteChance,
+      boss: _isBoss,
+    );
+    if (_isElite) _hpMax *= _config.eliteHpMult;
     _hp = _hpMax;
-    _kind = habitatKindAt(_config, _stage, _isBoss ? 0 : _habitatIndex);
+    _monsterId = monsterIdAt(_config, _stage, _isBoss ? 0 : _habitatIndex);
+    _kind = HabitatKind.fromKeyOrNull(_monsterId) ?? HabitatKind.tree;
     _walking = false;
     _walkT = 0;
     _attackAcc = 0;
@@ -1255,7 +1271,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final parked = lastStage > 0 && _stage >= lastStage;
     // 접속 보너스 — **직접 잡았을 때만** 붙는다(방치 정산에는 안 붙는다).
     // 켜두는 쪽이 이득이어야 자주 들어오고, 그래야 업그레이드·채팅도 돈다.
-    final gold =
+    var gold =
         (rewardGold(
                   _config,
                   depth,
@@ -1270,7 +1286,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ) *
                 (1 + _config.onlineGoldBonus))
             .round();
-    final xp =
+    var xp =
         (rewardXp(_config, depth, boss: _isBoss, parked: parked) *
                 stats.xpMultiplier)
             .round();
@@ -1377,6 +1393,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
         mats ??= {};
         mats[kind] = (mats[kind] ?? 0) + give;
+      }
+    }
+
+    // 엘리트는 보상도 크다 — 단단하기만 하면 그냥 성가신 놈이 된다.
+    //
+    // ⚠️ 곤충 드롭 확률에는 **안 곱한다.** 채집함 상한(§2.1)이 있어서 드롭을
+    // 늘리면 칸만 빨리 차고, 곤충 수 버프는 이미 50에서 멈춘다.
+    // 늘리는 건 골드·경험치·재료뿐이다.
+    if (_isElite) {
+      final m = _config.eliteRewardMult;
+      gold = (gold * m).round();
+      xp = (xp * m).round();
+      if (mats != null) {
+        mats = {
+          for (final e in mats.entries)
+            e.key: math.max(1, (e.value * m).round()),
+        };
       }
     }
 
@@ -1668,16 +1701,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             'assets/images/bosses/$regionId.webp',
           ]
         : [
-            'assets/images/habitats/${_kind.key}_${eState}_$eFrame.webp',
-            'assets/images/habitats/${_kind.key}.webp',
+            'assets/images/habitats/${_monsterId}_${eState}_$eFrame.webp',
+            'assets/images/habitats/$_monsterId.webp',
           ];
+    // 종류마다 크기가 다르다(`monsters[].scale`) — 그림이 같아도 실루엣이
+    // 갈리면 다른 놈으로 읽힌다. 엘리트는 그 위에 한 번 더 키운다.
+    final mon = _config.monsters[_monsterId];
+    final sizeMul = (mon?.scale ?? 1.0) * (_isElite ? _config.eliteScale : 1.0);
     final rawEnemy = gameImageChain(
       ePaths,
-      size: _isBoss ? 172 : 84,
+      size: _isBoss ? 172 : 84 * sizeMul,
       byHeight: true,
       fallback: _isBoss
           ? const Text('🪲', style: TextStyle(fontSize: 72))
-          : Text(habitatGlyph(_kind), style: const TextStyle(fontSize: 52)),
+          : Text(
+              mon?.glyph ?? habitatGlyph(_kind),
+              style: TextStyle(fontSize: 52 * sizeMul),
+            ),
     );
     // 보스는 캐릭터(좌측)를 바라보도록 좌우 반전(지역별 bossFlip).
     final enemyBase = _isBoss && _config.regionForStage(_stage).bossFlip
@@ -1764,6 +1804,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // 정예 이름표 — 한눈에 "저건 다르다"가 보여야
+                        // 사건이 된다. 보스 이름표와 같은 자리·같은 모양이되
+                        // 색을 갈라 놓는다(보스=핏빛, 정예=보랏빛).
+                        if (_isElite && !_isBoss)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xCC7E57C2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              l.eliteLabel,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
                         if (_isBoss)
                           Container(
                             margin: const EdgeInsets.only(bottom: 2),

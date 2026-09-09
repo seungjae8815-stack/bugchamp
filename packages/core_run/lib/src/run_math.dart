@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
 import 'enums.dart';
+import 'monster_config.dart';
 import 'run_config.dart';
 
 /// v2 런의 **순수 결정론 수식**. 실시간 루프(앱)는 이 함수들만 호출한다.
@@ -293,12 +294,28 @@ double combatPower(CharacterStats s) {
   return dps * 6 + effectiveHp * 0.4;
 }
 
-/// (스테이지, 서식지 인덱스)에 대응하는 서식지 종류 (결정론, 해당 지역 기준).
-HabitatKind habitatKindAt(RunConfig c, int stageNumber, int habitatIndex) {
-  final kinds = c.regionForStage(stageNumber).habitatKinds;
-  final idx = (stageNumber * 7 + habitatIndex * 3) % kinds.length;
-  return kinds[idx];
+/// (스테이지, 서식지 인덱스)에 대응하는 **몬스터 id** — 결정론.
+///
+/// 예전 `habitatKindAt` 은 `(stage*7 + index*3) % 종류수` 였다. 주기가 딱
+/// 떨어져 20마리가 5개짜리 고리를 정확히 네 번 돌았다 — 무작위가 아니라
+/// **행진**이었다(2026-09-09 "매번 비슷하다"의 정체).
+/// 지금은 스테이지를 씨앗으로 섞고 연속 중복을 없앤다([monsterOrder]).
+String monsterIdAt(RunConfig c, int stageNumber, int habitatIndex) {
+  final ids = c.regionForStage(stageNumber).monsterKeys;
+  if (ids.isEmpty) return HabitatKind.tree.key;
+  final order = monsterOrder(
+    ids: ids,
+    stageNumber: stageNumber,
+    count: c.habitatsPerStage <= 0 ? ids.length : c.habitatsPerStage,
+  );
+  return order[habitatIndex % order.length];
 }
+
+/// 구버전 호출부용. 새 몬스터 id 는 enum 에 없으므로 **나무로 떨어진다** —
+/// 그림은 `monsterIdAt` 이 준 id 로 그리므로 화면에는 영향이 없다.
+HabitatKind habitatKindAt(RunConfig c, int stageNumber, int habitatIndex) =>
+    HabitatKind.fromKeyOrNull(monsterIdAt(c, stageNumber, habitatIndex)) ??
+    HabitatKind.tree;
 
 /// 오프라인 정산 결과.
 class OfflineReport {

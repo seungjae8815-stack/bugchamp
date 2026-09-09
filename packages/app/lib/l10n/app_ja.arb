@@ -886,6 +886,7 @@
   "forgeStrikeLocked": "チャプター{n}が必要",
   "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
   "forgeStrikeAuto": "最大",
+  "eliteLabel": "精鋭",
   "regionElementTitle": "地域の属性",
   "regionElementHint": "この属性を克する昆虫を装備すると、その攻撃が強くなります。昆虫はキャラクターとは別に、自分の速さで攻撃します。",
   "forgeStrikeStart": "開始",
