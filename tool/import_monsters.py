@@ -59,6 +59,11 @@ SAME_THRESH = {'rock': 0, 'pebble': 0}
 # 돌은 배경과 색조까지 같아서 몸이 통째로 그림자로 잡힌다.
 SHADOW_OFF = {'rock', 'pebble'}
 
+# 그림자 규칙을 끈 종은 발밑 타원이 남는다. 자갈깨비가 그렇다.
+# 그 타원은 **완전히 균일한 한 가지 색**이고, 발·다리는 훨씬 어둡다
+# (그림자 187,157,133 vs 다리 131,109,93 — 거리 144). 색 하나로 가른다.
+FLAT_SHADOW = {'pebble'}
+
 # basalt 시트만 액자형 회색 패널 위에 그려져 있다 — 흰 여백에서 패널로
 # 이어 흘려보내야 해서 문턱을 크게 잡는다(몸은 훨씬 어두워 거기서 멈춘다).
 FLOOD_THRESH = {
@@ -116,6 +121,30 @@ def bg_like(a, bg, same_thresh=40, shadow=True):
     if not shadow:
         shade = np.zeros(same.shape, bool)
     return same | shade
+
+
+def flat_shadow(a, keep, band=0.30, tol=8, min_area=3000):
+    """발밑의 **균일한 한 색** 타원을 찾아 지운다.
+
+    색조·밝기로는 못 가른다 — 돌 몬스터는 몸의 밝은 면이 같은 띠에 들어와
+    2만 픽셀이 함께 지워졌다. 대신 "아래쪽에 넓게 깔린 단일색"이라는
+    그림자만의 성질을 쓴다.
+    """
+    h, w, _ = a.shape
+    y0 = int(h * (1 - band))
+    sub = a[y0:]
+    m = keep[y0:]
+    if m.sum() < min_area:
+        return np.zeros(keep.shape, bool)
+    vals, counts = np.unique(
+        sub[m].reshape(-1, 3) // 4, axis=0, return_counts=True
+    )
+    modal = vals[counts.argmax()] * 4 + 2
+    if counts.max() < min_area:
+        return np.zeros(keep.shape, bool)
+    out = np.zeros(keep.shape, bool)
+    out[y0:] = (np.abs(sub - modal).sum(axis=2) < tol * 3) & m
+    return out
 
 
 def keep_big_islands(mask, frac=0.05, grid=192):
@@ -181,6 +210,8 @@ def cut(path, mid):
         a = np.array(q).astype(int)
         keep &= ~bg_like(a, bg_of(a), SAME_THRESH.get(mid, 40),
                          shadow=mid not in SHADOW_OFF)
+        if mid in FLAT_SHADOW:
+            keep &= ~flat_shadow(a, keep)
         if mid in DROP_ISLANDS:
             keep = keep_big_islands(keep)
         alpha = Image.fromarray(np.where(keep, 255, 0).astype(np.uint8), 'L')
