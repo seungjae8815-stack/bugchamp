@@ -223,9 +223,13 @@ class ItemOptionList extends StatelessWidget {
           // ⚠️ 자리를 **있든 없든 늘 잡는다**(화살표 칸과 같은 원칙).
           // 조건부로 붙이면 버튼이 있는 줄만 라벨·값이 왼쪽으로 밀려
           // 글자 정렬이 어긋난다(2026-09-09 지적).
+          // ⚠️ **좁은 칸에는 인라인으로 못 넣는다.** 제련 비교창은 2열이라
+          // 한 쪽이 113px 뿐이고, 값(28)+화살표(16)+버튼(46)을 빼면 라벨에
+          // 49px 만 남아 "치명타 확률"이 잘린다(2026-09-10 지적).
+          // 좁은 쪽은 호출부가 비교창 **아래 전용 줄**로 뺀다.
           SizedBox(
-            width: 46,
-            child: (onReroll != null && rerollCost != null)
+            width: (rerollCost == null || dense) ? 0 : 46,
+            child: (!dense && onReroll != null && rerollCost != null)
                 ? GestureDetector(
                     onTap: onReroll,
                     child: Container(
@@ -247,24 +251,26 @@ class ItemOptionList extends StatelessWidget {
                             size: 11,
                             color: Color(0xFFCE93D8),
                           ),
-                          const SizedBox(width: 1),
-                          materialImage(
-                            MaterialKind.jelly,
-                            size: 10,
-                            fallback: const Icon(
-                              Icons.bubble_chart,
-                              size: 9,
-                              color: Color(0xFFCE93D8),
+                          if (!dense) ...[
+                            const SizedBox(width: 1),
+                            materialImage(
+                              MaterialKind.jelly,
+                              size: 10,
+                              fallback: const Icon(
+                                Icons.bubble_chart,
+                                size: 9,
+                                color: Color(0xFFCE93D8),
+                              ),
                             ),
-                          ),
-                          Text(
-                            '$rerollCost',
-                            style: const TextStyle(
-                              color: Color(0xFFCE93D8),
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w900,
+                            Text(
+                              '$rerollCost',
+                              style: const TextStyle(
+                                color: Color(0xFFCE93D8),
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),

@@ -931,8 +931,6 @@ class _CompareSide extends StatelessWidget {
     required this.locale,
     this.compare,
     this.highlight = false,
-    this.rerollCost,
-    this.onReroll,
   });
 
   final String label;
@@ -941,8 +939,6 @@ class _CompareSide extends StatelessWidget {
   final String locale;
   final EquipItem? compare;
   final bool highlight;
-  final int? rerollCost;
-  final void Function(int index)? onReroll;
 
   @override
   Widget build(BuildContext context) {
@@ -1004,8 +1000,6 @@ class _CompareSide extends StatelessWidget {
             config: config,
             compare: compare,
             dense: true,
-            rerollCost: rerollCost,
-            onReroll: onReroll,
           ),
       ],
     );
@@ -1072,30 +1066,47 @@ Future<bool> showForgeResult(
                     locale: locale,
                     compare: cur,
                     highlight: true,
-                    rerollCost: forge?.rerollJelly,
-                    onReroll: forge == null
-                        ? null
-                        : (i) async {
-                            final ok = await ref
-                                .read(saveControllerProvider.notifier)
-                                .rerollOption(index: i);
-                            if (!ctx.mounted) return;
-                            if (!ok) {
-                              showCenterToast(ctx, l.forgeNoJelly);
-                              return;
-                            }
-                            final stack = ref
-                                .read(saveControllerProvider)
-                                .requireValue
-                                .forgeStack;
-                            if (stack.isNotEmpty) {
-                              setLocal(() => shown = stack.last);
-                            }
-                          },
                   ),
                 ),
               ],
             ),
+            // 재굴림은 **비교창 아래 전용 줄**이다. 2열 안에 넣으면 한 쪽이
+            // 113px 뿐이라 옵션 이름이 잘린다(2026-09-10 지적).
+            // 여기서는 폭을 다 쓰므로 **어느 옵션을 바꾸는지** 이름으로 말한다.
+            if (forge != null) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (var i = 0; i < shown.options.length; i++)
+                    _JellyChip(
+                      icon: Icons.refresh_rounded,
+                      label: optionLabel(l, shown.options[i].kind),
+                      cost: forge.rerollJelly,
+                      enabled: true,
+                      onTap: () async {
+                        final ok = await ref
+                            .read(saveControllerProvider.notifier)
+                            .rerollOption(index: i);
+                        if (!ctx.mounted) return;
+                        if (!ok) {
+                          showCenterToast(ctx, l.forgeNoJelly);
+                          return;
+                        }
+                        final stack = ref
+                            .read(saveControllerProvider)
+                            .requireValue
+                            .forgeStack;
+                        if (stack.isNotEmpty) {
+                          setLocal(() => shown = stack.last);
+                        }
+                      },
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 4),
             Text(
               l.forgeRerollHint,
