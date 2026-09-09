@@ -946,6 +946,12 @@ abstract class AppLocalizations {
   /// **'Trophies'**
   String get rankKindTrophies;
 
+  /// No description provided for @leaderboardUnranked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unranked'**
+  String get leaderboardUnranked;
+
   /// No description provided for @rankKindLevel.
   ///
   /// In en, this message translates to:

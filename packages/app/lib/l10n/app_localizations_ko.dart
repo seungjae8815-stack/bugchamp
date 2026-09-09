@@ -468,6 +468,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rankKindTrophies => '트로피';
 
   @override
+  String get leaderboardUnranked => '순위권 밖';
+
+  @override
   String get rankKindLevel => '레벨';
 
   @override

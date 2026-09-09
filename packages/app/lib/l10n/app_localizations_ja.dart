@@ -467,6 +467,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rankKindTrophies => 'トロフィー';
 
   @override
+  String get leaderboardUnranked => '圏外';
+
+  @override
   String get rankKindLevel => 'レベル';
 
   @override

@@ -265,6 +265,7 @@
     }
   },
   "rankKindTrophies": "Trophies",
+  "leaderboardUnranked": "Unranked",
   "rankKindLevel": "Level",
   "rankKindStage": "Progress",
   "leaderboardMyRank": "My rank #{n}",

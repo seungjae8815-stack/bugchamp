@@ -158,6 +158,7 @@
   "rankKindLevel": "레벨",
   "rankKindStage": "진행도",
   "leaderboardMyRank": "내 순위 #{n}",
+  "leaderboardUnranked": "순위권 밖",
   "stanceAttack": "공격",
   "stanceDefend": "방어",
   "stanceHeal": "회복",

@@ -40,10 +40,13 @@ class SupabasePvpBackend implements PvpBackend {
       });
       // 2) 상위 N 조회(RPC). 정렬 축은 서버가 받는다 — 클라가 받아서
       //    다시 정렬하면 상위 N 이 트로피 기준으로 잘린 뒤라 틀린 목록이 된다.
+      // ⚠️ 화면에 보여줄 [limit] 보다 **넓게** 받는다. 좁게 받으면 상위권 밖인
+      // 내 진짜 순위를 알 길이 없어, 예전엔 `목록 길이 + 1`(=51위)을 적었다.
+      final scan = limit < _rankScanLimit ? _rankScanLimit : limit;
       final rows =
           (await _client.rpc(
                 'leaderboard_top',
-                params: {'lim': limit, 'sort': kind.key},
+                params: {'lim': scan, 'sort': kind.key},
               ))
               as List;
       final entries = <LeaderboardEntry>[
@@ -62,13 +65,19 @@ class SupabasePvpBackend implements PvpBackend {
             ),
           ),
       ];
-      // 내가 상위권 밖이면 표시용으로 말미에 덧붙임(정확한 순위는 후속 인크리먼트).
-      if (!entries.any((e) => e.isMe)) {
-        entries.add(
-          LeaderboardEntry(rank: entries.length + 1, profile: me, isMe: true),
+      // 넓게 받은 목록에서 **내 진짜 순위**를 먼저 찾아 둔다.
+      final mine = entries.where((e) => e.isMe).toList();
+      final shown = entries.take(limit).toList();
+      if (!shown.any((e) => e.isMe)) {
+        // 51~200위면 진짜 순위를, 그 밖이면 0(=순위권 밖)을 붙인다.
+        // 지어낸 숫자를 적지 않는다.
+        shown.add(
+          mine.isNotEmpty
+              ? mine.first
+              : LeaderboardEntry(rank: 0, profile: me, isMe: true),
         );
       }
-      return Leaderboard(entries: entries, live: true);
+      return Leaderboard(entries: shown, live: true);
     } catch (_) {
       // 화면이 비지 않게 NPC 사다리로 폴백하되, live=false 로 **사실대로** 알린다.
       return fallback.leaderboard(me: me, limit: limit, kind: kind);

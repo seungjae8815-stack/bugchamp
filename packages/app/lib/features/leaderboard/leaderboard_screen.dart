@@ -286,7 +286,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  l.leaderboardMyRank(myRank),
+                                  myRank >= 1
+                                      ? l.leaderboardMyRank(myRank)
+                                      : l.leaderboardUnranked,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -382,7 +384,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     };
     // 상위 3위는 **줄 자체가 달라야** 한다. 숫자 색만 바꿔서는 스크롤하며
     // 훑을 때 1등이 어디인지 안 보인다 — 순위표의 목적이 "누가 위인가"다.
-    final top = e.rank <= 3;
+    // ⚠️ `<= 3` 만 보면 **순위권 밖(0)** 이 1~3위 강조를 뒤집어쓴다.
+    final top = e.rank >= 1 && e.rank <= 3;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: top ? 12 : 9),
@@ -412,7 +415,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           SizedBox(
             width: 30,
             child: Text(
-              '${e.rank}',
+              e.rank >= 1 ? '${e.rank}' : '—',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: rankColor,

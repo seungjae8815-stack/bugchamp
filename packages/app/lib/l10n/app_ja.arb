@@ -151,6 +151,7 @@
   "rankKindLevel": "レベル",
   "rankKindStage": "進行度",
   "leaderboardMyRank": "自分の順位 #{n}",
+  "leaderboardUnranked": "圏外",
   "stanceAttack": "攻撃",
   "stanceDefend": "防御",
   "stanceHeal": "回復",

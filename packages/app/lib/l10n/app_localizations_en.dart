@@ -480,6 +480,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankKindTrophies => 'Trophies';
 
   @override
+  String get leaderboardUnranked => 'Unranked';
+
+  @override
   String get rankKindLevel => 'Level';
 
   @override

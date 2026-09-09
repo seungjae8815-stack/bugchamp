@@ -97,6 +97,11 @@ class LeaderboardEntry {
     this.badge = '',
   });
 
+  /// 1-based 순위. **0 이면 "순위권 밖"**(= 확정하지 못했다).
+  ///
+  /// 예전엔 상위권 밖인 나를 목록 끝에 붙이면서 `목록 길이 + 1` 을 순위로
+  /// 적었다 — 70위인 사람에게 **51위**라고 말하는 셈이었다(2026-09-09 제보).
+  /// 모르면 지어내지 않고 0 으로 두고, 화면이 "순위권 밖"이라고 쓴다.
   final int rank;
   final PvpProfile profile;
   final bool isMe;
