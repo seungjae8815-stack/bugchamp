@@ -777,7 +777,17 @@ class _AnvilButtonState extends State<_AnvilButton>
   @override
   void didUpdateWidget(_AnvilButton old) {
     super.didUpdateWidget(old);
-    if (widget.cycle != old.cycle) _c.duration = widget.cycle;
+    if (widget.cycle != old.cycle) {
+      _c.duration = widget.cycle;
+      // ⚠️ `duration` 만 바꾸면 **이미 돌고 있는 repeat 에는 안 먹는다** —
+      // 자동을 켠 채 가속을 사면 아무 일도 안 일어났다(2026-09-09 지적).
+      // 돌고 있으면 새 주기로 다시 시작한다.
+      if (widget.auto && _c.isAnimating) {
+        _rung = 0;
+        _prev = 0;
+        _c.repeat();
+      }
+    }
     if (widget.auto == old.auto) return;
     if (widget.auto) {
       _rung = 0;

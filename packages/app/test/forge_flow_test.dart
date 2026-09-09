@@ -409,13 +409,28 @@ void main() {
         characterLevel: 5,
         bugsCollected: 10,
       );
+      // ⚠️ **옵션이 있어야** 힘이 실린다. 2026-09-09 에 부위 기본 스탯을
+      // 없앴으므로, 옵션 없는 장비는 껴도 아무 일이 없는 게 맞다.
       final geared = applyEquipment(
+        base,
+        equipmentBonus([
+          const EquipItem(
+            slot: EquipSlot.tool,
+            tier: 9,
+            options: [ItemOption(kind: ItemOptionKind.attack, value: 40)],
+          ),
+        ], items),
+      );
+      expect(geared.attack, greaterThan(base.attack));
+
+      // 옵션이 없으면 아무 효과도 없다.
+      final empty = applyEquipment(
         base,
         equipmentBonus([
           const EquipItem(slot: EquipSlot.tool, tier: 9, options: []),
         ], items),
       );
-      expect(geared.attack, greaterThan(base.attack));
+      expect(empty.attack, base.attack);
 
       // 기준(base)으로 계산한 체력은 장비를 껴도 그대로 → 타격 수가 줄어든다.
       final hp = habitatMaxHp(run, 200, playerAttack: base.attack);

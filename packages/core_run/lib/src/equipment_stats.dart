@@ -14,11 +14,10 @@ Map<ItemOptionKind, double> equipmentBonus(
   final out = <ItemOptionKind, double>{};
   if (config == null) return out;
   for (final item in equipped) {
-    final def = config.slot(item.slot);
-    if (def != null) {
-      out[def.baseStat] =
-          (out[def.baseStat] ?? 0) + def.valueAt(item.tier, config.tiers);
-    }
+    // ⚠️ 부위 기본 스탯은 **더 이상 없다**(2026-09-09 확정). 부위마다 축이
+    // 고정이면 같은 등급끼리는 값도 같아서 **아이템끼리 고를 이유가 없다** —
+    // 장비는 이제 무작위 옵션 2개로만 이루어진다.
+    // 옛 세이브의 장비도 옵션만 읽히므로 그대로 동작한다(값만 작아진다).
     for (final o in item.options) {
       out[o.kind] = (out[o.kind] ?? 0) + o.value;
     }

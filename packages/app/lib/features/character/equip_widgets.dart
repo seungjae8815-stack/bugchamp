@@ -147,22 +147,11 @@ class ItemOptionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final def = config.slot(item.slot);
     final rows = <Widget>[];
 
-    if (def != null) {
-      rows.add(
-        _row(
-          optionLabel(l, def.baseStat),
-          def.valueAt(item.tier, config.tiers),
-          bold: true,
-          delta: compare == null
-              ? null
-              : def.valueAt(item.tier, config.tiers) -
-                    def.valueAt(compare!.tier, config.tiers),
-        ),
-      );
-    }
+    // 부위 기본 스탯 줄은 **없앴다**(2026-09-09). 부위마다 축이 고정이면
+    // 같은 등급끼리는 값도 같아 아이템끼리 고를 이유가 없다 — 장비는 이제
+    // 무작위 옵션 2개로만 이루어지고, 둘 다 젤리로 바꿀 수 있다.
     for (var i = 0; i < item.options.length; i++) {
       final o = item.options[i];
       rows.add(
@@ -231,47 +220,57 @@ class ItemOptionList extends StatelessWidget {
           ),
           // 옵션 줄 오른쪽에 **새로고침 + 젤리 + 값**. 눌러 보기 전에
           // 무엇을 얼마에 바꾸는지 보여야 한다(2026-09-09 확정).
-          if (onReroll != null && rerollCost != null)
-            GestureDetector(
-              onTap: onReroll,
-              child: Container(
-                margin: const EdgeInsets.only(left: 2),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: const Color(0x337E57C2),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0x887E57C2)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.refresh_rounded,
-                      size: 11,
-                      color: Color(0xFFCE93D8),
-                    ),
-                    const SizedBox(width: 1),
-                    materialImage(
-                      MaterialKind.jelly,
-                      size: 10,
-                      fallback: const Icon(
-                        Icons.bubble_chart,
-                        size: 9,
-                        color: Color(0xFFCE93D8),
+          // ⚠️ 자리를 **있든 없든 늘 잡는다**(화살표 칸과 같은 원칙).
+          // 조건부로 붙이면 버튼이 있는 줄만 라벨·값이 왼쪽으로 밀려
+          // 글자 정렬이 어긋난다(2026-09-09 지적).
+          SizedBox(
+            width: 46,
+            child: (onReroll != null && rerollCost != null)
+                ? GestureDetector(
+                    onTap: onReroll,
+                    child: Container(
+                      margin: const EdgeInsets.only(left: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x337E57C2),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: const Color(0x887E57C2)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.refresh_rounded,
+                            size: 11,
+                            color: Color(0xFFCE93D8),
+                          ),
+                          const SizedBox(width: 1),
+                          materialImage(
+                            MaterialKind.jelly,
+                            size: 10,
+                            fallback: const Icon(
+                              Icons.bubble_chart,
+                              size: 9,
+                              color: Color(0xFFCE93D8),
+                            ),
+                          ),
+                          Text(
+                            '$rerollCost',
+                            style: const TextStyle(
+                              color: Color(0xFFCE93D8),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      '$rerollCost',
-                      style: const TextStyle(
-                        color: Color(0xFFCE93D8),
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  )
+                : null,
+          ),
         ],
       ),
     );

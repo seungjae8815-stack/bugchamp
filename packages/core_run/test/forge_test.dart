@@ -202,16 +202,34 @@ void main() {
       boostBonus: 1.0,
     );
 
-    test('기본 스탯과 하위 옵션이 같은 축에 더해진다', () {
-      // 채집도구(기본 공격 8% × 등급1 배수 1.0) + 공격 옵션 10%
+    test('⚠️ 부위 기본 스탯은 더 이상 안 실린다 — 옵션만 더해진다', () {
+      // 2026-09-09: 부위마다 축이 고정이면 같은 등급끼리는 값도 같아
+      // **아이템끼리 고를 이유가 없다**. 장비는 무작위 옵션 2 개로만 이룬다.
       final item = EquipItem(
         slot: EquipSlot.tool,
         tier: 0,
         options: const [ItemOption(kind: ItemOptionKind.attack, value: 10)],
       );
       final bonus = equipmentBonus([item], items);
-      expect(bonus[ItemOptionKind.attack], closeTo(18.0, 1e-9));
-      expect(applyEquipment(base, bonus).attack, closeTo(118.0, 1e-9));
+      expect(bonus[ItemOptionKind.attack], closeTo(10.0, 1e-9));
+      expect(applyEquipment(base, bonus).attack, closeTo(110.0, 1e-9));
+    });
+
+    test('같은 축 옵션은 부위가 달라도 합산된다', () {
+      const a = EquipItem(
+        slot: EquipSlot.tool,
+        tier: 0,
+        options: [ItemOption(kind: ItemOptionKind.attack, value: 10)],
+      );
+      const b = EquipItem(
+        slot: EquipSlot.ring,
+        tier: 0,
+        options: [ItemOption(kind: ItemOptionKind.attack, value: 7)],
+      );
+      expect(
+        equipmentBonus([a, b], items)[ItemOptionKind.attack],
+        closeTo(17.0, 1e-9),
+      );
     });
 
     test('치명타 확률은 배율이 아니라 더하기 — 0에 곱하면 영원히 0이다', () {
@@ -758,6 +776,80 @@ void _forgeSinkTests() {
         rerollOptionAt(rng: Random(1), items: items, item: item, index: -1),
         item,
       );
+    });
+  });
+
+  group('옛 장비 옵션 채우기', () {
+    test('모자란 칸을 그 등급 개수만큼 채운다', () {
+      // 2026-09-09 에 기본 스탯을 없애고 모두 2 옵션으로 바꿨다. 옛 1 옵션
+      // 장비를 그대로 두면 **가만히 있던 유저가 손해**를 본다.
+      final one = EquipItem(
+        slot: EquipSlot.tool,
+        tier: top,
+        options: const [ItemOption(kind: ItemOptionKind.attack, value: 5.0)],
+      );
+      final out = fillMissingOptions(rng: Random(1), items: items, item: one);
+      expect(out.options.length, items.tier(top).options);
+    });
+
+    test('⚠️ 이미 있던 옵션은 안 건드린다 — 값이 바뀌면 그것도 손해다', () {
+      const kept = ItemOption(kind: ItemOptionKind.attack, value: 5.0);
+      final one = EquipItem(
+        slot: EquipSlot.tool,
+        tier: top,
+        options: const [kept],
+      );
+      for (var seed = 0; seed < 30; seed++) {
+        final out = fillMissingOptions(
+          rng: Random(seed),
+          items: items,
+          item: one,
+        );
+        expect(out.options.first.kind, kept.kind);
+        expect(out.options.first.value, kept.value);
+      }
+    });
+
+    test('채운 것이 기존과 겹치지 않는다', () {
+      final one = EquipItem(
+        slot: EquipSlot.tool,
+        tier: top,
+        options: const [ItemOption(kind: ItemOptionKind.attack, value: 5.0)],
+      );
+      for (var seed = 0; seed < 60; seed++) {
+        final out = fillMissingOptions(
+          rng: Random(seed),
+          items: items,
+          item: one,
+        );
+        expect(out.options[0].kind, isNot(out.options[1].kind));
+      }
+    });
+
+    test('이미 다 찼으면 그대로 돌려준다', () {
+      final full = EquipItem(
+        slot: EquipSlot.tool,
+        tier: top,
+        options: const [
+          ItemOption(kind: ItemOptionKind.attack, value: 5.0),
+          ItemOption(kind: ItemOptionKind.maxHp, value: 3.0),
+        ],
+      );
+      expect(
+        identical(
+          fillMissingOptions(rng: Random(1), items: items, item: full),
+          full,
+        ),
+        isTrue,
+      );
+    });
+
+    test('실데이터: 모든 등급이 옵션 2 개다', () {
+      // 부위 기본 스탯이 사라졌으므로 1 옵션 등급이 남아 있으면 그 등급만
+      // 유독 약해진다.
+      for (var t = 0; t < items.tierCount; t++) {
+        expect(items.tier(t).options, 2, reason: '등급 $t');
+      }
     });
   });
 

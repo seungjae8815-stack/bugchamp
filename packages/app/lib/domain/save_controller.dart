@@ -405,13 +405,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
     var changed = false;
     final equipped = <EquipSlot, EquipItem>{};
     for (final e in save.equippedItems.entries) {
-      final t = trimItemOptions(e.value, cfg);
+      // 상한을 넘으면 자르고, **모자라면 채운다**. 2026-09-09 에 모든 등급을
+      // 옵션 2 개로 바꿨는데, 그 전 1 옵션 장비를 그대로 두면 기본 스탯이
+      // 사라진 만큼만 약해져 가만히 있던 유저가 손해를 본다.
+      final t = fillMissingOptions(
+        rng: _forgeRng,
+        items: cfg,
+        item: trimItemOptions(e.value, cfg),
+      );
       if (!identical(t, e.value)) changed = true;
       equipped[e.key] = t;
     }
     final stack = <EquipItem>[];
     for (final i in save.forgeStack) {
-      final t = trimItemOptions(i, cfg);
+      final t = fillMissingOptions(
+        rng: _forgeRng,
+        items: cfg,
+        item: trimItemOptions(i, cfg),
+      );
       if (!identical(t, i)) changed = true;
       stack.add(t);
     }

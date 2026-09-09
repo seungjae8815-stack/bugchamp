@@ -287,6 +287,33 @@ EquipItem rerollOptionAt({
   return EquipItem(slot: item.slot, tier: item.tier, options: next);
 }
 
+/// 옵션이 **모자란 옛 장비**를 그 등급의 개수만큼 채운다.
+///
+/// 2026-09-09 에 부위 기본 스탯을 없애고 모든 등급을 옵션 2 개로 바꿨다.
+/// 그 전에 뽑힌 1 옵션 장비를 그대로 두면 기본 스탯이 사라진 만큼만 약해져
+/// **가만히 있던 유저가 손해**를 본다. 모자란 칸을 채워 준다.
+///
+/// ⚠️ 이미 있는 옵션은 **건드리지 않는다**(값이 바뀌면 그것도 손해다).
+/// 중복도 피한다 — 같은 축 두 줄은 합산이라 한 줄과 다를 바가 없다.
+EquipItem fillMissingOptions({
+  required math.Random rng,
+  required ItemConfig items,
+  required EquipItem item,
+}) {
+  final want = items.tier(item.tier).options;
+  if (item.options.length >= want) return item;
+  final have = {for (final o in item.options) o.kind};
+  final pool = items.optionPool.where((r) => !have.contains(r.kind)).toList();
+  final next = [...item.options];
+  while (next.length < want && pool.isNotEmpty) {
+    final r = pool.removeAt(rng.nextInt(pool.length));
+    final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
+    final v = r.min + roll * (r.maxAt(item.tier) - r.min);
+    next.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
+  }
+  return EquipItem(slot: item.slot, tier: item.tier, options: next);
+}
+
 EquipItem forgeOnce({
   required math.Random rng,
   required ItemConfig items,
