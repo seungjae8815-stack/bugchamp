@@ -1073,7 +1073,8 @@ Future<bool> showForgeResult(
   final items = data?.itemConfig;
   final forge = data?.forgeConfig;
   if (items == null) return false;
-  final cur = ref
+  // 낀 것도 이 창에서 굴릴 수 있다 — 그래서 **var** 다.
+  var cur = ref
       .read(saveControllerProvider)
       .requireValue
       .equippedItems[item.slot];
@@ -1098,6 +1099,28 @@ Future<bool> showForgeResult(
               item: cur,
               config: items,
               locale: locale,
+              // 낀 쪽에도 재굴림 버튼을 둔다. 기능이기도 하지만, 한쪽에만
+              // 버튼이 있으면 **두 칸의 옵션 줄이 서로 어긋나** 비교가
+              // 안 된다(2026-09-10 지적).
+              rerollCost: cur == null ? null : forge?.rerollJelly,
+              onReroll: (forge == null || cur == null)
+                  ? null
+                  : (i) async {
+                      final slot = cur!.slot;
+                      final ok = await ref
+                          .read(saveControllerProvider.notifier)
+                          .rerollOption(index: i, equipped: true, slot: slot);
+                      if (!ctx.mounted) return;
+                      if (!ok) {
+                        showCenterToast(ctx, l.forgeNoJelly);
+                        return;
+                      }
+                      final now = ref
+                          .read(saveControllerProvider)
+                          .requireValue
+                          .equippedItems[slot];
+                      setLocal(() => cur = now);
+                    },
             ),
             // 두 칸 사이에 **아래 화살표**. 무엇이 무엇으로 바뀌는지가
             // 이름표만으로는 덜 읽힌다.
