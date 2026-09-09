@@ -45,7 +45,7 @@ Consistent creature in all four, plain background, no text, no logo, no watermar
 ```
 > 다른 지역 보스도 같은 방식(잘린 파일 앞에 지역 id: `valley_stream_` 등).
 
-### 2-1. 잿불의 군주 (`ember_ridge`) — ⚠️ 미제작
+### 2-1. 잿불의 군주 (`ember_ridge`) — ✅ 완료(2026-09-09)
 > 2026-09-09 추가된 화(火) 지역의 보스. idle 은 `art_prompts_v2.md` STEP 16 으로
 > 먼저 만들고, **그 이미지를 첨부**해서 아래를 넣는다.
 > 결과 → `bosses/ember_ridge_attack_1.webp`·`_attack_2.webp`·`_death_1.webp`·`_death_2.webp`.

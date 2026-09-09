@@ -54,9 +54,7 @@ mobile game art, crisp high detail, no text, no watermark, no signature
 > **`ember_ridge`**(2026-09-08 추가) — 오행 5개 중 화(火)를 맡는 지역이 없어서
 > 불 속성 곤충이 방치 런에서 영영 상극이 안 걸렸기에 추가했다.
 > 배경은 **들어왔다**(`regions/ember_ridge.webp`).
-> ⚠️ **보스 그림이 아직 없다**(`bosses/ember_ridge*.webp` 5장 — 기본·공격2·사망2).
-> 없으면 이모지로 폴백되므로 화면은 안 깨지지만 101~125 스테이지의 보스만
-> 다른 지역과 결이 다르다. 프롬프트는 `art_prompts_v2.md` STEP 16.
+> 보스 그림도 **들어왔다**(`bosses/ember_ridge*.webp` 5장 — 기본·공격2·사망2).
 
 ---
 

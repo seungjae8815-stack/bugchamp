@@ -120,14 +120,18 @@ Square 1:1 image. A giant asian hornet sovereign boss, bold orange-yellow and bl
 Wide 16:9 landscape game background. A volcanic ridge at dusk, cooling lava cracks glowing molten orange between dark basalt rocks, drifting ash motes and heat haze, scorched sparse shrubs, distant hazy mountains, layered depth, open uncluttered middle ground for gameplay, warm ominous but cozy mood. Style: cozy naturalist cartoon, semi-realistic stylized, warm dusk lighting with ember glow, hand-painted storybook texture, charcoal and molten orange palette with dusty gold sky, mobile game background art, high detail. no text, no watermark, no logo, no UI.
 ```
 
-## STEP 16 · 잿불 능선 보스 (잿불의 군주) ⚠️ **미제작 — 다음 우선순위**
+## STEP 16 · 잿불 능선 보스 (잿불의 군주) ✅ **완료**
 저장: `packages/app/assets/images/bosses/ember_ridge.webp` · 비율 **1:1**
 ```
 Square 1:1 image. A giant volcanic fire beetle sovereign boss, heavy charcoal-black armored shell with glowing molten orange cracks running along the plates, ember sparks rising from its back, thick mandibles heated red at the tips, menacing but stylized and friendly, side view facing left, full body, centered on a plain flat pastel background for easy cutout. Style: cozy naturalist cartoon, semi-realistic stylized, warm ember lighting with orange rim light, hand-painted storybook texture, charcoal and molten orange palette, clean readable silhouette, mobile game boss art, high detail. no text, no watermark, no logo, no signature, no UI.
 ```
 
-공격·사망 프레임도 같은 규칙으로(다른 지역과 동일):
-`bosses/ember_ridge_attack_1.webp` `_attack_2.webp` `_death_1.webp` `_death_2.webp`
+공격·사망 프레임도 들어왔다(2x2 시트 → 4등분): `bosses/ember_ridge_attack_1.webp`
+`_attack_2.webp` `_death_1.webp` `_death_2.webp`
+
+> ⚠️ **중립 idle 포즈가 시트에 없어서** 기본 그림(`ember_ridge.webp`)에 곧추선
+> `attack_2` 를 그대로 썼다. 평상시와 벼르는 자세가 같다는 뜻이라, 나중에
+> 여유가 되면 서 있는 포즈 한 장을 따로 뽑아 덮어쓰면 된다.
 
 > ⚠️ 위 프롬프트는 **왼쪽을 보게** 뽑는다 → `run_config.json` 의
 > `ember_ridge.bossFlip` 은 **false** 여야 한다. 뽑힌 그림이 오른쪽을 보면
