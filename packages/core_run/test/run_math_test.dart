@@ -667,4 +667,113 @@ void main() {
       expect(upgradeCost(spec, 10), greaterThan(upgradeCost(spec, 9)));
     });
   });
+
+  group('재료 드롭 — 확률은 1 에서 자르고 넘친 배율은 수량으로', () {
+    final c = RunConfig.fromJson({..._baseJson(), 'materialDropChance': 0.5});
+
+    test('배율 2 미만이면 확률만 오른다', () {
+      final d = materialDrop(c, 1.0);
+      expect(d.chance, closeTo(0.5, 1e-9));
+      expect(d.amountMult, 1.0);
+    });
+
+    test('배율 2 에서 100% 가 되고, 그 뒤는 수량으로 간다', () {
+      // ⚠️ 예전엔 확률에만 곱해서 레벨 10(배율 2) 뒤 174 레벨이 헛돈이었다.
+      final at2 = materialDrop(c, 2.0); // p = 1.0 — 딱 경계
+      expect(at2.chance, 1.0);
+      expect(at2.amountMult, 1.0);
+      final at4 = materialDrop(c, 4.0); // p = 2.0 — 여기부터 수량
+      expect(at4.chance, 1.0);
+      expect(at4.amountMult, closeTo(2.0, 1e-9));
+      final at19 = materialDrop(c, 19.4);
+      expect(at19.chance, 1.0);
+      expect(at19.amountMult, closeTo(9.7, 1e-9));
+    });
+
+    test('기대값은 예전 공식(확률x배율)과 같다 — balance_sim 이 재던 값', () {
+      for (final f in [0.5, 1.0, 2.0, 5.0, 19.4]) {
+        final d = materialDrop(c, f);
+        expect(d.chance * d.amountMult, closeTo(0.5 * f, 1e-9));
+      }
+    });
+  });
+
+  group('업그레이드 상한(maxLevel)', () {
+    test('없으면 무제한', () {
+      const spec = UpgradeSpec(
+        kind: UpgradeKind.attack,
+        baseCost: 1,
+        costGrowth: 1.1,
+        baseValue: 1,
+        perLevel: 1,
+      );
+      expect(spec.canBuyAt(0), isTrue);
+      expect(spec.canBuyAt(100000), isTrue);
+    });
+
+    test('상한 레벨에서 멈춘다', () {
+      const spec = UpgradeSpec(
+        kind: UpgradeKind.crit,
+        baseCost: 1,
+        costGrowth: 1.1,
+        baseValue: 0,
+        perLevel: 0.01,
+        maxLevel: 100,
+      );
+      expect(spec.canBuyAt(99), isTrue);
+      expect(spec.canBuyAt(100), isFalse);
+    });
+
+    test('JSON 에서 읽힌다', () {
+      final spec = UpgradeSpec.fromJson({
+        'kind': 'crit',
+        'baseCost': 1,
+        'costGrowth': 1.1,
+        'baseValue': 0,
+        'perLevel': 0.01,
+        'maxLevel': 100,
+      });
+      expect(spec.maxLevel, 100);
+    });
+  });
+
+  group('치명확률 — 100% 까지 살아 있다', () {
+    test('deriveStats 가 0.9 에서 자르지 않는다', () {
+      // ⚠️ 0.9 로 자르면 capCritChance 가 돌릴 넘침이 5% 뿐이라 레벨 91 부터
+      // 헛돈이었다. 1.0 까지는 살아 있어야 한다.
+      final c = RunConfig.fromJson({
+        ..._baseJson(),
+        'upgrades': [
+          ...(_baseJson()['upgrades'] as List),
+          {
+            'kind': 'crit',
+            'baseCost': 60.0,
+            'costGrowth': 1.28,
+            'baseValue': 0.0,
+            'perLevel': 0.01,
+          },
+          {
+            'kind': 'critDamage',
+            'baseCost': 80.0,
+            'costGrowth': 1.3,
+            'baseValue': 2.0,
+            'perLevel': 0.15,
+          },
+        ],
+      });
+      final s = deriveStats(
+        c,
+        upgradeLevels: {UpgradeKind.crit: 100},
+        characterLevel: 1,
+        bugsCollected: 0,
+      );
+      expect(s.critChance, closeTo(1.0, 1e-9));
+      final capped = capCritChance(s, 0.85);
+      expect(capped.critChance, 0.85);
+      // 넘친 15% 가 치명피해로 갔다 — 기대값이 같다.
+      final before = 1 + s.critChance * (s.critDamage - 1);
+      final after = 1 + capped.critChance * (capped.critDamage - 1);
+      expect(after, closeTo(before, 1e-9));
+    });
+  });
 }

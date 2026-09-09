@@ -2811,6 +2811,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeStrikeAuto => 'Max';
 
   @override
+  String get upgradeMaxed => 'MAX';
+
+  @override
   String get eliteLabel => 'ELITE';
 
   @override

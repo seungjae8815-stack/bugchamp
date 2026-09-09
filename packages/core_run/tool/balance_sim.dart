@@ -435,10 +435,25 @@ void main(List<String> args) {
   }
   if (sim.stage > finalStage) {
     stdout.writeln(
-      '  ★ 최종 보스(스테이지 $finalStage): ${_days(sim.reached[finalStage]!)}',
+      '  ★ 최종 보스(스테이지 $finalStage): '
+      '${_days(sim.reached[finalStage] ?? sim.elapsedDays)}',
     );
   } else {
     stdout.writeln('  ★ $_maxDays일 안에 미도달 (스테이지 ${sim.stage}에서 정체)');
+  }
+
+  // 끝났을 때 각 업그레이드가 어디까지 올랐나 — 상한(`maxLevel`)을 정할 때
+  // 이 값이 기준선이다. 자연스럽게 닿는 레벨보다 낮게 두면 벽이 된다.
+  stdout.writeln('');
+  stdout.writeln('── 종료 시 업그레이드 레벨 (상한 있으면 /상한) ──');
+  for (final kind in config.upgrades.keys) {
+    final spec = config.upgrade(kind);
+    final lv = sim.levels[kind] ?? 0;
+    final cap = spec.maxLevel;
+    stdout.writeln(
+      '  ${kind.key.padRight(14)} ${lv.toString().padLeft(4)}'
+      '${cap == null ? '' : ' / $cap${lv >= cap ? '  ← 상한' : ''}'}',
+    );
   }
 }
 
@@ -689,6 +704,24 @@ class _Player {
         tier: _tier,
       );
       elapsedDays += slice / 3600 / (_activeHoursPerDay + _offlineHoursPerDay);
+      for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
+        if (prevStage < m && stage >= m) {
+          blockedAt[m] = (gold: _blockGold, mat: _blockMat);
+          _blockGold = 0;
+          _blockMat = 0;
+          matAt[m] = (
+            mat: materials[MaterialKind.chitin] ?? 0,
+            gold: gold,
+            earned: earnedMaterials[MaterialKind.chitin] ?? 0,
+          );
+        }
+      }
+      prevStage = stage;
+      stage = prog.newStage;
+      if (stage > careerStage) careerStage = stage;
+      // ⚠️ 기록은 **stage 를 갱신한 뒤**에 한다. 갱신 전에 하면 직전 슬라이스의
+      // 구간을 적는 셈이라, 하루의 마지막 슬라이스에서 넘은 스테이지는 다음
+      // 날에나 기록된다 — 최종 보스를 넘고도 "미도달"로 찍히던 원인(2026-09-09).
       // 모든 스테이지의 클리어 시각을 남긴다 — 곡선 모양(스테이지당 소요)을 보기 위해.
       for (var s = prevStage; s < stage; s++) {
         reached.putIfAbsent(s, () => elapsedDays);
@@ -790,21 +823,6 @@ class _Player {
           return (dps <= 0 ? 0.0 : hp / dps) + 0.6; // 0.6 = 걷는 시간
         });
       }
-      for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
-        if (prevStage < m && stage >= m) {
-          blockedAt[m] = (gold: _blockGold, mat: _blockMat);
-          _blockGold = 0;
-          _blockMat = 0;
-          matAt[m] = (
-            mat: materials[MaterialKind.chitin] ?? 0,
-            gold: gold,
-            earned: earnedMaterials[MaterialKind.chitin] ?? 0,
-          );
-        }
-      }
-      prevStage = stage;
-      stage = prog.newStage;
-      if (stage > careerStage) careerStage = stage;
       final earned =
           prog.gold *
           _buffGoldMult *
@@ -814,6 +832,10 @@ class _Player {
       goldEarnedByDay[elapsedDays.floor()] = _goldEarned;
       _gainXp(prog.xp);
       // 재료: 처치당 materialDropChance 확률로 평균 1.5개, 3종에 고르게.
+      // `chance × find` 를 그대로 곱하는 게 맞다 — 게임은 확률을 1 에서 자르고
+      // 넘친 배율을 수량으로 돌리므로(`materialDrop`) 기대값이 정확히 이 값이다.
+      // (그 규칙이 들어오기 전엔 확률만 잘려서, 이 시뮬이 재료를 최대 9배
+      // 과대계상하고 있었다 — 2026-09-09.)
       //
       // ⚠️ **접속 중에만** 떨어진다. 오프라인 정산(`computeOfflineReward`)은
       // 골드·경험치만 준다 — 여기서 오프라인까지 세면 재료 수입을 40% 넘게
@@ -862,6 +884,8 @@ class _Player {
       for (final kind in config.upgrades.keys) {
         final spec = config.upgrade(kind);
         final lv = levels[kind] ?? 0;
+        // 상한(`maxLevel`)에 닿은 축은 더 안 산다 — 게임과 같은 규칙.
+        if (!spec.canBuyAt(lv)) continue;
         final cost = upgradeCost(spec, lv).toDouble();
         final mk = spec.materialKind;
         final matShort =

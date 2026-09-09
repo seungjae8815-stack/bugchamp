@@ -19,7 +19,24 @@ class UpgradeSpec {
     this.materialBaseCost = 0,
     this.materialCostGrowth = 1.0,
     this.valueGrowth,
+    this.maxLevel,
   });
+
+  /// 살 수 있는 최대 레벨. **null 이면 무제한**(구버전 JSON 호환).
+  ///
+  /// 상한을 두는 이유는 두 가지다(2026-09-09 확정).
+  /// 1. 어떤 축은 일정 레벨 뒤로 **헛돈**이 된다 — 치명확률은 100% 를 넘으면
+  ///    아무 의미가 없는데 상점은 160 레벨까지 팔았다.
+  /// 2. 능력치만 뽑는 길에 끝이 있어야 **펫·장비를 뽑을 이유**가 생긴다.
+  ///    능력치가 무한하면 그게 늘 가장 싼 길이라 가챠·제련이 밀린다.
+  ///
+  /// ⚠️ 상한을 만질 땐 `balance_sim` 을 돌린다 — 적응형 체력(§7)은
+  /// 업그레이드+펫을 기준으로 잡으므로, 상한에 닿은 뒤의 진행은 장비(기준 밖)가
+  /// 끌고 간다. 그 구간이 너무 길면 벽이 된다.
+  final int? maxLevel;
+
+  /// [level] 에서 더 살 수 있나.
+  bool canBuyAt(int level) => maxLevel == null || level < maxLevel!;
 
   final UpgradeKind kind;
   final double baseCost;
@@ -57,6 +74,7 @@ class UpgradeSpec {
     materialKind: json['materialKind'] != null
         ? MaterialKind.fromKey(json['materialKind'] as String)
         : null,
+    maxLevel: (json['maxLevel'] as num?)?.toInt(),
     materialBaseCost: (json['materialBaseCost'] as num?)?.toDouble() ?? 0,
     materialCostGrowth: (json['materialCostGrowth'] as num?)?.toDouble() ?? 1.0,
     valueGrowth: (json['valueGrowth'] as num?)?.toDouble(),

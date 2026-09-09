@@ -169,6 +169,24 @@ Color _statColor(UpgradeKind k) {
   }
 }
 
+/// 상한에 닿은 축은 화살표 없이 현재값만 — `→` 뒤에 같은 값을 쓰면 "왜 안
+/// 오르지"로 읽힌다.
+String _valueSingle(UpgradeKind k, double cur) {
+  switch (k) {
+    case UpgradeKind.attack:
+    case UpgradeKind.maxHp:
+    case UpgradeKind.defense:
+      return cur.toStringAsFixed(0);
+    case UpgradeKind.attackSpeed:
+    case UpgradeKind.regen:
+      return '${cur.toStringAsFixed(2)}/s';
+    case UpgradeKind.crit:
+      return '${(cur * 100).toStringAsFixed(0)}%';
+    default:
+      return 'x${cur.toStringAsFixed(2)}';
+  }
+}
+
 String _valuePair(UpgradeKind k, double cur, double next) {
   switch (k) {
     case UpgradeKind.attack:
@@ -1370,12 +1388,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       }
     }
     _killSeconds = 0;
-    if (_rng.nextDouble() < _config.materialDropChance * stats.materialFind) {
+    // 확률·수량 분배는 core 의 한 함수가 정한다 — 서버 정산과 같아야 한다.
+    final drop = materialDrop(_config, stats.materialFind);
+    if (_rng.nextDouble() < drop.chance) {
       final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
       mats ??= {};
       // 수량도 깊이에 따라 자란다 — 골드만 지수로 커지면 재료는 중반에
       // 쌓이기만 하고(골드 병목) 후반엔 반대로 재료가 병목이 된다.
-      final amount = (1 + _rng.nextInt(2)) * materialAmountMult(_config, depth);
+      final amount =
+          (1 + _rng.nextInt(2)) *
+          materialAmountMult(_config, depth) *
+          drop.amountMult;
       mats[kind] = math.max(1, amount.round());
     }
     // 등급 필터에 걸린 곤충 → 재료 환산(§2.1). 젤리가 아니라 일반 재료다 —
@@ -6359,7 +6382,8 @@ class _UpgradeRow extends StatelessWidget {
     final batchMatCost = bulkUpgradeMaterialCost(spec, level, buyAmount);
     final haveMat = matKind == null ? 0 : (materials[matKind] ?? 0);
     final matOk = matKind == null || haveMat >= singleMatCost;
-    final affordable = gold >= singleCost && matOk;
+    final maxed = !spec.canBuyAt(level);
+    final affordable = !maxed && gold >= singleCost && matOk;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -6416,7 +6440,10 @@ class _UpgradeRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${_statLabel(l, kind)}  Lv.$level',
+                    // 상한이 있으면 `Lv.85/100` — 끝이 보여야 다음 길(펫·장비)을 찾는다.
+                    spec.maxLevel == null
+                        ? '${_statLabel(l, kind)}  Lv.$level'
+                        : '${_statLabel(l, kind)}  Lv.$level/${spec.maxLevel}',
                     style: const TextStyle(
                       color: _onScene,
                       fontWeight: FontWeight.w800,
@@ -6425,7 +6452,9 @@ class _UpgradeRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _valuePair(kind, cur, next),
+                    maxed
+                        ? _valueSingle(kind, cur)
+                        : _valuePair(kind, cur, next),
                     style: const TextStyle(
                       color: Color(0xB3FFFFFF),
                       fontSize: 11.5,
@@ -6458,7 +6487,7 @@ class _UpgradeRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '+$buyAmount Lv',
+                    maxed ? l.upgradeMaxed : '+$buyAmount Lv',
                     style: TextStyle(
                       color: affordable
                           ? Colors.white

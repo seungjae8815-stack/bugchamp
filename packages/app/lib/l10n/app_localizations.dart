@@ -5038,6 +5038,12 @@ abstract class AppLocalizations {
   /// **'Max'**
   String get forgeStrikeAuto;
 
+  /// No description provided for @upgradeMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get upgradeMaxed;
+
   /// No description provided for @eliteLabel.
   ///
   /// In en, this message translates to:

@@ -1661,6 +1661,7 @@
   "forgeStrikeLocked": "Needs chapter {n}",
   "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
   "forgeStrikeAuto": "Max",
+  "upgradeMaxed": "MAX",
   "eliteLabel": "ELITE",
   "regionElementTitle": "Region element",
   "regionElementHint": "Equip bugs whose element overcomes it and their hits get stronger. Bugs attack on their own timing, separately from you.",

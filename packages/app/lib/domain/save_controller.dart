@@ -539,6 +539,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final mats = Map<MaterialKind, int>.from(s.materials);
     var bought = 0;
     for (var i = 0; i < count; i++) {
+      // 상한(§6 `maxLevel`). 여기서 막아야 한다 — 화면만 막으면 연타·구버전
+      // 앱이 그대로 넘긴다.
+      if (!spec.canBuyAt(level)) break;
       final cost = upgradeCost(spec, level);
       if (gold < cost) break;
       // 골드 외에 재료가 필요한 업그레이드는 재료도 충분해야 구매 가능.

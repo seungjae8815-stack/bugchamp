@@ -2760,6 +2760,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeStrikeAuto => '최대';
 
   @override
+  String get upgradeMaxed => '최대';
+
+  @override
   String get eliteLabel => '정예';
 
   @override

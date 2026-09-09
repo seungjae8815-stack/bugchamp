@@ -872,9 +872,12 @@ class GameActions {
           if (rarePlus) pity = 0;
         }
       }
-      if (rng.nextDouble() < run.materialDropChance * stats.materialFind) {
+      final drop = materialDrop(run, stats.materialFind);
+      if (rng.nextDouble() < drop.chance) {
         final kind = _regularMaterials[rng.nextInt(_regularMaterials.length)];
-        mats[kind] = (mats[kind] ?? 0) + 1 + rng.nextInt(2);
+        mats[kind] =
+            (mats[kind] ?? 0) +
+            max(1, ((1 + rng.nextInt(2)) * drop.amountMult).round());
       }
     }
 

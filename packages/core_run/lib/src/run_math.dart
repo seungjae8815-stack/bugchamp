@@ -160,6 +160,24 @@ int rewardGold(
 ///
 /// 골드처럼 지수 성장시켜 **재료:골드 비율이 구간마다 뒤집히지 않게** 한다.
 /// `materialAmountGrowth` 가 1.0 이면 1.0 을 돌려줘 기존 동작 그대로다.
+/// 재료 드롭 판정 — **확률은 1에서 자르고, 넘친 배율은 수량으로** 돌린다.
+///
+/// 재료발견 배율 `1 + 0.1×레벨` 을 확률에만 곱했더니 레벨 10 에서 이미
+/// 100% 였고, **그 뒤 174 레벨이 전부 헛돈**이었다(2026-09-09 실측).
+/// 상점은 184 레벨까지 팔고 있었다.
+///
+/// 기대값은 `chance × amountMult = min(1,p) × max(1,p) = p` 로 예전 공식과
+/// 같다 — `balance_sim` 이 재던 값이 바로 이거라 시뮬은 안 고쳐도 된다.
+/// ⚠️ 앱(실시간)과 서버(정산)가 **이 함수 하나**를 쓴다(§4).
+({double chance, double amountMult}) materialDrop(
+  RunConfig c,
+  double materialFind,
+) {
+  final p = c.materialDropChance * materialFind;
+  if (p <= 1) return (chance: p, amountMult: 1.0);
+  return (chance: 1.0, amountMult: p);
+}
+
 double materialAmountMult(RunConfig c, int depth) =>
     c.materialAmountGrowth <= 1.0
     ? 1.0
@@ -280,7 +298,11 @@ CharacterStats deriveStats(
     attack: v(UpgradeKind.attack, 5.0) * levelScale,
     attackSpeed: v(UpgradeKind.attackSpeed, 1.0),
     rewardMultiplier: v(UpgradeKind.reward, 1.0) * bugBuff,
-    critChance: v(UpgradeKind.crit, 0.0).clamp(0.0, 0.9),
+    // ⚠️ 0.9 로 자르면 안 된다. 그 뒤 `capCritChance` 가 85% 를 넘친 몫을
+    // 치명피해로 돌리는데, 여기서 먼저 잘리면 돌릴 게 5% 뿐이라 레벨 91 부터
+    // **70 레벨이 헛돈**이었다(2026-09-09). 100% 초과는 어차피 의미가 없고
+    // 적응형 체력 기준(`baselineHitPower`)도 1.0 에서 자르므로 §7 과 맞는다.
+    critChance: v(UpgradeKind.crit, 0.0).clamp(0.0, 1.0),
     critDamage: v(UpgradeKind.critDamage, 2.0),
     bossDamage: v(UpgradeKind.bossDamage, 1.0),
     maxHp: v(UpgradeKind.maxHp, 100.0) * levelScale,
