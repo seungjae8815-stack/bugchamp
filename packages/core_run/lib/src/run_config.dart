@@ -209,6 +209,8 @@ class RunConfig {
     this.eliteHpMult = 3.0,
     this.eliteRewardMult = 4.0,
     this.eliteScale = 1.45,
+    this.gearHintMult = 1.70,
+    this.gearHintFullStage = 900,
     this.petRestrainMult = 1.5,
   });
 
@@ -478,6 +480,22 @@ class RunConfig {
   /// 엘리트 크기 배율(연출). 한눈에 달라 보여야 사건이 된다.
   final double eliteScale;
 
+  /// 관문(월드 보스) 앞 장비 안내의 **권장 장비 공격 배율** — 완성치와 완성 시점.
+  ///
+  /// 권장치 = `1 + (gearHintMult - 1) × min(1, 스테이지 / gearHintFullStage)`.
+  /// balance_sim 의 "평균 유저" 장비 가정(x1.70@900)과 **같은 숫자**여야 한다 —
+  /// 시뮬이 그 장비로 22일에 끝나니, 그보다 약하면 실제로 벽에 막힌다.
+  /// 안내는 벽을 만들지 않는다. **왜 막히는지, 무엇을 모으면 되는지**를 말할 뿐이다.
+  final double gearHintMult;
+  final int gearHintFullStage;
+
+  /// [stageNumber] 에서 권장하는 장비 공격 배율.
+  double gearHintAt(int stageNumber) {
+    if (gearHintFullStage <= 0) return gearHintMult;
+    final t = (stageNumber / gearHintFullStage).clamp(0.0, 1.0);
+    return 1 + (gearHintMult - 1) * t;
+  }
+
   /// 곤충 속성이 몬스터를 克할 때 **그 곤충의 타격에만** 곱하는 배율(§2.3).
   ///
   /// 이것이 이 시스템의 **유일한 §7 기준 밖 이득**이다. 3마리 다 상극이어도
@@ -586,6 +604,8 @@ class RunConfig {
       eliteHpMult: (json['eliteHpMult'] as num?)?.toDouble() ?? 3.0,
       eliteRewardMult: (json['eliteRewardMult'] as num?)?.toDouble() ?? 4.0,
       eliteScale: (json['eliteScale'] as num?)?.toDouble() ?? 1.45,
+      gearHintMult: (json['gearHintMult'] as num?)?.toDouble() ?? 1.70,
+      gearHintFullStage: (json['gearHintFullStage'] as num?)?.toInt() ?? 900,
       petRestrainMult: (json['petRestrainMult'] as num?)?.toDouble() ?? 1.5,
     );
   }

@@ -2766,6 +2766,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eliteLabel => '정예';
 
   @override
+  String gateGearHint(String cur, String need) {
+    return '장비 ×$cur · 권장 ×$need';
+  }
+
+  @override
+  String get gateGearWeak => '장비가 약해요 — 제련으로 공격 옵션을 모으세요';
+
+  @override
   String get regionElementTitle => '지역 속성';
 
   @override

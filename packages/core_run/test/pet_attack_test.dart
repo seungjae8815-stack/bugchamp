@@ -182,7 +182,7 @@ void main() {
     // (예: `petRestrainMultiplier`)를 못 잡는다.
     test('상극 배율이 run_config.json 에서 RunConfig 로 파싱된다', () {
       final run = RunConfig.fromJson(_readAppData('run_config.json'));
-      expect(run.petRestrainMult, 1.5);
+      expect(run.petRestrainMult, 2.0); // 2026-09-09 1.5→2.0 — 펫의 유일한 기준 밖 손잡이
     });
 
     test('곤충 타격 간격 설정이 pets.json 에서 PetConfig 로 파싱된다', () {

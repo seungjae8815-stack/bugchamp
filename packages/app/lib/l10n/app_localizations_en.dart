@@ -2817,6 +2817,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eliteLabel => 'ELITE';
 
   @override
+  String gateGearHint(String cur, String need) {
+    return 'Gear ×$cur · suggested ×$need';
+  }
+
+  @override
+  String get gateGearWeak => 'Gear is weak — forge attack options';
+
+  @override
   String get regionElementTitle => 'Region element';
 
   @override

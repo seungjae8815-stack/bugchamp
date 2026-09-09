@@ -870,6 +870,50 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _playerHp -= burst * ((_split?.playerHpMult ?? 1.0) / weight);
   }
 
+  /// 지금 스테이지가 월드 관문(x-100)인가.
+  bool get _isWorldGate =>
+      _config.worldSize > 0 && _stage % _config.worldSize == 0;
+
+  /// 장비 공격 배율(기준 밖·순수 이득) vs 권장치. 권장의 85% 미만이면 경고.
+  List<Widget> _gateGearHint(AppLocalizations l) {
+    final save = ref.read(saveControllerProvider).requireValue;
+    final bonus = equipmentBonus(save.equippedItems.values, _data.itemConfig);
+    final cur = 1 + (bonus[ItemOptionKind.attack] ?? 0) / 100.0;
+    final need = _config.gearHintAt(_stage);
+    final weak = cur < need * 0.85;
+    return [
+      Container(
+        margin: const EdgeInsets.only(bottom: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: weak ? const Color(0xCC7A3E00) : const Color(0x99000000),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: weak ? const Color(0xFFFFB74D) : const Color(0x44FFFFFF),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l.gateGearHint(cur.toStringAsFixed(2), need.toStringAsFixed(2)),
+              style: TextStyle(
+                color: weak ? const Color(0xFFFFE0B2) : const Color(0xCCFFFFFF),
+                fontWeight: FontWeight.w800,
+                fontSize: 9.5,
+              ),
+            ),
+            if (weak)
+              Text(
+                l.gateGearWeak,
+                style: const TextStyle(color: Color(0xFFFFB74D), fontSize: 9),
+              ),
+          ],
+        ),
+      ),
+    ];
+  }
+
   /// 지역 속성 설명 — 배지를 눌렀을 때. 무엇을 끼면 세지는지 한 줄로만 말한다.
   /// ⚠️ 매개변수 타입을 `Element` 로 쓰면 안 된다 — `core_models` 의 오행
   /// `Element` 와 Flutter 위젯 트리의 `Element` 가 이름이 겹쳐 모호해진다.
@@ -1901,6 +1945,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                               ),
                             ),
                           ),
+                        // 관문(월드 보스) 앞 장비 안내 — **벽을 만들지 않는다.**
+                        // 왜 막히는지, 무엇을 모으면 되는지를 말할 뿐이다.
+                        // 상한을 낮춰 벽을 만드는 건 실측상 장비로 못 뚫었다
+                        // (2026-09-09, x3 을 줘도 801→820). 장비가 후반을 끄는
+                        // 자리는 관문이고, 그걸 유저가 알아야 모을 이유가 생긴다.
+                        if (_isBoss && _isWorldGate) ..._gateGearHint(l),
                         _Bar(
                           fraction: hpFrac,
                           wide: _isBoss,

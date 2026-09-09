@@ -59,13 +59,18 @@ const _buffDpsMult = 1.4;
 // 포함). 그러면 시뮬 안에서는 버프가 스스로 상쇄돼 "빠듯하다"고 나온다 —
 // 실제로는 그만큼 쉬워지는데도. 그래서 체감과 계속 어긋났다.
 
-/// 장비 8부위의 **공격 배율**(옵션 attack%). 최고등급 5옵션까지 붙지만
-/// 평균 유저는 등급이 섞인다 — 상한이 아니라 중간을 잡는다.
-double _equipAttackMult = 1.35;
+/// 장비 8부위의 **공격 배율**(옵션 attack%). 평균 유저는 등급이 섞인다 —
+/// 상한이 아니라 중간을 잡는다.
+///
+/// 2026-09-09: x1.35@300 → x1.70@900. "장비가 후반을 끄는" 구조로 옮겼다.
+/// 총 기간은 그대로(22.0→21.2일)인데 **후반 1/3 의 속도가 장비에서** 나온다.
+/// items.json 의 상위 3등급(키틴·갑충·호박)을 같이 올렸으므로 실게임의 평균도
+/// 여기까지 온다. 둘을 따로 만지면 시뮬과 게임이 갈린다.
+double _equipAttackMult = 1.70;
 
 /// 장비가 주는 치명 확률·피해 가산(옵션 critChance/critDamage).
-double _equipCritChance = 0.12;
-double _equipCritDamage = 0.6;
+double _equipCritChance = 0.24;
+double _equipCritDamage = 1.2;
 
 /// 장비가 주는 **최대 체력·방어** 배율(옵션 maxHp/defense).
 ///
@@ -76,13 +81,13 @@ double _equipCritDamage = 0.6;
 ///
 /// **이 두 값은 기준 밖(§7)이라 순수 이득이다** — 위협도는 기준 전력에
 /// 비례하는데 실제 체력·방어는 이만큼 더 크니, 그 비만큼 안 닳는다.
-double _equipHpMult = 1.30;
-double _equipDefenseMult = 1.35;
+double _equipHpMult = 1.60;
+double _equipDefenseMult = 1.70;
 
 /// 장비 공격 옵션이 다 붙기까지 걸리는 스테이지(공방을 돌려 갖춘다).
 /// `--equip-full=N` 으로 바꿀 수 있다 — "장비가 후반을 끄는" 구조를 재려면
 /// 장비를 다 갖추는 시점을 뒤로 밀어 봐야 한다.
-int _equipFullStage = 300;
+int _equipFullStage = 900;
 
 /// 종 고유 패시브 — 펫 3마리 장착분. 능력치가 갈리므로 공격 기여는 일부다.
 const _passiveAttackMult = 1.08;

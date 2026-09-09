@@ -2760,6 +2760,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eliteLabel => '精鋭';
 
   @override
+  String gateGearHint(String cur, String need) {
+    return '装備 ×$cur · 推奨 ×$need';
+  }
+
+  @override
+  String get gateGearWeak => '装備が弱い — 鍛冶で攻撃オプションを集めよう';
+
+  @override
   String get regionElementTitle => '地域の属性';
 
   @override

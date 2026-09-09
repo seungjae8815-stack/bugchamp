@@ -5050,6 +5050,18 @@ abstract class AppLocalizations {
   /// **'ELITE'**
   String get eliteLabel;
 
+  /// No description provided for @gateGearHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear ×{cur} · suggested ×{need}'**
+  String gateGearHint(String cur, String need);
+
+  /// No description provided for @gateGearWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear is weak — forge attack options'**
+  String get gateGearWeak;
+
   /// No description provided for @regionElementTitle.
   ///
   /// In en, this message translates to:
