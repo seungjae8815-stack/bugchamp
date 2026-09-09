@@ -2766,6 +2766,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeExpand => '칸 확장';
 
   @override
+  String get forgeExpandMax => '확장 최대';
+
+  @override
+  String get forgeRushTitle => '망치질 가속';
+
+  @override
+  String forgeRushBody(int cost, int sec) {
+    return '젤리 $cost개로 $sec초 동안 망치질이 두 배 빨라져요.\n가속 중에 다시 쓰면 남은 시간에 더해집니다.';
+  }
+
+  @override
+  String forgeRushLeft(int sec) {
+    return '남은 시간 $sec초';
+  }
+
+  @override
+  String get forgeRerollHint => '등급·부위는 그대로, 옵션만 다시 굴려요';
+
+  @override
   String forgeRushOn(int s) {
     return '가속 $s초';
   }

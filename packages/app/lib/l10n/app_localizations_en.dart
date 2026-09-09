@@ -2817,6 +2817,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeExpand => 'Expand';
 
   @override
+  String get forgeExpandMax => 'MAX';
+
+  @override
+  String get forgeRushTitle => 'Hammer rush';
+
+  @override
+  String forgeRushBody(int cost, int sec) {
+    return 'Spend $cost jelly to hammer twice as fast for ${sec}s.\nUsing it again adds to the remaining time.';
+  }
+
+  @override
+  String forgeRushLeft(int sec) {
+    return '${sec}s left';
+  }
+
+  @override
+  String get forgeRerollHint =>
+      'Same tier and slot — only the options are rerolled';
+
+  @override
   String forgeRushOn(int s) {
     return 'Rush ${s}s';
   }

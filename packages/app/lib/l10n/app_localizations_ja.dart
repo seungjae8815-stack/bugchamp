@@ -2760,6 +2760,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeExpand => '枠拡張';
 
   @override
+  String get forgeExpandMax => '最大';
+
+  @override
+  String get forgeRushTitle => 'ハンマー加速';
+
+  @override
+  String forgeRushBody(int cost, int sec) {
+    return 'ゼリー$cost個で$sec秒間、ハンマーが2倍速に。\n加速中に使うと残り時間に加算されます。';
+  }
+
+  @override
+  String forgeRushLeft(int sec) {
+    return '残り$sec秒';
+  }
+
+  @override
+  String get forgeRerollHint => '等級・部位はそのまま、オプションのみ再抽選';
+
+  @override
   String forgeRushOn(int s) {
     return '加速 $s秒';
   }

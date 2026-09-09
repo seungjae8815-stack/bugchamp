@@ -38,6 +38,13 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   bool _autoOn = false;
   bool _busy = false;
 
+  /// 가속 남은 시간을 **1초마다** 다시 그리는 티커.
+  ///
+  /// 망치질 애니메이션은 자기 박자로만 setState 하므로, 가속이 끝나가도
+  /// 숫자가 멈춰 있었다(2026-09-09 지적). 남은 시간은 시간이 지나면 줄어야
+  /// 하는 값이라 **자기 티커**가 필요하다.
+  Timer? _rushTick;
+
   /// 한 번 뽑는 데 걸리는 시간 = 망치질 한 바퀴(§6 — `forge.json → hammerSeconds`).
   ///
   /// 손으로 눌러도 **같은 시간**이 걸린다. 즉시 뽑히면 손가락만 빠르면 화석을
@@ -51,6 +58,38 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     final rushing = until != null && until.isAfter(now);
     final sec = rushing ? f.hammerSeconds / 2 : f.hammerSeconds;
     return Duration(milliseconds: (sec * 1000).round());
+  }
+
+  /// 가속을 사기 전에 **무엇을 사는지** 보여준다.
+  ///
+  /// 값과 지속시간이 버튼에 안 적혀 있으면 눌러 보기 전엔 알 수 없다.
+  Future<void> _confirmRush(
+    AppLocalizations l,
+    ForgeConfig forge,
+    int left,
+  ) async {
+    final go = await showGameDialog<bool>(
+      context,
+      title: l.forgeRushTitle,
+      icon: Icons.fast_forward_rounded,
+      subtitle: left > 0 ? l.forgeRushLeft(left) : null,
+      content: Text(
+        l.forgeRushBody(forge.rushJelly, forge.rushSeconds),
+        style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12.5),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(l.forgeRush, () => Navigator.pop(context, true)),
+      ],
+    );
+    if (go != true || !mounted) return;
+    await _spendJelly(
+      () => ref.read(saveControllerProvider.notifier).rushForgeHammer(),
+    );
   }
 
   /// 젤리 액션 공통 — 실패하면 이유를 말한다.
@@ -184,8 +223,43 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   Future<void> _openTop() async {
     final stack = ref.read(saveControllerProvider).requireValue.forgeStack;
     if (stack.isEmpty) return;
-    final done = await showForgeResult(context, ref, stack.last);
-    if (done) await ref.read(saveControllerProvider.notifier).takeForgeItem();
+    // 하나를 처리하면 **다음 것이 바로 뜬다.** 예전엔 매번 모루를 다시
+    // 눌러야 했다 — 10칸을 비우려면 10번을 더 눌러야 하는 셈이었다
+    // (2026-09-09 지적).
+    while (mounted && await _openOne()) {
+      if (!mounted) return;
+      setState(() {});
+    }
+  }
+
+  /// 맨 위 하나를 열어 처리한다. 다음 것을 이어서 열어도 되면 true.
+  ///
+  /// 루프에서 분리한 이유: `context` 를 **await 전에** 써야 분석기가 통과한다.
+  /// 루프 안에 두면 두 번째 회차의 context 는 async 경계를 넘은 것이 된다.
+  Future<bool> _openOne() async {
+    final top = ref.read(saveControllerProvider).requireValue.forgeStack;
+    if (top.isEmpty) return false;
+    final done = await showForgeResult(context, ref, top.last);
+    if (!done) return false; // 바깥을 눌러 닫았다 — 여기서 멈춘다.
+    await ref.read(saveControllerProvider.notifier).takeForgeItem();
+    return true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _rushTick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      // 가속 중일 때만 다시 그린다 — 평소엔 공짜 리빌드를 만들지 않는다.
+      final save = ref.read(saveControllerProvider).value;
+      if (save != null && _rushLeft(save) > 0) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _rushTick?.cancel();
+    super.dispose();
   }
 
   @override
@@ -302,22 +376,16 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _JellyChip(
-                      icon: Icons.casino_rounded,
-                      label: l.forgeReroll,
-                      cost: forge.rerollJelly,
-                      // 모루가 비면 굴릴 대상이 없다.
-                      enabled: save.forgeStack.isNotEmpty,
-                      onTap: () => _spendJelly(
-                        () => ref
-                            .read(saveControllerProvider.notifier)
-                            .rerollForgeTop(),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    _JellyChip(
                       icon: Icons.add_box_rounded,
-                      label: l.forgeExpand,
-                      cost: forge.stackExpandCost(save.forgeStackBought),
+                      // 다 늘렸으면 **값을 지우고 "확장 최대"** 라고 쓴다.
+                      // 살 수 없는 값(450)이 떠 있으면 못 사는 게 아니라
+                      // 젤리가 모자란 것으로 읽힌다(2026-09-09 지적).
+                      label: cap >= forge.stackExpandMax
+                          ? l.forgeExpandMax
+                          : l.forgeExpand,
+                      cost: cap >= forge.stackExpandMax
+                          ? null
+                          : forge.stackExpandCost(save.forgeStackBought),
                       enabled: cap < forge.stackExpandMax,
                       onTap: () => _spendJelly(
                         () => ref
@@ -363,10 +431,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
               label: l.forgeRush,
               sub: rushLeft > 0 ? '$rushLeft' : '${forge.rushJelly}',
               on: rushLeft > 0,
-              onTap: () => _spendJelly(
-                () =>
-                    ref.read(saveControllerProvider.notifier).rushForgeHammer(),
-              ),
+              onTap: () => _confirmRush(l, forge, rushLeft),
             ),
             const SizedBox(height: 6),
             _SquareButton(
@@ -389,14 +454,17 @@ class _JellyChip extends StatelessWidget {
   const _JellyChip({
     required this.icon,
     required this.label,
-    required this.cost,
     required this.enabled,
+    this.cost,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final int cost;
+
+  /// 값. **null 이면 값을 안 그린다** — 다 사서 살 수 없는 상태에서 값이
+  /// 떠 있으면 "못 사는 것"이 아니라 "젤리가 모자란 것"으로 읽힌다.
+  final int? cost;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -427,21 +495,23 @@ class _JellyChip extends StatelessWidget {
                 fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(width: 4),
-            materialImage(
-              MaterialKind.jelly,
-              size: 11,
-              fallback: Icon(Icons.bubble_chart, size: 10, color: fg),
-            ),
-            const SizedBox(width: 2),
-            Text(
-              '$cost',
-              style: TextStyle(
-                color: fg,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w900,
+            if (cost != null) ...[
+              const SizedBox(width: 4),
+              materialImage(
+                MaterialKind.jelly,
+                size: 11,
+                fallback: Icon(Icons.bubble_chart, size: 10, color: fg),
               ),
-            ),
+              const SizedBox(width: 2),
+              Text(
+                '$cost',
+                style: TextStyle(
+                  color: fg,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -937,12 +1007,16 @@ Future<bool> showForgeResult(
 ) async {
   final l = AppLocalizations.of(context);
   final locale = Localizations.localeOf(context).languageCode;
-  final items = ref.read(gameDataProvider).value?.itemConfig;
+  final data = ref.read(gameDataProvider).value;
+  final items = data?.itemConfig;
+  final forge = data?.forgeConfig;
   if (items == null) return false;
   final cur = ref
       .read(saveControllerProvider)
       .requireValue
       .equippedItems[item.slot];
+  // 재굴림하면 이 창의 오른쪽이 바뀐다 — 창을 닫았다 열지 않고 여기서 갱신한다.
+  var shown = item;
 
   final done = await showGameDialog<bool>(
     context,
@@ -950,37 +1024,78 @@ Future<bool> showForgeResult(
     iconWidget: itemImage(item, size: 40),
     // **왼쪽 = 지금 낀 것, 오른쪽 = 새로 뽑은 것.** 위아래로 쌓으면 두 값을
     // 번갈아 보느라 눈이 왕복한다 — 나란히 두어야 한 줄씩 바로 비교된다.
-    content: SizedBox(
-      width: double.maxFinite,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: _CompareSide(
-              label: l.forgeCurrent,
-              item: cur,
-              config: items,
-              locale: locale,
+    content: StatefulBuilder(
+      builder: (ctx, setLocal) => SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _CompareSide(
+                    label: l.forgeCurrent,
+                    item: cur,
+                    config: items,
+                    locale: locale,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 18,
+                  color: Color(0x66FFFFFF),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _CompareSide(
+                    label: l.forgeResultNew,
+                    item: shown,
+                    config: items,
+                    locale: locale,
+                    compare: cur,
+                    highlight: true,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(
-            Icons.arrow_forward_rounded,
-            size: 18,
-            color: Color(0x66FFFFFF),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _CompareSide(
-              label: l.forgeResultNew,
-              item: item,
-              config: items,
-              locale: locale,
-              compare: cur,
-              highlight: true,
-            ),
-          ),
-        ],
+            // 재굴림은 **옵션 바로 아래**가 제자리다. 모루 줄에 두면 무엇이
+            // 굴려지는지 안 보인 채로 눌러야 했다(2026-09-09 지적).
+            if (forge != null) ...[
+              const SizedBox(height: 10),
+              _JellyChip(
+                icon: Icons.casino_rounded,
+                label: l.forgeReroll,
+                cost: forge.rerollJelly,
+                enabled: true,
+                onTap: () async {
+                  final ok = await ref
+                      .read(saveControllerProvider.notifier)
+                      .rerollForgeTop();
+                  if (!ctx.mounted) return;
+                  if (!ok) {
+                    showCenterToast(ctx, l.forgeNoJelly);
+                    return;
+                  }
+                  final stack = ref
+                      .read(saveControllerProvider)
+                      .requireValue
+                      .forgeStack;
+                  if (stack.isNotEmpty) setLocal(() => shown = stack.last);
+                },
+              ),
+              const SizedBox(height: 2),
+              Text(
+                l.forgeRerollHint,
+                style: const TextStyle(
+                  color: Color(0x88FFFFFF),
+                  fontSize: 10.5,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     ),
     actions: [
@@ -990,7 +1105,8 @@ Future<bool> showForgeResult(
         primary: false,
       ),
       gameDialogButton(l.forgeResultKeep, () {
-        ref.read(saveControllerProvider.notifier).equipItem(item);
+        // ⚠️ 굴린 뒤라면 **굴린 것**을 껴야 한다.
+        ref.read(saveControllerProvider.notifier).equipItem(shown);
         Navigator.pop(context, true);
       }),
     ],

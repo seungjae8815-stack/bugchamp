@@ -5050,6 +5050,36 @@ abstract class AppLocalizations {
   /// **'Expand'**
   String get forgeExpand;
 
+  /// No description provided for @forgeExpandMax.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get forgeExpandMax;
+
+  /// No description provided for @forgeRushTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hammer rush'**
+  String get forgeRushTitle;
+
+  /// No description provided for @forgeRushBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {cost} jelly to hammer twice as fast for {sec}s.\nUsing it again adds to the remaining time.'**
+  String forgeRushBody(int cost, int sec);
+
+  /// No description provided for @forgeRushLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{sec}s left'**
+  String forgeRushLeft(int sec);
+
+  /// No description provided for @forgeRerollHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Same tier and slot — only the options are rerolled'**
+  String get forgeRerollHint;
+
   /// No description provided for @forgeRushOn.
   ///
   /// In en, this message translates to:
