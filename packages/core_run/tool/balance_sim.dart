@@ -80,7 +80,9 @@ double _equipHpMult = 1.30;
 double _equipDefenseMult = 1.35;
 
 /// 장비 공격 옵션이 다 붙기까지 걸리는 스테이지(공방을 돌려 갖춘다).
-const _equipFullStage = 300;
+/// `--equip-full=N` 으로 바꿀 수 있다 — "장비가 후반을 끄는" 구조를 재려면
+/// 장비를 다 갖추는 시점을 뒤로 밀어 봐야 한다.
+int _equipFullStage = 300;
 
 /// 종 고유 패시브 — 펫 3마리 장착분. 능력치가 갈리므로 공격 기여는 일부다.
 const _passiveAttackMult = 1.08;
@@ -994,6 +996,11 @@ _Opts _parseArgs(List<String> args) {
     final tr = RegExp(r'^--tier=(.+)$').firstMatch(a);
     if (tr != null) {
       _tier = int.parse(tr.group(1)!);
+      continue;
+    }
+    final ef = RegExp(r'^--equip-full=(.+)$').firstMatch(a);
+    if (ef != null) {
+      _equipFullStage = int.parse(ef.group(1)!);
       continue;
     }
     final prc = RegExp(r'^--pet-restrain=(.+)$').firstMatch(a);
