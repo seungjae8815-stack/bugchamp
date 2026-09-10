@@ -32,7 +32,6 @@
 - 급소와 재료 발견을 아무리 올려도 효과가 없던 구간
 - 능력치 강화에 상한을 표시합니다
 - 부화기 알 목록에서 특성과 잠재력, 속성을 바로 볼 수 있어요
-- 지금 할 일을 화면 위에 모아 보여줍니다
 
 곤충학자 패스가 바뀌었습니다
 
@@ -65,7 +64,6 @@ Fixes
 - Critical and material find did nothing past a certain level
 - Stat upgrades now show their cap
 - The egg list shows traits, potential and element at a glance
-- What needs your attention is now collected at the top of the screen
 
 Entomologist Pass changed
 
@@ -98,7 +96,6 @@ Entomologist Pass changed
 - 急所と素材発見が一定以上で効かなくなっていた区間
 - 能力強化に上限を表示します
 - 孵化器のタマゴ一覧で特性と潜在能力、属性が見えます
-- 今やることを画面の上にまとめて表示します
 
 昆虫学者パスが変わりました
 
