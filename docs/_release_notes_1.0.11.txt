@@ -1,0 +1,35 @@
+========================================
+ Google Play — 출시 노트 (1.0.11 / 20260912)
+========================================
+※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
+※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
+※ 재계산:
+   python -c "import io;s=io.open('docs/_release_notes_1.0.11.txt',encoding='utf-8').read();b=s.split('-'*40,1)[1].strip();print(len(b)+b.count(chr(10)))"
+※ 범위: 1.0.10(20260911) 이후 — 결제 복구 · 선물 2배 정리 · 후반 난이도 · 계정 연결.
+※ ⚠️ 깜짝선물 2배가 하루 1회로 정리됐다(그동안 제한이 새고 있었다). 유저에게
+   불리한 변경이므로 노트에 반드시 적는다 — 조용히 바꾸면 그게 문의가 된다.
+----------------------------------------
+<ko-KR>
+🐛 결제·계정 문제 수정
+
+• 결제가 안 들어오던 문제 수정(밀린 건 자동 재시도)
+• 로그인 후 순위표에 이름이 두 번 뜨던 문제 수정
+• 깜짝선물 2배는 하루 1회(패스는 무제한)
+• 400스테이지부터 몬스터가 더 아픕니다
+</ko-KR>
+<en-US>
+🐛 Purchase and account fixes
+
+• Missing purchases now retry on their own
+• No more double name on the leaderboard
+• Gift doubling once a day (unlimited with Pass)
+• Monsters hit harder from stage 400
+</en-US>
+<ja-JP>
+🐛 課金とアカウントの修正
+
+• 届かない購入を自動で再取得
+• 順位表の名前が二重に出る問題を修正
+• プレゼント2倍は1日1回(パスは無制限)
+• ステージ400から敵が強くなります
+</ja-JP>
