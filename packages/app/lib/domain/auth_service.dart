@@ -113,6 +113,43 @@ class SupabaseAuthService implements AuthService {
     return u.email ?? u.userMetadata?['name'] as String?;
   }
 
+  /// 지금 **익명 계정**인가. 익명이면 로그인이 아니라 **연결**이어야 한다.
+  bool get _anonymous => _client.auth.currentUser?.isAnonymous == true;
+
+  /// 익명 계정에 소셜 신원을 **붙인다**(계정 id 유지).
+  ///
+  /// ⚠️ 예전엔 곧바로 `signInWithIdToken` 을 불렀다. 그러면 구글 계정으로
+  /// **새 계정에 로그인**하게 되어 익명 계정이 그대로 남고, 프로필이 두 개가
+  /// 되어 **랭킹에 같은 닉네임이 두 줄** 떴다(2026-09-12 확인: 266개 중 15쌍).
+  /// 연결하면 id 가 그대로라 프로필도 세이브도 하나로 유지된다.
+  ///
+  /// 이미 다른 계정이 쓰고 있는 구글/애플 계정이면 연결이 거부된다 — 그때는
+  /// 예전처럼 그 계정으로 로그인한다(기기를 바꿔 복구하는 정상 경로다).
+  /// 프로젝트에서 수동 연결(manual linking)이 꺼져 있어도 같은 길로 떨어진다.
+  Future<void> _linkOrSignIn({
+    required OAuthProvider provider,
+    required String idToken,
+    String? nonce,
+  }) async {
+    if (_anonymous) {
+      try {
+        await _client.auth.linkIdentityWithIdToken(
+          provider: provider,
+          idToken: idToken,
+          nonce: nonce,
+        );
+        return;
+      } catch (e) {
+        debugPrint('identity link 실패 → 로그인으로 진행: $e');
+      }
+    }
+    await _client.auth.signInWithIdToken(
+      provider: provider,
+      idToken: idToken,
+      nonce: nonce,
+    );
+  }
+
   Future<void> _ensureInit() async {
     if (_initialized) return;
     await GoogleSignIn.instance.initialize(serverClientId: _webClientId);
@@ -130,10 +167,7 @@ class SupabaseAuthService implements AuthService {
         debugPrint('google sign-in: idToken 없음');
         return false;
       }
-      await _client.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-      );
+      await _linkOrSignIn(provider: OAuthProvider.google, idToken: idToken);
       return true;
     } on GoogleSignInException catch (e) {
       // 사용자가 취소한 경우도 여기로 온다 — 실패로 조용히 처리.
@@ -170,7 +204,7 @@ class SupabaseAuthService implements AuthService {
         debugPrint('apple sign-in: identityToken 없음');
         return false;
       }
-      await _client.auth.signInWithIdToken(
+      await _linkOrSignIn(
         provider: OAuthProvider.apple,
         idToken: idToken,
         nonce: rawNonce,
