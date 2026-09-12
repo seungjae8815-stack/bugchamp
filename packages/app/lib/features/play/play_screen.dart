@@ -3915,23 +3915,101 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (g.chitin + g.mineral + g.sap > 0)
         '🧪${formatCompact(g.chitin + g.mineral + g.sap)}',
     ];
-    // 그냥 받기(1배) → 수령 후 "광고 보고 한 번 더 받기" 제안 → 수락 시 +1배.
-    Future<void> claimThenOffer() async {
+    // 2배는 **받기 전에** 묻는다.
+    //
+    // 예전엔 1배로 먼저 주고 나서 "한 번 더"를 로컬로 얹었는데, 수령이 서버
+    // 경로라 **서버가 돌려준 세이브를 그대로 채택**하면서 로컬로 올려 둔 무료
+    // 횟수가 통째로 날아갔다(업로드 주기 60초). 그래서 하루 1회 제한이 사실상
+    // 없었고 선물이 매번 2배로 나갔다(2026-09-12 사장님 지적).
+    // 이제 배수는 **서버가 판정하고 센다** — 앱은 묻기만 한다.
+    Future<void> claimGiftFlow() async {
       final notifier = r.read(saveControllerProvider.notifier);
-      final ok = await notifier.claimGift(g.id, doubled: false);
+      final canDouble = notifier.canDoubleGift();
+      var wantDouble = false;
+      if (canDouble) {
+        final more = await showGameDialog<bool>(
+          ctx,
+          title: l.giftAdMoreTitle,
+          icon: Icons.play_circle_fill_rounded,
+          // 이 다이얼로그가 곧 패스 광고판이다 — "1회뿐"과 "패스면 무제한"을
+          // 받는 순간에 같이 보여준다(2026-08-20 문구·강조 사장님 지시).
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l.giftAdMoreBody,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xD9FFFFFF),
+                  fontSize: 13.5,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                l.giftAdMoreFreeLine,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w900,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0x33EBA52F),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  l.giftAdMorePassLine,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFFFD54F),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w900,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            gameDialogButton(
+              l.giftAdMoreLater,
+              () => Navigator.pop(ctx, false),
+              primary: false,
+            ),
+            gameDialogButton(l.giftAdMoreYes, () => Navigator.pop(ctx, true)),
+          ],
+        );
+        wantDouble = more == true;
+        if (!ctx.mounted) return;
+      }
+      final ok = await notifier.claimGift(g.id, doubled: wantDouble);
       if (!ok || !ctx.mounted) return;
+      final mult = wantDouble
+          ? (r.read(gameDataProvider).value?.giftConfig?.adMultiplier ?? 2)
+          : 1;
       await showRewardPopup(
         ctx,
-        title: l.giftClaimedSnack,
+        title: wantDouble ? l.giftDoubledSnack : l.giftClaimedSnack,
         subtitle: l.rewardGained,
-        icon: Icons.card_giftcard_rounded,
-        gold: g.gold,
-        materials: g.materials,
+        icon: wantDouble
+            ? Icons.play_circle_fill_rounded
+            : Icons.card_giftcard_rounded,
+        gold: g.gold * mult,
+        materials: {for (final e in g.materials.entries) e.key: e.value * mult},
       );
-      if (!ctx.mounted) return;
-      // 무료 2배를 다 썼으면 **패스를 안내한다**(2배 제안 대신).
-      // 이미 뜬 보상은 1배로 받았으므로 손해는 없다 — 여기서 막는 건 덤뿐이다.
-      if (!notifier.canDoubleGift()) {
+      if (!ctx.mounted || canDouble) return;
+      // 무료 2배를 다 썼으면 **패스를 안내한다**. 이미 뜬 보상은 1배로 받았으니
+      // 손해는 없다 — 여기서 막는 건 덤뿐이고, 계속 2배로 받는 것이 패스의 값어치다.
+      {
         final capAction = await showGameDialog<_CapAction>(
           ctx,
           title: l.giftDoubleCapTitle,
@@ -3997,78 +4075,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         }
         return;
       }
-      final more = await showGameDialog<bool>(
-        ctx,
-        title: l.giftAdMoreTitle,
-        icon: Icons.play_circle_fill_rounded,
-        // 이 다이얼로그가 곧 패스 광고판이다 — "1회뿐"과 "패스면 무제한"을
-        // 받는 순간에 같이 보여준다(2026-08-20 문구·강조 사장님 지시).
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l.giftAdMoreBody,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xD9FFFFFF),
-                fontSize: 13.5,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              l.giftAdMoreFreeLine,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14.5,
-                fontWeight: FontWeight.w900,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0x33EBA52F),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                l.giftAdMorePassLine,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFFFD54F),
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w900,
-                  height: 1.35,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          gameDialogButton(
-            l.giftAdMoreLater,
-            () => Navigator.pop(ctx, false),
-            primary: false,
-          ),
-          gameDialogButton(l.giftAdMoreYes, () => Navigator.pop(ctx, true)),
-        ],
-      );
-      if (more == true && ctx.mounted) {
-        if (!await watchAdForReward(ctx, r, l)) return;
-        if (!ctx.mounted) return;
-        if (!await notifier.grantGiftBonus(g)) return;
-        if (!ctx.mounted) return;
-        await showRewardPopup(
-          ctx,
-          title: l.giftDoubledSnack,
-          subtitle: l.rewardGained,
-          icon: Icons.play_circle_fill_rounded,
-          gold: g.gold,
-          materials: g.materials,
-        );
-      }
     }
 
     return Padding(
@@ -4115,7 +4121,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               width: 104,
               height: 40,
               child: FilledButton(
-                onPressed: claimThenOffer,
+                onPressed: claimGiftFlow,
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFEBA52F),
                   foregroundColor: const Color(0xFF3A2600),

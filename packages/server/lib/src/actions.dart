@@ -163,6 +163,10 @@ class GameActions {
     // 이 플래그를 서버가 쥐고 있어야 앱이 옛 이름을 다시 올려도 요구가 남는다.
     'renameRequired',
     'ownedSkins',
+    // 깜짝선물 무료 2배 횟수. 서버가 판정하고 세므로 서버가 소유해야 한다 —
+    // 앱이 0 을 올려 하루 상한을 되돌리는 길을 막는다.
+    'giftDoubleDate',
+    'giftDoubleCount',
     // ⚠️ `incubatorCapacity` 는 여기 두면 안 된다. 부화기 슬롯은 IAP 뿐 아니라
     // **젤리로도 산다**(`expandIncubator`). 서버가 소유하면 젤리는 빠지고
     // 슬롯은 업로드 때 되돌아가, 앱을 껐다 켜면 산 게 사라진다(2026-08 버그).
@@ -1358,10 +1362,17 @@ class GameActions {
     );
   }
 
-  /// 깜짝선물 수령. 만료·없음이면 거부. [doubled]=광고 시청 배수.
+  /// 깜짝선물 수령. 만료·없음이면 거부. [doubled]=2배 요청.
   ///
-  /// ⚠️ [doubled] 는 아직 클라 신뢰다 — AdMob SSV(서버 보상 검증)가 붙기 전까지.
-  /// 출시 후 SSV 로 "실제로 광고를 봤는가"를 서버가 확인해야 이 배수를 신뢰한다.
+  /// ⚠️ **2배 자격은 서버가 판정한다.** 앱에도 같은 규칙([canDoubleGift])이
+  /// 있지만, 수령은 서버 경로가 먼저라 여기가 비어 있으면 앱의 제한이 통째로
+  /// 무의미해진다 — 실제로 무료 하루 1회가 **매번 2배**로 나가고 있었다
+  /// (2026-09-12 사장님 지적). 선물은 접속 시간에 비례해 무한히 나오는
+  /// 통로라(§2.6 젤리 수도꼭지), 여기서 새면 최상위 티어의 젤리도 함께 샌다.
+  ///
+  /// 규칙은 앱과 같다: 패스 보유자는 무제한, 나머지는 하루
+  /// [GiftConfig.freeDoubleDaily] 회. 자격이 없으면 **거부가 아니라 1배**로
+  /// 지급한다 — 이미 뜬 보상을 못 받게 하면 불만이 크다.
   ActionResult claimGift(SaveGame save, String giftId, {bool doubled = false}) {
     final t = now().toUtc();
     final idx = save.gifts.indexWhere((g) => g.id == giftId);
@@ -1370,7 +1381,14 @@ class GameActions {
     final gifts = List<GiftMail>.from(save.gifts)..removeAt(idx);
     // 만료된 선물은 지급하지 않는다(다음 sync 가 정리한다).
     if (g.isExpired(t)) return const ActionResult.fail('gift_expired');
-    final mult = doubled ? (config.gift?.adMultiplier ?? 2) : 1;
+
+    final passOn = save.anyPassActive(t);
+    final today = dailyDateKey(t);
+    final cap = config.gift?.freeDoubleDaily ?? 1;
+    final allowed = doubled && (passOn || save.giftDoublesUsed(today) < cap);
+    // 패스 보유자의 2배는 무료 횟수를 쓰지 않는다.
+    final counted = allowed && !passOn;
+    final mult = allowed ? (config.gift?.adMultiplier ?? 2) : 1;
     final mats = Map<MaterialKind, int>.from(save.materials);
     for (final e in g.materials.entries) {
       mats[e.key] = (mats[e.key] ?? 0) + e.value * mult;
@@ -1380,8 +1398,12 @@ class GameActions {
         gold: addCurrency(save.gold, g.gold * mult),
         materials: mats,
         gifts: gifts,
+        giftDoubleDate: counted ? today : save.giftDoubleDate,
+        giftDoubleCount: counted
+            ? save.giftDoublesUsed(today) + 1
+            : save.giftDoubleCount,
       ),
-      extra: {'gold': g.gold * mult, 'doubled': doubled},
+      extra: {'gold': g.gold * mult, 'doubled': allowed},
     );
   }
 

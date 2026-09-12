@@ -374,7 +374,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storeCanceled => '구매를 취소했어요';
 
   @override
-  String get storePending => '결제 확인 중이에요. 완료되면 자동으로 지급돼요';
+  String get storePending =>
+      '결제를 확인하고 있어요. 확인되면 자동으로 지급돼요. 몇 분 뒤에도 안 들어오면 상점에서 \'구매 복원\'을 눌러 주세요';
 
   @override
   String get storeUnavailable => '이 기기에서는 결제를 쓸 수 없어요';
@@ -1396,13 +1397,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftAdMoreTitle => '오늘의 무료 2배!';
 
   @override
-  String get giftAdMoreBody => '같은 보상을 한 번 더 받을 수 있어요.';
+  String get giftAdMoreBody => '이 선물을 2배로 받을 수 있어요.';
 
   @override
-  String get giftAdMoreYes => '한 번 더 받기';
+  String get giftAdMoreYes => '2배로 받기';
 
   @override
-  String get giftAdMoreLater => '괜찮아요';
+  String get giftAdMoreLater => '그냥 받기';
 
   @override
   String get notifLunchTitle => '점심 보상이 도착했어요 🍱';

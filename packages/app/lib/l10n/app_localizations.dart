@@ -781,7 +781,7 @@ abstract class AppLocalizations {
   /// No description provided for @storePending.
   ///
   /// In en, this message translates to:
-  /// **'Confirming payment. It\'ll be granted automatically once it completes'**
+  /// **'Confirming your payment. It will be granted automatically. If it hasn\'t arrived in a few minutes, tap Restore purchases in the shop'**
   String get storePending;
 
   /// No description provided for @storeUnavailable.
@@ -2575,19 +2575,19 @@ abstract class AppLocalizations {
   /// No description provided for @giftAdMoreBody.
   ///
   /// In en, this message translates to:
-  /// **'Claim the same reward once more.'**
+  /// **'Take this gift at double value.'**
   String get giftAdMoreBody;
 
   /// No description provided for @giftAdMoreYes.
   ///
   /// In en, this message translates to:
-  /// **'Claim again'**
+  /// **'Claim double'**
   String get giftAdMoreYes;
 
   /// No description provided for @giftAdMoreLater.
   ///
   /// In en, this message translates to:
-  /// **'No thanks'**
+  /// **'Claim as is'**
   String get giftAdMoreLater;
 
   /// No description provided for @notifLunchTitle.

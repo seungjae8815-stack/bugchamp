@@ -384,7 +384,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storePending =>
-      'Confirming payment. It\'ll be granted automatically once it completes';
+      'Confirming your payment. It will be granted automatically. If it hasn\'t arrived in a few minutes, tap Restore purchases in the shop';
 
   @override
   String get storeUnavailable =>
@@ -1419,13 +1419,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftAdMoreTitle => 'Today\'s free double!';
 
   @override
-  String get giftAdMoreBody => 'Claim the same reward once more.';
+  String get giftAdMoreBody => 'Take this gift at double value.';
 
   @override
-  String get giftAdMoreYes => 'Claim again';
+  String get giftAdMoreYes => 'Claim double';
 
   @override
-  String get giftAdMoreLater => 'No thanks';
+  String get giftAdMoreLater => 'Claim as is';
 
   @override
   String get notifLunchTitle => 'Lunch reward is ready 🍱';

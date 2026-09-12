@@ -874,31 +874,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
-  /// 이미 수령한 선물 [g] 를 광고 보상으로 **한 번 더**(추가 1배) 지급.
-  /// "그냥 받기" 후 광고 보고 한 번 더 받기 흐름용(선물은 이미 목록에서 제거됨).
-  Future<bool> grantGiftBonus(GiftMail g) async {
-    if (!canDoubleGift()) return false;
-    final s = state.requireValue;
-    final now = ref.read(clockProvider).now().toUtc();
-    final today = dailyDateKey(now);
-    // 패스 보유자는 무제한 — 카운터를 쓰지 않는다.
-    final counted = !s.anyPassActive(now);
-    final mats = Map<MaterialKind, int>.from(s.materials);
-    for (final e in g.materials.entries) {
-      mats[e.key] = (mats[e.key] ?? 0) + e.value;
-    }
-    await _commit(
-      s.copyWith(
-        gold: addCurrency(s.gold, g.gold),
-        materials: mats,
-        giftDoubleDate: counted ? today : s.giftDoubleDate,
-        giftDoubleCount: counted
-            ? s.giftDoublesUsed(today) + 1
-            : s.giftDoubleCount,
-      ),
-    );
-    return true;
-  }
+  // ⚠️ `grantGiftBonus`(선물 1배 수령 뒤 로컬로 1배 더 얹기)는 삭제했다
+  // (2026-09-12). 수령이 서버 경로라 **서버가 돌려준 세이브를 채택**하는 순간
+  // 로컬로 올려 둔 무료 2배 횟수가 날아가, 하루 1회 제한이 사실상 없었다.
+  // 2배는 이제 [claimGift] 한 곳에서 **서버가 판정하고 센다**.
 
   /// 이미 수령한 일일보상 [reward] 를 광고 보상으로 **한 번 더**(추가 1배) 지급.
   /// 점심/저녁 보상 "광고 보고 한 번 더 받기" 흐름용(로컬 전용 — 선물 보너스와 동일).

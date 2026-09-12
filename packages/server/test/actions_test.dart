@@ -1562,6 +1562,51 @@ void main() {
       expect(r.save!.gold, 1000 * cfg.gift!.adMultiplier);
     });
 
+    test('무료 2배는 하루 상한까지만 — 넘으면 조용히 1배', () {
+      // 서버가 안 세면 앱의 제한은 무의미하다. 실제로 매번 2배가 나갔다.
+      var s = SaveGame.initial(createdAt: t0).copyWith(
+        gifts: [
+          for (var i = 0; i < 3; i++)
+            GiftMail(
+              id: 'g$i',
+              expiry: t0.add(const Duration(hours: 1)),
+              gold: 1000,
+            ),
+        ],
+      );
+      final cap = cfg.gift!.freeDoubleDaily;
+      var expected = 0;
+      for (var i = 0; i < 3; i++) {
+        final r = actions.claimGift(s, 'g$i', doubled: true);
+        expect(r.isOk, isTrue);
+        final got = (r.save!.gold - expected);
+        expect(got, i < cap ? 1000 * cfg.gift!.adMultiplier : 1000);
+        expected = r.save!.gold;
+        s = r.save!;
+      }
+      expect(s.giftDoublesUsed(dailyDateKey(t0)), cap);
+    });
+
+    test('패스 보유자는 무제한 2배이고 무료 횟수를 쓰지 않는다', () {
+      var s = SaveGame.initial(createdAt: t0).copyWith(
+        passExpiresAt: t0.add(const Duration(days: 30)),
+        gifts: [
+          for (var i = 0; i < 3; i++)
+            GiftMail(
+              id: 'g$i',
+              expiry: t0.add(const Duration(hours: 1)),
+              gold: 1000,
+            ),
+        ],
+      );
+      for (var i = 0; i < 3; i++) {
+        final r = actions.claimGift(s, 'g$i', doubled: true);
+        s = r.save!;
+      }
+      expect(s.gold, 3 * 1000 * cfg.gift!.adMultiplier);
+      expect(s.giftDoublesUsed(dailyDateKey(t0)), 0);
+    });
+
     test('만료된 선물은 지급 안 함', () {
       final gift = GiftMail(
         id: 'g1',

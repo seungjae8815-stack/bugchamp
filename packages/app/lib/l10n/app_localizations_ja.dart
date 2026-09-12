@@ -373,7 +373,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get storeCanceled => '購入をキャンセルしました';
 
   @override
-  String get storePending => '決済を確認中です。完了すると自動で付与されます';
+  String get storePending =>
+      '決済を確認しています。確認できると自動で付与されます。数分待っても届かない場合はショップの「購入を復元」を押してください';
 
   @override
   String get storeUnavailable => 'この端末では課金を利用できません';
@@ -1391,13 +1392,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftAdMoreTitle => '本日の無料2倍！';
 
   @override
-  String get giftAdMoreBody => '同じ報酬をもう一度受け取れます。';
+  String get giftAdMoreBody => 'このプレゼントを2倍で受け取れます。';
 
   @override
-  String get giftAdMoreYes => 'もう一度受け取る';
+  String get giftAdMoreYes => '2倍で受け取る';
 
   @override
-  String get giftAdMoreLater => 'いいえ、結構です';
+  String get giftAdMoreLater => 'そのまま受け取る';
 
   @override
   String get notifLunchTitle => 'ランチ報酬が届きました 🍱';
