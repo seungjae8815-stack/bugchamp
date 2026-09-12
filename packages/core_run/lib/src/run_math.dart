@@ -245,6 +245,7 @@ double habitatThreat(
   int depth, {
   bool boss = false,
   double? playerToughness,
+  double? gearToughness,
   int tier = 0,
 }) {
   final base =
@@ -269,7 +270,26 @@ double habitatThreat(
   //   기준에 넣는 것   업그레이드·펫의 체력·방어 → 곡선을 따라가는 유지비
   //   기준 밖(순수 이득) 회복 · 장비(옷·바지) · 방어 스킬 · 버프
   // 회복은 애초에 이 식에 없으므로 올린 만큼 그대로 버틴다.
-  final threat = playerToughness * c.threatAdaptTargetPct;
+  // ── 후반 보정 ──
+  // 초반·중반은 이미 빠듯하거나 벽이다(시뮬 수지 -125 ~ -378%). 건드리면
+  // 신규가 먼저 죽는다. 그래서 보정은 **[threatAdaptDepthStart] 이후에만**
+  // 켜지고, 거기서부터 월드 단위로 서서히 붙는다.
+  final late = math.max(0.0, (depth - c.threatAdaptDepthStart) / 100);
+
+  // 장비 방어를 정해진 몫만 기준에 섞는다(0 이면 예전 동작 그대로).
+  // 섞는 것은 **초과분**뿐이다 — 장비를 뺀 영구 전력은 이미 기준에 있다.
+  var tough = playerToughness;
+  final share = c.threatEquipShare * math.min(1.0, late);
+  if (gearToughness != null && share > 0) {
+    final extra = gearToughness - playerToughness;
+    if (extra > 0) tough += extra * share;
+  }
+  // 깊이가 깊을수록 같은 전력이라도 더 아프다 — 기준 밖 전력(장비·도감·
+  // 종패시브)이 후반에 몰려 붙는 것을 여기서 되받는다.
+  final depthMult = c.threatAdaptDepthGain <= 0
+      ? 1.0
+      : math.min(c.threatAdaptDepthMax, 1 + c.threatAdaptDepthGain * late);
+  final threat = tough * c.threatAdaptTargetPct * depthMult;
   // 초반(전력이 미미할 때)에는 곡선 절대값이 더 크면 그쪽을 쓴다.
   return math.max(base, threat) * bossMult;
 }

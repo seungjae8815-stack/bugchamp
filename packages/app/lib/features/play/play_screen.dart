@@ -1006,11 +1006,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 회복은 이 식에 없으므로 올린 만큼 그대로 버틴다.
     final save = ref.read(saveControllerProvider).requireValue;
     final boss = _isBoss && !walking;
+    final perm = _petStats(save);
+    // 장비 방어는 **후반에만, 정해진 몫만** 기준에 섞인다(threatEquipShare).
+    // 안 섞으면 장비가 갖춰질수록 위협이 통째로 무의미해져서, 후반 한
+    // 스테이지 수지가 -20% 까지 떨어졌다(초반은 -178%). 버프·도감·종패시브는
+    // 여기 넣지 않는다 — 기준 밖이라는 원칙은 그대로다.
+    final geared = applyEquipment(
+      perm,
+      equipmentBonus(save.equippedItems.values, _data.itemConfig),
+    );
     final threat = habitatThreat(
       _config,
       _stage - 1,
       boss: boss,
-      playerToughness: toughnessOf(_petStats(save)),
+      playerToughness: toughnessOf(perm),
+      gearToughness: toughnessOf(geared),
       // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
       tier: save.difficultyTier,
     );

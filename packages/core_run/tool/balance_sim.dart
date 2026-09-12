@@ -761,7 +761,13 @@ class _Player {
           // 위협 기준은 **영구 전력**(버프 제외) — 앱과 같은 규칙.
           final tough = toughnessOf(_baseStats);
           final inc =
-              habitatThreat(config, s - 1, boss: true, playerToughness: tough) *
+              habitatThreat(
+                config,
+                s - 1,
+                boss: true,
+                playerToughness: tough,
+                gearToughness: toughnessOf(st),
+              ) *
               100 /
               (100 + st.defense);
           final net = inc - st.hpRegen;
@@ -787,7 +793,12 @@ class _Player {
           final walk = 0.6 / (st.moveSpeed <= 0 ? 1.0 : st.moveSpeed);
           final tough = toughnessOf(_baseStats);
           final inc =
-              habitatThreat(config, s - 1, playerToughness: tough) *
+              habitatThreat(
+                config,
+                s - 1,
+                playerToughness: tough,
+                gearToughness: toughnessOf(st),
+              ) *
               100 /
               (100 + st.defense);
           final bossHit = baselineHitPower(st, boss: true);
@@ -799,7 +810,13 @@ class _Player {
           final bossDps = bossHit * st.attackSpeed;
           final bossFight = bossDps <= 0 ? 0.0 : bossHp / bossDps;
           final bossInc =
-              habitatThreat(config, s - 1, boss: true, playerToughness: tough) *
+              habitatThreat(
+                config,
+                s - 1,
+                boss: true,
+                playerToughness: tough,
+                gearToughness: toughnessOf(st),
+              ) *
               100 /
               (100 + st.defense) *
               1.4; // 보스 한 대는 1.4배(앱과 동일)

@@ -163,6 +163,10 @@ class RunConfig {
     this.threatAdaptPower = 0.85,
     this.threatAdaptMinRatio = 0.5,
     this.threatAdaptMaxRatio = 1000,
+    this.threatAdaptDepthStart = 0,
+    this.threatAdaptDepthGain = 0,
+    this.threatAdaptDepthMax = 1,
+    this.threatEquipShare = 0,
     this.hpAdaptPower = 0,
     this.hpAdaptMinRatio = 0.5,
     this.hpAdaptMaxRatio = 1000,
@@ -259,6 +263,34 @@ class RunConfig {
   final double threatAdaptPower;
   final double threatAdaptMinRatio;
   final double threatAdaptMaxRatio;
+
+  /// 후반 보정이 **켜지기 시작하는 스테이지**(깊이).
+  ///
+  /// 초반·중반은 이미 빠듯하거나 벽이라(수지 -125 ~ -378%) 손대면 신규가 먼저
+  /// 죽는다. 문제는 **후반이 거꾸로 안전해지는 것**이므로 거기서만 켠다.
+  final double threatAdaptDepthStart;
+
+  /// 위협 비율이 **월드마다 얼마나 더 오르는가**(0 = 예전 동작, 전 구간 동일).
+  ///
+  /// [threatAdaptTargetPct] 를 전역으로 올리면 못 쓴다 — 전 구간에 곱해져
+  /// 이미 빡빡한 초반(스테이지 10~200)이 먼저 무너진다(0.006 → 0.0065 만으로
+  /// 신규 구간이 "너무 닳음"이 된 실측이 있다). 그래서 **깊이에만** 얹는다:
+  /// 초반은 그대로 두고 뒤로 갈수록 맞는 게 아파진다.
+  ///
+  /// 이유: 기준 밖 전력(장비·도감·종패시브·회복)이 후반에 몰려 붙어서,
+  /// 같은 비율이면 후반이 초반보다 훨씬 안전해진다(실측 수지 -178% → -20%).
+  final double threatAdaptDepthGain;
+
+  /// 위 증가분의 상한 배수. 무한히 두면 최종 월드에서 즉사한다.
+  final double threatAdaptDepthMax;
+
+  /// 위협 기준에 **장비 방어 전력을 얼마나 섞는가**(0 = 안 섞음).
+  ///
+  /// 장비는 원래 기준 밖이다 — 좋은 걸 껴도 몬스터가 같이 세지면 모으는 맛이
+  /// 사라지기 때문이다(`_stats` 주석). 다만 0 으로 두면 장비가 쌓일수록
+  /// 위협이 통째로 무의미해져서, **절반만** 섞어 둘을 절충한다.
+  /// 껴서 얻는 이득은 남고(섞은 뒤에도 순이득), 무적은 막는다.
+  final double threatEquipShare;
 
   // ── 적응형 체력(§7, 2026-08) ──
   // 공격은 업그레이드 레벨당 x1.15, 체력은 스테이지당 x1.015 로 자라 공격이
@@ -545,6 +577,13 @@ class RunConfig {
           (json['threatAdaptMinRatio'] as num?)?.toDouble() ?? 0.5,
       threatAdaptMaxRatio:
           (json['threatAdaptMaxRatio'] as num?)?.toDouble() ?? 1000,
+      threatAdaptDepthStart:
+          (json['threatAdaptDepthStart'] as num?)?.toDouble() ?? 0,
+      threatAdaptDepthGain:
+          (json['threatAdaptDepthGain'] as num?)?.toDouble() ?? 0,
+      threatAdaptDepthMax:
+          (json['threatAdaptDepthMax'] as num?)?.toDouble() ?? 1,
+      threatEquipShare: (json['threatEquipShare'] as num?)?.toDouble() ?? 0,
       hpAdaptTargetHits: (json['hpAdaptTargetHits'] as num?)?.toDouble() ?? 0,
       hpAdaptPower: (json['hpAdaptPower'] as num?)?.toDouble() ?? 0,
       hpAdaptMinRatio: (json['hpAdaptMinRatio'] as num?)?.toDouble() ?? 0.5,

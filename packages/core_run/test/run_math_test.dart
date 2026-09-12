@@ -48,6 +48,7 @@ Map<String, dynamic> _baseJson() => {
 RunConfig _config() => RunConfig.fromJson(_baseJson());
 
 void main() {
+  _lateThreatTests();
   final c = _config();
 
   group('HP 스케일링', () {
@@ -774,6 +775,59 @@ void main() {
       final before = 1 + s.critChance * (s.critDamage - 1);
       final after = 1 + capped.critChance * (capped.critDamage - 1);
       expect(after, closeTo(before, 1e-9));
+    });
+  });
+}
+
+void _lateThreatTests() {
+  // 후반 보정(2026-09-12): 기준 밖 전력(장비·도감)이 후반에 몰려 붙어
+  // 한 스테이지 수지가 초반 -178%, 후반 -20% 로 **거꾸로** 였다.
+  group('후반 위협 보정', () {
+    final c = RunConfig.fromJson({
+      ..._baseJson(),
+      // 곡선 절대값(바닥)을 눕혀 둔다 — 적응형 몫만 재기 위해서다.
+      'threatBase': 0.0001,
+      'threatGrowth': 1.0,
+      'worldHpMult': 1.0,
+      'threatAdaptTargetPct': 0.006,
+      'threatAdaptDepthStart': 400,
+      'threatAdaptDepthGain': 0.15,
+      'threatAdaptDepthMax': 2.5,
+      'threatEquipShare': 0.5,
+    });
+
+    test('시작 스테이지 전에는 예전과 똑같다', () {
+      final before = habitatThreat(
+        c,
+        200,
+        playerToughness: 1e6,
+        gearToughness: 3e6,
+      );
+      expect(before, habitatThreat(c, 200, playerToughness: 1e6));
+    });
+
+    test('깊어질수록 같은 전력이라도 더 아프다', () {
+      final at500 = habitatThreat(c, 500, playerToughness: 1e6);
+      final at900 = habitatThreat(c, 900, playerToughness: 1e6);
+      expect(at900, greaterThan(at500));
+    });
+
+    test('장비는 후반에만, 절반만 기준에 섞인다', () {
+      final bare = habitatThreat(c, 900, playerToughness: 1e6);
+      final geared = habitatThreat(
+        c,
+        900,
+        playerToughness: 1e6,
+        gearToughness: 3e6,
+      );
+      // 초과분 2e6 의 절반이 섞이므로 기준은 2e6 = 맨몸의 2배.
+      expect(geared / bare, closeTo(2.0, 0.001));
+    });
+
+    test('상한을 넘겨 무한히 세지지 않는다', () {
+      final deep = habitatThreat(c, 100000, playerToughness: 1e6);
+      final capped = habitatThreat(c, 200000, playerToughness: 1e6);
+      expect(deep, capped);
     });
   });
 }
