@@ -171,6 +171,10 @@ Color _statColor(UpgradeKind k) {
 
 /// 상한에 닿은 축은 화살표 없이 현재값만 — `→` 뒤에 같은 값을 쓰면 "왜 안
 /// 오르지"로 읽힌다.
+/// 초당 회복량 표기. 1000 미만은 소수 둘째 자리까지(초반엔 0.05 차이가
+/// 업그레이드의 전부다), 그 위로는 단위 표기(후반엔 자릿수가 계속 는다).
+String _rate(double v) => v < 1000 ? v.toStringAsFixed(2) : formatCompact(v);
+
 String _valueSingle(UpgradeKind k, double cur) {
   switch (k) {
     // 채집력·체력·방어는 자릿수가 계속 늘어난다 — 후반엔 열 자리가 넘어
@@ -180,8 +184,9 @@ String _valueSingle(UpgradeKind k, double cur) {
     case UpgradeKind.defense:
       return formatCompact(cur);
     case UpgradeKind.attackSpeed:
-    case UpgradeKind.regen:
       return '${cur.toStringAsFixed(2)}/s';
+    case UpgradeKind.regen:
+      return '${_rate(cur)}/s';
     case UpgradeKind.crit:
       return '${(cur * 100).toStringAsFixed(0)}%';
     default:
@@ -196,8 +201,9 @@ String _valuePair(UpgradeKind k, double cur, double next) {
     case UpgradeKind.defense:
       return '${formatCompact(cur)} → ${formatCompact(next)}';
     case UpgradeKind.attackSpeed:
-    case UpgradeKind.regen:
       return '${cur.toStringAsFixed(2)}/s → ${next.toStringAsFixed(2)}/s';
+    case UpgradeKind.regen:
+      return '${_rate(cur)}/s → ${_rate(next)}/s';
     case UpgradeKind.crit:
       return '${(cur * 100).toStringAsFixed(0)}% → ${(next * 100).toStringAsFixed(0)}%';
     default:
