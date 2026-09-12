@@ -173,10 +173,12 @@ Color _statColor(UpgradeKind k) {
 /// 오르지"로 읽힌다.
 String _valueSingle(UpgradeKind k, double cur) {
   switch (k) {
+    // 채집력·체력·방어는 자릿수가 계속 늘어난다 — 후반엔 열 자리가 넘어
+    // 칸을 밀어내고 읽을 수도 없다. 다른 화면과 같은 단위 표기를 쓴다.
     case UpgradeKind.attack:
     case UpgradeKind.maxHp:
     case UpgradeKind.defense:
-      return cur.toStringAsFixed(0);
+      return formatCompact(cur);
     case UpgradeKind.attackSpeed:
     case UpgradeKind.regen:
       return '${cur.toStringAsFixed(2)}/s';
@@ -192,7 +194,7 @@ String _valuePair(UpgradeKind k, double cur, double next) {
     case UpgradeKind.attack:
     case UpgradeKind.maxHp:
     case UpgradeKind.defense:
-      return '${cur.toStringAsFixed(0)} → ${next.toStringAsFixed(0)}';
+      return '${formatCompact(cur)} → ${formatCompact(next)}';
     case UpgradeKind.attackSpeed:
     case UpgradeKind.regen:
       return '${cur.toStringAsFixed(2)}/s → ${next.toStringAsFixed(2)}/s';
@@ -5695,11 +5697,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final base = _petStats(save);
     final rows = <(String, String)>[
       (l.statCombatPower, formatCompact(combatPower(base))),
-      (l.statAttack, base.attack.toStringAsFixed(0)),
+      (l.statAttack, formatCompact(base.attack)),
       (l.statAttackSpeed, '${base.attackSpeed.toStringAsFixed(2)}/s'),
       (l.statCrit, '${(base.critChance * 100).toStringAsFixed(0)}%'),
       (l.statMaxHp, formatCompact(base.maxHp)),
-      (l.statDefense, base.defense.toStringAsFixed(0)),
+      (l.statDefense, formatCompact(base.defense)),
     ];
     showDialog<void>(
       context: context,
