@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../domain/audio_service.dart';
+import '../domain/iap_service.dart';
 import '../domain/notification_service.dart';
 import '../domain/notify_prefs.dart';
 import '../data/save_repository.dart';
@@ -62,6 +63,10 @@ class _AppShellState extends ConsumerState<AppShell>
       //    여기로 되돌리지 말 것 — 게임 화면 위에 차단 다이얼로그가 얹히고,
       //    동기화 전에 닉네임을 묻는 경합이 다시 생긴다.
       _uploader.start();
+      // 지난 실행에서 검증이 멈춘 결제를 되살린다. 상점을 열어야만 결제
+      // 서비스가 만들어지던 구조라, 여기서 부르는 것이 **구매 스트림 구독의
+      // 유일한 보장**이기도 하다(앱을 끈 사이 끝난 결제를 놓치지 않는다).
+      unawaited(ref.read(iapServiceProvider).recoverPending());
       unawaited(showRankPopupOnStart(context, ref));
     });
   }
@@ -149,6 +154,8 @@ class _AppShellState extends ConsumerState<AppShell>
       // reconnect 는 변경 감지를 무력화해 반드시 한 번 올려본다 —
       // flush 만 부르면 세이브가 안 변했을 때 서버에 닿지 않아 확인이 안 된다.
       unawaited(_uploader.reconnect());
+      // 백그라운드에서 끝난 결제·보류된 결제를 복귀 즉시 다시 본다.
+      unawaited(ref.read(iapServiceProvider).recoverPending());
       // 백그라운드에 오래 두면 그 사이 강제 업데이트·점검이 걸릴 수 있다.
       // 앱을 껐다 켜지 않는 한 게이트를 **다시 보지 않아서**, 차단된 버전으로
       // 계속 노는 상태가 됐다(2026-09-01 지적).

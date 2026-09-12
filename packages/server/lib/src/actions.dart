@@ -66,7 +66,32 @@ class GameActions {
       return ActionResult.ok(save, extra: {'alreadyGranted': true});
     }
     if (product.type == IapType.starter && save.starterBought) {
-      return const ActionResult.fail('already_owned');
+      // ⚠️ **운영 지급이 먼저 나간 뒤 진짜 결제가 들어오는 경우**가 있다.
+      // "샀는데 안 들어왔다" 문의를 /admin/grant 로 먼저 막아 두면, 나중에
+      // 검증이 고쳐져 같은 영수증이 흘러올 때 여기서 실패가 난다.
+      // 실패로 돌려주면 앱이 스토어에 완료 통보를 못 하고, 승인되지 않은
+      // 주문을 구글이 **3일 뒤 자동 환불**한다 — 물건은 이미 나갔는데 돈만
+      // 돌아간다(2026-09-11 실제 사고).
+      //
+      // 그래서 **운영 지급으로 이미 받은 상품**에 한해 성공(멱등)으로
+      // 돌려준다. 새로 주는 것은 없고, 앱이 주문을 승인할 수 있게만 한다.
+      // 운영 지급 자신(`admin:`)은 예외에서 뺀다 — 스타터 계정당 1회 규칙이
+      // 거기서 뚫리면 결제한 사람과 형평이 깨지고, 패널은 아무 일도 일어나지
+      // 않은 지급을 "완료"로 보여 주게 된다.
+      final grantedByAdmin = save.redeemedPurchases.any(
+        (id) =>
+            id.startsWith('admin:') &&
+            id.split(':').skip(1).contains(productId),
+      );
+      if (purchaseId.startsWith('admin:') || !grantedByAdmin) {
+        return const ActionResult.fail('already_owned');
+      }
+      return ActionResult.ok(
+        save.copyWith(
+          redeemedPurchases: {...save.redeemedPurchases, purchaseId},
+        ),
+        extra: {'alreadyGranted': true},
+      );
     }
 
     final t = now().toUtc();

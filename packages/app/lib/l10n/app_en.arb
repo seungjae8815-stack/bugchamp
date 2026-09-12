@@ -206,7 +206,7 @@
   },
   "storeFailed": "Purchase failed",
   "storeCanceled": "Purchase canceled",
-  "storePending": "Confirming payment. It'll be granted automatically once it completes",
+  "storePending": "Confirming your payment. It will be granted automatically. If it hasn't arrived in a few minutes, tap Restore purchases in the shop",
   "storeUnavailable": "In-app purchases aren't available on this device",
   "storeNotRegistered": "This item isn't on sale yet",
   "storeDevMode": "Dev mode — no real payment; items are granted immediately",

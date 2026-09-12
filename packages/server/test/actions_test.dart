@@ -203,6 +203,43 @@ void main() {
       expect(second.error, 'already_owned');
     });
 
+    test('운영 지급 뒤 들어온 진짜 결제는 성공으로 받는다(자동 환불 방지)', () {
+      // 실패로 돌려주면 앱이 스토어에 완료 통보를 못 해, 승인 안 된 주문을
+      // 구글이 3일 뒤 자동 환불한다 — 물건은 나갔는데 돈만 돌아간다.
+      final granted = actions.grantPurchase(
+        base,
+        productId: 'starter_pack',
+        purchaseId: 'admin:starter_pack:9-11 미지급건',
+      );
+      expect(granted.save!.starterBought, isTrue);
+
+      final real = actions.grantPurchase(
+        granted.save!,
+        productId: 'starter_pack',
+        purchaseId: 'GPA-REAL',
+      );
+      expect(real.isOk, isTrue);
+      expect(real.extra['alreadyGranted'], isTrue);
+      // 새로 주는 것은 없다 — 승인만 되게 한다.
+      expect(real.save!.gold, granted.save!.gold);
+      expect(real.save!.redeemedPurchases, contains('GPA-REAL'));
+    });
+
+    test('운영 지급은 두 번 나가지 않는다(계정당 1회 유지)', () {
+      final granted = actions.grantPurchase(
+        base,
+        productId: 'starter_pack',
+        purchaseId: 'admin:starter_pack:1차',
+      );
+      final again = actions.grantPurchase(
+        granted.save!,
+        productId: 'starter_pack',
+        purchaseId: 'admin:starter_pack:2차',
+      );
+      expect(again.isOk, isFalse);
+      expect(again.error, 'already_owned');
+    });
+
     test('패스는 남은 기간에 이어서 연장된다', () {
       final first = actions.grantPurchase(
         base,

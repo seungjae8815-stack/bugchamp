@@ -47,6 +47,12 @@ abstract interface class IapService {
   /// 비소모성(광고제거·스킨·스타터) 구매 복원. 스토어 심사 필수 항목.
   Future<void> restore();
 
+  /// **검증 보류로 멈춰 있는 결제를 다시 시도한다.** 앱 시작·포그라운드 복귀에서 부른다.
+  ///
+  /// 유저가 상점의 "구매 복원"을 직접 누를 때까지 기다리면 안 된다 —
+  /// 승인되지 않은 주문은 구글이 72시간 뒤 자동 환불한다(§결제 사고 2026-09-11).
+  Future<void> recoverPending();
+
   /// 스트림 구독 해제 등 정리.
   void dispose();
 }
@@ -78,6 +84,10 @@ class LocalIapService implements IapService {
   /// 로컬은 스토어 이력이 없어 복원할 것이 없다.
   @override
   Future<void> restore() async {}
+
+  /// 로컬은 스토어 큐가 없다 — 보류될 결제 자체가 없다.
+  @override
+  Future<void> recoverPending() async {}
 
   @override
   void dispose() {}

@@ -120,7 +120,7 @@
   "storeBought": "{name} を購入しました！",
   "storeFailed": "購入できませんでした",
   "storeCanceled": "購入をキャンセルしました",
-  "storePending": "決済を確認中です。完了すると自動で付与されます",
+  "storePending": "決済を確認しています。確認できると自動で付与されます。数分待っても届かない場合はショップの「購入を復元」を押してください",
   "storeUnavailable": "この端末では課金を利用できません",
   "storeNotRegistered": "まだ販売準備中の商品です",
   "storeDevMode": "開発モード — 実際の決済ではなく、すぐに付与されます",

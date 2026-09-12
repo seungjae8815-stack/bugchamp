@@ -21,9 +21,11 @@ import 'save_controller.dart';
 /// UI 가 `await buy()` 로 결과를 받을 수 있게, 상품별 [Completer] 를 걸어두고
 /// 스트림이 결착될 때 완료시킨다.
 ///
-/// ⚠️ **영수증 서버 검증은 아직 없다.** 루팅 기기에서 결제를 위조할 수 있으므로,
-/// 실제 매출이 발생하기 전에 서버 검증(구글 Play Developer API)을 붙여야 한다.
+/// 영수증은 **서버에서 검증한 뒤에만** 지급한다(Edge Function `verify-purchase`).
 /// 자세한 내용은 `docs/monetization.md` §6.
+///
+/// ⚠️ 안드로이드는 미완료 구매를 **앱 시작 시 자동으로 다시 주지 않는다.**
+/// `restorePurchases()` 를 불러야 큐가 다시 흐른다 — [recoverPending] 참고.
 class StoreIapService implements IapService {
   StoreIapService(this._ref, {InAppPurchase? store})
     : _store = store ?? InAppPurchase.instance;
@@ -36,10 +38,34 @@ class StoreIapService implements IapService {
   /// 진행 중인 구매의 결과를 UI 로 돌려주기 위한 대기표(상품 id → 완료자).
   final _pending = <String, Completer<PurchaseOutcome>>{};
 
+  /// 대기표를 만든 시각. 결제창이 닫혔는데 스토어가 알려 주지 않은 대기표를
+  /// 걸러내는 데 쓴다([buy] 참고).
+  final _pendingSince = <String, DateTime>{};
+
+  /// 이 시간이 지난 뒤 같은 상품을 다시 누르면 **새 결제창**으로 본다.
+  static const _retapGrace = Duration(seconds: 3);
+
   /// 스토어에서 조회한 상품 상세(현지 가격 표시용). 상품 id → 상세.
   final _details = <String, ProductDetails>{};
 
   bool _available = false;
+
+  /// 마지막으로 보류 결제를 훑은 시각(과한 재조회 방지).
+  DateTime? _lastSweep;
+
+  /// 검증 보류 뒤 예약해 둔 재시도. 한 번에 하나만 돈다.
+  Timer? _retryTimer;
+  int _retryCount = 0;
+
+  /// 스토어 큐를 **손으로 다시 흘려야 하는** 플랫폼인가.
+  ///
+  /// 안드로이드의 `in_app_purchase_android` 는 `restorePurchases()` 가
+  /// `queryPurchases` 를 부를 때만 미완료 구매를 스트림에 다시 넣는다.
+  /// iOS(StoreKit)는 결제 큐가 앱 시작 시 미완료 거래를 스스로 다시 준다 —
+  /// 게다가 여기서 복원을 부르면 **Apple ID 로그인 창**이 뜰 수 있으므로
+  /// 부르지 않는다.
+  bool get _needsManualSweep =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   @override
   bool get isStore => true;
@@ -58,7 +84,10 @@ class StoreIapService implements IapService {
       debugPrint('[iap] 스토어를 사용할 수 없음(미지원 기기이거나 플레이 서비스 없음)');
       return;
     }
-    await _loadDetails();
+    // 상품 상세는 한 번만 받는다 — init 은 복귀마다 불릴 수 있다.
+    if (_details.isEmpty) await _loadDetails();
+    // 지난 실행에서 검증이 보류된 결제를 여기서 되살린다.
+    await _sweep();
   }
 
   /// `iap.json` 의 상품 id 로 스토어 상세를 조회한다.
@@ -107,12 +136,27 @@ class StoreIapService implements IapService {
     final details = _details[storeId];
     if (details == null) return PurchaseOutcome.notInStore;
 
-    // 같은 상품을 두 번 누르면 앞선 대기표를 그대로 쓴다.
+    // 같은 상품을 두 번 누르면 앞선 대기표를 그대로 쓴다 — 결제창이 **떠 있는
+    // 동안**의 연타를 막기 위해서다.
+    //
+    // ⚠️ 다만 결제창을 닫았는데 스토어가 취소를 안 알려 주는 경우가 있다.
+    // 그러면 대기표가 남아, 다시 눌러도 **아무 일도 일어나지 않는다**(옛 코드는
+    // 5분짜리 대기표를 그대로 돌려줬다 — 2026-09-12 실기). 다시 눌렀다는 것
+    // 자체가 앞선 결제창이 닫혔다는 신호이므로, 잠깐이라도 지났으면 앞선
+    // 대기표를 접고 새로 연다. 스토어가 뒤늦게 결과를 보내와도 지급은
+    // 스트림 한 곳에서 처리되므로 유실되지 않는다.
     final existing = _pending[storeId];
-    if (existing != null) return existing.future;
+    if (existing != null) {
+      final since = _pendingSince[storeId];
+      final stale =
+          since == null || DateTime.now().difference(since) > _retapGrace;
+      if (!stale) return existing.future;
+      _finish(storeId, PurchaseOutcome.pending);
+    }
 
     final completer = Completer<PurchaseOutcome>();
     _pending[storeId] = completer;
+    _pendingSince[storeId] = DateTime.now();
 
     final param = PurchaseParam(productDetails: details);
     try {
@@ -128,11 +172,13 @@ class StoreIapService implements IapService {
           : await _store.buyNonConsumable(purchaseParam: param);
       if (!started) {
         _pending.remove(storeId);
+        _pendingSince.remove(storeId);
         return PurchaseOutcome.failed;
       }
     } catch (e) {
       debugPrint('[iap] buy 실패: $e');
       _pending.remove(storeId);
+      _pendingSince.remove(storeId);
       return PurchaseOutcome.failed;
     }
 
@@ -142,6 +188,7 @@ class StoreIapService implements IapService {
       const Duration(minutes: 5),
       onTimeout: () {
         _pending.remove(storeId);
+        _pendingSince.remove(storeId);
         return PurchaseOutcome.pending;
       },
     );
@@ -152,6 +199,61 @@ class StoreIapService implements IapService {
     if (!_available) return;
     // 복원된 구매도 스트림으로 흘러와 _onPurchases 에서 지급된다.
     await _store.restorePurchases();
+  }
+
+  /// 앱 시작·포그라운드 복귀에서 부른다. 스토어 연결까지 여기서 끝낸다 —
+  /// 상점 화면을 한 번도 열지 않으면 서비스 자체가 만들어지지 않아
+  /// **구매 스트림 구독조차 없었다**(앱을 끈 사이 끝난 결제를 놓치는 원인).
+  @override
+  Future<void> recoverPending() async {
+    await init();
+    await _sweep();
+  }
+
+  /// 보류된 결제를 스토어 큐에서 다시 흘린다(안드로이드 전용).
+  ///
+  /// ⚠️ 2026-09-11 실제 사고의 자리다. 검증 보류(unknown)로 멈춘 결제는
+  /// 유저가 상점의 "구매 복원"을 손으로 누르기 전까지 영영 멈춰 있었고,
+  /// 승인되지 않은 주문은 구글이 **72시간 뒤 자동 환불**한다.
+  /// 돈은 빠져나갔는데 물건도 없고 매출도 없는 최악의 상태가 된다.
+  Future<void> _sweep({bool force = false}) async {
+    if (!_available || !_needsManualSweep) return;
+    final now = DateTime.now();
+    if (!force &&
+        _lastSweep != null &&
+        now.difference(_lastSweep!) < _sweepGap) {
+      return;
+    }
+    _lastSweep = now;
+    try {
+      await _store.restorePurchases();
+    } catch (e) {
+      debugPrint('[iap] 보류 결제 재조회 실패: $e');
+    }
+  }
+
+  /// 복귀할 때마다 스토어를 두드리지 않도록 두는 최소 간격.
+  static const _sweepGap = Duration(minutes: 2);
+
+  /// 검증 보류 뒤 같은 실행 안에서 다시 시도한다.
+  ///
+  /// 보류 사유는 대개 **일시적**이다(전파 지연으로 구글이 아직 "보류"라고
+  /// 답하거나, 네트워크가 잠깐 끊겼거나). 다음 실행까지 미루면 그 사이
+  /// 자동 환불 시한이 지나간다. 간격을 늘려 가며 세 번만 해 본다 —
+  /// 그래도 안 되면 복귀·재시작의 [_sweep] 이 이어받는다.
+  void _scheduleRetry() {
+    if (!_needsManualSweep || _retryTimer != null) return;
+    const delays = [
+      Duration(seconds: 20),
+      Duration(minutes: 1),
+      Duration(minutes: 3),
+    ];
+    if (_retryCount >= delays.length) return;
+    final delay = delays[_retryCount++];
+    _retryTimer = Timer(delay, () {
+      _retryTimer = null;
+      unawaited(_sweep(force: true));
+    });
   }
 
   /// 구매 스트림 처리 — **지급은 오직 여기서만** 일어난다.
@@ -174,13 +276,19 @@ class StoreIapService implements IapService {
               _finish(p.productID, PurchaseOutcome.failed);
 
             case VerifyResult.unknown:
-              // 판정 불가(네트워크·서버 점검). 지급도 완료통보도 하지 않는다 →
-              // 다음 실행에 스토어가 다시 전달해 재시도된다.
-              // 정상 구매자가 오프라인이라는 이유로 손해 보지 않게 하는 쪽을 택한다.
+              // 판정 불가(네트워크·서버 점검·전파 지연). 지급도 완료통보도 하지
+              // 않는다 — 정상 구매자가 오프라인이라는 이유로 손해 보지 않게 한다.
+              //
+              // ⚠️ 안드로이드는 **스토어가 알아서 다시 전달하지 않는다.**
+              // `restorePurchases()` 를 불러야 큐가 다시 흐른다. 그래서 여기서
+              // 재시도를 직접 예약한다(안 하면 승인 안 된 주문이 72시간 뒤
+              // 자동 환불된다 — 2026-09-11 사고).
               _finish(p.productID, PurchaseOutcome.pending);
+              _scheduleRetry();
 
             case VerifyResult.valid:
               final granted = await _grant(p);
+              if (granted) _retryCount = 0;
               // 지급에 실패했으면 완료 통보하지 않는다 — 그래야 스토어가 다시 전달해
               // 다음 기회에 지급할 수 있다(돈만 받고 물건 안 주는 상황 방지).
               if (granted && p.pendingCompletePurchase) {
@@ -304,12 +412,15 @@ class StoreIapService implements IapService {
   }
 
   void _finish(String productId, PurchaseOutcome outcome) {
+    _pendingSince.remove(productId);
     final c = _pending.remove(productId);
     if (c != null && !c.isCompleted) c.complete(outcome);
   }
 
   @override
   void dispose() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
     _sub?.cancel();
     _sub = null;
   }
