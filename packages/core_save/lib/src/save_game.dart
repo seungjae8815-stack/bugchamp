@@ -451,6 +451,7 @@ class SaveGame {
     required this.level,
     required this.upgradeLevels,
     required this.stageNumber,
+    this.bestStage = 0,
     required this.nickname,
     required this.buffExpiry,
     required this.missionProgress,
@@ -566,6 +567,16 @@ class SaveGame {
 
   /// 현재 도달 스테이지 (지역1 기준 1-based).
   final int stageNumber;
+
+  /// **역대 최고 도달 스테이지**. 내려가도 줄지 않는다.
+  ///
+  /// 랭킹·로드맵 해금이 보는 값이다(2026-09-14). 예전엔 [stageNumber] 하나로
+  /// 둘 다 했는데, 로드맵에서 아래 사냥터로 내려가면 그 값이 함께 내려가
+  /// **랭킹 진행도까지 같이 떨어졌다**. 사냥은 지금 있는 곳에서 하고,
+  /// 기록은 가장 멀리 간 곳에 남아야 한다.
+  ///
+  /// 0 이면 옛 세이브다 — 읽을 때 [stageNumber] 로 채운다.
+  final int bestStage;
 
   /// 플레이어 표시 이름.
   final String nickname;
@@ -1124,6 +1135,7 @@ class SaveGame {
     int? level,
     Map<UpgradeKind, int>? upgradeLevels,
     int? stageNumber,
+    int? bestStage,
     String? nickname,
     bool? nicknameSet,
     Map<BuffKind, DateTime>? buffExpiry,
@@ -1207,6 +1219,7 @@ class SaveGame {
     level: level ?? this.level,
     upgradeLevels: upgradeLevels ?? this.upgradeLevels,
     stageNumber: stageNumber ?? this.stageNumber,
+    bestStage: bestStage ?? this.bestStage,
     nickname: nickname ?? this.nickname,
     nicknameSet: nicknameSet ?? this.nicknameSet,
     buffExpiry: buffExpiry ?? this.buffExpiry,
@@ -1350,6 +1363,10 @@ class SaveGame {
       (k) => UpgradeKind.fromKeyOrNull(k) != null,
     ),
     stageNumber: (json['stageNumber'] as num).toInt(),
+    // 옛 세이브엔 없다 — 그때는 stageNumber 가 곧 최고 기록이었다.
+    bestStage:
+        (json['bestStage'] as num?)?.toInt() ??
+        (json['stageNumber'] as num).toInt(),
     nickname: json['nickname'] as String? ?? kDefaultNickname,
     // 신규 필드 — 기존 세이브가 커스텀 닉네임이면 확정으로 간주(재입력 방지).
     nicknameSet:
@@ -1528,6 +1545,9 @@ class SaveGame {
       ...unknownUpgrades,
     },
     'stageNumber': stageNumber,
+    // 지금 자리보다 멀리 간 적이 있을 때만 적는다 — 같으면 stageNumber 가
+    // 곧 최고 기록이라 키를 늘릴 이유가 없다(세이브 크기·왕복 동일성).
+    if (bestStage > stageNumber) 'bestStage': bestStage,
     'nickname': nickname,
     'nicknameSet': nicknameSet,
     'buffExpiry': {

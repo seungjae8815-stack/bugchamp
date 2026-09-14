@@ -3727,7 +3727,7 @@ abstract class AppLocalizations {
   /// No description provided for @tierNextBody.
   ///
   /// In en, this message translates to:
-  /// **'Stage, level and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all stay.\nYour level ranking keeps your best record.\nMonsters become far more powerful.'**
+  /// **'Stage, level, stat upgrades,\ngold and materials reset to the beginning.\n\nBugs, gear, the field guide and jelly\nall stay with you.\n\nYour level ranking keeps its best record.\nMonsters get far stronger.'**
   String get tierNextBody;
 
   /// No description provided for @tierNextGo.
@@ -5535,6 +5535,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can send another one in a moment.'**
   String get supportTooFast;
+
+  /// No description provided for @zoneConquered.
+  ///
+  /// In en, this message translates to:
+  /// **'Conquered'**
+  String get zoneConquered;
+
+  /// No description provided for @zoneHere.
+  ///
+  /// In en, this message translates to:
+  /// **'You are here'**
+  String get zoneHere;
+
+  /// No description provided for @zoneLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get zoneLocked;
 }
 
 class _AppLocalizationsDelegate

@@ -201,6 +201,7 @@ class RunConfig {
     this.enemyFirstBiteDelay = 0,
     this.enemyFollowBiteMult = 1.0,
     this.enemyAtkInterval = 1.5,
+    this.petBiteShare = 0.25,
     this.bossAtkInterval = 1.3,
     this.bossHitMult = 1.4,
     this.offlineEfficiency = 0.3,
@@ -433,6 +434,14 @@ class RunConfig {
   /// 1.5초마다 1~2% 씩 빼면 가랑비라 아무 긴장이 없다. 3초에 15~20% 면
   /// 한 대가 보이고, 죽여서 되찾는 리듬이 생긴다.
   final double enemyAtkInterval;
+
+  /// 몬스터 한 대를 곤충이 **함께** 받는 몫(캐릭터 몫을 빼앗지 않는다).
+  ///
+  /// 캐릭터가 한 대를 전부 받는 것이 기준이다 — 위협도가 캐릭터 맷집으로
+  /// 계산되므로, 곤충과 나눠 받으면 시뮬이 말하는 "한 대 12%"가 게임에서는
+  /// 4% 가 된다. 이 값은 곤충 체력바가 움직이고 부활 타이머가 살아 있게 하는
+  /// **연출 몫**이라 캐릭터의 생존에는 영향이 없다.
+  final double petBiteShare;
   final double bossAtkInterval;
 
   /// 보스 한 대의 배율(같은 DPS 에서 뭉치는 정도).
@@ -765,6 +774,7 @@ class RunConfig {
       enemyFollowBiteMult:
           (json['enemyFollowBiteMult'] as num?)?.toDouble() ?? 1.0,
       enemyAtkInterval: (json['enemyAtkInterval'] as num?)?.toDouble() ?? 1.5,
+      petBiteShare: (json['petBiteShare'] as num?)?.toDouble() ?? 0.25,
       bossAtkInterval: (json['bossAtkInterval'] as num?)?.toDouble() ?? 1.3,
       bossHitMult: (json['bossHitMult'] as num?)?.toDouble() ?? 1.4,
       offlineEfficiency: (json['offlineEfficiency'] as num?)?.toDouble() ?? 0.3,

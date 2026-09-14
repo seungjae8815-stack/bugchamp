@@ -81,12 +81,38 @@ class RoadmapChapter {
   }
 }
 
+/// 보스 한 마리의 이름·설명. 키는 **보스 아트 id**(`RunConfig.bossArtId`)라
+/// 그림과 글이 언제나 같은 보스를 가리킨다.
+@immutable
+class BossInfo {
+  const BossInfo({required this.name, required this.desc});
+
+  final LocalizedText name;
+  final LocalizedText desc;
+
+  factory BossInfo.fromJson(Map<String, dynamic> json) => BossInfo(
+    name: LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
+    desc: LocalizedText.fromJson(
+      (json['desc'] as Map<String, dynamic>?) ?? const {'ko': ''},
+    ),
+  );
+}
+
 /// 로드맵 전체 설정 (assets/data/roadmap.json).
 @immutable
 class RoadmapConfig {
-  const RoadmapConfig({required this.chapters, this.nodeStep = 10});
+  const RoadmapConfig({
+    required this.chapters,
+    this.nodeStep = 10,
+    this.bosses = const {},
+  });
 
   final List<RoadmapChapter> chapters;
+
+  /// 보스 아트 id → 이름·설명(44마리). 비어 있으면 화면이 챕터 이름으로 폴백한다.
+  final Map<String, BossInfo> bosses;
+
+  BossInfo? boss(String artId) => bosses[artId];
 
   /// 로드맵에 칸(징검다리 노드)을 하나 찍는 간격(스테이지).
   ///
@@ -133,5 +159,11 @@ class RoadmapConfig {
         .map(RoadmapChapter.fromJson)
         .toList(),
     nodeStep: (json['nodeStep'] as num?)?.toInt() ?? 10,
+    bosses: {
+      for (final e in ((json['bosses'] as Map?) ?? const {}).entries)
+        e.key as String: BossInfo.fromJson(
+          (e.value as Map).cast<String, dynamic>(),
+        ),
+    },
   );
 }

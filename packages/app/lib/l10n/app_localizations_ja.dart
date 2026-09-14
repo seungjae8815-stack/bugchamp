@@ -2051,7 +2051,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'ステージ・レベル・能力強化が最初に戻ります。\n虫・装備・図鑑・通貨はそのまま残ります。\nレベルランキングは自己ベストが維持されます。\n敵がさらに強力になります。';
+      'ステージ・レベル・能力強化・\nゴールド・素材が最初に戻ります。\n\n昆虫・装備・図鑑・ゼリーは\nそのまま残ります。\n\nレベルランキングは最高記録を保ちます。\nモンスターははるかに強くなります。';
 
   @override
   String get tierNextGo => '進む';
@@ -3049,4 +3049,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get supportTooFast => '少し経ってからもう一度送れます。';
+
+  @override
+  String get zoneConquered => '制圧済み';
+
+  @override
+  String get zoneHere => '現在地';
+
+  @override
+  String get zoneLocked => 'ロック';
 }

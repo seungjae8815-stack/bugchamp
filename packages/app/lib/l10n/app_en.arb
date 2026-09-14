@@ -435,14 +435,35 @@
   "rewardGained": "Rewards",
   "bossLabel": "BOSS",
   "zoneLabel": "Hunting Ground {n}",
-  "@zoneLabel": {"placeholders": {"n": {"type": "int"}}},
+  "@zoneLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "zoneFinalLabel": "Final Ground",
   "bossChallenge": "Challenge Boss",
   "bossChallengeLocked": "{n} more kills to challenge",
-  "@bossChallengeLocked": {"placeholders": {"n": {"type": "int"}}},
+  "@bossChallengeLocked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "bossChallengeFailed": "The boss pushed you back. Grow stronger and try again",
   "zoneKillsLabel": "Kills {n}/{m}",
-  "@zoneKillsLabel": {"placeholders": {"n": {"type": "int"}, "m": {"type": "int"}}},
+  "@zoneKillsLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "tapBoostHint": "Tap to boost!",
   "levelBadge": "Lv {n}",
   "@levelBadge": {
@@ -643,13 +664,27 @@
   "eventAdLimit": "Today's free rewards are used up",
   "eventTicketFull": "Tickets are full",
   "eventResultTitle": "Reached wave {n}!",
-
   "eventLeadStrong": "Strong",
   "eventLeadWeak": "Weak",
   "eventTicketBought": "Charged {n} entry ticket(s)",
-  "@eventTicketBought": {"placeholders": {"n": {"type": "int"}}},
+  "@eventTicketBought": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "eventTicketDaily": "today {used}/{max}",
-  "@eventTicketDaily": {"placeholders": {"used": {"type": "int"}, "max": {"type": "int"}}},
+  "@eventTicketDaily": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "eventStopWipe": "Your team was wiped out, so the run ends here.",
   "eventStopJudge": "Round 20 passed, so the wave was decided on remaining HP and you came up short. The run ends here even with bugs still standing.",
   "eventStopMax": "You cleared every wave to the last one!",
@@ -1274,7 +1309,7 @@
       }
     }
   },
-  "tierNextBody": "Stage, level and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all stay.\nYour level ranking keeps your best record.\nMonsters become far more powerful.",
+  "tierNextBody": "Stage, level, stat upgrades,\ngold and materials reset to the beginning.\n\nBugs, gear, the field guide and jelly\nall stay with you.\n\nYour level ranking keeps its best record.\nMonsters get far stronger.",
   "tierNextGo": "Enter",
   "tierStayHere": "Stay a while",
   "tierAllClear": "You conquered every difficulty. A true entomologist!",
@@ -1605,12 +1640,12 @@
   "forgeStep": "Workshop upgrade {cur}/{max}",
   "forgeUpgrading": "Upgrading",
   "forgeReady": "Done!",
-  "forgeRush": "Finish now",
+  "forgeRush": "Rush",
   "forgeClaim": "Claim",
   "forgeNext": "Next level odds",
   "forgeMaxLevel": "Max level",
   "forgeAutoTarget": "Wanted options",
-  "forgeStopOnHit": "Stop when found",
+  "forgeStopOnHit": "Stop when a match appears",
   "skillLearn": "Learn",
   "skillLevelUp": "Lv.{lv} → {next}",
   "skillEquipped": "Equipped",
@@ -1662,41 +1697,96 @@
   "forgeFilterGrade": "Min grade",
   "forgeFilterGradeHint": "Anything below this grade is discarded.",
   "forgeFilterRangeHint": "Ranges show the max for {tier} grade",
-  "@forgeFilterRangeHint": {"placeholders": {"tier": {"type": "String"}}},
+  "@forgeFilterRangeHint": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
   "optPerfect": "MAX",
   "forgeFilterGradeAll": "All",
   "forgeFilterOption": "Stats",
   "forgeStrikes": "x{n}",
-  "@forgeStrikes": {"placeholders": {"n": {"type": "int"}}},
+  "@forgeStrikes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStrikePick": "Strikes per hammer",
   "forgeStrikePickHint": "How many to forge per hammer blow. Applies to manual taps too.",
   "forgeStrikeLocked": "Needs chapter {n}",
-  "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
+  "@forgeStrikeLocked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStrikeAuto": "Max",
   "forgeReroll": "Reroll",
-  "forgeRush": "Rush",
   "forgeExpand": "Expand",
   "forgeExpandMax": "MAX",
   "forgeRushTitle": "Hammer rush",
   "forgeRushBody": "Spend {cost} jelly to hammer twice as fast for {sec}s.\nUsing it again adds to the remaining time.",
-  "@forgeRushBody": {"placeholders": {"cost": {"type": "int"}, "sec": {"type": "int"}}},
+  "@forgeRushBody": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      },
+      "sec": {
+        "type": "int"
+      }
+    }
+  },
   "forgeRushLeft": "{sec}s left",
-  "@forgeRushLeft": {"placeholders": {"sec": {"type": "int"}}},
+  "@forgeRushLeft": {
+    "placeholders": {
+      "sec": {
+        "type": "int"
+      }
+    }
+  },
   "forgeRerollHint": "Same tier and slot — only the options are rerolled",
   "forgeRushOn": "Rush {s}s",
-  "@forgeRushOn": {"placeholders": {"s": {"type": "int"}}},
+  "@forgeRushOn": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStackCount": "Anvil {n}/{max}",
-  "@forgeStackCount": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@forgeStackCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "forgeNoJelly": "Not enough jelly",
   "upgradeMaxed": "MAX",
   "eliteLabel": "ELITE",
   "gateGearHint": "Gear ×{cur} · suggested ×{need}",
-  "@gateGearHint": {"placeholders": {"cur": {"type": "String"}, "need": {"type": "String"}}},
+  "@gateGearHint": {
+    "placeholders": {
+      "cur": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "gateGearWeak": "Gear is weak — forge attack options",
   "regionElementTitle": "Region element",
   "regionElementHint": "Equip bugs whose element overcomes it and their hits get stronger. Bugs attack on their own timing, separately from you.",
   "forgeStrikeStart": "Start",
-  "forgeStopOnHit": "Stop when a match appears",
   "forgeStopOnHitHint": "Stops the auto-forge as soon as one passes your filter, saving the rest of your fossils.",
   "forgeStopOnHitNoFilter": "Set a filter first so there is something to stop on",
   "forgeStoppedOnHit": "Found what you were after",
@@ -1848,5 +1938,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "zoneConquered": "Conquered",
+  "zoneHere": "You are here",
+  "zoneLocked": "Locked"
 }

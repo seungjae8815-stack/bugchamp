@@ -2090,7 +2090,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'Stage, level and stat upgrades reset to the start.\nBugs, gear, Field Guide and currency all stay.\nYour level ranking keeps your best record.\nMonsters become far more powerful.';
+      'Stage, level, stat upgrades,\ngold and materials reset to the beginning.\n\nBugs, gear, the field guide and jelly\nall stay with you.\n\nYour level ranking keeps its best record.\nMonsters get far stronger.';
 
   @override
   String get tierNextGo => 'Enter';
@@ -3117,4 +3117,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportTooFast => 'You can send another one in a moment.';
+
+  @override
+  String get zoneConquered => 'Conquered';
+
+  @override
+  String get zoneHere => 'You are here';
+
+  @override
+  String get zoneLocked => 'Locked';
 }

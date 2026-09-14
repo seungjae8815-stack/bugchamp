@@ -51,7 +51,11 @@ class PvpProfile {
     nickname: save.nickname,
     trophies: save.pvpTrophies,
     level: save.level,
-    stageNumber: save.stageNumber,
+    // ⚠️ 지금 있는 사냥터가 아니라 **역대 최고**다. 로드맵에서 아래로
+    // 내려가면 랭킹 진행도까지 같이 떨어졌다(2026-09-14 지적).
+    stageNumber: save.bestStage > save.stageNumber
+        ? save.bestStage
+        : save.stageNumber,
     difficultyTier: save.difficultyTier,
   );
 

@@ -211,14 +211,25 @@ void main(List<String> args) {
     }
 
     for (var k = 1; k <= config.zonesPerTier; k++) {
-      // 1) 진입 전력으로 임시 표를 넣고 의도한 일수만큼 머문다(키운다).
+      // ── 사냥터 하나를 맞추는 순서 ──
+      // ⚠️ **일반 몬스터는 도착했을 때의 전력**에, **보스는 머물고 난 뒤의
+      // 전력**에 맞춘다. 2026-09-14 에 둘 다 "머문 뒤"로 맞췄다가 게임이
+      // 시작부터 막혔다 — 사냥터 1 의 첫 몬스터가 신규 유저에게 381대,
+      // 한 대가 체력의 346% 였다. 도착하면 잡을 수는 있어야 골드가 돌고,
+      // 골드가 돌아야 강화를 사서 보스를 넘는다. **벽은 보스 하나뿐이다.**
       final entry = fit.stats;
       hp.add((baselineHitPower(entry) * opts.fitHits).roundToDouble());
+      // 위협도 **도착 시점 맷집** 기준 — 한 대가 그때 체력의 fitBite 다.
+      // 머무는 동안 체력·방어를 올리면 그만큼 가벼워진다(성장 실감).
+      final entryTough = entry.maxHp * (100 + entry.defense) / 100;
+      th.add(
+        (opts.fitBite * entryTough / config.enemyAtkInterval * 100).round() /
+            100,
+      );
       bh.add(
         (baselineHitPower(entry, boss: true) * opts.fitHits * 4)
             .roundToDouble(),
       );
-      th.add(1);
       gd.add(
         k == 1
             ? config.goldBase
@@ -228,39 +239,28 @@ void main(List<String> args) {
       fit.stage = config.zoneStartStage(k);
       fit.playDays(days[(k - 1).clamp(0, days.length - 1)]);
 
-      // 2) 머문 뒤 전력으로 이 사냥터를 **확정**한다 — 그래야 처음 왔을 땐
-      //    벽이고, 의도한 만큼 키우면 딱 넘는다.
+      // 보스만 "머문 뒤 전력"으로 확정 — 도착 직후엔 못 잡고, 의도한 만큼
+      // 키우면 딱 넘어가는 관문이 된다.
       final st = fit.stats;
-      final hit = baselineHitPower(st);
       final bossHit = baselineHitPower(st, boss: true);
-      hp[k - 1] = (hit * opts.fitHits).roundToDouble();
-      bh[k - 1] = (bossHit * opts.fitHits * 4)
-          .roundToDouble(); // 보스 = 일반의 4배 타격
-      // 위협: 보스전에서 "버티는 시간 ≈ 잡는 시간 × 1.3" 이 되게 잡는다.
-      final bossDps = bossHit * st.attackSpeed;
-      final kill = bh[k - 1] / bossDps;
-      final needInc = st.maxHp / (kill * 1.3) + st.hpRegen; // 초당 피해(방어 뒤)
-      var threat = needInc * (100 + st.defense) / 100 / config.bossThreatMult;
-      // 일반 몬스터 한 대가 체력의 fitBite 근처가 되게 위아래로 자른다.
-      // 진입 시점은 전력이 이보다 약하므로 한 대가 1.3~1.5배로 느껴진다 —
-      // 상한을 좁게 둬야 도착하자마자 죽지 않는다.
-      double biteOf(double t) =>
-          t * config.enemyAtkInterval * 100 / (100 + st.defense) / st.maxHp;
-      double threatFor(double bite) =>
-          bite * st.maxHp * (100 + st.defense) / 100 / config.enemyAtkInterval;
-      final lo = opts.fitBite * 0.7, hi = opts.fitBite * 1.25;
-      if (biteOf(threat) < lo) {
-        threat = threatFor(lo);
-      }
-      if (biteOf(threat) > hi) {
-        threat = threatFor(hi);
-      }
-      th[k - 1] = (threat * 100).round() / 100;
+      bh[k - 1] = (bossHit * opts.fitHits * 4).roundToDouble();
       apply();
+      double biteOf(CharacterStats x) =>
+          th[k - 1] *
+          config.enemyAtkInterval *
+          100 /
+          (100 + x.defense) /
+          x.maxHp *
+          100;
       stdout.writeln(
-        '  fit 사냥터 $k: 체력 ${hp[k - 1].toStringAsFixed(0)} · 보스 ${bh[k - 1].toStringAsFixed(0)} '
-        '· 위협/s ${th[k - 1]} (한 대 ${(biteOf(th[k - 1]) * 100).toStringAsFixed(0)}%) '
-        '· 골드 ${gd[k - 1]} · 머문 뒤 한 대 ${hit.toStringAsFixed(0)}, 체력 ${st.maxHp.toStringAsFixed(0)}, 방어 ${st.defense.toStringAsFixed(0)}',
+        '  fit 사냥터 $k: 체력 ${hp[k - 1].toStringAsFixed(0)} '
+        '(도착 ${opts.fitHits.toStringAsFixed(0)}대 → 떠날 때 '
+        '${(hp[k - 1] / baselineHitPower(st)).toStringAsFixed(1)}대) '
+        '· 보스 ${bh[k - 1].toStringAsFixed(0)} '
+        '(도착 ${(bh[k - 1] / baselineHitPower(entry, boss: true)).toStringAsFixed(0)}대 '
+        '→ 떠날 때 ${(bh[k - 1] / bossHit).toStringAsFixed(0)}대) '
+        '· 한 대 ${biteOf(entry).toStringAsFixed(0)}% → '
+        '${biteOf(st).toStringAsFixed(0)}% · 골드 ${gd[k - 1]}',
       );
     }
     stdout.writeln('');

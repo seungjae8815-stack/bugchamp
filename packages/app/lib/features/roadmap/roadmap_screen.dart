@@ -118,6 +118,10 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
+    // 사냥터 구조(2026-09-14 지시): **아래에서 위로 한 칸씩 점령**하는 세로
+    // 목록. 예전 징검다리 격자는 칸이 56px 이라 보스 이름이 잘렸고, 11칸을
+    // 뱀처럼 접어 놓으니 "어디까지 왔나"가 오히려 안 보였다.
+    if (widget.runConfig.zoneMode) return _zoneList(context, l, locale);
     final all = _buildNodes();
     if (all.isEmpty) {
       return Scaffold(
@@ -305,6 +309,276 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     final step = widget.config.nodeStep;
     return widget.liveStage > node.stage - step &&
         widget.liveStage <= node.stage;
+  }
+
+  /// 사냥터 목록 — **맨 아래가 사냥터 1**, 위로 갈수록 강하다.
+  ///
+  /// `reverse: true` 라 처음 화면이 바닥(사냥터 1)에서 시작한다. 점령한 칸은
+  /// 그림이 드러나고, 아직 못 깬 칸은 검은 실루엣이다 — 다음에 뭐가 나오는지
+  /// 궁금하게 두고, 깨면 보여 준다(사장님 확정).
+  Widget _zoneList(BuildContext context, AppLocalizations l, String locale) {
+    final rc = widget.runConfig;
+    final zones = rc.zonesPerTier;
+    final hereZone = rc.zoneOf(widget.liveStage);
+    final topZone = rc.zoneOf(widget.highestStage);
+    return Scaffold(
+      appBar: AppBar(title: Text(l.roadmapTitle)),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/ui/roadmap_bg.webp',
+              fit: BoxFit.cover,
+              repeat: ImageRepeat.repeatY,
+              alignment: Alignment.bottomCenter,
+            ),
+          ),
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: Color(0x8C000000)),
+            ),
+          ),
+          ListView.builder(
+            reverse: true,
+            padding: EdgeInsets.only(
+              top: 12,
+              bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
+            ),
+            itemCount: zones,
+            itemBuilder: (context, i) {
+              final zone = i + 1; // reverse 라 i=0(사냥터 1)이 맨 아래
+              final conquered = topZone > zone;
+              final here = zone == hereZone;
+              final artId = rc.bossArtId(widget.tier, zone);
+              final info = widget.config.boss(artId);
+              final chapter = widget.config.chapterForStage(
+                rc.zoneStartStage(zone),
+              );
+              return _ZoneRow(
+                zone: zone,
+                isFinal: rc.isFinalZone(zone),
+                conquered: conquered,
+                here: here,
+                // 점령한 곳과 지금 있는 곳까지만 갈 수 있다.
+                unlocked: conquered || here,
+                title: rc.isFinalZone(zone)
+                    ? l.zoneFinalLabel
+                    : l.zoneLabel(zone),
+                name:
+                    info?.name.resolve(locale) ??
+                    chapter?.boss.resolve(locale) ??
+                    '',
+                desc: info?.desc.resolve(locale) ?? '',
+                artPath: 'assets/images/bosses/$artId.webp',
+                statusText: conquered
+                    ? l.zoneConquered
+                    : here
+                    ? l.zoneHere
+                    : l.zoneLocked,
+                onTap: () => Navigator.pop(context, rc.zoneStartStage(zone)),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 사냥터 한 칸 — 보스 그림(실루엣) + 이름 + 한 줄 설명 + 상태.
+class _ZoneRow extends StatelessWidget {
+  const _ZoneRow({
+    required this.zone,
+    required this.isFinal,
+    required this.conquered,
+    required this.here,
+    required this.unlocked,
+    required this.title,
+    required this.name,
+    required this.desc,
+    required this.artPath,
+    required this.statusText,
+    required this.onTap,
+  });
+
+  final int zone;
+  final bool isFinal;
+  final bool conquered;
+  final bool here;
+  final bool unlocked;
+  final String title;
+  final String name;
+  final String desc;
+  final String artPath;
+  final String statusText;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = here
+        ? const Color(0xFF8BC34A)
+        : conquered
+        ? const Color(0xFFEBA52F)
+        : const Color(0x33FFFFFF);
+    final art = Image.asset(
+      artPath,
+      width: 74,
+      height: 74,
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) =>
+          const Icon(Icons.bug_report, size: 44, color: Color(0x66FFFFFF)),
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      // ⚠️ IntrinsicHeight 가 필요하다. 목록 칸은 높이가 무한으로 주어지는데
+      // 아래 Row 가 `stretch` 로 세로를 채우려 해서 레이아웃이 터졌다 —
+      // 릴리즈에서는 오류 위젯이 **빈 상자**라 "배경만 보인다"가 됐다
+      // (2026-09-14). 여기서 높이를 카드 높이로 확정해 준다.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 왼쪽 세로 길 — 점령한 곳까지는 금색으로 이어진다.
+            SizedBox(
+              width: 14,
+              child: Center(
+                child: Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    color: conquered || here
+                        ? const Color(0xFFEBA52F)
+                        : const Color(0x22FFFFFF),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: unlocked ? onTap : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: here
+                        ? const Color(0xCC1B2A10)
+                        : const Color(0xB3101A0A),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: accent, width: here ? 2 : 1),
+                  ),
+                  child: Row(
+                    children: [
+                      // 점령 전엔 실루엣 — 무엇이 기다리는지는 숨긴다.
+                      // ⚠️ 검은색으로 칠하면 **어두운 카드 위에서 아무것도 안
+                      // 보인다**(2026-09-14 지적: "보스들이 안 나와"). 형태가
+                      // 읽히도록 밝은 회색으로 찍고 살짝 비친다.
+                      SizedBox(
+                        width: 74,
+                        height: 74,
+                        child: conquered || here
+                            ? art
+                            : Opacity(
+                                opacity: 0.55,
+                                child: ColorFiltered(
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFF8A96A0),
+                                    BlendMode.srcIn,
+                                  ),
+                                  child: art,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    name.isEmpty ? title : name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: isFinal
+                                          ? const Color(0xFFFFD54F)
+                                          : Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                if (isFinal) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.workspace_premium_rounded,
+                                    size: 15,
+                                    color: Color(0xFFFFD54F),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              desc,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xB3FFFFFF),
+                                fontSize: 11.5,
+                                height: 1.35,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: accent.withValues(alpha: 0.22),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(color: accent),
+                                  ),
+                                  child: Text(
+                                    '$title · $statusText',
+                                    style: TextStyle(
+                                      color: conquered || here
+                                          ? Colors.white
+                                          : const Color(0x99FFFFFF),
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                if (unlocked) ...[
+                                  const Spacer(),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    size: 18,
+                                    color: Color(0x99FFFFFF),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

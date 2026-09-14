@@ -2057,7 +2057,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      '스테이지·레벨·능력치 강화가 처음으로 돌아갑니다.\n곤충·장비·도감·재화는 그대로 남아요.\n레벨 랭킹은 최고 기록으로 유지됩니다.\n몬스터가 훨씬 더 강력해집니다.';
+      '스테이지 · 레벨 · 능력치 강화 ·\n골드 · 재료가 처음으로 돌아갑니다.\n\n곤충 · 장비 · 도감 · 젤리는\n그대로 남아요.\n\n레벨 랭킹은 최고 기록으로 유지됩니다.\n몬스터가 훨씬 더 강력해집니다.';
 
   @override
   String get tierNextGo => '진입하기';
@@ -3057,4 +3057,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get supportTooFast => '조금 뒤에 다시 보낼 수 있어요.';
+
+  @override
+  String get zoneConquered => '점령함';
+
+  @override
+  String get zoneHere => '지금 여기';
+
+  @override
+  String get zoneLocked => '잠김';
 }

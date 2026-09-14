@@ -897,38 +897,42 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
   }
 
-  /// 들어온 피해 [burst] 를 팀에 나눠 준다. **총량은 오늘과 같다.**
+  /// 들어온 피해 [burst] — **캐릭터가 먼저, 그리고 전부 받는다.**
   ///
-  /// 쓰러진 곤충의 몫은 남은 식구에게 넘어간다 — 안 넘기면 곤충이 쓰러질수록
-  /// 팀이 받는 총 피해가 줄어 오히려 안전해진다(긴장을 넣으려다 정반대가 된다).
+  /// ⚠️ 예전엔 팀 최대체력 비율로 캐릭터와 곤충이 나눠 받았다. 곤충이 세면
+  /// 캐릭터 몫이 몇 %로 줄어 **내 체력바는 거의 움직이지 않았다**(2026-09-14
+  /// 지시). 두 가지가 어긋난다:
+  ///  · 화면: 맞고 있는데 내 바가 안 움직여 위험이 보이지 않는다.
+  ///  · 밸런스: 위협도(§7)는 **캐릭터 맷집** 기준으로 계산된 값이다. 그걸
+  ///    곤충과 나눠 받으면 시뮬이 계산한 "한 대 12%"가 실제로는 4% 가 되어,
+  ///    시뮬은 빠듯하다는데 게임은 심심한 상태가 된다.
   ///
-  /// 곤충이 0 이 되면 [_petDown] 에 부활 시간을 걸고 넘친 피해는 버린다 —
-  /// 넘긴 만큼 캐릭터에 얹으면 한 방에 팀이 통째로 무너진다.
+  /// 곤충은 [_petBiteShare] 만큼을 **따로** 받는다(캐릭터 몫을 빼앗지 않는다).
+  /// 맨 앞 한 마리가 통째로 받고, 쓰러지면 다음 마리로 넘어간다 — 누가 맞고
+  /// 있는지 보이고, 부활 타이머도 그대로 작동한다.
   void _spreadDamage(double burst) {
-    final alive = _alivePets.toList();
-    var weight = _split?.playerHpMult ?? 1.0;
-    for (final p in alive) {
-      weight += p.hpMult;
-    }
-    if (weight <= 0) {
-      _playerHp -= burst;
-      return;
-    }
+    if (burst <= 0) return;
+    _playerHp -= burst;
+
     final revive = _data.petConfig?.petReviveSeconds ?? 12;
-    for (final p in alive) {
-      final part = burst * (p.hpMult / weight);
-      if (part <= 0) continue;
-      final left = (_petHp[p.bugId] ?? _petMaxHp(p)) - part;
+    var petShare = burst * _petBiteShare;
+    for (final p in _alivePets) {
+      if (petShare <= 0) break;
+      final hp = _petHp[p.bugId] ?? _petMaxHp(p);
       _petHitFlash[p.bugId] = 0.8;
-      if (left <= 0) {
+      if (petShare >= hp) {
         _petHp[p.bugId] = 0;
         _petDown[p.bugId] = revive;
+        petShare -= hp; // 넘친 만큼 다음 곤충이 받는다
       } else {
-        _petHp[p.bugId] = left;
+        _petHp[p.bugId] = hp - petShare;
+        petShare = 0;
       }
     }
-    _playerHp -= burst * ((_split?.playerHpMult ?? 1.0) / weight);
   }
+
+  /// 곤충이 함께 받는 몫(캐릭터 몫과 **별개**). 수치는 데이터에서.
+  double get _petBiteShare => _config.petBiteShare;
 
   /// 지금 스테이지가 월드 관문(x-100)인가.
   bool get _isWorldGate =>
@@ -1775,11 +1779,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _spawn();
   }
 
-  /// 캠페인 끝을 깼을 때의 안내 — **자동으로 넘기지 않는다.**
+  /// 캠페인 끝(= 그 난이도의 최종 보스)을 깼을 때.
   ///
-  /// 회차가 오르면 스테이지가 1 로 돌아가므로, 유저가 모르는 사이 넘어가면
-  /// "진행이 초기화됐다"로 읽힌다. 무엇이 이어지고 무엇이 돌아가는지 적어
-  /// 두고 **직접 누르게** 한다.
+  /// 사냥터 구조(2026-09-14 사장님 지시): **깨는 즉시 다음 난이도로 넘어간다.**
+  /// 예전엔 "여기 머물기"를 줬는데, 머무르면 게이지가 찬 채로 남아 최종
+  /// 보스를 몇 번이고 다시 잡을 수 있었다 — "깼는데 안 끝난다"가 된다.
+  /// 넘어간 **뒤에** 무엇이 이어지고 무엇이 돌아가는지 알린다(선택이 아니라 안내).
   ///
   /// ⚠️ 몬스터가 얼마나 세지는지 **수치를 쓰지 않는다**(사장님 지시
   /// 2026-08-30). 배율은 JSON 이라 언제든 바뀌는데 문구에 박아 두면 거짓이
@@ -1787,6 +1792,37 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Future<void> _showTierClear(AppLocalizations l, SaveGame save) async {
     final tier = save.difficultyTier;
     final last = tier >= kTierCount - 1;
+    if (!last) {
+      // 먼저 넘긴다 — 안내 창을 닫는 방식(바깥 탭)과 무관하게 확정되어야 한다.
+      await ref.read(saveControllerProvider.notifier).enterNextTier();
+      if (!mounted) return;
+      setState(() {
+        _stage = 1;
+        _habitatIndex = 0;
+        _bossChallenge = false;
+        // 곤충도 함께 일으켜 세운다 — 캐릭터만 살아나면 부활 직후가
+        // 죽기 직전보다 약해서 같은 자리에서 또 죽는다.
+        _healTeamFull();
+        _spawn();
+      });
+      AudioService.instance.sfxLevelUp();
+      await showGameDialog<void>(
+        context,
+        title: l.tierClearTitle(tierName(l, tier)),
+        icon: Icons.military_tech_rounded,
+        content: Text(
+          l.tierNextBody,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.45),
+        ),
+        actions: [
+          gameDialogButton(l.actionClose, () => Navigator.pop(context)),
+        ],
+      );
+      if (!mounted) return;
+      showCenterToast(context, l.tierNextTitle(tierName(l, tier + 1)));
+      return;
+    }
     final go = await showGameDialog<bool>(
       context,
       title: l.tierClearTitle(tierName(l, tier)),
@@ -3189,153 +3225,158 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ref.read(saveControllerProvider).requireValue.difficultyTier,
     );
     return Center(
-      child: GestureDetector(
-        onTap: _data.roadmapConfig == null ? null : _openRoadmap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xB3101A0A),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0x66EBA52F)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
+      // 보스 도전 버튼은 **로드맵 알약 아래 따로 줄**을 쓴다(2026-09-14 지시).
+      // 한 줄에 같이 두니 글자가 넘쳐 왼쪽 미션 패널과 겹쳤다.
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _data.roadmapConfig == null ? null : _openRoadmap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xB3101A0A),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0x66EBA52F)),
+              ),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    '🗺 $name · $diff',
-                    style: const TextStyle(
-                      color: _onScene,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
-                  ),
-                  // 지역 오행 — **지역 이름 바로 옆**이 제자리다.
-                  //
-                  // 예전엔 몬스터 체력바 위에 뒀는데, 거긴 스폰마다 다시
-                  // 그려지는 자리라 "이 몬스터의 속성"으로 읽혔다. 실제로는
-                  // 지역 전체(25스테이지)가 같은 속성이다 — 지역 이름 옆에
-                  // 붙어야 그게 무엇에 딸린 값인지 오해가 없다.
-                  if (region.element != null) ...[
-                    const SizedBox(width: 5),
-                    GestureDetector(
-                      onTap: () => _showRegionElement(l, region),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: elementColor(
-                            region.element!,
-                          ).withValues(alpha: 0.22),
-                          borderRadius: BorderRadius.circular(7),
-                          border: Border.all(
-                            color: elementColor(
-                              region.element!,
-                            ).withValues(alpha: 0.75),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            elementIcon(region.element!, size: 12),
-                            const SizedBox(width: 2),
-                            Text(
-                              elementLabel(l, region.element!),
-                              style: TextStyle(
-                                color: elementColor(region.element!),
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '🗺 $name · $diff',
+                        style: const TextStyle(
+                          color: _onScene,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
                       ),
+                      // 지역 오행 — **지역 이름 바로 옆**이 제자리다.
+                      //
+                      // 예전엔 몬스터 체력바 위에 뒀는데, 거긴 스폰마다 다시
+                      // 그려지는 자리라 "이 몬스터의 속성"으로 읽혔다. 실제로는
+                      // 지역 전체(25스테이지)가 같은 속성이다 — 지역 이름 옆에
+                      // 붙어야 그게 무엇에 딸린 값인지 오해가 없다.
+                      if (region.element != null) ...[
+                        const SizedBox(width: 5),
+                        GestureDetector(
+                          onTap: () => _showRegionElement(l, region),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: elementColor(
+                                region.element!,
+                              ).withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(7),
+                              border: Border.all(
+                                color: elementColor(
+                                  region.element!,
+                                ).withValues(alpha: 0.75),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                elementIcon(region.element!, size: 12),
+                                const SizedBox(width: 2),
+                                Text(
+                                  elementLabel(l, region.element!),
+                                  style: TextStyle(
+                                    color: elementColor(region.element!),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (_data.roadmapConfig != null) ...[
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.expand_more_rounded,
+                          color: Color(0xAAEBA52F),
+                          size: 15,
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (_config.zoneMode)
+                    _zoneProgressRow(l)
+                  else
+                    Text(
+                      _isBoss
+                          ? '$chapter-$stageInRegion · ${l.bossLabel}'
+                          : '$chapter-$stageInRegion · $_habitatIndex/${_config.habitatsPerStage}',
+                      style: const TextStyle(
+                        color: Color(0xCCFFFFFF),
+                        fontSize: 10.5,
+                      ),
                     ),
-                  ],
-                  if (_data.roadmapConfig != null) ...[
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.expand_more_rounded,
-                      color: Color(0xAAEBA52F),
-                      size: 15,
-                    ),
-                  ],
                 ],
               ),
-              if (_config.zoneMode)
-                _zoneProgressRow(l)
-              else
-                Text(
-                  _isBoss
-                      ? '$chapter-$stageInRegion · ${l.bossLabel}'
-                      : '$chapter-$stageInRegion · $_habitatIndex/${_config.habitatsPerStage}',
-                  style: const TextStyle(
-                    color: Color(0xCCFFFFFF),
-                    fontSize: 10.5,
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
+          if (_config.zoneMode && !_isBoss) ...[
+            const SizedBox(height: 5),
+            _bossChallengeButton(l),
+          ],
+        ],
       ),
     );
   }
 
-  /// 사냥터 모드의 진행 줄 — `사냥터 3 · 처치 42/100` + [보스 도전].
+  /// 사냥터 모드의 진행 줄 — `사냥터 3`.
   ///
-  /// 도전 버튼은 게이지가 차야 켜진다. 잠겨 있을 땐 남은 마리 수를 적는다 —
-  /// 얼마나 더 잡아야 하는지가 보여야 사냥에 목적이 생긴다.
+  /// 처치 수(`42/100`)는 **여기 적지 않는다**(2026-09-14 지시). 같은 숫자를
+  /// 아래 [보스 도전] 버튼이 이미 세고 있어, 두 번 쓰면 줄이 넘쳐 왼쪽
+  /// 미션 패널을 침범했다.
   Widget _zoneProgressRow(AppLocalizations l) {
-    final save = ref.watch(saveControllerProvider).requireValue;
     final zone = _config.zoneOf(_stage);
-    final need = _config.bossUnlockKills;
-    final kills = save.zoneKills;
-    final ready = kills >= need;
     final zoneText = _config.isFinalZone(zone)
         ? l.zoneFinalLabel
         : l.zoneLabel(zone);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          _isBoss
-              ? '$zoneText · ${l.bossLabel}'
-              : '$zoneText · ${l.zoneKillsLabel(math.min(kills, need), need)}',
-          style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5),
-        ),
-        if (!_isBoss) ...[
-          const SizedBox(width: 6),
-          GestureDetector(
-            onTap: ready ? _startBossChallenge : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: ready
-                    ? const Color(0xFFD1443E)
-                    : const Color(0x33000000),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: ready
-                      ? const Color(0xFFFF8A80)
-                      : const Color(0x33FFFFFF),
-                ),
-              ),
-              child: Text(
-                ready ? l.bossChallenge : l.bossChallengeLocked(need - kills),
-                style: TextStyle(
-                  color: ready ? Colors.white : const Color(0x88FFFFFF),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
+    return Text(
+      _isBoss ? '$zoneText · ${l.bossLabel}' : zoneText,
+      style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5),
+    );
+  }
+
+  /// [보스 도전] — 로드맵 알약 **아래 따로** 놓이는 버튼.
+  ///
+  /// 게이지가 차야 켜진다. 잠겨 있을 땐 남은 마리 수를 이 버튼이 센다 —
+  /// 얼마나 더 잡아야 하는지가 보여야 사냥에 목적이 생긴다.
+  Widget _bossChallengeButton(AppLocalizations l) {
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final need = _config.bossUnlockKills;
+    final kills = save.zoneKills;
+    final ready = kills >= need;
+    return GestureDetector(
+      onTap: ready ? _startBossChallenge : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: ready ? const Color(0xFFD1443E) : const Color(0x66101A0A),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: ready ? const Color(0xFFFF8A80) : const Color(0x33FFFFFF),
           ),
-        ],
-      ],
+        ),
+        child: Text(
+          ready ? l.bossChallenge : l.bossChallengeLocked(need - kills),
+          style: TextStyle(
+            color: ready ? Colors.white : const Color(0x99FFFFFF),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
     );
   }
 
@@ -3431,7 +3472,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         builder: (_) => RoadmapScreen(
           config: cfg,
           runConfig: _config,
-          highestStage: save.stageNumber,
+          highestStage: save.bestStage > save.stageNumber
+              ? save.bestStage
+              : save.stageNumber,
           liveStage: _stage,
           tier: save.difficultyTier,
         ),
@@ -6671,19 +6714,21 @@ class _UpgradeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final spec = config.upgrade(kind);
-    final singleCost = upgradeCost(spec, level);
     final batchCost = bulkUpgradeCost(spec, level, buyAmount);
     final cur = spec.valueAt(level);
     final next = spec.valueAt(level + 1);
 
-    // 재료 추가비용(있으면). 1레벨분 비용으로 구매 가능 여부 판정.
+    // 재료 추가비용(있으면).
     final matKind = spec.materialKind;
-    final singleMatCost = upgradeMaterialCost(spec, level);
     final batchMatCost = bulkUpgradeMaterialCost(spec, level, buyAmount);
     final haveMat = matKind == null ? 0 : (materials[matKind] ?? 0);
-    final matOk = matKind == null || haveMat >= singleMatCost;
+    // ⚠️ 구매 가능 판정은 **화면에 적힌 금액(묶음 전체)** 기준이다
+    // (2026-09-14 지적). 예전엔 1레벨분만 보고 켰다 — x100 버튼에 12만이
+    // 적혀 있는데 1,200원만 있어도 초록으로 켜져서, 누르면 몇 레벨만 오르고
+    // 멈췄다. 적힌 값을 못 내면 꺼져 있어야 한다.
+    final matOk = matKind == null || haveMat >= batchMatCost;
     final maxed = !spec.canBuyAt(level);
-    final affordable = !maxed && gold >= singleCost && matOk;
+    final affordable = !maxed && gold >= batchCost && matOk;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -6783,71 +6828,84 @@ class _UpgradeRow extends StatelessWidget {
                       : const Color(0x22FFFFFF),
                 ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    maxed ? l.upgradeMaxed : '+$buyAmount Lv',
-                    style: TextStyle(
-                      color: affordable
-                          ? Colors.white
-                          : const Color(0x66FFFFFF),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  // 골드 + 재료 비용을 한 줄로 → 재료 유무와 무관하게 행 높이 통일.
-                  // 상한이면 비용을 안 그린다 — "최대" 옆에 값이 찍혀 있으면
-                  // 아직 살 수 있는 줄 안다(2026-09-14 지적).
-                  if (maxed)
-                    const SizedBox(height: 15)
-                  else
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '💰${formatCompact(batchCost)}',
-                            style: TextStyle(
-                              color: affordable
-                                  ? const Color(0xFFFFE082)
-                                  : const Color(0x66FFFFFF),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12.5,
-                            ),
+              // 상한이면 "최대" **한 줄만** 크게 — 위아래 여백 없이 칸을 채운다.
+              // 예전엔 작은 글씨 + 빈 15px 이라 버튼 아래쪽이 뚫려 보였다
+              // (2026-09-14 지시). 높이는 일반 줄과 같게 고정해 목록이 안 흔들린다.
+              child: maxed
+                  ? SizedBox(
+                      height: 30,
+                      child: Center(
+                        child: Text(
+                          l.upgradeMaxed,
+                          style: const TextStyle(
+                            color: Color(0xFFFFE082),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            letterSpacing: 2,
                           ),
-                          if (matKind != null && batchMatCost > 0) ...[
-                            const SizedBox(width: 6),
-                            materialImage(
-                              matKind,
-                              size: 12,
-                              fallback: Icon(
-                                materialIcon(matKind),
-                                size: 11,
-                                color: matOk
-                                    ? const Color(0xFF9CCC65)
-                                    : const Color(0xFFEF9A9A),
-                              ),
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              formatCompact(batchMatCost),
-                              style: TextStyle(
-                                color: matOk
-                                    ? const Color(0xFFC5E1A5)
-                                    : const Color(0xFFEF9A9A),
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ],
+                        ),
                       ),
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '+$buyAmount Lv',
+                          style: TextStyle(
+                            color: affordable
+                                ? Colors.white
+                                : const Color(0x66FFFFFF),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        // 골드 + 재료 비용을 한 줄로 → 재료 유무와 무관하게 행 높이 통일.
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '💰${formatCompact(batchCost)}',
+                                style: TextStyle(
+                                  color: affordable
+                                      ? const Color(0xFFFFE082)
+                                      : const Color(0x66FFFFFF),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                              if (matKind != null && batchMatCost > 0) ...[
+                                const SizedBox(width: 6),
+                                materialImage(
+                                  matKind,
+                                  size: 12,
+                                  fallback: Icon(
+                                    materialIcon(matKind),
+                                    size: 11,
+                                    color: matOk
+                                        ? const Color(0xFF9CCC65)
+                                        : const Color(0xFFEF9A9A),
+                                  ),
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  formatCompact(batchMatCost),
+                                  style: TextStyle(
+                                    color: matOk
+                                        ? const Color(0xFFC5E1A5)
+                                        : const Color(0xFFEF9A9A),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                ],
-              ),
             ),
           ),
         ],

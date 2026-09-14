@@ -222,14 +222,35 @@
   "rewardGained": "獲得報酬",
   "bossLabel": "ボス",
   "zoneLabel": "狩り場 {n}",
-  "@zoneLabel": {"placeholders": {"n": {"type": "int"}}},
+  "@zoneLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "zoneFinalLabel": "最終狩り場",
   "bossChallenge": "ボスに挑戦",
   "bossChallengeLocked": "挑戦まであと{n}体",
-  "@bossChallengeLocked": {"placeholders": {"n": {"type": "int"}}},
+  "@bossChallengeLocked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "bossChallengeFailed": "ボスに押し返されました。強くなって再挑戦しましょう",
   "zoneKillsLabel": "討伐 {n}/{m}",
-  "@zoneKillsLabel": {"placeholders": {"n": {"type": "int"}, "m": {"type": "int"}}},
+  "@zoneKillsLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "tapBoostHint": "タップでブースト!",
   "levelBadge": "Lv {n}",
   "collectTitle": "採集フィールド",
@@ -343,13 +364,27 @@
   "eventAdLimit": "本日の無料報酬は受け取り済みです",
   "eventTicketFull": "参加券が満杯です",
   "eventResultTitle": "{n}ウェーブ到達！",
-
   "eventLeadStrong": "有利",
   "eventLeadWeak": "不利",
   "eventTicketBought": "参加券を{n}枚チャージしました",
-  "@eventTicketBought": {"placeholders": {"n": {"type": "int"}}},
+  "@eventTicketBought": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "eventTicketDaily": "本日 {used}/{max}",
-  "@eventTicketDaily": {"placeholders": {"used": {"type": "int"}, "max": {"type": "int"}}},
+  "@eventTicketDaily": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "eventStopWipe": "チームが全滅したのでここで終了です。",
   "eventStopJudge": "20ラウンドが過ぎ、残りHPの判定で及ばずでした。虫が残っていてもここで終了します。",
   "eventStopMax": "最後のウェーブまですべてクリアしました！",
@@ -655,7 +690,7 @@
   "stanceCycle": "攻 › 回 › 防 › 攻",
   "tierClearTitle": "{name}難易度をすべてクリア！",
   "tierNextTitle": "{name}難易度に進みます",
-  "tierNextBody": "ステージ・レベル・能力強化が最初に戻ります。\n虫・装備・図鑑・通貨はそのまま残ります。\nレベルランキングは自己ベストが維持されます。\n敵がさらに強力になります。",
+  "tierNextBody": "ステージ・レベル・能力強化・\nゴールド・素材が最初に戻ります。\n\n昆虫・装備・図鑑・ゼリーは\nそのまま残ります。\n\nレベルランキングは最高記録を保ちます。\nモンスターははるかに強くなります。",
   "tierNextGo": "進む",
   "tierStayHere": "もう少し残る",
   "tierAllClear": "すべての難易度を制覇しました！最高の昆虫学者です。",
@@ -858,12 +893,12 @@
   "forgeStep": "工房アップグレード {cur}/{max}",
   "forgeUpgrading": "アップグレード中",
   "forgeReady": "完了！",
-  "forgeRush": "今すぐ完了",
+  "forgeRush": "加速",
   "forgeClaim": "受け取る",
   "forgeNext": "次のレベルの確率",
   "forgeMaxLevel": "最高レベル",
   "forgeAutoTarget": "希望オプション",
-  "forgeStopOnHit": "見つけたら停止",
+  "forgeStopOnHit": "目当てが出たら止める",
   "skillLearn": "習得",
   "skillLevelUp": "レベル {lv} → {next}",
   "skillEquipped": "装備中",
@@ -888,41 +923,96 @@
   "forgeFilterGrade": "最低グレード",
   "forgeFilterGradeHint": "このグレード未満は捨てます。",
   "forgeFilterRangeHint": "範囲は{tier}グレードの最大値です",
-  "@forgeFilterRangeHint": {"placeholders": {"tier": {"type": "String"}}},
+  "@forgeFilterRangeHint": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
   "optPerfect": "完璧",
   "forgeFilterGradeAll": "すべて",
   "forgeFilterOption": "能力値",
   "forgeStrikes": "x{n}",
-  "@forgeStrikes": {"placeholders": {"n": {"type": "int"}}},
+  "@forgeStrikes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStrikePick": "ハンマーごとの個数",
   "forgeStrikePickHint": "一度叩くたびに作る個数です。手動タップにも適用されます。",
   "forgeStrikeLocked": "チャプター{n}が必要",
-  "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
+  "@forgeStrikeLocked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStrikeAuto": "最大",
   "forgeReroll": "再抽選",
-  "forgeRush": "加速",
   "forgeExpand": "枠拡張",
   "forgeExpandMax": "最大",
   "forgeRushTitle": "ハンマー加速",
   "forgeRushBody": "ゼリー{cost}個で{sec}秒間、ハンマーが2倍速に。\n加速中に使うと残り時間に加算されます。",
-  "@forgeRushBody": {"placeholders": {"cost": {"type": "int"}, "sec": {"type": "int"}}},
+  "@forgeRushBody": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      },
+      "sec": {
+        "type": "int"
+      }
+    }
+  },
   "forgeRushLeft": "残り{sec}秒",
-  "@forgeRushLeft": {"placeholders": {"sec": {"type": "int"}}},
+  "@forgeRushLeft": {
+    "placeholders": {
+      "sec": {
+        "type": "int"
+      }
+    }
+  },
   "forgeRerollHint": "等級・部位はそのまま、オプションのみ再抽選",
   "forgeRushOn": "加速 {s}秒",
-  "@forgeRushOn": {"placeholders": {"s": {"type": "int"}}},
+  "@forgeRushOn": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStackCount": "金床 {n}/{max}",
-  "@forgeStackCount": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@forgeStackCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "forgeNoJelly": "ゼリーが足りません",
   "upgradeMaxed": "最大",
   "eliteLabel": "精鋭",
   "gateGearHint": "装備 ×{cur} · 推奨 ×{need}",
-  "@gateGearHint": {"placeholders": {"cur": {"type": "String"}, "need": {"type": "String"}}},
+  "@gateGearHint": {
+    "placeholders": {
+      "cur": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "gateGearWeak": "装備が弱い — 鍛冶で攻撃オプションを集めよう",
   "regionElementTitle": "地域の属性",
   "regionElementHint": "この属性を克する昆虫を装備すると、その攻撃が強くなります。昆虫はキャラクターとは別に、自分の速さで攻撃します。",
   "forgeStrikeStart": "開始",
-  "forgeStopOnHit": "目当てが出たら止める",
   "forgeStopOnHitHint": "フィルターに合うものが出たら自動を止めます。残りの化石を使いません。",
   "forgeStopOnHitNoFilter": "先にフィルターを設定してください",
   "forgeStoppedOnHit": "目当ての装備が出ました",
@@ -987,5 +1077,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "zoneConquered": "制圧済み",
+  "zoneHere": "現在地",
+  "zoneLocked": "ロック"
 }

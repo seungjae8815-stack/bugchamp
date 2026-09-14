@@ -229,14 +229,35 @@
   "rewardGained": "획득 보상",
   "bossLabel": "보스",
   "zoneLabel": "사냥터 {n}",
-  "@zoneLabel": {"placeholders": {"n": {"type": "int"}}},
+  "@zoneLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "zoneFinalLabel": "최종 사냥터",
   "bossChallenge": "보스 도전",
   "bossChallengeLocked": "보스 도전까지 {n}마리",
-  "@bossChallengeLocked": {"placeholders": {"n": {"type": "int"}}},
+  "@bossChallengeLocked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "bossChallengeFailed": "보스에게 밀려났어요. 더 강해져서 다시 도전하세요",
   "zoneKillsLabel": "처치 {n}/{m}",
-  "@zoneKillsLabel": {"placeholders": {"n": {"type": "int"}, "m": {"type": "int"}}},
+  "@zoneKillsLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "tapBoostHint": "화면을 탭해 부스트!",
   "levelBadge": "Lv {n}",
   "collectTitle": "채집 필드",
@@ -350,13 +371,27 @@
   "eventAdLimit": "오늘 무료 보상을 모두 받았어요",
   "eventTicketFull": "참가권이 가득 찼어요",
   "eventResultTitle": "{n}웨이브 도달!",
-
   "eventLeadStrong": "유리",
   "eventLeadWeak": "불리",
   "eventTicketBought": "참가권 {n}장을 충전했어요",
-  "@eventTicketBought": {"placeholders": {"n": {"type": "int"}}},
+  "@eventTicketBought": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "eventTicketDaily": "오늘 {used}/{max}",
-  "@eventTicketDaily": {"placeholders": {"used": {"type": "int"}, "max": {"type": "int"}}},
+  "@eventTicketDaily": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "eventStopWipe": "팀이 전멸해서 여기서 끝났어요.",
   "eventStopJudge": "20라운드가 지나 체력 비율 판정에서 밀렸어요. 곤충이 남아 있어도 여기서 끝납니다.",
   "eventStopMax": "마지막 웨이브까지 모두 클리어했어요!",
@@ -662,7 +697,7 @@
   "stanceCycle": "공 › 회 › 방 › 공",
   "tierClearTitle": "{name} 난이도를 모두 깼어요!",
   "tierNextTitle": "{name} 난이도로 진입합니다",
-  "tierNextBody": "스테이지·레벨·능력치 강화가 처음으로 돌아갑니다.\n곤충·장비·도감·재화는 그대로 남아요.\n레벨 랭킹은 최고 기록으로 유지됩니다.\n몬스터가 훨씬 더 강력해집니다.",
+  "tierNextBody": "스테이지 · 레벨 · 능력치 강화 ·\n골드 · 재료가 처음으로 돌아갑니다.\n\n곤충 · 장비 · 도감 · 젤리는\n그대로 남아요.\n\n레벨 랭킹은 최고 기록으로 유지됩니다.\n몬스터가 훨씬 더 강력해집니다.",
   "tierNextGo": "진입하기",
   "tierStayHere": "조금 더 있기",
   "tierAllClear": "모든 난이도를 정복했어요! 최고의 곤충학자예요.",
@@ -893,12 +928,12 @@
   "forgeStep": "공방 업그레이드 {cur}/{max}",
   "forgeUpgrading": "업그레이드 중",
   "forgeReady": "완료!",
-  "forgeRush": "즉시 완료",
+  "forgeRush": "가속",
   "forgeClaim": "완료 받기",
   "forgeNext": "다음 등급 확률",
   "forgeMaxLevel": "최고 등급",
   "forgeAutoTarget": "원하는 옵션",
-  "forgeStopOnHit": "찾으면 멈춤",
+  "forgeStopOnHit": "원하는 게 나오면 멈추기",
   "skillLearn": "습득",
   "skillLevelUp": "레벨 {lv} → {next}",
   "skillEquipped": "장착 중",
@@ -923,42 +958,97 @@
   "forgeFilterGrade": "최소 등급",
   "forgeFilterGradeHint": "이 등급 미만은 버립니다.",
   "forgeFilterRangeHint": "범위는 {tier} 등급 기준 최대치입니다",
-  "@forgeFilterRangeHint": {"placeholders": {"tier": {"type": "String"}}},
+  "@forgeFilterRangeHint": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
   "optPerfect": "완벽",
   "forgeFilterGradeAll": "전부",
   "forgeFilterOption": "능력치",
   "forgeStrikes": "x{n}",
-  "@forgeStrikes": {"placeholders": {"n": {"type": "int"}}},
+  "@forgeStrikes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "forgeFiltered": "필터에 안 맞아 버렸습니다",
   "forgeStrikePick": "망치질 개수",
   "forgeStrikePickHint": "한 번 두드릴 때 뽑을 개수예요. 손으로 두드려도 같이 적용됩니다.",
   "forgeStrikeLocked": "챕터 {n} 필요",
-  "@forgeStrikeLocked": {"placeholders": {"n": {"type": "int"}}},
+  "@forgeStrikeLocked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStrikeAuto": "최대",
   "forgeReroll": "옵션 재굴림",
-  "forgeRush": "가속",
   "forgeExpand": "칸 확장",
   "forgeExpandMax": "확장 최대",
   "forgeRushTitle": "망치질 가속",
   "forgeRushBody": "젤리 {cost}개로 {sec}초 동안 망치질이 두 배 빨라져요.\n가속 중에 다시 쓰면 남은 시간에 더해집니다.",
-  "@forgeRushBody": {"placeholders": {"cost": {"type": "int"}, "sec": {"type": "int"}}},
+  "@forgeRushBody": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      },
+      "sec": {
+        "type": "int"
+      }
+    }
+  },
   "forgeRushLeft": "남은 시간 {sec}초",
-  "@forgeRushLeft": {"placeholders": {"sec": {"type": "int"}}},
+  "@forgeRushLeft": {
+    "placeholders": {
+      "sec": {
+        "type": "int"
+      }
+    }
+  },
   "forgeRerollHint": "등급·부위는 그대로, 옵션만 다시 굴려요",
   "forgeRushOn": "가속 {s}초",
-  "@forgeRushOn": {"placeholders": {"s": {"type": "int"}}},
+  "@forgeRushOn": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
   "forgeStackCount": "모루 {n}/{max}",
-  "@forgeStackCount": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@forgeStackCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "forgeNoJelly": "젤리가 모자라요",
   "upgradeMaxed": "최대",
   "eliteLabel": "정예",
   "gateGearHint": "장비 ×{cur} · 권장 ×{need}",
-  "@gateGearHint": {"placeholders": {"cur": {"type": "String"}, "need": {"type": "String"}}},
+  "@gateGearHint": {
+    "placeholders": {
+      "cur": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "gateGearWeak": "장비가 약해요 — 제련으로 공격 옵션을 모으세요",
   "regionElementTitle": "지역 속성",
   "regionElementHint": "이 속성을 克하는 곤충을 끼면 그 곤충의 타격이 세져요. 곤충은 캐릭터와 따로, 자기 속도로 때립니다.",
   "forgeStrikeStart": "시작",
-  "forgeStopOnHit": "원하는 게 나오면 멈추기",
   "forgeStopOnHitHint": "필터에 맞는 걸 뽑으면 거기서 자동을 멈춰요. 남은 화석을 안 태웁니다.",
   "forgeStopOnHitNoFilter": "먼저 필터를 걸어야 멈출 기준이 생겨요",
   "forgeStoppedOnHit": "원하는 장비를 찾았습니다",
@@ -1022,5 +1112,17 @@
         "type": "String"
       }
     }
+  },
+  "zoneConquered": "점령함",
+  "@zoneConquered": {
+    "description": "로드맵 사냥터 상태 — 보스를 깬 사냥터"
+  },
+  "zoneHere": "지금 여기",
+  "@zoneHere": {
+    "description": "로드맵 사냥터 상태 — 지금 사냥 중인 사냥터"
+  },
+  "zoneLocked": "잠김",
+  "@zoneLocked": {
+    "description": "로드맵 사냥터 상태 — 아직 못 간 사냥터"
   }
 }

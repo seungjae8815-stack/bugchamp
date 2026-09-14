@@ -235,5 +235,536 @@
    "_comment": "최종 보스 사냥터. 사냥터 10을 깨면 열리고, 가장 세다."
   }
  ],
- "_zoneComment": "사냥터 구조(2026-09-14): 챕터 하나 = 사냥터 하나(100 스테이지 폭, 실제로는 startStage 에 머문다). nodeStep 100 이라 로드맵에 사냥터마다 보스 칸 하나만 찍힌다. 11번째가 최종 보스."
+ "_zoneComment": "사냥터 구조(2026-09-14): 챕터 하나 = 사냥터 하나(100 스테이지 폭, 실제로는 startStage 에 머문다). nodeStep 100 이라 로드맵에 사냥터마다 보스 칸 하나만 찍힌다. 11번째가 최종 보스.",
+ "_bossComment": "보스 44마리(난이도 4 × 사냥터 11). 키 = RunConfig.bossArtId 가 돌려주는 아트 id 라 이름·설명·그림이 같은 키를 본다. 이름이 없으면 화면은 챕터 boss 이름으로 폴백한다 — 키 오타는 조용히 옛 이름으로 보이므로 app/test 의 키 검사가 막는다.",
+ "bosses": {
+  "e01": {
+   "name": {
+    "ko": "숲의 지배자",
+    "en": "Forest Overlord",
+    "ja": "森の支配者"
+   },
+   "desc": {
+    "ko": "이끼 낀 참나무 껍질을 두른 거대한 사슴벌레. 뿔 사이에 버섯이 자란다.",
+    "en": "An ancient stag beetle armored in mossy oak bark.",
+    "ja": "苔むした樫の樹皮をまとう巨大なクワガタ。"
+   }
+  },
+  "e02": {
+   "name": {
+    "ko": "물가의 포식자",
+    "en": "Riverside Predator",
+    "ja": "水辺の捕食者"
+   },
+   "desc": {
+    "ko": "젖은 갑옷을 번뜩이는 물장군. 낫 같은 앞다리로 먹이를 붙든다.",
+    "en": "A giant water scorpion with raptorial forelegs.",
+    "ja": "濡れた鎧を光らせるタガメ。"
+   }
+  },
+  "e03": {
+   "name": {
+    "ko": "초원의 여왕",
+    "en": "Meadow Queen",
+    "ja": "草原の女王"
+   },
+   "desc": {
+    "ko": "가시 왕관을 쓴 에메랄드빛 메뚜기. 한 번 뛰면 들판을 건넌다.",
+    "en": "An emerald grasshopper queen crowned with thorns.",
+    "ja": "棘の王冠をかぶるエメラルドのバッタ。"
+   }
+  },
+  "e04": {
+   "name": {
+    "ko": "밤의 군주",
+    "en": "Lord of Night",
+    "ja": "夜の君主"
+   },
+   "desc": {
+    "ko": "달무늬가 박힌 벨벳 날개. 날갯짓마다 은빛 가루가 떨어진다.",
+    "en": "A moth lord with moon-marked velvet wings.",
+    "ja": "月紋のビロードの翅を持つ蛾の君主。"
+   }
+  },
+  "e05": {
+   "name": {
+    "ko": "무쇠턱 폭군",
+    "en": "Irondaw Tyrant",
+    "ja": "鉄顎の暴君"
+   },
+   "desc": {
+    "ko": "녹슨 철판을 덧댄 장수풍뎅이. 뿔 하나로 바위를 가른다.",
+    "en": "A rhinoceros beetle clad in rusted iron plates.",
+    "ja": "錆びた鉄板をまとうカブトムシ。"
+   }
+  },
+  "e06": {
+   "name": {
+    "ko": "맹독 여제",
+    "en": "Venom Empress",
+    "ja": "猛毒の女帝"
+   },
+   "desc": {
+    "ko": "초록빛 독침을 세운 말벌 여제. 날개 소리만으로 벌레들이 흩어진다.",
+    "en": "A wasp empress bearing a glowing green stinger.",
+    "ja": "緑に光る毒針を持つスズメバチの女帝。"
+   }
+  },
+  "e07": {
+   "name": {
+    "ko": "그림자 사마귀",
+    "en": "Shadow Mantis",
+    "ja": "影のカマキリ"
+   },
+   "desc": {
+    "ko": "관절마다 그림자가 새어 나오는 사마귀. 낫이 보이면 이미 늦었다.",
+    "en": "A mantis trailing shadow from every joint.",
+    "ja": "関節から影が漏れるカマキリ。"
+   }
+  },
+  "e08": {
+   "name": {
+    "ko": "심연의 집게왕",
+    "en": "Deepcave Pincer King",
+    "ja": "深淵のハサミ王"
+   },
+   "desc": {
+    "ko": "동굴 바닥에서 자란 집게벌레. 옆구리의 푸른 점이 어둠에 빛난다.",
+    "en": "A cave earwig king with bioluminescent flanks.",
+    "ja": "洞窟の底で育ったハサミムシの王。"
+   }
+  },
+  "e09": {
+   "name": {
+    "ko": "태고의 여왕개미",
+    "en": "Primordial Ant Queen",
+    "ja": "太古の女王蟻"
+   },
+   "desc": {
+    "ko": "청동빛 배에 옛 문양이 새겨진 여왕개미. 수액 결정이 등에서 자란다.",
+    "en": "A queen ant with tribal carvings on a bronze abdomen.",
+    "ja": "青銅の腹に古の紋を刻む女王蟻。"
+   }
+  },
+  "e10": {
+   "name": {
+    "ko": "곤충 황제",
+    "en": "Insect Emperor",
+    "ja": "昆虫皇帝"
+   },
+   "desc": {
+    "ko": "금과 에메랄드로 빛나는 풍뎅이. 등껍질에 햇살 무늬가 새겨져 있다.",
+    "en": "A golden scarab whose shell is engraved with sun rays.",
+    "ja": "金とエメラルドに輝くコガネムシ。"
+   }
+  },
+  "e_final": {
+   "name": {
+    "ko": "태초의 왕충",
+    "en": "The First Sovereign",
+    "ja": "太初の王蟲"
+   },
+   "desc": {
+    "ko": "모든 곤충의 시작이라 불리는 왕. 쉬움의 끝에서 기다린다.",
+    "en": "The king said to be the origin of all insects.",
+    "ja": "すべての昆虫の始まりと呼ばれる王。"
+   }
+  },
+  "n01": {
+   "name": {
+    "ko": "흑요석 사슴벌레",
+    "en": "Obsidian Stag",
+    "ja": "黒曜石のクワガタ"
+   },
+   "desc": {
+    "ko": "유리처럼 깨질 듯 단단한 검은 턱. 빛을 되쏘아 눈을 멀게 한다.",
+    "en": "A stag beetle with obsidian-hard black mandibles.",
+    "ja": "ガラスのように硬い黒い顎を持つクワガタ。"
+   }
+  },
+  "n02": {
+   "name": {
+    "ko": "늪지의 잠자리 여왕",
+    "en": "Marsh Dragonfly Queen",
+    "ja": "沼地のトンボ女王"
+   },
+   "desc": {
+    "ko": "안개 낀 늪을 순찰하는 잠자리. 네 날개가 따로 움직인다.",
+    "en": "A dragonfly queen patrolling the fog-bound marsh.",
+    "ja": "霧の沼を巡回するトンボの女王。"
+   }
+  },
+  "n03": {
+   "name": {
+    "ko": "가시 메뚜기 장군",
+    "en": "Thorn Locust General",
+    "ja": "棘バッタ将軍"
+   },
+   "desc": {
+    "ko": "등줄기마다 가시가 솟은 메뚜기. 착지하는 곳이 곧 전장이다.",
+    "en": "A locust general bristling with spines.",
+    "ja": "背に棘を並べたバッタの将軍。"
+   }
+  },
+  "n04": {
+   "name": {
+    "ko": "서리 나방",
+    "en": "Frost Moth",
+    "ja": "霜の蛾"
+   },
+   "desc": {
+    "ko": "날개에서 서리가 떨어지는 흰 나방. 지나간 자리가 얼어붙는다.",
+    "en": "A white moth shedding frost from its wings.",
+    "ja": "翅から霜を落とす白い蛾。"
+   }
+  },
+  "n05": {
+   "name": {
+    "ko": "강철 소똥구리",
+    "en": "Steel Dung Beetle",
+    "ja": "鋼のフンコロガシ"
+   },
+   "desc": {
+    "ko": "쇳덩이를 굴리는 소똥구리. 그 공에 맞으면 성벽도 무너진다.",
+    "en": "A dung beetle that rolls a ball of solid steel.",
+    "ja": "鉄塊を転がすフンコロガシ。"
+   }
+  },
+  "n06": {
+   "name": {
+    "ko": "개미귀신 함정왕",
+    "en": "Antlion Trapper",
+    "ja": "蟻地獄の罠王"
+   },
+   "desc": {
+    "ko": "모래 아래 숨어 기다리는 개미귀신. 발을 딛는 순간 바닥이 사라진다.",
+    "en": "An antlion waiting beneath a pit of sand.",
+    "ja": "砂の下で待ち構える蟻地獄。"
+   }
+  },
+  "n07": {
+   "name": {
+    "ko": "그림자 반딧불",
+    "en": "Shadow Firefly",
+    "ja": "影のホタル"
+   },
+   "desc": {
+    "ko": "빛 대신 어둠을 뿌리는 반딧불. 밝을수록 주변이 어두워진다.",
+    "en": "A firefly that sheds darkness instead of light.",
+    "ja": "光の代わりに闇を撒くホタル。"
+   }
+  },
+  "n08": {
+   "name": {
+    "ko": "심해 물장군",
+    "en": "Abyss Water Bug",
+    "ja": "深淵のタガメ"
+   },
+   "desc": {
+    "ko": "깊은 물에서 올라온 물장군. 껍질에 아직 물이 흐른다.",
+    "en": "A giant water bug risen from the deep.",
+    "ja": "深い水から現れたタガメ。"
+   }
+  },
+  "n09": {
+   "name": {
+    "ko": "바위 하늘소",
+    "en": "Granite Longhorn",
+    "ja": "花崗岩のカミキリ"
+   },
+   "desc": {
+    "ko": "더듬이가 채찍처럼 긴 하늘소. 등껍질이 돌처럼 단단하다.",
+    "en": "A longhorn beetle with stone-hard armor.",
+    "ja": "石のように硬い甲羅のカミキリ。"
+   }
+  },
+  "n10": {
+   "name": {
+    "ko": "황금 장수풍뎅이",
+    "en": "Gilded Hercules",
+    "ja": "黄金のヘラクレス"
+   },
+   "desc": {
+    "ko": "금을 입힌 뿔을 세운 장수풍뎅이. 부딪히면 종소리가 난다.",
+    "en": "A hercules beetle with gilded horns.",
+    "ja": "金を帯びた角のヘラクレスオオカブト。"
+   }
+  },
+  "n_final": {
+   "name": {
+    "ko": "폭풍의 왕벌",
+    "en": "Storm Hornet King",
+    "ja": "嵐の王蜂"
+   },
+   "desc": {
+    "ko": "날갯소리가 천둥이 되는 왕벌. 보통의 끝을 지킨다.",
+    "en": "A hornet king whose wingbeat becomes thunder.",
+    "ja": "羽音が雷となる王蜂。"
+   }
+  },
+  "h01": {
+   "name": {
+    "ko": "용암 딱정벌레",
+    "en": "Magma Beetle",
+    "ja": "溶岩の甲虫"
+   },
+   "desc": {
+    "ko": "등딱지 틈으로 용암이 흐르는 딱정벌레. 닿으면 갑옷이 녹는다.",
+    "en": "A beetle with magma flowing between its plates.",
+    "ja": "甲羅の隙間から溶岩が流れる甲虫。"
+   }
+  },
+  "h02": {
+   "name": {
+    "ko": "검은 사마귀 황후",
+    "en": "Onyx Mantis Empress",
+    "ja": "黒瑪瑙のカマキリ皇后"
+   },
+   "desc": {
+    "ko": "검은 보석으로 깎은 듯한 사마귀. 한 번의 낫질로 승부를 낸다.",
+    "en": "A mantis empress carved from black onyx.",
+    "ja": "黒瑪瑙から削り出したようなカマキリ。"
+   }
+  },
+  "h03": {
+   "name": {
+    "ko": "독가시 애벌레",
+    "en": "Venomspine Caterpillar",
+    "ja": "毒棘のイモムシ"
+   },
+   "desc": {
+    "ko": "온몸이 독가시인 거대 애벌레. 밟는 자리마다 풀이 시든다.",
+    "en": "A vast caterpillar covered in venomous spines.",
+    "ja": "全身が毒棘の巨大なイモムシ。"
+   }
+  },
+  "h04": {
+   "name": {
+    "ko": "잿빛 매미 군주",
+    "en": "Ash Cicada Lord",
+    "ja": "灰の蝉主"
+   },
+   "desc": {
+    "ko": "울음소리가 재를 부르는 매미. 숲이 회색으로 변한다.",
+    "en": "A cicada lord whose cry summons ash.",
+    "ja": "鳴き声が灰を呼ぶ蝉の主。"
+   }
+  },
+  "h05": {
+   "name": {
+    "ko": "강철 집게벌레",
+    "en": "Iron Earwig",
+    "ja": "鉄のハサミムシ"
+   },
+   "desc": {
+    "ko": "꼬리 집게가 절단기인 집게벌레. 무엇이든 두 동강 낸다.",
+    "en": "An earwig whose tail pincers cut like shears.",
+    "ja": "尾のハサミが断裁機のハサミムシ。"
+   }
+  },
+  "h06": {
+   "name": {
+    "ko": "피의 모기 여왕",
+    "en": "Crimson Mosquito Queen",
+    "ja": "紅の蚊女王"
+   },
+   "desc": {
+    "ko": "배가 붉게 가득 찬 모기 여왕. 빨아들인 만큼 회복한다.",
+    "en": "A mosquito queen who heals with every drain.",
+    "ja": "吸った分だけ回復する蚊の女王。"
+   }
+  },
+  "h07": {
+   "name": {
+    "ko": "유령 하루살이",
+    "en": "Phantom Mayfly",
+    "ja": "幽霊のカゲロウ"
+   },
+   "desc": {
+    "ko": "반투명한 몸으로 흔들리는 하루살이. 때린 자리에 아무것도 없다.",
+    "en": "A translucent mayfly that blurs where struck.",
+    "ja": "半透明の体で揺らぐカゲロウ。"
+   }
+  },
+  "h08": {
+   "name": {
+    "ko": "지옥 개미 군주",
+    "en": "Hellfire Ant Lord",
+    "ja": "業火の蟻王"
+   },
+   "desc": {
+    "ko": "등이 불타는 개미 군주. 발자국마다 불씨가 남는다.",
+    "en": "An ant lord burning along its back.",
+    "ja": "背が燃える蟻の王。"
+   }
+  },
+  "h09": {
+   "name": {
+    "ko": "수정 풍뎅이",
+    "en": "Crystal Scarab",
+    "ja": "水晶のコガネムシ"
+   },
+   "desc": {
+    "ko": "수정으로 이루어진 풍뎅이. 깨진 조각도 스스로 붙는다.",
+    "en": "A scarab of living crystal that mends itself.",
+    "ja": "水晶でできたコガネムシ。"
+   }
+  },
+  "h10": {
+   "name": {
+    "ko": "밤의 황제 나방",
+    "en": "Night Emperor Moth",
+    "ja": "夜の皇帝蛾"
+   },
+   "desc": {
+    "ko": "별자리 무늬 날개를 펴는 거대 나방. 밤하늘이 좁아 보인다.",
+    "en": "An emperor moth with constellations on its wings.",
+    "ja": "星座の紋を広げる巨大な蛾。"
+   }
+  },
+  "h_final": {
+   "name": {
+    "ko": "재앙의 대벌레",
+    "en": "Calamity Stick Insect",
+    "ja": "災厄のナナフシ"
+   },
+   "desc": {
+    "ko": "나뭇가지인 줄 알았던 재앙. 어려움의 끝에 서 있다.",
+    "en": "The calamity you mistook for a branch.",
+    "ja": "枝だと思っていた災厄。"
+   }
+  },
+  "x01": {
+   "name": {
+    "ko": "공허 사슴벌레",
+    "en": "Void Stag",
+    "ja": "虚空のクワガタ"
+   },
+   "desc": {
+    "ko": "몸 안에 밤하늘을 담은 사슴벌레. 빛을 삼킨다.",
+    "en": "A stag beetle holding a night sky inside.",
+    "ja": "体に夜空を宿すクワガタ。"
+   }
+  },
+  "x02": {
+   "name": {
+    "ko": "성운 잠자리",
+    "en": "Nebula Dragonfly",
+    "ja": "星雲のトンボ"
+   },
+   "desc": {
+    "ko": "날개에 성운이 흐르는 잠자리. 지나간 자리에 별가루가 남는다.",
+    "en": "A dragonfly with nebulae drifting in its wings.",
+    "ja": "翅に星雲が流れるトンボ。"
+   }
+  },
+  "x03": {
+   "name": {
+    "ko": "별빛 반딧불 왕",
+    "en": "Starlight Firefly King",
+    "ja": "星光のホタル王"
+   },
+   "desc": {
+    "ko": "별 하나를 꼬리에 매단 반딧불 왕. 눈을 뜨기 어렵다.",
+    "en": "A firefly king carrying a star at his tail.",
+    "ja": "尾に星を宿すホタルの王。"
+   }
+  },
+  "x04": {
+   "name": {
+    "ko": "흑철 장수풍뎅이",
+    "en": "Blacksteel Hercules",
+    "ja": "黒鋼のヘラクレス"
+   },
+   "desc": {
+    "ko": "검은 강철로 벼려진 장수풍뎅이. 돌진 한 번이 지진이다.",
+    "en": "A hercules beetle forged in black steel.",
+    "ja": "黒鋼で鍛えたヘラクレスオオカブト。"
+   }
+  },
+  "x05": {
+   "name": {
+    "ko": "서리 여왕개미",
+    "en": "Frost Ant Queen",
+    "ja": "霜の女王蟻"
+   },
+   "desc": {
+    "ko": "숨결이 서리인 여왕개미. 가까이 가면 발이 얼어붙는다.",
+    "en": "An ant queen whose breath is frost.",
+    "ja": "吐息が霜となる女王蟻。"
+   }
+  },
+  "x06": {
+   "name": {
+    "ko": "뇌전 말벌",
+    "en": "Thunder Hornet",
+    "ja": "雷電の蜂"
+   },
+   "desc": {
+    "ko": "번개를 두르고 날아드는 말벌. 침에 닿으면 몸이 굳는다.",
+    "en": "A hornet cloaked in lightning.",
+    "ja": "雷をまとって飛ぶスズメバチ。"
+   }
+  },
+  "x07": {
+   "name": {
+    "ko": "심연의 물방개",
+    "en": "Abyssal Diving Beetle",
+    "ja": "深淵のゲンゴロウ"
+   },
+   "desc": {
+    "ko": "빛이 닿지 않는 물에서 온 물방개. 옆구리 불빛이 유일한 경고다.",
+    "en": "A diving beetle from lightless water.",
+    "ja": "光の届かぬ水から来たゲンゴロウ。"
+   }
+  },
+  "x08": {
+   "name": {
+    "ko": "태양 풍뎅이",
+    "en": "Solar Scarab",
+    "ja": "太陽のスカラベ"
+   },
+   "desc": {
+    "ko": "작은 태양을 등에 인 풍뎅이. 곁에 서면 숨이 막힌다.",
+    "en": "A scarab bearing a small sun on its back.",
+    "ja": "小さな太陽を背負うスカラベ。"
+   }
+  },
+  "x09": {
+   "name": {
+    "ko": "망령 사마귀",
+    "en": "Wraith Mantis",
+    "ja": "亡霊のカマキリ"
+   },
+   "desc": {
+    "ko": "죽은 뒤에도 낫을 휘두르는 사마귀. 그림자만 남았다.",
+    "en": "A mantis still swinging its scythes after death.",
+    "ja": "死してなお鎌を振るうカマキリ。"
+   }
+  },
+  "x10": {
+   "name": {
+    "ko": "시간의 매미",
+    "en": "Chrono Cicada",
+    "ja": "時の蝉"
+   },
+   "desc": {
+    "ko": "땅속에서 수백 년을 기다린 매미. 울면 시간이 늘어진다.",
+    "en": "A cicada that waited centuries underground.",
+    "ja": "地中で数百年待った蝉。"
+   }
+  },
+  "x_final": {
+   "name": {
+    "ko": "만충의 근원",
+    "en": "The Origin",
+    "ja": "万蟲の根源"
+   },
+   "desc": {
+    "ko": "모든 곤충이 여기서 나왔다고 전해진다. 이 게임의 끝.",
+    "en": "All insects are said to have come from here.",
+    "ja": "すべての蟲がここから生まれたという。"
+   }
+  }
+ }
 }

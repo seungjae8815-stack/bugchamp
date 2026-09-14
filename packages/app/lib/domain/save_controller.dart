@@ -377,6 +377,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ///  - 유지: 곤충 · 장비 · 도감 · 재화(골드·재료·젤리) · 부화기/짝짓기
   ///
   /// 남는 자산이 곧 "이번엔 훨씬 수월하다"는 성장 실감이다.
+  ///
+  /// ⚠️ **골드와 일반 재료는 성장 축이라 함께 처음으로 돌아간다**(2026-09-14 실측).
+  /// 업그레이드 레벨만 지우고 재화를 남겼더니, 쌓아 둔 것으로 **넘어간 즉시
+  /// 상한까지 다시 사서** 새 회차가 통째로 건너뛰어졌다 — 골드 113조면
+  /// 216레벨, 키틴 300만이면 164레벨이 즉시 복구된다. 강화의 문턱이 골드와
+  /// 재료 **둘**이므로 한쪽만 비우면 다른 쪽이 그대로 구멍이 된다.
+  /// 비용 곡선을 회차마다 올려 막으려면 배율이 억 단위라야 해서 손잡이로 쓸 수 없다.
+  ///
+  /// 남는 것: 곤충 · 장비 · 도감 · **젤리**(프리미엄 — 돈 주고 산 것을 지울 수
+  /// 없다) · **화석**(제련 전용이라 강화 문턱이 아니다). 그것이 "이번엔
+  /// 수월하다"의 실체이고, 골드·재료는 그때그때 다시 번다.
+  ///
+  /// ⚠️ 사냥터 게이지(`zoneKills`)도 비운다. 안 비우면 새 난이도 첫 사냥터에
+  /// 도착하자마자 **보스 도전이 열려 있다**(2026-09-14 지적).
   Future<void> enterNextTier() async {
     final s = state.requireValue;
     await _commit(
@@ -387,6 +401,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
         upgradeLevels: const {},
         level: 1,
         xp: 0,
+        gold: 0,
+        zoneKills: 0,
+        // 일반 재료(키틴·미네랄·수액)는 강화 2차 비용이라 골드와 한 세트다.
+        // 젤리·화석은 남긴다.
+        materials: {
+          for (final e in s.materials.entries)
+            if (!kRegularMaterials.contains(e.key)) e.key: e.value,
+        },
       ),
     );
   }
@@ -395,6 +417,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
   SaveRepository get _repo => ref.read(saveRepositoryProvider);
 
   Future<void> _commit(SaveGame save) async {
+    // 최고 도달 기록은 **저장되는 모든 경로**에서 한 번에 올린다. 획득 지점마다
+    // 올리면 새 경로가 생길 때 빠뜨린다(도감 갱신과 같은 원칙).
+    if (save.stageNumber > save.bestStage) {
+      save = save.copyWith(bestStage: save.stageNumber);
+    }
     // 채집함 상한은 **저장되는 모든 경로**에서 지켜져야 한다. 획득 지점마다
     // 막아두긴 했지만, 여기서 한 번 더 자르면 새 획득 경로가 생겨도 세이브가
     // 비대해지지 않는다(상한 이하면 그대로 통과 — 비용 없음).
