@@ -1126,7 +1126,7 @@
   "upBossDamageDesc": "Extra damage dealt to bosses.",
   "upMaxHpDesc": "Increases max HP so you last longer.",
   "upDefenseDesc": "Reduces damage taken from enemies.",
-  "upRegenDesc": "Increases HP regenerated per second.",
+  "upRegenDesc": "Recover a share of max HP every second. Lets you outlast hits.",
   "upRewardDesc": "More gold earned per monster kill.",
   "upXpDesc": "More XP earned per monster kill.",
   "upBugFindDesc": "Increases the chance to find bugs.",

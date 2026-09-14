@@ -296,6 +296,25 @@ double habitatThreat(
 
 double toughnessOf(CharacterStats s) => s.maxHp * (1 + s.defense / 100);
 
+/// 처치 회복량(체력 단위). **앱과 시뮬이 같은 식**을 쓴다.
+///
+/// `최대 × killHealPct + 잃은 체력 × killHealMissingPct`. 잃은 체력 비례 몫이
+/// 있어야 체력이 한 높이를 오르내린다(RunConfig.killHealMissingPct 참조).
+/// 가득 찬 상태보다 더 채우지는 않는다.
+double killHealAmount(
+  RunConfig c, {
+  required double hp,
+  required double maxHp,
+  bool boss = false,
+}) {
+  if (maxHp <= 0) return 0;
+  final missing = math.max(0.0, maxHp - hp);
+  final flat = maxHp * (boss ? c.bossKillHealPct : c.killHealPct);
+  final part =
+      missing * (boss ? c.bossKillHealMissingPct : c.killHealMissingPct);
+  return math.min(missing, flat + part);
+}
+
 /// 업그레이드 레벨 + 캐릭터 레벨 + 곤충 수로부터 유효 능력치 파생.
 /// 설정에 없는 업그레이드는 **중립값**으로 대체(부분 설정 안전).
 CharacterStats deriveStats(
@@ -327,7 +346,12 @@ CharacterStats deriveStats(
     bossDamage: v(UpgradeKind.bossDamage, 1.0),
     maxHp: v(UpgradeKind.maxHp, 100.0) * levelScale,
     defense: v(UpgradeKind.defense, 0.0),
-    hpRegen: v(UpgradeKind.regen, 0.0),
+    // 회복은 **최대 체력의 비율**(초당)이다. 예전엔 HP/초 절대값이라 캐릭터
+    // 레벨·장비로 체력이 불어나는 만큼 회복이 희석돼, 후반엔 초당 0.03% 로
+    // 사실상 0 이었다(2026-09-14 실측). 회복 195 레벨이 죽은 투자였다.
+    // 비율로 두면 체력이 얼마가 되든 "5초 버티면 이만큼 찬다"가 유지된다.
+    hpRegen:
+        v(UpgradeKind.maxHp, 100.0) * levelScale * v(UpgradeKind.regen, 0.0),
     xpMultiplier: v(UpgradeKind.xp, 1.0),
     bugFind: v(UpgradeKind.bugFind, 1.0),
     materialFind: v(UpgradeKind.materialFind, 1.0),

@@ -1859,7 +1859,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upDefenseDesc => '敵から受けるダメージが減ります。';
 
   @override
-  String get upRegenDesc => '秒間の体力回復量が増えます。';
+  String get upRegenDesc => '毎秒、最大体力の一定割合を回復します。攻撃に耐える時間が伸びます。';
 
   @override
   String get upRewardDesc => 'モンスター撃破時に得られるゴールドが増えます。';

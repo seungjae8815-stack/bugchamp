@@ -1890,7 +1890,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upDefenseDesc => 'Reduces damage taken from enemies.';
 
   @override
-  String get upRegenDesc => 'Increases HP regenerated per second.';
+  String get upRegenDesc =>
+      'Recover a share of max HP every second. Lets you outlast hits.';
 
   @override
   String get upRewardDesc => 'More gold earned per monster kill.';

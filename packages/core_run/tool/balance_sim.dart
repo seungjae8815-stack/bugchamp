@@ -418,6 +418,26 @@ void main(List<String> args) {
   }
   stdout.writeln('');
 
+  stdout.writeln('── 체력 궤적(죽을 듯 말 듯인가) ──');
+  stdout.writeln('  한 대 = 일반 몬스터 한 대(최대 체력 대비). 최저 = 스테이지 중 가장 낮았던 체력.');
+  stdout.writeln('  목표: 순항에서 최저 20~50% 를 오가고 죽지는 않는다. 벽에서는 죽는다.');
+  stdout.writeln('  스테이지 |  한 대 |  최저 |  끝 | 판정');
+  // 관문(100·200·400·1000)은 벽이라 죽는 게 맞다 — 순항 구간을 따로 본다.
+  for (final m in const [10, 50, 100, 200, 400, 550, 700, 850, 1000]) {
+    final v = sim.hpTrajectory[m];
+    if (v == null) continue;
+    final verdict = v.dead
+        ? '죽음 ← 벽'
+        : (v.low > 0.6 ? '밋밋함 ← 문제' : (v.low >= 0.15 ? '아슬아슬 — 좋다' : '간신히'));
+    stdout.writeln(
+      '  ${m.toString().padLeft(7)} |'
+      ' ${(v.hit * 100).toStringAsFixed(0).padLeft(5)}% |'
+      ' ${(v.low * 100).toStringAsFixed(0).padLeft(4)}% |'
+      ' ${(v.end * 100).toStringAsFixed(0).padLeft(3)}% | $verdict',
+    );
+  }
+  stdout.writeln('');
+
   stdout.writeln('── 업그레이드가 막힌 이유(구간별) ──');
   stdout.writeln('  재료가 100% 면 재료만 모으는 게임, 0% 면 재료가 장식이다.');
   for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
@@ -527,6 +547,17 @@ class _Player {
   /// 크면 순항 구간에서도 계속 죽는다. 목표는 **순항에선 안 죽고 벽에서는
   /// 죽는다** — 즉 피격이 회복보다 조금 크다.
   final Map<int, ({double dmg, double heal})> habitatBudget = {};
+
+  /// 스테이지별 **체력 궤적** — 한 스테이지를 마리 단위로 따라가며
+  /// (맞고 → 잡고 회복) 체력이 어디까지 내려갔다가 어디서 끝나는지.
+  /// 수지(합계)는 같아도 궤적은 다르다: 천천히 미끄러지는 것과
+  /// 30~60% 를 오르내리는 것은 같은 수지에서 전혀 다른 게임이다.
+  ///   hit   = 일반 몬스터 한 대(최대 체력 대비)
+  ///   low   = 스테이지 중 가장 낮았던 체력
+  ///   end   = 보스까지 끝낸 뒤 체력
+  ///   dead  = 도중에 0 에 닿았나
+  final Map<int, ({double hit, double low, double end, bool dead})>
+  hpTrajectory = {};
 
   /// 날짜별 누적 골드 획득 — 공방 같은 새 소비처의 규모를 정할 때 쓴다.
   final Map<int, double> goldEarnedByDay = {};
@@ -832,6 +863,86 @@ class _Player {
               st.hpRegen * bossFight +
               st.maxHp * config.bossKillHealPct;
           final max = st.maxHp <= 0 ? 1.0 : st.maxHp;
+          // ── 체력 궤적 ── (앱의 게이지 규칙 그대로: 간격마다 한 대, 게이지
+          // 이월, 처치 회복은 killHealAmount)
+          hpTrajectory.putIfAbsent(s, () {
+            var hp = max;
+            var low = max;
+            var acc = 0.0;
+            var dead = false;
+            void tick(
+              double sec,
+              double incPerSec,
+              double interval,
+              double mult,
+              double regenMul, {
+              // 달라붙고 enemyFirstBiteDelay 뒤 반드시 한 대(앱과 같은 규칙).
+              // 그 뒤 게이지는 0 부터 — 안 그러면 두 대가 겹친다.
+              bool engage = false,
+            }) {
+              final delay = config.enemyFirstBiteDelay;
+              var bitten = !(engage && delay > 0);
+              void bite() {
+                hp -= incPerSec * interval * mult;
+                if (hp < low) low = hp;
+                if (hp <= 0) dead = true;
+              }
+
+              // 회복은 구간에 고르게, 피격은 게이지가 찰 때마다 한 대.
+              var t = 0.0;
+              while (t < sec && !dead) {
+                final step = math.min(0.25, sec - t);
+                hp = math.min(max, hp + st.hpRegen * regenMul * step);
+                acc += step;
+                if (!bitten && t + step >= delay) {
+                  bitten = true;
+                  acc = 0;
+                  bite();
+                } else if (acc >= interval) {
+                  acc -= interval;
+                  bite();
+                }
+                t += step;
+              }
+            }
+
+            final iv = config.enemyAtkInterval;
+            for (var i = 0; i < n && !dead; i++) {
+              tick(walk, inc * config.walkThreatMult, iv, 1.0, 2.0);
+              tick(fight, inc, iv, 1.0, 1.0, engage: true);
+              if (!dead) {
+                hp += killHealAmount(config, hp: hp, maxHp: max);
+              }
+            }
+            if (!dead) {
+              tick(
+                bossFight,
+                bossInc / 1.4,
+                config.bossAtkInterval,
+                config.bossHitMult,
+                1.0,
+                engage: true,
+              );
+              if (!dead) {
+                hp += killHealAmount(config, hp: hp, maxHp: max, boss: true);
+              }
+            }
+            // 디버그: SIM_DEBUG_STAGE=850 처럼 주면 그 스테이지의 궤적 입력을 찍는다.
+            if (Platform.environment['SIM_DEBUG_STAGE'] == '$s') {
+              stderr.writeln(
+                '[궤적 $s] fight=${fight.toStringAsFixed(2)}s walk=${walk.toStringAsFixed(2)}s '
+                'bite=${(inc * iv / max * 100).toStringAsFixed(1)}% '
+                'bossFight=${bossFight.toStringAsFixed(1)}s bossBite=${(bossInc / 1.4 * config.bossAtkInterval * config.bossHitMult / max * 100).toStringAsFixed(1)}% '
+                'regen/s=${(st.hpRegen / max * 100).toStringAsFixed(2)}% hits=${hitsToKill[s]}',
+              );
+            }
+            return (
+              hit: inc * iv / max,
+              low: math.max(0.0, low) / max,
+              end: math.max(0.0, hp) / max,
+              dead: dead,
+            );
+          });
           return (dmg: dmg / max, heal: heal / max);
         });
         secPerKill.putIfAbsent(s, () {

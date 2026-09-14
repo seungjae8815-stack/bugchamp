@@ -193,6 +193,12 @@ class RunConfig {
     this.bossThreatMult = 4.0,
     this.killHealPct = 0.05,
     this.bossKillHealPct = 0.3,
+    this.killHealMissingPct = 0,
+    this.bossKillHealMissingPct = 0,
+    this.enemyFirstBiteDelay = 0,
+    this.enemyAtkInterval = 1.5,
+    this.bossAtkInterval = 1.3,
+    this.bossHitMult = 1.4,
     this.offlineEfficiency = 0.3,
     this.worldSize = 0,
     this.worldHpMult = 1.0,
@@ -372,6 +378,38 @@ class RunConfig {
   /// 보스를 잡을 때 회복되는 최대체력 비율. 보스전은 크게 깎이므로
   /// 다음 스테이지를 시작할 밑천을 여기서 돌려준다(서식지보다 크다).
   final double bossKillHealPct;
+
+  /// 처치 회복의 **잃은 체력 비례** 몫(0 = 없음).
+  ///
+  /// 최대체력 비례 회복만 있으면 체력은 "가득" 아니면 "줄줄"이다 — 회복이 더
+  /// 크면 늘 가득이고, 피격이 더 크면 한 방향으로 미끄러진다. 잃은 만큼에
+  /// 비례해 채우면 **피격과 회복이 만나는 높이**가 생겨 체력이 그 근처를
+  /// 오르내린다. 한 대 맞아 30% 로 떨어졌다가 잡아서 50% 로 돌아오는 리듬 —
+  /// "죽을 듯 말 듯"이 여기서 나온다(2026-09-14 사장님 방향).
+  ///
+  /// 벽에서는 한 마리에 여러 대를 맞아 만나는 높이가 0 아래로 내려가 죽는다.
+  /// 방어는 한 대의 크기를, 회복은 사이를, 체력 상한은 한 대를 견딜 폭을 맡는다.
+  final double killHealMissingPct;
+  final double bossKillHealMissingPct;
+
+  /// 몬스터가 **달라붙고 이만큼 뒤에 반드시 한 번 문다**(초, 0 = 끔).
+  ///
+  /// 게이지(간격)만으로는 장비를 갖춘 유저가 몬스터를 1초에 잡아 **평생 한 대도
+  /// 안 맞는다** — 스테이지 800 실측(2026-09-14). 위협도를 아무리 올려도
+  /// 맞지 않으면 의미가 없다. 첫 물기는 처치 속도와 무관하게 "마리당 한 대"를
+  /// 보장한다. 이 한 대가 크고(간격 x 초당 위협), 잡아서 되찾는 것이 리듬이다.
+  /// 첫 물기 뒤에는 게이지를 0 에서 다시 센다 — 안 그러면 두 대가 겹친다.
+  final double enemyFirstBiteDelay;
+
+  /// 몬스터가 무는 간격(초). 길수록 한 대가 크다(같은 DPS 를 뭉쳐서 준다).
+  ///
+  /// 1.5초마다 1~2% 씩 빼면 가랑비라 아무 긴장이 없다. 3초에 15~20% 면
+  /// 한 대가 보이고, 죽여서 되찾는 리듬이 생긴다.
+  final double enemyAtkInterval;
+  final double bossAtkInterval;
+
+  /// 보스 한 대의 배율(같은 DPS 에서 뭉치는 정도).
+  final double bossHitMult;
 
   /// 오프라인 파밍 효율(실시간 대비). 온라인이 훨씬 유리하도록 <1.
   final double offlineEfficiency;
@@ -617,6 +655,14 @@ class RunConfig {
       bossThreatMult: (json['bossThreatMult'] as num?)?.toDouble() ?? 4.0,
       killHealPct: (json['killHealPct'] as num?)?.toDouble() ?? 0.05,
       bossKillHealPct: (json['bossKillHealPct'] as num?)?.toDouble() ?? 0.3,
+      killHealMissingPct: (json['killHealMissingPct'] as num?)?.toDouble() ?? 0,
+      bossKillHealMissingPct:
+          (json['bossKillHealMissingPct'] as num?)?.toDouble() ?? 0,
+      enemyFirstBiteDelay:
+          (json['enemyFirstBiteDelay'] as num?)?.toDouble() ?? 0,
+      enemyAtkInterval: (json['enemyAtkInterval'] as num?)?.toDouble() ?? 1.5,
+      bossAtkInterval: (json['bossAtkInterval'] as num?)?.toDouble() ?? 1.3,
+      bossHitMult: (json['bossHitMult'] as num?)?.toDouble() ?? 1.4,
       offlineEfficiency: (json['offlineEfficiency'] as num?)?.toDouble() ?? 0.3,
       worldSize: (json['worldSize'] as num?)?.toInt() ?? 0,
       worldHpMult: (json['worldHpMult'] as num?)?.toDouble() ?? 1.0,

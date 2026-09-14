@@ -63,7 +63,8 @@ CharacterStats applyEquipment(
     bossDamage: base.bossDamage * m(ItemOptionKind.bossDamage),
     maxHp: base.maxHp * m(ItemOptionKind.maxHp),
     defense: base.defense * m(ItemOptionKind.defense),
-    hpRegen: base.hpRegen,
+    // 회복은 최대 체력 비율이다 — 체력이 커지면 같이 커져야 비율이 유지된다.
+    hpRegen: base.hpRegen * m(ItemOptionKind.maxHp),
     xpMultiplier: base.xpMultiplier,
     bugFind: base.bugFind * m(ItemOptionKind.bugFind),
     materialFind: base.materialFind * m(ItemOptionKind.material),

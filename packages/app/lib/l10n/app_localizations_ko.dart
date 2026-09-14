@@ -1863,7 +1863,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get upDefenseDesc => '적에게서 받는 피해가 줄어듭니다.';
 
   @override
-  String get upRegenDesc => '초당 체력 회복량이 늘어납니다.';
+  String get upRegenDesc => '매초 최대 체력의 일정 비율을 회복합니다. 맞고 버티는 시간이 길어져요.';
 
   @override
   String get upRewardDesc => '몬스터 처치 시 얻는 골드가 늘어납니다.';

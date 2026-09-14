@@ -3415,7 +3415,7 @@ abstract class AppLocalizations {
   /// No description provided for @upRegenDesc.
   ///
   /// In en, this message translates to:
-  /// **'Increases HP regenerated per second.'**
+  /// **'Recover a share of max HP every second. Lets you outlast hits.'**
   String get upRegenDesc;
 
   /// No description provided for @upRewardDesc.

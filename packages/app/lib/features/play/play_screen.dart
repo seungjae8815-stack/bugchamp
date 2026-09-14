@@ -186,7 +186,8 @@ String _valueSingle(UpgradeKind k, double cur) {
     case UpgradeKind.attackSpeed:
       return '${cur.toStringAsFixed(2)}/s';
     case UpgradeKind.regen:
-      return '${_rate(cur)}/s';
+      // 회복은 최대 체력 비율(초당)이다 — %/s 로 읽힌다.
+      return '${(cur * 100).toStringAsFixed(2)}%/s';
     case UpgradeKind.crit:
       return '${(cur * 100).toStringAsFixed(0)}%';
     default:
@@ -203,7 +204,7 @@ String _valuePair(UpgradeKind k, double cur, double next) {
     case UpgradeKind.attackSpeed:
       return '${cur.toStringAsFixed(2)}/s → ${next.toStringAsFixed(2)}/s';
     case UpgradeKind.regen:
-      return '${_rate(cur)}/s → ${_rate(next)}/s';
+      return '${(cur * 100).toStringAsFixed(2)}%/s → ${(next * 100).toStringAsFixed(2)}%/s';
     case UpgradeKind.crit:
       return '${(cur * 100).toStringAsFixed(0)}% → ${(next * 100).toStringAsFixed(0)}%';
     default:
@@ -478,6 +479,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   double _bgOffset = 0;
   double _dmgCooldown = 0;
   double _enemyAtkAcc = 0;
+
+  /// 지금 몬스터의 **첫 물기**까지 남은 시간. 음수 = 이미 물었다(또는 꺼짐).
+  /// 마리당 한 대를 보장하는 장치 — RunConfig.enemyFirstBiteDelay 참조.
+  double _firstBiteT = -1;
   double _enemyLunge = 0; // 적(보스·서식지) 공격 달려듦 모션 값
   double _playerHitFlash = 0;
   double _screenShake = 0;
@@ -701,6 +706,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 처치가 빨라도 "몇 마리에 한 번"으로 결국 같은 DPS 가 들어온다.
     _enemyLunge = 0;
     _dying = false;
+    // 달라붙자마자 한 번은 문다(처치가 아무리 빨라도). 0 이면 예전 동작.
+    _firstBiteT = _config.enemyFirstBiteDelay > 0
+        ? _config.enemyFirstBiteDelay
+        : -1;
   }
 
   /// 업그레이드/레벨 기반 순수 능력치(버프 미포함) — 전투력 표시에 사용.
@@ -836,6 +845,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ///
   /// 쓰러진 곤충도 회복시키지 않는다 — 부활은 시간이 정하지 회복이 정하지
   /// 않는다. 두 축이 섞이면 "왜 어떤 땐 금방 일어나지"가 된다.
+  /// 처치 회복 — 팀원마다 **자기 잃은 체력** 기준으로 채운다.
+  ///
+  /// 최대체력 비례 몫만 있으면 "가득 아니면 줄줄"이다. 잃은 만큼에 비례해
+  /// 채워야 피격과 회복이 만나는 높이가 생겨 체력이 그 근처를 오르내린다
+  /// (RunConfig.killHealMissingPct). 곤충도 같은 식이다 — 캐릭터만 되살아나면
+  /// 곤충은 한 번 깎인 채 영영 안 차서 벽을 두 번 만나면 반드시 쓰러진다.
+  void _healTeamOnKill({required bool boss}) {
+    _playerHp = math.min(
+      _playerHpMax,
+      _playerHp +
+          killHealAmount(
+            _config,
+            hp: _playerHp,
+            maxHp: _playerHpMax,
+            boss: boss,
+          ),
+    );
+    for (final p in _alivePets) {
+      final max = _petMaxHp(p);
+      final cur = _petHp[p.bugId] ?? max;
+      _petHp[p.bugId] = math.min(
+        max,
+        cur + killHealAmount(_config, hp: cur, maxHp: max, boss: boss),
+      );
+    }
+  }
+
   void _healTeamFraction(double frac) {
     if (frac <= 0) return;
     _playerHp = math.min(_playerHpMax, _playerHp + _playerHpMax * frac);
@@ -1036,11 +1072,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (walkMul <= 0) return;
     final incoming = threat * 100 / (100 + stats.defense) * walkMul;
     _enemyAtkAcc += dt;
-    final atkInterval = boss ? 1.3 : 1.5;
-    if (_enemyAtkAcc < atkInterval) return;
-    _enemyAtkAcc -= atkInterval;
+    // 간격·배율은 데이터다(§6). 간격이 길수록 같은 DPS 가 **한 대로 뭉친다** —
+    // 가랑비(1.5초마다 1~2%)를 한 대 15~20% 로 바꾼 자리(2026-09-14).
+    final atkInterval = boss
+        ? _config.bossAtkInterval
+        : _config.enemyAtkInterval;
+    // 첫 물기 — 달라붙고 잠깐 뒤 **반드시 한 대**. 그 뒤 게이지는 0 부터.
+    var firstBite = false;
+    if (!walking && _firstBiteT > 0) {
+      _firstBiteT -= dt;
+      if (_firstBiteT <= 0) {
+        firstBite = true;
+        _enemyAtkAcc = 0;
+      }
+    }
+    if (!firstBite) {
+      if (_enemyAtkAcc < atkInterval) return;
+      _enemyAtkAcc -= atkInterval;
+    }
     // 이전 상시 피해와 평균 DPS 가 같도록 interval 만큼 묶어서 준다.
-    final burst = incoming * atkInterval * (boss ? 1.4 : 1.0);
+    final burst = incoming * atkInterval * (boss ? _config.bossHitMult : 1.0);
     if (burst <= 0) return;
     // 팀에 나눠 준다 — 총량은 오늘과 같고, 곤충이 쓰러지면 그 몫이 넘어온다.
     _spreadDamage(burst);
@@ -1595,7 +1646,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _dying = false;
     // 처치 회복은 데이터에서 온다(§6). 서식지 20마리 × 30% 였던 시절엔
     // 스테이지마다 최대체력의 600% 를 회복해 **피가 절대 안 닳았다**.
-    _healTeamFraction(_isBoss ? _config.bossKillHealPct : _config.killHealPct);
+    // 잃은 체력 비례 몫은 `killHealAmount` 한 곳(앱·시뮬 공용)에서 계산한다.
+    _healTeamOnKill(boss: _isBoss);
     if (_isBoss) {
       // 캠페인 끝(로드맵 마지막 스테이지)에 닿으면 **더 나아가지 않는다**.
       // 예전에는 상한이 없어 1708 같은 값까지 흘러갔고, 그 구간은 저항이
