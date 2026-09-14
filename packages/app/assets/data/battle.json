@@ -60,7 +60,8 @@
   "resetWeekday": 1,
   "resetHour": 9,
   "tzOffsetMinutes": 540,
-  "resetFactor": 0.5,
+  "_resetFactorComment": "2026-09-14 사장님 확정: 시즌이 끝나면 트로피는 0 으로. 남기면(0.5) 지난주 강자가 이번주도 위에서 시작해 새 사람이 못 올라온다.",
+  "resetFactor": 0.0,
   "rewardMult": 2
  },
  "_ticketsComment": "결투 티켓 = 하루 판수 제한(랭킹을 '전력'으로 되돌린다). adDailyLimit 은 광고제거 구매자에게도 동일 적용.",
