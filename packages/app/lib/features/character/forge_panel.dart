@@ -1387,8 +1387,31 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
   final ctrl = ref.read(saveControllerProvider.notifier);
   final save = ref.read(saveControllerProvider).requireValue;
   final items = ref.read(gameDataProvider).value?.itemConfig;
+  final forge = ref.read(gameDataProvider).value?.forgeConfig;
   final want = {...save.autoForgeOptions};
   var minTier = save.autoForgeMinTier;
+
+  // 범위를 보여 줄 기준 등급. 등급 필터를 걸었으면 그 등급, 아니면 지금
+  // 공방 레벨에서 **실제로 나올 수 있는 가장 높은 등급**(확률 1% 이상).
+  // 최대치를 모르면 어떤 옵션을 노릴지 정할 수 없다(2026-09-14 지적).
+  int rangeTier() {
+    if (minTier > 0) return minTier;
+    if (items == null || forge == null) return 0;
+    final w = forge.tierWeights(save.forgeLevel, items.tierCount);
+    var top = 0;
+    for (var i = 0; i < w.length; i++) {
+      if (w[i] >= 0.01) top = i;
+    }
+    return top;
+  }
+
+  String rangeOf(ItemOptionKind k) {
+    if (items == null) return '';
+    final r = items.optionPool.where((x) => x.kind == k).firstOrNull;
+    if (r == null) return '';
+    final t = rangeTier();
+    return '${r.min.toStringAsFixed(0)}~${r.maxAt(t).toStringAsFixed(0)}%';
+  }
 
   await showGameDialog<void>(
     context,
@@ -1456,6 +1479,19 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
                 ),
               ),
             ),
+            if (items != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  l.forgeFilterRangeHint(
+                    items.tier(rangeTier()).name.resolve(l.localeName),
+                  ),
+                  style: const TextStyle(
+                    color: Color(0x80FFFFFF),
+                    fontSize: 10.5,
+                  ),
+                ),
+              ),
             const SizedBox(height: 6),
             SizedBox(
               height: 210,
@@ -1498,6 +1534,14 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
                                   color: Colors.white,
                                   fontSize: 12.5,
                                 ),
+                              ),
+                            ),
+                            Text(
+                              rangeOf(k),
+                              style: const TextStyle(
+                                color: Color(0x99FFFFFF),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],

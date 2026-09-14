@@ -2785,6 +2785,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeFilterGradeHint => 'Anything below this grade is discarded.';
 
   @override
+  String forgeFilterRangeHint(String tier) {
+    return 'Ranges show the max for $tier grade';
+  }
+
+  @override
+  String get optPerfect => 'MAX';
+
+  @override
   String get forgeFilterGradeAll => 'All';
 
   @override

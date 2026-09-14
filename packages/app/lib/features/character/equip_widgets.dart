@@ -152,12 +152,17 @@ class ItemOptionList extends StatelessWidget {
     // 부위 기본 스탯 줄은 **없앴다**(2026-09-09). 부위마다 축이 고정이면
     // 같은 등급끼리는 값도 같아 아이템끼리 고를 이유가 없다 — 장비는 이제
     // 무작위 옵션 2개로만 이루어지고, 둘 다 젤리로 바꿀 수 있다.
+    final ranges = {for (final r in config.optionPool) r.kind: r};
     for (var i = 0; i < item.options.length; i++) {
       final o = item.options[i];
       rows.add(
         _row(
           optionLabel(l, o.kind),
           o.value,
+          // 그 등급의 최대치를 옆에 보여 준다 — 최대가 얼마인지 모르면
+          // "잘 뽑았다"를 알 수 없어 계속 돌릴 이유가 안 보인다(2026-09-14).
+          max: ranges[o.kind]?.maxAt(item.tier),
+          perfectLabel: l.optPerfect,
           // 옵션마다 따로 굴린다 — 통째로 굴리면 마음에 드는 한 줄까지
           // 같이 날아가서 원하는 조합을 못 맞춘다(2026-09-09 확정).
           onReroll: onReroll == null ? null : () => onReroll!(i),
@@ -172,10 +177,24 @@ class ItemOptionList extends StatelessWidget {
     double value, {
     bool bold = false,
     double? delta,
+    double? max,
+    String? perfectLabel,
     VoidCallback? onReroll,
   }) {
     final up = delta != null && delta > 0.01;
     final down = delta != null && delta < -0.01;
+    // 최대치 대비 비율로 색을 준다. 95% 이상은 금색 + "완벽" — 여기가
+    // 제련을 계속 돌리게 하는 목표 지점이다.
+    final ratio = (max == null || max <= 0) ? null : value / max;
+    final perfect = ratio != null && ratio >= 0.95;
+    final high = ratio != null && ratio >= 0.7;
+    final valueColor = bold
+        ? const Color(0xFFFFD54F)
+        : perfect
+        ? const Color(0xFFFFD54F)
+        : high
+        ? const Color(0xFFA5D6A7)
+        : const Color(0xFFC5E1A5);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: dense ? 0.5 : 1.5),
       child: Row(
@@ -192,14 +211,37 @@ class ItemOptionList extends StatelessWidget {
               ),
             ),
           ),
+          if (perfect && perfectLabel != null && !dense)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Text(
+                perfectLabel,
+                style: const TextStyle(
+                  color: Color(0xFFFFD54F),
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
           Text(
             '+${value.toStringAsFixed(value >= 10 ? 0 : 1)}%',
             style: TextStyle(
-              color: bold ? const Color(0xFFFFD54F) : const Color(0xFFC5E1A5),
+              color: valueColor,
               fontSize: dense ? 10.5 : 12,
               fontWeight: FontWeight.w800,
             ),
           ),
+          // 등급 최대치. 값과 같은 줄에 흐리게 — 비교 대상이 있어야
+          // "23%" 가 좋은 건지 나쁜 건지 읽힌다.
+          if (max != null && max > 0)
+            Text(
+              '/${max.toStringAsFixed(0)}',
+              style: TextStyle(
+                color: const Color(0x66FFFFFF),
+                fontSize: dense ? 9 : 10.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           // 화살표 자리는 **있든 없든 늘 잡아 둔다.** 조건부로 붙이면 화살표가
           // 있는 줄만 값이 왼쪽으로 밀려 숫자 열이 삐뚤어진다.
           SizedBox(

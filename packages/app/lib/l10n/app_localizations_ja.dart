@@ -2730,6 +2730,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeFilterGradeHint => 'このグレード未満は捨てます。';
 
   @override
+  String forgeFilterRangeHint(String tier) {
+    return '範囲は$tierグレードの最大値です';
+  }
+
+  @override
+  String get optPerfect => '完璧';
+
+  @override
   String get forgeFilterGradeAll => 'すべて';
 
   @override

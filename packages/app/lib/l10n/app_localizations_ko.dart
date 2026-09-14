@@ -2736,6 +2736,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeFilterGradeHint => '이 등급 미만은 버립니다.';
 
   @override
+  String forgeFilterRangeHint(String tier) {
+    return '범위는 $tier 등급 기준 최대치입니다';
+  }
+
+  @override
+  String get optPerfect => '완벽';
+
+  @override
   String get forgeFilterGradeAll => '전부';
 
   @override

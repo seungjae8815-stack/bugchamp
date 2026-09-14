@@ -4996,6 +4996,18 @@ abstract class AppLocalizations {
   /// **'Anything below this grade is discarded.'**
   String get forgeFilterGradeHint;
 
+  /// No description provided for @forgeFilterRangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranges show the max for {tier} grade'**
+  String forgeFilterRangeHint(String tier);
+
+  /// No description provided for @optPerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get optPerfect;
+
   /// No description provided for @forgeFilterGradeAll.
   ///
   /// In en, this message translates to:
