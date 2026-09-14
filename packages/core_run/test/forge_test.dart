@@ -510,13 +510,35 @@ void _optionTierTests() {
       );
     });
 
-    test('값은 깎지 않는다 — 가만있는데 약해지면 안 된다', () {
-      const opt = ItemOption(kind: ItemOptionKind.attack, value: 15);
+    test('최대치 안의 값은 깎지 않는다 — 가만있는데 약해지면 안 된다', () {
+      final hi = cfg.optionPool
+          .firstWhere((r) => r.kind == ItemOptionKind.attack)
+          .maxAt(0);
+      final opt = ItemOption(kind: ItemOptionKind.attack, value: hi);
       final out = trimItemOptions(
-        const EquipItem(slot: EquipSlot.tool, tier: 0, options: [opt]),
+        EquipItem(slot: EquipSlot.tool, tier: 0, options: [opt]),
         cfg,
       );
-      expect(out.options.single.value, 15);
+      expect(out.options.single.value, hi);
+    });
+
+    test('최대치가 **내려갔으면** 그 최대치로 맞춘다(2026-09-14 치명확률 예산제)', () {
+      // 옛 값을 두면 화면에 "67/15" 가 찍히고 실제 효과는 예산에서 잘려
+      // 숫자와 효과가 갈린다.
+      final hi = cfg.optionPool
+          .firstWhere((r) => r.kind == ItemOptionKind.critChance)
+          .maxAt(9);
+      final out = trimItemOptions(
+        EquipItem(
+          slot: EquipSlot.tool,
+          tier: 9,
+          options: [
+            ItemOption(kind: ItemOptionKind.critChance, value: hi + 50),
+          ],
+        ),
+        cfg,
+      );
+      expect(out.options.single.value, hi);
     });
 
     test('이미 규칙에 맞으면 같은 객체를 돌려준다(매 저장마다 도는 자리다)', () {

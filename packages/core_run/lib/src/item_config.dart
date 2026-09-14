@@ -210,12 +210,27 @@ class ItemConfig {
 /// 새 최대치(30)보다 낮다 — 깎을 이유가 없고, 건드리면 "가만있는데 약해졌다"가 된다.
 EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
   final live = {for (final r in config.optionPool) r.kind: r};
-  final keep = [
-    for (final o in item.options)
-      if (live.containsKey(o.kind)) o,
-  ];
+  // 값이 **지금 등급 최대치를 넘으면** 최대치로 맞춘다(2026-09-14, 치명확률
+  // 예산제로 호박 67 → 15). 위의 "깎지 않는다" 원칙은 최대치가 **올랐을 때**
+  // 이야기다 — 최대치가 내려갔는데 옛 값을 두면 화면에 "67/15" 가 찍히고,
+  // 실제 효과는 예산에서 잘려 숫자와 효과가 갈린다.
+  var clamped = false;
+  final keep = <ItemOption>[];
+  for (final o in item.options) {
+    final r = live[o.kind];
+    if (r == null) continue;
+    final hi = r.maxAt(item.tier);
+    if (o.value > hi) {
+      keep.add(ItemOption(kind: o.kind, value: hi));
+      clamped = true;
+    } else {
+      keep.add(o);
+    }
+  }
   final limit = config.tier(item.tier).options;
-  if (keep.length == item.options.length && keep.length <= limit) return item;
+  if (!clamped && keep.length == item.options.length && keep.length <= limit) {
+    return item;
+  }
   if (keep.length > limit) {
     double score(ItemOption o) {
       final hi = live[o.kind]!.maxAt(item.tier);

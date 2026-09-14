@@ -6655,49 +6655,54 @@ class _UpgradeRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   // 골드 + 재료 비용을 한 줄로 → 재료 유무와 무관하게 행 높이 통일.
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '💰${formatCompact(batchCost)}',
-                          style: TextStyle(
-                            color: affordable
-                                ? const Color(0xFFFFE082)
-                                : const Color(0x66FFFFFF),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12.5,
-                          ),
-                        ),
-                        if (matKind != null && batchMatCost > 0) ...[
-                          const SizedBox(width: 6),
-                          materialImage(
-                            matKind,
-                            size: 12,
-                            fallback: Icon(
-                              materialIcon(matKind),
-                              size: 11,
-                              color: matOk
-                                  ? const Color(0xFF9CCC65)
-                                  : const Color(0xFFEF9A9A),
-                            ),
-                          ),
-                          const SizedBox(width: 2),
+                  // 상한이면 비용을 안 그린다 — "최대" 옆에 값이 찍혀 있으면
+                  // 아직 살 수 있는 줄 안다(2026-09-14 지적).
+                  if (maxed)
+                    const SizedBox(height: 15)
+                  else
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           Text(
-                            formatCompact(batchMatCost),
+                            '💰${formatCompact(batchCost)}',
                             style: TextStyle(
-                              color: matOk
-                                  ? const Color(0xFFC5E1A5)
-                                  : const Color(0xFFEF9A9A),
+                              color: affordable
+                                  ? const Color(0xFFFFE082)
+                                  : const Color(0x66FFFFFF),
                               fontWeight: FontWeight.w800,
-                              fontSize: 12,
+                              fontSize: 12.5,
                             ),
                           ),
+                          if (matKind != null && batchMatCost > 0) ...[
+                            const SizedBox(width: 6),
+                            materialImage(
+                              matKind,
+                              size: 12,
+                              fallback: Icon(
+                                materialIcon(matKind),
+                                size: 11,
+                                color: matOk
+                                    ? const Color(0xFF9CCC65)
+                                    : const Color(0xFFEF9A9A),
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              formatCompact(batchMatCost),
+                              style: TextStyle(
+                                color: matOk
+                                    ? const Color(0xFFC5E1A5)
+                                    : const Color(0xFFEF9A9A),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
