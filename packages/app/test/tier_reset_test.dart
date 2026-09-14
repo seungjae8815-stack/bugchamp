@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
@@ -22,21 +25,12 @@ void main() {
         materials: const {MaterialKind.chitin: 5000, MaterialKind.jelly: 300},
       );
 
-  /// `SaveController.enterNextTier` 가 만드는 것과 **같은 변환**.
-  /// (컨트롤러는 Riverpod·Hive 를 물고 있어 여기선 규칙만 본다.)
-  SaveGame nextTier(SaveGame s) => s.copyWith(
-    stageNumber: 1,
-    difficultyTier: s.difficultyTier + 1,
-    upgradeLevels: const {},
-    level: 1,
-    xp: 0,
-    gold: 0,
-    zoneKills: 0,
-    materials: {
-      for (final e in s.materials.entries)
-        if (!kRegularMaterials.contains(e.key)) e.key: e.value,
-    },
+  /// `SaveController.enterNextTier` 가 쓰는 **바로 그 함수**(core_save).
+  final run = RunConfig.fromJson(
+    jsonDecode(File('assets/data/run_config.json').readAsStringSync())
+        as Map<String, dynamic>,
   );
+  SaveGame nextTier(SaveGame s) => enterNextTierSave(s, run);
 
   test('성장 축은 처음으로 — 스테이지·레벨·강화·골드·보스 게이지', () {
     final s = nextTier(grown());

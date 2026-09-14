@@ -2039,6 +2039,39 @@ void main() {
       expect(r.extra['clamped'], isTrue);
     });
 
+    // 난이도는 기기 권위라 위조할 수 있다. 저장본이 가 본 최고 난이도에서 한
+    // 계단까지만 믿는다 — 쉬움 저장본이 극한으로 뛰어 극한 보상을 받지 못하게.
+    test('저장본보다 두 계단 이상 높은 난이도의 챕터 보상은 봐주지 않는다', () {
+      final big = bigChapter();
+      final reward = chapterClearGold(cfg.run, big, 3);
+      final before = stored(gold: 1000); // 쉬움
+      final cheat = before.copyWith(
+        difficultyTier: 3,
+        maxTierReached: 3,
+        gold: 1000 + reward,
+        stageNumber: big.endStage + 1,
+        clearedChapters: {chapterClearKey(big.id, 3)},
+      );
+      final r = actions.mergeSave(before, cheat.toJson());
+      expect(r.extra['clamped'], isTrue);
+    });
+
+    // 가 본 난이도로 내려가 있으면 앱은 클리어 보상을 주지 않는다.
+    test('아래 난이도로 내려가 있으면 챕터 보상을 봐주지 않는다', () {
+      final big = bigChapter();
+      final reward = chapterClearGold(cfg.run, big, 2);
+      final before = stored(
+        gold: 1000,
+      ).copyWith(difficultyTier: 2, maxTierReached: 3);
+      final cheat = before.copyWith(
+        gold: 1000 + reward,
+        stageNumber: big.endStage + 1,
+        clearedChapters: {chapterClearKey(big.id, 2)},
+      );
+      final r = actions.mergeSave(before, cheat.toJson());
+      expect(r.save!.gold, lessThan(1000 + reward));
+    });
+
     test('클리어하지 않은 챕터를 claim 해도 보상만큼 봐주지 않는다', () {
       final big = bigChapter();
       final reward = chapterClearGold(cfg.run, big, 3);

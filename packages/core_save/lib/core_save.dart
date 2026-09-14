@@ -10,3 +10,4 @@ library;
 export 'src/gift_mail.dart';
 export 'src/save_game.dart';
 export 'src/save_migrations.dart';
+export 'src/tier_progress.dart';

@@ -3110,4 +3110,21 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eventRewardBadgeLabel => '획득한 뱃지';
+
+  @override
+  String tierMoveTitle(String name) {
+    return '$name 난이도로 이동';
+  }
+
+  @override
+  String get tierMoveBody =>
+      '강화 · 재화 · 장비는 그대로예요.\n사냥터 클리어 보상은 가 본 가장 높은 난이도에서만 받을 수 있어요.';
+
+  @override
+  String get tierMoveGo => '이동';
+
+  @override
+  String tierMoved(String name) {
+    return '$name 난이도로 이동했어요';
+  }
 }

@@ -55,12 +55,11 @@ class PvpProfile {
     nickname: save.nickname,
     trophies: save.pvpTrophies,
     level: save.level,
-    // ⚠️ 지금 있는 사냥터가 아니라 **역대 최고**다. 로드맵에서 아래로
-    // 내려가면 랭킹 진행도까지 같이 떨어졌다(2026-09-14 지적).
-    stageNumber: save.bestStage > save.stageNumber
-        ? save.bestStage
-        : save.stageNumber,
-    difficultyTier: save.difficultyTier,
+    // ⚠️ 지금 있는 곳이 아니라 **가 본 가장 높은 난이도와 그 안의 최고 기록**이다.
+    // 로드맵에서 아래로(사냥터든 난이도든) 내려가면 랭킹까지 같이 떨어졌다
+    // (2026-09-14 지적 · 난이도 이동은 2026-09-15).
+    stageNumber: save.rankProgress.stage,
+    difficultyTier: save.rankProgress.tier,
     power: power,
   );
 

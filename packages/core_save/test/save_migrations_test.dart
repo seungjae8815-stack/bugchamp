@@ -172,10 +172,12 @@ void main() {
 
 void _zoneEpochTests() {
   group('사냥터 구조 세대(applyZoneEpoch)', () {
-    test('세대가 낮으면 진행도만 처음으로 — 강화·재화는 그대로', () {
+    /// 2026-09-15 B안: 난이도는 유지하고 그 난이도의 사냥터 1 부터.
+    test('세대가 낮으면 사냥터만 처음으로 — 난이도·강화·재화는 그대로', () {
       final old = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1))
           .copyWith(
             stageNumber: 885,
+            bestStage: 885,
             difficultyTier: 2,
             zoneKills: 40,
             gold: 12345,
@@ -183,7 +185,9 @@ void _zoneEpochTests() {
           );
       final now = applyZoneEpoch(old);
       expect(now.stageNumber, 1);
-      expect(now.difficultyTier, 0);
+      expect(now.difficultyTier, 2, reason: '어려움까지 간 사람은 어려움에서');
+      expect(now.maxTierReached, 2);
+      expect(now.bestStage, 0, reason: '옛 구조의 최고 기록은 뜻이 없다');
       expect(now.zoneKills, 0);
       expect(now.zoneEpoch, kZoneEpoch);
       expect(now.gold, 12345);

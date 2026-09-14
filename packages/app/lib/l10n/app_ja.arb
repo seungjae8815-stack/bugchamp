@@ -1092,5 +1092,9 @@
   "eventHallTop10": "4〜10位",
   "eventHallEntrants": "参加した皆さん",
   "eventHallMore": "ほか多数",
-  "eventRewardBadgeLabel": "獲得バッジ"
+  "eventRewardBadgeLabel": "獲得バッジ",
+  "tierMoveTitle": "{name}難易度へ移動",
+  "tierMoveBody": "強化・通貨・装備はそのままです。\n狩場クリア報酬は到達した最高難易度でのみ受け取れます。",
+  "tierMoveGo": "移動",
+  "tierMoved": "{name}難易度へ移動しました"
 }

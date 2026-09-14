@@ -5625,6 +5625,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Badge earned'**
   String get eventRewardBadgeLabel;
+
+  /// No description provided for @tierMoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to {name}'**
+  String tierMoveTitle(String name);
+
+  /// No description provided for @tierMoveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrades, currency and gear stay as they are.\nZone clear rewards are only given on your highest difficulty.'**
+  String get tierMoveBody;
+
+  /// No description provided for @tierMoveGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get tierMoveGo;
+
+  /// No description provided for @tierMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to {name}'**
+  String tierMoved(String name);
 }
 
 class _AppLocalizationsDelegate

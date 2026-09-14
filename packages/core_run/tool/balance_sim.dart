@@ -117,6 +117,9 @@ double _matBaseMult = 1.0;
 /// CLI 로도 받게 하면 JSON 과 시뮬이 갈려 "시뮬은 통과했는데 게임은 다르다"가 된다.
 int _petRestrainCount = 0;
 
+/// `--endgame-days=N` — 극한 최종 보스 뒤로 더 노는 일수.
+int _endgameDays = 0;
+
 /// 유저가 보스전을 붙잡고 있을 수 있는 최대 시간(초). 이보다 오래 걸리면 안 누른다고 본다.
 const _bossPatienceSeconds = 240.0;
 
@@ -346,6 +349,27 @@ void main(List<String> args) {
         stdout.writeln('  ⚠️ $_maxDays일 상한에 걸렸다 — 더 걸린다는 뜻이다.');
         break;
       }
+    }
+    // `--endgame-days=N` : 극한을 깬 뒤 최종 사냥터에서 N 일 더 논다 — 공방처럼
+    // 90일 계획 밖의 **후반 목표**가 언제 닿는지 본다.
+    if (_endgameDays > 0) {
+      stdout.writeln('  ── 극한 이후(최종 사냥터에서 계속) ──');
+      var lastForge = sim.forgeLevel;
+      for (var d = 1; d <= _endgameDays; d++) {
+        sim.stage = config.zoneStartStage(config.zonesPerTier);
+        sim.fitting = true; // 보스를 다시 넘지 않는다
+        sim.playDay();
+        if (sim.forgeLevel != lastForge) {
+          lastForge = sim.forgeLevel;
+          stdout.writeln(
+            '  +$d일 : 공방 ${sim.forgeLevel}(화면 ${sim.forgeLevel + 1}등급)'
+            ' · 장비 등급 ${sim.gearTier}',
+          );
+        }
+      }
+      stdout.writeln(
+        '  +$_endgameDays일 끝: 공방 ${sim.forgeLevel}(화면 ${sim.forgeLevel + 1}등급)',
+      );
     }
     stdout.writeln('');
     stdout.writeln('  ★ 전 회차 합계: $total일');
@@ -1905,6 +1929,11 @@ _Opts _parseArgs(List<String> args) {
     final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
     if (es != null) {
       _gearScale = double.parse(es.group(1)!);
+      continue;
+    }
+    final egd = RegExp(r'^--endgame-days=(.+)$').firstMatch(a);
+    if (egd != null) {
+      _endgameDays = int.parse(egd.group(1)!);
       continue;
     }
     final trs = RegExp(r'^--tiers=(.+)$').firstMatch(a);

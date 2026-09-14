@@ -1136,5 +1136,9 @@
   "eventHallTop10": "4~10위",
   "eventHallEntrants": "함께한 참가자",
   "eventHallMore": "외 다수",
-  "eventRewardBadgeLabel": "획득한 뱃지"
+  "eventRewardBadgeLabel": "획득한 뱃지",
+  "tierMoveTitle": "{name} 난이도로 이동",
+  "tierMoveBody": "강화 · 재화 · 장비는 그대로예요.\n사냥터 클리어 보상은 가 본 가장 높은 난이도에서만 받을 수 있어요.",
+  "tierMoveGo": "이동",
+  "tierMoved": "{name} 난이도로 이동했어요"
 }

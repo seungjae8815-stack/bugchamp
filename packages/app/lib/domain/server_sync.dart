@@ -382,17 +382,25 @@ bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
   // 전환 직후의 로컬이 항상 "뒤처짐"으로 보인다 — 전환하고 60초(업로드 주기)
   // 안에 앱을 끄면 다음 실행에서 전환 전 서버 세이브를 채택해 회차가 조용히
   // 취소된다. 반대 방향(다른 기기가 전환)도 마찬가지다.
-  if (local.difficultyTier != remote.difficultyTier) {
-    return local.difficultyTier > remote.difficultyTier;
+  //
+  // 비교 기준은 **가 본 최고 난이도**(`topTier`)다(2026-09-15). 가 본 난이도로는
+  // 내려갈 수 있어서(`selectTierSave`) 지금 난이도는 합법적으로 줄어든다 —
+  // 지금 난이도로 재면 내려간 직후의 로컬이 "뒤처짐"이 되어 선택과 그 사이
+  // 진행이 서버 옛 세이브로 덮인다.
+  if (local.topTier != remote.topTier) {
+    return local.topTier > remote.topTier;
   }
-  var ahead = false;
+  // 같은 최고 난이도 안에서 난이도만 옮겼다 — 스테이지는 난이도마다 뜻이 달라
+  // 비교하지 않고, 성장 축에서 뒤처지지 않으면 로컬(방금 옮긴 쪽)을 따른다.
+  final moved = local.difficultyTier != remote.difficultyTier;
+  var ahead = moved;
   bool cmp(num l, num r) {
     if (l > r) ahead = true;
     return l < r; // 뒤처지는 항목이 하나라도 있으면 애매한 것
   }
 
   final behind = [
-    cmp(local.stageNumber, remote.stageNumber),
+    if (!moved) cmp(local.stageNumber, remote.stageNumber),
     cmp(local.level, remote.level),
     cmp(local.bugs.length, remote.bugs.length),
     cmp(

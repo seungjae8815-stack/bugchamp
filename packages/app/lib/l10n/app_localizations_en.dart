@@ -3170,4 +3170,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventRewardBadgeLabel => 'Badge earned';
+
+  @override
+  String tierMoveTitle(String name) {
+    return 'Move to $name';
+  }
+
+  @override
+  String get tierMoveBody =>
+      'Upgrades, currency and gear stay as they are.\nZone clear rewards are only given on your highest difficulty.';
+
+  @override
+  String get tierMoveGo => 'Move';
+
+  @override
+  String tierMoved(String name) {
+    return 'Moved to $name';
+  }
 }

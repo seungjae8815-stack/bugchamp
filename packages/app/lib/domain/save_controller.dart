@@ -403,25 +403,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// ⚠️ 사냥터 게이지(`zoneKills`)도 비운다. 안 비우면 새 난이도 첫 사냥터에
   /// 도착하자마자 **보스 도전이 열려 있다**(2026-09-14 지적).
   Future<void> enterNextTier() async {
+    final run = ref.read(gameDataProvider).value?.runConfig;
+    if (run == null) return;
+    // 규칙은 core_save 의 순수 함수 하나(tier_progress.dart) — 처음 가는 난이도면
+    // 성장 축 초기화, 이미 가 본 난이도면 그대로 이동.
+    await _commit(enterNextTierSave(state.requireValue, run));
+  }
+
+  /// 로드맵에서 난이도를 고른다(가 본 가장 높은 난이도까지). 초기화 없음.
+  Future<void> selectTier(int tier) async {
+    final run = ref.read(gameDataProvider).value?.runConfig;
+    if (run == null) return;
     final s = state.requireValue;
-    await _commit(
-      s.copyWith(
-        stageNumber: 1,
-        difficultyTier: s.difficultyTier + 1,
-        // 성장 축을 처음으로 — 이게 없으면 회차가 이틀 만에 끝난다.
-        upgradeLevels: const {},
-        level: 1,
-        xp: 0,
-        gold: 0,
-        zoneKills: 0,
-        // 일반 재료(키틴·미네랄·수액)는 강화 2차 비용이라 골드와 한 세트다.
-        // 젤리·화석은 남긴다.
-        materials: {
-          for (final e in s.materials.entries)
-            if (!kRegularMaterials.contains(e.key)) e.key: e.value,
-        },
-      ),
-    );
+    final next = selectTierSave(s, run, tier);
+    if (identical(next, s)) return;
+    await _commit(next);
   }
 
   GatherService get _service => ref.read(gatherServiceProvider);
@@ -430,7 +426,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<void> _commit(SaveGame save) async {
     // 최고 도달 기록은 **저장되는 모든 경로**에서 한 번에 올린다. 획득 지점마다
     // 올리면 새 경로가 생길 때 빠뜨린다(도감 갱신과 같은 원칙).
-    if (save.stageNumber > save.bestStage) {
+    // 최고 기록은 **가 본 가장 높은 난이도 안에서만** 올린다 — 아래 난이도로
+    // 내려가 있는 동안의 스테이지는 그 난이도 것이다(tier_progress.dart).
+    if (save.difficultyTier >= save.topTier &&
+        save.stageNumber > save.bestStage) {
       save = save.copyWith(bestStage: save.stageNumber);
     }
     // 채집함 상한은 **저장되는 모든 경로**에서 지켜져야 한다. 획득 지점마다
@@ -602,10 +601,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     if (run == null || !run.zoneMode) return;
     final current = run.zoneOf(s.stageNumber);
-    final target = zone.clamp(1, current);
+    // 점령한 사냥터까지는 오간다(내려갔다가 다시 올라와도 된다). 그 위는 보스를
+    // 깨야 한다. 게이지는 사냥터마다 따로 세지 않는다(단순함) — 옮기면 0 부터.
+    final top = math.min(
+      run.zoneOf(s.highestStageInTier(run)),
+      run.zonesPerTier,
+    );
+    final target = zone.clamp(1, top);
     if (target == current) return;
-    // 내려가는 건 언제든 — 올라가는 건 보스를 깨야 한다. 게이지는 사냥터마다
-    // 따로 세지 않는다(단순함). 내려가면 0 부터.
     await _commit(
       s.copyWith(stageNumber: run.zoneStartStage(target), zoneKills: 0),
     );
@@ -750,6 +753,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final run = data.runConfig;
     if (cfg == null || run == null) return const [];
     final s = state.requireValue;
+    // 클리어 보상은 **가 본 가장 높은 난이도**에서만 — 아래 난이도로 내려가면
+    // 이미 다 깬 곳이라, 기록이 없는 옛 세이브가 한꺼번에 받는 일이 없게.
+    if (s.difficultyTier < s.topTier) return const [];
     final tier = s.difficultyTier;
     final newly = <({RoadmapChapter chapter, int gold})>[];
     for (final ch in cfg.chapters) {

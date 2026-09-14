@@ -335,24 +335,26 @@ void main() {
       expect(forge.levelUpGold(19), greaterThan(forge.levelUpGold(10)));
     });
 
-    /// 2026-09-15: 최대 레벨 20 → 16. 13레벨부터 등급업 골드가 x15 라 17 이상은
-    /// 영영 못 간다. 최대 레벨에서도 최상위 등급(호박)은 **귀하다** — 주력이 되면
-    /// 극한에서 장비가 최고치의 176% 까지 넘쳤다(balance_sim --tiers=4).
-    test('최고 레벨(16)에서 최상위 등급은 나오지만 귀하다', () {
-      expect(forge.maxLevel, 16);
-      final w = forge.tierWeights(forge.maxLevel, 10);
-      expect(w.last, greaterThan(0.03), reason: '못 뽑으면 목표가 사라진다');
-      expect(w.last, lessThan(0.3), reason: '흔하면 극한에서 장비가 넘친다');
+    /// 2026-09-15: 최대 레벨 19(화면 20등급). 16등급까지는 최상위(호박)가 귀하고
+    /// (90일 계획 안), 17~20등급은 극한 이후의 목표라 거기서 주력이 된다.
+    test('최고 레벨(화면 20등급)에서 최상위 등급이 주력이 된다', () {
+      expect(forge.maxLevel, 19);
+      expect(forge.tierWeights(forge.maxLevel, 10).last, greaterThan(0.5));
+      expect(
+        forge.tierWeights(15, 10).last,
+        lessThan(0.3),
+        reason: '90일 계획 안(공방 15)에서 흔하면 극한에서 장비가 넘친다',
+      );
     });
 
-    test('후반 등급업 골드는 lateFrom 부터 가팔라진다', () {
-      final early =
-          forge.levelUpGold(forge.levelUpLateFrom) /
-          forge.levelUpGold(forge.levelUpLateFrom - 1);
-      final late =
-          forge.levelUpGold(forge.levelUpLateFrom + 1) /
-          forge.levelUpGold(forge.levelUpLateFrom);
-      expect(late, greaterThan(early));
+    test('가파른 구간은 lateSpan 만큼만 — 그 뒤는 endGoldGrowth', () {
+      final f = forge.levelUpLateFrom;
+      double step(int lv) => forge.levelUpGold(lv) / forge.levelUpGold(lv - 1);
+      expect(step(f + 1), closeTo(forge.levelUpLateGoldGrowth, 0.01));
+      expect(
+        step(f + forge.levelUpLateSpan + 1),
+        closeTo(forge.levelUpEndGoldGrowth, 0.01),
+      );
     });
   });
 }

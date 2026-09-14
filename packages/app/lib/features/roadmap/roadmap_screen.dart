@@ -6,6 +6,13 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
+import '../../ui/tier_label.dart';
+
+/// 로드맵에서 난이도를 골랐다(pop 값). 스테이지 번호(int)와 구분한다.
+class RoadmapTierPick {
+  const RoadmapTierPick(this.tier);
+  final int tier;
+}
 
 /// 스테이지 로드맵 — **아래(하위) → 위(상위)** 로 올라가는 징검다리.
 ///
@@ -23,7 +30,11 @@ class RoadmapScreen extends StatefulWidget {
     required this.highestStage,
     required this.liveStage,
     this.tier = 0,
+    this.topTier = 0,
   });
+
+  /// 가 본 가장 높은 난이도 — 여기까지 난이도 칩을 누를 수 있다.
+  final int topTier;
 
   final RoadmapConfig config;
 
@@ -322,7 +333,16 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     final hereZone = rc.zoneOf(widget.liveStage);
     final topZone = rc.zoneOf(widget.highestStage);
     return Scaffold(
-      appBar: AppBar(title: Text(l.roadmapTitle)),
+      appBar: AppBar(
+        title: Text(l.roadmapTitle),
+        // 난이도 이동(2026-09-15) — 가 본 난이도까지. 어려우면 아래로 내려간다.
+        bottom: widget.topTier <= 0
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(46),
+                child: _tierChips(context, l),
+              ),
+      ),
       body: Stack(
         children: [
           Positioned.fill(
@@ -382,6 +402,56 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         ],
       ),
     );
+  }
+}
+
+extension on _RoadmapScreenState {
+  Widget _tierChips(BuildContext context, AppLocalizations l) => SizedBox(
+    height: 46,
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      children: [
+        for (var t = 0; t < 4; t++)
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: ChoiceChip(
+              label: Text(tierName(l, t)),
+              selected: t == widget.tier,
+              onSelected: t > widget.topTier || t == widget.tier
+                  ? null
+                  : (_) => _confirmTier(context, l, t),
+            ),
+          ),
+      ],
+    ),
+  );
+
+  Future<void> _confirmTier(
+    BuildContext context,
+    AppLocalizations l,
+    int tier,
+  ) async {
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.tierMoveTitle(tierName(l, tier))),
+        content: Text(l.tierMoveBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.actionClose),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.tierMoveGo),
+          ),
+        ],
+      ),
+    );
+    if (go == true && context.mounted) {
+      Navigator.pop(context, RoadmapTierPick(tier));
+    }
   }
 }
 

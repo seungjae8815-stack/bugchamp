@@ -3102,4 +3102,20 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get eventRewardBadgeLabel => '獲得バッジ';
+
+  @override
+  String tierMoveTitle(String name) {
+    return '$name難易度へ移動';
+  }
+
+  @override
+  String get tierMoveBody => '強化・通貨・装備はそのままです。\n狩場クリア報酬は到達した最高難易度でのみ受け取れます。';
+
+  @override
+  String get tierMoveGo => '移動';
+
+  @override
+  String tierMoved(String name) {
+    return '$name難易度へ移動しました';
+  }
 }

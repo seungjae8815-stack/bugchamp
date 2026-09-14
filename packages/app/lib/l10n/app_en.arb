@@ -1990,5 +1990,23 @@
   "eventHallTop10": "4th–10th",
   "eventHallEntrants": "Everyone who took part",
   "eventHallMore": "and more",
-  "eventRewardBadgeLabel": "Badge earned"
+  "eventRewardBadgeLabel": "Badge earned",
+  "tierMoveTitle": "Move to {name}",
+  "@tierMoveTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tierMoveBody": "Upgrades, currency and gear stay as they are.\nZone clear rewards are only given on your highest difficulty.",
+  "tierMoveGo": "Move",
+  "tierMoved": "Moved to {name}",
+  "@tierMoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

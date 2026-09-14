@@ -220,4 +220,37 @@ void main() {
     );
     expect(c.read(saveControllerProvider).requireValue.difficultyTier, 1);
   });
+
+  /// 가 본 난이도로 **내려가는** 것도 합법이다(2026-09-15). 지금 난이도로
+  /// 비교하면 내려간 직후의 로컬이 "뒤처짐"이 되어 서버 옛 세이브(윗 난이도)에
+  /// 덮인다 — 최고 난이도(`topTier`)로 비교해야 한다.
+  test('아래 난이도로 내려간 로컬은 내려가기 전 서버 세이브에 덮이지 않는다', () async {
+    final before = SaveGame.initial(createdAt: t0).copyWith(
+      zoneEpoch: kZoneEpoch,
+      difficultyTier: 2,
+      maxTierReached: 2,
+      stageNumber: 301,
+      level: 30,
+    );
+    final local = before.copyWith(difficultyTier: 1, stageNumber: 1001);
+    final server = _StaleServer(before);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.difficultyTier, 1, reason: '내려간 선택이 취소되면 안 된다');
+    expect(after.maxTierReached, 2);
+  });
 }

@@ -513,6 +513,7 @@ class SaveGame {
     this.eventRewardRound,
     this.eventBadges = const {},
     this.difficultyTier = 0,
+    this.maxTierReached = 0,
     this.zoneKills = 0,
     this.zoneEpoch = 0,
     this.rarePity = 0,
@@ -714,6 +715,12 @@ class SaveGame {
   /// 구버전 앱이 이 세이브를 읽으면 0(쉬움)으로 보고 스테이지만 이어간다 —
   /// 진행이 깨지지는 않는다.
   final int difficultyTier;
+
+  /// **가 본 가장 높은 난이도**(2026-09-15). 지금 난이도([difficultyTier])는 이보다
+  /// 낮을 수 있다 — 로드맵에서 아래 난이도로 내려갈 수 있다. 성장 축 초기화는
+  /// 이 값을 **넘어서는** 난이도에 처음 들어설 때만 한다(`tier_progress.dart`).
+  /// 읽을 때 [difficultyTier] 보다 작으면 그 값으로 올린다(옛 세이브).
+  final int maxTierReached;
 
   /// 지금 사냥터에 들어온 뒤 잡은 몬스터 수 — 보스 도전 게이지(2026-09-14).
   /// 보스를 깨고 다음 사냥터로 가면 0 으로. 호환 필드(없으면 0).
@@ -1160,6 +1167,7 @@ class SaveGame {
     String? eventRewardRound,
     Set<String>? eventBadges,
     int? difficultyTier,
+    int? maxTierReached,
     int? zoneKills,
     int? zoneEpoch,
     int? rarePity,
@@ -1244,6 +1252,7 @@ class SaveGame {
     eventRewardRound: eventRewardRound ?? this.eventRewardRound,
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
+    maxTierReached: maxTierReached ?? this.maxTierReached,
     zoneKills: zoneKills ?? this.zoneKills,
     zoneEpoch: zoneEpoch ?? this.zoneEpoch,
     rarePity: rarePity ?? this.rarePity,
@@ -1429,6 +1438,7 @@ class SaveGame {
     eventBadges:
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
+    maxTierReached: (json['maxTierReached'] as num?)?.toInt() ?? 0,
     zoneKills: (json['zoneKills'] as num?)?.toInt() ?? 0,
     zoneEpoch: (json['zoneEpoch'] as num?)?.toInt() ?? 0,
     rarePity: (json['rarePity'] as num?)?.toInt() ?? 0,
@@ -1590,6 +1600,7 @@ class SaveGame {
     if (eventRewardRound != null) 'eventRewardRound': eventRewardRound,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
+    if (maxTierReached > 0) 'maxTierReached': maxTierReached,
     if (zoneKills > 0) 'zoneKills': zoneKills,
     if (zoneEpoch > 0) 'zoneEpoch': zoneEpoch,
     if (rarePity > 0) 'rarePity': rarePity,
@@ -1700,17 +1711,27 @@ class SaveGame {
   }
 }
 
-/// 사냥터 구조 세대(2026-09-14). 올리면 **모든 유저의 진행도가 처음으로**
-/// 돌아간다(스테이지·회차·도전 게이지). 강화·장비·곤충·재화는 그대로.
+/// 사냥터 구조 세대(2026-09-14). 올리면 **모든 유저의 진행도가 그 난이도의
+/// 사냥터 1 로** 돌아간다(스테이지·도전 게이지). 난이도·강화·장비·곤충·재화는 그대로.
 const int kZoneEpoch = 1;
 
 /// 세대가 낮은 세이브를 지금 구조에 맞춘다. 앱 로드·서버 로드 **양쪽**에서
 /// 부른다 — 한쪽만 하면 동기화가 옛 진행도를 되살린다.
+///
+/// 2026-09-15 사장님 결정(B안): **난이도는 유지**하고 그 난이도의 사냥터 1 부터.
+/// 전원 쉬움으로 보내면 보통·어려움까지 갔던 사람이 난이도를 잃고, 다시 올라가며
+/// 회차 전환 초기화로 옛 규칙에서 쌓은 강화까지 두 번 잃는다. 어려우면 로드맵에서
+/// 아래 난이도로 내려갈 수 있다([selectTierSave]).
 SaveGame applyZoneEpoch(SaveGame save) {
   if (save.zoneEpoch >= kZoneEpoch) return save;
+  final top = save.maxTierReached > save.difficultyTier
+      ? save.maxTierReached
+      : save.difficultyTier;
   return save.copyWith(
     stageNumber: 1,
-    difficultyTier: 0,
+    // 옛 구조의 최고 기록(스테이지 885 등)은 사냥터 구조에서 뜻이 없다.
+    bestStage: 0,
+    maxTierReached: top,
     zoneKills: 0,
     zoneEpoch: kZoneEpoch,
     // 회차 전환처럼 성장 축을 되돌리지는 않는다 — 강해진 채로 빠르게 뚫는 게

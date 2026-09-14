@@ -22,6 +22,8 @@ class ForgeConfig {
     this.levelUpGoldGrowth = 2.4,
     this.levelUpLateFrom = 0,
     this.levelUpLateGoldGrowth = 0,
+    this.levelUpLateSpan = 0,
+    this.levelUpEndGoldGrowth = 0,
     this.levelUpBaseSeconds = 3600,
     this.levelUpGrowth = 1.28,
     this.levelUpJellyPerHour = 2,
@@ -74,6 +76,12 @@ class ForgeConfig {
   /// 170% 까지 넘쳤다. 시간(타이머)은 건드리지 않는다 — 즉시완료 젤리 값이 따라 오른다.
   final int levelUpLateFrom;
   final double levelUpLateGoldGrowth;
+
+  /// 가파른 구간의 길이(레벨 수). 0 이면 끝까지 가파르다. 그 뒤로는
+  /// [levelUpEndGoldGrowth] 배씩 — 극한을 깬 뒤 몇 주에 걸쳐 올리는 **후반 목표**가
+  /// 되게 한다(끝까지 x15 면 17등급부터 1경이라 영영 못 올렸다).
+  final int levelUpLateSpan;
+  final double levelUpEndGoldGrowth;
 
   /// 칸을 다 채운 뒤 걸리는 시간(레벨 0 → 1). 레벨마다 [levelUpGrowth] 배씩.
   final int levelUpBaseSeconds;
@@ -155,15 +163,21 @@ class ForgeConfig {
 
   /// 현재 레벨 [level] → [level]+1 에 드는 **총** 골드.
   int levelUpGold(int level) {
-    final late = levelUpLateFrom > 0 && levelUpLateGoldGrowth > 0
-        ? math.max(0, level - levelUpLateFrom)
-        : 0;
-    final early = level - late;
+    final on = levelUpLateFrom > 0 && levelUpLateGoldGrowth > 0;
+    final beyond = on ? math.max(0, level - levelUpLateFrom) : 0;
+    final late = levelUpLateSpan > 0
+        ? math.min(beyond, levelUpLateSpan)
+        : beyond;
+    final end = beyond - late;
+    final early = level - beyond;
     return (levelUpGoldBase *
             math.pow(levelUpGoldGrowth, early) *
+            math.pow(on ? levelUpLateGoldGrowth : 1, late) *
             math.pow(
-              levelUpLateGoldGrowth <= 0 ? 1 : levelUpLateGoldGrowth,
-              late,
+              levelUpEndGoldGrowth <= 0
+                  ? levelUpGoldGrowth
+                  : levelUpEndGoldGrowth,
+              end,
             ))
         .round();
   }
@@ -230,6 +244,8 @@ class ForgeConfig {
       levelUpGoldGrowth: (lv['goldGrowth'] as num?)?.toDouble() ?? 2.4,
       levelUpLateFrom: (lv['lateFrom'] as num?)?.toInt() ?? 0,
       levelUpLateGoldGrowth: (lv['lateGoldGrowth'] as num?)?.toDouble() ?? 0,
+      levelUpLateSpan: (lv['lateSpan'] as num?)?.toInt() ?? 0,
+      levelUpEndGoldGrowth: (lv['endGoldGrowth'] as num?)?.toDouble() ?? 0,
       levelUpBaseSeconds: (lv['baseSeconds'] as num?)?.toInt() ?? 3600,
       levelUpGrowth: (lv['growth'] as num?)?.toDouble() ?? 1.28,
       levelUpJellyPerHour: (lv['jellyPerHour'] as num?)?.toInt() ?? 2,

@@ -1782,11 +1782,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final tier = save.difficultyTier;
     final last = tier >= kTierCount - 1;
     if (!last) {
+      // 이미 가 본 난이도로 다시 올라가는 것이면 초기화가 없다(2026-09-15).
+      final revisit = tier + 1 <= save.topTier;
       // 먼저 넘긴다 — 안내 창을 닫는 방식(바깥 탭)과 무관하게 확정되어야 한다.
       await ref.read(saveControllerProvider.notifier).enterNextTier();
       if (!mounted) return;
+      final moved = ref.read(saveControllerProvider).requireValue;
       setState(() {
-        _stage = 1;
+        _stage = moved.stageNumber;
         _habitatIndex = 0;
         _bossChallenge = false;
         // 곤충도 함께 일으켜 세운다 — 캐릭터만 살아나면 부활 직후가
@@ -1795,6 +1798,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _spawn();
       });
       AudioService.instance.sfxLevelUp();
+      if (revisit) {
+        showCenterToast(context, l.tierMoved(tierName(l, tier + 1)));
+        return;
+      }
       await showGameDialog<void>(
         context,
         title: l.tierClearTitle(tierName(l, tier)),
@@ -3467,19 +3474,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final cfg = _data.roadmapConfig;
     if (cfg == null) return;
     final save = ref.read(saveControllerProvider).requireValue;
-    final target = await Navigator.of(context).push<int>(
+    final picked = await Navigator.of(context).push<Object>(
       MaterialPageRoute(
         builder: (_) => RoadmapScreen(
           config: cfg,
           runConfig: _config,
-          highestStage: save.bestStage > save.stageNumber
-              ? save.bestStage
-              : save.stageNumber,
+          highestStage: save.highestStageInTier(_config),
           liveStage: _stage,
           tier: save.difficultyTier,
+          topTier: save.topTier,
         ),
       ),
     );
+    if (picked is RoadmapTierPick && mounted) {
+      // 난이도 이동(2026-09-15) — 가 본 난이도까지, 초기화 없음.
+      await ref.read(saveControllerProvider.notifier).selectTier(picked.tier);
+      if (!mounted) return;
+      final s = ref.read(saveControllerProvider).requireValue;
+      _applyStageJump(s.stageNumber);
+      final l = AppLocalizations.of(context);
+      showCenterToast(context, l.tierMoved(tierName(l, s.difficultyTier)));
+      return;
+    }
+    final target = picked is int ? picked : null;
     if (target != null && mounted) {
       if (_config.zoneMode) {
         // 점령한 사냥터로 내려간다(위로는 보스를 깨야 간다).

@@ -302,12 +302,29 @@ class GameActions {
     final stage = epoch < kZoneEpoch
         ? 0
         : (clientJson['stageNumber'] as num?)?.toInt() ?? 0;
-    final highest = stage > stored.stageNumber ? stage : stored.stageNumber;
 
     // 기록 키는 난이도마다 따로다(`w3@2`). 올라온 세이브의 난이도 키만 인정한다 —
     // 쉬움에 있으면서 극한 키를 올려 큰 보상을 끼워 넣지 못하게.
     final tier =
-        (clientJson['difficultyTier'] as num?)?.toInt() ?? stored.difficultyTier;
+        (clientJson['difficultyTier'] as num?)?.toInt() ??
+        stored.difficultyTier;
+    // 난이도는 기기 권위라 위조할 수 있고, 클리어 보상은 난이도에 따라 커진다.
+    // 저장본이 가 본 최고 난이도에서 **한 계단**까지만 믿는다(업로드 사이에 최종
+    // 보스를 깨고 넘어갔을 수 있다). 표가 없는 난이도도 인정하지 않는다.
+    final storedTop = stored.topTier;
+    if (tier < 0 || tier > storedTop + 1) return 0;
+    if (config.run.zoneTiers.isNotEmpty &&
+        tier >= config.run.zoneTiers.length) {
+      return 0;
+    }
+    // 가 본 난이도로 내려가 있으면 앱이 클리어 보상을 주지 않는다
+    // (`SaveController.grantChapterClears`).
+    final clientTop = (clientJson['maxTierReached'] as num?)?.toInt() ?? tier;
+    if (tier < clientTop) return 0;
+    // 저장본 스테이지는 **같은 난이도**일 때만 근거가 된다 — 쉬움 1001 에서 보통으로
+    // 넘어간 직후 그 1001 로 보통 챕터를 전부 넘긴 것처럼 보이면 안 된다.
+    final storedStage = stored.difficultyTier == tier ? stored.stageNumber : 0;
+    final highest = stage > storedStage ? stage : storedStage;
     var sum = 0;
     for (final ch in chapters) {
       final key = chapterClearKey(ch.id, tier);
