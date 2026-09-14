@@ -73,7 +73,7 @@ class _MonsterGalleryScreenState extends ConsumerState<MonsterGalleryScreen> {
     final monsters = run.monsters.values.toList();
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('🛠 몬스터 그림 확인'),
@@ -82,7 +82,9 @@ class _MonsterGalleryScreenState extends ConsumerState<MonsterGalleryScreen> {
               Tab(text: '몬스터'),
               Tab(text: '스테이지'),
               Tab(text: '보스'),
+              Tab(text: '사냥터 보스'),
             ],
+            isScrollable: true,
           ),
           actions: [
             IconButton(
@@ -97,6 +99,7 @@ class _MonsterGalleryScreenState extends ConsumerState<MonsterGalleryScreen> {
             _monsterTab(monsters, locale),
             _stageTab(run, locale),
             _bossTab(run, locale),
+            _zoneBossTab(run, data?.roadmapConfig, locale),
           ],
         ),
       ),
@@ -385,6 +388,123 @@ class _MonsterGalleryScreenState extends ConsumerState<MonsterGalleryScreen> {
     return r.bossFlip
         ? Transform.scale(scaleX: -1, alignment: Alignment.center, child: art)
         : art;
+  }
+
+  // ── 4. 사냥터 보스 44마리(난이도 4 × 사냥터 11) ─────────────────
+
+  static const _tierNames = ['쉬움', '보통', '어려움', '극한'];
+
+  /// 게임이 찾는 자세 파일(`play_screen` 의 ePaths 와 같은 접미사).
+  static const _zoneBossStates = <({String suffix, String label})>[
+    (suffix: '', label: '대기'),
+    (suffix: '_attack_1', label: '공격1'),
+    (suffix: '_attack_2', label: '공격2'),
+    (suffix: '_hurt_1', label: '피격'),
+    (suffix: '_death_1', label: '사망1'),
+    (suffix: '_death_2', label: '사망2'),
+  ];
+
+  Widget _zoneBossTab(RunConfig run, RoadmapConfig? roadmap, String locale) =>
+      ListView(
+        padding: const EdgeInsets.all(10),
+        children: [
+          _hint(
+            '사냥터 보스는 난이도·사냥터마다 다른 종입니다(e01 … x_final, 마리당 6장).\n'
+            '⚠️ 칸이 **빨간 "없음"** 이면 그 파일이 없어 게임에서는 지역 보스 그림으로 '
+            '떨어집니다. 사냥터 보스는 게임에서 **뒤집지 않으므로** 여기서도 그대로 '
+            '보여줍니다 — 보스가 **왼쪽(캐릭터 쪽)** 을 봐야 맞습니다.',
+          ),
+          for (var tier = 0; tier < _tierNames.length; tier++) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 6, bottom: 8),
+              child: Text(
+                _tierNames[tier],
+                style: const TextStyle(
+                  color: Color(0xFFFFC24D),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            for (var zone = 1; zone <= run.zonesPerTier; zone++)
+              _zoneBossRow(run, roadmap, tier, zone, locale),
+          ],
+        ],
+      );
+
+  Widget _zoneBossRow(
+    RunConfig run,
+    RoadmapConfig? roadmap,
+    int tier,
+    int zone,
+    String locale,
+  ) {
+    final id = run.bossArtId(tier, zone);
+    final name = roadmap?.boss(id)?.name.resolve(locale) ?? '(이름 없음)';
+    final label = run.isFinalZone(zone) ? '최종' : '사냥터 $zone';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label · $name  ($id)',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final st in _zoneBossStates)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 84,
+                          height: 84,
+                          child: _zoneBossArt(id, st.suffix),
+                        ),
+                        Text(
+                          st.label,
+                          style: const TextStyle(
+                            color: Color(0x99FFFFFF),
+                            fontSize: 9,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 파일 **하나만** 본다 — 대체 그림으로 떨어지면 없는 게 안 보인다.
+  Widget _zoneBossArt(String id, String suffix) {
+    return gameImage(
+      'assets/images/bosses/$id$suffix.webp',
+      width: 80,
+      height: 80,
+      fallback: const Center(
+        child: Text(
+          '없음',
+          style: TextStyle(
+            color: Color(0xFFFF5252),
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
   }
 
   // ── 공통 ─────────────────────────────────────────────────────

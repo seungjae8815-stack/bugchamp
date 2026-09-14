@@ -4,6 +4,7 @@
 library;
 
 export 'src/battle_config.dart';
+export 'src/chapter_reward.dart';
 export 'src/jelly_cost.dart';
 export 'src/buff_config.dart';
 export 'src/character_stats.dart';

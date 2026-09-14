@@ -1397,7 +1397,10 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
   int rangeTier() {
     if (minTier > 0) return minTier;
     if (items == null || forge == null) return 0;
-    final w = forge.tierWeights(save.forgeLevel, items.tierCount);
+    final w = forge.tierWeights(
+      math.min(save.forgeLevel, forge.maxLevel),
+      items.tierCount,
+    );
     var top = 0;
     for (var i = 0; i < w.length; i++) {
       if (w[i] >= 0.01) top = i;
@@ -1633,7 +1636,11 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
     final maxed = save.forgeLevel >= forge.maxLevel;
     final upAt = save.forgeUpAt;
 
-    final cur = forge.tierWeights(save.forgeLevel, items.tierCount);
+    // 최대 레벨을 내렸을 때 이미 넘은 계정은 최대로 보여준다(20→16, 2026-09-15).
+    final cur = forge.tierWeights(
+      math.min(save.forgeLevel, forge.maxLevel),
+      items.tierCount,
+    );
     final next = forge.tierWeights(save.forgeLevel + 1, items.tierCount);
 
     return SizedBox(

@@ -191,7 +191,8 @@ String _valueSingle(UpgradeKind k, double cur) {
       // 회복은 최대 체력 비율(초당)이다 — %/s 로 읽힌다.
       return '${(cur * 100).toStringAsFixed(2)}%/s';
     case UpgradeKind.crit:
-      return '${(cur * 100).toStringAsFixed(0)}%';
+      // 레벨당 +0.4%p 라 정수로 반올림하면 사도 숫자가 안 바뀌는 레벨이 생긴다.
+      return '${(cur * 100).toStringAsFixed(1)}%';
     default:
       return 'x${cur.toStringAsFixed(2)}';
   }
@@ -208,7 +209,7 @@ String _valuePair(UpgradeKind k, double cur, double next) {
     case UpgradeKind.regen:
       return '${(cur * 100).toStringAsFixed(2)}%/s → ${(next * 100).toStringAsFixed(2)}%/s';
     case UpgradeKind.crit:
-      return '${(cur * 100).toStringAsFixed(0)}% → ${(next * 100).toStringAsFixed(0)}%';
+      return '${(cur * 100).toStringAsFixed(1)}% → ${(next * 100).toStringAsFixed(1)}%';
     default:
       return 'x${cur.toStringAsFixed(2)} → x${next.toStringAsFixed(2)}';
   }
@@ -1985,7 +1986,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
     );
     // 보스는 캐릭터(좌측)를 바라보도록 좌우 반전(지역별 bossFlip).
-    final enemyBase = _isBoss && _config.regionForStage(_stage).bossFlip
+    // ⚠️ bossFlip 은 **옛 지역 보스 그림** 기준이다. 사냥터 보스 44마리(e01…)는
+    // 전부 왼쪽을 보게 그렸으므로(docs/art_prompts_bosses.md) 뒤집지 않는다 —
+    // 뒤집으면 계곡·밤산 지역 사냥터에서 보스가 등을 돌렸다(2026-09-15).
+    final enemyBase =
+        _isBoss && bossArt == null && _config.regionForStage(_stage).bossFlip
         ? Transform.scale(
             scaleX: -1,
             alignment: Alignment.center,
@@ -3385,9 +3390,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     await ctrl.reachStage(stage);
     final cleared = await ctrl.grantChapterClears();
     if (!mounted) return;
-    for (final ch in cleared) {
+    for (final c in cleared) {
       AudioService.instance.sfxLevelUp(); // 챕터 돌파 — 스테이지 클리어보다 큰 마디
-      await _showChapterClearDialog(ch);
+      await _showChapterClearDialog(c.chapter, c.gold);
       if (!mounted) return;
     }
     // 챕터를 깬 직후 = 기분 좋은 순간. 리뷰는 **여기서 계정당 한 번만** 묻는다
@@ -3398,7 +3403,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     await maybeWarnGuest(context, ref, stage);
   }
 
-  Future<void> _showChapterClearDialog(RoadmapChapter ch) {
+  Future<void> _showChapterClearDialog(RoadmapChapter ch, int gold) {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     final save = ref.read(saveControllerProvider).requireValue;
@@ -3450,11 +3455,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
           ),
           const SizedBox(height: 8),
-          gameRewardList(
-            context,
-            gold: ch.rewardGold,
-            materials: ch.rewardMaterials,
-          ),
+          gameRewardList(context, gold: gold, materials: ch.rewardMaterials),
         ],
       ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
@@ -5973,7 +5974,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       (l.statCombatPower, formatCompact(combatPower(base))),
       (l.statAttack, formatCompact(base.attack)),
       (l.statAttackSpeed, '${base.attackSpeed.toStringAsFixed(2)}/s'),
-      (l.statCrit, '${(base.critChance * 100).toStringAsFixed(0)}%'),
+      (l.statCrit, '${(base.critChance * 100).toStringAsFixed(1)}%'),
       (l.statMaxHp, formatCompact(base.maxHp)),
       (l.statDefense, formatCompact(base.defense)),
     ];

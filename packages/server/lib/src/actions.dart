@@ -304,12 +304,17 @@ class GameActions {
         : (clientJson['stageNumber'] as num?)?.toInt() ?? 0;
     final highest = stage > stored.stageNumber ? stage : stored.stageNumber;
 
+    // 기록 키는 난이도마다 따로다(`w3@2`). 올라온 세이브의 난이도 키만 인정한다 —
+    // 쉬움에 있으면서 극한 키를 올려 큰 보상을 끼워 넣지 못하게.
+    final tier =
+        (clientJson['difficultyTier'] as num?)?.toInt() ?? stored.difficultyTier;
     var sum = 0;
     for (final ch in chapters) {
-      if (claimed.contains(ch.id) &&
-          !already.contains(ch.id) &&
+      final key = chapterClearKey(ch.id, tier);
+      if (claimed.contains(key) &&
+          !already.contains(key) &&
           ch.clearedBy(highest)) {
-        sum += ch.rewardGold;
+        sum += chapterClearGold(config.run, ch, tier);
       }
     }
     return sum;

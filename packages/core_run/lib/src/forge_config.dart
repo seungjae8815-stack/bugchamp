@@ -20,6 +20,8 @@ class ForgeConfig {
     this.levelUpSteps = 10,
     this.levelUpGoldBase = 300000,
     this.levelUpGoldGrowth = 2.4,
+    this.levelUpLateFrom = 0,
+    this.levelUpLateGoldGrowth = 0,
     this.levelUpBaseSeconds = 3600,
     this.levelUpGrowth = 1.28,
     this.levelUpJellyPerHour = 2,
@@ -64,6 +66,14 @@ class ForgeConfig {
   /// 실측 골드 수입 곡선에 맞춰 역산했다(수입의 30% 투입 기준 레벨 20 = 36일).
   final double levelUpGoldBase;
   final double levelUpGoldGrowth;
+
+  /// 이 레벨부터는 골드가 [levelUpLateGoldGrowth] 배씩 오른다(0 이면 끔).
+  ///
+  /// 후반만 비싸게 하려고 둔다(2026-09-15). 한 배율로는 앞까지 같이 비싸져 초반
+  /// 장비가 늦어지는데, 극한에서는 최상급 장비가 며칠이면 최고치를 넘어
+  /// 170% 까지 넘쳤다. 시간(타이머)은 건드리지 않는다 — 즉시완료 젤리 값이 따라 오른다.
+  final int levelUpLateFrom;
+  final double levelUpLateGoldGrowth;
 
   /// 칸을 다 채운 뒤 걸리는 시간(레벨 0 → 1). 레벨마다 [levelUpGrowth] 배씩.
   final int levelUpBaseSeconds;
@@ -144,13 +154,26 @@ class ForgeConfig {
       roundJellyCost(stackExpandJelly * math.pow(1.35, bought).toDouble());
 
   /// 현재 레벨 [level] → [level]+1 에 드는 **총** 골드.
-  int levelUpGold(int level) =>
-      (levelUpGoldBase * math.pow(levelUpGoldGrowth, level)).round();
+  int levelUpGold(int level) {
+    final late = levelUpLateFrom > 0 && levelUpLateGoldGrowth > 0
+        ? math.max(0, level - levelUpLateFrom)
+        : 0;
+    final early = level - late;
+    return (levelUpGoldBase *
+            math.pow(levelUpGoldGrowth, early) *
+            math.pow(
+              levelUpLateGoldGrowth <= 0 ? 1 : levelUpLateGoldGrowth,
+              late,
+            ))
+        .round();
+  }
 
   /// 칸 하나에 드는 골드(총액을 [levelUpSteps] 로 나눈 값).
   int levelUpStepGold(int level) {
     final steps = levelUpSteps <= 0 ? 1 : levelUpSteps;
-    return (levelUpGold(level) / steps).ceil();
+    // 정수 올림 나눗셈 — 후반 비용(수경)은 double 로 나누면 정밀도가 모자라
+    // 칸 × 10 이 총액보다 몇 골드 작아진다.
+    return (levelUpGold(level) + steps - 1) ~/ steps;
   }
 
   /// 등급업에 걸리는 시간 — 현재 레벨 [level] → [level]+1.
@@ -205,6 +228,8 @@ class ForgeConfig {
       levelUpSteps: (lv['steps'] as num?)?.toInt() ?? 10,
       levelUpGoldBase: (lv['goldBase'] as num?)?.toDouble() ?? 300000,
       levelUpGoldGrowth: (lv['goldGrowth'] as num?)?.toDouble() ?? 2.4,
+      levelUpLateFrom: (lv['lateFrom'] as num?)?.toInt() ?? 0,
+      levelUpLateGoldGrowth: (lv['lateGoldGrowth'] as num?)?.toDouble() ?? 0,
       levelUpBaseSeconds: (lv['baseSeconds'] as num?)?.toInt() ?? 3600,
       levelUpGrowth: (lv['growth'] as num?)?.toDouble() ?? 1.28,
       levelUpJellyPerHour: (lv['jellyPerHour'] as num?)?.toInt() ?? 2,

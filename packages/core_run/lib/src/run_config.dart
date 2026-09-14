@@ -276,6 +276,7 @@ class RunConfig {
     this.exchangeGoldHours = 1.0,
     this.exchangeMaterialHours = 1.0,
     this.exchangeKillsPerHour = 900,
+    this.chapterClearHours = 0,
     this.monsters = const {},
     this.eliteChance = 0.06,
     this.eliteHpMult = 3.0,
@@ -698,6 +699,10 @@ class RunConfig {
   final double exchangeMaterialHours;
   final int exchangeKillsPerHour;
 
+  /// 사냥터(챕터) 클리어 보상 = 그 사냥터에서 몇 시간 사냥한 골드인가
+  /// (`chapterClearGold`). 0 이면 로드맵의 정액을 쓴다(예전 동작).
+  final double chapterClearHours;
+
   /// 몬스터 도감(id → 정의). JSON `monsters` 배열에서 읽는다.
   ///
   /// 비어 있으면 지역의 옛 `habitatKinds` 가 그대로 쓰인다(구버전 호환).
@@ -771,6 +776,7 @@ class RunConfig {
                   as num?)
               ?.toDouble() ??
           1.0,
+      chapterClearHours: (json['chapterClearHours'] as num?)?.toDouble() ?? 0,
       exchangeKillsPerHour:
           ((json['exchange'] as Map<String, dynamic>?)?['killsPerHour'] as num?)
               ?.toInt() ??

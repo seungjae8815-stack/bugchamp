@@ -321,7 +321,7 @@ void main() {
 
     test('등급업 골드는 10칸으로 나뉘고, 칸 × 10 이 총액을 덮는다', () {
       expect(forge.levelUpSteps, 10);
-      for (final lv in [0, 5, 10, 19]) {
+      for (final lv in [0, 5, 10, forge.maxLevel - 1]) {
         final total = forge.levelUpGold(lv);
         final step = forge.levelUpStepGold(lv);
         // 올림이라 칸 합이 총액보다 조금 클 수는 있어도 모자라면 안 된다.
@@ -335,10 +335,24 @@ void main() {
       expect(forge.levelUpGold(19), greaterThan(forge.levelUpGold(10)));
     });
 
-    test('최고 레벨은 20 이고 거기서 최상위 등급이 주력이 된다', () {
-      expect(forge.maxLevel, 20);
+    /// 2026-09-15: 최대 레벨 20 → 16. 13레벨부터 등급업 골드가 x15 라 17 이상은
+    /// 영영 못 간다. 최대 레벨에서도 최상위 등급(호박)은 **귀하다** — 주력이 되면
+    /// 극한에서 장비가 최고치의 176% 까지 넘쳤다(balance_sim --tiers=4).
+    test('최고 레벨(16)에서 최상위 등급은 나오지만 귀하다', () {
+      expect(forge.maxLevel, 16);
       final w = forge.tierWeights(forge.maxLevel, 10);
-      expect(w.last, greaterThan(0.8));
+      expect(w.last, greaterThan(0.03), reason: '못 뽑으면 목표가 사라진다');
+      expect(w.last, lessThan(0.3), reason: '흔하면 극한에서 장비가 넘친다');
+    });
+
+    test('후반 등급업 골드는 lateFrom 부터 가팔라진다', () {
+      final early =
+          forge.levelUpGold(forge.levelUpLateFrom) /
+          forge.levelUpGold(forge.levelUpLateFrom - 1);
+      final late =
+          forge.levelUpGold(forge.levelUpLateFrom + 1) /
+          forge.levelUpGold(forge.levelUpLateFrom);
+      expect(late, greaterThan(early));
     });
   });
 }

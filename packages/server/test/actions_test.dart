@@ -1998,34 +1998,59 @@ void main() {
 
     // 챕터 보상은 앱이 지급해서 세이브에 실려 온다. 뒷 챕터는 보상이 수백만~수억
     // 이라, 인정하지 않으면 **정상 유저의 보상이 상식 상한에 잘린다**.
+    // 2026-09-15: 보상은 그 사냥터 N시간치(chapterClearGold)고 난이도마다 따로다.
+    // 극한 뒷 사냥터는 수억이라 인정하지 않으면 잘린다.
+    // 마지막 챕터는 빼고 고른다 — 그걸 깨면 스테이지가 캠페인 끝을 넘어 따로
+    // 접히고(clamped) 이 테스트가 보려는 것과 섞인다.
+    RoadmapChapter bigChapter() => cfg.roadmap!.chapters
+        .take(cfg.roadmap!.chapters.length - 1)
+        .reduce(
+          (a, b) =>
+              chapterClearGold(cfg.run, a, 3) >= chapterClearGold(cfg.run, b, 3)
+              ? a
+              : b,
+        );
+
     test('큰 챕터 보상은 정당하게 통과한다(잘리지 않는다)', () {
-      final big = cfg.roadmap!.chapters.firstWhere(
-        (c) => c.rewardGold > 1000000,
-      );
-      final before = stored(gold: 1000);
+      final big = bigChapter();
+      final reward = chapterClearGold(cfg.run, big, 3);
+      expect(reward, greaterThan(1000000), reason: '상식 상한보다 커야 의미가 있다');
+      final before = stored(gold: 1000).copyWith(difficultyTier: 3);
       final after = before.copyWith(
-        gold: 1000 + big.rewardGold,
+        gold: 1000 + reward,
         stageNumber: big.endStage + 1,
-        clearedChapters: {big.id},
+        clearedChapters: {chapterClearKey(big.id, 3)},
       );
       final r = actions.mergeSave(before, after.toJson());
       expect(r.extra['clamped'], isFalse);
-      expect(r.save!.gold, 1000 + big.rewardGold);
+      expect(r.save!.gold, 1000 + reward);
     });
 
-    test('클리어하지 않은 챕터를 claim 해도 보상만큼 봐주지 않는다', () {
-      final big = cfg.roadmap!.chapters.firstWhere(
-        (c) => c.rewardGold > 1000000,
-      );
-      final before = stored(gold: 1000);
-      // 스테이지는 그대로인데 챕터만 클리어했다고 우긴다.
+    test('다른 난이도의 챕터 키로는 봐주지 않는다', () {
+      final big = bigChapter();
+      final reward = chapterClearGold(cfg.run, big, 3);
+      final before = stored(gold: 1000); // 쉬움
       final cheat = before.copyWith(
-        gold: 1000 + big.rewardGold,
-        clearedChapters: {big.id},
+        gold: 1000 + reward,
+        stageNumber: big.endStage + 1,
+        clearedChapters: {chapterClearKey(big.id, 3)}, // 극한 키
       );
       final r = actions.mergeSave(before, cheat.toJson());
       expect(r.extra['clamped'], isTrue);
-      expect(r.save!.gold, lessThan(1000 + big.rewardGold));
+    });
+
+    test('클리어하지 않은 챕터를 claim 해도 보상만큼 봐주지 않는다', () {
+      final big = bigChapter();
+      final reward = chapterClearGold(cfg.run, big, 3);
+      final before = stored(gold: 1000).copyWith(difficultyTier: 3);
+      // 스테이지는 그대로인데 챕터만 클리어했다고 우긴다.
+      final cheat = before.copyWith(
+        gold: 1000 + reward,
+        clearedChapters: {chapterClearKey(big.id, 3)},
+      );
+      final r = actions.mergeSave(before, cheat.toJson());
+      expect(r.extra['clamped'], isTrue);
+      expect(r.save!.gold, lessThan(1000 + reward));
     });
 
     test('같은 챕터를 다시 claim 해도 두 번 인정하지 않는다', () {

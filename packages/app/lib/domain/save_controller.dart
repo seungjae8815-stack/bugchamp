@@ -740,26 +740,34 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 최고 도달 스테이지 기준으로 **처음 클리어한 챕터**들의 보상을 지급하고,
   /// 새로 클리어한 챕터 목록을 반환한다(UI 축하 팝업용). 없으면 빈 리스트.
-  Future<List<RoadmapChapter>> grantChapterClears() async {
-    final cfg = ref.read(gameDataProvider).requireValue.roadmapConfig;
-    if (cfg == null) return const [];
+  ///
+  /// 기록 키와 골드는 난이도마다 다르다(`chapterClearKey` · `chapterClearGold`,
+  /// 서버 허용치와 같은 함수).
+  Future<List<({RoadmapChapter chapter, int gold})>>
+  grantChapterClears() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.roadmapConfig;
+    final run = data.runConfig;
+    if (cfg == null || run == null) return const [];
     final s = state.requireValue;
-    final newly = <RoadmapChapter>[];
+    final tier = s.difficultyTier;
+    final newly = <({RoadmapChapter chapter, int gold})>[];
     for (final ch in cfg.chapters) {
-      if (ch.clearedBy(s.stageNumber) && !s.clearedChapters.contains(ch.id)) {
-        newly.add(ch);
+      if (ch.clearedBy(s.stageNumber) &&
+          !s.clearedChapters.contains(chapterClearKey(ch.id, tier))) {
+        newly.add((chapter: ch, gold: chapterClearGold(run, ch, tier)));
       }
     }
     if (newly.isEmpty) return const [];
     var gold = s.gold;
     final mats = Map<MaterialKind, int>.from(s.materials);
     final cleared = Set<String>.from(s.clearedChapters);
-    for (final ch in newly) {
-      gold += ch.rewardGold;
-      for (final e in ch.rewardMaterials.entries) {
+    for (final c in newly) {
+      gold += c.gold;
+      for (final e in c.chapter.rewardMaterials.entries) {
         mats[e.key] = (mats[e.key] ?? 0) + e.value;
       }
-      cleared.add(ch.id);
+      cleared.add(chapterClearKey(c.chapter.id, tier));
     }
     await _commit(
       s.copyWith(gold: gold, materials: mats, clearedChapters: cleared),
@@ -2152,7 +2160,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
         rng: _forgeRng,
         items: items,
         forge: forge,
-        forgeLevel: s.forgeLevel,
+        // 최대 레벨을 내렸을 때(20→16, 2026-09-15) 이미 넘은 계정도 최대로 본다.
+        forgeLevel: math.min(s.forgeLevel, forge.maxLevel),
       );
       have--;
       forged++;

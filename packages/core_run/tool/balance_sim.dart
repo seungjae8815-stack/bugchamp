@@ -667,6 +667,7 @@ RunConfig _fitTiers(Map<String, dynamic> base, RunConfig config, _Opts opts) {
         // 그래서 체력을 그 시간에 맞추면 전력이 조금만 모자라도 못 잡는
         // **확실한 관문**이 된다(타격 수로 잡으면 20초 만에 뚫려 일정이 무너졌다).
         bh[k - 1] = p.bossHpAtLimit(opts.fitBossMargin).roundToDouble();
+        p.gold += p.zoneClearGold(k); // 보스를 깨면 받는 클리어 보상
       }
       return (fill: p._upgradeFill, table: table(), end: p);
     }
@@ -1272,6 +1273,19 @@ class _Player {
     ));
   }
 
+  /// 사냥터 [zone] 클리어 보상(앱 `chapterClearGold` 와 같은 식 — 로드맵 없이 사냥터로 잰다).
+  double zoneClearGold(int zone) {
+    if (config.chapterClearHours <= 0) return 0;
+    return rewardGold(
+          config,
+          config.zoneStartStage(zone) - 1,
+          1.0,
+          tier: _tier,
+        ) *
+        config.exchangeKillsPerHour *
+        config.chapterClearHours;
+  }
+
   /// 표를 맞출 때 같은 출발점에서 여러 번 굴려 보려고 상태를 복제한다.
   /// 기록(도달·타격 수 등)은 복제하지 않는다 — 판정에 쓰지 않는다.
   _Player copy() {
@@ -1423,6 +1437,9 @@ class _Player {
               gearTier: gearTier,
             ));
           }
+          // 사냥터 클리어 보상 — 앱과 같은 규모(chapterClearGold: 그 사냥터
+          // chapterClearHours 시간치). 빼고 재면 초반이 시뮬보다 빠르다.
+          gold += zoneClearGold(z);
           stage = config.isFinalZone(z)
               ? stage + config.worldSize
               : config.zoneStartStage(z + 1);
