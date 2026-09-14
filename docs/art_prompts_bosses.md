@@ -62,6 +62,50 @@ Sprite strip of this exact creature from the attached image: same design, same c
 
 > 최종보스 ① 프롬프트에는 `Standing in a calm idle pose` 앞에 **"Epic scale, imposing and ornate,"** 를 덧붙인다.
 
-## 보통 / 어려움 / 극한
-쉬움 11마리가 끝나고 새 구조의 지역·이름이 정해지면 여기 이어서 적는다.
-(같은 표 형식. 난이도가 오를수록 팔레트를 차갑고 어둡게, 장식은 많게.)
+## 보통 (n01~n10, n_final) — 팔레트: 차갑고 짙게, 장식 한 단계 더
+
+| id | 이름 | {설명} |
+|---|---|---|
+| n01 | 흑요석 사슴벌레 (Obsidian Stag / 黒曜石のクワガタ) | a massive stag beetle armored in glossy black obsidian plates with sharp glassy edges, mandibles like curved blades, cold blue eyes, thin cracks glowing faint blue |
+| n02 | 늪지의 잠자리 여왕 (Marsh Dragonfly Queen / 沼地のトンボ女王) | a giant dragonfly queen, long iridescent teal-and-violet body, four wide translucent wings with vein patterns, a crown of woven reeds, water droplets on the wings |
+| n03 | 가시 메뚜기 장군 (Thorn Locust General / 棘バッタ将軍) | a war-general locust in bronze plate armor covered in thorns, heavy spring legs with spurs, a cracked shield-like face plate, dull red eyes |
+| n04 | 서리 나방 (Frost Moth / 霜の蛾) | a huge pale moth with wings like frosted glass, ice crystals along the wing edges, silver-white fur, soft cold blue glow, breath of frost |
+| n05 | 강철 소똥구리 (Steel Dung Beetle / 鋼のフンコロガシ) | a squat, powerful dung beetle plated in riveted steel, pushing a boulder of packed iron ore, thick legs, small determined amber eyes |
+| n06 | 개미귀신 함정왕 (Antlion Trapper / 蟻地獄の罠王) | a colossal antlion larva rising from a sand pit, enormous serrated jaws, flat sandy-brown segmented body, grains of sand sliding off its back |
+| n07 | 그림자 반딧불 (Shadow Firefly / 影のホタル) | a large firefly with a smoky charcoal body and a lantern abdomen glowing eerie green, translucent dark wings, wisps of light trailing behind |
+| n08 | 심해 물장군 (Abyss Giant Water Bug / 深淵のタガメ) | a giant water bug from deep water, flat dark-navy armored body, thick raptorial forelegs, pale bioluminescent spots, faint drifting bubbles |
+| n09 | 바위 하늘소 (Granite Longhorn / 花崗岩のカミキリ) | a longhorn beetle with extremely long striped antennae, body plated in grey granite with lichen patches, heavy slow stance, dull green eyes |
+| n10 | 황금 장수풍뎅이 (Gilded Hercules / 黄金のヘラクレス) | an imperial hercules beetle with polished gold armor and a massive forked horn, engraved ornaments on the shell, ruby-red eyes |
+| n_final | 폭풍의 왕벌 (Storm Hornet King / 嵐の王蜂, 최종) | the storm hornet king: a titanic hornet with jagged black-and-gold armor, wings crackling with lightning, a long glowing stinger, storm clouds swirling around its body, clearly larger and more ornate than any other boss |
+
+## 어려움 (h01~h10, h_final) — 팔레트: 어둡고 뜨겁게(용암·잿빛·핏빛), 장식 많게
+
+| id | 이름 | {설명} |
+|---|---|---|
+| h01 | 용암 딱정벌레 (Magma Beetle / 溶岩の甲虫) | a heavy beetle with black volcanic-rock armor split by glowing orange magma cracks, smoke rising from its back, molten drips from the mandibles |
+| h02 | 검은 사마귀 황후 (Onyx Mantis Empress / 黒瑪瑙のカマキリ皇后) | a tall elegant mantis empress in polished onyx armor with gold trim, enormous scythe arms, a jeweled crown, narrow crimson eyes |
+| h03 | 독가시 애벌레 (Venomspine Caterpillar / 毒棘のイモムシ) | a monstrous caterpillar covered in long venomous spines dripping green poison, banded purple-and-black body, many stubby legs, glowing yellow eyes |
+| h04 | 잿빛 매미 군주 (Ash Cicada Lord / 灰の蝉主) | a giant cicada with ash-grey armor and cracked translucent wings, embers glowing in the cracks, a crown of burnt twigs, red eyes |
+| h05 | 강철 집게벌레 (Iron Earwig / 鉄のハサミムシ) | a long armored earwig with riveted iron plates, gigantic serrated tail pincers held high, sparks at the joints, dull orange eyes |
+| h06 | 피의 모기 여왕 (Crimson Mosquito Queen / 紅の蚊女王) | a giant mosquito queen with a crimson glowing abdomen, long needle proboscis, spindly armored legs, translucent red-veined wings |
+| h07 | 유령 하루살이 (Phantom Mayfly / 幽霊のカゲロウ) | a ghostly pale mayfly, semi-transparent body with faint blue glow, long trailing tail filaments, wide delicate wings, eyes like dim lanterns |
+| h08 | 지옥 개미 군주 (Hellfire Ant Lord / 業火の蟻王) | a massive soldier ant with dark-red chitin, jaws glowing like hot iron, flames flickering from the abdomen, spiked armor plates |
+| h09 | 수정 풍뎅이 (Crystal Scarab / 水晶のコガネムシ) | a scarab beetle whose shell is made of translucent violet crystal with light refracting inside, sharp crystal spines, glowing white eyes |
+| h10 | 밤의 황제 나방 (Night Emperor Moth / 夜の皇帝蛾) | a colossal emperor moth with deep purple wings bearing golden eye spots, thick black fur, a crown of curved antennae, faint golden dust |
+| h_final | 재앙의 대벌레 (Calamity Stick Insect / 災厄のナナフシ, 최종) | the calamity stick insect: an enormous stick insect like a walking dead tree, bark-black body with red glowing veins, spiked limbs, a mane of withered leaves, clearly larger and more ornate than any other boss |
+
+## 극한 (x01~x10, x_final) — 팔레트: 우주·공허(남색·보라·별빛), 장식 최대
+
+| id | 이름 | {설명} |
+|---|---|---|
+| x01 | 공허 사슴벌레 (Void Stag / 虚空のクワガタ) | a stag beetle whose armor is deep void-black with tiny stars inside, mandibles edged with violet light, eyes like small galaxies |
+| x02 | 성운 잠자리 (Nebula Dragonfly / 星雲のトンボ) | a giant dragonfly with wings like painted nebulae in pink, blue and violet, a sleek dark body, trailing stardust |
+| x03 | 별빛 반딧불 왕 (Starlight Firefly King / 星光のホタル王) | a regal firefly with a midnight-blue body, an abdomen glowing like a small white star, a crown of light, tiny orbiting sparks |
+| x04 | 흑철 장수풍뎅이 (Blacksteel Hercules / 黒鋼のヘラクレス) | a hercules beetle in matte black steel armor with violet edge-light, a colossal serrated horn, engraved runes, pale glowing eyes |
+| x05 | 서리 여왕개미 (Frost Ant Queen / 霜の女王蟻) | a vast queen ant made of pale ice and frost, translucent abdomen with frozen eggs inside, crown of icicles, breath of cold mist |
+| x06 | 뇌전 말벌 (Thunder Hornet / 雷電の蜂) | a giant hornet with electric-blue stripes, wings crackling with arcs of lightning, a stinger like a lightning rod, storm sparks |
+| x07 | 심연의 물방개 (Abyssal Diving Beetle / 深淵のゲンゴロウ) | a sleek diving beetle from the deepest sea, glossy black shell with deep-blue sheen, bioluminescent blue spots, powerful paddle legs |
+| x08 | 태양 풍뎅이 (Solar Scarab / 太陽のスカラベ) | a radiant scarab with a shell like the surface of the sun, orange-white glow, solar-flare crest, eyes like white-hot coals |
+| x09 | 망령 사마귀 (Wraith Mantis / 亡霊のカマキリ) | a spectral mantis of dark mist and violet light, scythe arms of pale bone-light, eyes like cold flames, tattered ghostly wings |
+| x10 | 시간의 매미 (Chrono Cicada / 時の蝉) | an ancient cicada with clockwork-like gold-and-bronze armor, wings etched with rings like tree rings, glowing gear-shaped eyes |
+| x_final | 만충의 근원 (The Origin / 万虫の根源, 최종) | the origin of all insects: a titanic primordial mother-insect, body of layered cosmic chitin with galaxies glowing between the plates, dozens of eyes, several pairs of enormous wings, a crown of horns and roots, clearly larger and more ornate than any other boss |
