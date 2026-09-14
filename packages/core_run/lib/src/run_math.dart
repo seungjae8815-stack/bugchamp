@@ -94,6 +94,12 @@ double baselineHitPower(CharacterStats s, {bool boss = false}) {
 /// (`docs/design_difficulty_loop.md`). **적응형 보정 밖에 곱한다** —
 /// 안쪽에 넣으면 보정이 회차 상승을 그대로 상쇄해 아무 일도 안 일어난다.
 int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
+  // 사냥터 표(2026-09-14)가 있으면 그 값 × 회차 배율. 곡선·적응형은 안 본다.
+  final tableHp = c.zoneMode ? c.zoneHpAt(c.zoneOf(depth + 1)) : null;
+  if (tableHp != null) {
+    final hp = tableHp * c.tierHits(tier);
+    return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
+  }
   final base = c.hpBase * math.pow(c.hpGrowth, depth);
   final gate = c.worldMult(c.worldHpMult, depth);
   if (playerAttack == null || c.hpAdaptPower <= 0 || c.hpAdaptTargetHits <= 0) {
@@ -126,6 +132,13 @@ int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
 /// 보스 최대 HP. 월드 마지막 보스(1-100)는 [RunConfig.worldBossHpMult] 추가
 /// — 다음 월드로 가는 관문 벽.
 int bossMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
+  // 사냥터 보스 표(2026-09-14): 보스는 **전력 관문**이라 일반 몬스터 배율이
+  // 아니라 따로 맞춘다("이 사냥터에서 T일 키운 전력으로 딱 잡히는 체력").
+  final tableBoss = c.zoneMode ? c.zoneBossHpAt(c.zoneOf(depth + 1)) : null;
+  if (tableBoss != null) {
+    final hp = tableBoss * c.tierHits(tier);
+    return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
+  }
   final worldFinal = c.isWorldFinal(depth + 1) ? c.worldBossHpMult : 1.0;
   // ⚠️ 서식지 체력에 **또 곱하므로** 여기서도 상한을 본다. 서식지 쪽만
   // 막으면 보스에서 넘친다(2026-08-30 실측: 9.22e18 로 포화).
@@ -145,10 +158,12 @@ int rewardGold(
   int tier = 0,
   bool parked = false,
 }) {
+  final tableGold = c.zoneMode ? c.zoneGoldAt(c.zoneOf(depth + 1)) : null;
   final base =
-      c.goldBase *
-      math.pow(c.goldGrowth, depth) *
-      c.worldMult(c.worldGoldMult, depth) *
+      (tableGold ??
+          c.goldBase *
+              math.pow(c.goldGrowth, depth) *
+              c.worldMult(c.worldGoldMult, depth)) *
       rewardMultiplier *
       // ⚠️ 보상도 회차와 함께 오른다. 몬스터만 세지면 회차를 넘어갈 이유가
       // 없다 — 더 오래 걸리고 덜 버는 선택지가 되기 때문이다.
@@ -252,10 +267,12 @@ double habitatThreat(
   double? gearToughness,
   int tier = 0,
 }) {
+  final tableThreat = c.zoneMode ? c.zoneThreatAt(c.zoneOf(depth + 1)) : null;
   final base =
+      tableThreat ??
       c.threatBase *
-      math.pow(c.threatGrowth, depth) *
-      c.worldMult(c.worldHpMult, depth);
+          math.pow(c.threatGrowth, depth) *
+          c.worldMult(c.worldHpMult, depth);
   // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다. 체력을
   // 부풀리면 타격 수만 늘어 지루해지지만, 공격이 세지면 체력·방어·회복과
   // 장비 옵션이 실제 선택이 된다(docs/design_difficulty_loop.md).

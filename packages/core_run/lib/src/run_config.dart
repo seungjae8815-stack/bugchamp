@@ -212,6 +212,10 @@ class RunConfig {
     this.zoneMode = false,
     this.bossUnlockKills = 100,
     this.zonesPerTier = 11,
+    this.zoneHp = const [],
+    this.zoneThreat = const [],
+    this.zoneGold = const [],
+    this.zoneBossHp = const [],
     this.endParkedRewardMult = 1.0,
     this.rarePityKills = 0,
     this.dropGradeWeights = const {},
@@ -503,6 +507,31 @@ class RunConfig {
   /// 난이도(회차)마다 사냥터 수. 마지막 하나가 최종 보스 사냥터다.
   final int zonesPerTier;
 
+  /// 사냥터별 **표**(index = 사냥터-1). 비어 있으면 월드 배율 곡선을 쓴다.
+  ///
+  /// 왜 표인가: 강화가 덧셈이라 전력은 지수로 안 자란다. 한 배율(×1.7)로
+  /// 11계단을 만들면 앞은 한 방, 뒤는 못 잡음이 된다. 표는 `balance_sim
+  /// --fit-zones` 가 "사냥터 k 에서 T_k 일을 보낸 뒤의 전력"에 맞춰 뽑는다 —
+  /// 즉 **의도한 일정대로 키운 유저가 딱 넘을 수 있는 세기**다.
+  /// 덜 키우면 벽이고, 더 키우면 수월하다. 회차 배율은 그 위에 곱한다.
+  final List<double> zoneHp; // 일반 몬스터 체력
+  final List<double> zoneThreat; // 초당 위협(한 대 = ×enemyAtkInterval)
+  final List<double> zoneGold; // 처치당 골드(보상 배율 1 기준)
+  final List<double> zoneBossHp; // 보스 체력(비어 있으면 zoneHp × bossHpMult)
+
+  double? zoneBossHpAt(int zone) => zoneBossHp.isEmpty
+      ? null
+      : zoneBossHp[(zone - 1).clamp(0, zoneBossHp.length - 1)];
+
+  double? zoneHpAt(int zone) =>
+      zoneHp.isEmpty ? null : zoneHp[(zone - 1).clamp(0, zoneHp.length - 1)];
+  double? zoneThreatAt(int zone) => zoneThreat.isEmpty
+      ? null
+      : zoneThreat[(zone - 1).clamp(0, zoneThreat.length - 1)];
+  double? zoneGoldAt(int zone) => zoneGold.isEmpty
+      ? null
+      : zoneGold[(zone - 1).clamp(0, zoneGold.length - 1)];
+
   /// 사냥터 번호(1-based). 사냥터 모드가 아니어도 월드 번호와 같다.
   int zoneOf(int stageNumber) =>
       worldSize <= 0 ? 1 : ((stageNumber - 1) ~/ worldSize) + 1;
@@ -757,6 +786,22 @@ class RunConfig {
       zoneMode: json['zoneMode'] as bool? ?? false,
       bossUnlockKills: (json['bossUnlockKills'] as num?)?.toInt() ?? 100,
       zonesPerTier: (json['zonesPerTier'] as num?)?.toInt() ?? 11,
+      zoneHp: [
+        for (final v in (json['zoneHp'] as List? ?? const []))
+          (v as num).toDouble(),
+      ],
+      zoneThreat: [
+        for (final v in (json['zoneThreat'] as List? ?? const []))
+          (v as num).toDouble(),
+      ],
+      zoneGold: [
+        for (final v in (json['zoneGold'] as List? ?? const []))
+          (v as num).toDouble(),
+      ],
+      zoneBossHp: [
+        for (final v in (json['zoneBossHp'] as List? ?? const []))
+          (v as num).toDouble(),
+      ],
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
       monsters: {

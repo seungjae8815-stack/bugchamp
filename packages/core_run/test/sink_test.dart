@@ -181,10 +181,11 @@ void main() {
     test('지급량이 스테이지에 비례한다 — 정액이면 후반에 안 쓴다', () {
       final c = run();
       // 사냥터 구조(2026-09-14): 골드는 사냥터 안에서 평탄하고 사냥터
-      // 사이에서 계단으로 오른다. 사냥터 1 과 사냥터 5 를 비교한다.
+      // 사이에서 계단으로 오른다(표 zoneGold, 계단 ×1.6). 사냥터 1 과
+      // 마지막 사냥터를 비교한다 — 첫 사냥터의 20배는 넘어야 후반에도 쓴다.
       final early = rewardGold(c, 10, 1.0);
-      final late = rewardGold(c, 450, 1.0);
-      expect(late, greaterThan(early * 10));
+      final late = rewardGold(c, c.zoneStartStage(c.zonesPerTier) - 1, 1.0);
+      expect(late, greaterThan(early * 20));
     });
 
     test('교환 단위가 설정에서 온다(§6)', () {

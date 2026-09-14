@@ -161,6 +161,10 @@ const _sliceSeconds = 600.0;
 /// 며칠까지 굴려보고 포기할지.
 const _maxDays = 3650;
 
+/// 보고서 표본 스테이지. 사냥터 모드면 main 이 사냥터 시작점으로 바꿔 놓는다.
+List<int> _samples = const [10, 50, 100, 200, 400, 550, 700, 850, 1000];
+List<int> _samplesEcon = const [10, 30, 50, 100, 200, 400, 700];
+
 void main(List<String> args) {
   final opts = _parseArgs(args);
   final base =
@@ -169,6 +173,16 @@ void main(List<String> args) {
 
   // CLI 로 덮어쓸 값들 — JSON 을 고치기 전에 후보를 빠르게 재보기 위함.
   for (final e in opts.overrides.entries) {
+    if (e.key == '__up') {
+      for (final u in e.value as List<List<String>>) {
+        for (final spec in base['upgrades'] as List) {
+          if (spec['kind'] == u[0]) {
+            spec[u[1]] = num.tryParse(u[2]) ?? u[2];
+          }
+        }
+      }
+      continue;
+    }
     base[e.key] = e.value;
   }
   // --mult=1.15 : 공격 계열 스탯을 곱연산 성장으로 바꿔본다(진행 벽 해소 실험).
@@ -178,11 +192,100 @@ void main(List<String> args) {
       if (multiplicative.contains(u['kind'])) u['valueGrowth'] = opts.mult;
     }
   }
-  final config = RunConfig.fromJson(base);
+  var config = RunConfig.fromJson(base);
+  if (opts.fitZones != null) {
+    // ── 사냥터 표 맞추기 ──
+    // 사냥터 k 의 몬스터는 "사냥터 k-1 에서 의도한 일수만큼 키운 전력"으로
+    // fitHits 대에 죽고, 한 대가 최대 체력의 fitBite 만큼이 되게 잡는다.
+    // 골드는 사냥터마다 fitGoldStep 배. 그 표를 넣고 일반 시뮬로 검증한다.
+    final days = opts.fitZones!;
+    final hp = <double>[], th = <double>[], gd = <double>[], bh = <double>[];
+    final fit = _Player(config, const [])..fitting = true;
+    void apply() {
+      base['zoneHp'] = hp;
+      base['zoneThreat'] = th;
+      base['zoneGold'] = gd;
+      base['zoneBossHp'] = bh;
+      config = RunConfig.fromJson(base);
+      fit.config = config;
+    }
+
+    for (var k = 1; k <= config.zonesPerTier; k++) {
+      // 1) 진입 전력으로 임시 표를 넣고 의도한 일수만큼 머문다(키운다).
+      final entry = fit.stats;
+      hp.add((baselineHitPower(entry) * opts.fitHits).roundToDouble());
+      bh.add(
+        (baselineHitPower(entry, boss: true) * opts.fitHits * 4)
+            .roundToDouble(),
+      );
+      th.add(1);
+      gd.add(
+        k == 1
+            ? config.goldBase
+            : (gd.last * opts.fitGoldStep * 100).round() / 100,
+      );
+      apply();
+      fit.stage = config.zoneStartStage(k);
+      fit.playDays(days[(k - 1).clamp(0, days.length - 1)]);
+
+      // 2) 머문 뒤 전력으로 이 사냥터를 **확정**한다 — 그래야 처음 왔을 땐
+      //    벽이고, 의도한 만큼 키우면 딱 넘는다.
+      final st = fit.stats;
+      final hit = baselineHitPower(st);
+      final bossHit = baselineHitPower(st, boss: true);
+      hp[k - 1] = (hit * opts.fitHits).roundToDouble();
+      bh[k - 1] = (bossHit * opts.fitHits * 4)
+          .roundToDouble(); // 보스 = 일반의 4배 타격
+      // 위협: 보스전에서 "버티는 시간 ≈ 잡는 시간 × 1.3" 이 되게 잡는다.
+      final bossDps = bossHit * st.attackSpeed;
+      final kill = bh[k - 1] / bossDps;
+      final needInc = st.maxHp / (kill * 1.3) + st.hpRegen; // 초당 피해(방어 뒤)
+      var threat = needInc * (100 + st.defense) / 100 / config.bossThreatMult;
+      // 일반 몬스터 한 대가 체력의 fitBite 근처가 되게 위아래로 자른다.
+      // 진입 시점은 전력이 이보다 약하므로 한 대가 1.3~1.5배로 느껴진다 —
+      // 상한을 좁게 둬야 도착하자마자 죽지 않는다.
+      double biteOf(double t) =>
+          t * config.enemyAtkInterval * 100 / (100 + st.defense) / st.maxHp;
+      double threatFor(double bite) =>
+          bite * st.maxHp * (100 + st.defense) / 100 / config.enemyAtkInterval;
+      final lo = opts.fitBite * 0.7, hi = opts.fitBite * 1.25;
+      if (biteOf(threat) < lo) {
+        threat = threatFor(lo);
+      }
+      if (biteOf(threat) > hi) {
+        threat = threatFor(hi);
+      }
+      th[k - 1] = (threat * 100).round() / 100;
+      apply();
+      stdout.writeln(
+        '  fit 사냥터 $k: 체력 ${hp[k - 1].toStringAsFixed(0)} · 보스 ${bh[k - 1].toStringAsFixed(0)} '
+        '· 위협/s ${th[k - 1]} (한 대 ${(biteOf(th[k - 1]) * 100).toStringAsFixed(0)}%) '
+        '· 골드 ${gd[k - 1]} · 머문 뒤 한 대 ${hit.toStringAsFixed(0)}, 체력 ${st.maxHp.toStringAsFixed(0)}, 방어 ${st.defense.toStringAsFixed(0)}',
+      );
+    }
+    stdout.writeln('');
+    stdout.writeln('── run_config.json 에 넣을 표 ──');
+    stdout.writeln(' "zoneHp": ${jsonEncode(hp)},');
+    stdout.writeln(' "zoneBossHp": ${jsonEncode(bh)},');
+    stdout.writeln(' "zoneThreat": ${jsonEncode(th)},');
+    stdout.writeln(' "zoneGold": ${jsonEncode(gd)},');
+    stdout.writeln('');
+    // 아래 일반 시뮬은 맞춘 표로 돈다.
+  }
   // 캠페인 끝: 월드 구조면 --worlds(기본 10)개 월드, 아니면 지역×스테이지.
-  final finalStage = config.worldSize > 0
+  // 사냥터 구조(2026-09-14): 사냥터 k = 스테이지 (k-1)×worldSize+1. 마지막
+  // 사냥터(최종 보스)에 닿는 것이 캠페인 끝이다. 표본도 사냥터 시작점으로.
+  final finalStage = config.zoneMode
+      ? config.zoneStartStage(config.zonesPerTier)
+      : config.worldSize > 0
       ? config.worldSize * opts.worlds
       : config.stagesPerRegion * config.regions.length;
+  if (config.zoneMode) {
+    _samples = [
+      for (var z = 1; z <= config.zonesPerTier; z++) config.zoneStartStage(z),
+    ];
+    _samplesEcon = _samples;
+  }
 
   stdout.writeln('── 설정 ──');
   stdout.writeln('  habitatsPerStage : ${config.habitatsPerStage}');
@@ -208,7 +311,12 @@ void main(List<String> args) {
   stdout.writeln('');
 
   // 마일스톤: 월드 구조면 월드 경계, 아니면 지역 경계.
-  final marks = config.worldSize > 0
+  final marks = config.zoneMode
+      ? [
+          for (var z = 1; z <= config.zonesPerTier; z++)
+            config.zoneStartStage(z),
+        ]
+      : config.worldSize > 0
       ? [for (var i = 1; i <= opts.worlds; i++) i * config.worldSize]
       : [
           for (var i = 1; i <= config.regions.length; i++)
@@ -331,7 +439,7 @@ void main(List<String> args) {
   // 레벨당 1.15~1.30 으로 폭증하는데 재료값은 1.09~1.11 이라 격차가 벌어진다.
   stdout.writeln('── 재료 수지(키틴 기준) ──');
   stdout.writeln('  스테이지 |     번 것 |    남은 것 | 미사용 | 남은골드');
-  for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
+  for (final m in _samplesEcon) {
     final v = sim.matAt[m];
     if (v == null) continue;
     final pct = v.earned <= 0 ? 0.0 : v.mat / v.earned * 100;
@@ -360,7 +468,7 @@ void main(List<String> args) {
 
   stdout.writeln('── 처치 속도(화석 조각이 시간당 얼마나 들어오나) ──');
   stdout.writeln('  스테이지 |  타격 |    공속 | 마리당 |  처치/시간 | 고정 드롭 시');
-  for (final m in const [10, 50, 100, 200, 400, 700, 1000]) {
+  for (final m in _samples) {
     final sec = sim.secPerKill[m];
     final h = sim.hitsToKill[m];
     if (sec == null || h == null) continue;
@@ -377,7 +485,7 @@ void main(List<String> args) {
 
   stdout.writeln('── 보스전 생존(위협이 실제로 위협인가) ──');
   stdout.writeln('  스테이지 | 잡는 시간 | 버티는 시간 | 판정');
-  for (final m in const [10, 50, 100, 200, 400, 700, 1000]) {
+  for (final m in _samples) {
     final v = sim.survivalAt[m];
     if (v == null) continue;
     final verdict = v.live.isInfinite
@@ -397,7 +505,7 @@ void main(List<String> args) {
   stdout.writeln('  맞은 양 · 회복한 양 모두 **최대 체력 대비 %**.');
   stdout.writeln('  회복이 크면 위협도를 올려도 안 닳아 체력·방어·회복 투자가 죽는다.');
   stdout.writeln('  스테이지 |   맞은 양 |   회복한 양 |   수지 | 판정');
-  for (final m in const [10, 50, 100, 200, 400, 700, 1000]) {
+  for (final m in _samples) {
     final v = sim.habitatBudget[m];
     if (v == null) continue;
     final net = v.heal - v.dmg;
@@ -423,7 +531,7 @@ void main(List<String> args) {
   stdout.writeln('  목표: 순항에서 최저 20~50% 를 오가고 죽지는 않는다. 벽에서는 죽는다.');
   stdout.writeln('  스테이지 |  한 대 |  최저 |  끝 | 판정');
   // 관문(100·200·400·1000)은 벽이라 죽는 게 맞다 — 순항 구간을 따로 본다.
-  for (final m in const [10, 50, 100, 200, 400, 550, 700, 850, 1000]) {
+  for (final m in _samples) {
     final v = sim.hpTrajectory[m];
     if (v == null) continue;
     final verdict = v.dead
@@ -440,7 +548,7 @@ void main(List<String> args) {
 
   stdout.writeln('── 업그레이드가 막힌 이유(구간별) ──');
   stdout.writeln('  재료가 100% 면 재료만 모으는 게임, 0% 면 재료가 장식이다.');
-  for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
+  for (final m in _samplesEcon) {
     final b = sim.blockedAt[m];
     if (b == null) continue;
     final tot = b.gold + b.mat;
@@ -455,10 +563,10 @@ void main(List<String> args) {
   stdout.writeln('── 결과 ──');
   for (final m in marks) {
     final d = sim.reached[m];
-    stdout.writeln(
-      '  스테이지 ${m.toString().padLeft(3)} 클리어: '
-      '${d == null ? "미도달" : _days(d)}',
-    );
+    final label = config.zoneMode
+        ? '사냥터 ${config.zoneOf(m).toString().padLeft(2)} 도달'
+        : '스테이지 ${m.toString().padLeft(3)} 클리어';
+    stdout.writeln('  $label: ${d == null ? "미도달" : _days(d)}');
   }
   if (sim.stage > finalStage) {
     stdout.writeln(
@@ -522,7 +630,26 @@ List<int> _samplePoints(int finalStage) {
 class _Player {
   _Player(this.config, this.marks);
 
-  final RunConfig config;
+  /// 사냥터 표를 맞추는 동안 사냥터마다 새 표를 넣으므로 바꿀 수 있어야 한다.
+  RunConfig config;
+
+  /// 표를 맞추는 중 — 보스를 잡을 수 있어도 자동으로 안 넘어간다(일정대로 머문다).
+  bool fitting = false;
+
+  /// [days] 일만큼(소수 가능) 논다. 활동·오프라인 비율은 [playDay] 와 같다.
+  void playDays(double days) {
+    var left = days;
+    while (left > 0) {
+      final d = left < 1 ? left : 1.0;
+      left -= d;
+      gold += _dailyBonusGold * d;
+      _goldEarned += _dailyBonusGold * d;
+      _online = true;
+      _run(_activeHoursPerDay * 3600 * d, 1.0);
+      _online = false;
+      _run(_offlineHoursPerDay * 3600 * d, config.offlineEfficiency);
+    }
+  }
 
   /// 도달 시각을 기록할 스테이지들.
   final List<int> marks;
@@ -727,6 +854,41 @@ class _Player {
     _run(_offlineHoursPerDay * 3600, config.offlineEfficiency);
   }
 
+  /// 사냥터 모드의 보스 도전 게이지(처치 수).
+  double _zoneKills = 0;
+
+  /// 지금 전력으로 [stage] 의 보스를 잡을 수 있나 — 죽이는 시간 < 버티는 시간.
+  /// 앱의 도전 판단(유저가 누른다)을 시뮬이 대신한다. 너무 오래 걸리면(120초)
+  /// 유저도 안 누른다고 본다.
+  bool _bossBeatable(int stage) {
+    final st = stats;
+    final bossHit = baselineHitPower(st, boss: true);
+    final baseBoss = baselineHitPower(baselineStats, boss: true);
+    final hp = bossMaxHp(
+      config,
+      stage - 1,
+      playerAttack: baseBoss,
+      tier: _tier,
+    ).toDouble();
+    final dps = bossHit * st.attackSpeed;
+    if (dps <= 0) return false;
+    final kill = hp / dps;
+    if (kill > 240) return false;
+    final inc =
+        habitatThreat(
+          config,
+          stage - 1,
+          boss: true,
+          playerToughness: toughnessOf(_baseStats),
+          gearToughness: toughnessOf(st),
+        ) *
+        100 /
+        (100 + st.defense);
+    final net = inc - st.hpRegen;
+    final live = net <= 0 ? double.infinity : st.maxHp / net;
+    return live > kill * 1.1;
+  }
+
   /// [seconds] 동안 진행하되, 중간중간 업그레이드를 산다(dps 가 오르면 진행도 빨라짐).
   void _run(double seconds, double efficiency) {
     var left = seconds;
@@ -746,7 +908,7 @@ class _Player {
         tier: _tier,
       );
       elapsedDays += slice / 3600 / (_activeHoursPerDay + _offlineHoursPerDay);
-      for (final m in const [10, 30, 50, 100, 200, 400, 700]) {
+      for (final m in _samplesEcon) {
         if (prevStage < m && stage >= m) {
           blockedAt[m] = (gold: _blockGold, mat: _blockMat);
           _blockGold = 0;
@@ -760,6 +922,21 @@ class _Player {
       }
       prevStage = stage;
       stage = prog.newStage;
+      // ── 사냥터 모드: 게이지가 차고 보스를 잡을 수 있으면 다음 사냥터 ──
+      // 방치 정산(simulateIdleProgress)은 사냥터 안에서 스테이지를 밀지 않는다.
+      // "잡을 수 있다" = 보스를 죽이는 시간이 버티는 시간보다 짧다(앱의 도전
+      // 버튼을 누르는 판단을 시뮬이 대신한다). 최종 보스를 깨면 worldSize 만큼
+      // 더 밀어 캠페인 끝을 표시한다.
+      if (config.zoneMode && !fitting) {
+        _zoneKills += prog.habitatClears;
+        if (_zoneKills >= config.bossUnlockKills && _bossBeatable(stage)) {
+          final z = config.zoneOf(stage);
+          stage = config.isFinalZone(z)
+              ? stage + config.worldSize
+              : config.zoneStartStage(z + 1);
+          _zoneKills = 0;
+        }
+      }
       if (stage > careerStage) careerStage = stage;
       // ⚠️ 기록은 **stage 를 갱신한 뒤**에 한다. 갱신 전에 하면 직전 슬라이스의
       // 구간을 적는 셈이라, 하루의 마지막 슬라이스에서 넘은 스테이지는 다음
@@ -1077,8 +1254,23 @@ String _short(num v) {
 }
 
 class _Opts {
-  const _Opts(this.overrides, this.mult, this.worlds);
+  const _Opts(
+    this.overrides,
+    this.mult,
+    this.worlds, {
+    this.fitZones,
+    this.fitHits = 8,
+    this.fitBite = 0.2,
+    this.fitGoldStep = 1.6,
+  });
   final Map<String, dynamic> overrides;
+
+  /// `--fit-zones=0.1,0.3,…` : 사냥터마다 머무를 **의도한 일수**. 주면 사냥터
+  /// 표(zoneHp·zoneThreat·zoneGold)를 그 일정에 맞춰 뽑고 검증까지 돌린다.
+  final List<double>? fitZones;
+  final double fitHits;
+  final double fitBite;
+  final double fitGoldStep;
 
   /// 공격·체력 스탯의 레벨당 곱연산 성장률(null 이면 현행 덧셈).
   final double? mult;
@@ -1118,7 +1310,49 @@ _Opts _parseArgs(List<String> args) {
   final out = <String, dynamic>{};
   double? mult;
   var worlds = 10;
+  List<double>? fitZones;
+  var fitHits = 8.0, fitBite = 0.2, fitGoldStep = 1.6;
   for (final a in args) {
+    final fz = RegExp(r'^--fit-zones=(.+)$').firstMatch(a);
+    if (fz != null) {
+      fitZones = fz.group(1)!.split(',').map(double.parse).toList();
+      continue;
+    }
+    final fh = RegExp(r'^--fit-hits=(.+)$').firstMatch(a);
+    if (fh != null) {
+      fitHits = double.parse(fh.group(1)!);
+      continue;
+    }
+    final fb = RegExp(r'^--fit-bite=(.+)$').firstMatch(a);
+    if (fb != null) {
+      fitBite = double.parse(fb.group(1)!);
+      continue;
+    }
+    final fg = RegExp(r'^--fit-gold-step=(.+)$').firstMatch(a);
+    if (fg != null) {
+      fitGoldStep = double.parse(fg.group(1)!);
+      continue;
+    }
+    // `--set=키=값` : run_config 의 최상위 값을 아무거나 덮어쓴다(사냥터 계단 탐색용).
+    final st = RegExp(r'^--set=([A-Za-z]+)=(.+)$').firstMatch(a);
+    if (st != null) {
+      final v = st.group(2)!;
+      out[st.group(1)!] =
+          num.tryParse(v) ??
+          (v == 'true'
+              ? true
+              : v == 'false'
+              ? false
+              : v);
+      continue;
+    }
+    // `--up=종류.필드=값` : 업그레이드 스펙 한 칸을 덮어쓴다(예 --up=attack.perLevel=6).
+    final up = RegExp(r'^--up=([A-Za-z]+)\.([A-Za-z]+)=(.+)$').firstMatch(a);
+    if (up != null) {
+      final list = (out['__up'] ??= <List<String>>[]) as List<List<String>>;
+      list.add([up.group(1)!, up.group(2)!, up.group(3)!]);
+      continue;
+    }
     // 장비 옵션 **평균**을 배율로 조절한다(분포를 바꿀 때 난이도 영향을 잰다).
     final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
     if (es != null) {
@@ -1187,5 +1421,13 @@ _Opts _parseArgs(List<String> args) {
     }
     out[key] = num.parse(m.group(2)!);
   }
-  return _Opts(out, mult, worlds);
+  return _Opts(
+    out,
+    mult,
+    worlds,
+    fitZones: fitZones,
+    fitHits: fitHits,
+    fitBite: fitBite,
+    fitGoldStep: fitGoldStep,
+  );
 }

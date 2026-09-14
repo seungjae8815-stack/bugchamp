@@ -720,20 +720,27 @@ void main() {
       final base = aged(const Duration(hours: 8));
       final filtered = base.copyWith(bugFilterMinGrade: Grade.legendary);
 
-      final plain = seeded(3).sync(base).save!;
-      final released = seeded(3).sync(filtered).save!;
-
-      // 곤충 대신 일반 재료가 더 들어온다.
+      // 곤충 대신 일반 재료가 더 들어온다. 한 시드만 보면 곤충 롤이 rng 를
+      // 소비해 뒤따르는 재료 종류가 흔들려(+1/−1) 합이 같아질 수 있으므로
+      // 여러 시드를 합쳐 비교한다.
       int mats(SaveGame s) => const [
         MaterialKind.chitin,
         MaterialKind.mineral,
         MaterialKind.sap,
       ].fold(0, (a, k) => a + s.materialCount(k));
-      expect(plain.bugs, isNotEmpty, reason: '기준 케이스에 곤충이 있어야 비교가 성립한다');
-      expect(released.bugs, isEmpty);
-      expect(mats(released), greaterThan(mats(plain)));
-      // ⚠️ 프리미엄 재화(젤리)는 자동 통로로 절대 새면 안 된다(§2.6).
-      expect(released.materialCount(MaterialKind.jelly), 0);
+      var plainBugs = 0, plainMats = 0, releasedMats = 0;
+      for (var seed = 1; seed <= 8; seed++) {
+        final plain = seeded(seed).sync(base).save!;
+        final released = seeded(seed).sync(filtered).save!;
+        expect(released.bugs, isEmpty);
+        // ⚠️ 프리미엄 재화(젤리)는 자동 통로로 절대 새면 안 된다(§2.6).
+        expect(released.materialCount(MaterialKind.jelly), 0);
+        plainBugs += plain.bugs.length;
+        plainMats += mats(plain);
+        releasedMats += mats(released);
+      }
+      expect(plainBugs, greaterThan(0), reason: '기준 케이스에 곤충이 있어야 비교가 성립한다');
+      expect(releasedMats, greaterThan(plainMats));
     });
 
     test('필터가 기본값이면 예전 그대로 곤충이 들어온다', () {
