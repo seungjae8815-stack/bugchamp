@@ -1925,8 +1925,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       eState = 'idle';
       eFrame = 1;
     }
+    // 사냥터 구조: 보스는 난이도·사냥터마다 다른 종(e01 … x_final).
+    // 그림이 아직 없는 마리는 지역 보스 그림으로 떨어진다.
+    final bossArt = _config.zoneMode
+        ? _config.bossArtId(
+            ref.read(saveControllerProvider).requireValue.difficultyTier,
+            _config.zoneOf(_stage),
+          )
+        : null;
     final ePaths = _isBoss
         ? [
+            if (bossArt != null)
+              'assets/images/bosses/${bossArt}_${eState}_$eFrame.webp',
+            if (bossArt != null) 'assets/images/bosses/$bossArt.webp',
             'assets/images/bosses/${regionId}_${eState}_$eFrame.webp',
             'assets/images/bosses/$regionId.webp',
           ]
@@ -3422,6 +3433,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           runConfig: _config,
           highestStage: save.stageNumber,
           liveStage: _stage,
+          tier: save.difficultyTier,
         ),
       ),
     );

@@ -22,9 +22,13 @@ class RoadmapScreen extends StatefulWidget {
     required this.runConfig,
     required this.highestStage,
     required this.liveStage,
+    this.tier = 0,
   });
 
   final RoadmapConfig config;
+
+  /// 현재 회차(난이도) — 사냥터 구조에서 보스 아트 id 를 정한다.
+  final int tier;
 
   /// 월드 크기(x-100 판정)·"1-30" 라벨 계산에 필요.
   final RunConfig runConfig;
@@ -286,6 +290,11 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         // 이 칸의 지역 속성 — **다음에 갈 곳의 속성을 미리 보고** 편성을
         // 준비할 수 있어야 한다. 전투 화면에 도착해서야 알면 이미 늦다.
         element: widget.runConfig.regionForStage(node.stage).element,
+        // 사냥터 구조: 이 칸의 보스 그림(점령 전엔 실루엣).
+        artPath: widget.runConfig.zoneMode
+            ? 'assets/images/bosses/'
+                  '${widget.runConfig.bossArtId(widget.tier, widget.runConfig.zoneOf(node.stage))}.webp'
+            : null,
         onTap: () => Navigator.pop(context, node.stage),
       ),
     );
@@ -312,9 +321,14 @@ class _NodeTile extends StatelessWidget {
     required this.bossName,
     required this.element,
     required this.onTap,
+    this.artPath,
   });
 
   final _Node node;
+
+  /// 사냥터 구조의 보스 그림 경로. 점령 전엔 검은 실루엣으로만 보인다 —
+  /// "다음에 뭐가 나오나"는 실루엣으로 궁금하게, 깨면 드러난다(사장님 확정).
+  final String? artPath;
   final double size;
   final bool isFinal;
   final String label;
@@ -464,49 +478,94 @@ class _NodeTile extends StatelessWidget {
   }
 
   Widget _inner() {
-    // ★ 보스 칸(x-100)·최종 보스.
-    //
-    //   실제 보스 스프라이트를 쓰지 않는다: 보스 아트가 4장뿐인데 25스테이지
-    //   주기로 순환해서 **10개 챕터에 같은 그림이 반복**된다(초반 구간은 전부
-    //   oak_forest = 벌 한 마리). 정체를 감추고 "여긴 보스"만 알리는 편이
-    //   목표로 읽히고, 아트가 늘어나도 이 화면은 손댈 필요가 없다.
-    if (node.isWorldBoss || isFinal) {
-      final Widget mark;
-      if (cleared) {
-        mark = Icon(
-          Icons.check_circle_rounded,
-          color: _gold,
-          size: size * 0.28,
-        );
-      } else if (unlocked) {
-        mark = Text('👹', style: TextStyle(fontSize: size * 0.30));
-      } else {
-        // 잠김 — 자물쇠는 일반 칸과 같은 크기로 둔다(작은 배지로 줄이지 않는다).
-        mark = Icon(
-          Icons.lock_rounded,
-          color: const Color(0xE6FFFFFF),
-          size: size * 0.28,
-        );
-      }
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isFinal) Text('👑', style: TextStyle(fontSize: size * 0.16)),
-          mark,
-          Text(
-            'BOSS',
-            style: TextStyle(
-              color: unlocked ? Colors.white : const Color(0xCCFFFFFF),
-              fontWeight: FontWeight.w900,
-              fontSize: size * 0.155,
-              letterSpacing: 0.6,
-              height: 1.1,
-              shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
-            ),
-          ),
-        ],
+    // ★ 보스 칸·최종 보스 — 사냥터 구조에서는 마리마다 그림이 있다.
+    //   점령 전: 검은 실루엣(정체를 감추되 형태로 기대를 만든다).
+    //   점령 후: 그림 그대로 + 금색 체크.
+    //   그림이 없으면(아트 미도착) 예전 표식으로 떨어진다.
+    if ((node.isWorldBoss || isFinal) && artPath != null) {
+      final img = Image.asset(
+        artPath!,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (_, _, _) => _legacyBossMark(),
+      );
+      return Padding(
+        padding: EdgeInsets.all(size * 0.06),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (cleared)
+              img
+            else
+              ColorFiltered(
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF14110F),
+                  BlendMode.srcIn,
+                ),
+                child: img,
+              ),
+            if (cleared)
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: _gold,
+                  size: size * 0.26,
+                ),
+              )
+            else if (!unlocked)
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  Icons.lock_rounded,
+                  color: const Color(0xE6FFFFFF),
+                  size: size * 0.24,
+                ),
+              ),
+          ],
+        ),
       );
     }
+    if (node.isWorldBoss || isFinal) return _legacyBossMark();
+    return _plainMark();
+  }
+
+  /// 예전 보스 표식(그림 없을 때).
+  Widget _legacyBossMark() {
+    final Widget mark;
+    if (cleared) {
+      mark = Icon(Icons.check_circle_rounded, color: _gold, size: size * 0.28);
+    } else if (unlocked) {
+      mark = Text('👹', style: TextStyle(fontSize: size * 0.30));
+    } else {
+      // 잠김 — 자물쇠는 일반 칸과 같은 크기로 둔다(작은 배지로 줄이지 않는다).
+      mark = Icon(
+        Icons.lock_rounded,
+        color: const Color(0xE6FFFFFF),
+        size: size * 0.28,
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isFinal) Text('👑', style: TextStyle(fontSize: size * 0.16)),
+        mark,
+        Text(
+          'BOSS',
+          style: TextStyle(
+            color: unlocked ? Colors.white : const Color(0xCCFFFFFF),
+            fontWeight: FontWeight.w900,
+            fontSize: size * 0.155,
+            letterSpacing: 0.6,
+            height: 1.1,
+            shadows: const [Shadow(color: Colors.black, blurRadius: 3)],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _plainMark() {
     if (!unlocked) {
       return Icon(
         Icons.lock_rounded,

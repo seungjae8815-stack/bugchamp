@@ -514,6 +514,19 @@ class RunConfig {
   /// 마지막 사냥터(최종 보스)인가.
   bool isFinalZone(int zone) => zone >= zonesPerTier;
 
+  /// 보스 아트 파일 id — `assets/images/bosses/<id>.webp`.
+  ///
+  /// 난이도 접두(쉬움 e · 보통 n · 어려움 h · 극한 x) + 사냥터 두 자리,
+  /// 최종 보스는 `_final`. 예: `e01`, `n10`, `x_final`. 44마리가 전부 다른
+  /// 종이라(2026-09-14 확정) 지역 그림을 돌려쓰지 않는다. 파일이 없으면
+  /// 호출부가 지역 보스 그림으로 떨어진다(`gameImageChain`).
+  String bossArtId(int tier, int zone) {
+    const prefix = ['e', 'n', 'h', 'x'];
+    final p = prefix[tier.clamp(0, prefix.length - 1)];
+    if (isFinalZone(zone)) return '${p}_final';
+    return '$p${zone.toString().padLeft(2, '0')}';
+  }
+
   /// 캠페인 **끝(마지막 스테이지)에 눌러앉아** 파밍할 때 곱하는 보상 배율.
   ///
   /// 끝에 닿으면 더 나아가지 않고 그 자리에서 계속 잡을 수 있는데, 그 구간은
