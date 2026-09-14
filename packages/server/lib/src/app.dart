@@ -260,9 +260,11 @@ Handler buildHandler({
     Future<SaveGame?> loadSave(String uid) async {
       final raw = await store.load(uid);
       if (raw == null) return null;
-      // 사냥터 구조 세대(2026-09-14) — 앱 로드와 같은 함수. 한쪽만 하면
-      // 동기화가 옛 진행도를 되살린다.
-      return applyZoneEpoch(SaveGame.fromJson(migrateToCurrent(raw)));
+      // ⚠️ 사냥터 세대 리셋(applyZoneEpoch)은 **서버에서 하지 않는다.**
+      // 2026-09-14 여기서 돌렸다가 구버전 앱을 쓰는 실유저의 진행도가
+      // 동기화 한 번에 1 로 떨어졌다(준범 st 978 → 1). 리셋은 새 앱이 자기
+      // 로드에서만 하고, 서버는 그 결과를 받는다.
+      return SaveGame.fromJson(migrateToCurrent(raw));
     }
 
     /// 최초 1회 세이브 업로드(로컬 → 서버 이관).
