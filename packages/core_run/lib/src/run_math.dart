@@ -97,7 +97,11 @@ int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
   final base = c.hpBase * math.pow(c.hpGrowth, depth);
   final gate = c.worldMult(c.worldHpMult, depth);
   if (playerAttack == null || c.hpAdaptPower <= 0 || c.hpAdaptTargetHits <= 0) {
-    return (base * gate).round();
+    // 적응형이 꺼져 있으면(사냥터 구조) 회차 배율을 체력에 **직접** 곱한다.
+    // 적응형이 켜진 채로 곱하면 타격 수가 그대로 배가 돼 스펀지가 되지만,
+    // 몬스터가 고정이면 "회차가 오르면 세진다"를 만들 다른 자리가 없다.
+    final hp = base * gate * c.tierHits(tier);
+    return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
   }
   // 기준선 = 이 깊이에서 목표 타격 수로 잡으려면 필요한 공격력.
   //
@@ -511,6 +515,32 @@ IdleProgress simulateIdleProgress({
   var habitatClears = 0.0;
   var bossClears = 0;
   var advanced = 0;
+
+  // ── 사냥터 모드: 그 자리에서 몬스터만 잡는다 ──
+  // 보스는 유저가 "도전"을 눌러야 나오고, 사냥터는 보스를 깨야 바뀐다.
+  // 방치 정산이 스테이지를 밀어 버리면 보스를 안 깼는데 다음 사냥터로 가는
+  // 셈이라, 여기서는 처치 수(→ 도전 게이지)와 보상만 쌓는다.
+  if (config.zoneMode) {
+    final depth = stage - 1;
+    final habHp = habitatMaxHp(
+      config,
+      depth,
+      playerAttack: hit,
+      tier: tier,
+    ).toDouble();
+    final habTime = (habHp / dps + 0.6) / eff;
+    final n = habTime <= 0 ? 0.0 : budget / habTime;
+    gold += n * rewardGold(config, depth, stats.rewardMultiplier, tier: tier);
+    xp += n * rewardXp(config, depth);
+    return IdleProgress(
+      newStage: stage,
+      gold: gold.round(),
+      xp: (xp * stats.xpMultiplier).round(),
+      habitatClears: n,
+      bossClears: 0,
+      accrued: capped,
+    );
+  }
 
   while (budget > 0 && advanced < maxStageAdvance) {
     final depth = stage - 1;

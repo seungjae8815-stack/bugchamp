@@ -50,6 +50,7 @@ RunConfig _config() => RunConfig.fromJson(_baseJson());
 void main() {
   _lateThreatTests();
   _critBudgetTests();
+  _zoneModeTests();
   final c = _config();
 
   group('HP 스케일링', () {
@@ -892,6 +893,47 @@ void _critBudgetTests() {
         UpgradeKind.crit: 0.9,
       }, critBudget: c.critBudgetOther);
       expect(s.critChance, closeTo(1.0, 1e-9));
+    });
+  });
+}
+
+void _zoneModeTests() {
+  group('사냥터 모드 방치 정산', () {
+    final c = RunConfig.fromJson({
+      ..._baseJson(),
+      'zoneMode': true,
+      'worldSize': 100,
+      'bossUnlockKills': 100,
+      'zonesPerTier': 11,
+    });
+    final stats = deriveStats(
+      c,
+      upgradeLevels: {UpgradeKind.attack: 50},
+      characterLevel: 10,
+      bugsCollected: 0,
+    );
+
+    test('스테이지는 오르지 않고 처치 수만 쌓인다', () {
+      final p = simulateIdleProgress(
+        config: c,
+        startStage: 101,
+        stats: stats,
+        elapsed: const Duration(hours: 3),
+        efficiency: 0.3,
+      );
+      expect(p.newStage, 101);
+      expect(p.bossClears, 0);
+      expect(p.habitatClears, greaterThan(0));
+      expect(p.gold, greaterThan(0));
+    });
+
+    test('사냥터 번호 ↔ 스테이지', () {
+      expect(c.zoneOf(1), 1);
+      expect(c.zoneOf(100), 1);
+      expect(c.zoneOf(101), 2);
+      expect(c.zoneStartStage(3), 201);
+      expect(c.isFinalZone(11), isTrue);
+      expect(c.isFinalZone(10), isFalse);
     });
   });
 }

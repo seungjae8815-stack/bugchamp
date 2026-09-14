@@ -96,12 +96,15 @@ void main() {
   /// 진행이 통째로 날아갔다 — "돈이 줄어든다 · 스테이지가 되돌아간다 ·
   /// 부화한 곤충이 없어진다"가 전부 이 한 경로였다(2026-08-30 유저 제보).
   test('로컬이 더 진행됐으면 서버의 옛 세이브를 채택하지 않는다', () async {
-    final local = SaveGame.initial(
-      createdAt: t0,
-    ).copyWith(stageNumber: 500, level: 40, gold: 1000000);
+    final local = SaveGame.initial(createdAt: t0).copyWith(
+      zoneEpoch: kZoneEpoch,
+      stageNumber: 500,
+      level: 40,
+      gold: 1000000,
+    );
     final stale = SaveGame.initial(
       createdAt: t0,
-    ).copyWith(stageNumber: 320, level: 31, gold: 5000);
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 320, level: 31, gold: 5000);
     final server = _StaleServer(stale);
     final c = ProviderContainer(
       overrides: [
@@ -127,10 +130,12 @@ void main() {
   /// 반대 방향 — 다른 기기에서 더 진행했으면 그걸 따라야 한다.
   /// 되돌림만 막는 것이지 "서버가 진실"이라는 원칙을 버리는 게 아니다.
   test('서버가 더 진행됐으면 그대로 채택한다', () async {
-    final local = SaveGame.initial(createdAt: t0).copyWith(stageNumber: 100);
+    final local = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 100);
     final ahead = SaveGame.initial(
       createdAt: t0,
-    ).copyWith(stageNumber: 700, level: 55);
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 700, level: 55);
     final server = _StaleServer(ahead);
     final c = ProviderContainer(
       overrides: [
@@ -156,6 +161,7 @@ void main() {
   /// **회차가 조용히 취소**된다 — 회차가 다르면 회차만으로 판정한다.
   test('회차를 전환한 로컬은 전환 전 서버 세이브에 덮이지 않는다', () async {
     final local = SaveGame.initial(createdAt: t0).copyWith(
+      zoneEpoch: kZoneEpoch,
       difficultyTier: 1,
       stageNumber: 1,
       level: 1,
@@ -163,7 +169,7 @@ void main() {
     );
     final preTier = SaveGame.initial(
       createdAt: t0,
-    ).copyWith(stageNumber: 1000, level: 80);
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 1000, level: 80);
     final server = _StaleServer(preTier);
     final c = ProviderContainer(
       overrides: [
@@ -189,10 +195,13 @@ void main() {
   test('다른 기기가 회차를 전환했으면 그걸 따른다', () async {
     final local = SaveGame.initial(
       createdAt: t0,
-    ).copyWith(stageNumber: 1000, level: 80);
-    final tiered = SaveGame.initial(
-      createdAt: t0,
-    ).copyWith(difficultyTier: 1, stageNumber: 3, level: 2);
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 1000, level: 80);
+    final tiered = SaveGame.initial(createdAt: t0).copyWith(
+      zoneEpoch: kZoneEpoch,
+      difficultyTier: 1,
+      stageNumber: 3,
+      level: 2,
+    );
     final server = _StaleServer(tiered);
     final c = ProviderContainer(
       overrides: [

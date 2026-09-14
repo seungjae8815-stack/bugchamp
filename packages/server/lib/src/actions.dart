@@ -287,7 +287,11 @@ class GameActions {
     if (claimed.isEmpty) return 0;
 
     final already = stored.clearedChapters.toSet();
-    final stage = (clientJson['stageNumber'] as num?)?.toInt() ?? 0;
+    // 사냥터 세대가 낮은 앱(구버전)이 올린 스테이지는 옛 진행도다 — 안 믿는다.
+    final epoch = (clientJson['zoneEpoch'] as num?)?.toInt() ?? 0;
+    final stage = epoch < kZoneEpoch
+        ? 0
+        : (clientJson['stageNumber'] as num?)?.toInt() ?? 0;
     final highest = stage > stored.stageNumber ? stage : stored.stageNumber;
 
     var sum = 0;
@@ -930,6 +934,10 @@ class GameActions {
         level: level,
         lastSeen: t,
         stageNumber: prog.newStage,
+        // 사냥터 모드: 방치 중 잡은 수가 보스 도전 게이지에 쌓인다.
+        zoneKills: run.zoneMode
+            ? save.zoneKills + prog.habitatClears.floor()
+            : null,
         rarePity: pity,
         bugs: newBugs.isEmpty ? null : [...save.bugs, ...newBugs],
         materials: mats,

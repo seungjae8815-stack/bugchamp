@@ -398,6 +398,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 캠페인 끝을 깼다 — 다음 빌드에서 회차 전환 안내를 띄운다.
   bool _tierClearPending = false;
 
+  /// 사냥터 모드: 지금 보스에 도전 중인가(도전 버튼으로만 켜진다).
+  bool _bossChallenge = false;
+
   /// 강제 닉네임 변경 창을 이번 세션에 띄웠는지(매 빌드마다 뜨면 안 된다).
   bool _renamePrompted = false;
 
@@ -643,7 +646,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// [announce] 는 보스 등장 스팅어 재생 여부. 앱 시작·개발도구처럼 **플레이 흐름이
   /// 아닌** 스폰에서는 꺼서, 켜자마자 보스음이 튀어나오지 않게 한다.
   void _spawn({bool announce = true}) {
-    _isBoss = _habitatIndex >= _config.habitatsPerStage;
+    // 사냥터 모드(2026-09-14): 보스는 **도전 버튼**으로만 나온다. 사냥터의
+    // 몬스터는 무한히 나오고, 20마리마다 보스가 끼어들지 않는다.
+    _isBoss = _config.zoneMode
+        ? _bossChallenge
+        : _habitatIndex >= _config.habitatsPerStage;
     if (_isBoss && announce) AudioService.instance.sfxBoss();
     // 챕터 최종보스에서만 전용 배경음. 스테이지 보스마다 바꾸면 1분에 한 번씩
     // 곡이 갈려서 오히려 산만하다. 매 스폰마다 호출되지만 같은 트랙이면 무시된다.
@@ -1582,6 +1589,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           mission: _isBoss ? MissionType.killBosses : MissionType.killMonsters,
           idle: true, // 표시용 힌트(현재 로직에서 분기 없음)
           rarePity: pity,
+          zoneKill: !_isBoss, // 사냥터 보스 도전 게이지
         );
 
     // 재화 드롭 연출: 처치 지점에서 코인/재료가 튀어나와 캐릭터로 빨려 들어간다.
@@ -1679,6 +1687,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 스테이지마다 최대체력의 600% 를 회복해 **피가 절대 안 닳았다**.
     // 잃은 체력 비례 몫은 `killHealAmount` 한 곳(앱·시뮬 공용)에서 계산한다.
     _healTeamOnKill(boss: _isBoss);
+    if (_config.zoneMode) {
+      if (_isBoss) {
+        // 보스를 깼다 → 다음 사냥터. 마지막(최종 보스)이면 회차 전환 안내.
+        _bossChallenge = false;
+        final zone = _config.zoneOf(_stage);
+        if (_config.isFinalZone(zone)) {
+          _habitatIndex = 0;
+          _tierClearPending = true;
+          unawaited(_afterBossAdvance(_stage));
+          _spawn();
+          return;
+        }
+        final next = _config.zoneStartStage(zone + 1);
+        unawaited(ref.read(saveControllerProvider.notifier).advanceZone());
+        _stage = next;
+        _stageMax = math.max(_stageMax, _stage);
+        _habitatIndex = 0;
+        _afterBossAdvance(_stage); // 최고기록 갱신 + 챕터(사냥터) 클리어 보상
+      } else {
+        // 순서표는 20마리 주기로 돌린다 — 무한 사냥이라 인덱스는 감는다.
+        _habitatIndex = (_habitatIndex + 1) % _config.habitatsPerStage;
+      }
+      _spawn();
+      _walking = true;
+      _walkT = 0;
+      return;
+    }
     if (_isBoss) {
       // 캠페인 끝(로드맵 마지막 스테이지)에 닿으면 **더 나아가지 않는다**.
       // 예전에는 상한이 없어 1708 같은 값까지 흘러갔고, 그 구간은 저항이
@@ -1714,7 +1749,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _resumeAfterDefeat() {
     _defeated = false;
     _retreatFlash = 0;
-    _stage = math.max(1, _stage - 1); // 한 스테이지 뒤로
+    if (_config.zoneMode) {
+      // 벌칙 없음(사장님 확정). 보스 도전 중이었으면 사냥터로 돌아온다 —
+      // 게이지는 그대로라 바로 다시 도전할 수 있다. 사냥터 자체를 못 버티면
+      // 로드맵에서 아래 사냥터로 내려가면 된다.
+      if (_bossChallenge) {
+        _bossChallenge = false;
+        if (mounted) {
+          showCenterToast(
+            context,
+            AppLocalizations.of(context).bossChallengeFailed,
+          );
+        }
+      }
+    } else {
+      _stage = math.max(1, _stage - 1); // 한 스테이지 뒤로
+    }
     _habitatIndex = 0;
     // 곤충도 함께 일으켜 세운다 — 캐릭터만 살아나면 부활 직후가
     // 죽기 직전보다 약해서 같은 자리에서 또 죽는다.
@@ -3205,19 +3255,76 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ],
                 ],
               ),
-              Text(
-                _isBoss
-                    ? '$chapter-$stageInRegion · ${l.bossLabel}'
-                    : '$chapter-$stageInRegion · $_habitatIndex/${_config.habitatsPerStage}',
-                style: const TextStyle(
-                  color: Color(0xCCFFFFFF),
-                  fontSize: 10.5,
+              if (_config.zoneMode)
+                _zoneProgressRow(l)
+              else
+                Text(
+                  _isBoss
+                      ? '$chapter-$stageInRegion · ${l.bossLabel}'
+                      : '$chapter-$stageInRegion · $_habitatIndex/${_config.habitatsPerStage}',
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 10.5,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// 사냥터 모드의 진행 줄 — `사냥터 3 · 처치 42/100` + [보스 도전].
+  ///
+  /// 도전 버튼은 게이지가 차야 켜진다. 잠겨 있을 땐 남은 마리 수를 적는다 —
+  /// 얼마나 더 잡아야 하는지가 보여야 사냥에 목적이 생긴다.
+  Widget _zoneProgressRow(AppLocalizations l) {
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final zone = _config.zoneOf(_stage);
+    final need = _config.bossUnlockKills;
+    final kills = save.zoneKills;
+    final ready = kills >= need;
+    final zoneText = _config.isFinalZone(zone)
+        ? l.zoneFinalLabel
+        : l.zoneLabel(zone);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          _isBoss
+              ? '$zoneText · ${l.bossLabel}'
+              : '$zoneText · ${l.zoneKillsLabel(math.min(kills, need), need)}',
+          style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5),
+        ),
+        if (!_isBoss) ...[
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: ready ? _startBossChallenge : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: ready
+                    ? const Color(0xFFD1443E)
+                    : const Color(0x33000000),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: ready
+                      ? const Color(0xFFFF8A80)
+                      : const Color(0x33FFFFFF),
+                ),
+              ),
+              child: Text(
+                ready ? l.bossChallenge : l.bossChallengeLocked(need - kills),
+                style: TextStyle(
+                  color: ready ? Colors.white : const Color(0x88FFFFFF),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -3319,9 +3426,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ),
     );
     if (target != null && mounted) {
+      if (_config.zoneMode) {
+        // 점령한 사냥터로 내려간다(위로는 보스를 깨야 간다).
+        final zone = _config.zoneOf(target);
+        await ref.read(saveControllerProvider.notifier).selectZone(zone);
+        if (!mounted) return;
+        final s = ref.read(saveControllerProvider).requireValue;
+        _applyStageJump(s.stageNumber);
+        return;
+      }
       _applyStageJump(target);
       ref.read(saveControllerProvider.notifier).reachStage(target);
     }
+  }
+
+  /// 보스 도전 — 게이지가 찼을 때만. 사냥터의 몬스터를 치우고 보스를 부른다.
+  void _startBossChallenge() {
+    if (!_config.zoneMode || _bossChallenge || _defeated) return;
+    if (!ref.read(saveControllerProvider.notifier).bossUnlocked) return;
+    setState(() {
+      _bossChallenge = true;
+      _dying = false;
+      _walking = false;
+      _healTeamFull();
+      _enemyAtkAcc = 0;
+      _spawn();
+    });
   }
 
   Widget _questAndResources(AppLocalizations l, SaveGame save) {
@@ -5689,6 +5819,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _stageMax = math.max(_stageMax, n);
       _habitatIndex = 0;
       _isBoss = false;
+      _bossChallenge = false;
       _defeated = false;
       _dying = false;
       _walking = false;

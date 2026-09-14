@@ -512,6 +512,8 @@ class SaveGame {
     this.eventRewardRound,
     this.eventBadges = const {},
     this.difficultyTier = 0,
+    this.zoneKills = 0,
+    this.zoneEpoch = 0,
     this.rarePity = 0,
     this.renameRequired = false,
     this.gachaPity = 0,
@@ -701,6 +703,16 @@ class SaveGame {
   /// 구버전 앱이 이 세이브를 읽으면 0(쉬움)으로 보고 스테이지만 이어간다 —
   /// 진행이 깨지지는 않는다.
   final int difficultyTier;
+
+  /// 지금 사냥터에 들어온 뒤 잡은 몬스터 수 — 보스 도전 게이지(2026-09-14).
+  /// 보스를 깨고 다음 사냥터로 가면 0 으로. 호환 필드(없으면 0).
+  final int zoneKills;
+
+  /// 사냥터 구조 세대. [kZoneEpoch] 보다 낮으면 로드 시 진행도를 처음으로
+  /// 되돌린다(사장님 확정: 기존 유저도 사냥터 1 부터. 강화·장비는 남으니
+  /// 빠르게 뚫고 올라간다). 스키마 버전을 올리지 않는 이유는 구버전 앱이
+  /// 서버 세이브를 못 읽고 죽지 않게 하기 위해서다(§4 호환 필드 규칙).
+  final int zoneEpoch;
 
   /// 운영자가 **닉네임 변경을 요구**했는가(2026-09-02).
   ///
@@ -1136,6 +1148,8 @@ class SaveGame {
     String? eventRewardRound,
     Set<String>? eventBadges,
     int? difficultyTier,
+    int? zoneKills,
+    int? zoneEpoch,
     int? rarePity,
     bool? renameRequired,
     int? gachaPity,
@@ -1217,6 +1231,8 @@ class SaveGame {
     eventRewardRound: eventRewardRound ?? this.eventRewardRound,
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
+    zoneKills: zoneKills ?? this.zoneKills,
+    zoneEpoch: zoneEpoch ?? this.zoneEpoch,
     rarePity: rarePity ?? this.rarePity,
     renameRequired: renameRequired ?? this.renameRequired,
     gachaPity: gachaPity ?? this.gachaPity,
@@ -1396,6 +1412,8 @@ class SaveGame {
     eventBadges:
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
+    zoneKills: (json['zoneKills'] as num?)?.toInt() ?? 0,
+    zoneEpoch: (json['zoneEpoch'] as num?)?.toInt() ?? 0,
     rarePity: (json['rarePity'] as num?)?.toInt() ?? 0,
     renameRequired: json['renameRequired'] as bool? ?? false,
     gachaPity: (json['gachaPity'] as num?)?.toInt() ?? 0,
@@ -1552,6 +1570,8 @@ class SaveGame {
     if (eventRewardRound != null) 'eventRewardRound': eventRewardRound,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
+    if (zoneKills > 0) 'zoneKills': zoneKills,
+    if (zoneEpoch > 0) 'zoneEpoch': zoneEpoch,
     if (rarePity > 0) 'rarePity': rarePity,
     if (renameRequired) 'renameRequired': true,
     if (gachaPity > 0) 'gachaPity': gachaPity,
@@ -1658,4 +1678,22 @@ class SaveGame {
     }
     return out;
   }
+}
+
+/// 사냥터 구조 세대(2026-09-14). 올리면 **모든 유저의 진행도가 처음으로**
+/// 돌아간다(스테이지·회차·도전 게이지). 강화·장비·곤충·재화는 그대로.
+const int kZoneEpoch = 1;
+
+/// 세대가 낮은 세이브를 지금 구조에 맞춘다. 앱 로드·서버 로드 **양쪽**에서
+/// 부른다 — 한쪽만 하면 동기화가 옛 진행도를 되살린다.
+SaveGame applyZoneEpoch(SaveGame save) {
+  if (save.zoneEpoch >= kZoneEpoch) return save;
+  return save.copyWith(
+    stageNumber: 1,
+    difficultyTier: 0,
+    zoneKills: 0,
+    zoneEpoch: kZoneEpoch,
+    // 회차 전환처럼 성장 축을 되돌리지는 않는다 — 강해진 채로 빠르게 뚫는 게
+    // 이번 전환의 약속이다.
+  );
 }

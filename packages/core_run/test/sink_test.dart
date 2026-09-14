@@ -180,8 +180,10 @@ void main() {
   group('교환소', () {
     test('지급량이 스테이지에 비례한다 — 정액이면 후반에 안 쓴다', () {
       final c = run();
+      // 사냥터 구조(2026-09-14): 골드는 사냥터 안에서 평탄하고 사냥터
+      // 사이에서 계단으로 오른다. 사냥터 1 과 사냥터 5 를 비교한다.
       final early = rewardGold(c, 10, 1.0);
-      final late = rewardGold(c, 200, 1.0);
+      final late = rewardGold(c, 450, 1.0);
       expect(late, greaterThan(early * 10));
     });
 

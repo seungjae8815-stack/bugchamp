@@ -139,6 +139,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     saveUnreadable.value = repo.lastFailure;
     final now = clock.now().toUtc();
 
+    // 사냥터 구조 세대(2026-09-14) — 옛 진행도는 처음으로. 서버 로드에서도
+    // 같은 함수를 부른다(한쪽만 하면 동기화가 옛 진행도를 되살린다).
+    save = applyZoneEpoch(save);
+
     // 오프라인 정산 — 기기가 계산한다(기기 권위). 서버는 세이브를 저장만 한다.
     save = _applyOffline(save, data, now);
 
@@ -314,11 +318,28 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ..[MaterialKind.fossil] = (mats[MaterialKind.fossil] ?? 0) + give;
       }
     }
+    // 사냥터 모드: 방치 중 잡은 수도 도전 게이지에 쌓인다(서버 정산과 같은 규칙).
+    int? zoneKills;
+    if (config.zoneMode) {
+      final clears = estimateClears(
+        config: config,
+        stageNumber: save.stageNumber,
+        stats: stats,
+        elapsed: elapsed,
+        tier: save.difficultyTier,
+        efficiency: config.offlineEfficiency,
+        maxAccrual: passOn
+            ? Duration(hours: iap?.passOfflineCapHours ?? 12)
+            : kMaxOfflineAccrual,
+      );
+      zoneKills = save.zoneKills + clears.floor();
+    }
     return save.copyWith(
       gold: addCurrency(save.gold, report.gold),
       xp: xp,
       level: level,
       materials: mats,
+      zoneKills: zoneKills,
     );
   }
 
@@ -478,6 +499,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     MissionType? mission,
     bool idle = false,
     int? rarePity,
+
+    /// 사냥터 처치 게이지에 셀 것인가(일반 몬스터 처치). 보스는 안 센다.
+    bool zoneKill = false,
   }) async {
     // 기기 권위 — 아이들 처치 보상도 로컬에서 즉시 반영(재화 즉각 누적).
     // 세이브는 [ServerSaveUploader] 가 주기적으로 올린다. [idle] 은 이제 표시용.
@@ -508,7 +532,44 @@ class SaveController extends AsyncNotifier<SaveGame> {
             ? null
             : _bumpMissions(s.missionProgress, mission, 1),
         rarePity: rarePity,
+        zoneKills: zoneKill ? s.zoneKills + 1 : null,
       ),
+    );
+  }
+
+  /// 보스 도전이 열렸는가 — 이 사냥터에서 [RunConfig.bossUnlockKills] 마리.
+  bool get bossUnlocked {
+    final run = ref.read(gameDataProvider).value?.runConfig;
+    if (run == null || !run.zoneMode) return true;
+    return state.requireValue.zoneKills >= run.bossUnlockKills;
+  }
+
+  /// 보스를 깼다 — 다음 사냥터로. 스테이지는 사냥터 폭(worldSize)만큼 뛰고
+  /// 도전 게이지는 0 부터. 마지막 사냥터(최종 보스)면 그대로 둔다 — 회차
+  /// 전환은 유저가 누른다.
+  Future<void> advanceZone() async {
+    final run = ref.read(gameDataProvider).value?.runConfig;
+    final s = state.requireValue;
+    if (run == null || !run.zoneMode) return;
+    final zone = run.zoneOf(s.stageNumber);
+    if (run.isFinalZone(zone)) return;
+    await _commit(
+      s.copyWith(stageNumber: run.zoneStartStage(zone + 1), zoneKills: 0),
+    );
+  }
+
+  /// 사냥터를 고른다(로드맵에서 탭). 점령한 사냥터까지만.
+  Future<void> selectZone(int zone) async {
+    final run = ref.read(gameDataProvider).value?.runConfig;
+    final s = state.requireValue;
+    if (run == null || !run.zoneMode) return;
+    final current = run.zoneOf(s.stageNumber);
+    final target = zone.clamp(1, current);
+    if (target == current) return;
+    // 내려가는 건 언제든 — 올라가는 건 보스를 깨야 한다. 게이지는 사냥터마다
+    // 따로 세지 않는다(단순함). 내려가면 0 부터.
+    await _commit(
+      s.copyWith(stageNumber: run.zoneStartStage(target), zoneKills: 0),
     );
   }
 

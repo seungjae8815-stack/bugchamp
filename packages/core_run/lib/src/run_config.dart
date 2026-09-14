@@ -209,6 +209,9 @@ class RunConfig {
     this.tierHitsMult = 1.0,
     this.tierThreatMult = 1.0,
     this.tierRewardMult = 1.0,
+    this.zoneMode = false,
+    this.bossUnlockKills = 100,
+    this.zonesPerTier = 11,
     this.endParkedRewardMult = 1.0,
     this.rarePityKills = 0,
     this.dropGradeWeights = const {},
@@ -477,6 +480,40 @@ class RunConfig {
   /// 회차를 넘어갈 이유가 생긴다.
   final double tierRewardMult;
 
+  // ── 사냥터·보스 구조(2026-09-14 사장님 확정, docs/design_zones.md) ──
+  //
+  // 스테이지 1000개 × 20마리 대신 난이도마다 **사냥터 10 + 최종 1**.
+  // 사냥터 안의 몬스터는 세기가 **평탄**하고 무한히 나온다. 재화를 모아
+  // 강화한 뒤 "보스 도전"을 눌러 깨면 다음 사냥터가 열린다(몬스터도 보상도
+  // 한 단계 세진다). 낮은 사냥터에 눌러앉아 모으지 못하게 보상은 사냥터마다
+  // 오른다.
+  //
+  // 구현은 기존 축을 재사용한다: 사냥터 k = 스테이지 (k-1)×worldSize+1.
+  // 스테이지 번호는 사냥터 안에서 **오르지 않고**, 보스를 깨면 worldSize 만큼
+  // 뛴다. 그래서 지역(stagesPerRegion=worldSize)·월드 배율·로드맵 챕터가
+  // 그대로 "사냥터 단위"가 된다. 적응형 체력·위협은 끈다(hpAdaptTargetHits 0,
+  // threatAdaptTargetPct 0) — 몬스터는 정해진 세기이고 내가 성장해서 넘는다.
+
+  /// 사냥터 모드. false 면 예전 스테이지 진행(하위호환·테스트용).
+  final bool zoneMode;
+
+  /// 보스 도전이 열리는 처치 수(사냥터에 들어온 뒤 누적).
+  final int bossUnlockKills;
+
+  /// 난이도(회차)마다 사냥터 수. 마지막 하나가 최종 보스 사냥터다.
+  final int zonesPerTier;
+
+  /// 사냥터 번호(1-based). 사냥터 모드가 아니어도 월드 번호와 같다.
+  int zoneOf(int stageNumber) =>
+      worldSize <= 0 ? 1 : ((stageNumber - 1) ~/ worldSize) + 1;
+
+  /// 사냥터 [zone] 의 대표 스테이지(그 사냥터에 있는 동안 stageNumber 값).
+  int zoneStartStage(int zone) =>
+      worldSize <= 0 ? zone : (zone - 1) * worldSize + 1;
+
+  /// 마지막 사냥터(최종 보스)인가.
+  bool isFinalZone(int zone) => zone >= zonesPerTier;
+
   /// 캠페인 **끝(마지막 스테이지)에 눌러앉아** 파밍할 때 곱하는 보상 배율.
   ///
   /// 끝에 닿으면 더 나아가지 않고 그 자리에서 계속 잡을 수 있는데, 그 구간은
@@ -704,6 +741,9 @@ class RunConfig {
                   .toDouble(),
       },
       tierRewardMult: (json['tierRewardMult'] as num?)?.toDouble() ?? 1.0,
+      zoneMode: json['zoneMode'] as bool? ?? false,
+      bossUnlockKills: (json['bossUnlockKills'] as num?)?.toInt() ?? 100,
+      zonesPerTier: (json['zonesPerTier'] as num?)?.toInt() ?? 11,
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
       monsters: {

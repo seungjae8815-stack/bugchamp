@@ -692,6 +692,30 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bossLabel => 'ボス';
 
   @override
+  String zoneLabel(int n) {
+    return '狩り場 $n';
+  }
+
+  @override
+  String get zoneFinalLabel => '最終狩り場';
+
+  @override
+  String get bossChallenge => 'ボスに挑戦';
+
+  @override
+  String bossChallengeLocked(int n) {
+    return '挑戦まであと$n体';
+  }
+
+  @override
+  String get bossChallengeFailed => 'ボスに押し返されました。強くなって再挑戦しましょう';
+
+  @override
+  String zoneKillsLabel(int n, int m) {
+    return '討伐 $n/$m';
+  }
+
+  @override
   String get tapBoostHint => 'タップでブースト!';
 
   @override

@@ -791,9 +791,16 @@ void main() {
           upgradeLevels: {UpgradeKind.attack: 80, UpgradeKind.attackSpeed: 30},
         );
 
-    test('sync 가 스테이지를 올린다 (서버가 진행을 확정)', () {
+    test('sync 가 진행을 확정한다 — 사냥터 모드면 게이지, 아니면 스테이지', () {
       final r = actions.sync(strong(const Duration(hours: 2)));
-      expect(r.save!.stageNumber, greaterThan(1));
+      if (_Config().run.zoneMode) {
+        // 사냥터 구조(2026-09-14): 방치 정산은 스테이지를 밀지 않고 처치 수를
+        // 보스 도전 게이지에 쌓는다. 보스는 유저가 눌러야 나온다.
+        expect(r.save!.stageNumber, 1);
+        expect(r.save!.zoneKills, greaterThan(0));
+      } else {
+        expect(r.save!.stageNumber, greaterThan(1));
+      }
       expect(r.extra['newStage'], r.save!.stageNumber);
     });
 
@@ -1720,6 +1727,8 @@ void main() {
     SaveGame stored({int gold = 1000, int trophies = 500}) =>
         SaveGame.initial(createdAt: t0).copyWith(
           lastSeen: t0,
+          // 지금 세대의 앱이 올린 세이브(구세대면 스테이지를 안 믿는다).
+          zoneEpoch: kZoneEpoch,
           gold: gold,
           pvpTrophies: trophies,
           seasonPeakTrophies: trophies,

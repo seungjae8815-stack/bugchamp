@@ -29,8 +29,15 @@ String progressLabel(
   AppLocalizations l,
   RoadmapConfig? roadmap,
   int tier,
-  int stage,
-) {
+  int stage, {
+  RunConfig? run,
+}) {
+  // 사냥터 구조(2026-09-14): `보통 · 사냥터 3`. 점령한 보스 수가 곧 진행도다.
+  if (run != null && run.zoneMode) {
+    final zone = run.zoneOf(stage);
+    final label = run.isFinalZone(zone) ? l.zoneFinalLabel : l.zoneLabel(zone);
+    return '${tierName(l, tier)} · $label';
+  }
   final pos = roadmap?.stageLabel(stage);
   if (pos == null) return '${tierName(l, tier)} $stage';
   return '${tierName(l, tier)} ${pos.world}-${pos.inWorld}';

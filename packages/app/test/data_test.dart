@@ -326,8 +326,14 @@ void main() {
     final config = RunConfig.fromJson(_readJson('assets/data/run_config.json'));
 
     test('파싱 성공 & 스케일링 계수 > 1 또는 유효', () {
-      expect(config.hpGrowth, greaterThan(1.0));
-      expect(config.goldGrowth, greaterThan(1.0));
+      // 사냥터 구조(2026-09-14): 사냥터 안은 평탄(1.0)이고 계단은 월드 배율이 맡는다.
+      expect(config.hpGrowth, greaterThanOrEqualTo(1.0));
+      expect(config.goldGrowth, greaterThanOrEqualTo(1.0));
+      if (config.zoneMode) {
+        expect(config.worldHpMult, greaterThan(1.0));
+        expect(config.worldGoldMult, greaterThan(1.0));
+        expect(config.bossUnlockKills, greaterThan(0));
+      }
       expect(config.habitatsPerStage, greaterThan(0));
       expect(config.bossHpMult, greaterThan(1.0));
     });

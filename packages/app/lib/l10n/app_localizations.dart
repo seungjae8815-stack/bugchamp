@@ -1342,6 +1342,42 @@ abstract class AppLocalizations {
   /// **'BOSS'**
   String get bossLabel;
 
+  /// No description provided for @zoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunting Ground {n}'**
+  String zoneLabel(int n);
+
+  /// No description provided for @zoneFinalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Final Ground'**
+  String get zoneFinalLabel;
+
+  /// No description provided for @bossChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Boss'**
+  String get bossChallenge;
+
+  /// No description provided for @bossChallengeLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} more kills to challenge'**
+  String bossChallengeLocked(int n);
+
+  /// No description provided for @bossChallengeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The boss pushed you back. Grow stronger and try again'**
+  String get bossChallengeFailed;
+
+  /// No description provided for @zoneKillsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Kills {n}/{m}'**
+  String zoneKillsLabel(int n, int m);
+
   /// No description provided for @tapBoostHint.
   ///
   /// In en, this message translates to:

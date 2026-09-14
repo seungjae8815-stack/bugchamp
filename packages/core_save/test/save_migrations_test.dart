@@ -1,7 +1,9 @@
+import 'package:core_models/core_models.dart';
 import 'package:core_save/core_save.dart';
 import 'package:test/test.dart';
 
 void main() {
+  _zoneEpochTests();
   group('migrateToCurrent', () {
     test('v0(스키마 미표기) → v1 로 승격 + 기본 필드 채움', () {
       final migrated = migrateToCurrent({});
@@ -164,6 +166,44 @@ void main() {
       expect(back.passActive(DateTime.utc(2026, 2, 1)), isTrue);
       expect(back.passActive(DateTime.utc(2026, 4, 1)), isFalse);
       expect(back.adsHidden(DateTime.utc(2026, 4, 1)), isTrue); // 광고제거는 영구
+    });
+  });
+}
+
+void _zoneEpochTests() {
+  group('사냥터 구조 세대(applyZoneEpoch)', () {
+    test('세대가 낮으면 진행도만 처음으로 — 강화·재화는 그대로', () {
+      final old = SaveGame.initial(createdAt: DateTime.utc(2026, 1, 1))
+          .copyWith(
+            stageNumber: 885,
+            difficultyTier: 2,
+            zoneKills: 40,
+            gold: 12345,
+            level: 42,
+          );
+      final now = applyZoneEpoch(old);
+      expect(now.stageNumber, 1);
+      expect(now.difficultyTier, 0);
+      expect(now.zoneKills, 0);
+      expect(now.zoneEpoch, kZoneEpoch);
+      expect(now.gold, 12345);
+      expect(now.level, 42);
+    });
+
+    test('지금 세대면 손대지 않는다(같은 객체)', () {
+      final s = SaveGame.initial(
+        createdAt: DateTime.utc(2026, 1, 1),
+      ).copyWith(stageNumber: 301, zoneEpoch: kZoneEpoch);
+      expect(identical(applyZoneEpoch(s), s), isTrue);
+    });
+
+    test('zoneKills·zoneEpoch 는 JSON 을 왕복한다', () {
+      final s = SaveGame.initial(
+        createdAt: DateTime.utc(2026, 1, 1),
+      ).copyWith(zoneKills: 7, zoneEpoch: kZoneEpoch);
+      final back = SaveGame.fromJson(s.toJson());
+      expect(back.zoneKills, 7);
+      expect(back.zoneEpoch, kZoneEpoch);
     });
   });
 }

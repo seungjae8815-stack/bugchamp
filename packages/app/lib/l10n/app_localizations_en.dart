@@ -704,6 +704,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bossLabel => 'BOSS';
 
   @override
+  String zoneLabel(int n) {
+    return 'Hunting Ground $n';
+  }
+
+  @override
+  String get zoneFinalLabel => 'Final Ground';
+
+  @override
+  String get bossChallenge => 'Challenge Boss';
+
+  @override
+  String bossChallengeLocked(int n) {
+    return '$n more kills to challenge';
+  }
+
+  @override
+  String get bossChallengeFailed =>
+      'The boss pushed you back. Grow stronger and try again';
+
+  @override
+  String zoneKillsLabel(int n, int m) {
+    return 'Kills $n/$m';
+  }
+
+  @override
   String get tapBoostHint => 'Tap to boost!';
 
   @override

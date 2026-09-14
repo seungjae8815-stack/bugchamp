@@ -53,8 +53,10 @@ void main() {
   });
 
   test('보상도 회차와 함께 오른다', () {
-    final easy = rewardGold(cfg, 200, 1.0);
-    final extreme = rewardGold(cfg, 200, 1.0, tier: 3);
+    // 배율을 크게 줘서 반올림이 비율을 흔들지 않게 한다(사냥터 구조에서
+    // 사냥터 안 골드가 평탄해져 깊이 200 의 기본값이 한 자릿수다).
+    final easy = rewardGold(cfg, 200, 1000.0);
+    final extreme = rewardGold(cfg, 200, 1000.0, tier: 3);
     expect(
       extreme / easy,
       closeTo(cfg.tierReward(3), cfg.tierReward(3) * 0.005),

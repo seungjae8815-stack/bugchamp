@@ -441,7 +441,10 @@ class _NodeTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              isFinal ? bossName : label,
+              // 사냥터 구조에서는 칸 하나가 보스 하나다 — 이름이 곧 목표다.
+              (isFinal || node.isWorldBoss) && bossName.isNotEmpty
+                  ? bossName
+                  : label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

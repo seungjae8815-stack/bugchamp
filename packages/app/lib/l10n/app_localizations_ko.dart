@@ -693,6 +693,30 @@ class AppLocalizationsKo extends AppLocalizations {
   String get bossLabel => '보스';
 
   @override
+  String zoneLabel(int n) {
+    return '사냥터 $n';
+  }
+
+  @override
+  String get zoneFinalLabel => '최종 사냥터';
+
+  @override
+  String get bossChallenge => '보스 도전';
+
+  @override
+  String bossChallengeLocked(int n) {
+    return '보스 도전까지 $n마리';
+  }
+
+  @override
+  String get bossChallengeFailed => '보스에게 밀려났어요. 더 강해져서 다시 도전하세요';
+
+  @override
+  String zoneKillsLabel(int n, int m) {
+    return '처치 $n/$m';
+  }
+
+  @override
   String get tapBoostHint => '화면을 탭해 부스트!';
 
   @override
