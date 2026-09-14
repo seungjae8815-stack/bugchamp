@@ -12,7 +12,12 @@ void main() {
   late RunConfig config;
   setUpAll(() {
     final raw = File('../app/assets/data/run_config.json').readAsStringSync();
-    config = RunConfig.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    final json = jsonDecode(raw) as Map<String, dynamic>;
+    // 이 테스트는 **회차 배율이 처치 수와 단가 양쪽에 실리는가**를 본다. 실데이터는
+    // 난이도별 표(zoneTiers)가 배율을 대신하므로(회차마다 벌이가 표로 오른다),
+    // 배율 경로를 검사하려고 표를 뺀다. 표 경로는 zone_tiers_test 가 본다.
+    json.remove('zoneTiers');
+    config = RunConfig.fromJson(json);
   });
 
   CharacterStats stats() => deriveStats(

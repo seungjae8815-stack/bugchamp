@@ -1054,12 +1054,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       equipmentBonus(save.equippedItems.values, _data.itemConfig),
       critBudget: _config.critBudgetGear,
     );
+    // ⚠️ 기준 맷집은 **캐릭터 몫**이다. 곤충 체력은 팀 체력을 늘리지만 그만큼
+    // 캐릭터 몫(playerHpMult)이 줄어 캐릭터 체력은 그대로인데, 한 대는 캐릭터가
+    // 전부 받는다. 팀 맷집으로 재면 좋은 곤충을 낄수록 한 대가 커져서, 곤충 3마리
+    // (체력 x3.35)인 계정은 일반 몬스터 한 대가 캐릭터 체력의 51% 였다
+    // (2026-09-15 zone_check 실측 — 곤충 체력을 빼면 15%).
+    final charShare = _split?.playerHpMult ?? 1.0;
     final threat = habitatThreat(
       _config,
       _stage - 1,
       boss: boss,
-      playerToughness: toughnessOf(perm),
-      gearToughness: toughnessOf(geared),
+      playerToughness: toughnessOf(perm) * charShare,
+      gearToughness: toughnessOf(geared) * charShare,
       // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
       tier: save.difficultyTier,
     );

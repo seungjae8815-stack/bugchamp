@@ -267,6 +267,16 @@ class GameActions {
   /// 잘린다** — 방어보다 오탐이 더 나쁘다. 방치 효율(0.3) 대비 100배까지 인정.
   static const _saveBoundEfficiency = 30.0;
 
+  /// 상한 계산용 공격력 배율 — 강화만 반영한 전력에 곱한다.
+  ///
+  /// 상한은 저장본의 **강화**로만 전력을 잰다(펫·장비·버프·탭은 모른다). 난이도별
+  /// 표(2026-09-15)에서는 펫·장비를 갖춘 유저가 강화만 한 전력보다 몬스터를 수십
+  /// 배 빨리 잡아, 사냥터 중반부터 **정당한 수입이 잘렸다**(clamp_check 실측 x0.26).
+  /// 처치 속도는 아무리 세도 **걷는 시간**(0.6초) 아래로 안 내려가므로, 공격을
+  /// 넉넉히 줘서 처치를 걷는 시간에 붙인다 — 봉투는 여전히 "처치당 골드 × 걷는
+  /// 속도"로 묶여 1→10억 같은 조작은 그대로 잘린다.
+  static const _saveBoundAttackMult = 100.0;
+
   /// 이번 업로드에서 **정당하게 받았을 수 있는 챕터 클리어 보상**의 합.
   ///
   /// 챕터 보상은 앱이 지급하고(`SaveController.grantChapterClears`) 세이브에
@@ -318,11 +328,27 @@ class GameActions {
     var elapsed = t.difference(stored.lastSeen);
     if (elapsed.isNegative) elapsed = Duration.zero;
 
-    final stats = deriveStats(
+    final bare = deriveStats(
       config.run,
       upgradeLevels: stored.upgradeLevels,
       characterLevel: stored.level,
       bugsCollected: stored.bugs.length,
+    );
+    final stats = CharacterStats(
+      attack: bare.attack * _saveBoundAttackMult,
+      attackSpeed: bare.attackSpeed,
+      rewardMultiplier: bare.rewardMultiplier,
+      critChance: bare.critChance,
+      critDamage: bare.critDamage,
+      bossDamage: bare.bossDamage,
+      maxHp: bare.maxHp,
+      defense: bare.defense,
+      hpRegen: bare.hpRegen,
+      xpMultiplier: bare.xpMultiplier,
+      bugFind: bare.bugFind,
+      materialFind: bare.materialFind,
+      moveSpeed: bare.moveSpeed,
+      boostBonus: bare.boostBonus,
     );
     final generous = simulateIdleProgress(
       config: config.run,

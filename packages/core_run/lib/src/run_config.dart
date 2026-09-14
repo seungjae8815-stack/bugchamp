@@ -81,6 +81,55 @@ class UpgradeSpec {
   );
 }
 
+/// 한 난이도의 사냥터 표(`run_config.json → zoneTiers[회차]`). index = 사냥터-1.
+class ZoneTierTable {
+  const ZoneTierTable({
+    this.hp = const [],
+    this.bossHp = const [],
+    this.threat = const [],
+    this.gold = const [],
+    this.threatAdaptMult,
+  });
+
+  final List<double> hp;
+  final List<double> bossHp;
+  final List<double> threat;
+  final List<double> gold;
+
+  /// 적응형 위협(한 대 = 맷집의 일정 비율)에 곱할 배율. null 이면 회차 배율
+  /// (`tierThreatMult^회차`)을 쓴다. 곱셈은 극한에서 x8 이 되어 한 대가 체력의
+  /// 96% 였다 — 난이도마다 따로 둔다.
+  final double? threatAdaptMult;
+
+  static double? _at(List<double> l, int zone) =>
+      l.isEmpty ? null : l[(zone - 1).clamp(0, l.length - 1)];
+
+  double? hpAt(int zone) => _at(hp, zone);
+  double? bossHpAt(int zone) => _at(bossHp, zone);
+  double? threatAt(int zone) => _at(threat, zone);
+  double? goldAt(int zone) => _at(gold, zone);
+
+  static List<double> _list(Object? v) => [
+    for (final x in (v as List? ?? const [])) (x as num).toDouble(),
+  ];
+
+  factory ZoneTierTable.fromJson(Map<String, dynamic> json) => ZoneTierTable(
+    hp: _list(json['hp']),
+    bossHp: _list(json['bossHp']),
+    threat: _list(json['threat']),
+    gold: _list(json['gold']),
+    threatAdaptMult: (json['threatAdaptMult'] as num?)?.toDouble(),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'hp': hp,
+    'bossHp': bossHp,
+    'threat': threat,
+    'gold': gold,
+    'threatAdaptMult': ?threatAdaptMult,
+  };
+}
+
 /// 지역(테마) 정의.
 @immutable
 class RegionConfig {
@@ -217,6 +266,7 @@ class RunConfig {
     this.zoneThreat = const [],
     this.zoneGold = const [],
     this.zoneBossHp = const [],
+    this.zoneTiers = const [],
     this.endParkedRewardMult = 1.0,
     this.rarePityKills = 0,
     this.dropGradeWeights = const {},
@@ -528,6 +578,21 @@ class RunConfig {
   final List<double> zoneGold; // 처치당 골드(보상 배율 1 기준)
   final List<double> zoneBossHp; // 보스 체력(비어 있으면 zoneHp × bossHpMult)
 
+  /// **난이도별** 사냥터 표(2026-09-15). index = 회차(0=쉬움).
+  ///
+  /// 한 표 × 회차 배율(`tierHitsMult^회차`)로는 난이도마다 곡선을 다르게 둘 수
+  /// 없었다. 회차가 오를 때마다 장비·펫이 이월되고 강화만 초기화되므로, 난이도마다
+  /// 도착 전력과 성장 속도가 전혀 다르다 — 곱셈 한 줄로 맞추면 쉬움은 맞고
+  /// 어려움부터 수백 일이 됐다(balance_sim 실측 303일·극한 미완주).
+  ///
+  /// 회차의 표가 있으면 그 값을 **그대로** 쓰고 회차 배율을 곱하지 않는다.
+  /// 없으면 예전처럼 [zoneHp] 등 × 회차 배율이다(하위호환).
+  final List<ZoneTierTable> zoneTiers;
+
+  /// 회차 [tier] 의 표. 없으면 null.
+  ZoneTierTable? zoneTier(int tier) =>
+      tier >= 0 && tier < zoneTiers.length ? zoneTiers[tier] : null;
+
   double? zoneBossHpAt(int zone) => zoneBossHp.isEmpty
       ? null
       : zoneBossHp[(zone - 1).clamp(0, zoneBossHp.length - 1)];
@@ -811,6 +876,10 @@ class RunConfig {
       zoneBossHp: [
         for (final v in (json['zoneBossHp'] as List? ?? const []))
           (v as num).toDouble(),
+      ],
+      zoneTiers: [
+        for (final t in (json['zoneTiers'] as List? ?? const []))
+          ZoneTierTable.fromJson(t as Map<String, dynamic>),
       ],
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,

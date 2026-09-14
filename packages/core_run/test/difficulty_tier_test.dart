@@ -45,22 +45,37 @@ void main() {
     expect(kMaxMonsterHp, lessThan(9223372036854775807 ~/ 2));
   });
 
-  test('난이도는 위협도(맞는 아픔)로 온다', () {
-    final easy = habitatThreat(cfg, 199, playerToughness: 1e6);
-    final extreme = habitatThreat(cfg, 199, playerToughness: 1e6, tier: 3);
-    expect(extreme / easy, closeTo(cfg.tierThreat(3), 0.01));
-    expect(cfg.tierThreat(3), greaterThan(5.0), reason: '확실히 위험해야 한다');
+  /// 난이도별 표(2026-09-15)가 들어온 뒤로 적응형 위협의 회차 배율은
+  /// **표의 threatAdaptMult** 다. 예전 곱셈(2.0^회차 = 극한 x8)은 한 대가
+  /// 체력의 96% 라 극한을 아무도 못 깼다(balance_sim 실측 미완주).
+  test('난이도는 위협도(맞는 아픔)로 온다 — 오를수록 아프되 한 방은 아니다', () {
+    // 표의 절대값보다 적응형 몫이 커지도록 맷집을 크게 준다.
+    final easy = habitatThreat(cfg, 199, playerToughness: 1e12);
+    final extreme = habitatThreat(cfg, 199, playerToughness: 1e12, tier: 3);
+    final m0 = cfg.zoneTier(0)?.threatAdaptMult ?? cfg.tierThreat(0);
+    final m3 = cfg.zoneTier(3)?.threatAdaptMult ?? cfg.tierThreat(3);
+    expect(extreme / easy, closeTo(m3 / m0, 0.01));
+    expect(m3, greaterThan(m0), reason: '어려운 회차가 더 아파야 한다');
+    // 한 대 = 맷집 × pct × 간격 × 배율 — 극한에서도 체력의 절반을 넘지 않는다.
+    expect(
+      cfg.threatAdaptTargetPct * cfg.enemyAtkInterval * m3,
+      lessThan(0.5),
+      reason: '극한 한 대가 체력의 절반을 넘으면 두 대에 죽는다',
+    );
   });
 
+  /// 난이도별 표에서는 배율이 아니라 **표 자체**가 오른다 — 같은 사냥터라도
+  /// 어려운 회차가 더 번다(안 그러면 넘어갈 이유가 없다).
   test('보상도 회차와 함께 오른다', () {
-    // 배율을 크게 줘서 반올림이 비율을 흔들지 않게 한다(사냥터 구조에서
-    // 사냥터 안 골드가 평탄해져 깊이 200 의 기본값이 한 자릿수다).
-    final easy = rewardGold(cfg, 200, 1000.0);
-    final extreme = rewardGold(cfg, 200, 1000.0, tier: 3);
-    expect(
-      extreme / easy,
-      closeTo(cfg.tierReward(3), cfg.tierReward(3) * 0.005),
-    );
+    for (var z = 1; z <= cfg.zonesPerTier; z++) {
+      final depth = cfg.zoneStartStage(z) - 1;
+      var prev = rewardGold(cfg, depth, 1000.0);
+      for (var t = 1; t < 4; t++) {
+        final g = rewardGold(cfg, depth, 1000.0, tier: t);
+        expect(g, greaterThan(prev), reason: '사냥터 $z 회차 $t');
+        prev = g;
+      }
+    }
   });
 
   test('회차 0(쉬움)은 아무것도 바꾸지 않는다 — 구버전과 같다', () {

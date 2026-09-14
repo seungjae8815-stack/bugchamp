@@ -18,8 +18,10 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:io';
 
-import 'package:core_models/core_models.dart' show MaterialKind;
+import 'package:core_models/core_models.dart' show ItemOptionKind, MaterialKind;
 import 'package:core_run/core_run.dart';
+
+import 'power_ceiling.dart';
 
 /// 하루 중 실제로 앱을 켜고 노는 시간.
 const _activeHoursPerDay = 2.0;
@@ -59,43 +61,12 @@ const _buffDpsMult = 1.4;
 // 포함). 그러면 시뮬 안에서는 버프가 스스로 상쇄돼 "빠듯하다"고 나온다 —
 // 실제로는 그만큼 쉬워지는데도. 그래서 체감과 계속 어긋났다.
 
-/// 장비 8부위의 **공격 배율**(옵션 attack%). 평균 유저는 등급이 섞인다 —
-/// 상한이 아니라 중간을 잡는다.
-///
-/// 2026-09-09: x1.35@300 → x1.70@900. "장비가 후반을 끄는" 구조로 옮겼다.
-/// 총 기간은 그대로(22.0→21.2일)인데 **후반 1/3 의 속도가 장비에서** 나온다.
-/// items.json 의 상위 3등급(키틴·갑충·호박)을 같이 올렸으므로 실게임의 평균도
-/// 여기까지 온다. 둘을 따로 만지면 시뮬과 게임이 갈린다.
-double _equipAttackMult = 1.70;
-
-/// 장비가 주는 치명 확률·피해 가산(옵션 critChance/critDamage).
-double _equipCritChance = 0.24;
-double _equipCritDamage = 1.2;
-
-/// 장비가 주는 **최대 체력·방어** 배율(옵션 maxHp/defense).
-///
-/// ⚠️ 예전엔 이 두 축을 아예 안 태웠다(2026-09-07 발견). 그래서 시뮬은
-/// "피가 너무 닳는다"고 하는데 실기는 "안 닳는다"였다 — 방어 축만 맨몸으로
-/// 재고 있었던 것이다. CLAUDE.md 가 경고한 그 실수(§밸런스 시뮬)가 공격
-/// 쪽만 고쳐지고 방어 쪽에 남아 있었다.
-///
-/// **이 두 값은 기준 밖(§7)이라 순수 이득이다** — 위협도는 기준 전력에
-/// 비례하는데 실제 체력·방어는 이만큼 더 크니, 그 비만큼 안 닳는다.
-double _equipHpMult = 1.60;
-double _equipDefenseMult = 1.70;
-
-/// 장비 공격 옵션이 다 붙기까지 걸리는 스테이지(공방을 돌려 갖춘다).
-/// `--equip-full=N` 으로 바꿀 수 있다 — "장비가 후반을 끄는" 구조를 재려면
-/// 장비를 다 갖추는 시점을 뒤로 밀어 봐야 한다.
-int _equipFullStage = 900;
-
 /// 종 고유 패시브 — 펫 3마리 장착분. 능력치가 갈리므로 공격 기여는 일부다.
 const _passiveAttackMult = 1.08;
 
-/// 도감 영구 보너스 — 정복 20종이면 공격 +30%(`dex.json` attackPerConquer 0.015).
-/// 다 채우는 데 오래 걸리므로 진행에 따라 오른다.
-const _dexAttackMult = 1.30;
-const _dexFullStage = 600;
+/// `--equip-scale=k` — 공방 모델이 뽑은 장비 옵션 값을 k 배로 본다(장비를 더/덜
+/// 갖춘 유저). 장비 자체는 이제 공방 규칙으로 계산한다(`_Player._forgeDays`).
+double _gearScale = 1.0;
 
 /// 탭 부스트 — **활동 시간에만** 걸리는 평균 배율.
 ///
@@ -139,12 +110,6 @@ double? _matCostGrowth;
 /// `--mat-base-mult=` 로 재료 기본비용을 일괄 배수한다(탐색용).
 double _matBaseMult = 1.0;
 
-/// 펫을 다 갖췄을 때의 추가 공격 배율(+150% = x2.5).
-/// pets.json 의 상한(전설3 만렙 x4.04)이 아니라 **평균적인 유저**를 가정한다.
-/// `--pet-bonus=` 로 덮어쓸 수 있다(펫 상한을 바꿔볼 때).
-const _petMaxBonusDefault = 1.5;
-double _petMaxBonus = _petMaxBonusDefault;
-
 /// 오행 **상극이 걸린 곤충 수**(0~3). `--pet-restrain=N`.
 ///
 /// 곤충은 캐릭터와 따로 때리고, 지역 속성을 克하는 곤충의 타격만 배율을 받는다.
@@ -152,8 +117,8 @@ double _petMaxBonus = _petMaxBonusDefault;
 /// CLI 로도 받게 하면 JSON 과 시뮬이 갈려 "시뮬은 통과했는데 게임은 다르다"가 된다.
 int _petRestrainCount = 0;
 
-/// 펫이 위 배율에 도달하는 스테이지(그 전까지는 선형으로 오른다).
-const _petFullStage = 600.0;
+/// 유저가 보스전을 붙잡고 있을 수 있는 최대 시간(초). 이보다 오래 걸리면 안 누른다고 본다.
+const _bossPatienceSeconds = 240.0;
 
 /// 업그레이드 구매를 다시 판단하는 간격(초). 짧을수록 정확하고 느리다.
 const _sliceSeconds = 600.0;
@@ -272,6 +237,12 @@ void main(List<String> args) {
     stdout.writeln('');
     // 아래 일반 시뮬은 맞춘 표로 돈다.
   }
+  if (opts.fitTiers) {
+    config = _fitTiers(base, config, opts);
+    // 맞춘 표로 네 난이도를 이어서 검증한다.
+    _tierRuns = _targets.tierDays.length;
+    _tier = 0;
+  }
   // 캠페인 끝: 월드 구조면 --worlds(기본 10)개 월드, 아니면 지역×스테이지.
   // 사냥터 구조(2026-09-14): 사냥터 k = 스테이지 (k-1)×worldSize+1. 마지막
   // 사냥터(최종 보스)에 닿는 것이 캠페인 끝이다. 표본도 사냥터 시작점으로.
@@ -309,6 +280,11 @@ void main(List<String> args) {
     ' + 오프라인 ${_offlineHoursPerDay}h/일',
   );
   stdout.writeln('');
+  stdout.writeln('── 현실적 최고치(tool/balance_targets.json → ceiling) ──');
+  stdout.writeln(
+    '  ${describeCeiling(config, _ceilingData, _targets.ceiling)}',
+  );
+  stdout.writeln('');
 
   // 마일스톤: 월드 구조면 월드 경계, 아니면 지역 경계.
   final marks = config.zoneMode
@@ -341,12 +317,22 @@ void main(List<String> args) {
       // 끝난다 — 적응형 체력은 "그 스테이지의 기본 체력"을 기준으로 잡아서,
       // 스테이지 1 은 배율을 아무리 곱해도 한 방이 되기 때문이다(실측).
       sim.stage = 1; // careerStage 는 그대로 — 장비·도감·펫은 남는다
+      sim._entryPending = true;
       if (t > 0) {
+        // 게임의 enterNextTier 와 같다(2026-09-14): 강화·레벨·경험치에 더해
+        // **골드·일반 재료**도 처음으로. 남기면 넘어간 즉시 강화를 되사서
+        // 회차가 통째로 건너뛰어진다. 공방 레벨·장비·펫·도감은 남는다.
         sim.levels.clear();
         sim.level = 1;
         sim.xp = 0;
+        sim.gold = 0;
+        sim.materials.clear();
       }
       final from = day;
+      if (sim._entryPending) {
+        sim.logEntry();
+        sim._entryPending = false;
+      }
       while (day < _maxDays && sim.stage <= finalStage) {
         day++;
         sim.playDay();
@@ -363,6 +349,8 @@ void main(List<String> args) {
     }
     stdout.writeln('');
     stdout.writeln('  ★ 전 회차 합계: $total일');
+    _printBossLog(sim);
+    _printEntryLog(sim);
     return;
   }
 
@@ -560,6 +548,8 @@ void main(List<String> args) {
   }
   stdout.writeln('');
 
+  _printBossLog(sim);
+
   stdout.writeln('── 결과 ──');
   for (final m in marks) {
     final d = sim.reached[m];
@@ -590,6 +580,188 @@ void main(List<String> args) {
       '${cap == null ? '' : ' / $cap${lv >= cap ? '  ← 상한' : ''}'}',
     );
   }
+}
+
+/// 밸런스 목표·최고치 정의(tool/balance_targets.json) — 게임 수치가 아니라 판정 기준.
+final _targets = BalanceTargets.load();
+final _ceilingData = CeilingData.load();
+
+/// ── 난이도 4개 표 맞추기(`--fit-tiers`) ──
+///
+/// 난이도 t 마다:
+///  1. 일정: tierDays[t] 일을 사냥터 11개에 **뒤로 갈수록 조금씩 길게** 나눈다.
+///  2. 골드 규모(사냥터 1 의 처치당 골드)를 **이분 탐색**한다 — 그 난이도가 끝날 때
+///     **강화 채움**이 finalBossPowerPct[t] 에 닿게. 채움 평균으로 맞추면 이월되는
+///     장비·펫·도감이 넘쳐 강화를 거의 안 사도 목표를 넘는다(2026-09-15 첫 시도:
+///     보통부터 골드 0 · 강화 26%). 강화는 회차마다 초기화되는 유일한 축이라
+///     "이번 회차에서 키웠다"의 잣대가 된다. 채움 평균은 결과로 보고한다.
+///  3. 사냥터마다 기존 fit 규칙: 일반 몬스터·위협은 **도착 전력**, 보스는 **머문 뒤 전력**.
+///  4. 강화·레벨·골드·재료를 초기화하고 다음 난이도로(장비·펫·도감·공방은 이월).
+RunConfig _fitTiers(Map<String, dynamic> base, RunConfig config, _Opts opts) {
+  // `--fit-days=` 가 있으면 표를 뽑을 때만 그 일정을 쓴다. 이어서 돌리면 회차
+  // 사이 이월 때문에 일정이 어긋나므로, 목표 일수가 나오게 한 번 보정할 때 쓴다.
+  final days = opts.fitDays ?? _targets.tierDays;
+  final goals = _targets.finalBossPowerPct;
+  final adapt = [
+    for (final v in (_targets.raw['tierThreatAdaptMult'] as List? ?? const []))
+      (v as num).toDouble(),
+  ];
+  final tables = <Map<String, dynamic>>[];
+  var player = _Player(config, const [])..fitting = true;
+
+  RunConfig withTables(List<Map<String, dynamic>> t) {
+    base['zoneTiers'] = t;
+    return RunConfig.fromJson(base);
+  }
+
+  for (var t = 0; t < days.length; t++) {
+    _tier = t;
+    if (t > 0) {
+      player
+        ..stage = 1
+        ..levels.clear()
+        ..level = 1
+        ..xp = 0
+        ..gold = 0
+        ..materials.clear();
+    }
+    final n = config.zonesPerTier;
+    final weights = [for (var k = 0; k < n; k++) 1 + 0.1 * k];
+    final wSum = weights.fold(0.0, (a, v) => a + v);
+    final zoneDays = [for (final w in weights) days[t] * w / wSum];
+
+    ({double fill, Map<String, dynamic> table, _Player end}) run(double g1) {
+      final p = player.copy();
+      final hp = <double>[], th = <double>[], gd = <double>[], bh = <double>[];
+      Map<String, dynamic> table() => {
+        'hp': hp,
+        'bossHp': bh,
+        'threat': th,
+        'gold': gd,
+        if (t < adapt.length) 'threatAdaptMult': adapt[t],
+      };
+      for (var k = 1; k <= n; k++) {
+        final entry = p.stats;
+        // 난이도의 **첫 사냥터**는 강화가 막 초기화된 직후라 가장 약하다 —
+        // 여기서 죽으면 회차를 넘긴 벌을 받는 셈이다. 몬스터를 절반 대수로,
+        // 한 대를 조금 작게(2026-09-15 시뮬: 첫 사냥터만 죽었다).
+        final first = k == 1;
+        final hitsK = first ? opts.fitHits * 0.5 : opts.fitHits;
+        final biteK = first ? opts.fitBite * 0.6 : opts.fitBite;
+        hp.add((baselineHitPower(entry) * hitsK).roundToDouble());
+        final tough = entry.maxHp * (100 + entry.defense) / 100;
+        th.add((biteK * tough / config.enemyAtkInterval * 100).round() / 100);
+        gd.add(
+          (g1 * math.pow(opts.fitGoldStep, k - 1) * 100).roundToDouble() / 100,
+        );
+        bh.add(
+          (baselineHitPower(entry, boss: true) * opts.fitHits * 4)
+              .roundToDouble(),
+        );
+        p.config = withTables([...tables, table()]);
+        p._ceilPetsCache = null;
+        p.stage = config.zoneStartStage(k);
+        p.playDays(zoneDays[k - 1]);
+        // 보스 = **머문 뒤 전력으로 버틸 수 있는 시간 안에 겨우 잡히는** 체력.
+        // 위협이 적응형이라 버티는 시간은 전력과 무관하게 거의 일정하다 —
+        // 그래서 체력을 그 시간에 맞추면 전력이 조금만 모자라도 못 잡는
+        // **확실한 관문**이 된다(타격 수로 잡으면 20초 만에 뚫려 일정이 무너졌다).
+        bh[k - 1] = p.bossHpAtLimit(opts.fitBossMargin).roundToDouble();
+      }
+      return (fill: p._upgradeFill, table: table(), end: p);
+    }
+
+    // 로그 공간 이분 탐색. 골드를 아무리 줘도 못 닿거나(강화·장비가 꽉 차도
+    // 펫·도감 곡선이 모자람) 아무리 줄여도 넘으면 끝값을 쓰고 알린다.
+    var lo = math.log(1e-3), hi = math.log(1e9);
+    var best = run(math.exp(hi));
+    if (best.fill < goals[t]) {
+      stdout.writeln(
+        '  ⚠️ 난이도 $t: 골드를 최대로 줘도 강화 채움 '
+        '${(best.fill * 100).toStringAsFixed(1)}% < 목표 '
+        '${(goals[t] * 100).toStringAsFixed(0)}% — 펫·도감 곡선이나 목표를 봐야 한다',
+      );
+    } else {
+      for (var i = 0; i < 18; i++) {
+        final mid = (lo + hi) / 2;
+        final r = run(math.exp(mid));
+        if (r.fill < goals[t]) {
+          lo = mid;
+        } else {
+          hi = mid;
+          best = r;
+        }
+      }
+    }
+    tables.add(best.table);
+    player = best.end;
+    final g = best.table['gold'] as List<double>;
+    stdout.writeln(
+      '  fit 난이도 $t: ${days[t].toStringAsFixed(0)}일 · 채움 '
+      '${(best.fill * 100).toStringAsFixed(1)}%(강화) · 평균 '
+      '${(player.fillAverage * 100).toStringAsFixed(1)}% (목표 '
+      '${(goals[t] * 100).toStringAsFixed(0)}%) · 골드 ${_short(g.first)}→'
+      '${_short(g.last)} · 공방 ${player.forgeLevel} · 장비등급 ${player.gearTier}'
+      ' · 채움 ${player._fillByAxis.values.map((v) => (v * 100).toStringAsFixed(0)).join('·')}',
+    );
+  }
+
+  stdout.writeln('');
+  stdout.writeln('── run_config.json 에 넣을 표(zoneTiers) ──');
+  stdout.writeln(' "zoneTiers": ${jsonEncode(tables)},');
+  stdout.writeln('');
+  return withTables(tables);
+}
+
+/// 사냥터 도착 직후 — 일반 몬스터 20마리를 버티나. 벽은 보스뿐이어야 한다.
+void _printEntryLog(_Player sim) {
+  if (sim.entryLog.isEmpty) return;
+  stdout.writeln('── 사냥터 도착 직후(일반 몬스터 20마리) ──');
+  stdout.writeln('  목표: 몇 대 4~12 · 한 대 8~20% · 최저 15% 이상 · 죽지 않는다');
+  stdout.writeln('  회차·사냥터 |  몇 대 | 한 대 |  최저 | 판정');
+  for (final e in sim.entryLog) {
+    final verdict = e.dead
+        ? '죽음 ← 문제'
+        : (e.low < 0.15 ? '간신히' : (e.low > 0.7 ? '밋밋함' : '좋다'));
+    stdout.writeln(
+      '  ${e.tier}·${e.zone.toString().padLeft(2)}       |'
+      ' ${e.hits.toStringAsFixed(1).padLeft(6)} |'
+      ' ${(e.bite * 100).toStringAsFixed(0).padLeft(3)}% |'
+      ' ${(e.low * 100).toStringAsFixed(0).padLeft(4)}% | $verdict',
+    );
+  }
+  stdout.writeln('');
+}
+
+/// 보스를 깬 날과 그때 전력이 최고치의 몇 %였나. 최종 보스 줄에 목표를 붙인다.
+void _printBossLog(_Player sim) {
+  if (sim.bossLog.isEmpty) return;
+  final days = _targets.tierDays;
+  final goal = _targets.finalBossPowerPct;
+  stdout.writeln('');
+  stdout.writeln('── 보스 격파(최고치 대비 전투력) ──');
+  stdout.writeln(
+    '  회차·사냥터 | 날짜(누적) | 전투력 % | 채움 평균 | 채움(강화·펫·장비·도감) | 곱 기준 축별',
+  );
+  for (final b in sim.bossLog) {
+    final isFinal = b.zone == sim.config.zonesPerTier;
+    final axis = b.axis.entries
+        .map((e) => (e.value * 100).toStringAsFixed(0))
+        .join('·');
+    final target = isFinal && b.tier < goal.length
+        ? '  ← 목표 ${(goal[b.tier] * 100).toStringAsFixed(0)}% · '
+              '${days[b.tier].toStringAsFixed(0)}일'
+        : '';
+    stdout.writeln(
+      '  ${b.tier}·${b.zone.toString().padLeft(2)}${isFinal ? '★' : ' '}     |'
+      ' ${b.day.toStringAsFixed(1).padLeft(10)} |'
+      ' ${(b.pct * 100).toStringAsFixed(1).padLeft(9)}% |'
+      ' ${(b.fill.values.fold(0.0, (a, v) => a + math.min(1.0, v)) / b.fill.length * 100).toStringAsFixed(0).padLeft(7)}% |'
+      ' ${b.fill.values.map((v) => (v * 100).toStringAsFixed(0)).join('·').padRight(22)} |'
+      ' 공방 ${b.forge.toString().padLeft(2)}·장비등급 ${b.gearTier} | $axis$target',
+    );
+  }
+  stdout.writeln('');
 }
 
 /// 하루 = 활동 + 오프라인 시간. 소수 일수를 사람이 읽는 표기로.
@@ -648,6 +820,7 @@ class _Player {
       _run(_activeHoursPerDay * 3600 * d, 1.0);
       _online = false;
       _run(_offlineHoursPerDay * 3600 * d, config.offlineEfficiency);
+      _forgeDays(d);
     }
   }
 
@@ -730,39 +903,206 @@ class _Player {
   /// 스테이지 체크포인트에서의 (남은 재료, 남은 골드) — 어디서 남아도는지 본다.
   final Map<int, ({double mat, double gold, double earned})> matAt = {};
 
-  /// 진행도에 따른 **펫 공격 배율**.
-  ///
-  /// 예전엔 펫을 통째로 빼고 계산했다("맨몸 = 가장 느린 경로"). 그런데 실제
-  /// 유저는 펫을 키우고, 그 배율이 공격에 곱해진다 — 빼고 재면 "체력을 올렸는데
-  /// 한 방에 죽는다"를 못 본다(실제로 그렇게 틀렸다).
-  ///
-  /// 모델: 초반엔 낮은 등급·저레벨(≈+5%), 진행할수록 좋은 펫을 갖춰
-  /// [_petMaxBonus] 까지 오른다. 최대치(전설3 만렙)가 아니라 **평균적인 유저**를
-  /// 가정한다 — 상한을 기준으로 맞추면 대다수가 너무 어려워진다.
-  double get petAttackMult =>
-      1 + _petMaxBonus * math.min(1.0, careerStage / _petFullStage);
+  /// 보스를 깬 기록 — (회차, 사냥터, 날짜, 최고치 대비 %, 축별 %, 강화 채움).
+  final List<
+    ({
+      int tier,
+      int zone,
+      double day,
+      double pct,
+      Map<String, double> axis,
+      double upgradeFill,
+      Map<String, double> fill,
+      int forge,
+      int gearTier,
+    })
+  >
+  bossLog = [];
 
-  /// 기준 밖 전력이 진행에 따라 붙는 배율(장비·종패시브·도감).
-  double get _outsideBaselineAttack {
-    final equip =
-        1 +
-        (_equipAttackMult - 1) * math.min(1.0, careerStage / _equipFullStage);
-    final dex =
-        1 + (_dexAttackMult - 1) * math.min(1.0, careerStage / _dexFullStage);
-    // 오행 상극 — **§7 기준 밖**이다. 곤충 지분 중 상극이 걸린 몫만큼만 늘어난다.
-    //
-    // ⚠️ `baselineStats` 에는 절대 넣지 마라. 넣으면 몬스터 체력이 같이 올라
-    // 시뮬 안에서 스스로 상쇄되어 효과가 0 으로 나온다(이 파일 머리말의 사고).
+  /// 항목별 **채움률**(0~1) — 곱하지 않고 각 항목이 최고치까지 얼마나 왔나.
+  ///   강화 = 레벨 합 / maxLevel 합
+  ///   펫   = (펫 공격 배율 - 1) / (최고치 배율 - 1)
+  ///   장비 = 장비만 뗀 전투력 이득 / 최고치 장비의 이득 (넘으면 100% 초과)
+  ///   도감 = 정복 종 / 전 종
+  Map<String, double> get _fillByAxis {
+    final top = ceilingParts(
+      config,
+      _ceilingData,
+      _targets.ceiling,
+      level: level,
+    );
+    final me = powerParts;
+    double gearGain(Map<ItemOptionKind, double> gear) {
+      final base = (
+        upgrades: top.upgrades,
+        level: top.level,
+        petAttackMult: top.petAttackMult,
+        petHpMult: top.petHpMult,
+        gear: const <ItemOptionKind, double>{},
+        dexConquered: top.dexConquered,
+      );
+      final withGear = (
+        upgrades: top.upgrades,
+        level: top.level,
+        petAttackMult: top.petAttackMult,
+        petHpMult: top.petHpMult,
+        gear: gear,
+        dexConquered: top.dexConquered,
+      );
+      return combatPower(composeStats(config, _ceilingData, withGear)) /
+              combatPower(composeStats(config, _ceilingData, base)) -
+          1;
+    }
+
+    final topGear = gearGain(top.gear);
+    return {
+      '강화': _upgradeFill,
+      '펫': _petFill,
+      '장비': topGear <= 0 ? 0 : gearGain(me.gear) / topGear,
+      '도감': me.dexConquered / _ceilingData.speciesCount,
+    };
+  }
+
+  /// 강화 레벨 합 / maxLevel 합 — "강화를 얼마나 채웠나"(참고용).
+  double get _upgradeFill {
+    var have = 0, cap = 0;
+    for (final e in config.upgrades.entries) {
+      final m = e.value.maxLevel;
+      if (m == null) continue;
+      cap += m;
+      have += math.min(m, levels[e.key] ?? 0);
+    }
+    return cap == 0 ? 0 : have / cap;
+  }
+
+  /// 최고치와 **같은 조립**으로 넣을 이 유저의 재료(power_ceiling.dart).
+  /// 버프·탭 부스트·종 패시브는 뺀다 — 최고치에도 없다.
+  PowerParts get powerParts => (
+    upgrades: Map.of(levels),
+    level: level,
+    petAttackMult: petAttackMult,
+    petHpMult: 1 + (_ceilPets.petHpMult - 1) * _petFill,
+    gear: gear,
+    dexConquered: dexConquered,
+  );
+
+  // ── 펫·도감: 날짜별 가정 곡선(balance_targets.json → accumulation) ──
+  // ⚠️ 가정이다 — 브리딩 타이머·훈련 골드·돌파로 실제로 닿는지 따로 검증한다.
+  PowerParts get _ceilPets => _ceilPetsCache ??= ceilingParts(
+    config,
+    _ceilingData,
+    _targets.ceiling,
+    level: 1,
+  );
+  PowerParts? _ceilPetsCache;
+
+  double get _petFill => _targets.curveAt('petFillByDay', elapsedDays);
+
+  /// 펫 공격 배율 — 최고치 배율까지 채움만큼.
+  double get petAttackMult => 1 + (_ceilPets.petAttackMult - 1) * _petFill;
+
+  int get dexConquered =>
+      (_ceilingData.speciesCount *
+              _targets.curveAt('dexFillByDay', elapsedDays))
+          .round();
+
+  // ── 장비: 공방 규칙으로 계산 ──
+  //
+  // 처치 골드의 일부로 공방을 올리고(골드 + 타이머), 그 레벨의 등급 확률로
+  // 하루 화석만큼 뽑아 부위마다 **가장 좋은 것**을 낀다. 옵션 값은 같은 등급을
+  // N 번 뽑았을 때의 최고 백분위(N/(N+1))로 본다.
+  int forgeLevel = 0;
+  double forgeFund = 0;
+
+  /// 진행 중인 공방 등급업이 끝나는 날(없으면 null).
+  double? forgeUpUntil;
+
+  /// 부위 하나당 등급별 "쓸 만한 장비" 누적 개수.
+  final List<double> gearDraws = List.filled(_ceilingData.items.tierCount, 0.0);
+
+  /// 지금 끼고 있는 장비의 옵션 합(%).
+  Map<ItemOptionKind, double> gear = const {};
+
+  /// 가장 좋은 장비 등급(-1 = 없음).
+  int gearTier = -1;
+
+  void _forgeDays(double days) {
+    final forge = _ceilingData.forge;
+    final items = _ceilingData.items;
+    final end = elapsedDays;
+    var t = end - days;
+    while (forgeLevel < forge.maxLevel) {
+      final until = forgeUpUntil;
+      if (until != null) {
+        if (until > end) break;
+        t = math.max(t, until);
+        forgeLevel++;
+        forgeUpUntil = null;
+        continue;
+      }
+      final cost = forge.levelUpGold(forgeLevel).toDouble();
+      if (forgeFund < cost) break;
+      forgeFund -= cost;
+      forgeUpUntil = t + forge.levelUpDuration(forgeLevel).inSeconds / 86400;
+    }
+
+    final acc = _targets.accumulation;
+    final fossils =
+        (forge.fossilPerSecond * 3600 * _activeHoursPerDay +
+            forge.fossilPerSecond *
+                forge.fossilOfflineRatio *
+                3600 *
+                _offlineHoursPerDay) *
+        days;
+    final w = forge.tierWeights(forgeLevel, items.tierCount);
+    final perSlot =
+        fossils /
+        items.slots.length *
+        (acc['forgeUsefulOptionChance'] as num).toDouble();
+    for (var i = 0; i < w.length; i++) {
+      gearDraws[i] += perSlot * w[i];
+    }
+    var top = -1;
+    for (var i = 0; i < gearDraws.length; i++) {
+      if (gearDraws[i] >= 1) top = i;
+    }
+    gearTier = top;
+    if (top < 0) {
+      gear = const {};
+      return;
+    }
+    final n = gearDraws[top];
+    final roll = math.pow(n / (n + 1), items.optionCurve).toDouble();
+    final build =
+        (_targets.ceiling['gear'] as Map<String, dynamic>)['build']
+            as Map<String, dynamic>;
+    final out = <ItemOptionKind, double>{};
+    for (final e in build.entries) {
+      final kind = ItemOptionKind.fromKey(e.key);
+      final r = items.optionPool.firstWhere((x) => x.kind == kind);
+      out[kind] =
+          (r.min + (r.maxAt(top) - r.min) * roll) *
+          (e.value as num).toDouble() *
+          _gearScale;
+    }
+    gear = out;
+  }
+
+  /// 오행 상극 — **§7 기준 밖**. 곤충 지분 중 상극이 걸린 몫만큼만 늘어난다.
+  /// ⚠️ `baselineStats` 에는 절대 넣지 마라(시뮬 안에서 스스로 상쇄된다).
+  double get _restrainMult {
     final petShare = petAttackMult <= 1
         ? 0.0
         : (petAttackMult - 1) / petAttackMult;
     final restrained = petShare * (_petRestrainCount.clamp(0, 3) / 3.0);
-    final restrain = 1 + restrained * (config.petRestrainMult - 1);
-    return equip * _passiveAttackMult * dex * restrain;
+    return 1 + restrained * (config.petRestrainMult - 1);
   }
 
-  /// **적응형 체력이 맞추는 기준**(앱의 `_petStats`).
-  /// 장비·종패시브·도감·버프는 **들어가지 않는다** — 그게 이 게임의 설계다(§7).
+  /// **적응형 기준**(앱의 `_petStats`) — 강화 + 레벨 + 펫 공격.
+  ///
+  /// 체력은 **캐릭터 몫**만 둔다. 앱에서 곤충 체력은 팀 체력을 늘리지만 그만큼
+  /// 캐릭터 몫(`playerHpMult`)이 줄어 캐릭터 체력은 그대로다 — 한 대는
+  /// 캐릭터가 받는다.
   CharacterStats get baselineStats {
     final s = _baseStats;
     return CharacterStats(
@@ -783,49 +1123,39 @@ class _Player {
     );
   }
 
-  /// 실제로 몬스터를 때리는 능력치(앱의 `_stats`).
+  /// 실제로 몬스터를 때리는 능력치(앱의 `_stats`) — 앱과 같은 순서:
+  /// 기준 → 장비 → (종 패시브) → 도감 → 버프·탭 → 치명확률 상한.
   CharacterStats get stats {
-    final s = _baseStats;
-    return CharacterStats(
+    final b = baselineStats;
+    var s = CharacterStats(
       attack:
-          s.attack *
-          petAttackMult *
+          b.attack *
+          _passiveAttackMult *
+          _restrainMult *
           _buffDpsMult *
-          _outsideBaselineAttack *
           _tapBoostAvg,
       // 부스트는 공속에도 실린다 — 얼마나 실리는지는 `boostSpeedFactor` 다.
-      // 1.0 이면 DPS 가 배율의 **제곱**(x2 → x4), 0.5 면 완만해진다(x2 → x2.8).
       attackSpeed:
-          s.attackSpeed * (1 + (_tapBoostAvg - 1) * config.boostSpeedFactor),
-      rewardMultiplier: s.rewardMultiplier,
-      // 장비 몫은 예산(critBudgetGear)까지 — 앱의 applyEquipment 와 같은 규칙.
-      critChance:
-          (s.critChance +
-                  math.min(
-                    config.critBudgetGear,
-                    _equipCritChance * math.min(1.0, stage / _equipFullStage),
-                  ))
-              .clamp(0.0, 1.0),
-      critDamage:
-          s.critDamage +
-          _equipCritDamage * math.min(1.0, stage / _equipFullStage),
-      bossDamage: s.bossDamage,
-      // ⚠️ 장비의 체력·방어를 **반드시** 태운다. 빼면 시뮬이 "피가 닳는다"고
-      // 하는데 실기는 안 닳는다 — 방어 축만 맨몸으로 재는 셈이다.
-      maxHp: s.maxHp * _equipRamp(_equipHpMult),
-      defense: s.defense * _equipRamp(_equipDefenseMult),
-      hpRegen: s.hpRegen,
-      xpMultiplier: s.xpMultiplier,
-      bugFind: s.bugFind,
-      materialFind: s.materialFind,
-      moveSpeed: s.moveSpeed,
-      boostBonus: s.boostBonus,
+          b.attackSpeed * (1 + (_tapBoostAvg - 1) * config.boostSpeedFactor),
+      rewardMultiplier: b.rewardMultiplier,
+      critChance: b.critChance,
+      critDamage: b.critDamage,
+      bossDamage: b.bossDamage,
+      maxHp: b.maxHp,
+      defense: b.defense,
+      hpRegen: b.hpRegen,
+      xpMultiplier: b.xpMultiplier,
+      bugFind: b.bugFind,
+      materialFind: b.materialFind,
+      moveSpeed: b.moveSpeed,
+      boostBonus: b.boostBonus,
     );
+    // ⚠️ 장비의 체력·방어를 **반드시** 태운다(applyEquipment 가 한다). 빼면
+    // 시뮬이 "피가 닳는다"고 하는데 실기는 안 닳는다.
+    s = applyEquipment(s, gear, critBudget: config.critBudgetGear);
+    s = _ceilingData.dex.apply(s, dexConquered, dexConquered);
+    return capCritChance(s, config.critChanceMax);
   }
-
-  /// 장비 배율이 [_equipFullStage] 까지 서서히 붙는다(공방을 돌려 갖춘다).
-  double _equipRamp(double mult) =>
-      1 + (mult - 1) * math.min(1.0, stage / _equipFullStage);
 
   CharacterStats get _baseStats => deriveStats(
     config,
@@ -852,10 +1182,153 @@ class _Player {
     _run(_activeHoursPerDay * 3600, 1.0);
     _online = false;
     _run(_offlineHoursPerDay * 3600, config.offlineEfficiency);
+    _forgeDays(1);
+  }
+
+  /// 회차 시작 직후 도착 기록을 남겨야 하는가(초기화가 끝난 뒤에 잰다).
+  bool _entryPending = false;
+
+  /// 사냥터에 **도착했을 때** 일반 몬스터 사냥이 버틸 만한가.
+  /// (회차, 사냥터, 몇 대에 잡나, 한 대(최대 체력 %), 20마리 중 최저 체력, 죽었나)
+  final List<
+    ({int tier, int zone, double hits, double bite, double low, bool dead})
+  >
+  entryLog = [];
+
+  void logEntry() {
+    final st = stats;
+    final z = config.zoneOf(stage);
+    final hp = habitatMaxHp(
+      config,
+      stage - 1,
+      playerAttack: baselineHitPower(baselineStats),
+      tier: _tier,
+    ).toDouble();
+    final hit = baselineHitPower(st);
+    final dps = hit * st.attackSpeed;
+    final fight = dps <= 0 ? 999.0 : hp / dps;
+    final walk = 0.6 / (st.moveSpeed <= 0 ? 1.0 : st.moveSpeed);
+    final inc =
+        habitatThreat(
+          config,
+          stage - 1,
+          playerToughness: toughnessOf(_baseStats),
+          gearToughness: toughnessOf(st),
+          tier: _tier,
+        ) *
+        100 /
+        (100 + st.defense);
+    final max = st.maxHp <= 0 ? 1.0 : st.maxHp;
+    // 앱과 같은 리듬: 달라붙고 첫 물기(1배) → 간격마다 따라 물기(followMult)
+    // → 처치 회복. 걷는 동안은 walkThreatMult 로 게이지가 찬다.
+    final iv = config.enemyAtkInterval;
+    final delay = config.enemyFirstBiteDelay;
+    var cur = max, low = max, acc = 0.0;
+    var dead = false;
+    for (var i = 0; i < config.habitatsPerStage && !dead; i++) {
+      // 걷기
+      var t = 0.0;
+      while (t < walk && !dead) {
+        final step = math.min(0.25, walk - t);
+        cur = math.min(max, cur + st.hpRegen * 2 * step);
+        acc += step * config.walkThreatMult;
+        if (acc >= iv) {
+          acc -= iv;
+          cur -= inc * iv * config.enemyFollowBiteMult;
+        }
+        t += step;
+      }
+      // 싸움
+      var bitten = delay <= 0;
+      t = 0;
+      while (t < fight && !dead) {
+        final step = math.min(0.25, fight - t);
+        cur = math.min(max, cur + st.hpRegen * step);
+        acc += step;
+        if (!bitten && t + step >= delay) {
+          bitten = true;
+          acc = 0;
+          cur -= inc * iv;
+        } else if (acc >= iv) {
+          acc -= iv;
+          cur -= inc * iv * config.enemyFollowBiteMult;
+        }
+        if (cur < low) low = cur;
+        if (cur <= 0) dead = true;
+        t += step;
+      }
+      if (!bitten && !dead) cur -= inc * iv; // 죽으면서 무는 한 대
+      if (cur < low) low = cur;
+      if (cur <= 0) dead = true;
+      if (!dead) cur += killHealAmount(config, hp: cur, maxHp: max);
+    }
+    entryLog.add((
+      tier: _tier,
+      zone: z,
+      hits: hit <= 0 ? 0 : hp / hit,
+      bite: inc * iv / max,
+      low: math.max(0.0, low) / max,
+      dead: dead,
+    ));
+  }
+
+  /// 표를 맞출 때 같은 출발점에서 여러 번 굴려 보려고 상태를 복제한다.
+  /// 기록(도달·타격 수 등)은 복제하지 않는다 — 판정에 쓰지 않는다.
+  _Player copy() {
+    final c = _Player(config, marks)
+      ..fitting = fitting
+      ..stage = stage
+      ..prevStage = prevStage
+      ..gold = gold
+      ..level = level
+      ..careerStage = careerStage
+      ..xp = xp
+      ..elapsedDays = elapsedDays
+      ..forgeLevel = forgeLevel
+      ..forgeFund = forgeFund
+      ..forgeUpUntil = forgeUpUntil
+      ..gear = Map.of(gear)
+      ..gearTier = gearTier
+      .._zoneKills = _zoneKills
+      .._goldEarned = _goldEarned;
+    c.levels.addAll(levels);
+    c.materials.addAll(materials);
+    c.earnedMaterials.addAll(earnedMaterials);
+    for (var i = 0; i < gearDraws.length; i++) {
+      c.gearDraws[i] = gearDraws[i];
+    }
+    return c;
+  }
+
+  /// 채움 평균(각 항목 100% 에서 자른다).
+  double get fillAverage {
+    final f = _fillByAxis;
+    return f.values.fold(0.0, (a, v) => a + math.min(1.0, v)) / f.length;
   }
 
   /// 사냥터 모드의 보스 도전 게이지(처치 수).
   double _zoneKills = 0;
+
+  /// 지금 전력으로 [_bossBeatable] 을 **딱 통과하는** 보스 체력 × [margin].
+  double bossHpAtLimit(double margin) {
+    final st = stats;
+    final dps = baselineHitPower(st, boss: true) * st.attackSpeed;
+    final inc =
+        habitatThreat(
+          config,
+          stage - 1,
+          boss: true,
+          playerToughness: toughnessOf(_baseStats),
+          gearToughness: toughnessOf(st),
+          tier: _tier,
+        ) *
+        100 /
+        (100 + st.defense);
+    final net = inc - st.hpRegen;
+    final live = net <= 0 ? double.infinity : st.maxHp / net;
+    final limit = math.min(_bossPatienceSeconds, live / 1.1);
+    return dps * limit * margin;
+  }
 
   /// 지금 전력으로 [stage] 의 보스를 잡을 수 있나 — 죽이는 시간 < 버티는 시간.
   /// 앱의 도전 판단(유저가 누른다)을 시뮬이 대신한다. 너무 오래 걸리면(120초)
@@ -873,7 +1346,7 @@ class _Player {
     final dps = bossHit * st.attackSpeed;
     if (dps <= 0) return false;
     final kill = hp / dps;
-    if (kill > 240) return false;
+    if (kill > _bossPatienceSeconds) return false;
     final inc =
         habitatThreat(
           config,
@@ -881,6 +1354,7 @@ class _Player {
           boss: true,
           playerToughness: toughnessOf(_baseStats),
           gearToughness: toughnessOf(st),
+          tier: _tier,
         ) *
         100 /
         (100 + st.defense);
@@ -931,10 +1405,29 @@ class _Player {
         _zoneKills += prog.habitatClears;
         if (_zoneKills >= config.bossUnlockKills && _bossBeatable(stage)) {
           final z = config.zoneOf(stage);
+          if (z <= config.zonesPerTier) {
+            bossLog.add((
+              tier: _tier,
+              zone: z,
+              day: elapsedDays,
+              pct: powerPct(config, _ceilingData, _targets.ceiling, powerParts),
+              axis: powerPctByAxis(
+                config,
+                _ceilingData,
+                _targets.ceiling,
+                powerParts,
+              ),
+              upgradeFill: _upgradeFill,
+              fill: _fillByAxis,
+              forge: forgeLevel,
+              gearTier: gearTier,
+            ));
+          }
           stage = config.isFinalZone(z)
               ? stage + config.worldSize
               : config.zoneStartStage(z + 1);
           _zoneKills = 0;
+          if (!config.isFinalZone(z)) logEntry();
         }
       }
       if (stage > careerStage) careerStage = stage;
@@ -979,6 +1472,7 @@ class _Player {
                 boss: true,
                 playerToughness: tough,
                 gearToughness: toughnessOf(st),
+                tier: _tier,
               ) *
               100 /
               (100 + st.defense);
@@ -1010,6 +1504,7 @@ class _Player {
                 s - 1,
                 playerToughness: tough,
                 gearToughness: toughnessOf(st),
+                tier: _tier,
               ) *
               100 /
               (100 + st.defense);
@@ -1028,6 +1523,7 @@ class _Player {
                 boss: true,
                 playerToughness: tough,
                 gearToughness: toughnessOf(st),
+                tier: _tier,
               ) *
               100 /
               (100 + st.defense) *
@@ -1148,7 +1644,12 @@ class _Player {
           prog.gold *
           _buffGoldMult *
           (_online ? 1 + config.onlineGoldBonus : 1.0);
-      gold += earned;
+      // 공방이 최대가 아니면 처치 골드의 일부를 공방 등급업에 넣는다.
+      final toForge = forgeLevel < _ceilingData.forge.maxLevel
+          ? earned * (_targets.accumulation['forgeGoldShare'] as num).toDouble()
+          : 0.0;
+      forgeFund += toForge;
+      gold += earned - toForge;
       _goldEarned += earned;
       goldEarnedByDay[elapsedDays.floor()] = _goldEarned;
       _gainXp(prog.xp);
@@ -1260,8 +1761,11 @@ class _Opts {
     this.worlds, {
     this.fitZones,
     this.fitHits = 8,
-    this.fitBite = 0.2,
+    this.fitBite = 0.12,
     this.fitGoldStep = 1.6,
+    this.fitTiers = false,
+    this.fitBossMargin = 0.95,
+    this.fitDays,
   });
   final Map<String, dynamic> overrides;
 
@@ -1271,6 +1775,16 @@ class _Opts {
   final double fitHits;
   final double fitBite;
   final double fitGoldStep;
+
+  /// `--fit-tiers` : 네 난이도의 표(zoneTiers)를 balance_targets.json 의 일정·
+  /// 채움 목표에 맞춰 뽑고, 그 표로 이어서 검증한다.
+  final bool fitTiers;
+
+  /// 보스 체력 = 머문 뒤 전력의 한계 × 이 값. 1 에 가까울수록 일정 끝에 딱 뚫린다.
+  final double fitBossMargin;
+
+  /// `--fit-days=14,21,33,24` : 표를 뽑을 때 쓸 난이도별 일정(없으면 목표 일수).
+  final List<double>? fitDays;
 
   /// 공격·체력 스탯의 레벨당 곱연산 성장률(null 이면 현행 덧셈).
   final double? mult;
@@ -1311,11 +1825,28 @@ _Opts _parseArgs(List<String> args) {
   double? mult;
   var worlds = 10;
   List<double>? fitZones;
-  var fitHits = 8.0, fitBite = 0.2, fitGoldStep = 1.6;
+  var fitHits = 8.0, fitBite = 0.12, fitGoldStep = 1.6;
+  var fitTiers = false;
+  var fitBossMargin = 0.95;
+  List<double>? fitDays;
   for (final a in args) {
     final fz = RegExp(r'^--fit-zones=(.+)$').firstMatch(a);
     if (fz != null) {
       fitZones = fz.group(1)!.split(',').map(double.parse).toList();
+      continue;
+    }
+    final fdy = RegExp(r'^--fit-days=(.+)$').firstMatch(a);
+    if (fdy != null) {
+      fitDays = fdy.group(1)!.split(',').map(double.parse).toList();
+      continue;
+    }
+    final fbm = RegExp(r'^--fit-boss-margin=(.+)$').firstMatch(a);
+    if (fbm != null) {
+      fitBossMargin = double.parse(fbm.group(1)!);
+      continue;
+    }
+    if (a == '--fit-tiers') {
+      fitTiers = true;
       continue;
     }
     final fh = RegExp(r'^--fit-hits=(.+)$').firstMatch(a);
@@ -1353,15 +1884,10 @@ _Opts _parseArgs(List<String> args) {
       list.add([up.group(1)!, up.group(2)!, up.group(3)!]);
       continue;
     }
-    // 장비 옵션 **평균**을 배율로 조절한다(분포를 바꿀 때 난이도 영향을 잰다).
+    // 장비 옵션 값을 배율로 조절한다(장비를 더/덜 갖춘 유저).
     final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
     if (es != null) {
-      final k = double.parse(es.group(1)!);
-      _equipAttackMult = 1 + (_equipAttackMult - 1) * k;
-      _equipCritChance *= k;
-      _equipCritDamage *= k;
-      _equipHpMult = 1 + (_equipHpMult - 1) * k;
-      _equipDefenseMult = 1 + (_equipDefenseMult - 1) * k;
+      _gearScale = double.parse(es.group(1)!);
       continue;
     }
     final trs = RegExp(r'^--tiers=(.+)$').firstMatch(a);
@@ -1374,11 +1900,6 @@ _Opts _parseArgs(List<String> args) {
       _tier = int.parse(tr.group(1)!);
       continue;
     }
-    final ef = RegExp(r'^--equip-full=(.+)$').firstMatch(a);
-    if (ef != null) {
-      _equipFullStage = int.parse(ef.group(1)!);
-      continue;
-    }
     final prc = RegExp(r'^--pet-restrain=(.+)$').firstMatch(a);
     if (prc != null) {
       _petRestrainCount = int.parse(prc.group(1)!);
@@ -1387,11 +1908,6 @@ _Opts _parseArgs(List<String> args) {
     final tb = RegExp(r'^--boost=(.+)$').firstMatch(a);
     if (tb != null) {
       _tapBoostAvg = double.parse(tb.group(1)!);
-      continue;
-    }
-    final pb = RegExp(r'^--pet-bonus=(.+)$').firstMatch(a);
-    if (pb != null) {
-      _petMaxBonus = double.parse(pb.group(1)!);
       continue;
     }
     final mb = RegExp(r'^--mat-base-mult=(.+)$').firstMatch(a);
@@ -1429,5 +1945,8 @@ _Opts _parseArgs(List<String> args) {
     fitHits: fitHits,
     fitBite: fitBite,
     fitGoldStep: fitGoldStep,
+    fitTiers: fitTiers,
+    fitBossMargin: fitBossMargin,
+    fitDays: fitDays,
   );
 }

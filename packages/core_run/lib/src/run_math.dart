@@ -95,9 +95,12 @@ double baselineHitPower(CharacterStats s, {bool boss = false}) {
 /// 안쪽에 넣으면 보정이 회차 상승을 그대로 상쇄해 아무 일도 안 일어난다.
 int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
   // 사냥터 표(2026-09-14)가 있으면 그 값 × 회차 배율. 곡선·적응형은 안 본다.
-  final tableHp = c.zoneMode ? c.zoneHpAt(c.zoneOf(depth + 1)) : null;
+  // 난이도별 표(2026-09-15)가 있으면 회차 배율 없이 그대로.
+  final zone = c.zoneOf(depth + 1);
+  final tierHp = c.zoneMode ? c.zoneTier(tier)?.hpAt(zone) : null;
+  final tableHp = tierHp ?? (c.zoneMode ? c.zoneHpAt(zone) : null);
   if (tableHp != null) {
-    final hp = tableHp * c.tierHits(tier);
+    final hp = tableHp * (tierHp != null ? 1.0 : c.tierHits(tier));
     return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
   }
   final base = c.hpBase * math.pow(c.hpGrowth, depth);
@@ -134,9 +137,11 @@ int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
 int bossMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
   // 사냥터 보스 표(2026-09-14): 보스는 **전력 관문**이라 일반 몬스터 배율이
   // 아니라 따로 맞춘다("이 사냥터에서 T일 키운 전력으로 딱 잡히는 체력").
-  final tableBoss = c.zoneMode ? c.zoneBossHpAt(c.zoneOf(depth + 1)) : null;
+  final zone = c.zoneOf(depth + 1);
+  final tierBoss = c.zoneMode ? c.zoneTier(tier)?.bossHpAt(zone) : null;
+  final tableBoss = tierBoss ?? (c.zoneMode ? c.zoneBossHpAt(zone) : null);
   if (tableBoss != null) {
-    final hp = tableBoss * c.tierHits(tier);
+    final hp = tableBoss * (tierBoss != null ? 1.0 : c.tierHits(tier));
     return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
   }
   final worldFinal = c.isWorldFinal(depth + 1) ? c.worldBossHpMult : 1.0;
@@ -158,7 +163,9 @@ int rewardGold(
   int tier = 0,
   bool parked = false,
 }) {
-  final tableGold = c.zoneMode ? c.zoneGoldAt(c.zoneOf(depth + 1)) : null;
+  final zone = c.zoneOf(depth + 1);
+  final tierGold = c.zoneMode ? c.zoneTier(tier)?.goldAt(zone) : null;
+  final tableGold = tierGold ?? (c.zoneMode ? c.zoneGoldAt(zone) : null);
   final base =
       (tableGold ??
           c.goldBase *
@@ -167,7 +174,8 @@ int rewardGold(
       rewardMultiplier *
       // ⚠️ 보상도 회차와 함께 오른다. 몬스터만 세지면 회차를 넘어갈 이유가
       // 없다 — 더 오래 걸리고 덜 버는 선택지가 되기 때문이다.
-      c.tierReward(tier);
+      // 난이도별 표는 그 회차의 보상이 이미 들어 있어 배율을 곱하지 않는다.
+      (tierGold != null ? 1.0 : c.tierReward(tier));
   return (base *
           (boss ? c.bossRewardMult : 1.0) *
           (parked ? c.endParkedRewardMult : 1.0))
@@ -267,7 +275,10 @@ double habitatThreat(
   double? gearToughness,
   int tier = 0,
 }) {
-  final tableThreat = c.zoneMode ? c.zoneThreatAt(c.zoneOf(depth + 1)) : null;
+  final zone = c.zoneOf(depth + 1);
+  final tierTable = c.zoneMode ? c.zoneTier(tier) : null;
+  final tierThreat = tierTable?.threatAt(zone);
+  final tableThreat = tierThreat ?? (c.zoneMode ? c.zoneThreatAt(zone) : null);
   final base =
       tableThreat ??
       c.threatBase *
@@ -276,9 +287,13 @@ double habitatThreat(
   // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다. 체력을
   // 부풀리면 타격 수만 늘어 지루해지지만, 공격이 세지면 체력·방어·회복과
   // 장비 옵션이 실제 선택이 된다(docs/design_difficulty_loop.md).
-  final bossMult = (boss ? c.bossThreatMult : 1.0) * c.tierThreat(tier);
+  final bossMult = boss ? c.bossThreatMult : 1.0;
+  // 표 값은 난이도별 표면 그대로, 아니면 회차 배율을 곱한다. 적응형 몫은
+  // 난이도별 표의 threatAdaptMult(없으면 회차 배율)를 곱한다.
+  final tableMult = tierThreat != null ? 1.0 : c.tierThreat(tier);
+  final adaptMult = tierTable?.threatAdaptMult ?? c.tierThreat(tier);
   if (playerToughness == null || c.threatAdaptTargetPct <= 0) {
-    return base * bossMult;
+    return base * tableMult * bossMult;
   }
   // 몬스터 공격을 **내 방어 전력에 비례**시킨다. 한 대가 늘 체력의 일정
   // 비율을 가져가므로, 깊이와 무관하게 "맞으면 아프다"가 유지된다.
@@ -312,7 +327,7 @@ double habitatThreat(
       : math.min(c.threatAdaptDepthMax, 1 + c.threatAdaptDepthGain * late);
   final threat = tough * c.threatAdaptTargetPct * depthMult;
   // 초반(전력이 미미할 때)에는 곡선 절대값이 더 크면 그쪽을 쓴다.
-  return math.max(base, threat) * bossMult;
+  return math.max(base * tableMult, threat * adaptMult) * bossMult;
 }
 
 double toughnessOf(CharacterStats s) => s.maxHp * (1 + s.defense / 100);

@@ -1,0 +1,109 @@
+{
+  "_comment": "밸런스 **목표**(2026-09-15 사장님 확정). 게임이 읽는 수치가 아니라 시뮬레이터(balance_sim · zone_check)가 표를 맞추고 판정할 때 쓰는 기준이다. 게임 수치는 여전히 packages/app/assets/data/*.json 에만 있다(§6).",
+  "_tierDaysComment": "난이도(회차)마다 최종 보스까지 걸리는 **의도한 일수** — 매일 활동 2시간 + 방치 8시간인 평균 유저 기준. 합계 90일. 뒤로 갈수록 길다.",
+  "tierDays": [
+    14,
+    21,
+    25,
+    30
+  ],
+  "_finalBossComment": "난이도마다 최종(11번째) 보스를 잡을 때의 **채움 평균** — 강화 레벨·펫·장비·도감을 각각 현실적 최고치까지 몇 % 채웠나의 평균(2026-09-15 사장님 확정). 전투력(곱) 기준은 쓰지 않는다: 강화 5종과 펫·장비·도감이 서로 곱해져 50% 만 맞춰도 모든 항목이 87% 를 넘어야 해서, 90일에 걸쳐 조금씩 강해지는 흐름이 성립하지 않는다. 레벨은 계산에서 뺀다.",
+  "finalBossPowerPct": [
+    0.5,
+    0.65,
+    0.75,
+    0.85
+  ],
+  "_ceilingComment": "'현실적 최고치' = 모든 걸 **현실적인 최고**로 갖춘 전투력. 설정 상한 전부(1/300 이색·고귀 특성·최대 옵션 롤)를 합친 값은 아무도 닿지 않아 목표로 쓸 수 없다(측정: 강화가 그중 1%). 여기 정의가 바뀌면 모든 % 가 바뀐다.",
+  "ceiling": {
+    "_upgradesComment": "능력치 강화는 전부 maxLevel.",
+    "upgrades": "maxLevel",
+    "_petsComment": "장착 곤충 3마리 — 전설 · 포텐셜 5 · 부위 강화 만렙(포텐셜×10 × 4부위) · 훈련 최종 상한(tierCaps 마지막) · 성충 · 크기 평균 · 특성·이색 없음.",
+    "pets": {
+      "count": 3,
+      "grade": "legendary",
+      "potential": 5,
+      "sizeMult": 1.0,
+      "enhancePerPotential": 10,
+      "parts": 4,
+      "trait": "none",
+      "variant": "none"
+    },
+    "_gearComment": "8부위 최상급(호박) 장비 · 옵션 값은 **상위 10% 롤**(rollPercentile 0.9 → 값 = min + (max-min) × 0.9^optionCurve, 최대치의 약 2/3). 평균 롤로 잡았더니 시뮬의 평균 유저가 이미 그 두 배였다 — 제련을 돌려 좋은 롤만 골라 끼기 때문이다(2026-09-15 사장님 확정). 옵션 종류는 전투 빌드 — 16칸(8부위×2옵션)을 아래 비율로 채운다.",
+    "gear": {
+      "tier": "amber",
+      "rollPercentile": 0.9,
+      "build": {
+        "attack": 4,
+        "critDamage": 3,
+        "bossDamage": 2,
+        "attackSpeed": 2,
+        "critChance": 1,
+        "maxHp": 2,
+        "defense": 2
+      }
+    },
+    "_dexComment": "도감 전 종 정복.",
+    "dex": "all"
+  },
+  "_accumulationComment": "시뮬이 쓰는 **축적 모델**. 장비는 공방 규칙(레벨업 골드·타이머·등급 확률·화석)으로 직접 계산하고, 펫·도감은 체계가 복잡해 우선 날짜별 **가정 곡선**으로 둔다(⚠️ 검증 필요 — 브리딩 타이머·훈련 골드·돌파로 실제로 닿는지 따로 확인할 것). 곡선은 [누적 일수, 채움] 점들을 선형 보간한다.",
+  "accumulation": {
+    "_forgeGoldShareComment": "처치로 번 골드 중 공방 레벨업에 쓰는 몫(공방이 최대 레벨이면 0). 나머지가 능력치 강화로 간다.",
+    "forgeGoldShare": 0.25,
+    "_forgeUsefulOptionComment": "장비 한 개에 옵션 2개가 11종 중에서 붙는다 — 원하는 종류가 붙을 확률 ≈ 2/11. 필터로 그런 것만 남긴다고 본다.",
+    "forgeUsefulOptionChance": 0.18,
+    "_petFillComment": "가정: 장착 곤충 3마리가 최고치(전설·포텐셜5·강화 만렙·훈련 80)까지 얼마나 왔나.",
+    "petFillByDay": [
+      [
+        0,
+        0.0
+      ],
+      [
+        14,
+        0.3
+      ],
+      [
+        35,
+        0.55
+      ],
+      [
+        60,
+        0.75
+      ],
+      [
+        90,
+        0.9
+      ]
+    ],
+    "_dexFillComment": "가정: 도감 정복 종 / 전 종.",
+    "dexFillByDay": [
+      [
+        0,
+        0.0
+      ],
+      [
+        14,
+        0.5
+      ],
+      [
+        35,
+        0.8
+      ],
+      [
+        60,
+        0.95
+      ],
+      [
+        90,
+        1.0
+      ]
+    ]
+  },
+  "_tierThreatAdaptMultComment": "난이도마다 적응형 위협(한 대 = 맷집의 일정 비율)에 곱할 배율. 예전 곱셈(tierThreatMult 2.0^회차)은 극한에서 x8 이라 한 대가 체력의 96% 였다. 표를 맞출 때 zoneTiers[회차].threatAdaptMult 로 들어간다.",
+  "tierThreatAdaptMult": [
+    1.0,
+    1.15,
+    1.3,
+    1.45
+  ]
+}
