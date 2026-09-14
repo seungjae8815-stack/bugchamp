@@ -25,6 +25,7 @@ class GameConfig implements GameConfigLike {
     this.gift,
     this.daily,
     this.roadmap,
+    this.dex,
     this.event,
     this.speciesById = const {},
   });
@@ -54,6 +55,8 @@ class GameConfig implements GameConfigLike {
   final DailyConfig? daily;
   @override
   final RoadmapConfig? roadmap;
+  @override
+  final DexConfig? dex;
   @override
   final EventConfig? event;
 
@@ -91,6 +94,7 @@ class GameConfig implements GameConfigLike {
     final giftJson = await readOpt('gifts.json');
     final dailyJson = await readOpt('daily.json');
     final roadmapJson = await readOpt('roadmap.json');
+    final dexJson = await readOpt('dex.json');
     // 이벤트는 열려 있을 때만 파일이 있으면 된다 — 없으면 서버는 그대로 뜨고
     // `/event/*` 만 닫힌다.
     final eventJson = await readOpt('event.json');
@@ -107,6 +111,7 @@ class GameConfig implements GameConfigLike {
       gift: giftJson == null ? null : GiftConfig.fromJson(giftJson),
       daily: dailyJson == null ? null : DailyConfig.fromJson(dailyJson),
       roadmap: roadmapJson == null ? null : RoadmapConfig.fromJson(roadmapJson),
+      dex: dexJson == null ? null : DexConfig.fromJson(dexJson),
       event: eventJson == null ? null : EventConfig.fromJson(eventJson),
     );
   }

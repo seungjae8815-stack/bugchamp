@@ -45,6 +45,8 @@ class _Cfg implements GameConfigLike {
   @override
   final RoadmapConfig? roadmap = null;
   @override
+  final DexConfig? dex = null;
+  @override
   final EventConfig? event = EventConfig.fromJson(
     jsonDecode(File('../app/assets/data/event.json').readAsStringSync())
         as Map<String, dynamic>,

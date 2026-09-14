@@ -230,6 +230,7 @@ void main() {
       difficultyTier: 2,
       maxTierReached: 2,
       stageNumber: 301,
+      bestStage: 301,
       level: 30,
     );
     final local = before.copyWith(difficultyTier: 1, stageNumber: 1001);
@@ -252,5 +253,42 @@ void main() {
     final after = c.read(saveControllerProvider).requireValue;
     expect(after.difficultyTier, 1, reason: '내려간 선택이 취소되면 안 된다');
     expect(after.maxTierReached, 2);
+  });
+
+  /// 반대로 — 다른 기기가 그 사이 최고 난이도에서 더 나아갔으면(최고 기록이
+  /// 더 높음) 이 기기에서 난이도를 옮긴 것만으로 그 진행을 덮으면 안 된다.
+  test('난이도를 옮겨도 다른 기기가 더 나아간 최고 기록은 덮지 않는다', () async {
+    final base = SaveGame.initial(createdAt: t0).copyWith(
+      zoneEpoch: kZoneEpoch,
+      difficultyTier: 2,
+      maxTierReached: 2,
+      level: 30,
+    );
+    // 이 기기: 사냥터 3 까지만 간 상태에서 보통으로 내려갔다.
+    final local = base.copyWith(
+      difficultyTier: 1,
+      stageNumber: 1001,
+      bestStage: 201,
+    );
+    // 다른 기기: 어려움 사냥터 6 까지 나아갔다.
+    final other = base.copyWith(stageNumber: 501, bestStage: 501);
+    final server = _StaleServer(other);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.bestStage, 501, reason: '다른 기기의 진행이 사라지면 안 된다');
   });
 }

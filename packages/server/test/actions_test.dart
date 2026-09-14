@@ -117,6 +117,12 @@ class _Config implements GameConfigLike {
     jsonDecode(File('../app/assets/data/event.json').readAsStringSync())
         as Map<String, dynamic>,
   );
+
+  @override
+  final DexConfig? dex = DexConfig.fromJson(
+    jsonDecode(File('../app/assets/data/dex.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
 }
 
 void main() {
@@ -2070,6 +2076,56 @@ void main() {
       );
       final r = actions.mergeSave(before, cheat.toJson());
       expect(r.save!.gold, lessThan(1000 + reward));
+    });
+
+    // 줄어들 수 없는 기록 — 이 필드를 모르는 구버전 앱이 키 없이 올려도 지워지지 않는다.
+    test('구버전 앱 업로드가 최고 난이도·보스 수집 기록을 지우지 않는다', () {
+      final before = stored().copyWith(
+        difficultyTier: 1,
+        maxTierReached: 2,
+        bossDex: {'e03', 'n01'},
+      );
+      final old = before.toJson()
+        ..remove('maxTierReached')
+        ..remove('bossDex');
+      final r = actions.mergeSave(before, old);
+      expect(r.save!.maxTierReached, 2);
+      expect(r.save!.bossDex, {'e03', 'n01'});
+      // 새 앱이 더 모았으면 합쳐진다.
+      final more = before.copyWith(bossDex: {'e03', 'h02'}).toJson();
+      expect(actions.mergeSave(before, more).save!.bossDex, {
+        'e03',
+        'n01',
+        'h02',
+      });
+    });
+
+    // 도감 보스 마일스톤 화석(마지막 2,000)은 오프라인 정산 상한보다 클 수 있다.
+    test('보스 수집 마일스톤 화석은 몰아 받아도 잘리지 않는다', () {
+      final dex = cfg.dex!;
+      final all = <String>{
+        for (var t = 0; t < kBossDexTiers; t++)
+          for (var z = 1; z <= cfg.run.zonesPerTier; z++)
+            cfg.run.bossArtId(t, z),
+      };
+      final before = stored().copyWith(bossDex: all);
+      final fossil = dex.bossMilestones.fold<int>(0, (a, m) => a + m.fossil);
+      final after = before.copyWith(
+        materials: {MaterialKind.fossil: fossil},
+        claimedDex: {for (final m in dex.bossMilestones) m.id},
+      );
+      final r = actions.mergeSave(before, after.toJson());
+      expect(r.extra['clamped'], isFalse);
+      expect(r.save!.materialCount(MaterialKind.fossil), fossil);
+      // 모은 보스가 없으면 봐주지 않는다.
+      final cheat = stored().copyWith(
+        materials: {MaterialKind.fossil: fossil},
+        claimedDex: {for (final m in dex.bossMilestones) m.id},
+      );
+      expect(
+        actions.mergeSave(stored(), cheat.toJson()).extra['clamped'],
+        isTrue,
+      );
     });
 
     test('클리어하지 않은 챕터를 claim 해도 보상만큼 봐주지 않는다', () {

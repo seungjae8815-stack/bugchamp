@@ -390,8 +390,10 @@ bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
   if (local.topTier != remote.topTier) {
     return local.topTier > remote.topTier;
   }
-  // 같은 최고 난이도 안에서 난이도만 옮겼다 — 스테이지는 난이도마다 뜻이 달라
-  // 비교하지 않고, 성장 축에서 뒤처지지 않으면 로컬(방금 옮긴 쪽)을 따른다.
+  // 같은 최고 난이도 안에서 난이도만 옮겼다 — 지금 스테이지는 난이도마다 뜻이
+  // 달라 비교하지 않고, 대신 **최고 난이도 안의 최고 기록**(`bestStage`)으로 잰다.
+  // 다른 기기가 그 사이 최고 난이도에서 더 나아갔으면 그쪽이 앞선 것이다 —
+  // 이걸 안 보면 이 기기에서 난이도를 오간 것만으로 그 진행을 덮는다.
   final moved = local.difficultyTier != remote.difficultyTier;
   var ahead = moved;
   bool cmp(num l, num r) {
@@ -400,7 +402,9 @@ bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
   }
 
   final behind = [
-    if (!moved) cmp(local.stageNumber, remote.stageNumber),
+    moved
+        ? cmp(local.bestStage, remote.bestStage)
+        : cmp(local.stageNumber, remote.stageNumber),
     cmp(local.level, remote.level),
     cmp(local.bugs.length, remote.bugs.length),
     cmp(

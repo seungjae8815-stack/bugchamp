@@ -337,6 +337,34 @@ class GameActions {
     return sum;
   }
 
+  /// 이번 업로드에서 **정당하게 받았을 수 있는 도감 보스 수집 화석**의 합.
+  ///
+  /// 보스 마일스톤(`dex.json → bossMilestones`)은 앱이 지급하고 `claimedDex` 에
+  /// 실려 올라온다. 마지막 마일스톤은 화석 2,000, 도감을 늦게 열어 몇 개를
+  /// 한꺼번에 받으면 오프라인 정산 상한(`_maxFossilGain`)을 넘겨 **정상 유저의
+  /// 보상이 잘린다**. 저장본에 없던 마일스톤만, 모은 보스 수가 실제로 닿았을 때만.
+  int _dexFossilAllowance(SaveGame stored, Map<String, dynamic> clientJson) {
+    final dex = config.dex;
+    if (dex == null || dex.bossMilestones.isEmpty) return 0;
+    final claimed = ((clientJson['claimedDex'] as List?) ?? const [])
+        .map((e) => e.toString())
+        .toSet();
+    if (claimed.isEmpty) return 0;
+    // 모은 보스 수는 올라온 세이브 기준 — 수집 자체는 기기 권위(밸런스 축이 아니라
+    // 젤리·화석 일시금뿐이라 위조 이득이 작다).
+    final client = SaveGame.fromJson(clientJson);
+    final bosses = collectedBosses(client, config.run, config.roadmap).length;
+    var sum = 0;
+    for (final m in dex.bossMilestones) {
+      if (claimed.contains(m.id) &&
+          !stored.claimedDex.contains(m.id) &&
+          bosses >= m.count) {
+        sum += m.fossil;
+      }
+    }
+    return sum;
+  }
+
   /// 기기 권위 세이브 업로드 병합.
   ///
   /// 솔로 루프(업그레이드·재화·육성·방치·수령)는 **기기가 확정**하고 여기로
@@ -397,6 +425,19 @@ class GameActions {
         merged.remove(k);
       }
     }
+    // **줄어들 수 없는 기록**은 저장본과 합친다(2026-09-15). 이 필드를 모르는
+    // 구버전 앱은 키 없이 올리고, 그러면 기본값(0·빈 집합)이 저장본을 덮어
+    // 다른 기기에서 가 본 최고 난이도·도감 보스 수집이 사라진다.
+    final clientTop = (merged['maxTierReached'] as num?)?.toInt() ?? 0;
+    if (stored.maxTierReached > clientTop) {
+      merged['maxTierReached'] = stored.maxTierReached;
+    }
+    if (stored.bossDex.isNotEmpty) {
+      final clientBoss = ((merged['bossDex'] as List?) ?? const [])
+          .map((e) => e.toString())
+          .toSet();
+      merged['bossDex'] = {...clientBoss, ...stored.bossDex}.toList();
+    }
 
     // 골드 상식 상한.
     final clientGold = (merged['gold'] as num?)?.toInt() ?? stored.gold;
@@ -434,8 +475,10 @@ class GameActions {
           (mats['fossil'] as num?)?.toInt() ??
           stored.materialCount(MaterialKind.fossil);
       final storedFossil = stored.materialCount(MaterialKind.fossil);
-      if (clientFossil - storedFossil > _maxFossilGain) {
-        mats['fossil'] = storedFossil + _maxFossilGain;
+      final fossilAllow =
+          _maxFossilGain + _dexFossilAllowance(stored, clientJson);
+      if (clientFossil - storedFossil > fossilAllow) {
+        mats['fossil'] = storedFossil + fossilAllow;
         clamped = true;
       }
     }
@@ -2619,6 +2662,9 @@ abstract interface class GameConfigLike {
   GiftConfig? get gift;
   DailyConfig? get daily;
   RoadmapConfig? get roadmap;
+
+  /// 도감 — 보스 수집 마일스톤의 화석 증가 허용치 계산에만 쓴다.
+  DexConfig? get dex;
 
   /// 실물 경품 랭킹 이벤트. 없으면 이벤트 API 는 닫힌다.
   EventConfig? get event;
