@@ -1688,6 +1688,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         if (_config.isFinalZone(zone)) {
           _habitatIndex = 0;
           _tierClearPending = true;
+          // 최종 보스는 사냥터를 옮기지 않지만 도감 수집은 남긴다.
+          unawaited(ref.read(saveControllerProvider.notifier).advanceZone());
           unawaited(_afterBossAdvance(_stage));
           _spawn();
           return;

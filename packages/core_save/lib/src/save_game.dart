@@ -462,6 +462,7 @@ class SaveGame {
     required this.clearedChapters,
     this.dex = const {},
     this.claimedDex = const {},
+    this.bossDex = const {},
     required this.incubatorCapacity,
     required this.incubating,
     this.breedCooldowns = const {},
@@ -624,6 +625,12 @@ class SaveGame {
 
   /// 이미 받은 도감 마일스톤 id 집합(`DexMilestone.id`). 중복 수령 방지.
   final Set<String> claimedDex;
+
+  /// 도감 **보스 수집** 기록 — 잡아 본 사냥터 보스의 아트 id(`e01`·`n_final`).
+  /// 난이도마다 따로 센다(2026-09-15 사장님 확정). 클리어 보상 기록
+  /// (`clearedChapters`)과 따로 두는 이유: 아래 난이도로 내려가 잡으면 클리어
+  /// 보상은 없지만 수집은 된다. 옛 클리어 기록은 `collectedBosses` 가 합쳐 읽는다.
+  final Set<String> bossDex;
 
   /// 도감에 등록된(=한 번이라도 보유한) 종 수.
   int get dexDiscovered => dex.length;
@@ -1094,6 +1101,7 @@ class SaveGame {
     clearedChapters: const {},
     dex: const {},
     claimedDex: const {},
+    bossDex: const {},
     incubatorCapacity: 1,
     incubating: const {},
     breedCooldowns: const {},
@@ -1155,6 +1163,7 @@ class SaveGame {
     Set<String>? clearedChapters,
     Map<String, DexEntry>? dex,
     Set<String>? claimedDex,
+    Set<String>? bossDex,
     int? incubatorCapacity,
     Map<String, DateTime>? incubating,
     Map<String, DateTime>? breedCooldowns,
@@ -1240,6 +1249,7 @@ class SaveGame {
     clearedChapters: clearedChapters ?? this.clearedChapters,
     dex: dex ?? this.dex,
     claimedDex: claimedDex ?? this.claimedDex,
+    bossDex: bossDex ?? this.bossDex,
     incubatorCapacity: incubatorCapacity ?? this.incubatorCapacity,
     incubating: incubating ?? this.incubating,
     breedCooldowns: breedCooldowns ?? this.breedCooldowns,
@@ -1411,6 +1421,9 @@ class SaveGame {
     dex: _dexFromJson(json['dex']),
     claimedDex:
         (json['claimedDex'] as List?)?.cast<String>().toSet() ?? const {},
+    bossDex:
+        (json['bossDex'] as List?)?.map((e) => e.toString()).toSet() ??
+        const {},
     incubatorCapacity: (json['incubatorCapacity'] as num?)?.toInt() ?? 1,
     incubating:
         (json['incubating'] as Map<String, dynamic>?)?.map(
@@ -1575,6 +1588,7 @@ class SaveGame {
     if (dex.isNotEmpty)
       'dex': {for (final e in dex.entries) e.key: e.value.toJson()},
     if (claimedDex.isNotEmpty) 'claimedDex': claimedDex.toList(),
+    if (bossDex.isNotEmpty) 'bossDex': bossDex.toList(),
     'incubatorCapacity': incubatorCapacity,
     'incubating': {
       for (final e in incubating.entries)

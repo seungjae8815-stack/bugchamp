@@ -558,6 +558,12 @@
   "dexNotFound": "You haven't met this bug yet. Go find one!",
   "dexClaim": "Claim {n} dex reward(s)",
   "dexClaimedSnack": "Dex reward! {gold} gold · {jelly} jelly",
+  "dexTabBugs": "Bugs",
+  "dexTabBosses": "Bosses",
+  "dexBosses": "Bosses",
+  "dexBossNotFound": "You haven't defeated this boss yet. Beat it in this difficulty's hunting ground to record it.",
+  "dexBossHint": "Each difficulty counts separately. Beating one after moving down still counts.",
+  "dexClaimedFossil": "Plus {fossil} fossils",
   "dexBonusSummary": "Dex bonus — ATK +{atk}% · HP +{hp}% · Gold +{gold}%",
   "@dexBonusSummary": {
     "placeholders": {

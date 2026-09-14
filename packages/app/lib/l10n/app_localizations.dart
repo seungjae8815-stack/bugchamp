@@ -1558,6 +1558,42 @@ abstract class AppLocalizations {
   /// **'Dex reward! {gold} gold · {jelly} jelly'**
   String dexClaimedSnack(Object gold, Object jelly);
 
+  /// No description provided for @dexTabBugs.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs'**
+  String get dexTabBugs;
+
+  /// No description provided for @dexTabBosses.
+  ///
+  /// In en, this message translates to:
+  /// **'Bosses'**
+  String get dexTabBosses;
+
+  /// No description provided for @dexBosses.
+  ///
+  /// In en, this message translates to:
+  /// **'Bosses'**
+  String get dexBosses;
+
+  /// No description provided for @dexBossNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t defeated this boss yet. Beat it in this difficulty\'s hunting ground to record it.'**
+  String get dexBossNotFound;
+
+  /// No description provided for @dexBossHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each difficulty counts separately. Beating one after moving down still counts.'**
+  String get dexBossHint;
+
+  /// No description provided for @dexClaimedFossil.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus {fossil} fossils'**
+  String dexClaimedFossil(Object fossil);
+
   /// No description provided for @dexBonusSummary.
   ///
   /// In en, this message translates to:

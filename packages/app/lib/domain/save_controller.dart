@@ -584,15 +584,39 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 보스를 깼다 — 다음 사냥터로. 스테이지는 사냥터 폭(worldSize)만큼 뛰고
   /// 도전 게이지는 0 부터. 마지막 사냥터(최종 보스)면 그대로 둔다 — 회차
   /// 전환은 유저가 누른다.
+  ///
+  /// 도감 보스 수집도 여기서 남긴다(2026-09-15) — 보스 처치가 들어오는 길은
+  /// 이 한 곳이다. 아래 난이도로 내려가 잡아도 수집은 된다.
   Future<void> advanceZone() async {
     final run = ref.read(gameDataProvider).value?.runConfig;
     final s = state.requireValue;
     if (run == null || !run.zoneMode) return;
     final zone = run.zoneOf(s.stageNumber);
-    if (run.isFinalZone(zone)) return;
+    final artId = run.bossArtId(s.difficultyTier, zone);
+    final bossDex = s.bossDex.contains(artId)
+        ? s.bossDex
+        : {...s.bossDex, artId};
+    if (run.isFinalZone(zone)) {
+      if (!identical(bossDex, s.bossDex)) {
+        await _commit(s.copyWith(bossDex: bossDex));
+      }
+      return;
+    }
     await _commit(
-      s.copyWith(stageNumber: run.zoneStartStage(zone + 1), zoneKills: 0),
+      s.copyWith(
+        stageNumber: run.zoneStartStage(zone + 1),
+        zoneKills: 0,
+        bossDex: bossDex,
+      ),
     );
+  }
+
+  /// 도감에 잡힌 보스 수(옛 클리어 기록 포함, `collectedBosses`).
+  int get collectedBossCount {
+    final data = ref.read(gameDataProvider).value;
+    final run = data?.runConfig;
+    if (data == null || run == null) return 0;
+    return collectedBosses(state.requireValue, run, data.roadmapConfig).length;
   }
 
   /// 사냥터를 고른다(로드맵에서 탭). 점령한 사냥터까지만.
@@ -2630,6 +2654,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.dexDiscovered,
       s.dexConqueredWith(cfg.conquerLevel),
       s.claimedDex,
+      bosses: collectedBossCount,
     );
     if (claimable.isEmpty) return const [];
 
@@ -2639,6 +2664,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
       gold += m.gold;
       if (m.jelly > 0) {
         mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + m.jelly;
+      }
+      if (m.fossil > 0) {
+        mats[MaterialKind.fossil] = (mats[MaterialKind.fossil] ?? 0) + m.fossil;
       }
     }
     await _commit(

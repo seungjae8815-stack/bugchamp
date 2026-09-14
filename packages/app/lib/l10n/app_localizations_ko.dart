@@ -825,6 +825,26 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get dexTabBugs => '곤충';
+
+  @override
+  String get dexTabBosses => '보스';
+
+  @override
+  String get dexBosses => '보스 수집';
+
+  @override
+  String get dexBossNotFound => '아직 잡지 못한 보스예요. 이 난이도의 사냥터에서 보스를 쓰러뜨리면 기록돼요.';
+
+  @override
+  String get dexBossHint => '난이도마다 따로 모아요. 아래 난이도로 내려가 잡아도 기록돼요.';
+
+  @override
+  String dexClaimedFossil(Object fossil) {
+    return '화석 $fossil개도 받았어요';
+  }
+
+  @override
   String dexBonusSummary(String atk, String hp, String gold) {
     return '지금 도감 보너스 — 공격 +$atk% · 체력 +$hp% · 골드 +$gold%';
   }

@@ -839,6 +839,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dexTabBugs => 'Bugs';
+
+  @override
+  String get dexTabBosses => 'Bosses';
+
+  @override
+  String get dexBosses => 'Bosses';
+
+  @override
+  String get dexBossNotFound =>
+      'You haven\'t defeated this boss yet. Beat it in this difficulty\'s hunting ground to record it.';
+
+  @override
+  String get dexBossHint =>
+      'Each difficulty counts separately. Beating one after moving down still counts.';
+
+  @override
+  String dexClaimedFossil(Object fossil) {
+    return 'Plus $fossil fossils';
+  }
+
+  @override
   String dexBonusSummary(String atk, String hp, String gold) {
     return 'Dex bonus — ATK +$atk% · HP +$hp% · Gold +$gold%';
   }

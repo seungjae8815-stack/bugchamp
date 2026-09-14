@@ -824,6 +824,26 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get dexTabBugs => '昆虫';
+
+  @override
+  String get dexTabBosses => 'ボス';
+
+  @override
+  String get dexBosses => 'ボス収集';
+
+  @override
+  String get dexBossNotFound => 'まだ倒していないボスです。この難易度の狩場でボスを倒すと記録されます。';
+
+  @override
+  String get dexBossHint => '難易度ごとに別々に集めます。下の難易度に戻って倒しても記録されます。';
+
+  @override
+  String dexClaimedFossil(Object fossil) {
+    return '化石$fossil個も獲得';
+  }
+
+  @override
   String dexBonusSummary(String atk, String hp, String gold) {
     return '図鑑ボーナス — 攻撃 +$atk% · 体力 +$hp% · ゴールド +$gold%';
   }

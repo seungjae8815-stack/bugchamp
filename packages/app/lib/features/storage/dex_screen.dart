@@ -12,6 +12,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
+import '../../ui/tier_label.dart';
 import '../../ui/toast.dart';
 
 const _honey = Color(0xFFEBA52F);
@@ -33,6 +34,14 @@ class DexScreen extends ConsumerWidget {
     final cfg = data.dexConfig;
     final locale = Localizations.localeOf(context).languageCode;
     final all = dexSpecies(data.allSpecies);
+    final run = data.runConfig;
+    // 보스 수집(2026-09-15) — 사냥터 구조가 아니면 탭 자체가 없다.
+    final bosses = run == null
+        ? const <String>{}
+        : collectedBosses(save, run, data.roadmapConfig);
+    final bossSlots = run != null && run.zoneMode
+        ? bossDexSlots(run)
+        : const <({int tier, int zone, String id})>[];
 
     final claimable = cfg == null
         ? const <DexMilestone>[]
@@ -40,34 +49,271 @@ class DexScreen extends ConsumerWidget {
             save.dexDiscovered,
             save.dexConqueredWith(cfg.conquerLevel),
             save.claimedDex,
+            bosses: bosses.length,
           );
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l.dexTitle)),
-      body: Column(
-        children: [
-          _summary(context, ref, l, save, cfg, all.length, claimable),
-          const Divider(height: 1, color: Color(0x22FFFFFF)),
-          Expanded(
-            child: GridView.builder(
-              padding: EdgeInsets.fromLTRB(
-                12,
-                12,
-                12,
-                12 + MediaQuery.viewPaddingOf(context).bottom,
+    final bugGrid = GridView.builder(
+      padding: EdgeInsets.fromLTRB(
+        12,
+        12,
+        12,
+        12 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.74,
+      ),
+      itemCount: all.length,
+      itemBuilder: (context, i) =>
+          _tile(context, l, locale, all[i], save.dex[all[i].id]),
+    );
+    final summary = _summary(
+      context,
+      ref,
+      l,
+      save,
+      cfg,
+      all.length,
+      claimable,
+      bosses: bosses.length,
+      bossTotal: bossSlots.length,
+    );
+
+    if (bossSlots.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l.dexTitle)),
+        body: Column(
+          children: [
+            summary,
+            const Divider(height: 1, color: Color(0x22FFFFFF)),
+            Expanded(child: bugGrid),
+          ],
+        ),
+      );
+    }
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l.dexTitle),
+          bottom: TabBar(
+            indicatorColor: _honey,
+            labelColor: _honey,
+            unselectedLabelColor: const Color(0x99FFFFFF),
+            tabs: [
+              Tab(text: '${l.dexTabBugs} ${save.dexDiscovered}/${all.length}'),
+              Tab(
+                text: '${l.dexTabBosses} ${bosses.length}/${bossSlots.length}',
               ),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.74,
+            ],
+          ),
+        ),
+        body: Column(
+          children: [
+            summary,
+            const Divider(height: 1, color: Color(0x22FFFFFF)),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  bugGrid,
+                  _bossList(
+                    context,
+                    l,
+                    locale,
+                    data.roadmapConfig,
+                    bosses,
+                    bossSlots,
+                  ),
+                ],
               ),
-              itemCount: all.length,
-              itemBuilder: (context, i) =>
-                  _tile(context, l, locale, all[i], save.dex[all[i].id]),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 보스 수집 — 난이도마다 11칸. 안 잡은 보스는 **검은 실루엣**(2026-09-15 확정).
+  Widget _bossList(
+    BuildContext context,
+    AppLocalizations l,
+    String locale,
+    RoadmapConfig? roadmap,
+    Set<String> got,
+    List<({int tier, int zone, String id})> slots,
+  ) {
+    final tiers = <int>{for (final b in slots) b.tier}.toList()..sort();
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        12,
+        10,
+        12,
+        12 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      children: [
+        Text(
+          l.dexBossHint,
+          style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+        ),
+        for (final t in tiers) ...[
+          const SizedBox(height: 12),
+          _bossTierHeader(l, t, [
+            for (final b in slots)
+              if (b.tier == t) b,
+          ], got),
+          const SizedBox(height: 6),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 4,
+            crossAxisSpacing: 6,
+            mainAxisSpacing: 6,
+            childAspectRatio: 0.8,
+            children: [
+              for (final b in slots)
+                if (b.tier == t)
+                  _bossTile(
+                    context,
+                    l,
+                    locale,
+                    b,
+                    roadmap?.boss(b.id),
+                    got.contains(b.id),
+                  ),
+            ],
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _bossTierHeader(
+    AppLocalizations l,
+    int tier,
+    List<({int tier, int zone, String id})> inTier,
+    Set<String> got,
+  ) {
+    final n = inTier.where((b) => got.contains(b.id)).length;
+    return Row(
+      children: [
+        Text(
+          tierName(l, tier),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          '$n/${inTier.length}',
+          style: TextStyle(
+            color: n == inTier.length ? const Color(0xFFCE7AE0) : _honey,
+            fontWeight: FontWeight.w900,
+            fontSize: 12.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 보스 그림. 미수집이면 같은 그림을 까맣게 — 모양만 보이고 정체는 감춘다.
+  Widget _bossArt(String id, double w, double h, bool found) {
+    final art = gameImage(
+      'assets/images/bosses/$id.webp',
+      width: w,
+      height: h,
+      fallback: const Icon(Icons.bug_report_rounded, color: Color(0x55FFFFFF)),
+    );
+    if (found) return art;
+    return ColorFiltered(
+      colorFilter: const ColorFilter.mode(Color(0xFF0E1A0B), BlendMode.srcIn),
+      child: art,
+    );
+  }
+
+  String _bossWhere(AppLocalizations l, RunConfig run, int tier, int zone) =>
+      '${tierName(l, tier)} · '
+      '${run.isFinalZone(zone) ? l.zoneFinalLabel : l.zoneLabel(zone)}';
+
+  Widget _bossTile(
+    BuildContext context,
+    AppLocalizations l,
+    String locale,
+    ({int tier, int zone, String id}) b,
+    BossInfo? info,
+    bool found,
+  ) {
+    final run = ProviderScope.containerOf(
+      context,
+    ).read(gameDataProvider).requireValue.runConfig!;
+    final isFinal = run.isFinalZone(b.zone);
+    return GestureDetector(
+      onTap: () => showGameDialog<void>(
+        context,
+        title: found ? (info?.name.resolve(locale) ?? '') : '???',
+        subtitle: _bossWhere(l, run, b.tier, b.zone),
+        icon: Icons.menu_book_rounded,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 140, child: _bossArt(b.id, 200, 140, found)),
+            const SizedBox(height: 10),
+            Text(
+              found ? (info?.desc.resolve(locale) ?? '') : l.dexBossNotFound,
+              style: const TextStyle(
+                color: Color(0xB3FFFFFF),
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          gameDialogButton(l.actionClose, () => Navigator.pop(context)),
+        ],
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: const Color(0x22000000),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: found
+                ? (isFinal ? const Color(0xFFCE7AE0) : _honey)
+                : const Color(0x22FFFFFF),
+            width: found ? 1.4 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 50, child: _bossArt(b.id, 60, 50, found)),
+            const SizedBox(height: 2),
+            Text(
+              isFinal ? l.zoneFinalLabel : l.zoneLabel(b.zone),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: found ? _honey : const Color(0x66FFFFFF),
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(
+              found ? (info?.name.resolve(locale) ?? '') : '???',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: found ? Colors.white : const Color(0x66FFFFFF),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -80,8 +326,10 @@ class DexScreen extends ConsumerWidget {
     SaveGame save,
     DexConfig? cfg,
     int total,
-    List<DexMilestone> claimable,
-  ) {
+    List<DexMilestone> claimable, {
+    int bosses = 0,
+    int bossTotal = 0,
+  }) {
     final discovered = save.dexDiscovered;
     final conquered = save.dexConqueredWith(cfg?.conquerLevel ?? 1);
     return Container(
@@ -115,6 +363,10 @@ class DexScreen extends ConsumerWidget {
               ),
             ],
           ),
+          if (bossTotal > 0) ...[
+            const SizedBox(height: 6),
+            _bar(l.dexBosses, bosses, bossTotal, const Color(0xFFE0674A)),
+          ],
           if (cfg != null) ...[
             const SizedBox(height: 8),
             // 지금 붙어 있는 영구 보너스 — "모으면 세진다"가 숫자로 보여야 한다.
@@ -143,9 +395,11 @@ class DexScreen extends ConsumerWidget {
                   if (!context.mounted || got.isEmpty) return;
                   final gold = got.fold<int>(0, (a, m) => a + m.gold);
                   final jelly = got.fold<int>(0, (a, m) => a + m.jelly);
+                  final fossil = got.fold<int>(0, (a, m) => a + m.fossil);
+                  final text = l.dexClaimedSnack(formatCompact(gold), jelly);
                   showCenterToast(
                     context,
-                    l.dexClaimedSnack(formatCompact(gold), jelly),
+                    fossil > 0 ? '$text\n${l.dexClaimedFossil(fossil)}' : text,
                   );
                 },
                 icon: const Icon(Icons.card_giftcard_rounded, size: 18),

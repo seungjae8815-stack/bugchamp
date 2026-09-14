@@ -7,6 +7,7 @@
 /// Flutter / Hive / Riverpod 에 의존하지 않는다 — 영속화는 상위 레이어의 일.
 library;
 
+export 'src/boss_dex.dart';
 export 'src/gift_mail.dart';
 export 'src/save_game.dart';
 export 'src/save_migrations.dart';

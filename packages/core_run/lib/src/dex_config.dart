@@ -20,6 +20,7 @@ class DexConfig {
   const DexConfig({
     this.discoverMilestones = const [],
     this.conquerMilestones = const [],
+    this.bossMilestones = const [],
     this.attackPerConquer = 0,
     this.hpPerConquer = 0,
     this.rewardPerDiscover = 0,
@@ -38,6 +39,13 @@ class DexConfig {
   /// 정복(성충까지 키움) 마일스톤.
   final List<DexMilestone> conquerMilestones;
 
+  /// 보스 수집 마일스톤(2026-09-15). 잡아 본 사냥터 보스 수(난이도별로 따로, 최대 44).
+  ///
+  /// 골드가 아니라 젤리·화석으로 준다 — 골드는 난이도마다 규모가 수만 배
+  /// 달라지고 난이도를 넘기면 초기화돼서, 정액이면 쉬움에선 과하고 극한에선
+  /// 티도 안 난다. 영구 능력치도 붙이지 않는다(90일 표를 흔들지 않게).
+  final List<DexMilestone> bossMilestones;
+
   /// 정복 1종당 공격 배율 가산(0.01 = +1%).
   final double attackPerConquer;
 
@@ -52,12 +60,15 @@ class DexConfig {
   List<DexMilestone> claimable(
     int discovered,
     int conquered,
-    Set<String> claimed,
-  ) => [
+    Set<String> claimed, {
+    int bosses = 0,
+  }) => [
     for (final m in discoverMilestones)
       if (discovered >= m.count && !claimed.contains(m.id)) m,
     for (final m in conquerMilestones)
       if (conquered >= m.count && !claimed.contains(m.id)) m,
+    for (final m in bossMilestones)
+      if (bosses >= m.count && !claimed.contains(m.id)) m,
   ];
 
   /// 도감 진행도로 얻는 영구 스탯 보너스. 정복 수에 비례한다.
@@ -87,6 +98,7 @@ class DexConfig {
   factory DexConfig.fromJson(Map<String, dynamic> json) => DexConfig(
     discoverMilestones: _milestones(json['discoverMilestones'], 'dex_d'),
     conquerMilestones: _milestones(json['conquerMilestones'], 'dex_c'),
+    bossMilestones: _milestones(json['bossMilestones'], 'dex_b'),
     attackPerConquer: (json['attackPerConquer'] as num?)?.toDouble() ?? 0,
     hpPerConquer: (json['hpPerConquer'] as num?)?.toDouble() ?? 0,
     rewardPerDiscover: (json['rewardPerDiscover'] as num?)?.toDouble() ?? 0,
@@ -109,6 +121,7 @@ class DexConfig {
           count: count,
           gold: (m['gold'] as num?)?.toInt() ?? 0,
           jelly: (m['jelly'] as num?)?.toInt() ?? 0,
+          fossil: (m['fossil'] as num?)?.toInt() ?? 0,
         ),
       );
     }
@@ -125,6 +138,7 @@ class DexMilestone {
     required this.count,
     this.gold = 0,
     this.jelly = 0,
+    this.fossil = 0,
   });
 
   /// 수령 여부를 저장할 키(`SaveGame.claimedDex`).
@@ -135,8 +149,14 @@ class DexMilestone {
   final int gold;
   final int jelly;
 
+  /// 화석 조각(제련 재료) — 보스 수집 마일스톤이 준다.
+  final int fossil;
+
   /// 정복 마일스톤인가(발견이면 false). 화면 문구를 가른다.
   bool get isConquer => id.startsWith('dex_c');
+
+  /// 보스 수집 마일스톤인가.
+  bool get isBoss => id.startsWith('dex_b');
 }
 
 /// 종 목록에서 **도감에 실릴 종**만 고른다(현재는 전부).
