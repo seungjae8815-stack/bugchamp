@@ -11,6 +11,7 @@ import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/event_badge.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 
@@ -139,6 +140,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     //
     // 실패하면 되돌린다(아래). 티켓 낙관 차감과 같은 원칙이다.
     final localId = '$_localPrefix${now.microsecondsSinceEpoch}';
+    // 내 대표 뱃지 — 서버 트리거가 찍을 값과 **같은 규칙**(bestEventBadge)이다.
+    final badge = bestEventBadge(save.eventBadges);
     setState(() {
       _sending = true;
       _messages.add(
@@ -148,6 +151,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           nickname: save.nickname,
           body: body,
           createdAt: now,
+          badge: badge,
         ),
       );
     });
@@ -156,7 +160,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final ok = await ref
         .read(chatServiceProvider)
-        .send(nickname: save.nickname, body: body);
+        .send(nickname: save.nickname, body: body, badge: badge);
     if (!mounted) return;
     setState(() {
       _sending = false;
@@ -510,6 +514,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              // 대회 뱃지(2026-09-15) — 자랑거리는 남이 봐야 자랑거리다.
+              // 순위표를 열지 않는 사람도 채팅에서는 본다.
+              if (!m.isAdmin) EventBadgeChip(id: m.badge, size: 9.5),
             ],
           ),
           const SizedBox(height: 2),

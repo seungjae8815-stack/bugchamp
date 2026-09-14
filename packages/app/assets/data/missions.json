@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
   "_jellyComment": "젤리 보상 미션에는 rewardMax 를 반드시 둔다. rewardGrowth 1.15 는 지수라 20티어에서 16개, 40티어면 268개가 된다 — 프리미엄 재화(§2.6)에 무한 성장 곡선을 붙이면 후반 유저에게 젤리가 무제한으로 흘러간다. 검증: core_run/tool/jelly_sim.dart",
+  "_forgeComment": "보스 처치 미션을 제련 100회로 교체(2026-09-15 사장님 결정). 사냥터 구조에서는 보스가 사냥터마다 100마리를 잡고 도전해야만 나와 목표(3→4→5…)가 거의 안 찼고, 미션은 **한 번에 하나씩 순서대로** 돌아서 사냥·강화 미션까지 통째로 멈췄다. 목표는 **고정(goalGrowth 1.0)** — 다른 미션이 목표를 키우는 이유는 ① 성장할수록 빨라져서 ② 보상이 커져서인데, 제련은 화석(시간 비례, 켜 두면 시간당 약 200)이 속도를 정해 성장해도 안 빨라지고 보상은 rewardMax 3 으로 막혀 있다. 한 바퀴 속도는 목표가 커지는 사냥·강화가 정하므로 하루 젤리는 jelly_sim 가정(1회전/일) 안에 있다. id 를 새로 둔 이유: boss 의 수령 횟수를 물려받으면 첫 목표가 100이 아니게 된다(수령 합계는 그대로라 순환 위치는 안 바뀐다).",
   "missions": [
     { "id": "hunt", "type": "killMonsters", "goalBase": 20, "goalGrowth": 1.25, "reward": "gold", "rewardBase": 200, "rewardGrowth": 1.6 },
-    { "id": "boss", "type": "killBosses", "goalBase": 3, "goalGrowth": 1.3, "reward": "jelly", "rewardBase": 1, "rewardGrowth": 1.15, "rewardMax": 3 },
+    { "id": "forge", "type": "forgeItems", "goalBase": 100, "goalGrowth": 1.0, "reward": "jelly", "rewardBase": 1, "rewardGrowth": 1.15, "rewardMax": 3 },
     { "id": "power", "type": "buyUpgrades", "goalBase": 15, "goalGrowth": 1.3, "reward": "material", "rewardMaterial": "chitin", "rewardBase": 5, "rewardGrowth": 1.4 }
   ]
 }

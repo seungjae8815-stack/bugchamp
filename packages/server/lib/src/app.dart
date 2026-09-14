@@ -142,6 +142,12 @@ String _newSessionId() {
   ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
 
+/// 명예의 전당 명단 상한. 참가자 전원을 싣되 끝없이 늘지 않게 막는다.
+const _hallLimit = 500;
+
+/// 명예의 전당 명단을 다시 읽기까지의 시간.
+const _hallCacheTtl = Duration(minutes: 10);
+
 Response _json(Map<String, dynamic> body, {int status = 200}) => Response(
   status,
   body: jsonEncode(body),
@@ -267,6 +273,20 @@ Handler buildHandler({
       return SaveGame.fromJson(migrateToCurrent(raw));
     }
 
+    // 명예의 전당 명단 캐시(회차 id → 조회 시각·행). 끝난 회차라 순위가 더
+    // 바뀌지 않으므로, 대기 기간 내내 화면을 열 때마다 RPC 를 부를 이유가
+    // 없다. 운영이 부정 기록을 지우면 반영되도록 짧게만 둔다.
+    final hallCache =
+        <String, ({DateTime at, List<Map<String, dynamic>> rows})>{};
+    Future<List<Map<String, dynamic>>> hallRows(String roundId) async {
+      final t = actions.now();
+      final hit = hallCache[roundId];
+      if (hit != null && t.difference(hit.at) < _hallCacheTtl) return hit.rows;
+      final rows = await store.eventTop(roundId, _hallLimit);
+      hallCache[roundId] = (at: t, rows: rows);
+      return rows;
+    }
+
     /// 최초 1회 세이브 업로드(로컬 → 서버 이관).
     ///
     /// **이미 서버 세이브가 있으면 거부한다(409).** 허용하면 클라이언트가
@@ -345,16 +365,23 @@ Handler buildHandler({
               granted.save,
               extra: {...r.extra, ...granted.extra},
             );
-            // 대표 뱃지를 순위표(profiles)에 싣는다. 실패해도 보상 지급은
-            // 되돌리지 않는다 — 뱃지는 표시용이고 재화가 더 중요하다.
-            final badge = (granted.extra['eventReward'] as Map?)?['badge'];
-            if (badge is String && badge.isNotEmpty) {
-              try {
-                await store.setBadge(user.id, badge);
-              } on StateStoreException catch (e) {
-                stderr.writeln('[save] badge 저장 실패 ${user.id}: $e');
-              }
-            }
+            // **대표** 뱃지를 순위표(profiles)에 싣는다 — 방금 받은 뱃지가
+            // 아니다(챔피언이 다음 회차 참가 뱃지로 덮이면 안 된다).
+            await _writeBadge(
+              store,
+              user.id,
+              (granted.extra['eventReward'] as Map?)?['displayBadge'],
+            );
+          }
+        } else {
+          // 참가 뱃지가 생기기 전에 보상을 받아 간 참가자에게 한 번 채운다.
+          final filled = actions.backfillEventBadge(r.save!);
+          if (filled != null) {
+            r = ActionResult.ok(
+              filled.save,
+              extra: {...r.extra, ...filled.extra},
+            );
+            await _writeBadge(store, user.id, filled.extra['displayBadge']);
           }
         }
 
@@ -365,11 +392,13 @@ Handler buildHandler({
         // 클라이언트는 `clamped`·`season` 일 때만 서버 값을 채택하므로
         // 그때만 실어준다. 시즌 정산은 **주 1회**라 이그레스에 영향이 없다.
         // 대회 보상도 세이브를 바꾸므로 함께 채택시킨다(회차당 1회라
-        // 이그레스에 영향이 없다 — 시즌 정산과 같은 이유).
+        // 이그레스에 영향이 없다 — 시즌 정산과 같은 이유). 참가 뱃지 채우기도
+        // 계정당 한 번이다.
         final adopt =
             r.extra['clamped'] == true ||
             r.extra['season'] == true ||
-            r.extra['eventReward'] != null;
+            r.extra['eventReward'] != null ||
+            r.extra['eventBadges'] == true;
         return _json({
           'ok': true,
           ...r.extra,
@@ -689,6 +718,49 @@ Handler buildHandler({
       }
     });
 
+    /// 명예의 전당 — **가장 최근에 끝난 회차**의 순위 전체 + 다음 회차 일정.
+    ///
+    /// 대회가 닫혀 있어도 답한다(그때 보라고 만든 화면이다). 뱃지는 지금
+    /// `profiles.badge` 가 아니라 **그 회차의 순위로 계산한다** — 대표 뱃지는
+    /// 다음 회차에 바뀌므로, 그걸 쓰면 1회차 명단에 2회차 뱃지가 붙는다.
+    authed.get('/event/hall', (Request req) async {
+      final user = userOf(req);
+      final ev = cfg.event;
+      if (ev == null) return _json({'error': 'event_closed'}, status: 404);
+      final last = actions.eventLastEndedRound();
+      final next = actions.eventUpcomingRound();
+      try {
+        final rows = last == null
+            ? const <Map<String, dynamic>>[]
+            : await hallRows(last.roundId);
+        return _json({
+          if (last != null) 'round': last.toJson(),
+          if (next != null) 'next': next.toJson(),
+          'entries': [
+            for (final r in rows)
+              {
+                'rank': r['rank'],
+                'nickname': r['nickname'],
+                'score': r['score'],
+                'wave': r['wave'],
+                'badge':
+                    ev.badgeFor(
+                      (r['rank'] as num?)?.toInt(),
+                      roundNo: last!.no,
+                    ) ??
+                    '',
+                'isMe': r['user_id'] == user.id,
+              },
+          ],
+          // 상한에 닿았으면 명단이 잘렸다 — 앱이 "외 다수"를 붙인다.
+          'truncated': rows.length >= _hallLimit,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event/hall] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     /// **이벤트 도전 시작** — 참가권을 깎고 1웨이브를 치른다.
     ///
     /// 판을 통째로 돌리지 않고 세션으로 쪼개는 이유는 웨이브마다 **카드를
@@ -788,9 +860,14 @@ Handler buildHandler({
         if (r.save != save) await store.save(user.id, r.save!.toJson());
 
         var recorded = false;
+        // ⚠️ 판은 끝까지 치르게 두되, **회차가 끝났으면 기록하지 않는다.**
+        // 보상은 각자 접속할 때 순위를 확인해 주므로, 끝난 뒤에 점수가 바뀌면
+        // 먼저 받은 사람과 나중에 받은 사람의 순위가 어긋난다(챔피언이 둘).
         if (r.extra['done'] == true &&
             !user.isAnonymous &&
-            r.extra['isBest'] == true) {
+            r.extra['isBest'] == true &&
+            actions.eventOpen &&
+            r.save!.eventRoundId == actions.eventRoundId()) {
           recorded = await _submitEventScore(
             store,
             user.id,
@@ -2306,6 +2383,17 @@ Middleware limitBodySize({int maxBytes = kMaxRequestBytes}) {
       }
     };
   };
+}
+
+/// 대표 뱃지를 `profiles` 에 쓴다. 비었거나 실패해도 보상은 되돌리지 않는다 —
+/// 뱃지는 표시용이고 재화가 더 중요하다.
+Future<void> _writeBadge(StateStore store, String userId, Object? badge) async {
+  if (badge is! String || badge.isEmpty) return;
+  try {
+    await store.setBadge(userId, badge);
+  } on StateStoreException catch (e) {
+    stderr.writeln('[save] badge 저장 실패 $userId: $e');
+  }
 }
 
 /// 이벤트 점수 기록. 실패해도 판을 무르지 않는다 — 참가권은 이미 나갔고,

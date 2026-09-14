@@ -3382,6 +3382,12 @@ abstract class AppLocalizations {
   /// **'Upgrade Stats'**
   String get missionBuyUpgrades;
 
+  /// No description provided for @missionForgeItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge Gear'**
+  String get missionForgeItems;
+
   /// No description provided for @missionReachStage.
   ///
   /// In en, this message translates to:
@@ -5553,6 +5559,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Locked'**
   String get zoneLocked;
+
+  /// No description provided for @badgeParticipant.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round} Entrant'**
+  String badgeParticipant(int round);
+
+  /// No description provided for @eventWaitingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the next contest'**
+  String get eventWaitingTitle;
+
+  /// No description provided for @eventNextRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {no} opens {date}'**
+  String eventNextRound(int no, String date);
+
+  /// No description provided for @eventDateMd.
+  ///
+  /// In en, this message translates to:
+  /// **'{m}/{d}'**
+  String eventDateMd(int m, int d);
+
+  /// No description provided for @eventHallTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hall of Fame'**
+  String get eventHallTitle;
+
+  /// No description provided for @eventHallRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {no} · {n} entrants'**
+  String eventHallRound(int no, String n);
+
+  /// No description provided for @eventHallEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No one is in the Hall of Fame yet'**
+  String get eventHallEmpty;
+
+  /// No description provided for @eventHallTop10.
+  ///
+  /// In en, this message translates to:
+  /// **'4th–10th'**
+  String get eventHallTop10;
+
+  /// No description provided for @eventHallEntrants.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone who took part'**
+  String get eventHallEntrants;
+
+  /// No description provided for @eventHallMore.
+  ///
+  /// In en, this message translates to:
+  /// **'and more'**
+  String get eventHallMore;
+
+  /// No description provided for @eventRewardBadgeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Badge earned'**
+  String get eventRewardBadgeLabel;
 }
 
 class _AppLocalizationsDelegate

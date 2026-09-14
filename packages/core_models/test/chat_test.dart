@@ -168,6 +168,24 @@ void main() {
       });
       expect(admin.isAdmin, isTrue);
     });
+
+    /// 뱃지는 DB 트리거가 찍는다. 컬럼이 생기기 전 서버 응답도 읽혀야 한다.
+    test('badge 가 없는 서버 응답은 빈 문자열로 읽는다', () {
+      final m = ChatMessage.fromJson({
+        'id': 9,
+        'user_id': 'u-4',
+        'nickname': 'a',
+        'body': 'b',
+        'created_at': '2026-09-15T00:00:00Z',
+      });
+      expect(m.badge, '');
+      final champ = ChatMessage.fromJson({
+        ...m.toJson(),
+        'badge': 'champion:1',
+      });
+      expect(champ.badge, 'champion:1');
+      expect(ChatMessage.fromJson(champ.toJson()).badge, 'champion:1');
+    });
   });
 
   group('운영자 사칭 방지', () {

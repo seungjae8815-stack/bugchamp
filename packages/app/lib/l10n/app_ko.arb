@@ -633,6 +633,7 @@
   "missionKillMonsters": "몬스터 사냥",
   "missionKillBosses": "보스 처치",
   "missionBuyUpgrades": "능력 강화",
+  "missionForgeItems": "장비 제련",
   "missionReachStage": "스테이지 도달",
   "missionClaim": "수집",
   "missionComplete": "완료! 탭하여 수집",
@@ -1072,7 +1073,7 @@
   "eventOpensInHours": "{n}시간 뒤 시작",
   "eventOpensInMinutes": "{n}분 뒤 시작",
   "eventSeeFlyer": "대회 안내 보기",
-  "eventSoonBanner": "왕충 선발대회 · {when} 개막",
+  "eventSoonBanner": "왕충 선발대회 대기중 · {when}",
   "eventFlyerPrizeTag": "1등 상품",
   "adCooldown": "잠시 후 다시 볼 수 있어요 ({n}초)",
   "jellyContinueTitle": "젤리 사용",
@@ -1124,5 +1125,16 @@
   "zoneLocked": "잠김",
   "@zoneLocked": {
     "description": "로드맵 사냥터 상태 — 아직 못 간 사냥터"
-  }
+  },
+  "badgeParticipant": "{round}회차 참가",
+  "eventWaitingTitle": "대회 대기중",
+  "eventNextRound": "{no}회차 대회 · {date} 개막",
+  "eventDateMd": "{m}월 {d}일",
+  "eventHallTitle": "명예의 전당",
+  "eventHallRound": "{no}회차 · 참가 {n}명",
+  "eventHallEmpty": "아직 명예의 전당에 오른 사람이 없어요",
+  "eventHallTop10": "4~10위",
+  "eventHallEntrants": "함께한 참가자",
+  "eventHallMore": "외 다수",
+  "eventRewardBadgeLabel": "획득한 뱃지"
 }

@@ -118,6 +118,39 @@ class EventRewardTier {
   }
 }
 
+/// 대회 한 회차의 일정. 지난 회차(`event.json → pastRounds`)와 이번 회차가
+/// 같은 모양이다.
+@immutable
+class EventRound {
+  const EventRound({
+    required this.no,
+    required this.startsAt,
+    required this.endsAt,
+  });
+
+  /// 회차 번호(1부터). 뱃지 id 와 "몇 회차" 문구가 이걸 쓴다.
+  final int no;
+  final DateTime startsAt;
+  final DateTime endsAt;
+
+  /// 회차 키(`2026-0901`). 이번 회차와 **같은 함수**로 만든다 — 손으로 적게
+  /// 두면 한 글자 틀린 순간 지난 회차 기록을 영영 못 찾는다.
+  String get roundId => EventConfig.roundIdForStart(startsAt);
+
+  factory EventRound.fromJson(Map<String, dynamic> json) => EventRound(
+    no: (json['no'] as num).toInt(),
+    startsAt: DateTime.parse(json['startsAt'] as String).toUtc(),
+    endsAt: DateTime.parse(json['endsAt'] as String).toUtc(),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'no': no,
+    'roundId': roundId,
+    'startsAt': startsAt.toIso8601String(),
+    'endsAt': endsAt.toIso8601String(),
+  };
+}
+
 /// 실물 경품 랭킹 이벤트(웨이브 방어전) 설정. 값은 전부 `event.json`(§6).
 ///
 /// ⚠️ 이 설정은 **숫자만** 담는다. 웨이브 적을 실제로 만드는 것은
@@ -159,6 +192,8 @@ class EventConfig {
     this.cards = const [],
     this.rewardTiers = const [],
     this.participationMaterials = const {},
+    this.participationBadge = '',
+    this.pastRounds = const [],
     this.prizeFormUrl = '',
   });
 
@@ -207,10 +242,52 @@ class EventConfig {
   String roundIdAt(DateTime utc) {
     final s = startsAt;
     if (s == null) return roundIdOf(utc);
-    final kst = s.toUtc().add(const Duration(hours: 9));
+    return roundIdForStart(s);
+  }
+
+  /// 시작 시각 → 회차 키(`2026-0901`, KST 날짜). 지난 회차도 이 함수로 만든다.
+  static String roundIdForStart(DateTime startsAt) {
+    final kst = startsAt.toUtc().add(const Duration(hours: 9));
     final mm = kst.month.toString().padLeft(2, '0');
     final dd = kst.day.toString().padLeft(2, '0');
     return '${kst.year}-$mm$dd';
+  }
+
+  /// 끝난 지난 회차들(`event.json → pastRounds`).
+  ///
+  /// 이게 없으면 다음 회차를 여는 순간 **지난 회차의 번호를 알 길이 사라진다** —
+  /// 그 사이 접속하지 않은 1회차 입상자가 `2회차 입상` 뱃지를 받고, 명예의
+  /// 전당도 지난 회차를 찾지 못한다.
+  final List<EventRound> pastRounds;
+
+  /// 이번 회차(기간이 명시돼 있을 때만).
+  EventRound? get currentRound {
+    final s = startsAt;
+    final e = endsAt;
+    if (s == null || e == null) return null;
+    return EventRound(no: roundNo, startsAt: s, endsAt: e);
+  }
+
+  /// [roundId] 회차의 번호. 이번 회차든 지난 회차든 찾고, 모르면 0.
+  int roundNoOf(String roundId) {
+    final cur = currentRound;
+    if (cur != null && cur.roundId == roundId) return roundNo;
+    for (final r in pastRounds) {
+      if (r.roundId == roundId) return r.no;
+    }
+    return 0;
+  }
+
+  /// [utc] 시점에 **가장 최근에 끝난** 회차. 아직 끝난 회차가 없으면 null.
+  /// 명예의 전당이 보여줄 회차다.
+  EventRound? lastEndedRound(DateTime utc) {
+    final t = utc.toUtc();
+    EventRound? best;
+    for (final r in [...pastRounds, ?currentRound]) {
+      if (t.isBefore(r.endsAt)) continue;
+      if (best == null || r.endsAt.isAfter(best.endsAt)) best = r;
+    }
+    return best;
   }
 
   /// 참가권. ❌ 젤리로 사지 못한다(사행성·P2W — `event.json` 주석 참조).
@@ -253,18 +330,42 @@ class EventConfig {
   /// 참가는 회차마다 반복되는 통로다(§2.6).
   final Map<MaterialKind, int> participationMaterials;
 
+  /// 순위권 밖이어도 한 판이라도 뛴 사람에게 주는 뱃지 종류(`participant`).
+  /// 비어 있으면 참가 뱃지를 주지 않는다.
+  ///
+  /// 순위 뱃지는 10명뿐이라, 대회에 나온 나머지 전원에게는 남는 게 재료뿐이었다.
+  /// 뱃지는 재화가 아니라 **표식**이라 회차마다 반복돼도 경제를 흔들지 않는다(§2.6).
+  final String participationBadge;
+
   /// 실물 경품 신청 폼 주소. 비어 있으면 앱이 버튼을 감춘다.
   final String prizeFormUrl;
 
-  /// [rank] 가 받는 뱃지 id(`champion:1`). 없으면 null.
+  /// [roundNo] 회차에서 [rank] 가 받는 뱃지 id(`champion:1`). 없으면 null.
   ///
   /// 회차 번호를 붙이는 이유 = **같은 뱃지를 두 번 받아도 따로 남아야** 한다.
   /// 1회차 챔피언과 3회차 챔피언은 다른 자랑거리다.
-  String? badgeIdForRank(int rank) {
+  ///
+  /// ⚠️ 번호는 **그 유저가 뛴 회차의 번호**여야 한다([roundNoOf]). 이번 설정의
+  /// [roundNo] 를 그대로 쓰면, 다음 회차를 연 뒤에 접속한 지난 회차 입상자가
+  /// 다음 회차 뱃지를 받는다. 번호를 모르면(0) 뱃지를 주지 않는다.
+  String? badgeIdForRank(int rank, {required int roundNo}) {
+    if (roundNo <= 0) return null;
     final t = tierForRank(rank);
     if (t == null || t.badge.isEmpty) return null;
     return '${t.badge}:$roundNo';
   }
+
+  /// [roundNo] 회차 참가 뱃지 id(`participant:1`). 없으면 null.
+  String? participantBadgeId(int roundNo) {
+    if (roundNo <= 0 || participationBadge.isEmpty) return null;
+    return '$participationBadge:$roundNo';
+  }
+
+  /// [roundNo] 회차에서 [rank] 순위(순위 없으면 null)가 받는 뱃지.
+  /// 순위 뱃지가 없으면 참가 뱃지로 떨어진다.
+  String? badgeFor(int? rank, {required int roundNo}) =>
+      (rank == null ? null : badgeIdForRank(rank, roundNo: roundNo)) ??
+      participantBadgeId(roundNo);
 
   /// [rank] (1 부터) 에 해당하는 보상 구간. 순위권 밖이면 null.
   EventRewardTier? tierForRank(int rank) {
@@ -435,6 +536,14 @@ class EventConfig {
                 as Map<String, dynamic>?) ??
             const {},
       ),
+      participationBadge:
+          ((json['rewards'] as Map<String, dynamic>?)?['participationBadge']
+              as String?) ??
+          '',
+      pastRounds: [
+        for (final r in (json['pastRounds'] as List?) ?? const [])
+          EventRound.fromJson(r as Map<String, dynamic>),
+      ],
     );
   }
 }

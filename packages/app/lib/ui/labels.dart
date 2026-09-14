@@ -195,6 +195,7 @@ String missionLabel(AppLocalizations l, MissionType t) => switch (t) {
   MissionType.killMonsters => l.missionKillMonsters,
   MissionType.killBosses => l.missionKillBosses,
   MissionType.buyUpgrades => l.missionBuyUpgrades,
+  MissionType.forgeItems => l.missionForgeItems,
   MissionType.reachStage => l.missionReachStage,
 };
 
@@ -202,6 +203,7 @@ IconData missionIcon(MissionType t) => switch (t) {
   MissionType.killMonsters => Icons.pest_control,
   MissionType.killBosses => Icons.local_fire_department,
   MissionType.buyUpgrades => Icons.upgrade,
+  MissionType.forgeItems => Icons.hardware_rounded,
   MissionType.reachStage => Icons.flag_rounded,
 };
 

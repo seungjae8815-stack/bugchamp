@@ -1850,6 +1850,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get missionBuyUpgrades => '能力強化';
 
   @override
+  String get missionForgeItems => '装備製錬';
+
+  @override
   String get missionReachStage => 'ステージ到達';
 
   @override
@@ -3058,4 +3061,45 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get zoneLocked => 'ロック';
+
+  @override
+  String badgeParticipant(int round) {
+    return '$round回 参加';
+  }
+
+  @override
+  String get eventWaitingTitle => '次の大会を準備中';
+
+  @override
+  String eventNextRound(int no, String date) {
+    return '第$no回大会・$date 開幕';
+  }
+
+  @override
+  String eventDateMd(int m, int d) {
+    return '$m月$d日';
+  }
+
+  @override
+  String get eventHallTitle => '殿堂';
+
+  @override
+  String eventHallRound(int no, String n) {
+    return '第$no回・参加 $n名';
+  }
+
+  @override
+  String get eventHallEmpty => 'まだ殿堂入りした人はいません';
+
+  @override
+  String get eventHallTop10 => '4〜10位';
+
+  @override
+  String get eventHallEntrants => '参加した皆さん';
+
+  @override
+  String get eventHallMore => 'ほか多数';
+
+  @override
+  String get eventRewardBadgeLabel => '獲得バッジ';
 }

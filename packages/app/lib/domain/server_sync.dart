@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'combat_power.dart';
 import 'game_server.dart';
 import 'pvp_backend.dart';
 import 'providers.dart';
@@ -199,7 +200,12 @@ class ServerSaveUploader {
     _rankPushedAt = now;
     final backend = _ref.read(pvpBackendProvider);
     if (!backend.isRemote) return;
-    unawaited(backend.pushTrophies(me: PvpProfile.me(save)));
+    final power = displayCombatPower(
+      save,
+      _ref.read(gameDataProvider).value,
+      now,
+    );
+    unawaited(backend.pushTrophies(me: PvpProfile.me(save, power: power)));
   }
 
   /// 변경분이 있으면 서버에 올린다. 이미 올린 상태면 건너뛴다.
@@ -226,6 +232,7 @@ class ServerSaveUploader {
         //  · `clamped`: 골드·칸수를 잘랐다(치팅 의심).
         //  · `season`: 앱을 켜둔 채 주간 경계를 넘겨 **서버가 시즌을 정산**했다.
         //  · `eventReward`: 대회 회차 보상을 지급했다(회차당 1회).
+        //  · `eventBadges`: 참가 뱃지를 채웠다(계정당 1회).
         // 이때만 세이브가 실려 온다(전부 드물어 이그레스 부담이 없다).
         // ⚠️ 새 사유를 서버에 추가하면 **여기 조건도 같이** 넓혀야 한다 —
         // 안 그러면 서버는 지급했는데 앱은 채택하지 않아, 화면에 안 보이다가
@@ -233,7 +240,8 @@ class ServerSaveUploader {
         final data = res.data;
         final season = data?['season'] == true;
         final rewarded = data?['eventReward'] is Map;
-        if ((data?['clamped'] == true || season || rewarded) &&
+        final badged = data?['eventBadges'] == true;
+        if ((data?['clamped'] == true || season || rewarded || badged) &&
             res.save != null) {
           final ctrl = _ref.read(saveControllerProvider.notifier);
           await ctrl.adoptServerSave(res.save!);

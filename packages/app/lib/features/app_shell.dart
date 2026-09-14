@@ -19,6 +19,7 @@ import '../domain/update_checker.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
+import '../ui/event_badge.dart';
 import '../ui/game_dialog.dart';
 import '../ui/rank_popup.dart';
 import 'battle/battle_screen.dart';
@@ -317,7 +318,10 @@ class _AppShellState extends ConsumerState<AppShell>
           Text(
             r.rank == null
                 ? l.eventRewardNone
-                : l.eventRewardRank(r.roundId, r.rank!),
+                : l.eventRewardRank(
+                    r.roundNo > 0 ? '${r.roundNo}' : r.roundId,
+                    r.rank!,
+                  ),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
@@ -338,6 +342,23 @@ class _AppShellState extends ConsumerState<AppShell>
                       (r.materials[k.key] ?? 0),
             },
           ),
+          if (r.badge.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  l.eventRewardBadgeLabel,
+                  style: const TextStyle(
+                    color: Color(0xBBFFFFFF),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                EventBadgeChip(id: r.badge, size: 12),
+              ],
+            ),
+          ],
           if (r.physical) ...[
             const SizedBox(height: 12),
             Text(

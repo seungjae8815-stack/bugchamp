@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/auth_service.dart';
+import '../../domain/combat_power.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
@@ -38,7 +39,14 @@ final myRankProvider = FutureProvider<int?>((ref) async {
     final board = await backend.leaderboard(
       me: save == null
           ? PvpProfile(id: 'me', nickname: nickname, trophies: trophies)
-          : PvpProfile.me(save),
+          : PvpProfile.me(
+              save,
+              power: displayCombatPower(
+                save,
+                ref.read(gameDataProvider).value,
+                ref.read(clockProvider).now().toUtc(),
+              ),
+            ),
       limit: 50,
     );
     if (!board.live) return null; // 폴백(NPC)은 순위로 쓰지 않는다
@@ -95,19 +103,26 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   String _scoreTierName(AppLocalizations l, PvpProfile p) =>
       tierName(l, p.difficultyTier);
 
-  /// 진행도 두 열 표기 — 오른쪽 열(월드-스테이지 숫자만).
+  /// 진행도 표기 — `보통 · 사냥터 3`(사냥터 구조, 2026-09-15).
   ///
-  /// 스테이지는 항상 세 자리로 채운다(`6-098`, `6-002`) — 자릿수가 줄마다
-  /// 다르면 어떻게 정렬해도 삐뚤어 보인다(사장님 확정 2026-09-01).
-  /// 월드는 한 자리(챕터 4개)라 채우지 않는다.
-  String _scoreStageDigits(PvpProfile p) {
-    final pos = ref
-        .read(gameDataProvider)
-        .value
-        ?.roadmapConfig
-        ?.stageLabel(p.stageNumber);
-    if (pos == null) return '${p.stageNumber}';
-    return '${pos.world}-${pos.inWorld.toString().padLeft(3, '0')}';
+  /// 예전엔 `2-001`(월드-스테이지)이었다. 사냥터 구조에서는 스테이지가 사냥터
+  /// 시작점으로만 움직여 `-001` 이 늘 붙었고, 무엇을 뜻하는지 읽히지 않았다.
+  String _progressText(AppLocalizations l, PvpProfile p) {
+    final data = ref.read(gameDataProvider).value;
+    return progressLabel(
+      l,
+      data?.roadmapConfig,
+      p.difficultyTier,
+      p.stageNumber,
+      run: data?.runConfig,
+    );
+  }
+
+  /// 진행도 둘째 줄 — 전투력. 같은 사냥터끼리는 **이 값으로 순서가 갈린다**
+  /// (서버 정렬: 회차 → 사냥터 → 전투력). 모르면(구버전 앱) `—`.
+  String _powerText(AppLocalizations l, PvpProfile p) {
+    final v = p.power;
+    return '${l.combatPowerLabel} ${v == null || v <= 0 ? '—' : formatCompact(v)}';
   }
 
   /// 레벨 표기 — 스테이지와 같은 이유로 **세 자리로 채운다**
@@ -124,13 +139,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         // 구분돼야 "왜 저 사람이 위에 있지"가 설명된다.
         RankingKind.level =>
           '${tierName(l, p.difficultyTier)} ${_scoreLevelDigits(p)}',
-        // 숫자만 보여주면 어느 구간인지 모른다 — `보통 5-32` 로 보여준다.
-        RankingKind.stage => progressLabel(
-          l,
-          ref.read(gameDataProvider).value?.roadmapConfig,
-          p.difficultyTier,
-          p.stageNumber,
-        ),
+        // 숫자만 보여주면 어느 구간인지 모른다 — `보통 · 사냥터 3`.
+        RankingKind.stage => _progressText(l, p),
       };
 
   /// 점수 칸 — **고정 폭**. 자연 크기로 두면 줄마다 아이콘·숫자 위치가
@@ -141,7 +151,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     RankingKind k, {
     required bool emphasize,
   }) => SizedBox(
-    width: 96,
+    // 진행도는 두 줄(`보통 · 사냥터 3` / `전투력 1.2M`)이라 칸이 더 넓다.
+    width: k == RankingKind.stage ? 128 : 96,
     child: Row(
       children: [
         // 진행도 아이콘은 그림(타일 프레임 포함)이라 글리프보다 여백이 필요하다.
@@ -155,7 +166,46 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         // 진행도(`쉬움 6-100`)는 자릿수가 줄마다 달라 한 덩어리로는 어떻게
         // 정렬해도 삐뚤어 보인다(2026-09-01 실기 지적 2회). 두 열로 가른다 —
         // 난이도 이름은 왼쪽 열, 숫자는 오른쪽 열에 **같은 폭 숫자**로.
-        if (k == RankingKind.stage || k == RankingKind.level) ...[
+        if (k == RankingKind.stage)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    _progressText(l, p),
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: emphasize ? _honey : const Color(0xCCFFFFFF),
+                      fontWeight: emphasize ? FontWeight.w900 : FontWeight.w800,
+                      fontSize: emphasize ? 13 : 12.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    _powerText(l, p),
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: emphasize
+                          ? _honey.withValues(alpha: 0.85)
+                          : const Color(0x88FFFFFF),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10.5,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (k == RankingKind.level) ...[
           Expanded(
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -174,9 +224,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           SizedBox(
             width: 44,
             child: Text(
-              k == RankingKind.stage
-                  ? _scoreStageDigits(p)
-                  : _scoreLevelDigits(p),
+              _scoreLevelDigits(p),
               textAlign: TextAlign.right,
               maxLines: 1,
               style: TextStyle(
@@ -215,7 +263,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final cfg = data.battleConfig ?? const BattleConfig();
     final rules = data.chatRules ?? const ChatRules();
     final backend = ref.watch(pvpBackendProvider);
-    final me = PvpProfile.me(save);
+    final me = PvpProfile.me(
+      save,
+      power: displayCombatPower(
+        save,
+        data,
+        ref.read(clockProvider).now().toUtc(),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.rankingTitle)),

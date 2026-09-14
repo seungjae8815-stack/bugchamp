@@ -20,6 +20,7 @@ import '../../data/game_data.dart';
 import '../../domain/iap_service.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/audio_service.dart';
+import '../../domain/combat_power.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/notify_prefs.dart';
 import '../../domain/auth_service.dart';
@@ -36,6 +37,7 @@ import '../chat/chat_screen.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
+import '../../ui/event_badge.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/guest_warning.dart';
@@ -64,6 +66,10 @@ const _walkDuration = 0.6;
 // 부스트 지속시간·속도계수는 밸런스라 run_config.json 에 있다(§6).
 const _deathDuration = 0.4;
 const _defeatDuration = 2.5;
+
+/// 캐릭터의 첫 타 뒤 곤충이 따라 치기까지의 간격(초, 슬롯마다 한 칸씩 더).
+/// 연출 값이다 — 누산기는 기다리는 동안에도 쌓이므로 DPS 는 안 바뀐다.
+const _petFollowStep = 0.08;
 
 BoxDecoration _glass([double r = 999]) => BoxDecoration(
   color: const Color(0x66121A10),
@@ -428,6 +434,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   double _walkT = 0;
   double _attackAcc = 0;
 
+  /// 이 몬스터에게 캐릭터가 첫 타를 넣은 뒤 흐른 시간(초). 음수 = 아직 안 쳤다.
+  ///
+  /// 곤충은 이 값이 [_petFollowStep] × 슬롯을 넘어야 친다. 곤충 누산기는
+  /// 스폰 때 리셋되지 않아 몬스터가 달라붙자마자 곤충이 먼저 쳤고, 한 방에
+  /// 죽는 구간에서는 **캐릭터가 공격 모션 한 번 없이** 곤충만 싸웠다(2026-09-15 지적).
+  double _playerStruckT = -1;
+
   /// 곤충별 타격 누산기(bugId → 쌓인 초). 플레이어 `_attackAcc` 와 같은 방식.
   ///
   /// 스폰마다 리셋하지 않는다 — `_enemyAtkAcc` 와 같은 이유로, 빨리 죽는
@@ -706,6 +719,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _walking = false;
     _walkT = 0;
     _attackAcc = 0;
+    _playerStruckT = -1;
     // ⚠️ `_enemyAtkAcc` 는 **일부러 리셋하지 않는다.** 리셋하면 몬스터가 공격
     // 주기(1.5초)를 채우기 전에 죽는 구간에서 **평생 한 대도 못 때린다** —
     // 위협도를 아무리 올려도 체력이 안 닳던 진짜 원인이었다. 이월시키면
@@ -718,37 +732,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         : -1;
   }
 
-  /// 업그레이드/레벨 기반 순수 능력치(버프 미포함) — 전투력 표시에 사용.
-  /// 업그레이드/레벨만의 순수 능력치(펫·버프 미포함).
-  CharacterStats _baseStats(SaveGame save) => deriveStats(
-    _config,
-    upgradeLevels: save.upgradeLevels,
-    characterLevel: save.level,
-    bugsCollected: save.bugs.length,
-  );
-
   /// 장착 애완펫 보너스까지 반영한 능력치 — 전투력 표시 기준.
-  CharacterStats _petStats(SaveGame save) {
-    final base = _baseStats(save);
-    final cfg = _data.petConfig;
-    if (cfg == null || save.equippedBugIds.isEmpty) return base;
-    final now = _clock.now().toUtc();
-    final pets = <PetStat>[];
-    for (final id in save.equippedBugIds) {
-      IndividualBug? bug;
-      for (final b in save.bugs) {
-        if (b.id == id) {
-          bug = b;
-          break;
-        }
-      }
-      if (bug == null) continue;
-      final sp = _data.speciesById[bug.speciesId];
-      if (sp == null) continue;
-      pets.add(petStatOf(bug, sp, cfg, now));
-    }
-    return _applyPetBonus(base, computePetBonus(pets, cfg));
-  }
+  /// 랭킹 전투력과 **같은 함수**다(`domain/combat_power.dart`).
+  CharacterStats _petStats(SaveGame save) =>
+      permanentStatsOf(save, _data, _clock.now().toUtc());
 
   /// 장착 곤충 → 분배 입력. `_petStats` 와 같은 목록을 훑되 **기준은 안 건드린다**.
   List<PetAttackerInput> _equippedAttackerInputs(SaveGame save) {
@@ -778,24 +765,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     return out;
   }
-
-  CharacterStats _applyPetBonus(CharacterStats s, PetBonus pb) =>
-      CharacterStats(
-        attack: s.attack * pb.attackMult,
-        attackSpeed: s.attackSpeed,
-        rewardMultiplier: s.rewardMultiplier,
-        critChance: s.critChance,
-        critDamage: s.critDamage,
-        bossDamage: s.bossDamage,
-        maxHp: s.maxHp * pb.hpMult,
-        defense: s.defense,
-        hpRegen: s.hpRegen,
-        xpMultiplier: s.xpMultiplier,
-        bugFind: s.bugFind,
-        materialFind: s.materialFind,
-        moveSpeed: s.moveSpeed,
-        boostBonus: s.boostBonus,
-      );
 
   /// 이번 프레임의 타격자 분배. `_step` 이 채우고 피격·연출·렌더가 함께 본다.
   ///
@@ -1313,6 +1282,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     perHit *= split.playerMult;
 
     _attackAcc += dt;
+    // 첫 타를 넣은 프레임에는 0 에서 시작한다 — 곤충은 다음 프레임부터 센다.
+    if (_playerStruckT >= 0) _playerStruckT += dt;
     var guard = 0;
     while (_attackAcc >= interval && _hp > 0 && guard < 20) {
       _attackAcc -= interval;
@@ -1320,6 +1291,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       final crit = _rng.nextDouble() < stats.critChance;
       if (crit) dmg *= stats.critDamage;
       _hp -= dmg;
+      if (_playerStruckT < 0) _playerStruckT = 0;
       _attackPulse = 1;
       _hitFlash = 1;
       if (_dmgCooldown <= 0) {
@@ -1371,10 +1343,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       // 위상만 밀 뿐 간격은 그대로라 DPS 는 안 변한다.
       final phase = p.interval * i / split.pets.length;
       var left = (_petAcc[p.bugId] ?? phase) + dt;
+      // 캐릭터가 먼저 친다. 곤충은 캐릭터의 첫 타 뒤 슬롯 순서대로 따라 친다.
+      // 기다리는 동안에도 누산기는 쌓으므로(아래) 기다린 몫은 풀리는 순간 들어간다.
+      final follow = _petFollowStep * (i + 1);
+      final ready = _playerStruckT >= follow;
       // ⚠️ 몬스터가 이미 죽었어도 이번 프레임의 dt 는 누산기에 저장해야 한다.
       // 여기서 그냥 break/continue 하면 남은 곤충들의 dt 가 통째로 사라져
       // 빨리 죽는 구간에서 곤충 DPS 가 설계보다 낮게 나온다.
-      if (_hp > 0) {
+      if (!ready) {
+        // 쌓는 데는 상한을 둔다 — 캐릭터 한 방에 죽는 구간에서는 곤충이 끝내
+        // 못 치므로, 그대로 두면 몇십 대분이 쌓였다가 버티는 몬스터(보스)에게
+        // 한꺼번에 쏟아진다. 상한 = 지난 몬스터의 남은 몫 + 캐릭터 한 간격 +
+        // 따라가는 시간 — 캐릭터를 기다리지 않았다면 쳤을 만큼이다.
+        left = math.min(left, p.interval + interval + follow);
+      } else if (_hp > 0) {
         var petGuard = 0;
         final rest = petRestrainMult(
           p.element,
@@ -2962,7 +2944,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         // 운영자 메시지는 홈 채팅바에서도 구분된다 — 여기가
                         // 대부분의 유저가 채팅을 접하는 유일한 자리다.
                         TextSpan(
-                          text: '${last.nickname} ',
+                          text: last.nickname,
                           style: TextStyle(
                             color: last.isAdmin
                                 ? const Color(0xFF9FD3F5)
@@ -2970,6 +2952,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             fontWeight: FontWeight.w800,
                           ),
                         ),
+                        // 대회 뱃지는 한 줄에 들어가도록 **아이콘만**.
+                        if (!last.isAdmin && last.badge.isNotEmpty)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: EventBadgeChip(
+                              id: last.badge,
+                              size: 9,
+                              compact: true,
+                            ),
+                          ),
+                        const TextSpan(text: ' '),
                         TextSpan(
                           text: last.body,
                           style: const TextStyle(color: Color(0xE6FFFFFF)),

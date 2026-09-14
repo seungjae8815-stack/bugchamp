@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
+import '../../domain/combat_power.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/pvp_backend.dart';
@@ -338,7 +339,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   double _power(BattleBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
 
-  PvpProfile _me(SaveGame save) => PvpProfile.me(save);
+  PvpProfile _me(SaveGame save) => PvpProfile.me(
+    save,
+    power: displayCombatPower(
+      save,
+      ref.read(gameDataProvider).value,
+      ref.read(clockProvider).now().toUtc(),
+    ),
+  );
 
   /// 성충 개체 목록.
   List<IndividualBug> _adults(SaveGame save, GameData data, DateTime now) {

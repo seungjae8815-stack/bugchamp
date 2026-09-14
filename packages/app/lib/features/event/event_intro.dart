@@ -89,17 +89,8 @@ class EventIntroScreen extends ConsumerWidget {
           ),
         );
 
-    /// 칭호는 **뱃지 칩이 아니라 "무엇을 받는지"로** 적는다.
-    /// 칩만 두면 그게 상품인지 장식인지 안 읽힌다(2026-08-29 지적).
-    String titleName(String badgeId) {
-      final b = parseEventBadge(badgeId);
-      if (b == null) return '';
-      return switch (b.kind) {
-        'champion' => l.badgeChampion(b.round),
-        'finalist' => l.badgeFinalist(b.round),
-        _ => '',
-      };
-    }
+    /// 칭호는 칩이 아니라 **"무엇을 받는지"** 로 적는다(`eventBadgeName`).
+    String titleName(String badgeId) => eventBadgeName(l, badgeId);
 
     final rows = <Widget>[];
     var from = 1;
@@ -132,6 +123,7 @@ class EventIntroScreen extends ConsumerWidget {
       );
       from = t.maxRank + 1;
     }
+    final entrant = titleName(cfg.participantBadgeId(cfg.roundNo) ?? '');
     if (cfg.participationMaterials.isNotEmpty) {
       rows.add(
         row(l.eventRewardParticipationRow, [
@@ -144,6 +136,17 @@ class EventIntroScreen extends ConsumerWidget {
               ),
               '${materialLabel(l, e.key)} ${e.value}',
               color: const Color(0xBBFFFFFF),
+            ),
+          // 참가 뱃지(2026-09-15) — 순위권 밖이어도 표식이 남는다.
+          if (entrant.isNotEmpty)
+            item(
+              const Icon(
+                Icons.workspace_premium_rounded,
+                size: 15,
+                color: Color(0xFF8FD19E),
+              ),
+              l.eventRewardTitleAward(entrant),
+              color: const Color(0xFFB9E4C2),
             ),
         ]),
       );

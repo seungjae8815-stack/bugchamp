@@ -157,6 +157,10 @@ abstract interface class GameServer {
   /// 이벤트 순위(상위 100). 서버가 대신 읽어 준다 — 앱에는 RPC 권한이 없다.
   Future<ServerResult> eventLeaderboard();
 
+  /// 명예의 전당 — 가장 최근에 끝난 회차의 순위 전체 + 다음 회차 일정.
+  /// 대회가 닫혀 있어도 답한다(그때 보라고 만든 화면이다).
+  Future<ServerResult> eventHall();
+
   /// **개발자 모드 전용** — 이벤트 참가권 지급. 운영 키가 있어야 한다.
   ///
   /// 참가권은 서버 소유 필드라 앱이 세이브를 고쳐 늘릴 수 없다. 아무나 부르면
@@ -282,6 +286,9 @@ class NoGameServer implements GameServer {
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> eventLeaderboard() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventHall() async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> adminEventTicket({
@@ -507,6 +514,9 @@ class HttpGameServer implements GameServer {
 
   @override
   Future<ServerResult> eventLeaderboard() => _send('GET', '/event/leaderboard');
+
+  @override
+  Future<ServerResult> eventHall() => _send('GET', '/event/hall');
 
   @override
   Future<ServerResult> adminEventTicket({

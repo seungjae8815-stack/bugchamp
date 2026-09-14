@@ -1881,6 +1881,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get missionBuyUpgrades => 'Upgrade Stats';
 
   @override
+  String get missionForgeItems => 'Forge Gear';
+
+  @override
   String get missionReachStage => 'Reach Stage';
 
   @override
@@ -3126,4 +3129,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get zoneLocked => 'Locked';
+
+  @override
+  String badgeParticipant(int round) {
+    return 'R$round Entrant';
+  }
+
+  @override
+  String get eventWaitingTitle => 'Waiting for the next contest';
+
+  @override
+  String eventNextRound(int no, String date) {
+    return 'Round $no opens $date';
+  }
+
+  @override
+  String eventDateMd(int m, int d) {
+    return '$m/$d';
+  }
+
+  @override
+  String get eventHallTitle => 'Hall of Fame';
+
+  @override
+  String eventHallRound(int no, String n) {
+    return 'Round $no · $n entrants';
+  }
+
+  @override
+  String get eventHallEmpty => 'No one is in the Hall of Fame yet';
+
+  @override
+  String get eventHallTop10 => '4th–10th';
+
+  @override
+  String get eventHallEntrants => 'Everyone who took part';
+
+  @override
+  String get eventHallMore => 'and more';
+
+  @override
+  String get eventRewardBadgeLabel => 'Badge earned';
 }

@@ -1920,15 +1920,20 @@ class GameActions {
       add(e.key, e.value);
     }
 
-    final badge = rank == null ? null : cfg.badgeIdForRank(rank);
+    // ⚠️ 번호는 **그 유저가 뛴 회차**의 것이다. 이번 설정의 번호를 쓰면, 다음
+    // 회차를 연 뒤에 접속한 지난 회차 입상자가 다음 회차 뱃지를 받는다.
+    final roundNo = cfg.roundNoOf(roundId);
+    // 순위권 밖·익명은 참가 뱃지로 떨어진다(2026-09-15).
+    final badge = cfg.badgeFor(rank, roundNo: roundNo);
+    final badges = badge == null
+        ? save.eventBadges
+        : {...save.eventBadges, badge};
 
     return ActionResult.ok(
       save.copyWith(
         materials: mats,
         eventRewardRound: roundId,
-        eventBadges: badge == null
-            ? save.eventBadges
-            : {...save.eventBadges, badge},
+        eventBadges: badges,
       ),
       extra: {
         'eventReward': {
@@ -1946,7 +1951,10 @@ class GameActions {
           if ((tier?.physical ?? false) && cfg.prizeFormUrl.isNotEmpty)
             'prizeFormUrl': cfg.prizeFormUrl,
           if (badge != null) 'badge': badge,
-          if (cfg.roundNo > 0) 'roundNo': cfg.roundNo,
+          // 순위표·채팅에 실을 **대표** 뱃지. 새로 받은 것을 그대로 쓰면
+          // 1회차 챔피언이 2회차 참가 뱃지로 내려앉는다.
+          'displayBadge': bestEventBadge(badges),
+          if (roundNo > 0) 'roundNo': roundNo,
           'materials': {
             for (final e in {
               ...?tier?.materials,
@@ -1959,6 +1967,42 @@ class GameActions {
         },
       },
     );
+  }
+
+  /// 이미 보상을 받은 회차에 **뱃지가 하나도 없으면** 참가 뱃지를 채운다.
+  /// 채울 게 없으면 null.
+  ///
+  /// 참가 뱃지는 1회차가 끝난 **뒤에** 생겼다(2026-09-15). 그 전에 보상을 받아
+  /// 간 순위권 밖 참가자는 [eventRewardDueRound] 가 다시 잡지 않으므로(이미
+  /// 받았다) 여기서 한 번 채운다. 뱃지가 하나라도 있으면 손대지 않는다 —
+  /// 입상자에게 참가 뱃지를 겹쳐 줄 이유가 없다.
+  ActionResult? backfillEventBadge(SaveGame save) {
+    final cfg = config.event;
+    if (cfg == null) return null;
+    final paid = save.eventRewardRound;
+    if (paid == null || paid.isEmpty) return null;
+    final roundNo = cfg.roundNoOf(paid);
+    final badge = cfg.participantBadgeId(roundNo);
+    if (badge == null) return null;
+    final has = save.eventBadges.any(
+      (b) => parseEventBadge(b)?.round == roundNo,
+    );
+    if (has) return null;
+    final badges = {...save.eventBadges, badge};
+    return ActionResult.ok(
+      save.copyWith(eventBadges: badges),
+      extra: {'eventBadges': true, 'displayBadge': bestEventBadge(badges)},
+    );
+  }
+
+  /// 명예의 전당이 보여줄 회차 — **가장 최근에 끝난** 회차. 없으면 null.
+  EventRound? eventLastEndedRound() => config.event?.lastEndedRound(now());
+
+  /// 아직 열리지 않은 이번 회차(개막 전이면). 열렸거나 끝났으면 null.
+  EventRound? eventUpcomingRound() {
+    final cfg = config.event;
+    if (cfg == null || !cfg.notYetOpen(now())) return null;
+    return cfg.currentRound;
   }
 
   /// **젤리로** 참가권 [EventConfig.ticketAdGrant] 장(2026-09-01 전환).
@@ -2405,6 +2449,10 @@ class GameActions {
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
     final t = now().toUtc();
+    // ⚠️ 기간 밖이면 받지 않는다. 이 옛 한 판 경로에만 검사가 빠져 있어서,
+    // 회차가 끝난 뒤에도 점수를 써 넣을 수 있었다 — 보상은 각자 접속할 때
+    // 순위를 확인하므로, 끝난 뒤에 점수가 바뀌면 챔피언이 둘이 될 수 있다.
+    if (!cfg.isOpen(t)) return const ActionResult.fail('event_closed');
 
     if (teamIds.length != 3 || teamIds.toSet().length != 3) {
       return const ActionResult.fail('bad_team');

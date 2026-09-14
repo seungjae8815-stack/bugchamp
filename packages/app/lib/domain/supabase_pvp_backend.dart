@@ -26,18 +26,9 @@ class SupabasePvpBackend implements PvpBackend {
       return fallback.leaderboard(me: me, limit: limit, kind: kind);
     }
     try {
-      // 1) 내 프로필 upsert(닉네임·트로피·레벨·진행도).
+      // 1) 내 프로필 upsert(닉네임·트로피·레벨·진행도·전투력).
       //    레벨/스테이지도 올려야 그 축의 랭킹이 성립한다.
-      await _client.from('profiles').upsert({
-        'id': uid,
-        'nickname': me.nickname,
-        'trophies': me.trophies,
-        'level': me.level,
-        'stage': me.stageNumber,
-        // 회차를 안 올리면 서버는 회차를 넘어간 유저를 스테이지 1 로 본다 —
-        // 넘어가는 순간 진행도 랭킹 꼴찌가 되어 넘어갈 이유가 사라진다.
-        'tier': me.difficultyTier,
-      });
+      await _upsertProfile(uid, me);
       // 2) 상위 N 조회(RPC). 정렬 축은 서버가 받는다 — 클라가 받아서
       //    다시 정렬하면 상위 N 이 트로피 기준으로 잘린 뒤라 틀린 목록이 된다.
       // ⚠️ 화면에 보여줄 [limit] 보다 **넓게** 받는다. 좁게 받으면 상위권 밖인
@@ -62,6 +53,7 @@ class SupabasePvpBackend implements PvpBackend {
               level: (r['level'] as num?)?.toInt() ?? 1,
               stageNumber: (r['stage'] as num?)?.toInt() ?? 1,
               difficultyTier: (r['tier'] as num?)?.toInt() ?? 0,
+              power: (r['power'] as num?)?.toDouble(),
             ),
           ),
       ];
@@ -159,14 +151,7 @@ class SupabasePvpBackend implements PvpBackend {
       // ⚠️ **세 축을 모두** 올린다. 트로피만 올리던 시절엔 결투를 안 하는 유저의
       // 레벨·진행도가 서버에서 낡은 채(또는 기본값 1) 남아 진행도 랭킹에서
       // 사실상 사라졌다 — 랭킹 3축을 만든 이유가 무너진다(2026-09-09 제보).
-      await _client.from('profiles').upsert({
-        'id': uid,
-        'nickname': me.nickname,
-        'trophies': me.trophies,
-        'level': me.level,
-        'stage': me.stageNumber,
-        'tier': me.difficultyTier,
-      });
+      await _upsertProfile(uid, me);
       await _client
           .from('defenders')
           .update({'trophies': me.trophies})
@@ -185,14 +170,7 @@ class SupabasePvpBackend implements PvpBackend {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return null;
     try {
-      await _client.from('profiles').upsert({
-        'id': uid,
-        'nickname': me.nickname,
-        'trophies': me.trophies,
-        'level': me.level,
-        'stage': me.stageNumber,
-        'tier': me.difficultyTier,
-      });
+      await _upsertProfile(uid, me);
       final rows =
           (await _client.rpc(
                 'leaderboard_top',
@@ -205,6 +183,38 @@ class SupabasePvpBackend implements PvpBackend {
       return null; // 상위권 밖 — 지어내지 않는다.
     } catch (_) {
       return null;
+    }
+  }
+
+  /// 내 랭킹 프로필 upsert — **세 호출부가 이 한 곳을 쓴다.**
+  ///
+  /// 호출부마다 행을 손으로 채우던 시절, 한 곳이 축을 빠뜨려 기본값이 서버를
+  /// 덮어썼다(2026-09-09). 축을 늘릴 때 고칠 자리가 여기 하나여야 한다.
+  ///
+  /// 전투력은 **모를 때(null) 싣지 않는다** — 0 으로 올리면 서버의 멀쩡한
+  /// 값을 지운다. 그리고 `power` 컬럼이 아직 없는 DB(SQL 적용 전)에서는
+  /// upsert 전체가 실패해 랭킹이 통째로 폴백으로 떨어지므로, 그때는 전투력만
+  /// 빼고 한 번 더 올린다.
+  Future<void> _upsertProfile(String uid, PvpProfile me) async {
+    final row = <String, dynamic>{
+      'id': uid,
+      'nickname': me.nickname,
+      'trophies': me.trophies,
+      'level': me.level,
+      'stage': me.stageNumber,
+      // 회차를 안 올리면 서버는 회차를 넘어간 유저를 스테이지 1 로 본다 —
+      // 넘어가는 순간 진행도 랭킹 꼴찌가 되어 넘어갈 이유가 사라진다.
+      'tier': me.difficultyTier,
+    };
+    final power = me.power;
+    if (power == null || !power.isFinite) {
+      await _client.from('profiles').upsert(row);
+      return;
+    }
+    try {
+      await _client.from('profiles').upsert({...row, 'power': power});
+    } on PostgrestException {
+      await _client.from('profiles').upsert(row);
     }
   }
 

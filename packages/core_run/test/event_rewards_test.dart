@@ -59,20 +59,94 @@ void main() {
   });
 
   group('회차 뱃지', () {
+    final no = cfg.roundNo;
+
     /// 뱃지는 실물을 못 받는 해외 이용자에게 **등가를 맞추는 축**이다.
     /// 젤리로 맞추면 그 유저의 경제가 끝난다(§2.6).
-    test('상위 구간에만 붙는다', () {
-      expect(cfg.badgeIdForRank(1), isNotNull);
-      expect(cfg.badgeIdForRank(10), isNotNull);
-      expect(cfg.badgeIdForRank(50), isNull, reason: '흔하면 자랑거리가 아니다');
-      expect(cfg.badgeIdForRank(101), isNull);
+    test('순위 뱃지는 상위 구간에만 붙는다', () {
+      expect(cfg.badgeIdForRank(1, roundNo: no), isNotNull);
+      expect(cfg.badgeIdForRank(10, roundNo: no), isNotNull);
+      expect(
+        cfg.badgeIdForRank(50, roundNo: no),
+        isNull,
+        reason: '흔하면 자랑거리가 아니다',
+      );
+      expect(cfg.badgeIdForRank(101, roundNo: no), isNull);
     });
 
     /// 1회차 챔피언과 3회차 챔피언은 **다른** 자랑거리다.
     test('id 에 회차 번호가 붙는다', () {
-      expect(cfg.roundNo, greaterThan(0), reason: 'event.json round.no 누락');
-      expect(cfg.badgeIdForRank(1), 'champion:${cfg.roundNo}');
-      expect(cfg.badgeIdForRank(1), isNot(cfg.badgeIdForRank(10)));
+      expect(no, greaterThan(0), reason: 'event.json round.no 누락');
+      expect(cfg.badgeIdForRank(1, roundNo: no), 'champion:$no');
+      expect(
+        cfg.badgeIdForRank(1, roundNo: no),
+        isNot(cfg.badgeIdForRank(10, roundNo: no)),
+      );
+    });
+
+    test('번호를 모르면(0) 뱃지를 주지 않는다 — `0회차 챔피언` 이 안 생긴다', () {
+      expect(cfg.badgeIdForRank(1, roundNo: 0), isNull);
+      expect(cfg.participantBadgeId(0), isNull);
+      expect(cfg.badgeFor(null, roundNo: 0), isNull);
+    });
+
+    /// 순위 뱃지는 10명뿐이다. 나온 사람 전원에게 남는 표식이 있어야 한다.
+    test('순위권 밖·익명은 참가 뱃지로 떨어진다', () {
+      expect(cfg.participationBadge, isNotEmpty);
+      expect(cfg.badgeFor(null, roundNo: no), 'participant:$no');
+      expect(cfg.badgeFor(11, roundNo: no), 'participant:$no');
+      expect(cfg.badgeFor(1, roundNo: no), 'champion:$no');
+    });
+
+    test('대표 뱃지는 급이 먼저, 같은 급이면 최근 회차', () {
+      expect(bestEventBadge(['participant:2', 'champion:1']), 'champion:1');
+      expect(bestEventBadge(['finalist:1', 'finalist:3']), 'finalist:3');
+      expect(bestEventBadge(['participant:1', 'mystery:9']), 'participant:1');
+      expect(bestEventBadge(const []), '');
+    });
+  });
+
+  /// 다음 회차를 열어도 지난 회차의 번호를 잃지 않아야 한다 — 그 사이 접속하지
+  /// 않은 입상자가 다음 회차 뱃지를 받는 일이 생긴다.
+  group('회차 이력', () {
+    test('지난 회차는 번호가 겹치지 않고 이번 회차보다 앞이다', () {
+      final nos = {for (final r in cfg.pastRounds) r.no};
+      expect(nos.length, cfg.pastRounds.length, reason: '회차 번호 중복');
+      for (final r in cfg.pastRounds) {
+        expect(r.no, lessThan(cfg.roundNo));
+        expect(r.endsAt.isAfter(r.startsAt), isTrue);
+        if (cfg.startsAt != null) {
+          expect(r.endsAt.isAfter(cfg.startsAt!), isFalse);
+        }
+        expect(cfg.roundNoOf(r.roundId), r.no);
+      }
+    });
+
+    test('이번 회차 id 로도 번호를 찾고, 모르는 id 는 0', () {
+      final cur = cfg.currentRound;
+      if (cur != null) expect(cfg.roundNoOf(cur.roundId), cfg.roundNo);
+      expect(cfg.roundNoOf('1999-0101'), 0);
+    });
+
+    test('가장 최근에 끝난 회차 — 이번 회차가 끝나면 이번 회차로 넘어간다', () {
+      final c = EventConfig(
+        roundNo: 2,
+        startsAt: DateTime.utc(2026, 9, 27, 15),
+        endsAt: DateTime.utc(2026, 10, 11, 15),
+        pastRounds: [
+          EventRound(
+            no: 1,
+            startsAt: DateTime.utc(2026, 8, 31, 15),
+            endsAt: DateTime.utc(2026, 9, 14, 15),
+          ),
+        ],
+      );
+      expect(c.lastEndedRound(DateTime.utc(2026, 9, 1)), isNull);
+      expect(c.lastEndedRound(DateTime.utc(2026, 9, 20))!.no, 1);
+      expect(c.lastEndedRound(DateTime.utc(2026, 10, 1))!.no, 1);
+      expect(c.lastEndedRound(DateTime.utc(2026, 10, 12))!.no, 2);
+      expect(c.roundNoOf('2026-0901'), 1);
+      expect(c.roundNoOf('2026-0928'), 2);
     });
   });
 

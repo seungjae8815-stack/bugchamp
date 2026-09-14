@@ -74,6 +74,9 @@ alter table profiles add column if not exists stage int not null default 1;
 alter table profiles add column if not exists badge text not null default '';
 -- 난이도 회차(0=쉬움). 진행도 랭킹의 **1차 정렬 키**.
 alter table profiles add column if not exists tier  int  not null default 0;
+-- 전투력(홈 상단 표시값). 진행도 랭킹에서 **같은 사냥터끼리의 순서**(2026-09-15).
+-- 후반엔 int64 를 넘으므로 double. 구버전 앱은 안 올려 0 으로 남는다.
+alter table profiles add column if not exists power double precision not null default 0;
 
 -- ⚠️ **뱃지는 서버만 쓴다.** `profiles` 는 앱도 upsert 하는 테이블이고
 -- `own_profile` 정책이 본인 행 UPDATE 를 허용하므로, 그냥 두면 누구나
@@ -85,7 +88,7 @@ revoke update on profiles from authenticated;
 -- UPDATE 절에 넣는다. id 가 빠지면 upsert 전체가 권한 오류로 죽고, 앱 랭킹이
 -- 로컬 폴백으로 떨어진다(2026-08-27 실기에서 발견). id 허용은 안전하다 —
 -- RLS 가 본인 행만 허용하고 같은 값으로 덮을 뿐이다. badge 만 막으면 된다.
-grant  update (id, nickname, trophies, level, stage, tier) on profiles to authenticated;
+grant  update (id, nickname, trophies, level, stage, tier, power) on profiles to authenticated;
 
 create table if not exists defenders (
   id         uuid primary key references auth.users(id) on delete cascade,
@@ -119,40 +122,46 @@ create policy own_defender on defenders
 -- ⚠️ **정렬은 반드시 서버가 한다.** 상위 N 을 트로피 기준으로 잘라 보낸 뒤
 -- 클라가 레벨로 다시 정렬하면, 이미 잘린 목록이라 레벨 상위권이 통째로 빠진다.
 -- `sort` 는 화이트리스트로만 받는다(문자열을 order by 에 그대로 끼우면 SQL 주입).
-create or replace function leaderboard_top(lim int, sort text default 'trophies')
+-- ⚠️ 반환 컬럼이 바뀌면 create or replace 가 거부한다 — 먼저 지운다.
+drop function if exists leaderboard_top(int, text);
+create function leaderboard_top(lim int, sort text default 'trophies')
 returns table(rank bigint, id uuid, nickname text,
-              trophies int, level int, stage int, tier int, badge text)
+              trophies int, level int, stage int, tier int, badge text,
+              power double precision)
 language sql stable security definer set search_path = public as $$
-  select row_number() over (
-           order by case sort
-                      -- ⚠️ 레벨·진행도 모두 **회차가 먼저**다. 회차 전환이
-                      -- 스테이지와 레벨을 1 로 되돌리므로, 그 값만 보면 회차를
-                      -- 넘어간 유저가 꼴찌가 되어 아무도 넘어가지 않는다.
-                      -- 반대로 '최고 기록'으로 세면 쉬움에 눌러앉아 레벨만
-                      -- 올리는 것이 최적이 된다(2026-09-01).
-                      when 'level' then p.tier
-                      when 'stage' then p.tier
-                      else p.trophies
-                    end desc,
-                    case sort
-                      when 'level' then p.level
-                      when 'stage' then p.stage
-                      else 0
-                    end desc
-         ) as rank,
-         p.id, p.nickname, p.trophies, p.level, p.stage, p.tier,
-         coalesce(p.badge, '') as badge
-  from profiles p
-  order by case sort
-             when 'level' then p.tier
-             when 'stage' then p.tier
-             else p.trophies
-           end desc,
-           case sort
-             when 'level' then p.level
-             when 'stage' then p.stage
-             else 0
-           end desc
+  with ranked as (
+    select p.id, p.nickname, p.trophies, p.level, p.stage, p.tier,
+           coalesce(p.badge, '') as badge, p.power,
+           row_number() over (
+             order by
+               -- ⚠️ 레벨·진행도 모두 **회차가 먼저**다. 회차 전환이
+               -- 스테이지와 레벨을 1 로 되돌리므로, 그 값만 보면 회차를
+               -- 넘어간 유저가 꼴찌가 되어 아무도 넘어가지 않는다.
+               -- 반대로 '최고 기록'으로 세면 쉬움에 눌러앉아 레벨만
+               -- 올리는 것이 최적이 된다(2026-09-01).
+               case sort
+                 when 'level' then p.tier
+                 when 'stage' then p.tier
+                 else p.trophies
+               end desc,
+               -- 진행도는 스테이지가 아니라 **사냥터**(k = (stage-1)/100 + 1,
+               -- CLAUDE.md §2.4). 같은 사냥터면 **전투력**이 위(2026-09-15).
+               case sort
+                 when 'level' then p.level
+                 when 'stage' then (greatest(p.stage, 1) - 1) / 100
+                 else 0
+               end desc,
+               case sort when 'stage' then p.power else 0 end desc,
+               case sort when 'stage' then p.stage else 0 end desc,
+               -- 마지막 키가 없으면 완전 동률의 순서가 조회마다 달라진다.
+               p.id
+           ) as rank
+    from profiles p
+  )
+  select r.rank, r.id, r.nickname, r.trophies, r.level, r.stage, r.tier,
+         r.badge, r.power
+  from ranked r
+  order by r.rank
   limit lim;
 $$;
 
@@ -377,6 +386,33 @@ create policy chat_report_insert on chat_reports
 Supabase 대시보드 → **Database → Replication** → `supabase_realtime` 게시에
 **`chat_messages` 테이블을 추가**한다. 안 하면 새 메시지가 실시간으로 안 온다
 (앱은 최근 목록만 보여주고 조용히 멈춘 것처럼 보인다).
+
+### 8-5. 대회 뱃지 찍기 (2026-09-15)
+
+채팅에 보낸 사람의 **대표 대회 뱃지**를 싣는다. 앱이 보내게 두면 `chat_insert` 정책이
+컬럼을 가리지 못해 누구나 챔피언을 단다 — **넣는 순간 트리거가 `profiles.badge` 에서 찍는다.**
+원본은 `docs/_sql_20260915_chat_badge.sql`.
+
+```sql
+alter table chat_messages add column if not exists badge text not null default '';
+
+create or replace function public.chat_stamp_badge()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  new.badge := coalesce(
+    (select p.badge from profiles p where p.id = new.user_id), '');
+  return new;
+end;
+$$;
+
+drop trigger if exists chat_stamp_badge_trg on chat_messages;
+create trigger chat_stamp_badge_trg
+  before insert on chat_messages
+  for each row execute function public.chat_stamp_badge();
+```
+
+> `profiles.badge` 는 권위 서버가 `/save` 에서 **대표 뱃지**(급 → 최근 회차)로 쓴다.
+> 뱃지를 막 받은 사람은 다음 세이브 업로드(최대 60초) 뒤부터 채팅에 뱃지가 붙는다.
 
 ### 8-5. 운영 — 신고 확인하는 법
 

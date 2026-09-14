@@ -1854,6 +1854,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get missionBuyUpgrades => '능력 강화';
 
   @override
+  String get missionForgeItems => '장비 제련';
+
+  @override
   String get missionReachStage => '스테이지 도달';
 
   @override
@@ -2942,7 +2945,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String eventSoonBanner(String when) {
-    return '왕충 선발대회 · $when 개막';
+    return '왕충 선발대회 대기중 · $when';
   }
 
   @override
@@ -3066,4 +3069,45 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get zoneLocked => '잠김';
+
+  @override
+  String badgeParticipant(int round) {
+    return '$round회차 참가';
+  }
+
+  @override
+  String get eventWaitingTitle => '대회 대기중';
+
+  @override
+  String eventNextRound(int no, String date) {
+    return '$no회차 대회 · $date 개막';
+  }
+
+  @override
+  String eventDateMd(int m, int d) {
+    return '$m월 $d일';
+  }
+
+  @override
+  String get eventHallTitle => '명예의 전당';
+
+  @override
+  String eventHallRound(int no, String n) {
+    return '$no회차 · 참가 $n명';
+  }
+
+  @override
+  String get eventHallEmpty => '아직 명예의 전당에 오른 사람이 없어요';
+
+  @override
+  String get eventHallTop10 => '4~10위';
+
+  @override
+  String get eventHallEntrants => '함께한 참가자';
+
+  @override
+  String get eventHallMore => '외 다수';
+
+  @override
+  String get eventRewardBadgeLabel => '획득한 뱃지';
 }

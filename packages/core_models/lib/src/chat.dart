@@ -12,6 +12,7 @@ class ChatMessage {
     required this.body,
     required this.createdAt,
     this.isAdmin = false,
+    this.badge = '',
   });
 
   /// 서버가 부여한 메시지 id(신고·차단 대상 식별용).
@@ -31,6 +32,12 @@ class ChatMessage {
   /// 진짜 운영자라는 근거다. 화면은 반드시 이 값으로 배지를 판단한다.
   final bool isAdmin;
 
+  /// 보낸 사람의 대표 대회 뱃지(`champion:1`). 없으면 빈 문자열.
+  ///
+  /// **DB 트리거가 넣을 때 `profiles.badge` 에서 찍는다** — 클라이언트가 보낸
+  /// 값은 덮어쓴다. 앱이 넣게 두면 누구나 챔피언을 달고 말할 수 있다.
+  final String badge;
+
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
     id: json['id'].toString(),
     userId: json['user_id'] as String,
@@ -39,6 +46,7 @@ class ChatMessage {
     createdAt: DateTime.parse(json['created_at'] as String).toUtc(),
     // 컬럼이 없는 서버(구버전 스키마)에서도 안전하게 false 로 읽는다.
     isAdmin: json['is_admin'] == true,
+    badge: json['badge'] as String? ?? '',
   );
 
   Map<String, dynamic> toJson() => {
@@ -48,6 +56,7 @@ class ChatMessage {
     'body': body,
     'created_at': createdAt.toUtc().toIso8601String(),
     'is_admin': isAdmin,
+    if (badge.isNotEmpty) 'badge': badge,
   };
 }
 

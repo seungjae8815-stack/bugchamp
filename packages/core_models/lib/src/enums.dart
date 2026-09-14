@@ -227,6 +227,7 @@ enum MissionType {
   killMonsters('killMonsters'), // 일반 몬스터 처치
   killBosses('killBosses'), // 보스 처치
   buyUpgrades('buyUpgrades'), // 능력치 강화 구매
+  forgeItems('forgeItems'), // 장비 제련(화석 1개 = 1회)
   reachStage('reachStage'); // 스테이지 도달(마일스톤)
 
   const MissionType(this.key);

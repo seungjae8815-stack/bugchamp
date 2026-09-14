@@ -29,9 +29,18 @@ class EventRewardReport {
     required this.physical,
     required this.materials,
     required this.prizeFormUrl,
+    this.roundNo = 0,
+    this.badge = '',
   });
 
   final String roundId;
+
+  /// 회차 번호(1부터). 0 이면 구버전 서버라 모른다 — 화면은 [roundId] 로 떨어진다.
+  /// `2026-0901 회차 3위` 로 적히던 문제(roundId 를 그대로 보여줬다).
+  final int roundNo;
+
+  /// 이번에 받은 뱃지(`participant:1`). 없으면 빈 문자열.
+  final String badge;
 
   /// 순위. 익명 계정이거나 순위권 밖이면 null(참가 보상만 받는다).
   final int? rank;
@@ -54,6 +63,8 @@ class EventRewardReport {
             '${e.key}': (e.value as num).toInt(),
         },
         prizeFormUrl: (json['prizeFormUrl'] as String?) ?? '',
+        roundNo: (json['roundNo'] as num?)?.toInt() ?? 0,
+        badge: (json['badge'] as String?) ?? '',
       );
 }
 
@@ -2165,7 +2176,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
     final mats = Map<MaterialKind, int>.from(s.materials)
       ..[MaterialKind.fossil] = have;
-    await _commit(s.copyWith(materials: mats, forgeStack: stack));
+    await _commit(
+      s.copyWith(
+        materials: mats,
+        forgeStack: stack,
+        // 제련 미션(2026-09-15). 필터에 걸려 버려진 것도 화석은 탔으므로 센다.
+        missionProgress: forged <= 0
+            ? null
+            : _bumpMissions(s.missionProgress, MissionType.forgeItems, forged),
+      ),
+    );
     return (
       last: last,
       forged: forged,

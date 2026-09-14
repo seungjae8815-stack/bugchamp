@@ -1159,6 +1159,7 @@
   "missionKillMonsters": "Hunt Monsters",
   "missionKillBosses": "Defeat Bosses",
   "missionBuyUpgrades": "Upgrade Stats",
+  "missionForgeItems": "Forge Gear",
   "missionReachStage": "Reach Stage",
   "missionClaim": "Claim",
   "missionComplete": "Complete! Tap to claim",
@@ -1941,5 +1942,53 @@
   },
   "zoneConquered": "Conquered",
   "zoneHere": "You are here",
-  "zoneLocked": "Locked"
+  "zoneLocked": "Locked",
+  "badgeParticipant": "R{round} Entrant",
+  "@badgeParticipant": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "eventWaitingTitle": "Waiting for the next contest",
+  "eventNextRound": "Round {no} opens {date}",
+  "@eventNextRound": {
+    "placeholders": {
+      "no": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "eventDateMd": "{m}/{d}",
+  "@eventDateMd": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      },
+      "d": {
+        "type": "int"
+      }
+    }
+  },
+  "eventHallTitle": "Hall of Fame",
+  "eventHallRound": "Round {no} · {n} entrants",
+  "@eventHallRound": {
+    "placeholders": {
+      "no": {
+        "type": "int"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "eventHallEmpty": "No one is in the Hall of Fame yet",
+  "eventHallTop10": "4th–10th",
+  "eventHallEntrants": "Everyone who took part",
+  "eventHallMore": "and more",
+  "eventRewardBadgeLabel": "Badge earned"
 }

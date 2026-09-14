@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/audio_service.dart';
+import '../domain/combat_power.dart';
 import '../domain/providers.dart';
 import '../domain/pvp_backend.dart';
 import '../domain/rank_history.dart';
@@ -23,7 +24,12 @@ Future<void> showRankPopupOnStart(BuildContext context, WidgetRef ref) async {
   final backend = ref.read(pvpBackendProvider);
   if (!backend.isRemote) return;
 
-  final rank = await backend.myRank(me: PvpProfile.me(save));
+  final power = displayCombatPower(
+    save,
+    ref.read(gameDataProvider).value,
+    ref.read(clockProvider).now().toUtc(),
+  );
+  final rank = await backend.myRank(me: PvpProfile.me(save, power: power));
   if (rank == null || !context.mounted) return;
 
   final report = await RankHistory.instance.record(

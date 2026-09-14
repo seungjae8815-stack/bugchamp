@@ -15,6 +15,7 @@ import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'event_battle.dart';
+import 'event_hall.dart';
 import 'event_intro.dart';
 import '../../ui/event_badge.dart';
 
@@ -170,6 +171,18 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       appBar: AppBar(
         title: Text(l.eventTitle),
         actions: [
+          // 대회가 열려 있는 동안에도 지난 회차를 볼 수 있게. 닫혀 있을 땐
+          // 본문이 곧 명예의 전당이라 버튼이 필요 없다.
+          if (!_loading && _error == null)
+            IconButton(
+              tooltip: l.eventHallTitle,
+              icon: const Icon(Icons.workspace_premium_rounded),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const EventHallScreen(),
+                ),
+              ),
+            ),
           IconButton(
             tooltip: l.eventHelp,
             icon: const Icon(Icons.help_outline_rounded),
@@ -205,62 +218,109 @@ class _EventScreenState extends ConsumerState<EventScreen> {
 
   /// 못 들어가는 상태. **"아직 안 열림"과 "끝남"은 다른 화면**이어야 한다 —
   /// 끝난 건 닫으면 그만이지만, 시작 전이면 언제 열리는지 알려야 사람이 기다린다.
+  ///
+  /// 회차 사이(2026-09-15~)에는 **대회 대기중 + 명예의 전당**이다. 예전엔
+  /// "열린 대회가 없어요" 한 줄이라, 2주를 뛴 사람들의 이름이 어디에도 안 남았고
+  /// 다음 회차가 언제인지도 알 수 없었다.
   Widget _closed(AppLocalizations l) {
-    final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
-    final now = ref.read(clockProvider).now().toUtc();
-    final left = cfg?.untilOpen(now);
-    if (left != null && _error != 'no_server') {
-      final open = cfg!.startsAt!.toLocal();
+    if (_error == 'no_server') {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.hourglass_top_rounded, size: 40, color: _honey),
-              const SizedBox(height: 10),
-              Text(
-                l.eventOpensOn('${open.month}', '${open.day}'),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _untilText(l, left),
-                style: const TextStyle(
-                  color: _honey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 14),
-              // 기다리는 동안 **뭘 준비해야 하는지**는 전단지에 다 있다.
-              OutlinedButton.icon(
-                onPressed: _showIntro,
-                icon: const Icon(Icons.article_rounded, size: 16),
-                label: Text(l.eventSeeFlyer),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _honey,
-                  side: const BorderSide(color: Color(0x66EBA52F)),
-                ),
-              ),
-            ],
+          child: Text(
+            l.eventNeedServer,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0x99FFFFFF), height: 1.4),
           ),
         ),
       );
     }
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          _error == 'no_server' ? l.eventNeedServer : l.eventClosed,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0x99FFFFFF), height: 1.4),
-        ),
+    return ListView(
+      padding: EdgeInsets.only(
+        bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      children: [_waitingCard(l), const EventHallSection()],
+    );
+  }
+
+  /// 대기 안내 — 다음 회차가 잡혀 있으면 번호·개막일·기간·D-day, 없으면 닫힘 문구.
+  Widget _waitingCard(AppLocalizations l) {
+    final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
+    final now = ref.read(clockProvider).now().toUtc();
+    final left = cfg?.untilOpen(now);
+    final next = left == null ? null : cfg!.currentRound;
+    // 종료 시각은 **다음 날 0시**라, 그대로 적으면 하루 긴 기간으로 읽힌다.
+    String md(DateTime t) => l.eventDateMd(t.month, t.day);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _honey.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.hourglass_top_rounded, size: 34, color: _honey),
+          const SizedBox(height: 6),
+          Text(
+            next == null ? l.eventClosed : l.eventWaitingTitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          if (next != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              l.eventNextRound(next.no, md(next.startsAt.toLocal())),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _honey,
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${l.eventPeriodLabel} · ${md(next.startsAt.toLocal())} ~ '
+              '${md(next.endsAt.subtract(const Duration(seconds: 1)).toLocal())}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xBBFFFFFF), fontSize: 12.5),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                color: _honey.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _honey),
+              ),
+              child: Text(
+                _untilText(l, left!),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // 기다리는 동안 **뭘 준비해야 하는지**는 전단지에 다 있다.
+            OutlinedButton.icon(
+              onPressed: _showIntro,
+              icon: const Icon(Icons.article_rounded, size: 16),
+              label: Text(l.eventSeeFlyer),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _honey,
+                side: const BorderSide(color: Color(0x66EBA52F)),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -403,17 +463,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
           ),
         );
 
-    /// 칭호는 칩이 아니라 **"무엇을 받는지"** 로 적는다 — 칩만 두면 그게
-    /// 상품인지 장식인지 안 읽힌다.
-    String titleName(String badgeId) {
-      final b = parseEventBadge(badgeId);
-      if (b == null) return '';
-      return switch (b.kind) {
-        'champion' => l.badgeChampion(b.round),
-        'finalist' => l.badgeFinalist(b.round),
-        _ => '',
-      };
-    }
+    /// 칭호는 칩이 아니라 **"무엇을 받는지"** 로 적는다(`eventBadgeName`).
+    String titleName(String badgeId) => eventBadgeName(l, badgeId);
 
     final rows = <Widget>[];
     var from = 1;
@@ -450,6 +501,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       );
       from = t.maxRank + 1;
     }
+    final entrant = titleName(cfg.participantBadgeId(cfg.roundNo) ?? '');
     if (cfg.participationMaterials.isNotEmpty) {
       rows.add(
         row(l.eventRewardParticipationRow, [
@@ -462,6 +514,17 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               ),
               '${materialLabel(l, e.key)} ${e.value}',
               color: const Color(0xBBFFFFFF),
+            ),
+          // 참가 뱃지(2026-09-15) — 순위권 밖이어도 표식이 남는다.
+          if (entrant.isNotEmpty)
+            item(
+              const Icon(
+                Icons.workspace_premium_rounded,
+                size: 15,
+                color: Color(0xFF8FD19E),
+              ),
+              l.eventRewardTitleAward(entrant),
+              color: const Color(0xFFB9E4C2),
             ),
         ]),
       );

@@ -626,6 +626,7 @@
   "missionKillMonsters": "モンスター狩り",
   "missionKillBosses": "ボス討伐",
   "missionBuyUpgrades": "能力強化",
+  "missionForgeItems": "装備製錬",
   "missionReachStage": "ステージ到達",
   "missionClaim": "受取",
   "missionComplete": "完了！タップして受け取る",
@@ -1080,5 +1081,16 @@
   },
   "zoneConquered": "制圧済み",
   "zoneHere": "現在地",
-  "zoneLocked": "ロック"
+  "zoneLocked": "ロック",
+  "badgeParticipant": "{round}回 参加",
+  "eventWaitingTitle": "次の大会を準備中",
+  "eventNextRound": "第{no}回大会・{date} 開幕",
+  "eventDateMd": "{m}月{d}日",
+  "eventHallTitle": "殿堂",
+  "eventHallRound": "第{no}回・参加 {n}名",
+  "eventHallEmpty": "まだ殿堂入りした人はいません",
+  "eventHallTop10": "4〜10位",
+  "eventHallEntrants": "参加した皆さん",
+  "eventHallMore": "ほか多数",
+  "eventRewardBadgeLabel": "獲得バッジ"
 }

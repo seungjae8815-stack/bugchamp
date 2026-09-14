@@ -161,10 +161,40 @@ void main() {
       );
     });
 
-    test('순위권 밖은 뱃지가 없다', () {
-      final r = a.grantEventReward(played(closed), round, 101);
-      expect(r.save!.eventBadges, isEmpty);
-      expect((r.extra['eventReward'] as Map).containsKey('badge'), isFalse);
+    /// 순위 뱃지는 10명뿐이다. 나온 사람 전원에게 남는 표식이 있어야 한다
+    /// (2026-09-15 — 1위 챔피언 · 2~10위 입상 · 나머지 참가).
+    test('순위권 밖·익명은 참가 뱃지를 받는다', () {
+      for (final rank in [101, null]) {
+        final r = a.grantEventReward(played(closed), round, rank);
+        expect(r.save!.eventBadges, {'participant:${ev.roundNo}'});
+        expect(
+          (r.extra['eventReward'] as Map)['badge'],
+          'participant:${ev.roundNo}',
+        );
+      }
+    });
+
+    /// ⚠️ 다음 회차를 연 뒤에 접속한 지난 회차 입상자가 **다음 회차 번호**로
+    /// 뱃지를 받으면 안 된다(예전엔 이번 설정의 번호를 그대로 썼다).
+    test('뱃지 번호는 그 유저가 뛴 회차의 번호다', () {
+      final past = ev.pastRounds.first;
+      final a2 = at(open);
+      final save = played(open, round: past.roundId);
+      expect(a2.eventRewardDueRound(save), past.roundId);
+      final r = a2.grantEventReward(save, past.roundId, 1);
+      expect(r.save!.eventBadges, {'champion:${past.no}'});
+      final report = r.extra['eventReward'] as Map;
+      expect(report['roundNo'], past.no);
+      expect(report['badge'], 'champion:${past.no}');
+    });
+
+    /// 표시 칸은 하나다. 나중 회차 참가 뱃지로 덮으면 챔피언이 내려앉는다.
+    test('대표 뱃지는 급이 높은 것을 지킨다', () {
+      final champ = played(closed).copyWith(eventBadges: {'champion:1'});
+      final r = a.grantEventReward(champ, round, 50);
+      final report = r.extra['eventReward'] as Map;
+      expect(report['badge'], 'participant:${ev.roundNo}');
+      expect(report['displayBadge'], 'champion:1');
     });
 
     test('지난 회차 뱃지는 남는다 (누적)', () {
@@ -182,8 +212,62 @@ void main() {
       final forged = server.toJson()
         ..['eventBadges'] = ['champion:${ev.roundNo}'];
       final merged = a.mergeSave(server, forged);
-      expect(merged.save!.eventBadges, isEmpty);
+      // 50위는 참가 뱃지뿐이다 — 고쳐 넣은 챔피언은 서버 값으로 되돌아온다.
+      expect(merged.save!.eventBadges, {'participant:${ev.roundNo}'});
     });
+  });
+
+  /// 참가 뱃지가 생기기 **전에** 보상을 받아 간 참가자에게 한 번 채운다.
+  group('참가 뱃지 채우기', () {
+    final a = at(open);
+    final past = ev.pastRounds.first;
+
+    SaveGame paid({Set<String> badges = const {}}) => played(
+      open,
+      round: past.roundId,
+      rewarded: past.roundId,
+    ).copyWith(eventBadges: badges);
+
+    test('받은 회차에 뱃지가 없으면 참가 뱃지를 채운다', () {
+      final r = a.backfillEventBadge(paid());
+      expect(r, isNotNull);
+      expect(r!.save!.eventBadges, {'participant:${past.no}'});
+      expect(r.extra['displayBadge'], 'participant:${past.no}');
+      expect(r.extra['eventBadges'], isTrue, reason: '앱이 채택해야 한다');
+      expect(a.backfillEventBadge(r.save!), isNull, reason: '두 번 채우지 않는다');
+    });
+
+    test('입상자에게는 겹쳐 주지 않는다', () {
+      expect(
+        a.backfillEventBadge(paid(badges: {'finalist:${past.no}'})),
+        isNull,
+      );
+    });
+
+    test('보상을 받은 적이 없으면 손대지 않는다', () {
+      expect(a.backfillEventBadge(played(open)), isNull);
+    });
+  });
+
+  /// 명예의 전당이 볼 회차 — 가장 최근에 끝난 회차와, 아직 안 열린 이번 회차.
+  test('명예의 전당 회차: 개막 전엔 지난 회차 + 다음 일정', () {
+    final before = ev.startsAt!.subtract(const Duration(days: 1));
+    final a = at(before);
+    expect(a.eventUpcomingRound()?.no, ev.roundNo);
+    expect(a.eventLastEndedRound()?.no, ev.pastRounds.last.no);
+    expect(at(open).eventUpcomingRound(), isNull, reason: '열렸으면 다음 일정이 아니다');
+    expect(at(closed).eventLastEndedRound()?.no, ev.roundNo);
+  });
+
+  /// 끝난 뒤에 점수가 바뀌면, 먼저 보상을 받은 사람과 나중에 받은 사람의
+  /// 순위가 어긋난다(챔피언이 둘). 옛 한 판 경로에만 검사가 빠져 있었다.
+  test('옛 한 판 도전(eventChallenge)도 기간 밖이면 거부한다', () {
+    final r = at(closed).eventChallenge(
+      played(closed),
+      teamIds: const ['a', 'b', 'c'],
+      speciesById: const {},
+    );
+    expect(r.error, 'event_closed');
   });
 
   /// 세이브를 고쳐 수령 기록을 지우면 같은 회차를 반복해서 받을 수 있다.

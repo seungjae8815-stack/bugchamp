@@ -38,6 +38,7 @@ class PvpProfile {
     this.level = 1,
     this.stageNumber = 1,
     this.difficultyTier = 0,
+    this.power,
   });
 
   /// 내 세이브에서 랭킹 프로필을 만든다.
@@ -46,7 +47,10 @@ class PvpProfile {
   /// 따로 채우던 시절, 빠뜨린 축이 기본값(레벨 1·스테이지 1)으로 서버를
   /// 덮어썼다 — 랭킹 화면을 여는 것만으로 자기 진행도가 1 이 됐다
   /// (2026-09-09). 축을 늘릴 때 고칠 자리도 여기 하나여야 한다.
-  factory PvpProfile.me(SaveGame save) => PvpProfile(
+  ///
+  /// [power] 는 홈 상단 전투력(`displayCombatPower`)이다. 게임 데이터가 없어
+  /// 모르면 null — **올리지 않는다**(0 으로 올리면 서버 값을 덮어쓴다).
+  factory PvpProfile.me(SaveGame save, {double? power}) => PvpProfile(
     id: 'me',
     nickname: save.nickname,
     trophies: save.pvpTrophies,
@@ -57,6 +61,7 @@ class PvpProfile {
         ? save.bestStage
         : save.stageNumber,
     difficultyTier: save.difficultyTier,
+    power: power,
   );
 
   final String id;
@@ -73,6 +78,11 @@ class PvpProfile {
   /// 난이도 회차(0=쉬움). 진행도 랭킹은 **회차가 먼저**다 —
   /// 보통 1스테이지가 쉬움 1000스테이지보다 위다.
   final int difficultyTier;
+
+  /// 전투력(홈 상단 표시값). 진행도 랭킹에서 **같은 사냥터끼리의 순서**를 정한다
+  /// (2026-09-15 사장님 결정 — 사냥터 구조에선 같은 칸에 몰려 동률이 흔하다).
+  /// null = 모른다(구버전 앱·로컬 폴백). 서버 정렬에선 0 으로 친다.
+  final double? power;
 
   /// 이 랭킹 종류에서 줄 세우기에 쓰는 점수.
   int scoreFor(RankingKind kind) => switch (kind) {
