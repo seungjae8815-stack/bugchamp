@@ -1463,7 +1463,9 @@ class _Player {
           }
           // 사냥터 클리어 보상 — 앱과 같은 규모(chapterClearGold: 그 사냥터
           // chapterClearHours 시간치). 빼고 재면 초반이 시뮬보다 빠르다.
-          gold += zoneClearGold(z);
+          // 최종 사냥터는 앱이 스테이지를 옮기지 않아 클리어로 기록되지 않고,
+          // 회차 전환이 골드를 0 으로 하므로 어차피 남지 않는다 — 주지 않는다.
+          if (!config.isFinalZone(z)) gold += zoneClearGold(z);
           stage = config.isFinalZone(z)
               ? stage + config.worldSize
               : config.zoneStartStage(z + 1);

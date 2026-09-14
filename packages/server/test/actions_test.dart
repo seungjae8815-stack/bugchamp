@@ -2128,6 +2128,62 @@ void main() {
       );
     });
 
+    // B안: 가 본 난이도로 다시 올라간 직후 첫 업로드 — 저장본(쉬움)으로 봉투를
+    // 재면 극한 수입이 100배라 잘린다.
+    test('아래 난이도에서 극한으로 돌아온 직후 60초 수입이 잘리지 않는다', () {
+      final finalStart = cfg.run.zoneStartStage(cfg.run.zonesPerTier);
+      final before = stored(gold: 1000).copyWith(
+        difficultyTier: 0,
+        maxTierReached: 3,
+        stageNumber: finalStart,
+        bestStage: finalStart,
+        lastSeen: t0.subtract(const Duration(seconds: 60)),
+        // 극한 사냥터 11 에 있는 계정답게 강화를 갖춘다(봉투는 강화만 반영한다).
+        upgradeLevels: {for (final k in UpgradeKind.values) k: 200},
+      );
+      // 극한 사냥터 11 의 60초 수입(처치당 골드 × 초당 1마리) — 봉투 안이어야 한다.
+      final perKill = rewardGold(cfg.run, finalStart - 1, 1.0, tier: 3);
+      final after = before.copyWith(
+        difficultyTier: 3,
+        gold: 1000 + perKill * 60,
+      );
+      final r = actions.mergeSave(before, after.toJson());
+      expect(r.extra['clamped'], isFalse, reason: '극한 봉투로 재야 한다');
+    });
+
+    // 보스를 깨고 곧장 아래 사냥터로 내려간 채 올라오면 지금 스테이지는 낮다.
+    test('보스를 깨고 아래 사냥터로 내려가도 챕터 보상은 인정된다', () {
+      final big = bigChapter();
+      final reward = chapterClearGold(cfg.run, big, 3);
+      final before = stored(gold: 1000).copyWith(difficultyTier: 3);
+      final after = before.copyWith(
+        gold: 1000 + reward,
+        stageNumber: cfg.run.zoneStartStage(1),
+        bestStage: big.endStage + 1,
+        clearedChapters: {chapterClearKey(big.id, 3)},
+      );
+      final r = actions.mergeSave(before, after.toJson());
+      expect(r.extra['clamped'], isFalse);
+    });
+
+    // 전환기: 구버전 앱(평문 키·옛 정액)의 챕터 보상이 잘리지 않는다.
+    test('구버전 앱의 평문 챕터 키와 옛 정액 보상을 인정한다', () {
+      final ch = cfg.roadmap!.chapters.firstWhere((c) => c.id == 'w9');
+      final before = stored(gold: 1000).copyWith(difficultyTier: 2);
+      final old =
+          before
+              .copyWith(
+                gold: 1000 + ch.rewardGold,
+                stageNumber: ch.endStage + 1,
+                clearedChapters: {ch.id},
+              )
+              .toJson()
+            ..remove('maxTierReached');
+      final r = actions.mergeSave(before, old);
+      expect(r.extra['clamped'], isFalse);
+      expect(r.save!.gold, 1000 + ch.rewardGold);
+    });
+
     test('클리어하지 않은 챕터를 claim 해도 보상만큼 봐주지 않는다', () {
       final big = bigChapter();
       final reward = chapterClearGold(cfg.run, big, 3);

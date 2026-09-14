@@ -95,6 +95,7 @@ void main(List<String> args) {
   final buffs = BuffConfig.fromJson(load('buffs.json'));
   final iap = IapConfig.fromJson(load('iap.json'));
   final event = EventConfig.fromJson(load('event.json'));
+  final dex = DexConfig.fromJson(load('dex.json'));
 
   final rows = <({String name, double perDay, String note})>[];
 
@@ -210,6 +211,20 @@ void main(List<String> args) {
         ? '참가만(젤리 없음 — 참가는 회차마다 반복되는 통로다)'
         : '$_eventRank위 ${eventTier?.jelly ?? 0}젤리 '
               '(${roundDays.toStringAsFixed(0)}일 회차 → ÷${roundDays.toStringAsFixed(0)})',
+  ));
+
+  // ── 8. 도감 마일스톤(발견·정복·보스 수집) — **유한**하다(종 20·보스 44 가 끝).
+  // 무한 통로는 아니지만 총량이 크면 초반 수입을 부풀리므로 90일 환산으로 같이 본다.
+  final dexJelly = [
+    ...dex.discoverMilestones,
+    ...dex.conquerMilestones,
+    ...dex.bossMilestones,
+  ].fold<int>(0, (a, m) => a + m.jelly);
+  const dexDays = 90; // 극한 최종 보스까지의 설계 기간(CLAUDE.md §2.4)
+  rows.add((
+    name: '도감(일회성)',
+    perDay: dexJelly / dexDays,
+    note: '발견·정복·보스 마일스톤 합 $dexJelly젤리 — 계정당 1회, 90일 환산(÷$dexDays)',
   ));
 
   final total = rows.fold<double>(0, (a, r) => a + r.perDay);

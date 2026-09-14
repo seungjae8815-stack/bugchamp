@@ -323,15 +323,31 @@ class GameActions {
     if (tier < clientTop) return 0;
     // 저장본 스테이지는 **같은 난이도**일 때만 근거가 된다 — 쉬움 1001 에서 보통으로
     // 넘어간 직후 그 1001 로 보통 챕터를 전부 넘긴 것처럼 보이면 안 된다.
+    // 최고 기록(`bestStage`)도 본다 — 보스를 깨고 곧장 아래 사냥터로 내려가면
+    // 지금 스테이지는 낮아지지만 방금 받은 보상은 정당하다(최고 기록은 최고
+    // 난이도에서만 오른다, `SaveController._commit`).
     final storedStage = stored.difficultyTier == tier ? stored.stageNumber : 0;
-    final highest = stage > storedStage ? stage : storedStage;
+    final best = epoch < kZoneEpoch
+        ? 0
+        : (clientJson['bestStage'] as num?)?.toInt() ?? 0;
+    final highest = max(max(stage, storedStage), best);
+    // 전환기(2026-09-15): 구버전 앱(난이도별 키·30분치 보상 이전)은 평문 키(`w3`)와
+    // 옛 정액(`rewardGold`)을 올린다. 새 앱은 난이도 1 이상이면 `maxTierReached` 를
+    // 싣는다 — 그 키가 없고 난이도 키 대신 평문 키가 있으면 구버전으로 보고 옛
+    // 정액을 인정한다. 앱이 나갈 때까지 기존 유저의 챕터 보상이 통째로 잘리지
+    // 않게 하려는 것이다(쉬움은 키가 같아 구분이 안 되므로 둘 중 큰 쪽).
+    final maybeOld = tier >= 1 && !clientJson.containsKey('maxTierReached');
     var sum = 0;
     for (final ch in chapters) {
       final key = chapterClearKey(ch.id, tier);
-      if (claimed.contains(key) &&
-          !already.contains(key) &&
-          ch.clearedBy(highest)) {
-        sum += chapterClearGold(config.run, ch, tier);
+      if (already.contains(key) || !ch.clearedBy(highest)) continue;
+      if (claimed.contains(key)) {
+        final now = chapterClearGold(config.run, ch, tier);
+        sum += tier == 0 ? max(now, ch.rewardGold) : now;
+      } else if (maybeOld &&
+          claimed.contains(ch.id) &&
+          !already.contains(ch.id)) {
+        sum += ch.rewardGold;
       }
     }
     return sum;
@@ -400,15 +416,29 @@ class GameActions {
       moveSpeed: bare.moveSpeed,
       boostBonus: bare.boostBonus,
     );
+    // 봉투는 **올라온 세이브가 있는 자리**로 잰다(2026-09-15). 가 본 난이도로는
+    // 자유롭게 오갈 수 있어서(B안), 저장본이 쉬움인데 클라가 극한 사냥터 11 에
+    // 올라가 60초를 놀면 저장본 기준 봉투(쉬움)로는 극한 수입이 100배라 잘린다.
+    // 난이도는 저장본이 가 본 최고 +1 까지만, 스테이지는 저장본과 클라 중 큰 쪽.
+    final clientTier =
+        (clientJson['difficultyTier'] as num?)?.toInt() ??
+        stored.difficultyTier;
+    final envTier = clientTier.clamp(0, stored.topTier + 1).toInt();
+    final clientStage = (clientJson['stageNumber'] as num?)?.toInt() ?? 0;
+    final envStage = envTier == stored.difficultyTier
+        ? max(stored.stageNumber, clientStage)
+        : clientStage
+              .clamp(1, config.run.zoneStartStage(config.run.zonesPerTier))
+              .toInt();
     final generous = simulateIdleProgress(
       config: config.run,
-      startStage: stored.stageNumber,
+      startStage: envStage,
       stats: stats,
       elapsed: elapsed,
       efficiency: _saveBoundEfficiency,
       // 회차는 처치 속도(÷3)와 보상(×3)에 서로 반대로 실려 대략 상쇄되지만,
       // 정확히는 아니다 — 봉투가 회차를 모른 채 좁아지면 정당한 수입이 잘린다.
-      tier: stored.difficultyTier,
+      tier: envTier,
     ).gold;
     final maxGain =
         _goldSanityFloor +
