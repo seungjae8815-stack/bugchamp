@@ -813,8 +813,11 @@ PetBonus computePetBonus(Iterable<PetStat> pets, PetConfig cfg) {
 /// 배율 스탯에 0.22 를 더하면 1.0 → 1.22 로 정확히 22% 가 된다.
 CharacterStats applySpeciesPassives(
   CharacterStats s,
-  Map<UpgradeKind, double> passives,
-) {
+  Map<UpgradeKind, double> passives, {
+
+  /// 펫 패시브가 더할 수 있는 치명확률의 상한(예산, RunConfig.critBudgetOther).
+  double critBudget = 1.0,
+}) {
   if (passives.isEmpty) return s;
   double v(UpgradeKind k) => passives[k] ?? 0;
   return CharacterStats(
@@ -825,7 +828,8 @@ CharacterStats applySpeciesPassives(
     moveSpeed: s.moveSpeed * (1 + v(UpgradeKind.moveSpeed)),
     // 아래는 원래 배율·확률·계수라 그대로 더한다.
     rewardMultiplier: s.rewardMultiplier + v(UpgradeKind.reward),
-    critChance: (s.critChance + v(UpgradeKind.crit)).clamp(0.0, 0.95),
+    critChance: (s.critChance + math.min(v(UpgradeKind.crit), critBudget))
+        .clamp(0.0, 1.0),
     critDamage: s.critDamage + v(UpgradeKind.critDamage),
     bossDamage: s.bossDamage + v(UpgradeKind.bossDamage),
     defense: s.defense + v(UpgradeKind.defense) * 100,

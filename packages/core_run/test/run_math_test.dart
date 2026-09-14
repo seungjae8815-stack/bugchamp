@@ -1,4 +1,4 @@
-import 'package:core_models/core_models.dart' show kMaxCurrency;
+import 'package:core_models/core_models.dart' show ItemOptionKind, kMaxCurrency;
 import 'package:core_run/core_run.dart';
 import 'package:test/test.dart';
 
@@ -49,6 +49,7 @@ RunConfig _config() => RunConfig.fromJson(_baseJson());
 
 void main() {
   _lateThreatTests();
+  _critBudgetTests();
   final c = _config();
 
   group('HP 스케일링', () {
@@ -828,6 +829,69 @@ void _lateThreatTests() {
       final deep = habitatThreat(c, 100000, playerToughness: 1e6);
       final capped = habitatThreat(c, 200000, playerToughness: 1e6);
       expect(deep, capped);
+    });
+  });
+}
+
+void _critBudgetTests() {
+  // 2026-09-14 사장님 확정: 치명확률 100% 를 강화·장비·그 외가 예산으로 나눈다.
+  group('치명확률 출처별 예산', () {
+    final c = RunConfig.fromJson({
+      ..._baseJson(),
+      // 기본 설정엔 치명 강화가 없다 — 예산을 재려면 있어야 한다.
+      'upgrades': [
+        ...(_baseJson()['upgrades'] as List),
+        {
+          'kind': 'crit',
+          'baseCost': 60.0,
+          'costGrowth': 1.28,
+          'baseValue': 0.0,
+          'perLevel': 0.004,
+        },
+      ],
+      'critChanceMax': 1.0,
+      'critBudgetUpgrade': 0.4,
+      'critBudgetGear': 0.35,
+      'critBudgetOther': 0.25,
+    });
+
+    test('강화만으로는 예산(40%)을 넘지 못한다', () {
+      final s = deriveStats(
+        c,
+        upgradeLevels: {UpgradeKind.crit: 1000},
+        characterLevel: 1,
+        bugsCollected: 0,
+      );
+      expect(s.critChance, closeTo(0.4, 1e-9));
+    });
+
+    test('장비 몫은 35% 에서 잘린다 — 여덟 부위가 다 굴려도', () {
+      final base = deriveStats(
+        c,
+        upgradeLevels: const {},
+        characterLevel: 1,
+        bugsCollected: 0,
+      );
+      final geared = applyEquipment(base, {
+        ItemOptionKind.critChance: 120.0,
+      }, critBudget: c.critBudgetGear);
+      expect(geared.critChance, closeTo(0.35, 1e-9));
+    });
+
+    test('세 출처를 다 채우면 정확히 100% 다', () {
+      var s = deriveStats(
+        c,
+        upgradeLevels: {UpgradeKind.crit: 1000},
+        characterLevel: 1,
+        bugsCollected: 0,
+      );
+      s = applyEquipment(s, {
+        ItemOptionKind.critChance: 100.0,
+      }, critBudget: c.critBudgetGear);
+      s = applySpeciesPassives(s, {
+        UpgradeKind.crit: 0.9,
+      }, critBudget: c.critBudgetOther);
+      expect(s.critChance, closeTo(1.0, 1e-9));
     });
   });
 }

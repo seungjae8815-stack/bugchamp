@@ -1026,8 +1026,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     var s = applyEquipment(
       _petStats(save),
       equipmentBonus(save.equippedItems.values, _data.itemConfig),
+      critBudget: _config.critBudgetGear,
     );
-    s = applySpeciesPassives(s, _speciesPassives(save));
+    s = applySpeciesPassives(
+      s,
+      _speciesPassives(save),
+      critBudget: _config.critBudgetOther,
+    );
     final dex = _data.dexConfig;
     if (dex != null) {
       s = dex.apply(
@@ -1067,6 +1072,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final geared = applyEquipment(
       perm,
       equipmentBonus(save.equippedItems.values, _data.itemConfig),
+      critBudget: _config.critBudgetGear,
     );
     final threat = habitatThreat(
       _config,

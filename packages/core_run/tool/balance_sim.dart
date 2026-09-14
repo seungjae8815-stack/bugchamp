@@ -671,9 +671,13 @@ class _Player {
       attackSpeed:
           s.attackSpeed * (1 + (_tapBoostAvg - 1) * config.boostSpeedFactor),
       rewardMultiplier: s.rewardMultiplier,
+      // 장비 몫은 예산(critBudgetGear)까지 — 앱의 applyEquipment 와 같은 규칙.
       critChance:
           (s.critChance +
-                  _equipCritChance * math.min(1.0, stage / _equipFullStage))
+                  math.min(
+                    config.critBudgetGear,
+                    _equipCritChance * math.min(1.0, stage / _equipFullStage),
+                  ))
               .clamp(0.0, 1.0),
       critDamage:
           s.critDamage +

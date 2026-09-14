@@ -185,6 +185,9 @@ class RunConfig {
     this.boostStepPerTap = 0.15,
     this.boostMultMax = 5.0,
     this.critChanceMax = 0.85,
+    this.critBudgetUpgrade = 1.0,
+    this.critBudgetGear = 1.0,
+    this.critBudgetOther = 1.0,
     this.walkThreatMult = 0.0,
     this.boostDecayPerSec = 0.4,
     this.boostSpeedFactor = 1.0,
@@ -356,6 +359,14 @@ class RunConfig {
   /// 1.0 이면 모든 타격이 치명타가 되어 노란 숫자·큰 흔들림이 기본값이 되고,
   /// 때리는 손맛이 통째로 죽는다(2026-09-07). 변동이 있어야 한 방이 특별하다.
   final double critChanceMax;
+
+  /// 치명확률 **출처별 예산**(2026-09-14 사장님 확정). 상한 100% 를 강화·장비·
+  /// 그 외(펫 패시브 등)에 나눠 준다 — 모든 콘텐츠를 다 채워도 합이 상한을
+  /// 넘지 않게. 예전엔 강화만으로 100%, 장비 한 부위가 67% 라 두 부위면 끝이었다.
+  /// 그러면 나머지 출처는 전부 죽은 투자가 된다. 1.0 = 예산 없음(예전 동작).
+  final double critBudgetUpgrade;
+  final double critBudgetGear;
+  final double critBudgetOther;
 
   /// 탭을 멈췄을 때 초당 떨어지는 배율.
   final double boostDecayPerSec;
@@ -655,6 +666,9 @@ class RunConfig {
       boostStepPerTap: (json['boostStepPerTap'] as num?)?.toDouble() ?? 0.15,
       boostMultMax: (json['boostMultMax'] as num?)?.toDouble() ?? 5.0,
       critChanceMax: (json['critChanceMax'] as num?)?.toDouble() ?? 0.85,
+      critBudgetUpgrade: (json['critBudgetUpgrade'] as num?)?.toDouble() ?? 1.0,
+      critBudgetGear: (json['critBudgetGear'] as num?)?.toDouble() ?? 1.0,
+      critBudgetOther: (json['critBudgetOther'] as num?)?.toDouble() ?? 1.0,
       walkThreatMult: (json['walkThreatMult'] as num?)?.toDouble() ?? 0.0,
       boostDecayPerSec: (json['boostDecayPerSec'] as num?)?.toDouble() ?? 0.4,
       boostSpeedFactor: (json['boostSpeedFactor'] as num?)?.toDouble() ?? 1.0,

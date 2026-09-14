@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 
 import 'character_stats.dart';
@@ -43,8 +45,13 @@ int equipmentStorageSlots(Iterable<EquipItem> equipped, ItemConfig? config) {
 /// — 전설 장비를 껴도 체감 1.7배밖에 안 됐다(실측).
 CharacterStats applyEquipment(
   CharacterStats base,
-  Map<ItemOptionKind, double> bonus,
-) {
+  Map<ItemOptionKind, double> bonus, {
+
+  /// 장비가 더할 수 있는 치명확률의 상한(예산). 1.0 = 제한 없음.
+  /// 8부위가 전부 치명확률을 굴려도 이 몫을 넘지 않는다 — 나머지 출처의
+  /// 자리를 남겨 두기 위해서다(RunConfig.critBudgetGear).
+  double critBudget = 1.0,
+}) {
   if (bonus.isEmpty) return base;
   double m(ItemOptionKind k) => 1 + (bonus[k] ?? 0) / 100.0;
   double add(ItemOptionKind k) => (bonus[k] ?? 0) / 100.0;
@@ -55,10 +62,9 @@ CharacterStats applyEquipment(
     rewardMultiplier: base.rewardMultiplier * m(ItemOptionKind.gold),
     // 치명타 **확률**은 배율이 아니라 더하기다(0.05 = +5%p).
     // 배율로 넣으면 기본 확률이 0 인 유저에게 아무 일도 일어나지 않는다.
-    critChance: (base.critChance + add(ItemOptionKind.critChance)).clamp(
-      0.0,
-      1.0,
-    ),
+    critChance:
+        (base.critChance + math.min(add(ItemOptionKind.critChance), critBudget))
+            .clamp(0.0, 1.0),
     critDamage: base.critDamage + add(ItemOptionKind.critDamage),
     bossDamage: base.bossDamage * m(ItemOptionKind.bossDamage),
     maxHp: base.maxHp * m(ItemOptionKind.maxHp),

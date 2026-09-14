@@ -341,7 +341,9 @@ CharacterStats deriveStats(
     // 치명피해로 돌리는데, 여기서 먼저 잘리면 돌릴 게 5% 뿐이라 레벨 91 부터
     // **70 레벨이 헛돈**이었다(2026-09-09). 100% 초과는 어차피 의미가 없고
     // 적응형 체력 기준(`baselineHitPower`)도 1.0 에서 자르므로 §7 과 맞는다.
-    critChance: v(UpgradeKind.crit, 0.0).clamp(0.0, 1.0),
+    // 강화가 줄 수 있는 치명확률은 예산(critBudgetUpgrade)까지 — 상한 100% 를
+    // 강화·장비·그 외가 나눠 쓴다(RunConfig 참조).
+    critChance: v(UpgradeKind.crit, 0.0).clamp(0.0, c.critBudgetUpgrade),
     critDamage: v(UpgradeKind.critDamage, 2.0),
     bossDamage: v(UpgradeKind.bossDamage, 1.0),
     maxHp: v(UpgradeKind.maxHp, 100.0) * levelScale,

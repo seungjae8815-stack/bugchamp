@@ -620,15 +620,29 @@ void _critCapTests() {
       expect(b.critDamage, greaterThan(a.critDamage));
     });
 
-    test('실데이터 상한은 1.0 미만이다 — 1.0 이면 이 시스템이 꺼진 것과 같다', () {
+    test('실데이터: 출처별 예산이 상한을 정확히 채운다(2026-09-14 예산제)', () {
+      // 예전엔 상한 0.85 + 넘침을 치명피해로 돌리는 방식이었다. 이제 상한
+      // 100% 를 강화·장비·그 외가 예산으로 나눠 가지므로, 세 예산의 합이
+      // 상한이어야 한다 — 합이 작으면 절대 100% 에 못 닿고, 크면 한 출처가
+      // 남의 자리를 먹는다.
       final cfg = RunConfig.fromJson(
         jsonDecode(
               File('../app/assets/data/run_config.json').readAsStringSync(),
             )
             as Map<String, dynamic>,
       );
-      expect(cfg.critChanceMax, lessThan(1.0));
-      expect(cfg.critChanceMax, greaterThan(0.5));
+      final sum =
+          cfg.critBudgetUpgrade + cfg.critBudgetGear + cfg.critBudgetOther;
+      expect(sum, closeTo(cfg.critChanceMax, 1e-9));
+      expect(cfg.critBudgetUpgrade, lessThan(1.0));
+      expect(cfg.critBudgetGear, lessThan(1.0));
+      expect(cfg.critBudgetOther, lessThan(1.0));
+      // 강화 상한 레벨을 다 찍으면 정확히 강화 예산이 된다.
+      final crit = cfg.upgrades[UpgradeKind.crit]!;
+      expect(
+        crit.valueAt(crit.maxLevel!),
+        closeTo(cfg.critBudgetUpgrade, 1e-9),
+      );
     });
   });
 }
