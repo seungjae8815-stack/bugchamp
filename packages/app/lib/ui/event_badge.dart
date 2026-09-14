@@ -59,11 +59,19 @@ class EventBadgeChip extends StatelessWidget {
     required this.id,
     this.size = 11,
     this.compact = false,
+    this.margin = const EdgeInsets.only(left: 6),
   });
 
   final String id;
   final double size;
   final bool compact;
+
+  /// 칩 바깥 여백. 이름 **옆**에 붙일 땐 왼쪽을 띄우고(기본), 이름 **위**에
+  /// 올릴 땐 아래를 띄운다([aboveName]).
+  final EdgeInsetsGeometry margin;
+
+  /// 이름 위에 올리는 칩의 여백.
+  static const aboveName = EdgeInsets.only(bottom: 2);
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +90,7 @@ class EventBadgeChip extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(left: 6),
+      margin: margin,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),

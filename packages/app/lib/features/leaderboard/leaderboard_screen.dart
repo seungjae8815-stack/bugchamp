@@ -507,29 +507,35 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // 원인이다(2026-08-27 실기). Expanded 하나면 남는 공간이 전부
           // 이름 칸으로 가고 점수는 항상 오른쪽 끝에 붙는다.
           Expanded(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  child: Text(
-                    // 부적절한 닉네임은 표시 단계에서 대체(채팅과 같은 기준).
-                    rules.maskNickname(
-                      e.profile.nickname,
-                      fallback: l.nicknameFallback,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: (e.isMe || top)
-                          ? FontWeight.w900
-                          : FontWeight.w600,
-                      fontSize: top ? 15 : 13.5,
-                    ),
-                  ),
-                ),
                 // 대회 회차 뱃지 — 리그 뱃지와 달리 **모든 축**에 붙는다.
                 // 결투를 안 하는 유저도 대회에는 나가고, 그게 이 표식의 요지다.
-                EventBadgeChip(id: e.badge, size: top ? 12 : 10.5),
+                // ⚠️ 이름 **위**에 둔다. 옆에 두면 `1회차 챔피언` 칩이 폭을
+                // 먹어 이름이 잘렸다(2026-09-15 실기 지적).
+                EventBadgeChip(
+                  id: e.badge,
+                  size: top ? 11 : 10,
+                  margin: EventBadgeChip.aboveName,
+                ),
+                Text(
+                  // 부적절한 닉네임은 표시 단계에서 대체(채팅과 같은 기준).
+                  rules.maskNickname(
+                    e.profile.nickname,
+                    fallback: l.nicknameFallback,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: (e.isMe || top)
+                        ? FontWeight.w900
+                        : FontWeight.w600,
+                    fontSize: top ? 15 : 13.5,
+                  ),
+                ),
               ],
             ),
           ),

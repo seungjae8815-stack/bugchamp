@@ -301,17 +301,22 @@ class _EventHallSectionState extends ConsumerState<EventHallSection> {
           ),
           const SizedBox(width: 6),
           Expanded(
-            child: Row(
+            // 뱃지는 이름 **위** — 옆에 두면 이름이 잘린다(랭킹과 같은 이유).
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  child: Text(
-                    nickname,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                  ),
+                EventBadgeChip(
+                  id: '${e['badge'] ?? ''}',
+                  size: 10,
+                  margin: EventBadgeChip.aboveName,
                 ),
-                EventBadgeChip(id: '${e['badge'] ?? ''}', size: 10),
+                Text(
+                  nickname,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                ),
               ],
             ),
           ),

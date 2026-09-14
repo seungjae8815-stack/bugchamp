@@ -951,21 +951,32 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   // Spacer 로 두면 이름 길이에 따라 웨이브 칸의 시작점이 줄마다
                   // 달라진다(2026-09-02 지적).
                   Expanded(
-                    // 닉네임은 **마스킹해서** 쓴다 — 다른 랭킹·채팅과 같은 규칙.
-                    child: Text(
-                      rules.maskNickname(
-                        '${e['nickname'] ?? ''}',
-                        fallback: l.nicknameFallback,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13.5,
-                      ),
+                    // 뱃지는 이름 **위** — 옆에 두면 이름이 잘린다(랭킹과 같은 이유).
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        EventBadgeChip(
+                          id: '${e['badge'] ?? ''}',
+                          size: 10,
+                          margin: EventBadgeChip.aboveName,
+                        ),
+                        // 닉네임은 **마스킹해서** 쓴다 — 다른 랭킹·채팅과 같은 규칙.
+                        Text(
+                          rules.maskNickname(
+                            '${e['nickname'] ?? ''}',
+                            fallback: l.nicknameFallback,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  EventBadgeChip(id: '${e['badge'] ?? ''}'),
                   const SizedBox(width: 6),
                   // 웨이브 — **고정 폭 + 세 자리 채움 + 같은 폭 숫자**.
                   // 셋이 다 있어야 이름 길이와 무관하게 같은 자리에 선다.
