@@ -882,8 +882,11 @@ class _Player {
             }) {
               final delay = config.enemyFirstBiteDelay;
               var bitten = !(engage && delay > 0);
-              void bite() {
-                hp -= incPerSec * interval * mult;
+              void bite({bool first = false}) {
+                final follow = (first || delay <= 0)
+                    ? 1.0
+                    : config.enemyFollowBiteMult;
+                hp -= incPerSec * interval * mult * follow;
                 if (hp < low) low = hp;
                 if (hp <= 0) dead = true;
               }
@@ -897,7 +900,7 @@ class _Player {
                 if (!bitten && t + step >= delay) {
                   bitten = true;
                   acc = 0;
-                  bite();
+                  bite(first: true);
                 } else if (acc >= interval) {
                   acc -= interval;
                   bite();

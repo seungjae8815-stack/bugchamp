@@ -196,6 +196,7 @@ class RunConfig {
     this.killHealMissingPct = 0,
     this.bossKillHealMissingPct = 0,
     this.enemyFirstBiteDelay = 0,
+    this.enemyFollowBiteMult = 1.0,
     this.enemyAtkInterval = 1.5,
     this.bossAtkInterval = 1.3,
     this.bossHitMult = 1.4,
@@ -400,6 +401,14 @@ class RunConfig {
   /// 보장한다. 이 한 대가 크고(간격 x 초당 위협), 잡아서 되찾는 것이 리듬이다.
   /// 첫 물기 뒤에는 게이지를 0 에서 다시 센다 — 안 그러면 두 대가 겹친다.
   final double enemyFirstBiteDelay;
+
+  /// 첫 물기 **다음** 물기의 배율(1.0 = 같은 크기).
+  ///
+  /// 긴 전투 구간(관문 직후, 한 마리 50대)에서는 첫 물기 뒤 두 번째 물기까지
+  /// 맞아 한 마리에 45% 가 빠져 죽었다(2026-09-14 시뮬, 장비 유저 850).
+  /// 첫 대는 크게(긴장), 이어지는 대는 작게(버틸 수 있게) — 그래야 벽이
+  /// 아닌 구간에서 반복해 죽지 않는다.
+  final double enemyFollowBiteMult;
 
   /// 몬스터가 무는 간격(초). 길수록 한 대가 크다(같은 DPS 를 뭉쳐서 준다).
   ///
@@ -660,6 +669,8 @@ class RunConfig {
           (json['bossKillHealMissingPct'] as num?)?.toDouble() ?? 0,
       enemyFirstBiteDelay:
           (json['enemyFirstBiteDelay'] as num?)?.toDouble() ?? 0,
+      enemyFollowBiteMult:
+          (json['enemyFollowBiteMult'] as num?)?.toDouble() ?? 1.0,
       enemyAtkInterval: (json['enemyAtkInterval'] as num?)?.toDouble() ?? 1.5,
       bossAtkInterval: (json['bossAtkInterval'] as num?)?.toDouble() ?? 1.3,
       bossHitMult: (json['bossHitMult'] as num?)?.toDouble() ?? 1.4,

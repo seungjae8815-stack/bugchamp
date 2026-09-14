@@ -1090,8 +1090,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (_enemyAtkAcc < atkInterval) return;
       _enemyAtkAcc -= atkInterval;
     }
+    // 첫 물기 뒤의 물기는 작다 — 긴 전투에서 두 대가 겹쳐 죽지 않게.
+    final followMul = (firstBite || _config.enemyFirstBiteDelay <= 0)
+        ? 1.0
+        : _config.enemyFollowBiteMult;
     // 이전 상시 피해와 평균 DPS 가 같도록 interval 만큼 묶어서 준다.
-    final burst = incoming * atkInterval * (boss ? _config.bossHitMult : 1.0);
+    final burst =
+        incoming * atkInterval * (boss ? _config.bossHitMult : 1.0) * followMul;
     if (burst <= 0) return;
     // 팀에 나눠 준다 — 총량은 오늘과 같고, 곤충이 쓰러지면 그 몫이 넘어온다.
     _spreadDamage(burst);
