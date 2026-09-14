@@ -171,10 +171,6 @@ Color _statColor(UpgradeKind k) {
 
 /// 상한에 닿은 축은 화살표 없이 현재값만 — `→` 뒤에 같은 값을 쓰면 "왜 안
 /// 오르지"로 읽힌다.
-/// 초당 회복량 표기. 1000 미만은 소수 둘째 자리까지(초반엔 0.05 차이가
-/// 업그레이드의 전부다), 그 위로는 단위 표기(후반엔 자릿수가 계속 는다).
-String _rate(double v) => v < 1000 ? v.toStringAsFixed(2) : formatCompact(v);
-
 String _valueSingle(UpgradeKind k, double cur) {
   switch (k) {
     // 채집력·체력·방어는 자릿수가 계속 늘어난다 — 후반엔 열 자리가 넘어
@@ -483,6 +479,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 지금 몬스터의 **첫 물기**까지 남은 시간. 음수 = 이미 물었다(또는 꺼짐).
   /// 마리당 한 대를 보장하는 장치 — RunConfig.enemyFirstBiteDelay 참조.
   double _firstBiteT = -1;
+
+  /// 직전에 계산한 "한 대"의 피해량. 죽으면서 무는 한 대에 쓴다.
+  double _lastBite = 0;
   double _enemyLunge = 0; // 적(보스·서식지) 공격 달려듦 모션 값
   double _playerHitFlash = 0;
   double _screenShake = 0;
@@ -872,6 +871,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
   }
 
+  /// 마지막으로 계산한 "한 대"를 즉시 먹인다(죽으면서 무는 경우).
+  /// 값은 [_applyHabitatThreat] 가 매 틱 갱신해 둔다 — 여기서 다시 계산하면
+  /// 세이브·스탯을 또 읽어야 하고, 그 사이 값이 달라질 수 있다.
+  void _biteNow() {
+    if (_lastBite <= 0) return;
+    _spreadDamage(_lastBite);
+    _enemyLunge = 1;
+    _playerHitFlash = 0.6;
+  }
+
   void _healTeamFraction(double frac) {
     if (frac <= 0) return;
     _playerHp = math.min(_playerHpMax, _playerHp + _playerHpMax * frac);
@@ -1097,6 +1106,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 이전 상시 피해와 평균 DPS 가 같도록 interval 만큼 묶어서 준다.
     final burst =
         incoming * atkInterval * (boss ? _config.bossHitMult : 1.0) * followMul;
+    // 죽으면서 무는 한 대는 **첫 물기 크기**(followMul 이 붙지 않은 값)다.
+    _lastBite = incoming * atkInterval * (boss ? _config.bossHitMult : 1.0);
     if (burst <= 0) return;
     // 팀에 나눠 준다 — 총량은 오늘과 같고, 곤충이 쓰러지면 그 몫이 넘어온다.
     _spreadDamage(burst);
@@ -1649,6 +1660,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   void _advanceAfterDeath() {
     _dying = false;
+    // ⚠️ **죽으면서 문다.** 한 대도 못 문 채 죽었으면 그 한 대를 여기서 준다.
+    // 전력이 커지면 몬스터가 첫 물기(0.3초) 전에 죽어 **한 대도 안 맞는**
+    // 구간이 생긴다 — 스테이지 600 실측에서 한 마리가 0.0초였다(2026-09-14).
+    // 그러면 위협도를 아무리 올려도 화면에서는 아무 일도 안 일어난다.
+    // 이 한 대가 "마리당 한 대"를 처치 속도와 무관하게 보장한다.
+    if (!_isBoss && _firstBiteT > 0) {
+      _firstBiteT = -1;
+      _biteNow();
+    }
     // 처치 회복은 데이터에서 온다(§6). 서식지 20마리 × 30% 였던 시절엔
     // 스테이지마다 최대체력의 600% 를 회복해 **피가 절대 안 닳았다**.
     // 잃은 체력 비례 몫은 `killHealAmount` 한 곳(앱·시뮬 공용)에서 계산한다.

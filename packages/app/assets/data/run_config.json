@@ -40,7 +40,7 @@
  "bossThreatMult": 0.8,
  "_killHealComment": "처치 회복(최대 체력 대비). ⚠️ **마리당**이라 빠를수록 유리하다 — 순항 구간에서 이게 피격량을 넘어서면 피가 오히려 찬다(2026-09-07: 피격 9.2% vs 회복 8.0% 로 거의 비겼다). 벽 구간에서는 전투가 길어 노이즈 수준이라, 여길 줄이면 **순항만 조여지고 벽은 그대로**다. 예전 30% 시절엔 스테이지마다 600% 회복이라 위협도를 아무리 올려도 안 닳았다.",
  "_biteComment": "2026-09-14 사장님 방향: 천천히 닳는 게 아니라 **크게 맞고 죽여서 되찾는** 리듬. (1) 몬스터는 달라붙고 enemyFirstBiteDelay 뒤 반드시 한 대(처치가 빨라도 마리당 한 대), 그 뒤 enemyAtkInterval 마다. 간격이 길수록 한 대가 크다. (2) 처치 회복은 최대 비례(killHealPct) + **잃은 체력 비례**(killHealMissingPct). 잃은 만큼 채우니 피격과 회복이 만나는 높이가 생겨 체력이 그 근처를 오르내린다 — 벽에서는 한 마리에 여러 대라 그 높이가 0 아래로 내려가 죽는다. 검증: balance_sim 의 '체력 궤적' 표(최저 20~50% 가 목표).",
- "enemyFirstBiteDelay": 0.5,
+ "enemyFirstBiteDelay": 0.3,
  "enemyFollowBiteMult": 0.5,
  "enemyAtkInterval": 5.0,
  "bossAtkInterval": 5.0,

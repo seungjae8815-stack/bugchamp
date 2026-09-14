@@ -907,6 +907,8 @@ class _Player {
                 }
                 t += step;
               }
+              // 죽으면서 무는 한 대 — 첫 물기 전에 죽어도 마리당 한 대는 들어간다.
+              if (!bitten && !dead) bite(first: true);
             }
 
             final iv = config.enemyAtkInterval;
