@@ -1,0 +1,64 @@
+========================================
+ App Store — 새로운 기능 (1.0.12 / 20260932)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
+※ 범위: 1.0.11(20260912) 이후. iOS 가 1.0.11 을 건너뛰었다면 1.0.11 노트(결제 복구·선물 2배
+   하루 1회·계정 연결 시 순위표 이름 중복 수정)도 아래에 합쳐 적는다.
+※ 주의: 유저에게 불리하거나 놀랄 변경(진행도 사냥터 1 · 트로피 주간 초기화)은 반드시 적는다.
+
+<ko-KR>
+사냥터와 보스가 새로워졌어요
+
+- 난이도마다 사냥터 10곳과 최종 보스가 있습니다. 사냥터에서 몬스터를 모아 잡으면 보스에 도전할 수 있어요
+- 기존 진행도는 지금 난이도의 사냥터 1부터 다시 시작합니다. 강화, 장비, 곤충, 재화는 그대로예요
+- 한 번 가 본 난이도는 로드맵에서 자유롭게 오갈 수 있습니다. 버거우면 아래 난이도로 내려가세요
+- 모든 보스가 새 그림으로 바뀌었고, 도감에서 보스 44마리를 모을 수 있습니다
+- 보스를 모은 수에 따라 젤리와 화석을 드려요
+- 보스가 더 강해지고 공격 템포가 빨라졌습니다
+- 사냥터를 처음 점령하면 그 사냥터 30분치 골드를 받습니다
+- 공방 등급은 최대 20등급입니다
+- 곤충이 캐릭터 공격 뒤에 따라 공격합니다
+- 대회 입상자와 참가자에게 뱃지를 드리고, 채팅과 순위표에 표시됩니다
+- 대회가 없는 기간에는 명예의 전당과 다음 대회 일정을 보여줍니다
+- 순위표 진행도가 난이도와 사냥터, 전투력으로 표시됩니다
+- 리그 트로피는 매주 월요일 오전 9시에 초기화됩니다
+- 급소 노리기 수치를 소수점 한 자리까지 보여줍니다
+</ko-KR>
+
+<en-US>
+New hunting grounds and bosses
+
+- Each difficulty now has 10 hunting grounds and a final boss. Defeat enough monsters in a ground to challenge its boss
+- Existing progress restarts at hunting ground 1 of your current difficulty. Upgrades, gear, bugs and currency are kept
+- Move freely between any difficulty you have reached from the roadmap. If it feels too hard, step down a level
+- All bosses have new artwork, and you can collect 44 bosses in the Dex
+- Earn jelly and fossils as you collect more bosses
+- Bosses are tougher and attack at a faster pace
+- Conquering a hunting ground for the first time grants 30 minutes of its gold
+- The forge now goes up to grade 20
+- Bugs now attack right after your character
+- Tournament winners and participants receive badges shown in chat and on the leaderboard
+- Between tournaments you can see the Hall of Fame and the next schedule
+- Leaderboard progress now shows difficulty, hunting ground and power
+- League trophies reset every Monday at 9 AM KST
+- Critical chance is shown with one decimal place
+</en-US>
+
+<ja-JP>
+狩場とボスが新しくなりました
+
+- 難易度ごとに狩場10か所と最終ボスがあります。狩場でモンスターを倒すとボスに挑戦できます
+- これまでの進行度は現在の難易度の狩場1から再開します。強化、装備、昆虫、通貨はそのままです
+- 一度到達した難易度はロードマップから自由に移動できます。難しければ下の難易度へ
+- すべてのボスが新しいイラストになり、図鑑でボス44体を集められます
+- 集めたボスの数に応じてゼリーと化石をお届けします
+- ボスが強くなり、攻撃のテンポが速くなりました
+- 狩場を初めて制覇すると、その狩場の30分ぶんのゴールドを獲得します
+- 工房は最大20等級です
+- 昆虫がキャラクターの攻撃に続いて攻撃します
+- 大会の入賞者と参加者にバッジを贈り、チャットと順位表に表示されます
+- 大会のない期間は殿堂入りと次回の日程を表示します
+- 順位表の進行度が難易度・狩場・戦闘力で表示されます
+- リーグのトロフィーは毎週月曜午前9時(日本時間)にリセットされます
+- 急所狙いの数値を小数第1位まで表示します
+</ja-JP>
