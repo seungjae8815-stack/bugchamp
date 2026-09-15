@@ -27,6 +27,7 @@ class GameConfig implements GameConfigLike {
     this.roadmap,
     this.dex,
     this.event,
+    this.skill,
     this.speciesById = const {},
   });
 
@@ -59,6 +60,8 @@ class GameConfig implements GameConfigLike {
   final DexConfig? dex;
   @override
   final EventConfig? event;
+  @override
+  final SkillConfig? skill;
 
   @override
   List<Species> get speciesList => speciesById.values.toList();
@@ -98,6 +101,7 @@ class GameConfig implements GameConfigLike {
     // 이벤트는 열려 있을 때만 파일이 있으면 된다 — 없으면 서버는 그대로 뜨고
     // `/event/*` 만 닫힌다.
     final eventJson = await readOpt('event.json');
+    final skillJson = await readOpt('skills.json');
 
     return GameConfig(
       speciesById: {for (final s in speciesList) s.id: s},
@@ -113,6 +117,7 @@ class GameConfig implements GameConfigLike {
       roadmap: roadmapJson == null ? null : RoadmapConfig.fromJson(roadmapJson),
       dex: dexJson == null ? null : DexConfig.fromJson(dexJson),
       event: eventJson == null ? null : EventConfig.fromJson(eventJson),
+      skill: skillJson == null ? null : SkillConfig.fromJson(skillJson),
     );
   }
 }

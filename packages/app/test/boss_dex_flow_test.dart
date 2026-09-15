@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:app/data/game_data.dart';
 import 'package:app/data/save_repository.dart';
@@ -37,6 +38,7 @@ GameData _data() => GameData.fromDecoded(
   runConfig: _read('run_config.json'),
   dexConfig: _read('dex.json'),
   roadmapConfig: _read('roadmap.json'),
+  skillConfig: _read('skills.json'),
 );
 
 /// 도감 보스 수집(2026-09-15) — 보스를 깨면 기록되고, 마일스톤은 젤리·화석을 준다.
@@ -82,6 +84,38 @@ void main() {
     s = fin.read(saveControllerProvider).requireValue;
     expect(s.bossDex, {'n03', 'n_final'});
     expect(s.stageNumber, run.zoneStartStage(run.zonesPerTier));
+  });
+
+  test('보스를 잡으면 스킬 조각 — 첫 처치가 재처치보다 많다(§2.8)', () async {
+    int total(Map<String, int> m) => m.values.fold(0, (a, b) => a + b);
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      zoneEpoch: kZoneEpoch,
+      stageNumber: run.zoneStartStage(2),
+    );
+    var first = 0, repeat = 0;
+    for (var i = 0; i < 30; i++) {
+      final c = make(seed);
+      await c.read(saveControllerProvider.future);
+      final got = await c
+          .read(saveControllerProvider.notifier)
+          .advanceZone(rng: Random(i));
+      first += total(got);
+      final s = c.read(saveControllerProvider).requireValue;
+      // 받은 조각은 세이브에 들어가 있다(해금으로 빠진 몫은 레벨로).
+      expect(total(s.skillShards) + s.skillLevels.length * 10, total(got));
+
+      final again = make(
+        s.copyWith(stageNumber: run.zoneStartStage(2), skillShards: const {}),
+      );
+      await again.read(saveControllerProvider.future);
+      repeat += total(
+        await again
+            .read(saveControllerProvider.notifier)
+            .advanceZone(rng: Random(i)),
+      );
+    }
+    expect(first, greaterThan(repeat * 2));
   });
 
   test('보스 5마리 마일스톤을 받으면 젤리·화석이 들어온다', () async {

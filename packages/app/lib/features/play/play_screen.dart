@@ -516,6 +516,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   bool _defeated = false;
   double _defeatT = 0;
 
+  /// 탈피(스킬) 다음 사용 가능 시각. 화면 세션 동안만 기억한다 — 앱을 껐다 켜서
+  /// 쿨타임을 지우는 건 부활 한 번이라 세이브에 둘 만큼의 값어치가 없다.
+  DateTime? _reviveReadyAt;
+
   @override
   void initState() {
     super.initState();
@@ -828,22 +832,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// (RunConfig.killHealMissingPct). 곤충도 같은 식이다 — 캐릭터만 되살아나면
   /// 곤충은 한 번 깎인 채 영영 안 차서 벽을 두 번 만나면 반드시 쓰러진다.
   void _healTeamOnKill({required bool boss}) {
+    // 흡즙(스킬 패시브) — 처치 회복 자체를 키운다. 곤충도 같은 배율.
+    final save = ref.read(saveControllerProvider).value;
+    final skills = _data.skillConfig;
+    final mult = (save == null || skills == null)
+        ? 1.0
+        : skillKillHealMult(
+            skills,
+            levels: save.skillLevels,
+            equipped: save.equippedSkills,
+          );
     _playerHp = math.min(
       _playerHpMax,
       _playerHp +
-          killHealAmount(
-            _config,
-            hp: _playerHp,
-            maxHp: _playerHpMax,
-            boss: boss,
-          ),
+          mult *
+              killHealAmount(
+                _config,
+                hp: _playerHp,
+                maxHp: _playerHpMax,
+                boss: boss,
+              ),
     );
     for (final p in _alivePets) {
       final max = _petMaxHp(p);
       final cur = _petHp[p.bugId] ?? max;
       _petHp[p.bugId] = math.min(
         max,
-        cur + killHealAmount(_config, hp: cur, maxHp: max, boss: boss),
+        cur + mult * killHealAmount(_config, hp: cur, maxHp: max, boss: boss),
       );
     }
   }
@@ -1014,6 +1029,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _speciesPassives(save),
       critBudget: _config.critBudgetOther,
     );
+    // 스킬 패시브(§2.8)도 **기준 밖** — 끼는 순간 몬스터가 같이 세지면 스킬을
+    // 고르는 의미가 사라진다. 종 패시브와 같은 가산 층이다.
+    final skills = _data.skillConfig;
+    if (skills != null && save.equippedSkills.isNotEmpty) {
+      s = applySpeciesPassives(
+        s,
+        skillPassiveStats(
+          skills,
+          levels: save.skillLevels,
+          equipped: save.equippedSkills,
+          petCount: save.equippedBugIds.length,
+        ),
+        critBudget: _config.critBudgetOther,
+      );
+    }
     final dex = _data.dexConfig;
     if (dex != null) {
       s = dex.apply(
@@ -1689,13 +1719,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           _habitatIndex = 0;
           _tierClearPending = true;
           // 최종 보스는 사냥터를 옮기지 않지만 도감 수집은 남긴다.
-          unawaited(ref.read(saveControllerProvider.notifier).advanceZone());
+          unawaited(_advanceZoneWithShards());
           unawaited(_afterBossAdvance(_stage));
           _spawn();
           return;
         }
         final next = _config.zoneStartStage(zone + 1);
-        unawaited(ref.read(saveControllerProvider.notifier).advanceZone());
+        unawaited(_advanceZoneWithShards());
         _stage = next;
         _stageMax = math.max(_stageMax, _stage);
         _habitatIndex = 0;
@@ -1735,6 +1765,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   void _beginDefeat() {
+    // 탈피(스킬 패시브) — 쿨타임이 돌았으면 쓰러지는 대신 그 자리에서 일어난다.
+    // 곤충은 건드리지 않는다(캐릭터의 스킬이다).
+    final save = ref.read(saveControllerProvider).value;
+    final skills = _data.skillConfig;
+    final revive = (save == null || skills == null)
+        ? null
+        : skillRevive(
+            skills,
+            levels: save.skillLevels,
+            equipped: save.equippedSkills,
+          );
+    final now = _clock.now();
+    if (revive != null &&
+        (_reviveReadyAt == null || !now.isBefore(_reviveReadyAt!))) {
+      _reviveReadyAt = now.add(revive.cooldown);
+      _playerHp = _playerHpMax * revive.hpFraction;
+      _enemyAtkAcc = 0;
+      _playerHitFlash = 0;
+      if (mounted) {
+        showCenterToast(context, AppLocalizations.of(context).skillReviveToast);
+      }
+      return;
+    }
     // 즉시 넘어가지 않고 다친/죽는 연출을 보여준 뒤 후퇴.
     _defeated = true;
     _defeatT = _defeatDuration;
@@ -3394,6 +3447,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 보스 격파로 스테이지 상승 시: 최고기록 반영 후 새로 클리어한 챕터 축하.
+  /// 보스 처치 기록 + 스킬 조각(§2.8). 받은 조각을 한 줄로 알린다 —
+  /// 모르고 지나가면 스킬 화면에 가 볼 이유가 생기지 않는다.
+  Future<void> _advanceZoneWithShards() async {
+    final shards = await ref
+        .read(saveControllerProvider.notifier)
+        .advanceZone();
+    final skills = _data.skillConfig;
+    if (!mounted || shards.isEmpty || skills == null) return;
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final parts = [
+      for (final e in shards.entries)
+        if (skills.byId(e.key) case final def?)
+          '${def.name.resolve(locale)} ×${e.value}',
+    ];
+    if (parts.isEmpty) return;
+    showCenterToast(context, l.skillShardsGot(parts.join(', ')));
+  }
+
   Future<void> _afterBossAdvance(int stage) async {
     final ctrl = ref.read(saveControllerProvider.notifier);
     await ctrl.reachStage(stage);

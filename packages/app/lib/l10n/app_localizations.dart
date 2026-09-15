@@ -4972,6 +4972,240 @@ abstract class AppLocalizations {
   /// **'Skill slots are full'**
   String get skillSlotsFull;
 
+  /// No description provided for @skillEquip.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip'**
+  String get skillEquip;
+
+  /// No description provided for @skillUnequip.
+  ///
+  /// In en, this message translates to:
+  /// **'Unequip'**
+  String get skillUnequip;
+
+  /// No description provided for @skillSlotsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped {n}/{max}'**
+  String skillSlotsInfo(String n, String max);
+
+  /// No description provided for @skillNextSlotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'More slots open at new difficulties'**
+  String get skillNextSlotHint;
+
+  /// No description provided for @skillAnyShards.
+  ///
+  /// In en, this message translates to:
+  /// **'Wild shards {n}'**
+  String skillAnyShards(String n);
+
+  /// No description provided for @skillShardProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Shards {have}/{need}'**
+  String skillShardProgress(String have, String need);
+
+  /// No description provided for @skillLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get skillLocked;
+
+  /// No description provided for @skillMaxLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get skillMaxLevel;
+
+  /// No description provided for @skillTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Train'**
+  String get skillTrain;
+
+  /// No description provided for @skillTrainingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Training {name} Lv.{lv} · {left}'**
+  String skillTrainingNow(String name, String lv, String left);
+
+  /// No description provided for @skillTrainClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get skillTrainClaim;
+
+  /// No description provided for @skillTrainInstant.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish now · {n} jelly'**
+  String skillTrainInstant(String n);
+
+  /// No description provided for @skillTrainConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish training now'**
+  String get skillTrainConfirmTitle;
+
+  /// No description provided for @skillTrainConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {n} jelly to finish now?'**
+  String skillTrainConfirm(String n);
+
+  /// No description provided for @skillTrainCostShards.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} shards · {time}'**
+  String skillTrainCostShards(String n, String time);
+
+  /// No description provided for @skillTrainCostWithAny.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} shards + {any} wild · {time}'**
+  String skillTrainCostWithAny(String n, String any, String time);
+
+  /// No description provided for @skillTrainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Train {name}'**
+  String skillTrainTitle(String name);
+
+  /// No description provided for @skillLevelUpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} reached Lv.{lv}!'**
+  String skillLevelUpDone(String name, String lv);
+
+  /// No description provided for @skillErrNotEnoughShards.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough shards'**
+  String get skillErrNotEnoughShards;
+
+  /// No description provided for @skillErrTrainingBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Another skill is already training'**
+  String get skillErrTrainingBusy;
+
+  /// No description provided for @skillActiveSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Active skills are coming soon'**
+  String get skillActiveSoon;
+
+  /// No description provided for @skillHowToGet.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat hunting ground bosses to earn skill shards'**
+  String get skillHowToGet;
+
+  /// No description provided for @skillCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooldown {s}s'**
+  String skillCooldown(String s);
+
+  /// No description provided for @skillKindActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get skillKindActive;
+
+  /// No description provided for @skillKindPassive.
+  ///
+  /// In en, this message translates to:
+  /// **'Passive'**
+  String get skillKindPassive;
+
+  /// No description provided for @skillShardsGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill shards · {list}'**
+  String skillShardsGot(String list);
+
+  /// No description provided for @skillReviveToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Molting! You got back up'**
+  String get skillReviveToast;
+
+  /// No description provided for @skillFxMaterialFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Material gain +{v}%'**
+  String skillFxMaterialFind(String v);
+
+  /// No description provided for @skillFxBugFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug find +{v}%'**
+  String skillFxBugFind(String v);
+
+  /// No description provided for @skillFxBossDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss damage +{v}%'**
+  String skillFxBossDamage(String v);
+
+  /// No description provided for @skillFxPerPetAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack +{v}% per equipped bug'**
+  String skillFxPerPetAttack(String v);
+
+  /// No description provided for @skillFxKillHeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal on kill +{v}%'**
+  String skillFxKillHeal(String v);
+
+  /// No description provided for @skillFxRevive.
+  ///
+  /// In en, this message translates to:
+  /// **'Revive at {v}% HP when defeated'**
+  String skillFxRevive(String v);
+
+  /// No description provided for @skillFxMaterialBurst.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials ×{v} for {d}s'**
+  String skillFxMaterialBurst(String v, String d);
+
+  /// No description provided for @skillFxAttackSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack speed ×{v} for {d}s'**
+  String skillFxAttackSpeed(String v, String d);
+
+  /// No description provided for @skillFxAreaDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit everything for attack ×{v}'**
+  String skillFxAreaDamage(String v);
+
+  /// No description provided for @skillFxPetPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug power ×{v} for {d}s'**
+  String skillFxPetPower(String v, String d);
+
+  /// No description provided for @skillFxBurstDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'A strike for attack ×{v}'**
+  String skillFxBurstDamage(String v);
+
+  /// No description provided for @skillFxInvulnerable.
+  ///
+  /// In en, this message translates to:
+  /// **'Immune to damage for {d}s'**
+  String skillFxInvulnerable(String d);
+
   /// No description provided for @charTabStats.
   ///
   /// In en, this message translates to:

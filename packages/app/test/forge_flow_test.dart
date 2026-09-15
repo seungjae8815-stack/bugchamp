@@ -365,27 +365,51 @@ void main() {
   });
 
   group('스킬', () {
-    test('습득 → 장착, 칸을 넘기면 무시된다', () async {
+    test('보유 → 장착, 열린 칸(쉬움 2칸)을 넘기면 거절 사유를 돌려준다', () async {
       final cfg = SkillConfig.fromJson(_read('skills.json'));
-      final ids = cfg.skills.take(cfg.equipSlots + 1).map((s) => s.id).toList();
+      final slots = cfg.slotsFor(0);
+      final ids = cfg.skills.take(slots + 1).map((s) => s.id).toList();
       final c = make(
         seed().copyWith(skillLevels: {for (final id in ids) id: 1}),
       );
       await c.read(saveControllerProvider.future);
       final ctrl = c.read(saveControllerProvider.notifier);
 
+      String? last;
       for (final id in ids) {
-        await ctrl.toggleSkill(id);
+        last = await ctrl.toggleSkill(id);
       }
+      expect(last, 'slots_full');
       final s = c.read(saveControllerProvider).requireValue;
-      expect(s.equippedSkills.length, cfg.equipSlots);
+      expect(s.equippedSkills.length, slots);
 
       // 다시 누르면 해제된다.
       await ctrl.toggleSkill(s.equippedSkills.first);
       expect(
         c.read(saveControllerProvider).requireValue.equippedSkills.length,
-        cfg.equipSlots - 1,
+        slots - 1,
       );
+    });
+
+    test('수련 → 젤리 즉시완료로 레벨 +1', () async {
+      final cfg = SkillConfig.fromJson(_read('skills.json'));
+      final def = cfg.skills.first;
+      final c = make(
+        seed().copyWith(
+          skillLevels: {def.id: 1},
+          skillShards: {def.id: cfg.shardsForLevel(def, 1)},
+          materials: {MaterialKind.jelly: 1000},
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.completeSkillTraining(), 'no_training');
+      expect(await ctrl.startSkillTraining(def.id), isNull);
+      expect(await ctrl.completeSkillTraining(), 'not_ready');
+      expect(await ctrl.completeSkillTraining(viaJelly: true), isNull);
+      final s = c.read(saveControllerProvider).requireValue;
+      expect(s.skillLevels[def.id], 2);
+      expect(s.materialCount(MaterialKind.jelly), lessThan(1000));
     });
 
     test('미보유 스킬은 장착되지 않는다', () async {

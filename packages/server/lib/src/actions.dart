@@ -381,6 +381,111 @@ class GameActions {
     return sum;
   }
 
+  /// 한 번의 업로드에서 인정하는 **보스 재처치** 수. 보스는 100마리를 잡아야
+  /// 도전이 열려 업로드 주기(60초)에 한 번도 어렵다 — 네트워크가 끊긴 채 몇 시간
+  /// 논 경우까지 덮도록 넉넉히 둔다.
+  static const _skillRepeatKillSlack = 30;
+
+  /// 스킬 필드 강제(§2.8). 처리는 기기 권위라 **위조를 완전히 막지는 못한다** —
+  /// 결투·대회에 싣지 않는 것이 방어선이고, 여기는 세 가지를 막는다.
+  ///
+  /// 1. **스킬을 모르는 앱의 업로드가 조각·수련을 지우는 것.** 새 앱은
+  ///    `skillAnyShards` 를 항상 싣는다. 그 키가 없으면 저장본의 스킬 필드를 지킨다
+  ///    (`bossDex`·`maxTierReached` 와 같은 사고 — 구버전은 모르는 키를 빼고 올린다).
+  /// 2. **조각을 쏟아 넣는 것.** 조각 가치(스킬 조각 × 등급 환산 + 만능)의 증가가
+  ///    허용치(새로 잡은 보스 × 첫 처치 최대 + 재처치 여유)를 넘으면 저장본으로.
+  /// 3. **조각 없이 레벨을 올리는 것.** 오른 레벨의 비용(해금·수련 조각의 가치)을
+  ///    이번 업로드에서 줄어든 조각 가치 + 허용치가 덮지 못하면 저장본으로.
+  ///    수련은 시작할 때 조각을 내므로, 저장본에서 수련 중이던 스킬의 한 레벨은 선불이다.
+  ///
+  /// 레벨 ≤ 만렙 · 장착은 보유한 것만·열린 칸까지는 `enforceSkillRules`(앱 로드와 같은 함수).
+  SaveGame _enforceSkills(
+    SaveGame stored,
+    SaveGame client,
+    Map<String, dynamic> clientJson,
+    SkillConfig cfg,
+  ) {
+    var out = client;
+    if (!clientJson.containsKey('skillAnyShards')) {
+      final levels = {...stored.skillLevels};
+      for (final e in client.skillLevels.entries) {
+        levels[e.key] = max(levels[e.key] ?? 0, e.value);
+      }
+      out = out.copyWith(
+        skillLevels: levels,
+        skillShards: stored.skillShards,
+        skillAnyShards: stored.skillAnyShards,
+        skillTrainingId: stored.skillTrainingId,
+        skillTrainingEndsAt: stored.skillTrainingEndsAt,
+        clearSkillTraining: stored.skillTrainingId == null,
+      );
+    }
+    out = enforceSkillRules(out, cfg);
+
+    int value(SaveGame s) {
+      var v = s.skillAnyShards;
+      for (final e in s.skillShards.entries) {
+        final def = cfg.byId(e.key);
+        if (def != null) v += e.value * cfg.anyValueOf(def.grade);
+      }
+      return v;
+    }
+
+    var perRoll = 0;
+    for (final g in kSkillGrades) {
+      perRoll = max(perRoll, (cfg.shardsPerRoll[g] ?? 0) * cfg.anyValueOf(g));
+    }
+    final newBosses = max(0, out.bossDex.length - stored.bossDex.length);
+    final allow =
+        newBosses * cfg.bossFirstKillRolls * perRoll +
+        _skillRepeatKillSlack * cfg.bossRepeatRolls * perRoll;
+
+    var levelCost = 0;
+    for (final def in cfg.skills) {
+      final from = stored.skillLevels[def.id] ?? 0;
+      final to = out.skillLevels[def.id] ?? 0;
+      final unit = cfg.anyValueOf(def.grade);
+      for (var lv = from; lv < to; lv++) {
+        if (lv == from && lv > 0 && stored.skillTrainingId == def.id) continue;
+        levelCost +=
+            (lv == 0 ? cfg.unlockShards : cfg.shardsForLevel(def, lv)) * unit;
+      }
+    }
+    final gained = value(out) - value(stored) + levelCost;
+    if (gained > allow) {
+      final levels = {
+        for (final e in out.skillLevels.entries)
+          e.key: min(e.value, stored.skillLevels[e.key] ?? 0),
+      }..removeWhere((_, v) => v <= 0);
+      out = enforceSkillRules(
+        out.copyWith(
+          skillLevels: levels,
+          skillShards: stored.skillShards,
+          skillAnyShards: stored.skillAnyShards,
+          skillTrainingId: stored.skillTrainingId,
+          skillTrainingEndsAt: stored.skillTrainingEndsAt,
+          clearSkillTraining: stored.skillTrainingId == null,
+        ),
+        cfg,
+      );
+    }
+    return _sameSkills(out, client) ? client : out;
+  }
+
+  static bool _sameSkills(SaveGame a, SaveGame b) =>
+      a.skillAnyShards == b.skillAnyShards &&
+      a.skillTrainingId == b.skillTrainingId &&
+      a.skillTrainingEndsAt == b.skillTrainingEndsAt &&
+      _sameIntMap(a.skillLevels, b.skillLevels) &&
+      _sameIntMap(a.skillShards, b.skillShards) &&
+      a.equippedSkills.length == b.equippedSkills.length &&
+      Iterable.generate(
+        a.equippedSkills.length,
+      ).every((i) => a.equippedSkills[i] == b.equippedSkills[i]);
+
+  static bool _sameIntMap(Map<String, int> a, Map<String, int> b) =>
+      a.length == b.length && a.entries.every((e) => b[e.key] == e.value);
+
   /// 기기 권위 세이브 업로드 병합.
   ///
   /// 솔로 루프(업그레이드·재화·육성·방치·수령)는 **기기가 확정**하고 여기로
@@ -537,7 +642,13 @@ class GameActions {
     // 그대로 올려 세이브가 10MB 를 넘고, 업로드마다 DB 가 타임아웃한다
     // (2026-07 실제 장애). 서버가 여기서 자르고 `clamped` 로 알려주면
     // 클라이언트가 잘린 세이브를 채택해 다음 업로드부터 정상 크기가 된다.
-    final capped = enforceStorage(parsed);
+    var capped = enforceStorage(parsed);
+    final skillCfg = config.skill;
+    if (skillCfg != null) {
+      final sk = _enforceSkills(stored, capped, clientJson, skillCfg);
+      if (!identical(sk, capped)) clamped = true;
+      capped = sk;
+    }
     if (capped.bugs.length != parsed.bugs.length ||
         capped.storageCapacity != parsed.storageCapacity ||
         capped.incubatorCapacity != parsed.incubatorCapacity ||
@@ -2698,6 +2809,9 @@ abstract interface class GameConfigLike {
 
   /// 실물 경품 랭킹 이벤트. 없으면 이벤트 API 는 닫힌다.
   EventConfig? get event;
+
+  /// 캐릭터 스킬 — 업로드의 조각 급증 상한·레벨/장착 규칙에만 쓴다(처리는 기기 권위).
+  SkillConfig? get skill;
 
   /// 드롭 롤 대상 종 목록.
   List<Species> get speciesList;

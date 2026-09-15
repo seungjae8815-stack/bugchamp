@@ -2732,6 +2732,171 @@ class AppLocalizationsKo extends AppLocalizations {
   String get skillSlotsFull => '스킬 칸이 가득 찼어요';
 
   @override
+  String get skillEquip => '장착';
+
+  @override
+  String get skillUnequip => '해제';
+
+  @override
+  String skillSlotsInfo(String n, String max) {
+    return '장착 $n/$max';
+  }
+
+  @override
+  String get skillNextSlotHint => '새 난이도에 가면 칸이 늘어나요';
+
+  @override
+  String skillAnyShards(String n) {
+    return '만능 조각 $n';
+  }
+
+  @override
+  String skillShardProgress(String have, String need) {
+    return '조각 $have/$need';
+  }
+
+  @override
+  String get skillLocked => '미해금';
+
+  @override
+  String get skillMaxLevel => 'MAX';
+
+  @override
+  String get skillTrain => '수련';
+
+  @override
+  String skillTrainingNow(String name, String lv, String left) {
+    return '$name Lv.$lv 수련 중 · $left';
+  }
+
+  @override
+  String get skillTrainClaim => '수련 완료';
+
+  @override
+  String skillTrainInstant(String n) {
+    return '즉시 완료 · 젤리 $n';
+  }
+
+  @override
+  String get skillTrainConfirmTitle => '수련 즉시 완료';
+
+  @override
+  String skillTrainConfirm(String n) {
+    return '젤리 $n개를 써서 지금 완료할까요?';
+  }
+
+  @override
+  String skillTrainCostShards(String n, String time) {
+    return '조각 $n · $time';
+  }
+
+  @override
+  String skillTrainCostWithAny(String n, String any, String time) {
+    return '조각 $n + 만능 $any · $time';
+  }
+
+  @override
+  String skillTrainTitle(String name) {
+    return '$name 수련';
+  }
+
+  @override
+  String skillLevelUpDone(String name, String lv) {
+    return '$name Lv.$lv 달성!';
+  }
+
+  @override
+  String get skillErrNotEnoughShards => '조각이 부족해요';
+
+  @override
+  String get skillErrTrainingBusy => '이미 수련 중인 스킬이 있어요';
+
+  @override
+  String get skillActiveSoon => '액티브 스킬은 곧 열려요';
+
+  @override
+  String get skillHowToGet => '사냥터 보스를 잡으면 스킬 조각이 나와요';
+
+  @override
+  String skillCooldown(String s) {
+    return '쿨타임 $s초';
+  }
+
+  @override
+  String get skillKindActive => '액티브';
+
+  @override
+  String get skillKindPassive => '패시브';
+
+  @override
+  String skillShardsGot(String list) {
+    return '스킬 조각 획득 · $list';
+  }
+
+  @override
+  String get skillReviveToast => '탈피! 쓰러지지 않고 다시 일어났어요';
+
+  @override
+  String skillFxMaterialFind(String v) {
+    return '재료 획득 +$v%';
+  }
+
+  @override
+  String skillFxBugFind(String v) {
+    return '곤충 발견 +$v%';
+  }
+
+  @override
+  String skillFxBossDamage(String v) {
+    return '보스 피해 +$v%';
+  }
+
+  @override
+  String skillFxPerPetAttack(String v) {
+    return '장착 곤충 1마리당 공격 +$v%';
+  }
+
+  @override
+  String skillFxKillHeal(String v) {
+    return '처치 회복 +$v%';
+  }
+
+  @override
+  String skillFxRevive(String v) {
+    return '쓰러지면 체력 $v%로 부활';
+  }
+
+  @override
+  String skillFxMaterialBurst(String v, String d) {
+    return '$d초간 재료 ×$v';
+  }
+
+  @override
+  String skillFxAttackSpeed(String v, String d) {
+    return '$d초간 공격속도 ×$v';
+  }
+
+  @override
+  String skillFxAreaDamage(String v) {
+    return '화면 전체에 공격력 ×$v 피해';
+  }
+
+  @override
+  String skillFxPetPower(String v, String d) {
+    return '$d초간 곤충 효과 ×$v';
+  }
+
+  @override
+  String skillFxBurstDamage(String v) {
+    return '공격력 ×$v 일격';
+  }
+
+  @override
+  String skillFxInvulnerable(String d) {
+    return '$d초간 피해 무효';
+  }
+
+  @override
   String get charTabStats => '능력치';
 
   @override

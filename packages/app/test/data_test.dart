@@ -389,10 +389,10 @@ void main() {
     final forge = ForgeConfig.fromJson(_readJson('assets/data/forge.json'));
     final skills = SkillConfig.fromJson(_readJson('assets/data/skills.json'));
 
-    test('부위 8 × 등급 10 = 80종, 스킬 16종', () {
+    test('부위 8 × 등급 10 = 80종, 스킬 12종(§2.8)', () {
       expect(items.slots.length, 8);
       expect(items.tierCount, 10);
-      expect(skills.skills.length, 16);
+      expect(skills.skills.length, 12);
     });
 
     test('pubspec 이 자동 로드하는 assets/data 안에 있다', () {

@@ -13,6 +13,7 @@ import '../../ui/toast.dart';
 import 'character_scene.dart';
 import 'equip_widgets.dart';
 import 'forge_panel.dart';
+import 'skill_panel.dart';
 
 const _honey = Color(0xFFFFD54F);
 
@@ -57,20 +58,16 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
                   child: CharacterScene(save: save),
                 ),
                 const SizedBox(height: 8),
-                // 펫·스킬은 아직 다듬는 중이다. 반쯤 된 걸 보여 주느니
+                // 펫은 아직 다듬는 중이다. 반쯤 된 걸 보여 주느니
                 // **준비 중이라고 말한다** — 눌러도 아무 일이 없으면
-                // 고장으로 읽힌다. 다시 켤 땐 이 분기만 되돌리면 된다.
+                // 고장으로 읽힌다. 스킬은 2026-09-15 에 열었다(§2.8).
                 //
                 // ⚠️ 장비·공방은 **능력치 탭에만** 붙인다. 준비 중 안내 밑에
                 // 장비칸이 그대로 있으면 "펫인데 왜 장비가 있지"가 된다.
-                if (_panel != _Panel.stats)
-                  Expanded(
-                    child: _SoonPanel(
-                      label: _panel == _Panel.pets
-                          ? l.charTabPets
-                          : l.charTabSkills,
-                    ),
-                  )
+                if (_panel == _Panel.pets)
+                  Expanded(child: _SoonPanel(label: l.charTabPets))
+                else if (_panel == _Panel.skills)
+                  Expanded(child: SkillPanel(save: save))
                 else ...[
                   _StatsPanel(save: save),
                   const SizedBox(height: 8),
@@ -289,144 +286,6 @@ class _PetsPanel extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// 스킬 — 액티브·패시브 **공용 5칸**.
-// 준비 중이라 지금은 안 쓴다. **지우지 않는다** — 다시 켤 때 그대로 붙인다.
-// ignore: unused_element
-class _SkillsPanel extends ConsumerWidget {
-  const _SkillsPanel({required this.save});
-  final SaveGame save;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final cfg = ref.watch(gameDataProvider).value?.skillConfig;
-    if (cfg == null) return const SizedBox.shrink();
-    final locale = Localizations.localeOf(context).languageCode;
-    final ctrl = ref.read(saveControllerProvider.notifier);
-
-    // 스킬은 몇 개가 될지 모른다 — **높이를 묶어 두고 안에서 굴린다**.
-    // 안 묶으면 스킬이 늘어날 때마다 캐릭터 탭이 한 화면을 넘긴다.
-    return SizedBox(
-      height: 168,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          for (final def in cfg.skills)
-            _row(context, l, locale, ctrl, cfg, def),
-        ],
-      ),
-    );
-  }
-
-  Widget _row(
-    BuildContext context,
-    AppLocalizations l,
-    String locale,
-    SaveController ctrl,
-    SkillConfig cfg,
-    SkillDef def,
-  ) {
-    final lv = save.skillLevels[def.id] ?? 0;
-    final equipped = save.equippedSkills.contains(def.id);
-    final owned = lv > 0;
-    final cost = cfg.levelUpCost(lv + 1);
-    final canLevel =
-        lv < cfg.maxLevel &&
-        save.gold >= cost.gold &&
-        save.materialCount(MaterialKind.chitin) >= cost.material;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0x55121A10),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: equipped ? _honey : const Color(0x22FFFFFF),
-          width: equipped ? 1.6 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            def.isActive ? Icons.bolt_rounded : Icons.auto_awesome_rounded,
-            size: 18,
-            color: def.isActive ? const Color(0xFF4FC3F7) : _honey,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  def.name.resolve(locale),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  owned ? 'Lv.$lv' : l.skillLearn,
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (owned)
-            _mini(equipped ? l.skillEquipped : l.charEquipment, () async {
-              final wasFull = save.equippedSkills.length >= cfg.equipSlots;
-              await ctrl.toggleSkill(def.id);
-              // 칸이 차서 무시됐으면 이유를 알려준다 — 눌렀는데 아무 일도
-              // 없으면 고장으로 보인다.
-              if (!equipped && wasFull && context.mounted) {
-                showCenterToast(context, l.skillSlotsFull);
-              }
-            }, on: equipped),
-          const SizedBox(width: 6),
-          _mini(
-            owned ? '+' : l.skillLearn,
-            canLevel
-                ? () => ctrl.levelUpSkill(def.id)
-                : () => showCenterToast(context, l.notEnoughGold),
-            on: false,
-            dim: !canLevel,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _mini(
-    String text,
-    VoidCallback onTap, {
-    required bool on,
-    bool dim = false,
-  }) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: on ? const Color(0x33FFD54F) : const Color(0x22FFFFFF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: on ? _honey : const Color(0x33FFFFFF)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: dim ? const Color(0x66FFFFFF) : Colors.white,
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    ),
-  );
 }
 
 /// 장비 8칸 — 부위마다 **낀 것 1개**. 가방이 없다.

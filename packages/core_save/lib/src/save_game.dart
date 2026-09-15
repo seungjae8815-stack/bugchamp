@@ -499,6 +499,10 @@ class SaveGame {
     this.forgeStack = const [],
     this.skillLevels = const {},
     this.equippedSkills = const [],
+    this.skillShards = const {},
+    this.skillAnyShards = 0,
+    this.skillTrainingId,
+    this.skillTrainingEndsAt,
     this.forgeLevel = 0,
     this.forgeSteps = 0,
     this.forgeUpAt,
@@ -926,8 +930,22 @@ class SaveGame {
   /// 보유한 스킬의 레벨(`skillId` → 레벨). 없으면 미보유.
   final Map<String, int> skillLevels;
 
-  /// 장착한 스킬 id 5칸. **액티브·패시브 공용** — 칸을 나누면 선택이 사라진다.
+  /// 장착한 스킬 id. **액티브·패시브 공용** — 칸을 나누면 선택이 사라진다.
+  /// 칸 수는 처음 가 본 최고 난이도로 열린다(`SkillConfig.slotsFor`).
   final List<String> equippedSkills;
+
+  /// 스킬 조각(`skillId` → 개수) — 해금·수련 재료(CLAUDE.md §2.8).
+  ///
+  /// ⚠️ 새 `MaterialKind` 로 만들지 않는다. 구버전 앱이 모르는 재료 키에서
+  /// 크래시가 났다 — 별도 필드면 구버전은 필드째 무시한다.
+  final Map<String, int> skillShards;
+
+  /// 만능 조각 — 만렙 스킬로 들어온 조각이 바뀐 것. 어떤 스킬에도 넣는다.
+  final int skillAnyShards;
+
+  /// 수련 중인 스킬(한 번에 하나). 끝나는 시각과 한 쌍이다.
+  final String? skillTrainingId;
+  final DateTime? skillTrainingEndsAt;
 
   /// 공방 등급(0부터). 등급 확률 창의 위치를 정한다.
   final int forgeLevel;
@@ -1200,6 +1218,11 @@ class SaveGame {
     List<EquipItem>? forgeStack,
     Map<String, int>? skillLevels,
     List<String>? equippedSkills,
+    Map<String, int>? skillShards,
+    int? skillAnyShards,
+    String? skillTrainingId,
+    DateTime? skillTrainingEndsAt,
+    bool clearSkillTraining = false,
     int? forgeLevel,
     int? forgeSteps,
     DateTime? forgeUpAt,
@@ -1286,6 +1309,15 @@ class SaveGame {
     forgeStack: forgeStack ?? this.forgeStack,
     skillLevels: skillLevels ?? this.skillLevels,
     equippedSkills: equippedSkills ?? this.equippedSkills,
+    skillShards: skillShards ?? this.skillShards,
+    skillAnyShards: skillAnyShards ?? this.skillAnyShards,
+    // 수련이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
+    skillTrainingId: clearSkillTraining
+        ? null
+        : (skillTrainingId ?? this.skillTrainingId),
+    skillTrainingEndsAt: clearSkillTraining
+        ? null
+        : (skillTrainingEndsAt ?? this.skillTrainingEndsAt),
     forgeLevel: forgeLevel ?? this.forgeLevel,
     forgeSteps: forgeSteps ?? this.forgeSteps,
     // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
@@ -1506,6 +1538,20 @@ class SaveGame {
       for (final v in (json['equippedSkills'] as List? ?? const []))
         v as String,
     ],
+    skillShards: _intMapFromJson(
+      json['skillShards'] as Map<String, dynamic>? ?? const {},
+    ),
+    skillAnyShards: (json['skillAnyShards'] as num?)?.toInt() ?? 0,
+    // 둘 중 하나라도 깨져 있으면 수련 없음으로 읽는다 — 한쪽만 남으면
+    // "끝나는 시각 없는 수련"이 영영 안 끝난다.
+    skillTrainingId:
+        json['skillTrainingId'] is String &&
+            DateTime.tryParse('${json['skillTrainingEndsAt']}') != null
+        ? json['skillTrainingId'] as String
+        : null,
+    skillTrainingEndsAt: json['skillTrainingId'] is String
+        ? DateTime.tryParse('${json['skillTrainingEndsAt']}')?.toUtc()
+        : null,
     forgeLevel: (json['forgeLevel'] as num?)?.toInt() ?? 0,
     forgeSteps: (json['forgeSteps'] as num?)?.toInt() ?? 0,
     forgeUpAt: json['forgeUpAt'] == null
@@ -1644,6 +1690,15 @@ class SaveGame {
       'forgeStack': [for (final i in forgeStack) i.toJson()],
     if (skillLevels.isNotEmpty) 'skillLevels': skillLevels,
     if (equippedSkills.isNotEmpty) 'equippedSkills': equippedSkills,
+    if (skillShards.isNotEmpty) 'skillShards': skillShards,
+    // ⚠️ **0 이어도 항상 싣는다** — 서버가 "이 앱은 스킬 필드를 안다"를 알아보는
+    // 표식이다. 이 키가 없는 업로드(스킬 이전 앱)는 조각·수련을 모르고 올린 것이라
+    // 서버가 저장본 값을 지킨다(`GameActions._enforceSkills`).
+    'skillAnyShards': skillAnyShards,
+    if (skillTrainingId != null && skillTrainingEndsAt != null) ...{
+      'skillTrainingId': skillTrainingId,
+      'skillTrainingEndsAt': skillTrainingEndsAt!.toUtc().toIso8601String(),
+    },
     if (forgeLevel != 0) 'forgeLevel': forgeLevel,
     if (forgeSteps != 0) 'forgeSteps': forgeSteps,
     if (forgeUpAt != null) 'forgeUpAt': forgeUpAt!.toUtc().toIso8601String(),

@@ -9,6 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:core_save/core_save.dart';
+import 'package:core_save/core_save.dart'
+    as core_skill
+    show startSkillTraining, completeSkillTraining;
 import '../data/game_data.dart';
 import '../data/save_repository.dart';
 import 'bug_auto_filter.dart';
@@ -188,6 +191,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 부화 항목 정리보다 **먼저** 해야 한다 — 잘린 곤충의 부화 기록이 남으면
     // 슬롯이 새기 때문(아래 자가치유가 이어서 걷어낸다).
     save = save.trimmedToStorage();
+
+    // 스킬 필드를 규칙 안으로(만렙·장착 칸). 서버 업로드와 **같은 함수**다.
+    final skillCfg = data.skillConfig;
+    if (skillCfg != null) save = enforceSkillRules(save, skillCfg);
 
     // 자가치유: 존재하지 않는 곤충을 가리키는 부화 항목 제거(슬롯 누수 방지).
     if (save.incubating.isNotEmpty) {
@@ -587,28 +594,40 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ///
   /// 도감 보스 수집도 여기서 남긴다(2026-09-15) — 보스 처치가 들어오는 길은
   /// 이 한 곳이다. 아래 난이도로 내려가 잡아도 수집은 된다.
-  Future<void> advanceZone() async {
-    final run = ref.read(gameDataProvider).value?.runConfig;
+  ///
+  /// 보스를 잡으면 **스킬 조각**도 떨어진다(§2.8) — 그 난이도에서 처음 잡은
+  /// 보스면 많이, 다시 잡으면 조금. 받은 조각(스킬 id → 개수)을 돌려준다.
+  Future<Map<String, int>> advanceZone({math.Random? rng}) async {
+    final data = ref.read(gameDataProvider).value;
+    final run = data?.runConfig;
     final s = state.requireValue;
-    if (run == null || !run.zoneMode) return;
+    if (run == null || !run.zoneMode) return const {};
     final zone = run.zoneOf(s.stageNumber);
     final artId = run.bossArtId(s.difficultyTier, zone);
-    final bossDex = s.bossDex.contains(artId)
-        ? s.bossDex
-        : {...s.bossDex, artId};
-    if (run.isFinalZone(zone)) {
-      if (!identical(bossDex, s.bossDex)) {
-        await _commit(s.copyWith(bossDex: bossDex));
-      }
-      return;
+    final firstKill = !s.bossDex.contains(artId);
+    final bossDex = firstKill ? {...s.bossDex, artId} : s.bossDex;
+    var next = s.copyWith(bossDex: bossDex);
+    var shards = const <String, int>{};
+    final skillCfg = data?.skillConfig;
+    if (skillCfg != null) {
+      final got = grantBossShards(
+        next,
+        skillCfg,
+        rng ?? math.Random(),
+        tier: s.difficultyTier,
+        firstKill: firstKill,
+      );
+      next = got.save;
+      shards = got.shards;
     }
-    await _commit(
-      s.copyWith(
+    if (!run.isFinalZone(zone)) {
+      next = next.copyWith(
         stageNumber: run.zoneStartStage(zone + 1),
         zoneKills: 0,
-        bossDex: bossDex,
-      ),
-    );
+      );
+    }
+    await _commit(next);
+    return shards;
   }
 
   /// 도감에 잡힌 보스 수(옛 클리어 기록 포함, `collectedBosses`).
@@ -2475,42 +2494,38 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
-  /// 스킬 장착/해제. 칸(기본 5)을 넘으면 무시한다.
-  Future<void> toggleSkill(String id) async {
-    final cfg = ref.read(gameDataProvider).value?.skillConfig;
-    final s = state.requireValue;
-    final next = [...s.equippedSkills];
-    if (next.remove(id)) {
-      await _commit(s.copyWith(equippedSkills: next));
-      return;
-    }
-    if (next.length >= (cfg?.equipSlots ?? 5)) return;
-    if (!s.skillLevels.containsKey(id)) return; // 미보유
-    next.add(id);
-    await _commit(s.copyWith(equippedSkills: next));
-  }
+  /// 스킬 장착/해제. 실패면 사유 키(`slots_full`·`not_owned`)를 돌려준다 —
+  /// 눌렀는데 아무 일도 없으면 고장으로 읽힌다.
+  Future<String?> toggleSkill(String id) =>
+      _skillOp((s, cfg) => toggleSkillEquip(s, cfg, id));
 
-  /// 스킬 레벨업(골드+재료). 미보유면 **레벨 1로 습득**한다.
-  Future<bool> levelUpSkill(String id) async {
+  /// 스킬 수련 시작(조각 + 부족분 만능 조각, 타이머). 규칙은 `core_save` 한 곳.
+  Future<String?> startSkillTraining(String id) => _skillOp(
+    (s, cfg) => core_skill.startSkillTraining(
+      s,
+      cfg,
+      id,
+      ref.read(clockProvider).now().toUtc(),
+    ),
+  );
+
+  /// 스킬 수련 완료. [viaJelly] = 남은 시간만큼 젤리로 즉시.
+  Future<String?> completeSkillTraining({bool viaJelly = false}) => _skillOp(
+    (s, cfg) => core_skill.completeSkillTraining(
+      s,
+      cfg,
+      ref.read(clockProvider).now().toUtc(),
+      viaJelly: viaJelly,
+    ),
+  );
+
+  Future<String?> _skillOp(SkillOp Function(SaveGame, SkillConfig) op) async {
     final cfg = ref.read(gameDataProvider).value?.skillConfig;
-    if (cfg == null || cfg.byId(id) == null) return false;
-    final s = state.requireValue;
-    final lv = s.skillLevels[id] ?? 0;
-    if (lv >= cfg.maxLevel) return false;
-    final cost = cfg.levelUpCost(lv + 1);
-    if (s.gold < cost.gold) return false;
-    final have = s.materialCount(MaterialKind.chitin);
-    if (have < cost.material) return false;
-    final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.chitin] = have - cost.material;
-    await _commit(
-      s.copyWith(
-        gold: s.gold - cost.gold,
-        materials: mats,
-        skillLevels: {...s.skillLevels, id: lv + 1},
-      ),
-    );
-    return true;
+    if (cfg == null) return 'off';
+    final r = op(state.requireValue, cfg);
+    if (!r.isOk) return r.error;
+    await _commit(r.save!);
+    return null;
   }
 
   // ── 브리딩 (§2.5) ─────────────────────────────────────────────

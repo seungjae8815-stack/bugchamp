@@ -52,6 +52,8 @@ class _Cfg implements GameConfigLike {
         as Map<String, dynamic>,
   );
   @override
+  final SkillConfig? skill = null;
+  @override
   List<Species> get speciesList => [testSpecies];
 }
 

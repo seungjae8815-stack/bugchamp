@@ -2784,6 +2784,172 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skillSlotsFull => 'Skill slots are full';
 
   @override
+  String get skillEquip => 'Equip';
+
+  @override
+  String get skillUnequip => 'Unequip';
+
+  @override
+  String skillSlotsInfo(String n, String max) {
+    return 'Equipped $n/$max';
+  }
+
+  @override
+  String get skillNextSlotHint => 'More slots open at new difficulties';
+
+  @override
+  String skillAnyShards(String n) {
+    return 'Wild shards $n';
+  }
+
+  @override
+  String skillShardProgress(String have, String need) {
+    return 'Shards $have/$need';
+  }
+
+  @override
+  String get skillLocked => 'Locked';
+
+  @override
+  String get skillMaxLevel => 'MAX';
+
+  @override
+  String get skillTrain => 'Train';
+
+  @override
+  String skillTrainingNow(String name, String lv, String left) {
+    return 'Training $name Lv.$lv · $left';
+  }
+
+  @override
+  String get skillTrainClaim => 'Finish';
+
+  @override
+  String skillTrainInstant(String n) {
+    return 'Finish now · $n jelly';
+  }
+
+  @override
+  String get skillTrainConfirmTitle => 'Finish training now';
+
+  @override
+  String skillTrainConfirm(String n) {
+    return 'Spend $n jelly to finish now?';
+  }
+
+  @override
+  String skillTrainCostShards(String n, String time) {
+    return '$n shards · $time';
+  }
+
+  @override
+  String skillTrainCostWithAny(String n, String any, String time) {
+    return '$n shards + $any wild · $time';
+  }
+
+  @override
+  String skillTrainTitle(String name) {
+    return 'Train $name';
+  }
+
+  @override
+  String skillLevelUpDone(String name, String lv) {
+    return '$name reached Lv.$lv!';
+  }
+
+  @override
+  String get skillErrNotEnoughShards => 'Not enough shards';
+
+  @override
+  String get skillErrTrainingBusy => 'Another skill is already training';
+
+  @override
+  String get skillActiveSoon => 'Active skills are coming soon';
+
+  @override
+  String get skillHowToGet =>
+      'Defeat hunting ground bosses to earn skill shards';
+
+  @override
+  String skillCooldown(String s) {
+    return 'Cooldown ${s}s';
+  }
+
+  @override
+  String get skillKindActive => 'Active';
+
+  @override
+  String get skillKindPassive => 'Passive';
+
+  @override
+  String skillShardsGot(String list) {
+    return 'Skill shards · $list';
+  }
+
+  @override
+  String get skillReviveToast => 'Molting! You got back up';
+
+  @override
+  String skillFxMaterialFind(String v) {
+    return 'Material gain +$v%';
+  }
+
+  @override
+  String skillFxBugFind(String v) {
+    return 'Bug find +$v%';
+  }
+
+  @override
+  String skillFxBossDamage(String v) {
+    return 'Boss damage +$v%';
+  }
+
+  @override
+  String skillFxPerPetAttack(String v) {
+    return 'Attack +$v% per equipped bug';
+  }
+
+  @override
+  String skillFxKillHeal(String v) {
+    return 'Heal on kill +$v%';
+  }
+
+  @override
+  String skillFxRevive(String v) {
+    return 'Revive at $v% HP when defeated';
+  }
+
+  @override
+  String skillFxMaterialBurst(String v, String d) {
+    return 'Materials ×$v for ${d}s';
+  }
+
+  @override
+  String skillFxAttackSpeed(String v, String d) {
+    return 'Attack speed ×$v for ${d}s';
+  }
+
+  @override
+  String skillFxAreaDamage(String v) {
+    return 'Hit everything for attack ×$v';
+  }
+
+  @override
+  String skillFxPetPower(String v, String d) {
+    return 'Bug power ×$v for ${d}s';
+  }
+
+  @override
+  String skillFxBurstDamage(String v) {
+    return 'A strike for attack ×$v';
+  }
+
+  @override
+  String skillFxInvulnerable(String d) {
+    return 'Immune to damage for ${d}s';
+  }
+
+  @override
   String get charTabStats => 'Stats';
 
   @override

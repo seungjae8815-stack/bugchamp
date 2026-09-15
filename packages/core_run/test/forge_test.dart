@@ -257,10 +257,20 @@ void main() {
   group('스킬 데이터(skills.json)', () {
     final skills = _skills();
 
-    test('장착 5칸, 액티브·패시브 공용', () {
-      expect(skills.equipSlots, 5);
-      expect(skills.actives.length, greaterThanOrEqualTo(8));
-      expect(skills.passives.length, greaterThanOrEqualTo(8));
+    test('12종 · 등급 4단계에 고르게 · 칸은 진행도로 2 → 5', () {
+      expect(skills.skills.length, 12);
+      for (final g in kSkillGrades) {
+        expect(
+          skills.skills.where((s) => s.grade == g).length,
+          3,
+          reason: g.key,
+        );
+      }
+      expect(skills.skills.any((s) => s.grade == Grade.uncommon), isFalse);
+      expect(skills.slotsFor(0), 2);
+      expect(skills.slotsFor(3), 5);
+      expect(skills.slotsFor(99), 5); // 넘어도 마지막 값
+      expect(skills.maxSlots, 5);
     });
 
     test('액티브는 전부 쿨타임이 있다', () {
@@ -269,16 +279,119 @@ void main() {
       }
     });
 
-    test('자동발동 효율은 1 미만 — 직접 누를 이유를 남긴다', () {
-      expect(skills.autoEfficiency, lessThan(1.0));
-      expect(skills.autoEfficiency, greaterThan(0.0));
+    test('효과 키에 오타가 없다 — 모르는 키는 효과만 조용히 사라진다', () {
+      for (final s in skills.skills) {
+        final known = s.isActive ? kSkillActiveEffects : kSkillPassiveEffects;
+        expect(known, contains(s.effect), reason: s.id);
+      }
     });
 
-    test('레벨업 비용이 오른다', () {
-      final a = skills.levelUpCost(1);
-      final b = skills.levelUpCost(5);
-      expect(b.gold, greaterThan(a.gold));
-      expect(b.material, greaterThan(a.material));
+    test('등급마다 조각·수련·만능 환산값이 있다(없으면 0 조각으로 공짜 레벨업)', () {
+      for (final g in kSkillGrades) {
+        expect(skills.levelShardsBase[g], greaterThan(0), reason: g.key);
+        expect(skills.trainMinutesBase[g], greaterThan(0), reason: g.key);
+        expect(skills.anyShardValue[g], greaterThan(0), reason: g.key);
+        expect(skills.shardsPerRoll[g], greaterThan(0), reason: g.key);
+      }
+    });
+
+    test('레벨이 오를수록 조각·수련 시간이 늘고, 높은 등급일수록 수련이 길다', () {
+      final common = skills.skills.firstWhere((s) => s.grade == Grade.common);
+      final legend = skills.skills.firstWhere(
+        (s) => s.grade == Grade.legendary,
+      );
+      expect(
+        skills.shardsForLevel(common, 5),
+        greaterThan(skills.shardsForLevel(common, 1)),
+      );
+      expect(
+        skills.trainDuration(common, 5),
+        greaterThan(skills.trainDuration(common, 1)),
+      );
+      expect(
+        skills.trainDuration(legend, 1),
+        greaterThan(skills.trainDuration(common, 1)),
+      );
+    });
+
+    test('수련 즉시완료 젤리는 5·10 단위(§2.6 가격 단위)', () {
+      final legend = skills.skills.firstWhere(
+        (s) => s.grade == Grade.legendary,
+      );
+      for (var lv = 1; lv < skills.maxLevel; lv++) {
+        final j = skills.trainJelly(skills.trainDuration(legend, lv));
+        expect(j % 5, 0, reason: 'Lv$lv $j');
+        expect(j, greaterThan(0));
+      }
+      expect(skills.trainJelly(Duration.zero), 0);
+    });
+
+    test('보스 드롭 등급 표가 난이도 4개 · 어려운 난이도일수록 전설이 잦다', () {
+      expect(skills.bossGradeWeightsByTier.length, 4);
+      double legendShare(Map<Grade, double> w) =>
+          (w[Grade.legendary] ?? 0) / w.values.fold(0.0, (a, b) => a + b);
+      for (var t = 1; t < 4; t++) {
+        expect(
+          legendShare(skills.bossGradeWeightsByTier[t]),
+          greaterThan(legendShare(skills.bossGradeWeightsByTier[t - 1])),
+        );
+      }
+    });
+
+    test('보스 조각 — 같은 시드면 같은 결과, 첫 처치가 더 많다', () {
+      int total(Map<String, int> m) => m.values.fold(0, (a, b) => a + b);
+      final a = skills.rollBossShards(Random(7), tier: 2, firstKill: true);
+      final b = skills.rollBossShards(Random(7), tier: 2, firstKill: true);
+      expect(a, b);
+      var first = 0, repeat = 0;
+      for (var i = 0; i < 200; i++) {
+        first += total(
+          skills.rollBossShards(Random(i), tier: 0, firstKill: true),
+        );
+        repeat += total(
+          skills.rollBossShards(Random(i), tier: 0, firstKill: false),
+        );
+      }
+      expect(first, greaterThan(repeat * 2));
+      for (final id in a.keys) {
+        expect(skills.byId(id), isNotNull);
+      }
+    });
+
+    test('패시브 — 장착한 것만 · 군집은 펫 수에 비례 · 흡즙·탈피', () {
+      final levels = {'tenacity': 1, 'swarm': 2, 'sap_drink': 1, 'molting': 1};
+      final none = skillPassiveStats(
+        skills,
+        levels: levels,
+        equipped: const [],
+        petCount: 3,
+      );
+      expect(none, isEmpty);
+      final on = skillPassiveStats(
+        skills,
+        levels: levels,
+        equipped: const ['tenacity', 'swarm'],
+        petCount: 3,
+      );
+      expect(on[UpgradeKind.bossDamage], closeTo(0.15, 1e-9));
+      expect(on[UpgradeKind.attack], closeTo((0.06 + 0.01) * 3, 1e-9));
+      expect(
+        skillKillHealMult(
+          skills,
+          levels: levels,
+          equipped: const ['sap_drink'],
+        ),
+        closeTo(1.2, 1e-9),
+      );
+      expect(skillRevive(skills, levels: levels, equipped: const []), isNull);
+      expect(
+        skillRevive(
+          skills,
+          levels: levels,
+          equipped: const ['molting'],
+        )!.hpFraction,
+        closeTo(0.5, 1e-9),
+      );
     });
 
     test('id 가 중복되지 않는다', () {

@@ -1,39 +1,73 @@
 {
-  "_comment": "스킬 — 액티브·패시브 공용 5칸. 업그레이드 15종에 **없는 축**을 우선한다. ⚠️ 재화를 그냥 주는 액티브는 만들지 않는다(쿨타임이 기기 시계 기준이라 시계를 돌리면 무한 발동). 전부 처치를 거쳐야 이득이 되는 형태다.",
-  "schemaVersion": 1,
-  "equipSlots": 5,
-  "_autoComment": "방치 중 자동발동. 효율을 낮춰 직접 누를 이유는 남기고 피로는 없앤다.",
-  "autoEfficiency": 0.7,
-  "levelUp": {
-    "goldBase": 5000,
-    "goldGrowth": 1.35,
-    "materialBase": 20,
-    "materialGrowth": 1.25,
-    "maxLevel": 20
-  },
+  "_comment": "캐릭터 스킬(2026-09-15 개정, CLAUDE.md §2.8 · docs/design_character.md §4). 12종 · 등급 4단계(일반·희귀·영웅·전설 — 고급(uncommon)은 안 쓴다). 액티브·패시브 공용 칸. 성장 = 그 스킬의 조각 + 수련 타이머. ⚠️ 골드를 쓰지 않는다(회차마다 초기화·난이도마다 규모가 수만 배 다르다). ⚠️ 재화를 그냥 주는 액티브는 만들지 않는다(쿨타임이 기기 시계라 돌리면 무한 발동). ⚠️ 아래 수치는 초안 — 확정은 balance_sim --fit-tiers · jelly_sim 으로(설계 §4.7 4단계).",
+  "schemaVersion": 2,
+
+  "_slotsComment": "장착 칸 수 = slotsByTier[처음 가 본 최고 난이도]. 쉬움 2 → 보통 3 → 어려움 4 → 극한 5. ⚠️ 칸은 진행도로만 연다 — 젤리로 팔면 무료로 못 따라가는 영구 전력이 된다(§2.8).",
+  "slotsByTier": [2, 3, 4, 5],
+
+  "maxLevel": 10,
+
+  "_shardComment": "해금 = 그 스킬 조각 unlockShards 개(자동으로 레벨 1). 레벨 L → L+1 수련에 드는 조각 = levelShardsBase[등급] × levelShardsGrowth^(L-1). 등급이 높을수록 조각이 귀하므로 개수는 적게.",
+  "unlockShards": 10,
+  "levelShardsBase": { "common": 8, "rare": 6, "epic": 5, "legendary": 4 },
+  "levelShardsGrowth": 1.3,
+
+  "_trainComment": "수련 시간(분) = trainMinutesBase[등급] × trainGrowth^(L-1). 한 번에 한 스킬만. 즉시완료 젤리 = 계수 × 남은분^지수 → 5·10 단위(roundJellyCost). 지수 0.58 은 부화기·돌파와 같은 곡선 — 긴 대기일수록 분당 단가가 싸진다(pets.json instantJellyExponent).",
+  "trainMinutesBase": { "common": 10, "rare": 30, "epic": 90, "legendary": 240 },
+  "trainGrowth": 1.35,
+  "trainJellyPerMinute": 1.2,
+  "trainJellyExponent": 0.58,
+
+  "_anyComment": "만렙 스킬로 들어온 조각은 만능 조각으로 바뀐다. 값 = anyShardValue[등급](전설 조각 1개 = 만능 5). 만능으로 수련할 땐 부족한 조각 1개당 anyShardValue[그 스킬 등급] 를 쓴다 — 일반 잉여로 전설을 싸게 올리는 길을 막는다.",
+  "anyShardValue": { "common": 1, "rare": 2, "epic": 3, "legendary": 5 },
+
+  "_bossComment": "사냥터 보스 처치 조각. 한 번 뽑을 때(roll) 등급 → 그 등급 스킬 하나 → shardsPerRoll[등급] 개. 첫 처치는 firstKillRolls 번, 재처치는 repeatRolls 번. 등급 가중치는 난이도별(쉬움→극한). ⚠️ 뽑기 가중치(3단계)는 **어느 난이도의 이 표보다도 좋아야 한다**(돈 내고 확률이 나빠지면 안 된다).",
+  "bossFirstKillRolls": 3,
+  "bossRepeatRolls": 1,
+  "shardsPerRoll": { "common": 6, "rare": 4, "epic": 3, "legendary": 2 },
+  "bossGradeWeightsByTier": [
+    { "common": 60, "rare": 28, "epic": 10, "legendary": 2 },
+    { "common": 55, "rare": 30, "epic": 12, "legendary": 3 },
+    { "common": 50, "rare": 30, "epic": 15, "legendary": 5 },
+    { "common": 45, "rare": 30, "epic": 18, "legendary": 7 }
+  ],
+
+  "_effectComment": "패시브 효과 키: materialFind·bugFind·bossDamage(가산, 종 패시브와 같은 층) · perPetAttack(장착 펫 1마리당 공격 +) · killHeal(처치 회복 ×(1+값)) · revive(패배 시 최대 체력 값 비율로 부활, cooldown 초). 액티브 효과는 홈 스킬 바(5단계)에서 붙는다.",
   "skills": [
     {
-      "id": "crit_strike",
+      "id": "lure_sap",
       "kind": "active",
-      "name": {
-        "ko": "회심의 일격",
-        "en": "Decisive Strike",
-        "ja": "会心の一撃"
-      },
-      "effect": "burstDamage",
-      "base": 8.0,
-      "perLevel": 1.2,
-      "cooldown": 60,
-      "duration": 0
+      "grade": "common",
+      "name": { "ko": "유인 수액", "en": "Luring Sap", "ja": "誘引樹液" },
+      "effect": "materialFind",
+      "base": 3.0,
+      "perLevel": 0.2,
+      "cooldown": 120,
+      "duration": 20
+    },
+    {
+      "id": "gatherer_hand",
+      "kind": "passive",
+      "grade": "common",
+      "name": { "ko": "채집가의 손", "en": "Gatherer's Hand", "ja": "採集者の手" },
+      "effect": "materialFind",
+      "base": 0.1,
+      "perLevel": 0.02
+    },
+    {
+      "id": "scholar_eye",
+      "kind": "passive",
+      "grade": "common",
+      "name": { "ko": "곤충학자의 눈", "en": "Entomologist's Eye", "ja": "昆虫学者の目" },
+      "effect": "bugFind",
+      "base": 0.1,
+      "perLevel": 0.02
     },
     {
       "id": "gale_hunt",
       "kind": "active",
-      "name": {
-        "ko": "질풍 채집",
-        "en": "Gale Hunt",
-        "ja": "疾風採集"
-      },
+      "grade": "rare",
+      "name": { "ko": "질풍 채집", "en": "Gale Hunt", "ja": "疾風採集" },
       "effect": "attackSpeed",
       "base": 2.0,
       "perLevel": 0.1,
@@ -43,11 +77,8 @@
     {
       "id": "net_sweep",
       "kind": "active",
-      "name": {
-        "ko": "포충망 휘두르기",
-        "en": "Net Sweep",
-        "ja": "捕虫網の一振り"
-      },
+      "grade": "rare",
+      "name": { "ko": "포충망 휘두르기", "en": "Net Sweep", "ja": "捕虫網の一振り" },
       "effect": "areaDamage",
       "base": 4.0,
       "perLevel": 0.6,
@@ -55,55 +86,19 @@
       "duration": 0
     },
     {
-      "id": "focus_eye",
-      "kind": "active",
-      "name": {
-        "ko": "겹눈 집중",
-        "en": "Compound Focus",
-        "ja": "複眼集中"
-      },
-      "effect": "critChance",
-      "base": 0.5,
-      "perLevel": 0.03,
-      "cooldown": 100,
-      "duration": 15
-    },
-    {
-      "id": "lure_sap",
-      "kind": "active",
-      "name": {
-        "ko": "유인 수액",
-        "en": "Luring Sap",
-        "ja": "誘引樹液"
-      },
-      "effect": "materialFind",
-      "base": 3.0,
-      "perLevel": 0.2,
-      "cooldown": 120,
-      "duration": 20
-    },
-    {
-      "id": "pheromone",
-      "kind": "active",
-      "name": {
-        "ko": "페로몬 유인",
-        "en": "Pheromone Call",
-        "ja": "フェロモン誘引"
-      },
-      "effect": "bugFind",
-      "base": 3.0,
-      "perLevel": 0.2,
-      "cooldown": 150,
-      "duration": 15
+      "id": "tenacity",
+      "kind": "passive",
+      "grade": "rare",
+      "name": { "ko": "끈기", "en": "Tenacity", "ja": "粘り強さ" },
+      "effect": "bossDamage",
+      "base": 0.15,
+      "perLevel": 0.03
     },
     {
       "id": "queen_call",
       "kind": "active",
-      "name": {
-        "ko": "여왕의 부름",
-        "en": "Queen's Call",
-        "ja": "女王の呼び声"
-      },
+      "grade": "epic",
+      "name": { "ko": "여왕의 부름", "en": "Queen's Call", "ja": "女王の呼び声" },
       "effect": "petPower",
       "base": 2.0,
       "perLevel": 0.1,
@@ -111,13 +106,39 @@
       "duration": 15
     },
     {
+      "id": "swarm",
+      "kind": "passive",
+      "grade": "epic",
+      "name": { "ko": "군집", "en": "Swarm", "ja": "群れ" },
+      "effect": "perPetAttack",
+      "base": 0.06,
+      "perLevel": 0.01
+    },
+    {
+      "id": "sap_drink",
+      "kind": "passive",
+      "grade": "epic",
+      "name": { "ko": "흡즙", "en": "Sap Drinker", "ja": "吸汁" },
+      "effect": "killHeal",
+      "base": 0.2,
+      "perLevel": 0.04
+    },
+    {
+      "id": "crit_strike",
+      "kind": "active",
+      "grade": "legendary",
+      "name": { "ko": "회심의 일격", "en": "Decisive Strike", "ja": "会心の一撃" },
+      "effect": "burstDamage",
+      "base": 8.0,
+      "perLevel": 1.2,
+      "cooldown": 60,
+      "duration": 0
+    },
+    {
       "id": "pupa_guard",
       "kind": "active",
-      "name": {
-        "ko": "번데기 방벽",
-        "en": "Pupa Guard",
-        "ja": "蛹の防壁"
-      },
+      "grade": "legendary",
+      "name": { "ko": "번데기 방벽", "en": "Pupa Guard", "ja": "蛹の防壁" },
       "effect": "invulnerable",
       "base": 1.0,
       "perLevel": 0.0,
@@ -125,101 +146,14 @@
       "duration": 8
     },
     {
-      "id": "gatherer_hand",
-      "kind": "passive",
-      "name": {
-        "ko": "채집가의 손",
-        "en": "Gatherer's Hand",
-        "ja": "採集者の手"
-      },
-      "effect": "materialFind",
-      "base": 0.1,
-      "perLevel": 0.02
-    },
-    {
-      "id": "scholar_eye",
-      "kind": "passive",
-      "name": {
-        "ko": "곤충학자의 눈",
-        "en": "Entomologist's Eye",
-        "ja": "昆虫学者の目"
-      },
-      "effect": "bugFind",
-      "base": 0.1,
-      "perLevel": 0.02
-    },
-    {
-      "id": "sap_sense",
-      "kind": "passive",
-      "name": {
-        "ko": "수액 감별",
-        "en": "Sap Sense",
-        "ja": "樹液の目利き"
-      },
-      "effect": "gold",
-      "base": 0.1,
-      "perLevel": 0.02
-    },
-    {
-      "id": "tenacity",
-      "kind": "passive",
-      "name": {
-        "ko": "끈기",
-        "en": "Tenacity",
-        "ja": "粘り強さ"
-      },
-      "effect": "bossDamage",
-      "base": 0.15,
-      "perLevel": 0.03
-    },
-    {
-      "id": "nocturnal",
-      "kind": "passive",
-      "name": {
-        "ko": "야행성",
-        "en": "Nocturnal",
-        "ja": "夜行性"
-      },
-      "effect": "offline",
-      "base": 0.1,
-      "perLevel": 0.02
-    },
-    {
       "id": "molting",
       "kind": "passive",
-      "name": {
-        "ko": "탈피",
-        "en": "Molting",
-        "ja": "脱皮"
-      },
+      "grade": "legendary",
+      "name": { "ko": "탈피", "en": "Molting", "ja": "脱皮" },
       "effect": "revive",
-      "base": 1.0,
-      "perLevel": 0.0,
+      "base": 0.5,
+      "perLevel": 0.03,
       "cooldown": 180
-    },
-    {
-      "id": "swarm",
-      "kind": "passive",
-      "name": {
-        "ko": "군집",
-        "en": "Swarm",
-        "ja": "群れ"
-      },
-      "effect": "perPetAttack",
-      "base": 0.06,
-      "perLevel": 0.01
-    },
-    {
-      "id": "tidy_case",
-      "kind": "passive",
-      "name": {
-        "ko": "표본 정리",
-        "en": "Tidy Case",
-        "ja": "標本整理"
-      },
-      "effect": "storageSlots",
-      "base": 3.0,
-      "perLevel": 1.0
     }
   ]
 }

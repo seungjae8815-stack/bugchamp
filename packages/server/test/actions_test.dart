@@ -123,6 +123,12 @@ class _Config implements GameConfigLike {
     jsonDecode(File('../app/assets/data/dex.json').readAsStringSync())
         as Map<String, dynamic>,
   );
+
+  @override
+  final SkillConfig? skill = SkillConfig.fromJson(
+    jsonDecode(File('../app/assets/data/skills.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
 }
 
 void main() {
@@ -1775,6 +1781,100 @@ void main() {
         isTrue,
         reason: 'clamped 가 없으면 앱이 접힌 값을 채택하지 않는다',
       );
+    });
+
+    group('스킬(§2.8)', () {
+      final sk = cfg.skill!;
+      final legend = sk.skills.firstWhere((d) => d.grade == Grade.legendary);
+
+      test('보스를 새로 잡은 만큼의 조각은 받는다', () {
+        final client = stored().copyWith(
+          bossDex: {'n01'},
+          skillShards: {legend.id: 6},
+        );
+        final r = actions.mergeSave(stored(), client.toJson());
+        expect(r.save!.skillShards[legend.id], 6);
+        expect(r.extra['clamped'], isFalse);
+      });
+
+      test('세이브 편집으로 조각을 쏟아 넣으면 저장본 값으로 되돌린다', () {
+        final client = stored().copyWith(
+          skillShards: {legend.id: 99999},
+          skillAnyShards: 99999,
+        );
+        final r = actions.mergeSave(stored(), client.toJson());
+        expect(r.save!.skillShards, isEmpty);
+        expect(r.save!.skillAnyShards, 0);
+        expect(r.extra['clamped'], isTrue);
+      });
+
+      test('조각 없이 레벨만 올린 편집은 저장본 레벨로 되돌린다', () {
+        final client = stored().copyWith(
+          skillLevels: {for (final d in sk.skills) d.id: sk.maxLevel},
+        );
+        final r = actions.mergeSave(stored(), client.toJson());
+        expect(r.save!.skillLevels, isEmpty);
+        expect(r.extra['clamped'], isTrue);
+      });
+
+      test('조각을 써서 올린 레벨(해금 · 수련 완료)은 받는다', () {
+        final st = stored().copyWith(
+          skillLevels: {legend.id: 1},
+          skillShards: {legend.id: 30},
+        );
+        final need = sk.shardsForLevel(legend, 1);
+        final client = st.copyWith(
+          skillLevels: {legend.id: 2},
+          skillShards: {legend.id: 30 - need},
+        );
+        final r = actions.mergeSave(st, client.toJson());
+        expect(r.save!.skillLevels[legend.id], 2);
+        expect(r.extra['clamped'], isFalse);
+      });
+
+      test('수련 중이던 스킬이 끝나 오른 한 레벨은 선불이라 받는다', () {
+        final st = stored().copyWith(
+          skillLevels: {legend.id: 3},
+          skillTrainingId: legend.id,
+          skillTrainingEndsAt: t0,
+        );
+        final client = stored().copyWith(skillLevels: {legend.id: 4});
+        final r = actions.mergeSave(st, client.toJson());
+        expect(r.save!.skillLevels[legend.id], 4);
+        expect(r.save!.skillTrainingId, isNull);
+      });
+
+      test('스킬 필드를 모르는 앱의 업로드는 조각·수련을 지우지 못한다', () {
+        final st = stored().copyWith(
+          skillLevels: {legend.id: 2},
+          skillShards: {legend.id: 7},
+          skillAnyShards: 15,
+          skillTrainingId: legend.id,
+          skillTrainingEndsAt: t0,
+        );
+        final old = st.toJson()
+          ..remove('skillShards')
+          ..remove('skillAnyShards')
+          ..remove('skillTrainingId')
+          ..remove('skillTrainingEndsAt');
+        final r = actions.mergeSave(st, old);
+        expect(r.save!.skillShards, {legend.id: 7});
+        expect(r.save!.skillAnyShards, 15);
+        expect(r.save!.skillTrainingId, legend.id);
+        expect(r.save!.skillLevels[legend.id], 2);
+      });
+
+      test('만렙 초과 · 미보유 장착 · 열린 칸 초과를 접는다', () {
+        final ids = sk.skills.map((d) => d.id).toList();
+        final client = stored().copyWith(
+          skillLevels: {ids[0]: 99, ids[1]: 1, ids[2]: 1},
+          equippedSkills: [ids[5], ids[0], ids[1], ids[2]],
+        );
+        final r = actions.mergeSave(stored(), client.toJson());
+        expect(r.save!.skillLevels[ids[0]], sk.maxLevel);
+        expect(r.save!.equippedSkills, [ids[0], ids[1]]);
+        expect(r.extra['clamped'], isTrue);
+      });
     });
 
     test('끝 이하의 스테이지는 접지도, clamped 를 세우지도 않는다', () {

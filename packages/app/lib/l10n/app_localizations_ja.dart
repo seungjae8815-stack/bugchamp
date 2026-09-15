@@ -2726,6 +2726,171 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillSlotsFull => 'スキル枠がいっぱいです';
 
   @override
+  String get skillEquip => '装備';
+
+  @override
+  String get skillUnequip => '外す';
+
+  @override
+  String skillSlotsInfo(String n, String max) {
+    return '装備 $n/$max';
+  }
+
+  @override
+  String get skillNextSlotHint => '新しい難易度で枠が増えます';
+
+  @override
+  String skillAnyShards(String n) {
+    return '万能のかけら $n';
+  }
+
+  @override
+  String skillShardProgress(String have, String need) {
+    return 'かけら $have/$need';
+  }
+
+  @override
+  String get skillLocked => '未解放';
+
+  @override
+  String get skillMaxLevel => 'MAX';
+
+  @override
+  String get skillTrain => '修練';
+
+  @override
+  String skillTrainingNow(String name, String lv, String left) {
+    return '$name Lv.$lv 修練中 · $left';
+  }
+
+  @override
+  String get skillTrainClaim => '修練完了';
+
+  @override
+  String skillTrainInstant(String n) {
+    return '今すぐ完了 · ゼリー $n';
+  }
+
+  @override
+  String get skillTrainConfirmTitle => '修練を今すぐ完了';
+
+  @override
+  String skillTrainConfirm(String n) {
+    return 'ゼリー$n個で今すぐ完了しますか？';
+  }
+
+  @override
+  String skillTrainCostShards(String n, String time) {
+    return 'かけら $n · $time';
+  }
+
+  @override
+  String skillTrainCostWithAny(String n, String any, String time) {
+    return 'かけら $n + 万能 $any · $time';
+  }
+
+  @override
+  String skillTrainTitle(String name) {
+    return '$nameの修練';
+  }
+
+  @override
+  String skillLevelUpDone(String name, String lv) {
+    return '$name Lv.$lv 達成！';
+  }
+
+  @override
+  String get skillErrNotEnoughShards => 'かけらが足りません';
+
+  @override
+  String get skillErrTrainingBusy => '修練中のスキルがあります';
+
+  @override
+  String get skillActiveSoon => 'アクティブスキルは近日公開';
+
+  @override
+  String get skillHowToGet => '狩場のボスを倒すとスキルのかけらが手に入ります';
+
+  @override
+  String skillCooldown(String s) {
+    return 'クールタイム $s秒';
+  }
+
+  @override
+  String get skillKindActive => 'アクティブ';
+
+  @override
+  String get skillKindPassive => 'パッシブ';
+
+  @override
+  String skillShardsGot(String list) {
+    return 'スキルのかけら獲得 · $list';
+  }
+
+  @override
+  String get skillReviveToast => '脱皮！倒れずに立ち上がりました';
+
+  @override
+  String skillFxMaterialFind(String v) {
+    return '素材獲得 +$v%';
+  }
+
+  @override
+  String skillFxBugFind(String v) {
+    return '昆虫発見 +$v%';
+  }
+
+  @override
+  String skillFxBossDamage(String v) {
+    return 'ボスダメージ +$v%';
+  }
+
+  @override
+  String skillFxPerPetAttack(String v) {
+    return '装備した昆虫1匹につき攻撃 +$v%';
+  }
+
+  @override
+  String skillFxKillHeal(String v) {
+    return '撃破回復 +$v%';
+  }
+
+  @override
+  String skillFxRevive(String v) {
+    return '倒れると体力$v%で復活';
+  }
+
+  @override
+  String skillFxMaterialBurst(String v, String d) {
+    return '$d秒間 素材 ×$v';
+  }
+
+  @override
+  String skillFxAttackSpeed(String v, String d) {
+    return '$d秒間 攻撃速度 ×$v';
+  }
+
+  @override
+  String skillFxAreaDamage(String v) {
+    return '画面全体に攻撃力 ×$v のダメージ';
+  }
+
+  @override
+  String skillFxPetPower(String v, String d) {
+    return '$d秒間 昆虫効果 ×$v';
+  }
+
+  @override
+  String skillFxBurstDamage(String v) {
+    return '攻撃力 ×$v の一撃';
+  }
+
+  @override
+  String skillFxInvulnerable(String d) {
+    return '$d秒間 ダメージ無効';
+  }
+
+  @override
   String get charTabStats => '能力値';
 
   @override
