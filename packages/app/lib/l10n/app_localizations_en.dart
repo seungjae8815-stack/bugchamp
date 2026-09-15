@@ -2784,6 +2784,89 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skillSlotsFull => 'Skill slots are full';
 
   @override
+  String get skillGacha => 'Draw';
+
+  @override
+  String get skillGachaTitle => 'Skill Draw';
+
+  @override
+  String skillGachaFreeLeft(String n) {
+    return '$n free today';
+  }
+
+  @override
+  String skillGachaPityLeft(String grade, String n) {
+    return '$grade guaranteed within $n';
+  }
+
+  @override
+  String get skillGachaFree => 'Free draw';
+
+  @override
+  String skillGachaOne(String n) {
+    return '1× · $n jelly';
+  }
+
+  @override
+  String skillGachaTen(String n) {
+    return '10× · $n jelly';
+  }
+
+  @override
+  String get skillGachaOdds => 'View odds';
+
+  @override
+  String get skillGachaOddsTitle => 'Skill draw odds';
+
+  @override
+  String skillGachaOddsGrade(String grade, String p, String each) {
+    return '$grade $p% · $each% per skill';
+  }
+
+  @override
+  String skillGachaOddsNote(String n, String pity, String grade) {
+    return 'Each draw gives $n shards of one skill. Draw #$pity is guaranteed $grade or better; the count restarts when $grade appears.';
+  }
+
+  @override
+  String skillGachaResult(String name, String n) {
+    return '$name shards +$n';
+  }
+
+  @override
+  String get skillSweep => 'Sweep';
+
+  @override
+  String get skillSweepTitle => 'Boss Sweep';
+
+  @override
+  String skillSweepDesc(String tier, String n) {
+    return 'Counts as defeating a boss again at your highest cleared difficulty ($tier) and gives $n skill shards for sure.';
+  }
+
+  @override
+  String skillSweepToday(String used, String max) {
+    return 'Used $used/$max today';
+  }
+
+  @override
+  String skillSweepFree(String n) {
+    return 'Free sweep · $n left';
+  }
+
+  @override
+  String skillSweepPaid(String n) {
+    return 'Sweep · $n jelly';
+  }
+
+  @override
+  String get skillSweepNoBoss =>
+      'Defeat at least one hunting ground boss to sweep';
+
+  @override
+  String get skillSweepLimit => 'No sweeps left today';
+
+  @override
   String skillShardPop(String n) {
     return 'Shard +$n';
   }

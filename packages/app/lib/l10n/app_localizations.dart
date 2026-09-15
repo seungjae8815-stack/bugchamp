@@ -4972,6 +4972,126 @@ abstract class AppLocalizations {
   /// **'Skill slots are full'**
   String get skillSlotsFull;
 
+  /// No description provided for @skillGacha.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get skillGacha;
+
+  /// No description provided for @skillGachaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill Draw'**
+  String get skillGachaTitle;
+
+  /// No description provided for @skillGachaFreeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} free today'**
+  String skillGachaFreeLeft(String n);
+
+  /// No description provided for @skillGachaPityLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} guaranteed within {n}'**
+  String skillGachaPityLeft(String grade, String n);
+
+  /// No description provided for @skillGachaFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free draw'**
+  String get skillGachaFree;
+
+  /// No description provided for @skillGachaOne.
+  ///
+  /// In en, this message translates to:
+  /// **'1× · {n} jelly'**
+  String skillGachaOne(String n);
+
+  /// No description provided for @skillGachaTen.
+  ///
+  /// In en, this message translates to:
+  /// **'10× · {n} jelly'**
+  String skillGachaTen(String n);
+
+  /// No description provided for @skillGachaOdds.
+  ///
+  /// In en, this message translates to:
+  /// **'View odds'**
+  String get skillGachaOdds;
+
+  /// No description provided for @skillGachaOddsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill draw odds'**
+  String get skillGachaOddsTitle;
+
+  /// No description provided for @skillGachaOddsGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} {p}% · {each}% per skill'**
+  String skillGachaOddsGrade(String grade, String p, String each);
+
+  /// No description provided for @skillGachaOddsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Each draw gives {n} shards of one skill. Draw #{pity} is guaranteed {grade} or better; the count restarts when {grade} appears.'**
+  String skillGachaOddsNote(String n, String pity, String grade);
+
+  /// No description provided for @skillGachaResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} shards +{n}'**
+  String skillGachaResult(String name, String n);
+
+  /// No description provided for @skillSweep.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep'**
+  String get skillSweep;
+
+  /// No description provided for @skillSweepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss Sweep'**
+  String get skillSweepTitle;
+
+  /// No description provided for @skillSweepDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts as defeating a boss again at your highest cleared difficulty ({tier}) and gives {n} skill shards for sure.'**
+  String skillSweepDesc(String tier, String n);
+
+  /// No description provided for @skillSweepToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Used {used}/{max} today'**
+  String skillSweepToday(String used, String max);
+
+  /// No description provided for @skillSweepFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free sweep · {n} left'**
+  String skillSweepFree(String n);
+
+  /// No description provided for @skillSweepPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep · {n} jelly'**
+  String skillSweepPaid(String n);
+
+  /// No description provided for @skillSweepNoBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat at least one hunting ground boss to sweep'**
+  String get skillSweepNoBoss;
+
+  /// No description provided for @skillSweepLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'No sweeps left today'**
+  String get skillSweepLimit;
+
   /// No description provided for @skillShardPop.
   ///
   /// In en, this message translates to:

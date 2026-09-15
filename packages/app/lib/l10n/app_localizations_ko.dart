@@ -2732,6 +2732,88 @@ class AppLocalizationsKo extends AppLocalizations {
   String get skillSlotsFull => '스킬 칸이 가득 찼어요';
 
   @override
+  String get skillGacha => '뽑기';
+
+  @override
+  String get skillGachaTitle => '스킬 뽑기';
+
+  @override
+  String skillGachaFreeLeft(String n) {
+    return '오늘 무료 $n회';
+  }
+
+  @override
+  String skillGachaPityLeft(String grade, String n) {
+    return '$n회 안에 $grade 확정';
+  }
+
+  @override
+  String get skillGachaFree => '무료 뽑기';
+
+  @override
+  String skillGachaOne(String n) {
+    return '1회 · 젤리 $n';
+  }
+
+  @override
+  String skillGachaTen(String n) {
+    return '10회 · 젤리 $n';
+  }
+
+  @override
+  String get skillGachaOdds => '확률 보기';
+
+  @override
+  String get skillGachaOddsTitle => '스킬 뽑기 확률';
+
+  @override
+  String skillGachaOddsGrade(String grade, String p, String each) {
+    return '$grade $p% · 스킬 1종당 $each%';
+  }
+
+  @override
+  String skillGachaOddsNote(String n, String pity, String grade) {
+    return '1회에 한 스킬의 조각 $n개가 나와요. $pity회째 뽑기는 $grade 이상이 확정이고, $grade이 나오면 횟수가 다시 시작돼요.';
+  }
+
+  @override
+  String skillGachaResult(String name, String n) {
+    return '$name 조각 +$n';
+  }
+
+  @override
+  String get skillSweep => '소탕';
+
+  @override
+  String get skillSweepTitle => '보스 소탕';
+
+  @override
+  String skillSweepDesc(String tier, String n) {
+    return '잡아 본 가장 높은 난이도($tier)의 보스를 다시 잡은 것으로 쳐서 스킬 조각 $n개를 확정으로 받아요.';
+  }
+
+  @override
+  String skillSweepToday(String used, String max) {
+    return '오늘 $used/$max회 사용';
+  }
+
+  @override
+  String skillSweepFree(String n) {
+    return '무료 소탕 · $n회 남음';
+  }
+
+  @override
+  String skillSweepPaid(String n) {
+    return '소탕 · 젤리 $n';
+  }
+
+  @override
+  String get skillSweepNoBoss => '사냥터 보스를 한 마리 이상 잡아야 소탕할 수 있어요';
+
+  @override
+  String get skillSweepLimit => '오늘 소탕을 모두 썼어요';
+
+  @override
   String skillShardPop(String n) {
     return '조각 +$n';
   }

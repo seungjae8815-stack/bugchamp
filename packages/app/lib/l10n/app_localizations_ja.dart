@@ -2726,6 +2726,88 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillSlotsFull => 'スキル枠がいっぱいです';
 
   @override
+  String get skillGacha => 'ガチャ';
+
+  @override
+  String get skillGachaTitle => 'スキルガチャ';
+
+  @override
+  String skillGachaFreeLeft(String n) {
+    return '本日無料 $n回';
+  }
+
+  @override
+  String skillGachaPityLeft(String grade, String n) {
+    return '$n回以内に$grade確定';
+  }
+
+  @override
+  String get skillGachaFree => '無料ガチャ';
+
+  @override
+  String skillGachaOne(String n) {
+    return '1回 · ゼリー $n';
+  }
+
+  @override
+  String skillGachaTen(String n) {
+    return '10回 · ゼリー $n';
+  }
+
+  @override
+  String get skillGachaOdds => '確率を見る';
+
+  @override
+  String get skillGachaOddsTitle => 'スキルガチャの確率';
+
+  @override
+  String skillGachaOddsGrade(String grade, String p, String each) {
+    return '$grade $p% · スキル1種あたり $each%';
+  }
+
+  @override
+  String skillGachaOddsNote(String n, String pity, String grade) {
+    return '1回でスキル1種のかけらが$n個出ます。$pity回目は$grade以上が確定し、$gradeが出ると回数がリセットされます。';
+  }
+
+  @override
+  String skillGachaResult(String name, String n) {
+    return '$nameのかけら +$n';
+  }
+
+  @override
+  String get skillSweep => '掃討';
+
+  @override
+  String get skillSweepTitle => 'ボス掃討';
+
+  @override
+  String skillSweepDesc(String tier, String n) {
+    return '倒したことのある最も高い難易度（$tier）のボスを再び倒したものとして、スキルのかけらを$n個確定で受け取ります。';
+  }
+
+  @override
+  String skillSweepToday(String used, String max) {
+    return '本日 $used/$max回 使用';
+  }
+
+  @override
+  String skillSweepFree(String n) {
+    return '無料掃討 · 残り$n回';
+  }
+
+  @override
+  String skillSweepPaid(String n) {
+    return '掃討 · ゼリー $n';
+  }
+
+  @override
+  String get skillSweepNoBoss => '狩場のボスを1体以上倒すと掃討できます';
+
+  @override
+  String get skillSweepLimit => '本日の掃討はすべて使いました';
+
+  @override
   String skillShardPop(String n) {
     return 'かけら +$n';
   }

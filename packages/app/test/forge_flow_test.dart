@@ -443,6 +443,30 @@ void main() {
       expect(s.skillShards.values.fold(0, (a, b) => a + b), got);
     });
 
+    test('스킬 뽑기 — 무료 1회 · 젤리 10연 · 소탕은 보스를 잡아야', () async {
+      final cfg = SkillConfig.fromJson(_read('skills.json'));
+      final c = make(seed().copyWith(materials: {MaterialKind.jelly: 1000}));
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+
+      final free = await ctrl.drawSkills(times: 1, free: true, rng: Random(1));
+      expect(free.error, isNull);
+      expect(free.draws.length, 1);
+      expect(
+        (await ctrl.drawSkills(times: 1, free: true, rng: Random(2))).error,
+        'no_free',
+      );
+      final ten = await ctrl.drawSkills(times: 10, rng: Random(3));
+      expect(ten.draws.length, 10);
+      var s = c.read(saveControllerProvider).requireValue;
+      expect(
+        s.materialCount(MaterialKind.jelly),
+        1000 - cfg.gachaJellyCost * 10,
+      );
+
+      expect((await ctrl.sweepSkillBoss(rng: Random(4))).error, 'no_boss');
+    });
+
     test('미보유 스킬은 장착되지 않는다', () async {
       final c = make(seed());
       await c.read(saveControllerProvider.future);

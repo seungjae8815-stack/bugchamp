@@ -11,7 +11,12 @@ import 'package:uuid/uuid.dart';
 import 'package:core_save/core_save.dart';
 import 'package:core_save/core_save.dart'
     as core_skill
-    show startSkillTraining, completeSkillTraining, grantEliteShards;
+    show
+        startSkillTraining,
+        completeSkillTraining,
+        grantEliteShards,
+        drawSkills,
+        sweepBoss;
 import '../data/game_data.dart';
 import '../data/save_repository.dart';
 import 'bug_auto_filter.dart';
@@ -2528,6 +2533,56 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }) => _skillOp(
     (s, cfg) =>
         gradeUpShards(s, cfg, from: from, sources: sources, times: times),
+  );
+
+  /// 스킬 뽑기(§2.8) — [free] 면 하루 무료 1회, 아니면 젤리로 [times] 회.
+  /// 기기 권위라 시드는 기기가 정한다(알 뽑기와 같다). 실패하면 사유 키.
+  Future<({List<SkillDraw> draws, String? error})> drawSkills({
+    required int times,
+    bool free = false,
+    math.Random? rng,
+  }) async {
+    final cfg = ref.read(gameDataProvider).value?.skillConfig;
+    if (cfg == null) return (draws: const <SkillDraw>[], error: 'off');
+    final op = core_skill.drawSkills(
+      state.requireValue,
+      cfg,
+      rng ?? math.Random(),
+      dayKey: dailyDateKey(ref.read(clockProvider).now()),
+      times: times,
+      free: free,
+    );
+    if (!op.isOk) return (draws: const <SkillDraw>[], error: op.error);
+    await _commit(op.save!);
+    return (draws: op.extra['draws'] as List<SkillDraw>, error: null);
+  }
+
+  /// 보스 소탕(§2.8) — 잡아 본 가장 높은 난이도 기준 확정 조각.
+  Future<({Map<String, int> shards, String? error})> sweepSkillBoss({
+    math.Random? rng,
+  }) async {
+    final data = ref.read(gameDataProvider).value;
+    final cfg = data?.skillConfig;
+    final run = data?.runConfig;
+    if (cfg == null || run == null) {
+      return (shards: const <String, int>{}, error: 'off');
+    }
+    final op = core_skill.sweepBoss(
+      state.requireValue,
+      cfg,
+      run,
+      rng ?? math.Random(),
+      dayKey: dailyDateKey(ref.read(clockProvider).now()),
+    );
+    if (!op.isOk) return (shards: const <String, int>{}, error: op.error);
+    await _commit(op.save!);
+    return (shards: op.extra['shards'] as Map<String, int>, error: null);
+  }
+
+  /// 오늘 쓴 무료 뽑기·소탕 횟수.
+  ({int freeDraws, int sweeps}) get skillDailyUsedToday => skillDailyUsed(
+    state.requireValue,
+    dailyDateKey(ref.read(clockProvider).now()),
   );
 
   /// 정예 처치 조각(확률, §2.8). 나오면 받은 조각(스킬 id → 개수), 아니면 빈 맵.

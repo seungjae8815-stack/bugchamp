@@ -275,6 +275,163 @@ void main() {
     });
   });
 
+  group('뽑기', () {
+    const day = '2026-09-15';
+    SaveGame rich([int jelly = 1000]) =>
+        fresh().copyWith(materials: {MaterialKind.jelly: jelly});
+
+    test('젤리를 쓰고 조각이 들어온다 · 10연은 10배', () {
+      final op = drawSkills(rich(), cfg, Random(1), dayKey: day, times: 10);
+      expect(op.isOk, isTrue);
+      final s = op.save!;
+      expect(
+        s.materialCount(MaterialKind.jelly),
+        1000 - cfg.gachaJellyCost * 10,
+      );
+      final draws = op.extra['draws'] as List<SkillDraw>;
+      expect(draws.length, 10);
+      final got =
+          s.skillShards.values.fold(0, (a, b) => a + b) +
+          s.skillLevels.length * cfg.unlockShards;
+      expect(got, cfg.gachaShards * 10);
+    });
+
+    test('천장 — 10회 안에 천장 등급이 반드시 나온다', () {
+      for (var seed = 0; seed < 50; seed++) {
+        final op = drawSkills(
+          rich(),
+          cfg,
+          Random(seed),
+          dayKey: day,
+          times: cfg.gachaPity,
+        );
+        final draws = op.extra['draws'] as List<SkillDraw>;
+        expect(
+          draws.any((d) => d.grade.index >= cfg.gachaPityGrade.index),
+          isTrue,
+          reason: 'seed $seed',
+        );
+      }
+    });
+
+    test('천장 카운터는 천장 등급이 나올 때만 되감긴다', () {
+      final s = rich().copyWith(skillGachaPity: cfg.gachaPity - 1);
+      final op = drawSkills(s, cfg, Random(0), dayKey: day, times: 1);
+      expect(
+        (op.extra['draws'] as List<SkillDraw>).single.grade,
+        greaterThanOrEqualTo(cfg.gachaPityGrade),
+      );
+      expect(op.save!.skillGachaPity, 0);
+    });
+
+    test('하루 무료 — 젤리 없이 1회 · 날짜가 바뀌면 다시', () {
+      final op = drawSkills(
+        fresh(),
+        cfg,
+        Random(0),
+        dayKey: day,
+        times: 1,
+        free: true,
+      );
+      expect(op.isOk, isTrue);
+      expect(
+        drawSkills(
+          op.save!,
+          cfg,
+          Random(1),
+          dayKey: day,
+          times: 1,
+          free: true,
+        ).error,
+        'no_free',
+      );
+      expect(
+        drawSkills(
+          op.save!,
+          cfg,
+          Random(1),
+          dayKey: '2026-09-16',
+          times: 1,
+          free: true,
+        ).isOk,
+        isTrue,
+      );
+      expect(
+        drawSkills(fresh(), cfg, Random(0), dayKey: day, times: 1).error,
+        'not_enough_jelly',
+      );
+    });
+  });
+
+  group('소탕', () {
+    const day = '2026-09-15';
+    final run = RunConfig.fromJson(
+      jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+
+    test('보스를 잡아 본 적 없으면 못 한다', () {
+      expect(
+        sweepBoss(fresh(), cfg, run, Random(0), dayKey: day).error,
+        'no_boss',
+      );
+    });
+
+    test('가장 높은 난이도 기준 확정 조각 · 무료 뒤엔 젤리 · 하루 상한', () {
+      var s = fresh().copyWith(
+        bossDex: {run.bossArtId(0, 1), run.bossArtId(2, 3)},
+        materials: {MaterialKind.jelly: 10000},
+      );
+      expect(bestSweepTier(s, run), 2);
+      for (var i = 0; i < cfg.sweepMaxPerDay; i++) {
+        final op = sweepBoss(s, cfg, run, Random(i), dayKey: day);
+        expect(op.isOk, isTrue, reason: 'sweep $i');
+        final shards = op.extra['shards'] as Map<String, int>;
+        expect(shards.values.single, cfg.sweepShardsFor(2));
+        expect(
+          op.extra['jelly'],
+          i < cfg.sweepFreePerDay ? 0 : cfg.sweepJellyCost,
+        );
+        s = op.save!;
+      }
+      expect(
+        sweepBoss(s, cfg, run, Random(99), dayKey: day).error,
+        'sweep_limit',
+      );
+      expect(
+        sweepBoss(s, cfg, run, Random(99), dayKey: '2026-09-16').isOk,
+        isTrue,
+      );
+    });
+  });
+
+  group('뽑기·소탕 세이브', () {
+    test('천장·하루 기록 왕복 · 기본값은 싣지 않는다', () {
+      final s = fresh().copyWith(
+        skillGachaPity: 7,
+        skillDayKey: '2026-09-15',
+        skillFreeDrawsUsed: 1,
+        skillSweepsUsed: 4,
+      );
+      final back = SaveGame.fromJson(
+        jsonDecode(jsonEncode(s.toJson())) as Map<String, dynamic>,
+      );
+      expect(back.skillGachaPity, 7);
+      expect(back.skillDayKey, '2026-09-15');
+      expect(back.skillFreeDrawsUsed, 1);
+      expect(back.skillSweepsUsed, 4);
+      final empty = fresh().toJson();
+      for (final k in [
+        'skillGachaPity',
+        'skillDayKey',
+        'skillFreeDrawsUsed',
+        'skillSweepsUsed',
+      ]) {
+        expect(empty.containsKey(k), isFalse, reason: k);
+      }
+    });
+  });
+
   group('규칙 강제(업로드·로드)', () {
     test('만렙 초과 · 미보유 장착 · 칸 초과 · 중복 · 음수를 접는다', () {
       final ids = cfg.skills.map((d) => d.id).toList();

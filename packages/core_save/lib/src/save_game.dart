@@ -503,6 +503,10 @@ class SaveGame {
     this.skillGradeShards = const {},
     this.skillTrainingId,
     this.skillTrainingEndsAt,
+    this.skillGachaPity = 0,
+    this.skillDayKey,
+    this.skillFreeDrawsUsed = 0,
+    this.skillSweepsUsed = 0,
     this.forgeLevel = 0,
     this.forgeSteps = 0,
     this.forgeUpAt,
@@ -951,6 +955,14 @@ class SaveGame {
   final String? skillTrainingId;
   final DateTime? skillTrainingEndsAt;
 
+  /// 스킬 뽑기 천장 카운터 — 천장 등급이 나오면 0.
+  final int skillGachaPity;
+
+  /// 하루 사용 기록(무료 뽑기·소탕)의 날짜 키. 날짜가 바뀌면 둘 다 0 으로 본다.
+  final String? skillDayKey;
+  final int skillFreeDrawsUsed;
+  final int skillSweepsUsed;
+
   /// 공방 등급(0부터). 등급 확률 창의 위치를 정한다.
   final int forgeLevel;
 
@@ -1227,6 +1239,10 @@ class SaveGame {
     String? skillTrainingId,
     DateTime? skillTrainingEndsAt,
     bool clearSkillTraining = false,
+    int? skillGachaPity,
+    String? skillDayKey,
+    int? skillFreeDrawsUsed,
+    int? skillSweepsUsed,
     int? forgeLevel,
     int? forgeSteps,
     DateTime? forgeUpAt,
@@ -1322,6 +1338,10 @@ class SaveGame {
     skillTrainingEndsAt: clearSkillTraining
         ? null
         : (skillTrainingEndsAt ?? this.skillTrainingEndsAt),
+    skillGachaPity: skillGachaPity ?? this.skillGachaPity,
+    skillDayKey: skillDayKey ?? this.skillDayKey,
+    skillFreeDrawsUsed: skillFreeDrawsUsed ?? this.skillFreeDrawsUsed,
+    skillSweepsUsed: skillSweepsUsed ?? this.skillSweepsUsed,
     forgeLevel: forgeLevel ?? this.forgeLevel,
     forgeSteps: forgeSteps ?? this.forgeSteps,
     // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
@@ -1558,6 +1578,10 @@ class SaveGame {
     skillTrainingEndsAt: json['skillTrainingId'] is String
         ? DateTime.tryParse('${json['skillTrainingEndsAt']}')?.toUtc()
         : null,
+    skillGachaPity: (json['skillGachaPity'] as num?)?.toInt() ?? 0,
+    skillDayKey: json['skillDayKey'] as String?,
+    skillFreeDrawsUsed: (json['skillFreeDrawsUsed'] as num?)?.toInt() ?? 0,
+    skillSweepsUsed: (json['skillSweepsUsed'] as num?)?.toInt() ?? 0,
     forgeLevel: (json['forgeLevel'] as num?)?.toInt() ?? 0,
     forgeSteps: (json['forgeSteps'] as num?)?.toInt() ?? 0,
     forgeUpAt: json['forgeUpAt'] == null
@@ -1701,6 +1725,10 @@ class SaveGame {
     // 표식이다. 이 키가 없는 업로드(스킬 이전 앱)는 조각·수련을 모르고 올린 것이라
     // 서버가 저장본 값을 지킨다(`GameActions._enforceSkills`).
     'skillGradeShards': skillGradeShards,
+    if (skillGachaPity != 0) 'skillGachaPity': skillGachaPity,
+    if (skillDayKey != null) 'skillDayKey': skillDayKey,
+    if (skillFreeDrawsUsed != 0) 'skillFreeDrawsUsed': skillFreeDrawsUsed,
+    if (skillSweepsUsed != 0) 'skillSweepsUsed': skillSweepsUsed,
     if (skillTrainingId != null && skillTrainingEndsAt != null) ...{
       'skillTrainingId': skillTrainingId,
       'skillTrainingEndsAt': skillTrainingEndsAt!.toUtc().toIso8601String(),

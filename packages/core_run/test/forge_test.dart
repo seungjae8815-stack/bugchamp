@@ -368,6 +368,37 @@ void main() {
       expect(eliteHits / n, closeTo(skills.eliteShardChance, 0.02));
     });
 
+    test('뽑기 등급 확률은 어느 난이도의 드롭보다도 좋다 — 돈 내고 나빠지면 안 된다', () {
+      double share(Map<Grade, double> w, Set<Grade> gs) {
+        final total = w.values.fold(0.0, (a, b) => a + b);
+        return [for (final g in gs) w[g] ?? 0].fold(0.0, (a, b) => a + b) /
+            total;
+      }
+
+      const top = {Grade.legendary};
+      const high = {Grade.epic, Grade.legendary};
+      for (final w in skills.dropGradeWeightsByTier) {
+        expect(
+          share(skills.gachaGradeWeights, top),
+          greaterThanOrEqualTo(share(w, top)),
+        );
+        expect(
+          share(skills.gachaGradeWeights, high),
+          greaterThanOrEqualTo(share(w, high)),
+        );
+      }
+      final odds = skills.gachaGradeOdds;
+      expect(odds.values.fold(0.0, (a, b) => a + b), closeTo(1, 1e-9));
+    });
+
+    test('뽑기 천장 — 천장 회차면 천장 등급 이상만', () {
+      for (var i = 0; i < 300; i++) {
+        final r = skills.rollGacha(Random(i), pityDue: true)!;
+        expect(r.$2.index, greaterThanOrEqualTo(skills.gachaPityGrade.index));
+      }
+      expect(skills.sweepShardsFor(3), skills.sweepShardsByTier.last);
+    });
+
     test('패시브 — 장착한 것만 · 군집은 펫 수에 비례 · 흡즙·탈피', () {
       final levels = {'tenacity': 1, 'swarm': 2, 'sap_drink': 1, 'molting': 1};
       final none = skillPassiveStats(

@@ -34,6 +34,20 @@
     { "common": 45, "rare": 30, "epic": 18, "legendary": 7 }
   ],
 
+  "_gachaComment": "스킬 뽑기(2026-09-15 사장님 확정, §2.8 — §2.6 알 뽑기와 같은 논리: 드롭이 이미 주는 것의 시간 절약). 젤리 gachaJellyCost = 조각 상자 1개 = 등급(gachaGradeWeights) → 그 등급 스킬 중 랜덤 → gachaShards 개. gachaPity 회째는 gachaPityGrade 이상 확정(나오면 카운터 초기화 — 영웅에서 초기화하면 전설을 노리는 카운터가 계속 리셋된다). ⚠️ 등급 확률은 **어느 난이도의 드롭 표(dropGradeWeightsByTier)보다도 좋아야 한다**(data_test 가 검사) — 돈 내고 확률이 나빠지면 안 된다. ⚠️ 확률은 뽑기 화면에 공개한다(확률형 아이템 표시 의무). 하루 무료 gachaFreePerDay 회.",
+  "gachaJellyCost": 30,
+  "gachaShards": 10,
+  "gachaPity": 10,
+  "gachaPityGrade": "legendary",
+  "gachaGradeWeights": { "common": 35, "rare": 30, "epic": 25, "legendary": 10 },
+  "gachaFreePerDay": 1,
+
+  "_sweepComment": "보스 소탕권(사장님 확정): 이미 잡은 보스를 바로 다시 잡은 것으로 치고 조각을 **확정**으로 sweepShardsByTier[난이도] 개(재처치의 10% 확률과 달리 확정 — 확률이면 무료 3회가 하루 평균 1개뿐이라 의미가 없다). 난이도 = 보스를 한 마리라도 잡아 본 가장 높은 난이도. 하루 무료 sweepFreePerDay 회, 그 뒤는 젤리 sweepJellyCost, 하루 합계 sweepMaxPerDay 회까지.",
+  "sweepShardsByTier": [3, 4, 4, 5],
+  "sweepFreePerDay": 3,
+  "sweepJellyCost": 10,
+  "sweepMaxPerDay": 10,
+
   "_effectComment": "패시브 효과 키: materialFind·bugFind·bossDamage(가산, 종 패시브와 같은 층) · perPetAttack(장착 펫 1마리당 공격 +) · killHeal(처치 회복 ×(1+값)) · revive(패배 시 최대 체력 값 비율로 부활, cooldown 초). 액티브 효과는 홈 스킬 바(5단계)에서 붙는다.",
   "skills": [
     {

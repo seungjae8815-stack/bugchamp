@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
+import 'boss_dex.dart';
 import 'save_game.dart';
 import 'tier_progress.dart';
 
@@ -305,4 +306,144 @@ bool _sameList(List<String> a, List<String> b) {
     if (a[i] != b[i]) return false;
   }
   return true;
+}
+
+// ───────────────────────── 뽑기 · 소탕 (3단계) ─────────────────────────
+
+/// 오늘([dayKey]) 쓴 무료 뽑기·소탕 횟수. 날짜가 바뀌었으면 0.
+({int freeDraws, int sweeps}) skillDailyUsed(SaveGame s, String dayKey) =>
+    s.skillDayKey == dayKey
+    ? (freeDraws: s.skillFreeDrawsUsed, sweeps: s.skillSweepsUsed)
+    : (freeDraws: 0, sweeps: 0);
+
+/// 뽑기 결과 한 건.
+typedef SkillDraw = ({String id, Grade grade, int shards});
+
+/// 스킬 뽑기 [times] 회. [free] 면 하루 무료 1회(times 는 1이어야 한다), 아니면 젤리.
+///
+/// 천장: [SkillConfig.gachaPity] 회째는 천장 등급 이상 확정. **천장 등급이 나왔을 때만**
+/// 카운터를 되감는다(알 뽑기와 같다). 결과는 `extra['draws']`(List<SkillDraw>).
+SkillOp drawSkills(
+  SaveGame s,
+  SkillConfig cfg,
+  math.Random rng, {
+  required String dayKey,
+  required int times,
+  bool free = false,
+}) {
+  if (times <= 0 || cfg.gachaGradeWeights.isEmpty) {
+    return const SkillOp.fail('off');
+  }
+  final used = skillDailyUsed(s, dayKey);
+  var mats = s.materials;
+  if (free) {
+    if (times != 1 || used.freeDraws >= cfg.gachaFreePerDay) {
+      return const SkillOp.fail('no_free');
+    }
+  } else {
+    final cost = cfg.gachaJellyCost * times;
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cost) return const SkillOp.fail('not_enough_jelly');
+    mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cost;
+  }
+  var pity = s.skillGachaPity;
+  final draws = <SkillDraw>[];
+  final grant = <String, int>{};
+  for (var i = 0; i < times; i++) {
+    final pityDue = cfg.gachaPity > 0 && pity >= cfg.gachaPity - 1;
+    final r = cfg.rollGacha(rng, pityDue: pityDue);
+    if (r == null) return const SkillOp.fail('off');
+    final (id, grade) = r;
+    pity = grade.index >= cfg.gachaPityGrade.index ? 0 : pity + 1;
+    draws.add((id: id, grade: grade, shards: cfg.gachaShards));
+    grant[id] = (grant[id] ?? 0) + cfg.gachaShards;
+  }
+  final next = grantSkillShards(
+    s.copyWith(
+      materials: mats,
+      skillGachaPity: pity,
+      skillDayKey: dayKey,
+      skillFreeDrawsUsed: used.freeDraws + (free ? 1 : 0),
+      skillSweepsUsed: used.sweeps,
+    ),
+    cfg,
+    grant,
+  );
+  return SkillOp.ok(next, extra: {'draws': draws});
+}
+
+/// 소탕 기준 난이도 — 보스를 한 마리라도 잡아 본 가장 높은 난이도. 없으면 -1.
+int bestSweepTier(SaveGame s, RunConfig run) {
+  for (var tier = kBossDexTiers - 1; tier >= 0; tier--) {
+    for (var zone = 1; zone <= run.zonesPerTier; zone++) {
+      if (s.bossDex.contains(run.bossArtId(tier, zone))) return tier;
+    }
+  }
+  return -1;
+}
+
+/// 소탕 1회 — 이미 잡은 보스를 다시 잡은 것으로 치고 조각 **확정**.
+/// 하루 무료 [SkillConfig.sweepFreePerDay] 회, 그 뒤는 젤리, 합계 [SkillConfig.sweepMaxPerDay] 회.
+/// 결과는 `extra['shards']`(스킬 id → 개수) · `extra['jelly']`.
+SkillOp sweepBoss(
+  SaveGame s,
+  SkillConfig cfg,
+  RunConfig run,
+  math.Random rng, {
+  required String dayKey,
+}) {
+  final tier = bestSweepTier(s, run);
+  if (tier < 0) return const SkillOp.fail('no_boss');
+  final used = skillDailyUsed(s, dayKey);
+  if (used.sweeps >= cfg.sweepMaxPerDay) {
+    return const SkillOp.fail('sweep_limit');
+  }
+  final paid = used.sweeps >= cfg.sweepFreePerDay;
+  var mats = s.materials;
+  if (paid) {
+    final have = s.materialCount(MaterialKind.jelly);
+    if (have < cfg.sweepJellyCost)
+      return const SkillOp.fail('not_enough_jelly');
+    mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = have - cfg.sweepJellyCost;
+  }
+  final shards = <String, int>{};
+  final n = cfg.sweepShardsFor(tier);
+  final weights = cfg.dropGradeWeightsByTier.isEmpty
+      ? cfg.gachaGradeWeights
+      : cfg.dropGradeWeightsByTier[tier.clamp(
+          0,
+          cfg.dropGradeWeightsByTier.length - 1,
+        )];
+  final total = weights.values.fold<double>(0, (a, b) => a + b);
+  if (n > 0 && total > 0) {
+    var pick = rng.nextDouble() * total;
+    Grade? grade;
+    for (final e in weights.entries) {
+      if (e.value <= 0) continue;
+      grade = e.key;
+      pick -= e.value;
+      if (pick <= 0) break;
+    }
+    final pool = [
+      for (final d in cfg.skills)
+        if (d.grade == grade) d,
+    ];
+    if (pool.isNotEmpty) shards[pool[rng.nextInt(pool.length)].id] = n;
+  }
+  final next = grantSkillShards(
+    s.copyWith(
+      materials: mats,
+      skillDayKey: dayKey,
+      skillFreeDrawsUsed: used.freeDraws,
+      skillSweepsUsed: used.sweeps + 1,
+    ),
+    cfg,
+    shards,
+  );
+  return SkillOp.ok(
+    next,
+    extra: {'shards': shards, 'jelly': paid ? cfg.sweepJellyCost : 0},
+  );
 }

@@ -125,6 +125,16 @@ class SkillConfig {
     this.eliteShardChance = 0.1,
     this.eliteShards = 1,
     this.dropGradeWeightsByTier = const [],
+    this.gachaJellyCost = 30,
+    this.gachaShards = 10,
+    this.gachaPity = 10,
+    this.gachaPityGrade = Grade.legendary,
+    this.gachaGradeWeights = const {},
+    this.gachaFreePerDay = 1,
+    this.sweepShardsByTier = const [3, 4, 4, 5],
+    this.sweepFreePerDay = 3,
+    this.sweepJellyCost = 10,
+    this.sweepMaxPerDay = 10,
   });
 
   final List<SkillDef> skills;
@@ -165,6 +175,51 @@ class SkillConfig {
 
   /// 드롭 조각의 등급 가중치 — 인덱스 = 난이도. 보스·정예 공용.
   final List<Map<Grade, double>> dropGradeWeightsByTier;
+
+  /// 스킬 뽑기 — 젤리 가격 · 1회 조각 · 천장 횟수·등급 · 등급 가중치 · 하루 무료.
+  final int gachaJellyCost;
+  final int gachaShards;
+  final int gachaPity;
+  final Grade gachaPityGrade;
+  final Map<Grade, double> gachaGradeWeights;
+  final int gachaFreePerDay;
+
+  /// 보스 소탕권 — 난이도별 확정 조각 · 하루 무료 · 추가 젤리 · 하루 합계 상한.
+  final List<int> sweepShardsByTier;
+  final int sweepFreePerDay;
+  final int sweepJellyCost;
+  final int sweepMaxPerDay;
+
+  /// 소탕 1회 조각(난이도 [tier]).
+  int sweepShardsFor(int tier) => sweepShardsByTier.isEmpty
+      ? 0
+      : sweepShardsByTier[tier.clamp(0, sweepShardsByTier.length - 1)];
+
+  /// 뽑기 1회 — (스킬 id, 등급). [pityDue] 면 천장 등급 미만을 잘라낸다.
+  (String, Grade)? rollGacha(math.Random rng, {required bool pityDue}) {
+    var weights = Map<Grade, double>.from(gachaGradeWeights);
+    if (pityDue) {
+      weights = {
+        for (final e in weights.entries)
+          if (e.key.index >= gachaPityGrade.index) e.key: e.value,
+      };
+    }
+    final grade = _pickGrade(rng, weights);
+    if (grade == null) return null;
+    final pool = [
+      for (final s in skills)
+        if (s.grade == grade) s,
+    ];
+    if (pool.isEmpty) return null;
+    return (pool[rng.nextInt(pool.length)].id, grade);
+  }
+
+  /// 확률 공개용 — 등급별 확률(0~1, 천장 제외).
+  Map<Grade, double> get gachaGradeOdds {
+    final total = gachaGradeWeights.values.fold<double>(0, (a, b) => a + b);
+    if (total <= 0) return const {};
+    return {for (final e in gachaGradeWeights.entries) e.key: e.value / total};
+  }
 
   SkillDef? byId(String id) {
     for (final s in skills) {
@@ -314,6 +369,21 @@ class SkillConfig {
         for (final w in (json['dropGradeWeightsByTier'] as List? ?? const []))
           gradeMap(w, (n) => n.toDouble()),
       ],
+      gachaJellyCost: (json['gachaJellyCost'] as num?)?.toInt() ?? 30,
+      gachaShards: (json['gachaShards'] as num?)?.toInt() ?? 10,
+      gachaPity: (json['gachaPity'] as num?)?.toInt() ?? 10,
+      gachaPityGrade: Grade.fromKey(
+        json['gachaPityGrade'] as String? ?? 'legendary',
+      ),
+      gachaGradeWeights: gradeMap(
+        json['gachaGradeWeights'],
+        (n) => n.toDouble(),
+      ),
+      gachaFreePerDay: (json['gachaFreePerDay'] as num?)?.toInt() ?? 1,
+      sweepShardsByTier: ints(json['sweepShardsByTier'], const [3, 4, 4, 5]),
+      sweepFreePerDay: (json['sweepFreePerDay'] as num?)?.toInt() ?? 3,
+      sweepJellyCost: (json['sweepJellyCost'] as num?)?.toInt() ?? 10,
+      sweepMaxPerDay: (json['sweepMaxPerDay'] as num?)?.toInt() ?? 10,
     );
   }
 }

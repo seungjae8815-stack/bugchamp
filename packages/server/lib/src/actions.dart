@@ -416,6 +416,10 @@ class GameActions {
       skillTrainingId: stored.skillTrainingId,
       skillTrainingEndsAt: stored.skillTrainingEndsAt,
       clearSkillTraining: stored.skillTrainingId == null,
+      skillGachaPity: stored.skillGachaPity,
+      skillDayKey: stored.skillDayKey,
+      skillFreeDrawsUsed: stored.skillFreeDrawsUsed,
+      skillSweepsUsed: stored.skillSweepsUsed,
     );
 
     var out = client;
@@ -437,8 +441,28 @@ class GameActions {
       ...cfg.bossRepeatShardsByTier,
     ].fold(0, max);
     final newBosses = max(0, out.bossDex.length - stored.bossDex.length);
+    // 뽑기·소탕 — 이번 업로드에서 줄어든 젤리로 살 수 있었던 만큼 + 하루 무료분.
+    final jellySpent = max(
+      0,
+      stored.materialCount(MaterialKind.jelly) -
+          out.materialCount(MaterialKind.jelly),
+    );
+    final biggestSweep = cfg.sweepShardsByTier.fold(0, max);
+    final cheapest = min(
+      cfg.gachaJellyCost > 0 ? cfg.gachaJellyCost : 1 << 30,
+      cfg.sweepJellyCost > 0 ? cfg.sweepJellyCost : 1 << 30,
+    );
+    final bought = cheapest >= 1 << 30
+        ? 0
+        : jellySpent ~/ cheapest * max(cfg.gachaShards, biggestSweep);
+    final freebies =
+        cfg.gachaFreePerDay * cfg.gachaShards +
+        cfg.sweepFreePerDay * biggestSweep;
     final allow =
-        newBosses * cfg.bossFirstKillShards + _skillDropSlack * biggestDrop;
+        newBosses * cfg.bossFirstKillShards +
+        _skillDropSlack * biggestDrop +
+        bought +
+        freebies;
 
     var levelCost = 0;
     for (final def in cfg.skills) {

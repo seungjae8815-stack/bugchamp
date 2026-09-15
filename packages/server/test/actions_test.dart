@@ -1808,6 +1808,18 @@ void main() {
         expect(r.extra['clamped'], isTrue);
       });
 
+      test('젤리를 써서 뽑은 조각은 받는다(10연 = 조각 100)', () {
+        final st = stored().copyWith(materials: {MaterialKind.jelly: 1000});
+        final client = st.copyWith(
+          materials: {MaterialKind.jelly: 1000 - sk.gachaJellyCost * 10},
+          skillShards: {legend.id: sk.gachaShards * 10},
+          skillGachaPity: 3,
+        );
+        final r = actions.mergeSave(st, client.toJson());
+        expect(r.save!.skillShards[legend.id], sk.gachaShards * 10);
+        expect(r.extra['clamped'], isFalse);
+      });
+
       test('조각 없이 레벨만 올린 편집은 저장본 레벨로 되돌린다', () {
         final client = stored().copyWith(
           skillLevels: {for (final d in sk.skills) d.id: sk.maxLevel},
