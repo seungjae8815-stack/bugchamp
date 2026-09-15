@@ -319,3 +319,23 @@ Invoke-RestMethod -Method Post "https://api.telegram.org/bot<봇토큰>/setWebho
 확인: 앱에서 문의를 보내고 → 텔레그램에서 그 알림에 답장 → `✅ 우편 발송됨` 이 달리고 게임 편지함에 뜨는지 본다.
 안 되면 `getWebhookInfo` 의 `last_error_message`(401 이면 비밀값 불일치)와 서버 로그를 본다.
 끄려면 `Invoke-RestMethod "https://api.telegram.org/bot<봇토큰>/deleteWebhook"`.
+
+## 운영 감시 전체 (2026-09-15 신설) — 전부 전용 봇 @bugchamp_bot 으로
+
+| 알림 | 언제 | 어디서 |
+|---|---|---|
+| 💰/🧪 결제 | 결제 검증 직후(실결제·테스트 구분, 닉네임, 오늘 누적) | Edge Function `verify-purchase` |
+| ⚠️ 결제 이상 | 가짜·무효 영수증, 다른 계정 영수증 재사용 | `verify-purchase` |
+| 📅 일일 리포트 | 매일 09:00 KST(사용자 지표 + 매출 24h·누적·상품별) | `daily-report` + 크론 |
+| ⚠️ 리포트 누락 | 09:30 까지 발송 기록이 없으면 하루 1번 | `ops-watchdog`(10분 크론) |
+| 🚨/✅ 서버 응답 없음·복구 | /health 연속 2번 실패 / 되살아남 | `ops-watchdog` |
+| 🚨 서버 오류 급증 | 10분에 5xx 20건 이상(30분 쿨타임) | 권위 서버 `OpsMonitor` |
+| ⚠️ 세이브 너무 큼·요청 초과 | 700KB 이상 / 1MB 초과 거절 | `OpsMonitor` |
+| 📊 서버 요약 | 1시간마다, 일이 있을 때만(상한에 잘린 업로드·위조 곤충·큰 세이브·느린 응답) | `OpsMonitor` |
+| 💥/🧊/↩️/🔥 크래시 | 새 크래시·ANR·재발·급증(릴리즈 빌드만 수집) | Firebase Crashlytics → `firebase/functions`(us-east1) |
+
+- 비밀값: Supabase 시크릿 `TELEGRAM_BOT_TOKEN`·`REPORT_SECRET` · Cloud Run `TELEGRAM_BOT_TOKEN`·`TELEGRAM_WEBHOOK_SECRET` ·
+  Firebase(Secret Manager) `TELEGRAM_BOT_TOKEN`. **봇 토큰을 바꾸면 세 곳 모두** 바꾼다.
+- 크론 SQL: `docs/_sql_20260915_ops_monitor.sql`(비밀값 자리표시 — 실제 값 넣은 파일은 커밋 금지).
+- 크래시 함수 배포: `firebase/` 폴더에서 `firebase deploy --only functions:ops --project bugchamp`.
+- ⚠️ iOS 크래시는 dSYM 업로드(Codemagic 단계)를 붙여야 함수 이름으로 읽힌다 — 아직 안 붙였다.
