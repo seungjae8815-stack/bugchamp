@@ -1806,6 +1806,8 @@ void main() {
         expect(r.save!.skillShards, isEmpty);
         expect(r.save!.skillGradeShards, isEmpty);
         expect(r.extra['clamped'], isTrue);
+        // 운영 요약이 "무엇이 잘렸나"를 보여 줄 수 있게 사유를 싣는다.
+        expect(r.extra['clampReasons'], contains('skill'));
       });
 
       test('젤리를 써서 뽑은 조각은 받는다(10연 = 조각 100)', () {

@@ -587,10 +587,11 @@ class GameActions {
 
     // 골드 상식 상한.
     final clientGold = (merged['gold'] as num?)?.toInt() ?? stored.gold;
-    var clamped = false;
+    // 무엇이 잘렸나 — 운영 요약(OpsMonitor)이 "누가 무엇을" 보여 주는 데 쓴다.
+    final clampReasons = <String>[];
     if (clientGold - stored.gold > maxGain) {
       merged['gold'] = stored.gold + maxGain;
-      clamped = true;
+      clampReasons.add('gold');
     }
 
     // 젤리(프리미엄) 상식 상한 — 결제로 사는 재화라 급증을 막는다.
@@ -602,7 +603,7 @@ class GameActions {
       final storedJelly = stored.materialCount(MaterialKind.jelly);
       if (clientJelly - storedJelly > _jellySanityFloor) {
         mats['jelly'] = storedJelly + _jellySanityFloor;
-        clamped = true;
+        clampReasons.add('jelly');
       }
 
       // 일반 재료도 급증을 막는다 — 여기가 비어 있던 탓에 조작 업로드가
@@ -613,7 +614,7 @@ class GameActions {
         final have = stored.materialCount(k);
         if (client - have > _materialSanityFloor) {
           mats[k.key] = have + _materialSanityFloor;
-          clamped = true;
+          clampReasons.add('material:${k.key}');
         }
       }
 
@@ -625,7 +626,7 @@ class GameActions {
           _maxFossilGain + _dexFossilAllowance(stored, clientJson);
       if (clientFossil - storedFossil > fossilAllow) {
         mats['fossil'] = storedFossil + fossilAllow;
-        clamped = true;
+        clampReasons.add('fossil');
       }
     }
     merged['lastSeen'] = t.toIso8601String();
@@ -657,7 +658,7 @@ class GameActions {
     final skillCfg = config.skill;
     if (skillCfg != null) {
       final sk = _enforceSkills(stored, capped, clientJson, skillCfg);
-      if (!identical(sk, capped)) clamped = true;
+      if (!identical(sk, capped)) clampReasons.add('skill');
       capped = sk;
     }
     if (capped.bugs.length != parsed.bugs.length ||
@@ -668,7 +669,7 @@ class GameActions {
         // 60초마다 다시 올린다 — 화면에도 접히지 않은 값이 그대로 보이고,
         // 서버는 매 업로드마다 같은 일을 반복한다.
         capped.stageNumber != parsed.stageNumber) {
-      clamped = true;
+      clampReasons.add('storage');
     }
 
     // 시즌 정산은 **서버가 확정한다**. 트로피는 서버 소유 필드라 앱이 혼자
@@ -678,7 +679,8 @@ class GameActions {
     return ActionResult.ok(
       settled.save,
       extra: {
-        'clamped': clamped,
+        'clamped': clampReasons.isNotEmpty,
+        if (clampReasons.isNotEmpty) 'clampReasons': clampReasons,
         'season': settled.report != null,
         // 앱이 "시즌 종료" 다이얼로그를 그대로 띄울 수 있게 내역을 실어준다.
         if (settled.report != null) 'seasonReport': settled.report,

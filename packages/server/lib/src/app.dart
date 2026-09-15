@@ -16,6 +16,7 @@ import 'auth.dart';
 import 'battle_session.dart';
 import 'game_config.dart';
 import 'state_store.dart';
+import 'ops_monitor.dart';
 import 'support.dart';
 import 'verifier.dart';
 
@@ -177,8 +178,13 @@ Handler buildHandler({
   /// 문의를 텔레그램으로 밀어 주는 알림기. 생략하면 환경변수에서 만든다
   /// (`TELEGRAM_BOT_TOKEN`·`TELEGRAM_CHAT_ID`). 토큰이 없으면 조용히 꺼진다.
   SupportNotifier? supportNotifier,
+
+  /// 운영 감시(오류 급증·상한에 잘린 업로드·위조·큰 세이브). 생략하면 문의 봇으로 보낸다
+  /// (봇 토큰이 없으면 세기만 하고 보내지 않는다).
+  OpsMonitor? opsMonitor,
 }) {
   final support = supportNotifier ?? SupportNotifier();
+  final ops = opsMonitor ?? OpsMonitor(send: (t) => support.notify(t));
   final verifier =
       jwtVerifier ?? SupabaseJwtVerifier.forProject(config.supabaseUrl);
 
@@ -335,7 +341,9 @@ Handler buildHandler({
       final user = userOf(req);
       final Map<String, dynamic> body;
       try {
-        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+        final raw = await req.readAsString();
+        ops.recordSaveSize(user.id, req.contentLength ?? raw.length);
+        body = jsonDecode(raw) as Map<String, dynamic>;
       } catch (_) {
         return _json({'error': 'bad_request'}, status: 400);
       }
@@ -348,6 +356,10 @@ Handler buildHandler({
         if (stored == null) return _json({'error': 'no_save'}, status: 409);
         var r = actions.mergeSave(stored, migrateToCurrent(incoming));
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        final reasons = r.extra['clampReasons'];
+        if (reasons is List) {
+          ops.recordClamp(user.id, [for (final x in reasons) '$x']);
+        }
 
         // 끝난 회차의 대회 보상을 여기서 지급한다. **`/event` 가 아니다** —
         // 그쪽은 대회가 닫히면 404 라 끝난 뒤엔 호출되지 않는다.
@@ -1066,6 +1078,7 @@ Handler buildHandler({
           enhance: cfg.enhance,
         );
         if (built.error != null) {
+          _noteForged(ops, user.id, built.error);
           return _json({'error': built.error}, status: 400);
         }
 
@@ -1243,6 +1256,7 @@ Handler buildHandler({
           allowInjured: true,
         );
         if (built.error != null) {
+          _noteForged(ops, user.id, built.error);
           return _json({'error': built.error}, status: 400);
         }
 
@@ -1497,6 +1511,7 @@ Handler buildHandler({
           petConfig: cfg.pet,
         );
         if (!r.isOk) {
+          _noteForged(ops, user.id, r.error);
           return _json(_ticketError(actions, save, r.error), status: r.status);
         }
         await store.save(user.id, r.save!.toJson());
@@ -2371,8 +2386,19 @@ Handler buildHandler({
 
   return const Pipeline()
       .addMiddleware(logRequests())
+      .addMiddleware(opsMiddleware(ops))
       .addMiddleware(limitBodySize())
       .addHandler(cascade.handler);
+}
+
+/// 위조 곤충 편성 거부(`bug_forged:*`)면 운영 요약에 남긴다.
+void _noteForged(OpsMonitor ops, String uid, String? error) {
+  if (error != null && error.startsWith('bug_forged')) {
+    ops.recordForged(
+      uid,
+      error.substring('bug_forged'.length).replaceFirst(':', ''),
+    );
+  }
 }
 
 /// 액션 실패 응답 본문. 티켓 부족이면 **서버가 아는 잔량·충전시각을 함께** 준다.
