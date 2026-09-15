@@ -43,6 +43,29 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/tool/hook_korean_reminder.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/tool/hook_korean_stop.py\"",
+            "timeout": 15
+          }
+        ]
+      }
     ]
-  }
+  },
+  "language": "korean"
 }
