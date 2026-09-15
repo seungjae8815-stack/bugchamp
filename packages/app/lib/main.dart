@@ -14,6 +14,7 @@ import 'domain/admob_ad_service.dart';
 import 'domain/audio_service.dart';
 import 'domain/auth_service.dart';
 import 'domain/chat_service.dart';
+import 'domain/crash_reporting.dart';
 import 'domain/game_server.dart';
 import 'domain/cloud_save_service.dart';
 import 'domain/marketing_service.dart';
@@ -69,6 +70,8 @@ bool get _useRealAds => switch (_realAdsFlag) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // 크래시 수집을 **가장 먼저** — 아래 초기화(Hive·Supabase)에서 터지는 오류도 잡혀야 한다.
+  await initCrashReporting();
   // 세로 고정 — 모든 화면이 세로 설계라 가로로 돌면 레이아웃이 깨진다
   // (실기 지적 2026-08-20). 매니페스트/Info.plist 잠금과 삼중이지만,
   // 하나만 믿으면 플랫폼별로 새는 구멍이 생긴다.
@@ -102,6 +105,7 @@ Future<void> main() async {
         await client.auth.signInAnonymously();
       }
       supaClient = client;
+      await setCrashUser(client.auth.currentUser?.id);
     } catch (e) {
       // 초기화/로그인 실패 → 로컬 백엔드 유지(앱은 정상 동작).
       debugPrint('Supabase init failed: $e');

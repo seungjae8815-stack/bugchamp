@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "867649520275",
+    "project_id": "bugchamp",
+    "storage_bucket": "bugchamp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:867649520275:android:da89899407b72f97108366",
+        "android_client_info": {
+          "package_name": "com.bugchamp.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "867649520275-4ek3m7ni9cdvsqiqg3vce4up4rs8c1rv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAF5WCKGDMXLNI_LwW0P-oWzYiZrPwNr-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "867649520275-4ek3m7ni9cdvsqiqg3vce4up4rs8c1rv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:867649520275:android:22c2fe9c7318e4ce108366",
+        "android_client_info": {
+          "package_name": "com.bugchamp.app.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "867649520275-4ek3m7ni9cdvsqiqg3vce4up4rs8c1rv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAF5WCKGDMXLNI_LwW0P-oWzYiZrPwNr-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "867649520275-4ek3m7ni9cdvsqiqg3vce4up4rs8c1rv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

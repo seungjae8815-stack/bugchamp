@@ -1,0 +1,706 @@
+[debug] [2026-09-15T14:01:05.696Z] ----------------------------------------------------------------------
+[debug] [2026-09-15T14:01:05.705Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions:ops --project bugchamp --non-interactive
+[debug] [2026-09-15T14:01:05.705Z] CLI Version:   15.27.0
+[debug] [2026-09-15T14:01:05.706Z] Platform:      win32
+[debug] [2026-09-15T14:01:05.706Z] Node Version:  v24.15.0
+[debug] [2026-09-15T14:01:05.706Z] Detected Agent: claude-code_2-1-270_agent
+[debug] [2026-09-15T14:01:05.706Z] Time:          Tue Sep 15 2026 23:01:05 GMT+0900 (한국 표준시)
+[debug] [2026-09-15T14:01:05.706Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-15T14:02:33.420Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-15T14:02:33.420Z] > authorizing via signed-in user (seungjae8815@gmail.com)
+[debug] [2026-09-15T14:02:33.421Z] [iam] checking project bugchamp for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-09-15T14:02:33.622Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:33.622Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:33.626Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions [none]
+[debug] [2026-09-15T14:02:33.626Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:02:33.626Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-09-15T14:02:34.243Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions 200
+[debug] [2026-09-15T14:02:34.243Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-09-15T14:02:34.244Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:34.244Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:34.245Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/bugchamp/serviceAccounts/bugchamp@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-09-15T14:02:34.245Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/bugchamp/serviceAccounts/bugchamp@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-09-15T14:02:35.586Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/bugchamp/serviceAccounts/bugchamp@appspot.gserviceaccount.com:testIamPermissions 404
+[debug] [2026-09-15T14:02:35.587Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/bugchamp/serviceAccounts/bugchamp@appspot.gserviceaccount.com:testIamPermissions {"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}}
+[debug] [2026-09-15T14:02:35.588Z] [functions] service account IAM check errored, deploy may fail: Request to https://iam.googleapis.com/v1/projects/bugchamp/serviceAccounts/bugchamp@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://iam.googleapis.com/v1/projects/bugchamp/serviceAccounts/bugchamp@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account","status":404}
+[info] 
+[info] === Deploying to 'bugchamp'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-09-15T14:02:35.595Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.595Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.596Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp [none]
+[debug] [2026-09-15T14:02:35.855Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp 200
+[debug] [2026-09-15T14:02:35.855Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp {"projectNumber":"867649520275","projectId":"bugchamp","lifecycleState":"ACTIVE","name":"bugchamp","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-07-20T04:40:38.662Z"}
+[info] i  functions: preparing codebase ops for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[debug] [2026-09-15T14:02:35.866Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.866Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.876Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.876Z] Checked if tokens are valid: true, expires at: 1789483584556
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2026-09-15T14:02:35.885Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.885Z] Checked if tokens are valid: true, expires at: 1789483584556
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-09-15T14:02:35.889Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.889Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:35.889Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com [none]
+[debug] [2026-09-15T14:02:35.889Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:02:35.892Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/runtimeconfig.googleapis.com [none]
+[debug] [2026-09-15T14:02:35.892Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/runtimeconfig.googleapis.com  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:02:35.894Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbuild.googleapis.com [none]
+[debug] [2026-09-15T14:02:35.894Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbuild.googleapis.com  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:02:35.896Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/artifactregistry.googleapis.com [none]
+[debug] [2026-09-15T14:02:35.896Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/artifactregistry.googleapis.com  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:02:37.313Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/runtimeconfig.googleapis.com 200
+[debug] [2026-09-15T14:02:37.313Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2026-09-15T14:02:37.367Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbuild.googleapis.com 200
+[debug] [2026-09-15T14:02:37.368Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbuild.googleapis.com [omitted]
+[info] +  functions: required API cloudbuild.googleapis.com is enabled 
+[debug] [2026-09-15T14:02:37.381Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com 200
+[debug] [2026-09-15T14:02:37.381Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com [omitted]
+[warn] !  functions: missing required API cloudfunctions.googleapis.com. Enabling now... 
+[debug] [2026-09-15T14:02:37.382Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:37.382Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:37.382Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com:enable [none]
+[debug] [2026-09-15T14:02:37.382Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com:enable  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:02:37.435Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/artifactregistry.googleapis.com 200
+[debug] [2026-09-15T14:02:37.435Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/artifactregistry.googleapis.com [omitted]
+[info] +  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[debug] [2026-09-15T14:02:37.986Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com:enable 200
+[debug] [2026-09-15T14:02:37.987Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudfunctions.googleapis.com:enable [omitted]
+[debug] [2026-09-15T14:02:48.017Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:48.020Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:48.020Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/bugchamp/adminSdkConfig [none]
+[debug] [2026-09-15T14:02:48.574Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/bugchamp/adminSdkConfig 200
+[debug] [2026-09-15T14:02:48.574Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/bugchamp/adminSdkConfig {"projectId":"bugchamp","storageBucket":"bugchamp.firebasestorage.app"}
+[debug] [2026-09-15T14:02:48.575Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:48.575Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:02:48.576Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/bugchamp/configs [none]
+[debug] [2026-09-15T14:02:49.091Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/bugchamp/configs 200
+[debug] [2026-09-15T14:02:49.091Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/bugchamp/configs {}
+[debug] [2026-09-15T14:02:49.093Z] Validating nodejs source
+[debug] [2026-09-15T14:02:59.334Z] checkFunctionsSDKVersion was unable to fetch information from NPM Error: spawnSync C:\WINDOWS\system32\cmd.exe ETIMEDOUT
+    at Object.spawnSync (node:internal/child_process:1143:20)
+    at Object.spawnSync (node:child_process:911:24)
+    at spawn.spawnSync [as sync] (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\index.js:26:23)
+    at Object.getLatestSDKVersion (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\versioning.js:57:25)
+    at Object.checkFunctionsSDKVersion (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\versioning.js:79:32)
+    at Delegate.validate (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\runtimes\node\index.js:85:20)
+    at loadCodebases (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\prepare.js:505:31)
+    at async prepare (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\prepare.js:178:24)
+    at async chain (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\index.js:114:9)
+    at async deploy (C:\Users\Lenovo\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\index.js:193:9)
+[debug] [2026-09-15T14:02:59.335Z] > [functions] package.json contents: {
+  "name": "bugchamp-ops-functions",
+  "private": true,
+  "description": "Crashlytics 알림 → 텔레그램 전용 봇(@bugchamp_bot) 중계",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0"
+  }
+}
+[debug] [2026-09-15T14:02:59.336Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase ops to determine what to deploy 
+[debug] [2026-09-15T14:02:59.340Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-09-15T14:02:59.406Z] Found firebase-functions binary at 'C:\Users\Lenovo\Desktop\coding\BugChamp\firebase\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8594
+
+[debug] [2026-09-15T14:03:03.809Z] Got response from /__/functions.yaml {"endpoints":{"crashNewFatal":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN"}],"labels":{},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","eventFilters":{"alerttype":"crashlytics.newFatalIssue"},"retry":false},"entryPoint":"crashNewFatal"},"crashNewAnr":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN"}],"labels":{},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","eventFilters":{"alerttype":"crashlytics.newAnrIssue"},"retry":false},"entryPoint":"crashNewAnr"},"crashRegression":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN"}],"labels":{},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","eventFilters":{"alerttype":"crashlytics.regression"},"retry":false},"entryPoint":"crashRegression"},"crashVelocity":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN"}],"labels":{},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","eventFilters":{"alerttype":"crashlytics.velocity"},"retry":false},"entryPoint":"crashVelocity"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{},"params":[{"type":"secret","name":"TELEGRAM_BOT_TOKEN"}]}
+[debug] [2026-09-15T14:03:07.116Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:07.116Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:07.116Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/bugchamp/locations/-/functions [none]
+[debug] [2026-09-15T14:03:08.087Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/bugchamp/locations/-/functions 200
+[debug] [2026-09-15T14:03:08.088Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/bugchamp/locations/-/functions {}
+[debug] [2026-09-15T14:03:08.088Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:08.088Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:08.088Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2026-09-15T14:03:09.504Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/-/functions 200
+[debug] [2026-09-15T14:03:09.504Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/-/functions {}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2026-09-15T14:03:09.507Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:09.507Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:09.507Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com [none]
+[debug] [2026-09-15T14:03:09.507Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:03:10.848Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com 200
+[debug] [2026-09-15T14:03:10.848Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com [omitted]
+[warn] !  extensions: missing required API firebaseextensions.googleapis.com. Enabling now... 
+[debug] [2026-09-15T14:03:10.849Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:10.849Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:10.849Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com:enable [none]
+[debug] [2026-09-15T14:03:10.849Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com:enable  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:03:11.518Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com:enable 200
+[debug] [2026-09-15T14:03:11.518Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/firebaseextensions.googleapis.com:enable [omitted]
+[debug] [2026-09-15T14:03:21.539Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-15T14:03:21.539Z] > authorizing via signed-in user (seungjae8815@gmail.com)
+[debug] [2026-09-15T14:03:21.539Z] [iam] checking project bugchamp for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2026-09-15T14:03:21.539Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:21.539Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:21.539Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions [none]
+[debug] [2026-09-15T14:03:21.539Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:03:21.539Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-09-15T14:03:21.765Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions 200
+[debug] [2026-09-15T14:03:21.766Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-09-15T14:03:21.766Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:21.766Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:21.766Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/bugchamp/instances pageSize=100&pageToken=
+[debug] [2026-09-15T14:03:24.937Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/bugchamp/instances 200
+[debug] [2026-09-15T14:03:24.937Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/bugchamp/instances {}
+[debug] [2026-09-15T14:03:24.939Z] Attempting to merge .env secret bindings {} into declared secrets...)}
+[debug] [2026-09-15T14:03:24.939Z] crashNewFatal declared secrets: [{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp"}]
+[debug] [2026-09-15T14:03:24.939Z] crashNewAnr declared secrets: [{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp"}]
+[debug] [2026-09-15T14:03:24.939Z] crashRegression declared secrets: [{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp"}]
+[debug] [2026-09-15T14:03:24.939Z] crashVelocity declared secrets: [{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp"}]
+[debug] [2026-09-15T14:03:24.940Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:24.940Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:24.940Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN [none]
+[debug] [2026-09-15T14:03:25.217Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN 200
+[debug] [2026-09-15T14:03:25.218Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN {"name":"projects/867649520275/secrets/TELEGRAM_BOT_TOKEN","replication":{"automatic":{}},"createTime":"2026-09-15T14:00:45.084553Z","labels":{"firebase-managed":"functions"},"etag":"\"165b85fa30ee54\""}
+[debug] [2026-09-15T14:03:25.218Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:25.218Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:25.218Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN/versions/latest [none]
+[debug] [2026-09-15T14:03:25.445Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN/versions/latest 200
+[debug] [2026-09-15T14:03:25.445Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN/versions/latest {"name":"projects/867649520275/secrets/TELEGRAM_BOT_TOKEN/versions/1","createTime":"2026-09-15T14:00:48.560067Z","state":"ENABLED","replicationStatus":{"automatic":{}},"etag":"\"165b85fa4f8fc3\""}
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged C:\Users\Lenovo\Desktop\coding\BugChamp\firebase\functions (32.89 KB) for uploading 
+[info] i  functions: ensuring required API run.googleapis.com is enabled... 
+[debug] [2026-09-15T14:03:25.496Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:25.496Z] Checked if tokens are valid: true, expires at: 1789483584556
+[info] i  functions: ensuring required API eventarc.googleapis.com is enabled... 
+[debug] [2026-09-15T14:03:25.497Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:25.497Z] Checked if tokens are valid: true, expires at: 1789483584556
+[info] i  functions: ensuring required API pubsub.googleapis.com is enabled... 
+[debug] [2026-09-15T14:03:25.498Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:25.498Z] Checked if tokens are valid: true, expires at: 1789483584556
+[info] i  functions: ensuring required API storage.googleapis.com is enabled... 
+[debug] [2026-09-15T14:03:25.499Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:25.499Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:25.500Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/run.googleapis.com [none]
+[debug] [2026-09-15T14:03:25.500Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/run.googleapis.com  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:25.500Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com [none]
+[debug] [2026-09-15T14:03:25.501Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:25.502Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/pubsub.googleapis.com [none]
+[debug] [2026-09-15T14:03:25.502Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/pubsub.googleapis.com  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:25.503Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/storage.googleapis.com [none]
+[debug] [2026-09-15T14:03:25.503Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/storage.googleapis.com  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:26.796Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/pubsub.googleapis.com 200
+[debug] [2026-09-15T14:03:26.796Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/pubsub.googleapis.com [omitted]
+[info] +  functions: required API pubsub.googleapis.com is enabled 
+[debug] [2026-09-15T14:03:26.814Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com 200
+[debug] [2026-09-15T14:03:26.814Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com [omitted]
+[warn] !  functions: missing required API eventarc.googleapis.com. Enabling now... 
+[debug] [2026-09-15T14:03:26.815Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:26.815Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:26.815Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com:enable [none]
+[debug] [2026-09-15T14:03:26.815Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com:enable  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:26.841Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/storage.googleapis.com 200
+[debug] [2026-09-15T14:03:26.842Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/storage.googleapis.com [omitted]
+[info] +  functions: required API storage.googleapis.com is enabled 
+[debug] [2026-09-15T14:03:26.855Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/run.googleapis.com 200
+[debug] [2026-09-15T14:03:26.855Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/run.googleapis.com [omitted]
+[info] +  functions: required API run.googleapis.com is enabled 
+[debug] [2026-09-15T14:03:28.149Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com:enable 200
+[debug] [2026-09-15T14:03:28.150Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/867649520275/services/eventarc.googleapis.com:enable [omitted]
+[info] i  functions: generating the service identity for pubsub.googleapis.com... 
+[debug] [2026-09-15T14:03:38.165Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:38.165Z] Checked if tokens are valid: true, expires at: 1789483584556
+[info] i  functions: generating the service identity for eventarc.googleapis.com... 
+[debug] [2026-09-15T14:03:38.165Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:38.165Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:38.165Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/pubsub.googleapis.com:generateServiceIdentity [none]
+[debug] [2026-09-15T14:03:38.165Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/pubsub.googleapis.com:generateServiceIdentity  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:38.165Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/pubsub.googleapis.com:generateServiceIdentity {}
+[debug] [2026-09-15T14:03:38.165Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/eventarc.googleapis.com:generateServiceIdentity [none]
+[debug] [2026-09-15T14:03:38.165Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/eventarc.googleapis.com:generateServiceIdentity  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:38.165Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/eventarc.googleapis.com:generateServiceIdentity {}
+[debug] [2026-09-15T14:03:39.543Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/pubsub.googleapis.com:generateServiceIdentity 200
+[debug] [2026-09-15T14:03:39.543Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/pubsub.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-867649520275@gcp-sa-pubsub.iam.gserviceaccount.com","uniqueId":"105271234052193237710"}}
+[debug] [2026-09-15T14:03:39.763Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/eventarc.googleapis.com:generateServiceIdentity 200
+[debug] [2026-09-15T14:03:39.763Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/867649520275/services/eventarc.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-867649520275@gcp-sa-eventarc.iam.gserviceaccount.com","uniqueId":"104883417395624706976"}}
+[info] i  functions: ensuring required API secretmanager.googleapis.com is enabled... 
+[debug] [2026-09-15T14:03:39.765Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:39.765Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:39.765Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/secretmanager.googleapis.com [none]
+[debug] [2026-09-15T14:03:39.765Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/secretmanager.googleapis.com  x-goog-user-project=867649520275
+[debug] [2026-09-15T14:03:40.106Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/secretmanager.googleapis.com 200
+[debug] [2026-09-15T14:03:40.106Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/867649520275/services/secretmanager.googleapis.com [omitted]
+[info] +  functions: required API secretmanager.googleapis.com is enabled 
+[debug] [2026-09-15T14:03:40.112Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:40.112Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:40.113Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN/versions/latest [none]
+[debug] [2026-09-15T14:03:40.403Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN/versions/latest 200
+[debug] [2026-09-15T14:03:40.403Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN/versions/latest {"name":"projects/867649520275/secrets/TELEGRAM_BOT_TOKEN/versions/1","createTime":"2026-09-15T14:00:48.560067Z","state":"ENABLED","replicationStatus":{"automatic":{}},"etag":"\"165b85fa4f8fc3\""}
+[debug] [2026-09-15T14:03:40.403Z] Resolved latest secret version of TELEGRAM_BOT_TOKEN to 1.
+[debug] [2026-09-15T14:03:40.404Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:40.404Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:40.404Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/867649520275 [none]
+[debug] [2026-09-15T14:03:40.754Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/867649520275 403
+[debug] [2026-09-15T14:03:40.754Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/867649520275 {"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"867649520275","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","consumer":"projects/867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}}
+[debug] [2026-09-15T14:03:40.754Z] unable to look up default compute service account. Falling back to 867649520275-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"867649520275","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","consumer":"projects/867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/867649520275 had HTTP Error: 403, Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-09-15T14:03:40.755Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:40.755Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:40.755Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/867649520275:getIamPolicy [none]
+[debug] [2026-09-15T14:03:41.068Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/867649520275:getIamPolicy 200
+[debug] [2026-09-15T14:03:41.068Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/867649520275:getIamPolicy {"version":1,"etag":"BwZbhgPG2g0=","bindings":[{"role":"roles/artifactregistry.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-artifactregistry.iam.gserviceaccount.com"]},{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:867649520275@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.standardServiceAgent","members":["serviceAccount:service-867649520275@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-867649520275@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com","serviceAccount:867649520275@cloudservices.gserviceaccount.com","serviceAccount:bugchamp@appspot.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:service-867649520275@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-fbsvc@bugchamp.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-fbsvc@bugchamp.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:seungjae8815@gmail.com"]},{"role":"roles/pubsub.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-867649520275@serverless-robot-prod.iam.gserviceaccount.com"]}]}
+[debug] [2026-09-15T14:03:41.069Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:41.069Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:41.069Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/867649520275:setIamPolicy [none]
+[debug] [2026-09-15T14:03:41.069Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/867649520275:setIamPolicy {"policy":{"version":1,"etag":"BwZbhgPG2g0=","bindings":[{"role":"roles/artifactregistry.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-artifactregistry.iam.gserviceaccount.com"]},{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:867649520275@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.standardServiceAgent","members":["serviceAccount:service-867649520275@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-867649520275@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com","serviceAccount:867649520275@cloudservices.gserviceaccount.com","serviceAccount:bugchamp@appspot.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:service-867649520275@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-fbsvc@bugchamp.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-fbsvc@bugchamp.iam.gserviceaccount.com","serviceAccount:service-867649520275@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:seungjae8815@gmail.com"]},{"role":"roles/pubsub.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-867649520275@serverless-robot-prod.iam.gserviceaccount.com"]},{"role":"roles/run.invoker","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com"]},{"role":"roles/eventarc.eventReceiver","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com"]}]},"updateMask":"bindings"}
+[debug] [2026-09-15T14:03:42.367Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/867649520275:setIamPolicy 200
+[debug] [2026-09-15T14:03:42.367Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/867649520275:setIamPolicy {"version":1,"etag":"BwZbhgTSqtw=","bindings":[{"role":"roles/artifactregistry.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-artifactregistry.iam.gserviceaccount.com"]},{"role":"roles/cloudbuild.builds.builder","members":["serviceAccount:867649520275@cloudbuild.gserviceaccount.com"]},{"role":"roles/cloudbuild.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-cloudbuild.iam.gserviceaccount.com"]},{"role":"roles/cloudfunctions.standardServiceAgent","members":["serviceAccount:service-867649520275@gcf-admin-robot.iam.gserviceaccount.com"]},{"role":"roles/containerregistry.ServiceAgent","members":["serviceAccount:service-867649520275@containerregistry.iam.gserviceaccount.com"]},{"role":"roles/editor","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com","serviceAccount:867649520275@cloudservices.gserviceaccount.com","serviceAccount:bugchamp@appspot.gserviceaccount.com"]},{"role":"roles/eventarc.eventReceiver","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com"]},{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:service-867649520275@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-fbsvc@bugchamp.iam.gserviceaccount.com"]},{"role":"roles/firebasemods.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-firebasemods.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-fbsvc@bugchamp.iam.gserviceaccount.com","serviceAccount:service-867649520275@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:seungjae8815@gmail.com"]},{"role":"roles/pubsub.serviceAgent","members":["serviceAccount:service-867649520275@gcp-sa-pubsub.iam.gserviceaccount.com"]},{"role":"roles/run.invoker","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com"]},{"role":"roles/run.serviceAgent","members":["serviceAccount:service-867649520275@serverless-robot-prod.iam.gserviceaccount.com"]}]}
+[debug] [2026-09-15T14:03:42.368Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:42.368Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:42.368Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp [none]
+[debug] [2026-09-15T14:03:42.590Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp 200
+[debug] [2026-09-15T14:03:42.590Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/bugchamp {"projectNumber":"867649520275","projectId":"bugchamp","lifecycleState":"ACTIVE","name":"bugchamp","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-07-20T04:40:38.662Z"}
+[debug] [2026-09-15T14:03:42.590Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:42.590Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:42.590Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/867649520275 [none]
+[debug] [2026-09-15T14:03:42.879Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/867649520275 403
+[debug] [2026-09-15T14:03:42.879Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/867649520275 {"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"867649520275","consumer":"projects/867649520275","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}}
+[debug] [2026-09-15T14:03:42.879Z] unable to look up default compute service account. Falling back to 867649520275-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"containerInfo":"867649520275","consumer":"projects/867649520275","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/867649520275 had HTTP Error: 403, Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-09-15T14:03:42.880Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:42.880Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:42.880Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/867649520275 [none]
+[debug] [2026-09-15T14:03:43.168Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/867649520275 403
+[debug] [2026-09-15T14:03:43.169Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/867649520275 {"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/867649520275","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","containerInfo":"867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}}
+[debug] [2026-09-15T14:03:43.169Z] unable to look up default compute service account. Falling back to 867649520275-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/867649520275","activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","containerInfo":"867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/867649520275 had HTTP Error: 403, Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-09-15T14:03:43.169Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:43.169Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:43.169Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/867649520275 [none]
+[debug] [2026-09-15T14:03:43.425Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/867649520275 403
+[debug] [2026-09-15T14:03:43.425Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/867649520275 {"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","serviceTitle":"Compute Engine API","consumer":"projects/867649520275","containerInfo":"867649520275","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}}
+[debug] [2026-09-15T14:03:43.425Z] unable to look up default compute service account. Falling back to 867649520275-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","serviceTitle":"Compute Engine API","consumer":"projects/867649520275","containerInfo":"867649520275","service":"compute.googleapis.com"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/867649520275 had HTTP Error: 403, Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[debug] [2026-09-15T14:03:43.425Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:43.426Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:43.426Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/867649520275 [none]
+[debug] [2026-09-15T14:03:43.704Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/867649520275 403
+[debug] [2026-09-15T14:03:43.704Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/867649520275 {"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","consumer":"projects/867649520275","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","containerInfo":"867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}}
+[debug] [2026-09-15T14:03:43.704Z] unable to look up default compute service account. Falling back to 867649520275-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275","consumer":"projects/867649520275","serviceTitle":"Compute Engine API","service":"compute.googleapis.com","containerInfo":"867649520275"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/867649520275 had HTTP Error: 403, Compute Engine API has not been used in project 867649520275 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=867649520275 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[info] i  functions: ensuring 867649520275-compute@developer.gserviceaccount.com access to secret TELEGRAM_BOT_TOKEN. 
+[debug] [2026-09-15T14:03:43.705Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:43.705Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:43.705Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN:getIamPolicy [none]
+[debug] [2026-09-15T14:03:44.360Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN:getIamPolicy 200
+[debug] [2026-09-15T14:03:44.360Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN:getIamPolicy {"etag":"ACAB"}
+[debug] [2026-09-15T14:03:44.360Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:44.360Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:44.361Z] >>> [apiv2][query] POST https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN:setIamPolicy [none]
+[debug] [2026-09-15T14:03:44.361Z] >>> [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN:setIamPolicy {"policy":{"bindings":[{"role":"roles/secretmanager.secretAccessor","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com"]}]},"updateMask":"bindings"}
+[debug] [2026-09-15T14:03:44.882Z] <<< [apiv2][status] POST https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN:setIamPolicy 200
+[debug] [2026-09-15T14:03:44.882Z] <<< [apiv2][body] POST https://secretmanager.googleapis.com/v1/projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN:setIamPolicy {"version":1,"etag":"BwZbhgT4wWc=","bindings":[{"role":"roles/secretmanager.secretAccessor","members":["serviceAccount:867649520275-compute@developer.gserviceaccount.com"]}]}
+[info] +  secretmanager: Granted roles/secretmanager.secretAccessor on projects/bugchamp/secrets/TELEGRAM_BOT_TOKEN to 867649520275-compute@developer.gserviceaccount.com 
+[info] +  functions: ensured 867649520275-compute@developer.gserviceaccount.com access to TELEGRAM_BOT_TOKEN. 
+[debug] [2026-09-15T14:03:44.884Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:44.884Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:44.884Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com [none]
+[debug] [2026-09-15T14:03:44.884Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:03:46.145Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com 200
+[debug] [2026-09-15T14:03:46.145Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com [omitted]
+[debug] [2026-09-15T14:03:46.145Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:46.145Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:46.145Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com:enable [none]
+[debug] [2026-09-15T14:03:46.145Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com:enable  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:03:46.592Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com:enable 200
+[debug] [2026-09-15T14:03:46.592Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/bugchamp/services/cloudbilling.googleapis.com:enable [omitted]
+[debug] [2026-09-15T14:03:56.615Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:56.616Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:56.616Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/bugchamp/billingInfo [none]
+[debug] [2026-09-15T14:03:56.616Z] >>> [apiv2][(partial)header] GET https://cloudbilling.googleapis.com/v1/projects/bugchamp/billingInfo  x-goog-user-project=bugchamp
+[debug] [2026-09-15T14:03:57.894Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/bugchamp/billingInfo 200
+[debug] [2026-09-15T14:03:57.894Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/bugchamp/billingInfo {"name":"projects/bugchamp/billingInfo","projectId":"bugchamp","billingAccountName":"billingAccounts/015B4C-649ABF-9A6811","billingEnabled":true}
+[debug] [2026-09-15T14:03:57.896Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:57.896Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:03:57.896Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions:generateUploadUrl [none]
+[debug] [2026-09-15T14:04:00.847Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions:generateUploadUrl 200
+[debug] [2026-09-15T14:04:00.848Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com/3677f345-80a7-46b9-a6ef-0f731805ca9d.zip?GoogleAccessId=service-867649520275@gcf-admin-robot.iam.gserviceaccount.com&Expires=1789482843&Signature=Sw%2F3FGdnMu0D5yDrJb5PO9TPZM044srxp2rPLNLZI%2F3SSPA72zjUnO0fjZlUAYtEF4FpYk6ZXrsqonAg2LfiCdNL04qTK3%2Ftd3jDao9w8O%2BstfnQ4uWcb7FIYbPxij8ESa2dQZrw%2Btar02I7sRRaqEi5X4ZPTPbzo5oNtrlMiYqdJPZV%2Bxov86EhyyJI41LO9QKo2o2ZiXbxkPqdQV3ht%2F5Wk9G%2FIP8zPMPXhq%2F%2BsbPDK4h1vTXhM%2FCx3WLr3aA2N3azqdqhouOlBSGnbq8smbOWOPSFMrZ4oKqLgb%2FhPQxOM14GpuT3S%2BbJYWqmKXFPOslxx9%2FcyGZQhRoLhkweWQ%3D%3D","storageSource":{"bucket":"gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com","object":"3677f345-80a7-46b9-a6ef-0f731805ca9d.zip"}}
+[debug] [2026-09-15T14:04:00.849Z] >>> [apiv2][query] PUT https://storage.googleapis.com/gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com/3677f345-80a7-46b9-a6ef-0f731805ca9d.zip GoogleAccessId=service-867649520275%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1789482843&Signature=Sw%2F3FGdnMu0D5yDrJb5PO9TPZM044srxp2rPLNLZI%2F3SSPA72zjUnO0fjZlUAYtEF4FpYk6ZXrsqonAg2LfiCdNL04qTK3%2Ftd3jDao9w8O%2BstfnQ4uWcb7FIYbPxij8ESa2dQZrw%2Btar02I7sRRaqEi5X4ZPTPbzo5oNtrlMiYqdJPZV%2Bxov86EhyyJI41LO9QKo2o2ZiXbxkPqdQV3ht%2F5Wk9G%2FIP8zPMPXhq%2F%2BsbPDK4h1vTXhM%2FCx3WLr3aA2N3azqdqhouOlBSGnbq8smbOWOPSFMrZ4oKqLgb%2FhPQxOM14GpuT3S%2BbJYWqmKXFPOslxx9%2FcyGZQhRoLhkweWQ%3D%3D
+[debug] [2026-09-15T14:04:00.849Z] >>> [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com/3677f345-80a7-46b9-a6ef-0f731805ca9d.zip [stream]
+[debug] [2026-09-15T14:04:01.210Z] <<< [apiv2][status] PUT https://storage.googleapis.com/gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com/3677f345-80a7-46b9-a6ef-0f731805ca9d.zip 200
+[debug] [2026-09-15T14:04:01.210Z] <<< [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com/3677f345-80a7-46b9-a6ef-0f731805ca9d.zip [omitted]
+[info] +  functions: functions source uploaded successfully 
+[info] i  functions: creating Node.js 22 (2nd Gen) function ops:crashNewFatal(us-east1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function ops:crashNewAnr(us-east1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function ops:crashRegression(us-east1)... 
+[info] i  functions: creating Node.js 22 (2nd Gen) function ops:crashVelocity(us-east1)... 
+[debug] [2026-09-15T14:04:01.216Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:01.216Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:01.217Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions functionId=crashNewFatal
+[debug] [2026-09-15T14:04:01.217Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"name":"projects/bugchamp/locations/us-east1/functions/crashNewFatal","buildConfig":{"runtime":"nodejs22","entryPoint":"crashNewFatal","source":{"storageSource":{"bucket":"gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com","object":"3677f345-80a7-46b9-a6ef-0f731805ca9d.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}","GCLOUD_PROJECT":"bugchamp","EVENTARC_CLOUD_EVENT_SOURCE":"projects/bugchamp/locations/us-east1/services/crashNewFatal","FUNCTION_REGION":"us-east1","FUNCTION_SIGNATURE_TYPE":"cloudevent","FUNCTION_TARGET":"crashNewFatal","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","firebase-functions-codebase":"ops","firebase-functions-hash":"7fec5287b86cae94bbd53adc454c922df83d3d32"},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","retryPolicy":"RETRY_POLICY_DO_NOT_RETRY","eventFilters":[{"attribute":"alerttype","value":"crashlytics.newFatalIssue"}],"triggerRegion":"global"}}
+[debug] [2026-09-15T14:04:19.008Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions 400
+[debug] [2026-09-15T14:04:19.009Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"error":{"code":400,"message":"Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewfatal-456578: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.","status":"FAILED_PRECONDITION"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashNewFatal had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewfatal-456578: Invalid resource state for "": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role. 
+[warn] !  functions: Since this is your first time using 2nd gen functions, we need a little bit longer to finish setting everything up. Retry the deployment in a few minutes. 
+[warn] !  functions:  failed to create function projects/bugchamp/locations/us-east1/functions/crashNewFatal 
+[error] Failed to create function projects/bugchamp/locations/us-east1/functions/crashNewFatal
+[debug] [2026-09-15T14:04:19.010Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:19.010Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:19.010Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:19.010Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:19.010Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:19.010Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:19.010Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions functionId=crashNewAnr
+[debug] [2026-09-15T14:04:19.010Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"name":"projects/bugchamp/locations/us-east1/functions/crashNewAnr","buildConfig":{"runtime":"nodejs22","entryPoint":"crashNewAnr","source":{"storageSource":{"bucket":"gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com","object":"3677f345-80a7-46b9-a6ef-0f731805ca9d.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}","GCLOUD_PROJECT":"bugchamp","EVENTARC_CLOUD_EVENT_SOURCE":"projects/bugchamp/locations/us-east1/services/crashNewAnr","FUNCTION_REGION":"us-east1","FUNCTION_SIGNATURE_TYPE":"cloudevent","FUNCTION_TARGET":"crashNewAnr","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","firebase-functions-codebase":"ops","firebase-functions-hash":"7fec5287b86cae94bbd53adc454c922df83d3d32"},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","retryPolicy":"RETRY_POLICY_DO_NOT_RETRY","eventFilters":[{"attribute":"alerttype","value":"crashlytics.newAnrIssue"}],"triggerRegion":"global"}}
+[debug] [2026-09-15T14:04:19.010Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions functionId=crashRegression
+[debug] [2026-09-15T14:04:19.010Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"name":"projects/bugchamp/locations/us-east1/functions/crashRegression","buildConfig":{"runtime":"nodejs22","entryPoint":"crashRegression","source":{"storageSource":{"bucket":"gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com","object":"3677f345-80a7-46b9-a6ef-0f731805ca9d.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}","GCLOUD_PROJECT":"bugchamp","EVENTARC_CLOUD_EVENT_SOURCE":"projects/bugchamp/locations/us-east1/services/crashRegression","FUNCTION_REGION":"us-east1","FUNCTION_SIGNATURE_TYPE":"cloudevent","FUNCTION_TARGET":"crashRegression","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","firebase-functions-codebase":"ops","firebase-functions-hash":"7fec5287b86cae94bbd53adc454c922df83d3d32"},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","retryPolicy":"RETRY_POLICY_DO_NOT_RETRY","eventFilters":[{"attribute":"alerttype","value":"crashlytics.regression"}],"triggerRegion":"global"}}
+[debug] [2026-09-15T14:04:19.011Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions functionId=crashVelocity
+[debug] [2026-09-15T14:04:19.011Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"name":"projects/bugchamp/locations/us-east1/functions/crashVelocity","buildConfig":{"runtime":"nodejs22","entryPoint":"crashVelocity","source":{"storageSource":{"bucket":"gcf-v2-uploads-867649520275.us-east1.cloudfunctions.appspot.com","object":"3677f345-80a7-46b9-a6ef-0f731805ca9d.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"FIREBASE_CONFIG":"{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}","GCLOUD_PROJECT":"bugchamp","EVENTARC_CLOUD_EVENT_SOURCE":"projects/bugchamp/locations/us-east1/services/crashVelocity","FUNCTION_REGION":"us-east1","FUNCTION_SIGNATURE_TYPE":"cloudevent","FUNCTION_TARGET":"crashVelocity","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"TELEGRAM_BOT_TOKEN","secret":"TELEGRAM_BOT_TOKEN","projectId":"bugchamp","version":"1"}],"ingressSettings":null,"timeoutSeconds":null,"serviceAccountEmail":null,"availableMemory":"256Mi","minInstanceCount":null,"maxInstanceCount":null,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","firebase-functions-codebase":"ops","firebase-functions-hash":"7fec5287b86cae94bbd53adc454c922df83d3d32"},"eventTrigger":{"eventType":"google.firebase.firebasealerts.alerts.v1.published","retryPolicy":"RETRY_POLICY_DO_NOT_RETRY","eventFilters":[{"attribute":"alerttype","value":"crashlytics.velocity"}],"triggerRegion":"global"}}
+[debug] [2026-09-15T14:04:35.511Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions 400
+[debug] [2026-09-15T14:04:35.511Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"error":{"code":400,"message":"Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewanr-524269: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.","status":"FAILED_PRECONDITION"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashNewAnr had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewanr-524269: Invalid resource state for "": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role. 
+[warn] !  functions: Since this is your first time using 2nd gen functions, we need a little bit longer to finish setting everything up. Retry the deployment in a few minutes. 
+[warn] !  functions:  failed to create function projects/bugchamp/locations/us-east1/functions/crashNewAnr 
+[error] Failed to create function projects/bugchamp/locations/us-east1/functions/crashNewAnr
+[debug] [2026-09-15T14:04:35.562Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions 400
+[debug] [2026-09-15T14:04:35.562Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"error":{"code":400,"message":"Validation failed for trigger projects/bugchamp/locations/global/triggers/crashvelocity-138618: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.","status":"FAILED_PRECONDITION"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashVelocity had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashvelocity-138618: Invalid resource state for "": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role. 
+[warn] !  functions: Since this is your first time using 2nd gen functions, we need a little bit longer to finish setting everything up. Retry the deployment in a few minutes. 
+[warn] !  functions:  failed to create function projects/bugchamp/locations/us-east1/functions/crashVelocity 
+[error] Failed to create function projects/bugchamp/locations/us-east1/functions/crashVelocity
+[debug] [2026-09-15T14:04:35.578Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions 400
+[debug] [2026-09-15T14:04:35.578Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions {"error":{"code":400,"message":"Validation failed for trigger projects/bugchamp/locations/global/triggers/crashregression-437175: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.","status":"FAILED_PRECONDITION"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashRegression had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashregression-437175: Invalid resource state for "": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role. 
+[warn] !  functions: Since this is your first time using 2nd gen functions, we need a little bit longer to finish setting everything up. Retry the deployment in a few minutes. 
+[warn] !  functions:  failed to create function projects/bugchamp/locations/us-east1/functions/crashRegression 
+[error] Failed to create function projects/bugchamp/locations/us-east1/functions/crashRegression
+[warn] !  functions: Deploys failed. Skipping deletes. 
+[debug] [2026-09-15T14:04:35.586Z] Total Function Deployment time: 34366
+[debug] [2026-09-15T14:04:35.586Z] 4 Functions Deployed
+[debug] [2026-09-15T14:04:35.586Z] 4 Functions Errored
+[debug] [2026-09-15T14:04:35.586Z] 0 Function Deployments Aborted
+[debug] [2026-09-15T14:04:35.586Z] Average Function Deployment time: 30200.25
+[info] 
+[info] Functions deploy had errors with the following functions:
+	ops:crashNewAnr(us-east1)
+	ops:crashNewFatal(us-east1)
+	ops:crashRegression(us-east1)
+	ops:crashVelocity(us-east1)
+[debug] [2026-09-15T14:04:35.588Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:35.588Z] Checked if tokens are valid: true, expires at: 1789483584556
+[debug] [2026-09-15T14:04:35.588Z] >>> [apiv2][query] GET https://artifactregistry.googleapis.com/v1/projects/bugchamp/locations/us-east1/repositories/gcf-artifacts [none]
+[debug] [2026-09-15T14:04:36.995Z] <<< [apiv2][status] GET https://artifactregistry.googleapis.com/v1/projects/bugchamp/locations/us-east1/repositories/gcf-artifacts 404
+[debug] [2026-09-15T14:04:36.995Z] <<< [apiv2][body] GET https://artifactregistry.googleapis.com/v1/projects/bugchamp/locations/us-east1/repositories/gcf-artifacts {"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}}
+[debug] [2026-09-15T14:04:36.995Z] Failed to check artifact cleanup policy for region us-east1: Request to https://artifactregistry.googleapis.com/v1/projects/bugchamp/locations/us-east1/repositories/gcf-artifacts had HTTP Error: 404, Requested entity was not found. {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Requested entity was not found.","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://artifactregistry.googleapis.com/v1/projects/bugchamp/locations/us-east1/repositories/gcf-artifacts had HTTP Error: 404, Requested entity was not found.","status":404}
+[debug] [2026-09-15T14:04:36.995Z] Functions deploy failed.
+[debug] [2026-09-15T14:04:36.995Z] {
+  "endpoint": {
+    "id": "crashNewFatal",
+    "project": "bugchamp",
+    "region": "us-east1",
+    "entryPoint": "crashNewFatal",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "eventTrigger": {
+      "eventType": "google.firebase.firebasealerts.alerts.v1.published",
+      "retry": false,
+      "eventFilters": {
+        "alerttype": "crashlytics.newFatalIssue"
+      },
+      "region": "global"
+    },
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TELEGRAM_BOT_TOKEN",
+        "secret": "TELEGRAM_BOT_TOKEN",
+        "projectId": "bugchamp",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "FIREBASE_CONFIG": "{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "bugchamp",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/bugchamp/locations/us-east1/services/crashNewFatal",
+      "FUNCTION_REGION": "us-east1"
+    },
+    "codebase": "ops",
+    "cpu": 1,
+    "targetedByOnly": true,
+    "hash": "7fec5287b86cae94bbd53adc454c922df83d3d32"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/bugchamp/locations/us-east1/functions/crashNewFatal"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/bugchamp/locations/us-east1/functions/crashNewFatal",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewfatal-456578: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashNewFatal had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewfatal-456578: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-09-15T14:04:36.995Z] {
+  "endpoint": {
+    "id": "crashNewAnr",
+    "project": "bugchamp",
+    "region": "us-east1",
+    "entryPoint": "crashNewAnr",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "eventTrigger": {
+      "eventType": "google.firebase.firebasealerts.alerts.v1.published",
+      "retry": false,
+      "eventFilters": {
+        "alerttype": "crashlytics.newAnrIssue"
+      },
+      "region": "global"
+    },
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TELEGRAM_BOT_TOKEN",
+        "secret": "TELEGRAM_BOT_TOKEN",
+        "projectId": "bugchamp",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "FIREBASE_CONFIG": "{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "bugchamp",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/bugchamp/locations/us-east1/services/crashNewAnr",
+      "FUNCTION_REGION": "us-east1"
+    },
+    "codebase": "ops",
+    "cpu": 1,
+    "targetedByOnly": true,
+    "hash": "7fec5287b86cae94bbd53adc454c922df83d3d32"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/bugchamp/locations/us-east1/functions/crashNewAnr"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/bugchamp/locations/us-east1/functions/crashNewAnr",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewanr-524269: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashNewAnr had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashnewanr-524269: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-09-15T14:04:36.995Z] {
+  "endpoint": {
+    "id": "crashRegression",
+    "project": "bugchamp",
+    "region": "us-east1",
+    "entryPoint": "crashRegression",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "eventTrigger": {
+      "eventType": "google.firebase.firebasealerts.alerts.v1.published",
+      "retry": false,
+      "eventFilters": {
+        "alerttype": "crashlytics.regression"
+      },
+      "region": "global"
+    },
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TELEGRAM_BOT_TOKEN",
+        "secret": "TELEGRAM_BOT_TOKEN",
+        "projectId": "bugchamp",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "FIREBASE_CONFIG": "{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "bugchamp",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/bugchamp/locations/us-east1/services/crashRegression",
+      "FUNCTION_REGION": "us-east1"
+    },
+    "codebase": "ops",
+    "cpu": 1,
+    "targetedByOnly": true,
+    "hash": "7fec5287b86cae94bbd53adc454c922df83d3d32"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/bugchamp/locations/us-east1/functions/crashRegression"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/bugchamp/locations/us-east1/functions/crashRegression",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Validation failed for trigger projects/bugchamp/locations/global/triggers/crashregression-437175: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashRegression had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashregression-437175: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-09-15T14:04:36.995Z] {
+  "endpoint": {
+    "id": "crashVelocity",
+    "project": "bugchamp",
+    "region": "us-east1",
+    "entryPoint": "crashVelocity",
+    "platform": "gcfv2",
+    "runtime": "nodejs22",
+    "eventTrigger": {
+      "eventType": "google.firebase.firebasealerts.alerts.v1.published",
+      "retry": false,
+      "eventFilters": {
+        "alerttype": "crashlytics.velocity"
+      },
+      "region": "global"
+    },
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "TELEGRAM_BOT_TOKEN",
+        "secret": "TELEGRAM_BOT_TOKEN",
+        "projectId": "bugchamp",
+        "version": "1"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "FIREBASE_CONFIG": "{\"projectId\":\"bugchamp\",\"storageBucket\":\"bugchamp.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "bugchamp",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/bugchamp/locations/us-east1/services/crashVelocity",
+      "FUNCTION_REGION": "us-east1"
+    },
+    "codebase": "ops",
+    "cpu": 1,
+    "targetedByOnly": true,
+    "hash": "7fec5287b86cae94bbd53adc454c922df83d3d32"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/bugchamp/locations/us-east1/functions/crashVelocity"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/bugchamp/locations/us-east1/functions/crashVelocity",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Validation failed for trigger projects/bugchamp/locations/global/triggers/crashvelocity-138618: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+            "status": "FAILED_PRECONDITION"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/bugchamp/locations/us-east1/functions?functionId=crashVelocity had HTTP Error: 400, Validation failed for trigger projects/bugchamp/locations/global/triggers/crashvelocity-138618: Invalid resource state for \"\": Permission denied while using the Eventarc Service Agent. If you recently started to use Eventarc, it may take a few minutes before all necessary permissions are propagated to the Service Agent. Otherwise, verify that it has Eventarc Service Agent role.",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[error] Error: There was an error deploying functions:
+[error] - Error Failed to create function crashNewFatal in region us-east1
+[error] - Error Failed to create function crashNewAnr in region us-east1
+[error] - Error Failed to create function crashRegression in region us-east1
+[error] - Error Failed to create function crashVelocity in region us-east1

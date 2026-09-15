@@ -1,0 +1,11 @@
+{
+  "name": "bugchamp-ops-functions",
+  "private": true,
+  "description": "Crashlytics 알림 → 텔레그램 전용 봇(@bugchamp_bot) 중계",
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0"
+  }
+}
