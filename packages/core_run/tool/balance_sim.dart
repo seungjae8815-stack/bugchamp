@@ -610,6 +610,21 @@ void main(List<String> args) {
 final _targets = BalanceTargets.load();
 final _ceilingData = CeilingData.load();
 
+/// 캐릭터 스킬 설정(없으면 스킬을 뺀 예전 시뮬).
+final SkillConfig? _skillConfig = () {
+  final f = File('../app/assets/data/skills.json');
+  if (!f.existsSync()) return null;
+  return SkillConfig.fromJson(
+    jsonDecode(f.readAsStringSync()) as Map<String, dynamic>,
+  );
+}();
+
+/// 시뮬 유저가 끼는 스킬 순서(balance_targets.json → skillLoadout).
+final List<String> _skillLoadout = [
+  for (final v in (_targets.raw['skillLoadout'] as List? ?? const []))
+    v as String,
+];
+
 /// ── 난이도 4개 표 맞추기(`--fit-tiers`) ──
 ///
 /// 난이도 t 마다:
@@ -1179,7 +1194,66 @@ class _Player {
     // 시뮬이 "피가 닳는다"고 하는데 실기는 안 닳는다.
     s = applyEquipment(s, gear, critBudget: config.critBudgetGear);
     s = _ceilingData.dex.apply(s, dexConquered, dexConquered);
+    s = _applySkills(s);
     return capCritChance(s, config.critChanceMax);
+  }
+
+  // ── 캐릭터 스킬(§2.8): 날짜별 가정 곡선(balance_targets.json → skillFillByDay) ──
+  // 로드아웃 순서대로 열린 칸만큼 끼고, 채움만큼 레벨을 올린다. 패시브는 상시(앱과 같은
+  // 함수), 액티브는 **온라인만** 평균 가동률 — 방치 정산에는 스킬이 없다.
+  double get skillFill => _targets.curveAt('skillFillByDay', elapsedDays);
+
+  CharacterStats _applySkills(CharacterStats s) {
+    final cfg = _skillConfig;
+    // ⚠️ 온라인 여부로 가르지 않는다 — 버프(_buffDpsMult)·탭 부스트(_tapBoostAvg)와 **같은 규약**.
+    // 이 시뮬에서 `stats` 는 "접속해서 싸울 때의 전력"이고, 오프라인은 그 전력 × offlineEfficiency
+    // 로 근사한다. 표 맞추기(`--fit-tiers`)도 이 값을 도착 전력으로 쓴다. 온라인에만 넣으면
+    // 표를 잴 때(오프라인 상태) 스킬이 빠져 몬스터가 약하게 뽑히고, 실제 접속 플레이는 스킬이
+    // 있어 목표보다 빨라진다(2026-09-15 실측: 91일 → 77일).
+    if (cfg == null) return s;
+    final slots = cfg.slotsFor(_tier);
+    final lv = (skillFill * cfg.maxLevel).floor().clamp(0, cfg.maxLevel);
+    if (lv <= 0) return s;
+    final equipped = _skillLoadout.take(slots).toList();
+    final levels = {for (final id in equipped) id: lv};
+    s = applySpeciesPassives(
+      s,
+      skillPassiveStats(cfg, levels: levels, equipped: equipped, petCount: 3),
+      critBudget: config.critBudgetOther,
+    );
+    var atkSpeed = 1.0, attack = 1.0;
+    for (final id in equipped) {
+      final def = cfg.byId(id);
+      if (def == null || !def.isActive) continue;
+      final cd = def.cooldown.inMilliseconds / 1000;
+      if (cd <= 0) continue;
+      final v = def.valueAt(lv);
+      switch (def.effect) {
+        case 'attackSpeed':
+          final up = (def.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
+          atkSpeed *= 1 + (v - 1) * up;
+        case 'burstDamage' || 'areaDamage':
+          // 쿨마다 공격력 × 값 한 방 = 초당 공격력 × 값/쿨 → 타격 배율로 환산.
+          attack *= 1 + v / (cd * math.max(0.1, s.attackSpeed));
+      }
+    }
+    if (atkSpeed == 1 && attack == 1) return s;
+    return CharacterStats(
+      attack: s.attack * attack,
+      attackSpeed: s.attackSpeed * atkSpeed,
+      rewardMultiplier: s.rewardMultiplier,
+      critChance: s.critChance,
+      critDamage: s.critDamage,
+      bossDamage: s.bossDamage,
+      maxHp: s.maxHp,
+      defense: s.defense,
+      hpRegen: s.hpRegen,
+      xpMultiplier: s.xpMultiplier,
+      bugFind: s.bugFind,
+      materialFind: s.materialFind,
+      moveSpeed: s.moveSpeed,
+      boostBonus: s.boostBonus,
+    );
   }
 
   CharacterStats get _baseStats => deriveStats(
