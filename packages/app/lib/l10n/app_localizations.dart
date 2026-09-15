@@ -4972,6 +4972,30 @@ abstract class AppLocalizations {
   /// **'Skill slots are full'**
   String get skillSlotsFull;
 
+  /// No description provided for @skillAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'AUTO'**
+  String get skillAuto;
+
+  /// No description provided for @skillTimingBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect timing!'**
+  String get skillTimingBonus;
+
+  /// No description provided for @skillReflect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reflect {n}'**
+  String skillReflect(String n);
+
+  /// No description provided for @skillBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get skillBlocked;
+
   /// No description provided for @skillGacha.
   ///
   /// In en, this message translates to:

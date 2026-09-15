@@ -43,6 +43,7 @@ class SkillDef {
     required this.perLevel,
     this.cooldown = Duration.zero,
     this.duration = Duration.zero,
+    this.timing = const {},
   });
 
   final String id;
@@ -63,6 +64,12 @@ class SkillDef {
   final Duration cooldown;
   final Duration duration;
 
+  /// 직접 눌렀을 때만 붙는 타이밍 보너스 수치(스킬마다 키가 다르다). 없으면 빈 맵.
+  final Map<String, double> timing;
+
+  double timingValue(String key, [double fallback = 0]) =>
+      timing[key] ?? fallback;
+
   bool get isActive => kind == SkillKind.active;
 
   /// 레벨 [level](1부터)에서의 효과값.
@@ -80,6 +87,11 @@ class SkillDef {
     perLevel: (json['perLevel'] as num?)?.toDouble() ?? 0,
     cooldown: Duration(seconds: (json['cooldown'] as num?)?.toInt() ?? 0),
     duration: Duration(seconds: (json['duration'] as num?)?.toInt() ?? 0),
+    timing: {
+      if (json['timing'] is Map)
+        for (final e in (json['timing'] as Map).entries)
+          e.key as String: (e.value as num).toDouble(),
+    },
   );
 }
 

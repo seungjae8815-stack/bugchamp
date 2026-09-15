@@ -2784,6 +2784,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skillSlotsFull => 'Skill slots are full';
 
   @override
+  String get skillAuto => 'AUTO';
+
+  @override
+  String get skillTimingBonus => 'Perfect timing!';
+
+  @override
+  String skillReflect(String n) {
+    return 'Reflect $n';
+  }
+
+  @override
+  String get skillBlocked => 'Blocked';
+
+  @override
   String get skillGacha => 'Draw';
 
   @override

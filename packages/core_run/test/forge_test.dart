@@ -391,6 +391,27 @@ void main() {
       expect(odds.values.fold(0.0, (a, b) => a + b), closeTo(1, 1e-9));
     });
 
+    test('액티브 타이밍 보너스 — 일격은 보스 체력 기준 · 방벽은 물기 직전 반사', () {
+      final strike = skills.skills.firstWhere((d) => d.effect == 'burstDamage');
+      expect(strike.timingValue('bossHpBelow'), inExclusiveRange(0, 1));
+      expect(strike.timingValue('mult'), greaterThan(1));
+      final guard = skills.skills.firstWhere((d) => d.effect == 'invulnerable');
+      expect(guard.timingValue('window'), greaterThan(0));
+      expect(guard.timingValue('reflectAttackMult'), greaterThan(0));
+      expect(guard.timingValue('cooldownRefund'), inInclusiveRange(0, 1));
+      // 지속형 액티브는 지속시간이 있어야 켜진다.
+      for (final d in skills.actives) {
+        if (const {
+          'attackSpeed',
+          'materialFind',
+          'petPower',
+          'invulnerable',
+        }.contains(d.effect)) {
+          expect(d.duration, greaterThan(Duration.zero), reason: d.id);
+        }
+      }
+    });
+
     test('뽑기 천장 — 천장 회차면 천장 등급 이상만', () {
       for (var i = 0; i < 300; i++) {
         final r = skills.rollGacha(Random(i), pityDue: true)!;

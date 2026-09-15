@@ -507,6 +507,7 @@ class SaveGame {
     this.skillDayKey,
     this.skillFreeDrawsUsed = 0,
     this.skillSweepsUsed = 0,
+    this.skillAutoCast = true,
     this.forgeLevel = 0,
     this.forgeSteps = 0,
     this.forgeUpAt,
@@ -963,6 +964,9 @@ class SaveGame {
   final int skillFreeDrawsUsed;
   final int skillSweepsUsed;
 
+  /// 홈 스킬 바 자동발동(기본 켜짐). 효율 벌칙은 없다(§2.8).
+  final bool skillAutoCast;
+
   /// 공방 등급(0부터). 등급 확률 창의 위치를 정한다.
   final int forgeLevel;
 
@@ -1243,6 +1247,7 @@ class SaveGame {
     String? skillDayKey,
     int? skillFreeDrawsUsed,
     int? skillSweepsUsed,
+    bool? skillAutoCast,
     int? forgeLevel,
     int? forgeSteps,
     DateTime? forgeUpAt,
@@ -1342,6 +1347,7 @@ class SaveGame {
     skillDayKey: skillDayKey ?? this.skillDayKey,
     skillFreeDrawsUsed: skillFreeDrawsUsed ?? this.skillFreeDrawsUsed,
     skillSweepsUsed: skillSweepsUsed ?? this.skillSweepsUsed,
+    skillAutoCast: skillAutoCast ?? this.skillAutoCast,
     forgeLevel: forgeLevel ?? this.forgeLevel,
     forgeSteps: forgeSteps ?? this.forgeSteps,
     // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
@@ -1582,6 +1588,7 @@ class SaveGame {
     skillDayKey: json['skillDayKey'] as String?,
     skillFreeDrawsUsed: (json['skillFreeDrawsUsed'] as num?)?.toInt() ?? 0,
     skillSweepsUsed: (json['skillSweepsUsed'] as num?)?.toInt() ?? 0,
+    skillAutoCast: json['skillAutoCast'] as bool? ?? true,
     forgeLevel: (json['forgeLevel'] as num?)?.toInt() ?? 0,
     forgeSteps: (json['forgeSteps'] as num?)?.toInt() ?? 0,
     forgeUpAt: json['forgeUpAt'] == null
@@ -1729,6 +1736,7 @@ class SaveGame {
     if (skillDayKey != null) 'skillDayKey': skillDayKey,
     if (skillFreeDrawsUsed != 0) 'skillFreeDrawsUsed': skillFreeDrawsUsed,
     if (skillSweepsUsed != 0) 'skillSweepsUsed': skillSweepsUsed,
+    if (!skillAutoCast) 'skillAutoCast': false,
     if (skillTrainingId != null && skillTrainingEndsAt != null) ...{
       'skillTrainingId': skillTrainingId,
       'skillTrainingEndsAt': skillTrainingEndsAt!.toUtc().toIso8601String(),

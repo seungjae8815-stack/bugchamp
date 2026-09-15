@@ -420,6 +420,14 @@ void main() {
       expect(back.skillDayKey, '2026-09-15');
       expect(back.skillFreeDrawsUsed, 1);
       expect(back.skillSweepsUsed, 4);
+      // 자동발동은 기본 켜짐 — 끈 것만 싣는다.
+      expect(fresh().skillAutoCast, isTrue);
+      expect(fresh().toJson().containsKey('skillAutoCast'), isFalse);
+      final off = SaveGame.fromJson(
+        jsonDecode(jsonEncode(fresh().copyWith(skillAutoCast: false).toJson()))
+            as Map<String, dynamic>,
+      );
+      expect(off.skillAutoCast, isFalse);
       final empty = fresh().toJson();
       for (final k in [
         'skillGachaPity',

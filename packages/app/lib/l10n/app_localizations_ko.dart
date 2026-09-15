@@ -2732,6 +2732,20 @@ class AppLocalizationsKo extends AppLocalizations {
   String get skillSlotsFull => '스킬 칸이 가득 찼어요';
 
   @override
+  String get skillAuto => '자동';
+
+  @override
+  String get skillTimingBonus => '타이밍 보너스!';
+
+  @override
+  String skillReflect(String n) {
+    return '반사 $n';
+  }
+
+  @override
+  String get skillBlocked => '막음';
+
+  @override
   String get skillGacha => '뽑기';
 
   @override

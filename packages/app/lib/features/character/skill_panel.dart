@@ -452,13 +452,6 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
   }
 
   Future<void> _toggle(AppLocalizations l, SkillDef def) async {
-    final equipped = widget.save.equippedSkills.contains(def.id);
-    // 액티브는 홈 스킬 바(설계 §4.7 5단계)가 붙어야 효과가 난다. 그 전에
-    // 장착을 받으면 칸만 차지하고 아무 일도 없어 고장으로 읽힌다.
-    if (def.isActive && !equipped) {
-      showCenterToast(context, l.skillActiveSoon);
-      return;
-    }
     final err = await _ctrl.toggleSkill(def.id);
     if (!mounted || err == null) return;
     showCenterToast(context, err == 'slots_full' ? l.skillSlotsFull : err);

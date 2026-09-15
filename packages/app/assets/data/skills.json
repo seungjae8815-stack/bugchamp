@@ -48,6 +48,7 @@
   "sweepJellyCost": 10,
   "sweepMaxPerDay": 10,
 
+  "_activeComment": "액티브(홈 스킬 바, 2026-09-15 확정): 자동발동은 효율 벌칙 없음(100%). 직접 누를 이유 = timing 보너스 — 자동은 쿨이 차면 바로 써서 못 받는다. burstDamage·areaDamage = 공격력 × 값(보스면 보스 피해 배율도) 즉시 피해 · attackSpeed·materialFind·petPower = duration 초 동안 × 값 · invulnerable = duration 초 동안 피해 무효. 회심의 일격 timing: 보스 체력 bossHpBelow 이하에서 누르면 × mult. 번데기 방벽 timing: 물기 window 초 전 안에 누르면 막은 물기마다 공격력 × reflectAttackMult 반사 + 쿨타임 cooldownRefund 만큼 환급. 쿨타임·지속은 전투 화면 세션에만 있다(세이브 X) — 재화를 주는 액티브가 없어 껐다 켜기로 얻는 게 없다.",
   "_effectComment": "패시브 효과 키: materialFind·bugFind·bossDamage(가산, 종 패시브와 같은 층) · perPetAttack(장착 펫 1마리당 공격 +) · killHeal(처치 회복 ×(1+값)) · revive(패배 시 최대 체력 값 비율로 부활, cooldown 초). 액티브 효과는 홈 스킬 바(5단계)에서 붙는다.",
   "skills": [
     {
@@ -148,7 +149,8 @@
       "base": 8.0,
       "perLevel": 1.2,
       "cooldown": 60,
-      "duration": 0
+      "duration": 0,
+      "timing": { "bossHpBelow": 0.3, "mult": 2.0 }
     },
     {
       "id": "pupa_guard",
@@ -159,7 +161,8 @@
       "base": 1.0,
       "perLevel": 0.0,
       "cooldown": 120,
-      "duration": 8
+      "duration": 8,
+      "timing": { "window": 0.5, "reflectAttackMult": 5.0, "cooldownRefund": 0.5 }
     },
     {
       "id": "molting",

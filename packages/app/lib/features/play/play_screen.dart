@@ -520,6 +520,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 쿨타임을 지우는 건 부활 한 번이라 세이브에 둘 만큼의 값어치가 없다.
   DateTime? _reviveReadyAt;
 
+  // ── 홈 스킬 바(액티브, §2.8) ──
+  // 쿨타임·지속은 **이 화면 세션에만** 있다. 세이브에 두지 않는 이유: 재화를 주는
+  // 액티브가 없어서 껐다 켜서 쿨을 지워도 얻는 게 없고, 60초 업로드에 실을 값도 아니다.
+  /// 스킬 id → 남은 쿨타임(초).
+  final Map<String, double> _skillCd = {};
+
+  /// 스킬 id → 남은 지속(초). 지속형(공속·재료·곤충·방벽)만.
+  final Map<String, double> _skillOn = {};
+
+  /// 직접 누른 스킬 — 다음 전투 틱에 자동발동과 같은 경로로 쓴다.
+  final Set<String> _skillQueue = {};
+
+  /// 이번 방벽이 타이밍 보너스(반사)를 받았나 · 쿨 환급을 이미 받았나.
+  bool _guardReflect = false;
+  bool _guardRefunded = false;
+
   @override
   void initState() {
     super.initState();
@@ -868,6 +884,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 세이브·스탯을 또 읽어야 하고, 그 사이 값이 달라질 수 있다.
   void _biteNow() {
     if (_lastBite <= 0) return;
+    final save = ref.read(saveControllerProvider).value;
+    if (save != null && _skillEffectOn(save, 'invulnerable')) return;
     _spreadDamage(_lastBite);
     _enemyLunge = 1;
     _playerHitFlash = 0.6;
@@ -1053,6 +1071,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       );
     }
     s = applyBuffs(s, save.activeBuffs(_clock.now().toUtc()), _data.buffConfig);
+    // 지속형 액티브(질풍 채집·유인 수액) — 버프와 같은 층(기준 밖).
+    final gale = _activeSkillMult(save, 'attackSpeed');
+    final lure = _activeSkillMult(save, 'materialFind');
+    if (gale != 1 || lure != 1) {
+      s = CharacterStats(
+        attack: s.attack,
+        attackSpeed: s.attackSpeed * gale,
+        rewardMultiplier: s.rewardMultiplier,
+        critChance: s.critChance,
+        critDamage: s.critDamage,
+        bossDamage: s.bossDamage,
+        maxHp: s.maxHp,
+        defense: s.defense,
+        hpRegen: s.hpRegen,
+        xpMultiplier: s.xpMultiplier,
+        bugFind: s.bugFind,
+        materialFind: s.materialFind * lure,
+        moveSpeed: s.moveSpeed,
+        boostBonus: s.boostBonus,
+      );
+    }
     // 맨 마지막에 치명확률 상한을 씌운다 — 업그레이드·펫·장비·버프가 **다
     // 더해진 뒤**의 값이라야 실제로 100%에 닿았는지 알 수 있다.
     // 넘친 만큼은 치명피해로 돌아가므로 전력은 그대로다.
@@ -1132,6 +1171,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 죽으면서 무는 한 대는 **첫 물기 크기**(followMul 이 붙지 않은 값)다.
     _lastBite = incoming * atkInterval * (boss ? _config.bossHitMult : 1.0);
     if (burst <= 0) return;
+    // 번데기 방벽(액티브) — 막는다. 타이밍을 맞춰 눌렀으면 반사.
+    if (_skillEffectOn(save, 'invulnerable')) {
+      _onGuardBlock(save, stats, boss: boss, walking: walking);
+      return;
+    }
     // 팀에 나눠 준다 — 총량은 오늘과 같고, 곤충이 쓰러지면 그 몫이 넘어온다.
     _spreadDamage(burst);
     // 이동 중에는 달려드는 몬스터가 화면에 없다 — 돌진 모션은 빼고
@@ -1214,6 +1258,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       pt.age += dt;
     }
     _particles.removeWhere((pt) => pt.age > 0.5);
+    _tickSkills(dt);
 
     if (_defeated) {
       _defeatT -= dt;
@@ -1302,6 +1347,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       return;
     }
 
+    // 액티브 스킬 — 자동발동 + 직접 누른 것. 즉발 피해로 몬스터가 죽으면 여기서 끝.
+    _castSkills(save, stats);
+    if (_hp <= 0) {
+      _beginDeath(stats);
+      return;
+    }
+
     // 플레이어 공격
     // ⚠️ 부스트는 **플레이어 공격에만** 실린다(몬스터 공격은 아래에서 따로).
     final dmgMul = _boostMult;
@@ -1367,6 +1419,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 곤충 타격 — 각자 자기 간격으로. 플레이어와 같은 누산기 방식이라
     // 프레임이 튀어도 넣어야 할 대수가 안 사라진다.
     _petHits.clear();
+    final petPower = _activeSkillMult(save, 'petPower');
     for (var i = 0; i < split.pets.length; i++) {
       final p = split.pets[i];
       // 쓰러진 곤충은 때리지 않는다 — 빠진 몫이 곧 순항의 긴장이다.
@@ -1406,7 +1459,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           // 곤충 타격에는 치명타를 굴리지 않는다 — 굴리면 화면이 노란 숫자로
           // 덮이고, 무엇보다 치명 기대값이 분배에 이미 들어 있어 **총량이
           // 어긋난다**.
-          final dmg = perHitFull * p.damageMult * rest;
+          final dmg = perHitFull * p.damageMult * rest * petPower;
           _hp -= dmg;
           _petHits.add((bugId: p.bugId, damage: dmg, restrained: rest > 1));
         }
@@ -2455,6 +2508,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         children: [
           // 채집함 만석 알림 — 구매 버튼 바로 위(씬을 가리지 않는 자리).
           _storageFullBar(l, save),
+          // 홈 스킬 바(§2.8) — 만석 알림 바로 아래, 구매 버튼 위.
+          _skillBar(l, save),
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: Row(
@@ -3448,6 +3503,288 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 보스 격파로 스테이지 상승 시: 최고기록 반영 후 새로 클리어한 챕터 축하.
+  /// 장착·보유한 액티브 중 [effect] 가 **지금 켜져 있으면** 효과값을 곱한 배율(없으면 1).
+  double _activeSkillMult(SaveGame save, String effect) {
+    final cfg = _data.skillConfig;
+    if (cfg == null || _skillOn.isEmpty) return 1;
+    var m = 1.0;
+    for (final e in _skillOn.entries) {
+      if (e.value <= 0) continue;
+      final def = cfg.byId(e.key);
+      final lv = save.skillLevels[e.key] ?? 0;
+      if (def == null || def.effect != effect || lv <= 0) continue;
+      if (effect == 'invulnerable') continue; // 배율이 아니라 켜짐 여부
+      m *= def.valueAt(lv);
+    }
+    return m;
+  }
+
+  bool _skillEffectOn(SaveGame save, String effect) {
+    final cfg = _data.skillConfig;
+    if (cfg == null) return false;
+    for (final e in _skillOn.entries) {
+      if (e.value > 0 && cfg.byId(e.key)?.effect == effect) return true;
+    }
+    return false;
+  }
+
+  void _tickSkills(double dt) {
+    for (final k in _skillCd.keys.toList()) {
+      final v = _skillCd[k]! - dt;
+      v <= 0 ? _skillCd.remove(k) : _skillCd[k] = v;
+    }
+    for (final k in _skillOn.keys.toList()) {
+      final v = _skillOn[k]! - dt;
+      v <= 0 ? _skillOn.remove(k) : _skillOn[k] = v;
+    }
+  }
+
+  /// 다음 물기까지 남은 시간(초) — 방벽 타이밍 판정용.
+  double _timeToBite() {
+    if (_firstBiteT > 0) return _firstBiteT;
+    final interval = _isBoss
+        ? _config.bossAtkInterval
+        : _config.enemyAtkInterval;
+    return math.max(0, interval - _enemyAtkAcc);
+  }
+
+  /// 전투 틱에서 액티브를 쓴다 — 자동발동(켜져 있으면)과 직접 누른 것.
+  ///
+  /// 자동발동은 **효율 벌칙이 없다**(§2.8). 대신 타이밍 보너스는 직접 눌렀을 때만 붙는다
+  /// — 자동은 쿨이 차면 바로 쓰므로 보스 막타·물기 직전을 기다리지 않는다.
+  void _castSkills(SaveGame save, CharacterStats stats) {
+    final cfg = _data.skillConfig;
+    if (cfg == null || save.equippedSkills.isEmpty) {
+      _skillQueue.clear();
+      return;
+    }
+    for (final id in save.equippedSkills) {
+      final def = cfg.byId(id);
+      final lv = save.skillLevels[id] ?? 0;
+      if (def == null || !def.isActive || lv <= 0) continue;
+      if ((_skillCd[id] ?? 0) > 0) continue;
+      final manual = _skillQueue.remove(id);
+      if (!manual && !save.skillAutoCast) continue;
+      _castSkill(def, lv, stats, manual: manual);
+      if (_hp <= 0) break;
+    }
+    _skillQueue.clear();
+  }
+
+  void _castSkill(
+    SkillDef def,
+    int lv,
+    CharacterStats stats, {
+    required bool manual,
+  }) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    _skillCd[def.id] = def.cooldown.inMilliseconds / 1000;
+    final v = def.valueAt(lv);
+    var timed = false;
+    switch (def.effect) {
+      case 'burstDamage' || 'areaDamage':
+        var dmg = stats.attack * v;
+        if (_isBoss) dmg *= stats.bossDamage;
+        if (manual &&
+            def.timing.containsKey('bossHpBelow') &&
+            _isBoss &&
+            _hpMax > 0 &&
+            _hp / _hpMax <= def.timingValue('bossHpBelow')) {
+          dmg *= def.timingValue('mult', 1);
+          timed = true;
+        }
+        _hp -= dmg;
+        _hitFlash = 1;
+        _screenShake = 1;
+        _impacts.add(_Impact(true));
+        _pops.add(
+          _Pop(formatCompact(dmg), 0, const Color(0xFFE040FB), timed ? 32 : 28),
+        );
+        AudioService.instance.sfxHit();
+      case 'invulnerable':
+        _skillOn[def.id] = def.duration.inMilliseconds / 1000;
+        _guardRefunded = false;
+        _guardReflect =
+            manual &&
+            def.timing.containsKey('window') &&
+            !_walking &&
+            _timeToBite() <= def.timingValue('window');
+        timed = _guardReflect;
+      default:
+        _skillOn[def.id] = def.duration.inMilliseconds / 1000;
+    }
+    _pops.add(
+      _Pop(
+        timed
+            ? '${def.name.resolve(locale)} · ${l.skillTimingBonus}'
+            : def.name.resolve(locale),
+        0,
+        timed ? const Color(0xFFFFD54F) : const Color(0xFF80DEEA),
+        timed ? 17 : 15,
+        baseX: 0,
+        baseY: -0.6,
+      ),
+    );
+  }
+
+  /// 방벽이 물기를 막았다. 타이밍을 맞춘 방벽이면 반사 + 쿨 환급(한 번).
+  void _onGuardBlock(
+    SaveGame save,
+    CharacterStats stats, {
+    required bool boss,
+    required bool walking,
+  }) {
+    final l = AppLocalizations.of(context);
+    var text = l.skillBlocked;
+    final cfg = _data.skillConfig;
+    if (_guardReflect && !walking && cfg != null) {
+      SkillDef? def;
+      for (final id in _skillOn.keys) {
+        final d = cfg.byId(id);
+        if (d?.effect == 'invulnerable') def = d;
+      }
+      if (def != null) {
+        var dmg = stats.attack * def.timingValue('reflectAttackMult');
+        if (boss) dmg *= stats.bossDamage;
+        if (dmg > 0) {
+          _hp -= dmg;
+          _hitFlash = 1;
+          text = l.skillReflect(formatCompact(dmg));
+        }
+        if (!_guardRefunded) {
+          _guardRefunded = true;
+          final cd = _skillCd[def.id] ?? 0;
+          final refund = def.timingValue('cooldownRefund').clamp(0.0, 1.0);
+          if (cd > 0) _skillCd[def.id] = cd * (1 - refund);
+        }
+      }
+    }
+    _pops.add(
+      _Pop(text, 0, const Color(0xFF80DEEA), 17, baseX: -0.55, baseY: 0.3),
+    );
+  }
+
+  /// 홈 스킬 바 — 장착한 액티브 버튼(쿨타임 링) + 자동발동 토글.
+  /// 액티브를 안 꼈으면 통째로 숨긴다(빈 바는 자리만 먹는다).
+  Widget _skillBar(AppLocalizations l, SaveGame save) {
+    final cfg = _data.skillConfig;
+    if (cfg == null) return const SizedBox.shrink();
+    final actives = [
+      for (final id in save.equippedSkills)
+        if (cfg.byId(id) case final def?)
+          if (def.isActive && (save.skillLevels[id] ?? 0) > 0) def,
+    ];
+    if (actives.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+      child: Row(
+        children: [
+          for (final def in actives)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _skillButton(def),
+            ),
+          const Spacer(),
+          InkWell(
+            onTap: () => ref
+                .read(saveControllerProvider.notifier)
+                .setSkillAutoCast(!save.skillAutoCast),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: save.skillAutoCast
+                    ? const Color(0x3380DEEA)
+                    : const Color(0x22000000),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: save.skillAutoCast
+                      ? const Color(0xFF80DEEA)
+                      : const Color(0x33FFFFFF),
+                ),
+              ),
+              child: Text(
+                l.skillAuto,
+                style: TextStyle(
+                  color: save.skillAutoCast ? Colors.white : Colors.white54,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _skillButton(SkillDef def) {
+    final cd = _skillCd[def.id] ?? 0;
+    final total = def.cooldown.inMilliseconds / 1000;
+    final on = (_skillOn[def.id] ?? 0) > 0;
+    final queued = _skillQueue.contains(def.id);
+    final color = gradeColor(def.grade);
+    final icon = switch (def.effect) {
+      'burstDamage' => Icons.flash_on_rounded,
+      'areaDamage' => Icons.waves_rounded,
+      'attackSpeed' => Icons.air_rounded,
+      'materialFind' => Icons.water_drop_rounded,
+      'petPower' => Icons.pets_rounded,
+      'invulnerable' => Icons.shield_rounded,
+      _ => Icons.auto_awesome_rounded,
+    };
+    return GestureDetector(
+      onTap: cd > 0 ? null : () => setState(() => _skillQueue.add(def.id)),
+      child: SizedBox(
+        width: 46,
+        height: 46,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: cd > 0 ? 0.15 : 0.35),
+                border: Border.all(
+                  color: on || queued ? const Color(0xFFFFD54F) : color,
+                  width: on || queued ? 2.4 : 1.4,
+                ),
+                boxShadow: on
+                    ? const [
+                        BoxShadow(color: Color(0x88FFD54F), blurRadius: 10),
+                      ]
+                    : null,
+              ),
+            ),
+            Icon(icon, color: cd > 0 ? Colors.white38 : Colors.white, size: 22),
+            if (cd > 0 && total > 0) ...[
+              SizedBox(
+                width: 46,
+                height: 46,
+                child: CircularProgressIndicator(
+                  value: (cd / total).clamp(0.0, 1.0),
+                  strokeWidth: 3,
+                  color: const Color(0xCC000000),
+                  backgroundColor: Colors.transparent,
+                ),
+              ),
+              Text(
+                '${cd.ceil()}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   /// 정예 처치 스킬 조각(10% 확률, §2.8). 나오면 몬스터 자리에 작게 띄운다 —
   /// 하루 스무 번쯤이라 가운데 알림으로 띄우면 전투를 가린다.
   Future<void> _eliteSkillShard() async {

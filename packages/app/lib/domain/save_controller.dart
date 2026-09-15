@@ -2535,6 +2535,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
         gradeUpShards(s, cfg, from: from, sources: sources, times: times),
   );
 
+  /// 홈 스킬 바 자동발동 켜기/끄기(§2.8).
+  Future<void> setSkillAutoCast(bool on) async {
+    final s = state.requireValue;
+    if (s.skillAutoCast == on) return;
+    await _commit(s.copyWith(skillAutoCast: on));
+  }
+
   /// 스킬 뽑기(§2.8) — [free] 면 하루 무료 1회, 아니면 젤리로 [times] 회.
   /// 기기 권위라 시드는 기기가 정한다(알 뽑기와 같다). 실패하면 사유 키.
   Future<({List<SkillDraw> draws, String? error})> drawSkills({

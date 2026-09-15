@@ -2726,6 +2726,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillSlotsFull => 'スキル枠がいっぱいです';
 
   @override
+  String get skillAuto => 'オート';
+
+  @override
+  String get skillTimingBonus => 'タイミングボーナス！';
+
+  @override
+  String skillReflect(String n) {
+    return '反射 $n';
+  }
+
+  @override
+  String get skillBlocked => 'ブロック';
+
+  @override
   String get skillGacha => 'ガチャ';
 
   @override
