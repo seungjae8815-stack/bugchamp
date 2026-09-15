@@ -13,6 +13,7 @@
 //   HTTP 5xx                              → 일시적 오류. 앱은 **지급도 완료통보도 하지 말고** 재시도.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { kstTodayStartIso, priceOf, sendTelegram, won } from '../_shared/ops.ts'
 
 const PACKAGE_NAME = 'com.bugchamp.app'
 
@@ -185,6 +186,7 @@ Deno.serve(async (req) => {
   let reuseKey: string
   let orderId: string | null = null
   let env: PurchaseEnv = 'production'
+  const platform = looksLikeAppleReceipt(purchaseToken) ? 'iOS' : '안드로이드'
 
   if (looksLikeAppleReceipt(purchaseToken)) {
     // ── iOS(App Store) ──
@@ -195,6 +197,9 @@ Deno.serve(async (req) => {
         : r.reason === 'upstream_error'
         ? 502
         : 200
+      if (r.reason === 'invalid') {
+        await alertSuspicious('가짜·무효 영수증', uid, productId, platform)
+      }
       return Response.json({ ok: false, reason: r.reason }, { status: httpStatus })
     }
     reuseKey = r.reuseKey
@@ -218,6 +223,7 @@ Deno.serve(async (req) => {
 
       if (res.status === 404 || res.status === 400) {
         // 구글이 모르는 영수증 = 위조. 재시도해도 결과가 바뀌지 않는다.
+        await alertSuspicious('가짜·무효 영수증', uid, productId, platform)
         return Response.json({ ok: false, reason: 'invalid' })
       }
       if (!res.ok) {
@@ -259,6 +265,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (existing && existing.user_id !== uid) {
+    await alertSuspicious('다른 계정의 영수증 재사용 시도', uid, productId, platform)
     return Response.json({ ok: false, reason: 'owned_by_other' })
   }
   if (!existing) {
@@ -274,7 +281,60 @@ Deno.serve(async (req) => {
       console.error('record failed', error)
       return Response.json({ ok: false, reason: 'record_failed' }, { status: 500 })
     }
+    // 새로 기록된 결제만 알린다(재시도·복원으로 같은 영수증이 다시 오면 조용히 통과).
+    if (!error) await alertPurchase(admin, uid, productId, platform, env, orderId)
   }
 
   return Response.json({ ok: true })
 })
+
+// ── 운영 알림(2026-09-15) — 결제는 실시간으로 본다 ──
+
+type Admin = ReturnType<typeof createClient>
+
+async function nicknameOf(admin: Admin, uid: string): Promise<string> {
+  try {
+    const { data } = await admin
+      .from('saves')
+      .select('nick:data->>nickname')
+      .eq('id', uid)
+      .maybeSingle()
+    return String((data as Record<string, unknown> | null)?.nick ?? '') || '(닉네임 없음)'
+  } catch {
+    return '(조회 실패)'
+  }
+}
+
+async function alertPurchase(
+  admin: Admin,
+  uid: string,
+  productId: string,
+  platform: string,
+  env: PurchaseEnv,
+  orderId: string | null,
+) {
+  const real = env === 'production'
+  const lines = [
+    `${real ? '💰 결제' : env === 'promo' ? '🎟 프로모션 결제' : '🧪 테스트 결제'} · ${productId} (${won(priceOf(productId))})`,
+    `${platform} · ${real ? '실결제' : env}`,
+    `닉네임: ${await nicknameOf(admin, uid)} · uid ${uid.slice(0, 8)}`,
+  ]
+  if (orderId) lines.push(`주문: ${orderId}`)
+  try {
+    const { data } = await admin
+      .from('verified_purchases')
+      .select('product_id')
+      .eq('environment', 'production')
+      .gte('verified_at', kstTodayStartIso())
+    const rows = (data ?? []) as Array<{ product_id: string }>
+    const sum = rows.reduce((a, r) => a + priceOf(r.product_id), 0)
+    lines.push(`오늘 실결제 누적: ${rows.length}건 · ${won(sum)}`)
+  } catch {
+    /* 누적은 참고용 — 실패해도 결제 알림은 보낸다 */
+  }
+  await sendTelegram(lines.join('\n'))
+}
+
+async function alertSuspicious(what: string, uid: string, productId: string, platform: string) {
+  await sendTelegram([`⚠️ 결제 이상 · ${what}`, `${platform} · ${productId}`, `uid ${uid}`].join('\n'))
+}
