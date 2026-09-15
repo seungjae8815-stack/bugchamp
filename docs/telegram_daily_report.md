@@ -339,3 +339,28 @@ Invoke-RestMethod -Method Post "https://api.telegram.org/bot<봇토큰>/setWebho
 - 크론 SQL: `docs/_sql_20260915_ops_monitor.sql`(비밀값 자리표시 — 실제 값 넣은 파일은 커밋 금지).
 - 크래시 함수 배포: `firebase/` 폴더에서 `firebase deploy --only functions:ops --project bugchamp`.
 - ⚠️ iOS 크래시는 dSYM 업로드(Codemagic 단계)를 붙여야 함수 이름으로 읽힌다 — 아직 안 붙였다.
+
+## 텔레그램 운영 명령 · 채팅 요약 (2026-09-15)
+
+전용 봇 대화방에서 `/` 를 누르면 명령 메뉴가 뜬다(`setMyCommands` 등록). 목록은 `/help`.
+
+| 명령 | 하는 일 | 확인 버튼 |
+|---|---|---|
+| `/stats` | 지금 통계 | - |
+| `/user 닉네임·uid` | 계정 조회(운영 패널과 같은 함수 `lookupUser`) | - |
+| `/chat` · `/chat 50` · `/chat 닉네임` | 최근 채팅 | - |
+| `/del 번호` | 채팅 삭제 | - |
+| `/say 내용` | 운영자 채팅 | - |
+| `/chatmin N` | 채팅 요약 기준(기본 5) — `ops_settings.chat_summary_min` | - |
+| `/notice 제목 \| 본문` | 공지 | ✅ |
+| `/mail 대상 \| 제목 \| 본문 \| 젤리 100 골드 5만` | 한 명 우편 | ✅ |
+| `/mailall 제목 \| 본문 \| 보상` | 전체 우편 | ✅ |
+| `/code 코드 \| 보상 \| 횟수` | 선물코드 | ✅ |
+| `/grant 대상 \| 상품id` | 상품 지급(`grantProduct`, 소모품은 우편) | ✅ |
+
+- 받는 곳은 **우리 방(chat id)뿐**. 재화·전체 발송은 **[실행][취소] 버튼**, 30분 지나면 만료, 두 번 눌러도 한 번만 실행.
+- 확인 대기는 `ops_settings`(`tg_pending:*`)에 둔다 — Cloud Run 인스턴스가 여럿이어도 버튼이 동작하게.
+- 지급 상한은 운영 패널과 같은 `rewardFields`.
+- ⚠️ 웹훅 `allowed_updates` 에 **`callback_query`** 가 있어야 버튼이 온다(2026-09-15 재등록).
+- **채팅 요약**: `ops-watchdog`(10분)이 마지막 요약 뒤 새 채팅이 기준 이상 쌓이면 묶어서 보낸다
+  (커서 `ops_settings.chat_summary_cursor`). 기준보다 적으면 기다렸다가 이어서 센다.

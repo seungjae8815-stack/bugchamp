@@ -176,6 +176,112 @@ class SupportNotifier {
     });
   }
 
+  // ───────────────────────── 운영 명령(텔레그램) ─────────────────────────
+
+  /// 우리 방에서 온 `/명령` 메시지. 아니면 null. 같은 update 는 한 번만.
+  ({String text, int? messageId, Map<String, dynamic>? replyTo})? parseCommand(
+    Map<String, dynamic> update,
+  ) {
+    final msg = update['message'];
+    if (msg is! Map) return null;
+    final chat = msg['chat'];
+    if (chat is! Map || '${chat['id']}' != _chat) return null;
+    final text = (msg['text'] as String?)?.trim() ?? '';
+    if (!text.startsWith('/')) return null;
+    if (!_firstSeen(update)) return null;
+    final id = msg['message_id'];
+    final reply = msg['reply_to_message'];
+    return (
+      text: text,
+      messageId: id is int ? id : null,
+      replyTo: reply is Map ? Map<String, dynamic>.from(reply) : null,
+    );
+  }
+
+  /// 우리 방에서 누른 인라인 버튼. 아니면 null.
+  ({String data, String callbackId, int? messageId})? parseCallback(
+    Map<String, dynamic> update,
+  ) {
+    final cb = update['callback_query'];
+    if (cb is! Map) return null;
+    final msg = cb['message'];
+    final chat = msg is Map ? msg['chat'] : null;
+    if (chat is! Map || '${chat['id']}' != _chat) return null;
+    if (!_firstSeen(update)) return null;
+    final id = msg is Map ? msg['message_id'] : null;
+    return (
+      data: '${cb['data'] ?? ''}',
+      callbackId: '${cb['id'] ?? ''}',
+      messageId: id is int ? id : null,
+    );
+  }
+
+  bool _firstSeen(Map<String, dynamic> update) {
+    final updateId = update['update_id'];
+    if (updateId is! int) return true;
+    if (_seenUpdates.contains(updateId)) return false;
+    _seenUpdates.add(updateId);
+    if (_seenUpdates.length > 200) _seenUpdates.removeAt(0);
+    return true;
+  }
+
+  /// 긴 글은 텔레그램 한도(4096자) 안으로 줄 단위로 나눠 보낸다.
+  Future<bool> sendLong(String text, {int? replyTo}) async {
+    var ok = true;
+    for (final part in chunkTelegram(text)) {
+      ok = await notify(part, replyTo: replyTo) && ok;
+      replyTo = null;
+    }
+    return ok;
+  }
+
+  /// [확인] [취소] 같은 버튼을 단 메시지. [buttons] = (글자, callback_data).
+  Future<bool> sendButtons(String text, List<(String, String)> buttons) async {
+    if (!available) return false;
+    return _post({
+      'chat_id': _chat,
+      'text': text,
+      'reply_markup': {
+        'inline_keyboard': [
+          [
+            for (final b in buttons) {'text': b.$1, 'callback_data': b.$2},
+          ],
+        ],
+      },
+    });
+  }
+
+  /// 버튼 누름에 응답(텔레그램 로딩 표시를 끈다) + 원래 메시지의 버튼을 결과 글로 바꾼다.
+  Future<void> resolveButtons(
+    String callbackId,
+    int? messageId,
+    String resultText,
+  ) async {
+    if (!available) return;
+    await _call('answerCallbackQuery', {'callback_query_id': callbackId});
+    if (messageId != null) {
+      await _call('editMessageText', {
+        'chat_id': _chat,
+        'message_id': messageId,
+        'text': resultText,
+      });
+    }
+  }
+
+  Future<bool> _call(String method, Map<String, Object?> body) async {
+    try {
+      final res = await _http.post(
+        Uri.parse('https://api.telegram.org/bot$_token/$method'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      return res.statusCode < 300;
+    } catch (e) {
+      stderr.writeln('[support] $method 예외: $e');
+      return false;
+    }
+  }
+
   Future<bool> _post(Map<String, Object?> body) async {
     try {
       final res = await _http.post(
@@ -225,4 +331,20 @@ class SupportReply {
     final withQuote = quote.isEmpty ? text : '$text\n\n── 문의 내용 ──\n$quote';
     return (body: withQuote.length <= max ? withQuote : text, truncated: false);
   }
+}
+
+/// 텔레그램 한 메시지 한도(4096자) 안으로 **줄 단위로** 나눈다. 한 줄이 너무 길면 그 줄만 자른다.
+List<String> chunkTelegram(String text, {int max = 3900}) {
+  final out = <String>[];
+  final buf = StringBuffer();
+  for (var line in text.split('\n')) {
+    if (line.length > max) line = '${line.substring(0, max - 1)}…';
+    if (buf.length + line.length + 1 > max) {
+      out.add(buf.toString().trimRight());
+      buf.clear();
+    }
+    buf.writeln(line);
+  }
+  if (buf.isNotEmpty) out.add(buf.toString().trimRight());
+  return out;
 }

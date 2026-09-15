@@ -18,6 +18,7 @@ import 'game_config.dart';
 import 'state_store.dart';
 import 'ops_monitor.dart';
 import 'support.dart';
+import 'telegram_admin.dart';
 import 'verifier.dart';
 
 /// 서버 설정. 전부 환경변수에서 온다 — 코드·저장소에 비밀을 두지 않는다.
@@ -148,6 +149,11 @@ const _hallLimit = 500;
 
 /// 명예의 전당 명단을 다시 읽기까지의 시간.
 const _hallCacheTtl = Duration(minutes: 10);
+
+(int, Map<String, dynamic>) _jsonTuple(
+  Map<String, dynamic> body, {
+  int status = 200,
+}) => (status, body);
 
 Response _json(Map<String, dynamic> body, {int status = 200}) => Response(
   status,
@@ -1622,55 +1628,6 @@ Handler buildHandler({
           : _json({'error': 'send_failed'}, status: 502);
     });
 
-    /// 텔레그램 웹훅 — 운영자가 문의 알림에 **답장**하면 그 유저에게 우편을 보낸다.
-    ///
-    /// 인증은 JWT 가 아니라 `setWebhook` 때 정한 비밀 헤더다. 비밀값이 없으면 잠긴다.
-    /// 처리할 게 아닌 update(일반 메시지·다른 알림에 단 답장)도 **200** 으로 받는다 —
-    /// 실패 코드를 주면 텔레그램이 같은 update 를 계속 재전송한다.
-    public.post('/telegram/webhook', (Request req) async {
-      if (!support.webhookAuthorized(
-        req.headers['x-telegram-bot-api-secret-token'],
-      )) {
-        return _json({'error': 'unauthorized'}, status: 401);
-      }
-      final Map<String, dynamic> update;
-      try {
-        update = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
-      } catch (_) {
-        return _json({'ok': true});
-      }
-      final reply = support.parseReply(update);
-      if (reply == null) return _json({'ok': true});
-
-      final (:body, :truncated) = reply.mailBody();
-      try {
-        await store.insertRow('user_mail', {
-          'user_id': reply.userId,
-          'title': '[운영자 답변]',
-          'body': body,
-          'gold': 0,
-          'jelly': 0,
-          'chitin': 0,
-          'mineral': 0,
-          'sap': 0,
-        });
-      } on StateStoreException catch (e) {
-        stderr.writeln('[telegram/webhook] ${reply.userId}: $e');
-        await support.notify(
-          '❌ 우편 발송 실패 — 운영 패널에서 다시 보내 주세요',
-          replyTo: reply.messageId,
-        );
-        return _json({'ok': true});
-      }
-      await support.notify(
-        truncated
-            ? '✅ 우편 발송됨 (${SupportNotifier.replyMaxLength}자에서 잘림)'
-            : '✅ 우편 발송됨',
-        replyTo: reply.messageId,
-      );
-      return _json({'ok': true});
-    });
-
     authed.get('/notices', (Request req) async {
       try {
         final rows = await store.loadNotices(now: actions.now().toUtc());
@@ -2120,61 +2077,78 @@ Handler buildHandler({
     /// ⚠️ 세이브 전체를 그대로 뱉지 않는다. 곤충 수천 마리가 실린 세이브는
     /// 수 MB 라 브라우저가 멈추고, 화면에서 읽을 수도 없다. 문의 대응에 실제로
     /// 쓰는 값만 추린다.
-    public.post('/admin/user', (Request req) async {
-      final (b, err) = await adminBody(req);
-      if (err != null) return err;
-      var userId = clean(b!['userId'], 64);
-      final nickname = clean(b['nickname'], 32);
+    /// 계정 조회 — 운영 패널(`/admin/user`)과 텔레그램 `/user` 가 같이 쓴다.
+    /// (상태 코드, 응답 JSON). 닉네임이 여러 명이면 후보를 돌려준다(임의로 하나를 집지 않는다).
+    Future<(int, Map<String, dynamic>)> lookupUser({
+      String? userId,
+      String? nickname,
+    }) async {
       if (userId == null && nickname == null) {
-        return _json({'error': 'user_or_nickname_required'}, status: 400);
+        return (400, <String, dynamic>{'error': 'user_or_nickname_required'});
       }
       try {
         if (userId == null) {
           final rows = await store.findProfilesByNickname(nickname!);
-          if (rows.isEmpty) return _json({'error': 'not_found'}, status: 404);
+          if (rows.isEmpty)
+            return (404, <String, dynamic>{'error': 'not_found'});
           if (rows.length > 1) {
-            // 고르라고 돌려준다 — 임의로 하나를 집으면 엉뚱한 계정에 지급한다.
-            return _json({'ambiguous': true, 'candidates': rows});
+            return (
+              200,
+              <String, dynamic>{'ambiguous': true, 'candidates': rows},
+            );
           }
           userId = rows.first['id'] as String;
         }
         final raw = await store.load(userId);
-        if (raw == null) return _json({'error': 'no_save'}, status: 404);
+        if (raw == null) return (404, <String, dynamic>{'error': 'no_save'});
         final save = SaveGame.fromJson(migrateToCurrent(raw));
         final t = actions.now().toUtc();
         final tk = actions.ticketsNow(save);
         final ev = cfg.event == null ? null : actions.eventTicketsNow(save);
-        return _json({
-          'ok': true,
-          'id': userId,
-          'nickname': save.nickname,
-          'level': save.level,
-          'stage': save.stageNumber,
-          'tier': save.difficultyTier,
-          'gold': save.gold,
-          'jelly': save.materialCount(MaterialKind.jelly),
-          'chitin': save.materialCount(MaterialKind.chitin),
-          'mineral': save.materialCount(MaterialKind.mineral),
-          'sap': save.materialCount(MaterialKind.sap),
-          'bugs': save.bugs.length,
-          'storage': save.storageCapacity,
-          'trophies': save.pvpTrophies,
-          'tickets': tk.tickets,
-          'eventTickets': ev?.tickets,
-          // 결제 상태 — "샀는데 안 들어왔다" 문의의 답이 여기 있다.
-          'starterBought': save.starterBought,
-          'adsRemoved': save.adsRemoved,
-          'passExpiresAt': save.passExpiresAt?.toIso8601String(),
-          'buffPassExpiresAt': save.buffPassExpiresAt?.toIso8601String(),
-          'passActive': save.passActive(t),
-          'buffPassActive': save.buffPassActive(t),
-          'purchases': save.redeemedPurchases.length,
-          'lastSeen': save.lastSeen.toIso8601String(),
-        });
+        return (
+          200,
+          <String, dynamic>{
+            'ok': true,
+            'id': userId,
+            'nickname': save.nickname,
+            'level': save.level,
+            'stage': save.stageNumber,
+            'tier': save.difficultyTier,
+            'gold': save.gold,
+            'jelly': save.materialCount(MaterialKind.jelly),
+            'chitin': save.materialCount(MaterialKind.chitin),
+            'mineral': save.materialCount(MaterialKind.mineral),
+            'sap': save.materialCount(MaterialKind.sap),
+            'bugs': save.bugs.length,
+            'storage': save.storageCapacity,
+            'trophies': save.pvpTrophies,
+            'tickets': tk.tickets,
+            'eventTickets': ev?.tickets,
+            // 결제 상태 — "샀는데 안 들어왔다" 문의의 답이 여기 있다.
+            'starterBought': save.starterBought,
+            'adsRemoved': save.adsRemoved,
+            'passExpiresAt': save.passExpiresAt?.toIso8601String(),
+            'buffPassExpiresAt': save.buffPassExpiresAt?.toIso8601String(),
+            'passActive': save.passActive(t),
+            'buffPassActive': save.buffPassActive(t),
+            'purchases': save.redeemedPurchases.length,
+            'lastSeen': save.lastSeen.toIso8601String(),
+          },
+        );
       } on StateStoreException catch (e) {
         stderr.writeln('[admin/user] $e');
-        return _json({'error': 'store_unavailable'}, status: 503);
+        return (503, <String, dynamic>{'error': 'store_unavailable'});
       }
+    }
+
+    public.post('/admin/user', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final (status, body) = await lookupUser(
+        userId: clean(b!['userId'], 64),
+        nickname: clean(b['nickname'], 32),
+      );
+      return _json(body, status: status);
     });
 
     /// 운영 패널의 "지급" 탭이 상품 목록을 채울 때 부른다.
@@ -2196,26 +2170,22 @@ Handler buildHandler({
       });
     });
 
-    public.post('/admin/grant', (Request req) async {
-      final (b, err) = await adminBody(req);
-      if (err != null) return err;
-      final userId = clean(b!['userId'], 64);
-      if (userId == null) return _json({'error': 'user_required'}, status: 400);
-      final productId = clean(b['productId'], 64);
-      if (productId == null) {
-        return _json({'error': 'product_required'}, status: 400);
-      }
+    /// 상품 지급 — 운영 패널(`/admin/grant`)과 텔레그램 `/grant` 가 같이 쓴다.
+    Future<(int, Map<String, dynamic>)> grantProduct(
+      String userId,
+      String productId,
+      String reason,
+    ) async {
       if (cfg.iap.byId(productId) == null) {
         // 어떤 id 가 있는지 함께 알려준다 — 오타를 눈으로 못 잡는 값이다.
-        return _json({
+        return _jsonTuple({
           'error': 'unknown_product',
           'known': [for (final p in cfg.iap.products) p.id],
         }, status: 404);
       }
-      final reason = clean(b['reason'], 48) ?? 'grant';
       try {
         final raw = await store.load(userId);
-        if (raw == null) return _json({'error': 'no_save'}, status: 404);
+        if (raw == null) return _jsonTuple({'error': 'no_save'}, status: 404);
         final save = SaveGame.fromJson(migrateToCurrent(raw));
         final res = actions.grantPurchase(
           save,
@@ -2223,7 +2193,7 @@ Handler buildHandler({
           purchaseId: 'admin:$productId:$reason',
         );
         if (!res.isOk) {
-          return _json({'error': res.error}, status: res.status);
+          return _jsonTuple({'error': res.error}, status: res.status);
         }
         await store.save(userId, res.save!.toJson());
 
@@ -2261,7 +2231,7 @@ Handler buildHandler({
             stderr.writeln('[admin/grant] 우편 실패: $e');
           }
         }
-        return _json({
+        return _jsonTuple({
           'ok': true,
           'productId': productId,
           'alreadyGranted': res.extra['alreadyGranted'] == true,
@@ -2277,8 +2247,25 @@ Handler buildHandler({
         });
       } on StateStoreException catch (e) {
         stderr.writeln('[admin/grant] $e');
-        return _json({'error': 'store_unavailable'}, status: 503);
+        return _jsonTuple({'error': 'store_unavailable'}, status: 503);
       }
+    }
+
+    public.post('/admin/grant', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final userId = clean(b!['userId'], 64);
+      if (userId == null) return _json({'error': 'user_required'}, status: 400);
+      final productId = clean(b['productId'], 64);
+      if (productId == null) {
+        return _json({'error': 'product_required'}, status: 400);
+      }
+      final (status, body) = await grantProduct(
+        userId,
+        productId,
+        clean(b['reason'], 48) ?? 'grant',
+      );
+      return _json(body, status: status);
     });
 
     public.post('/admin/code', (Request req) async {
@@ -2362,6 +2349,465 @@ Handler buildHandler({
         stderr.writeln('[admin/delete] $e');
         return _json({'error': 'store_unavailable'}, status: 503);
       }
+    });
+
+    // ───────────────────────── 텔레그램 운영 명령(2026-09-15) ─────────────────────────
+    //
+    // 전용 봇(@bugchamp_bot) 대화방에서 운영 패널 기능을 쓴다. 실행은 위 운영 패널 코드와
+    // **같은 함수**(lookupUser·grantProduct·rewardFields·clean)를 쓴다 — 두 벌이면 한쪽만 고쳐진다.
+    //
+    // ⚠️ 재화가 나가거나 전체에 가는 명령은 **버튼으로 한 번 더 확인**한다. 확인 대기는 DB
+    // (`ops_settings`)에 둔다 — Cloud Run 인스턴스가 여럿이면 버튼이 다른 인스턴스로 갈 수 있다.
+    // 받는 곳은 우리 방뿐이다(SupportNotifier 가 chat id 로 거른다).
+
+    const tgPendingTtl = Duration(minutes: 30);
+
+    Future<void> tgSay(String text, {int? replyTo}) =>
+        support.sendLong(text, replyTo: replyTo);
+
+    String fmtNum(Object? v) {
+      final n = (v as num?)?.toInt() ?? 0;
+      final s = n.abs().toString();
+      final b = StringBuffer();
+      for (var i = 0; i < s.length; i++) {
+        if (i > 0 && (s.length - i) % 3 == 0) b.write(',');
+        b.write(s[i]);
+      }
+      return n < 0 ? '-$b' : b.toString();
+    }
+
+    /// 닉네임 또는 uid → uid. 못 찾으면 방에 이유를 알리고 null.
+    Future<String?> tgResolveUser(String who, int? replyTo) async {
+      final w = who.trim();
+      if (RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(w)) return w.toLowerCase();
+      if (w.isEmpty) {
+        await tgSay('❌ 대상(닉네임 또는 uid)이 비었습니다', replyTo: replyTo);
+        return null;
+      }
+      final (status, body) = await lookupUser(nickname: w);
+      if (body['ambiguous'] == true) {
+        final c = (body['candidates'] as List).cast<Map<String, dynamic>>();
+        await tgSay(
+          '⚠️ "$w" 닉네임이 ${c.length}명입니다 — uid 로 다시 입력하세요\n'
+          '${c.map((r) => '${r['id']} · Lv${r['level']} · 난이도${r['tier']}').join('\n')}',
+          replyTo: replyTo,
+        );
+        return null;
+      }
+      if (status != 200) {
+        await tgSay('❌ "$w" 계정을 찾지 못했습니다(${body['error']})', replyTo: replyTo);
+        return null;
+      }
+      return body['id'] as String;
+    }
+
+    /// 보상 문구 → 검사된 보상 맵. 문제가 있으면 방에 알리고 null.
+    Future<Map<String, int>?> tgReward(String text, int? replyTo) async {
+      if (text.trim().isEmpty) return const {};
+      final parsed = parseReward(text);
+      if (parsed.unknown.isNotEmpty) {
+        await tgSay(
+          '❌ 보상을 못 읽었습니다: ${parsed.unknown.join(', ')}\n예) 젤리 100 골드 5만 키틴 1천',
+          replyTo: replyTo,
+        );
+        return null;
+      }
+      final (out, tooBig) = rewardFields(parsed.reward);
+      if (tooBig != null) {
+        await tgSay('❌ 1건당 지급 상한을 넘었습니다($tooBig)', replyTo: replyTo);
+        return null;
+      }
+      return out;
+    }
+
+    /// 확인 버튼을 띄우고 실행할 내용을 DB 에 맡긴다.
+    Future<void> tgConfirm(String summary, Map<String, dynamic> action) async {
+      final id =
+          '${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}'
+          '${Random.secure().nextInt(1 << 30).toRadixString(36)}';
+      await store.putSetting(
+        'tg_pending:$id',
+        jsonEncode({...action, 'at': actions.now().toUtc().toIso8601String()}),
+      );
+      await support.sendButtons('$summary\n\n실행할까요? (30분 안에)', [
+        ('✅ 실행', 'ok:$id'),
+        ('취소', 'no:$id'),
+      ]);
+    }
+
+    /// 확인된 작업 실행 → 결과 문구.
+    Future<String> tgExecute(Map<String, dynamic> a) async {
+      final reward = Map<String, dynamic>.from(
+        (a['reward'] as Map?) ?? const {},
+      );
+      switch (a['kind']) {
+        case 'notice':
+          await store.insertRow('notices', {
+            'title': a['title'],
+            'body': a['body'] ?? '',
+            'pinned': false,
+          });
+          return '✅ 공지 등록 · ${a['title']}';
+        case 'mail':
+          final (out, tooBig) = rewardFields(reward);
+          if (tooBig != null) return '❌ 상한 초과($tooBig)';
+          await store.insertRow('user_mail', {
+            'user_id': a['userId'], // null = 전체
+            'title': a['title'],
+            'body': a['body'] ?? '',
+            ...out,
+          });
+          return '✅ 우편 발송 · ${a['userId'] == null ? '전체 유저' : a['label']} · '
+              '${a['title']} · ${rewardLabel(out)}';
+        case 'code':
+          final (out, tooBig) = rewardFields(reward);
+          if (tooBig != null) return '❌ 상한 초과($tooBig)';
+          await store.insertRow('gift_codes', {
+            'code': a['code'],
+            ...out,
+            if (a['maxUses'] != null) 'max_uses': a['maxUses'],
+          });
+          return '✅ 선물코드 생성 · ${a['code']} · ${rewardLabel(out)}'
+              '${a['maxUses'] != null ? ' · ${a['maxUses']}회' : ''}';
+        case 'grant':
+          final (status, body) = await grantProduct(
+            a['userId'] as String,
+            a['productId'] as String,
+            'telegram',
+          );
+          if (status != 200) return '❌ 지급 실패(${body['error']})';
+          return '✅ 지급 · ${a['label']} · ${a['productId']}'
+              '${body['alreadyGranted'] == true ? ' (이미 받은 상품이라 중복 지급 안 함)' : ''}'
+              '${body['mailed'] == true ? ' · 소모품은 우편으로' : ''}';
+      }
+      return '❌ 알 수 없는 작업';
+    }
+
+    Future<void> tgCommand(String text, int? messageId) async {
+      final (:name, :rest) = splitCommand(text);
+      final args = splitPipe(rest);
+      switch (name) {
+        case 'start' || 'help':
+          await tgSay(telegramHelp);
+
+        case 'stats':
+          final s = await store.dailyStats();
+          await tgSay(
+            '📊 지금 통계\n'
+            '실사용(24h) ${fmtNum(s['dau'])} · 주간 ${fmtNum(s['wau'])} · 월간 ${fmtNum(s['mau'])}\n'
+            '정착 ${fmtNum(s['retained'])} · 오늘 신규 ${fmtNum(s['new_today'])}\n'
+            '로그인 ${fmtNum(s['linked'])} · 세이브 ${fmtNum(s['saves_total'])} · 누적 계정 ${fmtNum(s['installs'])}\n'
+            '실결제 ${fmtNum(s['purchases'])}건 (테스트 ${fmtNum(s['purchases_test'])}건)',
+            replyTo: messageId,
+          );
+
+        case 'user':
+          if (rest.isEmpty) {
+            await tgSay('사용법: /user 닉네임 또는 uid', replyTo: messageId);
+            return;
+          }
+          final uid = await tgResolveUser(rest, messageId);
+          if (uid == null) return;
+          final (status, u) = await lookupUser(userId: uid);
+          if (status != 200) {
+            await tgSay('❌ 조회 실패(${u['error']})', replyTo: messageId);
+            return;
+          }
+          await tgSay(
+            '👤 ${u['nickname']} · uid ${u['id']}\n'
+            '난이도 ${u['tier']} · 스테이지 ${u['stage']} · Lv${u['level']}\n'
+            '골드 ${fmtNum(u['gold'])} · 젤리 ${fmtNum(u['jelly'])}\n'
+            '곤충 ${u['bugs']}/${u['storage']} · 트로피 ${u['trophies']} · 결투 티켓 ${u['tickets']}\n'
+            '결제 ${u['purchases']}건 · 스타터 ${u['starterBought'] == true ? 'O' : 'X'} · '
+            '패스 ${u['passActive'] == true ? '사용 중' : '없음'} · 버프패스 ${u['buffPassActive'] == true ? '사용 중' : '없음'}\n'
+            '마지막 접속 ${u['lastSeen']}',
+            replyTo: messageId,
+          );
+
+        case 'chat':
+          final n = int.tryParse(rest);
+          if (rest.isEmpty || n != null) {
+            final rows = await store.listChat(limit: (n ?? 20).clamp(1, 100));
+            await tgSay(formatChat(rows));
+          } else {
+            final rows = (await store.listChat(
+              limit: 300,
+            )).where((r) => '${r['nickname']}' == rest).take(30).toList();
+            await tgSay(
+              formatChat(rows, title: '💬 "$rest" 최근 채팅 ${rows.length}건\n'),
+            );
+          }
+
+        case 'del':
+          final id = rest.replaceFirst('#', '').trim();
+          if (int.tryParse(id) == null) {
+            await tgSay('사용법: /del 채팅번호 (목록의 #번호)', replyTo: messageId);
+            return;
+          }
+          await store.deleteRow('chat_messages', 'id', id);
+          await tgSay('🗑 채팅 #$id 삭제', replyTo: messageId);
+
+        case 'say':
+          final body = clean(rest, 100);
+          if (body == null) {
+            await tgSay('사용법: /say 내용(100자까지)', replyTo: messageId);
+            return;
+          }
+          if (chatUserId.isEmpty) {
+            await tgSay('❌ 서버에 ADMIN_CHAT_USER_ID 가 없습니다', replyTo: messageId);
+            return;
+          }
+          await store.insertAdminChat(
+            userId: chatUserId,
+            nickname: '운영자',
+            body: body,
+          );
+          await tgSay('📢 게임 채팅에 올렸습니다', replyTo: messageId);
+
+        case 'chatmin':
+          final n = int.tryParse(rest);
+          if (n == null || n < 1 || n > 500) {
+            final now = await store.getSetting('chat_summary_min');
+            await tgSay(
+              '지금 기준: ${now ?? '5'}건\n사용법: /chatmin 10 (1~500)',
+              replyTo: messageId,
+            );
+            return;
+          }
+          await store.putSetting('chat_summary_min', '$n');
+          await tgSay('✅ 채팅이 $n건 쌓일 때마다 요약을 보냅니다', replyTo: messageId);
+
+        case 'notice':
+          final title = args.isEmpty ? null : clean(args[0], 100);
+          if (title == null) {
+            await tgSay('사용법: /notice 제목 | 본문', replyTo: messageId);
+            return;
+          }
+          final body = args.length > 1 ? clean(args[1], 1000) ?? '' : '';
+          await tgConfirm('📢 공지 등록\n제목: $title\n본문: $body', {
+            'kind': 'notice',
+            'title': title,
+            'body': body,
+          });
+
+        case 'mail':
+          if (args.length < 2) {
+            await tgSay(
+              '사용법: /mail 닉네임또는uid | 제목 | 본문 | 젤리 100 골드 5만',
+              replyTo: messageId,
+            );
+            return;
+          }
+          final uid = await tgResolveUser(args[0], messageId);
+          if (uid == null) return;
+          final title = clean(args[1], 100);
+          if (title == null) {
+            await tgSay('❌ 제목이 비었습니다', replyTo: messageId);
+            return;
+          }
+          final reward = await tgReward(
+            args.length > 3 ? args[3] : '',
+            messageId,
+          );
+          if (reward == null) return;
+          final body = args.length > 2 ? clean(args[2], 1000) ?? '' : '';
+          await tgConfirm(
+            '✉️ 우편 · ${args[0]}\n제목: $title\n본문: $body\n보상: ${rewardLabel(reward)}',
+            {
+              'kind': 'mail',
+              'userId': uid,
+              'label': args[0],
+              'title': title,
+              'body': body,
+              'reward': reward,
+            },
+          );
+
+        case 'mailall':
+          final title = args.isEmpty ? null : clean(args[0], 100);
+          if (title == null) {
+            await tgSay('사용법: /mailall 제목 | 본문 | 젤리 100', replyTo: messageId);
+            return;
+          }
+          final reward = await tgReward(
+            args.length > 2 ? args[2] : '',
+            messageId,
+          );
+          if (reward == null) return;
+          final body = args.length > 1 ? clean(args[1], 1000) ?? '' : '';
+          await tgConfirm(
+            '📮 전체 우편(모든 유저)\n제목: $title\n본문: $body\n보상: ${rewardLabel(reward)}',
+            {
+              'kind': 'mail',
+              'userId': null,
+              'title': title,
+              'body': body,
+              'reward': reward,
+            },
+          );
+
+        case 'code':
+          final code = args.isEmpty ? null : clean(args[0], 32)?.toUpperCase();
+          if (code == null || !RegExp(r'^[A-Z0-9]{4,32}$').hasMatch(code)) {
+            await tgSay(
+              '사용법: /code 코드명(영문대문자·숫자 4~32자) | 젤리 50 | 사용횟수(선택)',
+              replyTo: messageId,
+            );
+            return;
+          }
+          final reward = await tgReward(
+            args.length > 1 ? args[1] : '',
+            messageId,
+          );
+          if (reward == null) return;
+          final maxUses = args.length > 2 ? int.tryParse(args[2]) : null;
+          await tgConfirm(
+            '🎁 선물코드 $code\n보상: ${rewardLabel(reward)}'
+            '${maxUses != null ? '\n사용 가능 $maxUses회' : '\n사용 횟수 제한 없음'}',
+            {
+              'kind': 'code',
+              'code': code,
+              'reward': reward,
+              if (maxUses != null && maxUses > 0) 'maxUses': maxUses,
+            },
+          );
+
+        case 'grant':
+          if (args.length < 2) {
+            await tgSay('사용법: /grant 닉네임또는uid | 상품id', replyTo: messageId);
+            return;
+          }
+          final productId = args[1];
+          final product = cfg.iap.byId(productId);
+          if (product == null) {
+            await tgSay(
+              '❌ 없는 상품입니다: $productId\n'
+              '상품: ${cfg.iap.products.map((p) => p.id).join(', ')}',
+              replyTo: messageId,
+            );
+            return;
+          }
+          final uid = await tgResolveUser(args[0], messageId);
+          if (uid == null) return;
+          await tgConfirm(
+            '💝 상품 지급 · ${args[0]}\n상품: ${product.name?.resolve('ko') ?? productId} ($productId)',
+            {
+              'kind': 'grant',
+              'userId': uid,
+              'label': args[0],
+              'productId': productId,
+            },
+          );
+
+        default:
+          await tgSay('모르는 명령입니다. /help 로 목록을 볼 수 있어요', replyTo: messageId);
+      }
+    }
+
+    Future<void> tgCallback(
+      String data,
+      String callbackId,
+      int? messageId,
+    ) async {
+      final sep = data.indexOf(':');
+      if (sep < 0) return;
+      final verb = data.substring(0, sep);
+      final key = 'tg_pending:${data.substring(sep + 1)}';
+      final raw = await store.getSetting(key);
+      if (raw == null) {
+        await support.resolveButtons(
+          callbackId,
+          messageId,
+          '⌛ 이미 처리됐거나 만료된 요청입니다',
+        );
+        return;
+      }
+      // **먼저 지운다** — 버튼을 두 번 누르거나 텔레그램이 재전송해도 한 번만 실행되게.
+      await store.deleteSetting(key);
+      final action = jsonDecode(raw) as Map<String, dynamic>;
+      if (verb != 'ok') {
+        await support.resolveButtons(callbackId, messageId, '취소했습니다');
+        return;
+      }
+      final at = DateTime.tryParse('${action['at']}');
+      if (at == null || actions.now().toUtc().difference(at) > tgPendingTtl) {
+        await support.resolveButtons(
+          callbackId,
+          messageId,
+          '⌛ 30분이 지나 취소됐습니다. 다시 입력해 주세요',
+        );
+        return;
+      }
+      final result = await tgExecute(action);
+      await support.resolveButtons(callbackId, messageId, result);
+    }
+
+    /// 텔레그램 웹훅 — ① 문의 알림에 단 **답장** → 그 유저에게 우편 ② `/명령` ③ 확인 버튼.
+    ///
+    /// 인증은 JWT 가 아니라 `setWebhook` 때 정한 비밀 헤더다. 비밀값이 없으면 잠긴다.
+    /// 처리할 게 아닌 update 도 **200** 으로 받는다 — 실패 코드를 주면 텔레그램이 계속 재전송한다.
+    /// ⚠️ 웹훅 등록 시 allowed_updates 에 `callback_query` 가 있어야 버튼이 온다.
+    public.post('/telegram/webhook', (Request req) async {
+      if (!support.webhookAuthorized(
+        req.headers['x-telegram-bot-api-secret-token'],
+      )) {
+        return _json({'error': 'unauthorized'}, status: 401);
+      }
+      final Map<String, dynamic> update;
+      try {
+        update = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'ok': true});
+      }
+
+      try {
+        final cb = support.parseCallback(update);
+        if (cb != null) {
+          await tgCallback(cb.data, cb.callbackId, cb.messageId);
+          return _json({'ok': true});
+        }
+
+        final reply = support.parseReply(update);
+        if (reply != null) {
+          final (:body, :truncated) = reply.mailBody();
+          try {
+            await store.insertRow('user_mail', {
+              'user_id': reply.userId,
+              'title': '[운영자 답변]',
+              'body': body,
+              'gold': 0,
+              'jelly': 0,
+              'chitin': 0,
+              'mineral': 0,
+              'sap': 0,
+            });
+          } on StateStoreException catch (e) {
+            stderr.writeln('[telegram/webhook] ${reply.userId}: $e');
+            await support.notify(
+              '❌ 우편 발송 실패 — 운영 패널에서 다시 보내 주세요',
+              replyTo: reply.messageId,
+            );
+            return _json({'ok': true});
+          }
+          await support.notify(
+            truncated
+                ? '✅ 우편 발송됨 (${SupportNotifier.replyMaxLength}자에서 잘림)'
+                : '✅ 우편 발송됨',
+            replyTo: reply.messageId,
+          );
+          return _json({'ok': true});
+        }
+
+        final cmd = support.parseCommand(update);
+        if (cmd != null) await tgCommand(cmd.text, cmd.messageId);
+      } on StateStoreException catch (e) {
+        stderr.writeln('[telegram/webhook] $e');
+        await support.notify('❌ DB 오류로 처리하지 못했습니다 — 잠시 뒤 다시 시도해 주세요');
+      } catch (e, st) {
+        stderr.writeln('[telegram/webhook] $e\n$st');
+        await support.notify('❌ 처리 중 오류: $e');
+      }
+      return _json({'ok': true});
     });
 
     authed.post(

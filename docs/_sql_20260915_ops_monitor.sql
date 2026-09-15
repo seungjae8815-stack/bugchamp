@@ -26,6 +26,18 @@ create table if not exists public.ops_heartbeat (
 alter table public.ops_heartbeat enable row level security;
 revoke all on public.ops_heartbeat from anon, authenticated;
 
+-- ②-b ops_settings — 텔레그램 확인 대기(tg_pending:*)·채팅 요약 기준(chat_summary_min)·커서.
+--      서비스 롤(권위 서버·Edge Function)만 읽고 쓴다.
+create table if not exists public.ops_settings (
+  key         text primary key,
+  value       text not null,
+  updated_at  timestamptz not null default now()
+);
+alter table public.ops_settings enable row level security;
+revoke all on public.ops_settings from anon, authenticated;
+insert into public.ops_settings (key, value) values ('chat_summary_min', '5')
+  on conflict (key) do nothing;
+
 -- ① 일일 리포트(09:00 KST = 00:00 UTC) — 있으면 지우고 다시 건다.
 select cron.unschedule(jobid) from cron.job where jobname = 'bugchamp-daily-report';
 select cron.schedule(
@@ -60,3 +72,4 @@ select jobname, schedule, active from cron.job where jobname like 'bugchamp-%';
 -- ── ROLLBACK ──
 -- select cron.unschedule(jobid) from cron.job where jobname in ('bugchamp-ops-watchdog');
 -- drop table if exists public.ops_heartbeat;
+-- drop table if exists public.ops_settings;

@@ -42,6 +42,9 @@ class _Fake extends http.BaseClient {
   /// 운영 패널이 지운 행(URL 그대로).
   final List<String> deleted = [];
 
+  /// ops_settings(텔레그램 확인 대기·채팅 요약 기준).
+  final Map<String, String> settings = {};
+
   /// 이미 처리된 1회성 행 — 기본키 중복(409)을 흉내낸다.
   final Set<String> claimedMail = {};
   final Set<String> redeemedCodes = {};
@@ -56,6 +59,11 @@ class _Fake extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final path = request.url.path;
     if (request.method == 'DELETE') {
+      if (path.contains('/ops_settings')) {
+        settings.remove(
+          request.url.queryParameters['key']?.replaceFirst('eq.', ''),
+        );
+      }
       deleted.add(request.url.toString());
       return http.StreamedResponse(Stream.value(utf8.encode('')), 204);
     }
@@ -82,6 +90,10 @@ class _Fake extends http.BaseClient {
           fresh ? 201 : 409,
         );
       }
+      if (path.contains('/ops_settings')) {
+        settings['${row['key']}'] = '${row['value']}';
+        return http.StreamedResponse(Stream.value(utf8.encode('')), 201);
+      }
       if (path.contains('/battle_sessions')) {
         sessions[row['id'].toString()] = row;
       } else {
@@ -91,7 +103,15 @@ class _Fake extends http.BaseClient {
     }
     final id = request.url.queryParameters['id']?.replaceFirst('eq.', '');
     final Object body;
-    if (path.contains('/chat_messages')) {
+    if (path.contains('/ops_settings')) {
+      final k = request.url.queryParameters['key']?.replaceFirst('eq.', '');
+      final v = settings[k];
+      body = v == null
+          ? []
+          : [
+              {'value': v},
+            ];
+    } else if (path.contains('/chat_messages')) {
       body = chat;
     } else if (path.contains('/notices')) {
       body = notices;
@@ -1488,6 +1508,108 @@ void main() {
       );
       expect(nearMax.mailBody().body, '나' * 990); // 원문을 붙이면 넘친다
       expect(nearMax.mailBody().truncated, isFalse);
+    });
+
+    group('운영 명령', () {
+      Map<String, dynamic> command(
+        int id,
+        String text, {
+        String chat = '1025640548',
+      }) => {
+        'update_id': id,
+        'message': {
+          'message_id': 500 + id,
+          'chat': {'id': int.parse(chat)},
+          'text': text,
+        },
+      };
+      Map<String, dynamic> press(
+        int id,
+        String data, {
+        String chat = '1025640548',
+      }) => {
+        'update_id': id,
+        'callback_query': {
+          'id': 'cb$id',
+          'data': data,
+          'message': {
+            'message_id': 900,
+            'chat': {'id': int.parse(chat)},
+          },
+        },
+      };
+
+      test('/help 는 명령 목록을 보낸다', () async {
+        final h = hookHandler();
+        await hook(h, command(1, '/help'));
+        expect(sent.single['text'], contains('운영 명령'));
+      });
+
+      test('/mailall → 확인 버튼 → 실행하면 전체 우편이 들어간다', () async {
+        final h = hookHandler();
+        await hook(
+          h,
+          command(2, '/mailall 점검 보상 | 불편을 드려 죄송합니다 | 젤리 100 골드 5만'),
+        );
+        expect(fake.lastSaved, isNull, reason: '확인 전에는 아무것도 보내지 않는다');
+        final ask = sent.single;
+        expect(ask['text'], contains('전체 우편'));
+        expect(ask['text'], contains('젤리 100'));
+        final keys = fake.settings.keys.where(
+          (k) => k.startsWith('tg_pending:'),
+        );
+        expect(keys.length, 1);
+        final id = keys.single.substring('tg_pending:'.length);
+        final buttons =
+            ((ask['reply_markup'] as Map)['inline_keyboard'] as List).first
+                as List;
+        expect((buttons.first as Map)['callback_data'], 'ok:$id');
+
+        await hook(h, press(3, 'ok:$id'));
+        final row = fake.lastSaved!;
+        expect(row['user_id'], isNull);
+        expect(row['title'], '점검 보상');
+        expect(row['jelly'], 100);
+        expect(row['gold'], 50000);
+        expect(fake.settings.containsKey('tg_pending:$id'), isFalse);
+        expect(sent.last['text'], contains('우편 발송'));
+
+        // 두 번 눌러도 한 번만.
+        fake.lastSaved = null;
+        await hook(h, press(4, 'ok:$id'));
+        expect(fake.lastSaved, isNull);
+        expect(sent.last['text'], contains('이미 처리'));
+      });
+
+      test('취소를 누르면 실행하지 않는다', () async {
+        final h = hookHandler();
+        await hook(h, command(5, '/notice 점검 안내 | 오늘 밤 점검'));
+        final id = fake.settings.keys.single.substring('tg_pending:'.length);
+        await hook(h, press(6, 'no:$id'));
+        expect(fake.lastSaved, isNull);
+        expect(sent.last['text'], contains('취소'));
+      });
+
+      test('보상 오타는 확인 창 전에 거절한다', () async {
+        final h = hookHandler();
+        await hook(h, command(7, '/mailall 보상 | 본문 | 젤리리 100'));
+        expect(fake.settings, isEmpty);
+        expect(sent.single['text'], contains('못 읽었습니다'));
+      });
+
+      test('다른 방의 명령·버튼은 무시한다', () async {
+        final h = hookHandler();
+        await hook(h, command(8, '/mailall 해킹 | 본문 | 젤리 9999', chat: '777'));
+        await hook(h, press(9, 'ok:whatever', chat: '777'));
+        expect(sent, isEmpty);
+        expect(fake.settings, isEmpty);
+      });
+
+      test('/chatmin 은 채팅 요약 기준을 저장한다', () async {
+        final h = hookHandler();
+        await hook(h, command(10, '/chatmin 12'));
+        expect(fake.settings['chat_summary_min'], '12');
+      });
     });
 
     test('텔레그램이 같은 update 를 다시 보내도 우편은 한 통', () async {

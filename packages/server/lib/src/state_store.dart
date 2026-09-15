@@ -439,6 +439,62 @@ class StateStore {
     return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
   }
 
+  // ── 운영 설정(ops_settings, 2026-09-15) — 텔레그램 확인 대기·채팅 요약 기준 등 ──
+
+  /// [key] 의 값. 없으면 null.
+  Future<String?> getSetting(String key) async {
+    final res = await _http.get(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/ops_settings'
+        '?select=value&key=eq.${Uri.encodeQueryComponent(key)}&limit=1',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw StateStoreException('설정 조회 실패: ${res.statusCode} ${res.body}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    return (rows.first as Map<String, dynamic>)['value'] as String?;
+  }
+
+  /// [key] 에 [value] 를 넣는다(있으면 덮어쓴다).
+  Future<void> putSetting(String key, String value) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/ops_settings?on_conflict=key'),
+      headers: {
+        ..._headers,
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: jsonEncode([
+        {
+          'key': key,
+          'value': value,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+      ]),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('설정 저장 실패: ${res.statusCode} ${res.body}');
+    }
+  }
+
+  Future<void> deleteSetting(String key) =>
+      deleteRow('ops_settings', 'key', key);
+
+  /// 일일 리포트와 같은 통계(RPC `bugchamp_daily_stats`).
+  Future<Map<String, dynamic>> dailyStats() async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/bugchamp_daily_stats'),
+      headers: _headers,
+      body: '{}',
+    );
+    if (res.statusCode != 200) {
+      throw StateStoreException('통계 실패: ${res.statusCode} ${res.body}');
+    }
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
   /// 행 1개 삽입(운영 등록). 실패는 예외 — 조용히 넘기면 "올렸는데 없다"가 된다.
   Future<void> insertRow(String table, Map<String, dynamic> row) async {
     final res = await _http.post(
