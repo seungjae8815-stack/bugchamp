@@ -1607,6 +1607,55 @@ Handler buildHandler({
           : _json({'error': 'send_failed'}, status: 502);
     });
 
+    /// 텔레그램 웹훅 — 운영자가 문의 알림에 **답장**하면 그 유저에게 우편을 보낸다.
+    ///
+    /// 인증은 JWT 가 아니라 `setWebhook` 때 정한 비밀 헤더다. 비밀값이 없으면 잠긴다.
+    /// 처리할 게 아닌 update(일반 메시지·다른 알림에 단 답장)도 **200** 으로 받는다 —
+    /// 실패 코드를 주면 텔레그램이 같은 update 를 계속 재전송한다.
+    public.post('/telegram/webhook', (Request req) async {
+      if (!support.webhookAuthorized(
+        req.headers['x-telegram-bot-api-secret-token'],
+      )) {
+        return _json({'error': 'unauthorized'}, status: 401);
+      }
+      final Map<String, dynamic> update;
+      try {
+        update = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'ok': true});
+      }
+      final reply = support.parseReply(update);
+      if (reply == null) return _json({'ok': true});
+
+      final (:body, :truncated) = reply.mailBody();
+      try {
+        await store.insertRow('user_mail', {
+          'user_id': reply.userId,
+          'title': '[운영자 답변]',
+          'body': body,
+          'gold': 0,
+          'jelly': 0,
+          'chitin': 0,
+          'mineral': 0,
+          'sap': 0,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[telegram/webhook] ${reply.userId}: $e');
+        await support.notify(
+          '❌ 우편 발송 실패 — 운영 패널에서 다시 보내 주세요',
+          replyTo: reply.messageId,
+        );
+        return _json({'ok': true});
+      }
+      await support.notify(
+        truncated
+            ? '✅ 우편 발송됨 (${SupportNotifier.replyMaxLength}자에서 잘림)'
+            : '✅ 우편 발송됨',
+        replyTo: reply.messageId,
+      );
+      return _json({'ok': true});
+    });
+
     authed.get('/notices', (Request req) async {
       try {
         final rows = await store.loadNotices(now: actions.now().toUtc());

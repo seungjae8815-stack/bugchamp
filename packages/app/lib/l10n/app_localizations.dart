@@ -4480,6 +4480,18 @@ abstract class AppLocalizations {
   /// **'Claim all'**
   String get mailClaimAll;
 
+  /// No description provided for @mailReadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Read more'**
+  String get mailReadMore;
+
+  /// No description provided for @mailConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get mailConfirm;
+
   /// No description provided for @gachaTitle.
   ///
   /// In en, this message translates to:

@@ -2474,6 +2474,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get mailClaimAll => '모두 받기';
 
   @override
+  String get mailReadMore => '전체 보기';
+
+  @override
+  String get mailConfirm => '확인';
+
+  @override
   String get gachaTitle => '곤충 알 뽑기';
 
   @override

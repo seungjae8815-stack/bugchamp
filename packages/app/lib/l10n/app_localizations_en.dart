@@ -2524,6 +2524,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailClaimAll => 'Claim all';
 
   @override
+  String get mailReadMore => 'Read more';
+
+  @override
+  String get mailConfirm => 'OK';
+
+  @override
   String get gachaTitle => 'Egg Draw';
 
   @override

@@ -4016,7 +4016,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ),
       const SizedBox(height: 10),
       // 2통 이상이면 한 번에 — 보상 팝업을 통마다 닫게 하는 건 노동이다.
-      if (mails.length >= 2)
+      // 글만 있는 우편(운영자 답변)은 빼고 센다 — 일괄 수령에 휩쓸리면 읽기도 전에 사라진다.
+      if (mails.where((m) => !m.textOnly).length >= 2)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: SizedBox(
@@ -4026,7 +4027,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 var gold = 0;
                 final mats = <MaterialKind, int>{};
                 var got = 0;
-                for (final m in List<ServerMail>.from(mails)) {
+                for (final m in List<ServerMail>.from(
+                  mails.where((m) => !m.textOnly),
+                )) {
                   final res = await r
                       .read(rewardClaimerProvider)
                       .claimMail(m.id);
@@ -4074,6 +4077,54 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     ];
   }
 
+  /// 운영 우편 전문. 본문 상한이 1000자라 스크롤로 감싼다.
+  Future<void> _showMailBody(
+    BuildContext context,
+    AppLocalizations l,
+    ServerMail m,
+  ) {
+    return showDialog<void>(
+      context: context,
+      barrierColor: const Color(0xAA000000),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xF21F2E13),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xAA5FA8D3), width: 1.5),
+        ),
+        title: Text(
+          m.title,
+          style: const TextStyle(
+            color: _onScene,
+            fontWeight: FontWeight.w800,
+            fontSize: 15,
+          ),
+        ),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(ctx).height * 0.5,
+          ),
+          child: SingleChildScrollView(
+            child: SelectableText(
+              m.body,
+              style: const TextStyle(
+                color: Color(0xE6FFFFFF),
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l.actionClose),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _serverMailRow(
     BuildContext ctx,
     WidgetRef r,
@@ -4117,15 +4168,48 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       fontSize: 13,
                     ),
                   ),
+                  // 본문은 두 줄로 줄여 보이고, 잘렸으면 눌러서 전문을 연다.
+                  // 예전엔 잘린 뒤를 볼 방법이 없어 첫 문장만 읽혔다.
                   if (m.body.isNotEmpty)
-                    Text(
-                      m.body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xB3FFFFFF),
-                        fontSize: 11,
-                      ),
+                    LayoutBuilder(
+                      builder: (_, box) {
+                        const style = TextStyle(
+                          color: Color(0xB3FFFFFF),
+                          fontSize: 11,
+                        );
+                        final clipped = (TextPainter(
+                          text: TextSpan(text: m.body, style: style),
+                          maxLines: 2,
+                          textDirection: Directionality.of(ctx),
+                          textScaler: MediaQuery.textScalerOf(ctx),
+                        )..layout(maxWidth: box.maxWidth)).didExceedMaxLines;
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: clipped
+                              ? () => _showMailBody(ctx, l, m)
+                              : null,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                m.body,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: style,
+                              ),
+                              if (clipped)
+                                Text(
+                                  '${l.mailReadMore} ›',
+                                  style: const TextStyle(
+                                    color: Color(0xFFBFE3F5),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   if (parts.isNotEmpty)
                     Padding(
@@ -4145,9 +4229,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             const SizedBox(width: 8),
             FilledButton(
               onPressed: () async {
+                // 글만 있는 우편은 전문을 먼저 보여 주고, 닫으면 읽음 처리한다 —
+                // 두 줄 미리보기만 보고 누르면 나머지를 영영 못 읽는다.
+                if (m.textOnly) {
+                  await _showMailBody(ctx, l, m);
+                  if (!ctx.mounted) return;
+                }
                 final res = await r.read(rewardClaimerProvider).claimMail(m.id);
                 if (!ctx.mounted) return;
-                if (res == RedeemResult.ok) {
+                if (res == RedeemResult.ok && m.textOnly) {
+                  // 보상 없는 글(운영자 답변) — 빈 보상 팝업을 띄우지 않는다.
+                  return;
+                } else if (res == RedeemResult.ok) {
                   AudioService.instance.sfxReward();
                   await showRewardPopup(
                     ctx,
@@ -4165,7 +4258,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 backgroundColor: const Color(0xFF3E7D4F),
                 padding: const EdgeInsets.symmetric(horizontal: 14),
               ),
-              child: Text(l.mailClaim),
+              child: Text(m.textOnly ? l.mailConfirm : l.mailClaim),
             ),
           ],
         ),

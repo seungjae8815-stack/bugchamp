@@ -12,11 +12,20 @@ import 'package:http/http.dart' as http;
 /// 게임 내 채팅으로 버그를 알리는 유저가 많은데(2026-08-30), 채팅은 흘러가고
 /// 운영자가 놓친다. 문의는 놓치면 안 되는 신호라 따로 받는다.
 class SupportNotifier {
-  SupportNotifier({http.Client? client, String? botToken, String? chatId})
-    : _http = client ?? http.Client(),
-      _token = botToken ?? Platform.environment['TELEGRAM_BOT_TOKEN'] ?? '',
-      _chat =
-          chatId ?? Platform.environment['TELEGRAM_CHAT_ID'] ?? _defaultChat;
+  SupportNotifier({
+    http.Client? client,
+    String? botToken,
+    String? chatId,
+    String? webhookSecret,
+  }) : _http = client ?? http.Client(),
+       _token = botToken ?? Platform.environment['TELEGRAM_BOT_TOKEN'] ?? '',
+       _chat =
+           chatId ?? Platform.environment['TELEGRAM_CHAT_ID'] ?? _defaultChat,
+       _secret =
+           (webhookSecret ??
+                   Platform.environment['TELEGRAM_WEBHOOK_SECRET'] ??
+                   '')
+               .trim();
 
   /// 일일 리포트(Edge Function)와 **같은 방**. 기본값을 두는 이유는 사장님이
   /// 배포 때 넣을 것을 **토큰 하나로 줄이기** 위해서다 — 채팅방 ID 는 비밀이
@@ -26,6 +35,10 @@ class SupportNotifier {
   final http.Client _http;
   final String _token;
   final String _chat;
+
+  /// 텔레그램 웹훅 비밀값(`setWebhook` 의 `secret_token`).
+  /// 비어 있으면 답장 기능이 잠긴다 — 아무나 우편을 보내는 문을 열어두지 않는다.
+  final String _secret;
 
   /// 유저별 마지막 전송 시각 — 도배 방지.
   final Map<String, DateTime> _lastSent = {};
@@ -45,6 +58,9 @@ class SupportNotifier {
     final left = cooldown - now.difference(last);
     return left.isNegative ? Duration.zero : left;
   }
+
+  static const _header = '🐛 문의';
+  static const _divider = '──────';
 
   /// 문의를 보낸다. 성공하면 true.
   ///
@@ -66,13 +82,106 @@ class SupportNotifier {
 
     // ⚠️ 유저가 쓴 글을 **그대로** 넣는다(마크다운 파싱 안 함). 서식 문자를
     // 해석하면 남이 쓴 글로 메시지 모양을 바꿀 수 있다.
-    final text = '🐛 문의\n\n$message\n\n──────\n$ctx\nuid: $userId';
+    // ⚠️ `uid:` 줄은 답장 기능이 유저를 찾는 근거다([parseReply]) — 형식을 바꾸지 않는다.
+    final text =
+        '$_header\n\n$message\n\n$_divider\n$ctx\nuid: $userId'
+        '${replyAvailable ? '\n\n↩️ 이 메시지에 답장하면 우편으로 전달돼요' : ''}';
+    return _post({'chat_id': _chat, 'text': text});
+  }
 
+  // ───────────────────────── 답장 → 우편 ─────────────────────────
+  //
+  // 운영자가 텔레그램에서 문의 알림에 **답장**하면 그 글을 유저 우편으로 보낸다.
+  // 예전엔 알림만 오고 답할 길이 없어, 운영 패널에서 uid 를 옮겨 우편을 따로 썼다.
+  //
+  // ⚠️ 봇 하나에 웹훅은 하나다. 봇을 다른 서비스와 같이 쓰면 그쪽 수신이 끊긴다.
+
+  /// 우편 본문 상한 — 운영 패널 우편(`/admin/mail`)과 같다.
+  static const replyMaxLength = 1000;
+
+  /// 우편 본문에 붙이는 원래 문의의 최대 길이.
+  static const quoteMaxLength = 200;
+
+  bool get replyAvailable => available && _secret.isNotEmpty;
+
+  /// 최근 처리한 update_id — 텔레그램이 재전송해도 우편이 두 통 가지 않게.
+  final List<int> _seenUpdates = [];
+
+  /// 웹훅 요청이 정말 텔레그램에서 왔는지(비밀 헤더 비교, 상수 시간).
+  bool webhookAuthorized(String? header) {
+    if (!replyAvailable) return false;
+    final given = (header ?? '').trim();
+    if (given.length != _secret.length) return false;
+    var diff = 0;
+    for (var i = 0; i < given.length; i++) {
+      diff |= given.codeUnitAt(i) ^ _secret.codeUnitAt(i);
+    }
+    return diff == 0;
+  }
+
+  /// 텔레그램 update 에서 "문의 알림에 단 답장"을 찾는다. 해당 없으면 null.
+  ///
+  /// 받는 조건: 우리 채팅방 · 글이 있음 · 답장 대상이 `uid:` 줄을 가진 문의 알림.
+  /// 같은 update_id 는 한 번만 돌려준다.
+  SupportReply? parseReply(Map<String, dynamic> update) {
+    final msg = update['message'];
+    if (msg is! Map) return null;
+    final chat = msg['chat'];
+    if (chat is! Map || '${chat['id']}' != _chat) return null;
+    final text = (msg['text'] as String?)?.trim() ?? '';
+    if (text.isEmpty) return null;
+    final origin = msg['reply_to_message'];
+    if (origin is! Map) return null;
+    final originText = origin['text'] as String? ?? '';
+    if (!originText.startsWith(_header)) return null;
+    final uid = RegExp(
+      r'^uid: ([0-9a-fA-F-]{36})$',
+      multiLine: true,
+    ).firstMatch(originText)?.group(1);
+    if (uid == null) return null;
+
+    final updateId = update['update_id'];
+    if (updateId is int) {
+      if (_seenUpdates.contains(updateId)) return null;
+      _seenUpdates.add(updateId);
+      if (_seenUpdates.length > 200) _seenUpdates.removeAt(0);
+    }
+
+    // 원래 문의 본문 = 머리말과 구분선 사이.
+    final start = originText.indexOf('\n\n');
+    final end = originText.lastIndexOf('\n\n$_divider');
+    var quote = (start >= 0 && end > start)
+        ? originText.substring(start + 2, end).trim()
+        : '';
+    if (quote.length > quoteMaxLength) {
+      quote = '${quote.substring(0, quoteMaxLength)}…';
+    }
+
+    final messageId = msg['message_id'];
+    return SupportReply(
+      userId: uid.toLowerCase(),
+      text: text,
+      quote: quote,
+      messageId: messageId is int ? messageId : null,
+    );
+  }
+
+  /// 방에 짧은 결과 알림(발송됨/실패). [replyTo] 가 있으면 그 메시지에 답장으로.
+  Future<bool> notify(String text, {int? replyTo}) async {
+    if (!available) return false;
+    return _post({
+      'chat_id': _chat,
+      'text': text,
+      if (replyTo != null) 'reply_to_message_id': replyTo,
+    });
+  }
+
+  Future<bool> _post(Map<String, Object?> body) async {
     try {
       final res = await _http.post(
         Uri.parse('https://api.telegram.org/bot$_token/sendMessage'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'chat_id': _chat, 'text': text}),
+        body: jsonEncode(body),
       );
       if (res.statusCode >= 300) {
         stderr.writeln('[support] 텔레그램 실패: ${res.statusCode}');
@@ -83,5 +192,37 @@ class SupportNotifier {
       stderr.writeln('[support] 텔레그램 예외: $e');
       return false;
     }
+  }
+}
+
+/// 문의 알림에 단 운영자 답장 1건.
+class SupportReply {
+  const SupportReply({
+    required this.userId,
+    required this.text,
+    required this.quote,
+    this.messageId,
+  });
+
+  final String userId;
+
+  /// 운영자가 쓴 답장.
+  final String text;
+
+  /// 원래 문의(잘라낸 것). 비어 있을 수 있다.
+  final String quote;
+
+  /// 운영자 답장 메시지 id — 결과 알림을 그 메시지에 붙인다.
+  final int? messageId;
+
+  /// 우편 본문. 답장이 먼저(편지함 미리보기 두 줄에 보이게), 문의 원문은 뒤에.
+  /// 합쳐서 상한을 넘으면 원문을 뺀다. 답장 자체가 넘으면 자르고 알린다.
+  ({String body, bool truncated}) mailBody() {
+    const max = SupportNotifier.replyMaxLength;
+    if (text.length > max) {
+      return (body: text.substring(0, max), truncated: true);
+    }
+    final withQuote = quote.isEmpty ? text : '$text\n\n── 문의 내용 ──\n$quote';
+    return (body: withQuote.length <= max ? withQuote : text, truncated: false);
   }
 }

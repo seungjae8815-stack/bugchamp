@@ -265,3 +265,53 @@ uid: 3f2a...
 
 유저당 **1분에 한 번**. 넘으면 429 와 남은 시간을 돌려주고 앱이 안내한다.
 본문은 500자에서 자른다(텔레그램이 잘라 버리면 뒷부분이 사라진다).
+
+## 텔레그램 답장 → 유저 우편 (2026-09-15 신설)
+
+문의 알림에 텔레그램 **답장(Reply)** 으로 글을 쓰면, 서버가 알림의 `uid:` 줄로 유저를 찾아
+**제목 `[운영자 답변]` 글 우편**(보상 0)을 보낸다. 성공하면 봇이 그 답장에 `✅ 우편 발송됨` 을 단다.
+
+- 경로: 텔레그램 → `POST /telegram/webhook`(권위 서버) → `user_mail` 삽입.
+- 인증: `setWebhook` 때 정한 **비밀 헤더**(`TELEGRAM_WEBHOOK_SECRET`). 값이 없으면 기능이 잠긴다(401).
+- 받는 것: 우리 방(`TELEGRAM_CHAT_ID`) · `🐛 문의` 로 시작하고 `uid:` 줄이 있는 알림에 단 답장만.
+  나머지(일일 리포트에 단 답장·일반 메시지)는 조용히 무시한다.
+- 우편 본문 = 답장 → `── 문의 내용 ──` → 원래 문의(200자). 합쳐 1000자를 넘으면 원문을 빼고,
+  답장 자체가 1000자를 넘으면 잘라서 보내고 방에 "잘림"을 알린다.
+- 앱: 글만 있는 우편은 버튼이 **확인**이고, 누르면 전문 팝업을 먼저 띄운 뒤 읽음 처리한다.
+  "모두 받기"에는 포함되지 않는다(읽기 전에 사라지지 않게). 구버전 앱에서는 "받기"로 보이고
+  본문이 2줄까지만 보인다.
+- ⚠️ `send()` 의 `uid: <uuid>` 줄 형식을 바꾸면 답장 기능이 끊긴다.
+
+### ⚠️ 봇 하나에 웹훅은 하나
+
+`setWebhook` 을 하면 그 봇의 모든 수신(update)이 이 서버로 온다. **아스트레일과 봇을 같이 쓰므로**,
+아스트레일이 봇으로 메시지를 **받고** 있다면(웹훅이든 `getUpdates` 폴링이든) 그쪽이 끊긴다.
+아스트레일이 보내기만 한다면 문제없다 — **2026-09-15 확인: 아스트레일은 보내기만 한다**(같은 봇 그대로 사용). 모르겠으면 **곤충키우기 전용 봇**을 새로 만든다
+(@BotFather → `/newbot` → 새 봇에게 `/start` 한 번 → 새 토큰을 `TELEGRAM_BOT_TOKEN` 에).
+일일 리포트(Supabase 쪽 토큰)는 그대로 둬도 된다.
+
+먼저 현재 웹훅 확인 — `url` 이 비어 있지 않으면 누군가 이미 쓰고 있다:
+
+```powershell
+Invoke-RestMethod "https://api.telegram.org/bot<봇토큰>/getWebhookInfo"
+```
+
+### 설정 — 사장님 작업 (1회, 서버 배포 후)
+
+```powershell
+# 1) 비밀값 만들기(영문·숫자만 허용)
+$secret = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 40 | ForEach-Object { [char]$_ })
+
+# 2) Cloud Run 에 넣기
+gcloud run services update bugchamp-server --region asia-northeast3 `
+  --update-env-vars TELEGRAM_WEBHOOK_SECRET=$secret
+
+# 3) 텔레그램에 웹훅 등록(message 만 받는다)
+Invoke-RestMethod -Method Post "https://api.telegram.org/bot<봇토큰>/setWebhook" `
+  -ContentType "application/json" `
+  -Body (@{ url = "https://bugchamp-server-867649520275.asia-northeast3.run.app/telegram/webhook"; secret_token = $secret; allowed_updates = @("message") } | ConvertTo-Json)
+```
+
+확인: 앱에서 문의를 보내고 → 텔레그램에서 그 알림에 답장 → `✅ 우편 발송됨` 이 달리고 게임 편지함에 뜨는지 본다.
+안 되면 `getWebhookInfo` 의 `last_error_message`(401 이면 비밀값 불일치)와 서버 로그를 본다.
+끄려면 `Invoke-RestMethod "https://api.telegram.org/bot<봇토큰>/deleteWebhook"`.

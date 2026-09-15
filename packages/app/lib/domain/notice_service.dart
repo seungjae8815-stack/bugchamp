@@ -60,6 +60,9 @@ class ServerMail {
   final int mineral;
   final int sap;
 
+  /// 보상 없이 글만 있는 우편(텔레그램으로 보낸 운영자 답변 등).
+  bool get textOnly => gold == 0 && materials.isEmpty;
+
   /// 수령 기한(UTC). null 이면 무기한.
   final DateTime? endsAt;
 

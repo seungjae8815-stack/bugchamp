@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:server/src/app.dart';
 import 'package:server/src/game_config.dart';
 import 'package:server/src/state_store.dart';
+import 'package:server/src/support.dart';
 import 'package:server/src/verifier.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -1363,4 +1364,152 @@ void main() {
       expect(res.statusCode, 200);
     });
   });
+  group('텔레그램 답장 → 우편(/telegram/webhook)', () {
+    const secret = 'webhook-secret-123';
+    const uid = '3f2a0000-1111-2222-3333-444455556666';
+    late List<Map<String, dynamic>> sent; // 봇이 방에 보낸 메시지
+
+    Handler hookHandler({String webhookSecret = secret}) {
+      fake = _Fake({'user-1': mySave.toJson()});
+      sent = [];
+      final telegram = _TelegramFake(sent);
+      return buildHandler(
+        config: ServerConfig(
+          supabaseUrl: _url,
+          serviceRoleKey: 'service-role',
+          anonKey: 'anon',
+        ),
+        store: StateStore(
+          supabaseUrl: _url,
+          serviceRoleKey: 'service-role',
+          client: fake,
+        ),
+        jwtVerifier: verifierFor(signingKey),
+        gameConfig: gameConfig,
+        speciesById: {'a': species},
+        clock: () => _t,
+        adminKey: '',
+        supportNotifier: SupportNotifier(
+          client: telegram,
+          botToken: 'bot-token',
+          chatId: '1025640548',
+          webhookSecret: webhookSecret,
+        ),
+      );
+    }
+
+    Map<String, dynamic> update({
+      int id = 1,
+      String chat = '1025640548',
+      String text = '확인해 보니 복구해 드렸어요',
+      String? origin,
+    }) => {
+      'update_id': id,
+      'message': {
+        'message_id': 77,
+        'chat': {'id': int.parse(chat)},
+        'text': text,
+        'reply_to_message': {
+          'text':
+              origin ??
+              '🐛 문의\n\n부화했는데 곤충이 없어져요\n\n──────\n닉네임: 크론병\nuid: $uid',
+        },
+      },
+    };
+
+    Future<Response> hook(Handler h, Object body, {String? k = secret}) async =>
+        h(
+          Request(
+            'POST',
+            Uri.parse('http://localhost/telegram/webhook'),
+            headers: {
+              if (k != null) 'x-telegram-bot-api-secret-token': k,
+              'content-type': 'application/json',
+            },
+            body: jsonEncode(body),
+          ),
+        );
+
+    test('문의 알림에 답장하면 그 유저에게 글 우편이 간다', () async {
+      final h = hookHandler();
+      final res = await hook(h, update());
+      expect(res.statusCode, 200);
+      final row = fake.lastSaved!;
+      expect(row['user_id'], uid);
+      expect(row['title'], '[운영자 답변]');
+      expect(row['body'], startsWith('확인해 보니 복구해 드렸어요'));
+      expect(row['body'], contains('부화했는데 곤충이 없어져요'));
+      expect(row['jelly'], 0);
+      expect(row['gold'], 0);
+      expect(sent.single['text'], contains('발송됨'));
+      expect(sent.single['reply_to_message_id'], 77);
+    });
+
+    test('비밀 헤더가 틀리거나 없으면 거절 — 아무나 우편을 못 보낸다', () async {
+      final h = hookHandler();
+      expect((await hook(h, update(), k: 'wrong')).statusCode, 401);
+      expect((await hook(h, update(), k: null)).statusCode, 401);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('비밀값을 설정하지 않은 배포는 잠긴다', () async {
+      final h = hookHandler(webhookSecret: '');
+      expect((await hook(h, update(), k: '')).statusCode, 401);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('다른 방·다른 알림에 단 답장·일반 메시지는 무시(200)', () async {
+      final h = hookHandler();
+      final otherChat = await hook(h, update(chat: '999'));
+      expect(otherChat.statusCode, 200);
+      await hook(h, update(id: 2, origin: '🐛 곤충키우기 (Bug Champ)\n리포트'));
+      await hook(h, {
+        'update_id': 3,
+        'message': {
+          'chat': {'id': 1025640548},
+          'text': '그냥 메시지',
+        },
+      });
+      expect(fake.lastSaved, isNull);
+      expect(sent, isEmpty);
+    });
+
+    test('긴 답장은 1000자에서 자르고 방에 알린다 · 넘치면 문의 원문을 뺀다', () async {
+      final h = hookHandler();
+      await hook(h, update(text: '가' * 1200));
+      expect(fake.lastSaved!['body'], hasLength(1000));
+      expect(sent.single['text'], contains('잘림'));
+
+      final fit = const SupportReply(userId: uid, text: '', quote: '문의');
+      final nearMax = SupportReply(
+        userId: uid,
+        text: '나' * 990,
+        quote: fit.quote,
+      );
+      expect(nearMax.mailBody().body, '나' * 990); // 원문을 붙이면 넘친다
+      expect(nearMax.mailBody().truncated, isFalse);
+    });
+
+    test('텔레그램이 같은 update 를 다시 보내도 우편은 한 통', () async {
+      final h = hookHandler();
+      await hook(h, update(id: 5));
+      fake.lastSaved = null;
+      await hook(h, update(id: 5));
+      expect(fake.lastSaved, isNull);
+      expect(sent.length, 1);
+    });
+  });
+}
+
+/// 텔레그램 Bot API 가짜 — 보낸 본문만 모은다.
+class _TelegramFake extends http.BaseClient {
+  _TelegramFake(this.sent);
+  final List<Map<String, dynamic>> sent;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final raw = await request.finalize().bytesToString();
+    sent.add(jsonDecode(raw) as Map<String, dynamic>);
+    return http.StreamedResponse(Stream.value(utf8.encode('{"ok":true}')), 200);
+  }
 }

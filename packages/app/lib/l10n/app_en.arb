@@ -1556,6 +1556,8 @@
   "mailNoticeSection": "From the team",
   "mailClaim": "Claim",
   "mailClaimAll": "Claim all",
+  "mailReadMore": "Read more",
+  "mailConfirm": "OK",
   "gachaTitle": "Egg Draw",
   "gachaDesc": "Potential 3★+ guaranteed (wild never gives 5★) · 10x variant odds",
   "gachaPityLeft": "Legendary guaranteed within {n} draws",

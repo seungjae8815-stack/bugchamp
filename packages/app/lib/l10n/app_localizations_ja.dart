@@ -2468,6 +2468,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mailClaimAll => 'すべて受け取る';
 
   @override
+  String get mailReadMore => '全文を見る';
+
+  @override
+  String get mailConfirm => '確認';
+
+  @override
   String get gachaTitle => '虫のタマゴガチャ';
 
   @override

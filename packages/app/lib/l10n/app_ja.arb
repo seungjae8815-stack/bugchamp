@@ -816,6 +816,8 @@
   "mailNoticeSection": "運営からのメール",
   "mailClaim": "受け取る",
   "mailClaimAll": "すべて受け取る",
+  "mailReadMore": "全文を見る",
+  "mailConfirm": "確認",
   "gachaTitle": "虫のタマゴガチャ",
   "gachaDesc": "ポテンシャル3★以上確定 (野生では5★が出ません) · 色違い確率10倍",
   "gachaPityLeft": "あと{n}回で伝説確定",
