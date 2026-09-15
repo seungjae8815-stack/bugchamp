@@ -2732,6 +2732,42 @@ class AppLocalizationsKo extends AppLocalizations {
   String get skillSlotsFull => '스킬 칸이 가득 찼어요';
 
   @override
+  String skillShardPop(String n) {
+    return '조각 +$n';
+  }
+
+  @override
+  String skillGradeWild(String grade) {
+    return '$grade 만능';
+  }
+
+  @override
+  String get skillGradeUp => '승급';
+
+  @override
+  String skillGradeUpTitle(String from, String to) {
+    return '$from 조각 → $to 만능 조각';
+  }
+
+  @override
+  String skillGradeUpDesc(String ratio, String from, String to) {
+    return '$from 조각 $ratio개로 $to 만능 조각 1개를 만들어요. 만능 조각은 $to 스킬 아무 데나 쓸 수 있어요. 재료로 쓸 조각을 고르세요.';
+  }
+
+  @override
+  String skillGradeUpMake(String n) {
+    return '$n개 만들기';
+  }
+
+  @override
+  String skillGradeUpDone(String n, String grade) {
+    return '$grade 만능 조각 $n개를 만들었어요';
+  }
+
+  @override
+  String get skillGradeUpPick => '재료로 쓸 조각을 골라 주세요';
+
+  @override
   String get skillEquip => '장착';
 
   @override
@@ -2744,11 +2780,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get skillNextSlotHint => '새 난이도에 가면 칸이 늘어나요';
-
-  @override
-  String skillAnyShards(String n) {
-    return '만능 조각 $n';
-  }
 
   @override
   String skillShardProgress(String have, String need) {
@@ -2815,7 +2846,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get skillActiveSoon => '액티브 스킬은 곧 열려요';
 
   @override
-  String get skillHowToGet => '사냥터 보스를 잡으면 스킬 조각이 나와요';
+  String get skillHowToGet => '사냥터 보스(첫 처치 확정)와 정예 몬스터에게서 스킬 조각이 나와요';
 
   @override
   String skillCooldown(String s) {

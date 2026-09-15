@@ -381,21 +381,22 @@ class GameActions {
     return sum;
   }
 
-  /// 한 번의 업로드에서 인정하는 **보스 재처치** 수. 보스는 100마리를 잡아야
-  /// 도전이 열려 업로드 주기(60초)에 한 번도 어렵다 — 네트워크가 끊긴 채 몇 시간
-  /// 논 경우까지 덮도록 넉넉히 둔다.
-  static const _skillRepeatKillSlack = 30;
+  /// 한 번의 업로드에서 인정하는 **확률 조각 드롭**(정예·보스 재처치) 수.
+  /// 온라인 처치는 시간당 약 1,600마리 × 정예 6% × 10% ≈ 10번이라 업로드 주기(60초)에
+  /// 한 번도 드물다 — 네트워크가 끊긴 채 몇 시간 논 경우까지 덮도록 넉넉히 둔다.
+  static const _skillDropSlack = 60;
 
   /// 스킬 필드 강제(§2.8). 처리는 기기 권위라 **위조를 완전히 막지는 못한다** —
   /// 결투·대회에 싣지 않는 것이 방어선이고, 여기는 세 가지를 막는다.
   ///
   /// 1. **스킬을 모르는 앱의 업로드가 조각·수련을 지우는 것.** 새 앱은
-  ///    `skillAnyShards` 를 항상 싣는다. 그 키가 없으면 저장본의 스킬 필드를 지킨다
+  ///    `skillGradeShards` 를 항상 싣는다. 그 키가 없으면 저장본의 스킬 필드를 지킨다
   ///    (`bossDex`·`maxTierReached` 와 같은 사고 — 구버전은 모르는 키를 빼고 올린다).
-  /// 2. **조각을 쏟아 넣는 것.** 조각 가치(스킬 조각 × 등급 환산 + 만능)의 증가가
-  ///    허용치(새로 잡은 보스 × 첫 처치 최대 + 재처치 여유)를 넘으면 저장본으로.
-  /// 3. **조각 없이 레벨을 올리는 것.** 오른 레벨의 비용(해금·수련 조각의 가치)을
-  ///    이번 업로드에서 줄어든 조각 가치 + 허용치가 덮지 못하면 저장본으로.
+  /// 2. **조각을 쏟아 넣는 것.** 조각 수(스킬 조각 + 등급 만능)의 증가가 허용치
+  ///    (새로 잡은 보스 × 첫 처치 + 확률 드롭 여유 × 가장 큰 한 번)를 넘으면 저장본으로.
+  ///    등급 승급은 조각 수를 줄이기만 한다(10 → 1).
+  /// 3. **조각 없이 레벨을 올리는 것.** 오른 레벨의 비용(해금·수련 조각 수)을
+  ///    이번 업로드에서 줄어든 조각 수 + 허용치가 덮지 못하면 저장본으로.
   ///    수련은 시작할 때 조각을 내므로, 저장본에서 수련 중이던 스킬의 한 레벨은 선불이다.
   ///
   /// 레벨 ≤ 만렙 · 장착은 보유한 것만·열린 칸까지는 `enforceSkillRules`(앱 로드와 같은 함수).
@@ -405,75 +406,61 @@ class GameActions {
     Map<String, dynamic> clientJson,
     SkillConfig cfg,
   ) {
+    SaveGame restoreFromStored(
+      SaveGame s, {
+      required Map<String, int> levels,
+    }) => s.copyWith(
+      skillLevels: levels,
+      skillShards: stored.skillShards,
+      skillGradeShards: stored.skillGradeShards,
+      skillTrainingId: stored.skillTrainingId,
+      skillTrainingEndsAt: stored.skillTrainingEndsAt,
+      clearSkillTraining: stored.skillTrainingId == null,
+    );
+
     var out = client;
-    if (!clientJson.containsKey('skillAnyShards')) {
+    if (!clientJson.containsKey('skillGradeShards')) {
       final levels = {...stored.skillLevels};
       for (final e in client.skillLevels.entries) {
         levels[e.key] = max(levels[e.key] ?? 0, e.value);
       }
-      out = out.copyWith(
-        skillLevels: levels,
-        skillShards: stored.skillShards,
-        skillAnyShards: stored.skillAnyShards,
-        skillTrainingId: stored.skillTrainingId,
-        skillTrainingEndsAt: stored.skillTrainingEndsAt,
-        clearSkillTraining: stored.skillTrainingId == null,
-      );
+      out = restoreFromStored(out, levels: levels);
     }
     out = enforceSkillRules(out, cfg);
 
-    int value(SaveGame s) {
-      var v = s.skillAnyShards;
-      for (final e in s.skillShards.entries) {
-        final def = cfg.byId(e.key);
-        if (def != null) v += e.value * cfg.anyValueOf(def.grade);
-      }
-      return v;
-    }
+    int count(SaveGame s) =>
+        s.skillShards.values.fold(0, (a, b) => a + b) +
+        s.skillGradeShards.values.fold(0, (a, b) => a + b);
 
-    var perRoll = 0;
-    for (final g in kSkillGrades) {
-      perRoll = max(perRoll, (cfg.shardsPerRoll[g] ?? 0) * cfg.anyValueOf(g));
-    }
+    final biggestDrop = [
+      cfg.eliteShards,
+      ...cfg.bossRepeatShardsByTier,
+    ].fold(0, max);
     final newBosses = max(0, out.bossDex.length - stored.bossDex.length);
     final allow =
-        newBosses * cfg.bossFirstKillRolls * perRoll +
-        _skillRepeatKillSlack * cfg.bossRepeatRolls * perRoll;
+        newBosses * cfg.bossFirstKillShards + _skillDropSlack * biggestDrop;
 
     var levelCost = 0;
     for (final def in cfg.skills) {
       final from = stored.skillLevels[def.id] ?? 0;
       final to = out.skillLevels[def.id] ?? 0;
-      final unit = cfg.anyValueOf(def.grade);
       for (var lv = from; lv < to; lv++) {
         if (lv == from && lv > 0 && stored.skillTrainingId == def.id) continue;
-        levelCost +=
-            (lv == 0 ? cfg.unlockShards : cfg.shardsForLevel(def, lv)) * unit;
+        levelCost += lv == 0 ? cfg.unlockShards : cfg.shardsForLevel(def, lv);
       }
     }
-    final gained = value(out) - value(stored) + levelCost;
-    if (gained > allow) {
+    if (count(out) - count(stored) + levelCost > allow) {
       final levels = {
         for (final e in out.skillLevels.entries)
           e.key: min(e.value, stored.skillLevels[e.key] ?? 0),
       }..removeWhere((_, v) => v <= 0);
-      out = enforceSkillRules(
-        out.copyWith(
-          skillLevels: levels,
-          skillShards: stored.skillShards,
-          skillAnyShards: stored.skillAnyShards,
-          skillTrainingId: stored.skillTrainingId,
-          skillTrainingEndsAt: stored.skillTrainingEndsAt,
-          clearSkillTraining: stored.skillTrainingId == null,
-        ),
-        cfg,
-      );
+      out = enforceSkillRules(restoreFromStored(out, levels: levels), cfg);
     }
     return _sameSkills(out, client) ? client : out;
   }
 
   static bool _sameSkills(SaveGame a, SaveGame b) =>
-      a.skillAnyShards == b.skillAnyShards &&
+      _sameIntMap(a.skillGradeShards, b.skillGradeShards) &&
       a.skillTrainingId == b.skillTrainingId &&
       a.skillTrainingEndsAt == b.skillTrainingEndsAt &&
       _sameIntMap(a.skillLevels, b.skillLevels) &&

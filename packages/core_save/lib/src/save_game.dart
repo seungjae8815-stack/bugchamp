@@ -500,7 +500,7 @@ class SaveGame {
     this.skillLevels = const {},
     this.equippedSkills = const [],
     this.skillShards = const {},
-    this.skillAnyShards = 0,
+    this.skillGradeShards = const {},
     this.skillTrainingId,
     this.skillTrainingEndsAt,
     this.forgeLevel = 0,
@@ -940,8 +940,12 @@ class SaveGame {
   /// 크래시가 났다 — 별도 필드면 구버전은 필드째 무시한다.
   final Map<String, int> skillShards;
 
-  /// 만능 조각 — 만렙 스킬로 들어온 조각이 바뀐 것. 어떤 스킬에도 넣는다.
-  final int skillAnyShards;
+  /// 등급 만능 조각(`Grade.key` → 개수) — 같은 등급 조각 10개를 올려 만든 한 단계
+  /// 위 등급의 조각. 그 등급 스킬 아무 데나 1:1 로 쓴다(§2.8).
+  final Map<String, int> skillGradeShards;
+
+  /// [g] 등급 만능 조각 수.
+  int gradeShards(Grade g) => skillGradeShards[g.key] ?? 0;
 
   /// 수련 중인 스킬(한 번에 하나). 끝나는 시각과 한 쌍이다.
   final String? skillTrainingId;
@@ -1219,7 +1223,7 @@ class SaveGame {
     Map<String, int>? skillLevels,
     List<String>? equippedSkills,
     Map<String, int>? skillShards,
-    int? skillAnyShards,
+    Map<String, int>? skillGradeShards,
     String? skillTrainingId,
     DateTime? skillTrainingEndsAt,
     bool clearSkillTraining = false,
@@ -1310,7 +1314,7 @@ class SaveGame {
     skillLevels: skillLevels ?? this.skillLevels,
     equippedSkills: equippedSkills ?? this.equippedSkills,
     skillShards: skillShards ?? this.skillShards,
-    skillAnyShards: skillAnyShards ?? this.skillAnyShards,
+    skillGradeShards: skillGradeShards ?? this.skillGradeShards,
     // 수련이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
     skillTrainingId: clearSkillTraining
         ? null
@@ -1541,7 +1545,9 @@ class SaveGame {
     skillShards: _intMapFromJson(
       json['skillShards'] as Map<String, dynamic>? ?? const {},
     ),
-    skillAnyShards: (json['skillAnyShards'] as num?)?.toInt() ?? 0,
+    skillGradeShards: _intMapFromJson(
+      json['skillGradeShards'] as Map<String, dynamic>? ?? const {},
+    ),
     // 둘 중 하나라도 깨져 있으면 수련 없음으로 읽는다 — 한쪽만 남으면
     // "끝나는 시각 없는 수련"이 영영 안 끝난다.
     skillTrainingId:
@@ -1691,10 +1697,10 @@ class SaveGame {
     if (skillLevels.isNotEmpty) 'skillLevels': skillLevels,
     if (equippedSkills.isNotEmpty) 'equippedSkills': equippedSkills,
     if (skillShards.isNotEmpty) 'skillShards': skillShards,
-    // ⚠️ **0 이어도 항상 싣는다** — 서버가 "이 앱은 스킬 필드를 안다"를 알아보는
+    // ⚠️ **비어 있어도 항상 싣는다** — 서버가 "이 앱은 스킬 필드를 안다"를 알아보는
     // 표식이다. 이 키가 없는 업로드(스킬 이전 앱)는 조각·수련을 모르고 올린 것이라
     // 서버가 저장본 값을 지킨다(`GameActions._enforceSkills`).
-    'skillAnyShards': skillAnyShards,
+    'skillGradeShards': skillGradeShards,
     if (skillTrainingId != null && skillTrainingEndsAt != null) ...{
       'skillTrainingId': skillTrainingId,
       'skillTrainingEndsAt': skillTrainingEndsAt!.toUtc().toIso8601String(),

@@ -40,20 +40,19 @@ void main() {
       expect(s.skillLevels, isEmpty);
     });
 
-    test('만렙 스킬로 들어온 조각은 만능 조각(등급 환산값)으로 바뀐다', () {
+    test('만렙 스킬 조각은 그대로 쌓인다 — 등급 승급 재료', () {
       final maxed = fresh().copyWith(skillLevels: {legend.id: cfg.maxLevel});
       final s = grantSkillShards(maxed, cfg, {legend.id: 4});
-      expect(s.skillShards[legend.id], isNull);
-      expect(s.skillAnyShards, 4 * cfg.anyValueOf(Grade.legendary));
+      expect(s.skillShards[legend.id], 4);
     });
   });
 
   group('수련', () {
-    SaveGame owned({int lv = 1, int shards = 0, int any = 0, int jelly = 0}) =>
+    SaveGame owned({int lv = 1, int shards = 0, int wild = 0, int jelly = 0}) =>
         fresh().copyWith(
           skillLevels: {common.id: lv},
           skillShards: shards > 0 ? {common.id: shards} : const {},
-          skillAnyShards: any,
+          skillGradeShards: wild > 0 ? {common.grade.key: wild} : const {},
           materials: {MaterialKind.jelly: jelly},
         );
 
@@ -81,24 +80,23 @@ void main() {
       expect(busy.error, 'training_busy');
     });
 
-    test('조각이 모자라면 만능으로 메운다 — 모자란 1개당 그 등급 환산값', () {
+    test('조각이 모자라면 그 등급 만능 조각으로 1:1 메운다', () {
       final need = cfg.shardsForLevel(common, 1);
-      final value = cfg.anyValueOf(common.grade);
       final short = startSkillTraining(
-        owned(shards: need - 2, any: 2 * value - 1),
+        owned(shards: need - 2, wild: 1),
         cfg,
         common.id,
         _t,
       );
       expect(short.error, 'not_enough_shards');
       final ok = startSkillTraining(
-        owned(shards: need - 2, any: 2 * value),
+        owned(shards: need - 2, wild: 2),
         cfg,
         common.id,
         _t,
       );
       expect(ok.isOk, isTrue);
-      expect(ok.save!.skillAnyShards, 0);
+      expect(ok.save!.gradeShards(common.grade), 0);
       expect(ok.save!.skillShards[common.id], isNull);
     });
 
@@ -153,19 +151,68 @@ void main() {
       expect(op.save!.materialCount(MaterialKind.jelly), 0);
       expect(op.save!.skillLevels[common.id], 2);
     });
+  });
 
-    test('만렙에 닿으면 남은 그 스킬 조각이 만능으로 바뀐다', () {
-      final need = cfg.shardsForLevel(common, cfg.maxLevel - 1);
-      final s = startSkillTraining(
-        owned(lv: cfg.maxLevel - 1, shards: need + 5),
+  group('등급 승급', () {
+    final commons = cfg.skills.where((d) => d.grade == Grade.common).toList();
+    final ratio = cfg.gradeUpRatio;
+
+    test('같은 등급 조각 N개 → 위 등급 만능 1개 · 고른 소스 순서대로 꺼낸다', () {
+      final s = fresh().copyWith(
+        skillShards: {commons[0].id: ratio + 3, commons[1].id: ratio},
+      );
+      final op = gradeUpShards(
+        s,
         cfg,
-        common.id,
-        _t,
-      ).save!;
-      final done = completeSkillTraining(s, cfg, s.skillTrainingEndsAt!).save!;
-      expect(done.skillLevels[common.id], cfg.maxLevel);
-      expect(done.skillShards[common.id], isNull);
-      expect(done.skillAnyShards, 5 * cfg.anyValueOf(common.grade));
+        from: Grade.common,
+        sources: [commons[0].id, commons[1].id],
+        times: 2,
+      );
+      expect(op.isOk, isTrue);
+      final out = op.save!;
+      expect(out.gradeShards(Grade.rare), 2);
+      expect(out.skillShards[commons[0].id], isNull);
+      expect(out.skillShards[commons[1].id], 3);
+    });
+
+    test('고르지 않은 스킬 조각은 건드리지 않는다 · 모자라면 거절', () {
+      final s = fresh().copyWith(
+        skillShards: {commons[0].id: ratio - 1, commons[1].id: 999},
+      );
+      final op = gradeUpShards(
+        s,
+        cfg,
+        from: Grade.common,
+        sources: [commons[0].id],
+        times: 1,
+      );
+      expect(op.error, 'not_enough_shards');
+    });
+
+    test('만능 조각도 재료가 된다 — 희귀 만능 N개 → 영웅 만능', () {
+      final s = fresh().copyWith(skillGradeShards: {Grade.rare.key: ratio});
+      final op = gradeUpShards(
+        s,
+        cfg,
+        from: Grade.rare,
+        sources: const [kGradeShardSource],
+        times: 1,
+      );
+      expect(op.save!.gradeShards(Grade.rare), 0);
+      expect(op.save!.gradeShards(Grade.epic), 1);
+    });
+
+    test('전설은 더 올릴 곳이 없다', () {
+      expect(
+        gradeUpShards(
+          fresh(),
+          cfg,
+          from: Grade.legendary,
+          sources: const [],
+          times: 1,
+        ).error,
+        'max_grade',
+      );
     });
   });
 
@@ -194,8 +241,8 @@ void main() {
     });
   });
 
-  group('보스 조각', () {
-    test('같은 시드면 같은 조각 · 해금까지 이어진다', () {
+  group('보스·정예 조각', () {
+    test('같은 시드면 같은 조각 · 첫 처치는 확정', () {
       final a = grantBossShards(
         fresh(),
         cfg,
@@ -211,8 +258,20 @@ void main() {
         firstKill: true,
       );
       expect(a.shards, b.shards);
-      expect(a.shards, isNotEmpty);
+      expect(a.shards.values.single, cfg.bossFirstKillShards);
       expect(a.save.skillShards, b.save.skillShards);
+    });
+
+    test('정예 조각은 확률 — 나오면 세이브에 들어간다', () {
+      var hits = 0;
+      for (var i = 0; i < 500; i++) {
+        final r = grantEliteShards(fresh(), cfg, Random(i), tier: 0);
+        if (r.shards.isEmpty) continue;
+        hits++;
+        expect(r.save.skillShards, r.shards);
+      }
+      expect(hits, greaterThan(0));
+      expect(hits, lessThan(500));
     });
   });
 
@@ -223,14 +282,14 @@ void main() {
         skillLevels: {ids[0]: 999, ids[1]: 1, ids[2]: 1, ids[3]: 0},
         equippedSkills: [ids[0], ids[0], ids[3], ids[1], ids[2]],
         skillShards: {ids[0]: -4, ids[1]: 3},
-        skillAnyShards: -10,
+        skillGradeShards: {'rare': -10, 'epic': 2},
       );
       final s = enforceSkillRules(bad, cfg);
       expect(s.skillLevels[ids[0]], cfg.maxLevel);
       expect(s.skillLevels.containsKey(ids[3]), isFalse);
       expect(s.equippedSkills, [ids[0], ids[1]]); // 쉬움 = 2칸
       expect(s.skillShards, {ids[1]: 3});
-      expect(s.skillAnyShards, 0);
+      expect(s.skillGradeShards, {'epic': 2});
     });
 
     test('규칙 안이면 같은 객체를 돌려준다(불필요한 커밋 방지)', () {
@@ -246,7 +305,7 @@ void main() {
     test('왕복 · 빈 값은 싣지 않는다 · 반쪽 수련은 수련 없음으로', () {
       final s = fresh().copyWith(
         skillShards: {common.id: 7},
-        skillAnyShards: 12,
+        skillGradeShards: {'legendary': 12},
         skillTrainingId: common.id,
         skillTrainingEndsAt: _t,
       );
@@ -254,13 +313,13 @@ void main() {
         jsonDecode(jsonEncode(s.toJson())) as Map<String, dynamic>,
       );
       expect(back.skillShards, {common.id: 7});
-      expect(back.skillAnyShards, 12);
+      expect(back.gradeShards(Grade.legendary), 12);
       expect(back.skillTrainingId, common.id);
       expect(back.skillTrainingEndsAt, _t);
 
       final empty = fresh().toJson();
-      // skillAnyShards 는 표식이라 0 이어도 싣는다(서버가 구버전 업로드를 알아본다).
-      expect(empty['skillAnyShards'], 0);
+      // skillGradeShards 는 표식이라 비어 있어도 싣는다(서버가 구버전 업로드를 알아본다).
+      expect(empty['skillGradeShards'], isEmpty);
       for (final k in [
         'skillShards',
         'skillTrainingId',

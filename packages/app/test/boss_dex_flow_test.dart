@@ -103,7 +103,7 @@ void main() {
       first += total(got);
       final s = c.read(saveControllerProvider).requireValue;
       // 받은 조각은 세이브에 들어가 있다(해금으로 빠진 몫은 레벨로).
-      expect(total(s.skillShards) + s.skillLevels.length * 10, total(got));
+      expect(total(s.skillShards) + s.skillLevels.length * 100, total(got));
 
       final again = make(
         s.copyWith(stageNumber: run.zoneStartStage(2), skillShards: const {}),

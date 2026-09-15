@@ -11,7 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:core_save/core_save.dart';
 import 'package:core_save/core_save.dart'
     as core_skill
-    show startSkillTraining, completeSkillTraining;
+    show startSkillTraining, completeSkillTraining, grantEliteShards;
 import '../data/game_data.dart';
 import '../data/save_repository.dart';
 import 'bug_auto_filter.dart';
@@ -2518,6 +2518,34 @@ class SaveController extends AsyncNotifier<SaveGame> {
       viaJelly: viaJelly,
     ),
   );
+
+  /// 등급 승급 — [from] 등급 조각을 [sources] 순서대로 `비율 × times` 개 태워
+  /// 한 단계 위 등급 만능 조각 [times] 개를 만든다.
+  Future<String?> gradeUpSkillShards({
+    required Grade from,
+    required List<String> sources,
+    required int times,
+  }) => _skillOp(
+    (s, cfg) =>
+        gradeUpShards(s, cfg, from: from, sources: sources, times: times),
+  );
+
+  /// 정예 처치 조각(확률, §2.8). 나오면 받은 조각(스킬 id → 개수), 아니면 빈 맵.
+  /// 안 나왔으면 커밋하지 않는다 — 정예마다 세이브를 쓰면 저장이 잦아진다.
+  Future<Map<String, int>> grantEliteShards({math.Random? rng}) async {
+    final cfg = ref.read(gameDataProvider).value?.skillConfig;
+    if (cfg == null) return const {};
+    final s = state.requireValue;
+    final got = core_skill.grantEliteShards(
+      s,
+      cfg,
+      rng ?? math.Random(),
+      tier: s.difficultyTier,
+    );
+    if (got.shards.isEmpty) return const {};
+    await _commit(got.save);
+    return got.shards;
+  }
 
   Future<String?> _skillOp(SkillOp Function(SaveGame, SkillConfig) op) async {
     final cfg = ref.read(gameDataProvider).value?.skillConfig;

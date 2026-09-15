@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:app/data/game_data.dart';
 import 'package:app/data/save_repository.dart';
@@ -410,6 +411,36 @@ void main() {
       final s = c.read(saveControllerProvider).requireValue;
       expect(s.skillLevels[def.id], 2);
       expect(s.materialCount(MaterialKind.jelly), lessThan(1000));
+    });
+
+    test('등급 승급 — 일반 조각 10개 → 희귀 만능 1개 · 정예 조각은 확률', () async {
+      final cfg = SkillConfig.fromJson(_read('skills.json'));
+      final common = cfg.skills.firstWhere((d) => d.grade == Grade.common);
+      final c = make(
+        seed().copyWith(skillShards: {common.id: cfg.gradeUpRatio * 2}),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(
+        await ctrl.gradeUpSkillShards(
+          from: Grade.common,
+          sources: [common.id],
+          times: 2,
+        ),
+        isNull,
+      );
+      var s = c.read(saveControllerProvider).requireValue;
+      expect(s.gradeShards(Grade.rare), 2);
+      expect(s.skillShards[common.id], isNull);
+
+      var got = 0;
+      for (var i = 0; i < 200; i++) {
+        final r = await ctrl.grantEliteShards(rng: Random(i));
+        got += r.values.fold(0, (a, b) => a + b);
+      }
+      s = c.read(saveControllerProvider).requireValue;
+      expect(got, greaterThan(0));
+      expect(s.skillShards.values.fold(0, (a, b) => a + b), got);
     });
 
     test('미보유 스킬은 장착되지 않는다', () async {

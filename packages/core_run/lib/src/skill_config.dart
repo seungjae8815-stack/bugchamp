@@ -111,18 +111,20 @@ class SkillConfig {
     required this.skills,
     this.slotsByTier = const [2, 3, 4, 5],
     this.maxLevel = 10,
-    this.unlockShards = 10,
+    this.unlockShards = 100,
     this.levelShardsBase = const {},
-    this.levelShardsGrowth = 1.3,
+    this.levelShardsGrowth = 1.2,
     this.trainMinutesBase = const {},
     this.trainGrowth = 1.35,
     this.trainJellyPerMinute = 1.2,
     this.trainJellyExponent = 0.58,
-    this.anyShardValue = const {},
-    this.bossFirstKillRolls = 3,
-    this.bossRepeatRolls = 1,
-    this.shardsPerRoll = const {},
-    this.bossGradeWeightsByTier = const [],
+    this.gradeUpRatio = 10,
+    this.bossFirstKillShards = 10,
+    this.bossRepeatChance = 0.1,
+    this.bossRepeatShardsByTier = const [3, 4, 4, 5],
+    this.eliteShardChance = 0.1,
+    this.eliteShards = 1,
+    this.dropGradeWeightsByTier = const [],
   });
 
   final List<SkillDef> skills;
@@ -147,18 +149,22 @@ class SkillConfig {
   final double trainJellyPerMinute;
   final double trainJellyExponent;
 
-  /// 만능 조각 환산값(등급별). 만렙 스킬 조각 1개 → 만능 value 개,
-  /// 만능으로 조각 1개를 메울 때 value 개.
-  final Map<Grade, int> anyShardValue;
+  /// 같은 등급 조각 이만큼 → 한 단계 위 등급 만능 조각 1개.
+  final int gradeUpRatio;
 
-  final int bossFirstKillRolls;
-  final int bossRepeatRolls;
+  /// 보스 첫 처치 조각(확정).
+  final int bossFirstKillShards;
 
-  /// 한 번 뽑을 때 나오는 조각 수(등급별).
-  final Map<Grade, int> shardsPerRoll;
+  /// 첫 처치 뒤 보스를 다시 잡았을 때 조각이 나올 확률 · 난이도별 개수.
+  final double bossRepeatChance;
+  final List<int> bossRepeatShardsByTier;
 
-  /// 보스 조각 등급 가중치 — 인덱스 = 난이도.
-  final List<Map<Grade, double>> bossGradeWeightsByTier;
+  /// 정예 처치 조각 확률 · 개수.
+  final double eliteShardChance;
+  final int eliteShards;
+
+  /// 드롭 조각의 등급 가중치 — 인덱스 = 난이도. 보스·정예 공용.
+  final List<Map<Grade, double>> dropGradeWeightsByTier;
 
   SkillDef? byId(String id) {
     for (final s in skills) {
@@ -178,6 +184,12 @@ class SkillConfig {
 
   /// 이론상 최대 칸 수(서버 상한 검사용).
   int get maxSlots => slotsByTier.fold(0, math.max);
+
+  /// [g] 의 한 단계 위 스킬 등급(전설이면 null).
+  static Grade? nextGrade(Grade g) {
+    final i = kSkillGrades.indexOf(g);
+    return (i < 0 || i >= kSkillGrades.length - 1) ? null : kSkillGrades[i + 1];
+  }
 
   /// 레벨 [level] → [level]+1 에 드는 그 스킬 조각.
   int shardsForLevel(SkillDef def, int level) {
@@ -202,39 +214,50 @@ class SkillConfig {
     );
   }
 
-  int anyValueOf(Grade g) => anyShardValue[g] ?? 1;
-
-  /// 보스 한 마리를 잡았을 때 나오는 조각 — 스킬 id → 개수.
+  /// 보스 처치 조각 — 스킬 id → 개수(안 나오면 빈 맵).
   ///
-  /// 모든 무작위는 주입된 [rng] 로만(§5 결정론). 등급 → 그 등급 스킬 하나 →
-  /// [shardsPerRoll] 개를 [bossFirstKillRolls]/[bossRepeatRolls] 번 반복한다.
+  /// 첫 처치는 [bossFirstKillShards] 확정, 그 뒤는 [bossRepeatChance] 확률로
+  /// [bossRepeatShardsByTier]. 모든 무작위는 주입된 [rng] 로만(§5 결정론).
   Map<String, int> rollBossShards(
     math.Random rng, {
     required int tier,
     required bool firstKill,
   }) {
-    final out = <String, int>{};
-    if (bossGradeWeightsByTier.isEmpty || skills.isEmpty) return out;
-    final weights =
-        bossGradeWeightsByTier[tier.clamp(
-          0,
-          bossGradeWeightsByTier.length - 1,
-        )];
-    final rolls = firstKill ? bossFirstKillRolls : bossRepeatRolls;
-    for (var i = 0; i < rolls; i++) {
-      final grade = _pickGrade(rng, weights);
-      if (grade == null) continue;
-      final pool = [
-        for (final s in skills)
-          if (s.grade == grade) s,
-      ];
-      if (pool.isEmpty) continue;
-      final def = pool[rng.nextInt(pool.length)];
-      final n = shardsPerRoll[grade] ?? 0;
-      if (n <= 0) continue;
-      out[def.id] = (out[def.id] ?? 0) + n;
+    if (firstKill) return _rollSkill(rng, tier, bossFirstKillShards);
+    if (rng.nextDouble() >= bossRepeatChance) return const {};
+    final n = bossRepeatShardsByTier.isEmpty
+        ? 0
+        : bossRepeatShardsByTier[tier.clamp(
+            0,
+            bossRepeatShardsByTier.length - 1,
+          )];
+    return _rollSkill(rng, tier, n);
+  }
+
+  /// 정예 처치 조각 — [eliteShardChance] 확률로 [eliteShards].
+  Map<String, int> rollEliteShards(math.Random rng, {required int tier}) {
+    if (rng.nextDouble() >= eliteShardChance) return const {};
+    return _rollSkill(rng, tier, eliteShards);
+  }
+
+  /// 등급(난이도별 가중치) → 그 등급 스킬 하나(균등) → [count] 개.
+  Map<String, int> _rollSkill(math.Random rng, int tier, int count) {
+    if (count <= 0 || dropGradeWeightsByTier.isEmpty || skills.isEmpty) {
+      return const {};
     }
-    return out;
+    final weights =
+        dropGradeWeightsByTier[tier.clamp(
+          0,
+          dropGradeWeightsByTier.length - 1,
+        )];
+    final grade = _pickGrade(rng, weights);
+    if (grade == null) return const {};
+    final pool = [
+      for (final s in skills)
+        if (s.grade == grade) s,
+    ];
+    if (pool.isEmpty) return const {};
+    return {pool[rng.nextInt(pool.length)].id: count};
   }
 
   static Grade? _pickGrade(math.Random rng, Map<Grade, double> weights) {
@@ -258,31 +281,37 @@ class SkillConfig {
             for (final e in raw.entries)
               Grade.fromKey(e.key as String): cast(e.value as num),
         };
+    List<int> ints(Object? raw, List<int> fallback) =>
+        raw is List ? [for (final v in raw) (v as num).toInt()] : fallback;
     return SkillConfig(
       skills: (json['skills'] as List)
           .cast<Map<String, dynamic>>()
           .map(SkillDef.fromJson)
           .toList(growable: false),
-      slotsByTier: [
-        for (final v in (json['slotsByTier'] as List? ?? const [2, 3, 4, 5]))
-          (v as num).toInt(),
-      ],
+      slotsByTier: ints(json['slotsByTier'], const [2, 3, 4, 5]),
       maxLevel: (json['maxLevel'] as num?)?.toInt() ?? 10,
-      unlockShards: (json['unlockShards'] as num?)?.toInt() ?? 10,
+      unlockShards: (json['unlockShards'] as num?)?.toInt() ?? 100,
       levelShardsBase: gradeMap(json['levelShardsBase'], (n) => n.toInt()),
-      levelShardsGrowth: (json['levelShardsGrowth'] as num?)?.toDouble() ?? 1.3,
+      levelShardsGrowth: (json['levelShardsGrowth'] as num?)?.toDouble() ?? 1.2,
       trainMinutesBase: gradeMap(json['trainMinutesBase'], (n) => n.toDouble()),
       trainGrowth: (json['trainGrowth'] as num?)?.toDouble() ?? 1.35,
       trainJellyPerMinute:
           (json['trainJellyPerMinute'] as num?)?.toDouble() ?? 1.2,
       trainJellyExponent:
           (json['trainJellyExponent'] as num?)?.toDouble() ?? 0.58,
-      anyShardValue: gradeMap(json['anyShardValue'], (n) => n.toInt()),
-      bossFirstKillRolls: (json['bossFirstKillRolls'] as num?)?.toInt() ?? 3,
-      bossRepeatRolls: (json['bossRepeatRolls'] as num?)?.toInt() ?? 1,
-      shardsPerRoll: gradeMap(json['shardsPerRoll'], (n) => n.toInt()),
-      bossGradeWeightsByTier: [
-        for (final w in (json['bossGradeWeightsByTier'] as List? ?? const []))
+      gradeUpRatio: (json['gradeUpRatio'] as num?)?.toInt() ?? 10,
+      bossFirstKillShards: (json['bossFirstKillShards'] as num?)?.toInt() ?? 10,
+      bossRepeatChance: (json['bossRepeatChance'] as num?)?.toDouble() ?? 0.1,
+      bossRepeatShardsByTier: ints(json['bossRepeatShardsByTier'], const [
+        3,
+        4,
+        4,
+        5,
+      ]),
+      eliteShardChance: (json['eliteShardChance'] as num?)?.toDouble() ?? 0.1,
+      eliteShards: (json['eliteShards'] as num?)?.toInt() ?? 1,
+      dropGradeWeightsByTier: [
+        for (final w in (json['dropGradeWeightsByTier'] as List? ?? const []))
           gradeMap(w, (n) => n.toDouble()),
       ],
     );

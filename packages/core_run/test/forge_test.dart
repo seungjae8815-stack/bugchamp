@@ -286,13 +286,16 @@ void main() {
       }
     });
 
-    test('등급마다 조각·수련·만능 환산값이 있다(없으면 0 조각으로 공짜 레벨업)', () {
+    test('등급마다 조각·수련 값이 있다(없으면 0 조각으로 공짜 레벨업)', () {
       for (final g in kSkillGrades) {
         expect(skills.levelShardsBase[g], greaterThan(0), reason: g.key);
         expect(skills.trainMinutesBase[g], greaterThan(0), reason: g.key);
-        expect(skills.anyShardValue[g], greaterThan(0), reason: g.key);
-        expect(skills.shardsPerRoll[g], greaterThan(0), reason: g.key);
       }
+      expect(skills.unlockShards, 100);
+      expect(skills.gradeUpRatio, greaterThan(1));
+      expect(SkillConfig.nextGrade(Grade.common), Grade.rare);
+      expect(SkillConfig.nextGrade(Grade.epic), Grade.legendary);
+      expect(SkillConfig.nextGrade(Grade.legendary), isNull);
     });
 
     test('레벨이 오를수록 조각·수련 시간이 늘고, 높은 등급일수록 수련이 길다', () {
@@ -326,36 +329,43 @@ void main() {
       expect(skills.trainJelly(Duration.zero), 0);
     });
 
-    test('보스 드롭 등급 표가 난이도 4개 · 어려운 난이도일수록 전설이 잦다', () {
-      expect(skills.bossGradeWeightsByTier.length, 4);
+    test('드롭 등급 표가 난이도 4개 · 어려운 난이도일수록 전설이 잦다', () {
+      expect(skills.dropGradeWeightsByTier.length, 4);
+      expect(skills.bossRepeatShardsByTier.length, 4);
       double legendShare(Map<Grade, double> w) =>
           (w[Grade.legendary] ?? 0) / w.values.fold(0.0, (a, b) => a + b);
       for (var t = 1; t < 4; t++) {
         expect(
-          legendShare(skills.bossGradeWeightsByTier[t]),
-          greaterThan(legendShare(skills.bossGradeWeightsByTier[t - 1])),
+          legendShare(skills.dropGradeWeightsByTier[t]),
+          greaterThan(legendShare(skills.dropGradeWeightsByTier[t - 1])),
         );
       }
     });
 
-    test('보스 조각 — 같은 시드면 같은 결과, 첫 처치가 더 많다', () {
+    test('보스 첫 처치는 확정 · 재처치·정예는 확률 · 한 번에 한 스킬', () {
       int total(Map<String, int> m) => m.values.fold(0, (a, b) => a + b);
       final a = skills.rollBossShards(Random(7), tier: 2, firstKill: true);
-      final b = skills.rollBossShards(Random(7), tier: 2, firstKill: true);
-      expect(a, b);
-      var first = 0, repeat = 0;
-      for (var i = 0; i < 200; i++) {
-        first += total(
-          skills.rollBossShards(Random(i), tier: 0, firstKill: true),
-        );
-        repeat += total(
-          skills.rollBossShards(Random(i), tier: 0, firstKill: false),
-        );
+      expect(a, skills.rollBossShards(Random(7), tier: 2, firstKill: true));
+      expect(a.length, 1);
+      expect(total(a), skills.bossFirstKillShards);
+      expect(skills.byId(a.keys.single), isNotNull);
+
+      var repeatHits = 0, eliteHits = 0;
+      const n = 4000;
+      for (var i = 0; i < n; i++) {
+        final r = skills.rollBossShards(Random(i), tier: 3, firstKill: false);
+        if (r.isNotEmpty) {
+          repeatHits++;
+          expect(total(r), skills.bossRepeatShardsByTier[3]);
+        }
+        final e = skills.rollEliteShards(Random(i + n), tier: 0);
+        if (e.isNotEmpty) {
+          eliteHits++;
+          expect(total(e), skills.eliteShards);
+        }
       }
-      expect(first, greaterThan(repeat * 2));
-      for (final id in a.keys) {
-        expect(skills.byId(id), isNotNull);
-      }
+      expect(repeatHits / n, closeTo(skills.bossRepeatChance, 0.02));
+      expect(eliteHits / n, closeTo(skills.eliteShardChance, 0.02));
     });
 
     test('패시브 — 장착한 것만 · 군집은 펫 수에 비례 · 흡즙·탈피', () {

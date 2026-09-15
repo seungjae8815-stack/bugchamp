@@ -2726,6 +2726,42 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillSlotsFull => 'スキル枠がいっぱいです';
 
   @override
+  String skillShardPop(String n) {
+    return 'かけら +$n';
+  }
+
+  @override
+  String skillGradeWild(String grade) {
+    return '$grade万能';
+  }
+
+  @override
+  String get skillGradeUp => '昇級';
+
+  @override
+  String skillGradeUpTitle(String from, String to) {
+    return '$fromのかけら → $to万能のかけら';
+  }
+
+  @override
+  String skillGradeUpDesc(String ratio, String from, String to) {
+    return '$fromのかけら$ratio個で$to万能のかけらを1個作ります。万能のかけらはどの$toスキルにも使えます。材料にするかけらを選んでください。';
+  }
+
+  @override
+  String skillGradeUpMake(String n) {
+    return '$n個作る';
+  }
+
+  @override
+  String skillGradeUpDone(String n, String grade) {
+    return '$grade万能のかけらを$n個作りました';
+  }
+
+  @override
+  String get skillGradeUpPick => '材料にするかけらを選んでください';
+
+  @override
   String get skillEquip => '装備';
 
   @override
@@ -2738,11 +2774,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get skillNextSlotHint => '新しい難易度で枠が増えます';
-
-  @override
-  String skillAnyShards(String n) {
-    return '万能のかけら $n';
-  }
 
   @override
   String skillShardProgress(String have, String need) {
@@ -2809,7 +2840,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillActiveSoon => 'アクティブスキルは近日公開';
 
   @override
-  String get skillHowToGet => '狩場のボスを倒すとスキルのかけらが手に入ります';
+  String get skillHowToGet => '狩場のボス（初回撃破で確定）とエリートモンスターからスキルのかけらが手に入ります';
 
   @override
   String skillCooldown(String s) {

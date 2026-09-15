@@ -7,10 +7,10 @@
 
   "maxLevel": 10,
 
-  "_shardComment": "해금 = 그 스킬 조각 unlockShards 개(자동으로 레벨 1). 레벨 L → L+1 수련에 드는 조각 = levelShardsBase[등급] × levelShardsGrowth^(L-1). 등급이 높을수록 조각이 귀하므로 개수는 적게.",
-  "unlockShards": 10,
-  "levelShardsBase": { "common": 8, "rare": 6, "epic": 5, "legendary": 4 },
-  "levelShardsGrowth": 1.3,
+  "_shardComment": "해금 = 그 스킬 조각 unlockShards 개(자동으로 레벨 1). 레벨 L → L+1 수련에 드는 조각 = levelShardsBase[등급] × levelShardsGrowth^(L-1). 모자란 조각은 그 등급의 만능 조각으로 1:1 메운다.",
+  "unlockShards": 100,
+  "levelShardsBase": { "common": 20, "rare": 20, "epic": 20, "legendary": 20 },
+  "levelShardsGrowth": 1.2,
 
   "_trainComment": "수련 시간(분) = trainMinutesBase[등급] × trainGrowth^(L-1). 한 번에 한 스킬만. 즉시완료 젤리 = 계수 × 남은분^지수 → 5·10 단위(roundJellyCost). 지수 0.58 은 부화기·돌파와 같은 곡선 — 긴 대기일수록 분당 단가가 싸진다(pets.json instantJellyExponent).",
   "trainMinutesBase": { "common": 10, "rare": 30, "epic": 90, "legendary": 240 },
@@ -18,14 +18,16 @@
   "trainJellyPerMinute": 1.2,
   "trainJellyExponent": 0.58,
 
-  "_anyComment": "만렙 스킬로 들어온 조각은 만능 조각으로 바뀐다. 값 = anyShardValue[등급](전설 조각 1개 = 만능 5). 만능으로 수련할 땐 부족한 조각 1개당 anyShardValue[그 스킬 등급] 를 쓴다 — 일반 잉여로 전설을 싸게 올리는 길을 막는다.",
-  "anyShardValue": { "common": 1, "rare": 2, "epic": 3, "legendary": 5 },
+  "_gradeUpComment": "등급 승급(2026-09-15 사장님 확정): 같은 등급 조각(어느 스킬 것이든 · 그 등급 만능 포함) gradeUpRatio 개 → 한 단계 위 등급의 **만능 조각** 1개. 만능 조각은 그 등급 스킬 아무 데나 1:1. 전설이 운 때문에 안 열리는 문제(무료 전설 1종 해금 111일)와 후반 하위 조각 잉여를 한 번에 푼다. 일반→전설은 1000:1.",
+  "gradeUpRatio": 10,
 
-  "_bossComment": "사냥터 보스 처치 조각. 한 번 뽑을 때(roll) 등급 → 그 등급 스킬 하나 → shardsPerRoll[등급] 개. 첫 처치는 firstKillRolls 번, 재처치는 repeatRolls 번. 등급 가중치는 난이도별(쉬움→극한). ⚠️ 뽑기 가중치(3단계)는 **어느 난이도의 이 표보다도 좋아야 한다**(돈 내고 확률이 나빠지면 안 된다).",
-  "bossFirstKillRolls": 3,
-  "bossRepeatRolls": 1,
-  "shardsPerRoll": { "common": 6, "rare": 4, "epic": 3, "legendary": 2 },
-  "bossGradeWeightsByTier": [
+  "_dropComment": "조각 드롭(2026-09-15 사장님 확정). 등급은 난이도별 가중치로 → 그 등급 스킬 중 하나(균등). 보스 첫 처치 = bossFirstKillShards 확정. 그 뒤 처치는 bossRepeatChance 확률로 bossRepeatShardsByTier[난이도]. 정예 = eliteShardChance 확률로 eliteShards. 온라인 처치만(방치 정산에는 없다). ⚠️ 재도전을 확정 지급으로 두면 아래 사냥터 보스(4분에 한 번)를 도는 게 정예보다 6배 좋아져 앞으로 안 나가게 된다 — 확률로 둔 이유. ⚠️ 뽑기 가중치(3단계)는 **어느 난이도의 이 표보다도 좋아야 한다**.",
+  "bossFirstKillShards": 10,
+  "bossRepeatChance": 0.1,
+  "bossRepeatShardsByTier": [3, 4, 4, 5],
+  "eliteShardChance": 0.1,
+  "eliteShards": 1,
+  "dropGradeWeightsByTier": [
     { "common": 60, "rare": 28, "epic": 10, "legendary": 2 },
     { "common": 55, "rare": 30, "epic": 12, "legendary": 3 },
     { "common": 50, "rare": 30, "epic": 15, "legendary": 5 },

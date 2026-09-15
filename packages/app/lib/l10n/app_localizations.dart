@@ -4972,6 +4972,54 @@ abstract class AppLocalizations {
   /// **'Skill slots are full'**
   String get skillSlotsFull;
 
+  /// No description provided for @skillShardPop.
+  ///
+  /// In en, this message translates to:
+  /// **'Shard +{n}'**
+  String skillShardPop(String n);
+
+  /// No description provided for @skillGradeWild.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} wild'**
+  String skillGradeWild(String grade);
+
+  /// No description provided for @skillGradeUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get skillGradeUp;
+
+  /// No description provided for @skillGradeUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} shards → {to} wild shard'**
+  String skillGradeUpTitle(String from, String to);
+
+  /// No description provided for @skillGradeUpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {ratio} {from} shards into 1 {to} wild shard, usable on any {to} skill. Pick the shards to use.'**
+  String skillGradeUpDesc(String ratio, String from, String to);
+
+  /// No description provided for @skillGradeUpMake.
+  ///
+  /// In en, this message translates to:
+  /// **'Make {n}'**
+  String skillGradeUpMake(String n);
+
+  /// No description provided for @skillGradeUpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Made {n} {grade} wild shards'**
+  String skillGradeUpDone(String n, String grade);
+
+  /// No description provided for @skillGradeUpPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick shards to use'**
+  String get skillGradeUpPick;
+
   /// No description provided for @skillEquip.
   ///
   /// In en, this message translates to:
@@ -4995,12 +5043,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More slots open at new difficulties'**
   String get skillNextSlotHint;
-
-  /// No description provided for @skillAnyShards.
-  ///
-  /// In en, this message translates to:
-  /// **'Wild shards {n}'**
-  String skillAnyShards(String n);
 
   /// No description provided for @skillShardProgress.
   ///
@@ -5101,7 +5143,7 @@ abstract class AppLocalizations {
   /// No description provided for @skillHowToGet.
   ///
   /// In en, this message translates to:
-  /// **'Defeat hunting ground bosses to earn skill shards'**
+  /// **'Skill shards drop from hunting ground bosses (guaranteed on first kill) and elite monsters'**
   String get skillHowToGet;
 
   /// No description provided for @skillCooldown.

@@ -1590,6 +1590,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // ⚠️ 곤충 드롭 확률에는 **안 곱한다.** 채집함 상한(§2.1)이 있어서 드롭을
     // 늘리면 칸만 빨리 차고, 곤충 수 버프는 이미 50에서 멈춘다.
     // 늘리는 건 골드·경험치·재료뿐이다.
+    if (_isElite && !_isBoss) unawaited(_eliteSkillShard());
     if (_isElite) {
       final m = _config.eliteRewardMult;
       gold = (gold * m).round();
@@ -3447,6 +3448,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 보스 격파로 스테이지 상승 시: 최고기록 반영 후 새로 클리어한 챕터 축하.
+  /// 정예 처치 스킬 조각(10% 확률, §2.8). 나오면 몬스터 자리에 작게 띄운다 —
+  /// 하루 스무 번쯤이라 가운데 알림으로 띄우면 전투를 가린다.
+  Future<void> _eliteSkillShard() async {
+    final got = await ref
+        .read(saveControllerProvider.notifier)
+        .grantEliteShards();
+    if (!mounted || got.isEmpty) return;
+    final l = AppLocalizations.of(context);
+    setState(() {
+      _pops.add(
+        _Pop(
+          l.skillShardPop('${got.values.fold(0, (a, b) => a + b)}'),
+          0,
+          const Color(0xFFCE93D8),
+          17,
+          baseX: 0.62,
+          baseY: -0.35,
+        ),
+      );
+    });
+  }
+
   /// 보스 처치 기록 + 스킬 조각(§2.8). 받은 조각을 한 줄로 알린다 —
   /// 모르고 지나가면 스킬 화면에 가 볼 이유가 생기지 않는다.
   Future<void> _advanceZoneWithShards() async {

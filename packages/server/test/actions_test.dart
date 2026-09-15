@@ -1790,21 +1790,21 @@ void main() {
       test('보스를 새로 잡은 만큼의 조각은 받는다', () {
         final client = stored().copyWith(
           bossDex: {'n01'},
-          skillShards: {legend.id: 6},
+          skillShards: {legend.id: sk.bossFirstKillShards},
         );
         final r = actions.mergeSave(stored(), client.toJson());
-        expect(r.save!.skillShards[legend.id], 6);
+        expect(r.save!.skillShards[legend.id], sk.bossFirstKillShards);
         expect(r.extra['clamped'], isFalse);
       });
 
       test('세이브 편집으로 조각을 쏟아 넣으면 저장본 값으로 되돌린다', () {
         final client = stored().copyWith(
           skillShards: {legend.id: 99999},
-          skillAnyShards: 99999,
+          skillGradeShards: {'legendary': 99999},
         );
         final r = actions.mergeSave(stored(), client.toJson());
         expect(r.save!.skillShards, isEmpty);
-        expect(r.save!.skillAnyShards, 0);
+        expect(r.save!.skillGradeShards, isEmpty);
         expect(r.extra['clamped'], isTrue);
       });
 
@@ -1820,12 +1820,12 @@ void main() {
       test('조각을 써서 올린 레벨(해금 · 수련 완료)은 받는다', () {
         final st = stored().copyWith(
           skillLevels: {legend.id: 1},
-          skillShards: {legend.id: 30},
+          skillShards: {legend.id: 60},
         );
         final need = sk.shardsForLevel(legend, 1);
         final client = st.copyWith(
           skillLevels: {legend.id: 2},
-          skillShards: {legend.id: 30 - need},
+          skillShards: {legend.id: 60 - need},
         );
         final r = actions.mergeSave(st, client.toJson());
         expect(r.save!.skillLevels[legend.id], 2);
@@ -1848,29 +1848,33 @@ void main() {
         final st = stored().copyWith(
           skillLevels: {legend.id: 2},
           skillShards: {legend.id: 7},
-          skillAnyShards: 15,
+          skillGradeShards: {'epic': 15},
           skillTrainingId: legend.id,
           skillTrainingEndsAt: t0,
         );
         final old = st.toJson()
           ..remove('skillShards')
-          ..remove('skillAnyShards')
+          ..remove('skillGradeShards')
           ..remove('skillTrainingId')
           ..remove('skillTrainingEndsAt');
         final r = actions.mergeSave(st, old);
         expect(r.save!.skillShards, {legend.id: 7});
-        expect(r.save!.skillAnyShards, 15);
+        expect(r.save!.skillGradeShards, {'epic': 15});
         expect(r.save!.skillTrainingId, legend.id);
         expect(r.save!.skillLevels[legend.id], 2);
       });
 
       test('만렙 초과 · 미보유 장착 · 열린 칸 초과를 접는다', () {
         final ids = sk.skills.map((d) => d.id).toList();
-        final client = stored().copyWith(
+        // 이미 정당하게 가진 레벨이다(저장본) — 조각 없이 올린 위조가 아니라 규칙 접기만 본다.
+        final st = stored().copyWith(
+          skillLevels: {ids[0]: sk.maxLevel, ids[1]: 1, ids[2]: 1},
+        );
+        final client = st.copyWith(
           skillLevels: {ids[0]: 99, ids[1]: 1, ids[2]: 1},
           equippedSkills: [ids[5], ids[0], ids[1], ids[2]],
         );
-        final r = actions.mergeSave(stored(), client.toJson());
+        final r = actions.mergeSave(st, client.toJson());
         expect(r.save!.skillLevels[ids[0]], sk.maxLevel);
         expect(r.save!.equippedSkills, [ids[0], ids[1]]);
         expect(r.extra['clamped'], isTrue);

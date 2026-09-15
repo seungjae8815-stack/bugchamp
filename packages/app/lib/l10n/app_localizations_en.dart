@@ -2784,6 +2784,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skillSlotsFull => 'Skill slots are full';
 
   @override
+  String skillShardPop(String n) {
+    return 'Shard +$n';
+  }
+
+  @override
+  String skillGradeWild(String grade) {
+    return '$grade wild';
+  }
+
+  @override
+  String get skillGradeUp => 'Upgrade';
+
+  @override
+  String skillGradeUpTitle(String from, String to) {
+    return '$from shards → $to wild shard';
+  }
+
+  @override
+  String skillGradeUpDesc(String ratio, String from, String to) {
+    return 'Turn $ratio $from shards into 1 $to wild shard, usable on any $to skill. Pick the shards to use.';
+  }
+
+  @override
+  String skillGradeUpMake(String n) {
+    return 'Make $n';
+  }
+
+  @override
+  String skillGradeUpDone(String n, String grade) {
+    return 'Made $n $grade wild shards';
+  }
+
+  @override
+  String get skillGradeUpPick => 'Pick shards to use';
+
+  @override
   String get skillEquip => 'Equip';
 
   @override
@@ -2796,11 +2832,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillNextSlotHint => 'More slots open at new difficulties';
-
-  @override
-  String skillAnyShards(String n) {
-    return 'Wild shards $n';
-  }
 
   @override
   String skillShardProgress(String have, String need) {
@@ -2868,7 +2899,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillHowToGet =>
-      'Defeat hunting ground bosses to earn skill shards';
+      'Skill shards drop from hunting ground bosses (guaranteed on first kill) and elite monsters';
 
   @override
   String skillCooldown(String s) {

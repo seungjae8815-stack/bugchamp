@@ -12,6 +12,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import 'skill_grade_up_dialog.dart';
 
 const _honey = Color(0xFFFFD54F);
 
@@ -112,16 +113,35 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                 ),
               ),
               const Spacer(),
-              const Icon(
-                Icons.diamond_outlined,
-                size: 14,
-                color: Colors.white70,
+              _button(
+                l.skillGradeUp,
+                () => showDialog<void>(
+                  context: context,
+                  barrierColor: const Color(0xB3000000),
+                  builder: (_) => SkillGradeUpDialog(cfg: cfg, locale: locale),
+                ),
+                accent: const Color(0xFFCE93D8),
               ),
-              const SizedBox(width: 3),
-              Text(
-                l.skillAnyShards('${save.skillAnyShards}'),
-                style: const TextStyle(color: Colors.white70, fontSize: 11.5),
-              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // 등급 만능 조각 — 일반은 아래 등급이 없어 만들 수 없으니 뺀다.
+          Wrap(
+            spacing: 10,
+            children: [
+              for (final g in kSkillGrades.skip(1))
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.diamond_rounded, size: 13, color: gradeColor(g)),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${l.skillGradeWild(gradeLabel(l, g))} '
+                      '${save.gradeShards(g)}',
+                      style: TextStyle(color: gradeColor(g), fontSize: 11),
+                    ),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 6),
@@ -443,8 +463,8 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     final lv = save.skillLevels[def.id] ?? 0;
     final cost = skillTrainCost(save, cfg, def);
     final time = formatShortDuration(cfg.trainDuration(def, lv));
-    final costText = cost.any > 0
-        ? l.skillTrainCostWithAny('${cost.shards}', '${cost.any}', time)
+    final costText = cost.gradeShards > 0
+        ? l.skillTrainCostWithAny('${cost.shards}', '${cost.gradeShards}', time)
         : l.skillTrainCostShards('${cost.shards}', time);
     final ok = await showGameDialog<bool>(
       context,
