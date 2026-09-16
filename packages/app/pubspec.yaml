@@ -114,6 +114,10 @@ flutter:
     - assets/images/ui/stance/
     - assets/images/ui/temperament/
     - assets/images/ui/event/
+    - assets/images/ui/nav/
+    - assets/images/ui/tab/
+    - assets/images/ui/skill/
+    - assets/images/skills/
     - assets/images/shop/
     - assets/sounds/
 

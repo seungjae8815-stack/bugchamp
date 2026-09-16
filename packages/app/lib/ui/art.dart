@@ -366,3 +366,62 @@ String habitatGlyph(HabitatKind k) => switch (k) {
   HabitatKind.stump => '🪵',
   HabitatKind.mushroom => '🍄',
 };
+
+// ─────────────────────────────────────────────────────────────
+// 스킬·메뉴 아이콘 (2026-09-16)
+//
+// 파일명 = JSON id 규칙(§6)이라 경로를 JSON 에 따로 적지 않는다.
+// 애셋이 없으면 지금까지 쓰던 Material 아이콘으로 폴백한다 — 아트가
+// 빠져도 화면이 비지 않아야 한다.
+// ─────────────────────────────────────────────────────────────
+
+/// 스킬 아이콘. `assets/images/skills/{skillId}.webp`
+Widget skillImage(
+  String skillId, {
+  required double size,
+  required Widget fallback,
+}) => gameImage(
+  'assets/images/skills/$skillId.webp',
+  width: size,
+  height: size,
+  fallback: fallback,
+);
+
+/// 하단 메뉴 아이콘. `assets/images/ui/nav/{name}.webp`
+/// (home / character / storage / battle / shop)
+Widget navImage(
+  String name, {
+  required double size,
+  required Widget fallback,
+}) => gameImage(
+  'assets/images/ui/nav/$name.webp',
+  width: size,
+  height: size,
+  fallback: fallback,
+);
+
+/// 캐릭터 탭 안의 탭 아이콘. `assets/images/ui/tab/{name}.webp`
+/// (pets / skills / stats)
+Widget tabImage(
+  String name, {
+  required double size,
+  required Widget fallback,
+}) => gameImage(
+  'assets/images/ui/tab/$name.webp',
+  width: size,
+  height: size,
+  fallback: fallback,
+);
+
+/// 스킬 화면 버튼 아이콘. `assets/images/ui/skill/{name}.webp`
+/// (gacha / sweep / gradeup / auto)
+Widget skillButtonImage(
+  String name, {
+  required double size,
+  required Widget fallback,
+}) => gameImage(
+  'assets/images/ui/skill/$name.webp',
+  width: size,
+  height: size,
+  fallback: fallback,
+);

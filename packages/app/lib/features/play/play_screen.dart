@@ -3704,13 +3704,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       : const Color(0x33FFFFFF),
                 ),
               ),
-              child: Text(
-                l.skillAuto,
-                style: TextStyle(
-                  color: save.skillAutoCast ? Colors.white : Colors.white54,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 꺼져 있으면 흐리게 — 글자 색과 같은 신호를 아트에도 준다.
+                  Opacity(
+                    opacity: save.skillAutoCast ? 1 : 0.45,
+                    child: skillButtonImage(
+                      'auto',
+                      size: 16,
+                      fallback: const SizedBox.shrink(),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    l.skillAuto,
+                    style: TextStyle(
+                      color: save.skillAutoCast ? Colors.white : Colors.white54,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -3757,7 +3772,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     : null,
               ),
             ),
-            Icon(icon, color: cd > 0 ? Colors.white38 : Colors.white, size: 22),
+            // 스킬 아트(없으면 아이콘 폴백). 쿨타임 중에는 흐리게 —
+            // 아래 쿨타임 링·남은 초와 같은 신호를 아트에도 준다.
+            Opacity(
+              opacity: cd > 0 ? 0.45 : 1,
+              child: skillImage(
+                def.id,
+                size: 34,
+                fallback: Icon(
+                  icon,
+                  color: cd > 0 ? Colors.white38 : Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
             if (cd > 0 && total > 0) ...[
               SizedBox(
                 width: 46,

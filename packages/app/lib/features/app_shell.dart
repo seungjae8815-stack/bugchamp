@@ -19,6 +19,7 @@ import '../domain/update_checker.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
+import '../ui/art.dart';
 import '../ui/event_badge.dart';
 import '../ui/game_dialog.dart';
 import '../ui/rank_popup.dart';
@@ -429,12 +430,14 @@ class _GameNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final items = <(IconData, String)>[
-      (Icons.home_rounded, l.navHome),
-      (Icons.person_rounded, l.navCharacter),
-      (Icons.menu_book_rounded, l.navStorage),
-      (Icons.sports_mma_rounded, l.navBattle),
-      (Icons.storefront_rounded, l.navShop),
+    // (아트 이름, 아이콘 폴백, 라벨). 아트는 assets/images/ui/nav/{이름}.webp —
+    // 애셋이 없으면 예전 Material 아이콘으로 떨어진다(§6).
+    final items = <(String, IconData, String)>[
+      ('home', Icons.home_rounded, l.navHome),
+      ('character', Icons.person_rounded, l.navCharacter),
+      ('storage', Icons.menu_book_rounded, l.navStorage),
+      ('battle', Icons.sports_mma_rounded, l.navBattle),
+      ('shop', Icons.storefront_rounded, l.navShop),
     ];
     return Container(
       decoration: const BoxDecoration(
@@ -454,8 +457,9 @@ class _GameNavBar extends StatelessWidget {
               for (var i = 0; i < items.length; i++)
                 Expanded(
                   child: _NavTab(
-                    icon: items[i].$1,
-                    label: items[i].$2,
+                    art: items[i].$1,
+                    icon: items[i].$2,
+                    label: items[i].$3,
                     active: i == index,
                     onTap: () => onTap(i),
                   ),
@@ -470,12 +474,14 @@ class _GameNavBar extends StatelessWidget {
 
 class _NavTab extends StatelessWidget {
   const _NavTab({
+    required this.art,
     required this.icon,
     required this.label,
     required this.active,
     required this.onTap,
   });
 
+  final String art;
   final IconData icon;
   final String label;
   final bool active;
@@ -491,8 +497,17 @@ class _NavTab extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 3),
+          // 고른 탭만 아트를 제 색으로, 나머지는 살짝 흐리게 —
+          // 아이콘 색으로 주던 선택 신호를 아트에도 유지한다.
+          Opacity(
+            opacity: active ? 1 : 0.62,
+            child: navImage(
+              art,
+              size: 28,
+              fallback: Icon(icon, color: color, size: 24),
+            ),
+          ),
+          const SizedBox(height: 1),
           Text(
             label,
             style: TextStyle(

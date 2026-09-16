@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
@@ -93,15 +94,20 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
 
   Widget _tabs(AppLocalizations l) => Row(
     children: [
-      _tab(l.charTabStats, Icons.person_rounded, _Panel.stats),
+      _tab(l.charTabStats, 'stats', Icons.person_rounded, _Panel.stats),
       const SizedBox(width: 6),
-      _tab(l.charTabPets, Icons.pets_rounded, _Panel.pets),
+      _tab(l.charTabPets, 'pets', Icons.pets_rounded, _Panel.pets),
       const SizedBox(width: 6),
-      _tab(l.charTabSkills, Icons.auto_awesome_rounded, _Panel.skills),
+      _tab(
+        l.charTabSkills,
+        'skills',
+        Icons.auto_awesome_rounded,
+        _Panel.skills,
+      ),
     ],
   );
 
-  Widget _tab(String text, IconData icon, _Panel p) {
+  Widget _tab(String text, String art, IconData icon, _Panel p) {
     final on = _panel == p;
     return Expanded(
       child: InkWell(
@@ -120,7 +126,19 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 15, color: on ? _honey : Colors.white70),
+              // 아트(없으면 아이콘 폴백). 고르지 않은 탭은 흐리게.
+              Opacity(
+                opacity: on ? 1 : 0.6,
+                child: tabImage(
+                  art,
+                  size: 20,
+                  fallback: Icon(
+                    icon,
+                    size: 15,
+                    color: on ? _honey : Colors.white70,
+                  ),
+                ),
+              ),
               const SizedBox(width: 5),
               Text(
                 text,

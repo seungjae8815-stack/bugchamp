@@ -437,6 +437,28 @@ void main() {
     expect(bad, isEmpty, reason: '배경이 안 지워진 그림: ${bad.join(', ')}');
   });
 
+  // 스킬 아트는 **파일명 = 스킬 id** 규칙으로 찾는다(§6, 경로를 JSON 에 안 적는다).
+  //
+  // 그래서 id 를 바꾸거나 스킬을 추가하면 아트가 **조용히 아이콘으로 폴백**한다 —
+  // 종 패시브 `stat` 오타가 패시브만 조용히 지우는 것과 같은 부류다.
+  // 반대로 남은 그림(id 가 없어진 아트)은 앱 용량만 먹는다.
+  test('스킬 12종의 아트가 id 와 1:1 로 맞는다', () {
+    final ids =
+        ((jsonDecode(File('assets/data/skills.json').readAsStringSync())
+                    as Map<String, dynamic>)['skills']
+                as List)
+            .map((e) => (e as Map<String, dynamic>)['id'] as String)
+            .toSet();
+    final art = Directory('assets/images/skills')
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.webp'))
+        .map((f) => f.uri.pathSegments.last.replaceAll('.webp', ''))
+        .toSet();
+    expect(ids.difference(art), isEmpty, reason: '아트 없는 스킬(아이콘으로 조용히 폴백된다)');
+    expect(art.difference(ids), isEmpty, reason: '쓰이지 않는 스킬 아트(id 가 바뀌었나?)');
+  });
+
   // pubspec 애셋 등록 — **Flutter 는 하위 디렉토리를 자동 포함하지 않는다.**
   //
   // `assets/images/ui/` 만 적혀 있으면 `ui/cards/` 는 번들에 안 들어가고,

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
@@ -118,18 +119,21 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                 l.skillGacha,
                 () => _open(SkillGachaDialog(cfg: cfg, locale: locale)),
                 accent: _honey,
+                art: 'gacha',
               ),
               const SizedBox(width: 5),
               _button(
                 l.skillSweep,
                 () => _open(SkillSweepDialog(cfg: cfg, locale: locale)),
                 accent: const Color(0xFF4FC3F7),
+                art: 'sweep',
               ),
               const SizedBox(width: 5),
               _button(
                 l.skillGradeUp,
                 () => _open(SkillGradeUpDialog(cfg: cfg, locale: locale)),
                 accent: const Color(0xFFCE93D8),
+                art: 'gradeup',
               ),
             ],
           ),
@@ -309,7 +313,18 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(width: 4, color: color),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
+            // 스킬 아트. 미보유는 흑백 실루엣으로 — 채워 갈 대상이 보여야 한다.
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: _SkillArt(
+                id: def.id,
+                owned: owned,
+                active: def.isActive,
+                size: 38,
+              ),
+            ),
+            const SizedBox(width: 6),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 7),
@@ -571,6 +586,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     bool on = false,
     bool dim = false,
     Color? accent,
+    String? art,
   }) => InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
@@ -586,14 +602,25 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
           color: on ? _honey : (accent ?? Colors.white).withValues(alpha: 0.3),
         ),
       ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: dim ? const Color(0x66FFFFFF) : Colors.white,
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 버튼 아트(없으면 글자만) — 있어도 없어도 배치가 같아야 한다.
+          if (art != null) ...[
+            skillButtonImage(art, size: 16, fallback: const SizedBox.shrink()),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: dim ? const Color(0x66FFFFFF) : Colors.white,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -603,4 +630,43 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     borderRadius: BorderRadius.circular(10),
     border: Border.all(color: border),
   );
+}
+
+/// 스킬 카드·스킬 바의 아트 썸네일.
+///
+/// 미보유 스킬은 **흑백 실루엣**으로 둔다(도감의 미수집 보스와 같은 규칙) —
+/// 무엇을 모으는 중인지 보이지 않으면 해금이 목표가 되지 않는다.
+/// 애셋이 없으면 예전 Material 아이콘으로 폴백한다.
+class _SkillArt extends StatelessWidget {
+  const _SkillArt({
+    required this.id,
+    required this.owned,
+    required this.active,
+    required this.size,
+  });
+
+  final String id;
+  final bool owned;
+  final bool active;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Icon(
+      active ? Icons.bolt_rounded : Icons.auto_awesome_rounded,
+      size: size * 0.62,
+      color: active ? const Color(0xFF4FC3F7) : _honey,
+    );
+    final art = skillImage(id, size: size, fallback: fallback);
+    if (owned) return art;
+    return ColorFiltered(
+      colorFilter: const ColorFilter.matrix(<double>[
+        0.2126, 0.7152, 0.0722, 0, 0, //
+        0.2126, 0.7152, 0.0722, 0, 0, //
+        0.2126, 0.7152, 0.0722, 0, 0, //
+        0, 0, 0, 0.45, 0,
+      ]),
+      child: art,
+    );
+  }
 }
