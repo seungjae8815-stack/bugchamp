@@ -1612,6 +1612,72 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
+  /// **개발자 모드 전용** — 스킬 하나를 원하는 레벨로 켜고 칸이 남으면 장착한다.
+  ///
+  /// 스킬은 보스 조각으로만 열리므로(§2.8) 실기기에서 12종을 보려면
+  /// 며칠이 걸린다. 미리 보기 위한 스위치다 — 규칙 강제(`enforceSkillRules`)를
+  /// 그대로 통과하므로 상한을 넘은 값은 저장되지 않는다.
+  Future<void> devSetSkillLevel(String id, int level) async {
+    final cfg = ref.read(gameDataProvider).value?.skillConfig;
+    if (cfg == null || cfg.byId(id) == null) return;
+    final s = state.requireValue;
+    final levels = Map<String, int>.from(s.skillLevels);
+    if (level <= 0) {
+      levels.remove(id);
+    } else {
+      levels[id] = level.clamp(1, cfg.maxLevel);
+    }
+    final equipped = [...s.equippedSkills];
+    if (level <= 0) {
+      equipped.remove(id);
+    } else if (!equipped.contains(id) &&
+        equipped.length < cfg.slotsFor(s.topTier)) {
+      equipped.add(id);
+    }
+    await _commit(
+      enforceSkillRules(
+        s.copyWith(skillLevels: levels, equippedSkills: equipped),
+        cfg,
+      ),
+    );
+  }
+
+  /// **개발자 모드 전용** — 12종 전부 켜거나 전부 끈다.
+  Future<void> devAllSkills({required bool on, int level = 1}) async {
+    final cfg = ref.read(gameDataProvider).value?.skillConfig;
+    if (cfg == null) return;
+    final s = state.requireValue;
+    if (!on) {
+      await _commit(
+        s.copyWith(skillLevels: const {}, equippedSkills: const []),
+      );
+      return;
+    }
+    final levels = <String, int>{
+      for (final d in cfg.skills) d.id: level.clamp(1, cfg.maxLevel),
+    };
+    // 장착은 열린 칸만큼만 — 넘치면 규칙 강제가 자른다.
+    final equipped = [
+      for (final d in cfg.skills.take(cfg.slotsFor(s.topTier))) d.id,
+    ];
+    await _commit(
+      enforceSkillRules(
+        s.copyWith(skillLevels: levels, equippedSkills: equipped),
+        cfg,
+      ),
+    );
+  }
+
+  /// **개발자 모드 전용** — 스킬 조각을 등급별 만능 조각으로 채운다.
+  Future<void> devAddGradeShards(int n) async {
+    final s = state.requireValue;
+    final m = Map<String, int>.from(s.skillGradeShards);
+    for (final g in kSkillGrades.skip(1)) {
+      m[g.key] = ((m[g.key] ?? 0) + n).clamp(0, 1 << 30);
+    }
+    await _commit(s.copyWith(skillGradeShards: m));
+  }
+
   /// 교환소 — 젤리를 **지금 스테이지 기준 방치 산출**로 바꾼다.
   ///
   /// 지급량을 현재 스테이지에 비례시키는 이유: 정액이면 후반엔 껌값이라 아무도

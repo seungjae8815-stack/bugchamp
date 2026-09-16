@@ -54,11 +54,16 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
               children: [
                 _tabs(l),
                 const SizedBox(height: 8),
-                SizedBox(
-                  height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
-                  child: CharacterScene(save: save),
-                ),
-                const SizedBox(height: 8),
+                // 채집 씬은 **스킬 탭에서 뺀다** — 스킬은 재료·장착 칸·12종
+                // 목록이 다 들어가야 해서 씬이 100px 을 먹으면 목록이 두 줄만
+                // 보인다(실기 지적 2026-09-16). 능력치·펫 탭은 그대로.
+                if (_panel != _Panel.skills) ...[
+                  SizedBox(
+                    height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
+                    child: CharacterScene(save: save),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 // 펫은 아직 다듬는 중이다. 반쯤 된 걸 보여 주느니
                 // **준비 중이라고 말한다** — 눌러도 아무 일이 없으면
                 // 고장으로 읽힌다. 스킬은 2026-09-15 에 열었다(§2.8).

@@ -2769,6 +2769,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String skillTimes(String n) {
+    return '×$n';
+  }
+
+  @override
   String get skillGachaOdds => '確率を見る';
 
   @override
@@ -2825,6 +2830,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String skillShardPop(String n) {
     return 'かけら +$n';
   }
+
+  @override
+  String get skillMaterials => 'スキル素材';
 
   @override
   String skillGradeWild(String grade) {
@@ -2897,6 +2905,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String skillTrainInstant(String n) {
     return '今すぐ完了 · ゼリー $n';
   }
+
+  @override
+  String get actionInstant => '即時完了';
 
   @override
   String get skillTrainConfirmTitle => '修練を今すぐ完了';

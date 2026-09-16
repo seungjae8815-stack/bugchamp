@@ -8,6 +8,7 @@ import '../../domain/audio_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/tier_label.dart';
@@ -45,7 +46,11 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
 
     return GameDialog(
       title: l.skillGachaTitle,
-      icon: Icons.auto_awesome_rounded,
+      iconWidget: skillButtonImage(
+        'gacha',
+        size: 26,
+        fallback: const Icon(Icons.auto_awesome_rounded, size: 22),
+      ),
       subtitle: l.skillGachaPityLeft(
         gradeLabel(l, cfg.gachaPityGrade),
         '$pityLeft',
@@ -93,7 +98,10 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
                   onPressed: _busy || jelly < cfg.gachaJellyCost
                       ? null
                       : () => _draw(l, 1),
-                  child: Text(l.skillGachaOne('${cfg.gachaJellyCost}')),
+                  child: jellyPrice(
+                    cost: cfg.gachaJellyCost,
+                    times: l.skillTimes('1'),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
@@ -102,7 +110,10 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
                   onPressed: _busy || jelly < cfg.gachaJellyCost * 10
                       ? null
                       : () => _draw(l, 10),
-                  child: Text(l.skillGachaTen('${cfg.gachaJellyCost * 10}')),
+                  child: jellyPrice(
+                    cost: cfg.gachaJellyCost * 10,
+                    times: l.skillTimes('10'),
+                  ),
                 ),
               ),
             ],
@@ -229,20 +240,25 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
     final freeLeft = (cfg.sweepFreePerDay - used.sweeps).clamp(0, 99);
     final limit = used.sweeps >= cfg.sweepMaxPerDay;
 
-    final String label;
+    // 유료 소탕만 젤리 가격표(아이콘+숫자)로 — 무료·상한은 글자가 맞다.
+    final Widget label;
     if (tier < 0) {
-      label = l.skillSweepNoBoss;
+      label = Text(l.skillSweepNoBoss);
     } else if (limit) {
-      label = l.skillSweepLimit;
+      label = Text(l.skillSweepLimit);
     } else if (freeLeft > 0) {
-      label = l.skillSweepFree('$freeLeft');
+      label = Text(l.skillSweepFree('$freeLeft'));
     } else {
-      label = l.skillSweepPaid('${cfg.sweepJellyCost}');
+      label = jellyPrice(cost: cfg.sweepJellyCost, label: l.skillSweep);
     }
 
     return GameDialog(
       title: l.skillSweepTitle,
-      icon: Icons.flash_on_rounded,
+      iconWidget: skillButtonImage(
+        'sweep',
+        size: 26,
+        fallback: const Icon(Icons.flash_on_rounded, size: 22),
+      ),
       subtitle: l.skillSweepToday('${used.sweeps}', '${cfg.sweepMaxPerDay}'),
       actions: [
         TextButton(
@@ -251,7 +267,7 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
         ),
         FilledButton(
           onPressed: _busy || tier < 0 || limit ? null : () => _sweep(l),
-          child: Text(label),
+          child: label,
         ),
       ],
       child: Text(

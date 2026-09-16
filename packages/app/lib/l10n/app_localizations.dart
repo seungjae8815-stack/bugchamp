@@ -5038,6 +5038,12 @@ abstract class AppLocalizations {
   /// **'10× · {n} jelly'**
   String skillGachaTen(String n);
 
+  /// No description provided for @skillTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'×{n}'**
+  String skillTimes(String n);
+
   /// No description provided for @skillGachaOdds.
   ///
   /// In en, this message translates to:
@@ -5121,6 +5127,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shard +{n}'**
   String skillShardPop(String n);
+
+  /// No description provided for @skillMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill materials'**
+  String get skillMaterials;
 
   /// No description provided for @skillGradeWild.
   ///
@@ -5229,6 +5241,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish now · {n} jelly'**
   String skillTrainInstant(String n);
+
+  /// No description provided for @actionInstant.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish now'**
+  String get actionInstant;
 
   /// No description provided for @skillTrainConfirmTitle.
   ///

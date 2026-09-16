@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
@@ -51,7 +52,11 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
 
     return GameDialog(
       title: l.skillGradeUpTitle(fromLabel, toLabel),
-      icon: Icons.diamond_rounded,
+      iconWidget: skillButtonImage(
+        'gradeup',
+        size: 26,
+        fallback: const Icon(Icons.diamond_rounded, size: 22),
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),

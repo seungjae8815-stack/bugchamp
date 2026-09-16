@@ -2775,6 +2775,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String skillTimes(String n) {
+    return '×$n';
+  }
+
+  @override
   String get skillGachaOdds => '확률 보기';
 
   @override
@@ -2831,6 +2836,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String skillShardPop(String n) {
     return '조각 +$n';
   }
+
+  @override
+  String get skillMaterials => '스킬 재료';
 
   @override
   String skillGradeWild(String grade) {
@@ -2903,6 +2911,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String skillTrainInstant(String n) {
     return '즉시 완료 · 젤리 $n';
   }
+
+  @override
+  String get actionInstant => '즉시 완료';
 
   @override
   String get skillTrainConfirmTitle => '수련 즉시 완료';

@@ -425,3 +425,55 @@ Widget skillButtonImage(
   height: size,
   fallback: fallback,
 );
+
+/// 젤리 가격표 한 줄 — `[젤리아이콘] 30 ×1`.
+///
+/// ⚠️ "젤리 30" 처럼 **글자로 쓰지 않는다**(실기 지적 2026-09-16).
+/// 프리미엄 재화는 가격표로 읽혀야 하고(§2.6), 글자로 쓰면 버튼에서
+/// 줄바꿈이 난다("10회 · 젤리 300" 이 두 줄이 됐다).
+/// [label] 은 앞에 붙는 말(소탕·즉시완료 등), [times] 는 뒤에 붙는 배수.
+Widget jellyPrice({
+  required int cost,
+  String? label,
+  String? times,
+  double size = 14,
+  Color color = Colors.white,
+  double fontSize = 12,
+}) => Row(
+  mainAxisSize: MainAxisSize.min,
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    if (label != null) ...[
+      Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(width: 4),
+    ],
+    jellyIcon(size: size),
+    const SizedBox(width: 2),
+    Text(
+      '$cost',
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+    if (times != null) ...[
+      const SizedBox(width: 3),
+      Text(
+        times,
+        style: TextStyle(
+          color: color.withValues(alpha: 0.75),
+          fontSize: fontSize,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ],
+  ],
+);

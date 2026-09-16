@@ -3665,8 +3665,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
-  /// 홈 스킬 바 — 장착한 액티브 버튼(쿨타임 링) + 자동발동 토글.
-  /// 액티브를 안 꼈으면 통째로 숨긴다(빈 바는 자리만 먹는다).
+  /// 홈 스킬 바 — 열린 칸이 **늘 보이고**, 장착한 액티브가 그 칸에 끼워진다.
+  ///
+  /// 예전엔 액티브가 없으면 바를 통째로 숨겼다. 그러면 ① 스킬을 끼는 순간
+  /// 화면이 밀려 올라가고 ② 스킬을 끼기 전에는 **이런 자리가 있는 줄 모른다**
+  /// (실기 지적 2026-09-16). 빈 칸을 점선으로 두어 자리를 잡아 둔다.
   Widget _skillBar(AppLocalizations l, SaveGame save) {
     final cfg = _data.skillConfig;
     if (cfg == null) return const SizedBox.shrink();
@@ -3675,7 +3678,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         if (cfg.byId(id) case final def?)
           if (def.isActive && (save.skillLevels[id] ?? 0) > 0) def,
     ];
-    if (actives.isEmpty) return const SizedBox.shrink();
+    // 빈 칸 수 = 열린 장착 칸에서 액티브가 찬 만큼 뺀 것.
+    // 패시브가 쓰는 칸까지 빈 칸으로 그리면 "왜 안 끼워지지"가 되므로
+    // 장착한 것(액티브+패시브) 전체를 센다.
+    final free = (cfg.slotsFor(save.topTier) - save.equippedSkills.length)
+        .clamp(0, cfg.maxSlots);
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
       child: Row(
@@ -3684,6 +3691,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: _skillButton(def),
+            ),
+          for (var i = 0; i < free; i++)
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: _EmptySkillSlot(),
             ),
           const Spacer(),
           InkWell(
@@ -6159,6 +6171,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 (v) => v.value?.ownedSkins ?? const <String>{},
               ),
             );
+            final locale = Localizations.localeOf(ctx).languageCode;
+            // 스킬 버튼의 ✓ 표시도 누르는 즉시 바뀌어야 한다(스킨과 같은 이유).
+            final skillLevels = r.watch(
+              saveControllerProvider.select(
+                (v) => v.value?.skillLevels ?? const <String, int>{},
+              ),
+            );
             // ⚠️ **스크롤**. 항목이 늘어날 때마다 아래가 잘려 안 보인다
             // (2026-08-31 실기 지적 — 이색 섹션을 넣자 바로 잘렸다).
             // 화면의 85% 까지만 쓰고 그 안에서 스크롤한다.
@@ -6194,6 +6213,45 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         _confirmReset(AppLocalizations.of(context));
                       }),
                     ]),
+                    // 스킬은 보스 조각으로만 열린다(§2.8) — 실기기에서
+                    // 12종을 다 보려면 며칠 걸린다. 미리 보기용 스위치.
+                    // 규칙 강제(enforceSkillRules)를 그대로 지나므로
+                    // 상한을 넘은 값은 저장되지 않는다.
+                    if (_data.skillConfig case final skillCfg?)
+                      _devSection('스킬 (12종 · 눌러서 켜고/끄기)', [
+                        _devBtn('전부 Lv.1 + 장착', () async {
+                          await ctrl.devAllSkills(on: true);
+                          toast('스킬 전부 해금');
+                        }),
+                        _devBtn('전부 만렙', () async {
+                          await ctrl.devAllSkills(
+                            on: true,
+                            level: skillCfg.maxLevel,
+                          );
+                          toast('스킬 전부 Lv.${skillCfg.maxLevel}');
+                        }),
+                        _devBtn('전부 끄기', () async {
+                          await ctrl.devAllSkills(on: false);
+                          toast('스킬 초기화');
+                        }, danger: true),
+                        _devBtn('만능 조각 +50', () async {
+                          await ctrl.devAddGradeShards(50);
+                          toast('만능 조각 +50');
+                        }),
+                        for (final d in skillCfg.skills)
+                          _devBtn(
+                            '${d.name.resolve(locale)}'
+                            '${(skillLevels[d.id] ?? 0) > 0 ? " ✓" : ""}',
+                            () async {
+                              final on = (skillLevels[d.id] ?? 0) > 0;
+                              await ctrl.devSetSkillLevel(d.id, on ? 0 : 1);
+                              toast(
+                                '${d.name.resolve(locale)} '
+                                '${on ? "끔" : "켬"}',
+                              );
+                            },
+                          ),
+                      ]),
                     _devSection('채집함', [
                       _devBtn('채우기(종별 3)', () async {
                         await ctrl.devFillBugs();
@@ -7837,4 +7895,50 @@ class _LanguageSection extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// 홈 스킬 바의 **빈 칸**. 장착 칸은 열려 있는데 아직 안 낀 자리다.
+///
+/// 점선 원 + 옅은 더하기 — 눌러도 아무 일이 없는 자리라 **버튼처럼 보이지
+/// 않게** 둔다(누를 수 있어 보이는데 반응이 없으면 고장으로 읽힌다).
+class _EmptySkillSlot extends StatelessWidget {
+  const _EmptySkillSlot();
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 46,
+    height: 46,
+    child: CustomPaint(
+      painter: _DashedCirclePainter(),
+      child: const Center(
+        child: Icon(Icons.add_rounded, size: 18, color: Color(0x40FFFFFF)),
+      ),
+    ),
+  );
+}
+
+class _DashedCirclePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3
+      ..color = const Color(0x33FFFFFF);
+    final r = size.width / 2 - 1;
+    final c = Offset(size.width / 2, size.height / 2);
+    const dash = 0.30; // 조각 / 빈틈 비율(라디안 단위로 12조각)
+    for (var i = 0; i < 12; i++) {
+      final a = i * 2 * math.pi / 12;
+      canvas.drawArc(
+        Rect.fromCircle(center: c, radius: r),
+        a,
+        2 * math.pi / 12 * dash * 2,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedCirclePainter oldDelegate) => false;
 }

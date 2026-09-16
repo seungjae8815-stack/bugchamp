@@ -138,23 +138,50 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
             ],
           ),
           const SizedBox(height: 6),
-          // 등급 만능 조각 — 일반은 아래 등급이 없어 만들 수 없으니 뺀다.
-          Wrap(
-            spacing: 10,
+          // 등급 만능 조각 = **스킬 재료**. 일반은 아래 등급이 없어 만들 수 없으니 뺀다.
+          //
+          // 제목 없이 '희귀 만능 0' 만 있으면 그게 재료인지 모른다(실기 지적
+          // 2026-09-16). 무엇을 모으는 중인지 한 줄로 말해 준다.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final g in kSkillGrades.skip(1))
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+              Text(
+                l.skillMaterials,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Wrap(
+                  spacing: 9,
+                  runSpacing: 3,
                   children: [
-                    Icon(Icons.diamond_rounded, size: 13, color: gradeColor(g)),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${l.skillGradeWild(gradeLabel(l, g))} '
-                      '${save.gradeShards(g)}',
-                      style: TextStyle(color: gradeColor(g), fontSize: 11),
-                    ),
+                    for (final g in kSkillGrades.skip(1))
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.diamond_rounded,
+                            size: 13,
+                            color: gradeColor(g),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${l.skillGradeWild(gradeLabel(l, g))} '
+                            '${save.gradeShards(g)}',
+                            style: TextStyle(
+                              color: gradeColor(g),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -277,9 +304,10 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
             _button(l.skillTrainClaim, () => _complete(l, cfg, locale))
           else
             _button(
-              l.skillTrainInstant('$jelly'),
+              l.actionInstant,
               () => _confirmInstant(l, cfg, jelly, locale),
               accent: const Color(0xFF4FC3F7),
+              jellyCost: jelly,
             ),
         ],
       ),
@@ -542,7 +570,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
         ),
         FilledButton(
           onPressed: () => Navigator.of(context, rootNavigator: true).pop(true),
-          child: Text(l.skillTrainInstant('$jelly')),
+          child: jellyPrice(cost: jelly, label: l.actionInstant),
         ),
       ],
     );
@@ -587,6 +615,9 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     bool dim = false,
     Color? accent,
     String? art,
+
+    /// 값이 있으면 글자 대신 **젤리 가격표**(아이콘+숫자)를 그린다.
+    int? jellyCost,
   }) => InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
@@ -611,15 +642,24 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
             skillButtonImage(art, size: 16, fallback: const SizedBox.shrink()),
             const SizedBox(width: 4),
           ],
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: dim ? const Color(0x66FFFFFF) : Colors.white,
+          if (jellyCost != null)
+            jellyPrice(
+              cost: jellyCost,
+              label: text,
+              size: 13,
               fontSize: 11.5,
-              fontWeight: FontWeight.w800,
+              color: dim ? const Color(0x66FFFFFF) : Colors.white,
+            )
+          else
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: dim ? const Color(0x66FFFFFF) : Colors.white,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
         ],
       ),
     ),
