@@ -118,6 +118,7 @@ flutter:
     - assets/images/ui/tab/
     - assets/images/ui/skill/
     - assets/images/skills/
+    - assets/images/ui/dialog/
     - assets/images/shop/
     - assets/sounds/
 

@@ -9,6 +9,49 @@ import 'labels.dart';
 
 const _honey = Color(0xFFEBA52F);
 
+/// 팝업 내용 여백. 액자 테두리(26논리px)보다 넉넉해야 글자가 나무를 타지 않는다.
+const kDialogFramePadding = EdgeInsets.fromLTRB(30, 28, 30, 26);
+
+/// 액자 애셋이 없을 때 — 조용히 그라데이션 틀만 쓴다(폴백, §6).
+void _frameMissing(Object e, StackTrace? s) {}
+
+/// 팝업 버튼 아트(9분할). `backgroundBuilder` 는 버튼의 배경색 **위에** 그려지고
+/// 버튼 모양으로 잘린다 — 그래서 호출부가 준 `backgroundColor` 를 덮는다.
+/// 애셋이 없으면 아무것도 그리지 않아 예전 색 버튼이 그대로 보인다(폴백, §6).
+///
+/// ⚠️ **팝업 안에서만** 쓴다(GameDialog 가 테마를 덮어쓴다). 앱 전체에 걸면
+/// 홈·상점의 버튼 94개까지 나무로 바뀐다 — 요청 범위를 넘는다.
+ButtonStyle _artButtonStyle(String asset, Rect slice) => ButtonStyle(
+  shape: const WidgetStatePropertyAll(StadiumBorder()),
+  // 아트가 배경을 담당하므로 그림자는 끈다(나무 위에 회색 그늘이 겹친다).
+  elevation: const WidgetStatePropertyAll(0),
+  shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+  backgroundBuilder: (context, states, child) => Opacity(
+    // 비활성은 흐리게 — 색 버튼일 때 disabledBackgroundColor 가 하던 일.
+    opacity: states.contains(WidgetState.disabled) ? 0.4 : 1,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: ExactAssetImage(asset, scale: 3),
+          centerSlice: slice,
+          fit: BoxFit.fill,
+          onError: _frameMissing,
+        ),
+      ),
+      child: child,
+    ),
+  ),
+);
+
+final _primaryBtn = _artButtonStyle(
+  'assets/images/ui/dialog/btn_primary.webp',
+  const Rect.fromLTRB(57, 2, 549, 130),
+);
+final _secondaryBtn = _artButtonStyle(
+  'assets/images/ui/dialog/btn_secondary.webp',
+  const Rect.fromLTRB(54, 2, 443, 130),
+);
+
 /// 게임 톤(다크그린 + 허니 테두리)으로 통일된 다이얼로그. 모든 팝업은 이걸 쓴다.
 Future<T?> showGameDialog<T>(
   BuildContext context, {
@@ -57,97 +100,120 @@ class GameDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xF21F2E13), Color(0xF20E1608)],
+      child: Theme(
+        // 팝업 안의 버튼만 나무 아트로. 확인·실행 = 황동, 취소·닫기 = 회색 나무.
+        data: theme.copyWith(
+          filledButtonTheme: FilledButtonThemeData(
+            style:
+                theme.filledButtonTheme.style?.merge(_primaryBtn) ??
+                _primaryBtn,
           ),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0x88EBA52F), width: 1.5),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x66EBA52F),
-              blurRadius: 20,
-              spreadRadius: -6,
-            ),
-            BoxShadow(color: Color(0x99000000), blurRadius: 18),
-          ],
+          textButtonTheme: TextButtonThemeData(
+            style:
+                theme.textButtonTheme.style?.merge(_secondaryBtn) ??
+                _secondaryBtn,
+          ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (iconWidget != null) ...[
-                  SizedBox(width: 40, height: 40, child: iconWidget),
-                  const SizedBox(width: 10),
-                ] else if (icon != null) ...[
-                  Container(
-                    width: 34,
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0x33EBA52F),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0x88EBA52F)),
-                    ),
-                    child: Icon(icon, color: _honey, size: 19),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16.5,
-                        ),
+        child: Container(
+          // 나무 액자 아트(9분할) — 애셋이 없으면 예전 그라데이션 틀로 떨어진다.
+          // 내용 여백은 **테두리 두께(26)보다 커야** 글자가 나무에 올라타지 않는다.
+          padding: kDialogFramePadding,
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              image: ExactAssetImage(
+                'assets/images/ui/dialog/frame.webp',
+                // 3배 해상도로 저장했다 — scale 을 주지 않으면 centerSlice 의
+                // 모서리가 원본 픽셀(77) 그대로 찍혀 테두리가 3배로 두꺼워진다.
+                scale: 3,
+              ),
+              centerSlice: Rect.fromLTRB(77, 76, 499, 494),
+              fit: BoxFit.fill,
+              onError: _frameMissing,
+            ),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xF21F2E13), Color(0xF20E1608)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [
+              BoxShadow(color: Color(0x99000000), blurRadius: 18),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (iconWidget != null) ...[
+                    SizedBox(width: 40, height: 40, child: iconWidget),
+                    const SizedBox(width: 10),
+                  ] else if (icon != null) ...[
+                    Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color(0x33EBA52F),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0x88EBA52F)),
                       ),
-                      if (subtitle != null)
+                      child: Icon(icon, color: _honey, size: 19),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          subtitle!,
+                          title,
                           style: const TextStyle(
-                            color: _honey,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11.5,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16.5,
                           ),
                         ),
-                    ],
+                        if (subtitle != null)
+                          Text(
+                            subtitle!,
+                            style: const TextStyle(
+                              color: _honey,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Divider(height: 1, color: Color(0x33EBA52F)),
+              ),
+              // 본문은 **스크롤 가능**해야 한다 — 설정·계정처럼 줄이 많은 창은
+              // 작은 화면에서 다이얼로그가 화면보다 커진다(세로 오버플로우).
+              // 머리말·버튼은 고정하고 본문만 흐르게 둔다.
+              Flexible(child: SingleChildScrollView(child: child)),
+              if (actions.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                // 버튼은 **줄바꿈**한다. 한 줄 고정이면 버튼이 3개만 넘어도
+                // 가로로 넘쳐 잘린다(계정 창 = 닫기·로그인·삭제·약관).
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: actions,
                 ),
               ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Divider(height: 1, color: Color(0x33EBA52F)),
-            ),
-            // 본문은 **스크롤 가능**해야 한다 — 설정·계정처럼 줄이 많은 창은
-            // 작은 화면에서 다이얼로그가 화면보다 커진다(세로 오버플로우).
-            // 머리말·버튼은 고정하고 본문만 흐르게 둔다.
-            Flexible(child: SingleChildScrollView(child: child)),
-            if (actions.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              // 버튼은 **줄바꿈**한다. 한 줄 고정이면 버튼이 3개만 넘어도
-              // 가로로 넘쳐 잘린다(계정 창 = 닫기·로그인·삭제·약관).
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: 8,
-                runSpacing: 8,
-                children: actions,
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
