@@ -336,6 +336,11 @@ Invoke-RestMethod -Method Post "https://api.telegram.org/bot<봇토큰>/setWebho
 
 - 비밀값: Supabase 시크릿 `TELEGRAM_BOT_TOKEN`·`REPORT_SECRET` · Cloud Run `TELEGRAM_BOT_TOKEN`·`TELEGRAM_WEBHOOK_SECRET` ·
   Firebase(Secret Manager) `TELEGRAM_BOT_TOKEN`. **봇 토큰을 바꾸면 세 곳 모두** 바꾼다.
+- ⚠️ **시크릿에 BOM·CRLF 를 넣지 말 것.** PowerShell 로 만들면 값 앞에 BOM(3바이트), 뒤에 CRLF 가 붙는다.
+  서버는 걷어내지만(`adminOk`), **다른 도구로 그 키를 쓰면 401** 이 난다. 실제로 `bugchamp-admin-key` 가
+  40자인데 46바이트로 저장돼 있었다(2026-09-17 에 v2 로 정리 — 값은 그대로, 40바이트·BOM 없음).
+  만들 때: `printf '%s' "$KEY" | gcloud secrets versions add <이름> --data-file=-`
+  확인: `gcloud secrets versions access latest --secret=<이름> | wc -c` 가 키 길이와 같아야 한다.
 - 크론 SQL: `docs/_sql_20260915_ops_monitor.sql`(비밀값 자리표시 — 실제 값 넣은 파일은 커밋 금지).
 - 크래시 함수 배포: `firebase/` 폴더에서 `firebase deploy --only functions:ops --project bugchamp`.
 - ⚠️ iOS 크래시는 dSYM 업로드(Codemagic 단계)를 붙여야 함수 이름으로 읽힌다 — 아직 안 붙였다.
