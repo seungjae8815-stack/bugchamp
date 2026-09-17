@@ -586,6 +586,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
+  /// 쓰러져서 후퇴할 때 사냥터 게이지를 비운다(사장님 확정 2026-09-18).
+  ///
+  /// ⚠️ 헌법 §2.4 는 "실패 벌칙 없음"이었다 — 이 지시로 **바뀐다**.
+  /// 보스는 겨우 잡히는 체력으로 맞춰 둬서 실패가 잦은데, 그때마다 100마리를
+  /// 다시 채워야 한다. 진행이 느려지면 이 규칙부터 되돌려 본다.
+  Future<void> resetZoneKills() async {
+    final s = state.requireValue;
+    if (s.zoneKills == 0) return;
+    await _commit(s.copyWith(zoneKills: 0));
+  }
+
   /// 보스 도전이 열렸는가 — 이 사냥터에서 [RunConfig.bossUnlockKills] 마리.
   bool get bossUnlocked {
     final run = ref.read(gameDataProvider).value?.runConfig;

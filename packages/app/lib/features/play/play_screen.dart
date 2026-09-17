@@ -1864,9 +1864,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _defeated = false;
     _retreatFlash = 0;
     if (_config.zoneMode) {
-      // 벌칙 없음(사장님 확정). 보스 도전 중이었으면 사냥터로 돌아온다 —
-      // 게이지는 그대로라 바로 다시 도전할 수 있다. 사냥터 자체를 못 버티면
-      // 로드맵에서 아래 사냥터로 내려가면 된다.
+      // **쓰러지면 사냥터 게이지가 비워진다**(사장님 확정 2026-09-18).
+      // 예전엔 벌칙이 없어 게이지를 그대로 들고 바로 재도전할 수 있었다.
+      // ⚠️ 헌법 §2.4 의 "실패 벌칙 없음"이 이 지시로 바뀌었다 — 보스는 겨우
+      // 잡히는 체력이라 실패가 잦고, 그때마다 100마리를 다시 채워야 한다.
+      // 진행이 눈에 띄게 느려지면 여기부터 되돌린다.
+      unawaited(ref.read(saveControllerProvider.notifier).resetZoneKills());
       if (_bossChallenge) {
         _bossChallenge = false;
         if (mounted) {
