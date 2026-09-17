@@ -159,75 +159,91 @@ class GameDialog extends StatelessWidget {
               BoxShadow(color: Color(0x99000000), blurRadius: 18),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (iconWidget != null) ...[
-                    SizedBox(width: 40, height: 40, child: iconWidget),
-                    const SizedBox(width: 10),
-                  ] else if (icon != null) ...[
-                    Container(
-                      width: 34,
-                      height: 34,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0x33EBA52F),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0x88EBA52F)),
-                      ),
-                      child: Icon(icon, color: _honey, size: 19),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 16.5,
-                          ),
+          child: Container(
+            // 나무 액자 가운데는 밝은 올리브다 — 그 위에 흰 글씨를 바로 얹으면
+            // 대비가 모자라 흐릿하게 읽힌다. **어두운 속판**을 깔아 글씨를
+            // 받치고, 나무는 테두리로만 보이게 한다.
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: const Color(0xD9121C0A),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0x33000000)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 머리말도 **가운데**로. 본문은 대부분 가운데 정렬인데 제목만
+                // 왼쪽이라 창 전체가 어긋나 보였다(실기 지적 2026-09-18).
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (iconWidget != null) ...[
+                      SizedBox(width: 40, height: 40, child: iconWidget),
+                      const SizedBox(width: 10),
+                    ] else if (icon != null) ...[
+                      Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: const Color(0x33EBA52F),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0x88EBA52F)),
                         ),
-                        if (subtitle != null)
+                        child: Icon(icon, color: _honey, size: 19),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
                           Text(
-                            subtitle!,
+                            title,
+                            textAlign: TextAlign.center,
                             style: const TextStyle(
-                              color: _honey,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11.5,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16.5,
                             ),
                           ),
-                      ],
+                          if (subtitle != null)
+                            Text(
+                              subtitle!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: _honey,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1, color: Color(0x33EBA52F)),
+                ),
+                // 본문은 **스크롤 가능**해야 한다 — 설정·계정처럼 줄이 많은 창은
+                // 작은 화면에서 다이얼로그가 화면보다 커진다(세로 오버플로우).
+                // 머리말·버튼은 고정하고 본문만 흐르게 둔다.
+                Flexible(child: SingleChildScrollView(child: child)),
+                if (actions.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  // 버튼은 **줄바꿈**한다. 한 줄 고정이면 버튼이 3개만 넘어도
+                  // 가로로 넘쳐 잘린다(계정 창 = 닫기·로그인·삭제·약관).
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: actions,
                   ),
                 ],
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Divider(height: 1, color: Color(0x33EBA52F)),
-              ),
-              // 본문은 **스크롤 가능**해야 한다 — 설정·계정처럼 줄이 많은 창은
-              // 작은 화면에서 다이얼로그가 화면보다 커진다(세로 오버플로우).
-              // 머리말·버튼은 고정하고 본문만 흐르게 둔다.
-              Flexible(child: SingleChildScrollView(child: child)),
-              if (actions.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                // 버튼은 **줄바꿈**한다. 한 줄 고정이면 버튼이 3개만 넘어도
-                // 가로로 넘쳐 잘린다(계정 창 = 닫기·로그인·삭제·약관).
-                Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: actions,
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -275,7 +291,12 @@ Widget gameRewardList(
   if (xp > 0) {
     rows.add(
       _rewardRow(
-        const Text('🔷', style: TextStyle(fontSize: 20)),
+        gameImage(
+          'assets/images/upgrades/xp.webp',
+          width: 26,
+          height: 26,
+          fallback: const Text('🔷', style: TextStyle(fontSize: 20)),
+        ),
         l.offlineXpLabel,
         formatCompact(xp),
       ),

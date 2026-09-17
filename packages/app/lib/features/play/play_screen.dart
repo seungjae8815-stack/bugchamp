@@ -2193,6 +2193,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
               ),
               // 적/서식지 (하단=발 기준 정렬)
+              // 팝업(데미지/골드) — **몬스터보다 먼저 그린다**(= 뒤에 깔린다).
+              //
+              // 위에 그리면 피해량 숫자가 몬스터 이름표를 덮는다. 숫자가 커질수록
+              // 심해져서 "무엇과 싸우는지"가 안 보였다(실기 지적 2026-09-18).
+              // 뒤에 깔아도 숫자는 떠오르며 사라져 충분히 읽힌다.
+              for (final p in _pops)
+                Align(
+                  alignment: Alignment(p.baseX + p.dx, p.baseY - p.age * 0.5),
+                  child: Opacity(
+                    opacity: (1 - p.age).clamp(0.0, 1.0),
+                    child: Text(
+                      p.text,
+                      style: TextStyle(
+                        color: p.color,
+                        fontWeight: FontWeight.w900,
+                        fontSize: p.size,
+                        shadows: const [
+                          Shadow(color: Colors.black87, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               Align(
                 alignment: const Alignment(0.45, 1.0),
                 child: Padding(
@@ -2358,26 +2381,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
               ),
 
-              // 팝업(데미지/골드)
-              for (final p in _pops)
-                Align(
-                  alignment: Alignment(p.baseX + p.dx, p.baseY - p.age * 0.5),
-                  child: Opacity(
-                    opacity: (1 - p.age).clamp(0.0, 1.0),
-                    child: Text(
-                      p.text,
-                      style: TextStyle(
-                        color: p.color,
-                        fontWeight: FontWeight.w900,
-                        fontSize: p.size,
-                        shadows: const [
-                          Shadow(color: Colors.black87, blurRadius: 4),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
               // 임팩트 스파크 + 파편
               Positioned.fill(
                 child: IgnorePointer(
@@ -2513,6 +2516,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
               // 부스트 유도: 주기적으로 나타났다 사라지는 손가락 탭 아이콘
               if (_boostMult <= 1.0) _buildTapHint(),
+              // 홈 스킬 바(§2.8) — **전투 화면 오른쪽 아래**(사장님 지시
+              // 2026-09-18). 강화 패널 위에 따로 자리를 잡으면 씬이 그만큼
+              // 줄어든다. 왼쪽에 자동발동 토글(아이콘만).
+              if (ref.watch(saveControllerProvider).value case final sv?)
+                Positioned(right: 8, bottom: 8, child: _skillBar(l, sv)),
             ],
           ),
         ),
@@ -2535,8 +2543,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         children: [
           // 채집함 만석 알림 — 구매 버튼 바로 위(씬을 가리지 않는 자리).
           _storageFullBar(l, save),
-          // 홈 스킬 바(§2.8) — 만석 알림 바로 아래, 구매 버튼 위.
-          _skillBar(l, save),
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: Row(
@@ -3712,69 +3718,75 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         if (cfg.byId(id) case final def?)
           if (def.isActive && (save.skillLevels[id] ?? 0) > 0) def,
     ];
-    // 빈 칸 수 = 열린 장착 칸에서 액티브가 찬 만큼 뺀 것.
-    // 패시브가 쓰는 칸까지 빈 칸으로 그리면 "왜 안 끼워지지"가 되므로
-    // 장착한 것(액티브+패시브) 전체를 센다.
-    final free = (cfg.slotsFor(save.topTier) - save.equippedSkills.length)
-        .clamp(0, cfg.maxSlots);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+    // 칸은 **항상 최대치(5칸)** 를 그린다(사장님 지시 2026-09-18).
+    // 열린 칸은 점선, 아직 안 열린 칸은 자물쇠 — 몇 칸까지 늘어나는지
+    // 보여야 난이도를 올릴 이유가 된다(도감 미수집 실루엣과 같은 규칙).
+    final opened = cfg.slotsFor(save.topTier);
+    final free = (opened - save.equippedSkills.length).clamp(0, cfg.maxSlots);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      decoration: BoxDecoration(
+        // 씬 위에 얹히므로 옅은 받침을 깔아 아이콘이 배경에 묻히지 않게.
+        color: const Color(0x4D000000),
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          // 자동발동 — **아이콘만**. 글자는 자리를 먹고, 켜짐/꺼짐은 밝기로 읽힌다.
+          Tooltip(
+            message: l.skillAuto,
+            child: InkWell(
+              onTap: () => ref
+                  .read(saveControllerProvider.notifier)
+                  .setSkillAutoCast(!save.skillAutoCast),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: save.skillAutoCast
+                      ? const Color(0x3380DEEA)
+                      : const Color(0x33000000),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: save.skillAutoCast
+                        ? const Color(0xFF80DEEA)
+                        : const Color(0x33FFFFFF),
+                  ),
+                ),
+                child: Opacity(
+                  opacity: save.skillAutoCast ? 1 : 0.4,
+                  child: skillButtonImage(
+                    'auto',
+                    size: 20,
+                    fallback: Icon(
+                      Icons.autorenew_rounded,
+                      size: 17,
+                      color: save.skillAutoCast ? Colors.white : Colors.white54,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           for (final def in actives)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(left: 6),
               child: _skillButton(def),
             ),
           for (var i = 0; i < free; i++)
             const Padding(
-              padding: EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(left: 6),
               child: _EmptySkillSlot(),
             ),
-          const Spacer(),
-          InkWell(
-            onTap: () => ref
-                .read(saveControllerProvider.notifier)
-                .setSkillAutoCast(!save.skillAutoCast),
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: save.skillAutoCast
-                    ? const Color(0x3380DEEA)
-                    : const Color(0x22000000),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: save.skillAutoCast
-                      ? const Color(0xFF80DEEA)
-                      : const Color(0x33FFFFFF),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 꺼져 있으면 흐리게 — 글자 색과 같은 신호를 아트에도 준다.
-                  Opacity(
-                    opacity: save.skillAutoCast ? 1 : 0.45,
-                    child: skillButtonImage(
-                      'auto',
-                      size: 16,
-                      fallback: const SizedBox.shrink(),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    l.skillAuto,
-                    style: TextStyle(
-                      color: save.skillAutoCast ? Colors.white : Colors.white54,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+          for (var i = 0; i < cfg.maxSlots - opened; i++)
+            const Padding(
+              padding: EdgeInsets.only(left: 6),
+              child: _EmptySkillSlot(locked: true),
             ),
-          ),
         ],
       ),
     );
@@ -3798,8 +3810,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return GestureDetector(
       onTap: cd > 0 ? null : () => setState(() => _skillQueue.add(def.id)),
       child: SizedBox(
-        width: 46,
-        height: 46,
+        width: 40,
+        height: 40,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -3824,7 +3836,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               opacity: cd > 0 ? 0.45 : 1,
               child: skillImage(
                 def.id,
-                size: 34,
+                size: 29,
                 fallback: Icon(
                   icon,
                   color: cd > 0 ? Colors.white38 : Colors.white,
@@ -3834,8 +3846,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
             if (cd > 0 && total > 0) ...[
               SizedBox(
-                width: 46,
-                height: 46,
+                width: 40,
+                height: 40,
                 child: CircularProgressIndicator(
                   value: (cd / total).clamp(0.0, 1.0),
                   strokeWidth: 3,
@@ -4135,7 +4147,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       padding: const EdgeInsets.only(bottom: 6),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: claimable ? () => _claimMission(l, def.id) : null,
+        onTap: claimable ? () => _claimMission(l, def, claims) : null,
         child: _PulseBox(
           // ⚠️ 깜빡임은 **스스로** 돌아야 한다. 예전엔 부모(_tapHint)의 값을 읽어
           //    계산했는데, 미션 목록은 바텀시트라 부모가 갱신돼도 다시 그려지지
@@ -4204,13 +4216,40 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
-  Future<void> _claimMission(AppLocalizations l, String id) async {
-    final ok = await ref.read(saveControllerProvider.notifier).claimMission(id);
-    if (!ok) return;
+  /// 미션 보상 수령 — **무엇을 받았는지 보여 준다**(실기 지적 2026-09-18).
+  ///
+  /// 예전엔 "완료!" 토스트뿐이라 골드인지 젤리인지 재료인지 알 수 없었다.
+  /// 보상은 **화면에서 계산**한다 — 컨트롤러는 성공 여부만 돌려주고(서버 경로도
+  /// 마찬가지) 값은 같은 정의에서 나오므로 서로 어긋나지 않는다.
+  Future<void> _claimMission(
+    AppLocalizations l,
+    MissionDef def,
+    int claims,
+  ) async {
+    final amount = def.rewardAt(claims);
+    final ok = await ref
+        .read(saveControllerProvider.notifier)
+        .claimMission(def.id);
+    if (!ok || !mounted) return;
     AudioService.instance.sfxMission();
-    if (mounted) {
-      showCenterToast(context, l.missionClaimedSnack);
-    }
+    await showRewardPopup(
+      context,
+      title: l.missionClaimedSnack,
+      subtitle: missionLabel(l, def.type),
+      iconWidget: missionImage(
+        def.type,
+        size: 30,
+        fallback: Icon(missionIcon(def.type), color: _honey, size: 22),
+      ),
+      gold: def.reward == 'gold' ? amount : 0,
+      materials: switch (def.reward) {
+        'jelly' => {MaterialKind.jelly: amount},
+        'material' when def.rewardMaterial != null => {
+          def.rewardMaterial!: amount,
+        },
+        _ => const {},
+      },
+    );
   }
 
   /// 흩어졌다가 캐릭터로 흡수되는 재화 알갱이 1개를 배치한다.
@@ -4846,7 +4885,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         final more = await showGameDialog<bool>(
           ctx,
           title: l.giftAdMoreTitle,
-          icon: Icons.play_circle_fill_rounded,
+          iconWidget: dialogIcon('gift'),
           // 이 다이얼로그가 곧 패스 광고판이다 — "1회뿐"과 "패스면 무제한"을
           // 받는 순간에 같이 보여준다(2026-08-20 문구·강조 사장님 지시).
           content: Column(
@@ -4915,6 +4954,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       await showRewardPopup(
         ctx,
         title: wantDouble ? l.giftDoubledSnack : l.giftClaimedSnack,
+        iconWidget: dialogIcon('reward'),
         subtitle: l.rewardGained,
         icon: wantDouble
             ? Icons.play_circle_fill_rounded
@@ -5103,7 +5143,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       final more = await showGameDialog<bool>(
         ctx,
         title: l.giftAdMoreTitle,
-        icon: Icons.play_circle_fill_rounded,
+        iconWidget: dialogIcon('gift'),
         content: Text(
           l.giftAdMoreBody,
           textAlign: TextAlign.center,
@@ -5130,6 +5170,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         await showRewardPopup(
           ctx,
           title: l.giftDoubledSnack,
+          iconWidget: dialogIcon('reward'),
           subtitle: l.rewardGained,
           icon: Icons.play_circle_fill_rounded,
           gold: rw.gold,
@@ -6283,6 +6324,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         _devBtn('만능 조각 +50', () async {
                           await ctrl.devAddGradeShards(50);
                           toast('만능 조각 +50');
+                        }),
+                        // 쿨타임 때문에 효과를 보려면 몇 분씩 기다려야 한다 —
+                        // 발동 없이 모션만 돌려 보는 창(실기 지적 2026-09-18).
+                        _devBtn('스킬 모션 보기', () {
+                          Navigator.pop(context);
+                          showDialog<void>(
+                            context: context,
+                            builder: (_) =>
+                                _SkillFxViewer(cfg: skillCfg, locale: locale),
+                          );
                         }),
                         for (final d in skillCfg.skills)
                           _devBtn(
@@ -7955,16 +8006,26 @@ class _LanguageSection extends ConsumerWidget {
 /// 점선 원 + 옅은 더하기 — 눌러도 아무 일이 없는 자리라 **버튼처럼 보이지
 /// 않게** 둔다(누를 수 있어 보이는데 반응이 없으면 고장으로 읽힌다).
 class _EmptySkillSlot extends StatelessWidget {
-  const _EmptySkillSlot();
+  const _EmptySkillSlot({this.locked = false});
+
+  /// 아직 열리지 않은 칸(난이도를 처음 밟으면 열린다, §2.8).
+  final bool locked;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 46,
-    height: 46,
-    child: CustomPaint(
-      painter: _DashedCirclePainter(),
-      child: const Center(
-        child: Icon(Icons.add_rounded, size: 18, color: Color(0x40FFFFFF)),
+  Widget build(BuildContext context) => Opacity(
+    opacity: locked ? 0.45 : 1,
+    child: SizedBox(
+      width: 40,
+      height: 40,
+      child: CustomPaint(
+        painter: _DashedCirclePainter(),
+        child: Center(
+          child: Icon(
+            locked ? Icons.lock_rounded : Icons.add_rounded,
+            size: 15,
+            color: const Color(0x40FFFFFF),
+          ),
+        ),
       ),
     ),
   );
@@ -8023,6 +8084,165 @@ class _SkillFx extends StatelessWidget {
         width: 150,
         height: 150,
         fallback: const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+/// **개발자 모드 전용** — 스킬 효과 모션을 쿨타임 없이 돌려 본다.
+///
+/// 액티브는 쿨타임이 2분씩이고 탈피는 쓰러질 뻔해야 뜬다. 모션만 확인하려고
+/// 그걸 기다릴 수는 없다. 게임 배경과 비슷한 어두운 판 위에 캐릭터 크기의
+/// 원을 두고 그 위에 효과를 얹어, 실제 화면에서 어떻게 보일지 그대로 맞춘다.
+class _SkillFxViewer extends StatefulWidget {
+  const _SkillFxViewer({required this.cfg, required this.locale});
+
+  final SkillConfig cfg;
+  final String locale;
+
+  @override
+  State<_SkillFxViewer> createState() => _SkillFxViewerState();
+}
+
+class _SkillFxViewerState extends State<_SkillFxViewer>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  String? _id;
+  double _t = 0;
+  bool _loop = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_tick)..start();
+  }
+
+  Duration _last = Duration.zero;
+
+  void _tick(Duration now) {
+    final dt = (now - _last).inMicroseconds / 1e6;
+    _last = now;
+    if (_id == null) return;
+    setState(() {
+      _t += dt.clamp(0.0, 0.05);
+      if (_t >= _PlayScreenState._fxDuration) {
+        // 반복이면 바로 다시 — 한 번만 보면 0.44초라 눈에 안 남는다.
+        _t = _loop ? 0 : _PlayScreenState._fxDuration;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 효과 그림이 있는 스킬만 — 없는 것을 눌러도 아무 일이 없으면 고장으로 읽힌다.
+    final ids = widget.cfg.skills.map((d) => d.id).toList();
+    return GameDialog(
+      title: '스킬 모션 보기',
+      subtitle: _id == null ? '스킬을 고르세요' : null,
+      iconWidget: skillButtonImage(
+        'auto',
+        size: 26,
+        fallback: const Icon(Icons.play_circle_fill_rounded, size: 22),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => setState(() => _loop = !_loop),
+          child: Text(_loop ? '반복 켬' : '반복 끔'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('닫기'),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 무대 — 게임 씬과 비슷한 어둡기. 가운데 원이 캐릭터 자리(92px).
+          Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: const Color(0xFF16240D),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0x22FFFFFF)),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 92,
+                  height: 92,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0x22FFFFFF),
+                    border: Border.all(color: const Color(0x33FFFFFF)),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('🧑‍🌾', style: TextStyle(fontSize: 38)),
+                ),
+                if (_id case final fx?) _SkillFx(id: fx, t: _t),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              for (final id in ids)
+                InkWell(
+                  onTap: () => setState(() {
+                    _id = id;
+                    _t = 0;
+                  }),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _id == id
+                          ? const Color(0x33EBA52F)
+                          : const Color(0x22FFFFFF),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _id == id
+                            ? const Color(0xFFEBA52F)
+                            : const Color(0x22FFFFFF),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        skillImage(
+                          id,
+                          size: 18,
+                          fallback: const SizedBox.shrink(),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.cfg.byId(id)?.name.resolve(widget.locale) ??
+                              id,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
