@@ -3275,7 +3275,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return RenameResult.noChange;
     final s = state.requireValue;
-    if (trimmed == s.nickname && s.nicknameSet) return RenameResult.noChange;
+    if (trimmed == s.nickname && s.nicknameSet) {
+      // ⚠️ 운영자가 변경을 요구한 상태에서 **같은 이름**을 낸 경우를 따로 돌려준다.
+      //
+      // 예전엔 둘 다 noChange 였고 화면은 "쓸 수 없는 문자"를 띄웠다. 이름에는
+      // 아무 문제가 없으니 유저는 바꿨다고 생각하는데, 서버는 새 이름이 올라와야
+      // 플래그를 내리므로(`mergeSave`) **안내가 영원히 다시 뜬다**
+      // (2026-09-17 문의: "바꿔도 계속 글이 떠요").
+      return s.renameRequired ? RenameResult.sameName : RenameResult.noChange;
+    }
     // 운영자가 변경을 요구한 경우엔 **무료**다 — 부적절한 이름을 고치라면서
     // 돈을 받으면 그건 벌금이지 조치가 아니다. 플래그는 여기서 내리지만
     // 서버가 새 이름을 보고 다시 내린다(서버 소유라 앱이 못 내린다).
@@ -3303,7 +3311,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
 }
 
 /// [SaveController.renamePlayer] 결과.
-enum RenameResult { ok, notEnoughJelly, noChange }
+enum RenameResult { ok, notEnoughJelly, noChange, sameName }
 
 final saveControllerProvider = AsyncNotifierProvider<SaveController, SaveGame>(
   SaveController.new,

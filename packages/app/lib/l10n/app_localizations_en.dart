@@ -2048,6 +2048,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Letters and numbers only (no emoji or stray marks)';
 
   @override
+  String get nicknameSameName =>
+      'Please pick a name different from your current one.';
+
+  @override
   String get eventRewardsTitle => 'Rank rewards';
 
   @override

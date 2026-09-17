@@ -3670,6 +3670,12 @@ abstract class AppLocalizations {
   /// **'Letters and numbers only (no emoji or stray marks)'**
   String get nicknameBadChars;
 
+  /// No description provided for @nicknameSameName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pick a name different from your current one.'**
+  String get nicknameSameName;
+
   /// No description provided for @eventRewardsTitle.
   ///
   /// In en, this message translates to:

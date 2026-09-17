@@ -6576,7 +6576,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       if (!ctx.mounted) return;
                       if (r != RenameResult.ok) {
                         setD(() => busy = false);
-                        showCenterToast(ctx, l.nicknameBadChars);
+                        // 같은 이름이면 **그렇다고 말한다** — "쓸 수 없는 문자"로
+                        // 뭉뚱그리면 유저는 이름이 문제인 줄 알고 헤맨다.
+                        showCenterToast(
+                          ctx,
+                          r == RenameResult.sameName
+                              ? l.nicknameSameName
+                              : l.nicknameBadChars,
+                        );
                         return;
                       }
                       // 지금 바로 올린다 — 60초를 기다리면 그동안 서버는

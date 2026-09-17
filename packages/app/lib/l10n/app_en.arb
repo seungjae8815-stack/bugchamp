@@ -1231,6 +1231,7 @@
     }
   },
   "nicknameBadChars": "Letters and numbers only (no emoji or stray marks)",
+  "nicknameSameName": "Please pick a name different from your current one.",
   "eventRewardsTitle": "Rank rewards",
   "eventRankOne": "1st",
   "eventRankRange": "{a}–{b}",

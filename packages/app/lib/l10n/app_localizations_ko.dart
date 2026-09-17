@@ -2013,6 +2013,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get nicknameBadChars => '한글·영문·숫자만 쓸 수 있어요 (이모지·자음/모음 하나는 안 돼요)';
 
   @override
+  String get nicknameSameName => '지금 쓰는 이름과 다른 이름을 지어 주세요.';
+
+  @override
   String get eventRewardsTitle => '순위 보상';
 
   @override

@@ -681,6 +681,7 @@
   "badgeChampion": "{round}회차 챔피언",
   "badgeFinalist": "{round}회차 입상",
   "nicknameBadChars": "한글·영문·숫자만 쓸 수 있어요 (이모지·자음/모음 하나는 안 돼요)",
+  "nicknameSameName": "지금 쓰는 이름과 다른 이름을 지어 주세요.",
   "eventRewardsTitle": "순위 보상",
   "eventRankOne": "1위",
   "eventRankRange": "{a}~{b}위",

@@ -2007,6 +2007,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nicknameBadChars => '文字と数字のみ使えます（絵文字・単独の記号は不可）';
 
   @override
+  String get nicknameSameName => '今の名前とは違う名前を入力してください。';
+
+  @override
   String get eventRewardsTitle => '順位報酬';
 
   @override
