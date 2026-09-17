@@ -83,7 +83,7 @@ def find_cells(path, grid=3):
     im = Image.open(path).convert('RGB')
     a = np.asarray(im).astype(np.float32)
     h, w, _ = a.shape
-    bg, bglike, _, _ = _masks(a)
+    bg, bglike, k, resid = _masks(a)
 
     lab, n = ndimage.label(~bglike)
     found = []
@@ -106,10 +106,10 @@ def find_cells(path, grid=3):
                              min(p[2], x0), max(p[3], x1), p[4] + area)
         else:
             cells[(r, c)] = (y0, y1, x0, x1, area)
-    return im, a, bg, bglike, cells
+    return im, a, bg, bglike, k, resid, cells
 
 
-def cut_cell(a, bg, bglike, box, target=TARGET):
+def cut_cell(a, bg, bglike, k, resid, box, target=TARGET):
     """칸 하나를 잘라 투명 WebP 용 이미지로."""
     y0, y1, x0, x1 = box
     pad = 6
@@ -117,9 +117,28 @@ def cut_cell(a, bg, bglike, box, target=TARGET):
     y1, x1 = min(a.shape[0], y1 + pad + 1), min(a.shape[1], x1 + pad + 1)
     sub = a[y0:y1, x0:x1]
     sub_bg = bglike[y0:y1, x0:x1]
+    sub_k = k[y0:y1, x0:x1]
+    sub_r = resid[y0:y1, x0:x1]
+
+    # ⚠️ **바깥에서 번져 들어간 것만 배경으로 본다.**
+    #    그냥 `~bglike` 를 쓰면 배경색과 비슷한 **물체 안쪽**까지 뚫린다 —
+    #    반투명 날개와 금속 조각에 검은 구멍이 났다(2026-09-18).
+    lab, n = ndimage.label(sub_bg)
+    outside_labels = set(lab[0]) | set(lab[-1]) | set(lab[:, 0]) | set(lab[:, -1])
+    outside_labels.discard(0)
+    # 고리 안쪽처럼 갇힌 배경은 **순수 배경색일 때만** 지운다(아트인 초록은 남긴다).
+    for i in range(1, n + 1):
+        if i in outside_labels:
+            continue
+        m = lab == i
+        if int(m.sum()) < 200:
+            continue
+        if float(np.abs(sub_k[m] - 1).mean()) < 0.012 and float(sub_r[m].mean()) < 6:
+            outside_labels.add(i)
+    outside = np.isin(lab, list(outside_labels))
 
     # 경계를 1px 깎고 부드럽게 — 세이지 헤일로 방지.
-    inside = ndimage.binary_erosion(~sub_bg, iterations=1)
+    inside = ndimage.binary_erosion(~outside, iterations=1)
     alpha = ndimage.gaussian_filter(inside.astype(np.float32), 0.8)
     alpha = np.clip((alpha - 0.35) / 0.45, 0.0, 1.0)
 
@@ -136,7 +155,11 @@ def cut_cell(a, bg, bglike, box, target=TARGET):
     side = int(round(max(img.size) * (1 + MARGIN * 2)))
     sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
     sq.paste(img, ((side - img.width) // 2, (side - img.height) // 2))
-    return sq.resize((target, target), Image.LANCZOS)
+    # ⚠️ **원본보다 키우지 않는다.** 시트가 가로로 길게 나오면 칸이 130px 밖에
+    # 안 되는데, 이를 514 로 늘리면 흐려지기만 하고 파일만 커진다. 아이콘은
+    # 화면에서 28~64논리px(3배 기기에서 192px)이라 그대로도 넉넉하다.
+    out = min(target, side)
+    return sq if out == side else sq.resize((out, out), Image.LANCZOS)
 
 
 def run(name, names, check_only=False):
@@ -146,7 +169,7 @@ def run(name, names, check_only=False):
     if not os.path.exists(path):
         print('%-22s 파일 없음 — 건너뜀' % name)
         return
-    im, a, bg, bglike, cells = find_cells(path)
+    im, a, bg, bglike, k, resid, cells = find_cells(path)
     order = sorted(cells.keys())
     print('%-22s %s  덩어리 %d개' % (name, im.size, len(order)))
     for (r, c) in order:
@@ -162,7 +185,7 @@ def run(name, names, check_only=False):
         return
     for (r, c), out in zip(order, names):
         y0, y1, x0, x1, _ = cells[(r, c)]
-        img = cut_cell(a, bg, bglike, (y0, y1, x0, x1))
+        img = cut_cell(a, bg, bglike, k, resid, (y0, y1, x0, x1))
         dst = os.path.join(OUT_ROOT, out + '.webp')
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         img.save(dst, 'WEBP', lossless=True)

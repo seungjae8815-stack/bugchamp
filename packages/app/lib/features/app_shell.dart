@@ -311,7 +311,7 @@ class _AppShellState extends ConsumerState<AppShell>
     await showGameDialog<void>(
       context,
       title: l.eventRewardTitle,
-      icon: Icons.emoji_events_rounded,
+      iconWidget: rankImageDlg('trophy'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

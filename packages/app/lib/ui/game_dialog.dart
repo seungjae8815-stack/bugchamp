@@ -15,6 +15,21 @@ const kDialogFramePadding = EdgeInsets.fromLTRB(30, 28, 30, 26);
 /// 액자 애셋이 없을 때 — 조용히 그라데이션 틀만 쓴다(폴백, §6).
 void _frameMissing(Object e, StackTrace? s) {}
 
+/// 등급·영예 아트를 팝업 제목에 쓴다(트로피·계급장·왕관).
+Widget rankImageDlg(String name, {double size = 30}) => rankImage(
+  name,
+  size: size,
+  fallback: Icon(
+    switch (name) {
+      'promote' => Icons.military_tech_rounded,
+      'crown' => Icons.workspace_premium_rounded,
+      _ => Icons.emoji_events_rounded,
+    },
+    size: size * 0.75,
+    color: _honey,
+  ),
+);
+
 /// 팝업 버튼 아트(9분할). `backgroundBuilder` 는 버튼의 배경색 **위에** 그려지고
 /// 버튼 모양으로 잘린다 — 그래서 호출부가 준 `backgroundColor` 를 덮는다.
 /// 애셋이 없으면 아무것도 그리지 않아 예전 색 버튼이 그대로 보인다(폴백, §6).
@@ -327,6 +342,9 @@ Future<void> showRewardPopup(
   required String title,
   String? subtitle,
   IconData icon = Icons.card_giftcard_rounded,
+
+  /// 아이콘 대신 그림. [icon] 보다 우선한다(팝업 제목 아트).
+  Widget? iconWidget,
   int gold = 0,
   Map<MaterialKind, int> materials = const {},
 }) {
@@ -335,6 +353,7 @@ Future<void> showRewardPopup(
   return showGameDialog<void>(
     context,
     title: title,
+    iconWidget: iconWidget,
     subtitle: subtitle,
     icon: icon,
     content: gameRewardList(context, gold: gold, materials: materials),

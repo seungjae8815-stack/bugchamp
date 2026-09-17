@@ -119,6 +119,10 @@ flutter:
     - assets/images/ui/skill/
     - assets/images/skills/
     - assets/images/ui/dialog/
+    - assets/images/ui/part/
+    - assets/images/ui/mission/
+    - assets/images/ui/rank/
+    - assets/images/ui/dlg/
     - assets/images/shop/
     - assets/sounds/
 

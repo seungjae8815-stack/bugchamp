@@ -1038,7 +1038,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     await showGameDialog<void>(
       context,
       title: l.leaguePromoTitle,
-      icon: Icons.military_tech_rounded,
+      iconWidget: rankImageDlg('promote'),
       content: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1084,7 +1084,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     await showGameDialog<void>(
       context,
       title: l.seasonEndTitle,
-      icon: Icons.workspace_premium_rounded,
+      iconWidget: rankImageDlg('crown'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1812,7 +1812,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ) => showGameDialog<void>(
     context,
     title: l.leagueSeasonTitle,
-    icon: Icons.emoji_events_rounded,
+    iconWidget: rankImageDlg('trophy'),
     content: _leaguePanel(l, cfg, save, now),
     actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
   );

@@ -49,7 +49,7 @@ Future<void> showRankPopupOnStart(BuildContext context, WidgetRef ref) async {
   await showGameDialog<void>(
     context,
     title: l.rankPopupTitle,
-    icon: Icons.emoji_events_rounded,
+    iconWidget: rankImageDlg('trophy'),
     content: _RankBody(report: report, l: l),
     actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
   );

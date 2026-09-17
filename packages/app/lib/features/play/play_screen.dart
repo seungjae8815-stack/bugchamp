@@ -587,7 +587,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       context,
       title: l.offlineTitle,
       subtitle: l.offlineElapsed(timeStr),
-      icon: Icons.wb_sunny_rounded,
+      iconWidget: dialogIcon('offline'),
       content: gameRewardList(context, gold: r.gold, xp: r.xp),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );
@@ -1914,7 +1914,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       await showGameDialog<void>(
         context,
         title: l.tierClearTitle(tierName(l, tier)),
-        icon: Icons.military_tech_rounded,
+        iconWidget: dialogIcon('tier_clear'),
         content: Text(
           l.tierNextBody,
           textAlign: TextAlign.center,
@@ -3895,7 +3895,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       // 챕터 고정 난이도 대신 **현재 회차**(위와 같은 이유).
       subtitle:
           '${tierName(l, save.difficultyTier)} · 👑 ${ch.boss.resolve(locale)}',
-      icon: Icons.emoji_events_rounded,
+      iconWidget: dialogIcon('zone_clear'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4114,7 +4114,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             children: [
               Row(
                 children: [
-                  Icon(missionIcon(def.type), color: _honey, size: 11),
+                  missionImage(
+                    def.type,
+                    size: 15,
+                    fallback: Icon(
+                      missionIcon(def.type),
+                      color: _honey,
+                      size: 11,
+                    ),
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -4414,7 +4422,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.mail_rounded, color: _honey, size: 18),
+                      dialogIcon(
+                        'mail',
+                        size: 22,
+                        fallback: Icons.mail_rounded,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         l.mailTitle,
@@ -4532,7 +4544,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ctx,
                   title: l.mailClaimAll,
                   subtitle: l.rewardGained,
-                  icon: Icons.campaign_rounded,
+                  iconWidget: dialogIcon('reward'),
                   gold: gold,
                   materials: mats,
                 );
@@ -5279,7 +5291,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     showGameDialog<void>(
       context,
       title: l.giftCodeTitle,
-      icon: Icons.confirmation_number_rounded,
+      iconWidget: dialogIcon('gift_code'),
       content: StatefulBuilder(
         builder: (ctx, setLocal) => Column(
           mainAxisSize: MainAxisSize.min,

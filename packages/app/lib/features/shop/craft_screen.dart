@@ -488,7 +488,7 @@ class _GachaCard extends ConsumerWidget {
     final picked = await showGameDialog<bool>(
       context,
       title: l.gachaPickTitle,
-      icon: Icons.style_rounded,
+      iconWidget: dialogAsset('assets/images/ui/gacha_card_back.webp'),
       barrierDismissible: false,
       content: _GachaPicker(cost: cfg.gachaJellyCost, hint: l.gachaPickHint),
       actions: const [],
@@ -514,7 +514,7 @@ class _GachaCard extends ConsumerWidget {
     await showGameDialog<void>(
       context,
       title: l.gachaResultTitle,
-      icon: Icons.egg_rounded,
+      iconWidget: dialogIcon('egg'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -981,7 +981,7 @@ Future<void> _showHoldings(
 ) => showGameDialog<void>(
   context,
   title: l.exchangeHoldings,
-  icon: Icons.inventory_2_rounded,
+  iconWidget: dialogAsset('assets/images/ui/exchange.webp'),
   content: Column(
     mainAxisSize: MainAxisSize.min,
     children: [

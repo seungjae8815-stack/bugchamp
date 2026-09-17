@@ -71,7 +71,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     final go = await showGameDialog<bool>(
       context,
       title: l.forgeRushTitle,
-      icon: Icons.fast_forward_rounded,
+      iconWidget: dialogAsset('assets/images/ui/anvil.webp'),
       subtitle: left > 0 ? l.forgeRushLeft(left) : null,
       content: Text(
         l.forgeRushBody(forge.rushJelly, forge.rushSeconds),

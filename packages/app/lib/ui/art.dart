@@ -477,3 +477,83 @@ Widget jellyPrice({
     ],
   ],
 );
+
+// ─────────────────────────────────────────────────────────────
+// 시트로 뽑은 아이콘 (2026-09-18) — 부위·미션·등급·팝업 제목
+//
+// 전부 `gameImage` 라 **애셋이 없으면 예전 Material 아이콘으로 떨어진다**(§6).
+// 파일명 = 뜻 이름 규칙이라 경로를 JSON 에 적지 않는다.
+// ─────────────────────────────────────────────────────────────
+
+/// 부위 강화 아이콘. `assets/images/ui/part/{horn_jaw|cuticle|wing|build}.webp`
+Widget partImage(
+  BugPart part, {
+  required double size,
+  required Widget fallback,
+}) => gameImage(
+  'assets/images/ui/part/${switch (part) {
+    BugPart.hornJaw => 'horn_jaw',
+    BugPart.cuticle => 'cuticle',
+    BugPart.wing => 'wing',
+    BugPart.build => 'build',
+  }}.webp',
+  width: size,
+  height: size,
+  fallback: fallback,
+);
+
+/// 미션 아이콘. `assets/images/ui/mission/{종류}.webp`
+Widget missionImage(
+  MissionType type, {
+  required double size,
+  required Widget fallback,
+}) => gameImage(
+  'assets/images/ui/mission/${switch (type) {
+    MissionType.killMonsters => 'kill_monsters',
+    MissionType.killBosses => 'kill_bosses',
+    MissionType.buyUpgrades => 'buy_upgrades',
+    MissionType.forgeItems => 'forge_items',
+    MissionType.reachStage => 'reach_stage',
+  }}.webp',
+  width: size,
+  height: size,
+  fallback: fallback,
+);
+
+/// 등급·영예 아이콘. `assets/images/ui/rank/{trophy|promote|crown}.webp`
+Widget rankImage(
+  String name, {
+  required double size,
+  required Widget fallback,
+}) => gameImage(
+  'assets/images/ui/rank/$name.webp',
+  width: size,
+  height: size,
+  fallback: fallback,
+);
+
+/// 팝업 제목 아이콘. `assets/images/ui/dlg/{이름}.webp`
+///
+/// 팝업의 `iconWidget:` 에 바로 넣는다 — 애셋이 없으면 [fallback] 아이콘이 뜬다.
+Widget dialogIcon(
+  String name, {
+  double size = 30,
+  IconData fallback = Icons.auto_awesome_rounded,
+}) => gameImage(
+  'assets/images/ui/dlg/$name.webp',
+  width: size,
+  height: size,
+  fallback: Icon(fallback, size: size * 0.75, color: const Color(0xFFEBA52F)),
+);
+
+/// 이미 있는 아트를 팝업 제목에 그대로 쓴다(새로 그릴 필요가 없던 것들).
+Widget dialogAsset(
+  String assetPath, {
+  double size = 30,
+  IconData fallback = Icons.auto_awesome_rounded,
+}) => gameImage(
+  assetPath,
+  width: size,
+  height: size,
+  fallback: Icon(fallback, size: size * 0.75, color: const Color(0xFFEBA52F)),
+);

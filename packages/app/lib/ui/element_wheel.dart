@@ -4,6 +4,7 @@ import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart' hide Element;
 
 import '../l10n/app_localizations.dart';
+import 'art.dart';
 import 'game_dialog.dart';
 import 'labels.dart';
 
@@ -202,7 +203,7 @@ Future<void> showElementWheel(BuildContext context, {Element? highlight}) {
   return showGameDialog<void>(
     context,
     title: l.elementWheelTitle,
-    icon: Icons.hub_rounded,
+    iconWidget: dialogIcon('element_wheel'),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       // 범례는 **왼쪽 끝을 맞춘다.** 가운데 정렬이면 두 줄의 길이가 달라

@@ -327,7 +327,7 @@ class StorageScreen extends ConsumerWidget {
   ) => showGameDialog<void>(
     ctx,
     title: l.storageFilterTitle,
-    icon: Icons.filter_alt_outlined,
+    iconWidget: dialogIcon('filter'),
     content: Consumer(
       builder: (context, r, _) {
         final save = r.watch(saveControllerProvider).requireValue;
@@ -414,7 +414,7 @@ class StorageScreen extends ConsumerWidget {
     final ok = await showGameDialog<bool>(
       ctx,
       title: l.autoSynthTitle,
-      icon: Icons.auto_awesome_motion_outlined,
+      iconWidget: dialogAsset('assets/images/ui/auto_synth.webp'),
       content: _cleanupPanel(
         ctx: ctx,
         data: data,
@@ -463,7 +463,7 @@ class StorageScreen extends ConsumerWidget {
     final ok = await showGameDialog<bool>(
       ctx,
       title: l.autoReleaseTitle,
-      icon: Icons.recycling_rounded,
+      iconWidget: dialogAsset('assets/images/ui/auto_release.webp'),
       content: _cleanupPanel(
         ctx: ctx,
         data: data,
@@ -1885,7 +1885,7 @@ class StorageScreen extends ConsumerWidget {
     showGameDialog<void>(
       ctx,
       title: l.incubatorPick,
-      icon: Icons.egg_alt,
+      iconWidget: dialogAsset('assets/images/ui/incubator_capsule.png'),
       content: eggs.isEmpty
           ? Text(
               l.incubatorNoEggs,
@@ -3630,7 +3630,11 @@ class StorageScreen extends ConsumerWidget {
               color: const Color(0x22FFFFFF),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(partIcon(part), color: Colors.white, size: 17),
+            child: partImage(
+              part,
+              size: 22,
+              fallback: Icon(partIcon(part), color: Colors.white, size: 17),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
