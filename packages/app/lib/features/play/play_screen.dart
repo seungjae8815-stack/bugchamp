@@ -529,6 +529,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 스킬 id → 남은 지속(초). 지속형(공속·재료·곤충·방벽)만.
   final Map<String, double> _skillOn = {};
 
+  /// 지금 재생 중인 스킬 효과(4프레임)와 경과 시간. **한 번에 하나만** 둔다 —
+  /// 여러 개를 겹치면 빛이 뭉개져 무엇이 터졌는지 안 보인다(늦게 쓴 것이 이긴다).
+  String? _fxId;
+  double _fxT = 0;
+
+  /// 효과 재생 시간(초). 프레임 4장을 이 시간에 나눠 보여 준다.
+  static const _fxDuration = 0.44;
+
   /// 직접 누른 스킬 — 다음 전투 틱에 자동발동과 같은 경로로 쓴다.
   final Set<String> _skillQueue = {};
 
@@ -1837,6 +1845,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _playerHp = _playerHpMax * revive.hpFraction;
       _enemyAtkAcc = 0;
       _playerHitFlash = 0;
+      // 탈피는 패시브라 _castSkill 을 안 지난다 — 효과는 여기서 띄운다.
+      // 쓰러질 뻔한 순간이라 무엇이 살렸는지 보여야 한다.
+      _fxId = 'molting';
+      _fxT = 0;
       if (mounted) {
         showCenterToast(context, AppLocalizations.of(context).skillReviveToast);
       }
@@ -2315,13 +2327,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           alignment: Alignment.bottomCenter,
                           child: Opacity(
                             opacity: charOpacity,
-                            child: gameImageChain(
-                              cPaths,
-                              size: 92,
-                              fallback: const Text(
-                                '🧑‍🌾',
-                                style: TextStyle(fontSize: 50),
-                              ),
+                            // 스킬 효과는 **캐릭터를 감싼다** — 그림 가운데가
+                            // 비어 있게 그려졌다(프롬프트 조건). 캐릭터보다
+                            // 크게 잡아야 고리가 바깥으로 돈다.
+                            child: Stack(
+                              alignment: Alignment.center,
+                              clipBehavior: Clip.none,
+                              children: [
+                                gameImageChain(
+                                  cPaths,
+                                  size: 92,
+                                  fallback: const Text(
+                                    '🧑‍🌾',
+                                    style: TextStyle(fontSize: 50),
+                                  ),
+                                ),
+                                if (_fxId case final fx?)
+                                  Positioned(
+                                    child: IgnorePointer(
+                                      child: _SkillFx(id: fx, t: _fxT),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
@@ -3537,6 +3564,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       final v = _skillOn[k]! - dt;
       v <= 0 ? _skillOn.remove(k) : _skillOn[k] = v;
     }
+    if (_fxId != null) {
+      _fxT += dt;
+      if (_fxT >= _fxDuration) _fxId = null;
+    }
   }
 
   /// 다음 물기까지 남은 시간(초) — 방벽 타이밍 판정용.
@@ -3580,6 +3611,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     _skillCd[def.id] = def.cooldown.inMilliseconds / 1000;
+    // 스킬 효과 — 그림이 없는 스킬이면 아무것도 안 뜬다(gameImage 폴백).
+    _fxId = def.id;
+    _fxT = 0;
     final v = def.valueAt(lv);
     var timed = false;
     switch (def.effect) {
@@ -7960,4 +7994,36 @@ class _DashedCirclePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DashedCirclePainter oldDelegate) => false;
+}
+
+/// 스킬 효과 — 4프레임을 짧게 넘겨 보여 준다.
+///
+/// 빛이라 오려 내지 않고 **밝기를 알파로** 바꿔 두었다(`tool/import_skill_fx.py`).
+/// 그냥 겹쳐 그리면 가산 합성처럼 보인다. 그림이 없으면 아무것도 안 그린다 —
+/// 효과가 없다고 전투가 달라지지는 않는다(§6 폴백).
+class _SkillFx extends StatelessWidget {
+  const _SkillFx({required this.id, required this.t});
+
+  final String id;
+
+  /// 발동 후 경과 시간(초).
+  final double t;
+
+  @override
+  Widget build(BuildContext context) {
+    const total = _PlayScreenState._fxDuration;
+    final p = (t / total).clamp(0.0, 1.0);
+    final frame = (p * 4).floor().clamp(0, 3) + 1;
+    // 마지막 구간은 조금 더 흐려지게 — 4장만으로는 뚝 끊겨 보인다.
+    final fade = p > 0.75 ? (1 - (p - 0.75) / 0.25).clamp(0.0, 1.0) : 1.0;
+    return Opacity(
+      opacity: fade,
+      child: gameImage(
+        'assets/images/fx/${id}_$frame.webp',
+        width: 150,
+        height: 150,
+        fallback: const SizedBox.shrink(),
+      ),
+    );
+  }
 }
