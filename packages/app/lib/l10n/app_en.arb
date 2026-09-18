@@ -856,6 +856,8 @@
   },
   "giftClaimedSnack": "Gift claimed!",
   "giftDoubledSnack": "Double reward claimed!",
+  "giftDoubledMult": "Reward x{n}!",
+  "@giftDoubledMult": {"placeholders": {"n": {"type": "String"}}},
   "giftAdMoreTitle": "Today's free double!",
   "giftAdMoreBody": "Take this gift at double value.",
   "giftAdMoreYes": "Claim double",

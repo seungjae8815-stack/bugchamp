@@ -6,7 +6,11 @@
  "intervalMaxSec": 900,
  "expiryHours": 3,
  "maxActive": 5,
+ "_multComment": "무료 2배 받기의 배수(2026-09-18 사장님 지시: 랜덤 2~4배, 젤리 비중은 크게 두지 말 것). 골드·일반 재료는 adMultiplierMin~Max 사이에서 선물마다 랜덤, 젤리는 adMultiplierJelly 로 고정한다. 젤리를 고정하는 이유: 깜짝선물은 접속 시간에 비례해 무한히 늘어나는 통로라(2.6 젤리 수도꼭지) 여기서 젤리 기대값을 올리면 하루 수입이 그대로 늘어난다. 젤리를 2 로 두면 jelly_sim 결과가 그대로 유효하다. adMultiplier 는 구버전 앱·서버 호환용으로 남긴다(Min 이 없을 때의 기본값).",
  "adMultiplier": 2,
+ "adMultiplierMin": 2,
+ "adMultiplierMax": 4,
+ "adMultiplierJelly": 2,
  "tiers": [
   {
    "weight": 50,

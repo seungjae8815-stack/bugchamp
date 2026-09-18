@@ -1438,6 +1438,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get giftDoubledSnack => '보상 2배 획득!';
 
   @override
+  String giftDoubledMult(String n) {
+    return '보상 $n배 획득!';
+  }
+
+  @override
   String get giftAdMoreTitle => '오늘의 무료 2배!';
 
   @override

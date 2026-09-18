@@ -488,6 +488,7 @@
   "giftExpiresIn": "{time} 後に期限切れ",
   "giftClaimedSnack": "ギフトを受け取りました！",
   "giftDoubledSnack": "報酬2倍獲得！",
+  "giftDoubledMult": "報酬 x{n} 獲得!",
   "giftAdMoreTitle": "本日の無料2倍！",
   "giftAdMoreBody": "このプレゼントを2倍で受け取れます。",
   "giftAdMoreYes": "2倍で受け取る",

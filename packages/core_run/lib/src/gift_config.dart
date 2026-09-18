@@ -1,3 +1,5 @@
+import 'package:core_models/core_models.dart';
+
 import 'dart:math';
 
 import 'package:meta/meta.dart';
@@ -42,6 +44,9 @@ class GiftConfig {
     this.expiryHours = 3,
     this.maxActive = 5,
     this.adMultiplier = 2,
+    this.adMultiplierMin = 2,
+    this.adMultiplierMax = 4,
+    this.adMultiplierJelly = 2,
     this.freeDoubleDaily = 1,
   });
 
@@ -60,6 +65,38 @@ class GiftConfig {
 
   /// 광고 시청 시 보상 배수.
   final int adMultiplier;
+
+  /// 무료 2배 받기의 배수 범위 — 골드·일반 재료는 선물마다 이 사이에서 뽑는다
+  /// (2026-09-18 사장님 지시: 최소 2배, 최대 4배).
+  final int adMultiplierMin;
+  final int adMultiplierMax;
+
+  /// **젤리만 따로 고정한다.** 깜짝선물은 접속 시간에 비례해 무한히 늘어나는
+  /// 통로라(§2.6 젤리 수도꼭지) 여기서 젤리 기대값을 올리면 하루 수입이 그대로
+  /// 늘어난다. 2 로 두면 `jelly_sim` 결과가 그대로 유효하다.
+  final int adMultiplierJelly;
+
+  /// 선물 [giftId] 의 배수 — **앱과 서버가 같은 값을 얻어야 한다.**
+  ///
+  /// 그래서 난수 발생기를 쓰지 않고 **id 를 해시**한다. 난수를 쓰면 앱이 뽑은
+  /// 값과 서버가 뽑은 값이 달라 "화면엔 4배인데 3배만 들어왔다"가 된다
+  /// (선물 수령은 서버 권위다). id 는 유저가 볼 수 없으니 예측도 못 한다.
+  int multiplierFor(String giftId) {
+    final lo = adMultiplierMin < 1 ? 1 : adMultiplierMin;
+    final hi = adMultiplierMax < lo ? lo : adMultiplierMax;
+    if (hi == lo) return lo;
+    var h = 0x811c9dc5;
+    for (final c in giftId.codeUnits) {
+      h = (h ^ c) * 0x01000193 & 0x7fffffff;
+    }
+    return lo + h % (hi - lo + 1);
+  }
+
+  /// 재료 [kind] 에 붙는 배수. 젤리만 고정값이다.
+  int multiplierForMaterial(String giftId, MaterialKind kind) =>
+      kind == MaterialKind.jelly
+      ? (adMultiplierJelly < 1 ? 1 : adMultiplierJelly)
+      : multiplierFor(giftId);
 
   /// 무료 2배 수령 횟수/일. 패스 보유자는 무제한(앱이 판단).
   ///
@@ -98,6 +135,18 @@ class GiftConfig {
     expiryHours: (json['expiryHours'] as num?)?.toInt() ?? 3,
     maxActive: (json['maxActive'] as num?)?.toInt() ?? 5,
     adMultiplier: (json['adMultiplier'] as num?)?.toInt() ?? 2,
+    adMultiplierMin:
+        (json['adMultiplierMin'] as num?)?.toInt() ??
+        (json['adMultiplier'] as num?)?.toInt() ??
+        2,
+    adMultiplierMax:
+        (json['adMultiplierMax'] as num?)?.toInt() ??
+        (json['adMultiplier'] as num?)?.toInt() ??
+        2,
+    adMultiplierJelly:
+        (json['adMultiplierJelly'] as num?)?.toInt() ??
+        (json['adMultiplier'] as num?)?.toInt() ??
+        2,
     freeDoubleDaily: (json['freeDoubleDaily'] as num?)?.toInt() ?? 1,
     tiers: (json['tiers'] as List? ?? const [])
         .cast<Map<String, dynamic>>()

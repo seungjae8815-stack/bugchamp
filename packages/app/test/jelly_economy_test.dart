@@ -25,6 +25,48 @@ void main() {
   );
   final gifts = GiftConfig.fromJson(_readJson('assets/data/gifts.json'));
 
+  group('깜짝선물 2배 — 젤리 배수는 올리지 않는다', () {
+    // 2026-09-18: 골드·일반 재료의 2배 받기가 **2~4배 랜덤**이 됐다.
+    // 깜짝선물은 접속 시간에 비례해 무한히 늘어나는 통로라, 여기서 젤리
+    // 기대값을 올리면 하루 수입이 그대로 늘어난다. 그래서 젤리만 고정이다.
+    test('젤리 배수가 최소 배수보다 크지 않다', () {
+      expect(
+        gifts.adMultiplierJelly,
+        lessThanOrEqualTo(gifts.adMultiplierMin),
+        reason: '젤리에 랜덤 증폭을 붙이면 무한 통로에 프리미엄 재화를 얹는 것이다',
+      );
+    });
+
+    test('젤리는 랜덤 배수를 타지 않는다 — 어떤 선물 id 에서도', () {
+      // id 해시가 어떻게 나오든 젤리 배수는 한 값이어야 한다.
+      for (final id in ['a', 'gift-1', 'ce644416', 'zzz', '42']) {
+        expect(
+          gifts.multiplierForMaterial(id, MaterialKind.jelly),
+          gifts.adMultiplierJelly,
+          reason: 'id=$id 에서 젤리가 랜덤 배수를 탔다',
+        );
+      }
+    });
+
+    test('골드·일반 재료는 실제로 범위 안에서 흩어진다', () {
+      final seen = <int>{};
+      for (var i = 0; i < 200; i++) {
+        final m = gifts.multiplierFor('gift-$i');
+        expect(m, greaterThanOrEqualTo(gifts.adMultiplierMin));
+        expect(m, lessThanOrEqualTo(gifts.adMultiplierMax));
+        seen.add(m);
+      }
+      // 한 값만 나오면 랜덤이 아니다(해시가 고장났다는 뜻).
+      expect(seen.length, greaterThan(1), reason: '배수가 한 값으로만 나온다 — 해시를 확인할 것');
+    });
+
+    test('앱과 서버가 같은 값을 얻는다 — 같은 함수라 id 가 같으면 같다', () {
+      for (final id in ['gift-7', 'abc-def', '2026-09-18T00:00']) {
+        expect(gifts.multiplierFor(id), gifts.multiplierFor(id));
+      }
+    });
+  });
+
   group('분해 — 무한 공급이라 문턱이 필요하다', () {
     test('포텐셜 문턱이 살아 있다 (0 이면 무제한 수도꼭지)', () {
       // 곤충은 시간당 27마리씩 무한히 나온다. 문턱이 없으면 분해만으로

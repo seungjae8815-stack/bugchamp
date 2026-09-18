@@ -923,12 +923,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     // 자격이 없으면 1배로 나간다(수령 자체는 막지 않는다).
     final wantDouble = doubled && canDoubleGift();
-    final mult = wantDouble ? (cfg?.adMultiplier ?? 2) : 1;
+    // 배수는 선물마다 랜덤(2~4)이고 젤리만 고정 — 규칙은 `GiftConfig` 한 곳,
+    // 서버도 **같은 함수**를 쓴다(id 해시라 값이 갈리지 않는다).
+    final mult = !wantDouble
+        ? 1
+        : (cfg?.multiplierFor(g.id) ?? cfg?.adMultiplier ?? 2);
     final today = dailyDateKey(now);
     final counted = wantDouble && !s.anyPassActive(now);
     final mats = Map<MaterialKind, int>.from(s.materials);
     for (final e in g.materials.entries) {
-      mats[e.key] = (mats[e.key] ?? 0) + e.value * mult;
+      final m = !wantDouble
+          ? 1
+          : (cfg?.multiplierForMaterial(g.id, e.key) ?? mult);
+      mats[e.key] = (mats[e.key] ?? 0) + e.value * m;
     }
     await _commit(
       s.copyWith(

@@ -2638,6 +2638,12 @@ abstract class AppLocalizations {
   /// **'Double reward claimed!'**
   String get giftDoubledSnack;
 
+  /// No description provided for @giftDoubledMult.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward x{n}!'**
+  String giftDoubledMult(String n);
+
   /// No description provided for @giftAdMoreTitle.
   ///
   /// In en, this message translates to:

@@ -1641,10 +1641,19 @@ class GameActions {
     final allowed = doubled && (passOn || save.giftDoublesUsed(today) < cap);
     // 패스 보유자의 2배는 무료 횟수를 쓰지 않는다.
     final counted = allowed && !passOn;
-    final mult = allowed ? (config.gift?.adMultiplier ?? 2) : 1;
+    // 배수는 선물마다 랜덤(2~4)이고 **젤리만 고정**이다 — 규칙은 `GiftConfig`
+    // 한 곳에 있고 앱도 같은 함수를 쓴다(§4: 로직을 두 벌로 두지 않는다).
+    // id 를 해시하므로 앱과 서버가 **같은 값**을 얻는다.
+    final gift = config.gift;
+    final mult = !allowed
+        ? 1
+        : (gift?.multiplierFor(g.id) ?? gift?.adMultiplier ?? 2);
     final mats = Map<MaterialKind, int>.from(save.materials);
     for (final e in g.materials.entries) {
-      mats[e.key] = (mats[e.key] ?? 0) + e.value * mult;
+      final m = !allowed
+          ? 1
+          : (gift?.multiplierForMaterial(g.id, e.key) ?? mult);
+      mats[e.key] = (mats[e.key] ?? 0) + e.value * m;
     }
     return ActionResult.ok(
       save.copyWith(
@@ -1656,7 +1665,7 @@ class GameActions {
             ? save.giftDoublesUsed(today) + 1
             : save.giftDoubleCount,
       ),
-      extra: {'gold': g.gold * mult, 'doubled': allowed},
+      extra: {'gold': g.gold * mult, 'doubled': allowed, 'mult': mult},
     );
   }
 

@@ -1463,6 +1463,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get giftDoubledSnack => 'Double reward claimed!';
 
   @override
+  String giftDoubledMult(String n) {
+    return 'Reward x$n!';
+  }
+
+  @override
   String get giftAdMoreTitle => 'Today\'s free double!';
 
   @override

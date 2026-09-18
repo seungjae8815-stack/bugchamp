@@ -119,12 +119,17 @@ void main(List<String> args) {
   // 예전처럼 전량 ×2 로 세면 무과금 수입이 두 배 가까이 과대계상된다.
   // 무제한 2배는 패스 몫이라 아래 "패스 보유자" 줄에서 따로 본다.
   final freeDoubles = gifts.freeDoubleDaily.toDouble().clamp(0, giftsPerDay);
+  // ⚠️ 배수를 **설정에서 읽는다.** 예전엔 "+1개분"으로 2배를 암묵적으로 넣어
+  // 뒀는데, 2026-09-18 에 골드·재료 배수가 2~4 랜덤이 되면서 젤리만 따로
+  // 고정됐다(`adMultiplierJelly`). 암묵적으로 두면 그 값을 올렸을 때 이 표가
+  // **조용히 틀린다** — 젤리 수도꼭지는 조용히 틀리는 게 가장 나쁘다(§2.6).
+  final jellyMult = gifts.adMultiplierJelly.clamp(1, 1 << 10);
   rows.add((
     name: '깜짝선물',
-    perDay: (giftsPerDay + freeDoubles) * avgGiftJelly,
+    perDay: (giftsPerDay + freeDoubles * (jellyMult - 1)) * avgGiftJelly,
     note:
         '${giftsPerDay.toStringAsFixed(1)}개/일 × 평균 '
-        '${avgGiftJelly.toStringAsFixed(2)} + 무료 2배 '
+        '${avgGiftJelly.toStringAsFixed(2)} + 무료 ${jellyMult}배 '
         '${freeDoubles.toStringAsFixed(0)}회',
   ));
 

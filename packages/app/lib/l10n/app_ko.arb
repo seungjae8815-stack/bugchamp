@@ -495,6 +495,7 @@
   "giftExpiresIn": "{time} 후 만료",
   "giftClaimedSnack": "선물을 받았어요!",
   "giftDoubledSnack": "보상 2배 획득!",
+  "giftDoubledMult": "보상 {n}배 획득!",
   "giftAdMoreTitle": "오늘의 무료 2배!",
   "giftAdMoreBody": "이 선물을 2배로 받을 수 있어요.",
   "giftAdMoreYes": "2배로 받기",

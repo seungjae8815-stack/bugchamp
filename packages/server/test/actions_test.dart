@@ -1606,7 +1606,13 @@ void main() {
         final r = actions.claimGift(s, 'g$i', doubled: true);
         expect(r.isOk, isTrue);
         final got = (r.save!.gold - expected);
-        expect(got, i < cap ? 1000 * cfg.gift!.adMultiplier : 1000);
+        // 2026-09-18: 배수가 선물마다 랜덤(2~4)이라 **설정 함수로** 기대값을
+        // 만든다. 숫자를 못 박으면 범위를 바꿀 때마다 테스트가 깨지고,
+        // 정작 검사하려던 "상한을 넘으면 1배"는 안 보인다.
+        expect(
+          got,
+          i < cap ? 1000 * cfg.gift!.multiplierFor('g' + i.toString()) : 1000,
+        );
         expected = r.save!.gold;
         s = r.save!;
       }
@@ -1629,7 +1635,12 @@ void main() {
         final r = actions.claimGift(s, 'g$i', doubled: true);
         s = r.save!;
       }
-      expect(s.gold, 3 * 1000 * cfg.gift!.adMultiplier);
+      // 배수는 선물마다 랜덤(2~4)이라 id 별로 합친다(2026-09-18).
+      var want = 0;
+      for (var i = 0; i < 3; i++) {
+        want += 1000 * cfg.gift!.multiplierFor('g' + i.toString());
+      }
+      expect(s.gold, want);
       expect(s.giftDoublesUsed(dailyDateKey(t0)), 0);
     });
 

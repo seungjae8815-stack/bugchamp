@@ -1433,6 +1433,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftDoubledSnack => '報酬2倍獲得！';
 
   @override
+  String giftDoubledMult(String n) {
+    return '報酬 x$n 獲得!';
+  }
+
+  @override
   String get giftAdMoreTitle => '本日の無料2倍！';
 
   @override

@@ -4951,19 +4951,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       }
       final ok = await notifier.claimGift(g.id, doubled: wantDouble);
       if (!ok || !ctx.mounted) return;
+      // 배수는 선물마다 다르다(2~4) — **몇 배 받았는지 제목에 넣는다.**
+      // "2배 획득"으로 고정하면 4배를 받아도 2배라고 말하는 셈이다.
+      final cfg = r.read(gameDataProvider).value?.giftConfig;
       final mult = wantDouble
-          ? (r.read(gameDataProvider).value?.giftConfig?.adMultiplier ?? 2)
+          ? (cfg?.multiplierFor(g.id) ?? cfg?.adMultiplier ?? 2)
           : 1;
       await showRewardPopup(
         ctx,
-        title: wantDouble ? l.giftDoubledSnack : l.giftClaimedSnack,
+        title: wantDouble ? l.giftDoubledMult('$mult') : l.giftClaimedSnack,
         iconWidget: dialogIcon('reward'),
         subtitle: l.rewardGained,
-        icon: wantDouble
-            ? Icons.play_circle_fill_rounded
-            : Icons.card_giftcard_rounded,
         gold: g.gold * mult,
-        materials: {for (final e in g.materials.entries) e.key: e.value * mult},
+        materials: {
+          for (final e in g.materials.entries)
+            e.key:
+                e.value *
+                (wantDouble
+                    ? (cfg?.multiplierForMaterial(g.id, e.key) ?? mult)
+                    : 1),
+        },
       );
       if (!ctx.mounted || canDouble) return;
       // 무료 2배를 다 썼으면 **패스를 안내한다**. 이미 뜬 보상은 1배로 받았으니
