@@ -2672,7 +2672,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeResultKeep => '装備';
 
   @override
-  String get forgeResultDrop => '捨てる';
+  String get forgeResultDrop => '売る';
+
+  @override
+  String forgeResultSell(String n) {
+    return '売る · $n';
+  }
 
   @override
   String get forgeCurrent => '装備中';

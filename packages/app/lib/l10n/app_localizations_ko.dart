@@ -2678,7 +2678,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeResultKeep => '교체';
 
   @override
-  String get forgeResultDrop => '버리기';
+  String get forgeResultDrop => '판매';
+
+  @override
+  String forgeResultSell(String n) {
+    return '판매 · $n';
+  }
 
   @override
   String get forgeCurrent => '지금 낀 것';

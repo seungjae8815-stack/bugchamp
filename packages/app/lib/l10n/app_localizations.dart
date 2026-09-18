@@ -4879,8 +4879,14 @@ abstract class AppLocalizations {
   /// No description provided for @forgeResultDrop.
   ///
   /// In en, this message translates to:
-  /// **'Discard'**
+  /// **'Sell'**
   String get forgeResultDrop;
+
+  /// No description provided for @forgeResultSell.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell for {n}'**
+  String forgeResultSell(String n);
 
   /// No description provided for @forgeCurrent.
   ///

@@ -2731,7 +2731,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeResultKeep => 'Equip';
 
   @override
-  String get forgeResultDrop => 'Discard';
+  String get forgeResultDrop => 'Sell';
+
+  @override
+  String forgeResultSell(String n) {
+    return 'Sell for $n';
+  }
 
   @override
   String get forgeCurrent => 'Equipped';

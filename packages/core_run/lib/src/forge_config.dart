@@ -34,6 +34,8 @@ class ForgeConfig {
     this.autoStrikeMax = 10,
     this.autoStrikeFullFromTier = 1,
     this.rerollJelly = 15,
+    this.sellMaterialBase = 2,
+    this.sellMaterialPerTier = 1,
     this.rushSeconds = 60,
     this.rushJelly = 10,
     this.stackExpandJelly = 100,
@@ -146,6 +148,17 @@ class ForgeConfig {
   /// 옵션은 제련을 계속 돌리면 언젠가 나오는 조합이라, 파는 것은 시간 절약이다.
   final int rerollJelly;
 
+  /// 장비를 팔 때 주는 일반 재료 — `base + perTier * 등급`.
+  ///
+  /// ⚠️ **젤리·화석은 주지 않는다.** 자동 제련은 방치 중에도 계속 돌아
+  /// 무한 통로이고(§2.6 젤리 수도꼭지), 화석을 되돌려주면 제련이 공짜가 된다.
+  final int sellMaterialBase;
+  final int sellMaterialPerTier;
+
+  /// 장비 [tier] 를 팔 때 나오는 재료 수.
+  int sellMaterialCount(int tier) =>
+      (sellMaterialBase + sellMaterialPerTier * tier).clamp(0, 1 << 20);
+
   /// 망치질 가속 — [rushJelly] 젤리로 [rushSeconds] 초 동안 간격 절반.
   final int rushSeconds;
   final int rushJelly;
@@ -255,6 +268,14 @@ class ForgeConfig {
       fossilMinPerDrop: (fs['minPerDrop'] as num?)?.toInt() ?? 1,
       autoStrikeMax: (json['autoStrikeMax'] as num?)?.toInt() ?? 10,
       rerollJelly: (json['rerollJelly'] as num?)?.toInt() ?? 15,
+      sellMaterialBase:
+          ((json['sell'] as Map<String, dynamic>?)?['materialBase'] as num?)
+              ?.toInt() ??
+          2,
+      sellMaterialPerTier:
+          ((json['sell'] as Map<String, dynamic>?)?['materialPerTier'] as num?)
+              ?.toInt() ??
+          1,
       rushSeconds: (json['rushSeconds'] as num?)?.toInt() ?? 60,
       rushJelly: (json['rushJelly'] as num?)?.toInt() ?? 10,
       stackExpandJelly: (json['stackExpandJelly'] as num?)?.toInt() ?? 100,
@@ -397,3 +418,17 @@ EquipItem forgeOnce({
   }
   return EquipItem(slot: picked, tier: tier, options: options);
 }
+
+/// 장비를 팔면 나오는 재료 **종류** — 부위로 정한다.
+///
+/// 같은 장비가 늘 같은 재료를 주어야 "이건 팔면 뭐가 나온다"가 기억된다.
+/// 무작위로 돌리면 결정론(§5)을 위해 rng 를 주입해야 하는데, 그럴 만한
+/// 이득이 없다.
+MaterialKind sellMaterialFor(EquipSlot slot) => switch (slot) {
+  // 공격·방어 계열(도구·바지·신발) → 키틴(단단한 것)
+  EquipSlot.tool || EquipSlot.bottom || EquipSlot.shoes => MaterialKind.chitin,
+  // 장식 계열(목걸이·반지) → 미네랄(광물)
+  EquipSlot.necklace || EquipSlot.ring => MaterialKind.mineral,
+  // 천·보관 계열(모자·옷·보관함) → 수액(끈적한 것)
+  EquipSlot.hat || EquipSlot.top || EquipSlot.box => MaterialKind.sap,
+};

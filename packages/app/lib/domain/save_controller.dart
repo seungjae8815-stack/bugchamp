@@ -2230,7 +2230,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// [hit] = 필터에 맞는 걸 뽑아서 **일부러 멈췄다**([SaveGame.autoForgeStopOnHit]).
   Future<
-    ({EquipItem? last, int forged, int kept, bool full, bool dry, bool hit})
+    ({
+      EquipItem? last,
+      int forged,
+      int kept,
+      bool full,
+      bool dry,
+      bool hit,
+
+      /// 필터에 걸려 **판** 장비의 대금(재료 -> 수량). 화면이 모루 위에 띄운다.
+      Map<MaterialKind, int> sold,
+    })
   >
   forgeMany(int times) async {
     const nothing = (
@@ -2240,6 +2250,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       full: false,
       dry: false,
       hit: false,
+      sold: <MaterialKind, int>{},
     );
     final data = ref.read(gameDataProvider).value;
     final items = data?.itemConfig;
@@ -2254,6 +2265,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         full: true,
         dry: false,
         hit: false,
+        sold: const <MaterialKind, int>{},
       );
     }
     var have = s.materialCount(MaterialKind.fossil);
@@ -2265,6 +2277,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         full: false,
         dry: true,
         hit: false,
+        sold: const <MaterialKind, int>{},
       );
     }
 
@@ -2277,6 +2290,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     EquipItem? last;
     var forged = 0, kept = 0;
     var full = false, dry = false, hit = false;
+    // 필터에 걸려 버려진 장비의 판매 대금(재료 종류 -> 수량).
+    final sold = <MaterialKind, int>{};
 
     for (var i = 0; i < times; i++) {
       if (have < 1) {
@@ -2311,11 +2326,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
           hit = true;
           break;
         }
+      } else {
+        final kind = sellMaterialFor(item.slot);
+        sold[kind] = (sold[kind] ?? 0) + forge.sellMaterialCount(item.tier);
       }
     }
 
     final mats = Map<MaterialKind, int>.from(s.materials)
       ..[MaterialKind.fossil] = have;
+    // 필터에 걸려 버려진 장비도 **판 것으로 본다**(사장님 지시 2026-09-18).
+    // 예전엔 그냥 사라져서 화석만 태운 셈이었다. 창은 띄우지 않고 모루 위에
+    // 아이콘만 잠깐 보여 준다(화면 쪽에서 처리).
+    // ⚠️ 젤리·화석은 주지 않는다 — 자동 제련은 방치 중에도 도는 무한 통로다.
+    for (final e in sold.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value;
+    }
     await _commit(
       s.copyWith(
         materials: mats,
@@ -2333,7 +2358,28 @@ class SaveController extends AsyncNotifier<SaveGame> {
       full: full,
       dry: dry,
       hit: hit,
+      sold: sold,
     );
+  }
+
+  /// 모루 맨 위 장비를 **판다** — 일반 재료로 바꾼다(사장님 지시 2026-09-18).
+  ///
+  /// 예전에는 "버리기"라 아무것도 주지 않았다. 판 재료는 자동 제련에서 필터에
+  /// 걸린 것과 **같은 규칙**이다(`sellMaterialFor` · `sellMaterialCount`).
+  /// 판 결과(재료 -> 수량)를 돌려주므로 화면이 얼마 받았는지 보여 줄 수 있다.
+  Future<Map<MaterialKind, int>> sellTopItem() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    final s = state.requireValue;
+    if (forge == null || s.forgeStack.isEmpty) return const {};
+    final item = s.forgeStack.last;
+    final kind = sellMaterialFor(item.slot);
+    final n = forge.sellMaterialCount(item.tier);
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[kind] = (s.materials[kind] ?? 0) + n;
+    await _commit(
+      s.copyWith(materials: mats, forgeStack: [...s.forgeStack]..removeLast()),
+    );
+    return {kind: n};
   }
 
   /// 지금 모루 칸 수 = 기본 + 젤리로 넓힌 만큼(상한은 설정이 정한다).

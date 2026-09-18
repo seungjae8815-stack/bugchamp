@@ -38,6 +38,27 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   bool _autoOn = false;
   bool _busy = false;
 
+  /// 자동 제련에서 필터에 걸려 **판** 재료 — 모루 위로 떠오르는 표시용
+  /// (사장님 지시 2026-09-18). `(재료, 수량, 생성 시각)`, 1.1초 뒤 사라진다.
+  final List<({MaterialKind kind, int n, DateTime at})> _sold = [];
+
+  void _showSold(Map<MaterialKind, int> sold) {
+    if (sold.isEmpty) return;
+    final now = DateTime.now();
+    for (final e in sold.entries) {
+      _sold.add((kind: e.key, n: e.value, at: now));
+    }
+    // 오래된 것은 버린다 — 자동이 계속 돌면 끝없이 쌓인다.
+    _sold.removeWhere((x) => now.difference(x.at).inMilliseconds > 1100);
+    if (mounted) setState(() {});
+    Future.delayed(const Duration(milliseconds: 1150), () {
+      if (!mounted) return;
+      final t = DateTime.now();
+      _sold.removeWhere((x) => t.difference(x.at).inMilliseconds > 1100);
+      setState(() {});
+    });
+  }
+
   /// 가속 남은 시간을 **1초마다** 다시 그리는 티커.
   ///
   /// 망치질 애니메이션은 자기 박자로만 setState 하므로, 가속이 끝나가도
@@ -168,6 +189,8 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     }
     // 걸러진 것도 화석은 줄었으니 다시 그린다.
     setState(() {});
+    // 필터에 걸려 **판** 재료를 모루 위에 띄운다(창은 열지 않는다).
+    _showSold(r.sold);
     if (r.kept == 0 && !_autoOn) {
       // 손으로 두드렸는데 아무것도 안 쌓이면 고장으로 보인다 — 이유를 말한다.
       showCenterToast(context, l.forgeFiltered);
@@ -306,6 +329,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                   cycle: _cycle(forge),
                   auto: _autoOn,
                   onStrike: _onStrikeDone,
+                  sold: _sold,
                 ),
                 const SizedBox(height: 3),
                 Row(
@@ -700,7 +724,13 @@ class _AnvilButton extends StatefulWidget {
     required this.cycle,
     required this.auto,
     required this.onStrike,
+    this.sold = const [],
   });
+
+  /// 자동 제련이 필터에 걸린 장비를 **판** 대금 — 모루 위로 떠오른다
+  /// (사장님 지시 2026-09-18: 창을 열지 말고 재료가 들어온 것처럼).
+  /// 부모(`_ForgeBarState`)가 들고 있다 — 제련을 실행하는 쪽이 거기다.
+  final List<({MaterialKind kind, int n, DateTime at})> sold;
 
   /// 망치질 한 바퀴 = **한 개 뽑는 데 걸리는 시간**.
   final Duration cycle;
@@ -892,6 +922,13 @@ class _AnvilButtonState extends State<_AnvilButton>
                     color: const Color(0xFFFFF59D),
                   ),
                 ),
+              ),
+            // 판 재료 — 모루 **위로 떠오르며** 사라진다. 창을 열지 않고
+            // "재료가 들어왔다"만 보여 준다(사장님 지시 2026-09-18).
+            for (final x in widget.sold)
+              Positioned(
+                top: 6,
+                child: _SoldFloat(kind: x.kind, n: x.n, at: x.at),
               ),
             // 망치 — 오른쪽 위에서 내리친다. 회전축을 자루 끝에 둬야
             // 휘두르는 것처럼 보인다(가운데로 두면 빙글 돈다).
@@ -1168,9 +1205,27 @@ Future<bool> showForgeResult(
       ),
     ),
     actions: [
+      // **판매** — 예전엔 "버리기"라 아무것도 주지 않았다(사장님 지시
+      // 2026-09-18). 얼마 받는지 버튼에 미리 보여 준다 — 누르고 나서야
+      // 알게 되면 팔지 말지 고를 수가 없다.
       gameDialogButton(
-        l.forgeResultDrop,
-        () => Navigator.pop(context, true),
+        forge == null
+            ? l.forgeResultDrop
+            : l.forgeResultSell(
+                '${materialLabel(l, sellMaterialFor(shown.slot))} '
+                '${forge.sellMaterialCount(shown.tier)}',
+              ),
+        () async {
+          final got = await ref
+              .read(saveControllerProvider.notifier)
+              .sellTopItem();
+          if (!context.mounted) return;
+          Navigator.pop(context, true);
+          if (got.isNotEmpty) {
+            final e = got.entries.first;
+            showCenterToast(context, '${materialLabel(l, e.key)} +${e.value}');
+          }
+        },
         primary: false,
       ),
       gameDialogButton(l.forgeResultKeep, () {
@@ -1857,5 +1912,73 @@ class _TierChip extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+/// 모루 위로 떠오르며 사라지는 **판 재료** 표시.
+///
+/// 자동 제련이 필터에 걸린 장비를 팔 때 뜬다. 창을 열면 자동이 도는 동안
+/// 화면을 계속 가리므로, 재화가 들어온 것처럼 아이콘만 잠깐 보여 준다.
+class _SoldFloat extends StatefulWidget {
+  const _SoldFloat({required this.kind, required this.n, required this.at});
+
+  final MaterialKind kind;
+  final int n;
+  final DateTime at;
+
+  @override
+  State<_SoldFloat> createState() => _SoldFloatState();
+}
+
+class _SoldFloatState extends State<_SoldFloat>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..forward();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    builder: (context, _) {
+      final t = _c.value;
+      return Transform.translate(
+        offset: Offset(0, -18 * t),
+        child: Opacity(
+          // 끝 30% 에서만 흐려진다 — 처음부터 흐려지면 못 읽는다.
+          opacity: t < 0.7 ? 1.0 : (1 - (t - 0.7) / 0.3).clamp(0.0, 1.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              materialImage(
+                widget.kind,
+                size: 15,
+                fallback: Icon(
+                  materialIcon(widget.kind),
+                  size: 13,
+                  color: Colors.white70,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Text(
+                '+${widget.n}',
+                style: const TextStyle(
+                  color: Color(0xFF9CCC65),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
