@@ -2083,7 +2083,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      '스테이지 · 레벨 · 능력치 강화 ·\n골드 · 재료가 처음으로 돌아갑니다.\n\n곤충 · 장비 · 도감 · 젤리는\n그대로 남아요.\n\n레벨 랭킹은 최고 기록으로 유지됩니다.\n몬스터가 훨씬 더 강력해집니다.';
+      '스테이지 · 레벨 · 능력치 강화 ·\n골드 · 재료가 처음으로 돌아갑니다.\n\n곤충 · 장비 · 도감 · 젤리 · 스킬은\n그대로 남아요.\n\n랭킹은 난이도를 먼저 봅니다 —\n난이도를 올리면 레벨이 낮아도 위로 올라가요.\n\n몬스터가 훨씬 더 강력해집니다.';
 
   @override
   String get tierNextGo => '진입하기';

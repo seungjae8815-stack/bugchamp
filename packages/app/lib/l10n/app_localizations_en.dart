@@ -2119,7 +2119,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'Stage, level, stat upgrades,\ngold and materials reset to the beginning.\n\nBugs, gear, the field guide and jelly\nall stay with you.\n\nYour level ranking keeps its best record.\nMonsters get far stronger.';
+      'Stage, level, upgrades, gold and materials\nreset to the beginning.\n\nBugs, gear, the dex, jelly and skills\nall stay with you.\n\nRankings sort by difficulty first - moving up\nputs you above lower tiers even at a low level.\n\nMonsters get much stronger.';
 
   @override
   String get tierNextGo => 'Enter';

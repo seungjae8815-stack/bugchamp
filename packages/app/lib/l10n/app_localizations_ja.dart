@@ -2077,7 +2077,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'ステージ・レベル・能力強化・\nゴールド・素材が最初に戻ります。\n\n昆虫・装備・図鑑・ゼリーは\nそのまま残ります。\n\nレベルランキングは最高記録を保ちます。\nモンスターははるかに強くなります。';
+      'ステージ・レベル・強化・\nゴールド・素材が最初に戻ります。\n\n昆虫・装備・図鑑・ゼリー・スキルは\nそのまま残ります。\n\nランキングは難易度が優先です —\n難易度を上げるとレベルが低くても上位になります。\n\nモンスターがずっと強くなります。';
 
   @override
   String get tierNextGo => '進む';
