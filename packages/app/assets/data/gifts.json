@@ -1,5 +1,6 @@
 {
  "schemaVersion": 1,
+  "_goldComment": "선물 골드는 gold(정액)와 goldMinutes(지금 사냥터 분치) 중 **큰 쪽**이다(2026-09-18 사장님 확정, giftGold). 정액만 두면 후반에 몬스터 한 마리보다 적어져 선물을 열 이유가 없고(극한 한 마리 13,759 > 선물 12,000), 분치만 두면 초반이 확 약해진다 — 정액은 초반 부스터로 설계된 값이라(balance_sim 의 _dailyBonusGold 주석: day1 골드의 25%) 그걸 바닥으로 깔고 후반에는 분치가 이긴다. 분치는 사냥터 클리어 보상과 같은 식으로 처치속도(exchange.killsPerHour)를 쓴다.",
  "_jellyComment": "젤리는 최상위 티어에만 둔다. 예전엔 중간 티어에도 2개가 있어 선물만으로 하루 32젤리(수입의 16%)가 들어왔다 — 접속 시간에 비례해 무한히 늘어나는 통로라 프리미엄 재화를 얹으면 안 된다. 검증: core_run/tool/jelly_sim.dart",
  "firstDelaySec": 90,
  "intervalMinSec": 420,
@@ -17,14 +18,16 @@
    "gold": 3000,
    "chitin": 20,
    "mineral": 20,
-   "sap": 20
+   "sap": 20,
+   "goldMinutes": 1.5
   },
   {
    "weight": 35,
    "gold": 6000,
    "chitin": 40,
    "mineral": 40,
-   "sap": 40
+   "sap": 40,
+   "goldMinutes": 3
   },
   {
    "weight": 15,
@@ -32,7 +35,8 @@
    "jelly": 3,
    "chitin": 80,
    "mineral": 80,
-   "sap": 80
+   "sap": 80,
+   "goldMinutes": 6
   }
  ],
  "freeDoubleDaily": 1,

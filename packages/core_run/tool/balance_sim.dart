@@ -133,6 +133,10 @@ const _maxDays = 3650;
 List<int> _samples = const [10, 50, 100, 200, 400, 550, 700, 850, 1000];
 List<int> _samplesEcon = const [10, 30, 50, 100, 200, 400, 700];
 
+/// 깜짝선물 설정 — 2026-09-18 부터 선물 골드가 **사냥터 분치**라 시뮬도 읽어야
+/// 한다(정액만 세면 후반 수입을 과소평가해 표가 실제보다 느리게 나온다).
+GiftConfig? _gifts;
+
 void main(List<String> args) {
   final opts = _parseArgs(args);
   final base =
@@ -161,6 +165,14 @@ void main(List<String> args) {
     }
   }
   var config = RunConfig.fromJson(base);
+  try {
+    _gifts = GiftConfig.fromJson(
+      jsonDecode(File('../app/assets/data/gifts.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+  } catch (_) {
+    _gifts = null; // 없으면 예전처럼 정액만 쓴다
+  }
   if (opts.fitZones != null) {
     // ── 사냥터 표 맞추기 ──
     // 사냥터 k 의 몬스터는 "사냥터 k-1 에서 의도한 일수만큼 키운 전력"으로
@@ -1266,8 +1278,45 @@ class _Player {
 
   void playDay() {
     // 전투 밖 보상(일일·선물·미션·결투)은 하루 한 번 정액으로 넣는다.
-    gold += _dailyBonusGold;
-    _goldEarned += _dailyBonusGold;
+    // ⚠️ 2026-09-18: **선물 골드가 사냥터 분치로 바뀌었다**(정액과 큰 쪽).
+    //    정액만 세면 후반 수입을 과소평가해 표가 실제보다 느리게 나온다.
+    //    선물 몫을 지금 사냥터 기준으로 다시 계산해 정액과 큰 쪽을 쓴다 —
+    //    게임의 `giftGold` 와 같은 규칙이다.
+    var bonus = _dailyBonusGold;
+    final gifts = _gifts;
+    if (gifts != null && gifts.tiers.isNotEmpty) {
+      final w = gifts.tiers.fold<double>(0, (a, t) => a + t.weight);
+      if (w > 0) {
+        final perDay =
+            _activeHoursPerDay * 3600 /
+            ((gifts.intervalMinSec + gifts.intervalMaxSec) / 2);
+        var each = 0.0;
+        for (final t in gifts.tiers) {
+          each +=
+              t.weight /
+              w *
+              giftGold(
+                config,
+                stage,
+                _tier,
+                t.gold,
+                t.goldMinutes,
+              ).toDouble();
+        }
+        // 무료 2배 1회분도 얹는다(젤리와 달리 골드는 랜덤 배수를 탄다 —
+        // 평균을 쓴다).
+        final avgMult =
+            (gifts.adMultiplierMin + gifts.adMultiplierMax) / 2.0;
+        final giftGoldPerDay =
+            each * (perDay + gifts.freeDoubleDaily * (avgMult - 1));
+        // 정액 가정에 이미 선물 몫(약 32,000)이 들어 있다 — 큰 쪽만 쓴다.
+        bonus = giftGoldPerDay > _dailyBonusGold
+            ? giftGoldPerDay
+            : _dailyBonusGold;
+      }
+    }
+    gold += bonus;
+    _goldEarned += bonus;
     for (final k in const [
       MaterialKind.chitin,
       MaterialKind.mineral,

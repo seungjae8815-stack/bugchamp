@@ -874,10 +874,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
       return;
     }
     final t = cfg.rollTier(rng);
+    final run = ref.read(gameDataProvider).value?.runConfig;
     final gift = GiftMail(
       id: _devUuid.v4(),
       expiry: now.add(Duration(hours: cfg.expiryHours)),
-      gold: t.gold,
+      // 정액과 **지금 사냥터 분치** 중 큰 쪽(2026-09-18). 서버도 같은 함수를 쓴다.
+      gold: run == null
+          ? t.gold
+          : giftGold(run, s.stageNumber, s.difficultyTier, t.gold,
+              t.goldMinutes),
       jelly: t.jelly,
       chitin: t.chitin,
       mineral: t.mineral,

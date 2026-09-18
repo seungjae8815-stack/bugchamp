@@ -1252,7 +1252,14 @@ class GameActions {
     final gift = GiftMail(
       id: _uuid.v4(),
       expiry: t.add(Duration(hours: cfg.expiryHours)),
-      gold: tier.gold,
+      // 정액과 **지금 사냥터 분치** 중 큰 쪽 — 앱과 같은 함수(§4).
+      gold: giftGold(
+        config.run,
+        save.stageNumber,
+        save.difficultyTier,
+        tier.gold,
+        tier.goldMinutes,
+      ),
       jelly: tier.jelly,
       chitin: tier.chitin,
       mineral: tier.mineral,

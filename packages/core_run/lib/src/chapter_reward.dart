@@ -30,3 +30,23 @@ int chapterClearKeyTier(String key) {
   if (i < 0) return 0;
   return int.tryParse(key.substring(i + 1)) ?? 0;
 }
+
+/// 깜짝선물 골드 — **정액과 사냥터 분치 중 큰 쪽**(2026-09-18 사장님 확정).
+///
+/// 정액만 두면 후반에 몬스터 한 마리보다 적어져(극한 한 마리 13,759 vs 선물
+/// 12,000) 선물을 열 이유가 없어진다. 그렇다고 분치만 두면 초반이 확 약해진다
+/// — 정액은 **초반 부스터로 설계된 값**이다(`balance_sim` 의 `_dailyBonusGold`
+/// 주석: "day1 골드의 25% 수준, day25 엔 반올림 오차"). 그래서 정액을 바닥으로
+/// 깔고 후반에는 분치가 이기게 둔다.
+///
+/// 선물은 **만들 때** 금액이 박힌다 — 그 시점 사냥터 기준이라 나중에 난이도를
+/// 옮겨도 이미 받은 선물의 금액이 흔들리지 않는다.
+/// 계산은 사냥터 클리어 보상과 같은 식이다(같은 처치 속도를 쓴다).
+int giftGold(RunConfig run, int stage, int tier, int fixedGold,
+    double goldMinutes) {
+  if (goldMinutes <= 0) return fixedGold;
+  final perKill = rewardGold(run, stage - 1, 1.0, tier: tier);
+  final scaled =
+      (perKill * run.exchangeKillsPerHour * goldMinutes / 60).round();
+  return scaled > fixedGold ? scaled : fixedGold;
+}

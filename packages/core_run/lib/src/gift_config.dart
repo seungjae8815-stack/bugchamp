@@ -10,6 +10,7 @@ class GiftTier {
   const GiftTier({
     required this.weight,
     this.gold = 0,
+    this.goldMinutes = 0,
     this.jelly = 0,
     this.chitin = 0,
     this.mineral = 0,
@@ -18,6 +19,11 @@ class GiftTier {
 
   final double weight;
   final int gold;
+
+  /// 지금 사냥터에서 몇 분 사냥한 만큼을 줄 것인가 — 골드는 [gold] 와 이 값 중
+  /// **큰 쪽**이다(`giftGold`). 0 이면 정액만 쓴다(예전 동작).
+  final double goldMinutes;
+
   final int jelly;
   final int chitin;
   final int mineral;
@@ -26,6 +32,7 @@ class GiftTier {
   factory GiftTier.fromJson(Map<String, dynamic> json) => GiftTier(
     weight: (json['weight'] as num?)?.toDouble() ?? 1,
     gold: (json['gold'] as num?)?.toInt() ?? 0,
+    goldMinutes: (json['goldMinutes'] as num?)?.toDouble() ?? 0,
     jelly: (json['jelly'] as num?)?.toInt() ?? 0,
     chitin: (json['chitin'] as num?)?.toInt() ?? 0,
     mineral: (json['mineral'] as num?)?.toInt() ?? 0,
