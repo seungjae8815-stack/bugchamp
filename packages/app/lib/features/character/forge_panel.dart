@@ -1209,10 +1209,12 @@ Future<bool> showForgeResult(
       // 2026-09-18). 얼마 받는지 버튼에 미리 보여 준다 — 누르고 나서야
       // 알게 되면 팔지 말지 고를 수가 없다.
       gameDialogButton(
+        // 재료 **종류는 무작위**라 미리 못 말한다(2026-09-18) — 수량만 보여
+        // 준다. 수량은 등급으로 정해지므로 팔지 말지 고르는 데 충분하다.
         forge == null
             ? l.forgeResultDrop
             : l.forgeResultSell(
-                '${materialLabel(l, sellMaterialFor(shown.slot))} '
+                '${l.tagCommonMaterial} '
                 '${forge.sellMaterialCount(shown.tier)}',
               ),
         () async {

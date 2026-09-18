@@ -419,16 +419,13 @@ EquipItem forgeOnce({
   return EquipItem(slot: picked, tier: tier, options: options);
 }
 
-/// 장비를 팔면 나오는 재료 **종류** — 부위로 정한다.
+/// 장비를 팔면 나오는 재료 **종류** — 일반 재료 셋 중 하나를 무작위로.
 ///
-/// 같은 장비가 늘 같은 재료를 주어야 "이건 팔면 뭐가 나온다"가 기억된다.
-/// 무작위로 돌리면 결정론(§5)을 위해 rng 를 주입해야 하는데, 그럴 만한
-/// 이득이 없다.
-MaterialKind sellMaterialFor(EquipSlot slot) => switch (slot) {
-  // 공격·방어 계열(도구·바지·신발) → 키틴(단단한 것)
-  EquipSlot.tool || EquipSlot.bottom || EquipSlot.shoes => MaterialKind.chitin,
-  // 장식 계열(목걸이·반지) → 미네랄(광물)
-  EquipSlot.necklace || EquipSlot.ring => MaterialKind.mineral,
-  // 천·보관 계열(모자·옷·보관함) → 수액(끈적한 것)
-  EquipSlot.hat || EquipSlot.top || EquipSlot.box => MaterialKind.sap,
-};
+/// 처음엔 부위로 고정했는데(도구→키틴 식) 사장님 지적대로 **부위와 재료 사이에
+/// 아무 뜻이 없어** 규칙을 외울 이유가 없었다. 무작위면 "무엇이 나올까"가
+/// 조금이라도 남고, 세 재료가 고르게 쌓인다(강화 2차 비용이 세 종류를 다 쓴다).
+///
+/// [rng] 는 **호출부가 넣는다**(§5 결정론) — 제련은 이미 인스턴스 하나를
+/// 계속 쓰고 있다. 새로 만들면 시각으로 씨앗이 잡혀 같은 재료가 연달아 나온다.
+MaterialKind sellMaterialFor(math.Random rng) =>
+    kRegularMaterials[rng.nextInt(kRegularMaterials.length)];

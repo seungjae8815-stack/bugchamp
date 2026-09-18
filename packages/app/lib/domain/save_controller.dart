@@ -1723,8 +1723,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 현재 스테이지의 처치 1회 산출 × 시간당 처치 수 × 시간.
     final depth = s.stageNumber;
     final kills = cfg.exchangeKillsPerHour;
+    // ⚠️ **회차를 넘긴다.** 안 넘기면 `rewardGold` 의 기본값(tier 0)으로 계산돼
+    // 어느 난이도에서나 **쉬움 골드**가 나왔다(2026-09-18 발견 — 사장님 지적
+    // "젤리 대비 너무 적게 준다"의 원인). 난이도별 골드 표는 회차마다 규모가
+    // 수십~수천 배 달라서, 극한에서는 제 값의 1/2000 을 주고 있었다.
     final gold = wantGold
-        ? (rewardGold(cfg, depth, 1.0) * kills * cfg.exchangeGoldHours * trades)
+        ? (rewardGold(cfg, depth, 1.0, tier: s.difficultyTier) *
+                  kills *
+                  cfg.exchangeGoldHours *
+                  trades)
               .round()
         : 0;
     // 재료는 3종을 고루 준다 — 한 종만 주면 부족한 종을 노려 반복 교환하게 된다.
@@ -2334,7 +2341,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           break;
         }
       } else {
-        final kind = sellMaterialFor(item.slot);
+        final kind = sellMaterialFor(_forgeRng);
         sold[kind] = (sold[kind] ?? 0) + forge.sellMaterialCount(item.tier);
       }
     }
@@ -2379,7 +2386,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     if (forge == null || s.forgeStack.isEmpty) return const {};
     final item = s.forgeStack.last;
-    final kind = sellMaterialFor(item.slot);
+    final kind = sellMaterialFor(_forgeRng);
     final n = forge.sellMaterialCount(item.tier);
     final mats = Map<MaterialKind, int>.from(s.materials)
       ..[kind] = (s.materials[kind] ?? 0) + n;
