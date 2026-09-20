@@ -39,15 +39,18 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   bool _busy = false;
 
   /// 자동 제련에서 필터에 걸려 **판** 재료 — 모루 위로 떠오르는 표시용
-  /// (사장님 지시 2026-09-18). `(재료, 수량, 생성 시각)`, 1.1초 뒤 사라진다.
-  final List<({MaterialKind kind, int n, DateTime at})> _sold = [];
+  /// (사장님 지시 2026-09-18).
+  ///
+  /// ⚠️ **한 번의 제련 = 한 줄**이다. 예전엔 재료 종류마다 한 줄씩 만들어
+  /// 놓고 전부 같은 자리(`top: 6`)에 그려서, 2종이 나오면 겹쳐 찍혀
+  /// "두 번 뜬다"로 보였다(2026-09-20 지적).
+  /// 줄이 여러 개면 **세로로 어긋나게** 그린다.
+  final List<({Map<MaterialKind, int> items, DateTime at})> _sold = [];
 
   void _showSold(Map<MaterialKind, int> sold) {
     if (sold.isEmpty) return;
     final now = DateTime.now();
-    for (final e in sold.entries) {
-      _sold.add((kind: e.key, n: e.value, at: now));
-    }
+    _sold.add((items: Map<MaterialKind, int>.from(sold), at: now));
     // 오래된 것은 버린다 — 자동이 계속 돌면 끝없이 쌓인다.
     _sold.removeWhere((x) => now.difference(x.at).inMilliseconds > 1100);
     if (mounted) setState(() {});
@@ -730,7 +733,7 @@ class _AnvilButton extends StatefulWidget {
   /// 자동 제련이 필터에 걸린 장비를 **판** 대금 — 모루 위로 떠오른다
   /// (사장님 지시 2026-09-18: 창을 열지 말고 재료가 들어온 것처럼).
   /// 부모(`_ForgeBarState`)가 들고 있다 — 제련을 실행하는 쪽이 거기다.
-  final List<({MaterialKind kind, int n, DateTime at})> sold;
+  final List<({Map<MaterialKind, int> items, DateTime at})> sold;
 
   /// 망치질 한 바퀴 = **한 개 뽑는 데 걸리는 시간**.
   final Duration cycle;
@@ -925,10 +928,11 @@ class _AnvilButtonState extends State<_AnvilButton>
               ),
             // 판 재료 — 모루 **위로 떠오르며** 사라진다. 창을 열지 않고
             // "재료가 들어왔다"만 보여 준다(사장님 지시 2026-09-18).
-            for (final x in widget.sold)
+            // 줄마다 **세로로 어긋나게** — 겹치면 읽을 수 없다.
+            for (final (i, x) in widget.sold.indexed)
               Positioned(
-                top: 6,
-                child: _SoldFloat(kind: x.kind, n: x.n, at: x.at),
+                top: 6 + i * 15.0,
+                child: _SoldFloat(items: x.items, at: x.at),
               ),
             // 망치 — 오른쪽 위에서 내리친다. 회전축을 자루 끝에 둬야
             // 휘두르는 것처럼 보인다(가운데로 두면 빙글 돈다).
@@ -1209,24 +1213,24 @@ Future<bool> showForgeResult(
       // 2026-09-18). 얼마 받는지 버튼에 미리 보여 준다 — 누르고 나서야
       // 알게 되면 팔지 말지 고를 수가 없다.
       gameDialogButton(
-        // 재료 **종류는 무작위**라 미리 못 말한다(2026-09-18) — 수량만 보여
-        // 준다. 수량은 등급으로 정해지므로 팔지 말지 고르는 데 충분하다.
-        forge == null
-            ? l.forgeResultDrop
-            : l.forgeResultSell(
-                '${l.tagCommonMaterial} '
-                '${forge.sellMaterialCount(shown.tier)}',
-              ),
+        // 버튼에는 **"판매"만** 쓴다(사장님 지시 2026-09-20) — 재료 종류가
+        // 무작위라 미리 말할 수 없고, 수량까지 붙이면 버튼이 길어진다.
+        // 무엇을 얼마나 받았는지는 **누른 뒤 보상 팝업**으로(아이콘과 함께).
+        l.forgeResultDrop,
         () async {
           final got = await ref
               .read(saveControllerProvider.notifier)
               .sellTopItem();
           if (!context.mounted) return;
           Navigator.pop(context, true);
-          if (got.isNotEmpty) {
-            final e = got.entries.first;
-            showCenterToast(context, '${materialLabel(l, e.key)} +${e.value}');
-          }
+          if (got.isEmpty || !context.mounted) return;
+          await showRewardPopup(
+            context,
+            title: l.forgeResultDrop,
+            subtitle: l.rewardGained,
+            iconWidget: dialogAsset('assets/images/ui/anvil.webp'),
+            materials: got,
+          );
         },
         primary: false,
       ),
@@ -1922,10 +1926,10 @@ class _TierChip extends StatelessWidget {
 /// 자동 제련이 필터에 걸린 장비를 팔 때 뜬다. 창을 열면 자동이 도는 동안
 /// 화면을 계속 가리므로, 재화가 들어온 것처럼 아이콘만 잠깐 보여 준다.
 class _SoldFloat extends StatefulWidget {
-  const _SoldFloat({required this.kind, required this.n, required this.at});
+  const _SoldFloat({required this.items, required this.at});
 
-  final MaterialKind kind;
-  final int n;
+  /// 이번 제련에서 판 재료 전부 — **한 줄에 나란히** 그린다.
+  final Map<MaterialKind, int> items;
   final DateTime at;
 
   @override
@@ -1958,25 +1962,28 @@ class _SoldFloatState extends State<_SoldFloat>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              materialImage(
-                widget.kind,
-                size: 15,
-                fallback: Icon(
-                  materialIcon(widget.kind),
-                  size: 13,
-                  color: Colors.white70,
+              for (final e in widget.items.entries) ...[
+                materialImage(
+                  e.key,
+                  size: 15,
+                  fallback: Icon(
+                    materialIcon(e.key),
+                    size: 13,
+                    color: Colors.white70,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 2),
-              Text(
-                '+${widget.n}',
-                style: const TextStyle(
-                  color: Color(0xFF9CCC65),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                  shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                const SizedBox(width: 2),
+                Text(
+                  '+${e.value}',
+                  style: const TextStyle(
+                    color: Color(0xFF9CCC65),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                    shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 6),
+              ],
             ],
           ),
         ),

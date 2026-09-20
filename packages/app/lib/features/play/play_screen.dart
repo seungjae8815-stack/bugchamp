@@ -67,6 +67,14 @@ const _walkDuration = 0.6;
 const _deathDuration = 0.4;
 const _defeatDuration = 2.5;
 
+/// 전투 씬 아래에 **스킬 바가 차지하는 높이**(논리 px).
+///
+/// 스킬 바는 씬 위에 얹히므로(오른쪽 아래), 몬스터·캐릭터가 그 아래로 내려오면
+/// 가려진다(사장님 지시 2026-09-20 — 가리는 게 없게). 둘 다 이만큼 띄운다.
+/// ⚠️ **캐릭터와 몬스터가 같은 값을 써야 한다** — 다르면 지면선이 어긋나
+/// 한쪽이 공중에 뜬 것처럼 보인다.
+const double _kSkillBarRoom = 52;
+
 /// 캐릭터의 첫 타 뒤 곤충이 따라 치기까지의 간격(초, 슬롯마다 한 칸씩 더).
 /// 연출 값이다 — 누산기는 기다리는 동안에도 쌓이므로 DPS 는 안 바뀐다.
 const _petFollowStep = 0.08;
@@ -2222,7 +2230,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               Align(
                 alignment: const Alignment(0.45, 1.0),
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  // 아래 여백 = 스킬 바 높이(약 50) + 숨 쉴 틈. 스킬 바가
+                  // 씬 위에 얹히므로 몬스터·캐릭터가 그 아래로 내려가면
+                  // 가려진다(사장님 지시 2026-09-20 — 가리는 게 없게).
+                  padding: const EdgeInsets.only(bottom: _kSkillBarRoom),
                   child: Transform.translate(
                     offset: Offset(shake - _enemyLunge * 24 + walkSlide, 0),
                     child: Column(
@@ -2327,7 +2338,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               Align(
                 alignment: const Alignment(-0.55, 1.0),
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  // 몬스터와 **같은 값** — 다르면 지면선이 어긋난다.
+                  padding: const EdgeInsets.only(bottom: _kSkillBarRoom),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -2523,7 +2535,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               // 2026-09-18). 강화 패널 위에 따로 자리를 잡으면 씬이 그만큼
               // 줄어든다. 왼쪽에 자동발동 토글(아이콘만).
               if (ref.watch(saveControllerProvider).value case final sv?)
-                Positioned(right: 8, bottom: 8, child: _skillBar(l, sv)),
+                Positioned(right: 6, bottom: 2, child: _skillBar(l, sv)),
             ],
           ),
         ),
@@ -2680,7 +2692,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     final tickets = (st['tickets'] as num?)?.toInt() ?? 0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
+      padding: const EdgeInsets.fromLTRB(10, 2, 10, 8),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () async {
@@ -2694,34 +2706,62 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0x267E57C2),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xAA7E57C2)),
+            // 배너답게 — 옅은 칠에 테두리만 있던 것을 그라데이션 + 옅은 광으로.
+            gradient: const LinearGradient(
+              colors: [Color(0x667E57C2), Color(0x333F2C63)],
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xCC9575CD), width: 1.3),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x447E57C2),
+                blurRadius: 10,
+                spreadRadius: -2,
+              ),
+            ],
           ),
+          // **제목만** 크게 — "진행 중 · 참가권 N장"은 길어서 배너가 안내문처럼
+          // 읽혔다(사장님 지시 2026-09-20). 참가권은 오른쪽에 숫자 뱃지로.
           child: Row(
             children: [
-              const Icon(
-                Icons.emoji_events_rounded,
-                color: Color(0xFFD7BCFF),
-                size: 14,
-              ),
-              const SizedBox(width: 6),
+              rankImageDlg('trophy', size: 20),
+              const SizedBox(width: 7),
               Expanded(
                 child: Text(
-                  l.eventBanner(tickets),
+                  l.eventTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFFD7BCFF),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFEDE0FF),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
+              if (tickets > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x557E57C2),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Text(
+                    '$tickets',
+                    style: const TextStyle(
+                      color: Color(0xFFEDE0FF),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               const Icon(
                 Icons.chevron_right_rounded,
                 color: Color(0xFFD7BCFF),
-                size: 16,
+                size: 18,
               ),
             ],
           ),
@@ -6331,6 +6371,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           await ctrl.devAllSkills(on: false);
                           toast('스킬 초기화');
                         }, danger: true),
+                        _devBtn('스킬 칸 전부 열기', () async {
+                          await ctrl.devOpenAllSkillSlots();
+                          toast('스킬 칸 ${skillCfg.maxSlots}개');
+                        }),
                         _devBtn('만능 조각 +50', () async {
                           await ctrl.devAddGradeShards(50);
                           toast('만능 조각 +50');

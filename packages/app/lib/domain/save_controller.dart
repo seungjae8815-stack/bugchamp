@@ -881,8 +881,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // 정액과 **지금 사냥터 분치** 중 큰 쪽(2026-09-18). 서버도 같은 함수를 쓴다.
       gold: run == null
           ? t.gold
-          : giftGold(run, s.stageNumber, s.difficultyTier, t.gold,
-              t.goldMinutes),
+          : giftGold(
+              run,
+              s.stageNumber,
+              s.difficultyTier,
+              t.gold,
+              t.goldMinutes,
+            ),
       jelly: t.jelly,
       chitin: t.chitin,
       mineral: t.mineral,
@@ -1689,6 +1694,27 @@ class SaveController extends AsyncNotifier<SaveGame> {
         cfg,
       ),
     );
+  }
+
+  /// **개발자 모드 전용** — 스킬 장착 칸을 전부 연다.
+  ///
+  /// 칸은 **처음 가 본 난이도**로만 열린다(§2.8) — 쉬움만 가 봤으면 2칸이라
+  /// 5칸짜리 로드아웃을 시험할 수 없다. 그래서 `maxTierReached` 를 올린다.
+  ///
+  /// ⚠️ 이 값은 **난이도 이동(§2.4)과 서버 허용치**도 함께 연다 — 개발자
+  /// 모드 전용인 이유다. 되돌리려면 세이브를 초기화해야 한다.
+  Future<void> devOpenAllSkillSlots() async {
+    final cfg = ref.read(gameDataProvider).value?.skillConfig;
+    final s = state.requireValue;
+    if (cfg == null) return;
+    // 최대 칸이 열리는 난이도 = slotsByTier 의 마지막 칸.
+    final want = cfg.maxSlots;
+    var tier = s.topTier;
+    while (tier < 10 && cfg.slotsFor(tier) < want) {
+      tier++;
+    }
+    if (tier <= s.maxTierReached) return;
+    await _commit(s.copyWith(maxTierReached: tier));
   }
 
   /// **개발자 모드 전용** — 스킬 조각을 등급별 만능 조각으로 채운다.
