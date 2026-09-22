@@ -452,8 +452,36 @@ void main() {
           levels: levels,
           equipped: const ['molting'],
         )!.hpFraction,
-        closeTo(0.5, 1e-9),
+        closeTo(0.35, 1e-9),
       );
+    });
+
+    test('순간 피해 = 지금 초당 피해 × 값(초) — 공속·치명이 자라도 묽어지지 않는다', () {
+      CharacterStats st({required double speed, required double crit}) =>
+          CharacterStats(
+            attack: 100,
+            attackSpeed: speed,
+            rewardMultiplier: 1,
+            critChance: crit,
+            critDamage: 3,
+            bossDamage: 2,
+            maxHp: 1000,
+            defense: 0,
+            hpRegen: 0,
+            xpMultiplier: 1,
+            bugFind: 1,
+            materialFind: 1,
+            moveSpeed: 1,
+            boostBonus: 0,
+          );
+      final slow = st(speed: 2, crit: 0);
+      // 100 × 2타/초 × 4초 = 800. 보스면 보스 피해 ×2.
+      expect(skillBurstDamage(slow, 4), closeTo(800, 1e-9));
+      expect(skillBurstDamage(slow, 4, boss: true), closeTo(1600, 1e-9));
+      // 공속·치명이 올라도 "초당 피해 대비 몇 초"는 그대로다.
+      final fast = st(speed: 8, crit: 0.5);
+      final dps = baselineHitPower(fast) * fast.attackSpeed;
+      expect(skillBurstDamage(fast, 4) / dps, closeTo(4, 1e-9));
     });
 
     test('id 가 중복되지 않는다', () {

@@ -3,8 +3,10 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
+import 'character_stats.dart';
 import 'enums.dart';
 import 'jelly_cost.dart';
+import 'run_math.dart' show baselineHitPower;
 
 /// 스킬이 액티브인지 패시브인지. **칸은 나누지 않는다** — 액티브 5개로 화력을
 /// 몰든 패시브 5개로 방치 효율을 올리든 본인이 고른다. 나누는 순간 선택이 사라진다.
@@ -428,6 +430,18 @@ Map<UpgradeKind, double> skillPassiveStats(
   }
   return out;
 }
+
+/// 순간 피해 액티브(회심의 일격·포충망) 한 방 — **지금 초당 피해 × [seconds]초**.
+///
+/// 예전(1.0.13 개발 중)엔 `공격력 × 값` 이었다. 공속·치명타가 자랄수록 한 방의 무게가
+/// 묽어져 회심의 일격(전설)이 보스 관문을 쉬움 5% → 극한 2% 밖에 못 넓혔다 — 수치로는
+/// 못 고친다(극한에 맞추면 쉬움에서 140%). 초 단위면 어느 난이도에서나 같은 무게다
+/// (2026-09-22 사장님 확정). 치명타는 기대값으로 들어간다. 앱·시뮬 공용.
+double skillBurstDamage(
+  CharacterStats s,
+  double seconds, {
+  bool boss = false,
+}) => baselineHitPower(s, boss: boss) * s.attackSpeed * seconds;
 
 /// 처치 회복 배율(흡즙). 없으면 1.0.
 double skillKillHealMult(

@@ -7,6 +7,8 @@
 // 실행:
 //   cd packages\core_run ; dart run tool/balance_sim.dart
 //   dart run tool/balance_sim.dart --habitats=20 --stages=15 --hp-growth=1.20
+//   dart run tool/balance_sim.dart --tiers=4 --loadout=molting,pupa_guard,sap_drink,tenacity,swarm
+//   dart run tool/balance_sim.dart --tiers=4 --skill=molting.base=0.3 --skill=pupa_guard.duration=4
 //
 // ⚠️ 근사인 지점(결과를 읽을 때 감안할 것):
 //  - 플레이어 구매 전략 = "지금 살 수 있는 것 중 가장 싼 업그레이드"를 반복.
@@ -387,6 +389,7 @@ void main(List<String> args) {
     stdout.writeln('  ★ 전 회차 합계: $total일');
     _printBossLog(sim);
     _printEntryLog(sim);
+    _printSkillBossLog(sim);
     return;
   }
 
@@ -558,9 +561,13 @@ void main(List<String> args) {
   for (final m in _samples) {
     final v = sim.hpTrajectory[m];
     if (v == null) continue;
-    final verdict = v.dead
-        ? '죽음 ← 벽'
-        : (v.low > 0.6 ? '밋밋함 ← 문제' : (v.low >= 0.15 ? '아슬아슬 — 좋다' : '간신히'));
+    final verdict =
+        (v.dead
+            ? '죽음 ← 벽'
+            : (v.low > 0.6
+                  ? '밋밋함 ← 문제'
+                  : (v.low >= 0.15 ? '아슬아슬 — 좋다' : '간신히'))) +
+        (v.revived > 0 ? ' (탈피 ${v.revived}회)' : '');
     stdout.writeln(
       '  ${m.toString().padLeft(7)} |'
       ' ${(v.hit * 100).toStringAsFixed(0).padLeft(5)}% |'
@@ -623,16 +630,29 @@ final _targets = BalanceTargets.load();
 final _ceilingData = CeilingData.load();
 
 /// 캐릭터 스킬 설정(없으면 스킬을 뺀 예전 시뮬).
+/// `--skill=id.필드=값` 덮어쓰기(예 `--skill=molting.base=0.3`) — JSON 을 고치기 전에
+/// 스킬 수치를 쓸어보기 위한 것. [_skillConfig] 를 처음 읽기 **전에** 채워야 한다.
+final List<(String, String, num)> _skillOverrides = [];
+
 final SkillConfig? _skillConfig = () {
   final f = File('../app/assets/data/skills.json');
   if (!f.existsSync()) return null;
-  return SkillConfig.fromJson(
-    jsonDecode(f.readAsStringSync()) as Map<String, dynamic>,
-  );
+  final raw = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
+  for (final (id, field, v) in _skillOverrides) {
+    final list = raw['skills'] as List;
+    final def = list.cast<Map<String, dynamic>>().where((e) => e['id'] == id);
+    if (def.isEmpty) {
+      stderr.writeln('알 수 없는 스킬: $id');
+      continue;
+    }
+    def.first[field] = v;
+  }
+  return SkillConfig.fromJson(raw);
 }();
 
 /// 시뮬 유저가 끼는 스킬 순서(balance_targets.json → skillLoadout).
-final List<String> _skillLoadout = [
+/// `--loadout=molting,pupa_guard,sap_drink` 로 바꿔 끼워 잴 수 있다(방어형 로드아웃 비교).
+List<String> _skillLoadout = [
   for (final v in (_targets.raw['skillLoadout'] as List? ?? const []))
     v as String,
 ];
@@ -765,6 +785,30 @@ RunConfig _fitTiers(Map<String, dynamic> base, RunConfig config, _Opts opts) {
   return withTables(tables);
 }
 
+/// 스킬 한 칸이 보스 관문을 몇 % 넓히나(난이도별 최종 보스 시점).
+void _printSkillBossLog(_Player sim) {
+  final cfg = _skillConfig;
+  if (cfg == null || sim.skillBossLog.isEmpty) return;
+  stdout.writeln('── 스킬 한 칸의 보스 관문 기여(그 스킬만 꼈을 때 잡는 보스 체력 +%) ──');
+  stdout.writeln('  액티브는 보스전 시작 때 준비됨 · 타이밍 보너스·여왕의 부름(펫)은 빠진다');
+  final head = sim.skillBossLog
+      .map((e) => '${e.tier}(Lv${e.lv})'.padLeft(9))
+      .join(' ');
+  stdout.writeln('  ${'스킬'.padRight(14)} 등급     $head');
+  for (final def in cfg.skills) {
+    final cells = sim.skillBossLog
+        .map(
+          (e) => '${((e.share[def.id] ?? 0) * 100).toStringAsFixed(0)}%'
+              .padLeft(9),
+        )
+        .join(' ');
+    stdout.writeln(
+      '  ${def.id.padRight(14)} ${def.grade.key.padRight(9)}$cells',
+    );
+  }
+  stdout.writeln('');
+}
+
 /// 사냥터 도착 직후 — 일반 몬스터 20마리를 버티나. 벽은 보스뿐이어야 한다.
 void _printEntryLog(_Player sim) {
   if (sim.entryLog.isEmpty) return;
@@ -772,9 +816,11 @@ void _printEntryLog(_Player sim) {
   stdout.writeln('  목표: 몇 대 4~12 · 한 대 8~20% · 최저 15% 이상 · 죽지 않는다');
   stdout.writeln('  회차·사냥터 |  몇 대 | 한 대 |  최저 | 판정');
   for (final e in sim.entryLog) {
-    final verdict = e.dead
-        ? '죽음 ← 문제'
-        : (e.low < 0.15 ? '간신히' : (e.low > 0.7 ? '밋밋함' : '좋다'));
+    final verdict =
+        (e.dead
+            ? '죽음 ← 문제'
+            : (e.low < 0.15 ? '간신히' : (e.low > 0.7 ? '밋밋함' : '좋다'))) +
+        (e.revived > 0 ? ' (탈피 ${e.revived}회)' : '');
     stdout.writeln(
       '  ${e.tier}·${e.zone.toString().padLeft(2)}       |'
       ' ${e.hits.toStringAsFixed(1).padLeft(6)} |'
@@ -908,7 +954,7 @@ class _Player {
   ///   low   = 스테이지 중 가장 낮았던 체력
   ///   end   = 보스까지 끝낸 뒤 체력
   ///   dead  = 도중에 0 에 닿았나
-  final Map<int, ({double hit, double low, double end, bool dead})>
+  final Map<int, ({double hit, double low, double end, bool dead, int revived})>
   hpTrajectory = {};
 
   /// 날짜별 누적 골드 획득 — 공방 같은 새 소비처의 규모를 정할 때 쓴다.
@@ -1177,7 +1223,12 @@ class _Player {
 
   /// 실제로 몬스터를 때리는 능력치(앱의 `_stats`) — 앱과 같은 순서:
   /// 기준 → 장비 → (종 패시브) → 도감 → 버프·탭 → 치명확률 상한.
-  CharacterStats get stats {
+  CharacterStats get stats => _statsWith(activeAvg: true);
+
+  /// 액티브를 **뺀** 전투 능력치 — 보스전은 액티브를 따로 얹는다([_bossDamageIn]).
+  CharacterStats get _statsNoActives => _statsWith(activeAvg: false);
+
+  CharacterStats _statsWith({required bool activeAvg}) {
     final b = baselineStats;
     var s = CharacterStats(
       attack:
@@ -1206,7 +1257,7 @@ class _Player {
     // 시뮬이 "피가 닳는다"고 하는데 실기는 안 닳는다.
     s = applyEquipment(s, gear, critBudget: config.critBudgetGear);
     s = _ceilingData.dex.apply(s, dexConquered, dexConquered);
-    s = _applySkills(s);
+    s = _applySkills(s, activeAvg: activeAvg);
     return capCritChance(s, config.critChanceMax);
   }
 
@@ -1215,19 +1266,16 @@ class _Player {
   // 함수), 액티브는 **온라인만** 평균 가동률 — 방치 정산에는 스킬이 없다.
   double get skillFill => _targets.curveAt('skillFillByDay', elapsedDays);
 
-  CharacterStats _applySkills(CharacterStats s) {
+  CharacterStats _applySkills(CharacterStats s, {bool activeAvg = true}) {
     final cfg = _skillConfig;
     // ⚠️ 온라인 여부로 가르지 않는다 — 버프(_buffDpsMult)·탭 부스트(_tapBoostAvg)와 **같은 규약**.
     // 이 시뮬에서 `stats` 는 "접속해서 싸울 때의 전력"이고, 오프라인은 그 전력 × offlineEfficiency
     // 로 근사한다. 표 맞추기(`--fit-tiers`)도 이 값을 도착 전력으로 쓴다. 온라인에만 넣으면
     // 표를 잴 때(오프라인 상태) 스킬이 빠져 몬스터가 약하게 뽑히고, 실제 접속 플레이는 스킬이
     // 있어 목표보다 빨라진다(2026-09-15 실측: 91일 → 77일).
-    if (cfg == null) return s;
-    final slots = cfg.slotsFor(_tier);
-    final lv = (skillFill * cfg.maxLevel).floor().clamp(0, cfg.maxLevel);
-    if (lv <= 0) return s;
-    final equipped = _skillLoadout.take(slots).toList();
-    final levels = {for (final id in equipped) id: lv};
+    final eq = _skillEquip;
+    if (cfg == null || eq == null) return s;
+    final (:equipped, :levels, :lv) = eq;
     s = applySpeciesPassives(
       s,
       skillPassiveStats(cfg, levels: levels, equipped: equipped, petCount: 3),
@@ -1245,11 +1293,11 @@ class _Player {
           final up = (def.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
           atkSpeed *= 1 + (v - 1) * up;
         case 'burstDamage' || 'areaDamage':
-          // 쿨마다 공격력 × 값 한 방 = 초당 공격력 × 값/쿨 → 타격 배율로 환산.
-          attack *= 1 + v / (cd * math.max(0.1, s.attackSpeed));
+          // 쿨마다 "값 초 분량" 한 방(skillBurstDamage) → 초당 피해 × (1 + 값/쿨).
+          attack *= 1 + v / cd;
       }
     }
-    if (atkSpeed == 1 && attack == 1) return s;
+    if (!activeAvg || (atkSpeed == 1 && attack == 1)) return s;
     return CharacterStats(
       attack: s.attack * attack,
       attackSpeed: s.attackSpeed * atkSpeed,
@@ -1266,6 +1314,142 @@ class _Player {
       moveSpeed: s.moveSpeed,
       boostBonus: s.boostBonus,
     );
+  }
+
+  /// 지금 끼고 있는 스킬 — 로드아웃 순서대로 열린 칸만큼, 채움만큼의 레벨. 없으면 null.
+  ({List<String> equipped, Map<String, int> levels, int lv})? get _skillEquip {
+    final cfg = _skillConfig;
+    if (cfg == null) return null;
+    final lv = (skillFill * cfg.maxLevel).floor().clamp(0, cfg.maxLevel);
+    if (lv <= 0) return null;
+    final equipped = _skillLoadout.take(cfg.slotsFor(_tier)).toList();
+    return (
+      equipped: equipped,
+      levels: {for (final id in equipped) id: lv},
+      lv: lv,
+    );
+  }
+
+  /// 방어형 스킬(§2.8) — 흡즙(처치 회복 ×)·탈피(쓰러지면 부활)·번데기 방벽(피해 무효).
+  ///
+  /// 능력치가 아니라 **체력 궤적**에 붙으므로 [stats] 에 못 싣는다 — 체력을 굴리는
+  /// 곳(도착 기록·궤적·보스 생존)이 이 값을 따로 읽는다. 예전엔 셋 다 빠져 있어서
+  /// 방어형 로드아웃의 생존력을 이 도구로 잴 수 없었다(2026-09-20 점검).
+  /// 앱과 같은 함수(`skillKillHealMult`·`skillRevive`)로 뽑는다.
+  /// 번데기 방벽은 **자동발동**(쿨이 차면 바로)으로 본다 — 물기 직전 반사·쿨 환급은
+  /// 직접 눌렀을 때만 붙어서 뺀다(액티브 가동률을 자동으로 재는 것과 같은 규약).
+  _SkillDefense get _skillDefense {
+    final cfg = _skillConfig;
+    final eq = _skillEquip;
+    if (cfg == null || eq == null) {
+      return (healMult: 1.0, revive: null, guard: null);
+    }
+    final r = skillRevive(cfg, levels: eq.levels, equipped: eq.equipped);
+    ({double duration, double cooldown})? guard;
+    for (final id in eq.equipped) {
+      final def = cfg.byId(id);
+      if (def?.effect != 'invulnerable' || !def!.isActive) continue;
+      final cd = def.cooldown.inMilliseconds / 1000;
+      final dur = def.duration.inMilliseconds / 1000;
+      if (cd > 0 && dur > 0) guard = (duration: dur, cooldown: cd);
+    }
+    return (
+      healMult: skillKillHealMult(
+        cfg,
+        levels: eq.levels,
+        equipped: eq.equipped,
+      ),
+      revive: r == null
+          ? null
+          : (
+              hpFraction: r.hpFraction,
+              cooldown: r.cooldown.inMilliseconds / 1000,
+            ),
+      guard: guard,
+    );
+  }
+
+  /// 난이도마다 최종 보스를 깬 순간의 [skillBossShare].
+  final List<({int tier, int lv, Map<String, double> share})> skillBossLog = [];
+
+  /// 스킬 **한 칸**이 보스 관문을 얼마나 넓히나 — 그 스킬만 꼈을 때 잡을 수 있는 보스 체력 ÷
+  /// 아무것도 안 꼈을 때 − 1. 날짜(±5일씩 흔들린다)와 달리 결정론이라 스킬끼리 바로 비교된다.
+  /// 레벨은 지금 채움(skillFillByDay)의 레벨.
+  ({int tier, int lv, Map<String, double> share}) skillBossShare() {
+    final cfg = _skillConfig;
+    final saved = _skillLoadout;
+    final out = <String, double>{};
+    var lv = 0;
+    try {
+      _skillLoadout = const [];
+      final none = bossHpAtLimit(1);
+      for (final def in cfg?.skills ?? const <SkillDef>[]) {
+        _skillLoadout = [def.id];
+        lv = _skillEquip?.lv ?? 0;
+        out[def.id] = none <= 0 ? 0 : bossHpAtLimit(1) / none - 1;
+      }
+    } finally {
+      _skillLoadout = saved;
+    }
+    return (tier: _tier, lv: lv, share: out);
+  }
+
+  /// 보스전 [sec] 초 동안 넣는 총 피해 — 액티브는 **시작 때 준비됨**으로 본다.
+  ///
+  /// 보스전은 10초 안팎이라 평균 가동률(지속/쿨)로 넣으면 크게 틀린다: 질풍 채집(10초/90초)은
+  /// 평균으론 +11% 지만 보스전에선 싸움 내내 켜져 있다. 유저는 도전 버튼을 직접 누르므로
+  /// 쿨이 찬 뒤에 들어간다 — 방어형([_bossLive])과 **같은 규약**이다(2026-09-22).
+  /// 사냥터(일반 몬스터)는 계속 돌므로 평균 가동률 그대로 둔다([stats]).
+  double _bossDamageIn(double sec) {
+    final st = _statsNoActives;
+    final hit = baselineHitPower(st, boss: true);
+    var dmg = hit * st.attackSpeed * sec;
+    final cfg = _skillConfig;
+    final eq = _skillEquip;
+    if (cfg == null || eq == null || sec <= 0) return dmg;
+    for (final id in eq.equipped) {
+      final def = cfg.byId(id);
+      if (def == null || !def.isActive) continue;
+      final cd = def.cooldown.inMilliseconds / 1000;
+      final dur = def.duration.inMilliseconds / 1000;
+      final v = def.valueAt(eq.lv);
+      // 0 초에 첫 발, 그 뒤 쿨마다.
+      for (var t = 0.0; t < sec; t += cd <= 0 ? sec : cd) {
+        switch (def.effect) {
+          case 'attackSpeed':
+            dmg += hit * st.attackSpeed * (v - 1) * math.min(dur, sec - t);
+          case 'burstDamage' || 'areaDamage':
+            // 앱과 같은 함수(값 = 몇 초 분량). 타이밍 보너스는 직접 눌렀을 때만.
+            dmg += skillBurstDamage(st, v, boss: true);
+        }
+      }
+    }
+    return dmg;
+  }
+
+  /// 보스전에서 버티는 시간(초) — 초당 순손실 [net] 에 방어형 스킬을 얹는다.
+  ///
+  /// 탈피: 쓰러질 때 쿨이 돌았으면 최대 체력 × 비율로 일어난다(보스전 시작엔 준비됐다고 본다).
+  /// 번데기 방벽: 쿨마다 지속 시간만큼 피가 안 준다 → 버티는 시간이 그만큼 늘어난다.
+  double _bossLive(double maxHp, double net) {
+    if (net <= 0) return double.infinity;
+    final d = _skillDefense;
+    var live = maxHp / net;
+    final r = d.revive;
+    if (r != null) {
+      var readyAt = 0.0;
+      // 쿨이 짧으면 여러 번 — 상한은 무한 루프 방지용.
+      for (var i = 0; i < 20 && live >= readyAt; i++) {
+        readyAt = live + r.cooldown;
+        live += r.hpFraction * maxHp / net;
+      }
+    }
+    final g = d.guard;
+    if (g != null) {
+      // 막는 시간도 흐르므로 한 바퀴(쿨)마다 지속만큼 늘어난다 — 첫 발은 바로 나간다.
+      live += g.duration * (1 + (live / g.cooldown).floor());
+    }
+    return live;
   }
 
   CharacterStats get _baseStats => deriveStats(
@@ -1288,25 +1472,19 @@ class _Player {
       final w = gifts.tiers.fold<double>(0, (a, t) => a + t.weight);
       if (w > 0) {
         final perDay =
-            _activeHoursPerDay * 3600 /
+            _activeHoursPerDay *
+            3600 /
             ((gifts.intervalMinSec + gifts.intervalMaxSec) / 2);
         var each = 0.0;
         for (final t in gifts.tiers) {
           each +=
               t.weight /
               w *
-              giftGold(
-                config,
-                stage,
-                _tier,
-                t.gold,
-                t.goldMinutes,
-              ).toDouble();
+              giftGold(config, stage, _tier, t.gold, t.goldMinutes).toDouble();
         }
         // 무료 2배 1회분도 얹는다(젤리와 달리 골드는 랜덤 배수를 탄다 —
         // 평균을 쓴다).
-        final avgMult =
-            (gifts.adMultiplierMin + gifts.adMultiplierMax) / 2.0;
+        final avgMult = (gifts.adMultiplierMin + gifts.adMultiplierMax) / 2.0;
         final giftGoldPerDay =
             each * (perDay + gifts.freeDoubleDaily * (avgMult - 1));
         // 정액 가정에 이미 선물 몫(약 32,000)이 들어 있다 — 큰 쪽만 쓴다.
@@ -1338,8 +1516,17 @@ class _Player {
 
   /// 사냥터에 **도착했을 때** 일반 몬스터 사냥이 버틸 만한가.
   /// (회차, 사냥터, 몇 대에 잡나, 한 대(최대 체력 %), 20마리 중 최저 체력, 죽었나)
+  /// revived = 탈피로 일어난 횟수(방어형 스킬을 낀 로드아웃에서만 0 이 아니다).
   final List<
-    ({int tier, int zone, double hits, double bite, double low, bool dead})
+    ({
+      int tier,
+      int zone,
+      double hits,
+      double bite,
+      double low,
+      bool dead,
+      int revived,
+    })
   >
   entryLog = [];
 
@@ -1371,52 +1558,51 @@ class _Player {
     // → 처치 회복. 걷는 동안은 walkThreatMult 로 게이지가 찬다.
     final iv = config.enemyAtkInterval;
     final delay = config.enemyFirstBiteDelay;
-    var cur = max, low = max, acc = 0.0;
-    var dead = false;
-    for (var i = 0; i < config.habitatsPerStage && !dead; i++) {
+    final h = _HpTrack(max, _skillDefense);
+    var acc = 0.0;
+    for (var i = 0; i < config.habitatsPerStage && !h.dead; i++) {
       // 걷기
       var t = 0.0;
-      while (t < walk && !dead) {
+      while (t < walk && !h.dead) {
         final step = math.min(0.25, walk - t);
-        cur = math.min(max, cur + st.hpRegen * 2 * step);
+        h.regen(st.hpRegen * 2 * step);
         acc += step * config.walkThreatMult;
+        h.clock += step;
         if (acc >= iv) {
           acc -= iv;
-          cur -= inc * iv * config.enemyFollowBiteMult;
+          h.bite(inc * iv * config.enemyFollowBiteMult);
         }
         t += step;
       }
       // 싸움
       var bitten = delay <= 0;
       t = 0;
-      while (t < fight && !dead) {
+      while (t < fight && !h.dead) {
         final step = math.min(0.25, fight - t);
-        cur = math.min(max, cur + st.hpRegen * step);
+        h.regen(st.hpRegen * step);
         acc += step;
+        h.clock += step;
         if (!bitten && t + step >= delay) {
           bitten = true;
           acc = 0;
-          cur -= inc * iv;
+          h.bite(inc * iv);
         } else if (acc >= iv) {
           acc -= iv;
-          cur -= inc * iv * config.enemyFollowBiteMult;
+          h.bite(inc * iv * config.enemyFollowBiteMult);
         }
-        if (cur < low) low = cur;
-        if (cur <= 0) dead = true;
         t += step;
       }
-      if (!bitten && !dead) cur -= inc * iv; // 죽으면서 무는 한 대
-      if (cur < low) low = cur;
-      if (cur <= 0) dead = true;
-      if (!dead) cur += killHealAmount(config, hp: cur, maxHp: max);
+      if (!bitten) h.bite(inc * iv); // 죽으면서 무는 한 대
+      h.killHeal(config);
     }
     entryLog.add((
       tier: _tier,
       zone: z,
       hits: hit <= 0 ? 0 : hp / hit,
       bite: inc * iv / max,
-      low: math.max(0.0, low) / max,
-      dead: dead,
+      low: math.max(0.0, h.low) / max,
+      dead: h.dead,
+      revived: h.revived,
     ));
   }
 
@@ -1473,7 +1659,6 @@ class _Player {
   /// 지금 전력으로 [_bossBeatable] 을 **딱 통과하는** 보스 체력 × [margin].
   double bossHpAtLimit(double margin) {
     final st = stats;
-    final dps = baselineHitPower(st, boss: true) * st.attackSpeed;
     final inc =
         habitatThreat(
           config,
@@ -1486,9 +1671,9 @@ class _Player {
         100 /
         (100 + st.defense);
     final net = inc - st.hpRegen;
-    final live = net <= 0 ? double.infinity : st.maxHp / net;
+    final live = _bossLive(st.maxHp, net);
     final limit = math.min(_bossPatienceSeconds, live / 1.1);
-    return dps * limit * margin;
+    return _bossDamageIn(limit) * margin;
   }
 
   /// 지금 전력으로 [stage] 의 보스를 잡을 수 있나 — 죽이는 시간 < 버티는 시간.
@@ -1496,7 +1681,6 @@ class _Player {
   /// 유저도 안 누른다고 본다.
   bool _bossBeatable(int stage) {
     final st = stats;
-    final bossHit = baselineHitPower(st, boss: true);
     final baseBoss = baselineHitPower(baselineStats, boss: true);
     final hp = bossMaxHp(
       config,
@@ -1504,10 +1688,6 @@ class _Player {
       playerAttack: baseBoss,
       tier: _tier,
     ).toDouble();
-    final dps = bossHit * st.attackSpeed;
-    if (dps <= 0) return false;
-    final kill = hp / dps;
-    if (kill > _bossPatienceSeconds) return false;
     final inc =
         habitatThreat(
           config,
@@ -1520,8 +1700,10 @@ class _Player {
         100 /
         (100 + st.defense);
     final net = inc - st.hpRegen;
-    final live = net <= 0 ? double.infinity : st.maxHp / net;
-    return live > kill * 1.1;
+    final live = _bossLive(st.maxHp, net);
+    // 예전 식(죽이는 시간 ≤ 인내 · 버티는 시간 > 죽이는 시간 × 1.1)과 같다 — 다만 넣는
+    // 피해를 [_bossDamageIn] 으로 재서 액티브가 보스전 규약을 탄다.
+    return _bossDamageIn(math.min(_bossPatienceSeconds, live / 1.1)) >= hp;
   }
 
   /// [seconds] 동안 진행하되, 중간중간 업그레이드를 산다(dps 가 오르면 진행도 빨라짐).
@@ -1567,6 +1749,7 @@ class _Player {
         if (_zoneKills >= config.bossUnlockKills && _bossBeatable(stage)) {
           final z = config.zoneOf(stage);
           if (z <= config.zonesPerTier) {
+            if (z == config.zonesPerTier) skillBossLog.add(skillBossShare());
             bossLog.add((
               tier: _tier,
               zone: z,
@@ -1645,7 +1828,7 @@ class _Player {
           final net = inc - st.hpRegen;
           return (
             kill: dps <= 0 ? 0.0 : hp / dps,
-            live: net <= 0 ? double.infinity : st.maxHp / net,
+            live: _bossLive(st.maxHp, net),
           );
         });
         // 서식지 한 스테이지(일반 몬스터 N마리 + 보스)의 피격/회복 수지.
@@ -1702,17 +1885,17 @@ class _Player {
               bossInc * bossFight;
           final heal =
               (st.hpRegen * fight + st.hpRegen * 2 * walk) * n +
-              st.maxHp * config.killHealPct * n +
-              st.hpRegen * bossFight +
-              st.maxHp * config.bossKillHealPct;
+              (st.maxHp * config.killHealPct * n +
+                      st.maxHp * config.bossKillHealPct) *
+                  _skillDefense.healMult +
+              st.hpRegen * bossFight;
           final max = st.maxHp <= 0 ? 1.0 : st.maxHp;
           // ── 체력 궤적 ── (앱의 게이지 규칙 그대로: 간격마다 한 대, 게이지
           // 이월, 처치 회복은 killHealAmount)
           hpTrajectory.putIfAbsent(s, () {
-            var hp = max;
-            var low = max;
+            // 방어형 스킬(흡즙·탈피·번데기 방벽)은 _HpTrack 이 얹는다.
+            final h = _HpTrack(max, _skillDefense);
             var acc = 0.0;
-            var dead = false;
             void tick(
               double sec,
               double incPerSec,
@@ -1729,17 +1912,16 @@ class _Player {
                 final follow = (first || delay <= 0)
                     ? 1.0
                     : config.enemyFollowBiteMult;
-                hp -= incPerSec * interval * mult * follow;
-                if (hp < low) low = hp;
-                if (hp <= 0) dead = true;
+                h.bite(incPerSec * interval * mult * follow);
               }
 
               // 회복은 구간에 고르게, 피격은 게이지가 찰 때마다 한 대.
               var t = 0.0;
-              while (t < sec && !dead) {
+              while (t < sec && !h.dead) {
                 final step = math.min(0.25, sec - t);
-                hp = math.min(max, hp + st.hpRegen * regenMul * step);
+                h.regen(st.hpRegen * regenMul * step);
                 acc += step;
+                h.clock += step;
                 if (!bitten && t + step >= delay) {
                   bitten = true;
                   acc = 0;
@@ -1751,18 +1933,16 @@ class _Player {
                 t += step;
               }
               // 죽으면서 무는 한 대 — 첫 물기 전에 죽어도 마리당 한 대는 들어간다.
-              if (!bitten && !dead) bite(first: true);
+              if (!bitten) bite(first: true);
             }
 
             final iv = config.enemyAtkInterval;
-            for (var i = 0; i < n && !dead; i++) {
+            for (var i = 0; i < n && !h.dead; i++) {
               tick(walk, inc * config.walkThreatMult, iv, 1.0, 2.0);
               tick(fight, inc, iv, 1.0, 1.0, engage: true);
-              if (!dead) {
-                hp += killHealAmount(config, hp: hp, maxHp: max);
-              }
+              h.killHeal(config);
             }
-            if (!dead) {
+            if (!h.dead) {
               tick(
                 bossFight,
                 bossInc / 1.4,
@@ -1771,9 +1951,7 @@ class _Player {
                 1.0,
                 engage: true,
               );
-              if (!dead) {
-                hp += killHealAmount(config, hp: hp, maxHp: max, boss: true);
-              }
+              h.killHeal(config, boss: true);
             }
             // 디버그: SIM_DEBUG_STAGE=850 처럼 주면 그 스테이지의 궤적 입력을 찍는다.
             if (Platform.environment['SIM_DEBUG_STAGE'] == '$s') {
@@ -1786,9 +1964,10 @@ class _Player {
             }
             return (
               hit: inc * iv / max,
-              low: math.max(0.0, low) / max,
-              end: math.max(0.0, hp) / max,
-              dead: dead,
+              low: math.max(0.0, h.low) / max,
+              end: math.max(0.0, h.hp) / max,
+              dead: h.dead,
+              revived: h.revived,
             );
           });
           return (dmg: dmg / max, heal: heal / max);
@@ -2056,6 +2235,20 @@ _Opts _parseArgs(List<String> args) {
       _gearScale = double.parse(es.group(1)!);
       continue;
     }
+    final lo = RegExp(r'^--loadout=(.+)$').firstMatch(a);
+    if (lo != null) {
+      _skillLoadout = lo.group(1)!.split(',').map((e) => e.trim()).toList();
+      continue;
+    }
+    final sk = RegExp(r'^--skill=([a-z_]+)\.([A-Za-z]+)=(.+)$').firstMatch(a);
+    if (sk != null) {
+      _skillOverrides.add((
+        sk.group(1)!,
+        sk.group(2)!,
+        num.parse(sk.group(3)!),
+      ));
+      continue;
+    }
     final egd = RegExp(r'^--endgame-days=(.+)$').firstMatch(a);
     if (egd != null) {
       _endgameDays = int.parse(egd.group(1)!);
@@ -2108,6 +2301,11 @@ _Opts _parseArgs(List<String> args) {
     }
     out[key] = num.parse(m.group(2)!);
   }
+  // 로드아웃 검사는 덮어쓰기(--skill=)를 다 모은 뒤에 — 먼저 읽으면 설정이 굳는다.
+  final unknown = _skillLoadout.where((id) => _skillConfig?.byId(id) == null);
+  if (_skillConfig != null && unknown.isNotEmpty) {
+    stderr.writeln('알 수 없는 스킬: ${unknown.join(', ')}');
+  }
   return _Opts(
     out,
     mult,
@@ -2120,4 +2318,64 @@ _Opts _parseArgs(List<String> args) {
     fitBossMargin: fitBossMargin,
     fitDays: fitDays,
   );
+}
+
+/// 방어형 스킬 묶음(`_Player._skillDefense`).
+typedef _SkillDefense = ({
+  double healMult,
+  ({double hpFraction, double cooldown})? revive,
+  ({double duration, double cooldown})? guard,
+});
+
+/// 체력 한 줄을 굴린다 — 물기·처치 회복에 방어형 스킬을 얹는다.
+///
+/// 도착 기록(`logEntry`)과 체력 궤적(`hpTrajectory`)이 **같은 규칙**을 쓰게 한 곳에 둔다.
+/// 앱과 같은 순서: 방벽이 켜져 있으면 물기가 없어지고(`_applyHabitatThreat`),
+/// 쓰러지는 순간 탈피 쿨이 돌았으면 그 자리에서 일어나고(`_beginDefeat`),
+/// 처치 회복은 흡즙 배율을 곱한다(`_healTeamOnKill`).
+class _HpTrack {
+  _HpTrack(this.max, this.skills) : hp = max, low = max;
+
+  final double max;
+  final _SkillDefense skills;
+  double hp;
+  double low;
+
+  /// 방벽 주기를 잴 시계(초). 자동발동이라 0 초에 첫 발이 나간다.
+  double clock = 0;
+  double _reviveReadyAt = 0;
+  int revived = 0;
+  int blocked = 0;
+  bool dead = false;
+
+  bool get _guarded {
+    final g = skills.guard;
+    return g != null && clock % g.cooldown < g.duration;
+  }
+
+  void regen(double v) => hp = math.min(max, hp + v);
+
+  void bite(double dmg) {
+    if (dead || dmg <= 0) return;
+    if (_guarded) {
+      blocked++;
+      return;
+    }
+    hp -= dmg;
+    if (hp < low) low = hp;
+    if (hp > 0) return;
+    final r = skills.revive;
+    if (r != null && clock >= _reviveReadyAt) {
+      _reviveReadyAt = clock + r.cooldown;
+      hp = max * r.hpFraction;
+      revived++;
+      return;
+    }
+    dead = true;
+  }
+
+  void killHeal(RunConfig c, {bool boss = false}) {
+    if (dead) return;
+    regen(skills.healMult * killHealAmount(c, hp: hp, maxHp: max, boss: boss));
+  }
 }

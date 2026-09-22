@@ -3109,7 +3109,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String skillFxAreaDamage(String v) {
-    return 'Hit everything for attack ×$v';
+    return 'Hit everything for ${v}s of damage';
   }
 
   @override
@@ -3119,7 +3119,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String skillFxBurstDamage(String v) {
-    return 'A strike for attack ×$v';
+    return 'A strike worth ${v}s of damage';
   }
 
   @override

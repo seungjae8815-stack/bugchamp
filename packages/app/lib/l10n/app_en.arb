@@ -2109,7 +2109,7 @@
       }
     }
   },
-  "skillFxAreaDamage": "Hit everything for attack ×{v}",
+  "skillFxAreaDamage": "Hit everything for {v}s of damage",
   "@skillFxAreaDamage": {
     "placeholders": {
       "v": {
@@ -2128,7 +2128,7 @@
       }
     }
   },
-  "skillFxBurstDamage": "A strike for attack ×{v}",
+  "skillFxBurstDamage": "A strike worth {v}s of damage",
   "@skillFxBurstDamage": {
     "placeholders": {
       "v": {

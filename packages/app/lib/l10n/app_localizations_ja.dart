@@ -3047,7 +3047,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String skillFxAreaDamage(String v) {
-    return '画面全体に攻撃力 ×$v のダメージ';
+    return '画面全体に$v秒分のダメージ';
   }
 
   @override
@@ -3057,7 +3057,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String skillFxBurstDamage(String v) {
-    return '攻撃力 ×$v の一撃';
+    return '$v秒分のダメージの一撃';
   }
 
   @override

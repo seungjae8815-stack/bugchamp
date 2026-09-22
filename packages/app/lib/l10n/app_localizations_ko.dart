@@ -3053,7 +3053,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String skillFxAreaDamage(String v) {
-    return '화면 전체에 공격력 ×$v 피해';
+    return '화면 전체에 $v초 분량 피해';
   }
 
   @override
@@ -3063,7 +3063,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String skillFxBurstDamage(String v) {
-    return '공격력 ×$v 일격';
+    return '$v초 분량 피해 일격';
   }
 
   @override

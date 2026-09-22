@@ -5455,7 +5455,7 @@ abstract class AppLocalizations {
   /// No description provided for @skillFxAreaDamage.
   ///
   /// In en, this message translates to:
-  /// **'Hit everything for attack ×{v}'**
+  /// **'Hit everything for {v}s of damage'**
   String skillFxAreaDamage(String v);
 
   /// No description provided for @skillFxPetPower.
@@ -5467,7 +5467,7 @@ abstract class AppLocalizations {
   /// No description provided for @skillFxBurstDamage.
   ///
   /// In en, this message translates to:
-  /// **'A strike for attack ×{v}'**
+  /// **'A strike worth {v}s of damage'**
   String skillFxBurstDamage(String v);
 
   /// No description provided for @skillFxInvulnerable.

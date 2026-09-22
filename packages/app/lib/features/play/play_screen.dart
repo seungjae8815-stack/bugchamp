@@ -3731,8 +3731,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     var timed = false;
     switch (def.effect) {
       case 'burstDamage' || 'areaDamage':
-        var dmg = stats.attack * v;
-        if (_isBoss) dmg *= stats.bossDamage;
+        // 값 = 몇 초 분량의 피해(skillBurstDamage) — 공속·치명이 자라도 묽어지지 않는다.
+        var dmg = skillBurstDamage(stats, v, boss: _isBoss);
         if (manual &&
             def.timing.containsKey('bossHpBelow') &&
             _isBoss &&
