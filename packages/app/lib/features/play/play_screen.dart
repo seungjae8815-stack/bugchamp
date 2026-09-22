@@ -3638,6 +3638,45 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return math.max(0, interval - _enemyAtkAcc);
   }
 
+  /// 자동발동 켜기/끄기 버튼(아이콘). 위의 "자동" 글자는 [_skillBar] 가 겹쳐 올린다.
+  Widget _skillAutoToggle(AppLocalizations l, SaveGame save) => Tooltip(
+    message: l.skillAuto,
+    child: InkWell(
+      onTap: () => ref
+          .read(saveControllerProvider.notifier)
+          .setSkillAutoCast(!save.skillAutoCast),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: _kSkillAuto,
+        height: _kSkillAuto,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: save.skillAutoCast
+              ? const Color(0x3380DEEA)
+              : const Color(0x33000000),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: save.skillAutoCast
+                ? const Color(0xFF80DEEA)
+                : const Color(0x33FFFFFF),
+          ),
+        ),
+        child: Opacity(
+          opacity: save.skillAutoCast ? 1 : 0.4,
+          child: skillButtonImage(
+            'auto',
+            size: 14,
+            fallback: Icon(
+              Icons.autorenew_rounded,
+              size: 12,
+              color: save.skillAutoCast ? Colors.white : Colors.white54,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   /// 전투 틱에서 액티브를 쓴다 — 자동발동(켜져 있으면)과 직접 누른 것.
   ///
   /// 자동발동은 **효율 벌칙이 없다**(§2.8). 대신 타이밍 보너스는 직접 눌렀을 때만 붙는다
@@ -3844,43 +3883,39 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 자동발동 — **아이콘만**. 글자는 자리를 먹고, 켜짐/꺼짐은 밝기로 읽힌다.
-          Tooltip(
-            message: l.skillAuto,
-            child: InkWell(
-              onTap: () => ref
-                  .read(saveControllerProvider.notifier)
-                  .setSkillAutoCast(!save.skillAutoCast),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                width: _kSkillAuto,
-                height: _kSkillAuto,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: save.skillAutoCast
-                      ? const Color(0x3380DEEA)
-                      : const Color(0x33000000),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: save.skillAutoCast
-                        ? const Color(0xFF80DEEA)
-                        : const Color(0x33FFFFFF),
-                  ),
-                ),
-                child: Opacity(
-                  opacity: save.skillAutoCast ? 1 : 0.4,
-                  child: skillButtonImage(
-                    'auto',
-                    size: 14,
-                    fallback: Icon(
-                      Icons.autorenew_rounded,
-                      size: 12,
-                      color: save.skillAutoCast ? Colors.white : Colors.white54,
+          // 자동발동 — 아이콘 + **위에 "자동" 글자**(늘 보인다). 아이콘만으로는 무슨
+          // 버튼인지 몰랐다(2026-09-22 사장님 지적). 글자는 바 **위로 삐져나오게**
+          // 겹쳐서 스킬 바 높이(= 씬 여백 _kSkillBarRoom)를 건드리지 않는다.
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _skillAutoToggle(l, save),
+              Positioned(
+                left: -6,
+                right: -6,
+                top: -13,
+                child: IgnorePointer(
+                  child: Text(
+                    l.skillAuto,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: TextStyle(
+                      fontSize: 9,
+                      height: 1,
+                      fontWeight: FontWeight.w800,
+                      color: save.skillAutoCast
+                          ? const Color(0xFF80DEEA)
+                          : Colors.white60,
+                      shadows: const [
+                        Shadow(color: Colors.black, blurRadius: 3),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
           const SizedBox(width: 5),
           for (final def in equipped)

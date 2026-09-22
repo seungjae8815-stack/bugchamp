@@ -28,6 +28,7 @@ import 'domain/store_iap_service.dart';
 import 'domain/supabase_pvp_backend.dart';
 import 'features/title/title_screen.dart';
 import 'l10n/app_localizations.dart';
+import 'ui/art.dart' show loadAssetManifest;
 
 /// Supabase 자격증명은 코드에 넣지 않고 빌드 인자로 주입(GitHub 유출 방지):
 ///   flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
@@ -78,6 +79,8 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // 설정 화면에 보여줄 버전 — pubspec 값을 그대로 읽는다(표시 전용).
   await loadAppVersion();
+  // 그림 폴백 체인이 없는 파일을 시도하지 않게(몬스터 깜빡임 방지).
+  await loadAssetManifest();
   await Hive.initFlutter();
   final box = await Hive.openBox<String>('bugchamp_save');
   final repository = HiveSaveRepository(box);

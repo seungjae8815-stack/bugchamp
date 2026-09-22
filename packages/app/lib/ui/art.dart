@@ -1,6 +1,7 @@
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 
 import 'labels.dart';
 import 'skins.dart';
@@ -32,6 +33,24 @@ Widget gameImage(
   );
 }
 
+/// 번들에 든 애셋 목록 — [loadAssetManifest] 가 앱 시작 때 채운다. 못 읽었으면 null
+/// (그때는 예전처럼 순서대로 시도한다).
+Set<String>? _assets;
+
+/// 앱 시작 때 한 번 부른다. [gameImageChain] 이 **없는 파일을 시도하지 않게** 한다.
+///
+/// 없는 경로를 `Image.asset` 에 넣으면 로드 실패 → errorBuilder 로 넘어가는 동안
+/// 빈 프레임이 생긴다. 몬스터는 `_idle_1` 그림이 한 종도 없어서 매 타격마다
+/// (대기 ↔ 맞는 자세) 이 빈 프레임이 끼어 반짝였다(2026-09-22 실기 제보).
+Future<void> loadAssetManifest() async {
+  try {
+    final m = await AssetManifest.loadFromAssetBundle(rootBundle);
+    _assets = m.listAssets().toSet();
+  } catch (_) {
+    _assets = null;
+  }
+}
+
 /// 여러 후보 경로를 순서대로 시도해 처음 존재하는 이미지를 표시, 다 없으면 [fallback].
 /// 프레임 애니메이션용: `attack_1.webp` → `attack.webp` → `idle.webp` → 이모지 식으로 폴백.
 Widget gameImageChain(
@@ -42,6 +61,8 @@ Widget gameImageChain(
   bool byHeight = false,
   Alignment alignment = Alignment.center,
 }) {
+  final known = _assets;
+  if (known != null) paths = [for (final p in paths) if (known.contains(p)) p];
   if (paths.isEmpty) return fallback;
   return Image.asset(
     paths.first,
@@ -50,6 +71,9 @@ Widget gameImageChain(
     fit: byHeight ? BoxFit.fitHeight : fit,
     alignment: alignment,
     filterQuality: FilterQuality.medium,
+    // 그림이 바뀌는 동안(대기 → 맞는 자세) 이전 그림을 유지한다 — 안 그러면
+    // 새 그림이 풀리는 한두 프레임이 비어 깜빡인다.
+    gaplessPlayback: true,
     errorBuilder: (_, _, _) => gameImageChain(
       paths.sublist(1),
       size: size,

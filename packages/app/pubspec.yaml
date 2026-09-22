@@ -117,6 +117,7 @@ flutter:
     - assets/images/ui/nav/
     - assets/images/ui/tab/
     - assets/images/ui/skill/
+    - assets/images/ui/tier/
     - assets/images/skills/
     - assets/images/fx/
     - assets/images/ui/dialog/

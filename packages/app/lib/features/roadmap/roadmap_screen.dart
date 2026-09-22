@@ -339,7 +339,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         bottom: widget.topTier <= 0
             ? null
             : PreferredSize(
-                preferredSize: const Size.fromHeight(46),
+                preferredSize: const Size.fromHeight(52),
                 child: _tierChips(context, l),
               ),
       ),
@@ -406,26 +406,169 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
 }
 
 extension on _RoadmapScreenState {
-  Widget _tierChips(BuildContext context, AppLocalizations l) => SizedBox(
-    height: 46,
-    child: ListView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  /// 난이도 네 칸 — 화면 폭을 똑같이 나눠 좌우 대칭으로 채운다. 칸마다 색·아이콘이
+  /// 달라서 글자를 읽지 않아도 어느 난이도인지 갈린다(2026-09-22 사장님 요청).
+  Widget _tierChips(BuildContext context, AppLocalizations l) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+    child: Row(
       children: [
-        for (var t = 0; t < 4; t++)
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: ChoiceChip(
-              label: Text(tierName(l, t)),
-              selected: t == widget.tier,
-              onSelected: t > widget.topTier || t == widget.tier
-                  ? null
-                  : (_) => _confirmTier(context, l, t),
+        for (var t = 0; t < 4; t++) ...[
+          if (t > 0) const SizedBox(width: 4),
+          Expanded(
+            // 높이 40 안에서 판 비율(600:194)을 지킨다 — 넓은 화면에서도 안 커진다.
+            child: SizedBox(
+              height: 40,
+              child: Center(child: _tierButton(context, l, t)),
             ),
           ),
+        ],
       ],
     ),
   );
+
+  /// 난이도 버튼 — `ui/tier/tier_{t}.webp` 판 그림 위에 글자를 얹는다.
+  /// 그림이 없으면 색 + 아이콘 버튼([_tierButtonPlain])으로 폴백한다.
+  /// 지금 난이도는 원색 + 빛 테두리, 갈 수 있는 곳은 흐리게, 못 가는 곳은
+  /// 흑백 + 자물쇠(같은 그림을 가공 — 따로 그리지 않는다).
+  Widget _tierButton(BuildContext context, AppLocalizations l, int t) {
+    final selected = t == widget.tier;
+    final locked = t > widget.topTier;
+    final plate = Image.asset(
+      'assets/images/ui/tier/tier_$t.webp',
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (_, _, _) => _tierButtonPlain(context, l, t),
+    );
+    Widget art = locked
+        ? ColorFiltered(colorFilter: _kGreyscale, child: plate)
+        : plate;
+    art = Opacity(opacity: selected ? 1 : (locked ? 0.45 : 0.6), child: art);
+    return AnimatedScale(
+      scale: selected ? 1.0 : 0.93,
+      duration: const Duration(milliseconds: 150),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: locked || selected ? null : () => _confirmTier(context, l, t),
+        child: AspectRatio(
+          aspectRatio: 600 / 194,
+          child: LayoutBuilder(
+            builder: (context, box) => Stack(
+              fit: StackFit.expand,
+              children: [
+                if (selected)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(box.maxHeight / 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kTierLook[t.clamp(0, 3)].$1.withValues(
+                            alpha: 0.8,
+                          ),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                art,
+                // 글자 — 문양(왼쪽 약 28%) 오른쪽 빈 판 위.
+                Positioned(
+                  left: box.maxWidth * 0.29,
+                  right: box.maxWidth * 0.06,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        tierName(l, t),
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: locked ? Colors.white54 : Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          shadows: const [
+                            Shadow(color: Colors.black87, blurRadius: 3),
+                            Shadow(color: Colors.black54, offset: Offset(0, 1)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (locked)
+                  Positioned(
+                    left: box.maxWidth * 0.06,
+                    width: box.maxWidth * 0.2,
+                    top: 0,
+                    bottom: 0,
+                    child: const Center(
+                      child: Icon(
+                        Icons.lock_rounded,
+                        size: 16,
+                        color: Colors.white,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tierButtonPlain(BuildContext context, AppLocalizations l, int t) {
+    final (color, icon) = _kTierLook[t.clamp(0, _kTierLook.length - 1)];
+    final selected = t == widget.tier;
+    final locked = t > widget.topTier;
+    final fg = locked
+        ? Colors.white38
+        : selected
+        ? Colors.white
+        : color;
+    return Material(
+      color: selected
+          ? color
+          : locked
+          ? Colors.white.withValues(alpha: 0.04)
+          : color.withValues(alpha: 0.14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(
+          color: locked ? Colors.white12 : color,
+          width: selected ? 2 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: locked || selected ? null : () => _confirmTier(context, l, t),
+        child: SizedBox(
+          height: 40,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(locked ? Icons.lock_rounded : icon, size: 16, color: fg),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  tierName(l, t),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _confirmTier(
     BuildContext context,
@@ -1032,3 +1175,19 @@ class _PathPainter extends CustomPainter {
   bool shouldRepaint(_PathPainter old) =>
       old.clearedUpTo != clearedUpTo || old.points.length != points.length;
 }
+
+/// 난이도별 색·아이콘(쉬움 → 극한). 뒤로 갈수록 뜨겁고 위험하게.
+const _kTierLook = <(Color, IconData)>[
+  (Color(0xFF66BB6A), Icons.eco_rounded),
+  (Color(0xFF42A5F5), Icons.terrain_rounded),
+  (Color(0xFFFFA726), Icons.local_fire_department_rounded),
+  (Color(0xFFE53935), Icons.dangerous_rounded),
+];
+
+/// 못 가는 난이도 — 같은 판 그림을 흑백으로.
+const _kGreyscale = ColorFilter.matrix(<double>[
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0, 0, 0, 1, 0,
+]);

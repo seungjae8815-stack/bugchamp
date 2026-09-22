@@ -2336,7 +2336,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     var forged = 0, kept = 0;
     var full = false, dry = false, hit = false;
     // 필터에 걸려 버려진 장비의 판매 대금(재료 종류 -> 수량).
+    // 한 번의 제련(배수 포함)에서는 **재료 한 종류**로 모은다 — 팔 때마다 종류를
+    // 따로 뽑으면 모루 위에 "+1 +1 +1" 이 여러 개 떠서 같은 그림이 반복돼
+    // 보였다(2026-09-22 사장님 지적). 종류별 기대값은 그대로다.
     final sold = <MaterialKind, int>{};
+    MaterialKind? saleKind;
 
     for (var i = 0; i < times; i++) {
       if (have < 1) {
@@ -2372,7 +2376,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           break;
         }
       } else {
-        final kind = sellMaterialFor(_forgeRng);
+        final kind = saleKind ??= sellMaterialFor(_forgeRng);
         sold[kind] = (sold[kind] ?? 0) + forge.sellMaterialCount(item.tier);
       }
     }
