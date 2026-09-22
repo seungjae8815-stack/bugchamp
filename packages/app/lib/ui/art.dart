@@ -387,6 +387,26 @@ Widget skillImage(
   fallback: fallback,
 );
 
+/// 스킬 조각. `assets/images/ui/skill/shard_{grade}.webp`
+///
+/// 등급마다 색·모양이 다른 그림이다 — 전부 같은 다이아 아이콘이라
+/// 무슨 조각인지 색으로만 갈렸다(실기 지적 2026-09-20).
+/// 아트가 없으면 등급색 다이아로 폴백한다(§6).
+Widget skillShardImage(
+  Grade grade, {
+  required double size,
+  bool wild = false,
+}) => gameImage(
+  'assets/images/ui/skill/shard_${wild ? 'wild_' : ''}${grade.key}.webp',
+  width: size,
+  height: size,
+  fallback: Icon(
+    wild ? Icons.hexagon_rounded : Icons.diamond_rounded,
+    size: size,
+    color: gradeColor(grade),
+  ),
+);
+
 /// 하단 메뉴 아이콘. `assets/images/ui/nav/{name}.webp`
 /// (home / character / storage / battle / shop)
 Widget navImage(

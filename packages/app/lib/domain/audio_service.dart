@@ -219,6 +219,12 @@ class AudioService {
   /// 몬스터(서식지/보스) 처치음.
   void sfxDie() => _playSfx('die');
 
+  /// 액티브 스킬 발동음 — `assets/sounds/skill_{skillId}.wav`.
+  ///
+  /// 스킬마다 파일을 따로 둔다(§2.8 12종). 없는 파일은 `_playSfx` 가
+  /// 조용히 넘기므로, 아직 안 받은 스킬은 소리 없이 지나간다.
+  void sfxSkill(String skillId) => _playSfx('skill_$skillId');
+
   /// 재화 부족·채집함 가득참·잠긴 칸 등 "안 됨" 피드백.
   void sfxError() => _playSfx('error');
 

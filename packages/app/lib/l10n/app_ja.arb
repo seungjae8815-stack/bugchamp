@@ -240,6 +240,22 @@
     }
   },
   "bossChallengeFailed": "ボスに押し返されました。強くなって再挑戦しましょう",
+  "bossFlee": "逃げる",
+  "@bossFlee": {
+    "description": "ボス戦 — 撤退ボタン"
+  },
+  "bossFleeTitle": "逃げますか？",
+  "@bossFleeTitle": {
+    "description": "撤退確認ダイアログのタイトル"
+  },
+  "bossFleeDesc": "狩場ゲージが空になります。\n倒れたときと同じです。",
+  "@bossFleeDesc": {
+    "description": "撤退確認ダイアログの本文"
+  },
+  "bossFled": "逃げました · ゲージが空に",
+  "@bossFled": {
+    "description": "撤退直後の通知"
+  },
   "zoneKillsLabel": "討伐 {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {
@@ -938,7 +954,23 @@
   "skillSweepToday": "本日 {used}/{max}回 使用",
   "skillSweepFree": "無料掃討 · 残り{n}回",
   "skillSweepPaid": "掃討 · ゼリー {n}",
-  "skillSweepNoBoss": "狩場のボスを1体以上倒すと掃討できます",
+  "skillSweepNoBoss": "狩場のボスを1体以上\n倒すと掃討できます",
+  "skillSweepLocked": "ボス撃破が先",
+  "@skillSweepLocked": {
+    "description": "掃討ボタン — ロック時の短いラベル"
+  },
+  "skillGradeUpShort": "カケラ昇級",
+  "@skillGradeUpShort": {
+    "description": "昇級ダイアログのタイトル（短く）"
+  },
+  "skillShardsTitle": "所持カケラ",
+  "@skillShardsTitle": {
+    "description": "スキル画面 — 等級別カケラ行のタイトル"
+  },
+  "skillWildShort": "万能",
+  "@skillWildShort": {
+    "description": "万能カケラ数の前に付く短い語"
+  },
   "skillSweepLimit": "本日の掃討はすべて使いました",
   "skillShardPop": "かけら +{n}",
   "skillMaterials": "スキル素材",

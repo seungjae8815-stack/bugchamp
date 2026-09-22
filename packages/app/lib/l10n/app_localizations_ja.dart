@@ -711,6 +711,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bossChallengeFailed => 'ボスに押し返されました。強くなって再挑戦しましょう';
 
   @override
+  String get bossFlee => '逃げる';
+
+  @override
+  String get bossFleeTitle => '逃げますか？';
+
+  @override
+  String get bossFleeDesc => '狩場ゲージが空になります。\n倒れたときと同じです。';
+
+  @override
+  String get bossFled => '逃げました · ゲージが空に';
+
+  @override
   String zoneKillsLabel(int n, int m) {
     return '討伐 $n/$m';
   }
@@ -2834,7 +2846,19 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get skillSweepNoBoss => '狩場のボスを1体以上倒すと掃討できます';
+  String get skillSweepNoBoss => '狩場のボスを1体以上\n倒すと掃討できます';
+
+  @override
+  String get skillSweepLocked => 'ボス撃破が先';
+
+  @override
+  String get skillGradeUpShort => 'カケラ昇級';
+
+  @override
+  String get skillShardsTitle => '所持カケラ';
+
+  @override
+  String get skillWildShort => '万能';
 
   @override
   String get skillSweepLimit => '本日の掃討はすべて使いました';

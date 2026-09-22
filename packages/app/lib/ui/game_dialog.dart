@@ -38,6 +38,23 @@ Widget rankImageDlg(String name, {double size = 30}) => rankImage(
 /// 홈·상점의 버튼 94개까지 나무로 바뀐다 — 요청 범위를 넘는다.
 ButtonStyle _artButtonStyle(String asset, Rect slice) => ButtonStyle(
   shape: const WidgetStatePropertyAll(StadiumBorder()),
+  // ⚠️ **글자색을 반드시 준다.** 배경은 아트가 그리는데 글자는 머티리얼
+  // 기본색(FilledButton=onPrimary · TextButton=primary)이라, 나무·황동 위에서
+  // 글자가 묻어 버튼이 비어 보였다(실기 지적 2026-09-20: 확률 보기·닫기·
+  // 소탕·승급이 전부 안 읽혔다). 크림색 + 검은 그림자는 두 아트 모두에서 읽힌다.
+  foregroundColor: WidgetStateProperty.resolveWith(
+    (states) => states.contains(WidgetState.disabled)
+        ? const Color(0x99FFF3D0)
+        : const Color(0xFFFFF3D0),
+  ),
+  textStyle: const WidgetStatePropertyAll(
+    TextStyle(
+      fontWeight: FontWeight.w900,
+      fontSize: 13.5,
+      shadows: [Shadow(color: Color(0xCC000000), blurRadius: 3)],
+    ),
+  ),
+  iconColor: const WidgetStatePropertyAll(Color(0xFFFFF3D0)),
   // 아트가 배경을 담당하므로 그림자는 끈다(나무 위에 회색 그늘이 겹친다).
   elevation: const WidgetStatePropertyAll(0),
   shadowColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -121,16 +138,46 @@ class GameDialog extends StatelessWidget {
       insetPadding: const EdgeInsets.symmetric(horizontal: 32),
       child: Theme(
         // 팝업 안의 버튼만 나무 아트로. 확인·실행 = 황동, 취소·닫기 = 회색 나무.
+        //
+        // ⚠️ **merge 는 수신자가 이긴다**(`a.merge(b)` = a 의 값을 남기고
+        // 빈 칸만 b 로 채운다). 전역 테마를 앞에 두면 거기서 정한 값이
+        // 팝업 스타일을 덮어 버린다 — `main.dart` 의 `styleFrom` 이
+        // disabled 색만 주려고 해도 `foregroundColor` **속성 전체**를
+        // 채워 놓기 때문에, 팝업이 준 글자색이 통째로 무시됐다
+        // (2026-09-20: 글자색을 넣었는데 화면이 그대로였던 원인).
+        // 그래서 **팝업 스타일을 앞에** 둔다.
         data: theme.copyWith(
           filledButtonTheme: FilledButtonThemeData(
-            style:
-                theme.filledButtonTheme.style?.merge(_primaryBtn) ??
-                _primaryBtn,
+            style: _primaryBtn.merge(theme.filledButtonTheme.style),
           ),
           textButtonTheme: TextButtonThemeData(
-            style:
-                theme.textButtonTheme.style?.merge(_secondaryBtn) ??
-                _secondaryBtn,
+            style: _secondaryBtn.merge(theme.textButtonTheme.style),
+          ),
+          // 승급 팝업의 재료 목록(체크박스)·등급 칩도 같은 판 위에 있다.
+          checkboxTheme: theme.checkboxTheme.copyWith(
+            fillColor: WidgetStateProperty.resolveWith(
+              (st) => st.contains(WidgetState.selected)
+                  ? _honey
+                  : const Color(0x22FFFFFF),
+            ),
+            checkColor: const WidgetStatePropertyAll(Color(0xFF3A2600)),
+            side: const BorderSide(color: Color(0x88FFFFFF)),
+          ),
+          chipTheme: theme.chipTheme.copyWith(
+            backgroundColor: const Color(0x22FFFFFF),
+            selectedColor: _honey,
+            labelStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+            secondaryLabelStyle: const TextStyle(
+              color: Color(0xFF3A2600),
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+            side: const BorderSide(color: Color(0x33FFFFFF)),
+            checkmarkColor: const Color(0xFF3A2600),
           ),
         ),
         child: Container(

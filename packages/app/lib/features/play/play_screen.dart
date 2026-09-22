@@ -73,7 +73,25 @@ const _defeatDuration = 2.5;
 /// 가려진다(사장님 지시 2026-09-20 — 가리는 게 없게). 둘 다 이만큼 띄운다.
 /// ⚠️ **캐릭터와 몬스터가 같은 값을 써야 한다** — 다르면 지면선이 어긋나
 /// 한쪽이 공중에 뜬 것처럼 보인다.
-const double _kSkillBarRoom = 52;
+/// 스킬 칸 한 변(논리 px). 40 이면 5칸 + 자동발동이 씬 폭의 3/4 를 먹어
+/// 몬스터를 가렸다(사장님 지시 2026-09-20). 여기만 바꾸면 바 전체가 따라 준다.
+const double _kSkillBtn = 27;
+
+/// 자동발동 토글 한 변 — 칸보다 한 치수 작게.
+const double _kSkillAuto = 23;
+
+/// 칸 사이 간격.
+const double _kSkillGap = 4;
+
+/// 바 높이 = 칸 + 위아래 여백(4×2) + 씬 바닥 여백 2.
+const double _kSkillBarRoom = _kSkillBtn + 10;
+
+/// 캐릭터 그림 한 변(논리 px).
+const double _kCharSize = 92;
+
+/// 스킬 효과 그림 한 변. 캐릭터를 **감싸야** 하므로 더 크다 — 그림
+/// 가운데가 비어 있게 그려졌다(프롬프트 조건).
+const double _kFxSize = 150;
 
 /// 캐릭터의 첫 타 뒤 곤충이 따라 치기까지의 간격(초, 슬롯마다 한 칸씩 더).
 /// 연출 값이다 — 누산기는 기다리는 동안에도 쌓이므로 DPS 는 안 바뀐다.
@@ -542,11 +560,43 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   String? _fxId;
   double _fxT = 0;
 
+  /// 지금 재생 중인 효과가 **패시브**인가. 패시브는 상시라 액티브와 같은
+  /// 세기로 터지면 화면이 쉴 새 없다 — 옅게 깐다.
+  bool _fxFaint = false;
+
+  /// 패시브 효과를 **돌아가며** 보여 주는 타이머(초)와 차례.
+  ///
+  /// 패시브는 눌러서 쓰는 게 아니라 늘 걸려 있어서, 화면만 보면 끼고 있는지
+  /// 아닌지 알 수 없었다(사장님 지시 2026-09-20). 주기마다 한 종씩 옅게
+  /// 재생해 "이것들이 돌고 있다"를 알린다. 액티브가 터지는 중이면 건너뛴다
+  /// — 그쪽이 지금 일어난 일이고, `_fxId` 는 한 번에 하나다.
+  double _passiveFxT = 0;
+  int _passiveFxIdx = 0;
+  static const _passiveFxPeriod = 6.0;
+
+  /// 공격 스킬은 **몬스터 위에서도** 터진다(사장님 지시 2026-09-20).
+  ///
+  /// 캐릭터 쪽에만 그리면 스킬이 몬스터에게 무슨 일을 했는지 보이지 않아
+  /// 타격감이 없다. 캐릭터 쪽(`_fxId`)과 **따로** 두는 이유: 지속형
+  /// 버프(공속·재료·방벽)는 내 몸에만 떠야 하고, 둘은 꺼지는 시점도 다르다.
+  String? _fxEnemyId;
+  double _fxEnemyT = 0;
+
   /// 효과 재생 시간(초). 프레임 4장을 이 시간에 나눠 보여 준다.
   static const _fxDuration = 0.44;
 
   /// 직접 누른 스킬 — 다음 전투 틱에 자동발동과 같은 경로로 쓴다.
   final Set<String> _skillQueue = {};
+
+  /// **개발자 모드 전용** — 쿨타임을 걷어낸다(실기 지적 2026-09-20:
+  /// 전설 스킬은 쿨이 90초라 발동 그림을 한 번 보려면 화면을 붙들고
+  /// 기다려야 했다).
+  ///
+  /// ⚠️ **완전히 0 으로 두지 않는다.** 0 이면 전투 틱마다 다시 나가서
+  /// 효과가 첫 프레임에서 계속 되감기고, 그러면 오히려 아무것도 안 보인다.
+  /// 효과 재생 시간(`_fxDuration` 0.44초)보다 넉넉히 긴 값을 쓴다.
+  bool _devNoSkillCd = false;
+  static const _devSkillCd = 0.9;
 
   /// 이번 방벽이 타이밍 보너스(반사)를 받았나 · 쿨 환급을 이미 받았나.
   bool _guardReflect = false;
@@ -2150,6 +2200,31 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           )
         : _EnemyArt(art: enemyBase, hitFlash: _hitFlash);
 
+    // 공격 스킬 효과를 몬스터 위에 겹친다.
+    //
+    // ⚠️ `Positioned.fill` + `OverflowBox` 인 이유: 몬스터 그림은 종마다
+    // 크기가 달라 미리 계산할 수 없다. `Positioned` 로 두어야 Stack 크기가
+    // 효과에 끌려가지 않고(= 몬스터가 들썩이지 않고), `OverflowBox` 로
+    // 풀어 줘야 작은 몬스터 위에서도 효과가 제 크기로 나온다.
+    final Widget enemyWithFx = _fxEnemyId == null
+        ? enemyWidget
+        : Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              enemyWidget,
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: OverflowBox(
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    child: _SkillFx(id: _fxEnemyId!, t: _fxEnemyT),
+                  ),
+                ),
+              ),
+            ],
+          );
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -2324,7 +2399,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                               : null,
                         ),
                         const SizedBox(height: 4),
-                        enemyWidget,
+                        enemyWithFx,
                       ],
                     ),
                   ),
@@ -2374,16 +2449,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                               children: [
                                 gameImageChain(
                                   cPaths,
-                                  size: 92,
+                                  size: _kCharSize,
                                   fallback: const Text(
                                     '🧑‍🌾',
                                     style: TextStyle(fontSize: 50),
                                   ),
                                 ),
+                                // ⚠️ **left·top·width·height 를 반드시 준다.**
+                                // 값이 하나도 없는 `Positioned` 는 Flutter 가
+                                // non-positioned 로 취급해 Stack 크기 계산에
+                                // 넣는다(`RenderStack` 의 `isPositioned`).
+                                // 효과(150)가 캐릭터(92)보다 커서 Column 이
+                                // 그만큼 높아지고, **발 기준(bottom) 정렬**이라
+                                // 스킬을 쓸 때마다 캐릭터가 위로 솟았다가
+                                // 내려왔다(실기 지적 2026-09-20).
                                 if (_fxId case final fx?)
                                   Positioned(
+                                    left: (_kCharSize - _kFxSize) / 2,
+                                    top: (_kCharSize - _kFxSize) / 2,
+                                    width: _kFxSize,
+                                    height: _kFxSize,
                                     child: IgnorePointer(
-                                      child: _SkillFx(id: fx, t: _fxT),
+                                      child: _SkillFx(
+                                        id: fx,
+                                        t: _fxT,
+                                        faint: _fxFaint,
+                                      ),
                                     ),
                                   ),
                               ],
@@ -2536,6 +2627,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               // 줄어든다. 왼쪽에 자동발동 토글(아이콘만).
               if (ref.watch(saveControllerProvider).value case final sv?)
                 Positioned(right: 6, bottom: 2, child: _skillBar(l, sv)),
+              // 보스전에서만 — 물러날 문.
+              if (_bossChallenge && !_defeated) _fleeButton(l),
             ],
           ),
         ),
@@ -2608,91 +2701,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     color: const Color(0xF20B1206),
     child: Column(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        _topBar(l, save),
-        _eventBanner(l),
-        _loginNudge(l),
-        _chatBar(l),
-      ],
+      children: [_topBar(l, save), _loginNudge(l), _chatBar(l)],
     ),
   );
 
-  /// 개막 전 예고 배너 — 눌러서 전단지를 볼 수 있다.
+  /// 대회(왕충 선발대회) 진입 — **상단 아이콘 줄 바로 아래에 제목만**.
   ///
-  /// 서버가 닫혀 있는 동안에도 떠야 하므로 **로컬 설정만** 본다.
-  Widget _eventSoonBanner(AppLocalizations l, Duration left) {
-    final when = left.inDays >= 1
-        ? l.eventOpensInDays(left.inDays + 1)
-        : (left.inHours >= 1
-              ? l.eventOpensInHours(left.inHours)
-              : l.eventOpensInMinutes(left.inMinutes + 1));
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute<void>(builder: (_) => const EventScreen())),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0x22EBA52F),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0x55EBA52F)),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.hourglass_top_rounded,
-                size: 15,
-                color: Color(0xFFEBA52F),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  l.eventSoonBanner(when),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFEBA52F),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 16,
-                color: Color(0x99EBA52F),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 이벤트(왕충 선발대회) 배너.
+  /// 사장님 지시(2026-09-20). 전체 폭 배너는 한 줄을 통째로 먹어 씬이 그만큼
+  /// 줄었고, "진행 중 · 참가권 N장" · "대기중 · D-8" 같은 상태 문구는 배너를
+  /// 안내문처럼 읽히게 했다. 상태는 대회 화면이 첫 줄에 보여 주므로 홈에는
+  /// **들어가는 문**만 남긴다.
   ///
-  /// 한시적 이벤트라 하단 탭을 늘리지 않고 홈 상단에 둔다. 탭은 이미 5개이고,
-  /// 회차가 끝나면 배너만 사라지면 된다.
-  ///
-  /// **개막 전에도 띄운다.** 서버는 기간 밖이면 `event_closed` 로 아무것도 안 주는데,
-  /// 그 상태를 "없음"으로 처리하니 시작 전날까지 대회의 존재 자체가 화면에 없었다.
-  /// 시작 전 예고는 **로컬 설정(`event.json`)만 보고** 그린다.
-  Widget _eventBanner(AppLocalizations l) {
+  /// **개막 전에도 띄운다.** 서버는 기간 밖이면 `event_closed` 로 아무것도 안
+  /// 주는데, 그 상태를 "없음"으로 처리하니 시작 전날까지 대회의 존재 자체가
+  /// 화면에 없었다. 시작 전 예고는 **로컬 설정(`event.json`)만 보고** 판단한다.
+  Widget _eventMini(AppLocalizations l) {
     final st = ref.watch(eventStateProvider).asData?.value;
     final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
     final now = ref.read(clockProvider).now().toUtc();
-    if (st == null) {
-      final left = cfg?.untilOpen(now);
-      if (left == null) return const SizedBox.shrink();
-      return _eventSoonBanner(l, left);
+    // 진행 중도 아니고 개막 예고도 없으면 자리를 비운다.
+    if (st == null && cfg?.untilOpen(now) == null) {
+      return const SizedBox.shrink();
     }
-    final tickets = (st['tickets'] as num?)?.toInt() ?? 0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 2, 10, 8),
+      padding: const EdgeInsets.only(top: 4),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () async {
@@ -2703,65 +2735,33 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ref.invalidate(eventStateProvider);
         },
         child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.fromLTRB(7, 3, 4, 3),
           decoration: BoxDecoration(
-            // 배너답게 — 옅은 칠에 테두리만 있던 것을 그라데이션 + 옅은 광으로.
             gradient: const LinearGradient(
               colors: [Color(0x667E57C2), Color(0x333F2C63)],
             ),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xCC9575CD), width: 1.3),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x447E57C2),
-                blurRadius: 10,
-                spreadRadius: -2,
-              ),
-            ],
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: const Color(0xCC9575CD)),
           ),
-          // **제목만** 크게 — "진행 중 · 참가권 N장"은 길어서 배너가 안내문처럼
-          // 읽혔다(사장님 지시 2026-09-20). 참가권은 오른쪽에 숫자 뱃지로.
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              rankImageDlg('trophy', size: 20),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  l.eventTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFEDE0FF),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.3,
-                  ),
+              rankImageDlg('trophy', size: 13),
+              const SizedBox(width: 5),
+              Text(
+                l.eventTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFEDE0FF),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              if (tickets > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0x557E57C2),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: Text(
-                    '$tickets',
-                    style: const TextStyle(
-                      color: Color(0xFFEDE0FF),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
               const Icon(
                 Icons.chevron_right_rounded,
                 color: Color(0xFFD7BCFF),
-                size: 18,
+                size: 15,
               ),
             ],
           ),
@@ -2953,6 +2953,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   _iconBtn(Icons.settings_rounded, () => _showSettings(l)),
                 ],
               ),
+              // 대회는 한시적이라 하단 탭을 늘리지 않는다 — 아이콘 줄이
+              // 그만큼 위로 올라가고 그 아래에 제목만 붙는다.
+              _eventMini(l),
             ],
           ),
         ],
@@ -3617,6 +3620,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _fxT += dt;
       if (_fxT >= _fxDuration) _fxId = null;
     }
+    if (_fxEnemyId != null) {
+      _fxEnemyT += dt;
+      if (_fxEnemyT >= _fxDuration) _fxEnemyId = null;
+    }
+    _passiveFxT += dt;
+    if (_passiveFxT >= _passiveFxPeriod) {
+      _passiveFxT = 0;
+      _playPassiveFx();
+    }
   }
 
   /// 다음 물기까지 남은 시간(초) — 방벽 타이밍 판정용.
@@ -3651,6 +3663,52 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _skillQueue.clear();
   }
 
+  /// **개발자 모드 전용** — 장착한 액티브를 차례로 한 번씩 발동시킨다.
+  ///
+  /// 실기에서 발동 그림을 확인하려면 스킬마다 쿨이 찰 때까지 기다려야 했다
+  /// (사장님 지시 2026-09-20). 쿨을 지우고 `_skillQueue` 에 넣으므로
+  /// **직접 누른 것과 같은 경로**로 나간다 — 타이밍 보너스까지 그대로 탄다.
+  void _devCastEquipped() {
+    final save = ref.read(saveControllerProvider).value;
+    final cfg = _data.skillConfig;
+    if (save == null || cfg == null) return;
+    final ids = [
+      for (final id in save.equippedSkills)
+        if (cfg.byId(id) case final d?)
+          if (d.isActive && (save.skillLevels[id] ?? 0) > 0) id,
+    ];
+    // 한 번에 다 넣으면 같은 틱에 전부 나가 효과가 서로를 덮어쓴다
+    // (`_fxId` 는 한 번에 하나다). 효과 재생 시간보다 넉넉히 띄운다.
+    for (final (i, id) in ids.indexed) {
+      Future.delayed(Duration(milliseconds: 900 * i), () {
+        if (!mounted) return;
+        setState(() {
+          _skillCd.remove(id);
+          _skillQueue.add(id);
+        });
+      });
+    }
+  }
+
+  /// 장착한 패시브를 한 종씩 돌아가며 옅게 재생한다(6초 주기).
+  void _playPassiveFx() {
+    // 액티브가 터지는 중이면 양보한다 — 덮으면 무엇이 터졌는지 흐려진다.
+    if (_fxId != null) return;
+    final save = ref.read(saveControllerProvider).value;
+    final cfg = _data.skillConfig;
+    if (save == null || cfg == null) return;
+    final passives = [
+      for (final id in save.equippedSkills)
+        if (cfg.byId(id) case final d?)
+          if (!d.isActive && (save.skillLevels[id] ?? 0) > 0) id,
+    ];
+    if (passives.isEmpty) return;
+    _passiveFxIdx = (_passiveFxIdx + 1) % passives.length;
+    _fxId = passives[_passiveFxIdx];
+    _fxT = 0;
+    _fxFaint = true;
+  }
+
   void _castSkill(
     SkillDef def,
     int lv,
@@ -3659,10 +3717,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }) {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
-    _skillCd[def.id] = def.cooldown.inMilliseconds / 1000;
+    _skillCd[def.id] = _devNoSkillCd
+        ? _devSkillCd
+        : def.cooldown.inMilliseconds / 1000;
     // 스킬 효과 — 그림이 없는 스킬이면 아무것도 안 뜬다(gameImage 폴백).
     _fxId = def.id;
     _fxT = 0;
+    _fxFaint = false;
+    // ⚠️ **액티브 발동에만** 소리를 낸다. 패시브 알림(`_playPassiveFx`)은
+    // 6초마다 돌아 소리까지 붙이면 귀가 쉴 틈이 없다.
+    AudioService.instance.sfxSkill(def.id);
     final v = def.valueAt(lv);
     var timed = false;
     switch (def.effect) {
@@ -3680,6 +3744,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _hp -= dmg;
         _hitFlash = 1;
         _screenShake = 1;
+        // 맞은 쪽에서도 터진다 — 피해 숫자만으로는 무엇이 때렸는지 모른다.
+        _fxEnemyId = def.id;
+        _fxEnemyT = 0;
         _impacts.add(_Impact(true));
         _pops.add(
           _Pop(formatCompact(dmg), 0, const Color(0xFFE040FB), timed ? 32 : 28),
@@ -3756,10 +3823,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Widget _skillBar(AppLocalizations l, SaveGame save) {
     final cfg = _data.skillConfig;
     if (cfg == null) return const SizedBox.shrink();
-    final actives = [
+    // 액티브뿐 아니라 **패시브도 칸을 차지한다**(사장님 지시 2026-09-20).
+    // 패시브만 끼면 바가 텅 비어 스킬을 안 낀 것처럼 보였다. 누를 수는
+    // 없으므로 `_skillButton` 이 모양으로 가른다.
+    final equipped = [
       for (final id in save.equippedSkills)
         if (cfg.byId(id) case final def?)
-          if (def.isActive && (save.skillLevels[id] ?? 0) > 0) def,
+          if ((save.skillLevels[id] ?? 0) > 0) def,
     ];
     // 칸은 **항상 최대치(5칸)** 를 그린다(사장님 지시 2026-09-18).
     // 열린 칸은 점선, 아직 안 열린 칸은 자물쇠 — 몇 칸까지 늘어나는지
@@ -3767,7 +3837,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final opened = cfg.slotsFor(save.topTier);
     final free = (opened - save.equippedSkills.length).clamp(0, cfg.maxSlots);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
       decoration: BoxDecoration(
         // 씬 위에 얹히므로 옅은 받침을 깔아 아이콘이 배경에 묻히지 않게.
         color: const Color(0x4D000000),
@@ -3785,8 +3855,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   .setSkillAutoCast(!save.skillAutoCast),
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                width: 34,
-                height: 34,
+                width: _kSkillAuto,
+                height: _kSkillAuto,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: save.skillAutoCast
@@ -3803,10 +3873,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   opacity: save.skillAutoCast ? 1 : 0.4,
                   child: skillButtonImage(
                     'auto',
-                    size: 20,
+                    size: 14,
                     fallback: Icon(
                       Icons.autorenew_rounded,
-                      size: 17,
+                      size: 12,
                       color: save.skillAutoCast ? Colors.white : Colors.white54,
                     ),
                   ),
@@ -3814,20 +3884,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          for (final def in actives)
+          const SizedBox(width: 5),
+          for (final def in equipped)
             Padding(
-              padding: const EdgeInsets.only(left: 6),
+              padding: const EdgeInsets.only(left: _kSkillGap),
               child: _skillButton(def),
             ),
           for (var i = 0; i < free; i++)
             const Padding(
-              padding: EdgeInsets.only(left: 6),
+              padding: EdgeInsets.only(left: _kSkillGap),
               child: _EmptySkillSlot(),
             ),
           for (var i = 0; i < cfg.maxSlots - opened; i++)
             const Padding(
-              padding: EdgeInsets.only(left: 6),
+              padding: EdgeInsets.only(left: _kSkillGap),
               child: _EmptySkillSlot(locked: true),
             ),
         ],
@@ -3850,17 +3920,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       'invulnerable' => Icons.shield_rounded,
       _ => Icons.auto_awesome_rounded,
     };
+    // 패시브는 누를 게 없다 — **둥근 사각**으로 그려 모양만으로 갈리게 한다
+    // (스킬 화면의 장착 칸과 같은 규칙). 쿨타임 링·남은 초도 없다.
+    final passive = !def.isActive;
     return GestureDetector(
-      onTap: cd > 0 ? null : () => setState(() => _skillQueue.add(def.id)),
+      onTap: passive || cd > 0
+          ? null
+          : () => setState(() => _skillQueue.add(def.id)),
       child: SizedBox(
-        width: 40,
-        height: 40,
+        width: _kSkillBtn,
+        height: _kSkillBtn,
         child: Stack(
           alignment: Alignment.center,
           children: [
             Container(
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                shape: passive ? BoxShape.rectangle : BoxShape.circle,
+                borderRadius: passive ? BorderRadius.circular(8) : null,
                 color: color.withValues(alpha: cd > 0 ? 0.15 : 0.35),
                 border: Border.all(
                   color: on || queued ? const Color(0xFFFFD54F) : color,
@@ -3879,21 +3955,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               opacity: cd > 0 ? 0.45 : 1,
               child: skillImage(
                 def.id,
-                size: 29,
+                size: 20,
                 fallback: Icon(
                   icon,
                   color: cd > 0 ? Colors.white38 : Colors.white,
-                  size: 22,
+                  size: 15,
                 ),
               ),
             ),
-            if (cd > 0 && total > 0) ...[
+            if (!passive && cd > 0 && total > 0) ...[
               SizedBox(
-                width: 40,
-                height: 40,
+                width: _kSkillBtn,
+                height: _kSkillBtn,
                 child: CircularProgressIndicator(
                   value: (cd / total).clamp(0.0, 1.0),
-                  strokeWidth: 3,
+                  strokeWidth: 2.4,
                   color: const Color(0xCC000000),
                   backgroundColor: Colors.transparent,
                 ),
@@ -3903,7 +3979,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
-                  fontSize: 13,
+                  fontSize: 10,
                   shadows: [Shadow(color: Colors.black, blurRadius: 3)],
                 ),
               ),
@@ -4088,6 +4164,90 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _spawn();
     });
   }
+
+  /// 보스에게서 **도망친다** — 사냥터로 돌아간다(사장님 지시 2026-09-20).
+  ///
+  /// 벌칙은 **쓰러진 것과 똑같다**: 사냥터 게이지(100마리)가 비워진다.
+  /// ⚠️ 무벌칙으로 두면 "죽기 직전에 도망"이 늘 최적이라 쓰러짐 벌칙
+  /// (§2.4, 2026-09-18)이 통째로 죽는다. 도망으로 아끼는 것은 **시간**이다 —
+  /// 이길 수 없는 보스를 붙들고 체력이 다 닳기를 기다릴 필요가 없다.
+  ///
+  /// 게이지 100마리가 날아가므로 **반드시 확인을 받는다**.
+  Future<void> _fleeBoss(AppLocalizations l) async {
+    if (!_bossChallenge || _defeated) return;
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.bossFleeTitle,
+      icon: Icons.directions_run_rounded,
+      content: Text(
+        l.bossFleeDesc,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 13),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.of(context).pop(false),
+          primary: false,
+        ),
+        gameDialogButton(l.bossFlee, () => Navigator.of(context).pop(true)),
+      ],
+    );
+    if (ok != true || !mounted || !_bossChallenge) return;
+    // 쓰러졌을 때(`_resumeAfterDefeat`)와 **같은 것을 되돌린다** — 게이지,
+    // 서식지 자리, 팀 체력, 이월된 공격 게이지.
+    unawaited(ref.read(saveControllerProvider.notifier).resetZoneKills());
+    setState(() {
+      _bossChallenge = false;
+      _dying = false;
+      _habitatIndex = 0;
+      _healTeamFull();
+      _enemyAtkAcc = 0;
+      _spawn();
+    });
+    if (mounted) showCenterToast(context, l.bossFled);
+  }
+
+  /// 보스전 동안 씬 **왼쪽 아래**에 뜨는 도망 버튼.
+  ///
+  /// 오른쪽 아래는 스킬 바 자리라 왼쪽에 둔다. 상시 노출이다(사장님 지시
+  /// 2026-09-20) — 체력이 위험할 때만 띄우면, 정작 "이건 못 이기겠다"를
+  /// 아는 시점(보스 체력이 안 깎일 때)에는 안 보인다.
+  Widget _fleeButton(AppLocalizations l) => Positioned(
+    left: 8,
+    bottom: _kSkillBarRoom + 2,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _fleeBoss(l),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0x99101A0A),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0x66FFFFFF)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.directions_run_rounded,
+              size: 15,
+              color: Color(0xFFE0E0E0),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              l.bossFlee,
+              style: const TextStyle(
+                color: Color(0xFFE0E0E0),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   Widget _questAndResources(AppLocalizations l, SaveGame save) {
     final missions = _data.missionConfig?.missions ?? const <MissionDef>[];
@@ -6379,6 +6539,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           await ctrl.devAddGradeShards(50);
                           toast('만능 조각 +50');
                         }),
+                        // 쿨을 걷어내고 실제 전투 화면에서 발동 그림을 본다
+                        // (실기 지적 2026-09-20). 뷰어와 달리 **게임 안**
+                        // 이라 몬스터·피해량과 겹치는 모습까지 보인다.
+                        _devBtn('쿨타임 없음${_devNoSkillCd ? " ✓" : ""}', () {
+                          setState(() => _devNoSkillCd = !_devNoSkillCd);
+                          toast(
+                            _devNoSkillCd ? '쿨타임 $_devSkillCd초 고정' : '쿨타임 원래대로',
+                          );
+                        }),
+                        _devBtn('장착 스킬 차례로 발동', () {
+                          // 시트를 닫아야 전투 화면이 보인다.
+                          Navigator.pop(context);
+                          _devCastEquipped();
+                        }),
                         // 쿨타임 때문에 효과를 보려면 몇 분씩 기다려야 한다 —
                         // 발동 없이 모션만 돌려 보는 창(실기 지적 2026-09-18).
                         _devBtn('스킬 모션 보기', () {
@@ -8069,14 +8243,14 @@ class _EmptySkillSlot extends StatelessWidget {
   Widget build(BuildContext context) => Opacity(
     opacity: locked ? 0.45 : 1,
     child: SizedBox(
-      width: 40,
-      height: 40,
+      width: _kSkillBtn,
+      height: _kSkillBtn,
       child: CustomPaint(
         painter: _DashedCirclePainter(),
         child: Center(
           child: Icon(
             locked ? Icons.lock_rounded : Icons.add_rounded,
-            size: 15,
+            size: 11,
             color: const Color(0x40FFFFFF),
           ),
         ),
@@ -8117,9 +8291,13 @@ class _DashedCirclePainter extends CustomPainter {
 /// 그냥 겹쳐 그리면 가산 합성처럼 보인다. 그림이 없으면 아무것도 안 그린다 —
 /// 효과가 없다고 전투가 달라지지는 않는다(§6 폴백).
 class _SkillFx extends StatelessWidget {
-  const _SkillFx({required this.id, required this.t});
+  const _SkillFx({required this.id, required this.t, this.faint = false});
 
   final String id;
+
+  /// 패시브를 알리는 재생인가 — 옅게 깐다(§ 패시브는 상시라 또렷하면
+  /// 액티브가 터진 것으로 오해된다).
+  final bool faint;
 
   /// 발동 후 경과 시간(초).
   final double t;
@@ -8132,11 +8310,11 @@ class _SkillFx extends StatelessWidget {
     // 마지막 구간은 조금 더 흐려지게 — 4장만으로는 뚝 끊겨 보인다.
     final fade = p > 0.75 ? (1 - (p - 0.75) / 0.25).clamp(0.0, 1.0) : 1.0;
     return Opacity(
-      opacity: fade,
+      opacity: fade * (faint ? 0.5 : 1.0),
       child: gameImage(
         'assets/images/fx/${id}_$frame.webp',
-        width: 150,
-        height: 150,
+        width: _kFxSize,
+        height: _kFxSize,
         fallback: const SizedBox.shrink(),
       ),
     );

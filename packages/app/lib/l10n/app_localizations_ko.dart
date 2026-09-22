@@ -712,6 +712,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get bossChallengeFailed => '보스에게 밀려났어요. 더 강해져서 다시 도전하세요';
 
   @override
+  String get bossFlee => '도망치기';
+
+  @override
+  String get bossFleeTitle => '도망칠까요?';
+
+  @override
+  String get bossFleeDesc => '사냥터 게이지가 비워져요.\n쓰러졌을 때와 같아요.';
+
+  @override
+  String get bossFled => '도망쳤어요 · 게이지가 비워졌어요';
+
+  @override
   String zoneKillsLabel(int n, int m) {
     return '처치 $n/$m';
   }
@@ -2840,7 +2852,19 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get skillSweepNoBoss => '사냥터 보스를 한 마리 이상 잡아야 소탕할 수 있어요';
+  String get skillSweepNoBoss => '사냥터 보스를 한 마리 이상\n잡아야 소탕할 수 있어요';
+
+  @override
+  String get skillSweepLocked => '보스 먼저';
+
+  @override
+  String get skillGradeUpShort => '조각 승급';
+
+  @override
+  String get skillShardsTitle => '내 조각';
+
+  @override
+  String get skillWildShort => '만능';
 
   @override
   String get skillSweepLimit => '오늘 소탕을 모두 썼어요';

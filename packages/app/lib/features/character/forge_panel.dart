@@ -41,24 +41,27 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   /// 자동 제련에서 필터에 걸려 **판** 재료 — 모루 위로 떠오르는 표시용
   /// (사장님 지시 2026-09-18).
   ///
-  /// ⚠️ **한 번의 제련 = 한 줄**이다. 예전엔 재료 종류마다 한 줄씩 만들어
-  /// 놓고 전부 같은 자리(`top: 6`)에 그려서, 2종이 나오면 겹쳐 찍혀
-  /// "두 번 뜬다"로 보였다(2026-09-20 지적).
-  /// 줄이 여러 개면 **세로로 어긋나게** 그린다.
-  final List<({Map<MaterialKind, int> items, DateTime at})> _sold = [];
+  /// ⚠️ **화면에 뜨는 표시는 언제나 하나**다(사장님 지시 2026-09-20).
+  ///
+  /// 처음엔 재료 종류마다 한 줄씩 만들어 전부 같은 자리(`top: 6`)에 그려서
+  /// 2종이 나오면 겹쳐 찍혔다. 줄을 15px 씩 어긋나게도 해 봤지만, 줄이
+  /// **18px 떠오르는** 애니메이션이라 간격보다 많이 움직여 결국 다음 줄과
+  /// 겹쳤다. 자동 제련은 1초에 몇 번씩 도니 줄이 몇 개든 겹친다.
+  /// 그래서 **새 제련이 이전 표시를 밀어낸다** — 자리도 하나로 고정된다.
+  /// 한 번에 나온 여러 재료는 `_SoldFloat` 이 `Wrap` 으로 펴서 보여 준다.
+  ({Map<MaterialKind, int> items, DateTime at})? _sold;
 
   void _showSold(Map<MaterialKind, int> sold) {
     if (sold.isEmpty) return;
     final now = DateTime.now();
-    _sold.add((items: Map<MaterialKind, int>.from(sold), at: now));
-    // 오래된 것은 버린다 — 자동이 계속 돌면 끝없이 쌓인다.
-    _sold.removeWhere((x) => now.difference(x.at).inMilliseconds > 1100);
+    // 이전 것은 그대로 치운다 — 두 개가 같이 떠 있을 수 있는 순간이 없다.
+    _sold = (items: Map<MaterialKind, int>.from(sold), at: now);
     if (mounted) setState(() {});
     Future.delayed(const Duration(milliseconds: 1150), () {
       if (!mounted) return;
-      final t = DateTime.now();
-      _sold.removeWhere((x) => t.difference(x.at).inMilliseconds > 1100);
-      setState(() {});
+      // 그 사이 새 표시가 올라왔으면 그건 남긴다(`at` 으로 구분).
+      if (_sold?.at != now) return;
+      setState(() => _sold = null);
     });
   }
 
@@ -727,13 +730,14 @@ class _AnvilButton extends StatefulWidget {
     required this.cycle,
     required this.auto,
     required this.onStrike,
-    this.sold = const [],
+    this.sold,
   });
 
   /// 자동 제련이 필터에 걸린 장비를 **판** 대금 — 모루 위로 떠오른다
   /// (사장님 지시 2026-09-18: 창을 열지 말고 재료가 들어온 것처럼).
   /// 부모(`_ForgeBarState`)가 들고 있다 — 제련을 실행하는 쪽이 거기다.
-  final List<({Map<MaterialKind, int> items, DateTime at})> sold;
+  /// **한 번에 하나**다 — 여럿을 동시에 띄우면 떠오르다 겹친다.
+  final ({Map<MaterialKind, int> items, DateTime at})? sold;
 
   /// 망치질 한 바퀴 = **한 개 뽑는 데 걸리는 시간**.
   final Duration cycle;
@@ -928,11 +932,12 @@ class _AnvilButtonState extends State<_AnvilButton>
               ),
             // 판 재료 — 모루 **위로 떠오르며** 사라진다. 창을 열지 않고
             // "재료가 들어왔다"만 보여 준다(사장님 지시 2026-09-18).
-            // 줄마다 **세로로 어긋나게** — 겹치면 읽을 수 없다.
-            for (final (i, x) in widget.sold.indexed)
+            // **한 번에 하나만** 뜬다 — 여러 개를 어긋나게 그려 봤자
+            // 떠오르는 폭(18px)이 간격보다 커서 겹친다(2026-09-20).
+            if (widget.sold case final x?)
               Positioned(
-                top: 6 + i * 15.0,
-                child: _SoldFloat(items: x.items, at: x.at),
+                top: 6,
+                child: _SoldFloat(key: ValueKey(x.at), items: x.items),
               ),
             // 망치 — 오른쪽 위에서 내리친다. 회전축을 자루 끝에 둬야
             // 휘두르는 것처럼 보인다(가운데로 두면 빙글 돈다).
@@ -1926,11 +1931,11 @@ class _TierChip extends StatelessWidget {
 /// 자동 제련이 필터에 걸린 장비를 팔 때 뜬다. 창을 열면 자동이 도는 동안
 /// 화면을 계속 가리므로, 재화가 들어온 것처럼 아이콘만 잠깐 보여 준다.
 class _SoldFloat extends StatefulWidget {
-  const _SoldFloat({required this.items, required this.at});
+  const _SoldFloat({required this.items, super.key});
 
-  /// 이번 제련에서 판 재료 전부 — **한 줄에 나란히** 그린다.
+  /// 이번 제련에서 판 재료 전부 — 모루 폭 안에서 `Wrap` 으로 편다.
+  /// 한 줄로 두면 3종 이상에서 양옆으로 삐져나가 서로 겹쳐 보였다.
   final Map<MaterialKind, int> items;
-  final DateTime at;
 
   @override
   State<_SoldFloat> createState() => _SoldFloatState();
@@ -1959,32 +1964,41 @@ class _SoldFloatState extends State<_SoldFloat>
         child: Opacity(
           // 끝 30% 에서만 흐려진다 — 처음부터 흐려지면 못 읽는다.
           opacity: t < 0.7 ? 1.0 : (1 - (t - 0.7) / 0.3).clamp(0.0, 1.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final e in widget.items.entries) ...[
-                materialImage(
-                  e.key,
-                  size: 15,
-                  fallback: Icon(
-                    materialIcon(e.key),
-                    size: 13,
-                    color: Colors.white70,
+          child: ConstrainedBox(
+            // 모루 카드 폭 안. 넘치면 아래 줄로 접힌다.
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 7,
+              runSpacing: 1,
+              children: [
+                for (final e in widget.items.entries)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      materialImage(
+                        e.key,
+                        size: 15,
+                        fallback: Icon(
+                          materialIcon(e.key),
+                          size: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '+${e.value}',
+                        style: const TextStyle(
+                          color: Color(0xFF9CCC65),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  '+${e.value}',
-                  style: const TextStyle(
-                    color: Color(0xFF9CCC65),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
-                    shadows: [Shadow(color: Colors.black, blurRadius: 3)],
-                  ),
-                ),
-                const SizedBox(width: 6),
               ],
-            ],
+            ),
           ),
         ),
       );

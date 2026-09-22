@@ -51,7 +51,10 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
     final toLabel = gradeLabel(l, to);
 
     return GameDialog(
-      title: l.skillGradeUpTitle(fromLabel, toLabel),
+      // 제목은 **짧게**. "일반 조각 → 희귀 만능 조각" 은 제목 칸에서 어중간하게
+      // 접혔다(실기 지적 2026-09-20). 무엇을 무엇으로 바꾸는지는 부제로 내린다.
+      title: l.skillGradeUpShort,
+      subtitle: l.skillGradeUpTitle(fromLabel, toLabel),
       iconWidget: skillButtonImage(
         'gradeup',
         size: 26,
@@ -73,31 +76,13 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Wrap(
-            spacing: 6,
-            alignment: WrapAlignment.center,
-            children: [
-              for (final g in kSkillGrades.take(kSkillGrades.length - 1))
-                ChoiceChip(
-                  label: Text(
-                    '${gradeLabel(l, g)} → '
-                    '${gradeLabel(l, SkillConfig.nextGrade(g)!)}',
-                  ),
-                  selected: _from == g,
-                  onSelected: (_) => setState(() {
-                    _from = g;
-                    _picked.clear();
-                    _times = 1;
-                  }),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l.skillGradeUpDesc('${cfg.gradeUpRatio}', fromLabel, toLabel),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
+          // 무엇을 무엇으로 바꾸는지 **그림으로** 보여 준다(사장님 지시
+          // 2026-09-20). 글자 칩('일반 → 희귀')은 무슨 뜻인지도 모호했고,
+          // 고른 것과 안 고른 것이 흰 판으로 똑같이 보였다.
+          _ladder(l, cfg, save),
+          const SizedBox(height: 10),
+          // 이번에 고른 변환: 조각 N 개 → 만능 1 개.
+          _recipe(l, cfg, fromLabel, toLabel),
           const SizedBox(height: 8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 220),
@@ -131,12 +116,25 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
                               fontSize: 11,
                             ),
                           ),
-                    secondary: Text(
-                      '${e.value}',
-                      style: TextStyle(
-                        color: gradeColor(_from),
-                        fontWeight: FontWeight.w800,
-                      ),
+                    // 무엇을 태우는지 그림으로도 보여 준다 — 이름만으로는
+                    // 스킬 조각인지 만능 조각인지 헷갈린다.
+                    secondary: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        skillShardImage(
+                          _from,
+                          size: 15,
+                          wild: e.key == kGradeShardSource,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${e.value}',
+                          style: TextStyle(
+                            color: gradeColor(_from),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],
@@ -170,6 +168,136 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
                 ),
               ],
             ),
+        ],
+      ),
+    );
+  }
+
+  /// 등급 사다리 — `조각 ▸ 조각 ▸ 조각 ▸ 조각`. 사이의 화살표를 누르면
+  /// 그 구간(아래 등급 → 위 등급)이 선택된다.
+  ///
+  /// 고른 구간은 화살표가 **꿀색으로 차고**, 양 끝 조각이 커진다. 무엇에서
+  /// 무엇으로 가는지 한 줄에 다 보인다.
+  Widget _ladder(AppLocalizations l, SkillConfig cfg, SaveGame save) {
+    final grades = kSkillGrades;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < grades.length; i++) ...[
+          if (i > 0) _arrow(grades[i - 1]),
+          _rung(l, cfg, save, grades[i]),
+        ],
+      ],
+    );
+  }
+
+  /// 사다리 한 칸 — 그 등급의 조각 그림과 보유 수.
+  Widget _rung(AppLocalizations l, SkillConfig cfg, SaveGame save, Grade g) {
+    // 이번 변환에 관계된 등급(출발·도착)만 또렷하게.
+    final to = SkillConfig.nextGrade(_from);
+    final lit = g == _from || g == to;
+    var own = save.gradeShards(g);
+    for (final def in cfg.skills) {
+      if (def.grade == g) own += save.skillShards[def.id] ?? 0;
+    }
+    return Opacity(
+      opacity: lit ? 1 : 0.4,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          skillShardImage(g, size: lit ? 34 : 26),
+          const SizedBox(height: 2),
+          Text(
+            '$own',
+            style: TextStyle(
+              color: gradeColor(g),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 사다리의 화살표 = 그 구간을 고르는 버튼.
+  Widget _arrow(Grade from) {
+    final on = _from == from;
+    return InkWell(
+      onTap: () => setState(() {
+        _from = from;
+        _picked.clear();
+        _times = 1;
+      }),
+      borderRadius: BorderRadius.circular(9),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+        child: Icon(
+          Icons.chevron_right_rounded,
+          size: on ? 26 : 20,
+          color: on ? const Color(0xFFFFD54F) : const Color(0x55FFFFFF),
+        ),
+      ),
+    );
+  }
+
+  /// 이번 변환의 셈 — `조각 그림 ×N  →  만능 그림 ×1`.
+  Widget _recipe(
+    AppLocalizations l,
+    SkillConfig cfg,
+    String fromLabel,
+    String toLabel,
+  ) {
+    final to = SkillConfig.nextGrade(_from)!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0x33000000),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0x22FFFFFF)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              skillShardImage(_from, size: 26),
+              const SizedBox(width: 3),
+              Text(
+                '×${cfg.gradeUpRatio}',
+                style: TextStyle(
+                  color: gradeColor(_from),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Icon(
+                  Icons.east_rounded,
+                  size: 18,
+                  color: Color(0xFFFFD54F),
+                ),
+              ),
+              skillShardImage(to, size: 26, wild: true),
+              const SizedBox(width: 3),
+              Text(
+                '×1',
+                style: TextStyle(
+                  color: gradeColor(to),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            l.skillGradeUpDesc('${cfg.gradeUpRatio}', fromLabel, toLabel),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+          ),
         ],
       ),
     );

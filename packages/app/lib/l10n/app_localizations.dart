@@ -1372,6 +1372,30 @@ abstract class AppLocalizations {
   /// **'The boss pushed you back. Grow stronger and try again'**
   String get bossChallengeFailed;
 
+  /// Boss fight - retreat button
+  ///
+  /// In en, this message translates to:
+  /// **'Flee'**
+  String get bossFlee;
+
+  /// Flee confirm dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Flee the boss?'**
+  String get bossFleeTitle;
+
+  /// Flee confirm dialog body
+  ///
+  /// In en, this message translates to:
+  /// **'Your hunting ground gauge resets.\nSame as being defeated.'**
+  String get bossFleeDesc;
+
+  /// Toast right after fleeing
+  ///
+  /// In en, this message translates to:
+  /// **'Fled - gauge reset'**
+  String get bossFled;
+
   /// No description provided for @zoneKillsLabel.
   ///
   /// In en, this message translates to:
@@ -5131,8 +5155,32 @@ abstract class AppLocalizations {
   /// No description provided for @skillSweepNoBoss.
   ///
   /// In en, this message translates to:
-  /// **'Defeat at least one hunting ground boss to sweep'**
+  /// **'Defeat at least one\nhunting ground boss to sweep'**
   String get skillSweepNoBoss;
+
+  /// Sweep button - short locked label
+  ///
+  /// In en, this message translates to:
+  /// **'Beat a boss'**
+  String get skillSweepLocked;
+
+  /// Grade-up dialog title, kept short
+  ///
+  /// In en, this message translates to:
+  /// **'Shard upgrade'**
+  String get skillGradeUpShort;
+
+  /// Skill screen - shards by grade row title
+  ///
+  /// In en, this message translates to:
+  /// **'My shards'**
+  String get skillShardsTitle;
+
+  /// Short word before the wild shard count
+  ///
+  /// In en, this message translates to:
+  /// **'Any'**
+  String get skillWildShort;
 
   /// No description provided for @skillSweepLimit.
   ///

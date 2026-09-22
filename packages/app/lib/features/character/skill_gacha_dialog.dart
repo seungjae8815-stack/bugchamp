@@ -243,7 +243,10 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
     // 유료 소탕만 젤리 가격표(아이콘+숫자)로 — 무료·상한은 글자가 맞다.
     final Widget label;
     if (tier < 0) {
-      label = Text(l.skillSweepNoBoss);
+      // ⚠️ 버튼에는 **짧은 말**만. 안내문 전체(`skillSweepNoBoss`)를 넣었더니
+      // 글자가 버튼을 꽉 채워 읽히지도, 버튼으로 보이지도 않았다
+      // (실기 지적 2026-09-20). 이유는 본문이 말한다.
+      label = Text(l.skillSweepLocked);
     } else if (limit) {
       label = Text(l.skillSweepLimit);
     } else if (freeLeft > 0) {

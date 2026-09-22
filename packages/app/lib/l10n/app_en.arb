@@ -453,6 +453,22 @@
     }
   },
   "bossChallengeFailed": "The boss pushed you back. Grow stronger and try again",
+  "bossFlee": "Flee",
+  "@bossFlee": {
+    "description": "Boss fight - retreat button"
+  },
+  "bossFleeTitle": "Flee the boss?",
+  "@bossFleeTitle": {
+    "description": "Flee confirm dialog title"
+  },
+  "bossFleeDesc": "Your hunting ground gauge resets.\nSame as being defeated.",
+  "@bossFleeDesc": {
+    "description": "Flee confirm dialog body"
+  },
+  "bossFled": "Fled - gauge reset",
+  "@bossFled": {
+    "description": "Toast right after fleeing"
+  },
   "zoneKillsLabel": "Kills {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {
@@ -857,7 +873,13 @@
   "giftClaimedSnack": "Gift claimed!",
   "giftDoubledSnack": "Double reward claimed!",
   "giftDoubledMult": "Reward x{n}!",
-  "@giftDoubledMult": {"placeholders": {"n": {"type": "String"}}},
+  "@giftDoubledMult": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "giftAdMoreTitle": "Today's free double!",
   "giftAdMoreBody": "Take this gift at double value.",
   "giftAdMoreYes": "Claim double",
@@ -1647,7 +1669,13 @@
   "forgeResultKeep": "Equip",
   "forgeResultDrop": "Sell",
   "forgeResultSell": "Sell for {n}",
-  "@forgeResultSell": {"placeholders": {"n": {"type": "String"}}},
+  "@forgeResultSell": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "forgeCurrent": "Equipped",
   "forgeNoFossil": "No fossil shards",
   "forgeLevel": "Workshop Lv.{lv}",
@@ -1667,118 +1695,455 @@
   "skillAuto": "AUTO",
   "skillTimingBonus": "Perfect timing!",
   "skillReflect": "Reflect {n}",
-  "@skillReflect": {"placeholders": {"n": {"type": "String"}}},
+  "@skillReflect": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillBlocked": "Blocked",
   "skillGacha": "Draw",
   "skillGachaTitle": "Skill Draw",
   "skillGachaFreeLeft": "{n} free today",
-  "@skillGachaFreeLeft": {"placeholders": {"n": {"type": "String"}}},
+  "@skillGachaFreeLeft": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillGachaPityLeft": "{grade} guaranteed within {n}",
-  "@skillGachaPityLeft": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "String"}}},
+  "@skillGachaPityLeft": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillGachaFree": "Free draw",
   "skillGachaOne": "1× · {n} jelly",
-  "@skillGachaOne": {"placeholders": {"n": {"type": "String"}}},
+  "@skillGachaOne": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillGachaTen": "10× · {n} jelly",
-  "@skillGachaTen": {"placeholders": {"n": {"type": "String"}}},
+  "@skillGachaTen": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillTimes": "×{n}",
-  "@skillTimes": {"placeholders": {"n": {"type": "String"}}},
+  "@skillTimes": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillGachaOdds": "View odds",
   "skillGachaOddsTitle": "Skill draw odds",
   "skillGachaOddsGrade": "{grade} {p}% · {each}% per skill",
-  "@skillGachaOddsGrade": {"placeholders": {"grade": {"type": "String"}, "p": {"type": "String"}, "each": {"type": "String"}}},
+  "@skillGachaOddsGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      },
+      "each": {
+        "type": "String"
+      }
+    }
+  },
   "skillGachaOddsNote": "Each draw gives {n} shards of one skill. Draw #{pity} is guaranteed {grade} or better; the count restarts when {grade} appears.",
-  "@skillGachaOddsNote": {"placeholders": {"n": {"type": "String"}, "pity": {"type": "String"}, "grade": {"type": "String"}}},
+  "@skillGachaOddsNote": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "pity": {
+        "type": "String"
+      },
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "skillGachaResult": "{name} shards +{n}",
-  "@skillGachaResult": {"placeholders": {"name": {"type": "String"}, "n": {"type": "String"}}},
+  "@skillGachaResult": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillSweep": "Sweep",
   "skillSweepTitle": "Boss Sweep",
   "skillSweepDesc": "Counts as defeating a boss again at your highest cleared difficulty ({tier}) and gives {n} skill shards for sure.",
-  "@skillSweepDesc": {"placeholders": {"tier": {"type": "String"}, "n": {"type": "String"}}},
+  "@skillSweepDesc": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillSweepToday": "Used {used}/{max} today",
-  "@skillSweepToday": {"placeholders": {"used": {"type": "String"}, "max": {"type": "String"}}},
+  "@skillSweepToday": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "skillSweepFree": "Free sweep · {n} left",
-  "@skillSweepFree": {"placeholders": {"n": {"type": "String"}}},
+  "@skillSweepFree": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillSweepPaid": "Sweep · {n} jelly",
-  "@skillSweepPaid": {"placeholders": {"n": {"type": "String"}}},
-  "skillSweepNoBoss": "Defeat at least one hunting ground boss to sweep",
+  "@skillSweepPaid": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "skillSweepNoBoss": "Defeat at least one\nhunting ground boss to sweep",
+  "skillSweepLocked": "Beat a boss",
+  "@skillSweepLocked": {
+    "description": "Sweep button - short locked label"
+  },
+  "skillGradeUpShort": "Shard upgrade",
+  "@skillGradeUpShort": {
+    "description": "Grade-up dialog title, kept short"
+  },
+  "skillShardsTitle": "My shards",
+  "@skillShardsTitle": {
+    "description": "Skill screen - shards by grade row title"
+  },
+  "skillWildShort": "Any",
+  "@skillWildShort": {
+    "description": "Short word before the wild shard count"
+  },
   "skillSweepLimit": "No sweeps left today",
   "skillShardPop": "Shard +{n}",
-  "@skillShardPop": {"placeholders": {"n": {"type": "String"}}},
+  "@skillShardPop": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillMaterials": "Skill materials",
   "skillGradeWild": "{grade} wild",
-  "@skillGradeWild": {"placeholders": {"grade": {"type": "String"}}},
+  "@skillGradeWild": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "skillGradeUp": "Upgrade",
   "skillGradeUpTitle": "{from} shards → {to} wild shard",
-  "@skillGradeUpTitle": {"placeholders": {"from": {"type": "String"}, "to": {"type": "String"}}},
+  "@skillGradeUpTitle": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
   "skillGradeUpDesc": "Turn {ratio} {from} shards into 1 {to} wild shard, usable on any {to} skill. Pick the shards to use.",
-  "@skillGradeUpDesc": {"placeholders": {"ratio": {"type": "String"}, "from": {"type": "String"}, "to": {"type": "String"}}},
+  "@skillGradeUpDesc": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
   "skillGradeUpMake": "Make {n}",
-  "@skillGradeUpMake": {"placeholders": {"n": {"type": "String"}}},
+  "@skillGradeUpMake": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillGradeUpDone": "Made {n} {grade} wild shards",
-  "@skillGradeUpDone": {"placeholders": {"n": {"type": "String"}, "grade": {"type": "String"}}},
+  "@skillGradeUpDone": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "skillGradeUpPick": "Pick shards to use",
   "skillEquip": "Equip",
   "skillUnequip": "Unequip",
   "skillSlotsInfo": "Equipped {n}/{max}",
-  "@skillSlotsInfo": {"placeholders": {"n": {"type": "String"}, "max": {"type": "String"}}},
+  "@skillSlotsInfo": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "skillNextSlotHint": "More slots open at new difficulties",
   "skillShardProgress": "Shards {have}/{need}",
-  "@skillShardProgress": {"placeholders": {"have": {"type": "String"}, "need": {"type": "String"}}},
+  "@skillShardProgress": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "skillLocked": "Locked",
   "skillMaxLevel": "MAX",
   "skillTrain": "Train",
   "skillTrainingNow": "Training {name} Lv.{lv} · {left}",
-  "@skillTrainingNow": {"placeholders": {"name": {"type": "String"}, "lv": {"type": "String"}, "left": {"type": "String"}}},
+  "@skillTrainingNow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lv": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
   "skillTrainClaim": "Finish",
   "skillTrainInstant": "Finish now · {n} jelly",
-  "@skillTrainInstant": {"placeholders": {"n": {"type": "String"}}},
+  "@skillTrainInstant": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "actionInstant": "Finish now",
   "skillTrainConfirmTitle": "Finish training now",
   "skillTrainConfirm": "Spend {n} jelly to finish now?",
-  "@skillTrainConfirm": {"placeholders": {"n": {"type": "String"}}},
+  "@skillTrainConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillTrainCostShards": "{n} shards · {time}",
-  "@skillTrainCostShards": {"placeholders": {"n": {"type": "String"}, "time": {"type": "String"}}},
+  "@skillTrainCostShards": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "skillTrainCostWithAny": "{n} shards + {any} wild · {time}",
-  "@skillTrainCostWithAny": {"placeholders": {"n": {"type": "String"}, "any": {"type": "String"}, "time": {"type": "String"}}},
+  "@skillTrainCostWithAny": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "any": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "skillTrainTitle": "Train {name}",
-  "@skillTrainTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@skillTrainTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillLevelUpDone": "{name} reached Lv.{lv}!",
-  "@skillLevelUpDone": {"placeholders": {"name": {"type": "String"}, "lv": {"type": "String"}}},
+  "@skillLevelUpDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lv": {
+        "type": "String"
+      }
+    }
+  },
   "skillErrNotEnoughShards": "Not enough shards",
   "skillErrTrainingBusy": "Another skill is already training",
   "skillActiveSoon": "Active skills are coming soon",
   "skillHowToGet": "Skill shards drop from hunting ground bosses (guaranteed on first kill) and elite monsters",
   "skillCooldown": "Cooldown {s}s",
-  "@skillCooldown": {"placeholders": {"s": {"type": "String"}}},
+  "@skillCooldown": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
   "skillKindActive": "Active",
   "skillKindPassive": "Passive",
   "skillShardsGot": "Skill shards · {list}",
-  "@skillShardsGot": {"placeholders": {"list": {"type": "String"}}},
+  "@skillShardsGot": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
   "skillReviveToast": "Molting! You got back up",
   "skillFxMaterialFind": "Material gain +{v}%",
-  "@skillFxMaterialFind": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxMaterialFind": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxBugFind": "Bug find +{v}%",
-  "@skillFxBugFind": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxBugFind": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxBossDamage": "Boss damage +{v}%",
-  "@skillFxBossDamage": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxBossDamage": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxPerPetAttack": "Attack +{v}% per equipped bug",
-  "@skillFxPerPetAttack": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxPerPetAttack": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxKillHeal": "Heal on kill +{v}%",
-  "@skillFxKillHeal": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxKillHeal": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxRevive": "Revive at {v}% HP when defeated",
-  "@skillFxRevive": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxRevive": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxMaterialBurst": "Materials ×{v} for {d}s",
-  "@skillFxMaterialBurst": {"placeholders": {"v": {"type": "String"}, "d": {"type": "String"}}},
+  "@skillFxMaterialBurst": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      },
+      "d": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxAttackSpeed": "Attack speed ×{v} for {d}s",
-  "@skillFxAttackSpeed": {"placeholders": {"v": {"type": "String"}, "d": {"type": "String"}}},
+  "@skillFxAttackSpeed": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      },
+      "d": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxAreaDamage": "Hit everything for attack ×{v}",
-  "@skillFxAreaDamage": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxAreaDamage": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxPetPower": "Bug power ×{v} for {d}s",
-  "@skillFxPetPower": {"placeholders": {"v": {"type": "String"}, "d": {"type": "String"}}},
+  "@skillFxPetPower": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      },
+      "d": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxBurstDamage": "A strike for attack ×{v}",
-  "@skillFxBurstDamage": {"placeholders": {"v": {"type": "String"}}},
+  "@skillFxBurstDamage": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "skillFxInvulnerable": "Immune to damage for {d}s",
-  "@skillFxInvulnerable": {"placeholders": {"d": {"type": "String"}}},
+  "@skillFxInvulnerable": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      }
+    }
+  },
   "@forgeLevel": {
     "placeholders": {
       "lv": {

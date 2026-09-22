@@ -247,6 +247,22 @@
     }
   },
   "bossChallengeFailed": "보스에게 밀려났어요. 더 강해져서 다시 도전하세요",
+  "bossFlee": "도망치기",
+  "@bossFlee": {
+    "description": "보스전 — 물러나는 버튼"
+  },
+  "bossFleeTitle": "도망칠까요?",
+  "@bossFleeTitle": {
+    "description": "보스 도망 확인 팝업 제목"
+  },
+  "bossFleeDesc": "사냥터 게이지가 비워져요.\n쓰러졌을 때와 같아요.",
+  "@bossFleeDesc": {
+    "description": "보스 도망 확인 팝업 본문 — 벌칙을 분명히 말한다"
+  },
+  "bossFled": "도망쳤어요 · 게이지가 비워졌어요",
+  "@bossFled": {
+    "description": "도망 직후 알림"
+  },
   "zoneKillsLabel": "처치 {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {
@@ -973,7 +989,23 @@
   "skillSweepToday": "오늘 {used}/{max}회 사용",
   "skillSweepFree": "무료 소탕 · {n}회 남음",
   "skillSweepPaid": "소탕 · 젤리 {n}",
-  "skillSweepNoBoss": "사냥터 보스를 한 마리 이상 잡아야 소탕할 수 있어요",
+  "skillSweepNoBoss": "사냥터 보스를 한 마리 이상\n잡아야 소탕할 수 있어요",
+  "skillSweepLocked": "보스 먼저",
+  "@skillSweepLocked": {
+    "description": "소탕 버튼 — 잠김 상태의 짧은 라벨(버튼 폭이 좁다)"
+  },
+  "skillGradeUpShort": "조각 승급",
+  "@skillGradeUpShort": {
+    "description": "승급 팝업 제목 — 짧게. 무엇을 무엇으로 바꾸는지는 부제에서 말한다"
+  },
+  "skillShardsTitle": "내 조각",
+  "@skillShardsTitle": {
+    "description": "스킬 화면 — 등급별 조각 보유 줄의 제목"
+  },
+  "skillWildShort": "만능",
+  "@skillWildShort": {
+    "description": "등급별 조각 줄에서 만능 조각 수 앞에 붙는 짧은 말"
+  },
   "skillSweepLimit": "오늘 소탕을 모두 썼어요",
   "skillShardPop": "조각 +{n}",
   "skillMaterials": "스킬 재료",

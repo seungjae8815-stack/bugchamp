@@ -724,6 +724,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'The boss pushed you back. Grow stronger and try again';
 
   @override
+  String get bossFlee => 'Flee';
+
+  @override
+  String get bossFleeTitle => 'Flee the boss?';
+
+  @override
+  String get bossFleeDesc =>
+      'Your hunting ground gauge resets.\nSame as being defeated.';
+
+  @override
+  String get bossFled => 'Fled - gauge reset';
+
+  @override
   String zoneKillsLabel(int n, int m) {
     return 'Kills $n/$m';
   }
@@ -2894,7 +2907,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillSweepNoBoss =>
-      'Defeat at least one hunting ground boss to sweep';
+      'Defeat at least one\nhunting ground boss to sweep';
+
+  @override
+  String get skillSweepLocked => 'Beat a boss';
+
+  @override
+  String get skillGradeUpShort => 'Shard upgrade';
+
+  @override
+  String get skillShardsTitle => 'My shards';
+
+  @override
+  String get skillWildShort => 'Any';
 
   @override
   String get skillSweepLimit => 'No sweeps left today';

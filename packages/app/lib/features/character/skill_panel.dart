@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,9 @@ import 'skill_gacha_dialog.dart';
 import 'skill_grade_up_dialog.dart';
 
 const _honey = Color(0xFFFFD54F);
+
+/// 장착 칸 한 변(논리 px). 칸 5개가 한 줄에 들어가야 한다.
+const double _kSlotChip = 44;
 
 /// 캐릭터 탭 · 스킬 패널(CLAUDE.md §2.8).
 ///
@@ -146,7 +150,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l.skillMaterials,
+                l.skillShardsTitle,
                 style: const TextStyle(
                   color: Colors.white60,
                   fontSize: 10.5,
@@ -155,30 +159,18 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
               ),
               const SizedBox(width: 6),
               Expanded(
+                // 순서: **조각 4등급 먼저, 그 뒤에 만능 조각**(사장님 지시
+                // 2026-09-20). 등급마다 조각·만능을 붙여 놓으니 같은 줄에
+                // 두 종류가 번갈아 나와 무엇이 무엇인지 읽기 어려웠다.
                 child: Wrap(
-                  spacing: 9,
+                  spacing: 8,
                   runSpacing: 3,
                   children: [
+                    for (final g in kSkillGrades) _shardTally(l, cfg, save, g),
+                    // 만능은 일반 등급이 없다 — 아래 등급이 없어 만들 수 없다.
                     for (final g in kSkillGrades.skip(1))
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.diamond_rounded,
-                            size: 13,
-                            color: gradeColor(g),
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${l.skillGradeWild(gradeLabel(l, g))} '
-                            '${save.gradeShards(g)}',
-                            style: TextStyle(
-                              color: gradeColor(g),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
+                      if (save.gradeShards(g) > 0)
+                        _shardTally(l, cfg, save, g, wild: true),
                   ],
                 ),
               ),
@@ -212,6 +204,50 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     builder: (_) => dialog,
   );
 
+  /// 등급 한 칸 — **그 등급 스킬 조각의 합**과 **만능 조각 수**.
+  ///
+  /// 예전엔 만능 조각만 '희귀 만능 0' 식으로 있어서, 정작 모으고 있는
+  /// 스킬 조각이 몇 개인지 화면 어디에도 없었다(실기 지적 2026-09-20).
+  /// 승급이 **같은 등급 10개** 단위라 등급별 합계가 바로 쓰이는 숫자다.
+  /// 만능은 겹치지 않게 뒤에 따로 붙인다 — 합쳐 세면 승급 계산이 틀어진다.
+  Widget _shardTally(
+    AppLocalizations l,
+    SkillConfig cfg,
+    SaveGame save,
+    Grade g, {
+    bool wild = false,
+  }) {
+    int count;
+    if (wild) {
+      count = save.gradeShards(g);
+    } else {
+      count = 0;
+      for (final def in cfg.skills) {
+        if (def.grade == g) count += save.skillShards[def.id] ?? 0;
+      }
+    }
+    return Tooltip(
+      message: wild
+          ? '${l.skillGradeWild(gradeLabel(l, g))} $count'
+          : '${gradeLabel(l, g)} ${l.skillShardsTitle} $count',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          skillShardImage(g, size: 14, wild: wild),
+          const SizedBox(width: 2),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: gradeColor(g),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _slotChip(
     SkillConfig cfg,
     SaveGame save,
@@ -224,27 +260,46 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
         ? cfg.byId(save.equippedSkills[i])
         : null;
     final color = def == null ? Colors.white24 : gradeColor(def.grade);
-    return Container(
-      constraints: const BoxConstraints(minWidth: 52),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    // 액티브는 **원**, 패시브는 **둥근 사각**(사장님 지시 2026-09-20).
+    // 홈 스킬 바에서 누를 수 있는 칸이 원이라 모양이 곧 "누르는 것"이라는
+    // 뜻이 된다. 글자를 넣기엔 칸이 작아 모양으로 가른다 — 무엇을 꼈는지는
+    // 그림이 말하고, 이름은 길게 눌러(툴팁) 확인한다.
+    final active = def?.isActive ?? false;
+    final chip = Container(
+      width: _kSlotChip,
+      height: _kSlotChip,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: def == null
             ? const Color(0x22000000)
             : color.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: open ? color : const Color(0x11FFFFFF)),
+        shape: active ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: active ? null : BorderRadius.circular(9),
+        border: Border.all(
+          color: open ? color : const Color(0x11FFFFFF),
+          width: active ? 1.6 : 1.2,
+        ),
       ),
-      child: open
-          ? Text(
-              def?.name.resolve(locale) ?? '+',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: def == null ? Colors.white38 : Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+      child: !open
+          ? const Icon(Icons.lock_rounded, size: 14, color: Colors.white24)
+          : def == null
+          ? const Icon(Icons.add_rounded, size: 16, color: Colors.white38)
+          : skillImage(
+              def.id,
+              size: _kSlotChip - 11,
+              fallback: Icon(
+                active ? Icons.flash_on_rounded : Icons.shield_moon_rounded,
+                size: 17,
+                color: Colors.white,
               ),
-            )
-          : const Icon(Icons.lock_rounded, size: 13, color: Colors.white24),
+            ),
+    );
+    if (def == null) return chip;
+    return Tooltip(
+      message:
+          '${def.name.resolve(locale)} · '
+          '${def.isActive ? AppLocalizations.of(context).skillKindActive : AppLocalizations.of(context).skillKindPassive}',
+      child: chip,
     );
   }
 
@@ -625,9 +680,9 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
       constraints: const BoxConstraints(minWidth: 54),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: on
-            ? const Color(0x33FFD54F)
-            : (accent ?? Colors.white).withValues(alpha: 0.13),
+        // 장착은 **꽉 찬 꿀색**, 해제는 어두운 판(사장님 지시 2026-09-20).
+        // 옅은 칠(0x33)로만 갈랐더니 무엇을 끼고 있는지 한눈에 안 보였다.
+        color: on ? _honey : (accent ?? Colors.white).withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: on ? _honey : (accent ?? Colors.white).withValues(alpha: 0.3),
@@ -655,7 +710,10 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
               text,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: dim ? const Color(0x66FFFFFF) : Colors.white,
+                // 꿀색 판 위에서는 흰 글자가 묻는다.
+                color: on
+                    ? const Color(0xFF3A2600)
+                    : (dim ? const Color(0x66FFFFFF) : Colors.white),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
