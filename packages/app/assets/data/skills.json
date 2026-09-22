@@ -50,7 +50,7 @@
 
   "_activeComment": "액티브(홈 스킬 바, 2026-09-15 확정): 자동발동은 효율 벌칙 없음(100%). 직접 누를 이유 = timing 보너스 — 자동은 쿨이 차면 바로 써서 못 받는다. burstDamage·areaDamage = **지금 초당 피해 × 값(초)** 즉시 피해(skillBurstDamage — 예전 `공격력 × 값` 은 공속·치명이 자랄수록 묽어졌다) · attackSpeed·materialFind·petPower = duration 초 동안 × 값 · invulnerable = duration 초 동안 피해 무효. 회심의 일격 timing: 보스 체력 bossHpBelow 이하에서 누르면 × mult. 번데기 방벽 timing: 물기 window 초 전 안에 누르면 막은 물기마다 공격력 × reflectAttackMult 반사 + 쿨타임 cooldownRefund 만큼 환급. 쿨타임·지속은 전투 화면 세션에만 있다(세이브 X) — 재화를 주는 액티브가 없어 껐다 켜기로 얻는 게 없다.",
   "_bossBalanceComment": "보스 관문 기여(2026-09-22 사장님 확정): 스킬 한 칸이 잡을 수 있는 보스 체력을 몇 % 넓히나 = 희귀 약 15% · 영웅 약 25% · 전설 약 40%(중간 레벨). 보스전은 10초 안팎이라 지속 10초 버프는 싸움 내내 켜져 있다 — 방벽 8초·질풍 10초·탈피 50% 가 전설 이상(60~130%)이던 이유. 수치를 바꾸면 balance_sim --tiers=4 의 \"스킬 한 칸의 보스 관문 기여\" 표를 보고, 전체 세기가 바뀌면 --fit-tiers 로 zoneTiers 를 다시 뽑는다.",
-  "_effectComment": "패시브 효과 키: materialFind·bugFind·bossDamage(가산, 종 패시브와 같은 층) · perPetAttack(장착 펫 1마리당 공격 +) · killHeal(처치 회복 ×(1+값)) · revive(패배 시 최대 체력 값 비율로 부활, cooldown 초). 액티브 효과는 홈 스킬 바(5단계)에서 붙는다.",
+  "_effectComment": "패시브 효과 키: materialFind·bugFind·bossDamage(**곱** — 보스 피해 ×(1+값), skillBossDamageMult · 가산이면 강화로 11배까지 자라는 보스 피해에 묽어진다) · perPetAttack(장착 펫 1마리당 공격 +) · killHeal(처치 회복 ×(1+값)) · revive(패배 시 최대 체력 값 비율로 부활, cooldown 초). 액티브 효과는 홈 스킬 바(5단계)에서 붙는다.",
   "skills": [
     {
       "id": "lure_sap",
@@ -109,8 +109,8 @@
       "grade": "rare",
       "name": { "ko": "끈기", "en": "Tenacity", "ja": "粘り強さ" },
       "effect": "bossDamage",
-      "base": 0.15,
-      "perLevel": 0.03
+      "base": 0.12,
+      "perLevel": 0.02
     },
     {
       "id": "queen_call",
@@ -118,10 +118,10 @@
       "grade": "epic",
       "name": { "ko": "여왕의 부름", "en": "Queen's Call", "ja": "女王の呼び声" },
       "effect": "petPower",
-      "base": 2.0,
-      "perLevel": 0.1,
+      "base": 1.8,
+      "perLevel": 0.05,
       "cooldown": 180,
-      "duration": 15
+      "duration": 4
     },
     {
       "id": "swarm",

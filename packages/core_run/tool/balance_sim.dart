@@ -790,7 +790,7 @@ void _printSkillBossLog(_Player sim) {
   final cfg = _skillConfig;
   if (cfg == null || sim.skillBossLog.isEmpty) return;
   stdout.writeln('── 스킬 한 칸의 보스 관문 기여(그 스킬만 꼈을 때 잡는 보스 체력 +%) ──');
-  stdout.writeln('  액티브는 보스전 시작 때 준비됨 · 타이밍 보너스·여왕의 부름(펫)은 빠진다');
+  stdout.writeln('  액티브는 보스전 시작 때 준비됨 · 타이밍 보너스(직접 누를 때)는 빠진다');
   final head = sim.skillBossLog
       .map((e) => '${e.tier}(Lv${e.lv})'.padLeft(9))
       .join(' ');
@@ -1186,13 +1186,14 @@ class _Player {
     gear = out;
   }
 
+  /// 전체 피해 중 곤충 몫(앱 `splitAttack` 의 petShare = 합/(1+합)).
+  double get _petShare =>
+      petAttackMult <= 1 ? 0.0 : (petAttackMult - 1) / petAttackMult;
+
   /// 오행 상극 — **§7 기준 밖**. 곤충 지분 중 상극이 걸린 몫만큼만 늘어난다.
   /// ⚠️ `baselineStats` 에는 절대 넣지 마라(시뮬 안에서 스스로 상쇄된다).
   double get _restrainMult {
-    final petShare = petAttackMult <= 1
-        ? 0.0
-        : (petAttackMult - 1) / petAttackMult;
-    final restrained = petShare * (_petRestrainCount.clamp(0, 3) / 3.0);
+    final restrained = _petShare * (_petRestrainCount.clamp(0, 3) / 3.0);
     return 1 + restrained * (config.petRestrainMult - 1);
   }
 
@@ -1276,9 +1277,12 @@ class _Player {
     final eq = _skillEquip;
     if (cfg == null || eq == null) return s;
     final (:equipped, :levels, :lv) = eq;
-    s = applySpeciesPassives(
+    s = applySkillPassives(
       s,
-      skillPassiveStats(cfg, levels: levels, equipped: equipped, petCount: 3),
+      cfg,
+      levels: levels,
+      equipped: equipped,
+      petCount: 3,
       critBudget: config.critBudgetOther,
     );
     var atkSpeed = 1.0, attack = 1.0;
@@ -1295,6 +1299,10 @@ class _Player {
         case 'burstDamage' || 'areaDamage':
           // 쿨마다 "값 초 분량" 한 방(skillBurstDamage) → 초당 피해 × (1 + 값/쿨).
           attack *= 1 + v / cd;
+        case 'petPower':
+          // 여왕의 부름 — 곤충 몫(_petShare)만 × 값. 캐릭터 몫은 그대로.
+          final up = (def.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
+          attack *= 1 + _petShare * (v - 1) * up;
       }
     }
     if (!activeAvg || (atkSpeed == 1 && attack == 1)) return s;
@@ -1421,6 +1429,13 @@ class _Player {
           case 'burstDamage' || 'areaDamage':
             // 앱과 같은 함수(값 = 몇 초 분량). 타이밍 보너스는 직접 눌렀을 때만.
             dmg += skillBurstDamage(st, v, boss: true);
+          case 'petPower':
+            dmg +=
+                hit *
+                st.attackSpeed *
+                _petShare *
+                (v - 1) *
+                math.min(dur, sec - t);
         }
       }
     }

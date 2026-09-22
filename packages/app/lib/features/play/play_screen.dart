@@ -1117,14 +1117,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 고르는 의미가 사라진다. 종 패시브와 같은 가산 층이다.
     final skills = _data.skillConfig;
     if (skills != null && save.equippedSkills.isNotEmpty) {
-      s = applySpeciesPassives(
+      s = applySkillPassives(
         s,
-        skillPassiveStats(
-          skills,
-          levels: save.skillLevels,
-          equipped: save.equippedSkills,
-          petCount: save.equippedBugIds.length,
-        ),
+        skills,
+        levels: save.skillLevels,
+        equipped: save.equippedSkills,
+        petCount: save.equippedBugIds.length,
         critBudget: _config.critBudgetOther,
       );
     }

@@ -435,7 +435,16 @@ void main() {
         equipped: const ['tenacity', 'swarm'],
         petCount: 3,
       );
-      expect(on[UpgradeKind.bossDamage], closeTo(0.15, 1e-9));
+      // 끈기는 가산 맵에 없다 — 곱(skillBossDamageMult)으로 따로 얹는다.
+      expect(on.containsKey(UpgradeKind.bossDamage), isFalse);
+      expect(
+        skillBossDamageMult(
+          skills,
+          levels: levels,
+          equipped: const ['tenacity'],
+        ),
+        closeTo(1.12, 1e-9),
+      );
       expect(on[UpgradeKind.attack], closeTo((0.06 + 0.01) * 3, 1e-9));
       expect(
         skillKillHealMult(

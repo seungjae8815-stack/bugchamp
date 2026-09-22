@@ -42,11 +42,16 @@ int chapterClearKeyTier(String key) {
 /// 선물은 **만들 때** 금액이 박힌다 — 그 시점 사냥터 기준이라 나중에 난이도를
 /// 옮겨도 이미 받은 선물의 금액이 흔들리지 않는다.
 /// 계산은 사냥터 클리어 보상과 같은 식이다(같은 처치 속도를 쓴다).
-int giftGold(RunConfig run, int stage, int tier, int fixedGold,
-    double goldMinutes) {
+int giftGold(
+  RunConfig run,
+  int stage,
+  int tier,
+  int fixedGold,
+  double goldMinutes,
+) {
   if (goldMinutes <= 0) return fixedGold;
   final perKill = rewardGold(run, stage - 1, 1.0, tier: tier);
-  final scaled =
-      (perKill * run.exchangeKillsPerHour * goldMinutes / 60).round();
+  final scaled = (perKill * run.exchangeKillsPerHour * goldMinutes / 60)
+      .round();
   return scaled > fixedGold ? scaled : fixedGold;
 }
