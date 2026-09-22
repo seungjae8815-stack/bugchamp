@@ -129,7 +129,7 @@ void main(List<String> args) {
     perDay: (giftsPerDay + freeDoubles * (jellyMult - 1)) * avgGiftJelly,
     note:
         '${giftsPerDay.toStringAsFixed(1)}개/일 × 평균 '
-        '${avgGiftJelly.toStringAsFixed(2)} + 무료 ${jellyMult}배 '
+        '${avgGiftJelly.toStringAsFixed(2)} + 무료 $jellyMult배 '
         '${freeDoubles.toStringAsFixed(0)}회',
   ));
 

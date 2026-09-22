@@ -698,7 +698,7 @@ void _optionTierTests() {
       // ⚠️ 나중에 구현하면 그때 풀에 되돌린다(equipment_stats 에 반영 후).
       const dead = {'skillDamage', 'skillCooldown', 'offline', 'pet'};
       for (final r in cfg.optionPool) {
-        expect(dead.contains(r.kind.key), isFalse, reason: '${r.kind.key}');
+        expect(dead.contains(r.kind.key), isFalse, reason: r.kind.key);
       }
     });
 

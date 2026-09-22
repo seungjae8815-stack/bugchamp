@@ -10,7 +10,7 @@ import 'auth_test.dart' show makeToken, attackerKey, signingKey, verifierFor;
 
 /// Supabase REST 를 흉내내는 가짜 클라이언트 — 네트워크 없이 라우팅을 검증한다.
 class _FakeHttp extends http.BaseClient {
-  _FakeHttp(this.rows, {this.defenders = const {}});
+  _FakeHttp(this.rows) : defenders = const {};
 
   /// userId → 세이브 JSON
   final Map<String, Map<String, dynamic>> rows;

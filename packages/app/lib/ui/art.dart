@@ -62,7 +62,12 @@ Widget gameImageChain(
   Alignment alignment = Alignment.center,
 }) {
   final known = _assets;
-  if (known != null) paths = [for (final p in paths) if (known.contains(p)) p];
+  if (known != null) {
+    paths = [
+      for (final p in paths)
+        if (known.contains(p)) p,
+    ];
+  }
   if (paths.isEmpty) return fallback;
   return Image.asset(
     paths.first,
