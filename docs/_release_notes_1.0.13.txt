@@ -5,24 +5,36 @@
 ※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
 ※ 재계산:
    python -c "import io;s=io.open('docs/_release_notes_1.0.13.txt',encoding='utf-8').read();b=s.split('-'*40,1)[1].strip();print(len(b)+b.count(chr(10)))"
-※ 범위: 1.0.12(20260932) 이후 — 편지함 우편 전문 보기 · 운영자 답변 우편.
-※ 작업 중 초안 — 빌드 전까지 변경이 더 들어오면 여기에 합친다.
+※ 범위: 1.0.12(20260932) 이후 — 캐릭터 스킬 12종 · 보스 도망치기 · 선물 랜덤 배수 · 제련 판매 · 편지함.
+※ ⚠️ 유저에게 불리한 변경: ① 보스에게 쓰러지면 사냥터 게이지 초기화 ② 집중력 강화 효과 하향.
 ----------------------------------------
 <ko-KR>
-📮 편지함 개선
+✨ 캐릭터 스킬 12종
 
-• 긴 우편은 눌러서 전체 보기
-• 문의에 운영자 답변이 우편으로 도착
+• 보스·정예 조각으로 해금·수련
+• 스킬 뽑기·보스 소탕·조각 승급
+• 선물 랜덤 2~4배
+• 필터 걸린 제련 장비는 재료로 판매
+• 보스에게 쓰러지면 사냥터 게이지 초기화
+• 집중력 효과 조정
 </ko-KR>
 <en-US>
-📮 Mailbox update
+✨ 12 character skills
 
-• Tap long mail to read it in full
-• Support replies arrive by mail
+• Unlock with boss/elite shards
+• Skill draws, boss sweeps
+• Gifts: random x2-4
+• Filtered gear sold for materials
+• Losing to a boss resets the gauge
+• Focus rebalanced
 </en-US>
 <ja-JP>
-📮 メールボックス改善
+✨ キャラスキル12種
 
-• 長いメールはタップで全文表示
-• お問い合わせへの返信がメールで届きます
+• ボス・精鋭の欠片で解放
+• スキルガチャ・ボス掃討
+• 贈り物ランダム2〜4倍
+• 除外装備は素材で売却
+• ボスに倒れるとゲージ初期化
+• 集中力を調整
 </ja-JP>
