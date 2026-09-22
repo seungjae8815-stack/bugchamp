@@ -435,16 +435,7 @@ void main() {
         equipped: const ['tenacity', 'swarm'],
         petCount: 3,
       );
-      // 끈기는 가산 맵에 없다 — 곱(skillBossDamageMult)으로 따로 얹는다.
-      expect(on.containsKey(UpgradeKind.bossDamage), isFalse);
-      expect(
-        skillBossDamageMult(
-          skills,
-          levels: levels,
-          equipped: const ['tenacity'],
-        ),
-        closeTo(1.12, 1e-9),
-      );
+      expect(on[UpgradeKind.bossDamage], closeTo(0.12, 1e-9));
       expect(on[UpgradeKind.attack], closeTo((0.06 + 0.01) * 3, 1e-9));
       expect(
         skillKillHealMult(
@@ -491,6 +482,28 @@ void main() {
       final fast = st(speed: 8, crit: 0.5);
       final dps = baselineHitPower(fast) * fast.attackSpeed;
       expect(skillBurstDamage(fast, 4) / dps, closeTo(4, 1e-9));
+    });
+
+    test('보스 피해 패시브는 곱 — 강화로 자란 보스 피해에 묽어지지 않는다', () {
+      const base = CharacterStats(
+        attack: 100,
+        attackSpeed: 1,
+        rewardMultiplier: 1,
+        critChance: 0,
+        critDamage: 2,
+        bossDamage: 5, // 강화 40레벨쯤
+        maxHp: 1000,
+        defense: 0,
+        hpRegen: 0,
+        xpMultiplier: 1,
+        bugFind: 1,
+        materialFind: 1,
+        moveSpeed: 1,
+        boostBonus: 0,
+      );
+      // 물장군 +25% → 5.0 × 1.25. 가산이면 5.25(= +5%)였다.
+      final out = applySpeciesPassives(base, {UpgradeKind.bossDamage: 0.25});
+      expect(out.bossDamage, closeTo(6.25, 1e-9));
     });
 
     test('id 가 중복되지 않는다', () {

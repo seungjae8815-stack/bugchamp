@@ -404,7 +404,7 @@ class SkillConfig {
 }
 
 /// 장착한 패시브가 캐릭터 능력치에 더하는 값 — [applySpeciesPassives] 에 그대로 넘긴다.
-/// 보통은 [applySkillPassives] 로 한 번에 얹는다(끈기는 여기 없다 — 곱이라 따로).
+/// 보통은 [applySkillPassives] 로 한 번에 얹는다.
 ///
 /// 종 패시브와 **같은 층(가산)**이다: 적응형 위협 기준 **밖**, 장비·도감과 같은 자리.
 /// 기준에 넣으면 끼는 순간 몬스터도 세져 스킬을 고르는 의미가 사라진다(§2.8).
@@ -424,6 +424,9 @@ Map<UpgradeKind, double> skillPassiveStats(
         add(UpgradeKind.materialFind, v);
       case 'bugFind':
         add(UpgradeKind.bugFind, v);
+      case 'bossDamage':
+        // 끈기 — applySpeciesPassives 가 보스 피해를 **곱**으로 얹는다.
+        add(UpgradeKind.bossDamage, v);
       case 'perPetAttack':
         add(UpgradeKind.attack, v * petCount);
     }
@@ -431,25 +434,8 @@ Map<UpgradeKind, double> skillPassiveStats(
   return out;
 }
 
-/// 끈기(보스 피해 패시브) — **곱**(1 + 값). 없으면 1.0.
-///
-/// 가산이면 안 된다: 보스 피해는 강화로 1.0 → 최대 11.0 까지 자라서, +0.15 를 더하면
-/// 후반엔 +1~3% 로 묽어진다(2026-09-22 실측: 보스 관문 기여 2% — 희귀 목표 15%).
-/// 화면 문구("보스 피해 +15%")도 곱으로 읽힌다.
-double skillBossDamageMult(
-  SkillConfig cfg, {
-  required Map<String, int> levels,
-  required List<String> equipped,
-}) {
-  var m = 1.0;
-  for (final (def, lv) in _equippedPassives(cfg, levels, equipped)) {
-    if (def.effect == 'bossDamage') m += def.valueAt(lv);
-  }
-  return m;
-}
-
-/// 장착한 스킬 패시브를 능력치에 얹는다 — 가산 몫([skillPassiveStats]) + 끈기(곱).
-/// 앱(`_stats`)과 시뮬이 같은 함수를 쓴다. 적응형 위협 기준 **밖**(§2.8).
+/// 장착한 스킬 패시브를 능력치에 얹는다 — 앱(`_stats`)과 시뮬이 같은 함수를 쓴다.
+/// 적응형 위협 기준 **밖**(§2.8). 끈기(보스 피해)는 곱으로 얹힌다([applySpeciesPassives]).
 CharacterStats applySkillPassives(
   CharacterStats s,
   SkillConfig cfg, {
@@ -457,36 +443,16 @@ CharacterStats applySkillPassives(
   required List<String> equipped,
   required int petCount,
   double critBudget = 1.0,
-}) {
-  final out = applySpeciesPassives(
-    s,
-    skillPassiveStats(
-      cfg,
-      levels: levels,
-      equipped: equipped,
-      petCount: petCount,
-    ),
-    critBudget: critBudget,
-  );
-  final boss = skillBossDamageMult(cfg, levels: levels, equipped: equipped);
-  if (boss == 1.0) return out;
-  return CharacterStats(
-    attack: out.attack,
-    attackSpeed: out.attackSpeed,
-    rewardMultiplier: out.rewardMultiplier,
-    critChance: out.critChance,
-    critDamage: out.critDamage,
-    bossDamage: out.bossDamage * boss,
-    maxHp: out.maxHp,
-    defense: out.defense,
-    hpRegen: out.hpRegen,
-    xpMultiplier: out.xpMultiplier,
-    bugFind: out.bugFind,
-    materialFind: out.materialFind,
-    moveSpeed: out.moveSpeed,
-    boostBonus: out.boostBonus,
-  );
-}
+}) => applySpeciesPassives(
+  s,
+  skillPassiveStats(
+    cfg,
+    levels: levels,
+    equipped: equipped,
+    petCount: petCount,
+  ),
+  critBudget: critBudget,
+);
 
 /// 순간 피해 액티브(회심의 일격·포충망) 한 방 — **지금 초당 피해 × [seconds]초**.
 ///

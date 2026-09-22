@@ -808,9 +808,10 @@ PetBonus computePetBonus(Iterable<PetStat> pets, PetConfig cfg) {
 /// 층이다. 기준 안에 넣으면 어떤 종을 껴도 몬스터가 같이 세져서 종을 고르는
 /// 의미가 사라진다(= 종 패시브를 넣은 이유 자체가 무너진다).
 ///
-/// 곱연산이 아니라 **가산**인 이유: 이미 업그레이드가 곱연산(valueGrowth)이라
-/// 후반엔 +22% 를 곱해도 티가 안 난다. `bossDamage` 처럼 기본값이 1.0 인
-/// 배율 스탯에 0.22 를 더하면 1.0 → 1.22 로 정확히 22% 가 된다.
+/// 공격·체력처럼 큰 스탯은 비율로, 확률·계수는 **가산**으로 얹는다.
+/// ⚠️ **보스 피해만은 곱이다(2026-09-22).** 기본값이 1.0 이라 가산이면 +22% 가 정확히
+/// 22% 일 것 같지만, 강화로 1.0 → 최대 11.0 까지 자라서 후반엔 +2% 로 묽어졌다
+/// (물장군 "보스 피해 +25%" 가 극한에서 +2~3%). 화면 문구도 곱으로 읽힌다.
 CharacterStats applySpeciesPassives(
   CharacterStats s,
   Map<UpgradeKind, double> passives, {
@@ -831,7 +832,7 @@ CharacterStats applySpeciesPassives(
     critChance: (s.critChance + math.min(v(UpgradeKind.crit), critBudget))
         .clamp(0.0, 1.0),
     critDamage: s.critDamage + v(UpgradeKind.critDamage),
-    bossDamage: s.bossDamage + v(UpgradeKind.bossDamage),
+    bossDamage: s.bossDamage * (1 + v(UpgradeKind.bossDamage)),
     defense: s.defense + v(UpgradeKind.defense) * 100,
     hpRegen: s.hpRegen * (1 + v(UpgradeKind.regen)),
     xpMultiplier: s.xpMultiplier + v(UpgradeKind.xp),
