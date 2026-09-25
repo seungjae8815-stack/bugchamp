@@ -1,5 +1,5 @@
 ========================================
- Google Play — 출시 노트 (1.0.13 / 20260934)
+ Google Play — 출시 노트 (1.0.13 / 20260935)
 ========================================
 ※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
 ※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
@@ -11,30 +11,30 @@
 <ko-KR>
 ✨ 캐릭터 스킬 12종
 
-• 보스·정예 조각으로 해금·수련
+• 보스 조각으로 해금·수련
 • 스킬 뽑기·보스 소탕·조각 승급
 • 합성·분해에서 이색·키운 곤충 보호
 • 선물 랜덤 2~4배
 • 보스에게 쓰러지면 게이지 초기화
-• 집중력 효과 조정
+• 집중력·재료 밸런스 조정
 </ko-KR>
 <en-US>
 ✨ 12 character skills
 
-• Unlock with boss/elite shards
+• Unlock with boss shards
 • Skill draws, boss sweeps
 • Shiny/raised bugs safe from fusing
 • Gifts: random x2-4
 • Losing to a boss resets the gauge
-• Focus rebalanced
+• Focus & materials rebalanced
 </en-US>
 <ja-JP>
 ✨ キャラスキル12種
 
-• ボス・精鋭の欠片で解放
+• ボスの欠片で解放
 • スキルガチャ・ボス掃討
 • 色違い・育てた昆虫を合成から保護
 • 贈り物ランダム2〜4倍
 • ボスに倒れるとゲージ初期化
-• 集中力を調整
+• 集中力・素材を調整
 </ja-JP>

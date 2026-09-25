@@ -1,5 +1,5 @@
 ========================================
- App Store — 새로운 기능 (1.0.13 / 20260934)
+ App Store — 새로운 기능 (1.0.13 / 20260935)
 ========================================
 ※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
 ※ 범위: 1.0.12(20260932) 이후. iOS 가 1.0.12 를 건너뛰었다면 1.0.12 노트도 아래에 합쳐 적는다.
@@ -14,7 +14,7 @@
 - 선물 받기가 랜덤 2~4배로 바뀌었습니다
 - 제련 필터에 걸린 장비는 버리지 않고 재료로 팔립니다
 - 이색 곤충과 키운 곤충(수련·돌파·부위 강화)은 합성 재료로 쓰이지 않습니다. 합성·분해 전에 확인 창이 뜹니다
-- 집중력 강화 효과를 조정했습니다
+- 집중력 강화 효과, 재료 획득량, 곤충 부위 강화·제작 비용을 조정했습니다
 - 긴 우편은 눌러서 끝까지 읽을 수 있고, 문의 답변이 우편으로 도착합니다
 </ko-KR>
 
@@ -28,7 +28,7 @@ Character skills are here
 - Gift rewards are now a random x2 to x4
 - Gear caught by the forge filter is sold for materials instead of discarded
 - Shiny bugs and raised bugs (trained, broken through, enhanced) are never used as fusion material, and fusing or disassembling now asks first
-- Focus upgrade has been rebalanced
+- Focus upgrade, material drops, bug part upgrade and crafting costs have been rebalanced
 - Tap a long mail to read it in full, and support replies arrive by mail
 </en-US>
 
@@ -42,6 +42,6 @@ Character skills are here
 - 贈り物の受け取りがランダム2〜4倍になりました
 - 製錬フィルターで除外された装備は捨てずに素材として売却されます
 - 色違いと育てた昆虫(修練・突破・部位強化)は合成素材に使われません。合成・分解の前に確認が出ます
-- 集中力強化の効果を調整しました
+- 集中力強化の効果、素材の獲得量、昆虫の部位強化・製作コストを調整しました
 - 長いメールはタップで最後まで読めます。お問い合わせの返信がメールで届きます
 </ja-JP>
