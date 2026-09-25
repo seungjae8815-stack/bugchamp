@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart';
 import 'package:core_save/core_save.dart';
 import 'package:test/test.dart';
 
@@ -172,6 +173,42 @@ void main() {
       expect(withBugs(80, capacity: 50).trimmedToStorage().bugs, hasLength(50));
       final small = withBugs(10, capacity: 50);
       expect(identical(small.trimmedToStorage(), small), isTrue);
+    });
+
+    test('이색은 상한 정리에서 가장 먼저 지킨다 — 다시 만들 수 없는 개체다', () {
+      final base = withBugs(10, capacity: 3);
+      // 마지막 한 마리만 이색, 나머지는 전부 수련·돌파로 투자한 개체.
+      final bugs = [
+        for (var i = 0; i < base.bugs.length; i++)
+          i == base.bugs.length - 1
+              ? base.bugs[i].copyWith(variant: BugVariant.rainbow)
+              : base.bugs[i].copyWith(level: 20, breakthroughTier: 3),
+      ];
+      final trimmed = base.copyWith(bugs: bugs).trimmedToStorage();
+      expect(trimmed.bugs, hasLength(3));
+      expect(
+        trimmed.bugs.any((b) => b.variant != BugVariant.none),
+        isTrue,
+        reason: '이색이 투자한 개체보다 먼저 잘리면 안 된다',
+      );
+    });
+
+    test('isPreciousBug — 이색·수련·돌파·강화한 개체는 재료 후보에서 뺀다', () {
+      final plain = withBugs(1).bugs.first;
+      expect(isPreciousBug(plain), isFalse);
+      expect(isPreciousBug(plain.copyWith(variant: BugVariant.albino)), isTrue);
+      expect(isPreciousBug(plain.copyWith(level: 2)), isTrue);
+      expect(isPreciousBug(plain.copyWith(breakthroughTier: 1)), isTrue);
+      // 덜 아까운 것부터 쓰는 순서 — 이색이 가장 뒤다.
+      expect(
+        bugFodderRank(plain) < bugFodderRank(plain.copyWith(level: 2)),
+        isTrue,
+      );
+      expect(
+        bugFodderRank(plain.copyWith(level: 20)) <
+            bugFodderRank(plain.copyWith(variant: BugVariant.rainbow)),
+        isTrue,
+      );
     });
 
     test('보호 대상이 상한보다 많으면 보호분만 남긴다(상한을 낮췄을 때)', () {

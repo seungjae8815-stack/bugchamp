@@ -1667,6 +1667,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get synthTitle => '合成（★強化）';
 
   @override
+  String get synthConfirm => 'この昆虫が消えます';
+
+  @override
+  String get synthConfirmTitle => '合成の確認';
+
+  @override
   String get synthDo => '合成';
 
   @override
@@ -1830,6 +1836,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String disassembleDesc(int n) {
     return 'ゼリー $n個に還元';
   }
+
+  @override
+  String get disassembleConfirm => 'この昆虫は取り戻しにくいです。本当に分解しますか?';
 
   @override
   String get disassembleAction => '分解';

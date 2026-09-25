@@ -3074,10 +3074,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 합성(★강화): 같은 종의 미장착 곤충 synthFodder마리를 소비해 [targetId] 포텐셜 +1.
   /// 최대 포텐셜 도달·재료 부족이면 false.
-  Future<bool> synthesize(String targetId) async {
-    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
-    if (cfg == null) return false;
-    final s = state.requireValue;
+  /// 이 개체를 합성할 때 **재료로 쓸 곤충**(모자라면 빈 목록).
+  ///
+  /// 화면이 실행 전에 "무엇이 사라지는지" 보여주려고 따로 뽑는다 —
+  /// 예전엔 저장 순서대로 앞 3마리를 그냥 지워서, 이색·수련한 개체가
+  /// 경고 없이 사라졌다(2026-09-25 제보).
+  List<IndividualBug> synthFodderFor(String targetId) {
+    final cfg = ref.read(gameDataProvider).value?.petConfig;
+    final s = state.value;
+    if (cfg == null || s == null || cfg.synthFodder <= 0) return const [];
     IndividualBug? target;
     for (final b in s.bugs) {
       if (b.id == targetId) {
@@ -3086,19 +3091,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
     if (target == null || target.potential >= cfg.synthMaxPotential) {
-      return false;
+      return const [];
     }
-    final targetSpeciesId = target.speciesId;
-    final fodder = s.bugs
-        .where(
-          (b) =>
-              b.id != targetId &&
-              b.speciesId == targetSpeciesId &&
-              !s.isEquipped(b.id) &&
-              !s.incubating.containsKey(b.id), // 부화 중 보호
-        )
-        .take(cfg.synthFodder)
-        .toList();
+    // 보호: 장착 중 · 부화 중 · 이색 · 투자한 개체(isPreciousBug).
+    final pool =
+        s.bugs
+            .where(
+              (b) =>
+                  b.id != targetId &&
+                  b.speciesId == target!.speciesId &&
+                  !s.isEquipped(b.id) &&
+                  !s.incubating.containsKey(b.id) &&
+                  !isPreciousBug(b),
+            )
+            .toList()
+          // 덜 아까운 것부터 — 자동 합성·상한 정리와 같은 축이다.
+          ..sort((a, b) => bugFodderRank(a).compareTo(bugFodderRank(b)));
+    if (pool.length < cfg.synthFodder) return const [];
+    return pool.take(cfg.synthFodder).toList();
+  }
+
+  Future<bool> synthesize(String targetId) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return false;
+    final s = state.requireValue;
+    final fodder = synthFodderFor(targetId);
     if (fodder.length < cfg.synthFodder) return false;
     final fodderIds = fodder.map((b) => b.id).toSet();
     final bugs = <IndividualBug>[];
@@ -3145,11 +3162,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
     // 재료로 쓸 수 있는 개체인지 — 위 안전장치 + 사용자가 고른 필터.
     bool isFodder(IndividualBug b) {
+      // 이색·투자 개체는 재료로 쓰지 않는다(isPreciousBug — 수동 합성과 같은 규칙).
       if (s.isEquipped(b.id) ||
           s.incubating.containsKey(b.id) ||
-          b.level > 1 ||
-          b.breakthroughTier > 0 ||
-          b.enhancement.total > 0) {
+          isPreciousBug(b)) {
         return false;
       }
       if (filter == null) return true;
@@ -3251,10 +3267,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final targets = <IndividualBug>[];
     var gain = 0;
     for (final b in s.bugs) {
+      // 이색·투자 개체는 건드리지 않는다 — 자동 합성·상한 정리와 같은 규칙.
       if (s.isEquipped(b.id) || s.incubating.containsKey(b.id)) continue;
-      if (b.level > 1 || b.breakthroughTier > 0 || b.enhancement.total > 0) {
-        continue;
-      }
+      if (isPreciousBug(b)) continue;
       final grade = data.speciesById[b.speciesId]?.grade;
       if (grade == null) continue; // 종을 모르면 건드리지 않는다
       if (filter != null && !filter.accepts(grade, b.potential)) continue;
@@ -3302,11 +3317,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return result;
   }
 
-  /// [target] 종으로 합성 가능한(미장착·타깃 제외) 같은 종 재료 수.
+  /// [target] 종으로 **실제로 재료가 되는** 같은 종 개체 수.
+  ///
+  /// 보호(장착·부화 중·이색·투자)를 그대로 반영한다 — 화면의 "3/3" 과 실제 소비가
+  /// 갈리면 버튼이 켜졌는데 아무 일도 안 일어난다(예전엔 실제로 그랬다).
   int synthFodderCount(SaveGame s, String targetId, String speciesId) => s.bugs
       .where(
         (b) =>
-            b.id != targetId && b.speciesId == speciesId && !s.isEquipped(b.id),
+            b.id != targetId &&
+            b.speciesId == speciesId &&
+            !s.isEquipped(b.id) &&
+            !s.incubating.containsKey(b.id) &&
+            !isPreciousBug(b),
       )
       .length;
 

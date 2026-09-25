@@ -1671,6 +1671,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get synthTitle => '합성 (★강화)';
 
   @override
+  String get synthConfirm => '아래 곤충이 사라집니다';
+
+  @override
+  String get synthConfirmTitle => '합성 확인';
+
+  @override
   String get synthDo => '합성';
 
   @override
@@ -1834,6 +1840,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String disassembleDesc(int n) {
     return '젤리 $n개로 환원';
   }
+
+  @override
+  String get disassembleConfirm => '이 곤충은 되찾기 어렵습니다. 정말 분해할까요?';
 
   @override
   String get disassembleAction => '분해';

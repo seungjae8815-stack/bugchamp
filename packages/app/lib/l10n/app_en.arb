@@ -992,6 +992,8 @@
   "evolveMaxed": "Fully evolved (Adult)",
   "accelerateAction": "Speed up",
   "synthTitle": "Synthesis (★ up)",
+  "synthConfirm": "These bugs will be consumed",
+  "synthConfirmTitle": "Confirm fusion",
   "synthDo": "Synthesize",
   "synthDesc": "Same species {have}/{need} · Potential +1",
   "@synthDesc": {
@@ -1148,6 +1150,7 @@
       }
     }
   },
+  "disassembleConfirm": "This bug is hard to get back. Disassemble it?",
   "disassembleAction": "Disassemble",
   "incubatingLabel": "Incubating",
   "disassembleSnack": "Disassembled",

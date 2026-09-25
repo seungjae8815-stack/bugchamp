@@ -385,6 +385,30 @@ Map<String, DexEntry> updatedDex({
   return next ?? current;
 }
 
+/// 이 개체를 **소멸 후보에서 빼야 하는가**(합성 재료·자동 분해·상한 정리 공용).
+///
+/// 빼는 것: 이색 · 투자한 개체(수련 2↑ · 돌파 1↑ · 부위 강화 1↑).
+/// 장착 중·부화 중은 호출부가 세이브를 보고 따로 거른다([SaveGame.pinnedBugIds]).
+///
+/// ⚠️ 수동 합성은 오랫동안 이 검사가 **없었다** — 같은 종을 저장 순서대로 3마리
+/// 지워서, 갓 부화한 이색 5성이 경고 없이 재료로 사라졌다(2026-09-25 제보).
+/// 규칙을 한 곳에 두어 수동·자동이 갈리지 않게 한다.
+bool isPreciousBug(IndividualBug b) =>
+    b.variant != BugVariant.none ||
+    b.level > 1 ||
+    b.breakthroughTier > 0 ||
+    b.enhancement.total > 0;
+
+/// 재료로 쓸 때 **덜 아까운 것부터**의 순서(작을수록 먼저 쓴다).
+/// 상한 정리([keepBugIds])와 같은 축을 반대 방향으로 본다.
+int bugFodderRank(IndividualBug b) =>
+    (b.variant != BugVariant.none ? 1 << 40 : 0) +
+    b.level * 100000000 +
+    b.breakthroughTier * 1000000 +
+    b.enhancement.total * 10000 +
+    b.potential * 100 +
+    b.sizeMm.round();
+
 /// 채집함 상한 정리에 필요한 곤충 1마리의 최소 정보.
 typedef BugTrimEntry = ({
   String id,
@@ -392,13 +416,19 @@ typedef BugTrimEntry = ({
   int tier,
   int potential,
   double size,
+
+  /// 이색(무지개·알비노)인가. **가장 먼저 지키는 축**이다 — §2.1.
+  bool variant,
 });
 
 /// 채집함 상한([capacity])을 넘겼을 때 **남길 곤충 id** 집합.
 ///
-/// [pinned](장착·부화 중)은 무조건 남긴다. 나머지는 **플레이어가 투자한 순서**로
-/// 남긴다 — 수련 레벨 > 돌파 티어 > 포텐셜 > 사이즈. 골드·재료를 쏟은 개체가
+/// [pinned](장착·부화 중)은 무조건 남긴다. 나머지는 **이색 > 플레이어가 투자한 순서**로
+/// 남긴다 — 이색 > 수련 레벨 > 돌파 티어 > 포텐셜 > 사이즈. 골드·재료를 쏟은 개체가
 /// 먼저 사라지면 그게 곧 클레임이 된다.
+///
+/// ⚠️ 이색이 맨 앞인 이유: 수련·돌파는 골드로 되찾을 수 있지만 이색은 야생 1/300 ·
+/// 짝짓기 1/60 이라 **다시 만들 수 없다**(2026-09-25, 이색이 조용히 사라졌다는 제보).
 ///
 /// 앱(마이그레이션)과 서버(업로드 강제)가 **같은 결과**를 내야 하므로 정리
 /// 기준은 이 함수 하나로만 정의한다.
@@ -423,7 +453,9 @@ Set<String> keepBugIds(
   if (room <= 0) return pinnedHere;
 
   rest.sort((a, b) {
-    var c = b.level.compareTo(a.level);
+    var c = (b.variant ? 1 : 0).compareTo(a.variant ? 1 : 0);
+    if (c != 0) return c;
+    c = b.level.compareTo(a.level);
     if (c != 0) return c;
     c = b.tier.compareTo(a.tier);
     if (c != 0) return c;
@@ -888,6 +920,7 @@ class SaveGame {
             tier: b.breakthroughTier,
             potential: b.potential,
             size: b.sizeMm,
+            variant: b.variant != BugVariant.none,
           ),
       ],
       capacity: storageCapacity,

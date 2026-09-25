@@ -12,6 +12,7 @@ import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
 import '../../domain/game_server.dart';
 import '../../domain/save_controller.dart';
+import '../../domain/server_sync.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/element_wheel.dart';
@@ -357,6 +358,19 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
     if (_busy) return;
     setState(() => _busy = true);
     final sid = '${_res['sessionId']}';
+    // ⚠️ 서버를 부르기 **전에** 최신 로컬 세이브를 올린다. 서버는 자기 저장본
+    // 위에서 계산해 돌려주고 우리는 그걸 채택하므로, 안 올리면 마지막 업로드
+    // 이후의 진행(부화 수령·획득 곤충·골드)이 통째로 사라진다 — 결투·우편·결제는
+    // 이미 이렇게 한다(2026-09-25 대회 경로만 빠져 있던 것을 고침).
+    if (!await flushSaveBeforeServerAction(
+      ref.read(gameServerProvider),
+      ref.read(saveControllerProvider).value,
+    )) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showCenterToast(context, AppLocalizations.of(context).cloudFailed);
+      return;
+    }
     final r = await ref
         .read(gameServerProvider)
         .eventPick(sid, cardId, leadBugId: _lead);

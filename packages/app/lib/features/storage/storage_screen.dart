@@ -2841,6 +2841,36 @@ class StorageScreen extends ConsumerWidget {
                               onPressed: hatching
                                   ? null
                                   : () async {
+                                      // 이색·키운 개체는 **한 번 더 묻는다**.
+                                      // 되찾을 수 없는데 버튼 한 번에 사라지면
+                                      // 그게 곧 클레임이다(2026-09-25 제보).
+                                      if (isPreciousBug(bug)) {
+                                        final go = await showGameDialog<bool>(
+                                          ctx,
+                                          title: l.disassembleAction,
+                                          icon: Icons.warning_amber_rounded,
+                                          content: Text(
+                                            l.disassembleConfirm,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          actions: [
+                                            gameDialogButton(
+                                              l.actionCancel,
+                                              () => Navigator.pop(ctx, false),
+                                              primary: false,
+                                            ),
+                                            gameDialogButton(
+                                              l.disassembleAction,
+                                              () => Navigator.pop(ctx, true),
+                                              color: const Color(0xFFB3452F),
+                                            ),
+                                          ],
+                                        );
+                                        if (go != true || !ctx.mounted) return;
+                                      }
                                       final res = await r
                                           .read(saveControllerProvider.notifier)
                                           .disassembleBug(bug.id);
@@ -3429,14 +3459,11 @@ class StorageScreen extends ConsumerWidget {
   ) {
     final l = AppLocalizations.of(ctx);
     final maxed = bug.potential >= petCfg.synthMaxPotential;
-    final have = save.bugs
-        .where(
-          (b) =>
-              b.id != bug.id &&
-              b.speciesId == bug.speciesId &&
-              !save.isEquipped(b.id),
-        )
-        .length;
+    // 보호(장착·부화 중·이색·투자)를 뺀 **실제 재료 수**. 예전엔 보호를 빼지 않고
+    // 세어서, 버튼이 켜졌는데 아무 일도 안 일어나거나 지켜야 할 개체가 사라졌다.
+    final have = r
+        .read(saveControllerProvider.notifier)
+        .synthFodderCount(save, bug.id, bug.speciesId);
     final need = petCfg.synthFodder;
     final can = !maxed && have >= need;
     return _sectionBox(
@@ -3472,9 +3499,50 @@ class StorageScreen extends ConsumerWidget {
                 _snack(ctx, l.notEnoughMaterials);
                 return;
               }
-              final ok = await r
-                  .read(saveControllerProvider.notifier)
-                  .synthesize(bug.id);
+              final ctrl = r.read(saveControllerProvider.notifier);
+              // ⚠️ **무엇이 사라지는지 먼저 보여준다.** 확인 없이 지우던 시절에
+              // 이색·수련한 개체가 조용히 재료로 쓰였다(2026-09-25 제보).
+              final fodder = ctrl.synthFodderFor(bug.id);
+              if (fodder.length < need) {
+                _snack(ctx, l.notEnoughMaterials);
+                return;
+              }
+              final locale = Localizations.localeOf(ctx).languageCode;
+              final data = r.read(gameDataProvider).value;
+              final go = await showGameDialog<bool>(
+                ctx,
+                title: l.synthConfirmTitle,
+                icon: Icons.auto_awesome_motion,
+                subtitle: l.synthConfirm,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final f in fodder)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Text(
+                          '· ${data?.speciesById[f.speciesId]?.name.resolve(locale) ?? f.speciesId}'
+                          '  ★${f.potential} · ${f.sizeMm.toStringAsFixed(1)}mm',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                actions: [
+                  gameDialogButton(
+                    l.actionCancel,
+                    () => Navigator.pop(ctx, false),
+                    primary: false,
+                  ),
+                  gameDialogButton(l.synthDo, () => Navigator.pop(ctx, true)),
+                ],
+              );
+              if (go != true || !ctx.mounted) return;
+              final ok = await ctrl.synthesize(bug.id);
               if (ok && ctx.mounted) _snack(ctx, l.synthSnack);
             },
             style: FilledButton.styleFrom(

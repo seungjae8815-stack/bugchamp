@@ -3076,6 +3076,18 @@ abstract class AppLocalizations {
   /// **'Synthesis (★ up)'**
   String get synthTitle;
 
+  /// No description provided for @synthConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'These bugs will be consumed'**
+  String get synthConfirm;
+
+  /// No description provided for @synthConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm fusion'**
+  String get synthConfirmTitle;
+
   /// No description provided for @synthDo.
   ///
   /// In en, this message translates to:
@@ -3345,6 +3357,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Convert to {n} jelly'**
   String disassembleDesc(int n);
+
+  /// No description provided for @disassembleConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This bug is hard to get back. Disassemble it?'**
+  String get disassembleConfirm;
 
   /// No description provided for @disassembleAction.
   ///

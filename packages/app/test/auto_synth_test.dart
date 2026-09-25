@@ -79,11 +79,13 @@ void main() {
     int level = 1,
     int tier = 0,
     PartLevels enhancement = PartLevels.zero,
+    BugVariant variant = BugVariant.none,
   }) => IndividualBug(
     id: id,
     speciesId: sp,
     sizeMm: 40,
     potential: potential,
+    variant: variant,
     temperament: Temperament.steadfast,
     sex: Sex.male,
     stage: LifeStage.adult,
@@ -320,5 +322,81 @@ void main() {
       c.read(saveControllerProvider).requireValue.bugFilterMinGrade,
       Grade.rare,
     );
+  });
+
+  // ── 수동 합성(곤충 상세의 합성 버튼) ──
+  //
+  // 2026-09-25 제보: "부화시킨 이색 왕사슴벌레가 사냥하고 오니 사라졌다".
+  // 원인은 수동 합성이 **저장 순서대로 앞 3마리**를 지운 것이었다 — 정렬도,
+  // 이색·투자 보호도 없었다(자동 합성에는 둘 다 있었다).
+  test('수동 합성은 이색을 재료로 쓰지 않는다 — 1/300 은 되돌릴 수 없다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        // 이색이 **목록 앞자리**에 있다(제보 상황: 먼저 얻은 개체가 앞).
+        bug('shiny', 'alpha', potential: 5, variant: BugVariant.rainbow),
+        bug('a1', 'alpha'),
+        bug('a2', 'alpha'),
+        bug('a3', 'alpha'),
+        bug('target', 'alpha'),
+      ],
+    );
+    final c = container(seed);
+    final k = await ctrl(seed, c);
+
+    expect(
+      k.synthFodderFor('target').map((b) => b.id),
+      isNot(contains('shiny')),
+      reason: '이색이 재료 후보에 들어가면 안 된다',
+    );
+    expect(await k.synthesize('target'), isTrue);
+    final s = c.read(saveControllerProvider).requireValue;
+    expect(s.bugs.map((b) => b.id), contains('shiny'));
+    expect(s.bugs.firstWhere((b) => b.id == 'target').potential, 2);
+  });
+
+  test('수동 합성은 투자한 개체도 지키고, 재료가 모자라면 아무것도 안 한다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        bug('lv', 'alpha', level: 12),
+        bug('bt', 'alpha', tier: 2),
+        bug(
+          'eh',
+          'alpha',
+          enhancement: PartLevels.zero.incremented(BugPart.hornJaw),
+        ),
+        bug('target', 'alpha'),
+      ],
+    );
+    final c = container(seed);
+    final k = await ctrl(seed, c);
+
+    expect(k.synthFodderFor('target'), isEmpty);
+    expect(await k.synthesize('target'), isFalse);
+    expect(c.read(saveControllerProvider).requireValue.bugs, hasLength(4));
+  });
+
+  test('수동 합성은 덜 아까운 개체부터 쓴다 — 포텐셜 높은 쪽이 남는다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        bug('good', 'alpha', potential: 4),
+        bug('p1', 'alpha'),
+        bug('p2', 'alpha'),
+        bug('p3', 'alpha'),
+        bug('target', 'alpha', potential: 2),
+      ],
+    );
+    final c = container(seed);
+    final k = await ctrl(seed, c);
+    expect(await k.synthesize('target'), isTrue);
+    final ids = c
+        .read(saveControllerProvider)
+        .requireValue
+        .bugs
+        .map((b) => b.id);
+    expect(ids, contains('good'));
+    expect(ids, isNot(contains('p1')));
   });
 }

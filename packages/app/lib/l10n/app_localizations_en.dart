@@ -1699,6 +1699,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get synthTitle => 'Synthesis (★ up)';
 
   @override
+  String get synthConfirm => 'These bugs will be consumed';
+
+  @override
+  String get synthConfirmTitle => 'Confirm fusion';
+
+  @override
   String get synthDo => 'Synthesize';
 
   @override
@@ -1863,6 +1869,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String disassembleDesc(int n) {
     return 'Convert to $n jelly';
   }
+
+  @override
+  String get disassembleConfirm =>
+      'This bug is hard to get back. Disassemble it?';
 
   @override
   String get disassembleAction => 'Disassemble';
