@@ -376,6 +376,7 @@ void main(List<String> args) {
         ' (누적 $day일) · 마지막 CP ${_short(combatPower(sim.stats))}'
         ' · 골드 번 ${_short(sim._goldEarned - goldBefore)}'
         ' · 재료 번 ${_short(earnedNow - earnedBefore)}'
+        ' · 쓴 ${_short(earnedNow - earnedBefore - leftNow)}'
         ' · 남은 ${_short(leftNow)}',
       );
       earnedBefore = earnedNow;

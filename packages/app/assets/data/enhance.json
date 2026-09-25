@@ -5,37 +5,38 @@
       "part": "hornJaw",
       "material": "chitin",
       "baseCost": 2,
-      "costGrowth": 1.12,
+      "costGrowth": 1.22,
       "effectPerLevel": 0.04
     },
     {
       "part": "cuticle",
       "material": "mineral",
       "baseCost": 2,
-      "costGrowth": 1.12,
+      "costGrowth": 1.22,
       "effectPerLevel": 0.04
     },
     {
       "part": "wing",
       "material": "sap",
       "baseCost": 2,
-      "costGrowth": 1.12,
+      "costGrowth": 1.22,
       "effectPerLevel": 0.03
     },
     {
       "part": "build",
       "material": "chitin",
       "baseCost": 3,
-      "costGrowth": 1.13,
+      "costGrowth": 1.23,
       "effectPerLevel": 0.05
     }
   ],
   "_comment": "부위강화는 곤충의 maxLevel(포텐셜x10)까지라 **총량이 유한**하다. 등급 배수가 없으면 재료 수입이 커지는 후반에 전설도 공짜로 만렙이 된다.",
   "gradeMult": {
     "common": 1,
-    "uncommon": 2,
-    "rare": 4,
-    "epic": 8,
-    "legendary": 16
-  }
+    "uncommon": 4,
+    "rare": 10,
+    "epic": 25,
+    "legendary": 60
+  },
+  "_costComment": "부위 강화 재료비(2026-09-25 상향). 시뮬 측정: 버는 재료의 99% 이상이 쓰이지 않고 쌓였다 — 3마리 만렙이 119만인데 쉬움 회차(14일) 재료 수입만 11억이었다. 성장률 1.12→1.22 · 등급 배수 전설 16→60 으로 올려 **만렙을 실제 목표**로 만든다(3마리 만렙 약 1.5억). 성장률을 올린 이유: 포텐셜이 낮은 곤충은 상한이 10레벨이라 초반 부담이 거의 안 늘고, 50레벨까지 가는 고포텐셜 곤충에만 비용이 붙는다. ⚠️ 곤충 축은 시뮬이 가정 곡선(petFillByDay)으로 넣으므로 이 비용은 시뮬 결과에 안 나타난다 — 실제 수급으로 닿는지는 따로 재야 한다."
 }
