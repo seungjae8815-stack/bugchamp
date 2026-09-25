@@ -327,6 +327,8 @@ void main(List<String> args) {
     var day = 0;
     var total = 0;
     stdout.writeln('── 회차 이월(업그레이드·재화를 그대로 들고 간다) ──');
+    var earnedBefore = 0.0;
+    var goldBefore = 0.0;
     for (var t = 0; t < _tierRuns; t++) {
       _tier = t;
       // ⚠️ **프레스티지다.** 성장 축(강화·레벨·경험치)을 처음으로 되돌리고
@@ -346,6 +348,11 @@ void main(List<String> args) {
         sim.materials.clear();
       }
       final from = day;
+      earnedBefore = sim.earnedMaterials.values.fold<double>(
+        0,
+        (a, b) => a + b,
+      );
+      goldBefore = sim._goldEarned;
       if (sim._entryPending) {
         sim.logEntry();
         sim._entryPending = false;
@@ -355,10 +362,24 @@ void main(List<String> args) {
         sim.playDay();
       }
       total = day;
+      // 재료: 이 회차에 **번 양**과 캐릭터 강화를 사고 **남은 양**.
+      // 곤충 부위 강화·돌파는 이 남는 재료에서 나간다 — 시뮬은 곤충 축을
+      // 가정 곡선(petFillByDay)으로 넣으므로, 그 곡선이 실제로 닿는지는
+      // 이 두 숫자로만 확인할 수 있다(2026-09-25 사장님 질문).
+      final earnedNow = sim.earnedMaterials.values.fold<double>(
+        0,
+        (a, b) => a + b,
+      );
+      final leftNow = sim.materials.values.fold<double>(0, (a, b) => a + b);
       stdout.writeln(
         '  회차 $t : ${(day - from).toString().padLeft(4)}일'
-        ' (누적 $day일) · 마지막 CP ${_short(combatPower(sim.stats))}',
+        ' (누적 $day일) · 마지막 CP ${_short(combatPower(sim.stats))}'
+        ' · 골드 번 ${_short(sim._goldEarned - goldBefore)}'
+        ' · 재료 번 ${_short(earnedNow - earnedBefore)}'
+        ' · 남은 ${_short(leftNow)}',
       );
+      earnedBefore = earnedNow;
+      goldBefore = sim._goldEarned;
       if (day >= _maxDays) {
         stdout.writeln('  ⚠️ $_maxDays일 상한에 걸렸다 — 더 걸린다는 뜻이다.');
         break;
