@@ -244,11 +244,13 @@ class ServerSaveUploader {
         final badged = data?['eventBadges'] == true;
         final pvpRank = data?['pvpRankReward'];
         final abyssRank = data?['abyssRankReward'];
+        final leagueResult = data?['pvpLeagueResult'];
         if ((data?['clamped'] == true ||
                 season ||
                 rewarded ||
                 badged ||
                 pvpRank is Map ||
+                leagueResult is Map ||
                 abyssRank is Map) &&
             res.save != null) {
           final ctrl = _ref.read(saveControllerProvider.notifier);
@@ -261,7 +263,13 @@ class ServerSaveUploader {
               Map<String, dynamic>.from(reward),
             );
           }
-          if (pvpRank is Map) {
+          // 리그 결산이 오면 그 팝업 하나로 보인다(젤리 포함) — 옛 순위 보상 모양은
+          // 1.0.13 이하 앱 호환용이라 같이 오지만 두 번 띄우지 않는다.
+          if (leagueResult is Map) {
+            ctrl.pendingLeagueResult = LeagueResultReport.fromJson(
+              Map<String, dynamic>.from(leagueResult),
+            );
+          } else if (pvpRank is Map) {
             ctrl.pendingPvpRankReward = PvpRankRewardReport.fromJson(
               Map<String, dynamic>.from(pvpRank),
             );

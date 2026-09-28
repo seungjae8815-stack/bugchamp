@@ -11,6 +11,7 @@ export 'src/abyss_progress.dart';
 export 'src/boss_dex.dart';
 export 'src/gift_claim.dart';
 export 'src/gift_mail.dart';
+export 'src/pvp_league.dart';
 export 'src/save_game.dart';
 export 'src/save_migrations.dart';
 export 'src/skill_progress.dart';

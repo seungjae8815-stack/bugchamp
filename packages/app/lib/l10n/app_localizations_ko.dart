@@ -3622,4 +3622,95 @@ class AppLocalizationsKo extends AppLocalizations {
   String abyssRankRewardBody(int floor, int rank) {
     return '지난주 심연 $floor층 · $rank위를 차지했어요!';
   }
+
+  @override
+  String get boardTitle => '순위표';
+
+  @override
+  String get boardTabDuel => '결투 리그';
+
+  @override
+  String get boardTabAbyss => '심연';
+
+  @override
+  String boardLeagueTitle(String league) {
+    return '$league 리그';
+  }
+
+  @override
+  String get boardAbyssTitle => '심연 주간 순위';
+
+  @override
+  String boardSeasonEndsIn(String time) {
+    return '새 시즌 시작: $time';
+  }
+
+  @override
+  String boardTimeLeftDays(int d, int h, int m) {
+    return '$d일 $h시간 $m분';
+  }
+
+  @override
+  String boardTimeLeft(int h, int m) {
+    return '$h시간 $m분';
+  }
+
+  @override
+  String boardZonesHint(int promote, int demote) {
+    return '상위 $promote명 승급 · 하위 $demote명 강등';
+  }
+
+  @override
+  String get boardEmpty => '아직 이번 주 기록이 없어요';
+
+  @override
+  String get boardMeNone => '이번 주 결투를 하면 순위에 올라요';
+
+  @override
+  String get boardAbyssMeNone => '이번 주 심연 1층을 깨면 순위에 올라요';
+
+  @override
+  String boardFloorShort(int n) {
+    return '$n층';
+  }
+
+  @override
+  String boardRewardsTitle(String league) {
+    return '$league 리그 순위 보상';
+  }
+
+  @override
+  String get boardAbyssRewardsTitle => '심연 주간 순위 보상';
+
+  @override
+  String get boardOpen => '순위표';
+
+  @override
+  String get leagueResultTitle => '리그 결산';
+
+  @override
+  String leagueResultUp(String league) {
+    return '$league 리그로 승급!';
+  }
+
+  @override
+  String leagueResultDown(String league) {
+    return '$league 리그로 내려갔어요';
+  }
+
+  @override
+  String leagueResultStay(String league) {
+    return '$league 리그 유지';
+  }
+
+  @override
+  String leagueResultRank(int rank, int total) {
+    return '지난주 $total명 중 $rank위';
+  }
+
+  @override
+  String get leagueResultInactive => '지난주 결투를 쉬어서 한 단계 내려갔어요';
+
+  @override
+  String get leagueZoneHint => '매주 일요일 자정 결산 · 상위 20% 승급 · 하위 20% 강등';
 }

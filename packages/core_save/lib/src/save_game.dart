@@ -556,6 +556,7 @@ class SaveGame {
     this.pvpScoreSeason,
     this.pvpRankRewardSeason,
     this.pvpDefenseIds = const [],
+    this.pvpLeague = -1,
     this.abyssUnlocked = false,
     this.inAbyss = false,
     this.abyssFloor = 1,
@@ -771,6 +772,11 @@ class SaveGame {
   /// 방어 스탯 위조 구멍. 이제 id 만 받고 편성 검증(`validateTeam`)과 같은 기준으로 서버가 만든다.
   /// 내 선택일 뿐이라 기기 소유(서버 소유 아님). 비어 있거나 무효하면 서버가 옛 방식으로 떨어진다.
   final List<String> pvpDefenseIds;
+
+  /// 결투 **리그 순번**(0 = 브론즈 … 4 = 다이아). -1 = 아직 정해지지 않음(개편 전 세이브) —
+  /// 그때는 트로피로 옛 등급을 유도한다([pvpLeagueOf]). 주간 결산에서 상위 20% 승급 · 하위 20% 강등
+  /// (2026-09-29 사장님 확정). ⚠️ **서버 소유 필드** — 세이브를 고쳐 다이아로 올리면 순위 보상이 커진다.
+  final int pvpLeague;
 
   // ── 심연(극한 이후 무한 층, 2026-09-28) ─────────────────────────────
   // 심연에 있는 동안 난이도는 극한, 스테이지는 극한 최종 사냥터로 고정된다(몬스터·보상은
@@ -1308,6 +1314,7 @@ class SaveGame {
     String? pvpScoreSeason,
     String? pvpRankRewardSeason,
     List<String>? pvpDefenseIds,
+    int? pvpLeague,
     bool? abyssUnlocked,
     bool? inAbyss,
     int? abyssFloor,
@@ -1415,6 +1422,7 @@ class SaveGame {
     pvpScoreSeason: pvpScoreSeason ?? this.pvpScoreSeason,
     pvpRankRewardSeason: pvpRankRewardSeason ?? this.pvpRankRewardSeason,
     pvpDefenseIds: pvpDefenseIds ?? this.pvpDefenseIds,
+    pvpLeague: pvpLeague ?? this.pvpLeague,
     abyssUnlocked: abyssUnlocked ?? this.abyssUnlocked,
     inAbyss: inAbyss ?? this.inAbyss,
     abyssFloor: abyssFloor ?? this.abyssFloor,
@@ -1630,6 +1638,7 @@ class SaveGame {
     pvpDefenseIds: [
       for (final e in (json['pvpDefenseIds'] as List? ?? const [])) '$e',
     ],
+    pvpLeague: (json['pvpLeague'] as num?)?.toInt() ?? -1,
     abyssUnlocked: json['abyssUnlocked'] as bool? ?? false,
     inAbyss: json['inAbyss'] as bool? ?? false,
     abyssFloor: ((json['abyssFloor'] as num?)?.toInt() ?? 1).clamp(1, 1 << 30),
@@ -1829,6 +1838,7 @@ class SaveGame {
     if (pvpScoreSeason != null) 'pvpScoreSeason': pvpScoreSeason,
     if (pvpRankRewardSeason != null) 'pvpRankRewardSeason': pvpRankRewardSeason,
     if (pvpDefenseIds.isNotEmpty) 'pvpDefenseIds': pvpDefenseIds,
+    if (pvpLeague >= 0) 'pvpLeague': pvpLeague,
     if (abyssUnlocked) 'abyssUnlocked': true,
     if (inAbyss) 'inAbyss': true,
     if (abyssFloor != 1) 'abyssFloor': abyssFloor,

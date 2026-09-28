@@ -3689,4 +3689,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String abyssRankRewardBody(int floor, int rank) {
     return 'Last week you reached Abyss F$floor and placed #$rank!';
   }
+
+  @override
+  String get boardTitle => 'Rankings';
+
+  @override
+  String get boardTabDuel => 'Duel League';
+
+  @override
+  String get boardTabAbyss => 'Abyss';
+
+  @override
+  String boardLeagueTitle(String league) {
+    return '$league League';
+  }
+
+  @override
+  String get boardAbyssTitle => 'Abyss Weekly Ranking';
+
+  @override
+  String boardSeasonEndsIn(String time) {
+    return 'New season in: $time';
+  }
+
+  @override
+  String boardTimeLeftDays(int d, int h, int m) {
+    return '${d}d ${h}h ${m}m';
+  }
+
+  @override
+  String boardTimeLeft(int h, int m) {
+    return '${h}h ${m}m';
+  }
+
+  @override
+  String boardZonesHint(int promote, int demote) {
+    return 'Top $promote promote · bottom $demote demote';
+  }
+
+  @override
+  String get boardEmpty => 'No records this week yet';
+
+  @override
+  String get boardMeNone => 'Duel this week to appear in the ranking';
+
+  @override
+  String get boardAbyssMeNone =>
+      'Clear Abyss F1 this week to appear in the ranking';
+
+  @override
+  String boardFloorShort(int n) {
+    return 'F$n';
+  }
+
+  @override
+  String boardRewardsTitle(String league) {
+    return '$league League Rank Rewards';
+  }
+
+  @override
+  String get boardAbyssRewardsTitle => 'Abyss Weekly Rank Rewards';
+
+  @override
+  String get boardOpen => 'Rankings';
+
+  @override
+  String get leagueResultTitle => 'League Results';
+
+  @override
+  String leagueResultUp(String league) {
+    return 'Promoted to $league League!';
+  }
+
+  @override
+  String leagueResultDown(String league) {
+    return 'Moved down to $league League';
+  }
+
+  @override
+  String leagueResultStay(String league) {
+    return 'Staying in $league League';
+  }
+
+  @override
+  String leagueResultRank(int rank, int total) {
+    return 'Last week: #$rank of $total';
+  }
+
+  @override
+  String get leagueResultInactive =>
+      'You skipped duels last week, so you moved down one league';
+
+  @override
+  String get leagueZoneHint =>
+      'Settles every Sunday midnight · top 20% promote · bottom 20% demote';
 }

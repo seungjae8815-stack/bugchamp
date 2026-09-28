@@ -152,6 +152,7 @@ class StateStore {
     required String userId,
     required String nickname,
     required int trophies,
+    required String league,
   }) async {
     final res = await _http.post(
       Uri.parse('$supabaseUrl/rest/v1/rpc/pvp_season_submit'),
@@ -161,6 +162,7 @@ class StateStore {
         'p_user': userId,
         'p_nick': nickname,
         'p_trophies': trophies,
+        'p_league': league,
       }),
     );
     if (res.statusCode >= 300) {
@@ -168,18 +170,23 @@ class StateStore {
     }
   }
 
-  /// 결투 시즌 [seasonId] 에서 [userId] 의 순위. 기록이 없으면 null.
-  Future<({int rank, int trophies, int total})?> pvpSeasonRankOf(
+  /// 결투 시즌 [seasonId] 의 리그 [league] 안에서 [userId] 의 순위. 기록이 없으면 null.
+  Future<({int rank, int trophies, int total})?> pvpLeagueRankOf(
     String seasonId,
+    String league,
     String userId,
   ) async {
     final res = await _http.post(
-      Uri.parse('$supabaseUrl/rest/v1/rpc/pvp_season_rank_of'),
+      Uri.parse('$supabaseUrl/rest/v1/rpc/pvp_league_rank_of'),
       headers: _headers,
-      body: jsonEncode({'p_season': seasonId, 'p_user': userId}),
+      body: jsonEncode({
+        'p_season': seasonId,
+        'p_league': league,
+        'p_user': userId,
+      }),
     );
     if (res.statusCode >= 300) {
-      throw StateStoreException('결투 시즌 순위 조회 실패: ${res.statusCode}');
+      throw StateStoreException('리그 순위 조회 실패: ${res.statusCode}');
     }
     final rows = jsonDecode(res.body) as List;
     if (rows.isEmpty) return null;
@@ -189,6 +196,40 @@ class StateStore {
       trophies: (r['trophies'] as num?)?.toInt() ?? 0,
       total: (r['total'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  /// 리그 순위표 상위 [limit] 명(닉네임·전투력·대표 곤충·뱃지 포함).
+  Future<List<Map<String, dynamic>>> pvpLeagueTop(
+    String seasonId,
+    String league,
+    int limit,
+  ) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/pvp_league_top'),
+      headers: _headers,
+      body: jsonEncode({
+        'p_season': seasonId,
+        'p_league': league,
+        'lim': limit,
+      }),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('리그 순위표 조회 실패: ${res.statusCode}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
+  }
+
+  /// 심연 주간 순위표 상위 [limit] 명.
+  Future<List<Map<String, dynamic>>> abyssTop(String week, int limit) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/abyss_top'),
+      headers: _headers,
+      body: jsonEncode({'p_week': week, 'lim': limit}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('심연 순위표 조회 실패: ${res.statusCode}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
   }
 
   /// 심연 주간 점수 기록(2026-09-28) — 그 주에 닿은 **최고 층**(오를 때만 갱신, SQL 이 판단).

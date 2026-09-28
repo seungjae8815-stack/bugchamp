@@ -432,26 +432,32 @@ Handler buildHandler({
         // 끝난 결투 시즌의 순위 보상(2026-09-28). 대회와 같은 이유로 여기서 판정한다 —
         // 시즌이 끝나면 그 시즌 점수는 더 이상 안 바뀌어, 끝난 뒤 조회가 곧 확정값이다.
         // 조회는 **그 시즌에 점수를 낸 사람만** 시즌당 1회 탄다.
-        final dueSeason = actions.pvpRankRewardDueSeason(r.save!);
-        if (dueSeason != null) {
+        final due = actions.pvpLeagueDue(r.save!);
+        if (due != null) {
           try {
-            final placed = await store.pvpSeasonRankOf(dueSeason, user.id);
-            final granted = actions.grantPvpRankReward(
+            final league = cfg.battle
+                .leagueAt(pvpLeagueOf(r.save!, cfg.battle))
+                .id;
+            final placed = due.played == null
+                ? null
+                : await store.pvpLeagueRankOf(due.played!, league, user.id);
+            final settled = actions.settlePvpLeague(
               r.save!,
-              dueSeason,
+              played: due.played,
+              lastEnded: due.lastEnded,
               rank: placed?.rank,
-              trophies: placed?.trophies ?? 0,
               total: placed?.total ?? 0,
+              trophies: placed?.trophies ?? 0,
             );
-            if (granted.isOk) {
+            if (settled.isOk) {
               r = ActionResult.ok(
-                granted.save,
-                extra: {...r.extra, ...granted.extra},
+                settled.save,
+                extra: {...r.extra, ...settled.extra},
               );
             }
           } on StateStoreException catch (e) {
-            // 조회가 실패하면 판정 기록을 찍지 않는다 — 다음 업로드에서 다시 본다.
-            stderr.writeln('[save] 결투 순위 조회 실패 ${user.id}: $e');
+            // 조회가 실패하면 결산 기록을 찍지 않는다 — 다음 업로드에서 다시 본다.
+            stderr.writeln('[save] 리그 결산 조회 실패 ${user.id}: $e');
           }
         }
 
@@ -509,6 +515,7 @@ Handler buildHandler({
             r.extra['eventReward'] != null ||
             r.extra['eventBadges'] == true ||
             r.extra['pvpRankReward'] != null ||
+            r.extra['pvpLeagueResult'] != null ||
             r.extra['abyssRankReward'] != null;
         return _json({
           'ok': true,
@@ -516,7 +523,9 @@ Handler buildHandler({
           // 1.0.13 이하 앱은 `pvpRankReward` 를 몰라 채택하지 않는다 — 그러면 서버가
           // 준 젤리를 다음 업로드가 덮는다(기기 권위). 그 앱들이 채택하는 사유
           // `season` 을 함께 실어 보낸다(시즌 보고서가 없으면 팝업은 안 뜬다).
-          if (r.extra['pvpRankReward'] != null) 'season': true,
+          if (r.extra['pvpRankReward'] != null ||
+              r.extra['pvpLeagueResult'] != null)
+            'season': true,
           if (adopt) 'save': r.save!.toJson(),
         });
       } on StateStoreException catch (e) {
@@ -775,6 +784,62 @@ Handler buildHandler({
     // 점수를 올리는 경로는 없다.** 서버가 참가권을 깎고 웨이브를 돌려 확정한다.
 
     /// 이벤트 현황 — 회차·참가권·내 최고 기록.
+    /// 결투 리그 순위표(2026-09-29) — 내 리그의 이번 시즌 상위 N 명 + 내 순위 · 승강 구간 · 결산 시각.
+    ///
+    /// 순위는 서버 전용 `pvp_season_scores` 로 매긴다(`profiles.trophies` 는 앱이 직접 쓰는 칸이라 쓰지 않는다).
+    authed.get('/pvp/league', (Request req) async {
+      final user = userOf(req);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final b = cfg.battle;
+        final t = actions.now().toUtc();
+        final season = seasonIdOf(seasonStartAt(t, b), b);
+        final league = b.leagueAt(pvpLeagueOf(save, b)).id;
+        final top = await store.pvpLeagueTop(season, league, b.leagueBoardSize);
+        final me = await store.pvpLeagueRankOf(season, league, user.id);
+        final total = me?.total ?? top.length;
+        final zones = b.leagueZones(total);
+        return _json({
+          'season': season,
+          'league': league,
+          'endsAt': seasonEndAt(t, b).toIso8601String(),
+          'total': total,
+          'promote': zones.promote,
+          'demote': zones.demote,
+          'me': ?(me == null
+              ? null
+              : {'rank': me.rank, 'trophies': me.trophies}),
+          'top': top,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[pvp/league] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 심연 주간 순위표 — 이번 주 전체 상위 N 명 + 내 순위(리그 없음, 1~10위 보상).
+    authed.get('/abyss/top', (Request req) async {
+      final user = userOf(req);
+      try {
+        final b = cfg.battle;
+        final t = actions.now().toUtc();
+        final week = abyssWeekId(t, b);
+        final top = await store.abyssTop(week, b.leagueBoardSize);
+        final me = await store.abyssRankOf(week, user.id);
+        return _json({
+          'week': week,
+          'endsAt': seasonEndAt(t, b).toIso8601String(),
+          'total': me?.total ?? top.length,
+          'me': ?(me == null ? null : {'rank': me.rank, 'floor': me.floor}),
+          'top': top,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[abyss/top] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     authed.get('/event', (Request req) async {
       final user = userOf(req);
       final ev = cfg.event;
@@ -3345,6 +3410,10 @@ Future<SaveGame> _recordPvpScore(
       userId: userId,
       nickname: save.nickname,
       trophies: p.save.pvpTrophies,
+      // 리그 = 등급 하나 — 순위는 같은 리그 안에서만 매긴다.
+      league: actions.config.battle
+          .leagueAt(pvpLeagueOf(p.save, actions.config.battle))
+          .id,
     );
   } catch (e) {
     stderr.writeln('[pvp/season] $userId: $e');

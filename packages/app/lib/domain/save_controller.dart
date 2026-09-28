@@ -108,6 +108,37 @@ class PvpRankRewardReport {
       );
 }
 
+/// 결투 **리그 주간 결산** 결과(2026-09-29) — 승급·유지·강등 · 지난주 순위 · 순위 젤리.
+class LeagueResultReport {
+  const LeagueResultReport({
+    required this.from,
+    required this.to,
+    this.rank,
+    this.total = 0,
+    this.jelly = 0,
+    this.inactive = false,
+  });
+
+  final String from;
+  final String to;
+  final int? rank;
+  final int total;
+  final int jelly;
+
+  /// 지난주를 쉬어서 한 단계 내려갔나.
+  final bool inactive;
+
+  factory LeagueResultReport.fromJson(Map<String, dynamic> j) =>
+      LeagueResultReport(
+        from: '${j['from']}',
+        to: '${j['to']}',
+        rank: (j['rank'] as num?)?.toInt(),
+        total: (j['total'] as num?)?.toInt() ?? 0,
+        jelly: (j['jelly'] as num?)?.toInt() ?? 0,
+        inactive: j['inactive'] == true,
+      );
+}
+
 /// 시즌 종료 정산 결과(UI 가 1회 표시). 트로피 소프트리셋 + 보상.
 class SeasonReport {
   const SeasonReport({
@@ -181,6 +212,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 결투 시즌 순위 보상(서버 지급) — 앱 셸이 1회 팝업으로 보여준다.
   PvpRankRewardReport? pendingPvpRankReward;
+
+  /// 결투 리그 주간 결산(서버) — 앱 셸이 1회 팝업으로 보여준다.
+  LeagueResultReport? pendingLeagueResult;
+  void consumeLeagueResult() => pendingLeagueResult = null;
 
   /// 심연 주간 순위 보상(서버 지급) — 같은 모양이라 같은 보고서를 쓴다(`floor` 가 채워진다).
   PvpRankRewardReport? pendingAbyssRankReward;
@@ -289,7 +324,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
       if (save.seasonStartedAt!.isBefore(curStart)) {
         // **끝나는 순간의 등급**으로 준다. 최고 기록이 아니다.
         final endTrophies = save.pvpTrophies;
-        final rw = battleCfg.seasonReward(endTrophies);
+        // 리그 소속으로 준다(트로피 문턱이 아니다 — 2026-09-29 리그 개편).
+        final rw = battleCfg.seasonRewardAt(pvpLeagueOf(save, battleCfg));
         final reset = battleCfg.seasonResetTrophies(save.pvpTrophies);
         final mats = Map<MaterialKind, int>.from(save.materials)
           ..[MaterialKind.jelly] =
@@ -1492,7 +1528,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final cfg = ref.read(gameDataProvider).requireValue.battleConfig;
     if (cfg == null) return null;
     final s = state.requireValue;
-    final claimable = cfg.claimableLeagues(s.pvpTrophies, s.claimedLeagues);
+    final claimable = cfg.claimableUpTo(pvpLeagueOf(s, cfg), s.claimedLeagues);
     if (claimable.isEmpty) return null;
     var gold = 0;
     var jelly = 0;

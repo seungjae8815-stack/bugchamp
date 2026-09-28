@@ -78,6 +78,17 @@
   "resetFactor": 0.0,
   "rewardMult": 2,
   "_rankRewardsComment": "시즌 종료 순위 보상(2026-09-28 사장님 확정). 위에서부터 먼저 맞는 구간 하나만 적용(maxRank 이하). 트로피 1 이상만 순위에 든다. 순위는 서버가 기록한 시즌 점수(pvp_season_scores)로 매긴다 — profiles.trophies 는 앱이 직접 쓰는 칸이라 보상 근거가 될 수 없다. 동률은 먼저 도달한 쪽이 위. 젤리를 만지면 core_run/tool/jelly_sim.dart --pvp-rank= 로 잰다.",
+  "_leagueComment": "리그 = 등급 하나(2026-09-29 사장님 확정). 같은 등급의 모든 유저가 이번 주 트로피로 경쟁하고, 주간 결산(일요일 24시)에 상위 20% 승급 · 하위 20% 강등 · 그 주를 쉬면 한 단계 강등. 리그 소속은 서버 소유 필드(pvpLeague)다 — 예전처럼 트로피 문턱으로 정하면 트로피가 매주 0 으로 리셋돼 모두가 매주 브론즈부터 시작했다. 순위 보상은 리그마다 차등(높은 리그일수록 많이) — 낮은 리그에도 목표가 생긴다. leagueRankRewards 가 없는 리그는 rankRewards(옛 전체 순위 표)로 떨어진다. 젤리를 만지면 core_run/tool/jelly_sim.dart --pvp-rank= --league= 로 잰다.",
+  "leaguePromotePct": 0.2,
+  "leagueDemotePct": 0.2,
+  "leagueBoardSize": 100,
+  "leagueRankRewards": {
+   "bronze": [{ "maxRank": 1, "jelly": 20 }, { "maxRank": 2, "jelly": 10 }, { "maxRank": 3, "jelly": 5 }, { "maxRank": 10, "jelly": 5 }],
+   "silver": [{ "maxRank": 1, "jelly": 40 }, { "maxRank": 2, "jelly": 20 }, { "maxRank": 3, "jelly": 10 }, { "maxRank": 10, "jelly": 5 }],
+   "gold": [{ "maxRank": 1, "jelly": 60 }, { "maxRank": 2, "jelly": 30 }, { "maxRank": 3, "jelly": 20 }, { "maxRank": 10, "jelly": 5 }],
+   "platinum": [{ "maxRank": 1, "jelly": 80 }, { "maxRank": 2, "jelly": 40 }, { "maxRank": 3, "jelly": 25 }, { "maxRank": 10, "jelly": 10 }],
+   "diamond": [{ "maxRank": 1, "jelly": 100 }, { "maxRank": 2, "jelly": 50 }, { "maxRank": 3, "jelly": 30 }, { "maxRank": 10, "jelly": 10 }]
+  },
   "rankRewards": [
    { "maxRank": 1, "jelly": 100 },
    { "maxRank": 2, "jelly": 50 },

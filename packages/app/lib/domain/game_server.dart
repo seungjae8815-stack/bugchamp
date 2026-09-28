@@ -184,6 +184,12 @@ abstract interface class GameServer {
   /// 대회가 닫혀 있어도 답한다(그때 보라고 만든 화면이다).
   Future<ServerResult> eventHall();
 
+  /// 결투 리그 순위표 — 내 리그의 이번 시즌 상위 100명 + 내 순위 · 승강 구간 · 결산 시각.
+  Future<ServerResult> pvpLeagueBoard();
+
+  /// 심연 주간 순위표 — 이번 주 전체 상위 100명 + 내 순위.
+  Future<ServerResult> abyssBoard();
+
   /// **개발자 모드 전용** — 이벤트 참가권 지급. 운영 키가 있어야 한다.
   ///
   /// 참가권은 서버 소유 필드라 앱이 세이브를 고쳐 늘릴 수 없다. 아무나 부르면
@@ -306,6 +312,12 @@ class NoGameServer implements GameServer {
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> eventAdTicket() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> pvpLeagueBoard() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> abyssBoard() async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> eventLeaderboard() async =>
@@ -556,6 +568,12 @@ class HttpGameServer implements GameServer {
 
   @override
   Future<ServerResult> eventLeaderboard() => _send('GET', '/event/leaderboard');
+
+  @override
+  Future<ServerResult> pvpLeagueBoard() => _send('GET', '/pvp/league');
+
+  @override
+  Future<ServerResult> abyssBoard() => _send('GET', '/abyss/top');
 
   @override
   Future<ServerResult> eventHall() => _send('GET', '/event/hall');

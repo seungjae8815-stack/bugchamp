@@ -27,6 +27,7 @@ import 'arena_widgets.dart';
 import '../../ui/skins.dart';
 import 'duel_arena_screen.dart';
 import 'duel_driver.dart';
+import 'league_board_screen.dart';
 import '../../ui/toast.dart';
 import '../../domain/server_sync.dart';
 
@@ -705,10 +706,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     DateTime now,
   ) {
     final trophies = save.pvpTrophies;
-    final cur = cfg.leagueFor(trophies);
-    final next = cfg.nextLeagueAfter(cur);
-    final progress = cfg.leagueProgress(trophies);
-    final claimable = cfg.claimableLeagues(trophies, save.claimedLeagues);
+    // 리그 = 서버가 주간 결산으로 정하는 소속(2026-09-29). 트로피는 이번 주 순위 점수다.
+    final cur = pvpLeagueNow(save, cfg);
+    final claimable = cfg.claimableUpTo(
+      pvpLeagueOf(save, cfg),
+      save.claimedLeagues,
+    );
     final (label, color) = _leagueStyle(l, cur.id);
     // 시즌 종료 = 다음 리셋(요일·시각 앵커). 모든 유저가 같은 순간에 끝난다.
     final seasonRemaining = seasonEndAt(now, cfg).difference(now);
@@ -745,31 +748,25 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: const Color(0x33000000),
-              valueColor: AlwaysStoppedAnimation(color),
-            ),
-          ),
-          const SizedBox(height: 5),
-          // ⚠️ 예전엔 "시즌 종료"와 "다음 리그까지"를 **한 줄에** 넣고 둘 다
-          // `Flexible`+생략 처리했다. 그래서 "실버까지 7..." 처럼 정작 중요한
-          // 숫자가 잘렸다(실기 지적). 각자 한 줄씩 준다.
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              next == null
-                  ? l.leagueMaxRank
-                  : l.leagueToNext(
-                      next.minTrophy - trophies,
-                      _leagueStyle(l, next.id).$1,
-                    ),
-              style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12),
-            ),
+          const SizedBox(height: 6),
+          // 리그는 트로피 문턱이 아니라 **주간 결산**으로 오르내린다 — 규칙과 순위표를 바로 보인다.
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l.leagueZoneHint,
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 11.5,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _openBoard,
+                icon: const Icon(Icons.leaderboard_rounded, size: 16),
+                label: Text(l.boardOpen),
+              ),
+            ],
           ),
           const SizedBox(height: 3),
           Row(
@@ -836,7 +833,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     int trophies,
   ) {
     final rows = <Widget>[];
-    final here = cfg.leagueFor(trophies);
+    final here = pvpLeagueNow(save, cfg);
     // **위에서 아래로 다이아 → 실버.** 목표가 위에 있어야 "저기까지 가자"가 된다
     // (실기 지적). 오름차순이면 이미 지난 리그부터 읽게 된다.
     for (final lg in cfg.leagues.reversed) {
@@ -947,7 +944,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     }
     // 보상은 **두 종류**다. 화면에 하나(최초 달성)만 있어서 "브론즈면 아무것도
     // 못 받나?"로 읽혔다(실기 지적) — 실은 시즌 종료 보상이 매주 나온다.
-    final season = cfg.seasonReward(trophies);
+    final season = cfg.seasonRewardAt(pvpLeagueOf(save, cfg));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -1241,10 +1238,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             child: Center(
               child: Row(
                 children: [
-                  leagueIcon(
-                    battleCfg.leagueFor(save.pvpTrophies).id,
-                    size: 17,
-                  ),
+                  leagueIcon(pvpLeagueNow(save, battleCfg).id, size: 17),
                   const SizedBox(width: 4),
                   Text(
                     '${save.pvpTrophies}',
@@ -1758,11 +1752,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     SaveGame save,
     DateTime now,
   ) {
-    final cur = cfg.leagueFor(save.pvpTrophies);
+    final cur = pvpLeagueNow(save, cfg);
     final (label, color) = _leagueStyle(l, cur.id);
     final left = seasonEndAt(now, cfg).difference(now);
     final hasReward = cfg
-        .claimableLeagues(save.pvpTrophies, save.claimedLeagues)
+        .claimableUpTo(pvpLeagueOf(save, cfg), save.claimedLeagues)
         .isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1809,7 +1803,22 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     fontSize: 10.5,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
+                // 순위표 — 리그 안 이번 주 순위(2026-09-29).
+                IconButton(
+                  onPressed: _openBoard,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                  icon: const Icon(
+                    Icons.leaderboard_rounded,
+                    size: 18,
+                    color: Color(0xFFEBC24A),
+                  ),
+                ),
                 Icon(
                   hasReward
                       ? Icons.card_giftcard_rounded
@@ -2534,6 +2543,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ref.read(gameServerProvider),
     ref.read(saveControllerProvider).value,
   );
+
+  void _openBoard() => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => const LeagueBoardScreen()));
 
   /// 결투 1판분 티켓을 확보한다. 없으면 이유를 알리고 false.
   ///

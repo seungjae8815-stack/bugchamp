@@ -197,6 +197,8 @@ class GameActions {
     // 받은 시즌을 지우면 같은 시즌 보상을 반복해서 받는다.
     'pvpScoreSeason',
     'pvpRankRewardSeason',
+    // 결투 리그 소속(2026-09-29). 고쳐서 다이아로 올리면 순위 보상이 커진다.
+    'pvpLeague',
     // 심연 주간 순위(2026-09-28). 결투 순위와 같은 이유.
     'abyssScoreWeek',
     'abyssRewardWeek',
@@ -754,6 +756,11 @@ class GameActions {
     // 시즌 정산은 **서버가 확정한다**. 트로피는 서버 소유 필드라 앱이 혼자
     // 깎아 올려도 위에서 저장본 값으로 덮인다 — 그래서 앱만 리셋하던 시절엔
     // 주간 리셋이 아예 먹지 않았다(2026-08 버그).
+    // 개편 전 세이브는 리그가 없다(-1) — **시즌 리셋 전 트로피**로 한 번 확정해 저장한다.
+    // 리셋 뒤에 유도하면 트로피가 0 이라 모두 브론즈로 떨어진다(2026-09-29 리그 개편).
+    if (capped.pvpLeague < 0) {
+      capped = capped.copyWith(pvpLeague: pvpLeagueOf(stored, config.battle));
+    }
     final settled = _settleSeason(stored, clientJson, capped, t);
     return ActionResult.ok(
       settled.save,
@@ -867,7 +874,8 @@ class GameActions {
     // 최고 기록으로 주던 시절이 있었는데, 화면에 뜨는 "지금 등급"과 실제 보상이
     // 달라 설명할 수가 없었다(2026-08-18 변경).
     final endTrophies = stored.pvpTrophies;
-    final rw = cfg.seasonReward(endTrophies);
+    // 리그 소속으로 준다(앱 `_applySeason` 과 같은 규칙, 2026-09-29 리그 개편).
+    final rw = cfg.seasonRewardAt(pvpLeagueOf(stored, cfg));
     if (rw.gold > 0 || rw.jelly > 0) {
       final mats = Map<MaterialKind, int>.from(out.materials);
       mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + rw.jelly;
@@ -2710,47 +2718,80 @@ class GameActions {
     return (save: save.copyWith(pvpScoreSeason: sid), seasonId: sid);
   }
 
-  /// 순위 보상을 **아직 판정하지 않은 끝난 시즌**이 있으면 그 시즌 id, 없으면 null.
+  /// 주간 **리그 결산**이 남았으면 (점수 낸 끝난 시즌, 마지막으로 끝난 시즌), 없으면 null.
   ///
-  /// 그 유저가 **실제로 점수를 낸 시즌**(`pvpScoreSeason`)만 본다 — 결투를 안 한
-  /// 유저에게 매주 순위 조회를 돌리지 않는다(시즌당 1인 1회).
-  String? pvpRankRewardDueSeason(SaveGame save) {
+  /// 결산 규칙(2026-09-29 사장님 확정): 리그 = 등급 하나. 점수를 낸 시즌은 **리그 안 순위**로
+  /// 보상(리그별 표)과 승강(상위 20% 승급 · 하위 20% 강등)을 정하고, 마지막으로 끝난 시즌을
+  /// 쉬었으면 한 단계 강등한다. `pvpRankRewardSeason` = 어디까지 결산했나(서버 소유).
+  /// 결투를 한 번도 안 한 유저는 결산할 것이 없다(브론즈에서 떨어질 곳도 없다).
+  ({String? played, String lastEnded})? pvpLeagueDue(SaveGame save) {
+    final cfg = config.battle;
+    final start = seasonStartAt(now().toUtc(), cfg);
+    final current = seasonIdOf(start, cfg);
+    final lastEnded = seasonIdOf(start.subtract(const Duration(days: 7)), cfg);
+    if (save.pvpRankRewardSeason == lastEnded) return null;
     final played = save.pvpScoreSeason;
     if (played == null || played.isEmpty) return null;
-    if (save.pvpRankRewardSeason == played) return null; // 이미 판정했다
-    final cfg = config.battle;
-    if (cfg.seasonRankRewards.isEmpty) return null;
-    final current = seasonIdOf(seasonStartAt(now().toUtc(), cfg), cfg);
-    // 지금 시즌이면 아직 안 끝났다.
-    return played == current ? null : played;
+    final pending = played != current && played != save.pvpRankRewardSeason
+        ? played
+        : null;
+    return (played: pending, lastEnded: lastEnded);
   }
 
-  /// 시즌 순위 보상 지급. [rank]·[trophies] 는 그 시즌 기록(없으면 null·0).
+  /// 리그 결산 — [rank]·[total]·[trophies] 는 [played] 시즌의 **그 리그 안** 기록(없으면 null·0).
   ///
-  /// 순위권 밖이어도 **판정 기록은 찍는다** — 안 찍으면 업로드마다 순위를 다시 조회한다.
-  /// 트로피 0 은 순위가 있어도 주지 않는다(한 판 지고 끝난 사람이 인원이 적은 주에
-  /// 순위권에 드는 것을 막는다).
-  ActionResult grantPvpRankReward(
-    SaveGame save,
-    String seasonId, {
+  /// 순위권 밖이어도 결산 기록은 찍는다(안 찍으면 업로드마다 순위를 다시 조회한다).
+  /// 트로피 0 은 순위가 있어도 보상·승급이 없다.
+  ActionResult settlePvpLeague(
+    SaveGame save, {
+    String? played,
+    required String lastEnded,
     int? rank,
-    int trophies = 0,
     int total = 0,
+    int trophies = 0,
   }) {
     final cfg = config.battle;
-    final jelly = rank == null || trophies <= 0 ? 0 : cfg.seasonRankJelly(rank);
-    var out = save.copyWith(pvpRankRewardSeason: seasonId);
+    final from = pvpLeagueOf(save, cfg);
+    var league = from;
+    var jelly = 0;
+    if (played != null && rank != null) {
+      final id = cfg.leagueAt(from).id;
+      jelly = trophies <= 0 ? 0 : cfg.seasonRankJelly(rank, league: id);
+      league = cfg.leagueAfterSeason(
+        from,
+        rank: rank,
+        total: total,
+        trophies: trophies,
+      );
+    }
+    // 마지막으로 끝난 시즌을 쉬었으면 한 단계 내려간다(여러 주를 쉬어도 한 번만).
+    final inactive = played != lastEnded;
+    if (inactive && league > 0) league -= 1;
+    var out = save.copyWith(pvpRankRewardSeason: lastEnded, pvpLeague: league);
     if (jelly > 0) {
       final mats = Map<MaterialKind, int>.from(out.materials);
       mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + jelly;
       out = out.copyWith(materials: mats);
     }
+    final changed = league != from || jelly > 0;
     return ActionResult.ok(
       out,
       extra: {
+        if (changed)
+          'pvpLeagueResult': {
+            'season': played ?? lastEnded,
+            'from': cfg.leagueAt(from).id,
+            'to': cfg.leagueAt(league).id,
+            'rank': ?rank,
+            'total': total,
+            'trophies': trophies,
+            'jelly': jelly,
+            'inactive': inactive,
+          },
+        // 1.0.13 이하 앱 호환 — 젤리가 있으면 옛 보고서 모양도 싣는다(채택 사유는 `season`).
         if (jelly > 0)
           'pvpRankReward': {
-            'season': seasonId,
+            'season': played,
             'rank': rank,
             'trophies': trophies,
             'total': total,

@@ -2681,36 +2681,95 @@ void _forfeitTests(GameActions actions, SaveGame base) {
       expect(a.pvpScoreFor(base().copyWith(seasonStartedAt: lastWeek)), isNull);
     });
 
-    test('점수를 낸 시즌이 끝났을 때만, 한 번만 판정한다', () {
-      expect(a.pvpRankRewardDueSeason(base()), isNull, reason: '결투 안 함');
-      final now = base().copyWith(pvpScoreSeason: '2026-07-20');
-      expect(a.pvpRankRewardDueSeason(now), isNull, reason: '아직 진행 중');
+    test('결산은 결투를 해 본 유저만 · 마지막으로 끝난 시즌까지 한 번', () {
+      expect(a.pvpLeagueDue(base()), isNull, reason: '결투 안 함');
       final ended = base().copyWith(pvpScoreSeason: '2026-07-13');
-      expect(a.pvpRankRewardDueSeason(ended), '2026-07-13');
-      final paid = ended.copyWith(pvpRankRewardSeason: '2026-07-13');
-      expect(a.pvpRankRewardDueSeason(paid), isNull, reason: '이미 받음');
+      final due = a.pvpLeagueDue(ended)!;
+      expect(due.played, '2026-07-13');
+      expect(due.lastEnded, '2026-07-13');
+      final done = ended.copyWith(pvpRankRewardSeason: '2026-07-13');
+      expect(a.pvpLeagueDue(done), isNull, reason: '이미 결산');
+      // 이번 시즌만 뛰었다 — 지난 시즌은 쉰 것(점수 결산은 없다).
+      final now = base().copyWith(pvpScoreSeason: '2026-07-20');
+      expect(a.pvpLeagueDue(now)!.played, isNull);
     });
 
-    test('순위권이면 젤리를 주고, 밖이어도 판정 기록은 찍는다', () {
-      final s = base().copyWith(pvpScoreSeason: '2026-07-13');
-      final first = a.grantPvpRankReward(
+    test('리그 안 1위 — 보상 + 승급 · 순위권 밖이어도 결산 기록은 찍는다', () {
+      final s = base().copyWith(pvpScoreSeason: '2026-07-13', pvpLeague: 1);
+      final first = a.settlePvpLeague(
         s,
-        '2026-07-13',
+        played: '2026-07-13',
+        lastEnded: '2026-07-13',
         rank: 1,
+        total: 20,
         trophies: 50,
       );
       expect(first.save!.materialCount(MaterialKind.jelly), 100);
+      expect(first.save!.pvpLeague, 2, reason: '상위 20% 승급');
       expect(first.save!.pvpRankRewardSeason, '2026-07-13');
-      expect((first.extra['pvpRankReward'] as Map)['jelly'], 100);
+      final res = first.extra['pvpLeagueResult'] as Map;
+      expect(res['from'], 'silver');
+      expect(res['to'], 'gold');
 
-      final out = a.grantPvpRankReward(s, '2026-07-13', rank: 11, trophies: 50);
-      expect(out.save!.materialCount(MaterialKind.jelly), 0);
-      expect(out.save!.pvpRankRewardSeason, '2026-07-13');
-      expect(out.extra.containsKey('pvpRankReward'), isFalse);
+      final mid = a.settlePvpLeague(
+        s,
+        played: '2026-07-13',
+        lastEnded: '2026-07-13',
+        rank: 11,
+        total: 20,
+        trophies: 50,
+      );
+      expect(mid.save!.materialCount(MaterialKind.jelly), 0);
+      expect(mid.save!.pvpLeague, 1, reason: '가운데는 유지');
+      expect(mid.save!.pvpRankRewardSeason, '2026-07-13');
 
-      // 트로피 0 은 순위가 있어도 주지 않는다.
-      final zero = a.grantPvpRankReward(s, '2026-07-13', rank: 1);
+      final low = a.settlePvpLeague(
+        s,
+        played: '2026-07-13',
+        lastEnded: '2026-07-13',
+        rank: 19,
+        total: 20,
+        trophies: 5,
+      );
+      expect(low.save!.pvpLeague, 0, reason: '하위 20% 강등');
+
+      // 트로피 0 은 순위가 있어도 보상·승급이 없다.
+      final zero = a.settlePvpLeague(
+        s,
+        played: '2026-07-13',
+        lastEnded: '2026-07-13',
+        rank: 1,
+        total: 20,
+      );
       expect(zero.save!.materialCount(MaterialKind.jelly), 0);
+      expect(zero.save!.pvpLeague, 1);
+    });
+
+    test('개편 전 세이브는 첫 업로드에서 리셋 전 트로피로 리그를 확정한다', () {
+      // 지난 시즌에 800(플래티넘)을 들고 경계를 넘겼다 — 리셋 뒤 0 으로 유도하면 브론즈가 된다.
+      final st = base().copyWith(
+        pvpTrophies: 800,
+        seasonStartedAt: DateTime.utc(2026, 7, 13),
+        lastSeen: t0.subtract(const Duration(minutes: 1)),
+        zoneEpoch: kZoneEpoch,
+      );
+      final r = a.mergeSave(st, st.toJson());
+      expect(r.save!.pvpTrophies, lessThan(800), reason: '시즌 리셋은 일어났다');
+      expect(r.save!.pvpLeague, 3, reason: '플래티넘을 유지');
+    });
+
+    test('지난 시즌을 쉬었으면 한 단계 강등(여러 주를 쉬어도 한 번)', () {
+      final s = base().copyWith(
+        pvpScoreSeason: '2026-06-29',
+        pvpRankRewardSeason: '2026-06-29',
+        pvpLeague: 3,
+      );
+      final due = a.pvpLeagueDue(s)!;
+      expect(due.played, isNull);
+      final r = a.settlePvpLeague(s, lastEnded: due.lastEnded);
+      expect(r.save!.pvpLeague, 2);
+      expect((r.extra['pvpLeagueResult'] as Map)['inactive'], isTrue);
+      expect(a.pvpLeagueDue(r.save!), isNull, reason: '같은 주에 두 번 강등하지 않는다');
     });
 
     test('판정 기록은 서버 소유 — 앱이 지워 올려도 되살아난다', () {

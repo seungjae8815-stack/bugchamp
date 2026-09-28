@@ -201,7 +201,8 @@ void main(List<String> args) {
   // ── 4b. 결투 시즌 **순위** 보상(2026-09-28) — 주간, 10위까지만.
   // 리그 등급 보상에서 젤리를 뺀 대신 여기로 옮겼다. 등급은 도달한 사람 전원이
   // 매주 받지만 순위는 한 주에 10명뿐이다.
-  final pvpRankJelly = battle.seasonRankJelly(_pvpRank);
+  // 리그마다 차등(2026-09-29) — `--league=` 리그의 표로 준다.
+  final pvpRankJelly = battle.seasonRankJelly(_pvpRank, league: _leagueId);
   rows.add((
     name: '결투 순위',
     perDay: pvpRankJelly / 7,

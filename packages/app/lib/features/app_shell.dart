@@ -20,6 +20,8 @@ import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/art.dart';
+import '../ui/labels.dart' show leagueIcon;
+import 'battle/league_board_screen.dart' show leagueName;
 import '../ui/event_badge.dart';
 import '../ui/game_dialog.dart';
 import '../ui/rank_popup.dart';
@@ -240,6 +242,13 @@ class _AppShellState extends ConsumerState<AppShell>
         (_) => _showPvpRankReward(pvpRank),
       );
     }
+    final leagueResult = ctrl.pendingLeagueResult;
+    if (leagueResult != null) {
+      ctrl.consumeLeagueResult();
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showLeagueResult(leagueResult),
+      );
+    }
     final abyssRank = ctrl.pendingAbyssRankReward;
     if (abyssRank != null) {
       ctrl.consumeAbyssRankReward();
@@ -434,6 +443,64 @@ class _AppShellState extends ConsumerState<AppShell>
           ),
           const SizedBox(height: 12),
           gameRewardList(context, materials: {MaterialKind.jelly: r.jelly}),
+        ],
+      ),
+      actions: [
+        gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
+      ],
+    );
+  }
+
+  /// 결투 리그 주간 결산 — 승급·유지·강등과 지난주 순위·젤리.
+  Future<void> _showLeagueResult(LeagueResultReport r) async {
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    final cfg = ref.read(gameDataProvider).value?.battleConfig;
+    final up =
+        cfg != null && cfg.leagueIndexOf(r.to) > cfg.leagueIndexOf(r.from);
+    final down =
+        cfg != null && cfg.leagueIndexOf(r.to) < cfg.leagueIndexOf(r.from);
+    final name = leagueName(l, r.to);
+    final head = up
+        ? l.leagueResultUp(name)
+        : (down ? l.leagueResultDown(name) : l.leagueResultStay(name));
+    if (up) AudioService.instance.sfxLevelUp();
+    await showGameDialog<void>(
+      context,
+      title: l.leagueResultTitle,
+      iconWidget: leagueIcon(r.to, size: 40),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            head,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: up
+                  ? const Color(0xFF9CE37D)
+                  : (down ? const Color(0xFFEF9A9A) : Colors.white),
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          if (r.rank != null && r.total > 0)
+            Text(
+              l.leagueResultRank(r.rank!, r.total),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xCCFFFFFF)),
+            ),
+          if (r.inactive)
+            Text(
+              l.leagueResultInactive,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 12),
+            ),
+          if (r.jelly > 0) ...[
+            const SizedBox(height: 10),
+            gameRewardList(context, materials: {MaterialKind.jelly: r.jelly}),
+          ],
         ],
       ),
       actions: [

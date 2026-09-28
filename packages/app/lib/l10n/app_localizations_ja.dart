@@ -3612,4 +3612,95 @@ class AppLocalizationsJa extends AppLocalizations {
   String abyssRankRewardBody(int floor, int rank) {
     return '先週は深淵$floor階・$rank位でした！';
   }
+
+  @override
+  String get boardTitle => 'ランキング';
+
+  @override
+  String get boardTabDuel => '決闘リーグ';
+
+  @override
+  String get boardTabAbyss => '深淵';
+
+  @override
+  String boardLeagueTitle(String league) {
+    return '$leagueリーグ';
+  }
+
+  @override
+  String get boardAbyssTitle => '深淵 週間ランキング';
+
+  @override
+  String boardSeasonEndsIn(String time) {
+    return '新シーズンまで：$time';
+  }
+
+  @override
+  String boardTimeLeftDays(int d, int h, int m) {
+    return '$d日$h時間$m分';
+  }
+
+  @override
+  String boardTimeLeft(int h, int m) {
+    return '$h時間$m分';
+  }
+
+  @override
+  String boardZonesHint(int promote, int demote) {
+    return '上位$promote人昇格・下位$demote人降格';
+  }
+
+  @override
+  String get boardEmpty => '今週の記録はまだありません';
+
+  @override
+  String get boardMeNone => '今週決闘するとランキングに載ります';
+
+  @override
+  String get boardAbyssMeNone => '今週深淵1階を突破するとランキングに載ります';
+
+  @override
+  String boardFloorShort(int n) {
+    return '$n階';
+  }
+
+  @override
+  String boardRewardsTitle(String league) {
+    return '$leagueリーグ 順位報酬';
+  }
+
+  @override
+  String get boardAbyssRewardsTitle => '深淵 週間順位報酬';
+
+  @override
+  String get boardOpen => 'ランキング';
+
+  @override
+  String get leagueResultTitle => 'リーグ決算';
+
+  @override
+  String leagueResultUp(String league) {
+    return '$leagueリーグに昇格！';
+  }
+
+  @override
+  String leagueResultDown(String league) {
+    return '$leagueリーグに降格しました';
+  }
+
+  @override
+  String leagueResultStay(String league) {
+    return '$leagueリーグ残留';
+  }
+
+  @override
+  String leagueResultRank(int rank, int total) {
+    return '先週 $total人中 $rank位';
+  }
+
+  @override
+  String get leagueResultInactive => '先週決闘を休んだため1段階降格しました';
+
+  @override
+  String get leagueZoneHint => '毎週日曜24時に決算・上位20%昇格・下位20%降格';
 }

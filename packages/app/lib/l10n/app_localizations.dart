@@ -6411,6 +6411,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last week you reached Abyss F{floor} and placed #{rank}!'**
   String abyssRankRewardBody(int floor, int rank);
+
+  /// No description provided for @boardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rankings'**
+  String get boardTitle;
+
+  /// No description provided for @boardTabDuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel League'**
+  String get boardTabDuel;
+
+  /// No description provided for @boardTabAbyss.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss'**
+  String get boardTabAbyss;
+
+  /// No description provided for @boardLeagueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{league} League'**
+  String boardLeagueTitle(String league);
+
+  /// No description provided for @boardAbyssTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss Weekly Ranking'**
+  String get boardAbyssTitle;
+
+  /// No description provided for @boardSeasonEndsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'New season in: {time}'**
+  String boardSeasonEndsIn(String time);
+
+  /// No description provided for @boardTimeLeftDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{d}d {h}h {m}m'**
+  String boardTimeLeftDays(int d, int h, int m);
+
+  /// No description provided for @boardTimeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{h}h {m}m'**
+  String boardTimeLeft(int h, int m);
+
+  /// No description provided for @boardZonesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Top {promote} promote · bottom {demote} demote'**
+  String boardZonesHint(int promote, int demote);
+
+  /// No description provided for @boardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No records this week yet'**
+  String get boardEmpty;
+
+  /// No description provided for @boardMeNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel this week to appear in the ranking'**
+  String get boardMeNone;
+
+  /// No description provided for @boardAbyssMeNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Abyss F1 this week to appear in the ranking'**
+  String get boardAbyssMeNone;
+
+  /// No description provided for @boardFloorShort.
+  ///
+  /// In en, this message translates to:
+  /// **'F{n}'**
+  String boardFloorShort(int n);
+
+  /// No description provided for @boardRewardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{league} League Rank Rewards'**
+  String boardRewardsTitle(String league);
+
+  /// No description provided for @boardAbyssRewardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss Weekly Rank Rewards'**
+  String get boardAbyssRewardsTitle;
+
+  /// No description provided for @boardOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Rankings'**
+  String get boardOpen;
+
+  /// No description provided for @leagueResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'League Results'**
+  String get leagueResultTitle;
+
+  /// No description provided for @leagueResultUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Promoted to {league} League!'**
+  String leagueResultUp(String league);
+
+  /// No description provided for @leagueResultDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved down to {league} League'**
+  String leagueResultDown(String league);
+
+  /// No description provided for @leagueResultStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Staying in {league} League'**
+  String leagueResultStay(String league);
+
+  /// No description provided for @leagueResultRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Last week: #{rank} of {total}'**
+  String leagueResultRank(int rank, int total);
+
+  /// No description provided for @leagueResultInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'You skipped duels last week, so you moved down one league'**
+  String get leagueResultInactive;
+
+  /// No description provided for @leagueZoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Settles every Sunday midnight · top 20% promote · bottom 20% demote'**
+  String get leagueZoneHint;
 }
 
 class _AppLocalizationsDelegate

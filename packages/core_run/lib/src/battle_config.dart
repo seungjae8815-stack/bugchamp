@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:meta/meta.dart';
 
 /// 스카우트 보드의 난이도 티어. 상대 파워 배율과 보상 배율을 함께 정의한다.
@@ -77,6 +79,10 @@ class BattleConfig {
     this.seasonResetFactor = 0.5,
     this.seasonRewardMult = 3.0,
     this.seasonRankRewards = const [],
+    this.leagueRankRewards = const {},
+    this.leaguePromotePct = 0.2,
+    this.leagueDemotePct = 0.2,
+    this.leagueBoardSize = 100,
     this.duelJson = const {},
     this.locationAffinityBonus = 0.2,
     this.manualTurnSeconds = 10,
@@ -144,13 +150,63 @@ class BattleConfig {
   /// 앱·서버가 `DuelParams.fromJson(cfg.duelJson)` 으로 만든다 — 같은 JSON 한 곳에서.
   final Map<String, dynamic> duelJson;
 
-  /// [rank] 위가 받는 순위 보상 젤리. 순위권 밖이면 0.
-  int seasonRankJelly(int rank) {
+  /// **리그별** 시즌 순위 보상(2026-09-29 사장님 확정 — 리그마다 차등). 키 = 리그 id.
+  /// 없는 리그는 [seasonRankRewards](옛 전체 순위 표)로 떨어진다.
+  final Map<String, List<SeasonRankReward>> leagueRankRewards;
+
+  /// 주간 결산에서 리그 안 **상위 몇 %가 승급**, **하위 몇 %가 강등**하나(2026-09-29 사장님 확정: 20%·20%).
+  /// 등급 하나 = 리그 하나 — 같은 등급의 모든 유저가 이번 주 트로피로 경쟁한다.
+  /// 예전 리그는 "트로피가 일정 수를 넘으면 그 등급"이었다 — 트로피가 매주 0 으로 리셋돼
+  /// 등급이 매주 브론즈부터 다시 시작했다.
+  final double leaguePromotePct;
+  final double leagueDemotePct;
+
+  /// 순위표에 보여 주는 인원(리그마다).
+  final int leagueBoardSize;
+
+  /// [rank] 위가 받는 순위 보상 젤리([league] = 리그 id, 없으면 옛 전체 표). 순위권 밖이면 0.
+  int seasonRankJelly(int rank, {String? league}) {
     if (rank < 1) return 0;
-    for (final r in seasonRankRewards) {
+    final table = league == null
+        ? seasonRankRewards
+        : (leagueRankRewards[league] ?? seasonRankRewards);
+    for (final r in table) {
       if (rank <= r.maxRank) return r.jelly;
     }
     return 0;
+  }
+
+  /// 리그 순번(0 = 첫 리그). 모르는 id 면 0.
+  int leagueIndexOf(String id) {
+    final i = leagues.indexWhere((l) => l.id == id);
+    return i < 0 ? 0 : i;
+  }
+
+  League leagueAt(int index) => leagues[index.clamp(0, leagues.length - 1)];
+
+  /// 리그 [total] 명 중 승급권·강등권 인원. 둘이 겹치지 않게 작은 리그에서는 줄인다
+  /// (2명 리그면 1등만 승급, 4명 이하는 강등 없음 — 혼자 남은 리그에서 떨어지지 않게).
+  ({int promote, int demote}) leagueZones(int total) {
+    if (total <= 1) return (promote: 0, demote: 0);
+    final up = math.max(1, (total * leaguePromotePct).round());
+    final down = total < 5 ? 0 : (total * leagueDemotePct).round();
+    return (promote: up, demote: math.min(down, total - up));
+  }
+
+  /// 주간 결산 — 리그 [league](순번)에서 [total] 명 중 [rank] 위([trophies] 로)였을 때 다음 주 리그.
+  /// 트로피 0 은 승급하지 않는다(한 판 지고 끝난 사람이 작은 리그에서 올라가지 않게).
+  int leagueAfterSeason(
+    int league, {
+    required int rank,
+    required int total,
+    required int trophies,
+  }) {
+    final z = leagueZones(total);
+    if (trophies > 0 && rank >= 1 && rank <= z.promote) {
+      return math.min(league + 1, leagues.length - 1);
+    }
+    if (z.demote > 0 && rank > total - z.demote) return math.max(league - 1, 0);
+    return league;
   }
 
   /// 스카우트 새로고침 — 무료 횟수/일, 소진 후 젤리 비용, 젤리 포함 총량/일.
@@ -252,6 +308,21 @@ class BattleConfig {
         lg,
   ];
 
+  /// [leagueIndex] 리그까지 올라왔는데 아직 첫 승급 보상을 안 받은 리그들(리그 소속 기준, 2026-09-29).
+  List<League> claimableUpTo(int leagueIndex, Set<String> claimed) => [
+    for (var i = 0; i <= leagueIndex && i < leagues.length; i++)
+      if (leagues[i].hasReward && !claimed.contains(leagues[i].id)) leagues[i],
+  ];
+
+  /// 시즌 종료 보상 — [leagueIndex] 리그의 승급 보상 × 시즌 배율(리그 소속 기준, 2026-09-29).
+  ({int gold, int jelly}) seasonRewardAt(int leagueIndex) {
+    final lg = leagueAt(leagueIndex);
+    return (
+      gold: (lg.rewardGold * seasonRewardMult).round(),
+      jelly: (lg.rewardJelly * seasonRewardMult).round(),
+    );
+  }
+
   /// 시즌 종료 보상 = 최고 트로피 도달 리그의 승급보상 × 시즌 배율.
   ({int gold, int jelly}) seasonReward(int peakTrophies) {
     final lg = leagueFor(peakTrophies);
@@ -300,6 +371,18 @@ class BattleConfig {
         for (final r in (season?['rankRewards'] as List? ?? const []))
           SeasonRankReward.fromJson(r as Map<String, dynamic>),
       ],
+      leagueRankRewards: {
+        for (final e
+            in ((season?['leagueRankRewards'] as Map?) ?? const {}).entries)
+          '${e.key}': [
+            for (final r in (e.value as List))
+              SeasonRankReward.fromJson(r as Map<String, dynamic>),
+          ],
+      },
+      leaguePromotePct:
+          (season?['leaguePromotePct'] as num?)?.toDouble() ?? 0.2,
+      leagueDemotePct: (season?['leagueDemotePct'] as num?)?.toDouble() ?? 0.2,
+      leagueBoardSize: (season?['leagueBoardSize'] as num?)?.toInt() ?? 100,
       locationAffinityBonus:
           (json['locationAffinityBonus'] as num?)?.toDouble() ?? 0.2,
       manualTurnSeconds: (json['manualTurnSeconds'] as num?)?.toInt() ?? 10,

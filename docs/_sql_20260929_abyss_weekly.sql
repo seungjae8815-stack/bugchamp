@@ -65,14 +65,20 @@ language sql stable security definer set search_path = public as $$
   where r.user_id = p_user;
 $$;
 
--- 운영용 상위 N 명.
-create or replace function abyss_top(p_week text, lim int default 10)
-returns table(rank bigint, user_id uuid, nickname text, floor int, boss_pm int, updated_at timestamptz)
+-- 순위표 상위 N 명(앱 화면 · 운영 확인 공용) — 닉네임·전투력·뱃지(profiles) + 대표 곤충(방어팀 1번).
+create or replace function abyss_top(p_week text, lim int default 100)
+returns table(rank bigint, user_id uuid, nickname text, floor int, boss_pm int,
+              updated_at timestamptz, power double precision, badge text, sp text)
 language sql stable security definer set search_path = public as $$
-  select row_number() over (order by floor desc, boss_pm desc, updated_at asc) as rank,
-         user_id, nickname, floor, boss_pm, updated_at
-  from abyss_weekly_scores where week_id = p_week and floor > 1
-  order by floor desc, boss_pm desc, updated_at asc
+  select row_number() over (order by s.floor desc, s.boss_pm desc, s.updated_at asc) as rank,
+         s.user_id, coalesce(nullif(p.nickname, ''), s.nickname), s.floor, s.boss_pm, s.updated_at,
+         coalesce(p.power, 0)::double precision, coalesce(p.badge, ''),
+         coalesce(d.team -> 0 ->> 'sp', '')
+  from abyss_weekly_scores s
+  left join profiles p on p.id = s.user_id
+  left join defenders d on d.id = s.user_id
+  where s.week_id = p_week and s.floor > 1
+  order by s.floor desc, s.boss_pm desc, s.updated_at asc
   limit lim;
 $$;
 
