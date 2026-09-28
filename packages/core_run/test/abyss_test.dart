@@ -39,8 +39,8 @@ void main() {
       }
     });
 
-    test('골드는 체력보다 느리게 자란다(어딘가에서 벽 — 순위가 갈린다)', () {
-      expect(run.abyss.goldGrowth, lessThan(run.abyss.hpGrowth));
+    test('골드는 체력보다 빠르지 않다(강화 비용이 지수라 어딘가에서 벽 — 순위가 갈린다)', () {
+      expect(run.abyss.goldGrowth, lessThanOrEqualTo(run.abyss.hpGrowth));
     });
 
     test('숫자가 넘치지 않는다 — 깊은 층에서도 상한에서 멈춘다', () {

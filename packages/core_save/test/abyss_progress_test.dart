@@ -108,4 +108,20 @@ void main() {
       isEmpty,
     );
   });
+
+  test('벽 보스 피해 — 이번 주 막힌 층의 최고치만 · 층을 깨거나 주가 바뀌면 0', () {
+    var s = unlockAbyss(
+      base(),
+    ).copyWith(inAbyss: true, abyssFloor: 12, abyssWeek: w1);
+    s = recordAbyssBossDamage(s, 0.42);
+    expect(s.abyssBossBest, 420);
+    s = recordAbyssBossDamage(s, 0.3);
+    expect(s.abyssBossBest, 420, reason: '낮은 기록은 덮지 않는다');
+    s = recordAbyssBossDamage(s, 1.2);
+    expect(s.abyssBossBest, 999, reason: '잡지 못했으면 100% 가 아니다');
+    expect(clearAbyssFloor(s, run).save.abyssBossBest, 0);
+    expect(applyAbyssWeek(s, w2).abyssBossBest, 0);
+    // 심연 밖에서는 기록하지 않는다.
+    expect(recordAbyssBossDamage(leaveAbyss(s), 0.9).abyssBossBest, 999);
+  });
 }

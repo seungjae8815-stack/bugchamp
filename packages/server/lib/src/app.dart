@@ -485,6 +485,7 @@ Handler buildHandler({
               userId: user.id,
               nickname: abyssScore.save.nickname,
               floor: abyssScore.floor,
+              boss: abyssScore.boss,
             );
             r = ActionResult.ok(abyssScore.save, extra: r.extra);
           } catch (e) {

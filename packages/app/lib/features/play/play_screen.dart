@@ -1932,6 +1932,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       }
       return;
     }
+    // 심연 층 보스에게 넣은 피해를 남긴다 — 주간 순위의 동률 판정(같은 층이면 더 깎은 쪽이 위).
+    _recordAbyssBossDamage();
     // 즉시 넘어가지 않고 다친/죽는 연출을 보여준 뒤 후퇴.
     _defeated = true;
     _defeatT = _defeatDuration;
@@ -3585,7 +3587,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final zone = _config.zoneOf(_stage);
     final save = ref.watch(saveControllerProvider).requireValue;
     final zoneText = save.inAbyss
-        ? l.abyssFloorLabel(save.abyssFloor)
+        ? (save.abyssBossBest > 0
+              // 막힌 층 보스를 얼마나 깎았나 — 주간 순위의 동률 판정이다.
+              ? '${l.abyssFloorLabel(save.abyssFloor)} · ${save.abyssBossBest ~/ 10}%'
+              : l.abyssFloorLabel(save.abyssFloor))
         : _config.isFinalZone(zone)
         ? l.zoneFinalLabel
         : l.zoneLabel(zone);
@@ -4144,6 +4149,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
   }
 
+  /// 심연 보스전이 (못 잡고) 끝날 때 — 넣은 피해 비율을 기록한다(이번 주 막힌 층의 최고치만).
+  void _recordAbyssBossDamage() {
+    if (!_isBoss || !_bossChallenge || _hpMax <= 0) return;
+    final save = ref.read(saveControllerProvider).requireValue;
+    if (!save.inAbyss) return;
+    unawaited(
+      ref
+          .read(saveControllerProvider.notifier)
+          .recordAbyssBossDamageNow(1 - _hp / _hpMax),
+    );
+  }
+
   /// 심연으로 들어가 화면을 그 자리에 맞춘다.
   Future<void> _goAbyss() async {
     await ref.read(saveControllerProvider.notifier).enterAbyssNow();
@@ -4344,6 +4361,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ],
     );
     if (ok != true || !mounted || !_bossChallenge) return;
+    _recordAbyssBossDamage();
     // 쓰러졌을 때(`_resumeAfterDefeat`)와 **같은 것을 되돌린다** — 게이지,
     // 서식지 자리, 팀 체력, 이월된 공격 게이지.
     unawaited(ref.read(saveControllerProvider.notifier).resetZoneKills());

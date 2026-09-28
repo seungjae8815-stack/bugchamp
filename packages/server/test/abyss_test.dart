@@ -104,6 +104,25 @@ void main() {
       expect(actions.abyssScoreFor(r.save, r.save), isNull);
     });
 
+    test('같은 층에서 벽 보스를 더 깎으면 다시 기록한다(동률 판정)', () {
+      final s = stored().copyWith(abyssScoreWeek: week, abyssBossBest: 300);
+      final better = s.copyWith(abyssBossBest: 450);
+      final r = actions.abyssScoreFor(s, better);
+      expect(r, isNotNull);
+      expect(r!.boss, 450);
+      expect(r.floor, 5);
+      // 덜 깎았으면 기록하지 않는다.
+      expect(actions.abyssScoreFor(s, s.copyWith(abyssBossBest: 200)), isNull);
+    });
+
+    test('층이 잘린 업로드의 보스 피해는 버린다 · 범위를 자른다', () {
+      final s = stored();
+      final forged = s.copyWith(abyssFloor: 999, abyssBossBest: 900);
+      expect(actions.mergeSave(s, forged.toJson()).save!.abyssBossBest, 0);
+      final json = s.toJson()..['abyssBossBest'] = 5000;
+      expect(actions.mergeSave(s, json).save!.abyssBossBest, 999);
+    });
+
     test('끝난 주만 한 번 판정 · 10위까지 젤리', () {
       final s = stored().copyWith(abyssScoreWeek: '2026-09-21');
       expect(actions.abyssRewardDueWeek(s), '2026-09-21');

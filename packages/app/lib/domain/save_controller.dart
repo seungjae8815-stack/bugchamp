@@ -720,6 +720,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(enterAbyss(s, run, _abyssWeekNow()));
   }
 
+  /// 심연 보스에게 넣은 피해 비율 기록(주간 순위 동률 판정). 바뀔 때만 저장한다.
+  Future<void> recordAbyssBossDamageNow(double fraction) async {
+    final s = state.requireValue;
+    final next = recordAbyssBossDamage(s, fraction);
+    if (!identical(next, s)) await _commit(next);
+  }
+
   /// 심연에서 나온다(극한 최종 사냥터로).
   Future<void> leaveAbyssNow() async {
     await _commit(leaveAbyss(state.requireValue));

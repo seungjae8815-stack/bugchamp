@@ -561,6 +561,7 @@ class SaveGame {
     this.abyssFloor = 1,
     this.abyssWeek,
     this.abyssBest = 0,
+    this.abyssBossBest = 0,
     this.abyssScoreWeek,
     this.abyssRewardWeek,
     this.eventBadges = const {},
@@ -789,6 +790,12 @@ class SaveGame {
 
   /// 역대 최고 층 — 마일스톤(10층마다 첫 도달)과 프로필 표시. 줄어들지 않는다.
   final int abyssBest;
+
+  /// 이번 주 **막힌 층 보스**에게 넣은 최대 피해(천분율 0~999). 층을 깨거나 주가 바뀌면 0.
+  /// 주간 순위의 동률 판정 — 같은 층이면 벽 보스를 더 깎은 쪽이 위다(2026-09-29 사장님 확정).
+  /// 오래 한 유저는 성장이 상한에 닿아 같은 층에 몰리는데, 그때 "먼저 도착"으로 가르면
+  /// 월요일 자정에 달려야 이긴다 — 이 값이 도착 시간 대신 **전력**으로 가르게 한다.
+  final int abyssBossBest;
 
   /// 주간 순위 점수를 마지막으로 기록한 주. **서버 소유**(조회를 점수 낸 사람만 돌리려고).
   final String? abyssScoreWeek;
@@ -1306,6 +1313,7 @@ class SaveGame {
     int? abyssFloor,
     String? abyssWeek,
     int? abyssBest,
+    int? abyssBossBest,
     String? abyssScoreWeek,
     String? abyssRewardWeek,
     Set<String>? eventBadges,
@@ -1412,6 +1420,7 @@ class SaveGame {
     abyssFloor: abyssFloor ?? this.abyssFloor,
     abyssWeek: abyssWeek ?? this.abyssWeek,
     abyssBest: abyssBest ?? this.abyssBest,
+    abyssBossBest: abyssBossBest ?? this.abyssBossBest,
     abyssScoreWeek: abyssScoreWeek ?? this.abyssScoreWeek,
     abyssRewardWeek: abyssRewardWeek ?? this.abyssRewardWeek,
     eventBadges: eventBadges ?? this.eventBadges,
@@ -1626,6 +1635,10 @@ class SaveGame {
     abyssFloor: ((json['abyssFloor'] as num?)?.toInt() ?? 1).clamp(1, 1 << 30),
     abyssWeek: json['abyssWeek'] as String?,
     abyssBest: (json['abyssBest'] as num?)?.toInt() ?? 0,
+    abyssBossBest: ((json['abyssBossBest'] as num?)?.toInt() ?? 0).clamp(
+      0,
+      999,
+    ),
     abyssScoreWeek: json['abyssScoreWeek'] as String?,
     abyssRewardWeek: json['abyssRewardWeek'] as String?,
     eventBadges:
@@ -1821,6 +1834,7 @@ class SaveGame {
     if (abyssFloor != 1) 'abyssFloor': abyssFloor,
     if (abyssWeek != null) 'abyssWeek': abyssWeek,
     if (abyssBest > 0) 'abyssBest': abyssBest,
+    if (abyssBossBest > 0) 'abyssBossBest': abyssBossBest,
     if (abyssScoreWeek != null) 'abyssScoreWeek': abyssScoreWeek,
     if (abyssRewardWeek != null) 'abyssRewardWeek': abyssRewardWeek,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),

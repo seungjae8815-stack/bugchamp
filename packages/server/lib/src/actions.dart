@@ -706,6 +706,7 @@ class GameActions {
     merged['inAbyss'] = abyss.inAbyss;
     merged['abyssFloor'] = abyss.floor;
     merged['abyssBest'] = abyss.best;
+    merged['abyssBossBest'] = abyss.bossBest;
     if (abyss.week != null) merged['abyssWeek'] = abyss.week;
     if (abyss.clamped) clampReasons.add('abyss');
 
@@ -2550,6 +2551,7 @@ class GameActions {
     bool inAbyss,
     int floor,
     int best,
+    int bossBest,
     String? week,
     bool clamped,
   })
@@ -2592,11 +2594,17 @@ class GameActions {
     final best = max(stored.abyssBest, min(clientBest, floor - 1));
     if (clientBest > best) clamped = true;
     final inAbyss = unlocked && clientJson['inAbyss'] == true;
+    // 벽 보스 피해(천분율) — 기기 권위라 검증할 수 없다. 범위만 자른다(잡지 못했으면 100% 가 아니다).
+    // 층이 잘렸으면 그 층의 기록이 아니므로 버린다.
+    final bossBest = clamped
+        ? 0
+        : ((clientJson['abyssBossBest'] as num?)?.toInt() ?? 0).clamp(0, 999);
     return (
       unlocked: unlocked,
       inAbyss: inAbyss,
       floor: floor,
       best: best,
+      bossBest: bossBest,
       week: week,
       clamped: clamped,
     );
@@ -2609,8 +2617,9 @@ class GameActions {
     return out.abyssBest ~/ every - stored.abyssBest ~/ every;
   }
 
-  /// 저장할 세이브에 **이번 주 점수 기록**을 찍는다. 기록할 (주, 층)을 돌려준다(층이 올랐을 때만).
-  ({SaveGame save, String week, int floor})? abyssScoreFor(
+  /// 저장할 세이브에 **이번 주 점수 기록**을 찍는다. 기록할 (주, 층, 벽 보스 피해)을 돌려준다
+  /// (층이 올랐거나, 같은 층에서 벽 보스를 더 깎았을 때만).
+  ({SaveGame save, String week, int floor, int boss})? abyssScoreFor(
     SaveGame stored,
     SaveGame save,
   ) {
@@ -2618,12 +2627,19 @@ class GameActions {
     if (!save.abyssUnlocked || save.abyssWeek != week || save.abyssFloor <= 1) {
       return null;
     }
-    final before = stored.abyssWeek == week ? stored.abyssFloor : 0;
-    if (save.abyssFloor <= before && stored.abyssScoreWeek == week) return null;
+    final sameWeek = stored.abyssWeek == week;
+    final before = sameWeek ? stored.abyssFloor : 0;
+    final bossBefore = sameWeek && save.abyssFloor == stored.abyssFloor
+        ? stored.abyssBossBest
+        : -1;
+    final improved =
+        save.abyssFloor > before || save.abyssBossBest > bossBefore;
+    if (!improved && stored.abyssScoreWeek == week) return null;
     return (
       save: save.copyWith(abyssScoreWeek: week),
       week: week,
       floor: save.abyssFloor,
+      boss: save.abyssBossBest,
     );
   }
 

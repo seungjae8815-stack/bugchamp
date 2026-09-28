@@ -197,6 +197,7 @@ class StateStore {
     required String userId,
     required String nickname,
     required int floor,
+    int boss = 0,
   }) async {
     final res = await _http.post(
       Uri.parse('$supabaseUrl/rest/v1/rpc/abyss_submit'),
@@ -206,6 +207,7 @@ class StateStore {
         'p_user': userId,
         'p_nick': nickname,
         'p_floor': floor,
+        'p_boss': boss,
       }),
     );
     if (res.statusCode >= 300) {

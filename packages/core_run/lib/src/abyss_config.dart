@@ -13,9 +13,9 @@ import 'battle_config.dart' show SeasonRankReward;
 @immutable
 class AbyssConfig {
   const AbyssConfig({
-    this.hpGrowth = 1.06,
-    this.threatGrowth = 1.05,
-    this.goldGrowth = 1.05,
+    this.hpGrowth = 1.03,
+    this.threatGrowth = 1.025,
+    this.goldGrowth = 1.03,
     this.milestoneEvery = 10,
     this.milestoneShards = 10,
     this.milestoneFossil = 100,
@@ -29,7 +29,7 @@ class AbyssConfig {
   /// 층마다 표 위협 배율(적응형 위협과 큰 쪽이 쓰인다).
   final double threatGrowth;
 
-  /// 층마다 골드 배율. **체력보다 느리게** — 어딘가에서 벽에 닿아야 순위가 갈린다.
+  /// 층마다 골드 배율. **체력보다 빠르지 않게** — 강화 비용이 지수라 같은 배율이어도 벽에 닿는다.
   final double goldGrowth;
 
   /// 이 층수마다 **처음 도달**하면 조각·화석 일시금(역대 최고 층 기준이라 주간 리셋에도 한 번뿐).

@@ -28,8 +28,17 @@ SaveGame applyAbyssWeek(SaveGame s, String week) {
   return s.copyWith(
     abyssWeek: week,
     abyssFloor: 1,
+    abyssBossBest: 0,
     zoneKills: s.inAbyss ? 0 : s.zoneKills,
   );
+}
+
+/// 심연 층 보스에게 넣은 피해 비율([fraction] 0~1)을 기록한다 — 이번 주 막힌 층의 **최고치**만.
+/// 쓰러지거나 도망쳐 보스전이 끝날 때 부른다(잡으면 층이 올라 0 부터 다시).
+SaveGame recordAbyssBossDamage(SaveGame s, double fraction) {
+  if (!s.inAbyss || !fraction.isFinite) return s;
+  final pm = (fraction * 1000).floor().clamp(0, 999);
+  return pm > s.abyssBossBest ? s.copyWith(abyssBossBest: pm) : s;
 }
 
 /// 극한 최종 보스를 처음 잡으면 심연이 열린다.
@@ -72,6 +81,7 @@ clearAbyssFloor(
   var out = s.copyWith(
     abyssFloor: floor + 1,
     abyssBest: math.max(s.abyssBest, floor),
+    abyssBossBest: 0,
     zoneKills: 0,
   );
   var fossil = 0;

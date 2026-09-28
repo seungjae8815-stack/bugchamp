@@ -122,6 +122,10 @@ int _petRestrainCount = 0;
 /// `--endgame-days=N` — 극한 최종 보스 뒤로 더 노는 일수.
 int _endgameDays = 0;
 
+/// `--abyss-weeks=N` — 극한을 깬 뒤 심연을 N 주 오른다(주마다 1층부터, docs/design_abyss.md).
+/// 한 주의 도달 층 = min(전력의 벽, 시간의 벽). 주 사이에는 성장이 이어진다.
+int _abyssWeeks = 0;
+
 /// 유저가 보스전을 붙잡고 있을 수 있는 최대 시간(초). 이보다 오래 걸리면 안 누른다고 본다.
 const _bossPatienceSeconds = 240.0;
 
@@ -406,6 +410,39 @@ void main(List<String> args) {
       stdout.writeln(
         '  +$_endgameDays일 끝: 공방 ${sim.forgeLevel}(화면 ${sim.forgeLevel + 1}등급)',
       );
+    }
+    // `--abyss-weeks=N` : 극한을 깬 뒤 심연(주간 1층부터)을 N 주 오른다.
+    //
+    // ⚠️ 근사: 한 주 동안의 성장은 **극한 최종 사냥터에서 논 것**으로 잰다(심연 골드는 층마다
+    // ×goldGrowth 라 실제로는 조금 더 빨리 큰다 — 도달 층은 **하한**이다).
+    if (_abyssWeeks > 0) {
+      final cfg = config.abyss;
+      stdout.writeln('  ── 심연(주마다 1층부터 · 전력의 벽 vs 시간의 벽) ──');
+      stdout.writeln(
+        '  배율: 체력 ×${cfg.hpGrowth} · 위협 ×${cfg.threatGrowth} · 골드 ×${cfg.goldGrowth} /층',
+      );
+      stdout.writeln('   주 | 전력의 벽 | 시간의 벽 | 도달 | 도달까지 활동 | 그 층 한 층 | CP');
+      final finalStage = config.zoneStartStage(config.zonesPerTier);
+      for (var w = 1; w <= _abyssWeeks; w++) {
+        for (var d = 0; d < 7; d++) {
+          sim.stage = finalStage;
+          sim.fitting = true;
+          sim.playDay();
+        }
+        sim.stage = finalStage;
+        final wall = sim.abyssWall();
+        final time = sim.abyssFloorsByTime(7);
+        final reach = math.min(wall, time.floors);
+        final toReach = sim.abyssHoursTo(reach);
+        final one = sim.abyssHoursTo(reach + 1) - toReach;
+        stdout.writeln(
+          '  ${w.toString().padLeft(3)} | ${wall.toString().padLeft(8)} | '
+          '${time.floors.toString().padLeft(8)} | ${reach.toString().padLeft(4)} | '
+          '${toReach.toStringAsFixed(1).padLeft(7)}시간 | '
+          '${(one * 60).toStringAsFixed(0).padLeft(5)}분 | '
+          '${_short(combatPower(sim.stats))}',
+        );
+      }
     }
     stdout.writeln('');
     stdout.writeln('  ★ 전 회차 합계: $total일');
@@ -1713,6 +1750,108 @@ class _Player {
     return _bossDamageIn(limit) * margin;
   }
 
+  /// 심연 [floor] 층 보스를 지금 전력으로 잡을 수 있나 — [_bossBeatable] 과 같은 판정에 층 배율.
+  bool _abyssBossBeatable(int floor) {
+    final st = stats;
+    final baseBoss = baselineHitPower(baselineStats, boss: true);
+    final hp = bossMaxHp(
+      config,
+      stage - 1,
+      playerAttack: baseBoss,
+      tier: _tier,
+      abyssFloor: floor,
+    ).toDouble();
+    final inc =
+        habitatThreat(
+          config,
+          stage - 1,
+          boss: true,
+          playerToughness: toughnessOf(_baseStats),
+          gearToughness: toughnessOf(st),
+          tier: _tier,
+          abyssFloor: floor,
+        ) *
+        100 /
+        (100 + st.defense);
+    final net = inc - st.hpRegen;
+    final live = _bossLive(st.maxHp, net);
+    return _bossDamageIn(math.min(_bossPatienceSeconds, live / 1.1)) >= hp;
+  }
+
+  /// 지금 전력으로 깰 수 있는 **가장 깊은 층**(전력의 벽). 이 층의 보스는 잡는다.
+  int abyssWall({int cap = 5000}) {
+    var lo = 0;
+    var hi = 1;
+    while (hi <= cap && _abyssBossBeatable(hi)) {
+      lo = hi;
+      hi *= 2;
+    }
+    if (hi > cap) return cap;
+    while (hi - lo > 1) {
+      final mid = (lo + hi) ~/ 2;
+      if (_abyssBossBeatable(mid)) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    return lo;
+  }
+
+  /// [days] 일 동안 1층부터 오를 수 있는 층(시간의 벽) — 층마다 100마리. 활동 시간은 그대로,
+  /// 방치는 효율만큼 게이지에 쌓인다(보스 도전은 활동 중에 누른다고 본다).
+  /// [floor] 층까지 오르는 데 드는 **활동 환산 시간**(시간) — 층마다 100마리.
+  double abyssHoursTo(int floor) {
+    final st = stats;
+    final need = config.bossUnlockKills.toDouble();
+    var h = 0.0;
+    for (var f = 1; f < floor; f++) {
+      final perHour = estimateClears(
+        config: config,
+        stageNumber: stage,
+        stats: st,
+        elapsed: const Duration(hours: 1),
+        efficiency: 1.0,
+        tier: _tier,
+        abyssFloor: f,
+      );
+      if (perHour <= 0) return double.infinity;
+      h += need / perHour;
+    }
+    return h;
+  }
+
+  ({int floors, double minutesAtReach}) abyssFloorsByTime(int days) {
+    final st = stats;
+    final need = config.bossUnlockKills.toDouble();
+    final budgetSec =
+        days *
+        (_activeHoursPerDay + _offlineHoursPerDay * config.offlineEfficiency) *
+        3600;
+    var used = 0.0;
+    var floor = 1;
+    var perFloorMin = 0.0;
+    while (floor < 5000) {
+      // 한 시간 동안 이 층에서 잡는 수(활동 효율 1.0).
+      final perHour = estimateClears(
+        config: config,
+        stageNumber: stage,
+        stats: st,
+        elapsed: const Duration(hours: 1),
+        efficiency: 1.0,
+        tier: _tier,
+        abyssFloor: floor,
+      );
+      if (perHour <= 0) break;
+      final sec = need / perHour * 3600;
+      if (used + sec > budgetSec) break;
+      used += sec;
+      perFloorMin = sec / 60;
+      floor++;
+    }
+    return (floors: floor, minutesAtReach: perFloorMin);
+  }
+
   /// 지금 전력으로 [stage] 의 보스를 잡을 수 있나 — 죽이는 시간 < 버티는 시간.
   /// 앱의 도전 판단(유저가 누른다)을 시뮬이 대신한다. 너무 오래 걸리면(120초)
   /// 유저도 안 누른다고 본다.
@@ -2289,6 +2428,11 @@ _Opts _parseArgs(List<String> args) {
     final egd = RegExp(r'^--endgame-days=(.+)$').firstMatch(a);
     if (egd != null) {
       _endgameDays = int.parse(egd.group(1)!);
+      continue;
+    }
+    final abw = RegExp(r'^--abyss-weeks=(.+)$').firstMatch(a);
+    if (abw != null) {
+      _abyssWeeks = int.parse(abw.group(1)!);
       continue;
     }
     final trs = RegExp(r'^--tiers=(.+)$').firstMatch(a);
