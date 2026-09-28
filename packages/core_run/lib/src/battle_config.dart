@@ -76,6 +76,8 @@ class BattleConfig {
     this.seasonTzOffsetMinutes = 540,
     this.seasonResetFactor = 0.5,
     this.seasonRewardMult = 3.0,
+    this.seasonRankRewards = const [],
+    this.duelJson = const {},
     this.locationAffinityBonus = 0.2,
     this.manualTurnSeconds = 10,
     this.ticketMax = 10,
@@ -128,6 +130,28 @@ class BattleConfig {
 
   /// 시즌 보상 = 최고 리그 승급보상 × 이 배율.
   final double seasonRewardMult;
+
+  /// 시즌 종료 **순위** 보상(2026-09-28 사장님 확정: 1위 100 · 2위 50 · 3위 30 ·
+  /// 4~10위 10젤리). 위에서부터 먼저 맞는 구간 하나만 적용된다(`maxRank` 이하).
+  ///
+  /// 젤리는 여기서만 나간다 — 리그 등급 보상은 골드만이다. 등급 보상에 젤리를
+  /// 두면 다이아에 오른 사람 전원이 매주 받아 넓게 퍼지지만, 순위는 10명뿐이다.
+  final List<SeasonRankReward> seasonRankRewards;
+
+  /// 결투(곤충 배틀 스타디움) 물리·규칙 수치 원본(`battle.json → duel`).
+  ///
+  /// core_run 은 core_battle 을 모르므로(형제) 모델(`DuelParams`)이 아니라 **원본 맵**으로 들고,
+  /// 앱·서버가 `DuelParams.fromJson(cfg.duelJson)` 으로 만든다 — 같은 JSON 한 곳에서.
+  final Map<String, dynamic> duelJson;
+
+  /// [rank] 위가 받는 순위 보상 젤리. 순위권 밖이면 0.
+  int seasonRankJelly(int rank) {
+    if (rank < 1) return 0;
+    for (final r in seasonRankRewards) {
+      if (rank <= r.maxRank) return r.jelly;
+    }
+    return 0;
+  }
 
   /// 스카우트 새로고침 — 무료 횟수/일, 소진 후 젤리 비용, 젤리 포함 총량/일.
   /// 총량이 없으면 젤리로 무한 리롤해 제일 약한 상대만 골라 트로피를 캔다.
@@ -271,6 +295,11 @@ class BattleConfig {
           (season?['tzOffsetMinutes'] as num?)?.toInt() ?? 540,
       seasonResetFactor: (season?['resetFactor'] as num?)?.toDouble() ?? 0.5,
       seasonRewardMult: (season?['rewardMult'] as num?)?.toDouble() ?? 3.0,
+      duelJson: Map<String, dynamic>.from((json['duel'] as Map?) ?? const {}),
+      seasonRankRewards: [
+        for (final r in (season?['rankRewards'] as List? ?? const []))
+          SeasonRankReward.fromJson(r as Map<String, dynamic>),
+      ],
       locationAffinityBonus:
           (json['locationAffinityBonus'] as num?)?.toDouble() ?? 0.2,
       manualTurnSeconds: (json['manualTurnSeconds'] as num?)?.toInt() ?? 10,
@@ -316,6 +345,34 @@ DateTime seasonStartAt(DateTime now, BattleConfig cfg) {
   // 오늘이 리셋 요일이어도 아직 리셋 시각 전이면 지난주가 이번 시즌이다.
   if (local.isBefore(start)) start = start.subtract(const Duration(days: 7));
   return start.subtract(off);
+}
+
+/// 시즌 식별자 — 시즌 시작의 **기준 시간대 날짜**(`2026-09-28`).
+///
+/// 순위 테이블(`pvp_season_scores`)의 키이자, 세이브에 "어느 시즌 점수를
+/// 냈나 / 어느 시즌 보상을 받았나"를 적는 값이다. 사람이 읽을 수 있어야 운영에서
+/// "지난주 1위가 누구였나"를 바로 조회한다.
+String seasonIdOf(DateTime seasonStart, BattleConfig cfg) {
+  final local = seasonStart.toUtc().add(
+    Duration(minutes: cfg.seasonTzOffsetMinutes),
+  );
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${local.year}-${two(local.month)}-${two(local.day)}';
+}
+
+/// 시즌 순위 보상 한 구간 — [maxRank] 위 이하가 [jelly] 를 받는다.
+@immutable
+class SeasonRankReward {
+  const SeasonRankReward({required this.maxRank, this.jelly = 0});
+
+  final int maxRank;
+  final int jelly;
+
+  factory SeasonRankReward.fromJson(Map<String, dynamic> json) =>
+      SeasonRankReward(
+        maxRank: (json['maxRank'] as num?)?.toInt() ?? 0,
+        jelly: (json['jelly'] as num?)?.toInt() ?? 0,
+      );
 }
 
 /// [now] 가 속한 시즌의 **종료(=다음 리셋) 시각**, UTC.

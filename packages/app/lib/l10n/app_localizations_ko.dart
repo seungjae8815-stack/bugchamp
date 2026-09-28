@@ -212,10 +212,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leagueSeasonTitle => '리그 · 시즌';
 
   @override
-  String get modeManual => '수동';
+  String get modeManual => '직접 던지기';
 
   @override
-  String get modeAuto => '자동';
+  String get modeAuto => '빠른 결투';
 
   @override
   String get opponentWild => '야생';
@@ -3293,7 +3293,8 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get seasonRewardHint => '매주 월요일 09시, 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요.';
+  String get seasonRewardHint =>
+      '매주 일요일 자정(24시), 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요.';
 
   @override
   String eventOpensOn(String m, String d) {
@@ -3392,6 +3393,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get giftAdMorePassLine => '패스가 있으면 언제나 2배로 받아요';
+
+  @override
+  String giftDoubleJellyLine(int min, int max) {
+    return '오늘 첫 2배 보너스: 곤충젤리 $min~$max개!';
+  }
 
   @override
   String get giftGoPassBtn => '패스 보러 가기';
@@ -3501,5 +3507,119 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String tierMoved(String name) {
     return '$name 난이도로 이동했어요';
+  }
+
+  @override
+  String get pvpRankRewardTitle => '결투 시즌 순위 보상';
+
+  @override
+  String pvpRankRewardBody(int rank) {
+    return '지난 시즌 결투 $rank위를 차지했어요!';
+  }
+
+  @override
+  String pvpRankN(int n) {
+    return '$n위';
+  }
+
+  @override
+  String pvpRankRewardHint(String list) {
+    return '순위 보상(젤리) $list';
+  }
+
+  @override
+  String get duelThrowButton => '던지기!';
+
+  @override
+  String get duelGaugeHint => '초록 칸에서 멈추면 첫 돌진이 세져요';
+
+  @override
+  String duelBout(int n) {
+    return '$n판';
+  }
+
+  @override
+  String get duelFinishRingOut => '장외!';
+
+  @override
+  String get duelFinishFlip => '뒤집기!';
+
+  @override
+  String get duelFinishKnockout => '기절!';
+
+  @override
+  String get duelFinishTimeUp => '판정!';
+
+  @override
+  String get duelBoutWin => '이겼다!';
+
+  @override
+  String get duelBoutLose => '졌다…';
+
+  @override
+  String get duelSkip => '건너뛰기';
+
+  @override
+  String duelTrophy(String delta) {
+    return '트로피 $delta';
+  }
+
+  @override
+  String get duelResultOk => '확인';
+
+  @override
+  String get duelNeedThree => '결투에는 곤충 3마리가 필요해요';
+
+  @override
+  String get duelOrderHint => '1·2·3번이 한 판씩 붙어요 · 이 순서가 내 방어 순서가 돼요';
+
+  @override
+  String get abyssName => '심연';
+
+  @override
+  String abyssFloorLabel(int n) {
+    return '심연 $n층';
+  }
+
+  @override
+  String get abyssUnlockedTitle => '심연이 열렸어요!';
+
+  @override
+  String get abyssUnlockedBody =>
+      '극한 너머로 끝없이 이어지는 층이에요. 강화·장비·곤충은 그대로 가져가요.\n매주 일요일 자정에 1층부터 다시 오르고, 한 주 동안 가장 깊이 내려간 순위로 젤리를 받아요.';
+
+  @override
+  String get abyssEnter => '심연으로';
+
+  @override
+  String get abyssLater => '나중에';
+
+  @override
+  String get abyssLeave => '심연에서 나가기';
+
+  @override
+  String abyssFloorClear(int n) {
+    return '$n층 돌파!';
+  }
+
+  @override
+  String abyssMilestone(int n, int fossil) {
+    return '$n층 첫 도달! 화석 +$fossil';
+  }
+
+  @override
+  String abyssBest(int n) {
+    return '역대 최고 $n층';
+  }
+
+  @override
+  String get abyssWeekReset => '새 주가 시작됐어요 — 심연 1층부터!';
+
+  @override
+  String get abyssRankRewardTitle => '심연 주간 순위 보상';
+
+  @override
+  String abyssRankRewardBody(int floor, int rank) {
+    return '지난주 심연 $floor층 · $rank위를 차지했어요!';
   }
 }

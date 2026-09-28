@@ -76,6 +76,38 @@ class EventRewardReport {
       );
 }
 
+/// 결투 시즌 **순위** 보상(2026-09-28) — 서버가 시즌이 끝난 뒤 첫 업로드에서
+/// 지급하고 알려 준다. 순위권(10위) 안에 든 사람에게만 온다.
+class PvpRankRewardReport {
+  const PvpRankRewardReport({
+    required this.season,
+    required this.rank,
+    required this.jelly,
+    this.total = 0,
+    this.floor = 0,
+  });
+
+  /// 심연 주간 순위일 때 그 주에 닿은 층(결투 순위면 0).
+  final int floor;
+
+  /// 시즌 id(`2026-09-28` = 그 시즌이 시작한 날).
+  final String season;
+  final int rank;
+  final int jelly;
+
+  /// 그 시즌 순위에 든 인원(트로피 1 이상).
+  final int total;
+
+  factory PvpRankRewardReport.fromJson(Map<String, dynamic> json) =>
+      PvpRankRewardReport(
+        season: '${json['season']}',
+        rank: (json['rank'] as num?)?.toInt() ?? 0,
+        jelly: (json['jelly'] as num?)?.toInt() ?? 0,
+        total: (json['total'] as num?)?.toInt() ?? 0,
+        floor: (json['floor'] as num?)?.toInt() ?? 0,
+      );
+}
+
 /// 시즌 종료 정산 결과(UI 가 1회 표시). 트로피 소프트리셋 + 보상.
 class SeasonReport {
   const SeasonReport({
@@ -146,6 +178,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 서버가 지급한 대회 회차 보상(UI 가 1회 표시 후 [consumeEventReward]).
   EventRewardReport? pendingEventReward;
+
+  /// 결투 시즌 순위 보상(서버 지급) — 앱 셸이 1회 팝업으로 보여준다.
+  PvpRankRewardReport? pendingPvpRankReward;
+
+  /// 심연 주간 순위 보상(서버 지급) — 같은 모양이라 같은 보고서를 쓴다(`floor` 가 채워진다).
+  PvpRankRewardReport? pendingAbyssRankReward;
 
   @override
   Future<SaveGame> build() async {
@@ -273,6 +311,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
 
+    // 심연 층은 **주간**이다(결투 시즌과 같은 경계) — 주가 바뀌었으면 1층부터(A안).
+    // 한 번이라도 심연에 들어가 본 세이브만(주 기록이 없으면 들어갈 때 정한다).
+    if (battleCfg != null && save.abyssWeek != null) {
+      save = applyAbyssWeek(save, abyssWeekId(now, battleCfg));
+    }
+
     return save;
   }
 
@@ -303,6 +347,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
       stats: stats,
       elapsed: elapsed,
       tier: save.difficultyTier,
+      // 심연이면 층 배율(서버 정산과 같은 규칙).
+      abyssFloor: activeAbyssFloor(save),
       // 끝에 눌러앉으면 방치 수입도 깎인다(온라인과 같은 규칙).
       finalStage: data.roadmapConfig?.finalStage,
       efficiency: config.offlineEfficiency,
@@ -350,6 +396,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         stats: stats,
         elapsed: elapsed,
         tier: save.difficultyTier,
+        abyssFloor: activeAbyssFloor(save),
         efficiency: config.offlineEfficiency,
         maxAccrual: passOn
             ? Duration(hours: iap?.passOfflineCapHours ?? 12)
@@ -385,6 +432,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
   void consumeOffline() => pendingOffline = null;
   void consumeSeason() => pendingSeason = null;
   void consumeEventReward() => pendingEventReward = null;
+  void consumePvpRankReward() => pendingPvpRankReward = null;
+  void consumeAbyssRankReward() => pendingAbyssRankReward = null;
 
   /// 다음 난이도 회차로 진입한다 — **성장 축을 리셋하고 자산은 남긴다**
   /// (프레스티지, `docs/design_difficulty_loop.md`).
@@ -618,6 +667,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final run = data?.runConfig;
     final s = state.requireValue;
     if (run == null || !run.zoneMode) return const {};
+    // 심연 층 보스는 사냥터 보스가 아니다 — 층 규칙(`clearAbyssFloor`)으로 따로 간다.
+    if (s.inAbyss) return (await clearAbyssFloorNow(rng: rng)).shards;
     final zone = run.zoneOf(s.stageNumber);
     final artId = run.bossArtId(s.difficultyTier, zone);
     final firstKill = !s.bossDex.contains(artId);
@@ -641,9 +692,77 @@ class SaveController extends AsyncNotifier<SaveGame> {
         stageNumber: run.zoneStartStage(zone + 1),
         zoneKills: 0,
       );
+    } else {
+      // 최종 보스도 게이지를 비운다 — 예전엔 안 비워서 최종 보스를 곧바로 무한 반복했다
+      // (보스 골드 ×8 + 조각이 사실상의 엔드게임이었다, 2026-09-28 조사).
+      next = next.copyWith(zoneKills: 0);
+      // 극한 최종 보스 → 심연이 열린다.
+      if (s.difficultyTier >= abyssTier(run)) next = unlockAbyss(next);
     }
     await _commit(next);
     return shards;
+  }
+
+  // ── 심연(극한 이후 무한 층, docs/design_abyss.md) ───────────────────
+
+  String _abyssWeekNow() => abyssWeekId(
+    ref.read(clockProvider).now().toUtc(),
+    ref.read(gameDataProvider).requireValue.battleConfig ??
+        const BattleConfig(),
+  );
+
+  /// 심연으로 — 극한 끝에 고정, 게이지 비움, 주가 바뀌었으면 1층.
+  Future<void> enterAbyssNow() async {
+    final run = ref.read(gameDataProvider).requireValue.runConfig;
+    if (run == null) return;
+    final s = state.requireValue;
+    if (!s.abyssUnlocked) return;
+    await _commit(enterAbyss(s, run, _abyssWeekNow()));
+  }
+
+  /// 심연에서 나온다(극한 최종 사냥터로).
+  Future<void> leaveAbyssNow() async {
+    await _commit(leaveAbyss(state.requireValue));
+  }
+
+  /// 층 보스 처치 → 다음 층(+ 10층마다 첫 도달 보상). 주가 바뀌었으면 1층으로만 돌린다.
+  Future<({bool milestone, int floor, Map<String, int> shards, int fossil})>
+  clearAbyssFloorNow({math.Random? rng}) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final run = data.runConfig;
+    final s0 = state.requireValue;
+    if (run == null || !s0.inAbyss) {
+      return (
+        milestone: false,
+        floor: s0.abyssFloor,
+        shards: const <String, int>{},
+        fossil: 0,
+      );
+    }
+    final week = _abyssWeekNow();
+    if (s0.abyssWeek != week) {
+      final reset = applyAbyssWeek(s0, week);
+      await _commit(reset);
+      return (
+        milestone: false,
+        floor: reset.abyssFloor,
+        shards: const <String, int>{},
+        fossil: 0,
+      );
+    }
+    final r = clearAbyssFloor(
+      s0,
+      run,
+      skill: data.skillConfig,
+      rng: rng ?? math.Random(),
+    );
+    await _commit(r.save);
+    return (
+      milestone: r.milestone,
+      floor: r.save.abyssFloor,
+      shards: r.shards,
+      fossil: r.fossil,
+    );
   }
 
   /// 도감에 잡힌 보스 수(옛 클리어 기록 포함, `collectedBosses`).
@@ -818,7 +937,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final tier = s.difficultyTier;
     final newly = <({RoadmapChapter chapter, int gold})>[];
     for (final ch in cfg.chapters) {
-      if (ch.clearedBy(s.stageNumber) &&
+      if (chapterClearedAt(
+            ch,
+            roadmap: cfg,
+            run: run,
+            tier: tier,
+            highestStage: s.stageNumber,
+            bossDex: s.bossDex,
+          ) &&
           !s.clearedChapters.contains(chapterClearKey(ch.id, tier))) {
         newly.add((chapter: ch, gold: chapterClearGold(run, ch, tier)));
       }
@@ -920,46 +1046,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
     if (viaServer != null) return viaServer;
 
-    final cfg = ref.read(gameDataProvider).requireValue.giftConfig;
-    final now = ref.read(clockProvider).now().toUtc();
-    final s = state.requireValue;
-    final idx = s.gifts.indexWhere((g) => g.id == id);
-    if (idx < 0) return false;
-    final g = s.gifts[idx];
-    final gifts = List<GiftMail>.from(s.gifts)..removeAt(idx);
-    if (g.isExpired(now)) {
-      await _commit(s.copyWith(gifts: gifts));
-      return false;
-    }
-    // 자격이 없으면 1배로 나간다(수령 자체는 막지 않는다).
-    final wantDouble = doubled && canDoubleGift();
-    // 배수는 선물마다 랜덤(2~4)이고 젤리만 고정 — 규칙은 `GiftConfig` 한 곳,
-    // 서버도 **같은 함수**를 쓴다(id 해시라 값이 갈리지 않는다).
-    final mult = !wantDouble
-        ? 1
-        : (cfg?.multiplierFor(g.id) ?? cfg?.adMultiplier ?? 2);
-    final today = dailyDateKey(now);
-    final counted = wantDouble && !s.anyPassActive(now);
-    final mats = Map<MaterialKind, int>.from(s.materials);
-    for (final e in g.materials.entries) {
-      final m = !wantDouble
-          ? 1
-          : (cfg?.multiplierForMaterial(g.id, e.key) ?? mult);
-      mats[e.key] = (mats[e.key] ?? 0) + e.value * m;
-    }
-    await _commit(
-      s.copyWith(
-        gold: addCurrency(s.gold, g.gold * mult),
-        materials: mats,
-        gifts: gifts,
-        giftDoubleDate: counted ? today : s.giftDoubleDate,
-        giftDoubleCount: counted
-            ? s.giftDoublesUsed(today) + 1
-            : s.giftDoubleCount,
-      ),
+    // 규칙(2배 자격·배수·첫 2배 젤리)은 서버와 같은 공용 함수 한 곳에 있다(§4).
+    final r = claimGiftOn(
+      state.requireValue,
+      ref.read(gameDataProvider).requireValue.giftConfig,
+      id,
+      doubled: doubled,
+      now: ref.read(clockProvider).now().toUtc(),
     );
-    return true;
+    if (r.save != null) await _commit(r.save!);
+    return r.error == null;
   }
+
+  /// 오늘 2배로 받으면 젤리가 붙는가(받기 전에 안내하려고).
+  bool hasGiftDoubleJelly() => giftDoubleJellyPending(
+    state.requireValue,
+    ref.read(gameDataProvider).requireValue.giftConfig,
+    ref.read(clockProvider).now().toUtc(),
+  );
 
   /// 패스 보유자용 **자동수령** — 쌓인 선물을 전부 2배로 받는다.
   ///
@@ -1089,6 +1193,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// KO 대가(회복 타이머)를 통째로 피할 수 있었다(감사 후 보완 2026-08-20).
   /// 결착에서 살아남은 곤충은 [applyBattleResult] 의 healBugIds 로 되돌린다.
   /// 편성 검증이 부상 곤충을 거부하므로, 이 시점의 팀은 전부 무부상이다.
+  /// 결투 **방어 순서**를 저장한다(곤충 id 3개). 다른 유저가 도전하면 서버가 이 순서로
+  /// **내 세이브에서** 방어팀 스탯을 계산한다 — 앱이 스탯을 올리던 옛 방식의 위조 구멍을 닫는다.
+  /// 결투할 때의 출전 순서를 그대로 쓴다(따로 고르는 화면 없이 "내가 싸우는 순서 = 지키는 순서").
+  Future<void> setPvpDefense(List<String> bugIds) async {
+    final s = state.requireValue;
+    if (bugIds.length == s.pvpDefenseIds.length &&
+        [
+          for (var i = 0; i < bugIds.length; i++)
+            bugIds[i] == s.pvpDefenseIds[i],
+        ].every((x) => x)) {
+      return;
+    }
+    await _commit(s.copyWith(pvpDefenseIds: List.unmodifiable(bugIds)));
+  }
+
   Future<void> preInjureTeam(List<String> bugIds) async {
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
@@ -1759,7 +1878,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // "젤리 대비 너무 적게 준다"의 원인). 난이도별 골드 표는 회차마다 규모가
     // 수십~수천 배 달라서, 극한에서는 제 값의 1/2000 을 주고 있었다.
     final gold = wantGold
-        ? (rewardGold(cfg, depth, 1.0, tier: s.difficultyTier) *
+        ? (rewardGold(
+                    cfg,
+                    depth,
+                    1.0,
+                    tier: s.difficultyTier,
+                    abyssFloor: activeAbyssFloor(s),
+                  ) *
                   kills *
                   cfg.exchangeGoldHours *
                   trades)

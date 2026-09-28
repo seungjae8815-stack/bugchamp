@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
+import 'abyss_config.dart';
 import 'enums.dart';
 import 'monster_config.dart';
 
@@ -267,6 +268,7 @@ class RunConfig {
     this.zoneGold = const [],
     this.zoneBossHp = const [],
     this.zoneTiers = const [],
+    this.abyss = const AbyssConfig(),
     this.endParkedRewardMult = 1.0,
     this.rarePityKills = 0,
     this.dropGradeWeights = const {},
@@ -590,6 +592,9 @@ class RunConfig {
   /// 없으면 예전처럼 [zoneHp] 등 × 회차 배율이다(하위호환).
   final List<ZoneTierTable> zoneTiers;
 
+  /// 심연(극한 이후 무한 층) 수치 — `run_config.json → abyss`.
+  final AbyssConfig abyss;
+
   /// 회차 [tier] 의 표. 없으면 null.
   ZoneTierTable? zoneTier(int tier) =>
       tier >= 0 && tier < zoneTiers.length ? zoneTiers[tier] : null;
@@ -887,6 +892,7 @@ class RunConfig {
         for (final t in (json['zoneTiers'] as List? ?? const []))
           ZoneTierTable.fromJson(t as Map<String, dynamic>),
       ],
+      abyss: AbyssConfig.fromJson(json['abyss'] as Map<String, dynamic>?),
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
       monsters: {

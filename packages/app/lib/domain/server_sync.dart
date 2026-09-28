@@ -233,6 +233,7 @@ class ServerSaveUploader {
         //  · `season`: 앱을 켜둔 채 주간 경계를 넘겨 **서버가 시즌을 정산**했다.
         //  · `eventReward`: 대회 회차 보상을 지급했다(회차당 1회).
         //  · `eventBadges`: 참가 뱃지를 채웠다(계정당 1회).
+        //  · `pvpRankReward`: 결투 시즌 순위 보상을 지급했다(시즌당 1회).
         // 이때만 세이브가 실려 온다(전부 드물어 이그레스 부담이 없다).
         // ⚠️ 새 사유를 서버에 추가하면 **여기 조건도 같이** 넓혀야 한다 —
         // 안 그러면 서버는 지급했는데 앱은 채택하지 않아, 화면에 안 보이다가
@@ -241,7 +242,14 @@ class ServerSaveUploader {
         final season = data?['season'] == true;
         final rewarded = data?['eventReward'] is Map;
         final badged = data?['eventBadges'] == true;
-        if ((data?['clamped'] == true || season || rewarded || badged) &&
+        final pvpRank = data?['pvpRankReward'];
+        final abyssRank = data?['abyssRankReward'];
+        if ((data?['clamped'] == true ||
+                season ||
+                rewarded ||
+                badged ||
+                pvpRank is Map ||
+                abyssRank is Map) &&
             res.save != null) {
           final ctrl = _ref.read(saveControllerProvider.notifier);
           await ctrl.adoptServerSave(res.save!);
@@ -252,6 +260,17 @@ class ServerSaveUploader {
             ctrl.pendingEventReward = EventRewardReport.fromJson(
               Map<String, dynamic>.from(reward),
             );
+          }
+          if (pvpRank is Map) {
+            ctrl.pendingPvpRankReward = PvpRankRewardReport.fromJson(
+              Map<String, dynamic>.from(pvpRank),
+            );
+          }
+          if (abyssRank is Map) {
+            ctrl.pendingAbyssRankReward = PvpRankRewardReport.fromJson({
+              ...Map<String, dynamic>.from(abyssRank),
+              'season': abyssRank['week'],
+            });
           }
           final report = data?['seasonReport'];
           if (season && report is Map) {

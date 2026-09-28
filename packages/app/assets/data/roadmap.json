@@ -18,7 +18,7 @@
    "endStage": 100,
    "color": "0xFF5CD65C",
    "rewardGold": 20000,
-   "rewardJelly": 10,
+   "rewardJelly": 0,
    "rewardChitin": 100,
    "rewardMineral": 100,
    "rewardSap": 100
@@ -39,7 +39,7 @@
    "endStage": 200,
    "color": "0xFF4CC9B0",
    "rewardGold": 60000,
-   "rewardJelly": 15,
+   "rewardJelly": 0,
    "rewardChitin": 150,
    "rewardMineral": 150,
    "rewardSap": 150
@@ -60,7 +60,7 @@
    "endStage": 300,
    "color": "0xFF8BC34A",
    "rewardGold": 180000,
-   "rewardJelly": 20,
+   "rewardJelly": 0,
    "rewardChitin": 220,
    "rewardMineral": 220,
    "rewardSap": 220
@@ -81,7 +81,7 @@
    "endStage": 400,
    "color": "0xFFFFC107",
    "rewardGold": 540000,
-   "rewardJelly": 25,
+   "rewardJelly": 0,
    "rewardChitin": 330,
    "rewardMineral": 330,
    "rewardSap": 330
@@ -102,7 +102,7 @@
    "endStage": 500,
    "color": "0xFFFF9800",
    "rewardGold": 1600000,
-   "rewardJelly": 30,
+   "rewardJelly": 0,
    "rewardChitin": 500,
    "rewardMineral": 500,
    "rewardSap": 500
@@ -123,7 +123,7 @@
    "endStage": 600,
    "color": "0xFFFF7043",
    "rewardGold": 5000000,
-   "rewardJelly": 40,
+   "rewardJelly": 0,
    "rewardChitin": 750,
    "rewardMineral": 750,
    "rewardSap": 750
@@ -144,7 +144,7 @@
    "endStage": 700,
    "color": "0xFFEF5350",
    "rewardGold": 15000000,
-   "rewardJelly": 50,
+   "rewardJelly": 0,
    "rewardChitin": 1100,
    "rewardMineral": 1100,
    "rewardSap": 1100
@@ -165,7 +165,7 @@
    "endStage": 800,
    "color": "0xFFE53935",
    "rewardGold": 45000000,
-   "rewardJelly": 60,
+   "rewardJelly": 0,
    "rewardChitin": 1700,
    "rewardMineral": 1700,
    "rewardSap": 1700
@@ -186,7 +186,7 @@
    "endStage": 900,
    "color": "0xFFAB47BC",
    "rewardGold": 140000000,
-   "rewardJelly": 80,
+   "rewardJelly": 0,
    "rewardChitin": 2500,
    "rewardMineral": 2500,
    "rewardSap": 2500
@@ -207,7 +207,7 @@
    "endStage": 1000,
    "color": "0xFF7E57C2",
    "rewardGold": 400000000,
-   "rewardJelly": 100,
+   "rewardJelly": 0,
    "rewardChitin": 4000,
    "rewardMineral": 4000,
    "rewardSap": 4000
@@ -228,7 +228,7 @@
    "endStage": 1100,
    "color": "0xFFFFD24A",
    "rewardGold": 800000000,
-   "rewardJelly": 150,
+   "rewardJelly": 10,
    "rewardChitin": 8000,
    "rewardMineral": 8000,
    "rewardSap": 8000,

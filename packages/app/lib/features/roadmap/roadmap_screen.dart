@@ -14,6 +14,12 @@ class RoadmapTierPick {
   final int tier;
 }
 
+/// 로드맵에서 심연을 골랐다 — [enter] 면 들어가고, 아니면 나온다.
+class RoadmapAbyssPick {
+  const RoadmapAbyssPick({required this.enter});
+  final bool enter;
+}
+
 /// 스테이지 로드맵 — **아래(하위) → 위(상위)** 로 올라가는 징검다리.
 ///
 /// 칸 하나 = `nodeStep`(기본 10) 스테이지. 한 월드(100)는 **2줄 × 5칸**이고,
@@ -31,7 +37,17 @@ class RoadmapScreen extends StatefulWidget {
     required this.liveStage,
     this.tier = 0,
     this.topTier = 0,
+    this.abyssUnlocked = false,
+    this.inAbyss = false,
+    this.abyssFloor = 1,
+    this.abyssBest = 0,
   });
+
+  /// 심연(극한 이후 무한 층) — 열렸으면 난이도 줄 위에 들어가기/나오기 줄이 생긴다.
+  final bool abyssUnlocked;
+  final bool inAbyss;
+  final int abyssFloor;
+  final int abyssBest;
 
   /// 가 본 가장 높은 난이도 — 여기까지 난이도 칩을 누를 수 있다.
   final int topTier;
@@ -339,8 +355,16 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         bottom: widget.topTier <= 0
             ? null
             : PreferredSize(
-                preferredSize: const Size.fromHeight(52),
-                child: _tierChips(context, l),
+                preferredSize: Size.fromHeight(
+                  widget.abyssUnlocked ? 52 + 44 : 52,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.abyssUnlocked) _abyssBar(context, l),
+                    _tierChips(context, l),
+                  ],
+                ),
               ),
       ),
       body: Stack(
@@ -408,6 +432,59 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
 extension on _RoadmapScreenState {
   /// 난이도 네 칸 — 화면 폭을 똑같이 나눠 좌우 대칭으로 채운다. 칸마다 색·아이콘이
   /// 달라서 글자를 읽지 않아도 어느 난이도인지 갈린다(2026-09-22 사장님 요청).
+  /// 심연 줄 — 이번 주 층 · 역대 최고 · 들어가기/나오기.
+  Widget _abyssBar(BuildContext context, AppLocalizations l) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+    child: Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1030), Color(0xFF3A1F5C)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: widget.inAbyss
+              ? const Color(0xFFB388FF)
+              : const Color(0x55B388FF),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.nights_stay_rounded,
+            color: Color(0xFFB388FF),
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${l.abyssFloorLabel(widget.abyssFloor)} · ${l.abyssBest(widget.abyssBest)}',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(
+              context,
+            ).pop(RoadmapAbyssPick(enter: !widget.inAbyss)),
+            child: Text(
+              widget.inAbyss ? l.abyssLeave : l.abyssEnter,
+              style: const TextStyle(
+                color: Color(0xFFE1BEE7),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
   Widget _tierChips(BuildContext context, AppLocalizations l) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
     child: Row(

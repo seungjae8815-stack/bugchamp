@@ -11,6 +11,8 @@ environment:
 dependencies:
   core_models:
     path: ../core_models
+  # @immutable — core_models 를 통해 딸려 오지만, 직접 쓰므로 명시한다.
+  meta: ^1.16.0
 
 dev_dependencies:
   lints: ^6.0.0

@@ -231,6 +231,22 @@ class _AppShellState extends ConsumerState<AppShell>
         (_) => _showEventReward(reward),
       );
     }
+    // 결투 시즌 순위 보상 — 같은 이유로 결투 화면이 아니라 여기서 띄운다
+    // (시즌이 끝난 뒤 첫 업로드에서 오므로 어느 탭에 있을지 모른다).
+    final pvpRank = ctrl.pendingPvpRankReward;
+    if (pvpRank != null) {
+      ctrl.consumePvpRankReward();
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showPvpRankReward(pvpRank),
+      );
+    }
+    final abyssRank = ctrl.pendingAbyssRankReward;
+    if (abyssRank != null) {
+      ctrl.consumeAbyssRankReward();
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showPvpRankReward(abyssRank, abyss: true),
+      );
+    }
 
     return saveAsync.when(
       loading: () =>
@@ -385,6 +401,42 @@ class _AppShellState extends ConsumerState<AppShell>
             ),
             primary: false,
           ),
+        gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
+      ],
+    );
+  }
+
+  /// 결투 시즌 순위 보상 수령 안내.
+  Future<void> _showPvpRankReward(
+    PvpRankRewardReport r, {
+    bool abyss = false,
+  }) async {
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    await showGameDialog<void>(
+      context,
+      title: abyss ? l.abyssRankRewardTitle : l.pvpRankRewardTitle,
+      iconWidget: rankImageDlg('trophy'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            abyss
+                ? l.abyssRankRewardBody(r.floor, r.rank)
+                : l.pvpRankRewardBody(r.rank),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+          gameRewardList(context, materials: {MaterialKind.jelly: r.jelly}),
+        ],
+      ),
+      actions: [
         gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
       ],
     );

@@ -31,3 +31,20 @@ List<({int tier, int zone, String id})> bossDexSlots(RunConfig run) => [
     for (var zone = 1; zone <= run.zonesPerTier; zone++)
       (tier: tier, zone: zone, id: run.bossArtId(tier, zone)),
 ];
+
+/// 사냥터(챕터) [ch] 를 [tier] 난이도에서 깼나 — 앱 지급(`grantChapterClears`)과 서버 허용치가 같이 쓴다.
+///
+/// ⚠️ 마지막 사냥터는 보스를 잡아도 스테이지가 그 사냥터 시작(1001)에 멈춰서, 스테이지만 보는
+/// `clearedBy`(> 1100)로는 **영영 참이 안 됐다** — 최종 사냥터 클리어 보상(골드·젤리)이 어느
+/// 난이도에서도 안 나가고 있었다(2026-09-28 발견). 마지막 사냥터는 최종 보스를 도감에 모았는지로 본다.
+bool chapterClearedAt(
+  RoadmapChapter ch, {
+  required RoadmapConfig roadmap,
+  required RunConfig run,
+  required int tier,
+  required int highestStage,
+  required Set<String> bossDex,
+}) =>
+    ch.clearedBy(highestStage) ||
+    (identical(ch, roadmap.chapters.last) &&
+        bossDex.contains(run.bossArtId(tier, run.zonesPerTier)));

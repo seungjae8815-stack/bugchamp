@@ -553,6 +553,16 @@ class SaveGame {
     this.bugFilterMinGrade = Grade.common,
     this.nicknameSet = false,
     this.eventRewardRound,
+    this.pvpScoreSeason,
+    this.pvpRankRewardSeason,
+    this.pvpDefenseIds = const [],
+    this.abyssUnlocked = false,
+    this.inAbyss = false,
+    this.abyssFloor = 1,
+    this.abyssWeek,
+    this.abyssBest = 0,
+    this.abyssScoreWeek,
+    this.abyssRewardWeek,
     this.eventBadges = const {},
     this.difficultyTier = 0,
     this.maxTierReached = 0,
@@ -742,6 +752,49 @@ class SaveGame {
   /// ⚠️ **서버 소유 필드**여야 한다 — 세이브를 고쳐 지우면 같은 회차 보상을
   /// 반복해서 받을 수 있다(`GameActions._serverOwnedKeys`).
   final String? eventRewardRound;
+
+  /// 결투 **시즌 점수를 마지막으로 낸 시즌**(`seasonIdOf`, 예: `2026-09-28`).
+  /// 서버가 결투 결과를 확정할 때 적는다(`pvp_season_scores` 에 기록한 시즌).
+  /// 시즌이 끝난 뒤 이 값이 있으면 그 시즌 순위를 조회해 보상한다 — 결투를
+  /// 안 한 유저에게 매주 순위 조회를 돌리지 않으려고 둔다. **서버 소유 필드.**
+  final String? pvpScoreSeason;
+
+  /// 결투 **시즌 순위 보상을 받은 시즌**. 같은 시즌을 두 번 받지 않게 한다.
+  /// ⚠️ **서버 소유 필드** — 세이브를 고쳐 지우면 같은 보상을 반복해 받는다.
+  final String? pvpRankRewardSeason;
+
+  /// 결투 **방어 순서**(곤충 id 3개, 1·2·3번 순). 다른 유저가 나에게 도전하면 서버가
+  /// **이 세이브에서** 스탯을 계산한다(2026-09-28 결투 개편).
+  ///
+  /// 예전엔 앱이 계산한 방어 스탯을 `defenders` 테이블에 직접 올렸고 서버가 그대로 믿었다 —
+  /// 방어 스탯 위조 구멍. 이제 id 만 받고 편성 검증(`validateTeam`)과 같은 기준으로 서버가 만든다.
+  /// 내 선택일 뿐이라 기기 소유(서버 소유 아님). 비어 있거나 무효하면 서버가 옛 방식으로 떨어진다.
+  final List<String> pvpDefenseIds;
+
+  // ── 심연(극한 이후 무한 층, 2026-09-28) ─────────────────────────────
+  // 심연에 있는 동안 난이도는 극한, 스테이지는 극한 최종 사냥터로 고정된다(몬스터·보상은
+  // 그 기준값 × 층 배율). 진행은 기기 권위 — 서버는 업로드마다 층 증가 상한을 건다.
+
+  /// 극한 최종 보스를 잡아 심연이 열렸나. 줄어들지 않는 기록(서버가 저장본과 OR 로 합친다).
+  final bool abyssUnlocked;
+
+  /// 지금 심연에 있나(로드맵에서 극한 ↔ 심연을 오간다).
+  final bool inAbyss;
+
+  /// 이번 주 현재 층(1부터). 주가 바뀌면 1층으로(매주 새 경쟁 — 사장님 확정 A안).
+  final int abyssFloor;
+
+  /// [abyssFloor] 가 속한 주(`seasonIdOf` — 결투 시즌과 같은 일요일 24시 경계).
+  final String? abyssWeek;
+
+  /// 역대 최고 층 — 마일스톤(10층마다 첫 도달)과 프로필 표시. 줄어들지 않는다.
+  final int abyssBest;
+
+  /// 주간 순위 점수를 마지막으로 기록한 주. **서버 소유**(조회를 점수 낸 사람만 돌리려고).
+  final String? abyssScoreWeek;
+
+  /// 주간 순위 보상을 판정한 주. **서버 소유** — 지우면 같은 주 보상을 반복해 받는다.
+  final String? abyssRewardWeek;
 
   /// 대회 회차 뱃지(`champion:1`). 순위표에서 닉네임 옆에 붙는 표식이다.
   ///
@@ -1245,6 +1298,16 @@ class SaveGame {
     int? eventBestWave,
     int? eventBestScore,
     String? eventRewardRound,
+    String? pvpScoreSeason,
+    String? pvpRankRewardSeason,
+    List<String>? pvpDefenseIds,
+    bool? abyssUnlocked,
+    bool? inAbyss,
+    int? abyssFloor,
+    String? abyssWeek,
+    int? abyssBest,
+    String? abyssScoreWeek,
+    String? abyssRewardWeek,
     Set<String>? eventBadges,
     int? difficultyTier,
     int? maxTierReached,
@@ -1341,6 +1404,16 @@ class SaveGame {
     eventBestWave: eventBestWave ?? this.eventBestWave,
     eventBestScore: eventBestScore ?? this.eventBestScore,
     eventRewardRound: eventRewardRound ?? this.eventRewardRound,
+    pvpScoreSeason: pvpScoreSeason ?? this.pvpScoreSeason,
+    pvpRankRewardSeason: pvpRankRewardSeason ?? this.pvpRankRewardSeason,
+    pvpDefenseIds: pvpDefenseIds ?? this.pvpDefenseIds,
+    abyssUnlocked: abyssUnlocked ?? this.abyssUnlocked,
+    inAbyss: inAbyss ?? this.inAbyss,
+    abyssFloor: abyssFloor ?? this.abyssFloor,
+    abyssWeek: abyssWeek ?? this.abyssWeek,
+    abyssBest: abyssBest ?? this.abyssBest,
+    abyssScoreWeek: abyssScoreWeek ?? this.abyssScoreWeek,
+    abyssRewardWeek: abyssRewardWeek ?? this.abyssRewardWeek,
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
     maxTierReached: maxTierReached ?? this.maxTierReached,
@@ -1543,6 +1616,18 @@ class SaveGame {
     eventBestWave: (json['eventBestWave'] as num?)?.toInt() ?? 0,
     eventBestScore: (json['eventBestScore'] as num?)?.toInt() ?? 0,
     eventRewardRound: json['eventRewardRound'] as String?,
+    pvpScoreSeason: json['pvpScoreSeason'] as String?,
+    pvpRankRewardSeason: json['pvpRankRewardSeason'] as String?,
+    pvpDefenseIds: [
+      for (final e in (json['pvpDefenseIds'] as List? ?? const [])) '$e',
+    ],
+    abyssUnlocked: json['abyssUnlocked'] as bool? ?? false,
+    inAbyss: json['inAbyss'] as bool? ?? false,
+    abyssFloor: ((json['abyssFloor'] as num?)?.toInt() ?? 1).clamp(1, 1 << 30),
+    abyssWeek: json['abyssWeek'] as String?,
+    abyssBest: (json['abyssBest'] as num?)?.toInt() ?? 0,
+    abyssScoreWeek: json['abyssScoreWeek'] as String?,
+    abyssRewardWeek: json['abyssRewardWeek'] as String?,
     eventBadges:
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
     difficultyTier: (json['difficultyTier'] as num?)?.toInt() ?? 0,
@@ -1728,6 +1813,16 @@ class SaveGame {
     if (eventBestWave > 0) 'eventBestWave': eventBestWave,
     if (eventBestScore > 0) 'eventBestScore': eventBestScore,
     if (eventRewardRound != null) 'eventRewardRound': eventRewardRound,
+    if (pvpScoreSeason != null) 'pvpScoreSeason': pvpScoreSeason,
+    if (pvpRankRewardSeason != null) 'pvpRankRewardSeason': pvpRankRewardSeason,
+    if (pvpDefenseIds.isNotEmpty) 'pvpDefenseIds': pvpDefenseIds,
+    if (abyssUnlocked) 'abyssUnlocked': true,
+    if (inAbyss) 'inAbyss': true,
+    if (abyssFloor != 1) 'abyssFloor': abyssFloor,
+    if (abyssWeek != null) 'abyssWeek': abyssWeek,
+    if (abyssBest > 0) 'abyssBest': abyssBest,
+    if (abyssScoreWeek != null) 'abyssScoreWeek': abyssScoreWeek,
+    if (abyssRewardWeek != null) 'abyssRewardWeek': abyssRewardWeek,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
     if (maxTierReached > 0) 'maxTierReached': maxTierReached,

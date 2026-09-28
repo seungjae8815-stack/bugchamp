@@ -25,9 +25,8 @@ import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import 'arena_widgets.dart';
 import '../../ui/skins.dart';
-import 'battle_arena.dart';
-import 'manual_battle_screen.dart';
-import 'manual_driver.dart';
+import 'duel_arena_screen.dart';
+import 'duel_driver.dart';
 import '../../ui/toast.dart';
 import '../../domain/server_sync.dart';
 
@@ -1012,6 +1011,30 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             l.seasonRewardHint,
             style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10),
           ),
+          // 젤리는 등급이 아니라 **순위**로만 나간다(2026-09-28) — 표를 그대로 보여 준다.
+          if (cfg.seasonRankRewards.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                materialImage(
+                  MaterialKind.jelly,
+                  size: 13,
+                  fallback: const SizedBox(width: 13),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    l.pvpRankRewardHint(_rankRewardList(l, cfg)),
+                    style: const TextStyle(
+                      color: Color(0xFF9BE7FF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const Divider(color: Color(0x22FFFFFF), height: 14),
           // ② 처음 그 리그에 닿았을 때 한 번 — 목표판이다.
           Text(
@@ -1838,25 +1861,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       );
 
   /// 전투 장소 칩 — 장소 이모지·이름 + 상성(그 오행 곤충 강화).
-  Widget _locationChip(AppLocalizations l, Element loc) => Center(
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: elementColor(loc).withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: elementColor(loc).withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        '${biomeEmoji(loc)} ${biomeName(l, loc)} · ${l.locationAffinity(elementLabel(l, loc))}',
-        style: TextStyle(
-          color: elementColor(loc),
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    ),
-  );
-
   /// VS 매치업 카드 — 내 팀(편성·드래그)과 선택 상대·상생·승리 보상.
   Widget _matchupCard(
     AppLocalizations l,
@@ -1975,8 +1979,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             ),
           ),
           if (scout != null) ...[
-            _locationChip(l, scout.location),
-            const SizedBox(height: 8),
             Row(
               children: [
                 Container(
@@ -2224,70 +2226,29 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ),
   );
 
-  /// 편성 순서대로 오행 상생(生) 연결·팀 시너지% 미리보기.
+  /// 편성 안내 — 결투는 1:1 이라 **순서가 곧 대진**이다(상생 시너지는 결투 개편에서 폐지).
   Widget _synergyBar(
     AppLocalizations l,
     GameData data,
     SaveGame save,
     String locale,
-  ) {
-    final mine = [
-      for (final id in _team.whereType<String>())
-        _toBattleBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
-    ];
-    if (mine.length < 2) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                l.synergyHint,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0x77FFFFFF),
-                  fontSize: 10.5,
-                ),
-              ),
-            ),
-            _elementGuideBtn(l),
-          ],
-        ),
-      );
-    }
-    final pct = ((teamSynergy(mine) - 1) * 100).round();
-    final active = pct > 0;
-    final color = active ? const Color(0xFF6FCF6F) : const Color(0xFFBFC4CC);
-    return Row(
+  ) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        for (var i = 0; i < mine.length; i++) ...[
-          if (i > 0) _linkGlyph(mine[i - 1].element.generates(mine[i].element)),
-          elementIcon(mine[i].element, size: 16),
-        ],
-        const SizedBox(width: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(999),
-          ),
+        Flexible(
           child: Text(
-            '${l.synergyLabel} ${active ? '+' : ''}$pct%',
-            style: TextStyle(
-              color: active ? const Color(0xFF6FCF6F) : const Color(0xCCFFFFFF),
-              fontSize: 11.5,
-              fontWeight: FontWeight.w900,
-            ),
+            l.duelOrderHint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10.5),
           ),
         ),
-        // 상생이 뭔지 **여기서** 궁금해진다 — 편성을 짜는 화면이니까.
-        const SizedBox(width: 4),
+        // 상극은 결투에 남았다 — 오행 관계도는 여기서 본다.
         _elementGuideBtn(l),
       ],
-    );
-  }
+    ),
+  );
 
   /// 오행 관계도 열기(상생·상극). 결투 화면 어디서든 같은 그림을 본다.
   Widget _elementGuideBtn(AppLocalizations l) => IconButton(
@@ -2300,18 +2261,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       Icons.help_outline_rounded,
       size: 16,
       color: Color(0x99FFFFFF),
-    ),
-  );
-
-  Widget _linkGlyph(bool gen) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 4),
-    child: Text(
-      gen ? '→' : '·',
-      style: TextStyle(
-        color: gen ? const Color(0xFF6FCF6F) : const Color(0x55FFFFFF),
-        fontSize: gen ? 16 : 15,
-        fontWeight: FontWeight.w900,
-      ),
     ),
   );
 
@@ -2554,34 +2503,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     showCenterToast(context, l.autoTeamDone);
   }
 
-  /// 편성된 팀 + 선택한 스카우트 상대 → 전투용 팀·표시용 종 맵·시드.
-  ({
-    List<BattleBug> mine,
-    List<BattleBug> foe,
-    Map<String, String> speciesOf,
-    int seed,
-  })
-  _buildMatch(GameData data, SaveGame save, String locale, _Scout scout) {
-    final speciesOf = <String, String>{};
-    final mine = <BattleBug>[];
-    for (final id in _team.whereType<String>()) {
-      final bug = save.bugs.firstWhere((b) => b.id == id);
-      speciesOf[bug.id] = bug.speciesId;
-      mine.add(_toBattleBug(bug, data, locale));
-    }
-    final foe = <BattleBug>[];
-    for (final e in scout.team) {
-      speciesOf[e.bug.id] = e.speciesId;
-      foe.add(e.bug);
-    }
-    return (
-      mine: mine,
-      foe: foe,
-      speciesOf: speciesOf,
-      seed: _rng.nextInt(1 << 31),
-    );
-  }
-
   /// 스카우트 팀 → **상대 곤충 id별** 스킨 필터.
   ///
   /// 종이 아니라 id 로 푼다 — 같은 종이라도 상대가 샀는지 여부가 다르다.
@@ -2599,24 +2520,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     for (final e in scout.team) e.bug.id: ?_viewOf(e.skin, e.speciesId),
   };
 
-  Future<void> _applyReward(
-    int gold,
-    int trophyDelta,
-    List<String> koedBugIds,
-  ) async {
-    await ref
-        .read(saveControllerProvider.notifier)
-        .applyBattleResult(
-          gold: gold,
-          trophyDelta: trophyDelta,
-          koedBugIds: koedBugIds,
-        );
-    // 승패 반영 후 트로피를 백엔드에 즉시 push(비동기 대전 라이브).
-    // 네트워크가 UI(아레나 전환)를 막지 않도록 fire-and-forget.
-    final save = ref.read(saveControllerProvider).requireValue;
-    unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(save)));
-  }
-
   /// 서버 권위 전투 — 승패·보상을 서버가 확정하고, 앱은 결과를 재생만 한다.
   ///
   /// 서버가 같은 시드로 같은 `core_battle` 을 돌리므로 클라이언트가
@@ -2631,112 +2534,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ref.read(gameServerProvider),
     ref.read(saveControllerProvider).value,
   );
-
-  Future<bool> _serverBattle(
-    GameData data,
-    String locale,
-    _Scout scout,
-    // ↓ 아레나로 넘어가기 직전에 부른다("결투 시작!" 오버레이 닫기).
-    ({
-      List<BattleBug> mine,
-      List<BattleBug> foe,
-      Map<String, String> speciesOf,
-      int seed,
-    })
-    m, {
-    VoidCallback? onReady,
-  }) async {
-    final l = AppLocalizations.of(context);
-    // 표시 언어는 **await 전에** 읽는다(async gap 뒤의 context 사용 금지).
-    // 서버가 전투 로그의 상대 이름을 이 언어로 굽는다.
-    final locale = Localizations.localeOf(context).languageCode;
-    // 이번 요청의 결과로만 판단하도록 **매번 초기화**한다. 남겨두면 세이브
-    // 업로드 실패(티켓과 무관)로 돌아왔을 때 직전의 '티켓 없음' 값이 남아
-    // 낙관 차감한 티켓을 되돌리지 않는다 = 티켓 1장이 그냥 사라진다.
-    _lastRejectedForTickets = false;
-    // 전투 전 최신 세이브를 서버에 올린다 — 서버가 **최신 곤충·골드**로 전투를
-    // 확정하고, 승패·보상을 그 위에 얹는다(기기 권위 진행이 묻히지 않게).
-    // 업로드 실패 시 전투를 진행하지 않는다 — 낡은 세이브로 싸우고 adopt 하면
-    // 최근 진행이 사라진다. 다음 주기 업로드가 따라잡은 뒤 다시 시도하면 된다.
-    if (!await _flushSave()) {
-      if (!mounted) return false;
-      showCenterToast(context, l.battleServerFailed);
-      return false;
-    }
-    final res = await ref
-        .read(gameServerProvider)
-        .battle(
-          teamBugIds: [for (final b in m.mine) b.id],
-          opponentUserId: scout.ownerId,
-          tierId: scout.ownerId == null ? scout.tier.id : null,
-          locale: locale,
-        );
-    if (!res.isOk || res.save == null) {
-      final noTicket = await _syncTicketRejection(res);
-      if (!mounted) return false;
-      showCenterToast(
-        context,
-        noTicket
-            ? l.pvpTicketNone
-            : (res.error == 'bug_injured'
-                  ? l.injuryDesc
-                  : l.battleServerFailed),
-      );
-      return false;
-    }
-
-    await ref.read(saveControllerProvider.notifier).adoptServerSave(res.save!);
-    if (!mounted) return false;
-
-    // 서버가 준 시드로 같은 전투를 재현해 연출한다.
-    //
-    // 상대도 **서버가 준 것**을 쓴다. 야생은 서버가 만들기 때문에 앱이
-    // 만든 상대로 재생하면 연출이 서버가 확정한 승패와 어긋난다.
-    final cfg = data.battleConfig ?? const BattleConfig();
-    final seed = (res.data!['seed'] as num?)?.toInt() ?? m.seed;
-    final srvFoe = foeTeamFromServer(res.data!['foe']);
-    final foe = srvFoe.isEmpty ? m.foe : [for (final e in srvFoe) e.bug];
-    final speciesOf = {
-      ...m.speciesOf,
-      for (final e in srvFoe) e.bug.id: e.speciesId,
-    };
-    // 상대를 서버가 그렸으면 스킨도 서버 값이다(id 가 달라져 스카우트 것과 안 맞는다).
-    final foeSkins = srvFoe.isEmpty
-        ? _foeSkins(scout)
-        : {for (final e in srvFoe) e.bug.id: ?_viewOf(e.skin, e.speciesId)};
-    // 장소 = 상대 리드 곤충의 오행(서버와 같은 규칙).
-    final location = foe.isEmpty ? scout.location : foe.first.element;
-    final result = simulate(
-      seed,
-      m.mine,
-      foe,
-      location: location,
-      locationBonus: cfg.locationAffinityBonus,
-    );
-    onReady?.call();
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => BattleArenaScreen(
-          data: data,
-          myTeam: m.mine,
-          foeTeam: foe,
-          speciesOf: speciesOf,
-          result: result,
-          gold: (res.data!['gold'] as num?)?.toInt() ?? 0,
-          trophyDelta: (res.data!['trophyDelta'] as num?)?.toInt() ?? 0,
-          location: location,
-          skinOf: ref.read(skinOfProvider),
-          arenaTheme: ref.read(arenaThemeOwnedProvider),
-          foeSkinOf: foeSkins,
-        ),
-      ),
-    );
-    _lastFoughtOwnerId = scout.ownerId;
-    // ⚠️ **서버 권위 경로에도** 리롤을 건다. 실제 전투는 대부분 여기로 흐르는데
-    // 로컬 경로에만 붙여 놔서 "싸워도 상대가 그대로"였다(2026-08-31 실기 지적).
-    if (mounted) setState(() => _rerollScouts = true);
-    return true;
-  }
 
   /// 결투 1판분 티켓을 확보한다. 없으면 이유를 알리고 false.
   ///
@@ -2790,6 +2587,141 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     };
   }
 
+  // ── 결투(곤충 배틀 스타디움, 2026-09-28) ───────────────────────────
+  //
+  // 1:1 · 3판 2선승 · 판마다 던지기(docs/design_duel.md). 승패는 서버가 확정하고 앱은
+  // 궤적을 재생만 한다. 서버가 없으면(개발 실행) 같은 엔진을 앱에서 돌린다.
+
+  DuelParams _duelParams(GameData data) =>
+      DuelParams.fromJson((data.battleConfig ?? const BattleConfig()).duelJson);
+
+  /// 보유 곤충 → 결투 유닛(서버 `validateDuelTeam` 과 같은 스탯 계산).
+  DuelBug _toDuelBug(IndividualBug bug, GameData data, String locale) =>
+      DuelBug.fromBattleBug(
+        _toBattleBug(bug, data, locale),
+        speciesId: bug.speciesId,
+        sizeMm: bug.sizeMm,
+        specialty: data.species(bug.speciesId).specialty,
+      );
+
+  /// 스카우트 상대(앱이 그린 것) → 결투 유닛. 야생은 사이즈 롤이 없으니 그 종의 중간 크기.
+  DuelBug _scoutToDuel(BattleBug b, String speciesId, GameData data) {
+    final sp = data.species(speciesId);
+    return DuelBug.fromBattleBug(
+      b,
+      speciesId: speciesId,
+      sizeMm: (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+      specialty: sp.specialty,
+    );
+  }
+
+  /// 출전 순서 3마리. 3마리가 아니면 null(결투는 정확히 3마리).
+  List<String>? _duelTeamIds(AppLocalizations l) {
+    final ids = _team.whereType<String>().toList();
+    if (ids.length != 3) {
+      showCenterToast(context, l.duelNeedThree);
+      return null;
+    }
+    return ids;
+  }
+
+  /// 서버가 준 상대 목록(`_duelFoeJson`) → 결투 유닛 + 스킨.
+  ({List<DuelBug> foe, Map<String, SkinView?> skins}) _foeFromServer(
+    Object? raw,
+  ) {
+    final foe = <DuelBug>[];
+    final skins = <String, SkinView?>{};
+    for (final e in (raw as List? ?? const [])) {
+      final m = Map<String, dynamic>.from(e as Map);
+      final b = DuelBug.fromJson(m);
+      foe.add(b);
+      skins[b.id] = _viewOf(m['skin']?.toString(), b.speciesId);
+    }
+    return (foe: foe, skins: skins);
+  }
+
+  Map<String, SkinView?> _mySkins(SaveGame save, List<String> ids) => {
+    for (final id in ids)
+      id: bugView(
+        ref.read(skinOfProvider),
+        save.bugs.firstWhere((b) => b.id == id),
+      ),
+  };
+
+  /// 결투 화면으로. 끝나면 새 상대를 뽑는다.
+  Future<void> _pushDuel({
+    required GameData data,
+    required List<DuelBug> mine,
+    required List<DuelBug> foe,
+    required DuelDriver driver,
+    required Map<String, SkinView?> mySkins,
+    required Map<String, SkinView?> foeSkins,
+    required Future<void> Function(DuelStep last) onFinished,
+    required _Scout scout,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DuelArenaScreen(
+          mine: mine,
+          foe: foe,
+          driver: driver,
+          params: _duelParams(data),
+          arena: foe.first.element,
+          mySkins: mySkins,
+          foeSkins: foeSkins,
+          onFinished: onFinished,
+        ),
+      ),
+    );
+    _lastFoughtOwnerId = scout.ownerId;
+    if (mounted) setState(() => _rerollScouts = true);
+  }
+
+  /// 로컬(서버 없음) 결투 결과 반영 — 진 판의 곤충만 부상, 나머지 선차감 부상은 푼다.
+  Future<void> _applyLocalDuel(DuelStep last, List<String> ids) async {
+    // 로컬 진행기는 판별 결과를 따로 안 들고 있어서, 마지막 판까지의 승패로 재구성한다.
+    await ref
+        .read(saveControllerProvider.notifier)
+        .applyBattleResult(
+          gold: last.gold,
+          trophyDelta: last.trophyDelta,
+          koedBugIds: _localLosers,
+          healBugIds: [
+            for (final id in ids)
+              if (!_localLosers.contains(id)) id,
+          ],
+        );
+    final s2 = ref.read(saveControllerProvider).requireValue;
+    unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(s2)));
+  }
+
+  /// 로컬 결투에서 진 판의 내 곤충 id(판마다 채운다).
+  final List<String> _localLosers = [];
+
+  /// 서버 결투가 끝났을 때 — 서버 세이브를 통째로 채택한다(보상·트로피·부상 모두 서버 값).
+  Future<void> _adoptDuel(DuelStep last) async {
+    final srv = last.save;
+    if (srv != null) {
+      await ref.read(saveControllerProvider.notifier).adoptServerSave(srv);
+    }
+    final s2 = ref.read(saveControllerProvider).requireValue;
+    unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(s2)));
+  }
+
+  /// 서버 거절 알림 + 티켓 정리(티켓 없음이면 서버 잔량으로, 아니면 낙관 차감을 되돌린다).
+  Future<void> _duelRejected(AppLocalizations l, ServerResult res) async {
+    final noTicket = await _syncTicketRejection(res);
+    if (!noTicket) await _returnTicket();
+    if (!mounted) return;
+    showCenterToast(
+      context,
+      noTicket
+          ? l.pvpTicketNone
+          : (res.error == 'bug_injured' ? l.injuryDesc : l.battleServerFailed),
+    );
+  }
+
+  /// **빠른 결투** — 게이지 없이 3판을 한 번에(서버가 모두 확정) → 재생.
   Future<void> _battle(
     GameData data,
     SaveGame save,
@@ -2797,74 +2729,115 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     _Scout scout,
   ) async {
     final l = AppLocalizations.of(context);
-    final m = _buildMatch(data, save, locale, scout);
-    if (m.mine.isEmpty) return;
+    final ids = _duelTeamIds(l);
+    if (ids == null) return;
     if (!await _takeTicket(l)) return;
+    await ref.read(saveControllerProvider.notifier).setPvpDefense(ids);
+    final mine = [
+      for (final id in ids)
+        _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
+    ];
+    final mySkins = _mySkins(save, ids);
 
-    // 권위 서버가 붙어 있으면 **서버가 승패를 확정**한다.
-    // 야생 상대도 서버가 만든다 — 앱이 만들면 약한 상대를 골라
-    // 트로피를 쓸어담을 수 있다.
     final server = ref.read(gameServerProvider);
     if (server.available) {
-      // 서버가 거부/불통이면 아래 로컬 경로로 폴백하지 않는다 —
-      // 폴백하면 서버 권위가 무의미해진다. 알리고 끝내되, 싸우지도 못했으니
-      // 낙관 차감한 티켓은 돌려준다(성공 시엔 서버 값이 덮어쓴다).
-      // 단 "티켓 없음"으로 거절당한 경우는 _serverBattle 이 서버 잔량으로
-      // 맞춰 놓았으므로 되돌리면 안 된다.
       final close = _showStartOverlay(l);
       try {
-        final ok = await _serverBattle(data, locale, scout, m, onReady: close);
-        if (!ok && !_lastRejectedForTickets) await _returnTicket();
+        // 전투 전 최신 세이브 업로드 — 실패하면 시작하지 않는다(낡은 세이브로 싸우고
+        // 채택하면 최근 진행이 사라진다).
+        if (!await _flushSave()) {
+          await _returnTicket();
+          if (mounted) showCenterToast(context, l.battleServerFailed);
+          return;
+        }
+        final res = await server.duelAuto(
+          teamBugIds: ids,
+          opponentUserId: scout.ownerId,
+          tierId: scout.ownerId == null ? scout.tier.id : null,
+          locale: locale,
+        );
+        if (!res.isOk || res.save == null) {
+          await _duelRejected(l, res);
+          return;
+        }
+        await ref
+            .read(saveControllerProvider.notifier)
+            .adoptServerSave(res.save!);
+        if (!mounted) return;
+        final f = _foeFromServer(res.data!['foe']);
+        final bouts = [
+          for (final b in (res.data!['bouts'] as List? ?? const []))
+            DuelBout.fromJson(Map<String, dynamic>.from(b as Map)),
+        ];
+        close();
+        await _pushDuel(
+          data: data,
+          mine: mine,
+          foe: f.foe,
+          driver: PrebakedDuelDriver(
+            bouts: bouts,
+            gold: (res.data!['gold'] as num?)?.toInt() ?? 0,
+            trophyDelta: (res.data!['trophyDelta'] as num?)?.toInt() ?? 0,
+          ),
+          mySkins: mySkins,
+          foeSkins: f.skins,
+          // 세이브는 이미 채택했다 — 트로피만 순위표에 알린다.
+          onFinished: (_) async {
+            final s2 = ref.read(saveControllerProvider).requireValue;
+            unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(s2)));
+          },
+          scout: scout,
+        );
       } finally {
         close();
       }
       return;
     }
 
-    final cfg = data.battleConfig ?? const BattleConfig();
-    final result = simulate(
-      m.seed,
-      m.mine,
-      m.foe,
-      location: scout.location,
-      locationBonus: cfg.locationAffinityBonus,
+    // 로컬(개발 실행) — 같은 엔진으로 끝까지 돌리고 보상은 끝날 때 반영한다.
+    final foe = [
+      for (final e in scout.team) _scoutToDuel(e.bug, e.speciesId, data),
+    ];
+    final match = simulateDuel(
+      seed: _rng.nextInt(1 << 31),
+      teamA: mine,
+      teamB: foe,
+      params: _duelParams(data),
     );
     final rw = pvpReward(
-      won: result.outcome == BattleOutcome.teamA,
-      draw: result.outcome == BattleOutcome.draw,
+      won: match.winsA > match.winsB,
+      draw: false,
       trophies: save.pvpTrophies,
-      cfg: cfg,
+      cfg: data.battleConfig ?? const BattleConfig(),
       rewardMult: scout.tier.rewardMult,
     );
-    await _applyReward(
-      rw.gold,
-      rw.trophyDelta,
-      koedTeamAIds(m.mine, result.events),
-    );
+    _localLosers
+      ..clear()
+      ..addAll([
+        for (var i = 0; i < match.bouts.length; i++)
+          if (match.bouts[i].winner == 1) ids[i],
+      ]);
     if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => BattleArenaScreen(
-          data: data,
-          myTeam: m.mine,
-          foeTeam: m.foe,
-          speciesOf: m.speciesOf,
-          result: result,
-          gold: rw.gold,
-          trophyDelta: rw.trophyDelta,
-          location: scout.location,
-          skinOf: ref.read(skinOfProvider),
-          arenaTheme: ref.read(arenaThemeOwnedProvider),
-          foeSkinOf: _foeSkins(scout),
-        ),
+    await _pushDuel(
+      data: data,
+      mine: mine,
+      foe: foe,
+      driver: PrebakedDuelDriver(
+        bouts: match.bouts,
+        gold: rw.gold,
+        trophyDelta: rw.trophyDelta,
       ),
+      mySkins: mySkins,
+      foeSkins: _foeSkins(scout),
+      onFinished: (last) => _applyLocalDuel(last, ids),
+      scout: scout,
     );
-    // 싸운 상대는 보드에서 물러난다 — 다음 판은 새 상대로.
-    _lastFoughtOwnerId = scout.ownerId;
-    if (mounted) setState(() => _rerollScouts = true);
   }
 
-  /// 수동 전투 — 심리전. 보상은 결착 후 적용(승패가 그때 결정).
+  /// **직접 던지기 결투** — 판마다 게이지 → 서버가 그 판을 확정 → 재생.
+  ///
+  /// 시작할 때 서버가 **트로피 패배분·부상을 먼저 깎는다**(도중에 나가면 그대로 패배 —
+  /// 옛 수동 전투와 같은 규칙). 화면에도 부상을 먼저 걸어 주기 업로드가 싣게 한다.
   Future<void> _battleManual(
     GameData data,
     SaveGame save,
@@ -2872,170 +2845,94 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     _Scout scout,
   ) async {
     final l = AppLocalizations.of(context);
-    // 표시 언어는 **await 전에** 읽는다(async gap 뒤 context 사용 금지).
-    final locale = Localizations.localeOf(context).languageCode;
-    final m = _buildMatch(data, save, locale, scout);
-    if (m.mine.isEmpty) return;
-    // 수동 전투도 **시작할 때** 한 장. 중간에 나가도 돌려주지 않는다
-    // (돌려주면 불리한 판을 나가버리는 것으로 무한 재시도가 된다).
+    final ids = _duelTeamIds(l);
+    if (ids == null) return;
     if (!await _takeTicket(l)) return;
+    await ref.read(saveControllerProvider.notifier).setPvpDefense(ids);
+    final mine = [
+      for (final id in ids)
+        _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
+    ];
+    final mySkins = _mySkins(save, ids);
 
-    // ⚠️ **먼저 지고 들어간다.** 티켓만으로는 부족했다 — 지고 있을 때 뒤로
-    // 나가거나 앱을 끄면 트로피가 그대로 남아, 수동 전투로는 절대 안 지는
-    // 치트가 됐다(2026-08-19 지적). 이기면 결착에서 차액으로 되돌려준다.
-    //
-    // **서버가 붙어 있어도 화면에서 먼저 깎는다.** 서버는 `manual/start` 에서
-    // 자기 세이브를 깎지만 그 값이 앱에 오는 건 다음 동기화 때다 — 그 사이에
-    // 나가면 "안 깎였다"로 보여서 치트가 안 막힌 것처럼 읽힌다(실기 지적).
-    // 트로피는 서버 소유 필드라 어긋나도 다음 업로드에 서버 값이 이긴다.
-    final cfgNow = data.battleConfig ?? const BattleConfig();
-    final serverAuth = ref.read(gameServerProvider).available;
-    final rawPrepaid = pvpReward(
-      won: false,
-      draw: false,
-      trophies: save.pvpTrophies,
-      cfg: cfgNow,
-      rewardMult: scout.tier.rewardMult,
-    ).trophyDelta;
-    // ⚠️ **실제로 깎인 만큼**만 기억한다. 트로피가 12 미만이면 차감이 0 에서
-    // 잘리는데, 결착에서 원래 액수를 되돌려주면 차이만큼 공짜 트로피가 된다.
-    final prepaid =
-        (save.pvpTrophies + rawPrepaid).clamp(0, 1 << 30) - save.pvpTrophies;
-    if (prepaid != 0) await _applyReward(0, prepaid, const []);
-    final teamIds = _team.whereType<String>().toList();
-    // ⚠️ 부상 선차감은 **여기서 하면 안 된다.** 서버 시작 전에 걸면 직전
-    // 세이브 업로드에 부상이 실리고, 서버의 시작 검증(bug_injured)이 그걸
-    // 거부해 **모든 수동 결투가 400 으로 죽는다**(실기 장애 2026-08-20).
-    // 서버 세션이 확정된 뒤(아래) / 로컬은 화면 진입 직전에 건다.
-
-    // 수동도 서버 세션을 여는 동안 기다린다 — 오토와 같은 전환으로 덮는다.
-    // 실패로 빠져나가는 길이 여럿이라 `try/finally` 로 반드시 닫는다.
-    final closeStart = _showStartOverlay(l);
-    try {
-      // 권위 서버가 붙어 있으면 서버 세션이 매 수를 확정한다(야생 포함).
-      ManualBattleDriver? driver;
-      var foe = m.foe;
-      var speciesOf = m.speciesOf;
-      var location = scout.location;
-      // 서버가 상대를 그리면 id 가 달라지므로 스킨 맵도 서버 값으로 갈아탄다.
-      var foeSkins = _foeSkins(scout);
-
-      final server = ref.read(gameServerProvider);
-      if (server.available) {
-        // 전투 전 최신 세이브 업로드(기기 권위 진행이 묻히지 않게).
-        // 실패 시 시작하지 않는다 — 낡은 세이브로 세션을 열면 진행이 사라진다.
+    final server = ref.read(gameServerProvider);
+    if (server.available) {
+      final close = _showStartOverlay(l);
+      try {
         if (!await _flushSave()) {
-          if (prepaid != 0) await _applyReward(0, -prepaid, const []);
           await _returnTicket();
-          if (!mounted) return;
-          showCenterToast(context, l.battleServerFailed);
+          if (mounted) showCenterToast(context, l.battleServerFailed);
           return;
         }
-        final res = await server.startManualBattle(
-          teamBugIds: [for (final b in m.mine) b.id],
+        final res = await server.duelStart(
+          teamBugIds: ids,
           opponentUserId: scout.ownerId,
           tierId: scout.ownerId == null ? scout.tier.id : null,
           locale: locale,
         );
         if (!res.isOk || res.data?['sessionId'] == null) {
-          // 싸우지도 못했으니 선차감한 트로피는 돌려준다(서버도 안 깎았다).
-          if (prepaid != 0) await _applyReward(0, -prepaid, const []);
-          // 서버가 "티켓 없음"이라 했으면 되돌리지 않는다 — 서버가 진실이다.
-          final noTicket = await _syncTicketRejection(res);
-          if (!noTicket) await _returnTicket();
-          if (!mounted) return;
-          // 거절 **사유**를 보여준다 — 부상 거절이 "연결을 확인하세요"로 뜨면
-          // 유저는 네트워크를 의심한다(실기 혼란 2026-08-20).
-          showCenterToast(
-            context,
-            noTicket
-                ? l.pvpTicketNone
-                : (res.error == 'bug_injured'
-                      ? l.injuryDesc
-                      : l.battleServerFailed),
-          );
-          return; // 로컬로 폴백하지 않는다 — 폴백하면 서버 권위가 무의미해진다.
+          await _duelRejected(l, res);
+          return;
         }
-        // 서버가 확정한 티켓 잔량으로 맞춘다(낙관 차감과 어긋나지 않게).
-        // 세이브 전체가 아니라 몇 바이트만 온다 — 이그레스 절약.
+        // 서버가 확정한 티켓 잔량으로 맞춘다(세이브 전체가 아니라 몇 바이트).
         await ref
             .read(saveControllerProvider.notifier)
             .adoptTicketState(res.data!);
-        // 세션이 열렸다 — 이제 이탈해도 패배다. 부상 선차감을 앱 세이브에도
-        // 걸어 주기 업로드가 싣고 가게 한다(서버 세이브에는 이미 걸려 있다).
-        await ref.read(saveControllerProvider.notifier).preInjureTeam(teamIds);
-        driver = ServerManualDriver(
-          server: server,
-          sessionId: res.data!['sessionId'].toString(),
-          startEnergy: (res.data!['energyA'] as num?)?.toInt() ?? 1,
-        );
-        // 서버가 싸울 상대를 그대로 그린다.
-        final srvFoe = foeTeamFromServer(res.data!['foe']);
-        if (srvFoe.isNotEmpty) {
-          foe = [for (final e in srvFoe) e.bug];
-          speciesOf = {
-            ...m.speciesOf,
-            for (final e in srvFoe) e.bug.id: e.speciesId,
-          };
-          location = foe.first.element;
-          foeSkins = {
-            for (final e in srvFoe) e.bug.id: ?_viewOf(e.skin, e.speciesId),
-          };
-        }
-      }
-      if (driver == null) {
-        // 로컬 경로 — 여기서부터는 실패 경로가 없다. 이탈 = 패배 확정.
-        await ref.read(saveControllerProvider.notifier).preInjureTeam(teamIds);
-      }
-      if (!mounted) return;
-
-      closeStart();
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => ManualBattleScreen(
-            driver: driver,
-            onAdoptSave: (srv) =>
-                ref.read(saveControllerProvider.notifier).adoptServerSave(srv),
-            data: data,
-            myTeam: m.mine,
-            foeTeam: foe,
-            speciesOf: speciesOf,
-            seed: m.seed,
-            trophiesAtStart: save.pvpTrophies,
-            // 서버 경로는 결착에서 **서버 세이브를 통째로 채택**하므로 앱이
-            // 차액을 따로 되돌릴 필요가 없다(이중 보정 방지).
-            trophyPrepaid: serverAuth ? 0 : prepaid,
-            config: cfgNow,
-            rewardMult: scout.tier.rewardMult,
-            onApply: (g, t, koed) async {
-              // 선차감 부상 중 **살아남은 곤충**만 되돌린다(KO 는 그대로).
-              await ref
-                  .read(saveControllerProvider.notifier)
-                  .applyBattleResult(
-                    gold: g,
-                    trophyDelta: t,
-                    koedBugIds: koed,
-                    healBugIds: [
-                      for (final id in teamIds)
-                        if (!koed.contains(id)) id,
-                    ],
-                  );
-              final s2 = ref.read(saveControllerProvider).requireValue;
-              unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(s2)));
-            },
-            location: location,
-            skinOf: ref.read(skinOfProvider),
-            arenaTheme: ref.read(arenaThemeOwnedProvider),
-            foeSkinOf: foeSkins,
+        // 세션이 열렸다 — 이제 이탈해도 패배다. 부상 선차감을 앱 세이브에도 건다.
+        await ref.read(saveControllerProvider.notifier).preInjureTeam(ids);
+        if (!mounted) return;
+        final f = _foeFromServer(res.data!['foe']);
+        close();
+        await _pushDuel(
+          data: data,
+          mine: mine,
+          foe: f.foe,
+          driver: ServerDuelDriver(
+            server: server,
+            sessionId: res.data!['sessionId'].toString(),
           ),
-        ),
-      );
-      // 오토와 같은 규칙 — 싸운 뒤에는 새 상대를 뽑는다.
-      _lastFoughtOwnerId = scout.ownerId;
-      if (mounted) setState(() => _rerollScouts = true);
-    } finally {
-      closeStart();
+          mySkins: mySkins,
+          foeSkins: f.skins,
+          onFinished: _adoptDuel,
+          scout: scout,
+        );
+      } finally {
+        close();
+      }
+      return;
     }
+
+    // 로컬(개발 실행).
+    final foe = [
+      for (final e in scout.team) _scoutToDuel(e.bug, e.speciesId, data),
+    ];
+    await ref.read(saveControllerProvider.notifier).preInjureTeam(ids);
+    final local = _RecordingLocalDriver(
+      LocalDuelDriver(
+        seed: _rng.nextInt(1 << 31),
+        mine: mine,
+        foe: foe,
+        params: _duelParams(data),
+        battle: data.battleConfig ?? const BattleConfig(),
+        trophies: save.pvpTrophies,
+        rewardMult: scout.tier.rewardMult,
+      ),
+      onBout: (i, won) {
+        if (i == 0) _localLosers.clear();
+        if (!won) _localLosers.add(ids[i]);
+      },
+    );
+    if (!mounted) return;
+    await _pushDuel(
+      data: data,
+      mine: mine,
+      foe: foe,
+      driver: local,
+      mySkins: mySkins,
+      foeSkins: _foeSkins(scout),
+      onFinished: (last) => _applyLocalDuel(last, ids),
+      scout: scout,
+    );
   }
 
   /// 스카우트 카드 — 난이도 배지·상대 3마리 미리보기·승리 보상, 탭하면 선택.
@@ -3200,5 +3097,42 @@ class _BattleStartOverlayState extends State<_BattleStartOverlay>
         );
       },
     );
+  }
+}
+
+/// 순위 보상 표를 한 줄로 — `1위 100 · 2위 50 · 3위 30 · 4~10위 10`.
+String _rankRewardList(AppLocalizations l, BattleConfig cfg) {
+  final parts = <String>[];
+  var from = 1;
+  for (final r in cfg.seasonRankRewards) {
+    if (r.maxRank < from) continue;
+    final label = r.maxRank == from
+        ? l.pvpRankN(from)
+        : l.eventRankRange(from, r.maxRank);
+    parts.add('$label ${r.jelly}');
+    from = r.maxRank + 1;
+  }
+  return parts.join(' · ');
+}
+
+/// 로컬 결투의 판별 승패를 기록한다(끝날 때 진 곤충만 부상을 걸려고).
+class _RecordingLocalDriver implements DuelDriver {
+  _RecordingLocalDriver(this._inner, {required this.onBout});
+
+  final LocalDuelDriver _inner;
+  final void Function(int index, bool won) onBout;
+  int _i = 0;
+
+  @override
+  bool get interactive => _inner.interactive;
+
+  @override
+  String? get error => _inner.error;
+
+  @override
+  Future<DuelStep?> next(double launch) async {
+    final s = await _inner.next(launch);
+    if (s != null) onBout(_i++, s.bout.aWon);
+    return s;
   }
 }

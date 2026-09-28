@@ -142,6 +142,100 @@ class StateStore {
     }
   }
 
+  /// 결투 시즌 점수 기록(2026-09-28 순위 보상).
+  ///
+  /// 대회와 달리 **최고 기록이 아니라 지금 트로피**를 덮어쓴다 — 시즌 순위는
+  /// "끝나는 순간의 트로피"다. 값이 바뀔 때만 `updated_at` 을 올려 동률은 먼저
+  /// 도달한 쪽이 위가 되게 한다(SQL `pvp_season_submit` 이 판단한다).
+  Future<void> submitPvpSeasonScore({
+    required String seasonId,
+    required String userId,
+    required String nickname,
+    required int trophies,
+  }) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/pvp_season_submit'),
+      headers: _headers,
+      body: jsonEncode({
+        'p_season': seasonId,
+        'p_user': userId,
+        'p_nick': nickname,
+        'p_trophies': trophies,
+      }),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('결투 시즌 기록 실패: ${res.statusCode} ${res.body}');
+    }
+  }
+
+  /// 결투 시즌 [seasonId] 에서 [userId] 의 순위. 기록이 없으면 null.
+  Future<({int rank, int trophies, int total})?> pvpSeasonRankOf(
+    String seasonId,
+    String userId,
+  ) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/pvp_season_rank_of'),
+      headers: _headers,
+      body: jsonEncode({'p_season': seasonId, 'p_user': userId}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('결투 시즌 순위 조회 실패: ${res.statusCode}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    final r = rows.first as Map<String, dynamic>;
+    return (
+      rank: (r['rank'] as num).toInt(),
+      trophies: (r['trophies'] as num?)?.toInt() ?? 0,
+      total: (r['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// 심연 주간 점수 기록(2026-09-28) — 그 주에 닿은 **최고 층**(오를 때만 갱신, SQL 이 판단).
+  Future<void> submitAbyssScore({
+    required String week,
+    required String userId,
+    required String nickname,
+    required int floor,
+  }) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/abyss_submit'),
+      headers: _headers,
+      body: jsonEncode({
+        'p_week': week,
+        'p_user': userId,
+        'p_nick': nickname,
+        'p_floor': floor,
+      }),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('심연 기록 실패: ${res.statusCode} ${res.body}');
+    }
+  }
+
+  /// 심연 주 [week] 에서 [userId] 의 순위. 기록이 없으면 null.
+  Future<({int rank, int floor, int total})?> abyssRankOf(
+    String week,
+    String userId,
+  ) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/abyss_rank_of'),
+      headers: _headers,
+      body: jsonEncode({'p_week': week, 'p_user': userId}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('심연 순위 조회 실패: ${res.statusCode}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    final r = rows.first as Map<String, dynamic>;
+    return (
+      rank: (r['rank'] as num).toInt(),
+      floor: (r['floor'] as num?)?.toInt() ?? 0,
+      total: (r['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   /// 이벤트 순위 상위 [limit] 명.
   ///
   /// 앱에 Supabase RPC 권한을 열지 않고 **서버가 대신 읽어** 준다 —

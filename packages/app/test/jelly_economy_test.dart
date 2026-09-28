@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:core_save/core_save.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// 젤리(프리미엄 재화 §2.6) **수도꼭지 규칙**을 고정한다.
@@ -131,15 +132,78 @@ void main() {
     });
   });
 
+  group('젤리 지급처 재정리(2026-09-28 사장님 확정)', () {
+    final battle = BattleConfig.fromJson(_readJson('assets/data/battle.json'));
+    final daily = DailyConfig.fromJson(_readJson('assets/data/daily.json'));
+    final roadmap = RoadmapConfig.fromJson(
+      _readJson('assets/data/roadmap.json'),
+    );
+
+    test('리그 등급 보상(승급·시즌 종료)에는 젤리가 없다 — 순위로만 나간다', () {
+      for (final lg in battle.leagues) {
+        expect(lg.rewardJelly, 0, reason: lg.id);
+      }
+      expect(battle.seasonReward(1 << 20).jelly, 0);
+    });
+
+    test('시즌 순위 보상은 10위까지 · 위로 갈수록 크다', () {
+      final r = battle.seasonRankRewards;
+      expect(r, isNotEmpty);
+      expect(r.last.maxRank, lessThanOrEqualTo(10));
+      for (var i = 1; i < r.length; i++) {
+        expect(r[i].maxRank, greaterThan(r[i - 1].maxRank));
+        expect(r[i].jelly, lessThanOrEqualTo(r[i - 1].jelly));
+      }
+    });
+
+    test('일일보상에는 젤리가 없다', () {
+      for (final d in daily.rewards) {
+        expect(d.jelly, 0, reason: d.id);
+      }
+    });
+
+    test('사냥터 클리어 젤리는 최종 보스만 — 사냥터 보스에는 없다', () {
+      final ch = roadmap.chapters;
+      for (final c in ch.take(ch.length - 1)) {
+        expect(c.rewardJelly, 0, reason: c.id);
+      }
+      expect(ch.last.rewardJelly, greaterThan(0));
+    });
+  });
+
   group('깜짝선물 — 접속 시간에 비례해 무한히 늘어나는 통로', () {
-    test('젤리는 최상위 티어에만 붙는다', () {
+    test('젤리는 최상위 티어에만 붙는다(없어도 된다)', () {
+      // 2026-09-28: 선물 본체의 젤리를 뺐다 — 젤리는 그날 첫 2배에만 붙는다.
       final withJelly = gifts.tiers.where((t) => t.jelly > 0).toList();
-      expect(withJelly.length, 1, reason: '젤리를 주는 티어 수');
+      expect(withJelly.length, lessThanOrEqualTo(1), reason: '젤리를 주는 티어 수');
+      if (withJelly.isEmpty) return;
       // 그 티어가 가장 드물어야 한다.
       final minWeight = gifts.tiers
           .map((t) => t.weight)
           .reduce((a, b) => a < b ? a : b);
       expect(withJelly.single.weight, minWeight);
+    });
+
+    test('첫 2배 젤리는 하루 1회뿐이다 — 패스 보유자도', () {
+      // 패스 보유자는 2배가 무제한이라, 2배마다 젤리가 붙으면 접속 시간에
+      // 비례해 무한히 늘어난다. 두 번째 2배부터는 0 이어야 한다.
+      final t = DateTime.utc(2026, 9, 28, 12);
+      var s = SaveGame.initial(createdAt: t).copyWith(
+        passExpiresAt: t.add(const Duration(days: 30)),
+        gifts: [
+          for (var i = 0; i < 5; i++)
+            GiftMail(id: 'g$i', expiry: t.add(const Duration(hours: 1))),
+        ],
+      );
+      var bonus = 0;
+      for (var i = 0; i < 5; i++) {
+        final r = claimGiftOn(s, gifts, 'g$i', doubled: true, now: t);
+        expect(r.doubled, isTrue, reason: '패스는 무제한 2배');
+        bonus += r.bonusJelly;
+        s = r.save!;
+      }
+      expect(bonus, gifts.doubleJellyFor('g0'));
+      expect(bonus, inInclusiveRange(1, 5));
     });
 
     test('선물 1개당 기대 젤리가 1개 미만이다', () {

@@ -6,6 +6,8 @@ import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:uuid/uuid.dart';
 
+import 'duel_session.dart';
+
 /// 액션 처리 결과.
 class ActionResult {
   const ActionResult.ok(this.save, {this.extra = const {}})
@@ -191,6 +193,13 @@ class GameActions {
     'eventRewardRound',
     // 회차 뱃지. 세이브를 고쳐 챔피언을 달 수 있으면 표식이 무의미해진다.
     'eventBadges',
+    // 결투 시즌 순위 보상(2026-09-28). 점수 시즌을 지우면 조회가 안 돌고,
+    // 받은 시즌을 지우면 같은 시즌 보상을 반복해서 받는다.
+    'pvpScoreSeason',
+    'pvpRankRewardSeason',
+    // 심연 주간 순위(2026-09-28). 결투 순위와 같은 이유.
+    'abyssScoreWeek',
+    'abyssRewardWeek',
   };
 
   /// 한 번의 업로드에 실릴 수 있는 화석 조각의 **정상 최대치**.
@@ -337,10 +346,25 @@ class GameActions {
     // 정액을 인정한다. 앱이 나갈 때까지 기존 유저의 챕터 보상이 통째로 잘리지
     // 않게 하려는 것이다(쉬움은 키가 같아 구분이 안 되므로 둘 중 큰 쪽).
     final maybeOld = tier >= 1 && !clientJson.containsKey('maxTierReached');
+    // 마지막 사냥터는 최종 보스 도감으로 본다(`chapterClearedAt` — 앱과 같은 판정).
+    final bossDex = {
+      ...stored.bossDex,
+      for (final e in (clientJson['bossDex'] as List? ?? const [])) '$e',
+    };
     var sum = 0;
     for (final ch in chapters) {
       final key = chapterClearKey(ch.id, tier);
-      if (already.contains(key) || !ch.clearedBy(highest)) continue;
+      if (already.contains(key) ||
+          !chapterClearedAt(
+            ch,
+            roadmap: config.roadmap!,
+            run: config.run,
+            tier: tier,
+            highestStage: highest,
+            bossDex: bossDex,
+          )) {
+        continue;
+      }
       if (claimed.contains(key)) {
         final now = chapterClearGold(config.run, ch, tier);
         sum += tier == 0 ? max(now, ch.rewardGold) : now;
@@ -376,6 +400,39 @@ class GameActions {
           !stored.claimedDex.contains(m.id) &&
           bosses >= m.count) {
         sum += m.fossil;
+      }
+    }
+    return sum;
+  }
+
+  /// 이번 업로드에서 **정당하게 받았을 수 있는 도감 발견·정복 마일스톤 골드**의 합.
+  ///
+  /// 발견·정복 마일스톤은 **정액 골드**(3만~300만)를 앱이 바로 지급한다. 이게 빠져 있어서
+  /// 신규 유저(60초 상한 ≈ 20만)가 15종 발견(40만)을 받는 순간 **정당한 보상이 잘렸다**
+  /// (2026-09-28 운영 알림 `7e79fb55` — 쉬움 사냥터 1 · Lv21). 화석([_dexFossilAllowance])과
+  /// 같은 규칙: 저장본에 없던 마일스톤만, 올라온 세이브의 발견·정복 수가 실제로 닿았을 때만.
+  /// 수집은 기기 권위라 위조를 막을 수는 없지만 계정당 1회 일시금이라 이득이 작다.
+  int _dexGoldAllowance(SaveGame stored, Map<String, dynamic> clientJson) {
+    final dex = config.dex;
+    if (dex == null) return 0;
+    final claimed = ((clientJson['claimedDex'] as List?) ?? const [])
+        .map((e) => e.toString())
+        .toSet();
+    if (claimed.isEmpty) return 0;
+    final client = SaveGame.fromJson(clientJson);
+    final discovered = client.dexDiscovered;
+    final conquered = client.dexConqueredWith(dex.conquerLevel);
+    var sum = 0;
+    for (final (list, have) in [
+      (dex.discoverMilestones, discovered),
+      (dex.conquerMilestones, conquered),
+    ]) {
+      for (final m in list) {
+        if (claimed.contains(m.id) &&
+            !stored.claimedDex.contains(m.id) &&
+            have >= m.count) {
+          sum += m.gold;
+        }
       }
     }
     return sum;
@@ -458,8 +515,10 @@ class GameActions {
     final freebies =
         cfg.gachaFreePerDay * cfg.gachaShards +
         cfg.sweepFreePerDay * biggestSweep;
+    // 심연 10층마다 첫 도달은 보스 첫 처치와 같은 조각(`clearAbyssFloor`).
+    final abyssFirsts = abyssNewMilestones(stored, out);
     final allow =
-        newBosses * cfg.bossFirstKillShards +
+        (newBosses + abyssFirsts) * cfg.bossFirstKillShards +
         _skillDropSlack * biggestDrop +
         bought +
         freebies;
@@ -546,6 +605,8 @@ class GameActions {
         : clientStage
               .clamp(1, config.run.zoneStartStage(config.run.zonesPerTier))
               .toInt();
+    // 심연 — 층 증가 상한을 먼저 확정한다(봉투도 그 층으로 잰다).
+    final abyss = _enforceAbyss(stored, clientJson, elapsed, t);
     final generous = simulateIdleProgress(
       config: config.run,
       startStage: envStage,
@@ -555,11 +616,14 @@ class GameActions {
       // 회차는 처치 속도(÷3)와 보상(×3)에 서로 반대로 실려 대략 상쇄되지만,
       // 정확히는 아니다 — 봉투가 회차를 모른 채 좁아지면 정당한 수입이 잘린다.
       tier: envTier,
+      // 심연 층 골드는 층마다 자란다 — 빼면 심연 유저의 정당한 수입이 잘린다.
+      abyssFloor: abyss.inAbyss ? abyss.floor : 0,
     ).gold;
     final maxGain =
         _goldSanityFloor +
         generous +
-        _chapterGrantAllowance(stored, clientJson);
+        _chapterGrantAllowance(stored, clientJson) +
+        _dexGoldAllowance(stored, clientJson);
 
     final merged = Map<String, dynamic>.from(clientJson);
     // 보호 필드는 서버 저장본 값으로 (없는 키/null 까지 정확히).
@@ -622,14 +686,28 @@ class GameActions {
           (mats['fossil'] as num?)?.toInt() ??
           stored.materialCount(MaterialKind.fossil);
       final storedFossil = stored.materialCount(MaterialKind.fossil);
+      // 심연 10층마다 첫 도달 화석(`clearAbyssFloor`).
+      final every = config.run.abyss.milestoneEvery;
+      final abyssFossil = every <= 0 || abyss.best <= stored.abyssBest
+          ? 0
+          : (abyss.best ~/ every - stored.abyssBest ~/ every) *
+                config.run.abyss.milestoneFossil;
       final fossilAllow =
-          _maxFossilGain + _dexFossilAllowance(stored, clientJson);
+          _maxFossilGain +
+          _dexFossilAllowance(stored, clientJson) +
+          abyssFossil;
       if (clientFossil - storedFossil > fossilAllow) {
         mats['fossil'] = storedFossil + fossilAllow;
         clampReasons.add('fossil');
       }
     }
     merged['lastSeen'] = t.toIso8601String();
+    merged['abyssUnlocked'] = abyss.unlocked;
+    merged['inAbyss'] = abyss.inAbyss;
+    merged['abyssFloor'] = abyss.floor;
+    merged['abyssBest'] = abyss.best;
+    if (abyss.week != null) merged['abyssWeek'] = abyss.week;
+    if (abyss.clamped) clampReasons.add('abyss');
 
     final SaveGame parsed;
     try {
@@ -1029,6 +1107,356 @@ class GameActions {
     );
   }
 
+  // ── 결투(곤충 배틀 스타디움, 2026-09-28) ─────────────────────────────
+  //
+  // 1:1 · 3판 2선승 · 물리 경기장(docs/design_duel.md). 옛 스탠스 전투(`runBattle`·수동 세션)는
+  // 1.0.13 이하 앱이 강제 업데이트될 때까지 그대로 둔다 — 대회는 계속 옛 엔진이다.
+
+  /// 결투 수치(`battle.json → duel`).
+  DuelParams get duelParams => DuelParams.fromJson(config.battle.duelJson);
+
+  /// 결투 편성 검증 → 출전 순서대로 결투 유닛. 검증 기준은 [validateTeam] 과 **같다**
+  /// (보유·부상·성충·위조) — 한쪽만 느슨하면 그쪽으로 우회한다.
+  ({List<DuelBug> team, String? error}) validateDuelTeam(
+    SaveGame save,
+    List<String> bugIds, {
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+    bool allowInjured = false,
+  }) {
+    final p = duelParams;
+    if (bugIds.length != p.bestOf) return (team: const [], error: 'team_size');
+    if (bugIds.toSet().length != bugIds.length) {
+      return (team: const [], error: 'duplicate_bug');
+    }
+    final v = validateTeam(
+      save,
+      bugIds,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+      allowInjured: allowInjured,
+    );
+    if (v.error != null) return (team: const [], error: v.error);
+    final byId = {for (final b in save.bugs) b.id: b};
+    return (
+      team: [
+        for (var i = 0; i < bugIds.length; i++)
+          DuelBug.fromBattleBug(
+            v.team[i],
+            speciesId: byId[bugIds[i]]!.speciesId,
+            sizeMm: byId[bugIds[i]]!.sizeMm,
+            specialty: speciesById[byId[bugIds[i]]!.speciesId]!.specialty,
+          ),
+      ],
+      error: null,
+    );
+  }
+
+  /// 상대 유저의 **세이브에서** 방어팀을 만든다(`pvpDefenseIds` 순서).
+  ///
+  /// 예전엔 앱이 계산해 `defenders` 에 올린 스탯을 그대로 믿었다(방어 스탯 위조 구멍).
+  /// 방어 순서가 없거나 무효하면 null — 호출자가 옛 `defenders` 행으로 떨어진다.
+  /// 방어 측 부상은 막지 않는다(자기가 결투하느라 다친 곤충도 방어는 선다).
+  List<DuelBug>? defenderDuelTeam(
+    SaveGame opponent, {
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    final ids = opponent.pvpDefenseIds;
+    if (ids.length != duelParams.bestOf) return null;
+    final v = validateDuelTeam(
+      opponent,
+      ids,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+      allowInjured: true,
+    );
+    return v.error == null ? v.team : null;
+  }
+
+  /// 야생 상대 — [buildWildTeam] 과 같은 규칙(내 상위 3마리 평균 × 티어 배율)에 사이즈·주특기를 붙인다.
+  /// 야생은 사이즈 롤이 없으니 **그 종의 중간 크기**로 둔다.
+  ({List<DuelBug> team, List<String> speciesIds, ScoutTier tier})?
+  buildWildDuelTeam(
+    SaveGame save, {
+    required String tierId,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+    Random? rng,
+    String locale = 'ko',
+  }) {
+    final w = buildWildTeam(
+      save,
+      tierId: tierId,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+      rng: rng,
+      locale: locale,
+    );
+    if (w == null) return null;
+    final team = <DuelBug>[];
+    for (var i = 0; i < w.team.length; i++) {
+      final sp = speciesById[w.speciesIds[i]];
+      if (sp == null) return null;
+      team.add(
+        DuelBug.fromBattleBug(
+          w.team[i],
+          speciesId: sp.id,
+          sizeMm: (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+          specialty: sp.specialty,
+        ),
+      );
+    }
+    return (team: team, speciesIds: w.speciesIds, tier: w.tier);
+  }
+
+  /// 결투 시작 — 티켓 1장 + **트로피·부상 선차감**(옛 수동 전투와 같은 규칙).
+  ///
+  /// 판마다 앱이 던지기를 보내므로 결착까지 시간이 걸린다. 지고 있을 때 앱을 끄면
+  /// 트로피·부상을 피하는 꼼수를 막으려고 **먼저 지고 들어간다**. 결착에서 차액을 돌려준다.
+  /// extra 의 `trophyPrepaid` 는 **실제로 깎인 양**이다(0 근처에서 잘린 만큼 되돌려주면 공짜 트로피).
+  ActionResult startDuel(
+    SaveGame save, {
+    required List<String> myTeamBugIds,
+    required double rewardMult,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+  }) {
+    final ticketed = consumePvpTicket(save);
+    if (!ticketed.isOk) return ticketed;
+    final start = ticketed.save!;
+    final prepaid = pvpReward(
+      won: false,
+      draw: false,
+      trophies: start.pvpTrophies,
+      cfg: config.battle,
+      rewardMult: rewardMult,
+    ).trophyDelta;
+    final t = now().toUtc();
+    final injured = Map<String, DateTime>.from(start.injured);
+    final byId = {for (final b in start.bugs) b.id: b};
+    for (final id in myTeamBugIds) {
+      final sp = speciesById[byId[id]?.speciesId];
+      if (sp == null) continue;
+      injured[id] = t.add(
+        Duration(seconds: petConfig.injuryDuration(sp.grade)),
+      );
+    }
+    final paid = start.copyWith(
+      pvpTrophies: (start.pvpTrophies + prepaid).clamp(0, 1 << 30),
+      injured: injured,
+    );
+    return ActionResult.ok(
+      paid,
+      extra: {
+        ...ticketed.extra,
+        'trophiesAtStart': start.pvpTrophies,
+        'trophyPrepaid': paid.pvpTrophies - start.pvpTrophies,
+      },
+    );
+  }
+
+  /// 결투 결과 반영 — 보상·트로피·부상. 세션·자동 공용.
+  ///
+  /// 부상은 **진 판의 곤충**만. [healOthers] 면 나머지(이긴 곤충·안 뛴 곤충)의 선차감 부상을 지운다.
+  ActionResult applyDuelOutcome(
+    SaveGame save, {
+    required bool won,
+    required List<String> teamBugIds,
+    required List<String> lostBugIds,
+    required double rewardMult,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    int? trophiesAtStart,
+    int trophyPrepaid = 0,
+    bool healOthers = false,
+    Map<String, dynamic> extra = const {},
+  }) {
+    final rw = pvpReward(
+      won: won,
+      draw: false,
+      trophies: trophiesAtStart ?? save.pvpTrophies,
+      cfg: config.battle,
+      rewardMult: rewardMult,
+    );
+    final t = now().toUtc();
+    final injured = Map<String, DateTime>.from(save.injured);
+    final byId = {for (final b in save.bugs) b.id: b};
+    final lost = lostBugIds.toSet();
+    for (final id in teamBugIds) {
+      if (lost.contains(id)) {
+        final sp = speciesById[byId[id]?.speciesId];
+        if (sp == null) continue;
+        final until = t.add(
+          Duration(seconds: petConfig.injuryDuration(sp.grade)),
+        );
+        final prev = injured[id];
+        injured[id] = prev != null && prev.isAfter(until) ? prev : until;
+      } else if (healOthers) {
+        injured.remove(id);
+      }
+    }
+    // 선차감분을 빼고 **차액만** 반영한다. 두 번 깎으면 이겨도 손해다.
+    final trophies = (save.pvpTrophies + rw.trophyDelta - trophyPrepaid).clamp(
+      0,
+      1 << 30,
+    );
+    return ActionResult.ok(
+      save.copyWith(
+        gold: addCurrency(save.gold, rw.gold),
+        pvpTrophies: trophies,
+        seasonPeakTrophies: trophies > save.seasonPeakTrophies
+            ? trophies
+            : save.seasonPeakTrophies,
+        injured: injured,
+      ),
+      extra: {
+        ...extra,
+        'outcome': won ? BattleOutcome.teamA.name : BattleOutcome.teamB.name,
+        'gold': rw.gold,
+        'trophyDelta': rw.trophyDelta,
+      },
+    );
+  }
+
+  /// 세션의 다음 판을 던진다. 결착이면 보상까지 반영한다.
+  ///
+  /// 내 팀은 **매 판 세이브에서 다시 검증**한다(시작 뒤 곤충을 분해·합성했으면 거부).
+  /// 시작 때 선차감한 부상은 허용한다(자기 선차감에 자기가 걸리지 않게).
+  ({ActionResult result, DuelSession? session}) duelThrow(
+    SaveGame save,
+    DuelSession session, {
+    required double launch,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    if (session.finished) {
+      return (
+        result: const ActionResult.fail('session_finished'),
+        session: null,
+      );
+    }
+    final p = duelParams;
+    final i = session.nextBout;
+    if (i >= session.myTeamBugIds.length || i >= session.foe.length) {
+      return (result: const ActionResult.fail('no_bout'), session: null);
+    }
+    final mine = validateDuelTeam(
+      save,
+      session.myTeamBugIds,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+      allowInjured: true,
+    );
+    if (mine.error != null) {
+      return (result: ActionResult.fail(mine.error), session: null);
+    }
+    final q = launch.isFinite ? launch.clamp(0.0, 1.0) : p.launchAuto;
+    final bout = simulateBout(
+      seed: duelBoutSeed(session.seed, i),
+      a: mine.team[i],
+      b: session.foe[i],
+      params: p,
+      launchA: q,
+    );
+    var next = session.copyWith(
+      winners: [...session.winners, bout.winner],
+      launches: [...session.launches, q],
+    );
+    final done =
+        next.winsA >= p.winsNeeded ||
+        next.winsB >= p.winsNeeded ||
+        next.nextBout >= session.myTeamBugIds.length;
+    final extra = <String, dynamic>{
+      'index': i,
+      'bout': bout.toJson(),
+      'winsA': next.winsA,
+      'winsB': next.winsB,
+      'done': done,
+    };
+    if (!done)
+      return (result: ActionResult.ok(save, extra: extra), session: next);
+
+    next = next.copyWith(finished: true);
+    final applied = applyDuelOutcome(
+      save,
+      won: next.winsA > next.winsB,
+      teamBugIds: next.myTeamBugIds,
+      lostBugIds: [
+        for (var j = 0; j < next.winners.length; j++)
+          if (next.winners[j] == 1) next.myTeamBugIds[j],
+      ],
+      rewardMult: next.rewardMult,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      trophiesAtStart: next.trophiesAtStart,
+      trophyPrepaid: next.trophyPrepaid,
+      healOthers: true,
+      extra: extra,
+    );
+    return (result: applied, session: next);
+  }
+
+  /// 빠른 결투 — 게이지 없이 끝까지 한 번에(선차감 없음 · 결과가 곧바로 나온다).
+  ActionResult runDuelAuto(
+    SaveGame save, {
+    required List<String> myTeamBugIds,
+    required List<DuelBug> foeTeam,
+    required int seed,
+    required double rewardMult,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    final p = duelParams;
+    final mine = validateDuelTeam(
+      save,
+      myTeamBugIds,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+    );
+    if (mine.error != null) return ActionResult.fail(mine.error);
+    if (foeTeam.length != mine.team.length) {
+      return const ActionResult.fail('bad_foe');
+    }
+    // 티켓 소모는 결투 확정과 같은 액션 안에서(분리하면 한쪽만 일어난다).
+    final ticketed = consumePvpTicket(save);
+    if (!ticketed.isOk) return ticketed;
+    final match = simulateDuel(
+      seed: seed,
+      teamA: mine.team,
+      teamB: foeTeam,
+      params: p,
+    );
+    return applyDuelOutcome(
+      ticketed.save!,
+      won: match.winner(p) == 0,
+      teamBugIds: myTeamBugIds,
+      lostBugIds: [
+        for (var j = 0; j < match.bouts.length; j++)
+          if (match.bouts[j].winner == 1) myTeamBugIds[j],
+      ],
+      rewardMult: rewardMult,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      extra: {
+        ...ticketed.extra,
+        'bouts': [for (final b in match.bouts) b.toJson()],
+        'winsA': match.winsA,
+        'winsB': match.winsB,
+      },
+    );
+  }
+
   /// 경과시간만큼 방치 수입을 정산한다.
   ///
   /// **클라이언트가 "얼마 벌었다"고 보고하지 않는다.** 서버가 `lastSeen` 부터
@@ -1070,6 +1498,8 @@ class GameActions {
       efficiency: run.offlineEfficiency,
       maxAccrual: maxAccrual,
       tier: save.difficultyTier,
+      // 심연이면 층 배율(앱 `_applyOffline` 과 같은 규칙).
+      abyssFloor: activeAbyssFloor(save),
       // 캠페인 끝을 넘겨 전진시키지 않는다 — 회차 전환은 유저가 직접 누른다.
       finalStage: config.roadmap?.finalStage,
     );
@@ -1634,45 +2064,24 @@ class GameActions {
   /// [GiftConfig.freeDoubleDaily] 회. 자격이 없으면 **거부가 아니라 1배**로
   /// 지급한다 — 이미 뜬 보상을 못 받게 하면 불만이 크다.
   ActionResult claimGift(SaveGame save, String giftId, {bool doubled = false}) {
-    final t = now().toUtc();
-    final idx = save.gifts.indexWhere((g) => g.id == giftId);
-    if (idx < 0) return const ActionResult.fail('gift_not_found');
-    final g = save.gifts[idx];
-    final gifts = List<GiftMail>.from(save.gifts)..removeAt(idx);
+    // 규칙(2배 자격·배수·첫 2배 젤리)은 앱과 같은 공용 함수 한 곳에 있다(§4).
+    final r = claimGiftOn(
+      save,
+      config.gift,
+      giftId,
+      doubled: doubled,
+      now: now().toUtc(),
+    );
     // 만료된 선물은 지급하지 않는다(다음 sync 가 정리한다).
-    if (g.isExpired(t)) return const ActionResult.fail('gift_expired');
-
-    final passOn = save.anyPassActive(t);
-    final today = dailyDateKey(t);
-    final cap = config.gift?.freeDoubleDaily ?? 1;
-    final allowed = doubled && (passOn || save.giftDoublesUsed(today) < cap);
-    // 패스 보유자의 2배는 무료 횟수를 쓰지 않는다.
-    final counted = allowed && !passOn;
-    // 배수는 선물마다 랜덤(2~4)이고 **젤리만 고정**이다 — 규칙은 `GiftConfig`
-    // 한 곳에 있고 앱도 같은 함수를 쓴다(§4: 로직을 두 벌로 두지 않는다).
-    // id 를 해시하므로 앱과 서버가 **같은 값**을 얻는다.
-    final gift = config.gift;
-    final mult = !allowed
-        ? 1
-        : (gift?.multiplierFor(g.id) ?? gift?.adMultiplier ?? 2);
-    final mats = Map<MaterialKind, int>.from(save.materials);
-    for (final e in g.materials.entries) {
-      final m = !allowed
-          ? 1
-          : (gift?.multiplierForMaterial(g.id, e.key) ?? mult);
-      mats[e.key] = (mats[e.key] ?? 0) + e.value * m;
-    }
+    if (r.error != null) return ActionResult.fail(r.error!);
     return ActionResult.ok(
-      save.copyWith(
-        gold: addCurrency(save.gold, g.gold * mult),
-        materials: mats,
-        gifts: gifts,
-        giftDoubleDate: counted ? today : save.giftDoubleDate,
-        giftDoubleCount: counted
-            ? save.giftDoublesUsed(today) + 1
-            : save.giftDoubleCount,
-      ),
-      extra: {'gold': g.gold * mult, 'doubled': allowed, 'mult': mult},
+      r.save!,
+      extra: {
+        'gold': r.gold,
+        'doubled': r.doubled,
+        'mult': r.mult,
+        'bonusJelly': r.bonusJelly,
+      },
     );
   }
 
@@ -2125,6 +2534,214 @@ class GameActions {
     // 하루치 지급 — 여러 날 비웠어도 **한 번만** 준다(모아두는 게임이 아니다).
     final next = save.eventTickets + cfg.ticketDailyGrant;
     return (tickets: next > cfg.ticketMax ? cfg.ticketMax : next, at: t);
+  }
+
+  // ── 심연(극한 이후 무한 층, 2026-09-28) ──────────────────────────────
+  //
+  // 심연 진행은 솔로 루프라 **기기 권위**다. 세이브를 고쳐 999층을 적으면 주간 1위가 된다 —
+  // 결투처럼 서버가 싸움을 확정할 수 없으므로, 업로드마다 **시간으로 층 증가를 묶는다**
+  // (층 하나 = 몬스터 100마리 + 보스라 `minSecondsPerFloor` 보다 빠를 수 없다).
+  // 골드 상한과 같은 수준의 방어다 — 전력 자체가 기기 권위라 완벽하지 않다(design_abyss §2).
+
+  /// 올라온 심연 필드를 규칙 안으로 — 열림(최종 보스 도감) · 주(이번 주/저장본 주만) ·
+  /// 층(시간 상한) · 역대 최고(깬 층까지, 줄지 않음).
+  ({
+    bool unlocked,
+    bool inAbyss,
+    int floor,
+    int best,
+    String? week,
+    bool clamped,
+  })
+  _enforceAbyss(
+    SaveGame stored,
+    Map<String, dynamic> clientJson,
+    Duration elapsed,
+    DateTime t,
+  ) {
+    final run = config.run;
+    final cfg = run.abyss;
+    final bossDex = {
+      ...stored.bossDex,
+      for (final e in (clientJson['bossDex'] as List? ?? const [])) '$e',
+    };
+    final finalKilled = bossDex.contains(
+      run.bossArtId(abyssTier(run), run.zonesPerTier),
+    );
+    final unlocked =
+        stored.abyssUnlocked ||
+        (clientJson['abyssUnlocked'] == true && finalKilled);
+    final current = abyssWeekId(t, config.battle);
+    final clientWeek = clientJson['abyssWeek'] as String?;
+    final week = clientWeek == current || clientWeek == stored.abyssWeek
+        ? clientWeek
+        : (stored.abyssWeek ?? (unlocked ? current : null));
+    final base = week != null && week == stored.abyssWeek
+        ? stored.abyssFloor
+        : 1;
+    final perFloor = cfg.minSecondsPerFloor <= 0 ? 1.0 : cfg.minSecondsPerFloor;
+    final maxFloor = base + (elapsed.inMilliseconds / 1000 / perFloor).ceil();
+    final clientFloor = (clientJson['abyssFloor'] as num?)?.toInt() ?? 1;
+    var floor = clientFloor < 1 ? 1 : clientFloor;
+    var clamped = false;
+    if (floor > maxFloor) {
+      floor = maxFloor;
+      clamped = true;
+    }
+    final clientBest = (clientJson['abyssBest'] as num?)?.toInt() ?? 0;
+    final best = max(stored.abyssBest, min(clientBest, floor - 1));
+    if (clientBest > best) clamped = true;
+    final inAbyss = unlocked && clientJson['inAbyss'] == true;
+    return (
+      unlocked: unlocked,
+      inAbyss: inAbyss,
+      floor: floor,
+      best: best,
+      week: week,
+      clamped: clamped,
+    );
+  }
+
+  /// 이번 업로드에서 새로 닿은 심연 마일스톤 수(역대 최고가 `milestoneEvery` 배수를 넘은 수).
+  int abyssNewMilestones(SaveGame stored, SaveGame out) {
+    final every = config.run.abyss.milestoneEvery;
+    if (every <= 0 || out.abyssBest <= stored.abyssBest) return 0;
+    return out.abyssBest ~/ every - stored.abyssBest ~/ every;
+  }
+
+  /// 저장할 세이브에 **이번 주 점수 기록**을 찍는다. 기록할 (주, 층)을 돌려준다(층이 올랐을 때만).
+  ({SaveGame save, String week, int floor})? abyssScoreFor(
+    SaveGame stored,
+    SaveGame save,
+  ) {
+    final week = abyssWeekId(now().toUtc(), config.battle);
+    if (!save.abyssUnlocked || save.abyssWeek != week || save.abyssFloor <= 1) {
+      return null;
+    }
+    final before = stored.abyssWeek == week ? stored.abyssFloor : 0;
+    if (save.abyssFloor <= before && stored.abyssScoreWeek == week) return null;
+    return (
+      save: save.copyWith(abyssScoreWeek: week),
+      week: week,
+      floor: save.abyssFloor,
+    );
+  }
+
+  /// 순위 보상을 아직 판정하지 않은 **끝난 주**가 있으면 그 주 id.
+  String? abyssRewardDueWeek(SaveGame save) {
+    final played = save.abyssScoreWeek;
+    if (played == null || played.isEmpty) return null;
+    if (save.abyssRewardWeek == played) return null;
+    if (config.run.abyss.rankRewards.isEmpty) return null;
+    final current = abyssWeekId(now().toUtc(), config.battle);
+    return played == current ? null : played;
+  }
+
+  /// 심연 주간 순위 보상 — 결투 순위와 같은 구조(순위권 밖이어도 판정 기록은 찍는다).
+  ActionResult grantAbyssRankReward(
+    SaveGame save,
+    String week, {
+    int? rank,
+    int floor = 0,
+    int total = 0,
+  }) {
+    final jelly = rank == null || floor <= 1
+        ? 0
+        : config.run.abyss.rankJelly(rank);
+    var out = save.copyWith(abyssRewardWeek: week);
+    if (jelly > 0) {
+      final mats = Map<MaterialKind, int>.from(out.materials);
+      mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + jelly;
+      out = out.copyWith(materials: mats);
+    }
+    return ActionResult.ok(
+      out,
+      extra: {
+        if (jelly > 0)
+          'abyssRankReward': {
+            'week': week,
+            'rank': rank,
+            'floor': floor,
+            'total': total,
+            'jelly': jelly,
+          },
+      },
+    );
+  }
+
+  // ── 결투 시즌 순위 보상(2026-09-28) ─────────────────────────────────
+  //
+  // 대회와 같은 구조다 — cron 없이 **끝난 뒤 첫 업로드에서** 판정한다.
+  // 시즌이 끝나면 그 시즌 점수는 더 이상 기록되지 않으므로(기록은 늘 **지금
+  // 시즌** 키로 들어간다) 끝난 뒤 조회한 순위가 곧 확정값이다.
+  //
+  // ⚠️ 순위를 `profiles.trophies` 로 매기지 않는다 — 그 칸은 앱이 직접 쓴다
+  // (`supabase_pvp_backend.pushTrophies`). 누구나 99999 를 적을 수 있는 값에
+  // 젤리 100 을 걸면 그대로 뚫린다. 점수는 **서버가 결투를 확정할 때만** 적는다.
+
+  /// 결투를 확정한 세이브에 **이번 시즌 점수 기록**을 찍는다. 기록할 시즌 id 를
+  /// 함께 돌려준다(호출자가 `pvp_season_scores` 에 쓴다). 기록하지 않으면 null.
+  ///
+  /// 시즌 정산 전의 세이브(경계를 넘긴 뒤 `/save` 보다 결투가 먼저 온 경우)는
+  /// 기록하지 않는다 — 트로피가 **지난 시즌 값**이라, 새 시즌 1위로 들어간다.
+  /// 다음 `/save` 가 시즌을 정산한 뒤부터 기록된다.
+  ({SaveGame save, String seasonId})? pvpScoreFor(SaveGame save) {
+    final cfg = config.battle;
+    final start = seasonStartAt(now().toUtc(), cfg);
+    final settled = save.seasonStartedAt;
+    if (settled == null || settled.isBefore(start)) return null;
+    final sid = seasonIdOf(start, cfg);
+    return (save: save.copyWith(pvpScoreSeason: sid), seasonId: sid);
+  }
+
+  /// 순위 보상을 **아직 판정하지 않은 끝난 시즌**이 있으면 그 시즌 id, 없으면 null.
+  ///
+  /// 그 유저가 **실제로 점수를 낸 시즌**(`pvpScoreSeason`)만 본다 — 결투를 안 한
+  /// 유저에게 매주 순위 조회를 돌리지 않는다(시즌당 1인 1회).
+  String? pvpRankRewardDueSeason(SaveGame save) {
+    final played = save.pvpScoreSeason;
+    if (played == null || played.isEmpty) return null;
+    if (save.pvpRankRewardSeason == played) return null; // 이미 판정했다
+    final cfg = config.battle;
+    if (cfg.seasonRankRewards.isEmpty) return null;
+    final current = seasonIdOf(seasonStartAt(now().toUtc(), cfg), cfg);
+    // 지금 시즌이면 아직 안 끝났다.
+    return played == current ? null : played;
+  }
+
+  /// 시즌 순위 보상 지급. [rank]·[trophies] 는 그 시즌 기록(없으면 null·0).
+  ///
+  /// 순위권 밖이어도 **판정 기록은 찍는다** — 안 찍으면 업로드마다 순위를 다시 조회한다.
+  /// 트로피 0 은 순위가 있어도 주지 않는다(한 판 지고 끝난 사람이 인원이 적은 주에
+  /// 순위권에 드는 것을 막는다).
+  ActionResult grantPvpRankReward(
+    SaveGame save,
+    String seasonId, {
+    int? rank,
+    int trophies = 0,
+    int total = 0,
+  }) {
+    final cfg = config.battle;
+    final jelly = rank == null || trophies <= 0 ? 0 : cfg.seasonRankJelly(rank);
+    var out = save.copyWith(pvpRankRewardSeason: seasonId);
+    if (jelly > 0) {
+      final mats = Map<MaterialKind, int>.from(out.materials);
+      mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + jelly;
+      out = out.copyWith(materials: mats);
+    }
+    return ActionResult.ok(
+      out,
+      extra: {
+        if (jelly > 0)
+          'pvpRankReward': {
+            'season': seasonId,
+            'rank': rank,
+            'trophies': trophies,
+            'total': total,
+            'jelly': jelly,
+          },
+      },
+    );
   }
 
   // ── 회차 종료 보상 ────────────────────────────────────────────────

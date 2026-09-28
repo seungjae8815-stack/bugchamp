@@ -3,6 +3,7 @@
 /// 서식지 HP/데미지/보상/업그레이드 수식과 설정 모델. Flutter 에 의존하지 않는다.
 library;
 
+export 'src/abyss_config.dart';
 export 'src/battle_config.dart';
 export 'src/chapter_reward.dart';
 export 'src/jelly_cost.dart';

@@ -101,6 +101,7 @@ flutter:
     - assets/images/upgrades/
     - assets/images/buffs/
     - assets/images/bugs/
+    - assets/images/duel/
     - assets/images/biomes/
     - assets/images/items/
     - assets/images/ui/

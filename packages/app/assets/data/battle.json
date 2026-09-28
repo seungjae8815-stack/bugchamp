@@ -18,51 +18,72 @@
    "id": "bronze",
    "minTrophy": 0,
    "reward": {
-    "gold": 1500,
-    "jelly": 1
+    "gold": 1500
    }
   },
   {
    "id": "silver",
    "minTrophy": 100,
    "reward": {
-    "gold": 5000,
-    "jelly": 3
+    "gold": 5000
    }
   },
   {
    "id": "gold",
    "minTrophy": 300,
    "reward": {
-    "gold": 15000,
-    "jelly": 6
+    "gold": 15000
    }
   },
   {
    "id": "platinum",
    "minTrophy": 700,
    "reward": {
-    "gold": 40000,
-    "jelly": 12
+    "gold": 40000
    }
   },
   {
    "id": "diamond",
    "minTrophy": 1500,
    "reward": {
-    "gold": 100000,
-    "jelly": 20
+    "gold": 100000
    }
   }
  ],
- "_seasonComment": "시즌은 주간. 모두에게 같은 순간에 끝나도록 요일·시각으로 못 박는다(tzOffsetMinutes=540 → KST 월요일 09:00).",
+ "_seasonComment": "시즌은 주간. 모두에게 같은 순간에 끝나도록 요일·시각으로 못 박는다(tzOffsetMinutes=540 → KST 월요일 00:00 = 일요일 24시). 2026-09-28 사장님 확정: 09:00 → 00:00. 리그 보상에서 젤리를 뺐다 — 젤리는 시즌 종료 순위 보상(1위 100·2위 50·3위 30·4~10위 10)으로만 나간다.",
+ "duel": {
+  "_comment": "곤충 배틀 스타디움(결투) 물리·규칙 수치(2026-09-28, docs/design_duel.md). 손으로 맞추지 않는다 — packages/core_battle/tool/duel_sim.dart 로 잰다. 목표: 같은 전력이면 주특기끼리 40~60%(치기>집기>던지기>치기 약한 상성), 전력 +20%≈70%·+50%≈90%, 같은 종 사이즈 최대 vs 최소 ≈60%, 게이지로는 전력 차이를 못 뒤집는다. 대회(왕충 선발대회)는 이 값을 쓰지 않는다(옛 엔진).",
+  "arenaRadius": 100,
+  "roundSeconds": 30,
+  "tickHz": 30,
+  "frameEvery": 3,
+  "bestOf": 3,
+  "damageK": 0.06,
+  "strikeFlipBase": 0.10,
+  "strikePushMult": 2.6,
+  "gripForce": 900,
+  "tossSpeed": 138,
+  "tossCooldown": 4.5,
+  "tossLandDamage": 0.1,
+  "massExp": 0.3,
+  "restrainMult": 1.3,
+  "launchBonusMax": 0.10,
+  "launchAuto": 0.6
+ },
  "season": {
   "resetWeekday": 1,
-  "resetHour": 9,
+  "resetHour": 0,
   "tzOffsetMinutes": 540,
   "_resetFactorComment": "2026-09-14 사장님 확정: 시즌이 끝나면 트로피는 0 으로. 남기면(0.5) 지난주 강자가 이번주도 위에서 시작해 새 사람이 못 올라온다.",
   "resetFactor": 0.0,
-  "rewardMult": 2
+  "rewardMult": 2,
+  "_rankRewardsComment": "시즌 종료 순위 보상(2026-09-28 사장님 확정). 위에서부터 먼저 맞는 구간 하나만 적용(maxRank 이하). 트로피 1 이상만 순위에 든다. 순위는 서버가 기록한 시즌 점수(pvp_season_scores)로 매긴다 — profiles.trophies 는 앱이 직접 쓰는 칸이라 보상 근거가 될 수 없다. 동률은 먼저 도달한 쪽이 위. 젤리를 만지면 core_run/tool/jelly_sim.dart --pvp-rank= 로 잰다.",
+  "rankRewards": [
+   { "maxRank": 1, "jelly": 100 },
+   { "maxRank": 2, "jelly": 50 },
+   { "maxRank": 3, "jelly": 30 },
+   { "maxRank": 10, "jelly": 10 }
+  ]
  },
  "_ticketsComment": "결투 티켓 = 하루 판수 제한(랭킹을 '전력'으로 되돌린다). adDailyLimit 은 광고제거 구매자에게도 동일 적용.",
  "tickets": {

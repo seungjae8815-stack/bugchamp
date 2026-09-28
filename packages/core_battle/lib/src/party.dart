@@ -1,6 +1,7 @@
 import 'package:core_models/core_models.dart';
 
 import 'core_battle_base.dart';
+import 'duel/duel_bug.dart';
 
 /// 주특기 → 선호 스탠스 매핑 (§2.3).
 Stance preferredStanceOf(Specialty s) => switch (s) {
@@ -71,6 +72,39 @@ BattleBug buildBattleBug({
         (1 + e.levelOf(BugPart.wing) * wingPerLevel),
   );
 }
+
+/// 보유 개체를 **결투(곤충 배틀 스타디움)** 유닛으로 — 스탯은 [buildBattleBug] 와 같은 계산에
+/// 사이즈·주특기를 더한다. 앱·서버가 이 함수 하나로 만든다(§4: 두 벌 금지).
+DuelBug buildDuelBug({
+  required IndividualBug bug,
+  required Species species,
+  required String locale,
+  double hornJawPerLevel = 0.04,
+  double cuticlePerLevel = 0.04,
+  double wingPerLevel = 0.03,
+  double buildPerLevel = 0.05,
+  double traitAtkBonus = 0,
+  double traitHpBonus = 0,
+  double variantAtkBonus = 0,
+  double variantHpBonus = 0,
+}) => DuelBug.fromBattleBug(
+  buildBattleBug(
+    bug: bug,
+    species: species,
+    locale: locale,
+    hornJawPerLevel: hornJawPerLevel,
+    cuticlePerLevel: cuticlePerLevel,
+    wingPerLevel: wingPerLevel,
+    buildPerLevel: buildPerLevel,
+    traitAtkBonus: traitAtkBonus,
+    traitHpBonus: traitHpBonus,
+    variantAtkBonus: variantAtkBonus,
+    variantHpBonus: variantHpBonus,
+  ),
+  speciesId: species.id,
+  sizeMm: bug.sizeMm,
+  specialty: species.specialty,
+);
 
 /// 내 팀(A)에서 이번 전투 중 KO 된 파이터 id들.
 /// 1:1 순차전이라 `aDown` 이벤트 수 = 앞에서부터 쓰러진 곤충 수.

@@ -14,6 +14,7 @@ import 'actions.dart';
 import 'admin_page.dart';
 import 'auth.dart';
 import 'battle_session.dart';
+import 'duel_session.dart';
 import 'game_config.dart';
 import 'state_store.dart';
 import 'ops_monitor.dart';
@@ -128,6 +129,31 @@ Map<String, dynamic> _foeJson(BattleBug b, String speciesId, {String? skin}) =>
       'def': b.def,
       'spd': b.spd,
     };
+
+/// 옛 방어팀 행(앱이 올린 스탯) → 결투 유닛. 사이즈 기록이 없으니 그 종의 중간 크기.
+/// 방어 순서(`pvpDefenseIds`)가 없는 상대에게만 쓰는 폴백이다.
+DuelBug _legacyDefenderToDuel(
+  Map<String, dynamic> d,
+  int index,
+  Map<String, Species> speciesById,
+  String locale,
+) {
+  final b = _defenderToBattleBug(d, index, speciesById, locale);
+  final sp = speciesById[d['sp']?.toString() ?? ''];
+  return DuelBug.fromBattleBug(
+    b,
+    speciesId: sp?.id ?? '',
+    sizeMm: sp == null ? 50 : (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+    specialty: sp?.specialty ?? Specialty.strike,
+  );
+}
+
+/// 결투 상대 1마리의 표시 정보 — 앱이 서버가 싸운 것과 같은 상대를 그린다.
+/// [skin] 은 그림에만 쓴다(전투 계산에는 안 들어간다).
+Map<String, dynamic> _duelFoeJson(DuelBug b, {String? skin}) => {
+  ...b.toJson(),
+  if (skin != null) 'skin': skin,
+};
 
 /// 방어팀 행의 스킨 효과 키(`gold`/`albino`). 없으면 null.
 ///
@@ -403,6 +429,70 @@ Handler buildHandler({
           }
         }
 
+        // 끝난 결투 시즌의 순위 보상(2026-09-28). 대회와 같은 이유로 여기서 판정한다 —
+        // 시즌이 끝나면 그 시즌 점수는 더 이상 안 바뀌어, 끝난 뒤 조회가 곧 확정값이다.
+        // 조회는 **그 시즌에 점수를 낸 사람만** 시즌당 1회 탄다.
+        final dueSeason = actions.pvpRankRewardDueSeason(r.save!);
+        if (dueSeason != null) {
+          try {
+            final placed = await store.pvpSeasonRankOf(dueSeason, user.id);
+            final granted = actions.grantPvpRankReward(
+              r.save!,
+              dueSeason,
+              rank: placed?.rank,
+              trophies: placed?.trophies ?? 0,
+              total: placed?.total ?? 0,
+            );
+            if (granted.isOk) {
+              r = ActionResult.ok(
+                granted.save,
+                extra: {...r.extra, ...granted.extra},
+              );
+            }
+          } on StateStoreException catch (e) {
+            // 조회가 실패하면 판정 기록을 찍지 않는다 — 다음 업로드에서 다시 본다.
+            stderr.writeln('[save] 결투 순위 조회 실패 ${user.id}: $e');
+          }
+        }
+
+        // 심연 주간 순위(2026-09-28) — 끝난 주의 보상 판정 → 이번 주 점수 기록.
+        final dueWeek = actions.abyssRewardDueWeek(r.save!);
+        if (dueWeek != null) {
+          try {
+            final placed = await store.abyssRankOf(dueWeek, user.id);
+            final granted = actions.grantAbyssRankReward(
+              r.save!,
+              dueWeek,
+              rank: placed?.rank,
+              floor: placed?.floor ?? 0,
+              total: placed?.total ?? 0,
+            );
+            if (granted.isOk) {
+              r = ActionResult.ok(
+                granted.save,
+                extra: {...r.extra, ...granted.extra},
+              );
+            }
+          } on StateStoreException catch (e) {
+            stderr.writeln('[save] 심연 순위 조회 실패 ${user.id}: $e');
+          }
+        }
+        final abyssScore = actions.abyssScoreFor(stored, r.save!);
+        if (abyssScore != null) {
+          try {
+            await store.submitAbyssScore(
+              week: abyssScore.week,
+              userId: user.id,
+              nickname: abyssScore.save.nickname,
+              floor: abyssScore.floor,
+            );
+            r = ActionResult.ok(abyssScore.save, extra: r.extra);
+          } catch (e) {
+            // 기록에 실패하면 점수 주를 찍지 않는다 — 다음 업로드에서 다시 쓴다.
+            stderr.writeln('[save] 심연 기록 실패 ${user.id}: $e');
+          }
+        }
+
         await store.save(user.id, r.save!.toJson());
         // ⚠️ 세이브 전체를 되돌려주지 않는다. 이 엔드포인트는 주기 업로드라
         // 호출이 잦은데, 응답까지 세이브 통째면 왕복마다 세이브 크기 × 2 의
@@ -416,10 +506,16 @@ Handler buildHandler({
             r.extra['clamped'] == true ||
             r.extra['season'] == true ||
             r.extra['eventReward'] != null ||
-            r.extra['eventBadges'] == true;
+            r.extra['eventBadges'] == true ||
+            r.extra['pvpRankReward'] != null ||
+            r.extra['abyssRankReward'] != null;
         return _json({
           'ok': true,
           ...r.extra,
+          // 1.0.13 이하 앱은 `pvpRankReward` 를 몰라 채택하지 않는다 — 그러면 서버가
+          // 준 젤리를 다음 업로드가 덮는다(기기 권위). 그 앱들이 채택하는 사유
+          // `season` 을 함께 실어 보낸다(시즌 보고서가 없으면 팝업은 안 뜬다).
+          if (r.extra['pvpRankReward'] != null) 'season': true,
           if (adopt) 'save': r.save!.toJson(),
         });
       } on StateStoreException catch (e) {
@@ -1192,7 +1288,14 @@ Handler buildHandler({
           trophyPrepaid: effPrepaid,
         );
         await store.saveSession(sessionId, user.id, session.toJson());
-        await store.save(user.id, prepaidSave.toJson());
+        // 패배분 선차감도 트로피 변화다 — 시즌 점수에 같이 반영한다.
+        final scoredStart = await _recordPvpScore(
+          store,
+          actions,
+          user.id,
+          prepaidSave,
+        );
+        await store.save(user.id, scoredStart.toJson());
 
         // 상대 스탯은 화면 표시에 필요하므로 준다. 시드는 주지 않는다.
         // 세이브는 싣지 않는다(이그레스 비용) — 바뀐 티켓 값만 돌려준다.
@@ -1332,14 +1435,319 @@ Handler buildHandler({
         out['teamBHpPct'] = r.teamBHpPct;
         out['rounds'] = r.rounds;
         if (!applied.isOk) return _json(out);
-        await store.save(user.id, applied.save!.toJson());
-        return _json({
-          ...out,
-          ...applied.extra,
-          'save': applied.save!.toJson(),
-        });
+        final scored = await _recordPvpScore(
+          store,
+          actions,
+          user.id,
+          applied.save!,
+        );
+        await store.save(user.id, scored.toJson());
+        return _json({...out, ...applied.extra, 'save': scored.toJson()});
       } on StateStoreException catch (e) {
         stderr.writeln('[manual/step] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    // ── 결투(곤충 배틀 스타디움, 2026-09-28) ───────────────────────────
+    //
+    // 옛 `/battle`·`/battle/manual/*` 는 1.0.13 이하 앱이 강제 업데이트될 때까지 그대로 둔다.
+
+    /// 결투 상대 — 실유저면 **그 유저의 세이브**에서 방어팀을 만든다(방어 순서 `pvpDefenseIds`).
+    /// 방어 순서가 없거나 무효하면 옛 `defenders` 행(앱이 올린 스탯)으로 떨어진다 — 1.0.14 로
+    /// 다 올라온 뒤 방어 순서를 한 번이라도 저장하면 이 폴백은 쓰이지 않는다.
+    Future<
+      ({
+        List<DuelBug> foe,
+        List<String> foeSpecies,
+        List<String?> foeSkins,
+        double rewardMult,
+      })?
+    >
+    duelFoe(
+      SaveGame save,
+      String opponentId,
+      String tierId,
+      String locale,
+    ) async {
+      if (opponentId.isNotEmpty) {
+        final rows = await store.loadDefenderTeam(opponentId);
+        final oppRaw = await store.load(opponentId);
+        final opp = oppRaw == null
+            ? null
+            : SaveGame.fromJson(migrateToCurrent(oppRaw));
+        final fromSave = opp == null
+            ? null
+            : actions.defenderDuelTeam(
+                opp,
+                speciesById: species,
+                petConfig: cfg.pet,
+                enhance: cfg.enhance,
+              );
+        if (fromSave != null) {
+          final byId = {for (final b in opp!.bugs) b.id: b};
+          final skins = <String, String?>{
+            for (final d in rows ?? const <Map<String, dynamic>>[])
+              '${d['sp']}': _defenderSkin(d),
+          };
+          return (
+            foe: fromSave,
+            foeSpecies: [for (final b in fromSave) b.speciesId],
+            foeSkins: [
+              for (final b in fromSave)
+                byId[b.id]?.variant != null ? null : skins[b.speciesId],
+            ],
+            rewardMult: 1.0,
+          );
+        }
+        if (rows == null || rows.length < actions.duelParams.bestOf) {
+          return null;
+        }
+        final legacy = [
+          for (var i = 0; i < actions.duelParams.bestOf; i++)
+            _legacyDefenderToDuel(rows[i], i, species, locale),
+        ];
+        return (
+          foe: legacy,
+          foeSpecies: [for (final b in legacy) b.speciesId],
+          foeSkins: [
+            for (var i = 0; i < legacy.length; i++) _defenderSkin(rows[i]),
+          ],
+          rewardMult: 1.0,
+        );
+      }
+      final wild = actions.buildWildDuelTeam(
+        save,
+        tierId: tierId,
+        speciesById: species,
+        petConfig: cfg.pet,
+        enhance: cfg.enhance,
+        locale: locale,
+      );
+      if (wild == null) return null;
+      return (
+        foe: wild.team,
+        foeSpecies: wild.speciesIds,
+        foeSkins: List<String?>.filled(wild.team.length, null),
+        rewardMult: wild.tier.rewardMult,
+      );
+    }
+
+    ({List<String> team, String opponentId, String tierId, String locale})?
+    duelRequest(Map<String, dynamic> body) {
+      final team = [
+        for (final id in (body['teamBugIds'] as List? ?? const [])) '$id',
+      ];
+      final opponentId = body['opponentUserId']?.toString() ?? '';
+      final tierId = body['tierId']?.toString() ?? '';
+      if (team.isEmpty || (opponentId.isEmpty && tierId.isEmpty)) return null;
+      return (
+        team: team,
+        opponentId: opponentId,
+        tierId: tierId,
+        locale: body['locale']?.toString() ?? 'ko',
+      );
+    }
+
+    /// 결투 시작 — 편성 검증 · 티켓 · 트로피/부상 선차감 · 세션(시드는 주지 않는다).
+    authed.post('/duel/start', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final q = duelRequest(body);
+      if (q == null) return _json({'error': 'bad_request'}, status: 400);
+      // ⚠️ 자기 자신과는 싸울 수 없다 — 내 방어팀은 내 전력과 같아 승률 조작에 쓰기 좋다.
+      if (q.opponentId == user.id) {
+        return _json({'error': 'self_opponent'}, status: 400);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final built = actions.validateDuelTeam(
+          save,
+          q.team,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        if (built.error != null) {
+          _noteForged(ops, user.id, built.error);
+          return _json({'error': built.error}, status: 400);
+        }
+        final foe = await duelFoe(save, q.opponentId, q.tierId, q.locale);
+        if (foe == null) {
+          return _json({'error': 'opponent_not_found'}, status: 404);
+        }
+        final started = actions.startDuel(
+          save,
+          myTeamBugIds: q.team,
+          rewardMult: foe.rewardMult,
+          speciesById: species,
+          petConfig: cfg.pet,
+        );
+        if (!started.isOk) {
+          return _json(
+            _ticketError(actions, save, started.error),
+            status: started.status,
+          );
+        }
+        final sessionId = _newSessionId();
+        final session = DuelSession(
+          id: sessionId,
+          userId: user.id,
+          seed: DateTime.now().microsecondsSinceEpoch & 0x7fffffff,
+          myTeamBugIds: q.team,
+          foe: foe.foe,
+          foeSpecies: foe.foeSpecies,
+          foeSkins: foe.foeSkins,
+          rewardMult: foe.rewardMult,
+          winners: const [],
+          launches: const [],
+          finished: false,
+          trophiesAtStart: started.extra['trophiesAtStart'] as int,
+          trophyPrepaid: started.extra['trophyPrepaid'] as int,
+        );
+        await store.saveSession(sessionId, user.id, session.toJson());
+        // 패배분 선차감도 트로피 변화다 — 시즌 점수에 같이 반영한다.
+        final scored = await _recordPvpScore(
+          store,
+          actions,
+          user.id,
+          started.save!,
+        );
+        await store.save(user.id, scored.toJson());
+        return _json({
+          'sessionId': sessionId,
+          'bestOf': actions.duelParams.bestOf,
+          if (started.extra['tickets'] != null)
+            'tickets': started.extra['tickets'],
+          if (started.extra['ticketsAt'] != null)
+            'ticketsAt': started.extra['ticketsAt'],
+          'foe': [
+            for (var i = 0; i < foe.foe.length; i++)
+              _duelFoeJson(foe.foe[i], skin: foe.foeSkins[i]),
+          ],
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[duel/start] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 한 판 던지기 — 게이지 값(0~1)을 받아 서버가 그 판을 확정하고 궤적을 돌려준다.
+    authed.post('/duel/throw', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final sessionId = body['sessionId']?.toString() ?? '';
+      final launch = (body['launch'] as num?)?.toDouble();
+      if (sessionId.isEmpty || launch == null) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final row = await store.loadSession(sessionId);
+        if (row == null) return _json({'error': 'no_session'}, status: 404);
+        // 남의 세션을 진행시킬 수 없다.
+        if (row['user_id']?.toString() != user.id) {
+          return _json({'error': 'forbidden'}, status: 403);
+        }
+        final data = Map<String, dynamic>.from(row['data'] as Map);
+        if (!DuelSession.isDuel(data)) {
+          return _json({'error': 'not_duel'}, status: 400);
+        }
+        final session = DuelSession.fromJson(data);
+        // 끝난 세션을 다시 돌려 보상을 두 번 받지 못하게.
+        if (session.finished) {
+          return _json({'error': 'already_finished'}, status: 409);
+        }
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.duelThrow(
+          save,
+          session,
+          launch: launch,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        if (!r.result.isOk || r.session == null) {
+          _noteForged(ops, user.id, r.result.error);
+          return _json({'error': r.result.error}, status: 400);
+        }
+        await store.saveSession(sessionId, user.id, r.session!.toJson());
+        if (r.result.extra['done'] != true) {
+          // 판 사이엔 세이브가 안 바뀐다 — 싣지 않는다(이그레스).
+          return _json(r.result.extra);
+        }
+        final scored = await _recordPvpScore(
+          store,
+          actions,
+          user.id,
+          r.result.save!,
+        );
+        await store.save(user.id, scored.toJson());
+        return _json({...r.result.extra, 'save': scored.toJson()});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[duel/throw] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 빠른 결투 — 게이지 없이 3판을 한 번에.
+    authed.post('/duel/auto', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final q = duelRequest(body);
+      if (q == null) return _json({'error': 'bad_request'}, status: 400);
+      if (q.opponentId == user.id) {
+        return _json({'error': 'self_opponent'}, status: 400);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final foe = await duelFoe(save, q.opponentId, q.tierId, q.locale);
+        if (foe == null) {
+          return _json({'error': 'opponent_not_found'}, status: 404);
+        }
+        final r = actions.runDuelAuto(
+          save,
+          myTeamBugIds: q.team,
+          foeTeam: foe.foe,
+          seed: DateTime.now().microsecondsSinceEpoch & 0x7fffffff,
+          rewardMult: foe.rewardMult,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        if (!r.isOk) {
+          _noteForged(ops, user.id, r.error);
+          return _json(_ticketError(actions, save, r.error), status: r.status);
+        }
+        final scored = await _recordPvpScore(store, actions, user.id, r.save!);
+        await store.save(user.id, scored.toJson());
+        return _json({
+          ...r.extra,
+          'save': scored.toJson(),
+          'foe': [
+            for (var i = 0; i < foe.foe.length; i++)
+              _duelFoeJson(foe.foe[i], skin: foe.foeSkins[i]),
+          ],
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[duel/auto] ${user.id}: $e');
         return _json({'error': 'store_unavailable'}, status: 503);
       }
     });
@@ -1520,9 +1928,10 @@ Handler buildHandler({
           _noteForged(ops, user.id, r.error);
           return _json(_ticketError(actions, save, r.error), status: r.status);
         }
-        await store.save(user.id, r.save!.toJson());
+        final scored = await _recordPvpScore(store, actions, user.id, r.save!);
+        await store.save(user.id, scored.toJson());
         return _json({
-          'save': r.save!.toJson(),
+          'save': scored.toJson(),
           ...r.extra,
           // 야생은 서버가 만든 상대다 — 앱이 이걸로 그리고 재생해야
           // 연출이 서버 결과와 일치한다.
@@ -2915,6 +3324,31 @@ Future<void> _writeBadge(StateStore store, String userId, Object? badge) async {
   } on StateStoreException catch (e) {
     stderr.writeln('[save] badge 저장 실패 $userId: $e');
   }
+}
+
+/// 결투를 확정한 세이브에 **이번 시즌 점수**를 찍고 `pvp_season_scores` 에 쓴다.
+///
+/// 순위 보상(2026-09-28)의 유일한 근거라 **서버가 결투를 확정하는 자리에서만**
+/// 부른다. 기록에 실패해도 판은 무르지 않는다 — 다음 결투에서 다시 쓴다.
+Future<SaveGame> _recordPvpScore(
+  StateStore store,
+  GameActions actions,
+  String userId,
+  SaveGame save,
+) async {
+  final p = actions.pvpScoreFor(save);
+  if (p == null) return save;
+  try {
+    await store.submitPvpSeasonScore(
+      seasonId: p.seasonId,
+      userId: userId,
+      nickname: save.nickname,
+      trophies: p.save.pvpTrophies,
+    );
+  } catch (e) {
+    stderr.writeln('[pvp/season] $userId: $e');
+  }
+  return p.save;
 }
 
 /// 이벤트 점수 기록. 실패해도 판을 무르지 않는다 — 참가권은 이미 나갔고,

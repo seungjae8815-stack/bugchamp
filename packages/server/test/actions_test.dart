@@ -1619,7 +1619,7 @@ void main() {
       expect(s.giftDoublesUsed(dailyDateKey(t0)), cap);
     });
 
-    test('패스 보유자는 무제한 2배이고 무료 횟수를 쓰지 않는다', () {
+    test('패스 보유자는 무제한 2배이고 첫 2배 젤리는 하루 1회뿐이다', () {
       var s = SaveGame.initial(createdAt: t0).copyWith(
         passExpiresAt: t0.add(const Duration(days: 30)),
         gifts: [
@@ -1641,7 +1641,38 @@ void main() {
         want += 1000 * cfg.gift!.multiplierFor('g' + i.toString());
       }
       expect(s.gold, want);
-      expect(s.giftDoublesUsed(dailyDateKey(t0)), 0);
+      // 패스 보유자의 2배도 센다(2026-09-28) — 첫 2배 젤리를 하루 1회로 묶으려고.
+      // 세도 패스는 자격 검사를 먼저 통과하므로 무제한은 그대로다(위 3회 모두 2배).
+      expect(s.giftDoublesUsed(dailyDateKey(t0)), 3);
+      expect(
+        s.materialCount(MaterialKind.jelly),
+        cfg.gift!.doubleJellyFor('g0'),
+      );
+    });
+
+    test('첫 2배 젤리는 1~5 이고 1배 수령에는 붙지 않는다', () {
+      expect(cfg.gift!.doubleJellyMax, greaterThan(0));
+      for (var i = 0; i < 200; i++) {
+        final j = cfg.gift!.doubleJellyFor('gift-$i');
+        expect(j, inInclusiveRange(1, 5));
+      }
+      final s = SaveGame.initial(createdAt: t0).copyWith(
+        gifts: [
+          GiftMail(
+            id: 'g1',
+            expiry: t0.add(const Duration(hours: 1)),
+            gold: 1000,
+          ),
+        ],
+      );
+      final single = actions.claimGift(s, 'g1').save!;
+      expect(single.materialCount(MaterialKind.jelly), 0);
+      final doubled = actions.claimGift(s, 'g1', doubled: true);
+      expect(
+        doubled.save!.materialCount(MaterialKind.jelly),
+        cfg.gift!.doubleJellyFor('g1'),
+      );
+      expect(doubled.extra['bonusJelly'], cfg.gift!.doubleJellyFor('g1'));
     });
 
     test('만료된 선물은 지급 안 함', () {
@@ -2257,6 +2288,36 @@ void main() {
       );
     });
 
+    // 2026-09-28 운영 알림(7e79fb55 — 쉬움 사냥터 1 · Lv21): 발견·정복 마일스톤은 **정액 골드**
+    // (15종 발견 40만)라 신규 유저의 60초 상한(≈20만)을 넘어 정당한 보상이 잘렸다.
+    test('도감 발견·정복 마일스톤 골드는 신규 유저가 몰아 받아도 잘리지 않는다', () {
+      final dex = cfg.dex!;
+      final species = [for (var i = 0; i < 20; i++) 'sp$i'];
+      final before = stored(gold: 1000).copyWith(
+        dex: {
+          for (final id in species)
+            id: DexEntry(maxLevel: dex.conquerLevel, raisedToAdult: true),
+        },
+      );
+      final ms = [...dex.discoverMilestones, ...dex.conquerMilestones];
+      final gold = ms.fold<int>(0, (a, m) => a + m.gold);
+      final after = before.copyWith(
+        gold: before.gold + gold,
+        claimedDex: {for (final m in ms) m.id},
+      );
+      final r = actions.mergeSave(before, after.toJson());
+      expect(r.extra['clamped'], isFalse);
+      expect(r.save!.gold, before.gold + gold);
+      // 도감을 채우지 않았으면 봐주지 않는다(받았다고 적기만 한 조작).
+      final cheat = stored(
+        gold: 1000,
+      ).copyWith(gold: 1000 + gold, claimedDex: {for (final m in ms) m.id});
+      expect(
+        actions.mergeSave(stored(gold: 1000), cheat.toJson()).extra['clamped'],
+        isTrue,
+      );
+    });
+
     // B안: 가 본 난이도로 다시 올라간 직후 첫 업로드 — 저장본(쉬움)으로 봉투를
     // 재면 극한 수입이 100배라 잘린다.
     test('아래 난이도에서 극한으로 돌아온 직후 60초 수입이 잘리지 않는다', () {
@@ -2587,4 +2648,96 @@ void _forfeitTests(GameActions actions, SaveGame base) {
       expect(r.save!.pvpTrophies, 500 + win);
     });
   });
+
+  group('결투 시즌 순위 보상(2026-09-28)', () {
+    // t0 = 2026-07-20(월) 12:00 UTC → 기본 설정(월 09:00 KST)으로 이번 시즌은 07-20.
+    final a = GameActions(config: _RankConfig(), now: () => t0);
+    final curStart = DateTime.utc(2026, 7, 20);
+    final lastWeek = curStart.subtract(const Duration(days: 7));
+    SaveGame base() => SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(seasonStartedAt: curStart, pvpTrophies: 120);
+
+    test('표: 1위 100 · 2위 50 · 3위 30 · 4~10위 10 · 그 밖은 0', () {
+      final cfg = _RankConfig().battle;
+      expect(
+        [
+          for (final r in [0, 1, 2, 3, 4, 10, 11]) cfg.seasonRankJelly(r),
+        ],
+        [0, 100, 50, 30, 10, 10, 0],
+      );
+    });
+
+    test('시즌 id 는 시즌 시작의 KST 날짜다', () {
+      expect(seasonIdOf(curStart, _RankConfig().battle), '2026-07-20');
+    });
+
+    test('정산된 세이브만 이번 시즌 점수를 찍는다', () {
+      final p = a.pvpScoreFor(base());
+      expect(p, isNotNull);
+      expect(p!.seasonId, '2026-07-20');
+      expect(p.save.pvpScoreSeason, '2026-07-20');
+      // 경계를 넘긴 뒤 정산 전 — 트로피가 지난 시즌 값이라 새 시즌에 넣지 않는다.
+      expect(a.pvpScoreFor(base().copyWith(seasonStartedAt: lastWeek)), isNull);
+    });
+
+    test('점수를 낸 시즌이 끝났을 때만, 한 번만 판정한다', () {
+      expect(a.pvpRankRewardDueSeason(base()), isNull, reason: '결투 안 함');
+      final now = base().copyWith(pvpScoreSeason: '2026-07-20');
+      expect(a.pvpRankRewardDueSeason(now), isNull, reason: '아직 진행 중');
+      final ended = base().copyWith(pvpScoreSeason: '2026-07-13');
+      expect(a.pvpRankRewardDueSeason(ended), '2026-07-13');
+      final paid = ended.copyWith(pvpRankRewardSeason: '2026-07-13');
+      expect(a.pvpRankRewardDueSeason(paid), isNull, reason: '이미 받음');
+    });
+
+    test('순위권이면 젤리를 주고, 밖이어도 판정 기록은 찍는다', () {
+      final s = base().copyWith(pvpScoreSeason: '2026-07-13');
+      final first = a.grantPvpRankReward(
+        s,
+        '2026-07-13',
+        rank: 1,
+        trophies: 50,
+      );
+      expect(first.save!.materialCount(MaterialKind.jelly), 100);
+      expect(first.save!.pvpRankRewardSeason, '2026-07-13');
+      expect((first.extra['pvpRankReward'] as Map)['jelly'], 100);
+
+      final out = a.grantPvpRankReward(s, '2026-07-13', rank: 11, trophies: 50);
+      expect(out.save!.materialCount(MaterialKind.jelly), 0);
+      expect(out.save!.pvpRankRewardSeason, '2026-07-13');
+      expect(out.extra.containsKey('pvpRankReward'), isFalse);
+
+      // 트로피 0 은 순위가 있어도 주지 않는다.
+      final zero = a.grantPvpRankReward(s, '2026-07-13', rank: 1);
+      expect(zero.save!.materialCount(MaterialKind.jelly), 0);
+    });
+
+    test('판정 기록은 서버 소유 — 앱이 지워 올려도 되살아난다', () {
+      final stored = base().copyWith(
+        lastSeen: t0,
+        zoneEpoch: kZoneEpoch,
+        pvpScoreSeason: '2026-07-13',
+        pvpRankRewardSeason: '2026-07-13',
+      );
+      final client = stored.toJson()
+        ..remove('pvpScoreSeason')
+        ..remove('pvpRankRewardSeason');
+      final r = a.mergeSave(stored, client);
+      expect(r.save!.pvpScoreSeason, '2026-07-13');
+      expect(r.save!.pvpRankRewardSeason, '2026-07-13');
+    });
+  });
+}
+
+class _RankConfig extends _Config {
+  @override
+  final BattleConfig battle = const BattleConfig(
+    seasonRankRewards: [
+      SeasonRankReward(maxRank: 1, jelly: 100),
+      SeasonRankReward(maxRank: 2, jelly: 50),
+      SeasonRankReward(maxRank: 3, jelly: 30),
+      SeasonRankReward(maxRank: 10, jelly: 10),
+    ],
+  );
 }

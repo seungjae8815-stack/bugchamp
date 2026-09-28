@@ -55,6 +55,8 @@ class GiftConfig {
     this.adMultiplierMax = 4,
     this.adMultiplierJelly = 2,
     this.freeDoubleDaily = 1,
+    this.doubleJellyMin = 0,
+    this.doubleJellyMax = 0,
   });
 
   /// 첫 선물까지 지연(초).
@@ -92,11 +94,32 @@ class GiftConfig {
     final lo = adMultiplierMin < 1 ? 1 : adMultiplierMin;
     final hi = adMultiplierMax < lo ? lo : adMultiplierMax;
     if (hi == lo) return lo;
+    return lo + _hash(giftId) % (hi - lo + 1);
+  }
+
+  /// **그날 첫 2배 받기**에 얹는 젤리 범위(2026-09-28 사장님 확정: 1~5 랜덤).
+  ///
+  /// 선물·일일보상 본체에서 젤리를 뺀 대신 여기로 옮겼다. **하루 1회만** 붙는다 —
+  /// 패스 보유자는 2배가 무제한이라 매번 붙이면 접속 시간에 비례해 젤리가 무한히
+  /// 늘어난다(§2.6 젤리 수도꼭지). max 0 이면 끈다(구버전 데이터 호환).
+  final int doubleJellyMin;
+  final int doubleJellyMax;
+
+  /// 선물 [giftId] 의 첫 2배 젤리 — 배수와 같은 이유로 **id 해시**(앱·서버 같은 값).
+  /// 배수와 따로 놀도록 소금을 친다(안 치면 4배 선물이 늘 젤리도 많이 준다).
+  int doubleJellyFor(String giftId) {
+    if (doubleJellyMax <= 0) return 0;
+    final lo = doubleJellyMin < 1 ? 1 : doubleJellyMin;
+    final hi = doubleJellyMax < lo ? lo : doubleJellyMax;
+    return lo + _hash('$giftId#jelly') % (hi - lo + 1);
+  }
+
+  static int _hash(String s) {
     var h = 0x811c9dc5;
-    for (final c in giftId.codeUnits) {
+    for (final c in s.codeUnits) {
       h = (h ^ c) * 0x01000193 & 0x7fffffff;
     }
-    return lo + h % (hi - lo + 1);
+    return h;
   }
 
   /// 재료 [kind] 에 붙는 배수. 젤리만 고정값이다.
@@ -155,6 +178,8 @@ class GiftConfig {
         (json['adMultiplier'] as num?)?.toInt() ??
         2,
     freeDoubleDaily: (json['freeDoubleDaily'] as num?)?.toInt() ?? 1,
+    doubleJellyMin: (json['doubleJellyMin'] as num?)?.toInt() ?? 0,
+    doubleJellyMax: (json['doubleJellyMax'] as num?)?.toInt() ?? 0,
     tiers: (json['tiers'] as List? ?? const [])
         .cast<Map<String, dynamic>>()
         .map(GiftTier.fromJson)

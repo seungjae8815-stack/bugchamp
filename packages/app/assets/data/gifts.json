@@ -12,6 +12,9 @@
  "adMultiplierMin": 2,
  "adMultiplierMax": 4,
  "adMultiplierJelly": 2,
+ "_doubleJellyComment": "그날 첫 2배 받기에만 붙는 젤리(2026-09-28 사장님 확정: 1~5 랜덤, 선물마다 id 해시). 선물·일일보상 본체의 젤리는 뺐다. 패스 보유자도 하루 1회 — 2배가 무제한이라 매번 붙이면 접속 시간에 비례해 무한히 늘어난다(§2.6). adMultiplierJelly 는 이미 떠 있는 옛 선물(젤리 포함)용으로 남긴다. 검증: core_run/tool/jelly_sim.dart",
+ "doubleJellyMin": 1,
+ "doubleJellyMax": 5,
  "tiers": [
   {
    "weight": 50,
@@ -32,7 +35,6 @@
   {
    "weight": 15,
    "gold": 12000,
-   "jelly": 3,
    "chitin": 80,
    "mineral": 80,
    "sap": 80,

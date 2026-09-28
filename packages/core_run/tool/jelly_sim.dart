@@ -1,7 +1,7 @@
 // 젤리(프리미엄 재화) 수급 감사 — "하루에 젤리가 몇 개 들어오나"를 JSON 으로 잰다.
 //
-// 왜 필요한가: 젤리 수도꼭지가 **일곱 군데**(일일보상·깜짝선물·미션·리그/시즌·
-// 광고버프·분해·대회 회차보상)로 흩어져 있어, 하나씩 보면 다 적어 보이는데 합치면 IAP 최대
+// 왜 필요한가: 젤리 수도꼭지가 **아홉 군데**(일일보상·깜짝선물·미션·리그/시즌·
+// 광고버프·분해·대회 회차보상·도감·사냥터 클리어)로 흩어져 있어, 하나씩 보면 다 적어 보이는데 합치면 IAP 최대
 // 패키지(₩5,500 = 300젤리)를 이틀에 하나씩 공짜로 주는 상태가 된다.
 // 손으로 더하면 반드시 틀리므로 실제 config 를 읽어 합산한다.
 //
@@ -61,6 +61,15 @@ String _leagueId = 'diamond';
 /// 넓게 퍼지는 양이다. 11위 이하는 참가 재료만 받아 젤리가 0 이다.
 int _eventRank = 10;
 
+/// 결투 시즌 순위(0 = 순위권 밖). `--pvp-rank=` 로 바꾼다. 기본값은 대회와 같은 이유로
+/// **젤리를 받는 마지막 순위**(10위) — 그 사람이 받는 양이 곧 넓게 퍼지는 양이다.
+/// ⚠️ 한 주에 10명뿐이라 대부분의 유저는 0 이다(`--pvp-rank=0` 으로 본다).
+int _pvpRank = 10;
+
+/// 심연 주간 순위(0 = 순위권 밖 · 심연을 안 여는 유저 포함). `--abyss-rank=` 로 바꾼다.
+/// 극한을 깬 유저만 해당한다 — 90일 표의 끝(극한 최종 보스) 이후의 수입이다.
+int _abyssRank = 10;
+
 /// 미션 순환 티어(보상이 `rewardGrowth^claims` 로 자라므로 진행도에 따라 커진다).
 /// `--mission-tier=` 로 바꾼다.
 int _missionClaims = 20;
@@ -78,6 +87,10 @@ void main(List<String> args) {
         _leagueId = m.group(2)!;
       case 'event-rank':
         _eventRank = int.parse(m.group(2)!);
+      case 'pvp-rank':
+        _pvpRank = int.parse(m.group(2)!);
+      case 'abyss-rank':
+        _abyssRank = int.parse(m.group(2)!);
       case 'mission-tier':
         _missionClaims = int.parse(m.group(2)!);
     }
@@ -96,6 +109,8 @@ void main(List<String> args) {
   final iap = IapConfig.fromJson(load('iap.json'));
   final event = EventConfig.fromJson(load('event.json'));
   final dex = DexConfig.fromJson(load('dex.json'));
+  final roadmap = RoadmapConfig.fromJson(load('roadmap.json'));
+  final run = RunConfig.fromJson(load('run_config.json'));
 
   final rows = <({String name, double perDay, String note})>[];
 
@@ -124,13 +139,22 @@ void main(List<String> args) {
   // 고정됐다(`adMultiplierJelly`). 암묵적으로 두면 그 값을 올렸을 때 이 표가
   // **조용히 틀린다** — 젤리 수도꼭지는 조용히 틀리는 게 가장 나쁘다(§2.6).
   final jellyMult = gifts.adMultiplierJelly.clamp(1, 1 << 10);
+  // 그날 첫 2배에만 붙는 젤리(2026-09-28, `doubleJellyFor`). 패스 보유자도 하루 1회라
+  // 무과금과 같은 몫이다 — 선물을 하루 한 개라도 받으면 붙는다.
+  final firstDoubleJelly = gifts.doubleJellyMax <= 0 || giftsPerDay < 1
+      ? 0.0
+      : (gifts.doubleJellyMin.clamp(1, 1 << 10) + gifts.doubleJellyMax) / 2;
   rows.add((
     name: '깜짝선물',
-    perDay: (giftsPerDay + freeDoubles * (jellyMult - 1)) * avgGiftJelly,
+    perDay:
+        (giftsPerDay + freeDoubles * (jellyMult - 1)) * avgGiftJelly +
+        firstDoubleJelly,
     note:
         '${giftsPerDay.toStringAsFixed(1)}개/일 × 평균 '
         '${avgGiftJelly.toStringAsFixed(2)} + 무료 $jellyMult배 '
-        '${freeDoubles.toStringAsFixed(0)}회',
+        '${freeDoubles.toStringAsFixed(0)}회'
+        ' + 첫 2배 젤리 ${gifts.doubleJellyMin}~${gifts.doubleJellyMax}'
+        '(평균 ${firstDoubleJelly.toStringAsFixed(1)})',
   ));
 
   // ── 3. 미션 — 젤리 보상 미션의 현재 티어값. 하루 몇 번 도느냐는 진행도에
@@ -172,6 +196,26 @@ void main(List<String> args) {
     name: '시즌 종료',
     perDay: seasonEnd / 7,
     note: '$_leagueId $seasonEnd젤리 (주간 → ÷7) · 승급 $promo 는 1회성이라 제외',
+  ));
+
+  // ── 4b. 결투 시즌 **순위** 보상(2026-09-28) — 주간, 10위까지만.
+  // 리그 등급 보상에서 젤리를 뺀 대신 여기로 옮겼다. 등급은 도달한 사람 전원이
+  // 매주 받지만 순위는 한 주에 10명뿐이다.
+  final pvpRankJelly = battle.seasonRankJelly(_pvpRank);
+  rows.add((
+    name: '결투 순위',
+    perDay: pvpRankJelly / 7,
+    note: _pvpRank <= 0 ? '순위권 밖 — 0' : '$_pvpRank위 $pvpRankJelly젤리 (주간 → ÷7)',
+  ));
+
+  // ── 4c. 심연 주간 순위(2026-09-28) — 극한 이후, 10위까지만. 층 보상에는 젤리가 없다(무한 통로).
+  final abyssJelly = run.abyss.rankJelly(_abyssRank);
+  rows.add((
+    name: '심연 순위',
+    perDay: abyssJelly / 7,
+    note: _abyssRank <= 0
+        ? '순위권 밖(또는 극한 전) — 0'
+        : '$_abyssRank위 $abyssJelly젤리 (주간 → ÷7, 극한 이후)',
   ));
 
   // ── 5. 광고 버프 — 버프 1회당 젤리 1개(코드 상수). 누적 상한까지 볼 수 있다.
@@ -232,11 +276,30 @@ void main(List<String> args) {
     note: '발견·정복·보스 마일스톤 합 $dexJelly젤리 — 계정당 1회, 90일 환산(÷$dexDays)',
   ));
 
+  // ── 9. 사냥터 첫 클리어(roadmap.json → rewardJelly) — **유한**하지만 **난이도마다 따로** 받는다.
+  //
+  // 기록 키가 난이도별(`chapterClearKey` → `w3@2`)이라 같은 사냥터를 난이도 수만큼 받는다.
+  // 2026-09-28 까지 이 장부에서 빠져 있었다 — 넣고 재 보니 단일 출처로 가장 컸다.
+  // 도감과 같은 90일 환산(설계 기간 안에 네 난이도를 다 깬다는 가정).
+  final chapterJelly = roadmap.chapters.fold<int>(
+    0,
+    (a, c) => a + c.rewardJelly,
+  );
+  final tierCount = run.zoneTiers.length;
+  rows.add((
+    name: '사냥터 클리어',
+    perDay: chapterJelly * tierCount / dexDays,
+    note:
+        '사냥터 ${roadmap.chapters.length}개 합 $chapterJelly젤리 × 난이도 $tierCount'
+        ' = ${chapterJelly * tierCount} — 계정당 1회, 90일 환산(÷$dexDays)',
+  ));
+
   final total = rows.fold<double>(0, (a, r) => a + r.perDay);
 
   stdout.writeln('── 가정 ──');
   stdout.writeln(
-    '  활동 ${_activeHours}h/일 · 광고 시청률 $_adRate · 리그 $_leagueId · 대회 $_eventRank위',
+    '  활동 ${_activeHours}h/일 · 광고 시청률 $_adRate · 리그 $_leagueId · 대회 $_eventRank위'
+    ' · 결투 $_pvpRank위 · 심연 $_abyssRank위',
   );
   stdout.writeln('');
   stdout.writeln('── 젤리 수급(하루) ──');

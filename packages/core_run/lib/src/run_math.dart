@@ -93,7 +93,21 @@ double baselineHitPower(CharacterStats s, {bool boss = false}) {
 /// [tier] = 난이도 회차(0=쉬움). 회차가 오르면 몬스터가 통째로 세진다
 /// (`docs/design_difficulty_loop.md`). **적응형 보정 밖에 곱한다** —
 /// 안쪽에 넣으면 보정이 회차 상승을 그대로 상쇄해 아무 일도 안 일어난다.
-int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
+/// [abyssFloor] — 심연 층(0 = 심연 밖). 심연에서는 난이도·스테이지가 극한 끝으로 고정되므로
+/// 그 기준값에 층 배율(`AbyssConfig.hpGrowth^(층-1)`)만 곱한다.
+int habitatMaxHp(
+  RunConfig c,
+  int depth, {
+  double? playerAttack,
+  int tier = 0,
+  int abyssFloor = 0,
+}) {
+  if (abyssFloor > 0) {
+    final hp =
+        habitatMaxHp(c, depth, playerAttack: playerAttack, tier: tier) *
+        c.abyss.scale(c.abyss.hpGrowth, abyssFloor);
+    return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
+  }
   // 사냥터 표(2026-09-14)가 있으면 그 값 × 회차 배율. 곡선·적응형은 안 본다.
   // 난이도별 표(2026-09-15)가 있으면 회차 배율 없이 그대로.
   final zone = c.zoneOf(depth + 1);
@@ -134,7 +148,19 @@ int habitatMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
 
 /// 보스 최대 HP. 월드 마지막 보스(1-100)는 [RunConfig.worldBossHpMult] 추가
 /// — 다음 월드로 가는 관문 벽.
-int bossMaxHp(RunConfig c, int depth, {double? playerAttack, int tier = 0}) {
+int bossMaxHp(
+  RunConfig c,
+  int depth, {
+  double? playerAttack,
+  int tier = 0,
+  int abyssFloor = 0,
+}) {
+  if (abyssFloor > 0) {
+    final hp =
+        bossMaxHp(c, depth, playerAttack: playerAttack, tier: tier) *
+        c.abyss.scale(c.abyss.hpGrowth, abyssFloor);
+    return hp >= kMaxMonsterHp ? kMaxMonsterHp : hp.round();
+  }
   // 사냥터 보스 표(2026-09-14): 보스는 **전력 관문**이라 일반 몬스터 배율이
   // 아니라 따로 맞춘다("이 사냥터에서 T일 키운 전력으로 딱 잡히는 체력").
   final zone = c.zoneOf(depth + 1);
@@ -162,7 +188,14 @@ int rewardGold(
   bool boss = false,
   int tier = 0,
   bool parked = false,
+  int abyssFloor = 0,
 }) {
+  if (abyssFloor > 0) {
+    final g =
+        rewardGold(c, depth, rewardMultiplier, boss: boss, tier: tier) *
+        c.abyss.scale(c.abyss.goldGrowth, abyssFloor);
+    return g >= kMaxCurrency ? kMaxCurrency : clampCurrency(g.roundToDouble());
+  }
   final zone = c.zoneOf(depth + 1);
   final tierGold = c.zoneMode ? c.zoneTier(tier)?.goldAt(zone) : null;
   final tableGold = tierGold ?? (c.zoneMode ? c.zoneGoldAt(zone) : null);
@@ -274,16 +307,23 @@ double habitatThreat(
   double? playerToughness,
   double? gearToughness,
   int tier = 0,
+  int abyssFloor = 0,
 }) {
   final zone = c.zoneOf(depth + 1);
   final tierTable = c.zoneMode ? c.zoneTier(tier) : null;
   final tierThreat = tierTable?.threatAt(zone);
   final tableThreat = tierThreat ?? (c.zoneMode ? c.zoneThreatAt(zone) : null);
+  // 심연 층은 **표 위협**에만 곱한다 — 적응형(맷집 비례)과 큰 쪽이 쓰이므로, 층이 깊어지면
+  // 표 쪽이 적응형을 넘어서는 순간부터 진짜 벽이 된다.
+  final abyss = abyssFloor > 0
+      ? c.abyss.scale(c.abyss.threatGrowth, abyssFloor)
+      : 1.0;
   final base =
-      tableThreat ??
-      c.threatBase *
-          math.pow(c.threatGrowth, depth) *
-          c.worldMult(c.worldHpMult, depth);
+      (tableThreat ??
+          c.threatBase *
+              math.pow(c.threatGrowth, depth) *
+              c.worldMult(c.worldHpMult, depth)) *
+      abyss;
   // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다. 체력을
   // 부풀리면 타격 수만 늘어 지루해지지만, 공격이 세지면 체력·방어·회복과
   // 장비 옵션이 실제 선택이 된다(docs/design_difficulty_loop.md).
@@ -524,6 +564,7 @@ IdleProgress simulateIdleProgress({
   double efficiency = 0.5,
   int maxStageAdvance = 500,
   int tier = 0,
+  int abyssFloor = 0,
   int? finalStage,
 }) {
   if (elapsed <= Duration.zero) {
@@ -559,10 +600,19 @@ IdleProgress simulateIdleProgress({
       depth,
       playerAttack: hit,
       tier: tier,
+      abyssFloor: abyssFloor,
     ).toDouble();
     final habTime = (habHp / dps + 0.6) / eff;
     final n = habTime <= 0 ? 0.0 : budget / habTime;
-    gold += n * rewardGold(config, depth, stats.rewardMultiplier, tier: tier);
+    gold +=
+        n *
+        rewardGold(
+          config,
+          depth,
+          stats.rewardMultiplier,
+          tier: tier,
+          abyssFloor: abyssFloor,
+        );
     xp += n * rewardXp(config, depth);
     return IdleProgress(
       newStage: stage,
@@ -583,12 +633,14 @@ IdleProgress simulateIdleProgress({
       depth,
       playerAttack: hit,
       tier: tier,
+      abyssFloor: abyssFloor,
     ).toDouble();
     final bossHp = bossMaxHp(
       config,
       depth,
       playerAttack: bossHit,
       tier: tier,
+      abyssFloor: abyssFloor,
     ).toDouble();
     // 효율을 시간에 반영: 실제로 한 번 처치하는 데 드는 예산(초).
     final habTime = (habHp / dps + 0.6) / eff;
@@ -600,6 +652,7 @@ IdleProgress simulateIdleProgress({
       depth,
       stats.rewardMultiplier,
       tier: tier,
+      abyssFloor: abyssFloor,
       parked: parked,
     );
     final xpHab = rewardXp(config, depth, parked: parked);
@@ -614,6 +667,7 @@ IdleProgress simulateIdleProgress({
             stats.rewardMultiplier,
             boss: true,
             tier: tier,
+            abyssFloor: abyssFloor,
             parked: parked,
           );
       xp +=
@@ -667,6 +721,7 @@ double estimateClears({
   Duration maxAccrual = kMaxOfflineAccrual,
   double efficiency = 0.5,
   int tier = 0,
+  int abyssFloor = 0,
 }) {
   if (elapsed <= Duration.zero) return 0;
   final capped = elapsed > maxAccrual ? maxAccrual : elapsed;
@@ -682,6 +737,7 @@ double estimateClears({
     stageNumber - 1,
     playerAttack: hit,
     tier: tier,
+    abyssFloor: abyssFloor,
   ).toDouble();
   final timePerClear = hp / dps + 0.6; // + 이동시간 근사
   if (timePerClear <= 0) return 0;
@@ -696,6 +752,7 @@ OfflineReport computeOfflineReward({
   Duration maxAccrual = kMaxOfflineAccrual,
   double efficiency = 0.5,
   int tier = 0,
+  int abyssFloor = 0,
   int? finalStage,
 }) {
   if (elapsed <= Duration.zero) return OfflineReport.empty;
@@ -708,6 +765,7 @@ OfflineReport computeOfflineReward({
     maxAccrual: maxAccrual,
     efficiency: efficiency,
     tier: tier,
+    abyssFloor: abyssFloor,
   );
   if (clears <= 0) return OfflineReport.empty;
 
@@ -721,6 +779,7 @@ OfflineReport computeOfflineReward({
     depth,
     stats.rewardMultiplier,
     tier: tier,
+    abyssFloor: abyssFloor,
     parked: parked,
   );
   final xpPer = (rewardXp(config, depth, parked: parked) * stats.xpMultiplier)

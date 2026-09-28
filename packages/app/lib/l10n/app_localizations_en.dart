@@ -212,10 +212,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leagueSeasonTitle => 'League · Season';
 
   @override
-  String get modeManual => 'Manual';
+  String get modeManual => 'Throw';
 
   @override
-  String get modeAuto => 'Auto';
+  String get modeAuto => 'Quick';
 
   @override
   String get opponentWild => 'Wild';
@@ -3357,7 +3357,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get seasonRewardHint =>
-      'Paid every Monday 09:00 at your rank at that moment. Climb before it ends.';
+      'Paid every Sunday at midnight (KST) at your rank at that moment. Climb before it ends.';
 
   @override
   String eventOpensOn(String m, String d) {
@@ -3458,6 +3458,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get giftAdMorePassLine => 'With a Pass, every gift is doubled';
+
+  @override
+  String giftDoubleJellyLine(int min, int max) {
+    return 'Today\'s first double bonus: $min–$max Bug Jelly!';
+  }
 
   @override
   String get giftGoPassBtn => 'See the Pass';
@@ -3568,5 +3573,120 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String tierMoved(String name) {
     return 'Moved to $name';
+  }
+
+  @override
+  String get pvpRankRewardTitle => 'Duel Season Rank Reward';
+
+  @override
+  String pvpRankRewardBody(int rank) {
+    return 'You finished #$rank in last season\'s duels!';
+  }
+
+  @override
+  String pvpRankN(int n) {
+    return '#$n';
+  }
+
+  @override
+  String pvpRankRewardHint(String list) {
+    return 'Rank rewards (Jelly) $list';
+  }
+
+  @override
+  String get duelThrowButton => 'Throw!';
+
+  @override
+  String get duelGaugeHint => 'Stop in the green for a stronger first charge';
+
+  @override
+  String duelBout(int n) {
+    return 'Bout $n';
+  }
+
+  @override
+  String get duelFinishRingOut => 'Ring out!';
+
+  @override
+  String get duelFinishFlip => 'Flipped!';
+
+  @override
+  String get duelFinishKnockout => 'Knockout!';
+
+  @override
+  String get duelFinishTimeUp => 'Decision!';
+
+  @override
+  String get duelBoutWin => 'Bout won!';
+
+  @override
+  String get duelBoutLose => 'Bout lost…';
+
+  @override
+  String get duelSkip => 'Skip';
+
+  @override
+  String duelTrophy(String delta) {
+    return 'Trophies $delta';
+  }
+
+  @override
+  String get duelResultOk => 'OK';
+
+  @override
+  String get duelNeedThree => 'You need 3 bugs for a duel';
+
+  @override
+  String get duelOrderHint =>
+      '#1, #2, #3 each fight one bout · this order is also your defense order';
+
+  @override
+  String get abyssName => 'Abyss';
+
+  @override
+  String abyssFloorLabel(int n) {
+    return 'Abyss F$n';
+  }
+
+  @override
+  String get abyssUnlockedTitle => 'The Abyss is open!';
+
+  @override
+  String get abyssUnlockedBody =>
+      'Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Sunday at midnight you start again from F1, and the deepest floor of the week earns ranking Jelly.';
+
+  @override
+  String get abyssEnter => 'Enter the Abyss';
+
+  @override
+  String get abyssLater => 'Later';
+
+  @override
+  String get abyssLeave => 'Leave the Abyss';
+
+  @override
+  String abyssFloorClear(int n) {
+    return 'F$n cleared!';
+  }
+
+  @override
+  String abyssMilestone(int n, int fossil) {
+    return 'First time reaching F$n! Fossils +$fossil';
+  }
+
+  @override
+  String abyssBest(int n) {
+    return 'Best F$n';
+  }
+
+  @override
+  String get abyssWeekReset => 'A new week — back to Abyss F1!';
+
+  @override
+  String get abyssRankRewardTitle => 'Abyss Weekly Rank Reward';
+
+  @override
+  String abyssRankRewardBody(int floor, int rank) {
+    return 'Last week you reached Abyss F$floor and placed #$rank!';
   }
 }

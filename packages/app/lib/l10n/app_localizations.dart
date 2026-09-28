@@ -475,13 +475,13 @@ abstract class AppLocalizations {
   /// No description provided for @modeManual.
   ///
   /// In en, this message translates to:
-  /// **'Manual'**
+  /// **'Throw'**
   String get modeManual;
 
   /// No description provided for @modeAuto.
   ///
   /// In en, this message translates to:
-  /// **'Auto'**
+  /// **'Quick'**
   String get modeAuto;
 
   /// No description provided for @opponentWild.
@@ -5875,7 +5875,7 @@ abstract class AppLocalizations {
   /// No description provided for @seasonRewardHint.
   ///
   /// In en, this message translates to:
-  /// **'Paid every Monday 09:00 at your rank at that moment. Climb before it ends.'**
+  /// **'Paid every Sunday at midnight (KST) at your rank at that moment. Climb before it ends.'**
   String get seasonRewardHint;
 
   /// No description provided for @eventOpensOn.
@@ -6033,6 +6033,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'With a Pass, every gift is doubled'**
   String get giftAdMorePassLine;
+
+  /// No description provided for @giftDoubleJellyLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s first double bonus: {min}–{max} Bug Jelly!'**
+  String giftDoubleJellyLine(int min, int max);
 
   /// No description provided for @giftGoPassBtn.
   ///
@@ -6219,6 +6225,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moved to {name}'**
   String tierMoved(String name);
+
+  /// No description provided for @pvpRankRewardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel Season Rank Reward'**
+  String get pvpRankRewardTitle;
+
+  /// No description provided for @pvpRankRewardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You finished #{rank} in last season\'s duels!'**
+  String pvpRankRewardBody(int rank);
+
+  /// No description provided for @pvpRankN.
+  ///
+  /// In en, this message translates to:
+  /// **'#{n}'**
+  String pvpRankN(int n);
+
+  /// No description provided for @pvpRankRewardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Rank rewards (Jelly) {list}'**
+  String pvpRankRewardHint(String list);
+
+  /// No description provided for @duelThrowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw!'**
+  String get duelThrowButton;
+
+  /// No description provided for @duelGaugeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop in the green for a stronger first charge'**
+  String get duelGaugeHint;
+
+  /// No description provided for @duelBout.
+  ///
+  /// In en, this message translates to:
+  /// **'Bout {n}'**
+  String duelBout(int n);
+
+  /// No description provided for @duelFinishRingOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring out!'**
+  String get duelFinishRingOut;
+
+  /// No description provided for @duelFinishFlip.
+  ///
+  /// In en, this message translates to:
+  /// **'Flipped!'**
+  String get duelFinishFlip;
+
+  /// No description provided for @duelFinishKnockout.
+  ///
+  /// In en, this message translates to:
+  /// **'Knockout!'**
+  String get duelFinishKnockout;
+
+  /// No description provided for @duelFinishTimeUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Decision!'**
+  String get duelFinishTimeUp;
+
+  /// No description provided for @duelBoutWin.
+  ///
+  /// In en, this message translates to:
+  /// **'Bout won!'**
+  String get duelBoutWin;
+
+  /// No description provided for @duelBoutLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Bout lost…'**
+  String get duelBoutLose;
+
+  /// No description provided for @duelSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get duelSkip;
+
+  /// No description provided for @duelTrophy.
+  ///
+  /// In en, this message translates to:
+  /// **'Trophies {delta}'**
+  String duelTrophy(String delta);
+
+  /// No description provided for @duelResultOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get duelResultOk;
+
+  /// No description provided for @duelNeedThree.
+  ///
+  /// In en, this message translates to:
+  /// **'You need 3 bugs for a duel'**
+  String get duelNeedThree;
+
+  /// No description provided for @duelOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'#1, #2, #3 each fight one bout · this order is also your defense order'**
+  String get duelOrderHint;
+
+  /// No description provided for @abyssName.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss'**
+  String get abyssName;
+
+  /// No description provided for @abyssFloorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss F{n}'**
+  String abyssFloorLabel(int n);
+
+  /// No description provided for @abyssUnlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Abyss is open!'**
+  String get abyssUnlockedTitle;
+
+  /// No description provided for @abyssUnlockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Sunday at midnight you start again from F1, and the deepest floor of the week earns ranking Jelly.'**
+  String get abyssUnlockedBody;
+
+  /// No description provided for @abyssEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the Abyss'**
+  String get abyssEnter;
+
+  /// No description provided for @abyssLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get abyssLater;
+
+  /// No description provided for @abyssLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave the Abyss'**
+  String get abyssLeave;
+
+  /// No description provided for @abyssFloorClear.
+  ///
+  /// In en, this message translates to:
+  /// **'F{n} cleared!'**
+  String abyssFloorClear(int n);
+
+  /// No description provided for @abyssMilestone.
+  ///
+  /// In en, this message translates to:
+  /// **'First time reaching F{n}! Fossils +{fossil}'**
+  String abyssMilestone(int n, int fossil);
+
+  /// No description provided for @abyssBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best F{n}'**
+  String abyssBest(int n);
+
+  /// No description provided for @abyssWeekReset.
+  ///
+  /// In en, this message translates to:
+  /// **'A new week — back to Abyss F1!'**
+  String get abyssWeekReset;
+
+  /// No description provided for @abyssRankRewardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss Weekly Rank Reward'**
+  String get abyssRankRewardTitle;
+
+  /// No description provided for @abyssRankRewardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Last week you reached Abyss F{floor} and placed #{rank}!'**
+  String abyssRankRewardBody(int floor, int rank);
 }
 
 class _AppLocalizationsDelegate

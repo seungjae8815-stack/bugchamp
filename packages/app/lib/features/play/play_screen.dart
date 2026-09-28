@@ -776,6 +776,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // (docs/design_difficulty_loop.md). 적응형 보정 **밖**에 곱해진다 —
     // 안쪽이면 보정이 회차 상승을 그대로 상쇄해 아무 일도 안 일어난다.
     final tier = ref.read(saveControllerProvider).requireValue.difficultyTier;
+    // 심연이면 층 배율이 얹힌다(심연 밖이면 0 — 그대로).
+    final abyss = activeAbyssFloor(
+      ref.read(saveControllerProvider).requireValue,
+    );
     _hpMax =
         (_isBoss
                 ? bossMaxHp(
@@ -783,12 +787,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     depth,
                     playerAttack: baselineHitPower(perm, boss: true),
                     tier: tier,
+                    abyssFloor: abyss,
                   )
                 : habitatMaxHp(
                     _config,
                     depth,
                     playerAttack: baselineHitPower(perm),
                     tier: tier,
+                    abyssFloor: abyss,
                   ))
             .toDouble();
     // 엘리트는 **적응형 체력 위에** 곱한다(월드 관문과 같은 층 — §7 기준 밖).
@@ -1202,6 +1208,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       gearToughness: toughnessOf(geared) * charShare,
       // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
       tier: save.difficultyTier,
+      abyssFloor: activeAbyssFloor(save),
     );
     final walkMul = walking ? _config.walkThreatMult : 1.0;
     if (walkMul <= 0) return;
@@ -1584,6 +1591,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       .requireValue
                       .difficultyTier,
                   parked: parked,
+                  abyssFloor: activeAbyssFloor(
+                    ref.read(saveControllerProvider).requireValue,
+                  ),
                 ) *
                 (1 + _config.onlineGoldBonus))
             .round();
@@ -1832,13 +1842,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (_isBoss) {
         // 보스를 깼다 → 다음 사냥터. 마지막(최종 보스)이면 회차 전환 안내.
         _bossChallenge = false;
+        // 심연 층 보스 → 다음 층(사냥터·스테이지는 그대로, 층만 오른다).
+        if (ref.read(saveControllerProvider).requireValue.inAbyss) {
+          _habitatIndex = 0;
+          unawaited(_clearAbyssFloor());
+          _spawn();
+          _walking = true;
+          _walkT = 0;
+          return;
+        }
         final zone = _config.zoneOf(_stage);
         if (_config.isFinalZone(zone)) {
           _habitatIndex = 0;
           _tierClearPending = true;
           // 최종 보스는 사냥터를 옮기지 않지만 도감 수집은 남긴다.
-          unawaited(_advanceZoneWithShards());
-          unawaited(_afterBossAdvance(_stage));
+          // ⚠️ 도감 기록이 **끝난 뒤** 클리어 보상을 판정한다 — 마지막 사냥터 클리어는
+          // 최종 보스 도감으로 본다(`chapterClearedAt`). 동시에 돌리면 보상이 빠진다.
+          unawaited(
+            _advanceZoneWithShards().then((_) => _afterBossAdvance(_stage)),
+          );
           _spawn();
           return;
         }
@@ -1997,6 +2019,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       );
       if (!mounted) return;
       showCenterToast(context, l.tierNextTitle(tierName(l, tier + 1)));
+      return;
+    }
+    // 극한 최종 보스 — 심연이 열렸다(2026-09-28). 예전엔 "모든 난이도 정복" 뒤 할 일이 없었다.
+    if (last) {
+      final goAbyss = await showGameDialog<bool>(
+        context,
+        title: l.abyssUnlockedTitle,
+        icon: Icons.nights_stay_rounded,
+        content: Text(
+          l.abyssUnlockedBody,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.45),
+        ),
+        actions: [
+          gameDialogButton(
+            l.abyssLater,
+            () => Navigator.pop(context, false),
+            primary: false,
+          ),
+          gameDialogButton(l.abyssEnter, () => Navigator.pop(context, true)),
+        ],
+      );
+      if (goAbyss == true && mounted) await _goAbyss();
       return;
     }
     final go = await showGameDialog<bool>(
@@ -3538,7 +3583,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 미션 패널을 침범했다.
   Widget _zoneProgressRow(AppLocalizations l) {
     final zone = _config.zoneOf(_stage);
-    final zoneText = _config.isFinalZone(zone)
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final zoneText = save.inAbyss
+        ? l.abyssFloorLabel(save.abyssFloor)
+        : _config.isFinalZone(zone)
         ? l.zoneFinalLabel
         : l.zoneLabel(zone);
     return Text(
@@ -4064,6 +4112,54 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     showCenterToast(context, l.skillShardsGot(parts.join(', ')));
   }
 
+  /// 심연 층 보스 처치 → 다음 층 · 10층마다 첫 도달 보상 · 조각 안내.
+  Future<void> _clearAbyssFloor() async {
+    final before = ref.read(saveControllerProvider).requireValue.abyssFloor;
+    final r = await ref
+        .read(saveControllerProvider.notifier)
+        .clearAbyssFloorNow();
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    if (r.floor < before) {
+      showCenterToast(context, l.abyssWeekReset);
+      return;
+    }
+    AudioService.instance.sfxLevelUp();
+    showCenterToast(
+      context,
+      r.milestone
+          ? l.abyssMilestone(before, r.fossil)
+          : l.abyssFloorClear(before),
+    );
+    final skills = _data.skillConfig;
+    if (r.shards.isEmpty || skills == null) return;
+    final locale = Localizations.localeOf(context).languageCode;
+    final parts = [
+      for (final e in r.shards.entries)
+        if (skills.byId(e.key) case final def?)
+          '${def.name.resolve(locale)} ×${e.value}',
+    ];
+    if (parts.isNotEmpty) {
+      showCenterToast(context, l.skillShardsGot(parts.join(', ')));
+    }
+  }
+
+  /// 심연으로 들어가 화면을 그 자리에 맞춘다.
+  Future<void> _goAbyss() async {
+    await ref.read(saveControllerProvider.notifier).enterAbyssNow();
+    if (!mounted) return;
+    final s = ref.read(saveControllerProvider).requireValue;
+    if (!s.inAbyss) return;
+    setState(() {
+      _stage = s.stageNumber;
+      _habitatIndex = 0;
+      _bossChallenge = false;
+      _healTeamFull();
+      _spawn();
+    });
+    AudioService.instance.sfxLevelUp();
+  }
+
   Future<void> _afterBossAdvance(int stage) async {
     final ctrl = ref.read(saveControllerProvider.notifier);
     await ctrl.reachStage(stage);
@@ -4155,9 +4251,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           liveStage: _stage,
           tier: save.difficultyTier,
           topTier: save.topTier,
+          abyssUnlocked: save.abyssUnlocked,
+          inAbyss: save.inAbyss,
+          abyssFloor: save.abyssFloor,
+          abyssBest: save.abyssBest,
         ),
       ),
     );
+    if (picked is RoadmapAbyssPick && mounted) {
+      if (picked.enter) {
+        await _goAbyss();
+      } else {
+        await ref.read(saveControllerProvider.notifier).leaveAbyssNow();
+        if (!mounted) return;
+        final s = ref.read(saveControllerProvider).requireValue;
+        _applyStageJump(s.stageNumber);
+      }
+      return;
+    }
+    // 심연 안에서 난이도·사냥터를 고르면 먼저 심연을 나온다.
+    if ((picked is RoadmapTierPick || picked is int) &&
+        ref.read(saveControllerProvider).requireValue.inAbyss) {
+      await ref.read(saveControllerProvider.notifier).leaveAbyssNow();
+      if (!mounted) return;
+    }
     if (picked is RoadmapTierPick && mounted) {
       // 난이도 이동(2026-09-15) — 가 본 난이도까지, 초기화 없음.
       await ref.read(saveControllerProvider.notifier).selectTier(picked.tier);
@@ -5116,6 +5233,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     Future<void> claimGiftFlow() async {
       final notifier = r.read(saveControllerProvider.notifier);
       final canDouble = notifier.canDoubleGift();
+      // 그날 첫 2배에만 젤리가 붙는다 — **받기 전에** 재 둔다(받고 나면 횟수가 올라간다).
+      final jellyPending = canDouble && notifier.hasGiftDoubleJelly();
+      final giftCfg = r.read(gameDataProvider).value?.giftConfig;
       var wantDouble = false;
       if (canDouble) {
         final more = await showGameDialog<bool>(
@@ -5136,6 +5256,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   height: 1.4,
                 ),
               ),
+              if (jellyPending && giftCfg != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l.giftDoubleJellyLine(
+                    giftCfg.doubleJellyMin,
+                    giftCfg.doubleJellyMax,
+                  ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF9CE37D),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    height: 1.35,
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               Text(
                 l.giftAdMoreFreeLine,
@@ -5186,24 +5322,32 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (!ok || !ctx.mounted) return;
       // 배수는 선물마다 다르다(2~4) — **몇 배 받았는지 제목에 넣는다.**
       // "2배 획득"으로 고정하면 4배를 받아도 2배라고 말하는 셈이다.
-      final cfg = r.read(gameDataProvider).value?.giftConfig;
+      final cfg = giftCfg;
       final mult = wantDouble
           ? (cfg?.multiplierFor(g.id) ?? cfg?.adMultiplier ?? 2)
           : 1;
+      final bonusJelly = wantDouble && jellyPending
+          ? (cfg?.doubleJellyFor(g.id) ?? 0)
+          : 0;
       await showRewardPopup(
         ctx,
         title: wantDouble ? l.giftDoubledMult('$mult') : l.giftClaimedSnack,
         iconWidget: dialogIcon('reward'),
         subtitle: l.rewardGained,
         gold: g.gold * mult,
-        materials: {
-          for (final e in g.materials.entries)
-            e.key:
-                e.value *
-                (wantDouble
-                    ? (cfg?.multiplierForMaterial(g.id, e.key) ?? mult)
-                    : 1),
-        },
+        materials:
+            {
+              for (final e in g.materials.entries)
+                e.key:
+                    e.value *
+                    (wantDouble
+                        ? (cfg?.multiplierForMaterial(g.id, e.key) ?? mult)
+                        : 1),
+            }..update(
+              MaterialKind.jelly,
+              (v) => v + bonusJelly,
+              ifAbsent: () => bonusJelly,
+            ),
       );
       if (!ctx.mounted || canDouble) return;
       // 무료 2배를 다 썼으면 **패스를 안내한다**. 이미 뜬 보상은 1배로 받았으니

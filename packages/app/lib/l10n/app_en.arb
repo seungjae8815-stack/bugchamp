@@ -127,8 +127,8 @@
   "synergyHint": "Place 2+ bugs · when a bug powers up the one behind it your team gets stronger (order matters)",
   "teamReorderHint": "Drag to reorder",
   "leagueSeasonTitle": "League · Season",
-  "modeManual": "Manual",
-  "modeAuto": "Auto",
+  "modeManual": "Throw",
+  "modeAuto": "Quick",
   "opponentWild": "Wild",
   "opponentPick": "Pick Opponent",
   "accountTitle": "Account",
@@ -2309,7 +2309,7 @@
     }
   },
   "seasonRewardNow": "Season reward · now {league}",
-  "seasonRewardHint": "Paid every Monday 09:00 at your rank at that moment. Climb before it ends.",
+  "seasonRewardHint": "Paid every Sunday at midnight (KST) at your rank at that moment. Climb before it ends.",
   "@seasonRewardNow": {
     "placeholders": {
       "league": {
@@ -2416,6 +2416,13 @@
   "elementGuideBtn": "Element chart",
   "giftAdMoreFreeLine": "Free double: once a day!",
   "giftAdMorePassLine": "With a Pass, every gift is doubled",
+  "giftDoubleJellyLine": "Today's first double bonus: {min}–{max} Bug Jelly!",
+  "@giftDoubleJellyLine": {
+    "placeholders": {
+      "min": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
   "giftGoPassBtn": "See the Pass",
   "eventLegalTitle": "Contest terms",
   "eventLegalHost": "This contest is hosted and run by the Bug Champ team (the developer), who is solely responsible for providing and shipping the prize.",
@@ -2504,5 +2511,46 @@
         "type": "String"
       }
     }
-  }
+  },
+  "pvpRankRewardTitle": "Duel Season Rank Reward",
+  "pvpRankRewardBody": "You finished #{rank} in last season's duels!",
+  "@pvpRankRewardBody": {"placeholders": {"rank": {"type": "int"}}},
+  "pvpRankN": "#{n}",
+  "@pvpRankN": {"placeholders": {"n": {"type": "int"}}},
+  "pvpRankRewardHint": "Rank rewards (Jelly) {list}",
+  "@pvpRankRewardHint": {"placeholders": {"list": {"type": "String"}}},
+  "duelThrowButton": "Throw!",
+  "duelGaugeHint": "Stop in the green for a stronger first charge",
+  "duelBout": "Bout {n}",
+  "@duelBout": {"placeholders": {"n": {"type": "int"}}},
+  "duelFinishRingOut": "Ring out!",
+  "duelFinishFlip": "Flipped!",
+  "duelFinishKnockout": "Knockout!",
+  "duelFinishTimeUp": "Decision!",
+  "duelBoutWin": "Bout won!",
+  "duelBoutLose": "Bout lost…",
+  "duelSkip": "Skip",
+  "duelTrophy": "Trophies {delta}",
+  "@duelTrophy": {"placeholders": {"delta": {"type": "String"}}},
+  "duelResultOk": "OK",
+  "duelNeedThree": "You need 3 bugs for a duel",
+  "duelOrderHint": "#1, #2, #3 each fight one bout · this order is also your defense order",
+  "abyssName": "Abyss",
+  "abyssFloorLabel": "Abyss F{n}",
+  "@abyssFloorLabel": {"placeholders": {"n": {"type": "int"}}},
+  "abyssUnlockedTitle": "The Abyss is open!",
+  "abyssUnlockedBody": "Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Sunday at midnight you start again from F1, and the deepest floor of the week earns ranking Jelly.",
+  "abyssEnter": "Enter the Abyss",
+  "abyssLater": "Later",
+  "abyssLeave": "Leave the Abyss",
+  "abyssFloorClear": "F{n} cleared!",
+  "@abyssFloorClear": {"placeholders": {"n": {"type": "int"}}},
+  "abyssMilestone": "First time reaching F{n}! Fossils +{fossil}",
+  "@abyssMilestone": {"placeholders": {"n": {"type": "int"}, "fossil": {"type": "int"}}},
+  "abyssBest": "Best F{n}",
+  "@abyssBest": {"placeholders": {"n": {"type": "int"}}},
+  "abyssWeekReset": "A new week — back to Abyss F1!",
+  "abyssRankRewardTitle": "Abyss Weekly Rank Reward",
+  "abyssRankRewardBody": "Last week you reached Abyss F{floor} and placed #{rank}!",
+  "@abyssRankRewardBody": {"placeholders": {"floor": {"type": "int"}, "rank": {"type": "int"}}}
 }
