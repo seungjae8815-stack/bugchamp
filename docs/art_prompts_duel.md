@@ -1,4 +1,4 @@
-# 곤충 배틀 스타디움 그림 35장
+# 곤충 배틀 스타디움 그림 34장
 
 2026-09-28 결투 개편. 설계 문서: `C:\Users\Lenovo\Desktop\coding\BugChamp\docs\design_duel.md`
 
@@ -16,8 +16,7 @@
 | A. 곤충 위에서 본 모습 | 20 | 던져서 떨어지는 순간 |
 | B. 경기장 위에서 본 모습 | 5 | 던지는 장면 |
 | C. 경기장 옆에서 본 모습 | 5 | 싸움 장면 |
-| D. 던지기 동작 | 1 | 발사 연출 |
-| E. 효과 | 4 | 충돌·먼지·장외·기절 |
+| D. 효과 | 4 | 충돌·먼지·장외·기절 |
 
 **곤충 합격 기준** — ① 원근 없이 정확히 위에서(좌우 대칭) ② 뿔·큰턱 길이가 옆모습과 같은 비율 ③ 색이 옆모습과 같다 ④ 글자 없음. 아니면 다시 뽑는다.
 (앞서 시험한 걷기·공격·뒤집힘 시트는 이제 필요 없다 — 이미 뽑은 애사슴벌레 시트는 가운데가 아닌 **왼쪽 칸**을 잘라 위에서 본 모습으로 쓸 수 있다.)
@@ -220,8 +219,10 @@ duel_mantis_giant
 
 참고 이미지: 옆모습 `longhorn_oak_adult.webp`
 
+⚠️ 2026-09-29: 사마귀를 뽑은 대화창에서 이어 뽑자 **사마귀 앞다리·사슴벌레 큰턱**이 섞여 나왔다 — **새 대화창**에서 뽑는다.
+
 ```
-Use the attached side-view image as the EXACT reference for this insect's colors, markings and horn/jaw shape. Do NOT redesign. large brown oak longhorn beetle, extra-long banded antennae, dorsal view, flat orthographic bird's-eye view with the camera pointing straight down from directly above, like a pinned entomology specimen photographed from above, no perspective, no foreshortening, no horizon, no ground plane, the body perfectly bilaterally symmetric, head at the top edge and abdomen at the bottom edge. The horn or mandibles keep the same length and proportion to the body as in the reference side view, do NOT shorten or lengthen them because of the top-down angle. Mid-air falling pose: the six legs pulled slightly in toward the body, antennae swept back, the jaws relaxed, a single insect centered, no shadow, plain flat pastel background for easy cutout, no text, no letters, no labels, no captions, no numbers, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1
+Use the attached side-view image as the EXACT reference for this insect's colors, markings and horn/jaw shape. Do NOT redesign. large plain brown oak longhorn beetle (Cerambycidae), a long narrow cylindrical body, extra-long cream-and-brown banded antennae longer than the whole body sweeping back in two smooth curves, tiny short mouthparts only. This is NOT a mantis and NOT a stag beetle: no raptorial grasping forelegs, no big pincer mandibles, no green head; all six legs are thin, plain brown and alike. Dorsal view, flat orthographic bird's-eye view with the camera pointing straight down from directly above, like a pinned entomology specimen photographed from above, no perspective, no foreshortening, no horizon, no ground plane, the body perfectly bilaterally symmetric, head at the top edge and abdomen at the bottom edge. The horn or mandibles keep the same length and proportion to the body as in the reference side view, do NOT shorten or lengthen them because of the top-down angle. Mid-air falling pose: the six legs pulled slightly in toward the body, antennae swept back, the jaws relaxed, a single insect centered, no shadow, plain flat pastel background for easy cutout, no text, no letters, no labels, no captions, no numbers, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1
 ```
 
 파일명
@@ -448,33 +449,11 @@ arena_water_side
 
 ---
 
-# D. 캐릭터 던지기 동작 ×1 (3칸 시트)
-
-판 시작 때 화면 아래에서 곤충을 던진다. 기존 캐릭터 그림을 참고 이미지로 붙인다:
-
-```
-C:\Users\Lenovo\Desktop\coding\BugChamp\packages\app\assets\images\character\idle.webp
-```
-
-### 31. 던지기 시트
-
-```
-Use the attached image as the EXACT reference for this character. Do NOT redesign. A cute bug-collector adventurer, back view seen from slightly behind and above, drawn as a 3-frame horizontal sprite sheet with clear even spacing, the character at the same size and position in each cell. Left: winding up, holding a small beetle in the right hand pulled back behind the head. Middle: throwing forward and upward, arm extended, the beetle just leaving the hand. Right: follow-through, arm down, leaning forward, cheering. Consistent character in all three, plain flat pastel background for easy cutout, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 3:1
-```
-
-파일명
-
-```
-duel_throw
-```
-
----
-
-# E. 효과 ×4
+# D. 효과 ×4
 
 효과는 코드로도 그리지만 그림이 있으면 훨씬 보기 좋다.
 
-### 32. 충돌 불꽃
+### 31. 충돌 불꽃
 
 ```
 a burst of bright yellow-white impact sparks and small star shapes radiating from the center, comic impact effect, single centered effect, game vfx sprite, bold shapes, strong readable silhouette, plain flat dark background for easy cutout, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1
@@ -486,7 +465,7 @@ a burst of bright yellow-white impact sparks and small star shapes radiating fro
 fx_clash
 ```
 
-### 33. 착지 먼지
+### 32. 착지 먼지
 
 ```
 a soft round puff of tan dust and tiny pebbles spreading outward in a ring, landing impact cloud, single centered effect, game vfx sprite, bold shapes, strong readable silhouette, plain flat dark background for easy cutout, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1
@@ -498,7 +477,7 @@ a soft round puff of tan dust and tiny pebbles spreading outward in a ring, land
 fx_dust
 ```
 
-### 34. 장외
+### 33. 장외
 
 ```
 a dramatic swoosh trail with a big bright star twinkle at the end, knocked-out-of-the-ring effect, single centered effect, game vfx sprite, bold shapes, strong readable silhouette, plain flat dark background for easy cutout, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1
@@ -510,7 +489,7 @@ a dramatic swoosh trail with a big bright star twinkle at the end, knocked-out-o
 fx_ringout
 ```
 
-### 35. 기절
+### 34. 기절
 
 ```
 a small ring of three spinning yellow stars and swirl lines, dizzy knocked-out effect, single centered effect, game vfx sprite, bold shapes, strong readable silhouette, plain flat dark background for easy cutout, cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), subtle ambient occlusion, clean readable silhouette, mobile game art, crisp high detail, no text, no watermark, no signature --ar 1:1

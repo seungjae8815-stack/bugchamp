@@ -466,16 +466,26 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
 
   // ── 옆에서 본 장면: 2.5D 무대 ──────────────────────────────────────
 
+  /// 옆 무대 그림의 세로/가로(1024×572).
+  static const double _sideAspect = 572 / 1024;
+
   Widget _sideScene(BoxConstraints box, AppLocalizations l) {
     final step = _step;
     if (step == null) return const SizedBox.shrink();
     final bout = step.bout;
     final w = box.maxWidth;
     final h = box.maxHeight;
-    final stageW = w * 0.92;
     final cx = w / 2;
-    final cy = h * 0.62;
+    final cy = h * 0.6;
     final r = widget.params.arenaRadius;
+    // 옆 무대 그림(arena_*_side, 1024×572)은 숲까지 그린 한 장이다. 폭에 맞춰 깔고,
+    // 곤충 좌표는 **그림 속 바닥 타원**에 맞춘다 — 다섯 장 모두 바닥 중심이 (0.5, 0.47),
+    // 반지름이 폭의 0.35 · 높이의 0.2 안팎이다(실측 2026-09-29). 테두리 안쪽으로 조금 줄여 쓴다.
+    // 폭보다 조금 크게 — 바닥이 화면을 거의 채워야 곤충 싸움이 크게 보인다(양옆 숲은 잘린다).
+    final imgW = w * 1.1;
+    final imgH = imgW * _sideAspect;
+    final halfX = imgW * 0.32;
+    final halfY = imgH * 0.18;
 
     // 재생 위치(초) → 프레임 보간.
     final playT = _phase == _Phase.fight
@@ -541,10 +551,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       final other = side == 0 ? pb : pa;
       final faceRight = other.x >= p.x;
       final depth = (p.y / r).clamp(-1.4, 1.4);
-      var sx = cx + p.x / r * stageW * 0.42;
-      var sy = cy - depth * h * 0.11;
+      var sx = cx + p.x / r * halfX;
+      var sy = cy - depth * halfY;
       final scale = 1 - depth * 0.12;
-      final base = w * 0.22 * (d.radius(widget.params) / 12) * scale;
+      final base = w * 0.3 * (d.radius(widget.params) / 12) * scale;
       var lift = 0.0;
       if (p.flags & DuelFlag.airborne != 0) lift = base * 0.8;
       var angle = 0.0;
@@ -588,9 +598,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     Widget shadow(DuelBug d, ({double x, double y, double hp, int flags}) p) {
       final depth = (p.y / r).clamp(-1.4, 1.4);
       final scale = 1 - depth * 0.12;
-      final base = w * 0.22 * (d.radius(widget.params) / 12) * scale;
-      final sx = cx + p.x / r * stageW * 0.42;
-      final sy = cy - depth * h * 0.11;
+      final base = w * 0.3 * (d.radius(widget.params) / 12) * scale;
+      final sx = cx + p.x / r * halfX;
+      final sy = cy - depth * halfY;
       return Positioned(
         left: sx - base * 0.4,
         top: sy - base * 0.08,
@@ -603,6 +613,102 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           ),
         ),
       );
+    }
+
+    // 효과 그림(fx_*) — 충돌·착지는 사건 직후 잠깐, 기절·장외는 결판 뒤 진 쪽에.
+    // 그림이 없으면 아무것도 안 그린다(연출은 자세·회전만으로도 읽힌다).
+    Offset feet(({double x, double y, double hp, int flags}) p) {
+      final depth = (p.y / r).clamp(-1.4, 1.4);
+      return Offset(cx + p.x / r * halfX, cy - depth * halfY);
+    }
+
+    final fxBase = w * 0.24;
+    Widget fx(
+      String id,
+      Offset at,
+      double t, {
+      double grow = 0.6,
+      bool flip = false,
+    }) {
+      final k = t.clamp(0.0, 1.0);
+      final size = fxBase * (0.7 + grow * k);
+      return Positioned(
+        left: at.dx - size / 2,
+        top: at.dy - size / 2,
+        width: size,
+        height: size,
+        child: IgnorePointer(
+          child: Opacity(
+            opacity: (1 - k * k).clamp(0.0, 1.0),
+            child: Transform.flip(
+              flipX: flip,
+              child: gameImageChain(
+                ['assets/images/duel/fx_$id.webp'],
+                size: size,
+                fallback: const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    List<Widget> effects() {
+      const life = 0.35;
+      final out = <Widget>[];
+      // 결판 뒤에는 시간이 멈춰 있어서, 끝 무렵 사건의 효과가 그대로 굳어 곤충을 가린다.
+      for (final e in ended ? const <DuelEvent>[] : bout.events) {
+        final dt = (tick - e.tick) / widget.params.tickHz;
+        if (dt < 0 || dt > life) continue;
+        final t = dt / life;
+        final me = e.who == 0 ? pa : pb;
+        switch (e.kind) {
+          case DuelEventKind.clash:
+            final m = (feet(pa) + feet(pb)) / 2;
+            out.add(fx('clash', m.translate(0, -fxBase * 0.35), t));
+          case DuelEventKind.land:
+            out.add(fx('dust', feet(me), t, grow: 0.9));
+          default:
+            break;
+        }
+      }
+      if (ended) {
+        final lp = feet(loser == 0 ? pa : pb);
+        switch (bout.finish) {
+          case DuelFinish.knockout:
+            // 머리 위에서 빙글빙글 — 사라지지 않고 계속 돈다.
+            final size = fxBase * 0.8;
+            out.add(
+              Positioned(
+                left: lp.dx - size / 2,
+                top: lp.dy - fxBase * 1.25,
+                width: size,
+                height: size * 0.6,
+                child: IgnorePointer(
+                  child: Transform.rotate(
+                    angle: _t * 4,
+                    child: gameImageChain(
+                      ['assets/images/duel/fx_dizzy.webp'],
+                      size: size,
+                      fallback: const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          case DuelFinish.ringOut:
+            final k = math.min(1.0, afterEnd * 1.4);
+            if (k < 1) {
+              final dir = lp.dx >= cx ? 1.0 : -1.0;
+              final at = lp.translate(dir * w * 0.3 * k, h * 0.2 * k * k);
+              // 그림은 오른쪽으로 날아가는 꼬리 — 왼쪽으로 나가면 뒤집는다.
+              out.add(fx('ringout', at, k, grow: 0.2, flip: dir < 0));
+            }
+          default:
+            break;
+        }
+      }
+      return out;
     }
 
     // 뒤(깊은 쪽)부터 그린다.
@@ -621,25 +727,46 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     return Stack(
       clipBehavior: Clip.hardEdge,
       children: [
-        // 무대.
+        // 무대 — 위아래 끝을 배경색으로 흐려 네모 그림이 떠 보이지 않게 한다.
         Positioned(
-          left: cx - stageW / 2,
-          top: cy - h * 0.2,
-          width: stageW,
-          height: h * 0.4,
-          child: gameImageChain(
-            ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
-            size: h * 0.4,
-            fit: BoxFit.fill,
-            fallback: Container(
-              decoration: BoxDecoration(
-                gradient: const RadialGradient(
-                  colors: [Color(0xFF9B7A48), Color(0xFF5A4028)],
+          left: cx - imgW / 2,
+          top: cy - imgH * 0.47,
+          width: imgW,
+          height: imgH,
+          child: ShaderMask(
+            blendMode: BlendMode.dstIn,
+            shaderCallback: (rect) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0x00000000),
+                Color(0xFF000000),
+                Color(0xFF000000),
+                Color(0x00000000),
+              ],
+              stops: [0, 0.14, 0.84, 1],
+            ).createShader(rect),
+            child: gameImageChain(
+              ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
+              size: imgH,
+              fit: BoxFit.fill,
+              fallback: Center(
+                child: Container(
+                  width: halfX * 2.3,
+                  height: halfY * 2.6,
+                  decoration: BoxDecoration(
+                    gradient: const RadialGradient(
+                      colors: [Color(0xFF9B7A48), Color(0xFF5A4028)],
+                    ),
+                    borderRadius: BorderRadius.all(
+                      Radius.elliptical(halfX * 2.3, halfY * 2.6),
+                    ),
+                    border: Border.all(
+                      color: const Color(0xFF3A2814),
+                      width: 4,
+                    ),
+                  ),
                 ),
-                borderRadius: BorderRadius.all(
-                  Radius.elliptical(stageW, h * 0.26),
-                ),
-                border: Border.all(color: const Color(0xFF3A2814), width: 4),
               ),
             ),
           ),
@@ -647,6 +774,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         shadow(a, pa),
         shadow(b, pb),
         for (final (side, d, p, skin) in order) fighter(d, side, p, skin),
+        ...effects(),
         // 체력.
         Positioned(
           left: 16,
