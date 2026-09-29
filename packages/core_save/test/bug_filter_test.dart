@@ -204,6 +204,7 @@ void main() {
       level: 1,
       trait: t,
       passive: null,
+      trainMult: 1.0,
     );
 
     test('맹렬은 공격만, 강인은 체력만 올린다 — 축이 갈려야 노리고 교배한다', () {

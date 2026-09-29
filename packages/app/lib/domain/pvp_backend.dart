@@ -39,6 +39,7 @@ class PvpProfile {
     this.stageNumber = 1,
     this.difficultyTier = 0,
     this.power,
+    this.abyssBest = 0,
   });
 
   /// 내 세이브에서 랭킹 프로필을 만든다.
@@ -61,6 +62,7 @@ class PvpProfile {
     stageNumber: save.rankProgress.stage,
     difficultyTier: save.rankProgress.tier,
     power: power,
+    abyssBest: save.abyssBest,
   );
 
   final String id;
@@ -83,6 +85,10 @@ class PvpProfile {
   /// null = 모른다(구버전 앱·로컬 폴백). 서버 정렬에선 0 으로 친다.
   final double? power;
 
+  /// 심연 역대 최고 층(2026-09-29) — 진행도 랭킹에서 극한 최종 사냥터 **다음** 기준. 0 = 심연 전.
+  /// 서버가 세이브 업로드 때 자른 값으로 적는다(앱은 이 칸을 쓰지 않는다).
+  final int abyssBest;
+
   /// 이 랭킹 종류에서 줄 세우기에 쓰는 점수.
   int scoreFor(RankingKind kind) => switch (kind) {
     RankingKind.trophies => trophies,
@@ -92,7 +98,9 @@ class PvpProfile {
     RankingKind.level => difficultyTier * _tierScoreStep + level,
     // ⚠️ 회차를 위에 얹는다. 스테이지만 비교하면 회차를 넘어간 유저가
     // 1 로 돌아가는 순간 꼴찌가 된다 — 넘어갈 이유가 사라진다.
-    RankingKind.stage => difficultyTier * _tierScoreStep + stageNumber,
+    // 같은 스테이지(극한 최종 사냥터)면 심연 역대 최고 층으로 가른다(2026-09-29, 서버 정렬과 같은 순서).
+    RankingKind.stage =>
+      (difficultyTier * _tierScoreStep + stageNumber) * 100000 + abyssBest,
   };
 }
 

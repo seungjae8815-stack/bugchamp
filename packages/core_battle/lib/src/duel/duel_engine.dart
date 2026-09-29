@@ -29,7 +29,16 @@ enum DuelEventKind {
   dodge('dodge'),
   flip('flip'),
   ringOut('ringOut'),
-  knockout('knockout');
+  knockout('knockout'),
+
+  /// 크리티컬(who = 때린 쪽, value = 그 피해).
+  crit('crit'),
+
+  /// 약점 공격(who = 때린 쪽, value = 그 피해).
+  weak('weak'),
+
+  /// 회피 — 부딪힘 피해를 통째로 피했다(who = 피한 쪽).
+  evade('evade');
 
   const DuelEventKind(this.key);
   final String key;
@@ -189,12 +198,17 @@ DuelBout simulateBout({
   required DuelParams params,
   double? launchA,
   double? launchB,
+  double hpA = 1,
+  double hpB = 1,
 }) {
   final p = params;
   final rng = math.Random(seed);
   final la = (launchA ?? p.launchAuto).clamp(0.0, 1.0);
   final lb = (launchB ?? p.launchAuto).clamp(0.0, 1.0);
   final bodies = [_Body(a, p, 0), _Body(b, p, 1)];
+  // 승자 연속 — 이긴 곤충은 남은 체력으로 들어온다.
+  bodies[0].hp = a.maxHp * hpA.clamp(0.01, 1.0);
+  bodies[1].hp = b.maxHp * hpB.clamp(0.01, 1.0);
   final dt = p.dt;
   final radius = p.arenaRadius;
 
@@ -239,6 +253,9 @@ DuelBout simulateBout({
   double defFactor(_Body to) => 100 / (100 + to.bug.def);
   double resist(_Body s) =>
       1 + (s.style == Temperament.steadfast ? p.steadfastPushResist : 0);
+  // 기세 — 체력이 많을수록 **밀려나는 양**이 준다(주특기 발동 조건 `leverage` 에는 넣지 않는다 —
+  // 넣으면 던지기가 체력 많은 상대에게 아예 발동하지 않아 집기가 던지기를 99% 이겼다).
+  double guard(_Body s) => 1 + p.hpGuard * s.hpPct;
   // 들어 올리거나 밀어낼 수 있는 힘의 몫(0~1) — 공격 쪽 ATK×무게 대 방어 쪽 DEF×무게.
   double leverage(_Body from, _Body to) {
     final f = from.bug.atk * from.m * restrain(from, to);
@@ -385,7 +402,13 @@ DuelBout simulateBout({
       var ax = -s.x * p.bowlPull, ay = -s.y * p.bowlPull;
       final lip = radius * 0.8;
       if (dist > lip) {
-        final k = p.rimPull * (dist - lip) / (radius - lip) * s.maxSpeed / 10;
+        final k =
+            p.rimPull *
+            (dist - lip) /
+            (radius - lip) *
+            s.maxSpeed /
+            10 *
+            (1 + p.rimHpGuard * s.hpPct);
         ax -= s.x / dist * k;
         ay -= s.y / dist * k;
       }
@@ -415,7 +438,11 @@ DuelBout simulateBout({
         py /= pl;
       }
       final lev = leverage(g, o);
-      final acc = p.gripForce * (lev * 2 - 0.6).clamp(0.0, 1.4) / (g.m + o.m);
+      final acc =
+          p.gripForce *
+          (lev * 2 - 0.6).clamp(0.0, 1.4) /
+          (g.m + o.m) /
+          guard(o);
       g.vx += px * acc * dt;
       g.vy += py * acc * dt;
       o.vx = g.vx;
@@ -468,12 +495,75 @@ DuelBout simulateBout({
           B.vx += j / B.m * nx;
           B.vy += j / B.m * ny;
           final im = (impact / p.impactRef).clamp(p.impactMin, p.impactMax);
+          // 약점 — 맞는 쪽이 바라보는 방향(움직이는 방향, 멈췄으면 상대 쪽)에서 벗어난 곳을 맞았나.
+          bool weakSpot(_Body v, double tx, double ty) {
+            final sp = math.sqrt(v.vx * v.vx + v.vy * v.vy);
+            if (sp < 8) return false;
+            return (v.vx * tx + v.vy * ty) / sp < p.weakCos;
+          }
+
+          double spread() => 1 + p.damageSpread * (rng.nextDouble() * 2 - 1);
+          final critA = rng.nextDouble() < p.critChance + A.bug.crit;
+          final critB = rng.nextDouble() < p.critChance + B.bug.crit;
+          final weakB = weakSpot(B, -nx, -ny);
+          final weakA = weakSpot(A, nx, ny);
+          // 회피(훈련소) — 맞는 쪽이 확률로 피해를 통째로 피한다. 밀림은 그대로.
+          final evadeB = B.bug.evade > 0 && rng.nextDouble() < B.bug.evade;
+          final evadeA = A.bug.evade > 0 && rng.nextDouble() < A.bug.evade;
           final toB =
-              A.bug.atk * p.damageK * im * defFactor(B) * restrain(A, B);
+              A.bug.atk *
+              p.damageK *
+              im *
+              defFactor(B) *
+              restrain(A, B) *
+              (critA ? p.critMult : 1) *
+              (weakB ? p.weakMult : 1) *
+              spread() *
+              (evadeB ? 0 : 1);
           final toA =
-              B.bug.atk * p.damageK * im * defFactor(A) * restrain(B, A);
+              B.bug.atk *
+              p.damageK *
+              im *
+              defFactor(A) *
+              restrain(B, A) *
+              (critB ? p.critMult : 1) *
+              (weakA ? p.weakMult : 1) *
+              spread() *
+              (evadeA ? 0 : 1);
           hit(B, toB);
           hit(A, toA);
+          for (final (side, ev) in [(1, evadeB), (0, evadeA)]) {
+            if (ev) {
+              events.add(
+                DuelEvent(tick: tick, kind: DuelEventKind.evade, who: side),
+              );
+            }
+          }
+          for (final (side, crit, weak, dmg) in [
+            (0, critA, weakB, toB),
+            (1, critB, weakA, toA),
+          ]) {
+            if (crit) {
+              events.add(
+                DuelEvent(
+                  tick: tick,
+                  kind: DuelEventKind.crit,
+                  who: side,
+                  value: dmg.round(),
+                ),
+              );
+            }
+            if (weak) {
+              events.add(
+                DuelEvent(
+                  tick: tick,
+                  kind: DuelEventKind.weak,
+                  who: side,
+                  value: dmg.round(),
+                ),
+              );
+            }
+          }
           events.add(
             DuelEvent(
               tick: tick,
@@ -500,9 +590,14 @@ DuelBout simulateBout({
                 if (s.strikeCd > 0) continue;
                 s.strikeCd = p.strikeFlipCooldown;
                 final push = impact * (p.strikePushMult - 1) * s.m / o.m;
-                o.vx += sx * push / resist(o);
-                o.vy += sy * push / resist(o);
-                final chance = p.strikeFlipBase * lev * 2 * im;
+                o.vx += sx * push / resist(o) / guard(o);
+                o.vy += sy * push / resist(o) / guard(o);
+                final chance =
+                    p.strikeFlipBase *
+                    lev *
+                    2 *
+                    im *
+                    (1 - p.flipHpGuard * o.hpPct).clamp(0.0, 1.0);
                 if (rng.nextDouble() < chance) {
                   o.flipped = true;
                   winner = s.side;
@@ -525,7 +620,7 @@ DuelBout simulateBout({
               case Specialty.toss:
                 if (s.tossCd > 0 || lev < 0.35) continue;
                 s.tossCd = p.tossCooldown;
-                final sp = p.tossSpeed * (0.5 + lev) / resist(o);
+                final sp = p.tossSpeed * (0.5 + lev) / resist(o) / guard(o);
                 o.vx = sx * sp;
                 o.vy = sy * sp;
                 o.air = p.tossAirSeconds;
@@ -609,17 +704,19 @@ DuelBout simulateBout({
   );
 }
 
-/// 3판 2선승 경기 결과.
+/// 승자 연속 경기 결과(2026-09-29 사장님 확정) — 이긴 곤충이 남아 다음 상대를 맞고,
+/// 한 팀의 곤충이 모두 쓰러지면 끝(3마리씩이면 3~5판).
 @immutable
 class DuelMatch {
   const DuelMatch({required this.bouts});
 
   final List<DuelBout> bouts;
 
+  /// A 가 이긴 판 수 = 쓰러뜨린 B 곤충 수.
   int get winsA => bouts.where((b) => b.winner == 0).length;
   int get winsB => bouts.where((b) => b.winner == 1).length;
 
-  /// 두 팀 중 한쪽이 과반을 이겼나.
+  /// 한쪽 팀이 모두 쓰러졌나.
   bool decided(DuelParams p) => winsA >= p.winsNeeded || winsB >= p.winsNeeded;
 
   /// 0 = A 승, 1 = B 승. 아직 안 끝났으면 null.
@@ -630,7 +727,39 @@ class DuelMatch {
       : null;
 }
 
-/// 자동 결투 — 게이지 없이 끝까지. 판 i 는 A[i] 대 B[i].
+/// 승자 연속의 **다음 판 대진·시작 체력** — 지금까지의 판 결과에서 나온다(앱·서버 공용).
+///
+/// 대진: A 의 [DuelDuelState.ia] 번째 대 B 의 [DuelDuelState.ib] 번째(진 쪽만 다음 곤충으로 바뀐다).
+/// 체력: 이긴 곤충은 끝난 체력 + 판 사이 회복, 새로 나온 곤충은 가득.
+typedef DuelDuelState = ({int ia, int ib, double hpA, double hpB});
+
+DuelDuelState duelNextState(
+  List<DuelBout> bouts,
+  List<DuelBug> teamA,
+  List<DuelBug> teamB,
+  DuelParams p,
+) {
+  var ia = 0, ib = 0;
+  var ha = 1.0, hb = 1.0;
+  for (final b in bouts) {
+    if (b.winner == 0) {
+      ha = duelCarryHp(b.hpPctA, teamA[math.min(ia, teamA.length - 1)], p);
+      ib++;
+      hb = 1;
+    } else {
+      hb = duelCarryHp(b.hpPctB, teamB[math.min(ib, teamB.length - 1)], p);
+      ia++;
+      ha = 1;
+    }
+  }
+  return (ia: ia, ib: ib, hpA: ha, hpB: hb);
+}
+
+/// 이긴 곤충이 다음 판에 들고 가는 체력(0~1) = 남은 체력 + 기본 회복 + 회복력.
+double duelCarryHp(double endPct, DuelBug bug, DuelParams p) =>
+    (endPct + p.carryHealBase + bug.recovery).clamp(0.05, 1.0);
+
+/// 자동 결투 — 게이지 없이 끝까지(승자 연속).
 ///
 /// [launchesA] 를 주면 그 판의 게이지 값을 쓴다(없으면 자동값).
 DuelMatch simulateDuel({
@@ -641,16 +770,17 @@ DuelMatch simulateDuel({
   List<double>? launchesA,
 }) {
   final bouts = <DuelBout>[];
-  final n = math.min(teamA.length, teamB.length);
-  for (var i = 0; i < n; i++) {
-    final m = DuelMatch(bouts: bouts);
-    if (m.decided(params)) break;
+  for (var i = 0; i < params.maxBouts; i++) {
+    final st = duelNextState(bouts, teamA, teamB, params);
+    if (st.ia >= teamA.length || st.ib >= teamB.length) break;
     bouts.add(
       simulateBout(
         seed: duelBoutSeed(seed, i),
-        a: teamA[i],
-        b: teamB[i],
+        a: teamA[st.ia],
+        b: teamB[st.ib],
         params: params,
+        hpA: st.hpA,
+        hpB: st.hpB,
         launchA: launchesA != null && i < launchesA.length
             ? launchesA[i]
             : null,

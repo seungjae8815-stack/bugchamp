@@ -89,7 +89,7 @@ void main() {
     );
     expect(find.text('순위표'), findsOneWidget);
     expect(find.text('다이아 리그'), findsOneWidget);
-    expect(find.textContaining('새 시즌 시작'), findsOneWidget);
+    expect(find.textContaining('시즌 마감'), findsOneWidget, reason: '집계 중에는 마감까지');
     expect(find.text('상위 6명 승급 · 하위 6명 강등'), findsOneWidget);
     expect(find.text('곤충왕1'), findsOneWidget);
     // 내 줄은 목록과 하단 고정 두 군데에 보인다.
@@ -111,6 +111,7 @@ void main() {
         },
         {
           'week': '2026-09-28',
+          'closed': true,
           'endsAt': ends,
           'total': 3,
           'top': [for (var r = 1; r <= 3; r++) _row(r)],
@@ -122,6 +123,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('심연 주간 순위'), findsOneWidget);
     expect(find.text('59층'), findsOneWidget);
+    expect(
+      find.textContaining('새 시즌 시작'),
+      findsOneWidget,
+      reason: '정산 기간에는 새 시즌까지',
+    );
     expect(find.text('이번 주 심연 1층을 깨면 순위에 올라요'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

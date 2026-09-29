@@ -118,16 +118,27 @@ void main(List<String> args) {
   }
 
   // ── 2. 결판 분포 ──────────────────────────────────────────────
-  stdout.writeln('\n── 2. 결판 분포 (주특기 조합별, 같은 스탯) ──');
+  stdout.writeln('\n── 2. 결판 분포 (주특기 조합별, 같은 스탯 · 목표 평균 8~12초 · 기절 30~40%) ──');
+  final allFin = {for (final f in DuelFinish.values) f: 0};
+  var allSecs = 0.0, combos = 0;
   for (final a in Specialty.values) {
     for (final b in Specialty.values) {
       if (b.index < a.index) continue;
       final r = run((_) => unit(a), (_) => unit(b));
+      for (final e in r.fin.entries) {
+        allFin[e.key] = allFin[e.key]! + e.value;
+      }
+      allSecs += r.secs;
+      combos++;
       stdout.writeln(
         '  ${_spcKo[a]} 대 ${_spcKo[b]}: ${finStr(r.fin)} · 평균 ${r.secs.toStringAsFixed(1)}초',
       );
     }
   }
+
+  stdout.writeln(
+    '  ── 전체: ${[for (final e in allFin.entries) '${_finKo[e.key]} ${(e.value * 100 / (_n * combos)).toStringAsFixed(0)}%'].join(' · ')} · 평균 ${(allSecs / combos).toStringAsFixed(1)}초',
+  );
 
   // ── 3. 전력 차이 ───────────────────────────────────────────────
   stdout.writeln(

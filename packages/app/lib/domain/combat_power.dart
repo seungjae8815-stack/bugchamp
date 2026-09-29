@@ -32,7 +32,19 @@ CharacterStats permanentStatsOf(SaveGame save, GameData data, DateTime now) {
     if (bug == null) continue;
     final sp = data.speciesById[bug.speciesId];
     if (sp == null) continue;
-    pets.add(petStatOf(bug, sp, cfg, now));
+    pets.add(
+      petStatOf(
+        bug,
+        sp,
+        cfg,
+        now,
+        trainMult: trainPetMult(
+          save,
+          bug.id,
+          (data.battleConfig ?? const BattleConfig()).training,
+        ),
+      ),
+    );
   }
   final pb = computePetBonus(pets, cfg);
   return CharacterStats(

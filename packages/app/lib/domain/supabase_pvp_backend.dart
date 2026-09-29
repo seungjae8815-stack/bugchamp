@@ -54,6 +54,7 @@ class SupabasePvpBackend implements PvpBackend {
               stageNumber: (r['stage'] as num?)?.toInt() ?? 1,
               difficultyTier: (r['tier'] as num?)?.toInt() ?? 0,
               power: (r['power'] as num?)?.toDouble(),
+              abyssBest: (r['abyss_best'] as num?)?.toInt() ?? 0,
             ),
           ),
       ];

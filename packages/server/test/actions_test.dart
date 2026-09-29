@@ -2694,6 +2694,32 @@ void _forfeitTests(GameActions actions, SaveGame base) {
       expect(a.pvpLeagueDue(now)!.played, isNull);
     });
 
+    test('정산 기간(일 09시~월 09시) — 이번 시즌을 바로 결산하고, 점수는 더 받지 않는다', () {
+      // 2026-07-26(일) 10:00 KST = 01:00 UTC.
+      final sunday = GameActions(
+        config: _RankConfig(),
+        now: () => DateTime.utc(2026, 7, 26, 1),
+      );
+      final played = base().copyWith(pvpScoreSeason: '2026-07-20');
+      final due = sunday.pvpLeagueDue(played)!;
+      expect(due.played, '2026-07-20');
+      expect(due.lastEnded, '2026-07-20');
+      expect(sunday.pvpScoreFor(base()), isNull, reason: '마감 뒤에는 순위가 굳는다');
+      // 받은 뒤 월 09시가 지나도 다시 결산하지 않는다.
+      final settled = played.copyWith(pvpRankRewardSeason: '2026-07-20');
+      final monday = GameActions(
+        config: _RankConfig(),
+        now: () => DateTime.utc(2026, 7, 27, 1),
+      );
+      expect(monday.pvpLeagueDue(settled), isNull);
+      // 마감 전(일 08시 KST)에는 이번 시즌을 결산하지 않는다.
+      final before = GameActions(
+        config: _RankConfig(),
+        now: () => DateTime.utc(2026, 7, 25, 23),
+      );
+      expect(before.pvpLeagueDue(played)!.played, isNull);
+    });
+
     test('리그 안 1위 — 보상 + 승급 · 순위권 밖이어도 결산 기록은 찍는다', () {
       final s = base().copyWith(pvpScoreSeason: '2026-07-13', pvpLeague: 1);
       final first = a.settlePvpLeague(

@@ -60,12 +60,21 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   double _t = 0;
   _Phase _phase = _Phase.aim;
   int _bout = 0;
+
+  /// 지금 판의 두 곤충 번호 — 승자 연속이라 **진 쪽만** 다음 곤충으로 바뀐다
+  /// (내 곤충 = 상대가 이긴 판 수번째). 판 결과 화면까지는 방금 싸운 둘을 그대로 둔다.
+  int _ia = 0, _ib = 0;
+  DuelBug get _curA => widget.mine[_ia.clamp(0, widget.mine.length - 1)];
+  DuelBug get _curB => widget.foe[_ib.clamp(0, widget.foe.length - 1)];
   int _winsA = 0;
   int _winsB = 0;
   DuelStep? _step;
   bool _finishing = false;
 
   static const _gaugePeriod = 1.3;
+
+  /// 게이지를 안 멈추면 이 시간 뒤 **그 순간의 값**으로 저절로 던진다(2026-09-29 사장님 확정).
+  static const _autoThrowSeconds = 3.0;
   static const _dropSeconds = 1.1;
   static const _boutEndSeconds = 1.6;
 
@@ -89,10 +98,14 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     if (dt <= 0 || dt > 0.25) return; // 앱이 멈췄다 돌아온 틈은 건너뛴다
     setState(() => _t += dt);
     switch (_phase) {
+      case _Phase.aim when widget.driver.interactive && _t >= _autoThrowSeconds:
+        _throw(_quality);
       case _Phase.drop when _t >= _dropSeconds:
         _go(_Phase.fight);
       case _Phase.fight when _t >= _fightSeconds + 0.8:
         _endBout();
+      case _Phase.fight:
+        _playEventSfx();
       case _Phase.boutEnd when _t >= _boutEndSeconds:
         _nextBoutOrFinish();
       default:
@@ -103,6 +116,45 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   void _go(_Phase p) {
     _phase = p;
     _t = 0;
+    if (p == _Phase.fight) _sfxUpTo = -1;
+  }
+
+  /// 이번 판에서 소리를 낸 마지막 사건 번호.
+  int _sfxUpTo = -1;
+
+  /// 재생 위치까지 온 사건의 효과음을 낸다(부딪힘·물기·던지기·착지·결판).
+  /// 건너뛰기로 한꺼번에 넘어간 사건은 소리 없이 넘긴다(한꺼번에 울리면 소음이다).
+  void _playEventSfx() {
+    final b = _step?.bout;
+    if (b == null) return;
+    final tick = (_t * widget.params.tickHz).round();
+    for (var i = _sfxUpTo + 1; i < b.events.length; i++) {
+      final e = b.events[i];
+      if (e.tick > tick) break;
+      _sfxUpTo = i;
+      if ((tick - e.tick) / widget.params.tickHz > 0.3) continue;
+      final a = AudioService.instance;
+      switch (e.kind) {
+        case DuelEventKind.clash:
+        case DuelEventKind.land:
+          a.sfxHit();
+        case DuelEventKind.grip:
+          a.sfxHurt();
+        case DuelEventKind.toss:
+        case DuelEventKind.dodge:
+          a.sfxSwipe();
+        case DuelEventKind.flip:
+        case DuelEventKind.ringOut:
+        case DuelEventKind.knockout:
+          a.sfxDie();
+        case DuelEventKind.crit:
+          a.sfxHurt();
+        case DuelEventKind.weak:
+          break;
+        case DuelEventKind.evade:
+          a.sfxSwipe();
+      }
+    }
   }
 
   double get _fightSeconds {
@@ -146,6 +198,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     final s = _step!;
     if (!s.done) {
       _bout++;
+      _ia = _winsB;
+      _ib = _winsA;
       _step = null;
       _go(_Phase.aim);
       if (!widget.driver.interactive) _throw(widget.params.launchAuto);
@@ -213,22 +267,29 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       canPop: _phase == _Phase.done,
       child: Scaffold(
         backgroundColor: const Color(0xFF1B1A14),
-        body: SafeArea(
-          child: Column(
-            children: [
-              _scoreBar(l),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, box) => switch (_phase) {
-                    _Phase.aim ||
-                    _Phase.waiting => _topScene(box, falling: false),
-                    _Phase.drop => _topScene(box, falling: true),
-                    _ => _sideScene(box, l),
-                  },
+        // 조준 중에는 **화면 어디를 눌러도** 게이지가 멈추고 던진다(버튼을 찾지 않아도 된다).
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: _phase == _Phase.aim && widget.driver.interactive
+              ? (_) => _throw(_quality)
+              : null,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _scoreBar(l),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, box) => switch (_phase) {
+                      _Phase.aim ||
+                      _Phase.waiting => _topScene(box, falling: false),
+                      _Phase.drop => _topScene(box, falling: true),
+                      _ => _sideScene(box, l),
+                    },
+                  ),
                 ),
-              ),
-              _bottomBar(l),
-            ],
+                _bottomBar(l),
+              ],
+            ),
           ),
         ),
       ),
@@ -236,8 +297,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   }
 
   Widget _scoreBar(AppLocalizations l) {
-    final a = widget.mine[_bout.clamp(0, widget.mine.length - 1)];
-    final b = widget.foe[_bout.clamp(0, widget.foe.length - 1)];
+    final a = _curA;
+    final b = _curB;
     TextStyle st(Color c) =>
         TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w800);
     return Padding(
@@ -295,6 +356,15 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
             const SizedBox(height: 6),
             Text(
               l.duelGaugeHint,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(
+              l.duelAutoThrowIn(math.max(1, (_autoThrowSeconds - _t).ceil())),
               style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 11.5),
             ),
             const SizedBox(height: 8),
@@ -308,7 +378,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                   foregroundColor: const Color(0xFF3A2410),
                 ),
                 child: Text(
-                  l.duelThrowButton,
+                  '${l.duelThrowButton}  ${math.max(1, (_autoThrowSeconds - _t).ceil())}',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
@@ -339,15 +409,17 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   }
 
   Widget _gauge() => SizedBox(
-    height: 26,
+    height: 44,
     child: LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
         return Stack(
+          clipBehavior: Clip.none,
           children: [
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(13),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white, width: 3),
                 gradient: const LinearGradient(
                   colors: [
                     Color(0xFFC85454),
@@ -361,14 +433,15 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               ),
             ),
             Positioned(
-              left: (w - 6) * _needle,
-              top: 0,
-              bottom: 0,
-              width: 6,
+              left: (w - 12) * _needle,
+              top: -4,
+              bottom: -4,
+              width: 12,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(color: const Color(0xFF22252E), width: 2),
+                  borderRadius: BorderRadius.circular(6),
                   boxShadow: const [
                     BoxShadow(color: Colors.black54, blurRadius: 4),
                   ],
@@ -385,8 +458,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
 
   Widget _topScene(BoxConstraints box, {required bool falling}) {
     final side = math.min(box.maxWidth, box.maxHeight) * 0.9;
-    final a = widget.mine[_bout.clamp(0, widget.mine.length - 1)];
-    final b = widget.foe[_bout.clamp(0, widget.foe.length - 1)];
+    final a = _curA;
+    final b = _curB;
     final k = falling ? (_t / _dropSeconds).clamp(0.0, 1.0) : 0.0;
     final ease = Curves.easeIn.transform(k);
     Widget bug(DuelBug d, SkinView? skin, double dir) {
@@ -482,6 +555,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     // 곤충 좌표는 **그림 속 바닥 타원**에 맞춘다 — 다섯 장 모두 바닥 중심이 (0.5, 0.47),
     // 반지름이 폭의 0.35 · 높이의 0.2 안팎이다(실측 2026-09-29). 테두리 안쪽으로 조금 줄여 쓴다.
     // 폭보다 조금 크게 — 바닥이 화면을 거의 채워야 곤충 싸움이 크게 보인다(양옆 숲은 잘린다).
+    // 좌표: 엔진은 위에서 본 경기장이라 두 곤충이 **y축**으로 마주 던져진다(내 곤충 y−).
+    // 옆에서 볼 때는 그 축을 **화면 좌우**로, x축을 앞뒤 깊이로 쓴다 — 반대로 두면
+    // 밀어붙이기가 "무대 안쪽으로 멀어지는" 움직임이 돼 읽히지 않는다.
     final imgW = w * 1.1;
     final imgH = imgW * _sideAspect;
     final halfX = imgW * 0.32;
@@ -503,8 +579,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     final ended = _phase != _Phase.fight || playT >= _fightSeconds;
 
     // 판마다 한 쌍.
-    final a = widget.mine[_bout.clamp(0, widget.mine.length - 1)];
-    final b = widget.foe[_bout.clamp(0, widget.foe.length - 1)];
+    final a = _curA;
+    final b = _curB;
 
     ({double x, double y, double hp, int flags}) at(int side) {
       final o = side * 6;
@@ -519,21 +595,41 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     final pa = at(0);
     final pb = at(1);
 
-    BugPose poseOf(int side) {
+    // 두 곤충이 **붙어 있는가**(몸이 닿을 거리). 붙어 있으면 번갈아 문다 — 사건(부딪힘·물기)
+    // 순간만 공격 그림을 보여 주면 7초짜리 판에서 5초 넘게 대기 그림이 미끄러져
+    // "날아다니는 느낌"이었다(2026-09-29 실기 지적).
+    final reach = (a.radius(widget.params) + b.radius(widget.params)) * 1.35;
+    final engaged =
+        !ended &&
+        math.sqrt(math.pow(pa.x - pb.x, 2) + math.pow(pa.y - pb.y, 2)) < reach;
+
+    /// 사건 뒤 몇 초가 지났나(없으면 null) — 공격이면 +, 맞았으면 −.
+    ({BugPose pose, double dt})? eventPose(int side) {
       for (final e in bout.events) {
         final dt = (tick - e.tick) / widget.params.tickHz;
-        if (dt < -0.02 || dt > 0.28) continue;
+        if (dt < -0.05 || dt > 0.45) continue;
         final mine = e.who == side;
         switch (e.kind) {
           case DuelEventKind.clash:
           case DuelEventKind.grip:
           case DuelEventKind.toss:
-            return mine ? BugPose.attack : BugPose.hurt;
+            return (pose: mine ? BugPose.attack : BugPose.hurt, dt: dt);
           case DuelEventKind.land:
-            if (mine) return BugPose.hurt;
+            if (mine) return (pose: BugPose.hurt, dt: dt);
           default:
             break;
         }
+      }
+      return null;
+    }
+
+    BugPose poseOf(int side) {
+      final ev = eventPose(side);
+      if (ev != null) return ev.pose;
+      if (engaged) {
+        // 0.32초마다 번갈아 문다(양쪽이 엇갈리게).
+        final beat = ((playT / 0.32).floor() + side) % 2;
+        return beat == 0 ? BugPose.attack : BugPose.idle;
       }
       return BugPose.idle;
     }
@@ -549,9 +645,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       SkinView? skin,
     ) {
       final other = side == 0 ? pb : pa;
-      final faceRight = other.x >= p.x;
-      final depth = (p.y / r).clamp(-1.4, 1.4);
-      var sx = cx + p.x / r * halfX;
+      final faceRight = other.y >= p.y;
+      final depth = (p.x / r).clamp(-1.4, 1.4);
+      var sx = cx + p.y / r * halfX;
       var sy = cy - depth * halfY;
       final scale = 1 - depth * 0.12;
       final base = w * 0.3 * (d.radius(widget.params) / 12) * scale;
@@ -559,13 +655,16 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       if (p.flags & DuelFlag.airborne != 0) lift = base * 0.8;
       var angle = 0.0;
       var opacity = 1.0;
+      var flipK = 0.0;
       if (side == loser && ended) {
         switch (bout.finish) {
           case DuelFinish.flip:
-            angle = math.pi * math.min(1, afterEnd * 3);
+            // 가로축으로 뒤집으며 한 번 튀어 오른다 — 머리 방향은 그대로, 배가 위로.
+            flipK = math.min(1.0, afterEnd * 2.5);
+            lift += math.sin(math.pi * flipK) * base * 0.7;
           case DuelFinish.ringOut:
             final k = math.min(1.0, afterEnd * 1.4);
-            sx += (p.x >= 0 ? 1 : -1) * w * 0.35 * k;
+            sx += (p.y >= 0 ? 1 : -1) * w * 0.35 * k;
             sy += h * 0.25 * k * k;
             opacity = 1 - k;
           default:
@@ -573,10 +672,39 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         }
       }
       final pose = ended && side == loser ? BugPose.hurt : poseOf(side);
+      final toward = faceRight ? 1.0 : -1.0;
+      if (!ended && p.flags & DuelFlag.airborne == 0) {
+        // 걸음 — 움직이는 만큼 톡톡 튄다(다리 그림이 없어서 몸으로 걸음을 보인다).
+        final o = side * 6;
+        final v = math.sqrt(
+          math.pow(f1[o] - f0[o], 2) + math.pow(f1[o + 1] - f0[o + 1], 2),
+        );
+        if (v > 0.5) {
+          final step = (math.sin(playT * 22 + side * 1.7)).abs();
+          lift += base * 0.045 * step * math.min(1.0, v / 6);
+          angle += math.sin(playT * 22 + side * 1.7) * 0.035 * toward;
+        }
+        final ev = eventPose(side);
+        if (pose == BugPose.attack) {
+          // 공격 — 상대 쪽으로 튀어 나갔다 돌아온다.
+          final k = ev == null
+              ? math.sin(((playT / 0.32) % 1.0) * math.pi)
+              : math.sin((ev.dt / 0.45).clamp(0.0, 1.0) * math.pi);
+          sx += toward * base * 0.16 * k;
+          angle += -toward * 0.08 * k;
+        } else if (pose == BugPose.hurt) {
+          // 맞음 — 뒤로 밀리며 부르르 떤다.
+          final k = ev == null ? 0.0 : 1 - (ev.dt / 0.45).clamp(0.0, 1.0);
+          sx -= toward * base * 0.12 * k;
+          sx += math.sin(playT * 70) * base * 0.03 * k;
+        }
+      }
       final img = bugPoseImage(
         d.speciesId,
         pose,
         size: base,
+        // 옆모습 그림은 가로로 길어 가운데 정렬이면 발 밑이 비어 공중에 뜬다(실기 "날아다닌다").
+        alignment: Alignment.bottomCenter,
         skin: skin,
         fallback: Icon(Icons.bug_report, size: base, color: Colors.white),
       );
@@ -587,19 +715,26 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         height: base,
         child: Opacity(
           opacity: opacity.clamp(0.0, 1.0),
-          child: Transform.rotate(
-            angle: angle,
-            child: Transform.flip(flipX: !faceRight, child: img),
+          child: Transform(
+            // 그림 속 몸통 가운데(아래쪽 정렬 · 가로로 긴 그림) 근처를 축으로.
+            alignment: const Alignment(0, 0.15),
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.002)
+              ..rotateX(math.pi * flipK),
+            child: Transform.rotate(
+              angle: angle,
+              child: Transform.flip(flipX: !faceRight, child: img),
+            ),
           ),
         ),
       );
     }
 
     Widget shadow(DuelBug d, ({double x, double y, double hp, int flags}) p) {
-      final depth = (p.y / r).clamp(-1.4, 1.4);
+      final depth = (p.x / r).clamp(-1.4, 1.4);
       final scale = 1 - depth * 0.12;
       final base = w * 0.3 * (d.radius(widget.params) / 12) * scale;
-      final sx = cx + p.x / r * halfX;
+      final sx = cx + p.y / r * halfX;
       final sy = cy - depth * halfY;
       return Positioned(
         left: sx - base * 0.4,
@@ -618,8 +753,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     // 효과 그림(fx_*) — 충돌·착지는 사건 직후 잠깐, 기절·장외는 결판 뒤 진 쪽에.
     // 그림이 없으면 아무것도 안 그린다(연출은 자세·회전만으로도 읽힌다).
     Offset feet(({double x, double y, double hp, int flags}) p) {
-      final depth = (p.y / r).clamp(-1.4, 1.4);
-      return Offset(cx + p.x / r * halfX, cy - depth * halfY);
+      final depth = (p.x / r).clamp(-1.4, 1.4);
+      return Offset(cx + p.y / r * halfX, cy - depth * halfY);
     }
 
     final fxBase = w * 0.24;
@@ -653,9 +788,151 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       );
     }
 
+    // 사건 전후 체력 차이(천분율 → 실제 값). 프레임은 frameEvery 틱마다 찍힌다.
+    double hpAt(int side, int t) {
+      final i = (t / widget.params.frameEvery).floor().clamp(
+        0,
+        bout.frames.length - 1,
+      );
+      return bout.frames[i][side * 6 + 4] / 1000;
+    }
+
+    Widget damageText(
+      Offset at,
+      double t,
+      int dmg, {
+      required bool restrain,
+      bool crit = false,
+      bool weak = false,
+    }) {
+      final k = t.clamp(0.0, 1.0);
+      final size = crit ? 28.0 : (restrain || weak ? 24.0 : 19.0);
+      final tags = [
+        if (crit) l.duelCritHit,
+        if (weak) l.duelWeakHit,
+        if (restrain) l.duelRestrainHit,
+      ];
+      return Positioned(
+        left: at.dx - 60,
+        top: at.dy - 30 - 34 * k,
+        width: 120,
+        child: IgnorePointer(
+          child: Opacity(
+            opacity: (1 - k * k).clamp(0.0, 1.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (tags.isNotEmpty)
+                  Text(
+                    tags.join(' '),
+                    style: const TextStyle(
+                      color: Color(0xFFFF9A3C),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                    ),
+                  ),
+                Text(
+                  '-$dmg',
+                  style: TextStyle(
+                    color: crit
+                        ? const Color(0xFFFFD54F)
+                        : restrain || weak
+                        ? const Color(0xFFFF7043)
+                        : const Color(0xFFFFFFFF),
+                    fontSize: size,
+                    fontWeight: FontWeight.w900,
+                    shadows: const [
+                      Shadow(color: Colors.black, blurRadius: 4),
+                      Shadow(color: Colors.black, offset: Offset(1, 2)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    List<Widget> damages() {
+      const life = 0.9;
+      final out = <Widget>[];
+      if (ended) return out;
+      final bugs = [a, b];
+      final pos = [pa, pb];
+      for (final e in bout.events) {
+        final dt = (tick - e.tick) / widget.params.tickHz;
+        if (dt < 0 || dt > life) continue;
+        if (e.kind == DuelEventKind.evade) {
+          // 회피 — 피한 곤충 위에 "빗나감!".
+          final k = (dt / life).clamp(0.0, 1.0);
+          final head = feet(
+            pos[e.who],
+          ).translate(0, -w * 0.3 * (bugs[e.who].radius(widget.params) / 12));
+          out.add(
+            Positioned(
+              left: head.dx - 60,
+              top: head.dy - 30 - 34 * k,
+              width: 120,
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: (1 - k * k).clamp(0.0, 1.0),
+                  child: Text(
+                    l.duelMiss,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF9CE3F7),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          continue;
+        }
+        final victims = switch (e.kind) {
+          DuelEventKind.clash => [0, 1],
+          DuelEventKind.land => [e.who],
+          _ => const <int>[],
+        };
+        for (final v in victims) {
+          final before = hpAt(v, e.tick - 1);
+          final after = hpAt(v, e.tick + widget.params.frameEvery * 2);
+          final dmg = ((before - after) * bugs[v].maxHp).round();
+          if (dmg <= 0) continue;
+          final attacker = bugs[1 - v];
+          final restrain = attacker.element.restrains(bugs[v].element);
+          bool tagged(DuelEventKind k) => bout.events.any(
+            (x) => x.tick == e.tick && x.kind == k && x.who == 1 - v,
+          );
+          final crit = tagged(DuelEventKind.crit);
+          final weak = tagged(DuelEventKind.weak);
+          final head = feet(pos[v]).translate(
+            (v == 0 ? -1 : 1) * w * 0.03,
+            -w * 0.3 * (bugs[v].radius(widget.params) / 12),
+          );
+          out.add(
+            damageText(
+              head,
+              dt / life,
+              dmg,
+              restrain: restrain,
+              crit: crit,
+              weak: weak,
+            ),
+          );
+        }
+      }
+      return out;
+    }
+
     List<Widget> effects() {
       const life = 0.35;
-      final out = <Widget>[];
+      final out = <Widget>[...damages()];
       // 결판 뒤에는 시간이 멈춰 있어서, 끝 무렵 사건의 효과가 그대로 굳어 곤충을 가린다.
       for (final e in ended ? const <DuelEvent>[] : bout.events) {
         final dt = (tick - e.tick) / widget.params.tickHz;
@@ -724,102 +1001,116 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       DuelFinish.timeUp => l.duelFinishTimeUp,
     };
 
-    return Stack(
-      clipBehavior: Clip.hardEdge,
-      children: [
-        // 무대 — 위아래 끝을 배경색으로 흐려 네모 그림이 떠 보이지 않게 한다.
-        Positioned(
-          left: cx - imgW / 2,
-          top: cy - imgH * 0.47,
-          width: imgW,
-          height: imgH,
-          child: ShaderMask(
-            blendMode: BlendMode.dstIn,
-            shaderCallback: (rect) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0x00000000),
-                Color(0xFF000000),
-                Color(0xFF000000),
-                Color(0x00000000),
-              ],
-              stops: [0, 0.14, 0.84, 1],
-            ).createShader(rect),
-            child: gameImageChain(
-              ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
-              size: imgH,
-              fit: BoxFit.fill,
-              fallback: Center(
-                child: Container(
-                  width: halfX * 2.3,
-                  height: halfY * 2.6,
-                  decoration: BoxDecoration(
-                    gradient: const RadialGradient(
-                      colors: [Color(0xFF9B7A48), Color(0xFF5A4028)],
-                    ),
-                    borderRadius: BorderRadius.all(
-                      Radius.elliptical(halfX * 2.3, halfY * 2.6),
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFF3A2814),
-                      width: 4,
+    // 부딪힘·물기 직후 0.15초 동안 화면이 흔들린다.
+    var shake = 0.0;
+    if (!ended) {
+      for (final e in bout.events) {
+        final dt = (tick - e.tick) / widget.params.tickHz;
+        if (dt < 0 || dt > 0.15) continue;
+        if (e.kind == DuelEventKind.clash || e.kind == DuelEventKind.grip) {
+          shake = math.sin(playT * 90) * w * 0.012 * (1 - dt / 0.15);
+        }
+      }
+    }
+    return Transform.translate(
+      offset: Offset(shake, 0),
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          // 무대 — 위아래 끝을 배경색으로 흐려 네모 그림이 떠 보이지 않게 한다.
+          Positioned(
+            left: cx - imgW / 2,
+            top: cy - imgH * 0.47,
+            width: imgW,
+            height: imgH,
+            child: ShaderMask(
+              blendMode: BlendMode.dstIn,
+              shaderCallback: (rect) => const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x00000000),
+                  Color(0xFF000000),
+                  Color(0xFF000000),
+                  Color(0x00000000),
+                ],
+                stops: [0, 0.14, 0.84, 1],
+              ).createShader(rect),
+              child: gameImageChain(
+                ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
+                size: imgH,
+                fit: BoxFit.fill,
+                fallback: Center(
+                  child: Container(
+                    width: halfX * 2.3,
+                    height: halfY * 2.6,
+                    decoration: BoxDecoration(
+                      gradient: const RadialGradient(
+                        colors: [Color(0xFF9B7A48), Color(0xFF5A4028)],
+                      ),
+                      borderRadius: BorderRadius.all(
+                        Radius.elliptical(halfX * 2.3, halfY * 2.6),
+                      ),
+                      border: Border.all(
+                        color: const Color(0xFF3A2814),
+                        width: 4,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-        shadow(a, pa),
-        shadow(b, pb),
-        for (final (side, d, p, skin) in order) fighter(d, side, p, skin),
-        ...effects(),
-        // 체력.
-        Positioned(
-          left: 16,
-          right: 16,
-          top: 8,
-          child: Row(
-            children: [
-              Expanded(child: _hpBar(pa.hp, const Color(0xFF6FCF6F))),
-              const SizedBox(width: 16),
-              Expanded(child: _hpBar(pb.hp, const Color(0xFFC85454))),
-            ],
-          ),
-        ),
-        if (ended)
+          shadow(a, pa),
+          shadow(b, pb),
+          for (final (side, d, p, skin) in order) fighter(d, side, p, skin),
+          ...effects(),
+          // 체력.
           Positioned(
-            left: 0,
-            right: 0,
-            top: h * 0.14,
-            child: Column(
+            left: 16,
+            right: 16,
+            top: 8,
+            child: Row(
               children: [
-                Text(
-                  finishText,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFFFFD54F),
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                    shadows: [Shadow(color: Colors.black, blurRadius: 6)],
-                  ),
-                ),
-                if (_phase == _Phase.boutEnd || _phase == _Phase.done)
-                  Text(
-                    bout.aWon ? l.duelBoutWin : l.duelBoutLose,
-                    style: TextStyle(
-                      color: bout.aWon
-                          ? const Color(0xFF9CE37D)
-                          : const Color(0xFFEF9A9A),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                Expanded(child: _hpBar(pa.hp, const Color(0xFF6FCF6F))),
+                const SizedBox(width: 16),
+                Expanded(child: _hpBar(pb.hp, const Color(0xFFC85454))),
               ],
             ),
           ),
-      ],
+          if (ended)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: h * 0.14,
+              child: Column(
+                children: [
+                  Text(
+                    finishText,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFFFFD54F),
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      shadows: [Shadow(color: Colors.black, blurRadius: 6)],
+                    ),
+                  ),
+                  if (_phase == _Phase.boutEnd || _phase == _Phase.done)
+                    Text(
+                      bout.aWon ? l.duelBoutWin : l.duelBoutLose,
+                      style: TextStyle(
+                        color: bout.aWon
+                            ? const Color(0xFF9CE37D)
+                            : const Color(0xFFEF9A9A),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 

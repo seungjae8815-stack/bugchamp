@@ -24,6 +24,9 @@ class DuelBug {
     required this.atk,
     required this.def,
     required this.spd,
+    this.crit = 0,
+    this.recovery = 0,
+    this.evade = 0,
   });
 
   final String id;
@@ -39,6 +42,41 @@ class DuelBug {
   final double atk;
   final double def;
   final double spd;
+
+  /// 추가 크리티컬 확률(0~1) — 훈련소에서 올린다(설계 대기, 지금은 0).
+  final double crit;
+
+  /// 판 사이 추가 회복(최대 체력 비율) — 훈련소에서 올린다(설계 대기, 지금은 0).
+  final double recovery;
+
+  /// 회피 확률(0~1) — 부딪힘 피해를 통째로 피한다. 훈련소에서 올린다.
+  final double evade;
+
+  /// 훈련소 보너스를 입힌다(공격·방어 배율, 회피·치명·회복력 가산). 값은 호출자가
+  /// `TrainingConfig.bonuses` 로 계산한다 — core_battle 은 core_run 을 모른다.
+  DuelBug withTraining({
+    double atkMult = 1,
+    double defMult = 1,
+    double hpMult = 1,
+    double evade = 0,
+    double crit = 0,
+    double recovery = 0,
+  }) => DuelBug(
+    id: id,
+    name: name,
+    speciesId: speciesId,
+    element: element,
+    temperament: temperament,
+    specialty: specialty,
+    sizeMm: sizeMm,
+    maxHp: maxHp * hpMult,
+    atk: atk * atkMult,
+    def: def * defMult,
+    spd: spd,
+    crit: this.crit + crit,
+    recovery: this.recovery + recovery,
+    evade: this.evade + evade,
+  );
 
   /// 옛 엔진 유닛에 사이즈·주특기를 붙인다.
   factory DuelBug.fromBattleBug(
@@ -76,6 +114,9 @@ class DuelBug {
     atk: atk,
     def: def,
     spd: spd,
+    crit: crit,
+    recovery: recovery,
+    evade: evade,
   );
 
   /// 몸 반경.
@@ -106,6 +147,9 @@ class DuelBug {
     'atk': atk,
     'def': def,
     'spd': spd,
+    if (crit > 0) 'crit': crit,
+    if (recovery > 0) 'rec': recovery,
+    if (evade > 0) 'eva': evade,
   };
 
   factory DuelBug.fromJson(Map<String, dynamic> j) => DuelBug(
@@ -120,5 +164,8 @@ class DuelBug {
     atk: (j['atk'] as num).toDouble(),
     def: (j['def'] as num).toDouble(),
     spd: (j['spd'] as num).toDouble(),
+    crit: (j['crit'] as num?)?.toDouble() ?? 0,
+    recovery: (j['rec'] as num?)?.toDouble() ?? 0,
+    evade: (j['eva'] as num?)?.toDouble() ?? 0,
   );
 }

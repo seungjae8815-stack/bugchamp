@@ -106,7 +106,7 @@ void main() {
     // 화면은 0.25초가 넘는 틈을 건너뛴다(앱이 멈췄다 돌아온 경우) — 0.1초씩 흘린다.
     var throws = 0;
     for (var i = 0; i < 1500 && finished == null; i++) {
-      final throwBtn = find.text('던지기!');
+      final throwBtn = find.textContaining('던지기!');
       if (throwBtn.evaluate().isNotEmpty) {
         await tester.tap(throwBtn);
         throws++;
@@ -115,7 +115,7 @@ void main() {
       if (skip.evaluate().isNotEmpty) await tester.tap(skip);
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(throws, inInclusiveRange(2, 3));
+    expect(throws, inInclusiveRange(3, 5), reason: '승자 연속 — 3~5판');
     expect(finished, isNotNull);
     expect(finished!.done, isTrue);
   });

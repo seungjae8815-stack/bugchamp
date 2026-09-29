@@ -6,7 +6,6 @@ import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
@@ -19,15 +18,15 @@ import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
-import '../../ui/element_wheel.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
-import 'arena_widgets.dart';
 import '../../ui/skins.dart';
+import 'board_preview.dart';
 import 'duel_arena_screen.dart';
 import 'duel_driver.dart';
 import 'league_board_screen.dart';
+import 'training_screen.dart';
 import '../../ui/toast.dart';
 import '../../domain/server_sync.dart';
 
@@ -130,78 +129,92 @@ class _TicketBarState extends ConsumerState<TicketBar> {
     final adUsed = save.adUseCount(kAdFeaturePvpTicket, today);
     final empty = tickets <= 0;
 
+    // 한 줄로(2026-09-29) — 결투 탭은 출정 칸·순위표까지 한 화면에 들어가야 한다.
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
+        padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
         decoration: BoxDecoration(
-          color: const Color(0x22000000),
+          color: const Color(0x99000000),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: empty ? const Color(0x66C1502E) : const Color(0x33FFFFFF),
           ),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                const Text('⚔️', style: TextStyle(fontSize: 15)),
-                const SizedBox(width: 5),
-                Text(
-                  l.pvpTicketTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Text('⚔️', style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          l.pvpTicketTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        l.pvpTicketCount(tickets, cfg.ticketMax),
+                        style: TextStyle(
+                          color: empty
+                              ? const Color(0xFFE07A5F)
+                              : const Color(0xFFBFE3A6),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  l.pvpTicketCount(tickets, cfg.ticketMax),
-                  style: TextStyle(
-                    color: empty
-                        ? const Color(0xFFE07A5F)
-                        : const Color(0xFFBFE3A6),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
+                  Text(
+                    left == null
+                        ? l.pvpTicketFullLabel
+                        : l.pvpTicketNextIn(formatClock(left)),
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  left == null
-                      ? l.pvpTicketFullLabel
-                      : l.pvpTicketNextIn(formatClock(left)),
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 7),
-            Row(
-              children: [
-                Expanded(
-                  child: _chargeBtn(
-                    // 광고제거·패스는 광고를 건너뛰고 즉시 받는다(ad_gate).
-                    // 📺 는 광고 시절 잔재 — 문구는 이미 "무료 충전"이다.
-                    l.pvpTicketAdBtn(cfg.ticketAdGrant),
-                    l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
-                    const Color(0xFF3E7D4F),
-                    () => _watchAd(l),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _chargeBtn(
-                    l.pvpTicketJellyBtn(cfg.ticketRefillJelly),
-                    null,
-                    const Color(0xFF3F5E86),
-                    () => _refill(l),
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: 96,
+              height: 44,
+              child: _chargeBtn(
+                l.pvpTicketAdBtn(cfg.ticketAdGrant),
+                l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
+                const Color(0xFF3E7D4F),
+                () => _watchAd(l),
+              ),
+            ),
+            const SizedBox(width: 6),
+            SizedBox(
+              width: 96,
+              height: 44,
+              child: _chargeBtn(
+                cfg.ticketRefillAmount > 0
+                    ? l.pvpTicketJellyGive(cfg.ticketRefillAmount)
+                    : l.pvpTicketJellyBtn(cfg.ticketRefillJelly),
+                null,
+                const Color(0xFF3F5E86),
+                () => _refill(l),
+                jelly: cfg.ticketRefillAmount > 0
+                    ? cfg.ticketRefillJelly
+                    : null,
+              ),
             ),
           ],
         ),
@@ -215,8 +228,9 @@ class _TicketBarState extends ConsumerState<TicketBar> {
     String label,
     String? sub,
     Color color,
-    Future<void> Function() onTap,
-  ) => FilledButton(
+    Future<void> Function() onTap, {
+    int? jelly,
+  }) => FilledButton(
     onPressed: _busy ? null : () => onTap(),
     style: FilledButton.styleFrom(
       backgroundColor: color,
@@ -230,10 +244,31 @@ class _TicketBarState extends ConsumerState<TicketBar> {
         // 무슨 버튼인지 모른다(부화기 즉시부화와 같은 규칙, 2026-08-20).
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            maxLines: 1,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 젤리 가격은 아이콘으로(글자 '젤리'는 다른 재화와 눈으로 안 갈린다).
+              if (jelly != null) ...[
+                jellyIcon(size: 15),
+                const SizedBox(width: 2),
+                Text(
+                  '$jelly',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
         ),
         if (sub != null)
@@ -250,30 +285,6 @@ class _TicketBarState extends ConsumerState<TicketBar> {
   );
 }
 
-/// 스카우트된 상대 후보 1팀(난이도 티어 + 상대 3마리 + 전투 장소).
-/// [ownerName] 이 있으면 **실제 다른 유저**의 방어팀, null 이면 로컬 합성 상대.
-/// [location] = 상대 리드 곤충의 오행(그 오행 곤충이 강화되는 장소, §장소 상성).
-class _Scout {
-  _Scout({
-    required this.tier,
-    required this.team,
-    required this.location,
-    this.ownerName,
-    this.ownerId,
-  });
-  final ScoutTier tier;
-
-  /// 상대 3마리. [skin] 은 그 유저가 산 스킨의 효과 키(`gold`/`albino`).
-  /// 남의 스킨이 내 화면에도 보여야 "나도 사고 싶다"가 생긴다(2026-08-19).
-  final List<({BattleBug bug, String speciesId, String? skin})> team;
-  final Element location;
-  final String? ownerName;
-
-  /// 실제 유저 상대의 계정 id. 있으면 **서버가 전투를 확정**할 수 있다.
-  /// null 이면 로컬 합성 상대(야생) — 아직 로컬 계산이다(P3 에서 서버 이관).
-  final String? ownerId;
-}
-
 /// 곤충 결투(PvP). 성충 3마리 팀 vs 상대(실제 다른 유저 방어팀 또는 로컬 합성).
 /// 결정론적 simulate 사용. Supabase 연동 시 스카우트 보드가 실 유저 방어팀으로 채워진다.
 class BattleScreen extends ConsumerStatefulWidget {
@@ -288,48 +299,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   List<String?> _team = [null, null, null];
   bool _initialized = false;
 
-  List<_Scout> _scouts = [];
-
-  /// [_scouts] 의 이름을 구울 때 쓴 로케일. 설정에서 언어를 바꾸면 달라진다.
-  String? _scoutLocale;
-  int _selectedScout = 1; // 기본 '대등' 티어
-  bool _manual = true; // 전투 모드 토글(수동/자동), 기본 수동(심리전)
-  bool _scoutsFetched = false; // 실 유저 방어팀 fetch 를 이번 세션에 시도했는지
-
-  /// 전투가 끝났으니 보드를 다시 뽑아야 한다는 표시.
-  ///
-  /// 예전에는 보드가 **처음 한 번**과 새로고침 버튼으로만 갱신돼서, 한 상대를
-  /// 이기고 나와도 같은 상대가 그대로 있었다(2026-08-31 지적). 티켓을 쓰며
-  /// 같은 얼굴만 계속 때리는 화면이 된다.
-  ///
-  /// ⚠️ 새로고침 **하루 상한을 쓰지 않는다.** 상한은 "제일 약한 상대가 나올
-  /// 때까지 무한 리롤"을 막으려는 것인데, 전투 뒤 갱신은 티켓을 이미 한 장
-  /// 쓴 결과라 그 남용 경로가 아니다.
-  bool _rerollScouts = false;
-
-  /// 직전에 싸운 상대(실 유저)의 id. 유저가 적으면 `nearby_defenders` 가
-  /// 늘 같은 한두 명을 돌려줘서, 리롤을 해도 **같은 상대가 다시 온다**
-  /// (2026-09-01 지적). 방금 싸운 상대만 한 번 걸러 준다 —
-  /// ⚠️ 그것 말고 아무도 없으면 걸러내지 않는다(빈 보드보다 낫다).
-  String? _lastFoughtOwnerId;
-
-  /// 오늘 쓴 스카우트 새로고침 횟수. **버튼에 값을 보여주려고** 들고 있다 —
-  /// 누르기 전에는 무료인지 젤리인지 알 수 없으면, 유저는 눌러 보고 나서야
-  /// 비용을 안다(2026-08-31 실기 지적).
-  int _refreshUsed = 0;
-  bool _refreshLoaded = false;
-
-  Future<void> _loadRefreshUsed() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = dailyDateKey(ref.read(clockProvider).now().toUtc());
-    final parts = (prefs.getString('scout_refresh_v1') ?? '|').split('|');
-    final used = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
-    if (!mounted) return;
-    setState(() {
-      _refreshUsed = used;
-      _refreshLoaded = true;
-    });
-  }
+  // 기본 '대등' 티어
+  // 전투 모드 토글(수동/자동), 기본 수동(심리전)
+  // 실 유저 방어팀 fetch 를 이번 세션에 시도했는지
 
   String? _registeredSig; // 마지막으로 등록한 방어팀 시그니처(중복 업서트 방지)
 
@@ -382,148 +354,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
-  /// 로스터 파워 상위 3마리의 평균 스탯(스카우트 상대 스케일 기준). 성충 없으면 null.
-  ({double hp, double atk, double def, double spd})? _rosterAvg(
-    List<IndividualBug> adults,
-    GameData data,
-    String locale,
-  ) {
-    if (adults.isEmpty) return null;
-    final bb = adults.map((b) => _toBattleBug(b, data, locale)).toList()
-      ..sort((a, b) => _power(b).compareTo(_power(a)));
-    final top = bb.take(3).toList();
-    final n = top.length;
-    return (
-      hp: top.fold(0.0, (s, b) => s + b.maxHp) / n,
-      atk: top.fold(0.0, (s, b) => s + b.atk) / n,
-      def: top.fold(0.0, (s, b) => s + b.def) / n,
-      spd: top.fold(0.0, (s, b) => s + b.spd) / n,
-    );
-  }
-
-  /// 기준 평균 × [powerMult] 로 상대 3마리 생성. [salt] 로 id 충돌 방지.
-  List<({BattleBug bug, String speciesId, String? skin})> _genFoeTeam(
-    ({double hp, double atk, double def, double spd}) avg,
-    double powerMult,
-    GameData data,
-    String locale,
-    int salt,
-  ) {
-    final species = data.allSpecies;
-    return List.generate(3, (i) {
-      final sp = species[_rng.nextInt(species.length)];
-      final f = (0.9 + _rng.nextDouble() * 0.2) * powerMult;
-      return (
-        speciesId: sp.id,
-        skin: null,
-        bug: BattleBug(
-          id: 'opp${salt}_$i',
-          name: sp.name.resolve(locale),
-          element: Element.values[_rng.nextInt(Element.values.length)],
-          temperament:
-              Temperament.values[_rng.nextInt(Temperament.values.length)],
-          preferredStance: preferredStanceOf(sp.specialty),
-          maxHp: avg.hp * f,
-          atk: avg.atk * f,
-          def: avg.def * f,
-          spd: avg.spd * f,
-        ),
-      );
-    });
-  }
-
-  /// 팀·티어 → 스카우트(장소 = 리드 곤충 오행).
-  _Scout _scoutOf(
-    ScoutTier tier,
-    List<({BattleBug bug, String speciesId, String? skin})> team, {
-    String? owner,
-    String? ownerId,
-  }) => _Scout(
-    tier: tier,
-    team: team,
-    location: team.first.bug.element,
-    ownerName: owner,
-    ownerId: ownerId,
-  );
-
-  /// 스카우트 보드 갱신(난이도 티어별 상대 1팀씩).
-  void _rollScouts(
-    GameData data,
-    String locale,
-    ({double hp, double atk, double def, double spd}) avg,
-  ) {
-    final cfg = data.battleConfig ?? const BattleConfig();
-    _scouts = [
-      for (var i = 0; i < cfg.scoutTiers.length; i++)
-        _scoutOf(
-          cfg.scoutTiers[i],
-          _genFoeTeam(avg, cfg.scoutTiers[i].powerMult, data, locale, i),
-        ),
-    ];
-    _scoutLocale = locale;
-    if (_selectedScout >= _scouts.length) _selectedScout = _scouts.length ~/ 2;
-  }
-
-  /// 상대 팀의 **표시 이름만** 현재 언어로 다시 굽는다.
-  void _relabelScouts(GameData data, String locale) {
-    _scoutLocale = locale;
-    for (final sc in _scouts) {
-      for (var i = 0; i < sc.team.length; i++) {
-        final sp = _speciesOrNull(data, sc.team[i].speciesId);
-        if (sp == null) continue;
-        sc.team[i] = (
-          bug: sc.team[i].bug.copyWith(name: sp.name.resolve(locale)),
-          speciesId: sc.team[i].speciesId,
-          skin: sc.team[i].skin,
-        );
-      }
-    }
-  }
-
-  Species? _speciesOrNull(GameData data, String id) {
-    try {
-      return data.species(id);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  double _teamPower(Iterable<BattleBug> team) {
-    if (team.isEmpty) return 0;
-    return team.map(_power).reduce((a, b) => a + b) / team.length;
-  }
-
-  /// 방어팀 스냅샷([dt]) → 전투용 팀. 종을 못 찾으면(데이터 변경) null 로 스킵.
-  List<({BattleBug bug, String speciesId, String? skin})>? _defenderTeam(
-    DefenderTeam dt,
-    GameData data,
-    String locale,
-    int salt,
-  ) {
-    final out = <({BattleBug bug, String speciesId, String? skin})>[];
-    for (var i = 0; i < dt.bugs.length; i++) {
-      final d = dt.bugs[i];
-      final sp = _speciesOrNull(data, d.speciesId);
-      if (sp == null) return null;
-      out.add((
-        speciesId: d.speciesId,
-        skin: d.skin,
-        bug: BattleBug(
-          id: 'def${salt}_$i',
-          name: sp.name.resolve(locale),
-          element: d.element,
-          temperament: d.temperament,
-          preferredStance: preferredStanceOf(sp.specialty),
-          maxHp: d.maxHp,
-          atk: d.atk,
-          def: d.def,
-          spd: d.spd,
-        ),
-      ));
-    }
-    return out.isEmpty ? null : out;
-  }
-
   /// 내 편성([_team]) → 방어팀 스냅샷(서버 등록용).
   DefenderBug _defenderBugOf(
     IndividualBug bug,
@@ -568,111 +398,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ref.read(pvpBackendProvider).registerDefender(me: _me(save), team: team);
   }
 
-  /// [ratio] 에 powerMult 가 가장 가까운 **빈** 티어 슬롯 index. 없으면 -1.
-  int _closestFreeTier(
-    double ratio,
-    List<_Scout?> slots,
-    List<ScoutTier> tiers,
-  ) {
-    var best = -1;
-    var bestD = double.infinity;
-    for (var i = 0; i < tiers.length; i++) {
-      if (slots[i] != null) continue;
-      final d = (tiers[i].powerMult - ratio).abs();
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-    return best;
-  }
-
-  /// 실 유저 방어팀을 fetch 해 스카우트 보드에 병합.
-  /// 각 방어팀을 내 로스터 대비 파워 비율로 난이도 티어에 배치하고,
-  /// 남는 티어는 로컬 합성 상대로 채운다(실데이터가 없으면 전부 합성 유지).
-  Future<void> _fetchRealScouts(
-    GameData data,
-    String locale,
-    ({double hp, double atk, double def, double spd}) avg,
-    SaveGame save,
-  ) async {
-    final backend = ref.read(pvpBackendProvider);
-    final cfg = data.battleConfig ?? const BattleConfig();
-    final tiers = cfg.scoutTiers;
-    final reals = await backend.fetchOpponents(
-      me: _me(save),
-      count: tiers.length,
-    );
-    if (!mounted || reals.isEmpty) return;
-    // 방금 싸운 상대를 뺀다. 뺐더니 아무도 안 남으면 그대로 쓴다.
-    final fresh = [
-      for (final r in reals)
-        if (r.ownerId != _lastFoughtOwnerId) r,
-    ];
-    final pool = fresh.isEmpty ? reals : fresh;
-
-    final myPower = avg.atk + avg.def + avg.spd + avg.hp * 0.15;
-    // 실 방어팀 → (전투팀, 파워비율). 종을 못 찾으면 스킵.
-    final built =
-        <
-          ({
-            List<({BattleBug bug, String speciesId, String? skin})> team,
-            double ratio,
-            String owner,
-            String ownerId,
-          })
-        >[];
-    for (var r = 0; r < pool.length; r++) {
-      final team = _defenderTeam(pool[r], data, locale, r);
-      if (team == null) continue;
-      final ratio =
-          _teamPower(team.map((e) => e.bug)) / (myPower <= 0 ? 1 : myPower);
-      built.add((
-        team: team,
-        ratio: ratio,
-        owner: pool[r].ownerName,
-        ownerId: pool[r].ownerId,
-      ));
-    }
-    if (built.isEmpty) return;
-
-    // 파워 낮은 순으로 가장 가까운 빈 티어에 배치(약→easy, 강→hard 경향).
-    built.sort((a, b) => a.ratio.compareTo(b.ratio));
-    final slots = List<_Scout?>.filled(tiers.length, null);
-    for (final b in built) {
-      final idx = _closestFreeTier(b.ratio, slots, tiers);
-      if (idx < 0) break;
-      slots[idx] = _scoutOf(
-        tiers[idx],
-        b.team,
-        owner: b.owner,
-        ownerId: b.ownerId,
-      );
-    }
-    // 빈 티어는 로컬 합성 상대로 채움.
-    for (var i = 0; i < tiers.length; i++) {
-      slots[i] ??= _scoutOf(
-        tiers[i],
-        _genFoeTeam(avg, tiers[i].powerMult, data, locale, 100 + i),
-      );
-    }
-    setState(() {
-      _scouts = [for (final s in slots) s!];
-      _scoutLocale = locale;
-      if (_selectedScout >= _scouts.length) {
-        _selectedScout = _scouts.length ~/ 2;
-      }
-    });
-  }
-
-  /// 티어 id → 현지화 라벨/색.
-  (String, Color) _tierStyle(AppLocalizations l, String id) => switch (id) {
-    'easy' => (l.scoutEasy, const Color(0xFF6FCF6F)),
-    'even' => (l.scoutEven, const Color(0xFFE9D9A6)),
-    'hard' => (l.scoutHard, const Color(0xFFEF6B4A)),
-    _ => (id, const Color(0xFFBFC4CC)),
-  };
-
   /// 리그 id → 현지화 라벨·색.
   ///
   /// 엠블럼은 여기서 주지 않는다 — 그리는 곳은 전부 `leagueIcon()`(그림)이고,
@@ -686,368 +411,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     'diamond' => (l.leagueDiamond, const Color(0xFF6FA8FF)),
     _ => (id, const Color(0xFFBFC4CC)),
   };
-
-  /// 시즌 종료까지 남은 시간 표기(일 포함). "13d 04:22" / "04:22".
-  String _seasonLeft(Duration d) {
-    if (d.isNegative) d = Duration.zero;
-    final days = d.inDays;
-    final h = d.inHours % 24;
-    final m = d.inMinutes % 60;
-    final hm =
-        '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-    return days > 0 ? '${days}d $hm' : hm;
-  }
-
-  /// 리그 패널 — 현재 등급 엠블럼·트로피·다음 티어 진행바·시즌 카운트다운·승급 보상 수령.
-  Widget _leaguePanel(
-    AppLocalizations l,
-    BattleConfig cfg,
-    SaveGame save,
-    DateTime now,
-  ) {
-    final trophies = save.pvpTrophies;
-    // 리그 = 서버가 주간 결산으로 정하는 소속(2026-09-29). 트로피는 이번 주 순위 점수다.
-    final cur = pvpLeagueNow(save, cfg);
-    final claimable = cfg.claimableUpTo(
-      pvpLeagueOf(save, cfg),
-      save.claimedLeagues,
-    );
-    final (label, color) = _leagueStyle(l, cur.id);
-    // 시즌 종료 = 다음 리셋(요일·시각 앵커). 모든 유저가 같은 순간에 끝난다.
-    final seasonRemaining = seasonEndAt(now, cfg).difference(now);
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      decoration: BoxDecoration(
-        color: const Color(0x22000000),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.55)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              leagueIcon(cur.id, size: 26),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '$trophies',
-                style: const TextStyle(
-                  color: _honey,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // 리그는 트로피 문턱이 아니라 **주간 결산**으로 오르내린다 — 규칙과 순위표를 바로 보인다.
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l.leagueZoneHint,
-                  style: const TextStyle(
-                    color: Color(0xCCFFFFFF),
-                    fontSize: 11.5,
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _openBoard,
-                icon: const Icon(Icons.leaderboard_rounded, size: 16),
-                label: Text(l.boardOpen),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Row(
-            children: [
-              const Icon(
-                Icons.hourglass_bottom_rounded,
-                size: 12,
-                color: Color(0x99FFFFFF),
-              ),
-              const SizedBox(width: 3),
-              Flexible(
-                child: Text(
-                  l.seasonEndsIn(_seasonLeft(seasonRemaining)),
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // **보상이 무엇인지 화면에 없었다**(실기 지적). 승급 보상은 리그마다
-          // 다르고 계정당 1회뿐이라(§2.6), 목록으로 보여야 목표가 생긴다.
-          _leagueRewardList(l, cfg, save, trophies),
-          if (claimable.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              height: 40,
-              child: FilledButton.icon(
-                onPressed: () => _claimLeague(l),
-                icon: const Icon(Icons.military_tech_rounded, size: 18),
-                label: Text(
-                  l.leagueClaimReward,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF3E7D4F),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// 리그별 승급 보상 목록 — 받은 것/받을 수 있는 것/아직 먼 것을 한눈에.
-  ///
-  /// 승급 보상은 **계정당 1회**다(§2.6 — `claimedLeagues` 는 시즌 리셋에서
-  /// 초기화되지 않는다). 그래서 "이번 시즌에 또 받는 것"으로 오해하지 않게
-  /// 받은 리그는 확실히 지워 표시한다.
-  Widget _leagueRewardList(
-    AppLocalizations l,
-    BattleConfig cfg,
-    SaveGame save,
-    int trophies,
-  ) {
-    final rows = <Widget>[];
-    final here = pvpLeagueNow(save, cfg);
-    // **위에서 아래로 다이아 → 실버.** 목표가 위에 있어야 "저기까지 가자"가 된다
-    // (실기 지적). 오름차순이면 이미 지난 리그부터 읽게 된다.
-    for (final lg in cfg.leagues.reversed) {
-      if (!lg.hasReward) continue; // 브론즈는 시작 리그라 보상이 없다
-      final claimed = save.claimedLeagues.contains(lg.id);
-      final reached = trophies >= lg.minTrophy;
-      final canClaim = reached && !claimed;
-      final isHere = lg.id == here.id;
-      final (name, color) = _leagueStyle(l, lg.id);
-      rows.add(
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 1),
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-          decoration: isHere
-              // 지금 내 리그 — 목록에서 **내 위치**가 보여야 남은 거리가 읽힌다.
-              ? BoxDecoration(
-                  color: color.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(7),
-                  border: Border.all(color: color.withValues(alpha: 0.6)),
-                )
-              : null,
-          child: Opacity(
-            opacity: reached ? 1 : 0.5,
-            // ⚠️ 예전엔 한 Row 에 아이콘·이름·트로피·골드·젤리·상태를 전부
-            // 넣어서 좁은 화면에서 **넘쳤다**(실기 지적). 이름/트로피는 왼쪽에서
-            // 줄어들 수 있게 Expanded 로 감싸고, 보상은 Wrap 으로 흘린다.
-            child: Row(
-              children: [
-                leagueIcon(lg.id, size: 17),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        l.leagueNeedTrophy(lg.minTrophy),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0x99FFFFFF),
-                          fontSize: 9.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                goldIcon(size: 12),
-                const SizedBox(width: 2),
-                Text(
-                  formatCompact(lg.rewardGold),
-                  style: const TextStyle(
-                    color: Color(0xFFEBD24A),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (lg.rewardJelly > 0) ...[
-                  const SizedBox(width: 6),
-                  materialImage(
-                    MaterialKind.jelly,
-                    size: 12,
-                    fallback: const SizedBox(width: 12),
-                  ),
-                  const SizedBox(width: 2),
-                  Text(
-                    '${lg.rewardJelly}',
-                    style: const TextStyle(
-                      color: Color(0xFF9BE7FF),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-                const SizedBox(width: 4),
-                claimed
-                    ? const Icon(
-                        Icons.check_circle_rounded,
-                        size: 13,
-                        color: Color(0xFF7CE38B),
-                      )
-                    : (canClaim
-                          ? const Icon(
-                              Icons.card_giftcard_rounded,
-                              size: 13,
-                              color: Color(0xFFEBC24A),
-                            )
-                          : const Icon(
-                              Icons.lock_rounded,
-                              size: 11,
-                              color: Color(0x66FFFFFF),
-                            )),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-    // 보상은 **두 종류**다. 화면에 하나(최초 달성)만 있어서 "브론즈면 아무것도
-    // 못 받나?"로 읽혔다(실기 지적) — 실은 시즌 종료 보상이 매주 나온다.
-    final season = cfg.seasonRewardAt(pvpLeagueOf(save, cfg));
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0x18000000),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0x22FFFFFF)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ① 매주 나오는 것 — 지금 내 등급 기준이라 "지금 끝나면 얼마"가 보인다.
-          Row(
-            children: [
-              const Icon(
-                Icons.event_repeat_rounded,
-                size: 14,
-                color: Color(0xFF7CE38B),
-              ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  l.seasonRewardNow(_leagueStyle(l, here.id).$1),
-                  style: const TextStyle(
-                    color: Color(0xFF7CE38B),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              goldIcon(size: 13),
-              const SizedBox(width: 2),
-              Text(
-                formatCompact(season.gold),
-                style: const TextStyle(
-                  color: Color(0xFFEBD24A),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              if (season.jelly > 0) ...[
-                const SizedBox(width: 6),
-                materialImage(
-                  MaterialKind.jelly,
-                  size: 13,
-                  fallback: const SizedBox(width: 13),
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  '${season.jelly}',
-                  style: const TextStyle(
-                    color: Color(0xFF9BE7FF),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(
-            l.seasonRewardHint,
-            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10),
-          ),
-          // 젤리는 등급이 아니라 **순위**로만 나간다(2026-09-28) — 표를 그대로 보여 준다.
-          if (cfg.seasonRankRewards.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                materialImage(
-                  MaterialKind.jelly,
-                  size: 13,
-                  fallback: const SizedBox(width: 13),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    l.pvpRankRewardHint(_rankRewardList(l, cfg)),
-                    style: const TextStyle(
-                      color: Color(0xFF9BE7FF),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const Divider(color: Color(0x22FFFFFF), height: 14),
-          // ② 처음 그 리그에 닿았을 때 한 번 — 목표판이다.
-          Text(
-            l.leagueRewardListTitle,
-            style: const TextStyle(
-              color: Color(0xCCFFFFFF),
-              fontSize: 11.5,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          ...rows,
-        ],
-      ),
-    );
-  }
 
   Future<void> _claimLeague(AppLocalizations l) async {
     final r = await ref
@@ -1168,38 +531,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final adultIds = adults.map((b) => b.id).toSet();
     _team = [
       for (final id in _team)
-        (id != null && adultIds.contains(id) && !save.isInjured(id, now))
-            ? id
-            : null,
+        // 다친 곤충은 **빼지 않는다** — 칸에서 사라지면 왜 없어졌는지 모른다(2026-09-29 실기 지적).
+        // 칸에 "회복 중"으로 남기고, 전투 시작 때 막는다.
+        (id != null && adultIds.contains(id)) ? id : null,
     ];
 
-    final teamCount = _team.whereType<String>().length;
-
-    // 스카우트 보드: 로스터가 있으면 합성 상대로 즉시 채우고(빈 보드 방지),
-    // 실 유저 방어팀은 비동기로 fetch 해 병합(있으면 교체).
     final battleCfg = data.battleConfig ?? const BattleConfig();
-    final avg = _rosterAvg(adults, data, locale);
-    if (avg != null && _scouts.isEmpty) _rollScouts(data, locale, avg);
-    // 전투를 마치고 돌아왔다 → 상대를 새로 뽑는다(같은 상대 반복 방지).
-    if (_rerollScouts && avg != null) {
-      _rerollScouts = false;
-      _rollScouts(data, locale, avg);
-      _fetchRealScouts(data, locale, avg, save);
-    }
-    // 설정에서 언어를 바꾸면 이미 구워 둔 상대 이름이 예전 언어로 남는다
-    // (이름은 팀을 만들 때 한 번 해석해 넣는다 — 전투 로그가 그 값을 쓴다).
-    // ⚠️ **다시 뽑지 않는다.** 재추첨하면 언어를 바꿨다는 이유로 상대가
-    // 바뀌어, 고르던 판이 사라진다. 스탯·시드는 그대로 두고 이름만 갈아끼운다.
-    if (_scouts.isNotEmpty && _scoutLocale != locale) {
-      _relabelScouts(data, locale);
-    }
-    if (avg != null && !_scoutsFetched) {
-      _scoutsFetched = true;
-      _fetchRealScouts(data, locale, avg, save);
-    }
     // 현재 편성을 내 방어팀으로 등록(다른 유저가 나를 상대하게).
     _maybeRegisterDefender(data, save, locale);
-    final canBattle = teamCount > 0 && _scouts.isNotEmpty;
 
     // 시즌 종료 정산(로드 시 계산됨) → 1회 다이얼로그.
     final notifier = ref.read(saveControllerProvider.notifier);
@@ -1211,498 +550,1276 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.battleTitle),
-        actions: [
-          // 이모지는 기기 폰트마다 모양이 달라 앱바처럼 작은 자리에서 안 읽힌다.
-          Center(
-            child: Row(
-              children: [
-                stanceArt(Stance.attack, size: 15),
-                const SizedBox(width: 4),
-                Text(
-                  '${ref.read(saveControllerProvider.notifier).ticketsNow}'
-                  '/${battleCfg.ticketMax}',
-                  style: const TextStyle(
-                    color: Color(0xFFBFE3A6),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Center(
-              child: Row(
-                children: [
-                  leagueIcon(pvpLeagueNow(save, battleCfg).id, size: 17),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${save.pvpTrophies}',
-                    style: const TextStyle(
-                      color: _honey,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 15,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: adults.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(
-                  l.battleNeedBugs,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xB3FFFFFF)),
-                ),
-              ),
-            )
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  // **무대가 먼저 온다.** 예전엔 리그·티켓·설정 카드가 줄줄이
-                  // 먼저 나오고 상대는 한참 아래에 있어서, 결투 탭이 전투가
-                  // 아니라 설정 화면처럼 읽혔다(실기: "끌리는 게 없다").
-                  _matchupBanner(l, data, battleCfg, save, locale),
-                  const SizedBox(height: 10),
-                  _leagueStrip(l, battleCfg, save, now),
-                  const SizedBox(height: 8),
-                  const TicketBar(),
-                  const SizedBox(height: 12),
-                  _matchupCard(l, data, battleCfg, save, locale),
-                  const SizedBox(height: 14),
-                  // ── 상대 고르기(스카우트) ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.travel_explore_rounded,
-                          color: _honey,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          l.opponentPick,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const Spacer(),
-                        // 무료가 남았는지 · 젤리가 얼마인지를 **누르기 전에**
-                        // 보여준다. 예전엔 라벨이 '새로고침' 하나뿐이라
-                        // 눌러 보고 나서야 비용을 알았다.
-                        Builder(
-                          builder: (_) {
-                            if (!_refreshLoaded) {
-                              // 첫 프레임에 한 번만 읽는다(SharedPreferences).
-                              WidgetsBinding.instance.addPostFrameCallback(
-                                (_) => _loadRefreshUsed(),
-                              );
-                            }
-                            final free =
-                                _refreshUsed < battleCfg.scoutFreeRefreshDaily;
-                            final over =
-                                _refreshUsed >= battleCfg.scoutRefreshDailyMax;
-                            return TextButton.icon(
-                              onPressed: (avg == null || over)
-                                  ? null
-                                  : () async {
-                                      // 광고가 없어진 대신 **하루 상한**을 건다.
-                                      // 공짜 무제한이면 제일 약한 상대가 나올
-                                      // 때까지 무한 리롤하게 된다.
-                                      if (!await _takeFreeRefresh(l)) return;
-                                      if (!mounted) return;
-                                      setState(
-                                        () => _rollScouts(data, locale, avg),
-                                      );
-                                      _fetchRealScouts(data, locale, avg, save);
-                                    },
-                              icon: Icon(
-                                over
-                                    ? Icons.block_rounded
-                                    : Icons.refresh_rounded,
-                                size: 16,
-                              ),
-                              // 젤리는 **아이콘으로** 보여준다 — 글자 '젤리'는
-                              // 다른 재화와 눈으로 안 갈린다(§ 재화 표기 통일).
-                              label: over
-                                  ? Text(l.scoutRefreshDone)
-                                  : free
-                                  ? Text(l.scoutRefreshFree)
-                                  : Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(l.scoutRefresh),
-                                        const SizedBox(width: 4),
-                                        jellyIcon(size: 14),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          '${battleCfg.scoutRefreshJelly}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                              style: TextButton.styleFrom(
-                                // 무료는 초록(공짜라는 신호), 젤리는 젤리색.
-                                foregroundColor: free
-                                    ? const Color(0xFF8FE08F)
-                                    : const Color(0xFF9BE7FF),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      // 스크롤(높이 무한) 안이라 stretch 금지 — 대신 카드 내용이
-                      // 항상 같은 줄 수(닉네임/'야생' 한 줄)라 높이가 맞는다.
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var i = 0; i < _scouts.length; i++)
-                          Expanded(
-                            child: _scoutCard(l, data, battleCfg, save, i),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  _modeToggle(l),
-                  // 결투 버튼은 하단 고정이라 여기선 자리만 비운다.
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-      // 결투 버튼은 **항상 보인다.** 스크롤 끝에 있으면 상대를 고른 뒤 또
-      // 내려야 해서, 정작 이 화면에서 제일 중요한 행동이 화면 밖에 있었다.
-      bottomNavigationBar: adults.isEmpty
-          ? null
-          : _battleBar(l, data, save, locale, canBattle),
-    );
-  }
+    final closed = seasonClosed(now, battleCfg);
+    final claimable = battleCfg
+        .claimableUpTo(pvpLeagueOf(save, battleCfg), save.claimedLeagues)
+        .isNotEmpty;
+    final injured = _injuredBugs(save, now).length;
 
-  /// 매치업 무대 — 내 팀과 상대 팀이 **실제로 마주 선 그림**.
-  ///
-  /// 예전엔 팀 편성도 상대도 회색 카드 안의 목록이라, 누구와 싸우는지가
-  /// 정보로만 있고 장면으로는 없었다.
-  Widget _matchupBanner(
-    AppLocalizations l,
-    GameData data,
-    BattleConfig cfg,
-    SaveGame save,
-    String locale,
-  ) {
-    final scout = (_scouts.isNotEmpty && _selectedScout < _scouts.length)
-        ? _scouts[_selectedScout]
-        : null;
-    final mine = [
-      for (final id in _team.whereType<String>())
-        save.bugs.cast<IndividualBug?>().firstWhere(
-          (b) => b!.id == id,
-          orElse: () => null,
+    return Scaffold(
+      backgroundColor: const Color(0xFF1C1A12),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2A2417),
+        titleSpacing: 12,
+        // 제목 옆에 지금 리그 · 남은 시간(누르면 리그 보상) — 2026-09-29 사장님 요청.
+        title: Row(
+          children: [
+            Text(l.battleTitle),
+            const SizedBox(width: 8),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: _LeagueClock(
+                  league: pvpLeagueNow(save, battleCfg).id,
+                  cfg: battleCfg,
+                  onTap: () => _showLeagueRewards(l, data, save, battleCfg),
+                ),
+              ),
+            ),
+          ],
         ),
-    ].whereType<IndividualBug>().toList();
-    return Container(
-      height: 168,
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _honey.withValues(alpha: 0.45)),
       ),
-      child: Stack(
+      // 결투장 로비 그림 — 장면은 위쪽 1/3(출정 칸 뒤), 아래는 어두워 순위표 글씨가 읽힌다.
+      body: Stack(
         children: [
           Positioned.fill(
-            child: scout == null
-                ? const ColoredBox(color: Color(0xFF1E3B28))
-                : biomeBackground(
-                    scout.location,
-                    fallback: const ColoredBox(color: Color(0xFF1E3B28)),
-                  ),
+            child: gameImageChain(
+              ['assets/images/duel/battle_hub_bg.webp'],
+              size: 720,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              fallback: const SizedBox.shrink(),
+            ),
           ),
-          // 그림 위에 글자가 얹히므로 어둡게 깔아 준다.
-          const Positioned.fill(child: ColoredBox(color: Color(0x66000000))),
-          // 두 팀을 **같은 선 위에 같은 크기로** 세운다(아레나와 같은 규칙).
-          // 원근을 주면 크기가 전력 차이로 오해된다.
-          Positioned(
-            left: 10,
-            right: 10,
-            bottom: 10,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (final b in mine.take(3))
-                  Padding(
-                    padding: const EdgeInsets.only(right: 2),
-                    child: bugStageImage(
-                      b.speciesId,
-                      LifeStage.adult,
-                      size: 46,
-                      fallback: const SizedBox(width: 46, height: 46),
-                      skin: bugView(ref.read(skinOfProvider), b),
+          Column(
+            children: [
+              const TicketBar(),
+              // ── 출정 곤충 3칸(순서 = 1·2·3판) ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 2, 6, 0),
+                child: Row(
+                  children: [
+                    Text(
+                      l.duelSquadTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                      ),
                     ),
-                  ),
-                const Spacer(),
-                if (scout != null)
-                  for (final e in scout.team.take(3))
-                    Padding(
-                      padding: const EdgeInsets.only(left: 2),
-                      // 좌우 반전해 서로 마주 본다.
-                      child: Transform.flip(
-                        flipX: true,
-                        child: bugStageImage(
-                          e.speciesId,
-                          LifeStage.adult,
-                          size: 46,
-                          fallback: const SizedBox(width: 46, height: 46),
-                          // **상대가 산** 스킨이다(내 것이 아니다).
-                          skin: _viewOf(e.skin, e.speciesId),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: adults.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        child: Text(
+                          l.battleNeedBugs,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Color(0xB3FFFFFF)),
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          for (var i = 0; i < 3; i++)
+                            Expanded(child: _teamSlot(data, save, locale, i)),
+                        ],
+                      ),
+              ),
+              // ── 전투 시작(출정 칸 아래 · 길게) ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: _startButton(l, data, save, locale, closed, adults),
+              ),
+              // ── 회복실 · 훈련소 ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _facilityButton(
+                        art: 'hub_recovery',
+                        icon: Icons.healing_rounded,
+                        color: const Color(0xFF5FD38D),
+                        label: l.recoveryRoom,
+                        badge: injured,
+                        onTap: () => _openRecovery(data),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _facilityButton(
+                        art: 'hub_training',
+                        icon: Icons.fitness_center_rounded,
+                        color: const Color(0xFFFFA24A),
+                        label: l.trainingCenter,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const TrainingScreen(),
+                          ),
                         ),
                       ),
                     ),
-              ],
-            ),
-          ),
-          // 내 전투력(왼쪽 위) / 상대(오른쪽 아래) — 비교가 이 화면의 핵심이다.
-          Positioned(
-            left: 10,
-            top: 8,
-            child: _powerTag(
-              l.sideMineTeam,
-              formatCompact(_myTeamPowerSum(data, save, locale)),
-              const Color(0xFF7CE38B),
-            ),
-          ),
-          if (scout != null)
-            Positioned(
-              right: 10,
-              top: 8,
-              child: Row(
-                children: [
-                  if (scout.ownerName != null) ...[
-                    Text(
-                      _maskName(scout.ownerName!),
-                      style: const TextStyle(
-                        color: Color(0xCCE9D9A6),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
                   ],
-                  _powerTag(
-                    l.sideFoeTeam,
-                    formatCompact(
-                      scout.team.fold<double>(0, (a, e) => a + _power(e.bug)),
-                    ),
-                    const Color(0xFFFF8A6B),
-                  ),
-                ],
+                ),
               ),
-            ),
-          Center(
-            child: Text(
-              'VS',
-              style: const TextStyle(
-                color: arenaHoney,
-                fontSize: 30,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-                shadows: [
-                  Shadow(color: Colors.black, blurRadius: 8),
-                  Shadow(color: Color(0x99EBA52F), blurRadius: 18),
-                ],
+              // ── 리그 순위표(내 줄·전투 시작 버튼은 하단 고정) ──
+              Expanded(
+                child: LeagueBoardView(
+                  key: _boardKey,
+                  headerHeight: 42,
+                  rewardExtra: claimable
+                      ? SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _claimLeague(l);
+                            },
+                            icon: const Icon(Icons.card_giftcard_rounded),
+                            label: Text(l.leagueClaimPromo),
+                          ),
+                        )
+                      : null,
+                  showHeader: false,
+                  myTeam: _myDuelTeam(data, save, locale),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  /// 전투력 태그 — **누구 것인지**를 먼저 쓰고 숫자를 뒤에 둔다.
-  /// 숫자만 있으면 둘 중 어느 쪽이 내 것인지 위치로 추측해야 했다(실기 지적).
-  Widget _powerTag(String who, String power, Color c) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-    decoration: BoxDecoration(
-      color: const Color(0xB30E1408),
-      borderRadius: BorderRadius.circular(7),
-      border: Border.all(color: c.withValues(alpha: 0.7)),
-    ),
-    child: Row(
+  final _boardKey = GlobalKey<LeagueBoardViewState>();
+
+  /// 리그 보상 — 지금 리그의 주간 순위 보상(젤리) · 시즌 종료 보상(골드) · 리그별 표 · 승급 보상 받기.
+  Future<void> _showLeagueRewards(
+    AppLocalizations l,
+    GameData data,
+    SaveGame save,
+    BattleConfig cfg,
+  ) {
+    final cur = pvpLeagueOf(save, cfg);
+    final curId = cfg.leagueAt(cur).id;
+    final claimable = cfg.claimableUpTo(cur, save.claimedLeagues).isNotEmpty;
+    const head = TextStyle(
+      color: _honey,
+      fontSize: 12.5,
+      fontWeight: FontWeight.w900,
+    );
+    const cell = TextStyle(
+      color: Colors.white,
+      fontSize: 12,
+      fontWeight: FontWeight.w800,
+    );
+    Widget jelly(int n) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        jellyIcon(size: 13),
+        const SizedBox(width: 2),
         Text(
-          who,
+          '$n',
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          power,
-          style: TextStyle(
-            color: c,
-            fontSize: 11.5,
+            color: Color(0xFF9BE7FF),
+            fontSize: 12,
             fontWeight: FontWeight.w900,
           ),
         ),
       ],
-    ),
-  );
-
-  /// 오토/수동 전환만 남긴 줄(버튼은 하단 고정으로 갔다).
-  Widget _modeToggle(AppLocalizations l) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 24),
-    child: Container(
-      padding: const EdgeInsets.all(3),
+    );
+    // 내 위치(순위표가 받아 둔 값) — 몇 위 · 승강 구간 · 이대로 끝나면 받는 보상.
+    final board = _boardKey.currentState?.data;
+    final me = board?['me'] is Map ? board!['me'] as Map : null;
+    final myRank = (me?['rank'] as num?)?.toInt();
+    final myScore = (me?['trophies'] as num?)?.toInt() ?? 0;
+    final total = (board?['total'] as num?)?.toInt() ?? 0;
+    final promote = (board?['promote'] as num?)?.toInt() ?? 0;
+    final demote = (board?['demote'] as num?)?.toInt() ?? 0;
+    // 지금 리그의 순위 구간 표.
+    final table = cfg.leagueRankRewards[curId] ?? cfg.seasonRankRewards;
+    var myJelly = 0;
+    if (myRank != null && myScore > 0) {
+      for (final r in table) {
+        if (myRank <= r.maxRank) {
+          myJelly = r.jelly;
+          break;
+        }
+      }
+    }
+    final rankRows = <Widget>[];
+    var from = 1;
+    for (final r in table) {
+      if (r.maxRank < from) continue;
+      final hit = myRank != null && myRank >= from && myRank <= r.maxRank;
+      rankRows.add(
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: hit ? const Color(0x331FA2F5) : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  r.maxRank == from
+                      ? l.pvpRankN(from)
+                      : l.eventRankRange(from, r.maxRank),
+                  style: cell,
+                ),
+              ),
+              jelly(r.jelly),
+            ],
+          ),
+        ),
+      );
+      from = r.maxRank + 1;
+    }
+    final seasonGold = cfg.seasonRewardAt(cur).gold;
+    // 다음 주 리그(승급권·유지·강등권) — 서버 결산과 같은 함수.
+    final nextIdx = myRank == null
+        ? cur
+        : cfg.leagueAfterSeason(
+            cur,
+            rank: myRank,
+            total: total,
+            trophies: myScore,
+          );
+    final zone = nextIdx > cur
+        ? l.leagueMyPromote(leagueName(l, cfg.leagueAt(nextIdx).id))
+        : nextIdx < cur
+        ? l.leagueMyDemote(leagueName(l, cfg.leagueAt(nextIdx).id))
+        : l.leagueMyStay;
+    final zoneColor = nextIdx > cur
+        ? const Color(0xFF6FCF6F)
+        : nextIdx < cur
+        ? const Color(0xFFEF6B6B)
+        : const Color(0xFFE9D9A6);
+    final myBox = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: const Color(0x22000000),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x33FFFFFF)),
+        color: const Color(0x331FA2F5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF1FA2F5)),
       ),
-      child: Row(
-        children: [
-          _modeTab(
-            l.modeManual,
-            Icons.psychology_rounded,
-            _manual,
-            () => setState(() => _manual = true),
+      child: myRank == null
+          ? Text(
+              l.boardMeNone,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      l.leagueMyNow(myRank, total),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 16,
+                      color: Color(0xFFFFC928),
+                    ),
+                    Text(
+                      '$myScore',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  zone,
+                  style: TextStyle(
+                    color: zoneColor,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                if (promote > 0 || demote > 0)
+                  Text(
+                    l.boardZonesHint(promote, demote),
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 10.5,
+                    ),
+                  ),
+                const SizedBox(height: 6),
+                Text(
+                  l.leagueMyIfEnds,
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 11.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    jelly(myJelly),
+                    const SizedBox(width: 12),
+                    goldIcon(size: 14),
+                    const SizedBox(width: 3),
+                    Text(
+                      formatCompact(seasonGold),
+                      style: const TextStyle(
+                        color: Color(0xFFEBD24A),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    );
+    return showGameDialog<void>(
+      context,
+      title: l.leagueInfoTitle(leagueName(l, curId)),
+      iconWidget: leagueIcon(curId, size: 56),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              myBox,
+              Text(
+                l.leagueZoneHint,
+                style: const TextStyle(
+                  color: Color(0xAAFFFFFF),
+                  fontSize: 11.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(l.leagueInfoRank, style: head),
+              const SizedBox(height: 4),
+              ...rankRows,
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: Text(l.leagueInfoSeason, style: head)),
+                  goldIcon(size: 14),
+                  const SizedBox(width: 3),
+                  Text(
+                    formatCompact(seasonGold),
+                    style: const TextStyle(
+                      color: Color(0xFFEBD24A),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(l.leagueInfoAll, style: head),
+              const SizedBox(height: 4),
+              for (var i = cfg.leagues.length - 1; i >= 0; i--)
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: i == cur
+                        ? const Color(0x33EBA52F)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: i == cur ? Border.all(color: _honey) : null,
+                  ),
+                  child: Row(
+                    children: [
+                      leagueIcon(cfg.leagues[i].id, size: 20),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          i == cur
+                              ? '${leagueName(l, cfg.leagues[i].id)} · ${l.leagueInfoCurrent}'
+                              : leagueName(l, cfg.leagues[i].id),
+                          style: cell,
+                        ),
+                      ),
+                      // 1위 젤리 · 시즌 종료 골드
+                      jelly(
+                        (cfg.leagueRankRewards[cfg.leagues[i].id] ??
+                                    cfg.seasonRankRewards)
+                                .isEmpty
+                            ? 0
+                            : (cfg.leagueRankRewards[cfg.leagues[i].id] ??
+                                      cfg.seasonRankRewards)
+                                  .first
+                                  .jelly,
+                      ),
+                      const SizedBox(width: 8),
+                      goldIcon(size: 12),
+                      const SizedBox(width: 2),
+                      Text(
+                        formatCompact(cfg.seasonRewardAt(i).gold),
+                        style: const TextStyle(
+                          color: Color(0xFFEBD24A),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Text(
+                l.leagueInfoAllHint,
+                style: const TextStyle(
+                  color: Color(0x88FFFFFF),
+                  fontSize: 10.5,
+                ),
+              ),
+            ],
           ),
-          _modeTab(
-            l.modeAuto,
-            Icons.fast_forward_rounded,
-            !_manual,
-            () => setState(() => _manual = false),
-          ),
-        ],
+        ),
+      ),
+      actions: [
+        if (claimable)
+          gameDialogButton(l.leagueClaimPromo, () {
+            Navigator.pop(context);
+            _claimLeague(l);
+          }),
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context),
+          primary: !claimable,
+        ),
+      ],
+    );
+  }
+
+  /// 회복실·훈련소 버튼.
+  Widget _facilityButton({
+    required String art,
+    required IconData icon,
+    required Color color,
+    required String label,
+    required VoidCallback onTap,
+    int badge = 0,
+  }) => Material(
+    color: const Color(0xE62A2417),
+    borderRadius: BorderRadius.circular(14),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            gameImageChain(
+              ['assets/images/duel/$art.webp'],
+              size: 40,
+              fallback: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+              ),
+            ),
+            if (badge > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF5350),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$badge',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     ),
   );
 
-  /// 하단 고정 결투 바.
-  Widget _battleBar(
+  /// 하단 고정 전투 시작 버튼 — 정산 기간이면 "시즌이 종료되었습니다!".
+  /// 전투 시작 — 출정 곤충 제목 줄 오른쪽(2026-09-29 사장님 요청). 정산 기간이면 "시즌 종료".
+  Widget _startButton(
     AppLocalizations l,
     GameData data,
     SaveGame save,
     String locale,
-    bool canBattle,
-  ) => SafeArea(
-    top: false,
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-      child: SizedBox(
-        height: 56,
-        child: FilledButton.icon(
-          onPressed: canBattle
-              ? () {
-                  final scout = _scouts[_selectedScout];
-                  if (_manual) {
-                    _battleManual(data, save, locale, scout);
-                  } else {
-                    _battle(data, save, locale, scout);
-                  }
-                }
-              : null,
-          icon: const Icon(Icons.sports_mma_rounded),
-          label: Text(
-            l.battleStart,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+    bool closed,
+    List<IndividualBug> adults,
+  ) {
+    if (closed) {
+      return Container(
+        width: double.infinity,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xB3000000),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          l.battleSeasonClosed,
+          style: const TextStyle(
+            color: Color(0xFFBDBDBD),
+            fontWeight: FontWeight.w900,
           ),
-          style: FilledButton.styleFrom(
-            backgroundColor: _manual
-                ? const Color(0xFFC1502E)
-                : const Color(0xFF3E7D4F),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+        ),
+      );
+    }
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFFEF5350),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: adults.isEmpty || _starting
+            ? null
+            : () => _startMatch(data, save, locale),
+        icon: _starting
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            // 결투 티켓과 같은 표식 — 누르면 티켓 한 장이 나간다는 걸 그림으로.
+            : const Text('⚔️', style: TextStyle(fontSize: 18)),
+        label: Text(
+          l.battleStart,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
+  }
+
+  bool _starting = false;
+
+  /// 지금 출정 칸의 결투 유닛(빈 칸은 뺀다) — 순위표 내 줄·미리보기 전투력.
+  List<DuelBug> _myDuelTeam(GameData data, SaveGame save, String locale) => [
+    for (final id in _team.whereType<String>())
+      for (final b in save.bugs)
+        if (b.id == id) _toDuelBug(b, data, locale),
+  ];
+
+  // ── 회복실 ─────────────────────────────────────────────────────────
+
+  /// 아직 회복 중인 내 곤충(보유 중인 것만).
+  List<(IndividualBug, DateTime)> _injuredBugs(SaveGame save, DateTime now) => [
+    for (final b in save.bugs)
+      if (save.injured[b.id] != null && now.isBefore(save.injured[b.id]!))
+        (b, save.injured[b.id]!),
+  ];
+
+  /// 회복실 — 회복 중인 곤충과 남은 시간, 젤리 즉시 회복.
+  void _openRecovery(GameData data) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xF22F333E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Consumer(
+        builder: (ctx, ref, _) {
+          final l = AppLocalizations.of(ctx);
+          final save = ref.watch(saveControllerProvider).requireValue;
+          final now = ref.read(clockProvider).now().toUtc();
+          final list = _injuredBugs(save, now)
+            ..sort((a, b) => a.$2.compareTo(b.$2));
+          final cfg = data.petConfig;
+          final locale = Localizations.localeOf(ctx).languageCode;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      gameImageChain(
+                        ['assets/images/duel/hub_recovery.webp'],
+                        size: 34,
+                        fallback: const Icon(
+                          Icons.healing_rounded,
+                          color: Color(0xFF5FD38D),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        l.recoveryRoom,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l.injuryDesc,
+                    style: const TextStyle(
+                      color: Color(0xAAFFFFFF),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (list.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(
+                          l.recoveryEmpty,
+                          style: const TextStyle(color: Color(0xCCFFFFFF)),
+                        ),
+                      ),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(ctx).size.height * 0.5,
+                      ),
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          for (final (bug, until) in list)
+                            _recoveryRow(
+                              l,
+                              data,
+                              locale,
+                              bug,
+                              until.difference(now),
+                              cfg?.injuryJelly(until.difference(now)) ?? 0,
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _recoveryRow(
+    AppLocalizations l,
+    GameData data,
+    String locale,
+    IndividualBug bug,
+    Duration left,
+    int jelly,
+  ) {
+    final sp = data.species(bug.speciesId);
+    final m = left.inMinutes;
+    final time = m >= 60
+        ? '${m ~/ 60}:${(m % 60).toString().padLeft(2, '0')}'
+        : '${m + 1}m';
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0x22FFFFFF),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 44,
+            height: 44,
+            child: bugStageImage(
+              bug.speciesId,
+              LifeStage.adult,
+              size: 44,
+              fallback: bugAvatar(sp, size: 40),
+              skin: bugView(ref.read(skinOfProvider), bug),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sp.name.resolve(locale),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  '${l.injuryTitle} · $time',
+                  style: const TextStyle(
+                    color: Color(0xFFEF9A9A),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2E7DBA),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+            ),
+            onPressed: () async {
+              final ok = await ref
+                  .read(saveControllerProvider.notifier)
+                  .healInjury(bug.id, viaJelly: true);
+              if (!ok && mounted) showCenterToast(context, l.notEnoughJelly);
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                jellyIcon(size: 15),
+                const SizedBox(width: 3),
+                Text(
+                  '$jelly',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── 상대 고르기(후보 5명) ───────────────────────────────────────────
+
+  /// 전투 시작 — 후보 5명을 받아 고르게 하고, 고른 상대와 직접 던지기 결투.
+  Future<void> _startMatch(GameData data, SaveGame save, String locale) async {
+    final l = AppLocalizations.of(context);
+    // 출정 칸이 다 차지 않았으면 가장 센 곤충으로 채우고, 확인하고 다시 누르게 한다.
+    if (_team.whereType<String>().length < 3) {
+      final now = ref.read(clockProvider).now().toUtc();
+      final pool = _byPower(data, save, locale, [
+        for (final b in _adults(save, data, now))
+          if (!save.isInjured(b.id, now) &&
+              !(save.trainingJob != null &&
+                  !save.trainingJob!.doneAt(now) &&
+                  save.trainingJob!.bugId == b.id))
+            b,
+      ]);
+      setState(() {
+        final left = [
+          for (final b in pool)
+            if (!_team.contains(b.id)) b.id,
+        ];
+        for (var i = 0; i < 3 && left.isNotEmpty; i++) {
+          _team[i] ??= left.removeAt(0);
+        }
+      });
+      showCenterToast(context, l.squadAutoFilled);
+      return;
+    }
+    final ids = _duelTeamIds(l);
+    if (ids == null) return;
+    final server = ref.read(gameServerProvider);
+    List<_Candidate> cands;
+    String? offerId;
+    if (server.available) {
+      setState(() => _starting = true);
+      try {
+        // 후보를 뽑기 전에 최신 세이브를 올린다(서버가 내 리그·전력을 본다).
+        if (!await _flushSave()) {
+          if (mounted) showCenterToast(context, l.battleServerFailed);
+          return;
+        }
+        final res = await server.duelOffer(locale: locale);
+        if (!mounted) return;
+        if (!res.isOk) {
+          showCenterToast(
+            context,
+            res.error == 'season_closed'
+                ? l.battleSeasonClosed
+                : l.battleServerFailed,
+          );
+          return;
+        }
+        offerId = res.data!['offerId']?.toString();
+        cands = [
+          for (final s in (res.data!['slots'] as List? ?? const []))
+            _Candidate.fromServer(Map<String, dynamic>.from(s as Map)),
+        ];
+      } finally {
+        if (mounted) setState(() => _starting = false);
+      }
+    } else {
+      cands = _localCandidates(data, save, locale, ids);
+    }
+    if (!mounted || cands.isEmpty) return;
+    final pick = await _pickOpponent(l, data, locale, cands);
+    if (pick == null || !mounted) return;
+    await _battleManual(
+      data,
+      ref.read(saveControllerProvider).requireValue,
+      locale,
+      pick,
+      offerId: offerId,
+    );
+  }
+
+  /// 서버 없이(개발 실행) — 내 팀을 세기만 바꿔 다섯 후보를 만든다(점수 5~1).
+  List<_Candidate> _localCandidates(
+    GameData data,
+    SaveGame save,
+    String locale,
+    List<String> ids,
+  ) {
+    final cfg = data.battleConfig ?? const BattleConfig();
+    final pts = [...cfg.matchAbovePoints.reversed, ...cfg.matchBelowPoints];
+    const mults = [1.25, 1.12, 1.0, 0.9, 0.8];
+    final species = data.allSpecies;
+    // 순위표 미리보기와 같은 명단에서 내 위 3명·아래 2명을 고른다(서버와 같은 함수).
+    final now = ref.read(clockProvider).now().toUtc();
+    final board = previewLeagueBoard(
+      league: pvpLeagueNow(save, cfg).id,
+      myNickname: save.nickname,
+      myTrophies: save.pvpTrophies,
+      myPower: _myDuelTeam(
+        data,
+        save,
+        locale,
+      ).fold<double>(0, (a, x) => a + x.power),
+      speciesIds: [for (final sp in species) sp.id],
+      cfg: cfg,
+      now: now,
+      myId: kPreviewMyId,
+    );
+    final rows = [
+      for (final r in (board['top'] as List))
+        Map<String, dynamic>.from(r as Map),
+    ];
+    final slots = pickMatchSlots(
+      ranked: [
+        for (final r in rows)
+          (userId: '${r['user_id']}', rank: (r['rank'] as num).toInt()),
+      ],
+      myRank: (board['me'] as Map)['rank'] as int,
+      myUserId: kPreviewMyId,
+      cfg: cfg,
+    );
+    return [
+      for (var i = 0; i < pts.length; i++)
+        () {
+          final foe = [
+            for (var k = 0; k < ids.length; k++)
+              () {
+                final mine = _toDuelBug(
+                  save.bugs.firstWhere((b) => b.id == ids[k]),
+                  data,
+                  locale,
+                );
+                final sp = species[_rng.nextInt(species.length)];
+                final m = mults[i % mults.length];
+                return DuelBug(
+                  id: 'local${i}_$k',
+                  name: sp.name.resolve(locale),
+                  speciesId: sp.id,
+                  element: Element.values[_rng.nextInt(Element.values.length)],
+                  temperament: Temperament
+                      .values[_rng.nextInt(Temperament.values.length)],
+                  specialty: sp.specialty,
+                  sizeMm: (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+                  maxHp: mine.maxHp * m,
+                  atk: mine.atk * m,
+                  def: mine.def * m,
+                  spd: mine.spd * m,
+                );
+              }(),
+          ];
+          final power = foe.fold<double>(0, (a, x) => a + _duelPower(x));
+          final slot = i < slots.length ? slots[i] : null;
+          final row = slot?.userId == null
+              ? null
+              : rows.where((r) => r['user_id'] == slot!.userId).firstOrNull;
+          return _Candidate(
+            index: i,
+            nickname: row == null ? '' : '${row['nickname']}',
+            rank: slot?.rank,
+            points: slot?.points ?? pts[i],
+            power: power,
+            team: [
+              for (final b in foe)
+                (
+                  sp: b.speciesId,
+                  element: b.element,
+                  power: _duelPower(b),
+                  skin: null,
+                  bug: b,
+                ),
+            ],
+            localFoe: foe,
+          );
+        }(),
+    ];
+  }
+
+  double _duelPower(DuelBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
+
+  /// 후보 5명 고르기 — 이기면 받는 점수를 크게 보여 준다(지면 0점).
+  Future<_Candidate?> _pickOpponent(
+    AppLocalizations l,
+    GameData data,
+    String locale,
+    List<_Candidate> cands,
+  ) {
+    final ids = _team.whereType<String>().toList();
+    final save = ref.read(saveControllerProvider).requireValue;
+    final myPower = ids.fold<double>(
+      0,
+      (a, id) =>
+          a +
+          _duelPower(
+            _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
+          ),
+    );
+    return showModalBottomSheet<_Candidate>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xF22F333E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l.opponentPickTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                l.opponentPickHint(formatCompact(myPower.round())),
+                style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 12),
+              ),
+              const SizedBox(height: 10),
+              for (final c in cands)
+                _candidateCard(l, data, locale, c, myPower, ctx),
+            ],
           ),
         ),
       ),
-    ),
-  );
-
-  /// 스카우트 새로고침 사용권 — 무료 소진 후엔 **젤리**로(사장님 결정 2026-08-18).
-  ///
-  /// 기기 단위 카운트다. 서버 소유 값이 아니어도 된다 — 새로고침은 상대
-  /// **선택**일 뿐이고 승패·보상 확정은 어차피 서버가 한다.
-  /// 젤리를 포함해도 하루 총량(refreshDailyMax)은 못 넘는다 — 무한 리롤로
-  /// 제일 약한 상대만 골라 트로피를 캐는 걸 막는 상한이라, 지불 수단과 무관하다.
-  Future<bool> _takeFreeRefresh(AppLocalizations l) async {
-    final cfg =
-        ref.read(gameDataProvider).requireValue.battleConfig ??
-        const BattleConfig();
-    final prefs = await SharedPreferences.getInstance();
-    final now = ref.read(clockProvider).now().toUtc();
-    final today = dailyDateKey(now);
-    final parts = (prefs.getString('scout_refresh_v1') ?? '|').split('|');
-    final used = parts[0] == today ? (int.tryParse(parts[1]) ?? 0) : 0;
-
-    if (used >= cfg.scoutRefreshDailyMax) {
-      if (mounted) {
-        showCenterToast(context, l.adDailyLimit(cfg.scoutRefreshDailyMax));
-      }
-      return false;
-    }
-    if (used >= cfg.scoutFreeRefreshDaily) {
-      // 무료 소진 — 젤리로 계속할지 **먼저 묻는다**(말없이 차감하지 않는다).
-      final ok = await _confirmJelly(l, cfg.scoutRefreshJelly);
-      if (ok != true) return false;
-      if (!await ref
-          .read(saveControllerProvider.notifier)
-          .trySpendJelly(cfg.scoutRefreshJelly)) {
-        if (mounted) showCenterToast(context, l.notEnoughJelly);
-        return false;
-      }
-    }
-    await prefs.setString('scout_refresh_v1', '$today|${used + 1}');
-    if (mounted) setState(() => _refreshUsed = used + 1);
-    return true;
+    );
   }
 
-  Future<bool?> _confirmJelly(AppLocalizations l, int cost) =>
-      showGameDialog<bool>(
-        context,
-        title: l.jellyContinueTitle,
-        icon: Icons.water_drop_rounded,
-        content: Text(
-          l.jellyContinueAsk(cost),
-          style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.4),
+  Widget _candidateCard(
+    AppLocalizations l,
+    GameData data,
+    String locale,
+    _Candidate c,
+    double myPower,
+    BuildContext sheet,
+  ) {
+    final ratio = myPower <= 0 ? 1.0 : c.teamPower / myPower;
+    final tone = ratio > 1.1
+        ? const Color(0xFFEF6B4A)
+        : (ratio < 0.9 ? const Color(0xFF6FCF6F) : const Color(0xFFE9D9A6));
+    return GestureDetector(
+      // 카드(이름)를 누르면 상대 곤충 상세, 공격 버튼을 눌러야 시작한다.
+      onTap: () => _showFoeDetail(l, data, locale, c),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3F4452),
+          borderRadius: BorderRadius.circular(12),
+          border: Border(left: BorderSide(color: tone, width: 4)),
         ),
-        actions: [
-          gameDialogButton(
-            l.actionCancel,
-            () => Navigator.pop(context, false),
-            primary: false,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 40,
+              child: Center(
+                child: Text(
+                  c.rank == null ? '-' : '${c.rank}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    c.nickname.isEmpty ? l.opponentWild : _maskName(c.nickname),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      for (final t in c.team)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: SizedBox(
+                            width: 30,
+                            height: 30,
+                            child: gameImageChain(
+                              ['assets/images/bugs/${t.sp}_adult.webp'],
+                              size: 30,
+                              fallback: const Icon(
+                                Icons.bug_report,
+                                color: Colors.white54,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.flash_on_rounded, size: 14, color: tone),
+                      Text(
+                        formatCompact(c.teamPower.round()),
+                        style: TextStyle(
+                          color: tone,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF22252E),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 18,
+                        color: Color(0xFFFFC928),
+                      ),
+                      Text(
+                        '+${c.points}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    l.opponentWinOnly,
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 9.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            FilledButton(
+              onPressed: () => Navigator.of(sheet).pop(c),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEF5350),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                minimumSize: const Size(0, 40),
+              ),
+              child: Text(
+                l.duelAttackBtn,
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 결투 화면으로. 끝나면 순위표를 새로 받는다.
+  Future<void> _pushDuel({
+    required GameData data,
+    required List<DuelBug> mine,
+    required List<DuelBug> foe,
+    required DuelDriver driver,
+    required Map<String, SkinView?> mySkins,
+    required Map<String, SkinView?> foeSkins,
+    required Future<void> Function(DuelStep last) onFinished,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DuelArenaScreen(
+          mine: mine,
+          foe: foe,
+          driver: driver,
+          params: _duelParams(data),
+          arena: foe.first.element,
+          mySkins: mySkins,
+          foeSkins: foeSkins,
+          onFinished: onFinished,
+        ),
+      ),
+    );
+    unawaited(_boardKey.currentState?.reload());
+  }
+
+  /// **직접 던지기 결투** — 판마다 게이지 → 서버가 그 판을 확정 → 재생.
+  ///
+  /// 이기면 고른 후보의 점수, 지면 0점(트로피 선차감 없음). 부상은 시작할 때 먼저 걸고
+  /// 결착에서 이긴 곤충은 풀어 준다 — 도중에 나가면 그대로 패배.
+  Future<void> _battleManual(
+    GameData data,
+    SaveGame save,
+    String locale,
+    _Candidate c, {
+    String? offerId,
+  }) async {
+    final l = AppLocalizations.of(context);
+    final ids = _duelTeamIds(l);
+    if (ids == null) return;
+    if (!await _takeTicket(l)) return;
+    await ref.read(saveControllerProvider.notifier).setPvpDefense(ids);
+    final mine = [
+      for (final id in ids)
+        _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
+    ];
+    final mySkins = _mySkins(save, ids);
+
+    final server = ref.read(gameServerProvider);
+    if (server.available && offerId != null) {
+      final close = _showStartOverlay(l);
+      try {
+        final res = await server.duelStart(
+          teamBugIds: ids,
+          offerId: offerId,
+          pick: c.index,
+        );
+        if (!res.isOk || res.data?['sessionId'] == null) {
+          await _duelRejected(l, res);
+          return;
+        }
+        // 서버가 확정한 티켓 잔량으로 맞춘다(세이브 전체가 아니라 몇 바이트).
+        await ref
+            .read(saveControllerProvider.notifier)
+            .adoptTicketState(res.data!);
+        // 세션이 열렸다 — 이제 이탈해도 패배다. 부상 선차감을 앱 세이브에도 건다.
+        await ref.read(saveControllerProvider.notifier).preInjureTeam(ids);
+        if (!mounted) return;
+        final f = _foeFromServer(res.data!['foe']);
+        close();
+        await _pushDuel(
+          data: data,
+          mine: mine,
+          foe: f.foe,
+          driver: ServerDuelDriver(
+            server: server,
+            sessionId: res.data!['sessionId'].toString(),
           ),
-          gameDialogButton(
-            l.jellyContinueYes,
-            () => Navigator.pop(context, true),
-          ),
-        ],
-      );
+          mySkins: mySkins,
+          foeSkins: f.skins,
+          onFinished: _adoptDuel,
+        );
+      } finally {
+        close();
+      }
+      return;
+    }
+
+    // 로컬(개발 실행).
+    final foe = c.localFoe ?? const <DuelBug>[];
+    if (foe.isEmpty) return;
+    await ref.read(saveControllerProvider.notifier).preInjureTeam(ids);
+    _localWinPoints = c.points;
+    final local = _RecordingLocalDriver(
+      LocalDuelDriver(
+        seed: _rng.nextInt(1 << 31),
+        mine: mine,
+        foe: foe,
+        params: _duelParams(data),
+        battle: data.battleConfig ?? const BattleConfig(),
+        trophies: save.pvpTrophies,
+        rewardMult: 1.0,
+      ),
+      onBout: (i, won) {
+        if (i == 0) _localLosers.clear();
+        // 승자 연속 — 지면 지금 나가 있던 곤충(앞에서부터 진 수번째)이 쓰러진다.
+        if (!won) {
+          _localLosers.add(ids[_localLosers.length.clamp(0, ids.length - 1)]);
+        }
+      },
+    );
+    if (!mounted) return;
+    await _pushDuel(
+      data: data,
+      mine: mine,
+      foe: foe,
+      driver: local,
+      mySkins: mySkins,
+      foeSkins: const {},
+      onFinished: (last) => _applyLocalDuel(last, ids),
+    );
+  }
+
+  /// 로컬 결투에서 이기면 받을 점수(고른 후보).
+  int _localWinPoints = 0;
 
   /// 다른 유저 닉네임 표시용 — 부적절한 이름은 중립 이름으로 대체.
   /// 이미 서버에 등록된 이름은 되돌릴 수 없으므로 보여줄 때 가린다.
@@ -1745,350 +1862,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ),
   );
 
-  /// 리그·시즌 요약 스트립(한 줄). 탭하면 상세(진행바·승급 보상) 다이얼로그.
-  Widget _leagueStrip(
-    AppLocalizations l,
-    BattleConfig cfg,
-    SaveGame save,
-    DateTime now,
-  ) {
-    final cur = pvpLeagueNow(save, cfg);
-    final (label, color) = _leagueStyle(l, cur.id);
-    final left = seasonEndAt(now, cfg).difference(now);
-    final hasReward = cfg
-        .claimableUpTo(pvpLeagueOf(save, cfg), save.claimedLeagues)
-        .isNotEmpty;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Material(
-        color: const Color(0x22000000),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _showLeagueDetail(l, cfg, save, now),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            child: Row(
-              children: [
-                leagueIcon(cur.id, size: 20),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '🏆${save.pvpTrophies}',
-                  style: const TextStyle(
-                    color: _honey,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12.5,
-                  ),
-                ),
-                const Spacer(),
-                const Icon(
-                  Icons.hourglass_bottom_rounded,
-                  size: 11,
-                  color: Color(0x99FFFFFF),
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  l.seasonEndsIn(_seasonLeft(left)),
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 10.5,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                // 순위표 — 리그 안 이번 주 순위(2026-09-29).
-                IconButton(
-                  onPressed: _openBoard,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  icon: const Icon(
-                    Icons.leaderboard_rounded,
-                    size: 18,
-                    color: Color(0xFFEBC24A),
-                  ),
-                ),
-                Icon(
-                  hasReward
-                      ? Icons.card_giftcard_rounded
-                      : Icons.chevron_right_rounded,
-                  size: 16,
-                  color: hasReward
-                      ? const Color(0xFF6FCF6F)
-                      : const Color(0x99FFFFFF),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showLeagueDetail(
-    AppLocalizations l,
-    BattleConfig cfg,
-    SaveGame save,
-    DateTime now,
-  ) => showGameDialog<void>(
-    context,
-    title: l.leagueSeasonTitle,
-    iconWidget: rankImageDlg('trophy'),
-    content: _leaguePanel(l, cfg, save, now),
-    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
-  );
-
-  /// 상대(선택된 스카우트) 1마리 포트레이트 — 이미지 + 오행 글리프.
-  Widget _oppPortrait(({BattleBug bug, String speciesId, String? skin}) e) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 3),
-        child: Column(
-          children: [
-            bugStageImage(
-              e.speciesId,
-              LifeStage.adult,
-              size: 46,
-              fallback: elementIcon(e.bug.element, size: 30),
-              // 스카우트 보드에서부터 보여야 "저 사람 금색이네"가 된다.
-              skin: _viewOf(e.skin, e.speciesId),
-            ),
-            const SizedBox(height: 2),
-            elementIcon(e.bug.element, size: 15),
-          ],
-        ),
-      );
-
-  /// 전투 장소 칩 — 장소 이모지·이름 + 상성(그 오행 곤충 강화).
-  /// VS 매치업 카드 — 내 팀(편성·드래그)과 선택 상대·상생·승리 보상.
-  Widget _matchupCard(
-    AppLocalizations l,
-    GameData data,
-    BattleConfig cfg,
-    SaveGame save,
-    String locale,
-  ) {
-    final scout = (_scouts.isNotEmpty && _selectedScout < _scouts.length)
-        ? _scouts[_selectedScout]
-        : null;
-    final (tierLabel, tierColor) = scout != null
-        ? _tierStyle(l, scout.tier.id)
-        : ('', const Color(0xFFBFC4CC));
-    final gold = scout != null
-        ? cfg.winGold(save.pvpTrophies, scout.tier.rewardMult)
-        : 0;
-    final trophy = scout != null ? cfg.trophyOnWin(scout.tier.rewardMult) : 0;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: BoxDecoration(
-        color: const Color(0x22000000),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _honey.withValues(alpha: 0.45)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.groups_rounded, color: _honey, size: 16),
-              const SizedBox(width: 5),
-              Text(
-                l.battleMyTeam,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(width: 8),
-              // 팀 전투력 — 편성을 바꿀 때마다 즉시 반영된다.
-              Text(
-                l.teamPower(formatCompact(_myTeamPowerSum(data, save, locale))),
-                style: const TextStyle(
-                  color: _honey,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () => _autoTeam(data, save, locale),
-                icon: const Icon(Icons.auto_awesome, size: 14),
-                label: Text(l.autoTeam, style: const TextStyle(fontSize: 11.5)),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFBFE3A6),
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  minimumSize: const Size(0, 28),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              const Icon(
-                Icons.drag_indicator_rounded,
-                color: Color(0x77FFFFFF),
-                size: 13,
-              ),
-              const SizedBox(width: 2),
-              Text(
-                l.teamReorderHint,
-                style: const TextStyle(color: Color(0x77FFFFFF), fontSize: 10),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              for (var i = 0; i < 3; i++)
-                Expanded(child: _teamSlot(data, save, locale, i)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          _synergyBar(l, data, save, locale),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                const Expanded(child: Divider(color: Color(0x33FFFFFF))),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Row(
-                    children: const [
-                      Icon(
-                        Icons.sports_mma_rounded,
-                        color: Color(0xFFEF6B4A),
-                        size: 16,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'VS',
-                        style: TextStyle(
-                          color: Color(0xFFEF6B4A),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Expanded(child: Divider(color: Color(0x33FFFFFF))),
-              ],
-            ),
-          ),
-          if (scout != null) ...[
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: tierColor.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    tierLabel,
-                    style: TextStyle(
-                      color: tierColor,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                if (scout.ownerName != null) ...[
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      '👤 ${_maskName(scout.ownerName!)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xCCE9D9A6),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                Text(
-                  '💰${formatCompact(gold)}  🏆+$trophy',
-                  style: const TextStyle(
-                    color: Color(0xFFEBD24A),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                for (final e in scout.team) Expanded(child: _oppPortrait(e)),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _modeTab(
-    String label,
-    IconData icon,
-    bool selected,
-    VoidCallback onTap,
-  ) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? _honey : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: selected
-                    ? const Color(0xFF3A2600)
-                    : const Color(0x99FFFFFF),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected
-                      ? const Color(0xFF3A2600)
-                      : const Color(0x99FFFFFF),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 수동/자동 토글 + 큰 전투 시작 버튼.
   Widget _teamSlot(GameData data, SaveGame save, String locale, int index) {
     final id = _team[index];
@@ -2099,84 +1872,187 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             orElse: () => null,
           );
     final sp = bug == null ? null : data.species(bug.speciesId);
+    const slotH = 128.0;
     final card = GestureDetector(
-      onTap: () => _showPicker(data, save, locale, index),
-      child: Container(
+      onTap: () => bug == null
+          ? _showPicker(data, save, locale, index)
+          : _showBugDetail(
+              null,
+              data,
+              save,
+              locale,
+              bug,
+              index,
+              save.isInjured(bug.id, ref.read(clockProvider).now().toUtc()),
+            ),
+      child: SizedBox(
         width: double.infinity, // 셀(1/3)을 꽉 채워 3슬롯 균등 정렬
-        height: 150,
-        decoration: BoxDecoration(
-          color: const Color(0x22000000),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: bug == null ? const Color(0x33FFFFFF) : _honey,
-            width: bug == null ? 1 : 1.6,
-          ),
-        ),
-        child: bug == null
-            ? const Center(
+        height: slotH,
+        child: Stack(
+          children: [
+            // 받침대 틀(나무껍질 + 그루터기). 그림이 없으면 예전 상자.
+            Positioned.fill(
+              child: Opacity(
+                opacity: bug == null ? 0.7 : 1,
+                child: gameImageChain(
+                  ['assets/images/duel/squad_slot.webp'],
+                  size: slotH,
+                  fit: BoxFit.fill,
+                  fallback: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0x22000000),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: bug == null ? const Color(0x33FFFFFF) : _honey,
+                        width: bug == null ? 1 : 1.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (bug == null)
+              const Center(
                 child: Icon(
                   Icons.add_circle_outline,
-                  color: Color(0x66FFFFFF),
-                  size: 28,
+                  color: Color(0x99FFFFFF),
+                  size: 30,
                 ),
               )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: bugStageImage(
-                      bug.speciesId,
-                      LifeStage.adult,
-                      size: 60,
-                      fallback: bugAvatar(sp!, size: 52),
-                      skin: bugView(ref.watch(skinOfProvider), bug),
-                    ),
+            else if (save.isInjured(
+              bug.id,
+              ref.read(clockProvider).now().toUtc(),
+            ))
+              Positioned.fill(
+                child: Container(
+                  margin: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0x99000000),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 2),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: elementColor(bug.element).withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        elementIcon(bug.element, size: 11),
-                        const SizedBox(width: 3),
-                        Text(
-                          elementLabel(
-                            AppLocalizations.of(context),
-                            bug.element,
-                          ),
-                          style: TextStyle(
-                            color: elementColor(bug.element),
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                          ),
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Opacity(
+                        opacity: 0.5,
+                        child: bugStageImage(
+                          bug.speciesId,
+                          LifeStage.adult,
+                          size: 52,
+                          fallback: bugAvatar(sp!, size: 44),
                         ),
-                      ],
-                    ),
+                      ),
+                      Text(
+                        AppLocalizations.of(context).injuryTitle,
+                        style: const TextStyle(
+                          color: Color(0xFFEF9A9A),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        formatClock(
+                          save
+                              .injuredUntil(bug.id)!
+                              .difference(
+                                ref.read(clockProvider).now().toUtc(),
+                              ),
+                        ),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
+                ),
+              )
+            else
+              Padding(
+                // 위: 이름·오행 · 아래: 그루터기 윗면에 발이 닿게.
+                padding: const EdgeInsets.fromLTRB(8, 12, 8, slotH * 0.13),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: gradeColor(sp!.grade).withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        gradeLabel(AppLocalizations.of(context), sp.grade),
+                        style: const TextStyle(
+                          color: Color(0xFF1B1A14),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
                       sp.name.resolve(locale),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 3)],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                ],
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: elementColor(
+                          bug.element,
+                        ).withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          elementIcon(bug.element, size: 11),
+                          const SizedBox(width: 3),
+                          Text(
+                            elementLabel(
+                              AppLocalizations.of(context),
+                              bug.element,
+                            ),
+                            style: TextStyle(
+                              color: elementColor(bug.element),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: bugStageImage(
+                          bug.speciesId,
+                          LifeStage.adult,
+                          size: 66,
+                          fallback: bugAvatar(sp, size: 52),
+                          skin: bugView(ref.watch(skinOfProvider), bug),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+          ],
+        ),
       ),
     );
     // 채워진 슬롯은 드래그 가능(탭=선택 유지). 빈 슬롯은 드롭 대상만.
@@ -2235,44 +2111,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ),
   );
 
-  /// 편성 안내 — 결투는 1:1 이라 **순서가 곧 대진**이다(상생 시너지는 결투 개편에서 폐지).
-  Widget _synergyBar(
-    AppLocalizations l,
-    GameData data,
-    SaveGame save,
-    String locale,
-  ) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Flexible(
-          child: Text(
-            l.duelOrderHint,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10.5),
-          ),
-        ),
-        // 상극은 결투에 남았다 — 오행 관계도는 여기서 본다.
-        _elementGuideBtn(l),
-      ],
-    ),
-  );
-
-  /// 오행 관계도 열기(상생·상극). 결투 화면 어디서든 같은 그림을 본다.
-  Widget _elementGuideBtn(AppLocalizations l) => IconButton(
-    tooltip: l.elementGuideBtn,
-    onPressed: () => showElementWheel(context),
-    visualDensity: VisualDensity.compact,
-    padding: EdgeInsets.zero,
-    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-    icon: const Icon(
-      Icons.help_outline_rounded,
-      size: 16,
-      color: Color(0x99FFFFFF),
-    ),
-  );
-
   void _showPicker(GameData data, SaveGame save, String locale, int slot) {
     final now = ref.read(clockProvider).now().toUtc();
     final adults = _adults(save, data, now);
@@ -2317,17 +2155,40 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 ),
                 const SizedBox(height: 12),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 340),
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        // 강한 순으로 보여준다 — 고르려고 여는 화면이다.
-                        for (final b in _byPower(data, save, locale, adults))
-                          _pickTile(ctx, data, save, locale, now, b, slot),
-                      ],
-                    ),
+                  constraints: const BoxConstraints(maxHeight: 360),
+                  child: LayoutBuilder(
+                    // 칸 너비를 화면에 맞춰 나눈다 — 고정 폭이면 오른쪽이 들쭉날쭉했다.
+                    builder: (_, box) {
+                      const cols = 4, gap = 8.0;
+                      final tileW = (box.maxWidth - gap * (cols - 1)) / cols;
+                      return SingleChildScrollView(
+                        child: Wrap(
+                          spacing: gap,
+                          runSpacing: gap,
+                          children: [
+                            // 강한 순으로 보여준다 — 고르려고 여는 화면이다.
+                            for (final b in _byPower(
+                              data,
+                              save,
+                              locale,
+                              adults,
+                            ))
+                              SizedBox(
+                                width: tileW,
+                                child: _pickTile(
+                                  ctx,
+                                  data,
+                                  save,
+                                  locale,
+                                  now,
+                                  b,
+                                  slot,
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -2354,20 +2215,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     return Opacity(
       opacity: injured ? 0.45 : 1,
       child: GestureDetector(
-        onTap: injured
-            ? null
-            : () {
-                setState(() {
-                  // 다른 슬롯에 이미 있으면 제거(중복 방지) 후 배치.
-                  for (var i = 0; i < 3; i++) {
-                    if (_team[i] == bug.id) _team[i] = null;
-                  }
-                  _team[slot] = bug.id;
-                });
-                Navigator.pop(ctx);
-              },
+        // 누르면 상세 창(능력치·특성) → 출정/취소.
+        onTap: () =>
+            _showBugDetail(ctx, data, save, locale, bug, slot, injured),
         child: SizedBox(
-          width: 84,
+          width: double.infinity,
           child: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
@@ -2450,6 +2302,315 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  // ── 곤충 능력치 창(내 곤충 고르기 · 상대 곤충 보기 공용) ─────────────────
+
+  /// 능력치 한 줄.
+  Widget _statRow(String label, String value, {Color? color, Widget? lead}) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 64,
+              child: Text(
+                label,
+                style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 12),
+              ),
+            ),
+            if (lead != null) ...[lead, const SizedBox(width: 4)],
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  color: color ?? Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  /// 결투 유닛 [d] 의 능력치 카드. 내 곤충이면 [bug] 로 포텐셜·혈통 특성·레벨까지.
+  Widget _bugStats(
+    AppLocalizations l,
+    GameData data,
+    String locale,
+    DuelBug d, {
+    IndividualBug? bug,
+    SkinView? skin,
+  }) {
+    Species? sp;
+    try {
+      sp = data.species(d.speciesId);
+    } catch (_) {}
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: 72,
+              height: 72,
+              child: bugPoseImage(
+                d.speciesId,
+                BugPose.idle,
+                size: 72,
+                skin: skin,
+                fallback: const Icon(Icons.bug_report, color: Colors.white54),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    sp?.name.resolve(locale) ?? d.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 3,
+                    children: [
+                      if (sp != null)
+                        _chip(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
+                      _chip(
+                        elementLabel(l, d.element),
+                        elementColor(d.element),
+                        lead: elementIcon(d.element, size: 11),
+                      ),
+                      if (bug != null && !bug.trait.isNone)
+                        _chip(
+                          traitLabel(l, bug.trait),
+                          traitColor(bug.trait),
+                          lead: traitIcon(bug.trait, size: 11),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        _statRow(
+          l.statCombatPower,
+          formatCompact(d.power.round()),
+          color: const Color(0xFFEBD24A),
+        ),
+        _statRow(l.statHp, formatCompact(d.maxHp.round())),
+        _statRow(l.bugInfoAtk, formatCompact(d.atk.round())),
+        _statRow(l.bugInfoDef, formatCompact(d.def.round())),
+        _statRow(l.bugInfoSpd, formatCompact(d.spd.round())),
+        _statRow(l.bugInfoSpecialty, specialtyLabel(l, d.specialty)),
+        _statRow(
+          l.bugInfoTemperament,
+          temperamentLabel(l, d.temperament),
+          lead: temperamentIcon(d.temperament, size: 14),
+        ),
+        _statRow(l.bugInfoSize, l.bugSize(d.sizeMm.toStringAsFixed(1))),
+        // 훈련소 단계(내 곤충) · 회피·치명·회복력(상대 곤충 — 훈련이 들어간 값).
+        if (bug != null)
+          for (final st in TrainStat.values)
+            if ((trainLevelsOf(
+                      ref.read(saveControllerProvider).requireValue,
+                      bug.id,
+                    )[st] ??
+                    0) >
+                0)
+              _statRow(
+                trainStatLabel(l, st),
+                l.trainingLevel(
+                  trainLevelsOf(
+                    ref.read(saveControllerProvider).requireValue,
+                    bug.id,
+                  )[st]!,
+                  trainCapOf(
+                    bug,
+                    data.species(bug.speciesId),
+                    st,
+                    (data.battleConfig ?? const BattleConfig()).training,
+                  ),
+                ),
+                color: trainStatColor(st),
+              ),
+        if (bug == null) ...[
+          if (d.evade > 0)
+            _statRow(l.trainEvade, '${(d.evade * 100).toStringAsFixed(1)}%'),
+          if (d.crit > 0)
+            _statRow(l.trainCrit, '+${(d.crit * 100).toStringAsFixed(1)}%'),
+          if (d.recovery > 0)
+            _statRow(
+              l.trainRecovery,
+              '+${(d.recovery * 100).toStringAsFixed(1)}%',
+            ),
+        ],
+        if (bug != null) ...[
+          _statRow(
+            l.bugInfoPotential,
+            '★' * bug.potential,
+            color: const Color(0xFFFFC928),
+          ),
+          _statRow('Lv', '${bug.level}'),
+        ],
+      ],
+    );
+  }
+
+  Widget _chip(String text, Color c, {Widget? lead}) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+      color: c.withValues(alpha: 0.22),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (lead != null) ...[lead, const SizedBox(width: 3)],
+        Text(
+          text,
+          style: TextStyle(
+            color: c,
+            fontSize: 10.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  /// 내 곤충 상세 — 출정 / 취소.
+  Future<void> _showBugDetail(
+    BuildContext? sheet,
+    GameData data,
+    SaveGame save,
+    String locale,
+    IndividualBug bug,
+    int slot,
+    bool injured,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final inTeam = _team.contains(bug.id);
+    // 'deploy' 출정 · 'release' 해제 · 'swap' 다른 곤충으로 교체.
+    final act = await showGameDialog<String>(
+      context,
+      title: l.squadDetailTitle,
+      icon: Icons.bug_report_rounded,
+      content: _bugStats(
+        l,
+        data,
+        locale,
+        _toDuelBug(bug, data, locale),
+        bug: bug,
+        skin: bugView(ref.read(skinOfProvider), bug),
+      ),
+      actions: [
+        if (inTeam)
+          gameDialogButton(
+            l.squadRelease,
+            () => Navigator.pop(context, 'release'),
+            primary: false,
+          )
+        else
+          gameDialogButton(
+            l.actionCancel,
+            () => Navigator.pop(context),
+            primary: false,
+          ),
+        // 칸에서 연 곤충은 이미 그 자리 — 출정 대신 교체.
+        if (sheet == null)
+          gameDialogButton(l.squadSwap, () => Navigator.pop(context, 'swap'))
+        else
+          gameDialogButton(
+            injured ? l.injuryTitle : l.squadDeploy,
+            injured ? () {} : () => Navigator.pop(context, 'deploy'),
+          ),
+      ],
+    );
+    if (act == null || !mounted) return;
+    switch (act) {
+      case 'release':
+        setState(() {
+          for (var i = 0; i < 3; i++) {
+            if (_team[i] == bug.id) _team[i] = null;
+          }
+        });
+      case 'swap':
+        _showPicker(
+          data,
+          ref.read(saveControllerProvider).requireValue,
+          locale,
+          slot,
+        );
+        return;
+      case 'deploy':
+        setState(() {
+          // 다른 슬롯에 이미 있으면 제거(중복 방지) 후 배치.
+          for (var i = 0; i < 3; i++) {
+            if (_team[i] == bug.id) _team[i] = null;
+          }
+          _team[slot] = bug.id;
+        });
+    }
+    if (sheet != null && sheet.mounted) Navigator.pop(sheet);
+  }
+
+  /// 상대 팀 상세 — 곤충마다 능력치·주특기·기질(전략을 짜게).
+  Future<void> _showFoeDetail(
+    AppLocalizations l,
+    GameData data,
+    String locale,
+    _Candidate c,
+  ) => showGameDialog<void>(
+    context,
+    title: c.nickname.isEmpty ? l.opponentWild : _maskName(c.nickname),
+    icon: Icons.groups_rounded,
+    content: ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.55,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            for (var i = 0; i < c.team.length; i++)
+              if (c.team[i].bug != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0x22FFFFFF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l.squadOrder(i + 1),
+                        style: const TextStyle(
+                          color: _honey,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      _bugStats(l, data, locale, c.team[i].bug!),
+                    ],
+                  ),
+                ),
+          ],
+        ),
+      ),
+    ),
+    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+  );
+
   /// 현재 편성의 전투력 **합**(빈 슬롯은 0).
   ///
   /// `_teamPower` 는 상대 스케일 계산용 **평균**이라 용도가 다르다 — 화면에는
@@ -2480,38 +2641,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       return d != 0 ? d : a.id.compareTo(b.id); // 동점이어도 순서가 흔들리지 않게
     });
 
-  /// 자동 편성 — 부상이 아닌 성충 중 전투력 상위 3마리.
-  ///
-  /// 오행 상생(순서 보너스)까지 최적화하지는 않는다. 그건 플레이어가 직접
-  /// 짜는 재미의 핵심이라(§2.3 "순서가 전략") 자동이 대신해버리면 안 된다.
-  /// 여기서는 "일단 센 놈들로 채워주는" 역할만 한다.
-  void _autoTeam(GameData data, SaveGame save, String locale) {
-    final now = ref.read(clockProvider).now().toUtc();
-    final pool = _byPower(data, save, locale, [
-      for (final b in _adults(save, data, now))
-        if (!save.isInjured(b.id, now)) b,
-    ]);
-    final picked = [for (final b in pool.take(3)) b.id];
-    final l = AppLocalizations.of(context);
-    final same =
-        picked.length == _team.whereType<String>().length &&
-        List.generate(
-          picked.length,
-          (i) => picked[i] == _team[i],
-        ).every((x) => x);
-    if (same) {
-      showCenterToast(context, l.autoTeamAlready);
-      return;
-    }
-    setState(() {
-      _team = [
-        for (var i = 0; i < 3; i++) i < picked.length ? picked[i] : null,
-      ];
-    });
-    AudioService.instance.sfxReward();
-    showCenterToast(context, l.autoTeamDone);
-  }
-
   /// 스카우트 팀 → **상대 곤충 id별** 스킨 필터.
   ///
   /// 종이 아니라 id 로 푼다 — 같은 종이라도 상대가 샀는지 여부가 다르다.
@@ -2524,10 +2653,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       hasArt: cfg?.skinHasArt(effect, speciesId) ?? false,
     );
   }
-
-  Map<String, SkinView> _foeSkins(_Scout scout) => {
-    for (final e in scout.team) e.bug.id: ?_viewOf(e.skin, e.speciesId),
-  };
 
   /// 서버 권위 전투 — 승패·보상을 서버가 확정하고, 앱은 결과를 재생만 한다.
   ///
@@ -2543,10 +2668,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ref.read(gameServerProvider),
     ref.read(saveControllerProvider).value,
   );
-
-  void _openBoard() => Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => const LeagueBoardScreen()));
 
   /// 결투 1판분 티켓을 확보한다. 없으면 이유를 알리고 false.
   ///
@@ -2609,30 +2730,47 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       DuelParams.fromJson((data.battleConfig ?? const BattleConfig()).duelJson);
 
   /// 보유 곤충 → 결투 유닛(서버 `validateDuelTeam` 과 같은 스탯 계산).
-  DuelBug _toDuelBug(IndividualBug bug, GameData data, String locale) =>
-      DuelBug.fromBattleBug(
-        _toBattleBug(bug, data, locale),
-        speciesId: bug.speciesId,
-        sizeMm: bug.sizeMm,
-        specialty: data.species(bug.speciesId).specialty,
-      );
-
-  /// 스카우트 상대(앱이 그린 것) → 결투 유닛. 야생은 사이즈 롤이 없으니 그 종의 중간 크기.
-  DuelBug _scoutToDuel(BattleBug b, String speciesId, GameData data) {
-    final sp = data.species(speciesId);
+  DuelBug _toDuelBug(IndividualBug bug, GameData data, String locale) {
+    final sp = data.species(bug.speciesId);
+    // 훈련소 보너스 — 서버(`validateDuelTeam`)와 **같은 함수**로 입힌다(최대 단계로 잘라서).
+    final t = trainingBonusOf(
+      ref.read(saveControllerProvider).requireValue,
+      bug,
+      sp,
+      (data.battleConfig ?? const BattleConfig()).training,
+      levelCap: data.petConfig?.levelCap(bug.breakthroughTier),
+    );
     return DuelBug.fromBattleBug(
-      b,
-      speciesId: speciesId,
-      sizeMm: (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+      _toBattleBug(bug, data, locale),
+      speciesId: bug.speciesId,
+      sizeMm: bug.sizeMm,
       specialty: sp.specialty,
+    ).withTraining(
+      atkMult: t.atkMult,
+      defMult: t.defMult,
+      hpMult: t.hpMult,
+      evade: t.evade,
+      crit: t.crit,
+      recovery: t.recovery,
     );
   }
 
-  /// 출전 순서 3마리. 3마리가 아니면 null(결투는 정확히 3마리).
+  /// 출전 순서 3마리. 3마리가 아니거나 회복 중인 곤충이 있으면 null.
   List<String>? _duelTeamIds(AppLocalizations l) {
     final ids = _team.whereType<String>().toList();
     if (ids.length != 3) {
       showCenterToast(context, l.duelNeedThree);
+      return null;
+    }
+    final save = ref.read(saveControllerProvider).requireValue;
+    final now = ref.read(clockProvider).now().toUtc();
+    if (ids.any((id) => save.isInjured(id, now))) {
+      showCenterToast(context, l.squadInjured);
+      return null;
+    }
+    final job = save.trainingJob;
+    if (job != null && !job.doneAt(now) && ids.contains(job.bugId)) {
+      showCenterToast(context, l.squadTraining);
       return null;
     }
     return ids;
@@ -2661,35 +2799,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ),
   };
 
-  /// 결투 화면으로. 끝나면 새 상대를 뽑는다.
-  Future<void> _pushDuel({
-    required GameData data,
-    required List<DuelBug> mine,
-    required List<DuelBug> foe,
-    required DuelDriver driver,
-    required Map<String, SkinView?> mySkins,
-    required Map<String, SkinView?> foeSkins,
-    required Future<void> Function(DuelStep last) onFinished,
-    required _Scout scout,
-  }) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => DuelArenaScreen(
-          mine: mine,
-          foe: foe,
-          driver: driver,
-          params: _duelParams(data),
-          arena: foe.first.element,
-          mySkins: mySkins,
-          foeSkins: foeSkins,
-          onFinished: onFinished,
-        ),
-      ),
-    );
-    _lastFoughtOwnerId = scout.ownerId;
-    if (mounted) setState(() => _rerollScouts = true);
-  }
-
   /// 로컬(서버 없음) 결투 결과 반영 — 진 판의 곤충만 부상, 나머지 선차감 부상은 푼다.
   Future<void> _applyLocalDuel(DuelStep last, List<String> ids) async {
     // 로컬 진행기는 판별 결과를 따로 안 들고 있어서, 마지막 판까지의 승패로 재구성한다.
@@ -2697,7 +2806,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         .read(saveControllerProvider.notifier)
         .applyBattleResult(
           gold: last.gold,
-          trophyDelta: last.trophyDelta,
+          // 승리 점수 방식(2026-09-29) — 이기면 고른 후보의 점수, 지면 0.
+          trophyDelta: last.winsA > last.winsB ? _localWinPoints : 0,
           koedBugIds: _localLosers,
           healBugIds: [
             for (final id in ids)
@@ -2731,322 +2841,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       noTicket
           ? l.pvpTicketNone
           : (res.error == 'bug_injured' ? l.injuryDesc : l.battleServerFailed),
-    );
-  }
-
-  /// **빠른 결투** — 게이지 없이 3판을 한 번에(서버가 모두 확정) → 재생.
-  Future<void> _battle(
-    GameData data,
-    SaveGame save,
-    String locale,
-    _Scout scout,
-  ) async {
-    final l = AppLocalizations.of(context);
-    final ids = _duelTeamIds(l);
-    if (ids == null) return;
-    if (!await _takeTicket(l)) return;
-    await ref.read(saveControllerProvider.notifier).setPvpDefense(ids);
-    final mine = [
-      for (final id in ids)
-        _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
-    ];
-    final mySkins = _mySkins(save, ids);
-
-    final server = ref.read(gameServerProvider);
-    if (server.available) {
-      final close = _showStartOverlay(l);
-      try {
-        // 전투 전 최신 세이브 업로드 — 실패하면 시작하지 않는다(낡은 세이브로 싸우고
-        // 채택하면 최근 진행이 사라진다).
-        if (!await _flushSave()) {
-          await _returnTicket();
-          if (mounted) showCenterToast(context, l.battleServerFailed);
-          return;
-        }
-        final res = await server.duelAuto(
-          teamBugIds: ids,
-          opponentUserId: scout.ownerId,
-          tierId: scout.ownerId == null ? scout.tier.id : null,
-          locale: locale,
-        );
-        if (!res.isOk || res.save == null) {
-          await _duelRejected(l, res);
-          return;
-        }
-        await ref
-            .read(saveControllerProvider.notifier)
-            .adoptServerSave(res.save!);
-        if (!mounted) return;
-        final f = _foeFromServer(res.data!['foe']);
-        final bouts = [
-          for (final b in (res.data!['bouts'] as List? ?? const []))
-            DuelBout.fromJson(Map<String, dynamic>.from(b as Map)),
-        ];
-        close();
-        await _pushDuel(
-          data: data,
-          mine: mine,
-          foe: f.foe,
-          driver: PrebakedDuelDriver(
-            bouts: bouts,
-            gold: (res.data!['gold'] as num?)?.toInt() ?? 0,
-            trophyDelta: (res.data!['trophyDelta'] as num?)?.toInt() ?? 0,
-          ),
-          mySkins: mySkins,
-          foeSkins: f.skins,
-          // 세이브는 이미 채택했다 — 트로피만 순위표에 알린다.
-          onFinished: (_) async {
-            final s2 = ref.read(saveControllerProvider).requireValue;
-            unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(s2)));
-          },
-          scout: scout,
-        );
-      } finally {
-        close();
-      }
-      return;
-    }
-
-    // 로컬(개발 실행) — 같은 엔진으로 끝까지 돌리고 보상은 끝날 때 반영한다.
-    final foe = [
-      for (final e in scout.team) _scoutToDuel(e.bug, e.speciesId, data),
-    ];
-    final match = simulateDuel(
-      seed: _rng.nextInt(1 << 31),
-      teamA: mine,
-      teamB: foe,
-      params: _duelParams(data),
-    );
-    final rw = pvpReward(
-      won: match.winsA > match.winsB,
-      draw: false,
-      trophies: save.pvpTrophies,
-      cfg: data.battleConfig ?? const BattleConfig(),
-      rewardMult: scout.tier.rewardMult,
-    );
-    _localLosers
-      ..clear()
-      ..addAll([
-        for (var i = 0; i < match.bouts.length; i++)
-          if (match.bouts[i].winner == 1) ids[i],
-      ]);
-    if (!mounted) return;
-    await _pushDuel(
-      data: data,
-      mine: mine,
-      foe: foe,
-      driver: PrebakedDuelDriver(
-        bouts: match.bouts,
-        gold: rw.gold,
-        trophyDelta: rw.trophyDelta,
-      ),
-      mySkins: mySkins,
-      foeSkins: _foeSkins(scout),
-      onFinished: (last) => _applyLocalDuel(last, ids),
-      scout: scout,
-    );
-  }
-
-  /// **직접 던지기 결투** — 판마다 게이지 → 서버가 그 판을 확정 → 재생.
-  ///
-  /// 시작할 때 서버가 **트로피 패배분·부상을 먼저 깎는다**(도중에 나가면 그대로 패배 —
-  /// 옛 수동 전투와 같은 규칙). 화면에도 부상을 먼저 걸어 주기 업로드가 싣게 한다.
-  Future<void> _battleManual(
-    GameData data,
-    SaveGame save,
-    String locale,
-    _Scout scout,
-  ) async {
-    final l = AppLocalizations.of(context);
-    final ids = _duelTeamIds(l);
-    if (ids == null) return;
-    if (!await _takeTicket(l)) return;
-    await ref.read(saveControllerProvider.notifier).setPvpDefense(ids);
-    final mine = [
-      for (final id in ids)
-        _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
-    ];
-    final mySkins = _mySkins(save, ids);
-
-    final server = ref.read(gameServerProvider);
-    if (server.available) {
-      final close = _showStartOverlay(l);
-      try {
-        if (!await _flushSave()) {
-          await _returnTicket();
-          if (mounted) showCenterToast(context, l.battleServerFailed);
-          return;
-        }
-        final res = await server.duelStart(
-          teamBugIds: ids,
-          opponentUserId: scout.ownerId,
-          tierId: scout.ownerId == null ? scout.tier.id : null,
-          locale: locale,
-        );
-        if (!res.isOk || res.data?['sessionId'] == null) {
-          await _duelRejected(l, res);
-          return;
-        }
-        // 서버가 확정한 티켓 잔량으로 맞춘다(세이브 전체가 아니라 몇 바이트).
-        await ref
-            .read(saveControllerProvider.notifier)
-            .adoptTicketState(res.data!);
-        // 세션이 열렸다 — 이제 이탈해도 패배다. 부상 선차감을 앱 세이브에도 건다.
-        await ref.read(saveControllerProvider.notifier).preInjureTeam(ids);
-        if (!mounted) return;
-        final f = _foeFromServer(res.data!['foe']);
-        close();
-        await _pushDuel(
-          data: data,
-          mine: mine,
-          foe: f.foe,
-          driver: ServerDuelDriver(
-            server: server,
-            sessionId: res.data!['sessionId'].toString(),
-          ),
-          mySkins: mySkins,
-          foeSkins: f.skins,
-          onFinished: _adoptDuel,
-          scout: scout,
-        );
-      } finally {
-        close();
-      }
-      return;
-    }
-
-    // 로컬(개발 실행).
-    final foe = [
-      for (final e in scout.team) _scoutToDuel(e.bug, e.speciesId, data),
-    ];
-    await ref.read(saveControllerProvider.notifier).preInjureTeam(ids);
-    final local = _RecordingLocalDriver(
-      LocalDuelDriver(
-        seed: _rng.nextInt(1 << 31),
-        mine: mine,
-        foe: foe,
-        params: _duelParams(data),
-        battle: data.battleConfig ?? const BattleConfig(),
-        trophies: save.pvpTrophies,
-        rewardMult: scout.tier.rewardMult,
-      ),
-      onBout: (i, won) {
-        if (i == 0) _localLosers.clear();
-        if (!won) _localLosers.add(ids[i]);
-      },
-    );
-    if (!mounted) return;
-    await _pushDuel(
-      data: data,
-      mine: mine,
-      foe: foe,
-      driver: local,
-      mySkins: mySkins,
-      foeSkins: _foeSkins(scout),
-      onFinished: (last) => _applyLocalDuel(last, ids),
-      scout: scout,
-    );
-  }
-
-  /// 스카우트 카드 — 난이도 배지·상대 3마리 미리보기·승리 보상, 탭하면 선택.
-  Widget _scoutCard(
-    AppLocalizations l,
-    GameData data,
-    BattleConfig cfg,
-    SaveGame save,
-    int index,
-  ) {
-    final scout = _scouts[index];
-    final selected = index == _selectedScout;
-    final (label, color) = _tierStyle(l, scout.tier.id);
-    final gold = cfg.winGold(save.pvpTrophies, scout.tier.rewardMult);
-    final trophy = cfg.trophyOnWin(scout.tier.rewardMult);
-    return GestureDetector(
-      onTap: () => setState(() => _selectedScout = index),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        decoration: BoxDecoration(
-          color: selected
-              ? color.withValues(alpha: 0.14)
-              : const Color(0x22000000),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? color : const Color(0x33FFFFFF),
-            width: selected ? 1.8 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-            // 실제 유저면 닉네임, 합성 상대면 '야생' — 항상 한 줄을 차지해
-            // 카드 3개의 높이가 어긋나지 않게 한다.
-            const SizedBox(height: 3),
-            Text(
-              scout.ownerName == null
-                  ? '🌿 ${l.opponentWild}'
-                  : '👤 ${_maskName(scout.ownerName!)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: scout.ownerName == null
-                    ? const Color(0x8899BB88)
-                    : const Color(0xCCE9D9A6),
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (final e in scout.team)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 1),
-                    child: bugStageImage(
-                      e.speciesId,
-                      LifeStage.adult,
-                      size: 26,
-                      fallback: elementIcon(e.bug.element, size: 18),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '💰${formatCompact(gold)}',
-              style: const TextStyle(
-                color: Color(0xFFEBD24A),
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              '🏆+$trophy',
-              style: const TextStyle(
-                color: Color(0xFFE9D9A6),
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -3113,21 +2907,6 @@ class _BattleStartOverlayState extends State<_BattleStartOverlay>
   }
 }
 
-/// 순위 보상 표를 한 줄로 — `1위 100 · 2위 50 · 3위 30 · 4~10위 10`.
-String _rankRewardList(AppLocalizations l, BattleConfig cfg) {
-  final parts = <String>[];
-  var from = 1;
-  for (final r in cfg.seasonRankRewards) {
-    if (r.maxRank < from) continue;
-    final label = r.maxRank == from
-        ? l.pvpRankN(from)
-        : l.eventRankRange(from, r.maxRank);
-    parts.add('$label ${r.jelly}');
-    from = r.maxRank + 1;
-  }
-  return parts.join(' · ');
-}
-
 /// 로컬 결투의 판별 승패를 기록한다(끝날 때 진 곤충만 부상을 걸려고).
 class _RecordingLocalDriver implements DuelDriver {
   _RecordingLocalDriver(this._inner, {required this.onBout});
@@ -3147,5 +2926,159 @@ class _RecordingLocalDriver implements DuelDriver {
     final s = await _inner.next(launch);
     if (s != null) onBout(_i++, s.bout.aWon);
     return s;
+  }
+}
+
+/// 상대 후보 한 명(서버 제안의 한 칸, 또는 개발 실행의 로컬 상대).
+class _Candidate {
+  const _Candidate({
+    required this.index,
+    required this.nickname,
+    required this.points,
+    required this.power,
+    required this.team,
+    this.userId,
+    this.rank,
+    this.teamPowerOverride,
+    this.localFoe,
+  });
+
+  factory _Candidate.fromServer(Map<String, dynamic> m) => _Candidate(
+    index: (m['i'] as num).toInt(),
+    userId: m['userId']?.toString(),
+    nickname: '${m['nickname'] ?? ''}',
+    rank: (m['rank'] as num?)?.toInt(),
+    points: (m['points'] as num?)?.toInt() ?? 1,
+    power: (m['power'] as num?)?.toDouble() ?? 0,
+    teamPowerOverride: (m['teamPower'] as num?)?.toDouble(),
+    team: [
+      for (final t in (m['team'] as List? ?? const []))
+        (
+          sp: '${(t as Map)['sp']}',
+          element: Element.values
+              .where((e) => e.name == t['element'])
+              .firstOrNull,
+          power: (t['power'] as num?)?.toDouble() ?? 0,
+          skin: t['skin']?.toString(),
+          bug: t['bug'] is Map
+              ? DuelBug.fromJson(Map<String, dynamic>.from(t['bug'] as Map))
+              : null,
+        ),
+    ],
+  );
+
+  /// 제안 안의 칸 번호(`/duel/start` 의 pick).
+  final int index;
+  final String? userId;
+
+  /// 빈 문자열 = 야생.
+  final String nickname;
+  final int? rank;
+
+  /// 이기면 받는 점수(지면 0).
+  final int points;
+
+  /// 순위표 전투력(야생이면 팀 전투력).
+  final double power;
+  final double? teamPowerOverride;
+  final List<
+    ({String sp, Element? element, double power, String? skin, DuelBug? bug})
+  >
+  team;
+
+  /// 개발 실행(서버 없음)에서 쓰는 상대 팀.
+  final List<DuelBug>? localFoe;
+
+  /// 내 팀과 견줄 전투력 — 곤충 3마리 합.
+  double get teamPower =>
+      teamPowerOverride ?? team.fold<double>(0, (a, t) => a + t.power);
+}
+
+/// 앱바 제목 옆 — 지금 리그 · 남은 시간(집계 중이면 마감까지, 정산 기간이면 새 시즌까지). 누르면 리그 보상.
+class _LeagueClock extends StatefulWidget {
+  const _LeagueClock({
+    required this.league,
+    required this.cfg,
+    required this.onTap,
+  });
+
+  final String league;
+  final BattleConfig cfg;
+  final VoidCallback onTap;
+
+  @override
+  State<_LeagueClock> createState() => _LeagueClockState();
+}
+
+class _LeagueClockState extends State<_LeagueClock> {
+  Timer? _t;
+
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final now = DateTime.now().toUtc();
+    final closed = seasonClosed(now, widget.cfg);
+    var left =
+        (closed ? seasonEndAt(now, widget.cfg) : seasonCloseAt(now, widget.cfg))
+            .difference(now);
+    if (left.isNegative) left = Duration.zero;
+    final d = left.inDays, h = left.inHours % 24, m = left.inMinutes % 60;
+    final time = d > 0 ? l.boardTimeLeftDays(d, h, m) : l.boardTimeLeft(h, m);
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: widget.onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(4, 3, 10, 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B1812),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: const Color(0x66EBA52F)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            leagueIcon(widget.league, size: 26),
+            const SizedBox(width: 4),
+            Text(
+              l.boardLeagueTitle(leagueName(l, widget.league)),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.card_giftcard_rounded,
+              color: Color(0xFFFF6B6B),
+              size: 17,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              time,
+              style: TextStyle(
+                color: closed ? const Color(0xFF6CFF6C) : Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -20,6 +20,9 @@ class DuelSession {
     required this.finished,
     required this.trophiesAtStart,
     required this.trophyPrepaid,
+    this.winPoints,
+    this.hpA = 1,
+    this.hpB = 1,
   });
 
   final String id;
@@ -44,6 +47,14 @@ class DuelSession {
   final int trophiesAtStart;
   final int trophyPrepaid;
 
+  /// 이기면 받는 점수(상대 후보 제안에서 서버가 정한 값, 2026-09-29). 지면 0점.
+  /// null = 옛 세션(트로피 공식).
+  final int? winPoints;
+
+  /// 다음 판 시작 체력(승자 연속 — 이긴 곤충은 남은 체력 + 판 사이 회복, 2026-09-29).
+  final double hpA;
+  final double hpB;
+
   int get winsA => winners.where((w) => w == 0).length;
   int get winsB => winners.where((w) => w == 1).length;
   int get nextBout => winners.length;
@@ -52,6 +63,8 @@ class DuelSession {
     List<int>? winners,
     List<double>? launches,
     bool? finished,
+    double? hpA,
+    double? hpB,
   }) => DuelSession(
     id: id,
     userId: userId,
@@ -66,6 +79,9 @@ class DuelSession {
     finished: finished ?? this.finished,
     trophiesAtStart: trophiesAtStart,
     trophyPrepaid: trophyPrepaid,
+    winPoints: winPoints,
+    hpA: hpA ?? this.hpA,
+    hpB: hpB ?? this.hpB,
   );
 
   Map<String, dynamic> toJson() => {
@@ -83,6 +99,9 @@ class DuelSession {
     'finished': finished,
     'trophiesAtStart': trophiesAtStart,
     'trophyPrepaid': trophyPrepaid,
+    'winPoints': ?winPoints,
+    'hpA': hpA,
+    'hpB': hpB,
   };
 
   static bool isDuel(Map<String, dynamic> j) => j['kind'] == 'duel';
@@ -111,5 +130,8 @@ class DuelSession {
     finished: j['finished'] as bool? ?? false,
     trophiesAtStart: (j['trophiesAtStart'] as num?)?.toInt() ?? 0,
     trophyPrepaid: (j['trophyPrepaid'] as num?)?.toInt() ?? 0,
+    winPoints: (j['winPoints'] as num?)?.toInt(),
+    hpA: (j['hpA'] as num?)?.toDouble() ?? 1,
+    hpB: (j['hpB'] as num?)?.toDouble() ?? 1,
   );
 }

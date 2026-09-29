@@ -99,14 +99,66 @@ void main() {
       expect(aw / n, greaterThan(0.8));
     });
 
-    test('3판 2선승 — 두 판을 먼저 이기면 3판째는 없다', () {
+    test('승자 연속 — 상대 세 마리를 모두 쓰러뜨려야 끝, 이긴 곤충이 계속 나간다', () {
       final strong = [
         for (var i = 0; i < 3; i++) _bug('a$i', Specialty.grip, scale: 3),
       ];
       final weak = [for (var i = 0; i < 3; i++) _bug('b$i', Specialty.grip)];
       final m = simulateDuel(seed: 5, teamA: strong, teamB: weak, params: p);
       expect(m.winner(p), 0);
-      expect(m.bouts.length, 2);
+      expect(m.bouts.length, 3, reason: '첫 곤충이 세 판을 다 이긴다');
+      expect(m.winsA, 3);
+      // 두 번째 판부터 A 는 **남은 체력**으로 들어온다(가득이 아니다).
+      final st = duelNextState(m.bouts.take(1).toList(), strong, weak, p);
+      expect(st.ia, 0);
+      expect(st.ib, 1);
+      expect(st.hpB, 1.0);
+      expect(
+        st.hpA,
+        closeTo(duelCarryHp(m.bouts.first.hpPctA, strong.first, p), 1e-9),
+      );
+    });
+
+    test('판 사이 회복 — 기본 회복 + 회복력, 가득을 넘지 않는다', () {
+      final b = _bug('a', Specialty.grip);
+      expect(duelCarryHp(0.4, b, p), closeTo(0.4 + p.carryHealBase, 1e-9));
+      final tough = DuelBug.fromJson({...b.toJson(), 'rec': 0.3});
+      expect(
+        duelCarryHp(0.4, tough, p),
+        closeTo(0.4 + p.carryHealBase + 0.3, 1e-9),
+      );
+      expect(duelCarryHp(0.99, tough, p), 1.0);
+    });
+
+    test('크리티컬·약점 공격은 사건으로 남는다(화면 표시용)', () {
+      var crit = 0, weak = 0;
+      for (var s = 1; s <= 40; s++) {
+        final r = simulateBout(
+          seed: s,
+          a: _bug('a', Specialty.strike),
+          b: _bug('b', Specialty.grip),
+          params: p,
+        );
+        crit += r.events.where((e) => e.kind == DuelEventKind.crit).length;
+        weak += r.events.where((e) => e.kind == DuelEventKind.weak).length;
+      }
+      expect(crit, greaterThan(0));
+      expect(weak, greaterThanOrEqualTo(0));
+    });
+
+    test('판 시작 체력 — 덜 찬 체력으로 들어오면 그만큼 약하다', () {
+      var lowWins = 0;
+      for (var s = 1; s <= 40; s++) {
+        final r = simulateBout(
+          seed: s,
+          a: _bug('a', Specialty.grip),
+          b: _bug('b', Specialty.grip),
+          params: p,
+          hpA: 0.3,
+        );
+        if (r.winner == 0) lowWins++;
+      }
+      expect(lowWins / 40, lessThan(0.5));
     });
 
     test('판 시드는 판마다 다르다', () {
@@ -145,7 +197,8 @@ void main() {
     test('수치는 JSON 에서 오고, 없는 키는 코드 기본값', () {
       final q = DuelParams.fromJson({'gripForce': 123, 'bestOf': 5});
       expect(q.gripForce, 123);
-      expect(q.winsNeeded, 3);
+      expect(q.winsNeeded, 5, reason: '승자 연속 — 팀 크기만큼 쓰러뜨려야 이긴다');
+      expect(q.maxBouts, 9);
       expect(q.friction, const DuelParams().friction);
     });
   });

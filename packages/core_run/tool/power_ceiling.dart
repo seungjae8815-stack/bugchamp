@@ -155,6 +155,8 @@ PowerParts ceilingParts(
     trait: BugTrait.values.firstWhere((t) => t.key == pets['trait']),
     variant: BugVariant.values.firstWhere((v) => v.key == pets['variant']),
     passive: null,
+    // 현실적 최고치에는 훈련소를 넣지 않는다(90일 표 정의 밖 — balance_targets.json).
+    trainMult: 1.0,
   );
   final bonus = computePetBonus(
     List.filled((pets['count'] as num).toInt(), one),

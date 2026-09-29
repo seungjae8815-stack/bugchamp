@@ -3,6 +3,8 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../battle/league_board_screen.dart';
+
 import '../../domain/auth_service.dart';
 import '../../domain/combat_power.dart';
 import '../../domain/providers.dart';
@@ -69,7 +71,11 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 }
 
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
-  RankingKind _kind = RankingKind.trophies;
+  RankingKind _kind = RankingKind.level;
+
+  /// 첫 탭 = **심연 주간 순위**(2026-09-29 사장님 확정). 결투 트로피 순위는 리그별로 나뉘어
+  /// 결투 탭 순위표로 옮겼다 — 전체 트로피 순위는 리그가 섞여 뜻이 없어졌다.
+  bool _abyss = true;
 
   String _kindLabel(AppLocalizations l, RankingKind k) => switch (k) {
     RankingKind.trophies => l.rankKindTrophies,
@@ -109,6 +115,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   /// 시작점으로만 움직여 `-001` 이 늘 붙었고, 무엇을 뜻하는지 읽히지 않았다.
   String _progressText(AppLocalizations l, PvpProfile p) {
     final data = ref.read(gameDataProvider).value;
+    // 극한 최종 사냥터 다음은 심연 역대 최고 층(2026-09-29) — `극한 · 심연 67층`.
+    if (p.abyssBest > 0) {
+      return l.rankProgressAbyss(tierName(l, p.difficultyTier), p.abyssBest);
+    }
     return progressLabel(
       l,
       data?.roadmapConfig,
@@ -272,6 +282,17 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       ),
     );
 
+    if (_abyss) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l.rankingTitle)),
+        body: Column(
+          children: [
+            _kindTabs(l),
+            const Expanded(child: LeagueBoardView(abyss: true)),
+          ],
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: Text(l.rankingTitle)),
       body: FutureBuilder<Leaderboard>(
@@ -385,33 +406,43 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     );
   }
 
+  bool _on(bool abyss, RankingKind k) =>
+      abyss ? _abyss : (!_abyss && _kind == k);
+
   /// 랭킹 축 선택 탭.
   Widget _kindTabs(AppLocalizations l) => Padding(
     padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
     child: Row(
       children: [
-        for (final k in RankingKind.values)
+        for (final (abyss, k) in [
+          (true, RankingKind.trophies),
+          (false, RankingKind.level),
+          (false, RankingKind.stage),
+        ])
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: GestureDetector(
-                onTap: () => setState(() => _kind = k),
+                onTap: () => setState(() {
+                  _abyss = abyss;
+                  if (!abyss) _kind = k;
+                }),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _kind == k
+                    color: _on(abyss, k)
                         ? _honey.withValues(alpha: 0.22)
                         : const Color(0x18FFFFFF),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: _kind == k ? _honey : const Color(0x22FFFFFF),
+                      color: _on(abyss, k) ? _honey : const Color(0x22FFFFFF),
                     ),
                   ),
                   child: Text(
-                    _kindLabel(l, k),
+                    abyss ? l.boardTabAbyss : _kindLabel(l, k),
                     style: TextStyle(
-                      color: _kind == k ? _honey : const Color(0x99FFFFFF),
+                      color: _on(abyss, k) ? _honey : const Color(0x99FFFFFF),
                       fontWeight: FontWeight.w900,
                       fontSize: 12.5,
                     ),

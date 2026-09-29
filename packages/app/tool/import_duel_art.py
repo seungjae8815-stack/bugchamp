@@ -46,6 +46,8 @@ SPECIES_JSON = os.path.normpath(
 )
 ELEMENTS = ("wood", "fire", "earth", "metal", "water")
 FX = ("clash", "dust", "ringout", "dizzy")
+# 결투 탭(2026-09-29, docs/art_prompts_battle_hub.md): 배경 · 출정 칸 틀 · 회복실 · 훈련소.
+HUB = ("battle_hub_bg", "squad_slot", "hub_recovery", "hub_training")
 BUG_SIDE = 512  # 던지는 장면에서 경기장 폭의 1/4 안팎(고밀도 ~300px)
 ARENA_SIDE = 768
 SIDE_W = 1024
@@ -64,6 +66,7 @@ def expected():
     out += ["arena_" + e for e in ELEMENTS]
     out += ["arena_%s_side" % e for e in ELEMENTS]
     out += ["fx_" + f for f in FX]
+    out += list(HUB)
     return out
 
 
@@ -149,6 +152,29 @@ def do_fx(src, name):
     return "%d KB · 워터마크 %s" % (kb, "지움 %dpx" % wiped if wiped else "없음")
 
 
+def do_hub(src, name):
+    im = Image.open(src).convert("RGBA")
+    if name == "battle_hub_bg":
+        # 배경째 쓴다 — 워터마크만 메우고 폭 720 으로.
+        mask, n = find_mark(im)
+        if mask is not None:
+            im = inpaint(im, mask)
+        w, h = im.size
+        im = im.resize((720, round(h * 720 / w)), Image.LANCZOS)
+        kb = save_webp(im.convert("RGB"), name, quality=80)
+        return "%d KB · 워터마크 %s" % (kb, "지움 %dpx" % n if n else "없음")
+    # 틀·아이콘 — 테두리에서 번지는 누끼(안쪽 어두운 판은 갇혀 있어 남는다).
+    cut = drop_fragments(flood_cut(erase_corner_mark(im)))
+    bbox = cut.getchannel("A").point(lambda v: 255 if v > 24 else 0).getbbox()
+    cut = cut.crop(bbox)
+    side = 384 if name == "squad_slot" else 256
+    w, h = cut.size
+    k = side / max(w, h)
+    cut = cut.resize((round(w * k), round(h * k)), Image.LANCZOS)
+    kb = save_webp(cut, name)
+    return "%d KB · %dx%d" % (kb, cut.size[0], cut.size[1])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="src", required=True)
@@ -185,6 +211,8 @@ def main():
         src = files[name]
         if name.startswith("duel_"):
             msg = do_bug(src, name)
+        elif name in HUB:
+            msg = do_hub(src, name)
         elif name.startswith("arena_"):
             msg = do_arena(src, name, name.endswith("_side"))
         else:

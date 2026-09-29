@@ -1122,6 +1122,31 @@ class StorageScreen extends ConsumerWidget {
                                   ? null
                                   : until.difference(now),
                               () async {
+                                // 상세를 보여 주고 짝짓기를 확인받는다(2026-09-29 사장님 요청).
+                                final go = await _confirmBug(
+                                  ctx,
+                                  data,
+                                  locale,
+                                  b,
+                                  LifeStage.adult,
+                                  confirm: l.breedingConfirm,
+                                  extra: picking
+                                      ? null
+                                      : l.breedingTimeInfo(
+                                          remainLabel(
+                                            l,
+                                            Duration(
+                                              seconds: data.petConfig!
+                                                  .breedingDuration(
+                                                    data
+                                                        .species(b.speciesId)
+                                                        .grade,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                );
+                                if (!go) return;
                                 if (picking) {
                                   setSheet(() => mother = b);
                                 } else {
@@ -1179,12 +1204,21 @@ class StorageScreen extends ConsumerWidget {
               // 타일 비율(0.82)이 고정이라 세로가 넘친다(실측 10px).
               Stack(
                 alignment: Alignment.bottomCenter,
+                clipBehavior: Clip.none,
                 children: [
                   bugStageImage(
                     bug.speciesId,
                     LifeStage.adult,
                     size: 60,
                     fallback: bugAvatar(sp, size: 50),
+                  ),
+                  Positioned(
+                    left: -6,
+                    top: -4,
+                    child: _eggBadge(
+                      gradeLabel(AppLocalizations.of(ctx), sp.grade),
+                      gradeColor(sp.grade),
+                    ),
                   ),
                   if (waiting)
                     Container(
@@ -1929,6 +1963,26 @@ class StorageScreen extends ConsumerWidget {
     final variant = bug.variant != BugVariant.none;
     return GestureDetector(
       onTap: () async {
+        // 상세를 보여 주고 부화 시작을 확인받는다(2026-09-29 사장님 요청).
+        final go = await _confirmBug(
+          ctx,
+          data,
+          locale,
+          bug,
+          LifeStage.egg,
+          confirm: l.incubatorStartConfirm,
+          extra: data.petConfig == null
+              ? null
+              : l.incubatorTimeInfo(
+                  remainLabel(
+                    l,
+                    Duration(
+                      seconds: data.petConfig!.incubateDuration(sp.grade),
+                    ),
+                  ),
+                ),
+        );
+        if (!go) return;
         final ok = await r
             .read(saveControllerProvider.notifier)
             .placeInIncubator(bug.id);
@@ -1987,6 +2041,15 @@ class StorageScreen extends ConsumerWidget {
                       top: -2,
                       child: _eggBadge(l.dexVariant, const Color(0xFFE0A020)),
                     ),
+                  // 등급 — 테두리 색만으로는 구분이 어렵다.
+                  Positioned(
+                    left: -4,
+                    top: -2,
+                    child: _eggBadge(
+                      gradeLabel(l, sp.grade),
+                      gradeColor(sp.grade),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -2029,6 +2092,114 @@ class StorageScreen extends ConsumerWidget {
 
   /// 알 위에 얹는 작은 이름표(특성·이색). 알 그림이 42px 뿐이라 글자를
   /// 8px 까지 줄이고 테두리를 넣어 배경과 안 섞이게 한다.
+  /// 곤충(알·성충) 상세 + 확인 버튼 — 짝짓기·부화 시작 공용. 확인이면 true.
+  Future<bool> _confirmBug(
+    BuildContext ctx,
+    GameData data,
+    String locale,
+    IndividualBug bug,
+    LifeStage stage, {
+    required String confirm,
+    String? extra,
+  }) async {
+    final l = AppLocalizations.of(ctx);
+    final sp = data.species(bug.speciesId);
+    Widget row(String k, Widget v) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(
+              k,
+              style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 12),
+            ),
+          ),
+          Expanded(child: v),
+        ],
+      ),
+    );
+    Text val(String t, [Color c = Colors.white]) => Text(
+      t,
+      style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w900),
+    );
+    final ok = await showGameDialog<bool>(
+      ctx,
+      title: sp.name.resolve(locale),
+      iconWidget: bugStageImage(
+        bug.speciesId,
+        stage,
+        size: 56,
+        fallback: bugAvatar(sp, size: 48),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 4,
+            runSpacing: 3,
+            children: [
+              _eggBadge(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
+              if (!bug.trait.isNone)
+                _eggBadge(traitLabel(l, bug.trait), traitColor(bug.trait)),
+              if (bug.variant != BugVariant.none)
+                _eggBadge(l.dexVariant, const Color(0xFFE0A020)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          row(
+            l.bugInfoPotential,
+            val('★' * bug.potential, const Color(0xFFFFC928)),
+          ),
+          row(
+            l.bugInfoSex,
+            Row(
+              children: [
+                sexArt(bug.sex, size: 14),
+                const SizedBox(width: 4),
+                val(sexLabel(l, bug.sex)),
+              ],
+            ),
+          ),
+          row(
+            l.bugInfoElement,
+            Row(
+              children: [
+                elementIcon(bug.element, size: 14),
+                const SizedBox(width: 4),
+                val(elementLabel(l, bug.element), elementColor(bug.element)),
+              ],
+            ),
+          ),
+          row(l.bugInfoTemperament, val(temperamentLabel(l, bug.temperament))),
+          row(l.bugInfoSpecialty, val(specialtyLabel(l, sp.specialty))),
+          row(l.bugInfoSize, val(l.bugSize(bug.sizeMm.toStringAsFixed(1)))),
+          if (extra != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              extra,
+              style: const TextStyle(
+                color: Color(0xFFEBD24A),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(ctx, false),
+          primary: false,
+        ),
+        gameDialogButton(confirm, () => Navigator.pop(ctx, true)),
+      ],
+    );
+    return ok == true;
+  }
+
   Widget _eggBadge(String text, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
     decoration: BoxDecoration(
@@ -2358,7 +2529,19 @@ class StorageScreen extends ConsumerWidget {
         if (bug == null) continue;
         final sp = data.speciesById[bug.speciesId];
         if (sp == null) continue;
-        pets.add(petStatOf(bug, sp, cfg, now));
+        pets.add(
+          petStatOf(
+            bug,
+            sp,
+            cfg,
+            now,
+            trainMult: trainPetMult(
+              save,
+              bug.id,
+              (data.battleConfig ?? const BattleConfig()).training,
+            ),
+          ),
+        );
       }
       final pb = computePetBonus(pets, cfg);
       atkPct = ((pb.attackMult - 1) * 100).toStringAsFixed(0);
@@ -2781,7 +2964,18 @@ class StorageScreen extends ConsumerWidget {
                   if (petCfg != null)
                     _injuryCard(ctx, r, petCfg, save, bug, now),
                   if (petCfg != null)
-                    _petEffectCard(l, species, bug, effStage, petCfg),
+                    _petEffectCard(
+                      l,
+                      species,
+                      bug,
+                      effStage,
+                      petCfg,
+                      trainMult: trainPetMult(
+                        save,
+                        bug.id,
+                        (data.battleConfig ?? const BattleConfig()).training,
+                      ),
+                    ),
                   if (petCfg != null && effStage == LifeStage.adult) ...[
                     const SizedBox(height: 6),
                     _trainRow(ctx, r, petCfg, save, bug, now),
@@ -3019,8 +3213,9 @@ class StorageScreen extends ConsumerWidget {
     Species sp,
     IndividualBug bug,
     LifeStage stage,
-    PetConfig cfg,
-  ) {
+    PetConfig cfg, {
+    double trainMult = 1,
+  }) {
     // 여기만 `petStatOf` 를 안 쓴다 — 호출부가 **이미 해석한 단계**를 넘기므로
     // (다시 계산하면 같은 화면 안에서 한 프레임 어긋날 수 있다) 단계만 갈아끼운다.
     final c = petContribution((
@@ -3033,6 +3228,7 @@ class StorageScreen extends ConsumerWidget {
       trait: bug.trait,
       variant: bug.variant,
       passive: sp.passive,
+      trainMult: trainMult,
     ), cfg);
     return _sectionBox(
       child: Column(

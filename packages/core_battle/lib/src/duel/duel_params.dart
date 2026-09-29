@@ -36,17 +36,17 @@ class DuelParams {
     this.impactRef = 70,
     this.impactMin = 0.25,
     this.impactMax = 1.8,
-    this.strikeFlipBase = 0.10,
+    this.strikeFlipBase = 0.13,
     this.strikeFlipCooldown = 1.4,
     this.strikePushMult = 2.6,
     this.gripSeconds = 1.3,
-    this.gripForce = 900,
+    this.gripForce = 1100,
     this.gripCooldown = 3.2,
     this.gripDps = 0.12,
-    this.tossCooldown = 4.5,
-    this.tossSpeed = 138,
+    this.tossCooldown = 3.2,
+    this.tossSpeed = 145,
     this.tossAirSeconds = 0.55,
-    this.tossLandDamage = 0.1,
+    this.tossLandDamage = 0.18,
     this.restrainMult = 1.3,
     this.launchSpeedMult = 1.1,
     this.launchBonusMax = 0.10,
@@ -56,6 +56,15 @@ class DuelParams {
     this.flankOffset = 28,
     this.aggressiveCooldownMult = 0.7,
     this.steadfastPushResist = 0.25,
+    this.critChance = 0.12,
+    this.critMult = 1.5,
+    this.weakMult = 1.3,
+    this.weakCos = 0.35,
+    this.carryHealBase = 0.05,
+    this.hpGuard = 1.2,
+    this.flipHpGuard = 0.75,
+    this.rimHpGuard = 1.2,
+    this.damageSpread = 0.5,
   });
 
   /// 경기장 반지름. 곤충 중심이 이 밖이면 장외.
@@ -158,9 +167,39 @@ class DuelParams {
   /// 우직: 밀림 저항 보너스(집기·던지기·충돌 밀림에 적용).
   final double steadfastPushResist;
 
+  /// 크리티컬 — 부딪힐 때 기본 확률(+ 곤충의 `crit`) · 피해 배율.
+  final double critChance;
+  final double critMult;
+
+  /// 약점 공격 — 맞는 쪽이 **옆구리·뒤**를 보일 때 피해 배율. 맞는 쪽이 바라보는 방향과
+  /// 때린 쪽 방향의 cos 이 [weakCos] 보다 작으면(약 70° 밖) 약점이다.
+  final double weakMult;
+  final double weakCos;
+
+  /// 승자 연속(2026-09-29): 이긴 곤충은 **남은 체력 그대로** 다음 상대를 맞는다.
+  /// 판 사이 회복 = 최대 체력 × ([carryHealBase] + 곤충의 `recovery`).
+  final double carryHealBase;
+
+  /// 기세(2026-09-29) — **체력이 많이 남을수록** 밀림·뒤집기·장외에 버틴다. 가득 찬 곤충은 첫 충돌에
+  /// 밀려나지 않고, 두들겨 맞아 체력이 깎일수록 마무리(장외·뒤집기)가 쉬워진다.
+  /// [hpGuard]: 밀림 저항 += hpGuard × 체력% · [flipHpGuard]: 뒤집기 확률 × (1 − flipHpGuard × 체력%)
+  /// · [rimHpGuard]: 테두리 버팀 × (1 + rimHpGuard × 체력%).
+  final double hpGuard;
+  final double flipHpGuard;
+  final double rimHpGuard;
+
+  /// 부딪힘 피해 흔들림 — 한 방마다 ×(1 ± damageSpread) 균등. 체력 싸움은 한 방이 늘 같으면
+  /// 센 쪽이 거의 정해진 대로 이긴다(전력 +20% 가 92%) — 약한 쪽에도 운의 여지를 둔다.
+  final double damageSpread;
+
   int get maxTicks => (roundSeconds * tickHz).round();
   double get dt => 1 / tickHz;
-  int get winsNeeded => bestOf ~/ 2 + 1;
+
+  /// 승자 연속 — 상대 [bestOf]마리(팀 크기)를 모두 쓰러뜨려야 이긴다.
+  int get winsNeeded => bestOf;
+
+  /// 한 경기의 최대 판 수(3마리씩이면 5판).
+  int get maxBouts => bestOf * 2 - 1;
 
   factory DuelParams.fromJson(Map<String, dynamic>? j) {
     if (j == null) return const DuelParams();
@@ -218,6 +257,15 @@ class DuelParams {
         d.aggressiveCooldownMult,
       ),
       steadfastPushResist: n('steadfastPushResist', d.steadfastPushResist),
+      critChance: n('critChance', d.critChance),
+      critMult: n('critMult', d.critMult),
+      weakMult: n('weakMult', d.weakMult),
+      weakCos: n('weakCos', d.weakCos),
+      carryHealBase: n('carryHealBase', d.carryHealBase),
+      hpGuard: n('hpGuard', d.hpGuard),
+      flipHpGuard: n('flipHpGuard', d.flipHpGuard),
+      rimHpGuard: n('rimHpGuard', d.rimHpGuard),
+      damageSpread: n('damageSpread', d.damageSpread),
     );
   }
 }

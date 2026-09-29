@@ -78,12 +78,19 @@ abstract interface class GameServer {
     required String stance,
   });
 
-  /// 결투(곤충 배틀 스타디움) 시작 — 출전 순서 3마리. 세션 id·상대 3마리가 온다(시드는 없다).
+  /// 상대 후보 5명(같은 리그 순위 위 3명·아래 2명, 모자라면 야생) — `offerId`·`slots`(점수 포함).
+  /// 정산 기간이면 `season_closed`.
+  Future<ServerResult> duelOffer({String? locale});
+
+  /// 순위표에서 누른 사람의 방어팀(곤충 3마리·전투력).
+  Future<ServerResult> pvpProfile(String userId);
+
+  /// 결투(곤충 배틀 스타디움) 시작 — 출전 순서 3마리 + 후보 제안의 한 칸([offerId]·[pick]).
+  /// 세션 id·상대 3마리·승리 점수가 온다(시드는 없다).
   Future<ServerResult> duelStart({
     required List<String> teamBugIds,
-    String? opponentUserId,
-    String? tierId,
-    String? locale,
+    required String offerId,
+    required int pick,
   });
 
   /// 결투 한 판 던지기 — [launch] 는 게이지 값(0~1). 그 판의 궤적·결판이 온다.
@@ -91,14 +98,6 @@ abstract interface class GameServer {
   Future<ServerResult> duelThrow({
     required String sessionId,
     required double launch,
-  });
-
-  /// 빠른 결투 — 게이지 없이 3판을 한 번에. 판 결과 목록·세이브가 온다.
-  Future<ServerResult> duelAuto({
-    required List<String> teamBugIds,
-    String? opponentUserId,
-    String? tierId,
-    String? locale,
   });
 
   /// 결투 티켓 충전 — 광고 보상(+N장, 하루 상한은 서버가 센다).
@@ -368,23 +367,21 @@ class NoGameServer implements GameServer {
     required String stance,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
+  Future<ServerResult> duelOffer({String? locale}) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> pvpProfile(String userId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
   Future<ServerResult> duelStart({
     required List<String> teamBugIds,
-    String? opponentUserId,
-    String? tierId,
-    String? locale,
+    required String offerId,
+    required int pick,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> duelThrow({
     required String sessionId,
     required double launch,
-  }) async => const ServerResult.fail('unavailable', 0);
-  @override
-  Future<ServerResult> duelAuto({
-    required List<String> teamBugIds,
-    String? opponentUserId,
-    String? tierId,
-    String? locale,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> pvpTicketAd() async =>
@@ -645,16 +642,22 @@ class HttpGameServer implements GameServer {
   });
 
   @override
+  Future<ServerResult> duelOffer({String? locale}) =>
+      _send('POST', '/duel/offer', {'locale': ?locale});
+
+  @override
+  Future<ServerResult> pvpProfile(String userId) =>
+      _send('GET', '/pvp/profile?user=${Uri.encodeQueryComponent(userId)}');
+
+  @override
   Future<ServerResult> duelStart({
     required List<String> teamBugIds,
-    String? opponentUserId,
-    String? tierId,
-    String? locale,
+    required String offerId,
+    required int pick,
   }) => _send('POST', '/duel/start', {
     'teamBugIds': teamBugIds,
-    'opponentUserId': ?opponentUserId,
-    'tierId': ?tierId,
-    'locale': ?locale,
+    'offerId': offerId,
+    'pick': pick,
   });
 
   @override
@@ -663,19 +666,6 @@ class HttpGameServer implements GameServer {
     required double launch,
   }) =>
       _send('POST', '/duel/throw', {'sessionId': sessionId, 'launch': launch});
-
-  @override
-  Future<ServerResult> duelAuto({
-    required List<String> teamBugIds,
-    String? opponentUserId,
-    String? tierId,
-    String? locale,
-  }) => _send('POST', '/duel/auto', {
-    'teamBugIds': teamBugIds,
-    'opponentUserId': ?opponentUserId,
-    'tierId': ?tierId,
-    'locale': ?locale,
-  });
 
   @override
   Future<ServerResult> pvpTicketAd() =>

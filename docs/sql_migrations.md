@@ -17,8 +17,9 @@ Supabase 스키마 변경 SQL 의 **적용 여부**를 기록한다.
 | `_sql_20260915_rank_power.sql` | 진행도 랭킹 동률을 전투력으로(profiles.power + leaderboard_top 재정의) — **새 앱보다 먼저** | 적용(2026-09-15) |
 | `_sql_20260915_chat_badge.sql` | 채팅 메시지에 대표 대회 뱃지(insert 트리거가 profiles.badge 에서 찍음) | 적용(2026-09-15) |
 | `_sql_20260915_ops_monitor.sql` | 운영 감시 — 리포트 크론 재등록 · `ops_heartbeat` · `ops_settings`(텔레그램 확인 버튼 대기·채팅 요약) · ops-watchdog 10분 크론. ⚠️ **서버 재배포보다 먼저** (없으면 확인 버튼·채팅 요약이 동작하지 않는다) | 적용(2026-09-16) |
-| `_sql_20260928_pvp_season_rank.sql` | 결투 **리그** 순위(리그 = 등급, 상위 20% 승급·하위 20% 강등) — 서버 전용 `pvp_season_scores`(league 칸) + `pvp_season_submit`·`pvp_league_rank_of`·`pvp_league_top`. ⚠️ **서버 재배포보다 먼저** | 대기 |
+| `_sql_20260928_pvp_season_rank.sql` | 결투 **리그** 순위(리그 = 등급, 상위 20% 승급·하위 20% 강등) — 서버 전용 `pvp_season_scores`(league 칸) + `pvp_season_submit`·`pvp_league_rank_of`·`pvp_league_top`·`pvp_league_range`·`pvp_league_count`·`pvp_season_row`(상대 후보·정산 기간 순위표). ⚠️ **서버 재배포보다 먼저** | 대기 |
 | `_sql_20260929_abyss_weekly.sql` | 심연 주간 최고 층 순위 — 서버 전용 `abyss_weekly_scores` + `abyss_submit`·`abyss_rank_of`·`abyss_top`. ⚠️ **서버 재배포보다 먼저** | 대기 |
+| `_sql_20260929_rank_abyss.sql` | 진행도 랭킹: 극한 최종 사냥터 다음은 **심연 역대 최고 층**(`profiles.abyss_best` — 서버만 씀 · `leaderboard_top` 재정의). 보상 없음(명예용). ⚠️ **서버 재배포보다 먼저** | 대기 |
 
 > `미확인` = 이 대장을 만들기(2026-09-08) 전에 있던 파일이라 적용 여부를 알 수 없다.
 > 다음에 각 파일을 다룰 때 확인해서 `적용` / `대기` / `폐기` 로 바꾼다.

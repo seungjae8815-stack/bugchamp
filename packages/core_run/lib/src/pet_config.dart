@@ -733,6 +733,9 @@ typedef PetStat = ({
 
   /// 종 고유 패시브(§2.1). 없으면 null.
   SpeciesPassive? passive,
+
+  /// 훈련소 배율(2026-09-29) — 1 + 훈련 단계 합계 × `training.petScale`. 호출자가 세이브에서 계산한다.
+  double trainMult,
 });
 
 /// 개체 + 종 → [PetStat]. **조립을 한 곳에 모은다.**
@@ -744,8 +747,9 @@ PetStat petStatOf(
   IndividualBug bug,
   Species species,
   PetConfig cfg,
-  DateTime now,
-) => (
+  DateTime now, {
+  double trainMult = 1,
+}) => (
   grade: species.grade,
   sizeMult: bug.statMultiplier(species),
   potential: bug.potential,
@@ -755,6 +759,7 @@ PetStat petStatOf(
   trait: bug.trait,
   variant: bug.variant,
   passive: species.passive,
+  trainMult: trainMult,
 );
 
 /// 펫 1마리가 기여하는 공격/체력 배율(장착 효과 표시·합산 공용).
@@ -764,7 +769,8 @@ PetStat petStatOf(
       p.sizeMult *
       (1 + p.enhanceTotal * cfg.enhanceScale) *
       (cfg.stageMult[p.stage] ?? 1.0) *
-      (1 + (p.level - 1) * cfg.levelBonus);
+      (1 + (p.level - 1) * cfg.levelBonus) *
+      p.trainMult;
   // 혈통 특성은 **곱이 아니라 축별 가산**이다 — 맹렬은 공격만, 강인은 체력만
   // 올려야 "무엇을 노리고 교배했는지"가 수치로 보인다. scale 에 곱해버리면
   // 두 축이 같이 올라 특성끼리 구분이 사라진다.

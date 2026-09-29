@@ -3597,7 +3597,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duelThrowButton => 'Throw!';
 
   @override
-  String get duelGaugeHint => 'Stop in the green for a stronger first charge';
+  String get duelGaugeHint =>
+      'Tap anywhere to stop · the greener, the stronger your first charge';
 
   @override
   String duelBout(int n) {
@@ -3782,5 +3783,278 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get leagueZoneHint =>
-      'Settles every Sunday midnight · top 20% promote · bottom 20% demote';
+      'Closes every Sunday 09:00 · top 20% promote · bottom 20% demote';
+
+  @override
+  String get duelSquadTitle => 'Squad';
+
+  @override
+  String get recoveryRoom => 'Recovery';
+
+  @override
+  String get trainingCenter => 'Training';
+
+  @override
+  String get trainingSoon => 'Training opens soon';
+
+  @override
+  String get leagueClaimPromo => 'Claim promotion reward';
+
+  @override
+  String get battleSeasonClosed => 'The season has ended!';
+
+  @override
+  String get recoveryEmpty => 'No bugs are recovering';
+
+  @override
+  String get opponentPickTitle => 'Choose an opponent';
+
+  @override
+  String opponentPickHint(String power) {
+    return 'Your team power $power · Win to earn stars, lose nothing';
+  }
+
+  @override
+  String get opponentWinOnly => 'on win';
+
+  @override
+  String boardSeasonClosesIn(String time) {
+    return 'Season closes: $time';
+  }
+
+  @override
+  String boardMyRankNow(int rank) {
+    return 'Now #$rank — your reward';
+  }
+
+  @override
+  String profileCombatPower(String power) {
+    return 'Power $power';
+  }
+
+  @override
+  String get profileNoTeam => 'No defense team yet';
+
+  @override
+  String duelAutoThrowIn(int n) {
+    return 'Auto-throw in ${n}s';
+  }
+
+  @override
+  String get duelRestrainHit => 'Counter!';
+
+  @override
+  String get duelCritHit => 'Critical!';
+
+  @override
+  String get duelWeakHit => 'Weak spot!';
+
+  @override
+  String pvpTicketJellyGive(int amount) {
+    return 'Refill +$amount';
+  }
+
+  @override
+  String get bugInfoAtk => 'Attack';
+
+  @override
+  String get bugInfoDef => 'Defense';
+
+  @override
+  String get bugInfoSpd => 'Speed';
+
+  @override
+  String get bugInfoSpecialty => 'Specialty';
+
+  @override
+  String get bugInfoTemperament => 'Temper';
+
+  @override
+  String get bugInfoSize => 'Size';
+
+  @override
+  String get bugInfoPotential => 'Potential';
+
+  @override
+  String get squadDetailTitle => 'Squad';
+
+  @override
+  String get squadDeploy => 'Deploy';
+
+  @override
+  String get squadInjured =>
+      'A bug is recovering — heal it in Recovery or swap it out';
+
+  @override
+  String squadOrder(int n) {
+    return 'Fighter $n';
+  }
+
+  @override
+  String get duelAttackBtn => 'Attack';
+
+  @override
+  String get squadRelease => 'Remove';
+
+  @override
+  String get squadSwap => 'Swap';
+
+  @override
+  String get trainAttack => 'Attack';
+
+  @override
+  String get trainDefense => 'Defense';
+
+  @override
+  String get trainEvade => 'Evade';
+
+  @override
+  String get trainCrit => 'Critical';
+
+  @override
+  String get trainRecovery => 'Recovery';
+
+  @override
+  String get trainingNone => 'No bug is training right now';
+
+  @override
+  String trainingNow(String stat, int level) {
+    return 'Training $stat Lv$level';
+  }
+
+  @override
+  String get trainingDone => 'Training complete!';
+
+  @override
+  String get trainingPickBug => 'Bug to train';
+
+  @override
+  String get trainingCapHint =>
+      'Max levels differ by potential, temper, specialty and bloodline trait';
+
+  @override
+  String trainingLevel(int lv, int cap) {
+    return '$lv / $cap';
+  }
+
+  @override
+  String get trainingStart => 'Train';
+
+  @override
+  String get trainingMaxed => 'Max';
+
+  @override
+  String get trainingBusy =>
+      'One bug at a time — wait for the current training';
+
+  @override
+  String get trainingNoMaterials => 'Not enough materials';
+
+  @override
+  String get trainingReset => 'Reset training';
+
+  @override
+  String trainingResetAsk(String n) {
+    return 'Reset all levels to 0 and get back half the materials ($n of each)';
+  }
+
+  @override
+  String get trainingResetDone => 'Training reset';
+
+  @override
+  String get squadTraining => 'A training bug cannot be deployed';
+
+  @override
+  String get duelMiss => 'Miss!';
+
+  @override
+  String get breedingConfirm => 'Mate';
+
+  @override
+  String breedingTimeInfo(String t) {
+    return 'Egg in $t';
+  }
+
+  @override
+  String get incubatorStartConfirm => 'Start hatching';
+
+  @override
+  String incubatorTimeInfo(String t) {
+    return 'Hatches in $t';
+  }
+
+  @override
+  String get bugInfoSex => 'Sex';
+
+  @override
+  String get bugInfoElement => 'Element';
+
+  @override
+  String leagueInfoTitle(String league) {
+    return '$league League';
+  }
+
+  @override
+  String get leagueInfoRank => 'Weekly rank rewards (closes Sun 09:00)';
+
+  @override
+  String get leagueInfoSeason => 'Season-end reward';
+
+  @override
+  String get leagueInfoAll => 'Rewards by league';
+
+  @override
+  String get leagueInfoCurrent => 'Now';
+
+  @override
+  String get leagueInfoAllHint =>
+      'Jelly = 1st place in that league · Gold = season-end reward';
+
+  @override
+  String get boardPromoteLine => '▲ Promotion zone above';
+
+  @override
+  String get boardDemoteLine => '▼ Demotion zone below';
+
+  @override
+  String get squadAutoFilled =>
+      'Squad filled automatically. Check it and tap Start again';
+
+  @override
+  String get battleSeasonClosedShort => 'Season over';
+
+  @override
+  String leagueMyNow(int rank, int total) {
+    return 'Now #$rank of $total';
+  }
+
+  @override
+  String leagueMyPromote(String league) {
+    return '▲ Promotion zone — $league League next week';
+  }
+
+  @override
+  String get leagueMyStay => 'Safe — same league next week';
+
+  @override
+  String leagueMyDemote(String league) {
+    return '▼ Demotion zone — $league League next week';
+  }
+
+  @override
+  String get leagueMyIfEnds => 'Reward if the season ended now';
+
+  @override
+  String boardBossPct(int n) {
+    return 'Boss $n%';
+  }
+
+  @override
+  String get boardAbyssHint =>
+      'Same floor? Higher max damage on the next floor boss (Boss %) ranks higher';
+
+  @override
+  String rankProgressAbyss(String tier, int floor) {
+    return '$tier · Abyss F$floor';
+  }
 }

@@ -265,6 +265,7 @@ Widget bugPoseImage(
   required double size,
   required Widget fallback,
   SkinView? skin,
+  Alignment alignment = Alignment.center,
 }) {
   final n = pose.index + 1;
   final sk = skin != null && skin.hasArt ? '_${skin.effect}' : '';
@@ -288,6 +289,7 @@ Widget bugPoseImage(
     ],
     size: size,
     fallback: fallback,
+    alignment: alignment,
   );
   return _skinned(img, skin, size);
 }

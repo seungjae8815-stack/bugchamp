@@ -323,3 +323,23 @@ enum BugVariant {
   static BugVariant fromKey(String k) =>
       values.firstWhere((e) => e.key == k, orElse: () => none);
 }
+
+/// 훈련소(2026-09-29) — 결투 전용 능력치 5종. 곤충마다 따로 훈련한다.
+enum TrainStat {
+  attack('attack'), // 공격(ATK ×)
+  defense('defense'), // 방어(DEF ×)
+  evade('evade'), // 회피(부딪힘 피해를 확률로 0)
+  crit('crit'), // 치명(크리티컬 확률 +)
+  recovery('recovery'); // 회복력(승자 연속 판 사이 회복 +)
+
+  const TrainStat(this.key);
+  final String key;
+
+  /// 모르는 키는 null — 세이브에서 읽을 때(신버전이 능력치를 추가해도 구버전이 죽지 않게).
+  static TrainStat? fromKeyOrNull(String k) {
+    for (final e in values) {
+      if (e.key == k) return e;
+    }
+    return null;
+  }
+}

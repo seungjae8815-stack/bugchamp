@@ -1148,16 +1148,44 @@ class GameActions {
       allowInjured: allowInjured,
     );
     if (v.error != null) return (team: const [], error: v.error);
+    // 훈련 중인 곤충은 출정할 수 없다(방어는 선다 — 자기가 훈련 중이어도 도전은 받는다).
+    final job = save.trainingJob;
+    if (!allowInjured &&
+        job != null &&
+        !job.doneAt(now()) &&
+        bugIds.contains(job.bugId)) {
+      return (team: const [], error: 'bug_training');
+    }
     final byId = {for (final b in save.bugs) b.id: b};
+    final tr = config.battle.training;
     return (
       team: [
         for (var i = 0; i < bugIds.length; i++)
-          DuelBug.fromBattleBug(
-            v.team[i],
-            speciesId: byId[bugIds[i]]!.speciesId,
-            sizeMm: byId[bugIds[i]]!.sizeMm,
-            specialty: speciesById[byId[bugIds[i]]!.speciesId]!.specialty,
-          ),
+          () {
+            final bug = byId[bugIds[i]]!;
+            final sp = speciesById[bug.speciesId]!;
+            // 훈련소 보너스 — **최대 단계로 잘라서** 입힌다(세이브를 고쳐 99단계를 적어도 소용없다).
+            final t = trainingBonusOf(
+              save,
+              bug,
+              sp,
+              tr,
+              levelCap: petConfig.levelCap(bug.breakthroughTier),
+            );
+            return DuelBug.fromBattleBug(
+              v.team[i],
+              speciesId: bug.speciesId,
+              sizeMm: bug.sizeMm,
+              specialty: sp.specialty,
+            ).withTraining(
+              atkMult: t.atkMult,
+              defMult: t.defMult,
+              hpMult: t.hpMult,
+              evade: t.evade,
+              crit: t.crit,
+              recovery: t.recovery,
+            );
+          }(),
       ],
       error: null,
     );
@@ -1236,17 +1264,21 @@ class GameActions {
     required double rewardMult,
     required Map<String, Species> speciesById,
     required PetConfig petConfig,
+    int? winPoints,
   }) {
     final ticketed = consumePvpTicket(save);
     if (!ticketed.isOk) return ticketed;
     final start = ticketed.save!;
-    final prepaid = pvpReward(
-      won: false,
-      draw: false,
-      trophies: start.pvpTrophies,
-      cfg: config.battle,
-      rewardMult: rewardMult,
-    ).trophyDelta;
+    // 승리 점수 방식(2026-09-29)은 **지면 0점**이라 미리 깎을 트로피가 없다.
+    final prepaid = winPoints != null
+        ? 0
+        : pvpReward(
+            won: false,
+            draw: false,
+            trophies: start.pvpTrophies,
+            cfg: config.battle,
+            rewardMult: rewardMult,
+          ).trophyDelta;
     final t = now().toUtc();
     final injured = Map<String, DateTime>.from(start.injured);
     final byId = {for (final b in start.bugs) b.id: b};
@@ -1285,15 +1317,20 @@ class GameActions {
     int? trophiesAtStart,
     int trophyPrepaid = 0,
     bool healOthers = false,
+    int? winPoints,
     Map<String, dynamic> extra = const {},
   }) {
-    final rw = pvpReward(
+    final base = pvpReward(
       won: won,
       draw: false,
       trophies: trophiesAtStart ?? save.pvpTrophies,
       cfg: config.battle,
       rewardMult: rewardMult,
     );
+    // 승리 점수 방식: 이기면 후보의 점수, 지면 0(골드는 그대로 공식).
+    final rw = winPoints == null
+        ? base
+        : (gold: base.gold, trophyDelta: won ? winPoints : 0);
     final t = now().toUtc();
     final injured = Map<String, DateTime>.from(save.injured);
     final byId = {for (final b in save.bugs) b.id: b};
@@ -1354,7 +1391,9 @@ class GameActions {
     }
     final p = duelParams;
     final i = session.nextBout;
-    if (i >= session.myTeamBugIds.length || i >= session.foe.length) {
+    // 승자 연속 — 진 쪽만 다음 곤충으로 바뀐다(내 곤충 = B 가 이긴 판 수번째).
+    final ia = session.winsB, ib = session.winsA;
+    if (ia >= session.myTeamBugIds.length || ib >= session.foe.length) {
       return (result: const ActionResult.fail('no_bout'), session: null);
     }
     final mine = validateDuelTeam(
@@ -1371,21 +1410,27 @@ class GameActions {
     final q = launch.isFinite ? launch.clamp(0.0, 1.0) : p.launchAuto;
     final bout = simulateBout(
       seed: duelBoutSeed(session.seed, i),
-      a: mine.team[i],
-      b: session.foe[i],
+      a: mine.team[ia],
+      b: session.foe[ib],
       params: p,
       launchA: q,
+      hpA: session.hpA,
+      hpB: session.hpB,
     );
+    final aWon = bout.winner == 0;
     var next = session.copyWith(
       winners: [...session.winners, bout.winner],
       launches: [...session.launches, q],
+      hpA: aWon ? duelCarryHp(bout.hpPctA, mine.team[ia], p) : 1.0,
+      hpB: aWon ? 1.0 : duelCarryHp(bout.hpPctB, session.foe[ib], p),
     );
     final done =
-        next.winsA >= p.winsNeeded ||
-        next.winsB >= p.winsNeeded ||
-        next.nextBout >= session.myTeamBugIds.length;
+        next.winsA >= session.foe.length ||
+        next.winsB >= session.myTeamBugIds.length;
     final extra = <String, dynamic>{
       'index': i,
+      'ia': ia,
+      'ib': ib,
       'bout': bout.toJson(),
       'winsA': next.winsA,
       'winsB': next.winsB,
@@ -1399,9 +1444,10 @@ class GameActions {
       save,
       won: next.winsA > next.winsB,
       teamBugIds: next.myTeamBugIds,
+      // 쓰러진 내 곤충 = 앞에서부터 B 가 이긴 판 수만큼. 안 나간 곤충은 부상 없음.
       lostBugIds: [
-        for (var j = 0; j < next.winners.length; j++)
-          if (next.winners[j] == 1) next.myTeamBugIds[j],
+        for (var j = 0; j < next.winsB && j < next.myTeamBugIds.length; j++)
+          next.myTeamBugIds[j],
       ],
       rewardMult: next.rewardMult,
       speciesById: speciesById,
@@ -1409,61 +1455,10 @@ class GameActions {
       trophiesAtStart: next.trophiesAtStart,
       trophyPrepaid: next.trophyPrepaid,
       healOthers: true,
+      winPoints: next.winPoints,
       extra: extra,
     );
     return (result: applied, session: next);
-  }
-
-  /// 빠른 결투 — 게이지 없이 끝까지 한 번에(선차감 없음 · 결과가 곧바로 나온다).
-  ActionResult runDuelAuto(
-    SaveGame save, {
-    required List<String> myTeamBugIds,
-    required List<DuelBug> foeTeam,
-    required int seed,
-    required double rewardMult,
-    required Map<String, Species> speciesById,
-    required PetConfig petConfig,
-    EnhanceConfig? enhance,
-  }) {
-    final p = duelParams;
-    final mine = validateDuelTeam(
-      save,
-      myTeamBugIds,
-      speciesById: speciesById,
-      petConfig: petConfig,
-      enhance: enhance,
-    );
-    if (mine.error != null) return ActionResult.fail(mine.error);
-    if (foeTeam.length != mine.team.length) {
-      return const ActionResult.fail('bad_foe');
-    }
-    // 티켓 소모는 결투 확정과 같은 액션 안에서(분리하면 한쪽만 일어난다).
-    final ticketed = consumePvpTicket(save);
-    if (!ticketed.isOk) return ticketed;
-    final match = simulateDuel(
-      seed: seed,
-      teamA: mine.team,
-      teamB: foeTeam,
-      params: p,
-    );
-    return applyDuelOutcome(
-      ticketed.save!,
-      won: match.winner(p) == 0,
-      teamBugIds: myTeamBugIds,
-      lostBugIds: [
-        for (var j = 0; j < match.bouts.length; j++)
-          if (match.bouts[j].winner == 1) myTeamBugIds[j],
-      ],
-      rewardMult: rewardMult,
-      speciesById: speciesById,
-      petConfig: petConfig,
-      extra: {
-        ...ticketed.extra,
-        'bouts': [for (final b in match.bouts) b.toJson()],
-        'winsA': match.winsA,
-        'winsB': match.winsB,
-      },
-    );
   }
 
   /// 경과시간만큼 방치 수입을 정산한다.
@@ -2631,7 +2626,10 @@ class GameActions {
     SaveGame stored,
     SaveGame save,
   ) {
-    final week = abyssWeekId(now().toUtc(), config.battle);
+    final t = now().toUtc();
+    final week = abyssWeekId(t, config.battle);
+    // 정산 기간(일 09시~월 09시)에는 기록하지 않는다 — 결투 시즌과 같은 시간표(2026-09-29).
+    if (seasonClosed(t, config.battle)) return null;
     if (!save.abyssUnlocked || save.abyssWeek != week || save.abyssFloor <= 1) {
       return null;
     }
@@ -2657,8 +2655,10 @@ class GameActions {
     if (played == null || played.isEmpty) return null;
     if (save.abyssRewardWeek == played) return null;
     if (config.run.abyss.rankRewards.isEmpty) return null;
-    final current = abyssWeekId(now().toUtc(), config.battle);
-    return played == current ? null : played;
+    final t = now().toUtc();
+    final current = abyssWeekId(t, config.battle);
+    // 이번 주도 집계가 닫혔으면(정산 기간) 바로 준다.
+    return played == current && !seasonClosed(t, config.battle) ? null : played;
   }
 
   /// 심연 주간 순위 보상 — 결투 순위와 같은 구조(순위권 밖이어도 판정 기록은 찍는다).
@@ -2711,9 +2711,12 @@ class GameActions {
   /// 다음 `/save` 가 시즌을 정산한 뒤부터 기록된다.
   ({SaveGame save, String seasonId})? pvpScoreFor(SaveGame save) {
     final cfg = config.battle;
-    final start = seasonStartAt(now().toUtc(), cfg);
+    final t = now().toUtc();
+    final start = seasonStartAt(t, cfg);
     final settled = save.seasonStartedAt;
     if (settled == null || settled.isBefore(start)) return null;
+    // 정산 기간에는 순위가 굳어 있어야 한다(보상을 이미 받아 간 사람이 있다).
+    if (seasonClosed(t, cfg)) return null;
     final sid = seasonIdOf(start, cfg);
     return (save: save.copyWith(pvpScoreSeason: sid), seasonId: sid);
   }
@@ -2726,15 +2729,15 @@ class GameActions {
   /// 결투를 한 번도 안 한 유저는 결산할 것이 없다(브론즈에서 떨어질 곳도 없다).
   ({String? played, String lastEnded})? pvpLeagueDue(SaveGame save) {
     final cfg = config.battle;
-    final start = seasonStartAt(now().toUtc(), cfg);
-    final current = seasonIdOf(start, cfg);
-    final lastEnded = seasonIdOf(start.subtract(const Duration(days: 7)), cfg);
+    final t = now().toUtc();
+    final current = seasonIdOf(seasonStartAt(t, cfg), cfg);
+    // 정산 기간(일 09시~)이면 이번 시즌, 아니면 지난 시즌이 결산 대상이다(2026-09-29).
+    final lastEnded = settleSeasonIdAt(t, cfg);
     if (save.pvpRankRewardSeason == lastEnded) return null;
     final played = save.pvpScoreSeason;
     if (played == null || played.isEmpty) return null;
-    final pending = played != current && played != save.pvpRankRewardSeason
-        ? played
-        : null;
+    final open = played == current && !seasonClosed(t, cfg);
+    final pending = !open && played != save.pvpRankRewardSeason ? played : null;
     return (played: pending, lastEnded: lastEnded);
   }
 

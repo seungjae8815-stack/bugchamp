@@ -545,9 +545,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 장비 옵션 정리(§제련 개편)도 여기서 한다 — 낀 8개 + 모루 10개뿐이라
     // 비용이 없고, **어느 경로로 들어온 장비든** 지금 규칙을 따르게 된다
     // (서버 세이브 채택·구버전 세이브 로드까지 한 곳에서 걸린다).
-    final stamped = _withTrimmedItems(
-      withDex,
-    ).trimmedToStorage().copyWith(lastSeen: now);
+    // 훈련소 — 끝난 훈련 반영 · 사라진 곤충의 훈련 기록 정리(어느 경로로 저장돼도 한 곳에서).
+    final stamped = pruneTraining(
+      finishTrainingIfDue(_withTrimmedItems(withDex).trimmedToStorage(), now),
+    ).copyWith(lastSeen: now);
     state = AsyncData(stamped);
     await _repo.save(stamped);
   }
@@ -1547,6 +1548,59 @@ class SaveController extends AsyncNotifier<SaveGame> {
       ),
     );
     return (gold: gold, jelly: jelly);
+  }
+
+  // ── 훈련소(2026-09-29) ───────────────────────────────────────────────
+  //
+  // 솔로 루프와 같은 기기 권위 — 규칙은 core_save/training_progress.dart(서버와 같은 함수).
+  // 서버는 결투 팀을 만들 때 단계를 최대 단계로 자른다.
+
+  /// 훈련 시작. 성공하면 null, 실패하면 사유(`busy`·`maxed`·`materials`·`no_bug`).
+  Future<String?> startDuelTraining(String bugId, TrainStat stat) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final s = state.requireValue;
+    final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
+    if (bug == null) return 'no_bug';
+    final r = startTraining(
+      s,
+      _battleCfg.training,
+      bug,
+      data.species(bug.speciesId),
+      stat,
+      ref.read(clockProvider).now().toUtc(),
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 지금 훈련을 젤리로 끝낸다. 성공하면 null, 부족하면 `jelly`.
+  Future<String?> finishDuelTrainingWithJelly() async {
+    final r = instantFinishTraining(
+      state.requireValue,
+      _battleCfg.training,
+      ref.read(clockProvider).now().toUtc(),
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 훈련 초기화(재료 절반 환불). 돌려받은 재료 수(종류마다), 실패하면 null.
+  Future<int?> resetDuelTraining(String bugId) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final s = state.requireValue;
+    final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
+    if (bug == null) return null;
+    final r = resetTraining(
+      s,
+      _battleCfg.training,
+      bug,
+      data.species(bug.speciesId),
+    );
+    if (r.save == null) return null;
+    await _commit(r.save!);
+    return r.refund;
   }
 
   /// 부상 회복. [viaJelly] 면 남은 시간 비례 젤리를 소비해 즉시 회복,
@@ -3530,7 +3584,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (final b in s.bugs) {
       final sp = data.speciesById[b.speciesId];
       if (sp == null) continue;
-      final c = petContribution(petStatOf(b, sp, cfg, now), cfg);
+      final c = petContribution(
+        petStatOf(
+          b,
+          sp,
+          cfg,
+          now,
+          trainMult: trainPetMult(s, b.id, _battleCfg.training),
+        ),
+        cfg,
+      );
       scored.add((id: b.id, score: c.attack + c.hp));
     }
     if (scored.isEmpty) return false;

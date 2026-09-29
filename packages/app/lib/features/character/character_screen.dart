@@ -282,7 +282,19 @@ class _PetsPanel extends ConsumerWidget {
         }
         final sp = bug == null ? null : data?.speciesById[bug.speciesId];
         if (bug == null || sp == null) continue;
-        pets.add(petStatOf(bug, sp, cfg, now));
+        pets.add(
+          petStatOf(
+            bug,
+            sp,
+            cfg,
+            now,
+            trainMult: trainPetMult(
+              save,
+              bug.id,
+              (data?.battleConfig ?? const BattleConfig()).training,
+            ),
+          ),
+        );
       }
       final pb = computePetBonus(pets, cfg);
       atk = ((pb.attackMult - 1) * 100).toStringAsFixed(0);

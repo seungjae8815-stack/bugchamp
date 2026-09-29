@@ -5,6 +5,7 @@ import 'package:core_run/core_run.dart';
 import 'package:meta/meta.dart';
 
 import 'gift_mail.dart';
+import 'training_progress.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
@@ -557,6 +558,8 @@ class SaveGame {
     this.pvpRankRewardSeason,
     this.pvpDefenseIds = const [],
     this.pvpLeague = -1,
+    this.duelTraining = const {},
+    this.trainingJob,
     this.abyssUnlocked = false,
     this.inAbyss = false,
     this.abyssFloor = 1,
@@ -778,6 +781,12 @@ class SaveGame {
   /// (2026-09-29 사장님 확정). ⚠️ **서버 소유 필드** — 세이브를 고쳐 다이아로 올리면 순위 보상이 커진다.
   final int pvpLeague;
 
+  /// 훈련소 — 곤충 id → 결투 능력치 단계(2026-09-29). 곤충이 사라지면 [_commit] 이 정리한다.
+  final Map<String, Map<TrainStat, int>> duelTraining;
+
+  /// 훈련소 1칸에서 진행 중인 훈련(없으면 null).
+  final TrainingJob? trainingJob;
+
   // ── 심연(극한 이후 무한 층, 2026-09-28) ─────────────────────────────
   // 심연에 있는 동안 난이도는 극한, 스테이지는 극한 최종 사냥터로 고정된다(몬스터·보상은
   // 그 기준값 × 층 배율). 진행은 기기 권위 — 서버는 업로드마다 층 증가 상한을 건다.
@@ -969,7 +978,14 @@ class SaveGame {
   }
 
   /// 장착 중이거나 부화기에 들어 있어 **상한 정리에서 보호되는** 곤충 id.
-  Set<String> get pinnedBugIds => {...equippedBugIds, ...incubating.keys};
+  /// 소멸 후보에서 빼는 곤충 — 장착 중 · 부화 중 · **훈련한 곤충 · 훈련 중인 곤충**(2026-09-29).
+  /// 재료·시간을 들인 곤충이 합성·방생으로 조용히 사라지면 그게 곧 클레임이다.
+  Set<String> get pinnedBugIds => {
+    ...equippedBugIds,
+    ...incubating.keys,
+    ...duelTraining.keys,
+    ?trainingJob?.bugId,
+  };
 
   /// 곤충 목록을 [storageCapacity] 이하로 줄인 세이브(초과분 폐기).
   ///
@@ -1315,6 +1331,9 @@ class SaveGame {
     String? pvpRankRewardSeason,
     List<String>? pvpDefenseIds,
     int? pvpLeague,
+    Map<String, Map<TrainStat, int>>? duelTraining,
+    TrainingJob? trainingJob,
+    bool clearTrainingJob = false,
     bool? abyssUnlocked,
     bool? inAbyss,
     int? abyssFloor,
@@ -1423,6 +1442,8 @@ class SaveGame {
     pvpRankRewardSeason: pvpRankRewardSeason ?? this.pvpRankRewardSeason,
     pvpDefenseIds: pvpDefenseIds ?? this.pvpDefenseIds,
     pvpLeague: pvpLeague ?? this.pvpLeague,
+    duelTraining: duelTraining ?? this.duelTraining,
+    trainingJob: clearTrainingJob ? null : (trainingJob ?? this.trainingJob),
     abyssUnlocked: abyssUnlocked ?? this.abyssUnlocked,
     inAbyss: inAbyss ?? this.inAbyss,
     abyssFloor: abyssFloor ?? this.abyssFloor,
@@ -1639,6 +1660,15 @@ class SaveGame {
       for (final e in (json['pvpDefenseIds'] as List? ?? const [])) '$e',
     ],
     pvpLeague: (json['pvpLeague'] as num?)?.toInt() ?? -1,
+    duelTraining: {
+      for (final e in ((json['duelTraining'] as Map?) ?? const {}).entries)
+        '${e.key}': {
+          for (final x in ((e.value as Map?) ?? const {}).entries)
+            if (TrainStat.fromKeyOrNull('${x.key}') != null)
+              TrainStat.fromKeyOrNull('${x.key}')!: (x.value as num).toInt(),
+        },
+    },
+    trainingJob: TrainingJob.fromJson(json['trainingJob']),
     abyssUnlocked: json['abyssUnlocked'] as bool? ?? false,
     inAbyss: json['inAbyss'] as bool? ?? false,
     abyssFloor: ((json['abyssFloor'] as num?)?.toInt() ?? 1).clamp(1, 1 << 30),
@@ -1839,6 +1869,12 @@ class SaveGame {
     if (pvpRankRewardSeason != null) 'pvpRankRewardSeason': pvpRankRewardSeason,
     if (pvpDefenseIds.isNotEmpty) 'pvpDefenseIds': pvpDefenseIds,
     if (pvpLeague >= 0) 'pvpLeague': pvpLeague,
+    if (duelTraining.isNotEmpty)
+      'duelTraining': {
+        for (final e in duelTraining.entries)
+          e.key: {for (final x in e.value.entries) x.key.key: x.value},
+      },
+    if (trainingJob != null) 'trainingJob': trainingJob!.toJson(),
     if (abyssUnlocked) 'abyssUnlocked': true,
     if (inAbyss) 'inAbyss': true,
     if (abyssFloor != 1) 'abyssFloor': abyssFloor,

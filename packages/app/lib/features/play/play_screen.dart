@@ -847,7 +847,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (bug == null) continue;
       final sp = _data.speciesById[bug.speciesId];
       if (sp == null) continue;
-      final c = petContribution(petStatOf(bug, sp, cfg, now), cfg);
+      final c = petContribution(
+        petStatOf(
+          bug,
+          sp,
+          cfg,
+          now,
+          trainMult: trainPetMult(
+            save,
+            bug.id,
+            (_data.battleConfig ?? const BattleConfig()).training,
+          ),
+        ),
+        cfg,
+      );
       out.add((
         bugId: bug.id,
         element: bug.element,
@@ -1091,7 +1104,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (bug == null) continue;
       final sp = _data.speciesById[bug.speciesId];
       if (sp == null) continue;
-      pets.add(petStatOf(bug, sp, cfg, now));
+      pets.add(
+        petStatOf(
+          bug,
+          sp,
+          cfg,
+          now,
+          trainMult: trainPetMult(
+            save,
+            bug.id,
+            (_data.battleConfig ?? const BattleConfig()).training,
+          ),
+        ),
+      );
     }
     return computePetBonus(pets, cfg).passives;
   }

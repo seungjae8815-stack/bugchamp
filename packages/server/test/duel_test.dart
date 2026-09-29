@@ -74,6 +74,70 @@ void main() {
       expect(err(['b1', 'b2', 'nope']), 'bug_not_owned');
     });
 
+    test('훈련소 — 보너스는 최대 단계로 잘라 입히고, 훈련 중인 곤충은 출정 불가', () {
+      final tr = cfg.battle.training;
+      final plain = actions
+          .validateDuelTeam(
+            myBase(),
+            ids,
+            speciesById: cfg.speciesById,
+            petConfig: cfg.pet,
+          )
+          .team
+          .first;
+      final forged = myBase().copyWith(
+        duelTraining: {
+          'b1': {TrainStat.attack: 99, TrainStat.evade: 99},
+        },
+      );
+      final b1 = forged.bugs.first;
+      final sp = cfg.speciesById[b1.speciesId]!;
+      final trained = actions
+          .validateDuelTeam(
+            forged,
+            ids,
+            speciesById: cfg.speciesById,
+            petConfig: cfg.pet,
+          )
+          .team
+          .first;
+      final capAtk = trainCapOf(b1, sp, TrainStat.attack, tr);
+      expect(
+        trained.atk,
+        closeTo(
+          plain.atk * (1 + capAtk * tr.perLevel[TrainStat.attack]!),
+          1e-6,
+        ),
+      );
+      expect(
+        trained.evade,
+        closeTo(
+          trainCapOf(b1, sp, TrainStat.evade, tr) *
+              tr.perLevel[TrainStat.evade]!,
+          1e-9,
+        ),
+      );
+      final training = myBase().copyWith(
+        trainingJob: TrainingJob(
+          bugId: 'b2',
+          stat: TrainStat.crit,
+          level: 1,
+          until: t0.add(const Duration(hours: 1)),
+        ),
+      );
+      expect(
+        actions
+            .validateDuelTeam(
+              training,
+              ids,
+              speciesById: cfg.speciesById,
+              petConfig: cfg.pet,
+            )
+            .error,
+        'bug_training',
+      );
+    });
+
     test('방어팀은 상대 세이브의 방어 순서로 서버가 만든다', () {
       final opp = myBase().copyWith(pvpDefenseIds: ['b3', 'b1', 'b2']);
       final team = actions.defenderDuelTeam(
@@ -99,6 +163,7 @@ void main() {
     ({SaveGame save, DuelSession session}) start({
       required SaveGame save,
       required List<DuelBug> foe,
+      int? winPoints,
     }) {
       final r = actions.startDuel(
         save,
@@ -106,6 +171,7 @@ void main() {
         rewardMult: 1.0,
         speciesById: cfg.speciesById,
         petConfig: cfg.pet,
+        winPoints: winPoints,
       );
       expect(r.isOk, isTrue, reason: r.error);
       return (
@@ -124,8 +190,31 @@ void main() {
           finished: false,
           trophiesAtStart: r.extra['trophiesAtStart'] as int,
           trophyPrepaid: r.extra['trophyPrepaid'] as int,
+          winPoints: winPoints,
         ),
       );
+    }
+
+    /// 끝까지 던진다.
+    ({SaveGame save, DuelSession session}) playOut(
+      ({SaveGame save, DuelSession session}) st,
+    ) {
+      var save = st.save;
+      var session = st.session;
+      while (!session.finished) {
+        final r = actions.duelThrow(
+          save,
+          session,
+          launch: 0.8,
+          speciesById: cfg.speciesById,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        expect(r.result.isOk, isTrue, reason: r.result.error);
+        save = r.result.save!;
+        session = r.session!;
+      }
+      return (save: save, session: session);
     }
 
     List<DuelBug> foeOf(double scale) => [
@@ -177,9 +266,10 @@ void main() {
         throws++;
         expect(r.result.extra['bout'], isA<Map<String, dynamic>>());
       }
-      expect(throws, 2);
+      expect(throws, 3, reason: '승자 연속 — 첫 곤충이 세 마리를 다 쓰러뜨린다');
       expect(session!.finished, isTrue);
-      expect(session.winsA, 2);
+      expect(session.winsA, 3);
+      expect(session.hpA, lessThanOrEqualTo(1.0));
       // 이겼으니 트로피는 시작 전보다 올라가고(선차감 차액 반환), 부상은 없다.
       expect(save.pvpTrophies, greaterThan(100));
       for (final id in ids) {
@@ -213,12 +303,29 @@ void main() {
         session = r.session;
         done = r.result.extra['done'] == true;
       }
-      expect(session!.winsB, 2);
+      expect(session!.winsB, 3);
       expect(save.pvpTrophies, st.save.pvpTrophies, reason: '패배는 이미 선차감됐다');
-      expect(save.isInjured('b1', t0), isTrue);
-      expect(save.isInjured('b2', t0), isTrue);
-      // 3판째는 안 뛰었다 — 선차감 부상을 풀어 준다.
-      expect(save.isInjured('b3', t0), isFalse);
+      // 세 마리 모두 나가서 졌다 — 모두 부상.
+      for (final id in ['b1', 'b2', 'b3']) {
+        expect(save.isInjured(id, t0), isTrue, reason: id);
+      }
+    });
+
+    test('승리 점수 방식 — 선차감 없음, 이기면 후보 점수만큼', () {
+      final st = start(save: myBase(), foe: foeOf(0.2), winPoints: 4);
+      expect(st.save.pvpTrophies, 100, reason: '지면 0점이라 미리 깎지 않는다');
+      final end = playOut(st);
+      expect(end.session.winsA, 3);
+      expect(end.save.pvpTrophies, 104);
+      // 첫 곤충 혼자 다 이겼다 — 안 나간 곤충(2·3번)은 회복실에 가지 않는다.
+      expect(end.save.isInjured('b2', t0), isFalse);
+      expect(end.save.isInjured('b3', t0), isFalse);
+    });
+
+    test('승리 점수 방식 — 지면 트로피가 깎이지 않는다', () {
+      final end = playOut(start(save: myBase(), foe: foeOf(8), winPoints: 5));
+      expect(end.session.winsB, 3);
+      expect(end.save.pvpTrophies, 100);
     });
 
     test('같은 세션·같은 게이지면 같은 결과(결정론)', () {
@@ -238,38 +345,5 @@ void main() {
               as Map<String, dynamic>;
       expect(once().toString(), once().toString());
     });
-  });
-
-  test('빠른 결투 — 한 번에 끝나고 판 결과가 실려 온다', () {
-    final r = actions.runDuelAuto(
-      myBase(),
-      myTeamBugIds: ids,
-      foeTeam: [
-        for (var i = 0; i < 3; i++)
-          DuelBug(
-            id: 'f$i',
-            name: 'f$i',
-            speciesId: 'stag_dorcus',
-            element: Element.fire,
-            temperament: Temperament.cunning,
-            specialty: Specialty.strike,
-            sizeMm: 40,
-            maxHp: 90,
-            atk: 30,
-            def: 30,
-            spd: 25,
-          ),
-      ],
-      seed: 99,
-      rewardMult: 1.0,
-      speciesById: cfg.speciesById,
-      petConfig: cfg.pet,
-      enhance: cfg.enhance,
-    );
-    expect(r.isOk, isTrue, reason: r.error);
-    final bouts = r.extra['bouts'] as List;
-    expect(bouts.length, inInclusiveRange(2, 3));
-    final winsA = r.extra['winsA'] as int;
-    expect(r.extra['outcome'], winsA >= 2 ? 'teamA' : 'teamB');
   });
 }

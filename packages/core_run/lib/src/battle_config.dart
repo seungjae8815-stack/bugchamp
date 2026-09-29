@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'training_config.dart';
+
 import 'package:meta/meta.dart';
 
 /// 스카우트 보드의 난이도 티어. 상대 파워 배율과 보상 배율을 함께 정의한다.
@@ -83,6 +85,12 @@ class BattleConfig {
     this.leaguePromotePct = 0.2,
     this.leagueDemotePct = 0.2,
     this.leagueBoardSize = 100,
+    this.seasonSettleHours = 24,
+    this.matchAbovePoints = const [3, 4, 5],
+    this.matchBelowPoints = const [2, 1],
+    this.matchWildPoints = 1,
+    this.matchWildTier = 'even',
+    this.training = const TrainingConfig(),
     this.duelJson = const {},
     this.locationAffinityBonus = 0.2,
     this.manualTurnSeconds = 10,
@@ -91,6 +99,7 @@ class BattleConfig {
     this.ticketAdGrant = 3,
     this.ticketAdDailyLimit = 30,
     this.ticketRefillJelly = 10,
+    this.ticketRefillAmount = 0,
     this.scoutFreeRefreshDaily = 10,
     this.scoutRefreshJelly = 1,
     this.scoutRefreshDailyMax = 30,
@@ -163,6 +172,24 @@ class BattleConfig {
 
   /// 순위표에 보여 주는 인원(리그마다).
   final int leagueBoardSize;
+
+  /// 시즌 끝(다음 시작) 전 **정산 기간** 시간(2026-09-29 사장님 확정: 24시간).
+  /// 월 09시 시작 → 일 09시 집계 마감 → 월 09시까지 정산(결투 불가 · 보상 수령).
+  final int seasonSettleHours;
+
+  /// 상대 후보 승리 점수(2026-09-29 사장님 확정). 내 순위 **위**는 가까운 사람부터
+  /// [matchAbovePoints](3·4·5), **아래**는 가까운 사람부터 [matchBelowPoints](2·1).
+  /// 후보 수 = 두 목록 길이의 합(5). 지면 0점 — 트로피가 깎이지 않는다.
+  /// 사람이 모자라 채운 야생 팀은 [matchWildPoints], 세기는 스카우트 티어 [matchWildTier].
+  final List<int> matchAbovePoints;
+  final List<int> matchBelowPoints;
+  final int matchWildPoints;
+  final String matchWildTier;
+
+  /// 훈련소(결투 능력치) 설정.
+  final TrainingConfig training;
+
+  int get matchSize => matchAbovePoints.length + matchBelowPoints.length;
 
   /// [rank] 위가 받는 순위 보상 젤리([league] = 리그 id, 없으면 옛 전체 표). 순위권 밖이면 0.
   int seasonRankJelly(int rank, {String? league}) {
@@ -246,6 +273,9 @@ class BattleConfig {
 
   /// 티켓을 [ticketMax] 로 즉시 채우는 젤리 비용.
   final int ticketRefillJelly;
+
+  /// 젤리 충전 한 번에 받는 장수(2026-09-29: 5장). 0 이면 예전처럼 상한까지 채운다.
+  final int ticketRefillAmount;
 
   /// 자연 충전 1회 간격.
   Duration get ticketRegen => Duration(seconds: ticketRegenSeconds);
@@ -340,6 +370,7 @@ class BattleConfig {
     final scout = json['scout'] as Map<String, dynamic>?;
     final tiers = scout?['tiers'] as List?;
     final season = json['season'] as Map<String, dynamic>?;
+    final match = json['match'] as Map<String, dynamic>?;
     final tickets = json['tickets'] as Map<String, dynamic>?;
     return BattleConfig(
       winGoldBase: (json['winGoldBase'] as num?)?.toInt() ?? 4000,
@@ -383,6 +414,14 @@ class BattleConfig {
           (season?['leaguePromotePct'] as num?)?.toDouble() ?? 0.2,
       leagueDemotePct: (season?['leagueDemotePct'] as num?)?.toDouble() ?? 0.2,
       leagueBoardSize: (season?['leagueBoardSize'] as num?)?.toInt() ?? 100,
+      seasonSettleHours: (season?['settleHours'] as num?)?.toInt() ?? 24,
+      matchAbovePoints: _ints(match?['abovePoints']) ?? const [3, 4, 5],
+      matchBelowPoints: _ints(match?['belowPoints']) ?? const [2, 1],
+      matchWildPoints: (match?['wildPoints'] as num?)?.toInt() ?? 1,
+      matchWildTier: match?['wildTier'] as String? ?? 'even',
+      training: TrainingConfig.fromJson(
+        json['training'] as Map<String, dynamic>?,
+      ),
       locationAffinityBonus:
           (json['locationAffinityBonus'] as num?)?.toDouble() ?? 0.2,
       manualTurnSeconds: (json['manualTurnSeconds'] as num?)?.toInt() ?? 10,
@@ -391,6 +430,7 @@ class BattleConfig {
       ticketAdGrant: (tickets?['adGrant'] as num?)?.toInt() ?? 3,
       ticketAdDailyLimit: (tickets?['adDailyLimit'] as num?)?.toInt() ?? 30,
       ticketRefillJelly: (tickets?['refillJelly'] as num?)?.toInt() ?? 10,
+      ticketRefillAmount: (tickets?['refillAmount'] as num?)?.toInt() ?? 0,
       scoutFreeRefreshDaily:
           ((json['scout'] as Map<String, dynamic>?)?['freeRefreshDaily']
                   as num?)
@@ -462,6 +502,76 @@ class SeasonRankReward {
 DateTime seasonEndAt(DateTime now, BattleConfig cfg) =>
     seasonStartAt(now, cfg).add(const Duration(days: 7));
 
+/// [now] 가 속한 시즌의 **집계 마감** 시각 — 끝나기 [BattleConfig.seasonSettleHours] 전(일 09시).
+DateTime seasonCloseAt(DateTime now, BattleConfig cfg) =>
+    seasonEndAt(now, cfg).subtract(Duration(hours: cfg.seasonSettleHours));
+
+/// 지금이 **정산 기간**(집계 마감 ~ 새 시즌)인가. 이 동안은 결투·점수 기록을 받지 않는다.
+bool seasonClosed(DateTime now, BattleConfig cfg) =>
+    !now.toUtc().isBefore(seasonCloseAt(now, cfg));
+
+/// 지금 **결산할 수 있는** 가장 최근 시즌 id — 정산 기간이면 이번 시즌, 아니면 지난 시즌.
+///
+/// 결산(순위 보상·승강)은 집계가 닫힌 시즌에만 한다. 정산 기간에 받은 사람은 월 09시에
+/// 다시 받지 않는다(같은 id — `pvpRankRewardSeason` 이 막는다).
+String settleSeasonIdAt(DateTime now, BattleConfig cfg) {
+  final start = seasonStartAt(now, cfg);
+  return seasonIdOf(
+    seasonClosed(now, cfg) ? start : start.subtract(const Duration(days: 7)),
+    cfg,
+  );
+}
+
+/// 결투 상대 후보 하나 — 순위표의 사람([userId]) 또는 야생([userId] == null).
+typedef MatchSlot = ({String? userId, int? rank, int points});
+
+/// 리그 순위표에서 상대 후보를 고른다(2026-09-29 사장님 확정).
+///
+/// [ranked] 는 리그 순위 1위부터(나 포함 가능), [myRank] 는 내 순위(없으면 null = 아직 점수 없음 —
+/// 맨 아래 바로 밑으로 친다). 내 위 [BattleConfig.matchAbovePoints] 명·아래
+/// [BattleConfig.matchBelowPoints] 명을 가까운 순서로 고르고, 한쪽이 모자라면 **다른 쪽에서 더** 가져온다
+/// (1위면 아래만 5명). 더 가져온 사람의 점수는 그쪽 목록의 마지막 값을 이어 쓴다. 그래도 모자라면 야생.
+/// 결과는 **순위 높은 사람부터**(야생은 맨 끝).
+List<MatchSlot> pickMatchSlots({
+  required List<({String userId, int rank})> ranked,
+  required int? myRank,
+  required String myUserId,
+  required BattleConfig cfg,
+}) {
+  final others = [
+    for (final r in ranked)
+      if (r.userId != myUserId) r,
+  ]..sort((a, b) => a.rank.compareTo(b.rank));
+  final me = myRank ?? (1 << 30);
+  final above = [
+    for (final r in others.reversed)
+      if (r.rank < me) r,
+  ]; // 가까운 순
+  final below = [
+    for (final r in others)
+      if (r.rank > me) r,
+  ]; // 가까운 순
+  final up = cfg.matchAbovePoints, down = cfg.matchBelowPoints;
+  var nUp = math.min(up.length, above.length);
+  var nDown = math.min(down.length, below.length);
+  // 한쪽이 모자라면 다른 쪽에서 채운다.
+  final want = cfg.matchSize;
+  nUp = math.min(above.length, nUp + (want - nUp - nDown));
+  nDown = math.min(below.length, want - nUp);
+  int pointAt(List<int> pts, int i) =>
+      pts.isEmpty ? cfg.matchWildPoints : pts[math.min(i, pts.length - 1)];
+  final out = <MatchSlot>[
+    for (var i = nUp - 1; i >= 0; i--)
+      (userId: above[i].userId, rank: above[i].rank, points: pointAt(up, i)),
+    for (var i = 0; i < nDown; i++)
+      (userId: below[i].userId, rank: below[i].rank, points: pointAt(down, i)),
+  ];
+  while (out.length < want) {
+    out.add((userId: null, rank: null, points: cfg.matchWildPoints));
+  }
+  return out;
+}
+
 /// 티켓 잔량과 **다음 충전 기준시각**. 세이브에 이 둘만 저장하고, 화면에
 /// 보이는 수는 언제나 [regenTickets] 로 파생한다 — 앱과 서버가 같은 함수로
 /// 같은 값을 얻으므로 "화면엔 있는데 서버가 없다고 한다"가 생기지 않는다.
@@ -527,7 +637,8 @@ TicketState grantTickets({
   return (tickets: next, at: next >= cfg.ticketMax ? now.toUtc() : cur.at);
 }
 
-/// 티켓을 상한까지 즉시 채운다(젤리). 이미 상한 이상이면 그대로.
+/// 젤리 충전 — [BattleConfig.ticketRefillAmount] 장을 준다(상한을 넘겨 쌓일 수 있다).
+/// 0 이면 상한까지 채운다(옛 규칙). 이미 상한 이상이면 그대로(쌓아 두기 방지).
 TicketState refillTickets({
   required int tickets,
   required DateTime? at,
@@ -536,6 +647,15 @@ TicketState refillTickets({
 }) {
   final cur = regenTickets(tickets: tickets, at: at, now: now, cfg: cfg);
   if (cur.tickets >= cfg.ticketMax) return cur;
+  if (cfg.ticketRefillAmount > 0) {
+    return grantTickets(
+      tickets: tickets,
+      at: at,
+      now: now,
+      cfg: cfg,
+      amount: cfg.ticketRefillAmount,
+    );
+  }
   return (tickets: cfg.ticketMax, at: now.toUtc());
 }
 
@@ -572,3 +692,6 @@ Duration? ticketRegenRemaining({
       ? cfg.trophyOnWin(rewardMult)
       : (draw ? cfg.trophyDraw : cfg.trophyLose),
 );
+
+List<int>? _ints(Object? v) =>
+    v is List ? [for (final e in v) (e as num).toInt()] : null;

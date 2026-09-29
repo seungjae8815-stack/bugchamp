@@ -3531,7 +3531,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get duelThrowButton => '던지기!';
 
   @override
-  String get duelGaugeHint => '초록 칸에서 멈추면 첫 돌진이 세져요';
+  String get duelGaugeHint => '화면 아무 곳이나 누르면 멈춰요 · 초록 칸일수록 첫 돌진이 세져요';
 
   @override
   String duelBout(int n) {
@@ -3712,5 +3712,272 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leagueResultInactive => '지난주 결투를 쉬어서 한 단계 내려갔어요';
 
   @override
-  String get leagueZoneHint => '매주 일요일 자정 결산 · 상위 20% 승급 · 하위 20% 강등';
+  String get leagueZoneHint => '매주 일요일 09시 마감 · 상위 20% 승급 · 하위 20% 강등';
+
+  @override
+  String get duelSquadTitle => '출정 곤충';
+
+  @override
+  String get recoveryRoom => '회복실';
+
+  @override
+  String get trainingCenter => '훈련소';
+
+  @override
+  String get trainingSoon => '훈련소는 곧 열려요';
+
+  @override
+  String get leagueClaimPromo => '승급 보상 받기';
+
+  @override
+  String get battleSeasonClosed => '시즌이 종료되었습니다!';
+
+  @override
+  String get recoveryEmpty => '회복 중인 곤충이 없어요';
+
+  @override
+  String get opponentPickTitle => '상대 고르기';
+
+  @override
+  String opponentPickHint(String power) {
+    return '내 팀 전투력 $power · 이기면 별을 받고, 져도 잃지 않아요';
+  }
+
+  @override
+  String get opponentWinOnly => '승리 시';
+
+  @override
+  String boardSeasonClosesIn(String time) {
+    return '시즌 마감: $time';
+  }
+
+  @override
+  String boardMyRankNow(int rank) {
+    return '지금 $rank위 — 받을 보상';
+  }
+
+  @override
+  String profileCombatPower(String power) {
+    return '전투력 $power';
+  }
+
+  @override
+  String get profileNoTeam => '아직 방어팀이 없어요';
+
+  @override
+  String duelAutoThrowIn(int n) {
+    return '$n초 뒤 자동으로 던져요';
+  }
+
+  @override
+  String get duelRestrainHit => '상극!';
+
+  @override
+  String get duelCritHit => '치명타!';
+
+  @override
+  String get duelWeakHit => '약점!';
+
+  @override
+  String pvpTicketJellyGive(int amount) {
+    return '+$amount장 충전';
+  }
+
+  @override
+  String get bugInfoAtk => '공격력';
+
+  @override
+  String get bugInfoDef => '방어력';
+
+  @override
+  String get bugInfoSpd => '속도';
+
+  @override
+  String get bugInfoSpecialty => '주특기';
+
+  @override
+  String get bugInfoTemperament => '기질';
+
+  @override
+  String get bugInfoSize => '크기';
+
+  @override
+  String get bugInfoPotential => '포텐셜';
+
+  @override
+  String get squadDetailTitle => '출정 곤충';
+
+  @override
+  String get squadDeploy => '출정';
+
+  @override
+  String get squadInjured => '회복 중인 곤충이 있어요 — 회복실에서 회복하거나 다른 곤충으로 바꿔 주세요';
+
+  @override
+  String squadOrder(int n) {
+    return '$n번째 출전';
+  }
+
+  @override
+  String get duelAttackBtn => '공격';
+
+  @override
+  String get squadRelease => '해제';
+
+  @override
+  String get squadSwap => '교체';
+
+  @override
+  String get trainAttack => '공격';
+
+  @override
+  String get trainDefense => '방어';
+
+  @override
+  String get trainEvade => '회피';
+
+  @override
+  String get trainCrit => '치명';
+
+  @override
+  String get trainRecovery => '회복력';
+
+  @override
+  String get trainingNone => '지금 훈련 중인 곤충이 없어요';
+
+  @override
+  String trainingNow(String stat, int level) {
+    return '$stat $level단계 훈련 중';
+  }
+
+  @override
+  String get trainingDone => '훈련 완료!';
+
+  @override
+  String get trainingPickBug => '훈련할 곤충';
+
+  @override
+  String get trainingCapHint => '최대 단계는 포텐셜·기질·주특기·혈통 특성에 따라 곤충마다 달라요';
+
+  @override
+  String trainingLevel(int lv, int cap) {
+    return '$lv / $cap단계';
+  }
+
+  @override
+  String get trainingStart => '훈련';
+
+  @override
+  String get trainingMaxed => '최대';
+
+  @override
+  String get trainingBusy => '훈련소가 비어야 시작할 수 있어요(한 번에 한 마리)';
+
+  @override
+  String get trainingNoMaterials => '재료가 부족해요';
+
+  @override
+  String get trainingReset => '훈련 초기화';
+
+  @override
+  String trainingResetAsk(String n) {
+    return '모든 단계를 0으로 되돌리고, 쓴 재료의 절반(종류마다 $n)을 돌려받아요';
+  }
+
+  @override
+  String get trainingResetDone => '훈련을 초기화했어요';
+
+  @override
+  String get squadTraining => '훈련 중인 곤충은 출정할 수 없어요';
+
+  @override
+  String get duelMiss => '빗나감!';
+
+  @override
+  String get breedingConfirm => '짝짓기';
+
+  @override
+  String breedingTimeInfo(String t) {
+    return '산란까지 $t';
+  }
+
+  @override
+  String get incubatorStartConfirm => '부화 시작';
+
+  @override
+  String incubatorTimeInfo(String t) {
+    return '부화까지 $t';
+  }
+
+  @override
+  String get bugInfoSex => '성별';
+
+  @override
+  String get bugInfoElement => '오행';
+
+  @override
+  String leagueInfoTitle(String league) {
+    return '$league 리그';
+  }
+
+  @override
+  String get leagueInfoRank => '주간 순위 보상 (일요일 09시 마감)';
+
+  @override
+  String get leagueInfoSeason => '시즌 종료 보상';
+
+  @override
+  String get leagueInfoAll => '리그별 보상';
+
+  @override
+  String get leagueInfoCurrent => '현재';
+
+  @override
+  String get leagueInfoAllHint => '젤리 = 그 리그 1위 보상 · 골드 = 시즌 종료 보상';
+
+  @override
+  String get boardPromoteLine => '▲ 이 위로 승급 구간';
+
+  @override
+  String get boardDemoteLine => '▼ 이 아래로 강등 구간';
+
+  @override
+  String get squadAutoFilled => '출정 곤충을 자동으로 채웠어요. 확인하고 전투 시작을 다시 눌러 주세요';
+
+  @override
+  String get battleSeasonClosedShort => '시즌 종료';
+
+  @override
+  String leagueMyNow(int rank, int total) {
+    return '지금 $rank위 / $total명';
+  }
+
+  @override
+  String leagueMyPromote(String league) {
+    return '▲ 승급권 — 다음 주 $league 리그';
+  }
+
+  @override
+  String get leagueMyStay => '유지권 — 다음 주도 이 리그';
+
+  @override
+  String leagueMyDemote(String league) {
+    return '▼ 강등권 — 다음 주 $league 리그';
+  }
+
+  @override
+  String get leagueMyIfEnds => '이대로 끝나면 받는 보상';
+
+  @override
+  String boardBossPct(int n) {
+    return '보스 $n%';
+  }
+
+  @override
+  String get boardAbyssHint => '층이 같으면 다음 층 보스에게 넣은 최대 피해(보스 %)가 큰 쪽이 위예요';
+
+  @override
+  String rankProgressAbyss(String tier, int floor) {
+    return '$tier · 심연 $floor층';
+  }
 }

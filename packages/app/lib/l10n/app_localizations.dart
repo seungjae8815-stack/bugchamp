@@ -6259,7 +6259,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelGaugeHint.
   ///
   /// In en, this message translates to:
-  /// **'Stop in the green for a stronger first charge'**
+  /// **'Tap anywhere to stop · the greener, the stronger your first charge'**
   String get duelGaugeHint;
 
   /// No description provided for @duelBout.
@@ -6547,8 +6547,470 @@ abstract class AppLocalizations {
   /// No description provided for @leagueZoneHint.
   ///
   /// In en, this message translates to:
-  /// **'Settles every Sunday midnight · top 20% promote · bottom 20% demote'**
+  /// **'Closes every Sunday 09:00 · top 20% promote · bottom 20% demote'**
   String get leagueZoneHint;
+
+  /// No description provided for @duelSquadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Squad'**
+  String get duelSquadTitle;
+
+  /// No description provided for @recoveryRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get recoveryRoom;
+
+  /// No description provided for @trainingCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get trainingCenter;
+
+  /// No description provided for @trainingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Training opens soon'**
+  String get trainingSoon;
+
+  /// No description provided for @leagueClaimPromo.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim promotion reward'**
+  String get leagueClaimPromo;
+
+  /// No description provided for @battleSeasonClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'The season has ended!'**
+  String get battleSeasonClosed;
+
+  /// No description provided for @recoveryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No bugs are recovering'**
+  String get recoveryEmpty;
+
+  /// No description provided for @opponentPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an opponent'**
+  String get opponentPickTitle;
+
+  /// No description provided for @opponentPickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your team power {power} · Win to earn stars, lose nothing'**
+  String opponentPickHint(String power);
+
+  /// No description provided for @opponentWinOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'on win'**
+  String get opponentWinOnly;
+
+  /// No description provided for @boardSeasonClosesIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Season closes: {time}'**
+  String boardSeasonClosesIn(String time);
+
+  /// No description provided for @boardMyRankNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now #{rank} — your reward'**
+  String boardMyRankNow(int rank);
+
+  /// No description provided for @profileCombatPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Power {power}'**
+  String profileCombatPower(String power);
+
+  /// No description provided for @profileNoTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'No defense team yet'**
+  String get profileNoTeam;
+
+  /// No description provided for @duelAutoThrowIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-throw in {n}s'**
+  String duelAutoThrowIn(int n);
+
+  /// No description provided for @duelRestrainHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Counter!'**
+  String get duelRestrainHit;
+
+  /// No description provided for @duelCritHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical!'**
+  String get duelCritHit;
+
+  /// No description provided for @duelWeakHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak spot!'**
+  String get duelWeakHit;
+
+  /// No description provided for @pvpTicketJellyGive.
+  ///
+  /// In en, this message translates to:
+  /// **'Refill +{amount}'**
+  String pvpTicketJellyGive(int amount);
+
+  /// No description provided for @bugInfoAtk.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get bugInfoAtk;
+
+  /// No description provided for @bugInfoDef.
+  ///
+  /// In en, this message translates to:
+  /// **'Defense'**
+  String get bugInfoDef;
+
+  /// No description provided for @bugInfoSpd.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get bugInfoSpd;
+
+  /// No description provided for @bugInfoSpecialty.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialty'**
+  String get bugInfoSpecialty;
+
+  /// No description provided for @bugInfoTemperament.
+  ///
+  /// In en, this message translates to:
+  /// **'Temper'**
+  String get bugInfoTemperament;
+
+  /// No description provided for @bugInfoSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get bugInfoSize;
+
+  /// No description provided for @bugInfoPotential.
+  ///
+  /// In en, this message translates to:
+  /// **'Potential'**
+  String get bugInfoPotential;
+
+  /// No description provided for @squadDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Squad'**
+  String get squadDetailTitle;
+
+  /// No description provided for @squadDeploy.
+  ///
+  /// In en, this message translates to:
+  /// **'Deploy'**
+  String get squadDeploy;
+
+  /// No description provided for @squadInjured.
+  ///
+  /// In en, this message translates to:
+  /// **'A bug is recovering — heal it in Recovery or swap it out'**
+  String get squadInjured;
+
+  /// No description provided for @squadOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Fighter {n}'**
+  String squadOrder(int n);
+
+  /// No description provided for @duelAttackBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get duelAttackBtn;
+
+  /// No description provided for @squadRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get squadRelease;
+
+  /// No description provided for @squadSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get squadSwap;
+
+  /// No description provided for @trainAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get trainAttack;
+
+  /// No description provided for @trainDefense.
+  ///
+  /// In en, this message translates to:
+  /// **'Defense'**
+  String get trainDefense;
+
+  /// No description provided for @trainEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'Evade'**
+  String get trainEvade;
+
+  /// No description provided for @trainCrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get trainCrit;
+
+  /// No description provided for @trainRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get trainRecovery;
+
+  /// No description provided for @trainingNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No bug is training right now'**
+  String get trainingNone;
+
+  /// No description provided for @trainingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Training {stat} Lv{level}'**
+  String trainingNow(String stat, int level);
+
+  /// No description provided for @trainingDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Training complete!'**
+  String get trainingDone;
+
+  /// No description provided for @trainingPickBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug to train'**
+  String get trainingPickBug;
+
+  /// No description provided for @trainingCapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Max levels differ by potential, temper, specialty and bloodline trait'**
+  String get trainingCapHint;
+
+  /// No description provided for @trainingLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'{lv} / {cap}'**
+  String trainingLevel(int lv, int cap);
+
+  /// No description provided for @trainingStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Train'**
+  String get trainingStart;
+
+  /// No description provided for @trainingMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get trainingMaxed;
+
+  /// No description provided for @trainingBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'One bug at a time — wait for the current training'**
+  String get trainingBusy;
+
+  /// No description provided for @trainingNoMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough materials'**
+  String get trainingNoMaterials;
+
+  /// No description provided for @trainingReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset training'**
+  String get trainingReset;
+
+  /// No description provided for @trainingResetAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all levels to 0 and get back half the materials ({n} of each)'**
+  String trainingResetAsk(String n);
+
+  /// No description provided for @trainingResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Training reset'**
+  String get trainingResetDone;
+
+  /// No description provided for @squadTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'A training bug cannot be deployed'**
+  String get squadTraining;
+
+  /// No description provided for @duelMiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Miss!'**
+  String get duelMiss;
+
+  /// No description provided for @breedingConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Mate'**
+  String get breedingConfirm;
+
+  /// No description provided for @breedingTimeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg in {t}'**
+  String breedingTimeInfo(String t);
+
+  /// No description provided for @incubatorStartConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Start hatching'**
+  String get incubatorStartConfirm;
+
+  /// No description provided for @incubatorTimeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatches in {t}'**
+  String incubatorTimeInfo(String t);
+
+  /// No description provided for @bugInfoSex.
+  ///
+  /// In en, this message translates to:
+  /// **'Sex'**
+  String get bugInfoSex;
+
+  /// No description provided for @bugInfoElement.
+  ///
+  /// In en, this message translates to:
+  /// **'Element'**
+  String get bugInfoElement;
+
+  /// No description provided for @leagueInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{league} League'**
+  String leagueInfoTitle(String league);
+
+  /// No description provided for @leagueInfoRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly rank rewards (closes Sun 09:00)'**
+  String get leagueInfoRank;
+
+  /// No description provided for @leagueInfoSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Season-end reward'**
+  String get leagueInfoSeason;
+
+  /// No description provided for @leagueInfoAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards by league'**
+  String get leagueInfoAll;
+
+  /// No description provided for @leagueInfoCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get leagueInfoCurrent;
+
+  /// No description provided for @leagueInfoAllHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly = 1st place in that league · Gold = season-end reward'**
+  String get leagueInfoAllHint;
+
+  /// No description provided for @boardPromoteLine.
+  ///
+  /// In en, this message translates to:
+  /// **'▲ Promotion zone above'**
+  String get boardPromoteLine;
+
+  /// No description provided for @boardDemoteLine.
+  ///
+  /// In en, this message translates to:
+  /// **'▼ Demotion zone below'**
+  String get boardDemoteLine;
+
+  /// No description provided for @squadAutoFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Squad filled automatically. Check it and tap Start again'**
+  String get squadAutoFilled;
+
+  /// No description provided for @battleSeasonClosedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Season over'**
+  String get battleSeasonClosedShort;
+
+  /// No description provided for @leagueMyNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now #{rank} of {total}'**
+  String leagueMyNow(int rank, int total);
+
+  /// No description provided for @leagueMyPromote.
+  ///
+  /// In en, this message translates to:
+  /// **'▲ Promotion zone — {league} League next week'**
+  String leagueMyPromote(String league);
+
+  /// No description provided for @leagueMyStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe — same league next week'**
+  String get leagueMyStay;
+
+  /// No description provided for @leagueMyDemote.
+  ///
+  /// In en, this message translates to:
+  /// **'▼ Demotion zone — {league} League next week'**
+  String leagueMyDemote(String league);
+
+  /// No description provided for @leagueMyIfEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward if the season ended now'**
+  String get leagueMyIfEnds;
+
+  /// No description provided for @boardBossPct.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss {n}%'**
+  String boardBossPct(int n);
+
+  /// No description provided for @boardAbyssHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Same floor? Higher max damage on the next floor boss (Boss %) ranks higher'**
+  String get boardAbyssHint;
+
+  /// No description provided for @rankProgressAbyss.
+  ///
+  /// In en, this message translates to:
+  /// **'{tier} · Abyss F{floor}'**
+  String rankProgressAbyss(String tier, int floor);
 }
 
 class _AppLocalizationsDelegate

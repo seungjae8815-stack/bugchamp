@@ -19,7 +19,7 @@ class DuelStep {
   final int winsA;
   final int winsB;
 
-  /// 경기가 끝났나(두 판을 먼저 이김).
+  /// 경기가 끝났나(한 팀이 모두 쓰러짐 — 승자 연속).
   final bool done;
 
   /// 서버가 확정한 세이브(끝났을 때만).
@@ -141,17 +141,21 @@ class LocalDuelDriver implements DuelDriver {
   @override
   Future<DuelStep?> next(double launch) async {
     final i = _done.length;
-    if (i >= mine.length || i >= foe.length) return null;
+    // 승자 연속 — 대진·시작 체력은 지금까지의 판에서 나온다(서버와 같은 함수).
+    final st = duelNextState(_done, mine, foe, params);
+    if (st.ia >= mine.length || st.ib >= foe.length) return null;
     final b = simulateBout(
       seed: duelBoutSeed(seed, i),
-      a: mine[i],
-      b: foe[i],
+      a: mine[st.ia],
+      b: foe[st.ib],
       params: params,
       launchA: launch,
+      hpA: st.hpA,
+      hpB: st.hpB,
     );
     _done.add(b);
     final m = DuelMatch(bouts: _done);
-    final done = m.decided(params) || _done.length >= mine.length;
+    final done = m.winsA >= foe.length || m.winsB >= mine.length;
     final rw = done
         ? pvpReward(
             won: m.winsA > m.winsB,

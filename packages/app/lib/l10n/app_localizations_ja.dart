@@ -3521,7 +3521,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelThrowButton => '投げる！';
 
   @override
-  String get duelGaugeHint => '緑で止めると最初の突進が強くなります';
+  String get duelGaugeHint => '画面のどこをタップしても止まります・緑ほど最初の突進が強くなります';
 
   @override
   String duelBout(int n) {
@@ -3702,5 +3702,272 @@ class AppLocalizationsJa extends AppLocalizations {
   String get leagueResultInactive => '先週決闘を休んだため1段階降格しました';
 
   @override
-  String get leagueZoneHint => '毎週日曜24時に決算・上位20%昇格・下位20%降格';
+  String get leagueZoneHint => '毎週日曜9時締切・上位20%昇格・下位20%降格';
+
+  @override
+  String get duelSquadTitle => '出陣昆虫';
+
+  @override
+  String get recoveryRoom => '回復室';
+
+  @override
+  String get trainingCenter => '訓練所';
+
+  @override
+  String get trainingSoon => '訓練所はまもなくオープン';
+
+  @override
+  String get leagueClaimPromo => '昇格報酬を受け取る';
+
+  @override
+  String get battleSeasonClosed => 'シーズンが終了しました！';
+
+  @override
+  String get recoveryEmpty => '回復中の昆虫はいません';
+
+  @override
+  String get opponentPickTitle => '対戦相手を選ぶ';
+
+  @override
+  String opponentPickHint(String power) {
+    return 'チーム戦闘力 $power・勝てば星を獲得、負けても失わない';
+  }
+
+  @override
+  String get opponentWinOnly => '勝利時';
+
+  @override
+  String boardSeasonClosesIn(String time) {
+    return 'シーズン締切：$time';
+  }
+
+  @override
+  String boardMyRankNow(int rank) {
+    return '現在$rank位 — 獲得報酬';
+  }
+
+  @override
+  String profileCombatPower(String power) {
+    return '戦闘力 $power';
+  }
+
+  @override
+  String get profileNoTeam => 'まだ防衛チームがありません';
+
+  @override
+  String duelAutoThrowIn(int n) {
+    return '$n秒後に自動で投げます';
+  }
+
+  @override
+  String get duelRestrainHit => '相克！';
+
+  @override
+  String get duelCritHit => 'クリティカル！';
+
+  @override
+  String get duelWeakHit => '弱点！';
+
+  @override
+  String pvpTicketJellyGive(int amount) {
+    return '+$amount枚チャージ';
+  }
+
+  @override
+  String get bugInfoAtk => '攻撃力';
+
+  @override
+  String get bugInfoDef => '防御力';
+
+  @override
+  String get bugInfoSpd => '素早さ';
+
+  @override
+  String get bugInfoSpecialty => '得意技';
+
+  @override
+  String get bugInfoTemperament => '気質';
+
+  @override
+  String get bugInfoSize => 'サイズ';
+
+  @override
+  String get bugInfoPotential => 'ポテンシャル';
+
+  @override
+  String get squadDetailTitle => '出陣昆虫';
+
+  @override
+  String get squadDeploy => '出陣';
+
+  @override
+  String get squadInjured => '回復中の昆虫がいます — 回復室で回復するか入れ替えてください';
+
+  @override
+  String squadOrder(int n) {
+    return '$n番目';
+  }
+
+  @override
+  String get duelAttackBtn => '攻撃';
+
+  @override
+  String get squadRelease => '解除';
+
+  @override
+  String get squadSwap => '交代';
+
+  @override
+  String get trainAttack => '攻撃';
+
+  @override
+  String get trainDefense => '防御';
+
+  @override
+  String get trainEvade => '回避';
+
+  @override
+  String get trainCrit => '会心';
+
+  @override
+  String get trainRecovery => '回復力';
+
+  @override
+  String get trainingNone => '訓練中の昆虫はいません';
+
+  @override
+  String trainingNow(String stat, int level) {
+    return '$stat $level段階 訓練中';
+  }
+
+  @override
+  String get trainingDone => '訓練完了！';
+
+  @override
+  String get trainingPickBug => '訓練する昆虫';
+
+  @override
+  String get trainingCapHint => '最大段階はポテンシャル・気質・得意技・血統特性で昆虫ごとに違います';
+
+  @override
+  String trainingLevel(int lv, int cap) {
+    return '$lv / $cap段階';
+  }
+
+  @override
+  String get trainingStart => '訓練';
+
+  @override
+  String get trainingMaxed => '最大';
+
+  @override
+  String get trainingBusy => '訓練所は一度に1匹だけです';
+
+  @override
+  String get trainingNoMaterials => '素材が足りません';
+
+  @override
+  String get trainingReset => '訓練リセット';
+
+  @override
+  String trainingResetAsk(String n) {
+    return 'すべての段階を0に戻し、使った素材の半分（各$n）を返します';
+  }
+
+  @override
+  String get trainingResetDone => '訓練をリセットしました';
+
+  @override
+  String get squadTraining => '訓練中の昆虫は出陣できません';
+
+  @override
+  String get duelMiss => 'ミス！';
+
+  @override
+  String get breedingConfirm => '交配';
+
+  @override
+  String breedingTimeInfo(String t) {
+    return '産卵まで $t';
+  }
+
+  @override
+  String get incubatorStartConfirm => '孵化開始';
+
+  @override
+  String incubatorTimeInfo(String t) {
+    return '孵化まで $t';
+  }
+
+  @override
+  String get bugInfoSex => '性別';
+
+  @override
+  String get bugInfoElement => '五行';
+
+  @override
+  String leagueInfoTitle(String league) {
+    return '$leagueリーグ';
+  }
+
+  @override
+  String get leagueInfoRank => '週間順位報酬（日曜9時締切）';
+
+  @override
+  String get leagueInfoSeason => 'シーズン終了報酬';
+
+  @override
+  String get leagueInfoAll => 'リーグ別報酬';
+
+  @override
+  String get leagueInfoCurrent => '現在';
+
+  @override
+  String get leagueInfoAllHint => 'ゼリー＝そのリーグの1位報酬・ゴールド＝シーズン終了報酬';
+
+  @override
+  String get boardPromoteLine => '▲ ここより上は昇格圏';
+
+  @override
+  String get boardDemoteLine => '▼ ここより下は降格圏';
+
+  @override
+  String get squadAutoFilled => '出陣昆虫を自動で編成しました。確認してもう一度開始を押してください';
+
+  @override
+  String get battleSeasonClosedShort => 'シーズン終了';
+
+  @override
+  String leagueMyNow(int rank, int total) {
+    return '現在 $total人中 $rank位';
+  }
+
+  @override
+  String leagueMyPromote(String league) {
+    return '▲ 昇格圏 — 来週 $leagueリーグ';
+  }
+
+  @override
+  String get leagueMyStay => '残留圏 — 来週も同じリーグ';
+
+  @override
+  String leagueMyDemote(String league) {
+    return '▼ 降格圏 — 来週 $leagueリーグ';
+  }
+
+  @override
+  String get leagueMyIfEnds => '今終わった場合の報酬';
+
+  @override
+  String boardBossPct(int n) {
+    return 'ボス $n%';
+  }
+
+  @override
+  String get boardAbyssHint => '同じ階なら次の階のボスに与えた最大ダメージ（ボス%）が大きい方が上';
+
+  @override
+  String rankProgressAbyss(String tier, int floor) {
+    return '$tier・深淵 $floor階';
+  }
 }
