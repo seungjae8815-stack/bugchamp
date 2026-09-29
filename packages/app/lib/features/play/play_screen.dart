@@ -6837,6 +6837,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       // 몬스터가 같이 세져 테스트 캐릭터로는 며칠 걸린다.
                       // "1000 보스를 방금 잡은 상태"로 바로 보낸다 —
                       // 이후 흐름(안내 → 전환 → 유지 확인)은 전부 실제 코드다.
+                      _devBtn('심연 열기(극한으로)', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devOpenAbyss();
+                        if (!mounted) return;
+                        Navigator.pop(context);
+                        setState(() {});
+                        toast('심연 1층 — 극한 최종 사냥터 뒤');
+                      }),
+                      _devBtn('강화 전부 최대', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devMaxUpgrades();
+                        toast('강화 전부 최대');
+                      }),
+                      _devBtn('심연 층 +10', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devAbyssFloors(10);
+                        toast('심연 층 +10');
+                      }),
                       _devBtn('회차 전환 테스트(1000 클리어)', () {
                         final last = _data.roadmapConfig?.finalStage ?? 0;
                         if (last <= 0) {

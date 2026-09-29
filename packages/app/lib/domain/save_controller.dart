@@ -1733,6 +1733,39 @@ class SaveController extends AsyncNotifier<SaveGame> {
   // ── 개발자(테스트) 전용 ───────────────────────────────────────
   static const _devUuid = Uuid();
 
+  /// (개발) 심연 바로 시험 — 난이도를 극한으로 올리고(가 본 최고도 극한) 심연을 열어 1층으로 들어간다.
+  /// 극한 최종 보스를 실제로 잡으려면 며칠 걸려서 만든 지름길이다. 이후 흐름은 전부 실제 코드다.
+  Future<void> devOpenAbyss() async {
+    final run = ref.read(gameDataProvider).requireValue.runConfig;
+    if (run == null) return;
+    final tier = abyssTier(run);
+    var s = state.requireValue.copyWith(
+      difficultyTier: tier,
+      maxTierReached: math.max(state.requireValue.maxTierReached, tier),
+    );
+    s = unlockAbyss(s);
+    s = enterAbyss(s, run, _abyssWeekNow());
+    await _commit(s);
+  }
+
+  /// (개발) 사냥 강화를 전부 최대 레벨로 — 쉬움 전력으로는 극한·심연 몬스터를 못 잡는다.
+  Future<void> devMaxUpgrades() async {
+    final run = ref.read(gameDataProvider).requireValue.runConfig;
+    if (run == null) return;
+    final lv = <UpgradeKind, int>{
+      for (final k in UpgradeKind.values)
+        if (run.upgrades.containsKey(k)) k: run.upgrade(k).maxLevel ?? 500,
+    };
+    await _commit(state.requireValue.copyWith(upgradeLevels: lv));
+  }
+
+  /// (개발) 심연 층을 [n] 만큼 올린다(층 보스를 잡은 것처럼 실제 함수로 — 10층마다 첫 도달 보상 포함).
+  Future<void> devAbyssFloors(int n) async {
+    for (var i = 0; i < n; i++) {
+      await clearAbyssFloorNow();
+    }
+  }
+
   /// (개발) 채집함 비우기(장착 해제 포함).
   Future<void> devClearBugs() async {
     await _commit(
