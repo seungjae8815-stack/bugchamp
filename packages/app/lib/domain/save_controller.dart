@@ -275,6 +275,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final skillCfg = data.skillConfig;
     if (skillCfg != null) save = enforceSkillRules(save, skillCfg);
 
+    // 요정도 규칙 안으로(등급 레벨 상한·요정함 상한). 서버 업로드와 **같은 함수**다.
+    // ⚠️ 모르는 종류·부가 키는 여기서 거르지 않는다 — 구버전 앱이 새 종류를 지우면 안 된다(서버만 거른다).
+    final fairyCfg = data.fairyConfig;
+    if (fairyCfg != null) {
+      save = save.copyWith(fairy: enforceFairyRules(save.fairy, fairyCfg));
+    }
+
     // 자가치유: 존재하지 않는 곤충을 가리키는 부화 항목 제거(슬롯 누수 방지).
     if (save.incubating.isNotEmpty) {
       final ids = {for (final b in save.bugs) b.id};
@@ -691,6 +698,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return state.requireValue.zoneKills >= run.bossUnlockKills;
   }
 
+  /// 마지막 [advanceZone] 에서 떨어진 요정 알 등급(화면 알림용). 없으면 빈 목록.
+  List<FairyGrade> lastBossFairyEggs = const [];
+
   /// 보스를 깼다 — 다음 사냥터로. 스테이지는 사냥터 폭(worldSize)만큼 뛰고
   /// 도전 게이지는 0 부터. 마지막 사냥터(최종 보스)면 그대로 둔다 — 회차
   /// 전환은 유저가 누른다.
@@ -724,6 +734,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
       );
       next = got.save;
       shards = got.shards;
+    }
+    // 요정 — 보스 **첫 처치**면 난이도별 알 1개 확정 + 속성석(§2.8 무료 경로, design_fairy.md §1.4).
+    // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
+    lastBossFairyEggs = const [];
+    final fairyCfg = data?.fairyConfig;
+    if (fairyCfg != null && firstKill) {
+      final drop = fairyBossDrop(
+        next.fairy,
+        fairyCfg,
+        rng ?? math.Random(),
+        tier: s.difficultyTier,
+        firstKill: true,
+      );
+      next = next.copyWith(fairy: drop.state);
+      lastBossFairyEggs = drop.extra['eggs'] as List<FairyGrade>;
     }
     if (!run.isFinalZone(zone)) {
       next = next.copyWith(
@@ -1776,6 +1801,57 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (var i = 0; i < n; i++) {
       await clearAbyssFloorNow();
     }
+  }
+
+  /// (개발) 요정 8종을 한 마리씩 넣고 영웅 한 마리를 동행으로 — 방치 런 반영·날아다니는 표시 확인용.
+  ///
+  /// ⚠️ 서버는 업로드에서 **알 없이 늘어난 등급 가치**를 자른다(무료 여유 30). 그래서 일반 6·희귀 1·영웅 1
+  /// (가치 18)만 준다 — 더 주면 다음 업로드에서 높은 것부터 잘려 "넣었는데 사라졌다"가 된다.
+  Future<void> devGrantFairies() async {
+    final cfg = ref.read(gameDataProvider).requireValue.fairyConfig;
+    if (cfg == null) return;
+    final rng = math.Random();
+    var f = state.requireValue.fairy;
+    final subs = cfg.subWeight.keys.toList();
+    String? epicId;
+    for (final (i, k) in cfg.kinds.indexed) {
+      final grade = i == 0
+          ? FairyGrade.epic
+          : i == 1
+          ? FairyGrade.rare
+          : FairyGrade.common;
+      final id = 'f${f.seq + 1}';
+      f = f.copyWith(
+        seq: f.seq + 1,
+        fairies: [
+          ...f.fairies,
+          Fairy(
+            id: id,
+            kind: k.id,
+            grade: grade,
+            sub: subs[rng.nextInt(subs.length)],
+            baseRoll: cfg.rollQuality(rng),
+            subRoll: cfg.rollQuality(rng),
+          ),
+        ],
+        dex: {...f.dex, FairyState.dexKey(k.id, grade)},
+      );
+      if (grade == FairyGrade.epic) epicId = id;
+    }
+    f = enforceFairyRules(f.copyWith(companionId: epicId), cfg);
+    await _commit(state.requireValue.copyWith(fairy: f));
+  }
+
+  /// (개발) 동행 요정을 다음 요정으로 바꾼다(없으면 첫 요정). 요정 스킬을 종류별로 확인하는 용도.
+  Future<String?> devCycleFairy() async {
+    final f = state.requireValue.fairy;
+    if (f.fairies.isEmpty) return null;
+    final i = f.fairies.indexWhere((x) => x.id == f.companionId);
+    final next = f.fairies[(i + 1) % f.fairies.length];
+    await _commit(
+      state.requireValue.copyWith(fairy: f.copyWith(companionId: next.id)),
+    );
+    return next.kind;
   }
 
   /// (개발) 채집함 비우기(장착 해제 포함).
@@ -2981,6 +3057,107 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(skillAutoCast: on));
   }
 
+  // ── 요정(docs/design_fairy.md) ────────────────────────────────
+  // 규칙은 전부 core_save `fairy_progress.dart`(서버 업로드 검사와 같은 함수).
+  // 여기는 젤리 차감·시각·난수·저장만 한다. 기기 권위(알 뽑기·스킬 뽑기와 같다).
+
+  /// 요정 액션 공용 — 실패면 상태를 바꾸지 않고 사유 키가 담긴 결과를 그대로 준다.
+  Future<FairyOp> _fairyOp(
+    FairyOp Function(FairyState f, FairyConfig cfg, int jelly) op,
+  ) async {
+    final cfg = ref.read(gameDataProvider).value?.fairyConfig;
+    if (cfg == null) return const FairyOp.fail('off');
+    final s = state.requireValue;
+    final have = s.materialCount(MaterialKind.jelly);
+    final r = op(s.fairy, cfg, have);
+    if (!r.isOk) return r;
+    var next = s.copyWith(fairy: r.state);
+    if (r.jelly > 0) {
+      next = next.copyWith(
+        materials: Map<MaterialKind, int>.from(s.materials)
+          ..[MaterialKind.jelly] = have - r.jelly,
+      );
+    }
+    await _commit(next);
+    return r;
+  }
+
+  DateTime get _fairyNow => ref.read(clockProvider).now().toUtc();
+
+  /// 둥지에 알을 넣는다([stoneSub] = 속성석 부가 키).
+  Future<FairyOp> fairyPlaceEgg(
+    String eggId, {
+    String? stoneSub,
+    math.Random? rng,
+  }) => _fairyOp(
+    (f, cfg, _) => placeFairyEgg(
+      f,
+      cfg,
+      rng ?? math.Random(),
+      eggId: eggId,
+      now: _fairyNow,
+      stoneSub: stoneSub,
+    ),
+  );
+
+  /// 다 깬 알을 꺼낸다. 결과 `extra['fairy']`.
+  Future<FairyOp> fairyCollectNest() =>
+      _fairyOp((f, _, _) => collectFairyNest(f, now: _fairyNow));
+
+  Future<FairyOp> fairyUseAccelerator(String accelId) => _fairyOp(
+    (f, cfg, _) =>
+        useFairyAccelerator(f, cfg, accelId: accelId, now: _fairyNow),
+  );
+
+  Future<FairyOp> fairyBuyAccelerator(String accelId, {int count = 1}) =>
+      _fairyOp(
+        (f, cfg, jelly) => buyFairyAccelerator(
+          f,
+          cfg,
+          accelId: accelId,
+          count: count,
+          jellyHave: jelly,
+        ),
+      );
+
+  Future<FairyOp> fairyBuyStone(String sub, {int count = 1}) => _fairyOp(
+    (f, cfg, jelly) =>
+        buyFairyStone(f, cfg, sub: sub, count: count, jellyHave: jelly),
+  );
+
+  Future<FairyOp> fairyMerge(List<String> ids) =>
+      _fairyOp((f, cfg, _) => mergeFairies(f, cfg, ids));
+
+  /// 자동 합성 — [dryRun] 이면 저장하지 않고 예상만(실행 전 확인, §2.7).
+  Future<FairyOp> fairyAutoMerge({bool dryRun = false}) async {
+    if (dryRun) {
+      final cfg = ref.read(gameDataProvider).value?.fairyConfig;
+      if (cfg == null) return const FairyOp.fail('off');
+      return autoMergeFairies(state.requireValue.fairy, cfg, dryRun: true);
+    }
+    return _fairyOp((f, cfg, _) => autoMergeFairies(f, cfg));
+  }
+
+  Future<FairyOp> fairyLevelUp(String id) =>
+      _fairyOp((f, cfg, _) => levelUpFairy(f, cfg, id));
+
+  Future<FairyOp> fairySetCompanion(String? id) =>
+      _fairyOp((f, _, _) => setFairyCompanion(f, id));
+
+  Future<FairyOp> fairyRelease(String id) =>
+      _fairyOp((f, cfg, _) => releaseFairy(f, cfg, id));
+
+  /// 요정 알 뽑기(젤리). 결과 `extra['grades']`.
+  Future<FairyOp> fairyDraw(int times, {math.Random? rng}) => _fairyOp(
+    (f, cfg, jelly) => drawFairyEggs(
+      f,
+      cfg,
+      rng ?? math.Random(),
+      times: times,
+      jellyHave: jelly,
+    ),
+  );
+
   /// 스킬 뽑기(§2.8) — [free] 면 하루 무료 1회, 아니면 젤리로 [times] 회.
   /// 기기 권위라 시드는 기기가 정한다(알 뽑기와 같다). 실패하면 사유 키.
   Future<({List<SkillDraw> draws, String? error})> drawSkills({
@@ -3046,6 +3223,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (got.shards.isEmpty) return const {};
     await _commit(got.save);
     return got.shards;
+  }
+
+  /// 정예 처치 요정 드롭(확률 — 알·속성석·가속기, §2.8 무료 경로). 아무것도 안 나오면 저장하지 않는다.
+  Future<FairyOp> grantEliteFairy({math.Random? rng}) async {
+    final cfg = ref.read(gameDataProvider).value?.fairyConfig;
+    if (cfg == null) return const FairyOp.fail('off');
+    final s = state.requireValue;
+    final r = fairyEliteDrop(s.fairy, cfg, rng ?? math.Random());
+    if (identical(r.state, s.fairy)) return r;
+    await _commit(s.copyWith(fairy: r.state));
+    return r;
   }
 
   Future<String?> _skillOp(SkillOp Function(SaveGame, SkillConfig) op) async {

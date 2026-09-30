@@ -9,6 +9,7 @@ export 'src/clock.dart';
 export 'src/enums.dart';
 export 'src/equipment.dart';
 export 'src/event_badge.dart';
+export 'src/fairy.dart';
 export 'src/field.dart';
 export 'src/game_rules.dart';
 export 'src/individual_bug.dart';

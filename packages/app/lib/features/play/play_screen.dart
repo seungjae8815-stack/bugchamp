@@ -36,6 +36,7 @@ import '../../l10n/app_localizations.dart';
 import '../chat/chat_screen.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
+import '../../ui/fairy_art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/format.dart';
@@ -551,6 +552,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   // 액티브가 없어서 껐다 켜서 쿨을 지워도 얻는 게 없고, 60초 업로드에 실을 값도 아니다.
   /// 스킬 id → 남은 쿨타임(초).
   final Map<String, double> _skillCd = {};
+
+  // ── 동행 요정(docs/design_fairy.md) ── 스킬 바와 같은 이유로 화면 세션에만 둔다.
+  /// 요정 스킬 남은 쿨타임(초). 요정 스킬은 늘 자동이다(요정 칸에는 누르는 버튼이 없다).
+  double _fairyCd = 0;
+
+  /// 지속형 요정 스킬(피해 감소·공속·곤충)의 남은 시간(초).
+  double _fairyOn = 0;
+
+  /// 볼테아 — 남은 확정 치명 타수.
+  int _fairyCritLeft = 0;
+
+  /// 시전 그림을 보여 줄 남은 시간(초). 0 이면 날갯짓.
+  double _fairyCastT = 0;
+
+  /// 날갯짓·둥실 흔들림에 쓰는 누적 시간(초).
+  double _fairyAnimT = 0;
 
   /// 스킬 id → 남은 지속(초). 지속형(공속·재료·곤충·방벽)만.
   final Map<String, double> _skillOn = {};
@@ -1157,6 +1174,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         critBudget: _config.critBudgetOther,
       );
     }
+    // 동행 요정(1.0.15)도 **기준 밖** — 스킬 패시브와 같은 층이다(design_fairy.md §1.1).
+    s = applyFairyStats(s, _fairyBonus(save));
     final dex = _data.dexConfig;
     if (dex != null) {
       s = dex.apply(
@@ -1167,7 +1186,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     s = applyBuffs(s, save.activeBuffs(_clock.now().toUtc()), _data.buffConfig);
     // 지속형 액티브(질풍 채집·유인 수액) — 버프와 같은 층(기준 밖).
-    final gale = _activeSkillMult(save, 'attackSpeed');
+    final gale =
+        _activeSkillMult(save, 'attackSpeed') *
+        (1 + _fairyOnValue(save, 'attackSpeed'));
     final lure = _activeSkillMult(save, 'materialFind');
     if (gale != 1 || lure != 1) {
       s = CharacterStats(
@@ -1237,7 +1258,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
     final walkMul = walking ? _config.walkThreatMult : 1.0;
     if (walkMul <= 0) return;
-    final incoming = threat * 100 / (100 + stats.defense) * walkMul;
+    // 테라리엘(피해 감소) — 켜져 있는 동안만.
+    final fairyGuard = 1 - _fairyOnValue(save, 'damageReduce').clamp(0.0, 0.8);
+    final incoming =
+        threat * 100 / (100 + stats.defense) * walkMul * fairyGuard;
     _enemyAtkAcc += dt;
     // 간격·배율은 데이터다(§6). 간격이 길수록 같은 DPS 가 **한 대로 뭉친다** —
     // 가랑비(1.5초마다 1~2%)를 한 대 15~20% 로 바꾼 자리(2026-09-14).
@@ -1425,7 +1449,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       // 게이지는 전투와 **공유한다** — 따로 두면 이동에서 찬 게 버려져
       // "걸어도 안 맞는다"가 그대로 남는다.
       _applyHabitatThreat(stats, dt, walking: true);
-      if (_playerHp <= 0) {
+      if (_playerHp <= 0 && !_fairyStand(save)) {
         _beginDefeat();
         return;
       }
@@ -1438,13 +1462,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _playerHpMax <= 0 ? 0 : stats.hpRegen * dt / _playerHpMax,
     );
     _applyHabitatThreat(stats, dt);
-    if (_playerHp <= 0) {
+    if (_playerHp <= 0 && !_fairyStand(save)) {
       _beginDefeat();
       return;
     }
 
     // 액티브 스킬 — 자동발동 + 직접 누른 것. 즉발 피해로 몬스터가 죽으면 여기서 끝.
     _castSkills(save, stats);
+    _castFairySkill(save, stats);
     if (_hp <= 0) {
       _beginDeath(stats);
       return;
@@ -1473,7 +1498,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     while (_attackAcc >= interval && _hp > 0 && guard < 20) {
       _attackAcc -= interval;
       var dmg = perHit;
-      final crit = _rng.nextDouble() < stats.critChance;
+      // 볼테아 — 남은 타수만큼 확정 치명.
+      final forced = _fairyCritLeft > 0;
+      if (forced) _fairyCritLeft--;
+      final crit = forced || _rng.nextDouble() < stats.critChance;
       if (crit) dmg *= stats.critDamage;
       _hp -= dmg;
       if (_playerStruckT < 0) _playerStruckT = 0;
@@ -1515,7 +1543,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 곤충 타격 — 각자 자기 간격으로. 플레이어와 같은 누산기 방식이라
     // 프레임이 튀어도 넣어야 할 대수가 안 사라진다.
     _petHits.clear();
-    final petPower = _activeSkillMult(save, 'petPower');
+    final petPower =
+        _activeSkillMult(save, 'petPower') *
+        fairyPetMult(_fairyBonus(save)) *
+        (1 + _fairyOnValue(save, 'petPower'));
     for (var i = 0; i < split.pets.length; i++) {
       final p = split.pets[i];
       // 쓰러진 곤충은 때리지 않는다 — 빠진 몫이 곧 순항의 긴장이다.
@@ -1742,7 +1773,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // ⚠️ 곤충 드롭 확률에는 **안 곱한다.** 채집함 상한(§2.1)이 있어서 드롭을
     // 늘리면 칸만 빨리 차고, 곤충 수 버프는 이미 50에서 멈춘다.
     // 늘리는 건 골드·경험치·재료뿐이다.
-    if (_isElite && !_isBoss) unawaited(_eliteSkillShard());
+    if (_isElite && !_isBoss) {
+      unawaited(_eliteSkillShard());
+      unawaited(_eliteFairyDrop());
+    }
     if (_isElite) {
       final m = _config.eliteRewardMult;
       gold = (gold * m).round();
@@ -2556,6 +2590,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                 ),
               ),
+
+              // 동행 요정: 캐릭터 머리 오른쪽 위에서 둥실
+              _fairyCompanion(),
 
               // 임팩트 스파크 + 파편
               Positioned.fill(
@@ -3658,6 +3695,154 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 보스 격파로 스테이지 상승 시: 최고기록 반영 후 새로 클리어한 챕터 축하.
+  // ── 동행 요정 ──────────────────────────────────────────────
+
+  /// 시전 그림을 보여 주는 시간(초).
+  static const _kFairyCastShow = 0.6;
+
+  /// 동행 요정의 능력치(없으면 빈 맵).
+  Map<String, double> _fairyBonus(SaveGame save) {
+    final cfg = _data.fairyConfig;
+    return cfg == null ? const {} : fairyCompanionBonus(save.fairy, cfg);
+  }
+
+  /// 동행 요정과 그 종류 정의(없거나 모르는 종류면 null).
+  (Fairy, FairyKindDef)? _fairyNow(SaveGame save) {
+    final f = save.fairy.companion;
+    final def = f == null ? null : _data.fairyConfig?.byId(f.kind);
+    return f == null || def == null ? null : (f, def);
+  }
+
+  /// 지속형 요정 스킬 [effect] 가 켜져 있으면 그 효과값, 아니면 0.
+  double _fairyOnValue(SaveGame save, String effect) {
+    if (_fairyOn <= 0) return 0;
+    final now = _fairyNow(save);
+    if (now == null || now.$2.skill.effect != effect) return 0;
+    return _data.fairyConfig!.skillValue(now.$1);
+  }
+
+  /// 요정 스킬 — 늘 자동. 쓸지 말지는 core_run `fairySkillShouldCast`(회복은 체력이 낮을 때,
+  /// 보스 일격은 보스전에서만). 재화를 주는 스킬은 없다(쿨이 기기 시계 — §2.8).
+  void _castFairySkill(SaveGame save, CharacterStats stats) {
+    if (_fairyCd > 0) return;
+    final now = _fairyNow(save);
+    if (now == null) return;
+    final (f, def) = now;
+    final sk = def.skill;
+    if (!fairySkillShouldCast(
+      sk.effect,
+      inCombat: !_walking && !_dying,
+      boss: _isBoss,
+      hpRatio: _playerHpMax <= 0 ? 1 : _playerHp / _playerHpMax,
+    )) {
+      return;
+    }
+    final v = _data.fairyConfig!.skillValue(f);
+    _fairyCd = sk.cooldown.inMilliseconds / 1000;
+    _fairyCastT = _kFairyCastShow;
+    switch (sk.effect) {
+      case 'burstDamage' || 'bossBurst':
+        // 스킬 순간 피해와 같은 규칙 — 지금 초당 피해 × 값(초).
+        final dmg = skillBurstDamage(stats, v, boss: _isBoss);
+        _hp -= dmg;
+        _hitFlash = 1;
+        _impacts.add(_Impact(true));
+        _pops.add(_Pop(formatCompact(dmg), 0, fairyGradeColor(f.grade), 26));
+      case 'heal':
+        _healTeamFraction(v);
+      case 'critStrikes':
+        _fairyCritLeft = v.round().clamp(1, 20);
+      default:
+        _fairyOn = sk.duration.inMilliseconds / 1000;
+    }
+    _fairyShout(def, f);
+  }
+
+  /// 아스테리아 — 쓰러질 한 대를 **한 번** 버틴다(쿨마다). 버텼으면 true.
+  bool _fairyStand(SaveGame save) {
+    if (_fairyCd > 0) return false;
+    final now = _fairyNow(save);
+    if (now == null || now.$2.skill.effect != 'lastStand') return false;
+    final (f, def) = now;
+    _playerHp =
+        _playerHpMax * _data.fairyConfig!.skillValue(f).clamp(0.05, 1.0);
+    _fairyCd = def.skill.cooldown.inMilliseconds / 1000;
+    _fairyCastT = _kFairyCastShow;
+    _fairyShout(def, f);
+    return true;
+  }
+
+  /// 요정 이름을 요정 쪽에 띄운다(무엇이 터졌는지).
+  void _fairyShout(FairyKindDef def, Fairy f) {
+    final locale = Localizations.localeOf(context).languageCode;
+    _pops.add(
+      _Pop(
+        def.name.resolve(locale),
+        0,
+        fairyGradeColor(f.grade),
+        14,
+        baseX: -0.3,
+        baseY: -0.7,
+      ),
+    );
+  }
+
+  /// 동행 요정 크기(빛 테두리 포함).
+  static const double _kFairySize = 58;
+
+  /// 캐릭터 옆을 나는 동행 요정 — 날갯짓 두 장을 번갈아(파닥임) · 스킬을 쓰면 시전 그림 ·
+  /// 위아래로 둥실. 그림이 없으면 등급 빛 속 🧚 로 떨어진다.
+  Widget _fairyCompanion() {
+    final save = ref.read(saveControllerProvider).value;
+    final now = save == null ? null : _fairyNow(save);
+    if (now == null) return const SizedBox.shrink();
+    final (f, _) = now;
+    final color = fairyGradeColor(f.grade);
+    final flap = (_fairyAnimT * 7).floor().isEven ? 1 : 2;
+    const dir = 'assets/images/fairies';
+    final paths = [
+      if (_fairyCastT > 0) '$dir/fairy_${f.kind}_cast.webp',
+      '$dir/fairy_${f.kind}_$flap.webp',
+      '$dir/fairy_${f.kind}_1.webp',
+    ];
+    final bob = math.sin(_fairyAnimT * 2.2) * 6;
+    final sway = math.sin(_fairyAnimT * 0.9) * 4;
+    // 시전하면 앞으로 살짝 날아간다.
+    final lunge = _fairyCastT > 0 ? 14 * (_fairyCastT / _kFairyCastShow) : 0.0;
+    return Align(
+      alignment: const Alignment(-0.3, 1.0),
+      child: Padding(
+        padding: const EdgeInsets.only(
+          bottom: _kSkillBarRoom + _kCharSize * 0.62,
+        ),
+        child: IgnorePointer(
+          child: Transform.translate(
+            offset: Offset(sway + lunge, bob),
+            child: Container(
+              width: _kFairySize,
+              height: _kFairySize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    color.withValues(alpha: _fairyOn > 0 ? 0.7 : 0.45),
+                    color.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+              alignment: Alignment.center,
+              child: gameImageChain(
+                paths,
+                size: _kFairySize * 0.9,
+                fallback: const Text('🧚', style: TextStyle(fontSize: 26)),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 장착·보유한 액티브 중 [effect] 가 **지금 켜져 있으면** 효과값을 곱한 배율(없으면 1).
   double _activeSkillMult(SaveGame save, String effect) {
     final cfg = _data.skillConfig;
@@ -3684,6 +3869,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   void _tickSkills(double dt) {
+    if (_fairyCd > 0) _fairyCd = math.max(0, _fairyCd - dt);
+    if (_fairyOn > 0) _fairyOn = math.max(0, _fairyOn - dt);
+    if (_fairyCastT > 0) _fairyCastT = math.max(0, _fairyCastT - dt);
+    _fairyAnimT += dt;
     for (final k in _skillCd.keys.toList()) {
       final v = _skillCd[k]! - dt;
       v <= 0 ? _skillCd.remove(k) : _skillCd[k] = v;
@@ -4123,12 +4312,80 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     });
   }
 
+  /// 정예 처치 요정 드롭(확률 — 알·속성석·가속기). 스킬 조각처럼 몬스터 자리에 작게 띄운다.
+  Future<void> _eliteFairyDrop() async {
+    final r = await ref.read(saveControllerProvider.notifier).grantEliteFairy();
+    if (!mounted || !r.isOk) return;
+    _fairyDropPops(
+      (r.extra['eggs'] as List<FairyGrade>?) ?? const [],
+      stones: ((r.extra['stones'] as Map?)?.isNotEmpty ?? false),
+      accel: r.extra['accel'] != null,
+    );
+  }
+
+  /// 요정 드롭 알림 — 알은 등급 색으로, 속성석·가속기는 이름만. 스킬 조각 알림보다 조금 아래.
+  void _fairyDropPops(
+    List<FairyGrade> eggs, {
+    bool stones = false,
+    bool accel = false,
+  }) {
+    if (eggs.isEmpty && !stones && !accel) return;
+    final l = AppLocalizations.of(context);
+    setState(() {
+      var y = -0.2;
+      for (final g in eggs) {
+        _pops.add(
+          _Pop(
+            l.fairyEggPop(fairyGradeLabel(l, g)),
+            0,
+            fairyGradeColor(g),
+            17,
+            baseX: 0.6,
+            baseY: y,
+          ),
+        );
+        y += 0.12;
+      }
+      if (stones) {
+        _pops.add(
+          _Pop(
+            l.fairyStone,
+            0,
+            const Color(0xFFFFD54F),
+            15,
+            baseX: 0.6,
+            baseY: y,
+          ),
+        );
+        y += 0.12;
+      }
+      if (accel) {
+        _pops.add(
+          _Pop(
+            l.fairyAccel,
+            0,
+            const Color(0xFF80DEEA),
+            15,
+            baseX: 0.6,
+            baseY: y,
+          ),
+        );
+      }
+    });
+  }
+
   /// 보스 처치 기록 + 스킬 조각(§2.8). 받은 조각을 한 줄로 알린다 —
   /// 모르고 지나가면 스킬 화면에 가 볼 이유가 생기지 않는다.
   Future<void> _advanceZoneWithShards() async {
-    final shards = await ref
-        .read(saveControllerProvider.notifier)
-        .advanceZone();
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final shards = await ctrl.advanceZone();
+    // 보스 첫 처치 요정 알(+ 속성석) — 조각 알림과 따로 띄운다.
+    if (mounted) {
+      _fairyDropPops(
+        ctrl.lastBossFairyEggs,
+        stones: ctrl.lastBossFairyEggs.isNotEmpty,
+      );
+    }
     final skills = _data.skillConfig;
     if (!mounted || shards.isEmpty || skills == null) return;
     final l = AppLocalizations.of(context);
@@ -6861,6 +7118,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             .read(saveControllerProvider.notifier)
                             .devMaxUpgrades();
                         toast('강화 전부 최대');
+                      }),
+                      _devBtn('요정 8종 넣기(영웅 동행)', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devGrantFairies();
+                        toast('요정 8종 — 영웅 1·희귀 1·일반 6');
+                      }),
+                      _devBtn('동행 요정 바꾸기', () async {
+                        final kind = await ref
+                            .read(saveControllerProvider.notifier)
+                            .devCycleFairy();
+                        setState(() => _fairyCd = 0);
+                        toast(kind == null ? '요정 없음' : '동행: $kind');
                       }),
                       _devBtn('심연 층 +10', () async {
                         await ref

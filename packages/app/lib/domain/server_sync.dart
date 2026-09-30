@@ -438,6 +438,15 @@ bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
       local.upgradeLevels.values.fold<int>(0, (a, b) => a + b),
       remote.upgradeLevels.values.fold<int>(0, (a, b) => a + b),
     ),
+    // 요정(1.0.15) — 요정만 키운 기기가 서버 세이브에 덮이지 않게.
+    cmp(_fairyProgress(local), _fairyProgress(remote)),
   ].any((x) => x);
   return ahead && !behind;
 }
+
+/// 요정 진행도 — 등급 가치 합(합성으로 안 변한다) + 레벨 합 + 도감 칸 수.
+/// 알을 얻거나·키우거나·새로 모으면 오르고, 분해·합성만으로는 거의 안 움직인다.
+int _fairyProgress(SaveGame s) =>
+    fairyStateValue(s.fairy) +
+    s.fairy.fairies.fold<int>(0, (a, f) => a + f.level) +
+    s.fairy.dex.length;

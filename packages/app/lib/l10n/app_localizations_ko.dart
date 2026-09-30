@@ -4123,4 +4123,288 @@ class AppLocalizationsKo extends AppLocalizations {
   String eventQuitBody(int n, int hp, int injury) {
     return '지금까지 깬 $n웨이브로 기록을 확정해요.\n지금 체력 $hp% — 부상은 최대의 $injury%만 쉬어요.\n(체력이 많이 남을수록 덜 쉬어요)';
   }
+
+  @override
+  String get charTabFairy => '요정';
+
+  @override
+  String get fairyCompanion => '동행 요정';
+
+  @override
+  String get fairyNoCompanion => '동행 요정이 없어요 — 요정함에서 골라 주세요';
+
+  @override
+  String fairyBoxTitle(String n, String max) {
+    return '요정함 $n/$max';
+  }
+
+  @override
+  String fairyEggCount(String n) {
+    return '알 $n개';
+  }
+
+  @override
+  String get fairyEmptyBox => '아직 요정이 없어요. 요정 알을 뽑아 둥지에서 깨워 보세요!';
+
+  @override
+  String get fairyNest => '요정 둥지';
+
+  @override
+  String get fairyNestEmpty => '둥지가 비었어요 — 알을 넣어 주세요';
+
+  @override
+  String get fairyNestNoEgg => '넣을 알이 없어요';
+
+  @override
+  String get fairyNestPut => '둥지에 넣기';
+
+  @override
+  String get fairyNestCollect => '꺼내기';
+
+  @override
+  String get fairyNestReady => '다 깼어요!';
+
+  @override
+  String fairyNestLeft(String t) {
+    return '$t 남음';
+  }
+
+  @override
+  String get fairyNestKindHint => '종류는 8가지 중 무작위예요';
+
+  @override
+  String get fairyStone => '속성석';
+
+  @override
+  String get fairyStoneNone => '속성석 없이';
+
+  @override
+  String fairyStoneHint(String p) {
+    return '속성석을 넣으면 그 부가 능력치가 $p% 확률로 나와요';
+  }
+
+  @override
+  String get fairyAccel => '가속기';
+
+  @override
+  String fairyAccelMinutes(String t) {
+    return '$t 단축';
+  }
+
+  @override
+  String get fairyUse => '쓰기';
+
+  @override
+  String get fairyBuy => '사기';
+
+  @override
+  String fairyOwned(String n) {
+    return '보유 $n';
+  }
+
+  @override
+  String get fairyDex => '요정 도감';
+
+  @override
+  String fairyDexGrades(String n, String max) {
+    return '등급 $n/$max';
+  }
+
+  @override
+  String fairyDexSubs(String n, String max) {
+    return '부가 능력치 $n/$max';
+  }
+
+  @override
+  String get fairyGacha => '요정 알 뽑기';
+
+  @override
+  String get fairyGachaOne => '1회';
+
+  @override
+  String get fairyGachaTen => '10회';
+
+  @override
+  String fairyGachaPity(String n) {
+    return '$n회 안에 전설 이상 확정';
+  }
+
+  @override
+  String get fairyGachaOdds => '확률 공개';
+
+  @override
+  String get fairyGachaOddsNote =>
+      '뽑기는 알의 등급만 정해요. 종류·부가 능력치·개체값은 둥지에서 깰 때 정해져요. 신화는 합성으로만 얻어요.';
+
+  @override
+  String fairyGachaGot(String n) {
+    return '알 $n개를 얻었어요';
+  }
+
+  @override
+  String get fairyDust => '요정 가루';
+
+  @override
+  String fairyLevel(String n) {
+    return 'Lv.$n';
+  }
+
+  @override
+  String get fairyLevelUp => '레벨업';
+
+  @override
+  String get fairyMaxLevel => '최고 레벨';
+
+  @override
+  String fairyQuality(String p) {
+    return '품질 $p%';
+  }
+
+  @override
+  String get fairyStatMain => '기본';
+
+  @override
+  String get fairyStatSub => '부가';
+
+  @override
+  String get fairySkill => '스킬';
+
+  @override
+  String fairyCooldown(String s) {
+    return '쿨 $s초';
+  }
+
+  @override
+  String get fairyGoCompanion => '동행하기';
+
+  @override
+  String get fairyIsCompanion => '동행 중';
+
+  @override
+  String get fairyMerge => '합성';
+
+  @override
+  String fairyMergeHint(String n) {
+    return '같은 종류·등급 $n마리 → 한 등급 위 1마리. 부가 능력치는 이 요정 것을 이어받고, 기본 개체값은 셋 중 가장 좋은 것.';
+  }
+
+  @override
+  String fairyMergePick(String n, String max) {
+    return '재료 $n/$max';
+  }
+
+  @override
+  String get fairyMergeNoMat => '같은 종류·등급 요정이 모자라요';
+
+  @override
+  String get fairyAutoMerge => '자동 합성';
+
+  @override
+  String fairyAutoMergeConfirm(String used, String made) {
+    return '$used마리를 합쳐 $made마리가 돼요. 동행 중·레벨 올린 요정은 빠지고, 부가 능력치가 같은 것끼리만 합쳐요.';
+  }
+
+  @override
+  String get fairyAutoMergeNone => '자동으로 합칠 요정이 없어요';
+
+  @override
+  String get fairyRelease => '분해';
+
+  @override
+  String fairyReleaseConfirm(String n) {
+    return '분해하면 요정 가루 $n개를 얻어요. 되돌릴 수 없어요.';
+  }
+
+  @override
+  String get fairyNew => '새 요정!';
+
+  @override
+  String get fairyErrJelly => '젤리가 모자라요';
+
+  @override
+  String get fairyErrDust => '요정 가루가 모자라요';
+
+  @override
+  String get fairyErrGeneric => '지금은 할 수 없어요';
+
+  @override
+  String get fairyGradeCommon => '일반';
+
+  @override
+  String get fairyGradeRare => '희귀';
+
+  @override
+  String get fairyGradeEpic => '영웅';
+
+  @override
+  String get fairyGradeLegendary => '전설';
+
+  @override
+  String get fairyGradeMythic => '신화';
+
+  @override
+  String get fairyStatAttack => '공격력';
+
+  @override
+  String get fairyStatHp => '체력';
+
+  @override
+  String get fairyStatDefense => '받는 피해 감소';
+
+  @override
+  String get fairyStatAttackSpeed => '공격속도';
+
+  @override
+  String get fairyStatCritDamage => '치명 피해';
+
+  @override
+  String get fairyStatBossDamage => '보스 피해';
+
+  @override
+  String get fairyStatPetShare => '곤충 피해';
+
+  @override
+  String fairySkillBurst(String s) {
+    return '$s초 분량의 피해를 한 번에';
+  }
+
+  @override
+  String fairySkillHeal(String p) {
+    return '체력이 60% 아래면 최대 체력 $p% 회복';
+  }
+
+  @override
+  String fairySkillGuard(String d, String p) {
+    return '$d초 동안 받는 피해 −$p%';
+  }
+
+  @override
+  String fairySkillHaste(String d, String p) {
+    return '$d초 동안 공격속도 +$p%';
+  }
+
+  @override
+  String fairySkillCrits(String n) {
+    return '다음 $n번 공격 확정 치명';
+  }
+
+  @override
+  String fairySkillBossBurst(String s) {
+    return '보스에게 $s초 분량의 피해';
+  }
+
+  @override
+  String fairySkillPet(String d, String p) {
+    return '$d초 동안 곤충 피해 +$p%';
+  }
+
+  @override
+  String fairySkillStand(String p) {
+    return '쓰러질 때 한 번 버티고 체력 $p%로 일어남';
+  }
+
+  @override
+  String fairyEggPop(String grade) {
+    return '요정 알 · $grade';
+  }
 }

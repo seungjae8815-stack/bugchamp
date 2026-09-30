@@ -19,6 +19,7 @@ class GameData {
     this.itemConfig,
     this.forgeConfig,
     this.skillConfig,
+    this.fairyConfig,
     this.missionConfig,
     this.petConfig,
     this.dailyConfig,
@@ -53,6 +54,9 @@ class GameData {
   final ItemConfig? itemConfig;
   final ForgeConfig? forgeConfig;
   final SkillConfig? skillConfig;
+
+  /// 요정(docs/design_fairy.md). 없으면 요정 기능이 꺼진다.
+  final FairyConfig? fairyConfig;
 
   /// 미션 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final MissionConfig? missionConfig;
@@ -114,6 +118,7 @@ class GameData {
     Map<String, dynamic>? itemConfig,
     Map<String, dynamic>? forgeConfig,
     Map<String, dynamic>? skillConfig,
+    Map<String, dynamic>? fairyConfig,
     Map<String, dynamic>? missionConfig,
     Map<String, dynamic>? petConfig,
     Map<String, dynamic>? dailyConfig,
@@ -157,6 +162,9 @@ class GameData {
       skillConfig: skillConfig == null
           ? null
           : SkillConfig.fromJson(skillConfig),
+      fairyConfig: fairyConfig == null
+          ? null
+          : FairyConfig.fromJson(fairyConfig),
       missionConfig: missionConfig == null
           ? null
           : MissionConfig.fromJson(missionConfig),
@@ -207,6 +215,7 @@ class GameData {
       read('skills.json'),
       read('dex.json'),
       read('event.json'),
+      read('fairies.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -230,6 +239,7 @@ class GameData {
       skillConfig: results[18],
       dexConfig: results[19],
       eventConfig: results[20],
+      fairyConfig: results[21],
     );
   }
 }

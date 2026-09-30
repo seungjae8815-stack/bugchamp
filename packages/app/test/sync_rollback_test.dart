@@ -190,6 +190,39 @@ void main() {
     expect(after.difficultyTier, 1, reason: '회차 전환이 취소되면 안 된다');
   });
 
+  test('요정만 키운 로컬은 요정이 없는 서버 세이브에 덮이지 않는다(1.0.15)', () async {
+    SaveGame base() =>
+        SaveGame.initial(createdAt: t0).copyWith(zoneEpoch: kZoneEpoch);
+    final local = base().copyWith(
+      fairy: const FairyState(
+        fairies: [
+          Fairy(id: 'f1', kind: 'ignis', grade: FairyGrade.epic, sub: 'hp'),
+        ],
+        companionId: 'f1',
+        dex: {'ignis:epic'},
+        seq: 1,
+      ),
+    );
+    final server = _StaleServer(base());
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.fairy.companion?.id, 'f1', reason: '요정이 사라지면 안 된다');
+  });
+
   /// 반대 방향 — 다른 기기가 회차를 전환했으면 이쪽 로컬(쉬움 1000)이
   /// 스테이지 숫자로는 앞서 보여도 서버를 따라야 한다.
   test('다른 기기가 회차를 전환했으면 그걸 따른다', () async {

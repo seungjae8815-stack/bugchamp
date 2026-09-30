@@ -13,17 +13,18 @@ import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 import 'character_scene.dart';
 import 'equip_widgets.dart';
+import 'fairy_panel.dart';
 import 'forge_panel.dart';
 import 'skill_panel.dart';
 
 const _honey = Color(0xFFFFD54F);
 
 /// 상단 3버튼이 무엇을 보여줄지.
-enum _Panel { stats, pets, skills }
+enum _Panel { stats, fairy, skills }
 
 /// 캐릭터 탭 — **내 전력을 조립하는 곳**.
 ///
-/// 위 → 아래: [능력치][펫][스킬] 버튼 · 메인 캐릭터와 곁에 선 곤충들 ·
+/// 위 → 아래: [능력치][요정][스킬] 버튼 · 메인 캐릭터와 곁에 선 곤충들 ·
 /// 고른 패널 · 장비 8칸 · **제련/자동** · **공방 등급**.
 class CharacterScreen extends ConsumerStatefulWidget {
   const CharacterScreen({super.key});
@@ -56,24 +57,24 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
                 const SizedBox(height: 8),
                 // 채집 씬은 **스킬 탭에서 뺀다** — 스킬은 재료·장착 칸·12종
                 // 목록이 다 들어가야 해서 씬이 100px 을 먹으면 목록이 두 줄만
-                // 보인다(실기 지적 2026-09-16). 능력치·펫 탭은 그대로.
-                if (_panel != _Panel.skills) ...[
+                // 보인다(실기 지적 2026-09-16). 요정 탭도 같은 이유로 뺀다. 능력치 탭만 씬을 둔다.
+                // 요정 탭도 요정함 칸이 들어가야 해서 씬을 뺀다(스킬 탭과 같은 이유).
+                if (_panel != _Panel.skills && _panel != _Panel.fairy) ...[
                   SizedBox(
                     height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
                     child: CharacterScene(save: save),
                   ),
                   const SizedBox(height: 8),
                 ],
-                // 펫은 아직 다듬는 중이다. 반쯤 된 걸 보여 주느니
-                // **준비 중이라고 말한다** — 눌러도 아무 일이 없으면
-                // 고장으로 읽힌다. 스킬은 2026-09-15 에 열었다(§2.8).
+                // 예전 "펫"(준비 중) 자리를 **요정**이 대신한다(2026-10-01 사장님 확정, 1.0.15).
+                // 스킬은 2026-09-15 에 열었다(§2.8).
                 //
-                // ⚠️ 장비·공방은 **능력치 탭에만** 붙인다. 준비 중 안내 밑에
-                // 장비칸이 그대로 있으면 "펫인데 왜 장비가 있지"가 된다.
-                if (_panel == _Panel.pets)
-                  Expanded(child: _SoonPanel(label: l.charTabPets))
-                else if (_panel == _Panel.skills)
+                // ⚠️ 장비·공방은 **능력치 탭에만** 붙인다. 요정·스킬 밑에 장비칸이
+                // 그대로 있으면 "요정인데 왜 장비가 있지"가 된다.
+                if (_panel == _Panel.skills)
                   Expanded(child: SkillPanel(save: save))
+                else if (_panel == _Panel.fairy)
+                  const Expanded(child: FairyPanel())
                 else ...[
                   _StatsPanel(save: save),
                   const SizedBox(height: 8),
@@ -101,7 +102,7 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
     children: [
       _tab(l.charTabStats, 'stats', Icons.person_rounded, _Panel.stats),
       const SizedBox(width: 6),
-      _tab(l.charTabPets, 'pets', Icons.pets_rounded, _Panel.pets),
+      _tab(l.charTabFairy, 'fairy', Icons.flutter_dash_rounded, _Panel.fairy),
       const SizedBox(width: 6),
       _tab(
         l.charTabSkills,
@@ -502,44 +503,6 @@ class _EquipCell extends ConsumerWidget {
         },
       ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
-    );
-  }
-}
-
-/// 아직 안 연 탭 — **준비 중**이라고 분명히 말한다.
-///
-/// 빈 화면이나 반쯤 된 화면을 보여 주면 고장으로 읽힌다.
-class _SoonPanel extends StatelessWidget {
-  const _SoonPanel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return _box(
-      SizedBox(
-        width: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.construction_rounded,
-              color: Color(0x99FFD54F),
-              size: 26,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '$label · ${l.comingSoon}',
-              style: const TextStyle(
-                color: Color(0xCCFFFFFF),
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

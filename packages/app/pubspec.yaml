@@ -118,6 +118,8 @@ flutter:
     - assets/images/ui/nav/
     - assets/images/ui/tab/
     - assets/images/ui/skill/
+    # 요정(1.0.15) — fairy_<종류>_1·_2(날갯짓)·_cast(시전). 없으면 🧚 로 폴백.
+    - assets/images/fairies/
     - assets/images/ui/tier/
     - assets/images/skills/
     - assets/images/fx/

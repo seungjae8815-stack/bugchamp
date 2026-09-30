@@ -272,6 +272,8 @@ class GameActions {
       'abyssBest',
       'abyssBossBest',
     ],
+    // 요정(1.0.15, docs/design_fairy.md) — 상태 전체가 필드 하나다.
+    15: ['fairy'],
   };
 
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
@@ -700,6 +702,162 @@ class GameActions {
   static bool _sameIntMap(Map<String, int> a, Map<String, int> b) =>
       a.length == b.length && a.entries.every((e) => b[e.key] == e.value);
 
+  /// 한 업로드에서 **젤리 없이** 늘 수 있는 등급 가치(정예 드롭·보상 알의 여유 — 희귀 10개분).
+  /// 보스 첫 처치 알은 여기가 아니라 새로 잡은 보스 수로 따로 인정한다.
+  /// 스킬 조각 여유([_skillDropSlack])와 같은 역할. 알이 나오는 무료 경로가 늘면 함께 본다.
+  /// ⚠️ "알 개수 × 가장 비싼 알"로 잡으면 여유가 전설 10개분(270)이라 **신화 3마리(243)를
+  /// 만들어 넣어도 통과**했다. 여유는 가치로 잡아 신화 한 마리(81)도 못 들어오게 한다.
+  static const _fairyFreeValue = 30;
+
+  /// 한 업로드에서 젤리 없이 늘 수 있는 속성석·가속기 수(보상·상점 여유).
+  static const _fairyItemSlack = 10;
+
+  /// 요정 강제(docs/design_fairy.md §5). 처리는 기기 권위라 **위조를 완전히 막지는 못한다** —
+  /// 결투·대회·길드전에 싣지 않는 것이 방어선이고, 여기는 네 가지를 막는다.
+  ///
+  /// 1. **알 없이 높은 등급이 생기는 것.** 합성은 등급 가치 합([fairyStateValue])을 바꾸지 않으므로,
+  ///    합이 (이번에 쓴 젤리로 뽑을 수 있었던 알 × 가장 비싼 알 가치 + 무료 여유)보다 더 늘면
+  ///    **넘친 만큼만** 이번에 새로 생긴 알·요정에서 가치 큰 것부터 뺀다.
+  ///    ⚠️ 통째로 저장본으로 되돌리면 안 된다 — 쓴 젤리는 순감소라 같은 구간에 젤리를 벌었으면
+  ///    정상 유저도 걸리고, 그때 알·요정·레벨업이 전부 사라진다(2026-10-01 호환 검사).
+  /// 2. **속성석·가속기를 쏟아 넣는 것.** 개수 증가가 (쓴 젤리 ÷ 가장 싼 값 + 여유)를 넘으면 저장본 개수로.
+  /// 3. **세이브 부풀리기.** 모르는 종류·부가·가속기 키, 도감의 없는 칸을 걸러 낸다. 서버는 늘 최신 데이터라
+  ///    모르는 키 = 조작이다. (앱에서는 거르지 않는다 — 구버전 앱이 새 종류를 지우면 안 된다.)
+  /// 4. **가루 위조.** 한 업로드의 가루 증가를 요정함 전부를 신화 만렙으로 분해한 양까지로 자른다.
+  ///
+  /// 레벨 ≤ 등급 상한 · 요정함 상한은 `enforceFairyRules`(앱 로드와 같은 함수).
+  SaveGame _enforceFairy(SaveGame stored, SaveGame client, FairyConfig cfg) {
+    final before = stored.fairy;
+    var f = _fairyKnownKeysOnly(enforceFairyRules(client.fairy, cfg), cfg);
+    final jellySpent = max(
+      0,
+      stored.materialCount(MaterialKind.jelly) -
+          client.materialCount(MaterialKind.jelly),
+    );
+    final eggsBought = cfg.gachaJelly > 0 ? jellySpent ~/ cfg.gachaJelly : 0;
+    final topEgg = cfg.gachaWeights.keys.fold<int>(
+      fairyGradeValue(FairyGrade.legendary),
+      (a, g) => max(a, fairyGradeValue(g)),
+    );
+    // 보스 첫 처치는 난이도별 알을 **확정**으로 준다(design_fairy.md §1.4) — 새로 잡은 보스 수만큼 인정.
+    // 안 넣으면 보스 두 마리를 잡고 한 번에 올린 정상 유저의 전설 알이 잘린다.
+    final newBosses = max(0, client.bossDex.length - stored.bossDex.length);
+    final bossEgg = cfg.drops.bossFirstEggGradeByTier.fold<int>(
+      0,
+      (a, g) => max(a, fairyGradeValue(g)),
+    );
+    final over =
+        fairyStateValue(f) -
+        fairyStateValue(before) -
+        (eggsBought * topEgg + newBosses * bossEgg + _fairyFreeValue);
+    if (over > 0) f = _trimNewFairyValue(before, f, over);
+
+    int items(FairyState s) =>
+        s.stones.values.fold(0, (a, b) => a + b) +
+        s.accelerators.values.fold(0, (a, b) => a + b);
+    final cheapest = [
+      cfg.stoneJelly,
+      for (final a in cfg.accelerators) a.jelly,
+    ].where((p) => p > 0).fold<int>(1 << 30, min);
+    final itemAllow =
+        (cheapest >= 1 << 30 ? 0 : jellySpent ~/ cheapest) +
+        newBosses * cfg.drops.bossFirstStones +
+        _fairyItemSlack;
+    if (items(f) - items(before) > itemAllow) {
+      f = f.copyWith(stones: before.stones, accelerators: before.accelerators);
+    }
+
+    final topGrade = FairyGrade.values.last;
+    final dustAllow =
+        cfg.boxCap *
+        ((cfg.releaseDust[topGrade] ?? 0) +
+            (cfg.dustSpentTo(topGrade, cfg.maxLevelOf(topGrade)) *
+                    cfg.mergeDustRefund)
+                .ceil());
+    if (f.dust - before.dust > dustAllow) {
+      f = f.copyWith(dust: before.dust + dustAllow);
+    }
+    return f == client.fairy ? client : client.copyWith(fairy: f);
+  }
+
+  /// 모르는 종류·부가를 가진 요정·둥지, 모르는 속성석·가속기 키, 없는 도감 칸을 버린다.
+  static FairyState _fairyKnownKeysOnly(FairyState f, FairyConfig cfg) {
+    final kinds = {for (final k in cfg.kinds) k.id};
+    final subs = cfg.subWeight.keys.toSet();
+    final accels = {for (final a in cfg.accelerators) a.id};
+    bool known(String kind, String sub) =>
+        kinds.contains(kind) && subs.contains(sub);
+    final dexOk = {
+      for (final k in kinds) ...[
+        for (final g in FairyGrade.values) FairyState.dexKey(k, g),
+        for (final b in subs) FairyState.dexSubKey(k, b),
+      ],
+    };
+    final fairies = [
+      for (final x in f.fairies)
+        if (known(x.kind, x.sub)) x,
+    ];
+    final nest = f.nest;
+    final out = f.copyWith(
+      fairies: fairies,
+      clearNest: nest != null && !known(nest.kind, nest.sub),
+      clearCompanion:
+          f.companionId != null && !fairies.any((x) => x.id == f.companionId),
+      stones: {
+        for (final e in f.stones.entries)
+          if (subs.contains(e.key)) e.key: e.value,
+      },
+      accelerators: {
+        for (final e in f.accelerators.entries)
+          if (accels.contains(e.key)) e.key: e.value,
+      },
+      dex: f.dex.intersection(dexOk),
+    );
+    return out == f ? f : out;
+  }
+
+  /// 이번 업로드에서 **새로 생긴**(저장본에 id 가 없는) 알·둥지·요정을 등급 가치 큰 것부터
+  /// [over] 가 메워질 때까지 뺀다. 예전부터 있던 것은 건드리지 않는다.
+  static FairyState _trimNewFairyValue(
+    FairyState before,
+    FairyState f,
+    int over,
+  ) {
+    final oldIds = {
+      for (final x in before.fairies) x.id,
+      for (final e in before.eggs) e.id,
+      if (before.nest != null) before.nest!.eggId,
+    };
+    final cands = <({String id, int value})>[
+      for (final e in f.eggs)
+        if (!oldIds.contains(e.id)) (id: e.id, value: fairyGradeValue(e.grade)),
+      if (f.nest != null && !oldIds.contains(f.nest!.eggId))
+        (id: f.nest!.eggId, value: fairyGradeValue(f.nest!.grade)),
+      for (final x in f.fairies)
+        if (!oldIds.contains(x.id)) (id: x.id, value: fairyGradeValue(x.grade)),
+    ]..sort((a, b) => b.value.compareTo(a.value));
+    final gone = <String>{};
+    var left = over;
+    for (final c in cands) {
+      if (left <= 0) break;
+      gone.add(c.id);
+      left -= c.value;
+    }
+    if (gone.isEmpty) return f;
+    return f.copyWith(
+      fairies: [
+        for (final x in f.fairies)
+          if (!gone.contains(x.id)) x,
+      ],
+      eggs: [
+        for (final e in f.eggs)
+          if (!gone.contains(e.id)) e,
+      ],
+      clearNest: f.nest != null && gone.contains(f.nest!.eggId),
+      clearCompanion: f.companionId != null && gone.contains(f.companionId),
+    );
+  }
+
   /// 기기 권위 세이브 업로드 병합.
   ///
   /// 솔로 루프(업그레이드·재화·육성·방치·수령)는 **기기가 확정**하고 여기로
@@ -894,6 +1052,12 @@ class GameActions {
       final sk = _enforceSkills(stored, capped, clientJson, skillCfg);
       if (!identical(sk, capped)) clampReasons.add('skill');
       capped = sk;
+    }
+    final fairyCfg = config.fairy;
+    if (fairyCfg != null) {
+      final fy = _enforceFairy(stored, capped, fairyCfg);
+      if (!identical(fy, capped)) clampReasons.add('fairy');
+      capped = fy;
     }
     if (capped.bugs.length != parsed.bugs.length ||
         capped.storageCapacity != parsed.storageCapacity ||
@@ -4047,6 +4211,9 @@ abstract interface class GameConfigLike {
 
   /// 캐릭터 스킬 — 업로드의 조각 급증 상한·레벨/장착 규칙에만 쓴다(처리는 기기 권위).
   SkillConfig? get skill;
+
+  /// 요정 — 업로드의 등급 가치 급증 상한·요정함 상한에만 쓴다(처리는 기기 권위).
+  FairyConfig? get fairy;
 
   /// 드롭 롤 대상 종 목록.
   List<Species> get speciesList;

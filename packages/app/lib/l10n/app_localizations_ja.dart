@@ -4113,4 +4113,288 @@ class AppLocalizationsJa extends AppLocalizations {
   String eventQuitBody(int n, int hp, int injury) {
     return 'ここまで突破した$nウェーブで記録を確定します。\n今の体力 $hp% — ケガは最大の$injury%だけ休みます。\n(体力が多く残るほど休みが短い)';
   }
+
+  @override
+  String get charTabFairy => '妖精';
+
+  @override
+  String get fairyCompanion => '同行の妖精';
+
+  @override
+  String get fairyNoCompanion => '同行の妖精がいません — 下から選んでください';
+
+  @override
+  String fairyBoxTitle(String n, String max) {
+    return '妖精 $n/$max';
+  }
+
+  @override
+  String fairyEggCount(String n) {
+    return '卵 $n個';
+  }
+
+  @override
+  String get fairyEmptyBox => 'まだ妖精がいません。妖精の卵を引いて巣で孵してみましょう！';
+
+  @override
+  String get fairyNest => '妖精の巣';
+
+  @override
+  String get fairyNestEmpty => '巣が空です — 卵を置いてください';
+
+  @override
+  String get fairyNestNoEgg => '置く卵がありません';
+
+  @override
+  String get fairyNestPut => '巣に置く';
+
+  @override
+  String get fairyNestCollect => '取り出す';
+
+  @override
+  String get fairyNestReady => '孵化しました！';
+
+  @override
+  String fairyNestLeft(String t) {
+    return '残り $t';
+  }
+
+  @override
+  String get fairyNestKindHint => '種類は8種からランダムです';
+
+  @override
+  String get fairyStone => '属性石';
+
+  @override
+  String get fairyStoneNone => '属性石なし';
+
+  @override
+  String fairyStoneHint(String p) {
+    return '属性石を置くとその付加能力が$p%の確率で出ます';
+  }
+
+  @override
+  String get fairyAccel => '加速器';
+
+  @override
+  String fairyAccelMinutes(String t) {
+    return '$t 短縮';
+  }
+
+  @override
+  String get fairyUse => '使う';
+
+  @override
+  String get fairyBuy => '買う';
+
+  @override
+  String fairyOwned(String n) {
+    return '所持 $n';
+  }
+
+  @override
+  String get fairyDex => '妖精図鑑';
+
+  @override
+  String fairyDexGrades(String n, String max) {
+    return '等級 $n/$max';
+  }
+
+  @override
+  String fairyDexSubs(String n, String max) {
+    return '付加能力 $n/$max';
+  }
+
+  @override
+  String get fairyGacha => '妖精の卵ガチャ';
+
+  @override
+  String get fairyGachaOne => '1回';
+
+  @override
+  String get fairyGachaTen => '10回';
+
+  @override
+  String fairyGachaPity(String n) {
+    return '$n回以内に伝説以上確定';
+  }
+
+  @override
+  String get fairyGachaOdds => '確率表示';
+
+  @override
+  String get fairyGachaOddsNote =>
+      'ガチャは卵の等級だけを決めます。種類・付加能力・個体値は孵化時に決まります。神話は合成でのみ入手できます。';
+
+  @override
+  String fairyGachaGot(String n) {
+    return '卵を$n個入手';
+  }
+
+  @override
+  String get fairyDust => '妖精の粉';
+
+  @override
+  String fairyLevel(String n) {
+    return 'Lv.$n';
+  }
+
+  @override
+  String get fairyLevelUp => 'レベルアップ';
+
+  @override
+  String get fairyMaxLevel => '最大レベル';
+
+  @override
+  String fairyQuality(String p) {
+    return '品質 $p%';
+  }
+
+  @override
+  String get fairyStatMain => '基本';
+
+  @override
+  String get fairyStatSub => '付加';
+
+  @override
+  String get fairySkill => 'スキル';
+
+  @override
+  String fairyCooldown(String s) {
+    return 'クール$s秒';
+  }
+
+  @override
+  String get fairyGoCompanion => '同行させる';
+
+  @override
+  String get fairyIsCompanion => '同行中';
+
+  @override
+  String get fairyMerge => '合成';
+
+  @override
+  String fairyMergeHint(String n) {
+    return '同じ種類・等級$n体 → 1段階上の1体。付加能力はこの妖精のものを継ぎ、基本個体値は3体の最良値。';
+  }
+
+  @override
+  String fairyMergePick(String n, String max) {
+    return '素材 $n/$max';
+  }
+
+  @override
+  String get fairyMergeNoMat => '同じ種類・等級の妖精が足りません';
+
+  @override
+  String get fairyAutoMerge => '自動合成';
+
+  @override
+  String fairyAutoMergeConfirm(String used, String made) {
+    return '$used体を合わせて$made体になります。同行中・レベルを上げた妖精は除外し、付加能力が同じもの同士だけ合成します。';
+  }
+
+  @override
+  String get fairyAutoMergeNone => '自動合成できる妖精がいません';
+
+  @override
+  String get fairyRelease => '分解';
+
+  @override
+  String fairyReleaseConfirm(String n) {
+    return '分解すると妖精の粉を$n個得ます。元に戻せません。';
+  }
+
+  @override
+  String get fairyNew => '新しい妖精！';
+
+  @override
+  String get fairyErrJelly => 'ゼリーが足りません';
+
+  @override
+  String get fairyErrDust => '妖精の粉が足りません';
+
+  @override
+  String get fairyErrGeneric => '今はできません';
+
+  @override
+  String get fairyGradeCommon => 'ノーマル';
+
+  @override
+  String get fairyGradeRare => 'レア';
+
+  @override
+  String get fairyGradeEpic => 'エピック';
+
+  @override
+  String get fairyGradeLegendary => 'レジェンド';
+
+  @override
+  String get fairyGradeMythic => 'ミシック';
+
+  @override
+  String get fairyStatAttack => '攻撃力';
+
+  @override
+  String get fairyStatHp => '体力';
+
+  @override
+  String get fairyStatDefense => '被ダメージ軽減';
+
+  @override
+  String get fairyStatAttackSpeed => '攻撃速度';
+
+  @override
+  String get fairyStatCritDamage => 'クリティカルダメージ';
+
+  @override
+  String get fairyStatBossDamage => 'ボスダメージ';
+
+  @override
+  String get fairyStatPetShare => '昆虫ダメージ';
+
+  @override
+  String fairySkillBurst(String s) {
+    return '$s秒分のダメージを一気に';
+  }
+
+  @override
+  String fairySkillHeal(String p) {
+    return '体力60%未満で最大体力の$p%回復';
+  }
+
+  @override
+  String fairySkillGuard(String d, String p) {
+    return '$d秒間 被ダメージ−$p%';
+  }
+
+  @override
+  String fairySkillHaste(String d, String p) {
+    return '$d秒間 攻撃速度+$p%';
+  }
+
+  @override
+  String fairySkillCrits(String n) {
+    return '次の$n回の攻撃が確定クリティカル';
+  }
+
+  @override
+  String fairySkillBossBurst(String s) {
+    return 'ボスに$s秒分のダメージ';
+  }
+
+  @override
+  String fairySkillPet(String d, String p) {
+    return '$d秒間 昆虫ダメージ+$p%';
+  }
+
+  @override
+  String fairySkillStand(String p) {
+    return '倒れる時に一度耐え、体力$p%で立ち上がる';
+  }
+
+  @override
+  String fairyEggPop(String grade) {
+    return '妖精の卵・$grade';
+  }
 }

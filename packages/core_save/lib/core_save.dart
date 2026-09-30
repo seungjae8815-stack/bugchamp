@@ -9,6 +9,7 @@ library;
 
 export 'src/abyss_progress.dart';
 export 'src/boss_dex.dart';
+export 'src/fairy_progress.dart';
 export 'src/gift_claim.dart';
 export 'src/gift_mail.dart';
 export 'src/pvp_league.dart';

@@ -28,6 +28,7 @@ class GameConfig implements GameConfigLike {
     this.dex,
     this.event,
     this.skill,
+    this.fairy,
     this.speciesById = const {},
   });
 
@@ -62,6 +63,8 @@ class GameConfig implements GameConfigLike {
   final EventConfig? event;
   @override
   final SkillConfig? skill;
+  @override
+  final FairyConfig? fairy;
 
   @override
   List<Species> get speciesList => speciesById.values.toList();
@@ -102,6 +105,7 @@ class GameConfig implements GameConfigLike {
     // `/event/*` 만 닫힌다.
     final eventJson = await readOpt('event.json');
     final skillJson = await readOpt('skills.json');
+    final fairyJson = await readOpt('fairies.json');
 
     return GameConfig(
       speciesById: {for (final s in speciesList) s.id: s},
@@ -118,6 +122,7 @@ class GameConfig implements GameConfigLike {
       dex: dexJson == null ? null : DexConfig.fromJson(dexJson),
       event: eventJson == null ? null : EventConfig.fromJson(eventJson),
       skill: skillJson == null ? null : SkillConfig.fromJson(skillJson),
+      fairy: fairyJson == null ? null : FairyConfig.fromJson(fairyJson),
     );
   }
 }

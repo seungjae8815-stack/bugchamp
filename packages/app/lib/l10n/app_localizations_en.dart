@@ -4204,4 +4204,289 @@ class AppLocalizationsEn extends AppLocalizations {
   String eventQuitBody(int n, int hp, int injury) {
     return 'Your record is locked in at $n waves cleared.\nHP now $hp% — injury lasts only $injury% of the maximum.\n(The more HP left, the shorter the rest)';
   }
+
+  @override
+  String get charTabFairy => 'Fairies';
+
+  @override
+  String get fairyCompanion => 'Companion';
+
+  @override
+  String get fairyNoCompanion => 'No companion yet — pick one below';
+
+  @override
+  String fairyBoxTitle(String n, String max) {
+    return 'Fairies $n/$max';
+  }
+
+  @override
+  String fairyEggCount(String n) {
+    return '$n eggs';
+  }
+
+  @override
+  String get fairyEmptyBox =>
+      'No fairies yet. Draw a fairy egg and hatch it in the nest!';
+
+  @override
+  String get fairyNest => 'Fairy Nest';
+
+  @override
+  String get fairyNestEmpty => 'The nest is empty — place an egg';
+
+  @override
+  String get fairyNestNoEgg => 'No eggs to place';
+
+  @override
+  String get fairyNestPut => 'Place in nest';
+
+  @override
+  String get fairyNestCollect => 'Collect';
+
+  @override
+  String get fairyNestReady => 'Ready to hatch!';
+
+  @override
+  String fairyNestLeft(String t) {
+    return '$t left';
+  }
+
+  @override
+  String get fairyNestKindHint => 'The fairy type is random (1 of 8)';
+
+  @override
+  String get fairyStone => 'Attribute Stone';
+
+  @override
+  String get fairyStoneNone => 'No stone';
+
+  @override
+  String fairyStoneHint(String p) {
+    return 'With a stone, that bonus stat appears $p% of the time';
+  }
+
+  @override
+  String get fairyAccel => 'Accelerator';
+
+  @override
+  String fairyAccelMinutes(String t) {
+    return '-$t';
+  }
+
+  @override
+  String get fairyUse => 'Use';
+
+  @override
+  String get fairyBuy => 'Buy';
+
+  @override
+  String fairyOwned(String n) {
+    return 'Owned $n';
+  }
+
+  @override
+  String get fairyDex => 'Fairy Codex';
+
+  @override
+  String fairyDexGrades(String n, String max) {
+    return 'Grades $n/$max';
+  }
+
+  @override
+  String fairyDexSubs(String n, String max) {
+    return 'Bonus stats $n/$max';
+  }
+
+  @override
+  String get fairyGacha => 'Fairy Egg Draw';
+
+  @override
+  String get fairyGachaOne => 'x1';
+
+  @override
+  String get fairyGachaTen => 'x10';
+
+  @override
+  String fairyGachaPity(String n) {
+    return 'Legendary+ guaranteed within $n';
+  }
+
+  @override
+  String get fairyGachaOdds => 'Odds';
+
+  @override
+  String get fairyGachaOddsNote =>
+      'The draw sets only the egg grade. Type, bonus stat and quality are rolled when it hatches. Mythic comes only from merging.';
+
+  @override
+  String fairyGachaGot(String n) {
+    return 'Got $n eggs';
+  }
+
+  @override
+  String get fairyDust => 'Fairy Dust';
+
+  @override
+  String fairyLevel(String n) {
+    return 'Lv.$n';
+  }
+
+  @override
+  String get fairyLevelUp => 'Level up';
+
+  @override
+  String get fairyMaxLevel => 'Max level';
+
+  @override
+  String fairyQuality(String p) {
+    return 'Quality $p%';
+  }
+
+  @override
+  String get fairyStatMain => 'Base';
+
+  @override
+  String get fairyStatSub => 'Bonus';
+
+  @override
+  String get fairySkill => 'Skill';
+
+  @override
+  String fairyCooldown(String s) {
+    return '${s}s cooldown';
+  }
+
+  @override
+  String get fairyGoCompanion => 'Make companion';
+
+  @override
+  String get fairyIsCompanion => 'Companion';
+
+  @override
+  String get fairyMerge => 'Merge';
+
+  @override
+  String fairyMergeHint(String n) {
+    return '$n of the same type & grade → 1 of the next grade. Keeps this fairy\'s bonus stat and the best base quality of the three.';
+  }
+
+  @override
+  String fairyMergePick(String n, String max) {
+    return 'Materials $n/$max';
+  }
+
+  @override
+  String get fairyMergeNoMat => 'Not enough fairies of the same type & grade';
+
+  @override
+  String get fairyAutoMerge => 'Auto merge';
+
+  @override
+  String fairyAutoMergeConfirm(String used, String made) {
+    return '$used fairies become $made. Companion and leveled fairies are skipped; only matching bonus stats are merged.';
+  }
+
+  @override
+  String get fairyAutoMergeNone => 'Nothing to auto merge';
+
+  @override
+  String get fairyRelease => 'Release';
+
+  @override
+  String fairyReleaseConfirm(String n) {
+    return 'Releasing gives $n fairy dust. This cannot be undone.';
+  }
+
+  @override
+  String get fairyNew => 'New fairy!';
+
+  @override
+  String get fairyErrJelly => 'Not enough jelly';
+
+  @override
+  String get fairyErrDust => 'Not enough fairy dust';
+
+  @override
+  String get fairyErrGeneric => 'Can\'t do that right now';
+
+  @override
+  String get fairyGradeCommon => 'Common';
+
+  @override
+  String get fairyGradeRare => 'Rare';
+
+  @override
+  String get fairyGradeEpic => 'Epic';
+
+  @override
+  String get fairyGradeLegendary => 'Legendary';
+
+  @override
+  String get fairyGradeMythic => 'Mythic';
+
+  @override
+  String get fairyStatAttack => 'Attack';
+
+  @override
+  String get fairyStatHp => 'HP';
+
+  @override
+  String get fairyStatDefense => 'Damage taken';
+
+  @override
+  String get fairyStatAttackSpeed => 'Attack speed';
+
+  @override
+  String get fairyStatCritDamage => 'Crit damage';
+
+  @override
+  String get fairyStatBossDamage => 'Boss damage';
+
+  @override
+  String get fairyStatPetShare => 'Bug damage';
+
+  @override
+  String fairySkillBurst(String s) {
+    return 'Deals ${s}s worth of damage at once';
+  }
+
+  @override
+  String fairySkillHeal(String p) {
+    return 'Heals $p% max HP when below 60%';
+  }
+
+  @override
+  String fairySkillGuard(String d, String p) {
+    return 'For ${d}s, -$p% damage taken';
+  }
+
+  @override
+  String fairySkillHaste(String d, String p) {
+    return 'For ${d}s, +$p% attack speed';
+  }
+
+  @override
+  String fairySkillCrits(String n) {
+    return 'Next $n hits are critical';
+  }
+
+  @override
+  String fairySkillBossBurst(String s) {
+    return 'Deals ${s}s worth of damage to bosses';
+  }
+
+  @override
+  String fairySkillPet(String d, String p) {
+    return 'For ${d}s, +$p% bug damage';
+  }
+
+  @override
+  String fairySkillStand(String p) {
+    return 'Once, survive a fatal hit with $p% HP';
+  }
+
+  @override
+  String fairyEggPop(String grade) {
+    return 'Fairy egg · $grade';
+  }
 }

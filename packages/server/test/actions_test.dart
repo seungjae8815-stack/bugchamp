@@ -129,6 +129,12 @@ class _Config implements GameConfigLike {
     jsonDecode(File('../app/assets/data/skills.json').readAsStringSync())
         as Map<String, dynamic>,
   );
+
+  @override
+  final FairyConfig? fairy = FairyConfig.fromJson(
+    jsonDecode(File('../app/assets/data/fairies.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
 }
 
 void main() {
@@ -1840,6 +1846,185 @@ void main() {
         isTrue,
         reason: 'clamped 가 없으면 앱이 접힌 값을 채택하지 않는다',
       );
+    });
+
+    group('요정(1.0.15)', () {
+      final fc = cfg.fairy!;
+      final kind = fc.kinds.first.id;
+      final sub = fc.subWeight.keys.first;
+      Fairy fy(int n, FairyGrade g, {int lv = 1}) =>
+          Fairy(id: 'f$n', kind: kind, grade: g, sub: sub, level: lv);
+      SaveGame withFairy(FairyState f, {int jelly = 0}) =>
+          stored().copyWith(fairy: f, materials: {MaterialKind.jelly: jelly});
+
+      test('합성은 통과한다(등급 가치 합이 그대로)', () {
+        final before = withFairy(
+          FairyState(
+            fairies: [for (var i = 1; i <= 3; i++) fy(i, FairyGrade.epic)],
+            seq: 3,
+          ),
+        );
+        final merged = mergeFairies(before.fairy, fc, [
+          'f1',
+          'f2',
+          'f3',
+        ]).state!;
+        final r = actions.mergeSave(
+          before,
+          before.copyWith(fairy: merged).toJson(),
+        );
+        expect(r.save!.fairy, merged);
+        expect(r.extra['clamped'], isFalse);
+      });
+
+      test('알 없이 신화를 한 마리라도 만들어 넣으면 그 요정만 뺀다', () {
+        final before = withFairy(FairyState.empty);
+        final forged = FairyState(fairies: [fy(1, FairyGrade.mythic)], seq: 1);
+        final r = actions.mergeSave(
+          before,
+          before.copyWith(fairy: forged).toJson(),
+        );
+        expect(r.save!.fairy.fairies, isEmpty);
+        expect(r.extra['clampReasons'], contains('fairy'));
+      });
+
+      test('넘친 만큼만 자른다 — 예전부터 있던 요정과 가루·레벨업은 남는다', () {
+        final before = withFairy(
+          FairyState(
+            fairies: [fy(1, FairyGrade.epic), fy(2, FairyGrade.common)],
+            dust: 1000,
+            seq: 2,
+          ),
+        );
+        final after = before.copyWith(
+          fairy: before.fairy.copyWith(
+            fairies: [
+              fy(1, FairyGrade.epic, lv: 5),
+              fy(2, FairyGrade.common),
+              fy(3, FairyGrade.mythic),
+            ],
+            dust: 900,
+            seq: 3,
+          ),
+        );
+        final r = actions.mergeSave(before, after.toJson());
+        final ids = r.save!.fairy.fairies.map((x) => x.id);
+        expect(ids, ['f1', 'f2']);
+        expect(r.save!.fairy.fairyById('f1')!.level, 5);
+        expect(r.save!.fairy.dust, 900);
+      });
+
+      test('모르는 종류·부가·속성석 키 · 없는 도감 칸은 걸러 낸다(세이브 부풀리기)', () {
+        final before = withFairy(FairyState.empty);
+        final after = before.copyWith(
+          fairy: FairyState(
+            fairies: [
+              fy(1, FairyGrade.common),
+              Fairy(id: 'f2', kind: 'nope', grade: FairyGrade.common, sub: sub),
+            ],
+            stones: {sub: 1, 'x1': 1, 'x2': 1},
+            dex: {
+              FairyState.dexKey(kind, FairyGrade.common),
+              for (var i = 0; i < 500; i++) 'junk$i',
+            },
+            seq: 2,
+          ),
+        );
+        final r = actions.mergeSave(before, after.toJson());
+        final f = r.save!.fairy;
+        expect(f.fairies.map((x) => x.id), ['f1']);
+        expect(f.stones, {sub: 1});
+        expect(f.dex, {FairyState.dexKey(kind, FairyGrade.common)});
+      });
+
+      test('가루를 쏟아 넣으면 상한까지만', () {
+        final before = withFairy(FairyState.empty);
+        final after = before.copyWith(fairy: const FairyState(dust: 1 << 40));
+        final r = actions.mergeSave(before, after.toJson());
+        expect(r.save!.fairy.dust, lessThan(1 << 30));
+        expect(r.save!.fairy.dust, greaterThan(0));
+      });
+
+      test('보스 첫 처치 알(전설)은 새로 잡은 보스 수만큼 받는다', () {
+        final before = withFairy(FairyState.empty);
+        var f = FairyState.empty;
+        for (final t in [3, 3]) {
+          f = fairyBossDrop(f, fc, Random(t), tier: t, firstKill: true).state!;
+        }
+        final after = before.copyWith(fairy: f, bossDex: {'x01', 'x02'});
+        final r = actions.mergeSave(before, after.toJson());
+        expect(r.save!.fairy.eggs.length, 2);
+        expect(r.save!.fairy.stones.values.fold<int>(0, (a, b) => a + b), 2);
+      });
+
+      test('젤리를 쓴 만큼의 뽑기 알은 받는다', () {
+        final before = withFairy(FairyState.empty, jelly: 1000);
+        final op = drawFairyEggs(
+          before.fairy,
+          fc,
+          Random(1),
+          times: 30,
+          jellyHave: 1000,
+        );
+        final after = before.copyWith(
+          fairy: op.state,
+          materials: {MaterialKind.jelly: 1000 - op.jelly},
+        );
+        final r = actions.mergeSave(before, after.toJson());
+        expect(r.save!.fairy.eggs.length, 30);
+      });
+
+      test('속성석을 쏟아 넣으면 개수만 저장본으로', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.common)], seq: 1),
+        );
+        final after = before.copyWith(
+          fairy: before.fairy.copyWith(stones: {sub: 999}),
+        );
+        final r = actions.mergeSave(before, after.toJson());
+        expect(r.save!.fairy.stones, isEmpty);
+        expect(r.save!.fairy.fairies.length, 1);
+      });
+
+      test('레벨은 등급 상한으로 자른다', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.common)], seq: 1),
+        );
+        final after = before.copyWith(
+          fairy: before.fairy.copyWith(
+            fairies: [fy(1, FairyGrade.common, lv: 999)],
+          ),
+        );
+        final r = actions.mergeSave(before, after.toJson());
+        expect(
+          r.save!.fairy.fairies.single.level,
+          fc.maxLevelOf(FairyGrade.common),
+        );
+      });
+
+      test('요정을 모르는 앱(feat 14)의 업로드는 요정을 지우지 않는다', () {
+        final before = withFairy(
+          FairyState(
+            fairies: [fy(1, FairyGrade.legendary)],
+            companionId: 'f1',
+            seq: 1,
+          ),
+        );
+        final j = before.toJson()
+          ..['feat'] = 14
+          ..remove('fairy');
+        final r = actions.mergeSave(before, j);
+        expect(r.save!.fairy, before.fairy);
+      });
+
+      test('요정을 아는 앱이 비우면 비운 것으로 본다', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.common)], seq: 1),
+        );
+        final j = before.copyWith(fairy: FairyState.empty).toJson();
+        final r = actions.mergeSave(before, j);
+        expect(r.save!.fairy, FairyState.empty);
+      });
     });
 
     group('스킬(§2.8)', () {

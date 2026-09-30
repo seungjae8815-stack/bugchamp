@@ -7263,6 +7263,468 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your record is locked in at {n} waves cleared.\nHP now {hp}% — injury lasts only {injury}% of the maximum.\n(The more HP left, the shorter the rest)'**
   String eventQuitBody(int n, int hp, int injury);
+
+  /// No description provided for @charTabFairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairies'**
+  String get charTabFairy;
+
+  /// No description provided for @fairyCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Companion'**
+  String get fairyCompanion;
+
+  /// No description provided for @fairyNoCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'No companion yet — pick one below'**
+  String get fairyNoCompanion;
+
+  /// No description provided for @fairyBoxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairies {n}/{max}'**
+  String fairyBoxTitle(String n, String max);
+
+  /// No description provided for @fairyEggCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} eggs'**
+  String fairyEggCount(String n);
+
+  /// No description provided for @fairyEmptyBox.
+  ///
+  /// In en, this message translates to:
+  /// **'No fairies yet. Draw a fairy egg and hatch it in the nest!'**
+  String get fairyEmptyBox;
+
+  /// No description provided for @fairyNest.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy Nest'**
+  String get fairyNest;
+
+  /// No description provided for @fairyNestEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The nest is empty — place an egg'**
+  String get fairyNestEmpty;
+
+  /// No description provided for @fairyNestNoEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'No eggs to place'**
+  String get fairyNestNoEgg;
+
+  /// No description provided for @fairyNestPut.
+  ///
+  /// In en, this message translates to:
+  /// **'Place in nest'**
+  String get fairyNestPut;
+
+  /// No description provided for @fairyNestCollect.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect'**
+  String get fairyNestCollect;
+
+  /// No description provided for @fairyNestReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to hatch!'**
+  String get fairyNestReady;
+
+  /// No description provided for @fairyNestLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{t} left'**
+  String fairyNestLeft(String t);
+
+  /// No description provided for @fairyNestKindHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The fairy type is random (1 of 8)'**
+  String get fairyNestKindHint;
+
+  /// No description provided for @fairyStone.
+  ///
+  /// In en, this message translates to:
+  /// **'Attribute Stone'**
+  String get fairyStone;
+
+  /// No description provided for @fairyStoneNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No stone'**
+  String get fairyStoneNone;
+
+  /// No description provided for @fairyStoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'With a stone, that bonus stat appears {p}% of the time'**
+  String fairyStoneHint(String p);
+
+  /// No description provided for @fairyAccel.
+  ///
+  /// In en, this message translates to:
+  /// **'Accelerator'**
+  String get fairyAccel;
+
+  /// No description provided for @fairyAccelMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'-{t}'**
+  String fairyAccelMinutes(String t);
+
+  /// No description provided for @fairyUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get fairyUse;
+
+  /// No description provided for @fairyBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get fairyBuy;
+
+  /// No description provided for @fairyOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Owned {n}'**
+  String fairyOwned(String n);
+
+  /// No description provided for @fairyDex.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy Codex'**
+  String get fairyDex;
+
+  /// No description provided for @fairyDexGrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades {n}/{max}'**
+  String fairyDexGrades(String n, String max);
+
+  /// No description provided for @fairyDexSubs.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus stats {n}/{max}'**
+  String fairyDexSubs(String n, String max);
+
+  /// No description provided for @fairyGacha.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy Egg Draw'**
+  String get fairyGacha;
+
+  /// No description provided for @fairyGachaOne.
+  ///
+  /// In en, this message translates to:
+  /// **'x1'**
+  String get fairyGachaOne;
+
+  /// No description provided for @fairyGachaTen.
+  ///
+  /// In en, this message translates to:
+  /// **'x10'**
+  String get fairyGachaTen;
+
+  /// No description provided for @fairyGachaPity.
+  ///
+  /// In en, this message translates to:
+  /// **'Legendary+ guaranteed within {n}'**
+  String fairyGachaPity(String n);
+
+  /// No description provided for @fairyGachaOdds.
+  ///
+  /// In en, this message translates to:
+  /// **'Odds'**
+  String get fairyGachaOdds;
+
+  /// No description provided for @fairyGachaOddsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The draw sets only the egg grade. Type, bonus stat and quality are rolled when it hatches. Mythic comes only from merging.'**
+  String get fairyGachaOddsNote;
+
+  /// No description provided for @fairyGachaGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Got {n} eggs'**
+  String fairyGachaGot(String n);
+
+  /// No description provided for @fairyDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy Dust'**
+  String get fairyDust;
+
+  /// No description provided for @fairyLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.{n}'**
+  String fairyLevel(String n);
+
+  /// No description provided for @fairyLevelUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Level up'**
+  String get fairyLevelUp;
+
+  /// No description provided for @fairyMaxLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Max level'**
+  String get fairyMaxLevel;
+
+  /// No description provided for @fairyQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality {p}%'**
+  String fairyQuality(String p);
+
+  /// No description provided for @fairyStatMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get fairyStatMain;
+
+  /// No description provided for @fairyStatSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus'**
+  String get fairyStatSub;
+
+  /// No description provided for @fairySkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill'**
+  String get fairySkill;
+
+  /// No description provided for @fairyCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'{s}s cooldown'**
+  String fairyCooldown(String s);
+
+  /// No description provided for @fairyGoCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Make companion'**
+  String get fairyGoCompanion;
+
+  /// No description provided for @fairyIsCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Companion'**
+  String get fairyIsCompanion;
+
+  /// No description provided for @fairyMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get fairyMerge;
+
+  /// No description provided for @fairyMergeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} of the same type & grade → 1 of the next grade. Keeps this fairy\'s bonus stat and the best base quality of the three.'**
+  String fairyMergeHint(String n);
+
+  /// No description provided for @fairyMergePick.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials {n}/{max}'**
+  String fairyMergePick(String n, String max);
+
+  /// No description provided for @fairyMergeNoMat.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough fairies of the same type & grade'**
+  String get fairyMergeNoMat;
+
+  /// No description provided for @fairyAutoMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto merge'**
+  String get fairyAutoMerge;
+
+  /// No description provided for @fairyAutoMergeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} fairies become {made}. Companion and leveled fairies are skipped; only matching bonus stats are merged.'**
+  String fairyAutoMergeConfirm(String used, String made);
+
+  /// No description provided for @fairyAutoMergeNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to auto merge'**
+  String get fairyAutoMergeNone;
+
+  /// No description provided for @fairyRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release'**
+  String get fairyRelease;
+
+  /// No description provided for @fairyReleaseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Releasing gives {n} fairy dust. This cannot be undone.'**
+  String fairyReleaseConfirm(String n);
+
+  /// No description provided for @fairyNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New fairy!'**
+  String get fairyNew;
+
+  /// No description provided for @fairyErrJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough jelly'**
+  String get fairyErrJelly;
+
+  /// No description provided for @fairyErrDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough fairy dust'**
+  String get fairyErrDust;
+
+  /// No description provided for @fairyErrGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t do that right now'**
+  String get fairyErrGeneric;
+
+  /// No description provided for @fairyGradeCommon.
+  ///
+  /// In en, this message translates to:
+  /// **'Common'**
+  String get fairyGradeCommon;
+
+  /// No description provided for @fairyGradeRare.
+  ///
+  /// In en, this message translates to:
+  /// **'Rare'**
+  String get fairyGradeRare;
+
+  /// No description provided for @fairyGradeEpic.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic'**
+  String get fairyGradeEpic;
+
+  /// No description provided for @fairyGradeLegendary.
+  ///
+  /// In en, this message translates to:
+  /// **'Legendary'**
+  String get fairyGradeLegendary;
+
+  /// No description provided for @fairyGradeMythic.
+  ///
+  /// In en, this message translates to:
+  /// **'Mythic'**
+  String get fairyGradeMythic;
+
+  /// No description provided for @fairyStatAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get fairyStatAttack;
+
+  /// No description provided for @fairyStatHp.
+  ///
+  /// In en, this message translates to:
+  /// **'HP'**
+  String get fairyStatHp;
+
+  /// No description provided for @fairyStatDefense.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage taken'**
+  String get fairyStatDefense;
+
+  /// No description provided for @fairyStatAttackSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack speed'**
+  String get fairyStatAttackSpeed;
+
+  /// No description provided for @fairyStatCritDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Crit damage'**
+  String get fairyStatCritDamage;
+
+  /// No description provided for @fairyStatBossDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss damage'**
+  String get fairyStatBossDamage;
+
+  /// No description provided for @fairyStatPetShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug damage'**
+  String get fairyStatPetShare;
+
+  /// No description provided for @fairySkillBurst.
+  ///
+  /// In en, this message translates to:
+  /// **'Deals {s}s worth of damage at once'**
+  String fairySkillBurst(String s);
+
+  /// No description provided for @fairySkillHeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Heals {p}% max HP when below 60%'**
+  String fairySkillHeal(String p);
+
+  /// No description provided for @fairySkillGuard.
+  ///
+  /// In en, this message translates to:
+  /// **'For {d}s, -{p}% damage taken'**
+  String fairySkillGuard(String d, String p);
+
+  /// No description provided for @fairySkillHaste.
+  ///
+  /// In en, this message translates to:
+  /// **'For {d}s, +{p}% attack speed'**
+  String fairySkillHaste(String d, String p);
+
+  /// No description provided for @fairySkillCrits.
+  ///
+  /// In en, this message translates to:
+  /// **'Next {n} hits are critical'**
+  String fairySkillCrits(String n);
+
+  /// No description provided for @fairySkillBossBurst.
+  ///
+  /// In en, this message translates to:
+  /// **'Deals {s}s worth of damage to bosses'**
+  String fairySkillBossBurst(String s);
+
+  /// No description provided for @fairySkillPet.
+  ///
+  /// In en, this message translates to:
+  /// **'For {d}s, +{p}% bug damage'**
+  String fairySkillPet(String d, String p);
+
+  /// No description provided for @fairySkillStand.
+  ///
+  /// In en, this message translates to:
+  /// **'Once, survive a fatal hit with {p}% HP'**
+  String fairySkillStand(String p);
+
+  /// No description provided for @fairyEggPop.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy egg · {grade}'**
+  String fairyEggPop(String grade);
 }
 
 class _AppLocalizationsDelegate

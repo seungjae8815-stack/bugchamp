@@ -19,7 +19,7 @@ const int kSaveSchemaVersion = 18;
 /// 이번 주 심연 층이 지워졌다(2026-09-30 점검). 서버는 이 값이 낮은 업로드에서
 /// 그 뒤에 생긴 필드를 저장본 값으로 지킨다(`GameActions.mergeSave`).
 /// 새 필드를 더하면 이 값을 올리고 서버의 목록에 추가한다.
-const int kSaveFeatureLevel = 14;
+const int kSaveFeatureLevel = 15;
 
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
@@ -566,6 +566,7 @@ class SaveGame {
     this.skillFreeDrawsUsed = 0,
     this.skillSweepsUsed = 0,
     this.skillAutoCast = true,
+    this.fairy = FairyState.empty,
     this.forgeLevel = 0,
     this.forgeSteps = 0,
     this.forgeUpAt,
@@ -1120,6 +1121,10 @@ class SaveGame {
   /// 홈 스킬 바 자동발동(기본 켜짐). 효율 벌칙은 없다(§2.8).
   final bool skillAutoCast;
 
+  /// 요정 시스템 전체(docs/design_fairy.md) — 필드 하나로 둔다(구버전 호환 목록이 한 줄이 되게).
+  /// 규칙은 `fairy_progress.dart`. feat 15 부터.
+  final FairyState fairy;
+
   /// 공방 등급(0부터). 등급 확률 창의 위치를 정한다.
   final int forgeLevel;
 
@@ -1417,6 +1422,7 @@ class SaveGame {
     int? skillFreeDrawsUsed,
     int? skillSweepsUsed,
     bool? skillAutoCast,
+    FairyState? fairy,
     int? forgeLevel,
     int? forgeSteps,
     DateTime? forgeUpAt,
@@ -1532,6 +1538,7 @@ class SaveGame {
     skillFreeDrawsUsed: skillFreeDrawsUsed ?? this.skillFreeDrawsUsed,
     skillSweepsUsed: skillSweepsUsed ?? this.skillSweepsUsed,
     skillAutoCast: skillAutoCast ?? this.skillAutoCast,
+    fairy: fairy ?? this.fairy,
     forgeLevel: forgeLevel ?? this.forgeLevel,
     forgeSteps: forgeSteps ?? this.forgeSteps,
     // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
@@ -1802,6 +1809,9 @@ class SaveGame {
     skillFreeDrawsUsed: (json['skillFreeDrawsUsed'] as num?)?.toInt() ?? 0,
     skillSweepsUsed: (json['skillSweepsUsed'] as num?)?.toInt() ?? 0,
     skillAutoCast: json['skillAutoCast'] as bool? ?? true,
+    fairy: json['fairy'] is Map
+        ? FairyState.fromJson(Map<String, dynamic>.from(json['fairy'] as Map))
+        : FairyState.empty,
     forgeLevel: (json['forgeLevel'] as num?)?.toInt() ?? 0,
     forgeSteps: (json['forgeSteps'] as num?)?.toInt() ?? 0,
     forgeUpAt: json['forgeUpAt'] == null
@@ -1970,6 +1980,8 @@ class SaveGame {
     if (skillFreeDrawsUsed != 0) 'skillFreeDrawsUsed': skillFreeDrawsUsed,
     if (skillSweepsUsed != 0) 'skillSweepsUsed': skillSweepsUsed,
     if (!skillAutoCast) 'skillAutoCast': false,
+    // 비었으면 싣지 않는다(세이브 크기). "몰라서 안 보냄"과 "비움"은 `feat` 로 가른다.
+    if (fairy.toJson().isNotEmpty) 'fairy': fairy.toJson(),
     if (skillTrainingId != null && skillTrainingEndsAt != null) ...{
       'skillTrainingId': skillTrainingId,
       'skillTrainingEndsAt': skillTrainingEndsAt!.toUtc().toIso8601String(),
