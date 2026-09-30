@@ -65,7 +65,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
       });
     final eggs = [...f.eggs]
       ..sort((a, b) => b.grade.index.compareTo(a.grade.index));
-    return Column(
+    final body = Column(
       children: [
         _header(l, save, cfg),
         const SizedBox(height: 8),
@@ -121,6 +121,27 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
                   ],
                 ),
         ),
+      ],
+    );
+    // 요정 숲 배경 — 흐리게 깐다(칸·글자가 읽혀야 한다). 그림이 없으면 없는 대로.
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Opacity(
+              opacity: 0.35,
+              child: gameImage(
+                'assets/images/fairies/fairy_bg.webp',
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                fallback: const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ),
+        body,
       ],
     );
   }
@@ -1362,7 +1383,10 @@ class _DexDialog extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          Row(
+                          // 좁은 폰에선 등급 점 5 + 속성석 7 이 한 줄에 안 들어간다 — 넘치면 내려간다.
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runSpacing: 2,
                             children: [
                               for (final g in FairyGrade.values)
                                 Container(
