@@ -6837,6 +6837,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       // 몬스터가 같이 세져 테스트 캐릭터로는 며칠 걸린다.
                       // "1000 보스를 방금 잡은 상태"로 바로 보낸다 —
                       // 이후 흐름(안내 → 전환 → 유지 확인)은 전부 실제 코드다.
+                      // 대회가 닫혀 있어도(회차 사이) 화면에서 곤충을 골라
+                      // "대회 체험(개발자)" 로 새 방식(1마리 결투 웨이브전)을 해 본다.
+                      _devBtn('왕충 선발대회 체험', () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const EventScreen(),
+                          ),
+                        );
+                      }),
                       _devBtn('심연 열기(극한으로)', () async {
                         await ref
                             .read(saveControllerProvider.notifier)

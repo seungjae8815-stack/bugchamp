@@ -931,7 +931,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventCardTitle(Object n) {
-    return 'Wave $n cleared! Choose one';
+    return 'Wave $n cleared!\nChoose one';
   }
 
   @override
@@ -977,7 +977,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cardRevive => 'Dew of Life';
 
   @override
-  String get cardReviveDesc => 'Revive one fallen bug at half HP';
+  String get cardReviveDesc =>
+      'When HP runs out, get back up once at 50% HP and retry the same wave';
 
   @override
   String get cardSkip => 'Detour';
@@ -1008,7 +1009,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventFlyerHow => 'How to enter';
 
   @override
-  String get eventFlyerHow1 => 'Pick 3 adult bugs and enter';
+  String get eventFlyerHow1 => 'Enter with your single best-raised adult bug';
 
   @override
   String get eventFlyerHow2 => 'Choose one boost card after each wave';
@@ -1021,19 +1022,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventFlyerRule1 =>
-      'Stats are **equalized** — only species, element and temperament count; training, enhancement and size do not apply';
+      'Your bug fights **as raised** — potential, part upgrades, training and drills all count (same stats as Duels)';
 
   @override
   String get eventFlyerRule2 =>
-      'Enemy elements rotate every wave — a single-element team will hit a wall';
+      'Enemy elements change every wave — waves your bug is weak to are the hard ones';
 
   @override
   String get eventFlyerRule3 =>
-      'Bugs that entered rest for a day — keeping several good bugs pays off';
+      'Your bug gets injured and must rest in the recovery room — jelly heals it instantly';
 
   @override
-  String get eventFlyerRule4 =>
-      'Tickets refill every morning; free top-ups add up to 2 more per day';
+  String eventFlyerRule4(int daily, int jelly, int extra) {
+    return 'You get $daily tickets every morning, and can top up with $jelly jelly each, up to $extra more per day';
+  }
 
   @override
   String get eventFlyerLogin =>
@@ -1049,6 +1051,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventClosed => 'No event is running';
+
+  @override
+  String get battleNeedServer => 'Duels need an online connection';
+
+  @override
+  String get eventQuitFailed =>
+      'Couldn\'t quit — check your connection and try again';
+
+  @override
+  String get eventBugUnavailable =>
+      'That bug can\'t enter — please pick another one';
+
+  @override
+  String get injuryHealConfirmTitle => 'Heal now';
+
+  @override
+  String injuryHealConfirm(int n) {
+    return 'Spend $n Jelly to heal now?';
+  }
+
+  @override
+  String get trainingInstantTitle => 'Finish training now';
+
+  @override
+  String get squadTrainingBadge => 'Training';
 
   @override
   String get eventNeedServer => 'The event needs an online connection';
@@ -1080,18 +1107,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventPickTeam => 'Pick 3 bugs to enter';
+  String get eventPickTeam => 'Pick 1 bug to enter';
 
   @override
   String get eventPickOrder =>
-      'They fight left to right · a bug that powers up the one behind it makes the team stronger';
+      'Face enemies one after another · throw gauge every bout · HP is your life';
 
   @override
-  String get eventNormalizeTitle => 'Stats are equalized in this event';
+  String get eventNormalizeTitle =>
+      'The better you raise it, the stronger it is';
 
   @override
-  String get eventNormalizeBody =>
-      'Only species, element, temperament and specialty count. Training, breakthrough, part enhancement, potential and size do not apply — everyone competes on formation alone.';
+  String eventNormalizeBody(int pct) {
+    return 'Fights with the same stats as Duels — potential, part upgrades, training, drills and traits all count. Losing by ring-out or flip costs $pct% HP and you retry the same wave. When HP runs out, the run ends.';
+  }
 
   @override
   String eventFatigueLeft(Object time) {
@@ -3357,7 +3386,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get seasonRewardHint =>
-      'Paid every Sunday at midnight (KST) at your rank at that moment. Climb before it ends.';
+      'Closes every Sunday 09:00 (KST) and pays by your league at that moment. Climb before it closes.';
 
   @override
   String eventOpensOn(String m, String d) {
@@ -3597,8 +3626,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duelThrowButton => 'Throw!';
 
   @override
-  String get duelGaugeHint =>
-      'Tap anywhere to stop · the greener, the stronger your first charge';
+  String duelGaugeHint(int pct) {
+    return 'Tap anywhere to stop · the closer to green, the stronger your attack this bout (up to +$pct%)';
+  }
 
   @override
   String duelBout(int n) {
@@ -3654,7 +3684,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get abyssUnlockedBody =>
-      'Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Sunday at midnight you start again from F1, and the deepest floor of the week earns ranking Jelly.';
+      'Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Monday 09:00 (KST) you start again from F1, and the deepest floor at the Sunday 09:00 close earns ranking Jelly.';
 
   @override
   String get abyssEnter => 'Enter the Abyss';
@@ -4056,5 +4086,122 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String rankProgressAbyss(String tier, int floor) {
     return '$tier · Abyss F$floor';
+  }
+
+  @override
+  String duelLaunchBonus(int pct) {
+    return 'Great throw! Attack +$pct% this bout';
+  }
+
+  @override
+  String eventWaveHeader(int n) {
+    return 'Wave $n';
+  }
+
+  @override
+  String get eventStopHp => 'Out of HP — the run ends here.';
+
+  @override
+  String get eventDevPreview =>
+      'Developer preview — no server record, rewards, tickets or injuries';
+
+  @override
+  String get eventDevTry => 'Try the contest (dev)';
+
+  @override
+  String get eventEntryLabel => 'Your entry';
+
+  @override
+  String get eventEntryEmpty =>
+      'Pick your best-raised bug below to put it on stage';
+
+  @override
+  String get eventBuffNow => 'Active boosts';
+
+  @override
+  String get eventBuffNone => 'No boosts yet';
+
+  @override
+  String eventBuffRevive(int n) {
+    return 'Revive $n';
+  }
+
+  @override
+  String eventFallRetry(int pct) {
+    return 'HP -$pct% · retry the same wave';
+  }
+
+  @override
+  String get eventReviveRetry => 'Revived! Retry the same wave';
+
+  @override
+  String get cardAgile => 'Nimble';
+
+  @override
+  String get cardAgileDesc => 'Evade +8%p — chance to dodge a clash entirely';
+
+  @override
+  String get cardVital => 'Vital Strike';
+
+  @override
+  String get cardVitalDesc => 'Critical chance +10%p';
+
+  @override
+  String get cardBreath => 'Catch Breath';
+
+  @override
+  String get cardBreathDesc => 'Heal 10% more HP after each wave';
+
+  @override
+  String get cardHeft => 'Heavyweight';
+
+  @override
+  String get cardHeftDesc => 'Body +40% — heavier, harder to push out';
+
+  @override
+  String get cardBerserk => 'Berserk';
+
+  @override
+  String get cardBerserkDesc => 'Attack +35% · but Defense -21%';
+
+  @override
+  String get cardIronhide => 'Ironhide';
+
+  @override
+  String get cardIronhideDesc => 'Defense +40% · but Speed -16%';
+
+  @override
+  String get cardLastStand => 'Last Stand';
+
+  @override
+  String get cardLastStandDesc => 'Attack +40% in waves you enter below 50% HP';
+
+  @override
+  String get eventBuffEvade => 'Evade';
+
+  @override
+  String get eventBuffCrit => 'Crit';
+
+  @override
+  String get eventBuffRecover => 'Heal';
+
+  @override
+  String get eventBuffSize => 'Body';
+
+  @override
+  String get eventBuffSpd => 'Speed';
+
+  @override
+  String get eventBuffLastStand => 'Last Stand';
+
+  @override
+  String get eventQuit => 'Retreat';
+
+  @override
+  String get eventQuitTitle => 'Stop here?';
+
+  @override
+  String eventQuitBody(int n, int hp, int injury) {
+    return 'Your record is locked in at $n waves cleared.\nHP now $hp% — injury lasts only $injury% of the maximum.\n(The more HP left, the shorter the rest)';
   }
 }

@@ -1,0 +1,44 @@
+========================================
+ App Store — 새로운 기능 (1.0.14 / 20260936)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
+※ 범위: 1.0.13(20260935) 이후.
+
+<ko-KR>
+곤충 배틀 스타디움이 열렸어요
+
+- 결투가 새로워졌습니다: 원형 경기장에서 1:1로 맞붙어 장외·뒤집기·기절로 승부합니다. 이긴 곤충은 남은 체력으로 다음 상대를 맞습니다
+- 던지기 게이지를 잘 맞추면 그 판이 유리해집니다. 크리티컬·약점 공격·회피가 생겼습니다
+- 훈련소: 곤충마다 공격·방어·회피·치명·회복력을 단련합니다. 최대 단계는 포텐셜·기질·주특기에 따라 달라집니다
+- 리그마다 매주 순위를 겨루고 상위 20%는 승급합니다. 월요일 09시에 시작해 일요일 09시에 마감합니다
+- 극한 최종 보스 너머에 끝없이 이어지는 심연이 열립니다. 매주 1층부터 다시 오르며 가장 깊이 내려간 순위로 보상을 받습니다
+- 왕충 선발대회 2회차: 가장 잘 키운 곤충 한 마리로 웨이브를 이어 가며, 웨이브마다 카드 한 장을 고릅니다
+- 젤리 보상 지급처를 정리했습니다(결투·심연 주간 순위, 선물의 그날 첫 2배 등)
+- 합성으로 포텐셜을 올린 5성 곤충은 분해해도 젤리가 나오지 않습니다(재료는 그대로)
+</ko-KR>
+
+<en-US>
+The Bug Battle Stadium is open
+
+- Duels are all new: fight 1:1 in a round arena and win by ring-out, flip or knockout. The winner stays on with its remaining HP
+- Time the throw gauge well to gain an edge. Critical hits, weak-spot hits and evasion have been added
+- Training Grounds: train attack, defense, evasion, critical and recovery for each bug. Max levels depend on potential, temperament and specialty
+- Compete in your league every week; the top 20% move up. Seasons run Monday 09:00 to Sunday 09:00 (KST)
+- The Abyss opens beyond the final Extreme boss: endless floors that restart from F1 every week, with rewards for the deepest floor
+- Tournament round 2: send your best bug through wave after wave, picking one card after each wave
+- Jelly rewards have been reorganized (weekly duel and Abyss rankings, first gift x2 of the day, and more)
+- 5-star bugs raised by fusion no longer give Jelly when disassembled (materials are unchanged)
+</en-US>
+
+<ja-JP>
+昆虫バトルスタジアムがオープン
+
+- 決闘が新しくなりました: 円形の闘技場で1対1、場外・ひっくり返し・気絶で勝負します。勝った昆虫は残りの体力で次の相手を迎えます
+- 投げゲージをうまく合わせるとその試合が有利になります。クリティカル・弱点攻撃・回避が加わりました
+- 訓練所: 昆虫ごとに攻撃・防御・回避・会心・回復力を鍛えます。最大段階はポテンシャル・気質・得意技で変わります
+- リーグごとに毎週順位を競い、上位20%が昇格します。月曜9時に始まり日曜9時に締め切ります
+- 極限の最終ボスの先に果てしなく続く深淵が開きます。毎週1階からやり直し、最も深く潜った順位で報酬がもらえます
+- 王虫選抜大会 第2回: 一番育てた昆虫1匹でウェーブを進み、ウェーブごとにカードを1枚選びます
+- ゼリー報酬の支給先を整理しました(決闘・深淵の週間順位、贈り物のその日最初の2倍など)
+- 合成でポテンシャルを上げた5つ星の昆虫は分解してもゼリーが出ません(素材はそのまま)
+</ja-JP>

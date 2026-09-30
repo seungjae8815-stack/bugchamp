@@ -47,7 +47,7 @@ SPECIES_JSON = os.path.normpath(
 ELEMENTS = ("wood", "fire", "earth", "metal", "water")
 FX = ("clash", "dust", "ringout", "dizzy")
 # 결투 탭(2026-09-29, docs/art_prompts_battle_hub.md): 배경 · 출정 칸 틀 · 회복실 · 훈련소.
-HUB = ("battle_hub_bg", "squad_slot", "hub_recovery", "hub_training")
+HUB = ("battle_hub_bg", "squad_slot", "hub_recovery", "hub_training", "event_entry_stage")
 BUG_SIDE = 512  # 던지는 장면에서 경기장 폭의 1/4 안팎(고밀도 ~300px)
 ARENA_SIDE = 768
 SIDE_W = 1024
@@ -154,7 +154,7 @@ def do_fx(src, name):
 
 def do_hub(src, name):
     im = Image.open(src).convert("RGBA")
-    if name == "battle_hub_bg":
+    if name in ("battle_hub_bg", "event_entry_stage"):
         # 배경째 쓴다 — 워터마크만 메우고 폭 720 으로.
         mask, n = find_mark(im)
         if mask is not None:

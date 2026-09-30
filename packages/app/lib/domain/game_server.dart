@@ -173,8 +173,24 @@ abstract interface class GameServer {
     String? leadBugId,
   });
 
+  /// 왕충 선발대회(2회차부터) — 곤충 1마리로 도전 시작. 참가권 −1 · 그 곤충 부상.
+  Future<ServerResult> eventDuelStart(String bugId);
+
+  /// 대회 한 판 — 카드가 걸려 있으면 [cardId] 를 먼저 적용하고 지금 웨이브를 [launch] 로 싸운다.
+  Future<ServerResult> eventDuelThrow({
+    required String sessionId,
+    required double launch,
+    String? cardId,
+  });
+
+  /// 대회 그만하기 — 지금까지의 기록으로 확정(부상은 남은 체력만큼 줄어든다).
+  Future<ServerResult> eventDuelQuit(String sessionId);
+
   /// 광고 시청 보상 참가권.
   Future<ServerResult> eventAdTicket();
+
+  /// 대회 부상 젤리 즉시 회복 — 대회 부상은 서버 소유라 서버가 젤리를 깎고 지운다.
+  Future<ServerResult> eventDuelHeal(String bugId);
 
   /// 이벤트 순위(상위 100). 서버가 대신 읽어 준다 — 앱에는 RPC 권한이 없다.
   Future<ServerResult> eventLeaderboard();
@@ -310,7 +326,22 @@ class NoGameServer implements GameServer {
     String? leadBugId,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
+  Future<ServerResult> eventDuelStart(String bugId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventDuelThrow({
+    required String sessionId,
+    required double launch,
+    String? cardId,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventDuelQuit(String sessionId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
   Future<ServerResult> eventAdTicket() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> eventDuelHeal(String bugId) async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> pvpLeagueBoard() async =>
@@ -422,6 +453,9 @@ class HttpGameServer implements GameServer {
 
   String? get _token => _client.auth.currentSession?.accessToken;
 
+  /// 요청 하나의 시간 제한. 세이브 업로드(최대 1MB)가 느린 망에서도 들어가는 여유.
+  static const _requestTimeout = Duration(seconds: 30);
+
   Future<ServerResult> _send(
     String method,
     String path, [
@@ -438,9 +472,13 @@ class HttpGameServer implements GameServer {
         'Content-Type': 'application/json',
         ...?extraHeaders,
       };
-      final res = method == 'GET'
-          ? await _http.get(uri, headers: headers)
-          : await _http.post(uri, headers: headers, body: jsonEncode(body));
+      // 시간 제한 — 없으면 던지기 직후 통신이 끊겼을 때 스피너만 돌고 뒤로가기도 막혀 앱을
+      // 강제 종료해야 했다(2026-09-30 점검). 걸리면 네트워크 오류(status 0)와 같이 다룬다.
+      final res =
+          await (method == 'GET'
+                  ? _http.get(uri, headers: headers)
+                  : _http.post(uri, headers: headers, body: jsonEncode(body)))
+              .timeout(_requestTimeout);
 
       final decoded = res.body.isEmpty
           ? const <String, dynamic>{}
@@ -548,6 +586,25 @@ class HttpGameServer implements GameServer {
       _send('POST', '/event/start', {'teamIds': teamBugIds});
 
   @override
+  Future<ServerResult> eventDuelStart(String bugId) =>
+      _send('POST', '/event/duel/start', {'bugId': bugId});
+
+  @override
+  Future<ServerResult> eventDuelQuit(String sessionId) =>
+      _send('POST', '/event/duel/quit', {'sessionId': sessionId});
+
+  @override
+  Future<ServerResult> eventDuelThrow({
+    required String sessionId,
+    required double launch,
+    String? cardId,
+  }) => _send('POST', '/event/duel/throw', {
+    'sessionId': sessionId,
+    'launch': launch,
+    'cardId': ?cardId,
+  });
+
+  @override
   Future<ServerResult> eventPick(
     String sessionId,
     String cardId, {
@@ -562,6 +619,10 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> eventAdTicket() =>
       _send('POST', '/event/ad-ticket', const {});
+
+  @override
+  Future<ServerResult> eventDuelHeal(String bugId) =>
+      _send('POST', '/event/duel/heal', {'bugId': bugId});
 
   @override
   Future<ServerResult> eventLeaderboard() => _send('GET', '/event/leaderboard');

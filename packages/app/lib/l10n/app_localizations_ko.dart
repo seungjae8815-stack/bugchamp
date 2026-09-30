@@ -914,7 +914,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String eventCardTitle(Object n) {
-    return '$n웨이브 돌파! 하나를 고르세요';
+    return '$n웨이브 돌파!\n하나를 고르세요';
   }
 
   @override
@@ -960,7 +960,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cardRevive => '생명의 이슬';
 
   @override
-  String get cardReviveDesc => '쓰러진 곤충 하나를 절반 체력으로 되살려요';
+  String get cardReviveDesc => '체력이 바닥나도 한 번, 체력 50%로 일어나 같은 웨이브를 다시 싸워요';
 
   @override
   String get cardSkip => '우회로';
@@ -989,7 +989,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventFlyerHow => '참가 방법';
 
   @override
-  String get eventFlyerHow1 => '성충 3마리를 골라 출전';
+  String get eventFlyerHow1 => '가장 잘 키운 성충 1마리를 골라 출전';
 
   @override
   String get eventFlyerHow2 => '웨이브를 깰 때마다 강화 카드 1장 선택';
@@ -1002,16 +1002,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eventFlyerRule1 =>
-      '이 대회는 **스탯이 평준화**돼요 — 종·오행·기질만 반영되고 수련·강화·크기는 적용되지 않아요';
+      '**키운 그대로** 싸워요 — 포텐셜·부위 강화·수련·훈련소가 모두 반영돼요(결투와 같은 능력치)';
 
   @override
-  String get eventFlyerRule2 => '적의 오행은 웨이브마다 바뀌어요 — 한 속성만 모으면 막혀요';
+  String get eventFlyerRule2 => '적의 오행은 웨이브마다 바뀌어요 — 내 곤충이 약한 색의 웨이브에서 고비가 와요';
 
   @override
-  String get eventFlyerRule3 => '출전한 곤충은 하루 쉬어요 — 좋은 곤충을 여러 마리 모아두면 유리해요';
+  String get eventFlyerRule3 => '출전하면 곤충이 다쳐서 회복실에서 쉬어야 해요 — 젤리로 바로 회복할 수 있어요';
 
   @override
-  String get eventFlyerRule4 => '참가권은 매일 아침 채워지고, 무료 충전으로 하루 2장까지 더 받을 수 있어요';
+  String eventFlyerRule4(int daily, int jelly, int extra) {
+    return '참가권은 매일 아침 $daily장씩 채워지고, 젤리 $jelly개로 하루 $extra장까지 더 충전할 수 있어요';
+  }
 
   @override
   String get eventFlyerLogin => '순위에 오르려면 로그인이 필요해요 (게스트는 참여만 가능)';
@@ -1026,6 +1028,29 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eventClosed => '지금은 열린 대회가 없어요';
+
+  @override
+  String get battleNeedServer => '결투는 온라인 연결이 필요해요';
+
+  @override
+  String get eventQuitFailed => '그만두지 못했어요 — 연결을 확인하고 다시 눌러 주세요';
+
+  @override
+  String get eventBugUnavailable => '고른 곤충으로는 도전할 수 없어요 — 다른 곤충을 골라 주세요';
+
+  @override
+  String get injuryHealConfirmTitle => '즉시 회복';
+
+  @override
+  String injuryHealConfirm(int n) {
+    return '젤리 $n개를 써서 지금 회복할까요?';
+  }
+
+  @override
+  String get trainingInstantTitle => '훈련 즉시 완료';
+
+  @override
+  String get squadTrainingBadge => '훈련 중';
 
   @override
   String get eventNeedServer => '대회는 온라인 연결이 필요해요';
@@ -1057,17 +1082,18 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get eventPickTeam => '출전 곤충 3마리를 고르세요';
+  String get eventPickTeam => '출전 곤충 1마리를 고르세요';
 
   @override
-  String get eventPickOrder => '왼쪽부터 순서대로 나가요 · 앞 곤충이 뒤 곤충의 기운을 북돋우면 더 강해져요';
+  String get eventPickOrder => '적을 한 마리씩 연속으로 상대해요 · 판마다 던지기 게이지 · 체력이 목숨이에요';
 
   @override
-  String get eventNormalizeTitle => '이 대회는 스탯이 평준화돼요';
+  String get eventNormalizeTitle => '키운 만큼 강해요';
 
   @override
-  String get eventNormalizeBody =>
-      '종·오행·기질·주특기만 반영돼요. 수련·돌파·부위 강화·포텐셜·크기는 적용되지 않아요 — 모두 같은 조건에서 편성으로 겨루는 대회예요.';
+  String eventNormalizeBody(int pct) {
+    return '결투와 같은 능력치로 싸워요 — 포텐셜·부위 강화·수련·훈련소·특성이 모두 반영돼요. 장외·뒤집기로 지면 체력이 $pct% 깎이고 같은 웨이브를 다시 싸워요. 체력이 바닥나면 끝이에요.';
+  }
 
   @override
   String eventFatigueLeft(Object time) {
@@ -3294,7 +3320,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get seasonRewardHint =>
-      '매주 일요일 자정(24시), 그 순간의 등급으로 지급돼요. 끝나기 전에 올려두세요.';
+      '매주 일요일 09시에 마감하고, 그 순간의 리그로 지급돼요. 마감 전에 올려두세요.';
 
   @override
   String eventOpensOn(String m, String d) {
@@ -3531,7 +3557,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get duelThrowButton => '던지기!';
 
   @override
-  String get duelGaugeHint => '화면 아무 곳이나 누르면 멈춰요 · 초록 칸일수록 첫 돌진이 세져요';
+  String duelGaugeHint(int pct) {
+    return '화면 아무 곳이나 누르면 멈춰요 · 초록 칸에 가까울수록 이번 판 공격력이 올라요(최대 +$pct%)';
+  }
 
   @override
   String duelBout(int n) {
@@ -3586,7 +3614,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get abyssUnlockedBody =>
-      '극한 너머로 끝없이 이어지는 층이에요. 강화·장비·곤충은 그대로 가져가요.\n매주 일요일 자정에 1층부터 다시 오르고, 한 주 동안 가장 깊이 내려간 순위로 젤리를 받아요.';
+      '극한 너머로 끝없이 이어지는 층이에요. 강화·장비·곤충은 그대로 가져가요.\n매주 월요일 09시에 1층부터 다시 오르고, 일요일 09시 마감 때 가장 깊이 내려간 순위로 젤리를 받아요.';
 
   @override
   String get abyssEnter => '심연으로';
@@ -3979,5 +4007,120 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String rankProgressAbyss(String tier, int floor) {
     return '$tier · 심연 $floor층';
+  }
+
+  @override
+  String duelLaunchBonus(int pct) {
+    return '던지기 성공! 이번 판 공격 +$pct%';
+  }
+
+  @override
+  String eventWaveHeader(int n) {
+    return '웨이브 $n';
+  }
+
+  @override
+  String get eventStopHp => '체력이 바닥나서 여기서 끝났어요.';
+
+  @override
+  String get eventDevPreview => '개발자 체험 — 서버 기록·보상·참가권·부상 없음';
+
+  @override
+  String get eventDevTry => '대회 체험(개발자)';
+
+  @override
+  String get eventEntryLabel => '출전 곤충';
+
+  @override
+  String get eventEntryEmpty => '아래에서 가장 잘 키운 곤충을 골라 무대에 올려요';
+
+  @override
+  String get eventBuffNow => '지금 받고 있는 강화';
+
+  @override
+  String get eventBuffNone => '받은 강화 없음';
+
+  @override
+  String eventBuffRevive(int n) {
+    return '부활 $n';
+  }
+
+  @override
+  String eventFallRetry(int pct) {
+    return '체력 -$pct% · 같은 웨이브를 다시 싸워요';
+  }
+
+  @override
+  String get eventReviveRetry => '부활! 같은 웨이브를 다시 싸워요';
+
+  @override
+  String get cardAgile => '날렵함';
+
+  @override
+  String get cardAgileDesc => '회피 +8%p — 부딪힘 피해를 통째로 피할 확률';
+
+  @override
+  String get cardVital => '급소 노리기';
+
+  @override
+  String get cardVitalDesc => '치명타 확률 +10%p';
+
+  @override
+  String get cardBreath => '숨 고르기';
+
+  @override
+  String get cardBreathDesc => '웨이브를 깰 때마다 체력 10% 더 회복';
+
+  @override
+  String get cardHeft => '무게 싣기';
+
+  @override
+  String get cardHeftDesc => '몸집 +40% — 무거워져서 장외로 잘 안 밀려요';
+
+  @override
+  String get cardBerserk => '광폭화';
+
+  @override
+  String get cardBerserkDesc => '공격력 +35% · 대신 방어력 -21%';
+
+  @override
+  String get cardIronhide => '철갑';
+
+  @override
+  String get cardIronhideDesc => '방어력 +40% · 대신 속도 -16%';
+
+  @override
+  String get cardLastStand => '배수진';
+
+  @override
+  String get cardLastStandDesc => '체력 50% 미만으로 들어가는 웨이브에서 공격력 +40%';
+
+  @override
+  String get eventBuffEvade => '회피';
+
+  @override
+  String get eventBuffCrit => '치명';
+
+  @override
+  String get eventBuffRecover => '회복';
+
+  @override
+  String get eventBuffSize => '몸집';
+
+  @override
+  String get eventBuffSpd => '속도';
+
+  @override
+  String get eventBuffLastStand => '배수진';
+
+  @override
+  String get eventQuit => '그만하기';
+
+  @override
+  String get eventQuitTitle => '여기서 그만할까요?';
+
+  @override
+  String eventQuitBody(int n, int hp, int injury) {
+    return '지금까지 깬 $n웨이브로 기록을 확정해요.\n지금 체력 $hp% — 부상은 최대의 $injury%만 쉬어요.\n(체력이 많이 남을수록 덜 쉬어요)';
   }
 }

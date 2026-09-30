@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,12 +19,14 @@ import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import 'board_preview.dart';
 import 'duel_arena_screen.dart';
+import 'duel_bug_build.dart';
 import 'duel_driver.dart';
 import 'league_board_screen.dart';
 import 'training_screen.dart';
@@ -333,26 +336,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   /// 개체 → 전투 유닛. 변환 로직은 `core_battle` 에 있다 —
   /// **서버도 같은 함수를 쓴다**(결과가 어긋나면 승패가 갈린다).
-  BattleBug _toBattleBug(IndividualBug bug, GameData data, String locale) {
-    final enh = data.enhanceConfig;
-    final pet = data.petConfig;
-    double per(BugPart p, double d) => enh?.spec(p).effectPerLevel ?? d;
-    return buildBattleBug(
-      bug: bug,
-      species: data.species(bug.speciesId),
-      locale: locale,
-      hornJawPerLevel: per(BugPart.hornJaw, 0.04),
-      cuticlePerLevel: per(BugPart.cuticle, 0.04),
-      wingPerLevel: per(BugPart.wing, 0.03),
-      buildPerLevel: per(BugPart.build, 0.05),
-      // 혈통 특성(§2.5)은 전투에도 실린다. 배율은 `traitBattleScale` —
-      // 서버(`GameActions._buildTeam`)와 **같은 값**이어야 승패가 안 갈린다.
-      traitAtkBonus: pet?.traitBattleAtk(bug.trait) ?? 0,
-      variantAtkBonus: pet?.variantBattleAtk(bug.variant) ?? 0,
-      variantHpBonus: pet?.variantBattleHp(bug.variant) ?? 0,
-      traitHpBonus: pet?.traitBattleHp(bug.trait) ?? 0,
-    );
-  }
+  BattleBug _toBattleBug(IndividualBug bug, GameData data, String locale) =>
+      battleBugFor(bug, data, locale);
 
   /// 내 편성([_team]) → 방어팀 스냅샷(서버 등록용).
   DefenderBug _defenderBugOf(
@@ -412,6 +397,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     _ => (id, const Color(0xFFBFC4CC)),
   };
 
+  /// 출정 칸에 표시할 쉬는 이유 — 부상이 먼저, 그다음 훈련 중. 없으면 null.
+  ({bool training, DateTime until})? _restOf(SaveGame save, String bugId) {
+    final now = ref.read(clockProvider).now().toUtc();
+    if (save.isInjured(bugId, now)) {
+      return (training: false, until: save.injuredUntil(bugId)!);
+    }
+    final job = save.trainingJob;
+    if (job != null && job.bugId == bugId && !job.doneAt(now)) {
+      return (training: true, until: job.until);
+    }
+    return null;
+  }
+
   Future<void> _claimLeague(AppLocalizations l) async {
     final r = await ref
         .read(saveControllerProvider.notifier)
@@ -435,21 +433,24 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               fontSize: 18,
             ),
           ),
-          const SizedBox(width: 14),
-          materialImage(
-            MaterialKind.jelly,
-            size: 20,
-            fallback: const SizedBox(width: 20),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            '${r.jelly}',
-            style: const TextStyle(
-              color: Color(0xFF9BE7FF),
-              fontWeight: FontWeight.w900,
-              fontSize: 18,
+          // 등급 보상은 골드만이라(2026-09-28) 젤리가 0 이면 줄을 싣지 않는다.
+          if (r.jelly > 0) ...[
+            const SizedBox(width: 14),
+            materialImage(
+              MaterialKind.jelly,
+              size: 20,
+              fallback: const SizedBox(width: 20),
             ),
-          ),
+            const SizedBox(width: 5),
+            Text(
+              '${r.jelly}',
+              style: const TextStyle(
+                color: Color(0xFF9BE7FF),
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+              ),
+            ),
+          ],
         ],
       ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
@@ -561,23 +562,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF2A2417),
         titleSpacing: 12,
-        // 제목 옆에 지금 리그 · 남은 시간(누르면 리그 보상) — 2026-09-29 사장님 요청.
-        title: Row(
-          children: [
-            Text(l.battleTitle),
-            const SizedBox(width: 8),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: _LeagueClock(
-                  league: pvpLeagueNow(save, battleCfg).id,
-                  cfg: battleCfg,
-                  onTap: () => _showLeagueRewards(l, data, save, battleCfg),
-                ),
-              ),
-            ),
-          ],
+        // 지금 리그 · 남은 시간(누르면 리그 보상)이 앱바 전체 — '곤충 결투' 제목은 뺐다
+        // (2026-09-30 사장님 요청: 탭 이름과 겹치고, 리그가 더 중요하다).
+        title: _LeagueClock(
+          league: pvpLeagueNow(save, battleCfg).id,
+          cfg: battleCfg,
+          onTap: () => _showLeagueRewards(l, data, save, battleCfg),
         ),
       ),
       // 결투장 로비 그림 — 장면은 위쪽 1/3(출정 칸 뒤), 아래는 어두워 순위표 글씨가 읽힌다.
@@ -1303,6 +1293,15 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10),
             ),
             onPressed: () async {
+              if (!await confirmJellySpend(
+                context,
+                title: l.injuryHealConfirmTitle,
+                body: l.injuryHealConfirm(jelly),
+                jelly: jelly,
+              )) {
+                return;
+              }
+              if (!mounted) return;
               final ok = await ref
                   .read(saveControllerProvider.notifier)
                   .healInjury(bug.id, viaJelly: true);
@@ -1385,6 +1384,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       } finally {
         if (mounted) setState(() => _starting = false);
       }
+    } else if (kReleaseMode) {
+      // 릴리즈에서 서버 없이 켜졌으면(첫 실행 오프라인·장애) 결투를 막는다 — 로컬 후보·로컬
+      // 결투로 흘러가면 골드가 기기에 쌓였다(2026-09-30 점검). 개발 실행에서만 로컬 미리보기.
+      showCenterToast(context, l.battleNeedServer);
+      return;
     } else {
       cands = _localCandidates(data, save, locale, ids);
     }
@@ -1919,10 +1923,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   size: 30,
                 ),
               )
-            else if (save.isInjured(
-              bug.id,
-              ref.read(clockProvider).now().toUtc(),
-            ))
+            // 쉬는 곤충 — 부상(빨강) 또는 훈련 중(파랑). 훈련 중인 곤충도 출정할 수 없는데
+            // 칸에는 멀쩡히 보여 전투 시작을 눌러야 알았다(2026-09-30 점검).
+            else if (_restOf(save, bug.id) case final rest?)
               Positioned.fill(
                 child: Container(
                   margin: const EdgeInsets.all(6),
@@ -1944,20 +1947,22 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         ),
                       ),
                       Text(
-                        AppLocalizations.of(context).injuryTitle,
-                        style: const TextStyle(
-                          color: Color(0xFFEF9A9A),
+                        rest.training
+                            ? AppLocalizations.of(context).squadTrainingBadge
+                            : AppLocalizations.of(context).injuryTitle,
+                        style: TextStyle(
+                          color: rest.training
+                              ? const Color(0xFF8EC9FF)
+                              : const Color(0xFFEF9A9A),
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       Text(
                         formatClock(
-                          save
-                              .injuredUntil(bug.id)!
-                              .difference(
-                                ref.read(clockProvider).now().toUtc(),
-                              ),
+                          rest.until.difference(
+                            ref.read(clockProvider).now().toUtc(),
+                          ),
                         ),
                         style: const TextStyle(
                           color: Colors.white,
@@ -2730,30 +2735,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       DuelParams.fromJson((data.battleConfig ?? const BattleConfig()).duelJson);
 
   /// 보유 곤충 → 결투 유닛(서버 `validateDuelTeam` 과 같은 스탯 계산).
-  DuelBug _toDuelBug(IndividualBug bug, GameData data, String locale) {
-    final sp = data.species(bug.speciesId);
-    // 훈련소 보너스 — 서버(`validateDuelTeam`)와 **같은 함수**로 입힌다(최대 단계로 잘라서).
-    final t = trainingBonusOf(
-      ref.read(saveControllerProvider).requireValue,
-      bug,
-      sp,
-      (data.battleConfig ?? const BattleConfig()).training,
-      levelCap: data.petConfig?.levelCap(bug.breakthroughTier),
-    );
-    return DuelBug.fromBattleBug(
-      _toBattleBug(bug, data, locale),
-      speciesId: bug.speciesId,
-      sizeMm: bug.sizeMm,
-      specialty: sp.specialty,
-    ).withTraining(
-      atkMult: t.atkMult,
-      defMult: t.defMult,
-      hpMult: t.hpMult,
-      evade: t.evade,
-      crit: t.crit,
-      recovery: t.recovery,
-    );
-  }
+  DuelBug _toDuelBug(IndividualBug bug, GameData data, String locale) =>
+      duelBugFor(
+        bug,
+        data,
+        ref.read(saveControllerProvider).requireValue,
+        locale,
+      );
 
   /// 출전 순서 3마리. 3마리가 아니거나 회복 중인 곤충이 있으면 null.
   List<String>? _duelTeamIds(AppLocalizations l) {
@@ -3042,25 +3030,32 @@ class _LeagueClockState extends State<_LeagueClock> {
       borderRadius: BorderRadius.circular(999),
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(4, 3, 10, 3),
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
         decoration: BoxDecoration(
           color: const Color(0xFF1B1812),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: const Color(0x66EBA52F)),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            leagueIcon(widget.league, size: 26),
-            const SizedBox(width: 4),
-            Text(
-              l.boardLeagueTitle(leagueName(l, widget.league)),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w900,
+            leagueIcon(widget.league, size: 32),
+            const SizedBox(width: 6),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  l.boardLeagueTitle(leagueName(l, widget.league)),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
             ),
+            const Spacer(),
             const SizedBox(width: 8),
             const Icon(
               Icons.card_giftcard_rounded,
@@ -3072,7 +3067,7 @@ class _LeagueClockState extends State<_LeagueClock> {
               time,
               style: TextStyle(
                 color: closed ? const Color(0xFF6CFF6C) : Colors.white,
-                fontSize: 12,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w800,
               ),
             ),

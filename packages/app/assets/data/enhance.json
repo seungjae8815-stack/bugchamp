@@ -20,7 +20,9 @@
       "material": "sap",
       "baseCost": 2,
       "costGrowth": 1.22,
-      "effectPerLevel": 0.03
+      "effectPerLevel": 0.03,
+      "_evadeComment": "결투 회피 +0.3%p/Lv(2026-09-29 사장님 확정, 헌법 §2.2 표) — 결투에만 들어가고 훈련소 회피와 더해진다.",
+      "evadePerLevel": 0.003
     },
     {
       "part": "build",

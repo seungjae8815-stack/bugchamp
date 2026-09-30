@@ -9,6 +9,7 @@
 //   dart run tool/balance_sim.dart --habitats=20 --stages=15 --hp-growth=1.20
 //   dart run tool/balance_sim.dart --tiers=4 --loadout=molting,pupa_guard,sap_drink,tenacity,swarm
 //   dart run tool/balance_sim.dart --tiers=4 --skill=molting.base=0.3 --skill=pupa_guard.duration=4
+//   dart run tool/balance_sim.dart --tiers=4 --abyss-weeks=12 --train-pet=0.25   # 훈련소 펫 보너스를 얹어 심연 도달 층 비교
 //
 // ⚠️ 근사인 지점(결과를 읽을 때 감안할 것):
 //  - 플레이어 구매 전략 = "지금 살 수 있는 것 중 가장 싼 업그레이드"를 반복.
@@ -125,6 +126,12 @@ int _endgameDays = 0;
 /// `--abyss-weeks=N` — 극한을 깬 뒤 심연을 N 주 오른다(주마다 1층부터, docs/design_abyss.md).
 /// 한 주의 도달 층 = min(전력의 벽, 시간의 벽). 주 사이에는 성장이 이어진다.
 int _abyssWeeks = 0;
+
+/// `--train-pet=X` — 훈련소가 펫 기여에 얹는 몫(곤충 3마리 평균, 예: 0.25 = +25%).
+/// 게임은 펫 기여 × (1 + 훈련 단계 합 × `training.petScale`)이다(core_save `trainPetMult`).
+/// 90일 표는 훈련을 모른다(가정 곡선 밖) — 심연 상위권이 몇 층 더 가는지 보려고 둔다(2026-09-30).
+/// 기본 0 = 훈련 없음(표를 뽑은 조건).
+double _trainPet = 0;
 
 /// 유저가 보스전을 붙잡고 있을 수 있는 최대 시간(초). 이보다 오래 걸리면 안 누른다고 본다.
 const _bossPatienceSeconds = 240.0;
@@ -1156,7 +1163,8 @@ class _Player {
   double get _petFill => _targets.curveAt('petFillByDay', elapsedDays);
 
   /// 펫 공격 배율 — 최고치 배율까지 채움만큼.
-  double get petAttackMult => 1 + (_ceilPets.petAttackMult - 1) * _petFill;
+  double get petAttackMult =>
+      1 + (_ceilPets.petAttackMult - 1) * _petFill * (1 + _trainPet);
 
   int get dexConquered =>
       (_ceilingData.speciesCount *
@@ -2428,6 +2436,11 @@ _Opts _parseArgs(List<String> args) {
     final egd = RegExp(r'^--endgame-days=(.+)$').firstMatch(a);
     if (egd != null) {
       _endgameDays = int.parse(egd.group(1)!);
+      continue;
+    }
+    final tp = RegExp(r'^--train-pet=(.+)$').firstMatch(a);
+    if (tp != null) {
+      _trainPet = double.parse(tp.group(1)!);
       continue;
     }
     final abw = RegExp(r'^--abyss-weeks=(.+)$').firstMatch(a);

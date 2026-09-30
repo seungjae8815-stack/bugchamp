@@ -1291,6 +1291,23 @@ void main() {
       expect(r.save!.materialCount(MaterialKind.jelly), greaterThan(0));
     });
 
+    test('합성으로 올린 5성은 분해해도 젤리가 없다(획득 시점 포텐셜 기준, 2026-09-30)', () {
+      final min = cfg.pet.disassembleJellyMinPotential;
+      final synth = egg('e').copyWith(potential: min, synthUps: 1);
+      final s = SaveGame.initial(createdAt: t0).copyWith(bugs: [synth]);
+      final r = actions.disassembleBug(s, 'e', petConfig: cfg.pet);
+      expect(r.isOk, isTrue);
+      expect(r.save!.materialCount(MaterialKind.jelly), 0);
+      // 합성 기록이 없는 옛 5성은 그대로 젤리(사장님 확정).
+      final legacy = egg('e').copyWith(potential: min);
+      final r2 = actions.disassembleBug(
+        SaveGame.initial(createdAt: t0).copyWith(bugs: [legacy]),
+        'e',
+        petConfig: cfg.pet,
+      );
+      expect(r2.save!.materialCount(MaterialKind.jelly), greaterThan(0));
+    });
+
     test('문턱 미만은 분해해도 젤리가 없다 — 재료만', () {
       final low = egg(
         'e',
@@ -2459,6 +2476,55 @@ void main() {
       expect(clean.passActive(t0), isFalse);
     });
   });
+
+  test('옛 결투 경로 점수는 새 체계로 — 이기면 +1, 지면 0(2026-09-30)', () {
+    final before = SaveGame.initial(createdAt: t0).copyWith(pvpTrophies: 40);
+    final won = before.copyWith(pvpTrophies: 59, seasonPeakTrophies: 59);
+    final lost = before.copyWith(pvpTrophies: 28);
+    expect(GameActions.legacyDuelScore(before, won).pvpTrophies, 41);
+    expect(GameActions.legacyDuelScore(before, won).seasonPeakTrophies, 41);
+    expect(GameActions.legacyDuelScore(before, lost).pvpTrophies, 40);
+  });
+
+  group('깜짝선물 2배 횟수 병합(2026-09-30 — 첫 2배 젤리 반복 지급)', () {
+    final today = dailyDateKey(t0);
+    SaveGame base() =>
+        SaveGame.initial(createdAt: t0.subtract(const Duration(minutes: 1)));
+
+    test('기기가 쓴 오늘 횟수가 서버에 남는다(서버 세이브 채택 뒤에도 첫 2배가 안 되살아난다)', () {
+      final stored = base();
+      final client = stored.copyWith(giftDoubleDate: today, giftDoubleCount: 1);
+      final r = actions.mergeSave(stored, client.toJson());
+      expect(r.save!.giftDoublesUsed(today), 1);
+    });
+
+    test('같은 날엔 0 을 올려도 줄지 않는다', () {
+      final stored = base().copyWith(giftDoubleDate: today, giftDoubleCount: 2);
+      final client = stored.copyWith(giftDoubleCount: 0);
+      final r = actions.mergeSave(stored, client.toJson());
+      expect(r.save!.giftDoublesUsed(today), 2);
+    });
+
+    test('미래 날짜로 바꿔 되살릴 수 없고, 지난 날짜로 되돌릴 수도 없다', () {
+      final stored = base().copyWith(giftDoubleDate: today, giftDoubleCount: 2);
+      for (final d in ['2099-01-01', '2000-01-01']) {
+        final client = stored.copyWith(giftDoubleDate: d, giftDoubleCount: 0);
+        final r = actions.mergeSave(stored, client.toJson());
+        expect(r.save!.giftDoubleDate, today, reason: d);
+        expect(r.save!.giftDoublesUsed(today), 2, reason: d);
+      }
+    });
+
+    test('새 날이 되면 기기 값으로 넘어간다', () {
+      final stored = base().copyWith(
+        giftDoubleDate: '2026-07-19',
+        giftDoubleCount: 3,
+      );
+      final client = stored.copyWith(giftDoubleDate: today, giftDoubleCount: 1);
+      final r = actions.mergeSave(stored, client.toJson());
+      expect(r.save!.giftDoublesUsed(today), 1);
+    });
+  });
 }
 
 /// 수동 전투 **중도 이탈 치트** 방지 — 시작할 때 패배분을 먼저 깎고,
@@ -2692,6 +2758,22 @@ void _forfeitTests(GameActions actions, SaveGame base) {
       // 이번 시즌만 뛰었다 — 지난 시즌은 쉰 것(점수 결산은 없다).
       final now = base().copyWith(pvpScoreSeason: '2026-07-20');
       expect(a.pvpLeagueDue(now)!.played, isNull);
+    });
+
+    test('여러 주를 쉬어도 옛 시즌 순위 젤리를 다시 주지 않는다(2026-09-30 점검)', () {
+      // 07-06 시즌에 뛰고, 07-13 시즌이 끝난 뒤 결산됐다(기록 = 마지막으로 끝난 시즌 07-13).
+      final stale = base().copyWith(
+        pvpScoreSeason: '2026-07-06',
+        pvpRankRewardSeason: '2026-07-13',
+      );
+      // 한 주 더 지나 07-20 시즌이 끝났다 — 쉰 주의 강등만 있고 07-06 보상은 없다.
+      final later = GameActions(
+        config: _RankConfig(),
+        now: () => DateTime.utc(2026, 7, 28, 1),
+      );
+      final due = later.pvpLeagueDue(stale)!;
+      expect(due.played, isNull);
+      expect(due.lastEnded, '2026-07-20');
     });
 
     test('정산 기간(일 09시~월 09시) — 이번 시즌을 바로 결산하고, 점수는 더 받지 않는다', () {

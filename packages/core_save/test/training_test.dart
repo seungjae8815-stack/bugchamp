@@ -52,9 +52,9 @@ void main() {
     expect(trainCapOf(b, sp, TrainStat.attack, cfg), 17);
     // 호전적은 방어 −2 → 6+5−2 = 9
     expect(trainCapOf(b, sp, TrainStat.defense, cfg), 9);
-    // 1성 우직: 방어 6+1+3 = 10 · 회피 6+1−2 = 5
+    // 1성 우직: 방어 6+1+4 = 11(2026-09-30 우직 방어 +3→+4) · 회피 6+1−2 = 5
     final s = bug(t: Temperament.steadfast, potential: 1);
-    expect(trainCapOf(s, sp, TrainStat.defense, cfg), 10);
+    expect(trainCapOf(s, sp, TrainStat.defense, cfg), 11);
     expect(trainCapOf(s, sp, TrainStat.evade, cfg), 5);
   });
 

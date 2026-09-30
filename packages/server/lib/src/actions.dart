@@ -165,10 +165,10 @@ class GameActions {
     // 이 플래그를 서버가 쥐고 있어야 앱이 옛 이름을 다시 올려도 요구가 남는다.
     'renameRequired',
     'ownedSkins',
-    // 깜짝선물 무료 2배 횟수. 서버가 판정하고 세므로 서버가 소유해야 한다 —
-    // 앱이 0 을 올려 하루 상한을 되돌리는 길을 막는다.
-    'giftDoubleDate',
-    'giftDoubleCount',
+    // ⚠️ 깜짝선물 2배 횟수(`giftDoubleDate/Count`)는 여기 두면 안 된다(2026-09-30).
+    // 수령은 기기가 처리하는데 서버가 소유하면 서버 값이 영원히 0 이라, 서버 세이브를
+    // 채택할 때마다 "오늘 첫 2배 젤리"가 되살아났다. 대신 줄어들 수 없게 병합한다
+    // ([_mergeGiftDoubles]).
     // ⚠️ `incubatorCapacity` 는 여기 두면 안 된다. 부화기 슬롯은 IAP 뿐 아니라
     // **젤리로도 산다**(`expandIncubator`). 서버가 소유하면 젤리는 빠지고
     // 슬롯은 업로드 때 되돌아가, 앱을 껐다 켜면 산 게 사라진다(2026-08 버그).
@@ -202,7 +202,117 @@ class GameActions {
     // 심연 주간 순위(2026-09-28). 결투 순위와 같은 이유.
     'abyssScoreWeek',
     'abyssRewardWeek',
+    // 심연 층 시간 예산 기준(2026-09-30). 지우면 예산이 다시 차서 층 상한이 풀린다.
+    'abyssFloorAt',
   };
+
+  /// 옛 결투 경로(`/battle`·`/battle/manual/*`, 1.0.13 이하 앱)의 점수를 **새 체계**로 자른다.
+  ///
+  /// 옛 트로피 규칙은 한 판에 +19 까지 줘서, 새 앱(상대에 따라 1~5점, 지면 0점)과 같은
+  /// 순위표에서 3~4배 빨랐다(2026-09-30 점검). 경로를 닫으면 iOS 심사가 늦을 때 구버전
+  /// 유저가 결투를 아예 못 하므로 열어 두되, 이기면 +1(새 체계의 야생 상대와 같은 값)·
+  /// 지면 0 으로 맞춘다.
+  static SaveGame legacyDuelScore(SaveGame before, SaveGame after) {
+    final base = before.pvpTrophies;
+    final t = after.pvpTrophies.clamp(base, base + 1);
+    if (t == after.pvpTrophies) return after;
+    return after.copyWith(
+      pvpTrophies: t,
+      seasonPeakTrophies: max(before.seasonPeakTrophies, t),
+    );
+  }
+
+  /// 깜짝선물 2배 횟수 병합 — **같은 날엔 줄지 않고**, 날짜는 저장본보다 뒤이면서
+  /// 서버의 오늘을 넘지 않을 때만 넘어간다. 0 을 올리거나 날짜를 바꿔 하루 상한·첫 2배 젤리를
+  /// 되살리는 길을 막는다.
+  static void _mergeGiftDoubles(
+    SaveGame stored,
+    Map<String, dynamic> merged,
+    DateTime now,
+  ) {
+    final today = dailyDateKey(now);
+    final sDate = stored.giftDoubleDate;
+    final sCount = stored.giftDoubleCount;
+    final cDate = merged['giftDoubleDate'] as String?;
+    final cCount = (merged['giftDoubleCount'] as num?)?.toInt() ?? 0;
+    String? date;
+    int count;
+    if (cDate != null && cDate == sDate) {
+      date = sDate;
+      count = max(cCount, sCount);
+    } else if (cDate != null &&
+        cDate.compareTo(today) <= 0 &&
+        (sDate == null || cDate.compareTo(sDate) > 0)) {
+      date = cDate;
+      count = cCount;
+    } else {
+      date = sDate;
+      count = sCount;
+    }
+    if (date == null) {
+      merged.remove('giftDoubleDate');
+      merged.remove('giftDoubleCount');
+    } else {
+      merged['giftDoubleDate'] = date;
+      merged['giftDoubleCount'] = count;
+    }
+  }
+
+  /// 세이브 기능 수준(`feat`)별로 **그 수준에서 새로 생긴, 기기가 쓰는 필드**.
+  /// 서버 소유 필드는 [_serverOwnedKeys] 가 따로 지킨다.
+  static const _fieldsSinceFeat = {
+    14: [
+      'duelTraining',
+      'trainingJob',
+      'pvpDefenseIds',
+      'abyssUnlocked',
+      'inAbyss',
+      'abyssFloor',
+      'abyssWeek',
+      'abyssBest',
+      'abyssBossBest',
+    ],
+  };
+
+  /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
+  static Map<String, dynamic> _keepFieldsOldAppDoesNotKnow(
+    SaveGame stored,
+    Map<String, dynamic> incoming,
+  ) {
+    final feat = (incoming['feat'] as num?)?.toInt() ?? 0;
+    if (feat >= kSaveFeatureLevel) return incoming;
+    final storedJson = stored.toJson();
+    final out = Map<String, dynamic>.from(incoming);
+    // 곤충의 합성 단계(`su`, 1.0.14) — 구버전 앱은 모르고 떨어뜨린다. 같은 곤충이면 저장본 값을 되돌린다
+    // (안 되돌리면 합성 5성이 다시 젤리가 된다).
+    if (feat < 14) {
+      final su = {
+        for (final b in stored.bugs)
+          if (b.synthUps > 0) b.id: b.synthUps,
+      };
+      final list = incoming['bugs'];
+      if (su.isNotEmpty && list is List) {
+        out['bugs'] = [
+          for (final b in list)
+            if (b is Map && su.containsKey(b['id']) && b['su'] == null)
+              (Map<String, dynamic>.from(b)..['su'] = su[b['id']])
+            else
+              b,
+        ];
+      }
+    }
+    for (final e in _fieldsSinceFeat.entries) {
+      if (feat >= e.key) continue;
+      for (final k in e.value) {
+        if (storedJson.containsKey(k)) {
+          out[k] = storedJson[k];
+        } else {
+          out.remove(k);
+        }
+      }
+    }
+    return out;
+  }
 
   /// 한 번의 업로드에 실릴 수 있는 화석 조각의 **정상 최대치**.
   ///
@@ -230,7 +340,11 @@ class GameActions {
 
   /// 젤리(프리미엄 재화) 급증 상한의 바닥. 솔로 획득(선물·분해)은 소량이라
   /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
-  static const _jellySanityFloor = 1000;
+  ///
+  /// 1000 → 300(2026-09-30 점검): 업로드는 60초마다라 1000 이면 편집으로 하루 144만까지 통과했다.
+  /// 기기에서 한꺼번에 들어오는 큰 젤리는 도감·보스 마일스톤뿐이라 그건 [_dexJellyAllowance] 로
+  /// 따로 인정한다(결제·순위·대회·우편 젤리는 서버가 저장본에 먼저 넣어 증가분에 안 잡힌다).
+  static const _jellySanityFloor = 300;
 
   /// 일반 재료(키틴·미네랄·수액) **업로드 1회당** 증가 상한.
   ///
@@ -385,6 +499,34 @@ class GameActions {
   /// 실려 올라온다. 마지막 마일스톤은 화석 2,000, 도감을 늦게 열어 몇 개를
   /// 한꺼번에 받으면 오프라인 정산 상한(`_maxFossilGain`)을 넘겨 **정상 유저의
   /// 보상이 잘린다**. 저장본에 없던 마일스톤만, 모은 보스 수가 실제로 닿았을 때만.
+  /// 이번 업로드에서 새로 받은 **도감 발견·정복·보스 수집 마일스톤 젤리**의 합.
+  /// 조건은 골드·화석 허용치와 같다(새로 받았고, 올라온 세이브가 그 조건을 채운다).
+  int _dexJellyAllowance(SaveGame stored, Map<String, dynamic> clientJson) {
+    final dex = config.dex;
+    if (dex == null) return 0;
+    final claimed = ((clientJson['claimedDex'] as List?) ?? const [])
+        .map((e) => e.toString())
+        .toSet();
+    if (claimed.isEmpty) return 0;
+    final client = SaveGame.fromJson(clientJson);
+    final bosses = collectedBosses(client, config.run, config.roadmap).length;
+    var sum = 0;
+    for (final (list, have) in [
+      (dex.discoverMilestones, client.dexDiscovered),
+      (dex.conquerMilestones, client.dexConqueredWith(dex.conquerLevel)),
+      (dex.bossMilestones, bosses),
+    ]) {
+      for (final m in list) {
+        if (claimed.contains(m.id) &&
+            !stored.claimedDex.contains(m.id) &&
+            have >= m.count) {
+          sum += m.jelly;
+        }
+      }
+    }
+    return sum;
+  }
+
   int _dexFossilAllowance(SaveGame stored, Map<String, dynamic> clientJson) {
     final dex = config.dex;
     if (dex == null || dex.bossMilestones.isEmpty) return 0;
@@ -566,7 +708,10 @@ class GameActions {
   ///     랭킹·결제 상태를 위조하지 못하게.
   ///  2. 골드가 **말도 안 되게** 뛰면(1→10억) 상식 상한으로 자른다.
   /// PvP 전투·결제의 실제 지급은 별도 서버 액션이 확정한다.
-  ActionResult mergeSave(SaveGame stored, Map<String, dynamic> clientJson) {
+  ActionResult mergeSave(SaveGame stored, Map<String, dynamic> incomingJson) {
+    // 구버전 앱(1.0.13 이하)은 1.0.14 필드를 모른다 — 키 없이 올리면 기본값이 저장본을 덮어
+    // 훈련소 기록·이번 주 심연 층이 사라졌다. 그 필드만 저장본 값으로 채워 넣고 진행한다.
+    final clientJson = _keepFieldsOldAppDoesNotKnow(stored, incomingJson);
     final t = now().toUtc();
     var elapsed = t.difference(stored.lastSeen);
     if (elapsed.isNegative) elapsed = Duration.zero;
@@ -637,6 +782,7 @@ class GameActions {
         merged.remove(k);
       }
     }
+    _mergeGiftDoubles(stored, merged, t);
     // **줄어들 수 없는 기록**은 저장본과 합친다(2026-09-15). 이 필드를 모르는
     // 구버전 앱은 키 없이 올리고, 그러면 기본값(0·빈 집합)이 저장본을 덮어
     // 다른 기기에서 가 본 최고 난이도·도감 보스 수집이 사라진다.
@@ -667,8 +813,10 @@ class GameActions {
           (mats['jelly'] as num?)?.toInt() ??
           stored.materialCount(MaterialKind.jelly);
       final storedJelly = stored.materialCount(MaterialKind.jelly);
-      if (clientJelly - storedJelly > _jellySanityFloor) {
-        mats['jelly'] = storedJelly + _jellySanityFloor;
+      final jellyAllow =
+          _jellySanityFloor + _dexJellyAllowance(stored, clientJson);
+      if (clientJelly - storedJelly > jellyAllow) {
+        mats['jelly'] = storedJelly + jellyAllow;
         clampReasons.add('jelly');
       }
 
@@ -710,6 +858,11 @@ class GameActions {
     merged['abyssBest'] = abyss.best;
     merged['abyssBossBest'] = abyss.bossBest;
     if (abyss.week != null) merged['abyssWeek'] = abyss.week;
+    if (abyss.floorAt != null) {
+      merged['abyssFloorAt'] = abyss.floorAt!.toIso8601String();
+    } else {
+      merged.remove('abyssFloorAt');
+    }
     if (abyss.clamped) clampReasons.add('abyss');
 
     final SaveGame parsed;
@@ -1133,9 +1286,13 @@ class GameActions {
     required PetConfig petConfig,
     EnhanceConfig? enhance,
     bool allowInjured = false,
+    int? teamSize,
   }) {
     final p = duelParams;
-    if (bugIds.length != p.bestOf) return (team: const [], error: 'team_size');
+    // 결투는 3마리(bestOf), 왕충 선발대회는 1마리(teamSize: 1).
+    if (bugIds.length != (teamSize ?? p.bestOf)) {
+      return (team: const [], error: 'team_size');
+    }
     if (bugIds.toSet().length != bugIds.length) {
       return (team: const [], error: 'duplicate_bug');
     }
@@ -1181,7 +1338,11 @@ class GameActions {
               atkMult: t.atkMult,
               defMult: t.defMult,
               hpMult: t.hpMult,
-              evade: t.evade,
+              // 날개 강화 회피(+0.3%p/Lv) + 훈련소 회피.
+              evade:
+                  t.evade +
+                  bug.enhancement.levelOf(BugPart.wing) *
+                      (enhance?.spec(BugPart.wing).evadePerLevel ?? 0),
               crit: t.crit,
               recovery: t.recovery,
             );
@@ -2318,7 +2479,8 @@ class GameActions {
     // 앱과 **같은 규칙**: 재료는 항상, 젤리는 문턱(포텐셜)을 넘는 개체만.
     // 곤충은 무한히 나오므로 분해에 젤리를 무제한으로 붙이면 프리미엄 재화가
     // 파밍으로 뽑힌다(§2.6). 규칙이 두 벌이면 "앱에선 젤리를 줬는데 서버가 안 준다"가 된다.
-    final reward = petConfig.disassembleJelly(bug.potential);
+    // 획득 시점 포텐셜 기준(합성으로 올린 몫은 젤리가 없다, 2026-09-30).
+    final reward = petConfig.disassembleJelly(bug.bornPotential);
     final grade = config.speciesList
         .where((s) => s.id == bug.speciesId)
         .map((s) => s.grade)
@@ -2557,6 +2719,7 @@ class GameActions {
     int bossBest,
     String? week,
     bool clamped,
+    DateTime? floorAt,
   })
   _enforceAbyss(
     SaveGame stored,
@@ -2585,7 +2748,18 @@ class GameActions {
         ? stored.abyssFloor
         : 1;
     final perFloor = cfg.minSecondsPerFloor <= 0 ? 1.0 : cfg.minSecondsPerFloor;
-    final maxFloor = base + (elapsed.inMilliseconds / 1000 / perFloor).ceil();
+    // 시간 예산은 서버가 기억하는 기준 시각(`abyssFloorAt`)부터 잰다 — 층을 인정할 때마다
+    // 층 수 × perFloor 만큼만 앞으로 민다(남은 몫은 다음 업로드로 이월). 업로드마다 경과를
+    // **올림**으로 재면 잘게 쪼개 올릴수록 층이 공짜로 늘었다(1초 × 300번 = 305층).
+    final sameWeek = week != null && week == stored.abyssWeek;
+    final anchor = sameWeek && stored.abyssFloorAt != null
+        ? stored.abyssFloorAt!
+        : t.subtract(elapsed);
+    // 한 층의 여유(+1)는 둔다 — 층을 막 깬 직후 업로드가 경계에 걸려 정상 유저가 잘리지 않게.
+    // 여유를 쓰면 기준 시각이 지금보다 뒤로 밀려 예산이 음수가 되므로, 쪼개 올려도 총 1층
+    // 이상 앞설 수 없다.
+    final budgetSec = t.difference(anchor).inMilliseconds / 1000;
+    final int maxFloor = base + max(0, (budgetSec / perFloor).floor() + 1);
     final clientFloor = (clientJson['abyssFloor'] as num?)?.toInt() ?? 1;
     var floor = clientFloor < 1 ? 1 : clientFloor;
     var clamped = false;
@@ -2593,6 +2767,10 @@ class GameActions {
       floor = maxFloor;
       clamped = true;
     }
+    final gained = floor > base ? floor - base : 0;
+    final floorAt = anchor.add(
+      Duration(milliseconds: (gained * perFloor * 1000).round()),
+    );
     final clientBest = (clientJson['abyssBest'] as num?)?.toInt() ?? 0;
     final best = max(stored.abyssBest, min(clientBest, floor - 1));
     if (clientBest > best) clamped = true;
@@ -2610,6 +2788,7 @@ class GameActions {
       bossBest: bossBest,
       week: week,
       clamped: clamped,
+      floorAt: week == null ? null : floorAt,
     );
   }
 
@@ -2737,7 +2916,14 @@ class GameActions {
     final played = save.pvpScoreSeason;
     if (played == null || played.isEmpty) return null;
     final open = played == current && !seasonClosed(t, cfg);
-    final pending = !open && played != save.pvpRankRewardSeason ? played : null;
+    // ⚠️ 결산 기록에는 "마지막으로 끝난 시즌"을 적는다 — `played != 기록` 으로 비교하면 두 주 이상
+    // 쉰 유저에게 옛 시즌 순위 젤리가 매주 다시 나갔다(2026-09-30 점검). 시즌 id 는 날짜라 크기로
+    // 비교해 **기록보다 뒤에 점수를 낸 시즌**만 결산한다.
+    final settledUpTo = save.pvpRankRewardSeason;
+    final pending =
+        !open && (settledUpTo == null || played.compareTo(settledUpTo) > 0)
+        ? played
+        : null;
     return (played: pending, lastEnded: lastEnded);
   }
 
@@ -3089,6 +3275,10 @@ class GameActions {
     required List<String> teamIds,
     required Map<String, Species> speciesById,
   }) {
+    // 2회차부터 곤충 1마리 · 결투 엔진(eventDuelStart). 구버전 앱이 옛 규칙으로 뛰지 못하게 닫는다.
+    if (config.event?.duelMode ?? false) {
+      return const ActionResult.fail('event_update', status: 426);
+    }
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
     final t = now().toUtc();
@@ -3202,6 +3392,337 @@ class GameActions {
     );
   }
 
+  // ── 왕충 선발대회: 곤충 1마리 · 결투 엔진 웨이브전(2026-09-29 사장님 확정, 2회차부터) ──────────
+  //
+  // 규칙은 core_battle `event_duel.dart` 한 곳(앱 재생·개발자 체험과 같은 함수). 서버는 세션에
+  // 진행 상태(EventDuelRun)를 들고 판마다 확정한다 — 결투 `/duel/throw` 와 같은 구조.
+  // 출전 피로 대신 **결투 부상**: 시작할 때 미리 건다(도중에 앱을 꺼서 피하지 못하게).
+
+  /// 대회 웨이브 설정(`event.json → duelWave`).
+  EventDuelSpec get eventDuelSpec =>
+      EventDuelSpec.fromJson(config.event?.duelWaveJson);
+
+  /// 웨이브 [wave] 의 적 — 모습(종)은 회차 seed 로 고른다(앱과 같은 순서: 종 id 정렬).
+  DuelBug eventDuelEnemyOf(
+    int roundSeed,
+    int wave,
+    Map<String, Species> speciesById,
+  ) {
+    final ids = speciesById.keys.toList()..sort();
+    final spId = eventWaveSpeciesId(roundSeed, wave, 0, ids) ?? '';
+    return eventDuelEnemy(
+      roundSeed: roundSeed,
+      wave: wave,
+      spec: eventDuelSpec,
+      speciesId: spId,
+      specialty: speciesById[spId]?.specialty ?? Specialty.strike,
+    );
+  }
+
+  /// 대회 도전 시작 — 곤충 1마리. 참가권 −1 · 그 곤충 부상(등급별) · 세션 생성.
+  ///
+  /// 거부: `event_closed` · `no_ticket` · 편성 검증 사유(`bug_not_owned` · `bug_injured` ·
+  /// `not_adult` · `bug_training` · `bug_forged:*` …).
+  ActionResult eventDuelStart(
+    SaveGame save, {
+    required String bugId,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    final cfg = config.event;
+    if (cfg == null || !cfg.duelMode) {
+      return const ActionResult.fail('event_closed');
+    }
+    final t = now().toUtc();
+    if (!cfg.isOpen(t)) return const ActionResult.fail('event_closed');
+    final v = validateDuelTeam(
+      save,
+      [bugId],
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+      teamSize: 1,
+    );
+    if (v.error != null) return ActionResult.fail(v.error!);
+    // 대회 부상은 서버 소유(`eventFatigue` 를 대회 부상 기록으로 다시 쓴다). `injured` 는 앱이
+    // 젤리로 지우는 필드라 세이브를 고치면 최강 곤충으로 계속 도전할 수 있었다(2026-09-30 점검).
+    if (save.eventOnFatigue(bugId, t)) {
+      return const ActionResult.fail('bug_injured');
+    }
+    final cur = eventTicketsNow(save);
+    if (cur.tickets <= 0) return const ActionResult.fail('no_ticket');
+
+    final bug = save.bugs.firstWhere((b) => b.id == bugId);
+    final grade = speciesById[bug.speciesId]!.grade;
+    final until = t.add(Duration(seconds: petConfig.injuryDuration(grade)));
+    final injured = Map<String, DateTime>.from(save.injured)..[bugId] = until;
+    final eventInjured = save.prunedEventFatigue(t)..[bugId] = until;
+    final roundId = cfg.roundIdAt(t);
+    final roundSeed = EventConfig.roundSeedOf(roundId);
+    // ⚠️ 추측 불가능한 난수 — 시각(마이크로초)으로 만들면 응답의 부상 시각에서 그대로 복원돼
+    // 게이지 결과를 미리 볼 수 있었다(2026-09-30 점검).
+    final seed = (rngFactory ?? Random.secure)().nextInt(0x7fffffff);
+    const run = EventDuelRun();
+    // 회차가 바뀌면 최고 기록을 비운다 — 안 비우면 1회차 점수(옛 단위 1,200만)가 남아
+    // 2회차 점수(수만)가 영영 "최고 기록 아님"이 되어 순위표에 안 올라간다.
+    final newRound = save.eventRoundId != roundId;
+    final out = save.copyWith(
+      eventTickets: cur.tickets - 1,
+      eventTicketsAt: cur.at,
+      eventRoundId: roundId,
+      eventBestScore: newRound ? 0 : save.eventBestScore,
+      eventBestWave: newRound ? 0 : save.eventBestWave,
+      injured: injured,
+      eventFatigue: eventInjured,
+    );
+    return ActionResult.ok(
+      out,
+      extra: {
+        'roundId': roundId,
+        'roundSeed': roundSeed,
+        'bug': v.team.first.toJson(),
+        'run': run.toJson(),
+        'tickets': cur.tickets - 1,
+        'session': {
+          'roundId': roundId,
+          'roundSeed': roundSeed,
+          'seed': seed,
+          'bugId': bugId,
+          'run': run.toJson(),
+          'cards': const <String>[],
+          'done': false,
+        },
+      },
+    );
+  }
+
+  /// 대회 한 판 — 카드가 걸려 있으면 [cardId] 를 먼저 적용하고, 지금 웨이브를 [launch] 로 싸운다.
+  /// 끝나면 점수를 확정한다(`done`·`score`·`isBest`).
+  ///
+  /// 거부: `session_done` · `card_required` · `bad_card` · 편성 사유(곤충이 사라졌으면 `bug_not_owned`).
+  ActionResult eventDuelThrow(
+    SaveGame save, {
+    required Map<String, dynamic> session,
+    required double launch,
+    String? cardId,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    final cfg = config.event;
+    if (cfg == null) return const ActionResult.fail('event_closed');
+    if (session['done'] == true) return const ActionResult.fail('session_done');
+    // 지난 회차(또는 기간 밖)에 연 판은 더 싸우지 못한다 — 그만하기로만 닫는다(기록 없음).
+    if (!_eventSessionLive(session)) {
+      return const ActionResult.fail('event_closed');
+    }
+    final spec = eventDuelSpec;
+    final roundSeed = (session['roundSeed'] as num).toInt();
+    var run = EventDuelRun.fromJson(
+      Map<String, dynamic>.from(session['run'] as Map),
+    );
+    final offered = [
+      for (final c in (session['cards'] as List? ?? const [])) '$c',
+    ];
+    if (offered.isNotEmpty) {
+      if (cardId == null || cardId.isEmpty) {
+        return const ActionResult.fail('card_required');
+      }
+      if (!offered.contains(cardId)) return const ActionResult.fail('bad_card');
+      final card = cfg.cardById(cardId);
+      if (card == null) return const ActionResult.fail('bad_card');
+      run = run.applyCard(card.kind, card.value, spec);
+    }
+    final bugId = '${session['bugId']}';
+    final v = validateDuelTeam(
+      save,
+      [bugId],
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+      allowInjured: true,
+      teamSize: 1,
+    );
+    if (v.error != null) return ActionResult.fail(v.error!);
+
+    DuelBout? bout;
+    var won = false;
+    // 건너뛰기 카드로 상한에 닿았으면 싸우지 않고 끝.
+    if (!run.over) {
+      final step = eventDuelFight(
+        seed: (session['seed'] as num).toInt(),
+        run: run,
+        bug: v.team.first,
+        enemy: eventDuelEnemyOf(roundSeed, run.wave, speciesById),
+        params: duelParams,
+        spec: spec,
+        launch: launch.clamp(0.0, 1.0),
+      );
+      run = step.run;
+      bout = step.bout;
+      won = step.won;
+    }
+    final done = run.over;
+    final cards = !done && won
+        ? cfg.drawCards(roundSeed, run.cleared)
+        : const <EventCard>[];
+    final fin = _eventDuelFinish(
+      save,
+      session,
+      run,
+      speciesById: speciesById,
+      petConfig: petConfig,
+    );
+    final score = fin.score;
+    final isBest = fin.isBest;
+    final out = fin.save;
+    return ActionResult.ok(
+      out,
+      extra: {
+        'bout': bout?.toJson(),
+        'won': won,
+        'run': run.toJson(),
+        'cleared': run.cleared,
+        'cards': [
+          for (final c in cards) {'id': c.id, 'kind': c.kind, 'value': c.value},
+        ],
+        'done': done,
+        'score': score,
+        'isBest': isBest,
+        'session': {
+          ...session,
+          'run': run.toJson(),
+          'cards': [for (final c in cards) c.id],
+          'done': done,
+        },
+      },
+    );
+  }
+
+  /// 끝난 판의 점수·최고 기록·부상. 끝나지 않았으면 점수만 계산하고 세이브는 그대로.
+  ///
+  /// 부상 = 등급별 최대 × `injuryRatio(끝 체력)` — **지금부터** 잰다(시작할 때 건 최대 부상을
+  /// 대신한다). 그만두면 체력이 남아 덜 쉬고, 바닥나서 끝나면 최대.
+  ({SaveGame save, int score, bool isBest}) _eventDuelFinish(
+    SaveGame save,
+    Map<String, dynamic> session,
+    EventDuelRun run, {
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+  }) {
+    final cfg = config.event!;
+    final score = cfg.score(
+      clearedWaves: run.cleared,
+      hpPct: run.hpAtEntry,
+      survivors: 0,
+      totalRounds: run.ticks ~/ duelParams.tickHz,
+    );
+    if (!run.over) return (save: save, score: score, isBest: false);
+    final roundId = '${session['roundId']}';
+    final prevBest = save.eventBestScoreIn(roundId);
+    // 지난 회차에 연 판을 이번 회차에 끝내면 이번 회차 기록으로 들어갔다(회차 끝 직전에 판을
+    // 여러 개 열어 두면 다음 회차 도전이 늘어난다). 판을 연 회차가 지금 회차이고 그 유저가
+    // 뛰는 회차일 때만 최고 기록을 고친다. 부상은 그대로 건다.
+    final isBest =
+        _eventSessionLive(session) &&
+        save.eventRoundId == roundId &&
+        score > prevBest;
+    final bugId = '${session['bugId']}';
+    final bug = save.bugs.where((b) => b.id == bugId).firstOrNull;
+    final grade = speciesById[bug?.speciesId]?.grade;
+    final t = now().toUtc();
+    final injured = Map<String, DateTime>.from(save.injured);
+    final eventInjured = save.prunedEventFatigue(t);
+    if (grade != null) {
+      final full = petConfig.injuryDuration(grade);
+      final sec = (full * eventDuelSpec.injuryRatio(run.hpPct)).round();
+      final until = t.add(Duration(seconds: sec));
+      injured[bugId] = until;
+      eventInjured[bugId] = until;
+    }
+    return (
+      save: save.copyWith(
+        eventBestWave: isBest ? run.cleared : save.eventBestWave,
+        eventBestScore: isBest ? score : save.eventBestScore,
+        injured: injured,
+        eventFatigue: eventInjured,
+      ),
+      score: score,
+      isBest: isBest,
+    );
+  }
+
+  /// 대회 부상 **젤리 즉시 회복**(§2.7 예외 — 참가권 하루 상한은 그대로라 시간만 산다).
+  ///
+  /// 대회 부상은 서버 소유(`eventFatigue`)라 앱이 지울 수 없다 — 젤리도 서버가 깎는다.
+  /// 결투 부상(`injured`)도 함께 지운다. 거부: `not_injured` · `no_jelly`.
+  ActionResult eventHealJelly(
+    SaveGame save, {
+    required String bugId,
+    required PetConfig petConfig,
+  }) {
+    final t = now().toUtc();
+    final until = save.eventFatigue[bugId];
+    if (until == null || !t.isBefore(until)) {
+      return const ActionResult.fail('not_injured');
+    }
+    final cost = petConfig.injuryJelly(until.difference(t));
+    final have = save.materialCount(MaterialKind.jelly);
+    if (have < cost) return const ActionResult.fail('no_jelly');
+    final mats = Map<MaterialKind, int>.from(save.materials)
+      ..[MaterialKind.jelly] = have - cost;
+    return ActionResult.ok(
+      save.copyWith(
+        materials: mats,
+        injured: Map<String, DateTime>.from(save.injured)..remove(bugId),
+        eventFatigue: save.prunedEventFatigue(t)..remove(bugId),
+      ),
+      extra: {'jelly': cost},
+    );
+  }
+
+  /// [session] 이 지금 열려 있는 회차에서 연 판인가.
+  bool _eventSessionLive(Map<String, dynamic> session) =>
+      eventOpen && '${session['roundId']}' == eventRoundId();
+
+  /// 대회 **그만하기** — 지금까지의 기록으로 확정한다. 부상은 남은 체력만큼 줄어든다.
+  ActionResult eventDuelQuit(
+    SaveGame save, {
+    required Map<String, dynamic> session,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+  }) {
+    if (config.event == null) return const ActionResult.fail('event_closed');
+    if (session['done'] == true) return const ActionResult.fail('session_done');
+    final run = EventDuelRun.fromJson(
+      Map<String, dynamic>.from(session['run'] as Map),
+    ).quit();
+    final fin = _eventDuelFinish(
+      save,
+      session,
+      run,
+      speciesById: speciesById,
+      petConfig: petConfig,
+    );
+    return ActionResult.ok(
+      fin.save,
+      extra: {
+        'run': run.toJson(),
+        'cleared': run.cleared,
+        'done': true,
+        'score': fin.score,
+        'isBest': fin.isBest,
+        'session': {
+          ...session,
+          'run': run.toJson(),
+          'cards': const <String>[],
+          'done': true,
+        },
+      },
+    );
+  }
+
   /// **카드를 고르고 다음 웨이브로.** 판이 끝나면 점수를 확정한다.
   ///
   /// [cardId] 가 이번 웨이브의 후보에 없으면 거부한다 — 원하는 카드를 아무거나
@@ -3218,6 +3739,10 @@ class GameActions {
     /// 미리 보여주는데 편성을 못 바꾸면 그 정보가 쓸모가 없다.
     String? leadBugId,
   }) {
+    // 2회차부터 곤충 1마리 · 결투 엔진(eventDuelStart). 구버전 앱이 옛 규칙으로 뛰지 못하게 닫는다.
+    if (config.event?.duelMode ?? false) {
+      return const ActionResult.fail('event_update', status: 426);
+    }
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
     if (session['done'] == true) return const ActionResult.fail('session_done');
@@ -3384,6 +3909,10 @@ class GameActions {
     required List<String> teamIds,
     required Map<String, Species> speciesById,
   }) {
+    // 2회차부터 곤충 1마리 · 결투 엔진(eventDuelStart). 구버전 앱이 옛 규칙으로 뛰지 못하게 닫는다.
+    if (config.event?.duelMode ?? false) {
+      return const ActionResult.fail('event_update', status: 426);
+    }
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
     final t = now().toUtc();

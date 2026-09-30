@@ -30,6 +30,7 @@ class IndividualBug {
     this.breakthroughEndsAt,
     this.trait = BugTrait.none,
     this.variant = BugVariant.none,
+    this.synthUps = 0,
     Element? element,
   }) : _element = element;
 
@@ -78,6 +79,14 @@ class IndividualBug {
 
   /// 이색(무지개·알비노) — 순수 외형. 스탯을 붙이지 않는 이유는 [BugVariant].
   final BugVariant variant;
+
+  /// **합성으로 오른 포텐셜 단계 수**(2026-09-30). 분해 젤리는 획득 시점 포텐셜
+  /// ([bornPotential])로 판정한다 — 합성으로 5성을 무한히 만들어 분해하면 젤리가 무한히 나왔다.
+  /// 이 필드가 생기기 전 개체는 0(= 기존 5성은 젤리 유지, 사장님 확정).
+  final int synthUps;
+
+  /// 획득 시점 포텐셜(합성으로 오른 몫을 뺀 값).
+  int get bornPotential => potential - synthUps;
 
   final Element? _element;
 
@@ -370,6 +379,7 @@ class IndividualBug {
     bool clearBreakthrough = false,
     BugTrait? trait,
     BugVariant? variant,
+    int? synthUps,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -388,6 +398,7 @@ class IndividualBug {
         : (breakthroughEndsAt ?? this.breakthroughEndsAt),
     trait: trait ?? this.trait,
     variant: variant ?? this.variant,
+    synthUps: synthUps ?? this.synthUps,
     element: element ?? this.element,
   );
 
@@ -426,6 +437,7 @@ class IndividualBug {
     variant: json['variant'] == null
         ? BugVariant.none
         : BugVariant.fromKey(json['variant'] as String),
+    synthUps: (json['su'] as num?)?.toInt() ?? 0,
     element: json['element'] == null
         ? null
         : Element.fromKeyOrNull(json['element'] as String),
@@ -450,6 +462,8 @@ class IndividualBug {
     if (trait != BugTrait.none) 'trait': trait.key,
     // 이색 아닌 개체(대다수)는 키를 싣지 않는다 — trait 와 같은 이유(§3).
     if (variant != BugVariant.none) 'variant': variant.key,
+    // 합성 안 한 개체(대다수)는 키를 싣지 않는다 — 세이브 크기(§3). 짧은 키.
+    if (synthUps > 0) 'su': synthUps,
     'element': element.key,
   };
 

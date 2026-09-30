@@ -12,6 +12,7 @@ class EnhancePartSpec {
     required this.baseCost,
     required this.costGrowth,
     required this.effectPerLevel,
+    this.evadePerLevel = 0,
   });
 
   final BugPart part;
@@ -24,6 +25,9 @@ class EnhancePartSpec {
   /// 주 효과 계수(%/Lv, 0.04 = +4%/Lv). 표시·전투 적용 공용.
   final double effectPerLevel;
 
+  /// 결투 회피(확률 +, 0.003 = +0.3%p/Lv) — 날개(2026-09-29 사장님 확정). 결투에만 들어간다.
+  final double evadePerLevel;
+
   /// 레벨 [level] → [level]+1 강화에 드는 재료 수.
   int costAt(int level) =>
       (baseCost * math.pow(costGrowth, level)).round().clamp(1, 1 << 30);
@@ -35,6 +39,7 @@ class EnhancePartSpec {
         baseCost: (json['baseCost'] as num).toDouble(),
         costGrowth: (json['costGrowth'] as num).toDouble(),
         effectPerLevel: (json['effectPerLevel'] as num).toDouble(),
+        evadePerLevel: (json['evadePerLevel'] as num?)?.toDouble() ?? 0,
       );
 }
 

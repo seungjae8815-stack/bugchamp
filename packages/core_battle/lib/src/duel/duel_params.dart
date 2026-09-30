@@ -58,13 +58,20 @@ class DuelParams {
     this.steadfastPushResist = 0.25,
     this.critChance = 0.12,
     this.critMult = 1.5,
+    this.evadeMax = 0.6,
+    this.critMax = 0.6,
     this.weakMult = 1.3,
     this.weakCos = 0.35,
     this.carryHealBase = 0.05,
+    this.lifestealMult = 0,
     this.hpGuard = 1.2,
     this.flipHpGuard = 0.75,
     this.rimHpGuard = 1.2,
     this.damageSpread = 0.5,
+    this.statCompress = 1,
+    this.launchPowerMax = 0,
+    this.leverageStatExp = 1,
+    this.leverageMassExp = 1,
   });
 
   /// 경기장 반지름. 곤충 중심이 이 밖이면 장외.
@@ -171,6 +178,11 @@ class DuelParams {
   final double critChance;
   final double critMult;
 
+  /// 회피·치명 **확률 상한**(기본 확률 + 곤충 + 대회 카드 합). 곤충만으로는 30% 안팎이라
+  /// 닿지 않지만, 대회 카드를 계속 쌓으면 회피가 100% 를 넘어 부딪힘 피해 면역이 됐다(2026-09-30 점검).
+  final double evadeMax;
+  final double critMax;
+
   /// 약점 공격 — 맞는 쪽이 **옆구리·뒤**를 보일 때 피해 배율. 맞는 쪽이 바라보는 방향과
   /// 때린 쪽 방향의 cos 이 [weakCos] 보다 작으면(약 70° 밖) 약점이다.
   final double weakMult;
@@ -179,6 +191,11 @@ class DuelParams {
   /// 승자 연속(2026-09-29): 이긴 곤충은 **남은 체력 그대로** 다음 상대를 맞는다.
   /// 판 사이 회복 = 최대 체력 × ([carryHealBase] + 곤충의 `recovery`).
   final double carryHealBase;
+
+  /// 흡혈 — 부딪혀 준 피해 × 곤충 `recovery` × 이 값만큼 **판 안에서** 체력을 되찾는다.
+  /// 회복력(훈련소)이 판 사이에만 쓰여 단판·대회 첫 판에선 가치가 0 이었다(2026-09-30 점검).
+  /// 0 이면 예전 엔진과 같다.
+  final double lifestealMult;
 
   /// 기세(2026-09-29) — **체력이 많이 남을수록** 밀림·뒤집기·장외에 버틴다. 가득 찬 곤충은 첫 충돌에
   /// 밀려나지 않고, 두들겨 맞아 체력이 깎일수록 마무리(장외·뒤집기)가 쉬워진다.
@@ -191,6 +208,21 @@ class DuelParams {
   /// 부딪힘 피해 흔들림 — 한 방마다 ×(1 ± damageSpread) 균등. 체력 싸움은 한 방이 늘 같으면
   /// 센 쪽이 거의 정해진 대로 이긴다(전력 +20% 가 92%) — 약한 쪽에도 운의 여지를 둔다.
   final double damageSpread;
+
+  /// 전력 차이 압축(2026-09-29 사장님 확정 A안) — 한 판 안에서 두 곤충의 공격·방어·체력 **비율**을
+  /// 이 지수로 누른다(두 값의 기하평균은 그대로). 0.6 이면 공격 +20% 가 약 +12% 로 들어간다.
+  /// 스탯이 공격·방어·체력으로 곱해져 +20% 가 86% 를 이기던 구조를 푼다. 1 = 끔.
+  final double statCompress;
+
+  /// 던지기 게이지 공격 보너스(B안) — 게이지가 자동값([launchAuto])보다 높은 만큼 그 판 공격력이
+  /// 최대 +launchPowerMax 오른다(만점 = 최대). 자동값 아래는 벌칙 없음. 0 = 끔.
+  final double launchPowerMax;
+
+  /// 밀어내기·뒤집기·던지기의 힘(C안) = ATK^[leverageStatExp] × 무게^[leverageMassExp] 대
+  /// DEF^[leverageStatExp] × 무게^[leverageMassExp]. 스탯 지수를 낮추고 무게 지수를 올리면
+  /// 장외·뒤집기가 **체구** 싸움이 된다 — 전력이 약해도 큰 곤충이 버틴다. 둘 다 1 = 예전.
+  final double leverageStatExp;
+  final double leverageMassExp;
 
   int get maxTicks => (roundSeconds * tickHz).round();
   double get dt => 1 / tickHz;
@@ -259,13 +291,20 @@ class DuelParams {
       steadfastPushResist: n('steadfastPushResist', d.steadfastPushResist),
       critChance: n('critChance', d.critChance),
       critMult: n('critMult', d.critMult),
+      evadeMax: n('evadeMax', d.evadeMax),
+      critMax: n('critMax', d.critMax),
       weakMult: n('weakMult', d.weakMult),
       weakCos: n('weakCos', d.weakCos),
       carryHealBase: n('carryHealBase', d.carryHealBase),
+      lifestealMult: n('lifestealMult', d.lifestealMult),
       hpGuard: n('hpGuard', d.hpGuard),
       flipHpGuard: n('flipHpGuard', d.flipHpGuard),
       rimHpGuard: n('rimHpGuard', d.rimHpGuard),
       damageSpread: n('damageSpread', d.damageSpread),
+      statCompress: n('statCompress', d.statCompress),
+      launchPowerMax: n('launchPowerMax', d.launchPowerMax),
+      leverageStatExp: n('leverageStatExp', d.leverageStatExp),
+      leverageMassExp: n('leverageMassExp', d.leverageMassExp),
     );
   }
 }

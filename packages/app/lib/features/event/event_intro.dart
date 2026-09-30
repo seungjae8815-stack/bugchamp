@@ -447,7 +447,12 @@ class EventIntroScreen extends ConsumerWidget {
                 l.eventFlyerRule1,
                 l.eventFlyerRule2,
                 l.eventFlyerRule3,
-                l.eventFlyerRule4,
+                if (cfg != null)
+                  l.eventFlyerRule4(
+                    cfg.ticketDailyGrant,
+                    cfg.ticketJelly,
+                    cfg.ticketAdDailyLimit * cfg.ticketAdGrant,
+                  ),
               ])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 7),

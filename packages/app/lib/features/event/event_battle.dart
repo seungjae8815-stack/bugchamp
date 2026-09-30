@@ -697,7 +697,13 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            l.eventNormalizeBody,
+            l.eventNormalizeBody(
+              (EventDuelSpec.fromJson(
+                        widget.data.eventConfig?.duelWaveJson,
+                      ).fallPenalty *
+                      100)
+                  .round(),
+            ),
             style: const TextStyle(
               color: Color(0x99FFFFFF),
               fontSize: 11,

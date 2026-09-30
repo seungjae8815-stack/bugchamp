@@ -912,7 +912,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventCardTitle(Object n) {
-    return '$nウェーブ突破！1つ選んでください';
+    return '$nウェーブ突破！\n1つ選んでください';
   }
 
   @override
@@ -958,7 +958,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cardRevive => '命の露';
 
   @override
-  String get cardReviveDesc => '倒れた虫1匹を半分の体力で復活させます';
+  String get cardReviveDesc => '体力が尽きても一度だけ、体力50%で起き上がり同じウェーブに再挑戦';
 
   @override
   String get cardSkip => '迂回路';
@@ -987,7 +987,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventFlyerHow => '参加方法';
 
   @override
-  String get eventFlyerHow1 => '成虫3匹を選んで出場';
+  String get eventFlyerHow1 => '一番育てた成虫1匹を選んで出場';
 
   @override
   String get eventFlyerHow2 => 'ウェーブ突破ごとに強化カードを1枚選択';
@@ -1000,16 +1000,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get eventFlyerRule1 =>
-      'この大会は**ステータスが平準化**されます — 種・五行・気質のみ反映され、修練・強化・サイズは適用されません';
+      '**育てたまま**戦います — ポテンシャル・部位強化・修練・訓練所がすべて反映(決闘と同じ能力値)';
 
   @override
-  String get eventFlyerRule2 => '敵の五行はウェーブごとに変わります — 一属性だけでは詰まります';
+  String get eventFlyerRule2 => '敵の五行はウェーブごとに変わります — 自分が苦手な色のウェーブが山場です';
 
   @override
-  String get eventFlyerRule3 => '出場した虫は1日休みます — 良い虫を多く揃えると有利です';
+  String get eventFlyerRule3 => '出場すると虫がケガをして回復室で休みます — ゼリーですぐ回復できます';
 
   @override
-  String get eventFlyerRule4 => '参加券は毎朝補充され、無料チャージで1日2枚まで追加できます';
+  String eventFlyerRule4(int daily, int jelly, int extra) {
+    return '参加券は毎朝$daily枚補充され、ゼリー$jelly個で1日$extra枚まで追加チャージできます';
+  }
 
   @override
   String get eventFlyerLogin => '順位に載るにはログインが必要です（ゲストは参加のみ可能）';
@@ -1024,6 +1026,29 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get eventClosed => '現在開催中の大会はありません';
+
+  @override
+  String get battleNeedServer => '決闘にはオンライン接続が必要です';
+
+  @override
+  String get eventQuitFailed => 'やめられませんでした — 接続を確認してもう一度押してください';
+
+  @override
+  String get eventBugUnavailable => 'その昆虫では挑戦できません — 別の昆虫を選んでください';
+
+  @override
+  String get injuryHealConfirmTitle => '即時回復';
+
+  @override
+  String injuryHealConfirm(int n) {
+    return 'ゼリー$n個を使って今すぐ回復しますか？';
+  }
+
+  @override
+  String get trainingInstantTitle => '訓練を即時完了';
+
+  @override
+  String get squadTrainingBadge => '訓練中';
 
   @override
   String get eventNeedServer => '大会にはオンライン接続が必要です';
@@ -1055,17 +1080,18 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get eventPickTeam => '出場する虫を3匹選んでください';
+  String get eventPickTeam => '出場する虫を1匹選んでください';
 
   @override
-  String get eventPickOrder => '左から順に出ます・前の虫が後ろの虫を強めるとさらに強くなります';
+  String get eventPickOrder => '敵と1匹ずつ連続で戦います · 毎試合投げゲージ · 体力が命です';
 
   @override
-  String get eventNormalizeTitle => 'この大会はステータスが平準化されます';
+  String get eventNormalizeTitle => '育てた分だけ強い';
 
   @override
-  String get eventNormalizeBody =>
-      '種・五行・気質・得意技だけが反映されます。修練・突破・部位強化・ポテンシャル・サイズは適用されません — 同じ条件で編成の巧さを競う大会です。';
+  String eventNormalizeBody(int pct) {
+    return '決闘と同じ能力値で戦います — ポテンシャル・部位強化・修練・訓練所・特性がすべて反映されます。場外・ひっくり返しで負けると体力が$pct%減って同じウェーブに再挑戦。体力が尽きたら終了です。';
+  }
 
   @override
   String eventFatigueLeft(Object time) {
@@ -3285,7 +3311,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get seasonRewardHint => '毎週日曜24時、その瞬間の等級で支給されます。終わる前に上げておきましょう。';
+  String get seasonRewardHint => '毎週日曜9時に締め切り、その瞬間のリーグで支給されます。締め切り前に上げておきましょう。';
 
   @override
   String eventOpensOn(String m, String d) {
@@ -3521,7 +3547,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelThrowButton => '投げる！';
 
   @override
-  String get duelGaugeHint => '画面のどこをタップしても止まります・緑ほど最初の突進が強くなります';
+  String duelGaugeHint(int pct) {
+    return '画面のどこでもタップで停止 · 緑に近いほどこの試合の攻撃力が上がる(最大+$pct%)';
+  }
 
   @override
   String duelBout(int n) {
@@ -3576,7 +3604,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get abyssUnlockedBody =>
-      '極限の先に果てしなく続く階層です。強化・装備・昆虫はそのまま持っていけます。\n毎週日曜24時に1階からやり直し、1週間で最も深く潜った順位でゼリーがもらえます。';
+      '極限の先に果てしなく続く階層です。強化・装備・昆虫はそのまま持っていけます。\n毎週月曜9時に1階からやり直し、日曜9時の締め切りで最も深く潜った順位でゼリーがもらえます。';
 
   @override
   String get abyssEnter => '深淵へ';
@@ -3969,5 +3997,120 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String rankProgressAbyss(String tier, int floor) {
     return '$tier・深淵 $floor階';
+  }
+
+  @override
+  String duelLaunchBonus(int pct) {
+    return 'ナイス投げ！この試合の攻撃 +$pct%';
+  }
+
+  @override
+  String eventWaveHeader(int n) {
+    return 'ウェーブ $n';
+  }
+
+  @override
+  String get eventStopHp => '体力が尽きてここで終了です。';
+
+  @override
+  String get eventDevPreview => '開発者体験 — サーバー記録・報酬・参加券・ケガなし';
+
+  @override
+  String get eventDevTry => '大会体験(開発者)';
+
+  @override
+  String get eventEntryLabel => '出場する虫';
+
+  @override
+  String get eventEntryEmpty => '下から一番育てた虫を選んで舞台に上げよう';
+
+  @override
+  String get eventBuffNow => '今受けている強化';
+
+  @override
+  String get eventBuffNone => '強化なし';
+
+  @override
+  String eventBuffRevive(int n) {
+    return '復活 $n';
+  }
+
+  @override
+  String eventFallRetry(int pct) {
+    return '体力 -$pct% · 同じウェーブに再挑戦';
+  }
+
+  @override
+  String get eventReviveRetry => '復活！同じウェーブに再挑戦';
+
+  @override
+  String get cardAgile => '身軽さ';
+
+  @override
+  String get cardAgileDesc => '回避 +8%p — ぶつかりダメージを丸ごと避ける確率';
+
+  @override
+  String get cardVital => '急所狙い';
+
+  @override
+  String get cardVitalDesc => 'クリティカル確率 +10%p';
+
+  @override
+  String get cardBreath => '息を整える';
+
+  @override
+  String get cardBreathDesc => 'ウェーブ突破ごとに体力を10%多く回復';
+
+  @override
+  String get cardHeft => '重みを乗せる';
+
+  @override
+  String get cardHeftDesc => '体格 +40% — 重くなって場外に押し出されにくい';
+
+  @override
+  String get cardBerserk => '狂暴化';
+
+  @override
+  String get cardBerserkDesc => '攻撃力 +35% · 代わりに防御力 -21%';
+
+  @override
+  String get cardIronhide => '鉄甲';
+
+  @override
+  String get cardIronhideDesc => '防御力 +40% · 代わりに速度 -16%';
+
+  @override
+  String get cardLastStand => '背水の陣';
+
+  @override
+  String get cardLastStandDesc => '体力50%未満で入るウェーブで攻撃力 +40%';
+
+  @override
+  String get eventBuffEvade => '回避';
+
+  @override
+  String get eventBuffCrit => '会心';
+
+  @override
+  String get eventBuffRecover => '回復';
+
+  @override
+  String get eventBuffSize => '体格';
+
+  @override
+  String get eventBuffSpd => '速度';
+
+  @override
+  String get eventBuffLastStand => '背水';
+
+  @override
+  String get eventQuit => 'ここでやめる';
+
+  @override
+  String get eventQuitTitle => 'ここでやめますか？';
+
+  @override
+  String eventQuitBody(int n, int hp, int injury) {
+    return 'ここまで突破した$nウェーブで記録を確定します。\n今の体力 $hp% — ケガは最大の$injury%だけ休みます。\n(体力が多く残るほど休みが短い)';
   }
 }

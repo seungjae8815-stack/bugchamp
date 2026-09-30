@@ -1711,7 +1711,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventCardTitle.
   ///
   /// In en, this message translates to:
-  /// **'Wave {n} cleared! Choose one'**
+  /// **'Wave {n} cleared!\nChoose one'**
   String eventCardTitle(Object n);
 
   /// No description provided for @eventCardHint.
@@ -1801,7 +1801,7 @@ abstract class AppLocalizations {
   /// No description provided for @cardReviveDesc.
   ///
   /// In en, this message translates to:
-  /// **'Revive one fallen bug at half HP'**
+  /// **'When HP runs out, get back up once at 50% HP and retry the same wave'**
   String get cardReviveDesc;
 
   /// No description provided for @cardSkip.
@@ -1855,7 +1855,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventFlyerHow1.
   ///
   /// In en, this message translates to:
-  /// **'Pick 3 adult bugs and enter'**
+  /// **'Enter with your single best-raised adult bug'**
   String get eventFlyerHow1;
 
   /// No description provided for @eventFlyerHow2.
@@ -1879,26 +1879,26 @@ abstract class AppLocalizations {
   /// No description provided for @eventFlyerRule1.
   ///
   /// In en, this message translates to:
-  /// **'Stats are **equalized** — only species, element and temperament count; training, enhancement and size do not apply'**
+  /// **'Your bug fights **as raised** — potential, part upgrades, training and drills all count (same stats as Duels)'**
   String get eventFlyerRule1;
 
   /// No description provided for @eventFlyerRule2.
   ///
   /// In en, this message translates to:
-  /// **'Enemy elements rotate every wave — a single-element team will hit a wall'**
+  /// **'Enemy elements change every wave — waves your bug is weak to are the hard ones'**
   String get eventFlyerRule2;
 
   /// No description provided for @eventFlyerRule3.
   ///
   /// In en, this message translates to:
-  /// **'Bugs that entered rest for a day — keeping several good bugs pays off'**
+  /// **'Your bug gets injured and must rest in the recovery room — jelly heals it instantly'**
   String get eventFlyerRule3;
 
   /// No description provided for @eventFlyerRule4.
   ///
   /// In en, this message translates to:
-  /// **'Tickets refill every morning; free top-ups add up to 2 more per day'**
-  String get eventFlyerRule4;
+  /// **'You get {daily} tickets every morning, and can top up with {jelly} jelly each, up to {extra} more per day'**
+  String eventFlyerRule4(int daily, int jelly, int extra);
 
   /// No description provided for @eventFlyerLogin.
   ///
@@ -1923,6 +1923,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No event is running'**
   String get eventClosed;
+
+  /// No description provided for @battleNeedServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Duels need an online connection'**
+  String get battleNeedServer;
+
+  /// No description provided for @eventQuitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t quit — check your connection and try again'**
+  String get eventQuitFailed;
+
+  /// No description provided for @eventBugUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'That bug can\'t enter — please pick another one'**
+  String get eventBugUnavailable;
+
+  /// No description provided for @injuryHealConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal now'**
+  String get injuryHealConfirmTitle;
+
+  /// No description provided for @injuryHealConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {n} Jelly to heal now?'**
+  String injuryHealConfirm(int n);
+
+  /// No description provided for @trainingInstantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish training now'**
+  String get trainingInstantTitle;
+
+  /// No description provided for @squadTrainingBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get squadTrainingBadge;
 
   /// No description provided for @eventNeedServer.
   ///
@@ -1969,26 +2011,26 @@ abstract class AppLocalizations {
   /// No description provided for @eventPickTeam.
   ///
   /// In en, this message translates to:
-  /// **'Pick 3 bugs to enter'**
+  /// **'Pick 1 bug to enter'**
   String get eventPickTeam;
 
   /// No description provided for @eventPickOrder.
   ///
   /// In en, this message translates to:
-  /// **'They fight left to right · a bug that powers up the one behind it makes the team stronger'**
+  /// **'Face enemies one after another · throw gauge every bout · HP is your life'**
   String get eventPickOrder;
 
   /// No description provided for @eventNormalizeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Stats are equalized in this event'**
+  /// **'The better you raise it, the stronger it is'**
   String get eventNormalizeTitle;
 
   /// No description provided for @eventNormalizeBody.
   ///
   /// In en, this message translates to:
-  /// **'Only species, element, temperament and specialty count. Training, breakthrough, part enhancement, potential and size do not apply — everyone competes on formation alone.'**
-  String get eventNormalizeBody;
+  /// **'Fights with the same stats as Duels — potential, part upgrades, training, drills and traits all count. Losing by ring-out or flip costs {pct}% HP and you retry the same wave. When HP runs out, the run ends.'**
+  String eventNormalizeBody(int pct);
 
   /// No description provided for @eventFatigueLeft.
   ///
@@ -5875,7 +5917,7 @@ abstract class AppLocalizations {
   /// No description provided for @seasonRewardHint.
   ///
   /// In en, this message translates to:
-  /// **'Paid every Sunday at midnight (KST) at your rank at that moment. Climb before it ends.'**
+  /// **'Closes every Sunday 09:00 (KST) and pays by your league at that moment. Climb before it closes.'**
   String get seasonRewardHint;
 
   /// No description provided for @eventOpensOn.
@@ -6259,8 +6301,8 @@ abstract class AppLocalizations {
   /// No description provided for @duelGaugeHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap anywhere to stop · the greener, the stronger your first charge'**
-  String get duelGaugeHint;
+  /// **'Tap anywhere to stop · the closer to green, the stronger your attack this bout (up to +{pct}%)'**
+  String duelGaugeHint(int pct);
 
   /// No description provided for @duelBout.
   ///
@@ -6355,7 +6397,7 @@ abstract class AppLocalizations {
   /// No description provided for @abyssUnlockedBody.
   ///
   /// In en, this message translates to:
-  /// **'Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Sunday at midnight you start again from F1, and the deepest floor of the week earns ranking Jelly.'**
+  /// **'Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Monday 09:00 (KST) you start again from F1, and the deepest floor at the Sunday 09:00 close earns ranking Jelly.'**
   String get abyssUnlockedBody;
 
   /// No description provided for @abyssEnter.
@@ -7011,6 +7053,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{tier} · Abyss F{floor}'**
   String rankProgressAbyss(String tier, int floor);
+
+  /// No description provided for @duelLaunchBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Great throw! Attack +{pct}% this bout'**
+  String duelLaunchBonus(int pct);
+
+  /// No description provided for @eventWaveHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave {n}'**
+  String eventWaveHeader(int n);
+
+  /// No description provided for @eventStopHp.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of HP — the run ends here.'**
+  String get eventStopHp;
+
+  /// No description provided for @eventDevPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer preview — no server record, rewards, tickets or injuries'**
+  String get eventDevPreview;
+
+  /// No description provided for @eventDevTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try the contest (dev)'**
+  String get eventDevTry;
+
+  /// No description provided for @eventEntryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your entry'**
+  String get eventEntryLabel;
+
+  /// No description provided for @eventEntryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your best-raised bug below to put it on stage'**
+  String get eventEntryEmpty;
+
+  /// No description provided for @eventBuffNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Active boosts'**
+  String get eventBuffNow;
+
+  /// No description provided for @eventBuffNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No boosts yet'**
+  String get eventBuffNone;
+
+  /// No description provided for @eventBuffRevive.
+  ///
+  /// In en, this message translates to:
+  /// **'Revive {n}'**
+  String eventBuffRevive(int n);
+
+  /// No description provided for @eventFallRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'HP -{pct}% · retry the same wave'**
+  String eventFallRetry(int pct);
+
+  /// No description provided for @eventReviveRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Revived! Retry the same wave'**
+  String get eventReviveRetry;
+
+  /// No description provided for @cardAgile.
+  ///
+  /// In en, this message translates to:
+  /// **'Nimble'**
+  String get cardAgile;
+
+  /// No description provided for @cardAgileDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Evade +8%p — chance to dodge a clash entirely'**
+  String get cardAgileDesc;
+
+  /// No description provided for @cardVital.
+  ///
+  /// In en, this message translates to:
+  /// **'Vital Strike'**
+  String get cardVital;
+
+  /// No description provided for @cardVitalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical chance +10%p'**
+  String get cardVitalDesc;
+
+  /// No description provided for @cardBreath.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch Breath'**
+  String get cardBreath;
+
+  /// No description provided for @cardBreathDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal 10% more HP after each wave'**
+  String get cardBreathDesc;
+
+  /// No description provided for @cardHeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavyweight'**
+  String get cardHeft;
+
+  /// No description provided for @cardHeftDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Body +40% — heavier, harder to push out'**
+  String get cardHeftDesc;
+
+  /// No description provided for @cardBerserk.
+  ///
+  /// In en, this message translates to:
+  /// **'Berserk'**
+  String get cardBerserk;
+
+  /// No description provided for @cardBerserkDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack +35% · but Defense -21%'**
+  String get cardBerserkDesc;
+
+  /// No description provided for @cardIronhide.
+  ///
+  /// In en, this message translates to:
+  /// **'Ironhide'**
+  String get cardIronhide;
+
+  /// No description provided for @cardIronhideDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Defense +40% · but Speed -16%'**
+  String get cardIronhideDesc;
+
+  /// No description provided for @cardLastStand.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Stand'**
+  String get cardLastStand;
+
+  /// No description provided for @cardLastStandDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack +40% in waves you enter below 50% HP'**
+  String get cardLastStandDesc;
+
+  /// No description provided for @eventBuffEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'Evade'**
+  String get eventBuffEvade;
+
+  /// No description provided for @eventBuffCrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Crit'**
+  String get eventBuffCrit;
+
+  /// No description provided for @eventBuffRecover.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal'**
+  String get eventBuffRecover;
+
+  /// No description provided for @eventBuffSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Body'**
+  String get eventBuffSize;
+
+  /// No description provided for @eventBuffSpd.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get eventBuffSpd;
+
+  /// No description provided for @eventBuffLastStand.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Stand'**
+  String get eventBuffLastStand;
+
+  /// No description provided for @eventQuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Retreat'**
+  String get eventQuit;
+
+  /// No description provided for @eventQuitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop here?'**
+  String get eventQuitTitle;
+
+  /// No description provided for @eventQuitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your record is locked in at {n} waves cleared.\nHP now {hp}% — injury lasts only {injury}% of the maximum.\n(The more HP left, the shorter the rest)'**
+  String eventQuitBody(int n, int hp, int injury);
 }
 
 class _AppLocalizationsDelegate

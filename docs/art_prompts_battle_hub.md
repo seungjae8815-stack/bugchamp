@@ -94,3 +94,39 @@ Use the attached image only as the art style reference. Do NOT copy its subject.
 ```
 abyss_banner
 ```
+
+---
+
+### 6. 왕충 선발대회 출전 무대 (대회 화면 → 출전 곤충 칸)
+
+참고 그림(화풍): `C:\Users\Lenovo\Desktop\coding\BugChamp\packages\app\assets\images\duel\battle_hub_bg.webp`
+가로로 넓은 칸(약 16:10) 전체를 채운다. **가운데 아래의 빈 그루터기 무대 위에 고른 곤충이 올라선다** — 무대 위는 비워 두고,
+맨 아래 1/5 은 이름·전투력 글씨 띠가 얹히므로 **어둡고 조용하게**.
+
+```
+Use the attached image only as the art style reference. Do NOT copy its subject. Wide mobile game illustration of the grand entry stage of a royal insect championship held deep in a forest at night: a single round tree-stump podium with visible growth rings in the lower center, lit from above by one warm golden spotlight beam, a carved bark archway behind it decorated with a small golden crown emblem and moss-green and honey-amber leaf pennant banners, strings of glowing firefly lanterns, a softly blurred cheering crowd of tiny acorn-cap bleachers in the dark background, a few floating golden sparkles in the spotlight. The top surface of the podium is completely EMPTY, with nothing standing on it, so a beetle can be placed there later. The bottom fifth of the image fades into a very dark, calm, plain deep brown shadow with almost no detail, so a line of text can sit on top of it. Cozy naturalist cartoon, semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, rounded friendly forms, muted earthy forest palette (moss green, honey amber, warm bark brown, soft cream), no insects, no characters, no people, no text, no letters, no numbers, no logo, no watermark, no signature --ar 16:10
+```
+
+파일명
+
+```
+event_entry_stage
+```
+
+---
+
+### 7. 왕충 선발대회 새 카드 7장 (한 장에 모아서)
+
+참고 그림(화풍): `C:\Users\Lenovo\Desktop\coding\BugChamp\packages\app\assets\images\ui\cards\atk_s.webp`
+**한 장에 아이콘 7개**를 그린다 — 윗줄 4개, 아랫줄 3개(가운데 정렬). 받으면 제가 잘라서 카드마다 따로 넣습니다.
+아이콘끼리 **넉넉히 떨어져** 있어야 자를 수 있다(겹치거나 닿으면 안 된다).
+
+```
+Use the attached image only as the art style reference. Do NOT copy its subject. A sprite sheet of 7 separate game card icons arranged in a clean grid: the top row has 4 icons, the bottom row has 3 icons centered. Every icon is a single standalone object, evenly spaced with wide empty gaps between them, none touching or overlapping, all the same size. In reading order (left to right, top row then bottom row): 1) a swift gust of pale cyan wind swirling around a small green leaf, showing nimble dodging; 2) a sharp golden arrowhead hitting the center of a tiny red-and-cream target made of a mushroom cap, showing a critical strike; 3) a calm curled fern leaf with a single glowing green dewdrop and a soft breath-like mist, showing catching breath and recovering; 4) a heavy smooth river stone with a small iron weight tag and a moss tuft, showing heavy body weight; 5) a fierce blazing red-orange flame shaped like a beetle horn with small cracks, showing berserk rage; 6) a round shield made of dark iron-plated beetle shell with rivets and a short chain, showing ironhide armor; 7) a single crimson drop of determination inside a ring of small flames with a cracked edge, showing a last stand. Style: glossy stylized mobile game UI icons, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with each icon's accent color, semi-realistic painterly shading, soft rim light, bold readable silhouettes, thick warm brown outline, high detail, readable at 40 pixels. Plain flat pale sage-green background everywhere around and between the icons, front view, no perspective tilt, NO drop shadow. no real insects, no text, no letters, no numbers, no labels, no border, no frame, no grid lines, no watermark, no logo --ar 16:9
+```
+
+파일명
+
+```
+event_cards_sheet
+```

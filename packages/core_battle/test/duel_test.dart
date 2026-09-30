@@ -202,4 +202,89 @@ void main() {
       expect(q.friction, const DuelParams().friction);
     });
   });
+  group('약한 쪽의 여지(A·B·C, 2026-09-29)', () {
+    double winRate(DuelParams q, {double scaleA = 1, double? la, double? lb}) {
+      var w = 0;
+      for (var i = 0; i < 200; i++) {
+        final r = simulateBout(
+          seed: 900 + i * 31,
+          a: _bug(
+            'a',
+            Specialty.values[i % 3],
+            scale: scaleA,
+            tm: Temperament.values[i % 5],
+          ),
+          b: _bug(
+            'b',
+            Specialty.values[(i ~/ 3) % 3],
+            tm: Temperament.values[(i ~/ 5) % 5],
+          ),
+          params: q,
+          launchA: la,
+          launchB: lb,
+        );
+        if (r.winner == 0) w++;
+      }
+      return w / 200;
+    }
+
+    test('전력 압축을 켜면 센 쪽 승률이 내려간다', () {
+      final off = winRate(const DuelParams(), scaleA: 1.2);
+      final on = winRate(const DuelParams(statCompress: 0.5), scaleA: 1.2);
+      expect(on, lessThan(off));
+      expect(on, greaterThan(0.5)); // 그래도 센 쪽이 이긴다
+    });
+
+    test('게이지 공격 보너스 — 자동값 아래는 효과 없음, 만점은 이득', () {
+      const q = DuelParams(launchPowerMax: 0.3);
+      final auto = winRate(q, la: q.launchAuto, lb: q.launchAuto);
+      final low = winRate(q, la: 0, lb: q.launchAuto);
+      final perfect = winRate(q, la: 1, lb: q.launchAuto);
+      expect(perfect, greaterThan(auto));
+      // 게이지 0 은 첫 돌진 속도만 약간 느리다(공격 벌칙 없음).
+      expect(low, greaterThan(auto - 0.15));
+    });
+
+    test('기본값(1·0·1·1)이면 예전 엔진과 같은 결과', () {
+      final a = _bug('a', Specialty.strike, scale: 1.3);
+      final b = _bug('b', Specialty.toss);
+      const q = DuelParams(
+        statCompress: 1,
+        launchPowerMax: 0,
+        leverageStatExp: 1,
+        leverageMassExp: 1,
+      );
+      final r1 = simulateBout(seed: 7, a: a, b: b, params: q);
+      final r2 = simulateBout(seed: 7, a: a, b: b, params: const DuelParams());
+      expect(jsonEncode(r1.toJson()), jsonEncode(r2.toJson()));
+    });
+  });
+
+  group('흡혈 — 회복력이 판 안에서도 쓰인다(2026-09-30)', () {
+    test('lifestealMult 0 이면 회복력이 있어도 판 결과가 예전과 같다', () {
+      final a = _bug('a', Specialty.strike).withTraining(recovery: 0.3);
+      final b = _bug('b', Specialty.strike);
+      final plain = _bug('a', Specialty.strike);
+      const off = DuelParams(lifestealMult: 0);
+      for (var s = 0; s < 5; s++) {
+        final r1 = simulateBout(seed: s, a: a, b: b, params: off);
+        final r2 = simulateBout(seed: s, a: plain, b: b, params: off);
+        expect(r1.hpPctA, r2.hpPctA);
+        expect(r1.winner, r2.winner);
+      }
+    });
+
+    test('흡혈이 켜지면 회복력 있는 쪽이 더 많은 체력으로 끝난다(평균)', () {
+      final a = _bug('a', Specialty.strike).withTraining(recovery: 0.3);
+      final plain = _bug('a', Specialty.strike);
+      final b = _bug('b', Specialty.strike, scale: 0.8);
+      const on = DuelParams(lifestealMult: 1);
+      var withLs = 0.0, without = 0.0;
+      for (var s = 0; s < 30; s++) {
+        withLs += simulateBout(seed: s, a: a, b: b, params: on).hpPctA;
+        without += simulateBout(seed: s, a: plain, b: b, params: on).hpPctA;
+      }
+      expect(withLs, greaterThan(without));
+    });
+  });
 }

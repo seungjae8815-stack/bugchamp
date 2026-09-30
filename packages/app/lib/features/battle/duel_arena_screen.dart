@@ -30,6 +30,14 @@ class DuelArenaScreen extends StatefulWidget {
     required this.onFinished,
     this.mySkins = const {},
     this.foeSkins = const {},
+    this.foeAt,
+    this.foeIndex,
+    this.header,
+    this.between,
+    this.showDuelResult = true,
+    this.mineStatus,
+    this.boutNote,
+    this.onQuit,
   });
 
   final List<DuelBug> mine;
@@ -44,6 +52,35 @@ class DuelArenaScreen extends StatefulWidget {
   final Future<void> Function(DuelStep last) onFinished;
   final Map<String, SkinView?> mySkins;
   final Map<String, SkinView?> foeSkins;
+
+  // ── 왕충 선발대회(곤충 1마리 · 웨이브전)용 — 결투는 비워 둔다 ──
+
+  /// 상대 [index] 번째(웨이브 index+1)를 그때그때 만든다 — 웨이브는 끝이 없어 목록으로 못 준다.
+  final DuelBug Function(int index)? foeAt;
+
+  /// 다음 판의 상대 번호. 없으면 승자 연속 규칙(내가 이긴 판 수). 대회는 카드(건너뛰기)·재도전이 있어
+  /// 진행기가 정한다.
+  final int Function()? foeIndex;
+
+  /// 점수판 가운데 글(없으면 `이긴 판 : 진 판`).
+  final String Function()? header;
+
+  /// 판과 판 사이(다음 조준 전)에 부른다 — 대회는 여기서 카드를 고른다.
+  /// true 를 돌려주면(카드 창에서 그만하기) 무대를 닫는다.
+  final Future<bool> Function(DuelStep last)? between;
+
+  /// 끝나고 결투 결과 팝업을 띄우나(대회는 [onFinished] 에서 자기 결과를 띄운다).
+  final bool showDuelResult;
+
+  /// 싸움터 바로 아래에 붙는 상태 줄(대회: 지금 받고 있는 강화).
+  final Widget Function()? mineStatus;
+
+  /// 판 결과 아래 한 줄(대회: "체력 −30% · 같은 웨이브 재도전"). null 이면 없음.
+  final String? Function(DuelStep step)? boutNote;
+
+  /// 그만하기(대회) — 조준 중에만 버튼이 보인다. 호출자가 확인·확정·결과까지 하고
+  /// true 를 돌려주면 무대를 닫는다.
+  final Future<bool> Function()? onQuit;
 
   @override
   State<DuelArenaScreen> createState() => _DuelArenaScreenState();
@@ -65,7 +102,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   /// (내 곤충 = 상대가 이긴 판 수번째). 판 결과 화면까지는 방금 싸운 둘을 그대로 둔다.
   int _ia = 0, _ib = 0;
   DuelBug get _curA => widget.mine[_ia.clamp(0, widget.mine.length - 1)];
-  DuelBug get _curB => widget.foe[_ib.clamp(0, widget.foe.length - 1)];
+  DuelBug get _curB => widget.foeAt != null
+      ? widget.foeAt!(_ib)
+      : widget.foe[_ib.clamp(0, widget.foe.length - 1)];
   int _winsA = 0;
   int _winsB = 0;
   DuelStep? _step;
@@ -98,6 +137,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     if (dt <= 0 || dt > 0.25) return; // 앱이 멈췄다 돌아온 틈은 건너뛴다
     setState(() => _t += dt);
     switch (_phase) {
+      case _Phase.aim when _quitting:
+        _t = 0;
       case _Phase.aim when widget.driver.interactive && _t >= _autoThrowSeconds:
         _throw(_quality);
       case _Phase.drop when _t >= _dropSeconds:
@@ -106,6 +147,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         _endBout();
       case _Phase.fight:
         _playEventSfx();
+      case _Phase.boutEnd when _quitting:
+        _t = 0;
       case _Phase.boutEnd when _t >= _boutEndSeconds:
         _nextBoutOrFinish();
       default:
@@ -167,8 +210,25 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   double get _needle => 0.5 - 0.5 * math.cos(2 * math.pi * _t / _gaugePeriod);
   double get _quality => 1 - ((_needle - 0.5).abs() * 2);
 
+  /// 게이지가 준 이번 판 공격 보너스(%) — 엔진 `launchPower` 와 같은 식(자동값 아래는 0).
+  int _launchBonusPct(double q) {
+    final p = widget.params;
+    if (p.launchPowerMax <= 0 || p.launchAuto >= 1) return 0;
+    final k = ((q - p.launchAuto) / (1 - p.launchAuto)).clamp(0.0, 1.0);
+    return (p.launchPowerMax * k * 100).round();
+  }
+
   Future<void> _throw(double launch) async {
     AudioService.instance.sfxSwipe();
+    if (widget.driver.interactive) {
+      final pct = _launchBonusPct(launch);
+      if (pct > 0) {
+        showCenterToast(
+          context,
+          AppLocalizations.of(context).duelLaunchBonus(pct),
+        );
+      }
+    }
     setState(() => _go(_Phase.waiting));
     final s = await widget.driver.next(launch);
     if (!mounted) return;
@@ -194,12 +254,58 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     _go(_Phase.boutEnd);
   }
 
+  /// 그만하기 확인 창이 떠 있는 동안 — 자동 던지기·화면 탭을 멈춘다.
+  bool _quitting = false;
+
+  Future<void> _quit() async {
+    if (_quitting || widget.onQuit == null) return;
+    // 싸우는 중 — 이 판의 결과는 서버가 이미 확정했다. 재생만 끝으로 넘기고 그만둔다.
+    // 이 판으로 이미 끝났으면(체력 바닥) 그만둘 것 없이 끝까지 간다.
+    if (_phase == _Phase.fight || _phase == _Phase.boutEnd) {
+      if (_step?.done ?? true) {
+        setState(() => _t = _fightSeconds + 0.8);
+        return;
+      }
+      setState(() => _t = _fightSeconds + 0.8);
+    }
+    setState(() => _quitting = true);
+    final done = await widget.onQuit!();
+    if (!mounted) return;
+    if (done) {
+      _finishing = true;
+      _go(_Phase.done);
+      Navigator.of(context).pop();
+      return;
+    }
+    // 취소 — 게이지를 처음부터(3초 자동 던지기가 바로 터지지 않게).
+    setState(() {
+      _quitting = false;
+      _t = 0;
+    });
+  }
+
+  /// 판 사이 처리(카드 고르기) 중 — 틱이 이 함수를 계속 부르므로 한 번만 돌게 막는다.
+  bool _inBetween = false;
+
   Future<void> _nextBoutOrFinish() async {
     final s = _step!;
     if (!s.done) {
+      if (widget.between != null) {
+        if (_inBetween) return;
+        _inBetween = true;
+        final stop = await widget.between!(s);
+        _inBetween = false;
+        if (!mounted) return;
+        if (stop) {
+          _finishing = true;
+          _go(_Phase.done);
+          Navigator.of(context).pop();
+          return;
+        }
+      }
       _bout++;
       _ia = _winsB;
-      _ib = _winsA;
+      _ib = widget.foeIndex?.call() ?? _winsA;
       _step = null;
       _go(_Phase.aim);
       if (!widget.driver.interactive) _throw(widget.params.launchAuto);
@@ -210,7 +316,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     _go(_Phase.done);
     await widget.onFinished(s);
     if (!mounted) return;
-    await _showResult(s);
+    if (widget.showDuelResult) await _showResult(s);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -270,8 +376,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         // 조준 중에는 **화면 어디를 눌러도** 게이지가 멈추고 던진다(버튼을 찾지 않아도 된다).
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTapDown: _phase == _Phase.aim && widget.driver.interactive
-              ? (_) => _throw(_quality)
+          // 뗄 때 던진다(onTap) — 누를 때 던지면 안쪽 버튼(그만하기)을 눌러도 먼저 던져졌다.
+          onTap: _phase == _Phase.aim && widget.driver.interactive && !_quitting
+              ? () => _throw(_quality)
               : null,
           child: SafeArea(
             child: Column(
@@ -287,6 +394,18 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                     },
                   ),
                 ),
+                // 싸움터 바로 아래 — 대회: 지금 받고 있는 강화(장면·결과 문구를 가리지 않게).
+                if (widget.mineStatus != null &&
+                    _phase != _Phase.aim &&
+                    _phase != _Phase.waiting &&
+                    _phase != _Phase.drop)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: widget.mineStatus!(),
+                    ),
+                  ),
                 _bottomBar(l),
               ],
             ),
@@ -323,10 +442,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                 ),
               ),
               Text(
-                '$_winsA : $_winsB',
-                style: const TextStyle(
+                widget.header?.call() ?? '$_winsA : $_winsB',
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: widget.header == null ? 24 : 18,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -355,7 +474,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
             _gauge(),
             const SizedBox(height: 6),
             Text(
-              l.duelGaugeHint,
+              l.duelGaugeHint((widget.params.launchPowerMax * 100).round()),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -367,6 +486,16 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               l.duelAutoThrowIn(math.max(1, (_autoThrowSeconds - _t).ceil())),
               style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 11.5),
             ),
+            if (widget.onQuit != null)
+              TextButton.icon(
+                onPressed: _quit,
+                icon: const Icon(Icons.flag_rounded, size: 16),
+                label: Text(l.eventQuit),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFEF9A9A),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
@@ -395,12 +524,29 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
         child: Align(
           alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () => setState(() => _t = _fightSeconds + 0.8),
-            child: Text(
-              l.duelSkip,
-              style: const TextStyle(color: Color(0xCCFFFFFF)),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // 그만하기(대회) — 이 판으로 끝나지 않을 때만.
+              if (widget.onQuit != null && !(_step?.done ?? true))
+                TextButton.icon(
+                  onPressed: _quitting ? null : _quit,
+                  icon: const Icon(Icons.flag_rounded, size: 16),
+                  label: Text(l.eventQuit),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFEF9A9A),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              TextButton(
+                onPressed: () => setState(() => _t = _fightSeconds + 0.8),
+                child: Text(
+                  l.duelSkip,
+                  style: const TextStyle(color: Color(0xCCFFFFFF)),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -504,7 +650,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       );
     }
 
-    return Center(
+    final scene = Center(
       child: SizedBox(
         width: side,
         height: side,
@@ -535,6 +681,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         ),
       ),
     );
+    return scene;
   }
 
   // ── 옆에서 본 장면: 2.5D 무대 ──────────────────────────────────────
@@ -1071,8 +1218,14 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
             right: 16,
             top: 8,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _hpBar(pa.hp, const Color(0xFF6FCF6F))),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [_hpBar(pa.hp, const Color(0xFF6FCF6F))],
+                  ),
+                ),
                 const SizedBox(width: 16),
                 Expanded(child: _hpBar(pb.hp, const Color(0xFFC85454))),
               ],
@@ -1104,6 +1257,22 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                             : const Color(0xFFEF9A9A),
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  if ((_phase == _Phase.boutEnd || _phase == _Phase.done) &&
+                      _step != null &&
+                      widget.boutNote?.call(_step!) != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        widget.boutNote!(_step!)!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          shadows: [Shadow(color: Colors.black, blurRadius: 5)],
+                        ),
                       ),
                     ),
                 ],

@@ -11,6 +11,16 @@ import 'training_progress.dart';
 /// 로드 시 이 값보다 낮으면 마이그레이션이 실행된다 (see data/save_migrations.dart).
 const int kSaveSchemaVersion = 18;
 
+/// 이 세이브를 **쓴 앱이 아는 필드 묶음**의 수준 — `toJson` 이 늘 `feat` 로 적는다.
+///
+/// 스키마 버전과 다르다: 필드를 더해도 마이그레이션이 필요 없으면 스키마를 올리지 않는데,
+/// 그러면 서버가 "구버전 앱이 새 필드를 몰라서 안 보냈다"와 "새 앱이 값을 비웠다"를
+/// 구분할 수 없다(기본값이면 키를 생략하므로). 1.0.13 앱이 한 번만 올려도 훈련소 기록·
+/// 이번 주 심연 층이 지워졌다(2026-09-30 점검). 서버는 이 값이 낮은 업로드에서
+/// 그 뒤에 생긴 필드를 저장본 값으로 지킨다(`GameActions.mergeSave`).
+/// 새 필드를 더하면 이 값을 올리고 서버의 목록에 추가한다.
+const int kSaveFeatureLevel = 14;
+
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
 /// 50 인 이유: `deriveStats` 의 곤충 수 버프가 `min(bugsCollected, 50)` 이라
@@ -437,14 +447,21 @@ Set<String> keepBugIds(
   List<BugTrimEntry> entries, {
   required int capacity,
   Set<String> pinned = const {},
+
+  /// **칸이 남는 만큼만** 먼저 남기는 곤충(훈련한 곤충, 2026-09-30). [pinned] 처럼 무조건
+  /// 남기면 훈련 기록을 수백 마리에 붙여 올려 상한을 통째로 우회할 수 있었다(600마리 재현).
+  Set<String> preferred = const {},
 }) {
   if (entries.length <= capacity) return {for (final e in entries) e.id};
 
   final pinnedHere = <String>{};
+  final preferredHere = <BugTrimEntry>[];
   final rest = <BugTrimEntry>[];
   for (final e in entries) {
     if (pinned.contains(e.id)) {
       pinnedHere.add(e.id);
+    } else if (preferred.contains(e.id)) {
+      preferredHere.add(e);
     } else {
       rest.add(e);
     }
@@ -453,7 +470,7 @@ Set<String> keepBugIds(
   final room = capacity - pinnedHere.length;
   if (room <= 0) return pinnedHere;
 
-  rest.sort((a, b) {
+  int rank(BugTrimEntry a, BugTrimEntry b) {
     var c = (b.variant ? 1 : 0).compareTo(a.variant ? 1 : 0);
     if (c != 0) return c;
     c = b.level.compareTo(a.level);
@@ -465,8 +482,16 @@ Set<String> keepBugIds(
     c = b.size.compareTo(a.size);
     if (c != 0) return c;
     return a.id.compareTo(b.id); // 완전 동률이어도 결정론적으로.
-  });
-  return {...pinnedHere, for (final e in rest.take(room)) e.id};
+  }
+
+  preferredHere.sort(rank);
+  final keptPreferred = preferredHere.take(room).toList();
+  rest.sort(rank);
+  return {
+    ...pinnedHere,
+    for (final e in keptPreferred) e.id,
+    for (final e in rest.take(room - keptPreferred.length)) e.id,
+  };
 }
 
 /// 저장 루트 (버전드 JSON 스냅샷). v2: 횡스크롤 런 진행 상태 포함.
@@ -567,6 +592,7 @@ class SaveGame {
     this.abyssBest = 0,
     this.abyssBossBest = 0,
     this.abyssScoreWeek,
+    this.abyssFloorAt,
     this.abyssRewardWeek,
     this.eventBadges = const {},
     this.difficultyTier = 0,
@@ -815,6 +841,11 @@ class SaveGame {
   /// 주간 순위 점수를 마지막으로 기록한 주. **서버 소유**(조회를 점수 낸 사람만 돌리려고).
   final String? abyssScoreWeek;
 
+  /// 심연 층 **시간 예산의 기준 시각**(서버 소유). 층 하나 = `minSecondsPerFloor` 이고, 서버가 층을
+  /// 인정할 때마다 그만큼 앞으로 민다. 업로드마다 경과 시간을 올림으로 재던 시절엔 1초마다 올리면
+  /// 매번 한 층씩 늘어 300번에 305층이 됐다(2026-09-30 점검).
+  final DateTime? abyssFloorAt;
+
   /// 주간 순위 보상을 판정한 주. **서버 소유** — 지우면 같은 주 보상을 반복해 받는다.
   final String? abyssRewardWeek;
 
@@ -1006,13 +1037,20 @@ class SaveGame {
           ),
       ],
       capacity: storageCapacity,
-      pinned: pinnedBugIds,
+      // 훈련 기록은 약한 보호 — [keepBugIds] 의 `preferred` 참조.
+      pinned: {...equippedBugIds, ...incubating.keys, ?trainingJob?.bugId},
+      preferred: duelTraining.keys.toSet(),
     );
     return copyWith(
       bugs: [
         for (final b in bugs)
           if (keep.contains(b.id)) b,
       ],
+      // 사라진 곤충의 훈련 기록도 치운다 — 남겨 두면 세이브만 커진다.
+      duelTraining: {
+        for (final e in duelTraining.entries)
+          if (keep.contains(e.key)) e.key: e.value,
+      },
     );
   }
 
@@ -1341,6 +1379,7 @@ class SaveGame {
     int? abyssBest,
     int? abyssBossBest,
     String? abyssScoreWeek,
+    DateTime? abyssFloorAt,
     String? abyssRewardWeek,
     Set<String>? eventBadges,
     int? difficultyTier,
@@ -1451,6 +1490,7 @@ class SaveGame {
     abyssBest: abyssBest ?? this.abyssBest,
     abyssBossBest: abyssBossBest ?? this.abyssBossBest,
     abyssScoreWeek: abyssScoreWeek ?? this.abyssScoreWeek,
+    abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
     abyssRewardWeek: abyssRewardWeek ?? this.abyssRewardWeek,
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
@@ -1679,6 +1719,9 @@ class SaveGame {
       999,
     ),
     abyssScoreWeek: json['abyssScoreWeek'] as String?,
+    abyssFloorAt: json['abyssFloorAt'] == null
+        ? null
+        : DateTime.tryParse(json['abyssFloorAt'] as String)?.toUtc(),
     abyssRewardWeek: json['abyssRewardWeek'] as String?,
     eventBadges:
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
@@ -1802,6 +1845,7 @@ class SaveGame {
 
   Map<String, dynamic> toJson() => {
     'schemaVersion': schemaVersion,
+    'feat': kSaveFeatureLevel,
     'bugs': bugs.map((b) => b.toJson()).toList(),
     // 모르는 키도 그대로 되돌려준다 — 구버전이 신버전 세이브를 덮어써
     // 재료가 사라지는 걸 막는다(§unknownMaterials).
@@ -1882,6 +1926,7 @@ class SaveGame {
     if (abyssBest > 0) 'abyssBest': abyssBest,
     if (abyssBossBest > 0) 'abyssBossBest': abyssBossBest,
     if (abyssScoreWeek != null) 'abyssScoreWeek': abyssScoreWeek,
+    if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),
     if (abyssRewardWeek != null) 'abyssRewardWeek': abyssRewardWeek,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,

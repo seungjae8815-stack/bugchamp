@@ -374,4 +374,22 @@ void main() {
       expect(IndividualBug.fromJson(json).trait, BugTrait.none);
     });
   });
+
+  test('합성 단계(su)는 왕복되고, 없으면 0 · 획득 시점 포텐셜 = 포텐셜 − 합성 단계', () {
+    const b = IndividualBug(
+      id: 'x',
+      speciesId: 's',
+      sizeMm: 30,
+      potential: 5,
+      temperament: Temperament.fickle,
+      sex: Sex.female,
+      synthUps: 2,
+    );
+    final back = IndividualBug.fromJson(b.toJson());
+    expect(back.synthUps, 2);
+    expect(back.bornPotential, 3);
+    final plain = b.copyWith(synthUps: 0);
+    expect(plain.toJson().containsKey('su'), isFalse);
+    expect(IndividualBug.fromJson(plain.toJson()).synthUps, 0);
+  });
 }

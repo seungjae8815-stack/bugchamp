@@ -355,6 +355,13 @@ String remainLabel(AppLocalizations l, Duration d) {
   'hp_s' => (l.cardHp_s, l.cardHp_sDesc),
   'revive' => (l.cardRevive, l.cardReviveDesc),
   'skip' => (l.cardSkip, l.cardSkipDesc),
+  'agile' => (l.cardAgile, l.cardAgileDesc),
+  'vital' => (l.cardVital, l.cardVitalDesc),
+  'breath' => (l.cardBreath, l.cardBreathDesc),
+  'heft' => (l.cardHeft, l.cardHeftDesc),
+  'berserk' => (l.cardBerserk, l.cardBerserkDesc),
+  'ironhide' => (l.cardIronhide, l.cardIronhideDesc),
+  'last_stand' => (l.cardLastStand, l.cardLastStandDesc),
   _ => (id, ''),
 };
 
@@ -366,5 +373,12 @@ String cardGlyph(String kind) => switch (kind) {
   'maxHp' => '❤️',
   'revive' => '✨',
   'skip' => '🌀',
+  'evade' => '💨',
+  'crit' => '🎯',
+  'recover' => '🍃',
+  'size' => '🪨',
+  'berserk' => '🔥',
+  'ironhide' => '⛓️',
+  'lastStand' => '🩸',
   _ => '🃏',
 };

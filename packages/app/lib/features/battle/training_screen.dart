@@ -12,6 +12,7 @@ import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
@@ -242,6 +243,16 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                       backgroundColor: const Color(0xFF2E7DBA),
                     ),
                     onPressed: () async {
+                      final jelly = cfg.instantJelly(job.until.difference(now));
+                      if (!await confirmJellySpend(
+                        context,
+                        title: l.trainingInstantTitle,
+                        body: l.skillTrainConfirm('$jelly'),
+                        jelly: jelly,
+                      )) {
+                        return;
+                      }
+                      if (!mounted) return;
                       final err = await ref
                           .read(saveControllerProvider.notifier)
                           .finishDuelTrainingWithJelly();

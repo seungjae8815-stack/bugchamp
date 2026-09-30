@@ -158,4 +158,13 @@ void main() {
     expect(physical.first.maxRank, 1, reason: '2026-08-26 — 실물은 1위만');
     expect(cfg.tierForRank(2)!.physical, isFalse);
   });
+
+  test('점수 체력 몫은 곱한 뒤 반올림 — 같은 정수 % 라도 갈린다(2026-09-30)', () {
+    const cfg = EventConfig(wavePoint: 1000, hpPoint: 5, speedBase: 0);
+    int sc(double hp) =>
+        cfg.score(clearedWaves: 30, hpPct: hp, survivors: 0, totalRounds: 0);
+    expect(sc(0.501), isNot(sc(0.504)));
+    expect(sc(1.0), 30000 + 500);
+    expect(sc(0.0), 30000);
+  });
 }

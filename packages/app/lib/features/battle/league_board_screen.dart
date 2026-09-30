@@ -138,6 +138,9 @@ class LeagueBoardView extends ConsumerStatefulWidget {
 class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
   Map<String, dynamic>? _data;
 
+  /// 서버 시각 − 기기 시각(받은 순간). 남은 시간을 기기 시계가 아니라 서버 기준으로 잰다.
+  Duration _clockSkew = Duration.zero;
+
   /// 마지막으로 받은 순위표(내 순위·인원·승강 인원) — 리그 보상 창이 내 위치를 보여 줄 때 쓴다.
   Map<String, dynamic>? get data => _data;
   bool _loading = false;
@@ -185,6 +188,10 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
       _loading = false;
       if (res.isOk) {
         _data = res.data;
+        final serverNow = DateTime.tryParse('${res.data?['now']}')?.toUtc();
+        _clockSkew = serverNow == null
+            ? Duration.zero
+            : serverNow.difference(DateTime.now().toUtc());
       } else {
         _failed = true;
       }
@@ -396,7 +403,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     final ends = DateTime.tryParse('${d['endsAt']}');
     final left = ends == null
         ? Duration.zero
-        : ends.difference(DateTime.now().toUtc());
+        : ends.difference(DateTime.now().toUtc().add(_clockSkew));
     final league = '${d['league'] ?? ''}';
     final data = ref.read(gameDataProvider).value;
     final promote = (d['promote'] as num?)?.toInt() ?? 0;

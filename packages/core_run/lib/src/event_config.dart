@@ -170,6 +170,7 @@ class EventConfig {
     this.ticketAdGrant = 1,
     this.ticketAdDailyLimit = 2,
     this.fatigueHours = 24,
+    this.duelWaveJson,
     this.normBaseHp = 120,
     this.normBaseAtk = 55,
     this.normBaseDef = 40,
@@ -298,6 +299,13 @@ class EventConfig {
 
   /// 출전한 곤충이 다시 나갈 수 있게 되기까지(시간).
   final int fatigueHours;
+
+  /// 곤충 1마리 · 결투 엔진 웨이브전 설정(`event.json → duelWave`, 2026-09-29 사장님 확정, 2회차부터).
+  /// core_run 은 core_battle 을 모르므로(형제) 원본 JSON 만 들고, 앱·서버가 `EventDuelSpec.fromJson` 으로 읽는다.
+  /// 있으면 새 방식이고 옛 3마리 경로(`/event/start`·`/event/pick`·`/event/challenge`)는 닫힌다.
+  final Map<String, dynamic>? duelWaveJson;
+
+  bool get duelMode => duelWaveJson != null;
 
   /// 이벤트 정규화 기준 스탯. 개체의 수련·돌파·강화·포텐셜·사이즈는 **버린다**.
   final double normBaseHp;
@@ -439,8 +447,10 @@ class EventConfig {
     required int totalRounds,
   }) {
     final speed = speedBase - totalRounds;
+    // 체력 몫은 **곱한 뒤 반올림**한다(2026-09-30) — 정수 % 로 먼저 자르면 101칸뿐이라 같은
+    // 웨이브의 완전 동점이 2% 나왔다(실물 경품은 1위 단독). 범위(0~100×hpPoint)는 그대로다.
     return clearedWaves * wavePoint +
-        (hpPct.clamp(0.0, 1.0) * 100).round() * hpPoint +
+        (hpPct.clamp(0.0, 1.0) * 100 * hpPoint).round() +
         survivors * survivorPoint +
         (speed > 0 ? speed : 0);
   }
@@ -489,6 +499,7 @@ class EventConfig {
       ticketAdDailyLimit: (tickets['adDailyLimit'] as num?)?.toInt() ?? 2,
       ticketJelly: (tickets['jelly'] as num?)?.toInt() ?? 0,
       fatigueHours: (json['fatigueHours'] as num?)?.toInt() ?? 24,
+      duelWaveJson: (json['duelWave'] as Map?)?.cast<String, dynamic>(),
       normBaseHp: (norm['baseHp'] as num?)?.toDouble() ?? 120,
       normBaseAtk: (norm['baseAtk'] as num?)?.toDouble() ?? 55,
       normBaseDef: (norm['baseDef'] as num?)?.toDouble() ?? 40,

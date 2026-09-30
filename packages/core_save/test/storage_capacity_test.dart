@@ -221,4 +221,36 @@ void main() {
       );
     });
   });
+
+  test('훈련 기록을 수백 마리에 붙여도 상한을 넘지 않는다(약한 보호, 2026-09-30)', () {
+    final bugs = [
+      for (var i = 0; i < 600; i++)
+        IndividualBug.fromJson(bug('b$i', level: i % 7)),
+    ];
+    final save = SaveGame.initial(createdAt: DateTime.utc(2026)).copyWith(
+      bugs: bugs,
+      duelTraining: {
+        for (final b in bugs) b.id: {TrainStat.attack: 1},
+      },
+    );
+    final out = save.trimmedToStorage();
+    expect(out.bugs.length, save.storageCapacity);
+    // 남은 곤충의 기록만 남는다.
+    expect(out.duelTraining.length, out.bugs.length);
+  });
+
+  test('칸이 남으면 훈련한 곤충이 먼저 남는다', () {
+    final bugs = [
+      for (var i = 0; i < 80; i++)
+        IndividualBug.fromJson(bug('b$i', level: 50)),
+    ];
+    final save = SaveGame.initial(createdAt: DateTime.utc(2026)).copyWith(
+      bugs: bugs,
+      duelTraining: {
+        'b79': {TrainStat.attack: 3},
+      },
+    );
+    final out = save.trimmedToStorage();
+    expect(out.bugs.any((b) => b.id == 'b79'), isTrue);
+  });
 }

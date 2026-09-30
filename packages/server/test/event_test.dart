@@ -15,6 +15,15 @@ import 'actions_test.dart' show testSpecies;
 /// 경로가 없어야 하고, 참가권·출전 피로·최고 기록은 전부 서버가 소유해야 한다
 /// (`_serverOwnedKeys`). 여기서 검사하는 것은 그 계약이다.
 class _Cfg implements GameConfigLike {
+  /// [legacy] = 옛 3마리 웨이브전(`duelWave` 를 뺀 설정) — 옛 경로 테스트가 계속 그 규칙을 검사한다.
+  _Cfg({bool legacy = true})
+    : event = EventConfig.fromJson(
+        Map<String, dynamic>.from(
+          jsonDecode(File('../app/assets/data/event.json').readAsStringSync())
+              as Map<String, dynamic>,
+        )..removeWhere((k, _) => legacy && k == 'duelWave'),
+      );
+
   @override
   final IapConfig iap = IapConfig.fromJson({
     'passDurationDays': 30,
@@ -47,10 +56,7 @@ class _Cfg implements GameConfigLike {
   @override
   final DexConfig? dex = null;
   @override
-  final EventConfig? event = EventConfig.fromJson(
-    jsonDecode(File('../app/assets/data/event.json').readAsStringSync())
-        as Map<String, dynamic>,
-  );
+  final EventConfig? event;
   @override
   final SkillConfig? skill = null;
   @override
@@ -58,7 +64,8 @@ class _Cfg implements GameConfigLike {
 }
 
 /// 다른 이벤트 테스트도 같은 설정을 쓴다(실제 event.json 로드).
-GameConfigLike buildEventCfg() => _Cfg();
+/// [legacy] 가 참이면 옛 3마리 규칙, 거짓이면 2회차부터의 1마리 결투 웨이브전.
+GameConfigLike buildEventCfg({bool legacy = true}) => _Cfg(legacy: legacy);
 
 void main() {
   // 개막일 정오(KST). **달력이 아니라 설정에서 계산**한다 — 회차 날짜를 옮길

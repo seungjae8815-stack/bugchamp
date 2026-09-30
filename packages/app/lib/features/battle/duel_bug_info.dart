@@ -10,7 +10,15 @@ import '../../ui/labels.dart';
 
 /// 결투 곤충 한 마리의 능력치 창 — 순위표 프로필에서 곤충을 누를 때(2026-09-29).
 /// 서버가 그 사람의 세이브로 계산한 값(훈련·수련 반영)을 그대로 보여 준다.
-Future<void> showDuelBugInfo(BuildContext context, GameData? data, DuelBug d) {
+///
+/// [confirm] 을 주면 `취소 · confirm` 버튼이 붙고, confirm 을 누르면 true 를 돌려준다
+/// (왕충 선발대회 출전 곤충 고르기).
+Future<bool?> showDuelBugInfo(
+  BuildContext context,
+  GameData? data,
+  DuelBug d, {
+  String? confirm,
+}) {
   final l = AppLocalizations.of(context);
   final locale = Localizations.localeOf(context).languageCode;
   String name = d.name;
@@ -50,7 +58,7 @@ Future<void> showDuelBugInfo(BuildContext context, GameData? data, DuelBug d) {
     ),
   );
   String pct(double v) => '${(v * 100).toStringAsFixed(1)}%';
-  return showGameDialog<void>(
+  return showGameDialog<bool>(
     context,
     title: name,
     iconWidget: bugPoseImage(
@@ -107,6 +115,15 @@ Future<void> showDuelBugInfo(BuildContext context, GameData? data, DuelBug d) {
         if (d.recovery > 0) row(l.trainRecovery, '+${pct(d.recovery)}'),
       ],
     ),
-    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    actions: confirm == null
+        ? [gameDialogButton(l.actionClose, () => Navigator.pop(context))]
+        : [
+            gameDialogButton(
+              l.actionCancel,
+              () => Navigator.pop(context, false),
+              primary: false,
+            ),
+            gameDialogButton(confirm, () => Navigator.pop(context, true)),
+          ],
   );
 }

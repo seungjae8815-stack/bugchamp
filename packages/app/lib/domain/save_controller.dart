@@ -23,6 +23,7 @@ import 'bug_auto_filter.dart';
 import 'gather_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
+import 'server_sync.dart' show flushSaveBeforeServerAction;
 
 /// 대회 회차 종료 보상(서버가 확정, UI 가 1회 표시).
 ///
@@ -1610,6 +1611,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (cfg == null) return false;
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
+    // 대회 부상은 서버 소유(`eventFatigue`) — 로컬로 지우면 다음 업로드에 되살아나고 젤리만
+    // 사라진다. 서버가 젤리를 깎고 두 기록을 함께 지운 세이브를 채택한다.
+    final server = ref.read(gameServerProvider);
+    if (viaJelly && server.available && s.eventOnFatigue(bugId, now)) {
+      if (!await flushSaveBeforeServerAction(server, s)) return false;
+      final r = await server.eventDuelHeal(bugId);
+      final json = r.save;
+      if (!r.isOk || json == null) return false;
+      await adoptServerSave(json);
+      return true;
+    }
     final until = s.injured[bugId];
     if (until == null) return false;
     final injured = Map<String, DateTime>.from(s.injured)..remove(bugId);
@@ -3273,7 +3285,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 수입은 줄면서 "좋은 걸 분해하는 순간"의 가치는 오히려 올라간다.
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
-    final reward = cfg?.disassembleJelly(bug.potential) ?? bug.potential;
+    // 젤리는 **획득 시점 포텐셜**로 — 합성으로 올린 5성을 분해하면 젤리가 무한히 나왔다(2026-09-30).
+    final reward = cfg?.disassembleJelly(bug.bornPotential) ?? 0;
     final grade = data.speciesById[bug.speciesId]?.grade;
     final matGain = (cfg == null || grade == null)
         ? 0
@@ -3376,7 +3389,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final bugs = <IndividualBug>[];
     for (final b in s.bugs) {
       if (b.id == targetId) {
-        bugs.add(b.copyWith(potential: b.potential + 1));
+        bugs.add(
+          b.copyWith(potential: b.potential + 1, synthUps: b.synthUps + 1),
+        );
       } else if (!fodderIds.contains(b.id)) {
         bugs.add(b);
       }
@@ -3492,7 +3507,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (final b in s.bugs) {
       if (consumed.contains(b.id)) continue;
       final pot = upgraded[b.id];
-      bugs.add(pot == null ? b : b.copyWith(potential: pot));
+      bugs.add(
+        pot == null
+            ? b
+            : b.copyWith(
+                potential: pot,
+                synthUps: b.synthUps + (pot - b.potential),
+              ),
+      );
     }
     await _commit(s.copyWith(bugs: bugs));
     return result;

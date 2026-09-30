@@ -205,10 +205,50 @@ DuelBout simulateBout({
   final rng = math.Random(seed);
   final la = (launchA ?? p.launchAuto).clamp(0.0, 1.0);
   final lb = (launchB ?? p.launchAuto).clamp(0.0, 1.0);
-  final bodies = [_Body(a, p, 0), _Body(b, p, 1)];
+  // 전력 압축(A안) — 두 값의 비율만 지수로 누른다(기하평균 유지). 게이지 보너스(B안)는 누른 뒤에 곱한다.
+  (double, double) squeeze(double x, double y) {
+    if (p.statCompress >= 1 || x <= 0 || y <= 0) return (x, y);
+    final m = math.sqrt(x * y);
+    return (
+      m * math.pow(x / m, p.statCompress).toDouble(),
+      m * math.pow(y / m, p.statCompress).toDouble(),
+    );
+  }
+
+  double launchPower(double q) => p.launchPowerMax <= 0 || p.launchAuto >= 1
+      ? 1
+      : 1 +
+            p.launchPowerMax *
+                ((q - p.launchAuto) / (1 - p.launchAuto)).clamp(0.0, 1.0);
+  final (hpa, hpb) = squeeze(a.maxHp, b.maxHp);
+  final (atka, atkb) = squeeze(a.atk, b.atk);
+  final (defa, defb) = squeeze(a.def, b.def);
+  final (spda, spdb) = squeeze(a.spd, b.spd);
+  final bodies = [
+    _Body(
+      a.withCombatStats(
+        maxHp: hpa,
+        atk: atka * launchPower(la),
+        def: defa,
+        spd: spda,
+      ),
+      p,
+      0,
+    ),
+    _Body(
+      b.withCombatStats(
+        maxHp: hpb,
+        atk: atkb * launchPower(lb),
+        def: defb,
+        spd: spdb,
+      ),
+      p,
+      1,
+    ),
+  ];
   // 승자 연속 — 이긴 곤충은 남은 체력으로 들어온다.
-  bodies[0].hp = a.maxHp * hpA.clamp(0.01, 1.0);
-  bodies[1].hp = b.maxHp * hpB.clamp(0.01, 1.0);
+  bodies[0].hp = bodies[0].bug.maxHp * hpA.clamp(0.01, 1.0);
+  bodies[1].hp = bodies[1].bug.maxHp * hpB.clamp(0.01, 1.0);
   final dt = p.dt;
   final radius = p.arenaRadius;
 
@@ -257,9 +297,13 @@ DuelBout simulateBout({
   // 넣으면 던지기가 체력 많은 상대에게 아예 발동하지 않아 집기가 던지기를 99% 이겼다).
   double guard(_Body s) => 1 + p.hpGuard * s.hpPct;
   // 들어 올리거나 밀어낼 수 있는 힘의 몫(0~1) — 공격 쪽 ATK×무게 대 방어 쪽 DEF×무게.
+  // 체구 비중(C안): 스탯 지수를 낮추고 무게 지수를 올리면 밀기 싸움이 몸집 싸움이 된다.
+  double heft(double stat, double m) =>
+      math.pow(math.max(stat, 1e-6), p.leverageStatExp).toDouble() *
+      math.pow(m, p.leverageMassExp).toDouble();
   double leverage(_Body from, _Body to) {
-    final f = from.bug.atk * from.m * restrain(from, to);
-    final r = to.bug.def * to.m * resist(to);
+    final f = heft(from.bug.atk, from.m) * restrain(from, to);
+    final r = heft(to.bug.def, to.m) * resist(to);
     return f / (f + r);
   }
 
@@ -503,13 +547,19 @@ DuelBout simulateBout({
           }
 
           double spread() => 1 + p.damageSpread * (rng.nextDouble() * 2 - 1);
-          final critA = rng.nextDouble() < p.critChance + A.bug.crit;
-          final critB = rng.nextDouble() < p.critChance + B.bug.crit;
+          final critA =
+              rng.nextDouble() < math.min(p.critMax, p.critChance + A.bug.crit);
+          final critB =
+              rng.nextDouble() < math.min(p.critMax, p.critChance + B.bug.crit);
           final weakB = weakSpot(B, -nx, -ny);
           final weakA = weakSpot(A, nx, ny);
           // 회피(훈련소) — 맞는 쪽이 확률로 피해를 통째로 피한다. 밀림은 그대로.
-          final evadeB = B.bug.evade > 0 && rng.nextDouble() < B.bug.evade;
-          final evadeA = A.bug.evade > 0 && rng.nextDouble() < A.bug.evade;
+          final evadeB =
+              B.bug.evade > 0 &&
+              rng.nextDouble() < math.min(p.evadeMax, B.bug.evade);
+          final evadeA =
+              A.bug.evade > 0 &&
+              rng.nextDouble() < math.min(p.evadeMax, A.bug.evade);
           final toB =
               A.bug.atk *
               p.damageK *
@@ -532,6 +582,15 @@ DuelBout simulateBout({
               (evadeA ? 0 : 1);
           hit(B, toB);
           hit(A, toA);
+          // 흡혈(회복력) — 준 피해의 일부를 되찾는다. 이번 충돌로 쓰러졌으면 없다.
+          if (p.lifestealMult > 0) {
+            for (final (me, dealt) in [(A, toB), (B, toA)]) {
+              final gain = dealt * me.bug.recovery * p.lifestealMult;
+              if (gain > 0 && me.hp > 0) {
+                me.hp = math.min(me.bug.maxHp, me.hp + gain);
+              }
+            }
+          }
           for (final (side, ev) in [(1, evadeB), (0, evadeA)]) {
             if (ev) {
               events.add(

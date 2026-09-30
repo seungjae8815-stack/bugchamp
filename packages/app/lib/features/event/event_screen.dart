@@ -1,4 +1,6 @@
+import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
@@ -14,8 +16,12 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
+import '../../ui/skins.dart';
 import '../../ui/toast.dart';
+import '../battle/duel_bug_build.dart';
 import 'event_battle.dart';
+import 'event_duel_play.dart';
+import '../battle/duel_bug_info.dart';
 import 'event_hall.dart';
 import 'event_intro.dart';
 import '../../ui/event_badge.dart';
@@ -47,6 +53,11 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   Map<String, dynamic>? _state;
   List<Map<String, dynamic>> _ranks = const [];
   final List<String> _team = [];
+
+  /// 2회차부터 곤충 1마리 · 결투 엔진 웨이브전(`event.json → duelWave`).
+  bool get _duelMode =>
+      ref.read(gameDataProvider).value?.eventConfig?.duelMode ?? false;
+  int get _teamSize => _duelMode ? 1 : 3;
   bool _loading = true;
   bool _busy = false;
   String? _error;
@@ -113,7 +124,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   /// 도전 — 서버가 참가권을 깎고 **1웨이브**를 치른 뒤, 이후는 전투 화면에서
   /// 카드를 고르며 이어간다(로그라이크). 판 전체를 한 번에 돌리지 않는다.
   Future<void> _challenge(AppLocalizations l) async {
-    if (_team.length != 3 || _busy) return;
+    if (_team.length != _teamSize || _busy) return;
+    if (_duelMode) return _challengeDuel(l);
     setState(() => _busy = true);
     final server = ref.read(gameServerProvider);
     // ⚠️ 서버를 부르기 **전에** 최신 로컬 세이브를 올린다. 서버는 자기 저장본
@@ -164,6 +176,112 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     await _refresh();
   }
 
+  /// 1마리 도전 — 서버가 참가권·부상을 확정하고 세션을 연다. 판은 결투 무대에서 하나씩.
+  Future<void> _challengeDuel(AppLocalizations l) async {
+    setState(() => _busy = true);
+    final server = ref.read(gameServerProvider);
+    // 서버를 부르기 **전에** 최신 로컬 세이브를 올린다(서버 저장본 위에서 계산해 돌려준다).
+    if (!await flushSaveBeforeServerAction(
+      server,
+      ref.read(saveControllerProvider).value,
+    )) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showCenterToast(context, l.cloudFailed);
+      return;
+    }
+    final bugId = _team.first;
+    final r = await server.eventDuelStart(bugId);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    final d = r.data;
+    if (!r.isOk || d == null || d['bug'] is! Map) {
+      showCenterToast(context, _errorText(l, r.error));
+      return;
+    }
+    final save = r.save;
+    if (save != null) {
+      await ref.read(saveControllerProvider.notifier).adoptServerSave(save);
+    }
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.eventConfig!;
+    final bug = ref
+        .read(saveControllerProvider)
+        .requireValue
+        .bugs
+        .where((b) => b.id == bugId)
+        .firstOrNull;
+    _team.clear();
+    if (!mounted || bug == null) return;
+    await playEventDuel(
+      context: context,
+      ref: ref,
+      data: data,
+      bug: bug,
+      mine: DuelBug.fromJson(Map<String, dynamic>.from(d['bug'] as Map)),
+      roundSeed: (d['roundSeed'] as num).toInt(),
+      driver: ServerEventDuelDriver(
+        spec: EventDuelSpec.fromJson(cfg.duelWaveJson),
+        cfg: cfg,
+        server: server,
+        sessionId: '${d['sessionId']}',
+      ),
+    );
+    await _refresh();
+  }
+
+  /// 개발자 체험 — 서버 없이 같은 규칙을 앱에서 돌린다(참가권·부상·기록·보상 없음).
+  /// 개발 빌드에서만 보인다. 회차가 열리기 전에도 새 방식을 미리 해 볼 수 있게.
+  Future<void> _devTry() async {
+    if (_team.isEmpty) return;
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.eventConfig;
+    if (cfg == null) return;
+    final save = ref.read(saveControllerProvider).requireValue;
+    final bug = save.bugs.where((b) => b.id == _team.first).firstOrNull;
+    if (bug == null) return;
+    final locale = Localizations.localeOf(context).languageCode;
+    final spec = EventDuelSpec.fromJson(cfg.duelWaveJson);
+    final now = ref.read(clockProvider).now().toUtc();
+    final roundSeed = EventConfig.roundSeedOf(
+      cfg.roundIdAt(cfg.startsAt ?? now),
+    );
+    await playEventDuel(
+      context: context,
+      ref: ref,
+      data: data,
+      bug: bug,
+      mine: duelBugFor(bug, data, save, locale),
+      roundSeed: roundSeed,
+      dev: true,
+      driver: LocalEventDuelDriver(
+        spec: spec,
+        cfg: cfg,
+        seed: now.microsecondsSinceEpoch & 0x7fffffff,
+        roundSeed: roundSeed,
+        bug: duelBugFor(bug, data, save, locale),
+        enemyOf: (w) => eventEnemyFor(data, spec, roundSeed, w, locale),
+        params: DuelParams.fromJson(
+          (data.battleConfig ?? const BattleConfig()).duelJson,
+        ),
+      ),
+    );
+  }
+
+  Widget _devTryButton(AppLocalizations l) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+    child: OutlinedButton.icon(
+      onPressed: _team.isEmpty ? null : _devTry,
+      icon: const Icon(Icons.science_rounded, size: 18),
+      label: Text(l.eventDevTry),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF9BE7FF),
+        side: const BorderSide(color: Color(0x669BE7FF)),
+        minimumSize: const Size(double.infinity, 42),
+      ),
+    ),
+  );
+
   String _errorText(AppLocalizations l, String? code) => switch (code) {
     'no_ticket' => l.eventNoTicket,
     'fatigued' => l.eventFatigueLeft(''),
@@ -171,6 +289,15 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     'ticket_full' => l.eventTicketFull,
     'no_jelly' => l.eventNoJelly,
     'event_closed' => l.eventClosed,
+    'bug_injured' => l.squadInjured,
+    'bug_training' => l.squadTraining,
+    // 구버전 경로 차단(426) — "잠시 후 다시"로 보이면 계속 눌러 본다(2026-09-30 점검).
+    'event_update' => l.updateRequiredBody,
+    'not_adult' ||
+    'bug_not_owned' ||
+    'team_size' ||
+    'duplicate_bug' => l.eventBugUnavailable,
+    final c? when c.startsWith('bug_forged') => l.eventBugUnavailable,
     _ => l.cloudFailed,
   };
 
@@ -223,6 +350,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                 _normalizeCard(l),
                 _teamPicker(context, l, data, save, now),
                 _challengeButton(l, save),
+                if (!kReleaseMode && _duelMode) _devTryButton(l),
                 const Divider(height: 24, color: Color(0x22FFFFFF)),
                 _rankList(l),
               ],
@@ -237,6 +365,32 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   /// "열린 대회가 없어요" 한 줄이라, 2주를 뛴 사람들의 이름이 어디에도 안 남았고
   /// 다음 회차가 언제인지도 알 수 없었다.
   Widget _closed(AppLocalizations l) {
+    // 개발 빌드는 서버가 없어도(로그인 전·오프라인) 체험 칸을 보여 준다 — 체험은 앱에서만 돈다.
+    if (_error == 'no_server' && !kReleaseMode && _duelMode) {
+      return ListView(
+        padding: EdgeInsets.only(
+          bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              l.eventNeedServer,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0x99FFFFFF)),
+            ),
+          ),
+          _teamPicker(
+            context,
+            l,
+            ref.read(gameDataProvider).requireValue,
+            ref.read(saveControllerProvider).requireValue,
+            ref.read(clockProvider).now().toUtc(),
+          ),
+          _devTryButton(l),
+        ],
+      );
+    }
     if (_error == 'no_server') {
       return Center(
         child: Padding(
@@ -253,7 +407,21 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       padding: EdgeInsets.only(
         bottom: 24 + MediaQuery.viewPaddingOf(context).bottom,
       ),
-      children: [_waitingCard(l), const EventHallSection()],
+      children: [
+        _waitingCard(l),
+        // 개발 빌드 — 회차가 열리기 전에도 새 방식(1마리 결투 웨이브전)을 해 본다.
+        if (!kReleaseMode && _duelMode) ...[
+          _teamPicker(
+            context,
+            l,
+            ref.read(gameDataProvider).requireValue,
+            ref.read(saveControllerProvider).requireValue,
+            ref.read(clockProvider).now().toUtc(),
+          ),
+          _devTryButton(l),
+        ],
+        const EventHallSection(),
+      ],
     );
   }
 
@@ -619,7 +787,17 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          l.eventNormalizeBody,
+          l.eventNormalizeBody(
+            (EventDuelSpec.fromJson(
+                      ref
+                          .read(gameDataProvider)
+                          .value
+                          ?.eventConfig
+                          ?.duelWaveJson,
+                    ).fallPenalty *
+                    100)
+                .round(),
+          ),
           style: const TextStyle(
             color: Color(0xDDFFFFFF),
             fontSize: 12,
@@ -629,6 +807,213 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       ],
     ),
   );
+
+  /// 출전 확인 — 결투와 같은 능력치 창에 `취소 · 출전`(이미 출전 중이면 `해제`).
+  Future<void> _confirmEntry(
+    AppLocalizations l,
+    GameData data,
+    SaveGame save,
+    IndividualBug bug,
+    bool picked,
+  ) async {
+    final locale = Localizations.localeOf(context).languageCode;
+    final ok = await showDuelBugInfo(
+      context,
+      data,
+      duelBugFor(bug, data, save, locale),
+      confirm: picked ? l.squadRelease : l.squadDeploy,
+    );
+    if (ok != true || !mounted) return;
+    setState(() {
+      _team.clear();
+      if (!picked) _team.add(bug.id);
+    });
+  }
+
+  /// 출전 무대(1마리 모드) — 고른 곤충이 무대 위에 올라선다. 비어 있으면 물음표 실루엣.
+  /// 무대 그림은 `assets/images/duel/event_entry_stage.webp`(없으면 출정 칸 그림으로).
+  Widget _entryStage(AppLocalizations l, GameData data, SaveGame save) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final bug = _team.isEmpty
+        ? null
+        : save.bugs.where((b) => b.id == _team.first).firstOrNull;
+    final sp = bug == null ? null : data.speciesById[bug.speciesId];
+    final d = bug == null ? null : duelBugFor(bug, data, save, locale);
+    const h = 210.0;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      height: h,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: sp == null
+              ? const Color(0x44FFFFFF)
+              : gradeColor(sp.grade).withValues(alpha: 0.8),
+          width: 1.6,
+        ),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF2E2414), Color(0xFF14100A)],
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, box) => Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(
+              child: gameImage(
+                'assets/images/duel/event_entry_stage.webp',
+                width: box.maxWidth,
+                height: h,
+                fit: BoxFit.cover,
+                fallback: const SizedBox.shrink(),
+              ),
+            ),
+            // 출전하는 곤충 — 바뀔 때 무대 위로 튀어 오르듯 등장.
+            Positioned(
+              left: 0,
+              right: 0,
+              // 그루터기 윗면(그림 높이의 약 70%)에 발이 닿게.
+              bottom: 50,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 420),
+                switchInCurve: Curves.easeOutBack,
+                transitionBuilder: (child, a) => FadeTransition(
+                  opacity: a,
+                  child: ScaleTransition(
+                    scale: Tween(begin: 0.6, end: 1.0).animate(a),
+                    child: SlideTransition(
+                      position: Tween(
+                        begin: const Offset(0, 0.35),
+                        end: Offset.zero,
+                      ).animate(a),
+                      child: child,
+                    ),
+                  ),
+                ),
+                child: bug == null
+                    ? Text(
+                        '?',
+                        key: const ValueKey('empty'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          fontSize: 72,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      )
+                    : GestureDetector(
+                        key: ValueKey(bug.id),
+                        onTap: () => _confirmEntry(l, data, save, bug, true),
+                        child: bugPoseImage(
+                          bug.speciesId,
+                          BugPose.idle,
+                          size: 108,
+                          skin: bugView(ref.read(skinOfProvider), bug),
+                          fallback: bugAvatar(sp!, size: 90),
+                        ),
+                      ),
+              ),
+            ),
+            // 머리표: 출전 곤충
+            Positioned(
+              top: 8,
+              left: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xCC000000),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  l.eventEntryLabel,
+                  style: const TextStyle(
+                    color: _honey,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            // 아래 띠: 이름 · 등급 · 전투력 (비었으면 안내)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                color: const Color(0xB3000000),
+                child: bug == null || sp == null || d == null
+                    ? Text(
+                        l.eventEntryEmpty,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xCCFFFFFF),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: gradeColor(
+                                sp.grade,
+                              ).withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              gradeLabel(l, sp.grade),
+                              style: TextStyle(
+                                color: gradeColor(sp.grade),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          elementIcon(bug.element, size: 14),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              sp.name.resolve(locale),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.flash_on_rounded,
+                            size: 15,
+                            color: Color(0xFFEBC24A),
+                          ),
+                          Text(
+                            formatCompact(d.power.round()),
+                            style: const TextStyle(
+                              color: Color(0xFFEBC24A),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _teamPicker(
     BuildContext context,
@@ -647,16 +1032,51 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     // 쉬고 있는 곤충은 뒤로 — 지금 고를 수 없으니 눈에 먼저 들어올 이유가 없다.
     int gradeIdx(IndividualBug b) =>
         data.speciesById[b.speciesId]?.grade.index ?? -1;
+    final duel = _duelMode;
+    final locale = Localizations.localeOf(context).languageCode;
+    // 1마리 모드: 결투와 같은 능력치의 전투력 — 가장 잘 키운 곤충이 맨 앞.
+    final power = duel
+        ? {
+            for (final b in adults)
+              b.id: duelBugFor(b, data, save, locale).power,
+          }
+        : const <String, double>{};
+    final job = save.trainingJob;
+    DateTime? restUntil(IndividualBug b) {
+      if (!duel) return save.eventFatigue[b.id];
+      // 대회 부상은 서버 소유 기록(`eventFatigue`)이 기준 — 결투 부상과 둘 중 늦은 쪽.
+      final ev = save.eventOnFatigue(b.id, now)
+          ? save.eventFatigue[b.id]
+          : null;
+      final inj = save.isInjured(b.id, now) ? save.injuredUntil(b.id) : null;
+      if (ev != null || inj != null) {
+        if (ev == null) return inj;
+        if (inj == null) return ev;
+        return ev.isAfter(inj) ? ev : inj;
+      }
+      if (job != null && job.bugId == b.id && !job.doneAt(now)) {
+        return job.until;
+      }
+      return null;
+    }
+
+    bool resting(IndividualBug b) {
+      final u = restUntil(b);
+      return u != null && now.isBefore(u);
+    }
+
     adults.sort((a, b) {
-      final af = save.eventOnFatigue(a.id, now) ? 1 : 0;
-      final bf = save.eventOnFatigue(b.id, now) ? 1 : 0;
+      final af = resting(a) ? 1 : 0;
+      final bf = resting(b) ? 1 : 0;
       if (af != bf) return af - bf;
+      if (duel) return (power[b.id] ?? 0).compareTo(power[a.id] ?? 0);
       return gradeIdx(b).compareTo(gradeIdx(a));
     });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (duel) _entryStage(l, data, save),
         Padding(
           padding: const EdgeInsets.fromLTRB(14, 4, 14, 2),
           child: Text(
@@ -685,22 +1105,33 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               final bug = adults[i];
               final sp = data.speciesById[bug.speciesId];
               if (sp == null) return const SizedBox.shrink();
-              final until = save.eventFatigue[bug.id];
-              final resting = until != null && now.isBefore(until);
+              final until = restUntil(bug);
+              final rest = until != null && now.isBefore(until);
               final picked = _team.indexOf(bug.id);
               return _bugTile(
                 l,
                 bug,
                 sp,
                 order: picked < 0 ? null : picked + 1,
-                resting: resting ? until.difference(now) : null,
-                onTap: () => setState(() {
-                  if (picked >= 0) {
-                    _team.removeAt(picked);
-                  } else if (_team.length < 3) {
-                    _team.add(bug.id);
-                  }
-                }),
+                resting: rest ? until.difference(now) : null,
+                // 쉬는 곤충을 누르면 이유를 알려 준다(예전엔 아무 반응이 없었다, 2026-09-30).
+                onRestTap: () => showCenterToast(
+                  context,
+                  job != null && job.bugId == bug.id && !job.doneAt(now)
+                      ? l.squadTraining
+                      : l.squadInjured,
+                ),
+                power: power[bug.id],
+                onTap: duel
+                    // 1마리 — 누르면 상세 창(능력치) → 출전 / 이미 나가 있으면 해제.
+                    ? () => _confirmEntry(l, data, save, bug, picked >= 0)
+                    : () => setState(() {
+                        if (picked >= 0) {
+                          _team.removeAt(picked);
+                        } else if (_team.length < 3) {
+                          _team.add(bug.id);
+                        }
+                      }),
               );
             },
           ),
@@ -716,10 +1147,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     required int? order,
     required Duration? resting,
     required VoidCallback onTap,
+    VoidCallback? onRestTap,
+    double? power,
   }) {
     final locale = Localizations.localeOf(context).languageCode;
     return GestureDetector(
-      onTap: resting == null ? onTap : null,
+      onTap: resting == null ? onTap : onRestTap,
       child: Opacity(
         opacity: resting == null ? 1 : 0.4,
         child: Container(
@@ -779,7 +1212,27 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               ),
               // 타일이 좁아서(86px) "23시간 45분 후 출전 가능"은 들어가지 않는다.
               // 여기선 **얼마나 남았는지만** 보여주고, 이유는 눌렀을 때 알린다.
-              if (resting == null)
+              if (resting == null && power != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    elementIcon(bug.element, size: 12),
+                    const SizedBox(width: 2),
+                    Flexible(
+                      child: Text(
+                        formatCompact(power.round()),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFEBC24A),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else if (resting == null)
                 elementIcon(bug.element, size: 14)
               else
                 Text(
@@ -804,7 +1257,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   Widget _challengeButton(AppLocalizations l, SaveGame save) {
     final cfg = ref.watch(gameDataProvider).value?.eventConfig;
     final tickets = (_state?['tickets'] as num?)?.toInt() ?? 0;
-    final ready = _team.length == 3 && tickets > 0 && !_busy;
+    final ready = _team.length == _teamSize && tickets > 0 && !_busy;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
       child: Column(

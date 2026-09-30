@@ -78,6 +78,29 @@ class DuelBug {
     evade: this.evade + evade,
   );
 
+  /// 한 판 안에서만 쓰는 전투 수치로 바꾼다(전력 압축·게이지 보너스, 엔진 내부용).
+  DuelBug withCombatStats({
+    required double maxHp,
+    required double atk,
+    required double def,
+    double? spd,
+  }) => DuelBug(
+    id: id,
+    name: name,
+    speciesId: speciesId,
+    element: element,
+    temperament: temperament,
+    specialty: specialty,
+    sizeMm: sizeMm,
+    maxHp: maxHp,
+    atk: atk,
+    def: def,
+    spd: spd ?? this.spd,
+    crit: crit,
+    recovery: recovery,
+    evade: evade,
+  );
+
   /// 옛 엔진 유닛에 사이즈·주특기를 붙인다.
   factory DuelBug.fromBattleBug(
     BattleBug b, {

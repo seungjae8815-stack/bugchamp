@@ -243,6 +243,32 @@ void main(List<String> args) {
     (i) => unit(Specialty.values[(i ~/ 3) % 3], el: Element.fire),
   );
   stdout.writeln('\n── 7. 오행 상극 (수 → 화, 같은 스탯) ── 상극 쪽 승률 ${pct(el.win)}');
+
+  // ── 8. 경기 단위(3마리 승자 연속) ─────────────────────────────
+  // 판 하나보다 차이가 벌어진다 — 이긴 곤충이 남은 체력으로 계속 싸워서.
+  stdout.writeln('\n── 8. 경기 단위 전력 차이 (3마리 승자 연속 · A 팀 전원 ×배율) ──');
+  for (final k in [1.1, 1.2, 1.5]) {
+    var w = 0;
+    for (var i = 0; i < _n; i++) {
+      List<DuelBug> team(double sc, int off) => [
+        for (var j = 0; j < 3; j++)
+          unit(
+            Specialty.values[(i + j + off) % 3],
+            scale: sc,
+            tm: Temperament.values[(i + j * 2 + off) % 5],
+            id: 'u$j',
+          ),
+      ];
+      final m = simulateDuel(
+        seed: 5000 + i * 7919,
+        teamA: team(k, 0),
+        teamB: team(1, i ~/ 3),
+        params: p,
+      );
+      if (m.winner(p) == 0) w++;
+    }
+    stdout.writeln('  ×$k : ${pct(w / _n)}');
+  }
 }
 
 const _spcKo = {

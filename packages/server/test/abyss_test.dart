@@ -183,4 +183,107 @@ void main() {
     final r = actions.mergeSave(s, client.toJson());
     expect(r.extra['clamped'], isFalse);
   });
+
+  test('업로드를 잘게 쪼개도 층 상한이 뚫리지 않는다(1초 × 300번, 2026-09-30 점검)', () {
+    var clock = t0;
+    final a2 = GameActions(config: cfg, now: () => clock);
+    var s = stored(ago: Duration.zero).copyWith(lastSeen: t0);
+    final start = s.abyssFloor;
+    for (var i = 0; i < 300; i++) {
+      clock = clock.add(const Duration(seconds: 1));
+      final client = s.copyWith(abyssFloor: s.abyssFloor + 1, lastSeen: clock);
+      s = a2.mergeSave(s, client.toJson()).save!.copyWith(lastSeen: clock);
+    }
+    final perFloor = cfg.run.abyss.minSecondsPerFloor;
+    // 300초면 층당 최소 시간으로 (300 ÷ perFloor) 층 + 여유 1층까지.
+    expect(
+      s.abyssFloor,
+      lessThanOrEqualTo(start + (300 / perFloor).floor() + 1),
+    );
+  });
+
+  group('구버전 앱 업로드 — 1.0.14 필드 보존(2026-09-30 점검)', () {
+    SaveGame trained() => stored().copyWith(
+      duelTraining: {
+        'bug1': {TrainStat.attack: 4, TrainStat.evade: 2},
+      },
+      trainingJob: TrainingJob(
+        bugId: 'bug1',
+        stat: TrainStat.defense,
+        level: 1,
+        until: t0.add(const Duration(minutes: 15)),
+      ),
+      pvpDefenseIds: const ['bug1'],
+    );
+
+    /// 1.0.13 앱이 올리는 모양 — 표식(`feat`)도 1.0.14 필드도 없다.
+    Map<String, dynamic> oldAppJson(SaveGame s) {
+      final j = s.toJson()..remove('feat');
+      for (final k in [
+        'duelTraining',
+        'trainingJob',
+        'pvpDefenseIds',
+        'abyssUnlocked',
+        'inAbyss',
+        'abyssFloor',
+        'abyssWeek',
+        'abyssBest',
+        'abyssBossBest',
+      ]) {
+        j.remove(k);
+      }
+      return j;
+    }
+
+    test('훈련소 기록·이번 주 심연 층·방어팀이 지워지지 않는다', () {
+      final s = trained();
+      final r = actions.mergeSave(s, oldAppJson(s));
+      expect(r.save!.duelTraining['bug1']?[TrainStat.attack], 4);
+      expect(r.save!.trainingJob?.bugId, 'bug1');
+      expect(r.save!.pvpDefenseIds, ['bug1']);
+      expect(r.save!.abyssFloor, 5);
+      expect(r.save!.abyssWeek, week);
+      expect(r.save!.inAbyss, isTrue);
+    });
+
+    test('새 앱이 비운 값은 그대로 비운다(훈련 초기화·심연 나가기)', () {
+      final s = trained();
+      final client = s.copyWith(
+        duelTraining: const {},
+        clearTrainingJob: true,
+        inAbyss: false,
+      );
+      final r = actions.mergeSave(s, client.toJson());
+      expect(r.save!.duelTraining, isEmpty);
+      expect(r.save!.trainingJob, isNull);
+      expect(r.save!.inAbyss, isFalse);
+    });
+
+    test('구버전 앱이 떨어뜨린 곤충 합성 단계(su)를 되돌린다', () {
+      final bug = IndividualBug(
+        id: 'b5',
+        speciesId: 'stag_saw',
+        sizeMm: 40,
+        potential: 5,
+        temperament: Temperament.fickle,
+        sex: Sex.male,
+        synthUps: 2,
+      );
+      final s = trained().copyWith(bugs: [bug]);
+      final j = oldAppJson(s);
+      for (final b in j['bugs'] as List) {
+        (b as Map).remove('su');
+      }
+      final r = actions.mergeSave(s, j);
+      expect(r.error, isNull);
+      expect(r.save!.bugs.single.synthUps, 2);
+    });
+
+    test('새 세이브는 늘 표식을 적는다', () {
+      expect(
+        SaveGame.initial(createdAt: t0).toJson()['feat'],
+        kSaveFeatureLevel,
+      );
+    });
+  });
 }
