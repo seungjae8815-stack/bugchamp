@@ -185,23 +185,34 @@ void main() {
       expect(got.subRoll, n.subRoll);
     });
 
-    test('합성: 기본 개체값은 셋 중 최고 · 부가 개체값은 주재료 것', () {
-      Fairy q(int n, int base, int subr) => Fairy(
+    test('합성 결과는 새로 굴린다 — 같은 seed 면 같고, seed 가 다르면 갈린다', () {
+      Fairy q(int n) => Fairy(
         id: 'f$n',
         kind: kind,
         grade: FairyGrade.common,
         sub: sub,
-        baseRoll: base,
-        subRoll: subr,
+        baseRoll: 1000,
+        subRoll: 1000,
       );
-      final s = withFairies([q(1, 100, 700), q(2, 950, 10), q(3, 300, 999)]);
-      final made =
-          mergeFairies(s, cfg, ['f1', 'f2', 'f3']).extra['fairy']! as Fairy;
-      expect(made.baseRoll, 950);
-      expect(made.subRoll, 700);
+      final s = withFairies([q(1), q(2), q(3)]);
+      Fairy made(int seed) =>
+          mergeFairies(s, cfg, ['f1', 'f2', 'f3'], Random(seed)).extra['fairy']!
+              as Fairy;
+      expect(made(5), made(5));
+      final outs = {
+        for (var seed = 0; seed < 40; seed++)
+          (made(seed).sub, made(seed).baseRoll, made(seed).subRoll),
+      };
+      expect(outs.length, greaterThan(30), reason: '재료 개체값을 이어받지 않는다');
+      for (var seed = 0; seed < 40; seed++) {
+        final m = made(seed);
+        expect(m.kind, kind, reason: '종류는 재료와 같다');
+        expect(subs, contains(m.sub));
+        expect(m.baseRoll, inInclusiveRange(0, kFairyRollMax));
+      }
     });
 
-    test('자동 합성은 가장 좋은 개체를 주재료로 둔다', () {
+    test('자동 합성은 품질 낮은 것부터 태운다(좋은 개체가 남는다)', () {
       Fairy q(int n, int roll) => Fairy(
         id: 'f$n',
         kind: kind,
@@ -210,9 +221,10 @@ void main() {
         baseRoll: roll,
         subRoll: roll,
       );
-      final s = withFairies([q(1, 10), q(2, 800), q(3, 20)]);
-      final made = (autoMergeFairies(s, cfg).state!).fairies.single;
-      expect(made.subRoll, 800);
+      final s = withFairies([q(1, 10), q(2, 800), q(3, 20), q(4, 30)]);
+      final out = autoMergeFairies(s, cfg, Random(1)).state!;
+      expect(out.fairies.map((x) => x.id), contains('f2'));
+      expect(out.fairies.length, 2);
     });
   });
 
@@ -430,14 +442,13 @@ void main() {
   });
 
   group('합성', () {
-    test('같은 종류·등급 3마리 → 한 등급 위 · 부가는 주재료(첫 요정) 것 · 가루 일부 환급', () {
-      final other = subs[1];
-      final s = withFairies([f(1, b: other), f(2), f(3, lv: 3)]);
-      final op = mergeFairies(s, cfg, ['f1', 'f2', 'f3']);
+    test('같은 종류·등급 3마리 → 같은 종류 한 등급 위 · 레벨 1 · 가루 일부 환급', () {
+      final s = withFairies([f(1, b: subs[1]), f(2), f(3, lv: 3)]);
+      final op = mergeFairies(s, cfg, ['f1', 'f2', 'f3'], Random(1));
       final made = op.extra['fairy']! as Fairy;
       expect(made.grade, FairyGrade.rare);
       expect(made.kind, kind);
-      expect(made.sub, other);
+      expect(made.level, 1);
       expect(op.state!.fairies, [made]);
       final spent = cfg.dustSpentTo(FairyGrade.common, 3);
       expect(op.state!.dust, (spent * cfg.mergeDustRefund).floor());
@@ -450,7 +461,7 @@ void main() {
         f(2, b: subs[1]),
         f(3, b: subs[2]),
       ]);
-      expect(mergeFairies(s, cfg, ['f1', 'f2', 'f3']).isOk, isTrue);
+      expect(mergeFairies(s, cfg, ['f1', 'f2', 'f3'], Random(1)).isOk, isTrue);
     });
 
     test('종류나 등급이 다르면 · 동행 중이면 · 신화면 실패', () {
@@ -460,7 +471,7 @@ void main() {
           'f1',
           'f2',
           'f3',
-        ]).error,
+        ], Random(1)).error,
         'mismatch',
       );
       final withComp = withFairies([
@@ -469,13 +480,16 @@ void main() {
         f(3),
       ]).copyWith(companionId: 'f1');
       expect(
-        mergeFairies(withComp, cfg, ['f1', 'f2', 'f3']).error,
+        mergeFairies(withComp, cfg, ['f1', 'f2', 'f3'], Random(1)).error,
         'companion',
       );
       final myth = withFairies([
         for (var i = 1; i <= 3; i++) f(i, g: FairyGrade.mythic),
       ]);
-      expect(mergeFairies(myth, cfg, ['f1', 'f2', 'f3']).error, 'max_grade');
+      expect(
+        mergeFairies(myth, cfg, ['f1', 'f2', 'f3'], Random(1)).error,
+        'max_grade',
+      );
     });
 
     test('자동 합성은 연쇄로 끝까지 · 투자한 요정·동행은 재료에서 뺀다', () {
@@ -485,26 +499,26 @@ void main() {
         f(10, lv: 2),
         f(11),
       ]).copyWith(companionId: 'f11');
-      final dry = autoMergeFairies(s, cfg, dryRun: true);
+      final dry = autoMergeFairies(s, cfg, Random(1), dryRun: true);
       expect(dry.state, s, reason: 'dryRun 은 상태를 바꾸지 않는다');
       final made = dry.extra['made']! as List<Fairy>;
       expect(made.map((x) => x.grade), [FairyGrade.epic]);
       expect(dry.extra['used'], 12);
 
-      final run = autoMergeFairies(s, cfg).state!;
+      final run = autoMergeFairies(s, cfg, Random(1)).state!;
       expect(run.fairies.map((x) => x.id), containsAll(['f10', 'f11']));
       expect(run.fairies.length, 3);
     });
 
-    test('자동 합성은 부가가 다른 요정을 섞지 않는다(무엇을 남길지는 사람이 고른다)', () {
+    test('자동 합성은 부가가 달라도 종류·등급이 같으면 합친다(결과는 새로 굴린다)', () {
       final s = withFairies([
         f(1, b: subs[0]),
         f(2, b: subs[1]),
         f(3, b: subs[2]),
       ]);
-      final op = autoMergeFairies(s, cfg);
-      expect(op.extra['used'], 0);
-      expect(op.state!.fairies.length, 3);
+      final op = autoMergeFairies(s, cfg, Random(1));
+      expect(op.extra['used'], 3);
+      expect(op.state!.fairies.single.grade, FairyGrade.rare);
     });
   });
 
@@ -600,7 +614,7 @@ void main() {
       final s = withFairies([
         for (var i = 1; i <= 3; i++) f(i, g: FairyGrade.legendary),
       ]);
-      final merged = mergeFairies(s, cfg, ['f1', 'f2', 'f3']).state!;
+      final merged = mergeFairies(s, cfg, ['f1', 'f2', 'f3'], Random(1)).state!;
       expect(fairyStateValue(merged), fairyStateValue(s));
       expect(merged.fairies.single.grade, FairyGrade.mythic);
     });

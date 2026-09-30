@@ -1059,7 +1059,7 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
 
 // ── 합성 ─────────────────────────────────────────────────────
 
-/// [mainId] 가 주재료(부가 능력치를 이어받는다). 같은 종류·등급에서 나머지를 고른다.
+/// [mainId] 에 같은 종류·등급 요정을 더 골라 합친다. 결과 능력치는 새로 굴린다(design_fairy.md §1.6).
 class _MergeDialog extends ConsumerStatefulWidget {
   const _MergeDialog({required this.mainId});
   final String mainId;
@@ -1163,7 +1163,7 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
       showCenterToast(context, _err(AppLocalizations.of(context), r.error));
       return;
     }
-    // 합성 창과 (이제 없어진) 주재료 상세 창을 닫고 새 요정을 보여 준다.
+    // 합성 창과 (이제 없어진) 요정의 상세 창을 닫고 새 요정을 보여 준다.
     final nav = Navigator.of(context);
     nav.pop();
     nav.pop();

@@ -3125,17 +3125,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
         buyFairyStone(f, cfg, sub: sub, count: count, jellyHave: jelly),
   );
 
-  Future<FairyOp> fairyMerge(List<String> ids) =>
-      _fairyOp((f, cfg, _) => mergeFairies(f, cfg, ids));
+  /// 합성 — 결과(부가·개체값)는 새로 굴린다(design_fairy.md §1.6).
+  Future<FairyOp> fairyMerge(List<String> ids, {math.Random? rng}) =>
+      _fairyOp((f, cfg, _) => mergeFairies(f, cfg, ids, rng ?? math.Random()));
 
   /// 자동 합성 — [dryRun] 이면 저장하지 않고 예상만(실행 전 확인, §2.7).
+  /// 결과를 새로 굴리므로 예상은 **수(몇 마리를 써서 몇 마리)** 만 믿을 수 있다.
   Future<FairyOp> fairyAutoMerge({bool dryRun = false}) async {
     if (dryRun) {
       final cfg = ref.read(gameDataProvider).value?.fairyConfig;
       if (cfg == null) return const FairyOp.fail('off');
-      return autoMergeFairies(state.requireValue.fairy, cfg, dryRun: true);
+      return autoMergeFairies(
+        state.requireValue.fairy,
+        cfg,
+        math.Random(0),
+        dryRun: true,
+      );
     }
-    return _fairyOp((f, cfg, _) => autoMergeFairies(f, cfg));
+    return _fairyOp((f, cfg, _) => autoMergeFairies(f, cfg, math.Random()));
   }
 
   Future<FairyOp> fairyLevelUp(String id) =>

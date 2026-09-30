@@ -4285,7 +4285,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String fairyMergeHint(String n) {
-    return '같은 종류·등급 $n마리 → 한 등급 위 1마리. 부가 능력치는 이 요정 것을 이어받고, 기본 개체값은 셋 중 가장 좋은 것.';
+    return '같은 종류·등급 $n마리 → 같은 종류 한 등급 위 1마리. 기본·부가 능력치는 새 등급에서 새로 정해져요.';
   }
 
   @override
@@ -4301,7 +4301,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String fairyAutoMergeConfirm(String used, String made) {
-    return '$used마리를 합쳐 $made마리가 돼요. 동행 중·레벨 올린 요정은 빠지고, 부가 능력치가 같은 것끼리만 합쳐요.';
+    return '$used마리를 합쳐 $made마리가 돼요. 동행 중·레벨 올린 요정은 빠지고, 품질이 낮은 요정부터 써요. 결과 능력치는 새로 정해져요.';
   }
 
   @override
@@ -4384,8 +4384,8 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String fairySkillCrits(String n) {
-    return '다음 $n번 공격 확정 치명';
+  String fairySkillCrits(String s) {
+    return '$s초 동안 모든 공격 치명';
   }
 
   @override

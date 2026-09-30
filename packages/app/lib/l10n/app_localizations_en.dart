@@ -4367,7 +4367,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyMergeHint(String n) {
-    return '$n of the same type & grade → 1 of the next grade. Keeps this fairy\'s bonus stat and the best base quality of the three.';
+    return '$n of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade.';
   }
 
   @override
@@ -4383,7 +4383,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyAutoMergeConfirm(String used, String made) {
-    return '$used fairies become $made. Companion and leveled fairies are skipped; only matching bonus stats are merged.';
+    return '$used fairies become $made. Companion and leveled fairies are skipped; lowest quality goes first. Results are rolled fresh.';
   }
 
   @override
@@ -4466,8 +4466,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String fairySkillCrits(String n) {
-    return 'Next $n hits are critical';
+  String fairySkillCrits(String s) {
+    return 'All hits are critical for ${s}s';
   }
 
   @override

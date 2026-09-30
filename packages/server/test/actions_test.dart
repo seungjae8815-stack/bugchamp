@@ -1868,7 +1868,7 @@ void main() {
           'f1',
           'f2',
           'f3',
-        ]).state!;
+        ], Random(1)).state!;
         final r = actions.mergeSave(
           before,
           before.copyWith(fairy: merged).toJson(),

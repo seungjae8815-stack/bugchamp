@@ -26,7 +26,7 @@ const Set<String> kFairySkillEffects = {
   'heal',
   'damageReduce',
   'attackSpeed',
-  'critStrikes',
+  'critWindow',
   'bossBurst',
   'petPower',
   'lastStand',

@@ -560,8 +560,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 지속형 요정 스킬(피해 감소·공속·곤충)의 남은 시간(초).
   double _fairyOn = 0;
 
-  /// 볼테아 — 남은 확정 치명 타수.
-  int _fairyCritLeft = 0;
+  /// 볼테아 — 모든 공격이 치명인 남은 시간(초). 타수가 아니라 시간인 이유: 공속이 빨라지면
+  /// "다음 N타"는 순식간에 끝나 후반 가치가 사라졌다(2026-10-01 시뮬).
+  double _fairyCritT = 0;
 
   /// 시전 그림을 보여 줄 남은 시간(초). 0 이면 날갯짓.
   double _fairyCastT = 0;
@@ -1498,10 +1499,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     while (_attackAcc >= interval && _hp > 0 && guard < 20) {
       _attackAcc -= interval;
       var dmg = perHit;
-      // 볼테아 — 남은 타수만큼 확정 치명.
-      final forced = _fairyCritLeft > 0;
-      if (forced) _fairyCritLeft--;
-      final crit = forced || _rng.nextDouble() < stats.critChance;
+      // 볼테아 — 켜진 동안 모든 공격 치명.
+      final crit = _fairyCritT > 0 || _rng.nextDouble() < stats.critChance;
       if (crit) dmg *= stats.critDamage;
       _hp -= dmg;
       if (_playerStruckT < 0) _playerStruckT = 0;
@@ -3750,8 +3749,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _pops.add(_Pop(formatCompact(dmg), 0, fairyGradeColor(f.grade), 26));
       case 'heal':
         _healTeamFraction(v);
-      case 'critStrikes':
-        _fairyCritLeft = v.round().clamp(1, 20);
+      case 'critWindow':
+        _fairyCritT = v.clamp(0.0, 30.0);
       default:
         _fairyOn = sk.duration.inMilliseconds / 1000;
     }
@@ -3872,6 +3871,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (_fairyCd > 0) _fairyCd = math.max(0, _fairyCd - dt);
     if (_fairyOn > 0) _fairyOn = math.max(0, _fairyOn - dt);
     if (_fairyCastT > 0) _fairyCastT = math.max(0, _fairyCastT - dt);
+    if (_fairyCritT > 0) _fairyCritT = math.max(0, _fairyCritT - dt);
     _fairyAnimT += dt;
     for (final k in _skillCd.keys.toList()) {
       final v = _skillCd[k]! - dt;

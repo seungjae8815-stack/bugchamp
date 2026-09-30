@@ -9,6 +9,8 @@
 //   dart run tool/balance_sim.dart --habitats=20 --stages=15 --hp-growth=1.20
 //   dart run tool/balance_sim.dart --tiers=4 --loadout=molting,pupa_guard,sap_drink,tenacity,swarm
 //   dart run tool/balance_sim.dart --tiers=4 --skill=molting.base=0.3 --skill=pupa_guard.duration=4
+//   dart run tool/balance_sim.dart --tiers=4 --no-fairy          # 요정을 뺀 90일 표와 비교
+//   dart run tool/balance_sim.dart --tiers=4 --fairy-kind=voltea --fairy-sub=critDamage
 //   dart run tool/balance_sim.dart --tiers=4 --abyss-weeks=12 --train-pet=0.25   # 훈련소 펫 보너스를 얹어 심연 도달 층 비교
 //
 // ⚠️ 근사인 지점(결과를 읽을 때 감안할 것):
@@ -21,7 +23,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:io';
 
-import 'package:core_models/core_models.dart' show ItemOptionKind, MaterialKind;
+import 'package:core_models/core_models.dart'
+    show Fairy, FairyGrade, ItemOptionKind, MaterialKind;
 import 'package:core_run/core_run.dart';
 
 import 'power_ceiling.dart';
@@ -456,6 +459,7 @@ void main(List<String> args) {
     _printBossLog(sim);
     _printEntryLog(sim);
     _printSkillBossLog(sim);
+    _printFairyBossLog(sim);
     return;
   }
 
@@ -716,6 +720,24 @@ final SkillConfig? _skillConfig = () {
   return SkillConfig.fromJson(raw);
 }();
 
+/// 요정 설정(없으면 요정을 뺀 예전 시뮬). docs/design_fairy.md.
+final FairyConfig? _fairyConfig = () {
+  final f = File('../app/assets/data/fairies.json');
+  if (!f.existsSync()) return null;
+  return FairyConfig.fromJson(
+    jsonDecode(f.readAsStringSync()) as Map<String, dynamic>,
+  );
+}();
+
+/// `--no-fairy` — 요정을 빼고 잰다(요정이 90일 표를 얼마나 당기는지 비교).
+bool _noFairy = false;
+
+/// 시뮬 동행 요정의 종류·부가(`--fairy-kind=` · `--fairy-sub=`). 등급·레벨·개체값은
+/// fairy_sim 실측 곡선(accumulation.fairyByDay)을 따른다 — 종류는 무작위라 대표 하나로 잰다.
+/// 기본 = 공격형(이그니스 + 보스 피해) — 90일 표에 가장 크게 작용하는 쪽(보수적 = 빠르게 잰다).
+String _fairyKind = 'ignis';
+String _fairySub = 'bossDamage';
+
 /// 시뮬 유저가 끼는 스킬 순서(balance_targets.json → skillLoadout).
 /// `--loadout=molting,pupa_guard,sap_drink` 로 바꿔 끼워 잴 수 있다(방어형 로드아웃 비교).
 List<String> _skillLoadout = [
@@ -870,6 +892,21 @@ void _printSkillBossLog(_Player sim) {
         .join(' ');
     stdout.writeln(
       '  ${def.id.padRight(14)} ${def.grade.key.padRight(9)}$cells',
+    );
+  }
+  stdout.writeln('');
+}
+
+/// 동행 요정 한 마리가 보스 관문을 몇 % 넓히나(난이도별 최종 보스 시점) — 스킬 한 칸 표와 나란히 본다.
+void _printFairyBossLog(_Player sim) {
+  if (sim.fairyBossLog.isEmpty) return;
+  stdout.writeln(
+    '── 동행 요정의 보스 관문 기여($_fairyKind + 부가 $_fairySub · fairy_sim 곡선) ──',
+  );
+  for (final e in sim.fairyBossLog) {
+    stdout.writeln(
+      '  난이도 ${e.tier} 최종 보스: ${e.grade} Lv${e.lv} → '
+      '+${(e.share * 100).toStringAsFixed(0)}%',
     );
   }
   stdout.writeln('');
@@ -1326,6 +1363,7 @@ class _Player {
     s = applyEquipment(s, gear, critBudget: config.critBudgetGear);
     s = _ceilingData.dex.apply(s, dexConquered, dexConquered);
     s = _applySkills(s, activeAvg: activeAvg);
+    s = _applyFairy(s, activeAvg: activeAvg);
     return capCritChance(s, config.critChanceMax);
   }
 
@@ -1389,6 +1427,112 @@ class _Player {
       moveSpeed: s.moveSpeed,
       boostBonus: s.boostBonus,
     );
+  }
+
+  // ── 동행 요정(docs/design_fairy.md): fairy_sim 실측 곡선(accumulation.fairyByDay) ──
+  // 패시브(기본·부가 능력치)는 앱과 같은 함수(`applyFairyStats`). 스킬은 스킬 액티브와 같은 규약 —
+  // 사냥터는 평균 가동률, 보스전은 시작 때 준비됨([_bossDamageIn]). 생존형(회복·버티기)은 빠진다(보수적).
+
+  /// 지금 날짜의 동행 요정(곡선은 계단 — 그날까지의 마지막 점). 없으면 null.
+  Fairy? get _fairy {
+    final cfg = _fairyConfig;
+    final pts = _targets.accumulation['fairyByDay'] as List?;
+    if (_noFairy || cfg == null || pts == null) return null;
+    List? cur;
+    for (final p in pts) {
+      if (((p as List)[0] as num) <= elapsedDays) cur = p;
+    }
+    if (cur == null) return null;
+    final g = (cur[1] as num).toInt();
+    if (g < 0 || g >= FairyGrade.values.length) return null;
+    return Fairy(
+      id: 'sim',
+      kind: _fairyKind,
+      grade: FairyGrade.values[g],
+      sub: _fairySub,
+      level: math.max(1, (cur[2] as num).toInt()),
+      baseRoll: (cur[3] as num).toInt(),
+      subRoll: (cur[4] as num).toInt(),
+    );
+  }
+
+  CharacterStats _applyFairy(CharacterStats s, {required bool activeAvg}) {
+    final cfg = _fairyConfig;
+    final f = _fairy;
+    if (cfg == null || f == null) return s;
+    final bonus = cfg.statBonus(f);
+    s = applyFairyStats(s, bonus);
+    // 곤충 몫(티타니아 등)은 곤충 피해에만 — 캐릭터 몫은 그대로(스킬 petPower 와 같은 규약).
+    var attack = 1 + _petShare * (bonus['petShare'] ?? 0);
+    var speed = 1.0;
+    final def = cfg.byId(f.kind);
+    if (activeAvg && def != null) {
+      final sk = def.skill;
+      final cd = sk.cooldown.inMilliseconds / 1000;
+      final up = cd <= 0
+          ? 0.0
+          : (sk.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
+      final v = cfg.skillValue(f);
+      if (cd > 0) {
+        switch (sk.effect) {
+          case 'burstDamage':
+            attack *= 1 + v / cd;
+          case 'attackSpeed':
+            speed *= 1 + v * up;
+          case 'petPower':
+            attack *= 1 + _petShare * v * up;
+          case 'critWindow':
+            attack *= 1 + (v / cd).clamp(0.0, 1.0) * _forcedCritGain(s);
+        }
+      }
+    }
+    if (attack == 1 && speed == 1) return s;
+    return CharacterStats(
+      attack: s.attack * attack,
+      attackSpeed: s.attackSpeed * speed,
+      rewardMultiplier: s.rewardMultiplier,
+      critChance: s.critChance,
+      critDamage: s.critDamage,
+      bossDamage: s.bossDamage,
+      maxHp: s.maxHp,
+      defense: s.defense,
+      hpRegen: s.hpRegen,
+      xpMultiplier: s.xpMultiplier,
+      bugFind: s.bugFind,
+      materialFind: s.materialFind,
+      moveSpeed: s.moveSpeed,
+      boostBonus: s.boostBonus,
+    );
+  }
+
+  /// 볼테아 — "모든 공격 치명"이 켜진 동안 피해가 몇 배 오르나(−1). 켜진 비율은 호출부가 곱한다.
+  double _forcedCritGain(CharacterStats s) {
+    final c = s.critChance.clamp(0.0, 1.0);
+    final avg = 1 + c * (s.critDamage - 1);
+    return (1 - c) * (s.critDamage - 1) / avg;
+  }
+
+  /// 난이도마다 최종 보스를 깬 순간의 요정 보스 관문 기여(요정만 뺐을 때 대비 +%).
+  final List<({int tier, String grade, int lv, double share})> fairyBossLog =
+      [];
+
+  ({int tier, String grade, int lv, double share}) fairyBossShare() {
+    final f = _fairy;
+    final saved = _noFairy;
+    try {
+      _noFairy = true;
+      final none = bossHpAtLimit(1);
+      _noFairy = saved;
+      final withF = bossHpAtLimit(1);
+      return (
+        tier: _tier,
+        grade: f?.grade.key ?? '-',
+        lv: f?.level ?? 0,
+        share: none <= 0 ? 0 : withF / none - 1,
+      );
+    } finally {
+      _noFairy = saved;
+    }
   }
 
   /// 지금 끼고 있는 스킬 — 로드아웃 순서대로 열린 칸만큼, 채움만큼의 레벨. 없으면 null.
@@ -1479,6 +1623,7 @@ class _Player {
     final st = _statsNoActives;
     final hit = baselineHitPower(st, boss: true);
     var dmg = hit * st.attackSpeed * sec;
+    dmg += _fairyBossExtra(st, hit, sec);
     final cfg = _skillConfig;
     final eq = _skillEquip;
     if (cfg == null || eq == null || sec <= 0) return dmg;
@@ -1507,6 +1652,35 @@ class _Player {
       }
     }
     return dmg;
+  }
+
+  /// 보스전 [sec] 초 동안 요정 스킬이 더하는 피해 — 스킬 액티브와 같은 규약(시작 때 준비됨, 쿨마다).
+  double _fairyBossExtra(CharacterStats st, double hit, double sec) {
+    final cfg = _fairyConfig;
+    final f = _fairy;
+    final def = f == null ? null : cfg?.byId(f.kind);
+    if (cfg == null || f == null || def == null || sec <= 0) return 0;
+    final sk = def.skill;
+    final cd = sk.cooldown.inMilliseconds / 1000;
+    final dur = sk.duration.inMilliseconds / 1000;
+    final v = cfg.skillValue(f);
+    var extra = 0.0;
+    for (var t = 0.0; t < sec; t += cd <= 0 ? sec : cd) {
+      switch (sk.effect) {
+        case 'burstDamage' || 'bossBurst':
+          extra += skillBurstDamage(st, v, boss: true);
+        case 'attackSpeed':
+          extra += hit * st.attackSpeed * v * math.min(dur, sec - t);
+        case 'petPower':
+          extra +=
+              hit * st.attackSpeed * _petShare * v * math.min(dur, sec - t);
+        case 'critWindow':
+          // v = 모든 공격이 치명인 시간(초).
+          extra +=
+              hit * st.attackSpeed * _forcedCritGain(st) * math.min(v, sec - t);
+      }
+    }
+    return extra;
   }
 
   /// 보스전에서 버티는 시간(초) — 초당 순손실 [net] 에 방어형 스킬을 얹는다.
@@ -1933,7 +2107,10 @@ class _Player {
         if (_zoneKills >= config.bossUnlockKills && _bossBeatable(stage)) {
           final z = config.zoneOf(stage);
           if (z <= config.zonesPerTier) {
-            if (z == config.zonesPerTier) skillBossLog.add(skillBossShare());
+            if (z == config.zonesPerTier) {
+              skillBossLog.add(skillBossShare());
+              fairyBossLog.add(fairyBossShare());
+            }
             bossLog.add((
               tier: _tier,
               zone: z,
@@ -2417,6 +2594,20 @@ _Opts _parseArgs(List<String> args) {
     final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
     if (es != null) {
       _gearScale = double.parse(es.group(1)!);
+      continue;
+    }
+    if (a == '--no-fairy') {
+      _noFairy = true;
+      continue;
+    }
+    final fk = RegExp(r'^--fairy-kind=(.+)$').firstMatch(a);
+    if (fk != null) {
+      _fairyKind = fk.group(1)!;
+      continue;
+    }
+    final fs = RegExp(r'^--fairy-sub=(.+)$').firstMatch(a);
+    if (fs != null) {
+      _fairySub = fs.group(1)!;
       continue;
     }
     final lo = RegExp(r'^--loadout=(.+)$').firstMatch(a);

@@ -7531,7 +7531,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyMergeHint.
   ///
   /// In en, this message translates to:
-  /// **'{n} of the same type & grade → 1 of the next grade. Keeps this fairy\'s bonus stat and the best base quality of the three.'**
+  /// **'{n} of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade.'**
   String fairyMergeHint(String n);
 
   /// No description provided for @fairyMergePick.
@@ -7555,7 +7555,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyAutoMergeConfirm.
   ///
   /// In en, this message translates to:
-  /// **'{used} fairies become {made}. Companion and leveled fairies are skipped; only matching bonus stats are merged.'**
+  /// **'{used} fairies become {made}. Companion and leveled fairies are skipped; lowest quality goes first. Results are rolled fresh.'**
   String fairyAutoMergeConfirm(String used, String made);
 
   /// No description provided for @fairyAutoMergeNone.
@@ -7699,8 +7699,8 @@ abstract class AppLocalizations {
   /// No description provided for @fairySkillCrits.
   ///
   /// In en, this message translates to:
-  /// **'Next {n} hits are critical'**
-  String fairySkillCrits(String n);
+  /// **'All hits are critical for {s}s'**
+  String fairySkillCrits(String s);
 
   /// No description provided for @fairySkillBossBurst.
   ///

@@ -223,13 +223,20 @@ FairyState grantFairyItems(
 bool fairyIsFodder(FairyState s, Fairy f) =>
     f.id != s.companionId && f.level <= 1;
 
-/// 같은 종류·같은 등급 [FairyConfig.mergeCount] 마리 → 한 등급 위 1마리(확률 없음).
+/// 같은 종류·같은 등급 [FairyConfig.mergeCount] 마리 → 한 등급 위 1마리(등급 오름은 확정).
 ///
-/// **부가 능력치·부가 개체값은 [ids] 의 첫 요정(주재료) 것을 이어받는다** — 모은 부가를
-/// 등급을 올리며 지켜 가는 게 수집의 목표가 된다. **기본 개체값은 셋 중 가장 좋은 것**
-/// (재료를 셋이나 태우는 보상 · 좋은 개체를 버리지 않게). 개체값은 새 등급 범위의 같은 자리로 간다. 직접 고른 것이라 레벨 2 이상도 허용한다(쓴 가루 일부 환급).
-/// 동행 중은 안 된다. 결과 `extra['fairy']` · `extra['refund']`.
-FairyOp mergeFairies(FairyState s, FairyConfig cfg, List<String> ids) {
+/// **결과는 새로 굴린다**(2026-10-01 사장님 확정) — 종류는 재료와 같고, 기본 개체값·부가 능력치(종류)·
+/// 부가 개체값은 새 등급 범위에서 다시 굴린다. 합성할 때마다 좋은 개체를 노리는 뽑기가 된다.
+/// 순서 고정(부가 → 기본 개체값 → 부가 개체값, 둥지 부화와 같다) — 바꾸면 같은 seed 의 결과가 달라진다.
+///
+/// 직접 고른 것이라 레벨 2 이상도 허용한다(쓴 가루 일부 환급). 동행 중은 안 된다.
+/// 결과 `extra['fairy']` · `extra['refund']`.
+FairyOp mergeFairies(
+  FairyState s,
+  FairyConfig cfg,
+  List<String> ids,
+  math.Random rng,
+) {
   if (ids.length != cfg.mergeCount || ids.toSet().length != ids.length) {
     return const FairyOp.fail('bad_count');
   }
@@ -246,15 +253,19 @@ FairyOp mergeFairies(FairyState s, FairyConfig cfg, List<String> ids) {
   }
   final up = first.grade.next;
   if (up == null) return const FairyOp.fail('max_grade');
+  if (cfg.subWeight.isEmpty) return const FairyOp.fail('off');
   final refund = _refund(cfg, picked);
   final seq = s.seq + 1;
+  final sub = cfg.rollSub(rng);
+  final baseRoll = cfg.rollQuality(rng);
+  final subRoll = cfg.rollQuality(rng);
   final made = Fairy(
     id: 'f$seq',
     kind: first.kind,
     grade: up,
-    sub: first.sub,
-    baseRoll: picked.map((f) => f.baseRoll).reduce(math.max),
-    subRoll: first.subRoll,
+    sub: sub,
+    baseRoll: baseRoll,
+    subRoll: subRoll,
   );
   final gone = ids.toSet();
   return FairyOp.ok(
@@ -272,12 +283,16 @@ FairyOp mergeFairies(FairyState s, FairyConfig cfg, List<String> ids) {
   );
 }
 
-/// 자동 합성 — 재료가 되는 요정([fairyIsFodder])만 **같은 종류·등급·부가끼리** 묶어
-/// 끝까지(연쇄) 합친다. 부가가 다른 요정을 섞지 않는다 — 어떤 부가를 남길지는
-/// 사람이 고를 일이다(수동 [mergeFairies]).
-/// [dryRun] 이면 상태를 바꾸지 않고 예상 결과만 준다(실행 전 확인 — §2.7).
+/// 자동 합성 — 재료가 되는 요정([fairyIsFodder])만 **같은 종류·등급끼리** 묶어 끝까지(연쇄) 합친다.
+/// 결과는 어차피 새로 굴리므로 **품질 낮은 것부터** 태운다 — 셋으로 안 나눠떨어지면 좋은 개체가 남는다.
+/// [dryRun] 이면 상태를 바꾸지 않고 예상(몇 마리를 써서 몇 마리가 되나)만 준다(실행 전 확인 — §2.7).
 /// 결과 `extra['made']`(남는 요정 List<Fairy>) · `extra['used']`(재료 수).
-FairyOp autoMergeFairies(FairyState s, FairyConfig cfg, {bool dryRun = false}) {
+FairyOp autoMergeFairies(
+  FairyState s,
+  FairyConfig cfg,
+  math.Random rng, {
+  bool dryRun = false,
+}) {
   var cur = s;
   final made = <Fairy>[];
   var used = 0;
@@ -285,19 +300,16 @@ FairyOp autoMergeFairies(FairyState s, FairyConfig cfg, {bool dryRun = false}) {
     final groups = <String, List<Fairy>>{};
     for (final f in cur.fairies) {
       if (!fairyIsFodder(cur, f) || f.grade.next == null) continue;
-      groups
-          .putIfAbsent('${f.kind}|${f.grade.index}|${f.sub}', () => [])
-          .add(f);
+      groups.putIfAbsent('${f.kind}|${f.grade.index}', () => []).add(f);
     }
     final ready = groups.values.where((g) => g.length >= cfg.mergeCount);
     if (ready.isEmpty) break;
     final before = made.length;
     for (final g in ready.toList()) {
-      // 좋은 개체부터 — 주재료(첫째)의 부가 개체값을 이어받으므로 가장 좋은 것을 앞에.
-      g.sort((a, b) => b.quality.compareTo(a.quality));
+      g.sort((a, b) => a.quality.compareTo(b.quality));
       final op = mergeFairies(cur, cfg, [
         for (final f in g.take(cfg.mergeCount)) f.id,
-      ]);
+      ], rng);
       if (!op.isOk) continue;
       cur = op.state!;
       made.add(op.extra['fairy']! as Fairy);

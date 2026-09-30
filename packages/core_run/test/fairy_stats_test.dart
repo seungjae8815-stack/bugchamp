@@ -116,7 +116,7 @@ void main() {
         'burstDamage',
         'damageReduce',
         'attackSpeed',
-        'critStrikes',
+        'critWindow',
         'petPower',
       ]) {
         expect(

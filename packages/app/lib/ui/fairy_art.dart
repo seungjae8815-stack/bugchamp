@@ -63,7 +63,7 @@ String fairySkillText(AppLocalizations l, FairySkillDef sk, double value) =>
       ),
       'attackSpeed' => l.fairySkillHaste(_sec(sk.duration), _pct(value)),
       'petPower' => l.fairySkillPet(_sec(sk.duration), _pct(value)),
-      'critStrikes' => l.fairySkillCrits('${value.round().clamp(1, 20)}'),
+      'critWindow' => l.fairySkillCrits(value.toStringAsFixed(1)),
       'lastStand' => l.fairySkillStand(_pct(value.clamp(0.05, 1.0))),
       _ => sk.effect,
     };

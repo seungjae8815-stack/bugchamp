@@ -4275,7 +4275,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyMergeHint(String n) {
-    return '同じ種類・等級$n体 → 1段階上の1体。付加能力はこの妖精のものを継ぎ、基本個体値は3体の最良値。';
+    return '同じ種類・等級$n体 → 同じ種類の1段階上1体。基本・付加能力は新しい等級で改めて決まります。';
   }
 
   @override
@@ -4291,7 +4291,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyAutoMergeConfirm(String used, String made) {
-    return '$used体を合わせて$made体になります。同行中・レベルを上げた妖精は除外し、付加能力が同じもの同士だけ合成します。';
+    return '$used体を合わせて$made体になります。同行中・レベルを上げた妖精は除外し、品質の低い妖精から使います。結果の能力は新しく決まります。';
   }
 
   @override
@@ -4374,8 +4374,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String fairySkillCrits(String n) {
-    return '次の$n回の攻撃が確定クリティカル';
+  String fairySkillCrits(String s) {
+    return '$s秒間 すべての攻撃がクリティカル';
   }
 
   @override
