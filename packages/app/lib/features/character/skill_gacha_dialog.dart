@@ -290,7 +290,8 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
         'not_enough_jelly' => l.notEnoughJelly,
         'sweep_limit' => l.skillSweepLimit,
         'no_boss' => l.skillSweepNoBoss,
-        _ => r.error!,
+        // 매핑 안 된 서버 코드를 원문으로 띄우지 않는다(2026-10-02 출시 점검).
+        _ => l.guildErrGeneric,
       });
       return;
     }

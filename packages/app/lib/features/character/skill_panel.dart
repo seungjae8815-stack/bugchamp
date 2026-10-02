@@ -660,7 +660,8 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     'training_busy' => l.skillErrTrainingBusy,
     'not_enough_jelly' => l.notEnoughJelly,
     'slots_full' => l.skillSlotsFull,
-    _ => err,
+    // 매핑 안 된 서버 코드를 원문으로 띄우지 않는다(2026-10-02 출시 점검).
+    _ => l.guildErrGeneric,
   };
 
   Widget _button(

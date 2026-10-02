@@ -4901,7 +4901,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   String _mailTitle(AppLocalizations l, String t) {
     if (t == _replyTitleKo) return l.mailReplyTitle;
     if (t.startsWith(_grantPrefix)) {
-      return l.mailGrantTitle(t.substring(_grantPrefix.length));
+      var name = t.substring(_grantPrefix.length);
+      // 서버는 상품명을 **한국어로** 박아 보낸다 — iap.json 에서 같은 한국어 이름을 찾아
+      // 기기 언어로 바꾼다(2026-10-02 출시 점검: en/ja 유저에게 상품명만 한글이었다).
+      final locale = Localizations.localeOf(context).languageCode;
+      for (final p in _data.iapConfig?.products ?? const <IapProduct>[]) {
+        if (p.name?.resolve('ko') == name) {
+          name = p.name!.resolve(locale);
+          break;
+        }
+      }
+      return l.mailGrantTitle(name);
     }
     return t;
   }

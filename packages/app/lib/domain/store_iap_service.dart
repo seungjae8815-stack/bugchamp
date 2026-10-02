@@ -287,7 +287,8 @@ class StoreIapService implements IapService {
               _scheduleRetry();
 
             case VerifyResult.valid:
-              final granted = await _grant(p);
+              final grant = await _grant(p);
+              final granted = grant == _Grant.granted;
               if (granted) _retryCount = 0;
               // 지급에 실패했으면 완료 통보하지 않는다 — 그래야 스토어가 다시 전달해
               // 다음 기회에 지급할 수 있다(돈만 받고 물건 안 주는 상황 방지).
@@ -297,10 +298,17 @@ class StoreIapService implements IapService {
               // 광고 전환 신호는 **지급까지 끝난 뒤에만** 보낸다. 검증 실패·
               // 취소까지 세면 메타가 가짜 구매자를 닮은 사람에게 광고를 돌린다.
               if (granted) _logPurchase(p);
-              _finish(
-                p.productID,
-                granted ? PurchaseOutcome.success : PurchaseOutcome.failed,
-              );
+              if (grant == _Grant.retry) {
+                // 서버 지급만 실패(콜드스타트·일시 오류) — 검증 보류와 같은 길로
+                // 재시도한다(2026-10-02 출시 점검).
+                _finish(p.productID, PurchaseOutcome.pending);
+                _scheduleRetry();
+              } else {
+                _finish(
+                  p.productID,
+                  granted ? PurchaseOutcome.success : PurchaseOutcome.failed,
+                );
+              }
           }
 
         case PurchaseStatus.canceled:
@@ -383,31 +391,37 @@ class StoreIapService implements IapService {
   }
 
   /// 구매 1건을 세이브에 반영. 중복 지급은 `purchaseId` 로 막는다.
-  Future<bool> _grant(PurchaseDetails p) async {
+  Future<_Grant> _grant(PurchaseDetails p) async {
     final cfg = _ref.read(gameDataProvider).value?.iapConfig;
     final product = cfg?.byId(p.productID);
     if (product == null) {
       // iap.json 에 없는 상품이 스토어에서 왔다 — 지급할 근거가 없다.
       debugPrint('[iap] 알 수 없는 상품: ${p.productID}');
-      return false;
+      return _Grant.failed;
     }
     // 권위 서버가 있으면 서버가 지급한다(영수증 검증도 서버가 다시 한다).
     final server = _ref.read(gameServerProvider);
     if (server.available) {
-      if (await _grantViaServer(p)) return true;
-      // 서버 지급 실패(콜드스타트·일시 오류 등) → **영수증은 이미 검증됐으므로**
-      // 로컬 지급으로 폴백해 결제가 유실되지 않게 한다. 위조 영수증은 앞선
-      // _verify 에서 걸러졌고, 로컬은 purchaseId 로 중복 지급을 막는다.
-      debugPrint('[iap] 서버 지급 실패 → 로컬 지급 폴백');
+      if (await _grantViaServer(p)) return _Grant.granted;
+      // 서버 지급 실패(콜드스타트·일시 오류 등) → **로컬로 폴백하지 않는다**
+      // (2026-10-02 출시 점검). 예전엔 로컬에 넣고 스토어 큐를 닫았는데, 다음
+      // 업로드에서 서버가 젤리 증가를 300 으로 자르고 `starterBought`·`passExpiresAt`·
+      // `redeemedPurchases` 는 서버 소유라 서버 값으로 덮였다 — 젤리 660~4,200 결제가
+      // 300 만 남고 큐는 이미 닫혀 되살릴 길이 없었다. 완료 통보를 미루면 스토어가
+      // 다시 전달하고([_scheduleRetry]·[_sweep]) 서버 `/purchase` 는 토큰으로 멱등이라
+      // 두 번 들어가지 않는다.
+      debugPrint('[iap] 서버 지급 실패 → 보류·재시도');
+      return _Grant.retry;
     }
 
     try {
-      return await _ref
+      final ok = await _ref
           .read(saveControllerProvider.notifier)
           .applyPurchase(product, purchaseId: p.purchaseID ?? p.productID);
+      return ok ? _Grant.granted : _Grant.failed;
     } catch (e) {
       debugPrint('[iap] 지급 실패: $e');
-      return false;
+      return _Grant.failed;
     }
   }
 
@@ -435,3 +449,6 @@ final storePricesProvider = FutureProvider<Map<String, String>>((ref) async {
   if (svc is StoreIapService) await svc.init();
   return svc.storePrices;
 });
+
+/// [_grant] 결과 — 서버 지급만 실패한 경우는 실패가 아니라 **보류**다.
+enum _Grant { granted, failed, retry }

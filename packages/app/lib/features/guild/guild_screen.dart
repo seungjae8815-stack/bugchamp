@@ -636,10 +636,15 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                   ),
                   const SizedBox(width: 8),
                   _chip(_joinModeShort(l, g.joinMode)),
-                  const Spacer(),
-                  Text(
-                    l.guildAvgPower(formatCompact(g.avgPower)),
-                    style: const TextStyle(color: _dim, fontSize: 11.5),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l.guildAvgPower(formatCompact(g.avgPower)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(color: _dim, fontSize: 11.5),
+                    ),
                   ),
                 ],
               ),

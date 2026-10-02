@@ -18,7 +18,12 @@ void showCenterToast(BuildContext context, String text) {
   // "젤리가 부족해요" 류는 토스트 대신 **상점 안내 창**으로(jelly_short.dart) — 부족을 알리는 곳
   // 약 25곳을 하나하나 바꾸지 않고 여기 한 곳에서 잡는다. 새로 생기는 곳도 저절로 따라온다.
   final l = Localizations.of<AppLocalizations>(context, AppLocalizations);
-  if (l != null && (text == l.notEnoughJelly || text == l.fairyErrJelly)) {
+  if (l != null &&
+      (text == l.notEnoughJelly ||
+          text == l.fairyErrJelly ||
+          text == l.forgeNoJelly ||
+          text == l.eventNoJelly ||
+          text == l.guildErrJelly)) {
     showJellyShort(context);
     return;
   }

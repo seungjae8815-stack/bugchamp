@@ -306,8 +306,33 @@ class LocalPvpBackend implements PvpBackend {
     '더듬이전사',
   ];
 
+  /// 영어·일본어 기기용 NPC 닉네임 — 미로그인·조회 실패 폴백 순위표가 한글 닉네임으로
+  /// 가득 찼다(2026-10-02 출시 점검). 언어는 앱이 [languageCode] 로 알려 준다.
+  static const _handlesEn = [
+    'BeetleKing',
+    'StagLord',
+    'MasterCatcher',
+    'BugMaster',
+    'ForestTitan',
+    'JawPincer',
+    'Firefly',
+    'HerculesBug',
+    'SpiderKing',
+    'ButterflyDream',
+    'MeadowRuler',
+    'HoneyHunter',
+    'Specimenist',
+    'NightPredator',
+    'Molter',
+    'AntennaKnight',
+  ];
+
+  /// 앱이 현재 언어를 적어 둔다(`main.dart`). 'ko' 가 아니면 영문 닉네임.
+  static String languageCode = 'ko';
+
   String _npcName(int i) {
-    final base = _handles[i % _handles.length];
+    final handles = languageCode == 'ko' ? _handles : _handlesEn;
+    final base = handles[i % handles.length];
     final tier = i ~/ _handles.length;
     return tier == 0 ? base : '$base${tier + 1}';
   }

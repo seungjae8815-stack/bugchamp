@@ -325,12 +325,43 @@ Widget gameDialogButton(
   Color? color,
 }) {
   if (primary) {
+    if (color != null) {
+      // 색을 지정한 버튼(삭제·초기화·신고 = 붉은색)은 **단색 판**으로 그린다. 팝업 테마의
+      // 황동 아트(`backgroundBuilder`)가 `backgroundColor` 를 덮어 위험 버튼이 확인 버튼과
+      // 똑같이 보였다(2026-10-02 출시 점검). 속성별로 테마가 채워지므로 빌더를 직접 준다.
+      return FilledButton(
+        onPressed: onPressed,
+        style: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll(Color(0xFFFFF3D0)),
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 13.5,
+              shadows: [Shadow(color: Color(0xCC000000), blurRadius: 3)],
+            ),
+          ),
+          backgroundBuilder: (context, states, child) => DecoratedBox(
+            decoration: ShapeDecoration(
+              color: states.contains(WidgetState.disabled)
+                  ? const Color(0xFF5A4A44)
+                  : color,
+              shape: const StadiumBorder(
+                side: BorderSide(color: Color(0x55000000)),
+              ),
+            ),
+            child: child,
+          ),
+        ),
+        child: Text(label),
+      );
+    }
     return FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: color ?? _honey,
+        backgroundColor: _honey,
         foregroundColor: const Color(0xFF3A2600),
-        textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        // 크기는 팝업 테마(13.5)와 맞춘다 — 굵기만 덮으려다 크기까지 덮여 14px 로 달랐다.
+        textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
       ),
       child: Text(label),
     );

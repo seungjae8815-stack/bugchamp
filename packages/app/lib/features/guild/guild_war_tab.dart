@@ -277,12 +277,17 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
         children: [
           SizedBox(
             width: 92,
-            child: Text(
-              '$d · ${guildWarThemeLabel(l, _themeOf(d))}',
-              style: TextStyle(
-                color: today ? _honey : _dim,
-                fontSize: 12,
-                fontWeight: today ? FontWeight.w900 : FontWeight.w500,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '$d · ${guildWarThemeLabel(l, _themeOf(d))}',
+                maxLines: 1,
+                style: TextStyle(
+                  color: today ? _honey : _dim,
+                  fontSize: 12,
+                  fontWeight: today ? FontWeight.w900 : FontWeight.w500,
+                ),
               ),
             ),
           ),

@@ -172,6 +172,11 @@ class BugChampApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localePrefsProvider);
+    // 로컬 폴백 순위표의 NPC 닉네임 언어(pvp_backend.dart).
+    LocalPvpBackend.languageCode =
+        (locale ?? WidgetsBinding.instance.platformDispatcher.locale)
+            .languageCode;
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       // 시스템 글자 크기를 1.15배까지만 따른다 — 고정 폭 칸(하단 메뉴·카드)이 큰 글씨에서 넘쳤다
@@ -207,13 +212,19 @@ class BugChampApp extends ConsumerWidget {
             disabledForegroundColor: const Color(0x99FFFFFF),
           ),
         ),
+        // 글자색도 여기서 — M3 기본(primary = 진녹색)은 다크 배경 위 대비가 약 2.5:1 이라
+        // 길드 "이용 불가"·재시도·초기화 같은 맨 TextButton 이 묻혔다(2026-10-02 출시 점검).
+        // 팝업(GameDialog)은 자기 스타일을 앞에 merge 하므로 영향 없다.
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Color(0x66FFFFFF)),
             disabledForegroundColor: const Color(0x99FFFFFF),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
             disabledForegroundColor: const Color(0x99FFFFFF),
           ),
         ),

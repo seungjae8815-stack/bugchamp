@@ -843,12 +843,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      l.leagueMyNow(myRank, total),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
+                    Flexible(
+                      child: Text(
+                        l.leagueMyNow(myRank, total),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
