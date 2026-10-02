@@ -1,0 +1,44 @@
+========================================
+ App Store — 새로운 기능 (1.0.15 / 20260940)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
+※ 범위: 1.0.14(20260936) 이후. 길드는 앱에서 잠겨 있어(준비 중) 적지 않는다.
+
+<ko-KR>
+요정이 찾아왔어요
+
+- 요정 8종이 새로 등장합니다. 캐릭터 곁을 날아다니며 사냥을 돕고, 요정마다 고유한 스킬을 씁니다
+- 요정은 보스를 처음 쓰러뜨리거나 정예 몬스터에게서 알로 얻고, 같은 요정 3마리를 합쳐 다음 등급으로 키웁니다
+- 공략집이 생겼습니다(설정 메뉴). 오행 상성, 주특기, 기질, 훈련을 한곳에서 볼 수 있습니다
+- 곤충 잠금: 잠근 곤충은 합성과 분해 재료로 쓰이지 않습니다
+- 결투 상대 후보가 더 풍성해졌고, 순위표 전투력은 결투 방어팀 기준으로 표시됩니다
+- 결투 티켓 젤리 충전은 하루 3회까지입니다
+- 상점: 곤충 알 뽑기 확률을 제목 옆 물음표에서 확인할 수 있습니다
+- 화면 글씨와 버튼 색을 더 잘 보이게 다듬고, 여러 문제를 고쳤습니다
+</ko-KR>
+
+<en-US>
+Fairies have arrived
+
+- 8 new fairies fly beside your character, help you hunt and each use their own skill
+- Get fairy eggs from first-time boss kills and elite monsters, and merge 3 of the same fairy to raise its grade
+- New Guide in Settings: elements, specialties, temperaments and training in one place
+- Bug lock: locked bugs are never used for fusion or disassembly
+- More duel opponents to choose from, and duel rankings now show defense team power
+- Duel ticket refills with Jelly are limited to 3 per day
+- Shop: see egg draw odds from the question mark next to the title
+- Clearer text and button colors, plus various fixes
+</en-US>
+
+<ja-JP>
+妖精がやってきた
+
+- 新しい妖精8種が登場。キャラクターのそばを飛びながら狩りを手伝い、それぞれ固有のスキルを使います
+- 妖精はボスの初討伐やエリートモンスターから卵で手に入り、同じ妖精3匹を合わせると次の等級に育ちます
+- 攻略集を追加しました(設定メニュー)。五行の相性・得意技・気質・訓練をまとめて確認できます
+- 昆虫ロック: ロックした昆虫は合成・分解の素材に使われません
+- 決闘の対戦候補が増え、ランキングの戦闘力は決闘の防衛チーム基準で表示されます
+- 決闘チケットのゼリー補充は1日3回までです
+- ショップ: 昆虫の卵ガチャの確率はタイトル横のはてなマークから確認できます
+- 文字とボタンの色を見やすく整え、いくつかの不具合を修正しました
+</ja-JP>
