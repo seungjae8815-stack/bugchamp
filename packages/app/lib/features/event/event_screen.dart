@@ -25,8 +25,9 @@ import '../battle/duel_bug_info.dart';
 import 'event_hall.dart';
 import 'event_intro.dart';
 import '../../ui/event_badge.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 홈 배너용 이벤트 현황. 서버가 없거나 이벤트가 닫혀 있으면 null 이라
 /// 배너 자체가 뜨지 않는다 — 이벤트는 서버 없이는 성립하지 않는다.
@@ -629,7 +630,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   rank,
                   maxLines: 1,
                   style: TextStyle(
-                    color: highlight ? const Color(0xFFEBC24A) : Colors.white,
+                    color: highlight ? kHoney : Colors.white,
                     fontWeight: FontWeight.w900,
                     fontSize: 12.5,
                   ),
@@ -658,13 +659,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         row(rankLabel(from, t.maxRank), highlight: t.physical, [
           if (t.physical)
             item(
-              const Icon(
-                Icons.emoji_nature_rounded,
-                size: 15,
-                color: Color(0xFFEBC24A),
-              ),
+              const Icon(Icons.emoji_nature_rounded, size: 15, color: kHoney),
               l.eventRewardRealBug,
-              color: const Color(0xFFEBC24A),
+              color: kHoney,
               bold: true,
             ),
           if (t.jelly > 0)
@@ -725,16 +722,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.emoji_events_rounded,
-                size: 16,
-                color: Color(0xFFEBC24A),
-              ),
+              const Icon(Icons.emoji_events_rounded, size: 16, color: kHoney),
               const SizedBox(width: 6),
               Text(
                 l.eventRewardsTitle,
                 style: const TextStyle(
-                  color: Color(0xFFEBC24A),
+                  color: kHoney,
                   fontSize: 13,
                   fontWeight: FontWeight.w900,
                 ),
@@ -995,12 +988,12 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                           const Icon(
                             Icons.flash_on_rounded,
                             size: 15,
-                            color: Color(0xFFEBC24A),
+                            color: kHoney,
                           ),
                           Text(
                             formatCompact(d.power.round()),
                             style: const TextStyle(
-                              color: Color(0xFFEBC24A),
+                              color: kHoney,
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
                             ),
@@ -1195,7 +1188,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                       child: Text(
                         '$order',
                         style: const TextStyle(
-                          color: Color(0xFF3A2600),
+                          color: kHoneyInk,
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                         ),
@@ -1224,7 +1217,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFEBC24A),
+                          color: kHoney,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w900,
                         ),
@@ -1268,7 +1261,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               onPressed: ready ? () => _challenge(l) : null,
               style: FilledButton.styleFrom(
                 backgroundColor: _honey,
-                foregroundColor: const Color(0xFF3A2600),
+                foregroundColor: kHoneyInk,
                 minimumSize: const Size(0, 46),
               ),
               child: Text(

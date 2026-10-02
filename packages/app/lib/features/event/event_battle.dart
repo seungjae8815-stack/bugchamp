@@ -22,8 +22,9 @@ import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 import '../battle/arena_widgets.dart';
 import 'event_arena.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 이벤트 도전 — **서버와 대화하며 한 웨이브씩** 진행한다.
 ///
@@ -919,7 +920,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
               onPressed: () => Navigator.of(context).pop(),
               style: FilledButton.styleFrom(
                 backgroundColor: _honey,
-                foregroundColor: const Color(0xFF3A2600),
+                foregroundColor: kHoneyInk,
                 minimumSize: const Size(0, 44),
               ),
               child: Text(

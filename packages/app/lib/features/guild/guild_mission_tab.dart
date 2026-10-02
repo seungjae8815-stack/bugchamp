@@ -11,8 +11,9 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBC24A);
+const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
 const _green = Color(0xFF9CE37D);
 
@@ -413,7 +414,7 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
                       : () => guildHelpMission(context, ref, m.id),
                   style: FilledButton.styleFrom(
                     backgroundColor: _honey,
-                    foregroundColor: const Color(0xFF1A1200),
+                    foregroundColor: kHoneyInk,
                     visualDensity: VisualDensity.compact,
                   ),
                   child: Text(l.guildMissionHelp),

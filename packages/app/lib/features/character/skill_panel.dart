@@ -16,8 +16,9 @@ import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'skill_gacha_dialog.dart';
 import 'skill_grade_up_dialog.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFFFD54F);
+const _honey = kHoney;
 
 /// 장착 칸 한 변(논리 px). 칸 5개가 한 줄에 들어가야 한다.
 const double _kSlotChip = 44;
@@ -713,7 +714,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
               style: TextStyle(
                 // 꿀색 판 위에서는 흰 글자가 묻는다.
                 color: on
-                    ? const Color(0xFF3A2600)
+                    ? kHoneyInk
                     : (dim ? const Color(0x66FFFFFF) : Colors.white),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w800,

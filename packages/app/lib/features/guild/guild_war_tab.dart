@@ -6,9 +6,10 @@ import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 import 'guild_boss_tab.dart' show guildBossErrorText;
 
-const _honey = Color(0xFFEBC24A);
+const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
 const _green = Color(0xFF9CE37D);
 const _red = Color(0xFFE57373);

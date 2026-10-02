@@ -6,8 +6,9 @@ import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/event_badge.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 명예의 전당 — **가장 최근에 끝난 회차**의 순위를 남긴다(2026-09-15).
 ///

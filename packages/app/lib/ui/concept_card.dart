@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'colors.dart';
 
 /// 게임 컨셉에 맞춘 카드형 상세 설명 다이얼로그(다크그린 + 허니 테두리).
 /// 능력치·재화 등 "무엇이고 어디에 쓰이는지" 안내를 통일된 카드로 보여준다.
@@ -54,7 +55,7 @@ void showConceptCard(
                         Text(
                           subtitle,
                           style: const TextStyle(
-                            color: Color(0xFFEBA52F),
+                            color: kHoney,
                             fontWeight: FontWeight.w700,
                             fontSize: 11.5,
                           ),
@@ -81,9 +82,7 @@ void showConceptCard(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFEBA52F),
-                ),
+                style: TextButton.styleFrom(foregroundColor: kHoney),
                 child: Text(closeLabel),
               ),
             ),

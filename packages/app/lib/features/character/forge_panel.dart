@@ -18,8 +18,9 @@ import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'equip_widgets.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFFFD54F);
+const _honey = kHoney;
 
 /// 장비 칸 **바로 밑**에 붙는 공방 조작부.
 ///
@@ -588,7 +589,7 @@ class _SquareButton extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: on
-                ? const [Color(0xFFFFD54F), Color(0xFFC08A1E)]
+                ? const [kHoney, Color(0xFFC08A1E)]
                 : const [Color(0xFF6B4A28), Color(0xFF3A2716)],
           ),
           borderRadius: BorderRadius.circular(10),

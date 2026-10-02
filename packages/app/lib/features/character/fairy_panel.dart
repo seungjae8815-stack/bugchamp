@@ -16,8 +16,9 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFFFD54F);
+const _honey = kHoney;
 
 /// 요정 탭(docs/design_fairy.md §2) — 위 → 아래: [둥지][뽑기][도감][자동 합성] ·
 /// 동행 요정 카드 · 요정함(요정 + 알).

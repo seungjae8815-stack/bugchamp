@@ -6,8 +6,9 @@ import '../../data/game_data.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
 import '../battle/arena_widgets.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 이벤트 전투 무대 — PvP 아레나와 **같은 위젯**(`ArenaFighter`·`ArenaFloat`·
 /// `ArenaBurst`)을 쓴다. 연출을 두 벌로 만들면 한쪽만 좋아지고 다른 쪽은 낡는다.

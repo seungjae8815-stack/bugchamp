@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers.dart';
 import '../../ui/art.dart';
 import '../../ui/labels.dart';
+import '../../ui/colors.dart';
 
 /// 개발자용 — **몬스터·보스 그림과 모션을 한 화면에서** 본다.
 ///
@@ -331,7 +332,7 @@ class _MonsterGalleryScreenState extends ConsumerState<MonsterGalleryScreen> {
               Text(
                 '${r.bossName.resolve(locale)}  (${r.id})',
                 style: const TextStyle(
-                  color: Color(0xFFFFD54F),
+                  color: kHoney,
                   fontWeight: FontWeight.w900,
                   fontSize: 13,
                 ),

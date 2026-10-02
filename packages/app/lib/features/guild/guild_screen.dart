@@ -19,8 +19,9 @@ import 'guild_boss_tab.dart';
 import 'guild_growth.dart';
 import 'guild_war_tab.dart';
 import 'guild_mission_tab.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBC24A);
+const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
 
 /// 길드(1.0.15 1단계 — docs/design_guild.md §1).
@@ -460,7 +461,7 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
                   label: Text(l.guildCreateWithCost(cfg.createJellyCost)),
                   style: FilledButton.styleFrom(
                     backgroundColor: _honey,
-                    foregroundColor: const Color(0xFF1A1200),
+                    foregroundColor: kHoneyInk,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -950,7 +951,7 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                     _run(context, n.answer(r.userId, accept: true)),
                 style: FilledButton.styleFrom(
                   backgroundColor: _honey,
-                  foregroundColor: const Color(0xFF1A1200),
+                  foregroundColor: kHoneyInk,
                 ),
                 child: Text(l.guildAccept),
               ),
@@ -1093,7 +1094,7 @@ class GuildComingSoon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    const honey = Color(0xFFEBA52F);
+    const honey = kHoney;
     // 그림을 **탭 전체에 꽉 차게**(cover) 깔고, 가운데에 "준비 중" + 안내를 한 판에 얹는다(2026-10-02 사장님).
     // 그림 아래 워터마크 띠는 애셋에서 잘라 냈다(tool/import_guild_art.py).
     return Scaffold(

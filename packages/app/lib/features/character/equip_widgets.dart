@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/colors.dart';
 
 /// 등급 색 — `items.json` 의 ARGB 문자열을 그대로 쓴다(코드에 색 하드코딩 금지).
 Color tierColor(ItemConfig cfg, int tier) {
@@ -189,9 +190,9 @@ class ItemOptionList extends StatelessWidget {
     final perfect = ratio != null && ratio >= 0.95;
     final high = ratio != null && ratio >= 0.7;
     final valueColor = bold
-        ? const Color(0xFFFFD54F)
+        ? kHoney
         : perfect
-        ? const Color(0xFFFFD54F)
+        ? kHoney
         : high
         ? const Color(0xFFA5D6A7)
         : const Color(0xFFC5E1A5);
@@ -217,7 +218,7 @@ class ItemOptionList extends StatelessWidget {
               child: Text(
                 perfectLabel,
                 style: const TextStyle(
-                  color: Color(0xFFFFD54F),
+                  color: kHoney,
                   fontSize: 9.5,
                   fontWeight: FontWeight.w900,
                 ),

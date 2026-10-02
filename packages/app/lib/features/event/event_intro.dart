@@ -7,8 +7,9 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/labels.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 const _paper = Color(0xFF1B2A11);
 
 /// 이벤트 **전단지** — 한 장으로 대회를 설명한다.
@@ -217,7 +218,7 @@ class EventIntroScreen extends ConsumerWidget {
                   onPressed: () => Navigator.of(context).pop(),
                   style: FilledButton.styleFrom(
                     backgroundColor: _honey,
-                    foregroundColor: const Color(0xFF3A2600),
+                    foregroundColor: kHoneyInk,
                     minimumSize: const Size(0, 48),
                   ),
                   child: Text(
@@ -376,13 +377,13 @@ class EventIntroScreen extends ConsumerWidget {
                       const Icon(
                         Icons.emoji_events_rounded,
                         size: 13,
-                        color: Color(0xFF3A2600),
+                        color: kHoneyInk,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         l.eventFlyerPrizeTag,
                         style: const TextStyle(
-                          color: Color(0xFF3A2600),
+                          color: kHoneyInk,
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                         ),

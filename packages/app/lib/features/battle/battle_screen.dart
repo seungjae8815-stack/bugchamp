@@ -32,8 +32,9 @@ import 'league_board_screen.dart';
 import 'training_screen.dart';
 import '../../ui/toast.dart';
 import '../../domain/server_sync.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 결투 티켓 바 — 잔량·다음 충전 카운트다운·충전 버튼(광고/젤리).
 ///
@@ -418,7 +419,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   (String, Color) _leagueStyle(AppLocalizations l, String id) => switch (id) {
     'bronze' => (l.leagueBronze, const Color(0xFFB87333)),
     'silver' => (l.leagueSilver, const Color(0xFFB8C4CE)),
-    'gold' => (l.leagueGold, const Color(0xFFEBC24A)),
+    'gold' => (l.leagueGold, kHoney),
     'platinum' => (l.leaguePlatinum, const Color(0xFF5FD3C8)),
     'diamond' => (l.leagueDiamond, const Color(0xFF6FA8FF)),
     _ => (id, const Color(0xFFBFC4CC)),
@@ -1427,7 +1428,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           child: Text(
                             l.duelPickDeployed(slot + 1),
                             style: const TextStyle(
-                              color: Color(0xFF1A1200),
+                              color: kHoneyInk,
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
                             ),
@@ -2267,7 +2268,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     child: Text(
       '${index + 1}',
       style: const TextStyle(
-        color: Color(0xFF3A2600),
+        color: kHoneyInk,
         fontSize: 11,
         fontWeight: FontWeight.w900,
       ),
@@ -2417,7 +2418,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFF1A1200),
+                        color: kHoneyInk,
                         fontSize: 8.5,
                         fontWeight: FontWeight.w900,
                       ),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers.dart';
 import '../../ui/art.dart';
 import '../../ui/skins.dart';
+import '../../ui/colors.dart';
 
 /// 개발자용 — **스킨이 걸린 종을 기본/스킨 나란히** 본다.
 ///
@@ -64,9 +65,7 @@ class _SkinGalleryScreenState extends ConsumerState<SkinGalleryScreen> {
               child: Text(
                 '${sk.id}  ·  ${sk.effect}  ·  전용그림 ${sk.artSpecies.length}종',
                 style: TextStyle(
-                  color: _dark
-                      ? const Color(0xFFFFD54F)
-                      : const Color(0xFF7A5B12),
+                  color: _dark ? kHoney : const Color(0xFF7A5B12),
                   fontWeight: FontWeight.w900,
                   fontSize: 14,
                 ),

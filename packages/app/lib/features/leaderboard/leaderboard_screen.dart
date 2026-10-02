@@ -16,8 +16,9 @@ import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/tier_label.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 로그인(비익명) 시 내 현재 랭킹. 미로그인·실패·미확정이면 null.
 /// 트로피/닉네임이 바뀔 때만 재조회(select) — 매 세이브마다 네트워크 호출 방지.
@@ -463,7 +464,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   ) {
     final league = cfg.leagueFor(e.profile.trophies);
     final rankColor = switch (e.rank) {
-      1 => const Color(0xFFEBC24A),
+      1 => kHoney,
       2 => const Color(0xFFC0C7D0),
       3 => const Color(0xFFB87333),
       _ => const Color(0x99FFFFFF),

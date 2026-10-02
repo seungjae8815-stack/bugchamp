@@ -12,6 +12,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
 import 'duel_driver.dart';
+import '../../ui/colors.dart';
 
 /// 곤충 배틀 스타디움 — **던질 때는 위에서, 싸울 때는 옆에서**(docs/design_duel.md §7).
 ///
@@ -503,7 +504,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               child: FilledButton(
                 onPressed: () => _throw(_quality),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFEBA52F),
+                  backgroundColor: kHoney,
                   foregroundColor: const Color(0xFF3A2410),
                 ),
                 child: Text(
@@ -983,7 +984,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                   '-$dmg',
                   style: TextStyle(
                     color: crit
-                        ? const Color(0xFFFFD54F)
+                        ? kHoney
                         : restrain || weak
                         ? const Color(0xFFFF7043)
                         : const Color(0xFFFFFFFF),
@@ -1242,7 +1243,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                     finishText,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xFFFFD54F),
+                      color: kHoney,
                       fontSize: 34,
                       fontWeight: FontWeight.w900,
                       shadows: [Shadow(color: Colors.black, blurRadius: 6)],

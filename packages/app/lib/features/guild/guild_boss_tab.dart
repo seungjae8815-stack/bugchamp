@@ -7,8 +7,9 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBC24A);
+const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
 const _red = Color(0xFFE57373);
 
@@ -159,7 +160,7 @@ class _GuildBossTabState extends ConsumerState<GuildBossTab> {
           onPressed: _busy || !v.hasTeam || v.attacksLeft <= 0 ? null : _attack,
           style: FilledButton.styleFrom(
             backgroundColor: _honey,
-            foregroundColor: const Color(0xFF1A1200),
+            foregroundColor: kHoneyInk,
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
           child: Text(l.guildBossAttack(v.attacksLeft)),

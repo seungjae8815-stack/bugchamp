@@ -7,6 +7,7 @@ import '../domain/pvp_backend.dart';
 import '../domain/save_controller.dart';
 import '../domain/server_sync.dart';
 import '../l10n/app_localizations.dart';
+import 'colors.dart';
 
 /// 닉네임 검증 한 곳: 빈 값 → 금칙어 → **중복(온라인)** 순.
 /// 통과하면 null, 아니면 사용자에게 보여줄 오류 문구를 돌려준다.
@@ -128,8 +129,8 @@ Future<void> ensureNicknameSet(BuildContext context, WidgetRef ref) async {
                       if (ctx.mounted) Navigator.pop(ctx);
                     },
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFEBA52F),
-                foregroundColor: const Color(0xFF3A2600),
+                backgroundColor: kHoney,
+                foregroundColor: kHoneyInk,
               ),
               child: checking
                   ? const SizedBox(

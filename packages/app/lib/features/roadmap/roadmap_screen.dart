@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
 import '../../ui/tier_label.dart';
+import '../../ui/colors.dart';
 
 /// 로드맵에서 난이도를 골랐다(pop 값). 스테이지 번호(int)와 구분한다.
 class RoadmapTierPick {
@@ -708,7 +709,7 @@ class _ZoneRow extends StatelessWidget {
     final accent = here
         ? const Color(0xFF8BC34A)
         : conquered
-        ? const Color(0xFFEBA52F)
+        ? kHoney
         : const Color(0x33FFFFFF);
     final art = Image.asset(
       artPath,
@@ -735,9 +736,7 @@ class _ZoneRow extends StatelessWidget {
                 child: Container(
                   width: 3,
                   decoration: BoxDecoration(
-                    color: conquered || here
-                        ? const Color(0xFFEBA52F)
-                        : const Color(0x22FFFFFF),
+                    color: conquered || here ? kHoney : const Color(0x22FFFFFF),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -794,9 +793,7 @@ class _ZoneRow extends StatelessWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: isFinal
-                                          ? const Color(0xFFFFD54F)
-                                          : Colors.white,
+                                      color: isFinal ? kHoney : Colors.white,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 15,
                                     ),
@@ -807,7 +804,7 @@ class _ZoneRow extends StatelessWidget {
                                   const Icon(
                                     Icons.workspace_premium_rounded,
                                     size: 15,
-                                    color: Color(0xFFFFD54F),
+                                    color: kHoney,
                                   ),
                                 ],
                               ],

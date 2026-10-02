@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 
 import 'labels.dart';
 import 'skins.dart';
+import 'colors.dart';
 
 /// 아트 플레이스홀더 + **AI 교체 훅**.
 /// 지정 경로에 이미지 파일이 있으면 표시하고, 없으면 이모지/그라데이션으로 폴백한다.
@@ -625,7 +626,7 @@ Widget dialogIcon(
   'assets/images/ui/dlg/$name.webp',
   width: size,
   height: size,
-  fallback: Icon(fallback, size: size * 0.75, color: const Color(0xFFEBA52F)),
+  fallback: Icon(fallback, size: size * 0.75, color: kHoney),
 );
 
 /// 이미 있는 아트를 팝업 제목에 그대로 쓴다(새로 그릴 필요가 없던 것들).
@@ -637,5 +638,5 @@ Widget dialogAsset(
   assetPath,
   width: size,
   height: size,
-  fallback: Icon(fallback, size: size * 0.75, color: const Color(0xFFEBA52F)),
+  fallback: Icon(fallback, size: size * 0.75, color: kHoney),
 );

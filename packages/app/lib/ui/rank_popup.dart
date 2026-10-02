@@ -9,8 +9,9 @@ import '../domain/rank_history.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'game_dialog.dart';
+import 'colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 const _up = Color(0xFF6FD08C);
 const _down = Color(0xFFEF7A6B);
 

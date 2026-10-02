@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
 import 'equip_widgets.dart';
+import '../../ui/colors.dart';
 
 /// 개발자용 — **장비 80종을 한 화면에서** 본다.
 ///
@@ -34,7 +35,7 @@ class ItemGalleryScreen extends ConsumerWidget {
               child: Text(
                 slotLabel(l, slot),
                 style: const TextStyle(
-                  color: Color(0xFFFFD54F),
+                  color: kHoney,
                   fontWeight: FontWeight.w900,
                   fontSize: 14,
                 ),

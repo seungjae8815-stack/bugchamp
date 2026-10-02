@@ -15,6 +15,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../battle/duel_arena_screen.dart';
 import '../battle/duel_driver.dart';
+import '../../ui/colors.dart';
 
 /// 왕충 선발대회(2회차부터) — **곤충 1마리 · 결투 엔진 웨이브전**을 결투 무대로 치른다.
 ///
@@ -466,7 +467,7 @@ Future<String?> _pickCard(BuildContext context, EventDuelDriver driver) {
         Text(
           l.eventBuffNow,
           style: const TextStyle(
-            color: Color(0xFFEBA52F),
+            color: kHoney,
             fontSize: 12,
             fontWeight: FontWeight.w900,
           ),
@@ -489,10 +490,7 @@ Future<String?> _pickCard(BuildContext context, EventDuelDriver driver) {
                   decoration: BoxDecoration(
                     color: const Color(0x22000000),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFEBA52F),
-                      width: 1.4,
-                    ),
+                    border: Border.all(color: kHoney, width: 1.4),
                   ),
                   child: Row(
                     children: [
@@ -530,10 +528,7 @@ Future<String?> _pickCard(BuildContext context, EventDuelDriver driver) {
                           ],
                         ),
                       ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFFEBA52F),
-                      ),
+                      const Icon(Icons.chevron_right_rounded, color: kHoney),
                     ],
                   ),
                 ),
@@ -570,7 +565,7 @@ Future<void> _showEventResult(
         Text(
           l.eventScore(driver.score),
           style: const TextStyle(
-            color: Color(0xFFEBC24A),
+            color: kHoney,
             fontSize: 26,
             fontWeight: FontWeight.w900,
           ),

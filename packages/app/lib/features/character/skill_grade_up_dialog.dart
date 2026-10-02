@@ -10,6 +10,7 @@ import '../../ui/art.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
 /// 등급 승급 창(§2.8) — 아래 등급을 고르고, 재료로 쓸 조각을 **직접 체크**한다.
 ///
@@ -235,7 +236,7 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
         child: Icon(
           Icons.chevron_right_rounded,
           size: on ? 26 : 20,
-          color: on ? const Color(0xFFFFD54F) : const Color(0x55FFFFFF),
+          color: on ? kHoney : const Color(0x55FFFFFF),
         ),
       ),
     );
@@ -274,11 +275,7 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 10),
-                child: Icon(
-                  Icons.east_rounded,
-                  size: 18,
-                  color: Color(0xFFFFD54F),
-                ),
+                child: Icon(Icons.east_rounded, size: 18, color: kHoney),
               ),
               skillShardImage(to, size: 26, wild: true),
               const SizedBox(width: 3),

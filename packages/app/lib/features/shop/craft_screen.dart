@@ -19,6 +19,7 @@ import '../../domain/audio_service.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/jelly_short.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
 /// 상점 탭 — 인앱결제 카탈로그(iap.json).
 ///
@@ -131,7 +132,7 @@ class _StoreSection extends ConsumerWidget {
     ),
     child: Row(
       children: [
-        const Icon(Icons.science_rounded, color: Color(0xFFEBA52F), size: 18),
+        const Icon(Icons.science_rounded, color: kHoney, size: 18),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -198,8 +199,8 @@ class _ProductCard extends ConsumerWidget {
 
   (IconData, Color) get _style => switch (product.type) {
     IapType.removeAds => (Icons.block_rounded, const Color(0xFF5FD3C8)),
-    IapType.buffPass => (Icons.auto_awesome_rounded, const Color(0xFFEBA52F)),
-    IapType.starter => (Icons.card_giftcard_rounded, const Color(0xFFEBA52F)),
+    IapType.buffPass => (Icons.auto_awesome_rounded, kHoney),
+    IapType.starter => (Icons.card_giftcard_rounded, kHoney),
     IapType.pass => (Icons.workspace_premium_rounded, const Color(0xFFB98BFF)),
     IapType.jelly => (Icons.bubble_chart_rounded, const Color(0xFF7FD3F5)),
     IapType.skin => (Icons.palette_rounded, const Color(0xFFF48FB1)),
@@ -352,7 +353,7 @@ class _ProductCard extends ConsumerWidget {
               onPressed: owned ? null : () => _buy(context, ref, l, name),
               style: FilledButton.styleFrom(
                 backgroundColor: color,
-                foregroundColor: const Color(0xFF1A1200),
+                foregroundColor: kHoneyInk,
                 disabledBackgroundColor: const Color(0x33FFFFFF),
                 padding: EdgeInsets.zero,
               ),
@@ -709,17 +710,13 @@ class _GachaPickerState extends State<_GachaPicker>
                       colors: [Color(0xFF6C3A80), Color(0xFF2E1740)],
                     ),
                     border: Border.all(
-                      color: chosen
-                          ? const Color(0xFFEBC24A)
-                          : const Color(0x66E9A6FF),
+                      color: chosen ? kHoney : const Color(0x66E9A6FF),
                       width: chosen ? 2 : 1.2,
                     ),
                     boxShadow: chosen
                         ? [
                             BoxShadow(
-                              color: const Color(
-                                0xFFEBC24A,
-                              ).withValues(alpha: 0.45 * t),
+                              color: kHoney.withValues(alpha: 0.45 * t),
                               blurRadius: 18,
                             ),
                           ]
@@ -1128,7 +1125,7 @@ void _showEggOdds(
   int speciesOf(Grade g) =>
       data.allSpecies.where((s) => s.grade == g).length.clamp(1, 999);
   const head = TextStyle(
-    color: Color(0xFFEBA52F),
+    color: kHoney,
     fontSize: 13,
     fontWeight: FontWeight.w900,
   );

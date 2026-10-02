@@ -58,9 +58,10 @@ import '../notice/notice_screen.dart';
 import '../../domain/review_service.dart';
 import '../../domain/notice_service.dart';
 import '../../ui/tier_label.dart';
+import '../../ui/colors.dart';
 
 const _uuid = Uuid();
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 const _onScene = Color(0xFFFFFFFF);
 
 /// 일반 강화 재료(처치/채집 드롭 대상). 젤리는 프리미엄이라 제외(§E).
@@ -3346,7 +3347,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       child: const Text(
                         '!',
                         style: TextStyle(
-                          color: Color(0xFF3A2600),
+                          color: kHoneyInk,
                           fontSize: 7.5,
                           fontWeight: FontWeight.w900,
                           height: 1.0,
@@ -3435,7 +3436,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           style: TextStyle(
                             color: last.isAdmin
                                 ? const Color(0xFF9FD3F5)
-                                : const Color(0xFFEBA52F),
+                                : kHoney,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -3510,7 +3511,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             child: Text(
               'Lv ${save.level}',
               style: const TextStyle(
-                color: Color(0xFF3A2600),
+                color: kHoneyInk,
                 fontWeight: FontWeight.w900,
                 fontSize: 9,
               ),
@@ -3931,7 +3932,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           _Pop(
             '${k.name.resolve(locale)} · ${k.skill.effect}',
             0,
-            const Color(0xFFFFD54F),
+            kHoney,
             14,
             baseX: -0.3,
             baseY: -0.7,
@@ -4168,9 +4169,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (_fairyFxT <= 0 || _fairyFxKind.isEmpty) return const SizedBox.shrink();
     final save = ref.read(saveControllerProvider).value;
     final now = save == null ? null : _fairyNow(save);
-    final color = now == null
-        ? const Color(0xFFFFD54F)
-        : fairyGradeColor(now.$1.grade);
+    final color = now == null ? kHoney : fairyGradeColor(now.$1.grade);
     final t = 1 - _fairyFxT / _kFairyFxShow; // 0 → 1
     final scale = 0.6 + 0.7 * Curves.easeOut.transform(t);
     final fade = t < 0.7 ? 1.0 : (1 - (t - 0.7) / 0.3).clamp(0.0, 1.0);
@@ -4464,7 +4463,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ? '${def.name.resolve(locale)} · ${l.skillTimingBonus}'
             : def.name.resolve(locale),
         0,
-        timed ? const Color(0xFFFFD54F) : const Color(0xFF80DEEA),
+        timed ? kHoney : const Color(0xFF80DEEA),
         timed ? 17 : 15,
         baseX: 0,
         baseY: -0.6,
@@ -4629,7 +4628,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 borderRadius: passive ? BorderRadius.circular(8) : null,
                 color: color.withValues(alpha: cd > 0 ? 0.15 : 0.35),
                 border: Border.all(
-                  color: on || queued ? const Color(0xFFFFD54F) : color,
+                  color: on || queued ? kHoney : color,
                   width: on || queued ? 2.4 : 1.4,
                 ),
                 boxShadow: on
@@ -4756,16 +4755,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         y += 0.12;
       }
       if (stones) {
-        _pops.add(
-          _Pop(
-            l.fairyStone,
-            0,
-            const Color(0xFFFFD54F),
-            15,
-            baseX: 0.6,
-            baseY: y,
-          ),
-        );
+        _pops.add(_Pop(l.fairyStone, 0, kHoney, 15, baseX: 0.6, baseY: y));
         y += 0.12;
       }
       if (accel) {
@@ -5044,7 +5034,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           Text(
             l.chapterClearReward,
             style: const TextStyle(
-              color: Color(0xFFEBA52F),
+              color: kHoney,
               fontWeight: FontWeight.w800,
               fontSize: 12,
             ),
@@ -5646,7 +5636,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   Text(
                     l.mailDailyTitle,
                     style: const TextStyle(
-                      color: Color(0xFFEBA52F),
+                      color: kHoney,
                       fontWeight: FontWeight.w700,
                       fontSize: 11.5,
                     ),
@@ -5664,7 +5654,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   Text(
                     l.giftSectionTitle,
                     style: const TextStyle(
-                      color: Color(0xFFEBA52F),
+                      color: kHoney,
                       fontWeight: FontWeight.w700,
                       fontSize: 11.5,
                     ),
@@ -5697,7 +5687,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       Text(
         l.mailNoticeSection,
         style: const TextStyle(
-          color: Color(0xFFEBA52F),
+          color: kHoney,
           fontWeight: FontWeight.w700,
           fontSize: 11.5,
         ),
@@ -6078,7 +6068,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   l.giftAdMorePassLine,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Color(0xFFFFD54F),
+                    color: kHoney,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w900,
                     height: 1.35,
@@ -6148,7 +6138,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               l.giftDoubleCapBody,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFFFFD54F),
+                color: kHoney,
                 fontSize: 14.5,
                 fontWeight: FontWeight.w900,
                 height: 1.4,
@@ -6247,8 +6237,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               child: FilledButton(
                 onPressed: claimGiftFlow,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFEBA52F),
-                  foregroundColor: const Color(0xFF3A2600),
+                  backgroundColor: kHoney,
+                  foregroundColor: kHoneyInk,
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(0, 40),
                 ),
@@ -6433,8 +6423,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 child: FilledButton(
                   onPressed: claimDailyThenOffer,
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFEBA52F),
-                    foregroundColor: const Color(0xFF3A2600),
+                    backgroundColor: kHoney,
+                    foregroundColor: kHoneyInk,
                     padding: EdgeInsets.zero,
                     minimumSize: const Size(0, 40),
                   ),
@@ -6466,7 +6456,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               child: Text(
                 l.settingsSound,
                 style: const TextStyle(
-                  color: Color(0xFFEBA52F),
+                  color: kHoney,
                   fontWeight: FontWeight.w800,
                   fontSize: 12,
                 ),
@@ -6504,7 +6494,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     children: [
       Row(
         children: [
-          Icon(icon, color: const Color(0xFFEBA52F), size: 18),
+          Icon(icon, color: kHoney, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -6521,7 +6511,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       ),
       Slider(
         value: vol.clamp(0.0, 1.0),
-        activeColor: const Color(0xFFEBA52F),
+        activeColor: kHoney,
         onChanged: on ? onVol : null,
       ),
     ],
@@ -6658,7 +6648,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               icon: const Icon(Icons.menu_book_rounded, size: 18),
               label: Text(l.guideTitle),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFEBA52F),
+                foregroundColor: kHoney,
                 side: const BorderSide(color: Color(0x55EBA52F)),
               ),
             ),
@@ -6736,7 +6726,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 icon: const Icon(Icons.confirmation_number_rounded, size: 18),
                 label: Text(l.giftCodeTitle),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFEBC24A),
+                  foregroundColor: kHoney,
                   side: const BorderSide(color: Color(0x55EBC24A)),
                 ),
               ),
@@ -6792,7 +6782,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                               : Icons.info_outline_rounded,
                           size: 16,
                           color: _showBuildDetail
-                              ? const Color(0xFFEBA52F)
+                              ? kHoney
                               : const Color(0x99FFFFFF),
                         ),
                       ),
@@ -7887,7 +7877,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         Text(
           title,
           style: const TextStyle(
-            color: Color(0xFFEBA52F),
+            color: kHoney,
             fontWeight: FontWeight.w800,
             fontSize: 12.5,
           ),
@@ -8084,9 +8074,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                 isDense: true,
                                 counterText: '',
                                 labelText: l.settingsNickname,
-                                labelStyle: const TextStyle(
-                                  color: Color(0xFFEBA52F),
-                                ),
+                                labelStyle: const TextStyle(color: kHoney),
                                 hintText: l.settingsNicknameHint,
                                 enabledBorder: const UnderlineInputBorder(
                                   borderSide: BorderSide(
@@ -8094,9 +8082,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                   ),
                                 ),
                                 focusedBorder: const UnderlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Color(0xFFEBA52F),
-                                  ),
+                                  borderSide: BorderSide(color: kHoney),
                                 ),
                               ),
                             )
@@ -8107,7 +8093,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                 Text(
                                   l.settingsNickname,
                                   style: const TextStyle(
-                                    color: Color(0xFFEBA52F),
+                                    color: kHoney,
                                     fontSize: 11,
                                   ),
                                 ),
@@ -8150,7 +8136,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           setD(() => editing = true);
                         },
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFEBA52F),
+                          foregroundColor: kHoney,
                           side: const BorderSide(color: Color(0x66EBA52F)),
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           minimumSize: const Size(0, 34),
@@ -8273,8 +8259,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           if (ctx.mounted) Navigator.pop(ctx);
                         },
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFEBA52F),
-                          foregroundColor: const Color(0xFF3A2600),
+                          backgroundColor: kHoney,
+                          foregroundColor: kHoneyInk,
                         ),
                         child: Text(l.nicknameEditAction),
                       ),
@@ -8651,9 +8637,7 @@ class _AmountButton extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           gradient: selected
-              ? const LinearGradient(
-                  colors: [Color(0xFFFFD977), Color(0xFFEBA52F)],
-                )
+              ? const LinearGradient(colors: [Color(0xFFFFD977), kHoney])
               : null,
           color: selected ? null : const Color(0x33FFFFFF),
           border: Border.all(
@@ -8663,7 +8647,7 @@ class _AmountButton extends StatelessWidget {
         child: Text(
           '+$amount',
           style: TextStyle(
-            color: selected ? const Color(0xFF3A2600) : _onScene,
+            color: selected ? kHoneyInk : _onScene,
             fontWeight: FontWeight.w900,
             fontSize: 14,
           ),
@@ -9129,7 +9113,7 @@ class _NotifySectionState extends State<_NotifySection> {
                 Text(
                   l.settingsNotify,
                   style: const TextStyle(
-                    color: Color(0xFFEBA52F),
+                    color: kHoney,
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
@@ -9303,7 +9287,7 @@ class _LanguageSection extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(10),
                     gradient: current == code
                         ? const LinearGradient(
-                            colors: [Color(0xFFFFD977), Color(0xFFEBA52F)],
+                            colors: [Color(0xFFFFD977), kHoney],
                           )
                         : null,
                     color: current == code ? null : const Color(0x22FFFFFF),
@@ -9317,7 +9301,7 @@ class _LanguageSection extends ConsumerWidget {
                     code == null ? l.languageSystem : name,
                     style: TextStyle(
                       color: current == code
-                          ? const Color(0xFF3A2600)
+                          ? kHoneyInk
                           : const Color(0xCCFFFFFF),
                       fontWeight: FontWeight.w800,
                       fontSize: 12.5,
@@ -9548,9 +9532,7 @@ class _SkillFxViewerState extends State<_SkillFxViewer>
                           : const Color(0x22FFFFFF),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: _id == id
-                            ? const Color(0xFFEBA52F)
-                            : const Color(0x22FFFFFF),
+                        color: _id == id ? kHoney : const Color(0x22FFFFFF),
                       ),
                     ),
                     child: Row(

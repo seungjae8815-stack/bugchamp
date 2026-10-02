@@ -14,6 +14,7 @@ import '../../l10n/app_localizations.dart';
 import '../../domain/audio_service.dart';
 import '../../ui/art.dart';
 import '../../ui/labels.dart';
+import '../../ui/colors.dart';
 
 /// 걷기 스프라이트를 초당 몇 장 넘기나. 2장뿐이라 너무 빠르면 떨려 보인다.
 const double _kWalkFps = 5;
@@ -374,7 +375,7 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
           Text(
             l.sceneCatchTap,
             style: const TextStyle(
-              color: Color(0xFFFFD54F),
+              color: kHoney,
               fontSize: 15,
               fontWeight: FontWeight.w900,
               shadows: [Shadow(color: Colors.black, blurRadius: 4)],
@@ -472,7 +473,7 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
                 ? const Text(
                     '★',
                     style: TextStyle(
-                      color: Color(0xFFFFD54F),
+                      color: kHoney,
                       fontSize: 13,
                       fontWeight: FontWeight.w900,
                     ),
@@ -481,7 +482,7 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
                 ? const Text(
                     '!',
                     style: TextStyle(
-                      color: Color(0xFFFFD54F),
+                      color: kHoney,
                       fontSize: 13,
                       fontWeight: FontWeight.w900,
                     ),

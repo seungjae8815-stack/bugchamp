@@ -10,8 +10,9 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBC24A);
+const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
 const _green = Color(0xFF9CE37D);
 
@@ -289,7 +290,7 @@ class GuildSkillScreen extends ConsumerWidget {
                   : null,
               style: FilledButton.styleFrom(
                 backgroundColor: _honey,
-                foregroundColor: const Color(0xFF1A1200),
+                foregroundColor: kHoneyInk,
               ),
               child: const Text('+1'),
             ),
@@ -397,7 +398,7 @@ class _GuildShopScreenState extends ConsumerState<GuildShopScreen> {
                               : () => _buy(e),
                           style: FilledButton.styleFrom(
                             backgroundColor: _honey,
-                            foregroundColor: const Color(0xFF1A1200),
+                            foregroundColor: kHoneyInk,
                           ),
                           child: Text(
                             e.soldOut

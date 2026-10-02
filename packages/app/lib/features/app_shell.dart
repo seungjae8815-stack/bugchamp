@@ -33,6 +33,7 @@ import 'character/character_screen.dart';
 import 'shop/craft_screen.dart';
 import 'title/title_screen.dart';
 import 'storage/storage_screen.dart';
+import '../ui/colors.dart';
 
 /// 하단 4탭 셸: 홈 · 채집함 · 전투 · 상점. 세이브 로드 완료 후 표시.
 class AppShell extends ConsumerStatefulWidget {
@@ -613,7 +614,7 @@ class _NavTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const on = Color(0xFFEBA52F);
+    const on = kHoney;
     const off = Color(0xB3FFFFFF);
     final color = active ? on : off;
     return InkWell(

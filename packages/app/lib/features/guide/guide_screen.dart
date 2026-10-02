@@ -10,9 +10,10 @@ import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/element_wheel.dart';
 import '../../ui/labels.dart';
+import '../../ui/colors.dart';
 import '../battle/training_screen.dart' show trainStatLabel;
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 공략집 — 설정 → 공략집. 곤충 개체 변수(오행·주특기·기질·크기·포텐셜·특성·이색)와
 /// 결투·훈련·짝짓기 용어를 한 곳에서 설명한다(2026-10-01 사장님 요청 — 오행 관계도가

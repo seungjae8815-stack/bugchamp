@@ -20,6 +20,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import 'board_preview.dart';
 import 'duel_bug_info.dart';
+import '../../ui/colors.dart';
 
 /// 순위표(2026-09-29 사장님 요청 — 다른 게임의 리그 화면을 참고).
 ///
@@ -69,7 +70,7 @@ class _LeagueBoardScreenState extends ConsumerState<LeagueBoardScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         decoration: BoxDecoration(
                           color: _abyss == abyss
-                              ? const Color(0xFFEBA52F)
+                              ? kHoney
                               : const Color(0x22FFFFFF),
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -538,7 +539,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
               fallback: Icon(
                 Icons.emoji_events_rounded,
                 size: h * 0.85,
-                color: const Color(0xFFEBC24A),
+                color: kHoney,
               ),
             ),
             const SizedBox(width: 8),
@@ -625,7 +626,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                     fallback: Icon(
                       Icons.emoji_events_rounded,
                       size: h * 0.85,
-                      color: const Color(0xFFEBC24A),
+                      color: kHoney,
                     ),
                   ),
           ),
@@ -799,12 +800,12 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                         const Icon(
                           Icons.flash_on_rounded,
                           size: 14,
-                          color: Color(0xFFEBC24A),
+                          color: kHoney,
                         ),
                         Text(
                           formatCompact(power.round()),
                           style: const TextStyle(
-                            color: Color(0xFFEBC24A),
+                            color: kHoney,
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                           ),
@@ -1043,15 +1044,11 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.flash_on_rounded,
-                size: 18,
-                color: Color(0xFFEBC24A),
-              ),
+              const Icon(Icons.flash_on_rounded, size: 18, color: kHoney),
               Text(
                 l.profileCombatPower(formatCompact(power.round())),
                 style: const TextStyle(
-                  color: Color(0xFFEBC24A),
+                  color: kHoney,
                   fontWeight: FontWeight.w900,
                   fontSize: 15,
                 ),
@@ -1121,15 +1118,11 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.flash_on_rounded,
-                  size: 18,
-                  color: Color(0xFFEBC24A),
-                ),
+                const Icon(Icons.flash_on_rounded, size: 18, color: kHoney),
                 Text(
                   l.profileCombatPower(formatCompact(power.round())),
                   style: const TextStyle(
-                    color: Color(0xFFEBC24A),
+                    color: kHoney,
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
@@ -1225,7 +1218,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
         Text(
           formatCompact(((t['power'] as num?) ?? 0).round()),
           style: const TextStyle(
-            color: Color(0xFFEBC24A),
+            color: kHoney,
             fontSize: 12,
             fontWeight: FontWeight.w900,
           ),

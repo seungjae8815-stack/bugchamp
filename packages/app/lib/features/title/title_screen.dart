@@ -15,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/nickname_gate.dart';
 import '../app_shell.dart';
+import '../../ui/colors.dart';
 
 /// 앱 대문. **게임 화면 위에 다이얼로그를 겹치던 구조를 여기로 옮긴다.**
 ///
@@ -315,10 +316,7 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
         const SizedBox(
           width: 26,
           height: 26,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.4,
-            color: Color(0xFFEBA52F),
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2.4, color: kHoney),
         ),
         const SizedBox(height: 12),
         Text(
@@ -482,10 +480,8 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
       FilledButton(
         onPressed: onTap,
         style: FilledButton.styleFrom(
-          backgroundColor: primary
-              ? const Color(0xFFEBA52F)
-              : const Color(0xCC1F2E13),
-          foregroundColor: primary ? const Color(0xFF3A2600) : Colors.white,
+          backgroundColor: primary ? kHoney : const Color(0xCC1F2E13),
+          foregroundColor: primary ? kHoneyInk : Colors.white,
           disabledBackgroundColor: const Color(0x55FFFFFF),
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(

@@ -6,8 +6,9 @@ import '../l10n/app_localizations.dart';
 import 'art.dart';
 import 'format.dart';
 import 'labels.dart';
+import 'colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 팝업 내용 여백. 액자 테두리(26논리px)보다 넉넉해야 글자가 나무를 타지 않는다.
 const kDialogFramePadding = EdgeInsets.fromLTRB(30, 28, 30, 26);
@@ -92,7 +93,7 @@ const _greyFilter = ColorFilter.matrix(<double>[
 final _primaryBtn = _artButtonStyle(
   'assets/images/ui/dialog/btn_primary.webp',
   const Rect.fromLTRB(57, 2, 549, 130),
-  fg: const Color(0xFF3A2600),
+  fg: kHoneyInk,
   fgOff: const Color(0xFF2E2A24),
   shadow: const Shadow(color: Color(0x55FFF3D0), blurRadius: 2),
 );
@@ -179,7 +180,7 @@ class GameDialog extends StatelessWidget {
                   ? _honey
                   : const Color(0x22FFFFFF),
             ),
-            checkColor: const WidgetStatePropertyAll(Color(0xFF3A2600)),
+            checkColor: const WidgetStatePropertyAll(kHoneyInk),
             side: const BorderSide(color: Color(0x88FFFFFF)),
           ),
           chipTheme: theme.chipTheme.copyWith(
@@ -191,12 +192,12 @@ class GameDialog extends StatelessWidget {
               fontSize: 12,
             ),
             secondaryLabelStyle: const TextStyle(
-              color: Color(0xFF3A2600),
+              color: kHoneyInk,
               fontWeight: FontWeight.w900,
               fontSize: 12,
             ),
             side: const BorderSide(color: Color(0x33FFFFFF)),
-            checkmarkColor: const Color(0xFF3A2600),
+            checkmarkColor: kHoneyInk,
           ),
         ),
         child: Container(
@@ -359,7 +360,7 @@ Widget gameDialogButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         backgroundColor: _honey,
-        foregroundColor: const Color(0xFF3A2600),
+        foregroundColor: kHoneyInk,
         // 크기는 팝업 테마(13.5)와 맞춘다 — 굵기만 덮으려다 크기까지 덮여 14px 로 달랐다.
         textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
       ),

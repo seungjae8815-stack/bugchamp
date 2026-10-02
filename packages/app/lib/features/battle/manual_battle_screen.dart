@@ -16,6 +16,7 @@ import '../../ui/skins.dart';
 import 'arena_widgets.dart';
 import 'manual_driver.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
 /// 표시용 최대 기력(엔진 상수와 일치 — core_battle `_maxEnergy`).
 const _maxEnergyDisplay = 3;
@@ -645,9 +646,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                   minHeight: 5,
                   backgroundColor: const Color(0x33000000),
                   valueColor: AlwaysStoppedAnimation(
-                    _turnLeft <= 3
-                        ? const Color(0xFFFF6B6B)
-                        : const Color(0xFFEBA52F),
+                    _turnLeft <= 3 ? const Color(0xFFFF6B6B) : kHoney,
                   ),
                 ),
               ),

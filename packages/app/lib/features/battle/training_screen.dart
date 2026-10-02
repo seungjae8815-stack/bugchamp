@@ -18,8 +18,9 @@ import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 능력치 이름(훈련소·곤충 상세 공용).
 String trainStatLabel(AppLocalizations l, TrainStat s) => switch (s) {
@@ -42,7 +43,7 @@ Color trainStatColor(TrainStat s) => switch (s) {
   TrainStat.attack => const Color(0xFFFF8A65),
   TrainStat.defense => const Color(0xFF64B5F6),
   TrainStat.evade => const Color(0xFF81C784),
-  TrainStat.crit => const Color(0xFFFFD54F),
+  TrainStat.crit => kHoney,
   TrainStat.recovery => const Color(0xFFF48FB1),
 };
 

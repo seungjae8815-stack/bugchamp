@@ -12,11 +12,12 @@ import '../../ui/skins.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/colors.dart';
 
 /// 오토 아레나(`battle_arena.dart`)와 수동 배틀(`manual_battle_screen.dart`)이
 /// 공유하는 순수 표시 위젯. 파이터/데미지 플로트/결과 다이얼로그를 한 곳에 둔다.
 
-const arenaHoney = Color(0xFFEBA52F);
+const arenaHoney = kHoney;
 const kRoundDur = 0.85; // 라운드 1회 재생 시간(초, 1x)
 
 String stanceGlyph(Stance s) => switch (s) {
@@ -1115,7 +1116,7 @@ class ArenaResultBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Curves.easeOutCubic.transform(t.clamp(0.0, 1.0));
-    final c = win ? const Color(0xFFEBC24A) : const Color(0xFF8FA0B5);
+    final c = win ? kHoney : const Color(0xFF8FA0B5);
     return Positioned.fill(
       child: IgnorePointer(
         child: Center(

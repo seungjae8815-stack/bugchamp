@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/notice_service.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 공지사항 — 운영이 서버에서 보낸 글 목록. 열면 **읽음 처리**된다.
 ///

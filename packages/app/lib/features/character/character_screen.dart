@@ -16,8 +16,9 @@ import 'equip_widgets.dart';
 import 'fairy_panel.dart';
 import 'forge_panel.dart';
 import 'skill_panel.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFFFD54F);
+const _honey = kHoney;
 
 /// 상단 3버튼이 무엇을 보여줄지.
 enum _Panel { stats, fairy, skills }

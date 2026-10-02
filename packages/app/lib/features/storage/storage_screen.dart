@@ -20,8 +20,9 @@ import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import 'dex_screen.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 채집함: 상단 장착 3슬롯 + 아이콘 그리드(단계·티어순) + 탭 시 상세 팝업.
 class StorageScreen extends ConsumerWidget {
@@ -1474,7 +1475,7 @@ class StorageScreen extends ConsumerWidget {
                             label: Text(l.incubatorCollectAll(doneIds.length)),
                             style: FilledButton.styleFrom(
                               backgroundColor: _honey,
-                              foregroundColor: const Color(0xFF3A2600),
+                              foregroundColor: kHoneyInk,
                               textStyle: const TextStyle(
                                 fontWeight: FontWeight.w900,
                               ),
@@ -2004,7 +2005,7 @@ class StorageScreen extends ConsumerWidget {
               // 이색은 **테두리부터** 다르다 — 1/300 이라 목록에서 놓치면
               // 일반 알을 먼저 돌려 버린다.
               color: variant
-                  ? const Color(0xFFFFD54F)
+                  ? kHoney
                   : gradeColor(sp.grade).withValues(alpha: 0.7),
               width: variant ? 1.8 : 1,
             ),
@@ -2369,7 +2370,7 @@ class StorageScreen extends ConsumerWidget {
                         child: Text(
                           AppLocalizations.of(context).equippedBadge,
                           style: const TextStyle(
-                            color: Color(0xFF3A2600),
+                            color: kHoneyInk,
                             fontSize: 7.5,
                             fontWeight: FontWeight.w900,
                           ),
@@ -2387,7 +2388,7 @@ class StorageScreen extends ConsumerWidget {
                       child: Icon(
                         Icons.lock_rounded,
                         size: 14,
-                        color: Color(0xFFFFD54F),
+                        color: kHoney,
                         shadows: [Shadow(color: Colors.black, blurRadius: 3)],
                       ),
                     ),
@@ -3469,7 +3470,7 @@ class StorageScreen extends ConsumerWidget {
                         _snack(ctx, l.breakthroughDoneSnack);
                       }
                     },
-                    style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
+                    style: _pillStyle(_honey, fg: kHoneyInk),
                     child: _pillText(l.breakthroughCollect),
                   )
                 : FilledButton.icon(
@@ -3534,7 +3535,7 @@ class StorageScreen extends ConsumerWidget {
                 AudioService.instance.sfxEnhance();
                 if (ctx.mounted) _snack(ctx, l.trainSnack);
               },
-              style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
+              style: _pillStyle(_honey, fg: kHoneyInk),
               child: _pillText(l.trainAction),
             ),
           ],
@@ -3603,7 +3604,7 @@ class StorageScreen extends ConsumerWidget {
                 _snack(ctx, l.breakthroughStartedSnack);
               }
             },
-            style: _pillStyle(_honey, fg: const Color(0xFF3A2600)),
+            style: _pillStyle(_honey, fg: kHoneyInk),
             child: _pillText(l.breakthroughDo),
           ),
         ],
@@ -3778,8 +3779,8 @@ class StorageScreen extends ConsumerWidget {
               if (ok && ctx.mounted) _snack(ctx, l.synthSnack);
             },
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEBA52F),
-              foregroundColor: const Color(0xFF3A2600),
+              backgroundColor: kHoney,
+              foregroundColor: kHoneyInk,
               minimumSize: const Size(0, 36),
             ),
             child: Text(l.synthDo),
@@ -4150,9 +4151,7 @@ Widget _lockButton(
       decoration: BoxDecoration(
         color: locked ? const Color(0x33FFD54F) : const Color(0x22FFFFFF),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: locked ? const Color(0xFFFFD54F) : const Color(0x44FFFFFF),
-        ),
+        border: Border.all(color: locked ? kHoney : const Color(0x44FFFFFF)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -4160,12 +4159,12 @@ Widget _lockButton(
           Icon(
             locked ? Icons.lock_rounded : Icons.lock_open_rounded,
             size: 20,
-            color: locked ? const Color(0xFFFFD54F) : Colors.white60,
+            color: locked ? kHoney : Colors.white60,
           ),
           Text(
             locked ? l.bugLocked : l.bugLock,
             style: TextStyle(
-              color: locked ? const Color(0xFFFFD54F) : Colors.white60,
+              color: locked ? kHoney : Colors.white60,
               fontSize: 9.5,
               fontWeight: FontWeight.w800,
             ),

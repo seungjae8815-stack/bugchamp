@@ -14,6 +14,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 import '../guild/guild_mission_tab.dart' show guildHelpMission;
 
 /// 전체 채팅 화면.
@@ -445,7 +446,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             icon: const Icon(Icons.support_agent_rounded, size: 18),
             label: Text(l.supportTitle),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFEBC24A),
+              foregroundColor: kHoney,
               textStyle: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
@@ -531,9 +532,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 style: TextStyle(
                   color: m.isAdmin
                       ? const Color(0xFF9FD3F5)
-                      : (mine
-                            ? const Color(0xFFEBA52F)
-                            : const Color(0x99FFFFFF)),
+                      : (mine ? kHoney : const Color(0x99FFFFFF)),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
@@ -593,7 +592,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.flag_rounded, color: Color(0xFFEBC24A), size: 18),
+          const Icon(Icons.flag_rounded, color: kHoney, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -608,9 +607,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ref,
                 m.body.substring(_helpPrefix.length),
               ),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFEBC24A),
-              ),
+              style: TextButton.styleFrom(foregroundColor: kHoney),
               child: Text(l.guildMissionHelp),
             ),
         ],
@@ -692,8 +689,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           FilledButton(
             onPressed: available && !_sending ? _send : null,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEBA52F),
-              foregroundColor: const Color(0xFF1A1200),
+              backgroundColor: kHoney,
+              foregroundColor: kHoneyInk,
               shape: const CircleBorder(),
               padding: const EdgeInsets.all(14),
             ),

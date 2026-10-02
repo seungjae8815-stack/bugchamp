@@ -14,8 +14,9 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/toast.dart';
+import '../../ui/colors.dart';
 
-const _honey = Color(0xFFEBA52F);
+const _honey = kHoney;
 
 /// 도감(§2.1) — 종 20개의 **영구 기록**.
 ///
@@ -386,7 +387,7 @@ class DexScreen extends ConsumerWidget {
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: _honey,
-                  foregroundColor: const Color(0xFF3A2600),
+                  foregroundColor: kHoneyInk,
                 ),
                 onPressed: () async {
                   final got = await ref
