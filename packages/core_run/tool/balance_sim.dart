@@ -732,6 +732,20 @@ final FairyConfig? _fairyConfig = () {
 /// `--no-fairy` — 요정을 빼고 잰다(요정이 90일 표를 얼마나 당기는지 비교).
 bool _noFairy = false;
 
+/// 길드 설정(1.0.15). 없으면 길드 버프 없이 잰다.
+final GuildConfig? _guildConfig = () {
+  final f = File('../app/assets/data/guild.json');
+  if (!f.existsSync()) return null;
+  return GuildConfig.fromJson(
+    jsonDecode(f.readAsStringSync()) as Map<String, dynamic>,
+  );
+}();
+
+/// `--guild` — 길드 버프를 넣고 잰다. **기본은 뺀다**: 90일 표는 길드에 안 든 유저 기준이다
+/// (2026-10-01 — 길드 포함으로 표를 맞추면 비길드 유저가 112일로 느려져, 길드가 필수가 된다).
+/// 길드 버프는 그 위에 얹히는 **가속**이다(활동적 길드 기준 91 → 82일).
+bool _noGuild = true;
+
 /// 시뮬 동행 요정의 종류·부가(`--fairy-kind=` · `--fairy-sub=`). 등급·레벨·개체값은
 /// fairy_sim 실측 곡선(accumulation.fairyByDay)을 따른다 — 종류는 무작위라 대표 하나로 잰다.
 /// 기본 = 공격형(이그니스 + 보스 피해) — 90일 표에 가장 크게 작용하는 쪽(보수적 = 빠르게 잰다).
@@ -1364,7 +1378,28 @@ class _Player {
     s = _ceilingData.dex.apply(s, dexConquered, dexConquered);
     s = _applySkills(s, activeAvg: activeAvg);
     s = _applyFairy(s, activeAvg: activeAvg);
+    s = _applyGuild(s);
     return capCritChance(s, config.critChanceMax);
+  }
+
+  // ── 길드 버프(1.0.15): 길드 레벨 = guild.json 곡선 × 가정 하루 경험치(balance_targets →
+  // guild.expPerDay, 활동적인 20인 길드) · 포인트를 guild.skillOrder 순서로 찍는다. 앱과 같은 함수.
+  // ⚠️ 가정이다(펫·도감·스킬 곡선과 같은 처지) — 길드에 안 든 유저는 0, 느슨한 길드는 더 느리다.
+  CharacterStats _applyGuild(CharacterStats s) {
+    final cfg = _guildConfig;
+    final g = _targets.raw['guild'] as Map<String, dynamic>?;
+    if (_noGuild || cfg == null || g == null) return s;
+    final exp = ((g['expPerDay'] as num?)?.toDouble() ?? 0) * elapsedDays;
+    var points = cfg.level.points(cfg.level.levelOf(exp.round()).level);
+    final levels = <String, int>{};
+    for (final id in (g['skillOrder'] as List? ?? const [])) {
+      if (points <= 0) break;
+      final def = cfg.skill('$id');
+      if (def == null || (levels[def.id] ?? 0) >= def.max) continue;
+      levels[def.id] = (levels[def.id] ?? 0) + 1;
+      points--;
+    }
+    return applyGuildStats(s, guildBonus(cfg.skills, levels));
   }
 
   // ── 캐릭터 스킬(§2.8): 날짜별 가정 곡선(balance_targets.json → skillFillByDay) ──
@@ -2598,6 +2633,10 @@ _Opts _parseArgs(List<String> args) {
     }
     if (a == '--no-fairy') {
       _noFairy = true;
+      continue;
+    }
+    if (a == '--guild') {
+      _noGuild = false;
       continue;
     }
     final fk = RegExp(r'^--fairy-kind=(.+)$').firstMatch(a);

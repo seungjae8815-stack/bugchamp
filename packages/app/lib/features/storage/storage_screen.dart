@@ -2376,6 +2376,21 @@ class StorageScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  if (ref
+                      .read(saveControllerProvider)
+                      .requireValue
+                      .lockedBugIds
+                      .contains(bug.id))
+                    const Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Icon(
+                        Icons.lock_rounded,
+                        size: 14,
+                        color: Color(0xFFFFD54F),
+                        shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                      ),
+                    ),
                   // 부상 표시는 칸 한가운데 크게 — 구석의 작은 이모지는
                   // 그리드에서 눈에 들어오지 않았다.
                   if (injured)
@@ -2945,6 +2960,14 @@ class StorageScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
+                      // 잠금 — 잠근 곤충은 합성·분해 재료로 쓰지 않는다(2026-10-02 문의).
+                      _lockButton(
+                        ctx,
+                        r,
+                        l,
+                        save.lockedBugIds.contains(bug.id),
+                        bug.id,
+                      ),
                     ],
                   ),
                   if (species.desc != null) ...[
@@ -2961,6 +2984,18 @@ class StorageScreen extends ConsumerWidget {
                     ),
                   ],
                   const SizedBox(height: 10),
+                  // 개체 정보 — 예전엔 짝짓기·부화 확인 창에만 있어 채집함에서 크기·오행을
+                  // 볼 수 없었다(2026-10-01 사장님 지적).
+                  _bugInfoCard(
+                    l,
+                    species,
+                    bug,
+                    trainLv: trainLevelsOf(
+                      save,
+                      bug.id,
+                    ).values.fold<int>(0, (a, v) => a + v),
+                  ),
+                  const SizedBox(height: 6),
                   if (petCfg != null)
                     _injuryCard(ctx, r, petCfg, save, bug, now),
                   if (petCfg != null)
@@ -3078,6 +3113,7 @@ class StorageScreen extends ConsumerWidget {
                                             'equipped' => l.disassembleEquipped,
                                             'incubating' =>
                                               l.disassembleIncubating,
+                                            'locked' => l.disassembleLocked,
                                             _ => l.disassembleFailed,
                                           },
                                         );
@@ -3953,3 +3989,189 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 }
+
+/// 곤충 상세의 개체 정보(오행·성별·기질·주특기·크기). 두 칸씩 나란히.
+Widget _bugInfoCard(
+  AppLocalizations l,
+  Species sp,
+  IndividualBug bug, {
+  int trainLv = 0,
+}) {
+  Widget cell(String k, Widget v) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        // 이름 칸 — 영어 "Specialty"·"Training" 이 46px 에서 단어 중간에 꺾였다.
+        SizedBox(
+          width: 58,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              k,
+              maxLines: 1,
+              style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 11.5),
+            ),
+          ),
+        ),
+        Expanded(child: v),
+      ],
+    ),
+  );
+  Widget val(String t, [Color c = Colors.white]) => Text(
+    t,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: TextStyle(color: c, fontSize: 12.5, fontWeight: FontWeight.w900),
+  );
+  // 크기 줄은 길어서(영어) 두 줄까지 — 한 줄이면 핵심인 "×배율"이 잘렸다.
+  Widget val2(String t) => Text(
+    t,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+    style: const TextStyle(
+      color: Colors.white,
+      fontSize: 12.5,
+      fontWeight: FontWeight.w900,
+    ),
+  );
+  Widget withIcon(Widget icon, Widget text) => Row(
+    children: [
+      icon,
+      const SizedBox(width: 4),
+      Flexible(child: text),
+    ],
+  );
+  final mult = bug.statMultiplier(sp);
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(10, 6, 10, 7),
+    decoration: BoxDecoration(
+      color: const Color(0x22000000),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: cell(
+                l.bugInfoElement,
+                withIcon(
+                  elementIcon(bug.element, size: 14),
+                  val(elementLabel(l, bug.element), elementColor(bug.element)),
+                ),
+              ),
+            ),
+            Expanded(
+              child: cell(
+                l.bugInfoSex,
+                withIcon(sexArt(bug.sex, size: 14), val(sexLabel(l, bug.sex))),
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: cell(
+                l.bugInfoTemperament,
+                withIcon(
+                  temperamentIcon(bug.temperament, size: 14),
+                  val(temperamentLabel(l, bug.temperament)),
+                ),
+              ),
+            ),
+            Expanded(
+              child: cell(
+                l.bugInfoSpecialty,
+                val(specialtyLabel(l, sp.specialty)),
+              ),
+            ),
+          ],
+        ),
+        cell(
+          l.bugInfoSize,
+          val2(
+            l.bugInfoSizeDetail(
+              bug.sizeMm.toStringAsFixed(1),
+              sp.sizeMinMm.toStringAsFixed(0),
+              sp.sizeMaxMm.toStringAsFixed(0),
+              mult.toStringAsFixed(2),
+            ),
+          ),
+        ),
+        // 훈련소 단계 합(결투 능력치) — 훈련소에서와 같은 표기.
+        cell(
+          l.trainingCenter,
+          val(
+            trainLv > 0 ? l.trainingSumShort(trainLv) : l.trainingNoneShort,
+            trainLv > 0 ? const Color(0xFF8FD8FF) : const Color(0xB3FFFFFF),
+          ),
+        ),
+        // 이색 — 값은 종류(무지개·알비노). 예전엔 "이색 | 이색"으로 같은 말이 두 번 보였다.
+        if (bug.variant != BugVariant.none)
+          cell(
+            l.dexVariant,
+            val(
+              bug.variant == BugVariant.rainbow
+                  ? l.variantRainbow
+                  : l.variantAlbino,
+              const Color(0xFFE0A020),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+/// 곤충 상세의 잠금 버튼 — 켜면 노란 자물쇠, 끄면 흐린 열린 자물쇠.
+Widget _lockButton(
+  BuildContext ctx,
+  WidgetRef r,
+  AppLocalizations l,
+  bool locked,
+  String bugId,
+) => Tooltip(
+  message: locked ? l.bugUnlock : l.bugLock,
+  child: InkWell(
+    borderRadius: BorderRadius.circular(20),
+    onTap: () async {
+      final now = await r
+          .read(saveControllerProvider.notifier)
+          .toggleBugLock(bugId);
+      if (ctx.mounted) {
+        showCenterToast(ctx, now ? l.bugLockedToast : l.bugUnlockedToast);
+      }
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: locked ? const Color(0x33FFD54F) : const Color(0x22FFFFFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: locked ? const Color(0xFFFFD54F) : const Color(0x44FFFFFF),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            locked ? Icons.lock_rounded : Icons.lock_open_rounded,
+            size: 20,
+            color: locked ? const Color(0xFFFFD54F) : Colors.white60,
+          ),
+          Text(
+            locked ? l.bugLocked : l.bugLock,
+            style: TextStyle(
+              color: locked ? const Color(0xFFFFD54F) : Colors.white60,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
+);

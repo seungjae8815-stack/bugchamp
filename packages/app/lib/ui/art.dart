@@ -488,9 +488,35 @@ Widget jellyPrice({
   String? label,
   String? times,
   double size = 14,
-  Color color = Colors.white,
+
+  /// 글자색. 안 주면 **둘러싼 글자색**(버튼 안이면 버튼 글자색)을 따른다 — 팝업 황동 버튼은 진갈색,
+  /// 회색 나무 버튼은 크림이라, 색을 박아 두면 버튼마다 어긋났다(2026-10-02 출시 점검).
+  Color? color,
   double fontSize = 12,
-}) => Row(
+
+  /// 그림 버튼(나무·황동) 위에서 쓸 때 — 팝업 버튼 글씨와 같은 검은 그림자.
+  bool shadow = false,
+}) => Builder(
+  builder: (context) => _jellyPrice(
+    cost,
+    label,
+    times,
+    size,
+    color ?? DefaultTextStyle.of(context).style.color ?? Colors.white,
+    fontSize,
+    shadow,
+  ),
+);
+
+Widget _jellyPrice(
+  int cost,
+  String? label,
+  String? times,
+  double size,
+  Color color,
+  double fontSize,
+  bool shadow,
+) => Row(
   mainAxisSize: MainAxisSize.min,
   mainAxisAlignment: MainAxisAlignment.center,
   children: [
@@ -501,6 +527,7 @@ Widget jellyPrice({
           color: color,
           fontSize: fontSize,
           fontWeight: FontWeight.w800,
+          shadows: shadow ? _priceShadow : null,
         ),
       ),
       const SizedBox(width: 4),
@@ -513,6 +540,7 @@ Widget jellyPrice({
         color: color,
         fontSize: fontSize,
         fontWeight: FontWeight.w800,
+        shadows: shadow ? _priceShadow : null,
       ),
     ),
     if (times != null) ...[
@@ -523,11 +551,14 @@ Widget jellyPrice({
           color: color.withValues(alpha: 0.75),
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
+          shadows: shadow ? _priceShadow : null,
         ),
       ),
     ],
   ],
 );
+
+const _priceShadow = [Shadow(color: Color(0xCC000000), blurRadius: 3)];
 
 // ─────────────────────────────────────────────────────────────
 // 시트로 뽑은 아이콘 (2026-09-18) — 부위·미션·등급·팝업 제목

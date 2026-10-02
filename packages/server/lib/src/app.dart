@@ -16,6 +16,15 @@ import 'auth.dart';
 import 'battle_session.dart';
 import 'duel_session.dart';
 import 'game_config.dart';
+import 'guild_actions.dart';
+import 'guild_boss_actions.dart';
+import 'guild_boss_store.dart';
+import 'guild_mission_actions.dart';
+import 'guild_mission_store.dart';
+import 'guild_routes.dart';
+import 'guild_store.dart';
+import 'guild_war_actions.dart';
+import 'guild_war_store.dart';
 import 'state_store.dart';
 import 'ops_monitor.dart';
 import 'support.dart';
@@ -222,6 +231,12 @@ Handler buildHandler({
   /// 운영 감시(오류 급증·상한에 잘린 업로드·위조·큰 세이브). 생략하면 문의 봇으로 보낸다
   /// (봇 토큰이 없으면 세기만 하고 보내지 않는다).
   OpsMonitor? opsMonitor,
+
+  /// 길드 테이블. 생략하면 Supabase(테스트는 메모리 구현을 넣는다).
+  GuildStore? guildStore,
+  GuildMissionStore? guildMissionStore,
+  GuildBossStore? guildBossStore,
+  GuildWarStore? guildWarStore,
 }) {
   final support = supportNotifier ?? SupportNotifier();
   final ops = opsMonitor ?? OpsMonitor(send: (t) => support.notify(t));
@@ -319,6 +334,94 @@ Handler buildHandler({
       return SaveGame.fromJson(migrateToCurrent(raw));
     }
 
+    // 길드(1.0.15) — 상태는 서버 테이블이 소유한다(세이브에 없음).
+    final gStore =
+        guildStore ??
+        SupabaseGuildStore(
+          supabaseUrl: config.supabaseUrl,
+          serviceRoleKey: config.serviceRoleKey,
+        );
+    final guildActions = GuildActions(
+      store: gStore,
+      config: cfg.guild,
+      rules: cfg.chatRules,
+      now: actions.now,
+    );
+    // 결투 방어팀(서버 편성 검증을 거친 것) — 길드 보스 피해·길드전 7일차 공용.
+    Future<List<DuelBug>?> defenseTeamOf(String uid) async {
+      final raw = await store.load(uid);
+      if (raw == null) return null;
+      return actions.defenderDuelTeam(
+        SaveGame.fromJson(migrateToCurrent(raw)),
+        speciesById: species,
+        petConfig: cfg.pet,
+        enhance: cfg.enhance,
+      );
+    }
+
+    final guildWar = GuildWarActions(
+      guilds: gStore,
+      store:
+          guildWarStore ??
+          SupabaseGuildWarStore(
+            supabaseUrl: config.supabaseUrl,
+            serviceRoleKey: config.serviceRoleKey,
+          ),
+      config: cfg.guild,
+      now: actions.now,
+      teamOf: defenseTeamOf,
+      duelParams: actions.duelParams,
+      addExp: guildActions.addExp,
+    );
+    mountGuildRoutes(
+      authed,
+      war: guildWar,
+      missions: GuildMissionActions(
+        guilds: gStore,
+        store:
+            guildMissionStore ??
+            SupabaseGuildMissionStore(
+              supabaseUrl: config.supabaseUrl,
+              serviceRoleKey: config.serviceRoleKey,
+            ),
+        config: cfg.guild,
+        run: cfg.run,
+        now: actions.now,
+        addExp: guildActions.addExp,
+      ),
+      boss: GuildBossActions(
+        guilds: gStore,
+        store:
+            guildBossStore ??
+            SupabaseGuildBossStore(
+              supabaseUrl: config.supabaseUrl,
+              serviceRoleKey: config.serviceRoleKey,
+            ),
+        config: cfg.guild,
+        now: actions.now,
+        addExp: guildActions.addExp,
+        // 피해 = 결투 방어팀 전투력(서버 편성 검증을 거친 값 — 설계 A안).
+        teamPowerOf: (uid) async {
+          final team = await defenseTeamOf(uid);
+          if (team == null || team.isEmpty) return null;
+          return team.fold<double>(0, (a, x) => a + _duelPower(x));
+        },
+        // 길드전 6일차(보스) 점수 — 서버가 확정한 공격만 센다.
+        onDamage: (uid, gid, dmg) =>
+            guildWar.recordServerAction(uid, 'bossAttack'),
+      ),
+      fairy: cfg.fairy,
+      run: cfg.run,
+      guild: guildActions,
+      userIdOf: (req) => userOf(req).id,
+      loadSave: (uid) => loadSave(uid),
+      spendJelly: (save, n) {
+        final r = actions.spendJelly(save, n, reason: 'guild_create');
+        return r.isOk ? r.save : null;
+      },
+      storeSave: (uid, save) => store.save(uid, save.toJson()),
+    );
+
     // 명예의 전당 명단 캐시(회차 id → 조회 시각·행). 끝난 회차라 순위가 더
     // 바뀌지 않으므로, 대기 기간 내내 화면을 열 때마다 RPC 를 부를 이유가
     // 없다. 운영이 부정 기록을 지우면 반영되도록 짧게만 둔다.
@@ -396,6 +499,19 @@ Handler buildHandler({
         if (stored == null) return _json({'error': 'no_save'}, status: 409);
         var r = actions.mergeSave(stored, migrateToCurrent(incoming));
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        // 길드전 활동 점수(1.0.15) — 세이브가 아니라 **본문 옆칸**으로 온다(세이브 스키마를 안 건드린다).
+        // 실패해도 저장은 막지 않는다.
+        final tally = body['guildTally'];
+        if (tally is Map) {
+          try {
+            await guildWar.recordTally(user.id, '${tally['day']}', {
+              for (final e in ((tally['counts'] as Map?) ?? const {}).entries)
+                if (e.value is num) '${e.key}': (e.value as num).toInt(),
+            });
+          } catch (e) {
+            stderr.writeln('[save/guildTally] ${user.id}: $e');
+          }
+        }
         final reasons = r.extra['clampReasons'];
         if (reasons is List) {
           ops.recordClamp(user.id, [for (final x in reasons) '$x']);
@@ -1872,14 +1988,57 @@ Handler buildHandler({
         );
         final offerSlots = <Map<String, dynamic>>[];
         final shown = <Map<String, dynamic>>[];
+        // 빈 칸은 야생 전에 **이번 주 아직 안 싸운 같은 리그 사람**으로(2026-10-01 사장님 확정).
+        // 점수는 순위 대신 전투력 비율(상대 방어팀 ÷ 내 방어팀)로 — 센 상대일수록 높다.
+        List<Map<String, dynamic>>? idle;
+        final myTeam = actions.defenderDuelTeam(
+          save,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        final myPower = (myTeam ?? const <DuelBug>[]).fold<double>(
+          0,
+          (a, x) => a + _duelPower(x),
+        );
+        final usedIds = {
+          for (final sl in slots)
+            if (sl.userId != null) sl.userId!,
+        };
         for (var i = 0; i < slots.length; i++) {
           final sl = slots[i];
-          final row = sl.userId == null ? null : byUser[sl.userId];
+          var row = sl.userId == null ? null : byUser[sl.userId];
           var foe = sl.userId == null
               ? null
               : await duelFoe(save, sl.userId!, '', locale);
           var real = foe != null && row != null;
           var points = sl.points;
+          var idleId = '';
+          if (!real) {
+            idle ??= await store.pvpLeagueIdle(
+              season,
+              pvpLeagueOf(save, b),
+              user.id,
+              b.matchSize * 2,
+            );
+            while (idle.isNotEmpty) {
+              final cand = idle.removeAt(0);
+              final id = '${cand['user_id']}';
+              if (usedIds.contains(id)) continue;
+              final f = await duelFoe(save, id, '', locale);
+              if (f == null) continue;
+              usedIds.add(id);
+              final p = f.foe.fold<double>(0, (a, x) => a + _duelPower(x));
+              foe = f;
+              row = cand;
+              real = true;
+              idleId = id;
+              points = myPower > 0
+                  ? b.idleMatchPoints(p / myPower)
+                  : b.matchWildPoints;
+              break;
+            }
+          }
           if (!real) {
             // 방어팀이 없는 사람은 야생으로 바꾼다(점수도 야생 점수).
             foe = await duelFoe(save, '', b.matchWildTier, locale);
@@ -1893,14 +2052,14 @@ Handler buildHandler({
           );
           final entry = <String, dynamic>{
             'i': i,
-            'userId': ?(real ? sl.userId : null),
+            'userId': ?(real ? (idleId.isEmpty ? sl.userId : idleId) : null),
             'nickname': real ? '${row!['nickname'] ?? ''}' : '',
-            'rank': ?(real ? sl.rank : null),
+            'rank': ?(real && idleId.isEmpty ? sl.rank : null),
             'trophies': real ? (row!['trophies'] as num?)?.toInt() ?? 0 : 0,
             'points': points,
-            'power': real
-                ? (row!['power'] as num?)?.toDouble() ?? teamPower
-                : teamPower,
+            // 결투 화면에는 **결투 팀 전투력**만(2026-10-01 — 순위표 값이 홈 전투력으로 떨어져 1.84M 로 보였다).
+            // 방금 서버가 만든 상대 팀으로 잰 값이라 늘 정확하다.
+            'power': teamPower,
             'teamPower': teamPower,
             'team': [
               for (var k = 0; k < foe.foe.length; k++)
@@ -2170,6 +2329,15 @@ Handler buildHandler({
           r.result.save!,
         );
         await store.save(user.id, scored.toJson());
+        // 길드전 4일차(결투) — 서버가 확정한 승리만 센다.
+        final ex = r.result.extra;
+        if ((ex['winsA'] as num? ?? 0) > (ex['winsB'] as num? ?? 0)) {
+          try {
+            await guildWar.recordServerAction(user.id, 'duelWin');
+          } catch (e) {
+            stderr.writeln('[duel/guildWar] ${user.id}: $e');
+          }
+        }
         return _json({...r.result.extra, 'save': scored.toJson()});
       } on StateStoreException catch (e) {
         stderr.writeln('[duel/throw] ${user.id}: $e');

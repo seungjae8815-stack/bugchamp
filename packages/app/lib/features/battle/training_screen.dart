@@ -104,6 +104,12 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       final gb = data.species(b.speciesId).grade.index;
       if (ga != gb) return gb.compareTo(ga);
       if (a.potential != b.potential) return b.potential.compareTo(a.potential);
+      // 같은 등급·포텐셜이면 많이 훈련한 곤충 → 수련 레벨 높은 곤충이 앞(2026-10-02 사장님).
+      int trained(IndividualBug x) =>
+          trainLevelsOf(save, x.id).values.fold<int>(0, (a, v) => a + v);
+      final tr = trained(b).compareTo(trained(a));
+      if (tr != 0) return tr;
+      if (a.level != b.level) return b.level.compareTo(a.level);
       final sz = b.sizeMm.compareTo(a.sizeMm);
       return sz != 0 ? sz : a.id.compareTo(b.id);
     });
@@ -137,7 +143,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
-                  height: 92,
+                  height: 124,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: adults.length,
@@ -304,6 +310,15 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         ),
         child: Column(
           children: [
+            // 등급 — 채집함·결투 고르기처럼 한눈에(2026-10-02 사장님).
+            Text(
+              gradeLabel(AppLocalizations.of(context), sp.grade),
+              style: TextStyle(
+                color: gradeColor(sp.grade),
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             Expanded(
               child: bugStageImage(
                 b.speciesId,
@@ -313,19 +328,35 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 skin: bugView(ref.read(skinOfProvider), b),
               ),
             ),
+            // 별 → 훈련 Lv(안 했으면 "미훈련") → 이름 순(2026-10-02 사장님).
             Text(
-              sp.name.resolve(locale),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 10),
-            ),
-            Text(
-              lv > 0 ? 'T$lv · ${'★' * b.potential}' : '★' * b.potential,
+              '★' * b.potential,
               style: const TextStyle(
                 color: Color(0xFFFFC928),
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
               ),
+            ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                lv > 0
+                    ? AppLocalizations.of(context).trainingSumShort(lv)
+                    : AppLocalizations.of(context).trainingNoneShort,
+                style: TextStyle(
+                  color: lv > 0
+                      ? const Color(0xFF8FD8FF)
+                      : const Color(0x88FFFFFF),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            Text(
+              sp.name.resolve(locale),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 10),
             ),
           ],
         ),
@@ -402,6 +433,43 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                           ),
                       ],
                     ),
+                    const SizedBox(height: 4),
+                    // 상세 — 오행·크기·성별·수련 레벨(2026-10-02 사장님: 훈련할 곤충의 정보가 보여야 한다).
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 3,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            elementIcon(bug.element, size: 13),
+                            const SizedBox(width: 2),
+                            _chip(
+                              elementLabel(l, bug.element),
+                              elementColor(bug.element),
+                            ),
+                          ],
+                        ),
+                        _chip(
+                          l.bugSize(bug.sizeMm.toStringAsFixed(1)),
+                          const Color(0xFFCFD8DC),
+                        ),
+                        _chip(sexLabel(l, bug.sex), const Color(0xFFCFD8DC)),
+                        _chip('Lv.${bug.level}', const Color(0xFFCFD8DC)),
+                        // 훈련 단계 합(2026-10-02 사장님 — 상세에도 보여야 한다).
+                        _chip(
+                          levels.values.fold<int>(0, (a, v) => a + v) > 0
+                              ? l.trainingSumShort(
+                                  levels.values.fold<int>(0, (a, v) => a + v),
+                                )
+                              : l.trainingNoneShort,
+                          const Color(0xFF8FD8FF),
+                        ),
+                        if (bug.variant != BugVariant.none)
+                          _chip(l.dexVariant, const Color(0xFFE0A020)),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -410,7 +478,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           const SizedBox(height: 6),
           Text(
             l.trainingCapHint,
-            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+            style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 11.5),
           ),
           const SizedBox(height: 8),
           for (final st in TrainStat.values)
@@ -556,6 +624,9 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           const SizedBox(width: 6),
           FilledButton(
             style: FilledButton.styleFrom(
+              // 최대(비활성)도 읽히게 — 전역 비활성 색(0x99)이 흐렸다.
+              disabledBackgroundColor: const Color(0xFF55504A),
+              disabledForegroundColor: Colors.white70,
               backgroundColor: maxed
                   ? const Color(0xFF55504A)
                   : const Color(0xFFE08A2E),

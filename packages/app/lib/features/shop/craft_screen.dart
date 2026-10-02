@@ -11,11 +11,13 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/fairy_art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../domain/audio_service.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_short.dart';
 import '../../ui/toast.dart';
 
 /// 상점 탭 — 인앱결제 카탈로그(iap.json).
@@ -69,7 +71,14 @@ class _StoreSection extends ConsumerWidget {
     }
     final now = ref.read(clockProvider).now().toUtc();
     final locale = Localizations.localeOf(context).languageCode;
-    final products = cfg.sorted;
+    // 아직 안 산 스타터는 **맨 위**(2026-10-02 출시 점검 — 뽑기·교환소 다음 3번째라 잘 안 보였다).
+    final starter = save.starterBought
+        ? null
+        : cfg.sorted.where((p) => p.type == IapType.starter).firstOrNull;
+    final products = [
+      for (final p in cfg.sorted)
+        if (p != starter) p,
+    ];
     // 스토어가 붙어 있으면 현지 통화 가격으로 덮어쓴다(없으면 원화 참고값).
     final prices = ref.watch(storePricesProvider).value ?? const {};
     final devMode = !ref.watch(iapServiceProvider).isStore;
@@ -77,11 +86,24 @@ class _StoreSection extends ConsumerWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(12),
       // +1 = 알 뽑기, +1 = 교환소, +1 = 복원 줄, 개발자 모드면 배너까지.
-      itemCount: products.length + 3 + (devMode ? 1 : 0),
+      itemCount:
+          products.length + 3 + (devMode ? 1 : 0) + (starter != null ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         if (devMode && i == 0) return _devBanner(l);
-        final j = devMode ? i - 1 : i;
+        var j = devMode ? i - 1 : i;
+        if (starter != null) {
+          if (j == 0) {
+            return _ProductCard(
+              product: starter,
+              save: save,
+              now: now,
+              locale: locale,
+              storePrice: prices[starter.id],
+            );
+          }
+          j -= 1;
+        }
         // 젤리 소비처(뽑기·교환소)를 상품보다 **위**에 둔다 — 젤리를 이미
         // 가진 사람이 쓸 곳을 먼저 봐야, 젤리가 남아서 안 사는 상태가 끊긴다.
         if (j == 0) return const _GachaCard();
@@ -385,7 +407,6 @@ class _GachaCard extends ConsumerWidget {
     final cfg = ref.watch(gameDataProvider).requireValue.petConfig;
     if (cfg == null || cfg.gachaJellyCost <= 0) return const SizedBox.shrink();
     final have = save.materialCount(MaterialKind.jelly);
-    final enough = have >= cfg.gachaJellyCost;
     final toPity = cfg.gachaEpicPity <= 0
         ? 0
         : cfg.gachaEpicPity - save.gachaPity;
@@ -434,6 +455,20 @@ class _GachaCard extends ConsumerWidget {
               height: 1.35,
             ),
           ),
+          // 확률 공개(확률형 아이템 표시 의무 — 스킬·요정 뽑기와 같은 수준, 2026-10-02 출시 점검).
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => _showEggOdds(context, ref, l, cfg),
+              icon: const Icon(Icons.percent_rounded, size: 15),
+              label: Text(l.skillGachaOdds),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFE9A6FF),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                minimumSize: const Size(0, 30),
+              ),
+            ),
+          ),
           if (toPity > 0) ...[
             const SizedBox(height: 4),
             Text(
@@ -449,7 +484,8 @@ class _GachaCard extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: enough ? () => _draw(context, ref, l) : null,
+              // 모자라도 누를 수 있게 — 누르면 상점 안내(회색 버튼은 왜 안 되는지도, 어디서 사는지도 안 보였다).
+              onPressed: () => _draw(context, ref, l),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF8E4DA8),
               ),
@@ -725,7 +761,11 @@ class _ExchangeCard extends ConsumerStatefulWidget {
 class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
   /// 한 번에 몇 묶음 교환할지. 후반엔 10개씩 바꾸는 게 답답해서 배수를 둔다.
   int _trades = 1;
-  bool _wantGold = true;
+
+  /// 0 골드 · 1 재료 · 2 요정 가루(2026-10-01).
+  int _mode = 0;
+  bool get _wantGold => _mode == 0;
+  bool get _wantDust => _mode == 2;
 
   @override
   Widget build(BuildContext context) {
@@ -736,6 +776,17 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
 
     final ctrl = ref.read(saveControllerProvider.notifier);
     final out = ctrl.exchangeJelly(trades: _trades, wantGold: _wantGold);
+    final dustOut = ctrl.exchangeDust(trades: _trades);
+    // 하루 상한이 있으면 오늘 남은 가루(없으면 null).
+    final dustLeft = ctrl.exchangeDustLeftToday();
+    final dustOn =
+        (ref
+                .watch(gameDataProvider)
+                .requireValue
+                .fairyConfig
+                ?.exchangeDustPerJelly ??
+            0) >
+        0;
     final cost = cfg.exchangeJellyPerTrade * _trades;
     final have = save.materialCount(MaterialKind.jelly);
     final enough = have >= cost;
@@ -811,7 +862,11 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  l.exchangeHint,
+                  !_wantDust
+                      ? l.exchangeHint
+                      : dustLeft == null
+                      ? l.exchangeHintDust
+                      : '${l.exchangeHintDust} · ${l.exchangeDustLeft('$dustLeft')}',
                   style: const TextStyle(
                     color: Color(0x99FFFFFF),
                     fontSize: 11,
@@ -823,25 +878,36 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                     Expanded(
                       child: _pick(
                         l.exchangeToGold,
-                        _wantGold,
+                        _mode == 0,
                         goldIcon(size: 16),
-                        () => setState(() => _wantGold = true),
+                        () => setState(() => _mode = 0),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: _pick(
                         l.exchangeToMaterial,
-                        !_wantGold,
+                        _mode == 1,
                         // 재료는 3종을 고루 주므로 대표로 키틴을 보인다.
                         materialImage(
                           MaterialKind.chitin,
                           size: 16,
                           fallback: const Icon(Icons.science_rounded, size: 15),
                         ),
-                        () => setState(() => _wantGold = false),
+                        () => setState(() => _mode = 1),
                       ),
                     ),
+                    if (dustOn) ...[
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: _pick(
+                          l.exchangeToDust,
+                          _wantDust,
+                          fairyDustImage(size: 16),
+                          () => setState(() => _mode = 2),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -872,13 +938,17 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                   width: double.infinity,
                   height: 44,
                   child: FilledButton.icon(
-                    onPressed: (out == null || !enough)
+                    onPressed: !enough
+                        ? () => showJellyShort(context)
+                        : (_wantDust ? dustOut == null : out == null)
                         ? null
                         : () async {
-                            final ok = await ctrl.tradeJelly(
-                              trades: _trades,
-                              wantGold: _wantGold,
-                            );
+                            final ok = _wantDust
+                                ? await ctrl.tradeJellyForDust(trades: _trades)
+                                : await ctrl.tradeJelly(
+                                    trades: _trades,
+                                    wantGold: _wantGold,
+                                  );
                             if (!context.mounted) return;
                             showCenterToast(
                               context,
@@ -887,7 +957,14 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                           },
                     icon: const Icon(Icons.swap_horiz_rounded, size: 18),
                     label: Text(
-                      out == null
+                      _wantDust
+                          ? (dustOut == null
+                                ? ((dustLeft ?? 1 << 30) <
+                                          cfg.exchangeJellyPerTrade * _trades
+                                      ? l.exchangeDustCapReached
+                                      : l.notEnoughJelly)
+                                : l.exchangeGetDust(formatCompact(dustOut)))
+                          : out == null
                           ? l.notEnoughJelly
                           : (_wantGold
                                 ? l.exchangeGetGold(formatCompact(out.gold))
@@ -934,12 +1011,19 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
               // 켜졌을 때만 또렷하게 — 아이콘은 색을 못 바꾸므로 투명도로.
               Opacity(opacity: on ? 1 : 0.55, child: icon),
               const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  color: on ? Colors.white : const Color(0x99FFFFFF),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
+              // 3칸이라 영어("To materials")가 넘쳤다 — 칸에 맞게 줄인다.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: on ? Colors.white : const Color(0xB3FFFFFF),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1026,3 +1110,85 @@ const _grantStyle = TextStyle(
   fontSize: 12,
   fontWeight: FontWeight.w800,
 );
+
+/// 곤충 알 뽑기 확률 공개 — 등급(종마다) · 포텐셜 · 이색 · 천장. 숫자는 pets.json 에서.
+void _showEggOdds(
+  BuildContext context,
+  WidgetRef ref,
+  AppLocalizations l,
+  PetConfig cfg,
+) {
+  final data = ref.read(gameDataProvider).requireValue;
+  String pct(double v) => (v * 100).toStringAsFixed(v * 100 < 10 ? 2 : 1);
+  final gTotal = cfg.gachaWeights.values.fold<double>(0, (a, b) => a + b);
+  final pTotal = cfg.gachaPotentialWeights.values.fold<double>(
+    0,
+    (a, b) => a + b,
+  );
+  int speciesOf(Grade g) =>
+      data.allSpecies.where((s) => s.grade == g).length.clamp(1, 999);
+  const head = TextStyle(
+    color: Color(0xFFEBA52F),
+    fontSize: 13,
+    fontWeight: FontWeight.w900,
+  );
+  const body = TextStyle(color: Colors.white, fontSize: 12.5, height: 1.4);
+  showGameDialog<void>(
+    context,
+    title: l.eggOddsTitle,
+    icon: Icons.percent_rounded,
+    content: ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 380),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.eggOddsGradeHead, style: head),
+            const SizedBox(height: 4),
+            for (final g in Grade.values.reversed)
+              if ((cfg.gachaWeights[g] ?? 0) > 0 && gTotal > 0)
+                Text(
+                  l.eggOddsGradeLine(
+                    gradeLabel(l, g),
+                    pct(cfg.gachaWeights[g]! / gTotal),
+                    pct(cfg.gachaWeights[g]! / gTotal / speciesOf(g)),
+                  ),
+                  style: body.copyWith(color: gradeColor(g)),
+                ),
+            const SizedBox(height: 10),
+            Text(l.eggOddsPotentialHead, style: head),
+            const SizedBox(height: 4),
+            for (final e in cfg.gachaPotentialWeights.entries)
+              if (e.value > 0 && pTotal > 0)
+                Text(
+                  '${'★' * e.key}  ${pct(e.value / pTotal)}%',
+                  style: body.copyWith(color: const Color(0xFFFFC928)),
+                ),
+            const SizedBox(height: 10),
+            Text(l.eggOddsVariant(pct(cfg.gachaVariantChance)), style: body),
+            if (cfg.gachaEpicPity > 0)
+              Text(
+                l.eggOddsPity(
+                  '${cfg.gachaEpicPity}',
+                  gradeLabel(l, cfg.gachaPityGrade),
+                ),
+                style: body,
+              ),
+            const SizedBox(height: 6),
+            Text(
+              l.eggOddsNote,
+              style: const TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    ),
+    actions: [
+      gameDialogButton(
+        l.actionClose,
+        () => Navigator.of(context, rootNavigator: true).pop(),
+      ),
+    ],
+  );
+}

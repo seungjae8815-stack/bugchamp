@@ -246,6 +246,31 @@ class StateStore {
     return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
   }
 
+  /// 같은 리그에서 **방어팀은 있는데 이번 시즌 아직 점수가 없는** 사람(무작위 [limit] 명) — 순위표가
+  /// 모자랄 때 야생보다 먼저 상대로 넣는다(2026-10-01). SQL 이 아직 없으면 빈 목록(예전처럼 야생).
+  Future<List<Map<String, dynamic>>> pvpLeagueIdle(
+    String seasonId,
+    int leagueIndex,
+    String userId,
+    int limit,
+  ) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/pvp_league_idle'),
+      headers: _headers,
+      body: jsonEncode({
+        'p_season': seasonId,
+        'p_league': leagueIndex,
+        'p_user': userId,
+        'lim': limit,
+      }),
+    );
+    if (res.statusCode == 404) return const []; // SQL 적용 전 — 함수가 없다
+    if (res.statusCode >= 300) {
+      throw StateStoreException('리그 대기 인원 조회 실패: ${res.statusCode}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
+  }
+
   /// 리그 인원.
   Future<int> pvpLeagueCount(String seasonId, String league) async {
     final res = await _http.post(

@@ -252,6 +252,9 @@ class FairyState {
     this.dex = const {},
     this.gachaPity = 0,
     this.seq = 0,
+    this.dexClaimed = 0,
+    this.exchangeDay = '',
+    this.exchangedDust = 0,
   });
 
   static const FairyState empty = FairyState();
@@ -279,6 +282,14 @@ class FairyState {
 
   /// 뽑기 천장 카운터.
   final int gachaPity;
+
+  /// 받은 도감 마일스톤 수(앞에서부터 차례로 받는다 — `FairyConfig.dexMilestones`).
+  final int dexClaimed;
+
+  /// 상점 교환소(젤리 → 가루) 하루 상한용 — 마지막으로 교환한 날(기기 날짜 키)과 그날 받은 가루.
+  /// 알 뽑기·스킬 소탕과 같은 수준의 기기 날짜다(시계 조작에 약하다 — 서버는 업로드당 상한으로 덮는다).
+  final String exchangeDay;
+  final int exchangedDust;
 
   /// 새 요정·알 id 를 만드는 순번. 무작위 id 는 결정론(§5)을 깨고, 시각은 겹친다.
   final int seq;
@@ -313,6 +324,9 @@ class FairyState {
     Set<String>? dex,
     int? gachaPity,
     int? seq,
+    int? dexClaimed,
+    String? exchangeDay,
+    int? exchangedDust,
   }) => FairyState(
     fairies: fairies ?? this.fairies,
     eggs: eggs ?? this.eggs,
@@ -324,6 +338,9 @@ class FairyState {
     dex: dex ?? this.dex,
     gachaPity: gachaPity ?? this.gachaPity,
     seq: seq ?? this.seq,
+    dexClaimed: dexClaimed ?? this.dexClaimed,
+    exchangeDay: exchangeDay ?? this.exchangeDay,
+    exchangedDust: exchangedDust ?? this.exchangedDust,
   );
 
   /// 기본값인 칸은 적지 않는다(세이브 크기).
@@ -338,6 +355,9 @@ class FairyState {
     if (dex.isNotEmpty) 'x': dex.toList()..sort(),
     if (gachaPity != 0) 'p': gachaPity,
     if (seq != 0) 'q': seq,
+    if (dexClaimed != 0) 'm': dexClaimed,
+    if (exchangeDay.isNotEmpty) 'xd': exchangeDay,
+    if (exchangedDust != 0) 'xn': exchangedDust,
   };
 
   /// 깨진 칸은 건너뛴다 — 세이브 파서는 던지지 않는다(구버전·조작 세이브 방어).
@@ -375,6 +395,9 @@ class FairyState {
       },
       gachaPity: _int(json['p'], 0).clamp(0, 1 << 20),
       seq: _int(json['q'], 0).clamp(0, 1 << 52),
+      dexClaimed: _int(json['m'], 0).clamp(0, 1000),
+      exchangeDay: json['xd'] is String ? json['xd'] as String : '',
+      exchangedDust: _int(json['xn'], 0).clamp(0, 1 << 30),
     );
   }
 
@@ -391,7 +414,10 @@ class FairyState {
       other.dex.length == dex.length &&
       other.dex.containsAll(dex) &&
       other.gachaPity == gachaPity &&
-      other.seq == seq;
+      other.seq == seq &&
+      other.dexClaimed == dexClaimed &&
+      other.exchangeDay == exchangeDay &&
+      other.exchangedDust == exchangedDust;
 
   @override
   int get hashCode => Object.hash(
@@ -402,6 +428,9 @@ class FairyState {
     dust,
     gachaPity,
     seq,
+    dexClaimed,
+    exchangeDay,
+    exchangedDust,
   );
 }
 

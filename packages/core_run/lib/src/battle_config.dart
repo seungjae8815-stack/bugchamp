@@ -90,6 +90,7 @@ class BattleConfig {
     this.matchBelowPoints = const [2, 1],
     this.matchWildPoints = 1,
     this.matchWildTier = 'even',
+    this.matchIdleSteps = const [(1.15, 5), (1.05, 4), (1.0, 3), (0.85, 2)],
     this.training = const TrainingConfig(),
     this.duelJson = const {},
     this.locationAffinityBonus = 0.2,
@@ -99,6 +100,7 @@ class BattleConfig {
     this.ticketAdGrant = 3,
     this.ticketAdDailyLimit = 30,
     this.ticketRefillJelly = 10,
+    this.ticketRefillDailyLimit = 3,
     this.ticketRefillAmount = 0,
     this.scoutFreeRefreshDaily = 10,
     this.scoutRefreshJelly = 1,
@@ -185,6 +187,21 @@ class BattleConfig {
   final List<int> matchBelowPoints;
   final int matchWildPoints;
   final String matchWildTier;
+
+  /// 순위표에 사람이 모자랄 때 **이번 주 아직 안 싸운 같은 리그 사람**(방어팀 있음)으로 채운다
+  /// (2026-10-01 사장님 확정 — 출시 직후·작은 리그에서 후보가 전부 야생 1점이던 문제).
+  /// 순위가 없으니 점수는 **전투력 비율**(상대 방어팀 ÷ 내 방어팀)로 정한다: 비율 ≥ 첫 값이면 그 점수,
+  /// 어느 것에도 못 미치면 1점. 센 상대를 고를지 판단하게 하는 순위표 규칙(위 3·4·5 · 아래 2·1)과 같은 뜻.
+  final List<(double, int)> matchIdleSteps;
+
+  /// 아직 안 싸운 상대의 승리 점수 — [ratio] = 상대 방어팀 전투력 ÷ 내 방어팀 전투력.
+  int idleMatchPoints(double ratio) {
+    if (!ratio.isFinite) return matchWildPoints;
+    for (final (min, pts) in matchIdleSteps) {
+      if (ratio >= min) return pts;
+    }
+    return 1;
+  }
 
   /// 훈련소(결투 능력치) 설정.
   final TrainingConfig training;
@@ -273,6 +290,9 @@ class BattleConfig {
 
   /// 티켓을 [ticketMax] 로 즉시 채우는 젤리 비용.
   final int ticketRefillJelly;
+
+  /// 젤리 충전 하루 횟수(0 = 제한 없음, 기본값은 battle.json 과 같은 3). 패스 구매자도 같다 — 결제로 판수를 사지 못하게(§2.8).
+  final int ticketRefillDailyLimit;
 
   /// 젤리 충전 한 번에 받는 장수(2026-09-29: 5장). 0 이면 예전처럼 상한까지 채운다.
   final int ticketRefillAmount;
@@ -419,6 +439,12 @@ class BattleConfig {
       matchBelowPoints: _ints(match?['belowPoints']) ?? const [2, 1],
       matchWildPoints: (match?['wildPoints'] as num?)?.toInt() ?? 1,
       matchWildTier: match?['wildTier'] as String? ?? 'even',
+      matchIdleSteps: match?['idleSteps'] is List
+          ? [
+              for (final x in match!['idleSteps'] as List)
+                (((x as List)[0] as num).toDouble(), (x[1] as num).toInt()),
+            ]
+          : const [(1.15, 5), (1.05, 4), (1.0, 3), (0.85, 2)],
       training: TrainingConfig.fromJson(
         json['training'] as Map<String, dynamic>?,
       ),
@@ -430,6 +456,8 @@ class BattleConfig {
       ticketAdGrant: (tickets?['adGrant'] as num?)?.toInt() ?? 3,
       ticketAdDailyLimit: (tickets?['adDailyLimit'] as num?)?.toInt() ?? 30,
       ticketRefillJelly: (tickets?['refillJelly'] as num?)?.toInt() ?? 10,
+      ticketRefillDailyLimit:
+          (tickets?['refillDailyLimit'] as num?)?.toInt() ?? 3,
       ticketRefillAmount: (tickets?['refillAmount'] as num?)?.toInt() ?? 0,
       scoutFreeRefreshDaily:
           ((json['scout'] as Map<String, dynamic>?)?['freeRefreshDaily']

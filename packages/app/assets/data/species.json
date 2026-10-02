@@ -21,7 +21,7 @@
       "desc": {
         "ko": "몸집은 작지만 단단한 검은 사슴벌레. 짧고 야무진 큰턱으로 상대를 집어 던진다.",
         "en": "A small but sturdy black stag beetle that grips and throws foes.",
-        "ja": "몸집은 작지만 단단한 검은 사슴벌레. 짧고 야무진 큰턱으로 상대를 집어 던진다."
+        "ja": "体は小さいが頑丈な黒いクワガタ。短く力強い大アゴで相手をはさんで投げ飛ばす。"
       },
       "passive": {
         "stat": "defense",
@@ -48,7 +48,7 @@
       "desc": {
         "ko": "길고 톱니 같은 큰턱이 특징인 사슴벌레. 굽은 턱으로 상대를 걸어 넘긴다.",
         "en": "A stag beetle with long saw-toothed jaws to hook opponents.",
-        "ja": "길고 톱니 같은 큰턱이 특징인 사슴벌레. 굽은 턱으로 상대를 걸어 넘긴다."
+        "ja": "長くノコギリのような大アゴが特徴のクワガタ。曲がったアゴで相手を引っかけて倒す。"
       },
       "passive": {
         "stat": "reward",
@@ -75,7 +75,7 @@
       "desc": {
         "ko": "이마에 짧은 외뿔이 난 작은 장수풍뎅이. 힘차게 들이받는다.",
         "en": "A small rhinoceros beetle with one short horn; charges hard.",
-        "ja": "이마에 짧은 외뿔이 난 작은 장수풍뎅이. 힘차게 들이받는다."
+        "ja": "額に短い一本角を持つ小さなカブトムシ。力強く体当たりする。"
       },
       "passive": {
         "stat": "bossDamage",
@@ -102,7 +102,7 @@
       "desc": {
         "ko": "몸이 가는 작은 갈색 사마귀. 재빠른 앞다리로 순식간에 낚아챈다.",
         "en": "A slender brown mantis with lightning-fast forelegs.",
-        "ja": "몸이 가는 작은 갈색 사마귀. 재빠른 앞다리로 순식간에 낚아챈다."
+        "ja": "体の細い小さな茶色のカマキリ。すばやい前脚で一瞬のうちに捕まえる。"
       },
       "passive": {
         "stat": "crit",
@@ -129,7 +129,7 @@
       "desc": {
         "ko": "톱니 더듬이를 가진 갈색 하늘소. 단단한 겉날개가 방패가 된다.",
         "en": "A brown longhorn beetle with serrated antennae and a tough shell.",
-        "ja": "톱니 더듬이를 가진 갈색 하늘소. 단단한 겉날개가 방패가 된다."
+        "ja": "ノコギリのような触角を持つ茶色のカミキリムシ。硬い前翅が盾になる。"
       },
       "passive": {
         "stat": "materialFind",
@@ -156,7 +156,7 @@
       "desc": {
         "ko": "머리가 길쭉한 초록 메뚜기. 긴 뒷다리로 멀리 도약한다.",
         "en": "A long-headed green grasshopper that leaps far.",
-        "ja": "머리가 길쭉한 초록 메뚜기. 긴 뒷다리로 멀리 도약한다."
+        "ja": "頭が長い緑色のバッタ。長い後ろ脚で遠くまで跳ぶ。"
       },
       "passive": {
         "stat": "moveSpeed",
@@ -183,7 +183,7 @@
       "desc": {
         "ko": "넓고 납작한 몸에 강한 큰턱을 지닌 사슴벌레. 힘이 세다.",
         "en": "A broad flat stag beetle with powerful jaws.",
-        "ja": "넓고 납작한 몸에 강한 큰턱을 지닌 사슴벌레. 힘이 세다."
+        "ja": "幅広く平たい体に強い大アゴを持つクワガタ。力が強い。"
       },
       "passive": {
         "stat": "defense",
@@ -210,7 +210,7 @@
       "desc": {
         "ko": "Y자 뿔이 위풍당당한 장수풍뎅이. 곤충계의 대표 장사.",
         "en": "A mighty rhinoceros beetle with a proud Y-horn.",
-        "ja": "Y자 뿔이 위풍당당한 장수풍뎅이. 곤충계의 대표 장사."
+        "ja": "Y字の角が堂々としたカブトムシ。昆虫界を代表する力持ち。"
       },
       "passive": {
         "stat": "bossDamage",
@@ -237,7 +237,7 @@
       "desc": {
         "ko": "배가 넓은 초록 사마귀. 낫 같은 앞다리 공격이 매섭다.",
         "en": "A wide-bellied green mantis with fierce scythe arms.",
-        "ja": "배가 넓은 초록 사마귀. 낫 같은 앞다리 공격이 매섭다."
+        "ja": "お腹の広い緑色のカマキリ。鎌のような前脚の攻撃が鋭い。"
       },
       "passive": {
         "stat": "critDamage",
@@ -264,7 +264,7 @@
       "desc": {
         "ko": "흰 점무늬와 아주 긴 더듬이를 가진 검은 하늘소.",
         "en": "A black longhorn beetle with white speckles and very long antennae.",
-        "ja": "흰 점무늬와 아주 긴 더듬이를 가진 검은 하늘소."
+        "ja": "白い斑点ととても長い触角を持つ黒いカミキリムシ。"
       },
       "passive": {
         "stat": "materialFind",
@@ -291,7 +291,7 @@
       "desc": {
         "ko": "통통한 초록 여치. 긴 더듬이로 주변을 살핀다.",
         "en": "A plump green katydid with long antennae.",
-        "ja": "통통한 초록 여치. 긴 더듬이로 주변을 살핀다."
+        "ja": "まるまるとした緑色のキリギリス。長い触角で周りの様子をうかがう。"
       },
       "passive": {
         "stat": "attackSpeed",
@@ -318,7 +318,7 @@
       "desc": {
         "ko": "머리에 황금빛 귀 모양 돌기가 난 산지의 사슴벌레. 크고 우아한 큰턱.",
         "en": "A mountain stag beetle with golden head flanges and elegant jaws.",
-        "ja": "머리에 황금빛 귀 모양 돌기가 난 산지의 사슴벌레. 크고 우아한 큰턱."
+        "ja": "頭に金色の耳のような突起がある山のクワガタ。大きく優雅な大アゴ。"
       },
       "passive": {
         "stat": "maxHp",
@@ -345,7 +345,7 @@
       "desc": {
         "ko": "크고 위엄 있는 초록 사마귀. 사냥의 제왕.",
         "en": "A large, majestic green mantis; king of the hunt.",
-        "ja": "크고 위엄 있는 초록 사마귀. 사냥의 제왕."
+        "ja": "大きく威厳のある緑色のカマキリ。狩りの王者。"
       },
       "passive": {
         "stat": "crit",
@@ -372,7 +372,7 @@
       "desc": {
         "ko": "아주 긴 줄무늬 더듬이를 가진 큰 갈색 하늘소. 참나무의 주인.",
         "en": "A big brown oak longhorn with extra-long banded antennae.",
-        "ja": "아주 긴 줄무늬 더듬이를 가진 큰 갈색 하늘소. 참나무의 주인."
+        "ja": "とても長い縞模様の触角を持つ大きな茶色のカミキリムシ。クヌギの主。"
       },
       "passive": {
         "stat": "regen",
@@ -399,7 +399,7 @@
       "desc": {
         "ko": "금속빛 초록·청동색으로 빛나는 꽃무지. 화려한 겉날개가 아름답다.",
         "en": "A flower chafer shining in metallic green-bronze.",
-        "ja": "금속빛 초록·청동색으로 빛나는 꽃무지. 화려한 겉날개가 아름답다."
+        "ja": "金属光沢の緑と銅色に輝くハナムグリ。華やかな前翅が美しい。"
       },
       "passive": {
         "stat": "bugFind",
@@ -426,7 +426,7 @@
       "desc": {
         "ko": "두껍고 힘센 큰턱을 가진 거대한 검은 사슴벌레. 왕의 품격.",
         "en": "A giant black stag beetle with thick, powerful jaws.",
-        "ja": "두껍고 힘센 큰턱을 가진 거대한 검은 사슴벌레. 왕의 품격."
+        "ja": "太く力強い大アゴを持つ巨大な黒いクワガタ。王の風格。"
       },
       "passive": {
         "stat": "attack",
@@ -453,7 +453,7 @@
       "desc": {
         "ko": "납작한 갈색 몸에 강력한 앞다리를 지닌 물속의 포식자.",
         "en": "A flat brown predator of the water with strong forelegs.",
-        "ja": "납작한 갈색 몸에 강력한 앞다리를 지닌 물속의 포식자."
+        "ja": "平たい茶色の体に強力な前脚を持つ水中の捕食者。"
       },
       "passive": {
         "stat": "bossDamage",
@@ -480,7 +480,7 @@
       "desc": {
         "ko": "붉은 갈색 몸에 밝은 두 점이 박힌 희귀한 사슴벌레.",
         "en": "A rare reddish-brown stag beetle with two bright spots.",
-        "ja": "붉은 갈색 몸에 밝은 두 점이 박힌 희귀한 사슴벌레."
+        "ja": "赤茶色の体に明るい二つの点がある珍しいクワガタ。"
       },
       "passive": {
         "stat": "xp",
@@ -507,7 +507,7 @@
       "desc": {
         "ko": "길고 우아한 몸을 지닌 전설의 거대 하늘소. 영웅의 기품이 감돈다.",
         "en": "A legendary giant longhorn with a long, elegant, heroic body.",
-        "ja": "길고 우아한 몸을 지닌 전설의 거대 하늘소. 영웅의 기품이 감돈다."
+        "ja": "長く優雅な体を持つ伝説の巨大カミキリムシ。英雄の気品が漂う。"
       },
       "passive": {
         "stat": "maxHp",
@@ -534,7 +534,7 @@
       "desc": {
         "ko": "노란 머리의 거대 말벌. 빠르고 강력한 전설의 사냥꾼.",
         "en": "A giant yellow-headed hornet; a fast, powerful legendary hunter.",
-        "ja": "노란 머리의 거대 말벌. 빠르고 강력한 전설의 사냥꾼."
+        "ja": "黄色い頭の巨大なスズメバチ。速く強力な伝説のハンター。"
       },
       "passive": {
         "stat": "attack",

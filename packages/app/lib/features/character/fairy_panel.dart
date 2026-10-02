@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:core_models/core_models.dart';
@@ -60,8 +61,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
       ..sort((a, b) {
         if (a.id == f.companionId) return -1;
         if (b.id == f.companionId) return 1;
-        final g = b.grade.index.compareTo(a.grade.index);
-        return g != 0 ? g : b.quality.compareTo(a.quality);
+        return _fairyOrder(a, b);
       });
     final eggs = [...f.eggs]
       ..sort((a, b) => b.grade.index.compareTo(a.grade.index));
@@ -107,7 +107,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
                     maxCrossAxisExtent: 76,
                     mainAxisSpacing: 6,
                     crossAxisSpacing: 6,
-                    childAspectRatio: 0.82,
+                    childAspectRatio: 0.72,
                   ),
                   children: [
                     for (final x in fairies)
@@ -149,7 +149,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
   Future<void> _open(Widget dialog) => showDialog<void>(
     context: context,
     barrierColor: const Color(0xB3000000),
-    builder: (_) => dialog,
+    builder: (_) => fairyButtons(dialog),
   );
 
   Widget _header(AppLocalizations l, SaveGame save, FairyConfig cfg) {
@@ -202,16 +202,33 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         Expanded(
           child: _btn(
             l.fairyDex,
-            const Icon(Icons.menu_book_rounded, size: 15, color: _honey),
+            // 그림이 있으면 그림(docs/art_prompts_fairy_fx.md), 없으면 아이콘.
+            gameImageChain(
+              const ['assets/images/fairies/fairy_dex.webp'],
+              size: 18,
+              fallback: const Icon(
+                Icons.menu_book_rounded,
+                size: 15,
+                color: _honey,
+              ),
+            ),
             () => _open(const _DexDialog()),
           ),
         ),
         const SizedBox(width: 4),
         Expanded(
           child: _btn(
-            l.fairyAutoMerge,
-            const Icon(Icons.merge_type_rounded, size: 15, color: _honey),
-            _autoMerge,
+            l.fairyMerge,
+            gameImageChain(
+              const ['assets/images/fairies/fairy_automerge.webp'],
+              size: 18,
+              fallback: const Icon(
+                Icons.merge_type_rounded,
+                size: 15,
+                color: _honey,
+              ),
+            ),
+            () => _open(const _MergeHubDialog()),
           ),
         ),
       ],
@@ -238,43 +255,22 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         children: [
           SizedBox(height: 18, child: Center(child: art)),
           const SizedBox(height: 2),
-          Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: badge ? _honey : Colors.white70,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              text,
+              maxLines: 1,
+              style: TextStyle(
+                color: badge ? _honey : Colors.white70,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
       ),
     ),
   );
-
-  /// 자동 합성 — 예상을 먼저 보여 주고 확인받는다(§2.7).
-  Future<void> _autoMerge() async {
-    final l = AppLocalizations.of(context);
-    final ctrl = ref.read(saveControllerProvider.notifier);
-    final dry = await ctrl.fairyAutoMerge(dryRun: true);
-    final used = (dry.extra['used'] as int?) ?? 0;
-    final made = (dry.extra['made'] as List<Fairy>?) ?? const [];
-    if (!mounted) return;
-    if (used == 0) {
-      showCenterToast(context, l.fairyAutoMergeNone);
-      return;
-    }
-    final ok = await _confirm(
-      context,
-      l.fairyAutoMerge,
-      l.fairyAutoMergeConfirm('$used', '${made.length}'),
-    );
-    if (!ok) return;
-    final r = await ctrl.fairyAutoMerge();
-    if (!mounted) return;
-    if (!r.isOk) showCenterToast(context, _err(l, r.error));
-  }
 }
 
 String _err(AppLocalizations l, String? e) => switch (e) {
@@ -294,13 +290,14 @@ Future<bool> _confirm(BuildContext context, String title, String body) async {
       style: const TextStyle(color: Colors.white, fontSize: 13),
     ),
     actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context, rootNavigator: true).pop(false),
-        child: Text(l.actionCancel),
+      gameDialogButton(
+        l.actionCancel,
+        () => Navigator.of(context, rootNavigator: true).pop(false),
+        primary: false,
       ),
-      FilledButton(
-        onPressed: () => Navigator.of(context, rootNavigator: true).pop(true),
-        child: Text(title),
+      gameDialogButton(
+        title,
+        () => Navigator.of(context, rootNavigator: true).pop(true),
       ),
     ],
   );
@@ -331,8 +328,7 @@ Widget _nameBlock(AppLocalizations l, FairyKindDef? def, String locale) =>
 
 /// 등급 · 레벨 · 품질 한 줄.
 Widget _gradeLine(AppLocalizations l, Fairy f) => Text(
-  '${fairyGradeLabel(l, f.grade)} · ${l.fairyLevel('${f.level}')} · '
-  '${l.fairyQuality((f.quality * 100).round().toString())}',
+  '${fairyGradeLabel(l, f.grade)} · ${l.fairyLevel('${f.level}')}',
   style: TextStyle(
     color: fairyGradeColor(f.grade),
     fontWeight: FontWeight.w800,
@@ -342,34 +338,72 @@ Widget _gradeLine(AppLocalizations l, Fairy f) => Text(
 
 /// 기본·부가 능력치 줄.
 List<Widget> _statLines(AppLocalizations l, Fairy f, FairyConfig cfg) {
-  Widget line(String tag, String key, double v) => Padding(
-    padding: const EdgeInsets.only(top: 2),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          decoration: BoxDecoration(
-            color: const Color(0x22FFFFFF),
-            borderRadius: BorderRadius.circular(4),
+  // 같은 등급·레벨에서 이 능력치가 가질 수 있는 범위 — 개체값 0 과 최대 자리의 값(비례).
+  final lo = cfg.statAt(f.grade, 0), hi = cfg.statAt(f.grade, kFairyRollMax);
+  Widget line(String tag, String key, double v, int roll) {
+    final at = cfg.statAt(f.grade, roll);
+    // [기본] 공격 +2.1%
+    //        (영웅 범위 1.6%~3.2%)   ← 범위는 **아래 줄**, 값과 왼쪽 끝을 맞춘다(2026-10-01 실기).
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 1),
+            decoration: BoxDecoration(
+              color: const Color(0x22FFFFFF),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              tag,
+              style: const TextStyle(color: Colors.white60, fontSize: 9.5),
+            ),
           ),
-          child: Text(
-            tag,
-            style: const TextStyle(color: Colors.white60, fontSize: 9.5),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${fairyStatLabel(l, key)} ${fairyStatValue(key, v)}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                if (at > 0)
+                  Text(
+                    l.fairyStatRange(
+                      fairyGradeLabel(l, f.grade),
+                      fairyStatValue(key, v * lo / at),
+                      fairyStatValue(key, v * hi / at),
+                    ),
+                    style: const TextStyle(color: Colors.white38, fontSize: 10),
+                  ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          '${fairyStatLabel(l, key)} ${fairyStatValue(key, v)}',
-          style: const TextStyle(color: Colors.white, fontSize: 12),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
+
+  // 줄들을 한 덩어리로 — 덩어리는 부모 정렬(가운데·왼쪽)을 따르고, 줄끼리는 왼쪽 끝을 맞춘다.
   return [
-    for (final e in cfg.mainBonus(f).entries)
-      line(l.fairyStatMain, e.key, e.value),
-    if (cfg.subBonus(f) > 0) line(l.fairyStatSub, f.sub, cfg.subBonus(f)),
+    IntrinsicWidth(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final e in cfg.mainBonus(f).entries)
+            line(l.fairyStatMain, e.key, e.value, f.baseRoll),
+          if (cfg.subBonus(f) > 0)
+            line(l.fairyStatSub, f.sub, cfg.subBonus(f), f.subRoll),
+        ],
+      ),
+    ),
   ];
 }
 
@@ -442,66 +476,121 @@ class _CompanionCard extends StatelessWidget {
   }
 }
 
-class _FairyCell extends StatelessWidget {
+class _FairyCell extends ConsumerWidget {
   const _FairyCell({
     required this.fairy,
     required this.onTap,
     this.companion = false,
     this.selected = false,
+    this.dim = false,
+    this.companionLabel,
   });
   final Fairy fairy;
   final VoidCallback onTap;
   final bool companion;
   final bool selected;
 
+  /// 지금 고를 수 없는 칸(합성 창 — 종류·등급이 다르거나 착용 중).
+  final bool dim;
+
+  /// 동행 띠 글자(합성 창 = "착용 중"). null 이면 "동행 중".
+  final String? companionLabel;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final def = ref
+        .watch(gameDataProvider)
+        .value
+        ?.fairyConfig
+        ?.byId(fairy.kind);
     final c = fairyGradeColor(fairy.grade);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: selected ? c.withValues(alpha: 0.25) : const Color(0x33121A10),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected || companion ? c : c.withValues(alpha: 0.45),
-            width: selected || companion ? 2 : 1,
+    // **가운데 정렬**(2026-10-01 실기 — Stack 기본 정렬이 왼쪽 위라 칸 안에서 왼쪽으로 쏠렸다).
+    // 위: 등급 · Lv / 가운데: 그림 / 아래: 이름 · 하급~최상급.
+    return Opacity(
+      opacity: dim ? 0.38 : 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: selected
+                ? c.withValues(alpha: 0.25)
+                : const Color(0x33121A10),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected || companion ? c : c.withValues(alpha: 0.45),
+              width: selected || companion ? 2 : 1,
+            ),
           ),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                fairyGlow(fairy, size: 46),
-                Text(
-                  'Lv.${fairy.level}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 3, 2, 3),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${fairyGradeLabel(l, fairy.grade)} · ${l.fairyLevel('${fairy.level}')}',
+                          style: TextStyle(
+                            color: c,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(child: fairyGlow(fairy, size: 40)),
+                      ),
+                      // 동행(착용) 표시 = 이름 **바로 위** 글자 줄 — 다른 칸과 같은 짜임(2026-10-01 사장님).
+                      if (companion)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xE63A2600),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              companionLabel ?? l.fairyIsCompanion,
+                              style: const TextStyle(
+                                color: _honey,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          def?.name.resolve(locale) ?? fairy.kind,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  '${(fairy.quality * 100).round()}%',
-                  style: TextStyle(color: c, fontSize: 9.5),
+              ),
+              if (selected)
+                const Positioned(
+                  top: 2,
+                  left: 2,
+                  child: Icon(Icons.check_circle, size: 13, color: _honey),
                 ),
-              ],
-            ),
-            if (companion)
-              const Positioned(
-                top: 3,
-                right: 3,
-                child: Icon(Icons.star_rounded, size: 13, color: _honey),
-              ),
-            if (selected)
-              const Positioned(
-                top: 3,
-                left: 3,
-                child: Icon(Icons.check_circle, size: 14, color: _honey),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -556,6 +645,9 @@ class _NestDialog extends ConsumerStatefulWidget {
 class _NestDialogState extends ConsumerState<_NestDialog> {
   FairyGrade? _grade;
   String? _stone;
+
+  /// 속성석 목록 스크롤(막대를 늘 보이게 하려면 컨트롤러가 있어야 한다).
+  final _stoneScroll = ScrollController();
   Timer? _tick;
   bool _busy = false;
 
@@ -570,6 +662,7 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
   @override
   void dispose() {
     _tick?.cancel();
+    _stoneScroll.dispose();
     super.dispose();
   }
 
@@ -590,8 +683,18 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
         iconWidget: fairyNestImage(size: 40),
         actions: [
           close,
+          // 알을 고르기 전에도 켜 둔다 — 꺼진 버튼(흐린 그림)이 "글씨가 안 보인다"로 읽혔다(2026-10-01).
           FilledButton(
-            onPressed: _grade == null || _busy ? null : () => _place(f),
+            onPressed: _busy
+                ? null
+                : () => _grade == null
+                      ? showCenterToast(
+                          context,
+                          f.eggs.isEmpty
+                              ? l.fairyNestNoEgg
+                              : l.fairyNestPickEgg,
+                        )
+                      : _place(f),
             child: Text(l.fairyNestPut),
           ),
         ],
@@ -694,58 +797,60 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
           ),
         ),
         const SizedBox(height: 6),
-        Wrap(
-          spacing: 5,
-          runSpacing: 5,
-          alignment: WrapAlignment.center,
-          children: [
-            _choice(
-              selected: _stone == null,
-              color: Colors.white54,
-              onTap: () => setState(() => _stone = null),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  l.fairyStoneNone,
-                  style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+        // 속성석 = **한 줄에 하나**(이름 + 그 아래 효과) · 이 칸만 끌어서 내린다(2026-10-01 사장님 —
+        // 격자일 땐 "받는 피해 감소"처럼 긴 이름이 두 줄로 내려가 칸 크기가 제각각이었다).
+        SizedBox(
+          height: 196,
+          child: Scrollbar(
+            controller: _stoneScroll,
+            thumbVisibility: true,
+            child: ListView(
+              controller: _stoneScroll,
+              padding: const EdgeInsets.only(right: 6),
+              children: [
+                _stoneRow(
+                  l,
+                  selected: _stone == null,
+                  icon: const Icon(
+                    Icons.block_rounded,
+                    size: 22,
+                    color: Colors.white38,
+                  ),
+                  name: l.fairyStoneNone,
+                  effect: l.fairyNestKindHint('${cfg.kinds.length}'),
+                  trailing: const SizedBox.shrink(),
+                  onTap: () => setState(() => _stone = null),
                 ),
-              ),
-            ),
-            for (final sub in cfg.subWeight.keys)
-              _choice(
-                selected: _stone == sub,
-                color: _honey,
-                onTap: () => _pickStone(f, cfg, sub),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    fairyStoneImage(sub, size: 22),
-                    Text(
+                for (final sub in cfg.subWeight.keys)
+                  _stoneRow(
+                    l,
+                    selected: _stone == sub,
+                    icon: fairyStoneImage(sub, size: 30),
+                    name: l.fairyStoneName(fairyStatLabel(l, sub)),
+                    effect: l.fairyStoneEffect(
                       fairyStatLabel(l, sub),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9.5,
-                      ),
+                      (cfg.stoneChance * 100).round().toString(),
                     ),
-                    Text(
-                      '×${f.stones[sub] ?? 0}',
-                      style: const TextStyle(
-                        color: Colors.white60,
-                        fontSize: 9,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _stone == null
-              ? l.fairyNestKindHint
-              : l.fairyStoneHint((cfg.stoneChance * 100).round().toString()),
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white60, fontSize: 11),
+                    trailing: (f.stones[sub] ?? 0) > 0
+                        ? Text(
+                            '×${f.stones[sub]}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          )
+                        : jellyPrice(
+                            cost: cfg.stoneJelly,
+                            size: 13,
+                            fontSize: 11,
+                            color: const Color(0xFFFFE08A),
+                          ),
+                    onTap: () => _pickStone(f, cfg, sub),
+                  ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -776,20 +881,120 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
     ),
   );
 
-  /// 속성석 고르기 — 없으면 한 개 사서(젤리 확인) 고른다.
+  Widget _stoneRow(
+    AppLocalizations l, {
+    required bool selected,
+    required Widget icon,
+    required String name,
+    required String effect,
+    required Widget trailing,
+    required VoidCallback onTap,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 5),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? _honey.withValues(alpha: 0.18)
+              : const Color(0x22000000),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? _honey : const Color(0x22FFFFFF),
+            width: selected ? 1.6 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            SizedBox(width: 32, height: 32, child: Center(child: icon)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    effect,
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 10.5,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            trailing,
+          ],
+        ),
+      ),
+    ),
+  );
+
+  /// 속성석 고르기 — 없으면 **젤리로 구입**하는 창(그 속성석의 그림·이름·효과)을 띄운다.
   Future<void> _pickStone(FairyState f, FairyConfig cfg, String sub) async {
     if ((f.stones[sub] ?? 0) > 0) {
       setState(() => _stone = sub);
       return;
     }
     final l = AppLocalizations.of(context);
-    final ok = await confirmJellySpend(
+    final name = l.fairyStoneName(fairyStatLabel(l, sub));
+    final ok = await showGameDialog<bool>(
       context,
-      title: l.fairyStone,
-      body: '${fairyStatLabel(l, sub)} · ${l.fairyBuy}',
-      jelly: cfg.stoneJelly,
+      title: l.fairyStoneBuyTitle,
+      iconWidget: fairyStoneImage(sub, size: 40),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          fairyStoneImage(sub, size: 64),
+          const SizedBox(height: 6),
+          Text(
+            name,
+            style: const TextStyle(
+              color: _honey,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.fairyStoneEffect(
+              fairyStatLabel(l, sub),
+              (cfg.stoneChance * 100).round().toString(),
+            ),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 12.5),
+          ),
+        ],
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.of(context, rootNavigator: true).pop(false),
+          primary: false,
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(true),
+          child: jellyPrice(
+            cost: cfg.stoneJelly,
+            label: l.fairyStoneBuyAction,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
-    if (!ok || !mounted) return;
+    if (ok != true || !mounted) return;
     final r = await ref
         .read(saveControllerProvider.notifier)
         .fairyBuyStone(sub);
@@ -803,7 +1008,11 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
 
   Future<void> _place(FairyState f) async {
     final egg = f.eggs.where((e) => e.grade == _grade).firstOrNull;
-    if (egg == null) return;
+    if (egg == null) {
+      setState(() => _grade = null);
+      showCenterToast(context, AppLocalizations.of(context).fairyNestPickEgg);
+      return;
+    }
     setState(() => _busy = true);
     final r = await ref
         .read(saveControllerProvider.notifier)
@@ -823,14 +1032,17 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
     if (!mounted) return;
     setState(() => _busy = false);
     final got = r.extra['fairy'];
-    if (got is! Fairy) return;
+    if (!r.isOk || got is! Fairy) {
+      showCenterToast(context, _err(AppLocalizations.of(context), r.error));
+      return;
+    }
     // 둥지 창을 닫고 새 요정을 보여 준다 — 닫힌 창의 context 는 못 쓰므로 내비게이터 것을 쓴다.
     final nav = Navigator.of(context);
     nav.pop();
     await showDialog<void>(
       context: nav.context,
       barrierColor: const Color(0xB3000000),
-      builder: (_) => _NewFairyDialog(fairy: got),
+      builder: (_) => fairyButtons(_NewFairyDialog(fairy: got)),
     );
   }
 
@@ -869,8 +1081,11 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
               onPressed: _busy
                   ? null
                   : () async {
+                      // 연타로 여러 개가 쓰이지 않게 처리 중엔 막는다.
+                      setState(() => _busy = true);
                       final r = await ctrl.fairyUseAccelerator(a.id);
                       if (!mounted) return;
+                      setState(() => _busy = false);
                       if (!r.isOk) showCenterToast(context, _err(l, r.error));
                     },
               child: Text(l.fairyUse),
@@ -889,14 +1104,17 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
                         jelly: a.jelly,
                       );
                       if (!ok || !mounted) return;
+                      setState(() => _busy = true);
                       final b = await ctrl.fairyBuyAccelerator(a.id);
                       if (!mounted) return;
                       if (!b.isOk) {
+                        setState(() => _busy = false);
                         showCenterToast(context, _err(l, b.error));
                         return;
                       }
                       final u = await ctrl.fairyUseAccelerator(a.id);
                       if (!mounted) return;
+                      setState(() => _busy = false);
                       if (!u.isOk) showCenterToast(context, _err(l, u.error));
                     },
               child: jellyPrice(cost: a.jelly),
@@ -989,6 +1207,36 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 도움말 — 등급별 능력치 범위 · 부가 능력치 종류 · 하급~최상급 · 레벨.
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () => _showFairyHelp(context, l, cfg, f),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.help_outline_rounded,
+                      size: 16,
+                      color: _honey,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      l.fairyHelpTitle,
+                      style: const TextStyle(
+                        color: _honey,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           fairyGlow(f, size: 110),
           _gradeLine(l, f),
           const SizedBox(height: 4),
@@ -1000,11 +1248,14 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
             runSpacing: 6,
             alignment: WrapAlignment.center,
             children: [
+              // 동행 중이면 **동행 해제**(누를 수 있게) — 흐린 "동행 중"이 안 읽혔다(2026-10-01).
               FilledButton(
-                onPressed: isComp || _busy
+                onPressed: _busy
                     ? null
-                    : () => run(() => ctrl.fairySetCompanion(f.id)),
-                child: Text(isComp ? l.fairyIsCompanion : l.fairyGoCompanion),
+                    : () => run(
+                        () => ctrl.fairySetCompanion(isComp ? null : f.id),
+                      ),
+                child: Text(isComp ? l.fairyStopCompanion : l.fairyGoCompanion),
               ),
               FilledButton.tonal(
                 onPressed: maxLv || _busy
@@ -1032,10 +1283,14 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
               OutlinedButton(
                 onPressed: f.grade.next == null || _busy
                     ? null
+                    : isComp
+                    // 동행 요정은 재료가 될 수 없다 — 눌러서 실패만 뜨면 이유를 모른다(2026-10-01 점검).
+                    ? () => showCenterToast(context, l.fairyMergeEquipped)
                     : () => showDialog<void>(
                         context: context,
                         barrierColor: const Color(0xB3000000),
-                        builder: (_) => _MergeDialog(mainId: f.id),
+                        builder: (_) =>
+                            fairyButtons(_MergeDialog(mainId: f.id)),
                       ),
                 child: Text(l.fairyMerge),
               ),
@@ -1109,7 +1364,7 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
             x.kind == main.kind &&
             x.grade == main.grade)
           x,
-    ]..sort((a, b) => a.quality.compareTo(b.quality));
+    ]..sort(_fairyOrder);
     return GameDialog(
       title: l.fairyMerge,
       actions: [
@@ -1147,10 +1402,10 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
               height: 190,
               child: GridView(
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 70,
+                  maxCrossAxisExtent: 72,
                   mainAxisSpacing: 5,
                   crossAxisSpacing: 5,
-                  childAspectRatio: 0.82,
+                  childAspectRatio: 0.72,
                 ),
                 children: [
                   for (final x in cands)
@@ -1172,6 +1427,8 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
   }
 
   Future<void> _go(Fairy main) async {
+    if (!await _confirmInvested(context, ref, [main.id, ..._picked])) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     final r = await ref.read(saveControllerProvider.notifier).fairyMerge([
       main.id,
@@ -1184,6 +1441,7 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
       showCenterToast(context, _err(AppLocalizations.of(context), r.error));
       return;
     }
+    _toastRefund(context, r);
     // 합성 창과 (이제 없어진) 요정의 상세 창을 닫고 새 요정을 보여 준다.
     final nav = Navigator.of(context);
     nav.pop();
@@ -1191,9 +1449,274 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
     await showDialog<void>(
       context: nav.context,
       barrierColor: const Color(0xB3000000),
-      builder: (_) => _NewFairyDialog(fairy: made),
+      builder: (_) => fairyButtons(_NewFairyDialog(fairy: made)),
     );
   }
+}
+
+/// 합성 창(2026-10-01 사장님) — 재료를 **직접 고르거나** 자동 합성. 착용 중은 "착용 중"으로 보이고 못 고른다.
+/// 첫 번째로 고른 요정이 종류·등급을 정하고, 나머지는 같은 종류·등급만 고를 수 있다.
+class _MergeHubDialog extends ConsumerStatefulWidget {
+  const _MergeHubDialog();
+
+  @override
+  ConsumerState<_MergeHubDialog> createState() => _MergeHubDialogState();
+}
+
+class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
+  final _picked = <String>[];
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).value!.fairyConfig!;
+    final fs = save.fairy;
+    _picked.removeWhere((id) => fs.fairyById(id) == null);
+    final first = _picked.isEmpty ? null : fs.fairyById(_picked.first);
+    final list = [...fs.fairies]..sort(_fairyOrder);
+    bool pickable(Fairy x) =>
+        x.id != fs.companionId &&
+        x.grade.next != null &&
+        (first == null || (x.kind == first.kind && x.grade == first.grade));
+    return GameDialog(
+      title: l.fairyMerge,
+      iconWidget: gameImageChain(
+        const ['assets/images/fairies/fairy_automerge.webp'],
+        size: 40,
+        fallback: const Icon(Icons.merge_type_rounded, color: _honey),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.actionCancel),
+        ),
+        TextButton(
+          onPressed: _busy ? null : _auto,
+          child: Text(l.fairyAutoMerge),
+        ),
+        FilledButton(
+          onPressed: _picked.length == cfg.mergeCount && !_busy ? _go : null,
+          child: Text(l.fairyMerge),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l.fairyMergeHint('${cfg.mergeCount}'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l.fairyMergePick('${_picked.length}', '${cfg.mergeCount}'),
+            style: const TextStyle(
+              color: _honey,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          if (list.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                l.fairyMergeNoMat,
+                style: const TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+            )
+          else
+            SizedBox(
+              width: 290,
+              height: 250,
+              child: GridView(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 72,
+                  mainAxisSpacing: 5,
+                  crossAxisSpacing: 5,
+                  childAspectRatio: 0.72,
+                ),
+                children: [
+                  for (final x in list)
+                    _FairyCell(
+                      fairy: x,
+                      companion: x.id == fs.companionId,
+                      companionLabel: l.fairyEquippedTag,
+                      selected: _picked.contains(x.id),
+                      dim: !_picked.contains(x.id) && !pickable(x),
+                      onTap: () {
+                        if (_picked.remove(x.id)) {
+                          setState(() {});
+                          return;
+                        }
+                        if (x.id == fs.companionId) {
+                          showCenterToast(context, l.fairyMergeEquipped);
+                          return;
+                        }
+                        if (!pickable(x) || _picked.length >= cfg.mergeCount) {
+                          return;
+                        }
+                        setState(() => _picked.add(x.id));
+                      },
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _go() async {
+    if (!await _confirmInvested(context, ref, [..._picked])) return;
+    if (!mounted) return;
+    setState(() => _busy = true);
+    final r = await ref.read(saveControllerProvider.notifier).fairyMerge([
+      ..._picked,
+    ]);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    final made = r.extra['fairy'];
+    if (!r.isOk || made is! Fairy) {
+      showCenterToast(context, _err(AppLocalizations.of(context), r.error));
+      return;
+    }
+    _picked.clear();
+    _toastRefund(context, r);
+    await showDialog<void>(
+      context: context,
+      barrierColor: const Color(0xB3000000),
+      builder: (_) => fairyButtons(_NewFairyDialog(fairy: made)),
+    );
+  }
+
+  /// 자동 합성 — 예상(쓰는 수 → 남는 요정의 종류·등급)을 **먼저 보여 주고** 확인받는다(§2.7).
+  /// 능력치는 실행할 때 새로 굴리므로 예상에는 종류·등급만 보인다.
+  Future<void> _auto() async {
+    final l = AppLocalizations.of(context);
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final dry = await ctrl.fairyAutoMerge(dryRun: true);
+    final used = (dry.extra['used'] as int?) ?? 0;
+    final preview = (dry.extra['made'] as List<Fairy>?) ?? const [];
+    if (!mounted) return;
+    if (used == 0) {
+      showCenterToast(context, l.fairyAutoMergeNone);
+      return;
+    }
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.fairyAutoMerge,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l.fairyAutoMergeConfirm('$used', '${preview.length}'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 12.5),
+          ),
+          const SizedBox(height: 10),
+          _resultWrap(l, preview, showQuality: false),
+        ],
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.of(context, rootNavigator: true).pop(false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.fairyAutoMerge,
+          () => Navigator.of(context, rootNavigator: true).pop(true),
+        ),
+      ],
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    final r = await ctrl.fairyAutoMerge();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _picked.clear();
+    });
+    if (!r.isOk) {
+      showCenterToast(context, _err(l, r.error));
+      return;
+    }
+    // 실제 결과(새로 굴린 능력치 포함)를 한 번 더 보여 준다.
+    final made = (r.extra['made'] as List<Fairy>?) ?? const [];
+    await showGameDialog<void>(
+      context,
+      title: l.fairyAutoMergeDone,
+      content: _resultWrap(l, made, showQuality: true),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.of(context, rootNavigator: true).pop(),
+        ),
+      ],
+    );
+  }
+
+  Widget _resultWrap(
+    AppLocalizations l,
+    List<Fairy> fairies, {
+    required bool showQuality,
+  }) => ConstrainedBox(
+    constraints: const BoxConstraints(maxHeight: 220),
+    child: SingleChildScrollView(
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        alignment: WrapAlignment.center,
+        children: [
+          for (final f in fairies)
+            Container(
+              width: 62,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: const Color(0x33121A10),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: fairyGradeColor(f.grade)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  fairyGlow(f, size: 38),
+                  Text(
+                    fairyGradeLabel(l, f.grade),
+                    style: TextStyle(
+                      color: fairyGradeColor(f.grade),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (showQuality)
+                    for (final e
+                        in (ref
+                                    .read(gameDataProvider)
+                                    .value
+                                    ?.fairyConfig
+                                    ?.mainBonus(f) ??
+                                const <String, double>{})
+                            .entries
+                            .take(1))
+                      Text(
+                        fairyStatValue(e.key, e.value),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ── 뽑기 ─────────────────────────────────────────────────────
@@ -1245,7 +1768,7 @@ class _GachaDialogState extends ConsumerState<_GachaDialog> {
                 child: jellyPrice(
                   cost: cfg.gachaJelly,
                   label: l.fairyGachaOne,
-                  color: const Color(0xFF3A2600),
+                  fontSize: 13,
                 ),
               ),
               FilledButton(
@@ -1253,7 +1776,7 @@ class _GachaDialogState extends ConsumerState<_GachaDialog> {
                 child: jellyPrice(
                   cost: cfg.gachaJelly * 10,
                   label: l.fairyGachaTen,
-                  color: const Color(0xFF3A2600),
+                  fontSize: 13,
                 ),
               ),
             ],
@@ -1272,9 +1795,23 @@ class _GachaDialogState extends ConsumerState<_GachaDialog> {
               children: [for (final g in _last) fairyEggImage(g, size: 30)],
             ),
           ],
-          TextButton(
-            onPressed: () => setState(() => _odds = !_odds),
-            child: Text(l.fairyGachaOdds),
+          // 팝업 안 TextButton 은 회색 나무 그림이 깔려 꿀색 글씨가 흐렸다 — 밑줄 글자 링크로.
+          InkWell(
+            onTap: () => setState(() => _odds = !_odds),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              child: Text(
+                l.fairyGachaOdds,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: _honey,
+                  fontWeight: FontWeight.w800,
+                  decoration: TextDecoration.underline,
+                  decorationColor: _honey,
+                ),
+              ),
+            ),
           ),
           if (_odds && total > 0) ...[
             // 확률 공개(확률형 아이템 표시 의무, §2.8).
@@ -1300,21 +1837,39 @@ class _GachaDialogState extends ConsumerState<_GachaDialog> {
   Future<void> _draw(int times) async {
     final l = AppLocalizations.of(context);
     final cfg = ref.read(gameDataProvider).value!.fairyConfig!;
+    // 요정함 빈칸보다 많이 뽑으면 **넘친 알은 가루가 된다** — 젤리를 쓰기 전에 알린다(2026-10-01 점검).
+    final free = math.max(
+      0,
+      cfg.boxCap - ref.read(saveControllerProvider).requireValue.fairy.boxUsed,
+    );
+    final base = times == 1 ? l.fairyGachaOne : l.fairyGachaTen;
     final ok = await confirmJellySpend(
       context,
       title: l.fairyGacha,
-      body: times == 1 ? l.fairyGachaOne : l.fairyGachaTen,
+      body: times > free
+          ? '$base\n\n${l.fairyGachaOverflowWarn('$free', '${times - free}')}'
+          : base,
       jelly: cfg.gachaJelly * times,
     );
     if (!ok || !mounted) return;
     setState(() => _busy = true);
     final r = await ref.read(saveControllerProvider.notifier).fairyDraw(times);
     if (!mounted) return;
+    final grades = (r.extra['grades'] as List<FairyGrade>?) ?? const [];
+    final lost = (r.extra['overflowEggs'] as int?) ?? 0;
     setState(() {
       _busy = false;
-      _last = (r.extra['grades'] as List<FairyGrade>?) ?? const [];
+      // 가루가 된 알은 알 그림으로 보여 주지 않는다(넘침은 뒤쪽부터).
+      _last = grades.take(math.max(0, grades.length - lost)).toList();
     });
-    if (!r.isOk) showCenterToast(context, _err(l, r.error));
+    if (!r.isOk) {
+      showCenterToast(context, _err(l, r.error));
+    } else if (lost > 0) {
+      showCenterToast(
+        context,
+        l.fairyOverflowToast('$lost', '${r.extra['overflowDust'] ?? 0}'),
+      );
+    }
   }
 }
 
@@ -1355,9 +1910,102 @@ class _DexDialog extends ConsumerWidget {
       ],
       child: SizedBox(
         width: 300,
-        height: 360,
+        height: 420,
         child: ListView(
           children: [
+            // 도감이 무엇인지 — "점과 돌이 뭘 뜻하는지 모르겠다"(2026-10-01 실기 지적).
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0x22FFD54F),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.fairyDexHelp,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.5,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l.fairyDexLegendGrades,
+                    style: const TextStyle(
+                      color: _honey,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 3,
+                    children: [
+                      for (final g in FairyGrade.values)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: fairyGradeColor(g),
+                              ),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              fairyGradeLabel(l, g),
+                              style: TextStyle(
+                                color: fairyGradeColor(g),
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l.fairyDexLegendSubs,
+                    style: const TextStyle(
+                      color: _honey,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 3,
+                    children: [
+                      for (final sub in subs)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            fairyStoneImage(sub, size: 14),
+                            const SizedBox(width: 2),
+                            Text(
+                              fairyStatLabel(l, sub),
+                              style: const TextStyle(
+                                color: Color(0xCCFFFFFF),
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            _DexMilestones(have: dex.length),
+            const SizedBox(height: 10),
             for (final k in cfg.kinds)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -1428,4 +2076,319 @@ class _DexDialog extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// 요정 창 버튼 색(2026-10-01 실기 지적 — 기본 버튼 색이 어두운 창 배경과 겹쳐 "둥지에 넣기"·"1회/10회"
+/// 글씨가 안 보였다). 주 버튼 = 꿀색 바탕 + 진한 글씨(게임 대화상자 `gameDialogButton` 과 같다),
+/// 닫기·취소 = 밝은 글씨, 테두리 버튼 = 꿀색. 꺼진 버튼도 글씨가 읽히게 둔다.
+Widget fairyButtons(Widget child) => Builder(
+  builder: (context) {
+    // ⚠️ 채움·글자 버튼(FilledButton·TextButton)은 **건드리지 않는다** — 팝업(GameDialog)이 나무·황동
+    // 그림 버튼 + 크림 글씨를 입히는데, 여기서 꿀색 바탕을 깔면 크림 글씨가 노란 바탕에 묻혔다
+    // (2026-10-01 실기: "닫기·둥지에 넣기 글씨가 안 보인다"). 테두리 버튼만 꿀색으로 맞춘다.
+    final t = Theme.of(context);
+    return Theme(
+      data: t.copyWith(
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _honey,
+            side: const BorderSide(color: _honey),
+            disabledForegroundColor: const Color(0x66FFFFFF),
+            textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+      ),
+      child: child,
+    );
+  },
+);
+
+/// 요정 창 바로 열기 — 개발자 모드 요정 메뉴가 쓴다(요정 탭으로 가지 않고 확인).
+Future<void> openFairyWindow(BuildContext context, String which) =>
+    showDialog<void>(
+      context: context,
+      barrierColor: const Color(0xB3000000),
+      builder: (_) => fairyButtons(switch (which) {
+        'nest' => const _NestDialog(),
+        'gacha' => const _GachaDialog(),
+        _ => const _DexDialog(),
+      }),
+    );
+
+/// 요정 도감 마일스톤 — 칸을 모을수록 요정 가루·가속기·화석(젤리 없음). 앞에서부터 차례로 받는다.
+class _DexMilestones extends ConsumerStatefulWidget {
+  const _DexMilestones({required this.have});
+  final int have;
+
+  @override
+  ConsumerState<_DexMilestones> createState() => _DexMilestonesState();
+}
+
+class _DexMilestonesState extends ConsumerState<_DexMilestones> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).value!.fairyConfig!;
+    final ms = cfg.dexMilestones;
+    if (ms.isEmpty) return const SizedBox.shrink();
+    final claimed = save.fairy.dexClaimed;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l.fairyDexRewards(widget.have, ms.last.count),
+          style: const TextStyle(
+            color: _honey,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        for (final (i, m) in ms.indexed)
+          Container(
+            margin: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: i < claimed
+                  ? const Color(0x14FFFFFF)
+                  : const Color(0x22000000),
+              borderRadius: BorderRadius.circular(8),
+              border: i == claimed && widget.have >= m.count
+                  ? Border.all(color: _honey)
+                  : null,
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 44,
+                  child: Text(
+                    '${m.count}',
+                    style: TextStyle(
+                      color: widget.have >= m.count ? _honey : Colors.white54,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (m.dust > 0)
+                        _reward(fairyDustImage(size: 14), '${m.dust}'),
+                      for (final e in m.accelerators.entries)
+                        _reward(
+                          fairyAccelImage(e.key, size: 14),
+                          '×${e.value}',
+                        ),
+                      if (m.fossil > 0)
+                        _reward(
+                          materialImage(
+                            MaterialKind.fossil,
+                            size: 14,
+                            fallback: const Text(
+                              '🦴',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ),
+                          '${m.fossil}',
+                        ),
+                    ],
+                  ),
+                ),
+                if (i < claimed)
+                  const Icon(Icons.check_circle, size: 16, color: _honey)
+                else if (i == claimed && widget.have >= m.count)
+                  SizedBox(
+                    height: 26,
+                    child: FilledButton(
+                      onPressed: _busy ? null : _claim,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        textStyle: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      child: Text(l.eventRewardClaim),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _reward(Widget icon, String text) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      icon,
+      const SizedBox(width: 2),
+      Text(text, style: const TextStyle(color: Colors.white, fontSize: 11)),
+    ],
+  );
+
+  Future<void> _claim() async {
+    final l = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    final ok = await ref.read(saveControllerProvider.notifier).fairyClaimDex();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    showCenterToast(context, ok ? l.fairyDexClaimed : l.fairyErrGeneric);
+  }
+}
+
+/// 요정 도움말 — 등급별 기본 능력치 범위·최대 레벨, 부가 능력치 종류와 범위, 하급~최상급, 레벨 성장.
+/// 숫자는 fairies.json 에서 읽는다(§6).
+Future<void> _showFairyHelp(
+  BuildContext context,
+  AppLocalizations l,
+  FairyConfig cfg,
+  Fairy f,
+) {
+  String pct(double v) =>
+      '${(v * 100).toStringAsFixed(v * 100 >= 10 ? 0 : 1)}%';
+  TextStyle body = const TextStyle(
+    color: Colors.white,
+    fontSize: 12,
+    height: 1.4,
+  );
+  Widget head(String t) => Padding(
+    padding: const EdgeInsets.only(top: 10, bottom: 4),
+    child: Text(
+      t,
+      style: const TextStyle(
+        color: _honey,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
+  final sel = f.grade;
+  final lo = cfg.gradeStatMin[sel] ?? 0, hi = cfg.gradeStatMax[sel] ?? 0;
+  // 이 요정 종류의 기본 능력치 비중(볼테아 치명 피해 ×4 등) — 등급 범위에 곱해야 실제 값이다.
+  final kindStats = cfg.byId(f.kind)?.stats ?? const <String, double>{};
+  return showGameDialog<void>(
+    context,
+    title: l.fairyHelpTitle,
+    icon: Icons.help_outline_rounded,
+    content: ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 420),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            head(l.fairyHelpGradeHead),
+            for (final g in FairyGrade.values)
+              if (cfg.gradeStatMax[g] != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Text(
+                    l.fairyHelpGradeLine(
+                      fairyGradeLabel(l, g),
+                      [
+                        for (final e in kindStats.entries)
+                          '${fairyStatLabel(l, e.key)} '
+                              '${pct((cfg.gradeStatMin[g] ?? 0) * e.value)}',
+                      ].join(' · '),
+                      [
+                        for (final e in kindStats.entries)
+                          pct((cfg.gradeStatMax[g] ?? 0) * e.value),
+                      ].join(' · '),
+                      '${cfg.maxLevelOf(g)}',
+                    ),
+                    style: body.copyWith(
+                      color: fairyGradeColor(g),
+                      fontWeight: g == sel ? FontWeight.w900 : null,
+                    ),
+                  ),
+                ),
+            Text(
+              l.fairyHelpLevel(pct(cfg.levelStatPerLevel)),
+              style: body.copyWith(color: Colors.white70, fontSize: 11.5),
+            ),
+            head(l.fairyHelpSubHead),
+            Text(
+              l.fairyHelpSub(pct(cfg.subRatio)),
+              style: body.copyWith(color: Colors.white70, fontSize: 11.5),
+            ),
+            const SizedBox(height: 4),
+            for (final e in cfg.subWeight.entries)
+              Text(
+                l.fairyHelpSubLine(
+                  fairyStatLabel(l, e.key),
+                  fairyGradeLabel(l, sel),
+                  pct(lo * cfg.subRatio * e.value),
+                  pct(hi * cfg.subRatio * e.value),
+                ),
+                style: body,
+              ),
+            head(l.fairyHelpMergeHead),
+            Text(l.fairyHelpMerge('${cfg.mergeCount}'), style: body),
+          ],
+        ),
+      ),
+    ),
+    actions: [
+      gameDialogButton(
+        l.actionClose,
+        () => Navigator.of(context, rootNavigator: true).pop(),
+      ),
+    ],
+  );
+}
+
+/// 직접 합성에 레벨을 올린 요정이 끼면 한 번 더 묻는다 — 돌려받는 가루(쓴 가루의 일부)를 함께 보여 준다.
+/// (자동 합성은 투자한 요정을 아예 태우지 않는다. 직접 고른 것은 허용하되 모르고 잃지 않게.)
+Future<bool> _confirmInvested(
+  BuildContext context,
+  WidgetRef ref,
+  List<String> ids,
+) async {
+  final cfg = ref.read(gameDataProvider).value?.fairyConfig;
+  final fs = ref.read(saveControllerProvider).requireValue.fairy;
+  if (cfg == null) return true;
+  final invested = [
+    for (final id in ids) ?fs.fairyById(id),
+  ].where((f) => f.level > 1).toList();
+  if (invested.isEmpty) return true;
+  final refund = invested.fold<int>(
+    0,
+    (a, f) =>
+        a + (cfg.dustSpentTo(f.grade, f.level) * cfg.mergeDustRefund).floor(),
+  );
+  final l = AppLocalizations.of(context);
+  return _confirm(
+    context,
+    l.fairyMerge,
+    l.fairyMergeInvestedConfirm('${invested.length}', '$refund'),
+  );
+}
+
+void _toastRefund(BuildContext context, FairyOp r) {
+  final refund = (r.extra['refund'] as int?) ?? 0;
+  if (refund > 0) {
+    showCenterToast(
+      context,
+      AppLocalizations.of(context).fairyMergeRefund('$refund'),
+    );
+  }
+}
+
+/// 요정 정렬(요정함·합성 창 공용) — 등급 높은 순 → 레벨 높은 순 → 종류(같은 종류끼리 모인다) →
+/// 능력치(개체값) 높은 순(2026-10-02 사장님).
+int _fairyOrder(Fairy a, Fairy b) {
+  final g = b.grade.index.compareTo(a.grade.index);
+  if (g != 0) return g;
+  final lv = b.level.compareTo(a.level);
+  if (lv != 0) return lv;
+  final k = a.kind.compareTo(b.kind);
+  return k != 0 ? k : b.quality.compareTo(a.quality);
 }

@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+import 'jelly_short.dart';
+
 /// 화면 **가운데**에 잠깐 떠 있다 사라지는 안내.
 ///
 /// SnackBar 를 쓰지 않는 이유: 하단에 뜨면 탭바·부화기 버튼처럼 손가락이 있는
@@ -12,6 +15,13 @@ OverlayEntry? _current;
 Timer? _timer;
 
 void showCenterToast(BuildContext context, String text) {
+  // "젤리가 부족해요" 류는 토스트 대신 **상점 안내 창**으로(jelly_short.dart) — 부족을 알리는 곳
+  // 약 25곳을 하나하나 바꾸지 않고 여기 한 곳에서 잡는다. 새로 생기는 곳도 저절로 따라온다.
+  final l = Localizations.of<AppLocalizations>(context, AppLocalizations);
+  if (l != null && (text == l.notEnoughJelly || text == l.fairyErrJelly)) {
+    showJellyShort(context);
+    return;
+  }
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay == null || text.isEmpty) return;
 

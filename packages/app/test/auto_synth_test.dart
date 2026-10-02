@@ -377,6 +377,65 @@ void main() {
     expect(c.read(saveControllerProvider).requireValue.bugs, hasLength(4));
   });
 
+  // 2026-10-02 문의: "3포텐셜 알을 강화했더니 장착 안 한 4포텐셜 성충이 사라졌다".
+  test('수동 합성은 대상보다 포텐셜이 높은 곤충을 재료로 쓰지 않는다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        bug('high4', 'alpha', potential: 4),
+        bug('high5', 'alpha', potential: 5),
+        bug('p1', 'alpha'),
+        bug('p2', 'alpha'),
+        bug('target', 'alpha', potential: 3),
+      ],
+    );
+    final c = container(seed);
+    final k = await ctrl(seed, c);
+    // 재료 후보는 p1·p2 둘뿐 — 모자라서 합성하지 않는다(높은 쪽을 태우지 않는다).
+    expect(k.synthFodderFor('target'), isEmpty);
+    expect(await k.synthesize('target'), isFalse);
+    expect(c.read(saveControllerProvider).requireValue.bugs, hasLength(5));
+  });
+
+  test('잠근 곤충·훈련한 곤충은 수동·자동 합성 재료로 쓰지 않는다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        bug('locked', 'alpha'),
+        bug('trained', 'alpha'),
+        bug('p1', 'alpha'),
+        bug('target', 'alpha', potential: 2),
+      ],
+      lockedBugIds: {'locked'},
+      duelTraining: {
+        'trained': {TrainStat.attack: 1},
+      },
+    );
+    final c = container(seed);
+    final k = await ctrl(seed, c);
+    expect(k.synthFodderFor('target'), isEmpty);
+    final auto = await k.autoSynthesize(dryRun: true);
+    expect(auto.consumed, isNot(contains('locked')));
+    expect(auto.consumed, isNot(contains('trained')));
+    // 잠금 해제하면 다시 재료가 된다.
+    expect(await k.toggleBugLock('locked'), isFalse);
+    expect(c.read(saveControllerProvider).requireValue.lockedBugIds, isEmpty);
+  });
+
+  test('잠근 곤충은 분해할 수 없다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [bug('locked', 'alpha')],
+      lockedBugIds: {'locked'},
+    );
+    final c = container(seed);
+    final k = await ctrl(seed, c);
+    final r = await k.disassembleBug('locked');
+    expect(r.ok, isFalse);
+    expect(r.error, 'locked');
+    expect(c.read(saveControllerProvider).requireValue.bugs, hasLength(1));
+  });
+
   test('수동 합성은 덜 아까운 개체부터 쓴다 — 포텐셜 높은 쪽이 남는다', () async {
     final seed = SaveGame.initial(createdAt: t0).copyWith(
       lastSeen: t0,

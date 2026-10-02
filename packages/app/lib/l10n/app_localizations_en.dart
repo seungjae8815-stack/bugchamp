@@ -2176,7 +2176,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'Stage, level, upgrades, gold and materials\nreset to the beginning.\n\nBugs, gear, the dex, jelly and skills\nall stay with you.\n\nRankings sort by difficulty first - moving up\nputs you above lower tiers even at a low level.\n\nMonsters get much stronger.';
+      'Stage, level, upgrades, gold and materials reset to the beginning.\n\nBugs, gear, the dex, jelly and skills all stay with you.\n\nRankings sort by difficulty first - moving up puts you above lower tiers even at a low level.\n\nMonsters get much stronger.';
 
   @override
   String get tierNextGo => 'Enter';
@@ -3342,19 +3342,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get elementWheelTitle => 'Elemental Chart';
 
   @override
-  String get elementWheelRestrain =>
-      'Overcome — 1.5x damage when you hit whoever the red arrow points at';
-
-  @override
-  String get elementWheelGenerate =>
-      'Generate — +10% team attack and healing when the slot right before points at you with a green arrow';
+  String elementWheelRestrain(String mult) {
+    return 'Restrain: hitting the foe a red arrow points to deals ${mult}x damage';
+  }
 
   @override
   String get traitNoneBadge => 'No trait';
 
   @override
   String get elementWheelHint =>
-      'Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.';
+      'Example: Water → Fire. A Water bug deals more damage to a Fire bug in duels.';
 
   @override
   String get leagueRewardListTitle => 'First-time reward (once per rank)';
@@ -4252,7 +4249,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fairyNestKindHint => 'The fairy type is random (1 of 8)';
+  String fairyNestKindHint(String n) {
+    return 'The kind is random among $n';
+  }
 
   @override
   String get fairyStone => 'Attribute Stone';
@@ -4489,4 +4488,1102 @@ class AppLocalizationsEn extends AppLocalizations {
   String fairyEggPop(String grade) {
     return 'Fairy egg · $grade';
   }
+
+  @override
+  String get guildTitle => 'Guild';
+
+  @override
+  String get guildIntro =>
+      'Join a guild to chat with guildmates — guild missions, bosses and guild wars are coming soon.';
+
+  @override
+  String get guildUnavailable =>
+      'Couldn\'t load guild info. Please try again in a moment.';
+
+  @override
+  String get guildRetry => 'Retry';
+
+  @override
+  String get guildSearchHint => 'Search guild name';
+
+  @override
+  String get guildEmptyList => 'No guilds found. Why not create one?';
+
+  @override
+  String get guildCreate => 'Create guild';
+
+  @override
+  String guildNameHint(int min, int max) {
+    return 'Guild name ($min–$max chars)';
+  }
+
+  @override
+  String get guildJoinModeOpen => 'Open — anyone can join instantly';
+
+  @override
+  String get guildJoinModeApproval => 'Approval — leaders review requests';
+
+  @override
+  String get guildJoinModeOpenShort => 'Open';
+
+  @override
+  String get guildJoinModeApprovalShort => 'Approval';
+
+  @override
+  String get guildJoin => 'Join';
+
+  @override
+  String get guildRequest => 'Request';
+
+  @override
+  String get guildCancelRequest => 'Cancel request';
+
+  @override
+  String get guildFull => 'Full';
+
+  @override
+  String guildMembersCount(int n, int max) {
+    return '$n/$max members';
+  }
+
+  @override
+  String guildAvgPower(String v) {
+    return 'Avg. power $v';
+  }
+
+  @override
+  String guildCooldown(String time) {
+    return 'You can join another guild in $time';
+  }
+
+  @override
+  String get guildTabMembers => 'Members';
+
+  @override
+  String get guildTabChat => 'Chat';
+
+  @override
+  String guildTabRequests(int n) {
+    return 'Req. $n';
+  }
+
+  @override
+  String get guildRoleLeader => 'Leader';
+
+  @override
+  String get guildRoleDeputy => 'Deputy';
+
+  @override
+  String get guildRoleMember => 'Member';
+
+  @override
+  String get guildLastSeenNow => 'Online recently';
+
+  @override
+  String guildLastSeenHours(int n) {
+    return '${n}h ago';
+  }
+
+  @override
+  String guildLastSeenDays(int n) {
+    return '${n}d ago';
+  }
+
+  @override
+  String get guildNoticeEmpty => 'No guild introduction yet';
+
+  @override
+  String get guildNoticeHint => 'Introduce your guild';
+
+  @override
+  String get guildEditNotice => 'Edit introduction';
+
+  @override
+  String get guildChangeJoinMode => 'Join mode';
+
+  @override
+  String get guildSave => 'Save';
+
+  @override
+  String get guildLeave => 'Leave guild';
+
+  @override
+  String guildLeaveConfirm(int hours) {
+    return 'After leaving, you can\'t join another guild for $hours hours. Leave?';
+  }
+
+  @override
+  String get guildLeaveLastConfirm =>
+      'You\'re the last member — the guild will be disbanded. Leave?';
+
+  @override
+  String get guildLeaderLeaveNote =>
+      'Leadership passes to a deputy (or the most active member).';
+
+  @override
+  String get guildKick => 'Remove from guild';
+
+  @override
+  String guildKickConfirm(String name) {
+    return 'Remove $name from the guild?';
+  }
+
+  @override
+  String get guildMakeDeputy => 'Make deputy';
+
+  @override
+  String get guildRemoveDeputy => 'Remove deputy';
+
+  @override
+  String get guildTransfer => 'Transfer leadership';
+
+  @override
+  String guildTransferConfirm(String name) {
+    return 'Make $name the guild leader?';
+  }
+
+  @override
+  String get guildAccept => 'Accept';
+
+  @override
+  String get guildReject => 'Decline';
+
+  @override
+  String get guildNoRequests => 'No join requests';
+
+  @override
+  String get guildCreated => 'Guild created!';
+
+  @override
+  String get guildJoined => 'You joined the guild!';
+
+  @override
+  String get guildRequestSent => 'Join request sent';
+
+  @override
+  String get guildChatEmpty => 'No guild messages yet. Say hello!';
+
+  @override
+  String get guildErrNameTaken => 'That name is already taken';
+
+  @override
+  String get guildErrNameInvalid =>
+      'That name can\'t be used (check length, characters and words)';
+
+  @override
+  String get guildErrCooldown => 'You can\'t join another guild yet';
+
+  @override
+  String get guildErrFull => 'This guild is full';
+
+  @override
+  String get guildErrTooManyRequests =>
+      'Too many pending requests — cancel one first';
+
+  @override
+  String get guildErrRequestsFull =>
+      'This guild has too many requests. Try again later';
+
+  @override
+  String get guildErrDeputyFull => 'No more deputy slots';
+
+  @override
+  String get guildErrNoticeInvalid => 'That introduction can\'t be used';
+
+  @override
+  String get guildErrGeneric => 'Something went wrong. Please try again';
+
+  @override
+  String guildCreateWithCost(int cost) {
+    return 'Create guild · $cost jelly';
+  }
+
+  @override
+  String guildCreateNeedJelly(int cost) {
+    return 'You need $cost jelly to create a guild';
+  }
+
+  @override
+  String get guildErrJelly => 'Not enough jelly';
+
+  @override
+  String get guildTabMissions => 'Missions';
+
+  @override
+  String get guildMissionForest => 'Forest survey';
+
+  @override
+  String get guildMissionCave => 'Cave expedition';
+
+  @override
+  String get guildMissionSwamp => 'Swamp search';
+
+  @override
+  String get guildMissionRuins => 'Ruins dig';
+
+  @override
+  String get guildMissionCanyon => 'Canyon patrol';
+
+  @override
+  String get guildMissionMeadow => 'Meadow gathering';
+
+  @override
+  String get guildMissionErrNoStarts => 'No missions left today';
+
+  @override
+  String get guildMissionErrRunning => 'You already have a mission in progress';
+
+  @override
+  String get guildMissionErrClosed => 'That mission has already ended';
+
+  @override
+  String get guildMissionErrHelped => 'You already helped this mission';
+
+  @override
+  String get guildMissionErrHelpersFull =>
+      'This mission already has enough helpers';
+
+  @override
+  String get guildMissionErrOwn => 'You can\'t help your own mission';
+
+  @override
+  String get guildMissionErrNothing => 'No rewards to claim';
+
+  @override
+  String get guildMissionHelped => 'Helped! Your power was added';
+
+  @override
+  String get guildMissionSoloHint =>
+      'You can clear this one alone — it succeeds instantly.';
+
+  @override
+  String get guildMissionWaitHint =>
+      'Choose how long to wait. Guildmates who help add their power — if the total beats the requirement when time runs out, you succeed. If 3 helpers join, it succeeds instantly! Longer waits give bigger rewards.';
+
+  @override
+  String guildMissionWaitOption(int min, String mult) {
+    return 'Wait $min min · reward ×$mult';
+  }
+
+  @override
+  String get guildMissionClaimTitle => 'Mission rewards';
+
+  @override
+  String guildMissionCoins(int n) {
+    return 'Guild coins +$n';
+  }
+
+  @override
+  String guildMissionEgg(int n) {
+    return 'Fairy egg ×$n!';
+  }
+
+  @override
+  String guildMissionStartsLeft(int n, int max) {
+    return 'Missions $n/$max';
+  }
+
+  @override
+  String guildMissionHelpLeft(int n, int max) {
+    return 'Help rewards $n/$max';
+  }
+
+  @override
+  String guildMissionReset(String time) {
+    return 'resets in $time';
+  }
+
+  @override
+  String guildMissionClaimable(int n) {
+    return '$n mission rewards ready';
+  }
+
+  @override
+  String get guildMissionClaim => 'Claim';
+
+  @override
+  String get guildMissionActive => 'Help requests';
+
+  @override
+  String get guildMissionNoActive => 'No missions in progress right now';
+
+  @override
+  String get guildMissionBoard => 'Today\'s board';
+
+  @override
+  String get guildMissionRecent => 'Today\'s results';
+
+  @override
+  String get guildMissionMine => 'My mission';
+
+  @override
+  String guildMissionOwner(String name) {
+    return '$name\'s mission';
+  }
+
+  @override
+  String guildMissionProgress(int p, int n, int max) {
+    return '$p% · helpers $n/$max';
+  }
+
+  @override
+  String get guildMissionHelp => 'Help';
+
+  @override
+  String get guildMissionHelpedTag => 'Helped';
+
+  @override
+  String guildMissionSlotSolo(double mult) {
+    return 'Power ×$mult · clear it solo';
+  }
+
+  @override
+  String guildMissionSlotNeed(double mult) {
+    return 'Power ×$mult · needs help';
+  }
+
+  @override
+  String get guildMissionStart => 'Start';
+
+  @override
+  String get guildMissionSuccess => 'Success';
+
+  @override
+  String guildMissionPartial(int p) {
+    return '$p%';
+  }
+
+  @override
+  String get guildMissionChatMine => 'You asked your guild for help';
+
+  @override
+  String guildMissionChatAsk(String name) {
+    return '$name needs help with a mission!';
+  }
+
+  @override
+  String guildLevel(int n) {
+    return 'Lv $n';
+  }
+
+  @override
+  String guildCoins(int n) {
+    return '$n guild coins';
+  }
+
+  @override
+  String get guildDonate => 'Check in';
+
+  @override
+  String get guildDonateDoneShort => 'Checked';
+
+  @override
+  String get guildDonateOk => 'Checked in! Guild coins and guild EXP added';
+
+  @override
+  String get guildDonateDone => 'Already checked in today';
+
+  @override
+  String get guildSkills => 'Skills';
+
+  @override
+  String get guildShop => 'Shop';
+
+  @override
+  String get guildSkillAttack => 'Attack';
+
+  @override
+  String get guildSkillHp => 'HP';
+
+  @override
+  String get guildSkillGold => 'Gold';
+
+  @override
+  String get guildSkillMaterial => 'Material find';
+
+  @override
+  String get guildSkillXp => 'EXP';
+
+  @override
+  String get guildSkillMission => 'Mission rewards';
+
+  @override
+  String guildSkillHeader(int n) {
+    return 'Skill points left: $n';
+  }
+
+  @override
+  String get guildSkillNote =>
+      'Buffs apply to every guildmate while hunting (offline gold too). They don\'t apply to duels or events. Leaving the guild removes them. Guild level +1 = 1 point.';
+
+  @override
+  String guildSkillValue(String now, String max) {
+    return '+$now% (max +$max%)';
+  }
+
+  @override
+  String get guildSkillNoPoints => 'No skill points left';
+
+  @override
+  String get guildSkillMax => 'Already maxed';
+
+  @override
+  String get guildSkillForbidden => 'Only the leader and deputies can do this';
+
+  @override
+  String get guildSkillReset => 'Reset';
+
+  @override
+  String get guildSkillResetBody =>
+      'Reset all guild skills and refund every point?';
+
+  @override
+  String get guildShopNote =>
+      'Earn coins from missions, helping, check-ins and the guild boss.';
+
+  @override
+  String guildShopMaterials(String h) {
+    return 'Materials (${h}h of hunting)';
+  }
+
+  @override
+  String guildShopFossil(int n) {
+    return 'Fossil ×$n';
+  }
+
+  @override
+  String guildShopFairyDust(int n) {
+    return 'Fairy dust ×$n';
+  }
+
+  @override
+  String guildShopFairyEgg(int n) {
+    return 'Fairy egg ×$n';
+  }
+
+  @override
+  String guildShopSkillShard(String grade, int n) {
+    return '$grade wild shard ×$n';
+  }
+
+  @override
+  String guildShopLimitDay(int n, int max) {
+    return 'Today $n/$max';
+  }
+
+  @override
+  String guildShopLimitWeek(int n, int max) {
+    return 'This week $n/$max';
+  }
+
+  @override
+  String guildShopBought(String item) {
+    return 'Bought: $item';
+  }
+
+  @override
+  String get guildShopSoldOut => 'Purchase limit reached';
+
+  @override
+  String get guildShopSoldOutShort => 'Sold out';
+
+  @override
+  String get guildShopNoCoins => 'Not enough guild coins';
+
+  @override
+  String get guildTabBoss => 'Boss';
+
+  @override
+  String guildBossTitle(int n) {
+    return 'Guild boss · Stage $n';
+  }
+
+  @override
+  String guildBossAttack(int n) {
+    return 'Attack ($n left today)';
+  }
+
+  @override
+  String get guildBossNote =>
+      'Damage comes from your duel defense team (fairies, skills and gear don\'t count). HP is shared by the whole guild and carries over all week.';
+
+  @override
+  String get guildBossNoTeam =>
+      'Register a duel defense team to attack the boss.';
+
+  @override
+  String get guildBossNoAttacks => 'No attacks left today';
+
+  @override
+  String guildBossHit(String d) {
+    return '$d damage';
+  }
+
+  @override
+  String get guildBossKilled => 'Boss defeated! Next stage';
+
+  @override
+  String guildBossMine(String d) {
+    return 'My damage this week: $d';
+  }
+
+  @override
+  String guildBossRank(int n) {
+    return 'Guild rank this week: #$n';
+  }
+
+  @override
+  String get guildBossRankNone =>
+      'Not ranked yet — attack to enter the ranking';
+
+  @override
+  String guildBossTopRow(int s, int p) {
+    return 'Stage $s · $p%';
+  }
+
+  @override
+  String guildBossLastWeek(int rank, int jelly) {
+    return 'Last week #$rank — $jelly jelly';
+  }
+
+  @override
+  String guildBossClaimed(int n) {
+    return 'Received $n jelly!';
+  }
+
+  @override
+  String get guildTabWar => 'War';
+
+  @override
+  String get guildWarBreed => 'Breeding';
+
+  @override
+  String get guildWarForge => 'Forging';
+
+  @override
+  String get guildWarHunt => 'Hunting';
+
+  @override
+  String get guildWarDuel => 'Duels';
+
+  @override
+  String get guildWarTrain => 'Training';
+
+  @override
+  String get guildWarBoss => 'Guild boss';
+
+  @override
+  String get guildWarClash => 'Power clash';
+
+  @override
+  String get guildWarBreedHint =>
+      'Finish breeding, collect hatched eggs and synthesize. Jelly-rushed completions don\'t count.';
+
+  @override
+  String get guildWarForgeHint => 'Forge gear — higher grades score far more.';
+
+  @override
+  String get guildWarHuntHint => 'Defeat elites and zone bosses.';
+
+  @override
+  String get guildWarDuelHint => 'Win duels (confirmed by the server).';
+
+  @override
+  String get guildWarTrainHint =>
+      'Level up bugs, start training steps and finish skill training.';
+
+  @override
+  String get guildWarBossHint => 'Attack the guild boss.';
+
+  @override
+  String get guildWarClashHint =>
+      'Nothing to do today! Members are paired 1:1 by duel defense team power and fight automatically. Results come in when you open this tab.';
+
+  @override
+  String guildWarTier(String tier, int gr) {
+    return '$tier tier · $gr GR';
+  }
+
+  @override
+  String get guildWarClosed => 'Guild wars aren\'t open yet.';
+
+  @override
+  String guildWarOpensOn(String date) {
+    return 'Guild wars start the week of $date.';
+  }
+
+  @override
+  String guildWarNeedMembers(int n) {
+    return 'A guild needs at least $n members to enter this week\'s war.';
+  }
+
+  @override
+  String guildWarVs(String name) {
+    return 'vs $name';
+  }
+
+  @override
+  String get guildWarVsVirtual => 'vs Wild Guild (tier average)';
+
+  @override
+  String get guildWarVirtualName => 'Wild';
+
+  @override
+  String guildWarDayOf(int d, String theme) {
+    return 'Day $d · $theme';
+  }
+
+  @override
+  String guildWarMyToday(int n, int cap) {
+    return 'My points today $n/$cap';
+  }
+
+  @override
+  String get guildWarWin => 'Victory';
+
+  @override
+  String get guildWarLose => 'Defeat';
+
+  @override
+  String get guildWarDraw => 'Draw';
+
+  @override
+  String guildWarPoints(int a, int b) {
+    return 'Points $a : $b';
+  }
+
+  @override
+  String guildWarClashResult(int a, int b) {
+    return 'Day 7 duels $a : $b';
+  }
+
+  @override
+  String guildWarReward(String result, int coins, int jelly) {
+    return '$result reward — $coins coins · $jelly jelly';
+  }
+
+  @override
+  String guildWarClaimed(int coins, int jelly) {
+    return 'Received $coins coins · $jelly jelly!';
+  }
+
+  @override
+  String duelPickDeployed(int n) {
+    return 'In slot $n';
+  }
+
+  @override
+  String get fairyDexHelp =>
+      'The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Stat stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.';
+
+  @override
+  String get fairyDexLegendGrades =>
+      'Grade dots (lit = obtained at that grade)';
+
+  @override
+  String get fairyDexLegendSubs =>
+      'Stat stones (bright = obtained with that bonus stat)';
+
+  @override
+  String fairyDexRewards(int n, int max) {
+    return 'Codex rewards · $n/$max collected';
+  }
+
+  @override
+  String get fairyDexClaimed => 'Codex reward received!';
+
+  @override
+  String get fairyNestPickEgg => 'Pick an egg to place first';
+
+  @override
+  String get guideTitle => 'Guidebook';
+
+  @override
+  String get guideIntro =>
+      'Every bug is different even within a species. Tap a topic to see what each term means.';
+
+  @override
+  String get guideElementTitle => 'Elements (Wood·Fire·Earth·Metal·Water)';
+
+  @override
+  String guideElementBody(String mult) {
+    return 'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals ${mult}x damage. The red arrows show who beats whom.';
+  }
+
+  @override
+  String guideElementLine(String a, String b) {
+    return '$a beats $b';
+  }
+
+  @override
+  String get guideSpecialtyTitle => 'Specialty (fighting style)';
+
+  @override
+  String get guideSpecialtyBody =>
+      'Each species has a specialty that decides how it fights in duels.';
+
+  @override
+  String get guideSpecialtyStrike => 'Charges in to ram and flip the opponent.';
+
+  @override
+  String get guideSpecialtyGrip =>
+      'Bites and holds on, pushing the opponent out.';
+
+  @override
+  String get guideSpecialtyToss => 'Lifts the opponent and throws it.';
+
+  @override
+  String get guideTemperamentTitle => 'Temperament (fighting tendency)';
+
+  @override
+  String get guideTemperamentBody =>
+      'Temperament decides how a bug moves in duels and which stats it can train higher.';
+
+  @override
+  String get guideTempAggressive => 'Charges often — an attacker.';
+
+  @override
+  String get guideTempCautious => 'Avoids the edge and sidesteps charges.';
+
+  @override
+  String get guideTempCunning => 'Circles to the side to hit weak spots.';
+
+  @override
+  String get guideTempSteadfast => 'Hard to push — a tank.';
+
+  @override
+  String get guideTempFickle => 'Mixes all styles.';
+
+  @override
+  String guideTrainCapMods(String mods) {
+    return 'Training cap: $mods';
+  }
+
+  @override
+  String get guideSizeTitle => 'Size (weight)';
+
+  @override
+  String guideSizeBody(String min, String max) {
+    return 'Size is rolled within the species\' range. Bigger bugs get stats ×$min~×$max, are harder to push and less likely to fall out of the ring in duels.';
+  }
+
+  @override
+  String get guidePotentialTitle => 'Potential (1–5 stars)';
+
+  @override
+  String guidePotentialBody(int perStar, int fodder) {
+    return 'Higher stars raise the part-enhance max level (stars × 10) and the training cap (+$perStar per star). Merge $fodder bugs of the same species to gain a star.';
+  }
+
+  @override
+  String get guideTraitTitle => 'Bloodline traits (breeding only)';
+
+  @override
+  String get guideTraitBody =>
+      'Only bugs born from breeding can have a trait — wild bugs never do. Traits work both as a pet and in duels.';
+
+  @override
+  String guideTraitEffect(String atk, String hp) {
+    return 'Attack +$atk · HP +$hp';
+  }
+
+  @override
+  String get guideBreedTitle => 'Breeding & inheritance';
+
+  @override
+  String guideBreedBody(String el, String tm, String tr) {
+    return 'Pair a male and female adult of the same species to get an egg. The child inherits the parents\' element ($el) and temperament ($tm) with high chance, and a parent\'s trait ($tr). If both parents share the same element, temperament or trait, the child is guaranteed to get it — so you can build your own line.';
+  }
+
+  @override
+  String get guideVariantTitle => 'Variant bugs';
+
+  @override
+  String guideVariantBody(
+    String wild,
+    String breed,
+    String parent,
+    String gacha,
+    String pet,
+    String duel,
+  ) {
+    return 'Very rarely a bug with different colors (rainbow / albino) appears. Chance: wild $wild · breeding $breed · variant parent $parent · egg draw $gacha. As a pet its stats are +$pet, in duels +$duel.';
+  }
+
+  @override
+  String get guideLifeTitle => 'Life stages';
+
+  @override
+  String get guideLifeBody =>
+      'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels.';
+
+  @override
+  String get guideDuelTitle => 'Duels';
+
+  @override
+  String guideDuelBody(int sec, String weak) {
+    return 'A bout is a $sec-second 1:1 physical fight in a round arena. Win by ring-out, flipping, or knockout; when time runs out, remaining HP % decides. A match is 3 bugs, winner stays on. Hitting the side or back deals ×$weak damage, and critical hits and evasion also apply.';
+  }
+
+  @override
+  String get guideTrainTitle => 'Training ground';
+
+  @override
+  String guideTrainBody(int base) {
+    return 'Train 5 duel stats per bug: attack, defense, evasion, crit and recovery. Max stage = $base + potential + temperament/specialty/trait bonuses, so every bug has its own strengths. Mix bugs with different roles in your team!';
+  }
+
+  @override
+  String bugInfoSizeDetail(String mm, String min, String max, String mult) {
+    return '${mm}mm (range $min–$max) · stats ×$mult';
+  }
+
+  @override
+  String get eventHudShort => 'King\nCup';
+
+  @override
+  String fairyStoneName(String stat) {
+    return '$stat stone';
+  }
+
+  @override
+  String fairyStoneEffect(String stat, String p) {
+    return 'The hatched fairy\'s sub-stat becomes $stat with $p% chance';
+  }
+
+  @override
+  String get fairyStoneBuyTitle => 'Buy element stone';
+
+  @override
+  String get fairyStoneBuyAction => 'Buy';
+
+  @override
+  String get fairyEquippedTag => 'Equipped';
+
+  @override
+  String get fairyMergeEquipped => 'An equipped fairy can\'t be merged';
+
+  @override
+  String get fairyAutoMergeDone => 'Merge results';
+
+  @override
+  String get exchangeToDust => 'Fairy dust';
+
+  @override
+  String get exchangeHintDust =>
+      'Trade jelly for fairy dust (1 jelly = 1 dust)';
+
+  @override
+  String exchangeGetDust(String amount) {
+    return 'Get $amount fairy dust';
+  }
+
+  @override
+  String fairyStatRange(String grade, String lo, String hi) {
+    return '($grade range $lo~$hi)';
+  }
+
+  @override
+  String get fairyStopCompanion => 'Stop companion';
+
+  @override
+  String get fairyHelpTitle => 'Help';
+
+  @override
+  String get fairyHelpGradeHead => 'Base stat range by grade (Lv.1)';
+
+  @override
+  String fairyHelpGradeLine(String grade, String lo, String hi, String max) {
+    return '$grade: $lo ~ $hi · max Lv.$max';
+  }
+
+  @override
+  String fairyHelpLevel(String p) {
+    return 'Each level adds +$p of the value (Lv.1 basis).';
+  }
+
+  @override
+  String get fairyHelpSubHead => 'Sub-stat (one per fairy)';
+
+  @override
+  String fairyHelpSub(String p) {
+    return 'Rolled at hatching from the list below — $p of the base range × the stat\'s weight. An element stone raises the chance of the one you want.';
+  }
+
+  @override
+  String fairyHelpSubLine(String stat, String grade, String lo, String hi) {
+    return '$stat: $grade $lo ~ $hi';
+  }
+
+  @override
+  String get fairyHelpMergeHead => 'Merge';
+
+  @override
+  String fairyHelpMerge(String n) {
+    return '$n fairies of the same kind and grade → 1 of the next grade. Base and sub stats are rolled again, so you can aim for a better one.';
+  }
+
+  @override
+  String fairyGachaOverflowWarn(String free, String lost) {
+    return 'Your fairy box has $free free slots — $lost eggs will turn into fairy dust.';
+  }
+
+  @override
+  String fairyOverflowToast(String n, String dust) {
+    return 'Box full — $n eggs became $dust fairy dust';
+  }
+
+  @override
+  String fairyOverflowPop(String dust) {
+    return 'Box full · Fairy dust +$dust';
+  }
+
+  @override
+  String fairyMergeInvestedConfirm(String n, String dust) {
+    return '$n leveled-up fairies will be used. You get back $dust fairy dust (part of what you spent). Merge?';
+  }
+
+  @override
+  String fairyMergeRefund(String dust) {
+    return '$dust fairy dust returned';
+  }
+
+  @override
+  String exchangeDustLeft(String n) {
+    return '$n left today';
+  }
+
+  @override
+  String get exchangeDustCapReached => 'Today\'s limit reached';
+
+  @override
+  String get bugLock => 'Lock';
+
+  @override
+  String get bugLocked => 'Locked';
+
+  @override
+  String get bugUnlock => 'Unlock';
+
+  @override
+  String get bugLockedToast =>
+      'Locked — it won\'t be used for merging or dismantling';
+
+  @override
+  String get bugUnlockedToast => 'Unlocked';
+
+  @override
+  String get disassembleLocked =>
+      'Locked bugs can\'t be dismantled. Unlock it first.';
+
+  @override
+  String trainingSumShort(int n) {
+    return 'Train Lv.$n';
+  }
+
+  @override
+  String get reviewAskTitle => 'Enjoying Bug Champ?';
+
+  @override
+  String get reviewAskBody =>
+      'If you have a moment, a store review would really help a solo developer.\nThank you for playing!';
+
+  @override
+  String get reviewAskLater => 'Later';
+
+  @override
+  String get trainingNoneShort => 'Untrained';
+
+  @override
+  String get guildComingSoonTitle => 'Coming soon';
+
+  @override
+  String get guildComingSoonBody =>
+      'Guilds — missions, guild boss, shop and weekly guild wars — are coming in an upcoming update. Stay tuned!';
+
+  @override
+  String get notifChannelName => 'Reward alerts';
+
+  @override
+  String get notifChannelDesc =>
+      'Lunch/dinner rewards and full offline-reward alerts';
+
+  @override
+  String get eggOddsTitle => 'Bug egg draw odds';
+
+  @override
+  String get eggOddsGradeHead =>
+      'Grade (each species in the grade is equally likely)';
+
+  @override
+  String get eggOddsPotentialHead => 'Potential';
+
+  @override
+  String eggOddsVariant(String p) {
+    return 'Variant (rainbow/albino): $p%';
+  }
+
+  @override
+  String eggOddsPity(String n, String grade) {
+    return 'Every ${n}th draw guarantees $grade or higher';
+  }
+
+  @override
+  String get eggOddsNote =>
+      'Odds are per draw. The pity counter resets only when its grade appears.';
+
+  @override
+  String eggOddsGradeLine(String grade, String p, String each) {
+    return '$grade $p% · each species $each%';
+  }
+
+  @override
+  String get variantRainbow => 'Rainbow';
+
+  @override
+  String get variantAlbino => 'Albino';
+
+  @override
+  String get jellyShortTitle => 'Not enough jelly';
+
+  @override
+  String get jellyShortBody => 'Get jelly in the shop and continue right away.';
+
+  @override
+  String get jellyShortGoShop => 'Go to shop';
+
+  @override
+  String pvpRefillLimit(int n) {
+    return 'You can refill with jelly up to $n times a day';
+  }
+
+  @override
+  String get pvpTicketRefillTitle => 'Refill tickets';
+
+  @override
+  String pvpTicketRefillBody(int n, int left) {
+    return 'Get $n tickets with jelly. ($left left today)';
+  }
+
+  @override
+  String get starterOfferTitle => 'Starter package';
+
+  @override
+  String get starterOfferBody =>
+      'Jelly 300 · gold · materials · +1 incubator slot.\nOnly once per account — the best value in the shop!';
+
+  @override
+  String get starterOfferGo => 'See it';
+
+  @override
+  String mailGrantTitle(String name) {
+    return '[From the team] $name';
+  }
+
+  @override
+  String get mailGrantBody =>
+      'A reward from the team. Tap Claim to receive it.';
+
+  @override
+  String get mailReplyTitle => '[Reply from the team]';
 }

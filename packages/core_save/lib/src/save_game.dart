@@ -19,7 +19,7 @@ const int kSaveSchemaVersion = 18;
 /// 이번 주 심연 층이 지워졌다(2026-09-30 점검). 서버는 이 값이 낮은 업로드에서
 /// 그 뒤에 생긴 필드를 저장본 값으로 지킨다(`GameActions.mergeSave`).
 /// 새 필드를 더하면 이 값을 올리고 서버의 목록에 추가한다.
-const int kSaveFeatureLevel = 15;
+const int kSaveFeatureLevel = 16;
 
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
@@ -61,6 +61,9 @@ const String kAdFeaturePvpTicket = 'pvpTicket';
 
 /// 이벤트 참가권 광고(실물 경품 랭킹 이벤트). 상한은 event.json.
 const String kAdFeatureEventTicket = 'eventTicket';
+
+/// 결투 티켓 **젤리 충전** 하루 횟수(2026-10-02). 광고는 아니지만 같은 서버 소유 하루 카운터를 쓴다.
+const String kAdFeaturePvpRefill = 'pvpRefill';
 
 /// 설치된 트랩 1개 (레거시 v1 채집 시스템. v2 에서는 미사용이나 세이브 호환 위해 유지).
 class TrapInstallation {
@@ -547,6 +550,8 @@ class SaveGame {
     this.giftDoubleCount = 0,
     this.lastReadNoticeId = 0,
     this.reviewAsked = false,
+    this.reviewPromptTier = -1,
+    this.reviewOpened = false,
     this.adsRemoved = false,
     this.buffPassExpiresAt,
     this.starterBought = false,
@@ -585,6 +590,7 @@ class SaveGame {
     this.pvpDefenseIds = const [],
     this.pvpLeague = -1,
     this.duelTraining = const {},
+    this.lockedBugIds = const {},
     this.trainingJob,
     this.abyssUnlocked = false,
     this.inAbyss = false,
@@ -811,6 +817,12 @@ class SaveGame {
   /// 훈련소 — 곤충 id → 결투 능력치 단계(2026-09-29). 곤충이 사라지면 [_commit] 이 정리한다.
   final Map<String, Map<TrainStat, int>> duelTraining;
 
+  /// 유저가 잠근 곤충(2026-10-02 — "장착 안 한 좋은 성충이 합성 재료로 사라진다" 문의).
+  /// 합성·분해·자동 합성·자동 분해 재료에서 빠진다([pinnedBugIds]). 채집함 상한 정리에서는
+  /// **약한 보호**(칸이 남는 만큼만 먼저 남긴다) — 무조건 지키면 잠금으로 상한을 우회한다(훈련과 같은 이유).
+  /// 없는 곤충 id 는 [trimmedToStorage] 가 치운다.
+  final Set<String> lockedBugIds;
+
   /// 훈련소 1칸에서 진행 중인 훈련(없으면 null).
   final TrainingJob? trainingJob;
 
@@ -1017,6 +1029,7 @@ class SaveGame {
     ...incubating.keys,
     ...duelTraining.keys,
     ?trainingJob?.bugId,
+    ...lockedBugIds,
   };
 
   /// 곤충 목록을 [storageCapacity] 이하로 줄인 세이브(초과분 폐기).
@@ -1024,7 +1037,14 @@ class SaveGame {
   /// 상한 내면 자기 자신을 그대로 돌려준다. 구버전 앱·조작된 업로드가 상한을
   /// 넘긴 세이브를 올려도 서버가 이걸로 잘라 세이브 비대화를 원천 차단한다.
   SaveGame trimmedToStorage() {
-    if (bugs.length <= storageCapacity) return this;
+    if (bugs.length <= storageCapacity) {
+      // 잠금 목록에 없는 곤충 id 가 남아 있으면 치운다(세이브 크기·조작 업로드 방어).
+      if (lockedBugIds.isEmpty) return this;
+      final ids = {for (final b in bugs) b.id};
+      return lockedBugIds.every(ids.contains)
+          ? this
+          : copyWith(lockedBugIds: lockedBugIds.intersection(ids));
+    }
     final keep = keepBugIds(
       [
         for (final b in bugs)
@@ -1038,9 +1058,9 @@ class SaveGame {
           ),
       ],
       capacity: storageCapacity,
-      // 훈련 기록은 약한 보호 — [keepBugIds] 의 `preferred` 참조.
+      // 훈련 기록·잠금은 약한 보호 — [keepBugIds] 의 `preferred` 참조.
       pinned: {...equippedBugIds, ...incubating.keys, ?trainingJob?.bugId},
-      preferred: duelTraining.keys.toSet(),
+      preferred: {...duelTraining.keys, ...lockedBugIds},
     );
     return copyWith(
       bugs: [
@@ -1052,6 +1072,7 @@ class SaveGame {
         for (final e in duelTraining.entries)
           if (keep.contains(e.key)) e.key: e.value,
       },
+      lockedBugIds: lockedBugIds.intersection(keep),
     );
   }
 
@@ -1204,6 +1225,14 @@ class SaveGame {
   /// 별점이 몇 개인지 앱에 알려주지 않는다. 그래서 리뷰에 보상을 걸 수 없고
   /// (걸어도 검증 불가), 플레이·앱스토어 정책도 이를 금지한다.
   final bool reviewAsked;
+
+  /// 게임 안 리뷰 창을 **마지막으로 띄운 난이도**(-1 = 아직, 2026-10-02 사장님 — 난이도마다 다시 묻는다).
+  /// 첫 사냥터 보스를 깨면, 이 값보다 높은 난이도에서 처음 깼을 때만 묻는다(같은 난이도에서 반복 안 함).
+  final int reviewPromptTier;
+
+  /// 리뷰 창에서 "게임 평가하기"를 눌러 스토어를 연 적이 있나 — 열었으면 더 묻지 않는다.
+  /// (스토어는 작성 여부를 알려주지 않는다. 연 것을 쓴 것으로 본다.)
+  final bool reviewOpened;
 
   /// [noticeId] 가 아직 안 읽은 새 공지인지.
   bool isNewNotice(int noticeId) => noticeId > lastReadNoticeId;
@@ -1375,6 +1404,7 @@ class SaveGame {
     List<String>? pvpDefenseIds,
     int? pvpLeague,
     Map<String, Map<TrainStat, int>>? duelTraining,
+    Set<String>? lockedBugIds,
     TrainingJob? trainingJob,
     bool clearTrainingJob = false,
     bool? abyssUnlocked,
@@ -1436,6 +1466,8 @@ class SaveGame {
     bool? autoForgeStopOnHit,
     int? lastReadNoticeId,
     bool? reviewAsked,
+    int? reviewPromptTier,
+    bool? reviewOpened,
     bool? adsRemoved,
     DateTime? buffPassExpiresAt,
     bool? starterBought,
@@ -1488,6 +1520,7 @@ class SaveGame {
     pvpDefenseIds: pvpDefenseIds ?? this.pvpDefenseIds,
     pvpLeague: pvpLeague ?? this.pvpLeague,
     duelTraining: duelTraining ?? this.duelTraining,
+    lockedBugIds: lockedBugIds ?? this.lockedBugIds,
     trainingJob: clearTrainingJob ? null : (trainingJob ?? this.trainingJob),
     abyssUnlocked: abyssUnlocked ?? this.abyssUnlocked,
     inAbyss: inAbyss ?? this.inAbyss,
@@ -1555,6 +1588,8 @@ class SaveGame {
     autoForgeStopOnHit: autoForgeStopOnHit ?? this.autoForgeStopOnHit,
     lastReadNoticeId: lastReadNoticeId ?? this.lastReadNoticeId,
     reviewAsked: reviewAsked ?? this.reviewAsked,
+    reviewPromptTier: reviewPromptTier ?? this.reviewPromptTier,
+    reviewOpened: reviewOpened ?? this.reviewOpened,
     adsRemoved: adsRemoved ?? this.adsRemoved,
     buffPassExpiresAt: buffPassExpiresAt ?? this.buffPassExpiresAt,
     starterBought: starterBought ?? this.starterBought,
@@ -1716,6 +1751,10 @@ class SaveGame {
         },
     },
     trainingJob: TrainingJob.fromJson(json['trainingJob']),
+    lockedBugIds: {
+      for (final e in (json['lockedBugs'] as List? ?? const []))
+        if (e is String) e,
+    },
     abyssUnlocked: json['abyssUnlocked'] as bool? ?? false,
     inAbyss: json['inAbyss'] as bool? ?? false,
     abyssFloor: ((json['abyssFloor'] as num?)?.toInt() ?? 1).clamp(1, 1 << 30),
@@ -1833,6 +1872,8 @@ class SaveGame {
     giftDoubleCount: (json['giftDoubleCount'] as num?)?.toInt() ?? 0,
     lastReadNoticeId: (json['lastReadNoticeId'] as num?)?.toInt() ?? 0,
     reviewAsked: json['reviewAsked'] as bool? ?? false,
+    reviewPromptTier: (json['reviewTier'] as num?)?.toInt() ?? -1,
+    reviewOpened: json['reviewOpened'] as bool? ?? false,
     adsRemoved: json['adsRemoved'] as bool? ?? false,
     buffPassExpiresAt: json['buffPassExpiresAt'] == null
         ? null
@@ -1929,6 +1970,7 @@ class SaveGame {
           e.key: {for (final x in e.value.entries) x.key.key: x.value},
       },
     if (trainingJob != null) 'trainingJob': trainingJob!.toJson(),
+    if (lockedBugIds.isNotEmpty) 'lockedBugs': lockedBugIds.toList()..sort(),
     if (abyssUnlocked) 'abyssUnlocked': true,
     if (inAbyss) 'inAbyss': true,
     if (abyssFloor != 1) 'abyssFloor': abyssFloor,
@@ -2002,6 +2044,8 @@ class SaveGame {
     if (giftDoubleCount != 0) 'giftDoubleCount': giftDoubleCount,
     'lastReadNoticeId': lastReadNoticeId,
     'reviewAsked': reviewAsked,
+    if (reviewPromptTier >= 0) 'reviewTier': reviewPromptTier,
+    if (reviewOpened) 'reviewOpened': true,
     'adsRemoved': adsRemoved,
     'buffPassExpiresAt': buffPassExpiresAt?.toIso8601String(),
     'starterBought': starterBought,

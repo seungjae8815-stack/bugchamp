@@ -36,48 +36,65 @@ Widget rankImageDlg(String name, {double size = 30}) => rankImage(
 ///
 /// ⚠️ **팝업 안에서만** 쓴다(GameDialog 가 테마를 덮어쓴다). 앱 전체에 걸면
 /// 홈·상점의 버튼 94개까지 나무로 바뀐다 — 요청 범위를 넘는다.
-ButtonStyle _artButtonStyle(String asset, Rect slice) => ButtonStyle(
+ButtonStyle _artButtonStyle(
+  String asset,
+  Rect slice, {
+  Color fg = const Color(0xFFFFF3D0),
+  Color fgOff = const Color(0xFFD8D2C4),
+  Shadow shadow = const Shadow(color: Color(0xCC000000), blurRadius: 3),
+}) => ButtonStyle(
   shape: const WidgetStatePropertyAll(StadiumBorder()),
   // ⚠️ **글자색을 반드시 준다.** 배경은 아트가 그리는데 글자는 머티리얼
   // 기본색(FilledButton=onPrimary · TextButton=primary)이라, 나무·황동 위에서
   // 글자가 묻어 버튼이 비어 보였다(실기 지적 2026-09-20: 확률 보기·닫기·
   // 소탕·승급이 전부 안 읽혔다). 크림색 + 검은 그림자는 두 아트 모두에서 읽힌다.
   foregroundColor: WidgetStateProperty.resolveWith(
-    (states) => states.contains(WidgetState.disabled)
-        ? const Color(0x99FFF3D0)
-        : const Color(0xFFFFF3D0),
+    // 비활성도 **읽혀야 한다** — 0x99 크림은 회색 판 위에서 묻혔다(2026-10-01 실기).
+    (states) => states.contains(WidgetState.disabled) ? fgOff : fg,
   ),
-  textStyle: const WidgetStatePropertyAll(
-    TextStyle(
-      fontWeight: FontWeight.w900,
-      fontSize: 13.5,
-      shadows: [Shadow(color: Color(0xCC000000), blurRadius: 3)],
-    ),
+  textStyle: WidgetStatePropertyAll(
+    TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5, shadows: [shadow]),
   ),
-  iconColor: const WidgetStatePropertyAll(Color(0xFFFFF3D0)),
+  iconColor: WidgetStatePropertyAll(fg),
   // 아트가 배경을 담당하므로 그림자는 끈다(나무 위에 회색 그늘이 겹친다).
   elevation: const WidgetStatePropertyAll(0),
   shadowColor: const WidgetStatePropertyAll(Colors.transparent),
-  backgroundBuilder: (context, states, child) => Opacity(
-    // 비활성은 흐리게 — 색 버튼일 때 disabledBackgroundColor 가 하던 일.
-    opacity: states.contains(WidgetState.disabled) ? 0.4 : 1,
-    child: DecoratedBox(
+  // 비활성 = **회색 판**(채도 0)으로 "못 누름"을 보이고 글씨는 또렷하게 둔다.
+  // 예전엔 판 전체를 0.4 로 흐려서 글씨까지 같이 사라졌다(2026-10-01 실기 — 그림을 따로 그릴 필요 없음).
+  backgroundBuilder: (context, states, child) {
+    final off = states.contains(WidgetState.disabled);
+    final art = DecoratedBox(
       decoration: BoxDecoration(
         image: DecorationImage(
           image: ExactAssetImage(asset, scale: 3),
           centerSlice: slice,
           fit: BoxFit.fill,
           onError: _frameMissing,
+          colorFilter: off ? _greyFilter : null,
         ),
       ),
       child: child,
-    ),
-  ),
+    );
+    return off ? Opacity(opacity: 0.75, child: art) : art;
+  },
 );
 
+/// 비활성 버튼 판 — 채도 0 · 조금 어둡게.
+const _greyFilter = ColorFilter.matrix(<double>[
+  0.24, 0.47, 0.09, 0, -18, //
+  0.24, 0.47, 0.09, 0, -18, //
+  0.24, 0.47, 0.09, 0, -18, //
+  0, 0, 0, 1, 0, //
+]);
+
+// 황동(확인·실행) = **진갈색 글씨**(2026-10-02 출시 점검 — 크림 글씨는 황동 위 대비 약 2.7:1 이라 흐렸고,
+// gameDialogButton 은 진갈색이라 같은 버튼이 두 가지 글자색이었다). 비활성(회색 판)도 진하게.
 final _primaryBtn = _artButtonStyle(
   'assets/images/ui/dialog/btn_primary.webp',
   const Rect.fromLTRB(57, 2, 549, 130),
+  fg: const Color(0xFF3A2600),
+  fgOff: const Color(0xFF2E2A24),
+  shadow: const Shadow(color: Color(0x55FFF3D0), blurRadius: 2),
 );
 final _secondaryBtn = _artButtonStyle(
   'assets/images/ui/dialog/btn_secondary.webp',
@@ -135,7 +152,9 @@ class GameDialog extends StatelessWidget {
     final theme = Theme.of(context);
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+      // 바깥 여백을 줄여 본문 폭을 넓힌다 — 액자·속판 여백까지 빠져 360dp 폰에서 본문이 약 208px 였다
+      // (2026-10-02 출시 점검: 줄바꿈이 이상하다·칸에서 잘린다의 공통 원인).
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18),
       child: Theme(
         // 팝업 안의 버튼만 나무 아트로. 확인·실행 = 황동, 취소·닫기 = 회색 나무.
         //

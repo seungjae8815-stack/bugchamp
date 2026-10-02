@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'save_controller.dart';
 
@@ -18,6 +19,9 @@ const String kAppStoreId = String.fromEnvironment(
   'APP_STORE_ID',
   defaultValue: '6793452983',
 );
+
+/// 플레이스토어 정식 앱 패키지(테스트 빌드 `.dev` 가 아니라 스토어에 올라간 앱).
+const String kPlayPackageId = 'com.bugchamp.app';
 
 /// 스토어 리뷰 요청.
 ///
@@ -50,10 +54,31 @@ Future<void> requestStoreReview(WidgetRef ref, {bool force = false}) async {
       // 설정의 "리뷰 남기기" = 스토어 페이지를 직접 연다. 시스템 리뷰창은
       // 하루 호출 한도가 있어 눌러도 아무 일이 없을 수 있는데, 사용자가
       // **직접 누른** 버튼이 반응하지 않으면 고장으로 보인다.
-      await review.openStoreListing(appStoreId: kAppStoreId);
+      if (Platform.isAndroid) {
+        // 플레이스토어 **정식 앱 주소**로 연다 — `openStoreListing` 은 지금 앱의 패키지로 열어서,
+        // 테스트 빌드(com.bugchamp.app.dev)에서는 "앱을 찾을 수 없음"이 됐다(2026-10-02).
+        final opened = await launchUrl(
+          Uri.parse('market://details?id=$kPlayPackageId'),
+          mode: LaunchMode.externalApplication,
+        ).catchError((_) => false);
+        if (!opened) {
+          await launchUrl(
+            Uri.parse(
+              'https://play.google.com/store/apps/details?id=$kPlayPackageId',
+            ),
+            mode: LaunchMode.externalApplication,
+          );
+        }
+      } else {
+        await review.openStoreListing(appStoreId: kAppStoreId);
+      }
     }
   } catch (e) {
     debugPrint('리뷰 요청 실패: $e');
   }
   await ctrl.markReviewAsked();
 }
+
+/// 게임 안 리뷰 창을 띄울 차례인가 — 스토어를 연 적이 없고, 이 난이도에서 아직 안 물었을 때.
+bool shouldAskReview(int reviewPromptTier, bool reviewOpened, int tier) =>
+    !reviewOpened && tier > reviewPromptTier;

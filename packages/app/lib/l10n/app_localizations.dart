@@ -3865,7 +3865,7 @@ abstract class AppLocalizations {
   /// No description provided for @tierNextBody.
   ///
   /// In en, this message translates to:
-  /// **'Stage, level, upgrades, gold and materials\nreset to the beginning.\n\nBugs, gear, the dex, jelly and skills\nall stay with you.\n\nRankings sort by difficulty first - moving up\nputs you above lower tiers even at a low level.\n\nMonsters get much stronger.'**
+  /// **'Stage, level, upgrades, gold and materials reset to the beginning.\n\nBugs, gear, the dex, jelly and skills all stay with you.\n\nRankings sort by difficulty first - moving up puts you above lower tiers even at a low level.\n\nMonsters get much stronger.'**
   String get tierNextBody;
 
   /// No description provided for @tierNextGo.
@@ -5845,14 +5845,8 @@ abstract class AppLocalizations {
   /// No description provided for @elementWheelRestrain.
   ///
   /// In en, this message translates to:
-  /// **'Overcome — 1.5x damage when you hit whoever the red arrow points at'**
-  String get elementWheelRestrain;
-
-  /// No description provided for @elementWheelGenerate.
-  ///
-  /// In en, this message translates to:
-  /// **'Generate — +10% team attack and healing when the slot right before points at you with a green arrow'**
-  String get elementWheelGenerate;
+  /// **'Restrain: hitting the foe a red arrow points to deals {mult}x damage'**
+  String elementWheelRestrain(String mult);
 
   /// No description provided for @traitNoneBadge.
   ///
@@ -5863,7 +5857,7 @@ abstract class AppLocalizations {
   /// No description provided for @elementWheelHint.
   ///
   /// In en, this message translates to:
-  /// **'Order your team along the green arrows. Wood > Fire > Earth is two links, so +20%.'**
+  /// **'Example: Water → Fire. A Water bug deals more damage to a Fire bug in duels.'**
   String get elementWheelHint;
 
   /// No description provided for @leagueRewardListTitle.
@@ -7345,8 +7339,8 @@ abstract class AppLocalizations {
   /// No description provided for @fairyNestKindHint.
   ///
   /// In en, this message translates to:
-  /// **'The fairy type is random (1 of 8)'**
-  String get fairyNestKindHint;
+  /// **'The kind is random among {n}'**
+  String fairyNestKindHint(String n);
 
   /// No description provided for @fairyStone.
   ///
@@ -7725,6 +7719,1759 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fairy egg · {grade}'**
   String fairyEggPop(String grade);
+
+  /// No description provided for @guildTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild'**
+  String get guildTitle;
+
+  /// No description provided for @guildIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a guild to chat with guildmates — guild missions, bosses and guild wars are coming soon.'**
+  String get guildIntro;
+
+  /// No description provided for @guildUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load guild info. Please try again in a moment.'**
+  String get guildUnavailable;
+
+  /// No description provided for @guildRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get guildRetry;
+
+  /// No description provided for @guildSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search guild name'**
+  String get guildSearchHint;
+
+  /// No description provided for @guildEmptyList.
+  ///
+  /// In en, this message translates to:
+  /// **'No guilds found. Why not create one?'**
+  String get guildEmptyList;
+
+  /// No description provided for @guildCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create guild'**
+  String get guildCreate;
+
+  /// No description provided for @guildNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild name ({min}–{max} chars)'**
+  String guildNameHint(int min, int max);
+
+  /// No description provided for @guildJoinModeOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open — anyone can join instantly'**
+  String get guildJoinModeOpen;
+
+  /// No description provided for @guildJoinModeApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval — leaders review requests'**
+  String get guildJoinModeApproval;
+
+  /// No description provided for @guildJoinModeOpenShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get guildJoinModeOpenShort;
+
+  /// No description provided for @guildJoinModeApprovalShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval'**
+  String get guildJoinModeApprovalShort;
+
+  /// No description provided for @guildJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get guildJoin;
+
+  /// No description provided for @guildRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get guildRequest;
+
+  /// No description provided for @guildCancelRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel request'**
+  String get guildCancelRequest;
+
+  /// No description provided for @guildFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get guildFull;
+
+  /// No description provided for @guildMembersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}/{max} members'**
+  String guildMembersCount(int n, int max);
+
+  /// No description provided for @guildAvgPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. power {v}'**
+  String guildAvgPower(String v);
+
+  /// No description provided for @guildCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'You can join another guild in {time}'**
+  String guildCooldown(String time);
+
+  /// No description provided for @guildTabMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get guildTabMembers;
+
+  /// No description provided for @guildTabChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get guildTabChat;
+
+  /// No description provided for @guildTabRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Req. {n}'**
+  String guildTabRequests(int n);
+
+  /// No description provided for @guildRoleLeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Leader'**
+  String get guildRoleLeader;
+
+  /// No description provided for @guildRoleDeputy.
+  ///
+  /// In en, this message translates to:
+  /// **'Deputy'**
+  String get guildRoleDeputy;
+
+  /// No description provided for @guildRoleMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get guildRoleMember;
+
+  /// No description provided for @guildLastSeenNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Online recently'**
+  String get guildLastSeenNow;
+
+  /// No description provided for @guildLastSeenHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}h ago'**
+  String guildLastSeenHours(int n);
+
+  /// No description provided for @guildLastSeenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}d ago'**
+  String guildLastSeenDays(int n);
+
+  /// No description provided for @guildNoticeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No guild introduction yet'**
+  String get guildNoticeEmpty;
+
+  /// No description provided for @guildNoticeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Introduce your guild'**
+  String get guildNoticeHint;
+
+  /// No description provided for @guildEditNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit introduction'**
+  String get guildEditNotice;
+
+  /// No description provided for @guildChangeJoinMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Join mode'**
+  String get guildChangeJoinMode;
+
+  /// No description provided for @guildSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get guildSave;
+
+  /// No description provided for @guildLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave guild'**
+  String get guildLeave;
+
+  /// No description provided for @guildLeaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'After leaving, you can\'t join another guild for {hours} hours. Leave?'**
+  String guildLeaveConfirm(int hours);
+
+  /// No description provided for @guildLeaveLastConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re the last member — the guild will be disbanded. Leave?'**
+  String get guildLeaveLastConfirm;
+
+  /// No description provided for @guildLeaderLeaveNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Leadership passes to a deputy (or the most active member).'**
+  String get guildLeaderLeaveNote;
+
+  /// No description provided for @guildKick.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from guild'**
+  String get guildKick;
+
+  /// No description provided for @guildKickConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from the guild?'**
+  String guildKickConfirm(String name);
+
+  /// No description provided for @guildMakeDeputy.
+  ///
+  /// In en, this message translates to:
+  /// **'Make deputy'**
+  String get guildMakeDeputy;
+
+  /// No description provided for @guildRemoveDeputy.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove deputy'**
+  String get guildRemoveDeputy;
+
+  /// No description provided for @guildTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer leadership'**
+  String get guildTransfer;
+
+  /// No description provided for @guildTransferConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Make {name} the guild leader?'**
+  String guildTransferConfirm(String name);
+
+  /// No description provided for @guildAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get guildAccept;
+
+  /// No description provided for @guildReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get guildReject;
+
+  /// No description provided for @guildNoRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No join requests'**
+  String get guildNoRequests;
+
+  /// No description provided for @guildCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild created!'**
+  String get guildCreated;
+
+  /// No description provided for @guildJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'You joined the guild!'**
+  String get guildJoined;
+
+  /// No description provided for @guildRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Join request sent'**
+  String get guildRequestSent;
+
+  /// No description provided for @guildChatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No guild messages yet. Say hello!'**
+  String get guildChatEmpty;
+
+  /// No description provided for @guildErrNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'That name is already taken'**
+  String get guildErrNameTaken;
+
+  /// No description provided for @guildErrNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That name can\'t be used (check length, characters and words)'**
+  String get guildErrNameInvalid;
+
+  /// No description provided for @guildErrCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t join another guild yet'**
+  String get guildErrCooldown;
+
+  /// No description provided for @guildErrFull.
+  ///
+  /// In en, this message translates to:
+  /// **'This guild is full'**
+  String get guildErrFull;
+
+  /// No description provided for @guildErrTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many pending requests — cancel one first'**
+  String get guildErrTooManyRequests;
+
+  /// No description provided for @guildErrRequestsFull.
+  ///
+  /// In en, this message translates to:
+  /// **'This guild has too many requests. Try again later'**
+  String get guildErrRequestsFull;
+
+  /// No description provided for @guildErrDeputyFull.
+  ///
+  /// In en, this message translates to:
+  /// **'No more deputy slots'**
+  String get guildErrDeputyFull;
+
+  /// No description provided for @guildErrNoticeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That introduction can\'t be used'**
+  String get guildErrNoticeInvalid;
+
+  /// No description provided for @guildErrGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again'**
+  String get guildErrGeneric;
+
+  /// No description provided for @guildCreateWithCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Create guild · {cost} jelly'**
+  String guildCreateWithCost(int cost);
+
+  /// No description provided for @guildCreateNeedJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {cost} jelly to create a guild'**
+  String guildCreateNeedJelly(int cost);
+
+  /// No description provided for @guildErrJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough jelly'**
+  String get guildErrJelly;
+
+  /// No description provided for @guildTabMissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Missions'**
+  String get guildTabMissions;
+
+  /// No description provided for @guildMissionForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest survey'**
+  String get guildMissionForest;
+
+  /// No description provided for @guildMissionCave.
+  ///
+  /// In en, this message translates to:
+  /// **'Cave expedition'**
+  String get guildMissionCave;
+
+  /// No description provided for @guildMissionSwamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Swamp search'**
+  String get guildMissionSwamp;
+
+  /// No description provided for @guildMissionRuins.
+  ///
+  /// In en, this message translates to:
+  /// **'Ruins dig'**
+  String get guildMissionRuins;
+
+  /// No description provided for @guildMissionCanyon.
+  ///
+  /// In en, this message translates to:
+  /// **'Canyon patrol'**
+  String get guildMissionCanyon;
+
+  /// No description provided for @guildMissionMeadow.
+  ///
+  /// In en, this message translates to:
+  /// **'Meadow gathering'**
+  String get guildMissionMeadow;
+
+  /// No description provided for @guildMissionErrNoStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'No missions left today'**
+  String get guildMissionErrNoStarts;
+
+  /// No description provided for @guildMissionErrRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a mission in progress'**
+  String get guildMissionErrRunning;
+
+  /// No description provided for @guildMissionErrClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'That mission has already ended'**
+  String get guildMissionErrClosed;
+
+  /// No description provided for @guildMissionErrHelped.
+  ///
+  /// In en, this message translates to:
+  /// **'You already helped this mission'**
+  String get guildMissionErrHelped;
+
+  /// No description provided for @guildMissionErrHelpersFull.
+  ///
+  /// In en, this message translates to:
+  /// **'This mission already has enough helpers'**
+  String get guildMissionErrHelpersFull;
+
+  /// No description provided for @guildMissionErrOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t help your own mission'**
+  String get guildMissionErrOwn;
+
+  /// No description provided for @guildMissionErrNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'No rewards to claim'**
+  String get guildMissionErrNothing;
+
+  /// No description provided for @guildMissionHelped.
+  ///
+  /// In en, this message translates to:
+  /// **'Helped! Your power was added'**
+  String get guildMissionHelped;
+
+  /// No description provided for @guildMissionSoloHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can clear this one alone — it succeeds instantly.'**
+  String get guildMissionSoloHint;
+
+  /// No description provided for @guildMissionWaitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how long to wait. Guildmates who help add their power — if the total beats the requirement when time runs out, you succeed. If 3 helpers join, it succeeds instantly! Longer waits give bigger rewards.'**
+  String get guildMissionWaitHint;
+
+  /// No description provided for @guildMissionWaitOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait {min} min · reward ×{mult}'**
+  String guildMissionWaitOption(int min, String mult);
+
+  /// No description provided for @guildMissionClaimTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission rewards'**
+  String get guildMissionClaimTitle;
+
+  /// No description provided for @guildMissionCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild coins +{n}'**
+  String guildMissionCoins(int n);
+
+  /// No description provided for @guildMissionEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy egg ×{n}!'**
+  String guildMissionEgg(int n);
+
+  /// No description provided for @guildMissionStartsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Missions {n}/{max}'**
+  String guildMissionStartsLeft(int n, int max);
+
+  /// No description provided for @guildMissionHelpLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Help rewards {n}/{max}'**
+  String guildMissionHelpLeft(int n, int max);
+
+  /// No description provided for @guildMissionReset.
+  ///
+  /// In en, this message translates to:
+  /// **'resets in {time}'**
+  String guildMissionReset(String time);
+
+  /// No description provided for @guildMissionClaimable.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} mission rewards ready'**
+  String guildMissionClaimable(int n);
+
+  /// No description provided for @guildMissionClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim'**
+  String get guildMissionClaim;
+
+  /// No description provided for @guildMissionActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Help requests'**
+  String get guildMissionActive;
+
+  /// No description provided for @guildMissionNoActive.
+  ///
+  /// In en, this message translates to:
+  /// **'No missions in progress right now'**
+  String get guildMissionNoActive;
+
+  /// No description provided for @guildMissionBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s board'**
+  String get guildMissionBoard;
+
+  /// No description provided for @guildMissionRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s results'**
+  String get guildMissionRecent;
+
+  /// No description provided for @guildMissionMine.
+  ///
+  /// In en, this message translates to:
+  /// **'My mission'**
+  String get guildMissionMine;
+
+  /// No description provided for @guildMissionOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s mission'**
+  String guildMissionOwner(String name);
+
+  /// No description provided for @guildMissionProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{p}% · helpers {n}/{max}'**
+  String guildMissionProgress(int p, int n, int max);
+
+  /// No description provided for @guildMissionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get guildMissionHelp;
+
+  /// No description provided for @guildMissionHelpedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Helped'**
+  String get guildMissionHelpedTag;
+
+  /// No description provided for @guildMissionSlotSolo.
+  ///
+  /// In en, this message translates to:
+  /// **'Power ×{mult} · clear it solo'**
+  String guildMissionSlotSolo(double mult);
+
+  /// No description provided for @guildMissionSlotNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Power ×{mult} · needs help'**
+  String guildMissionSlotNeed(double mult);
+
+  /// No description provided for @guildMissionStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get guildMissionStart;
+
+  /// No description provided for @guildMissionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get guildMissionSuccess;
+
+  /// No description provided for @guildMissionPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'{p}%'**
+  String guildMissionPartial(int p);
+
+  /// No description provided for @guildMissionChatMine.
+  ///
+  /// In en, this message translates to:
+  /// **'You asked your guild for help'**
+  String get guildMissionChatMine;
+
+  /// No description provided for @guildMissionChatAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} needs help with a mission!'**
+  String guildMissionChatAsk(String name);
+
+  /// No description provided for @guildLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv {n}'**
+  String guildLevel(int n);
+
+  /// No description provided for @guildCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} guild coins'**
+  String guildCoins(int n);
+
+  /// No description provided for @guildDonate.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in'**
+  String get guildDonate;
+
+  /// No description provided for @guildDonateDoneShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked'**
+  String get guildDonateDoneShort;
+
+  /// No description provided for @guildDonateOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked in! Guild coins and guild EXP added'**
+  String get guildDonateOk;
+
+  /// No description provided for @guildDonateDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Already checked in today'**
+  String get guildDonateDone;
+
+  /// No description provided for @guildSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get guildSkills;
+
+  /// No description provided for @guildShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop'**
+  String get guildShop;
+
+  /// No description provided for @guildSkillAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get guildSkillAttack;
+
+  /// No description provided for @guildSkillHp.
+  ///
+  /// In en, this message translates to:
+  /// **'HP'**
+  String get guildSkillHp;
+
+  /// No description provided for @guildSkillGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get guildSkillGold;
+
+  /// No description provided for @guildSkillMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material find'**
+  String get guildSkillMaterial;
+
+  /// No description provided for @guildSkillXp.
+  ///
+  /// In en, this message translates to:
+  /// **'EXP'**
+  String get guildSkillXp;
+
+  /// No description provided for @guildSkillMission.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission rewards'**
+  String get guildSkillMission;
+
+  /// No description provided for @guildSkillHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill points left: {n}'**
+  String guildSkillHeader(int n);
+
+  /// No description provided for @guildSkillNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffs apply to every guildmate while hunting (offline gold too). They don\'t apply to duels or events. Leaving the guild removes them. Guild level +1 = 1 point.'**
+  String get guildSkillNote;
+
+  /// No description provided for @guildSkillValue.
+  ///
+  /// In en, this message translates to:
+  /// **'+{now}% (max +{max}%)'**
+  String guildSkillValue(String now, String max);
+
+  /// No description provided for @guildSkillNoPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'No skill points left'**
+  String get guildSkillNoPoints;
+
+  /// No description provided for @guildSkillMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Already maxed'**
+  String get guildSkillMax;
+
+  /// No description provided for @guildSkillForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the leader and deputies can do this'**
+  String get guildSkillForbidden;
+
+  /// No description provided for @guildSkillReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get guildSkillReset;
+
+  /// No description provided for @guildSkillResetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all guild skills and refund every point?'**
+  String get guildSkillResetBody;
+
+  /// No description provided for @guildShopNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn coins from missions, helping, check-ins and the guild boss.'**
+  String get guildShopNote;
+
+  /// No description provided for @guildShopMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials ({h}h of hunting)'**
+  String guildShopMaterials(String h);
+
+  /// No description provided for @guildShopFossil.
+  ///
+  /// In en, this message translates to:
+  /// **'Fossil ×{n}'**
+  String guildShopFossil(int n);
+
+  /// No description provided for @guildShopFairyDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy dust ×{n}'**
+  String guildShopFairyDust(int n);
+
+  /// No description provided for @guildShopFairyEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy egg ×{n}'**
+  String guildShopFairyEgg(int n);
+
+  /// No description provided for @guildShopSkillShard.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} wild shard ×{n}'**
+  String guildShopSkillShard(String grade, int n);
+
+  /// No description provided for @guildShopLimitDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Today {n}/{max}'**
+  String guildShopLimitDay(int n, int max);
+
+  /// No description provided for @guildShopLimitWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week {n}/{max}'**
+  String guildShopLimitWeek(int n, int max);
+
+  /// No description provided for @guildShopBought.
+  ///
+  /// In en, this message translates to:
+  /// **'Bought: {item}'**
+  String guildShopBought(String item);
+
+  /// No description provided for @guildShopSoldOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase limit reached'**
+  String get guildShopSoldOut;
+
+  /// No description provided for @guildShopSoldOutShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold out'**
+  String get guildShopSoldOutShort;
+
+  /// No description provided for @guildShopNoCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough guild coins'**
+  String get guildShopNoCoins;
+
+  /// No description provided for @guildTabBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss'**
+  String get guildTabBoss;
+
+  /// No description provided for @guildBossTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild boss · Stage {n}'**
+  String guildBossTitle(int n);
+
+  /// No description provided for @guildBossAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack ({n} left today)'**
+  String guildBossAttack(int n);
+
+  /// No description provided for @guildBossNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage comes from your duel defense team (fairies, skills and gear don\'t count). HP is shared by the whole guild and carries over all week.'**
+  String get guildBossNote;
+
+  /// No description provided for @guildBossNoTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Register a duel defense team to attack the boss.'**
+  String get guildBossNoTeam;
+
+  /// No description provided for @guildBossNoAttacks.
+  ///
+  /// In en, this message translates to:
+  /// **'No attacks left today'**
+  String get guildBossNoAttacks;
+
+  /// No description provided for @guildBossHit.
+  ///
+  /// In en, this message translates to:
+  /// **'{d} damage'**
+  String guildBossHit(String d);
+
+  /// No description provided for @guildBossKilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss defeated! Next stage'**
+  String get guildBossKilled;
+
+  /// No description provided for @guildBossMine.
+  ///
+  /// In en, this message translates to:
+  /// **'My damage this week: {d}'**
+  String guildBossMine(String d);
+
+  /// No description provided for @guildBossRank.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild rank this week: #{n}'**
+  String guildBossRank(int n);
+
+  /// No description provided for @guildBossRankNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Not ranked yet — attack to enter the ranking'**
+  String get guildBossRankNone;
+
+  /// No description provided for @guildBossTopRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage {s} · {p}%'**
+  String guildBossTopRow(int s, int p);
+
+  /// No description provided for @guildBossLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last week #{rank} — {jelly} jelly'**
+  String guildBossLastWeek(int rank, int jelly);
+
+  /// No description provided for @guildBossClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Received {n} jelly!'**
+  String guildBossClaimed(int n);
+
+  /// No description provided for @guildTabWar.
+  ///
+  /// In en, this message translates to:
+  /// **'War'**
+  String get guildTabWar;
+
+  /// No description provided for @guildWarBreed.
+  ///
+  /// In en, this message translates to:
+  /// **'Breeding'**
+  String get guildWarBreed;
+
+  /// No description provided for @guildWarForge.
+  ///
+  /// In en, this message translates to:
+  /// **'Forging'**
+  String get guildWarForge;
+
+  /// No description provided for @guildWarHunt.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunting'**
+  String get guildWarHunt;
+
+  /// No description provided for @guildWarDuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Duels'**
+  String get guildWarDuel;
+
+  /// No description provided for @guildWarTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get guildWarTrain;
+
+  /// No description provided for @guildWarBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild boss'**
+  String get guildWarBoss;
+
+  /// No description provided for @guildWarClash.
+  ///
+  /// In en, this message translates to:
+  /// **'Power clash'**
+  String get guildWarClash;
+
+  /// No description provided for @guildWarBreedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish breeding, collect hatched eggs and synthesize. Jelly-rushed completions don\'t count.'**
+  String get guildWarBreedHint;
+
+  /// No description provided for @guildWarForgeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge gear — higher grades score far more.'**
+  String get guildWarForgeHint;
+
+  /// No description provided for @guildWarHuntHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat elites and zone bosses.'**
+  String get guildWarHuntHint;
+
+  /// No description provided for @guildWarDuelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Win duels (confirmed by the server).'**
+  String get guildWarDuelHint;
+
+  /// No description provided for @guildWarTrainHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Level up bugs, start training steps and finish skill training.'**
+  String get guildWarTrainHint;
+
+  /// No description provided for @guildWarBossHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack the guild boss.'**
+  String get guildWarBossHint;
+
+  /// No description provided for @guildWarClashHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to do today! Members are paired 1:1 by duel defense team power and fight automatically. Results come in when you open this tab.'**
+  String get guildWarClashHint;
+
+  /// No description provided for @guildWarTier.
+  ///
+  /// In en, this message translates to:
+  /// **'{tier} tier · {gr} GR'**
+  String guildWarTier(String tier, int gr);
+
+  /// No description provided for @guildWarClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild wars aren\'t open yet.'**
+  String get guildWarClosed;
+
+  /// No description provided for @guildWarOpensOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild wars start the week of {date}.'**
+  String guildWarOpensOn(String date);
+
+  /// No description provided for @guildWarNeedMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'A guild needs at least {n} members to enter this week\'s war.'**
+  String guildWarNeedMembers(int n);
+
+  /// No description provided for @guildWarVs.
+  ///
+  /// In en, this message translates to:
+  /// **'vs {name}'**
+  String guildWarVs(String name);
+
+  /// No description provided for @guildWarVsVirtual.
+  ///
+  /// In en, this message translates to:
+  /// **'vs Wild Guild (tier average)'**
+  String get guildWarVsVirtual;
+
+  /// No description provided for @guildWarVirtualName.
+  ///
+  /// In en, this message translates to:
+  /// **'Wild'**
+  String get guildWarVirtualName;
+
+  /// No description provided for @guildWarDayOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {d} · {theme}'**
+  String guildWarDayOf(int d, String theme);
+
+  /// No description provided for @guildWarMyToday.
+  ///
+  /// In en, this message translates to:
+  /// **'My points today {n}/{cap}'**
+  String guildWarMyToday(int n, int cap);
+
+  /// No description provided for @guildWarWin.
+  ///
+  /// In en, this message translates to:
+  /// **'Victory'**
+  String get guildWarWin;
+
+  /// No description provided for @guildWarLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat'**
+  String get guildWarLose;
+
+  /// No description provided for @guildWarDraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get guildWarDraw;
+
+  /// No description provided for @guildWarPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Points {a} : {b}'**
+  String guildWarPoints(int a, int b);
+
+  /// No description provided for @guildWarClashResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Day 7 duels {a} : {b}'**
+  String guildWarClashResult(int a, int b);
+
+  /// No description provided for @guildWarReward.
+  ///
+  /// In en, this message translates to:
+  /// **'{result} reward — {coins} coins · {jelly} jelly'**
+  String guildWarReward(String result, int coins, int jelly);
+
+  /// No description provided for @guildWarClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Received {coins} coins · {jelly} jelly!'**
+  String guildWarClaimed(int coins, int jelly);
+
+  /// No description provided for @duelPickDeployed.
+  ///
+  /// In en, this message translates to:
+  /// **'In slot {n}'**
+  String duelPickDeployed(int n);
+
+  /// No description provided for @fairyDexHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Stat stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.'**
+  String get fairyDexHelp;
+
+  /// No description provided for @fairyDexLegendGrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade dots (lit = obtained at that grade)'**
+  String get fairyDexLegendGrades;
+
+  /// No description provided for @fairyDexLegendSubs.
+  ///
+  /// In en, this message translates to:
+  /// **'Stat stones (bright = obtained with that bonus stat)'**
+  String get fairyDexLegendSubs;
+
+  /// No description provided for @fairyDexRewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Codex rewards · {n}/{max} collected'**
+  String fairyDexRewards(int n, int max);
+
+  /// No description provided for @fairyDexClaimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Codex reward received!'**
+  String get fairyDexClaimed;
+
+  /// No description provided for @fairyNestPickEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an egg to place first'**
+  String get fairyNestPickEgg;
+
+  /// No description provided for @guideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guidebook'**
+  String get guideTitle;
+
+  /// No description provided for @guideIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Every bug is different even within a species. Tap a topic to see what each term means.'**
+  String get guideIntro;
+
+  /// No description provided for @guideElementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Elements (Wood·Fire·Earth·Metal·Water)'**
+  String get guideElementTitle;
+
+  /// No description provided for @guideElementBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom.'**
+  String guideElementBody(String mult);
+
+  /// No description provided for @guideElementLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{a} beats {b}'**
+  String guideElementLine(String a, String b);
+
+  /// No description provided for @guideSpecialtyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialty (fighting style)'**
+  String get guideSpecialtyTitle;
+
+  /// No description provided for @guideSpecialtyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Each species has a specialty that decides how it fights in duels.'**
+  String get guideSpecialtyBody;
+
+  /// No description provided for @guideSpecialtyStrike.
+  ///
+  /// In en, this message translates to:
+  /// **'Charges in to ram and flip the opponent.'**
+  String get guideSpecialtyStrike;
+
+  /// No description provided for @guideSpecialtyGrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Bites and holds on, pushing the opponent out.'**
+  String get guideSpecialtyGrip;
+
+  /// No description provided for @guideSpecialtyToss.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifts the opponent and throws it.'**
+  String get guideSpecialtyToss;
+
+  /// No description provided for @guideTemperamentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperament (fighting tendency)'**
+  String get guideTemperamentTitle;
+
+  /// No description provided for @guideTemperamentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperament decides how a bug moves in duels and which stats it can train higher.'**
+  String get guideTemperamentBody;
+
+  /// No description provided for @guideTempAggressive.
+  ///
+  /// In en, this message translates to:
+  /// **'Charges often — an attacker.'**
+  String get guideTempAggressive;
+
+  /// No description provided for @guideTempCautious.
+  ///
+  /// In en, this message translates to:
+  /// **'Avoids the edge and sidesteps charges.'**
+  String get guideTempCautious;
+
+  /// No description provided for @guideTempCunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Circles to the side to hit weak spots.'**
+  String get guideTempCunning;
+
+  /// No description provided for @guideTempSteadfast.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard to push — a tank.'**
+  String get guideTempSteadfast;
+
+  /// No description provided for @guideTempFickle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixes all styles.'**
+  String get guideTempFickle;
+
+  /// No description provided for @guideTrainCapMods.
+  ///
+  /// In en, this message translates to:
+  /// **'Training cap: {mods}'**
+  String guideTrainCapMods(String mods);
+
+  /// No description provided for @guideSizeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Size (weight)'**
+  String get guideSizeTitle;
+
+  /// No description provided for @guideSizeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Size is rolled within the species\' range. Bigger bugs get stats ×{min}~×{max}, are harder to push and less likely to fall out of the ring in duels.'**
+  String guideSizeBody(String min, String max);
+
+  /// No description provided for @guidePotentialTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Potential (1–5 stars)'**
+  String get guidePotentialTitle;
+
+  /// No description provided for @guidePotentialBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher stars raise the part-enhance max level (stars × 10) and the training cap (+{perStar} per star). Merge {fodder} bugs of the same species to gain a star.'**
+  String guidePotentialBody(int perStar, int fodder);
+
+  /// No description provided for @guideTraitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bloodline traits (breeding only)'**
+  String get guideTraitTitle;
+
+  /// No description provided for @guideTraitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only bugs born from breeding can have a trait — wild bugs never do. Traits work both as a pet and in duels.'**
+  String get guideTraitBody;
+
+  /// No description provided for @guideTraitEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack +{atk} · HP +{hp}'**
+  String guideTraitEffect(String atk, String hp);
+
+  /// No description provided for @guideBreedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Breeding & inheritance'**
+  String get guideBreedTitle;
+
+  /// No description provided for @guideBreedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a male and female adult of the same species to get an egg. The child inherits the parents\' element ({el}) and temperament ({tm}) with high chance, and a parent\'s trait ({tr}). If both parents share the same element, temperament or trait, the child is guaranteed to get it — so you can build your own line.'**
+  String guideBreedBody(String el, String tm, String tr);
+
+  /// No description provided for @guideVariantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant bugs'**
+  String get guideVariantTitle;
+
+  /// No description provided for @guideVariantBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Very rarely a bug with different colors (rainbow / albino) appears. Chance: wild {wild} · breeding {breed} · variant parent {parent} · egg draw {gacha}. As a pet its stats are +{pet}, in duels +{duel}.'**
+  String guideVariantBody(
+    String wild,
+    String breed,
+    String parent,
+    String gacha,
+    String pet,
+    String duel,
+  );
+
+  /// No description provided for @guideLifeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Life stages'**
+  String get guideLifeTitle;
+
+  /// No description provided for @guideLifeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels.'**
+  String get guideLifeBody;
+
+  /// No description provided for @guideDuelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Duels'**
+  String get guideDuelTitle;
+
+  /// No description provided for @guideDuelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A bout is a {sec}-second 1:1 physical fight in a round arena. Win by ring-out, flipping, or knockout; when time runs out, remaining HP % decides. A match is 3 bugs, winner stays on. Hitting the side or back deals ×{weak} damage, and critical hits and evasion also apply.'**
+  String guideDuelBody(int sec, String weak);
+
+  /// No description provided for @guideTrainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training ground'**
+  String get guideTrainTitle;
+
+  /// No description provided for @guideTrainBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Train 5 duel stats per bug: attack, defense, evasion, crit and recovery. Max stage = {base} + potential + temperament/specialty/trait bonuses, so every bug has its own strengths. Mix bugs with different roles in your team!'**
+  String guideTrainBody(int base);
+
+  /// No description provided for @bugInfoSizeDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{mm}mm (range {min}–{max}) · stats ×{mult}'**
+  String bugInfoSizeDetail(String mm, String min, String max, String mult);
+
+  /// No description provided for @eventHudShort.
+  ///
+  /// In en, this message translates to:
+  /// **'King\nCup'**
+  String get eventHudShort;
+
+  /// No description provided for @fairyStoneName.
+  ///
+  /// In en, this message translates to:
+  /// **'{stat} stone'**
+  String fairyStoneName(String stat);
+
+  /// No description provided for @fairyStoneEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'The hatched fairy\'s sub-stat becomes {stat} with {p}% chance'**
+  String fairyStoneEffect(String stat, String p);
+
+  /// No description provided for @fairyStoneBuyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy element stone'**
+  String get fairyStoneBuyTitle;
+
+  /// No description provided for @fairyStoneBuyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get fairyStoneBuyAction;
+
+  /// No description provided for @fairyEquippedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped'**
+  String get fairyEquippedTag;
+
+  /// No description provided for @fairyMergeEquipped.
+  ///
+  /// In en, this message translates to:
+  /// **'An equipped fairy can\'t be merged'**
+  String get fairyMergeEquipped;
+
+  /// No description provided for @fairyAutoMergeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge results'**
+  String get fairyAutoMergeDone;
+
+  /// No description provided for @exchangeToDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy dust'**
+  String get exchangeToDust;
+
+  /// No description provided for @exchangeHintDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Trade jelly for fairy dust (1 jelly = 1 dust)'**
+  String get exchangeHintDust;
+
+  /// No description provided for @exchangeGetDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Get {amount} fairy dust'**
+  String exchangeGetDust(String amount);
+
+  /// No description provided for @fairyStatRange.
+  ///
+  /// In en, this message translates to:
+  /// **'({grade} range {lo}~{hi})'**
+  String fairyStatRange(String grade, String lo, String hi);
+
+  /// No description provided for @fairyStopCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop companion'**
+  String get fairyStopCompanion;
+
+  /// No description provided for @fairyHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get fairyHelpTitle;
+
+  /// No description provided for @fairyHelpGradeHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Base stat range by grade (Lv.1)'**
+  String get fairyHelpGradeHead;
+
+  /// No description provided for @fairyHelpGradeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade}: {lo} ~ {hi} · max Lv.{max}'**
+  String fairyHelpGradeLine(String grade, String lo, String hi, String max);
+
+  /// No description provided for @fairyHelpLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Each level adds +{p} of the value (Lv.1 basis).'**
+  String fairyHelpLevel(String p);
+
+  /// No description provided for @fairyHelpSubHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Sub-stat (one per fairy)'**
+  String get fairyHelpSubHead;
+
+  /// No description provided for @fairyHelpSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Rolled at hatching from the list below — {p} of the base range × the stat\'s weight. An element stone raises the chance of the one you want.'**
+  String fairyHelpSub(String p);
+
+  /// No description provided for @fairyHelpSubLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{stat}: {grade} {lo} ~ {hi}'**
+  String fairyHelpSubLine(String stat, String grade, String lo, String hi);
+
+  /// No description provided for @fairyHelpMergeHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get fairyHelpMergeHead;
+
+  /// No description provided for @fairyHelpMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} fairies of the same kind and grade → 1 of the next grade. Base and sub stats are rolled again, so you can aim for a better one.'**
+  String fairyHelpMerge(String n);
+
+  /// No description provided for @fairyGachaOverflowWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your fairy box has {free} free slots — {lost} eggs will turn into fairy dust.'**
+  String fairyGachaOverflowWarn(String free, String lost);
+
+  /// No description provided for @fairyOverflowToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Box full — {n} eggs became {dust} fairy dust'**
+  String fairyOverflowToast(String n, String dust);
+
+  /// No description provided for @fairyOverflowPop.
+  ///
+  /// In en, this message translates to:
+  /// **'Box full · Fairy dust +{dust}'**
+  String fairyOverflowPop(String dust);
+
+  /// No description provided for @fairyMergeInvestedConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} leveled-up fairies will be used. You get back {dust} fairy dust (part of what you spent). Merge?'**
+  String fairyMergeInvestedConfirm(String n, String dust);
+
+  /// No description provided for @fairyMergeRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'{dust} fairy dust returned'**
+  String fairyMergeRefund(String dust);
+
+  /// No description provided for @exchangeDustLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} left today'**
+  String exchangeDustLeft(String n);
+
+  /// No description provided for @exchangeDustCapReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s limit reached'**
+  String get exchangeDustCapReached;
+
+  /// No description provided for @bugLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock'**
+  String get bugLock;
+
+  /// No description provided for @bugLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get bugLocked;
+
+  /// No description provided for @bugUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get bugUnlock;
+
+  /// No description provided for @bugLockedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked — it won\'t be used for merging or dismantling'**
+  String get bugLockedToast;
+
+  /// No description provided for @bugUnlockedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get bugUnlockedToast;
+
+  /// No description provided for @disassembleLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked bugs can\'t be dismantled. Unlock it first.'**
+  String get disassembleLocked;
+
+  /// No description provided for @trainingSumShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Train Lv.{n}'**
+  String trainingSumShort(int n);
+
+  /// No description provided for @reviewAskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enjoying Bug Champ?'**
+  String get reviewAskTitle;
+
+  /// No description provided for @reviewAskBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If you have a moment, a store review would really help a solo developer.\nThank you for playing!'**
+  String get reviewAskBody;
+
+  /// No description provided for @reviewAskLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get reviewAskLater;
+
+  /// No description provided for @trainingNoneShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Untrained'**
+  String get trainingNoneShort;
+
+  /// No description provided for @guildComingSoonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get guildComingSoonTitle;
+
+  /// No description provided for @guildComingSoonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Guilds — missions, guild boss, shop and weekly guild wars — are coming in an upcoming update. Stay tuned!'**
+  String get guildComingSoonBody;
+
+  /// No description provided for @notifChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward alerts'**
+  String get notifChannelName;
+
+  /// No description provided for @notifChannelDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunch/dinner rewards and full offline-reward alerts'**
+  String get notifChannelDesc;
+
+  /// No description provided for @eggOddsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug egg draw odds'**
+  String get eggOddsTitle;
+
+  /// No description provided for @eggOddsGradeHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade (each species in the grade is equally likely)'**
+  String get eggOddsGradeHead;
+
+  /// No description provided for @eggOddsPotentialHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Potential'**
+  String get eggOddsPotentialHead;
+
+  /// No description provided for @eggOddsVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant (rainbow/albino): {p}%'**
+  String eggOddsVariant(String p);
+
+  /// No description provided for @eggOddsPity.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {n}th draw guarantees {grade} or higher'**
+  String eggOddsPity(String n, String grade);
+
+  /// No description provided for @eggOddsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Odds are per draw. The pity counter resets only when its grade appears.'**
+  String get eggOddsNote;
+
+  /// No description provided for @eggOddsGradeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} {p}% · each species {each}%'**
+  String eggOddsGradeLine(String grade, String p, String each);
+
+  /// No description provided for @variantRainbow.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainbow'**
+  String get variantRainbow;
+
+  /// No description provided for @variantAlbino.
+  ///
+  /// In en, this message translates to:
+  /// **'Albino'**
+  String get variantAlbino;
+
+  /// No description provided for @jellyShortTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough jelly'**
+  String get jellyShortTitle;
+
+  /// No description provided for @jellyShortBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Get jelly in the shop and continue right away.'**
+  String get jellyShortBody;
+
+  /// No description provided for @jellyShortGoShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to shop'**
+  String get jellyShortGoShop;
+
+  /// No description provided for @pvpRefillLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can refill with jelly up to {n} times a day'**
+  String pvpRefillLimit(int n);
+
+  /// No description provided for @pvpTicketRefillTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refill tickets'**
+  String get pvpTicketRefillTitle;
+
+  /// No description provided for @pvpTicketRefillBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Get {n} tickets with jelly. ({left} left today)'**
+  String pvpTicketRefillBody(int n, int left);
+
+  /// No description provided for @starterOfferTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Starter package'**
+  String get starterOfferTitle;
+
+  /// No description provided for @starterOfferBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly 300 · gold · materials · +1 incubator slot.\nOnly once per account — the best value in the shop!'**
+  String get starterOfferBody;
+
+  /// No description provided for @starterOfferGo.
+  ///
+  /// In en, this message translates to:
+  /// **'See it'**
+  String get starterOfferGo;
+
+  /// No description provided for @mailGrantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'[From the team] {name}'**
+  String mailGrantTitle(String name);
+
+  /// No description provided for @mailGrantBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A reward from the team. Tap Claim to receive it.'**
+  String get mailGrantBody;
+
+  /// No description provided for @mailReplyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'[Reply from the team]'**
+  String get mailReplyTitle;
 }
 
 class _AppLocalizationsDelegate

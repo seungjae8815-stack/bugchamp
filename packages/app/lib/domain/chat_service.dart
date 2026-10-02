@@ -15,10 +15,11 @@ abstract interface class ChatService {
   bool get available;
 
   /// 최근 메시지를 시간순(오래된 것 → 최신)으로 가져온다.
-  Future<List<ChatMessage>> recent({int limit = 50});
+  /// [guildId] 가 있으면 그 길드 채팅, 없으면 전체 채팅.
+  Future<List<ChatMessage>> recent({int limit = 50, String? guildId});
 
-  /// 새 메시지 실시간 스트림.
-  Stream<ChatMessage> subscribe();
+  /// 새 메시지 실시간 스트림 — [guildId] 채널만(없으면 전체 채팅만).
+  Stream<ChatMessage> subscribe({String? guildId});
 
   /// 메시지 전송. 성공 시 true.
   /// **금칙어·길이·도배 검사는 호출 전에 [ChatRules.check] 로 끝내야 한다.**
@@ -29,6 +30,7 @@ abstract interface class ChatService {
     required String nickname,
     required String body,
     String badge = '',
+    String? guildId,
   });
 
   /// 메시지 신고(UGC 정책 필수). 같은 메시지를 두 번 신고해도 오류가 아니다.
@@ -48,14 +50,16 @@ class NoChatService implements ChatService {
   @override
   bool get available => false;
   @override
-  Future<List<ChatMessage>> recent({int limit = 50}) async => const [];
+  Future<List<ChatMessage>> recent({int limit = 50, String? guildId}) async =>
+      const [];
   @override
-  Stream<ChatMessage> subscribe() => const Stream.empty();
+  Stream<ChatMessage> subscribe({String? guildId}) => const Stream.empty();
   @override
   Future<bool> send({
     required String nickname,
     required String body,
     String badge = '',
+    String? guildId,
   }) async => false;
   @override
   Future<bool> report({
@@ -88,13 +92,17 @@ class SupabaseChatService implements ChatService {
   bool get available => _uid != null;
 
   @override
-  Future<List<ChatMessage>> recent({int limit = 50}) async {
+  Future<List<ChatMessage>> recent({int limit = 50, String? guildId}) async {
     try {
-      final rows = await _client
-          .from('chat_messages')
-          .select()
-          .order('created_at', ascending: false)
-          .limit(limit);
+      // 전체 채팅은 `guild_id is null` 로 거른다 — 정책이 내 길드 글도 읽게 해 주므로
+      // 안 거르면 길드 대화가 전체 채팅에 섞인다.
+      final q = _client.from('chat_messages').select();
+      final rows =
+          await (guildId == null
+                  ? q.isFilter('guild_id', null)
+                  : q.eq('guild_id', guildId))
+              .order('created_at', ascending: false)
+              .limit(limit);
       // 최신순으로 받아 화면 표시용(오래된 것 → 최신)으로 뒤집는다.
       return [
         for (final r in (rows as List).reversed)
@@ -115,8 +123,11 @@ class SupabaseChatService implements ChatService {
   /// `_channel` 을 덮어썼다. 그러면 나중에 붙은 쪽이 먼저 붙은 쪽을 밀어내
   /// **홈 채팅 바가 조용히 갱신을 멈췄고**, 채팅 화면을 나갈 때 채널을 지워
   /// 남은 구독자까지 끊겼다. 채널은 하나만 두고 스트림을 공유한다.
+  ///
+  /// 길드 채팅도 **같은 채널**로 온다 — DB 정책이 전체 + 내 길드 글만 보내 주므로 채널을 더 열
+  /// 필요가 없다(연결 수 = 요금). 받는 쪽에서 [guildId] 로 가른다.
   @override
-  Stream<ChatMessage> subscribe() {
+  Stream<ChatMessage> subscribe({String? guildId}) {
     final controller = _events ??= StreamController<ChatMessage>.broadcast();
     _channel ??= _client
         .channel('public:chat_messages')
@@ -134,7 +145,7 @@ class SupabaseChatService implements ChatService {
         )
         .subscribe();
     // 개별 구독자가 떠나도 채널은 유지한다 — 정리는 [dispose] 한 곳에서만.
-    return controller.stream;
+    return controller.stream.where((m) => m.guildId == guildId);
   }
 
   @override
@@ -142,6 +153,7 @@ class SupabaseChatService implements ChatService {
     required String nickname,
     required String body,
     String badge = '',
+    String? guildId,
   }) async {
     final uid = _uid;
     if (uid == null) return false;
@@ -150,6 +162,7 @@ class SupabaseChatService implements ChatService {
         'user_id': uid,
         'nickname': nickname,
         'body': body,
+        'guild_id': ?guildId,
       });
       // ⚠️ **넣자마자 스스로 방송한다.** 예전에는 Postgres → realtime →
       // 앱 왕복이 돌아올 때까지 기다렸고, 그 시간이 그대로 "내가 쓴 글이 늦게
@@ -166,6 +179,7 @@ class SupabaseChatService implements ChatService {
           body: body,
           createdAt: DateTime.now().toUtc(),
           badge: badge,
+          guildId: guildId,
         ),
       );
       return true;

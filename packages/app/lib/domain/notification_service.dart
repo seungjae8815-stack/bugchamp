@@ -1,4 +1,7 @@
+import 'dart:ui' show Locale, PlatformDispatcher;
 import 'package:flutter/foundation.dart';
+
+import '../l10n/app_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -84,12 +87,21 @@ class NotificationService {
     } catch (_) {}
   }
 
-  static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
-    'bugchamp_daily',
-    '보상 알림',
-    description: '점심·저녁 보상, 오프라인 보상 가득참 알림',
-    importance: Importance.defaultImportance,
-  );
+  /// 알림 채널 — 이름·설명은 **기기 언어**로(안드로이드 설정 › 알림에 그대로 보인다).
+  /// init 은 화면이 생기기 전이라 context 가 없어 기기 로케일로 문구를 찾는다(모르는 언어는 영어).
+  /// 같은 id 로 다시 만들면 안드로이드가 이름·설명만 갱신한다.
+  static AndroidNotificationChannel get _channel {
+    final code = PlatformDispatcher.instance.locale.languageCode;
+    final l = lookupAppLocalizations(
+      Locale(const {'ko', 'en', 'ja'}.contains(code) ? code : 'en'),
+    );
+    return AndroidNotificationChannel(
+      'bugchamp_daily',
+      l.notifChannelName,
+      description: l.notifChannelDesc,
+      importance: Importance.defaultImportance,
+    );
+  }
 
   Future<void> init() async {
     if (_ready) return;

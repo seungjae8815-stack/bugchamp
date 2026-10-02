@@ -46,12 +46,21 @@ Future<void> showRankPopupOnStart(BuildContext context, WidgetRef ref) async {
   }
 
   final l = AppLocalizations.of(context);
+  // ⚠️ 닫기에서 **바깥 context 로 Navigator 를 찾지 않는다.** 팝업이 떠 있는 사이 앱 화면이
+  // 타이틀로 바뀌면(끊김·로그아웃) 바깥 context 가 사라져 `Navigator.pop(context)` 가
+  // "Null check operator used on a null value" 로 앱을 죽였다(2026-10-02 크래시 · 1.0.14).
+  // 띄우는 순간의 네비게이터를 잡아 두고, 아직 살아 있을 때만 닫는다.
+  final nav = Navigator.of(context);
   await showGameDialog<void>(
     context,
     title: l.rankPopupTitle,
     iconWidget: rankImageDlg('trophy'),
     content: _RankBody(report: report, l: l),
-    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    actions: [
+      gameDialogButton(l.actionClose, () {
+        if (nav.mounted && nav.canPop()) nav.pop();
+      }),
+    ],
   );
 }
 

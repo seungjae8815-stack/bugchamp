@@ -64,6 +64,34 @@ ProviderContainer _make(SaveGame seed, {DateTime? now}) {
 
 void main() {
   group('컨트롤러 흐름(젤리 차감 · 저장)', () {
+    test('교환소 젤리 → 가루는 하루 상한까지(다음 날 다시 열린다)', () async {
+      final c = _make(_seed());
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      final cap = c
+          .read(gameDataProvider)
+          .requireValue
+          .fairyConfig!
+          .exchangeDustDailyCap;
+      expect(cap, greaterThan(0));
+      expect(ctrl.exchangeDustLeftToday(), cap);
+      // 한도만큼 바꾼다(묶음 = 젤리 10).
+      expect(await ctrl.tradeJellyForDust(trades: cap ~/ 10), isTrue);
+      final s = c.read(saveControllerProvider).requireValue;
+      expect(s.fairy.dust, cap);
+      expect(s.materialCount(MaterialKind.jelly), 1000 - cap);
+      expect(ctrl.exchangeDustLeftToday(), 0);
+      expect(ctrl.exchangeDust(trades: 1), isNull);
+      expect(await ctrl.tradeJellyForDust(trades: 1), isFalse);
+
+      final next = _make(s, now: _t0.add(const Duration(days: 1)));
+      await next.read(saveControllerProvider.future);
+      expect(
+        next.read(saveControllerProvider.notifier).exchangeDustLeftToday(),
+        cap,
+      );
+    });
+
     test('뽑기 → 둥지 → 가속기 → 꺼내기', () async {
       final c = _make(_seed());
       await c.read(saveControllerProvider.future);
@@ -207,9 +235,17 @@ void main() {
       await tester.tap(find.text('요정 둥지'));
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text('보스 피해'));
+      // 속성석은 한 줄에 하나(이름 + 효과) — 목록을 끌어 내려 고른다.
+      final stone = find.text('보스 피해 속성석');
+      await tester.dragUntilVisible(
+        stone,
+        find.byType(ListView).last,
+        const Offset(0, -60),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(stone);
       await tester.pump();
-      expect(find.textContaining('50%'), findsOneWidget);
+      expect(find.text('×1'), findsOneWidget);
       await tester.tap(find.text('둥지에 넣기'));
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
       expect(find.textContaining('남음'), findsOneWidget);
@@ -258,15 +294,16 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
 
       // 요정 상세 → 합성(재료 없음)
-      await tester.tap(find.text('Lv.3').first);
+      // 칸 위쪽 = "등급 · Lv.N".
+      await tester.tap(find.text('영웅 · Lv.3').last); // 동행 중인 f0(에픽) 칸
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
-      expect(find.text('동행 중'), findsOneWidget);
-      await tester.tap(find.text('합성'));
-      await tester.pumpAndSettle(const Duration(milliseconds: 300));
-      expect(find.text('같은 종류·등급 요정이 모자라요'), findsOneWidget);
+      expect(find.text('동행 해제'), findsOneWidget);
+      // 동행 요정은 합성 창 대신 이유를 알린다.
+      await tester.tap(find.text('합성').last);
+      await tester.pump();
+      expect(find.text('착용 중인 요정은 합성할 수 없어요'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text('취소').last);
-      await tester.pumpAndSettle(const Duration(milliseconds: 300));
       await tester.tap(find.text('닫기').last);
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
 

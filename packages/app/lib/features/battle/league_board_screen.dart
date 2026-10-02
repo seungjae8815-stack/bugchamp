@@ -10,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/chat_service.dart';
-import '../../domain/combat_power.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
@@ -224,8 +223,9 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
             league: pvpLeagueNow(save, cfg).id,
             myNickname: nick,
             myTrophies: save.pvpTrophies,
+            // 결투 팀 전투력만(홈 전투력은 캐릭터 포함이라 결투 화면에 쓰지 않는다 — 모르면 0 = 숨김).
             myPower: widget.myTeam == null || widget.myTeam!.isEmpty
-                ? (displayCombatPower(save, data, now) ?? 1e6)
+                ? 0
                 : widget.myTeam!.fold<double>(0, (a, x) => a + x.power),
             speciesIds: species,
             cfg: cfg,
@@ -733,7 +733,12 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     VoidCallback? onTap,
   }) {
     final sp = '${r['sp'] ?? ''}';
-    final power = (r['power'] as num?)?.toDouble() ?? 0;
+    // 내 줄은 **지금 내 출정 팀**으로 직접 잰다(서버 기록은 결투를 해야 생기고, 비어 있으면 숫자가
+    // 빠졌다 — 2026-10-01 실기). 홈 전투력(캐릭터 포함)은 결투 화면에 쓰지 않는다.
+    final myTeam = widget.myTeam;
+    final power = mine && !_abyss && myTeam != null && myTeam.isNotEmpty
+        ? myTeam.fold<double>(0, (a, x) => a + x.power)
+        : (r['power'] as num?)?.toDouble() ?? 0;
     final score = _abyss
         ? l.boardFloorShort((r['floor'] as num?)?.toInt() ?? 0)
         : '${(r['trophies'] as num?)?.toInt() ?? 0}';

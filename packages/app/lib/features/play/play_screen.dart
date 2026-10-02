@@ -14,9 +14,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'pet_attackers.dart';
+import '../character/fairy_panel.dart' show openFairyWindow;
 import '../../ui/toast.dart';
 import '../../app_version.dart';
 import '../../data/game_data.dart';
+import '../../domain/guild_service.dart';
 import '../../domain/iap_service.dart';
 import '../../domain/admob_ad_service.dart';
 import '../../domain/audio_service.dart';
@@ -28,6 +30,7 @@ import '../../domain/cloud_save_service.dart';
 import '../../domain/game_server.dart';
 import '../../domain/locale_prefs.dart';
 import '../../domain/providers.dart';
+import '../guide/guide_screen.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
 import '../../domain/server_sync.dart';
@@ -89,6 +92,14 @@ const double _kSkillBarRoom = _kSkillBtn + 10;
 
 /// 캐릭터 그림 한 변(논리 px).
 const double _kCharSize = 92;
+
+/// 캐릭터 체력바 폭(2026-10-01 — 106 이면 뒤쪽 어깨 위 요정을 가렸다).
+const double _kCharHpBarWidth = 64;
+
+/// 동행 요정 자리 — 가로 정렬(-1 왼쪽 끝)과 발밑 기준 높이(캐릭터 키의 몇 배).
+/// 2026-10-01 사장님: 왼쪽으로 조금 더, 아래로 살짝(-0.78·0.78 → -0.86·0.64).
+const double _kFairyAlignX = -0.86;
+const double _kFairyLift = 0.64;
 
 /// 스킬 효과 그림 한 변. 캐릭터를 **감싸야** 하므로 더 크다 — 그림
 /// 가운데가 비어 있게 그려졌다(프롬프트 조건).
@@ -564,11 +575,52 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// "다음 N타"는 순식간에 끝나 후반 가치가 사라졌다(2026-10-01 시뮬).
   double _fairyCritT = 0;
 
+  /// 지금 스킬 상태가 누구 것인지 — 동행이 바뀌면 [_fairyNow] 가 상태를 비운다.
+  String? _fairyCompId;
+
   /// 시전 그림을 보여 줄 남은 시간(초). 0 이면 날갯짓.
   double _fairyCastT = 0;
 
   /// 날갯짓·둥실 흔들림에 쓰는 누적 시간(초).
   double _fairyAnimT = 0;
+
+  /// 요정 스킬 효과 그림을 보여 주는 남은 시간(초)과 대상(true = 상대 몬스터, false = 우리 캐릭터).
+  double _fairyFxT = 0;
+  bool _fairyFxOnEnemy = true;
+  String _fairyFxKind = '';
+  static const _kFairyFxShow = 0.8;
+
+  /// 지금 그리는 몬스터 크기(빌드에서 갱신) — 요정 효과 위치용.
+  double _enemyDrawSize = 84;
+
+  /// 몬스터 몸 가운데(씬 좌표). 몬스터 칸 = Align(0.45, 1) · 아래 여백 스킬 바 · 위에 체력바.
+  Offset _enemyCenter(Size scene) {
+    final w = math.max(_isBoss ? 152.0 : 106.0, _enemyDrawSize);
+    final x = (scene.width - w) * (1 + 0.45) / 2 + w / 2;
+    final y = scene.height - _kSkillBarRoom - _enemyDrawSize / 2;
+    return Offset(x, y);
+  }
+
+  /// 캐릭터 몸 가운데(씬 좌표). 캐릭터 칸 = Align(-0.55, 1) · 아래 여백 스킬 바.
+  Offset _charCenter(Size scene) {
+    const w = _kCharSize;
+    final x = (scene.width - w) * (1 - 0.55) / 2 + w / 2;
+    final y = scene.height - _kSkillBarRoom - _kCharSize / 2;
+    return Offset(x, y);
+  }
+
+  /// 캐릭터가 칠 때 요정이 보태는 빛 알갱이(연출만 — 데미지는 그대로, 2026-10-01 사장님).
+  /// 값 = 날아간 정도(0 → 1). [_fairyMoteCd] 로 너무 잦지 않게.
+  final List<double> _fairyMotes = [];
+  double _fairyMoteCd = 0;
+  static const _kFairyMoteFly = 0.35;
+  static const _kFairyMoteGap = 0.45;
+
+  /// (개발) 다음 판정에서 요정 스킬을 조건·쿨타임 없이 한 번 발동.
+  bool _devForceFairy = false;
+
+  /// (개발) 연출 미리보기 중인 요정 종류 — 동행 요정 그림 대신 이 종류를 보여 준다(효과는 없음).
+  String? _devFairyShowKind;
 
   /// 스킬 id → 남은 지속(초). 지속형(공속·재료·곤충·방벽)만.
   final Map<String, double> _skillOn = {};
@@ -1177,6 +1229,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     // 동행 요정(1.0.15)도 **기준 밖** — 스킬 패시브와 같은 층이다(design_fairy.md §1.1).
     s = applyFairyStats(s, _fairyBonus(save));
+    // 길드 버프(1.0.15)도 **기준 밖**(§7) — 들어가면 길드가 강할수록 몬스터도 세져 의미가 없다.
+    s = applyGuildStats(s, ref.read(guildBonusProvider));
     final dex = _data.dexConfig;
     if (dex != null) {
       s = dex.apply(
@@ -1516,6 +1570,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ),
         );
         _impacts.add(_Impact(crit));
+        _addFairyMote();
         final n = crit ? 7 : 4;
         for (var i = 0; i < n; i++) {
           final ang = _rng.nextDouble() * math.pi * 2;
@@ -2266,6 +2321,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 갈리면 다른 놈으로 읽힌다. 엘리트는 그 위에 한 번 더 키운다.
     final mon = _config.monsters[_monsterId];
     final sizeMul = (mon?.scale ?? 1.0) * (_isElite ? _config.eliteScale : 1.0);
+    // 요정 효과를 몬스터 정중앙에 맞추려고 그리는 크기를 기억한다.
+    _enemyDrawSize = _isBoss ? 172 : 84 * sizeMul;
     final rawEnemy = gameImageChain(
       ePaths,
       size: _isBoss ? 172 : 84 * sizeMul,
@@ -2512,6 +2569,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               // 장착 펫: 캐릭터 뒤를 따라다니는 작은 동행
               _petFollowers(),
 
+              // 동행 요정: 캐릭터 **뒤쪽 어깨 위**에서 보조(2026-10-01 사장님 — 앞이 아니라 뒤).
+              // 캐릭터보다 먼저 그려서 캐릭터 뒤에 겹친다.
+              _fairyCompanion(),
+
               // 캐릭터 + 플레이어 HP바 (하단=발 기준 정렬)
               Align(
                 alignment: const Alignment(-0.55, 1.0),
@@ -2524,6 +2585,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       _Bar(
                         fraction: pHpFrac,
                         wide: false,
+                        // 캐릭터 몸 폭(92)보다 좁게 — 뒤쪽 위의 요정을 가리지 않는다.
+                        width: _kCharHpBarWidth,
                         colors: const [Color(0xFF81C784), Color(0xFF43A047)],
                         // 내 체력도 숫자를 뺀다 — 위험한지 아닌지는 게이지가
                         // 더 빨리 읽힌다(전투 중에 자릿수를 읽지 않는다).
@@ -2590,8 +2653,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
               ),
 
-              // 동행 요정: 캐릭터 머리 오른쪽 위에서 둥실
-              _fairyCompanion(),
+              // 요정 스킬 효과(공격형 = 몬스터, 회복·방어 = 캐릭터) · 타격에 보태는 빛 알갱이
+              _fairyFxLayer(),
+              _fairyMoteLayer(),
 
               // 임팩트 스파크 + 파편
               Positioned.fill(
@@ -2821,13 +2885,135 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// **개막 전에도 띄운다.** 서버는 기간 밖이면 `event_closed` 로 아무것도 안
   /// 주는데, 그 상태를 "없음"으로 처리하니 시작 전날까지 대회의 존재 자체가
   /// 화면에 없었다. 시작 전 예고는 **로컬 설정(`event.json`)만 보고** 판단한다.
-  Widget _eventMini(AppLocalizations l) {
+  /// 골드·일반 재료 한 줄(상단 오른쪽). 골드 칸에 `goldHud` 키(테스트가 찾는다).
+  Widget _materialRow(SaveGame save) {
+    // 다섯 칸이 좌우를 **꽉 채운다**(2026-10-01 사장님). 칸마다 같은 폭, 좁으면 글자가 줄어든다.
+    Widget item(Widget icon, String v, {Key? key}) => Expanded(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(width: 15, height: 15, child: Center(child: icon)),
+            const SizedBox(width: 3),
+            Text(
+              v,
+              key: key,
+              style: const TextStyle(
+                color: _onScene,
+                fontWeight: FontWeight.w800,
+                fontSize: 11.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0x55101A0A),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          item(
+            goldIcon(size: 13),
+            formatCompact(save.gold),
+            key: const Key('goldHud'),
+          ),
+          // 젤리도 다른 재료와 같은 모양(2026-10-01 — 따로 알약이면 버튼처럼 보였다).
+          // 젤리 칸을 누르면 상점으로(2026-10-02 — 젤리를 사러 가는 가장 짧은 길).
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () =>
+                  ref.read(tabIndexProvider.notifier).set(kShopTabIndex),
+              child: Row(
+                children: [
+                  item(
+                    jellyIcon(size: 13),
+                    formatCompact(save.materialCount(MaterialKind.jelly)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          for (final m in _regularMaterials)
+            item(
+              materialImage(
+                m,
+                size: 13,
+                fallback: Icon(
+                  materialIcon(m),
+                  size: 12,
+                  color: Colors.white70,
+                ),
+              ),
+              formatCompact(save.materialCount(m)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _eventMini(AppLocalizations l, {bool inHud = false}) {
     final st = ref.watch(eventStateProvider).asData?.value;
     final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
     final now = ref.read(clockProvider).now().toUtc();
     // 진행 중도 아니고 개막 예고도 없으면 자리를 비운다.
     if (st == null && cfg?.untilOpen(now) == null) {
       return const SizedBox.shrink();
+    }
+    if (inHud) {
+      // 아이콘 줄 아래 가로 배너 — 폭은 아이콘 줄에 맞춰 늘어난다(2026-10-01 사장님).
+      return Padding(
+        padding: const EdgeInsets.only(top: 3),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const EventScreen()),
+            );
+            ref.invalidate(eventStateProvider);
+          },
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(7, 3, 4, 3),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0x667E57C2), Color(0x333F2C63)],
+              ),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: const Color(0xCC9575CD)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                rankImageDlg('trophy', size: 14),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    l.eventTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFEDE0FF),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFFD7BCFF),
+                  size: 15,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     return Padding(
       padding: const EdgeInsets.only(top: 4),
@@ -2925,145 +3111,132 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final cp = combatPower(_petStats(save));
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 캐릭터 초상화 → 탭하면 능력치/닉네임 카드
-          InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: () => _showCharacterCard(l, save),
-            child: _portrait(save),
-          ),
-          const SizedBox(width: 8),
-          // 닉네임 · 전투력 · 경험치
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  save.nickname,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _onScene,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Row(
+          Row(
+            children: [
+              // 캐릭터 초상화 → 탭하면 능력치/닉네임 카드
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => _showCharacterCard(l, save),
+                child: _portrait(save),
+              ),
+              const SizedBox(width: 8),
+              // 닉네임 · 전투력 · 경험치
+              Expanded(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.local_fire_department,
-                      color: _honey,
-                      size: 13,
+                    // 닉네임 → 경험치 바 → 전투력 세 줄(2026-10-01 사장님).
+                    Text(
+                      save.nickname,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _onScene,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
                     ),
-                    const SizedBox(width: 3),
-                    // ⚠️ **줄어들 수 있어야 한다.** 오른쪽(버프 줄)이 넓어지면
-                    // 이 칸이 좁아지는데, 자연 크기로 두면 넘쳐서 젤리 칸 위로
-                    // 글자가 겹친다(2026-09-01 지적). 넘칠 땐 말줄임.
-                    Flexible(
-                      child: Text(
-                        '${l.combatPowerLabel} ${formatCompact(cp)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _honey,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (save.xp / xpNeed).clamp(0.0, 1.0),
+                        minHeight: 5,
+                        backgroundColor: const Color(0x33FFFFFF),
+                        valueColor: const AlwaysStoppedAnimation(
+                          Color(0xFF66BB6A),
                         ),
                       ),
                     ),
-                    // (2026-08) 랭킹은 여기서 빼고 **앱 시작 팝업**으로 옮겼다
-                    // — 상시 표기는 갱신 시점이 모호해 실제 순위와 어긋나 보였다.
-                    // see ui/rank_popup.dart
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.local_fire_department,
+                          color: _honey,
+                          size: 13,
+                        ),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            '${l.combatPowerLabel} ${formatCompact(cp)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _honey,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: (save.xp / xpNeed).clamp(0.0, 1.0),
-                    minHeight: 5,
-                    backgroundColor: const Color(0x33FFFFFF),
-                    valueColor: const AlwaysStoppedAnimation(Color(0xFF66BB6A)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          // 재화: 골드 + 다이아(젤리)만 — 두 칸 폭을 동일하게(IntrinsicWidth).
-          IntrinsicWidth(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _resourcePill(
-                  goldIcon(size: 15),
-                  formatCompact(save.gold),
-                  valueKey: const Key('goldHud'),
-                ),
-                const SizedBox(height: 4),
-                _resourcePill(
-                  // ⚠️ 다이아 글리프가 아니라 **실제 곤충젤리 그림**이다.
-                  // 프리미엄 재화를 보석으로 그리면 다른 재화처럼 읽힌다.
-                  jellyIcon(size: 14),
-                  formatCompact(save.materialCount(MaterialKind.jelly)),
-                  tint: const Color(0x3355C7F2),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          // 랭킹·편지함·설정 + 그 아래 버프 5개
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 공지 — 안 읽은 글이 있으면 빨간 점.
-                  _iconBtn(
-                    Icons.campaign_rounded,
-                    () {
-                      // 열 때마다 최신 공지를 다시 받는다(플레이 중 올라온 글 반영).
-                      ref.invalidate(noticesProvider);
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const NoticeScreen(),
-                        ),
-                      );
-                    },
-                    badge: ref.watch(hasUnreadNoticeProvider),
-                  ),
-                  _iconBtn(
-                    Icons.leaderboard_rounded,
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const LeaderboardScreen(),
-                      ),
-                    ),
-                  ),
-                  _iconBtn(
-                    Icons.mail_rounded,
-                    () => _showMail(l),
-                    // 운영 우편(점검 보상 등)도 편지함 알림에 포함한다.
-                    badge:
-                        _hasClaimableDaily(save) ||
-                        (ref.watch(serverMailProvider).value?.isNotEmpty ??
-                            false),
-                  ),
-                  _iconBtn(Icons.settings_rounded, () => _showSettings(l)),
-                ],
               ),
-              // 대회는 한시적이라 하단 탭을 늘리지 않는다 — 아이콘 줄이
-              // 그만큼 위로 올라가고 그 아래에 제목만 붙는다.
-              _eventMini(l),
+              const SizedBox(width: 6),
+              // 공지~설정 아이콘 줄 + 그 아래 왕충 선발대회 배너(아이콘 줄 폭만큼 길게, 2026-10-01 사장님).
+              IntrinsicWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 공지 — 안 읽은 글이 있으면 빨간 점.
+                        _iconBtn(
+                          Icons.campaign_rounded,
+                          () {
+                            // 열 때마다 최신 공지를 다시 받는다(플레이 중 올라온 글 반영).
+                            ref.invalidate(noticesProvider);
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const NoticeScreen(),
+                              ),
+                            );
+                          },
+                          badge: ref.watch(hasUnreadNoticeProvider),
+                        ),
+                        _iconBtn(
+                          Icons.leaderboard_rounded,
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const LeaderboardScreen(),
+                            ),
+                          ),
+                        ),
+                        _iconBtn(
+                          Icons.mail_rounded,
+                          () => _showMail(l),
+                          // 운영 우편(점검 보상 등)도 편지함 알림에 포함한다.
+                          badge:
+                              _hasClaimableDaily(save) ||
+                              (ref
+                                      .watch(serverMailProvider)
+                                      .value
+                                      ?.isNotEmpty ??
+                                  false),
+                        ),
+                        _iconBtn(
+                          Icons.settings_rounded,
+                          () => _showSettings(l),
+                        ),
+                      ],
+                    ),
+                    _eventMini(l, inHud: true),
+                  ],
+                ),
+              ),
             ],
           ),
+          // 골드·젤리·재료 — 한 줄 전체(오른쪽 칸 안에 두면 폭이 모자라 잘렸다, 2026-10-01).
+          const SizedBox(height: 4),
+          _materialRow(save),
         ],
       ),
     );
@@ -3348,38 +3521,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     ),
   );
 
-  Widget _resourcePill(
-    Widget icon,
-    String value, {
-    Key? valueKey,
-    Color? tint,
-  }) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: tint == null
-        ? _glass(9)
-        : BoxDecoration(
-            color: tint,
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: const Color(0x5555C7F2)),
-          ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(width: 15, height: 15, child: Center(child: icon)),
-        const SizedBox(width: 4),
-        Text(
-          value,
-          key: valueKey,
-          style: const TextStyle(
-            color: _onScene,
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    ),
-  );
-
   Widget _iconBtn(IconData icon, VoidCallback onTap, {bool badge = false}) =>
       InkWell(
         onTap: onTap,
@@ -3493,8 +3634,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     const SizedBox(width: 5),
                     Flexible(
                       child: Text(
-                        l.storageFullBanner,
-                        maxLines: 1,
+                        // 문구에 줄바꿈이 있어 한 줄이면 뒷부분("곤충이 들어오지 않아요")이 잘렸다.
+                        l.storageFullBanner.replaceAll('\n', ' · '),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Color(0xFFFFCCBC),
@@ -3708,6 +3850,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 동행 요정과 그 종류 정의(없거나 모르는 종류면 null).
   (Fairy, FairyKindDef)? _fairyNow(SaveGame save) {
     final f = save.fairy.companion;
+    // 동행을 바꾸면 켜져 있던 스킬을 끄고 새 요정은 쿨타임부터 — 남은 지속시간이 새 요정 효과로
+    // 넘어가거나(실피드 → 티타니아), 바꿔 끼워 쿨타임을 건너뛰지 않게(2026-10-01 점검).
+    if (f?.id != _fairyCompId) {
+      if (_fairyCompId != null) {
+        _fairyOn = 0;
+        _fairyCritT = 0;
+        final d = f == null ? null : _data.fairyConfig?.byId(f.kind);
+        _fairyCd = d == null ? 0 : d.skill.cooldown.inMilliseconds / 1000;
+      }
+      _fairyCompId = f?.id;
+    }
     final def = f == null ? null : _data.fairyConfig?.byId(f.kind);
     return f == null || def == null ? null : (f, def);
   }
@@ -3723,17 +3876,21 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 요정 스킬 — 늘 자동. 쓸지 말지는 core_run `fairySkillShouldCast`(회복은 체력이 낮을 때,
   /// 보스 일격은 보스전에서만). 재화를 주는 스킬은 없다(쿨이 기기 시계 — §2.8).
   void _castFairySkill(SaveGame save, CharacterStats stats) {
+    if (_devForceFairy) _fairyCd = 0;
     if (_fairyCd > 0) return;
     final now = _fairyNow(save);
     if (now == null) return;
     final (f, def) = now;
     final sk = def.skill;
-    if (!fairySkillShouldCast(
-      sk.effect,
-      inCombat: !_walking && !_dying,
-      boss: _isBoss,
-      hpRatio: _playerHpMax <= 0 ? 1 : _playerHp / _playerHpMax,
-    )) {
+    final forced = _devForceFairy;
+    _devForceFairy = false;
+    if (!forced &&
+        !fairySkillShouldCast(
+          sk.effect,
+          inCombat: !_walking && !_dying,
+          boss: _isBoss,
+          hpRatio: _playerHpMax <= 0 ? 1 : _playerHp / _playerHpMax,
+        )) {
       return;
     }
     final v = _data.fairyConfig!.skillValue(f);
@@ -3754,7 +3911,113 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       default:
         _fairyOn = sk.duration.inMilliseconds / 1000;
     }
+    _startFairyFx(f.kind, sk.effect);
     _fairyShout(def, f);
+  }
+
+  /// (개발) 요정 8종 스킬 연출을 차례로 — 시전 모션 + 효과 그림 + 이름(효과 수치는 없음).
+  /// 그림은 동행 요정 자리에 그리므로 **동행 요정이 하나는 있어야** 보인다.
+  Future<void> _devPreviewFairySkills() async {
+    final cfg = _data.fairyConfig;
+    if (cfg == null) return;
+    final locale = Localizations.localeOf(context).languageCode;
+    for (final k in cfg.kinds) {
+      if (!mounted) return;
+      setState(() {
+        _devFairyShowKind = k.id;
+        _fairyCastT = _kFairyCastShow;
+        _startFairyFx(k.id, k.skill.effect);
+        _pops.add(
+          _Pop(
+            '${k.name.resolve(locale)} · ${k.skill.effect}',
+            0,
+            const Color(0xFFFFD54F),
+            14,
+            baseX: -0.3,
+            baseY: -0.7,
+          ),
+        );
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 1600));
+    }
+    if (mounted) setState(() => _devFairyShowKind = null);
+  }
+
+  /// 캐릭터 타격에 요정 빛 알갱이를 하나 띄운다(동행 요정이 있을 때만, 간격 제한).
+  void _addFairyMote() {
+    if (_fairyMoteCd > 0) return;
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null || _fairyNow(save) == null) return;
+    _fairyMoteCd = _kFairyMoteGap;
+    _fairyMotes.add(0);
+  }
+
+  /// 요정 → 몬스터로 날아가는 빛 알갱이(살짝 위로 휘며, 끝에서 작아진다).
+  Widget _fairyMoteLayer() {
+    if (_fairyMotes.isEmpty) return const SizedBox.shrink();
+    final save = ref.read(saveControllerProvider).value;
+    final now = save == null ? null : _fairyNow(save);
+    if (now == null) return const SizedBox.shrink();
+    final color = fairyGradeColor(now.$1.grade);
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            // 출발 = 요정 몸 가운데(_fairyCompanion 의 자리) · 도착 = 임팩트 스파크 자리.
+            final sx =
+                (c.maxWidth - _kFairySize) / 2 * (1 + _kFairyAlignX) +
+                _kFairySize / 2;
+            final sy =
+                c.maxHeight -
+                _kSkillBarRoom -
+                _kCharSize * _kFairyLift -
+                _kFairySize / 2;
+            final to = _enemyCenter(Size(c.maxWidth, c.maxHeight));
+            final ex = to.dx;
+            final ey = to.dy;
+            return Stack(
+              children: [
+                for (final t in _fairyMotes)
+                  Builder(
+                    builder: (_) {
+                      final e = Curves.easeIn.transform(t);
+                      final x = sx + (ex - sx) * e;
+                      final y = sy + (ey - sy) * e - math.sin(t * math.pi) * 40;
+                      final r = 9.0 * (1 - 0.5 * t);
+                      return Positioned(
+                        left: x - r,
+                        top: y - r,
+                        width: r * 2,
+                        height: r * 2,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.9),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 스킬 효과 그림 — 공격형은 **상대에게**, 회복·방어·버프형은 **우리 캐릭터에게**.
+  void _startFairyFx(String kind, String effect) {
+    _fairyFxKind = kind;
+    _fairyFxOnEnemy = fairySkillTargetsEnemy(effect);
+    _fairyFxT = _kFairyFxShow;
   }
 
   /// 아스테리아 — 쓰러질 한 대를 **한 번** 버틴다(쿨마다). 버텼으면 true.
@@ -3767,6 +4030,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _playerHpMax * _data.fairyConfig!.skillValue(f).clamp(0.05, 1.0);
     _fairyCd = def.skill.cooldown.inMilliseconds / 1000;
     _fairyCastT = _kFairyCastShow;
+    _startFairyFx(f.kind, def.skill.effect);
     _fairyShout(def, f);
     return true;
   }
@@ -3795,48 +4059,168 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final save = ref.read(saveControllerProvider).value;
     final now = save == null ? null : _fairyNow(save);
     if (now == null) return const SizedBox.shrink();
-    final (f, _) = now;
+    final (f, def) = now;
     final color = fairyGradeColor(f.grade);
     final flap = (_fairyAnimT * 7).floor().isEven ? 1 : 2;
+    final cdMax = def.skill.cooldown.inMilliseconds / 1000;
     const dir = 'assets/images/fairies';
+    final kind = _devFairyShowKind ?? f.kind; // (개발) 미리보기 중이면 그 종류 그림
     final paths = [
-      if (_fairyCastT > 0) '$dir/fairy_${f.kind}_cast.webp',
-      '$dir/fairy_${f.kind}_$flap.webp',
-      '$dir/fairy_${f.kind}_1.webp',
+      if (_fairyCastT > 0) '$dir/fairy_${kind}_cast.webp',
+      '$dir/fairy_${kind}_$flap.webp',
+      '$dir/fairy_${kind}_1.webp',
     ];
     final bob = math.sin(_fairyAnimT * 2.2) * 6;
     final sway = math.sin(_fairyAnimT * 0.9) * 4;
     // 시전하면 앞으로 살짝 날아간다.
     final lunge = _fairyCastT > 0 ? 14 * (_fairyCastT / _kFairyCastShow) : 0.0;
     return Align(
-      alignment: const Alignment(-0.3, 1.0),
+      // 캐릭터(-0.55) **뒤쪽 어깨 위** — 펫(-0.72~-0.94, 발밑)보다 높이 떠서 겹치지 않는다.
+      alignment: const Alignment(_kFairyAlignX, 1.0),
       child: Padding(
         padding: const EdgeInsets.only(
-          bottom: _kSkillBarRoom + _kCharSize * 0.62,
+          bottom: _kSkillBarRoom + _kCharSize * _kFairyLift,
         ),
         child: IgnorePointer(
           child: Transform.translate(
             offset: Offset(sway + lunge, bob),
-            child: Container(
-              width: _kFairySize,
-              height: _kFairySize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    color.withValues(alpha: _fairyOn > 0 ? 0.7 : 0.45),
-                    color.withValues(alpha: 0),
-                  ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 스킬 쿨타임 — 머리 위 작은 원(차오르면 준비). 남은 초를 가운데에.
+                _fairyCooldownBadge(cdMax, color),
+                const SizedBox(height: 2),
+                Container(
+                  width: _kFairySize,
+                  height: _kFairySize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        color.withValues(alpha: _fairyOn > 0 ? 0.7 : 0.45),
+                        color.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: gameImageChain(
+                    paths,
+                    size: _kFairySize * 0.9,
+                    fallback: const Text('🧚', style: TextStyle(fontSize: 26)),
+                  ),
                 ),
-              ),
-              alignment: Alignment.center,
-              child: gameImageChain(
-                paths,
-                size: _kFairySize * 0.9,
-                fallback: const Text('🧚', style: TextStyle(fontSize: 26)),
-              ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// 요정 머리 위 쿨타임 원 — 남은 시간만큼 비어 있고, 다 차면 반짝이며 "준비".
+  Widget _fairyCooldownBadge(double cdMax, Color color) {
+    const size = 20.0;
+    final ready = _fairyCd <= 0;
+    final frac = cdMax <= 0 ? 1.0 : (1 - _fairyCd / cdMax).clamp(0.0, 1.0);
+    final pulse = ready ? 0.6 + 0.4 * math.sin(_fairyAnimT * 6).abs() : 1.0;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xAA101A0A),
+              boxShadow: ready
+                  ? [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.7 * pulse),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
+            ),
+          ),
+          CircularProgressIndicator(
+            value: frac,
+            strokeWidth: 2.4,
+            backgroundColor: const Color(0x33FFFFFF),
+            valueColor: AlwaysStoppedAnimation(color),
+          ),
+          Text(
+            ready ? '✦' : '${_fairyCd.ceil()}',
+            style: TextStyle(
+              color: ready ? color : Colors.white,
+              fontSize: ready ? 10 : 8.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 요정 스킬 효과 그림 — 공격형은 몬스터 자리, 회복·방어·버프형은 캐릭터 자리에 터진다.
+  /// 그림(`assets/images/fairies/fx_<종류>.webp`)이 없으면 등급 색 빛 원으로 떨어진다.
+  Widget _fairyFxLayer() {
+    if (_fairyFxT <= 0 || _fairyFxKind.isEmpty) return const SizedBox.shrink();
+    final save = ref.read(saveControllerProvider).value;
+    final now = save == null ? null : _fairyNow(save);
+    final color = now == null
+        ? const Color(0xFFFFD54F)
+        : fairyGradeColor(now.$1.grade);
+    final t = 1 - _fairyFxT / _kFairyFxShow; // 0 → 1
+    final scale = 0.6 + 0.7 * Curves.easeOut.transform(t);
+    final fade = t < 0.7 ? 1.0 : (1 - (t - 0.7) / 0.3).clamp(0.0, 1.0);
+    // 우리 캐릭터 위 효과는 캐릭터가 비쳐 보이게(방벽·별빛 그림은 가운데가 채워져 있다).
+    final opacity = fade * (_fairyFxOnEnemy ? 1.0 : 0.72);
+    const size = 130.0;
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            // 몬스터 = 임팩트 스파크와 같은 자리 · 캐릭터 = 캐릭터 몸 가운데.
+            // 몬스터·캐릭터 **몸 정중앙**(2026-10-01 실기 지적 — 비율 좌표라 어긋났다).
+            final scene = Size(c.maxWidth, c.maxHeight);
+            final at = _fairyFxOnEnemy
+                ? _enemyCenter(scene)
+                : _charCenter(scene);
+            final x = at.dx;
+            final y = at.dy;
+            return Stack(
+              children: [
+                Positioned(
+                  left: x - size / 2,
+                  top: y - size / 2,
+                  width: size,
+                  height: size,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: gameImageChain(
+                        ['assets/images/fairies/fx_$_fairyFxKind.webp'],
+                        size: size,
+                        fallback: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                color.withValues(alpha: 0.8),
+                                color.withValues(alpha: 0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -3871,6 +4255,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (_fairyCd > 0) _fairyCd = math.max(0, _fairyCd - dt);
     if (_fairyOn > 0) _fairyOn = math.max(0, _fairyOn - dt);
     if (_fairyCastT > 0) _fairyCastT = math.max(0, _fairyCastT - dt);
+    if (_fairyFxT > 0) _fairyFxT = math.max(0, _fairyFxT - dt);
+    if (_fairyMoteCd > 0) _fairyMoteCd = math.max(0, _fairyMoteCd - dt);
+    for (var i = _fairyMotes.length - 1; i >= 0; i--) {
+      final v = _fairyMotes[i] + dt / _kFairyMoteFly;
+      v >= 1 ? _fairyMotes.removeAt(i) : _fairyMotes[i] = v;
+    }
     if (_fairyCritT > 0) _fairyCritT = math.max(0, _fairyCritT - dt);
     _fairyAnimT += dt;
     for (final k in _skillCd.keys.toList()) {
@@ -4320,6 +4710,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       (r.extra['eggs'] as List<FairyGrade>?) ?? const [],
       stones: ((r.extra['stones'] as Map?)?.isNotEmpty ?? false),
       accel: r.extra['accel'] != null,
+      overflowEggs: (r.extra['overflowEggs'] as int?) ?? 0,
+      overflowDust: (r.extra['overflowDust'] as int?) ?? 0,
     );
   }
 
@@ -4328,12 +4720,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     List<FairyGrade> eggs, {
     bool stones = false,
     bool accel = false,
+    int overflowEggs = 0,
+    int overflowDust = 0,
   }) {
     if (eggs.isEmpty && !stones && !accel) return;
     final l = AppLocalizations.of(context);
+    // 요정함이 차서 가루가 된 알(뒤쪽부터)은 알로 알리지 않는다 — 알 팝업이 뜨고 실제론 가루였다(2026-10-01 점검).
+    final shown = eggs.take(math.max(0, eggs.length - overflowEggs));
     setState(() {
       var y = -0.2;
-      for (final g in eggs) {
+      if (overflowEggs > 0) {
+        _pops.add(
+          _Pop(
+            l.fairyOverflowPop('$overflowDust'),
+            0,
+            const Color(0xFFFFE08A),
+            15,
+            baseX: 0.6,
+            baseY: y,
+          ),
+        );
+        y += 0.12;
+      }
+      for (final g in shown) {
         _pops.add(
           _Pop(
             l.fairyEggPop(fairyGradeLabel(l, g)),
@@ -4384,6 +4793,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _fairyDropPops(
         ctrl.lastBossFairyEggs,
         stones: ctrl.lastBossFairyEggs.isNotEmpty,
+        overflowEggs: ctrl.lastBossFairyOverflow.eggs,
+        overflowDust: ctrl.lastBossFairyOverflow.dust,
       );
     }
     final skills = _data.skillConfig;
@@ -4471,10 +4882,110 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     // 챕터를 깬 직후 = 기분 좋은 순간. 리뷰는 **여기서 계정당 한 번만** 묻는다
     // (보상 없음 — 평점에 보상을 걸 수 없다. review_service.dart 주석 참조).
-    if (cleared.isNotEmpty) await requestStoreReview(ref);
+    if (cleared.isNotEmpty) {
+      // 리뷰 창이 뜬 때는 스타터 소개를 다음 기회로(한 번에 창 두 개를 띄우지 않는다).
+      final asked = await _askReviewOnce();
+      if (!asked && mounted) await _offerStarterOnce();
+    }
     if (!mounted) return;
     // 게스트면 진척 지점에서 데이터 유실을 상기시킨다(하루 1회 상한은 내부에서).
     await maybeWarnGuest(context, ref, stage);
+  }
+
+  /// 서버 우편의 고정 문구(운영 지급·운영자 답변)를 기기 언어로 바꾼다(2026-10-02 출시 점검).
+  /// 서버는 한국어로 적어 보내므로 앱이 알아보고 바꿔 보여 준다. 운영자가 직접 쓴 우편은 그대로.
+  static const _grantPrefix = '[운영자 지급] ';
+  static const _grantBodyKo = '운영자가 보낸 보상입니다. 받기를 눌러 수령하세요.';
+  static const _replyTitleKo = '[운영자 답변]';
+
+  String _mailTitle(AppLocalizations l, String t) {
+    if (t == _replyTitleKo) return l.mailReplyTitle;
+    if (t.startsWith(_grantPrefix)) {
+      return l.mailGrantTitle(t.substring(_grantPrefix.length));
+    }
+    return t;
+  }
+
+  String _mailBody(AppLocalizations l, String b) =>
+      b == _grantBodyKo ? l.mailGrantBody : b;
+
+  /// 사냥터 보스를 깬 직후 **게임 창**으로 리뷰를 묻는다(2026-10-02 사장님).
+  /// - 예전엔 시스템 리뷰창만 불렀는데, 스토어가 횟수를 제한해 **아무것도 안 뜨고** "물어봤음"만
+  ///   기록되는 경우가 많았다.
+  /// - **난이도마다 한 번**(쉬움 → 보통 → 어려움 → 극한): "게임 평가하기"로 스토어를 열었으면
+  ///   더 묻지 않고, "나중에"면 다음 난이도의 첫 클리어 때 다시 묻는다. 같은 난이도에서는 반복하지 않는다.
+  /// ⚠️ 평점을 먼저 묻고 좋은 쪽만 스토어로 보내는 "게이팅"은 스토어 정책 위반이다 — 중립 문구로만 묻는다.
+  /// 보상도 걸지 않는다(review_service.dart 주석).
+  Future<bool> _askReviewOnce({bool preview = false}) async {
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null) return false;
+    final tier = save.difficultyTier;
+    if (!preview &&
+        !shouldAskReview(save.reviewPromptTier, save.reviewOpened, tier)) {
+      return false;
+    }
+    final l = AppLocalizations.of(context);
+    final go = await showGameDialog<bool>(
+      context,
+      title: l.reviewAskTitle,
+      icon: Icons.star_rounded,
+      content: Text(
+        l.reviewAskBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+      ),
+      actions: [
+        gameDialogButton(
+          l.reviewAskLater,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(l.reviewAction, () => Navigator.pop(context, true)),
+      ],
+    );
+    if (!mounted) return true;
+    if (go == true) {
+      await requestStoreReview(ref, force: true); // 스토어 페이지를 연다
+    }
+    if (preview) return true; // 미리보기는 이동까지만 — 기록은 남기지 않는다
+    await ref
+        .read(saveControllerProvider.notifier)
+        .markReviewPrompt(tier, opened: go == true);
+    return true;
+  }
+
+  /// 스타터 패키지 소개 — 아직 안 산 계정에 **사냥터 보스를 깬 직후 한 번만**(2026-10-02 출시 점검).
+  /// 계정당 1회 상품이라 부담이 적고 첫 결제 전환에 효과가 크다. 기록은 기기에만(한 번 보여 주면 끝).
+  /// 결제는 여기서 하지 않고 상점으로 보낸다(상점 맨 위에 스타터가 있다).
+  Future<void> _offerStarterOnce({bool preview = false}) async {
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null || (save.starterBought && !preview)) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (!preview && (prefs.getBool('starter_offer_v1') ?? false)) return;
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    final go = await showGameDialog<bool>(
+      context,
+      title: l.starterOfferTitle,
+      icon: Icons.card_giftcard_rounded,
+      content: Text(
+        l.starterOfferBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+      ),
+      actions: [
+        gameDialogButton(
+          l.reviewAskLater,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(l.starterOfferGo, () => Navigator.pop(context, true)),
+      ],
+    );
+    if (!preview) await prefs.setBool('starter_offer_v1', true);
+    if (go == true && mounted) {
+      ref.read(tabIndexProvider.notifier).set(kShopTabIndex);
+    }
   }
 
   Future<void> _showChapterClearDialog(RoadmapChapter ch, int gold) {
@@ -4734,53 +5245,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           // 한 번에 하나의 미션만 노출. 수집하면 다음 미션으로 순환.
           if (missions.isNotEmpty)
             _missionRow(l, save, missions[_activeMissionIndex(save, missions)]),
-          const Divider(height: 10, color: Color(0x22FFFFFF)),
-          _resRow(goldIcon(size: 14), formatCompact(save.gold)),
-          for (final m in _regularMaterials)
-            Padding(
-              padding: const EdgeInsets.only(top: 3),
-              child: _resRow(
-                materialImage(
-                  m,
-                  size: 14,
-                  fallback: Icon(
-                    materialIcon(m),
-                    size: 13,
-                    color: Colors.white70,
-                  ),
-                ),
-                formatCompact(save.materialCount(m)),
-              ),
-            ),
-          // 프리미엄 재화(젤리) — 다른 재화와 동일 간격.
-          Padding(
-            padding: const EdgeInsets.only(top: 3),
-            child: _resRow(
-              jellyIcon(size: 14),
-              formatCompact(save.materialCount(MaterialKind.jelly)),
-              valueColor: const Color(0xFF81D4FA),
-            ),
-          ),
         ],
       ),
     );
   }
-
-  Widget _resRow(Widget icon, String value, {Color valueColor = _onScene}) =>
-      Row(
-        children: [
-          SizedBox(width: 16, height: 16, child: Center(child: icon)),
-          const SizedBox(width: 5),
-          Text(
-            value,
-            style: TextStyle(
-              color: valueColor,
-              fontWeight: FontWeight.w700,
-              fontSize: 10.5,
-            ),
-          ),
-        ],
-      );
 
   /// 현재 노출할 미션 인덱스. 총 수집 횟수만큼 다음 미션으로 순환.
   int _activeMissionIndex(SaveGame save, List<MissionDef> missions) {
@@ -5303,7 +5771,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           side: const BorderSide(color: Color(0xAA5FA8D3), width: 1.5),
         ),
         title: Text(
-          m.title,
+          _mailTitle(l, m.title),
           style: const TextStyle(
             color: _onScene,
             fontWeight: FontWeight.w800,
@@ -5316,7 +5784,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ),
           child: SingleChildScrollView(
             child: SelectableText(
-              m.body,
+              _mailBody(l, m.body),
               style: const TextStyle(
                 color: Color(0xE6FFFFFF),
                 fontSize: 13,
@@ -5369,7 +5837,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    m.title,
+                    _mailTitle(l, m.title),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -5388,7 +5856,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           fontSize: 11,
                         );
                         final clipped = (TextPainter(
-                          text: TextSpan(text: m.body, style: style),
+                          text: TextSpan(
+                            text: _mailBody(l, m.body),
+                            style: style,
+                          ),
                           maxLines: 2,
                           textDirection: Directionality.of(ctx),
                           textScaler: MediaQuery.textScalerOf(ctx),
@@ -5402,7 +5873,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                m.body,
+                                _mailBody(l, m.body),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: style,
@@ -5693,7 +6164,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         // ⚠️ 편지함 시트도 같이 닫는다 — 탭만 바꾸면 상점 **위에** 시트가
         // 그대로 떠 있어 이동한 게 안 보인다(실기 지적 2026-08-20).
         Navigator.of(ctx).pop();
-        r.read(tabIndexProvider.notifier).set(4);
+        r.read(tabIndexProvider.notifier).set(kShopTabIndex);
         if (capAction == _CapAction.buy) {
           // 곤충학자 패스 결제창을 바로 연다(간판 패스 — 자동수령+2배가 이 값어치다).
           final data = r.read(gameDataProvider).value;
@@ -6164,6 +6635,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
             const SizedBox(height: 8),
           ],
+          // 공략집 — 오행·기질·특성 등 용어 설명(2026-10-01 사장님 요청).
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const GuideScreen()),
+                );
+              },
+              icon: const Icon(Icons.menu_book_rounded, size: 18),
+              label: Text(l.guideTitle),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFEBA52F),
+                side: const BorderSide(color: Color(0x55EBA52F)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           _audioSettings(l),
           const SizedBox(height: 10),
           const _LanguageSection(),
@@ -6987,6 +7477,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         _confirmReset(AppLocalizations.of(context));
                       }),
                     ]),
+                    // 리뷰 창 미리보기 — 실제 조건(난이도·기록)과 상관없이 띄우고 기록도 남기지 않는다.
+                    _devSection('리뷰', [
+                      _devBtn('리뷰 창 미리보기', () {
+                        Navigator.pop(context);
+                        _askReviewOnce(preview: true);
+                      }),
+                      _devBtn('스타터 소개 미리보기', () {
+                        Navigator.pop(context);
+                        _offerStarterOnce(preview: true);
+                      }),
+                    ]),
                     // 스킬은 보스 조각으로만 열린다(§2.8) — 실기기에서
                     // 12종을 다 보려면 며칠 걸린다. 미리 보기용 스위치.
                     // 규칙 강제(enforceSkillRules)를 그대로 지나므로
@@ -7119,19 +7620,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             .devMaxUpgrades();
                         toast('강화 전부 최대');
                       }),
-                      _devBtn('요정 8종 넣기(영웅 동행)', () async {
-                        await ref
-                            .read(saveControllerProvider.notifier)
-                            .devGrantFairies();
-                        toast('요정 8종 — 영웅 1·희귀 1·일반 6');
-                      }),
-                      _devBtn('동행 요정 바꾸기', () async {
-                        final kind = await ref
-                            .read(saveControllerProvider.notifier)
-                            .devCycleFairy();
-                        setState(() => _fairyCd = 0);
-                        toast(kind == null ? '요정 없음' : '동행: $kind');
-                      }),
                       _devBtn('심연 층 +10', () async {
                         await ref
                             .read(saveControllerProvider.notifier)
@@ -7161,6 +7649,86 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     // 제대로 뜨는지, 버프 ∞ 표기가 도는지 확인용.
                     // 서버 지급(/admin/grant)과 달리 **로컬 세이브에 바로** 넣는다:
                     // 소모품이 우편으로 도는 경로를 거치지 않아 즉시 확인된다.
+                    // 요정 점검(2026-10-01 사장님 요청) — 둥지·뽑기·합성·도감을 한 곳에서.
+                    _devSection('요정', [
+                      _devBtn('요정 8종 넣기(영웅 동행)', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devGrantFairies();
+                        toast('요정 8종 — 영웅 1·희귀 1·일반 6');
+                      }),
+                      _devBtn('동행 요정 바꾸기', () async {
+                        final kind = await ref
+                            .read(saveControllerProvider.notifier)
+                            .devCycleFairy();
+                        setState(() => _fairyCd = 0);
+                        toast(kind == null ? '요정 없음' : '동행: $kind');
+                      }),
+                      _devBtn('요정 스킬 지금 발동', () {
+                        Navigator.pop(context);
+                        setState(() => _devForceFairy = true);
+                        toast('다음 순간 발동(쿨·조건 무시) — 동행 요정 필요');
+                      }),
+                      _devBtn('요정 8종 스킬 차례로 보기', () {
+                        Navigator.pop(context);
+                        _devPreviewFairySkills();
+                      }),
+                      _devBtn('알 5개(등급별 1개)', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devFairyEggs();
+                        toast('요정 알 — 일반·희귀·영웅·전설·신화');
+                      }),
+                      _devBtn('둥지 즉시 완료', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devFairyNestNow();
+                        toast('둥지 — 지금 꺼낼 수 있음(둥지가 비었으면 그대로)');
+                      }),
+                      _devBtn('속성석·가속기·가루 넣기', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devFairyItems();
+                        toast('속성석 ×10 · 가속기 ×5 · 가루 +5,000');
+                      }),
+                      _devBtn('합성 재료(일반 9마리)', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devFairyMergeFodder();
+                        toast('같은 종류 일반 9마리 — 자동 합성하면 희귀 3마리');
+                      }),
+                      _devBtn('뽑기 천장 직전', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devFairyPityNear();
+                        toast('다음 뽑기가 천장');
+                      }),
+                      _devBtn('젤리 +1,000(뽑기용)', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devAddResources(jelly: 1000);
+                        toast('젤리 +1,000');
+                      }),
+                      _devBtn('둥지 창 열기', () {
+                        Navigator.pop(context);
+                        openFairyWindow(context, 'nest');
+                      }),
+                      _devBtn('알 뽑기 창 열기', () {
+                        Navigator.pop(context);
+                        openFairyWindow(context, 'gacha');
+                      }),
+                      _devBtn('도감 창 열기', () {
+                        Navigator.pop(context);
+                        openFairyWindow(context, 'dex');
+                      }),
+                      _devBtn('요정 전부 비우기', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devFairyReset();
+                        setState(() => _fairyCd = 0);
+                        toast('요정·알·둥지·아이템·도감 비움');
+                      }),
+                    ]),
                     _devSection('상품 적용(결제 없이)', [
                       for (final id in const [
                         'starter_pack',
@@ -8403,16 +8971,20 @@ class _Bar extends StatelessWidget {
     required this.wide,
     required this.colors,
     this.label,
+    this.width,
   });
   final double fraction;
   final bool wide;
+
+  /// 폭을 직접 줄 때(캐릭터 — 요정을 가리지 않게 짧게, 2026-10-01).
+  final double? width;
   final List<Color> colors;
   final String? label;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: wide ? 152 : 106,
+      width: width ?? (wide ? 152 : 106),
       height: 15,
       decoration: BoxDecoration(
         color: const Color(0x99000000),

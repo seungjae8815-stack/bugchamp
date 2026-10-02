@@ -73,6 +73,7 @@ class _TicketBarState extends ConsumerState<TicketBar> {
       TicketCharge.ok => okMsg,
       TicketCharge.adLimit => l.adDailyLimit(cfg.ticketAdDailyLimit),
       TicketCharge.notEnoughJelly => l.notEnoughJelly,
+      TicketCharge.refillLimit => l.pvpRefillLimit(cfg.ticketRefillDailyLimit),
       TicketCharge.alreadyFull => l.pvpTicketAlreadyFull,
       TicketCharge.failed => l.pvpTicketChargeFailed,
     });
@@ -107,6 +108,28 @@ class _TicketBarState extends ConsumerState<TicketBar> {
   }
 
   Future<void> _refill(AppLocalizations l) async {
+    final cfg = _cfg;
+    // 젤리를 쓰는 즉시 버튼 — 확인부터(09-30 원칙). 모자라면 확인 창이 상점 안내로 바뀐다.
+    if (!await confirmJellySpend(
+      context,
+      title: l.pvpTicketRefillTitle,
+      body: l.pvpTicketRefillBody(
+        cfg.ticketRefillAmount,
+        cfg.ticketRefillDailyLimit -
+            (ref
+                    .read(saveControllerProvider)
+                    .value
+                    ?.adUseCount(
+                      kAdFeaturePvpRefill,
+                      dailyDateKey(ref.read(clockProvider).now().toUtc()),
+                    ) ??
+                0),
+      ),
+      jelly: cfg.ticketRefillJelly,
+    )) {
+      return;
+    }
+    if (!mounted) return;
     setState(() => _busy = true);
     try {
       final r = await ref
@@ -312,7 +335,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// 이 경우 낙관 차감분을 되돌리면 안 된다(서버 잔량으로 이미 맞췄다).
   bool _lastRejectedForTickets = false;
 
-  double _power(BattleBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
+  /// 곤충 한 마리의 **결투 전투력** — 상세 창·순위표·서버 편성 검증과 같은 값(훈련소·수련 레벨 포함).
+  /// ⚠️ 선택 목록이 `_power(_toBattleBug(...))`(훈련·수련 빠짐)를 쓰던 시절, 목록 384 · 상세 437 처럼
+  /// 같은 곤충이 두 숫자로 보였다(2026-10-01 실기 지적). 정렬·자동 편성도 실제 세기와 어긋났다.
+  double _bugPower(IndividualBug bug, GameData data, String locale) =>
+      _toDuelBug(bug, data, locale).power;
 
   PvpProfile _me(SaveGame save) => PvpProfile.me(
     save,
@@ -520,9 +547,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             for (final b in adults)
               if (!save.isInjured(b.id, now)) b,
           ]..sort(
-            (a, b) => _power(
-              _toBattleBug(b, data, locale),
-            ).compareTo(_power(_toBattleBug(a, data, locale))),
+            (a, b) => _bugPower(
+              b,
+              data,
+              locale,
+            ).compareTo(_bugPower(a, data, locale)),
           );
       for (var i = 0; i < 3 && i < sorted.length; i++) {
         _team[i] = sorted[i].id;
@@ -1152,10 +1181,26 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           final l = AppLocalizations.of(ctx);
           final save = ref.watch(saveControllerProvider).requireValue;
           final now = ref.read(clockProvider).now().toUtc();
-          final list = _injuredBugs(save, now)
-            ..sort((a, b) => a.$2.compareTo(b.$2));
           final cfg = data.petConfig;
           final locale = Localizations.localeOf(ctx).languageCode;
+          // 먼저 회복할 곤충이 위로(2026-10-01 실기 지적): 출정 칸에 든 곤충 → 등급 → 결투 전투력.
+          final list = _injuredBugs(save, now)
+            ..sort((a, b) {
+              final ta = _team.contains(a.$1.id) ? 0 : 1;
+              final tb = _team.contains(b.$1.id) ? 0 : 1;
+              if (ta != tb) return ta - tb;
+              final g = data
+                  .species(b.$1.speciesId)
+                  .grade
+                  .index
+                  .compareTo(data.species(a.$1.speciesId).grade.index);
+              if (g != 0) return g;
+              return _bugPower(
+                b.$1,
+                data,
+                locale,
+              ).compareTo(_bugPower(a.$1, data, locale));
+            });
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
@@ -1232,6 +1277,59 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  /// 젤리로 즉시 회복(확인 후). 회복실 줄 버튼 · 상세 창 공용.
+  Future<void> _healWithJelly(IndividualBug bug, int jelly) async {
+    final l = AppLocalizations.of(context);
+    if (!await confirmJellySpend(
+      context,
+      title: l.injuryHealConfirmTitle,
+      body: l.injuryHealConfirm(jelly),
+      jelly: jelly,
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    final ok = await ref
+        .read(saveControllerProvider.notifier)
+        .healInjury(bug.id, viaJelly: true);
+    if (!ok && mounted) showCenterToast(context, l.notEnoughJelly);
+  }
+
+  /// 회복 중인 곤충 상세 — 능력치(출정 칸에서 보는 것과 같은 값) + 즉시 회복.
+  Future<void> _showRecoveryDetail(
+    GameData data,
+    String locale,
+    IndividualBug bug,
+    int jelly,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final heal = await showGameDialog<bool>(
+      context,
+      title: l.squadDetailTitle,
+      icon: Icons.healing_rounded,
+      content: _bugStats(
+        l,
+        data,
+        locale,
+        _toDuelBug(bug, data, locale),
+        bug: bug,
+        skin: bugView(ref.read(skinOfProvider), bug),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.injuryHealJelly(jelly),
+          () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (heal == true && mounted) await _healWithJelly(bug, jelly);
+  }
+
   Widget _recoveryRow(
     AppLocalizations l,
     GameData data,
@@ -1245,81 +1343,137 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final time = m >= 60
         ? '${m ~/ 60}:${(m % 60).toString().padLeft(2, '0')}'
         : '${m + 1}m';
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 3),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: const Color(0x22FFFFFF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 44,
-            height: 44,
-            child: bugStageImage(
-              bug.speciesId,
-              LifeStage.adult,
-              size: 44,
-              fallback: bugAvatar(sp, size: 40),
-              skin: bugView(ref.read(skinOfProvider), bug),
-            ),
+    final slot = _team.indexOf(bug.id); // 출정 칸(0~2), 없으면 -1
+    final grade = gradeColor(sp.grade);
+    final stars = List.filled(bug.potential, '★').join();
+    return GestureDetector(
+      // 누르면 상세(능력치·특성) — 어떤 곤충을 먼저 회복할지 고르게(2026-10-01).
+      onTap: () => _showRecoveryDetail(data, locale, bug, jelly),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0x22FFFFFF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: slot >= 0 ? _honey : grade.withValues(alpha: 0.6),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  sp.name.resolve(locale),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: bugStageImage(
+                bug.speciesId,
+                LifeStage.adult,
+                size: 44,
+                fallback: bugAvatar(sp, size: 40),
+                skin: bugView(ref.read(skinOfProvider), bug),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: grade.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          gradeLabel(l, sp.grade),
+                          style: TextStyle(
+                            color: grade,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          sp.name.resolve(locale),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      if (slot >= 0) ...[
+                        const SizedBox(width: 5),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _honey,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            l.duelPickDeployed(slot + 1),
+                            style: const TextStyle(
+                              color: Color(0xFF1A1200),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-                Text(
-                  '${l.injuryTitle} · $time',
-                  style: const TextStyle(
-                    color: Color(0xFFEF9A9A),
-                    fontSize: 12,
+                  const SizedBox(height: 2),
+                  Text(
+                    '⚔ ${formatCompact(_bugPower(bug, data, locale).round())}'
+                    ' · Lv.${bug.level} · $stars',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFEBD24A),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
+                  Text(
+                    '${l.injuryTitle} · $time',
+                    style: const TextStyle(
+                      color: Color(0xFFEF9A9A),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7DBA),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF2E7DBA),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+              ),
+              onPressed: () => _healWithJelly(bug, jelly),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  jellyIcon(size: 15),
+                  const SizedBox(width: 3),
+                  Text(
+                    '$jelly',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
             ),
-            onPressed: () async {
-              if (!await confirmJellySpend(
-                context,
-                title: l.injuryHealConfirmTitle,
-                body: l.injuryHealConfirm(jelly),
-                jelly: jelly,
-              )) {
-                return;
-              }
-              if (!mounted) return;
-              final ok = await ref
-                  .read(saveControllerProvider.notifier)
-                  .healInjury(bug.id, viaJelly: true);
-              if (!ok && mounted) showCenterToast(context, l.notEnoughJelly);
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                jellyIcon(size: 15),
-                const SizedBox(width: 3),
-                Text(
-                  '$jelly',
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -2215,6 +2369,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ) {
     final sp = data.species(bug.speciesId);
     final used = _team.contains(bug.id);
+    final usedAt = _team.indexOf(bug.id); // 0~2 — 몇 번 칸에 출정 중인지
     final until = save.injuredUntil(bug.id);
     final injured = until != null && now.isBefore(until);
     return Opacity(
@@ -2241,6 +2396,29 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // 출정 중 표시(2026-10-01 실기 지적 — 테두리 색만으로는 몰랐다). 몇 번 칸인지까지.
+                if (used)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _honey,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      AppLocalizations.of(ctx).duelPickDeployed(usedAt + 1),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF1A1200),
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 bugStageImage(
                   bug.speciesId,
                   LifeStage.adult,
@@ -2276,7 +2454,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   style: const TextStyle(color: Colors.white, fontSize: 10),
                 ),
                 Text(
-                  '⚔ ${formatCompact(_power(_toBattleBug(bug, data, locale)))}',
+                  '⚔ ${formatCompact(_bugPower(bug, data, locale).round())}',
                   style: const TextStyle(
                     color: Color(0xFFEBD24A),
                     fontSize: 9,
@@ -2627,7 +2805,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         (b) => b!.id == id,
         orElse: () => null,
       );
-      if (bug != null) sum += _power(_toBattleBug(bug, data, locale));
+      if (bug != null) sum += _bugPower(bug, data, locale);
     }
     return sum;
   }
@@ -2640,9 +2818,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     List<IndividualBug> bugs,
   ) => [...bugs]
     ..sort((a, b) {
-      final d = _power(
-        _toBattleBug(b, data, locale),
-      ).compareTo(_power(_toBattleBug(a, data, locale)));
+      final d = _bugPower(
+        b,
+        data,
+        locale,
+      ).compareTo(_bugPower(a, data, locale));
       return d != 0 ? d : a.id.compareTo(b.id); // 동점이어도 순서가 흔들리지 않게
     });
 

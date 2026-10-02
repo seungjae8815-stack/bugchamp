@@ -1,4 +1,3 @@
-import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +41,6 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
       1,
       cfg.gachaPity,
     );
-    final jelly = save.materialCount(MaterialKind.jelly);
 
     return GameDialog(
       title: l.skillGachaTitle,
@@ -95,9 +93,7 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
             children: [
               Expanded(
                 child: FilledButton.tonal(
-                  onPressed: _busy || jelly < cfg.gachaJellyCost
-                      ? null
-                      : () => _draw(l, 1),
+                  onPressed: _busy ? null : () => _draw(l, 1),
                   child: jellyPrice(
                     cost: cfg.gachaJellyCost,
                     times: l.skillTimes('1'),
@@ -107,9 +103,7 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
               const SizedBox(width: 6),
               Expanded(
                 child: FilledButton.tonal(
-                  onPressed: _busy || jelly < cfg.gachaJellyCost * 10
-                      ? null
-                      : () => _draw(l, 10),
+                  onPressed: _busy ? null : () => _draw(l, 10),
                   child: jellyPrice(
                     cost: cfg.gachaJellyCost * 10,
                     times: l.skillTimes('10'),

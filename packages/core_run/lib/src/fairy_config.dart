@@ -158,6 +158,9 @@ class FairyConfig {
     this.gachaWeights = const {},
     this.gachaPity = 10,
     this.gachaPityGrade = FairyGrade.legendary,
+    this.exchangeDustPerJelly = 0,
+    this.exchangeDustDailyCap = 0,
+    this.dexMilestones = const [],
     this.drops = const FairyDrops(),
   });
 
@@ -220,6 +223,14 @@ class FairyConfig {
 
   /// 뽑기 등급 가중치. ⚠️ 드롭보다 반드시 좋아야 한다(§2.6 — 돈을 내면 확률이 나빠지는 상품 금지).
   final Map<FairyGrade, double> gachaWeights;
+
+  /// 상점 교환소: 젤리 1개당 요정 가루(2026-10-01). 0 이면 교환소에 안 뜬다.
+  /// 서버는 쓴 젤리 × 이 값만큼 가루 증가를 더 허용한다.
+  final double exchangeDustPerJelly;
+
+  /// 교환소에서 하루에 받을 수 있는 가루(2026-10-01 사장님 (가) — 1:1 유지 + 하루 상한).
+  /// 한도 없이 팔면 "시간"이 아니라 "레벨(능력치)"을 파는 쪽이 된다(§2.8). 0 = 상한 없음.
+  final int exchangeDustDailyCap;
 
   /// [gachaPity] 회째는 [gachaPityGrade] 이상 확정.
   final int gachaPity;
@@ -347,6 +358,10 @@ class FairyConfig {
     return last;
   }
 
+  /// 도감 마일스톤(2026-10-01 사장님 — **젤리 없이 재료 위주**). 도감 칸(등급 40 + 부가 56) 수가
+  /// [FairyDexMilestone.count] 에 닿으면 앞에서부터 차례로 받는다.
+  final List<FairyDexMilestone> dexMilestones;
+
   factory FairyConfig.fromJson(Map<String, dynamic> json) => FairyConfig(
     kinds: [
       for (final k in json['kinds'] as List)
@@ -381,6 +396,9 @@ class FairyConfig {
     gachaJelly: (json['gachaJelly'] as num?)?.toInt() ?? 30,
     gachaWeights: _byGrade(json['gachaWeights'], (v) => v.toDouble()),
     gachaPity: (json['gachaPity'] as num?)?.toInt() ?? 10,
+    exchangeDustPerJelly:
+        (json['exchangeDustPerJelly'] as num?)?.toDouble() ?? 0,
+    exchangeDustDailyCap: (json['exchangeDustDailyCap'] as num?)?.toInt() ?? 0,
     gachaPityGrade: FairyGrade.fromKey(
       json['gachaPityGrade'] as String? ?? 'legendary',
     ),
@@ -389,7 +407,43 @@ class FairyConfig {
           ? Map<String, dynamic>.from(json['drops'] as Map)
           : null,
     ),
+    dexMilestones: [
+      if (json['dexMilestones'] is List)
+        for (final m in json['dexMilestones'] as List)
+          FairyDexMilestone.fromJson(Map<String, dynamic>.from(m as Map)),
+    ],
   );
+}
+
+/// 요정 도감 마일스톤 한 칸 — 요정 가루 · 가속기 · 화석(젤리 없음, 유한 — §2.6).
+@immutable
+class FairyDexMilestone {
+  const FairyDexMilestone({
+    required this.count,
+    this.dust = 0,
+    this.accelerators = const {},
+    this.fossil = 0,
+  });
+
+  /// 모아야 하는 도감 칸 수.
+  final int count;
+  final int dust;
+  final Map<String, int> accelerators;
+  final int fossil;
+
+  int get acceleratorCount => accelerators.values.fold(0, (a, b) => a + b);
+
+  factory FairyDexMilestone.fromJson(Map<String, dynamic> j) =>
+      FairyDexMilestone(
+        count: (j['count'] as num).toInt(),
+        dust: (j['dust'] as num?)?.toInt() ?? 0,
+        accelerators: {
+          if (j['accelerators'] is Map)
+            for (final e in (j['accelerators'] as Map).entries)
+              '${e.key}': (e.value as num).toInt(),
+        },
+        fossil: (j['fossil'] as num?)?.toInt() ?? 0,
+      );
 }
 
 /// 동행 요정 능력치([FairyConfig.statBonus])를 캐릭터 능력치에 얹는다 — 앱(`_stats`)과 시뮬이 같은 함수.
@@ -519,3 +573,8 @@ class FairyDrops {
     );
   }
 }
+
+/// 요정 스킬 효과를 **상대에게** 보여 줄지(공격형) — 아니면 우리 캐릭터에게(회복·방어·버프형).
+/// 화면 연출용(앱)이다. 새 스킬 효과를 만들면 여기에 넣는다.
+bool fairySkillTargetsEnemy(String effect) =>
+    const {'burstDamage', 'bossBurst', 'critWindow'}.contains(effect);

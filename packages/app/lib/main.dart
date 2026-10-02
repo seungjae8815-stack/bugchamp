@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_version.dart';
 import 'data/save_repository.dart';
+import 'domain/guild_service.dart';
 import 'domain/ad_service.dart';
 import 'domain/admob_ad_service.dart';
 import 'domain/audio_service.dart';
@@ -118,6 +119,9 @@ Future<void> main() async {
   // 저장된 표시 언어를 **첫 프레임 전에** 읽는다(안 그러면 기기 언어로 한 번
   // 그려졌다가 바뀌어 깜빡인다).
   final savedLocale = await loadSavedLocale();
+  // 길드 버프 캐시 — 오프라인 골드 정산(세이브 로드 때)이 길드 조회보다 먼저 돈다.
+  await GuildBuffCache.load();
+  await GuildWarTally.load();
 
   runApp(
     ProviderScope(
@@ -170,6 +174,16 @@ class BugChampApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+      // 시스템 글자 크기를 1.15배까지만 따른다 — 고정 폭 칸(하단 메뉴·카드)이 큰 글씨에서 넘쳤다
+      // (2026-10-02 출시 점검). 접근성을 끄지 않고 상한만 둔다.
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: MediaQuery.textScalerOf(
+            context,
+          ).clamp(maxScaleFactor: 1.15),
+        ),
+        child: child ?? const SizedBox.shrink(),
+      ),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF3B7A2A)),

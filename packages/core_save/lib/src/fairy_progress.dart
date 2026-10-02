@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
+import 'save_game.dart';
+
 /// 요정 진행 규칙(docs/design_fairy.md) — **알 · 둥지 · 가속기 · 속성석 · 합성 · 레벨 · 뽑기 · 분해**.
 ///
 /// 규칙이 여기 한 곳에만 있다(스킬과 같다). 지금은 [FairyState] 만 받고 젤리는 숫자로
@@ -33,19 +35,21 @@ class FairyOp {
 
 /// 알을 넣는다. 요정함이 차면 **넘친 알은 가루로** 바꾼다(곤충 채집함 획득 차단과 달리
 /// 버리지 않는다 — 보스 첫 처치처럼 한 번뿐인 알이 사라지면 클레임이 된다).
-/// 결과 `extra['overflowDust']`.
+/// 결과 `extra['overflowDust']` · `extra['overflowEggs']`(가루로 바뀐 알 수).
 FairyOp grantFairyEggs(FairyState s, FairyConfig cfg, List<FairyGrade> grades) {
   if (grades.isEmpty) return FairyOp.ok(s);
   final eggs = [...s.eggs];
   var seq = s.seq;
   var dust = s.dust;
   var overflow = 0;
+  var overflowEggs = 0;
   var used = s.boxUsed;
   for (final g in grades) {
     if (used >= cfg.boxCap) {
       final d = cfg.releaseDust[g] ?? 0;
       dust += d;
       overflow += d;
+      overflowEggs++;
       continue;
     }
     seq++;
@@ -54,7 +58,7 @@ FairyOp grantFairyEggs(FairyState s, FairyConfig cfg, List<FairyGrade> grades) {
   }
   return FairyOp.ok(
     s.copyWith(eggs: eggs, seq: seq, dust: dust),
-    extra: {'overflowDust': overflow},
+    extra: {'overflowDust': overflow, 'overflowEggs': overflowEggs},
   );
 }
 
@@ -323,6 +327,9 @@ FairyOp autoMergeFairies(
     for (final f in made)
       if (alive.contains(f.id)) f,
   ];
+  // 화면에 보이는 "몇 마리를 합치나" = **원래 있던 요정 중 사라지는 수**(연쇄 중간 산물은 빼야
+  // 일반 9 → 영웅 1 이 "12마리"로 부풀지 않는다, 2026-10-01 점검).
+  used = s.fairies.where((f) => !alive.contains(f.id)).length;
   return FairyOp.ok(dryRun ? s : cur, extra: {'made': result, 'used': used});
 }
 
@@ -399,7 +406,11 @@ FairyOp drawFairyEggs(
   return FairyOp.ok(
     op.state!,
     jelly: cost,
-    extra: {'grades': grades, 'overflowDust': op.extra['overflowDust']},
+    extra: {
+      'grades': grades,
+      'overflowDust': op.extra['overflowDust'],
+      'overflowEggs': op.extra['overflowEggs'],
+    },
   );
 }
 
@@ -449,8 +460,9 @@ int fairyStateValue(FairyState s) =>
 /// 규칙 상한 정리 — **앱 로드와 서버 업로드가 같은 함수**를 쓴다.
 ///
 /// - 레벨은 등급 상한까지.
-/// - 요정함 상한([FairyConfig.boxCap])을 넘으면 알부터, 그다음 **품질 낮은 요정부터** 가루로 바꾼다
-///   (동행 요정은 남긴다). 세이브 크기 방어선(§2.1)이라 조작 업로드도 여기서 잘린다.
+/// - 요정함 상한([FairyConfig.boxCap])을 넘으면 알부터, 그다음 **등급 → 레벨 → 품질이 낮은 요정부터**
+///   가루로 바꾼다(분해와 같은 가루 + 레벨업 환급, 동행 요정은 남긴다). 품질만 보던 시절엔 품질 낮은
+///   신화 50레벨이 일반보다 먼저 사라질 수 있었다(2026-10-01 점검). 세이브 크기 방어선(§2.1).
 FairyState enforceFairyRules(FairyState s, FairyConfig cfg) {
   var fairies = [
     for (final f in s.fairies)
@@ -466,14 +478,20 @@ FairyState enforceFairyRules(FairyState s, FairyConfig cfg) {
     over--;
   }
   if (over > 0) {
-    final order = [
-      for (final f in fairies)
-        if (f.id != s.companionId) f,
-    ]..sort((a, b) => a.quality.compareTo(b.quality));
+    final order =
+        [
+          for (final f in fairies)
+            if (f.id != s.companionId) f,
+        ]..sort((a, b) {
+          final g = a.grade.index.compareTo(b.grade.index);
+          if (g != 0) return g;
+          final lv = a.level.compareTo(b.level);
+          return lv != 0 ? lv : a.quality.compareTo(b.quality);
+        });
     final gone = <String>{};
     for (final f in order.take(over)) {
       gone.add(f.id);
-      dust += cfg.releaseDust[f.grade] ?? 0;
+      dust += (cfg.releaseDust[f.grade] ?? 0) + _refund(cfg, [f]);
     }
     fairies = [
       for (final f in fairies)
@@ -497,7 +515,8 @@ FairyOp fairyBossDrop(
   final grade = firstKill ? d.bossFirstEggGrade(tier) : null;
   if (grade == null)
     return FairyOp.ok(s, extra: const {'eggs': <FairyGrade>[]});
-  var out = grantFairyEggs(s, cfg, [grade]).state!;
+  final granted = grantFairyEggs(s, cfg, [grade]);
+  var out = granted.state!;
   final stones = <String, int>{};
   final subs = cfg.subWeight.keys.toList();
   for (var i = 0; i < d.bossFirstStones && subs.isNotEmpty; i++) {
@@ -510,6 +529,9 @@ FairyOp fairyBossDrop(
     extra: {
       'eggs': [grade],
       'stones': stones,
+      // 요정함이 차서 알 대신 가루가 됐으면 화면이 그렇게 말해야 한다(2026-10-01 점검 — 알 팝업이 떴다).
+      'overflowDust': granted.extra['overflowDust'],
+      'overflowEggs': granted.extra['overflowEggs'],
     },
   );
 }
@@ -537,7 +559,8 @@ FairyOp fairyEliteDrop(FairyState s, FairyConfig cfg, math.Random rng) {
   if (eggs.isEmpty && stones.isEmpty && !gotAccel) {
     return FairyOp.ok(s, extra: const {'eggs': <FairyGrade>[]});
   }
-  var out = eggs.isEmpty ? s : grantFairyEggs(s, cfg, eggs).state!;
+  final granted = eggs.isEmpty ? null : grantFairyEggs(s, cfg, eggs);
+  var out = granted?.state ?? s;
   out = grantFairyItems(
     out,
     stones: stones,
@@ -545,6 +568,60 @@ FairyOp fairyEliteDrop(FairyState s, FairyConfig cfg, math.Random rng) {
   );
   return FairyOp.ok(
     out,
-    extra: {'eggs': eggs, 'stones': stones, if (gotAccel) 'accel': accel},
+    extra: {
+      'eggs': eggs,
+      'stones': stones,
+      if (gotAccel) 'accel': accel,
+      'overflowDust': granted?.extra['overflowDust'] ?? 0,
+      'overflowEggs': granted?.extra['overflowEggs'] ?? 0,
+    },
   );
 }
+
+/// 요정 도감에 모은 칸 수(등급 + 부가). 모르는 키는 서버가 이미 버린다.
+int fairyDexCount(FairyState s) => s.dex.length;
+
+/// 지금 받을 수 있는 다음 도감 마일스톤(없으면 null).
+FairyDexMilestone? fairyDexNext(FairyState s, FairyConfig cfg) {
+  if (s.dexClaimed >= cfg.dexMilestones.length) return null;
+  final m = cfg.dexMilestones[s.dexClaimed];
+  return fairyDexCount(s) >= m.count ? m : null;
+}
+
+/// 도감 마일스톤 하나를 받는다 — 요정 가루·가속기는 요정 상태에, 화석은 재료에. 못 받으면 null.
+/// 앱(받기 버튼)·서버(허용치 계산)가 같은 표를 본다.
+SaveGame? claimFairyDexMilestone(SaveGame save, FairyConfig cfg) {
+  final m = fairyDexNext(save.fairy, cfg);
+  if (m == null) return null;
+  final f = grantFairyItems(
+    save.fairy,
+    accelerators: m.accelerators,
+    dust: m.dust,
+  ).copyWith(dexClaimed: save.fairy.dexClaimed + 1);
+  return save.copyWith(
+    fairy: f,
+    materials: m.fossil <= 0
+        ? null
+        : {
+            ...save.materials,
+            MaterialKind.fossil:
+                save.materialCount(MaterialKind.fossil) + m.fossil,
+          },
+  );
+}
+
+/// 저장본 → 올라온 세이브 사이에 **새로 받은** 도감 마일스톤(서버 허용치용). 올라온 세이브의 도감 칸 수가
+/// 실제로 닿은 것만 센다 — 받은 수를 부풀려도 칸이 모자라면 인정하지 않는다.
+List<FairyDexMilestone> fairyDexNewlyClaimed(
+  FairyState stored,
+  FairyState client,
+  FairyConfig cfg,
+) => [
+  for (
+    var i = stored.dexClaimed;
+    i < client.dexClaimed && i < cfg.dexMilestones.length;
+    i++
+  )
+    if (fairyDexCount(client) >= cfg.dexMilestones[i].count)
+      cfg.dexMilestones[i],
+];

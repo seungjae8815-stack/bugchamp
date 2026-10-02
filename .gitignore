@@ -27,3 +27,4 @@ packages/app/supabase.env.json
 **/android/key.properties
 *.jks
 *.keystore
+__pycache__/

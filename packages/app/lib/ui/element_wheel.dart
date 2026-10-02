@@ -1,7 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
+import 'package:core_battle/core_battle.dart' show DuelParams;
+import 'package:core_run/core_run.dart' show BattleConfig;
 import 'package:flutter/material.dart' hide Element;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../domain/providers.dart';
 
 import '../l10n/app_localizations.dart';
 import 'art.dart';
@@ -164,19 +169,16 @@ class _WheelPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const cyc = ElementWheel.cycle;
-    // 상생 — 이웃끼리(둘레). 초록.
-    for (var i = 0; i < 5; i++) {
-      final from = cyc[i], to = cyc[(i + 1) % 5];
-      final on = highlight == null || from == highlight || to == highlight;
-      final (a, b) = _trim(points[i], points[(i + 1) % 5], 30);
-      _arrow(
-        canvas,
-        a,
-        b,
-        const Color(0xFF7CE38B).withValues(alpha: on ? 0.95 : 0.18),
-        on ? 3 : 2,
-      );
-    }
+    // 둘레 — 흐린 원만(상생 순서 시너지는 1.0.14 결투 개편에서 폐지, 화살표를 그리면
+    // 아직 있는 규칙으로 읽힌다). 배치는 그대로 둬야 한 칸 건너 = 상극이 된다.
+    canvas.drawCircle(
+      center,
+      (points[0] - center).distance,
+      Paint()
+        ..color = const Color(0x22FFFFFF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
     // 상극 — 하나 건너뛰기(가운데를 가로지른다). 빨강.
     for (var i = 0; i < 5; i++) {
       final from = cyc[i], to = cyc[(i + 2) % 5];
@@ -200,6 +202,11 @@ class _WheelPainter extends CustomPainter {
 /// 오행 관계도를 띄운다. [highlight] 를 주면 그 오행의 상극 관계만 진하게 보인다.
 Future<void> showElementWheel(BuildContext context, {Element? highlight}) {
   final l = AppLocalizations.of(context);
+  // 상극 배율은 결투 수치(battle.json → duel.restrainMult)에서 — 문구에 박으면 옛 값이 남는다.
+  final data = ProviderScope.containerOf(context).read(gameDataProvider).value;
+  final mult = DuelParams.fromJson(
+    (data?.battleConfig ?? const BattleConfig()).duelJson,
+  ).restrainMult;
   return showGameDialog<void>(
     context,
     title: l.elementWheelTitle,
@@ -212,9 +219,10 @@ Future<void> showElementWheel(BuildContext context, {Element? highlight}) {
       children: [
         Center(child: ElementWheel(highlight: highlight)),
         const SizedBox(height: 12),
-        _legend(const Color(0xFFFF6B6B), l.elementWheelRestrain),
-        const SizedBox(height: 6),
-        _legend(const Color(0xFF7CE38B), l.elementWheelGenerate),
+        _legend(
+          const Color(0xFFFF6B6B),
+          l.elementWheelRestrain(mult.toStringAsFixed(1)),
+        ),
         const SizedBox(height: 10),
         // 규칙을 읽고도 **뭘 하라는 건지** 모르면 그림이 소용없다.
         Text(

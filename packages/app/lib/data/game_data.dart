@@ -20,6 +20,7 @@ class GameData {
     this.forgeConfig,
     this.skillConfig,
     this.fairyConfig,
+    this.guildConfig = const GuildConfig(),
     this.missionConfig,
     this.petConfig,
     this.dailyConfig,
@@ -57,6 +58,9 @@ class GameData {
 
   /// 요정(docs/design_fairy.md). 없으면 요정 기능이 꺼진다.
   final FairyConfig? fairyConfig;
+
+  /// 길드 기본 규칙(guild.json) — 화면 안내용. 검사는 서버가 같은 파일로 한다.
+  final GuildConfig guildConfig;
 
   /// 미션 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final MissionConfig? missionConfig;
@@ -119,6 +123,7 @@ class GameData {
     Map<String, dynamic>? forgeConfig,
     Map<String, dynamic>? skillConfig,
     Map<String, dynamic>? fairyConfig,
+    Map<String, dynamic>? guildConfig,
     Map<String, dynamic>? missionConfig,
     Map<String, dynamic>? petConfig,
     Map<String, dynamic>? dailyConfig,
@@ -165,6 +170,7 @@ class GameData {
       fairyConfig: fairyConfig == null
           ? null
           : FairyConfig.fromJson(fairyConfig),
+      guildConfig: GuildConfig.fromJson(guildConfig),
       missionConfig: missionConfig == null
           ? null
           : MissionConfig.fromJson(missionConfig),
@@ -216,6 +222,7 @@ class GameData {
       read('dex.json'),
       read('event.json'),
       read('fairies.json'),
+      read('guild.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -240,6 +247,7 @@ class GameData {
       dexConfig: results[19],
       eventConfig: results[20],
       fairyConfig: results[21],
+      guildConfig: results[22],
     );
   }
 }

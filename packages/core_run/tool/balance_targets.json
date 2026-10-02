@@ -216,5 +216,16 @@
     1.15,
     1.3,
     1.45
-  ]
+  ],
+  "_guildComment": "길드 버프(1.0.15, design_guild.md §5). 길드 레벨은 guild.json 곡선 그대로, 경험치는 가정: 활동적인 20인 길드 하루 약 600(미션 3회 × 평균 8 + 출석 5 + 보스 2회 × 1 = 인당 31 × 20 − 결석). 포인트는 skillOrder 순서로 찍는다(공격·골드 먼저). ⚠️ 90일 표(zoneTiers)는 **길드 없이** 맞춘다 — balance_sim 기본은 길드를 빼고, `--guild` 로 넣는다. 2026-10-01 측정: 길드 없이 91일 · 활동적 길드 82일. 길드 포함으로 표를 다시 뽑으면 길드원 91일 · 비길드 112일이 돼 길드가 사실상 필수가 된다 — 그래서 가속으로 둔다.",
+  "guild": {
+    "expPerDay": 600,
+    "skillOrder": [
+      "attack", "gold", "attack", "gold", "attack", "gold", "attack", "gold", "attack", "gold",
+      "hp", "hp", "hp", "hp", "hp",
+      "material", "material", "material", "material", "material",
+      "xp", "xp", "xp", "xp", "xp",
+      "mission", "mission", "mission", "mission", "mission"
+    ]
+  }
 }

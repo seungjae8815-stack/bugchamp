@@ -569,6 +569,22 @@ void main() {
       expect(poor.pvpTickets, 2);
     });
 
+    test('젤리 충전은 하루 횟수까지만 — 패스·광고제거여도 같다(2026-10-02)', () {
+      expect(cfg.ticketRefillDailyLimit, greaterThan(0));
+      final r = actions.refillPvpTickets(
+        spent.copyWith(materials: {MaterialKind.jelly: 30}),
+      );
+      expect(r.save!.adUseCount(kAdFeaturePvpRefill, dailyDateKey(t0)), 1);
+      final maxed = spent.copyWith(
+        materials: {MaterialKind.jelly: 300},
+        adUseCounts: {kAdFeaturePvpRefill: cfg.ticketRefillDailyLimit},
+        adUseDate: dailyDateKey(t0),
+        adsRemoved: true,
+      );
+      final no = actions.refillPvpTickets(maxed);
+      expect(no.error, 'refill_limit');
+    });
+
     test('가득 찬 상태에서는 젤리를 받지 않는다', () {
       final full = spent.copyWith(
         pvpTickets: cfg.ticketMax,
@@ -1877,6 +1893,49 @@ void main() {
         expect(r.extra['clamped'], isFalse);
       });
 
+      // 도감 칸 [n] 개(종류×등급 → 종류×부가 순서로 진짜 키만).
+      Set<String> dexOf(int n) => {
+        for (final k in fc.kinds)
+          for (final g in FairyGrade.values) FairyState.dexKey(k.id, g),
+        for (final k in fc.kinds)
+          for (final b in fc.subWeight.keys) FairyState.dexSubKey(k.id, b),
+      }.take(n).toSet();
+
+      test('도감 마일스톤 — 받은 가속기·가루·화석이 업로드 상한에 잘리지 않는다', () {
+        final before = withFairy(FairyState(dex: dexOf(30)));
+        var after = before;
+        for (var i = 0; i < 4; i++) {
+          after = claimFairyDexMilestone(after, fc)!;
+        }
+        expect(claimFairyDexMilestone(after, fc), isNull, reason: '45칸 전');
+        final r = actions.mergeSave(before, after.toJson());
+        expect(r.save!.fairy.dexClaimed, 4);
+        expect(r.save!.fairy.accelerators, after.fairy.accelerators);
+        expect(r.save!.fairy.dust, after.fairy.dust);
+        expect(
+          r.save!.materialCount(MaterialKind.fossil),
+          after.materialCount(MaterialKind.fossil),
+        );
+      });
+
+      test('도감 칸이 모자라면 받은 수를 인정하지 않는다', () {
+        final before = withFairy(FairyState(dex: dexOf(10)));
+        final forged = before.copyWith(
+          fairy: before.fairy.copyWith(dexClaimed: 8),
+        );
+        final r = actions.mergeSave(before, forged.toJson());
+        expect(r.save!.fairy.dexClaimed, 2, reason: '10칸 = 5·10 두 개만');
+      });
+
+      test('받은 수를 되돌려 같은 보상을 다시 받을 수 없다', () {
+        final before = withFairy(FairyState(dex: dexOf(30), dexClaimed: 4));
+        final rolled = before.copyWith(
+          fairy: before.fairy.copyWith(dexClaimed: 0),
+        );
+        final r = actions.mergeSave(before, rolled.toJson());
+        expect(r.save!.fairy.dexClaimed, 4);
+      });
+
       test('알 없이 신화를 한 마리라도 만들어 넣으면 그 요정만 뺀다', () {
         final before = withFairy(FairyState.empty);
         final forged = FairyState(fairies: [fy(1, FairyGrade.mythic)], seq: 1);
@@ -1943,6 +2002,97 @@ void main() {
         final r = actions.mergeSave(before, after.toJson());
         expect(r.save!.fairy.dust, lessThan(1 << 30));
         expect(r.save!.fairy.dust, greaterThan(0));
+      });
+
+      // ── 2026-10-01 점검에서 나온 구멍 ──
+      test('기존 요정의 등급·개체값을 고쳐 올리면 저장본 값으로(레벨은 오른 것 인정)', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.common)], seq: 1),
+        );
+        final forged = Fairy(
+          id: 'f1',
+          kind: kind,
+          grade: FairyGrade.mythic,
+          sub: sub,
+          baseRoll: kFairyRollMax,
+          subRoll: kFairyRollMax,
+          level: 3,
+        );
+        final r = actions.mergeSave(
+          before,
+          before
+              .copyWith(fairy: before.fairy.copyWith(fairies: [forged]))
+              .toJson(),
+        );
+        final f = r.save!.fairy.fairyById('f1')!;
+        expect(f.grade, FairyGrade.common);
+        expect(f.baseRoll, 0);
+        expect(f.level, 3);
+        expect(r.extra['clampReasons'], contains('fairy'));
+      });
+
+      test('같은 id 를 겹쳐 올리면 하나만 남는다', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.common)], seq: 1),
+        );
+        final r = actions.mergeSave(
+          before,
+          before
+              .copyWith(
+                fairy: before.fairy.copyWith(
+                  fairies: [fy(1, FairyGrade.common), fy(1, FairyGrade.common)],
+                ),
+              )
+              .toJson(),
+        );
+        expect(r.save!.fairy.fairies.length, 1);
+      });
+
+      test('가루는 사라진 요정의 분해·환급만큼만 — 분해는 통과, 쏟아 넣기는 잘린다', () {
+        final before = withFairy(
+          FairyState(
+            fairies: [
+              fy(1, FairyGrade.legendary, lv: 5),
+              fy(2, FairyGrade.common),
+            ],
+            seq: 2,
+          ),
+        );
+        final rel = releaseFairy(before.fairy, fc, 'f1');
+        final ok = actions.mergeSave(
+          before,
+          before.copyWith(fairy: rel.state).toJson(),
+        );
+        expect(ok.save!.fairy.dust, rel.state!.dust, reason: '정상 분해는 그대로');
+        final forged = actions.mergeSave(
+          before,
+          before.copyWith(fairy: before.fairy.copyWith(dust: 100000)).toJson(),
+        );
+        expect(forged.save!.fairy.dust, lessThan(1000));
+      });
+
+      test('가짜 도감 칸으로 마일스톤을 부풀려도 화석은 더 나오지 않는다', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.common)], seq: 1),
+        );
+        SaveGame up(int claimed) => before.copyWith(
+          fairy: before.fairy.copyWith(
+            dex: {for (var i = 0; i < 100; i++) 'junk$i'},
+            dexClaimed: claimed,
+          ),
+          materials: {
+            ...before.materials,
+            MaterialKind.fossil:
+                before.materialCount(MaterialKind.fossil) + 1000000000,
+          },
+        );
+        final a = actions.mergeSave(before, up(8).toJson());
+        final b = actions.mergeSave(before, up(0).toJson());
+        expect(
+          a.save!.materialCount(MaterialKind.fossil),
+          b.save!.materialCount(MaterialKind.fossil),
+        );
+        expect(a.save!.fairy.dexClaimed, 0);
       });
 
       test('보스 첫 처치 알(전설)은 새로 잡은 보스 수만큼 받는다', () {
@@ -2025,6 +2175,30 @@ void main() {
         final r = actions.mergeSave(before, j);
         expect(r.save!.fairy, FairyState.empty);
       });
+    });
+
+    test('곤충 잠금을 모르는 앱(feat 15)의 업로드는 잠금을 지우지 않는다', () {
+      const id = 'locked1';
+      final before = stored().copyWith(
+        bugs: [
+          const IndividualBug(
+            id: id,
+            speciesId: 'kabuto',
+            sizeMm: 50,
+            potential: 4,
+            element: Element.wood,
+            temperament: Temperament.cautious,
+            sex: Sex.male,
+            stage: LifeStage.adult,
+          ),
+        ],
+        lockedBugIds: {id},
+      );
+      final j = before.toJson()
+        ..['feat'] = 15
+        ..remove('lockedBugs');
+      final r = actions.mergeSave(before, j);
+      expect(r.save!.lockedBugIds, {id});
     });
 
     group('스킬(§2.8)', () {

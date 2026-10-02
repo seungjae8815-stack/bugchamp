@@ -70,6 +70,15 @@ int _pvpRank = 10;
 /// 극한을 깬 유저만 해당한다 — 90일 표의 끝(극한 최종 보스) 이후의 수입이다.
 int _abyssRank = 10;
 
+/// 길드 보스 주간 순위(같은 티어 길드끼리, 0 = 순위 밖·길드 없음). `--guild-boss-rank=`.
+/// 기본값은 다른 순위와 같은 이유로 **젤리를 받는 마지막 순위**(10위).
+int _guildBossRank = 10;
+
+/// 길드전 결과(`win` · `lose` · `none`)와 티어. `--guild-war=` · `--guild-tier=`.
+/// 기본 = 브론즈 승리(가장 흔한 "받는" 경우). 패배는 절반.
+String _guildWar = 'win';
+String _guildTier = 'bronze';
+
 /// 미션 순환 티어(보상이 `rewardGrowth^claims` 로 자라므로 진행도에 따라 커진다).
 /// `--mission-tier=` 로 바꾼다.
 int _missionClaims = 20;
@@ -91,6 +100,12 @@ void main(List<String> args) {
         _pvpRank = int.parse(m.group(2)!);
       case 'abyss-rank':
         _abyssRank = int.parse(m.group(2)!);
+      case 'guild-boss-rank':
+        _guildBossRank = int.parse(m.group(2)!);
+      case 'guild-war':
+        _guildWar = m.group(2)!;
+      case 'guild-tier':
+        _guildTier = m.group(2)!;
       case 'mission-tier':
         _missionClaims = int.parse(m.group(2)!);
     }
@@ -111,6 +126,7 @@ void main(List<String> args) {
   final dex = DexConfig.fromJson(load('dex.json'));
   final roadmap = RoadmapConfig.fromJson(load('roadmap.json'));
   final run = RunConfig.fromJson(load('run_config.json'));
+  final guild = GuildConfig.fromJson(load('guild.json'));
 
   final rows = <({String name, double perDay, String note})>[];
 
@@ -219,6 +235,32 @@ void main(List<String> args) {
         : '$_abyssRank위 $abyssJelly젤리 (주간 → ÷7, 극한 이후)',
   ));
 
+  // ── 4d. 길드 보스 주간 순위(1.0.15) — 같은 티어 10위까지, 그 주에 공격한 길드원 한 명당.
+  // 보스 공격·처치·미션·출석·상점에는 젤리가 없다(무한 통로).
+  final gBossJelly = guild.boss.rankJelly(_guildBossRank);
+  rows.add((
+    name: '길드 보스 순위',
+    perDay: gBossJelly / 7,
+    note: _guildBossRank <= 0
+        ? '순위 밖(또는 길드 없음) — 0'
+        : '$_guildBossRank위 $gBossJelly젤리 (주간 → ÷7)',
+  ));
+
+  // ── 4e. 길드전(1.0.15) — 주 1회, 티어별 · 승리 100% / 패배 50%(사장님 확정).
+  final gTier = guild.war.tierById(_guildTier) ?? guild.war.tierOf(0);
+  final gWarJelly = switch (_guildWar) {
+    'win' => gTier.jelly,
+    'lose' => (gTier.jelly * guild.war.loseShare).round(),
+    _ => 0,
+  };
+  rows.add((
+    name: '길드전',
+    perDay: gWarJelly / 7,
+    note: _guildWar == 'none'
+        ? '참가 안 함 — 0'
+        : '${gTier.id} $_guildWar $gWarJelly젤리 (주간 → ÷7)',
+  ));
+
   // ── 5. 광고 버프 — 버프 1회당 젤리 1개(코드 상수). 누적 상한까지 볼 수 있다.
   final buffAdsPerDay = buffs.durationSeconds <= 0
       ? 0.0
@@ -300,7 +342,8 @@ void main(List<String> args) {
   stdout.writeln('── 가정 ──');
   stdout.writeln(
     '  활동 ${_activeHours}h/일 · 광고 시청률 $_adRate · 리그 $_leagueId · 대회 $_eventRank위'
-    ' · 결투 $_pvpRank위 · 심연 $_abyssRank위',
+    ' · 결투 $_pvpRank위 · 심연 $_abyssRank위'
+    ' · 길드 보스 $_guildBossRank위 · 길드전 $_guildTier $_guildWar',
   );
   stdout.writeln('');
   stdout.writeln('── 젤리 수급(하루) ──');

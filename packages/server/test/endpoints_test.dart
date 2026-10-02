@@ -7,6 +7,8 @@ import 'package:core_save/core_save.dart';
 import 'package:http/http.dart' as http;
 import 'package:server/src/app.dart';
 import 'package:server/src/game_config.dart';
+import 'package:server/src/guild_mission_store.dart';
+import 'package:server/src/guild_store.dart';
 import 'package:server/src/state_store.dart';
 import 'package:server/src/support.dart';
 import 'package:server/src/verifier.dart';
@@ -199,6 +201,17 @@ void main() {
   });
 
   final gameConfig = GameConfig(
+    guild: const GuildConfig(
+      shop: [
+        GuildShopItem(
+          id: 'fossil',
+          kind: 'fossil',
+          amount: 20,
+          cost: 30,
+          limit: 5,
+        ),
+      ],
+    ),
     iap: IapConfig.fromJson(_readJson('iap.json')),
     battle: BattleConfig.fromJson(_readJson('battle.json')),
     run: RunConfig.fromJson(_readJson('run_config.json')),
@@ -236,6 +249,8 @@ void main() {
     List<Map<String, dynamic>> notices = const [],
     List<Map<String, dynamic>> mail = const [],
     List<Map<String, dynamic>> codes = const [],
+    GuildStore? guildStore,
+    GuildMissionStore? guildMissionStore,
   }) {
     fake = _Fake(
       serverHasSave ? {'user-1': (save ?? mySave).toJson()} : {},
@@ -260,6 +275,8 @@ void main() {
       speciesById: {'a': species},
       receiptVerifier: FixedVerifier(verdict),
       clock: () => _t,
+      guildStore: guildStore ?? MemoryGuildStore(clock: () => _t),
+      guildMissionStore: guildMissionStore ?? MemoryGuildMissionStore(),
     );
   }
 
@@ -1619,6 +1636,128 @@ void main() {
       await hook(h, update(id: 5));
       expect(fake.lastSaved, isNull);
       expect(sent.length, 1);
+    });
+  });
+  group('길드 미션', () {
+    test('혼자 바로 성공 → 보상 받기가 서버 세이브에 재료·화석을 넣는다', () async {
+      final guilds = MemoryGuildStore(clock: () => _t);
+      final g = await guilds.insertGuild(
+        name: '장수풍뎅이단',
+        lang: 'ko',
+        leader: 'user-1',
+        maxMembers: 20,
+        joinMode: GuildJoinMode.open,
+      );
+      await guilds.insertMember(g!.id, 'user-1', GuildRole.leader);
+      final missions = MemoryGuildMissionStore();
+      final h = handler(guildStore: guilds, guildMissionStore: missions);
+      final before = mySave.materialCount(MaterialKind.fossil);
+
+      final st = await post(h, '/guild/mission/start', {
+        'slot': 0,
+        'wait': 60,
+        'power': 1000,
+      }, token: makeToken());
+      expect(st.statusCode, 200);
+
+      final res = await post(h, '/guild/mission/claim', {}, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map;
+      expect(body['missions'], 1);
+      final fossil = (body['granted'] as Map)['fossil'] as int;
+      expect(fossil, greaterThan(0));
+      final saved = SaveGame.fromJson(
+        migrateToCurrent((fake.lastSaved!['data'] as Map).cast()),
+      );
+      expect(saved.materialCount(MaterialKind.fossil), before + fossil);
+
+      final again = await post(
+        h,
+        '/guild/mission/claim',
+        {},
+        token: makeToken(),
+      );
+      expect(again.statusCode, 409, reason: '두 번은 못 받는다');
+    });
+  });
+
+  group('길드 상점', () {
+    test('사면 코인이 빠지고 서버 세이브에 화석이 들어간다', () async {
+      final guilds = MemoryGuildStore(clock: () => _t);
+      final g = await guilds.insertGuild(
+        name: '상점길드',
+        lang: 'ko',
+        leader: 'user-1',
+        maxMembers: 20,
+        joinMode: GuildJoinMode.open,
+      );
+      await guilds.insertMember(g!.id, 'user-1', GuildRole.leader);
+      await guilds.addCoins('user-1', 100);
+      final h = handler(guildStore: guilds);
+      final before = mySave.materialCount(MaterialKind.fossil);
+      final res = await post(h, '/guild/shop/buy', {
+        'itemId': 'fossil',
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map;
+      final n = (body['granted'] as Map)['fossil'] as int;
+      final saved = SaveGame.fromJson(
+        migrateToCurrent((fake.lastSaved!['data'] as Map).cast()),
+      );
+      expect(saved.materialCount(MaterialKind.fossil), before + n);
+      expect(body['myCoins'], lessThan(100));
+    });
+  });
+
+  group('길드 개설(젤리 200)', () {
+    SaveGame withJelly(int n) => mySave.copyWith(
+      materials: {...mySave.materials, MaterialKind.jelly: n},
+    );
+
+    test('만들면 서버 세이브에서 젤리 200이 빠진다', () async {
+      final guilds = MemoryGuildStore(clock: () => _t);
+      final h = handler(save: withJelly(250), guildStore: guilds);
+      final res = await post(h, '/guild/create', {
+        'name': '장수풍뎅이단',
+        'lang': 'ko',
+        'joinMode': 'open',
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map;
+      expect(body['jellySpent'], 200);
+      expect((body['guild'] as Map)['name'], '장수풍뎅이단');
+      final saved = SaveGame.fromJson(
+        migrateToCurrent((fake.lastSaved!['data'] as Map).cast()),
+      );
+      expect(saved.materialCount(MaterialKind.jelly), 50);
+    });
+
+    test('젤리가 모자라면 길드도 안 생기고 세이브도 안 건드린다', () async {
+      final guilds = MemoryGuildStore(clock: () => _t);
+      final h = handler(save: withJelly(199), guildStore: guilds);
+      final res = await post(h, '/guild/create', {
+        'name': '장수풍뎅이단',
+      }, token: makeToken());
+      expect(res.statusCode, 409);
+      expect(guilds.guilds, isEmpty);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('이름이 겹쳐 실패하면 젤리를 쓰지 않는다', () async {
+      final guilds = MemoryGuildStore(clock: () => _t);
+      await guilds.insertGuild(
+        name: '장수풍뎅이단',
+        lang: 'ko',
+        leader: 'someone',
+        maxMembers: 20,
+        joinMode: GuildJoinMode.open,
+      );
+      final h = handler(save: withJelly(500), guildStore: guilds);
+      final res = await post(h, '/guild/create', {
+        'name': '장수풍뎅이단',
+      }, token: makeToken());
+      expect(res.statusCode, 409);
+      expect(fake.lastSaved, isNull);
     });
   });
 }

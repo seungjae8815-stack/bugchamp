@@ -1,0 +1,308 @@
+import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
+import 'package:server/src/guild_actions.dart';
+import 'package:server/src/guild_store.dart';
+import 'package:test/test.dart';
+
+void main() {
+  late DateTime t;
+  late MemoryGuildStore store;
+  late GuildActions g;
+
+  setUp(() {
+    t = DateTime.utc(2026, 10, 5, 12);
+    store = MemoryGuildStore(clock: () => t);
+    g = GuildActions(
+      store: store,
+      config: const GuildConfig(maxMembers: 3, deputyMax: 1),
+      rules: const ChatRules(bannedWords: ['badword'], reservedNames: ['운영자']),
+      now: () => t,
+    );
+  });
+
+  Future<String> create(
+    String uid, {
+    String name = '장수풍뎅이단',
+    String mode = 'open',
+  }) async {
+    final (st, body) = await g.create(
+      uid,
+      jelly: 200,
+      name: name,
+      joinMode: mode,
+    );
+    expect(st, 200, reason: '$body');
+    return (body['guild'] as Map)['id'] as String;
+  }
+
+  group('만들기', () {
+    test('젤리가 개설 비용(200)보다 적으면 못 만든다', () async {
+      final (st, body) = await g.create('a', jelly: 199, name: '길드');
+      expect(st, 409);
+      expect(body['error'], 'insufficient_jelly');
+      expect(body['cost'], 200);
+      expect(store.guilds, isEmpty);
+    });
+
+    test('이름 규칙 — 길이·금칙어·운영자 사칭·깨진 문자', () async {
+      for (final bad in ['a', '가나다라마바사아자차카타파', 'badword단', '운영자길드', 'ㅃㅃㅃ']) {
+        final (st, body) = await g.create('a', jelly: 200, name: bad);
+        expect(st, 400, reason: bad);
+        expect(body['error'], 'name_invalid');
+      }
+    });
+
+    test('이름은 대소문자를 무시하고 겹치면 안 된다', () async {
+      await create('a', name: 'Beetle');
+      final (st, body) = await g.create('b', jelly: 200, name: 'beetle');
+      expect(st, 409);
+      expect(body['error'], 'name_taken');
+    });
+
+    test('만든 사람이 길드장이다 · 이미 길드가 있으면 못 만든다', () async {
+      await create('a');
+      expect(store.memberRows['a']!.role, GuildRole.leader);
+      final (st, _) = await g.create('a', jelly: 200, name: '두번째');
+      expect(st, 409);
+    });
+  });
+
+  group('가입', () {
+    test('공개 길드는 바로 들어가고, 가득 차면 막힌다', () async {
+      final id = await create('a');
+      expect((await g.join('b', id)).$1, 200);
+      expect((await g.join('c', id)).$1, 200);
+      final (st, body) = await g.join('d', id);
+      expect(st, 409);
+      expect(body['error'], 'guild_full');
+    });
+
+    test('승인제는 신청만 넣고, 길드장이 수락하면 들어온다', () async {
+      final id = await create('a', mode: 'approval');
+      final (st, body) = await g.join('b', id);
+      expect(st, 200);
+      expect(body['requested'], true);
+      expect(store.memberRows.containsKey('b'), isFalse);
+
+      final (_, meA) = await g.me('a');
+      expect((meA['requests'] as List).single['userId'], 'b');
+
+      expect((await g.answerRequest('a', 'b', accept: true)).$1, 200);
+      expect(store.memberRows['b']!.guildId, id);
+      expect(store.requests, isEmpty);
+    });
+
+    test('멤버는 신청을 받을 수 없다', () async {
+      final id = await create('a', mode: 'approval');
+      await store.insertMember(id, 'b', GuildRole.member);
+      await g.join('c', id);
+      final (st, _) = await g.answerRequest('b', 'c', accept: true);
+      expect(st, 403);
+    });
+
+    test('신청은 한 사람당 상한이 있다', () async {
+      final g2 = GuildActions(
+        store: store,
+        config: const GuildConfig(maxPendingRequests: 2),
+        rules: const ChatRules(),
+        now: () => t,
+      );
+      final ids = [
+        for (final (i, u) in ['a', 'b', 'c'].indexed)
+          await create(u, name: '길드$i', mode: 'approval'),
+      ];
+      expect((await g2.join('z', ids[0])).$1, 200);
+      expect((await g2.join('z', ids[1])).$1, 200);
+      final (st, body) = await g2.join('z', ids[2]);
+      expect(st, 409);
+      expect(body['error'], 'too_many_requests');
+    });
+
+    test('가입하면 다른 길드에 넣어 둔 신청이 지워진다', () async {
+      final ap = await create('a', name: '승인길드', mode: 'approval');
+      final op = await create('b', name: '공개길드');
+      await g.join('z', ap);
+      await g.join('z', op);
+      expect(store.requests, isEmpty);
+    });
+  });
+
+  group('탈퇴 · 재가입 제한', () {
+    test('스스로 나가면 24시간 동안 다른 길드에 못 들어간다', () async {
+      final id = await create('a');
+      final other = await create('b', name: '다른길드');
+      await g.join('c', id);
+      final (st, body) = await g.leave('c');
+      expect(st, 200);
+      expect(body['cooldownUntil'], isNotNull);
+
+      final (st2, b2) = await g.join('c', other);
+      expect(st2, 409);
+      expect(b2['error'], 'cooldown');
+
+      t = t.add(const Duration(hours: 24, minutes: 1));
+      expect((await g.join('c', other)).$1, 200);
+    });
+
+    test('추방당한 쪽은 재가입 제한이 없다', () async {
+      final id = await create('a');
+      final other = await create('b', name: '다른길드');
+      await g.join('c', id);
+      expect((await g.kick('a', 'c')).$1, 200);
+      expect((await g.join('c', other)).$1, 200);
+    });
+
+    test('길드장이 나가면 부길드장에게 넘어가고, 마지막 한 명이면 길드가 없어진다', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      await g.join('c', id);
+      await g.setRole('a', 'c', 'deputy');
+      await g.leave('a');
+      expect(store.memberRows['c']!.role, GuildRole.leader);
+      expect(store.guilds[id]!.leader, 'c');
+
+      await g.leave('b');
+      await g.leave('c');
+      expect(store.guilds.containsKey(id), isFalse);
+    });
+  });
+
+  group('직책', () {
+    test('부길드장은 멤버만 추방할 수 있다', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      await g.join('c', id);
+      await g.setRole('a', 'b', 'deputy');
+      expect((await g.kick('b', 'a')).$1, 403);
+      expect((await g.kick('b', 'c')).$1, 200);
+    });
+
+    test('부길드장 수에는 상한이 있다', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      await g.join('c', id);
+      expect((await g.setRole('a', 'b', 'deputy')).$1, 200);
+      final (st, body) = await g.setRole('a', 'c', 'deputy');
+      expect(st, 409);
+      expect(body['error'], 'deputy_full');
+    });
+
+    test('길드장 위임 — 원래 길드장은 자리가 있으면 부길드장이 된다', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      expect((await g.setRole('a', 'b', 'leader')).$1, 200);
+      expect(store.memberRows['b']!.role, GuildRole.leader);
+      expect(store.memberRows['a']!.role, GuildRole.deputy);
+      expect(store.guilds[id]!.leader, 'b');
+    });
+
+    test('길드장이 7일 동안 안 들어오면 최근에 들어온 부길드장에게 넘어간다', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      await g.join('c', id);
+      await g.setRole('a', 'c', 'deputy');
+      store.setLastSeen('a', t.subtract(const Duration(days: 8)));
+      final (_, body) = await g.me('b');
+      expect(store.memberRows['c']!.role, GuildRole.leader);
+      expect(store.memberRows['a']!.role, GuildRole.member);
+      expect(store.guilds[id]!.leader, 'c');
+      expect(body['myRole'], 'member');
+    });
+
+    test('소개 글 — 금칙어·길이 검사', () async {
+      await create('a');
+      expect((await g.settings('a', notice: 'badword')).$1, 400);
+      expect((await g.settings('a', notice: 'x' * 81)).$1, 400);
+      final (st, body) = await g.settings(
+        'a',
+        notice: '매일 접속해요',
+        joinMode: 'approval',
+      );
+      expect(st, 200);
+      expect((body['guild'] as Map)['notice'], '매일 접속해요');
+      expect((body['guild'] as Map)['joinMode'], 'approval');
+    });
+  });
+
+  group('3단계 — 레벨 · 출석 · 스킬 · 상점', () {
+    late GuildActions g3;
+    const cfg3 = GuildConfig(
+      maxMembers: 20,
+      level: GuildLevelConfig(expBase: 100, expGrowth: 1.0),
+      skills: [
+        GuildSkillDef(id: 'attack', stat: 'attack', perLevel: 0.016, max: 5),
+        GuildSkillDef(id: 'gold', stat: 'gold', perLevel: 0.02, max: 5),
+      ],
+      shop: [
+        GuildShopItem(
+          id: 'fossil',
+          kind: 'fossil',
+          amount: 20,
+          cost: 30,
+          limit: 2,
+        ),
+      ],
+    );
+    setUp(() {
+      g3 = GuildActions(
+        store: store,
+        config: cfg3,
+        rules: const ChatRules(),
+        now: () => t,
+      );
+    });
+
+    Future<String> make() async {
+      final (_, b) = await g3.create('a', jelly: 200, name: '레벨길드');
+      return (b['guild'] as Map)['id'] as String;
+    }
+
+    test('출석은 하루 한 번 — 코인과 길드 경험치', () async {
+      final id = await make();
+      final (st, body) = await g3.donate('a');
+      expect(st, 200);
+      expect(body['myCoins'], cfg3.donateCoins);
+      expect(body['donatedToday'], true);
+      expect(store.guilds[id]!.exp, cfg3.donateExp);
+      expect((await g3.donate('a')).$2['error'], 'already_donated');
+      t = t.add(const Duration(days: 1));
+      expect((await g3.donate('a')).$1, 200);
+    });
+
+    test('경험치로 레벨이 오르면 인원과 스킬 포인트가 는다', () async {
+      final id = await make();
+      await g3.addExp(id, 250); // 100씩 → 3레벨
+      expect(store.guilds[id]!.level, 3);
+      expect(store.guilds[id]!.maxMembers, 22);
+      final (_, body) = await g3.me('a');
+      expect((body['guild'] as Map)['pointsLeft'], 2);
+    });
+
+    test('스킬은 포인트만큼 · 관리자만 · 최대 단계까지 · 초기화는 길드장만', () async {
+      final id = await make();
+      await store.insertMember(id, 'b', GuildRole.member);
+      expect((await g3.skillUp('a', 'attack')).$2['error'], 'no_points');
+      await g3.addExp(id, 200); // 3레벨 = 2포인트
+      expect((await g3.skillUp('b', 'attack')).$1, 403);
+      expect((await g3.skillUp('a', 'attack')).$1, 200);
+      expect((await g3.skillUp('a', 'gold')).$1, 200);
+      expect((await g3.skillUp('a', 'gold')).$2['error'], 'no_points');
+      expect(store.guilds[id]!.skills, {'attack': 1, 'gold': 1});
+      expect((await g3.skillReset('b')).$1, 403);
+      await g3.skillReset('a');
+      expect(store.guilds[id]!.skills, isEmpty);
+    });
+
+    test('상점 — 코인이 모자라면 못 사고, 기간 한도가 있다', () async {
+      await make();
+      expect((await g3.buy('a', 'fossil')).$2['error'], 'not_enough_coins');
+      await store.addCoins('a', 100);
+      expect((await g3.buy('a', 'fossil')).$1, 200);
+      expect((await g3.buy('a', 'fossil')).$1, 200);
+      expect((await g3.buy('a', 'fossil')).$2['error'], 'shop_limit');
+      expect(store.memberRows['a']!.coins, 40);
+      t = t.add(const Duration(days: 1));
+      expect((await g3.buy('a', 'fossil')).$1, 200, reason: '다음 날 다시');
+    });
+  });
+}

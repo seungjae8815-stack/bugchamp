@@ -36,7 +36,8 @@
         "ja": "泉の妖精"
       },
       "stats": {
-        "hp": 1.0
+        "hp": 1.0,
+        "attack": 1.7
       },
       "skill": {
         "effect": "heal",
@@ -58,7 +59,8 @@
         "ja": "大地の妖精"
       },
       "stats": {
-        "defense": 1.0
+        "defense": 1.0,
+        "attack": 1.7
       },
       "skill": {
         "effect": "damageReduce",
@@ -172,7 +174,8 @@
       },
       "stats": {
         "hp": 0.6,
-        "defense": 0.6
+        "defense": 0.6,
+        "attack": 1.7
       },
       "skill": {
         "effect": "lastStand",
@@ -300,5 +303,20 @@
     "eliteAccelChance": 0.02,
     "eliteAccelId": "acc30m"
   },
-  "_balanceComment": "2026-10-01 balance_sim(fairy_sim 곡선) 조정: 요정 한 마리 = 전설 스킬 한 칸 정도(보스 관문 +20~30%). 능력치 범위 ×0.4 · 공격형 스킬 ×0.3, 공격형 5종(이그니스·실피드·볼테아·루나리스·티타니아)을 이그니스 기준으로 맞춤. 방어형(운디네·테라리엘·아스테리아)은 생존용이라 관문 기여 없음(시뮬은 생존을 안 잰다). 재기: core_run/tool/balance_sim.dart --tiers=4 --fairy-kind=<id>."
+  "_balanceComment": "2026-10-01 balance_sim(fairy_sim 곡선) 조정: 요정 한 마리 = 전설 스킬 한 칸 정도(보스 관문 +20~30%). 능력치 범위 ×0.4 · 공격형 스킬 ×0.3, 공격형 5종(이그니스·실피드·볼테아·루나리스·티타니아)을 이그니스 기준으로 맞춤. 방어형(운디네·테라리엘·아스테리아)은 2026-10-02 사장님 확정으로 공격형과 비슷하게: 방어 능력치는 그대로 두고 기본 능력치에 공격 1.7 비중을 얹었다(balance_sim --tiers=4 --fairy-kind: 방어형 77일 · 공격형 74~77일 · 요정 없음 91일). 생존 이득은 시뮬 밖이라 공격형보다 조금 느린 쪽에 둔다. 재기: core_run/tool/balance_sim.dart --tiers=4 --fairy-kind=<id>.",
+  "_dexMilestonesComment": "요정 도감 마일스톤(2026-10-01 사장님 — 젤리 없이 재료 위주). 도감 칸 = 종류×등급 40 + 종류×부가 56 = 96. 칸 수가 count 에 닿으면 앞에서부터 차례로 받는다. 요정 가루·가속기·화석. 유한(계정당 1회) — 서버는 새로 받은 마일스톤만큼 가속기·화석 증가를 허용한다.",
+  "dexMilestones": [
+    {"count": 5, "dust": 100, "accelerators": {"acc30m": 2}},
+    {"count": 10, "dust": 200, "accelerators": {"acc2h": 1}},
+    {"count": 20, "dust": 400, "accelerators": {"acc2h": 2}, "fossil": 30},
+    {"count": 30, "dust": 600, "accelerators": {"acc8h": 1}, "fossil": 50},
+    {"count": 45, "dust": 1000, "accelerators": {"acc8h": 2}, "fossil": 80},
+    {"count": 60, "dust": 1500, "accelerators": {"acc8h": 2}, "fossil": 120},
+    {"count": 75, "dust": 2000, "accelerators": {"acc8h": 3}, "fossil": 160},
+    {"count": 96, "dust": 3000, "accelerators": {"acc8h": 5}, "fossil": 250}
+  ],
+  "_exchangeComment": "상점 교환소 젤리 → 요정 가루(2026-10-01 사장님). 젤리 1 = 가루 1. 근거: 알 뽑기(30젤리) 한 개를 분해하면 평균 21.5가루(0.72/젤리) — 교환이 그보다는 낫되, 무료 유저 가루 수입(fairy_sim 90일 약 2,050 · 하루 약 23)을 생각하면 300젤리 = 무료 13일치라 시간 판매 선을 넘지 않는다. 가루 → 젤리 방향은 없다(§2.6 수도꼭지).",
+  "exchangeDustPerJelly": 1.0,
+  "_exchangeCapComment": "교환소 하루 상한(2026-10-01 사장님 (가)): 가루 100 = 젤리 100. 도감·길드 가루가 이미 들어와 1:1 을 무한히 열 이유가 없다 — 한도 없이 팔면 레벨(능력치) 판매가 된다(§2.8). 서버는 업로드당 이 값까지만 교환 가루를 인정한다.",
+  "exchangeDustDailyCap": 100
 }

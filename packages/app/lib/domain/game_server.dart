@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'guild_service.dart' show GuildWarTally, kGuildOpen;
+
 /// 권위 서버 호출 결과.
 class ServerResult {
   const ServerResult.ok(this.data)
@@ -127,6 +129,77 @@ abstract interface class GameServer {
 
   /// 선물코드 사용(계정당 1회). 성공하면 지급된 세이브가 온다.
   Future<ServerResult> redeemCode(String code);
+
+  // ── 길드(1.0.15, docs/design_guild.md) ──
+  //
+  // 길드 상태는 서버 테이블이 소유한다(세이브에 없음). 응답은 대부분 `/guild/me` 와 같은
+  // 모양(`guild`·`myRole`·`members`·`requests`)이라 화면은 받은 걸 그대로 갈아 끼운다.
+  // ⚠️ 길드 화면이 열려 있을 때·앱 시작 때만 부른다(화면 밖 폴링 금지 — 요금).
+
+  /// 내 길드. 없으면 `guild: null` + `cooldownUntil`·`requested`.
+  Future<ServerResult> guildMe();
+
+  /// 추천·검색 목록(같은 언어 → 자리 있음 → 전투력이 가까운 순).
+  Future<ServerResult> guildList({required String lang, String query = ''});
+  Future<ServerResult> guildCreate({
+    required String name,
+    required String lang,
+    required String joinMode,
+  });
+
+  /// 가입 — 공개 길드는 바로(`guild` 가 온다), 승인제는 신청(`requested: true`).
+  Future<ServerResult> guildJoin(String guildId);
+  Future<ServerResult> guildCancelRequest(String guildId);
+  Future<ServerResult> guildLeave();
+  Future<ServerResult> guildKick(String userId);
+
+  /// 직책(`leader` = 위임 · `deputy` · `member`) — 길드장만.
+  Future<ServerResult> guildSetRole(String userId, String role);
+  Future<ServerResult> guildAnswerRequest(
+    String userId, {
+    required bool accept,
+  });
+  Future<ServerResult> guildSettings({String? notice, String? joinMode});
+
+  /// 길드 미션 탭 — 게시판·남은 출발·도움 목록·받을 보상. ⚠️ 탭을 보고 있을 때만 주기 조회.
+  Future<ServerResult> guildMissions();
+
+  /// 출발 — [power] 는 홈 상단 전투력(요구치 = 이 값 × 배율이라 부풀려도 얻는 게 없다).
+  Future<ServerResult> guildMissionStart({
+    required int slot,
+    required int waitSec,
+    required double power,
+  });
+  Future<ServerResult> guildMissionHelp(
+    String missionId, {
+    required double power,
+  });
+
+  /// 받을 수 있는 미션 보상을 모두 받는다 — 응답의 `save` 를 채택한다(우편 수령과 같은 방식).
+  Future<ServerResult> guildMissionClaim();
+
+  /// 하루 한 번 출석(무료) — `/guild/me` 모양.
+  Future<ServerResult> guildDonate();
+  Future<ServerResult> guildSkillUp(String skillId);
+  Future<ServerResult> guildSkillReset();
+
+  /// 코인 상점 — `/guild/me` 모양 + `save`(채택) + `granted`.
+  Future<ServerResult> guildShopBuy(String itemId);
+
+  /// 길드 보스 — 단계·체력·남은 공격·순위·지난주 보상.
+  Future<ServerResult> guildBoss();
+
+  /// 공격 — 피해는 서버가 결투 방어팀으로 계산한다. 응답 = [guildBoss] 모양 + `hit`.
+  Future<ServerResult> guildBossAttack();
+
+  /// 지난주 순위 보상(젤리) — `save` 를 채택한다.
+  Future<ServerResult> guildBossClaim();
+
+  /// 길드전 — 일차·주제·내 점수·양 길드 일차 합·결과·보상.
+  Future<ServerResult> guildWar();
+
+  /// 길드전 보상(코인 + 젤리) — `save` 를 채택한다.
+  Future<ServerResult> guildWarClaim();
 
   /// 방치 수입 정산 — 금액은 서버가 정한다.
   Future<ServerResult> sync();
@@ -432,6 +505,89 @@ class NoGameServer implements GameServer {
   @override
   Future<ServerResult> redeemCode(String code) async =>
       const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildMe() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildList({
+    required String lang,
+    String query = '',
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildCreate({
+    required String name,
+    required String lang,
+    required String joinMode,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildJoin(String guildId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildCancelRequest(String guildId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildLeave() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildKick(String userId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildSetRole(String userId, String role) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildAnswerRequest(
+    String userId, {
+    required bool accept,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildSettings({
+    String? notice,
+    String? joinMode,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildMissions() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildMissionStart({
+    required int slot,
+    required int waitSec,
+    required double power,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildMissionHelp(
+    String missionId, {
+    required double power,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildMissionClaim() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildDonate() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildSkillUp(String skillId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildSkillReset() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildShopBuy(String itemId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildBoss() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildBossAttack() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildBossClaim() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildWar() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildWarClaim() async =>
+      const ServerResult.fail('unavailable', 0);
 }
 
 /// HTTP 구현. 인증은 **Supabase 세션 토큰**을 그대로 실어 보낸다
@@ -539,8 +695,19 @@ class HttpGameServer implements GameServer {
       _send('POST', '/state', {'save': save});
 
   @override
-  Future<ServerResult> uploadSave(Map<String, dynamic> save) =>
-      _send('POST', '/save', {'save': save});
+  Future<ServerResult> uploadSave(Map<String, dynamic> save) async {
+    // 길드전 활동 수는 세이브가 아니라 **본문 옆칸**으로(세이브 스키마를 안 건드린다).
+    // 길드를 열기 전(kGuildOpen)에는 싣지 않는다 — 서버 길드 표가 없을 때 쓸데없는 처리.
+    final tally = kGuildOpen
+        ? GuildWarTally.payload(DateTime.now().toUtc())
+        : null;
+    final r = await _send('POST', '/save', {
+      'save': save,
+      'guildTally': ?tally,
+    });
+    if (r.isOk && tally != null) GuildWarTally.sent();
+    return r;
+  }
 
   @override
   Future<ServerResult> sync() => _send('POST', '/sync', const {});
@@ -749,6 +916,124 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> redeemCode(String code) =>
       _send('POST', '/code/redeem', {'code': code});
+
+  @override
+  Future<ServerResult> guildMe() => _send('GET', '/guild/me');
+
+  @override
+  Future<ServerResult> guildList({required String lang, String query = ''}) =>
+      _send(
+        'GET',
+        '/guild/list?lang=${Uri.encodeQueryComponent(lang)}'
+            '&q=${Uri.encodeQueryComponent(query)}',
+      );
+
+  @override
+  Future<ServerResult> guildCreate({
+    required String name,
+    required String lang,
+    required String joinMode,
+  }) => _send('POST', '/guild/create', {
+    'name': name,
+    'lang': lang,
+    'joinMode': joinMode,
+  });
+
+  @override
+  Future<ServerResult> guildJoin(String guildId) =>
+      _send('POST', '/guild/join', {'guildId': guildId});
+
+  @override
+  Future<ServerResult> guildCancelRequest(String guildId) =>
+      _send('POST', '/guild/request/cancel', {'guildId': guildId});
+
+  @override
+  Future<ServerResult> guildLeave() => _send('POST', '/guild/leave', const {});
+
+  @override
+  Future<ServerResult> guildKick(String userId) =>
+      _send('POST', '/guild/kick', {'userId': userId});
+
+  @override
+  Future<ServerResult> guildSetRole(String userId, String role) =>
+      _send('POST', '/guild/role', {'userId': userId, 'role': role});
+
+  @override
+  Future<ServerResult> guildAnswerRequest(
+    String userId, {
+    required bool accept,
+  }) => _send('POST', '/guild/request/answer', {
+    'userId': userId,
+    'accept': accept,
+  });
+
+  @override
+  Future<ServerResult> guildMissions() => _send('GET', '/guild/missions');
+
+  @override
+  Future<ServerResult> guildMissionStart({
+    required int slot,
+    required int waitSec,
+    required double power,
+  }) => _send('POST', '/guild/mission/start', {
+    'slot': slot,
+    'wait': waitSec,
+    'power': power,
+  });
+
+  @override
+  Future<ServerResult> guildMissionHelp(
+    String missionId, {
+    required double power,
+  }) => _send('POST', '/guild/mission/help', {
+    'missionId': missionId,
+    'power': power,
+  });
+
+  @override
+  Future<ServerResult> guildMissionClaim() =>
+      _send('POST', '/guild/mission/claim', const {});
+
+  @override
+  Future<ServerResult> guildDonate() =>
+      _send('POST', '/guild/donate', const {});
+
+  @override
+  Future<ServerResult> guildSkillUp(String skillId) =>
+      _send('POST', '/guild/skill/up', {'skillId': skillId});
+
+  @override
+  Future<ServerResult> guildSkillReset() =>
+      _send('POST', '/guild/skill/reset', const {});
+
+  @override
+  Future<ServerResult> guildShopBuy(String itemId) =>
+      _send('POST', '/guild/shop/buy', {'itemId': itemId});
+
+  @override
+  Future<ServerResult> guildBoss() => _send('GET', '/guild/boss');
+
+  @override
+  Future<ServerResult> guildBossAttack() =>
+      _send('POST', '/guild/boss/attack', const {});
+
+  @override
+  Future<ServerResult> guildBossClaim() =>
+      _send('POST', '/guild/boss/claim', const {});
+
+  @override
+  Future<ServerResult> guildWar() => _send('GET', '/guild/war');
+
+  @override
+  Future<ServerResult> guildWarClaim() =>
+      _send('POST', '/guild/war/claim', const {});
+
+  @override
+  Future<ServerResult> guildSettings({String? notice, String? joinMode}) =>
+      _send('POST', '/guild/settings', {
+        'notice': ?notice,
+        'joinMode': ?joinMode,
+      });
 }
 
 /// 교체 가능한 권위 서버. 기본은 미설정(로컬 경로 유지).

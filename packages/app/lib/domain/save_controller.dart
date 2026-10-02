@@ -21,6 +21,7 @@ import '../data/game_data.dart';
 import '../data/save_repository.dart';
 import 'bug_auto_filter.dart';
 import 'gather_service.dart';
+import 'guild_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
 import 'server_sync.dart' show flushSaveBeforeServerAction;
@@ -188,6 +189,9 @@ enum TicketCharge {
 
   /// 젤리가 모자란다.
   notEnoughJelly,
+
+  /// 오늘 젤리 충전 횟수를 다 썼다(battle.json tickets.refillDailyLimit).
+  refillLimit,
 
   /// 이미 가득 차 있다.
   alreadyFull,
@@ -400,13 +404,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ? Duration(hours: iap?.passOfflineCapHours ?? 12)
           : kMaxOfflineAccrual,
     );
-    final report = passOn
-        ? OfflineReport(
-            gold: (raw.gold * (iap?.passIdleGoldMult ?? 1.2)).round(),
-            xp: raw.xp,
-            accrued: raw.accrued,
-          )
-        : raw;
+    // 길드 버프 골드(1.0.15) — 방치가 주 플레이라 오프라인에도 건다(사장님 확정).
+    // 길드 조회보다 먼저 돌기 때문에 기기 캐시를 쓴다([GuildBuffCache]).
+    final guildGold = kGuildOpen
+        ? 1 + (GuildBuffCache.bonus['gold'] ?? 0)
+        : 1.0;
+    final report = OfflineReport(
+      gold:
+          (raw.gold *
+                  (passOn ? (iap?.passIdleGoldMult ?? 1.2) : 1.0) *
+                  guildGold)
+              .round(),
+      xp: raw.xp,
+      accrued: raw.accrued,
+    );
     if (report.isEmpty) return save;
 
     var xp = save.xp + report.xp;
@@ -701,6 +712,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 마지막 [advanceZone] 에서 떨어진 요정 알 등급(화면 알림용). 없으면 빈 목록.
   List<FairyGrade> lastBossFairyEggs = const [];
 
+  /// 마지막 보스 첫 처치 알이 요정함이 차서 가루가 됐으면 그 수·가루.
+  ({int eggs, int dust}) lastBossFairyOverflow = (eggs: 0, dust: 0);
+
   /// 보스를 깼다 — 다음 사냥터로. 스테이지는 사냥터 폭(worldSize)만큼 뛰고
   /// 도전 게이지는 0 부터. 마지막 사냥터(최종 보스)면 그대로 둔다 — 회차
   /// 전환은 유저가 누른다.
@@ -710,7 +724,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ///
   /// 보스를 잡으면 **스킬 조각**도 떨어진다(§2.8) — 그 난이도에서 처음 잡은
   /// 보스면 많이, 다시 잡으면 조금. 받은 조각(스킬 id → 개수)을 돌려준다.
+  /// 사냥터 보스 처치 → 다음 사냥터 — 길드전 3일차.
   Future<Map<String, int>> advanceZone({math.Random? rng}) async {
+    final r = await _advanceZoneImpl(rng: rng);
+    GuildWarTally.add('zoneClear', ref.read(clockProvider).now().toUtc());
+    return r;
+  }
+
+  Future<Map<String, int>> _advanceZoneImpl({math.Random? rng}) async {
     final data = ref.read(gameDataProvider).value;
     final run = data?.runConfig;
     final s = state.requireValue;
@@ -738,6 +759,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 요정 — 보스 **첫 처치**면 난이도별 알 1개 확정 + 속성석(§2.8 무료 경로, design_fairy.md §1.4).
     // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
     lastBossFairyEggs = const [];
+    lastBossFairyOverflow = (eggs: 0, dust: 0);
     final fairyCfg = data?.fairyConfig;
     if (fairyCfg != null && firstKill) {
       final drop = fairyBossDrop(
@@ -749,6 +771,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
       );
       next = next.copyWith(fairy: drop.state);
       lastBossFairyEggs = drop.extra['eggs'] as List<FairyGrade>;
+      lastBossFairyOverflow = (
+        eggs: (drop.extra['overflowEggs'] as int?) ?? 0,
+        dust: (drop.extra['overflowDust'] as int?) ?? 0,
+      );
     }
     if (!run.isFinalZone(zone)) {
       next = next.copyWith(
@@ -1360,6 +1386,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(reviewAsked: true));
   }
 
+  /// 게임 안 리뷰 창을 [tier] 난이도에서 띄웠다고 기록. [opened] 면 스토어를 연 것 — 더 묻지 않는다.
+  Future<void> markReviewPrompt(int tier, {required bool opened}) async {
+    final s = state.requireValue;
+    await _commit(
+      s.copyWith(
+        reviewAsked: true,
+        reviewPromptTier: tier > s.reviewPromptTier ? tier : s.reviewPromptTier,
+        reviewOpened: s.reviewOpened || opened,
+      ),
+    );
+  }
+
   // ── 결투 티켓 ──
   //
   // 티켓은 **서버 소유**다(GameActions._serverOwnedKeys). 로컬 변경은 화면이
@@ -1435,18 +1473,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
         ? s.ticketsAt
         : DateTime.parse(data['ticketsAt'] as String).toUtc();
     final adUsed = (data['adUsed'] as num?)?.toInt();
+    final refillUsed = (data['refillUsed'] as num?)?.toInt();
     final today = dailyDateKey(ref.read(clockProvider).now().toUtc());
+    final touched = adUsed != null || refillUsed != null;
     await _commit(
       s.copyWith(
         pvpTickets: tickets,
         ticketsAt: at,
-        adUseCounts: adUsed == null
+        adUseCounts: !touched
             ? null
             : {
                 ...(s.adUseDate == today ? s.adUseCounts : const {}),
-                kAdFeaturePvpTicket: adUsed,
+                kAdFeaturePvpTicket: ?adUsed,
+                kAdFeaturePvpRefill: ?refillUsed,
               },
-        adUseDate: adUsed == null ? null : today,
+        adUseDate: !touched ? null : today,
       ),
     );
   }
@@ -1504,6 +1545,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
     if (ticketsNow >= cfg.ticketMax) return TicketCharge.alreadyFull;
+    final today = dailyDateKey(now);
+    final refillUsed = s.adUseCount(kAdFeaturePvpRefill, today);
+    if (cfg.ticketRefillDailyLimit > 0 &&
+        refillUsed >= cfg.ticketRefillDailyLimit) {
+      return TicketCharge.refillLimit;
+    }
     final have = s.materialCount(MaterialKind.jelly);
     if (have < cfg.ticketRefillJelly) return TicketCharge.notEnoughJelly;
 
@@ -1515,6 +1562,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         return switch (res.error) {
           'insufficient' => TicketCharge.notEnoughJelly,
           'already_full' => TicketCharge.alreadyFull,
+          'refill_limit' => TicketCharge.refillLimit,
           _ => TicketCharge.failed,
         };
       }
@@ -1544,6 +1592,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
         ticketsAt: next.at,
         materials: Map<MaterialKind, int>.from(s.materials)
           ..[MaterialKind.jelly] = have - cfg.ticketRefillJelly,
+        adUseCounts: {
+          ...(s.adUseDate == today ? s.adUseCounts : const {}),
+          kAdFeaturePvpRefill: refillUsed + 1,
+        },
+        adUseDate: today,
       ),
     );
     return TicketCharge.ok;
@@ -1582,7 +1635,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
   // 서버는 결투 팀을 만들 때 단계를 최대 단계로 자른다.
 
   /// 훈련 시작. 성공하면 null, 실패하면 사유(`busy`·`maxed`·`materials`·`no_bug`).
+  /// 훈련소 단계 시작 — 길드전 5일차(시작 시점에 센다 — 완료는 젤리로 당길 수 있다).
   Future<String?> startDuelTraining(String bugId, TrainStat stat) async {
+    final err = await _startDuelTrainingImpl(bugId, stat);
+    if (err == null) {
+      GuildWarTally.add('trainStep', ref.read(clockProvider).now().toUtc());
+    }
+    return err;
+  }
+
+  Future<String?> _startDuelTrainingImpl(String bugId, TrainStat stat) async {
     final data = ref.read(gameDataProvider).requireValue;
     final s = state.requireValue;
     final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
@@ -1841,6 +1903,78 @@ class SaveController extends AsyncNotifier<SaveGame> {
     f = enforceFairyRules(f.copyWith(companionId: epicId), cfg);
     await _commit(state.requireValue.copyWith(fairy: f));
   }
+
+  // ── (개발) 요정 점검 묶음(2026-10-01 사장님 요청) ──
+  // ⚠️ 테스트 앱도 운영 서버에 붙는다 — 서버 업로드 상한(요정 가치 급증)이 개발로 넣은 요정·알을
+  // 다음 업로드 때 잘라 낼 수 있다. 화면 확인용이다.
+
+  FairyConfig? get _fairyCfg =>
+      ref.read(gameDataProvider).requireValue.fairyConfig;
+
+  Future<void> _devFairy(
+    FairyState Function(FairyState f, FairyConfig cfg) fn,
+  ) async {
+    final cfg = _fairyCfg;
+    if (cfg == null) return;
+    final s = state.requireValue;
+    await _commit(s.copyWith(fairy: fn(s.fairy, cfg)));
+  }
+
+  /// (개발) 요정 알 — 등급마다 하나씩(일반~신화).
+  Future<void> devFairyEggs() => _devFairy((f, cfg) {
+    final op = grantFairyEggs(f, cfg, FairyGrade.values);
+    return op.state ?? f;
+  });
+
+  /// (개발) 둥지 부화를 지금 끝낸다(수령 버튼 확인용).
+  Future<void> devFairyNestNow() => _devFairy((f, cfg) {
+    final n = f.nest;
+    if (n == null) return f;
+    return f.copyWith(
+      nest: n.copyWith(endsAt: ref.read(clockProvider).now().toUtc()),
+    );
+  });
+
+  /// (개발) 속성석 7종 ×10 · 가속기 전 종류 ×5 · 요정 가루 +5,000.
+  Future<void> devFairyItems() => _devFairy(
+    (f, cfg) => grantFairyItems(
+      f,
+      stones: {for (final k in cfg.subWeight.keys) k: 10},
+      accelerators: {for (final a in cfg.accelerators) a.id: 5},
+      dust: 5000,
+    ),
+  );
+
+  /// (개발) 자동 합성 재료 — 첫 번째 종류의 일반 요정 9마리(합성하면 희귀 3마리).
+  Future<void> devFairyMergeFodder() => _devFairy((f, cfg) {
+    final rng = math.Random();
+    final subs = cfg.subWeight.keys.toList();
+    var out = f;
+    for (var i = 0; i < 9; i++) {
+      out = out.copyWith(
+        seq: out.seq + 1,
+        fairies: [
+          ...out.fairies,
+          Fairy(
+            id: 'f${out.seq + 1}',
+            kind: cfg.kinds.first.id,
+            grade: FairyGrade.common,
+            sub: subs[rng.nextInt(subs.length)],
+            baseRoll: cfg.rollQuality(rng),
+            subRoll: cfg.rollQuality(rng),
+          ),
+        ],
+      );
+    }
+    return enforceFairyRules(out, cfg);
+  });
+
+  /// (개발) 뽑기 천장 직전(다음 한 번이 천장).
+  Future<void> devFairyPityNear() =>
+      _devFairy((f, cfg) => f.copyWith(gachaPity: cfg.gachaPity - 1));
+
+  /// (개발) 요정 전부 비우기(요정·알·둥지·아이템·도감).
+  Future<void> devFairyReset() => _devFairy((f, cfg) => FairyState.empty);
 
   /// (개발) 동행 요정을 다음 요정으로 바꾼다(없으면 첫 요정). 요정 스킬을 종류별로 확인하는 용도.
   Future<String?> devCycleFairy() async {
@@ -2120,6 +2254,57 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return (gold: gold, materials: matEach);
   }
 
+  /// 교환소 오늘 남은 가루(하루 상한이 없으면 null).
+  int? exchangeDustLeftToday() {
+    final fc = ref.read(gameDataProvider).requireValue.fairyConfig;
+    if (fc == null || fc.exchangeDustDailyCap <= 0) return null;
+    final f = state.requireValue.fairy;
+    final today = dailyDateKey(ref.read(clockProvider).now());
+    final used = f.exchangeDay == today ? f.exchangedDust : 0;
+    return math.max(0, fc.exchangeDustDailyCap - used);
+  }
+
+  /// 교환소 젤리 → 요정 가루 미리보기(받을 가루). 못 바꾸면(젤리 부족·오늘 상한 초과) null.
+  int? exchangeDust({required int trades}) {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.runConfig;
+    final fc = data.fairyConfig;
+    if (trades <= 0 || cfg == null || fc == null) return null;
+    if (fc.exchangeDustPerJelly <= 0) return null;
+    final cost = cfg.exchangeJellyPerTrade * trades;
+    if (state.requireValue.materialCount(MaterialKind.jelly) < cost) {
+      return null;
+    }
+    final dust = (cost * fc.exchangeDustPerJelly).floor();
+    final left = exchangeDustLeftToday();
+    if (left != null && dust > left) return null;
+    return dust;
+  }
+
+  /// 교환소 젤리 → 요정 가루 실행.
+  Future<bool> tradeJellyForDust({required int trades}) async {
+    final dust = exchangeDust(trades: trades);
+    if (dust == null) return false;
+    final cfg = ref.read(gameDataProvider).requireValue.runConfig!;
+    final s = state.requireValue;
+    final cost = cfg.exchangeJellyPerTrade * trades;
+    final mats = Map<MaterialKind, int>.from(s.materials)
+      ..[MaterialKind.jelly] = s.materialCount(MaterialKind.jelly) - cost;
+    final today = dailyDateKey(ref.read(clockProvider).now());
+    final usedToday = s.fairy.exchangeDay == today ? s.fairy.exchangedDust : 0;
+    await _commit(
+      s.copyWith(
+        materials: mats,
+        fairy: s.fairy.copyWith(
+          dust: s.fairy.dust + dust,
+          exchangeDay: today,
+          exchangedDust: usedToday + dust,
+        ),
+      ),
+    );
+    return true;
+  }
+
   /// 교환 실행. 미리보기는 [exchangeJelly] 로 같은 값을 얻는다.
   Future<bool> tradeJelly({required int trades, required bool wantGold}) async {
     final out = exchangeJelly(trades: trades, wantGold: wantGold);
@@ -2280,7 +2465,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 수련: 골드를 소비해 성충 [bugId] 의 레벨을 1 올린다.
   /// 성충 아님·티어 상한 도달·돌파 진행중·골드부족·없음이면 false.
+  /// 수련(레벨업) — 길드전 5일차.
   Future<bool> trainBug(String bugId) async {
+    final ok = await _trainBugImpl(bugId);
+    if (ok) {
+      GuildWarTally.add('bugLevel', ref.read(clockProvider).now().toUtc());
+    }
+    return ok;
+  }
+
+  Future<bool> _trainBugImpl(String bugId) async {
     final viaServer = await _viaServer(
       () => ref.read(gameServerProvider).train(bugId),
     );
@@ -2519,7 +2713,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 부화 완료된 알을 수령 → 유충으로. 미완료/없음이면 false.
+  /// 부화 수령 — 길드전 1일차.
   Future<bool> collectIncubated(String bugId) async {
+    final ok = await _collectIncubatedImpl(bugId);
+    final rushed = GuildWarTally.rushed.remove(bugId);
+    if (ok && !rushed) {
+      GuildWarTally.add('hatch', ref.read(clockProvider).now().toUtc());
+    }
+    return ok;
+  }
+
+  Future<bool> _collectIncubatedImpl(String bugId) async {
     final viaServer = await _viaServer(
       () => ref.read(gameServerProvider).collectIncubated(bugId),
     );
@@ -2558,6 +2762,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) - cost;
     final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = now;
     await _commit(s.copyWith(materials: mats, incubating: inc));
+    // 젤리로 당긴 부화는 길드전 점수에 안 센다(수령 때 확인).
+    GuildWarTally.rushed.add(bugId);
     return true;
   }
 
@@ -2597,7 +2803,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 필터([SaveGame.autoForgeOptions])를 걸어 두면 **그 능력치가 하나도 없는
   /// 건 쌓지 않고 버린다**(`kept == false`). 10칸이 금방 차 버리면 자동이
   /// 멈춰서, 원하는 것만 골라 받는 게 필터의 목적이다.
+  /// 제련 한 번 — 길드전 2일차(결과 등급 단계만큼 지수 점수).
   Future<({EquipItem? item, bool kept})> forgeOnce() async {
+    final r = await _forgeOnceImpl();
+    final item = r.item;
+    if (item != null) {
+      GuildWarTally.add(
+        'forge:${item.tier}',
+        ref.read(clockProvider).now().toUtc(),
+      );
+    }
+    return r;
+  }
+
+  Future<({EquipItem? item, bool kept})> _forgeOnceImpl() async {
     final r = await forgeMany(1);
     return (item: r.last, kept: r.kept > 0);
   }
@@ -3030,14 +3249,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
   );
 
   /// 스킬 수련 완료. [viaJelly] = 남은 시간만큼 젤리로 즉시.
-  Future<String?> completeSkillTraining({bool viaJelly = false}) => _skillOp(
-    (s, cfg) => core_skill.completeSkillTraining(
-      s,
-      cfg,
-      ref.read(clockProvider).now().toUtc(),
-      viaJelly: viaJelly,
-    ),
-  );
+  /// 스킬 수련 완료 — 젤리로 당기지 않은 것만 길드전 5일차.
+  Future<String?> completeSkillTraining({bool viaJelly = false}) async {
+    final err = await _completeSkillTrainingImpl(viaJelly: viaJelly);
+    if (err == null && !viaJelly) {
+      GuildWarTally.add('skillTrain', ref.read(clockProvider).now().toUtc());
+    }
+    return err;
+  }
+
+  Future<String?> _completeSkillTrainingImpl({bool viaJelly = false}) =>
+      _skillOp(
+        (s, cfg) => core_skill.completeSkillTraining(
+          s,
+          cfg,
+          ref.read(clockProvider).now().toUtc(),
+          viaJelly: viaJelly,
+        ),
+      );
 
   /// 등급 승급 — [from] 등급 조각을 [sources] 순서대로 `비율 × times` 개 태워
   /// 한 단계 위 등급 만능 조각 [times] 개를 만든다.
@@ -3151,6 +3380,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<FairyOp> fairySetCompanion(String? id) =>
       _fairyOp((f, _, _) => setFairyCompanion(f, id));
 
+  /// 요정 도감 마일스톤 하나 받기(요정 가루·가속기·화석 — 젤리 없음). 못 받으면 false.
+  Future<bool> fairyClaimDex() async {
+    final cfg = ref.read(gameDataProvider).value?.fairyConfig;
+    if (cfg == null) return false;
+    final next = claimFairyDexMilestone(state.requireValue, cfg);
+    if (next == null) return false;
+    await _commit(next);
+    return true;
+  }
+
   Future<FairyOp> fairyRelease(String id) =>
       _fairyOp((f, cfg, _) => releaseFairy(f, cfg, id));
 
@@ -3233,7 +3472,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 정예 처치 요정 드롭(확률 — 알·속성석·가속기, §2.8 무료 경로). 아무것도 안 나오면 저장하지 않는다.
+  /// 정예 처치(요정 드롭 판정과 같은 자리) — 길드전 3일차.
   Future<FairyOp> grantEliteFairy({math.Random? rng}) async {
+    GuildWarTally.add('elite', ref.read(clockProvider).now().toUtc());
+    return _grantEliteFairyImpl(rng: rng);
+  }
+
+  Future<FairyOp> _grantEliteFairyImpl({math.Random? rng}) async {
     final cfg = ref.read(gameDataProvider).value?.fairyConfig;
     if (cfg == null) return const FairyOp.fail('off');
     final s = state.requireValue;
@@ -3318,7 +3563,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 산란 완료 슬롯 수령 → 자식(알)을 보관함에 추가. [viaJelly]=남은시간 비례 젤리 즉시완료.
+  /// 짝짓기 수령. 젤리로 당기지 않은 수령만 길드전 점수(1일차)에 센다.
   Future<bool> collectBreeding(String slotId, {bool viaJelly = false}) async {
+    final ok = await _collectBreedingImpl(slotId, viaJelly: viaJelly);
+    if (ok && !viaJelly) {
+      GuildWarTally.add('breedDone', ref.read(clockProvider).now().toUtc());
+    }
+    return ok;
+  }
+
+  Future<bool> _collectBreedingImpl(
+    String slotId, {
+    bool viaJelly = false,
+  }) async {
     final viaServer = await _viaServer(
       () => ref
           .read(gameServerProvider)
@@ -3468,6 +3725,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (s.incubating.containsKey(bugId)) {
       return (ok: false, error: 'incubating', jelly: 0, kind: null, amount: 0);
     }
+    if (s.lockedBugIds.contains(bugId)) {
+      return (ok: false, error: 'locked', jelly: 0, kind: null, amount: 0);
+    }
     final idx = s.bugs.indexWhere((b) => b.id == bugId);
     if (idx < 0) return fail;
     final bug = s.bugs[idx];
@@ -3556,16 +3816,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (target == null || target.potential >= cfg.synthMaxPotential) {
       return const [];
     }
-    // 보호: 장착 중 · 부화 중 · 이색 · 투자한 개체(isPreciousBug).
+    // 보호: 장착 중 · 부화 중 · 훈련 · **잠금**(pinnedBugIds) · 이색 · 투자한 개체(isPreciousBug).
     final pool =
         s.bugs
             .where(
               (b) =>
                   b.id != targetId &&
                   b.speciesId == target!.speciesId &&
-                  !s.isEquipped(b.id) &&
-                  !s.incubating.containsKey(b.id) &&
-                  !isPreciousBug(b),
+                  _isSynthFodder(s, b, target.potential),
             )
             .toList()
           // 덜 아까운 것부터 — 자동 합성·상한 정리와 같은 축이다.
@@ -3574,7 +3832,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return pool.take(cfg.synthFodder).toList();
   }
 
+  /// 합성 — 길드전 1일차.
   Future<bool> synthesize(String targetId) async {
+    final ok = await _synthesizeImpl(targetId);
+    if (ok) GuildWarTally.add('synth', ref.read(clockProvider).now().toUtc());
+    return ok;
+  }
+
+  Future<bool> _synthesizeImpl(String targetId) async {
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;
     if (cfg == null) return false;
     final s = state.requireValue;
@@ -3627,10 +3892,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
     // 재료로 쓸 수 있는 개체인지 — 위 안전장치 + 사용자가 고른 필터.
     bool isFodder(IndividualBug b) {
-      // 이색·투자 개체는 재료로 쓰지 않는다(isPreciousBug — 수동 합성과 같은 규칙).
-      if (s.isEquipped(b.id) ||
-          s.incubating.containsKey(b.id) ||
-          isPreciousBug(b)) {
+      // 장착·부화·훈련·잠금·이색·투자 개체는 재료로 쓰지 않는다(수동 합성과 같은 보호).
+      if (s.pinnedBugIds.contains(b.id) || isPreciousBug(b)) {
         return false;
       }
       if (filter == null) return true;
@@ -3679,7 +3942,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
         final picked = <String>[];
         while (picked.length < cfg.synthFodder && tail > targetIdx) {
           final b = alive[tail--];
-          if (consumed.contains(b.id) || !isFodder(b)) continue;
+          // 대상보다 포텐셜이 높은 곤충은 태우지 않는다(수동 합성과 같은 규칙).
+          if (consumed.contains(b.id) || !isFodder(b) || b.potential > pot) {
+            continue;
+          }
           picked.add(b.id);
         }
         if (picked.length < cfg.synthFodder) break; // 이 종은 재료가 모자란다
@@ -3740,7 +4006,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     var gain = 0;
     for (final b in s.bugs) {
       // 이색·투자 개체는 건드리지 않는다 — 자동 합성·상한 정리와 같은 규칙.
-      if (s.isEquipped(b.id) || s.incubating.containsKey(b.id)) continue;
+      // 장착·부화·훈련·잠금(pinnedBugIds)은 건드리지 않는다.
+      if (s.pinnedBugIds.contains(b.id)) continue;
       if (isPreciousBug(b)) continue;
       final grade = data.speciesById[b.speciesId]?.grade;
       if (grade == null) continue; // 종을 모르면 건드리지 않는다
@@ -3793,16 +4060,44 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ///
   /// 보호(장착·부화 중·이색·투자)를 그대로 반영한다 — 화면의 "3/3" 과 실제 소비가
   /// 갈리면 버튼이 켜졌는데 아무 일도 안 일어난다(예전엔 실제로 그랬다).
-  int synthFodderCount(SaveGame s, String targetId, String speciesId) => s.bugs
-      .where(
-        (b) =>
-            b.id != targetId &&
-            b.speciesId == speciesId &&
-            !s.isEquipped(b.id) &&
-            !s.incubating.containsKey(b.id) &&
-            !isPreciousBug(b),
-      )
-      .length;
+  int synthFodderCount(SaveGame s, String targetId, String speciesId) {
+    final target = s.bugs.where((b) => b.id == targetId).firstOrNull;
+    if (target == null) return 0;
+    return s.bugs
+        .where(
+          (b) =>
+              b.id != targetId &&
+              b.speciesId == speciesId &&
+              _isSynthFodder(s, b, target.potential),
+        )
+        .length;
+  }
+
+  /// 합성 재료가 될 수 있나(수동·자동·개수 공용).
+  ///
+  /// - 장착·부화·훈련·**잠금**(`pinnedBugIds`) · 이색·투자한 개체(`isPreciousBug`)는 안 된다.
+  ///   ⚠️ `pinnedBugIds`(훈련·잠금 포함)는 만들어만 두고 합성에서 쓰지 않고 있었다(2026-10-02 발견).
+  /// - **대상보다 포텐셜이 높은 곤충은 안 된다**(2026-10-02 문의: 3포텐셜 알을 강화했더니 장착 안 한
+  ///   4·5포텐셜 성충이 재료로 사라졌다). 낮은 걸 올리려고 높은 걸 태우는 경우는 없다.
+  bool _isSynthFodder(SaveGame s, IndividualBug b, int targetPotential) =>
+      !s.pinnedBugIds.contains(b.id) &&
+      !isPreciousBug(b) &&
+      b.potential <= targetPotential;
+
+  /// 곤충 잠금 켜기/끄기 — 잠근 곤충은 합성·분해 재료에서 빠진다.
+  Future<bool> toggleBugLock(String bugId) async {
+    final s = state.requireValue;
+    if (!s.bugs.any((b) => b.id == bugId)) return false;
+    final locked = s.lockedBugIds.contains(bugId);
+    await _commit(
+      s.copyWith(
+        lockedBugIds: locked
+            ? ({...s.lockedBugIds}..remove(bugId))
+            : {...s.lockedBugIds, bugId},
+      ),
+    );
+    return !locked;
+  }
 
   /// 곤충 [bugId] 를 애완펫으로 장착(최대 maxEquip). 이미 장착이면 무시.
   Future<void> equipBug(String bugId) async {

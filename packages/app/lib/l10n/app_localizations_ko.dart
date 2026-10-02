@@ -2135,7 +2135,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      '스테이지 · 레벨 · 능력치 강화 ·\n골드 · 재료가 처음으로 돌아갑니다.\n\n곤충 · 장비 · 도감 · 젤리 · 스킬은\n그대로 남아요.\n\n랭킹은 난이도를 먼저 봅니다 —\n난이도를 올리면 레벨이 낮아도 위로 올라가요.\n\n몬스터가 훨씬 더 강력해집니다.';
+      '스테이지 · 레벨 · 능력치 강화 · 골드 · 재료가 처음으로 돌아갑니다.\n\n곤충 · 장비 · 도감 · 젤리 · 스킬은 그대로 남아요.\n\n랭킹은 난이도를 먼저 봅니다 — 난이도를 올리면 레벨이 낮아도 위로 올라가요.\n\n몬스터가 훨씬 더 강력해집니다.';
 
   @override
   String get tierNextGo => '진입하기';
@@ -3277,18 +3277,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get elementWheelTitle => '오행 상성';
 
   @override
-  String get elementWheelRestrain => '상극 — 빨간 화살표가 가리키는 상대를 때리면 데미지 1.5배';
-
-  @override
-  String get elementWheelGenerate =>
-      '상생 — 편성에서 바로 앞자리가 초록 화살표로 나를 가리키면 팀 전체 공격·회복 +10%';
+  String elementWheelRestrain(String mult) {
+    return '상극 — 빨간 화살표가 가리키는 상대와 부딪히면 피해 $mult배';
+  }
 
   @override
   String get traitNoneBadge => '특성 없음';
 
   @override
-  String get elementWheelHint =>
-      '편성은 초록 화살표를 따라가게 짜세요. 예) 목 → 화 → 토 로 세우면 연결 2개라 +20%.';
+  String get elementWheelHint => '예) 수 → 화: 수 속성 곤충이 화 속성 곤충과 싸우면 더 큰 피해를 줘요.';
 
   @override
   String get leagueRewardListTitle => '최초 달성 보상 (등급마다 1회)';
@@ -4170,7 +4167,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get fairyNestKindHint => '종류는 8가지 중 무작위예요';
+  String fairyNestKindHint(String n) {
+    return '종류는 $n가지 중 무작위예요';
+  }
 
   @override
   String get fairyStone => '속성석';
@@ -4407,4 +4406,1077 @@ class AppLocalizationsKo extends AppLocalizations {
   String fairyEggPop(String grade) {
     return '요정 알 · $grade';
   }
+
+  @override
+  String get guildTitle => '길드';
+
+  @override
+  String get guildIntro => '길드에 들어가면 길드원과 채팅할 수 있어요. 길드 미션·보스·길드전도 곧 열려요.';
+
+  @override
+  String get guildUnavailable => '길드 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
+
+  @override
+  String get guildRetry => '다시 시도';
+
+  @override
+  String get guildSearchHint => '길드 이름 검색';
+
+  @override
+  String get guildEmptyList => '조건에 맞는 길드가 없어요. 직접 만들어 보세요!';
+
+  @override
+  String get guildCreate => '길드 만들기';
+
+  @override
+  String guildNameHint(int min, int max) {
+    return '길드 이름 ($min~$max자)';
+  }
+
+  @override
+  String get guildJoinModeOpen => '공개 — 누구나 바로 가입';
+
+  @override
+  String get guildJoinModeApproval => '승인제 — 길드장·부길드장이 수락';
+
+  @override
+  String get guildJoinModeOpenShort => '공개';
+
+  @override
+  String get guildJoinModeApprovalShort => '승인제';
+
+  @override
+  String get guildJoin => '가입';
+
+  @override
+  String get guildRequest => '가입 신청';
+
+  @override
+  String get guildCancelRequest => '신청 취소';
+
+  @override
+  String get guildFull => '가득 참';
+
+  @override
+  String guildMembersCount(int n, int max) {
+    return '길드원 $n/$max';
+  }
+
+  @override
+  String guildAvgPower(String v) {
+    return '평균 전투력 $v';
+  }
+
+  @override
+  String guildCooldown(String time) {
+    return '$time 뒤에 다른 길드에 들어갈 수 있어요';
+  }
+
+  @override
+  String get guildTabMembers => '길드원';
+
+  @override
+  String get guildTabChat => '채팅';
+
+  @override
+  String guildTabRequests(int n) {
+    return '신청 $n';
+  }
+
+  @override
+  String get guildRoleLeader => '길드장';
+
+  @override
+  String get guildRoleDeputy => '부길드장';
+
+  @override
+  String get guildRoleMember => '길드원';
+
+  @override
+  String get guildLastSeenNow => '최근 접속';
+
+  @override
+  String guildLastSeenHours(int n) {
+    return '$n시간 전';
+  }
+
+  @override
+  String guildLastSeenDays(int n) {
+    return '$n일 전';
+  }
+
+  @override
+  String get guildNoticeEmpty => '길드 소개가 없어요';
+
+  @override
+  String get guildNoticeHint => '길드를 소개해 주세요';
+
+  @override
+  String get guildEditNotice => '소개 수정';
+
+  @override
+  String get guildChangeJoinMode => '가입 방식';
+
+  @override
+  String get guildSave => '저장';
+
+  @override
+  String get guildLeave => '길드 탈퇴';
+
+  @override
+  String guildLeaveConfirm(int hours) {
+    return '길드를 나가면 $hours시간 동안 다른 길드에 들어갈 수 없어요. 나갈까요?';
+  }
+
+  @override
+  String get guildLeaveLastConfirm => '마지막 길드원이라 나가면 길드가 사라져요. 나갈까요?';
+
+  @override
+  String get guildLeaderLeaveNote => '길드장은 부길드장(없으면 기여도가 높은 길드원)에게 넘어가요.';
+
+  @override
+  String get guildKick => '추방';
+
+  @override
+  String guildKickConfirm(String name) {
+    return '$name 님을 길드에서 내보낼까요?';
+  }
+
+  @override
+  String get guildMakeDeputy => '부길드장 임명';
+
+  @override
+  String get guildRemoveDeputy => '부길드장 해제';
+
+  @override
+  String get guildTransfer => '길드장 위임';
+
+  @override
+  String guildTransferConfirm(String name) {
+    return '$name 님에게 길드장을 넘길까요?';
+  }
+
+  @override
+  String get guildAccept => '수락';
+
+  @override
+  String get guildReject => '거절';
+
+  @override
+  String get guildNoRequests => '들어온 가입 신청이 없어요';
+
+  @override
+  String get guildCreated => '길드를 만들었어요!';
+
+  @override
+  String get guildJoined => '길드에 들어왔어요!';
+
+  @override
+  String get guildRequestSent => '가입 신청을 보냈어요';
+
+  @override
+  String get guildChatEmpty => '아직 길드 대화가 없어요. 먼저 인사해 보세요!';
+
+  @override
+  String get guildErrNameTaken => '이미 있는 이름이에요';
+
+  @override
+  String get guildErrNameInvalid => '쓸 수 없는 이름이에요 (길이·문자·금칙어 확인)';
+
+  @override
+  String get guildErrCooldown => '아직 다른 길드에 들어갈 수 없어요';
+
+  @override
+  String get guildErrFull => '길드 인원이 가득 찼어요';
+
+  @override
+  String get guildErrTooManyRequests => '넣어 둔 가입 신청이 너무 많아요. 하나를 취소해 주세요';
+
+  @override
+  String get guildErrRequestsFull => '이 길드는 신청이 밀려 있어요. 나중에 다시 신청해 주세요';
+
+  @override
+  String get guildErrDeputyFull => '부길드장 자리가 가득 찼어요';
+
+  @override
+  String get guildErrNoticeInvalid => '쓸 수 없는 소개예요';
+
+  @override
+  String get guildErrGeneric => '처리하지 못했어요. 잠시 후 다시 시도해 주세요';
+
+  @override
+  String guildCreateWithCost(int cost) {
+    return '길드 만들기 · 젤리 $cost';
+  }
+
+  @override
+  String guildCreateNeedJelly(int cost) {
+    return '젤리 $cost개가 있어야 길드를 만들 수 있어요';
+  }
+
+  @override
+  String get guildErrJelly => '젤리가 부족해요';
+
+  @override
+  String get guildTabMissions => '미션';
+
+  @override
+  String get guildMissionForest => '숲 탐사';
+
+  @override
+  String get guildMissionCave => '동굴 조사';
+
+  @override
+  String get guildMissionSwamp => '늪지 수색';
+
+  @override
+  String get guildMissionRuins => '유적 발굴';
+
+  @override
+  String get guildMissionCanyon => '협곡 정찰';
+
+  @override
+  String get guildMissionMeadow => '초원 채집';
+
+  @override
+  String get guildMissionErrNoStarts => '오늘 출발 횟수를 다 썼어요';
+
+  @override
+  String get guildMissionErrRunning => '이미 진행 중인 미션이 있어요';
+
+  @override
+  String get guildMissionErrClosed => '이미 끝난 미션이에요';
+
+  @override
+  String get guildMissionErrHelped => '이미 도운 미션이에요';
+
+  @override
+  String get guildMissionErrHelpersFull => '도울 자리가 다 찼어요';
+
+  @override
+  String get guildMissionErrOwn => '내 미션은 도울 수 없어요';
+
+  @override
+  String get guildMissionErrNothing => '받을 보상이 없어요';
+
+  @override
+  String get guildMissionHelped => '도왔어요! 전투력이 보태졌어요';
+
+  @override
+  String get guildMissionSoloHint => '혼자서도 충분해요 — 출발하면 바로 성공해요.';
+
+  @override
+  String get guildMissionWaitHint =>
+      '얼마나 기다릴지 골라 주세요. 그 사이 길드원이 도와주면 전투력이 보태지고, 시간이 끝날 때 합이 요구 전투력을 넘으면 성공이에요. 도움이 3명 다 모이면 그 자리에서 성공! 오래 기다릴수록 보상이 커요.';
+
+  @override
+  String guildMissionWaitOption(int min, String mult) {
+    return '$min분 대기 · 보상 ×$mult';
+  }
+
+  @override
+  String get guildMissionClaimTitle => '미션 보상';
+
+  @override
+  String guildMissionCoins(int n) {
+    return '길드 코인 +$n';
+  }
+
+  @override
+  String guildMissionEgg(int n) {
+    return '요정 알 $n개!';
+  }
+
+  @override
+  String guildMissionStartsLeft(int n, int max) {
+    return '출발 $n/$max';
+  }
+
+  @override
+  String guildMissionHelpLeft(int n, int max) {
+    return '도움 보상 $n/$max';
+  }
+
+  @override
+  String guildMissionReset(String time) {
+    return '$time 뒤 초기화';
+  }
+
+  @override
+  String guildMissionClaimable(int n) {
+    return '받을 보상 $n건';
+  }
+
+  @override
+  String get guildMissionClaim => '보상 받기';
+
+  @override
+  String get guildMissionActive => '도움 요청';
+
+  @override
+  String get guildMissionNoActive => '지금 진행 중인 미션이 없어요';
+
+  @override
+  String get guildMissionBoard => '오늘의 게시판';
+
+  @override
+  String get guildMissionRecent => '오늘 결과';
+
+  @override
+  String get guildMissionMine => '내 미션';
+
+  @override
+  String guildMissionOwner(String name) {
+    return '$name 님의 미션';
+  }
+
+  @override
+  String guildMissionProgress(int p, int n, int max) {
+    return '$p% · 도움 $n/$max명';
+  }
+
+  @override
+  String get guildMissionHelp => '도와주기';
+
+  @override
+  String get guildMissionHelpedTag => '도움 완료';
+
+  @override
+  String guildMissionSlotSolo(double mult) {
+    return '요구 전투력 ×$mult · 혼자 가능';
+  }
+
+  @override
+  String guildMissionSlotNeed(double mult) {
+    return '요구 전투력 ×$mult · 도움 필요';
+  }
+
+  @override
+  String get guildMissionStart => '출발';
+
+  @override
+  String get guildMissionSuccess => '성공';
+
+  @override
+  String guildMissionPartial(int p) {
+    return '달성 $p%';
+  }
+
+  @override
+  String get guildMissionChatMine => '길드에 도움을 요청했어요';
+
+  @override
+  String guildMissionChatAsk(String name) {
+    return '$name 님이 미션 도움을 요청했어요!';
+  }
+
+  @override
+  String guildLevel(int n) {
+    return '길드 Lv $n';
+  }
+
+  @override
+  String guildCoins(int n) {
+    return '코인 $n';
+  }
+
+  @override
+  String get guildDonate => '출석';
+
+  @override
+  String get guildDonateDoneShort => '출석 완료';
+
+  @override
+  String get guildDonateOk => '출석했어요! 코인과 길드 경험치를 받았어요';
+
+  @override
+  String get guildDonateDone => '오늘은 이미 출석했어요';
+
+  @override
+  String get guildSkills => '스킬';
+
+  @override
+  String get guildShop => '상점';
+
+  @override
+  String get guildSkillAttack => '공격력';
+
+  @override
+  String get guildSkillHp => '체력';
+
+  @override
+  String get guildSkillGold => '골드 획득';
+
+  @override
+  String get guildSkillMaterial => '재료 발견';
+
+  @override
+  String get guildSkillXp => '경험치';
+
+  @override
+  String get guildSkillMission => '미션 보상';
+
+  @override
+  String guildSkillHeader(int n) {
+    return '남은 스킬 포인트 $n';
+  }
+
+  @override
+  String get guildSkillNote =>
+      '길드원 모두에게 사냥 중 적용돼요(오프라인 골드 포함). 결투·대회에는 적용되지 않고, 길드를 나가면 사라져요. 길드 레벨 +1 = 포인트 1.';
+
+  @override
+  String guildSkillValue(String now, String max) {
+    return '+$now% (최대 +$max%)';
+  }
+
+  @override
+  String get guildSkillNoPoints => '남은 스킬 포인트가 없어요';
+
+  @override
+  String get guildSkillMax => '이미 최대 단계예요';
+
+  @override
+  String get guildSkillForbidden => '길드장·부길드장만 할 수 있어요';
+
+  @override
+  String get guildSkillReset => '초기화';
+
+  @override
+  String get guildSkillResetBody => '길드 스킬을 모두 초기화하고 포인트를 돌려받을까요?';
+
+  @override
+  String get guildShopNote => '코인은 미션·도움·출석·길드 보스에서 모여요.';
+
+  @override
+  String guildShopMaterials(String h) {
+    return '재료 묶음 (사냥 $h시간치)';
+  }
+
+  @override
+  String guildShopFossil(int n) {
+    return '화석 $n개';
+  }
+
+  @override
+  String guildShopFairyDust(int n) {
+    return '요정 가루 $n';
+  }
+
+  @override
+  String guildShopFairyEgg(int n) {
+    return '요정 알 $n개';
+  }
+
+  @override
+  String guildShopSkillShard(String grade, int n) {
+    return '$grade 만능 조각 $n개';
+  }
+
+  @override
+  String guildShopLimitDay(int n, int max) {
+    return '오늘 $n/$max';
+  }
+
+  @override
+  String guildShopLimitWeek(int n, int max) {
+    return '이번 주 $n/$max';
+  }
+
+  @override
+  String guildShopBought(String item) {
+    return '구매했어요: $item';
+  }
+
+  @override
+  String get guildShopSoldOut => '구매 한도에 닿았어요';
+
+  @override
+  String get guildShopSoldOutShort => '품절';
+
+  @override
+  String get guildShopNoCoins => '코인이 부족해요';
+
+  @override
+  String get guildTabBoss => '보스';
+
+  @override
+  String guildBossTitle(int n) {
+    return '길드 보스 · $n단계';
+  }
+
+  @override
+  String guildBossAttack(int n) {
+    return '공격하기 (오늘 $n회 남음)';
+  }
+
+  @override
+  String get guildBossNote =>
+      '피해는 결투 방어팀 전투력으로 정해져요(요정·스킬·장비는 들어가지 않아요). 체력은 길드 전체가 공유하고 한 주 동안 이어져요.';
+
+  @override
+  String get guildBossNoTeam => '결투 방어팀을 등록해야 보스를 공격할 수 있어요.';
+
+  @override
+  String get guildBossNoAttacks => '오늘 공격을 다 썼어요';
+
+  @override
+  String guildBossHit(String d) {
+    return '피해 $d';
+  }
+
+  @override
+  String get guildBossKilled => '보스 처치! 다음 단계';
+
+  @override
+  String guildBossMine(String d) {
+    return '이번 주 내 피해 $d';
+  }
+
+  @override
+  String guildBossRank(int n) {
+    return '이번 주 길드 순위 $n위';
+  }
+
+  @override
+  String get guildBossRankNone => '아직 순위 밖이에요 — 공격하면 순위에 올라요';
+
+  @override
+  String guildBossTopRow(int s, int p) {
+    return '$s단계 · $p%';
+  }
+
+  @override
+  String guildBossLastWeek(int rank, int jelly) {
+    return '지난주 $rank위 — 젤리 $jelly개';
+  }
+
+  @override
+  String guildBossClaimed(int n) {
+    return '젤리 $n개를 받았어요!';
+  }
+
+  @override
+  String get guildTabWar => '길드전';
+
+  @override
+  String get guildWarBreed => '육성';
+
+  @override
+  String get guildWarForge => '제련';
+
+  @override
+  String get guildWarHunt => '사냥';
+
+  @override
+  String get guildWarDuel => '결투';
+
+  @override
+  String get guildWarTrain => '수련';
+
+  @override
+  String get guildWarBoss => '길드 보스';
+
+  @override
+  String get guildWarClash => '전투력 대결';
+
+  @override
+  String get guildWarBreedHint =>
+      '짝짓기 수령·부화 수령·합성으로 점수를 얻어요. 젤리로 즉시 완료한 건 세지 않아요.';
+
+  @override
+  String get guildWarForgeHint => '제련하면 점수 — 높은 등급일수록 훨씬 커요.';
+
+  @override
+  String get guildWarHuntHint => '정예와 사냥터 보스를 잡으면 점수.';
+
+  @override
+  String get guildWarDuelHint => '결투에서 이기면 점수(서버가 확정한 승리만).';
+
+  @override
+  String get guildWarTrainHint => '곤충 수련·훈련소 단계·스킬 수련으로 점수.';
+
+  @override
+  String get guildWarBossHint => '길드 보스를 공격하면 점수.';
+
+  @override
+  String get guildWarClashHint =>
+      '오늘은 할 일이 없어요! 결투 방어팀 전투력 순으로 1:1 대결이 자동으로 벌어지고, 이 탭을 열면 결과가 나와요.';
+
+  @override
+  String guildWarTier(String tier, int gr) {
+    return '$tier 티어 · 등급점 $gr';
+  }
+
+  @override
+  String get guildWarClosed => '길드전은 아직 열리지 않았어요.';
+
+  @override
+  String guildWarOpensOn(String date) {
+    return '길드전은 $date 주부터 시작해요.';
+  }
+
+  @override
+  String guildWarNeedMembers(int n) {
+    return '이번 주 길드전에 나가려면 길드원이 $n명 이상이어야 해요.';
+  }
+
+  @override
+  String guildWarVs(String name) {
+    return 'vs $name';
+  }
+
+  @override
+  String get guildWarVsVirtual => 'vs 야생 길드(같은 티어 평균)';
+
+  @override
+  String get guildWarVirtualName => '야생';
+
+  @override
+  String guildWarDayOf(int d, String theme) {
+    return '$d일차 · $theme';
+  }
+
+  @override
+  String guildWarMyToday(int n, int cap) {
+    return '오늘 내 점수 $n/$cap';
+  }
+
+  @override
+  String get guildWarWin => '승리';
+
+  @override
+  String get guildWarLose => '패배';
+
+  @override
+  String get guildWarDraw => '무승부';
+
+  @override
+  String guildWarPoints(int a, int b) {
+    return '승점 $a : $b';
+  }
+
+  @override
+  String guildWarClashResult(int a, int b) {
+    return '7일차 대결 $a : $b';
+  }
+
+  @override
+  String guildWarReward(String result, int coins, int jelly) {
+    return '$result 보상 — 코인 $coins · 젤리 $jelly';
+  }
+
+  @override
+  String guildWarClaimed(int coins, int jelly) {
+    return '코인 $coins · 젤리 $jelly개를 받았어요!';
+  }
+
+  @override
+  String duelPickDeployed(int n) {
+    return '출정 중 · $n번';
+  }
+
+  @override
+  String get fairyDexHelp =>
+      '요정 도감은 지금까지 얻어 본 요정을 기록하는 곳이에요. 요정 8종마다 두 가지를 모아요.\n• 등급 점 — 그 요정을 그 등급으로 처음 얻으면 그 색의 점이 켜져요.\n• 속성석 — 그 요정을 그 부가 능력치로 처음 얻으면 그 속성석이 밝아져요.\n알을 둥지에서 부화시키거나 합성으로 새 요정을 얻을 때 기록되고, 요정을 분해해도 기록은 남아요. 칸을 모을수록 아래 보상(요정 가루·가속기·화석)을 받아요. 능력치를 올려 주지는 않아요.';
+
+  @override
+  String get fairyDexLegendGrades => '등급 점 (켜짐 = 그 등급으로 얻어 봄)';
+
+  @override
+  String get fairyDexLegendSubs => '속성석 (밝음 = 그 부가 능력치로 얻어 봄)';
+
+  @override
+  String fairyDexRewards(int n, int max) {
+    return '도감 보상 · $n/$max칸 모음';
+  }
+
+  @override
+  String get fairyDexClaimed => '도감 보상을 받았어요!';
+
+  @override
+  String get fairyNestPickEgg => '넣을 알을 먼저 골라 주세요';
+
+  @override
+  String get guideTitle => '공략집';
+
+  @override
+  String get guideIntro => '같은 종이라도 곤충마다 능력이 달라요. 궁금한 항목을 눌러 용어의 뜻을 확인하세요.';
+
+  @override
+  String get guideElementTitle => '오행 상성 (목·화·토·금·수)';
+
+  @override
+  String guideElementBody(String mult) {
+    return '곤충마다 오행 속성이 하나 있어요. 결투에서 상극 관계인 상대와 부딪히면 피해가 $mult배가 돼요. 빨간 화살표가 이기는 방향이에요.';
+  }
+
+  @override
+  String guideElementLine(String a, String b) {
+    return '$a은(는) $b에 강해요';
+  }
+
+  @override
+  String get guideSpecialtyTitle => '주특기 (싸우는 방식)';
+
+  @override
+  String get guideSpecialtyBody => '종마다 정해진 주특기가 결투에서 싸우는 방식을 정해요.';
+
+  @override
+  String get guideSpecialtyStrike => '돌진해서 들이받고 상대를 뒤집어요.';
+
+  @override
+  String get guideSpecialtyGrip => '물고 늘어져 상대를 밀어내요.';
+
+  @override
+  String get guideSpecialtyToss => '상대를 들어 올려 내던져요.';
+
+  @override
+  String get guideTemperamentTitle => '기질 (싸움 성향)';
+
+  @override
+  String get guideTemperamentBody =>
+      '기질은 결투에서 곤충이 움직이는 성향이고, 훈련소에서 어떤 능력치를 더 높이 키울 수 있는지도 정해요.';
+
+  @override
+  String get guideTempAggressive => '돌진이 잦은 공격형이에요.';
+
+  @override
+  String get guideTempCautious => '가장자리를 피하고 상대의 돌진을 옆으로 흘려요.';
+
+  @override
+  String get guideTempCunning => '옆으로 돌아 들어가 약점을 노려요.';
+
+  @override
+  String get guideTempSteadfast => '잘 밀리지 않는 버팀형이에요.';
+
+  @override
+  String get guideTempFickle => '여러 전법을 섞어 써요.';
+
+  @override
+  String guideTrainCapMods(String mods) {
+    return '훈련 상한: $mods';
+  }
+
+  @override
+  String get guideSizeTitle => '크기 (무게)';
+
+  @override
+  String guideSizeBody(String min, String max) {
+    return '크기는 종마다 정해진 범위 안에서 정해져요. 클수록 능력치가 ×$min~×$max로 높아지고, 결투에서 잘 밀리지 않고 장외로 덜 떨어져요.';
+  }
+
+  @override
+  String get guidePotentialTitle => '포텐셜 (1~5성)';
+
+  @override
+  String guidePotentialBody(int perStar, int fodder) {
+    return '별이 높을수록 부위 강화 최대 레벨(별 × 10)과 훈련 최대 단계(별 1개당 +$perStar)가 올라가요. 같은 종 $fodder마리를 합성하면 별이 하나 올라요.';
+  }
+
+  @override
+  String get guideTraitTitle => '혈통 특성 (짝짓기 전용)';
+
+  @override
+  String get guideTraitBody =>
+      '짝짓기로 태어난 곤충만 가질 수 있어요. 야생 곤충에게는 없어요. 펫으로 장착했을 때와 결투 모두에 효과가 있어요.';
+
+  @override
+  String guideTraitEffect(String atk, String hp) {
+    return '공격 +$atk · 체력 +$hp';
+  }
+
+  @override
+  String get guideBreedTitle => '짝짓기와 유전';
+
+  @override
+  String guideBreedBody(String el, String tm, String tr) {
+    return '같은 종 수컷·암컷 성충을 짝지으면 알을 얻어요. 자식은 부모의 오행($el)과 기질($tm)을 높은 확률로, 부모의 특성($tr)을 물려받아요. 부모의 오행·기질·특성이 같으면 자식도 반드시 같아서, 원하는 계통을 대대로 이어 갈 수 있어요.';
+  }
+
+  @override
+  String get guideVariantTitle => '이색 개체';
+
+  @override
+  String guideVariantBody(
+    String wild,
+    String breed,
+    String parent,
+    String gacha,
+    String pet,
+    String duel,
+  ) {
+    return '아주 드물게 색이 다른 곤충(무지개·알비노)이 나와요. 확률은 야생 $wild · 짝짓기 $breed · 부모가 이색이면 $parent · 알 뽑기 $gacha예요. 펫으로 장착하면 능력치 +$pet, 결투에서는 +$duel이에요.';
+  }
+
+  @override
+  String get guideLifeTitle => '성장 단계';
+
+  @override
+  String get guideLifeBody =>
+      '알 → 유충 → 번데기 → 성충 순서로 자라요. 알은 부화기에 넣어야 유충이 되고, 유충부터는 시간이 지나면 저절로 성충이 돼요. 수련·짝짓기·결투는 성충만 할 수 있어요.';
+
+  @override
+  String get guideDuelTitle => '결투';
+
+  @override
+  String guideDuelBody(int sec, String weak) {
+    return '한 판은 원형 경기장에서 벌이는 $sec초 1:1 몸싸움이에요. 장외·뒤집기·기절로 이기고, 시간이 끝나면 남은 체력 %로 판정해요. 한 경기는 3마리가 이긴 곤충이 계속 나가는 승자 연속전이에요. 옆·뒤를 들이받으면 피해 ×$weak, 치명타와 회피도 있어요.';
+  }
+
+  @override
+  String get guideTrainTitle => '훈련소';
+
+  @override
+  String guideTrainBody(int base) {
+    return '곤충마다 결투 능력치 5가지(공격·방어·회피·치명·회복력)를 훈련해요. 최대 단계 = 기본 $base + 포텐셜 + 기질·주특기·특성 보정이라, 곤충마다 잘 키울 수 있는 능력치가 달라요. 역할이 다른 곤충을 섞어 팀을 짜 보세요!';
+  }
+
+  @override
+  String bugInfoSizeDetail(String mm, String min, String max, String mult) {
+    return '${mm}mm (범위 $min~$max) · 능력치 ×$mult';
+  }
+
+  @override
+  String get eventHudShort => '왕충\n선발대회';
+
+  @override
+  String fairyStoneName(String stat) {
+    return '$stat 속성석';
+  }
+
+  @override
+  String fairyStoneEffect(String stat, String p) {
+    return '부화한 요정의 부가 능력치가 $p% 확률로 \'$stat\'(으)로 나와요';
+  }
+
+  @override
+  String get fairyStoneBuyTitle => '속성석 구입';
+
+  @override
+  String get fairyStoneBuyAction => '구입';
+
+  @override
+  String get fairyEquippedTag => '착용 중';
+
+  @override
+  String get fairyMergeEquipped => '착용 중인 요정은 합성할 수 없어요';
+
+  @override
+  String get fairyAutoMergeDone => '합성 결과';
+
+  @override
+  String get exchangeToDust => '요정 가루로';
+
+  @override
+  String get exchangeHintDust => '젤리를 요정 가루로 바꿔요 (젤리 1 = 가루 1)';
+
+  @override
+  String exchangeGetDust(String amount) {
+    return '요정 가루 $amount 받기';
+  }
+
+  @override
+  String fairyStatRange(String grade, String lo, String hi) {
+    return '($grade 범위 $lo~$hi)';
+  }
+
+  @override
+  String get fairyStopCompanion => '동행 해제';
+
+  @override
+  String get fairyHelpTitle => '도움말';
+
+  @override
+  String get fairyHelpGradeHead => '등급별 기본 능력치 범위 (Lv.1)';
+
+  @override
+  String fairyHelpGradeLine(String grade, String lo, String hi, String max) {
+    return '$grade: $lo ~ $hi · 최대 Lv.$max';
+  }
+
+  @override
+  String fairyHelpLevel(String p) {
+    return '레벨이 1 오를 때마다 능력치가 Lv.1 값의 $p씩 늘어나요.';
+  }
+
+  @override
+  String get fairyHelpSubHead => '부가 능력치 (요정마다 하나)';
+
+  @override
+  String fairyHelpSub(String p) {
+    return '부화할 때 아래 중 하나가 붙어요. 크기는 기본 범위의 $p × 능력치별 비중이에요. 속성석을 넣으면 원하는 부가가 나올 확률이 올라가요.';
+  }
+
+  @override
+  String fairyHelpSubLine(String stat, String grade, String lo, String hi) {
+    return '$stat: $grade $lo ~ $hi';
+  }
+
+  @override
+  String get fairyHelpMergeHead => '합성';
+
+  @override
+  String fairyHelpMerge(String n) {
+    return '같은 종류·등급 $n마리 → 한 등급 위 1마리. 기본·부가 능력치는 새로 정해져서, 합성할 때마다 더 좋은 요정을 노릴 수 있어요.';
+  }
+
+  @override
+  String fairyGachaOverflowWarn(String free, String lost) {
+    return '요정함 빈칸이 $free칸이라, 알 $lost개는 요정 가루로 바뀌어요.';
+  }
+
+  @override
+  String fairyOverflowToast(String n, String dust) {
+    return '요정함이 가득 차 알 $n개가 요정 가루 $dust로 바뀌었어요';
+  }
+
+  @override
+  String fairyOverflowPop(String dust) {
+    return '요정함 가득 · 요정 가루 +$dust';
+  }
+
+  @override
+  String fairyMergeInvestedConfirm(String n, String dust) {
+    return '레벨을 올린 요정 $n마리가 재료로 들어가요. 쓴 가루 중 $dust를 돌려받아요. 합성할까요?';
+  }
+
+  @override
+  String fairyMergeRefund(String dust) {
+    return '요정 가루 $dust를 돌려받았어요';
+  }
+
+  @override
+  String exchangeDustLeft(String n) {
+    return '오늘 $n 남음';
+  }
+
+  @override
+  String get exchangeDustCapReached => '오늘 교환 한도에 닿았어요';
+
+  @override
+  String get bugLock => '잠금';
+
+  @override
+  String get bugLocked => '잠김';
+
+  @override
+  String get bugUnlock => '잠금 해제';
+
+  @override
+  String get bugLockedToast => '잠갔어요 — 합성·분해 재료로 쓰지 않아요';
+
+  @override
+  String get bugUnlockedToast => '잠금을 풀었어요';
+
+  @override
+  String get disassembleLocked => '잠긴 곤충은 분해할 수 없어요. 잠금을 먼저 풀어 주세요.';
+
+  @override
+  String trainingSumShort(int n) {
+    return '훈련 Lv.$n';
+  }
+
+  @override
+  String get reviewAskTitle => '곤충 키우기, 재미있게 하고 계신가요?';
+
+  @override
+  String get reviewAskBody =>
+      '잠깐 시간 내서 스토어에 리뷰를 남겨 주시면 혼자 만드는 게임에 큰 힘이 돼요.\n플레이해 주셔서 감사해요!';
+
+  @override
+  String get reviewAskLater => '나중에';
+
+  @override
+  String get trainingNoneShort => '미훈련';
+
+  @override
+  String get guildComingSoonTitle => '준비 중이에요';
+
+  @override
+  String get guildComingSoonBody =>
+      '길드 미션 · 길드 보스 · 길드 상점 · 주간 길드전이 다음 업데이트에서 열려요. 조금만 기다려 주세요!';
+
+  @override
+  String get notifChannelName => '보상 알림';
+
+  @override
+  String get notifChannelDesc => '점심·저녁 보상, 오프라인 보상 가득참 알림';
+
+  @override
+  String get eggOddsTitle => '곤충 알 뽑기 확률';
+
+  @override
+  String get eggOddsGradeHead => '등급 (같은 등급 안의 종은 모두 같은 확률)';
+
+  @override
+  String get eggOddsPotentialHead => '포텐셜';
+
+  @override
+  String eggOddsVariant(String p) {
+    return '이색(무지개·알비노): $p%';
+  }
+
+  @override
+  String eggOddsPity(String n, String grade) {
+    return '$n회째에는 $grade 이상 확정';
+  }
+
+  @override
+  String get eggOddsNote =>
+      '확률은 한 번 뽑을 때 기준이에요. 천장 횟수는 그 등급이 나올 때만 처음부터 다시 세요.';
+
+  @override
+  String eggOddsGradeLine(String grade, String p, String each) {
+    return '$grade $p% · 종마다 $each%';
+  }
+
+  @override
+  String get variantRainbow => '무지개';
+
+  @override
+  String get variantAlbino => '알비노';
+
+  @override
+  String get jellyShortTitle => '젤리가 부족해요';
+
+  @override
+  String get jellyShortBody => '상점에서 젤리를 구매하면 바로 이어서 할 수 있어요.';
+
+  @override
+  String get jellyShortGoShop => '상점 가기';
+
+  @override
+  String pvpRefillLimit(int n) {
+    return '젤리 충전은 하루 $n번까지예요';
+  }
+
+  @override
+  String get pvpTicketRefillTitle => '티켓 충전';
+
+  @override
+  String pvpTicketRefillBody(int n, int left) {
+    return '젤리로 티켓 $n장을 받아요. (오늘 $left번 남음)';
+  }
+
+  @override
+  String get starterOfferTitle => '스타터 패키지';
+
+  @override
+  String get starterOfferBody =>
+      '젤리 300 · 골드 · 재료 · 부화기 1칸.\n계정당 한 번만 살 수 있는, 상점에서 가장 알찬 구성이에요!';
+
+  @override
+  String get starterOfferGo => '보러 가기';
+
+  @override
+  String mailGrantTitle(String name) {
+    return '[운영자 지급] $name';
+  }
+
+  @override
+  String get mailGrantBody => '운영자가 보낸 보상입니다. 받기를 눌러 수령하세요.';
+
+  @override
+  String get mailReplyTitle => '[운영자 답변]';
 }

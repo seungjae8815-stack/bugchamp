@@ -27,6 +27,9 @@ class TabIndexNotifier extends Notifier<int> {
   void set(int index) => state = index;
 }
 
+/// 하단 메뉴의 상점 탭 번호(홈·캐릭터·채집함·전투·길드·상점).
+const int kShopTabIndex = 5;
+
 final tabIndexProvider = NotifierProvider<TabIndexNotifier, int>(
   TabIndexNotifier.new,
 );

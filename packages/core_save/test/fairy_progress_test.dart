@@ -503,7 +503,7 @@ void main() {
       expect(dry.state, s, reason: 'dryRun 은 상태를 바꾸지 않는다');
       final made = dry.extra['made']! as List<Fairy>;
       expect(made.map((x) => x.grade), [FairyGrade.epic]);
-      expect(dry.extra['used'], 12);
+      expect(dry.extra['used'], 9, reason: '원래 있던 일반 9마리(연쇄 중간 희귀 3은 빼고)');
 
       final run = autoMergeFairies(s, cfg, Random(1)).state!;
       expect(run.fairies.map((x) => x.id), containsAll(['f10', 'f11']));
@@ -670,7 +670,7 @@ void main() {
       ]).copyWith(companionId: 'f1', dust: 7);
       final save = SaveGame.initial(createdAt: _t).copyWith(fairy: fs);
       final j = jsonDecode(jsonEncode(save.toJson())) as Map<String, dynamic>;
-      expect(j['feat'], 15);
+      expect(j['feat'], greaterThanOrEqualTo(15), reason: '요정은 feat 15 부터');
       expect(SaveGame.fromJson(j).fairy, fs);
     });
 

@@ -546,7 +546,8 @@ Future<String?> _pickCard(BuildContext context, EventDuelDriver driver) {
           onPressed: () => Navigator.of(context).pop(_quitPick),
           icon: const Icon(Icons.flag_rounded, size: 16),
           label: Text(l.eventQuit),
-          style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF9A9A)),
+          // 글자색은 팝업 그림 버튼 기본(크림)으로 — 회색 나무 위 분홍은 흐릿했다. 위험 표시는 아이콘으로만.
+          style: TextButton.styleFrom(iconColor: const Color(0xFFEF9A9A)),
         ),
       ],
     ),

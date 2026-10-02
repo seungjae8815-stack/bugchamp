@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:core_models/core_models.dart' show MaterialKind;
+
+import '../domain/save_controller.dart';
+import 'jelly_short.dart';
 
 import '../l10n/app_localizations.dart';
 import 'art.dart';
@@ -14,6 +19,15 @@ Future<bool> confirmJellySpend(
   required int jelly,
 }) async {
   final l = AppLocalizations.of(context);
+  // 젤리가 모자라면 확인 창 대신 상점 안내(2026-10-02).
+  final have = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(saveControllerProvider).value?.materialCount(MaterialKind.jelly);
+  if (have != null && have < jelly) {
+    await showJellyShort(context);
+    return false;
+  }
   final ok = await showGameDialog<bool>(
     context,
     title: title,

@@ -274,6 +274,8 @@ class GameActions {
     ],
     // 요정(1.0.15, docs/design_fairy.md) — 상태 전체가 필드 하나다.
     15: ['fairy'],
+    // 곤충 잠금(1.0.15, 2026-10-02) — 모르는 앱이 올리면 저장본의 잠금을 지킨다.
+    16: ['lockedBugs', 'reviewTier', 'reviewOpened'],
   };
 
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
@@ -712,6 +714,10 @@ class GameActions {
   /// 한 업로드에서 젤리 없이 늘 수 있는 속성석·가속기 수(보상·상점 여유).
   static const _fairyItemSlack = 10;
 
+  /// 한 업로드에서 사라진 요정·알 없이 늘 수 있는 가루(정예 알이 넘쳐 가루가 되는 몫 등).
+  /// 정예 알 확률 2%·하루 180처치면 한 업로드(60초) 넘침은 한두 개 — 희귀 분해(15) 수십 개분.
+  static const _fairyDustSlack = 500;
+
   /// 요정 강제(docs/design_fairy.md §5). 처리는 기기 권위라 **위조를 완전히 막지는 못한다** —
   /// 결투·대회·길드전에 싣지 않는 것이 방어선이고, 여기는 네 가지를 막는다.
   ///
@@ -723,12 +729,16 @@ class GameActions {
   /// 2. **속성석·가속기를 쏟아 넣는 것.** 개수 증가가 (쓴 젤리 ÷ 가장 싼 값 + 여유)를 넘으면 저장본 개수로.
   /// 3. **세이브 부풀리기.** 모르는 종류·부가·가속기 키, 도감의 없는 칸을 걸러 낸다. 서버는 늘 최신 데이터라
   ///    모르는 키 = 조작이다. (앱에서는 거르지 않는다 — 구버전 앱이 새 종류를 지우면 안 된다.)
-  /// 4. **가루 위조.** 한 업로드의 가루 증가를 요정함 전부를 신화 만렙으로 분해한 양까지로 자른다.
+  /// 4. **가루 위조.** 한 업로드의 가루 증가를 (사라진 요정·알의 분해·환급 + 도감 + 교환소 + 여유)로 자른다.
+  /// 5. **기존 요정 고쳐 쓰기.** 저장본에 있던 id 의 등급·종류·부가·개체값은 저장본 값으로([_keepFairyIdentity]).
   ///
   /// 레벨 ≤ 등급 상한 · 요정함 상한은 `enforceFairyRules`(앱 로드와 같은 함수).
   SaveGame _enforceFairy(SaveGame stored, SaveGame client, FairyConfig cfg) {
     final before = stored.fairy;
     var f = _fairyKnownKeysOnly(enforceFairyRules(client.fairy, cfg), cfg);
+    // 이미 있던 요정·알의 **정체는 바뀌지 않는다**(레벨만 오른다). 가치 검사는 새 id 만 깎으므로,
+    // 기존 요정의 등급을 신화로 고쳐 올리면 그대로 통과했다(2026-10-01 점검).
+    f = _keepFairyIdentity(before, f, cfg);
     final jellySpent = max(
       0,
       stored.materialCount(MaterialKind.jelly) -
@@ -752,6 +762,15 @@ class GameActions {
         (eggsBought * topEgg + newBosses * bossEgg + _fairyFreeValue);
     if (over > 0) f = _trimNewFairyValue(before, f, over);
 
+    // 요정 도감 마일스톤(2026-10-01) — 받은 수는 줄지 않고(되받기 방지), 도감 칸이 실제로 닿은 것만
+    // 인정한다. 새로 받은 것만큼 가속기·가루 증가를 허용(화석은 mergeSave 의 화석 상한에서).
+    final dexNew = fairyDexNewlyClaimed(before, f, cfg);
+    final dexOk = before.dexClaimed + dexNew.length;
+    final dexFixed = f.dexClaimed < before.dexClaimed
+        ? before.dexClaimed
+        : min(f.dexClaimed, dexOk);
+    if (dexFixed != f.dexClaimed) f = f.copyWith(dexClaimed: dexFixed);
+
     int items(FairyState s) =>
         s.stones.values.fold(0, (a, b) => a + b) +
         s.accelerators.values.fold(0, (a, b) => a + b);
@@ -762,20 +781,43 @@ class GameActions {
     final itemAllow =
         (cheapest >= 1 << 30 ? 0 : jellySpent ~/ cheapest) +
         newBosses * cfg.drops.bossFirstStones +
+        dexNew.fold<int>(0, (a, m) => a + m.acceleratorCount) +
         _fairyItemSlack;
     if (items(f) - items(before) > itemAllow) {
       f = f.copyWith(stones: before.stones, accelerators: before.accelerators);
     }
 
-    final topGrade = FairyGrade.values.last;
-    final dustAllow =
-        cfg.boxCap *
-        ((cfg.releaseDust[topGrade] ?? 0) +
-            (cfg.dustSpentTo(topGrade, cfg.maxLevelOf(topGrade)) *
-                    cfg.mergeDustRefund)
-                .ceil());
-    if (f.dust - before.dust > dustAllow) {
-      f = f.copyWith(dust: before.dust + dustAllow);
+    // 가루는 **사라진 것에서만** 나온다(2026-10-01 점검 — 예전엔 요정함 전부를 신화 만렙으로 분해한
+    // 양(약 1,000만)을 매 업로드 허용해 사실상 상한이 없었다). 저장본에 있다 사라진 요정 = 분해 가루 +
+    // 레벨업 환급(분해·합성 공통 상한), 사라진 알 = 분해 가루. 이번 업로드에 생겼다 바로 사라진 것
+    // (넘친 알·뽑자마자 분해)은 쓴 젤리 · 새 보스 · 무료 여유로 덮는다.
+    final nowIds = {
+      for (final x in f.fairies) x.id,
+      for (final e in f.eggs) e.id,
+      if (f.nest != null) f.nest!.eggId,
+    };
+    var dustAllow = _fairyDustSlack;
+    for (final x in before.fairies) {
+      if (nowIds.contains(x.id)) continue;
+      dustAllow +=
+          (cfg.releaseDust[x.grade] ?? 0) +
+          (cfg.dustSpentTo(x.grade, x.level) * cfg.mergeDustRefund).ceil();
+    }
+    final maxEggDust = cfg.releaseDust.values.fold<int>(0, max);
+    for (final e in before.eggs) {
+      if (!nowIds.contains(e.id)) dustAllow += cfg.releaseDust[e.grade] ?? 0;
+    }
+    dustAllow += (eggsBought + newBosses) * maxEggDust;
+    final dustAllowAll =
+        dustAllow +
+        dexNew.fold<int>(0, (a, m) => a + m.dust) +
+        // 상점 교환소(젤리 → 가루, 2026-10-01) — 하루 상한이 있으면 업로드당 그 값까지.
+        min<int>(
+          (jellySpent * cfg.exchangeDustPerJelly).ceil(),
+          cfg.exchangeDustDailyCap > 0 ? cfg.exchangeDustDailyCap : 1 << 30,
+        );
+    if (f.dust - before.dust > dustAllowAll) {
+      f = f.copyWith(dust: before.dust + dustAllowAll);
     }
     return f == client.fairy ? client : client.copyWith(fairy: f);
   }
@@ -814,6 +856,95 @@ class GameActions {
       dex: f.dex.intersection(dexOk),
     );
     return out == f ? f : out;
+  }
+
+  /// 저장본에 있던 요정·알의 정체(등급·종류·부가·개체값)를 저장본 값으로 되돌리고, 같은 id 는 하나만 남긴다.
+  /// 레벨은 올라갈 수 있으므로 클라 값을 쓰되 (되돌린) 등급의 상한으로 자른다.
+  /// 둥지의 알이 저장본의 알·둥지였다면 등급도 그 값으로(종류·부가·개체값은 넣을 때 굴리므로 둥지가
+  /// 저장본에 이미 있었을 때만 고정).
+  static FairyState _keepFairyIdentity(
+    FairyState before,
+    FairyState f,
+    FairyConfig cfg,
+  ) {
+    final oldF = {for (final x in before.fairies) x.id: x};
+    final oldE = {for (final e in before.eggs) e.id: e};
+    final seen = <String>{};
+    var changed = false;
+    final fairies = <Fairy>[];
+    for (final x in f.fairies) {
+      if (!seen.add(x.id)) {
+        changed = true;
+        continue;
+      }
+      final o = oldF[x.id];
+      if (o == null ||
+          (o.kind == x.kind &&
+              o.grade == x.grade &&
+              o.sub == x.sub &&
+              o.baseRoll == x.baseRoll &&
+              o.subRoll == x.subRoll)) {
+        fairies.add(x);
+        continue;
+      }
+      changed = true;
+      fairies.add(
+        o.copyWith(level: x.level.clamp(o.level, cfg.maxLevelOf(o.grade))),
+      );
+    }
+    final eggs = <FairyEgg>[];
+    for (final e in f.eggs) {
+      if (!seen.add(e.id)) {
+        changed = true;
+        continue;
+      }
+      final o = oldE[e.id];
+      if (o != null && o.grade != e.grade) {
+        changed = true;
+        eggs.add(o);
+      } else {
+        eggs.add(e);
+      }
+    }
+    var nest = f.nest;
+    if (nest != null) {
+      final was = before.nest;
+      final fromEgg = oldE[nest.eggId];
+      if (seen.contains(nest.eggId)) {
+        // 둥지 알 id 가 요정·알과 겹친다(넣은 알은 알 목록에서 빠진다) — 위조. 둥지를 비운다.
+        changed = true;
+        nest = null;
+      } else if (was != null && was.eggId == nest.eggId) {
+        // 같은 알이 둥지에 있었다 — 정체는 저장본, 완료 시각은 당겨질 수만 있다(가속기).
+        final ends = nest.endsAt.isBefore(was.endsAt)
+            ? nest.endsAt
+            : was.endsAt;
+        final fixed = was.copyWith(endsAt: ends);
+        if (fixed != nest) {
+          nest = fixed;
+          changed = true;
+        }
+      } else if (fromEgg != null && fromEgg.grade != nest.grade) {
+        // 저장본의 알을 넣었다 — 등급은 그 알의 등급.
+        nest = FairyNest(
+          eggId: nest.eggId,
+          grade: fromEgg.grade,
+          kind: nest.kind,
+          sub: nest.sub,
+          baseRoll: nest.baseRoll,
+          subRoll: nest.subRoll,
+          endsAt: nest.endsAt,
+        );
+        changed = true;
+      }
+    }
+    if (!changed) return f;
+    return f.copyWith(
+      fairies: fairies,
+      eggs: eggs,
+      nest: nest,
+      clearNest: nest == null && f.nest != null,
+    );
   }
 
   /// 이번 업로드에서 **새로 생긴**(저장본에 id 가 없는) 알·둥지·요정을 등급 가치 큰 것부터
@@ -1000,10 +1131,26 @@ class GameActions {
           ? 0
           : (abyss.best ~/ every - stored.abyssBest ~/ every) *
                 config.run.abyss.milestoneFossil;
+      final fairyCfg = config.fairy;
+      final fairyDexFossil = fairyCfg == null || clientJson['fairy'] is! Map
+          ? 0
+          // ⚠️ 모르는 도감 칸을 **먼저 거른다** — 가짜 칸 100개로 마일스톤을 부풀리면 화석만 지급되고
+          // 수령 기록은 _enforceFairy 에서 되돌려져 매 업로드 반복됐다(2026-10-01 점검).
+          : fairyDexNewlyClaimed(
+              stored.fairy,
+              _fairyKnownKeysOnly(
+                FairyState.fromJson(
+                  Map<String, dynamic>.from(clientJson['fairy'] as Map),
+                ),
+                fairyCfg,
+              ),
+              fairyCfg,
+            ).fold<int>(0, (a, m) => a + m.fossil);
       final fossilAllow =
           _maxFossilGain +
           _dexFossilAllowance(stored, clientJson) +
-          abyssFossil;
+          abyssFossil +
+          fairyDexFossil;
       if (clientFossil - storedFossil > fossilAllow) {
         mats['fossil'] = storedFossil + fossilAllow;
         clampReasons.add('fossil');
@@ -2758,6 +2905,12 @@ class GameActions {
     if (cur.tickets >= cfg.ticketMax) {
       return const ActionResult.fail('already_full');
     }
+    // 하루 횟수(2026-10-02) — 패스 구매자도 같다(결제로 판수를 사지 못하게, §2.8).
+    final today = dailyDateKey(t);
+    final used = save.adUseCount(kAdFeaturePvpRefill, today);
+    if (cfg.ticketRefillDailyLimit > 0 && used >= cfg.ticketRefillDailyLimit) {
+      return const ActionResult.fail('refill_limit');
+    }
     final paid = spendJelly(save, cfg.ticketRefillJelly, reason: 'pvp_ticket');
     if (!paid.isOk) return paid;
     final next = refillTickets(
@@ -2766,12 +2919,23 @@ class GameActions {
       now: t,
       cfg: cfg,
     );
+    final counts = save.adUseDate == today
+        ? Map<String, int>.from(save.adUseCounts)
+        : <String, int>{};
+    counts[kAdFeaturePvpRefill] = used + 1;
     return ActionResult.ok(
-      paid.save!.copyWith(pvpTickets: next.tickets, ticketsAt: next.at),
+      paid.save!.copyWith(
+        pvpTickets: next.tickets,
+        ticketsAt: next.at,
+        adUseCounts: counts,
+        adUseDate: today,
+      ),
       extra: {
         'tickets': next.tickets,
         'ticketsAt': next.at.toIso8601String(),
         'jelly': paid.save!.materialCount(MaterialKind.jelly),
+        'refillUsed': used + 1,
+        'refillLimit': cfg.ticketRefillDailyLimit,
       },
     );
   }

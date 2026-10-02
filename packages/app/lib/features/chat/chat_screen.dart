@@ -14,6 +14,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
+import '../guild/guild_mission_tab.dart' show guildHelpMission;
 
 /// 전체 채팅 화면.
 ///
@@ -23,8 +24,14 @@ import '../../ui/toast.dart';
 /// - 사용자 차단
 /// - 도배 방지
 /// 넷 다 이 화면에 있다. 하나라도 빼면 심사에서 거부될 수 있다.
+///
+/// [guildId] 가 있으면 **길드 채팅**(같은 테이블, DB 정책이 내 길드만 읽고 쓰게 한다).
+/// [embedded] 면 앱바 없이 본문만 — 길드 화면의 탭 안에 넣을 때.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({super.key, this.guildId, this.embedded = false});
+
+  final String? guildId;
+  final bool embedded;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -60,7 +67,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Future<void> _load() async {
     final svc = ref.read(chatServiceProvider);
-    final list = await svc.recent(limit: _rules.historyLimit);
+    final list = await svc.recent(
+      limit: _rules.historyLimit,
+      guildId: widget.guildId,
+    );
     if (!mounted) return;
     setState(() {
       _messages
@@ -69,7 +79,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _loading = false;
     });
     _jumpToBottom();
-    _sub = svc.subscribe().listen((m) {
+    _sub = svc.subscribe(guildId: widget.guildId).listen((m) {
       if (!mounted) return;
       setState(() {
         // 같은 글이 세 경로로 들어올 수 있다 —
@@ -152,6 +162,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           body: body,
           createdAt: now,
           badge: badge,
+          guildId: widget.guildId,
         ),
       );
     });
@@ -160,7 +171,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final ok = await ref
         .read(chatServiceProvider)
-        .send(nickname: save.nickname, body: body, badge: badge);
+        .send(
+          nickname: save.nickname,
+          body: body,
+          badge: badge,
+          guildId: widget.guildId,
+        );
     if (!mounted) return;
     setState(() {
       _sending = false;
@@ -369,6 +385,55 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final available = ref.watch(chatServiceProvider).available;
     final myId = ref.watch(chatMyUserIdProvider);
 
+    final body = Column(
+      children: [
+        // 대화 규칙 안내 — UGC 정책상 이용 기준을 명시해 둔다.
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          color: const Color(0x22EBA52F),
+          child: Text(
+            l.chatRules,
+            style: const TextStyle(
+              color: Color(0xCCEBD24A),
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+          ),
+        ),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : !available
+              ? Center(
+                  child: Text(
+                    l.chatUnavailable,
+                    style: const TextStyle(color: Color(0x99FFFFFF)),
+                  ),
+                )
+              : _messages.isEmpty
+              ? Center(
+                  child: Text(
+                    widget.guildId == null ? l.chatEmpty : l.guildChatEmpty,
+                    style: const TextStyle(color: Color(0x99FFFFFF)),
+                  ),
+                )
+              : ListView.builder(
+                  controller: _scroll,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, i) =>
+                      _bubble(_messages[i], save, myId, l),
+                ),
+        ),
+        _composer(l, available),
+      ],
+    );
+    if (widget.embedded) return body;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l.chatTitle),
@@ -390,53 +455,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        children: [
-          // 대화 규칙 안내 — UGC 정책상 이용 기준을 명시해 둔다.
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            color: const Color(0x22EBA52F),
-            child: Text(
-              l.chatRules,
-              style: const TextStyle(
-                color: Color(0xCCEBD24A),
-                fontSize: 11.5,
-                height: 1.35,
-              ),
-            ),
-          ),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : !available
-                ? Center(
-                    child: Text(
-                      l.chatUnavailable,
-                      style: const TextStyle(color: Color(0x99FFFFFF)),
-                    ),
-                  )
-                : _messages.isEmpty
-                ? Center(
-                    child: Text(
-                      l.chatEmpty,
-                      style: const TextStyle(color: Color(0x99FFFFFF)),
-                    ),
-                  )
-                : ListView.builder(
-                    controller: _scroll,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, i) =>
-                        _bubble(_messages[i], save, myId, l),
-                  ),
-          ),
-          _composer(l, available),
-        ],
-      ),
+      body: body,
     );
   }
 
@@ -462,6 +481,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
     }
     final mine = myId != null && m.userId == myId;
+    // 길드 미션 도움 요청 카드(서버가 `#help:<id>` 로 넣는다) — 말풍선 대신 "도와주기" 버튼.
+    // 전체 채팅에는 없다(길드 채팅에만 들어간다). 누가 손으로 같은 글을 써도 서버가 없는 미션으로 거절한다.
+    if (widget.guildId != null && m.body.startsWith(_helpPrefix)) {
+      return _helpCard(m, mine, l);
+    }
     // 보여줄 때도 필터를 건다 — 목록 갱신 전에 서버에 들어간 과거 메시지 대비.
     final body = _rules.mask(m.body);
 
@@ -550,6 +574,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  static const _helpPrefix = '#help:';
+
+  Widget _helpCard(ChatMessage m, bool mine, AppLocalizations l) {
+    final name = _rules.maskNickname(m.nickname, fallback: l.nicknameFallback);
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: const Color(0x22EBC24A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x88EBC24A)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.flag_rounded, color: Color(0xFFEBC24A), size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              mine ? l.guildMissionChatMine : l.guildMissionChatAsk(name),
+              style: const TextStyle(color: Colors.white, fontSize: 12.5),
+            ),
+          ),
+          if (!mine)
+            TextButton(
+              onPressed: () => guildHelpMission(
+                context,
+                ref,
+                m.body.substring(_helpPrefix.length),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFEBC24A),
+              ),
+              child: Text(l.guildMissionHelp),
+            ),
         ],
       ),
     );

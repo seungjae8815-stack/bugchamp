@@ -29,6 +29,8 @@ class GameConfig implements GameConfigLike {
     this.event,
     this.skill,
     this.fairy,
+    this.guild = const GuildConfig(),
+    this.chatRules = const ChatRules(),
     this.speciesById = const {},
   });
 
@@ -65,6 +67,12 @@ class GameConfig implements GameConfigLike {
   final SkillConfig? skill;
   @override
   final FairyConfig? fairy;
+
+  /// 길드 기본 규칙(guild.json). 파일이 없으면 기본값.
+  final GuildConfig guild;
+
+  /// 금칙어·이름 규칙(chat.json) — 길드 이름 검사에 쓴다(닉네임과 같은 기준).
+  final ChatRules chatRules;
 
   @override
   List<Species> get speciesList => speciesById.values.toList();
@@ -106,6 +114,8 @@ class GameConfig implements GameConfigLike {
     final eventJson = await readOpt('event.json');
     final skillJson = await readOpt('skills.json');
     final fairyJson = await readOpt('fairies.json');
+    final guildJson = await readOpt('guild.json');
+    final chatJson = await readOpt('chat.json');
 
     return GameConfig(
       speciesById: {for (final s in speciesList) s.id: s},
@@ -123,6 +133,10 @@ class GameConfig implements GameConfigLike {
       event: eventJson == null ? null : EventConfig.fromJson(eventJson),
       skill: skillJson == null ? null : SkillConfig.fromJson(skillJson),
       fairy: fairyJson == null ? null : FairyConfig.fromJson(fairyJson),
+      guild: GuildConfig.fromJson(guildJson),
+      chatRules: chatJson == null
+          ? const ChatRules()
+          : ChatRules.fromJson(chatJson),
     );
   }
 }

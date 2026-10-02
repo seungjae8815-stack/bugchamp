@@ -1,3 +1,5 @@
+import '../domain/guild_service.dart' show kGuildOpen;
+import 'guild/guild_screen.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
@@ -284,6 +286,8 @@ class _AppShellState extends ConsumerState<AppShell>
                   const CharacterScreen(),
                   StorageScreen(save: save),
                   const BattleScreen(),
+                  // 길드(1.0.15) — 하단 메뉴(2026-10-02 사장님). 열기 전엔 "준비 중" 화면.
+                  kGuildOpen ? const GuildScreen() : const GuildComingSoon(),
                   const CraftScreen(),
                 ],
               ),
@@ -556,6 +560,7 @@ class _GameNavBar extends StatelessWidget {
       ('character', Icons.person_rounded, l.navCharacter),
       ('storage', Icons.menu_book_rounded, l.navStorage),
       ('battle', Icons.sports_mma_rounded, l.navBattle),
+      ('guild', Icons.groups_rounded, l.guildTitle),
       ('shop', Icons.storefront_rounded, l.navShop),
     ];
     return Container(
@@ -627,12 +632,20 @@ class _NavTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 1),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+          // 6칸이라 칸이 좁다 — "コレクション"·"Character"가 단어 중간에서 꺾였다(한 줄 · 칸에 맞게 줄임).
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],

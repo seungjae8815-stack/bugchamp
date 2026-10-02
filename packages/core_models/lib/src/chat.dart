@@ -13,6 +13,7 @@ class ChatMessage {
     required this.createdAt,
     this.isAdmin = false,
     this.badge = '',
+    this.guildId,
   });
 
   /// 서버가 부여한 메시지 id(신고·차단 대상 식별용).
@@ -38,6 +39,10 @@ class ChatMessage {
   /// 값은 덮어쓴다. 앱이 넣게 두면 누구나 챔피언을 달고 말할 수 있다.
   final String badge;
 
+  /// 길드 채팅이면 그 길드 id, 전체 채팅이면 null(2026-10-01 길드 1단계).
+  /// 읽기·쓰기는 DB 정책이 **전체 + 내 길드**로 막는다 — 앱이 거르는 건 화면 분리용이다.
+  final String? guildId;
+
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
     id: json['id'].toString(),
     userId: json['user_id'] as String,
@@ -47,6 +52,7 @@ class ChatMessage {
     // 컬럼이 없는 서버(구버전 스키마)에서도 안전하게 false 로 읽는다.
     isAdmin: json['is_admin'] == true,
     badge: json['badge'] as String? ?? '',
+    guildId: json['guild_id']?.toString(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +63,7 @@ class ChatMessage {
     'created_at': createdAt.toUtc().toIso8601String(),
     'is_admin': isAdmin,
     if (badge.isNotEmpty) 'badge': badge,
+    'guild_id': ?guildId,
   };
 }
 
