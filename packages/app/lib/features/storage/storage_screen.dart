@@ -2382,14 +2382,26 @@ class StorageScreen extends ConsumerWidget {
                       .requireValue
                       .lockedBugIds
                       .contains(bug.id))
-                    const Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Icon(
-                        Icons.lock_rounded,
-                        size: 14,
-                        color: kHoney,
-                        shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                    // 안쪽에 두고 회색 판을 깐다 — 음수 좌표는 Stack 이 잘랐고 노랑은
+                    // 곤충 그림에 묻혔다(2026-10-02 사장님 실기 지적).
+                    Positioned(
+                      top: 1,
+                      right: 1,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: const BoxDecoration(
+                          color: Color(0xEE3A3A3A),
+                          shape: BoxShape.circle,
+                          border: Border.fromBorderSide(
+                            BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.lock_rounded,
+                          size: 11,
+                          color: Color(0xFFE6E6E6),
+                        ),
                       ),
                     ),
                   // 부상 표시는 칸 한가운데 크게 — 구석의 작은 이모지는
@@ -4127,7 +4139,7 @@ Widget _bugInfoCard(
   );
 }
 
-/// 곤충 상세의 잠금 버튼 — 켜면 노란 자물쇠, 끄면 흐린 열린 자물쇠.
+/// 곤충 상세의 잠금 버튼 — 켜면 **밝은 회색** 자물쇠(2026-10-02 사장님: 노랑은 안 보였다), 끄면 흐린 열린 자물쇠.
 Widget _lockButton(
   BuildContext ctx,
   WidgetRef r,
@@ -4149,9 +4161,11 @@ Widget _lockButton(
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: locked ? const Color(0x33FFD54F) : const Color(0x22FFFFFF),
+        color: locked ? const Color(0xCC3A3A3A) : const Color(0x22FFFFFF),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: locked ? kHoney : const Color(0x44FFFFFF)),
+        border: Border.all(
+          color: locked ? const Color(0xFFE0E0E0) : const Color(0x44FFFFFF),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -4159,12 +4173,12 @@ Widget _lockButton(
           Icon(
             locked ? Icons.lock_rounded : Icons.lock_open_rounded,
             size: 20,
-            color: locked ? kHoney : Colors.white60,
+            color: locked ? const Color(0xFFF2F2F2) : Colors.white60,
           ),
           Text(
             locked ? l.bugLocked : l.bugLock,
             style: TextStyle(
-              color: locked ? kHoney : Colors.white60,
+              color: locked ? const Color(0xFFF2F2F2) : Colors.white60,
               fontSize: 9.5,
               fontWeight: FontWeight.w800,
             ),

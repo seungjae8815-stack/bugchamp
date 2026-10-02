@@ -434,6 +434,20 @@ class _GachaCard extends ConsumerWidget {
                   fontSize: 15,
                 ),
               ),
+              const SizedBox(width: 4),
+              // 확률 공개는 제목 옆 물음표로(2026-10-02 사장님 — 요정 도움말과 같은 모양).
+              InkWell(
+                onTap: () => _showEggOdds(context, ref, l, cfg),
+                borderRadius: BorderRadius.circular(12),
+                child: const Padding(
+                  padding: EdgeInsets.all(3),
+                  child: Icon(
+                    Icons.help_outline_rounded,
+                    size: 17,
+                    color: Color(0xFFE9A6FF),
+                  ),
+                ),
+              ),
               const Spacer(),
               jellyIcon(size: 15),
               const SizedBox(width: 3),
@@ -454,20 +468,6 @@ class _GachaCard extends ConsumerWidget {
               color: Color(0xB3FFFFFF),
               fontSize: 11.5,
               height: 1.35,
-            ),
-          ),
-          // 확률 공개(확률형 아이템 표시 의무 — 스킬·요정 뽑기와 같은 수준, 2026-10-02 출시 점검).
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => _showEggOdds(context, ref, l, cfg),
-              icon: const Icon(Icons.percent_rounded, size: 15),
-              label: Text(l.skillGachaOdds),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFE9A6FF),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                minimumSize: const Size(0, 30),
-              ),
             ),
           ),
           if (toPity > 0) ...[
