@@ -540,36 +540,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               // 대회 뱃지(2026-09-15) — 자랑거리는 남이 봐야 자랑거리다.
               // 순위표를 열지 않는 사람도 채팅에서는 본다.
               if (!m.isAdmin) EventBadgeChip(id: m.badge, size: 9.5),
+              // 신고·차단(남의 글)·삭제(내 글)는 이 버튼으로(2026-10-03). 말풍선 꾹 누르기는
+              // **글자 선택**에 내줬다 — 안드로이드는 거기서 기기 번역이 뜬다.
+              // 운영자 메시지는 신고·차단 대상이 아니다(공지 성격).
+              if (!m.isAdmin)
+                InkWell(
+                  onTap: () => mine ? _deleteMine(m, l) : _actions(m, l),
+                  borderRadius: BorderRadius.circular(10),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Icon(
+                      Icons.more_horiz_rounded,
+                      size: 16,
+                      color: Color(0x99FFFFFF),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 2),
-          GestureDetector(
-            // 내 메시지 길게누르기=삭제, 남의 메시지=신고/차단 메뉴.
-            // 운영자 메시지는 신고·차단 대상이 아니다(공지 성격).
-            onLongPress: m.isAdmin
-                ? null
-                : () => mine ? _deleteMine(m, l) : _actions(m, l),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 280),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: m.isAdmin
-                    ? const Color(0x333F7FB5)
-                    : (mine
-                          ? const Color(0x33EBA52F)
-                          : const Color(0x22FFFFFF)),
-                borderRadius: BorderRadius.circular(12),
-                border: m.isAdmin
-                    ? Border.all(color: const Color(0x883F7FB5))
-                    : null,
-              ),
-              child: Text(
-                body,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13.5,
-                  height: 1.35,
-                ),
+          Container(
+            constraints: const BoxConstraints(maxWidth: 280),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: m.isAdmin
+                  ? const Color(0x333F7FB5)
+                  : (mine ? const Color(0x33EBA52F) : const Color(0x22FFFFFF)),
+              borderRadius: BorderRadius.circular(12),
+              border: m.isAdmin
+                  ? Border.all(color: const Color(0x883F7FB5))
+                  : null,
+            ),
+            // 선택 가능한 글자 — 꾹 누르면 복사, 안드로이드는 설치된 번역 앱(구글 번역 등)의
+            // "번역"이 같이 뜬다(Flutter 가 시스템 텍스트 처리 메뉴를 붙인다). 채팅 번역 서버를
+            // 따로 두지 않는다(2026-10-03 사장님 — 비용).
+            child: SelectableText(
+              body,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13.5,
+                height: 1.35,
               ),
             ),
           ),

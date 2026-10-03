@@ -2848,11 +2848,21 @@ Handler buildHandler({
       final title = clean(b!['title'], 100);
       if (title == null) return _json({'error': 'title_required'}, status: 400);
       try {
+        // 영어·일본어는 **적었을 때만** 넣는다 — 비워 두면 키를 빼서, 언어 칸 SQL 이
+        // 아직 안 돌았어도 한국어 공지는 그대로 올라간다(2026-10-03).
+        final titleEn = clean(b['titleEn'], 100);
+        final bodyEn = clean(b['bodyEn'], 1000);
+        final titleJa = clean(b['titleJa'], 100);
+        final bodyJa = clean(b['bodyJa'], 1000);
         await store.insertRow('notices', {
           'title': title,
           'body': clean(b['body'], 1000) ?? '',
           'pinned': b['pinned'] == true,
           if (b['endsAt'] != null) 'ends_at': b['endsAt'],
+          if (titleEn != null) 'title_en': titleEn,
+          if (bodyEn != null) 'body_en': bodyEn,
+          if (titleJa != null) 'title_ja': titleJa,
+          if (bodyJa != null) 'body_ja': bodyJa,
         });
         return _json({'ok': true});
       } on StateStoreException catch (e) {

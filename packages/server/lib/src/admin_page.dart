@@ -104,6 +104,13 @@ const String adminHtml = r'''<!doctype html>
       <h2>공지 쓰기</h2>
       <label>제목</label><input id="n-title" maxlength="100">
       <label>본문</label><textarea id="n-body" maxlength="1000"></textarea>
+      <details>
+        <summary>영어 · 일본어 (선택 — 비우면 한국어가 보여요. 일본어가 비면 영어)</summary>
+        <label>제목 (English)</label><input id="n-title-en" maxlength="100">
+        <label>본문 (English)</label><textarea id="n-body-en" maxlength="1000"></textarea>
+        <label>제목 (日本語)</label><input id="n-title-ja" maxlength="100">
+        <label>본문 (日本語)</label><textarea id="n-body-ja" maxlength="1000"></textarea>
+      </details>
       <div class="row">
         <div><label>고정</label>
           <select id="n-pinned"><option value="false">아니오</option><option value="true">예</option></select></div>
@@ -499,10 +506,13 @@ async function createNotice() {
   try {
     await api('/admin/notice', {
       title: val('n-title'), body: val('n-body'),
+      titleEn: val('n-title-en'), bodyEn: val('n-body-en'),
+      titleJa: val('n-title-ja'), bodyJa: val('n-body-ja'),
       pinned: val('n-pinned') === 'true', endsAt: day(val('n-ends')),
     });
-    document.getElementById('n-title').value = '';
-    document.getElementById('n-body').value = '';
+    for (const id of ['n-title', 'n-body', 'n-title-en', 'n-body-en', 'n-title-ja', 'n-body-ja']) {
+      document.getElementById(id).value = '';
+    }
     toast('공지를 올렸습니다'); refresh();
   } catch (e) { toast(e.message); }
 }

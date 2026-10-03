@@ -464,12 +464,21 @@ class StateStore {
     required DateTime now,
     int limit = 30,
   }) async {
-    final uri = Uri.parse(
+    Uri uriFor(String cols) => Uri.parse(
       '$supabaseUrl/rest/v1/notices'
-      '?select=id,title,body,starts_at,ends_at,pinned,created_at'
+      '?select=$cols'
       '&order=pinned.desc,created_at.desc&limit=$limit',
     );
-    final res = await _http.get(uri, headers: _headers);
+    const base = 'id,title,body,starts_at,ends_at,pinned,created_at';
+    // 언어별 칸(2026-10-03, `_sql_20261003_notice_lang.sql`). SQL 이 아직 안 돌았으면
+    // 없는 열이라 400 이 난다 — 그때는 예전 칸만 읽어 공지가 끊기지 않게 한다.
+    var res = await _http.get(
+      uriFor('$base,title_en,body_en,title_ja,body_ja'),
+      headers: _headers,
+    );
+    if (res.statusCode == 400) {
+      res = await _http.get(uriFor(base), headers: _headers);
+    }
     if (res.statusCode != 200) {
       throw StateStoreException('notices 실패: ${res.statusCode} ${res.body}');
     }

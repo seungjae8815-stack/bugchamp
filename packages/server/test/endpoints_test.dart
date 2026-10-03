@@ -1266,6 +1266,28 @@ void main() {
       expect(fake.lastSaved!['pinned'], true);
     });
 
+    test('공지 등록 — 영어·일본어는 적었을 때만 넣는다(2026-10-03)', () async {
+      final h = adminHandler();
+      final both = await adminPost(h, '/admin/notice', {
+        'title': '요정 안내',
+        'titleEn': 'Fairy guide',
+        'bodyEn': 'English body',
+        'titleJa': '妖精ガイド',
+        'bodyJa': '',
+      });
+      expect(both.statusCode, 200);
+      expect(fake.lastSaved!['title_en'], 'Fairy guide');
+      expect(fake.lastSaved!['body_en'], 'English body');
+      expect(fake.lastSaved!['title_ja'], '妖精ガイド');
+      // 비운 칸은 키째 빠진다 — 언어 칸 SQL 이 없어도 한국어 공지는 올라가게.
+      expect(fake.lastSaved!.containsKey('body_ja'), isFalse);
+
+      final koOnly = await adminPost(h, '/admin/notice', {'title': '한국어만'});
+      expect(koOnly.statusCode, 200);
+      expect(fake.lastSaved!.keys.where((k) => k.contains('_en')), isEmpty);
+      expect(fake.lastSaved!.keys.where((k) => k.contains('_ja')), isEmpty);
+    });
+
     test('전체 발송 우편 — user_id 가 null 로 들어간다', () async {
       final h = adminHandler();
       final res = await adminPost(h, '/admin/mail', {

@@ -1,7 +1,9 @@
 import 'package:core_models/core_models.dart';
+import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'game_server.dart';
+import 'locale_prefs.dart';
 import 'save_controller.dart';
 import 'server_sync.dart';
 
@@ -23,15 +25,31 @@ class Notice {
   final bool pinned;
   final DateTime? createdAt;
 
-  factory Notice.fromJson(Map<String, dynamic> j) => Notice(
-    id: (j['id'] as num?)?.toInt() ?? 0,
-    title: j['title']?.toString() ?? '',
-    body: j['body']?.toString() ?? '',
-    pinned: j['pinned'] == true,
-    createdAt: j['created_at'] == null
-        ? null
-        : DateTime.tryParse(j['created_at'].toString())?.toUtc(),
-  );
+  /// [lang] 의 글을 고른다(2026-10-03 언어별 공지). 일본어가 비면 영어, 그것도 비면
+  /// 한국어(`title`·`body`) — 운영이 영어만 써도 일본 유저는 한국어보다 영어를 본다.
+  factory Notice.fromJson(Map<String, dynamic> j, {String lang = 'ko'}) {
+    String? pick(String key) {
+      final v = j[key]?.toString().trim() ?? '';
+      return v.isEmpty ? null : v;
+    }
+
+    String text(String base) {
+      final ko = j[base]?.toString() ?? '';
+      if (lang == 'ko') return ko;
+      if (lang == 'ja') return pick('${base}_ja') ?? pick('${base}_en') ?? ko;
+      return pick('${base}_en') ?? ko;
+    }
+
+    return Notice(
+      id: (j['id'] as num?)?.toInt() ?? 0,
+      title: text('title'),
+      body: text('body'),
+      pinned: j['pinned'] == true,
+      createdAt: j['created_at'] == null
+          ? null
+          : DateTime.tryParse(j['created_at'].toString())?.toUtc(),
+    );
+  }
 }
 
 /// 운영이 보낸 우편 1통(점검 보상·이벤트 지급 등).
@@ -97,11 +115,17 @@ class ServerMail {
 final noticesProvider = FutureProvider<List<Notice>>((ref) async {
   final server = ref.watch(gameServerProvider);
   if (!server.available) return const [];
+  // 앱 언어 설정이 바뀌면 다시 불러 그 언어의 글로 바꾼다.
+  final lang =
+      (ref.watch(localePrefsProvider) ??
+              WidgetsBinding.instance.platformDispatcher.locale)
+          .languageCode;
   final res = await server.notices();
   final rows = res.data?['notices'];
   if (rows is! List) return const [];
   return [
-    for (final r in rows.cast<Map<String, dynamic>>()) Notice.fromJson(r),
+    for (final r in rows.cast<Map<String, dynamic>>())
+      Notice.fromJson(r, lang: lang),
   ];
 });
 
