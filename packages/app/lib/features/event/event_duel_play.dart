@@ -382,6 +382,10 @@ Future<void> playEventDuel({
     return true;
   }
 
+  // 결투 화면에 넘기는 함수들은 **바깥 화면의 context 를 붙잡지 않는다** — 결투 중 바깥 화면이
+  // 사라지면 `AppLocalizations.of(context)` 가 null 로 앱을 죽인다(2026-10-03 1.0.14 크래시 계열).
+  // 언어는 한 판 사이에 바뀌지 않으므로 띄우기 전에 한 번 잡아 둔다.
+  final lz = AppLocalizations.of(context);
   await Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => DuelArenaScreen(
@@ -389,10 +393,7 @@ Future<void> playEventDuel({
         foe: [foe(0)],
         foeAt: foe,
         foeIndex: () => driver.preview.wave - 1,
-        header: () {
-          final l = AppLocalizations.of(context);
-          return l.eventWaveHeader(driver.preview.wave);
-        },
+        header: () => lz.eventWaveHeader(driver.preview.wave),
         driver: driver,
         params: params,
         arena: mine.element,
@@ -401,14 +402,12 @@ Future<void> playEventDuel({
         // 장외·뒤집기·시간으로 졌지만 체력이 남았으면 — 왜 또 싸우는지 알려 준다.
         boutNote: (s) {
           if (s.bout.aWon || s.done) return null;
-          final l = AppLocalizations.of(context);
           return s.bout.finish == DuelFinish.knockout
-              ? l.eventReviveRetry
-              : l.eventFallRetry((spec.fallPenalty * 100).round());
+              ? lz.eventReviveRetry
+              : lz.eventFallRetry((spec.fallPenalty * 100).round());
         },
         // 체력칸 아래 — 이번 웨이브에 실리는 강화(고른 카드까지).
-        mineStatus: () =>
-            eventBuffChips(AppLocalizations.of(context), driver.preview),
+        mineStatus: () => eventBuffChips(lz, driver.preview),
         onQuit: quitFlow,
         between: (last) async {
           if (driver.cards.isEmpty || !context.mounted) return false;
