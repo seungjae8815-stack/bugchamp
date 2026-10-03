@@ -6,6 +6,7 @@ import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'combat_power.dart';
+import 'device_session.dart';
 import 'game_server.dart';
 import 'pvp_backend.dart';
 import 'providers.dart';
@@ -212,6 +213,8 @@ class ServerSaveUploader {
   Future<void> flush() async {
     final server = _ref.read(gameServerProvider);
     if (!server.available || _inFlight) return;
+    // 다른 기기에 밀려났다 — 올리면 그 기기의 진행을 덮는다(서버도 거절한다).
+    if (DeviceSession.taken.value) return;
     // ⚠️ 세이브를 못 읽은 상태의 화면값은 **초기 세이브**다. 올리면 서버의
     // 멀쩡한 계정을 그걸로 덮어쓴다. 사람이 고칠 때까지 올리지 않는다.
     if (_ref.read(saveRepositoryProvider).lastFailure != null) return;
@@ -288,6 +291,10 @@ class ServerSaveUploader {
             );
           }
         }
+      } else if (isSessionTaken(res)) {
+        // 다른 기기가 나중에 켜졌다 — 화면이 "다른 기기에서 접속 중"으로 덮는다.
+        // 연결은 멀쩡하니 끊김으로 세지 않는다.
+        return;
       } else if (res.status == 409) {
         // 서버에 저장본이 없다 → 최초 이관(부트스트랩)이 먼저.
         final boot = await server.bootstrap(json);
@@ -348,6 +355,27 @@ class ServerSaveUploader {
     return !serverDisconnected.value;
   }
 
+  /// "이 기기에서 계속하기"(한 기기만 접속, 1.0.16). 다시 쥐고 **서버 저장본을 그대로 받는다** —
+  /// 그동안 다른 기기에서 한 진행이 진짜다. 이 기기의 화면값은 낡았으니 비교하지 않는다
+  /// ([_localIsAhead] 를 타면 낡은 쪽이 "더 진행됨"으로 보일 수 있다). 성공하면 true.
+  Future<bool> takeOver() async {
+    final server = _ref.read(gameServerProvider);
+    // 진행 중인 업로드가 끝나길 기다린다 — 그게 409 로 돌아오며 밀려남을 다시 켜지 않게.
+    for (var i = 0; _inFlight && i < 100; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    DeviceSession.claimed = false;
+    final state = await server.fetchState();
+    if (!state.isOk || !DeviceSession.claimed) return false;
+    final remote = state.save;
+    if (remote != null) {
+      await _ref.read(saveControllerProvider.notifier).adoptServerSave(remote);
+      _lastUploaded = jsonEncode(remote);
+    }
+    DeviceSession.taken.value = false;
+    return true;
+  }
+
   void stop() {
     _timer?.cancel();
     _timer = null;
@@ -383,8 +411,10 @@ Future<bool> flushSaveBeforeServerAction(
   final json = save.toJson();
   final res = await server.uploadSave(json);
   if (res.isOk) return true;
-  // 저장본이 없다 = 최초 이관이 먼저.
-  if (res.status == 409) return (await server.bootstrap(json)).isOk;
+  // 저장본이 없다 = 최초 이관이 먼저. 다른 기기에 밀려난 409 는 아니다.
+  if (res.status == 409 && !isSessionTaken(res)) {
+    return (await server.bootstrap(json)).isOk;
+  }
   return false;
 }
 

@@ -3928,6 +3928,30 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get netRetry;
 
+  /// No description provided for @sessionTakenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing on another device'**
+  String get sessionTakenTitle;
+
+  /// No description provided for @sessionTakenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This account was opened on another device.\nContinue here to load the progress from that device.'**
+  String get sessionTakenBody;
+
+  /// No description provided for @sessionTakenContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue on this device'**
+  String get sessionTakenContinue;
+
+  /// No description provided for @sessionTakenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load. Please try again in a moment.'**
+  String get sessionTakenFailed;
+
   /// No description provided for @netToTitle.
   ///
   /// In en, this message translates to:

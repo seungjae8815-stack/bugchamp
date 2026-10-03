@@ -879,6 +879,95 @@ void main() {
     });
   });
 
+  // 한 기기만 접속(2026-10-03, 1.0.16) — 두 기기를 같이 켜 두면 나중에 올린 쪽이
+  // 다른 기기의 진행을 덮고 골드가 상한에 잘렸다(운영 요약 `골드 ×2`).
+  group('한 기기만 접속(/session/claim · /save)', () {
+    const phone = 'phone-session-01';
+    const tablet = 'tablet-session-02';
+    SaveGame savedNow() =>
+        SaveGame.fromJson(fake.lastSaved!['data'] as Map<String, dynamic>);
+
+    test('켤 때 표식을 쥔다 — 나중에 켠 기기가 이긴다', () async {
+      final res = await post(
+        handler(save: mySave.copyWith(activeSession: phone)),
+        '/session/claim',
+        {'session': tablet},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 200);
+      expect(savedNow().activeSession, tablet);
+    });
+
+    test('표식이 이상하면 400', () async {
+      final res = await post(handler(), '/session/claim', {
+        'session': 'x',
+      }, token: makeToken());
+      expect(res.statusCode, 400);
+    });
+
+    test('새 계정이면 쥘 게 없다 — 첫 이관이 채운다', () async {
+      final h = handler(serverHasSave: false);
+      final res = await post(h, '/session/claim', {
+        'session': phone,
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      expect(jsonDecode(await res.readAsString())['claimed'], isFalse);
+      final boot = await post(h, '/state', {
+        'save': mySave.toJson(),
+        'session': phone,
+      }, token: makeToken());
+      expect(boot.statusCode, 200);
+      expect(savedNow().activeSession, phone);
+    });
+
+    test('밀려난 기기의 업로드는 거절하고 저장하지 않는다', () async {
+      final res = await post(
+        handler(save: mySave.copyWith(activeSession: tablet)),
+        '/save',
+        {'save': mySave.copyWith(gold: 999).toJson(), 'session': phone},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 409);
+      expect(jsonDecode(await res.readAsString())['error'], 'session_taken');
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('쥔 기기의 업로드는 통과하고, 표식은 앱이 못 바꾼다', () async {
+      final res = await post(
+        handler(save: mySave.copyWith(activeSession: tablet)),
+        '/save',
+        {
+          'save': mySave.copyWith(gold: 999, activeSession: phone).toJson(),
+          'session': tablet,
+        },
+        token: makeToken(),
+      );
+      expect(res.statusCode, 200);
+      expect(savedNow().gold, 999);
+      expect(savedNow().activeSession, tablet);
+    });
+
+    test('표식을 안 보내는 구버전 앱은 지금처럼 통과한다', () async {
+      final res = await post(
+        handler(save: mySave.copyWith(activeSession: tablet)),
+        '/save',
+        {'save': mySave.copyWith(gold: 999).toJson()},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 200);
+      expect(savedNow().activeSession, tablet);
+    });
+
+    test('아무도 안 쥐었으면 첫 업로드가 쥔다', () async {
+      final res = await post(handler(), '/save', {
+        'save': mySave.toJson(),
+        'session': phone,
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      expect(savedNow().activeSession, phone);
+    });
+  });
+
   group('세이브 업로드 엔드포인트(/save)', () {
     test('인증 없이는 불가', () async {
       final res = await post(handler(), '/save', {'save': mySave.toJson()});

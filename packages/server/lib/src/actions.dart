@@ -164,6 +164,9 @@ class GameActions {
     // 닉네임 변경 요구(2026-09-02). 닉네임 자체는 서버 소유가 아니라서,
     // 이 플래그를 서버가 쥐고 있어야 앱이 옛 이름을 다시 올려도 요구가 남는다.
     'renameRequired',
+    // 한 기기만 접속(2026-10-03, 1.0.16) — 표식은 `/session/claim` 만 바꾼다.
+    // 앱이 올린 값을 믿으면 아무 기기나 표식을 들고 와 다른 기기를 밀어낼 수 있다.
+    'activeSession',
     'ownedSkins',
     // ⚠️ 깜짝선물 2배 횟수(`giftDoubleDate/Count`)는 여기 두면 안 된다(2026-09-30).
     // 수령은 기기가 처리하는데 서버가 소유하면 서버 값이 영원히 0 이라, 서버 세이브를
@@ -1365,6 +1368,26 @@ class GameActions {
   /// 새 익명 계정이 **트로피·IAP 지급물을 위조**해 올릴 수 있어(랭킹 도배·무료
   /// 결제 혜택), 서버가 소유하는 필드를 **초기값으로 리셋**한다. 솔로 진행
   /// (골드·곤충·업그레이드)은 그대로 둔다 — 기기 권위라 편집을 수용하는 범위다.
+  /// 기기 접속 표식으로 쓸 수 있는 값인가 — 앱이 켤 때마다 만드는 무작위 문자열.
+  static bool validSession(Object? v) =>
+      v is String && RegExp(r'^[A-Za-z0-9_-]{8,64}$').hasMatch(v);
+
+  /// 이 업로드가 **다른 기기에 밀려난 기기**에서 왔는가(2026-10-03, 1.0.16).
+  ///
+  /// 거절하는 경우는 하나뿐이다: 앱이 표식을 보냈고, 저장본에도 표식이 있고, 둘이 다르다.
+  ///  - 표식을 안 보낸 업로드 = 1.0.15 이하 앱. 지금처럼 통과시킨다(막으면 구버전이 저장을 못 한다).
+  ///  - 저장본에 표식이 없다 = 아직 아무도 쥐지 않았다. 통과시키고 [adoptSession] 이 채운다.
+  static bool sessionTaken(SaveGame stored, Object? session) =>
+      validSession(session) &&
+      stored.activeSession.isNotEmpty &&
+      stored.activeSession != session;
+
+  /// 비어 있는 표식을 이 업로드의 표식으로 채운다(첫 업로드가 곧 접속).
+  static SaveGame adoptSession(SaveGame save, Object? session) =>
+      save.activeSession.isEmpty && validSession(session)
+      ? save.copyWith(activeSession: session as String)
+      : save;
+
   Map<String, dynamic> sanitizeBootstrap(Map<String, dynamic> clientJson) {
     final fresh = SaveGame.initial(createdAt: now().toUtc()).toJson();
     final out = Map<String, dynamic>.from(clientJson);

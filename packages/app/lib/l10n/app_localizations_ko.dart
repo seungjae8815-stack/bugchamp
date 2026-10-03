@@ -2168,6 +2168,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get netRetry => '다시 시도';
 
   @override
+  String get sessionTakenTitle => '다른 기기에서 접속 중이에요';
+
+  @override
+  String get sessionTakenBody =>
+      '같은 계정으로 다른 기기에서 게임을 시작했어요.\n이 기기에서 계속하면 다른 기기의 진행을 불러와요.';
+
+  @override
+  String get sessionTakenContinue => '이 기기에서 계속하기';
+
+  @override
+  String get sessionTakenFailed => '불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.';
+
+  @override
   String get netToTitle => '타이틀로';
 
   @override

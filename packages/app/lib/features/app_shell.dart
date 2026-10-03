@@ -16,6 +16,7 @@ import '../domain/iap_service.dart';
 import '../domain/notification_service.dart';
 import '../domain/notify_prefs.dart';
 import '../data/save_repository.dart';
+import '../domain/device_session.dart';
 import '../domain/server_sync.dart';
 import '../domain/update_checker.dart';
 import '../domain/providers.dart';
@@ -299,6 +300,14 @@ class _AppShellState extends ConsumerState<AppShell>
                 valueListenable: serverDisconnected,
                 builder: (context, lost, _) => lost
                     ? _DisconnectedOverlay(uploader: _uploader)
+                    : const SizedBox.shrink(),
+              ),
+              // 다른 기기에 밀려났다(한 기기만 접속, 1.0.16). 끊김과 같은 자리에서 게임을 덮는다 —
+              // 계속 놀게 두면 저장되지 않는 진행이 쌓인다(서버가 업로드를 거절한다).
+              ValueListenableBuilder<bool>(
+                valueListenable: DeviceSession.taken,
+                builder: (context, taken, _) => taken
+                    ? _SessionTakenOverlay(uploader: _uploader)
                     : const SizedBox.shrink(),
               ),
               // 세이브를 못 읽었으면 **끊김보다도 위**를 덮는다. 이 상태로 놀면
@@ -747,6 +756,96 @@ class _DisconnectedOverlayState extends State<_DisconnectedOverlay> {
                       _trying ? () {} : _retry,
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 다른 기기에 밀려났을 때 게임을 덮는 화면(한 기기만 접속, 2026-10-03 · 1.0.16).
+///
+/// 나가는 버튼은 두지 않는다 — 다른 기기에서 계속할 사람은 이 앱을 닫으면 된다.
+/// "이 기기에서 계속하기"는 다시 쥐고 서버 저장본(= 다른 기기의 진행)을 받는다.
+class _SessionTakenOverlay extends StatefulWidget {
+  const _SessionTakenOverlay({required this.uploader});
+
+  final ServerSaveUploader uploader;
+
+  @override
+  State<_SessionTakenOverlay> createState() => _SessionTakenOverlayState();
+}
+
+class _SessionTakenOverlayState extends State<_SessionTakenOverlay> {
+  bool _trying = false;
+  bool _failedOnce = false;
+
+  Future<void> _continueHere() async {
+    setState(() => _trying = true);
+    final ok = await widget.uploader.takeOver();
+    if (!mounted) return;
+    setState(() {
+      _trying = false;
+      _failedOnce = !ok;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Positioned.fill(
+      child: ColoredBox(
+        color: const Color(0xF20A1206),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.devices_rounded,
+                  size: 54,
+                  color: Color(0xFFFFCC80),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  l.sessionTakenTitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l.sessionTakenBody,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 13.5,
+                    height: 1.4,
+                  ),
+                ),
+                if (_failedOnce) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    l.sessionTakenFailed,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFFEF9A9A),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                gameDialogButton(
+                  _trying ? '...' : l.sessionTakenContinue,
+                  _trying ? () {} : _continueHere,
                 ),
               ],
             ),

@@ -2162,6 +2162,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get netRetry => '再試行';
 
   @override
+  String get sessionTakenTitle => '別の端末で接続中です';
+
+  @override
+  String get sessionTakenBody =>
+      '同じアカウントで別の端末からゲームが開始されました。\nこの端末で続けると、別の端末の進行を読み込みます。';
+
+  @override
+  String get sessionTakenContinue => 'この端末で続ける';
+
+  @override
+  String get sessionTakenFailed => '読み込めませんでした。少し待ってから再試行してください。';
+
+  @override
   String get netToTitle => 'タイトルへ';
 
   @override

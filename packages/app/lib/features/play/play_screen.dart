@@ -33,6 +33,7 @@ import '../../domain/providers.dart';
 import '../guide/guide_screen.dart';
 import '../../domain/pvp_backend.dart';
 import '../../domain/save_controller.dart';
+import '../../domain/device_session.dart';
 import '../../domain/server_sync.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
@@ -696,6 +697,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 계속 돌게 두면 저장되지 않는 진행이 쌓이고, 앱을 껐다 켜는 순간 서버의
     // 낡은 세이브에 덮여 통째로 사라진다.
     serverDisconnected.addListener(_onConnectionChanged);
+    DeviceSession.taken.addListener(_onConnectionChanged);
 
     // 오프라인 복귀 보상 알림 (1회)
     final controller = ref.read(saveControllerProvider.notifier);
@@ -734,6 +736,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     serverDisconnected.removeListener(_onConnectionChanged);
+    DeviceSession.taken.removeListener(_onConnectionChanged);
     _ticker.dispose();
     // 챕터 보스전 도중에 화면을 떠나도 보스 배경음이 남지 않게 되돌린다.
     unawaited(AudioService.instance.restoreBgm());
@@ -752,7 +755,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   void _onConnectionChanged() {
     if (!mounted) return;
-    if (serverDisconnected.value) {
+    // 다른 기기에 밀려났을 때도 멈춘다(한 기기만 접속, 1.0.16) — 이 기기의 진행은 저장되지 않는다.
+    if (serverDisconnected.value || DeviceSession.taken.value) {
       _ticker.stop();
     } else if (!_ticker.isActive) {
       // `_tick` 이 dt 를 0.05초로 클램프하므로 재시작해도 튀지 않는다.

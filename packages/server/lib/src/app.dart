@@ -461,7 +461,11 @@ Handler buildHandler({
         final sanitized = actions.sanitizeBootstrap(migrateToCurrent(incoming));
         // 부트스트랩은 mergeSave 를 거치지 않으므로 채집함 상한을 여기서도
         // 강제한다 — 안 그러면 비대한 세이브를 새 계정으로 올려 되살릴 수 있다.
-        final save = actions.enforceStorage(SaveGame.fromJson(sanitized));
+        // 첫 이관한 기기가 곧 접속 중인 기기다(한 기기만 접속, 1.0.16).
+        final save = GameActions.adoptSession(
+          actions.enforceStorage(SaveGame.fromJson(sanitized)),
+          body['session'],
+        );
         await store.save(user.id, save.toJson());
         return _json({'save': save.toJson(), 'bootstrapped': true});
       } on StateStoreException catch (e) {
@@ -470,6 +474,38 @@ Handler buildHandler({
       } catch (e) {
         stderr.writeln('[bootstrap] ${user.id} 파싱 실패: $e');
         return _json({'error': 'bad_save'}, status: 400);
+      }
+    });
+
+    /// 이 기기가 계정을 쥔다(한 기기만 접속, 2026-10-03 · 1.0.16).
+    ///
+    /// 앱이 켤 때 부른다 — **나중에 켠 기기가 이긴다.** 먼저 켜져 있던 기기의 다음 업로드는
+    /// `/save` 가 409 `session_taken` 으로 거절하고, 그 기기는 "이 기기에서 계속하기"를 누르면
+    /// 다시 이걸 불러 서버 저장본을 받아 이어 간다.
+    authed.post('/session/claim', (Request req) async {
+      final user = userOf(req);
+      Object? session;
+      try {
+        final body = jsonDecode(await req.readAsString());
+        if (body is Map) session = body['session'];
+      } catch (_) {}
+      if (!GameActions.validSession(session)) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final stored = await loadSave(user.id);
+        // 새 계정 — 첫 이관(`POST /state`)이 표식을 채운다.
+        if (stored == null) return _json({'claimed': false});
+        if (stored.activeSession != session) {
+          await store.save(
+            user.id,
+            stored.copyWith(activeSession: session as String).toJson(),
+          );
+        }
+        return _json({'claimed': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[session/claim] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
       }
     });
 
@@ -497,8 +533,18 @@ Handler buildHandler({
       try {
         final stored = await loadSave(user.id);
         if (stored == null) return _json({'error': 'no_save'}, status: 409);
+        // 한 기기만 접속(2026-10-03, 1.0.16) — 다른 기기가 나중에 켜졌으면 이 기기의 세이브는
+        // 낡았다. 받아 주면 그 기기의 진행을 통째로 덮는다. 앱은 "다른 기기에서 접속 중"을 띄운다.
+        final session = body['session'];
+        if (GameActions.sessionTaken(stored, session)) {
+          return _json({'error': 'session_taken'}, status: 409);
+        }
         var r = actions.mergeSave(stored, migrateToCurrent(incoming));
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        r = ActionResult.ok(
+          GameActions.adoptSession(r.save!, session),
+          extra: r.extra,
+        );
         // 길드전 활동 점수(1.0.15) — 세이브가 아니라 **본문 옆칸**으로 온다(세이브 스키마를 안 건드린다).
         // 실패해도 저장은 막지 않는다.
         final tally = body['guildTally'];

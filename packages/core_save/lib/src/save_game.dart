@@ -608,6 +608,7 @@ class SaveGame {
     this.zoneEpoch = 0,
     this.rarePity = 0,
     this.renameRequired = false,
+    this.activeSession = '',
     this.gachaPity = 0,
     this.unknownMaterials = const {},
     this.unknownUpgrades = const {},
@@ -910,6 +911,16 @@ class SaveGame {
   /// 이름을 다시 올린다. 플래그를 서버가 쥐고 있어야 요구가 유지된다.
   /// 새 이름이 규칙을 통과해 올라오면 서버가 플래그를 내린다.
   final bool renameRequired;
+
+  /// 지금 이 계정을 쥐고 있는 기기의 접속 표식(2026-10-03, 1.0.16 — 한 기기만 접속).
+  ///
+  /// 앱은 켤 때 `/session/claim` 으로 새 표식을 받고, 주기 업로드(`/save`)에 실어 보낸다.
+  /// 서버는 표식이 다른 업로드를 거절한다(409 `session_taken`) — 두 기기를 같이 켜 두면
+  /// 나중에 올린 쪽이 다른 기기의 진행을 통째로 덮고, 골드가 상한에 잘려 줄었다
+  /// (2026-10-03 운영 요약 `골드 ×2`). 빈 문자열 = 아직 아무도 쥐지 않음(통과).
+  ///
+  /// ⚠️ **서버 소유 필드**(`GameActions._serverOwnedKeys`) — 앱이 올린 값은 무시된다.
+  final String activeSession;
 
   /// 희귀 천장(§2.1, 2026-08-31) — 희귀 이상을 얻지 못한 채 처치한 몬스터 수.
   /// `RunConfig.rarePityKills` 에 닿으면 다음 드롭이 희귀 이상으로 보장된다.
@@ -1423,6 +1434,7 @@ class SaveGame {
     int? zoneEpoch,
     int? rarePity,
     bool? renameRequired,
+    String? activeSession,
     int? gachaPity,
     int? pvpTrophies,
     Map<String, DateTime>? injured,
@@ -1538,6 +1550,7 @@ class SaveGame {
     zoneEpoch: zoneEpoch ?? this.zoneEpoch,
     rarePity: rarePity ?? this.rarePity,
     renameRequired: renameRequired ?? this.renameRequired,
+    activeSession: activeSession ?? this.activeSession,
     gachaPity: gachaPity ?? this.gachaPity,
     pvpTrophies: pvpTrophies ?? this.pvpTrophies,
     injured: injured ?? this.injured,
@@ -1777,6 +1790,7 @@ class SaveGame {
     zoneEpoch: (json['zoneEpoch'] as num?)?.toInt() ?? 0,
     rarePity: (json['rarePity'] as num?)?.toInt() ?? 0,
     renameRequired: json['renameRequired'] as bool? ?? false,
+    activeSession: json['activeSession'] as String? ?? '',
     gachaPity: (json['gachaPity'] as num?)?.toInt() ?? 0,
     pvpTrophies: (json['pvpTrophies'] as num?)?.toInt() ?? 0,
     injured:
@@ -1987,6 +2001,7 @@ class SaveGame {
     if (zoneEpoch > 0) 'zoneEpoch': zoneEpoch,
     if (rarePity > 0) 'rarePity': rarePity,
     if (renameRequired) 'renameRequired': true,
+    if (activeSession.isNotEmpty) 'activeSession': activeSession,
     if (gachaPity > 0) 'gachaPity': gachaPity,
     'pvpTrophies': pvpTrophies,
     'injured': {

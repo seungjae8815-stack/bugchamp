@@ -2211,6 +2211,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get netRetry => 'Retry';
 
   @override
+  String get sessionTakenTitle => 'Playing on another device';
+
+  @override
+  String get sessionTakenBody =>
+      'This account was opened on another device.\nContinue here to load the progress from that device.';
+
+  @override
+  String get sessionTakenContinue => 'Continue on this device';
+
+  @override
+  String get sessionTakenFailed =>
+      'Couldn\'t load. Please try again in a moment.';
+
+  @override
   String get netToTitle => 'Back to title';
 
   @override

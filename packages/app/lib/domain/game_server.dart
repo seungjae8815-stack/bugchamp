@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'device_session.dart';
 import 'guild_service.dart' show GuildWarTally, kGuildOpen;
 
 /// 권위 서버 호출 결과.
@@ -326,6 +327,10 @@ abstract interface class GameServer {
     String? device,
   });
 }
+
+/// 업로드가 **다른 기기에 밀려나** 거절됐는가(한 기기만 접속, 1.0.16).
+bool isSessionTaken(ServerResult r) =>
+    r.status == 409 && r.error == 'session_taken';
 
 /// 서버 미설정 — 항상 사용 불가.
 class NoGameServer implements GameServer {
@@ -654,8 +659,49 @@ class HttpGameServer implements GameServer {
     }
   }
 
+  /// 이 기기가 계정을 쥔다(한 기기만 접속, 1.0.16 · [DeviceSession]).
+  ///
+  /// 실패해도 막지 않는다 — 표식 없이 올리면 서버는 구버전 앱처럼 받아 준다(지금과 같은 동작).
+  /// [force] 가 아니면 실패 뒤 2분은 다시 두드리지 않는다(업로드마다 요청이 하나 더 붙지 않게).
+  /// 지금 로그인한 계정으로 쥐고 있나.
+  bool get _claimedHere =>
+      DeviceSession.claimed &&
+      DeviceSession.claimedUser == _client.auth.currentUser?.id;
+
+  void _markClaimed() {
+    DeviceSession.claimed = true;
+    DeviceSession.claimedUser = _client.auth.currentUser?.id;
+    DeviceSession.claimedAt = DateTime.now();
+  }
+
+  Future<void> _ensureSession({bool force = false}) async {
+    if (_claimedHere) return;
+    final now = DateTime.now();
+    final tried = DeviceSession.triedAt;
+    if (!force &&
+        tried != null &&
+        now.difference(tried) < const Duration(minutes: 2)) {
+      return;
+    }
+    DeviceSession.triedAt = now;
+    final r = await _send('POST', '/session/claim', {
+      'session': DeviceSession.id,
+    });
+    if (r.isOk) _markClaimed();
+  }
+
+  /// 켤 때의 첫 조회가 곧 접속이다 — 쥔 뒤에 서버 저장본을 받아야 그 사이 다른 기기의
+  /// 업로드에 덮이지 않는다.
   @override
-  Future<ServerResult> fetchState() => _send('GET', '/state');
+  Future<ServerResult> fetchState() async {
+    // 계정이 바뀌었다(게스트 → 로그인) — 옛 계정에서 밀려났던 표시는 새 계정과 무관하다.
+    if (DeviceSession.claimed &&
+        DeviceSession.claimedUser != _client.auth.currentUser?.id) {
+      DeviceSession.taken.value = false;
+    }
+    await _ensureSession(force: true);
+    return _send('GET', '/state');
+  }
 
   @override
   Future<ServerResult> purchase({
@@ -691,8 +737,15 @@ class HttpGameServer implements GameServer {
   });
 
   @override
-  Future<ServerResult> bootstrap(Map<String, dynamic> save) =>
-      _send('POST', '/state', {'save': save});
+  Future<ServerResult> bootstrap(Map<String, dynamic> save) async {
+    // 새 계정 — 첫 이관이 표식을 채운다(서버는 비어 있을 때만 쓴다).
+    final r = await _send('POST', '/state', {
+      'save': save,
+      'session': DeviceSession.id,
+    });
+    if (r.isOk) _markClaimed();
+    return r;
+  }
 
   @override
   Future<ServerResult> uploadSave(Map<String, dynamic> save) async {
@@ -701,11 +754,31 @@ class HttpGameServer implements GameServer {
     final tally = kGuildOpen
         ? GuildWarTally.payload(DateTime.now().toUtc())
         : null;
-    final r = await _send('POST', '/save', {
+    await _ensureSession();
+    Future<ServerResult> send() => _send('POST', '/save', {
       'save': save,
       'guildTally': ?tally,
+      'session': ?(_claimedHere ? DeviceSession.id : null),
     });
+    var r = await send();
+    // 방금(3분 안) 쥐었는데 밀려났다 = 옛 기기의 쓰기와 겹쳐 표식이 되돌려진 경쟁이다
+    // ([DeviceSession.claimedAt]). 한 번만 다시 쥐고 다시 올린다. 진짜로 밀려난 기기는
+    // 쥔 지 오래라 여기 걸리지 않는다.
+    final at = DeviceSession.claimedAt;
+    if (isSessionTaken(r) &&
+        at != null &&
+        DateTime.now().difference(at) < const Duration(minutes: 3)) {
+      DeviceSession.claimed = false;
+      DeviceSession.claimedAt = null; // 두 번은 안 한다
+      await _ensureSession(force: true);
+      if (_claimedHere) {
+        DeviceSession.claimedAt = null;
+        r = await send();
+      }
+    }
     if (r.isOk && tally != null) GuildWarTally.sent();
+    // 다른 기기가 나중에 켜졌다 — 이 기기의 세이브는 낡았다.
+    if (isSessionTaken(r)) DeviceSession.taken.value = true;
     return r;
   }
 
