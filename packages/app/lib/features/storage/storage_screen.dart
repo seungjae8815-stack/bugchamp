@@ -3083,6 +3083,13 @@ class StorageScreen extends ConsumerWidget {
                               onPressed: hatching
                                   ? null
                                   : () async {
+                                      // 보상 팝업은 **앱 화면(네비게이터)** 기준으로 띄운다. 이 창을 연
+                                      // `context` 는 곤충 칸이라, 분해로 곤충이 빠지면 칸도 사라져
+                                      // `AppLocalizations.of` 가 null 로 앱을 죽였다(1.0.14 Crashlytics,
+                                      // 2026-10-03). 네비게이터는 앱이 떠 있는 동안 계속 살아 있다.
+                                      final host = Navigator.of(
+                                        context,
+                                      ).context;
                                       // 이색·키운 개체는 **한 번 더 묻는다**.
                                       // 되찾을 수 없는데 버튼 한 번에 사라지면
                                       // 그게 곧 클레임이다(2026-09-25 제보).
@@ -3143,15 +3150,16 @@ class StorageScreen extends ConsumerWidget {
                                         if (res.jelly > 0)
                                           MaterialKind.jelly: res.jelly,
                                       };
+                                      if (!host.mounted) return;
                                       if (gained.isEmpty) {
                                         showCenterToast(
-                                          context,
+                                          host,
                                           l.disassembleSnack,
                                         );
                                         return;
                                       }
                                       await showRewardPopup(
-                                        context,
+                                        host,
                                         title: l.disassembleSnack,
                                         icon: Icons.call_split,
                                         materials: gained,
