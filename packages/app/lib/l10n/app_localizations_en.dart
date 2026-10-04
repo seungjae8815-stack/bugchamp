@@ -2560,6 +2560,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get pvpTicketSettling => 'Settling\nNew season Mon 09:00';
+
+  @override
   String get pvpTicketFullLabel => 'Full';
 
   @override

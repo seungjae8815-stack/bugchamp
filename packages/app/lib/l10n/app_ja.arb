@@ -834,6 +834,7 @@
   "pvpTicketTitle": "決闘チケット",
   "pvpTicketCount": "{tickets}/{max}",
   "pvpTicketNextIn": "次の回復 {time}",
+  "pvpTicketSettling": "精算中です\n月曜9時に新シーズン",
   "pvpTicketFullLabel": "満タン",
   "pvpTicketNone": "決闘にはチケットが必要です。下から補充できます。",
   "pvpTicketAdBtn": "無料チャージ+{amount}枚",

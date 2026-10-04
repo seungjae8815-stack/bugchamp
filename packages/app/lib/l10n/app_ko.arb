@@ -869,6 +869,7 @@
   "pvpTicketTitle": "결투 티켓",
   "pvpTicketCount": "{tickets}/{max}",
   "pvpTicketNextIn": "다음 충전 {time}",
+  "pvpTicketSettling": "정산 중이에요\n월요일 09시 새 시즌",
   "pvpTicketFullLabel": "가득참",
   "pvpTicketNone": "결투하려면 티켓이 필요해요. 아래에서 충전할 수 있어요.",
   "pvpTicketAdBtn": "무료 충전 +{amount}장",

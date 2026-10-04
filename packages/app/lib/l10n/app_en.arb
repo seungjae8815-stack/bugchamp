@@ -1546,6 +1546,7 @@
       }
     }
   },
+  "pvpTicketSettling": "Settling\nNew season Mon 09:00",
   "pvpTicketFullLabel": "Full",
   "pvpTicketNone": "You need a duel ticket to fight. Charge one below.",
   "pvpTicketAdBtn": "Free refill +{amount}",

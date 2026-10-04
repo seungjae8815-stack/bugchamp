@@ -562,6 +562,24 @@ void main() {
       );
     });
 
+    // 2026-10-04 사장님 지적: 정산 기간(일 09시~월 09시)에도 무료 충전이 열려 하루 횟수를 날렸다.
+    test('정산 기간엔 무료·젤리 충전을 모두 막는다', () {
+      // t0 = 7/20(월) → 정산 기간 = 7/26(일) 00:00 UTC(09시 KST) ~ 7/27 00:00 UTC.
+      final settling = GameActions(
+        config: _Config(),
+        now: () => DateTime.utc(2026, 7, 26, 3),
+      );
+      final rich = spent.copyWith(materials: {MaterialKind.jelly: 30});
+      expect(settling.grantAdTicket(rich).error, 'season_closed');
+      expect(settling.refillPvpTickets(rich).error, 'season_closed');
+      // 새 시즌이 열리면 다시 된다.
+      final monday = GameActions(
+        config: _Config(),
+        now: () => DateTime.utc(2026, 7, 27, 1),
+      );
+      expect(monday.grantAdTicket(rich).isOk, isTrue);
+    });
+
     test('젤리가 모자라면 충전되지 않는다', () {
       final poor = spent.copyWith(materials: {MaterialKind.jelly: 1});
       final r = actions.refillPvpTickets(poor);

@@ -2861,6 +2861,8 @@ class GameActions {
     final cfg = config.battle;
     if (cfg.ticketAdGrant <= 0) return const ActionResult.fail('disabled');
     final t = now().toUtc();
+    // 정산 기간엔 결투를 받지 않는다 — 충전해 봐야 쓸 곳이 없고 하루 무료 횟수만 날아간다(2026-10-04).
+    if (seasonClosed(t, cfg)) return const ActionResult.fail('season_closed');
     // 날짜 경계는 UTC. 서버는 기기 타임존을 모르고, 알더라도 타임존을 바꿔가며
     // 상한을 리셋하는 우회가 생긴다.
     final today = dailyDateKey(t);
@@ -2900,6 +2902,8 @@ class GameActions {
   ActionResult refillPvpTickets(SaveGame save) {
     final cfg = config.battle;
     final t = now().toUtc();
+    // 정산 기간엔 결투를 받지 않는다 — 젤리만 쓰고 쓸 곳이 없다(2026-10-04).
+    if (seasonClosed(t, cfg)) return const ActionResult.fail('season_closed');
     final cur = regenTickets(
       tickets: save.pvpTickets,
       at: save.ticketsAt,

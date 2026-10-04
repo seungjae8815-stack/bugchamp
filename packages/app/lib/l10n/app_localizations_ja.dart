@@ -2488,6 +2488,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get pvpTicketSettling => '精算中です\n月曜9時に新シーズン';
+
+  @override
   String get pvpTicketFullLabel => '満タン';
 
   @override

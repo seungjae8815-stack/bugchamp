@@ -4516,6 +4516,12 @@ abstract class AppLocalizations {
   /// **'Next in {time}'**
   String pvpTicketNextIn(String time);
 
+  /// No description provided for @pvpTicketSettling.
+  ///
+  /// In en, this message translates to:
+  /// **'Settling\nNew season Mon 09:00'**
+  String get pvpTicketSettling;
+
   /// No description provided for @pvpTicketFullLabel.
   ///
   /// In en, this message translates to:

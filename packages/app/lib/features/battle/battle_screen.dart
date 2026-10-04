@@ -72,6 +72,7 @@ class _TicketBarState extends ConsumerState<TicketBar> {
     final cfg = _cfg;
     _snack(switch (r) {
       TicketCharge.ok => okMsg,
+      TicketCharge.seasonClosed => l.battleSeasonClosed,
       TicketCharge.adLimit => l.adDailyLimit(cfg.ticketAdDailyLimit),
       TicketCharge.notEnoughJelly => l.notEnoughJelly,
       TicketCharge.refillLimit => l.pvpRefillLimit(cfg.ticketRefillDailyLimit),
@@ -155,6 +156,9 @@ class _TicketBarState extends ConsumerState<TicketBar> {
     final today = dailyDateKey(ref.read(clockProvider).now().toUtc());
     final adUsed = save.adUseCount(kAdFeaturePvpTicket, today);
     final empty = tickets <= 0;
+    // 정산 기간(일 09시~월 09시)엔 결투를 받지 않는다 — 충전 버튼도 거둔다(2026-10-04 사장님 지적:
+    // 무료 충전이 열려 있었다). 서버도 거절하지만, 눌러 보고 실패하는 것보다 처음부터 안 보이는 게 맞다.
+    final closed = seasonClosed(ref.read(clockProvider).now().toUtc(), cfg);
 
     // 한 줄로(2026-09-29) — 결투 탭은 출정 칸·순위표까지 한 화면에 들어가야 한다.
     return Padding(
@@ -217,32 +221,48 @@ class _TicketBarState extends ConsumerState<TicketBar> {
                 ],
               ),
             ),
-            SizedBox(
-              width: 96,
-              height: 44,
-              child: _chargeBtn(
-                l.pvpTicketAdBtn(cfg.ticketAdGrant),
-                l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
-                const Color(0xFF3E7D4F),
-                () => _watchAd(l),
+            if (closed)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Text(
+                  l.pvpTicketSettling,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 11.5,
+                    height: 1.3,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            SizedBox(
-              width: 96,
-              height: 44,
-              child: _chargeBtn(
-                cfg.ticketRefillAmount > 0
-                    ? l.pvpTicketJellyGive(cfg.ticketRefillAmount)
-                    : l.pvpTicketJellyBtn(cfg.ticketRefillJelly),
-                null,
-                const Color(0xFF3F5E86),
-                () => _refill(l),
-                jelly: cfg.ticketRefillAmount > 0
-                    ? cfg.ticketRefillJelly
-                    : null,
+            if (!closed) ...[
+              SizedBox(
+                width: 96,
+                height: 44,
+                child: _chargeBtn(
+                  l.pvpTicketAdBtn(cfg.ticketAdGrant),
+                  l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
+                  const Color(0xFF3E7D4F),
+                  () => _watchAd(l),
+                ),
               ),
-            ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 96,
+                height: 44,
+                child: _chargeBtn(
+                  cfg.ticketRefillAmount > 0
+                      ? l.pvpTicketJellyGive(cfg.ticketRefillAmount)
+                      : l.pvpTicketJellyBtn(cfg.ticketRefillJelly),
+                  null,
+                  const Color(0xFF3F5E86),
+                  () => _refill(l),
+                  jelly: cfg.ticketRefillAmount > 0
+                      ? cfg.ticketRefillJelly
+                      : null,
+                ),
+              ),
+            ],
           ],
         ),
       ),

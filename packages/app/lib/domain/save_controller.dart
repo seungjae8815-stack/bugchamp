@@ -184,6 +184,9 @@ class SeasonReport {
 enum TicketCharge {
   ok,
 
+  /// 정산 기간(일 09시~월 09시) — 결투를 받지 않아 충전도 막는다(2026-10-04).
+  seasonClosed,
+
   /// 오늘 광고 시청 상한에 걸렸다(광고제거 구매자도 동일).
   adLimit,
 
@@ -1545,9 +1548,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
         await adoptTicketState(res.data!);
         return TicketCharge.ok;
       }
-      return res.error == 'ad_limit'
-          ? TicketCharge.adLimit
-          : TicketCharge.failed;
+      return switch (res.error) {
+        'ad_limit' => TicketCharge.adLimit,
+        'season_closed' => TicketCharge.seasonClosed,
+        _ => TicketCharge.failed,
+      };
     }
 
     // 서버 미연결(개발·오프라인) — 로컬로 처리한다.
@@ -1603,6 +1608,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           'insufficient' => TicketCharge.notEnoughJelly,
           'already_full' => TicketCharge.alreadyFull,
           'refill_limit' => TicketCharge.refillLimit,
+          'season_closed' => TicketCharge.seasonClosed,
           _ => TicketCharge.failed,
         };
       }

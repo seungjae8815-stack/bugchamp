@@ -2494,6 +2494,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get pvpTicketSettling => '정산 중이에요\n월요일 09시 새 시즌';
+
+  @override
   String get pvpTicketFullLabel => '가득참';
 
   @override
