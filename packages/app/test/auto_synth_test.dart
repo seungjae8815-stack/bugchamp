@@ -133,6 +133,30 @@ void main() {
     expect(s.bugs.single.potential, 2);
   });
 
+  // 2026-10-04 문의: "알이 많은데 합성할 게 없다고 나와요". 가장 많이 키운 개체(★2 수련)가 대상이 되면
+  // 그보다 포텐셜이 높은 ★4 알들은 재료가 될 수 없어(보호 규칙) 그 종 전체를 건너뛰었다.
+  test('대상에 맞는 재료가 없으면 다음 후보로 — 높은 포텐셜 알끼리는 합친다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        bug('trained', 'alpha', potential: 2, level: 5),
+        bug('e1', 'alpha', potential: 4),
+        bug('e2', 'alpha', potential: 4),
+        bug('e3', 'alpha', potential: 4),
+        bug('e4', 'alpha', potential: 4),
+      ],
+    );
+    final c = container(seed);
+    final k = await ctrl(seed, c);
+    final r = await k.autoSynthesize();
+
+    expect(r.fused, 1);
+    final s = c.read(saveControllerProvider).requireValue;
+    expect(s.bugs.length, 2);
+    expect(s.bugs.firstWhere((b) => b.id == 'trained').potential, 2);
+    expect(s.bugs.where((b) => b.potential == 5), hasLength(1));
+  });
+
   test('재료가 모자라면 아무것도 하지 않는다', () async {
     final seed = SaveGame.initial(createdAt: t0).copyWith(
       lastSeen: t0,

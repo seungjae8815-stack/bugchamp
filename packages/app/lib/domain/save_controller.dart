@@ -3948,7 +3948,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
           }
           picked.add(b.id);
         }
-        if (picked.length < cfg.synthFodder) break; // 이 종은 재료가 모자란다
+        if (picked.length < cfg.synthFodder) {
+          // 이 대상에 맞는 재료가 모자란다 — **다음 후보로** 넘어간다(2026-10-04 문의).
+          // 끊으면 수련한 ★2 성충이 대상일 때 ★4 알(대상보다 높아 재료 불가)끼리도 못 합쳐
+          // "알이 많은데 합성할 게 없다"가 됐다. 재료는 처음부터 다시 훑는다(쓴 건 consumed 가 거른다).
+          targetIdx++;
+          tail = alive.length - 1;
+          continue;
+        }
         consumed.addAll(picked);
         pot += 1;
         upgraded[target.id] = pot;
