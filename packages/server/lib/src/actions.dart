@@ -2016,77 +2016,23 @@ class GameActions {
     // 처치 수 → 곤충·재료 드롭. **서버가 굴린다.**
     final rolls = prog.habitatClears.floor().clamp(0, maxRollsPerSync);
     final rng = (rngFactory ?? Random.new)();
-    final newBugs = <IndividualBug>[];
-    final mats = Map<MaterialKind, int>.from(save.materials);
-    final species = config.speciesList;
-
-    // 채집함 여유분까지만 받는다(가득 차면 곤충 획득 차단 — 재료·골드는 계속).
-    var bugRoom = save.storageFree;
-
-    // 희귀 천장(§2.1) — 앱과 같은 규칙. 서버가 안 굴리면 방치 정산은
-    // 천장이 없는 셈이 되어, 켜 두는 쪽이 손해가 된다.
-    var pity = save.rarePity;
-
-    for (var i = 0; i < rolls; i++) {
-      final pityDue = run.rarePityKills > 0 && pity >= run.rarePityKills;
-      pity++;
-      if (species.isNotEmpty &&
-          (pityDue || rng.nextDouble() < run.bugDropChance * stats.bugFind)) {
-        // 등급 가중치·한정 종 모두 앱과 **같은 함수**로 고른다.
-        final sp = pickDropSpecies(
-          rng,
-          species,
-          weights: run.dropGradeWeights,
-          now: t,
-          minGrade: pityDue ? Grade.rare : null,
-        );
-        if (sp == null) continue;
-        // 되감기는 아래 분기에서 — 실제로 받았거나 필터로 재료가 됐을 때만.
-        // 채집함이 가득 차 버려진 롤로 되감으면 천장이 허공에 쓰인다.
-        final rarePlus = sp.grade.index >= Grade.rare.index;
-        // 앱과 같은 분포: rng*rng 라 고포텐셜이 드물다.
-        final potential = 1 + (rng.nextDouble() * rng.nextDouble() * 4).floor();
-        // 등급 필터(§2.1)를 **서버도 건다.** 클라이언트만 거르면 구버전 앱·
-        // 조작 업로드가 필터를 우회해 칸을 채운다.
-        if (!save.acceptsGrade(sp.grade)) {
-          // 자동 방생 → 일반 재료. 젤리를 주지 않는 이유는 pets.json 참조.
-          // 스킨 계열 보너스(§2.6 — 재료만, 전투 스탯 아님).
-          // 근거는 ownedSkins = **서버 소유 필드**라 위조할 수 없다.
-          final give = config.iap.skinnedReleaseMaterial(
-            config.pet.releaseMaterial(sp.grade),
-            save.ownedSkins,
-            sp.id,
-          );
-          if (give > 0) {
-            final kind =
-                _regularMaterials[rng.nextInt(_regularMaterials.length)];
-            mats[kind] = (mats[kind] ?? 0) + give;
-          }
-          if (rarePlus) pity = 0; // 필터 방생은 유저의 선택 — "나온 것"으로 친다
-        } else if (bugRoom > 0) {
-          newBugs.add(
-            IndividualBug.roll(
-              id: _uuid.v4(),
-              species: sp,
-              rng: rng,
-              potential: potential.clamp(1, 5),
-              // 이색도 서버가 같은 확률로 굴린다 — 안 굴리면 방치 정산으로
-              // 받은 곤충만 이색이 안 나와, 방치가 손해가 된다.
-              variantChance: config.pet.variantWildChance,
-            ).copyWith(stage: LifeStage.egg, stageSince: t),
-          );
-          bugRoom--;
-          if (rarePlus) pity = 0;
-        }
-      }
-      final drop = materialDrop(run, stats.materialFind);
-      if (rng.nextDouble() < drop.chance) {
-        final kind = _regularMaterials[rng.nextInt(_regularMaterials.length)];
-        mats[kind] =
-            (mats[kind] ?? 0) +
-            max(1, ((1 + rng.nextInt(2)) * drop.amountMult).round());
-      }
-    }
+    // 앱 오프라인 정산과 **같은 함수**(core_save `rollIdleDrops`) — 규칙이 두 벌이면 갈린다.
+    final drops = rollIdleDrops(
+      save: save,
+      rolls: rolls,
+      species: config.speciesList,
+      run: run,
+      pet: config.pet,
+      iap: config.iap,
+      bugFind: stats.bugFind,
+      materialFind: stats.materialFind,
+      now: t,
+      rng: rng,
+      newId: _uuid.v4,
+    );
+    final newBugs = drops.bugs;
+    final mats = drops.materials;
+    final pity = drops.rarePity;
 
     // 미션 진행(처치) — 활성 미션이 killMonsters/killBosses 면 반영.
     // 하나만 활성이라 둘 중 최대 하나가 실제로 바뀐다.

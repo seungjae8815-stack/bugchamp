@@ -1168,6 +1168,12 @@ abstract class AppLocalizations {
   /// **'Welcome back!'**
   String get offlineTitle;
 
+  /// No description provided for @offlineBugs.
+  ///
+  /// In en, this message translates to:
+  /// **'🥚 Collected {count} bug eggs'**
+  String offlineBugs(int count);
+
   /// No description provided for @offlineElapsed.
   ///
   /// In en, this message translates to:

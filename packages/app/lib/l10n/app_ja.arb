@@ -185,6 +185,7 @@
   "retreat": "撤退!",
   "offlineReward": "おかえり!💰{gold}・🔷{xp} 獲得",
   "offlineTitle": "おかえりなさい！",
+  "offlineBugs": "🥚 虫の卵を{count}個採集しました",
   "offlineElapsed": "{time} の間に貯まった放置報酬です",
   "offlineGoldLabel": "ゴールド",
   "offlineXpLabel": "経験値",

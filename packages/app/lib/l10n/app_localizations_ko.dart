@@ -596,6 +596,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineTitle => '돌아왔어요!';
 
   @override
+  String offlineBugs(int count) {
+    return '🥚 곤충 알 $count개를 채집했어요';
+  }
+
+  @override
   String offlineElapsed(String time) {
     return '$time 동안 모은 방치 보상이에요';
   }

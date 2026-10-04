@@ -727,7 +727,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       title: l.offlineTitle,
       subtitle: l.offlineElapsed(timeStr),
       iconWidget: dialogIcon('offline'),
-      content: gameRewardList(context, gold: r.gold, xp: r.xp),
+      // 방치 중 드롭(2026-10-04) — 재료와 곤충(알) 수까지 보여 준다.
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          gameRewardList(
+            context,
+            gold: r.gold,
+            xp: r.xp,
+            materials: r.materials,
+          ),
+          if (r.bugs > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              l.offlineBugs(r.bugs),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ],
+      ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );
   }

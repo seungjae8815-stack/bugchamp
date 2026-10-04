@@ -595,6 +595,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineTitle => 'おかえりなさい！';
 
   @override
+  String offlineBugs(int count) {
+    return '🥚 虫の卵を$count個採集しました';
+  }
+
+  @override
   String offlineElapsed(String time) {
     return '$time の間に貯まった放置報酬です';
   }

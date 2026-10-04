@@ -404,6 +404,38 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ? Duration(hours: iap?.passOfflineCapHours ?? 12)
           : kMaxOfflineAccrual,
     );
+    final maxAccrual = passOn
+        ? Duration(hours: iap?.passOfflineCapHours ?? 12)
+        : kMaxOfflineAccrual;
+    // 방치 중 처치 수 — 사냥터 게이지와 **곤충·재료 드롭**이 같은 값을 쓴다.
+    final clears = estimateClears(
+      config: config,
+      stageNumber: save.stageNumber,
+      stats: stats,
+      elapsed: elapsed,
+      tier: save.difficultyTier,
+      abyssFloor: activeAbyssFloor(save),
+      efficiency: config.offlineEfficiency,
+      maxAccrual: maxAccrual,
+    );
+    // 곤충·재료 드롭(2026-10-04) — 처치마다 온라인과 같은 규칙으로 굴린다. 서버 `/sync` 와 같은 함수.
+    // 기기 권위 전환(2026-07) 뒤 앱이 `/sync` 를 안 불러 오프라인 드롭이 통째로 빠져 있었다.
+    final pet = data.petConfig;
+    final drops = pet == null
+        ? null
+        : rollIdleDrops(
+            save: save,
+            rolls: clears.floor().clamp(0, _maxOfflineRolls),
+            species: data.allSpecies,
+            run: config,
+            pet: pet,
+            iap: iap,
+            bugFind: stats.bugFind,
+            materialFind: stats.materialFind,
+            now: now,
+            rng: math.Random(),
+            newId: _devUuid.v4,
+          );
     // 길드 버프 골드(1.0.15) — 방치가 주 플레이라 오프라인에도 건다(사장님 확정).
     // 길드 조회보다 먼저 돌기 때문에 기기 캐시를 쓴다([GuildBuffCache]).
     final guildGold = kGuildOpen
@@ -426,10 +458,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
       xp -= xpForNextLevel(level);
       level++;
     }
-    pendingOffline = report;
     // 화석 조각은 **시간 비례**라 정산된 시간(오프라인 상한이 걸린 값)에 맞춰
     // 준다. 오프라인은 온라인의 1/3 — 켜두는 쪽이 이득이어야 한다.
-    var mats = save.materials;
+    var mats = drops?.materials ?? save.materials;
     final forge = data.forgeConfig;
     if (forge != null) {
       final give =
@@ -442,21 +473,22 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ..[MaterialKind.fossil] = (mats[MaterialKind.fossil] ?? 0) + give;
       }
     }
+    // 팝업에 보일 몫 = 정산 뒤 − 정산 전.
+    final gained = <MaterialKind, int>{
+      for (final e in mats.entries)
+        if (e.value - (save.materials[e.key] ?? 0) > 0)
+          e.key: e.value - (save.materials[e.key] ?? 0),
+    };
+    pendingOffline = OfflineReport(
+      gold: report.gold,
+      xp: report.xp,
+      accrued: report.accrued,
+      bugs: drops?.bugs.length ?? 0,
+      materials: gained,
+    );
     // 사냥터 모드: 방치 중 잡은 수도 도전 게이지에 쌓인다(서버 정산과 같은 규칙).
     int? zoneKills;
     if (config.zoneMode) {
-      final clears = estimateClears(
-        config: config,
-        stageNumber: save.stageNumber,
-        stats: stats,
-        elapsed: elapsed,
-        tier: save.difficultyTier,
-        abyssFloor: activeAbyssFloor(save),
-        efficiency: config.offlineEfficiency,
-        maxAccrual: passOn
-            ? Duration(hours: iap?.passOfflineCapHours ?? 12)
-            : kMaxOfflineAccrual,
-      );
       zoneKills = save.zoneKills + clears.floor();
     }
     return save.copyWith(
@@ -465,8 +497,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
       level: level,
       materials: mats,
       zoneKills: zoneKills,
+      bugs: (drops == null || drops.bugs.isEmpty)
+          ? null
+          : [...save.bugs, ...drops.bugs],
+      rarePity: drops?.rarePity,
     );
   }
+
+  /// 오프라인 정산 한 번에 굴리는 처치 수 상한 — 연산 방어(8시간·12시간 정산도 이보다 훨씬 적다).
+  static const _maxOfflineRolls = 50000;
 
   /// 백그라운드에서 돌아왔을 때 그동안의 방치 보상을 정산한다.
   /// 보상이 생겼으면 true — 호출부가 [pendingOffline] 을 팝업으로 보여준다.

@@ -607,6 +607,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineTitle => 'Welcome back!';
 
   @override
+  String offlineBugs(int count) {
+    return '🥚 Collected $count bug eggs';
+  }
+
+  @override
   String offlineElapsed(String time) {
     return 'Idle rewards earned over $time';
   }

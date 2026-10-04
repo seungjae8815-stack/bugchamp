@@ -30,7 +30,7 @@ Map<String, dynamic> _readJson(String rel) =>
 
 Map<String, dynamic> _name(String s) => {'ko': s, 'en': s, 'ja': s};
 
-GameData _data() => GameData.fromDecoded(
+GameData _data({bool pets = false}) => GameData.fromDecoded(
   species: {
     'species': [
       {
@@ -63,6 +63,7 @@ GameData _data() => GameData.fromDecoded(
   },
   // 방치 수식은 실제 밸런스 값으로 검증한다(더미 값이면 의미가 없다).
   runConfig: _readJson('assets/data/run_config.json'),
+  petConfig: pets ? _readJson('assets/data/pets.json') : null,
 );
 
 void main() {
@@ -179,5 +180,67 @@ void main() {
     // 팝업이 보여줄 금액과 실제 지급액이 맞는지.
     final report = c.read(saveControllerProvider.notifier).pendingOffline!;
     expect(after.gold, 1000 + report.gold);
+  });
+
+  // 2026-10-04: 기기 권위 전환 뒤 오프라인 정산에 곤충·재료 드롭이 빠져 있었다(서버 `/sync` 에만 있었다).
+  group('방치 중 곤충·재료 드롭', () {
+    Future<(SaveController, ProviderContainer)> boot(
+      SaveGame seed,
+      DateTime now,
+    ) async {
+      final c = ProviderContainer(
+        overrides: [
+          gameDataProvider.overrideWith((ref) => _data(pets: true)),
+          saveRepositoryProvider.overrideWithValue(_FakeRepo(seed)),
+          clockProvider.overrideWithValue(FixedClock(now)),
+        ],
+      );
+      addTearDown(c.dispose);
+      await c.read(saveControllerProvider.future);
+      return (c.read(saveControllerProvider.notifier), c);
+    }
+
+    test('8시간 방치하면 알과 재료가 들어오고, 팝업 숫자와 실제가 맞는다', () async {
+      final seed = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(lastSeen: t0, stageNumber: 30, level: 5);
+      final (ctrl, c) = await boot(seed, t0.add(const Duration(hours: 8)));
+      final after = c.read(saveControllerProvider).requireValue;
+      final r = ctrl.pendingOffline!;
+      expect(r.bugs, greaterThan(0));
+      expect(after.bugs.length, seed.bugs.length + r.bugs);
+      expect(after.bugs.every((b) => b.stage == LifeStage.egg), isTrue);
+      final regular = [for (final k in kRegularMaterials) r.materials[k] ?? 0];
+      expect(regular.fold<int>(0, (a, b) => a + b), greaterThan(0));
+      for (final e in r.materials.entries) {
+        expect(after.materials[e.key], (seed.materials[e.key] ?? 0) + e.value);
+      }
+    });
+
+    test('채집함이 가득 차면 곤충은 안 들어오고 재료는 들어온다', () async {
+      final full = SaveGame.initial(createdAt: t0).copyWith(
+        lastSeen: t0,
+        stageNumber: 30,
+        bugs: [
+          for (var i = 0; i < kDefaultStorageCapacity; i++)
+            IndividualBug(
+              id: 'b$i',
+              speciesId: 'a',
+              sizeMm: 30,
+              potential: 1,
+              temperament: Temperament.steadfast,
+              sex: Sex.male,
+              element: Element.wood,
+              stage: LifeStage.adult,
+              stageSince: t0,
+            ),
+        ],
+      );
+      final (ctrl, c) = await boot(full, t0.add(const Duration(hours: 8)));
+      final after = c.read(saveControllerProvider).requireValue;
+      expect(ctrl.pendingOffline!.bugs, 0);
+      expect(after.bugs.length, kDefaultStorageCapacity);
+      expect(ctrl.pendingOffline!.materials, isNotEmpty);
+    });
   });
 }

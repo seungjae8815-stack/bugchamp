@@ -7,6 +7,7 @@ import 'package:core_models/core_models.dart'
         Species,
         Grade,
         clampCurrency,
+        MaterialKind,
         kMaxCurrency;
 import 'package:meta/meta.dart';
 
@@ -483,11 +484,17 @@ class OfflineReport {
     required this.gold,
     required this.xp,
     required this.accrued,
+    this.bugs = 0,
+    this.materials = const {},
   });
 
   final int gold;
   final int xp;
   final Duration accrued;
+
+  /// 방치 중 얻은 곤충 수(알) · 재료(드롭 + 자동 방생 환산, 화석 포함) — 팝업 표시용(2026-10-04).
+  final int bugs;
+  final Map<MaterialKind, int> materials;
 
   bool get isEmpty => gold <= 0 && xp <= 0;
 

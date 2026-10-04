@@ -367,6 +367,8 @@
     }
   },
   "offlineTitle": "Welcome back!",
+  "offlineBugs": "🥚 Collected {count} bug eggs",
+  "@offlineBugs": {"placeholders": {"count": {"type": "int"}}},
   "offlineElapsed": "Idle rewards earned over {time}",
   "@offlineElapsed": {
     "placeholders": {

@@ -192,6 +192,7 @@
   "retreat": "후퇴!",
   "offlineReward": "돌아왔어요! 💰{gold} · 🔷{xp} 획득",
   "offlineTitle": "돌아왔어요!",
+  "offlineBugs": "🥚 곤충 알 {count}개를 채집했어요",
   "offlineElapsed": "{time} 동안 모은 방치 보상이에요",
   "offlineGoldLabel": "골드",
   "offlineXpLabel": "경험치",
