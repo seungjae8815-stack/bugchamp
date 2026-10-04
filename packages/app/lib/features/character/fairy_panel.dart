@@ -1301,19 +1301,18 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
               if (cfg.rerollJelly > 0 && cfg.rerollDailyCap > 0)
                 OutlinedButton(
                   onPressed: _busy ? null : () => _reroll(f, cfg),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l.fairyReroll(
-                          '${_rerollLeft(fs, cfg)}',
-                          '${cfg.rerollDailyCap}',
+                  child: fs.reroll != null
+                      ? Text(l.fairyRerollPending)
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(l.fairyReroll('${_rerollLeft(fs, cfg)}')),
+                            if (_rerollLeft(fs, cfg) > 0) ...[
+                              const SizedBox(width: 4),
+                              jellyPrice(cost: cfg.rerollJelly),
+                            ],
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      jellyPrice(cost: cfg.rerollJelly),
-                    ],
-                  ),
                 ),
               OutlinedButton(
                 onPressed: isComp || _busy ? null : () => _release(f, cfg),
@@ -1457,7 +1456,15 @@ class _RerollChooseState extends ConsumerState<_RerollChooseDialog> {
       subRoll: r.subRoll,
       level: f.level,
     );
-    Widget col(String head, Fairy x, Color color) => Expanded(
+    // 위아래로 쌓는다 — 좌우 두 열이면 360dp 에서 열마다 글자 칸이 80px 남짓이라 줄이 2~3번 꺾였다.
+    Widget block(String head, Fairy x, Color color) => Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      decoration: BoxDecoration(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
       child: Column(
         children: [
           Text(
@@ -1468,7 +1475,7 @@ class _RerollChooseState extends ConsumerState<_RerollChooseDialog> {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           ..._statLines(l, x, cfg),
         ],
       ),
@@ -1492,14 +1499,16 @@ class _RerollChooseState extends ConsumerState<_RerollChooseDialog> {
           fairyGlow(f, size: 72),
           _gradeLine(l, f),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              col(l.fairyRerollNow, f, Colors.white70),
-              const SizedBox(width: 8),
-              col(l.fairyRerollNew, next, _honey),
-            ],
+          block(l.fairyRerollNow, f, Colors.white70),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 2),
+            child: Icon(
+              Icons.arrow_downward_rounded,
+              size: 18,
+              color: Colors.white54,
+            ),
           ),
+          block(l.fairyRerollNew, next, _honey),
         ],
       ),
     );

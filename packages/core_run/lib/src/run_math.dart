@@ -486,6 +486,7 @@ class OfflineReport {
     required this.accrued,
     this.bugs = 0,
     this.materials = const {},
+    this.bugsBlocked = 0,
   });
 
   final int gold;
@@ -495,6 +496,9 @@ class OfflineReport {
   /// 방치 중 얻은 곤충 수(알) · 재료(드롭 + 자동 방생 환산, 화석 포함) — 팝업 표시용(2026-10-04).
   final int bugs;
   final Map<MaterialKind, int> materials;
+
+  /// 채집함이 가득 차서 못 받은 곤충 수.
+  final int bugsBlocked;
 
   bool get isEmpty => gold <= 0 && xp <= 0;
 

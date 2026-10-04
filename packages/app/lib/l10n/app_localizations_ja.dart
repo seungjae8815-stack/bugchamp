@@ -595,6 +595,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineTitle => 'おかえりなさい！';
 
   @override
+  String offlineBugsBlocked(int count) {
+    return '採集箱がいっぱいで\n卵$count個を受け取れませんでした';
+  }
+
+  @override
+  String get fairyRerollPending => '再抽選の結果を選ぶ';
+
+  @override
   String offlineBugs(int count) {
     return '🥚 虫の卵を$count個採集しました';
   }
@@ -2171,7 +2179,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sessionTakenBody =>
-      '同じアカウントで別の端末からゲームが開始されました。\nこの端末で続けると、別の端末の進行を読み込みます。';
+      '別の端末から\n同じアカウントで接続されました。\n\nこの端末で続けると\n別の端末の進行を読み込みます。';
 
   @override
   String get sessionTakenContinue => 'この端末で続ける';
@@ -4298,8 +4306,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String fairyReroll(String left, String max) {
-    return '再抽選 $left/$max';
+  String fairyReroll(String left) {
+    return '再抽選（残り$left回）';
   }
 
   @override
@@ -4307,7 +4315,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get fairyRerollConfirm =>
-      'サブ能力と数値を引き直します。\n結果が気に入らなければ\n今の値をそのまま残せます。\n\n1日に使える回数に上限があります。';
+      '基本・サブ能力の数値を\n引き直します。\nサブ能力の種類も変わることがあります。\n\n結果が気に入らなければ\n今の値を残せます。\n\n1日の回数に上限があります。';
 
   @override
   String get fairyRerollPick => 'どちらにしますか？';

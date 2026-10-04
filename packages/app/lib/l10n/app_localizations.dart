@@ -1168,10 +1168,22 @@ abstract class AppLocalizations {
   /// **'Welcome back!'**
   String get offlineTitle;
 
+  /// No description provided for @offlineBugsBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Your collection box was full —\n{count, plural, =1{1 egg was} other{{count} eggs were}} not collected'**
+  String offlineBugsBlocked(int count);
+
+  /// No description provided for @fairyRerollPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick reroll result'**
+  String get fairyRerollPending;
+
   /// No description provided for @offlineBugs.
   ///
   /// In en, this message translates to:
-  /// **'🥚 Collected {count} bug eggs'**
+  /// **'🥚 Collected {count, plural, =1{1 bug egg} other{{count} bug eggs}}'**
   String offlineBugs(int count);
 
   /// No description provided for @offlineElapsed.
@@ -3943,7 +3955,7 @@ abstract class AppLocalizations {
   /// No description provided for @sessionTakenBody.
   ///
   /// In en, this message translates to:
-  /// **'This account was opened on another device.\nContinue here to load the progress from that device.'**
+  /// **'This account was opened on another device.\n\nContinue here to load the progress from that device.'**
   String get sessionTakenBody;
 
   /// No description provided for @sessionTakenContinue.
@@ -7555,14 +7567,14 @@ abstract class AppLocalizations {
   /// No description provided for @fairyMergeEpicNote.
   ///
   /// In en, this message translates to:
-  /// **'Epic → Legendary merges need {n}.'**
+  /// **'Epic → Legendary merges need {n} fairies.'**
   String fairyMergeEpicNote(String n);
 
   /// No description provided for @fairyReroll.
   ///
   /// In en, this message translates to:
-  /// **'Reroll {left}/{max}'**
-  String fairyReroll(String left, String max);
+  /// **'Reroll ({left} left)'**
+  String fairyReroll(String left);
 
   /// No description provided for @fairyRerollTitle.
   ///
@@ -7573,7 +7585,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyRerollConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Rerolls the bonus stat and its values.\nIf you don\'t like the result,\nyou can keep the current values.\n\nUses per day are limited.'**
+  /// **'Rerolls the base and bonus values. The bonus stat itself may change too. If you don\'t like the result, you can keep the current values.\n\nUses per day are limited.'**
   String get fairyRerollConfirm;
 
   /// No description provided for @fairyRerollPick.

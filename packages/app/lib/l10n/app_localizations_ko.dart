@@ -596,6 +596,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineTitle => '돌아왔어요!';
 
   @override
+  String offlineBugsBlocked(int count) {
+    return '채집함이 가득 차서\n알 $count개를 받지 못했어요';
+  }
+
+  @override
+  String get fairyRerollPending => '재굴림 결과 고르기';
+
+  @override
   String offlineBugs(int count) {
     return '🥚 곤충 알 $count개를 채집했어요';
   }
@@ -2177,7 +2185,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sessionTakenBody =>
-      '같은 계정으로 다른 기기에서 게임을 시작했어요.\n이 기기에서 계속하면 다른 기기의 진행을 불러와요.';
+      '다른 기기에서\n같은 계정으로 접속했어요.\n\n이 기기에서 계속하면\n다른 기기의 진행을 불러와요.';
 
   @override
   String get sessionTakenContinue => '이 기기에서 계속하기';
@@ -4306,8 +4314,8 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String fairyReroll(String left, String max) {
-    return '재굴림 $left/$max';
+  String fairyReroll(String left) {
+    return '재굴림 · $left회 남음';
   }
 
   @override
@@ -4315,7 +4323,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get fairyRerollConfirm =>
-      '부가 능력치와 수치를 새로 굴려요.\n결과가 마음에 들지 않으면\n지금 값을 그대로 지킬 수 있어요.\n\n하루 사용 횟수가 정해져 있어요.';
+      '기본·부가 능력치를\n새로 굴려요.\n부가 종류도 바뀔 수 있어요.\n\n결과가 마음에 들지 않으면\n지금 값을 지킬 수 있어요.\n\n하루 횟수가 정해져 있어요.';
 
   @override
   String get fairyRerollPick => '어느 쪽으로 할까요?';

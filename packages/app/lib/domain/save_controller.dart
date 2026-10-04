@@ -485,6 +485,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       accrued: report.accrued,
       bugs: drops?.bugs.length ?? 0,
       materials: gained,
+      bugsBlocked: drops?.blocked ?? 0,
     );
     // 사냥터 모드: 방치 중 잡은 수도 도전 게이지에 쌓인다(서버 정산과 같은 규칙).
     int? zoneKills;

@@ -11,6 +11,7 @@ class IdleDrops {
     required this.bugs,
     required this.materials,
     required this.rarePity,
+    this.blocked = 0,
   });
 
   /// 새로 얻은 곤충(알 상태). 채집함 여유분까지만.
@@ -21,6 +22,9 @@ class IdleDrops {
 
   /// 굴린 뒤의 희귀 천장 카운터.
   final int rarePity;
+
+  /// 채집함이 가득 차서 **못 받은** 곤충 수(§2.1 "가득 차면 안내" — 복귀 팝업이 알린다).
+  final int blocked;
 }
 
 /// 방치 정산(오프라인)의 곤충·재료 드롭 — **앱 오프라인 정산과 서버 `/sync` 가 같은 함수**를 쓴다.
@@ -51,6 +55,7 @@ IdleDrops rollIdleDrops({
   // 채집함 여유분까지만 받는다(가득 차면 곤충 획득 차단 — 재료는 계속).
   var bugRoom = save.storageFree;
   var pity = save.rarePity;
+  var blocked = 0;
   const regular = kRegularMaterials;
 
   for (var i = 0; i < rolls; i++) {
@@ -93,6 +98,8 @@ IdleDrops rollIdleDrops({
           );
           bugRoom--;
           if (rarePlus) pity = 0;
+        } else {
+          blocked++;
         }
       }
     }
@@ -107,5 +114,10 @@ IdleDrops rollIdleDrops({
           max(1, ((1 + rng.nextInt(2)) * drop.amountMult).round());
     }
   }
-  return IdleDrops(bugs: newBugs, materials: mats, rarePity: pity);
+  return IdleDrops(
+    bugs: newBugs,
+    materials: mats,
+    rarePity: pity,
+    blocked: blocked,
+  );
 }

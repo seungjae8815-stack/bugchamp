@@ -548,7 +548,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   onTap: () => mine ? _deleteMine(m, l) : _actions(m, l),
                   borderRadius: BorderRadius.circular(10),
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     child: Icon(
                       Icons.more_horiz_rounded,
                       size: 16,

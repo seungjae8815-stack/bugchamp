@@ -607,8 +607,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineTitle => 'Welcome back!';
 
   @override
+  String offlineBugsBlocked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count eggs were',
+      one: '1 egg was',
+    );
+    return 'Your collection box was full —\n$_temp0 not collected';
+  }
+
+  @override
+  String get fairyRerollPending => 'Pick reroll result';
+
+  @override
   String offlineBugs(int count) {
-    return '🥚 Collected $count bug eggs';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bug eggs',
+      one: '1 bug egg',
+    );
+    return '🥚 Collected $_temp0';
   }
 
   @override
@@ -2220,7 +2240,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionTakenBody =>
-      'This account was opened on another device.\nContinue here to load the progress from that device.';
+      'This account was opened on another device.\n\nContinue here to load the progress from that device.';
 
   @override
   String get sessionTakenContinue => 'Continue on this device';
@@ -4385,12 +4405,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyMergeEpicNote(String n) {
-    return 'Epic → Legendary merges need $n.';
+    return 'Epic → Legendary merges need $n fairies.';
   }
 
   @override
-  String fairyReroll(String left, String max) {
-    return 'Reroll $left/$max';
+  String fairyReroll(String left) {
+    return 'Reroll ($left left)';
   }
 
   @override
@@ -4398,7 +4418,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fairyRerollConfirm =>
-      'Rerolls the bonus stat and its values.\nIf you don\'t like the result,\nyou can keep the current values.\n\nUses per day are limited.';
+      'Rerolls the base and bonus values. The bonus stat itself may change too. If you don\'t like the result, you can keep the current values.\n\nUses per day are limited.';
 
   @override
   String get fairyRerollPick => 'Which one do you want?';

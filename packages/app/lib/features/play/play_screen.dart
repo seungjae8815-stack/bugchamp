@@ -749,6 +749,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
           ],
+          // 채집함이 가득 차 못 받은 알 — 말없이 버리면 "방치했는데 알이 없다"가 된다(§2.1).
+          if (r.bugsBlocked > 0) ...[
+            const SizedBox(height: 6),
+            Text(
+              l.offlineBugsBlocked(r.bugsBlocked),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFFFCC80),
+                fontSize: 12.5,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ],
       ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],

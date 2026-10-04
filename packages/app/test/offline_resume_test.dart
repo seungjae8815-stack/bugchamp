@@ -239,6 +239,7 @@ void main() {
       final (ctrl, c) = await boot(full, t0.add(const Duration(hours: 8)));
       final after = c.read(saveControllerProvider).requireValue;
       expect(ctrl.pendingOffline!.bugs, 0);
+      expect(ctrl.pendingOffline!.bugsBlocked, greaterThan(0)); // 팝업이 안내한다
       expect(after.bugs.length, kDefaultStorageCapacity);
       expect(ctrl.pendingOffline!.materials, isNotEmpty);
     });
