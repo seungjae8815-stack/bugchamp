@@ -65,9 +65,22 @@ CharacterStats permanentStatsOf(SaveGame save, GameData data, DateTime now) {
   );
 }
 
+/// 전투력 **표시용** 능력치 — 영구 능력치 + 장비(2026-10-04 사장님 확정).
+///
+/// 장비를 빼고 보여 주던 시절, 좋은 장비를 껴도 전투력 숫자가 그대로라 "장비가 차이가 없다"로 읽혔다.
+/// 장비는 회차가 바뀌어도 남는 영구 축이라 표시에 넣는다(버프는 여전히 뺀다).
+/// ⚠️ **적응형 몬스터 기준에 쓰지 않는다** — 기준은 [permanentStatsOf](장비 밖)다. 여기를 기준에
+/// 넣으면 장비를 낄 때 몬스터도 같이 세진다(§2.7).
+CharacterStats displayStatsOf(SaveGame save, GameData data, DateTime now) =>
+    applyEquipment(
+      permanentStatsOf(save, data, now),
+      equipmentBonus(save.equippedItems.values, data.itemConfig),
+      critBudget: data.runConfig!.critBudgetGear,
+    );
+
 /// 화면에 보이는 전투력(홈 상단) — 랭킹 진행도의 동률을 가르는 값이기도 하다.
 /// 게임 데이터가 아직 없으면 null(모르는 값을 0 으로 올리면 서버를 덮어쓴다).
 double? displayCombatPower(SaveGame save, GameData? data, DateTime now) {
   if (data?.runConfig == null) return null;
-  return combatPower(permanentStatsOf(save, data!, now));
+  return combatPower(displayStatsOf(save, data!, now));
 }

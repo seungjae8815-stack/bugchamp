@@ -3113,7 +3113,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   Widget _topBar(AppLocalizations l, SaveGame save) {
     final xpNeed = xpForNextLevel(save.level);
-    final cp = combatPower(_petStats(save));
+    // 장비 포함(표시용) — 랭킹 전투력과 같은 함수.
+    final cp = combatPower(displayStatsOf(save, _data, _clock.now().toUtc()));
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
       child: Column(
@@ -8024,7 +8025,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final controller = TextEditingController(text: save.nickname);
     // 닉네임 편집 모드. 처음엔 잠겨 있고, 옆 버튼을 눌러야 열린다.
     var editing = false;
-    final base = _petStats(save);
+    // 캐릭터 카드도 홈 상단과 같은 값(장비 포함)으로 보인다.
+    final base = displayStatsOf(save, _data, _clock.now().toUtc());
     final rows = <(String, String)>[
       (l.statCombatPower, formatCompact(combatPower(base))),
       (l.statAttack, formatCompact(base.attack)),

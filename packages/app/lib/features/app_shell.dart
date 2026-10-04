@@ -161,6 +161,10 @@ class _AppShellState extends ConsumerState<AppShell>
       // 회복됐는데 "연결 끊김" 배너가 계속 떠 있기도 한다.
       // reconnect 는 변경 감지를 무력화해 반드시 한 번 올려본다 —
       // flush 만 부르면 세이브가 안 변했을 때 서버에 닿지 않아 확인이 안 된다.
+      // 이 업로드가 **다른 기기에 밀려났는지**도 바로 드러낸다(한 기기만 접속, 1.0.16) —
+      // 백그라운드에 둔 사이 다른 기기가 켜졌으면 409 → "다른 기기에서 접속 중" 덮개.
+      // ⚠️ 복귀 때 서버 세이브를 통째로 받아 오지 않는다(2026-10-04 검토): 방치 보상은 서버가 아니라
+      // 기기가 `lastSeen` 으로 정산하므로(`_settleOnResume`) 받아 와도 보상은 같고, 업로드 전 진행만 잃는다.
       unawaited(_uploader.reconnect());
       // 백그라운드에서 끝난 결제·보류된 결제를 복귀 즉시 다시 본다.
       unawaited(ref.read(iapServiceProvider).recoverPending());
