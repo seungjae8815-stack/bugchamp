@@ -24,11 +24,17 @@ class DeviceSession {
   /// 안 그러면 혼자 쓰는데도 새 계정의 옛 표식과 달라 "다른 기기에서 접속 중"이 뜬다.
   static String? claimedUser;
 
-  /// 언제 쥐었나 — 방금 쥔 기기가 "밀려남"을 받으면 경쟁(아래)이라 한 번 다시 쥔다.
+  /// 쥔 뒤 아직 **첫 업로드가 통과하지 않았다** — 이때 "밀려남"을 받으면 경쟁이라 한 번 다시 쥔다.
   ///
-  /// 서버의 `/session/claim` 과 옛 기기의 `/save` 는 둘 다 세이브 전체를 읽고 다시 쓴다. 옛 기기가
-  /// 쥐기 직전에 읽고 직후에 쓰면 옛 표식이 되살아나, **방금 켠 기기**가 밀려난 것처럼 보인다.
-  static DateTime? claimedAt;
+  /// 서버의 `/session/claim` 과 다른 쓰기(옛 기기의 `/save`, 같은 기기의 공지 보상·결제 복구 등)는 둘 다
+  /// 세이브 전체를 읽고 다시 쓴다. 쥐기 직전에 읽고 직후에 쓰면 옛 표식이 되살아나, **방금 켠 기기**가
+  /// 밀려난 것처럼 보인다. 예전엔 "쥔 지 3분"으로 쟀는데, 켜자마자 백그라운드로 갔다 3분 뒤 돌아오면
+  /// 구제 창이 지나 덮개가 떴다(2026-10-04 출시 전 리뷰) — 시간이 아니라 첫 업로드로 잰다.
+  static bool firstUploadPending = false;
+
+  /// 쥘 때마다 오른다 — 업로드가 나간 사이 다른 호출이 이미 다시 쥐었는지 알아보는 데 쓴다
+  /// (동시에 두 업로드가 409 를 받으면 둘째가 다시 쥐지 않고 덮개를 켰다).
+  static int claimEpoch = 0;
 
   /// 다른 기기에 밀려났다. 화면이 게임을 덮고, 업로더는 더 올리지 않는다.
   static final taken = ValueNotifier<bool>(false);
@@ -48,7 +54,8 @@ class DeviceSession {
   static void reset() {
     claimed = false;
     claimedUser = null;
-    claimedAt = null;
+    firstUploadPending = false;
+    claimEpoch = 0;
     triedAt = null;
     taken.value = false;
   }

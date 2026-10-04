@@ -1979,6 +1979,21 @@ void main() {
         expect(r.extra['clamped'], isFalse);
       });
 
+      test('기기에만 있는 대기 결과(고르기 응답 유실)는 지우고 clamped 로 알린다', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.legendary)], seq: 1),
+        );
+        final stale = before.fairy.copyWith(
+          reroll: FairyReroll(fairyId: 'f1', sub: sub, baseRoll: 5, subRoll: 5),
+        );
+        final r = actions.mergeSave(
+          before,
+          before.copyWith(fairy: stale).toJson(),
+        );
+        expect(r.save!.fairy.reroll, isNull);
+        expect(r.extra['clamped'], isTrue);
+      });
+
       // 도감 칸 [n] 개(종류×등급 → 종류×부가 순서로 진짜 키만).
       Set<String> dexOf(int n) => {
         for (final k in fc.kinds)

@@ -342,11 +342,19 @@ Future<void> playEventDuel({
   final spec = driver.spec;
   DuelBug foe(int index) =>
       eventEnemyFor(data, spec, roundSeed, index + 1, locale);
+  // 결투 화면에 넘기는 함수들은 **바깥 화면의 context·ref 를 붙잡지 않는다** — 결투 중 바깥 화면이
+  // 사라지면 `AppLocalizations.of(context)` 가 null 로 앱을 죽이고(2026-10-03 1.0.14 크래시 계열),
+  // dispose 된 ConsumerState 의 `ref.read` 는 StateError 다(2026-10-04 출시 전 리뷰).
+  // 언어·네비게이터·컨트롤러는 한 판 사이에 바뀌지 않으므로 띄우기 전에 한 번 잡아 둔다.
+  final lz = AppLocalizations.of(context);
+  final host = Navigator.of(context).context;
+  final ctrl = ref.read(saveControllerProvider.notifier);
   // 그만하기 — 확인 → 확정 → 결과. 조준·싸우는 중·카드 창에서 같은 흐름.
   Future<bool> quitFlow() async {
-    final l = AppLocalizations.of(context);
+    final l = lz;
+    if (!host.mounted) return false;
     final ok = await showGameDialog<bool>(
-      context,
+      host,
       title: l.eventQuitTitle,
       icon: Icons.flag_rounded,
       content: Text(
@@ -361,31 +369,27 @@ Future<void> playEventDuel({
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          () => Navigator.pop(host, false),
           primary: false,
         ),
-        gameDialogButton(l.eventQuit, () => Navigator.pop(context, true)),
+        gameDialogButton(l.eventQuit, () => Navigator.pop(host, true)),
       ],
     );
-    if (ok != true || !context.mounted) return false;
+    if (ok != true || !host.mounted) return false;
     if (!await driver.quit()) {
       // 실패를 알리지 않으면 조준 화면으로 돌아가 3초 뒤 저절로 던져졌다(2026-09-30 점검).
-      if (context.mounted) showCenterToast(context, l.eventQuitFailed);
+      if (host.mounted) showCenterToast(host, l.eventQuitFailed);
       return false;
     }
     final save = driver.quitSave;
     if (save != null) {
-      await ref.read(saveControllerProvider.notifier).adoptServerSave(save);
+      await ctrl.adoptServerSave(save);
     }
-    if (!context.mounted) return true;
-    await _showEventResult(context, driver, dev: dev);
+    if (!host.mounted) return true;
+    await _showEventResult(host, driver, dev: dev);
     return true;
   }
 
-  // 결투 화면에 넘기는 함수들은 **바깥 화면의 context 를 붙잡지 않는다** — 결투 중 바깥 화면이
-  // 사라지면 `AppLocalizations.of(context)` 가 null 로 앱을 죽인다(2026-10-03 1.0.14 크래시 계열).
-  // 언어는 한 판 사이에 바뀌지 않으므로 띄우기 전에 한 번 잡아 둔다.
-  final lz = AppLocalizations.of(context);
   await Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => DuelArenaScreen(
@@ -410,11 +414,11 @@ Future<void> playEventDuel({
         mineStatus: () => eventBuffChips(lz, driver.preview),
         onQuit: quitFlow,
         between: (last) async {
-          if (driver.cards.isEmpty || !context.mounted) return false;
+          if (driver.cards.isEmpty || !host.mounted) return false;
           // 카드 창의 그만하기 → 확인 → 취소하면 카드 창을 다시 연다.
           while (true) {
-            if (!context.mounted) return false;
-            final pick = await _pickCard(context, driver);
+            if (!host.mounted) return false;
+            final pick = await _pickCard(host, driver);
             // 안드로이드 뒤로가기로 닫혔다 — 카드 없이 던지면 서버가 거절해 판이 끊겼다
             // (참가권은 이미 썼다, 2026-09-30 점검). 다시 연다.
             if (pick == null) continue;
@@ -427,13 +431,9 @@ Future<void> playEventDuel({
         },
         onFinished: (last) async {
           final save = last.save;
-          if (save != null) {
-            await ref
-                .read(saveControllerProvider.notifier)
-                .adoptServerSave(save);
-          }
-          if (!context.mounted) return;
-          await _showEventResult(context, driver, dev: dev);
+          if (save != null) await ctrl.adoptServerSave(save);
+          if (!host.mounted) return;
+          await _showEventResult(host, driver, dev: dev);
         },
       ),
     ),

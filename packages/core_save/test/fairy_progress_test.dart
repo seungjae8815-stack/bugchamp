@@ -714,6 +714,18 @@ void main() {
       );
     });
 
+    test('고를 결과가 걸린 요정은 자동 합성 재료가 아니다', () {
+      final s = withFairies([for (var i = 1; i <= 3; i++) f(i)]).copyWith(
+        reroll: FairyReroll(fairyId: 'f1', sub: sub, baseRoll: 1, subRoll: 1),
+      );
+      expect(fairyIsFodder(s, s.fairyById('f1')!), isFalse);
+      expect(
+        (autoMergeFairies(s, cfg, Random(1)).extra['made']! as List),
+        isEmpty,
+        reason: '나머지 2마리로는 일반 3합성이 안 된다',
+      );
+    });
+
     test('재굴림 고르기: 받으면 부가·개체값만 바뀌고(레벨·등급 그대로) 도감에 적힌다', () {
       final s = withFairies([f(1, g: FairyGrade.legendary, lv: 7)]);
       final rolled = rollFairyReroll(

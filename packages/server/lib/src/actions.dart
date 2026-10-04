@@ -1231,7 +1231,15 @@ class GameActions {
       // 재굴림 칸(서버 소유)은 **잘림 판정 전에** 저장본으로 맞춘다. 1.0.15 앱은 이 칸을 몰라 늘 비워 올려서,
       // 판정 안에서 되돌리면 매 업로드가 `clamped` → 세이브 왕복이 됐다(2026-10-04 호환 점검).
       final rr = _keepRerollFields(stored.fairy, capped.fairy);
-      if (!identical(rr, capped.fairy)) capped = capped.copyWith(fairy: rr);
+      if (!identical(rr, capped.fairy)) {
+        // 기기가 **서버와 다른 대기 결과**를 들고 있다(고르기 응답 유실 등) — 알려서 채택하게 한다.
+        // 비워 올린 것(1.0.15 앱)은 알리지 않는다 — 알리면 매 업로드가 되튄다.
+        if (capped.fairy.reroll != null &&
+            capped.fairy.reroll != stored.fairy.reroll) {
+          clampReasons.add('fairy');
+        }
+        capped = capped.copyWith(fairy: rr);
+      }
       final fy = _enforceFairy(stored, capped, fairyCfg);
       if (!identical(fy, capped)) clampReasons.add('fairy');
       capped = fy;

@@ -225,7 +225,7 @@ FairyState grantFairyItems(
 /// 자동 합성 재료로 쓸 수 있나 — 동행 중·레벨 2 이상(투자한 요정)은 빠진다
 /// (곤충 자동 합성과 같은 원칙: 투자한 개체가 조용히 사라지면 클레임).
 bool fairyIsFodder(FairyState s, Fairy f) =>
-    f.id != s.companionId && f.level <= 1;
+    f.id != s.companionId && f.level <= 1 && f.id != s.reroll?.fairyId;
 
 /// 같은 종류·같은 등급 [FairyConfig.mergeCountOf] 마리 → 한 등급 위 1마리(등급 오름은 확정).
 /// 마릿수는 재료 등급마다 다를 수 있다(2026-10-04: 영웅 → 전설만 4마리).

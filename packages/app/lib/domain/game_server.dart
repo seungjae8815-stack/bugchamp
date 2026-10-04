@@ -683,7 +683,8 @@ class HttpGameServer implements GameServer {
   void _markClaimed() {
     DeviceSession.claimed = true;
     DeviceSession.claimedUser = _client.auth.currentUser?.id;
-    DeviceSession.claimedAt = DateTime.now();
+    DeviceSession.firstUploadPending = true;
+    DeviceSession.claimEpoch++;
   }
 
   Future<void> _ensureSession({bool force = false}) async {
@@ -699,7 +700,7 @@ class HttpGameServer implements GameServer {
     final r = await _send('POST', '/session/claim', {
       'session': DeviceSession.id,
     });
-    if (r.isOk) _markClaimed();
+    if (r.isOk && r.data?['claimed'] == true) _markClaimed();
   }
 
   /// 켤 때의 첫 조회가 곧 접속이다 — 쥔 뒤에 서버 저장본을 받아야 그 사이 다른 기기의
@@ -772,22 +773,27 @@ class HttpGameServer implements GameServer {
       'guildTally': ?tally,
       'session': ?(_claimedHere ? DeviceSession.id : null),
     });
+    final epoch = DeviceSession.claimEpoch;
     var r = await send();
-    // 방금(3분 안) 쥐었는데 밀려났다 = 옛 기기의 쓰기와 겹쳐 표식이 되돌려진 경쟁이다
-    // ([DeviceSession.claimedAt]). 한 번만 다시 쥐고 다시 올린다. 진짜로 밀려난 기기는
-    // 쥔 지 오래라 여기 걸리지 않는다.
-    final at = DeviceSession.claimedAt;
-    if (isSessionTaken(r) &&
-        at != null &&
-        DateTime.now().difference(at) < const Duration(minutes: 3)) {
-      DeviceSession.claimed = false;
-      DeviceSession.claimedAt = null; // 두 번은 안 한다
-      await _ensureSession(force: true);
-      if (_claimedHere) {
-        DeviceSession.claimedAt = null;
+    if (isSessionTaken(r)) {
+      if (DeviceSession.claimEpoch != epoch && _claimedHere) {
+        // 이 업로드가 나간 사이 다른 호출이 이미 다시 쥐었다 — 새 표식으로 한 번 더 올린다.
         r = await send();
+      } else if (DeviceSession.firstUploadPending) {
+        // 쥔 뒤 첫 업로드인데 밀려났다 = 다른 쓰기와 겹쳐 표식이 되돌려진 경쟁이다
+        // ([DeviceSession.firstUploadPending]). 한 번만 다시 쥐고 다시 올린다. 진짜로 밀려난 기기는
+        // 이미 첫 업로드를 통과했으니 여기 걸리지 않는다.
+        DeviceSession.firstUploadPending = false; // 두 번은 안 한다
+        DeviceSession.claimed = false;
+        await _ensureSession(force: true);
+        if (_claimedHere) {
+          DeviceSession.firstUploadPending = false;
+          r = await send();
+        }
       }
     }
+    // 표식을 실은 업로드가 통과했다 — 이제부터 "밀려남"은 진짜다.
+    if (r.isOk && _claimedHere) DeviceSession.firstUploadPending = false;
     if (r.isOk && tally != null) GuildWarTally.sent();
     // 다른 기기가 나중에 켜졌다 — 이 기기의 세이브는 낡았다.
     if (isSessionTaken(r)) DeviceSession.taken.value = true;

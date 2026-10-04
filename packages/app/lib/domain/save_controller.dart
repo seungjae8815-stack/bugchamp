@@ -3433,6 +3433,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
       return const FairyOp.fail('network');
     }
     final r = await call(server);
+    // 서버엔 고를 결과가 없다 — 고르기 응답이 유실됐거나 업로드가 정리했다. 기기만 대기 중이라 믿고 있으면
+    // 재굴림이 영영 막히므로 서버 세이브를 받아 맞춘다(2026-10-04 출시 전 리뷰).
+    if (r.error == 'no_reroll') {
+      final st = await server.fetchState();
+      final fresh = st.save;
+      if (st.isOk && fresh != null) await adoptServerSave(fresh);
+      return FairyOp.ok(state.requireValue.fairy);
+    }
     final json = r.save;
     if (!r.isOk || json == null) return FairyOp.fail(r.error ?? 'network');
     await adoptServerSave(json);
@@ -3998,6 +4006,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
       var tail = alive.length - 1;
       while (targetIdx < alive.length) {
         final target = alive[targetIdx];
+        // 다음 후보로 넘어가며 재료를 처음부터 다시 훑으므로, 이미 재료로 쓰인 개체가 대상 자리에 올 수 있다.
+        if (consumed.contains(target.id)) {
+          targetIdx++;
+          continue;
+        }
         var pot = upgraded[target.id] ?? target.potential;
         if (pot >= cfg.synthMaxPotential) {
           targetIdx++; // 이미 만렙이면 다음 후보를 올린다

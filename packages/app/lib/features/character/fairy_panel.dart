@@ -1306,7 +1306,13 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(l.fairyReroll('${_rerollLeft(fs, cfg)}')),
+                            // 좁은 창에서 젤리 가격까지 한 줄에 안 들어가면 문구가 줄을 바꾼다(12px 넘침).
+                            Flexible(
+                              child: Text(
+                                l.fairyReroll('${_rerollLeft(fs, cfg)}'),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                             if (_rerollLeft(fs, cfg) > 0) ...[
                               const SizedBox(width: 4),
                               jellyPrice(cost: cfg.rerollJelly),
@@ -1484,6 +1490,12 @@ class _RerollChooseState extends ConsumerState<_RerollChooseDialog> {
       title: l.fairyRerollTitle,
       subtitle: l.fairyRerollPick,
       actions: [
+        // 고르지 않고 닫기 — 결과는 남아 다음에 재굴림을 누르면 다시 뜬다. 연결이 끊겨 두 버튼이 다 실패해도
+        // 창에 갇히지 않게(iOS 는 뒤로가기가 없다, 2026-10-04 출시 전 리뷰).
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: Text(l.actionClose),
+        ),
         TextButton(
           onPressed: _busy ? null : () => _choose(false),
           child: Text(l.fairyRerollKeep),
