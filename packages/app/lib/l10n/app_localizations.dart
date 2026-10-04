@@ -7573,7 +7573,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyRerollConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Rerolls the bonus stat and stat values.\nYou can keep the current values after seeing the result (it never gets worse).\nUses per day are limited.'**
+  /// **'Rerolls the bonus stat and its values.\nIf you don\'t like the result,\nyou can keep the current values.\n\nUses per day are limited.'**
   String get fairyRerollConfirm;
 
   /// No description provided for @fairyRerollPick.

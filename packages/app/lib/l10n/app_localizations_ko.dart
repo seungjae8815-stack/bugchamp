@@ -4315,7 +4315,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get fairyRerollConfirm =>
-      '부가 능력치와 능력치 수치를 새로 굴려요.\n결과를 보고 지금 값을 지킬 수도 있어요(나빠지지 않아요).\n하루에 쓸 수 있는 횟수가 정해져 있어요.';
+      '부가 능력치와 수치를 새로 굴려요.\n결과가 마음에 들지 않으면\n지금 값을 그대로 지킬 수 있어요.\n\n하루 사용 횟수가 정해져 있어요.';
 
   @override
   String get fairyRerollPick => '어느 쪽으로 할까요?';

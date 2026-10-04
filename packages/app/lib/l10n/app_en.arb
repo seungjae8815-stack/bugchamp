@@ -2798,7 +2798,7 @@
   "fairyMergeEpicNote": "Epic → Legendary merges need {n}.",
   "fairyReroll": "Reroll {left}/{max}",
   "fairyRerollTitle": "Fairy reroll",
-  "fairyRerollConfirm": "Rerolls the bonus stat and stat values.\nYou can keep the current values after seeing the result (it never gets worse).\nUses per day are limited.",
+  "fairyRerollConfirm": "Rerolls the bonus stat and its values.\nIf you don't like the result,\nyou can keep the current values.\n\nUses per day are limited.",
   "fairyRerollPick": "Which one do you want?",
   "fairyRerollNow": "Current",
   "fairyRerollNew": "New",

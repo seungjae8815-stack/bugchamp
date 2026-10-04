@@ -4398,7 +4398,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fairyRerollConfirm =>
-      'Rerolls the bonus stat and stat values.\nYou can keep the current values after seeing the result (it never gets worse).\nUses per day are limited.';
+      'Rerolls the bonus stat and its values.\nIf you don\'t like the result,\nyou can keep the current values.\n\nUses per day are limited.';
 
   @override
   String get fairyRerollPick => 'Which one do you want?';

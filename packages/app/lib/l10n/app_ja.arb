@@ -1441,7 +1441,7 @@
   "fairyMergeEpicNote": "英雄 → 伝説の合成には{n}体必要です。",
   "fairyReroll": "再抽選 {left}/{max}",
   "fairyRerollTitle": "妖精の再抽選",
-  "fairyRerollConfirm": "サブ能力と能力値を引き直します。\n結果を見て今の値を残すこともできます（悪くなりません）。\n1日に使える回数に上限があります。",
+  "fairyRerollConfirm": "サブ能力と数値を引き直します。\n結果が気に入らなければ\n今の値をそのまま残せます。\n\n1日に使える回数に上限があります。",
   "fairyRerollPick": "どちらにしますか？",
   "fairyRerollNow": "現在",
   "fairyRerollNew": "新しい結果",

@@ -4307,7 +4307,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get fairyRerollConfirm =>
-      'サブ能力と能力値を引き直します。\n結果を見て今の値を残すこともできます（悪くなりません）。\n1日に使える回数に上限があります。';
+      'サブ能力と数値を引き直します。\n結果が気に入らなければ\n今の値をそのまま残せます。\n\n1日に使える回数に上限があります。';
 
   @override
   String get fairyRerollPick => 'どちらにしますか？';
