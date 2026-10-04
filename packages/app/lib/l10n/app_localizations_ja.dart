@@ -4293,6 +4293,44 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fairyMerge => '合成';
 
   @override
+  String fairyMergeEpicNote(String n) {
+    return '英雄 → 伝説の合成には$n体必要です。';
+  }
+
+  @override
+  String fairyReroll(String left, String max) {
+    return '再抽選 $left/$max';
+  }
+
+  @override
+  String get fairyRerollTitle => '妖精の再抽選';
+
+  @override
+  String get fairyRerollConfirm =>
+      'サブ能力と能力値を引き直します。\n結果を見て今の値を残すこともできます（悪くなりません）。\n1日に使える回数に上限があります。';
+
+  @override
+  String get fairyRerollPick => 'どちらにしますか？';
+
+  @override
+  String get fairyRerollNow => '現在';
+
+  @override
+  String get fairyRerollNew => '新しい結果';
+
+  @override
+  String get fairyRerollKeep => '今の値を残す';
+
+  @override
+  String get fairyRerollTake => '新しい値にする';
+
+  @override
+  String get fairyRerollCap => '今日の再抽選はすべて使いました。明日また使えます。';
+
+  @override
+  String get fairyRerollNetwork => 'サーバー接続が必要です。少し待ってから再試行してください。';
+
+  @override
   String fairyMergeHint(String n) {
     return '同じ種類・等級$n体 → 同じ種類の1段階上1体。基本・付加能力は新しい等級で改めて決まります。';
   }

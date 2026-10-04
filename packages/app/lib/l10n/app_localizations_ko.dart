@@ -4301,6 +4301,44 @@ class AppLocalizationsKo extends AppLocalizations {
   String get fairyMerge => '합성';
 
   @override
+  String fairyMergeEpicNote(String n) {
+    return '영웅 → 전설 합성은 $n마리가 필요해요.';
+  }
+
+  @override
+  String fairyReroll(String left, String max) {
+    return '재굴림 $left/$max';
+  }
+
+  @override
+  String get fairyRerollTitle => '요정 재굴림';
+
+  @override
+  String get fairyRerollConfirm =>
+      '부가 능력치와 능력치 수치를 새로 굴려요.\n결과를 보고 지금 값을 지킬 수도 있어요(나빠지지 않아요).\n하루에 쓸 수 있는 횟수가 정해져 있어요.';
+
+  @override
+  String get fairyRerollPick => '어느 쪽으로 할까요?';
+
+  @override
+  String get fairyRerollNow => '지금';
+
+  @override
+  String get fairyRerollNew => '새 결과';
+
+  @override
+  String get fairyRerollKeep => '지금 값 유지';
+
+  @override
+  String get fairyRerollTake => '새 값으로';
+
+  @override
+  String get fairyRerollCap => '오늘 재굴림을 모두 썼어요. 내일 다시 할 수 있어요.';
+
+  @override
+  String get fairyRerollNetwork => '서버에 연결되어야 할 수 있어요. 잠시 뒤 다시 시도해 주세요.';
+
+  @override
   String fairyMergeHint(String n) {
     return '같은 종류·등급 $n마리 → 같은 종류 한 등급 위 1마리. 기본·부가 능력치는 새 등급에서 새로 정해져요.';
   }

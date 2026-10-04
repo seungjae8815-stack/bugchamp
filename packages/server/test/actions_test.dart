@@ -1873,17 +1873,18 @@ void main() {
       SaveGame withFairy(FairyState f, {int jelly = 0}) =>
           stored().copyWith(fairy: f, materials: {MaterialKind.jelly: jelly});
 
-      test('합성은 통과한다(등급 가치 합이 그대로)', () {
+      test('합성은 통과한다(등급 가치 합이 늘지 않는다 — 영웅 → 전설 4마리)', () {
         final before = withFairy(
           FairyState(
-            fairies: [for (var i = 1; i <= 3; i++) fy(i, FairyGrade.epic)],
-            seq: 3,
+            fairies: [for (var i = 1; i <= 4; i++) fy(i, FairyGrade.epic)],
+            seq: 4,
           ),
         );
         final merged = mergeFairies(before.fairy, fc, [
           'f1',
           'f2',
           'f3',
+          'f4',
         ], Random(1)).state!;
         final r = actions.mergeSave(
           before,
@@ -1891,6 +1892,72 @@ void main() {
         );
         expect(r.save!.fairy, merged);
         expect(r.extra['clamped'], isFalse);
+      });
+
+      // 재굴림(2026-10-04, 조정안 C) — 서버가 굴리고, 업로드로는 대기 결과·횟수를 못 바꾼다.
+      test('재굴림: 젤리를 쓰고 대기 결과를 적는다 · 고르면 바뀐다', () {
+        final before = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.legendary)], seq: 1),
+          jelly: 100,
+        );
+        final r = actions.fairyReroll(before, 'f1');
+        expect(r.isOk, isTrue);
+        expect(r.save!.materialCount(MaterialKind.jelly), 100 - fc.rerollJelly);
+        final pending = r.save!.fairy.reroll!;
+        expect(pending.fairyId, 'f1');
+        expect(
+          r.save!.fairy.fairyById('f1')!.baseRoll,
+          0,
+          reason: '고르기 전엔 그대로',
+        );
+        expect(actions.fairyReroll(r.save!, 'f1').error, 'reroll_pending');
+
+        final keep = actions.fairyRerollChoose(r.save!, accept: false);
+        expect(keep.save!.fairy.reroll, isNull);
+        expect(keep.save!.fairy.fairyById('f1')!.baseRoll, 0);
+        final take = actions.fairyRerollChoose(r.save!, accept: true);
+        final f = take.save!.fairy.fairyById('f1')!;
+        expect(f.baseRoll, pending.baseRoll);
+        expect(f.sub, pending.sub);
+        expect(f.grade, FairyGrade.legendary);
+      });
+
+      test('재굴림: 하루 횟수를 넘으면 막는다', () {
+        var s = withFairy(
+          FairyState(fairies: [fy(1, FairyGrade.legendary)], seq: 1),
+          jelly: 10000,
+        );
+        for (var i = 0; i < fc.rerollDailyCap; i++) {
+          s = actions.fairyReroll(s, 'f1').save!;
+          s = actions.fairyRerollChoose(s, accept: false).save!;
+        }
+        expect(actions.fairyReroll(s, 'f1').error, 'reroll_cap');
+      });
+
+      test('재굴림: 업로드로 대기 결과를 지어내거나 횟수를 되돌리지 못한다', () {
+        final before = withFairy(
+          FairyState(
+            fairies: [fy(1, FairyGrade.legendary)],
+            seq: 1,
+            rerollDay: '2026-08-15',
+            rerollCount: 5,
+          ),
+        );
+        final forged = before.fairy.copyWith(
+          reroll: FairyReroll(
+            fairyId: 'f1',
+            sub: sub,
+            baseRoll: kFairyRollMax,
+            subRoll: kFairyRollMax,
+          ),
+          rerollCount: 0,
+        );
+        final r = actions.mergeSave(
+          before,
+          before.copyWith(fairy: forged).toJson(),
+        );
+        expect(r.save!.fairy.reroll, isNull);
+        expect(r.save!.fairy.rerollCount, 5);
       });
 
       // 도감 칸 [n] 개(종류×등급 → 종류×부가 순서로 진짜 키만).

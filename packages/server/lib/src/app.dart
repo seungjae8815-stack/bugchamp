@@ -814,6 +814,56 @@ Handler buildHandler({
     });
 
     /// 돌파 시작 — 레벨 상한을 올린다(재화 소비 + 타이머). 스탯에 직결돼 PvP 영향.
+    /// 요정 재굴림(2026-10-04, 조정안 C) — 서버가 굴려 대기 결과로 적는다. 앱은 직전에 세이브를 올린다
+    /// (`flushSaveBeforeServerAction`) — 안 그러면 최근 진행이 서버 저장본으로 덮인다.
+    authed.post('/fairy/reroll', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final id = body['fairyId']?.toString() ?? '';
+      if (id.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.fairyReroll(save, id);
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson(), ...r.extra});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[fairy/reroll] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 재굴림 결과 고르기 — `accept: true` 면 새 값, 아니면 원래 값.
+    authed.post('/fairy/reroll/choose', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.fairyRerollChoose(
+          save,
+          accept: body['accept'] == true,
+        );
+        if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        await store.save(user.id, r.save!.toJson());
+        return _json({'save': r.save!.toJson()});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[fairy/reroll/choose] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
     authed.post('/breakthrough', (Request req) async {
       final user = userOf(req);
       final Map<String, dynamic> body;

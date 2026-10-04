@@ -4384,6 +4384,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fairyMerge => 'Merge';
 
   @override
+  String fairyMergeEpicNote(String n) {
+    return 'Epic → Legendary merges need $n.';
+  }
+
+  @override
+  String fairyReroll(String left, String max) {
+    return 'Reroll $left/$max';
+  }
+
+  @override
+  String get fairyRerollTitle => 'Fairy reroll';
+
+  @override
+  String get fairyRerollConfirm =>
+      'Rerolls the bonus stat and stat values.\nYou can keep the current values after seeing the result (it never gets worse).\nUses per day are limited.';
+
+  @override
+  String get fairyRerollPick => 'Which one do you want?';
+
+  @override
+  String get fairyRerollNow => 'Current';
+
+  @override
+  String get fairyRerollNew => 'New';
+
+  @override
+  String get fairyRerollKeep => 'Keep current';
+
+  @override
+  String get fairyRerollTake => 'Use new';
+
+  @override
+  String get fairyRerollCap => 'No rerolls left today. Try again tomorrow.';
+
+  @override
+  String get fairyRerollNetwork =>
+      'Needs a server connection. Please try again shortly.';
+
+  @override
   String fairyMergeHint(String n) {
     return '$n of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade.';
   }

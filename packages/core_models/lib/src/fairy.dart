@@ -240,6 +240,58 @@ class FairyNest {
 /// 요정 시스템 전체 상태. 세이브에는 **이 객체 하나**로 들어간다 —
 /// 필드를 SaveGame 에 흩어 놓으면 구버전 호환 목록(`_fieldsSinceFeat`)이 여러 줄이 된다.
 @immutable
+/// 재굴림 대기 결과(2026-10-04, 1.0.16 — design_fairy.md 조정안 C).
+///
+/// 서버가 굴려 여기 적어 두고, 유저가 **새 값을 쓸지 원래 값을 지킬지** 고르면 지운다. 결과를 세이브에
+/// 먼저 적는 이유 = 고르기 전에 앱을 껐다 켜서 공짜로 다시 굴리지 못하게.
+@immutable
+class FairyReroll {
+  const FairyReroll({
+    required this.fairyId,
+    required this.sub,
+    required this.baseRoll,
+    required this.subRoll,
+  });
+
+  final String fairyId;
+  final String sub;
+  final int baseRoll;
+  final int subRoll;
+
+  /// 개체값 두 개의 평균(0~1) — [Fairy.quality] 와 같은 식.
+  double get quality => (baseRoll + subRoll) / (2 * kFairyRollMax);
+
+  Map<String, dynamic> toJson() => {
+    'i': fairyId,
+    'b': sub,
+    'r': baseRoll,
+    'u': subRoll,
+  };
+
+  static FairyReroll? fromJson(Map<String, dynamic> json) {
+    final id = json['i'];
+    final sub = json['b'];
+    if (id is! String || sub is! String) return null;
+    return FairyReroll(
+      fairyId: id,
+      sub: sub,
+      baseRoll: _roll(json['r']),
+      subRoll: _roll(json['u']),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is FairyReroll &&
+      other.fairyId == fairyId &&
+      other.sub == sub &&
+      other.baseRoll == baseRoll &&
+      other.subRoll == subRoll;
+
+  @override
+  int get hashCode => Object.hash(fairyId, sub, baseRoll, subRoll);
+}
+
 class FairyState {
   const FairyState({
     this.fairies = const [],
@@ -255,9 +307,19 @@ class FairyState {
     this.dexClaimed = 0,
     this.exchangeDay = '',
     this.exchangedDust = 0,
+    this.reroll,
+    this.rerollDay = '',
+    this.rerollCount = 0,
   });
 
   static const FairyState empty = FairyState();
+
+  /// 재굴림 대기 결과(고르기 전). ⚠️ 서버만 쓴다 — 업로드는 저장본 값으로 덮인다.
+  final FairyReroll? reroll;
+
+  /// 재굴림 하루 상한용 — 날짜 키(KST)와 그날 쓴 횟수. 서버가 세고, 업로드로 줄일 수 없다.
+  final String rerollDay;
+  final int rerollCount;
 
   final List<Fairy> fairies;
   final List<FairyEgg> eggs;
@@ -327,6 +389,10 @@ class FairyState {
     int? dexClaimed,
     String? exchangeDay,
     int? exchangedDust,
+    FairyReroll? reroll,
+    bool clearReroll = false,
+    String? rerollDay,
+    int? rerollCount,
   }) => FairyState(
     fairies: fairies ?? this.fairies,
     eggs: eggs ?? this.eggs,
@@ -341,6 +407,9 @@ class FairyState {
     dexClaimed: dexClaimed ?? this.dexClaimed,
     exchangeDay: exchangeDay ?? this.exchangeDay,
     exchangedDust: exchangedDust ?? this.exchangedDust,
+    reroll: clearReroll ? null : (reroll ?? this.reroll),
+    rerollDay: rerollDay ?? this.rerollDay,
+    rerollCount: rerollCount ?? this.rerollCount,
   );
 
   /// 기본값인 칸은 적지 않는다(세이브 크기).
@@ -358,6 +427,9 @@ class FairyState {
     if (dexClaimed != 0) 'm': dexClaimed,
     if (exchangeDay.isNotEmpty) 'xd': exchangeDay,
     if (exchangedDust != 0) 'xn': exchangedDust,
+    if (reroll != null) 'rp': reroll!.toJson(),
+    if (rerollDay.isNotEmpty) 'rd': rerollDay,
+    if (rerollCount != 0) 'rn': rerollCount,
   };
 
   /// 깨진 칸은 건너뛴다 — 세이브 파서는 던지지 않는다(구버전·조작 세이브 방어).
@@ -398,6 +470,11 @@ class FairyState {
       dexClaimed: _int(json['m'], 0).clamp(0, 1000),
       exchangeDay: json['xd'] is String ? json['xd'] as String : '',
       exchangedDust: _int(json['xn'], 0).clamp(0, 1 << 30),
+      reroll: json['rp'] is Map
+          ? FairyReroll.fromJson(Map<String, dynamic>.from(json['rp'] as Map))
+          : null,
+      rerollDay: json['rd'] is String ? json['rd'] as String : '',
+      rerollCount: _int(json['rn'], 0).clamp(0, 1000),
     );
   }
 
@@ -417,7 +494,10 @@ class FairyState {
       other.seq == seq &&
       other.dexClaimed == dexClaimed &&
       other.exchangeDay == exchangeDay &&
-      other.exchangedDust == exchangedDust;
+      other.exchangedDust == exchangedDust &&
+      other.reroll == reroll &&
+      other.rerollDay == rerollDay &&
+      other.rerollCount == rerollCount;
 
   @override
   int get hashCode => Object.hash(
@@ -431,6 +511,9 @@ class FairyState {
     dexClaimed,
     exchangeDay,
     exchangedDust,
+    reroll,
+    rerollDay,
+    rerollCount,
   );
 }
 

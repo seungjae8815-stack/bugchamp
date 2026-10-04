@@ -569,7 +569,7 @@ void main() {
   });
 
   group('뽑기', () {
-    test('천장: 10회째는 전설 이상 확정', () {
+    test('천장: 천장 회차째는 전설 이상 확정', () {
       // 천장 직전까지 전설이 안 나왔다고 친다.
       final s = FairyState(gachaPity: cfg.gachaPity - 1);
       for (var seed = 0; seed < 50; seed++) {
@@ -610,6 +610,134 @@ void main() {
   });
 
   group('상한 정리 · 등급 가치', () {
+    // 2026-10-04 사장님 확정(B안): 영웅 → 전설만 4마리.
+    test('영웅 → 전설은 4마리 · 3마리면 실패 · 다른 등급은 3마리', () {
+      expect(cfg.mergeCountOf(FairyGrade.epic), 4);
+      expect(cfg.mergeCountOf(FairyGrade.rare), 3);
+      final four = withFairies([
+        for (var i = 1; i <= 4; i++) f(i, g: FairyGrade.epic),
+      ]);
+      expect(
+        mergeFairies(four, cfg, ['f1', 'f2', 'f3'], Random(1)).error,
+        'bad_count',
+      );
+      final ok = mergeFairies(four, cfg, ['f1', 'f2', 'f3', 'f4'], Random(1));
+      expect(ok.state!.fairies.single.grade, FairyGrade.legendary);
+      expect(fairyStateValue(ok.state!), lessThan(fairyStateValue(four)));
+    });
+
+    test('자동 합성도 영웅은 4마리씩 — 3마리면 남겨 둔다', () {
+      final three = withFairies([
+        for (var i = 1; i <= 3; i++) f(i, g: FairyGrade.epic),
+      ]);
+      expect(
+        (autoMergeFairies(three, cfg, Random(1)).extra['made']! as List),
+        isEmpty,
+      );
+      final four = withFairies([
+        for (var i = 1; i <= 4; i++) f(i, g: FairyGrade.epic),
+      ]);
+      final made =
+          autoMergeFairies(four, cfg, Random(1)).extra['made']! as List<Fairy>;
+      expect(made.single.grade, FairyGrade.legendary);
+    });
+
+    // 2026-10-04 사장님 확정(C안): 재굴림 — 대기 결과 → 고르기.
+    test('재굴림: 결정론 · 젤리 · 하루 상한 · 대기 중엔 못 굴린다', () {
+      final s = withFairies([f(1, g: FairyGrade.legendary)]);
+      final a = rollFairyReroll(
+        s,
+        cfg,
+        Random(7),
+        fairyId: 'f1',
+        today: 'd',
+        jellyHave: 999,
+      );
+      final b = rollFairyReroll(
+        s,
+        cfg,
+        Random(7),
+        fairyId: 'f1',
+        today: 'd',
+        jellyHave: 999,
+      );
+      expect(a.state!.reroll, b.state!.reroll);
+      expect(a.jelly, cfg.rerollJelly);
+      expect(
+        rollFairyReroll(
+          a.state!,
+          cfg,
+          Random(1),
+          fairyId: 'f1',
+          today: 'd',
+          jellyHave: 999,
+        ).error,
+        'reroll_pending',
+      );
+      expect(
+        rollFairyReroll(
+          s,
+          cfg,
+          Random(1),
+          fairyId: 'f1',
+          today: 'd',
+          jellyHave: 0,
+        ).error,
+        'not_enough_jelly',
+      );
+      final capped = s.copyWith(
+        rerollDay: 'd',
+        rerollCount: cfg.rerollDailyCap,
+      );
+      expect(
+        rollFairyReroll(
+          capped,
+          cfg,
+          Random(1),
+          fairyId: 'f1',
+          today: 'd',
+          jellyHave: 999,
+        ).error,
+        'reroll_cap',
+      );
+      // 날이 바뀌면 다시 쓸 수 있다.
+      expect(
+        rollFairyReroll(
+          capped,
+          cfg,
+          Random(1),
+          fairyId: 'f1',
+          today: 'e',
+          jellyHave: 999,
+        ).isOk,
+        isTrue,
+      );
+    });
+
+    test('재굴림 고르기: 받으면 부가·개체값만 바뀌고(레벨·등급 그대로) 도감에 적힌다', () {
+      final s = withFairies([f(1, g: FairyGrade.legendary, lv: 7)]);
+      final rolled = rollFairyReroll(
+        s,
+        cfg,
+        Random(3),
+        fairyId: 'f1',
+        today: 'd',
+        jellyHave: 999,
+      ).state!;
+      final r = rolled.reroll!;
+      final take = chooseFairyReroll(rolled, accept: true).state!;
+      final x = take.fairyById('f1')!;
+      expect(
+        [x.sub, x.baseRoll, x.subRoll, x.level, x.grade],
+        [r.sub, r.baseRoll, r.subRoll, 7, FairyGrade.legendary],
+      );
+      expect(take.reroll, isNull);
+      expect(take.dex, contains(FairyState.dexSubKey(x.kind, r.sub)));
+      final keep = chooseFairyReroll(rolled, accept: false).state!;
+      expect(keep.fairyById('f1'), s.fairyById('f1'));
+      expect(keep.reroll, isNull);
+    });
+
     test('합성은 등급 가치 합을 바꾸지 않는다(서버 위조 판정의 근거)', () {
       final s = withFairies([
         for (var i = 1; i <= 3; i++) f(i, g: FairyGrade.legendary),

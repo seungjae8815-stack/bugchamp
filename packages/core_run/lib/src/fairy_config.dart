@@ -145,6 +145,7 @@ class FairyConfig {
     this.levelDustBase = const {},
     this.levelDustGrowth = 1.15,
     this.mergeCount = 3,
+    this.mergeCountByGrade = const {},
     this.mergeDustRefund = 0.7,
     this.hatchSec = const {},
     this.boxCap = 30,
@@ -160,6 +161,8 @@ class FairyConfig {
     this.gachaPityGrade = FairyGrade.legendary,
     this.exchangeDustPerJelly = 0,
     this.exchangeDustDailyCap = 0,
+    this.rerollJelly = 0,
+    this.rerollDailyCap = 0,
     this.dexMilestones = const [],
     this.drops = const FairyDrops(),
   });
@@ -188,8 +191,15 @@ class FairyConfig {
   final Map<FairyGrade, int> levelDustBase;
   final double levelDustGrowth;
 
-  /// 합성에 드는 같은 종류·같은 등급 수(확률 없음 — 곤충 합성과 같은 이유).
+  /// 합성에 드는 같은 종류·같은 등급 수(확률 없음 — 곤충 합성과 같은 이유). 기본값.
   final int mergeCount;
+
+  /// 재료 등급별 합성 수(없는 등급은 [mergeCount]). 2026-10-04 사장님 확정: **영웅 → 전설만 4마리**
+  /// — 무료 전설이 21일이라 너무 빨랐다(같은 등급 스킬 111일). [mergeCountOf] 로 읽는다.
+  final Map<FairyGrade, int> mergeCountByGrade;
+
+  /// [from] 등급 요정을 합성할 때 드는 마릿수.
+  int mergeCountOf(FairyGrade from) => mergeCountByGrade[from] ?? mergeCount;
 
   /// 합성·분해 때 재료 요정에 쓴 레벨업 가루를 돌려주는 비율(투자를 잃지 않게).
   final double mergeDustRefund;
@@ -231,6 +241,11 @@ class FairyConfig {
   /// 교환소에서 하루에 받을 수 있는 가루(2026-10-01 사장님 (가) — 1:1 유지 + 하루 상한).
   /// 한도 없이 팔면 "시간"이 아니라 "레벨(능력치)"을 파는 쪽이 된다(§2.8). 0 = 상한 없음.
   final int exchangeDustDailyCap;
+
+  /// 재굴림(2026-10-04, 조정안 C) — 가진 요정의 부가·개체값을 **서버가** 다시 굴린다(원래 값을 지킬 수 있다).
+  /// 1회 젤리 · 하루 횟수. 0 이면 끈다. 하루 상한이 없으면 돈으로 최고 개체값을 바로 사게 된다(§2.8).
+  final int rerollJelly;
+  final int rerollDailyCap;
 
   /// [gachaPity] 회째는 [gachaPityGrade] 이상 확정.
   final int gachaPity;
@@ -376,6 +391,7 @@ class FairyConfig {
     levelDustBase: _byGrade(json['levelDustBase'], (v) => v.toInt()),
     levelDustGrowth: (json['levelDustGrowth'] as num?)?.toDouble() ?? 1.15,
     mergeCount: (json['mergeCount'] as num?)?.toInt() ?? 3,
+    mergeCountByGrade: _byGrade(json['mergeCountByGrade'], (v) => v.toInt()),
     mergeDustRefund: (json['mergeDustRefund'] as num?)?.toDouble() ?? 0.7,
     hatchSec: _byGrade(json['hatchSec'], (v) => v.toInt()),
     boxCap: (json['boxCap'] as num?)?.toInt() ?? 30,
@@ -399,6 +415,8 @@ class FairyConfig {
     exchangeDustPerJelly:
         (json['exchangeDustPerJelly'] as num?)?.toDouble() ?? 0,
     exchangeDustDailyCap: (json['exchangeDustDailyCap'] as num?)?.toInt() ?? 0,
+    rerollJelly: (json['rerollJelly'] as num?)?.toInt() ?? 0,
+    rerollDailyCap: (json['rerollDailyCap'] as num?)?.toInt() ?? 0,
     gachaPityGrade: FairyGrade.fromKey(
       json['gachaPityGrade'] as String? ?? 'legendary',
     ),

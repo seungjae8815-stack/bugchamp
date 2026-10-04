@@ -277,6 +277,8 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
 String _err(AppLocalizations l, String? e) => switch (e) {
   'not_enough_jelly' => l.fairyErrJelly,
   'not_enough_dust' => l.fairyErrDust,
+  'reroll_cap' => l.fairyRerollCap,
+  'network' => l.fairyRerollNetwork,
   _ => l.fairyErrGeneric,
 };
 
@@ -1295,6 +1297,24 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
                       ),
                 child: Text(l.fairyMerge),
               ),
+              // 재굴림(2026-10-04) — 대기 결과가 있으면 그것부터 고르게 한다(다른 요정 것이어도).
+              if (cfg.rerollJelly > 0 && cfg.rerollDailyCap > 0)
+                OutlinedButton(
+                  onPressed: _busy ? null : () => _reroll(f, cfg),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l.fairyReroll(
+                          '${_rerollLeft(fs, cfg)}',
+                          '${cfg.rerollDailyCap}',
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      jellyPrice(cost: cfg.rerollJelly),
+                    ],
+                  ),
+                ),
               OutlinedButton(
                 onPressed: isComp || _busy ? null : () => _release(f, cfg),
                 child: Text(l.fairyRelease),
@@ -1303,6 +1323,41 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _reroll(Fairy f, FairyConfig cfg) async {
+    final l = AppLocalizations.of(context);
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final fs = ref.read(saveControllerProvider).requireValue.fairy;
+    // 고르지 않은 결과가 남아 있으면(앱을 껐다 켬 등) 새로 굴리지 않고 그것부터 고른다.
+    if (fs.reroll == null) {
+      if (_rerollLeft(fs, cfg) <= 0) {
+        showCenterToast(context, l.fairyRerollCap);
+        return;
+      }
+      final ok = await confirmJellySpend(
+        context,
+        title: l.fairyRerollTitle,
+        body: l.fairyRerollConfirm,
+        jelly: cfg.rerollJelly,
+      );
+      if (!ok || !mounted) return;
+      setState(() => _busy = true);
+      final r = await ctrl.fairyReroll(f.id);
+      if (!mounted) return;
+      setState(() => _busy = false);
+      if (!r.isOk) {
+        showCenterToast(context, _err(l, r.error));
+        return;
+      }
+    }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: const Color(0xB3000000),
+      builder: (_) => fairyButtons(const _RerollChooseDialog()),
     );
   }
 
@@ -1334,6 +1389,123 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
   }
 }
 
+/// 오늘 남은 재굴림 횟수(KST 날짜 — 서버와 같은 기준. 실제 판정은 서버가 한다).
+int _rerollLeft(FairyState fs, FairyConfig cfg) {
+  final k = DateTime.now().toUtc().add(const Duration(hours: 9));
+  final today =
+      '${k.year}-${k.month.toString().padLeft(2, '0')}-${k.day.toString().padLeft(2, '0')}';
+  final used = fs.rerollDay == today ? fs.rerollCount : 0;
+  return (cfg.rerollDailyCap - used).clamp(0, cfg.rerollDailyCap);
+}
+
+/// 재굴림 결과 고르기 — 지금 값과 새 값을 나란히 보여 준다. 바깥을 눌러 닫을 수 없다
+/// (고르지 않고 나가도 결과는 세이브에 남아, 다음에 재굴림을 누르면 이 창이 다시 뜬다).
+class _RerollChooseDialog extends ConsumerStatefulWidget {
+  const _RerollChooseDialog();
+
+  @override
+  ConsumerState<_RerollChooseDialog> createState() => _RerollChooseState();
+}
+
+class _RerollChooseState extends ConsumerState<_RerollChooseDialog> {
+  bool _busy = false;
+
+  Future<void> _choose(bool accept) async {
+    setState(() => _busy = true);
+    final r = await ref
+        .read(saveControllerProvider.notifier)
+        .fairyRerollChoose(accept: accept);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!r.isOk) {
+      showCenterToast(context, _err(AppLocalizations.of(context), r.error));
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).value!.fairyConfig!;
+    final r = save.fairy.reroll;
+    final f = r == null ? null : save.fairy.fairyById(r.fairyId);
+    if (r == null || f == null) {
+      // 고를 것이 없다(이미 골랐거나 요정이 사라짐). 사라진 요정의 결과는 서버에서 지운다.
+      return GameDialog(
+        title: l.fairyRerollTitle,
+        actions: [
+          FilledButton(
+            onPressed: _busy
+                ? null
+                : r == null
+                ? () => Navigator.of(context).pop()
+                : () => _choose(false),
+            child: Text(l.actionClose),
+          ),
+        ],
+        child: const SizedBox.shrink(),
+      );
+    }
+    final next = Fairy(
+      id: f.id,
+      kind: f.kind,
+      grade: f.grade,
+      sub: r.sub,
+      baseRoll: r.baseRoll,
+      subRoll: r.subRoll,
+      level: f.level,
+    );
+    Widget col(String head, Fairy x, Color color) => Expanded(
+      child: Column(
+        children: [
+          Text(
+            head,
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ..._statLines(l, x, cfg),
+        ],
+      ),
+    );
+    return GameDialog(
+      title: l.fairyRerollTitle,
+      subtitle: l.fairyRerollPick,
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => _choose(false),
+          child: Text(l.fairyRerollKeep),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : () => _choose(true),
+          child: Text(l.fairyRerollTake),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          fairyGlow(f, size: 72),
+          _gradeLine(l, f),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              col(l.fairyRerollNow, f, Colors.white70),
+              const SizedBox(width: 8),
+              col(l.fairyRerollNew, next, _honey),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── 합성 ─────────────────────────────────────────────────────
 
 /// [mainId] 에 같은 종류·등급 요정을 더 골라 합친다. 결과 능력치는 새로 굴린다(design_fairy.md §1.6).
@@ -1357,7 +1529,8 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
     final fs = save.fairy;
     final main = fs.fairyById(widget.mainId);
     if (main == null) return const SizedBox.shrink();
-    final need = cfg.mergeCount - 1;
+    // 재료 등급마다 마릿수가 다르다(2026-10-04: 영웅 → 전설만 4마리).
+    final need = cfg.mergeCountOf(main.grade) - 1;
     final cands = [
       for (final x in fs.fairies)
         if (x.id != main.id &&
@@ -1382,7 +1555,7 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            l.fairyMergeHint('${cfg.mergeCount}'),
+            l.fairyMergeHint('${need + 1}'),
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.white70, fontSize: 11.5),
           ),
@@ -1481,6 +1654,9 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
         x.id != fs.companionId &&
         x.grade.next != null &&
         (first == null || (x.kind == first.kind && x.grade == first.grade));
+    // 첫 번째로 고른 요정의 등급이 마릿수를 정한다(영웅 → 전설만 4마리, 2026-10-04).
+    final need = first == null ? cfg.mergeCount : cfg.mergeCountOf(first.grade);
+    final epicNeed = cfg.mergeCountOf(FairyGrade.epic);
     return GameDialog(
       title: l.fairyMerge,
       iconWidget: gameImageChain(
@@ -1498,7 +1674,7 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
           child: Text(l.fairyAutoMerge),
         ),
         FilledButton(
-          onPressed: _picked.length == cfg.mergeCount && !_busy ? _go : null,
+          onPressed: _picked.length == need && !_busy ? _go : null,
           child: Text(l.fairyMerge),
         ),
       ],
@@ -1506,13 +1682,19 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            l.fairyMergeHint('${cfg.mergeCount}'),
+            l.fairyMergeHint('$need'),
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.white70, fontSize: 11.5),
           ),
+          if (epicNeed != cfg.mergeCount && first == null)
+            Text(
+              l.fairyMergeEpicNote('$epicNeed'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _honey, fontSize: 11.5),
+            ),
           const SizedBox(height: 6),
           Text(
-            l.fairyMergePick('${_picked.length}', '${cfg.mergeCount}'),
+            l.fairyMergePick('${_picked.length}', '$need'),
             style: const TextStyle(
               color: _honey,
               fontSize: 12.5,
@@ -1556,7 +1738,7 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
                           showCenterToast(context, l.fairyMergeEquipped);
                           return;
                         }
-                        if (!pickable(x) || _picked.length >= cfg.mergeCount) {
+                        if (!pickable(x) || _picked.length >= need) {
                           return;
                         }
                         setState(() => _picked.add(x.id));
@@ -2333,6 +2515,11 @@ Future<void> _showFairyHelp(
               ),
             head(l.fairyHelpMergeHead),
             Text(l.fairyHelpMerge('${cfg.mergeCount}'), style: body),
+            if (cfg.mergeCountOf(FairyGrade.epic) != cfg.mergeCount)
+              Text(
+                l.fairyMergeEpicNote('${cfg.mergeCountOf(FairyGrade.epic)}'),
+                style: body,
+              ),
           ],
         ),
       ),

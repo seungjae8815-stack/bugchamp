@@ -227,7 +227,8 @@ FairyState grantFairyItems(
 bool fairyIsFodder(FairyState s, Fairy f) =>
     f.id != s.companionId && f.level <= 1;
 
-/// 같은 종류·같은 등급 [FairyConfig.mergeCount] 마리 → 한 등급 위 1마리(등급 오름은 확정).
+/// 같은 종류·같은 등급 [FairyConfig.mergeCountOf] 마리 → 한 등급 위 1마리(등급 오름은 확정).
+/// 마릿수는 재료 등급마다 다를 수 있다(2026-10-04: 영웅 → 전설만 4마리).
 ///
 /// **결과는 새로 굴린다**(2026-10-01 사장님 확정) — 종류는 재료와 같고, 기본 개체값·부가 능력치(종류)·
 /// 부가 개체값은 새 등급 범위에서 다시 굴린다. 합성할 때마다 좋은 개체를 노리는 뽑기가 된다.
@@ -241,7 +242,7 @@ FairyOp mergeFairies(
   List<String> ids,
   math.Random rng,
 ) {
-  if (ids.length != cfg.mergeCount || ids.toSet().length != ids.length) {
+  if (ids.isEmpty || ids.toSet().length != ids.length) {
     return const FairyOp.fail('bad_count');
   }
   final picked = <Fairy>[];
@@ -254,6 +255,9 @@ FairyOp mergeFairies(
   final first = picked.first;
   if (picked.any((f) => f.kind != first.kind || f.grade != first.grade)) {
     return const FairyOp.fail('mismatch');
+  }
+  if (ids.length != cfg.mergeCountOf(first.grade)) {
+    return const FairyOp.fail('bad_count');
   }
   final up = first.grade.next;
   if (up == null) return const FairyOp.fail('max_grade');
@@ -300,24 +304,28 @@ FairyOp autoMergeFairies(
   var cur = s;
   final made = <Fairy>[];
   var used = 0;
-  while (cfg.mergeCount > 0) {
+  while (true) {
     final groups = <String, List<Fairy>>{};
     for (final f in cur.fairies) {
       if (!fairyIsFodder(cur, f) || f.grade.next == null) continue;
+      if (cfg.mergeCountOf(f.grade) <= 0) continue;
       groups.putIfAbsent('${f.kind}|${f.grade.index}', () => []).add(f);
     }
-    final ready = groups.values.where((g) => g.length >= cfg.mergeCount);
+    final ready = groups.values.where(
+      (g) => g.length >= cfg.mergeCountOf(g.first.grade),
+    );
     if (ready.isEmpty) break;
     final before = made.length;
     for (final g in ready.toList()) {
+      final need = cfg.mergeCountOf(g.first.grade);
       g.sort((a, b) => a.quality.compareTo(b.quality));
       final op = mergeFairies(cur, cfg, [
-        for (final f in g.take(cfg.mergeCount)) f.id,
+        for (final f in g.take(need)) f.id,
       ], rng);
       if (!op.isOk) continue;
       cur = op.state!;
       made.add(op.extra['fairy']! as Fairy);
-      used += cfg.mergeCount;
+      used += need;
     }
     if (made.length == before) break; // 진행이 없으면 멈춘다(무한 반복 방지).
   }
@@ -331,6 +339,70 @@ FairyOp autoMergeFairies(
   // 일반 9 → 영웅 1 이 "12마리"로 부풀지 않는다, 2026-10-01 점검).
   used = s.fairies.where((f) => !alive.contains(f.id)).length;
   return FairyOp.ok(dryRun ? s : cur, extra: {'made': result, 'used': used});
+}
+
+/// 재굴림(2026-10-04, 조정안 C) — 가진 요정의 **부가 능력치·개체값을 새로 굴려 대기 결과로 적는다.**
+/// 요정은 아직 그대로다 — [chooseFairyReroll] 로 새 값/원래 값을 고른다(나빠지지 않는다).
+///
+/// ⚠️ **서버만 부른다**(`/fairy/reroll`). 기기에서 굴리면 서버의 정체 고정(`_keepFairyIdentity`)이 되돌리고,
+/// 그 고정을 풀면 개체값 위조가 열린다. 하루 횟수([today] = KST 날짜 키)도 서버가 센다.
+/// 굴리는 순서는 합성과 같다(부가 → 기본 개체값 → 부가 개체값). 결과 `extra['reroll']`.
+FairyOp rollFairyReroll(
+  FairyState s,
+  FairyConfig cfg,
+  math.Random rng, {
+  required String fairyId,
+  required String today,
+  required int jellyHave,
+}) {
+  if (cfg.rerollJelly <= 0 ||
+      cfg.rerollDailyCap <= 0 ||
+      cfg.subWeight.isEmpty) {
+    return const FairyOp.fail('off');
+  }
+  if (s.reroll != null) return const FairyOp.fail('reroll_pending');
+  if (s.fairyById(fairyId) == null) return const FairyOp.fail('no_fairy');
+  final used = s.rerollDay == today ? s.rerollCount : 0;
+  if (used >= cfg.rerollDailyCap) return const FairyOp.fail('reroll_cap');
+  if (jellyHave < cfg.rerollJelly)
+    return const FairyOp.fail('not_enough_jelly');
+  final r = FairyReroll(
+    fairyId: fairyId,
+    sub: cfg.rollSub(rng),
+    baseRoll: cfg.rollQuality(rng),
+    subRoll: cfg.rollQuality(rng),
+  );
+  return FairyOp.ok(
+    s.copyWith(reroll: r, rerollDay: today, rerollCount: used + 1),
+    jelly: cfg.rerollJelly,
+    extra: {'reroll': r},
+  );
+}
+
+/// 재굴림 결과를 고른다 — [accept] 면 새 부가·개체값으로 바꾸고(레벨·등급·종류는 그대로), 아니면 원래 값을 지킨다.
+/// 어느 쪽이든 대기 결과를 지운다. 그 사이 요정이 사라졌으면(합성·분해) 대기만 지운다. 서버가 부른다.
+FairyOp chooseFairyReroll(FairyState s, {required bool accept}) {
+  final r = s.reroll;
+  if (r == null) return const FairyOp.fail('no_reroll');
+  final f = s.fairyById(r.fairyId);
+  if (!accept || f == null) return FairyOp.ok(s.copyWith(clearReroll: true));
+  final made = Fairy(
+    id: f.id,
+    kind: f.kind,
+    grade: f.grade,
+    sub: r.sub,
+    baseRoll: r.baseRoll,
+    subRoll: r.subRoll,
+    level: f.level,
+  );
+  return FairyOp.ok(
+    s.copyWith(
+      fairies: [for (final x in s.fairies) x.id == f.id ? made : x],
+      clearReroll: true,
+      dex: _dexWith(s.dex, made),
+    ),
+    extra: {'fairy': made},
+  );
 }
 
 /// 레벨 +1(요정 가루). 골드는 쓰지 않는다(회차마다 초기화 — 스킬과 같은 이유).
@@ -446,7 +518,8 @@ Map<String, int> _add(Map<String, int> m, String key, int delta) {
 
 /// 등급 가치 — 일반 1 · 희귀 3 · 영웅 9 · 전설 27 · 신화 81.
 ///
-/// 합성은 같은 등급 3마리를 한 등급 위 1마리로 바꾸므로 **총합이 변하지 않는다**.
+/// 합성은 같은 등급 3마리를 한 등급 위 1마리로 바꾸므로 **총합이 변하지 않는다**
+/// (영웅 → 전설 4마리 합성은 36 → 27 로 **줄어든다** — 늘지 않는다는 성질은 그대로).
 /// 분해·넘침은 줄이기만 한다. 그래서 총합이 늘었다면 새 알이 들어온 것뿐이다 —
 /// 서버가 업로드에서 "알 없이 신화가 생겼다"를 이 값 하나로 잡는다.
 int fairyGradeValue(FairyGrade g) => math.pow(3, g.index).toInt();

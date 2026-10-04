@@ -7552,6 +7552,72 @@ abstract class AppLocalizations {
   /// **'Merge'**
   String get fairyMerge;
 
+  /// No description provided for @fairyMergeEpicNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic → Legendary merges need {n}.'**
+  String fairyMergeEpicNote(String n);
+
+  /// No description provided for @fairyReroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll {left}/{max}'**
+  String fairyReroll(String left, String max);
+
+  /// No description provided for @fairyRerollTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy reroll'**
+  String get fairyRerollTitle;
+
+  /// No description provided for @fairyRerollConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Rerolls the bonus stat and stat values.\nYou can keep the current values after seeing the result (it never gets worse).\nUses per day are limited.'**
+  String get fairyRerollConfirm;
+
+  /// No description provided for @fairyRerollPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Which one do you want?'**
+  String get fairyRerollPick;
+
+  /// No description provided for @fairyRerollNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get fairyRerollNow;
+
+  /// No description provided for @fairyRerollNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get fairyRerollNew;
+
+  /// No description provided for @fairyRerollKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current'**
+  String get fairyRerollKeep;
+
+  /// No description provided for @fairyRerollTake.
+  ///
+  /// In en, this message translates to:
+  /// **'Use new'**
+  String get fairyRerollTake;
+
+  /// No description provided for @fairyRerollCap.
+  ///
+  /// In en, this message translates to:
+  /// **'No rerolls left today. Try again tomorrow.'**
+  String get fairyRerollCap;
+
+  /// No description provided for @fairyRerollNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a server connection. Please try again shortly.'**
+  String get fairyRerollNetwork;
+
   /// No description provided for @fairyMergeHint.
   ///
   /// In en, this message translates to:

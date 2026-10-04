@@ -742,6 +742,23 @@ class GameActions {
     // 이미 있던 요정·알의 **정체는 바뀌지 않는다**(레벨만 오른다). 가치 검사는 새 id 만 깎으므로,
     // 기존 요정의 등급을 신화로 고쳐 올리면 그대로 통과했다(2026-10-01 점검).
     f = _keepFairyIdentity(before, f, cfg);
+    // 재굴림(2026-10-04) — 대기 결과·하루 횟수는 **서버만** 쓴다. 업로드로 대기 결과를 지어내거나(최고 개체값)
+    // 횟수를 0 으로 되돌리지 못하게 저장본 값으로 덮는다. 1.0.15 앱은 이 칸을 몰라 비워 올린다 — 그래도 지켜진다.
+    if (f.reroll != before.reroll ||
+        f.rerollDay != before.rerollDay ||
+        f.rerollCount != before.rerollCount) {
+      f = before.reroll == null
+          ? f.copyWith(
+              clearReroll: true,
+              rerollDay: before.rerollDay,
+              rerollCount: before.rerollCount,
+            )
+          : f.copyWith(
+              reroll: before.reroll,
+              rerollDay: before.rerollDay,
+              rerollCount: before.rerollCount,
+            );
+    }
     final jellySpent = max(
       0,
       stored.materialCount(MaterialKind.jelly) -
@@ -2947,6 +2964,40 @@ class GameActions {
   }
 
   /// 젤리 소비. 잔액이 모자라면 거부한다 — **클라이언트 말을 믿지 않는다.**
+  /// 요정 재굴림 — **서버가 굴린다**(2026-10-04, 조정안 C). 기기에서 굴리면 [_keepFairyIdentity] 가 되돌리고,
+  /// 그 고정을 풀면 개체값 위조가 열린다. 결과는 대기로 적고 [fairyRerollChoose] 로 고른다.
+  /// 하루 횟수는 KST 날짜 — 서버 시계라 기기 시계로 늘릴 수 없다.
+  ActionResult fairyReroll(SaveGame save, String fairyId) {
+    final cfg = config.fairy;
+    if (cfg == null) return const ActionResult.fail('off');
+    final k = now().toUtc().add(const Duration(hours: 9));
+    final today =
+        '${k.year}-${k.month.toString().padLeft(2, '0')}-${k.day.toString().padLeft(2, '0')}';
+    final op = rollFairyReroll(
+      save.fairy,
+      cfg,
+      (rngFactory ?? Random.secure)(),
+      fairyId: fairyId,
+      today: today,
+      jellyHave: save.materialCount(MaterialKind.jelly),
+    );
+    if (!op.isOk) return ActionResult.fail(op.error!);
+    final paid = spendJelly(save, op.jelly, reason: 'fairy_reroll');
+    if (!paid.isOk) return paid;
+    final r = op.extra['reroll']! as FairyReroll;
+    return ActionResult.ok(
+      paid.save!.copyWith(fairy: op.state),
+      extra: {'reroll': r.toJson()},
+    );
+  }
+
+  /// 재굴림 결과 고르기 — [accept] 면 새 값, 아니면 원래 값을 지킨다.
+  ActionResult fairyRerollChoose(SaveGame save, {required bool accept}) {
+    final op = chooseFairyReroll(save.fairy, accept: accept);
+    if (!op.isOk) return ActionResult.fail(op.error!);
+    return ActionResult.ok(save.copyWith(fairy: op.state));
+  }
+
   ActionResult spendJelly(SaveGame save, int amount, {String? reason}) {
     if (amount <= 0) return const ActionResult.fail('bad_amount');
     final have = save.materialCount(MaterialKind.jelly);

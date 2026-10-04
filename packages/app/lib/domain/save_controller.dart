@@ -3413,6 +3413,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return _fairyOp((f, cfg, _) => autoMergeFairies(f, cfg, math.Random()));
   }
 
+  /// 요정 재굴림(2026-10-04, 조정안 C) — **서버가 굴린다**(기기에서 굴리면 서버의 정체 고정이 되돌린다).
+  /// 직전에 세이브를 올리고(안 그러면 최근 진행이 서버 저장본으로 덮인다) 응답 세이브를 채택한다.
+  /// 결과는 대기로 적힌다 — [fairyRerollChoose] 로 고른다. 오류 키는 서버 것 그대로(`reroll_cap` 등).
+  Future<FairyOp> fairyReroll(String id) =>
+      _fairyServerOp((server) => server.fairyReroll(id));
+
+  /// 재굴림 결과 고르기 — [accept] 면 새 값, 아니면 원래 값을 지킨다.
+  Future<FairyOp> fairyRerollChoose({required bool accept}) =>
+      _fairyServerOp((server) => server.fairyRerollChoose(accept: accept));
+
+  Future<FairyOp> _fairyServerOp(
+    Future<ServerResult> Function(GameServer server) call,
+  ) async {
+    final server = ref.read(gameServerProvider);
+    if (!server.available) return const FairyOp.fail('network');
+    if (!await flushSaveBeforeServerAction(server, state.value)) {
+      return const FairyOp.fail('network');
+    }
+    final r = await call(server);
+    final json = r.save;
+    if (!r.isOk || json == null) return FairyOp.fail(r.error ?? 'network');
+    await adoptServerSave(json);
+    return FairyOp.ok(state.requireValue.fairy);
+  }
+
   Future<FairyOp> fairyLevelUp(String id) =>
       _fairyOp((f, cfg, _) => levelUpFairy(f, cfg, id));
 
