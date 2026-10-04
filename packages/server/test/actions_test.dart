@@ -1960,6 +1960,25 @@ void main() {
         expect(r.save!.fairy.rerollCount, 5);
       });
 
+      test('재굴림 칸을 모르는 1.0.15 앱 업로드 — 지키되 clamped 로 되튀지 않는다', () {
+        final before = withFairy(
+          FairyState(
+            fairies: [fy(1, FairyGrade.legendary)],
+            seq: 1,
+            rerollDay: '2026-08-15',
+            rerollCount: 3,
+          ),
+        );
+        // 옛 앱은 rd/rn 을 버린 채 올린다.
+        final old = before.fairy.copyWith(rerollDay: '', rerollCount: 0);
+        final r = actions.mergeSave(
+          before,
+          before.copyWith(fairy: old).toJson(),
+        );
+        expect(r.save!.fairy.rerollCount, 3);
+        expect(r.extra['clamped'], isFalse);
+      });
+
       // 도감 칸 [n] 개(종류×등급 → 종류×부가 순서로 진짜 키만).
       Set<String> dexOf(int n) => {
         for (final k in fc.kinds)

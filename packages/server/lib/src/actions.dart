@@ -742,23 +742,8 @@ class GameActions {
     // 이미 있던 요정·알의 **정체는 바뀌지 않는다**(레벨만 오른다). 가치 검사는 새 id 만 깎으므로,
     // 기존 요정의 등급을 신화로 고쳐 올리면 그대로 통과했다(2026-10-01 점검).
     f = _keepFairyIdentity(before, f, cfg);
-    // 재굴림(2026-10-04) — 대기 결과·하루 횟수는 **서버만** 쓴다. 업로드로 대기 결과를 지어내거나(최고 개체값)
-    // 횟수를 0 으로 되돌리지 못하게 저장본 값으로 덮는다. 1.0.15 앱은 이 칸을 몰라 비워 올린다 — 그래도 지켜진다.
-    if (f.reroll != before.reroll ||
-        f.rerollDay != before.rerollDay ||
-        f.rerollCount != before.rerollCount) {
-      f = before.reroll == null
-          ? f.copyWith(
-              clearReroll: true,
-              rerollDay: before.rerollDay,
-              rerollCount: before.rerollCount,
-            )
-          : f.copyWith(
-              reroll: before.reroll,
-              rerollDay: before.rerollDay,
-              rerollCount: before.rerollCount,
-            );
-    }
+    // 재굴림(2026-10-04) — 대기 결과·하루 횟수는 **서버만** 쓴다(mergeSave 가 판정 전에 이미 맞췄다 — 여기는 방어).
+    f = _keepRerollFields(before, f);
     final jellySpent = max(
       0,
       stored.materialCount(MaterialKind.jelly) -
@@ -840,6 +825,27 @@ class GameActions {
       f = f.copyWith(dust: before.dust + dustAllowAll);
     }
     return f == client.fairy ? client : client.copyWith(fairy: f);
+  }
+
+  /// 재굴림 대기 결과·하루 횟수를 저장본 값으로(서버 소유). 같으면 [f] 를 그대로 돌려준다.
+  /// 업로드로 대기 결과를 지어내거나(최고 개체값) 횟수를 0 으로 되돌리지 못하게 한다.
+  static FairyState _keepRerollFields(FairyState before, FairyState f) {
+    if (f.reroll == before.reroll &&
+        f.rerollDay == before.rerollDay &&
+        f.rerollCount == before.rerollCount) {
+      return f;
+    }
+    return before.reroll == null
+        ? f.copyWith(
+            clearReroll: true,
+            rerollDay: before.rerollDay,
+            rerollCount: before.rerollCount,
+          )
+        : f.copyWith(
+            reroll: before.reroll,
+            rerollDay: before.rerollDay,
+            rerollCount: before.rerollCount,
+          );
   }
 
   /// 모르는 종류·부가를 가진 요정·둥지, 모르는 속성석·가속기 키, 없는 도감 칸을 버린다.
@@ -1222,6 +1228,10 @@ class GameActions {
     }
     final fairyCfg = config.fairy;
     if (fairyCfg != null) {
+      // 재굴림 칸(서버 소유)은 **잘림 판정 전에** 저장본으로 맞춘다. 1.0.15 앱은 이 칸을 몰라 늘 비워 올려서,
+      // 판정 안에서 되돌리면 매 업로드가 `clamped` → 세이브 왕복이 됐다(2026-10-04 호환 점검).
+      final rr = _keepRerollFields(stored.fairy, capped.fairy);
+      if (!identical(rr, capped.fairy)) capped = capped.copyWith(fairy: rr);
       final fy = _enforceFairy(stored, capped, fairyCfg);
       if (!identical(fy, capped)) clampReasons.add('fairy');
       capped = fy;
