@@ -124,6 +124,8 @@ void main() {
 
     final after = c.read(saveControllerProvider).requireValue;
     expect(after.stageNumber, 500, reason: '스테이지가 되돌아가면 안 된다');
+    // 서버 횟수를 이어 센다(stale 은 0 이라 그냥 1 이상).
+    expect(after.saveRev, greaterThan(stale.saveRev));
     expect(after.gold, greaterThanOrEqualTo(1000000), reason: '골드가 줄면 안 된다');
   });
 
@@ -323,5 +325,104 @@ void main() {
     );
     final after = c.read(saveControllerProvider).requireValue;
     expect(after.bestStage, 501, reason: '다른 기기의 진행이 사라지면 안 된다');
+  });
+
+  /// 진행도가 **같으면** 저장 횟수가 많은 쪽이 나중 것이다(2026-10-05 제보: "훈련을 눌러도
+  /// 나갔다 오면 취소돼 있다"). 훈련 시작처럼 진행도를 안 바꾸는 변경이 업로드 전에 앱이 꺼지면,
+  /// 동점이라 서버의 옛 세이브가 채택돼 그 변경이 사라졌다. 표식으로 골드를 쓴다(진행도 축이 아니다).
+  Future<SaveGame> syncTie({
+    required int localRev,
+    required int remoteRev,
+  }) async {
+    final base = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 201, level: 20);
+    final local = base.copyWith(gold: 777, saveRev: localRev);
+    final remote = base.copyWith(gold: 5, saveRev: remoteRev);
+    final server = _StaleServer(remote);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    return c.read(saveControllerProvider).requireValue;
+  }
+
+  test('진행도가 같으면 저장 횟수가 많은 기기 세이브를 지킨다', () async {
+    final after = await syncTie(localRev: 10, remoteRev: 3);
+    expect(after.gold, 777, reason: '업로드 전에 꺼진 변경이 서버 옛 세이브에 덮이면 안 된다');
+  });
+
+  test('진행도가 같아도 서버의 저장 횟수가 많으면 서버를 따른다', () async {
+    final after = await syncTie(localRev: 3, remoteRev: 50);
+    expect(after.gold, 5);
+    // 채택한 뒤에도 횟수를 이어 센다 — 줄면 다음 동점 판정이 거꾸로 간다.
+    expect(after.saveRev, greaterThan(50));
+  });
+
+  test('채택할 때 기기의 저장 횟수가 더 크면 그 값을 이어 센다', () async {
+    final local = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 100, saveRev: 90);
+    // 서버가 더 진행됐다(다른 기기) — 채택은 하되 횟수는 줄지 않는다.
+    final ahead = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 700, saveRev: 4);
+    final server = _StaleServer(ahead);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.stageNumber, 700);
+    expect(after.saveRev, greaterThan(90));
+  });
+
+  /// 진행도로 앞서 서버를 채택하지 않을 때도 횟수는 서버 것까지 이어 센다 — 안 그러면 이 기기 내용이
+  /// 다른 기기가 남긴 큰 횟수로 저장돼, 다음 동점에서 이 기기의 새 변경(훈련 시작 등)이 진다.
+  test('로컬이 앞서 채택을 건너뛰어도 서버 횟수를 이어 센다', () async {
+    final local = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 500, saveRev: 21);
+    final remote = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(zoneEpoch: kZoneEpoch, stageNumber: 300, saveRev: 100);
+    final server = _StaleServer(remote);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.stageNumber, 500);
+    expect(after.saveRev, greaterThan(100));
   });
 }

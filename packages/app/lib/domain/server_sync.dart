@@ -68,6 +68,9 @@ Future<void> syncSaveWith({
     final local = await localSave();
     if (_localIsAhead(local, remote)) {
       debugPrint('[sync] 로컬이 더 진행됨 — 서버 채택을 건너뛴다');
+      // 횟수는 서버 것까지 이어 센다 — 서버는 횟수를 줄이지 않아서, 안 맞추면 이 기기 내용이 다른 기기가
+      // 남긴 큰 횟수로 저장되고 다음 동점 판정에서 이 기기의 새 변경이 "옛 것"으로 진다.
+      await ctrl.catchUpSaveRev((remote['rev'] as num?)?.toInt() ?? 0);
       // 다음 주기 업로드가 서버를 따라잡게 둔다(여기서 올리면 중복 경로가 된다).
       return;
     }
@@ -424,6 +427,7 @@ Future<bool> flushSaveBeforeServerAction(
 /// 묻힌다. 되돌아갈 이유가 없는 값들만 본다.
 ///
 /// 하나라도 로컬이 앞서고 뒤처지는 게 없으면 로컬이 앞선 것으로 본다.
+/// 전부 같으면 저장 횟수([SaveGame.saveRev])가 많은 쪽이다.
 /// 애매하면(서로 엇갈리면) **서버를 따른다** — 서버가 진실이라는 기본 원칙은
 /// 유지하고, 명백한 되돌림만 막는 게 목적이다.
 bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
@@ -471,7 +475,12 @@ bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
     // 요정(1.0.15) — 요정만 키운 기기가 서버 세이브에 덮이지 않게.
     cmp(_fairyProgress(local), _fairyProgress(remote)),
   ].any((x) => x);
-  return ahead && !behind;
+  if (behind) return false;
+  if (ahead) return true;
+  // 진행도가 **같다** — 저장 횟수가 많은 쪽이 나중 것이다(2026-10-05). 예전엔 동점이면 서버를 따라,
+  // 훈련 시작·부위 강화처럼 진행도를 안 바꾸는 변경이 업로드 전에 앱이 꺼지면 사라졌다
+  // ("훈련을 눌러도 나갔다 오면 취소돼 있다" 제보).
+  return local.saveRev > remote.saveRev;
 }
 
 /// 요정 진행도 — 등급 가치 합(합성으로 안 변한다) + 레벨 합 + 도감 칸 수.

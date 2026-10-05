@@ -1098,6 +1098,10 @@ class GameActions {
       }
     }
     _mergeGiftDoubles(stored, merged, t);
+    // 저장 횟수(`rev`)는 **줄지 않는다** — 이 필드를 모르는 구버전 앱은 키 없이 올린다. 줄면 다른 기기가
+    // 앱을 켤 때 동점 판정(`_localIsAhead`)이 서버의 새 세이브를 옛 것으로 본다.
+    final clientRev = (merged['rev'] as num?)?.toInt() ?? 0;
+    if (stored.saveRev > clientRev) merged['rev'] = stored.saveRev;
     // **줄어들 수 없는 기록**은 저장본과 합친다(2026-09-15). 이 필드를 모르는
     // 구버전 앱은 키 없이 올리고, 그러면 기본값(0·빈 집합)이 저장본을 덮어
     // 다른 기기에서 가 본 최고 난이도·도감 보스 수집이 사라진다.

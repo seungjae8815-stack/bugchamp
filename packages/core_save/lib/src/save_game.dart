@@ -507,6 +507,7 @@ class SaveGame {
     required this.unlockedFieldIds,
     required this.createdAt,
     required this.lastSeen,
+    this.saveRev = 0,
     required this.gold,
     required this.xp,
     required this.level,
@@ -643,6 +644,14 @@ class SaveGame {
 
   /// 마지막 활동(저장) 시각. 오프라인 정산 기준.
   final DateTime lastSeen;
+
+  /// 저장 횟수(기기가 `_commit` 마다 +1, 서버 세이브를 채택하면 그 값을 이어 센다).
+  ///
+  /// 앱을 켤 때 기기·서버 세이브의 진행도가 **같으면** 이 값이 큰 쪽을 남긴다(2026-10-05).
+  /// 진행도(스테이지·레벨·곤충 수…)를 안 바꾸는 변경 — 훈련 시작·부위 강화·합성 — 직후 업로드가
+  /// 닿기 전에 앱이 꺼지면, 동점이라 서버의 옛 세이브가 채택돼 그 변경이 사라졌다("훈련이 취소된다" 제보).
+  /// 시계가 아니라 횟수라 기기 시간대와 무관하다.
+  final int saveRev;
 
   // --- v2 런 진행 ---
   /// 골드 (업그레이드 재화).
@@ -1381,6 +1390,7 @@ class SaveGame {
     List<TrapInstallation>? installations,
     Set<String>? unlockedFieldIds,
     DateTime? lastSeen,
+    int? saveRev,
     int? gold,
     int? xp,
     int? level,
@@ -1498,6 +1508,7 @@ class SaveGame {
     unlockedFieldIds: unlockedFieldIds ?? this.unlockedFieldIds,
     createdAt: createdAt,
     lastSeen: lastSeen ?? this.lastSeen,
+    saveRev: saveRev ?? this.saveRev,
     gold: gold ?? this.gold,
     xp: xp ?? this.xp,
     level: level ?? this.level,
@@ -1669,6 +1680,7 @@ class SaveGame {
     lastSeen: json['lastSeen'] != null
         ? DateTime.parse(json['lastSeen'] as String).toUtc()
         : DateTime.parse(json['createdAt'] as String).toUtc(),
+    saveRev: (json['rev'] as num?)?.toInt() ?? 0,
     // ⚠️ 재화는 읽을 때 **자른다**. int64 가 넘쳐 음수가 된 세이브(2026-08-30
     // 제보)를 그대로 읽으면 화면에 마이너스가 그대로 뜨고, 거기서 또 더하면
     // 계속 음수다. 여기서 0 으로 되돌려야 스스로 회복된다.
@@ -1922,6 +1934,7 @@ class SaveGame {
     'unlockedFieldIds': unlockedFieldIds.toList(),
     'createdAt': createdAt.toUtc().toIso8601String(),
     'lastSeen': lastSeen.toUtc().toIso8601String(),
+    if (saveRev > 0) 'rev': saveRev,
     'gold': gold,
     'xp': xp,
     'level': level,

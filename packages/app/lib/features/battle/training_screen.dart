@@ -10,6 +10,7 @@ import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
+import '../../domain/server_sync.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/jelly_confirm.dart';
@@ -265,6 +266,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                           .finishDuelTrainingWithJelly();
                       if (!mounted) return;
                       if (err == null) {
+                        unawaited(pushSaveNow(ref));
                         AudioService.instance.sfxEnhance();
                       } else {
                         showCenterToast(context, l.notEnoughJelly);
@@ -650,6 +652,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                         .startDuelTraining(bug.id, st);
                     if (!mounted) return;
                     if (err == null) {
+                      // 훈련은 누르고 바로 앱을 나가는 행동이라 60초 주기를 기다리지 않고 올린다(2026-10-05 제보).
+                      unawaited(pushSaveNow(ref));
                       AudioService.instance.sfxEnhance();
                     } else {
                       showCenterToast(
@@ -708,6 +712,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         .read(saveControllerProvider.notifier)
         .resetDuelTraining(bug.id);
     if (!mounted) return;
+    if (r != null) unawaited(pushSaveNow(ref));
     showCenterToast(context, r == null ? l.trainingBusy : l.trainingResetDone);
   }
 }

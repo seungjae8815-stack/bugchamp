@@ -610,7 +610,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 훈련소 — 끝난 훈련 반영 · 사라진 곤충의 훈련 기록 정리(어느 경로로 저장돼도 한 곳에서).
     final stamped = pruneTraining(
       finishTrainingIfDue(_withTrimmedItems(withDex).trimmedToStorage(), now),
-    ).copyWith(lastSeen: now);
+    ).copyWith(lastSeen: now, saveRev: save.saveRev + 1);
     state = AsyncData(stamped);
     await _repo.save(stamped);
   }
@@ -1791,6 +1791,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 않는다 — 나중에 특정 액션만 다시 서버 권위로 돌릴 때를 위한 여지다.
   Future<bool?> _viaServer(Future<ServerResult> Function() call) async => null;
 
+  /// 저장 횟수([SaveGame.saveRev])를 [rev] 보다 크게 맞춘다(이미 크면 그대로).
+  /// 앱을 켤 때 기기 세이브를 지키기로 한 경우에 부른다 — 서버 횟수를 이어 세야 다음 동점 판정이 맞다.
+  Future<void> catchUpSaveRev(int rev) async {
+    final s = state.value;
+    if (s == null || s.saveRev > rev) return;
+    await _commit(s.copyWith(saveRev: rev));
+  }
+
   /// 권위 서버가 확정한 세이브를 그대로 채택한다.
   ///
   /// 서버 권위 모드에서는 **서버가 진실**이므로 로컬 계산 결과를 버리고
@@ -1816,6 +1824,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // 영영 정산되지 않는다.
       save = _applyOffline(save, data, now);
     }
+    // 저장 횟수는 **이어 센다**(둘 중 큰 쪽) — 채택한 뒤의 저장이 이 기기의 옛 횟수보다 작으면
+    // 다음 실행의 동점 판정([SaveGame.saveRev])이 거꾸로 간다.
+    final localRev = state.value?.saveRev ?? 0;
+    if (localRev > save.saveRev) save = save.copyWith(saveRev: localRev);
     await _commit(save);
   }
 
