@@ -19,7 +19,7 @@ const int kSaveSchemaVersion = 18;
 /// 이번 주 심연 층이 지워졌다(2026-09-30 점검). 서버는 이 값이 낮은 업로드에서
 /// 그 뒤에 생긴 필드를 저장본 값으로 지킨다(`GameActions.mergeSave`).
 /// 새 필드를 더하면 이 값을 올리고 서버의 목록에 추가한다.
-const int kSaveFeatureLevel = 16;
+const int kSaveFeatureLevel = 17;
 
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
@@ -508,6 +508,8 @@ class SaveGame {
     required this.createdAt,
     required this.lastSeen,
     this.saveRev = 0,
+    this.capTier = 0,
+    this.capStage = 0,
     required this.gold,
     required this.xp,
     required this.level,
@@ -600,6 +602,7 @@ class SaveGame {
     this.abyssBest = 0,
     this.abyssBossBest = 0,
     this.abyssScoreWeek,
+    this.abyssRankMark,
     this.abyssFloorAt,
     this.abyssRewardWeek,
     this.eventBadges = const {},
@@ -652,6 +655,14 @@ class SaveGame {
   /// 닿기 전에 앱이 꺼지면, 동점이라 서버의 옛 세이브가 채택돼 그 변경이 사라졌다("훈련이 취소된다" 제보).
   /// 시계가 아니라 횟수라 기기 시간대와 무관하다.
   final int saveRev;
+
+  /// **올라갈 수 있는 한계**(2026-10-05 사장님 확정) — 일반 몬스터에게 쓰러지면 한 칸 아래로 내려가고
+  /// 한계도 그 칸이 된다. 로드맵은 한계 위로 못 가고, 보스를 잡으면 한 칸씩 다시 오른다.
+  /// [capStage] = 한계 사냥터의 **시작 스테이지**(0 = 한계 없음, 가 본 곳 어디든). 진행도 랭킹도 한계로 매긴다(`rankProgress`).
+  /// ⚠️ `maxTierReached`·`bestStage` 는 건드리지 않는다 — 처음 가는 난이도의 성장 초기화·스킬 칸·
+  /// 서버 허용치가 그 값을 본다. 내리면 다시 올라갈 때 성장이 초기화된다. 규칙은 `zone_fall.dart`.
+  final int capTier;
+  final int capStage;
 
   // --- v2 런 진행 ---
   /// 골드 (업그레이드 재화).
@@ -863,6 +874,10 @@ class SaveGame {
 
   /// 주간 순위 점수를 마지막으로 기록한 주. **서버 소유**(조회를 점수 낸 사람만 돌리려고).
   final String? abyssScoreWeek;
+
+  /// 진행도 랭킹에 마지막으로 적은 심연 값(`"주:층"`). **서버 소유**(2026-10-05) — 랭킹이 지금 층을 따르게 된 뒤
+  /// 내려간 것도 적어야 하는데, 프로필을 매 업로드 쓰지 않으려고 바뀔 때만 쓴다.
+  final String? abyssRankMark;
 
   /// 심연 층 **시간 예산의 기준 시각**(서버 소유). 층 하나 = `minSecondsPerFloor` 이고, 서버가 층을
   /// 인정할 때마다 그만큼 앞으로 민다. 업로드마다 경과 시간을 올림으로 재던 시절엔 1초마다 올리면
@@ -1391,6 +1406,9 @@ class SaveGame {
     Set<String>? unlockedFieldIds,
     DateTime? lastSeen,
     int? saveRev,
+    int? capTier,
+    int? capStage,
+    bool clearClimbCap = false,
     int? gold,
     int? xp,
     int? level,
@@ -1435,6 +1453,7 @@ class SaveGame {
     int? abyssBest,
     int? abyssBossBest,
     String? abyssScoreWeek,
+    String? abyssRankMark,
     DateTime? abyssFloorAt,
     String? abyssRewardWeek,
     Set<String>? eventBadges,
@@ -1509,6 +1528,8 @@ class SaveGame {
     createdAt: createdAt,
     lastSeen: lastSeen ?? this.lastSeen,
     saveRev: saveRev ?? this.saveRev,
+    capTier: clearClimbCap ? 0 : (capTier ?? this.capTier),
+    capStage: clearClimbCap ? 0 : (capStage ?? this.capStage),
     gold: gold ?? this.gold,
     xp: xp ?? this.xp,
     level: level ?? this.level,
@@ -1552,6 +1573,7 @@ class SaveGame {
     abyssBest: abyssBest ?? this.abyssBest,
     abyssBossBest: abyssBossBest ?? this.abyssBossBest,
     abyssScoreWeek: abyssScoreWeek ?? this.abyssScoreWeek,
+    abyssRankMark: abyssRankMark ?? this.abyssRankMark,
     abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
     abyssRewardWeek: abyssRewardWeek ?? this.abyssRewardWeek,
     eventBadges: eventBadges ?? this.eventBadges,
@@ -1681,6 +1703,8 @@ class SaveGame {
         ? DateTime.parse(json['lastSeen'] as String).toUtc()
         : DateTime.parse(json['createdAt'] as String).toUtc(),
     saveRev: (json['rev'] as num?)?.toInt() ?? 0,
+    capTier: (json['capT'] as num?)?.toInt() ?? 0,
+    capStage: (json['capS'] as num?)?.toInt() ?? 0,
     // ⚠️ 재화는 읽을 때 **자른다**. int64 가 넘쳐 음수가 된 세이브(2026-08-30
     // 제보)를 그대로 읽으면 화면에 마이너스가 그대로 뜨고, 거기서 또 더하면
     // 계속 음수다. 여기서 0 으로 되돌려야 스스로 회복된다.
@@ -1790,6 +1814,7 @@ class SaveGame {
       999,
     ),
     abyssScoreWeek: json['abyssScoreWeek'] as String?,
+    abyssRankMark: json['abyRk'] as String?,
     abyssFloorAt: json['abyssFloorAt'] == null
         ? null
         : DateTime.tryParse(json['abyssFloorAt'] as String)?.toUtc(),
@@ -1935,6 +1960,8 @@ class SaveGame {
     'createdAt': createdAt.toUtc().toIso8601String(),
     'lastSeen': lastSeen.toUtc().toIso8601String(),
     if (saveRev > 0) 'rev': saveRev,
+    if (capStage > 0) 'capT': capTier,
+    if (capStage > 0) 'capS': capStage,
     'gold': gold,
     'xp': xp,
     'level': level,
@@ -2005,6 +2032,7 @@ class SaveGame {
     if (abyssBest > 0) 'abyssBest': abyssBest,
     if (abyssBossBest > 0) 'abyssBossBest': abyssBossBest,
     if (abyssScoreWeek != null) 'abyssScoreWeek': abyssScoreWeek,
+    if (abyssRankMark != null) 'abyRk': abyssRankMark,
     if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),
     if (abyssRewardWeek != null) 'abyssRewardWeek': abyssRewardWeek,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),

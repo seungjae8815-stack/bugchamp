@@ -204,6 +204,7 @@ class GameActions {
     'pvpLeague',
     // 심연 주간 순위(2026-09-28). 결투 순위와 같은 이유.
     'abyssScoreWeek',
+    'abyRk',
     'abyssRewardWeek',
     // 심연 층 시간 예산 기준(2026-09-30). 지우면 예산이 다시 차서 층 상한이 풀린다.
     'abyssFloorAt',
@@ -279,6 +280,8 @@ class GameActions {
     15: ['fairy'],
     // 곤충 잠금(1.0.15, 2026-10-02) — 모르는 앱이 올리면 저장본의 잠금을 지킨다.
     16: ['lockedBugs', 'reviewTier', 'reviewOpened'],
+    // 올라갈 수 있는 한계(1.0.17, 쓰러지면 아래로 — zone_fall.dart). 모르는 앱이 올리면 저장본의 한계를 지킨다.
+    17: ['capT', 'capS'],
   };
 
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
@@ -3208,6 +3211,25 @@ class GameActions {
     );
   }
 
+  /// 진행도 랭킹의 심연 값(`profiles.abyss_best`) — **이번 주 지금 깬 층**(2026-10-05 사장님 확정:
+  /// 약해져 내려가면 랭킹도 내려간다). 주가 바뀌면 0 부터. 역대 최고(`abyssBest`)는 마일스톤 판정에만 쓴다.
+  int abyssRankFloor(SaveGame save) {
+    final week = abyssWeekId(now().toUtc(), config.battle);
+    if (!save.abyssUnlocked || save.abyssWeek != week) return 0;
+    return max(0, save.abyssFloor - 1);
+  }
+
+  /// 진행도 랭킹의 심연 값을 새로 적어야 하면 (적을 값, 표식을 찍은 세이브). 이미 적은 값이면 null.
+  /// 심연을 연 적 없는 계정은 적지 않는다(늘 0 이다).
+  ({int floor, SaveGame save})? abyssRankUpdate(SaveGame save) {
+    if (!save.abyssUnlocked) return null;
+    final week = abyssWeekId(now().toUtc(), config.battle);
+    final floor = abyssRankFloor(save);
+    final mark = '$week:$floor';
+    if (save.abyssRankMark == mark) return null;
+    return (floor: floor, save: save.copyWith(abyssRankMark: mark));
+  }
+
   /// 이번 업로드에서 새로 닿은 심연 마일스톤 수(역대 최고가 `milestoneEvery` 배수를 넘은 수).
   int abyssNewMilestones(SaveGame stored, SaveGame out) {
     final every = config.run.abyss.milestoneEvery;
@@ -3216,7 +3238,7 @@ class GameActions {
   }
 
   /// 저장할 세이브에 **이번 주 점수 기록**을 찍는다. 기록할 (주, 층, 벽 보스 피해)을 돌려준다
-  /// (층이 올랐거나, 같은 층에서 벽 보스를 더 깎았을 때만).
+  /// (층이 바뀌었거나 — 내려간 것도 — 같은 층에서 벽 보스를 더 깎았을 때만).
   ({SaveGame save, String week, int floor, int boss})? abyssScoreFor(
     SaveGame stored,
     SaveGame save,
@@ -3225,17 +3247,21 @@ class GameActions {
     final week = abyssWeekId(t, config.battle);
     // 정산 기간(일 09시~월 09시)에는 기록하지 않는다 — 결투 시즌과 같은 시간표(2026-09-29).
     if (seasonClosed(t, config.battle)) return null;
-    if (!save.abyssUnlocked || save.abyssWeek != week || save.abyssFloor <= 1) {
-      return null;
-    }
+    if (!save.abyssUnlocked || save.abyssWeek != week) return null;
     final sameWeek = stored.abyssWeek == week;
     final before = sameWeek ? stored.abyssFloor : 0;
+    // 주간 순위는 **지금 층**이다(2026-10-05 사장님 확정) — 쓰러져 내려가면 기록도 내려간다.
+    // 1층은 기록하지 않지만, 이번 주 기록이 있는 채로 1층까지 내려왔으면 1층으로 덮는다(순위에서 빠진다).
+    if (save.abyssFloor <= 1 &&
+        !(stored.abyssScoreWeek == week && before > 1)) {
+      return null;
+    }
     final bossBefore = sameWeek && save.abyssFloor == stored.abyssFloor
         ? stored.abyssBossBest
         : -1;
-    final improved =
-        save.abyssFloor > before || save.abyssBossBest > bossBefore;
-    if (!improved && stored.abyssScoreWeek == week) return null;
+    final changed =
+        save.abyssFloor != before || save.abyssBossBest > bossBefore;
+    if (!changed && stored.abyssScoreWeek == week) return null;
     return (
       save: save.copyWith(abyssScoreWeek: week),
       week: week,

@@ -425,4 +425,42 @@ void main() {
     expect(after.stageNumber, 500);
     expect(after.saveRev, greaterThan(100));
   });
+
+  /// 쓰러져 한 칸 내려간 직후(2026-10-05 zone_fall) 업로드 전에 꺼져도, 다시 켰을 때 서버의 옛 자리로
+  /// 되돌아가지 않는다 — 지금 칸이 아니라 가 본 최고로 재고, 같으면 저장 횟수로 가른다.
+  test('쓰러져 내려간 기기 세이브는 서버 옛 자리에 덮이지 않는다', () async {
+    final base = SaveGame.initial(createdAt: t0).copyWith(
+      zoneEpoch: kZoneEpoch,
+      difficultyTier: 1,
+      maxTierReached: 1,
+      stageNumber: 501,
+      bestStage: 501,
+      level: 30,
+      saveRev: 40,
+    );
+    final local = base.copyWith(
+      stageNumber: 401,
+      capTier: 1,
+      capStage: 401,
+      saveRev: 41,
+    );
+    final server = _StaleServer(base);
+    final c = ProviderContainer(
+      overrides: [
+        gameDataProvider.overrideWith((ref) => _data()),
+        saveRepositoryProvider.overrideWithValue(_FreshRepo(local)),
+        gameServerProvider.overrideWithValue(server),
+        clockProvider.overrideWithValue(FixedClock(t0)),
+      ],
+    );
+    addTearDown(c.dispose);
+    await syncSaveWith(
+      server: server,
+      ctrl: c.read(saveControllerProvider.notifier),
+      localSave: () => c.read(saveControllerProvider.future),
+    );
+    final after = c.read(saveControllerProvider).requireValue;
+    expect(after.stageNumber, 401);
+    expect(after.capStage, 401);
+  });
 }

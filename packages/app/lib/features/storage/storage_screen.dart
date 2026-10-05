@@ -17,6 +17,7 @@ import '../../ui/art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import 'dex_screen.dart';
@@ -91,11 +92,9 @@ class StorageScreen extends ConsumerWidget {
     final cap = save.storageCapacity;
     final full = save.storageFull;
     final atMax = cap >= cfg.storageSlotsMax;
-    final jelly = save.materialCount(MaterialKind.jelly);
     // ⚠️ 확장은 살수록 비싸진다(2026-08-18). UI 가 정액을 보여주면 실제
     // 차감액과 어긋나 "가격이 다르다"가 된다.
     final expandCost = cfg.storageExpandCost(cap);
-    final canExpand = !atMax && jelly >= expandCost;
 
     return Container(
       color: const Color(0xFF15200D),
@@ -171,10 +170,20 @@ class StorageScreen extends ConsumerWidget {
                 minimumSize: const Size(0, 40),
               ),
               onPressed: () async {
-                if (!canExpand) {
-                  _snack(context, l.notEnoughJelly);
+                // 확인부터 — 모자라면 확인 창이 상점 안내로 바뀐다.
+                if (!await confirmJellySpend(
+                  context,
+                  title: l.storageExpandTitle,
+                  body: l.storageExpandConfirm(
+                    expandCost,
+                    cfg.storageExpandAmount,
+                  ),
+                  jelly: expandCost,
+                  actionLabel: l.jellyActExpand,
+                )) {
                   return;
                 }
+                if (!context.mounted) return;
                 final ok = await ref
                     .read(saveControllerProvider.notifier)
                     .expandStorage();
@@ -808,7 +817,6 @@ class StorageScreen extends ConsumerWidget {
               ..sort((a, b) => a.endsAt.compareTo(b.endsAt));
             final canAdd = save.breeding.length < save.breedingCapacity;
             final canExpand = save.breedingCapacity < cfg.breedingSlotsMax;
-            final jellyHave = save.materialCount(MaterialKind.jelly);
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
               child: Column(
@@ -868,12 +876,20 @@ class StorageScreen extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: () {
-                          if (jellyHave <
-                              cfg.breedingExpandCost(save.breedingCapacity)) {
-                            _snack(ctx, l.notEnoughJelly);
+                        onPressed: () async {
+                          final cost = cfg.breedingExpandCost(
+                            save.breedingCapacity,
+                          );
+                          if (!await confirmJellySpend(
+                            ctx,
+                            title: l.breedingExpandTitle,
+                            body: l.slotExpandConfirm(cost),
+                            jelly: cost,
+                            actionLabel: l.jellyActExpand,
+                          )) {
                             return;
                           }
+                          if (!ctx.mounted) return;
                           r
                               .read(saveControllerProvider.notifier)
                               .expandBreedingSlots();
@@ -922,7 +938,6 @@ class StorageScreen extends ConsumerWidget {
         : (total > 0 ? (1 - remaining.inSeconds / total).clamp(0.0, 1.0) : 1.0);
     final jelly = cfg.breedingJelly(remaining);
     final saveNow = r.watch(saveControllerProvider).requireValue;
-    final jellyHave = saveNow.materialCount(MaterialKind.jelly);
     final storageFull = saveNow.storageFull;
     return _sectionBox(
       child: Row(
@@ -983,14 +998,20 @@ class StorageScreen extends ConsumerWidget {
                 )
               : FilledButton(
                   onPressed: () async {
-                    if (jellyHave < jelly) {
-                      _snack(ctx, l.notEnoughJelly);
-                      return;
-                    }
+                    // 채집함이 가득이면 젤리를 묻기 전에 막는다 — 확인받고 거절하면 헛걸음이다.
                     if (storageFull) {
                       AudioService.instance.sfxError();
                       return _snack(ctx, l.storageFullSnack);
                     }
+                    if (!await confirmJellySpend(
+                      ctx,
+                      title: l.breedingInstantTitle,
+                      body: l.breedingInstantConfirm(jelly),
+                      jelly: jelly,
+                    )) {
+                      return;
+                    }
+                    if (!ctx.mounted) return;
                     final ok = await r
                         .read(saveControllerProvider.notifier)
                         .collectBreeding(slot.id, viaJelly: true);
@@ -1569,10 +1590,16 @@ class StorageScreen extends ConsumerWidget {
       );
       if (isNextUnlock) {
         onTap = () async {
-          if (!canExp) {
-            _snack(ctx, l.notEnoughJelly);
+          if (!await confirmJellySpend(
+            ctx,
+            title: l.incubatorExpandTitle,
+            body: l.slotExpandConfirm(expCost),
+            jelly: expCost,
+            actionLabel: l.jellyActExpand,
+          )) {
             return;
           }
+          if (!ctx.mounted) return;
           final ok = await ctrl.expandIncubator();
           if (ok && ctx.mounted) _snack(ctx, l.incubatorExpandedSnack);
         };
@@ -1823,15 +1850,19 @@ class StorageScreen extends ConsumerWidget {
   ) {
     final ctrl = r.read(saveControllerProvider.notifier);
     final cost = cfg.incubateJelly(rem);
-    final canPay = save.materialCount(MaterialKind.jelly) >= cost;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         _hatchBtn(cost, const Color(0xFF7E57C2), l, () async {
-          if (!canPay) {
-            _snack(ctx, l.notEnoughJelly);
+          if (!await confirmJellySpend(
+            ctx,
+            title: l.incubatorInstant,
+            body: l.incubatorInstantConfirm(cost),
+            jelly: cost,
+          )) {
             return;
           }
+          if (!ctx.mounted) return;
           if (!await ctrl.instantIncubate(bugId)) return;
           AudioService.instance.sfxHatch();
           if (ctx.mounted) _snack(ctx, l.incubatorReady);
@@ -3220,8 +3251,6 @@ class StorageScreen extends ConsumerWidget {
     if (until == null || !now.isBefore(until)) return const SizedBox.shrink();
     final remaining = until.difference(now);
     final jelly = cfg.injuryJelly(remaining);
-    final have = save.materialCount(MaterialKind.jelly);
-    final canHeal = have >= jelly;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: _sectionBox(
@@ -3247,10 +3276,16 @@ class StorageScreen extends ConsumerWidget {
             const SizedBox(width: 8),
             FilledButton(
               onPressed: () async {
-                if (!canHeal) {
-                  _snack(ctx, l.notEnoughJelly);
+                // 결투 탭 회복실(_healWithJelly)과 같은 확인 창.
+                if (!await confirmJellySpend(
+                  ctx,
+                  title: l.injuryHealConfirmTitle,
+                  body: l.injuryHealConfirm(jelly),
+                  jelly: jelly,
+                )) {
                   return;
                 }
+                if (!ctx.mounted) return;
                 final ok = await r
                     .read(saveControllerProvider.notifier)
                     .healInjury(bug.id, viaJelly: true);
@@ -3459,7 +3494,6 @@ class StorageScreen extends ConsumerWidget {
       final rem = ends.difference(now);
       final done = rem <= Duration.zero;
       final jellyCost = cfg.breakthroughJelly(rem);
-      final canInstant = save.materialCount(MaterialKind.jelly) >= jellyCost;
       return _sectionBox(
         child: Row(
           children: [
@@ -3495,10 +3529,15 @@ class StorageScreen extends ConsumerWidget {
                   )
                 : FilledButton.icon(
                     onPressed: () async {
-                      if (!canInstant) {
-                        _snack(ctx, l.notEnoughJelly);
+                      if (!await confirmJellySpend(
+                        ctx,
+                        title: l.breakthroughInstantTitle,
+                        body: l.breakthroughInstantConfirm(jellyCost),
+                        jelly: jellyCost,
+                      )) {
                         return;
                       }
+                      if (!ctx.mounted) return;
                       final ok = await ctrl.completeBreakthrough(
                         bug.id,
                         viaJelly: true,
@@ -3642,8 +3681,6 @@ class StorageScreen extends ConsumerWidget {
     DateTime now,
   ) {
     final l = AppLocalizations.of(ctx);
-    final jelly = save.materialCount(MaterialKind.jelly);
-    final canAcc = !effStage.isFinal && jelly >= petCfg.accelerateJelly;
     final rem =
         stageRemaining(bug.stage, bug.stageSince, now, petCfg) ?? Duration.zero;
     return _sectionBox(
@@ -3682,11 +3719,20 @@ class StorageScreen extends ConsumerWidget {
           ),
           if (!effStage.isFinal)
             FilledButton.icon(
-              onPressed: () {
-                if (!canAcc) {
-                  _snack(ctx, l.notEnoughJelly);
+              onPressed: () async {
+                if (!await confirmJellySpend(
+                  ctx,
+                  title: l.evolveAccelTitle,
+                  body: l.evolveAccelConfirm(
+                    petCfg.accelerateJelly,
+                    stageLabel(l, effStage.next),
+                  ),
+                  jelly: petCfg.accelerateJelly,
+                  actionLabel: l.accelerateAction,
+                )) {
                   return;
                 }
+                if (!ctx.mounted) return;
                 r
                     .read(saveControllerProvider.notifier)
                     .accelerateEvolution(bug.id);

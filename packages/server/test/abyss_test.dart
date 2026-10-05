@@ -104,6 +104,35 @@ void main() {
       expect(actions.abyssScoreFor(r.save, r.save), isNull);
     });
 
+    // 쓰러지면 아래로(2026-10-05) — 주간 순위도 지금 층.
+    test('쓰러져 층이 내려가면 내려간 층으로 다시 기록한다', () {
+      final s = stored().copyWith(abyssScoreWeek: week);
+      final down = s.copyWith(abyssFloor: 4);
+      final r = actions.abyssScoreFor(s, down);
+      expect(r, isNotNull);
+      expect(r!.floor, 4);
+    });
+
+    test('1층까지 내려오면 1층으로 덮는다 · 기록이 없던 1층은 안 적는다', () {
+      final s = stored(floor: 2).copyWith(abyssScoreWeek: week);
+      final r = actions.abyssScoreFor(s, s.copyWith(abyssFloor: 1));
+      expect(r?.floor, 1);
+      final fresh = stored(floor: 1);
+      expect(actions.abyssScoreFor(fresh, fresh), isNull);
+    });
+
+    test('진행도 랭킹 심연 값 — 지금 깬 층, 바뀔 때만 다시 적는다', () {
+      final s = stored(); // 이번 주 5층에서 싸우는 중 = 4층까지 깸
+      final u = actions.abyssRankUpdate(s);
+      expect(u!.floor, 4);
+      expect(actions.abyssRankUpdate(u.save), isNull);
+      final down = u.save.copyWith(abyssFloor: 3);
+      expect(actions.abyssRankUpdate(down)!.floor, 2, reason: '내려가면 랭킹도 내려간다');
+      // 지난주 기록만 있으면 0 으로 한 번 적는다.
+      final stale = u.save.copyWith(abyssWeek: '2026-09-21');
+      expect(actions.abyssRankUpdate(stale)!.floor, 0);
+    });
+
     test('같은 층에서 벽 보스를 더 깎으면 다시 기록한다(동률 판정)', () {
       final s = stored().copyWith(abyssScoreWeek: week, abyssBossBest: 300);
       final better = s.copyWith(abyssBossBest: 450);

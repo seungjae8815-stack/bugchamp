@@ -24,17 +24,28 @@ extension TierProgress on SaveGame {
 
   /// 지금 난이도에서 **점령한 가장 높은 스테이지**. 최고 난이도보다 아래면 그
   /// 난이도는 다 깬 것이다(최종 보스를 넘어 올라갔으므로).
-  int highestStageInTier(RunConfig run) => difficultyTier < topTier
-      ? run.zoneStartStage(run.zonesPerTier) + run.worldSize
-      : math.max(bestStage, stageNumber);
+  /// 올라갈 수 있는 한계([SaveGame.capStage], zone_fall.dart)가 있으면 그 칸까지로 자른다.
+  int highestStageInTier(RunConfig run) {
+    final raw = difficultyTier < topTier
+        ? run.zoneStartStage(run.zonesPerTier) + run.worldSize
+        : math.max(bestStage, stageNumber);
+    if (capStage <= 0 || difficultyTier < capTier) return raw;
+    return math.min(raw, capStage);
+  }
 
-  /// 랭킹에 싣는 진행도 — (최고 난이도, 그 난이도의 최고 스테이지).
-  ({int tier, int stage}) get rankProgress => (
-    tier: topTier,
-    stage: difficultyTier >= topTier
-        ? math.max(math.max(bestStage, stageNumber), 1)
-        : math.max(bestStage, 1),
-  );
+  /// 로드맵에서 고를 수 있는 가장 높은 난이도 — 한계가 있으면 한계 난이도.
+  int get climbTopTier => capStage > 0 ? math.min(capTier, topTier) : topTier;
+
+  /// 랭킹에 싣는 진행도 — (최고 난이도, 그 난이도의 최고 스테이지). 한계가 있으면 한계 칸
+  /// (쓰러져 내려가면 랭킹도 내려간다, 2026-10-05).
+  ({int tier, int stage}) get rankProgress => capStage > 0
+      ? (tier: capTier, stage: capStage)
+      : (
+          tier: topTier,
+          stage: difficultyTier >= topTier
+              ? math.max(math.max(bestStage, stageNumber), 1)
+              : math.max(bestStage, 1),
+        );
 }
 
 /// 최종 보스를 깨고 다음 난이도로.
@@ -70,9 +81,12 @@ SaveGame enterNextTierSave(SaveGame s, RunConfig run) {
 /// 최종 사냥터로 간다(다 깬 난이도라 사냥터는 로드맵에서 다시 고르면 된다).
 SaveGame selectTierSave(SaveGame s, RunConfig run, int tier) {
   final top = s.topTier;
-  final t = tier.clamp(0, top);
+  // 쓰러져 내려온 한계(zone_fall.dart) 위로는 못 간다.
+  final t = tier.clamp(0, s.climbTopTier);
   if (t == s.difficultyTier) return s;
-  final stage = t == top
+  final stage = s.capStage > 0 && t == s.capTier
+      ? s.capStage
+      : t == top
       ? run.zoneStartStage(run.zoneOf(math.max(s.bestStage, 1)))
       : run.zoneStartStage(run.zonesPerTier);
   return s.copyWith(

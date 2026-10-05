@@ -15,6 +15,7 @@ import '../../domain/server_sync.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
@@ -1275,6 +1276,32 @@ class _EventScreenState extends ConsumerState<EventScreen> {
             onPressed: _busy
                 ? null
                 : () async {
+                    // 젤리를 쓰는 버튼 — 서버에 가기 전에(세이브 업로드보다도 먼저)
+                    // 확인부터 받는다. 모자라면 확인 창이 상점 안내로 바뀐다.
+                    if (!await confirmJellySpend(
+                      context,
+                      title: l.eventJellyTicket,
+                      body: l.eventJellyTicketConfirm(
+                        cfg?.ticketJelly ?? 0,
+                        cfg?.ticketAdGrant ?? 1,
+                        // 아래에서 같은 이름 `save` 를 새로 선언하므로 여기선 세이브를 직접 읽는다.
+                        ref
+                            .read(saveControllerProvider)
+                            .requireValue
+                            .adUseCount(
+                              kAdFeatureEventTicket,
+                              dailyDateKey(
+                                ref.read(clockProvider).now().toUtc(),
+                              ),
+                            ),
+                        cfg?.ticketAdDailyLimit ?? 0,
+                      ),
+                      jelly: cfg?.ticketJelly ?? 0,
+                      actionLabel: l.jellyActCharge,
+                    )) {
+                      return;
+                    }
+                    if (!mounted) return;
                     // 젤리를 쓴 행동이라 **결과를 말해 줘야 한다** — 조용히
                     // 끝나면 빠졌는지 안 빠졌는지 알 수 없다. 몇 장 늘었는지는
                     // 서버 세이브 차이로 센다(지급량이 바뀌어도 따라간다).

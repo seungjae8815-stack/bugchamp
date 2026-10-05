@@ -36,4 +36,21 @@ void main() {
     final r = actions.mergeSave(s, s.copyWith(saveRev: 7).toJson());
     expect(r.save!.saveRev, 40);
   });
+
+  // 올라갈 수 있는 한계(1.0.17) — 모르는 1.0.16 앱이 올려도 저장본의 한계가 남는다.
+  test('구버전 앱(feat 16)이 올리면 저장본의 한계를 지킨다', () {
+    final s = stored(1).copyWith(capTier: 1, capStage: 401);
+    final json = s.toJson()
+      ..remove('capT')
+      ..remove('capS')
+      ..['feat'] = 16;
+    final r = actions.mergeSave(s, json);
+    expect((r.save!.capTier, r.save!.capStage), (1, 401));
+  });
+
+  test('새 앱이 한계를 풀어 올리면 풀린다', () {
+    final s = stored(1).copyWith(capTier: 1, capStage: 401);
+    final json = s.copyWith(clearClimbCap: true).toJson();
+    expect(actions.mergeSave(s, json).save!.capStage, 0);
+  });
 }

@@ -17,6 +17,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../domain/audio_service.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/jelly_short.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
@@ -940,6 +941,30 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                         : (_wantDust ? dustOut == null : out == null)
                         ? null
                         : () async {
+                            // 무엇을 얼마나 받는지 보여 주고 확인받는다(받을 양은 버튼과 같은 계산).
+                            if (!await confirmJellySpend(
+                              context,
+                              title: l.exchangeTitle,
+                              body: _wantDust
+                                  ? l.exchangeConfirmDust(
+                                      cost,
+                                      formatCompact(dustOut!),
+                                    )
+                                  : _wantGold
+                                  ? l.exchangeConfirmGold(
+                                      cost,
+                                      formatCompact(out!.gold),
+                                    )
+                                  : l.exchangeConfirmMaterial(
+                                      cost,
+                                      formatCompact(out!.materials),
+                                    ),
+                              jelly: cost,
+                              actionLabel: l.jellyActExchange,
+                            )) {
+                              return;
+                            }
+                            if (!context.mounted) return;
                             final ok = _wantDust
                                 ? await ctrl.tradeJellyForDust(trades: _trades)
                                 : await ctrl.tradeJelly(

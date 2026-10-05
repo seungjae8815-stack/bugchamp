@@ -9586,6 +9586,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'[Reply from the team]'**
   String get mailReplyTitle;
+
+  /// No description provided for @jellyActExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand'**
+  String get jellyActExpand;
+
+  /// No description provided for @jellyActCharge.
+  ///
+  /// In en, this message translates to:
+  /// **'Refill'**
+  String get jellyActCharge;
+
+  /// No description provided for @jellyActExchange.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange'**
+  String get jellyActExchange;
+
+  /// No description provided for @jellyActReroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll'**
+  String get jellyActReroll;
+
+  /// No description provided for @eventJellyTicketConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly for {n} entry ticket(s)?\n(Used today: {used}/{max})'**
+  String eventJellyTicketConfirm(int jelly, int n, int used, int max);
+
+  /// No description provided for @storageExpandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand storage'**
+  String get storageExpandTitle;
+
+  /// No description provided for @storageExpandConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to add {n} storage slots?'**
+  String storageExpandConfirm(int jelly, int n);
+
+  /// No description provided for @breedingExpandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand breeding slots'**
+  String get breedingExpandTitle;
+
+  /// No description provided for @incubatorExpandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand incubator'**
+  String get incubatorExpandTitle;
+
+  /// No description provided for @slotExpandConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to add 1 slot?'**
+  String slotExpandConfirm(int jelly);
+
+  /// No description provided for @breedingInstantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish breeding now'**
+  String get breedingInstantTitle;
+
+  /// No description provided for @breedingInstantConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to get the egg right now?'**
+  String breedingInstantConfirm(int jelly);
+
+  /// No description provided for @incubatorInstantConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to hatch it right now?'**
+  String incubatorInstantConfirm(int jelly);
+
+  /// No description provided for @breakthroughInstantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish breakthrough now'**
+  String get breakthroughInstantTitle;
+
+  /// No description provided for @breakthroughInstantConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to finish the breakthrough now?'**
+  String breakthroughInstantConfirm(int jelly);
+
+  /// No description provided for @evolveAccelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed up evolution'**
+  String get evolveAccelTitle;
+
+  /// No description provided for @evolveAccelConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to evolve to the next stage ({next}) now?'**
+  String evolveAccelConfirm(int jelly, String next);
+
+  /// No description provided for @forgeExpandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand anvil'**
+  String get forgeExpandTitle;
+
+  /// No description provided for @forgeExpandConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to add {n} anvil slots?'**
+  String forgeExpandConfirm(int jelly, int n);
+
+  /// No description provided for @forgeRerollConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to reroll \'{option}\'?\nGrade and slot stay the same.'**
+  String forgeRerollConfirm(int jelly, String option);
+
+  /// No description provided for @forgeUpRushTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish workshop upgrade now'**
+  String get forgeUpRushTitle;
+
+  /// No description provided for @forgeUpRushConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to finish the {grade} upgrade now?'**
+  String forgeUpRushConfirm(int jelly, String grade);
+
+  /// No description provided for @exchangeConfirmGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to get {amount} gold?'**
+  String exchangeConfirmGold(int jelly, String amount);
+
+  /// No description provided for @exchangeConfirmMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to get {amount} of each of the 3 materials?'**
+  String exchangeConfirmMaterial(int jelly, String amount);
+
+  /// No description provided for @exchangeConfirmDust.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to get {amount} fairy dust?'**
+  String exchangeConfirmDust(int jelly, String amount);
+
+  /// No description provided for @zoneFellBack.
+  ///
+  /// In en, this message translates to:
+  /// **'You fell back to {tier} · Zone {zone}. Defeat the boss again to climb back'**
+  String zoneFellBack(String tier, int zone);
+
+  /// No description provided for @abyssFellBack.
+  ///
+  /// In en, this message translates to:
+  /// **'You fell back to Abyss floor {floor}. Defeat the floor boss to climb back'**
+  String abyssFellBack(int floor);
+
+  /// No description provided for @abyssFellOut.
+  ///
+  /// In en, this message translates to:
+  /// **'You were pushed out of the Abyss. Defeat the Extreme final boss again to re-enter'**
+  String get abyssFellOut;
 }
 
 class _AppLocalizationsDelegate

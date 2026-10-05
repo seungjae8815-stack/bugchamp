@@ -46,8 +46,9 @@ SaveGame unlockAbyss(SaveGame s) =>
     s.abyssUnlocked ? s : s.copyWith(abyssUnlocked: true);
 
 /// 심연으로 — 난이도·스테이지를 극한 끝으로 고정하고 게이지는 비운다. 성장 축은 **그대로**.
+/// 쓰러져 심연 밖으로 밀려났으면(올라갈 수 있는 한계가 있으면) 극한 최종 보스를 다시 잡아야 들어간다.
 SaveGame enterAbyss(SaveGame s, RunConfig run, String week) {
-  if (!s.abyssUnlocked) return s;
+  if (!s.abyssUnlocked || s.capStage > 0) return s;
   final w = applyAbyssWeek(s, week);
   return w.copyWith(
     inAbyss: true,

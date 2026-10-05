@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:math' as math;
 
 import 'package:core_gathering/core_gathering.dart';
@@ -746,6 +748,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(zoneKills: 0));
   }
 
+  /// 일반 몬스터에게 쓰러졌다 — 한 칸 아래로(심연이면 한 층 아래, zone_fall.dart). 바뀐 세이브를
+  /// **바로** 돌려준다(저장은 이어서 — 화면이 같은 프레임에 새 자리로 옮겨야 한다). 바뀐 게 없거나
+  /// 사냥터 모드가 아니면 null.
+  SaveGame? fallAfterDefeat() {
+    final run = ref.read(gameDataProvider).value?.runConfig;
+    final s = state.requireValue;
+    if (run == null || !run.zoneMode) return null;
+    final next = fallOnDefeat(s, run);
+    if (identical(next, s)) return null;
+    // _commit 은 첫 await 전에 state 를 바꾼다 — 아래에서 읽는 값이 저장될 값이다.
+    unawaited(_commit(next));
+    return state.requireValue;
+  }
+
   /// 보스 도전이 열렸는가 — 이 사냥터에서 [RunConfig.bossUnlockKills] 마리.
   bool get bossUnlocked {
     final run = ref.read(gameDataProvider).value?.runConfig;
@@ -786,7 +802,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final artId = run.bossArtId(s.difficultyTier, zone);
     final firstKill = !s.bossDex.contains(artId);
     final bossDex = firstKill ? {...s.bossDex, artId} : s.bossDex;
-    var next = s.copyWith(bossDex: bossDex);
+    // 쓰러져 내려왔으면 한계를 한 칸 올린다(zone_fall.dart).
+    var next = liftClimbCap(
+      s.copyWith(bossDex: bossDex),
+      run,
+      tier: s.difficultyTier,
+      zone: zone,
+    );
     var shards = const <String, int>{};
     final skillCfg = data?.skillConfig;
     if (skillCfg != null) {

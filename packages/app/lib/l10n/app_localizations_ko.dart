@@ -5546,4 +5546,118 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mailReplyTitle => '[운영자 답변]';
+
+  @override
+  String get jellyActExpand => '확장';
+
+  @override
+  String get jellyActCharge => '충전';
+
+  @override
+  String get jellyActExchange => '교환';
+
+  @override
+  String get jellyActReroll => '재굴림';
+
+  @override
+  String eventJellyTicketConfirm(int jelly, int n, int used, int max) {
+    return '젤리 $jelly개로 참가권 $n장을 충전할까요?\n(오늘 $used/$max회 사용)';
+  }
+
+  @override
+  String get storageExpandTitle => '채집함 확장';
+
+  @override
+  String storageExpandConfirm(int jelly, int n) {
+    return '젤리 $jelly개로 채집함을 $n칸 늘릴까요?';
+  }
+
+  @override
+  String get breedingExpandTitle => '짝짓기 슬롯 확장';
+
+  @override
+  String get incubatorExpandTitle => '부화기 확장';
+
+  @override
+  String slotExpandConfirm(int jelly) {
+    return '젤리 $jelly개로 슬롯을 1칸 늘릴까요?';
+  }
+
+  @override
+  String get breedingInstantTitle => '짝짓기 즉시 완료';
+
+  @override
+  String breedingInstantConfirm(int jelly) {
+    return '젤리 $jelly개로 지금 바로 알을 받을까요?';
+  }
+
+  @override
+  String incubatorInstantConfirm(int jelly) {
+    return '젤리 $jelly개로 지금 바로 부화시킬까요?';
+  }
+
+  @override
+  String get breakthroughInstantTitle => '돌파 즉시 완료';
+
+  @override
+  String breakthroughInstantConfirm(int jelly) {
+    return '젤리 $jelly개로 돌파를 지금 끝낼까요?';
+  }
+
+  @override
+  String get evolveAccelTitle => '진화 촉진';
+
+  @override
+  String evolveAccelConfirm(int jelly, String next) {
+    return '젤리 $jelly개로 지금 바로 다음 단계($next)로 진화시킬까요?';
+  }
+
+  @override
+  String get forgeExpandTitle => '모루 칸 확장';
+
+  @override
+  String forgeExpandConfirm(int jelly, int n) {
+    return '젤리 $jelly개로 모루를 $n칸 늘릴까요?';
+  }
+
+  @override
+  String forgeRerollConfirm(int jelly, String option) {
+    return '젤리 $jelly개로 \'$option\' 옵션을 다시 굴릴까요?\n등급·부위는 그대로예요.';
+  }
+
+  @override
+  String get forgeUpRushTitle => '공방 등급업 즉시 완료';
+
+  @override
+  String forgeUpRushConfirm(int jelly, String grade) {
+    return '젤리 $jelly개로 $grade 업그레이드를 지금 끝낼까요?';
+  }
+
+  @override
+  String exchangeConfirmGold(int jelly, String amount) {
+    return '젤리 $jelly개로 골드 $amount을(를) 받을까요?';
+  }
+
+  @override
+  String exchangeConfirmMaterial(int jelly, String amount) {
+    return '젤리 $jelly개로 재료 3종을 각 $amount씩 받을까요?';
+  }
+
+  @override
+  String exchangeConfirmDust(int jelly, String amount) {
+    return '젤리 $jelly개로 요정 가루 $amount을(를) 받을까요?';
+  }
+
+  @override
+  String zoneFellBack(String tier, int zone) {
+    return '버티지 못하고 $tier · 사냥터 $zone(으)로 물러났어요. 보스를 다시 잡으면 올라가요';
+  }
+
+  @override
+  String abyssFellBack(int floor) {
+    return '버티지 못하고 심연 $floor층으로 물러났어요. 층 보스를 잡으면 다시 올라가요';
+  }
+
+  @override
+  String get abyssFellOut => '버티지 못하고 심연에서 밀려났어요. 극한 최종 보스를 다시 잡으면 들어갈 수 있어요';
 }

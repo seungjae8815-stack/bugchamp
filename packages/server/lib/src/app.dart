@@ -670,10 +670,14 @@ Handler buildHandler({
           }
         }
 
-        // 진행도 랭킹 — 심연 역대 최고 층이 올랐으면 프로필에 적는다(서버가 자른 값 · 오를 때만).
-        if (r.save!.abyssBest > stored.abyssBest) {
+        // 진행도 랭킹 — 심연 **이번 주 지금 층**이 바뀌었으면 프로필에 적는다(서버가 자른 값).
+        // 내려가도 적는다(2026-10-05 — 약해지면 랭킹도 내려간다). 예전엔 역대 최고가 오를 때만 적었다.
+        // 마지막으로 적은 값(서버 소유 `abyRk`)과 다를 때만 쓴다 — 주가 바뀌어 0 이 된 것도 여기서 잡힌다.
+        final rankUp = actions.abyssRankUpdate(r.save!);
+        if (rankUp != null) {
           try {
-            await store.setAbyssBest(user.id, r.save!.abyssBest);
+            await store.setAbyssBest(user.id, rankUp.floor);
+            r = ActionResult.ok(rankUp.save, extra: r.extra);
           } catch (e) {
             stderr.writeln('[save] 심연 최고 층 기록 실패 ${user.id}: $e');
           }

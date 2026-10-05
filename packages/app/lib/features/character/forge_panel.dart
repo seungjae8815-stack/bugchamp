@@ -15,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'equip_widgets.dart';
@@ -117,6 +118,29 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     if (go != true || !mounted) return;
     await _spendJelly(
       () => ref.read(saveControllerProvider.notifier).rushForgeHammer(),
+    );
+  }
+
+  /// 모루 칸 확장 — 젤리를 쓰기 전에 몇 칸·얼마인지 확인받는다.
+  /// 모자라면 확인 창이 상점 안내로 바뀐다.
+  Future<void> _confirmExpand(
+    AppLocalizations l,
+    ForgeConfig forge,
+    SaveGame save,
+  ) async {
+    final cost = forge.stackExpandCost(save.forgeStackBought);
+    if (!await confirmJellySpend(
+      context,
+      title: l.forgeExpandTitle,
+      body: l.forgeExpandConfirm(cost, forge.stackExpandStep),
+      jelly: cost,
+      actionLabel: l.jellyActExpand,
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    await _spendJelly(
+      () => ref.read(saveControllerProvider.notifier).expandForgeStack(),
     );
   }
 
@@ -418,11 +442,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                           ? null
                           : forge.stackExpandCost(save.forgeStackBought),
                       enabled: cap < forge.stackExpandMax,
-                      onTap: () => _spendJelly(
-                        () => ref
-                            .read(saveControllerProvider.notifier)
-                            .expandForgeStack(),
-                      ),
+                      onTap: () => _confirmExpand(l, forge, save),
                     ),
                   ],
                 ),
@@ -1772,6 +1792,21 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
               _wide(
                 '${l.forgeRush} · ${forge.levelUpJelly(upAt.difference(now))}',
                 () async {
+                  final cost = forge.levelUpJelly(
+                    upAt.difference(ref.read(clockProvider).now().toUtc()),
+                  );
+                  if (!await confirmJellySpend(
+                    context,
+                    title: l.forgeUpRushTitle,
+                    body: l.forgeUpRushConfirm(
+                      cost,
+                      l.forgeLevel(save.forgeLevel + 1),
+                    ),
+                    jelly: cost,
+                  )) {
+                    return;
+                  }
+                  if (!context.mounted) return;
                   if (!await ctrl.rushForgeUpgrade() && context.mounted) {
                     showCenterToast(context, l.notEnoughJelly);
                   }

@@ -17,6 +17,8 @@ Future<bool> confirmJellySpend(
   required String title,
   required String body,
   required int jelly,
+  // 확인 버튼 글자. 비우면 '즉시'(즉시 완료·회복). 확장·충전·교환처럼 즉시가 어색한 곳만 넘긴다.
+  String? actionLabel,
 }) async {
   final l = AppLocalizations.of(context);
   // 젤리가 모자라면 확인 창 대신 상점 안내(2026-10-02).
@@ -44,7 +46,7 @@ Future<bool> confirmJellySpend(
       ),
       FilledButton(
         onPressed: () => Navigator.of(context, rootNavigator: true).pop(true),
-        child: jellyPrice(cost: jelly, label: l.actionInstant),
+        child: jellyPrice(cost: jelly, label: actionLabel ?? l.actionInstant),
       ),
     ],
   );

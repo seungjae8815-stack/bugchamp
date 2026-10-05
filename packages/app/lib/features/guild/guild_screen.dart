@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_short.dart';
 import '../../ui/labels.dart';
 import '../../ui/art.dart';
 import '../../ui/toast.dart';
@@ -456,7 +457,11 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
                     ),
                   ),
                 FilledButton.icon(
-                  onPressed: canCreate && !cooling ? _create : null,
+                  // 젤리가 모자라도 버튼은 켜 둔다 — 꺼져 있으면 왜 안 되는지·어디서
+                  // 채우는지 모른다. 누르면 다른 젤리 버튼과 같은 상점 안내.
+                  onPressed: cooling
+                      ? null
+                      : (canCreate ? _create : () => showJellyShort(context)),
                   icon: jellyIcon(size: 18),
                   label: Text(l.guildCreateWithCost(cfg.createJellyCost)),
                   style: FilledButton.styleFrom(

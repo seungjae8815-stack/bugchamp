@@ -19,3 +19,4 @@ export 'src/save_migrations.dart';
 export 'src/skill_progress.dart';
 export 'src/tier_progress.dart';
 export 'src/training_progress.dart';
+export 'src/zone_fall.dart';

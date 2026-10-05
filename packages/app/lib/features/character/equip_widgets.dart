@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/colors.dart';
+import '../../ui/jelly_confirm.dart';
 
 /// 등급 색 — `items.json` 의 ARGB 문자열을 그대로 쓴다(코드에 색 하드코딩 금지).
 Color tierColor(ItemConfig cfg, int tier) {
@@ -166,11 +167,35 @@ class ItemOptionList extends StatelessWidget {
           perfectLabel: l.optPerfect,
           // 옵션마다 따로 굴린다 — 통째로 굴리면 마음에 드는 한 줄까지
           // 같이 날아가서 원하는 조합을 못 맞춘다(2026-09-09 확정).
-          onReroll: onReroll == null ? null : () => onReroll!(i),
+          onReroll: onReroll == null
+              ? null
+              : () => _confirmReroll(context, l, optionLabel(l, o.kind), i),
         ),
       );
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
+  }
+
+  /// 재굴림은 누를 때마다 젤리가 빠진다 — 확인받고 나서 굴린다.
+  /// 모자라면 확인 창이 상점 안내로 바뀐다(호출부의 "젤리가 모자라요"는 예비용).
+  Future<void> _confirmReroll(
+    BuildContext context,
+    AppLocalizations l,
+    String option,
+    int index,
+  ) async {
+    final cost = rerollCost ?? 0;
+    if (!await confirmJellySpend(
+      context,
+      title: l.forgeReroll,
+      body: l.forgeRerollConfirm(cost, option),
+      jelly: cost,
+      actionLabel: l.jellyActReroll,
+    )) {
+      return;
+    }
+    if (!context.mounted) return;
+    onReroll?.call(index);
   }
 
   Widget _row(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:core_save/core_save.dart';
@@ -463,9 +464,15 @@ bool _localIsAhead(SaveGame local, Map<String, dynamic> remoteJson) {
   }
 
   final behind = [
+    // 지금 칸이 아니라 **가 본 최고**로 잰다(2026-10-05) — 쓰러지면 한 칸 아래로 내려가서
+    // (zone_fall.dart), 지금 칸으로 재면 내려간 직후의 로컬이 "뒤처짐"이 되어 서버 옛 세이브가
+    // 채택되며 하강이 취소된다. 내려간 것 자체는 저장 횟수(saveRev)가 가른다.
     moved
         ? cmp(local.bestStage, remote.bestStage)
-        : cmp(local.stageNumber, remote.stageNumber),
+        : cmp(
+            math.max(local.bestStage, local.stageNumber),
+            math.max(remote.bestStage, remote.stageNumber),
+          ),
     cmp(local.level, remote.level),
     cmp(local.bugs.length, remote.bugs.length),
     cmp(

@@ -5667,4 +5667,119 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailReplyTitle => '[Reply from the team]';
+
+  @override
+  String get jellyActExpand => 'Expand';
+
+  @override
+  String get jellyActCharge => 'Refill';
+
+  @override
+  String get jellyActExchange => 'Exchange';
+
+  @override
+  String get jellyActReroll => 'Reroll';
+
+  @override
+  String eventJellyTicketConfirm(int jelly, int n, int used, int max) {
+    return 'Spend $jelly Jelly for $n entry ticket(s)?\n(Used today: $used/$max)';
+  }
+
+  @override
+  String get storageExpandTitle => 'Expand storage';
+
+  @override
+  String storageExpandConfirm(int jelly, int n) {
+    return 'Spend $jelly Jelly to add $n storage slots?';
+  }
+
+  @override
+  String get breedingExpandTitle => 'Expand breeding slots';
+
+  @override
+  String get incubatorExpandTitle => 'Expand incubator';
+
+  @override
+  String slotExpandConfirm(int jelly) {
+    return 'Spend $jelly Jelly to add 1 slot?';
+  }
+
+  @override
+  String get breedingInstantTitle => 'Finish breeding now';
+
+  @override
+  String breedingInstantConfirm(int jelly) {
+    return 'Spend $jelly Jelly to get the egg right now?';
+  }
+
+  @override
+  String incubatorInstantConfirm(int jelly) {
+    return 'Spend $jelly Jelly to hatch it right now?';
+  }
+
+  @override
+  String get breakthroughInstantTitle => 'Finish breakthrough now';
+
+  @override
+  String breakthroughInstantConfirm(int jelly) {
+    return 'Spend $jelly Jelly to finish the breakthrough now?';
+  }
+
+  @override
+  String get evolveAccelTitle => 'Speed up evolution';
+
+  @override
+  String evolveAccelConfirm(int jelly, String next) {
+    return 'Spend $jelly Jelly to evolve to the next stage ($next) now?';
+  }
+
+  @override
+  String get forgeExpandTitle => 'Expand anvil';
+
+  @override
+  String forgeExpandConfirm(int jelly, int n) {
+    return 'Spend $jelly Jelly to add $n anvil slots?';
+  }
+
+  @override
+  String forgeRerollConfirm(int jelly, String option) {
+    return 'Spend $jelly Jelly to reroll \'$option\'?\nGrade and slot stay the same.';
+  }
+
+  @override
+  String get forgeUpRushTitle => 'Finish workshop upgrade now';
+
+  @override
+  String forgeUpRushConfirm(int jelly, String grade) {
+    return 'Spend $jelly Jelly to finish the $grade upgrade now?';
+  }
+
+  @override
+  String exchangeConfirmGold(int jelly, String amount) {
+    return 'Spend $jelly Jelly to get $amount gold?';
+  }
+
+  @override
+  String exchangeConfirmMaterial(int jelly, String amount) {
+    return 'Spend $jelly Jelly to get $amount of each of the 3 materials?';
+  }
+
+  @override
+  String exchangeConfirmDust(int jelly, String amount) {
+    return 'Spend $jelly Jelly to get $amount fairy dust?';
+  }
+
+  @override
+  String zoneFellBack(String tier, int zone) {
+    return 'You fell back to $tier · Zone $zone. Defeat the boss again to climb back';
+  }
+
+  @override
+  String abyssFellBack(int floor) {
+    return 'You fell back to Abyss floor $floor. Defeat the floor boss to climb back';
+  }
+
+  @override
+  String get abyssFellOut =>
+      'You were pushed out of the Abyss. Defeat the Extreme final boss again to re-enter';
 }

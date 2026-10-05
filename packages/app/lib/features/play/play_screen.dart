@@ -2040,14 +2040,39 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       // ⚠️ 헌법 §2.4 의 "실패 벌칙 없음"이 이 지시로 바뀌었다 — 보스는 겨우
       // 잡히는 체력이라 실패가 잦고, 그때마다 100마리를 다시 채워야 한다.
       // 진행이 눈에 띄게 느려지면 여기부터 되돌린다.
-      unawaited(ref.read(saveControllerProvider.notifier).resetZoneKills());
       if (_bossChallenge) {
+        unawaited(ref.read(saveControllerProvider.notifier).resetZoneKills());
         _bossChallenge = false;
         if (mounted) {
           showCenterToast(
             context,
             AppLocalizations.of(context).bossChallengeFailed,
           );
+        }
+      } else {
+        // **일반 몬스터에게 쓰러지면 한 칸 아래로**(2026-10-05 사장님 확정, zone_fall.dart) —
+        // 그 사냥터를 버틸 힘이 없다는 뜻이다. 보스 도전이 열린 채로 도착해서, 아래 보스만 다시
+        // 잡으면 돌아온다. 로드맵·랭킹도 그 칸까지로 내려간다.
+        final before = ref.read(saveControllerProvider).requireValue;
+        final after = ref
+            .read(saveControllerProvider.notifier)
+            .fallAfterDefeat();
+        if (after != null) {
+          _stage = after.stageNumber;
+          if (mounted) {
+            final l = AppLocalizations.of(context);
+            showCenterToast(
+              context,
+              before.inAbyss && after.inAbyss
+                  ? l.abyssFellBack(after.abyssFloor)
+                  : before.inAbyss
+                  ? l.abyssFellOut
+                  : l.zoneFellBack(
+                      tierName(l, after.difficultyTier),
+                      _config.zoneOf(after.stageNumber),
+                    ),
+            );
+          }
         }
       }
     } else {
@@ -5038,8 +5063,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           highestStage: save.highestStageInTier(_config),
           liveStage: _stage,
           tier: save.difficultyTier,
-          topTier: save.topTier,
-          abyssUnlocked: save.abyssUnlocked,
+          // 쓰러져 내려왔으면 한계까지만(zone_fall.dart) — 심연도 극한 최종 보스를 다시 잡아야 열린다.
+          topTier: save.climbTopTier,
+          abyssUnlocked: save.abyssUnlocked && save.capStage == 0,
           inAbyss: save.inAbyss,
           abyssFloor: save.abyssFloor,
           abyssBest: save.abyssBest,
