@@ -35,6 +35,7 @@ class RoadmapScreen extends StatefulWidget {
     required this.config,
     required this.runConfig,
     required this.highestStage,
+    this.conqueredStage,
     required this.liveStage,
     this.tier = 0,
     this.topTier = 0,
@@ -62,6 +63,10 @@ class RoadmapScreen extends StatefulWidget {
   final RunConfig runConfig;
 
   final int highestStage;
+
+  /// 한계와 상관없이 잡아 본 최고 스테이지(쓰러져 내려와 [highestStage] 가 잘렸을 때만 다르다).
+  /// null 이면 [highestStage] 와 같다.
+  final int? conqueredStage;
   final int liveStage;
 
   @override
@@ -349,6 +354,8 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     final zones = rc.zonesPerTier;
     final hereZone = rc.zoneOf(widget.liveStage);
     final topZone = rc.zoneOf(widget.highestStage);
+    // 쓰러져 내려왔으면(2026-10-05) 한계 위 칸도 한 번 잡았으면 그림은 보여 준다 — 갈 수만 없다.
+    final seenZone = rc.zoneOf(widget.conqueredStage ?? widget.highestStage);
     return Scaffold(
       appBar: AppBar(
         title: Text(l.roadmapTitle),
@@ -393,6 +400,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
             itemBuilder: (context, i) {
               final zone = i + 1; // reverse 라 i=0(사냥터 1)이 맨 아래
               final conquered = topZone > zone;
+              final reclaim = !conquered && seenZone > zone;
               final here = zone == hereZone;
               final artId = rc.bossArtId(widget.tier, zone);
               final info = widget.config.boss(artId);
@@ -402,7 +410,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
               return _ZoneRow(
                 zone: zone,
                 isFinal: rc.isFinalZone(zone),
-                conquered: conquered,
+                conquered: conquered || reclaim,
                 here: here,
                 // 점령한 곳과 지금 있는 곳까지만 갈 수 있다.
                 unlocked: conquered || here,
@@ -415,7 +423,9 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
                     '',
                 desc: info?.desc.resolve(locale) ?? '',
                 artPath: 'assets/images/bosses/$artId.webp',
-                statusText: conquered
+                statusText: reclaim
+                    ? l.zoneReclaim
+                    : conquered
                     ? l.zoneConquered
                     : here
                     ? l.zoneHere

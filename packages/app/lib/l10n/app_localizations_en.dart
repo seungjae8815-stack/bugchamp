@@ -3486,7 +3486,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exchangeHint =>
-      'Trade jelly for one hour of hunting at your current power';
+      'Trade jelly for one hour of hunting at your current power (without buffs)';
 
   @override
   String get exchangeToGold => 'To gold';
@@ -5672,7 +5672,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get jellyActExpand => 'Expand';
 
   @override
-  String get jellyActCharge => 'Refill';
+  String get jellyActCharge => 'Buy';
 
   @override
   String get jellyActExchange => 'Exchange';
@@ -5682,7 +5682,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventJellyTicketConfirm(int jelly, int n, int used, int max) {
-    return 'Spend $jelly Jelly for $n entry ticket(s)?\n(Used today: $used/$max)';
+    return 'Spend $jelly Jelly for +$n entry tickets?\n(Used today: $used/$max)';
   }
 
   @override
@@ -5770,16 +5770,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String zoneFellBack(String tier, int zone) {
-    return 'You fell back to $tier · Zone $zone. Defeat the boss again to climb back';
+  String zoneFellBack(String tier, String zone) {
+    return 'You fell back to $tier · $zone. Defeat the boss again to climb back';
   }
 
   @override
   String abyssFellBack(int floor) {
-    return 'You fell back to Abyss floor $floor. Defeat the floor boss to climb back';
+    return 'You fell back to Abyss F$floor. Defeat the floor boss to climb back';
   }
 
   @override
   String get abyssFellOut =>
       'You were pushed out of the Abyss. Defeat the Extreme final boss again to re-enter';
+
+  @override
+  String get zoneReclaim => 'Reclaim it';
 }

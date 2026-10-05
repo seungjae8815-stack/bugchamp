@@ -49,6 +49,21 @@ void main() {
       expect(r.extra['clampReasons'] ?? const [], isNot(contains('abyss')));
     });
 
+    // 쓰러지면 한 칸 아래로(2026-10-05) — 내려간 층은 예산을 돌려받아, 곧바로 다시 올라도 잘리지 않는다.
+    test('쓰러졌다 곧바로 복귀해도 층이 잘리지 않는다', () {
+      // 예산을 다 쓴 상태: 기준 시각 = 지금.
+      final s = stored(floor: 10, best: 9).copyWith(abyssFloorAt: t0);
+      final down = actions.mergeSave(s, s.copyWith(abyssFloor: 9).toJson());
+      expect(down.save!.abyssFloor, 9);
+      // 몇 초 뒤 아래 보스를 잡고 10층으로 — 이미 인정받은 층이다.
+      final again = actions.mergeSave(
+        down.save!,
+        down.save!.copyWith(abyssFloor: 10).toJson(),
+      );
+      expect(again.save!.abyssFloor, 10);
+      expect(again.extra['clampReasons'] ?? const [], isNot(contains('abyss')));
+    });
+
     test('60초에 999층은 잘린다(층당 최소 시간)', () {
       final s = stored();
       final client = s.copyWith(abyssFloor: 999, abyssBest: 998);

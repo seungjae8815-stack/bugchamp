@@ -2190,6 +2190,8 @@ SaveGame applyZoneEpoch(SaveGame save) {
     maxTierReached: top,
     zoneKills: 0,
     zoneEpoch: kZoneEpoch,
+    // 쓰러져 내려온 한계(zone_fall.dart)도 옛 구조의 스테이지 값이라 비운다.
+    clearClimbCap: true,
     // 회차 전환처럼 성장 축을 되돌리지는 않는다 — 강해진 채로 빠르게 뚫는 게
     // 이번 전환의 약속이다.
   );

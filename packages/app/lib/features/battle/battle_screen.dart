@@ -1310,6 +1310,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       title: l.injuryHealConfirmTitle,
       body: l.injuryHealConfirm(jelly),
       jelly: jelly,
+      actionLabel: l.injuryHealConfirmTitle,
     )) {
       return;
     }

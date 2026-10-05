@@ -3282,6 +3282,7 @@ class StorageScreen extends ConsumerWidget {
                   title: l.injuryHealConfirmTitle,
                   body: l.injuryHealConfirm(jelly),
                   jelly: jelly,
+                  actionLabel: l.injuryHealConfirmTitle,
                 )) {
                   return;
                 }

@@ -3405,7 +3405,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get exchangeTitle => '교환소';
 
   @override
-  String get exchangeHint => '젤리를 지금 내 능력치로 1시간 사냥한 만큼으로 바꿔요';
+  String get exchangeHint => '젤리를 지금 내 능력치(버프 제외)로 1시간 사냥한 만큼으로 바꿔요';
 
   @override
   String get exchangeToGold => '골드로';
@@ -5630,12 +5630,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String forgeUpRushConfirm(int jelly, String grade) {
-    return '젤리 $jelly개로 $grade 업그레이드를 지금 끝낼까요?';
+    return '젤리 $jelly개로 $grade 등급업을 지금 끝낼까요?';
   }
 
   @override
   String exchangeConfirmGold(int jelly, String amount) {
-    return '젤리 $jelly개로 골드 $amount을(를) 받을까요?';
+    return '젤리 $jelly개 → 골드 $amount\n교환할까요?';
   }
 
   @override
@@ -5645,12 +5645,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String exchangeConfirmDust(int jelly, String amount) {
-    return '젤리 $jelly개로 요정 가루 $amount을(를) 받을까요?';
+    return '젤리 $jelly개 → 요정 가루 $amount\n교환할까요?';
   }
 
   @override
-  String zoneFellBack(String tier, int zone) {
-    return '버티지 못하고 $tier · 사냥터 $zone(으)로 물러났어요. 보스를 다시 잡으면 올라가요';
+  String zoneFellBack(String tier, String zone) {
+    return '버티지 못하고 $tier · $zone까지 물러났어요. 보스를 다시 잡으면 올라가요';
   }
 
   @override
@@ -5660,4 +5660,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get abyssFellOut => '버티지 못하고 심연에서 밀려났어요. 극한 최종 보스를 다시 잡으면 들어갈 수 있어요';
+
+  @override
+  String get zoneReclaim => '다시 잡아야 해요';
 }

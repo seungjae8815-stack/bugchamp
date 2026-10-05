@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
+import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../domain/server_sync.dart';
@@ -78,6 +79,18 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   void dispose() {
     _tick?.cancel();
     super.dispose();
+  }
+
+  /// 지금 바로 서버에 올린다(60초 주기를 기다리지 않는다 — 훈련은 누르고 바로 나가는 행동이다).
+  /// 화면의 `ref` 를 쥔 업로더(`pushSaveNow`)를 쓰지 않는다 — 업로드 중에 화면을 닫으면 Riverpod 이
+  /// 닫힌 `ref` 에서 예외를 던졌다(2026-10-05 출시 전 점검). 필요한 값을 **지금** 읽어 넘긴다.
+  void _pushNow() {
+    unawaited(
+      flushSaveBeforeServerAction(
+        ref.read(gameServerProvider),
+        ref.read(saveControllerProvider).value,
+      ),
+    );
   }
 
   TrainingConfig _cfg(GameData d) =>
@@ -266,7 +279,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                           .finishDuelTrainingWithJelly();
                       if (!mounted) return;
                       if (err == null) {
-                        unawaited(pushSaveNow(ref));
+                        _pushNow();
                         AudioService.instance.sfxEnhance();
                       } else {
                         showCenterToast(context, l.notEnoughJelly);
@@ -653,7 +666,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                     if (!mounted) return;
                     if (err == null) {
                       // 훈련은 누르고 바로 앱을 나가는 행동이라 60초 주기를 기다리지 않고 올린다(2026-10-05 제보).
-                      unawaited(pushSaveNow(ref));
+                      _pushNow();
                       AudioService.instance.sfxEnhance();
                     } else {
                       showCenterToast(
@@ -712,7 +725,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         .read(saveControllerProvider.notifier)
         .resetDuelTraining(bug.id);
     if (!mounted) return;
-    if (r != null) unawaited(pushSaveNow(ref));
+    if (r != null) _pushNow();
     showCenterToast(context, r == null ? l.trainingBusy : l.trainingResetDone);
   }
 }

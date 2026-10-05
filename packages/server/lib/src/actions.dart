@@ -3186,9 +3186,12 @@ class GameActions {
       floor = maxFloor;
       clamped = true;
     }
-    final gained = floor > base ? floor - base : 0;
+    // 오른 층만큼 기준 시각을 앞으로, **내려간 층만큼은 뒤로** 돌려준다(2026-10-05 쓰러지면 한 칸 아래로).
+    // 안 돌려주면 벽에서 쓰러졌다 곧바로 아래 보스를 잡고 복귀하는 정상 유저가, 이미 한 번 인정받은 층을
+    // 다시 오를 때마다 예산을 써서 잘린다. 일부러 내려갔다 오르는 건 그대로 0 이라 이득이 없다.
+    final steps = floor - base;
     final floorAt = anchor.add(
-      Duration(milliseconds: (gained * perFloor * 1000).round()),
+      Duration(milliseconds: (steps * perFloor * 1000).round()),
     );
     final clientBest = (clientJson['abyssBest'] as num?)?.toInt() ?? 0;
     final best = max(stored.abyssBest, min(clientBest, floor - 1));

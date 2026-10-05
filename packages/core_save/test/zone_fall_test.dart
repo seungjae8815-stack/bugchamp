@@ -35,12 +35,35 @@ void main() {
       expect(s.maxTierReached, 1);
     });
 
-    test('사냥터 1 → 이전 난이도 최종 사냥터(성장 초기화 없음)', () {
+    test('사냥터 1 은 난이도를 넘지 않는다(이전 난이도 최종이 더 세다) — 게이지만', () {
       final s = fallOnDefeat(at(tier: 2, zone: 1, top: 2, bestZone: 1), run);
-      expect(s.difficultyTier, 1);
-      expect(s.stageNumber, z(last));
-      expect(s.maxTierReached, 2, reason: '가 본 최고 난이도는 그대로 — 내리면 다시 갈 때 초기화된다');
-      expect((s.capTier, s.capStage), (1, z(last)));
+      expect(s.difficultyTier, 2);
+      expect(s.stageNumber, z(1));
+      expect(s.zoneKills, 0);
+      expect(s.capStage, 0);
+    });
+
+    test('가 본 최고보다 아래 칸에서 쓰러지면 게이지만(한계를 걸지 않는다)', () {
+      // 보통 사냥터 6 까지 간 유저가 쉬움 최종을 구경하다 쓰러짐.
+      final low = fallOnDefeat(
+        at(tier: 0, zone: last, top: 1, bestZone: 6),
+        run,
+      );
+      expect(low.difficultyTier, 0);
+      expect(low.stageNumber, z(last));
+      expect(low.capStage, 0);
+      expect(selectTierSave(low, run, 1).difficultyTier, 1, reason: '돌아갈 수 있다');
+      // 같은 난이도 아래 칸도 마찬가지.
+      final same = fallOnDefeat(at(zone: 3, bestZone: 8), run);
+      expect(same.stageNumber, z(3));
+      expect(same.capStage, 0);
+    });
+
+    test('한계 칸에서 또 쓰러지면 한 칸 더 내려간다', () {
+      final once = fallOnDefeat(at(), run);
+      final twice = fallOnDefeat(once.copyWith(zoneKills: 0), run);
+      expect(twice.stageNumber, z(4));
+      expect(twice.capStage, z(4));
     });
 
     test('쉬움 사냥터 1 은 게이지만 비운다', () {
@@ -92,11 +115,13 @@ void main() {
 
   group('한계', () {
     test('로드맵은 한계 위로 못 간다 · 랭킹도 한계', () {
-      final s = fallOnDefeat(at(tier: 2, zone: 1, top: 2, bestZone: 4), run);
-      expect(s.climbTopTier, 1);
-      expect(selectTierSave(s, run, 2).difficultyTier, 1);
-      expect(s.highestStageInTier(run), z(last));
-      expect(s.rankProgress, (tier: 1, stage: z(last)));
+      final s = fallOnDefeat(at(tier: 2, zone: 4, top: 2, bestZone: 4), run);
+      expect(s.highestStageInTier(run), z(3));
+      expect(s.rankProgress, (tier: 2, stage: z(3)));
+      // 아래 난이도로는 가고, 한계 난이도로 돌아오면 한계 칸에 선다.
+      final down = selectTierSave(s, run, 1);
+      expect(down.difficultyTier, 1);
+      expect(selectTierSave(down, run, 2).stageNumber, z(3));
     });
 
     test('보스를 잡으면 한 칸씩 오르고, 가 본 최고 자리에 닿으면 풀린다', () {
@@ -107,13 +132,6 @@ void main() {
       expect(s.rankProgress, (tier: 1, stage: z(5)));
       s = liftClimbCap(s, run, tier: 1, zone: 5);
       expect(s.capStage, 0, reason: '사냥터 6(가 본 최고)에 닿았다');
-    });
-
-    test('이전 난이도 최종 보스를 잡으면 원래 난이도 사냥터 1 이 열린다', () {
-      var s = fallOnDefeat(at(tier: 2, zone: 1, top: 2, bestZone: 3), run);
-      s = liftClimbCap(s, run, tier: 1, zone: last);
-      expect((s.capTier, s.capStage), (2, z(1)));
-      expect(selectTierSave(s, run, 2).stageNumber, z(1));
     });
 
     test('한계 아래 보스를 다시 잡아도 한계는 그대로', () {

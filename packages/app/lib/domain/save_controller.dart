@@ -786,8 +786,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 보스면 많이, 다시 잡으면 조금. 받은 조각(스킬 id → 개수)을 돌려준다.
   /// 사냥터 보스 처치 → 다음 사냥터 — 길드전 3일차.
   Future<Map<String, int>> advanceZone({math.Random? rng}) async {
+    // 쓰러져 내려온 칸의 보스를 다시 잡는 건 **되찾기**다 — 길드전 집계에 넣지 않는다. 넣으면 장비를 빼서
+    // 일부러 쓰러지고(게이지가 찬 채 도착) 곧바로 잡는 반복이 4분에 한 번이던 처치를 몇 초에 한 번으로 만든다.
+    final reclaim = (state.value?.capStage ?? 0) > 0;
     final r = await _advanceZoneImpl(rng: rng);
-    GuildWarTally.add('zoneClear', ref.read(clockProvider).now().toUtc());
+    if (!reclaim) {
+      GuildWarTally.add('zoneClear', ref.read(clockProvider).now().toUtc());
+    }
     return r;
   }
 
@@ -811,7 +816,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
     var shards = const <String, int>{};
     final skillCfg = data?.skillConfig;
-    if (skillCfg != null) {
+    // 되찾기(한계가 있던 채로 잡음)는 재처치 조각을 굴리지 않는다 — 일부러 쓰러졌다 잡는 반복 파밍 차단.
+    // 첫 처치(도감에 없던 보스)는 그대로 준다.
+    final reclaim = s.capStage > 0;
+    if (skillCfg != null && (firstKill || !reclaim)) {
       final got = grantBossShards(
         next,
         skillCfg,

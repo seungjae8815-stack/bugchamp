@@ -6,14 +6,16 @@ import 'tier_progress.dart';
 
 /// 쓰러지면 아래로(2026-10-05 사장님 확정) — **앱과 서버가 같은 함수**를 쓴다(§4).
 ///
-/// - **일반 몬스터**에게 쓰러지면 한 칸 아래 사냥터로 내려가고, 올라갈 수 있는 한계
-///   ([SaveGame.capTier]·[SaveGame.capStage])도 그 칸이 된다. 보스 도전 실패는 예전처럼 게이지만 비운다
-///   (보스는 "겨우 잡히는" 체력이라 실패가 잦은 게 정상이다).
-/// - 사냥터 1 이면 이전 난이도의 최종 사냥터로. 쉬움 사냥터 1 은 더 내려갈 곳이 없어 게이지만 비운다.
-/// - 심연이면 한 층 아래로, 심연 1층이면 극한 최종 사냥터로 나간다.
-/// - 내려간 칸에는 **보스 도전이 열린 채로** 도착한다 — 그 보스(이미 잡아 본 보스)만 다시 잡으면 원래 칸으로
-///   돌아간다. 정말 약해졌으면 그 보스도 못 잡아 머물게 된다.
-/// - 로드맵은 한계 위로 못 간다(안 그러면 로드맵을 눌러 바로 되돌아간다). 진행도 랭킹도 한계로 매긴다.
+/// - **올라갈 수 있는 가장 높은 칸**([frontierOf])에서 **일반 몬스터**에게 쓰러지면 한 칸 아래 사냥터로 내려가고,
+///   올라갈 수 있는 한계([SaveGame.capTier]·[SaveGame.capStage])도 그 칸이 된다.
+/// - 그보다 **아래 칸**(로드맵으로 내려가 농사하던 칸)에서 쓰러지면 예전처럼 게이지만 비운다 — 한계를 지금 칸으로
+///   덮으면 쉬움을 구경하다 쓰러진 유저가 최고 난이도로 못 돌아갔다(2026-10-05 출시 전 점검).
+/// - **사냥터 1 은 난이도를 넘지 않는다**(게이지만). 난이도마다 성장이 초기화돼서 이전 난이도의 최종 사냥터가 지금
+///   사냥터 1 보다 수백 배 세다(보통 1 체력 287 · 쉬움 최종 158,734) — "아래로"가 아니라 "위로"가 된다.
+/// - 심연이면 한 층 아래로, 심연 1층이면 극한 최종 사냥터로 나간다(심연은 극한 최종 위에 층 배율만 얹으므로
+///   극한 최종이 더 쉽다).
+/// - 보스 도전 실패는 이 함수를 부르지 않는다(게이지만 — 보스는 "겨우 잡히는" 체력이라 실패가 잦은 게 정상).
+/// - 내려간 칸에는 **보스 도전이 열린 채로** 도착한다 — 그 보스만 다시 잡으면 원래 칸으로 돌아간다.
 SaveGame fallOnDefeat(SaveGame s, RunConfig run) {
   final full = run.bossUnlockKills;
   if (s.inAbyss) {
@@ -35,23 +37,27 @@ SaveGame fallOnDefeat(SaveGame s, RunConfig run) {
     );
   }
   final zone = run.zoneOf(s.stageNumber);
-  var t = s.difficultyTier;
-  int z;
-  if (zone > 1) {
-    z = zone - 1;
-  } else if (t > 0) {
-    t -= 1;
-    z = run.zonesPerTier;
-  } else {
-    return s.copyWith(zoneKills: 0);
+  final front = frontierOf(s, run);
+  final atFront = s.difficultyTier == front.tier && zone >= front.zone;
+  if (!atFront || zone <= 1) {
+    return s.zoneKills == 0 ? s : s.copyWith(zoneKills: 0);
   }
   return s.copyWith(
-    difficultyTier: t,
-    stageNumber: run.zoneStartStage(z),
+    stageNumber: run.zoneStartStage(zone - 1),
     zoneKills: full,
-    capTier: t,
-    capStage: run.zoneStartStage(z),
+    capTier: s.difficultyTier,
+    capStage: run.zoneStartStage(zone - 1),
   );
+}
+
+/// 지금 올라갈 수 있는 가장 높은 칸 — 한계가 있으면 한계, 없으면 가 본 최고 난이도의 최고 사냥터.
+({int tier, int zone}) frontierOf(SaveGame s, RunConfig run) {
+  if (s.capStage > 0) return (tier: s.capTier, zone: run.zoneOf(s.capStage));
+  final top = s.topTier;
+  final best = s.difficultyTier >= top
+      ? (s.bestStage > s.stageNumber ? s.bestStage : s.stageNumber)
+      : s.bestStage;
+  return (tier: top, zone: run.zoneOf(best < 1 ? 1 : best));
 }
 
 /// [tier] 난이도 [zone] 사냥터의 보스를 잡았다 — 한계를 그 다음 칸까지 올린다. 가 본 최고 자리에 다시

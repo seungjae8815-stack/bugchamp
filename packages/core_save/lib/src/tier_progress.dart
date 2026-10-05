@@ -26,12 +26,16 @@ extension TierProgress on SaveGame {
   /// 난이도는 다 깬 것이다(최종 보스를 넘어 올라갔으므로).
   /// 올라갈 수 있는 한계([SaveGame.capStage], zone_fall.dart)가 있으면 그 칸까지로 자른다.
   int highestStageInTier(RunConfig run) {
-    final raw = difficultyTier < topTier
-        ? run.zoneStartStage(run.zonesPerTier) + run.worldSize
-        : math.max(bestStage, stageNumber);
+    final raw = conqueredStageInTier(run);
     if (capStage <= 0 || difficultyTier < capTier) return raw;
     return math.min(raw, capStage);
   }
+
+  /// 한계와 상관없이 **잡아 본** 가장 높은 스테이지 — 로드맵이 보스 그림을 드러낼지 정하는 데 쓴다
+  /// (쓰러져 내려와도 한 번 잡은 보스는 보인다. 갈 수 있는지는 [highestStageInTier]).
+  int conqueredStageInTier(RunConfig run) => difficultyTier < topTier
+      ? run.zoneStartStage(run.zonesPerTier) + run.worldSize
+      : math.max(bestStage, stageNumber);
 
   /// 로드맵에서 고를 수 있는 가장 높은 난이도 — 한계가 있으면 한계 난이도.
   int get climbTopTier => capStage > 0 ? math.min(capTier, topTier) : topTier;

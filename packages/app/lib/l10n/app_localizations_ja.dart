@@ -3398,7 +3398,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get exchangeTitle => '交換所';
 
   @override
-  String get exchangeHint => 'ゼリーを今の能力で1時間狩りをした分に交換します';
+  String get exchangeHint => 'ゼリーを今の能力（バフを除く）で1時間狩りをした分に交換します';
 
   @override
   String get exchangeToGold => 'ゴールドへ';
@@ -5542,7 +5542,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get jellyActExpand => '拡張';
 
   @override
-  String get jellyActCharge => '補充';
+  String get jellyActCharge => 'チャージ';
 
   @override
   String get jellyActExchange => '交換';
@@ -5552,15 +5552,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventJellyTicketConfirm(int jelly, int n, int used, int max) {
-    return 'ゼリー$jelly個で参加券$n枚を補充しますか？\n（本日 $used/$max回使用）';
+    return 'ゼリー$jelly個で参加券$n枚をチャージしますか？\n（本日 $used/$max回使用）';
   }
 
   @override
-  String get storageExpandTitle => 'コレクションの拡張';
+  String get storageExpandTitle => '採集箱の拡張';
 
   @override
   String storageExpandConfirm(int jelly, int n) {
-    return 'ゼリー$jelly個でコレクションを$n枠増やしますか？';
+    return 'ゼリー$jelly個で採集箱を$n枠増やしますか？';
   }
 
   @override
@@ -5640,8 +5640,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String zoneFellBack(String tier, int zone) {
-    return '耐えきれず$tier・狩り場$zoneへ後退しました。ボスを再び倒すと戻れます';
+  String zoneFellBack(String tier, String zone) {
+    return '耐えきれず$tier・$zoneまで後退しました。ボスを再び倒すと戻れます';
   }
 
   @override
@@ -5651,4 +5651,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get abyssFellOut => '耐えきれず深淵から押し出されました。極限の最終ボスを再び倒すと入れます';
+
+  @override
+  String get zoneReclaim => '取り戻す必要あり';
 }

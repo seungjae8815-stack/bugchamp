@@ -1276,6 +1276,26 @@ class _EventScreenState extends ConsumerState<EventScreen> {
             onPressed: _busy
                 ? null
                 : () async {
+                    // 오늘 횟수를 다 썼거나 참가권이 가득이면 묻기 전에 막는다 — 확인하고 나서
+                    // 서버가 거절하면 헛걸음이다(2026-10-05 출시 전 점검).
+                    final usedNow = ref
+                        .read(saveControllerProvider)
+                        .requireValue
+                        .adUseCount(
+                          kAdFeatureEventTicket,
+                          dailyDateKey(ref.read(clockProvider).now().toUtc()),
+                        );
+                    final limit = cfg?.ticketAdDailyLimit ?? 0;
+                    if (limit > 0 && usedNow >= limit) {
+                      showCenterToast(context, l.eventAdLimit);
+                      return;
+                    }
+                    final have = (_state?['tickets'] as num?)?.toInt() ?? 0;
+                    final cap = (_state?['ticketMax'] as num?)?.toInt() ?? 5;
+                    if (have >= cap) {
+                      showCenterToast(context, l.eventTicketFull);
+                      return;
+                    }
                     // 젤리를 쓰는 버튼 — 서버에 가기 전에(세이브 업로드보다도 먼저)
                     // 확인부터 받는다. 모자라면 확인 창이 상점 안내로 바뀐다.
                     if (!await confirmJellySpend(

@@ -2057,10 +2057,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         final after = ref
             .read(saveControllerProvider.notifier)
             .fallAfterDefeat();
+        // 쉬움 사냥터 1 은 내려갈 곳이 없어 게이지만 비운다 — 움직이지 않았으니 안내도 없다.
+        final moved =
+            after != null &&
+            (after.stageNumber != before.stageNumber ||
+                after.difficultyTier != before.difficultyTier ||
+                after.inAbyss != before.inAbyss ||
+                after.abyssFloor != before.abyssFloor);
         if (after != null) {
           _stage = after.stageNumber;
-          if (mounted) {
+          if (mounted && moved) {
             final l = AppLocalizations.of(context);
+            final zone = _config.zoneOf(after.stageNumber);
             showCenterToast(
               context,
               before.inAbyss && after.inAbyss
@@ -2069,7 +2077,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ? l.abyssFellOut
                   : l.zoneFellBack(
                       tierName(l, after.difficultyTier),
-                      _config.zoneOf(after.stageNumber),
+                      _config.isFinalZone(zone)
+                          ? l.zoneFinalLabel
+                          : l.zoneLabel(zone),
                     ),
             );
           }
@@ -5061,6 +5071,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           config: cfg,
           runConfig: _config,
           highestStage: save.highestStageInTier(_config),
+          conqueredStage: save.conqueredStageInTier(_config),
           liveStage: _stage,
           tier: save.difficultyTier,
           // 쓰러져 내려왔으면 한계까지만(zone_fall.dart) — 심연도 극한 최종 보스를 다시 잡아야 열린다.

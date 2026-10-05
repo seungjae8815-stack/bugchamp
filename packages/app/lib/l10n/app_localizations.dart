@@ -6049,7 +6049,7 @@ abstract class AppLocalizations {
   /// No description provided for @exchangeHint.
   ///
   /// In en, this message translates to:
-  /// **'Trade jelly for one hour of hunting at your current power'**
+  /// **'Trade jelly for one hour of hunting at your current power (without buffs)'**
   String get exchangeHint;
 
   /// No description provided for @exchangeToGold.
@@ -9596,7 +9596,7 @@ abstract class AppLocalizations {
   /// No description provided for @jellyActCharge.
   ///
   /// In en, this message translates to:
-  /// **'Refill'**
+  /// **'Buy'**
   String get jellyActCharge;
 
   /// No description provided for @jellyActExchange.
@@ -9614,7 +9614,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventJellyTicketConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Spend {jelly} Jelly for {n} entry ticket(s)?\n(Used today: {used}/{max})'**
+  /// **'Spend {jelly} Jelly for +{n} entry tickets?\n(Used today: {used}/{max})'**
   String eventJellyTicketConfirm(int jelly, int n, int used, int max);
 
   /// No description provided for @storageExpandTitle.
@@ -9740,13 +9740,13 @@ abstract class AppLocalizations {
   /// No description provided for @zoneFellBack.
   ///
   /// In en, this message translates to:
-  /// **'You fell back to {tier} · Zone {zone}. Defeat the boss again to climb back'**
-  String zoneFellBack(String tier, int zone);
+  /// **'You fell back to {tier} · {zone}. Defeat the boss again to climb back'**
+  String zoneFellBack(String tier, String zone);
 
   /// No description provided for @abyssFellBack.
   ///
   /// In en, this message translates to:
-  /// **'You fell back to Abyss floor {floor}. Defeat the floor boss to climb back'**
+  /// **'You fell back to Abyss F{floor}. Defeat the floor boss to climb back'**
   String abyssFellBack(int floor);
 
   /// No description provided for @abyssFellOut.
@@ -9754,6 +9754,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You were pushed out of the Abyss. Defeat the Extreme final boss again to re-enter'**
   String get abyssFellOut;
+
+  /// No description provided for @zoneReclaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Reclaim it'**
+  String get zoneReclaim;
 }
 
 class _AppLocalizationsDelegate
