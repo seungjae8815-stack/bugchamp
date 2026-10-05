@@ -672,12 +672,32 @@ class _ForgePile extends StatelessWidget {
     // **쌓인 걸 다 보여 준다.** 5개까지만 그렸더니 10칸이 찼는데도 5개로
     // 보여서 "안 쌓인다"로 읽혔다. 대신 간격을 좁혀 다 들어가게 한다.
     // 오른쪽에서 왼쪽으로 — 방금 뽑힌 게 맨 왼쪽이자 **맨 위**다.
-    const step = -11.0;
+    //
+    // ⚠️ 칸 폭을 **다 쓰고**, 줄이 그 안에 들어가게 간격을 줄인다(2026-10-05 사장님 지적).
+    // 폭을 170 으로 박아 두었더니 모루를 늘려 20~50개가 쌓이면 줄이 칸 밖으로 뻗어, 바깥쪽은 눌러도
+    // 반응이 없고 가운데만 눌렸다. 이제 칸 어디를 눌러도 맨 위(방금 뽑은 것)가 열린다.
+    return LayoutBuilder(
+      builder: (context, box) {
+        final width = box.maxWidth.isFinite ? box.maxWidth : 170.0;
+        const itemW = 30.0;
+        const badgeRoom = 26.0; // 오른쪽 위 개수 배지 자리
+        final usable = (width - itemW - badgeRoom).clamp(0.0, double.infinity);
+        final n = stack.length;
+        final step = n <= 1 ? 0.0 : -math.min(11.0, usable / (n - 1));
+        return _pile(context, l, width, h, step);
+      },
+    );
+  }
 
+  Widget _pile(
+    BuildContext context,
+    AppLocalizations l,
+    double width,
+    double h,
+    double step,
+  ) {
     return SizedBox(
-      // 폭을 고정한다 — 안 그러면 개수 배지가 아이템 한 칸 옆(=가운데)에
-      // 붙어 버린다. 10개가 ±50px 로 퍼지므로 그만큼 잡아 둔다.
-      width: 170,
+      width: width,
       height: h,
       child: GestureDetector(
         onTap: onTap,

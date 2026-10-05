@@ -3405,7 +3405,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get exchangeTitle => '교환소';
 
   @override
-  String get exchangeHint => '젤리를 지금 내 능력치(버프 제외)로 1시간 사냥한 만큼으로 바꿔요';
+  String get exchangeHint => '젤리를 지금 내 능력치로 1시간 사냥한 만큼으로 바꿔요';
 
   @override
   String get exchangeToGold => '골드로';

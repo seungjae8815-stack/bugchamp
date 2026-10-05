@@ -2400,7 +2400,7 @@
   "giftDoubleCapTitle": "Free double already used today",
   "giftDoubleCapBody": "With a Pass, every gift stays doubled\nand gets claimed automatically.",
   "exchangeTitle": "Exchange",
-  "exchangeHint": "Trade jelly for one hour of hunting at your current power (without buffs)",
+  "exchangeHint": "Trade jelly for one hour of hunting at your current power",
   "exchangeToGold": "To gold",
   "exchangeToMaterial": "To materials",
   "exchangeCost": "{n} jelly",

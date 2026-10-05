@@ -3398,7 +3398,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get exchangeTitle => '交換所';
 
   @override
-  String get exchangeHint => 'ゼリーを今の能力（バフを除く）で1時間狩りをした分に交換します';
+  String get exchangeHint => 'ゼリーを今の能力で1時間狩りをした分に交換します';
 
   @override
   String get exchangeToGold => 'ゴールドへ';
