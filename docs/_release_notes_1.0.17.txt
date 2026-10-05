@@ -1,0 +1,37 @@
+========================================
+ Google Play — 출시 노트 (1.0.17 / 20260942)
+========================================
+※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
+※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
+※ 재계산:
+   python -c "import io;s=io.open('docs/_release_notes_1.0.17.txt',encoding='utf-8').read();b=s.split('-'*40,1)[1].strip();print(len(b)+b.count(chr(10)))"
+※ 범위: 1.0.16(20260941) 이후 — 쓰러지면 한 칸 아래 · 교환소 개편 · 젤리 확인 창 · 훈련 저장 · 모루 더미 · 문구.
+※ ⚠️ 유저에게 불리한 변경: 가장 높은 사냥터에서 쓰러지면 한 칸 아래로 · 심연 순위는 지금 층 기준.
+----------------------------------------
+<ko-KR>
+⚔️ 사냥터·교환소 업데이트
+
+• 쓰러지면 한 칸 아래로
+• 교환소 대폭 상향
+• 젤리 사용 전 확인 창
+• 훈련 취소 문제 수정
+• 버그 수정
+</ko-KR>
+<en-US>
+⚔️ Zones & exchange update
+
+• Fall back a zone when defeated
+• Exchange gives much more
+• Confirm before spending jelly
+• Training no longer cancels
+• Bug fixes
+</en-US>
+<ja-JP>
+⚔️ 狩り場・交換所アップデート
+
+• 倒れると1つ下の狩り場へ
+• 交換所を大幅強化
+• ゼリー使用前に確認
+• 訓練が取り消される問題を修正
+• 不具合修正
+</ja-JP>

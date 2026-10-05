@@ -1,0 +1,41 @@
+========================================
+ App Store — 새로운 기능 (1.0.17 / 20260942)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지.
+※ 범위: 1.0.16(20260941) 이후.
+
+<ko-KR>
+사냥터와 교환소가 바뀌었어요
+
+- 지금 갈 수 있는 가장 높은 사냥터에서 일반 몬스터에게 쓰러지면 한 칸 아래 사냥터로 물러납니다. 보스 도전이 열린 채로 도착하니, 그 보스를 다시 잡으면 바로 돌아갈 수 있어요
+- 심연에서 쓰러지면 한 층 아래로 내려가고, 심연 순위와 진행도 랭킹은 지금 층 기준으로 바뀝니다
+- 교환소: 젤리 10개로 지금 내 능력치로 1시간 사냥한 만큼의 골드나 재료를 받습니다(예전보다 크게 늘었어요)
+- 젤리를 쓰는 버튼에는 먼저 확인 창이 뜹니다(확장, 즉시 완료, 재굴림, 대회 참가권 충전 등)
+- 훈련을 시작하고 바로 게임을 나가면 훈련이 취소되던 문제를 고쳤습니다
+- 공방에서 쌓인 장비 줄 어디를 눌러도 방금 나온 장비가 열립니다
+- 여러 문구와 문제를 고쳤습니다
+</ko-KR>
+
+<en-US>
+Zones and the exchange have changed
+
+- If a regular monster defeats you in the highest zone you can reach, you fall back one zone. You arrive with the boss challenge open, so beating that boss takes you right back
+- In the Abyss you fall back one floor, and the Abyss ranking and progress ranking now use your current floor
+- Exchange: 10 jelly now gives the gold or materials of one hour of hunting at your current power (much more than before)
+- Buttons that spend jelly now ask for confirmation first (expansions, instant finish, rerolls, contest ticket refills and more)
+- Fixed training being canceled when you left the game right after starting it
+- Tap anywhere on the stacked gear in the workshop to open the newest item
+- Various text and bug fixes
+</en-US>
+
+<ja-JP>
+狩り場と交換所が変わりました
+
+- 今行ける一番上の狩り場で通常モンスターに倒されると、1つ下の狩り場へ後退します。ボス挑戦が開いた状態で着くので、そのボスを倒せばすぐ戻れます
+- 深淵で倒されると1つ下の階へ。深淵ランキングと進行度ランキングは今の階が基準になります
+- 交換所: ゼリー10個で、今の能力で1時間狩りをした分のゴールドか素材を受け取れます(以前より大きく増えました)
+- ゼリーを使うボタンは、先に確認画面が出ます(拡張、即完了、再抽選、大会参加券のチャージなど)
+- 訓練を始めてすぐゲームを閉じると訓練が取り消される問題を修正しました
+- 工房で積み重なった装備の列のどこを押しても、最新の装備が開きます
+- いくつかの文言と不具合を修正しました
+</ja-JP>
