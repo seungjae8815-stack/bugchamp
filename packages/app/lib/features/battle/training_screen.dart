@@ -84,11 +84,13 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   /// 지금 바로 서버에 올린다(60초 주기를 기다리지 않는다 — 훈련은 누르고 바로 나가는 행동이다).
   /// 화면의 `ref` 를 쥔 업로더(`pushSaveNow`)를 쓰지 않는다 — 업로드 중에 화면을 닫으면 Riverpod 이
   /// 닫힌 `ref` 에서 예외를 던졌다(2026-10-05 출시 전 점검). 필요한 값을 **지금** 읽어 넘긴다.
+  /// 올릴 세이브는 업로드 잠금을 잡은 뒤 컨트롤러에서 읽는다(앞선 우편·결제 결과가 실리게).
   void _pushNow() {
+    final ctrl = ref.read(saveControllerProvider.notifier);
     unawaited(
       flushSaveBeforeServerAction(
         ref.read(gameServerProvider),
-        ref.read(saveControllerProvider).value,
+        () => ctrl.latestSave,
       ),
     );
   }

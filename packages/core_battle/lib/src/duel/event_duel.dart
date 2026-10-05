@@ -70,6 +70,13 @@ class EventDuelSpec {
     return cap == null ? next : math.min(cap, next);
   }
 
+  /// [kind] 카드가 이미 상한([cardCaps])에 닿았나 — [current] 는 지금 쌓인 값.
+  /// 카드 화면이 "최대치"로 표시한다(2026-10-05 문의: 여러 장 골라도 수치가 그대로).
+  bool cardMaxed(String kind, double current) {
+    final cap = cardCaps[kind];
+    return cap != null && current >= cap - 1e-9;
+  }
+
   /// 끝난 체력 [hpLeft](0~1)에 맞춘 부상 비율(0~1).
   double injuryRatio(double hpLeft) =>
       math.max(injuryMinRatio, 1 - hpLeft.clamp(0.0, 1.0));
@@ -239,6 +246,15 @@ class EventDuelRun {
   /// 카드 적용 — `heal`(즉시 회복) · `atk`/`def`/`maxHp`(판 끝까지 +비율) ·
   /// `revive`(지면 한 번 그 체력으로 같은 웨이브 재도전) · `skip`(다음 웨이브 건너뛰기).
   /// 모르는 종류는 무시한다(앱·서버 배포 시점이 달라도 안 깨지게).
+  /// [kind] 카드를 더 골라도 효과가 없나(누적 상한에 닿음) — 카드 화면의 "최대치" 표시.
+  bool cardMaxed(String kind, EventDuelSpec spec) => switch (kind) {
+    'evade' => spec.cardMaxed(kind, evade),
+    'crit' => spec.cardMaxed(kind, crit),
+    'recover' => spec.cardMaxed(kind, recover),
+    'size' => spec.cardMaxed(kind, size),
+    _ => false,
+  };
+
   EventDuelRun applyCard(String kind, double value, EventDuelSpec spec) =>
       switch (kind) {
         'heal' => _copy(hpPct: math.min(1.0, hpPct + value)),

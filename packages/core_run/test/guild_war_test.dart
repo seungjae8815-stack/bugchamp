@@ -51,24 +51,64 @@ void main() {
     expect(guildWarDayIndex(DateTime.utc(2026, 10, 11, 23), start), 7);
   });
 
-  test('승점 — 1~6일차 승 2 · 7일차 승 4 · 동점은 7일차 승수 → 총합', () {
+  test('실데이터 — 일차 승점은 7칸 · 합이 홀수(한 주 동점 불가) · 뒤로 갈수록 크거나 같다', () {
+    expect(cfg.dayPoints, hasLength(7));
+    final sum = cfg.dayPoints.fold(0, (a, b) => a + b);
+    expect(sum.isOdd, isTrue, reason: '합이 짝수면 한 주 결과가 동점이 될 수 있다($sum)');
+    for (var i = 1; i < cfg.dayPoints.length; i++) {
+      expect(cfg.dayPoints[i], greaterThanOrEqualTo(cfg.dayPoints[i - 1]));
+    }
+  });
+
+  GuildWarDayStat st(int total, [int members = 1, DateTime? at]) =>
+      GuildWarDayStat(total: total, members: members, reachedAt: at);
+  final none = List.filled(6, const GuildWarDayStat());
+
+  test('하루 무승부 없음 — 점수 → 참여 인원 → 먼저 도달 → seed', () {
+    final t0 = DateTime.utc(2026, 10, 5, 1);
+    final t1 = DateTime.utc(2026, 10, 5, 2);
+    expect(guildWarDayWinner(st(10), st(5), seed: 1, day: 1), 0);
+    expect(guildWarDayWinner(st(10, 2), st(10, 3), seed: 1, day: 1), 1);
+    expect(guildWarDayWinner(st(10, 3, t1), st(10, 3, t0), seed: 1, day: 1), 1);
+    // 기록이 없으면 seed — 같은 seed·같은 날은 늘 같은 답, 0·1 둘 다 나온다.
+    final picks = {
+      for (var s = 0; s < 40; s++)
+        guildWarDayWinner(st(0, 0), st(0, 0), seed: s, day: 3),
+    };
+    expect(picks, {0, 1});
+    expect(
+      guildWarDayWinner(st(0, 0), st(0, 0), seed: 7, day: 3),
+      guildWarDayWinner(st(0, 0), st(0, 0), seed: 7, day: 3),
+    );
+  });
+
+  test('승점 — 이긴 날만 dayPoints · 7일차 동수면 1위 대결 · 한 주 동점 없음', () {
     final o = guildWarOutcome(
       cfg,
-      dayA: [10, 0, 5, 0, 0, 0],
-      dayB: [0, 10, 5, 0, 0, 0],
+      dayA: [st(10), st(0), st(5, 2), st(0), st(0), st(0)],
+      dayB: [st(0), st(10), st(5, 1), st(1), st(1), st(1)],
       clashA: 3,
       clashB: 2,
+      seed: 1,
     );
-    expect(o.pointsA, 2 + 1 + 3 * 1 + 4);
-    expect(o.winner, 0);
+    // A: 1일차(1) + 3일차(2, 인원) + 7일차(6) = 9 · B: 2(2) + 4(3) + 5(3) + 6(4) = 12.
+    expect(o.pointsA, 1 + 2 + 6);
+    expect(o.pointsB, 2 + 3 + 3 + 4);
+    expect(o.winner, 1);
+    expect(o.pointsA + o.pointsB, 21);
+    expect(o.clashWinner, 0);
+
     final tie = guildWarOutcome(
       cfg,
-      dayA: [10, 0, 0, 0, 0, 0],
-      dayB: [0, 20, 0, 0, 0, 0],
-      clashA: 1,
-      clashB: 1,
+      dayA: none,
+      dayB: none,
+      clashA: 2,
+      clashB: 2,
+      topWinA: false,
+      seed: 99,
     );
-    expect(tie.pointsA, tie.pointsB);
-    expect(tie.winner, 1, reason: '대결도 같으면 총합(20 > 10)');
+    expect(tie.clashWinner, 1, reason: '승수가 같으면 1위끼리 대결 결과');
+    expect(tie.pointsA + tie.pointsB, 21);
+    expect(tie.pointsA == tie.pointsB, isFalse);
   });
 }

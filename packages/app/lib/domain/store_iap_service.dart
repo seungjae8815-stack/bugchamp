@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:core_run/core_run.dart';
+import 'package:core_save/core_save.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -11,6 +12,7 @@ import 'providers.dart';
 import 'marketing_service.dart';
 import 'purchase_verifier.dart';
 import 'save_controller.dart';
+import 'server_sync.dart';
 
 /// 실제 스토어(구글 플레이 / 앱스토어) 결제 구현.
 ///
@@ -266,6 +268,12 @@ class StoreIapService implements IapService {
 
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
+          // 이미 서버가 지급한 구매 — 검증·업로드·`/purchase`·채택 없이 완료 처리만 한다.
+          if (_alreadyGranted(p)) {
+            if (p.pendingCompletePurchase) await _store.completePurchase(p);
+            _finish(p.productID, PurchaseOutcome.success);
+            break;
+          }
           // 지급 전에 **서버에서 영수증을 검증**한다. 클라이언트만 믿으면
           // 결제 후킹 앱이 만든 가짜 영수증으로 상품이 나간다.
           switch (await _verify(p)) {
@@ -323,6 +331,26 @@ class StoreIapService implements IapService {
     }
   }
 
+  /// 이 구매를 **서버가 이미 지급했는가**(세이브의 `redeemedPurchases` 에 토큰이 있다).
+  ///
+  /// 안드로이드는 복귀마다 [_sweep] 의 `restorePurchases()` 가 이미 산 비소모 상품을
+  /// `restored` 로 다시 흘린다. 상품마다 "업로드 → `/purchase` → 채택"을 하면 복귀할 때마다
+  /// 서버 왕복이 두 번씩 생기고, 그게 우편 받기와 겹쳐 받은 골드가 되돌아갔다(2026-10-05).
+  /// 서버는 토큰으로 멱등이라(`alreadyGranted`) 결과가 같으니 묻지 않고 닫는다.
+  ///
+  /// 믿어도 되는 이유: `redeemedPurchases` 는 **서버 소유 필드**라 업로드로는 바뀌지 않고, 이 기기의
+  /// 값은 서버 세이브를 채택해서만 채워진다 — 서버 지급 키는 영수증 토큰이고, 서버 없이 쓰는
+  /// 로컬 지급([SaveController.applyPurchase])은 주문 번호를 적어 토큰과 겹치지 않는다.
+  /// 그래서 토큰이 있으면 서버에도 있다. 없으면(채택 전·다른 기기 구매) 예전처럼 서버에 묻는다.
+  /// 서버가 없으면(로컬 경로) 쓰지 않는다 — 그쪽 중복은 `applyPurchase` 가 주문 번호로 막는다.
+  bool _alreadyGranted(PurchaseDetails p) {
+    if (!_ref.read(gameServerProvider).available) return false;
+    return purchaseAlreadyGranted(
+      _ref.read(saveControllerProvider.notifier).latestSave,
+      p.verificationData.serverVerificationData,
+    );
+  }
+
   /// 영수증 서버 검증.
   ///
   /// 검증기가 없을 때: **개발 빌드는 통과**(백엔드 없이 상점을 돌려보려고),
@@ -370,22 +398,22 @@ class StoreIapService implements IapService {
 
     // 지급 전 최신 로컬 세이브를 올린다 — 안 그러면 서버가 **낡은 세이브**에
     // 지급하고 그걸 adopt 해, 최근 기기 진행(방금 번 골드·잡은 곤충)이 사라진다.
-    final save = _ref.read(saveControllerProvider).value;
-    if (save != null) {
-      final up = await server.uploadSave(save.toJson());
-      if (up.status == 409) await server.bootstrap(save.toJson());
-    }
-
-    final res = await server.purchase(
-      productId: p.productID,
-      purchaseToken: token,
-    );
-    if (res.isOk && res.save != null) {
-      await _ref
-          .read(saveControllerProvider.notifier)
-          .adoptServerSave(res.save!);
-      return true;
-    }
+    // 업로드 실패는 지급을 막지 않는다(예전과 같다) — 결제 승인이 늦으면 자동 환불된다.
+    //
+    // 올리기 → `/purchase` → 채택은 **한 줄로** 돈다([withServerSaveLock]). 올릴 세이브도 잠금을
+    // 잡은 뒤 읽는다 — 우편 받기 직전에 읽은 세이브를 받기 직후 올려 받은 골드가 되돌아갔다
+    // (2026-10-05 운영 로그: 복귀 때 복원 흐름 두 건 사이에 우편 받기가 끼었다).
+    final ctrl = _ref.read(saveControllerProvider.notifier);
+    final res = await withServerSaveLock(() async {
+      await flushSaveBeforeServerAction(server, () => ctrl.latestSave);
+      final res = await server.purchase(
+        productId: p.productID,
+        purchaseToken: token,
+      );
+      if (res.isOk && res.save != null) await ctrl.adoptServerSave(res.save!);
+      return res;
+    });
+    if (res.isOk && res.save != null) return true;
     debugPrint('[iap] 서버 지급 실패: ${res.error} (${res.status})');
     return false;
   }
@@ -449,6 +477,12 @@ final storePricesProvider = FutureProvider<Map<String, String>>((ref) async {
   if (svc is StoreIapService) await svc.init();
   return svc.storePrices;
 });
+
+/// 서버 지급 키(영수증 토큰)가 세이브의 지급 기록에 있는가 — [StoreIapService] 가 복원된 구매를
+/// 서버에 다시 묻지 않고 닫는 기준이다. 빈 토큰은 판단할 수 없으니 거짓(서버에 묻는다).
+@visibleForTesting
+bool purchaseAlreadyGranted(SaveGame? save, String token) =>
+    token.isNotEmpty && save != null && save.redeemedPurchases.contains(token);
 
 /// [_grant] 결과 — 서버 지급만 실패한 경우는 실패가 아니라 **보류**다.
 enum _Grant { granted, failed, retry }

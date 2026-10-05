@@ -500,7 +500,8 @@ class StateStore {
   }) async {
     final uri = Uri.parse(
       '$supabaseUrl/rest/v1/user_mail'
-      '?select=id,title,body,gold,jelly,chitin,mineral,sap,starts_at,ends_at,created_at'
+      // ⚠️ `fairy` 칸은 _sql_20261005_mail_gold_bigint.sql 이 만든다 — SQL 전에 이 서버를 올리면 우편함 전체가 400.
+      '?select=id,title,body,gold,jelly,chitin,mineral,sap,fairy,starts_at,ends_at,created_at'
       '&or=(user_id.is.null,user_id.eq.$userId)'
       '&order=created_at.desc&limit=$limit',
     );
@@ -748,6 +749,20 @@ class StateStore {
   }
 
   /// 운영 행 삭제. [column] 기준 1건(공지·우편은 id, 코드는 code).
+  /// 공지 고정 켜기/끄기(운영 패널, 2026-10-05) — 고정한 공지를 풀려면 지우고 다시 써야 했다.
+  Future<void> setNoticePinned(String id, bool pinned) async {
+    final res = await _http.patch(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/notices?id=eq.${Uri.encodeComponent(id)}',
+      ),
+      headers: _headers,
+      body: jsonEncode({'pinned': pinned}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('공지 고정 변경 실패: ${res.statusCode}');
+    }
+  }
+
   Future<void> deleteRow(String table, String column, String value) async {
     final res = await _http.delete(
       Uri.parse(

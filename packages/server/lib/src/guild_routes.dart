@@ -130,6 +130,13 @@ void mountGuildRoutes(
     return (save, const {});
   }
 
+  SaveGame addJelly(SaveGame save, int jelly) => save.copyWith(
+    materials: {
+      ...save.materials,
+      MaterialKind.jelly: save.materialCount(MaterialKind.jelly) + jelly,
+    },
+  );
+
   /// 수령 결과를 서버 세이브에 넣는다 — 재료·화석은 더하고, 요정 알은 요정함 규칙으로(넘치면 가루).
   SaveGame grant(SaveGame save, GuildMissionClaim r) {
     final mats = Map<MaterialKind, int>.from(save.materials);
@@ -193,6 +200,7 @@ void mountGuildRoutes(
           name: s(b, 'name'),
           lang: s(b, 'lang'),
           joinMode: s(b, 'joinMode'),
+          emblem: _emblemArg(b),
         );
         if (r.$1 != 200) return r;
         final paid = spendJelly(save, cost);
@@ -246,14 +254,22 @@ void mountGuildRoutes(
         // 세이브가 없으면 **수령 기록을 남기기 전에** 멈춘다(기록만 남고 못 받는 일이 없게).
         final save = await loadSave(uid);
         if (save == null) return (409, {'error': 'no_save'});
-        final r = await missions.claimAll(uid);
-        if (r.missions == 0) return (409, {'error': 'nothing_to_claim'});
-        final next = grant(save, r);
-        await storeSave(uid, next);
+        // 저장이 실패하면 claimAll 이 수령 기록을 되돌리고 다시 던진다 → 503(보상은 남는다).
+        SaveGame? next;
+        final r = await missions.claimAll(
+          uid,
+          deliver: (r) async {
+            next = grant(save, r);
+            await storeSave(uid, next!);
+          },
+        );
+        if (r.missions == 0 || next == null) {
+          return (409, {'error': 'nothing_to_claim'});
+        }
         return (
           200,
           {
-            'save': next.toJson(),
+            'save': next!.toJson(),
             'granted': {...r.reward.toJson(), 'eggs': r.eggs},
             'missions': r.missions,
           },
@@ -280,16 +296,16 @@ void mountGuildRoutes(
         // 세이브가 없으면 수령 기록을 남기기 **전에** 멈춘다.
         final save = await loadSave(uid);
         if (save == null) return (409, {'error': 'no_save'});
-        final (st, out, jelly) = await boss.claimLastWeek(uid);
-        if (st != 200) return (st, out);
-        final next = save.copyWith(
-          materials: {
-            ...save.materials,
-            MaterialKind.jelly: save.materialCount(MaterialKind.jelly) + jelly,
+        SaveGame? next;
+        final (st, out, jelly) = await boss.claimLastWeek(
+          uid,
+          deliver: (jelly) async {
+            next = addJelly(save, jelly);
+            await storeSave(uid, next!);
           },
         );
-        await storeSave(uid, next);
-        return (200, {...out, 'save': next.toJson(), 'jelly': jelly});
+        if (st != 200 || next == null) return (st, out);
+        return (200, {...out, 'save': next!.toJson(), 'jelly': jelly});
       }),
     )
     ..get('/guild/war', (Request req) async {
@@ -308,16 +324,16 @@ void mountGuildRoutes(
         // 세이브가 없으면 수령 기록을 남기기 **전에** 멈춘다.
         final save = await loadSave(uid);
         if (save == null) return (409, {'error': 'no_save'});
-        final (st, out, jelly) = await war.claim(uid);
-        if (st != 200) return (st, out);
-        final next = save.copyWith(
-          materials: {
-            ...save.materials,
-            MaterialKind.jelly: save.materialCount(MaterialKind.jelly) + jelly,
+        SaveGame? next;
+        final (st, out, jelly) = await war.claim(
+          uid,
+          deliver: (jelly) async {
+            next = addJelly(save, jelly);
+            await storeSave(uid, next!);
           },
         );
-        await storeSave(uid, next);
-        return (200, {...out, 'save': next.toJson(), 'jelly': jelly});
+        if (st != 200 || next == null) return (st, out);
+        return (200, {...out, 'save': next!.toJson(), 'jelly': jelly});
       }),
     )
     ..post('/guild/donate', post('donate', (uid, _) => guild.donate(uid)))
@@ -335,13 +351,22 @@ void mountGuildRoutes(
         // 세이브가 없으면 코인을 쓰기 **전에** 멈춘다.
         final save = await loadSave(uid);
         if (save == null) return (409, {'error': 'no_save'});
-        final (st, out) = await guild.buy(uid, s(b, 'itemId'));
-        if (st != 200) return (st, out);
-        final it = GuildShopItem.fromJson(out['item'] as Map<String, dynamic>);
-        final (next, granted) = grantItem(save, it);
-        await storeSave(uid, next);
+        // 저장이 실패하면 buy 가 코인·구매 수를 되돌리고 다시 던진다 → 503.
+        SaveGame? next;
+        var granted = const <String, dynamic>{};
+        final (st, out) = await guild.buy(
+          uid,
+          s(b, 'itemId'),
+          deliver: (it) async {
+            final g = grantItem(save, it);
+            next = g.$1;
+            granted = g.$2;
+            await storeSave(uid, next!);
+          },
+        );
+        if (st != 200 || next == null) return (st, out);
         final (_, view) = await guild.me(uid);
-        return (200, {...view, 'save': next.toJson(), 'granted': granted});
+        return (200, {...view, 'save': next!.toJson(), 'granted': granted});
       }),
     )
     ..post(
@@ -383,7 +408,18 @@ void mountGuildRoutes(
           uid,
           notice: b['notice'] as String?,
           joinMode: b['joinMode'] as String?,
+          deputyCanAccept: b['deputyCanAccept'] as bool?,
+          emblem: _emblemArg(b),
         ),
       ),
     );
+}
+
+/// 요청의 `emblem` — 없으면 null, 정수가 아니면 0(→ 400 `emblem_invalid`).
+int? _emblemArg(Map<String, dynamic> b) {
+  final v = b['emblem'];
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is num && v == v.roundToDouble()) return v.toInt();
+  return 0;
 }

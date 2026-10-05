@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:core_run/core_run.dart';
 
-import 'guild_actions.dart' show GuildResult;
+import 'guild_actions.dart' show GuildResult, guildUndo;
 import 'guild_boss_store.dart';
 import 'guild_store.dart';
 
@@ -43,7 +43,9 @@ class GuildBossActions {
   String _day(DateTime t) =>
       guildDayKey(t, anchorHour: config.mission.dayAnchorHourKst);
 
-  /// 이번 주 보스(없으면 만든다). 체력 = 방어팀이 있는 길드원 전투력 합 기준.
+  /// 이번 주 보스(없으면 만든다). 만들 때 체력은 방어팀이 있는 길드원 전투력 합으로 **추정**만 하고
+  /// (`estPower`), 그 주에 공격하는 길드원이 자기 몫을 공격 순간 체력에 더한다(`basePower`,
+  /// [GuildBossStore.hit]) — 방어팀을 비운 채 열어 체력을 4 로 만드는 구멍(2026-10-05 점검).
   Future<GuildBossRow> _ensure(String week, GuildRow g) async {
     final have = await store.boss(week, g.id);
     if (have != null) return have;
@@ -59,7 +61,7 @@ class GuildBossActions {
         tier: g.tier,
         hpMax: hp,
         hpLeft: hp,
-        basePower: sum,
+        estPower: sum,
       ),
     );
   }
@@ -73,7 +75,8 @@ class GuildBossActions {
     final week = guildWeekKey(t);
     final b = await _ensure(week, g);
     final h = await store.hitsOf(week, userId);
-    final myToday = h != null && h.guildId == g.id ? h.hitsOn(_day(t)) : 0;
+    // 하루 공격 수는 **유저 기준**(길드를 옮겨도 이어진다 — 추방 → 재가입으로 하루 두 번 치던 구멍).
+    final myToday = h?.hitsOn(_day(t)) ?? 0;
     final last = await _lastWeek(userId, t);
     return (
       200,
@@ -113,12 +116,16 @@ class GuildBossActions {
       userId: userId,
       day: _day(t),
       damage: dmg,
+      power: power,
+      hpPerPower: c.hitsPerMember,
       maxDaily: c.attacksPerDay,
       growth: c.stageGrowth,
       killCoinsPerStage: c.killCoinsPerStage,
     );
     if (!r.ok) return _err('no_attacks');
-    final chest = c.chestFor(b.hpMax <= 0 ? 0 : dmg / b.hpMax);
+    // 상자 비율의 분모 = 내 몫을 더한 뒤의 체력(더하기 전 체력으로 나누면 첫 공격이 늘 큰 상자다).
+    final hpAt = r.hpHit > 0 ? r.hpHit : b.hpMax;
+    final chest = c.chestFor(hpAt <= 0 ? 0 : dmg / hpAt);
     await guilds.addCoins(userId, c.attackCoins + chest);
     await addExp(g.id, c.attackExp + r.killed * c.killExp);
     await onDamage?.call(userId, g.id, dmg);
@@ -152,16 +159,29 @@ class GuildBossActions {
     };
   }
 
-  /// 지난주 보상 수령 — 수령 기록을 **먼저** 남기고 젤리 양을 돌려준다(라우트가 세이브에 넣는다).
-  Future<(int, Map<String, dynamic>, int)> claimLastWeek(String userId) async {
+  /// 지난주 보상 수령 — 수령 기록을 **먼저** 남기고 [deliver](라우트가 젤리를 서버 세이브에 넣고 저장)를
+  /// 부른다. [deliver] 가 실패하면 수령 기록을 되돌리고 오류를 다시 던진다(보상 유실 방지).
+  Future<(int, Map<String, dynamic>, int)> claimLastWeek(
+    String userId, {
+    Future<void> Function(int jelly)? deliver,
+  }) async {
     final t = now().toUtc();
     final last = await _lastWeek(userId, t);
     final jelly = (last?['jelly'] as int?) ?? 0;
     if (last == null || jelly <= 0) {
       return (409, <String, dynamic>{'error': 'nothing_to_claim'}, 0);
     }
-    if (!await store.insertClaim(last['week'] as String, userId)) {
+    final week = last['week'] as String;
+    if (!await store.insertClaim(week, userId)) {
       return (409, <String, dynamic>{'error': 'already_claimed'}, 0);
+    }
+    if (deliver != null) {
+      try {
+        await deliver(jelly);
+      } catch (_) {
+        await guildUndo('boss', () => store.deleteClaim(week, userId));
+        rethrow;
+      }
     }
     return (200, <String, dynamic>{'rank': last['rank']}, jelly);
   }

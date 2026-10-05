@@ -6,7 +6,10 @@ import 'package:app/data/save_repository.dart';
 import 'package:app/domain/game_server.dart';
 import 'package:app/domain/guild_service.dart';
 import 'package:app/domain/providers.dart';
+import 'package:app/features/guild/guild_art.dart';
+import 'package:app/features/guild/guild_mission_tab.dart';
 import 'package:app/features/guild/guild_screen.dart';
+import 'package:app/features/guild/guild_war_tab.dart';
 import 'package:app/l10n/app_localizations.dart';
 import 'package:app/domain/save_controller.dart';
 import 'package:core_models/core_models.dart';
@@ -63,6 +66,14 @@ Map<String, dynamic> _guild(
 class _GuildServer implements GameServer {
   final joined = <String>[];
 
+  /// 만들기 요청에 실려 온 문장.
+  int? createdEmblem;
+
+  /// 호출 수 — 숨은 화면이 서버를 부르지 않는지 본다.
+  var meCalls = 0;
+  var listCalls = 0;
+  var missionCalls = 0;
+
   Map<String, dynamic> get _me => joined.isEmpty
       ? {'guild': null, 'requested': <String>[]}
       : {
@@ -73,6 +84,8 @@ class _GuildServer implements GameServer {
             'expNeed': 115,
             'skills': {'attack': 1},
             'pointsLeft': 1,
+            'deputyCanAccept': deputyCanAccept,
+            'emblem': settingsEmblem,
           },
           'myCoins': coins,
           'donatedToday': donated,
@@ -87,20 +100,30 @@ class _GuildServer implements GameServer {
               'bought': bought,
             },
           ],
-          'myRole': 'member',
+          'myRole': role,
           'members': [
             {
               'userId': 'u1',
-              'role': 'leader',
+              'role': role == 'leader' ? 'deputy' : 'leader',
               'nickname': '대장',
               'power': 3.2e6,
+              'contribution': 3500,
               'lastSeen': DateTime.now().toUtc().toIso8601String(),
             },
             {
               'userId': 'me',
-              'role': 'member',
+              'role': role,
               'nickname': '나',
               'power': 1.1e6,
+              'contribution': 120,
+              'lastSeen': DateTime.now().toUtc().toIso8601String(),
+            },
+            {
+              'userId': 'u3',
+              'role': 'member',
+              'nickname': '막내',
+              'power': 0.5e6,
+              'contribution': 600,
               'lastSeen': DateTime.now().toUtc().toIso8601String(),
             },
           ],
@@ -110,13 +133,21 @@ class _GuildServer implements GameServer {
   bool get available => true;
 
   @override
-  Future<ServerResult> guildMe() async => ServerResult.ok(_me);
+  Future<ServerResult> guildMe() async {
+    meCalls++;
+    return ServerResult.ok(_me);
+  }
 
   @override
   Future<ServerResult> guildList({
     required String lang,
     String query = '',
-  }) async => ServerResult.ok({
+  }) async {
+    listCalls++;
+    return _list;
+  }
+
+  ServerResult get _list => ServerResult.ok({
     'guilds': [
       _guild('g1', '장수풍뎅이단'),
       _guild('g2', '사슴벌레회', mode: 'approval'),
@@ -130,7 +161,9 @@ class _GuildServer implements GameServer {
     required String name,
     required String lang,
     required String joinMode,
+    int? emblem,
   }) async {
+    createdEmblem = emblem;
     joined.add('new');
     return ServerResult.ok({..._me, 'jellySpent': 200});
   }
@@ -151,6 +184,8 @@ class _GuildServer implements GameServer {
     'myToday': 0,
     'match': {
       'opponent': '사슴벌레회',
+      'opponentId': 'g2',
+      'opponentEmblem': 5,
       'virtual': false,
       'mine': [100, 50, 0, 30, 0, 10],
       'theirs': [80, 60, 0, 0, 0, 0],
@@ -228,6 +263,26 @@ class _GuildServer implements GameServer {
 
   // ── 3단계 ──
   var coins = 100;
+
+  /// 내 직책 · 부길드장 수락 허용(직책 권한 테스트).
+  var role = 'member';
+  var deputyCanAccept = true;
+
+  /// 문장 바꾸기로 받은 값(내 길드 응답에 실린다).
+  int? settingsEmblem;
+
+  @override
+  Future<ServerResult> guildSettings({
+    String? notice,
+    String? joinMode,
+    bool? deputyCanAccept,
+    int? emblem,
+  }) async {
+    if (emblem != null) settingsEmblem = emblem;
+    if (deputyCanAccept != null) this.deputyCanAccept = deputyCanAccept;
+    return ServerResult.ok(_me);
+  }
+
   var donated = false;
   var bought = 0;
 
@@ -308,7 +363,10 @@ class _GuildServer implements GameServer {
   };
 
   @override
-  Future<ServerResult> guildMissions() async => ServerResult.ok(_missions);
+  Future<ServerResult> guildMissions() async {
+    missionCalls++;
+    return ServerResult.ok(_missions);
+  }
 
   @override
   Future<ServerResult> guildMissionHelp(
@@ -370,6 +428,7 @@ Future<ProviderContainer> _pump(
   _GuildServer server,
   SaveGame seed, {
   Locale locale = const Locale('ko'),
+  bool onGuildTab = true,
 }) async {
   tester.view.physicalSize = const Size(360, 780);
   tester.view.devicePixelRatio = 1;
@@ -382,6 +441,8 @@ Future<ProviderContainer> _pump(
     ],
   );
   addTearDown(container.dispose);
+  // 길드 화면은 하단 길드 탭이 골라졌을 때만 안쪽을 빌드한다.
+  if (onGuildTab) container.read(tabIndexProvider.notifier).set(kGuildTabIndex);
   // 실제 앱은 세이브를 읽은 뒤에 홈(길드 아이콘)에 들어온다.
   await tester.runAsync(() => container.read(saveControllerProvider.future));
   await tester.pumpWidget(
@@ -405,6 +466,9 @@ void main() {
     await _pump(tester, server, _seed(0));
 
     expect(find.text('장수풍뎅이단'), findsOneWidget);
+    // 문장을 고른 적 없는 길드도 id 해시로 기본 문장이 보인다 · 상단 배너.
+    expect(find.byKey(const ValueKey('guildEmblem:g1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('guildNoneBanner')), findsOneWidget);
     expect(find.text('가입 신청'), findsOneWidget, reason: '승인제는 신청 버튼');
     expect(find.text('가득 참'), findsOneWidget);
     // 젤리가 모자라 만들기는 막히고 이유가 보인다.
@@ -422,6 +486,80 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
   });
 
+  testWidgets('직책 권한 — 부길드장에게는 추방·설정 버튼이 없다 · 등급 뱃지', (tester) async {
+    final server = _GuildServer()
+      ..joined.add('g1')
+      ..role = 'deputy'
+      ..deputyCanAccept = false;
+    await _pump(tester, server, _seed(0));
+
+    // 멤버 등급(기여도) — 3500 정예 · 600 일꾼 · 120 새내기(뱃지 + 내 등급 줄).
+    expect(find.byKey(const ValueKey('guildRank:elite')), findsOneWidget);
+    expect(find.byKey(const ValueKey('guildRank:worker')), findsOneWidget);
+    expect(find.byKey(const ValueKey('guildRank:rookie')), findsWidgets);
+    // 멤버 줄에 메뉴 표시가 없고, 눌러도 추방이 안 나온다.
+    expect(
+      find.byIcon(Icons.more_vert_rounded),
+      findsOneWidget,
+      reason: '앱바 메뉴만',
+    );
+    await tester.tap(find.text('막내'));
+    await tester.pumpAndSettle();
+    expect(find.text('추방'), findsNothing);
+    // 앱바 메뉴 — 소개·가입 방식·수락 허용 스위치가 없다.
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('소개 수정'), findsNothing);
+    expect(find.text('부길드장 가입 수락 허용'), findsNothing);
+    expect(find.text('길드 탈퇴'), findsOneWidget);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    // 스위치가 꺼져 있으면 신청 탭도 없다.
+    expect(find.textContaining('신청 '), findsNothing);
+    // 권한 도움말(i).
+    await tester.tap(find.byKey(const ValueKey('guildPermsHelp')));
+    await tester.pumpAndSettle();
+    expect(find.text('직책별 권한'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('직책 권한 — 길드장은 멤버 메뉴에 추방 · 앱바에 수락 허용 스위치', (tester) async {
+    final server = _GuildServer()
+      ..joined.add('g1')
+      ..role = 'leader';
+    await _pump(tester, server, _seed(0));
+
+    expect(find.byIcon(Icons.more_vert_rounded), findsNWidgets(3));
+    await tester.tap(find.text('막내'));
+    await tester.pumpAndSettle();
+    expect(find.text('추방'), findsOneWidget);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('신청 '), findsOneWidget, reason: '길드장은 신청 탭');
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.more_vert_rounded),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('부길드장 가입 수락 허용'), findsOneWidget);
+    // 문장 바꾸기(길드장) — 고르고 저장하면 서버로 간다 · 앱바 문장이 바뀐다.
+    await tester.tap(find.byKey(const ValueKey('guildEmblemChange')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('guildEmblemPick:4')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('저장'));
+    await tester.pumpAndSettle();
+    expect(server.settingsEmblem, 4);
+    final mine = tester.widget<GuildEmblem>(
+      find.byKey(const ValueKey('guildEmblem:mine')),
+    );
+    expect(mine.emblem, 4);
+    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
   testWidgets('개설 — 서버가 치른 젤리 200을 로컬에서도 뺀다', (tester) async {
     final server = _GuildServer();
     final c = await _pump(tester, server, _seed(250));
@@ -429,9 +567,12 @@ void main() {
     await tester.tap(find.text('길드 만들기 · 젤리 200'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, '장수풍뎅이단');
+    await tester.tap(find.byKey(const ValueKey('guildEmblemPick:3')));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('길드 만들기 · 젤리 200').last);
     await tester.pumpAndSettle();
     expect(server.joined, ['new']);
+    expect(server.createdEmblem, 3, reason: '고른 문장이 만들기 요청에 실린다');
     expect(
       c
           .read(saveControllerProvider)
@@ -481,18 +622,21 @@ void main() {
   testWidgets('3단계 — 출석 · 상점 구매(서버 세이브 채택)', (tester) async {
     final server = _GuildServer()..joined.add('g1');
     final c = await _pump(tester, server, _seed(0));
-    expect(find.text('길드 Lv 3 · 코인 100'), findsOneWidget);
+    // 레벨과 코인은 한 줄에 따로(코인 앞엔 코인 그림).
+    expect(find.text('길드 Lv 3'), findsOneWidget);
+    expect(find.text('코인 100'), findsOneWidget);
 
     await tester.tap(find.text('출석'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('출석 완료'), findsOneWidget);
-    expect(find.text('길드 Lv 3 · 코인 110'), findsOneWidget);
+    expect(find.text('코인 110'), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
 
     await tester.tap(find.text('상점'));
     await tester.pumpAndSettle();
     expect(find.text('화석 20개'), findsOneWidget);
-    await tester.tap(find.text('30'));
+    // 가격에 단위(코인)가 보인다.
+    await tester.tap(find.text('코인 30'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(server.uploaded, isNotNull, reason: '사기 전에 최신 세이브를 올린다');
     expect(
@@ -527,8 +671,26 @@ void main() {
     await tester.tap(find.text('길드전'));
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
     expect(find.text('vs 사슴벌레회'), findsOneWidget);
+    // 대진 문장(우리·상대) — 7일 줄 아래 결과는 스크롤해야 보인다.
+    expect(find.byKey(const ValueKey('guildWarEmblem:mine')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('guildWarEmblem:opponent')),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.text('승점 12 : 6'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(GuildWarTab),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('승점 12 : 6'), findsOneWidget);
     expect(find.text('승리'), findsOneWidget);
+    await tester.ensureVisible(find.text('보상 받기'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('보상 받기'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(
@@ -566,5 +728,60 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 200));
       expect(tester.takeException(), isNull, reason: tab);
     }
+  });
+  testWidgets('영어 — 머리 줄(레벨·코인·출석/스킬/상점 그림 버튼)·탭 아이콘이 360폭에 들어간다', (
+    tester,
+  ) async {
+    final server = _GuildServer()
+      ..joined.add('g1')
+      ..role = 'leader';
+    await _pump(tester, server, _seed(0), locale: const Locale('en'));
+    expect(find.byKey(const ValueKey('guildAttend')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    for (final tab in ['Missions', 'Boss', 'War', 'Chat']) {
+      await tester.tap(find.text(tab).first);
+      await tester.pumpAndSettle(const Duration(milliseconds: 200));
+      expect(tester.takeException(), isNull, reason: tab);
+    }
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('숨은 길드 화면 — 하단 길드 탭을 열기 전엔 목록·미션을 부르지 않는다', (tester) async {
+    final server = _GuildServer();
+    final c = await _pump(tester, server, _seed(0), onGuildTab: false);
+    expect(server.listCalls, 0);
+    expect(find.text('장수풍뎅이단'), findsNothing);
+    c.read(tabIndexProvider.notifier).set(kGuildTabIndex);
+    await tester.pumpAndSettle();
+    expect(server.listCalls, 1);
+    expect(find.text('장수풍뎅이단'), findsOneWidget);
+    expect(server.meCalls, 1, reason: 'build 가 방금 받았으면 탭 진입 갱신은 건너뛴다');
+  });
+
+  testWidgets('미션 탭 주기 조회 — 다른 하단 탭으로 가면 멈춘다', (tester) async {
+    final server = _GuildServer()..joined.add('g1');
+    final c = await _pump(tester, server, _seed(0));
+    expect(server.missionCalls, 0, reason: '안 연 안쪽 탭은 빌드하지 않는다');
+    await tester.tap(find.text('미션'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 200));
+    expect(server.missionCalls, 1, reason: '처음 열 때 한 번(겹쳐 부르지 않는다)');
+    c.read(tabIndexProvider.notifier).set(0);
+    await tester.pump();
+    final before = server.missionCalls;
+    await tester.pump(const Duration(seconds: 30));
+    expect(server.missionCalls, before, reason: '길드 탭 밖에서는 조회하지 않는다');
+  });
+
+  test('배율 표기 — ×2 · ×1.3 · ×0.85', () {
+    expect(guildMultText(2.0), '2');
+    expect(guildMultText(1.3), '1.3');
+    expect(guildMultText(0.85), '0.85');
+    expect(guildMultText(1.3000000000000003), '1.3');
+  });
+
+  test('길드 상태가 낡았다는 오류 코드', () {
+    expect(guildStateStale('not_in_guild'), isTrue);
+    expect(guildStateStale('already_in_guild'), isTrue);
+    expect(guildStateStale('guild_not_found'), isTrue);
+    expect(guildStateStale('guild_full'), isFalse);
   });
 }

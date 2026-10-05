@@ -2875,10 +2875,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// **성공했을 때만 true.** 실패(네트워크·5xx)면 서버엔 낡은 세이브가 남아 있어,
   /// 그 위에서 전투를 돌리고 결과를 adopt 하면 **최근 로컬 진행이 통째로 사라진다.**
   /// 그래서 호출부는 실패 시 전투를 진행하지 않는다.
-  Future<bool> _flushSave() => flushSaveBeforeServerAction(
-    ref.read(gameServerProvider),
-    ref.read(saveControllerProvider).value,
-  );
+  Future<bool> _flushSave() {
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    return flushSaveBeforeServerAction(
+      ref.read(gameServerProvider),
+      () => ctrl.latestSave,
+    );
+  }
 
   /// 결투 1판분 티켓을 확보한다. 없으면 이유를 알리고 false.
   ///
@@ -3019,7 +3022,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   Future<void> _adoptDuel(DuelStep last) async {
     final srv = last.save;
     if (srv != null) {
-      await ref.read(saveControllerProvider.notifier).adoptServerSave(srv);
+      final ctrl = ref.read(saveControllerProvider.notifier);
+      // 채택이 진행 중인 업로드와 엇갈리지 않게 줄을 선다([withServerSaveLock]).
+      await withServerSaveLock(() => ctrl.adoptServerSave(srv));
     }
     final s2 = ref.read(saveControllerProvider).requireValue;
     unawaited(ref.read(pvpBackendProvider).pushTrophies(me: _me(s2)));

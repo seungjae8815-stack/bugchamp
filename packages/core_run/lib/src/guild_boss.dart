@@ -8,8 +8,8 @@ import 'battle_config.dart' show SeasonRankReward;
 ///
 /// - 피해는 **서버가** 계산한다. 입력 = 결투 방어팀 전투력(서버 `validateDuelTeam` 이 이미 검증 —
 ///   설계 A안). 홈 전투력(기기 권위)을 쓰면 누구나 1위다. 방어팀이 없으면 공격할 수 없다.
-/// - 체력 = 방어팀이 있는 길드원 전투력 합 × [hitsPerMember] (모두가 그만큼 치면 1단계가 쓰러진다)
-///   × [stageGrowth]^(단계−1). 길드 규모 차이를 체력이 흡수한다.
+/// - 체력 = max(만들 때 방어팀 합, 그 주 공격자 합) × [hitsPerMember] (모두가 그만큼 치면 1단계가
+///   쓰러진다) × [stageGrowth]^(단계−1). 길드 규모 차이를 체력이 흡수한다([hpFor]).
 /// - 개인 보상 = 공격마다 코인 + **피해 구간 상자**(약한 유저도 첫 상자는 받는다). 처치하면 그 주에
 ///   공격한 길드원 **모두** 코인. 젤리는 **주간 순위**(같은 티어 길드끼리)로만 — 유한 통로(§2.6).
 /// ⚠️ 요정·스킬·장비·길드 버프는 싣지 않는다(결투와 같은 선 — 뽑기가 순위를 정하지 않게).
@@ -75,11 +75,19 @@ class GuildBossConfig {
     );
   }
 
-  /// [stage] 단계 최대 체력 — [teamPowerSum] = 방어팀이 있는 길드원 전투력 합.
+  /// 전투력 1 이 [stage] 단계 체력에 보태는 몫(= [hitsPerMember] × [stageGrowth]^(단계−1)).
+  double stageMult(int stage) =>
+      hitsPerMember * math.pow(stageGrowth, math.max(0, stage - 1));
+
+  /// [stage] 단계 최대 체력 — [teamPowerSum] = 체력에 넣은 전투력 합.
+  ///
+  /// 2026-10-05 개정: 보스를 만들 때는 방어팀이 있는 길드원 합으로 **추정**만 하고, 그 주에 공격하는
+  /// 길드원마다 **자기 몫(전투력 × [stageMult])을 그 순간 체력에 더한다**(공격자 합이 추정보다 커지는
+  /// 만큼, 서버 `guild_boss_hit_v2`). 방어팀을 비운 채 보스를 열어 체력 4 로 만드는 구멍을 막는다 —
+  /// 그래서 실제 바닥값은 "지금 공격하는 사람 자신의 몫"이고, 여기의 1 은 아무도 방어팀이 없을 때
+  /// 화면이 0 으로 나누지 않게 하는 자리표시다(그 상태에선 공격할 수 없다).
   double hpFor(double teamPowerSum, int stage) =>
-      math.max(1.0, teamPowerSum) *
-      hitsPerMember *
-      math.pow(stageGrowth, stage - 1);
+      math.max(1.0, teamPowerSum) * stageMult(stage);
 
   /// 한 번 공격 피해 — 방어팀 전투력 × (1 ± variance). [roll] 은 0~1 (서버 난수).
   double damage(double teamPower, double roll) =>

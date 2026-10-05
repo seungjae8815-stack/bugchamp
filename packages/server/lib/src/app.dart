@@ -335,6 +335,11 @@ Handler buildHandler({
     }
 
     // 길드(1.0.15) — 상태는 서버 테이블이 소유한다(세이브에 없음).
+    // 길드전 첫 주는 환경변수가 guild.json 을 덮는다(운영이 재빌드 없이 연다).
+    final guildCfg = guildConfigWithStartWeekEnv(
+      cfg.guild,
+      Platform.environment['GUILD_WAR_START_WEEK'],
+    );
     final gStore =
         guildStore ??
         SupabaseGuildStore(
@@ -343,7 +348,7 @@ Handler buildHandler({
         );
     final guildActions = GuildActions(
       store: gStore,
-      config: cfg.guild,
+      config: guildCfg,
       rules: cfg.chatRules,
       now: actions.now,
     );
@@ -367,7 +372,7 @@ Handler buildHandler({
             supabaseUrl: config.supabaseUrl,
             serviceRoleKey: config.serviceRoleKey,
           ),
-      config: cfg.guild,
+      config: guildCfg,
       now: actions.now,
       teamOf: defenseTeamOf,
       duelParams: actions.duelParams,
@@ -384,7 +389,7 @@ Handler buildHandler({
               supabaseUrl: config.supabaseUrl,
               serviceRoleKey: config.serviceRoleKey,
             ),
-        config: cfg.guild,
+        config: guildCfg,
         run: cfg.run,
         now: actions.now,
         addExp: guildActions.addExp,
@@ -397,7 +402,7 @@ Handler buildHandler({
               supabaseUrl: config.supabaseUrl,
               serviceRoleKey: config.serviceRoleKey,
             ),
-        config: cfg.guild,
+        config: guildCfg,
         now: actions.now,
         addExp: guildActions.addExp,
         // 피해 = 결투 방어팀 전투력(서버 편성 검증을 거친 값 — 설계 A안).
@@ -547,13 +552,18 @@ Handler buildHandler({
         );
         // 길드전 활동 점수(1.0.15) — 세이브가 아니라 **본문 옆칸**으로 온다(세이브 스키마를 안 건드린다).
         // 실패해도 저장은 막지 않는다.
+        // 빈 tally(길드가 없거나 그날 행동이 없음)는 **아무것도 조회하지 않는다** — 업로드는 60초마다라
+        // 길드 없는 유저까지 멤버 조회를 하면 요청 수가 그대로 DB 로 간다.
         final tally = body['guildTally'];
-        if (tally is Map) {
+        final tallyCounts = <String, int>{
+          if (tally is Map)
+            for (final e in ((tally['counts'] as Map?) ?? const {}).entries)
+              if (e.value is num && (e.value as num) > 0)
+                '${e.key}': (e.value as num).toInt(),
+        };
+        if (tally is Map && tallyCounts.isNotEmpty) {
           try {
-            await guildWar.recordTally(user.id, '${tally['day']}', {
-              for (final e in ((tally['counts'] as Map?) ?? const {}).entries)
-                if (e.value is num) '${e.key}': (e.value as num).toInt(),
-            });
+            await guildWar.recordTally(user.id, '${tally['day']}', tallyCounts);
           } catch (e) {
             stderr.writeln('[save/guildTally] ${user.id}: $e');
           }
@@ -2875,13 +2885,18 @@ Handler buildHandler({
 
     /// 운영 지급의 **1건당 상한**. 오타 한 번으로 전 유저에게 젤리 100만이
     /// 나가는 사고를 코드로 막는다(UI 검증만으로는 못 막는다).
-    const adminMaxGold = 10000000;
+    const adminMaxGold =
+        1000000000000000; // 1,000조 — 난이도별 골드가 수조까지 커서 1,000만은 못 보냈다(2026-10-05). JS 안전 정수(9e15) 안.
     const adminMaxJelly = 10000;
     // ⚠️ 10만이었는데 **정상화 되돌리기가 불가능했다**(2026-09-01):
     // 재료를 2,000만으로 맞추려면 우편을 200번 보내야 했다.
     // 이건 밸런스 규칙이 아니라 **오타 방어선**이다 — 자릿수 하나 더 친 것을
     // 잡으면 되고, 운영자가 실제로 해야 하는 값은 통과시켜야 한다.
-    const adminMaxMaterial = 50000000;
+    // 2026-10-05 5,000만 → 1,000조: 재료 수량도 난이도·스테이지로 수조까지 커서 걸렸다(골드와 같은 이유).
+    const adminMaxMaterial = 1000000000000000;
+    // 요정 재료(2026-10-05 우편 지급 추가) — 가루는 레벨업에 수십만씩 들어 넉넉히, 속성석·가속기는 개수라 작게.
+    const adminMaxFairyDust = 1000000000000;
+    const adminMaxFairyItem = 1000000;
 
     /// 지급 필드 정규화 + 상한 검사.
     ///
@@ -2908,6 +2923,52 @@ Handler buildHandler({
         if (out[k]! > adminMaxMaterial) return (out, 'material_too_large');
       }
       return (out, null);
+    }
+
+    /// 요정 재료 정규화 + 상한 검사 — `{dust, stones:{부가키:n}, accelerators:{id:n}}`.
+    /// 0 은 빼고, 아무것도 없으면 null(칸을 비운다). 모르는 키는 거절한다 — 오타로 쓸모없는
+    /// 속성석이 나가면 유저 화면엔 안 보이고 세이브에만 쌓인다.
+    (Map<String, dynamic>?, String?) fairyFields(Map<String, dynamic> b) {
+      final f = b['fairy'];
+      if (f is! Map) return (null, null);
+      int n(Object? v) {
+        final i = (v is num) ? v.toInt() : 0;
+        return i < 0 ? 0 : i;
+      }
+
+      final cfg = actions.config.fairy;
+      final stoneKeys = cfg?.subWeight.keys.toSet() ?? const <String>{};
+      final accIds = <String>{
+        for (final a in cfg?.accelerators ?? const []) a.id,
+      };
+      Map<String, int>? group(Object? raw, Set<String> allowed, String err) {
+        if (raw is! Map) return const {};
+        final out = <String, int>{};
+        for (final e in raw.entries) {
+          final v = n(e.value);
+          if (v == 0) continue;
+          if (!allowed.contains('${e.key}') || v > adminMaxFairyItem)
+            return null;
+          out['${e.key}'] = v;
+        }
+        return out;
+      }
+
+      final dust = n(f['dust']);
+      if (dust > adminMaxFairyDust) return (null, 'fairy_dust_too_large');
+      final stones = group(f['stones'], stoneKeys, 'stone');
+      if (stones == null) return (null, 'fairy_stone_invalid');
+      final accs = group(f['accelerators'], accIds, 'acc');
+      if (accs == null) return (null, 'fairy_accelerator_invalid');
+      if (dust == 0 && stones.isEmpty && accs.isEmpty) return (null, null);
+      return (
+        {
+          if (dust > 0) 'dust': dust,
+          if (stones.isNotEmpty) 'stones': stones,
+          if (accs.isNotEmpty) 'accelerators': accs,
+        },
+        null,
+      );
     }
 
     /// 본문 파싱 + 키 검사를 한 번에. 통과하면 본문을, 아니면 응답을 돌려준다.
@@ -2978,6 +3039,8 @@ Handler buildHandler({
       if (title == null) return _json({'error': 'title_required'}, status: 400);
       final (reward, tooBig) = rewardFields(b);
       if (tooBig != null) return _json({'error': tooBig}, status: 400);
+      final (fairy, fairyErr) = fairyFields(b);
+      if (fairyErr != null) return _json({'error': fairyErr}, status: 400);
       try {
         await store.insertRow('user_mail', {
           // null = 전체 유저 대상(점검 보상 등).
@@ -2985,6 +3048,8 @@ Handler buildHandler({
           'title': title,
           'body': clean(b['body'], 1000) ?? '',
           ...reward,
+          // ⚠️ 칸이 없을 때(SQL 전) 넣으면 실패하므로 있을 때만 싣는다.
+          if (fairy != null) 'fairy': fairy,
           if (b['endsAt'] != null) 'ends_at': b['endsAt'],
         });
         return _json({'ok': true});
@@ -3439,6 +3504,24 @@ Handler buildHandler({
         return _json({'ok': true});
       } on StateStoreException catch (e) {
         stderr.writeln('[admin/chat] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 공지 고정 켜기/끄기 — `{id, pinned}`.
+    public.post('/admin/notice/pin', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final id = clean(b!['id'], 64);
+      final pinned = b['pinned'];
+      if (id == null || pinned is! bool) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        await store.setNoticePinned(id, pinned);
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/notice/pin] $e');
         return _json({'error': 'store_unavailable'}, status: 503);
       }
     });

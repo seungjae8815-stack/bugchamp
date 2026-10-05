@@ -48,7 +48,7 @@ void main() {
       final server = _TakenServer();
       final ok = await flushSaveBeforeServerAction(
         server,
-        SaveGame.initial(createdAt: DateTime.utc(2026, 10, 3)),
+        () => SaveGame.initial(createdAt: DateTime.utc(2026, 10, 3)),
       );
       expect(ok, isFalse);
       expect(server.bootstraps, 0);

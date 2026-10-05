@@ -1095,6 +1095,10 @@ class GameActions {
       tier: envTier,
       abyssFloor: abyss.inAbyss ? abyss.floor : 0,
     );
+    // 길드 버프(골드 최대 +10% · 공격 +8%, guild.json skills)는 봉투에 **넣지 않는다** — 여유에 흡수된다.
+    // 측정(2026-10-05, `core_run/tool/clamp_check.dart --guild` — 펫 x4·장비 x3·광폭화·골드러시·접속 보너스
+    // 위에 길드 최대치): 60초 상한 최소 여유 x6.09(극한 사냥터 1) · 교환소 1회 최소 x27.3.
+    // 여유가 2배 아래로 내려가면 여기서 길드 버프를 봉투에 넣는다(서버 settle 이 길드를 조회해야 한다).
     final maxGain =
         _goldSanityFloor +
         generous +
@@ -3022,13 +3026,51 @@ class GameActions {
     for (final e in grant.entries) {
       if (e.value > 0) mats[e.key] = save.materialCount(e.key) + e.value;
     }
+    // 요정 재료(우편 `fairy` 칸, 2026-10-05) — 가루·속성석·가속기. 선물코드 행엔 없다(null).
+    var fairyState = save.fairy;
+    final fr = row['fairy'];
+    final fairyGranted = <String, dynamic>{};
+    if (fr is Map) {
+      int fn(Object? v) {
+        final i = (v is num) ? v.toInt() : 0;
+        return i < 0 ? 0 : i;
+      }
+
+      Map<String, int> add(Map<String, int> cur, Object? raw) {
+        final out = Map<String, int>.from(cur);
+        if (raw is Map) {
+          for (final e in raw.entries) {
+            final v = fn(e.value);
+            if (v > 0) out['${e.key}'] = addCurrency(out['${e.key}'] ?? 0, v);
+          }
+        }
+        return out;
+      }
+
+      final dust = fn(fr['dust']);
+      fairyState = fairyState.copyWith(
+        dust: addCurrency(fairyState.dust, dust),
+        stones: add(fairyState.stones, fr['stones']),
+        accelerators: add(fairyState.accelerators, fr['accelerators']),
+      );
+      if (dust > 0) fairyGranted['dust'] = dust;
+      if (fr['stones'] is Map) fairyGranted['stones'] = fr['stones'];
+      if (fr['accelerators'] is Map) {
+        fairyGranted['accelerators'] = fr['accelerators'];
+      }
+    }
     return ActionResult.ok(
-      save.copyWith(gold: addCurrency(save.gold, gold), materials: mats),
+      save.copyWith(
+        gold: addCurrency(save.gold, gold),
+        materials: mats,
+        fairy: fairyState,
+      ),
       extra: {
         'granted': {
           'gold': gold,
           for (final e in grant.entries)
             if (e.value > 0) e.key.key: e.value,
+          if (fairyGranted.isNotEmpty) 'fairy': fairyGranted,
         },
       },
     );

@@ -4056,6 +4056,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventBuffNow => '今受けている強化';
 
   @override
+  String get eventCardMaxed => '最大値';
+
+  @override
   String get eventBuffNone => '強化なし';
 
   @override
@@ -4471,7 +4474,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guildIntro =>
-      'ギルドに入るとギルドメンバーとチャットできます。ギルドミッション・ボス・ギルド戦もまもなく登場します。';
+      'ギルドに入ると、メンバーと一緒にミッション・ギルドボス・週間ギルド戦に挑戦でき、出席・ギルドショップ・ギルドバフも使えます。';
 
   @override
   String get guildUnavailable => 'ギルド情報を読み込めませんでした。しばらくしてからもう一度お試しください。';
@@ -4497,7 +4500,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get guildJoinModeOpen => '公開 — 誰でもすぐ加入';
 
   @override
-  String get guildJoinModeApproval => '承認制 — マスター・サブマスターが承認';
+  String get guildJoinModeApproval => '承認制 — マスター(許可時はサブマスターも)が承認';
 
   @override
   String get guildJoinModeOpenShort => '公開';
@@ -4802,12 +4805,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get guildMissionHelpedTag => '手伝い済み';
 
   @override
-  String guildMissionSlotSolo(double mult) {
+  String guildMissionSlotSolo(String mult) {
     return '必要戦闘力 ×$mult · ひとりで可';
   }
 
   @override
-  String guildMissionSlotNeed(double mult) {
+  String guildMissionSlotNeed(String mult) {
     return '必要戦闘力 ×$mult · 手伝いが必要';
   }
 
@@ -4897,7 +4900,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get guildSkillMax => 'すでに最大段階です';
 
   @override
-  String get guildSkillForbidden => 'マスター・サブマスターのみ操作できます';
+  String get guildSkillForbidden => 'マスターのみ操作できます';
 
   @override
   String get guildSkillReset => 'リセット';
@@ -5654,4 +5657,113 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get zoneReclaim => '取り戻す必要あり';
+
+  @override
+  String get guildNameFallback => 'ギルド';
+
+  @override
+  String get guildErrAlreadyInGuild => 'すでにギルドに入っています';
+
+  @override
+  String get guildErrNotFound => 'ギルドが見つかりません。解散した可能性があります';
+
+  @override
+  String get guildErrNotInGuild => 'ギルドに入っていません';
+
+  @override
+  String get guildErrRequestNotFound => 'この加入申請はすでに処理されています';
+
+  @override
+  String get guildErrForbidden => 'この操作をする権限がありません';
+
+  @override
+  String get guildErrStoreUnavailable => 'ギルド機能が一時的に使えません。しばらくしてからもう一度お試しください';
+
+  @override
+  String get guildEmblemPick => 'ギルドの紋章';
+
+  @override
+  String get guildEmblemChange => '紋章を変更';
+
+  @override
+  String get guildEmblemChanged => 'ギルドの紋章を変更しました';
+
+  @override
+  String get guildErrEmblemInvalid => '選べない紋章です';
+
+  @override
+  String get guildLeaveCoinsNote => '脱退すると、所持しているギルドコインと貢献度は失われ、元に戻せません。';
+
+  @override
+  String get guildKickCoinsNote => '追放したメンバーのギルドコインと貢献度は失われ、元に戻せません。';
+
+  @override
+  String get guildReport => 'ギルドを通報';
+
+  @override
+  String get guildReportBody => 'このギルドの名前や紹介が不適切な場合は運営にお知らせください。確認のうえ対応します。';
+
+  @override
+  String get guildReported => '通報しました。運営が確認します';
+
+  @override
+  String get guildDeputyCanAccept => 'サブマスターの加入承認を許可';
+
+  @override
+  String get guildSwitchOn => 'オン';
+
+  @override
+  String get guildSwitchOff => 'オフ';
+
+  @override
+  String get guildRankRookie => '新人';
+
+  @override
+  String get guildRankWorker => '働き手';
+
+  @override
+  String get guildRankElite => '精鋭';
+
+  @override
+  String get guildRankElder => '長老';
+
+  @override
+  String guildMyRank(String rank, String points) {
+    return '私のランク $rank · 貢献度 $points';
+  }
+
+  @override
+  String guildRankNext(String rank, String left) {
+    return '$rankまであと $left';
+  }
+
+  @override
+  String get guildRankMax => '最高ランクです';
+
+  @override
+  String get guildPermsTitle => '役職ごとの権限';
+
+  @override
+  String get guildPermAccept => '加入申請の承認・拒否';
+
+  @override
+  String get guildPermKick => '追放';
+
+  @override
+  String get guildPermSettings => 'お知らせ・紹介・加入方式';
+
+  @override
+  String get guildPermSkills => 'ギルドスキルの割り振り・初期化';
+
+  @override
+  String get guildPermRoles => '役職の任命・委任';
+
+  @override
+  String guildPermDeputyNote(String state) {
+    return 'サブマスターの加入承認はマスターが許可した場合のみです(現在: $state)。';
+  }
+
+  @override
+  String get guildPermRanksNote =>
+      'メンバーランクはこのギルドで獲得したコイン(貢献度)で自動的に上がります。表示のみで、特典・権限はありません。ギルドを抜けると貢献度とともに消えます。';
 }

@@ -1,3 +1,5 @@
+import 'dart:io' show stderr;
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
@@ -5,6 +7,16 @@ import 'guild_store.dart';
 
 /// (HTTP 상태, 응답 본문).
 typedef GuildResult = (int, Map<String, dynamic>);
+
+/// 지급 실패 뒤 되돌리기(수령 기록 삭제·코인 환불). 되돌리기마저 실패하면 로그만 남긴다 —
+/// 원래 오류를 덮지 않게(호출한 쪽이 원래 오류를 다시 던진다).
+Future<void> guildUndo(String tag, Future<void> Function() undo) async {
+  try {
+    await undo();
+  } catch (e) {
+    stderr.writeln('[guild/undo:$tag] 되돌리기 실패: $e');
+  }
+}
 
 /// 길드 1단계 — 만들기·가입(공개/승인제)·탈퇴·추방·직책·소개(docs/design_guild.md §1).
 ///
@@ -82,14 +94,16 @@ class GuildActions {
         'pointsLeft': config.level.points(lv.level) - used,
       },
       'myCoins': mine.coins,
-      'donatedToday': mine.donateDay == day,
+      // 출석은 유저 기준(길드를 옮겨도 같은 날 한 번) — 멤버 행에 없으면 유저 기록도 본다.
+      'donatedToday':
+          mine.donateDay == day || await store.donateDayOf(userId) == day,
       'shop': [
         for (final it in config.shop)
           {...it.toJson(), 'bought': bought[it.id] ?? 0},
       ],
       'myRole': me.role.key,
       'members': [for (final m in _sorted(members)) m.toApi()],
-      if (me.role.canManage)
+      if (me.role.canAnswerRequests(deputyCanAccept: synced.deputyCanAccept))
         'requests': [for (final r in await store.requestsOf(g.id)) r.toApi()],
     });
   }
@@ -125,7 +139,12 @@ class GuildActions {
     required String name,
     String lang = 'ko',
     String joinMode = 'open',
+    int? emblem,
   }) async {
+    // 문장은 선택(안 보내면 null = 앱이 id 해시로 기본 문장). 보냈으면 1~10 이어야 한다.
+    if (emblem != null && !guildEmblemValid(emblem)) {
+      return _err('emblem_invalid', 400);
+    }
     if (jelly < config.createJellyCost) {
       return _err('insufficient_jelly', 409, {'cost': config.createJellyCost});
     }
@@ -145,6 +164,7 @@ class GuildActions {
       leader: userId,
       maxMembers: config.maxMembers,
       joinMode: GuildJoinMode.fromKey(joinMode),
+      emblem: emblem,
     );
     if (g == null) return _err('name_taken');
     final r = await store.insertMember(g.id, userId, GuildRole.leader);
@@ -233,16 +253,18 @@ class GuildActions {
     });
   }
 
-  // ── 관리(길드장·부길드장) ──
+  // ── 관리(직책 권한 — 2026-10-05 사장님 확정, docs/design_guild.md §1) ──
 
-  /// 추방 — 길드장은 부길드장·멤버를, 부길드장은 멤버만. 추방당한 쪽은 재가입 제한이 없다
+  /// 추방 — **길드장만**(부길드장·멤버를). 추방당한 쪽은 재가입 제한이 없다
   /// (스스로 나간 게 아니다).
   Future<GuildResult> kick(String actorId, String targetId) async {
     if (actorId == targetId) return _err('forbidden', 403);
     final ctx = await _pair(actorId, targetId);
     if (ctx == null) return _err('not_same_guild', 404);
     final (actor, target) = ctx;
-    if (!_outranks(actor.role, target.role)) return _err('forbidden', 403);
+    if (!actor.role.canKick || !_outranks(actor.role, target.role)) {
+      return _err('forbidden', 403);
+    }
     await store.deleteMember(targetId);
     return me(actorId);
   }
@@ -257,7 +279,7 @@ class GuildActions {
     final ctx = await _pair(actorId, targetId);
     if (ctx == null) return _err('not_same_guild', 404);
     final (actor, target) = ctx;
-    if (actor.role != GuildRole.leader) return _err('forbidden', 403);
+    if (!actor.role.canAssignRoles) return _err('forbidden', 403);
     final role = GuildRole.fromKey(roleKey);
     if (role == target.role) return me(actorId);
     final members = await store.members(actor.guildId);
@@ -285,7 +307,7 @@ class GuildActions {
     return me(actorId);
   }
 
-  /// 가입 신청 수락·거절.
+  /// 가입 신청 수락·거절 — 길드장, 또는 길드장이 허용([GuildRow.deputyCanAccept])한 부길드장.
   Future<GuildResult> answerRequest(
     String actorId,
     String applicantId, {
@@ -293,7 +315,11 @@ class GuildActions {
   }) async {
     final actor = await store.membershipOf(actorId);
     if (actor == null) return _err('not_in_guild');
-    if (!actor.role.canManage) return _err('forbidden', 403);
+    final g = await store.guild(actor.guildId);
+    if (g == null) return _err('not_in_guild');
+    if (!actor.role.canAnswerRequests(deputyCanAccept: g.deputyCanAccept)) {
+      return _err('forbidden', 403);
+    }
     final reqs = await store.requestsOf(actor.guildId);
     if (!reqs.any((r) => r.userId == applicantId)) {
       return _err('request_not_found', 404);
@@ -320,15 +346,17 @@ class GuildActions {
     }
   }
 
-  /// 길드 소개·가입 방식(길드장·부길드장).
+  /// 길드 소개·가입 방식·부길드장 수락 허용·문장(**길드장만**).
   Future<GuildResult> settings(
     String actorId, {
     String? notice,
     String? joinMode,
+    bool? deputyCanAccept,
+    int? emblem,
   }) async {
     final actor = await store.membershipOf(actorId);
     if (actor == null) return _err('not_in_guild');
-    if (!actor.role.canManage) return _err('forbidden', 403);
+    if (!actor.role.canEditSettings) return _err('forbidden', 403);
     final patch = <String, dynamic>{};
     if (notice != null) {
       final n = notice.trim();
@@ -339,6 +367,11 @@ class GuildActions {
     }
     if (joinMode != null) {
       patch['join_mode'] = GuildJoinMode.fromKey(joinMode).key;
+    }
+    if (deputyCanAccept != null) patch['deputy_can_accept'] = deputyCanAccept;
+    if (emblem != null) {
+      if (!guildEmblemValid(emblem)) return _err('emblem_invalid', 400);
+      patch['emblem'] = emblem;
     }
     if (patch.isNotEmpty) await store.updateGuild(actor.guildId, patch);
     return me(actorId);
@@ -378,11 +411,11 @@ class GuildActions {
     return me(userId);
   }
 
-  /// 스킬 한 단계 올리기(길드장·부길드장). 포인트 = (레벨 − 1).
+  /// 스킬 한 단계 올리기(**길드장만**). 포인트 = (레벨 − 1).
   Future<GuildResult> skillUp(String actorId, String skillId) async {
     final actor = await store.membershipOf(actorId);
     if (actor == null) return _err('not_in_guild');
-    if (!actor.role.canManage) return _err('forbidden', 403);
+    if (!actor.role.canEditSkills) return _err('forbidden', 403);
     final def = config.skill(skillId);
     final g = await store.guild(actor.guildId);
     if (def == null || g == null) return _err('bad_request', 400);
@@ -402,25 +435,47 @@ class GuildActions {
   Future<GuildResult> skillReset(String actorId) async {
     final actor = await store.membershipOf(actorId);
     if (actor == null) return _err('not_in_guild');
-    if (actor.role != GuildRole.leader) return _err('forbidden', 403);
+    if (!actor.role.canEditSkills) return _err('forbidden', 403);
     await store.updateGuild(actor.guildId, {'skill_points': <String, int>{}});
     return me(actorId);
   }
 
-  /// 상점 구매 — 코인·기간 한도를 DB 가 한 번에 확인·차감한다. 성공하면 `item` 을 돌려주고
-  /// 라우트가 서버 세이브에 넣는다.
-  Future<GuildResult> buy(String userId, String itemId) async {
+  /// 상점 구매 — 코인·기간 한도를 DB 가 한 번에 확인·차감한다. 성공하면 [deliver](라우트가 품목을
+  /// 서버 세이브에 넣고 저장)를 부르고 `item` 을 돌려준다. [deliver] 가 실패하면 **코인·구매 수를
+  /// 되돌리고** 오류를 다시 던진다 — 코인만 빠지고 품목이 사라지지 않게(2026-10-05 점검).
+  Future<GuildResult> buy(
+    String userId,
+    String itemId, {
+    Future<void> Function(GuildShopItem item)? deliver,
+  }) async {
     final mine = await store.membershipOf(userId);
     if (mine == null) return _err('not_in_guild');
     final it = config.shopItem(itemId);
     if (it == null) return _err('bad_request', 400);
+    final period = _periods(now().toUtc())[it.id]!;
     final r = await store.buy(
       userId: userId,
       itemId: it.id,
-      period: _periods(now().toUtc())[it.id]!,
+      period: period,
       limit: it.limit,
       cost: it.cost,
     );
+    if (r == GuildBuyResult.ok && deliver != null) {
+      try {
+        await deliver(it);
+      } catch (_) {
+        await guildUndo(
+          'shop',
+          () => store.refundBuy(
+            userId: userId,
+            itemId: it.id,
+            period: period,
+            cost: it.cost,
+          ),
+        );
+        rethrow;
+      }
+    }
     return switch (r) {
       GuildBuyResult.ok => _ok({'item': it.toJson()}),
       GuildBuyResult.limit => _err('shop_limit'),

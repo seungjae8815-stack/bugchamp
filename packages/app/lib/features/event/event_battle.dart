@@ -363,29 +363,25 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
     // 위에서 계산해 돌려주고 우리는 그걸 채택하므로, 안 올리면 마지막 업로드
     // 이후의 진행(부화 수령·획득 곤충·골드)이 통째로 사라진다 — 결투·우편·결제는
     // 이미 이렇게 한다(2026-09-25 대회 경로만 빠져 있던 것을 고침).
-    if (!await flushSaveBeforeServerAction(
-      ref.read(gameServerProvider),
-      ref.read(saveControllerProvider).value,
-    )) {
-      if (!mounted) return;
-      setState(() => _busy = false);
-      showCenterToast(context, AppLocalizations.of(context).cloudFailed);
-      return;
-    }
-    final r = await ref
-        .read(gameServerProvider)
-        .eventPick(sid, cardId, leadBugId: _lead);
+    // 올리기 → 서버 행동 → 채택은 한 줄로 돈다([withServerSaveLock]).
+    final server = ref.read(gameServerProvider);
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final lead = _lead;
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await server.eventPick(sid, cardId, leadBugId: lead);
+      final save = r.save;
+      if (r.isOk && save != null) await ctrl.adoptServerSave(save);
+      return r;
+    });
     if (!mounted) return;
     setState(() => _busy = false);
-    if (!r.isOk) {
+    if (r == null || !r.isOk) {
       showCenterToast(context, AppLocalizations.of(context).cloudFailed);
       return;
     }
-    final save = r.save;
-    if (save != null) {
-      await ref.read(saveControllerProvider.notifier).adoptServerSave(save);
-    }
-    if (!mounted) return;
     final before = _hpShown;
     setState(() {
       _res = {..._res, ...?r.data};

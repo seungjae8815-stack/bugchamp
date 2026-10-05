@@ -67,6 +67,55 @@ void main() {
     });
   });
 
+  group('문장', () {
+    test('만들 때 고른 문장(1~10)이 응답·목록에 실린다 · 안 고르면 null', () async {
+      final (st, body) = await g.create(
+        'a',
+        jelly: 200,
+        name: '문장길드',
+        emblem: 7,
+      );
+      expect(st, 200);
+      expect((body['guild'] as Map)['emblem'], 7);
+      final id = await create('b', name: '기본길드');
+      expect(store.guilds[id]!.emblem, isNull);
+      final (_, list) = await g.list('c', lang: 'ko');
+      final rows = (list['guilds'] as List).cast<Map>();
+      expect(rows.firstWhere((r) => r['name'] == '문장길드')['emblem'], 7);
+      expect(rows.firstWhere((r) => r['name'] == '기본길드')['emblem'], isNull);
+    });
+
+    test('범위 밖 문장은 400 · 길드도 젤리 확인도 하기 전에 거른다', () async {
+      for (final bad in [0, 11, -1]) {
+        final (st, body) = await g.create(
+          'a',
+          jelly: 200,
+          name: '문장길드',
+          emblem: bad,
+        );
+        expect(st, 400, reason: '$bad');
+        expect(body['error'], 'emblem_invalid');
+      }
+      expect(store.guilds, isEmpty);
+    });
+
+    test('문장 바꾸기 — 길드장만 · 범위 검사', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      expect((await g.settings('b', emblem: 3)).$1, 403);
+      final (bad, badBody) = await g.settings('a', emblem: 11);
+      expect(bad, 400);
+      expect(badBody['error'], 'emblem_invalid');
+      expect(store.guilds[id]!.emblem, isNull);
+      final (st, body) = await g.settings('a', emblem: 3);
+      expect(st, 200);
+      expect((body['guild'] as Map)['emblem'], 3);
+      // 다른 설정만 바꿔도 문장은 그대로.
+      await g.settings('a', notice: '안녕');
+      expect(store.guilds[id]!.emblem, 3);
+    });
+  });
+
   group('가입', () {
     test('공개 길드는 바로 들어가고, 가득 차면 막힌다', () async {
       final id = await create('a');
@@ -168,13 +217,60 @@ void main() {
   });
 
   group('직책', () {
-    test('부길드장은 멤버만 추방할 수 있다', () async {
+    test('추방은 길드장만 — 부길드장은 멤버도 못 내보낸다(2026-10-05)', () async {
       final id = await create('a');
       await g.join('b', id);
       await g.join('c', id);
       await g.setRole('a', 'b', 'deputy');
       expect((await g.kick('b', 'a')).$1, 403);
-      expect((await g.kick('b', 'c')).$1, 200);
+      final (st, body) = await g.kick('b', 'c');
+      expect(st, 403);
+      expect(body['error'], 'forbidden');
+      expect((await g.kick('c', 'b')).$1, 403, reason: '멤버');
+      expect((await g.kick('a', 'b')).$1, 200, reason: '길드장 → 부길드장');
+      expect((await g.kick('a', 'c')).$1, 200, reason: '길드장 → 멤버');
+    });
+
+    test('설정·임명은 길드장만 — 부길드장 403', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      await g.join('c', id);
+      await g.setRole('a', 'b', 'deputy');
+      expect((await g.settings('b', notice: '안녕')).$1, 403);
+      expect((await g.settings('b', joinMode: 'approval')).$1, 403);
+      expect((await g.settings('b', deputyCanAccept: false)).$1, 403);
+      expect((await g.setRole('b', 'c', 'deputy')).$1, 403);
+      expect((await g.settings('a', notice: '안녕')).$1, 200);
+      expect(store.guilds[id]!.notice, '안녕');
+    });
+
+    test('부길드장 가입 수락 — 길드장 스위치(기본 켜짐)를 따른다', () async {
+      final id = await create('a', mode: 'approval');
+      await store.insertMember(id, 'b', GuildRole.deputy);
+      await g.join('c', id);
+      await g.join('d', id);
+
+      // 기본 켜짐 — 응답에 스위치 값과 신청 목록이 실린다.
+      final (_, meB) = await g.me('b');
+      expect((meB['guild'] as Map)['deputyCanAccept'], isTrue);
+      expect(meB['requests'], isNotNull);
+
+      // 길드장이 끈다 → 부길드장 수락·거절 403, 신청 목록도 안 실린다.
+      final (st, body) = await g.settings('a', deputyCanAccept: false);
+      expect(st, 200);
+      expect((body['guild'] as Map)['deputyCanAccept'], isFalse);
+      expect((await g.answerRequest('b', 'c', accept: true)).$1, 403);
+      expect((await g.answerRequest('b', 'c', accept: false)).$1, 403);
+      expect((await g.me('b')).$2['requests'], isNull);
+      expect(store.memberRows.containsKey('c'), isFalse);
+
+      // 다시 켠다 → 200.
+      await g.settings('a', deputyCanAccept: true);
+      expect((await g.answerRequest('b', 'c', accept: true)).$1, 200);
+      expect(store.memberRows['c']!.guildId, id);
+      // 길드장은 스위치와 상관없이 늘 된다.
+      await g.settings('a', deputyCanAccept: false);
+      expect((await g.answerRequest('a', 'd', accept: false)).$1, 200);
     });
 
     test('부길드장 수에는 상한이 있다', () async {
@@ -269,6 +365,33 @@ void main() {
       expect((await g3.donate('a')).$1, 200);
     });
 
+    test('출석은 유저 기준 — 다른 길드로 옮겨도 같은 날엔 다시 못 한다', () async {
+      await make();
+      expect((await g3.donate('a')).$1, 200);
+      await store.deleteMember('a');
+      final (_, b2) = await g3.create('a', jelly: 200, name: '두번째길드');
+      expect(b2['guild'], isNotNull);
+      final (_, me) = await g3.me('a');
+      expect(me['donatedToday'], true, reason: '화면도 출석함으로');
+      expect((await g3.donate('a')).$2['error'], 'already_donated');
+      expect(store.memberRows['a']!.coins, 0);
+      t = t.add(const Duration(days: 1));
+      expect((await g3.donate('a')).$1, 200);
+    });
+
+    test('상점 — 지급(저장)이 실패하면 코인·구매 수를 되돌린다', () async {
+      await make();
+      await store.addCoins('a', 100);
+      await expectLater(
+        g3.buy('a', 'fossil', deliver: (_) async => throw StateError('db')),
+        throwsStateError,
+      );
+      expect(store.memberRows['a']!.coins, 100);
+      expect((await g3.buy('a', 'fossil')).$1, 200);
+      expect((await g3.buy('a', 'fossil')).$1, 200, reason: '한도 2 그대로');
+      expect((await g3.buy('a', 'fossil')).$2['error'], 'shop_limit');
+    });
+
     test('경험치로 레벨이 오르면 인원과 스킬 포인트가 는다', () async {
       final id = await make();
       await g3.addExp(id, 250); // 100씩 → 3레벨
@@ -278,12 +401,16 @@ void main() {
       expect((body['guild'] as Map)['pointsLeft'], 2);
     });
 
-    test('스킬은 포인트만큼 · 관리자만 · 최대 단계까지 · 초기화는 길드장만', () async {
+    test('스킬은 포인트만큼 · 길드장만 · 최대 단계까지 · 초기화는 길드장만', () async {
       final id = await make();
       await store.insertMember(id, 'b', GuildRole.member);
       expect((await g3.skillUp('a', 'attack')).$2['error'], 'no_points');
       await g3.addExp(id, 200); // 3레벨 = 2포인트
       expect((await g3.skillUp('b', 'attack')).$1, 403);
+      // 부길드장도 스킬을 못 찍는다(2026-10-05 — 길드장만).
+      await store.insertMember(id, 'd', GuildRole.deputy);
+      expect((await g3.skillUp('d', 'attack')).$1, 403);
+      expect((await g3.skillReset('d')).$1, 403);
       expect((await g3.skillUp('a', 'attack')).$1, 200);
       expect((await g3.skillUp('a', 'gold')).$1, 200);
       expect((await g3.skillUp('a', 'gold')).$2['error'], 'no_points');

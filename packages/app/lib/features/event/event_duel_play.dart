@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/game_data.dart';
 import '../../domain/game_server.dart';
 import '../../domain/save_controller.dart';
+import '../../domain/server_sync.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/toast.dart';
@@ -376,14 +377,17 @@ Future<void> playEventDuel({
       ],
     );
     if (ok != true || !host.mounted) return false;
-    if (!await driver.quit()) {
+    // 서버 확정 → 채택은 한 줄로 돈다 — 사이에 낡은 업로드가 끼지 않게([withServerSaveLock]).
+    final quit = await withServerSaveLock(() async {
+      if (!await driver.quit()) return false;
+      final save = driver.quitSave;
+      if (save != null) await ctrl.adoptServerSave(save);
+      return true;
+    });
+    if (!quit) {
       // 실패를 알리지 않으면 조준 화면으로 돌아가 3초 뒤 저절로 던져졌다(2026-09-30 점검).
       if (host.mounted) showCenterToast(host, l.eventQuitFailed);
       return false;
-    }
-    final save = driver.quitSave;
-    if (save != null) {
-      await ctrl.adoptServerSave(save);
     }
     if (!host.mounted) return true;
     await _showEventResult(host, driver, dev: dev);
@@ -431,7 +435,9 @@ Future<void> playEventDuel({
         },
         onFinished: (last) async {
           final save = last.save;
-          if (save != null) await ctrl.adoptServerSave(save);
+          if (save != null) {
+            await withServerSaveLock(() => ctrl.adoptServerSave(save));
+          }
           if (!host.mounted) return;
           await _showEventResult(host, driver, dev: dev);
         },
@@ -478,6 +484,8 @@ Future<String?> _pickCard(BuildContext context, EventDuelDriver driver) {
           Builder(
             builder: (ctx) {
               final (name, desc) = cardText(l, c.id);
+              // 누적 상한에 닿은 카드 — 골라도 수치가 그대로라 "최대치"로 알린다(고르는 건 막지 않는다).
+              final maxed = driver.run.cardMaxed(c.kind, driver.spec);
               return GestureDetector(
                 onTap: () => Navigator.of(ctx).pop(c.id),
                 child: Container(
@@ -489,7 +497,10 @@ Future<String?> _pickCard(BuildContext context, EventDuelDriver driver) {
                   decoration: BoxDecoration(
                     color: const Color(0x22000000),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: kHoney, width: 1.4),
+                    border: Border.all(
+                      color: maxed ? const Color(0x66FFFFFF) : kHoney,
+                      width: 1.4,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -507,13 +518,43 @@ Future<String?> _pickCard(BuildContext context, EventDuelDriver driver) {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                              ),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: maxed
+                                          ? const Color(0x99FFFFFF)
+                                          : Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                if (maxed) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF9A3434),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      l.eventCardMaxed,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             const SizedBox(height: 2),
                             Text(

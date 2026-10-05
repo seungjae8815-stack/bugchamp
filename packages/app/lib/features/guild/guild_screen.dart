@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/auth_service.dart';
+import '../../domain/game_server.dart' show gameServerProvider;
 import '../../domain/guild_service.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
@@ -16,8 +19,10 @@ import '../../ui/labels.dart';
 import '../../ui/art.dart';
 import '../../ui/toast.dart';
 import '../chat/chat_screen.dart';
+import 'guild_art.dart';
 import 'guild_boss_tab.dart';
 import 'guild_growth.dart';
+import 'guild_rank.dart';
 import 'guild_war_tab.dart';
 import 'guild_mission_tab.dart';
 import '../../ui/colors.dart';
@@ -25,11 +30,17 @@ import '../../ui/colors.dart';
 const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
 
-/// 길드(1.0.15 1단계 — docs/design_guild.md §1).
+/// 길드(1.0.15 — docs/design_guild.md).
 ///
-/// 길드가 없으면 **추천·검색 목록 + 만들기**, 있으면 **길드원 · 채팅 · 가입 신청** 탭.
-/// 상태는 서버가 소유한다 — 화면은 [guildProvider] 를 열 때 한 번 새로 받고, 액션 응답으로 갈아 끼운다.
-/// ⚠️ 화면이 열려 있어도 주기 조회는 하지 않는다(2단계 미션 도움 요청부터 필요하면 그때 붙인다).
+/// 길드가 없으면 **추천·검색 목록 + 만들기**, 있으면 **길드원 · 미션 · 보스 · 길드전 · 채팅 · 가입 신청** 탭.
+/// 상태는 서버가 소유한다 — 액션 응답으로 갈아 끼우고, 하단 길드 탭에 들어올 때·앱으로 돌아올 때
+/// [GuildController.refreshIfStale] 로 다시 받는다(짧은 간격 안이면 건너뛴다).
+///
+/// ⚠️ 이 화면은 하단 메뉴 IndexedStack 안이라 **앱 시작부터 살아 있다.** 그래서
+/// - 하단 길드 탭을 처음 열 때까지 안쪽(목록·탭)을 빌드하지 않는다 — 안 그러면 시작마다
+///   목록·미션·보스·길드전·채팅 기록을 다 부른다. 시작 때 `/guild/me` 한 번은 [guildProvider] 의
+///   build 가 한다(가입 신청 빨간 점·오프라인 골드용 버프 캐시).
+/// - 주기 조회(미션 탭)는 **하단 탭이 길드 · 안쪽 탭이 미션 · 앱이 전면**일 때만 돈다.
 class GuildScreen extends ConsumerStatefulWidget {
   const GuildScreen({super.key});
 
@@ -37,19 +48,56 @@ class GuildScreen extends ConsumerStatefulWidget {
   ConsumerState<GuildScreen> createState() => _GuildScreenState();
 }
 
-class _GuildScreenState extends ConsumerState<GuildScreen> {
+class _GuildScreenState extends ConsumerState<GuildScreen>
+    with WidgetsBindingObserver {
+  /// 앱이 전면인가.
+  bool _resumed = true;
+
+  /// 하단 길드 탭을 한 번이라도 열었나(그 전엔 안쪽을 빌드하지 않는다).
+  bool _opened = false;
+
+  bool get _onTab => ref.read(tabIndexProvider) == kGuildTabIndex;
+
   @override
   void initState() {
     super.initState();
-    // 열 때마다 최신으로 — 그 사이 신청이 들어왔거나 추방됐을 수 있다.
-    Future.microtask(() => ref.read(guildProvider.notifier).refresh());
+    WidgetsBinding.instance.addObserver(this);
+    final s = WidgetsBinding.instance.lifecycleState;
+    _resumed = s == null || s == AppLifecycleState.resumed;
   }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final r = state == AppLifecycleState.resumed;
+    if (r == _resumed || !mounted) return;
+    setState(() => _resumed = r);
+    // 길드 탭을 보던 채로 돌아왔다 — 그 사이 신청이 들어왔거나 추방됐을 수 있다.
+    if (r && _onTab) _refresh();
+  }
+
+  void _refresh() => ref.read(guildProvider.notifier).refreshIfStale();
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    // 하단 길드 탭에 들어올 때마다 최신으로(짧은 간격 안이면 건너뛴다).
+    ref.listen<int>(tabIndexProvider, (prev, next) {
+      if (next == kGuildTabIndex && prev != kGuildTabIndex) _refresh();
+    });
+    final onTab = ref.watch(tabIndexProvider) == kGuildTabIndex;
+    if (!onTab && !_opened) return const SizedBox.shrink();
+    _opened = true;
+    final active = onTab && _resumed;
     final async = ref.watch(guildProvider);
     final view = async.value;
+    final rules =
+        ref.watch(gameDataProvider).value?.chatRules ?? const ChatRules();
     final Widget body;
     if (view == null) {
       body = const Center(child: CircularProgressIndicator());
@@ -62,11 +110,30 @@ class _GuildScreenState extends ConsumerState<GuildScreen> {
     } else if (view.guild == null) {
       body = _NoGuild(view: view);
     } else {
-      body = _MyGuild(view: view);
+      body = _MyGuild(view: view, active: active);
     }
+    final mine = view?.guild;
     return Scaffold(
       appBar: AppBar(
-        title: Text(view?.guild?.name ?? l.guildTitle),
+        title: mine == null
+            ? Text(l.guildTitle)
+            : Row(
+                children: [
+                  GuildEmblem(
+                    key: const ValueKey('guildEmblem:mine'),
+                    emblem: mine.emblemShown,
+                    size: 30,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      guildDisplayName(l, rules, mine.name),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
         actions: [if (view?.guild != null) _GuildMenu(view: view!)],
       ),
       body: body,
@@ -74,7 +141,12 @@ class _GuildScreenState extends ConsumerState<GuildScreen> {
   }
 }
 
-/// 서버 오류 코드 → 안내 문구.
+/// 남이 지은 길드 이름 표시 — 닉네임과 같은 기준(금칙어·사칭·깨진 문자)으로 가린다.
+/// 길드 이름은 서버가 닉네임 규칙(`nicknameAllowed`)으로 받지만, 규칙이 바뀌기 전 이름은 남는다.
+String guildDisplayName(AppLocalizations l, ChatRules rules, String name) =>
+    rules.maskNickname(name, fallback: l.guildNameFallback);
+
+/// 서버 오류 코드 → 안내 문구. 모르는 코드(서버가 새로 만든 것)는 일반 문구.
 String guildErrorText(AppLocalizations l, String code) => switch (code) {
   'name_taken' => l.guildErrNameTaken,
   'name_invalid' => l.guildErrNameInvalid,
@@ -85,8 +157,86 @@ String guildErrorText(AppLocalizations l, String code) => switch (code) {
   'requests_full' => l.guildErrRequestsFull,
   'deputy_full' => l.guildErrDeputyFull,
   'notice_invalid' => l.guildErrNoticeInvalid,
+  'already_in_guild' => l.guildErrAlreadyInGuild,
+  'guild_not_found' => l.guildErrNotFound,
+  'not_in_guild' => l.guildErrNotInGuild,
+  'request_not_found' => l.guildErrRequestNotFound,
+  'forbidden' => l.guildErrForbidden,
+  'store_unavailable' => l.guildErrStoreUnavailable,
+  'emblem_invalid' => l.guildErrEmblemInvalid,
   _ => l.guildErrGeneric,
 };
+
+/// 문장 고르기 격자(만들기 대화상자 · 문장 바꾸기 공용). 대화상자 본문이 스크롤되므로 줄바꿈(Wrap)만.
+class _EmblemPicker extends StatelessWidget {
+  const _EmblemPicker({required this.selected, required this.onPick});
+  final int selected;
+  final ValueChanged<int> onPick;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    alignment: WrapAlignment.center,
+    spacing: 6,
+    runSpacing: 6,
+    children: [
+      for (var e = 1; e <= kGuildEmblemCount; e++)
+        InkWell(
+          key: ValueKey('guildEmblemPick:$e'),
+          onTap: () => onPick(e),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            width: 46,
+            height: 46,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: e == selected
+                  ? _honey.withValues(alpha: 0.22)
+                  : const Color(0x18FFFFFF),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: e == selected ? _honey : const Color(0x22FFFFFF),
+                width: e == selected ? 2 : 1,
+              ),
+            ),
+            child: GuildEmblem(emblem: e, size: 38),
+          ),
+        ),
+    ],
+  );
+}
+
+/// 길드 신고(iOS 1.2 UGC) — 운영자 문의(`/support`, 텔레그램)로 길드 id·이름·소개를 보낸다.
+/// 서버 변경 없이 쓰는 경로라 문의와 같은 쿨다운(429)을 탄다.
+Future<void> _reportGuild(
+  BuildContext context,
+  WidgetRef ref,
+  GuildInfo g,
+) async {
+  final l = AppLocalizations.of(context);
+  if (!await _confirm(
+    context,
+    title: l.guildReport,
+    body: l.guildReportBody,
+    action: l.guildReport,
+  )) {
+    return;
+  }
+  final r = await ref
+      .read(gameServerProvider)
+      .sendSupport(
+        message:
+            '[길드 신고] ${g.name}\n'
+            'id: ${g.id} · lang: ${g.lang}\n'
+            '소개: ${g.notice}',
+      );
+  if (!context.mounted) return;
+  showCenterToast(
+    context,
+    r.isOk
+        ? l.guildReported
+        : (r.status == 429 ? l.supportTooFast : l.supportFailed),
+  );
+}
 
 String guildRoleLabel(AppLocalizations l, GuildRole r) => switch (r) {
   GuildRole.leader => l.guildRoleLeader,
@@ -94,16 +244,21 @@ String guildRoleLabel(AppLocalizations l, GuildRole r) => switch (r) {
   GuildRole.member => l.guildRoleMember,
 };
 
-Widget _roleIcon(GuildRole r, {double size = 16}) => switch (r) {
-  GuildRole.leader => Icon(
-    Icons.workspace_premium_rounded,
-    color: _honey,
+/// 직책 표지 — 그림(`role_leader`·`role_deputy`), 없으면 아이콘.
+Widget _roleIcon(GuildRole r, {double size = 18}) => switch (r) {
+  GuildRole.leader => guildArt(
+    'role_leader',
     size: size,
+    fallback: Icon(Icons.workspace_premium_rounded, color: _honey, size: size),
   ),
-  GuildRole.deputy => Icon(
-    Icons.star_rounded,
-    color: const Color(0xFF9FD3F5),
+  GuildRole.deputy => guildArt(
+    'role_deputy',
     size: size,
+    fallback: Icon(
+      Icons.star_rounded,
+      color: const Color(0xFF9FD3F5),
+      size: size,
+    ),
   ),
   GuildRole.member => SizedBox(width: size),
 };
@@ -264,6 +419,8 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
         ref.read(gameDataProvider).value?.guildConfig ?? const GuildConfig();
     final name = _name..clear();
     var mode = GuildJoinMode.open;
+    // 처음 고른 문장은 무작위 — 안 바꾸고 만들어도 모두 같은 문장이 되지 않게(화면 쪽이라 시드 불필요).
+    var emblem = math.Random().nextInt(kGuildEmblemCount) + 1;
     final go = await showGameDialog<bool>(
       context,
       title: l.guildCreate,
@@ -286,6 +443,20 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
                 border: const OutlineInputBorder(),
                 counterStyle: const TextStyle(color: Color(0x66FFFFFF)),
               ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l.guildEmblemPick,
+              style: const TextStyle(
+                color: _dim,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            _EmblemPicker(
+              selected: emblem,
+              onPick: (e) => setLocal(() => emblem = e),
             ),
             const SizedBox(height: 8),
             for (final m in GuildJoinMode.values)
@@ -353,7 +524,7 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
       context,
       ref
           .read(guildProvider.notifier)
-          .create(name: text, lang: _lang, joinMode: mode),
+          .create(name: text, lang: _lang, joinMode: mode, emblem: emblem),
       okText: l.guildCreated,
     );
   }
@@ -370,9 +541,27 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
     final cd = widget.view.cooldownUntil;
     final cooling = cd != null && now.isBefore(cd);
     final list = _list;
+    // 검색창에 키보드가 올라오면 배너를 접는다 — 작은 화면에서 목록 자리가 사라지지 않게.
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Column(
       children: [
+        if (!keyboard)
+          SizedBox(
+            key: const ValueKey('guildNoneBanner'),
+            width: double.infinity,
+            height: 104,
+            child: guildArt(
+              'none',
+              fit: BoxFit.cover,
+              fallback: const ColoredBox(
+                color: Color(0x22EBA52F),
+                child: Center(
+                  child: Icon(Icons.groups_rounded, color: _honey, size: 40),
+                ),
+              ),
+            ),
+          ),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
@@ -502,6 +691,12 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
       ),
       child: Row(
         children: [
+          GuildEmblem(
+            key: ValueKey('guildEmblem:${g.id}'),
+            emblem: g.emblemShown,
+            size: 40,
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,7 +705,7 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
                   children: [
                     Flexible(
                       child: Text(
-                        g.name,
+                        guildDisplayName(l, rules, g.name),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -545,7 +740,16 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          // 길드 신고(iOS 1.2) — 이름·소개가 부적절할 때.
+          IconButton(
+            onPressed: () => _reportGuild(context, ref, g),
+            tooltip: l.guildReport,
+            icon: const Icon(Icons.flag_outlined, size: 18),
+            color: const Color(0x66FFFFFF),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
           OutlinedButton(
             onPressed: enabled ? () => _join(g) : null,
             style: OutlinedButton.styleFrom(
@@ -592,8 +796,11 @@ Widget _chip(String text, {Color color = _dim}) => Container(
 // ── 내 길드: 길드원 · 채팅 · 가입 신청 ────────────────────────────────
 
 class _MyGuild extends ConsumerStatefulWidget {
-  const _MyGuild({required this.view});
+  const _MyGuild({required this.view, required this.active});
   final GuildView view;
+
+  /// 하단 탭이 길드이고 앱이 전면인가 — 안쪽 탭의 조회는 이때만.
+  final bool active;
 
   @override
   ConsumerState<_MyGuild> createState() => _MyGuildState();
@@ -602,21 +809,49 @@ class _MyGuild extends ConsumerStatefulWidget {
 class _MyGuildState extends ConsumerState<_MyGuild> {
   int _tab = 0;
 
+  /// 한 번이라도 연 안쪽 탭 — 안 연 탭은 빌드하지 않는다(열지도 않은 미션·보스·길드전·채팅을 부르지 않게).
+  final _visited = <int>{0};
+
+  /// 수락·거절 처리 중인 신청(연타 방지).
+  final _answering = <String>{};
+
+  Future<void> _answer(String userId, {required bool accept}) async {
+    if (!_answering.add(userId)) return;
+    setState(() {});
+    await _run(
+      context,
+      ref.read(guildProvider.notifier).answer(userId, accept: accept),
+    );
+    if (!mounted) return;
+    setState(() => _answering.remove(userId));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final v = widget.view;
     final g = v.guild!;
-    final manage = v.myRole.canManage;
-    final tabs = [
-      l.guildTabMembers,
-      l.guildTabMissions,
-      l.guildTabBoss,
-      l.guildTabWar,
-      l.guildTabChat,
-      if (manage) l.guildTabRequests(v.requests.length),
+    // 신청 탭 — 길드장, 또는 길드장이 허용한 부길드장(2026-10-05 직책 권한).
+    final manage = v.canAnswerRequests;
+    // (문구, 그림 이름, 그림이 없을 때 아이콘). 채팅·신청 그림은 아직 없다 — 넣으면 뜬다.
+    final tabs = <(String, String, IconData)>[
+      (l.guildTabMembers, 'tab_members', Icons.groups_rounded),
+      (l.guildTabMissions, 'tab_mission', Icons.flag_rounded),
+      (l.guildTabBoss, 'tab_boss', Icons.pest_control_rounded),
+      (l.guildTabWar, 'tab_war', Icons.sports_kabaddi_rounded),
+      (l.guildTabChat, 'tab_chat', Icons.chat_bubble_rounded),
+      if (manage)
+        (
+          l.guildTabRequests(v.requests.length),
+          'tab_requests',
+          Icons.person_add_alt_1_rounded,
+        ),
     ];
     final tab = _tab.clamp(0, tabs.length - 1);
+    _visited.add(tab);
+    final active = widget.active;
+    Widget lazy(int i, Widget Function() child) =>
+        _visited.contains(i) ? child() : const SizedBox.shrink();
     final rules =
         ref.watch(gameDataProvider).value?.chatRules ?? const ChatRules();
 
@@ -679,7 +914,7 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                     child: GestureDetector(
                       onTap: () => setState(() => _tab = i),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 5),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: i == tab
@@ -690,12 +925,39 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                             color: i == tab ? _honey : const Color(0x22FFFFFF),
                           ),
                         ),
-                        child: Text(
-                          tabs[i],
-                          style: TextStyle(
-                            color: i == tab ? _honey : _dim,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12.5,
+                        // 6칸이라 360dp·영어·일본어에서 넘친다 — 한 줄로 두고 칸에 맞게 줄인다.
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Opacity(
+                                opacity: i == tab ? 1 : 0.6,
+                                child: guildArt(
+                                  tabs[i].$2,
+                                  size: 22,
+                                  fallback: Icon(
+                                    tabs[i].$3,
+                                    size: 18,
+                                    color: i == tab ? _honey : _dim,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  tabs[i].$1,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: TextStyle(
+                                    color: i == tab ? _honey : _dim,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -706,19 +968,22 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
           ),
         ),
         Expanded(
-          // 채팅 탭을 오가도 대화·입력이 날아가지 않게 셋 다 살려 둔다.
+          // 채팅 탭을 오가도 대화·입력이 날아가지 않게 한 번 연 탭은 살려 둔다.
           child: IndexedStack(
             index: tab,
             children: [
               _members(l, v, rules),
-              // 미션 탭은 **보일 때만** 주기 조회한다.
-              GuildMissionTab(visible: tab == 1),
-              GuildBossTab(visible: tab == 2),
-              GuildWarTab(visible: tab == 3),
-              ChatScreen(
-                key: ValueKey('guildChat:${g.id}'),
-                guildId: g.id,
-                embedded: true,
+              // 미션 탭은 **하단 길드 탭 · 미션 탭 · 앱 전면**일 때만 주기 조회한다.
+              lazy(1, () => GuildMissionTab(visible: active && tab == 1)),
+              lazy(2, () => GuildBossTab(visible: active && tab == 2)),
+              lazy(3, () => GuildWarTab(visible: active && tab == 3)),
+              lazy(
+                4,
+                () => ChatScreen(
+                  key: ValueKey('guildChat:${g.id}'),
+                  guildId: g.id,
+                  embedded: true,
+                ),
               ),
               if (manage) _requests(l, v, rules),
             ],
@@ -731,16 +996,29 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
   Widget _members(AppLocalizations l, GuildView v, ChatRules rules) {
     final myId = ref.watch(authServiceProvider).userId;
     final now = ref.read(clockProvider).now().toUtc();
+    final ranks =
+        ref.watch(gameDataProvider).value?.guildConfig.memberRanks ??
+        kDefaultGuildMemberRanks;
+    final mine = v.members.where((m) => m.userId == myId).firstOrNull;
+    // 멤버 줄을 누르면 나오는 메뉴(임명·위임·추방)는 전부 길드장 권한이다 — 부길드장·멤버는 누를 게 없다.
+    final canActOnOthers = v.myRole.canKick || v.myRole.canAssignRoles;
     return ListView.builder(
       padding: EdgeInsets.only(
         top: 4,
         bottom: 8 + MediaQuery.viewPaddingOf(context).bottom,
       ),
-      itemCount: v.members.length,
+      itemCount: v.members.length + 1,
       itemBuilder: (context, i) {
-        final m = v.members[i];
+        if (i == 0) {
+          return GuildMyRankBar(
+            view: v,
+            ranks: ranks,
+            contribution: mine?.contribution ?? 0,
+          );
+        }
+        final m = v.members[i - 1];
         final me = m.userId == myId;
-        final canAct = !me && _outranks(v.myRole, m.role);
+        final canAct = !me && canActOnOthers && _outranks(v.myRole, m.role);
         return InkWell(
           onTap: canAct ? () => _memberActions(l, v, m, rules) : null,
           child: Container(
@@ -782,9 +1060,25 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                           fontSize: 13.5,
                         ),
                       ),
-                      Text(
-                        '${guildRoleLabel(l, m.role)} · ${_lastSeen(l, now, m.lastSeen)}',
-                        style: const TextStyle(color: _dim, fontSize: 11),
+                      Row(
+                        children: [
+                          GuildRankBadge(
+                            rankId: guildMemberRank(
+                              ranks,
+                              m.contribution,
+                            ).rank.id,
+                            size: 11,
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              '${guildRoleLabel(l, m.role)} · ${_lastSeen(l, now, m.lastSeen)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: _dim, fontSize: 11),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -830,7 +1124,7 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
   ) async {
     final name = rules.maskNickname(m.nickname, fallback: l.nicknameFallback);
     final n = ref.read(guildProvider.notifier);
-    final leader = v.myRole == GuildRole.leader;
+    final leader = v.myRole.canAssignRoles;
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xF2141F0E),
@@ -869,17 +1163,25 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                   }
                 },
               ),
-            _sheetItem(ctx, Icons.person_remove_rounded, l.guildKick, () async {
-              if (await _confirm(
-                context,
-                title: l.guildKick,
-                body: l.guildKickConfirm(name),
-                action: l.guildKick,
-              )) {
-                if (!mounted) return;
-                await _run(context, n.kick(m.userId));
-              }
-            }, danger: true),
+            if (v.myRole.canKick)
+              _sheetItem(
+                ctx,
+                Icons.person_remove_rounded,
+                l.guildKick,
+                () async {
+                  if (await _confirm(
+                    context,
+                    title: l.guildKick,
+                    body:
+                        '${l.guildKickConfirm(name)}\n\n${l.guildKickCoinsNote}',
+                    action: l.guildKick,
+                  )) {
+                    if (!mounted) return;
+                    await _run(context, n.kick(m.userId));
+                  }
+                },
+                danger: true,
+              ),
           ],
         ),
       ),
@@ -907,12 +1209,12 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
         child: Text(l.guildNoRequests, style: const TextStyle(color: _dim)),
       );
     }
-    final n = ref.read(guildProvider.notifier);
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 4),
       itemCount: v.requests.length,
       itemBuilder: (context, i) {
         final r = v.requests[i];
+        final busy = _answering.contains(r.userId);
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -945,15 +1247,13 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                 ),
               ),
               TextButton(
-                onPressed: () =>
-                    _run(context, n.answer(r.userId, accept: false)),
+                onPressed: busy ? null : () => _answer(r.userId, accept: false),
                 style: TextButton.styleFrom(foregroundColor: _dim),
                 child: Text(l.guildReject),
               ),
               const SizedBox(width: 4),
               FilledButton(
-                onPressed: () =>
-                    _run(context, n.answer(r.userId, accept: true)),
+                onPressed: busy ? null : () => _answer(r.userId, accept: true),
                 style: FilledButton.styleFrom(
                   backgroundColor: _honey,
                   foregroundColor: kHoneyInk,
@@ -968,7 +1268,7 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
   }
 }
 
-/// 앱바 메뉴 — 소개 수정·가입 방식(관리자) · 탈퇴(모두).
+/// 앱바 메뉴 — 소개 수정·문장·가입 방식·부길드장 수락 허용(길드장) · 신고·탈퇴(모두).
 class _GuildMenu extends ConsumerWidget {
   const _GuildMenu({required this.view});
   final GuildView view;
@@ -976,13 +1276,16 @@ class _GuildMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final manage = view.myRole.canManage;
+    final manage = view.myRole.canEditSettings;
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert_rounded),
       color: const Color(0xF2141F0E),
       onSelected: (k) => switch (k) {
         'notice' => _editNotice(context, ref),
+        'emblem' => _changeEmblem(context, ref),
         'mode' => _toggleMode(context, ref),
+        'deputy' => _toggleDeputyAccept(context, ref),
+        'report' => _reportGuild(context, ref, view.guild!),
         _ => _leave(context, ref),
       },
       itemBuilder: (_) => [
@@ -996,12 +1299,60 @@ class _GuildMenu extends ConsumerWidget {
           ),
         if (manage)
           PopupMenuItem(
+            key: const ValueKey('guildEmblemChange'),
+            value: 'emblem',
+            child: Row(
+              children: [
+                GuildEmblem(emblem: view.guild!.emblemShown, size: 22),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    l.guildEmblemChange,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (manage)
+          PopupMenuItem(
             value: 'mode',
             child: Text(
               '${l.guildChangeJoinMode}: ${_joinModeShort(l, view.guild!.joinMode)}',
               style: const TextStyle(color: Colors.white),
             ),
           ),
+        if (manage)
+          PopupMenuItem(
+            key: const ValueKey('guildDeputyAcceptToggle'),
+            value: 'deputy',
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l.guildDeputyCanAccept,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 메뉴 안의 스위치는 표시만 — 누르면 메뉴 항목이 토글한다.
+                IgnorePointer(
+                  child: Switch(
+                    value: view.guild!.deputyCanAccept,
+                    onChanged: (_) {},
+                    activeThumbColor: _honey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        PopupMenuItem(
+          value: 'report',
+          child: Text(
+            l.guildReport,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
         PopupMenuItem(
           value: 'leave',
           child: Text(
@@ -1054,6 +1405,38 @@ class _GuildMenu extends ConsumerWidget {
     );
   }
 
+  /// 문장 바꾸기(길드장만 — 서버 `canEditSettings`).
+  Future<void> _changeEmblem(BuildContext context, WidgetRef ref) async {
+    final l = AppLocalizations.of(context);
+    final now = view.guild!.emblemShown;
+    var pick = now;
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.guildEmblemChange,
+      iconWidget: GuildEmblem(emblem: now, size: 40),
+      content: StatefulBuilder(
+        builder: (ctx, setLocal) => _EmblemPicker(
+          selected: pick,
+          onPick: (e) => setLocal(() => pick = e),
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(l.guildSave, () => Navigator.pop(context, true)),
+      ],
+    );
+    if (ok != true || pick == now || !context.mounted) return;
+    await _run(
+      context,
+      ref.read(guildProvider.notifier).settings(emblem: pick),
+      okText: l.guildEmblemChanged,
+    );
+  }
+
   Future<void> _toggleMode(BuildContext context, WidgetRef ref) => _run(
     context,
     ref
@@ -1063,6 +1446,14 @@ class _GuildMenu extends ConsumerWidget {
               ? GuildJoinMode.approval
               : GuildJoinMode.open,
         ),
+  );
+
+  /// 부길드장 가입 수락 허용 스위치(길드장만, 기본 켜짐).
+  Future<void> _toggleDeputyAccept(BuildContext context, WidgetRef ref) => _run(
+    context,
+    ref
+        .read(guildProvider.notifier)
+        .settings(deputyCanAccept: !view.guild!.deputyCanAccept),
   );
 
   Future<void> _leave(BuildContext context, WidgetRef ref) async {
@@ -1076,6 +1467,7 @@ class _GuildMenu extends ConsumerWidget {
       else
         l.guildLeaveConfirm(cfg.rejoinCooldownHours),
       if (!last && view.myRole == GuildRole.leader) l.guildLeaderLeaveNote,
+      l.guildLeaveCoinsNote,
     ].join('\n\n');
     if (!await _confirm(
       context,

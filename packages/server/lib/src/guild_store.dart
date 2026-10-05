@@ -18,10 +18,12 @@ class GuildRow {
     this.notice = '',
     this.leader = '',
     this.skills = const {},
+    this.deputyCanAccept = true,
     this.tier = 'bronze',
     this.gr = 0,
     this.memberCount = 0,
     this.avgPower = 0,
+    this.emblem,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.utc(2000);
 
@@ -38,11 +40,17 @@ class GuildRow {
   /// 길드 버프 스킬 레벨(스킬 id → 레벨). DB `skill_points`.
   final Map<String, int> skills;
 
+  /// 부길드장이 가입 신청을 수락·거절할 수 있는지(길드장 스위치, 기본 켜짐). DB `deputy_can_accept`.
+  final bool deputyCanAccept;
+
   /// 길드전 티어·등급점(5단계).
   final String tier;
   final int gr;
   final int memberCount;
   final double avgPower;
+
+  /// 길드 문장(1~10, DB `emblem`). null = 고른 적 없음(옛 길드 · SQL 적용 전) — 앱이 id 해시로 기본 문장을 보인다.
+  final int? emblem;
   final DateTime createdAt;
 
   bool get full => memberCount >= maxMembers;
@@ -61,10 +69,14 @@ class GuildRow {
       for (final e in ((j['skill_points'] as Map?) ?? const {}).entries)
         '${e.key}': (e.value as num).toInt(),
     },
+    // 칸이 없는 옛 RPC(SQL 적용 전)면 기본값 = 켜짐.
+    deputyCanAccept: j['deputy_can_accept'] as bool? ?? true,
     tier: j['tier'] as String? ?? 'bronze',
     gr: (j['gr'] as num?)?.toInt() ?? 0,
     memberCount: (j['member_count'] as num?)?.toInt() ?? 0,
     avgPower: (j['avg_power'] as num?)?.toDouble() ?? 0,
+    // 칸이 없는 옛 RPC(SQL ⑧ 적용 전)면 null.
+    emblem: (j['emblem'] as num?)?.toInt(),
     createdAt: DateTime.tryParse('${j['created_at']}')?.toUtc(),
   );
 
@@ -76,8 +88,10 @@ class GuildRow {
     String? notice,
     String? leader,
     Map<String, int>? skills,
+    bool? deputyCanAccept,
     String? tier,
     int? gr,
+    int? emblem,
   }) => GuildRow(
     id: id,
     name: name,
@@ -89,10 +103,12 @@ class GuildRow {
     notice: notice ?? this.notice,
     leader: leader ?? this.leader,
     skills: skills ?? this.skills,
+    deputyCanAccept: deputyCanAccept ?? this.deputyCanAccept,
     tier: tier ?? this.tier,
     gr: gr ?? this.gr,
     memberCount: memberCount,
     avgPower: avgPower,
+    emblem: emblem ?? this.emblem,
     createdAt: createdAt,
   );
 
@@ -105,9 +121,11 @@ class GuildRow {
     'maxMembers': maxMembers,
     'joinMode': joinMode.key,
     'notice': notice,
+    'deputyCanAccept': deputyCanAccept,
     'memberCount': memberCount,
     'avgPower': avgPower,
     'tier': tier,
+    'emblem': emblem,
   };
 }
 
@@ -252,6 +270,7 @@ abstract interface class GuildStore {
     required String leader,
     required int maxMembers,
     required GuildJoinMode joinMode,
+    int? emblem,
   });
   Future<void> updateGuild(String guildId, Map<String, dynamic> patch);
 
@@ -283,8 +302,20 @@ abstract interface class GuildStore {
   Future<void> addCoins(String userId, int coins);
   Future<void> addGuildExp(String guildId, int exp);
 
-  /// 출석 — 그날 처음이면 코인을 더하고 true(원자적 조건부 갱신).
+  /// 출석 — **유저 기준** 그날 처음이면 코인을 더하고 true(원자적, SQL `guild_donate_v2`).
+  /// 길드를 옮겨도 같은 날엔 false — 추방 → 다른 길드 가입으로 두 번 받던 구멍(2026-10-05).
   Future<bool> donate(String userId, String day, int coins);
+
+  /// 유저 기준 마지막 출석일(길드를 옮겨도 남는다). 없으면 ''.
+  Future<String> donateDayOf(String userId);
+
+  /// 상점 환불 — 코인을 돌려주고 이번 기간 구매 수를 하나 뺀다(지급 저장이 실패했을 때).
+  Future<void> refundBuy({
+    required String userId,
+    required String itemId,
+    required String period,
+    required int cost,
+  });
 
   /// 상점 구매 — 기간 한도·코인을 **한 번에** 확인하고 차감한다.
   Future<GuildBuyResult> buy({
@@ -409,6 +440,7 @@ class SupabaseGuildStore implements GuildStore {
     required String leader,
     required int maxMembers,
     required GuildJoinMode joinMode,
+    int? emblem,
   }) async {
     final res = await _http.post(
       _rest('guilds'),
@@ -420,6 +452,8 @@ class SupabaseGuildStore implements GuildStore {
           'leader': leader,
           'max_members': maxMembers,
           'join_mode': joinMode.key,
+          // 고르지 않았으면 칸을 보내지 않는다(DB 기본 null).
+          'emblem': ?emblem,
         },
       ]),
     );
@@ -549,12 +583,33 @@ class SupabaseGuildStore implements GuildStore {
 
   @override
   Future<bool> donate(String userId, String day, int coins) async =>
-      (await _rpcRaw('guild_donate', {
+      (await _rpcRaw('guild_donate_v2', {
         'p_user': userId,
         'p_day': day,
         'p_coins': coins,
       })) ==
       true;
+
+  @override
+  Future<String> donateDayOf(String userId) async {
+    final rows = await _get(
+      'guild_user_daily?user_id=${_eq(userId)}&select=donate_day&limit=1',
+    );
+    return rows.isEmpty ? '' : '${rows.first['donate_day'] ?? ''}';
+  }
+
+  @override
+  Future<void> refundBuy({
+    required String userId,
+    required String itemId,
+    required String period,
+    required int cost,
+  }) => _rpcRaw('guild_shop_refund', {
+    'p_user': userId,
+    'p_item': itemId,
+    'p_period': period,
+    'p_cost': cost,
+  });
 
   @override
   Future<GuildBuyResult> buy({
@@ -608,6 +663,9 @@ class MemoryGuildStore implements GuildStore {
   /// (user|item) → (기간, 수).
   final Map<String, (String, int)> buys = {};
 
+  /// 유저 기준 마지막 출석일(guild_user_daily 흉내 — 길드를 옮겨도 남는다).
+  final Map<String, String> donateDays = {};
+
   /// 닉네임·전투력(profiles 흉내).
   final Map<String, ({String nickname, double power})> profiles = {};
   var _seq = 0;
@@ -647,10 +705,12 @@ class MemoryGuildStore implements GuildStore {
       notice: g.notice,
       leader: g.leader,
       skills: g.skills,
+      deputyCanAccept: g.deputyCanAccept,
       tier: g.tier,
       gr: g.gr,
       memberCount: ms.length,
       avgPower: avg,
+      emblem: g.emblem,
       createdAt: g.createdAt,
     );
   }
@@ -702,6 +762,7 @@ class MemoryGuildStore implements GuildStore {
     required String leader,
     required int maxMembers,
     required GuildJoinMode joinMode,
+    int? emblem,
   }) async {
     final lower = name.toLowerCase();
     if (guilds.values.any((g) => g.name.toLowerCase() == lower)) return null;
@@ -712,6 +773,7 @@ class MemoryGuildStore implements GuildStore {
       leader: leader,
       maxMembers: maxMembers,
       joinMode: joinMode,
+      emblem: emblem,
       createdAt: _clock(),
     );
     guilds[g.id] = g;
@@ -735,8 +797,10 @@ class MemoryGuildStore implements GuildStore {
               (k, v) => MapEntry('$k', (v as num).toInt()),
             )
           : null,
+      deputyCanAccept: patch['deputy_can_accept'] as bool?,
       tier: patch['tier'] as String?,
       gr: patch['gr'] as int?,
+      emblem: patch['emblem'] as int?,
     );
   }
 
@@ -847,13 +911,39 @@ class MemoryGuildStore implements GuildStore {
   @override
   Future<bool> donate(String userId, String day, int coins) async {
     final m = memberRows[userId];
-    if (m == null || m.donateDay == day) return false;
+    if (m == null) return false;
+    if (m.donateDay == day || donateDays[userId] == day) {
+      memberRows[userId] = m.copyWith(donateDay: day);
+      return false;
+    }
+    donateDays[userId] = day;
     memberRows[userId] = m.copyWith(
       donateDay: day,
       coins: m.coins + coins,
       contribution: m.contribution + coins,
     );
     return true;
+  }
+
+  @override
+  Future<String> donateDayOf(String userId) async => donateDays[userId] ?? '';
+
+  @override
+  Future<void> refundBuy({
+    required String userId,
+    required String itemId,
+    required String period,
+    required int cost,
+  }) async {
+    final m = memberRows[userId];
+    if (m != null && cost > 0) {
+      memberRows[userId] = m.copyWith(coins: m.coins + cost);
+    }
+    final key = '$userId|$itemId';
+    final prev = buys[key];
+    if (prev != null && prev.$1 == period) {
+      buys[key] = (period, prev.$2 > 0 ? prev.$2 - 1 : 0);
+    }
   }
 
   @override

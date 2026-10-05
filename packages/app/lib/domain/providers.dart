@@ -30,6 +30,9 @@ class TabIndexNotifier extends Notifier<int> {
 /// 하단 메뉴의 상점 탭 번호(홈·캐릭터·채집함·전투·길드·상점).
 const int kShopTabIndex = 5;
 
+/// 하단 메뉴의 길드 탭 번호. 길드 화면은 이 탭이 골라졌을 때만 서버를 부른다.
+const int kGuildTabIndex = 4;
+
 final tabIndexProvider = NotifierProvider<TabIndexNotifier, int>(
   TabIndexNotifier.new,
 );

@@ -56,10 +56,18 @@ class _Fake extends http.BaseClient {
 
   /// 수동 전투 세션 — 수와 수 사이에 살아남아야 한다.
   final Map<String, Map<String, dynamic>> sessions = {};
+  final List<(String, Object?)> patched = [];
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final path = request.url.path;
+    if (request.method == 'PATCH') {
+      patched.add((
+        request.url.toString(),
+        jsonDecode(await request.finalize().bytesToString()),
+      ));
+      return http.StreamedResponse(Stream.value(utf8.encode('')), 204);
+    }
     if (request.method == 'DELETE') {
       if (path.contains('/ops_settings')) {
         settings.remove(
@@ -201,6 +209,11 @@ void main() {
   });
 
   final gameConfig = GameConfig(
+    // 운영 우편 요정 재료(속성석·가속기 키 검사)에 쓴다.
+    fairy: FairyConfig.fromJson(
+      jsonDecode(File('../app/assets/data/fairies.json').readAsStringSync())
+          as Map<String, dynamic>,
+    ),
     guild: const GuildConfig(
       shop: [
         GuildShopItem(
@@ -1051,6 +1064,7 @@ void main() {
       int jelly = 100,
       int gold = 0,
       String? endsAt,
+      Map<String, dynamic>? fairy,
     }) => {
       'id': id,
       'title': '점검 보상',
@@ -1060,6 +1074,7 @@ void main() {
       'chitin': 0,
       'mineral': 0,
       'sap': 0,
+      'fairy': ?fairy,
       'starts_at': null,
       'ends_at': endsAt,
       'created_at': _t.toIso8601String(),
@@ -1126,6 +1141,34 @@ void main() {
         fake.lastSaved!['data'] as Map<String, dynamic>,
       );
       expect(saved.materialCount(MaterialKind.jelly), 100);
+    });
+
+    test('우편 수령: 요정 재료(가루·속성석·가속기)도 서버가 지급한다', () async {
+      final h = handler(
+        mail: [
+          mailRow(
+            jelly: 0,
+            gold: 1000000000000,
+            fairy: {
+              'dust': 5000,
+              'stones': {'attack': 3},
+              'accelerators': {'acc2h': 2},
+            },
+          ),
+        ],
+      );
+      final res = await post(h, '/mail/claim', {'id': 1}, token: makeToken());
+      expect(res.statusCode, 200);
+      final saved = SaveGame.fromJson(
+        fake.lastSaved!['data'] as Map<String, dynamic>,
+      );
+      expect(
+        saved.gold,
+        greaterThanOrEqualTo(1000000000000),
+      ); // 1조 — integer 칸을 넘는 값
+      expect(saved.fairy.dust, 5000);
+      expect(saved.fairy.stones['attack'], 3);
+      expect(saved.fairy.accelerators['acc2h'], 2);
     });
 
     test('같은 우편을 두 번 받을 수 없다', () async {
@@ -1401,6 +1444,64 @@ void main() {
         'jelly_too_large',
       );
       expect(fake.lastSaved, isNull); // 저장 자체가 없었다
+    });
+
+    test('골드·재료 1조도 보낼 수 있다(2026-10-05 상한 1,000조)', () async {
+      final h = adminHandler();
+      final res = await adminPost(h, '/admin/mail', {
+        'title': '큰 보상',
+        'gold': 1000000000000,
+        'chitin': 1000000000000,
+      });
+      expect(res.statusCode, 200);
+      expect(fake.lastSaved!['gold'], 1000000000000);
+      expect(fake.lastSaved!['chitin'], 1000000000000);
+      expect(
+        fake.lastSaved!.containsKey('fairy'),
+        isFalse,
+      ); // 요정 재료가 없으면 칸을 싣지 않는다
+    });
+
+    test('요정 재료 우편 — 아는 키만, 0 은 빼고 저장한다', () async {
+      final h = adminHandler();
+      final res = await adminPost(h, '/admin/mail', {
+        'title': '요정 보상',
+        'fairy': {
+          'dust': 100,
+          'stones': {'attack': 2, 'hp': 0},
+          'accelerators': {'acc8h': 1},
+        },
+      });
+      expect(res.statusCode, 200);
+      expect(fake.lastSaved!['fairy'], {
+        'dust': 100,
+        'stones': {'attack': 2},
+        'accelerators': {'acc8h': 1},
+      });
+      final bad = await adminPost(h, '/admin/mail', {
+        'title': '오타',
+        'fairy': {
+          'stones': {'atack': 2},
+        },
+      });
+      expect(bad.statusCode, 400);
+      expect(
+        jsonDecode(await bad.readAsString())['error'],
+        'fairy_stone_invalid',
+      );
+    });
+
+    test('공지 고정 풀기 — pinned:false 로 그 공지만 고친다', () async {
+      final h = adminHandler();
+      final res = await adminPost(h, '/admin/notice/pin', {
+        'id': '7',
+        'pinned': false,
+      });
+      expect(res.statusCode, 200);
+      expect(fake.patched.single.$1, contains('/notices?id=eq.7'));
+      expect(fake.patched.single.$2, {'pinned': false});
+      final bad = await adminPost(h, '/admin/notice/pin', {'id': '7'});
+      expect(bad.statusCode, 400);
     });
 
     test('음수 지급은 0으로 — 운영 실수로 재화를 뺏지 않는다', () async {
@@ -1841,6 +1942,27 @@ void main() {
         migrateToCurrent((fake.lastSaved!['data'] as Map).cast()),
       );
       expect(saved.materialCount(MaterialKind.jelly), 50);
+    });
+
+    test('문장 — 정수 1~10 만 받는다(아니면 400, 젤리 안 씀)', () async {
+      final guilds = MemoryGuildStore(clock: () => _t);
+      final h = handler(save: withJelly(250), guildStore: guilds);
+      for (final bad in [11, '3', 2.5]) {
+        final res = await post(h, '/guild/create', {
+          'name': '장수풍뎅이단',
+          'emblem': bad,
+        }, token: makeToken());
+        expect(res.statusCode, 400, reason: '$bad');
+      }
+      expect(guilds.guilds, isEmpty);
+      expect(fake.lastSaved, isNull);
+      final res = await post(h, '/guild/create', {
+        'name': '장수풍뎅이단',
+        'emblem': 4,
+      }, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map;
+      expect((body['guild'] as Map)['emblem'], 4);
     });
 
     test('젤리가 모자라면 길드도 안 생기고 세이브도 안 건드린다', () async {

@@ -1,4 +1,4 @@
-import '../domain/guild_service.dart' show kGuildOpen;
+import '../domain/guild_service.dart' show kGuildOpen, guildHasRequestsProvider;
 import 'guild/guild_screen.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
@@ -328,6 +328,8 @@ class _AppShellState extends ConsumerState<AppShell>
           ),
           bottomNavigationBar: _GameNavBar(
             index: index,
+            // 관리자인데 가입 신청이 쌓여 있으면 길드 아이콘에 빨간 점.
+            guildDot: ref.watch(guildHasRequestsProvider),
             onTap: (i) {
               AudioService.instance.sfxTap();
               ref.read(tabIndexProvider.notifier).set(i);
@@ -559,10 +561,15 @@ class _AppShellState extends ConsumerState<AppShell>
 }
 
 class _GameNavBar extends StatelessWidget {
-  const _GameNavBar({required this.index, required this.onTap});
+  const _GameNavBar({
+    required this.index,
+    required this.onTap,
+    this.guildDot = false,
+  });
 
   final int index;
   final ValueChanged<int> onTap;
+  final bool guildDot;
 
   @override
   Widget build(BuildContext context) {
@@ -599,6 +606,7 @@ class _GameNavBar extends StatelessWidget {
                     icon: items[i].$2,
                     label: items[i].$3,
                     active: i == index,
+                    dot: guildDot && i == kGuildTabIndex,
                     onTap: () => onTap(i),
                   ),
                 ),
@@ -617,6 +625,7 @@ class _NavTab extends StatelessWidget {
     required this.label,
     required this.active,
     required this.onTap,
+    this.dot = false,
   });
 
   final String art;
@@ -624,6 +633,9 @@ class _NavTab extends StatelessWidget {
   final String label;
   final bool active;
   final VoidCallback onTap;
+
+  /// 아이콘 오른쪽 위 빨간 점(처리할 일이 있다).
+  final bool dot;
 
   @override
   Widget build(BuildContext context) {
@@ -637,13 +649,27 @@ class _NavTab extends StatelessWidget {
         children: [
           // 고른 탭만 아트를 제 색으로, 나머지는 살짝 흐리게 —
           // 아이콘 색으로 주던 선택 신호를 아트에도 유지한다.
-          Opacity(
-            opacity: active ? 1 : 0.62,
-            child: navImage(
-              art,
-              size: 28,
-              fallback: Icon(icon, color: color, size: 24),
-            ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Opacity(
+                opacity: active ? 1 : 0.62,
+                child: navImage(
+                  art,
+                  size: 28,
+                  fallback: Icon(icon, color: color, size: 24),
+                ),
+              ),
+              if (dot)
+                const Positioned(
+                  right: -3,
+                  top: -2,
+                  child: CircleAvatar(
+                    radius: 4.5,
+                    backgroundColor: Color(0xFFFF5252),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 1),
           // 6칸이라 칸이 좁다 — "コレクション"·"Character"가 단어 중간에서 꺾였다(한 줄 · 칸에 맞게 줄임).

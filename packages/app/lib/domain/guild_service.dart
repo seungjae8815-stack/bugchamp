@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:core_run/core_run.dart';
@@ -27,6 +28,8 @@ class GuildInfo {
     this.skills = const {},
     this.pointsLeft = 0,
     this.tier = 'bronze',
+    this.deputyCanAccept = true,
+    this.emblem,
   });
 
   final String id;
@@ -50,6 +53,15 @@ class GuildInfo {
   /// 길드전 티어(5단계).
   final String tier;
 
+  /// 부길드장이 가입 신청을 수락·거절할 수 있는지(길드장 스위치, 기본 켜짐).
+  final bool deputyCanAccept;
+
+  /// 길드장이 고른 문장(1~10). null = 고른 적 없음(옛 길드 · 서버 SQL 적용 전).
+  final int? emblem;
+
+  /// 화면에 보일 문장 — 고른 값, 없으면 길드 id 해시로 정한 기본 문장(늘 같은 그림).
+  int get emblemShown => guildEmblemOf(id, emblem);
+
   bool get full => memberCount >= maxMembers;
 
   factory GuildInfo.fromJson(Map<String, dynamic> j) => GuildInfo(
@@ -70,6 +82,8 @@ class GuildInfo {
     },
     pointsLeft: (j['pointsLeft'] as num?)?.toInt() ?? 0,
     tier: j['tier'] as String? ?? 'bronze',
+    deputyCanAccept: j['deputyCanAccept'] as bool? ?? true,
+    emblem: (j['emblem'] as num?)?.toInt(),
   );
 }
 
@@ -89,6 +103,7 @@ class GuildMemberInfo {
     required this.power,
     required this.lastSeen,
     this.badge = '',
+    this.contribution = 0,
   });
 
   final String userId;
@@ -98,6 +113,9 @@ class GuildMemberInfo {
   final DateTime lastSeen;
   final String badge;
 
+  /// 이 길드에서 번 코인 누적 — 멤버 등급([guildMemberRank])의 근거.
+  final int contribution;
+
   factory GuildMemberInfo.fromJson(Map<String, dynamic> j) => GuildMemberInfo(
     userId: '${j['userId']}',
     role: GuildRole.fromKey(j['role'] as String?),
@@ -106,6 +124,7 @@ class GuildMemberInfo {
     lastSeen:
         DateTime.tryParse('${j['lastSeen']}')?.toUtc() ?? DateTime.utc(2000),
     badge: j['badge'] as String? ?? '',
+    contribution: (j['contribution'] as num?)?.toInt() ?? 0,
   );
 }
 
@@ -162,6 +181,10 @@ class GuildView {
   final bool donatedToday;
   final List<GuildShopEntry> shop;
 
+  /// 가입 신청을 수락·거절할 수 있나(길드장 · 스위치가 켜진 부길드장). 서버와 같은 함수.
+  bool get canAnswerRequests =>
+      myRole.canAnswerRequests(deputyCanAccept: guild?.deputyCanAccept ?? true);
+
   factory GuildView.fromJson(Map<String, dynamic> j) {
     final g = j['guild'];
     return GuildView(
@@ -192,12 +215,17 @@ class GuildView {
   }
 }
 
-/// 내 길드. **앱 시작 때 한 번**(홈 아이콘이 지켜본다 — 서버가 마지막 접속을 적는다)과
-/// 길드 화면을 열 때 [refresh] 로만 조회한다. 화면 밖 폴링은 하지 않는다(요금).
+/// 내 길드. **앱 시작 때 한 번**(이 provider 의 build — 하단 길드 아이콘의 가입 신청 빨간 점과
+/// 길드 버프가 지켜본다. 서버가 마지막 접속을 적고, 오프라인 골드용 버프 캐시도 이때 채운다)과
+/// 하단 길드 탭에 들어올 때·길드 탭에서 앱으로 돌아올 때 [refreshIfStale] 로만 조회한다.
+/// 화면 밖 폴링은 하지 않는다(요금).
 ///
 /// 액션은 실패하면 서버 오류 코드(`name_taken` 등)를 돌려주고, 성공하면 null.
 class GuildController extends AsyncNotifier<GuildView> {
   GameServer get _server => ref.read(gameServerProvider);
+
+  /// 마지막으로 서버에서 받은 시각(기기 시계 — 조회 간격만 잰다).
+  DateTime? _fetchedAt;
 
   @override
   Future<GuildView> build() async {
@@ -205,17 +233,33 @@ class GuildController extends AsyncNotifier<GuildView> {
     if (!server.available) return const GuildView.unavailable();
     final r = await server.guildMe();
     if (!r.isOk) return const GuildView.unavailable();
+    _fetchedAt = DateTime.now();
     return _remember(GuildView.fromJson(r.data!));
   }
 
   Future<void> refresh() async {
     final r = await _server.guildMe();
-    if (r.isOk) state = AsyncData(_remember(GuildView.fromJson(r.data!)));
+    if (r.isOk) {
+      _fetchedAt = DateTime.now();
+      state = AsyncData(_remember(GuildView.fromJson(r.data!)));
+    }
+  }
+
+  /// 방금([minGap] 안에) 받았으면 건너뛴다 — 탭을 빠르게 오가거나 앱을 잠깐 내렸다 올려도
+  /// 조회가 쌓이지 않게. 첫 조회(build)가 아직 진행 중이면 그 결과를 쓴다.
+  Future<void> refreshIfStale({
+    Duration minGap = const Duration(seconds: 15),
+  }) async {
+    final at = _fetchedAt;
+    if (at == null && state.isLoading) return;
+    if (at != null && DateTime.now().difference(at) < minGap) return;
+    return refresh();
   }
 
   /// 길드 버프를 기기에 적어 둔다 — 다음 실행의 **오프라인 정산**(길드 조회보다 먼저 돈다)이 쓴다.
   GuildView _remember(GuildView v) {
     final defs = ref.read(gameDataProvider).value?.guildConfig.skills;
+    if (v.available) GuildWarTally.inGuild = v.guild != null;
     if (v.available && defs != null) {
       GuildBuffCache.save(
         v.guild == null ? const {} : guildBonus(defs, v.guild!.skills),
@@ -225,9 +269,14 @@ class GuildController extends AsyncNotifier<GuildView> {
   }
 
   /// 응답이 `/guild/me` 모양이면 그대로 갈아 끼우고, 아니면(승인제 신청 등) 다시 조회한다.
+  /// 실패 코드가 "화면의 길드 상태가 낡았다"는 뜻이면(그 사이 추방·해산·다른 기기에서 가입) 다시 받는다.
   Future<String?> _apply(Future<ServerResult> call) async {
     final r = await call;
-    if (!r.isOk) return r.error ?? 'network';
+    if (!r.isOk) {
+      final code = r.error ?? 'network';
+      if (guildStateStale(code)) unawaited(refresh());
+      return code;
+    }
     if (r.data!.containsKey('guild')) {
       state = AsyncData(_remember(GuildView.fromJson(r.data!)));
     } else {
@@ -259,21 +308,41 @@ class GuildController extends AsyncNotifier<GuildView> {
     required String name,
     required String lang,
     required GuildJoinMode joinMode,
+    int? emblem,
   }) async {
     // 서버는 **자기 저장본**의 젤리로 판정·차감한다 — 먼저 최신 세이브를 올린다(방금 모은 젤리로
     // 잘못 거절되거나, 이미 쓴 젤리로 통과하지 않게).
-    final save = ref.read(saveControllerProvider).value;
-    if (!await flushSaveBeforeServerAction(_server, save)) return 'network';
-    final r = await _server.guildCreate(
-      name: name,
-      lang: lang,
-      joinMode: joinMode.key,
-    );
-    if (!r.isOk) return r.error ?? 'network';
-    final spent = (r.data!['jellySpent'] as num?)?.toInt() ?? 0;
-    if (spent > 0) {
-      await ref.read(saveControllerProvider.notifier).trySpendJelly(spent);
+    // 올리기 → 개설 → 젤리 차감(필요하면 채택)을 한 줄로 돈다([withServerSaveLock]).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(_server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await _server.guildCreate(
+        name: name,
+        lang: lang,
+        joinMode: joinMode.key,
+        emblem: emblem,
+      );
+      if (!r.isOk) return r;
+      final spent = (r.data!['jellySpent'] as num?)?.toInt() ?? 0;
+      if (spent > 0 && !await ctrl.trySpendJelly(spent)) {
+        // 올린 뒤 그 사이 젤리를 써서 로컬 잔액이 모자라다 — 서버는 이미 치렀다.
+        // 로컬을 그대로 두면 공짜 길드가 되고 다음 업로드가 서버 차감을 덮는다(젤리는 기기 권위).
+        // 서버 세이브(차감 반영본)를 받아 채택한다 — 이 순간은 서버가 진실이다.
+        final st = await _server.fetchState();
+        final sv = st.save;
+        if (st.isOk && sv != null) await ctrl.adoptServerSave(sv);
+      }
+      return r;
+    });
+    if (r == null) return 'network';
+    if (!r.isOk) {
+      final code = r.error ?? 'network';
+      if (guildStateStale(code)) unawaited(refresh());
+      return code;
     }
+    _fetchedAt = DateTime.now();
     state = AsyncData(_remember(GuildView.fromJson(r.data!)));
     return null;
   }
@@ -287,15 +356,22 @@ class GuildController extends AsyncNotifier<GuildView> {
   Future<({String? error, Map<String, dynamic> granted})> buy(
     String itemId,
   ) async {
-    final save = ref.read(saveControllerProvider).value;
-    if (!await flushSaveBeforeServerAction(_server, save)) {
+    // 올리기 → 서버 행동 → 채택을 한 줄로 돈다([withServerSaveLock]).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(_server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await _server.guildShopBuy(itemId);
+      if (r.isOk && r.save != null) await ctrl.adoptServerSave(r.save!);
+      return r;
+    });
+    if (r == null) {
       return (error: 'network', granted: const <String, dynamic>{});
     }
-    final r = await _server.guildShopBuy(itemId);
     if (!r.isOk || r.save == null) {
       return (error: r.error ?? 'network', granted: const <String, dynamic>{});
     }
-    await ref.read(saveControllerProvider.notifier).adoptServerSave(r.save!);
     state = AsyncData(_remember(GuildView.fromJson(r.data!)));
     return (
       error: null,
@@ -312,13 +388,41 @@ class GuildController extends AsyncNotifier<GuildView> {
       _apply(_server.guildSetRole(userId, role.key));
   Future<String?> answer(String userId, {required bool accept}) =>
       _apply(_server.guildAnswerRequest(userId, accept: accept));
-  Future<String?> settings({String? notice, GuildJoinMode? joinMode}) =>
-      _apply(_server.guildSettings(notice: notice, joinMode: joinMode?.key));
+  Future<String?> settings({
+    String? notice,
+    GuildJoinMode? joinMode,
+    bool? deputyCanAccept,
+    int? emblem,
+  }) => _apply(
+    _server.guildSettings(
+      notice: notice,
+      joinMode: joinMode?.key,
+      deputyCanAccept: deputyCanAccept,
+      emblem: emblem,
+    ),
+  );
 }
 
 final guildProvider = AsyncNotifierProvider<GuildController, GuildView>(
   GuildController.new,
 );
+
+/// 이 오류 코드가 오면 화면의 길드 상태가 낡았다 — 다시 조회한다.
+bool guildStateStale(String code) =>
+    code == 'not_in_guild' ||
+    code == 'already_in_guild' ||
+    code == 'guild_not_found';
+
+/// 로그아웃·계정 전환·계정 삭제 — 이전 계정의 길드 상태·버프 캐시·활동 집계를 잊는다.
+/// (버프 캐시를 남기면 새 계정의 오프라인 골드에 이전 계정의 길드 버프가 붙는다.)
+void forgetGuildSession(WidgetRef ref) {
+  GuildBuffCache.save(const {});
+  GuildWarTally.reset();
+  ref.invalidate(guildProvider);
+  ref.invalidate(guildMissionProvider);
+  ref.invalidate(guildBossProvider);
+  ref.invalidate(guildWarProvider);
+}
 
 /// 지금 걸린 길드 버프(stat → 값). 길드가 없거나 모르면 빈 맵.
 final guildBonusProvider = Provider<Map<String, double>>((ref) {
@@ -362,13 +466,14 @@ class GuildBuffCache {
 /// 길드를 열었나(2026-10-02 사장님 — 1.0.15 는 **창만 만들고 "준비 중"**, SQL·서버 점검 뒤에 연다).
 /// false 면 길드 서버 호출(`/guild/me`)·길드 버프·길드전 집계 전송을 전부 하지 않는다 —
 /// DB 표가 없을 때 앱 시작마다 503 이 찍히던 것도 같이 사라진다.
-const bool kGuildOpen = false;
+/// 기본은 닫힘. 테스트 빌드는 `--dart-define=GUILD_OPEN=true`, 출시 때는 `true` 로 바꾼다.
+const bool kGuildOpen = bool.fromEnvironment('GUILD_OPEN');
 
-/// 홈 길드 아이콘의 빨간 점 — 관리자인데 가입 신청이 쌓여 있을 때.
+/// 홈 길드 아이콘의 빨간 점 — 신청을 받을 수 있는 사람인데 가입 신청이 쌓여 있을 때.
 final guildHasRequestsProvider = Provider<bool>((ref) {
   if (!kGuildOpen) return false;
   final v = ref.watch(guildProvider).value;
-  return v != null && v.myRole.canManage && v.requests.isNotEmpty;
+  return v != null && v.canAnswerRequests && v.requests.isNotEmpty;
 });
 
 // ── 길드 미션(2단계) ─────────────────────────────────────────────────
@@ -512,19 +617,37 @@ class GuildMissionController extends AsyncNotifier<GuildMissionsView> {
 
   DateTime get _now => ref.read(clockProvider).now().toUtc();
 
+  /// 마지막으로 받은 시각(조회 간격만 잰다).
+  DateTime? _fetchedAt;
+
   @override
   Future<GuildMissionsView> build() async {
     final server = ref.watch(gameServerProvider);
     if (!server.available) return const GuildMissionsView.unavailable();
     final r = await server.guildMissions();
-    return r.isOk
-        ? GuildMissionsView.fromJson(r.data!, _now)
-        : const GuildMissionsView.unavailable();
+    if (!r.isOk) return const GuildMissionsView.unavailable();
+    _fetchedAt = DateTime.now();
+    return GuildMissionsView.fromJson(r.data!, _now);
   }
 
   Future<void> refresh() async {
     final r = await _server.guildMissions();
-    if (r.isOk) state = AsyncData(GuildMissionsView.fromJson(r.data!, _now));
+    if (r.isOk) {
+      _fetchedAt = DateTime.now();
+      state = AsyncData(GuildMissionsView.fromJson(r.data!, _now));
+    } else if (guildStateStale(r.error ?? '')) {
+      unawaited(ref.read(guildProvider.notifier).refresh());
+    }
+  }
+
+  /// 방금 받았으면(탭을 처음 열 때 build 가 막 받아 왔으면) 건너뛴다.
+  Future<void> refreshIfStale({
+    Duration minGap = const Duration(seconds: 3),
+  }) async {
+    final at = _fetchedAt;
+    if (at == null && state.isLoading) return;
+    if (at != null && DateTime.now().difference(at) < minGap) return;
+    return refresh();
   }
 
   /// 내 전투력(홈 상단 값). 모르면 0 — 서버가 1 로 본다.
@@ -537,7 +660,14 @@ class GuildMissionController extends AsyncNotifier<GuildMissionsView> {
 
   Future<String?> _apply(Future<ServerResult> call) async {
     final r = await call;
-    if (!r.isOk) return r.error ?? 'network';
+    if (!r.isOk) {
+      final code = r.error ?? 'network';
+      if (guildStateStale(code)) {
+        unawaited(ref.read(guildProvider.notifier).refresh());
+      }
+      return code;
+    }
+    _fetchedAt = DateTime.now();
     state = AsyncData(GuildMissionsView.fromJson(r.data!, _now));
     return null;
   }
@@ -553,15 +683,22 @@ class GuildMissionController extends AsyncNotifier<GuildMissionsView> {
   /// 돌아온 세이브를 채택한다(우편 수령과 같은 순서). 성공하면 받은 양, 실패하면 오류 코드.
   Future<({String? error, GuildMissionReward reward, int eggs})> claim() async {
     const none = GuildMissionReward();
-    final save = ref.read(saveControllerProvider).value;
-    if (!await flushSaveBeforeServerAction(_server, save)) {
+    // 올리기 → 서버 행동 → 채택을 한 줄로 돈다([withServerSaveLock]).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(_server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await _server.guildMissionClaim();
+      if (r.isOk && r.save != null) await ctrl.adoptServerSave(r.save!);
+      return r;
+    });
+    if (r == null) {
       return (error: 'network', reward: none, eggs: 0);
     }
-    final r = await _server.guildMissionClaim();
     if (!r.isOk || r.save == null) {
       return (error: r.error ?? 'network', reward: none, eggs: 0);
     }
-    await ref.read(saveControllerProvider.notifier).adoptServerSave(r.save!);
     final g = (r.data!['granted'] as Map?)?.cast<String, dynamic>() ?? const {};
     int n(String k) => (g[k] as num?)?.toInt() ?? 0;
     await refresh();
@@ -580,7 +717,7 @@ class GuildMissionController extends AsyncNotifier<GuildMissionsView> {
 }
 
 /// 자동 폐기하지 않는다 — 길드 채팅의 "도와주기" 카드도 이걸 쓴다. 스스로 조회하지는 않으므로
-/// 살려 둬도 요금이 들지 않는다(주기 조회는 미션 탭이 보일 때만 화면이 한다).
+/// 살려 둬도 요금이 들지 않는다(주기 조회는 하단 길드 탭 · 미션 탭 · 앱 전면일 때만 화면이 한다).
 final guildMissionProvider =
     AsyncNotifierProvider<GuildMissionController, GuildMissionsView>(
       GuildMissionController.new,
@@ -614,7 +751,10 @@ class GuildBossView {
   final int attacksLeft;
   final double myDamage;
   final int? rank;
-  final List<({int rank, String name, int stage, double progress})> top;
+
+  /// 순위표 — [emblem] 은 보일 문장(서버 값이 없으면 길드 id 해시).
+  final List<({int rank, String name, int stage, double progress, int emblem})>
+  top;
 
   /// 결투 방어팀이 있나(없으면 공격 불가).
   final bool hasTeam;
@@ -642,6 +782,10 @@ class GuildBossView {
             name: '${r['name'] ?? ''}',
             stage: (r['stage'] as num?)?.toInt() ?? 1,
             progress: (r['progress'] as num?)?.toDouble() ?? 0,
+            emblem: guildEmblemOf(
+              '${r['guild_id'] ?? r['name'] ?? ''}',
+              (r['emblem'] as num?)?.toInt(),
+            ),
           ),
       ],
       hasTeam: j['hasTeam'] != false,
@@ -677,6 +821,9 @@ class GuildBossController extends AsyncNotifier<GuildBossView> {
   attack() async {
     final r = await _server.guildBossAttack();
     if (!r.isOk) {
+      if (guildStateStale(r.error ?? '')) {
+        unawaited(ref.read(guildProvider.notifier).refresh());
+      }
       return (
         error: r.error ?? 'network',
         damage: 0.0,
@@ -698,15 +845,22 @@ class GuildBossController extends AsyncNotifier<GuildBossView> {
 
   /// 지난주 순위 젤리 — 먼저 최신 세이브를 올리고 돌아온 세이브를 채택한다.
   Future<({String? error, int jelly})> claim() async {
-    final save = ref.read(saveControllerProvider).value;
-    if (!await flushSaveBeforeServerAction(_server, save)) {
+    // 올리기 → 서버 행동 → 채택을 한 줄로 돈다([withServerSaveLock]).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(_server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await _server.guildBossClaim();
+      if (r.isOk && r.save != null) await ctrl.adoptServerSave(r.save!);
+      return r;
+    });
+    if (r == null) {
       return (error: 'network', jelly: 0);
     }
-    final r = await _server.guildBossClaim();
     if (!r.isOk || r.save == null) {
       return (error: r.error ?? 'network', jelly: 0);
     }
-    await ref.read(saveControllerProvider.notifier).adoptServerSave(r.save!);
     await refresh();
     return (error: null, jelly: (r.data!['jelly'] as num?)?.toInt() ?? 0);
   }
@@ -733,6 +887,11 @@ class GuildWarTally {
 
   /// 젤리로 즉시 부화한 알(수령해도 세지 않는다). 기기 메모리 — 재시작하면 잊는다(드문 경우라 허용).
   static final Set<String> rushed = {};
+
+  /// 길드에 들어가 있나 — `/guild/me` 를 받을 때마다 [GuildController] 가 적는다.
+  /// 모르거나(시작 직후) 길드가 없으면 업로드에 집계를 싣지 않는다(서버가 길드를 조회하지 않게).
+  /// 안 실은 집계는 dirty 로 남아 다음 업로드에 간다.
+  static bool inGuild = false;
 
   static Future<void> load() async {
     try {
@@ -778,11 +937,12 @@ class GuildWarTally {
   /// 업로드가 성공했으면 부른다.
   static void sent() => _dirty = false;
 
-  /// 테스트용.
+  /// 계정 전환([forgetGuildSession])·테스트용.
   static void reset() {
     _day = '';
     _counts = {};
     _dirty = false;
+    inGuild = false;
   }
 }
 
@@ -829,6 +989,7 @@ class GuildWarView {
     this.hasMatch = false,
     this.minMembers = 5,
     this.opponent,
+    this.opponentEmblem,
     this.virtual = false,
     this.mine = const [],
     this.theirs = const [],
@@ -852,6 +1013,9 @@ class GuildWarView {
   final bool hasMatch;
   final int minMembers;
   final String? opponent;
+
+  /// 상대 길드 문장(보일 값). 가상 길드·옛 서버(상대 id 없음)면 null.
+  final int? opponentEmblem;
   final bool virtual;
   final List<int> mine;
   final List<int> theirs;
@@ -882,6 +1046,12 @@ class GuildWarView {
       hasMatch: m != null,
       minMembers: (j['minMembers'] as num?)?.toInt() ?? 5,
       opponent: m?['opponent'] as String?,
+      opponentEmblem: m?['opponentId'] == null
+          ? null
+          : guildEmblemOf(
+              '${m!['opponentId']}',
+              (m['opponentEmblem'] as num?)?.toInt(),
+            ),
       virtual: m?['virtual'] == true,
       mine: ints(m?['mine']),
       theirs: ints(m?['theirs']),
@@ -913,15 +1083,22 @@ class GuildWarController extends AsyncNotifier<GuildWarView> {
 
   /// 보상 받기 — 먼저 최신 세이브를 올리고 돌아온 세이브를 채택한다.
   Future<({String? error, int jelly, int coins})> claim() async {
-    final save = ref.read(saveControllerProvider).value;
-    if (!await flushSaveBeforeServerAction(_server, save)) {
+    // 올리기 → 서버 행동 → 채택을 한 줄로 돈다([withServerSaveLock]).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(_server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await _server.guildWarClaim();
+      if (r.isOk && r.save != null) await ctrl.adoptServerSave(r.save!);
+      return r;
+    });
+    if (r == null) {
       return (error: 'network', jelly: 0, coins: 0);
     }
-    final r = await _server.guildWarClaim();
     if (!r.isOk || r.save == null) {
       return (error: r.error ?? 'network', jelly: 0, coins: 0);
     }
-    await ref.read(saveControllerProvider.notifier).adoptServerSave(r.save!);
     await refresh();
     ref.read(guildProvider.notifier).refresh();
     return (

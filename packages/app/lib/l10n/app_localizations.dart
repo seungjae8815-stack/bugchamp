@@ -7144,6 +7144,12 @@ abstract class AppLocalizations {
   /// **'Active boosts'**
   String get eventBuffNow;
 
+  /// No description provided for @eventCardMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get eventCardMaxed;
+
   /// No description provided for @eventBuffNone.
   ///
   /// In en, this message translates to:
@@ -7843,7 +7849,7 @@ abstract class AppLocalizations {
   /// No description provided for @guildIntro.
   ///
   /// In en, this message translates to:
-  /// **'Join a guild to chat with guildmates — guild missions, bosses and guild wars are coming soon.'**
+  /// **'Join a guild to take on missions, the guild boss and weekly guild wars together — plus check-ins, the guild shop and guild buffs.'**
   String get guildIntro;
 
   /// No description provided for @guildUnavailable.
@@ -8420,13 +8426,13 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Power ×{mult} · clear it solo'**
-  String guildMissionSlotSolo(double mult);
+  String guildMissionSlotSolo(String mult);
 
   /// No description provided for @guildMissionSlotNeed.
   ///
   /// In en, this message translates to:
   /// **'Power ×{mult} · needs help'**
-  String guildMissionSlotNeed(double mult);
+  String guildMissionSlotNeed(String mult);
 
   /// No description provided for @guildMissionStart.
   ///
@@ -8575,7 +8581,7 @@ abstract class AppLocalizations {
   /// No description provided for @guildSkillForbidden.
   ///
   /// In en, this message translates to:
-  /// **'Only the leader and deputies can do this'**
+  /// **'Only the leader can do this'**
   String get guildSkillForbidden;
 
   /// No description provided for @guildSkillReset.
@@ -9760,6 +9766,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reclaim it'**
   String get zoneReclaim;
+
+  /// No description provided for @guildNameFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild'**
+  String get guildNameFallback;
+
+  /// No description provided for @guildErrAlreadyInGuild.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already in a guild'**
+  String get guildErrAlreadyInGuild;
+
+  /// No description provided for @guildErrNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find that guild. It may have been disbanded'**
+  String get guildErrNotFound;
+
+  /// No description provided for @guildErrNotInGuild.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not in a guild'**
+  String get guildErrNotInGuild;
+
+  /// No description provided for @guildErrRequestNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'That request has already been handled'**
+  String get guildErrRequestNotFound;
+
+  /// No description provided for @guildErrForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to do that'**
+  String get guildErrForbidden;
+
+  /// No description provided for @guildErrStoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild features are temporarily unavailable. Please try again shortly'**
+  String get guildErrStoreUnavailable;
+
+  /// No description provided for @guildEmblemPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild emblem'**
+  String get guildEmblemPick;
+
+  /// No description provided for @guildEmblemChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change emblem'**
+  String get guildEmblemChange;
+
+  /// No description provided for @guildEmblemChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild emblem changed'**
+  String get guildEmblemChanged;
+
+  /// No description provided for @guildErrEmblemInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That emblem can\'t be chosen'**
+  String get guildErrEmblemInvalid;
+
+  /// No description provided for @guildLeaveCoinsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'If you leave, your guild coins and contribution will be lost for good.'**
+  String get guildLeaveCoinsNote;
+
+  /// No description provided for @guildKickCoinsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The member\'s guild coins and contribution will be lost for good.'**
+  String get guildKickCoinsNote;
+
+  /// No description provided for @guildReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report guild'**
+  String get guildReport;
+
+  /// No description provided for @guildReportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If this guild\'s name or description is inappropriate, let our team know. We\'ll review it and take action.'**
+  String get guildReportBody;
+
+  /// No description provided for @guildReported.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported. Our team will take a look'**
+  String get guildReported;
+
+  /// No description provided for @guildDeputyCanAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Deputies can accept requests'**
+  String get guildDeputyCanAccept;
+
+  /// No description provided for @guildSwitchOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get guildSwitchOn;
+
+  /// No description provided for @guildSwitchOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get guildSwitchOff;
+
+  /// No description provided for @guildRankRookie.
+  ///
+  /// In en, this message translates to:
+  /// **'Rookie'**
+  String get guildRankRookie;
+
+  /// No description provided for @guildRankWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'Worker'**
+  String get guildRankWorker;
+
+  /// No description provided for @guildRankElite.
+  ///
+  /// In en, this message translates to:
+  /// **'Elite'**
+  String get guildRankElite;
+
+  /// No description provided for @guildRankElder.
+  ///
+  /// In en, this message translates to:
+  /// **'Elder'**
+  String get guildRankElder;
+
+  /// No description provided for @guildMyRank.
+  ///
+  /// In en, this message translates to:
+  /// **'My rank {rank} · Contribution {points}'**
+  String guildMyRank(String rank, String points);
+
+  /// No description provided for @guildRankNext.
+  ///
+  /// In en, this message translates to:
+  /// **'To {rank}: {left} left'**
+  String guildRankNext(String rank, String left);
+
+  /// No description provided for @guildRankMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Top rank reached'**
+  String get guildRankMax;
+
+  /// No description provided for @guildPermsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Role permissions'**
+  String get guildPermsTitle;
+
+  /// No description provided for @guildPermAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept/decline requests'**
+  String get guildPermAccept;
+
+  /// No description provided for @guildPermKick.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick'**
+  String get guildPermKick;
+
+  /// No description provided for @guildPermSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notice · intro · join mode'**
+  String get guildPermSettings;
+
+  /// No description provided for @guildPermSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign/reset guild skills'**
+  String get guildPermSkills;
+
+  /// No description provided for @guildPermRoles.
+  ///
+  /// In en, this message translates to:
+  /// **'Appoint/transfer roles'**
+  String get guildPermRoles;
+
+  /// No description provided for @guildPermDeputyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Deputies can accept requests only if the leader allows it (now: {state}).'**
+  String guildPermDeputyNote(String state);
+
+  /// No description provided for @guildPermRanksNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Member ranks rise automatically with the coins you earn in this guild (contribution). They are for display only, with no perks or permissions. Leaving the guild resets your contribution.'**
+  String get guildPermRanksNote;
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:http/http.dart' as http;
 
@@ -14,6 +15,7 @@ class GuildBossRow {
     required this.hpMax,
     required this.hpLeft,
     this.basePower = 0,
+    this.estPower = 0,
   });
 
   final String week;
@@ -25,8 +27,11 @@ class GuildBossRow {
   final double hpMax;
   final double hpLeft;
 
-  /// 체력 계산에 쓴 전투력 합(다음 단계 체력 = 이 값 기준 × 성장).
+  /// 그 주에 공격한 길드원 몫의 합(2026-10-05~ — 공격할 때마다 늘어난 만큼 더한다).
   final double basePower;
+
+  /// 만들 때 추정한 전투력 합(방어팀 있는 길드원). 체력 = max(이 값, [basePower]) × 단계 배율.
+  final double estPower;
 
   double get progress => hpMax <= 0 ? 0 : (1 - hpLeft / hpMax).clamp(0.0, 1.0);
 
@@ -38,6 +43,7 @@ class GuildBossRow {
     hpMax: (j['hp_max'] as num?)?.toDouble() ?? 1,
     hpLeft: (j['hp_left'] as num?)?.toDouble() ?? 1,
     basePower: (j['base_power'] as num?)?.toDouble() ?? 0,
+    estPower: (j['est_power'] as num?)?.toDouble() ?? 0,
   );
 }
 
@@ -49,12 +55,18 @@ class GuildBossHits {
     this.hits = 0,
     this.dayKey = '',
     this.dayHits = 0,
+    this.power = 0,
   });
   final String guildId;
   final double damage;
   final int hits;
   final String dayKey;
+
+  /// 그날 공격 수 — **유저 기준**(길드를 옮겨도 이어진다).
   final int dayHits;
+
+  /// [guildId] 보스 체력에 이미 넣은 내 전투력.
+  final double power;
 
   int hitsOn(String day) => dayKey == day ? dayHits : 0;
 
@@ -64,6 +76,7 @@ class GuildBossHits {
     hits: (j['hits'] as num?)?.toInt() ?? 0,
     dayKey: j['day_key'] as String? ?? '',
     dayHits: (j['day_hits'] as num?)?.toInt() ?? 0,
+    power: (j['power'] as num?)?.toDouble() ?? 0,
   );
 }
 
@@ -75,8 +88,12 @@ class GuildBossHitResult {
     this.stage = 1,
     this.hpMax = 1,
     this.hpLeft = 1,
+    this.hpHit = 1,
   });
   final bool ok;
+
+  /// 이번 공격 순간의 최대 체력(내 몫을 더한 뒤) — 피해 구간 상자 비율의 분모.
+  final double hpHit;
 
   /// 이번 공격으로 쓰러뜨린 단계 수(0 또는 1).
   final int killed;
@@ -92,13 +109,17 @@ abstract interface class GuildBossStore {
   /// 없으면 만든다(동시에 둘이 만들어도 하나만 남는다).
   Future<GuildBossRow> ensure(GuildBossRow row);
 
-  /// 공격 — 하루 횟수 확인·체력 차감·처치(다음 단계)·처치 코인(그 주 공격한 전원)을 **한 번에**.
+  /// 공격 — 하루 횟수 확인(유저 기준)·내 몫을 체력에 더하기([power] × [hpPerPower] × 현재 단계 배율,
+  /// 이미 넣은 몫보다 세졌으면 차이만)·체력 차감·처치(다음 단계)·처치 코인(그 주 공격한 전원)을
+  /// **한 번에**(SQL `guild_boss_hit_v2`).
   Future<GuildBossHitResult> hit({
     required String week,
     required String guildId,
     required String userId,
     required String day,
     required double damage,
+    required double power,
+    required double hpPerPower,
     required int maxDaily,
     required double growth,
     required int killCoinsPerStage,
@@ -115,6 +136,9 @@ abstract interface class GuildBossStore {
   /// 주간 순위 보상 수령 기록(1회성).
   Future<bool> insertClaim(String week, String userId);
   Future<bool> claimed(String week, String userId);
+
+  /// 수령 기록 되돌리기 — 지급(서버 세이브 저장)이 실패했을 때.
+  Future<void> deleteClaim(String week, String userId);
 }
 
 class SupabaseGuildBossStore implements GuildBossStore {
@@ -182,6 +206,7 @@ class SupabaseGuildBossStore implements GuildBossStore {
           'hp_max': row.hpMax,
           'hp_left': row.hpLeft,
           'base_power': row.basePower,
+          'est_power': row.estPower,
         },
       ]),
     );
@@ -198,16 +223,20 @@ class SupabaseGuildBossStore implements GuildBossStore {
     required String userId,
     required String day,
     required double damage,
+    required double power,
+    required double hpPerPower,
     required int maxDaily,
     required double growth,
     required int killCoinsPerStage,
   }) async {
-    final r = await _rpc('guild_boss_hit', {
+    final r = await _rpc('guild_boss_hit_v2', {
       'p_week': week,
       'p_guild': guildId,
       'p_user': userId,
       'p_day': day,
       'p_damage': damage,
+      'p_power': power,
+      'p_hpm': hpPerPower,
       'p_max_daily': maxDaily,
       'p_growth': growth,
       'p_kill_coins': killCoinsPerStage,
@@ -219,6 +248,7 @@ class SupabaseGuildBossStore implements GuildBossStore {
       stage: (j['stage'] as num?)?.toInt() ?? 1,
       hpMax: (j['hp_max'] as num?)?.toDouble() ?? 1,
       hpLeft: (j['hp_left'] as num?)?.toDouble() ?? 1,
+      hpHit: (j['hp_hit'] as num?)?.toDouble() ?? 1,
     );
   }
 
@@ -273,6 +303,17 @@ class SupabaseGuildBossStore implements GuildBossStore {
     }
     return true;
   }
+
+  @override
+  Future<void> deleteClaim(String week, String userId) async {
+    final res = await _http.delete(
+      _rest('guild_boss_claims?week=${_eq(week)}&user_id=${_eq(userId)}'),
+      headers: _headers,
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('보스 보상 되돌리기 실패: ${res.statusCode}');
+    }
+  }
 }
 
 /// 테스트용 메모리 구현. 처치 코인은 [onKillCoins] 로 넘긴다(길드 저장소 쪽 코인).
@@ -304,23 +345,48 @@ class MemoryGuildBossStore implements GuildBossStore {
     required String userId,
     required String day,
     required double damage,
+    required double power,
+    required double hpPerPower,
     required int maxDaily,
     required double growth,
     required int killCoinsPerStage,
   }) async {
-    final b = rows[_k(week, guildId)];
+    var b = rows[_k(week, guildId)];
     if (b == null) return const GuildBossHitResult(ok: false);
-    final h =
-        hits[_k(week, userId)] ?? GuildBossHits(guildId: guildId, dayKey: day);
-    final today = h.hitsOn(day);
+    final h = hits[_k(week, userId)];
+    // 하루 공격 수는 유저 기준(길드를 옮겨도 이어진다) — SQL guild_boss_hit_v2 와 같은 규칙.
+    final today = h?.hitsOn(day) ?? 0;
     if (today >= maxDaily) return const GuildBossHitResult(ok: false);
+    final same = h != null && h.guildId == guildId;
+    final counted = same ? h.power : 0.0;
+    final delta = math.max(0.0, power - counted);
+    if (delta > 0) {
+      final base = b.basePower + delta;
+      final want =
+          math.max(b.estPower, base) *
+          hpPerPower *
+          math.pow(growth, math.max(0, b.stage - 1));
+      final grow = math.max(0.0, want - b.hpMax);
+      b = GuildBossRow(
+        week: week,
+        guildId: guildId,
+        tier: b.tier,
+        stage: b.stage,
+        hpMax: b.hpMax + grow,
+        hpLeft: b.hpLeft + grow,
+        basePower: base,
+        estPower: b.estPower,
+      );
+    }
     hits[_k(week, userId)] = GuildBossHits(
       guildId: guildId,
-      damage: h.damage + damage,
-      hits: h.hits + 1,
+      damage: (same ? h.damage : 0) + damage,
+      hits: (same ? h.hits : 0) + 1,
       dayKey: day,
       dayHits: today + 1,
+      power: math.max(counted, power),
     );
+    final hpHit = b.hpMax;
     var left = b.hpLeft - damage;
     var stage = b.stage;
     var max = b.hpMax;
@@ -347,6 +413,7 @@ class MemoryGuildBossStore implements GuildBossStore {
       hpMax: max,
       hpLeft: left,
       basePower: b.basePower,
+      estPower: b.estPower,
     );
     order[_k(week, guildId)] = ++_seq;
     return GuildBossHitResult(
@@ -355,6 +422,7 @@ class MemoryGuildBossStore implements GuildBossStore {
       stage: stage,
       hpMax: max,
       hpLeft: left,
+      hpHit: hpHit,
     );
   }
 
@@ -413,4 +481,8 @@ class MemoryGuildBossStore implements GuildBossStore {
   @override
   Future<bool> claimed(String week, String userId) async =>
       claims.contains(_k(week, userId));
+
+  @override
+  Future<void> deleteClaim(String week, String userId) async =>
+      claims.remove(_k(week, userId));
 }

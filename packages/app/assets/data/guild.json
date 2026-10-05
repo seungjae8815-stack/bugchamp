@@ -13,6 +13,13 @@
   "listLimit": 20,
   "maxPendingRequests": 3,
   "requestLimit": 30,
+  "_memberRanksComment": "멤버 등급(2026-10-05 사장님 확정) — 그 길드에서 번 코인 누적(guild_members.contribution)으로 자동, 표시 전용(혜택·권한 없음). 하루 코인 약 80~240 기준 일꾼 약 5일 · 정예 약 4주 · 원로 약 3개월. 탈퇴하면 기여도와 함께 사라진다(새 길드에서 새내기부터). 그림은 assets/images/ui/guild/rank_{id}.webp(없으면 아이콘).",
+  "memberRanks": [
+    { "id": "rookie", "min": 0 },
+    { "id": "worker", "min": 500 },
+    { "id": "elite", "min": 3000 },
+    { "id": "elder", "min": 10000 }
+  ],
   "mission": {
     "_comment": "길드 미션(docs/design_guild.md §2) — 하루(KST 09시) 3회 출발, 게시판 5칸(길드원마다 다름), 대기 1·3·10분 동안 길드원이 전투력을 보탠다(한 사람 몫 상한 없음). 시간이 끝나면 합산으로 판정, 도움이 helperMax 명 다 모이면 그 자리에서 성공. 요구 = 출발자 전투력 × 배율. 판정·보상은 서버. 젤리 없음(하루 8번 × 인원 = 무한 통로 §2.6).",
     "dailyStarts": 3,
@@ -62,11 +69,11 @@
     {"id": "xp", "stat": "xp", "perLevel": 0.03, "max": 5},
     {"id": "mission", "stat": "missionReward", "perLevel": 0.04, "max": 5}
   ],
-  "_shopComment": "길드 코인 상점 — 코인은 서버 소유(guild_members.coins). 하루 코인 수입 약 80(미션 45·도움 25·출석 10) + 보스. 재료는 '자기 사냥터 몇 시간치'(정액이면 후반엔 껌값). ❌ 젤리·결투 티켓·대회 참가권은 팔지 않는다(§6).",
+  "_shopComment": "길드 코인 상점 — 코인은 서버 소유(guild_members.coins). 하루 코인 수입 약 80(미션 45·도움 25·출석 10) + 보스 30~60 + 길드전 주 100~300 → 보통 약 130·최대 약 240. 요정 가루는 2026-10-05 100→30(무료 가루 수입 하루 약 23 의 2.9배였다 — 사장님 확정). 재료는 '자기 사냥터 몇 시간치'(정액이면 후반엔 껌값). ❌ 젤리·결투 티켓·대회 참가권은 팔지 않는다(§6).",
   "shop": [
     {"id": "materials", "kind": "materials", "hours": 1, "cost": 60, "limit": 3, "period": "day"},
     {"id": "fossil", "kind": "fossil", "amount": 20, "cost": 30, "limit": 5, "period": "day"},
-    {"id": "fairyDust", "kind": "fairyDust", "amount": 100, "cost": 40, "limit": 3, "period": "week"},
+    {"id": "fairyDust", "kind": "fairyDust", "amount": 30, "cost": 40, "limit": 3, "period": "week"},
     {"id": "fairyEgg", "kind": "fairyEgg", "grade": "common", "amount": 1, "cost": 200, "limit": 2, "period": "week"},
     {"id": "skillShard", "kind": "skillShard", "grade": "rare", "amount": 1, "cost": 120, "limit": 3, "period": "week"}
   ],
@@ -92,8 +99,8 @@
     ]
   },
   "war": {
-    "_comment": "주간 길드전(5단계, design_guild.md §4). 월 09시 KST 시작 → 1~6일차 활동 경쟁(멤버 하루 상한 — '몇 명이 참여했나'가 승부) → 7일차 결투 방어팀 1:1(서버가 결투 엔진으로) → 승점 합 승리. 승리 = 보상 100%, 패배 = 50%(사장님 확정). startWeek 이전에는 열리지 않는다(출시 주에는 길드 만들기만) — 운영이 날짜를 바꿔 연다.",
-    "startWeek": "2026-10-12",
+    "_comment": "주간 길드전(5단계, design_guild.md §4). 월 09시 KST 시작 → 1~6일차 활동 경쟁(멤버 하루 상한 — '몇 명이 참여했나'가 승부) → 7일차 결투 방어팀 1:1(서버가 결투 엔진으로) → 승점 합 승리. 승리 = 보상 100%, 패배 = 50%(사장님 확정). startWeek 이전에는 열리지 않는다. 기본값은 먼 미래(=닫힘)이고 운영이 서버 환경변수 GUILD_WAR_START_WEEK(월요일 YYYY-MM-DD)로 덮어 연다 — 서버 재빌드 없이.",
+    "startWeek": "2099-01-05",
     "minMembers": 5,
     "_daysComment": "일차별 주제·멤버 하루 상한. 결투(4)·보스(6)는 서버가 확정 결과로 세고, 나머지는 앱이 센 값을 60초 업로드에 실어 보낸다(위조해도 상한까지). 젤리 즉시완료로 끝낸 짝짓기·부화는 세지 않는다.",
     "days": [
@@ -115,8 +122,8 @@
     "_forgeComment": "2일차 제련 — 결과 장비 등급 단계 g(0 = 풀잎)당 forgeBase × forgeGrowth^g 점(지수). 화석을 모아 뒀다 몰아 치는 건 허용(준비한 대가) — 하루 상한이 자른다.",
     "forgeBase": 1,
     "forgeGrowth": 1.6,
-    "_pointsComment": "1~6일차: 그날 길드 합이 높은 쪽 2점(동점 각 1) · 7일차 대결 승수가 많은 쪽 4점(동점 각 2). 동점이면 7일차 승수 → 1~6일차 총합.",
-    "dayWin": 2, "dayTie": 1, "clashWin": 4, "clashTie": 2,
+    "_pointsComment": "일차별 승점(2026-10-05 사장님 확정 — 뒤로 갈수록 커짐). 그날 이긴 쪽만 승점을 가져가고 하루 무승부는 없다(점수 같으면 참여 인원 → 그 점수에 먼저 도달한 쪽, 7일차 승수가 같으면 1위끼리 대결 결과). 총합이 홀수(21)라 한 주 결과는 동점이 될 수 없다 — 값을 바꿀 땐 합을 홀수로 유지한다.",
+    "dayPoints": [1, 2, 2, 3, 3, 4, 6],
     "grWin": 30, "grLose": -20,
     "loseShare": 0.5,
     "_tiersComment": "등급점(GR) 경계와 **승리** 보상(멤버 한 명당, 패배는 절반). 받을 자격 = 그 주 월 09시 전에 가입 + 그 주 점수 1 이상. 젤리는 주 1회 유한 통로 — jelly_sim 에 줄이 있다.",
@@ -124,8 +131,8 @@
       {"id": "bronze", "minGr": 0, "coins": 100, "jelly": 10},
       {"id": "silver", "minGr": 100, "coins": 150, "jelly": 15},
       {"id": "gold", "minGr": 250, "coins": 200, "jelly": 20},
-      {"id": "platinum", "minGr": 450, "coins": 250, "jelly": 30},
-      {"id": "diamond", "minGr": 700, "coins": 300, "jelly": 40}
+      {"id": "platinum", "minGr": 450, "coins": 250, "jelly": 22},
+      {"id": "diamond", "minGr": 700, "coins": 300, "jelly": 25}
     ]
   }
 }

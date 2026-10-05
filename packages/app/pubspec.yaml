@@ -118,6 +118,8 @@ flutter:
     - assets/images/ui/nav/
     - assets/images/ui/tab/
     - assets/images/ui/skill/
+    # 길드(1.0.18) — 문장·코인·보스·탭·미션 배경 등. 없는 파일은 각 화면이 아이콘으로 폴백.
+    - assets/images/ui/guild/
     # 요정(1.0.15) — fairy_<종류>_1·_2(날갯짓)·_cast(시전). 없으면 🧚 로 폴백.
     - assets/images/fairies/
     - assets/images/ui/tier/

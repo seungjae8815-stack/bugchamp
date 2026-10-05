@@ -4158,6 +4158,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventBuffNow => 'Active boosts';
 
   @override
+  String get eventCardMaxed => 'MAX';
+
+  @override
   String get eventBuffNone => 'No boosts yet';
 
   @override
@@ -4575,7 +4578,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guildIntro =>
-      'Join a guild to chat with guildmates — guild missions, bosses and guild wars are coming soon.';
+      'Join a guild to take on missions, the guild boss and weekly guild wars together — plus check-ins, the guild shop and guild buffs.';
 
   @override
   String get guildUnavailable =>
@@ -4914,12 +4917,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guildMissionHelpedTag => 'Helped';
 
   @override
-  String guildMissionSlotSolo(double mult) {
+  String guildMissionSlotSolo(String mult) {
     return 'Power ×$mult · clear it solo';
   }
 
   @override
-  String guildMissionSlotNeed(double mult) {
+  String guildMissionSlotNeed(String mult) {
     return 'Power ×$mult · needs help';
   }
 
@@ -5009,7 +5012,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guildSkillMax => 'Already maxed';
 
   @override
-  String get guildSkillForbidden => 'Only the leader and deputies can do this';
+  String get guildSkillForbidden => 'Only the leader can do this';
 
   @override
   String get guildSkillReset => 'Reset';
@@ -5785,4 +5788,118 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get zoneReclaim => 'Reclaim it';
+
+  @override
+  String get guildNameFallback => 'Guild';
+
+  @override
+  String get guildErrAlreadyInGuild => 'You\'re already in a guild';
+
+  @override
+  String get guildErrNotFound =>
+      'Couldn\'t find that guild. It may have been disbanded';
+
+  @override
+  String get guildErrNotInGuild => 'You\'re not in a guild';
+
+  @override
+  String get guildErrRequestNotFound => 'That request has already been handled';
+
+  @override
+  String get guildErrForbidden => 'You don\'t have permission to do that';
+
+  @override
+  String get guildErrStoreUnavailable =>
+      'Guild features are temporarily unavailable. Please try again shortly';
+
+  @override
+  String get guildEmblemPick => 'Guild emblem';
+
+  @override
+  String get guildEmblemChange => 'Change emblem';
+
+  @override
+  String get guildEmblemChanged => 'Guild emblem changed';
+
+  @override
+  String get guildErrEmblemInvalid => 'That emblem can\'t be chosen';
+
+  @override
+  String get guildLeaveCoinsNote =>
+      'If you leave, your guild coins and contribution will be lost for good.';
+
+  @override
+  String get guildKickCoinsNote =>
+      'The member\'s guild coins and contribution will be lost for good.';
+
+  @override
+  String get guildReport => 'Report guild';
+
+  @override
+  String get guildReportBody =>
+      'If this guild\'s name or description is inappropriate, let our team know. We\'ll review it and take action.';
+
+  @override
+  String get guildReported => 'Reported. Our team will take a look';
+
+  @override
+  String get guildDeputyCanAccept => 'Deputies can accept requests';
+
+  @override
+  String get guildSwitchOn => 'On';
+
+  @override
+  String get guildSwitchOff => 'Off';
+
+  @override
+  String get guildRankRookie => 'Rookie';
+
+  @override
+  String get guildRankWorker => 'Worker';
+
+  @override
+  String get guildRankElite => 'Elite';
+
+  @override
+  String get guildRankElder => 'Elder';
+
+  @override
+  String guildMyRank(String rank, String points) {
+    return 'My rank $rank · Contribution $points';
+  }
+
+  @override
+  String guildRankNext(String rank, String left) {
+    return 'To $rank: $left left';
+  }
+
+  @override
+  String get guildRankMax => 'Top rank reached';
+
+  @override
+  String get guildPermsTitle => 'Role permissions';
+
+  @override
+  String get guildPermAccept => 'Accept/decline requests';
+
+  @override
+  String get guildPermKick => 'Kick';
+
+  @override
+  String get guildPermSettings => 'Notice · intro · join mode';
+
+  @override
+  String get guildPermSkills => 'Assign/reset guild skills';
+
+  @override
+  String get guildPermRoles => 'Appoint/transfer roles';
+
+  @override
+  String guildPermDeputyNote(String state) {
+    return 'Deputies can accept requests only if the leader allows it (now: $state).';
+  }
+
+  @override
+  String get guildPermRanksNote =>
+      'Member ranks rise automatically with the coins you earn in this guild (contribution). They are for display only, with no perks or permissions. Leaving the guild resets your contribution.';
 }

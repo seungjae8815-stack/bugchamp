@@ -135,13 +135,31 @@ const String adminHtml = r'''<!doctype html>
       <label>제목</label><input id="m-title" maxlength="100" value="점검 보상">
       <label>본문</label><textarea id="m-body" maxlength="1000">불편을 드려 죄송합니다.</textarea>
       <div class="row">
-        <div><label>골드</label><input id="m-gold" type="number" value="0" min="0"></div>
-        <div><label>젤리</label><input id="m-jelly" type="number" value="0" min="0"></div>
+        <div><label>골드</label><input id="m-gold" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>젤리</label><input id="m-jelly" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
       </div>
       <div class="row">
-        <div><label>키틴</label><input id="m-chitin" type="number" value="0" min="0"></div>
-        <div><label>미네랄</label><input id="m-mineral" type="number" value="0" min="0"></div>
-        <div><label>수액</label><input id="m-sap" type="number" value="0" min="0"></div>
+        <div><label>키틴</label><input id="m-chitin" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>미네랄</label><input id="m-mineral" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>수액</label><input id="m-sap" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+      </div>
+      <div class="row">
+        <div><label>요정 가루</label><input id="m-f-dust" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>가속기 30분</label><input id="m-f-acc30m" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>가속기 2시간</label><input id="m-f-acc2h" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>가속기 8시간</label><input id="m-f-acc8h" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+      </div>
+      <label>속성석</label>
+      <div class="row">
+        <div><label>공격</label><input id="m-fs-attack" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>체력</label><input id="m-fs-hp" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>방어</label><input id="m-fs-defense" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>공속</label><input id="m-fs-attackSpeed" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+      </div>
+      <div class="row">
+        <div><label>치명피해</label><input id="m-fs-critDamage" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>보스피해</label><input id="m-fs-bossDamage" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>곤충몫</label><input id="m-fs-petShare" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
       </div>
       <label>수령 기한 (비우면 무기한)</label><input id="m-ends" type="date">
       <button class="act warn" onclick="createMail()">우편 보내기</button>
@@ -155,16 +173,16 @@ const String adminHtml = r'''<!doctype html>
       <h2>선물코드 만들기</h2>
       <label>코드 (영문 대문자·숫자)</label><input id="c-code" maxlength="32" placeholder="BUGCHAMP100">
       <div class="row">
-        <div><label>골드</label><input id="c-gold" type="number" value="0" min="0"></div>
-        <div><label>젤리</label><input id="c-jelly" type="number" value="0" min="0"></div>
+        <div><label>골드</label><input id="c-gold" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>젤리</label><input id="c-jelly" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
       </div>
       <div class="row">
-        <div><label>키틴</label><input id="c-chitin" type="number" value="0" min="0"></div>
-        <div><label>미네랄</label><input id="c-mineral" type="number" value="0" min="0"></div>
-        <div><label>수액</label><input id="c-sap" type="number" value="0" min="0"></div>
+        <div><label>키틴</label><input id="c-chitin" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>미네랄</label><input id="c-mineral" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
+        <div><label>수액</label><input id="c-sap" type="text" inputmode="decimal" class="amt" value="0" min="0"></div>
       </div>
       <div class="row">
-        <div><label>수량 (비우면 무제한)</label><input id="c-max" type="number" min="1"></div>
+        <div><label>수량 (비우면 무제한)</label><input id="c-max" type="text" inputmode="decimal" class="amt" min="1"></div>
         <div><label>종료일</label><input id="c-ends" type="date"></div>
       </div>
       <button class="act" onclick="createCode()">코드 만들기</button>
@@ -251,6 +269,16 @@ document.getElementById('m-target').onchange = e => {
 };
 function day(v) { return v ? new Date(v + 'T23:59:59Z').toISOString() : null; }
 function fmt(v) { return v ? new Date(v).toISOString().slice(0, 10) : '무기한'; }
+const FAIRY_STONES = [['attack','공격'],['hp','체력'],['defense','방어'],['attackSpeed','공속'],['critDamage','치명피해'],['bossDamage','보스피해'],['petShare','곤충몫']];
+const FAIRY_ACCS = [['acc30m','가속기 30분'],['acc2h','가속기 2시간'],['acc8h','가속기 8시간']];
+function fairyBody() {
+  const stones = {}, accs = {};
+  for (const [k] of FAIRY_STONES) { const v = num('m-fs-' + k); if (v > 0) stones[k] = v; }
+  for (const [k] of FAIRY_ACCS) { const v = num('m-f-' + k); if (v > 0) accs[k] = v; }
+  const dust = num('m-f-dust');
+  if (!dust && !Object.keys(stones).length && !Object.keys(accs).length) return null;
+  return { dust: dust, stones: stones, accelerators: accs };
+}
 function rewardPills(r) {
   const p = [];
   if (r.gold > 0) p.push('골드 ' + r.gold.toLocaleString());
@@ -258,6 +286,10 @@ function rewardPills(r) {
   if (r.chitin > 0) p.push('키틴 ' + r.chitin);
   if (r.mineral > 0) p.push('미네랄 ' + r.mineral);
   if (r.sap > 0) p.push('수액 ' + r.sap);
+  const f = r.fairy || {};
+  if (f.dust > 0) p.push('요정 가루 ' + f.dust.toLocaleString());
+  for (const [k, n] of FAIRY_STONES) if ((f.stones || {})[k] > 0) p.push('속성석(' + n + ') ' + f.stones[k]);
+  for (const [k, n] of FAIRY_ACCS) if ((f.accelerators || {})[k] > 0) p.push(n + ' ' + f.accelerators[k]);
   return p.map(x => '<span class="pill">' + esc(x) + '</span>').join('');
 }
 
@@ -267,6 +299,8 @@ async function refresh() {
     '<div class="item"><div class="body"><b>' + (n.pinned ? '📌 ' : '') + esc(n.title) +
     '</b><div class="sub">' + esc(n.body) + '</div>' +
     '<div class="sub">종료 ' + fmt(n.ends_at) + '</div></div>' +
+    '<button onclick="pinNotice(\'' + n.id + '\',' + (n.pinned ? 'false' : 'true') + ')">' +
+    (n.pinned ? '고정 풀기' : '고정') + '</button>' +
     '<button onclick="del(\'notice\',\'' + n.id + '\')">삭제</button></div>'
   ).join('') || '<div class="sub">없음</div>';
 
@@ -376,12 +410,12 @@ async function findUser() {
           '건</b> — 산 젤리를 깎으면 환불 사유입니다. 젤리 칸은 비워 두세요.</p>'
         : '<p class="hint">결제 이력 없음</p>') +
       '<div class="row">' +
-      '<div><label>골드 (지금 ' + n(r.gold) + ')</label><input id="cur-gold" type="number" min="0"></div>' +
-      '<div><label>젤리 (지금 ' + n(r.jelly) + ')</label><input id="cur-jelly" type="number" min="0"></div>' +
+      '<div><label>골드 (지금 ' + n(r.gold) + ')</label><input id="cur-gold" type="text" inputmode="decimal" class="amt" min="0"></div>' +
+      '<div><label>젤리 (지금 ' + n(r.jelly) + ')</label><input id="cur-jelly" type="text" inputmode="decimal" class="amt" min="0"></div>' +
       '</div><div class="row">' +
-      '<div><label>키틴 (' + n(r.chitin) + ')</label><input id="cur-chitin" type="number" min="0"></div>' +
-      '<div><label>미네랄 (' + n(r.mineral) + ')</label><input id="cur-mineral" type="number" min="0"></div>' +
-      '<div><label>수액 (' + n(r.sap) + ')</label><input id="cur-sap" type="number" min="0"></div>' +
+      '<div><label>키틴 (' + n(r.chitin) + ')</label><input id="cur-chitin" type="text" inputmode="decimal" class="amt" min="0"></div>' +
+      '<div><label>미네랄 (' + n(r.mineral) + ')</label><input id="cur-mineral" type="text" inputmode="decimal" class="amt" min="0"></div>' +
+      '<div><label>수액 (' + n(r.sap) + ')</label><input id="cur-sap" type="text" inputmode="decimal" class="amt" min="0"></div>' +
       '</div>' +
       '<p class="hint">입력 예: 젤리 <b>1500</b> · 재료 <b>20000000</b> (골드는 비워 두기)</p>' +
       '<p class="hint">⚠ 이 도구는 <b>낮추기만</b> 합니다. 되돌리려면 우편으로 차액을 보내세요.</p>' +
@@ -425,8 +459,9 @@ async function normalizeCurrency(id) {
   const fields = [['gold','cur-gold'],['jelly','cur-jelly'],['chitin','cur-chitin'],
                   ['mineral','cur-mineral'],['sap','cur-sap']];
   for (const f of fields) {
-    const v = document.getElementById(f[1]).value.trim();
-    if (v !== '') body[f[0]] = parseInt(v, 10);
+    const v = rawAmt(document.getElementById(f[1]));
+    if (Number.isNaN(v)) return toast('숫자를 확인하세요 — 예: 1500000 · 1.5M · 2T');
+    if (v !== null) body[f[0]] = v;
   }
   if (Object.keys(body).length <= 2) return toast('맞출 값을 하나 이상 입력하세요');
   if (!confirm('이 유저의 재화를 줄입니다. 되돌릴 수 없습니다. 계속할까요?')) return;
@@ -493,12 +528,84 @@ async function grantProduct() {
   }
 }
 
+async function pinNotice(id, pinned) {
+  try {
+    await api('/admin/notice/pin', { id: id, pinned: pinned });
+    toast(pinned ? '고정했습니다' : '고정을 풀었습니다'); refresh();
+  } catch (e) { toast(e.message); }
+}
 async function del(kind, id) {
   if (!confirm('삭제할까요?')) return;
   try { await api('/admin/delete', { kind: kind, id: id }); toast('삭제했습니다'); refresh(); }
   catch (e) { toast(e.message); }
 }
-function num(id) { return Math.max(0, parseInt(document.getElementById(id).value || '0', 10) || 0); }
+// 큰 숫자 칸(2026-10-05 사장님 — 우편 오타 방지): 칸에서 손을 떼면 1.5T 처럼 줄여 보여 주고,
+// 다시 누르면 원래 숫자로 돌아간다. 1.5T · 300B · 2,000,000 처럼 단위·쉼표를 붙여 쳐도 된다.
+// 실제 값은 data-raw 에 둔다 — 화면 글자(1.23M)는 반올림이라 그걸 다시 읽으면 값이 바뀐다.
+const AMT_UNITS = [['Qa', 1e15], ['T', 1e12], ['B', 1e9], ['M', 1e6], ['K', 1e3]];
+function parseAmt(s) {
+  s = String(s == null ? '' : s).trim().replace(/[,_\s]/g, '').toUpperCase();
+  if (!s) return null;
+  const m = s.match(/^(\d+(?:\.\d+)?)(QA|T|B|M|K)?$/);
+  if (!m) return NaN;
+  const mult = { QA: 1e15, T: 1e12, B: 1e9, M: 1e6, K: 1e3 }[m[2]] || 1;
+  return Math.round(parseFloat(m[1]) * mult);
+}
+function abbrAmt(v) {
+  for (const [u, d] of AMT_UNITS) {
+    if (v >= d) return (Math.floor(v / d * 100) / 100) + u;
+  }
+  return String(v);
+}
+function showAmt(el) {
+  const raw = el.dataset.raw;
+  el.style.borderColor = '';
+  if (raw === undefined || raw === '') { el.value = ''; el.title = ''; return; }
+  const v = Number(raw);
+  el.value = abbrAmt(v);
+  el.title = v.toLocaleString();
+}
+function rawAmt(el) {
+  if (document.activeElement === el) return parseAmt(el.value);
+  if (el.dataset.raw === undefined) return parseAmt(el.value);
+  return el.dataset.raw === '' ? null : (el.dataset.raw === 'NaN' ? NaN : Number(el.dataset.raw));
+}
+document.addEventListener('focusin', e => {
+  const el = e.target;
+  if (!el.classList || !el.classList.contains('amt')) return;
+  if (el.dataset.raw !== undefined && el.dataset.raw !== 'NaN') el.value = el.dataset.raw;
+  el.style.borderColor = '';
+  setTimeout(() => el.select(), 0);
+});
+document.addEventListener('focusout', e => {
+  const el = e.target;
+  if (!el.classList || !el.classList.contains('amt')) return;
+  const v = parseAmt(el.value);
+  if (v === null) { el.dataset.raw = ''; showAmt(el); return; }
+  if (Number.isNaN(v)) { el.dataset.raw = 'NaN'; el.style.borderColor = '#e05555'; el.title = '숫자를 확인하세요'; return; }
+  el.dataset.raw = String(v);
+  showAmt(el);
+});
+// 처음 그려진 칸(value="0")과 나중에 그려지는 칸(유저 조회의 재화 맞추기)을 모두 줄임 표기로.
+function initAmt(root) {
+  for (const el of (root || document).querySelectorAll('input.amt')) {
+    if (el.dataset.raw !== undefined || document.activeElement === el) continue;
+    const v = parseAmt(el.value);
+    el.dataset.raw = (v === null || Number.isNaN(v)) ? '' : String(v);
+    showAmt(el);
+  }
+}
+document.addEventListener('DOMContentLoaded', () => initAmt());
+new MutationObserver(() => initAmt()).observe(document.documentElement, { childList: true, subtree: true });
+function num(id) {
+  const el = document.getElementById(id);
+  const v = rawAmt(el);
+  if (Number.isNaN(v)) {
+    el.style.borderColor = '#e05555';
+    throw new Error('숫자를 확인하세요 — 예: 1500000 · 1.5M · 2T');
+  }
+  return Math.max(0, v || 0);
+}
 function val(id) { return document.getElementById(id).value.trim(); }
 
 async function createNotice() {
@@ -528,7 +635,7 @@ async function createMail() {
     await api('/admin/mail', {
       userId: one ? uid : null, title: val('m-title'), body: val('m-body'),
       gold: num('m-gold'), jelly: num('m-jelly'), chitin: num('m-chitin'),
-      mineral: num('m-mineral'), sap: num('m-sap'), endsAt: day(val('m-ends')),
+      mineral: num('m-mineral'), sap: num('m-sap'), fairy: fairyBody(), endsAt: day(val('m-ends')),
     });
     toast('보냈습니다'); refresh();
   } catch (e) { toast(e.message); }

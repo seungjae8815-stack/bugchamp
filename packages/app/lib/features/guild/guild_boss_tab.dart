@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart' show ChatRules;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,10 +9,14 @@ import '../../ui/format.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import 'guild_art.dart';
+import 'guild_screen.dart' show guildDisplayName;
 
 const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
 const _red = Color(0xFFE57373);
+
+const _lastStyle = TextStyle(color: _honey, fontWeight: FontWeight.w800);
 
 String guildBossErrorText(AppLocalizations l, String code) => switch (code) {
   'no_defense_team' => l.guildBossNoTeam,
@@ -31,7 +36,9 @@ class GuildBossTab extends ConsumerStatefulWidget {
 
 class _GuildBossTabState extends ConsumerState<GuildBossTab> {
   bool _busy = false;
-  String? _last;
+
+  /// 방금 공격 결과(피해·코인·처치) — 코인 앞에 코인 그림을 붙이려고 나눠 둔다.
+  ({double damage, int coins, bool killed})? _last;
 
   @override
   void didUpdateWidget(GuildBossTab old) {
@@ -49,11 +56,7 @@ class _GuildBossTabState extends ConsumerState<GuildBossTab> {
     setState(() {
       _busy = false;
       if (r.error == null) {
-        _last = [
-          l.guildBossHit(formatCompact(r.damage)),
-          l.guildMissionCoins(r.coins),
-          if (r.killed) l.guildBossKilled,
-        ].join(' · ');
+        _last = (damage: r.damage, coins: r.coins, killed: r.killed);
       }
     });
     if (r.error != null) {
@@ -93,6 +96,8 @@ class _GuildBossTabState extends ConsumerState<GuildBossTab> {
       );
     }
     final now = ref.read(clockProvider).now().toUtc();
+    final rules =
+        ref.watch(gameDataProvider).value?.chatRules ?? const ChatRules();
     return ListView(
       padding: EdgeInsets.fromLTRB(
         12,
@@ -136,7 +141,25 @@ class _GuildBossTabState extends ConsumerState<GuildBossTab> {
             fontSize: 16,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
+        // 길드 보스 전신(거대 말벌 여왕) — 체력바 바로 위. 쓰러진 만큼 살짝 어두워진다.
+        SizedBox(
+          key: const ValueKey('guildBossArt'),
+          height: 180,
+          child: Opacity(
+            opacity: 1 - v.progress * 0.35,
+            child: guildArt(
+              'boss',
+              fit: BoxFit.contain,
+              fallback: const Icon(
+                Icons.pest_control_rounded,
+                color: _red,
+                size: 96,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(5),
           child: LinearProgressIndicator(
@@ -174,11 +197,24 @@ class _GuildBossTabState extends ConsumerState<GuildBossTab> {
             height: 1.35,
           ),
         ),
-        if (_last != null) ...[
+        if (_last case final last?) ...[
           const SizedBox(height: 6),
-          Text(
-            _last!,
-            style: const TextStyle(color: _honey, fontWeight: FontWeight.w800),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 2,
+            children: [
+              Text(
+                l.guildBossHit(formatCompact(last.damage)),
+                style: _lastStyle,
+              ),
+              GuildCoinLabel(
+                l.guildMissionCoins(last.coins),
+                style: _lastStyle,
+                flexible: false,
+              ),
+              if (last.killed) Text(l.guildBossKilled, style: _lastStyle),
+            ],
           ),
         ],
         const SizedBox(height: 6),
@@ -207,9 +243,11 @@ class _GuildBossTabState extends ConsumerState<GuildBossTab> {
                     ),
                   ),
                 ),
+                GuildEmblem(emblem: r.emblem, size: 22),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    r.name,
+                    guildDisplayName(l, rules, r.name),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white),

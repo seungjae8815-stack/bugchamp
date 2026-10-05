@@ -27,7 +27,7 @@ import 'combat_power.dart';
 import 'guild_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
-import 'server_sync.dart' show flushSaveBeforeServerAction;
+import 'server_sync.dart' show flushSaveBeforeServerAction, withServerSaveLock;
 
 /// 대회 회차 종료 보상(서버가 확정, UI 가 1회 표시).
 ///
@@ -230,6 +230,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 심연 주간 순위 보상(서버 지급) — 같은 모양이라 같은 보고서를 쓴다(`floor` 가 채워진다).
   PvpRankRewardReport? pendingAbyssRankReward;
+
+  /// **지금 이 순간의** 세이브(로딩 중이면 null). 서버 세이브 잠금 안에서 올릴 세이브를 읽는 데 쓴다
+  /// ([flushSaveBeforeServerAction] 의 `latest`) — 화면의 `ref` 는 잠금을 기다리는 사이 닫힐 수
+  /// 있어서, 컨트롤러를 쥐어 두고 여기서 읽는다.
+  SaveGame? get latestSave => state.value;
 
   @override
   Future<SaveGame> build() async {
@@ -1083,8 +1088,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 도달 스테이지 갱신(최고 기록만). 기기 권위 — 로컬 즉시 반영.
-  Future<void> reachStage(int stage) async {
+  ///
+  /// [tier] 를 주면 **그 난이도일 때만** 쓴다(2026-10-05) — 최종 보스 직후 다음 난이도로 자동으로
+  /// 넘어간 세이브에 옛 난이도의 스테이지(1001)를 써넣어, 새 난이도 사냥터 1~10 이 통째로 깬 것이 됐다.
+  Future<void> reachStage(int stage, {int? tier}) async {
     final s = state.requireValue;
+    if (tier != null && s.difficultyTier != tier) return;
     if (stage <= s.stageNumber) return;
     await _commit(s.copyWith(stageNumber: stage));
   }
@@ -1094,8 +1103,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ///
   /// 기록 키와 골드는 난이도마다 다르다(`chapterClearKey` · `chapterClearGold`,
   /// 서버 허용치와 같은 함수).
-  Future<List<({RoadmapChapter chapter, int gold})>>
-  grantChapterClears() async {
+  ///
+  /// [tier] 를 주면 지금 난이도가 그와 다를 때 아무것도 안 한다 — [reachStage] 와 같은 이유.
+  Future<List<({RoadmapChapter chapter, int gold})>> grantChapterClears({
+    int? tier,
+  }) async {
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.roadmapConfig;
     final run = data.runConfig;
@@ -1104,19 +1116,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 클리어 보상은 **가 본 가장 높은 난이도**에서만 — 아래 난이도로 내려가면
     // 이미 다 깬 곳이라, 기록이 없는 옛 세이브가 한꺼번에 받는 일이 없게.
     if (s.difficultyTier < s.topTier) return const [];
-    final tier = s.difficultyTier;
+    if (tier != null && s.difficultyTier != tier) return const [];
+    final at = s.difficultyTier;
     final newly = <({RoadmapChapter chapter, int gold})>[];
     for (final ch in cfg.chapters) {
       if (chapterClearedAt(
             ch,
             roadmap: cfg,
             run: run,
-            tier: tier,
+            tier: at,
             highestStage: s.stageNumber,
             bossDex: s.bossDex,
           ) &&
-          !s.clearedChapters.contains(chapterClearKey(ch.id, tier))) {
-        newly.add((chapter: ch, gold: chapterClearGold(run, ch, tier)));
+          !s.clearedChapters.contains(chapterClearKey(ch.id, at))) {
+        newly.add((chapter: ch, gold: chapterClearGold(run, ch, at)));
       }
     }
     if (newly.isEmpty) return const [];
@@ -1128,7 +1141,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       for (final e in c.chapter.rewardMaterials.entries) {
         mats[e.key] = (mats[e.key] ?? 0) + e.value;
       }
-      cleared.add(chapterClearKey(c.chapter.id, tier));
+      cleared.add(chapterClearKey(c.chapter.id, at));
     }
     await _commit(
       s.copyWith(gold: gold, materials: mats, clearedChapters: cleared),
@@ -1779,12 +1792,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 사라진다. 서버가 젤리를 깎고 두 기록을 함께 지운 세이브를 채택한다.
     final server = ref.read(gameServerProvider);
     if (viaJelly && server.available && s.eventOnFatigue(bugId, now)) {
-      if (!await flushSaveBeforeServerAction(server, s)) return false;
-      final r = await server.eventDuelHeal(bugId);
-      final json = r.save;
-      if (!r.isOk || json == null) return false;
-      await adoptServerSave(json);
-      return true;
+      return withServerSaveLock(() async {
+        if (!await flushSaveBeforeServerAction(server, () => latestSave)) {
+          return false;
+        }
+        final r = await server.eventDuelHeal(bugId);
+        final json = r.save;
+        if (!r.isOk || json == null) return false;
+        await adoptServerSave(json);
+        return true;
+      });
     }
     final until = s.injured[bugId];
     if (until == null) return false;
@@ -3468,22 +3485,25 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ) async {
     final server = ref.read(gameServerProvider);
     if (!server.available) return const FairyOp.fail('network');
-    if (!await flushSaveBeforeServerAction(server, state.value)) {
-      return const FairyOp.fail('network');
-    }
-    final r = await call(server);
-    // 서버엔 고를 결과가 없다 — 고르기 응답이 유실됐거나 업로드가 정리했다. 기기만 대기 중이라 믿고 있으면
-    // 재굴림이 영영 막히므로 서버 세이브를 받아 맞춘다(2026-10-04 출시 전 리뷰).
-    if (r.error == 'no_reroll') {
-      final st = await server.fetchState();
-      final fresh = st.save;
-      if (st.isOk && fresh != null) await adoptServerSave(fresh);
+    // 올리기 → 서버 행동 → 채택을 한 줄로(다른 서버 세이브 흐름과 엇갈리지 않게).
+    return withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(server, () => latestSave)) {
+        return const FairyOp.fail('network');
+      }
+      final r = await call(server);
+      // 서버엔 고를 결과가 없다 — 고르기 응답이 유실됐거나 업로드가 정리했다. 기기만 대기 중이라 믿고 있으면
+      // 재굴림이 영영 막히므로 서버 세이브를 받아 맞춘다(2026-10-04 출시 전 리뷰).
+      if (r.error == 'no_reroll') {
+        final st = await server.fetchState();
+        final fresh = st.save;
+        if (st.isOk && fresh != null) await adoptServerSave(fresh);
+        return FairyOp.ok(state.requireValue.fairy);
+      }
+      final json = r.save;
+      if (!r.isOk || json == null) return FairyOp.fail(r.error ?? 'network');
+      await adoptServerSave(json);
       return FairyOp.ok(state.requireValue.fairy);
-    }
-    final json = r.save;
-    if (!r.isOk || json == null) return FairyOp.fail(r.error ?? 'network');
-    await adoptServerSave(json);
-    return FairyOp.ok(state.requireValue.fairy);
+    });
   }
 
   Future<FairyOp> fairyLevelUp(String id) =>

@@ -1945,12 +1945,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         final zone = _config.zoneOf(_stage);
         if (_config.isFinalZone(zone)) {
           _habitatIndex = 0;
-          _tierClearPending = true;
           // 최종 보스는 사냥터를 옮기지 않지만 도감 수집은 남긴다.
           // ⚠️ 도감 기록이 **끝난 뒤** 클리어 보상을 판정한다 — 마지막 사냥터 클리어는
           // 최종 보스 도감으로 본다(`chapterClearedAt`). 동시에 돌리면 보상이 빠진다.
+          // ⚠️ 다음 난이도 안내(= 자동으로 다음 난이도로 넘김)는 그 판정까지 **끝난 뒤에** 띄운다
+          // (2026-10-05). 먼저 넘어가면 옛 스테이지(1001)가 새 난이도 세이브에 써져 새 난이도
+          // 사냥터 1~10 이 통째로 깬 것이 됐다(클리어 골드·보스 도감까지). 스테이지·난이도는
+          // 잡은 순간 값으로 묶는다 — 콜백이 돌 때의 `_stage` 는 이미 새 난이도일 수 있다.
+          final stage = _stage;
+          final tier = ref
+              .read(saveControllerProvider)
+              .requireValue
+              .difficultyTier;
           unawaited(
-            _advanceZoneWithShards().then((_) => _afterBossAdvance(_stage)),
+            _advanceZoneWithShards()
+                .then((_) => _afterBossAdvance(stage, tier: tier))
+                .whenComplete(() {
+                  if (mounted) setState(() => _tierClearPending = true);
+                }),
           );
           _spawn();
           return;
@@ -4873,10 +4885,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     AudioService.instance.sfxLevelUp();
   }
 
-  Future<void> _afterBossAdvance(int stage) async {
+  Future<void> _afterBossAdvance(int stage, {int? tier}) async {
     final ctrl = ref.read(saveControllerProvider.notifier);
-    await ctrl.reachStage(stage);
-    final cleared = await ctrl.grantChapterClears();
+    final t =
+        tier ?? ref.read(saveControllerProvider).requireValue.difficultyTier;
+    await ctrl.reachStage(stage, tier: t);
+    final cleared = await ctrl.grantChapterClears(tier: t);
     if (!mounted) return;
     for (final c in cleared) {
       AudioService.instance.sfxLevelUp(); // 챕터 돌파 — 스테이지 클리어보다 큰 마디
@@ -7016,6 +7030,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             if (!mounted) return;
             setState(() {});
             ref.invalidate(myRankProvider); // 로그아웃 → 랭킹 표시 제거
+            forgetGuildSession(ref); // 이전 계정의 길드·버프 캐시를 잊는다
             showCenterToast(context, l.accountSignedOut);
           }, color: const Color(0xFF556070)),
         // 계정 삭제는 로그인 여부와 무관하게 제공한다 — 익명 계정도 서버에
@@ -7143,6 +7158,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
     await ref.read(saveControllerProvider.notifier).resetGame();
     if (!mounted) return;
+    forgetGuildSession(ref);
     setState(() {});
     showCenterToast(context, l.accountDeleteDone);
   }
@@ -7161,6 +7177,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     setState(() {});
     ref.invalidate(myRankProvider); // 로그인 후 랭킹 재조회
+    forgetGuildSession(ref); // 계정이 바뀌었다 — 길드를 새 계정으로 다시 받는다
     // 이 계정에 이미 백업이 있으면 어느 쪽을 쓸지 선택하게 한다(덮어쓰기 사고 방지).
     final cloud = ref.read(cloudSaveProvider);
     final existing = cloud.available ? await cloud.download() : null;
@@ -7419,11 +7436,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (resetDaily) {
       // 카운터는 서버 소유 필드라, 서버가 지운 값을 **다시 받아 채택**해야
       // 화면이 바뀐다 — 로컬 세이브만 봐서는 초기화가 안 보인다.
-      final st = await server.fetchState();
-      final sv = st.save;
-      if (st.isOk && sv != null) {
-        await ref.read(saveControllerProvider.notifier).adoptServerSave(sv);
-      }
+      final ctrl = ref.read(saveControllerProvider.notifier);
+      // 조회 → 채택 사이에 업로드가 끼지 않게 줄을 선다([withServerSaveLock]).
+      await withServerSaveLock(() async {
+        final st = await server.fetchState();
+        final sv = st.save;
+        if (st.isOk && sv != null) await ctrl.adoptServerSave(sv);
+      });
       return '오늘 충전 횟수 초기화';
     }
     return '참가권 ${r.data?['tickets']}/${r.data?['max']}';

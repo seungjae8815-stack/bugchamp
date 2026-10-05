@@ -134,25 +134,27 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     // 위에서 계산해 돌려주고 우리는 그걸 채택하므로, 안 올리면 마지막 업로드
     // 이후의 진행(부화 수령·획득 곤충·골드)이 통째로 사라진다 — 결투·우편·결제는
     // 이미 이렇게 한다(2026-09-25 대회 경로만 빠져 있던 것을 고침).
-    if (!await flushSaveBeforeServerAction(
-      server,
-      ref.read(saveControllerProvider).value,
-    )) {
-      if (!mounted) return;
-      setState(() => _busy = false);
+    // 올리기 → 서버 행동 → 채택은 한 줄로 돈다([withServerSaveLock]).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final teamIds = List<String>.from(_team);
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await server.eventStart(teamIds);
+      final save = r.save;
+      if (r.isOk && save != null) await ctrl.adoptServerSave(save);
+      return r;
+    });
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (r == null) {
       showCenterToast(context, l.cloudFailed);
       return;
     }
-    final r = await server.eventStart(List<String>.from(_team));
-    if (!mounted) return;
-    setState(() => _busy = false);
     if (!r.isOk) {
       showCenterToast(context, _errorText(l, r.error));
       return;
-    }
-    final save = r.save;
-    if (save != null) {
-      await ref.read(saveControllerProvider.notifier).adoptServerSave(save);
     }
 
     // 출전한 곤충을 순서 그대로 넘긴다(재생용). 세이브가 서버 값으로 바뀐
@@ -183,27 +185,30 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     setState(() => _busy = true);
     final server = ref.read(gameServerProvider);
     // 서버를 부르기 **전에** 최신 로컬 세이브를 올린다(서버 저장본 위에서 계산해 돌려준다).
-    if (!await flushSaveBeforeServerAction(
-      server,
-      ref.read(saveControllerProvider).value,
-    )) {
-      if (!mounted) return;
-      setState(() => _busy = false);
+    // 올리기 → 서버 행동 → 채택은 한 줄로 돈다([withServerSaveLock]).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final bugId = _team.first;
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await server.eventDuelStart(bugId);
+      final save = r.save;
+      if (r.isOk && r.data?['bug'] is Map && save != null) {
+        await ctrl.adoptServerSave(save);
+      }
+      return r;
+    });
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (r == null) {
       showCenterToast(context, l.cloudFailed);
       return;
     }
-    final bugId = _team.first;
-    final r = await server.eventDuelStart(bugId);
-    if (!mounted) return;
-    setState(() => _busy = false);
     final d = r.data;
     if (!r.isOk || d == null || d['bug'] is! Map) {
       showCenterToast(context, _errorText(l, r.error));
       return;
-    }
-    final save = r.save;
-    if (save != null) {
-      await ref.read(saveControllerProvider.notifier).adoptServerSave(save);
     }
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.eventConfig!;
@@ -1330,27 +1335,31 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                         .requireValue
                         .eventTickets;
                     // 서버가 자기 저장본 위에 티켓을 얹어 돌려준다 — 먼저 올린다.
-                    if (!await flushSaveBeforeServerAction(
-                      ref.read(gameServerProvider),
-                      ref.read(saveControllerProvider).value,
-                    )) {
-                      if (!mounted) return;
+                    // 올리기 → 충전 → 채택은 한 줄로 돈다([withServerSaveLock]).
+                    final server = ref.read(gameServerProvider);
+                    final ctrl = ref.read(saveControllerProvider.notifier);
+                    final r = await withServerSaveLock(() async {
+                      if (!await flushSaveBeforeServerAction(
+                        server,
+                        () => ctrl.latestSave,
+                      )) {
+                        return null;
+                      }
+                      final r = await server.eventAdTicket();
+                      final save = r.save;
+                      if (r.isOk && save != null) {
+                        await ctrl.adoptServerSave(save);
+                      }
+                      return r;
+                    });
+                    if (!mounted) return;
+                    if (r == null) {
                       showCenterToast(context, l.cloudFailed);
                       return;
                     }
-                    final r = await ref
-                        .read(gameServerProvider)
-                        .eventAdTicket();
-                    if (!mounted) return;
                     if (!r.isOk) {
                       showCenterToast(context, _errorText(l, r.error));
                       return;
-                    }
-                    final save = r.save;
-                    if (save != null) {
-                      await ref
-                          .read(saveControllerProvider.notifier)
-                          .adoptServerSave(save);
                     }
                     if (!mounted) return;
                     final after = ref

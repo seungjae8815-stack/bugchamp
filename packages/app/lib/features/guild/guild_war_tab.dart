@@ -1,3 +1,4 @@
+import 'package:core_models/core_models.dart' show ChatRules;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,7 +8,9 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import 'guild_art.dart';
 import 'guild_boss_tab.dart' show guildBossErrorText;
+import 'guild_screen.dart' show guildDisplayName;
 
 const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
@@ -33,6 +36,26 @@ String guildWarThemeHint(AppLocalizations l, String? theme) => switch (theme) {
   'boss' => l.guildWarBossHint,
   _ => l.guildWarClashHint,
 };
+
+/// 일차 그림 — `war_<테마>`(breed·forge·hunt·duel·train·boss·clash, `guild.json → war.days[].theme`).
+/// 아직 없는 그림은 아이콘으로 폴백 — 파일만 넣으면 뜬다.
+Widget guildWarThemeIcon(String? theme, {double size = 22, Color? color}) {
+  final t = theme ?? 'clash';
+  final icon = switch (t) {
+    'breed' => Icons.egg_rounded,
+    'forge' => Icons.hardware_rounded,
+    'hunt' => Icons.track_changes_rounded,
+    'duel' => Icons.sports_mma_rounded,
+    'train' => Icons.fitness_center_rounded,
+    'boss' => Icons.pest_control_rounded,
+    _ => Icons.flash_on_rounded,
+  };
+  return guildArt(
+    'war_$t',
+    size: size,
+    fallback: Icon(icon, size: size * 0.8, color: color ?? _dim),
+  );
+}
 
 String guildTierLabel(AppLocalizations l, String tier) => switch (tier) {
   'silver' => l.leagueSilver,
@@ -93,8 +116,13 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
       );
     }
     final now = ref.read(clockProvider).now().toUtc();
+    final rules =
+        ref.watch(gameDataProvider).value?.chatRules ?? const ChatRules();
+    String nick(Object? n) =>
+        rules.maskNickname('${n ?? ''}', fallback: l.nicknameFallback);
     final claim = v.claimable;
     final result = v.result;
+    final myEmblem = ref.watch(guildProvider).value?.guild?.emblemShown;
     return ListView(
       padding: EdgeInsets.fromLTRB(
         12,
@@ -119,6 +147,8 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
             ),
             child: Row(
               children: [
+                guildCoinIcon(size: 22),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     l.guildWarReward(
@@ -143,7 +173,7 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
           Text(
             v.startWeek.isEmpty
                 ? l.guildWarClosed
-                : l.guildWarOpensOn(v.startWeek),
+                : l.guildWarOpensOn(_dateLabel(context, v.startWeek)),
             style: const TextStyle(color: _dim, height: 1.4),
           )
         else if (!v.hasMatch)
@@ -152,8 +182,46 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
             style: const TextStyle(color: _dim, height: 1.4),
           )
         else ...[
+          // 대진 — 우리 문장 VS 상대 문장(가상 길드는 물음표 방패).
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (myEmblem != null)
+                GuildEmblem(
+                  key: const ValueKey('guildWarEmblem:mine'),
+                  emblem: myEmblem,
+                  size: 48,
+                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  'VS',
+                  style: TextStyle(
+                    color: _honey,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              if (v.opponentEmblem case final e?)
+                GuildEmblem(
+                  key: const ValueKey('guildWarEmblem:opponent'),
+                  emblem: e,
+                  size: 48,
+                )
+              else
+                const Icon(Icons.help_outline_rounded, color: _dim, size: 40),
+            ],
+          ),
+          const SizedBox(height: 6),
           Text(
-            v.virtual ? l.guildWarVsVirtual : l.guildWarVs(v.opponent ?? '?'),
+            v.virtual
+                ? l.guildWarVsVirtual
+                : l.guildWarVs(
+                    v.opponent == null
+                        ? '?'
+                        : guildDisplayName(l, rules, v.opponent!),
+                  ),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w900,
@@ -176,32 +244,41 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
               color: const Color(0x18000000),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  guildWarThemeHint(l, v.theme),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.5,
-                    height: 1.35,
+                guildWarThemeIcon(v.theme, size: 40, color: _honey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        guildWarThemeHint(l, v.theme),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          height: 1.35,
+                        ),
+                      ),
+                      if (v.cap > 0) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          l.guildWarMyToday(v.myToday, v.cap),
+                          style: const TextStyle(
+                            color: _honey,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (v.cap > 0) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    l.guildWarMyToday(v.myToday, v.cap),
-                    style: const TextStyle(
-                      color: _honey,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
           const SizedBox(height: 10),
-          for (var d = 1; d <= 6; d++) _dayRow(l, v, d),
+          for (var d = 1; d <= 7; d++) _dayRow(l, v, d),
           if (result != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -246,7 +323,8 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        '${p['me'] ?? '?'}  vs  ${p['them'] ?? l.guildWarVirtualName}',
+                        '${nick(p['me'])}  vs  '
+                        '${p['them'] == null ? l.guildWarVirtualName : nick(p['them'])}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -264,11 +342,23 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
     );
   }
 
+  /// 서버의 `YYYY-MM-DD`(KST 주 시작일)를 로케일 날짜로. 못 읽으면 원문.
+  /// 날짜만 쓰므로 시간대 변환 없이 그 숫자 그대로 보인다.
+  static String _dateLabel(BuildContext context, String ymd) {
+    final d = DateTime.tryParse(ymd);
+    if (d == null) return ymd;
+    return MaterialLocalizations.of(
+      context,
+    ).formatMediumDate(DateTime(d.year, d.month, d.day));
+  }
+
   Widget _dayRow(AppLocalizations l, GuildWarView v, int d) {
     final a = d - 1 < v.mine.length ? v.mine[d - 1] : 0;
     final b = d - 1 < v.theirs.length ? v.theirs[d - 1] : 0;
     final past = d < v.day;
     final today = d == v.day;
+    // 7일차(정면 대결)는 하루 점수가 없다 — 결과는 아래 결과 칸에.
+    final scored = d <= 6 && (past || today);
     final color = !past && !today
         ? const Color(0x44FFFFFF)
         : (a > b ? _green : (a < b ? _red : _dim));
@@ -276,6 +366,11 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
+          Opacity(
+            opacity: past || today ? 1 : 0.5,
+            child: guildWarThemeIcon(_themeOf(d), color: today ? _honey : _dim),
+          ),
+          const SizedBox(width: 6),
           SizedBox(
             width: 92,
             child: FittedBox(
@@ -294,7 +389,7 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
           ),
           Expanded(
             child: Text(
-              past || today ? '$a  :  $b' : '—',
+              scored ? '$a  :  $b' : '—',
               textAlign: TextAlign.center,
               style: TextStyle(color: color, fontWeight: FontWeight.w800),
             ),

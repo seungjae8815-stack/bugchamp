@@ -235,4 +235,49 @@ void main() {
       'not_in_guild',
     );
   });
+
+  test('동시에 여러 번 출발해도 한 번만(진행 중 1개) — DB 가 유저 잠금 아래 다시 센다', () async {
+    final rs = await Future.wait([
+      for (var i = 0; i < 6; i++)
+        a.start('a', slot: 4, waitSec: 60, power: 100, stage: 1, nickname: 'a'),
+    ]);
+    expect(rs.where((r) => r.$1 == 200), hasLength(1));
+    expect(store.rows.values.where((m) => m.owner == 'a'), hasLength(1));
+  });
+
+  test('도움 보상 하루 5회 — 동시에 6건을 도와도 보상 칸은 5건', () async {
+    for (final u in ['f', 'g']) {
+      await guilds.insertMember(gid, u, GuildRole.member);
+    }
+    final ids = <String>[];
+    for (final u in ['a', 'b', 'c', 'd', 'e', 'f']) {
+      final body = await start(u, slot: 4, wait: 600);
+      ids.add(
+        (body['active'] as List).cast<Map>().firstWhere(
+              (m) => m['owner'] == u,
+            )['id']
+            as String,
+      );
+    }
+    await Future.wait([
+      for (final id in ids) a.help('g', id, power: 1, stage: 1, nickname: 'g'),
+    ]);
+    final rewarded = store.rows.values
+        .expand((m) => m.helpers)
+        .where((h) => h.userId == 'g' && h.rewarded)
+        .length;
+    expect(rewarded, cfg.mission.helpRewardsPerDay);
+  });
+
+  test('보상 지급(저장)이 실패하면 수령 기록을 되돌리고 코인도 안 준다', () async {
+    await start('a', wait: 600); // ×0.8 혼자 성공
+    await expectLater(
+      a.claimAll('a', deliver: (_) async => throw StateError('db')),
+      throwsStateError,
+    );
+    expect(store.claims, isEmpty);
+    expect(guilds.memberRows['a']!.coins, 0);
+    final r = await a.claimAll('a');
+    expect(r.missions, 1, reason: '다시 받을 수 있다');
+  });
 }

@@ -146,6 +146,7 @@ abstract interface class GameServer {
     required String name,
     required String lang,
     required String joinMode,
+    int? emblem,
   });
 
   /// 가입 — 공개 길드는 바로(`guild` 가 온다), 승인제는 신청(`requested: true`).
@@ -160,7 +161,12 @@ abstract interface class GameServer {
     String userId, {
     required bool accept,
   });
-  Future<ServerResult> guildSettings({String? notice, String? joinMode});
+  Future<ServerResult> guildSettings({
+    String? notice,
+    String? joinMode,
+    bool? deputyCanAccept,
+    int? emblem,
+  });
 
   /// 길드 미션 탭 — 게시판·남은 출발·도움 목록·받을 보상. ⚠️ 탭을 보고 있을 때만 주기 조회.
   Future<ServerResult> guildMissions();
@@ -535,6 +541,7 @@ class NoGameServer implements GameServer {
     required String name,
     required String lang,
     required String joinMode,
+    int? emblem,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> guildJoin(String guildId) async =>
@@ -560,6 +567,8 @@ class NoGameServer implements GameServer {
   Future<ServerResult> guildSettings({
     String? notice,
     String? joinMode,
+    bool? deputyCanAccept,
+    int? emblem,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> guildMissions() async =>
@@ -763,8 +772,9 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> uploadSave(Map<String, dynamic> save) async {
     // 길드전 활동 수는 세이브가 아니라 **본문 옆칸**으로(세이브 스키마를 안 건드린다).
-    // 길드를 열기 전(kGuildOpen)에는 싣지 않는다 — 서버 길드 표가 없을 때 쓸데없는 처리.
-    final tally = kGuildOpen
+    // 길드를 열기 전(kGuildOpen)·길드가 없을 때(또는 아직 모를 때)는 싣지 않는다 — 서버가
+    // 업로드마다 길드를 조회하지 않게. 안 실은 집계는 dirty 로 남아 길드가 확인된 뒤 업로드에 간다.
+    final tally = kGuildOpen && GuildWarTally.inGuild
         ? GuildWarTally.payload(DateTime.now().toUtc())
         : null;
     await _ensureSession();
@@ -1032,10 +1042,12 @@ class HttpGameServer implements GameServer {
     required String name,
     required String lang,
     required String joinMode,
+    int? emblem,
   }) => _send('POST', '/guild/create', {
     'name': name,
     'lang': lang,
     'joinMode': joinMode,
+    'emblem': ?emblem,
   });
 
   @override
@@ -1128,11 +1140,17 @@ class HttpGameServer implements GameServer {
       _send('POST', '/guild/war/claim', const {});
 
   @override
-  Future<ServerResult> guildSettings({String? notice, String? joinMode}) =>
-      _send('POST', '/guild/settings', {
-        'notice': ?notice,
-        'joinMode': ?joinMode,
-      });
+  Future<ServerResult> guildSettings({
+    String? notice,
+    String? joinMode,
+    bool? deputyCanAccept,
+    int? emblem,
+  }) => _send('POST', '/guild/settings', {
+    'notice': ?notice,
+    'joinMode': ?joinMode,
+    'deputyCanAccept': ?deputyCanAccept,
+    'emblem': ?emblem,
+  });
 }
 
 /// 교체 가능한 권위 서버. 기본은 미설정(로컬 경로 유지).

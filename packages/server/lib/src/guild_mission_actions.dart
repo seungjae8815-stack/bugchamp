@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:core_run/core_run.dart';
 
-import 'guild_actions.dart' show GuildResult;
+import 'guild_actions.dart' show GuildResult, guildUndo;
 import 'guild_mission_store.dart';
 import 'guild_store.dart';
 
@@ -142,6 +142,8 @@ class GuildMissionActions {
       await store.userMissions(userId, _keepSince(t)),
       t,
     );
+    // 빠른 거절(화면 안내용). **최종 판정은 DB 가 유저 잠금 아래 다시 센다**(startMission) —
+    // 여기서만 보면 동시 요청 여러 개가 같은 "아직 0회"를 보고 모두 출발한다.
     if (_startsOn(userId, my, day) >= c.dailyStarts) {
       return _err('no_starts_left');
     }
@@ -152,7 +154,7 @@ class GuildMissionActions {
     final s = board[slot];
     final need = pw * s.mult;
     final solo = pw >= need; // 혼자로 이미 충분 = 바로 성공
-    var m = await store.insertMission(
+    final (inserted, error) = await store.startMission(
       GuildMissionRow(
         guildId: mine.guildId,
         owner: userId,
@@ -170,7 +172,10 @@ class GuildMissionActions {
         solo: solo,
         helperMax: c.helperMax,
       ),
+      dailyStarts: c.dailyStarts,
     );
+    if (inserted == null) return _err(error ?? 'no_starts_left');
+    final m = inserted;
     if (solo) {
       await _settleOne(m, t);
     } else {
@@ -206,8 +211,6 @@ class GuildMissionActions {
     }
     if (m.helpers.length >= c.helperMax) return _err('helpers_full');
     final day = _day(t);
-    final my = await store.userMissions(userId, _keepSince(t));
-    final rewarded = _helpRewardsOn(userId, my, day) < c.helpRewardsPerDay;
     final h = GuildHelperRow(
       missionId: m.id,
       userId: userId,
@@ -216,11 +219,27 @@ class GuildMissionActions {
       power: power.isFinite && power > 0 ? power : 0,
       stage: stage < 1 ? 1 : stage,
       dayKey: day,
-      rewarded: rewarded,
+      rewarded: false, // DB 가 정한다(하루 도움 보상 횟수를 유저 잠금 아래 센다)
       createdAt: t,
     );
-    if (!await store.insertHelper(h)) return _err('helpers_full');
-    final after = m.copyWith(helpers: [...m.helpers, h]);
+    final ins = await store.insertHelper(h, maxRewards: c.helpRewardsPerDay);
+    if (ins.error != null) return _err(ins.error!);
+    final rewarded = ins.rewarded;
+    final after = m.copyWith(
+      helpers: [
+        ...m.helpers,
+        GuildHelperRow(
+          missionId: h.missionId,
+          userId: h.userId,
+          nickname: h.nickname,
+          power: h.power,
+          stage: h.stage,
+          dayKey: h.dayKey,
+          rewarded: rewarded,
+          createdAt: h.createdAt,
+        ),
+      ],
+    );
     // 전투력이 요구를 넘어도 시간은 계속 흐른다(끝나면 합산으로 판정).
     // **도움이 다 차면 그 자리에서 성공**(2026-10-01 사장님 확정).
     if (after.helpers.length >= after.helperMax) {
@@ -232,9 +251,14 @@ class GuildMissionActions {
 
   // ── 보상 받기 ──
 
-  /// 받을 수 있는 보상을 **모두** 받는다. 코인은 여기서 길드 테이블에 넣고, 재료·화석·알은
-  /// 돌려주어 라우트가 서버 세이브에 넣는다. 수령 기록을 **먼저** 남기고 지급한다(우편과 같은 순서).
-  Future<GuildMissionClaim> claimAll(String userId) async {
+  /// 받을 수 있는 보상을 **모두** 받는다. 수령 기록을 **먼저** 남기고(우편과 같은 순서) [deliver]
+  /// (라우트가 재료·화석·알을 서버 세이브에 넣고 저장)를 부른다. [deliver] 가 실패하면 수령 기록을
+  /// 되돌리고 오류를 다시 던진다 — 기록만 남고 보상이 사라지지 않게. 코인은 [deliver] 가 성공한 **뒤에**
+  /// 길드 테이블에 넣는다(되돌릴 일이 없게).
+  Future<GuildMissionClaim> claimAll(
+    String userId, {
+    Future<void> Function(GuildMissionClaim claim)? deliver,
+  }) async {
     final t = now().toUtc();
     final my = await _settleDue(
       await store.userMissions(userId, _keepSince(t)),
@@ -246,14 +270,25 @@ class GuildMissionActions {
     var n = 0;
     // 길드 버프 "미션 보상" — **지금 속한 길드** 기준(나가면 사라진다, §5).
     final bonus = await _missionBonus(userId);
+    final ids = <String>[];
     for (final m in _claimable(userId, my, claimed)) {
       if (!await store.insertClaim(m.id, userId)) continue;
+      ids.add(m.id);
       sum = sum + _boost(_rewardOf(userId, m), bonus);
       n++;
       if (m.owner == userId && m.success && _eggRoll(m)) eggs++;
     }
+    final out = GuildMissionClaim(reward: sum, eggs: eggs, missions: n);
+    if (n > 0 && deliver != null) {
+      try {
+        await deliver(out);
+      } catch (_) {
+        await guildUndo('mission', () => store.deleteClaims(userId, ids));
+        rethrow;
+      }
+    }
     if (sum.coins > 0) await guilds.addCoins(userId, sum.coins);
-    return GuildMissionClaim(reward: sum, eggs: eggs, missions: n);
+    return out;
   }
 
   // ── 내부 ──

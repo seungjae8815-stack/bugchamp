@@ -30,6 +30,10 @@ Supabase 스키마 변경 SQL 의 **적용 여부**를 기록한다.
 | `_sql_20261001_pvp_board_power.sql` | 결투 순위표·후보 전투력 = 결투 방어팀만(홈 전투력 대체 제거) · 점수 기록이 전투력 0 으로 덮지 않게(`pvp_season_submit`·`pvp_league_top`·`pvp_league_range` 재정의). 순서 무관 | 적용(2026-10-02) |
 | `_sql_20261003_notice_lang.sql` | 언어별 공지 — `notices` 에 `title_en`·`body_en`·`title_ja`·`body_ja`(비워 둘 수 있음). ⚠️ **서버 재배포보다 먼저**(없으면 서버가 예전 방식으로 물러서지만 영어·일본어 입력이 저장 안 됨) | ✅ 적용 2026-10-03 (확인 4 · 서버 00113 배포) |
 | `_sql_20261005_abyss_current_floor.sql` | 심연 주간 순위 = **지금 층**(쓰러지면 한 칸 아래로, 1.0.17) — `abyss_submit` 이 내려간 층도 덮어쓴다(본문만 교체, 데이터 변경 없음). 순서 무관 | ✅ 적용 2026-10-05 (확인 0) |
+| `_sql_20261005_guild_fixes.sql` | 길드 공개 전 점검 — 미션 출발·도움 보상 원자화(`guild_mission_start`·`guild_mission_help`) · 보스 공격자 몫 체력 반영·하루 공격 유저 기준(`guild_boss_hit_v2`, 칸 `est_power`·`power`) · 출석 유저 기준(`guild_user_daily`·`guild_donate_v2`) · 길드전 점수 유저·날짜 상한(`guild_war_set_v2`·`add_v2`) · 하루 승자 집계(`guild_war_day_stats`·`tier_avg_stats`, 칸 `updated_at`) · 판정 표시(`guild_war_resolve_lock`, 칸 `resolving_at`) · 상점 환불(`guild_shop_refund`) · 직책 권한 — 부길드장 가입 수락 스위치(칸 `guilds.deputy_can_accept`) · 길드 문장(칸 `guilds.emblem` 1~10·null 허용, `guild_get`·`guild_list`·`guild_boss_top` 이 돌려주게 다시 만듦). 옛 함수는 그대로 둔다. ⚠️ `guild_war` **다음**, **서버 재배포보다 먼저** | 대기 |
+| `_sql_20261005_mail_gold_bigint.sql` | 운영 우편·선물코드 골드 칸 integer → bigint (100억 우편이 22003 으로 실패). 서버 상한 1,000조는 이미 배포 | 대기 — `mail_fairy` 에 포함(그쪽만 돌리면 된다) |
+| `_sql_20261005_mail_fairy.sql` | 운영 우편 골드·재료 칸 bigint(1조 이상) + 요정 재료 칸 `user_mail.fairy` jsonb. ⚠️ **서버 재배포보다 먼저**(새 서버가 `fairy` 칸을 읽는다) | 대기 |
+| `_sql_20261005_phantom_clears_check.sql` | **조회 전용** — 최종 보스 직후 난이도 자동 전환 경쟁 버그로 생긴 유령 사냥터 클리어(도감에 보스 없는 `wN@T`) 계정 찾기 | 대기 |
 
 > `미확인` = 이 대장을 만들기(2026-09-08) 전에 있던 파일이라 적용 여부를 알 수 없다.
 > 다음에 각 파일을 다룰 때 확인해서 `적용` / `대기` / `폐기` 로 바꾼다.

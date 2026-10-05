@@ -31,6 +31,7 @@ class GuildConfig {
     this.shop = const [],
     this.boss = const GuildBossConfig(),
     this.war = const GuildWarConfig(),
+    this.memberRanks = kDefaultGuildMemberRanks,
   });
 
   /// 길드 인원(길드 레벨로 늘어나는 몫은 3단계에서 더한다).
@@ -86,6 +87,33 @@ class GuildConfig {
   /// 주간 길드전(5단계).
   final GuildWarConfig war;
 
+  /// 멤버 등급(기여도 자동 · 표시 전용) — [guildMemberRank].
+  final List<GuildMemberRankDef> memberRanks;
+
+  /// [war] 만 바꾼 사본(서버가 환경변수로 길드전 첫 주를 덮을 때).
+  GuildConfig withWar(GuildWarConfig war) => GuildConfig(
+    maxMembers: maxMembers,
+    createJellyCost: createJellyCost,
+    nameMinLength: nameMinLength,
+    nameMaxLength: nameMaxLength,
+    noticeMaxLength: noticeMaxLength,
+    rejoinCooldownHours: rejoinCooldownHours,
+    deputyMax: deputyMax,
+    leaderInactiveDays: leaderInactiveDays,
+    listLimit: listLimit,
+    maxPendingRequests: maxPendingRequests,
+    requestLimit: requestLimit,
+    mission: mission,
+    level: level,
+    donateExp: donateExp,
+    donateCoins: donateCoins,
+    skills: skills,
+    shop: shop,
+    boss: boss,
+    war: war,
+    memberRanks: memberRanks,
+  );
+
   GuildSkillDef? skill(String id) =>
       skills.where((s) => s.id == id).firstOrNull;
   GuildShopItem? shopItem(String id) =>
@@ -126,6 +154,10 @@ class GuildConfig {
       ],
       boss: GuildBossConfig.fromJson(j['boss'] as Map<String, dynamic>?),
       war: GuildWarConfig.fromJson(j['war'] as Map<String, dynamic>?),
+      memberRanks: [
+        for (final x in (j['memberRanks'] as List? ?? const []))
+          GuildMemberRankDef.fromJson(x as Map<String, dynamic>),
+      ].where((r) => r.id.isNotEmpty).toList().orDefaultRanks(),
     );
   }
 }
@@ -145,8 +177,62 @@ enum GuildRole {
     _ => GuildRole.member,
   };
 
-  /// 가입 승인·추방·소개 수정을 할 수 있는지.
-  bool get canManage => this != GuildRole.member;
+  /// 직책 권한(2026-10-05 사장님 확정, docs/design_guild.md §1). 길드장만 추방·설정·스킬·임명을 한다.
+  /// 부길드장은 길드장이 켠 경우([deputyCanAccept], 기본 켜짐)에만 가입 신청을 수락·거절한다.
+  /// 앱(버튼 표시)과 서버(검사)가 같은 함수를 본다.
+  bool canAnswerRequests({required bool deputyCanAccept}) =>
+      this == GuildRole.leader || (this == GuildRole.deputy && deputyCanAccept);
+
+  /// 추방(길드장 → 부길드장·멤버).
+  bool get canKick => this == GuildRole.leader;
+
+  /// 공지·소개·가입 방식·부길드장 수락 허용 스위치.
+  bool get canEditSettings => this == GuildRole.leader;
+
+  /// 길드 스킬 찍기·초기화.
+  bool get canEditSkills => this == GuildRole.leader;
+
+  /// 직책 임명·위임.
+  bool get canAssignRoles => this == GuildRole.leader;
+}
+
+/// 멤버 등급 한 단계(`guild.json → memberRanks`) — 그 길드에서 번 코인 누적(기여도)이 [min] 이상.
+/// **표시 전용**이다(혜택·권한 없음, 2026-10-05 사장님 확정).
+@immutable
+class GuildMemberRankDef {
+  const GuildMemberRankDef(this.id, this.min);
+
+  final String id;
+  final int min;
+
+  factory GuildMemberRankDef.fromJson(Map<String, dynamic> j) =>
+      GuildMemberRankDef(
+        j['id'] as String? ?? '',
+        (j['min'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// 기본 등급표(JSON 이 비었을 때) — 새내기 · 일꾼 · 정예 · 원로.
+const kDefaultGuildMemberRanks = [
+  GuildMemberRankDef('rookie', 0),
+  GuildMemberRankDef('worker', 500),
+  GuildMemberRankDef('elite', 3000),
+  GuildMemberRankDef('elder', 10000),
+];
+
+/// 기여도 → (지금 등급, 다음 등급 또는 null). 앱·서버 공용(새 DB 칸 없이 파생값).
+/// [ranks] 는 순서와 상관없이 [GuildMemberRankDef.min] 으로 정렬해 본다.
+({GuildMemberRankDef rank, GuildMemberRankDef? next}) guildMemberRank(
+  List<GuildMemberRankDef> ranks,
+  int contribution,
+) {
+  final list = [...(ranks.isEmpty ? kDefaultGuildMemberRanks : ranks)]
+    ..sort((a, b) => a.min.compareTo(b.min));
+  var i = 0;
+  for (var k = 0; k < list.length; k++) {
+    if (contribution >= list[k].min) i = k;
+  }
+  return (rank: list[i], next: i + 1 < list.length ? list[i + 1] : null);
 }
 
 /// 가입 방식.
@@ -159,4 +245,32 @@ enum GuildJoinMode {
 
   static GuildJoinMode fromKey(String? k) =>
       k == 'approval' ? GuildJoinMode.approval : GuildJoinMode.open;
+}
+
+/// 길드 문장 수(그림 `assets/images/ui/guild/emblem_01`~`emblem_10`, DB `guilds.emblem` check 1~10).
+/// 그림 개수에 묶인 **구조 상수**다 — 늘리면 그림·SQL check 를 함께 바꾼다.
+const kGuildEmblemCount = 10;
+
+/// 길드장이 고를 수 있는 문장 번호인가(1~[kGuildEmblemCount]).
+bool guildEmblemValid(int emblem) => emblem >= 1 && emblem <= kGuildEmblemCount;
+
+/// 문장을 고른 적 없는 길드(옛 길드 · SQL 적용 전)의 기본 문장 — 길드 id 의 간단한 해시.
+/// `String.hashCode` 는 플랫폼·버전 사이 같음을 보장하지 않아 직접 센다(같은 길드는 어디서나 같은 문장).
+int guildDefaultEmblem(String guildId) {
+  var h = 0;
+  for (final c in guildId.codeUnits) {
+    h = (h * 31 + c) & 0x7fffffff;
+  }
+  return h % kGuildEmblemCount + 1;
+}
+
+/// 보여 줄 문장 — 고른 값이 유효하면 그것, 아니면 [guildDefaultEmblem].
+int guildEmblemOf(String guildId, int? emblem) =>
+    emblem != null && guildEmblemValid(emblem)
+    ? emblem
+    : guildDefaultEmblem(guildId);
+
+extension on List<GuildMemberRankDef> {
+  List<GuildMemberRankDef> orDefaultRanks() =>
+      isEmpty ? kDefaultGuildMemberRanks : this;
 }

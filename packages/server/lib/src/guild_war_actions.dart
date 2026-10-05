@@ -1,14 +1,18 @@
+import 'dart:io' show stderr;
+
 import 'package:core_battle/core_battle.dart';
 import 'package:core_run/core_run.dart';
 
-import 'guild_actions.dart' show GuildResult;
+import 'guild_actions.dart' show GuildResult, guildUndo;
 import 'guild_store.dart';
 import 'guild_war_store.dart';
 
 /// 길드전(docs/design_guild.md §4) — 점수 기록 · 매칭 · 7일차 결투 · 결과 · 보상.
 ///
 /// cron 이 없다: 매칭은 그 주 첫 조회 때, 결과는 7일차 첫 조회 때 한 번 적는다(DB 가 `result is null`
-/// 조건으로 두 번 적히지 않게 막는다 — 등급점도 한 번만 바뀐다).
+/// 조건으로 두 번 적히지 않게 막는다 — 등급점도 한 번만 바뀐다). 7일차에 아무도 안 열었으면
+/// **다음 주 조회·수령 때** 지난주 경기를 판정한다. 판정은 계산 **전에** 판정 표시를 잡아
+/// (`tryLockResolve`) 동시에 여러 요청이 결투 30판을 돌리지 않게 한다.
 class GuildWarActions {
   GuildWarActions({
     required this.guilds,
@@ -57,7 +61,8 @@ class GuildWarActions {
     if (score <= 0) return;
     final mine = await guilds.membershipOf(userId);
     if (mine == null) return;
-    await store.setScore(week, mine.guildId, userId, day, score);
+    // 같은 사람·같은 날은 길드를 옮겨도 합쳐서 상한까지(DB 가 다른 길드 몫을 뺀다).
+    await store.setScore(week, mine.guildId, userId, day, score, def.cap);
   }
 
   /// 서버가 확정한 행동(결투 승리·보스 공격) — 그날 주제일 때만.
@@ -119,10 +124,16 @@ class GuildWarActions {
     final a = m.sideA(g.id);
     final oppId = a ? m.guildB : m.guildA;
     final opp = oppId == null ? null : await guilds.guild(oppId);
-    final mineTotals = await store.dayTotals(week, g.id);
-    final oppTotals = oppId == null
-        ? await store.tierAverage(week, a ? m.tierA : m.tierB)
-        : await store.dayTotals(week, oppId);
+    final mineTotals = [
+      for (final d in await store.dayStats(week, g.id)) d.total,
+    ];
+    final oppTotals = [
+      for (final d
+          in oppId == null
+              ? await store.tierAverageStats(week, a ? m.tierA : m.tierB)
+              : await store.dayStats(week, oppId))
+        d.total,
+    ];
     final def = c.dayDef(day);
     return (
       200,
@@ -134,6 +145,9 @@ class GuildWarActions {
         'myToday': await store.myScore(week, userId, day),
         'match': {
           'opponent': opp?.name,
+          // 상대 문장 — null 이면 앱이 [opponentId] 해시로 기본 문장(가상 길드는 둘 다 null).
+          'opponentId': opp?.id,
+          'opponentEmblem': opp?.emblem,
           'virtual': oppId == null,
           'mine': mineTotals.take(6).toList(),
           'theirs': oppTotals.take(6).toList(),
@@ -153,7 +167,8 @@ class GuildWarActions {
       'points': a ? r['pointsA'] : r['pointsB'],
       'theirPoints': a ? r['pointsB'] : r['pointsA'],
       'won': w((r['winner'] as num).toInt()) == 0,
-      'draw': (r['winner'] as num).toInt() < 0,
+      // 2026-10-05~ 무승부 없음(승점 합 홀수 · 하루 동점도 갈린다). 앱 호환으로 키만 남긴다.
+      'draw': false,
       'clash': a ? r['clashA'] : r['clashB'],
       'theirClash': a ? r['clashB'] : r['clashA'],
       'days': [
@@ -172,13 +187,20 @@ class GuildWarActions {
 
   // ── 7일차 · 결과 ──
 
-  /// 7일차 대결을 돌리고 결과를 적는다(이미 있으면 그대로).
+  /// 7일차 대결을 돌리고 결과를 적는다(이미 있으면 그대로). 다른 요청이 판정 중이면 null —
+  /// 그 요청이 적은 결과가 다음 조회에 보인다.
   Future<Map<String, dynamic>?> _resolve(GuildWarMatch m) async {
     if (m.result != null) return m.result;
-    final dayA = await store.dayTotals(m.week, m.guildA);
+    // 계산 **전에** 판정을 맡는다 — 동시에 여러 요청이 결투 30판을 다 돌리지 않게.
+    if (!await store.tryLockResolve(m.id)) {
+      return (await store.matchOf(m.week, m.guildA))?.result;
+    }
+    final dayA = await store.dayStats(m.week, m.guildA);
     final dayB = m.guildB == null
-        ? await store.tierAverage(m.week, m.tierA)
-        : await store.dayTotals(m.week, m.guildB!);
+        ? await store.tierAverageStats(m.week, m.tierA)
+        : await store.dayStats(m.week, m.guildB!);
+    // 대결 참가 = 보상 자격과 같은 조건 — 그 주 월 09시 KST **전에** 가입한 길드원만(7일차 용병 차단).
+    final weekStart = DateTime.parse('${m.week}T00:00:00Z');
 
     // 멤버를 방어팀 전투력 순으로 1:1. 인원이 다르면 남는 쪽은 부전승 없음(인원 늘리기 경쟁 방지).
     Future<List<({String nick, List<DuelBug> team, double power})>> side(
@@ -187,6 +209,7 @@ class GuildWarActions {
       if (gid == null) return const [];
       final out = <({String nick, List<DuelBug> team, double power})>[];
       for (final mem in await guilds.members(gid)) {
+        if (mem.joinedAt.isAfter(weekStart)) continue;
         final team = await teamOf(mem.userId);
         if (team == null || team.isEmpty) continue;
         final p = team.fold<double>(
@@ -225,38 +248,40 @@ class GuildWarActions {
         pairs.add({'a': sa[i].nick, 'b': sb[i].nick, 'winA': winA});
       }
     }
+    // 7일차 승수가 같으면 전투력 1위끼리 대결 결과(첫 짝). 대결이 없었으면 방어팀이 있는 쪽,
+    // 그것도 같으면 null → seed(결정론).
+    final bool? topWinA = pairs.isNotEmpty
+        ? pairs.first['winA'] as bool
+        : (sa.length != sb.length ? sa.length > sb.length : null);
     final o = guildWarOutcome(
       c,
       dayA: dayA.take(6).toList(),
       dayB: dayB.take(6).toList(),
       clashA: clashA,
       clashB: clashB,
+      topWinA: topWinA,
+      seed: seed0,
     );
     final result = {
-      'dayA': dayA.take(6).toList(),
-      'dayB': dayB.take(6).toList(),
+      'dayA': [for (final d in dayA.take(6)) d.total],
+      'dayB': [for (final d in dayB.take(6)) d.total],
       'clashA': clashA,
       'clashB': clashB,
       'pointsA': o.pointsA,
       'pointsB': o.pointsB,
       'winner': o.winner,
       'dayWinners': o.dayWinners,
+      'clashWinner': o.clashWinner,
       'pairs': pairs,
     };
     if (await store.saveResult(m.id, result)) {
-      await _applyGr(
-        m.guildA,
-        o.winner == 0 ? c.grWin : (o.winner == 1 ? c.grLose : 0),
-      );
+      await _applyGr(m.guildA, o.winner == 0 ? c.grWin : c.grLose);
       if (m.guildB != null) {
-        await _applyGr(
-          m.guildB!,
-          o.winner == 1 ? c.grWin : (o.winner == 0 ? c.grLose : 0),
-        );
+        await _applyGr(m.guildB!, o.winner == 1 ? c.grWin : c.grLose);
       }
       return result;
     }
-    // 다른 요청이 먼저 적었다 — 그걸 쓴다.
+    // 다른 요청이 먼저 적었다(판정 표시가 오래 멈춰 다시 맡은 경우) — 그걸 쓴다.
     return (await store.matchOf(m.week, m.guildA))?.result ?? result;
   }
 
@@ -280,15 +305,23 @@ class GuildWarActions {
     final ref = current ? t : t.subtract(const Duration(days: 7));
     final week = guildWeekKey(ref);
     final m = await store.matchOf(week, mine.guildId);
-    if (m == null || m.result == null) return null;
+    if (m == null) return null;
+    var result = m.result;
+    // 지난주 경기를 7일차에 아무도 안 열었으면 여기서 판정한다(안 그러면 결과·보상이 영영 없다).
+    // 이번 주는 7일차가 된 뒤에만.
+    if (result == null &&
+        (!current || guildWarDayIndex(t, guildWeekStart(t)) >= 7)) {
+      result = await _resolve(m);
+    }
+    if (result == null) return null;
     final start = guildWeekStart(ref);
     // 자격: 그 주 월 09시 **전에** 가입 + 그 주 점수 1 이상(보상 사냥 방지).
     final eligible =
         !mine.joinedAt.isAfter(start) &&
         (await store.scoredMembers(week, mine.guildId)).contains(userId);
     final a = m.sideA(mine.guildId);
-    final winner = (m.result!['winner'] as num).toInt();
-    final won = winner < 0 || (a ? winner == 0 : winner == 1);
+    final winner = (result['winner'] as num).toInt();
+    final won = a ? winner == 0 : winner == 1;
     final tier = c.tierById(a ? m.tierA : m.tierB) ?? c.tierOf(0);
     final share = won ? 1.0 : c.loseShare;
     return {
@@ -301,8 +334,13 @@ class GuildWarActions {
     };
   }
 
-  /// 받을 수 있는 대전 보상(이번 주 결과 → 없으면 지난주). 코인은 여기서 넣고 젤리 양을 돌려준다.
-  Future<(int, Map<String, dynamic>, int)> claim(String userId) async {
+  /// 받을 수 있는 대전 보상(이번 주 결과 → 없으면 지난주). 수령 기록을 **먼저** 남기고 [deliver]
+  /// (라우트가 젤리를 서버 세이브에 넣고 저장)를 부른다. 실패하면 수령 기록을 되돌리고 오류를 다시 던진다.
+  /// 코인은 [deliver] 가 성공한 **뒤에** 넣는다(되돌릴 일이 없게).
+  Future<(int, Map<String, dynamic>, int)> claim(
+    String userId, {
+    Future<void> Function(int jelly)? deliver,
+  }) async {
     final mine = await guilds.membershipOf(userId);
     if (mine == null)
       return (409, <String, dynamic>{'error': 'not_in_guild'}, 0);
@@ -310,7 +348,16 @@ class GuildWarActions {
     for (final current in [true, false]) {
       final r = await _rewardInfo(userId, mine, t, current: current);
       if (r == null || r['eligible'] != true || r['claimed'] == true) continue;
-      if (!await store.insertClaim(r['week'] as String, userId)) continue;
+      final week = r['week'] as String;
+      if (!await store.insertClaim(week, userId)) continue;
+      if (deliver != null) {
+        try {
+          await deliver(r['jelly'] as int);
+        } catch (_) {
+          await guildUndo('war', () => store.deleteClaim(week, userId));
+          rethrow;
+        }
+      }
       await guilds.addCoins(userId, r['coins'] as int);
       return (
         200,
@@ -320,4 +367,34 @@ class GuildWarActions {
     }
     return (409, <String, dynamic>{'error': 'nothing_to_claim'}, 0);
   }
+}
+
+/// 서버 환경변수 `GUILD_WAR_START_WEEK`(월요일 `YYYY-MM-DD`)로 길드전 첫 주를 덮는다 — 운영이 서버
+/// 재빌드 없이(Cloud Run 환경변수만 바꿔) 길드전을 연다. guild.json 기본값은 먼 미래(= 닫힘).
+/// 비었으면 그대로, 형식이 틀리거나 월요일이 아니면 **무시하고 로그**(잘못 연 날짜로 대전이 반쯤
+/// 열리는 것보다 닫혀 있는 편이 낫다). `/guild/war` 응답의 `startWeek` 도 덮인 값이 나간다.
+GuildConfig guildConfigWithStartWeekEnv(
+  GuildConfig c,
+  String? raw, {
+  void Function(String line)? log,
+}) {
+  final say = log ?? stderr.writeln;
+  final v = (raw ?? '').trim();
+  if (v.isEmpty) return c;
+  final m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(v);
+  final d = m == null
+      ? null
+      : DateTime.utc(
+          int.parse(m.group(1)!),
+          int.parse(m.group(2)!),
+          int.parse(m.group(3)!),
+        );
+  final valid =
+      d != null && guildWeekKey(d) == v && d.weekday == DateTime.monday;
+  if (!valid) {
+    say('[guild] GUILD_WAR_START_WEEK="$v" 무시 — 월요일 YYYY-MM-DD 가 아니다');
+    return c;
+  }
+  say('[guild] 길드전 첫 주 = $v (환경변수 GUILD_WAR_START_WEEK)');
+  return c.withWar(c.war.withStartWeek(v));
 }

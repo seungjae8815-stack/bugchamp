@@ -2,14 +2,30 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:core_battle/core_battle.dart';
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:server/src/guild_store.dart';
 import 'package:server/src/guild_war_actions.dart';
 import 'package:server/src/guild_war_store.dart';
 import 'package:test/test.dart';
 
+DuelBug _bug(String id, [double scale = 1]) => DuelBug(
+  id: id,
+  name: id,
+  speciesId: 'x',
+  element: Element.wood,
+  temperament: Temperament.steadfast,
+  specialty: Specialty.grip,
+  sizeMm: 60,
+  maxHp: 150 * scale,
+  atk: 60 * scale,
+  def: 50 * scale,
+  spd: 50 * scale,
+);
+
 void main() {
   late DateTime t;
+  late Map<String, List<DuelBug>> teams;
   late MemoryGuildStore guilds;
   late MemoryGuildWarStore store;
   late GuildWarActions w;
@@ -24,7 +40,9 @@ void main() {
     cfg = GuildConfig.fromJson(j);
     t = DateTime.utc(2026, 10, 4, 12); // 대전 전 주 일요일 — 이때 가입
     guilds = MemoryGuildStore(clock: () => t);
+    teams = {};
     store = MemoryGuildWarStore(
+      clock: () => t,
       membersOf: (g) =>
           guilds.memberRows.values.where((m) => m.guildId == g).length,
       guildOf: (g) {
@@ -37,7 +55,7 @@ void main() {
       store: store,
       config: cfg,
       now: () => t,
-      teamOf: (_) async => null,
+      teamOf: (u) async => teams[u],
       duelParams: const DuelParams(),
       addExp: guilds.addGuildExp,
     );
@@ -94,18 +112,36 @@ void main() {
     t = DateTime.utc(2026, 10, 5, 3);
     final (_, v) = await w.view('a0');
     expect((v['match'] as Map)['opponent'], 'B길드');
-    // A 가 1·2일차, B 가 3일차를 이긴다(4~6일차 0:0 동점).
+    // 상대 문장 — 고른 적 없으면 null(앱이 opponentId 해시로 기본 문장), 고르면 그 값.
+    expect((v['match'] as Map)['opponentId'], gb);
+    expect((v['match'] as Map)['opponentEmblem'], isNull);
+    await guilds.updateGuild(gb, {'emblem': 9});
+    final (_, v2) = await w.view('a0');
+    expect((v2['match'] as Map)['opponentEmblem'], 9);
+    // A 가 1·2·4·5·6일차(1+2+3+3+4 = 13), B 가 3일차(2)를 이긴다. 7일차(6)는 누가 이겨도 A 승.
     await w.recordTally('a0', day(t), {'breedDone': 5});
     t = DateTime.utc(2026, 10, 6, 3);
     await w.recordTally('a0', day(t), {'forge:3': 10});
     t = DateTime.utc(2026, 10, 7, 3);
     await w.recordTally('b0', day(t), {'zoneClear': 2});
+    t = DateTime.utc(2026, 10, 8, 3);
+    await w.recordServerAction('a0', 'duelWin');
+    t = DateTime.utc(2026, 10, 9, 3);
+    await w.recordTally('a0', day(t), {'bugLevel': 1});
+    t = DateTime.utc(2026, 10, 10, 3);
+    await w.recordServerAction('a0', 'bossAttack');
     // 7일차(일 09시 KST 이후).
     t = DateTime.utc(2026, 10, 11, 3);
     final (_, r) = await w.view('a0');
     final res = r['result'] as Map;
     expect(res['won'], true);
+    expect(res['draw'], false);
     expect(res['points'], greaterThan(res['theirPoints'] as int));
+    expect(
+      (res['points'] as int) + (res['theirPoints'] as int),
+      21,
+      reason: '무승부 없음 — 날마다 한쪽이 승점을 가져간다',
+    );
     expect(guilds.guilds[ga]!.gr, cfg.war.grWin);
     expect(guilds.guilds[gb]!.gr, 0, reason: '0 아래로는 내려가지 않는다');
     // 결과는 한 번만 — 다시 봐도 등급점이 안 바뀐다.
@@ -180,5 +216,111 @@ void main() {
     t = DateTime.utc(2026, 10, 19, 3);
     final (_, w3) = await w.view('a0');
     expect((w3['match'] as Map)['opponent'], 'C길드');
+  });
+
+  test('하루 점수가 같으면 그날 점수 낸 인원이 많은 쪽 → 같으면 먼저 도달한 쪽', () async {
+    t = DateTime.utc(2026, 10, 5, 1);
+    await w.view('a0');
+    // 1일차: A 는 한 명이 30, B 는 세 명이 10씩(합 30) → B.
+    await w.recordTally('a0', day(t), {'breedDone': 3});
+    for (final u in ['b0', 'b1', 'b2']) {
+      await w.recordTally(u, day(t), {'breedDone': 1});
+    }
+    // 2일차: 둘 다 한 명이 5점 — A 가 먼저.
+    t = DateTime.utc(2026, 10, 6, 1);
+    await w.recordTally('a0', day(t), {'forge:0': 5});
+    t = DateTime.utc(2026, 10, 6, 2);
+    await w.recordTally('b0', day(t), {'forge:0': 5});
+    t = DateTime.utc(2026, 10, 11, 3);
+    final (_, r) = await w.view('a0');
+    final days = (r['result'] as Map)['days'] as List;
+    expect(days[0], 1, reason: '인원 많은 B');
+    expect(days[1], 0, reason: '먼저 도달한 A');
+    expect(days.every((d) => d == 0 || d == 1), isTrue, reason: '무승부 없음');
+  });
+
+  test('7일차에 아무도 안 열었으면 다음 주 조회·수령 때 지난주를 판정한다', () async {
+    t = DateTime.utc(2026, 10, 5, 3);
+    await w.view('a0'); // 매칭만
+    await w.recordTally('a0', day(t), {'breedDone': 5});
+    await w.recordTally('b0', day(t), {'breedDone': 1});
+    // 7일차를 건너뛰고 다음 주 월요일에 바로 수령.
+    t = DateTime.utc(2026, 10, 12, 3);
+    final m = await store.matchOf('2026-10-05', ga);
+    expect(m!.result, isNull);
+    final (st, _, _) = await w.claim('a0');
+    expect(st, 200, reason: '수령하면서 지난주 경기를 판정한다');
+    expect((await store.matchOf('2026-10-05', ga))!.result, isNotNull);
+    final (_, v) = await w.view('b0');
+    expect((v['lastWeek'] as Map)['eligible'], true);
+  });
+
+  test('판정은 한 번만 맡는다 — 다른 요청이 판정 중이면 계산하지 않는다', () async {
+    t = DateTime.utc(2026, 10, 5, 3);
+    await w.view('a0');
+    final m = await store.matchOf('2026-10-05', ga);
+    expect(await store.tryLockResolve(m!.id), isTrue);
+    t = DateTime.utc(2026, 10, 11, 3);
+    final (_, v) = await w.view('a0');
+    expect(v['result'], isNull, reason: '판정 중 — 결과를 다시 계산하지 않는다');
+    expect(guilds.guilds[ga]!.gr, 0);
+  });
+
+  test('7일차 대결은 그 주 월 09시 전에 가입한 길드원만(용병 차단)', () async {
+    for (var i = 0; i < 5; i++) {
+      teams['a$i'] = [_bug('a$i')];
+      teams['b$i'] = [_bug('b$i')];
+    }
+    t = DateTime.utc(2026, 10, 5, 3);
+    await w.view('a0');
+    // 수요일에 센 용병이 A 에 들어온다.
+    t = DateTime.utc(2026, 10, 7, 3);
+    await guilds.insertMember(ga, 'merc', GuildRole.member);
+    teams['merc'] = [_bug('merc', 50)];
+    t = DateTime.utc(2026, 10, 11, 3);
+    final (_, r) = await w.view('a0');
+    final pairs = (r['result'] as Map)['pairs'] as List;
+    expect(pairs, hasLength(5));
+    expect(pairs.any((p) => (p as Map)['me'] == 'merc'), isFalse);
+  });
+
+  test('같은 사람·같은 날 점수는 길드를 옮겨도 합쳐서 상한까지', () async {
+    t = DateTime.utc(2026, 10, 5, 3);
+    await w.recordTally('a0', day(t), {'breedDone': 10}); // 100(상한)
+    await guilds.deleteMember('a0');
+    await guilds.insertMember(gb, 'a0', GuildRole.member);
+    await w.recordTally('a0', day(t), {'breedDone': 12});
+    expect(await store.myScore('2026-10-05', 'a0', 1), 100);
+    final b = await store.dayStats('2026-10-05', gb);
+    expect(b[0].total, 0, reason: '이미 A 에서 상한을 채웠다');
+  });
+
+  test('GUILD_WAR_START_WEEK — 월요일이면 덮고, 아니면 무시', () {
+    final logs = <String>[];
+    final c2 = guildConfigWithStartWeekEnv(cfg, '2026-10-12', log: logs.add);
+    expect(c2.war.startWeek, '2026-10-12');
+    expect(c2.war.dayPoints, cfg.war.dayPoints);
+    expect(
+      guildConfigWithStartWeekEnv(
+        cfg,
+        '2026-10-13',
+        log: logs.add,
+      ).war.startWeek,
+      cfg.war.startWeek,
+      reason: '화요일',
+    );
+    expect(
+      guildConfigWithStartWeekEnv(
+        cfg,
+        '2026-02-30',
+        log: logs.add,
+      ).war.startWeek,
+      cfg.war.startWeek,
+    );
+    expect(
+      guildConfigWithStartWeekEnv(cfg, null).war.startWeek,
+      cfg.war.startWeek,
+    );
+    expect(logs.where((l) => l.contains('무시')), hasLength(2));
   });
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -6,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/save_repository.dart';
 import 'combat_power.dart';
 import 'device_session.dart';
 import 'game_server.dart';
@@ -41,7 +43,17 @@ Future<void> syncSaveWith({
   required Future<SaveGame> Function() localSave,
 }) async {
   if (!server.available) return;
+  // 조회 → 비교 → 채택 사이에 업로드가 끼면 낡은 조회 결과로 방금 올린 진행을 덮는다.
+  await withServerSaveLock(
+    () => _syncSaveLocked(server: server, ctrl: ctrl, localSave: localSave),
+  );
+}
 
+Future<void> _syncSaveLocked({
+  required GameServer server,
+  required SaveController ctrl,
+  required Future<SaveGame> Function() localSave,
+}) async {
   // 앱을 갓 켜면 **저장된 세션 토큰이 만료**돼 있을 수 있다. Supabase 가
   // 백그라운드로 토큰을 갱신하는 동안 첫 조회가 401 을 맞는다(콜드스타트 경쟁).
   // 인증이 준비될 시간을 주고 몇 번 재시도한다 — 여기서 포기하면 이번 실행 내내
@@ -217,19 +229,37 @@ class ServerSaveUploader {
   Future<void> flush() async {
     final server = _ref.read(gameServerProvider);
     if (!server.available || _inFlight) return;
+    // 화면의 `ref` 는 잠금을 기다리는 사이 닫힐 수 있다 — 필요한 것을 **지금** 쥐어 둔다.
+    final ctrl = _ref.read(saveControllerProvider.notifier);
+    final repo = _ref.read(saveRepositoryProvider);
+    _inFlight = true;
+    try {
+      // 다른 서버 세이브 흐름(우편·결제·전투)과 한 줄로 선다 — 받기 직전에 읽은 세이브가
+      // 받기 직후 서버에 도착하면 받은 것이 되돌아간다([withServerSaveLock]).
+      await withServerSaveLock(() => _flushLocked(server, ctrl, repo));
+    } finally {
+      _inFlight = false;
+    }
+  }
+
+  /// [flush] 의 알맹이 — 잠금 안에서 돈다. 올릴 세이브도 **잠금을 잡은 뒤** 읽는다.
+  Future<void> _flushLocked(
+    GameServer server,
+    SaveController ctrl,
+    SaveRepository repo,
+  ) async {
     // 다른 기기에 밀려났다 — 올리면 그 기기의 진행을 덮는다(서버도 거절한다).
     if (DeviceSession.taken.value) return;
     // ⚠️ 세이브를 못 읽은 상태의 화면값은 **초기 세이브**다. 올리면 서버의
     // 멀쩡한 계정을 그걸로 덮어쓴다. 사람이 고칠 때까지 올리지 않는다.
-    if (_ref.read(saveRepositoryProvider).lastFailure != null) return;
-    final save = _ref.read(saveControllerProvider).value;
+    if (repo.lastFailure != null) return;
+    final save = ctrl.latestSave;
     if (save == null) return;
 
     final json = save.toJson();
     final encoded = jsonEncode(json);
     if (encoded == _lastUploaded) return; // 변경 없음 → 호출 안 함
 
-    _inFlight = true;
     try {
       final res = await server.uploadSave(json);
       if (res.isOk) {
@@ -260,7 +290,6 @@ class ServerSaveUploader {
                 leagueResult is Map ||
                 abyssRank is Map) &&
             res.save != null) {
-          final ctrl = _ref.read(saveControllerProvider.notifier);
           await ctrl.adoptServerSave(res.save!);
           _lastUploaded = jsonEncode(res.save);
           // 대회 회차 보상 — 서버가 지급했다. 회차당 1회다.
@@ -312,8 +341,6 @@ class ServerSaveUploader {
     } catch (e) {
       debugPrint('[save] 업로드 예외: $e');
       _onFail(0);
-    } finally {
-      _inFlight = false;
     }
   }
 
@@ -364,20 +391,20 @@ class ServerSaveUploader {
   /// ([_localIsAhead] 를 타면 낡은 쪽이 "더 진행됨"으로 보일 수 있다). 성공하면 true.
   Future<bool> takeOver() async {
     final server = _ref.read(gameServerProvider);
-    // 진행 중인 업로드가 끝나길 기다린다 — 그게 409 로 돌아오며 밀려남을 다시 켜지 않게.
-    for (var i = 0; _inFlight && i < 100; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-    DeviceSession.claimed = false;
-    final state = await server.fetchState();
-    if (!state.isOk || !DeviceSession.claimed) return false;
-    final remote = state.save;
-    if (remote != null) {
-      await _ref.read(saveControllerProvider.notifier).adoptServerSave(remote);
-      _lastUploaded = jsonEncode(remote);
-    }
-    DeviceSession.taken.value = false;
-    return true;
+    final ctrl = _ref.read(saveControllerProvider.notifier);
+    // 잠금이 진행 중인 업로드가 끝나길 기다려 준다 — 그게 409 로 돌아오며 밀려남을 다시 켜지 않게.
+    return withServerSaveLock(() async {
+      DeviceSession.claimed = false;
+      final state = await server.fetchState();
+      if (!state.isOk || !DeviceSession.claimed) return false;
+      final remote = state.save;
+      if (remote != null) {
+        await ctrl.adoptServerSave(remote);
+        _lastUploaded = jsonEncode(remote);
+      }
+      DeviceSession.taken.value = false;
+      return true;
+    });
   }
 
   void stop() {
@@ -406,20 +433,87 @@ Future<void> pushSaveNow(WidgetRef ref) => ServerSaveUploader(ref).flush();
 ///
 /// 전투·우편수령·코드사용이 같은 함수를 쓴다 — 한 곳이라도 빠지면 그 경로에서만
 /// 진행도가 사라지는, 재현하기 어려운 버그가 된다.
+///
+/// [latest] 는 세이브 **값이 아니라 읽는 함수**다(2026-10-05). 잠금을 잡은 **뒤에** 읽어야
+/// 앞선 흐름(우편 받기 등)이 채택한 결과가 실린다 — 호출부가 미리 읽어 둔 세이브를 넘기던 시절,
+/// 결제 복원이 받기 전에 읽은 세이브를 받기 직후 올려 서버 골드가 되돌아갔다.
+/// 호출부는 "올리기 → 서버 행동 → 채택"을 통째로 [withServerSaveLock] 으로 감싼다. 이 함수도
+/// 스스로 잠금을 잡으므로(같은 흐름 안이면 그대로 통과) 홀로 불려도 다른 흐름과 엇갈리지 않는다.
 Future<bool> flushSaveBeforeServerAction(
   GameServer server,
-  SaveGame? save,
+  SaveGame? Function() latest,
 ) async {
   if (!server.available) return true; // 서버 미연결이면 로컬 경로로 진행
-  if (save == null) return false;
-  final json = save.toJson();
-  final res = await server.uploadSave(json);
-  if (res.isOk) return true;
-  // 저장본이 없다 = 최초 이관이 먼저. 다른 기기에 밀려난 409 는 아니다.
-  if (res.status == 409 && !isSessionTaken(res)) {
-    return (await server.bootstrap(json)).isOk;
+  return withServerSaveLock(() async {
+    final save = latest();
+    if (save == null) return false;
+    final json = save.toJson();
+    final res = await server.uploadSave(json);
+    if (res.isOk) return true;
+    // 저장본이 없다 = 최초 이관이 먼저. 다른 기기에 밀려난 409 는 아니다.
+    if (res.status == 409 && !isSessionTaken(res)) {
+      return (await server.bootstrap(json)).isOk;
+    }
+    return false;
+  });
+}
+
+/// 서버 세이브 잠금이 지금 이 흐름에 잡혀 있다는 표시(Zone 값).
+///
+/// 잠금 안에서 만든 타이머·`unawaited` 작업도 같은 Zone 을 물려받는다 — 그래서 bool 이 아니라
+/// **잡고 있는 동안만 참**인 객체를 둔다. 풀린 뒤에 깨어난 작업(업로드 재시도 타이머 등)은
+/// 재진입으로 오해받지 않고 줄을 다시 선다.
+class _LockHold {
+  bool active = true;
+}
+
+final Object _lockZoneKey = Object();
+
+/// 잠금이 잡혀 있는가 · 기다리는 흐름(먼저 온 순서).
+///
+/// "앞 흐름의 Future 가 끝나면" 식의 체인으로 만들지 않는다 — Future 완료는 **그 Future 를 만든
+/// Zone** 의 마이크로태스크로 전해져서, 그 Zone 이 더는 돌지 않으면(위젯 테스트의 FakeAsync 가
+/// 끝난 뒤) 다음 흐름이 영영 깨어나지 못한다. 대신 기다리는 쪽이 **자기 Zone 에서** 만든
+/// Completer 를 줄에 세우고, 놓는 쪽이 다음 사람 것을 완료해 소유권을 넘긴다.
+bool _lockHeld = false;
+final _lockWaiters = Queue<Completer<void>>();
+
+/// **서버 세이브를 만지는 흐름을 한 줄로 세운다**(앱 전역, 2026-10-05).
+///
+/// 실제 사고(운영 로그 2026-10-05 12:08 UTC): 앱 복귀 때 결제 복원이 상품마다 "업로드 →
+/// `/purchase` → 채택"을 하는 사이에 우편 받기가 끼었다. 우편이 서버 저장본에 골드를 더한
+/// **직후**, 결제 흐름이 **받기 전에 읽어 둔 세이브**를 올렸고 서버는 골드 감소를 소비로
+/// 받아들였다 → `/purchase` 가 되돌아간 세이브를 돌려주고 앱이 채택해 화면 골드도 되돌아갔다
+/// ("우편을 받으면 받아지고 바로 이전으로 돌아간다").
+///
+/// 규칙:
+///  - "로컬 세이브 업로드 → 서버 행동 → [SaveController.adoptServerSave]" 를 통째로 이 안에서 돈다.
+///    주기 업로더([ServerSaveUploader.flush])도 같다.
+///  - 올릴 세이브는 **잠금을 잡은 뒤** 읽는다([flushSaveBeforeServerAction] 의 `latest`).
+///  - 서버 왕복과 채택 구간만 쥔다 — 결투 재생·카드 고르기 같은 긴 화면 동안 쥐면 업로드가 멈춘다.
+///  - `adoptServerSave` 자체는 잠금을 잡지 않는다(바깥 흐름이 잡는다). 같은 흐름 안에서 다시
+///    부르면 그대로 통과한다(재진입 — 교착 없음).
+Future<T> withServerSaveLock<T>(Future<T> Function() body) async {
+  final hold = Zone.current[_lockZoneKey];
+  if (hold is _LockHold && hold.active) return body();
+  if (_lockHeld) {
+    final turn = Completer<void>();
+    _lockWaiters.add(turn);
+    await turn.future; // 앞 흐름이 놓으면서 소유권을 넘겨준다(_lockHeld 는 참 그대로).
+  } else {
+    _lockHeld = true;
   }
-  return false;
+  final mine = _LockHold();
+  try {
+    return await runZoned(body, zoneValues: {_lockZoneKey: mine});
+  } finally {
+    mine.active = false;
+    if (_lockWaiters.isNotEmpty) {
+      _lockWaiters.removeFirst().complete();
+    } else {
+      _lockHeld = false;
+    }
+  }
 }
 
 /// 로컬 세이브가 서버 저장본보다 **더 진행됐는가**.

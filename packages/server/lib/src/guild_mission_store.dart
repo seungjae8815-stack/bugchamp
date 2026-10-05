@@ -188,7 +188,13 @@ class GuildMissionRow {
 
 /// 길드 미션 테이블 접근(`docs/_sql_20261001_guild_missions.sql`). 규칙은 [GuildMissionActions].
 abstract interface class GuildMissionStore {
-  Future<GuildMissionRow> insertMission(GuildMissionRow m);
+  /// 출발 — **유저 잠금 아래** 오늘 출발 수([dailyStarts] 이상이면 `no_starts_left`)와 진행 중 미션
+  /// (`mission_running`)을 세고 넣는다(SQL `guild_mission_start`). 조회 후 insert 로 하면 동시 요청으로
+  /// 무한 출발된다. 성공이면 (행, null), 아니면 (null, 오류 코드).
+  Future<(GuildMissionRow?, String?)> startMission(
+    GuildMissionRow m, {
+    required int dailyStarts,
+  });
   Future<GuildMissionRow?> mission(String id);
 
   /// 길드의 미션([since] 이후 시작) — 도움 목록·오늘 결과.
@@ -197,8 +203,13 @@ abstract interface class GuildMissionStore {
   /// 내가 출발했거나 도운 미션([since] 이후) — 보상 받기·하루 횟수.
   Future<List<GuildMissionRow>> userMissions(String userId, DateTime since);
 
-  /// 도움 넣기. 이미 도왔거나 자리가 찼으면(DB 트리거) false.
-  Future<bool> insertHelper(GuildHelperRow h);
+  /// 도움 넣기 — **유저 잠금 아래** 오늘 받은 도움 보상 수를 세어 [maxRewards] 안이면 보상 칸으로 넣는다
+  /// (SQL `guild_mission_help`, [GuildHelperRow.rewarded] 는 무시하고 DB 가 정한다).
+  /// 실패면 error = `already_helped` · `helpers_full` · `mission_not_found`.
+  Future<({String? error, bool rewarded})> insertHelper(
+    GuildHelperRow h, {
+    required int maxRewards,
+  });
 
   /// 판정 — **아직 판정 전일 때만** 적는다. 이번 호출이 판정했으면 true(길드 경험치를 한 번만 주려고).
   Future<bool> settle(
@@ -211,6 +222,9 @@ abstract interface class GuildMissionStore {
   /// 보상 수령 기록(1회성). 이미 받았으면 false.
   Future<bool> insertClaim(String missionId, String userId);
   Future<Set<String>> claimedIds(String userId, DateTime since);
+
+  /// 수령 기록 되돌리기 — 지급(서버 세이브 저장)이 실패했을 때.
+  Future<void> deleteClaims(String userId, List<String> missionIds);
 
   /// 내가 출발한 [before] 이전 미션을 지운다(테이블 크기 방어 — 보상 기한이 지난 것).
   Future<void> deleteOwnedBefore(String userId, DateTime before);
@@ -267,16 +281,44 @@ class SupabaseGuildMissionStore implements GuildMissionStore {
     body: jsonEncode(body),
   );
 
-  @override
-  Future<GuildMissionRow> insertMission(GuildMissionRow m) async {
-    final res = await _post('guild_missions', [
-      m.toRow(),
-    ], prefer: 'return=representation');
+  Future<dynamic> _rpc(String fn, Map<String, dynamic> args) async {
+    final res = await _http.post(
+      _rest('rpc/$fn'),
+      headers: _headers,
+      body: jsonEncode(args),
+    );
     if (res.statusCode >= 300) {
-      throw StateStoreException('길드 미션 출발 실패: ${res.statusCode}');
+      throw StateStoreException('길드 미션 RPC $fn 실패: ${res.statusCode}');
     }
-    final row = (jsonDecode(res.body) as List).first as Map<String, dynamic>;
-    return GuildMissionRow.fromJson(row);
+    return res.body.isEmpty ? null : jsonDecode(res.body);
+  }
+
+  @override
+  Future<(GuildMissionRow?, String?)> startMission(
+    GuildMissionRow m, {
+    required int dailyStarts,
+  }) async {
+    final r = await _rpc('guild_mission_start', {
+      'p_guild': m.guildId,
+      'p_owner': m.owner,
+      'p_owner_nick': m.ownerNick,
+      'p_day': m.dayKey,
+      'p_slot': m.slot,
+      'p_kind': m.kind,
+      'p_mult': m.mult,
+      'p_wait': m.waitSec,
+      'p_need': m.needPower,
+      'p_owner_power': m.ownerPower,
+      'p_owner_stage': m.ownerStage,
+      'p_started': m.startedAt.toUtc().toIso8601String(),
+      'p_ends': m.endsAt.toUtc().toIso8601String(),
+      'p_solo': m.solo,
+      'p_helper_max': m.helperMax,
+      'p_daily': dailyStarts,
+    });
+    final j = (r as Map).cast<String, dynamic>();
+    if (j['error'] != null) return (null, '${j['error']}');
+    return (GuildMissionRow.fromJson(j), null);
   }
 
   @override
@@ -320,14 +362,21 @@ class SupabaseGuildMissionStore implements GuildMissionStore {
   }
 
   @override
-  Future<bool> insertHelper(GuildHelperRow h) async {
-    final res = await _post('guild_mission_helpers', [h.toRow()]);
-    if (res.statusCode == 409) return false; // 이미 도왔다
-    if (res.body.contains('helpers_full')) return false;
-    if (res.statusCode >= 300) {
-      throw StateStoreException('도와주기 실패: ${res.statusCode}');
-    }
-    return true;
+  Future<({String? error, bool rewarded})> insertHelper(
+    GuildHelperRow h, {
+    required int maxRewards,
+  }) async {
+    final r = await _rpc('guild_mission_help', {
+      'p_mission': h.missionId,
+      'p_user': h.userId,
+      'p_nick': h.nickname,
+      'p_power': h.power,
+      'p_stage': h.stage,
+      'p_day': h.dayKey,
+      'p_max_rewards': maxRewards,
+    });
+    final j = (r as Map).cast<String, dynamic>();
+    return (error: j['error']?.toString(), rewarded: j['rewarded'] == true);
   }
 
   @override
@@ -375,6 +424,21 @@ class SupabaseGuildMissionStore implements GuildMissionStore {
   };
 
   @override
+  Future<void> deleteClaims(String userId, List<String> missionIds) async {
+    if (missionIds.isEmpty) return;
+    final res = await _http.delete(
+      _rest(
+        'guild_mission_claims?user_id=${_eq(userId)}'
+        '&mission_id=in.(${missionIds.join(',')})',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('미션 수령 되돌리기 실패: ${res.statusCode}');
+    }
+  }
+
+  @override
   Future<void> deleteOwnedBefore(String userId, DateTime before) async {
     final res = await _http.delete(
       _rest('guild_missions?owner=${_eq(userId)}&started_at=lt.${_ts(before)}'),
@@ -418,10 +482,20 @@ class MemoryGuildMissionStore implements GuildMissionStore {
   MemoryGuildMissionStore({this.helperMax = 3});
 
   @override
-  Future<GuildMissionRow> insertMission(GuildMissionRow m) async {
+  Future<(GuildMissionRow?, String?)> startMission(
+    GuildMissionRow m, {
+    required int dailyStarts,
+  }) async {
+    final mine = rows.values.where((x) => x.owner == m.owner);
+    if (mine.where((x) => x.dayKey == m.dayKey).length >= dailyStarts) {
+      return (null, 'no_starts_left');
+    }
+    if (mine.any((x) => !x.settled && x.endsAt.isAfter(m.startedAt))) {
+      return (null, 'mission_running');
+    }
     final r = m.copyWith(id: 'm${++_seq}');
     rows[r.id] = r;
-    return r;
+    return (r, null);
   }
 
   @override
@@ -448,13 +522,37 @@ class MemoryGuildMissionStore implements GuildMissionStore {
   ];
 
   @override
-  Future<bool> insertHelper(GuildHelperRow h) async {
+  Future<({String? error, bool rewarded})> insertHelper(
+    GuildHelperRow h, {
+    required int maxRewards,
+  }) async {
     final m = rows[h.missionId];
-    if (m == null) return false;
-    if (m.helpers.any((x) => x.userId == h.userId)) return false;
-    if (m.helpers.length >= helperMax) return false;
-    rows[m.id] = m.copyWith(helpers: [...m.helpers, h]);
-    return true;
+    if (m == null) return (error: 'mission_not_found', rewarded: false);
+    if (m.helpers.any((x) => x.userId == h.userId)) {
+      return (error: 'already_helped', rewarded: false);
+    }
+    if (m.helpers.length >= helperMax) {
+      return (error: 'helpers_full', rewarded: false);
+    }
+    final today = rows.values
+        .expand((x) => x.helpers)
+        .where(
+          (x) => x.userId == h.userId && x.dayKey == h.dayKey && x.rewarded,
+        )
+        .length;
+    final rewarded = today < maxRewards;
+    final row = GuildHelperRow(
+      missionId: h.missionId,
+      userId: h.userId,
+      nickname: h.nickname,
+      power: h.power,
+      stage: h.stage,
+      dayKey: h.dayKey,
+      rewarded: rewarded,
+      createdAt: h.createdAt,
+    );
+    rows[m.id] = m.copyWith(helpers: [...m.helpers, row]);
+    return (error: null, rewarded: rewarded);
   }
 
   @override
@@ -484,6 +582,13 @@ class MemoryGuildMissionStore implements GuildMissionStore {
     for (final c in claims)
       if (c.endsWith('|$userId')) c.split('|').first,
   };
+
+  @override
+  Future<void> deleteClaims(String userId, List<String> missionIds) async {
+    for (final id in missionIds) {
+      claims.remove('$id|$userId');
+    }
+  }
 
   @override
   Future<void> deleteOwnedBefore(String userId, DateTime before) async => rows

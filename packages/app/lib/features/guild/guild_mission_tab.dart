@@ -12,6 +12,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import 'guild_art.dart';
 
 const _honey = kHoney;
 const _dim = Color(0x99FFFFFF);
@@ -26,6 +27,56 @@ String guildMissionKindLabel(AppLocalizations l, String kind) => switch (kind) {
   'canyon' => l.guildMissionCanyon,
   _ => l.guildMissionMeadow,
 };
+
+/// 미션 카드 배경 그림 이름 — 서버 게시판의 `kind`(지역 6종)가 곧 그림 이름이다.
+/// 같은 미션은 늘 같은 그림. 모르는 kind(서버가 새로 만든 것)는 이름표와 같이 초원으로.
+String guildMissionArt(String kind) => switch (kind) {
+  'forest' || 'cave' || 'swamp' || 'ruins' || 'canyon' => 'mission_$kind',
+  _ => 'mission_meadow',
+};
+
+/// 지역 그림을 깐 미션 카드 — 글씨가 읽히게 왼쪽(글씨 쪽)을 더 어둡게 덮는다.
+/// 카드 높이는 내용이 정한다(그림은 뒤에 채워질 뿐이라 카드가 커지지 않는다).
+Widget _missionCard(
+  String kind, {
+  required EdgeInsets padding,
+  required Widget child,
+}) => Container(
+  margin: const EdgeInsets.only(bottom: 6),
+  clipBehavior: Clip.antiAlias,
+  decoration: BoxDecoration(
+    color: const Color(0x18000000),
+    borderRadius: BorderRadius.circular(10),
+  ),
+  child: Stack(
+    children: [
+      Positioned.fill(
+        child: guildArt(
+          guildMissionArt(kind),
+          fit: BoxFit.cover,
+          fallback: const SizedBox.shrink(),
+        ),
+      ),
+      const Positioned.fill(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [Color(0xE6000000), Color(0x99000000), Color(0x55000000)],
+              stops: [0, 0.6, 1],
+            ),
+          ),
+        ),
+      ),
+      Padding(padding: padding, child: child),
+    ],
+  ),
+);
+
+/// 배율 표기 — 2.0 → "2", 1.30 → "1.3", 0.85 → "0.85"(double 그대로 찍으면 "2.0"·"1.3000000000000003").
+String guildMultText(double m) =>
+    m.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
 
 String guildMissionErrorText(AppLocalizations l, String code) => switch (code) {
   'no_starts_left' => l.guildMissionErrNoStarts,
@@ -56,7 +107,7 @@ Future<void> guildHelpMission(
 /// 길드 미션 탭(docs/design_guild.md §2).
 ///
 /// [visible] 일 때만 1초마다 남은 시간을 다시 그리고 [GuildMissionConfig.pollSeconds] 마다 서버를 조회한다
-/// — 탭을 떠나면 멈춘다(요금은 조회 수에 선형).
+/// — [visible] = 하단 탭이 길드 · 안쪽 탭이 미션 · 앱이 전면. 하나라도 아니면 멈춘다(요금은 조회 수에 선형).
 class GuildMissionTab extends ConsumerStatefulWidget {
   const GuildMissionTab({super.key, required this.visible});
 
@@ -96,7 +147,10 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
 
   void _resume() {
     _sinceFetch = 0;
-    Future.microtask(() => ref.read(guildMissionProvider.notifier).refresh());
+    // 처음 열 때는 provider 의 build 가 막 받아 온다 — 겹쳐 부르지 않는다.
+    Future.microtask(
+      () => ref.read(guildMissionProvider.notifier).refreshIfStale(),
+    );
     _tick ??= Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       if (++_sinceFetch >= _cfg.pollSeconds) {
@@ -155,8 +209,8 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
                   l.guildMissionWaitOption(
                     cfg.waitSeconds[i] ~/ 60,
                     i < cfg.waitMults.length
-                        ? cfg.waitMults[i].toStringAsFixed(2)
-                        : '1.00',
+                        ? guildMultText(cfg.waitMults[i])
+                        : '1',
                   ),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
@@ -211,12 +265,13 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
           ),
           const SizedBox(height: 8),
           if (r.reward.coins > 0)
-            Text(
+            GuildCoinLabel(
               l.guildMissionCoins(r.reward.coins),
-              textAlign: TextAlign.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               style: const TextStyle(
                 color: _honey,
                 fontWeight: FontWeight.w800,
+                fontSize: 14,
               ),
             ),
           if (r.eggs > 0)
@@ -337,19 +392,13 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
     child: Text(text, style: const TextStyle(color: _dim, fontSize: 12)),
   );
 
-  BoxDecoration get _card => BoxDecoration(
-    color: const Color(0x18000000),
-    borderRadius: BorderRadius.circular(10),
-  );
-
   Widget _activeCard(AppLocalizations l, GuildMissionInfo m, DateTime now) {
     final canHelp = !m.mine && !m.helped && m.helpers.length < m.helperMax;
     final rules =
         ref.read(gameDataProvider).value?.chatRules ?? const ChatRules();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
+    return _missionCard(
+      m.kind,
       padding: const EdgeInsets.all(10),
-      decoration: _card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -357,7 +406,7 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
             children: [
               Expanded(
                 child: Text(
-                  '${guildMissionKindLabel(l, m.kind)} ×${m.mult}',
+                  '${guildMissionKindLabel(l, m.kind)} ×${guildMultText(m.mult)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -437,10 +486,9 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
     GuildMissionSlot s,
   ) {
     final can = !_busy && v.startsLeft > 0 && !v.hasRunning;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
+    return _missionCard(
+      s.kind,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: _card,
       child: Row(
         children: [
           Expanded(
@@ -456,8 +504,8 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
                 ),
                 Text(
                   s.mult <= 1
-                      ? l.guildMissionSlotSolo(s.mult)
-                      : l.guildMissionSlotNeed(s.mult),
+                      ? l.guildMissionSlotSolo(guildMultText(s.mult))
+                      : l.guildMissionSlotNeed(guildMultText(s.mult)),
                   style: const TextStyle(color: _dim, fontSize: 11.5),
                 ),
               ],
@@ -497,7 +545,7 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              '$who · ${guildMissionKindLabel(l, m.kind)} ×${m.mult}',
+              '$who · ${guildMissionKindLabel(l, m.kind)} ×${guildMultText(m.mult)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Colors.white, fontSize: 12.5),

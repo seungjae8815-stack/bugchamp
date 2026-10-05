@@ -199,6 +199,24 @@ void main() {
       expect(run.evade, spec.cardCaps['evade']);
       expect(run.crit, spec.cardCaps['crit']);
     });
+    test('상한에 닿은 카드만 최대치 — 몸집 2장 · 회피·치명 3장째부터', () {
+      var run = const EventDuelRun();
+      expect(run.cardMaxed('size', spec), isFalse);
+      run = run.applyCard('size', 0.4, spec);
+      expect(run.cardMaxed('size', spec), isFalse);
+      run = run.applyCard('size', 0.4, spec);
+      expect(run.cardMaxed('size', spec), isTrue);
+      for (var i = 0; i < 2; i++) {
+        run = run.applyCard('evade', 0.08, spec).applyCard('crit', 0.1, spec);
+      }
+      expect(run.cardMaxed('evade', spec), isFalse);
+      expect(run.cardMaxed('crit', spec), isFalse);
+      run = run.applyCard('evade', 0.08, spec).applyCard('crit', 0.1, spec);
+      expect(run.cardMaxed('evade', spec), isTrue);
+      expect(run.cardMaxed('crit', spec), isTrue);
+      // 상한이 없는 카드는 늘 고를 의미가 있다.
+      expect(run.applyCard('atk', 5, spec).cardMaxed('atk', spec), isFalse);
+    });
     test('상한이 없는 카드는 그대로 쌓인다', () {
       var run = const EventDuelRun();
       for (var i = 0; i < 3; i++) {

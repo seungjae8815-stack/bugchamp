@@ -193,16 +193,20 @@ class RewardClaimer {
     // 보상을 얹어 돌려주고 앱이 그걸 채택하므로, 이 단계를 건너뛰면 최근 1분의
     // 진행이 사라진다. 올리지 못했으면 수령을 진행하지 않는다 — 보상보다
     // 진행도를 잃지 않는 쪽이 중요하다(다음에 다시 받으면 된다).
-    final save = ref.read(saveControllerProvider).value;
-    if (!await flushSaveBeforeServerAction(server, save)) {
-      return RedeemResult.failed;
-    }
-
-    final res = await call();
+    //
+    // 올리기 → 받기 → 채택은 **한 줄로** 돈다([withServerSaveLock]) — 결제 복원이 받기 전에 읽은
+    // 세이브를 받기 직후 올려 받은 골드가 되돌아갔다(2026-10-05 운영 로그).
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final res = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final res = await call();
+      if (res.isOk && res.save != null) await ctrl.adoptServerSave(res.save!);
+      return res;
+    });
+    if (res == null) return RedeemResult.failed;
     if (res.isOk && res.save != null) {
-      await ref
-          .read(saveControllerProvider.notifier)
-          .adoptServerSave(res.save!);
       ref.invalidate(serverMailProvider);
       return RedeemResult.ok;
     }

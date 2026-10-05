@@ -4064,6 +4064,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eventBuffNow => '지금 받고 있는 강화';
 
   @override
+  String get eventCardMaxed => '최대치';
+
+  @override
   String get eventBuffNone => '받은 강화 없음';
 
   @override
@@ -4478,7 +4481,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get guildTitle => '길드';
 
   @override
-  String get guildIntro => '길드에 들어가면 길드원과 채팅할 수 있어요. 길드 미션·보스·길드전도 곧 열려요.';
+  String get guildIntro =>
+      '길드에 들어가면 길드원과 함께 미션·길드 보스·주간 길드전을 하고, 출석·길드 상점·길드 버프를 누릴 수 있어요.';
 
   @override
   String get guildUnavailable => '길드 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.';
@@ -4504,7 +4508,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get guildJoinModeOpen => '공개 — 누구나 바로 가입';
 
   @override
-  String get guildJoinModeApproval => '승인제 — 길드장·부길드장이 수락';
+  String get guildJoinModeApproval => '승인제 — 길드장(허용하면 부길드장도)이 수락';
 
   @override
   String get guildJoinModeOpenShort => '공개';
@@ -4809,12 +4813,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get guildMissionHelpedTag => '도움 완료';
 
   @override
-  String guildMissionSlotSolo(double mult) {
+  String guildMissionSlotSolo(String mult) {
     return '요구 전투력 ×$mult · 혼자 가능';
   }
 
   @override
-  String guildMissionSlotNeed(double mult) {
+  String guildMissionSlotNeed(String mult) {
     return '요구 전투력 ×$mult · 도움 필요';
   }
 
@@ -4904,7 +4908,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get guildSkillMax => '이미 최대 단계예요';
 
   @override
-  String get guildSkillForbidden => '길드장·부길드장만 할 수 있어요';
+  String get guildSkillForbidden => '길드장만 할 수 있어요';
 
   @override
   String get guildSkillReset => '초기화';
@@ -5663,4 +5667,113 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get zoneReclaim => '다시 잡아야 해요';
+
+  @override
+  String get guildNameFallback => '길드';
+
+  @override
+  String get guildErrAlreadyInGuild => '이미 길드에 들어가 있어요';
+
+  @override
+  String get guildErrNotFound => '길드를 찾을 수 없어요. 사라졌을 수 있어요';
+
+  @override
+  String get guildErrNotInGuild => '길드에 들어가 있지 않아요';
+
+  @override
+  String get guildErrRequestNotFound => '이미 처리된 가입 신청이에요';
+
+  @override
+  String get guildErrForbidden => '그 일을 할 권한이 없어요';
+
+  @override
+  String get guildErrStoreUnavailable => '길드 기능을 잠시 쓸 수 없어요. 잠시 후 다시 시도해 주세요';
+
+  @override
+  String get guildEmblemPick => '길드 문장';
+
+  @override
+  String get guildEmblemChange => '문장 바꾸기';
+
+  @override
+  String get guildEmblemChanged => '길드 문장을 바꿨어요';
+
+  @override
+  String get guildErrEmblemInvalid => '고를 수 없는 문장이에요';
+
+  @override
+  String get guildLeaveCoinsNote => '나가면 가진 길드 코인과 기여도가 사라지고 되돌릴 수 없어요.';
+
+  @override
+  String get guildKickCoinsNote => '내보낸 길드원의 길드 코인과 기여도는 사라지고 되돌릴 수 없어요.';
+
+  @override
+  String get guildReport => '길드 신고';
+
+  @override
+  String get guildReportBody => '이 길드의 이름이나 소개가 부적절하면 운영자에게 알려 주세요. 확인 후 조치해요.';
+
+  @override
+  String get guildReported => '신고했어요. 운영자가 확인할게요';
+
+  @override
+  String get guildDeputyCanAccept => '부길드장 가입 수락 허용';
+
+  @override
+  String get guildSwitchOn => '켜짐';
+
+  @override
+  String get guildSwitchOff => '꺼짐';
+
+  @override
+  String get guildRankRookie => '새내기';
+
+  @override
+  String get guildRankWorker => '일꾼';
+
+  @override
+  String get guildRankElite => '정예';
+
+  @override
+  String get guildRankElder => '원로';
+
+  @override
+  String guildMyRank(String rank, String points) {
+    return '내 등급 $rank · 기여도 $points';
+  }
+
+  @override
+  String guildRankNext(String rank, String left) {
+    return '$rank까지 $left 남음';
+  }
+
+  @override
+  String get guildRankMax => '최고 등급이에요';
+
+  @override
+  String get guildPermsTitle => '직책별 권한';
+
+  @override
+  String get guildPermAccept => '가입 신청 수락·거절';
+
+  @override
+  String get guildPermKick => '추방';
+
+  @override
+  String get guildPermSettings => '공지·소개·가입 방식';
+
+  @override
+  String get guildPermSkills => '길드 스킬 찍기·초기화';
+
+  @override
+  String get guildPermRoles => '직책 임명·위임';
+
+  @override
+  String guildPermDeputyNote(String state) {
+    return '부길드장의 가입 수락은 길드장이 허용했을 때만 할 수 있어요(지금: $state).';
+  }
+
+  @override
+  String get guildPermRanksNote =>
+      '멤버 등급은 이 길드에서 번 코인(기여도)으로 자동으로 올라요. 표시만 하고 혜택·권한은 없어요. 길드를 나가면 기여도와 함께 사라져요.';
 }
