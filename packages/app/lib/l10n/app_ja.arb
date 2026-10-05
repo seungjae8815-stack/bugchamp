@@ -1180,7 +1180,7 @@
   "giftDoubleCapTitle": "本日の無料2倍は受け取り済み",
   "giftDoubleCapBody": "パスがあればすべてのギフトがずっと2倍、\n受け取りも自動です。",
   "exchangeTitle": "交換所",
-  "exchangeHint": "ゼリーを現在ステージの放置1時間分に交換します",
+  "exchangeHint": "ゼリーを今の能力で1時間狩りをした分に交換します",
   "exchangeToGold": "ゴールドへ",
   "exchangeToMaterial": "素材へ",
   "exchangeCost": "ゼリー{n}",

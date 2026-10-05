@@ -84,3 +84,96 @@ double? displayCombatPower(SaveGame save, GameData? data, DateTime now) {
   if (data?.runConfig == null) return null;
   return combatPower(displayStatsOf(save, data!, now));
 }
+
+/// 사냥 능력치 — 플레이 화면의 실제 능력치에서 **버프·지속형 액티브만 뺀** 값(치명 상한 전).
+///
+/// 펫 → 장비 → 종 패시브 → 스킬 패시브 → 동행 요정 → 길드 → 도감 순으로 얹는다. 플레이 화면(`_stats`)이
+/// 이 위에 버프·액티브를 얹고 치명 상한을 씌운다 — 층을 두 벌로 들면 교환소가 화면 사냥과 어긋난다.
+CharacterStats huntStatsUncapped(
+  SaveGame save,
+  GameData data,
+  DateTime now, {
+  required Map<String, double> guildBonus,
+}) {
+  final config = data.runConfig!;
+  var s = displayStatsOf(save, data, now);
+  s = applySpeciesPassives(
+    s,
+    speciesPassivesOf(save, data, now),
+    critBudget: config.critBudgetOther,
+  );
+  final skills = data.skillConfig;
+  if (skills != null && save.equippedSkills.isNotEmpty) {
+    s = applySkillPassives(
+      s,
+      skills,
+      levels: save.skillLevels,
+      equipped: save.equippedSkills,
+      petCount: save.equippedBugIds.length,
+      critBudget: config.critBudgetOther,
+    );
+  }
+  final fairy = data.fairyConfig;
+  s = applyFairyStats(
+    s,
+    fairy == null ? const {} : fairyCompanionBonus(save.fairy, fairy),
+  );
+  s = applyGuildStats(s, guildBonus);
+  final dex = data.dexConfig;
+  if (dex != null) {
+    s = dex.apply(
+      s,
+      save.dexDiscovered,
+      save.dexConqueredWith(dex.conquerLevel),
+    );
+  }
+  return s;
+}
+
+/// [huntStatsUncapped] 에 치명 상한까지 씌운 값 — 교환소가 쓴다.
+CharacterStats huntStatsOf(
+  SaveGame save,
+  GameData data,
+  DateTime now, {
+  required Map<String, double> guildBonus,
+}) => capCritChance(
+  huntStatsUncapped(save, data, now, guildBonus: guildBonus),
+  data.runConfig!.critChanceMax,
+);
+
+/// 장착 펫들의 **종 고유 패시브** 합산(§2.1). 적응형 기준 밖이라 [permanentStatsOf] 에 넣지 않는다.
+Map<UpgradeKind, double> speciesPassivesOf(
+  SaveGame save,
+  GameData data,
+  DateTime now,
+) {
+  final cfg = data.petConfig;
+  if (cfg == null || save.equippedBugIds.isEmpty) return const {};
+  final pets = <PetStat>[];
+  for (final id in save.equippedBugIds) {
+    IndividualBug? bug;
+    for (final b in save.bugs) {
+      if (b.id == id) {
+        bug = b;
+        break;
+      }
+    }
+    if (bug == null) continue;
+    final sp = data.speciesById[bug.speciesId];
+    if (sp == null) continue;
+    pets.add(
+      petStatOf(
+        bug,
+        sp,
+        cfg,
+        now,
+        trainMult: trainPetMult(
+          save,
+          bug.id,
+          (data.battleConfig ?? const BattleConfig()).training,
+        ),
+      ),
+    );
+  }
+  return computePetBonus(pets, cfg).passives;
+}

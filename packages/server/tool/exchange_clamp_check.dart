@@ -1,9 +1,10 @@
-// 젤리 → 골드 교환소가 서버 골드 상한(mergeSave)에 잘리는지 잰다(2026-09-28).
+// 젤리 → 골드 교환소가 서버 골드 상한(mergeSave)에 잘리는지 잰다(2026-09-28, 10-05 새 교환량).
 //
 // 교환은 기기에서 바로 골드를 준다(교환 1회 = 그 자리 1시간치 골드). 서버는 60초 업로드마다
 // "그 사이 벌 수 있는 골드"로 상한을 걸어 넘으면 자른다 — 젤리를 내고 받은 골드가 잘리면 그대로 손해다.
 //
 // 실행: cd packages\server ; dart run tool/exchange_clamp_check.dart
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:server/src/actions.dart';
@@ -29,15 +30,30 @@ Future<void> main() async {
           bestStage: stage,
           upgradeLevels: {for (final k in UpgradeKind.values) k: lv},
           gold: 1000,
+          materials: {MaterialKind.jelly: 1000},
         );
-        final perTrade =
-            (rewardGold(run, stage, 1.0, tier: tier) *
-                    run.exchangeKillsPerHour *
-                    run.exchangeGoldHours)
-                .round();
+        // 교환 1회 = 그 능력치로 직접 사냥한 1시간치(exchangeOutput, 2026-10-05). 강화만으로 잰다.
+        final perTrade = exchangeOutput(
+          run,
+          stats: deriveStats(
+            run,
+            upgradeLevels: stored.upgradeLevels,
+            characterLevel: stored.level,
+            bugsCollected: stored.bugs.length,
+          ),
+          stage: stage,
+          trades: 1,
+          tier: tier,
+        ).gold;
         var pass = 0;
         for (var n = 1; n <= 10; n++) {
-          final client = stored.copyWith(gold: stored.gold + perTrade * n);
+          // 교환한 만큼 젤리가 줄어 있어야 서버가 교환으로 인정한다.
+          final client = stored.copyWith(
+            gold: stored.gold + perTrade * n,
+            materials: {
+              MaterialKind.jelly: 1000 - n * run.exchangeJellyPerTrade,
+            },
+          );
           final r = actions.mergeSave(stored, client.toJson());
           if (r.extra['clamped'] == true) break;
           pass = n;

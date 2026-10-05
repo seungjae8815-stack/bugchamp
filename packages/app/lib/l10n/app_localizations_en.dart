@@ -3486,7 +3486,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exchangeHint =>
-      'Trade jelly for one hour of idle output at your stage';
+      'Trade jelly for one hour of hunting at your current power';
 
   @override
   String get exchangeToGold => 'To gold';

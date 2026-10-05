@@ -6049,7 +6049,7 @@ abstract class AppLocalizations {
   /// No description provided for @exchangeHint.
   ///
   /// In en, this message translates to:
-  /// **'Trade jelly for one hour of idle output at your stage'**
+  /// **'Trade jelly for one hour of hunting at your current power'**
   String get exchangeHint;
 
   /// No description provided for @exchangeToGold.

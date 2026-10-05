@@ -695,10 +695,11 @@ class RunConfig {
 
   UpgradeSpec upgrade(UpgradeKind kind) => upgrades[kind]!;
 
-  /// 교환소 — 젤리 [exchangeJellyPerTrade] 개당 방치 몇 시간치를 주는가.
+  /// 교환소 — 젤리 [exchangeJellyPerTrade] 개당 **직접 사냥** 몇 시간치를 주는가([exchangeOutput]).
   ///
-  /// 지급량을 현재 스테이지 산출에 비례시키는 이유: 정액이면 후반엔 껌값이라
+  /// 지급량을 그 유저의 사냥 산출에 비례시키는 이유: 정액이면 후반엔 껌값이라
   /// 아무도 안 쓴다. 정작 젤리가 남아도는 시점이 후반이다.
+  /// [exchangeKillsPerHour] 는 이제 교환소가 아니라 사냥터 클리어 보상·선물 골드가 쓴다.
   final int exchangeJellyPerTrade;
   final double exchangeGoldHours;
   final double exchangeMaterialHours;

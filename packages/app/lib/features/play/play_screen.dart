@@ -1197,42 +1197,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
-  /// 장착 펫들의 **종 고유 패시브** 합산(§2.1).
-  ///
-  /// `_petStats` 안이 아니라 밖에서 쓰는 이유는 `_stats` 주석 참조.
-  Map<UpgradeKind, double> _speciesPassives(SaveGame save) {
-    final cfg = _data.petConfig;
-    if (cfg == null || save.equippedBugIds.isEmpty) return const {};
-    final now = _clock.now().toUtc();
-    final pets = <PetStat>[];
-    for (final id in save.equippedBugIds) {
-      IndividualBug? bug;
-      for (final b in save.bugs) {
-        if (b.id == id) {
-          bug = b;
-          break;
-        }
-      }
-      if (bug == null) continue;
-      final sp = _data.speciesById[bug.speciesId];
-      if (sp == null) continue;
-      pets.add(
-        petStatOf(
-          bug,
-          sp,
-          cfg,
-          now,
-          trainMult: trainPetMult(
-            save,
-            bug.id,
-            (_data.battleConfig ?? const BattleConfig()).training,
-          ),
-        ),
-      );
-    }
-    return computePetBonus(pets, cfg).passives;
-  }
-
   /// 펫 + **종 패시브 + 도감 + 장비** + 활성 버프까지 반영한 유효 능력치
   /// — 전투/보상 계산에 사용.
   ///
@@ -1246,41 +1210,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ///    의미가 통째로 사라진다(= 종 패시브를 만든 이유가 무너진다).
   ///  - 도감을 기준에 넣으면 채울수록 몬스터도 세져서 모을 이유가 없어진다.
   CharacterStats _stats(SaveGame save) {
-    var s = applyEquipment(
-      _petStats(save),
-      equipmentBonus(save.equippedItems.values, _data.itemConfig),
-      critBudget: _config.critBudgetGear,
+    // 버프 아래 층(펫·장비·종 패시브·스킬 패시브·요정·길드·도감)은 교환소와 같은 함수다.
+    var s = huntStatsUncapped(
+      save,
+      _data,
+      _clock.now().toUtc(),
+      guildBonus: ref.read(guildBonusProvider),
     );
-    s = applySpeciesPassives(
-      s,
-      _speciesPassives(save),
-      critBudget: _config.critBudgetOther,
-    );
-    // 스킬 패시브(§2.8)도 **기준 밖** — 끼는 순간 몬스터가 같이 세지면 스킬을
-    // 고르는 의미가 사라진다. 종 패시브와 같은 가산 층이다.
-    final skills = _data.skillConfig;
-    if (skills != null && save.equippedSkills.isNotEmpty) {
-      s = applySkillPassives(
-        s,
-        skills,
-        levels: save.skillLevels,
-        equipped: save.equippedSkills,
-        petCount: save.equippedBugIds.length,
-        critBudget: _config.critBudgetOther,
-      );
-    }
-    // 동행 요정(1.0.15)도 **기준 밖** — 스킬 패시브와 같은 층이다(design_fairy.md §1.1).
-    s = applyFairyStats(s, _fairyBonus(save));
-    // 길드 버프(1.0.15)도 **기준 밖**(§7) — 들어가면 길드가 강할수록 몬스터도 세져 의미가 없다.
-    s = applyGuildStats(s, ref.read(guildBonusProvider));
-    final dex = _data.dexConfig;
-    if (dex != null) {
-      s = dex.apply(
-        s,
-        save.dexDiscovered,
-        save.dexConqueredWith(dex.conquerLevel),
-      );
-    }
     s = applyBuffs(s, save.activeBuffs(_clock.now().toUtc()), _data.buffConfig);
     // 지속형 액티브(질풍 채집·유인 수액) — 버프와 같은 층(기준 밖).
     final gale =

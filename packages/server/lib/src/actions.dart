@@ -1081,9 +1081,21 @@ class GameActions {
       // 심연 층 골드는 층마다 자란다 — 빼면 심연 유저의 정당한 수입이 잘린다.
       abyssFloor: abyss.inAbyss ? abyss.floor : 0,
     ).gold;
+    // 교환소(젤리 → 골드·재료) — 이번 업로드에서 **줄어든 젤리**만큼 교환을 인정한다(2026-10-05).
+    // 교환 1회가 "직접 사냥 1시간치"라 60초 봉투로는 바로 잘린다. 젤리 감소는 위조로 늘릴 수 없는 값이다
+    // (줄이면 그만큼 젤리를 잃는다). 같은 봉투(넉넉한 효율·공격)로 재서 펫·장비 배율이 빠진 것을 덮는다.
+    final exchange = _exchangeAllowance(
+      stored,
+      clientJson,
+      stats: stats,
+      stage: envStage,
+      tier: envTier,
+      abyssFloor: abyss.inAbyss ? abyss.floor : 0,
+    );
     final maxGain =
         _goldSanityFloor +
         generous +
+        exchange.gold +
         _chapterGrantAllowance(stored, clientJson) +
         _dexGoldAllowance(stored, clientJson);
 
@@ -1145,8 +1157,9 @@ class GameActions {
         final client =
             (mats[k.key] as num?)?.toInt() ?? stored.materialCount(k);
         final have = stored.materialCount(k);
-        if (client - have > _materialSanityFloor) {
-          mats[k.key] = have + _materialSanityFloor;
+        final allow = _materialSanityFloor + exchange.materialsEach;
+        if (client - have > allow) {
+          mats[k.key] = have + allow;
           clampReasons.add('material:${k.key}');
         }
       }
@@ -1277,6 +1290,35 @@ class GameActions {
         // 앱이 "시즌 종료" 다이얼로그를 그대로 띄울 수 있게 내역을 실어준다.
         if (settled.report != null) 'seasonReport': settled.report,
       },
+    );
+  }
+
+  /// 교환소 허용치 — 저장본보다 줄어든 젤리 ÷ 교환 1회 젤리 = 교환 횟수로 보고, 골드·재료 각각
+  /// 그 횟수만큼의 [exchangeOutput] 을 넉넉한 봉투로 잰다. 젤리를 다른 데 쓴 것도 교환으로 세지만
+  /// (넉넉한 쪽으로 틀린다), 그만큼 젤리를 실제로 잃어야 하므로 위조 통로가 되지 않는다.
+  ({int gold, int materialsEach}) _exchangeAllowance(
+    SaveGame stored,
+    Map<String, dynamic> clientJson, {
+    required CharacterStats stats,
+    required int stage,
+    required int tier,
+    required int abyssFloor,
+  }) {
+    final per = config.run.exchangeJellyPerTrade;
+    final mats = clientJson['materials'];
+    if (per <= 0 || mats is! Map) return (gold: 0, materialsEach: 0);
+    final storedJelly = stored.materialCount(MaterialKind.jelly);
+    final clientJelly = (mats['jelly'] as num?)?.toInt() ?? storedJelly;
+    final trades = (storedJelly - clientJelly) ~/ per;
+    if (trades <= 0) return (gold: 0, materialsEach: 0);
+    return exchangeOutput(
+      config.run,
+      stats: stats,
+      stage: stage,
+      trades: trades,
+      tier: tier,
+      abyssFloor: abyssFloor,
+      efficiency: _saveBoundEfficiency,
     );
   }
 

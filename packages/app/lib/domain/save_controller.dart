@@ -21,6 +21,7 @@ import '../data/game_data.dart';
 import '../data/save_repository.dart';
 import 'bug_auto_filter.dart';
 import 'gather_service.dart';
+import 'combat_power.dart';
 import 'guild_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
@@ -2280,36 +2281,26 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final cost = cfg.exchangeJellyPerTrade * trades;
     if (s.materialCount(MaterialKind.jelly) < cost) return null;
 
-    // 현재 스테이지의 처치 1회 산출 × 시간당 처치 수 × 시간.
-    final depth = s.stageNumber;
-    final kills = cfg.exchangeKillsPerHour;
-    // ⚠️ **회차를 넘긴다.** 안 넘기면 `rewardGold` 의 기본값(tier 0)으로 계산돼
-    // 어느 난이도에서나 **쉬움 골드**가 나왔다(2026-09-18 발견 — 사장님 지적
-    // "젤리 대비 너무 적게 준다"의 원인). 난이도별 골드 표는 회차마다 규모가
-    // 수십~수천 배 달라서, 극한에서는 제 값의 1/2000 을 주고 있었다.
-    final gold = wantGold
-        ? (rewardGold(
-                    cfg,
-                    depth,
-                    1.0,
-                    tier: s.difficultyTier,
-                    abyssFloor: activeAbyssFloor(s),
-                  ) *
-                  kills *
-                  cfg.exchangeGoldHours *
-                  trades)
-              .round()
-        : 0;
-    // 재료는 3종을 고루 준다 — 한 종만 주면 부족한 종을 노려 반복 교환하게 된다.
-    final matEach = wantGold
-        ? 0
-        : (materialAmountMult(cfg, depth) *
-                  kills *
-                  cfg.exchangeMaterialHours *
-                  trades /
-                  3)
-              .round();
-    return (gold: gold, materials: matEach);
+    // 교환 1회 = 이 유저가 지금 자리에서 **직접 사냥한** 1시간치(버프·접속 보너스 제외, exchangeOutput).
+    // ⚠️ 회차·심연 층을 넘긴다 — 안 넘기면 어느 난이도에서나 쉬움 골드가 나왔다(2026-09-18).
+    final data = ref.read(gameDataProvider).requireValue;
+    final out = exchangeOutput(
+      cfg,
+      stats: huntStatsOf(
+        s,
+        data,
+        ref.read(clockProvider).now().toUtc(),
+        guildBonus: ref.read(guildBonusProvider),
+      ),
+      stage: s.stageNumber,
+      trades: trades,
+      tier: s.difficultyTier,
+      abyssFloor: activeAbyssFloor(s),
+    );
+    return (
+      gold: wantGold ? out.gold : 0,
+      materials: wantGold ? 0 : out.materialsEach,
+    );
   }
 
   /// 교환소 오늘 남은 가루(하루 상한이 없으면 null).
