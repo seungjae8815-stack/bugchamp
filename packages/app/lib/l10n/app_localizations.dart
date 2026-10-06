@@ -808,6 +808,24 @@ abstract class AppLocalizations {
   /// **'{days} days left'**
   String storePassLeft(int days);
 
+  /// No description provided for @storePurchased.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchased'**
+  String get storePurchased;
+
+  /// No description provided for @storeWeeklyDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done this week'**
+  String get storeWeeklyDone;
+
+  /// No description provided for @storeWeeklyNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Available again next Monday at 09:00 (KST)'**
+  String get storeWeeklyNext;
+
   /// No description provided for @biomeForest.
   ///
   /// In en, this message translates to:
@@ -9365,6 +9383,84 @@ abstract class AppLocalizations {
   /// **'{dust} fairy dust returned'**
   String fairyMergeRefund(String dust);
 
+  /// No description provided for @fairyReleaseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick fairies and eggs to release. They turn into fairy dust (cannot be undone).'**
+  String get fairyReleaseHint;
+
+  /// No description provided for @fairyReleasePicked.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} picked'**
+  String fairyReleasePicked(String n);
+
+  /// No description provided for @fairyReleaseAllOf.
+  ///
+  /// In en, this message translates to:
+  /// **'All {grade} ({n})'**
+  String fairyReleaseAllOf(String grade, String n);
+
+  /// No description provided for @fairyReleaseEquipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Your companion fairy cannot be released'**
+  String get fairyReleaseEquipped;
+
+  /// No description provided for @fairyReleaseBulkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Release {n} for {dust} fairy dust? This cannot be undone.'**
+  String fairyReleaseBulkConfirm(String n, String dust);
+
+  /// No description provided for @fairyReleaseValuableNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes {n} leveled or Legendary+ fairies.'**
+  String fairyReleaseValuableNote(String n);
+
+  /// No description provided for @fairyReleaseDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy dust +{dust}'**
+  String fairyReleaseDone(String dust);
+
+  /// No description provided for @fairyAutoReleaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-release eggs'**
+  String get fairyAutoReleaseTitle;
+
+  /// No description provided for @fairyAutoReleaseOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get fairyAutoReleaseOff;
+
+  /// No description provided for @fairyAutoReleaseUpTo.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} & below'**
+  String fairyAutoReleaseUpTo(String grade);
+
+  /// No description provided for @fairyAutoReleaseHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'New eggs at or below this grade turn into fairy dust instead of entering the box. Eggs bought in the guild shop are kept.'**
+  String get fairyAutoReleaseHelp;
+
+  /// No description provided for @fairyAutoReleasePop.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg auto-released · Fairy dust +{dust}'**
+  String fairyAutoReleasePop(String dust);
+
+  /// No description provided for @fairyAutoReleaseToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-released {n} eggs for {dust} fairy dust'**
+  String fairyAutoReleaseToast(String n, String dust);
+
   /// No description provided for @exchangeDustLeft.
   ///
   /// In en, this message translates to:
@@ -9970,6 +10066,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Member ranks rise automatically with the coins you earn in this guild (contribution). They are for display only, with no perks or permissions. Leaving the guild resets your contribution.'**
   String get guildPermRanksNote;
+
+  /// No description provided for @guildRecruitingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recruiting guilds'**
+  String get guildRecruitingTitle;
+
+  /// No description provided for @guildSearchResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search results'**
+  String get guildSearchResultTitle;
+
+  /// No description provided for @guildRecruitingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No guilds are recruiting right now — why not create your own?'**
+  String get guildRecruitingEmpty;
+
+  /// No description provided for @guildAttendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance card'**
+  String get guildAttendTitle;
+
+  /// No description provided for @guildAttendNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Each day you check in fills one box (missed days don\'t reset it). After all {cycle} boxes it starts over from Day 1. Changing guilds starts a new card.'**
+  String guildAttendNote(int cycle);
+
+  /// No description provided for @guildAttendDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day}'**
+  String guildAttendDay(int day);
+
+  /// No description provided for @guildAttendProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} / {cycle}'**
+  String guildAttendProgress(int n, int cycle);
+
+  /// No description provided for @guildAttendDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Every day: {coins} coins · {exp} guild EXP'**
+  String guildAttendDaily(int coins, int exp);
+
+  /// No description provided for @guildAttendBigNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Big reward every 7th day (coins · fossils · fairy dust)'**
+  String get guildAttendBigNote;
+
+  /// No description provided for @guildAttendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in today'**
+  String get guildAttendButton;
+
+  /// No description provided for @guildAttendDoneToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked in today — see you tomorrow'**
+  String get guildAttendDoneToday;
+
+  /// No description provided for @guildAttendGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} checked in!'**
+  String guildAttendGot(int day);
+
+  /// No description provided for @guildMemberContribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribution {n}'**
+  String guildMemberContribution(String n);
+
+  /// No description provided for @guildMemberLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Character Lv {lv}'**
+  String guildMemberLevel(int lv);
+
+  /// No description provided for @guildMemberPets.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped bugs'**
+  String get guildMemberPets;
+
+  /// No description provided for @guildMemberTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel defense team'**
+  String get guildMemberTeam;
+
+  /// No description provided for @guildMemberEquip.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get guildMemberEquip;
+
+  /// No description provided for @guildMemberFairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Companion fairy'**
+  String get guildMemberFairy;
+
+  /// No description provided for @guildMemberSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped skills'**
+  String get guildMemberSkills;
+
+  /// No description provided for @guildMemberNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get guildMemberNone;
+
+  /// No description provided for @guildMemberNoSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this member\'s details'**
+  String get guildMemberNoSave;
+
+  /// No description provided for @guildMemberFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load member info'**
+  String get guildMemberFailed;
+
+  /// No description provided for @guildMissionOwnerTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Leader'**
+  String get guildMissionOwnerTag;
+
+  /// No description provided for @guildMissionTeamTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members on this mission'**
+  String get guildMissionTeamTitle;
+
+  /// No description provided for @guildMissionRewardSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success reward'**
+  String get guildMissionRewardSuccess;
+
+  /// No description provided for @guildMissionExpShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild EXP {n}'**
+  String guildMissionExpShort(int n);
+
+  /// No description provided for @guildMissionEggChance.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy egg {pct}%'**
+  String guildMissionEggChance(String pct);
+
+  /// No description provided for @guildMissionFailRule.
+  ///
+  /// In en, this message translates to:
+  /// **'If it fails: reward × progress × {pct}%'**
+  String guildMissionFailRule(int pct);
+
+  /// No description provided for @guildMissionHelperRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Helpers: {pct}% of materials/fossils (by their own zone) + {coins} coins'**
+  String guildMissionHelperRule(int pct, int coins);
+
+  /// No description provided for @guildMissionWaitPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait {min} min'**
+  String guildMissionWaitPick(int min);
+
+  /// No description provided for @chatTabAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get chatTabAll;
+
+  /// No description provided for @chatTabGuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Guild'**
+  String get chatTabGuild;
 }
 
 class _AppLocalizationsDelegate

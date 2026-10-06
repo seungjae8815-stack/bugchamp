@@ -70,4 +70,26 @@ void main() {
     expect(guildWeekKey(DateTime.utc(2026, 10, 4, 23, 59)), '2026-09-28'); // 일
     expect(guildWeekKey(DateTime.utc(2026, 10, 11, 12)), '2026-10-05');
   });
+
+  test('출석 표 — 35칸 순환 · 7일차마다 큰 보상(젤리 없음)', () {
+    final a = cfg.attend;
+    expect(a.cycleDays, 35);
+    expect(a.dayOf(0), 0);
+    expect(a.nextDay(0), 1);
+    expect(a.dayOf(1), 1);
+    expect(a.dayOf(35), 35);
+    expect(a.nextDay(35), 1, reason: '다 채우면 1일차로');
+    expect(a.dayOf(36), 1);
+    expect(a.dayOf(70), 35);
+    expect([for (final b in a.bonuses) b.day], [7, 14, 21, 28, 35]);
+    final table = a.bonusCoinsTable();
+    expect(table, hasLength(35));
+    expect(table[6], a.bonusOn(7)!.coins);
+    expect(table[0], 0);
+    expect(a.bonusOn(35)!.hasItems, isTrue);
+    expect(a.bonusOn(3), isNull);
+    // 큰 보상은 갈수록 크다(코인).
+    final coins = [for (final b in a.bonuses) b.coins];
+    expect(coins, orderedEquals([...coins]..sort()));
+  });
 }

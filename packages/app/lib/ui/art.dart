@@ -24,6 +24,12 @@ Widget gameImage(
   required Widget fallback,
   BoxFit fit = BoxFit.contain,
 }) {
+  // 번들에 없는 파일은 **시도하지 않는다**(2026-10-06 Crashlytics `Unable to load asset:
+  // assets/images/fx/gatherer_hand_3.webp`). errorBuilder 가 있어도, 읽기가 실패하기 전에 위젯이
+  // 다른 경로로 바뀌면(스킬 효과는 0.2초마다 프레임이 바뀐다) 그 스트림엔 듣는 쪽이 없어
+  // 오류가 FlutterError 로 올라가고, 우리 설정(recordFlutterFatalError)이 그걸 크래시로 적었다.
+  final known = _assets;
+  if (known != null && !known.contains(assetPath)) return fallback;
   return Image.asset(
     assetPath,
     width: width,

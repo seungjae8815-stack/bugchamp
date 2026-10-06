@@ -202,3 +202,71 @@ DateTime guildWeekStart(DateTime utc) {
   final day = DateTime.utc(t.year, t.month, t.day);
   return day.subtract(Duration(days: day.weekday - DateTime.monday));
 }
+
+/// 출석 표의 큰 보상 한 칸(`guild.json → donate.bonuses`). [day] 일차에 기본 출석 보상(코인·길드 경험치)
+/// **위에** 더 준다. 화석·요정 가루는 서버가 서버 세이브에 넣는다(앱이 더하면 업로드 상한에 잘린다).
+/// ❌ 젤리는 없다 — 35일마다 계속 도는 통로다(§2.6 젤리 수도꼭지 규칙).
+@immutable
+class GuildAttendBonus {
+  const GuildAttendBonus({
+    required this.day,
+    this.coins = 0,
+    this.fossil = 0,
+    this.fairyDust = 0,
+  });
+
+  final int day;
+  final int coins;
+  final int fossil;
+  final int fairyDust;
+
+  /// 세이브에 넣을 것이 있나(화석·가루). 코인만이면 서버 세이브를 건드리지 않는다.
+  bool get hasItems => fossil > 0 || fairyDust > 0;
+
+  factory GuildAttendBonus.fromJson(Map<String, dynamic> j) => GuildAttendBonus(
+    day: (j['day'] as num?)?.toInt() ?? 0,
+    coins: (j['coins'] as num?)?.toInt() ?? 0,
+    fossil: (j['fossil'] as num?)?.toInt() ?? 0,
+    fairyDust: (j['fairyDust'] as num?)?.toInt() ?? 0,
+  );
+}
+
+/// 길드 출석 표(2026-10-05 사장님 확정) — [cycleDays] 칸(7일 × 5줄)을 **출석한 날만** 한 칸씩 채운다.
+/// 연속이 아니다(빠져도 이어서). 다 채우면 다음 출석은 1일차로 돌아간다.
+/// 출석 횟수는 서버 소유(`guild_members.attend_count`)라 **길드를 옮기면(탈퇴·추방) 처음부터**다.
+/// 앱(달력 표시)과 서버(지급)가 같은 함수를 본다.
+@immutable
+class GuildAttendConfig {
+  const GuildAttendConfig({this.cycleDays = 35, this.bonuses = const []});
+
+  final int cycleDays;
+  final List<GuildAttendBonus> bonuses;
+
+  int get _cycle => cycleDays < 1 ? 1 : cycleDays;
+
+  /// [count] 번째 출석이 몇 일차인가(1~[cycleDays]). 0 이면 0.
+  int dayOf(int count) => count <= 0 ? 0 : ((count - 1) % _cycle) + 1;
+
+  /// 다음 출석이 몇 일차인가 — 표를 다 채웠으면 1.
+  int nextDay(int count) => count <= 0 ? 1 : (count % _cycle) + 1;
+
+  /// 그 일차의 큰 보상(없으면 null).
+  GuildAttendBonus? bonusOn(int day) =>
+      bonuses.where((b) => b.day == day).firstOrNull;
+
+  /// 일차별 보너스 코인(인덱스 0 = 1일차) — 서버가 출석 RPC 에 넘겨 코인을 **한 번에** 더한다.
+  List<int> bonusCoinsTable() => [
+    for (var d = 1; d <= _cycle; d++) bonusOn(d)?.coins ?? 0,
+  ];
+
+  factory GuildAttendConfig.fromJson(Map<String, dynamic>? j) {
+    if (j == null) return const GuildAttendConfig();
+    return GuildAttendConfig(
+      cycleDays: (j['cycleDays'] as num?)?.toInt() ?? 35,
+      bonuses: [
+        for (final x in (j['bonuses'] as List? ?? const []))
+          GuildAttendBonus.fromJson(x as Map<String, dynamic>),
+      ].where((b) => b.day >= 1).toList(),
+    );
+  }
+}

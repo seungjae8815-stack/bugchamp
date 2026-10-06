@@ -97,6 +97,8 @@ class GuildActions {
       // 출석은 유저 기준(길드를 옮겨도 같은 날 한 번) — 멤버 행에 없으면 유저 기록도 본다.
       'donatedToday':
           mine.donateDay == day || await store.donateDayOf(userId) == day,
+      // 출석 표(35칸) — 이 길드에서 출석한 날 수. 달력은 앱이 같은 규칙(GuildAttendConfig)으로 그린다.
+      'attendCount': mine.attendCount,
       'shop': [
         for (final it in config.shop)
           {...it.toJson(), 'bought': bought[it.id] ?? 0},
@@ -115,7 +117,7 @@ class GuildActions {
     String query = '',
   }) async {
     final q = query.trim();
-    final rows = await store.listGuilds(
+    var rows = await store.listGuilds(
       userId: userId,
       lang: lang,
       query: q.length > config.nameMaxLength
@@ -123,6 +125,14 @@ class GuildActions {
           : q,
       limit: config.listLimit,
     );
+    // 검색어가 없으면 "모집 중" 목록 — 자리가 남은 길드만(2026-10-05). SQL `guild_list` 도 같은 조건으로
+    // 거르지만(⑩) 옛 RPC·메모리 저장소에서도 같게 한 번 더. 가입 방식(공개·승인제)은 둘 다 들어갈 수 있다.
+    // 검색할 때는 꽉 찬 길드도 보인다(이름을 찾는 중이다).
+    if (q.isEmpty)
+      rows = [
+        for (final g in rows)
+          if (!g.full) g,
+      ];
     return _ok({
       'guilds': [for (final g in rows) g.toApi()],
       'requested': await store.requestedGuildsOf(userId),
@@ -396,19 +406,80 @@ class GuildActions {
     return g.copyWith(level: lv, maxMembers: cap);
   }
 
-  /// 하루 한 번 출석(무료) — 내 코인 + 길드 경험치.
-  Future<GuildResult> donate(String userId) async {
+  /// 하루 한 번 출석(무료) — 내 코인 + 길드 경험치 + 출석 표 한 칸(2026-10-05).
+  ///
+  /// 출석 표 7·14·21·28·35일차는 큰 보상(코인 + 화석·요정 가루, 젤리 없음). 코인은 출석 RPC 가 기본과
+  /// **한 번에** 더하고, 화석·가루는 [deliver](라우트가 서버 세이브에 넣고 저장)로 준다. [deliver] 가
+  /// 실패하면 **출석을 되돌리고**(횟수·코인·그날 기록) 오류를 다시 던진다 — 상점·수령과 같은 순서.
+  /// 응답 = `/guild/me` 모양 + `attend`(이번 일차·받은 것).
+  Future<GuildResult> donate(
+    String userId, {
+    Future<void> Function(GuildAttendBonus bonus)? deliver,
+  }) async {
     final mine = await store.membershipOf(userId);
     if (mine == null) return _err('not_in_guild');
     final day = guildDayKey(
       now().toUtc(),
       anchorHour: config.mission.dayAnchorHourKst,
     );
-    if (!await store.donate(userId, day, config.donateCoins)) {
-      return _err('already_donated');
+    final a = config.attend;
+    final n = await store.donate(
+      userId,
+      day,
+      config.donateCoins,
+      a.bonusCoinsTable(),
+    );
+    if (n <= 0) return _err('already_donated');
+    final dayNo = a.dayOf(n);
+    final bonus = a.bonusOn(dayNo);
+    final coins = config.donateCoins + (bonus?.coins ?? 0);
+    if (bonus != null && bonus.hasItems && deliver != null) {
+      try {
+        await deliver(bonus);
+      } catch (_) {
+        await guildUndo(
+          'donate',
+          () => store.undoDonate(userId: userId, day: day, coins: coins),
+        );
+        rethrow;
+      }
     }
     await addExp(mine.guildId, config.donateExp);
-    return me(userId);
+    final (st, body) = await me(userId);
+    return (
+      st,
+      {
+        ...body,
+        'attend': {
+          'day': dayNo,
+          'coins': coins,
+          'fossil': bonus?.fossil ?? 0,
+          'fairyDust': bonus?.fairyDust ?? 0,
+        },
+      },
+    );
+  }
+
+  /// 길드원 한 명의 정보(멤버 탭에서 줄을 누를 때) — **같은 길드만**(다른 길드·길드 없음 = 403).
+  /// 여기서는 권한과 멤버 줄(직책·기여도·등급·전투력)만 본다. 세이브 요약은 라우트가 붙인다.
+  Future<GuildResult> member(String actorId, String targetId) async {
+    final actor = await store.membershipOf(actorId);
+    if (actor == null) return _err('not_in_guild');
+    final target = await store.membershipOf(targetId);
+    if (target == null || target.guildId != actor.guildId) {
+      return _err('forbidden', 403);
+    }
+    final row =
+        (await store.members(
+          actor.guildId,
+        )).where((m) => m.userId == targetId).firstOrNull ??
+        target;
+    return _ok({
+      'member': {
+        ...row.toApi(),
+        'rank': guildMemberRank(config.memberRanks, row.contribution).rank.id,
+      },
+    });
   }
 
   /// 스킬 한 단계 올리기(**길드장만**). 포인트 = (레벨 − 1).

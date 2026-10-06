@@ -22,6 +22,7 @@ import '../chat/chat_screen.dart';
 import 'guild_art.dart';
 import 'guild_boss_tab.dart';
 import 'guild_growth.dart';
+import 'guild_member_sheet.dart';
 import 'guild_rank.dart';
 import 'guild_war_tab.dart';
 import 'guild_mission_tab.dart';
@@ -366,6 +367,12 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
   List<String> _requested = const [];
   bool _busy = false;
 
+  /// 마지막 조회가 실패했나 — 빈 목록("모집 중인 길드가 없어요")과 구분해 다시 시도를 보인다.
+  bool _failed = false;
+
+  /// 지금 목록이 어떤 검색어로 받은 것인가(빈 문자열 = 모집 중 목록).
+  String _shownQuery = '';
+
   String get _lang => Localizations.localeOf(context).languageCode;
 
   @override
@@ -383,11 +390,14 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
   }
 
   Future<void> _search() async {
+    final q = _query.text.trim();
     final r = await ref
         .read(guildProvider.notifier)
-        .search(lang: _lang, query: _query.text);
+        .search(lang: _lang, query: q);
     if (!mounted) return;
     setState(() {
+      _failed = r == null;
+      _shownQuery = q;
       _list = r?.guilds ?? const [];
       if (r != null) _requested = r.requested;
     });
@@ -608,15 +618,46 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
             ),
           ),
         ),
+        // 들어오자마자 "모집 중" — 검색어가 없으면 서버가 자리가 남은 길드만 준다(2026-10-05).
+        if (list != null && !_failed)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 2),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                _shownQuery.isEmpty
+                    ? l.guildRecruitingTitle
+                    : l.guildSearchResultTitle,
+                key: const ValueKey('guildListTitle'),
+                style: const TextStyle(
+                  color: _honey,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
         Expanded(
           child: list == null
               ? const Center(child: CircularProgressIndicator())
+              : _failed
+              // 조회 실패를 "길드가 없어요"로 보이면 안 된다 — 다시 시도.
+              ? _Unavailable(
+                  onRetry: () {
+                    setState(() => _list = null);
+                    _search();
+                  },
+                  text: l.guildUnavailable,
+                  retry: l.guildRetry,
+                )
               : list.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      l.guildEmptyList,
+                      _shownQuery.isEmpty
+                          ? l.guildRecruitingEmpty
+                          : l.guildEmptyList,
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: _dim),
                     ),
@@ -1019,8 +1060,10 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
         final m = v.members[i - 1];
         final me = m.userId == myId;
         final canAct = !me && canActOnOthers && _outranks(v.myRole, m.role);
+        // 줄을 누르면 길드원 정보(2026-10-05). 직책·추방 메뉴는 오른쪽 ⋮ 그대로(길드장만).
         return InkWell(
-          onTap: canAct ? () => _memberActions(l, v, m, rules) : null,
+          key: ValueKey('guildMember:${m.userId}'),
+          onTap: () => showGuildMemberSheet(context, m),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -1092,7 +1135,21 @@ class _MyGuildState extends ConsumerState<_MyGuild> {
                   ),
                 ),
                 if (canAct)
-                  const Icon(Icons.more_vert_rounded, color: _dim, size: 18),
+                  IconButton(
+                    key: ValueKey('guildMemberMenu:${m.userId}'),
+                    onPressed: () => _memberActions(l, v, m, rules),
+                    icon: const Icon(
+                      Icons.more_vert_rounded,
+                      color: _dim,
+                      size: 18,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 30,
+                      minHeight: 30,
+                    ),
+                  ),
               ],
             ),
           ),

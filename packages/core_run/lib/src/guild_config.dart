@@ -13,7 +13,7 @@ import 'guild_war.dart';
 class GuildConfig {
   const GuildConfig({
     this.maxMembers = 20,
-    this.createJellyCost = 200,
+    this.createJellyCost = 500,
     this.nameMinLength = 2,
     this.nameMaxLength = 12,
     this.noticeMaxLength = 80,
@@ -27,6 +27,7 @@ class GuildConfig {
     this.level = const GuildLevelConfig(),
     this.donateExp = 5,
     this.donateCoins = 10,
+    this.attend = const GuildAttendConfig(),
     this.skills = const [],
     this.shop = const [],
     this.boss = const GuildBossConfig(),
@@ -37,7 +38,7 @@ class GuildConfig {
   /// 길드 인원(길드 레벨로 늘어나는 몫은 3단계에서 더한다).
   final int maxMembers;
 
-  /// 길드 개설 비용(젤리, 2026-10-01 사장님 확정). 골드는 회차마다 초기화라 정액 비용이 성립하지 않는다.
+  /// 길드 개설 비용(젤리, 2026-10-01 사장님 확정 · 2026-10-05 200 → 500). 골드는 회차마다 초기화라 정액 비용이 성립하지 않는다.
   /// 서버가 먼저 치르고(`/guild/create`) 앱은 같은 금액을 로컬에서 뺀다(결투 티켓 젤리 충전과 같은 방식).
   final int createJellyCost;
 
@@ -75,6 +76,9 @@ class GuildConfig {
   final int donateExp;
   final int donateCoins;
 
+  /// 출석 표(35칸 · 7일차마다 큰 보상, 2026-10-05) — `guild.json → donate.cycleDays·bonuses`.
+  final GuildAttendConfig attend;
+
   /// 길드 버프 스킬 — 길드장·부길드장이 포인트를 찍는다(모두에게 적용).
   final List<GuildSkillDef> skills;
 
@@ -107,6 +111,7 @@ class GuildConfig {
     level: level,
     donateExp: donateExp,
     donateCoins: donateCoins,
+    attend: attend,
     skills: skills,
     shop: shop,
     boss: boss,
@@ -124,7 +129,7 @@ class GuildConfig {
     int i(String k, int d) => (j[k] as num?)?.toInt() ?? d;
     return GuildConfig(
       maxMembers: i('maxMembers', 20),
-      createJellyCost: i('createJellyCost', 200),
+      createJellyCost: i('createJellyCost', 500),
       nameMinLength: i('nameMinLength', 2),
       nameMaxLength: i('nameMaxLength', 12),
       noticeMaxLength: i('noticeMaxLength', 80),
@@ -144,6 +149,9 @@ class GuildConfig {
       donateCoins: (j['donate'] as Map?)?['coins'] is num
           ? ((j['donate'] as Map)['coins'] as num).toInt()
           : 10,
+      attend: GuildAttendConfig.fromJson(
+        (j['donate'] as Map?)?.cast<String, dynamic>(),
+      ),
       skills: [
         for (final x in (j['skills'] as List? ?? const []))
           GuildSkillDef.fromJson(x as Map<String, dynamic>),

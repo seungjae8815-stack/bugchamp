@@ -35,16 +35,38 @@ class FairyOp {
 
 /// 알을 넣는다. 요정함이 차면 **넘친 알은 가루로** 바꾼다(곤충 채집함 획득 차단과 달리
 /// 버리지 않는다 — 보스 첫 처치처럼 한 번뿐인 알이 사라지면 클레임이 된다).
-/// 결과 `extra['overflowDust']` · `extra['overflowEggs']`(가루로 바뀐 알 수).
-FairyOp grantFairyEggs(FairyState s, FairyConfig cfg, List<FairyGrade> grades) {
+///
+/// 알 자동 분해([FairyState.autoReleaseUpTo], 2026-10-06)가 켜져 있으면 그 등급 이하는 넣지 않고
+/// 바로 분해 가루로 바꾼다. [autoRelease] 가 false 면 건너뛴다 — 상점에서 **골라 산** 알이 가루가 되면 안 된다.
+/// 결과 `extra['overflowDust']` · `extra['overflowEggs']`(넘쳐 가루가 된 알 수) ·
+/// `extra['autoDust']` · `extra['autoEggs']`(자동 분해된 알 수) · `extra['kept']`(실제로 들어간 알 등급).
+FairyOp grantFairyEggs(
+  FairyState s,
+  FairyConfig cfg,
+  List<FairyGrade> grades, {
+  bool autoRelease = true,
+}) {
   if (grades.isEmpty) return FairyOp.ok(s);
   final eggs = [...s.eggs];
   var seq = s.seq;
   var dust = s.dust;
   var overflow = 0;
   var overflowEggs = 0;
+  var autoDust = 0;
+  var autoEggs = 0;
+  final kept = <FairyGrade>[];
   var used = s.boxUsed;
+  final upTo = autoRelease ? s.autoReleaseUpTo : null;
   for (final g in grades) {
+    if (upTo != null &&
+        g.index <= upTo.index &&
+        g.index <= kFairyAutoReleaseMax.index) {
+      final d = cfg.releaseDust[g] ?? 0;
+      dust += d;
+      autoDust += d;
+      autoEggs++;
+      continue;
+    }
     if (used >= cfg.boxCap) {
       final d = cfg.releaseDust[g] ?? 0;
       dust += d;
@@ -54,12 +76,28 @@ FairyOp grantFairyEggs(FairyState s, FairyConfig cfg, List<FairyGrade> grades) {
     }
     seq++;
     eggs.add(FairyEgg(id: 'e$seq', grade: g));
+    kept.add(g);
     used++;
   }
   return FairyOp.ok(
     s.copyWith(eggs: eggs, seq: seq, dust: dust),
-    extra: {'overflowDust': overflow, 'overflowEggs': overflowEggs},
+    extra: {
+      'overflowDust': overflow,
+      'overflowEggs': overflowEggs,
+      'autoDust': autoDust,
+      'autoEggs': autoEggs,
+      'kept': kept,
+    },
   );
+}
+
+/// 알 자동 분해 등급을 정한다(null = 끔). [kFairyAutoReleaseMax] 위는 거절한다.
+FairyOp setFairyAutoRelease(FairyState s, FairyGrade? upTo) {
+  if (upTo == null) return FairyOp.ok(s.copyWith(clearAutoRelease: true));
+  if (upTo.index > kFairyAutoReleaseMax.index) {
+    return const FairyOp.fail('bad_grade');
+  }
+  return FairyOp.ok(s.copyWith(autoReleaseUpTo: upTo));
 }
 
 /// 둥지(1칸)에 알을 넣는다. [stoneSub] 가 있으면 그 속성석 1개를 쓴다
@@ -450,6 +488,56 @@ FairyOp releaseFairy(FairyState s, FairyConfig cfg, String id) {
   );
 }
 
+/// 여러 개를 한 번에 분해(2026-10-06 사장님 — 분해 창) — 요정 [fairyIds] + 알 [eggIds] → 요정 가루.
+/// 요정 하나하나는 [releaseFairy] 와 같은 가루(등급 가루 + 레벨업 환급), 알은 등급 가루. ❌ 젤리 없음.
+/// 동행 중이거나 없는 것이 하나라도 끼면 통째로 거절한다(일부만 사라지면 화면과 어긋난다).
+/// 결과 `extra['dust']`.
+FairyOp releaseFairiesBulk(
+  FairyState s,
+  FairyConfig cfg, {
+  List<String> fairyIds = const [],
+  List<String> eggIds = const [],
+}) {
+  final fIds = fairyIds.toSet();
+  final eIds = eggIds.toSet();
+  if (fIds.isEmpty && eIds.isEmpty) return const FairyOp.fail('bad_count');
+  if (fIds.length != fairyIds.length || eIds.length != eggIds.length) {
+    return const FairyOp.fail('bad_count');
+  }
+  if (s.companionId != null && fIds.contains(s.companionId)) {
+    return const FairyOp.fail('companion');
+  }
+  var got = 0;
+  var found = 0;
+  for (final f in s.fairies) {
+    if (!fIds.contains(f.id)) continue;
+    found++;
+    got += (cfg.releaseDust[f.grade] ?? 0) + _refund(cfg, [f]);
+  }
+  if (found != fIds.length) return const FairyOp.fail('no_fairy');
+  found = 0;
+  for (final e in s.eggs) {
+    if (!eIds.contains(e.id)) continue;
+    found++;
+    got += cfg.releaseDust[e.grade] ?? 0;
+  }
+  if (found != eIds.length) return const FairyOp.fail('no_egg');
+  return FairyOp.ok(
+    s.copyWith(
+      fairies: [
+        for (final x in s.fairies)
+          if (!fIds.contains(x.id)) x,
+      ],
+      eggs: [
+        for (final e in s.eggs)
+          if (!eIds.contains(e.id)) e,
+      ],
+      dust: s.dust + got,
+    ),
+    extra: {'dust': got},
+  );
+}
+
 /// 요정 알 뽑기 [times] 회(젤리). 천장: [FairyConfig.gachaPity] 회째는 천장 등급 이상 확정,
 /// **천장 등급이 나왔을 때만** 카운터를 되감는다(알 뽑기·스킬 뽑기와 같다).
 /// 결과 `extra['grades']` · `extra['overflowDust']`.
@@ -482,6 +570,9 @@ FairyOp drawFairyEggs(
       'grades': grades,
       'overflowDust': op.extra['overflowDust'],
       'overflowEggs': op.extra['overflowEggs'],
+      'autoDust': op.extra['autoDust'],
+      'autoEggs': op.extra['autoEggs'],
+      'kept': op.extra['kept'],
     },
   );
 }
@@ -605,6 +696,8 @@ FairyOp fairyBossDrop(
       // 요정함이 차서 알 대신 가루가 됐으면 화면이 그렇게 말해야 한다(2026-10-01 점검 — 알 팝업이 떴다).
       'overflowDust': granted.extra['overflowDust'],
       'overflowEggs': granted.extra['overflowEggs'],
+      'autoDust': granted.extra['autoDust'],
+      'autoEggs': granted.extra['autoEggs'],
     },
   );
 }
@@ -647,6 +740,8 @@ FairyOp fairyEliteDrop(FairyState s, FairyConfig cfg, math.Random rng) {
       if (gotAccel) 'accel': accel,
       'overflowDust': granted?.extra['overflowDust'] ?? 0,
       'overflowEggs': granted?.extra['overflowEggs'] ?? 0,
+      'autoDust': granted?.extra['autoDust'] ?? 0,
+      'autoEggs': granted?.extra['autoEggs'] ?? 0,
     },
   );
 }

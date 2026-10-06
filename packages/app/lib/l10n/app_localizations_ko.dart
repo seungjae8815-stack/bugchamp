@@ -392,6 +392,15 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get storePurchased => '구매 완료';
+
+  @override
+  String get storeWeeklyDone => '이번 주 완료';
+
+  @override
+  String get storeWeeklyNext => '다음 주 월요일 09시에 다시 살 수 있어요';
+
+  @override
   String get biomeForest => '숲';
 
   @override
@@ -5418,6 +5427,62 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get fairyReleaseHint => '분해할 요정·알을 고르세요. 요정 가루로 바뀌어요(되돌릴 수 없어요).';
+
+  @override
+  String fairyReleasePicked(String n) {
+    return '$n개 선택';
+  }
+
+  @override
+  String fairyReleaseAllOf(String grade, String n) {
+    return '$grade 모두 ($n)';
+  }
+
+  @override
+  String get fairyReleaseEquipped => '동행 중인 요정은 분해할 수 없어요';
+
+  @override
+  String fairyReleaseBulkConfirm(String n, String dust) {
+    return '$n개를 분해해 요정 가루 $dust를 받아요. 되돌릴 수 없어요.';
+  }
+
+  @override
+  String fairyReleaseValuableNote(String n) {
+    return '레벨을 올렸거나 전설 이상인 요정 $n마리가 들어 있어요.';
+  }
+
+  @override
+  String fairyReleaseDone(String dust) {
+    return '요정 가루 +$dust';
+  }
+
+  @override
+  String get fairyAutoReleaseTitle => '알 자동 분해';
+
+  @override
+  String get fairyAutoReleaseOff => '끄기';
+
+  @override
+  String fairyAutoReleaseUpTo(String grade) {
+    return '$grade 이하';
+  }
+
+  @override
+  String get fairyAutoReleaseHelp =>
+      '새로 얻는 알 중 고른 등급 이하는 요정함에 넣지 않고 바로 요정 가루로 바꿔요. 길드 상점에서 산 알은 그대로 들어와요.';
+
+  @override
+  String fairyAutoReleasePop(String dust) {
+    return '알 자동 분해 · 요정 가루 +$dust';
+  }
+
+  @override
+  String fairyAutoReleaseToast(String n, String dust) {
+    return '알 $n개를 자동 분해해 요정 가루 $dust를 받았어요';
+  }
+
+  @override
   String exchangeDustLeft(String n) {
     return '오늘 $n 남음';
   }
@@ -5776,4 +5841,124 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get guildPermRanksNote =>
       '멤버 등급은 이 길드에서 번 코인(기여도)으로 자동으로 올라요. 표시만 하고 혜택·권한은 없어요. 길드를 나가면 기여도와 함께 사라져요.';
+
+  @override
+  String get guildRecruitingTitle => '모집 중인 길드';
+
+  @override
+  String get guildSearchResultTitle => '검색 결과';
+
+  @override
+  String get guildRecruitingEmpty => '모집 중인 길드가 없어요 — 직접 만들어 보세요!';
+
+  @override
+  String get guildAttendTitle => '출석 표';
+
+  @override
+  String guildAttendNote(int cycle) {
+    return '출석한 날마다 한 칸씩 채워요(빠진 날이 있어도 이어서). $cycle칸을 다 채우면 1일차부터 다시 — 길드를 옮기면 처음부터예요.';
+  }
+
+  @override
+  String guildAttendDay(int day) {
+    return '$day일차';
+  }
+
+  @override
+  String guildAttendProgress(int n, int cycle) {
+    return '$n / $cycle칸';
+  }
+
+  @override
+  String guildAttendDaily(int coins, int exp) {
+    return '매일: 코인 $coins · 길드 경험치 $exp';
+  }
+
+  @override
+  String get guildAttendBigNote => '7일차마다 큰 보상(코인 · 화석 · 요정 가루)';
+
+  @override
+  String get guildAttendButton => '오늘 출석하기';
+
+  @override
+  String get guildAttendDoneToday => '오늘은 출석했어요 — 내일 또 만나요';
+
+  @override
+  String guildAttendGot(int day) {
+    return '$day일차 출석!';
+  }
+
+  @override
+  String guildMemberContribution(String n) {
+    return '기여도 $n';
+  }
+
+  @override
+  String guildMemberLevel(int lv) {
+    return '캐릭터 Lv $lv';
+  }
+
+  @override
+  String get guildMemberPets => '장착 곤충';
+
+  @override
+  String get guildMemberTeam => '결투 방어팀';
+
+  @override
+  String get guildMemberEquip => '장비';
+
+  @override
+  String get guildMemberFairy => '동행 요정';
+
+  @override
+  String get guildMemberSkills => '장착 스킬';
+
+  @override
+  String get guildMemberNone => '없음';
+
+  @override
+  String get guildMemberNoSave => '이 길드원의 자세한 정보를 불러올 수 없어요';
+
+  @override
+  String get guildMemberFailed => '길드원 정보를 불러오지 못했어요';
+
+  @override
+  String get guildMissionOwnerTag => '출발자';
+
+  @override
+  String get guildMissionTeamTitle => '함께하는 길드원';
+
+  @override
+  String get guildMissionRewardSuccess => '성공 보상';
+
+  @override
+  String guildMissionExpShort(int n) {
+    return '길드 경험치 $n';
+  }
+
+  @override
+  String guildMissionEggChance(String pct) {
+    return '요정 알 $pct%';
+  }
+
+  @override
+  String guildMissionFailRule(int pct) {
+    return '실패하면 보상 × 달성률 × $pct%만 받아요';
+  }
+
+  @override
+  String guildMissionHelperRule(int pct, int coins) {
+    return '도와준 길드원: 자기 사냥터 기준 재료·화석 $pct% + 코인 $coins';
+  }
+
+  @override
+  String guildMissionWaitPick(int min) {
+    return '$min분 기다리기';
+  }
+
+  @override
+  String get chatTabAll => '전체';
+
+  @override
+  String get chatTabGuild => '길드';
 }

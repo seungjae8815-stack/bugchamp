@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/game_server.dart';
+import '../../domain/guild_service.dart' show guildProvider, kGuildOpen;
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
@@ -26,8 +27,12 @@ import '../guild/guild_mission_tab.dart' show guildHelpMission;
 /// - 도배 방지
 /// 넷 다 이 화면에 있다. 하나라도 빼면 심사에서 거부될 수 있다.
 ///
-/// [guildId] 가 있으면 **길드 채팅**(같은 테이블, DB 정책이 내 길드만 읽고 쓰게 한다).
-/// [embedded] 면 앱바 없이 본문만 — 길드 화면의 탭 안에 넣을 때.
+/// **전체 / 길드 탭**(2026-10-05) — 길드에 들어가 있으면 위에 두 탭이 생긴다.
+/// - 전체: 전체 글 + 내 길드 글(길드 글은 [길드] 표시). 여기서 쓰면 전체 글.
+/// - 길드: 내 길드 글만. 여기서 쓰면 길드 글(`guild_id`).
+/// 길드가 없으면 탭 없이 전체 채팅만. DB 정책(`chat_read`)은 원래 전체 + 내 길드 글을 읽게 해 줘서 SQL 변경은 없다.
+///
+/// [embedded] 면 앱바·탭 없이 [guildId] 의 **길드 채팅만** — 길드 화면의 채팅 탭(같은 [ChatPane]).
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, this.guildId, this.embedded = false});
 
@@ -39,160 +44,118 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  final _input = TextEditingController();
-  final _scroll = ScrollController();
-  final _messages = <ChatMessage>[];
-  StreamSubscription<ChatMessage>? _sub;
-
-  /// 마지막 전송 시각 — 도배 방지(클라이언트 1차 방어).
-  DateTime? _lastSentAt;
-  bool _loading = true;
-  bool _sending = false;
-
-  /// 낙관적으로 먼저 띄운 메시지의 id 접두어. 서버가 준 id 와 구분한다.
-  static const _localPrefix = 'local:';
-
-  /// 아직 서버 id 를 못 받은(임시) 메시지인가. `local:`(내가 즉시 띄운 것)과
-  /// `echo:`(서비스가 넣자마자 방송한 것) 둘 다 임시다.
-  static bool _isTemp(String id) =>
-      id.startsWith(_localPrefix) || id.startsWith('echo:');
-
-  ChatRules get _rules =>
-      ref.read(gameDataProvider).value?.chatRules ?? const ChatRules();
+  /// 0 = 전체, 1 = 길드.
+  int _tab = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final svc = ref.read(chatServiceProvider);
-    final list = await svc.recent(
-      limit: _rules.historyLimit,
-      guildId: widget.guildId,
-    );
-    if (!mounted) return;
-    setState(() {
-      _messages
-        ..clear()
-        ..addAll(list);
-      _loading = false;
-    });
-    _jumpToBottom();
-    _sub = svc.subscribe(guildId: widget.guildId).listen((m) {
-      if (!mounted) return;
-      setState(() {
-        // 같은 글이 세 경로로 들어올 수 있다 —
-        //  ① 내가 즉시 띄운 것(`local:`)  ② 서비스가 보낸 자체 방송(`echo:`)
-        //  ③ 서버 실시간 브로드캐스트(진짜 id)
-        // 셋을 합쳐 **한 줄만** 남긴다. 안 그러면 같은 말이 두세 번 보인다.
-        final dup = _messages.any(
-          (x) =>
-              !_isTemp(x.id) &&
-              x.userId == m.userId &&
-              x.body == m.body &&
-              m.createdAt.difference(x.createdAt).abs() <
-                  const Duration(seconds: 20),
-        );
-        _messages.removeWhere(
-          (x) => _isTemp(x.id) && x.userId == m.userId && x.body == m.body,
-        );
-        // ③ 이 이미 들어와 있으면 ②(에코)는 버린다.
-        if (!(dup && _isTemp(m.id))) _messages.add(m);
-        // 화면에 무한정 쌓이지 않게 상한 유지.
-        if (_messages.length > _rules.historyLimit) {
-          _messages.removeRange(0, _messages.length - _rules.historyLimit);
-        }
-      });
-      _jumpToBottom();
-    });
-  }
-
-  void _jumpToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scroll.hasClients) return;
-      _scroll.jumpTo(_scroll.position.maxScrollExtent);
-    });
-  }
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    _input.dispose();
-    _scroll.dispose();
-    super.dispose();
-  }
-
-  Future<void> _send() async {
-    final l = AppLocalizations.of(context);
-    final body = _input.text.trim();
-    final now = ref.read(clockProvider).now().toUtc();
-
-    // 전송 전 검사 — 금칙어/길이/도배.
-    final check = _rules.check(body, lastSentAt: _lastSentAt, now: now);
-    if (check != ChatCheckResult.ok) {
-      final msg = switch (check) {
-        ChatCheckResult.empty => null, // 조용히 무시
-        ChatCheckResult.tooLong => l.chatTooLong(_rules.maxLength),
-        ChatCheckResult.blocked => l.chatBlockedWord,
-        ChatCheckResult.tooFast => l.chatTooFast,
-        ChatCheckResult.ok => null,
-      };
-      if (msg != null) _snack(msg);
-      return;
-    }
-
-    final save = ref.read(saveControllerProvider).requireValue;
-    // ⚠️ **먼저 화면에 띄운다.** 예전에는 서버에 넣고 그 브로드캐스트가
-    // 되돌아올 때까지 기다렸다 — 왕복(insert → Postgres → realtime → 앱)이
-    // 통째로 지연으로 보였다(2026-08-30 지적). 내가 쓴 글이 내 화면에 늦게
-    // 뜨는 건 네트워크가 아니라 설계 문제다.
-    //
-    // 실패하면 되돌린다(아래). 티켓 낙관 차감과 같은 원칙이다.
-    final localId = '$_localPrefix${now.microsecondsSinceEpoch}';
-    // 내 대표 뱃지 — 서버 트리거가 찍을 값과 **같은 규칙**(bestEventBadge)이다.
-    final badge = bestEventBadge(save.eventBadges);
-    setState(() {
-      _sending = true;
-      _messages.add(
-        ChatMessage(
-          id: localId,
-          userId: ref.read(authServiceProvider).userId ?? '',
-          nickname: save.nickname,
-          body: body,
-          createdAt: now,
-          badge: badge,
-          guildId: widget.guildId,
-        ),
+  Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return ChatPane(
+        key: ValueKey('chatPane:guild:${widget.guildId}'),
+        guildId: widget.guildId,
+        guildOnly: widget.guildId != null,
       );
-    });
-    _input.clear();
-    _jumpToBottom();
-
-    final ok = await ref
-        .read(chatServiceProvider)
-        .send(
-          nickname: save.nickname,
-          body: body,
-          badge: badge,
-          guildId: widget.guildId,
-        );
-    if (!mounted) return;
-    setState(() {
-      _sending = false;
-      if (!ok) {
-        // 못 보냈으면 화면에서도 지운다 — 보낸 줄 알고 넘어가면 안 된다.
-        _messages.removeWhere((x) => x.id == localId);
-      }
-    });
-    if (ok) {
-      _lastSentAt = now;
-    } else {
-      _input.text = body; // 다시 쓰게 하지 않는다
-      _snack(l.chatSendFailed);
     }
+    final l = AppLocalizations.of(context);
+    // 길드는 아직 닫혀 있을 수 있다(kGuildOpen) — 닫혔으면 길드 탭 없이 예전처럼 전체 채팅만.
+    final gid = kGuildOpen
+        ? ref.watch(guildProvider).value?.guild?.id
+        : widget.guildId;
+    final Widget body;
+    if (gid == null) {
+      body = const ChatPane(key: ValueKey('chatPane:all'));
+    } else {
+      final tab = _tab.clamp(0, 1);
+      body = Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: Row(
+              children: [
+                for (final (i, text) in [l.chatTabAll, l.chatTabGuild].indexed)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: InkWell(
+                        key: ValueKey('chatTab:$i'),
+                        onTap: () => setState(() => _tab = i),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: i == tab
+                                ? kHoney.withValues(alpha: 0.22)
+                                : const Color(0x18FFFFFF),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: i == tab
+                                  ? kHoney
+                                  : const Color(0x22FFFFFF),
+                            ),
+                          ),
+                          child: Text(
+                            text,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: i == tab
+                                  ? kHoney
+                                  : const Color(0x99FFFFFF),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            // 탭을 오가도 대화·입력이 날아가지 않게 둘 다 살려 둔다(같은 실시간 채널을 나눠 쓴다).
+            child: IndexedStack(
+              index: tab,
+              children: [
+                ChatPane(key: ValueKey('chatPane:mixed:$gid'), guildId: gid),
+                ChatPane(
+                  key: ValueKey('chatPane:guild:$gid'),
+                  guildId: gid,
+                  guildOnly: true,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l.chatTitle),
+        actions: [
+          // 채팅으로 버그를 알리는 유저가 많은데(2026-08-30) 채팅은 흘러가서
+          // 운영자가 놓친다. 놓치면 안 되는 신호는 따로 받는다.
+          TextButton.icon(
+            onPressed: _showSupport,
+            icon: const Icon(Icons.support_agent_rounded, size: 18),
+            label: Text(l.supportTitle),
+            style: TextButton.styleFrom(
+              foregroundColor: kHoney,
+              textStyle: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: body,
+    );
   }
+
+  void _snack(String msg) => showCenterToast(context, msg);
 
   /// 운영자에게 문의 — 서버가 텔레그램으로 밀어 준다.
   ///
@@ -260,6 +223,183 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       actions: const [],
     );
     input.dispose();
+  }
+}
+
+/// 채팅 한 칸(목록 + 입력) — 전체 탭 · 길드 탭 · 길드 화면 채팅 탭이 같은 위젯이다.
+///
+/// [guildOnly] 면 [guildId] 길드 글만 보이고 쓴 글도 길드 글. 아니면 전체 글 + [guildId] 길드 글
+/// (있으면, [길드] 표시)이 보이고 쓴 글은 전체 글. 거르는 규칙은 [chatMessageVisible].
+class ChatPane extends ConsumerStatefulWidget {
+  const ChatPane({super.key, this.guildId, this.guildOnly = false});
+
+  final String? guildId;
+  final bool guildOnly;
+
+  @override
+  ConsumerState<ChatPane> createState() => _ChatPaneState();
+}
+
+class _ChatPaneState extends ConsumerState<ChatPane> {
+  final _input = TextEditingController();
+  final _scroll = ScrollController();
+  final _messages = <ChatMessage>[];
+  StreamSubscription<ChatMessage>? _sub;
+
+  /// 마지막 전송 시각 — 도배 방지(클라이언트 1차 방어).
+  DateTime? _lastSentAt;
+  bool _loading = true;
+  bool _sending = false;
+
+  /// 낙관적으로 먼저 띄운 메시지의 id 접두어. 서버가 준 id 와 구분한다.
+  static const _localPrefix = 'local:';
+
+  /// 아직 서버 id 를 못 받은(임시) 메시지인가. `local:`(내가 즉시 띄운 것)과
+  /// `echo:`(서비스가 넣자마자 방송한 것) 둘 다 임시다.
+  static bool _isTemp(String id) =>
+      id.startsWith(_localPrefix) || id.startsWith('echo:');
+
+  ChatRules get _rules =>
+      ref.read(gameDataProvider).value?.chatRules ?? const ChatRules();
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final svc = ref.read(chatServiceProvider);
+    final list = await svc.recent(
+      limit: _rules.historyLimit,
+      guildId: widget.guildId,
+      mixed: !widget.guildOnly,
+    );
+    if (!mounted) return;
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(list);
+      _loading = false;
+    });
+    _jumpToBottom();
+    _sub = svc
+        .subscribe(guildId: widget.guildId, mixed: !widget.guildOnly)
+        .listen((m) {
+          if (!mounted) return;
+          setState(() {
+            // 같은 글이 세 경로로 들어올 수 있다 —
+            //  ① 내가 즉시 띄운 것(`local:`)  ② 서비스가 보낸 자체 방송(`echo:`)
+            //  ③ 서버 실시간 브로드캐스트(진짜 id)
+            // 셋을 합쳐 **한 줄만** 남긴다. 안 그러면 같은 말이 두세 번 보인다.
+            final dup = _messages.any(
+              (x) =>
+                  !_isTemp(x.id) &&
+                  x.userId == m.userId &&
+                  x.body == m.body &&
+                  m.createdAt.difference(x.createdAt).abs() <
+                      const Duration(seconds: 20),
+            );
+            _messages.removeWhere(
+              (x) => _isTemp(x.id) && x.userId == m.userId && x.body == m.body,
+            );
+            // ③ 이 이미 들어와 있으면 ②(에코)는 버린다.
+            if (!(dup && _isTemp(m.id))) _messages.add(m);
+            // 화면에 무한정 쌓이지 않게 상한 유지.
+            if (_messages.length > _rules.historyLimit) {
+              _messages.removeRange(0, _messages.length - _rules.historyLimit);
+            }
+          });
+          _jumpToBottom();
+        });
+  }
+
+  void _jumpToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scroll.hasClients) return;
+      _scroll.jumpTo(_scroll.position.maxScrollExtent);
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _input.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// 이 칸에서 쓴 글이 갈 곳 — 길드 탭이면 길드 글, 아니면 전체 글.
+  String? get _sendGuildId => widget.guildOnly ? widget.guildId : null;
+
+  Future<void> _send() async {
+    final l = AppLocalizations.of(context);
+    final body = _input.text.trim();
+    final now = ref.read(clockProvider).now().toUtc();
+
+    // 전송 전 검사 — 금칙어/길이/도배.
+    final check = _rules.check(body, lastSentAt: _lastSentAt, now: now);
+    if (check != ChatCheckResult.ok) {
+      final msg = switch (check) {
+        ChatCheckResult.empty => null, // 조용히 무시
+        ChatCheckResult.tooLong => l.chatTooLong(_rules.maxLength),
+        ChatCheckResult.blocked => l.chatBlockedWord,
+        ChatCheckResult.tooFast => l.chatTooFast,
+        ChatCheckResult.ok => null,
+      };
+      if (msg != null) _snack(msg);
+      return;
+    }
+
+    final save = ref.read(saveControllerProvider).requireValue;
+    // ⚠️ **먼저 화면에 띄운다.** 예전에는 서버에 넣고 그 브로드캐스트가
+    // 되돌아올 때까지 기다렸다 — 왕복(insert → Postgres → realtime → 앱)이
+    // 통째로 지연으로 보였다(2026-08-30 지적). 내가 쓴 글이 내 화면에 늦게
+    // 뜨는 건 네트워크가 아니라 설계 문제다.
+    //
+    // 실패하면 되돌린다(아래). 티켓 낙관 차감과 같은 원칙이다.
+    final localId = '$_localPrefix${now.microsecondsSinceEpoch}';
+    // 내 대표 뱃지 — 서버 트리거가 찍을 값과 **같은 규칙**(bestEventBadge)이다.
+    final badge = bestEventBadge(save.eventBadges);
+    setState(() {
+      _sending = true;
+      _messages.add(
+        ChatMessage(
+          id: localId,
+          userId: ref.read(authServiceProvider).userId ?? '',
+          nickname: save.nickname,
+          body: body,
+          createdAt: now,
+          badge: badge,
+          guildId: _sendGuildId,
+        ),
+      );
+    });
+    _input.clear();
+    _jumpToBottom();
+
+    final ok = await ref
+        .read(chatServiceProvider)
+        .send(
+          nickname: save.nickname,
+          body: body,
+          badge: badge,
+          guildId: _sendGuildId,
+        );
+    if (!mounted) return;
+    setState(() {
+      _sending = false;
+      if (!ok) {
+        // 못 보냈으면 화면에서도 지운다 — 보낸 줄 알고 넘어가면 안 된다.
+        _messages.removeWhere((x) => x.id == localId);
+      }
+    });
+    if (ok) {
+      _lastSentAt = now;
+    } else {
+      _input.text = body; // 다시 쓰게 하지 않는다
+      _snack(l.chatSendFailed);
+    }
   }
 
   void _snack(String msg) {
@@ -415,7 +555,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               : _messages.isEmpty
               ? Center(
                   child: Text(
-                    widget.guildId == null ? l.chatEmpty : l.guildChatEmpty,
+                    widget.guildOnly ? l.guildChatEmpty : l.chatEmpty,
                     style: const TextStyle(color: Color(0x99FFFFFF)),
                   ),
                 )
@@ -433,31 +573,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _composer(l, available),
       ],
     );
-    if (widget.embedded) return body;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.chatTitle),
-        actions: [
-          // 채팅으로 버그를 알리는 유저가 많은데(2026-08-30) 채팅은 흘러가서
-          // 운영자가 놓친다. 놓치면 안 되는 신호는 따로 받는다.
-          TextButton.icon(
-            onPressed: _showSupport,
-            icon: const Icon(Icons.support_agent_rounded, size: 18),
-            label: Text(l.supportTitle),
-            style: TextButton.styleFrom(
-              foregroundColor: kHoney,
-              textStyle: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: body,
-    );
+    return body;
   }
 
   Widget _bubble(
@@ -483,8 +599,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
     final mine = myId != null && m.userId == myId;
     // 길드 미션 도움 요청 카드(서버가 `#help:<id>` 로 넣는다) — 말풍선 대신 "도와주기" 버튼.
-    // 전체 채팅에는 없다(길드 채팅에만 들어간다). 누가 손으로 같은 글을 써도 서버가 없는 미션으로 거절한다.
-    if (widget.guildId != null && m.body.startsWith(_helpPrefix)) {
+    // 길드 글에만 들어간다(전체 탭에서도 내 길드 글이면 카드). 누가 손으로 같은 글을 써도 서버가 없는 미션으로 거절한다.
+    if (m.guildId != null && m.body.startsWith(_helpPrefix)) {
       return _helpCard(m, mine, l);
     }
     // 보여줄 때도 필터를 건다 — 목록 갱신 전에 서버에 들어간 과거 메시지 대비.
@@ -514,6 +630,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     l.chatAdminBadge,
                     style: const TextStyle(
                       color: Colors.white,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
+              // 전체 탭에 섞여 보이는 내 길드 글 — [길드] 표시로 가른다(2026-10-05).
+              if (!widget.guildOnly && m.guildId != null) ...[
+                Container(
+                  key: const ValueKey('chatGuildTag'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x337FBF5A),
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(color: const Color(0x997FBF5A)),
+                  ),
+                  child: Text(
+                    l.chatTabGuild,
+                    style: const TextStyle(
+                      color: Color(0xFF9CE37D),
                       fontSize: 9.5,
                       fontWeight: FontWeight.w900,
                     ),

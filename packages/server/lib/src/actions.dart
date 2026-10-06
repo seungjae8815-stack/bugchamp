@@ -67,7 +67,11 @@ class GameActions {
       // 이미 지급됨 — 오류가 아니라 현재 상태를 그대로 돌려준다(멱등).
       return ActionResult.ok(save, extra: {'alreadyGranted': true});
     }
-    if (product.type == IapType.starter && save.starterBought) {
+    final t = now().toUtc();
+    // 계정당 1회 상품(스타터 · 요정/스킬 입문 패키지) — 두 번째 영수증 처리는 스타터와 같다.
+    if (iapIsOncePerAccount(product) &&
+        iapPurchaseBlock(save, product, battle: config.battle, now: t) ==
+            IapBlock.owned) {
       // ⚠️ **운영 지급이 먼저 나간 뒤 진짜 결제가 들어오는 경우**가 있다.
       // "샀는데 안 들어왔다" 문의를 /admin/grant 로 먼저 막아 두면, 나중에
       // 검증이 고쳐져 같은 영수증이 흘러올 때 여기서 실패가 난다.
@@ -96,52 +100,23 @@ class GameActions {
       );
     }
 
-    final t = now().toUtc();
-    final g = product.grant;
-    final mats = Map<MaterialKind, int>.from(save.materials);
-    void add(MaterialKind k, int n) {
-      if (n > 0) mats[k] = (mats[k] ?? 0) + n;
+    // 요정 알은 요정함 상한을 설정에서 읽는다 — 설정이 없으면 실패가 아니라 **보류**(503)로 돌려
+    // 앱이 완료 통보를 미루고 다시 보내게 한다(물건 없이 주문만 승인되면 안 된다).
+    if (iapNeedsFairyConfig(product) && config.fairy == null) {
+      return const ActionResult.fail('config_unavailable', status: 503);
     }
-
-    add(MaterialKind.jelly, g.jelly);
-    add(MaterialKind.chitin, g.chitin);
-    add(MaterialKind.mineral, g.mineral);
-    add(MaterialKind.sap, g.sap);
-
-    DateTime? passExpiry = save.passExpiresAt;
-    if (product.type == IapType.pass) {
-      final base = (passExpiry != null && passExpiry.isAfter(t))
-          ? passExpiry
-          : t;
-      passExpiry = base.add(Duration(days: config.iap.passDurationDays));
-    }
-    // ⚠️ 무한 버프 패스는 오래 서버 쪽에 빠져 있었다 — 앱만 지급하고 있었다
-    // (`SaveController.grantPurchase`). 서버 경로로 지급하면 칸이 비어 있어
-    // **결제했는데 아무것도 안 켜지는** 상태가 된다. 앱과 같은 규칙으로 맞춘다:
-    // 남은 기간이 있으면 이어 붙인다(중복 구매 시 손해 없게).
-    DateTime? buffPassExpiry = save.buffPassExpiresAt;
-    if (product.type == IapType.buffPass) {
-      final base = (buffPassExpiry != null && buffPassExpiry.isAfter(t))
-          ? buffPassExpiry
-          : t;
-      buffPassExpiry = base.add(
-        Duration(days: config.iap.buffPassDurationDays),
-      );
-    }
-
+    // 지급 내용은 앱 로컬 지급과 **같은 함수**(core_save `applyIapGrant`). 주간 묶음의 같은 주
+    // 두 번째 영수증도 여기서 지급한다 — 거절하면 구글 자동 환불·완료 통보 실패로 꼬인다(함수 주석).
+    // 구매 전 차단은 앱 상점이 한다(`iapPurchaseBlock`).
     return ActionResult.ok(
-      save.copyWith(
-        gold: addCurrency(save.gold, g.gold),
-        materials: mats,
-        incubatorCapacity: save.incubatorCapacity + g.incubatorSlots,
-        adsRemoved: save.adsRemoved || product.type == IapType.removeAds,
-        starterBought: save.starterBought || product.type == IapType.starter,
-        ownedSkins: product.skinId == null
-            ? save.ownedSkins
-            : {...save.ownedSkins, product.skinId!},
-        passExpiresAt: passExpiry,
-        buffPassExpiresAt: buffPassExpiry,
-        redeemedPurchases: {...save.redeemedPurchases, purchaseId},
+      applyIapGrant(
+        save,
+        product,
+        config.iap,
+        battle: config.battle,
+        now: t,
+        fairy: config.fairy,
+        purchaseId: purchaseId,
       ),
     );
   }
@@ -154,6 +129,11 @@ class GameActions {
     'seasonPeakTrophies',
     'redeemedPurchases',
     'starterBought',
+    // 요정·스킬 상품(2026-10) — 1회 상품 기록·성장 패스 만료·주간 묶음 산 주. 결제 전용 필드라
+    // 전부 서버 소유다(지우면 1회 상품을 다시 사거나, 패스 매일 지급이 공짜로 켜진다).
+    'boughtOnce',
+    'growthPassExpiresAt',
+    'weeklyBought',
     'adsRemoved',
     'passExpiresAt',
     // ⚠️ 무한 버프 패스도 **서버 소유**여야 한다. 여기 없던 탓에 서버가

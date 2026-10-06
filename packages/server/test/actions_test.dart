@@ -2190,6 +2190,36 @@ void main() {
         expect(forged.save!.fairy.dust, lessThan(1000));
       });
 
+      test('분해 창(2026-10-06) — 요정 여럿 + 알 일괄 분해 가루는 잘리지 않는다', () {
+        var fs = FairyState(
+          fairies: [
+            for (var i = 1; i <= 12; i++)
+              fy(i, i <= 2 ? FairyGrade.legendary : FairyGrade.epic, lv: 10),
+          ],
+          seq: 12,
+        );
+        fs = grantFairyEggs(fs, fc, [
+          for (var i = 0; i < 10; i++) FairyGrade.epic,
+        ]).state!;
+        final before = withFairy(fs);
+        final rel = releaseFairiesBulk(
+          before.fairy,
+          fc,
+          fairyIds: [for (final x in before.fairy.fairies) x.id],
+          eggIds: [for (final e in before.fairy.eggs) e.id],
+        );
+        expect(
+          rel.extra['dust'] as int,
+          greaterThan(500),
+          reason: '여유(500)보다 커야 의미가 있다',
+        );
+        final ok = actions.mergeSave(
+          before,
+          before.copyWith(fairy: rel.state).toJson(),
+        );
+        expect(ok.save!.fairy.dust, rel.state!.dust);
+      });
+
       test('가짜 도감 칸으로 마일스톤을 부풀려도 화석은 더 나오지 않는다', () {
         final before = withFairy(
           FairyState(fairies: [fy(1, FairyGrade.common)], seq: 1),

@@ -185,8 +185,12 @@ abstract interface class GameServer {
   /// 받을 수 있는 미션 보상을 모두 받는다 — 응답의 `save` 를 채택한다(우편 수령과 같은 방식).
   Future<ServerResult> guildMissionClaim();
 
-  /// 하루 한 번 출석(무료) — `/guild/me` 모양.
+  /// 하루 한 번 출석(무료) — `/guild/me` 모양 + `attend`(이번 일차·받은 것).
+  /// 출석 표 큰 보상(화석·가루)이 있는 날엔 `save`(서버 세이브 — 채택한다)도 온다.
   Future<ServerResult> guildDonate();
+
+  /// 길드원 정보(같은 길드만, 아니면 403) — `member`(직책·기여도·등급·전투력) + `summary`(세이브 요약).
+  Future<ServerResult> guildMember(String userId);
   Future<ServerResult> guildSkillUp(String skillId);
   Future<ServerResult> guildSkillReset();
 
@@ -589,6 +593,9 @@ class NoGameServer implements GameServer {
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> guildDonate() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> guildMember(String userId) async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> guildSkillUp(String skillId) async =>
@@ -1108,6 +1115,10 @@ class HttpGameServer implements GameServer {
   @override
   Future<ServerResult> guildDonate() =>
       _send('POST', '/guild/donate', const {});
+
+  @override
+  Future<ServerResult> guildMember(String userId) =>
+      _send('GET', '/guild/member/${Uri.encodeComponent(userId)}');
 
   @override
   Future<ServerResult> guildSkillUp(String skillId) =>

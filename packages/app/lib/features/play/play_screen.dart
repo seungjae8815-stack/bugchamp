@@ -4736,6 +4736,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       accel: r.extra['accel'] != null,
       overflowEggs: (r.extra['overflowEggs'] as int?) ?? 0,
       overflowDust: (r.extra['overflowDust'] as int?) ?? 0,
+      autoEggs: (r.extra['autoEggs'] as int?) ?? 0,
+      autoDust: (r.extra['autoDust'] as int?) ?? 0,
     );
   }
 
@@ -4746,13 +4748,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     bool accel = false,
     int overflowEggs = 0,
     int overflowDust = 0,
+    int autoEggs = 0,
+    int autoDust = 0,
   }) {
     if (eggs.isEmpty && !stones && !accel) return;
     final l = AppLocalizations.of(context);
     // 요정함이 차서 가루가 된 알(뒤쪽부터)은 알로 알리지 않는다 — 알 팝업이 뜨고 실제론 가루였다(2026-10-01 점검).
-    final shown = eggs.take(math.max(0, eggs.length - overflowEggs));
+    // 자동 분해된 알도 같다(2026-10-06). 보스·정예 알은 한 번에 하나뿐이라 수만 빼면 된다.
+    final shown = eggs.take(math.max(0, eggs.length - overflowEggs - autoEggs));
     setState(() {
       var y = -0.2;
+      if (autoEggs > 0) {
+        _pops.add(
+          _Pop(
+            l.fairyAutoReleasePop('$autoDust'),
+            0,
+            const Color(0xFFFFE08A),
+            15,
+            baseX: 0.6,
+            baseY: y,
+          ),
+        );
+        y += 0.12;
+      }
       if (overflowEggs > 0) {
         _pops.add(
           _Pop(
@@ -4810,6 +4828,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         stones: ctrl.lastBossFairyEggs.isNotEmpty,
         overflowEggs: ctrl.lastBossFairyOverflow.eggs,
         overflowDust: ctrl.lastBossFairyOverflow.dust,
+        autoEggs: ctrl.lastBossFairyAuto.eggs,
+        autoDust: ctrl.lastBossFairyAuto.dust,
       );
     }
     final skills = _data.skillConfig;

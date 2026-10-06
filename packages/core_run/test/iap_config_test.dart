@@ -100,4 +100,60 @@ void main() {
       expect(cfg.skinEffectFor(const {'gold_rhino'}, 'rhino_common'), isNull);
     });
   });
+
+  group('요정·스킬 상품 칸(2026-10)', () {
+    final c = IapConfig.fromJson({
+      'growthPassDurationDays': 30,
+      'growthPassDaily': {
+        'fairyDust': 20,
+        'skillGradeShards': {'rare': 2},
+        'fairyAccelerators': {'acc30m': 1},
+      },
+      'products': [
+        {
+          'id': 'fairy_starter',
+          'kind': 'nonConsumable',
+          'type': 'oncePack',
+          'priceKrw': 4400,
+          'grant': {
+            'fairyEggs': {'epic': 1, 'rare': 3},
+            'fairyAccelerators': {'acc8h': 3},
+            'fairyStones': {'attack': 1, 'critDamage': 1, 'bossDamage': 1},
+            'fairyDust': 300,
+            // 모양이 틀린 값·0 은 버린다(던지지 않는다).
+            'skillGradeShards': {'rare': 'x', 'epic': 0},
+          },
+        },
+        {'id': 'growth_pass', 'kind': 'timed', 'type': 'growthPass'},
+        {'id': 'weekly_bundle', 'kind': 'consumable', 'type': 'weekly'},
+      ],
+    });
+
+    test('새 타입·지급 칸을 읽는다', () {
+      final p = c.byId('fairy_starter')!;
+      expect(p.type, IapType.oncePack);
+      expect(p.grant.fairyEggs, {'epic': 1, 'rare': 3});
+      expect(p.grant.fairyAccelerators, {'acc8h': 3});
+      expect(p.grant.fairyStones.length, 3);
+      expect(p.grant.fairyDust, 300);
+      expect(p.grant.skillGradeShards, isEmpty);
+      expect(p.grant.hasFairy, isTrue);
+      expect(p.grant.isEmpty, isFalse);
+      expect(c.byId('growth_pass')!.type, IapType.growthPass);
+      expect(c.byId('weekly_bundle')!.type, IapType.weekly);
+    });
+
+    test('성장 패스 기간·매일 몫', () {
+      expect(c.growthPassDurationDays, 30);
+      expect(c.growthPassDaily.fairyDust, 20);
+      expect(c.growthPassDaily.skillGradeShards, {'rare': 2});
+      expect(c.growthPassDaily.fairyAccelerators, {'acc30m': 1});
+      expect(c.growthPassDaily.jelly, 0);
+    });
+
+    test('칸이 없는 옛 JSON 이면 빈 값', () {
+      expect(cfg.growthPassDaily.isEmpty, isTrue);
+      expect(const IapGrant().hasFairy, isFalse);
+    });
+  });
 }

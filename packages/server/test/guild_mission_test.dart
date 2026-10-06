@@ -280,4 +280,45 @@ void main() {
     final r = await a.claimAll('a');
     expect(r.missions, 1, reason: '다시 받을 수 있다');
   });
+
+  test('진행 중 미션에 돕는 길드원(닉네임·보탠 전투력)과 출발자 전투력이 실린다', () async {
+    final id = activeId(await start('a', slot: 4, power: 120)); // 요구 420
+    await a.help('b', id, power: 77, stage: 1, nickname: '비');
+    final (_, body) = await a.view('c');
+    final m = (body['active'] as List).single as Map;
+    expect(m['ownerPower'], 120);
+    expect(m['ownerNick'], 'a');
+    final hs = (m['helpers'] as List).cast<Map>();
+    expect(hs.single['nickname'], '비');
+    expect(hs.single['power'], 77);
+  });
+
+  test(
+    '예상 보상(core_run guildMissionExpected) = 실제 지급 — 출발자·도우미 · 대기 배율',
+    () async {
+      final id = activeId(await start('a', slot: 4, wait: 600, stage: 300));
+      for (final u in ['b', 'c', 'd']) {
+        await a.help(u, id, power: 1, stage: 500, nickname: u); // 3명 = 성공
+      }
+      final owner = await a.claimAll('a');
+      final wantOwner = guildMissionExpected(
+        cfg.mission,
+        run,
+        stage: 300,
+        mult: cfg.mission.boardMults[4],
+        waitSec: 600,
+      );
+      expect(owner.reward.toJson(), wantOwner.toJson());
+      final helper = await a.claimAll('b');
+      final wantHelper = guildMissionExpected(
+        cfg.mission,
+        run,
+        stage: 500,
+        mult: cfg.mission.boardMults[4],
+        waitSec: 600,
+        helper: true,
+      );
+      expect(helper.reward.toJson(), wantHelper.toJson());
+    },
+  );
 }

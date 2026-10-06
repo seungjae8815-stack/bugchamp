@@ -3,7 +3,12 @@ import 'dart:io' show stderr;
 
 import 'package:core_models/core_models.dart' show FairyGrade, MaterialKind;
 import 'package:core_run/core_run.dart'
-    show FairyConfig, GuildShopItem, RunConfig, materialAmountMult;
+    show
+        FairyConfig,
+        GuildAttendBonus,
+        GuildShopItem,
+        RunConfig,
+        materialAmountMult;
 import 'package:core_save/core_save.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -31,6 +36,9 @@ void mountGuildRoutes(
   required GuildWarActions war,
   required RunConfig run,
   FairyConfig? fairy,
+
+  /// 길드원 정보 시트의 세이브 요약(`guildMemberSummary` + 서버가 검증한 결투 방어팀). 세이브가 없으면 null.
+  Future<Map<String, dynamic>?> Function(String userId)? memberSummary,
 }) {
   Response json(int status, Map<String, dynamic> body) => Response(
     status,
@@ -108,10 +116,12 @@ void mountGuildRoutes(
             .where((g) => g.key == it.grade)
             .firstOrNull;
         if (fairy == null || grade == null) return (save, const {});
+        // 골라 산 알은 자동 분해하지 않는다(2026-10-06) — 산 알이 바로 가루가 되면 안 된다.
         final op = grantFairyEggs(
           save.fairy,
           fairy,
           List.filled(it.amount, grade),
+          autoRelease: false,
         );
         return op.isOk
             ? (save.copyWith(fairy: op.state), {'fairyEggs': it.amount})
@@ -128,6 +138,26 @@ void mountGuildRoutes(
         );
     }
     return (save, const {});
+  }
+
+  /// 출석 표 큰 보상(화석·요정 가루)을 서버 세이브에 넣는다 — 상점 품목과 같은 방식.
+  SaveGame grantAttend(SaveGame save, GuildAttendBonus b) {
+    var out = save;
+    if (b.fossil > 0) {
+      out = out.copyWith(
+        materials: {
+          ...out.materials,
+          MaterialKind.fossil:
+              out.materialCount(MaterialKind.fossil) + b.fossil,
+        },
+      );
+    }
+    if (b.fairyDust > 0) {
+      out = out.copyWith(
+        fairy: out.fairy.copyWith(dust: out.fairy.dust + b.fairyDust),
+      );
+    }
+    return out;
   }
 
   SaveGame addJelly(SaveGame save, int jelly) => save.copyWith(
@@ -336,7 +366,38 @@ void mountGuildRoutes(
         return (200, {...out, 'save': next!.toJson(), 'jelly': jelly});
       }),
     )
-    ..post('/guild/donate', post('donate', (uid, _) => guild.donate(uid)))
+    ..post(
+      '/guild/donate',
+      post('donate', (uid, _) async {
+        // 7일차마다 큰 보상(화석·가루)은 서버 세이브에 넣는다 — 앱이 더하면 업로드 상한에 잘린다.
+        // 저장이 실패하면 donate 가 출석을 되돌리고 다시 던진다 → 503(다시 누를 수 있다).
+        SaveGame? next;
+        final (st, out) = await guild.donate(
+          uid,
+          deliver: (bonus) async {
+            final save = await loadSave(uid);
+            if (save == null) throw StateStoreException('no_save');
+            next = grantAttend(save, bonus);
+            await storeSave(uid, next!);
+          },
+        );
+        if (st != 200 || next == null) return (st, out);
+        return (200, {...out, 'save': next!.toJson()});
+      }),
+    )
+    ..get('/guild/member/<id>', (Request req, String id) async {
+      // 길드원 정보 — 같은 길드만(403). 세이브는 **요약만** 보낸다(크기·개인정보).
+      final uid = userIdOf(req);
+      try {
+        final (st, out) = await guild.member(uid, id);
+        if (st != 200) return json(st, out);
+        final summary = memberSummary == null ? null : await memberSummary(id);
+        return json(200, {...out, 'summary': ?summary});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[guild/member] $uid: $e');
+        return json(503, {'error': 'store_unavailable'});
+      }
+    })
     ..post(
       '/guild/skill/up',
       post('skill/up', (uid, b) => guild.skillUp(uid, s(b, 'skillId'))),

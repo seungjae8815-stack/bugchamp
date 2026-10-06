@@ -212,6 +212,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 결제 혜택 일일 젤리 수령 기록용 키(dailyClaims 재사용 — 세이브 필드 추가 없이).
   static const _iapDailyKey = '_iapDaily';
 
+  /// 성장 패스 오늘 몫을 준 사본(없거나 이미 받았으면 그대로).
+  SaveGame _claimGrowthDaily(SaveGame save, GameData data) {
+    final iap = data.iapConfig;
+    if (iap == null) return save;
+    return claimGrowthPassDaily(
+          save,
+          iap,
+          now: ref.read(clockProvider).now().toUtc(),
+          today: dailyDateKey(ref.read(clockProvider).now()),
+          fairy: data.fairyConfig,
+        ) ??
+        save;
+  }
+
   /// 마지막 로드 시 계산된 오프라인 보상(UI 가 1회 표시 후 [consumeOffline]).
   OfflineReport? pendingOffline;
 
@@ -277,6 +291,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
         }
       }
     }
+
+    // 요정·스킬 성장 패스 매일 지급(2026-10) — 곤충학자 패스 매일 젤리와 같은 구조(기기 날짜 1회).
+    // 규칙은 core_save `claimGrowthPassDaily` 한 곳. 젤리는 없다(§2.6).
+    save = _claimGrowthDaily(save, data);
 
     // 자가치유: 채집함 상한 초과분 정리.
     //
@@ -780,6 +798,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 마지막 보스 첫 처치 알이 요정함이 차서 가루가 됐으면 그 수·가루.
   ({int eggs, int dust}) lastBossFairyOverflow = (eggs: 0, dust: 0);
 
+  /// 같은 자리에서 알 자동 분해로 가루가 된 알 수와 가루(2026-10-06).
+  ({int eggs, int dust}) lastBossFairyAuto = (eggs: 0, dust: 0);
+
   /// 보스를 깼다 — 다음 사냥터로. 스테이지는 사냥터 폭(worldSize)만큼 뛰고
   /// 도전 게이지는 0 부터. 마지막 사냥터(최종 보스)면 그대로 둔다 — 회차
   /// 전환은 유저가 누른다.
@@ -839,6 +860,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
     lastBossFairyEggs = const [];
     lastBossFairyOverflow = (eggs: 0, dust: 0);
+    lastBossFairyAuto = (eggs: 0, dust: 0);
     final fairyCfg = data?.fairyConfig;
     if (fairyCfg != null && firstKill) {
       final drop = fairyBossDrop(
@@ -853,6 +875,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
       lastBossFairyOverflow = (
         eggs: (drop.extra['overflowEggs'] as int?) ?? 0,
         dust: (drop.extra['overflowDust'] as int?) ?? 0,
+      );
+      lastBossFairyAuto = (
+        eggs: (drop.extra['autoEggs'] as int?) ?? 0,
+        dust: (drop.extra['autoDust'] as int?) ?? 0,
       );
     }
     if (!run.isFinalZone(zone)) {
@@ -1297,56 +1323,42 @@ class SaveController extends AsyncNotifier<SaveGame> {
       return true;
     }
 
-    // 스타터는 계정당 1회.
-    if (p.type == IapType.starter && s.starterBought) return false;
-
-    final g = p.grant;
-    final mats = Map<MaterialKind, int>.from(s.materials);
-    void add(MaterialKind k, int n) {
-      if (n > 0) mats[k] = (mats[k] ?? 0) + n;
+    final battle =
+        ref.read(gameDataProvider).requireValue.battleConfig ??
+        const BattleConfig();
+    final fairyCfg = ref.read(gameDataProvider).requireValue.fairyConfig;
+    // 계정당 1회(스타터 · 요정/스킬 입문 패키지).
+    if (iapIsOncePerAccount(p) &&
+        iapPurchaseBlock(s, p, battle: battle, now: now) == IapBlock.owned) {
+      return false;
     }
+    // 요정 알은 요정함 상한을 설정에서 읽는다 — 설정이 없으면 지급하지 않는다(서버도 보류한다).
+    if (iapNeedsFairyConfig(p) && fairyCfg == null) return false;
 
-    add(MaterialKind.jelly, g.jelly);
-    add(MaterialKind.chitin, g.chitin);
-    add(MaterialKind.mineral, g.mineral);
-    add(MaterialKind.sap, g.sap);
-
-    // 패스는 남은 기간에 이어서 연장(중복 구매 시 손해 없게).
-    DateTime? passExpiry = s.passExpiresAt;
-    if (p.type == IapType.pass) {
-      final days = cfg?.passDurationDays ?? 30;
-      final base = (passExpiry != null && passExpiry.isAfter(now))
-          ? passExpiry
-          : now;
-      passExpiry = base.add(Duration(days: days));
-    }
-    // 무한 버프 패스도 같은 규칙으로 이어 붙인다(칸만 다르다).
-    DateTime? buffPassExpiry = s.buffPassExpiresAt;
-    if (p.type == IapType.buffPass) {
-      final days = cfg?.buffPassDurationDays ?? 30;
-      final base = (buffPassExpiry != null && buffPassExpiry.isAfter(now))
-          ? buffPassExpiry
-          : now;
-      buffPassExpiry = base.add(Duration(days: days));
-    }
-
-    await _commit(
-      s.copyWith(
-        gold: addCurrency(s.gold, g.gold),
-        materials: mats,
-        incubatorCapacity: s.incubatorCapacity + g.incubatorSlots,
-        adsRemoved: s.adsRemoved || p.type == IapType.removeAds,
-        buffPassExpiresAt: buffPassExpiry,
-        starterBought: s.starterBought || p.type == IapType.starter,
-        ownedSkins: p.skinId == null
-            ? s.ownedSkins
-            : {...s.ownedSkins, p.skinId!},
-        passExpiresAt: passExpiry,
-        redeemedPurchases: purchaseId == null
-            ? s.redeemedPurchases
-            : {...s.redeemedPurchases, purchaseId},
-      ),
+    // 지급 내용은 서버 `GameActions.grantPurchase` 와 **같은 함수**(core_save `applyIapGrant`).
+    // 주간 묶음은 여기서 막지 않는다 — 결제가 끝난 영수증이다. 구매 전 차단은 상점이 한다.
+    var next = applyIapGrant(
+      s,
+      p,
+      cfg ?? const IapConfig(products: []),
+      battle: battle,
+      now: now,
+      fairy: fairyCfg,
+      purchaseId: purchaseId,
     );
+    // 성장 패스를 샀으면 오늘 몫을 바로 준다(다음 실행까지 기다리게 하지 않는다).
+    if (cfg != null) {
+      next =
+          claimGrowthPassDaily(
+            next,
+            cfg,
+            now: now,
+            today: dailyDateKey(ref.read(clockProvider).now()),
+            fairy: fairyCfg,
+          ) ??
+          next;
+    }
+    await _commit(next);
     return true;
   }
 
@@ -1871,6 +1883,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // `_commit` 이 `lastSeen` 을 지금으로 찍으므로 여기서 놓치면 그 구간은
       // 영영 정산되지 않는다.
       save = _applyOffline(save, data, now);
+      // 성장 패스 오늘 몫 — 결제 직후 서버 세이브를 채택하는 경로(`_grantViaServer`)가 여기다.
+      // 이 기기에서 이미 받았다면 채택본에도 오늘 키가 있어(올린 뒤 결제) 두 번 나가지 않는다.
+      save = _claimGrowthDaily(save, data);
     }
     // 저장 횟수는 **이어 센다**(둘 중 큰 쪽) — 채택한 뒤의 저장이 이 기기의 옛 횟수보다 작으면
     // 다음 실행의 동점 판정([SaveGame.saveRev])이 거꾸로 간다.
@@ -3524,6 +3539,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   Future<FairyOp> fairyRelease(String id) =>
       _fairyOp((f, cfg, _) => releaseFairy(f, cfg, id));
+
+  /// 분해 창 — 요정·알 여러 개를 한 번에 가루로(2026-10-06). 결과 `extra['dust']`.
+  Future<FairyOp> fairyReleaseBulk({
+    List<String> fairyIds = const [],
+    List<String> eggIds = const [],
+  }) => _fairyOp(
+    (f, cfg, _) =>
+        releaseFairiesBulk(f, cfg, fairyIds: fairyIds, eggIds: eggIds),
+  );
+
+  /// 알 자동 분해 등급(null = 끔).
+  Future<FairyOp> fairySetAutoRelease(FairyGrade? upTo) =>
+      _fairyOp((f, _, _) => setFairyAutoRelease(f, upTo));
 
   /// 요정 알 뽑기(젤리). 결과 `extra['grades']`.
   Future<FairyOp> fairyDraw(int times, {math.Random? rng}) => _fairyOp(

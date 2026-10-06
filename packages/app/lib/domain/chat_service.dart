@@ -15,11 +15,16 @@ abstract interface class ChatService {
   bool get available;
 
   /// 최근 메시지를 시간순(오래된 것 → 최신)으로 가져온다.
-  /// [guildId] 가 있으면 그 길드 채팅, 없으면 전체 채팅.
-  Future<List<ChatMessage>> recent({int limit = 50, String? guildId});
+  /// [guildId] 가 있으면 그 길드 채팅, 없으면 전체 채팅. [mixed] 면 전체 + 그 길드 글을 함께
+  /// (채팅 화면 "전체" 탭 — 길드 글은 [길드] 표시로 가른다, 2026-10-05).
+  Future<List<ChatMessage>> recent({
+    int limit = 50,
+    String? guildId,
+    bool mixed = false,
+  });
 
-  /// 새 메시지 실시간 스트림 — [guildId] 채널만(없으면 전체 채팅만).
-  Stream<ChatMessage> subscribe({String? guildId});
+  /// 새 메시지 실시간 스트림 — 거르는 규칙은 [chatMessageVisible].
+  Stream<ChatMessage> subscribe({String? guildId, bool mixed = false});
 
   /// 메시지 전송. 성공 시 true.
   /// **금칙어·길이·도배 검사는 호출 전에 [ChatRules.check] 로 끝내야 한다.**
@@ -43,6 +48,17 @@ abstract interface class ChatService {
   void dispose();
 }
 
+/// 채팅 탭에 이 글이 보이나(2026-10-05 전체/길드 탭).
+/// - 길드 탭(`mixed` 아님 + [guildId]): 그 길드 글만.
+/// - 전체 탭(`mixed` + [guildId]): 전체 글 + 내 길드 글(화면이 [길드] 표시를 붙인다).
+/// - 길드가 없으면([guildId] null): 전체 글만.
+/// DB 정책(`chat_read`)이 원래 전체 + 내 길드 글만 보내 주지만, 길드를 막 옮긴 순간 등을 위해 앱도 거른다.
+bool chatMessageVisible(ChatMessage m, {String? guildId, bool mixed = false}) {
+  if (guildId == null) return m.guildId == null;
+  if (mixed) return m.guildId == null || m.guildId == guildId;
+  return m.guildId == guildId;
+}
+
 /// 백엔드 미연결 — 채팅 사용 불가.
 class NoChatService implements ChatService {
   const NoChatService();
@@ -50,10 +66,14 @@ class NoChatService implements ChatService {
   @override
   bool get available => false;
   @override
-  Future<List<ChatMessage>> recent({int limit = 50, String? guildId}) async =>
-      const [];
+  Future<List<ChatMessage>> recent({
+    int limit = 50,
+    String? guildId,
+    bool mixed = false,
+  }) async => const [];
   @override
-  Stream<ChatMessage> subscribe({String? guildId}) => const Stream.empty();
+  Stream<ChatMessage> subscribe({String? guildId, bool mixed = false}) =>
+      const Stream.empty();
   @override
   Future<bool> send({
     required String nickname,
@@ -92,14 +112,20 @@ class SupabaseChatService implements ChatService {
   bool get available => _uid != null;
 
   @override
-  Future<List<ChatMessage>> recent({int limit = 50, String? guildId}) async {
+  Future<List<ChatMessage>> recent({
+    int limit = 50,
+    String? guildId,
+    bool mixed = false,
+  }) async {
     try {
-      // 전체 채팅은 `guild_id is null` 로 거른다 — 정책이 내 길드 글도 읽게 해 주므로
-      // 안 거르면 길드 대화가 전체 채팅에 섞인다.
+      // 전체 채팅만이면 `guild_id is null` 로 거른다 — 정책이 내 길드 글도 읽게 해 주므로
+      // 안 거르면 길드 대화가 섞인다. "전체" 탭([mixed])은 전체 + 내 길드 글을 함께 받는다.
       final q = _client.from('chat_messages').select();
       final rows =
           await (guildId == null
                   ? q.isFilter('guild_id', null)
+                  : mixed
+                  ? q.or('guild_id.is.null,guild_id.eq.$guildId')
                   : q.eq('guild_id', guildId))
               .order('created_at', ascending: false)
               .limit(limit);
@@ -125,9 +151,9 @@ class SupabaseChatService implements ChatService {
   /// 남은 구독자까지 끊겼다. 채널은 하나만 두고 스트림을 공유한다.
   ///
   /// 길드 채팅도 **같은 채널**로 온다 — DB 정책이 전체 + 내 길드 글만 보내 주므로 채널을 더 열
-  /// 필요가 없다(연결 수 = 요금). 받는 쪽에서 [guildId] 로 가른다.
+  /// 필요가 없다(연결 수 = 요금). 받는 쪽에서 [chatMessageVisible] 로 가른다.
   @override
-  Stream<ChatMessage> subscribe({String? guildId}) {
+  Stream<ChatMessage> subscribe({String? guildId, bool mixed = false}) {
     final controller = _events ??= StreamController<ChatMessage>.broadcast();
     _channel ??= _client
         .channel('public:chat_messages')
@@ -145,7 +171,9 @@ class SupabaseChatService implements ChatService {
         )
         .subscribe();
     // 개별 구독자가 떠나도 채널은 유지한다 — 정리는 [dispose] 한 곳에서만.
-    return controller.stream.where((m) => m.guildId == guildId);
+    return controller.stream.where(
+      (m) => chatMessageVisible(m, guildId: guildId, mixed: mixed),
+    );
   }
 
   @override

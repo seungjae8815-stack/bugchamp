@@ -153,7 +153,8 @@ class GuildMissionActions {
     final pw = power.isFinite && power >= 1 ? power : 1.0;
     final s = board[slot];
     final need = pw * s.mult;
-    final solo = pw >= need; // 혼자로 이미 충분 = 바로 성공
+    // 혼자로 이미 충분 = 바로 성공(배율 ≤ 1) — 앱 예상 보상과 같은 판정.
+    final solo = guildMissionSoloSlot(s.mult);
     final (inserted, error) = await store.startMission(
       GuildMissionRow(
         guildId: mine.guildId,
@@ -274,7 +275,8 @@ class GuildMissionActions {
     for (final m in _claimable(userId, my, claimed)) {
       if (!await store.insertClaim(m.id, userId)) continue;
       ids.add(m.id);
-      sum = sum + _boost(_rewardOf(userId, m), bonus);
+      // 재료·화석만 늘린다(코인은 그대로) — 앱 예상 보상과 같은 core_run 함수.
+      sum = sum + guildMissionBoost(_rewardOf(userId, m), bonus);
       n++;
       if (m.owner == userId && m.success && _eggRoll(m)) eggs++;
     }
@@ -300,17 +302,6 @@ class GuildMissionActions {
     if (g == null) return 0;
     return guildBonus(config.skills, g.skills)['missionReward'] ?? 0;
   }
-
-  /// 재료·화석만 늘린다(코인은 그대로 — 코인 상점 가격이 흔들리지 않게).
-  static GuildMissionReward _boost(GuildMissionReward r, double b) => b <= 0
-      ? r
-      : GuildMissionReward(
-          chitin: (r.chitin * (1 + b)).round(),
-          mineral: (r.mineral * (1 + b)).round(),
-          sap: (r.sap * (1 + b)).round(),
-          fossil: (r.fossil * (1 + b)).round(),
-          coins: r.coins,
-        );
 
   /// 요정 알 — 미션 id 로 seed 를 고정한다(다시 받기로 다시 굴릴 수 없다).
   bool _eggRoll(GuildMissionRow m) =>
@@ -419,8 +410,11 @@ class GuildMissionActions {
     'settled': m.settled,
     'success': m.success,
     'ratio': m.ratio,
+    // 지금 돕고 있는 길드원 — 닉네임·보탠 전투력(2026-10-05). 출발자 몫은 ownerPower.
+    'ownerPower': m.ownerPower,
     'helpers': [
-      for (final h in m.helpers) {'userId': h.userId, 'nickname': h.nickname},
+      for (final h in m.helpers)
+        {'userId': h.userId, 'nickname': h.nickname, 'power': h.power},
     ],
     'helped': m.helpers.any((h) => h.userId == me),
     'helperMax': c.helperMax,

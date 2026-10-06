@@ -285,3 +285,52 @@ GuildMissionReward guildMissionReward(
         : (c.coinBase * mult * factor).round(),
   );
 }
+
+/// 혼자 출발해도 바로 성공하는 칸인가 — 요구 = 내 전투력 × 배율이라 배율 ≤ 1 이면 혼자로 충분하다.
+/// 이 칸은 **대기 배율을 받지 않는다**(바로 끝났는데 10분 배율을 받는 구멍). 서버 출발·앱 예상 보상 공용.
+bool guildMissionSoloSlot(double mult) => mult <= 1.0;
+
+/// 길드 버프 "미션 보상"([bonus], 0.2 = +20%) — **재료·화석만** 늘린다. 코인은 그대로
+/// (코인 상점 가격이 흔들리지 않게). 서버 수령·앱 예상 보상 공용.
+GuildMissionReward guildMissionBoost(GuildMissionReward r, double bonus) =>
+    bonus <= 0
+    ? r
+    : GuildMissionReward(
+        chitin: (r.chitin * (1 + bonus)).round(),
+        mineral: (r.mineral * (1 + bonus)).round(),
+        sap: (r.sap * (1 + bonus)).round(),
+        fossil: (r.fossil * (1 + bonus)).round(),
+        coins: r.coins,
+      );
+
+/// 출발 전 **성공했을 때 받을 보상**(게시판 카드·대기 시간 고르기 화면).
+///
+/// 서버가 수령 때 쓰는 [guildMissionReward] · [guildMissionBoost] 를 그대로 부른다 — 로직이 두 벌이면
+/// "화면엔 120 이라더니 100 들어왔다"가 생긴다. [stage] 는 자기 사냥터(서버도 출발 순간 서버 세이브의
+/// 스테이지를 쓴다), [bonus] 는 길드 버프 "미션 보상". [helper] 면 도와준 사람 몫(자기 사냥터 기준 × 비율).
+/// 실패하면 이 값 × 달성률 × [GuildMissionConfig.partialRewardMult](재료·화석·코인, 도우미 코인은 그대로).
+GuildMissionReward guildMissionExpected(
+  GuildMissionConfig c,
+  RunConfig run, {
+  required int stage,
+  required double mult,
+  required int waitSec,
+  double bonus = 0,
+  bool helper = false,
+}) {
+  final waitMult = !helper && guildMissionSoloSlot(mult)
+      ? 1.0
+      : c.waitMultOf(waitSec);
+  return guildMissionBoost(
+    guildMissionReward(
+      c,
+      run,
+      stage: stage < 1 ? 1 : stage,
+      mult: mult,
+      factor: 1.0,
+      waitMult: waitMult,
+      helper: helper,
+    ),
+    bonus,
+  );
+}

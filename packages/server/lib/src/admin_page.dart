@@ -523,7 +523,7 @@ async function grantProduct() {
     toast(r.alreadyGranted ? '이미 지급된 건입니다' : '지급했습니다');
   } catch (e) {
     toast(e.message === 'no_save' ? '그 uuid 의 세이브가 없습니다'
-        : e.message === 'already_owned' ? '스타터는 계정당 1회입니다'
+        : e.message === 'already_owned' ? '계정당 1회 상품입니다(이미 받음)'
         : e.message);
   }
 }

@@ -215,6 +215,11 @@ void main() {
           as Map<String, dynamic>,
     ),
     guild: const GuildConfig(
+      // 출석 표 — 엔드포인트 테스트는 1일차부터 큰 보상이 나오게(세이브 지급 경로를 본다).
+      attend: GuildAttendConfig(
+        cycleDays: 35,
+        bonuses: [GuildAttendBonus(day: 1, coins: 5, fossil: 3, fairyDust: 4)],
+      ),
       shop: [
         GuildShopItem(
           id: 'fossil',
@@ -1921,14 +1926,77 @@ void main() {
     });
   });
 
-  group('길드 개설(젤리 200)', () {
+  group('길드 출석 표 · 길드원 정보', () {
+    Future<MemoryGuildStore> inGuild() async {
+      final guilds = MemoryGuildStore(clock: () => _t);
+      final g = await guilds.insertGuild(
+        name: '출석길드',
+        lang: 'ko',
+        leader: 'user-1',
+        maxMembers: 20,
+        joinMode: GuildJoinMode.open,
+      );
+      await guilds.insertMember(g!.id, 'user-1', GuildRole.leader);
+      return guilds;
+    }
+
+    test('큰 보상 일차 — 화석·요정 가루가 서버 세이브에 들어가고 save 가 온다', () async {
+      final guilds = await inGuild();
+      final h = handler(guildStore: guilds);
+      final before = mySave.materialCount(MaterialKind.fossil);
+      final res = await post(h, '/guild/donate', {}, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map;
+      expect((body['attend'] as Map)['day'], 1);
+      expect((body['attend'] as Map)['coins'], 10 + 5);
+      expect(body['attendCount'], 1);
+      expect(body['save'], isA<Map>());
+      final saved = SaveGame.fromJson(
+        migrateToCurrent((fake.lastSaved!['data'] as Map).cast()),
+      );
+      expect(saved.materialCount(MaterialKind.fossil), before + 3);
+      expect(saved.fairy.dust, mySave.fairy.dust + 4);
+      expect(guilds.memberRows['user-1']!.coins, 15);
+      final again = await post(h, '/guild/donate', {}, token: makeToken());
+      expect(again.statusCode, 409, reason: '하루 한 번');
+    });
+
+    test('길드원 정보 — 같은 길드면 세이브 요약(통째 아님) · 다른 길드면 403', () async {
+      final guilds = await inGuild();
+      final other = await guilds.insertGuild(
+        name: '남의길드',
+        lang: 'ko',
+        leader: 'user-2',
+        maxMembers: 20,
+        joinMode: GuildJoinMode.open,
+      );
+      await guilds.insertMember(other!.id, 'user-2', GuildRole.leader);
+      final h = handler(guildStore: guilds);
+      final res = await get(h, '/guild/member/user-1', token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map;
+      expect((body['member'] as Map)['role'], 'leader');
+      final sum = body['summary'] as Map;
+      expect(sum['level'], mySave.level);
+      expect(sum['stage'], mySave.stageNumber);
+      expect(sum.containsKey('pets'), isTrue);
+      expect(sum.containsKey('equipment'), isTrue);
+      // 세이브를 통째로 보내지 않는다(곤충 목록·재료·구매 기록 등).
+      expect(sum.containsKey('bugs'), isFalse);
+      expect(sum.containsKey('materials'), isFalse);
+      final denied = await get(h, '/guild/member/user-2', token: makeToken());
+      expect(denied.statusCode, 403);
+    });
+  });
+
+  group('길드 개설(젤리 500)', () {
     SaveGame withJelly(int n) => mySave.copyWith(
       materials: {...mySave.materials, MaterialKind.jelly: n},
     );
 
-    test('만들면 서버 세이브에서 젤리 200이 빠진다', () async {
+    test('만들면 서버 세이브에서 젤리 500이 빠진다', () async {
       final guilds = MemoryGuildStore(clock: () => _t);
-      final h = handler(save: withJelly(250), guildStore: guilds);
+      final h = handler(save: withJelly(550), guildStore: guilds);
       final res = await post(h, '/guild/create', {
         'name': '장수풍뎅이단',
         'lang': 'ko',
@@ -1936,7 +2004,7 @@ void main() {
       }, token: makeToken());
       expect(res.statusCode, 200);
       final body = jsonDecode(await res.readAsString()) as Map;
-      expect(body['jellySpent'], 200);
+      expect(body['jellySpent'], 500);
       expect((body['guild'] as Map)['name'], '장수풍뎅이단');
       final saved = SaveGame.fromJson(
         migrateToCurrent((fake.lastSaved!['data'] as Map).cast()),
@@ -1946,7 +2014,7 @@ void main() {
 
     test('문장 — 정수 1~10 만 받는다(아니면 400, 젤리 안 씀)', () async {
       final guilds = MemoryGuildStore(clock: () => _t);
-      final h = handler(save: withJelly(250), guildStore: guilds);
+      final h = handler(save: withJelly(550), guildStore: guilds);
       for (final bad in [11, '3', 2.5]) {
         final res = await post(h, '/guild/create', {
           'name': '장수풍뎅이단',
@@ -1967,7 +2035,7 @@ void main() {
 
     test('젤리가 모자라면 길드도 안 생기고 세이브도 안 건드린다', () async {
       final guilds = MemoryGuildStore(clock: () => _t);
-      final h = handler(save: withJelly(199), guildStore: guilds);
+      final h = handler(save: withJelly(499), guildStore: guilds);
       final res = await post(h, '/guild/create', {
         'name': '장수풍뎅이단',
       }, token: makeToken());
@@ -1985,7 +2053,7 @@ void main() {
         maxMembers: 20,
         joinMode: GuildJoinMode.open,
       );
-      final h = handler(save: withJelly(500), guildStore: guilds);
+      final h = handler(save: withJelly(800), guildStore: guilds);
       final res = await post(h, '/guild/create', {
         'name': '장수풍뎅이단',
       }, token: makeToken());

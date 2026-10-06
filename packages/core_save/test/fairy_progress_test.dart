@@ -961,4 +961,106 @@ void main() {
       expect(s.stones, {'hp': 2});
     });
   });
+
+  group('분해 창 · 알 자동 분해(2026-10-06)', () {
+    test('여러 개 분해 = 요정 하나씩 분해한 가루 합 + 알 등급 가루', () {
+      var s = withFairies([
+        f(1),
+        f(2, g: FairyGrade.rare, lv: 5),
+        f(3, g: FairyGrade.epic),
+      ]);
+      s = grantFairyEggs(s, cfg, [FairyGrade.common, FairyGrade.rare]).state!;
+      final eggIds = [for (final e in s.eggs) e.id];
+      final one =
+          (releaseFairy(s, cfg, 'f1').extra['dust'] as int) +
+          (releaseFairy(s, cfg, 'f2').extra['dust'] as int);
+      final eggDust =
+          cfg.releaseDust[FairyGrade.common]! +
+          cfg.releaseDust[FairyGrade.rare]!;
+      final op = releaseFairiesBulk(
+        s,
+        cfg,
+        fairyIds: ['f1', 'f2'],
+        eggIds: eggIds,
+      );
+      expect(op.isOk, isTrue);
+      expect(op.extra['dust'], one + eggDust);
+      expect(op.state!.dust, s.dust + one + eggDust);
+      expect(op.state!.fairies.map((x) => x.id), ['f3']);
+      expect(op.state!.eggs, isEmpty);
+    });
+
+    test('동행 중·없는 것이 끼면 통째로 거절 · 빈 선택도 거절', () {
+      final s = withFairies([f(1), f(2)]).copyWith(companionId: 'f1');
+      expect(
+        releaseFairiesBulk(s, cfg, fairyIds: ['f1', 'f2']).error,
+        'companion',
+      );
+      expect(
+        releaseFairiesBulk(s, cfg, fairyIds: ['f2', 'f9']).error,
+        'no_fairy',
+      );
+      expect(releaseFairiesBulk(s, cfg, eggIds: ['e9']).error, 'no_egg');
+      expect(releaseFairiesBulk(s, cfg).error, 'bad_count');
+    });
+
+    test('자동 분해: 고른 등급 이하 알은 가루로 · 위 등급은 그대로 들어온다', () {
+      final s = setFairyAutoRelease(FairyState.empty, FairyGrade.rare).state!;
+      final op = grantFairyEggs(s, cfg, [
+        FairyGrade.common,
+        FairyGrade.epic,
+        FairyGrade.rare,
+        FairyGrade.legendary,
+      ]);
+      final out = op.state!;
+      expect(out.eggs.map((e) => e.grade), [
+        FairyGrade.epic,
+        FairyGrade.legendary,
+      ]);
+      expect(op.extra['kept'], [FairyGrade.epic, FairyGrade.legendary]);
+      expect(op.extra['autoEggs'], 2);
+      final d =
+          cfg.releaseDust[FairyGrade.common]! +
+          cfg.releaseDust[FairyGrade.rare]!;
+      expect(op.extra['autoDust'], d);
+      expect(out.dust, d);
+    });
+
+    test('상점에서 골라 산 알(autoRelease: false)은 자동 분해하지 않는다', () {
+      final s = setFairyAutoRelease(FairyState.empty, FairyGrade.epic).state!;
+      final op = grantFairyEggs(s, cfg, [
+        FairyGrade.common,
+      ], autoRelease: false);
+      expect(op.state!.eggs.single.grade, FairyGrade.common);
+      expect(op.extra['autoEggs'], 0);
+    });
+
+    test('자동 분해는 영웅까지만 · 끄기 · 세이브에 남는다(조작한 전설 값은 끔으로 읽는다)', () {
+      expect(
+        setFairyAutoRelease(FairyState.empty, FairyGrade.legendary).error,
+        'bad_grade',
+      );
+      final on = setFairyAutoRelease(FairyState.empty, FairyGrade.epic).state!;
+      expect(setFairyAutoRelease(on, null).state!.autoReleaseUpTo, isNull);
+      final back = FairyState.fromJson(
+        jsonDecode(jsonEncode(on.toJson())) as Map<String, dynamic>,
+      );
+      expect(back.autoReleaseUpTo, FairyGrade.epic);
+      expect(back, on);
+      expect(FairyState.fromJson({'ar': 'legendary'}).autoReleaseUpTo, isNull);
+      expect(FairyState.fromJson({'ar': 'zzz'}).autoReleaseUpTo, isNull);
+      // 기본값(끔)은 키를 적지 않는다(세이브 크기).
+      expect(FairyState.empty.toJson().containsKey('ar'), isFalse);
+    });
+
+    test('뽑기·정예 드롭도 자동 분해를 따른다', () {
+      final s = setFairyAutoRelease(FairyState.empty, FairyGrade.epic).state!;
+      final op = drawFairyEggs(s, cfg, Random(3), times: 10, jellyHave: 9999);
+      final grades = op.extra['grades'] as List<FairyGrade>;
+      final kept = op.extra['kept'] as List<FairyGrade>;
+      expect(kept.every((g) => g.index > FairyGrade.epic.index), isTrue);
+      expect((op.extra['autoEggs'] as int) + kept.length, grades.length);
+      expect(op.state!.eggs.length, kept.length);
+    });
+  });
 }

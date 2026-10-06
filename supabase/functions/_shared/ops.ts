@@ -23,6 +23,10 @@ export const PRICE_KRW: Record<string, number> = {
   skin_albino_stag: 3300,
   theme_arena: 2200,
   buff_pass: 6600,
+  fairy_starter: 4400,
+  skill_starter: 4400,
+  growth_pass: 5500,
+  weekly_bundle: 2200,
   remove_ads: 0,
 }
 

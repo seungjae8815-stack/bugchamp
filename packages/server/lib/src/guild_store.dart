@@ -140,6 +140,7 @@ class GuildMemberRow {
     this.contribution = 0,
     this.coins = 0,
     this.donateDay = '',
+    this.attendCount = 0,
     this.nickname = '',
     this.power = 0,
     this.badge = '',
@@ -158,6 +159,10 @@ class GuildMemberRow {
 
   /// 마지막으로 출석한 날(KST 09시 경계 키).
   final String donateDay;
+
+  /// 이 길드에서 출석한 날 수(출석 표 35칸 — 순환, `guild_members.attend_count`).
+  /// 멤버 행이 탈퇴·추방으로 지워지면 함께 사라진다 = 길드를 옮기면 처음부터.
+  final int attendCount;
   final String nickname;
   final double power;
   final String badge;
@@ -171,6 +176,8 @@ class GuildMemberRow {
     contribution: (j['contribution'] as num?)?.toInt() ?? 0,
     coins: (j['coins'] as num?)?.toInt() ?? 0,
     donateDay: j['donate_day'] as String? ?? '',
+    // 칸이 없는 옛 DB(SQL ⑨ 적용 전)면 0.
+    attendCount: (j['attend_count'] as num?)?.toInt() ?? 0,
     nickname: j['nickname'] as String? ?? '',
     power: (j['power'] as num?)?.toDouble() ?? 0,
     badge: j['badge'] as String? ?? '',
@@ -182,6 +189,7 @@ class GuildMemberRow {
     int? contribution,
     int? coins,
     String? donateDay,
+    int? attendCount,
   }) => GuildMemberRow(
     guildId: guildId,
     userId: userId,
@@ -191,6 +199,7 @@ class GuildMemberRow {
     contribution: contribution ?? this.contribution,
     coins: coins ?? this.coins,
     donateDay: donateDay ?? this.donateDay,
+    attendCount: attendCount ?? this.attendCount,
     nickname: nickname,
     power: power,
     badge: badge,
@@ -302,9 +311,24 @@ abstract interface class GuildStore {
   Future<void> addCoins(String userId, int coins);
   Future<void> addGuildExp(String guildId, int exp);
 
-  /// 출석 — **유저 기준** 그날 처음이면 코인을 더하고 true(원자적, SQL `guild_donate_v2`).
-  /// 길드를 옮겨도 같은 날엔 false — 추방 → 다른 길드 가입으로 두 번 받던 구멍(2026-10-05).
-  Future<bool> donate(String userId, String day, int coins);
+  /// 출석 — **유저 기준** 그날 처음이면 출석 횟수를 하나 올리고 코인(기본 [coins] + 그 일차의
+  /// [bonusCoins])을 **한 번에** 더한 뒤 새 출석 횟수를 돌려준다(원자적, SQL `guild_donate_v3`).
+  /// 이미 출석했으면 0. 길드를 옮겨도 같은 날엔 0 — 추방 → 다른 길드 가입으로 두 번 받던 구멍.
+  /// [bonusCoins] 는 일차별 보너스 코인(인덱스 0 = 1일차, 길이 = 출석 표 칸 수).
+  Future<int> donate(
+    String userId,
+    String day,
+    int coins,
+    List<int> bonusCoins,
+  );
+
+  /// 출석 되돌리기 — 큰 보상(화석·가루) 지급 저장이 실패했을 때. 출석 횟수 −1 · 코인·기여도 −[coins] ·
+  /// 그날 출석 기록을 지운다(다시 누를 수 있게, SQL `guild_donate_undo`).
+  Future<void> undoDonate({
+    required String userId,
+    required String day,
+    required int coins,
+  });
 
   /// 유저 기준 마지막 출석일(길드를 옮겨도 남는다). 없으면 ''.
   Future<String> donateDayOf(String userId);
@@ -582,13 +606,32 @@ class SupabaseGuildStore implements GuildStore {
       _rpcRaw('guild_add_exp', {'p_guild': guildId, 'p_exp': exp});
 
   @override
-  Future<bool> donate(String userId, String day, int coins) async =>
-      (await _rpcRaw('guild_donate_v2', {
-        'p_user': userId,
-        'p_day': day,
-        'p_coins': coins,
-      })) ==
-      true;
+  Future<int> donate(
+    String userId,
+    String day,
+    int coins,
+    List<int> bonusCoins,
+  ) async =>
+      ((await _rpcRaw('guild_donate_v3', {
+                'p_user': userId,
+                'p_day': day,
+                'p_coins': coins,
+                'p_bonus': bonusCoins,
+              }))
+              as num?)
+          ?.toInt() ??
+      0;
+
+  @override
+  Future<void> undoDonate({
+    required String userId,
+    required String day,
+    required int coins,
+  }) => _rpcRaw('guild_donate_undo', {
+    'p_user': userId,
+    'p_day': day,
+    'p_coins': coins,
+  });
 
   @override
   Future<String> donateDayOf(String userId) async {
@@ -681,6 +724,7 @@ class MemoryGuildStore implements GuildStore {
       contribution: m.contribution,
       coins: m.coins,
       donateDay: m.donateDay,
+      attendCount: m.attendCount,
       nickname: p?.nickname ?? '',
       power: p?.power ?? 0,
     );
@@ -909,20 +953,47 @@ class MemoryGuildStore implements GuildStore {
   }
 
   @override
-  Future<bool> donate(String userId, String day, int coins) async {
+  Future<int> donate(
+    String userId,
+    String day,
+    int coins,
+    List<int> bonusCoins,
+  ) async {
     final m = memberRows[userId];
-    if (m == null) return false;
+    if (m == null) return 0;
     if (m.donateDay == day || donateDays[userId] == day) {
       memberRows[userId] = m.copyWith(donateDay: day);
-      return false;
+      return 0;
     }
     donateDays[userId] = day;
+    final n = m.attendCount + 1;
+    final cycle = bonusCoins.isEmpty ? 1 : bonusCoins.length;
+    final bonus = bonusCoins.isEmpty ? 0 : bonusCoins[(n - 1) % cycle];
+    final add = coins + bonus;
     memberRows[userId] = m.copyWith(
       donateDay: day,
-      coins: m.coins + coins,
-      contribution: m.contribution + coins,
+      attendCount: n,
+      coins: m.coins + add,
+      contribution: m.contribution + add,
     );
-    return true;
+    return n;
+  }
+
+  @override
+  Future<void> undoDonate({
+    required String userId,
+    required String day,
+    required int coins,
+  }) async {
+    if (donateDays[userId] == day) donateDays[userId] = '';
+    final m = memberRows[userId];
+    if (m == null) return;
+    memberRows[userId] = m.copyWith(
+      donateDay: m.donateDay == day ? '' : m.donateDay,
+      attendCount: m.attendCount > 0 ? m.attendCount - 1 : 0,
+      coins: m.coins - coins < 0 ? 0 : m.coins - coins,
+      contribution: m.contribution - coins < 0 ? 0 : m.contribution - coins,
+    );
   }
 
   @override

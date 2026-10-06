@@ -305,7 +305,10 @@ class StoreIapService implements IapService {
               }
               // 광고 전환 신호는 **지급까지 끝난 뒤에만** 보낸다. 검증 실패·
               // 취소까지 세면 메타가 가짜 구매자를 닮은 사람에게 광고를 돌린다.
-              if (granted) _logPurchase(p);
+              if (granted &&
+                  !_restoredOwned.remove(p.purchaseID ?? p.productID)) {
+                _logPurchase(p);
+              }
               if (grant == _Grant.retry) {
                 // 서버 지급만 실패(콜드스타트·일시 오류) — 검증 보류와 같은 길로
                 // 재시도한다(2026-10-02 출시 점검).
@@ -414,9 +417,24 @@ class StoreIapService implements IapService {
       return res;
     });
     if (res.isOk && res.save != null) return true;
+    if (isIosRestoreOfOwned(
+      platform: defaultTargetPlatform,
+      error: res.error,
+    )) {
+      // iOS 구매 복원(2026-10-06 사장님 확정 — 완료로 처리): 복원하면 영수증 토큰이 원래와 달라질 수 있어
+      // 서버가 계정당 1회 상품을 `already_owned` 로 돌려준다. 물건은 이미 이 계정에 있고 복원은 결제가
+      // 아니므로 완료로 닫는다 — 안 그러면 재시도만 영영 반복한다. 안드로이드는 그대로 둔다(다른 구글
+      // 계정으로 진짜 두 번 결제한 경우 완료 통보를 안 해야 구글이 3일 뒤 환불한다).
+      debugPrint('[iap] iOS 복원 — 이미 보유한 상품, 완료 처리');
+      _restoredOwned.add(p.purchaseID ?? p.productID);
+      return true;
+    }
     debugPrint('[iap] 서버 지급 실패: ${res.error} (${res.status})');
     return false;
   }
+
+  /// iOS 복원으로 "이미 보유"를 완료 처리한 구매 — 광고 전환(매출) 신호를 보내지 않는다.
+  final _restoredOwned = <String>{};
 
   /// 구매 1건을 세이브에 반영. 중복 지급은 `purchaseId` 로 막는다.
   Future<_Grant> _grant(PurchaseDetails p) async {
@@ -483,6 +501,14 @@ final storePricesProvider = FutureProvider<Map<String, String>>((ref) async {
 @visibleForTesting
 bool purchaseAlreadyGranted(SaveGame? save, String token) =>
     token.isNotEmpty && save != null && save.redeemedPurchases.contains(token);
+
+/// 서버의 `already_owned`(계정당 1회 상품을 이미 가짐)를 **완료로 닫을지** — iOS 만(구매 복원은 토큰이
+/// 바뀌어 올 수 있다). 안드로이드는 진짜 두 번째 결제일 수 있어 닫지 않는다(구글 3일 자동 환불).
+@visibleForTesting
+bool isIosRestoreOfOwned({
+  required TargetPlatform platform,
+  required String? error,
+}) => platform == TargetPlatform.iOS && error == 'already_owned';
 
 /// [_grant] 결과 — 서버 지급만 실패한 경우는 실패가 아니라 **보류**다.
 enum _Grant { granted, failed, retry }

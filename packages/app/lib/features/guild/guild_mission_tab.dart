@@ -7,7 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/guild_service.dart';
 import '../../domain/providers.dart';
+import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
+import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
@@ -89,6 +92,57 @@ String guildMissionErrorText(AppLocalizations l, String code) => switch (code) {
   _ => l.guildErrGeneric,
 };
 
+/// 보상 한 줄 — 키틴·미네랄·수액·화석·코인 그림 + 수, 길드 경험치·요정 알 확률(있으면).
+/// 미션 카드·대기 시간 고르기에 쓴다. 360dp 에서 넘치지 않게 줄바꿈(Wrap).
+Widget guildMissionRewardChips(
+  AppLocalizations l,
+  GuildMissionReward r, {
+  int exp = 0,
+  double eggChance = 0,
+  double size = 14,
+  Color color = const Color(0xE6FFFFFF),
+}) {
+  final style = TextStyle(
+    color: color,
+    fontSize: size * 0.82,
+    fontWeight: FontWeight.w800,
+  );
+  Widget item(Widget icon, String text) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      icon,
+      const SizedBox(width: 2),
+      Text(text, style: style),
+    ],
+  );
+  Widget mat(MaterialKind k, int n) => item(
+    materialImage(
+      k,
+      size: size,
+      fallback: Icon(materialIcon(k), size: size, color: color),
+    ),
+    formatCompact(n),
+  );
+  return Wrap(
+    spacing: 8,
+    runSpacing: 2,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      if (r.chitin > 0) mat(MaterialKind.chitin, r.chitin),
+      if (r.mineral > 0) mat(MaterialKind.mineral, r.mineral),
+      if (r.sap > 0) mat(MaterialKind.sap, r.sap),
+      if (r.fossil > 0) mat(MaterialKind.fossil, r.fossil),
+      if (r.coins > 0) item(guildCoinIcon(size: size), formatCompact(r.coins)),
+      if (exp > 0) Text(l.guildMissionExpShort(exp), style: style),
+      if (eggChance > 0)
+        Text(
+          l.guildMissionEggChance(guildMultText(eggChance * 100)),
+          style: style.copyWith(color: _green),
+        ),
+    ],
+  );
+}
+
 /// 도와주기 공용(미션 탭 · 길드 채팅 카드).
 Future<void> guildHelpMission(
   BuildContext context,
@@ -166,6 +220,28 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
     _tick = null;
   }
 
+  /// 성공했을 때 받을 보상(예상) — 서버 지급과 **같은 core_run 함수**(guildMissionExpected).
+  /// 사냥터는 지금 내 세이브(서버도 출발 순간 서버 세이브의 사냥터를 쓴다), 길드 버프 "미션 보상" 포함.
+  GuildMissionReward _expected(
+    double mult,
+    int waitSec, {
+    bool helper = false,
+  }) {
+    final data = ref.read(gameDataProvider).value;
+    final save = ref.read(saveControllerProvider).value;
+    final run = data?.runConfig;
+    if (run == null || save == null) return const GuildMissionReward();
+    return guildMissionExpected(
+      _cfg,
+      run,
+      stage: save.stageNumber,
+      mult: mult,
+      waitSec: waitSec,
+      bonus: ref.read(guildBonusProvider)['missionReward'] ?? 0,
+      helper: helper,
+    );
+  }
+
   DateTime _now(GuildMissionsView v) =>
       ref.read(clockProvider).now().toUtc().add(v.serverOffset);
 
@@ -199,23 +275,56 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: OutlinedButton(
+                key: ValueKey('guildMissionWait:${cfg.waitSeconds[i]}'),
                 onPressed: () => Navigator.pop(context, cfg.waitSeconds[i]),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _honey,
                   side: const BorderSide(color: _honey),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-                child: Text(
-                  l.guildMissionWaitOption(
-                    cfg.waitSeconds[i] ~/ 60,
-                    i < cfg.waitMults.length
-                        ? guildMultText(cfg.waitMults[i])
-                        : '1',
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 10,
                   ),
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      // 혼자 바로 성공하는 칸은 대기 배율이 없다(서버와 같은 판정) — ×1 로 보인다.
+                      l.guildMissionWaitOption(
+                        cfg.waitSeconds[i] ~/ 60,
+                        guildMultText(
+                          guildMissionSoloSlot(slot.mult)
+                              ? 1
+                              : cfg.waitMultOf(cfg.waitSeconds[i]),
+                        ),
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    // 이 대기 시간으로 성공했을 때 받을 것 — 배율이 반영돼 숫자가 바뀐다.
+                    guildMissionRewardChips(
+                      l,
+                      _expected(slot.mult, cfg.waitSeconds[i]),
+                      exp: cfg.expSuccess,
+                      eggChance: cfg.eggChance,
+                      size: 13,
+                    ),
+                  ],
                 ),
               ),
             ),
+          const SizedBox(height: 10),
+          Text(
+            [
+              l.guildMissionFailRule((cfg.partialRewardMult * 100).round()),
+              if (!guildMissionSoloSlot(slot.mult))
+                l.guildMissionHelperRule(
+                  (cfg.helperRewardShare * 100).round(),
+                  cfg.helperCoins,
+                ),
+            ].join('\n'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: _dim, fontSize: 11.5, height: 1.4),
+          ),
         ],
       ),
       actions: [
@@ -475,10 +584,73 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
                 ),
             ],
           ),
+          // 함께하는 길드원 — 출발자(깃발) + 돕는 사람들, 보탠 전투력(2026-10-05).
+          const SizedBox(height: 4),
+          _teamRow(
+            l,
+            m.mine
+                ? l.guildMissionMine
+                : rules.maskNickname(m.ownerNick, fallback: l.nicknameFallback),
+            m.ownerPower,
+            owner: true,
+          ),
+          for (final h in m.helpers)
+            _teamRow(
+              l,
+              rules.maskNickname(h.nickname, fallback: l.nicknameFallback),
+              h.power,
+            ),
         ],
       ),
     );
   }
+
+  Widget _teamRow(
+    AppLocalizations l,
+    String name,
+    double power, {
+    bool owner = false,
+  }) => Padding(
+    padding: const EdgeInsets.only(top: 2),
+    child: Row(
+      children: [
+        Icon(
+          owner ? Icons.flag_rounded : Icons.volunteer_activism_rounded,
+          size: 13,
+          color: owner ? _honey : _green,
+        ),
+        const SizedBox(width: 4),
+        if (owner) ...[
+          Text(
+            l.guildMissionOwnerTag,
+            style: const TextStyle(
+              color: _honey,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+        Expanded(
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontSize: 11.5),
+          ),
+        ),
+        if (power > 0)
+          Text(
+            '${l.combatPowerLabel} ${formatCompact(power)}',
+            style: const TextStyle(
+              color: _honey,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _slotCard(
     AppLocalizations l,
@@ -486,6 +658,7 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
     GuildMissionSlot s,
   ) {
     final can = !_busy && v.startsLeft > 0 && !v.hasRunning;
+    final cfg = _cfg;
     return _missionCard(
       s.kind,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -507,6 +680,27 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
                       ? l.guildMissionSlotSolo(guildMultText(s.mult))
                       : l.guildMissionSlotNeed(guildMultText(s.mult)),
                   style: const TextStyle(color: _dim, fontSize: 11.5),
+                ),
+                const SizedBox(height: 3),
+                // 성공 보상(가장 짧은 대기 기준) — 대기 시간을 고르면 배율이 더해진 값이 보인다.
+                // 이름표는 한 줄 위에(옆에 두면 영어·일본어에서 보상 칸이 좁아져 넘친다).
+                Text(
+                  l.guildMissionRewardSuccess,
+                  style: const TextStyle(
+                    color: _honey,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                guildMissionRewardChips(
+                  l,
+                  _expected(
+                    s.mult,
+                    cfg.waitSeconds.isEmpty ? 60 : cfg.waitSeconds.first,
+                  ),
+                  exp: cfg.expSuccess,
+                  eggChance: cfg.eggChance,
+                  size: 13,
                 ),
               ],
             ),

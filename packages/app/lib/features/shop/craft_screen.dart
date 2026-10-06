@@ -192,11 +192,22 @@ class _ProductCard extends ConsumerWidget {
   bool get _owned => switch (product.type) {
     IapType.removeAds => save.adsRemoved,
     // 기간제라 '보유'로 잠그지 않는다 — 재구매로 기간을 잇는다.
-    IapType.buffPass => false,
-    IapType.starter => save.starterBought,
+    IapType.buffPass || IapType.growthPass => false,
     IapType.skin => save.ownedSkins.contains(product.skinId),
-    _ => false, // 젤리·패스는 반복 구매 가능
+    _ => false, // 젤리·패스는 반복 구매 가능 · 1회/주간 상품은 [_block]
   };
+
+  /// 계정당 1회·주 1회 차단(core_save `iapPurchaseBlock` — 서버 지급과 같은 기록을 본다).
+  ///
+  /// ⚠️ 주간 묶음은 **여기서만** 막는다. 결제가 끝난 영수증을 서버가 거절하면 구글이 3일 뒤
+  /// 환불하고 완료 통보가 꼬인다(2026-09-11 사고) — 그래서 서버는 같은 주 두 번째 영수증도 지급한다.
+  IapBlock _block(WidgetRef ref) => iapPurchaseBlock(
+    save,
+    product,
+    battle:
+        ref.read(gameDataProvider).value?.battleConfig ?? const BattleConfig(),
+    now: now,
+  );
 
   (IconData, Color) get _style => switch (product.type) {
     IapType.removeAds => (Icons.block_rounded, const Color(0xFF5FD3C8)),
@@ -205,6 +216,9 @@ class _ProductCard extends ConsumerWidget {
     IapType.pass => (Icons.workspace_premium_rounded, const Color(0xFFB98BFF)),
     IapType.jelly => (Icons.bubble_chart_rounded, const Color(0xFF7FD3F5)),
     IapType.skin => (Icons.palette_rounded, const Color(0xFFF48FB1)),
+    IapType.oncePack => (Icons.redeem_rounded, kHoney),
+    IapType.growthPass => (Icons.spa_rounded, const Color(0xFF8FE3A0)),
+    IapType.weekly => (Icons.date_range_rounded, const Color(0xFF7FD3F5)),
   };
 
   @override
@@ -213,7 +227,13 @@ class _ProductCard extends ConsumerWidget {
     final (icon, color) = _style;
     final name = product.name?.resolve(locale) ?? product.id;
     final desc = product.desc?.resolve(locale);
-    final owned = _owned;
+    final block = _block(ref);
+    final owned = _owned || block != IapBlock.none;
+    final ownedLabel = switch (block) {
+      IapBlock.owned => l.storePurchased,
+      IapBlock.thisWeek => l.storeWeeklyDone,
+      IapBlock.none => l.storeOwned,
+    };
     // 패스는 남은 기간을 보여준다.
     //
     // ⚠️ 곤충학자 패스와 **무한 버프 패스는 칸이 다르다**(`passExpiresAt` /
@@ -223,6 +243,8 @@ class _ProductCard extends ConsumerWidget {
       IapType.pass => save.passActive(now) ? save.passExpiresAt : null,
       IapType.buffPass =>
         save.buffPassActive(now) ? save.buffPassExpiresAt : null,
+      IapType.growthPass =>
+        save.growthPassActive(now) ? save.growthPassExpiresAt : null,
       _ => null,
     };
     final passLeft = passEndsAt?.difference(now).inDays;
@@ -332,6 +354,17 @@ class _ProductCard extends ConsumerWidget {
                     ],
                   ),
                 ],
+                if (block == IapBlock.thisWeek) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    l.storeWeeklyNext,
+                    style: const TextStyle(
+                      color: Color(0xFF7FD3F5),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
                 if (passLeft != null) ...[
                   const SizedBox(height: 3),
                   Text(
@@ -360,7 +393,7 @@ class _ProductCard extends ConsumerWidget {
               ),
               child: Text(
                 owned
-                    ? l.storeOwned
+                    ? ownedLabel
                     : (storePrice ?? '₩${formatThousands(product.priceKrw)}'),
                 style: const TextStyle(
                   fontSize: 12.5,
@@ -380,6 +413,23 @@ class _ProductCard extends ConsumerWidget {
     AppLocalizations l,
     String name,
   ) async {
+    // 화면이 낡았을 수 있다(다른 기기에서 샀다) — 결제창을 열기 직전에 최신 세이브로 한 번 더 본다.
+    final latest = ref.read(saveControllerProvider).value ?? save;
+    final block = iapPurchaseBlock(
+      latest,
+      product,
+      battle:
+          ref.read(gameDataProvider).value?.battleConfig ??
+          const BattleConfig(),
+      now: ref.read(clockProvider).now().toUtc(),
+    );
+    if (block != IapBlock.none) {
+      showCenterToast(
+        ctx,
+        block == IapBlock.thisWeek ? l.storeWeeklyNext : l.storePurchased,
+      );
+      return;
+    }
     final outcome = await ref.read(iapServiceProvider).buy(product);
     if (!ctx.mounted) return;
     // 결과마다 다른 안내를 준다 — 취소를 "실패"라고 하면 사용자가 불안해한다.

@@ -20,7 +20,7 @@ import '../../ui/colors.dart';
 
 const _honey = kHoney;
 
-/// 요정 탭(docs/design_fairy.md §2) — 위 → 아래: [둥지][뽑기][도감][자동 합성] ·
+/// 요정 탭(docs/design_fairy.md §2) — 위 → 아래: [둥지][뽑기][도감][합성][분해] ·
 /// 동행 요정 카드 · 요정함(요정 + 알).
 ///
 /// 규칙은 전부 core_save `fairy_progress.dart` 이고 여기는 보여 주고 부르기만 한다.
@@ -230,6 +230,24 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
               ),
             ),
             () => _open(const _MergeHubDialog()),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: _btn(
+            l.fairyRelease,
+            gameImageChain(
+              const ['assets/images/fairies/fairy_release.webp'],
+              size: 18,
+              fallback: const Icon(
+                Icons.recycling_rounded,
+                size: 15,
+                color: _honey,
+              ),
+            ),
+            () => _open(const _ReleaseHubDialog()),
+            // 자동 분해가 켜져 있으면 테두리로 알린다(모르고 알이 사라진다고 느끼지 않게).
+            badge: save.fairy.autoReleaseUpTo != null,
           ),
         ),
       ],
@@ -601,9 +619,16 @@ class _FairyCell extends ConsumerWidget {
 }
 
 class _EggCell extends StatelessWidget {
-  const _EggCell({required this.egg, required this.onTap});
+  const _EggCell({
+    required this.egg,
+    required this.onTap,
+    this.selected = false,
+  });
   final FairyEgg egg;
   final VoidCallback onTap;
+
+  /// 분해 창에서 고른 알.
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -614,18 +639,33 @@ class _EggCell extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0x22121A10),
+          color: selected ? c.withValues(alpha: 0.25) : const Color(0x22121A10),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: c.withValues(alpha: 0.35)),
+          border: Border.all(
+            color: selected ? c : c.withValues(alpha: 0.35),
+            width: selected ? 2 : 1,
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            fairyEggImage(egg.grade, size: 44),
-            Text(
-              fairyGradeLabel(l, egg.grade),
-              style: TextStyle(color: c, fontSize: 10.5),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  fairyEggImage(egg.grade, size: 44),
+                  Text(
+                    fairyGradeLabel(l, egg.grade),
+                    style: TextStyle(color: c, fontSize: 10.5),
+                  ),
+                ],
+              ),
             ),
+            if (selected)
+              const Positioned(
+                top: 2,
+                left: 2,
+                child: Icon(Icons.check_circle, size: 13, color: _honey),
+              ),
           ],
         ),
       ),
@@ -1923,6 +1963,321 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
   );
 }
 
+// ── 분해 ─────────────────────────────────────────────────────
+
+/// 분해 창(2026-10-06 사장님) — 요정·알을 **여러 개 골라** 한 번에 요정 가루로. 위에는 알 자동 분해 설정.
+///
+/// 등급 버튼은 그 등급의 **레벨 1 요정 + 알**을 한꺼번에 고른다(투자한 요정·동행은 빠진다 — 자동 합성과 같은 원칙).
+/// 레벨을 올린 요정은 직접 눌러야 고를 수 있고, 분해 전에 한 번 더 알린다. ❌ 젤리 없음(§2.6).
+class _ReleaseHubDialog extends ConsumerStatefulWidget {
+  const _ReleaseHubDialog();
+
+  @override
+  ConsumerState<_ReleaseHubDialog> createState() => _ReleaseHubDialogState();
+}
+
+class _ReleaseHubDialogState extends ConsumerState<_ReleaseHubDialog> {
+  final _fairies = <String>{};
+  final _eggs = <String>{};
+  bool _busy = false;
+
+  /// 등급 버튼에 띄우는 등급 — 전설 이상은 한꺼번에 고르지 않는다(실수로 잃으면 크다).
+  static const _bulkGrades = [
+    FairyGrade.common,
+    FairyGrade.rare,
+    FairyGrade.epic,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).value!.fairyConfig!;
+    final fs = save.fairy;
+    _fairies.removeWhere((id) => fs.fairyById(id) == null);
+    _eggs.removeWhere((id) => !fs.eggs.any((e) => e.id == id));
+    final list = [...fs.fairies]..sort(_fairyOrder);
+    final eggs = [...fs.eggs]
+      ..sort((a, b) => b.grade.index.compareTo(a.grade.index));
+    final preview = (_fairies.isEmpty && _eggs.isEmpty)
+        ? null
+        : releaseFairiesBulk(
+            fs,
+            cfg,
+            fairyIds: [..._fairies],
+            eggIds: [..._eggs],
+          );
+    final dust = (preview?.extra['dust'] as int?) ?? 0;
+    final count = _fairies.length + _eggs.length;
+    return GameDialog(
+      title: l.fairyRelease,
+      iconWidget: gameImageChain(
+        const ['assets/images/fairies/fairy_release.webp'],
+        size: 40,
+        fallback: const Icon(Icons.recycling_rounded, color: _honey),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.actionClose),
+        ),
+        FilledButton(
+          onPressed: count > 0 && !_busy ? () => _go(cfg) : null,
+          child: Text(l.fairyRelease),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _autoRow(l, fs),
+          const Divider(color: Color(0x33FFFFFF), height: 16),
+          Text(
+            l.fairyReleaseHint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            alignment: WrapAlignment.center,
+            children: [for (final g in _bulkGrades) _gradeChip(l, fs, g)],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                l.fairyReleasePicked('$count'),
+                style: const TextStyle(
+                  color: _honey,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(width: 8),
+              fairyDustImage(size: 14),
+              const SizedBox(width: 2),
+              Text(
+                '+${formatCompact(dust)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (list.isEmpty && eggs.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                l.fairyEmptyBox,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+            )
+          else
+            SizedBox(
+              width: 290,
+              height: 230,
+              child: GridView(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 72,
+                  mainAxisSpacing: 5,
+                  crossAxisSpacing: 5,
+                  childAspectRatio: 0.72,
+                ),
+                children: [
+                  for (final x in list)
+                    _FairyCell(
+                      fairy: x,
+                      companion: x.id == fs.companionId,
+                      companionLabel: l.fairyEquippedTag,
+                      selected: _fairies.contains(x.id),
+                      dim: x.id == fs.companionId,
+                      onTap: () {
+                        if (x.id == fs.companionId) {
+                          showCenterToast(context, l.fairyReleaseEquipped);
+                          return;
+                        }
+                        setState(() {
+                          if (!_fairies.remove(x.id)) _fairies.add(x.id);
+                        });
+                      },
+                    ),
+                  for (final e in eggs)
+                    _EggCell(
+                      egg: e,
+                      selected: _eggs.contains(e.id),
+                      onTap: () => setState(() {
+                        if (!_eggs.remove(e.id)) _eggs.add(e.id);
+                      }),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 알 자동 분해 — 끄기 · 일반 · 희귀 이하 · 영웅 이하.
+  Widget _autoRow(AppLocalizations l, FairyState fs) {
+    final cur = fs.autoReleaseUpTo;
+    Widget opt(FairyGrade? g) {
+      final on = cur == g;
+      final text = g == null
+          ? l.fairyAutoReleaseOff
+          : g == FairyGrade.common
+          ? fairyGradeLabel(l, g)
+          : l.fairyAutoReleaseUpTo(fairyGradeLabel(l, g));
+      return ChoiceChip(
+        label: Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: on
+                ? Colors.black
+                : (g == null ? Colors.white70 : fairyGradeColor(g)),
+          ),
+        ),
+        selected: on,
+        showCheckmark: false,
+        selectedColor: _honey,
+        backgroundColor: const Color(0x33121A10),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        onSelected: _busy || on
+            ? null
+            : (_) async {
+                setState(() => _busy = true);
+                await ref
+                    .read(saveControllerProvider.notifier)
+                    .fairySetAutoRelease(g);
+                if (mounted) setState(() => _busy = false);
+              },
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          l.fairyAutoReleaseTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          alignment: WrapAlignment.center,
+          children: [
+            opt(null),
+            for (final g in FairyGrade.values)
+              if (g.index <= kFairyAutoReleaseMax.index) opt(g),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l.fairyAutoReleaseHelp,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white54, fontSize: 10.5),
+        ),
+      ],
+    );
+  }
+
+  /// 등급 버튼 — 그 등급의 레벨 1 요정(동행·재굴림 대기 제외) + 알을 모두 고른다. 다 골라져 있으면 푼다.
+  Widget _gradeChip(AppLocalizations l, FairyState fs, FairyGrade g) {
+    final fIds = [
+      for (final f in fs.fairies)
+        if (f.grade == g && fairyIsFodder(fs, f)) f.id,
+    ];
+    final eIds = [
+      for (final e in fs.eggs)
+        if (e.grade == g) e.id,
+    ];
+    final n = fIds.length + eIds.length;
+    final all =
+        n > 0 && fIds.every(_fairies.contains) && eIds.every(_eggs.contains);
+    final c = fairyGradeColor(g);
+    return ActionChip(
+      label: Text(
+        l.fairyReleaseAllOf(fairyGradeLabel(l, g), '$n'),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: all ? Colors.black : c,
+        ),
+      ),
+      backgroundColor: all ? c : const Color(0x33121A10),
+      side: BorderSide(color: c.withValues(alpha: 0.6)),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      onPressed: n == 0
+          ? null
+          : () => setState(() {
+              if (all) {
+                _fairies.removeAll(fIds);
+                _eggs.removeAll(eIds);
+              } else {
+                _fairies.addAll(fIds);
+                _eggs.addAll(eIds);
+              }
+            }),
+    );
+  }
+
+  Future<void> _go(FairyConfig cfg) async {
+    final l = AppLocalizations.of(context);
+    final fs = ref.read(saveControllerProvider).requireValue.fairy;
+    final pre = releaseFairiesBulk(
+      fs,
+      cfg,
+      fairyIds: [..._fairies],
+      eggIds: [..._eggs],
+    );
+    if (!pre.isOk) {
+      showCenterToast(context, _err(l, pre.error));
+      return;
+    }
+    final dust = (pre.extra['dust'] as int?) ?? 0;
+    // 레벨을 올렸거나 전설 이상인 요정이 끼면 한 번 더 알린다(모르고 잃지 않게).
+    final valuable = [
+      for (final id in _fairies) ?fs.fairyById(id),
+    ].where((f) => f.level > 1 || f.grade.index >= FairyGrade.legendary.index);
+    final body = [
+      l.fairyReleaseBulkConfirm('${_fairies.length + _eggs.length}', '$dust'),
+      if (valuable.isNotEmpty) l.fairyReleaseValuableNote('${valuable.length}'),
+    ].join('\n\n');
+    final ok = await _confirm(context, l.fairyRelease, body);
+    if (!ok || !mounted) return;
+    setState(() => _busy = true);
+    final r = await ref
+        .read(saveControllerProvider.notifier)
+        .fairyReleaseBulk(fairyIds: [..._fairies], eggIds: [..._eggs]);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (r.isOk) {
+        _fairies.clear();
+        _eggs.clear();
+      }
+    });
+    showCenterToast(
+      context,
+      r.isOk ? l.fairyReleaseDone('${r.extra['dust'] ?? 0}') : _err(l, r.error),
+    );
+  }
+}
+
 // ── 뽑기 ─────────────────────────────────────────────────────
 
 class _GachaDialog extends ConsumerStatefulWidget {
@@ -2059,19 +2414,25 @@ class _GachaDialogState extends ConsumerState<_GachaDialog> {
     setState(() => _busy = true);
     final r = await ref.read(saveControllerProvider.notifier).fairyDraw(times);
     if (!mounted) return;
-    final grades = (r.extra['grades'] as List<FairyGrade>?) ?? const [];
+    final kept = (r.extra['kept'] as List<FairyGrade>?) ?? const [];
     final lost = (r.extra['overflowEggs'] as int?) ?? 0;
+    final auto = (r.extra['autoEggs'] as int?) ?? 0;
     setState(() {
       _busy = false;
-      // 가루가 된 알은 알 그림으로 보여 주지 않는다(넘침은 뒤쪽부터).
-      _last = grades.take(math.max(0, grades.length - lost)).toList();
+      // 가루가 된 알(넘침·자동 분해)은 알 그림으로 보여 주지 않는다 — 실제로 들어간 알만.
+      _last = kept;
     });
     if (!r.isOk) {
       showCenterToast(context, _err(l, r.error));
-    } else if (lost > 0) {
+    } else if (lost > 0 || auto > 0) {
       showCenterToast(
         context,
-        l.fairyOverflowToast('$lost', '${r.extra['overflowDust'] ?? 0}'),
+        [
+          if (auto > 0)
+            l.fairyAutoReleaseToast('$auto', '${r.extra['autoDust'] ?? 0}'),
+          if (lost > 0)
+            l.fairyOverflowToast('$lost', '${r.extra['overflowDust'] ?? 0}'),
+        ].join('\n'),
       );
     }
   }

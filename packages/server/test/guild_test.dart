@@ -27,7 +27,7 @@ void main() {
   }) async {
     final (st, body) = await g.create(
       uid,
-      jelly: 200,
+      jelly: 500,
       name: name,
       joinMode: mode,
     );
@@ -36,17 +36,17 @@ void main() {
   }
 
   group('만들기', () {
-    test('젤리가 개설 비용(200)보다 적으면 못 만든다', () async {
-      final (st, body) = await g.create('a', jelly: 199, name: '길드');
+    test('젤리가 개설 비용(500)보다 적으면 못 만든다', () async {
+      final (st, body) = await g.create('a', jelly: 499, name: '길드');
       expect(st, 409);
       expect(body['error'], 'insufficient_jelly');
-      expect(body['cost'], 200);
+      expect(body['cost'], 500);
       expect(store.guilds, isEmpty);
     });
 
     test('이름 규칙 — 길이·금칙어·운영자 사칭·깨진 문자', () async {
       for (final bad in ['a', '가나다라마바사아자차카타파', 'badword단', '운영자길드', 'ㅃㅃㅃ']) {
-        final (st, body) = await g.create('a', jelly: 200, name: bad);
+        final (st, body) = await g.create('a', jelly: 500, name: bad);
         expect(st, 400, reason: bad);
         expect(body['error'], 'name_invalid');
       }
@@ -54,7 +54,7 @@ void main() {
 
     test('이름은 대소문자를 무시하고 겹치면 안 된다', () async {
       await create('a', name: 'Beetle');
-      final (st, body) = await g.create('b', jelly: 200, name: 'beetle');
+      final (st, body) = await g.create('b', jelly: 500, name: 'beetle');
       expect(st, 409);
       expect(body['error'], 'name_taken');
     });
@@ -62,7 +62,7 @@ void main() {
     test('만든 사람이 길드장이다 · 이미 길드가 있으면 못 만든다', () async {
       await create('a');
       expect(store.memberRows['a']!.role, GuildRole.leader);
-      final (st, _) = await g.create('a', jelly: 200, name: '두번째');
+      final (st, _) = await g.create('a', jelly: 500, name: '두번째');
       expect(st, 409);
     });
   });
@@ -71,7 +71,7 @@ void main() {
     test('만들 때 고른 문장(1~10)이 응답·목록에 실린다 · 안 고르면 null', () async {
       final (st, body) = await g.create(
         'a',
-        jelly: 200,
+        jelly: 500,
         name: '문장길드',
         emblem: 7,
       );
@@ -89,7 +89,7 @@ void main() {
       for (final bad in [0, 11, -1]) {
         final (st, body) = await g.create(
           'a',
-          jelly: 200,
+          jelly: 500,
           name: '문장길드',
           emblem: bad,
         );
@@ -349,7 +349,7 @@ void main() {
     });
 
     Future<String> make() async {
-      final (_, b) = await g3.create('a', jelly: 200, name: '레벨길드');
+      final (_, b) = await g3.create('a', jelly: 500, name: '레벨길드');
       return (b['guild'] as Map)['id'] as String;
     }
 
@@ -369,7 +369,7 @@ void main() {
       await make();
       expect((await g3.donate('a')).$1, 200);
       await store.deleteMember('a');
-      final (_, b2) = await g3.create('a', jelly: 200, name: '두번째길드');
+      final (_, b2) = await g3.create('a', jelly: 500, name: '두번째길드');
       expect(b2['guild'], isNotNull);
       final (_, me) = await g3.me('a');
       expect(me['donatedToday'], true, reason: '화면도 출석함으로');
@@ -430,6 +430,131 @@ void main() {
       expect(store.memberRows['a']!.coins, 40);
       t = t.add(const Duration(days: 1));
       expect((await g3.buy('a', 'fossil')).$1, 200, reason: '다음 날 다시');
+    });
+
+    test('출석 표 — 출석한 날만 한 칸씩(연속 아님) · 7일차 큰 보상 · 35칸 뒤 1일차', () async {
+      const cfgA = GuildConfig(
+        attend: GuildAttendConfig(
+          cycleDays: 35,
+          bonuses: [
+            GuildAttendBonus(day: 7, coins: 50, fossil: 10),
+            GuildAttendBonus(day: 35, coins: 120, fossil: 30, fairyDust: 50),
+          ],
+        ),
+      );
+      final ga = GuildActions(
+        store: store,
+        config: cfgA,
+        rules: const ChatRules(),
+        now: () => t,
+      );
+      await ga.create('a', jelly: 500, name: '출석길드');
+      final delivered = <GuildAttendBonus>[];
+      Future<GuildResult> attend() =>
+          ga.donate('a', deliver: (b) async => delivered.add(b));
+      for (var d = 1; d <= 6; d++) {
+        final (st, body) = await attend();
+        expect(st, 200);
+        expect((body['attend'] as Map)['day'], d);
+        expect(body['attendCount'], d);
+        // 이틀씩 건너뛰어도(연속 아님) 다음 칸으로 이어진다.
+        t = t.add(Duration(days: d.isEven ? 3 : 1));
+      }
+      expect(delivered, isEmpty, reason: '큰 보상 전에는 세이브를 건드리지 않는다');
+      final coins6 = store.memberRows['a']!.coins;
+      expect(coins6, 6 * cfgA.donateCoins);
+      final (_, b7) = await attend();
+      expect((b7['attend'] as Map)['day'], 7);
+      expect((b7['attend'] as Map)['coins'], cfgA.donateCoins + 50);
+      expect((b7['attend'] as Map)['fossil'], 10);
+      expect(store.memberRows['a']!.coins, coins6 + cfgA.donateCoins + 50);
+      expect(delivered.single.day, 7);
+      // 35일차까지 채운 뒤 다음은 1일차.
+      for (var d = 8; d <= 35; d++) {
+        t = t.add(const Duration(days: 1));
+        await attend();
+      }
+      expect(store.memberRows['a']!.attendCount, 35);
+      expect(delivered.last.day, 35);
+      t = t.add(const Duration(days: 1));
+      final (_, b36) = await attend();
+      expect((b36['attend'] as Map)['day'], 1, reason: '다 채우면 1일차로');
+    });
+
+    test('출석 표 — 길드를 옮기면 처음부터 · 큰 보상 저장이 실패하면 출석을 되돌린다', () async {
+      const cfgA = GuildConfig(
+        attend: GuildAttendConfig(
+          cycleDays: 3,
+          bonuses: [GuildAttendBonus(day: 2, coins: 7, fairyDust: 30)],
+        ),
+      );
+      final ga = GuildActions(
+        store: store,
+        config: cfgA,
+        rules: const ChatRules(),
+        now: () => t,
+      );
+      await ga.create('a', jelly: 500, name: '옮기기길드');
+      expect((await ga.donate('a')).$1, 200);
+      t = t.add(const Duration(days: 1));
+      // 2일차 = 큰 보상 — 지급 저장 실패 → 출석이 통째로 되돌아간다(다시 누를 수 있다).
+      await expectLater(
+        ga.donate('a', deliver: (_) async => throw StateError('db')),
+        throwsStateError,
+      );
+      expect(store.memberRows['a']!.attendCount, 1);
+      expect(store.memberRows['a']!.coins, cfgA.donateCoins);
+      final (st, again) = await ga.donate('a', deliver: (_) async {});
+      expect(st, 200);
+      expect((again['attend'] as Map)['day'], 2);
+      expect((again['attend'] as Map)['fairyDust'], 30);
+      // 탈퇴 → 다른 길드: 출석 표가 1일차부터.
+      await ga.leave('a');
+      t = t.add(const Duration(days: 2));
+      await ga.create('a', jelly: 500, name: '새길드');
+      final (_, fresh) = await ga.donate('a');
+      expect((fresh['attend'] as Map)['day'], 1);
+      expect(fresh['attendCount'], 1);
+    });
+  });
+
+  group('길드원 정보 · 모집 목록', () {
+    test('길드원 정보는 같은 길드만 — 다른 길드·길드 없음은 403', () async {
+      final id = await create('a');
+      await g.join('b', id);
+      store.profiles['b'] = (nickname: '비', power: 1234);
+      final (st, body) = await g.member('a', 'b');
+      expect(st, 200);
+      final m = body['member'] as Map;
+      expect(m['nickname'], '비');
+      expect(m['power'], 1234);
+      expect(m['role'], 'member');
+      expect(m['rank'], 'rookie');
+      // 다른 길드 사람.
+      final other = await create('c', name: '다른길드');
+      expect(other, isNot(id));
+      expect((await g.member('a', 'c')).$1, 403);
+      expect((await g.member('c', 'b')).$1, 403);
+      // 길드 없는 사람을 보거나, 길드 없는 사람이 보면.
+      expect((await g.member('a', 'nobody')).$1, 403);
+      expect((await g.member('nobody', 'a')).$2['error'], 'not_in_guild');
+    });
+
+    test('검색어가 없으면 자리가 남은 길드만(모집 중) · 검색하면 꽉 찬 길드도', () async {
+      final full = await create('a', name: '만원길드');
+      await g.join('b', full);
+      await g.join('c', full); // maxMembers 3 → 가득
+      await create('d', name: '빈자리길드', mode: 'approval');
+      final (_, list) = await g.list('x');
+      final names = [
+        for (final r in list['guilds'] as List) (r as Map)['name'],
+      ];
+      expect(names, ['빈자리길드'], reason: '승인제도 모집 중');
+      final (_, found) = await g.list('x', query: '만원');
+      expect(
+        [for (final r in found['guilds'] as List) (r as Map)['name']],
+        ['만원길드'],
+      );
     });
   });
 }

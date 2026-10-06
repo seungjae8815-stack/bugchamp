@@ -1169,63 +1169,72 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     GameData? data,
     String locale,
     Map<String, dynamic> t,
-  ) {
-    final sp = '${t['sp']}';
-    final el = Element.values.where((e) => e.name == t['element']).firstOrNull;
-    String name = sp;
-    try {
-      name = data?.species(sp).name.resolve(locale) ?? sp;
-    } catch (_) {}
-    return Column(
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            color: const Color(0x22FFFFFF),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: const EdgeInsets.all(4),
-          child: gameImageChain(
-            ['assets/images/bugs/${sp}_adult.webp'],
-            size: 56,
-            fallback: const Icon(Icons.bug_report, color: Colors.white54),
-          ),
+  ) => duelProfileBugTile(l, data, locale, t);
+}
+
+/// 방어팀 곤충 한 칸(그림·이름·오행·전투력) — `/pvp/profile` 의 `team` 한 줄 모양.
+/// 리그 순위표 프로필과 길드원 정보 시트가 같은 칸을 쓴다.
+Widget duelProfileBugTile(
+  AppLocalizations l,
+  GameData? data,
+  String locale,
+  Map<String, dynamic> t,
+) {
+  final sp = '${t['sp']}';
+  final el = Element.values.where((e) => e.name == t['element']).firstOrNull;
+  String name = sp;
+  try {
+    name = data?.species(sp).name.resolve(locale) ?? sp;
+  } catch (_) {}
+  return Column(
+    children: [
+      Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: const Color(0x22FFFFFF),
+          borderRadius: BorderRadius.circular(10),
         ),
-        const SizedBox(height: 4),
-        Text(
-          name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-          ),
+        padding: const EdgeInsets.all(4),
+        child: gameImageChain(
+          ['assets/images/bugs/${sp}_adult.webp'],
+          size: 56,
+          fallback: const Icon(Icons.bug_report, color: Colors.white54),
         ),
-        if (el != null)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              elementIcon(el, size: 12),
-              const SizedBox(width: 2),
-              Text(
-                elementLabel(l, el),
-                style: TextStyle(color: elementColor(el), fontSize: 10.5),
-              ),
-            ],
-          ),
-        Text(
-          formatCompact(((t['power'] as num?) ?? 0).round()),
-          style: const TextStyle(
-            color: kHoney,
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-          ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
         ),
-      ],
-    );
-  }
+      ),
+      if (el != null)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            elementIcon(el, size: 12),
+            const SizedBox(width: 2),
+            Text(
+              elementLabel(l, el),
+              style: TextStyle(color: elementColor(el), fontSize: 10.5),
+            ),
+          ],
+        ),
+      Text(
+        formatCompact(((t['power'] as num?) ?? 0).round()),
+        style: const TextStyle(
+          color: kHoney,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    ],
+  );
 }
 
 /// 리그 id → 화면 이름(결투 화면·순위표·결산 팝업 공용).

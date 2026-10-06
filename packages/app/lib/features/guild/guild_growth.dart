@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/guild_service.dart';
 import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
+import '../../ui/fairy_art.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
@@ -178,24 +180,12 @@ class GuildGrowthBar extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // 출석 — 누르면 출석 표(35칸)가 열린다. 출석한 날에도 표는 볼 수 있다.
                         btn(
                           view.donatedToday
                               ? l.guildDonateDoneShort
                               : l.guildDonate,
-                          view.donatedToday
-                              ? null
-                              : () async {
-                                  final err = await ref
-                                      .read(guildProvider.notifier)
-                                      .donate();
-                                  if (!context.mounted) return;
-                                  showCenterToast(
-                                    context,
-                                    err == null
-                                        ? l.guildDonateOk
-                                        : guildGrowthErrorText(l, err),
-                                  );
-                                },
+                          () => showGuildAttendDialog(context),
                           dot: !view.donatedToday,
                           art: 'attend',
                           icon: Icons.event_available_rounded,
@@ -230,6 +220,210 @@ class GuildGrowthBar extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 출석 표(2026-10-05 사장님 확정) — 35칸(7일 × 5줄)을 출석한 날만 한 칸씩 채운다(연속 아님).
+/// 7·14·21·28·35일차 칸에는 큰 보상 그림. 규칙(일차 계산)은 서버와 같은 core_run [GuildAttendConfig].
+Future<void> showGuildAttendDialog(BuildContext context) {
+  final l = AppLocalizations.of(context);
+  return showGameDialog<void>(
+    context,
+    title: l.guildAttendTitle,
+    iconWidget: guildArt(
+      'attend',
+      size: 36,
+      fallback: const Icon(Icons.event_available_rounded, color: _honey),
+    ),
+    content: const GuildAttendCard(),
+    actions: [
+      gameDialogButton(
+        l.actionClose,
+        () => Navigator.of(context).pop(),
+        primary: false,
+      ),
+    ],
+  );
+}
+
+/// 출석 표 본문 — 달력 · 매일/큰 보상 안내 · 오늘 출석 버튼. [guildProvider] 를 지켜봐 출석하면 바로 채워진다.
+class GuildAttendCard extends ConsumerStatefulWidget {
+  const GuildAttendCard({super.key});
+
+  @override
+  ConsumerState<GuildAttendCard> createState() => _GuildAttendCardState();
+}
+
+class _GuildAttendCardState extends ConsumerState<GuildAttendCard> {
+  bool _busy = false;
+
+  Future<void> _attend() async {
+    final l = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    final r = await ref.read(guildProvider.notifier).donate();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    final a = r.attend;
+    if (r.error != null || a == null) {
+      showCenterToast(context, guildGrowthErrorText(l, r.error ?? 'network'));
+      return;
+    }
+    showCenterToast(
+      context,
+      [
+        l.guildAttendGot(a.day),
+        if (a.coins > 0) l.guildCoins(a.coins),
+        if (a.fossil > 0)
+          '${materialLabel(l, MaterialKind.fossil)} ${a.fossil}',
+        if (a.fairyDust > 0) '${l.fairyDust} ${a.fairyDust}',
+      ].join(' · '),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final v = ref.watch(guildProvider).value;
+    final cfg =
+        ref.watch(gameDataProvider).value?.guildConfig ?? const GuildConfig();
+    final a = cfg.attend;
+    final count = v?.attendCount ?? 0;
+    final done = v?.donatedToday ?? false;
+    // 채운 칸 수(다 채운 날엔 35칸이 다 차 보이고, 다음 출석에 1일차부터 다시).
+    final filled = a.dayOf(count);
+    final next = done ? 0 : a.nextDay(count);
+    final cycle = a.cycleDays < 1 ? 1 : a.cycleDays;
+    // 다음이 1일차면(처음 · 한 바퀴 끝) 빈 표로 보인다 — 다 찬 표 위에 1일차 표시가 겹치지 않게.
+    final shown = next == 1 ? 0 : filled;
+    const perRow = 7;
+    final rows = (cycle / perRow).ceil();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l.guildAttendProgress(shown, cycle),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: _honey,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        for (var r = 0; r < rows; r++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                for (var c = 0; c < perRow; c++)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: r * perRow + c < cycle
+                          ? _cell(
+                              l,
+                              a,
+                              r * perRow + c + 1,
+                              filled: r * perRow + c + 1 <= shown,
+                              today: r * perRow + c + 1 == next,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 6),
+        Text(
+          [
+            l.guildAttendDaily(cfg.donateCoins, cfg.donateExp),
+            if (a.bonuses.isNotEmpty) l.guildAttendBigNote,
+            l.guildAttendNote(cycle),
+          ].join('\n'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: _dim, fontSize: 11.5, height: 1.4),
+        ),
+        const SizedBox(height: 10),
+        FilledButton(
+          key: const ValueKey('guildAttendNow'),
+          onPressed: done || _busy || v?.guild == null ? null : _attend,
+          style: FilledButton.styleFrom(
+            backgroundColor: _honey,
+            foregroundColor: kHoneyInk,
+            padding: const EdgeInsets.symmetric(vertical: 11),
+          ),
+          child: Text(
+            done ? l.guildAttendDoneToday : l.guildAttendButton,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 달력 한 칸 — 일차 번호 · 채운 칸(체크) · 큰 보상 칸(보상 그림) · 오늘 칸(테두리).
+  Widget _cell(
+    AppLocalizations l,
+    GuildAttendConfig a,
+    int day, {
+    required bool filled,
+    required bool today,
+  }) {
+    final bonus = a.bonusOn(day);
+    final big = bonus != null;
+    final Widget? art = !big
+        ? null
+        : bonus.fairyDust > 0 && bonus.fossil == 0
+        ? fairyDustImage(size: 14)
+        : bonus.fossil > 0
+        ? materialImage(
+            MaterialKind.fossil,
+            size: 14,
+            fallback: Icon(materialIcon(MaterialKind.fossil), size: 13),
+          )
+        : guildCoinIcon(size: 14);
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        key: ValueKey('guildAttendCell:$day'),
+        decoration: BoxDecoration(
+          color: filled
+              ? _honey.withValues(alpha: 0.85)
+              : (big ? const Color(0x33EBA52F) : const Color(0x18FFFFFF)),
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(
+            color: today ? _green : (big ? _honey : const Color(0x22FFFFFF)),
+            width: today ? 2 : 1,
+          ),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              left: 3,
+              top: 1,
+              child: Text(
+                '$day',
+                style: TextStyle(
+                  color: filled ? kHoneyInk : const Color(0xCCFFFFFF),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            if (filled)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Icon(Icons.check_rounded, size: 16, color: kHoneyInk),
+              )
+            else if (art != null)
+              Padding(padding: const EdgeInsets.only(top: 7), child: art),
+          ],
+        ),
       ),
     );
   }

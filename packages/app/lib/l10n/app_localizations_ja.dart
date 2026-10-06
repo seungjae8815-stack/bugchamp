@@ -391,6 +391,15 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get storePurchased => '購入済み';
+
+  @override
+  String get storeWeeklyDone => '今週は購入済み';
+
+  @override
+  String get storeWeeklyNext => '来週月曜9時にまた購入できます';
+
+  @override
   String get biomeForest => '森';
 
   @override
@@ -5409,6 +5418,62 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get fairyReleaseHint => '分解する妖精・卵を選んでください。妖精の粉になります（元に戻せません）。';
+
+  @override
+  String fairyReleasePicked(String n) {
+    return '$n個選択';
+  }
+
+  @override
+  String fairyReleaseAllOf(String grade, String n) {
+    return '$gradeすべて（$n）';
+  }
+
+  @override
+  String get fairyReleaseEquipped => '同行中の妖精は分解できません';
+
+  @override
+  String fairyReleaseBulkConfirm(String n, String dust) {
+    return '$n個を分解して妖精の粉$dustを受け取ります。元に戻せません。';
+  }
+
+  @override
+  String fairyReleaseValuableNote(String n) {
+    return 'レベルを上げた妖精、または伝説以上の妖精が$n匹含まれています。';
+  }
+
+  @override
+  String fairyReleaseDone(String dust) {
+    return '妖精の粉 +$dust';
+  }
+
+  @override
+  String get fairyAutoReleaseTitle => '卵の自動分解';
+
+  @override
+  String get fairyAutoReleaseOff => 'オフ';
+
+  @override
+  String fairyAutoReleaseUpTo(String grade) {
+    return '$grade以下';
+  }
+
+  @override
+  String get fairyAutoReleaseHelp =>
+      '新しく手に入る卵のうち、選んだ等級以下はボックスに入れず妖精の粉にします。ギルドショップで買った卵はそのまま入ります。';
+
+  @override
+  String fairyAutoReleasePop(String dust) {
+    return '卵を自動分解・妖精の粉 +$dust';
+  }
+
+  @override
+  String fairyAutoReleaseToast(String n, String dust) {
+    return '卵$n個を自動分解し、妖精の粉$dustを受け取りました';
+  }
+
+  @override
   String exchangeDustLeft(String n) {
     return '本日あと$n';
   }
@@ -5766,4 +5831,124 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get guildPermRanksNote =>
       'メンバーランクはこのギルドで獲得したコイン(貢献度)で自動的に上がります。表示のみで、特典・権限はありません。ギルドを抜けると貢献度とともに消えます。';
+
+  @override
+  String get guildRecruitingTitle => 'メンバー募集中のギルド';
+
+  @override
+  String get guildSearchResultTitle => '検索結果';
+
+  @override
+  String get guildRecruitingEmpty => '募集中のギルドがありません — 自分で作ってみましょう！';
+
+  @override
+  String get guildAttendTitle => '出席カード';
+
+  @override
+  String guildAttendNote(int cycle) {
+    return '出席した日ごとに1マス埋まります(休んでも続きから)。$cycleマス埋めると1日目に戻ります。ギルドを移ると最初からです。';
+  }
+
+  @override
+  String guildAttendDay(int day) {
+    return '$day日目';
+  }
+
+  @override
+  String guildAttendProgress(int n, int cycle) {
+    return '$n / $cycleマス';
+  }
+
+  @override
+  String guildAttendDaily(int coins, int exp) {
+    return '毎日: コイン$coins · ギルド経験値$exp';
+  }
+
+  @override
+  String get guildAttendBigNote => '7日目ごとに大きな報酬(コイン · 化石 · 妖精の粉)';
+
+  @override
+  String get guildAttendButton => '今日の出席';
+
+  @override
+  String get guildAttendDoneToday => '今日は出席済み — また明日';
+
+  @override
+  String guildAttendGot(int day) {
+    return '$day日目 出席！';
+  }
+
+  @override
+  String guildMemberContribution(String n) {
+    return '貢献度 $n';
+  }
+
+  @override
+  String guildMemberLevel(int lv) {
+    return 'キャラクター Lv $lv';
+  }
+
+  @override
+  String get guildMemberPets => '装備中の昆虫';
+
+  @override
+  String get guildMemberTeam => '決闘の防衛チーム';
+
+  @override
+  String get guildMemberEquip => '装備';
+
+  @override
+  String get guildMemberFairy => '同行の妖精';
+
+  @override
+  String get guildMemberSkills => '装備スキル';
+
+  @override
+  String get guildMemberNone => 'なし';
+
+  @override
+  String get guildMemberNoSave => 'このメンバーの詳細を読み込めません';
+
+  @override
+  String get guildMemberFailed => 'メンバー情報を読み込めませんでした';
+
+  @override
+  String get guildMissionOwnerTag => '出発者';
+
+  @override
+  String get guildMissionTeamTitle => '参加中のメンバー';
+
+  @override
+  String get guildMissionRewardSuccess => '成功報酬';
+
+  @override
+  String guildMissionExpShort(int n) {
+    return 'ギルド経験値 $n';
+  }
+
+  @override
+  String guildMissionEggChance(String pct) {
+    return '妖精の卵 $pct%';
+  }
+
+  @override
+  String guildMissionFailRule(int pct) {
+    return '失敗時: 報酬 × 達成率 × $pct%';
+  }
+
+  @override
+  String guildMissionHelperRule(int pct, int coins) {
+    return '手伝った仲間: 自分の狩場基準で素材・化石$pct% + コイン$coins';
+  }
+
+  @override
+  String guildMissionWaitPick(int min) {
+    return '$min分待つ';
+  }
+
+  @override
+  String get chatTabAll => '全体';
+
+  @override
+  String get chatTabGuild => 'ギルド';
 }

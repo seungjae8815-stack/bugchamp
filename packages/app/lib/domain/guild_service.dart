@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -87,6 +88,109 @@ class GuildInfo {
   );
 }
 
+/// 출석 한 번의 결과 — 이번 일차와 받은 것(큰 보상 날엔 화석·가루도).
+class GuildAttendResult {
+  const GuildAttendResult({
+    required this.day,
+    this.coins = 0,
+    this.fossil = 0,
+    this.fairyDust = 0,
+  });
+  final int day;
+  final int coins;
+  final int fossil;
+  final int fairyDust;
+
+  static GuildAttendResult? fromJson(Object? j) {
+    if (j is! Map) return null;
+    int n(String k) => (j[k] as num?)?.toInt() ?? 0;
+    return GuildAttendResult(
+      day: n('day'),
+      coins: n('coins'),
+      fossil: n('fossil'),
+      fairyDust: n('fairyDust'),
+    );
+  }
+}
+
+/// 길드원 정보 시트 — 멤버 줄(직책·등급·기여도·전투력) + 그 사람 세이브의 **요약**(서버가 고른 것만).
+/// 곤충·장비·요정은 각 모델의 JSON 그대로 와서 같은 모델로 읽는다(채집함·장비 화면과 같은 그림).
+class GuildMemberDetail {
+  const GuildMemberDetail({
+    required this.member,
+    required this.rankId,
+    this.hasSummary = false,
+    this.level = 1,
+    this.tier = 0,
+    this.stage = 1,
+    this.inAbyss = false,
+    this.abyssFloor = 0,
+    this.pets = const [],
+    this.team = const [],
+    this.equipment = const [],
+    this.fairy,
+    this.skills = const [],
+  });
+
+  final GuildMemberInfo member;
+  final String rankId;
+
+  /// 서버 세이브가 있어 요약을 받았나(없으면 멤버 줄만 보인다).
+  final bool hasSummary;
+  final int level;
+  final int tier;
+  final int stage;
+  final bool inAbyss;
+  final int abyssFloor;
+  final List<IndividualBug> pets;
+
+  /// 결투 방어팀 — `/pvp/profile` 과 같은 모양(sp·element·power·bug).
+  final List<Map<String, dynamic>> team;
+  final List<EquipItem> equipment;
+  final Fairy? fairy;
+  final List<({String id, int level})> skills;
+
+  factory GuildMemberDetail.fromJson(Map<String, dynamic> j) {
+    final m = (j['member'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final s = (j['summary'] as Map?)?.cast<String, dynamic>();
+    List<T> list<T>(String k, T? Function(Map<String, dynamic>) f) => [
+      for (final x in (s?[k] as List? ?? const []))
+        if (x is Map) ?_tryParse(() => f(x.cast<String, dynamic>())),
+    ];
+    final fairyJson = s?['fairy'];
+    return GuildMemberDetail(
+      member: GuildMemberInfo.fromJson(m),
+      rankId: m['rank'] as String? ?? 'rookie',
+      hasSummary: s != null,
+      level: (s?['level'] as num?)?.toInt() ?? 1,
+      tier: (s?['tier'] as num?)?.toInt() ?? 0,
+      stage: (s?['stage'] as num?)?.toInt() ?? 1,
+      inAbyss: s?['inAbyss'] == true,
+      abyssFloor: (s?['abyssFloor'] as num?)?.toInt() ?? 0,
+      pets: list('pets', IndividualBug.fromJson),
+      team: list('team', (x) => x),
+      equipment: list('equipment', EquipItem.tryFromJson),
+      fairy: fairyJson is Map
+          ? _tryParse(() => Fairy.fromJson(fairyJson.cast<String, dynamic>()))
+          : null,
+      skills: [
+        for (final x in (s?['skills'] as List? ?? const []))
+          if (x is Map)
+            (id: '${x['id']}', level: (x['level'] as num?)?.toInt() ?? 0),
+      ],
+    );
+  }
+}
+
+/// 모르는 모양(새 서버가 보낸 새 칸 등)은 그 항목만 건너뛴다 — 시트 전체가 깨지지 않게.
+T? _tryParse<T>(T? Function() f) {
+  try {
+    return f();
+  } catch (_) {
+    return null;
+  }
+}
+
 /// 상점 품목 + 이번 기간 구매 수.
 class GuildShopEntry {
   const GuildShopEntry(this.item, this.bought);
@@ -158,6 +262,7 @@ class GuildView {
     this.requested = const [],
     this.myCoins = 0,
     this.donatedToday = false,
+    this.attendCount = 0,
     this.shop = const [],
   });
 
@@ -179,6 +284,9 @@ class GuildView {
   /// 내 길드 코인(서버 소유).
   final int myCoins;
   final bool donatedToday;
+
+  /// 이 길드에서 출석한 날 수(출석 표 35칸 — 순환, 서버 소유). 길드를 옮기면 0 부터.
+  final int attendCount;
   final List<GuildShopEntry> shop;
 
   /// 가입 신청을 수락·거절할 수 있나(길드장 · 스위치가 켜진 부길드장). 서버와 같은 함수.
@@ -204,6 +312,7 @@ class GuildView {
       ],
       myCoins: (j['myCoins'] as num?)?.toInt() ?? 0,
       donatedToday: j['donatedToday'] == true,
+      attendCount: (j['attendCount'] as num?)?.toInt() ?? 0,
       shop: [
         for (final x in (j['shop'] as List? ?? const []))
           GuildShopEntry(
@@ -347,7 +456,42 @@ class GuildController extends AsyncNotifier<GuildView> {
     return null;
   }
 
-  Future<String?> donate() => _apply(_server.guildDonate());
+  /// 출석 — 먼저 최신 세이브를 올리고(큰 보상 날엔 서버가 자기 저장본에 화석·가루를 넣는다), 돌아온
+  /// 세이브가 있으면 채택한다(상점과 같은 순서 — [withServerSaveLock] 안에서). 성공하면 이번 일차·받은 것.
+  Future<({String? error, GuildAttendResult? attend})> donate() async {
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final r = await withServerSaveLock(() async {
+      if (!await flushSaveBeforeServerAction(_server, () => ctrl.latestSave)) {
+        return null;
+      }
+      final r = await _server.guildDonate();
+      if (r.isOk && r.save != null) await ctrl.adoptServerSave(r.save!);
+      return r;
+    });
+    if (r == null) return (error: 'network', attend: null);
+    if (!r.isOk) {
+      final code = r.error ?? 'network';
+      if (guildStateStale(code)) unawaited(refresh());
+      return (error: code, attend: null);
+    }
+    _fetchedAt = DateTime.now();
+    state = AsyncData(_remember(GuildView.fromJson(r.data!)));
+    return (error: null, attend: GuildAttendResult.fromJson(r.data!['attend']));
+  }
+
+  /// 길드원 정보(같은 길드만 — 서버가 403). 실패하면 오류 코드.
+  Future<({String? error, GuildMemberDetail? detail})> member(
+    String userId,
+  ) async {
+    final r = await _server.guildMember(userId);
+    if (!r.isOk) {
+      final code = r.error ?? 'network';
+      if (guildStateStale(code)) unawaited(refresh());
+      return (error: code, detail: null);
+    }
+    return (error: null, detail: GuildMemberDetail.fromJson(r.data!));
+  }
+
   Future<String?> skillUp(String skillId) =>
       _apply(_server.guildSkillUp(skillId));
   Future<String?> skillReset() => _apply(_server.guildSkillReset());
@@ -495,6 +639,7 @@ class GuildMissionInfo {
     required this.helpers,
     required this.helped,
     required this.helperMax,
+    this.ownerPower = 0,
   });
 
   final String id;
@@ -508,9 +653,14 @@ class GuildMissionInfo {
   final bool settled;
   final bool success;
   final double ratio;
-  final List<String> helpers;
+
+  /// 지금 돕고 있는 길드원(닉네임·보탠 전투력).
+  final List<({String nickname, double power})> helpers;
   final bool helped;
   final int helperMax;
+
+  /// 출발자가 낸 전투력(옛 서버면 0 — 화면은 숫자를 빼고 이름만).
+  final double ownerPower;
 
   double get progress => need <= 0 ? 1 : (total / need).clamp(0.0, 1.0);
 
@@ -528,10 +678,15 @@ class GuildMissionInfo {
     ratio: (j['ratio'] as num?)?.toDouble() ?? 0,
     helpers: [
       for (final h in (j['helpers'] as List? ?? const []))
-        '${(h as Map)['nickname'] ?? ''}',
+        if (h is Map)
+          (
+            nickname: '${h['nickname'] ?? ''}',
+            power: (h['power'] as num?)?.toDouble() ?? 0,
+          ),
     ],
     helped: j['helped'] == true,
     helperMax: (j['helperMax'] as num?)?.toInt() ?? 3,
+    ownerPower: (j['ownerPower'] as num?)?.toDouble() ?? 0,
   );
 }
 

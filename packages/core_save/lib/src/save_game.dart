@@ -558,6 +558,9 @@ class SaveGame {
     this.adsRemoved = false,
     this.buffPassExpiresAt,
     this.starterBought = false,
+    this.boughtOnce = const {},
+    this.growthPassExpiresAt,
+    this.weeklyBought = const {},
     this.ownedSkins = const {},
     this.passExpiresAt,
     this.redeemedPurchases = const {},
@@ -1285,6 +1288,23 @@ class SaveGame {
   /// 스타터 패키지 구매 여부(계정당 1회).
   final bool starterBought;
 
+  /// 산 **계정당 1회 묶음**(`IapType.oncePack`) 상품 id(2026-10, 요정·스킬 입문 패키지).
+  ///
+  /// ⚠️ **서버 소유 필드**(`GameActions._serverOwnedKeys`) — 지우면 다시 살 수 있다.
+  /// 스타터는 옛 칸([starterBought])을 그대로 쓴다(옮기면 기존 구매자 기록이 갈린다).
+  final Set<String> boughtOnce;
+
+  /// 요정·스킬 성장 패스 만료 시각(UTC). null/과거면 없음. **서버 소유 필드**.
+  final DateTime? growthPassExpiresAt;
+
+  /// 주 1회 묶음(`IapType.weekly`)을 마지막으로 산 주(상품 id → 주 id, 결투 시즌과 같은
+  /// 월 09시 경계 — `iapWeekId`). **서버 소유 필드**. 앱이 구매 **전에** 이 값으로 버튼을 막는다.
+  final Map<String, String> weeklyBought;
+
+  /// 성장 패스가 살아 있는가.
+  bool growthPassActive(DateTime now) =>
+      growthPassExpiresAt != null && growthPassExpiresAt!.isAfter(now);
+
   /// 보유 스킨 id 집합(코스메틱 — 스탯 영향 없음).
   final Set<String> ownedSkins;
 
@@ -1512,6 +1532,9 @@ class SaveGame {
     bool? adsRemoved,
     DateTime? buffPassExpiresAt,
     bool? starterBought,
+    Set<String>? boughtOnce,
+    DateTime? growthPassExpiresAt,
+    Map<String, String>? weeklyBought,
     Set<String>? ownedSkins,
     DateTime? passExpiresAt,
     Set<String>? redeemedPurchases,
@@ -1639,6 +1662,9 @@ class SaveGame {
     adsRemoved: adsRemoved ?? this.adsRemoved,
     buffPassExpiresAt: buffPassExpiresAt ?? this.buffPassExpiresAt,
     starterBought: starterBought ?? this.starterBought,
+    boughtOnce: boughtOnce ?? this.boughtOnce,
+    growthPassExpiresAt: growthPassExpiresAt ?? this.growthPassExpiresAt,
+    weeklyBought: weeklyBought ?? this.weeklyBought,
     ownedSkins: ownedSkins ?? this.ownedSkins,
     passExpiresAt: passExpiresAt ?? this.passExpiresAt,
     redeemedPurchases: redeemedPurchases ?? this.redeemedPurchases,
@@ -1930,6 +1956,19 @@ class SaveGame {
         ? null
         : DateTime.parse(json['buffPassExpiresAt'] as String).toUtc(),
     starterBought: json['starterBought'] as bool? ?? false,
+    // 결제 상품(2026-10) — 서버 소유. 모양이 틀린 값은 던지지 않고 버린다(세이브 파서 방어).
+    boughtOnce: {
+      for (final v in (json['boughtOnce'] as List? ?? const []))
+        if (v is String) v,
+    },
+    growthPassExpiresAt: json['growthPassExpiresAt'] is String
+        ? DateTime.tryParse(json['growthPassExpiresAt'] as String)?.toUtc()
+        : null,
+    weeklyBought: {
+      if (json['weeklyBought'] is Map)
+        for (final e in (json['weeklyBought'] as Map).entries)
+          if (e.value is String) '${e.key}': e.value as String,
+    },
     ownedSkins:
         (json['ownedSkins'] as List?)?.cast<String>().toSet() ?? const {},
     redeemedPurchases:
@@ -2105,6 +2144,11 @@ class SaveGame {
     'adsRemoved': adsRemoved,
     'buffPassExpiresAt': buffPassExpiresAt?.toIso8601String(),
     'starterBought': starterBought,
+    // 기본값이면 키를 생략한다(세이브 크기). 서버 소유라 생략돼도 업로드가 지우지 못한다.
+    if (boughtOnce.isNotEmpty) 'boughtOnce': boughtOnce.toList()..sort(),
+    if (growthPassExpiresAt != null)
+      'growthPassExpiresAt': growthPassExpiresAt!.toIso8601String(),
+    if (weeklyBought.isNotEmpty) 'weeklyBought': weeklyBought,
     'ownedSkins': ownedSkins.toList(),
     'redeemedPurchases': redeemedPurchases.toList(),
     'blockedUserIds': blockedUserIds.toList(),

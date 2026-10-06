@@ -19,6 +19,7 @@ import 'game_config.dart';
 import 'guild_actions.dart';
 import 'guild_boss_actions.dart';
 import 'guild_boss_store.dart';
+import 'guild_member_summary.dart';
 import 'guild_mission_actions.dart';
 import 'guild_mission_store.dart';
 import 'guild_routes.dart';
@@ -425,6 +426,33 @@ Handler buildHandler({
         return r.isOk ? r.save : null;
       },
       storeSave: (uid, save) => store.save(uid, save.toJson()),
+      // 길드원 정보 시트 — 그 사람 세이브의 요약 + 서버가 검증한 결투 방어팀(`/pvp/profile` 과 같은 모양).
+      memberSummary: (uid) async {
+        final save = await loadSave(uid);
+        if (save == null) return null;
+        final team =
+            actions.defenderDuelTeam(
+              save,
+              speciesById: species,
+              petConfig: cfg.pet,
+              enhance: cfg.enhance,
+            ) ??
+            const <DuelBug>[];
+        return guildMemberSummary(
+          save,
+          team: [
+            for (final x in team)
+              {
+                'sp': x.speciesId,
+                'element': x.element.name,
+                'specialty': x.specialty.name,
+                'sizeMm': x.sizeMm,
+                'power': _duelPower(x),
+                'bug': x.toJson(),
+              },
+          ],
+        );
+      },
     );
 
     // 명예의 전당 명단 캐시(회차 id → 조회 시각·행). 끝난 회차라 순위가 더
@@ -3311,6 +3339,9 @@ Handler buildHandler({
             'adsRemoved': save.adsRemoved,
             'passExpiresAt': save.passExpiresAt?.toIso8601String(),
             'buffPassExpiresAt': save.buffPassExpiresAt?.toIso8601String(),
+            'growthPassExpiresAt': save.growthPassExpiresAt?.toIso8601String(),
+            'boughtOnce': save.boughtOnce.toList(),
+            'weeklyBought': save.weeklyBought,
             'passActive': save.passActive(t),
             'buffPassActive': save.buffPassActive(t),
             'purchases': save.redeemedPurchases.length,
@@ -3423,9 +3454,16 @@ Handler buildHandler({
           // 부화기 슬롯도 서버 소유가 아니다(젤리로도 사는 값이라 소유할 수
           // 없다 — §2.1). 세이브에 써도 덮이므로 **손으로 확인**해야 한다.
           'incubatorSlotsNeedsCheck': g.incubatorSlots > 0,
+          // 요정(가루·속성석·가속기·알)·스킬 만능 조각도 기기 권위 필드라 세이브에 써도 앱의 다음
+          // 업로드에 덮일 수 있다(2026-10 요정·스킬 상품). 덮였으면 /admin/mail 의 요정 칸으로 다시 보낸다.
+          'deviceGoodsNeedsCheck':
+              g.hasFairy || g.skillGradeShards.values.any((v) => v > 0),
           'passExpiresAt': res.save!.passExpiresAt?.toIso8601String(),
           'buffPassExpiresAt': res.save!.buffPassExpiresAt?.toIso8601String(),
+          'growthPassExpiresAt': res.save!.growthPassExpiresAt
+              ?.toIso8601String(),
           'starterBought': res.save!.starterBought,
+          'boughtOnce': res.save!.boughtOnce.toList(),
         });
       } on StateStoreException catch (e) {
         stderr.writeln('[admin/grant] $e');

@@ -14,7 +14,8 @@ void main() {
   final run = RunConfig.fromJson(_read('run_config.json'));
 
   test('실데이터를 읽는다', () {
-    expect(guild.createJellyCost, 200);
+    expect(guild.createJellyCost, 500);
+    expect(guild.createJellyCost % 10, 0, reason: '젤리 가격은 5·10 단위');
     expect(c.boardMults, hasLength(5));
     expect(c.waitSeconds, hasLength(c.waitMults.length));
   });
@@ -70,5 +71,72 @@ void main() {
     expect(help.coins, c.helperCoins);
     expect(lo.coins, (c.coinBase * 1.8).round());
     expect(lo.fossil, (c.fossilBase * 1.8).round());
+  });
+
+  test('예상 보상 = 서버 지급 함수(guildMissionReward + 버프)와 같은 값 · 대기 배율이 숫자를 바꾼다', () {
+    for (final mult in c.boardMults) {
+      for (final w in c.waitSeconds) {
+        final exp = guildMissionExpected(
+          c,
+          run,
+          stage: 350,
+          mult: mult,
+          waitSec: w,
+          bonus: 0.2,
+        );
+        final solo = guildMissionSoloSlot(mult);
+        final server = guildMissionBoost(
+          guildMissionReward(
+            c,
+            run,
+            stage: 350,
+            mult: mult,
+            factor: 1,
+            waitMult: solo ? 1.0 : c.waitMultOf(w),
+          ),
+          0.2,
+        );
+        expect(exp.toJson(), server.toJson(), reason: '$mult/$w');
+      }
+    }
+    // 대기 1·3·10분이면 재료가 1.0·1.1·1.25 배로 오른다(혼자 칸 제외).
+    final m = c.boardMults.last;
+    final a = guildMissionExpected(c, run, stage: 350, mult: m, waitSec: 60);
+    final b = guildMissionExpected(c, run, stage: 350, mult: m, waitSec: 600);
+    expect(b.chitin, greaterThan(a.chitin));
+    expect(b.chitin / a.chitin, closeTo(1.25, 0.02));
+    // 혼자 칸(×0.8)은 10분을 골라도 같다.
+    final s1 = guildMissionExpected(c, run, stage: 350, mult: 0.8, waitSec: 60);
+    final s2 = guildMissionExpected(
+      c,
+      run,
+      stage: 350,
+      mult: 0.8,
+      waitSec: 600,
+    );
+    expect(s2.toJson(), s1.toJson());
+    // 버프는 재료·화석만 — 코인은 그대로.
+    final nb = guildMissionExpected(c, run, stage: 350, mult: m, waitSec: 60);
+    final wb = guildMissionExpected(
+      c,
+      run,
+      stage: 350,
+      mult: m,
+      waitSec: 60,
+      bonus: 0.2,
+    );
+    expect(wb.coins, nb.coins);
+    expect(wb.chitin, greaterThan(nb.chitin));
+    // 도우미 몫 = 비율 · 코인 고정.
+    final h = guildMissionExpected(
+      c,
+      run,
+      stage: 350,
+      mult: m,
+      waitSec: 600,
+      helper: true,
+    );
+    expect(h.coins, c.helperCoins);
+    expect(h.chitin / b.chitin, closeTo(c.helperRewardShare, 0.02));
   });
 }

@@ -310,6 +310,7 @@ class FairyState {
     this.reroll,
     this.rerollDay = '',
     this.rerollCount = 0,
+    this.autoReleaseUpTo,
   });
 
   static const FairyState empty = FairyState();
@@ -320,6 +321,10 @@ class FairyState {
   /// 재굴림 하루 상한용 — 날짜 키(KST)와 그날 쓴 횟수. 서버가 세고, 업로드로 줄일 수 없다.
   final String rerollDay;
   final int rerollCount;
+
+  /// 알 자동 분해(2026-10-06 사장님) — 새로 얻는 알 중 **이 등급 이하**는 요정함에 넣지 않고 바로 가루로.
+  /// null = 끔. 영웅까지만 고를 수 있다([kFairyAutoReleaseMax]) — 전설 알이 조용히 사라지면 클레임이다.
+  final FairyGrade? autoReleaseUpTo;
 
   final List<Fairy> fairies;
   final List<FairyEgg> eggs;
@@ -393,6 +398,8 @@ class FairyState {
     bool clearReroll = false,
     String? rerollDay,
     int? rerollCount,
+    FairyGrade? autoReleaseUpTo,
+    bool clearAutoRelease = false,
   }) => FairyState(
     fairies: fairies ?? this.fairies,
     eggs: eggs ?? this.eggs,
@@ -410,6 +417,9 @@ class FairyState {
     reroll: clearReroll ? null : (reroll ?? this.reroll),
     rerollDay: rerollDay ?? this.rerollDay,
     rerollCount: rerollCount ?? this.rerollCount,
+    autoReleaseUpTo: clearAutoRelease
+        ? null
+        : (autoReleaseUpTo ?? this.autoReleaseUpTo),
   );
 
   /// 기본값인 칸은 적지 않는다(세이브 크기).
@@ -430,6 +440,7 @@ class FairyState {
     if (reroll != null) 'rp': reroll!.toJson(),
     if (rerollDay.isNotEmpty) 'rd': rerollDay,
     if (rerollCount != 0) 'rn': rerollCount,
+    if (autoReleaseUpTo != null) 'ar': autoReleaseUpTo!.key,
   };
 
   /// 깨진 칸은 건너뛴다 — 세이브 파서는 던지지 않는다(구버전·조작 세이브 방어).
@@ -475,6 +486,7 @@ class FairyState {
           : null,
       rerollDay: json['rd'] is String ? json['rd'] as String : '',
       rerollCount: _int(json['rn'], 0).clamp(0, 1000),
+      autoReleaseUpTo: _autoReleaseGrade(json['ar']),
     );
   }
 
@@ -497,7 +509,8 @@ class FairyState {
       other.exchangedDust == exchangedDust &&
       other.reroll == reroll &&
       other.rerollDay == rerollDay &&
-      other.rerollCount == rerollCount;
+      other.rerollCount == rerollCount &&
+      other.autoReleaseUpTo == autoReleaseUpTo;
 
   @override
   int get hashCode => Object.hash(
@@ -514,7 +527,17 @@ class FairyState {
     reroll,
     rerollDay,
     rerollCount,
+    autoReleaseUpTo,
   );
+}
+
+/// 알 자동 분해로 고를 수 있는 가장 높은 등급.
+const FairyGrade kFairyAutoReleaseMax = FairyGrade.epic;
+
+/// 세이브의 자동 분해 등급 — 모르는 키·상한 위(조작)는 끔으로 읽는다.
+FairyGrade? _autoReleaseGrade(Object? raw) {
+  final g = FairyGrade.fromKeyOrNull(raw is String ? raw : null);
+  return g == null || g.index > kFairyAutoReleaseMax.index ? null : g;
 }
 
 bool _listEq<T>(List<T> a, List<T> b) {

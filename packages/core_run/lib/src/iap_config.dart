@@ -21,7 +21,11 @@ enum IapType {
   buffPass('buffPass'), // 무한 버프 패스(기간제)
   starter('starter'), // 스타터 패키지(1회 묶음)
   pass('pass'), // 기간제 패스
-  skin('skin'); // 코스메틱
+  skin('skin'), // 코스메틱
+  // ── 2026-10 요정·스킬 상품(사장님 확정) ──
+  oncePack('oncePack'), // 계정당 1회 묶음(요정·스킬 입문) — `SaveGame.boughtOnce`
+  growthPass('growthPass'), // 요정·스킬 성장 패스(기간제 · 매일 지급)
+  weekly('weekly'); // 주 1회 묶음 — `SaveGame.weeklyBought`
 
   const IapType(this.key);
   final String key;
@@ -31,6 +35,9 @@ enum IapType {
 }
 
 /// 상품 구매 시 지급되는 재화·편의 묶음.
+///
+/// 요정·스킬 칸(2026-10)은 **곤충 전투 스탯이 아니다** — 요정은 방치 런에만, 스킬 조각은
+/// 무료 경로(보스·뽑기·소탕)로도 닿는 시간 판매다(§2.8 P2W 선). 결투·대회에는 실리지 않는다.
 @immutable
 class IapGrant {
   const IapGrant({
@@ -40,6 +47,11 @@ class IapGrant {
     this.mineral = 0,
     this.sap = 0,
     this.incubatorSlots = 0,
+    this.fairyDust = 0,
+    this.fairyStones = const {},
+    this.fairyAccelerators = const {},
+    this.fairyEggs = const {},
+    this.skillGradeShards = const {},
   });
 
   final int jelly;
@@ -51,13 +63,44 @@ class IapGrant {
   /// 부화기 슬롯 영구 확장 수(편의 — 스탯 아님).
   final int incubatorSlots;
 
+  /// 요정 가루.
+  final int fairyDust;
+
+  /// 속성석(부가 능력치 키 → 개수, `fairies.json → subWeight` 키).
+  final Map<String, int> fairyStones;
+
+  /// 가속기(가속기 id → 개수, `fairies.json → accelerators[].id`).
+  final Map<String, int> fairyAccelerators;
+
+  /// 요정 알(등급 키 → 개수, `FairyGrade.key`). 산 알은 **자동 분해하지 않는다**.
+  final Map<String, int> fairyEggs;
+
+  /// 스킬 만능 조각(등급 키 → 개수, `Grade.key` — `SaveGame.skillGradeShards`).
+  final Map<String, int> skillGradeShards;
+
+  /// 요정 칸이 하나라도 있는가(요정 설정이 있어야 지급할 수 있다 — 알은 요정함 상한을 본다).
+  bool get hasFairy =>
+      fairyDust > 0 ||
+      fairyStones.values.any((v) => v > 0) ||
+      fairyAccelerators.values.any((v) => v > 0) ||
+      fairyEggs.values.any((v) => v > 0);
+
   bool get isEmpty =>
       jelly == 0 &&
       gold == 0 &&
       chitin == 0 &&
       mineral == 0 &&
       sap == 0 &&
-      incubatorSlots == 0;
+      incubatorSlots == 0 &&
+      !hasFairy &&
+      !skillGradeShards.values.any((v) => v > 0);
+
+  static Map<String, int> _intMap(Object? v) => {
+    if (v is Map)
+      for (final e in v.entries)
+        if (e.value is num && (e.value as num).toInt() > 0)
+          '${e.key}': (e.value as num).toInt(),
+  };
 
   factory IapGrant.fromJson(Map<String, dynamic> json) => IapGrant(
     jelly: (json['jelly'] as num?)?.toInt() ?? 0,
@@ -66,6 +109,11 @@ class IapGrant {
     mineral: (json['mineral'] as num?)?.toInt() ?? 0,
     sap: (json['sap'] as num?)?.toInt() ?? 0,
     incubatorSlots: (json['incubatorSlots'] as num?)?.toInt() ?? 0,
+    fairyDust: (json['fairyDust'] as num?)?.toInt() ?? 0,
+    fairyStones: _intMap(json['fairyStones']),
+    fairyAccelerators: _intMap(json['fairyAccelerators']),
+    fairyEggs: _intMap(json['fairyEggs']),
+    skillGradeShards: _intMap(json['skillGradeShards']),
   );
 }
 
@@ -211,6 +259,8 @@ class IapConfig {
     this.passOfflineCapHours = 12,
     this.passIdleGoldMult = 1.2,
     this.buffPassDurationDays = 30,
+    this.growthPassDurationDays = 30,
+    this.growthPassDaily = const IapGrant(),
   });
 
   final List<IapProduct> products;
@@ -290,6 +340,14 @@ class IapConfig {
   /// 무한 버프 패스 기간(일).
   final int buffPassDurationDays;
 
+  /// 요정·스킬 성장 패스 기간(일).
+  final int growthPassDurationDays;
+
+  /// 성장 패스 **매일** 지급 묶음(요정 가루·만능 조각·가속기). ⚠️ 젤리를 넣지 않는다 —
+  /// 매일 도는 통로라 젤리 수도꼭지 규칙(§2.6)에 걸린다. 서버 업로드 검사 여유
+  /// (가루 500 · 아이템 10 · 조각 급증)보다 한참 작아야 한다(`iap_grant_test`).
+  final IapGrant growthPassDaily;
+
   /// 정렬된 상품 목록(sort 오름차순).
   /// 상점 표시용 — 판매 중단(hidden) 상품은 뺀다.
   List<IapProduct> get sorted =>
@@ -326,5 +384,10 @@ class IapConfig {
     passOfflineCapHours: (json['passOfflineCapHours'] as num?)?.toInt() ?? 12,
     passIdleGoldMult: (json['passIdleGoldMult'] as num?)?.toDouble() ?? 1.2,
     buffPassDurationDays: (json['buffPassDurationDays'] as num?)?.toInt() ?? 30,
+    growthPassDurationDays:
+        (json['growthPassDurationDays'] as num?)?.toInt() ?? 30,
+    growthPassDaily: json['growthPassDaily'] is Map<String, dynamic>
+        ? IapGrant.fromJson(json['growthPassDaily'] as Map<String, dynamic>)
+        : const IapGrant(),
   );
 }

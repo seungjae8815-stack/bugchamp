@@ -24,6 +24,13 @@
 --      문장을 돌려줘야 하는 조회 `guild_get`(⑦ 의 deputy_can_accept 와 **한 번에** 다시 만든다) · `guild_list` ·
 --      `guild_boss_top`(다른 길드 이름을 돌려주는 순위) — 반환 모양이 바뀌어 drop 후 create.
 --      길드전 상대 문장은 서버가 `guild_get` 으로 상대 길드를 읽어 붙인다(`guild_war_match` 변경 없음).
+--   ⑨ 출석 표(2026-10-05 사장님 확정) — 35칸을 출석한 날만 채운다(연속 아님). 새 칸 `guild_members.attend_count`
+--      (멤버 행이 지워지면 함께 사라진다 = 길드를 옮기면 처음부터). `guild_donate_v3` 가 유저 기준 하루 1회(④와 같은
+--      `guild_user_daily`)를 지키며 횟수 +1 · 코인 = 기본 + 그 일차 보너스(p_bonus[일차])를 **한 번에** 더하고 새 횟수를
+--      돌려준다. 큰 보상의 화석·가루는 서버가 세이브에 넣고, 그 저장이 실패하면 `guild_donate_undo` 로 되돌린다.
+--      ❌ 젤리 없음(35일마다 도는 통로 §2.6). ④의 `guild_donate_v2` 는 옛 서버용으로 그대로 둔다.
+--   ⑩ 모집 중 목록 — `guild_list` 가 **검색어가 없을 때** 자리가 남은 길드만 돌려준다(검색할 때는 꽉 찬 길드도).
+--      ⑧ 정의와 반환 모양이 같아 `create or replace` 로 덮는다. 가입 방식(공개·승인제)은 둘 다 들어갈 수 있어 거르지 않는다.
 -- 작성: 2026-10-05
 -- 위험: 낮음. 새 함수·새 테이블·기본값 있는 새 칸만 더한다(⑦ guild_get 은 칸 하나를 더해 다시 만든다 —
 --       옛 서버는 모르는 칸을 무시한다). 기존 함수(guild_boss_hit · guild_war_set/add ·
@@ -395,6 +402,93 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke execute on function guild_boss_top(text, text, int) from public, anon, authenticated;
 
+-- ⑨ 출석 표 — 출석 횟수 칸 + 일차 보너스 코인을 한 번에 ─────────────────────────
+alter table guild_members add column if not exists attend_count int not null default 0;
+comment on column guild_members.attend_count is
+  '이 길드에서 출석한 날 수(출석 표 35칸 순환) — 멤버 행이 지워지면(탈퇴·추방) 함께 사라진다 = 길드를 옮기면 처음부터 — 2026-10-05';
+
+-- 그날 처음이면(유저 기준 — ④와 같은 guild_user_daily) 출석 횟수 +1, 코인·기여도 = 기본 p_coins + p_bonus[그 일차]
+-- (1-기반, 일차 = (횟수 − 1) % 칸 수 + 1, 칸 수 = 배열 길이). 새 횟수를 돌려준다. 이미 출석했으면 0.
+-- 멤버 행 잠금(for update)이 같은 사람의 동시 요청을 줄 세운다 — 두 번 눌러도 한 번만 오른다.
+create or replace function guild_donate_v3(p_user uuid, p_day text, p_coins int, p_bonus int[])
+returns int language plpgsql security definer set search_path = public as $$
+declare
+  n     int;
+  cnt   int;
+  cyc   int := greatest(1, coalesce(array_length(p_bonus, 1), 1));
+  extra int;
+begin
+  perform 1 from guild_members where user_id = p_user for update;
+  if not found then return 0; end if;
+  insert into guild_user_daily (user_id, donate_day) values (p_user, p_day)
+  on conflict (user_id) do update set donate_day = excluded.donate_day
+   where guild_user_daily.donate_day <> excluded.donate_day;
+  get diagnostics n = row_count;
+  if n = 0 then
+    -- 길드를 옮겨도 같은 날엔 다시 못 한다 — 지금 길드 행에도 오늘을 적어 "출석함" 표시를 맞춘다.
+    update guild_members set donate_day = p_day where user_id = p_user and donate_day <> p_day;
+    return 0;
+  end if;
+  select attend_count + 1 into cnt from guild_members where user_id = p_user;
+  extra := greatest(0, coalesce(p_bonus[((cnt - 1) % cyc) + 1], 0));
+  update guild_members
+     set donate_day   = p_day,
+         attend_count = cnt,
+         coins        = coins + greatest(0, p_coins) + extra,
+         contribution = contribution + greatest(0, p_coins) + extra
+   where user_id = p_user;
+  return cnt;
+end;
+$$;
+
+-- 되돌리기 — 큰 보상(화석·가루) 저장이 실패했을 때: 횟수 −1 · 코인·기여도 −p_coins · 그날 기록을 지운다(다시 누를 수 있게).
+create or replace function guild_donate_undo(p_user uuid, p_day text, p_coins int)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  update guild_user_daily set donate_day = '' where user_id = p_user and donate_day = p_day;
+  update guild_members
+     set donate_day   = case when donate_day = p_day then '' else donate_day end,
+         attend_count = greatest(0, attend_count - 1),
+         coins        = greatest(0, coins - greatest(0, p_coins)),
+         contribution = greatest(0, contribution - greatest(0, p_coins))
+   where user_id = p_user;
+end;
+$$;
+
+-- ⑩ 모집 중 목록 — 검색어가 없으면 자리가 남은 길드만(⑧ 정의 + 마지막 where 한 줄) ───────────
+create or replace function guild_list(p_user uuid, p_lang text, p_query text default '', lim int default 20)
+returns table(id uuid, name text, lang text, level int, exp bigint, max_members int,
+              join_mode text, notice text, leader uuid, skill_points jsonb,
+              tier text, gr int, created_at timestamptz,
+              member_count bigint, avg_power double precision, emblem smallint)
+language sql stable security definer set search_path = public as $$
+  with me as (
+    select coalesce((select power from profiles where id = p_user), 0)::double precision as pw
+  ),
+  g as (
+    select g.*,
+           (select count(*) from guild_members m where m.guild_id = g.id) as member_count,
+           coalesce((select avg(coalesce(p.power, 0)) from guild_members m
+                       left join profiles p on p.id = m.user_id
+                      where m.guild_id = g.id), 0)::double precision as avg_power
+    from guilds g
+    where coalesce(p_query, '') = ''
+       or g.name ilike '%' || replace(replace(replace(p_query, '\', '\\'), '%', '\%'), '_', '\_') || '%'
+  )
+  select g.id, g.name, g.lang, g.level, g.exp, g.max_members, g.join_mode, g.notice, g.leader,
+         g.skill_points, g.tier, g.gr, g.created_at, g.member_count, g.avg_power, g.emblem
+  from g, me
+  where coalesce(p_query, '') <> '' or g.member_count < g.max_members
+  order by (g.lang = p_lang) desc,
+           (g.member_count >= g.max_members) asc,
+           abs(ln(g.avg_power + 1) - ln(me.pw + 1)) asc,
+           g.created_at desc
+  limit lim;
+$$;
+revoke execute on function guild_list(uuid, text, text, int) from public, anon, authenticated;
+
+revoke execute on function guild_donate_v3(uuid, text, int, int[]) from public, anon, authenticated;
+revoke execute on function guild_donate_undo(uuid, text, int) from public, anon, authenticated;
 revoke execute on function guild_mission_start(uuid, uuid, text, text, int, text, double precision, int, double precision, double precision, int, timestamptz, timestamptz, boolean, int, int) from public, anon, authenticated;
 revoke execute on function guild_mission_help(uuid, uuid, text, double precision, int, text, int) from public, anon, authenticated;
 revoke execute on function guild_boss_hit_v2(text, uuid, uuid, text, double precision, double precision, double precision, int, double precision, int) from public, anon, authenticated;
@@ -459,6 +553,16 @@ union all
 select '⑩ 앱이 guild_list·guild_boss_top 을 못 부른다', not exists(select 1 from pg_proc p
          where p.proname in ('guild_list','guild_boss_top')
            and (has_function_privilege('anon', p.oid, 'execute')
+                or has_function_privilege('authenticated', p.oid, 'execute')))
+union all
+select '⑪ guild_members.attend_count(기본 0) · 출석 함수 2개', exists(select 1 from information_schema.columns
+         where table_name = 'guild_members' and column_name = 'attend_count'
+           and column_default = '0' and is_nullable = 'NO')
+       and (select count(*) from pg_proc where proname in ('guild_donate_v3','guild_donate_undo')) = 2
+union all
+select '⑫ 앱이 출석 함수를 못 부른다', not exists(select 1 from pg_proc p
+         where p.proname in ('guild_donate_v3','guild_donate_undo')
+           and (has_function_privilege('anon', p.oid, 'execute')
                 or has_function_privilege('authenticated', p.oid, 'execute')));
 
 -- ────────────────────────────────────────────────────────────────
@@ -468,6 +572,11 @@ select '⑩ 앱이 guild_list·guild_boss_top 을 못 부른다', not exists(sel
 --    _sql_20261001_guild_growth.sql 의 guild_get 정의를 drop 후 다시 실행(칸을 먼저 지우면 guild_get 이 깨진다).
 -- ────────────────────────────────────────────────────────────────
 -- begin;
+--   -- ⑨ 출석 표(새 서버를 먼저 내린 뒤). attend_count 는 기본값이 있어 옛 서버에 무해 — 남겨도 된다.
+--   drop function if exists guild_donate_undo(uuid, text, int);
+--   drop function if exists guild_donate_v3(uuid, text, int, int[]);
+--   alter table guild_members drop column if exists attend_count;
+--   -- ⑩ guild_list 는 ⑧ 정의(마지막 where 줄 없이)를 다시 실행하면 꽉 찬 길드도 다시 보인다.
 --   drop function if exists guild_shop_refund(uuid, text, text, int);
 --   drop function if exists guild_war_resolve_lock(uuid, int);
 --   drop function if exists guild_war_tier_avg_stats(text, text);

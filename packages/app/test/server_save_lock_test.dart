@@ -13,6 +13,7 @@ import 'package:app/domain/store_iap_service.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _Repo implements SaveRepository {
@@ -199,6 +200,30 @@ void main() {
       final s = base.copyWith(redeemedPurchases: {''});
       expect(purchaseAlreadyGranted(s, ''), isFalse);
       expect(purchaseAlreadyGranted(null, 'tok-1'), isFalse);
+    });
+
+    test('iOS 복원의 already_owned 만 완료로 닫는다(안드로이드는 환불 경로 유지)', () {
+      expect(
+        isIosRestoreOfOwned(
+          platform: TargetPlatform.iOS,
+          error: 'already_owned',
+        ),
+        isTrue,
+      );
+      expect(
+        isIosRestoreOfOwned(
+          platform: TargetPlatform.android,
+          error: 'already_owned',
+        ),
+        isFalse,
+      );
+      expect(
+        isIosRestoreOfOwned(
+          platform: TargetPlatform.iOS,
+          error: 'store_unavailable',
+        ),
+        isFalse,
+      );
     });
   });
 }

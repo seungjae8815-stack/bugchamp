@@ -403,6 +403,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get storePurchased => 'Purchased';
+
+  @override
+  String get storeWeeklyDone => 'Done this week';
+
+  @override
+  String get storeWeeklyNext => 'Available again next Monday at 09:00 (KST)';
+
+  @override
   String get biomeForest => 'Forest';
 
   @override
@@ -5533,6 +5542,63 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get fairyReleaseHint =>
+      'Pick fairies and eggs to release. They turn into fairy dust (cannot be undone).';
+
+  @override
+  String fairyReleasePicked(String n) {
+    return '$n picked';
+  }
+
+  @override
+  String fairyReleaseAllOf(String grade, String n) {
+    return 'All $grade ($n)';
+  }
+
+  @override
+  String get fairyReleaseEquipped => 'Your companion fairy cannot be released';
+
+  @override
+  String fairyReleaseBulkConfirm(String n, String dust) {
+    return 'Release $n for $dust fairy dust? This cannot be undone.';
+  }
+
+  @override
+  String fairyReleaseValuableNote(String n) {
+    return 'Includes $n leveled or Legendary+ fairies.';
+  }
+
+  @override
+  String fairyReleaseDone(String dust) {
+    return 'Fairy dust +$dust';
+  }
+
+  @override
+  String get fairyAutoReleaseTitle => 'Auto-release eggs';
+
+  @override
+  String get fairyAutoReleaseOff => 'Off';
+
+  @override
+  String fairyAutoReleaseUpTo(String grade) {
+    return '$grade & below';
+  }
+
+  @override
+  String get fairyAutoReleaseHelp =>
+      'New eggs at or below this grade turn into fairy dust instead of entering the box. Eggs bought in the guild shop are kept.';
+
+  @override
+  String fairyAutoReleasePop(String dust) {
+    return 'Egg auto-released · Fairy dust +$dust';
+  }
+
+  @override
+  String fairyAutoReleaseToast(String n, String dust) {
+    return 'Auto-released $n eggs for $dust fairy dust';
+  }
+
+  @override
   String exchangeDustLeft(String n) {
     return '$n left today';
   }
@@ -5902,4 +5968,126 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get guildPermRanksNote =>
       'Member ranks rise automatically with the coins you earn in this guild (contribution). They are for display only, with no perks or permissions. Leaving the guild resets your contribution.';
+
+  @override
+  String get guildRecruitingTitle => 'Recruiting guilds';
+
+  @override
+  String get guildSearchResultTitle => 'Search results';
+
+  @override
+  String get guildRecruitingEmpty =>
+      'No guilds are recruiting right now — why not create your own?';
+
+  @override
+  String get guildAttendTitle => 'Attendance card';
+
+  @override
+  String guildAttendNote(int cycle) {
+    return 'Each day you check in fills one box (missed days don\'t reset it). After all $cycle boxes it starts over from Day 1. Changing guilds starts a new card.';
+  }
+
+  @override
+  String guildAttendDay(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String guildAttendProgress(int n, int cycle) {
+    return '$n / $cycle';
+  }
+
+  @override
+  String guildAttendDaily(int coins, int exp) {
+    return 'Every day: $coins coins · $exp guild EXP';
+  }
+
+  @override
+  String get guildAttendBigNote =>
+      'Big reward every 7th day (coins · fossils · fairy dust)';
+
+  @override
+  String get guildAttendButton => 'Check in today';
+
+  @override
+  String get guildAttendDoneToday => 'Checked in today — see you tomorrow';
+
+  @override
+  String guildAttendGot(int day) {
+    return 'Day $day checked in!';
+  }
+
+  @override
+  String guildMemberContribution(String n) {
+    return 'Contribution $n';
+  }
+
+  @override
+  String guildMemberLevel(int lv) {
+    return 'Character Lv $lv';
+  }
+
+  @override
+  String get guildMemberPets => 'Equipped bugs';
+
+  @override
+  String get guildMemberTeam => 'Duel defense team';
+
+  @override
+  String get guildMemberEquip => 'Equipment';
+
+  @override
+  String get guildMemberFairy => 'Companion fairy';
+
+  @override
+  String get guildMemberSkills => 'Equipped skills';
+
+  @override
+  String get guildMemberNone => 'None';
+
+  @override
+  String get guildMemberNoSave => 'Couldn\'t load this member\'s details';
+
+  @override
+  String get guildMemberFailed => 'Couldn\'t load member info';
+
+  @override
+  String get guildMissionOwnerTag => 'Leader';
+
+  @override
+  String get guildMissionTeamTitle => 'Members on this mission';
+
+  @override
+  String get guildMissionRewardSuccess => 'Success reward';
+
+  @override
+  String guildMissionExpShort(int n) {
+    return 'Guild EXP $n';
+  }
+
+  @override
+  String guildMissionEggChance(String pct) {
+    return 'Fairy egg $pct%';
+  }
+
+  @override
+  String guildMissionFailRule(int pct) {
+    return 'If it fails: reward × progress × $pct%';
+  }
+
+  @override
+  String guildMissionHelperRule(int pct, int coins) {
+    return 'Helpers: $pct% of materials/fossils (by their own zone) + $coins coins';
+  }
+
+  @override
+  String guildMissionWaitPick(int min) {
+    return 'Wait $min min';
+  }
+
+  @override
+  String get chatTabAll => 'All';
+
+  @override
+  String get chatTabGuild => 'Guild';
 }
