@@ -7,6 +7,8 @@
 //   dart run tool/event_duel_sim.dart --focus=heft --nocap    # 카드 누적 상한·확률 상한을 끈 채로(비교용)
 //   dart run tool/event_duel_sim.dart --set=statCompress=0.3  # 대회 전용 압축 바꿔 보기(없으면 결투 값)
 //   dart run tool/event_duel_sim.dart --nosize                # 사이즈 몫 덜어내기 끄기(예전 경로 비교용)
+//   dart run tool/event_duel_sim.dart --duel=clutchEnabled=true   # battle.json → duel 덮어쓰기(불값 가능)
+//   dart run tool/event_duel_sim.dart --data=<폴더>            # 다른 데이터 폴더(예: git show 로 꺼낸 옛 battle/event.json)
 //
 // 곤충 = 종 기본 능력치 × 사이즈 배율 × "키운 정도"(강화·수련·훈련을 한 배율로 뭉친 값).
 // 현실적 최고치는 약 ×3.5(부위 강화 만렙 +200~250% · 수련 +40% · 훈련 +25%)라 ×1 ~ ×4 를 본다.
@@ -23,6 +25,8 @@ import 'package:core_models/core_models.dart';
 
 void main(List<String> args) {
   final over = <String, num>{};
+  final duelOver = <String, Object>{};
+  var dataDir = '../app/assets/data';
   var n = 40;
   var gauge = 0.8;
   String? focus;
@@ -43,11 +47,22 @@ void main(List<String> args) {
       case 'set':
         final kv = m.group(2)!.split('=');
         over[kv[0]] = num.parse(kv[1]);
+      case 'duel':
+        final kv = m.group(2)!.split('=');
+        duelOver[kv[0]] = kv[1] == 'true' || kv[1] == 'false'
+            ? kv[1] == 'true'
+            : num.parse(kv[1]);
+      case 'data':
+        dataDir = m.group(2)!;
     }
   }
-  Map<String, dynamic> read(String f) =>
-      jsonDecode(File('../app/assets/data/$f').readAsStringSync())
-          as Map<String, dynamic>;
+  // battle·event 는 --data 폴더에서(없으면 기본 폴더), 종은 늘 지금 데이터.
+  Map<String, dynamic> read(String f) {
+    var file = File('$dataDir/$f');
+    if (!file.existsSync()) file = File('../app/assets/data/$f');
+    return jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+  }
+
   final ev = read('event.json');
   final spec = EventDuelSpec.fromJson({
     ...?(ev['duelWave'] as Map<String, dynamic>?),
@@ -57,6 +72,7 @@ void main(List<String> args) {
   // 서버·앱과 같은 함수 — 대회 전용 압축(duelWave.statCompress)이 결투 값을 덮어쓴다.
   final p = eventDuelParamsOf({
     ...?(read('battle.json')['duel'] as Map<String, dynamic>?),
+    ...duelOver,
     if (noCap) 'evadeMax': 99,
     if (noCap) 'critMax': 99,
   }, spec);
