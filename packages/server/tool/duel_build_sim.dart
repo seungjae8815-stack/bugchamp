@@ -8,6 +8,8 @@
 //   cd packages\server ; dart run tool/duel_build_sim.dart
 //   dart run tool/duel_build_sim.dart --n=40                         # 짝마다 판 수(기본 24)
 //   dart run tool/duel_build_sim.dart --set=strikeFlipBase=0.09      # battle.json → duel 덮어쓰기
+//   dart run tool/duel_build_sim.dart --set=clutchEnabled=true       # 불값도 된다(탭 반격 켠 1.0.18 상태)
+//   dart run tool/duel_build_sim.dart --only1 --n=200                # 1번 표(기질)만 — 판 수를 늘려 흔들림 줄이기
 //   dart run tool/duel_build_sim.dart --mod=aggressive.attack=2      # training.temperamentMods 덮어쓰기
 //   dart run tool/duel_build_sim.dart --per=crit=0.015               # training.perLevel 덮어쓰기
 //
@@ -26,7 +28,8 @@ import 'package:server/src/game_config.dart';
 
 Future<void> main(List<String> args) async {
   var n = 24;
-  final duelOver = <String, num>{};
+  final only1 = args.contains('--only1');
+  final duelOver = <String, Object>{};
   final modOver = <String, num>{};
   final perOver = <String, num>{};
   for (final a in args) {
@@ -38,7 +41,9 @@ Future<void> main(List<String> args) async {
         n = int.parse(v);
       case 'set':
         final kv = v.split('=');
-        duelOver[kv[0]] = num.parse(kv[1]);
+        duelOver[kv[0]] = kv[1] == 'true' || kv[1] == 'false'
+            ? kv[1] == 'true'
+            : num.parse(kv[1]);
       case 'mod':
         final kv = v.split('=');
         modOver[kv[0]] = num.parse(kv[1]);
@@ -188,6 +193,7 @@ Future<void> main(List<String> args) async {
       '  ${t.name.padRight(12)} ${(win[t]! / cnt[t]! * 100).toStringAsFixed(1)}%',
     );
   }
+  if (only1) return;
 
   // ── 2. 종별 판 길이 — 모든 종을 상대로(실제 경기 모양) ──
   final crossBySp = <String, double>{};

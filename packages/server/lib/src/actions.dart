@@ -44,6 +44,11 @@ class GameActions {
   /// 테스트에서 결정론을 위해 주입할 수 있다.
   final Random Function()? rngFactory;
 
+  /// 탭 반격 **개발자 시험 계정** 요청 중인가(2026-10-08 — 출시 전 실기 확인용). 켜져 있으면 `clutchEnabled` 가
+  /// false 여도 그 요청의 결투·대회 계산만 탭 반격을 켠다. app.dart 가 동기 호출 앞뒤로만 세운다(await 없음 — 다른
+  /// 요청과 섞이지 않는다). 계정 목록은 환경변수 `CLUTCH_TEST_USERS`(쉼표로 구분한 user id).
+  bool clutchTestUser = false;
+
   /// 한 번의 sync 에서 굴릴 드롭 롤 상한.
   /// 오래 비운 뒤 접속하면 처치 수가 수천이 될 수 있어 계산량을 묶는다.
   static const maxRollsPerSync = 300;
@@ -1834,7 +1839,11 @@ class GameActions {
   // 1.0.13 이하 앱이 강제 업데이트될 때까지 그대로 둔다 — 대회는 계속 옛 엔진이다.
 
   /// 결투 수치(`battle.json → duel`).
-  DuelParams get duelParams => DuelParams.fromJson(config.battle.duelJson);
+  DuelParams get duelParams => DuelParams.fromJson(
+    clutchTestUser
+        ? {...config.battle.duelJson, 'clutchEnabled': true}
+        : config.battle.duelJson,
+  );
 
   /// 결투 편성 검증 → 출전 순서대로 결투 유닛. 검증 기준은 [validateTeam] 과 **같다**
   /// (보유·부상·성충·위조) — 한쪽만 느슨하면 그쪽으로 우회한다.
@@ -4149,8 +4158,12 @@ class GameActions {
       EventDuelSpec.fromJson(config.event?.duelWaveJson);
 
   /// 대회용 결투 수치 — `duelWave.statCompress` 가 있으면 결투 값을 덮어쓴다(앱과 같은 함수).
-  DuelParams get eventDuelParams =>
-      eventDuelParamsOf(config.battle.duelJson, eventDuelSpec);
+  DuelParams get eventDuelParams => eventDuelParamsOf(
+    clutchTestUser
+        ? {...config.battle.duelJson, 'clutchEnabled': true}
+        : config.battle.duelJson,
+    eventDuelSpec,
+  );
 
   /// 웨이브 [wave] 의 적 — 모습(종)은 회차 seed 로 고른다(앱과 같은 순서: 종 id 정렬).
   DuelBug eventDuelEnemyOf(

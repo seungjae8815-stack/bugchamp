@@ -220,6 +220,22 @@ int _secureSeed() => _seedRng.nextInt(0x7fffffff);
 bool _clutchCapable(Request req, Map<String, dynamic> body) =>
     body['clutch'] == true || req.headers['x-bc-clutch'] == '1';
 
+/// 탭 반격 시험 계정(환경변수 `CLUTCH_TEST_USERS` — 쉼표로 구분한 user id). 출시 전 실기 확인용.
+final Set<String> _clutchTestUsers = {
+  for (final x in (Platform.environment['CLUTCH_TEST_USERS'] ?? '').split(','))
+    if (x.trim().isNotEmpty) x.trim(),
+};
+
+/// [userId] 가 시험 계정이면 [f] 동안만 탭 반격을 켠다([GameActions.clutchTestUser]). [f] 는 **동기** 호출이어야 한다.
+T _asClutchTester<T>(GameActions actions, String userId, T Function() f) {
+  actions.clutchTestUser = _clutchTestUsers.contains(userId);
+  try {
+    return f();
+  } finally {
+    actions.clutchTestUser = false;
+  }
+}
+
 /// 명예의 전당 명단 상한. 참가자 전원을 싣되 끝없이 늘지 않게 막는다.
 const _hallLimit = 500;
 
@@ -1383,12 +1399,16 @@ Handler buildHandler({
       try {
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.eventDuelStart(
-          save,
-          bugId: bugId,
-          speciesById: species,
-          petConfig: cfg.pet,
-          enhance: cfg.enhance,
+        final r = _asClutchTester(
+          actions,
+          user.id,
+          () => actions.eventDuelStart(
+            save,
+            bugId: bugId,
+            speciesById: species,
+            petConfig: cfg.pet,
+            enhance: cfg.enhance,
+          ),
         );
         if (!r.isOk) {
           _noteForged(ops, user.id, r.error);
@@ -1439,16 +1459,20 @@ Handler buildHandler({
         }
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.eventDuelThrow(
-          save,
-          session: data,
-          launch: launch,
-          cardId: body['cardId']?.toString(),
-          speciesById: species,
-          petConfig: cfg.pet,
-          enhance: cfg.enhance,
-          // 탭 반격을 모르는 앱(1.0.17)은 자동 점수로 끝까지.
-          clutch: _clutchCapable(req, body),
+        final r = _asClutchTester(
+          actions,
+          user.id,
+          () => actions.eventDuelThrow(
+            save,
+            session: data,
+            launch: launch,
+            cardId: body['cardId']?.toString(),
+            speciesById: species,
+            petConfig: cfg.pet,
+            enhance: cfg.enhance,
+            // 탭 반격을 모르는 앱(1.0.17)은 자동 점수로 끝까지.
+            clutch: _clutchCapable(req, body),
+          ),
         );
         return await finishEventDuelStep(user, sessionId, data, save, r);
       } on StateStoreException catch (e) {
@@ -1485,14 +1509,18 @@ Handler buildHandler({
         }
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.eventDuelClutch(
-          save,
-          session: data,
-          index: index,
-          score: score,
-          speciesById: species,
-          petConfig: cfg.pet,
-          enhance: cfg.enhance,
+        final r = _asClutchTester(
+          actions,
+          user.id,
+          () => actions.eventDuelClutch(
+            save,
+            session: data,
+            index: index,
+            score: score,
+            speciesById: species,
+            petConfig: cfg.pet,
+            enhance: cfg.enhance,
+          ),
         );
         return await finishEventDuelStep(user, sessionId, data, save, r);
       } on StateStoreException catch (e) {
@@ -2613,15 +2641,19 @@ Handler buildHandler({
         }
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.duelThrow(
-          save,
-          session,
-          launch: launch,
-          speciesById: species,
-          petConfig: cfg.pet,
-          enhance: cfg.enhance,
-          // 1.0.18+ 앱만 탭 반격을 받는다 — 모르는 앱(1.0.17)은 자동 점수로 끝까지(멈춘 판을 받지 않게).
-          clutch: _clutchCapable(req, body),
+        final r = _asClutchTester(
+          actions,
+          user.id,
+          () => actions.duelThrow(
+            save,
+            session,
+            launch: launch,
+            speciesById: species,
+            petConfig: cfg.pet,
+            enhance: cfg.enhance,
+            // 1.0.18+ 앱만 탭 반격을 받는다 — 모르는 앱(1.0.17)은 자동 점수로 끝까지(멈춘 판을 받지 않게).
+            clutch: _clutchCapable(req, body),
+          ),
         );
         return await finishDuelStep(user.id, sessionId, r);
       } on StateStoreException catch (e) {
@@ -2662,14 +2694,18 @@ Handler buildHandler({
         }
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.duelClutch(
-          save,
-          session,
-          index: index,
-          score: score,
-          speciesById: species,
-          petConfig: cfg.pet,
-          enhance: cfg.enhance,
+        final r = _asClutchTester(
+          actions,
+          user.id,
+          () => actions.duelClutch(
+            save,
+            session,
+            index: index,
+            score: score,
+            speciesById: species,
+            petConfig: cfg.pet,
+            enhance: cfg.enhance,
+          ),
         );
         return await finishDuelStep(user.id, sessionId, r);
       } on StateStoreException catch (e) {
