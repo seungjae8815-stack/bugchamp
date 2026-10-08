@@ -110,13 +110,52 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
         'skills',
         Icons.auto_awesome_rounded,
         _Panel.skills,
+        // 놀고 있는 스킬 조각으로 승급할 수 있으면 빨간 점(2026-10-08).
+        dot: () {
+          final cfg = ref.watch(gameDataProvider).value?.skillConfig;
+          final save = ref.watch(saveControllerProvider).value;
+          return cfg != null &&
+              save != null &&
+              skillIdleGradeUps(cfg, save).isNotEmpty;
+        }(),
       ),
     ],
   );
 
-  Widget _tab(String text, String art, IconData icon, _Panel p) {
+  Widget _tab(
+    String text,
+    String art,
+    IconData icon,
+    _Panel p, {
+    bool dot = false,
+  }) {
     final on = _panel == p;
     return Expanded(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          _tabBody(text, art, icon, p, on),
+          if (dot)
+            Positioned(
+              top: -3,
+              right: -2,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF4D4D),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.2),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tabBody(String text, String art, IconData icon, _Panel p, bool on) {
+    return SizedBox(
       child: InkWell(
         onTap: () => setState(() => _panel = p),
         borderRadius: BorderRadius.circular(10),

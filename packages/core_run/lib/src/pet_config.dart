@@ -734,7 +734,8 @@ typedef PetStat = ({
   /// 종 고유 패시브(§2.1). 없으면 null.
   SpeciesPassive? passive,
 
-  /// 훈련소 배율(2026-09-29) — 1 + 훈련 단계 합계 × `training.petScale`. 호출자가 세이브에서 계산한다.
+  /// 훈련 배율 — 1 + 찍은 훈련 포인트 × `training.petPerPoint`(훈련 v2, 2026-10-08; 옛 부위 강화·훈련
+  /// 단계가 있는 곤충은 옛 식과 max). 호출자가 세이브에서 계산한다(core_save `trainPetMult`).
   double trainMult,
 });
 
@@ -753,7 +754,9 @@ PetStat petStatOf(
   grade: species.grade,
   sizeMult: bug.statMultiplier(species),
   potential: bug.potential,
-  enhanceTotal: bug.enhancement.total,
+  // 훈련 v2(2026-10-08): 부위 강화는 훈련 포인트로 이전됐다 — 펫 기여는 [trainMult]
+  // (core_save `trainPetMult` = 1 + 찍은 포인트 × petPerPoint, 옛 투자는 max 로 보존)가 맡는다.
+  enhanceTotal: 0,
   stage: effectiveStage(bug.stage, bug.stageSince, now, cfg),
   level: bug.level,
   trait: bug.trait,

@@ -264,6 +264,16 @@ class GameActions {
     16: ['lockedBugs', 'reviewTier', 'reviewOpened'],
     // 올라갈 수 있는 한계(1.0.17, 쓰러지면 아래로 — zone_fall.dart). 모르는 앱이 올리면 저장본의 한계를 지킨다.
     17: ['capT', 'capS'],
+    // 훈련 v2(1.0.18, docs/design_training_v2.md) — 포인트 배분·찍기 대기열·결투석. 모르는 앱이 올리면 저장본을 지킨다.
+    // 옛 훈련 단계·대기열도 여기서 **얼린다** — 1.0.17 앱은 옛 훈련소로 단계를 계속 올릴 수 있는데, 그 단계가
+    // 이전 상한(옛 투자로 다시 계산하는 칸 상한·보너스 한도)을 늘린다. 저장본 값(이전 때 굳은 값)으로 둔다.
+    19: [
+      'trainPoints',
+      'trainPointJob',
+      'duelStones',
+      'duelTraining',
+      'trainingJob',
+    ],
   };
 
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
@@ -1219,6 +1229,10 @@ class GameActions {
     // (2026-07 실제 장애). 서버가 여기서 자르고 `clamped` 로 알려주면
     // 클라이언트가 잘린 세이브를 채택해 다음 업로드부터 정상 크기가 된다.
     var capped = enforceStorage(parsed);
+    // 훈련 v2 — 이전(멱등, 앱 로드와 같은 함수) → 배분을 예산·칸 상한으로 → 결투석 급증.
+    final tv2 = _enforceTrainV2(stored, capped);
+    if (tv2.clamped) clampReasons.add('train');
+    capped = tv2.save;
     final skillCfg = config.skill;
     if (skillCfg != null) {
       final sk = _enforceSkills(stored, capped, clientJson, skillCfg);
@@ -1273,6 +1287,56 @@ class GameActions {
         if (settled.report != null) 'seasonReport': settled.report,
       },
     );
+  }
+
+  /// 훈련 v2 업로드 검사(design_training_v2.md §5·§6). 처리는 기기 권위라 위조를 완전히 막지는 못한다 —
+  /// 결투 팀을 만들 때도 같은 함수로 한 번 더 자른다([trainingBonusOf]).
+  ///
+  /// 1. **이전** — 기록이 없는 곤충의 옛 부위 강화·옛 훈련 단계를 칸으로 옮긴다(`migrateTrainingV2`, 멱등).
+  ///    1.0.17 앱이 올린 세이브도 여기서 옮겨진다.
+  /// 2. **배분** — 칸 상한·예산(포텐셜·수련(돌파 상한으로 자름)·돌파 + 옛 투자 한도 안의 보너스)으로 자른다.
+  /// 3. **결투석 급증** — 증가가 (쓴 젤리로 살 수 있던 수 + 새 심연 마일스톤 × 개수 + 드롭 여유)를 넘으면 저장본 수로.
+  ///
+  /// [clamped] 는 2·3 에서 잘렸을 때만 참이다(이전은 정상 동작이라 알리지 않는다 — 알리면 1.0.17 기기가
+  /// 업로드마다 세이브를 되받는다).
+  ({SaveGame save, bool clamped}) _enforceTrainV2(
+    SaveGame stored,
+    SaveGame client,
+  ) {
+    final tr = config.battle.training;
+    final byId = {for (final sp in config.speciesList) sp.id: sp};
+    var out = migrateTrainingV2(
+      client,
+      tr,
+      speciesOf: (id) => byId[id],
+      enhance: config.enhance,
+    );
+    final migrated = out;
+    out = sanitizeTrainPoints(
+      out,
+      tr,
+      speciesOf: (id) => byId[id],
+      levelCapOf: config.pet.levelCap,
+      enhance: config.enhance,
+    );
+    var clamped = !identical(out, migrated);
+
+    int stones(SaveGame s) => s.duelStones.values.fold(0, (a, b) => a + b);
+    final jellySpent = max(
+      0,
+      stored.materialCount(MaterialKind.jelly) -
+          out.materialCount(MaterialKind.jelly),
+    );
+    final allow = duelStoneAllowance(
+      tr.stones,
+      jellySpent: jellySpent,
+      abyssMilestones: abyssNewMilestones(stored, out),
+    );
+    if (stones(out) - stones(stored) > allow) {
+      out = out.copyWith(duelStones: stored.duelStones);
+      clamped = true;
+    }
+    return (save: out, clamped: clamped);
   }
 
   /// 봉투 능력치 — 강화만 아는 전력에 공격 [_saveBoundAttackMult] 배(펫·장비·버프가 빠진 것을 덮는다).
@@ -1575,7 +1639,7 @@ class GameActions {
     final t = now().toUtc();
     final byId = {for (final b in save.bugs) b.id: b};
     final team = <BattleBug>[];
-    double per(BugPart p, double d) => enhance?.spec(p).effectPerLevel ?? d;
+    final tr = config.battle.training;
 
     for (final id in bugIds) {
       final bug = byId[id];
@@ -1599,15 +1663,25 @@ class GameActions {
         maxBreakthroughTier: petConfig.maxTier,
       );
       if (forged != null) return (team: const [], error: 'bug_forged:$forged');
+      // 훈련 v2(2026-10-08) — 배분을 **예산·칸 상한으로 잘라서** 입힌다(세이브를 고쳐 칸에 99를 적어도
+      // 소용없다). 부위 강화는 훈련 포인트로 이전돼 `buildBattleBug` 가 더 이상 읽지 않는다.
+      final tb = trainingBonusOf(
+        save,
+        bug,
+        sp,
+        tr,
+        levelCap: petConfig.levelCap(bug.breakthroughTier),
+        enhance: enhance,
+      );
       team.add(
         buildBattleBug(
           bug: bug,
           species: sp,
           locale: 'ko',
-          hornJawPerLevel: per(BugPart.hornJaw, 0.04),
-          cuticlePerLevel: per(BugPart.cuticle, 0.04),
-          wingPerLevel: per(BugPart.wing, 0.03),
-          buildPerLevel: per(BugPart.build, 0.05),
+          trainAtkMult: tb.atkMult,
+          trainDefMult: tb.defMult,
+          trainHpMult: tb.hpMult,
+          trainSpdMult: tb.spdMult,
           // 혈통 특성(§2.5)도 전투에 실린다 — 앱과 **같은 배율**이어야 한다.
           //
           // ⚠️ 특성 자체는 위조를 막을 수단이 없다(곤충 롤이 기기 권위).
@@ -1791,11 +1865,9 @@ class GameActions {
     );
     if (v.error != null) return (team: const [], error: v.error);
     // 훈련 중인 곤충은 출정할 수 없다(방어는 선다 — 자기가 훈련 중이어도 도전은 받는다).
-    final job = save.trainingJob;
-    if (!allowInjured &&
-        job != null &&
-        !job.doneAt(now()) &&
-        bugIds.contains(job.bugId)) {
+    // 훈련 v2 — 포인트 찍는 중 · 다시 찍기 대기 중.
+    final at = now();
+    if (!allowInjured && bugIds.any((id) => trainBusy(save, id, at))) {
       return (team: const [], error: 'bug_training');
     }
     final byId = {for (final b in save.bugs) b.id: b};
@@ -1806,13 +1878,15 @@ class GameActions {
           () {
             final bug = byId[bugIds[i]]!;
             final sp = speciesById[bug.speciesId]!;
-            // 훈련소 보너스 — **최대 단계로 잘라서** 입힌다(세이브를 고쳐 99단계를 적어도 소용없다).
+            // 공격·방어·체력·속도는 [validateTeam] 이 이미 입혔다(같은 [trainingBonusOf] — 예산·칸 상한으로 자름).
+            // 여기는 결투 전용 칸(회피·치명·회복력·체급·주특기 기술·근성)만.
             final t = trainingBonusOf(
               save,
               bug,
               sp,
               tr,
               levelCap: petConfig.levelCap(bug.breakthroughTier),
+              enhance: enhance,
             );
             return DuelBug.fromBattleBug(
               v.team[i],
@@ -1820,16 +1894,12 @@ class GameActions {
               sizeMm: bug.sizeMm,
               specialty: sp.specialty,
             ).withTraining(
-              atkMult: t.atkMult,
-              defMult: t.defMult,
-              hpMult: t.hpMult,
-              // 날개 강화 회피(+0.3%p/Lv) + 훈련소 회피.
-              evade:
-                  t.evade +
-                  bug.enhancement.levelOf(BugPart.wing) *
-                      (enhance?.spec(BugPart.wing).evadePerLevel ?? 0),
+              evade: t.evade,
               crit: t.crit,
               recovery: t.recovery,
+              massMult: t.massMult,
+              tech: t.tech,
+              grit: t.grit,
             );
           }(),
       ],
@@ -2367,7 +2437,7 @@ class GameActions {
     if (tier == null) return null; // 클라가 임의 배율을 못 넣게 id 로만 받는다
 
     final t = now().toUtc();
-    double per(BugPart p, double d) => enhance?.spec(p).effectPerLevel ?? d;
+    final tr = config.battle.training;
 
     // 내 성충 로스터 → 전투 유닛 → 파워 상위 3마리 평균.
     final mine = <BattleBug>[];
@@ -2378,15 +2448,23 @@ class GameActions {
           LifeStage.adult) {
         continue;
       }
+      final tb = trainingBonusOf(
+        save,
+        bug,
+        sp,
+        tr,
+        levelCap: petConfig.levelCap(bug.breakthroughTier),
+        enhance: enhance,
+      );
       mine.add(
         buildBattleBug(
           bug: bug,
           species: sp,
           locale: 'ko',
-          hornJawPerLevel: per(BugPart.hornJaw, 0.04),
-          cuticlePerLevel: per(BugPart.cuticle, 0.04),
-          wingPerLevel: per(BugPart.wing, 0.03),
-          buildPerLevel: per(BugPart.build, 0.05),
+          trainAtkMult: tb.atkMult,
+          trainDefMult: tb.defMult,
+          trainHpMult: tb.hpMult,
+          trainSpdMult: tb.spdMult,
         ),
       );
     }
@@ -2429,44 +2507,15 @@ class GameActions {
     return (team: team, speciesIds: speciesIds, tier: tier);
   }
 
-  /// 부위 강화 1단계. 재료 비용·상한을 서버가 판정한다.
-  ///
-  /// 강화는 전투 스탯을 직접 올리므로 PvP 에 바로 영향을 준다.
-  /// 클라이언트가 처리하면 재료 없이 만렙 강화가 가능해진다.
+  /// 부위 강화 1단계 — **닫혔다**(2026-10-08 훈련 v2). 부위 강화는 훈련 포인트로 흡수돼(design_training_v2.md §2)
+  /// 1.0.17 이하 앱이 부르면 `update_required`(426)로 업데이트를 안내한다(1.0.14 결투 개편의 `event_update` 와 같은 방식).
+  /// 열어 두면 구버전이 계속 강화를 올려 이전 상한(옛 투자로 다시 계산하는 칸 상한·보너스)이 늘어난다.
   ActionResult enhancePart(
     SaveGame save,
     String bugId,
     BugPart part, {
     required EnhanceConfig enhance,
-  }) {
-    final idx = save.bugs.indexWhere((b) => b.id == bugId);
-    if (idx < 0) return const ActionResult.fail('bug_not_owned');
-    final bug = save.bugs[idx];
-    if (bug.enhancement.total >= bug.maxLevel) {
-      return const ActionResult.fail('at_cap');
-    }
-    final spec = enhance.spec(part);
-    // 등급 배수까지 **앱과 같은 계산**을 써야 한다. 여기만 옛 가격이면
-    // 조작한 클라이언트가 이 엔드포인트로 싸게 강화하는 우회로가 된다.
-    final grade = config.speciesList
-        .where((s) => s.id == bug.speciesId)
-        .firstOrNull
-        ?.grade;
-    final cost = grade == null
-        ? spec.costAt(bug.enhancement.levelOf(part))
-        : enhance.costFor(part, bug.enhancement.levelOf(part), grade);
-    final have = save.materialCount(spec.material);
-    if (have < cost) return const ActionResult.fail('insufficient_material');
-
-    final mats = Map<MaterialKind, int>.from(save.materials)
-      ..[spec.material] = have - cost;
-    final bugs = List<IndividualBug>.from(save.bugs);
-    bugs[idx] = bug.copyWith(enhancement: bug.enhancement.incremented(part));
-    return ActionResult.ok(
-      save.copyWith(bugs: bugs, materials: mats),
-      extra: {'cost': cost, 'part': part.key},
-    );
-  }
+  }) => const ActionResult.fail('update_required', status: 426);
 
   /// 수련(성충 레벨업). 골드 비용·티어 상한·돌파중 여부를 서버가 확인한다.
   ActionResult trainBug(

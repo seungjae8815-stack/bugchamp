@@ -18,14 +18,13 @@
   "ceiling": {
     "_upgradesComment": "능력치 강화는 전부 maxLevel.",
     "upgrades": "maxLevel",
-    "_petsComment": "장착 곤충 3마리 — 전설 · 포텐셜 5 · 부위 강화 만렙(포텐셜×10 × 4부위) · 훈련 최종 상한(tierCaps 마지막) · 성충 · 크기 평균 · 특성·이색 없음.",
+    "_petsComment": "장착 곤충 3마리 — 전설 · 포텐셜 5 · 훈련 포인트 전부(5성·80레벨·돌파 4 = 102, 2026-10-08 훈련 v2 — 예전 '부위 강화 포텐셜×10 × 4부위 = 200'은 실제 상한(포텐셜×10 = 50 총합)의 4배였다) · 수련 최종 상한(tierCaps 마지막) · 성충 · 크기 평균 · 특성·이색 없음.",
     "pets": {
       "count": 3,
       "grade": "legendary",
       "potential": 5,
       "sizeMult": 1.0,
-      "enhancePerPotential": 10,
-      "parts": 4,
+      "trainPoints": 102,
       "trait": "none",
       "variant": "none"
     },

@@ -5,22 +5,48 @@ import 'package:core_save/core_save.dart';
 
 import '../../data/game_data.dart';
 
-/// 개체 → 전투 유닛(부위 강화·혈통 특성·이색). 서버 `GameActions._buildTeam` 과 **같은 값**이어야
-/// 승패가 안 갈린다.
-BattleBug battleBugFor(IndividualBug bug, GameData data, String locale) {
-  final enh = data.enhanceConfig;
+/// 훈련 v2 보너스(배분을 예산·칸 상한으로 자름 · 수련 레벨 보너스 포함). 서버 `validateTeam` 과 같은 계산.
+({
+  double atkMult,
+  double defMult,
+  double hpMult,
+  double spdMult,
+  double evade,
+  double crit,
+  double recovery,
+  double massMult,
+  double tech,
+  int grit,
+})
+_trainOf(IndividualBug bug, GameData data, SaveGame save) => trainingBonusOf(
+  save,
+  bug,
+  data.species(bug.speciesId),
+  (data.battleConfig ?? const BattleConfig()).training,
+  levelCap: data.petConfig?.levelCap(bug.breakthroughTier),
+  enhance: data.enhanceConfig,
+);
+
+/// 개체 → 전투 유닛(훈련 v2 배분·혈통 특성·이색). 서버 `GameActions.validateTeam` 과 **같은 값**이어야
+/// 승패가 안 갈린다. 부위 강화는 훈련 포인트로 이전돼 더 이상 따로 붙지 않는다.
+BattleBug battleBugFor(
+  IndividualBug bug,
+  GameData data,
+  SaveGame save,
+  String locale,
+) {
   final pet = data.petConfig;
-  double per(BugPart p, double d) => enh?.spec(p).effectPerLevel ?? d;
+  final t = _trainOf(bug, data, save);
   return buildBattleBug(
     bug: bug,
     species: data.species(bug.speciesId),
     locale: locale,
-    hornJawPerLevel: per(BugPart.hornJaw, 0.04),
-    cuticlePerLevel: per(BugPart.cuticle, 0.04),
-    wingPerLevel: per(BugPart.wing, 0.03),
-    buildPerLevel: per(BugPart.build, 0.05),
+    trainAtkMult: t.atkMult,
+    trainDefMult: t.defMult,
+    trainHpMult: t.hpMult,
+    trainSpdMult: t.spdMult,
     // 혈통 특성(§2.5)은 전투에도 실린다. 배율은 `traitBattleScale` —
-    // 서버(`GameActions._buildTeam`)와 **같은 값**이어야 승패가 안 갈린다.
+    // 서버(`GameActions.validateTeam`)와 **같은 값**이어야 승패가 안 갈린다.
     traitAtkBonus: pet?.traitBattleAtk(bug.trait) ?? 0,
     variantAtkBonus: pet?.variantBattleAtk(bug.variant) ?? 0,
     variantHpBonus: pet?.variantBattleHp(bug.variant) ?? 0,
@@ -29,7 +55,7 @@ BattleBug battleBugFor(IndividualBug bug, GameData data, String locale) {
 }
 
 /// 개체 → 결투 유닛(결투·왕충 선발대회 공용). 서버 `validateDuelTeam` 과 **같은 계산**이다 —
-/// 훈련소(최대 단계로 자름)·수련 레벨·날개 회피까지.
+/// 훈련 v2 배분(예산·칸 상한으로 자름)·수련 레벨·체급·주특기 기술·근성까지.
 DuelBug duelBugFor(
   IndividualBug bug,
   GameData data,
@@ -37,28 +63,18 @@ DuelBug duelBugFor(
   String locale,
 ) {
   final sp = data.species(bug.speciesId);
-  final t = trainingBonusOf(
-    save,
-    bug,
-    sp,
-    (data.battleConfig ?? const BattleConfig()).training,
-    levelCap: data.petConfig?.levelCap(bug.breakthroughTier),
-  );
+  final t = _trainOf(bug, data, save);
   return DuelBug.fromBattleBug(
-    battleBugFor(bug, data, locale),
+    battleBugFor(bug, data, save, locale),
     speciesId: bug.speciesId,
     sizeMm: bug.sizeMm,
     specialty: sp.specialty,
   ).withTraining(
-    atkMult: t.atkMult,
-    defMult: t.defMult,
-    hpMult: t.hpMult,
-    // 날개 강화 회피(+0.3%p/Lv, 서버와 같은 계산) + 훈련소 회피.
-    evade:
-        t.evade +
-        bug.enhancement.levelOf(BugPart.wing) *
-            (data.enhanceConfig?.spec(BugPart.wing).evadePerLevel ?? 0),
+    evade: t.evade,
     crit: t.crit,
     recovery: t.recovery,
+    massMult: t.massMult,
+    tech: t.tech,
+    grit: t.grit,
   );
 }

@@ -74,68 +74,134 @@ void main() {
       expect(err(['b1', 'b2', 'nope']), 'bug_not_owned');
     });
 
-    test('훈련소 — 보너스는 최대 단계로 잘라 입히고, 훈련 중인 곤충은 출정 불가', () {
+    test('훈련 v2 — 배분은 예산·칸 상한으로 잘라 입히고, 찍는 중·다시 찍기 대기 중인 곤충은 출정 불가', () {
       final tr = cfg.battle.training;
-      final plain = actions
+      DuelBug first(SaveGame s) => actions
           .validateDuelTeam(
-            myBase(),
+            s,
             ids,
             speciesById: cfg.speciesById,
             petConfig: cfg.pet,
+            enhance: cfg.enhance,
           )
           .team
           .first;
+      final plain = first(myBase());
+      // 세이브를 고쳐 칸에 99를 적었다 — 3성 1레벨 예산은 18포인트.
       final forged = myBase().copyWith(
-        duelTraining: {
-          'b1': {TrainStat.attack: 99, TrainStat.evade: 99},
+        trainPoints: {
+          'b1': const BugTrain(
+            alloc: {
+              TrainSlot.attack: 99,
+              TrainSlot.evade: 99,
+              TrainSlot.mass: 99,
+              TrainSlot.grit: 99,
+            },
+            paid: 999,
+            bonus: 999,
+          ),
         },
       );
       final b1 = forged.bugs.first;
       final sp = cfg.speciesById[b1.speciesId]!;
-      final trained = actions
+      final eff = effectiveAllocOf(
+        forged,
+        b1,
+        sp,
+        tr,
+        levelCap: cfg.pet.levelCap(0),
+        enhance: cfg.enhance,
+      );
+      expect(eff.values.fold<int>(0, (a, b) => a + b), 18);
+      expect(eff[TrainSlot.attack], lessThanOrEqualTo(18));
+      final trained = first(forged);
+      final atkPts = eff[TrainSlot.attack] ?? 0;
+      expect(trained.atk, closeTo(plain.atk * (1 + atkPts * 0.03), 1e-6));
+      expect(trained.evade, closeTo((eff[TrainSlot.evade] ?? 0) * 0.006, 1e-9));
+      expect(trained.grit, eff[TrainSlot.grit] ?? 0);
+      expect(
+        trained.massMult,
+        closeTo(1 + (eff[TrainSlot.mass] ?? 0) * 0.015, 1e-9),
+      );
+
+      // 찍는 중(훈련소 1칸)
+      final busy = myBase().copyWith(
+        trainPoints: {'b2': const BugTrain()},
+        trainPointJob: TrainPointJob(
+          bugId: 'b2',
+          slot: TrainSlot.hp,
+          count: 1,
+          until: t0.add(const Duration(hours: 1)),
+        ),
+      );
+      String? err(SaveGame s) => actions
           .validateDuelTeam(
-            forged,
+            s,
             ids,
             speciesById: cfg.speciesById,
             petConfig: cfg.pet,
           )
+          .error;
+      expect(err(busy), 'bug_training');
+      // 다시 찍기 대기 중
+      final respec = myBase().copyWith(
+        trainPoints: {
+          'b3': BugTrain(
+            alloc: const {TrainSlot.hp: 1},
+            paid: 1,
+            pending: const {TrainSlot.attack: 1},
+            respecUntil: t0.add(const Duration(minutes: 33)),
+          ),
+        },
+      );
+      expect(err(respec), 'bug_training');
+      // 대기가 끝났으면 출정할 수 있다
+      final done = myBase().copyWith(
+        trainPoints: {
+          'b3': BugTrain(
+            alloc: const {TrainSlot.hp: 1},
+            paid: 1,
+            pending: const {TrainSlot.attack: 1},
+            respecUntil: t0.subtract(const Duration(minutes: 1)),
+          ),
+        },
+      );
+      expect(err(done), isNull);
+    });
+
+    test('훈련 v2 — 옛 부위 강화는 이전 전이어도 같은 값(가상 이전) · 날개 회피는 회피 칸으로', () {
+      final old = myBase();
+      final b1 = old.bugs.first.copyWith(
+        enhancement: const PartLevels(hornJaw: 10, wing: 10),
+      );
+      final s = old.copyWith(bugs: [b1, ...old.bugs.skip(1)]);
+      DuelBug first(SaveGame x) => actions
+          .validateDuelTeam(
+            x,
+            ids,
+            speciesById: cfg.speciesById,
+            petConfig: cfg.pet,
+            enhance: cfg.enhance,
+          )
           .team
           .first;
-      final capAtk = trainCapOf(b1, sp, TrainStat.attack, tr);
-      expect(
-        trained.atk,
-        closeTo(
-          plain.atk * (1 + capAtk * tr.perLevel[TrainStat.attack]!),
-          1e-6,
-        ),
+      final plain = first(old);
+      final before = first(s);
+      // 뿔 10 → 공격 +40% 를 3% 칸으로 덮는 14포인트 = +42% (같거나 크다)
+      expect(before.atk, greaterThanOrEqualTo(plain.atk * 1.4 - 1e-6));
+      // 날개 10 → 속도 15포인트(+30%) · 회피 0.3%p×10 = 3% → 5포인트(3%)
+      expect(before.spd, greaterThanOrEqualTo(plain.spd * 1.3 - 1e-6));
+      expect(before.evade, closeTo(0.03, 1e-9));
+      // 저장된 이전과 같은 값
+      final migrated = migrateTrainingV2(
+        s,
+        cfg.battle.training,
+        speciesOf: (id) => cfg.speciesById[id],
+        enhance: cfg.enhance,
       );
-      expect(
-        trained.evade,
-        closeTo(
-          trainCapOf(b1, sp, TrainStat.evade, tr) *
-              tr.perLevel[TrainStat.evade]!,
-          1e-9,
-        ),
-      );
-      final training = myBase().copyWith(
-        trainingJob: TrainingJob(
-          bugId: 'b2',
-          stat: TrainStat.crit,
-          level: 1,
-          until: t0.add(const Duration(hours: 1)),
-        ),
-      );
-      expect(
-        actions
-            .validateDuelTeam(
-              training,
-              ids,
-              speciesById: cfg.speciesById,
-              petConfig: cfg.pet,
-            )
-            .error,
-        'bug_training',
-      );
+      final after = first(migrated);
+      expect(after.atk, closeTo(before.atk, 1e-9));
+      expect(after.evade, closeTo(before.evade, 1e-9));
     });
 
     test('방어팀은 상대 세이브의 방어 순서로 서버가 만든다', () {

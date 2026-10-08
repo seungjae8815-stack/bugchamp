@@ -3130,7 +3130,9 @@ class StorageScreen extends ConsumerWidget {
                                       // 이색·키운 개체는 **한 번 더 묻는다**.
                                       // 되찾을 수 없는데 버튼 한 번에 사라지면
                                       // 그게 곧 클레임이다(2026-09-25 제보).
-                                      if (isPreciousBug(bug)) {
+                                      // 훈련 v2 — 포인트를 찍은 곤충도(재료를 낸 투자).
+                                      if (isPreciousBug(bug) ||
+                                          trainedPointsOf(save, bug.id) > 0) {
                                         final go = await showGameDialog<bool>(
                                           ctx,
                                           title: l.disassembleAction,
@@ -3321,7 +3323,7 @@ class StorageScreen extends ConsumerWidget {
       grade: sp.grade,
       sizeMult: bug.statMultiplier(sp),
       potential: bug.potential,
-      enhanceTotal: bug.enhancement.total,
+      enhanceTotal: 0, // 훈련 v2 — 부위 강화는 trainMult(훈련 포인트)로 이전
       stage: stage,
       level: bug.level,
       trait: bug.trait,
@@ -3863,205 +3865,45 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 
-  /// 상세 팝업의 부위강화 진입 줄(탭 → 별도 시트).
+  /// 상세 팝업의 부위강화 자리 — 훈련 v2(2026-10-08)에서 부위 강화는 훈련 포인트로 흡수됐다
+  /// (docs/design_training_v2.md §2). 화면 재작성(훈련소 포인트 배분)은 다음 단계라 지금은 안내만 띄운다.
+  /// 옛 강화 시트는 서버가 `update_required` 로 닫아 눌러도 실패하므로 지웠다.
   Widget _enhanceOpenRow(
     BuildContext context,
     WidgetRef ref,
     GameData data,
     AppLocalizations l,
     IndividualBug bug,
-  ) => InkWell(
-    onTap: () => _showEnhanceSheet(context, ref, data, bug.id),
-    borderRadius: BorderRadius.circular(10),
-    child: _sectionBox(
-      child: Row(
-        children: [
-          const Icon(Icons.handyman, color: Color(0xFF9CCC65), size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l.enhanceTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13.5,
-                  ),
+  ) => _sectionBox(
+    child: Row(
+      children: [
+        const Icon(Icons.handyman, color: Color(0xFF9CCC65), size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l.enhanceTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13.5,
                 ),
-                Text(
-                  l.enhanceCap(bug.enhancement.total, bug.maxLevel),
-                  style: const TextStyle(
-                    color: Color(0xB3FFFFFF),
-                    fontSize: 11.5,
-                  ),
+              ),
+              Text(
+                l.enhanceMovedToTraining,
+                style: const TextStyle(
+                  color: Color(0xB3FFFFFF),
+                  fontSize: 11.5,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const Icon(Icons.chevron_right, color: Color(0x88FFFFFF)),
-        ],
-      ),
+        ),
+      ],
     ),
   );
-
-  /// 부위 강화 전용 시트(4부위).
-  void _showEnhanceSheet(
-    BuildContext context,
-    WidgetRef ref,
-    GameData data,
-    String bugId,
-  ) {
-    final enhCfg = data.enhanceConfig;
-    if (enhCfg == null) return;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xF2141F0E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Consumer(
-          builder: (ctx, r, _) {
-            final l = AppLocalizations.of(ctx);
-            final save = r.watch(saveControllerProvider).requireValue;
-            final bug = _findBug(save, bugId);
-            if (bug == null) return const SizedBox.shrink();
-            final species = data.species(bug.speciesId);
-            final locale = Localizations.localeOf(ctx).languageCode;
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${species.name.resolve(locale)} · ${l.enhanceTitle}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 15,
-                    ),
-                  ),
-                  Text(
-                    l.enhanceCap(bug.enhancement.total, bug.maxLevel),
-                    style: const TextStyle(
-                      color: _honey,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final part in BugPart.values)
-                    _enhanceRow(ctx, r, enhCfg, save, bug, part),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _enhanceRow(
-    BuildContext ctx,
-    WidgetRef r,
-    EnhanceConfig cfg,
-    SaveGame save,
-    IndividualBug bug,
-    BugPart part,
-  ) {
-    final l = AppLocalizations.of(ctx);
-    final spec = cfg.spec(part);
-    final level = bug.enhancement.levelOf(part);
-    // 차감(`enhancePart`)과 **같은 계산**을 써야 한다 — 어긋나면 "살 수 있다고
-    // 떠서 눌렀는데 실패"가 된다. 등급 배수가 여기 빠져 있었다.
-    final grade = r
-        .read(gameDataProvider)
-        .value
-        ?.speciesById[bug.speciesId]
-        ?.grade;
-    final cost = grade == null
-        ? spec.costAt(level)
-        : cfg.costFor(part, level, grade);
-    final have = save.materialCount(spec.material);
-    final atCap = bug.enhancement.total >= bug.maxLevel;
-    final canBuy = !atCap && have >= cost;
-    final pctNum = spec.effectPerLevel * 100;
-    final pct = pctNum % 1 == 0
-        ? pctNum.toStringAsFixed(0)
-        : pctNum.toStringAsFixed(1);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: const Color(0x22FFFFFF),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: partImage(
-              part,
-              size: 22,
-              fallback: Icon(partIcon(part), color: Colors.white, size: 17),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '${partLabel(l, part)}  Lv.$level · ${l.enhancePerLevel(pct)}',
-              style: const TextStyle(color: Colors.white, fontSize: 12.5),
-            ),
-          ),
-          if (!atCap) ...[
-            materialImage(
-              spec.material,
-              size: 14,
-              fallback: Icon(
-                materialIcon(spec.material),
-                size: 13,
-                color: canBuy
-                    ? const Color(0xFF9CCC65)
-                    : const Color(0xFFEF9A9A),
-              ),
-            ),
-            const SizedBox(width: 3),
-            Text(
-              formatCompact(cost),
-              style: TextStyle(
-                color: canBuy
-                    ? const Color(0xFFC5E1A5)
-                    : const Color(0xFFEF9A9A),
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          FilledButton(
-            onPressed: () {
-              if (!canBuy) {
-                _snack(ctx, l.notEnoughMaterials);
-                return;
-              }
-              AudioService.instance.sfxEnhance();
-              r.read(saveControllerProvider.notifier).enhancePart(bug.id, part);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              minimumSize: const Size(0, 32),
-            ),
-            child: Text(atCap ? l.enhanceMaxed : l.enhanceAction),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// 곤충 상세의 개체 정보(오행·성별·기질·주특기·크기). 두 칸씩 나란히.

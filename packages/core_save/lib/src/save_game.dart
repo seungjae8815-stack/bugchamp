@@ -5,6 +5,7 @@ import 'package:core_run/core_run.dart';
 import 'package:meta/meta.dart';
 
 import 'gift_mail.dart';
+import 'train_points.dart';
 import 'training_progress.dart';
 
 /// 현재 세이브 스키마 버전. SaveGame.toJson 이 이 값을 기록하고,
@@ -19,7 +20,7 @@ const int kSaveSchemaVersion = 18;
 /// 이번 주 심연 층이 지워졌다(2026-09-30 점검). 서버는 이 값이 낮은 업로드에서
 /// 그 뒤에 생긴 필드를 저장본 값으로 지킨다(`GameActions.mergeSave`).
 /// 새 필드를 더하면 이 값을 올리고 서버의 목록에 추가한다.
-const int kSaveFeatureLevel = 18;
+const int kSaveFeatureLevel = 19;
 
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
@@ -598,6 +599,9 @@ class SaveGame {
     this.duelTraining = const {},
     this.lockedBugIds = const {},
     this.trainingJob,
+    this.trainPoints = const {},
+    this.trainPointJob,
+    this.duelStones = const {},
     this.abyssUnlocked = false,
     this.inAbyss = false,
     this.abyssFloor = 1,
@@ -850,6 +854,21 @@ class SaveGame {
   /// 훈련소 1칸에서 진행 중인 훈련(없으면 null).
   final TrainingJob? trainingJob;
 
+  // ── 훈련 v2(2026-10-08, docs/design_training_v2.md) ─────────────────
+  // 옛 [duelTraining]·[trainingJob]·곤충의 부위 강화는 **이전 원본으로 남는다**(구버전 호환·서버가 이전
+  // 상한을 다시 계산하는 근거). 결투·펫 계산은 이 필드만 본다(train_points.dart).
+
+  /// 곤충 id → 훈련 포인트 배분 기록([BugTrain]). 기록이 있으면 이전이 끝난 곤충이다.
+  final Map<String, BugTrain> trainPoints;
+
+  /// 훈련소 1칸 — 재료를 낸 포인트 찍기(없으면 null).
+  final TrainPointJob? trainPointJob;
+
+  /// 결투석 보유 수(오행석·기질석). ⚠️ `MaterialKind` 가 아니라 별도 맵이다(구버전 앱 크래시 방지).
+  final Map<DuelStone, int> duelStones;
+
+  int duelStoneCount(DuelStone k) => duelStones[k] ?? 0;
+
   // ── 심연(극한 이후 무한 층, 2026-09-28) ─────────────────────────────
   // 심연에 있는 동안 난이도는 극한, 스테이지는 극한 최종 사냥터로 고정된다(몬스터·보상은
   // 그 기준값 × 층 배율). 진행은 기기 권위 — 서버는 업로드마다 층 증가 상한을 건다.
@@ -1067,6 +1086,11 @@ class SaveGame {
     ...incubating.keys,
     ...duelTraining.keys,
     ?trainingJob?.bugId,
+    // 훈련 v2 — 찍은 포인트 1↑ · 찍는 중 · 다시 찍기 대기(design_training_v2.md §5).
+    for (final e in trainPoints.entries)
+      if (e.value.allocated > 0 || e.value.paid > 0 || e.value.pending != null)
+        e.key,
+    ?trainPointJob?.bugId,
     ...lockedBugIds,
   };
 
@@ -1097,8 +1121,13 @@ class SaveGame {
       ],
       capacity: storageCapacity,
       // 훈련 기록·잠금은 약한 보호 — [keepBugIds] 의 `preferred` 참조.
-      pinned: {...equippedBugIds, ...incubating.keys, ?trainingJob?.bugId},
-      preferred: {...duelTraining.keys, ...lockedBugIds},
+      pinned: {
+        ...equippedBugIds,
+        ...incubating.keys,
+        ?trainingJob?.bugId,
+        ?trainPointJob?.bugId,
+      },
+      preferred: {...duelTraining.keys, ...trainPoints.keys, ...lockedBugIds},
     );
     return copyWith(
       bugs: [
@@ -1108,6 +1137,10 @@ class SaveGame {
       // 사라진 곤충의 훈련 기록도 치운다 — 남겨 두면 세이브만 커진다.
       duelTraining: {
         for (final e in duelTraining.entries)
+          if (keep.contains(e.key)) e.key: e.value,
+      },
+      trainPoints: {
+        for (final e in trainPoints.entries)
           if (keep.contains(e.key)) e.key: e.value,
       },
       lockedBugIds: lockedBugIds.intersection(keep),
@@ -1466,6 +1499,10 @@ class SaveGame {
     Set<String>? lockedBugIds,
     TrainingJob? trainingJob,
     bool clearTrainingJob = false,
+    Map<String, BugTrain>? trainPoints,
+    TrainPointJob? trainPointJob,
+    bool clearTrainPointJob = false,
+    Map<DuelStone, int>? duelStones,
     bool? abyssUnlocked,
     bool? inAbyss,
     int? abyssFloor,
@@ -1589,6 +1626,11 @@ class SaveGame {
     duelTraining: duelTraining ?? this.duelTraining,
     lockedBugIds: lockedBugIds ?? this.lockedBugIds,
     trainingJob: clearTrainingJob ? null : (trainingJob ?? this.trainingJob),
+    trainPoints: trainPoints ?? this.trainPoints,
+    trainPointJob: clearTrainPointJob
+        ? null
+        : (trainPointJob ?? this.trainPointJob),
+    duelStones: duelStones ?? this.duelStones,
     abyssUnlocked: abyssUnlocked ?? this.abyssUnlocked,
     inAbyss: inAbyss ?? this.inAbyss,
     abyssFloor: abyssFloor ?? this.abyssFloor,
@@ -1826,6 +1868,17 @@ class SaveGame {
         },
     },
     trainingJob: TrainingJob.fromJson(json['trainingJob']),
+    trainPoints: {
+      for (final e in ((json['trainPoints'] as Map?) ?? const {}).entries)
+        if (BugTrain.fromJson(e.value) case final t?) '${e.key}': t,
+    },
+    trainPointJob: TrainPointJob.fromJson(json['trainPointJob']),
+    duelStones: {
+      for (final e in ((json['duelStones'] as Map?) ?? const {}).entries)
+        if (DuelStone.fromKeyOrNull('${e.key}') case final k?
+            when e.value is num && (e.value as num) > 0)
+          k: (e.value as num).toInt(),
+    },
     lockedBugIds: {
       for (final e in (json['lockedBugs'] as List? ?? const []))
         if (e is String) e,
@@ -2063,6 +2116,16 @@ class SaveGame {
           e.key: {for (final x in e.value.entries) x.key.key: x.value},
       },
     if (trainingJob != null) 'trainingJob': trainingJob!.toJson(),
+    if (trainPoints.isNotEmpty)
+      'trainPoints': {
+        for (final e in trainPoints.entries) e.key: e.value.toJson(),
+      },
+    if (trainPointJob != null) 'trainPointJob': trainPointJob!.toJson(),
+    if (duelStones.values.any((v) => v > 0))
+      'duelStones': {
+        for (final e in duelStones.entries)
+          if (e.value > 0) e.key.key: e.value,
+      },
     if (lockedBugIds.isNotEmpty) 'lockedBugs': lockedBugIds.toList()..sort(),
     if (abyssUnlocked) 'abyssUnlocked': true,
     if (inAbyss) 'inAbyss': true,

@@ -1640,6 +1640,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get enhanceTitle => '부위 강화';
 
   @override
+  String get enhanceMovedToTraining =>
+      '부위 강화는 훈련 포인트로 옮겨졌어요. 결투 탭 훈련소에서 칸을 골라 찍으세요.';
+
+  @override
   String get partHornJaw => '뿔·큰턱';
 
   @override
@@ -2984,6 +2988,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get skillGradeUpPick => '재료로 쓸 조각을 골라 주세요';
+
+  @override
+  String skillGradeUpHint(String grade, String n) {
+    return '안 쓰는 스킬 조각으로 $grade 만능 조각 $n개를 만들 수 있어요! 만능 조각은 $grade 스킬 아무 데나 쓸 수 있어요.';
+  }
+
+  @override
+  String get skillGradeUpHintGo => '승급하기';
 
   @override
   String get skillEquip => '장착';

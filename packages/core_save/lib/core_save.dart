@@ -19,5 +19,6 @@ export 'src/save_game.dart';
 export 'src/save_migrations.dart';
 export 'src/skill_progress.dart';
 export 'src/tier_progress.dart';
+export 'src/train_points.dart';
 export 'src/training_progress.dart';
 export 'src/zone_fall.dart';

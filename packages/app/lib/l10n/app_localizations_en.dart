@@ -1683,6 +1683,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enhanceTitle => 'Enhance Parts';
 
   @override
+  String get enhanceMovedToTraining =>
+      'Part enhancement has moved to Training Points. Allocate them in the Training Center on the Duel tab.';
+
+  @override
   String get partHornJaw => 'Horn/Jaw';
 
   @override
@@ -3056,6 +3060,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillGradeUpPick => 'Pick shards to use';
+
+  @override
+  String skillGradeUpHint(String grade, String n) {
+    return 'Turn your unused skill shards into $grade universal shards ×$n! They work on any skill of that grade.';
+  }
+
+  @override
+  String get skillGradeUpHintGo => 'Promote';
 
   @override
   String get skillEquip => 'Equip';

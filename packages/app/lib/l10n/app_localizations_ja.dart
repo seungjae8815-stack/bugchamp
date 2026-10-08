@@ -1635,6 +1635,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get enhanceTitle => '部位強化';
 
   @override
+  String get enhanceMovedToTraining =>
+      '部位強化はトレーニングポイントに移りました。決闘タブのトレーニング所で振り分けてください。';
+
+  @override
   String get partHornJaw => '角・大顎';
 
   @override
@@ -2977,6 +2981,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get skillGradeUpPick => '材料にするかけらを選んでください';
+
+  @override
+  String skillGradeUpHint(String grade, String n) {
+    return '使っていないスキルのかけらで$gradeの万能かけらを$n個作れます！万能かけらはどの$gradeスキルにも使えます。';
+  }
+
+  @override
+  String get skillGradeUpHintGo => '昇級する';
 
   @override
   String get skillEquip => '装備';

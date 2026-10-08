@@ -1055,41 +1055,17 @@ void main() {
           materials: mats ?? const {},
         );
 
-    test('내 곤충이 아니면 강화 불가', () {
-      final r = actions.enhancePart(
-        owner(mats: {MaterialKind.chitin: 9999}),
-        'not-mine',
-        BugPart.hornJaw,
-        enhance: cfg.enhance!,
-      );
-      expect(r.error, 'bug_not_owned');
-    });
-
-    test('재료가 모자라면 강화 거부 — 클라 주장을 믿지 않는다', () {
-      final r = actions.enhancePart(
-        owner(),
-        'mine',
-        BugPart.hornJaw,
-        enhance: cfg.enhance!,
-      );
-      expect(r.error, 'insufficient_material');
-    });
-
-    test('재료가 충분하면 강화되고 재료가 빠진다', () {
-      final spec = cfg.enhance!.spec(BugPart.hornJaw);
-      final before = owner(mats: {spec.material: 99999});
+    test('부위 강화는 닫혔다 — 구버전 앱에 update_required(426) (훈련 v2, 2026-10-08)', () {
+      final before = owner(mats: {MaterialKind.chitin: 99999});
       final r = actions.enhancePart(
         before,
         'mine',
         BugPart.hornJaw,
         enhance: cfg.enhance!,
       );
-      expect(r.isOk, isTrue);
-      expect(r.save!.bugs.first.enhancement.levelOf(BugPart.hornJaw), 1);
-      expect(
-        r.save!.materialCount(spec.material),
-        lessThan(before.materialCount(spec.material)),
-      );
+      expect(r.isOk, isFalse);
+      expect(r.error, 'update_required');
+      expect(r.status, 426);
     });
 
     test('골드가 모자라면 수련 거부', () {
@@ -1853,60 +1829,6 @@ void main() {
       final s = SaveGame.initial(createdAt: t0).copyWith(stageNumber: 1);
       final r = actions.grantChapterClears(s);
       expect((r.extra['cleared'] as List), isEmpty);
-    });
-  });
-
-  group('부위강화 비용', () {
-    test('서버도 등급 배수를 적용한다 (앱만 올리면 서버가 우회로가 된다)', () {
-      // testSpecies 는 common — 배수 1배라 기본값 그대로여야 한다.
-      final enh = EnhanceConfig.fromJson({
-        'parts': [
-          {
-            'part': 'hornJaw',
-            'material': 'chitin',
-            'baseCost': 2,
-            'costGrowth': 1.12,
-            'effectPerLevel': 0.04,
-          },
-        ],
-        'gradeMult': {'common': 1, 'legendary': 16},
-      });
-      final bug = IndividualBug.roll(
-        id: 'b1',
-        species: testSpecies,
-        rng: Random(1),
-        potential: 3,
-      ).copyWith(stage: LifeStage.adult);
-      final save = SaveGame.initial(
-        createdAt: t0,
-      ).copyWith(bugs: [bug], materials: {MaterialKind.chitin: 100});
-
-      final r = actions.enhancePart(save, 'b1', BugPart.hornJaw, enhance: enh);
-      expect(r.isOk, isTrue);
-      expect(r.save!.materialCount(MaterialKind.chitin), 98); // 2 x 1배
-
-      // 재료가 배수만큼 없으면 거부된다(전설 기준 32 필요).
-      final legendary = EnhanceConfig.fromJson({
-        'parts': [
-          {
-            'part': 'hornJaw',
-            'material': 'chitin',
-            'baseCost': 2,
-            'costGrowth': 1.12,
-            'effectPerLevel': 0.04,
-          },
-        ],
-        'gradeMult': {'common': 50},
-      });
-      final poor = save.copyWith(materials: {MaterialKind.chitin: 10});
-      final r2 = actions.enhancePart(
-        poor,
-        'b1',
-        BugPart.hornJaw,
-        enhance: legendary,
-      );
-      expect(r2.isOk, isFalse);
-      expect(r2.error, 'insufficient_material');
     });
   });
 

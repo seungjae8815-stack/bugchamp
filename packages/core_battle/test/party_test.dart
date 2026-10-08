@@ -64,18 +64,55 @@ void main() {
       expect(atkOnly.spd, closeTo(base.spd, 1e-9));
     });
 
-    test('부위 강화와 **곱해진다** — 후반에도 세대를 쌓은 보람이 남아야 한다', () {
-      // 강화가 이미 큰 상태에서 덧셈으로 붙이면 체감이 사라진다.
-      final enhanced = bug(enhancement: const PartLevels(hornJaw: 25));
-      final base = build(enhanced);
-      final withTrait = build(enhanced, atkBonus: 0.35);
+    test('훈련 배율과 **곱해진다** — 후반에도 세대를 쌓은 보람이 남아야 한다', () {
+      // 훈련이 이미 큰 상태에서 덧셈으로 붙이면 체감이 사라진다.
+      final b = bug();
+      final base = buildBattleBug(
+        bug: b,
+        species: species,
+        locale: 'ko',
+        trainAtkMult: 2.0,
+      );
+      final withTrait = buildBattleBug(
+        bug: b,
+        species: species,
+        locale: 'ko',
+        trainAtkMult: 2.0,
+        traitAtkBonus: 0.35,
+      );
       expect(withTrait.atk, closeTo(base.atk * 1.35, 1e-9));
-      // 강화 +100%(25레벨 × 4%) 위에 특성이 곱해진 값인지 확인.
       // ⚠️ 사이즈 배율은 중앙값이어도 1.0 이 아니다 — [min,max] 가
       // [0.85, 1.20] 으로 매핑되므로 중앙은 1.025 다(§2.1).
-      final sm = enhanced.statMultiplier(species);
+      final sm = b.statMultiplier(species);
       expect(sm, closeTo((kStatMultiplierMin + kStatMultiplierMax) / 2, 1e-9));
       expect(base.atk, closeTo(40 * sm * 2.0, 1e-9));
+    });
+
+    test('부위 강화(옛 축)는 더 이상 읽지 않는다 — 훈련 포인트로 이전돼 두 번 세지지 않게(훈련 v2)', () {
+      final plain = build(bug());
+      final enhanced = build(
+        bug(enhancement: const PartLevels(hornJaw: 25, build: 10, wing: 5)),
+      );
+      expect(enhanced.atk, plain.atk);
+      expect(enhanced.maxHp, plain.maxHp);
+      expect(enhanced.spd, plain.spd);
+    });
+
+    test('훈련 배율은 각 축에만 곱해진다', () {
+      final base = build(bug());
+      final t = buildBattleBug(
+        bug: bug(),
+        species: species,
+        locale: 'ko',
+        trainAtkMult: 1.3,
+        trainDefMult: 1.2,
+        trainHpMult: 1.4,
+        trainSpdMult: 1.1,
+      );
+      expect(t.atk, closeTo(base.atk * 1.3, 1e-9));
+      expect(t.def, closeTo(base.def * 1.2, 1e-9));
+      expect(t.maxHp, closeTo(base.maxHp * 1.4, 1e-9));
+      expect(t.spd, closeTo(base.spd * 1.1, 1e-9));
     });
 
     test('오행·기질·선호 스탠스는 특성과 무관하게 그대로다', () {

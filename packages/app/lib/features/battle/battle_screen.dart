@@ -385,8 +385,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   /// 개체 → 전투 유닛. 변환 로직은 `core_battle` 에 있다 —
   /// **서버도 같은 함수를 쓴다**(결과가 어긋나면 승패가 갈린다).
-  BattleBug _toBattleBug(IndividualBug bug, GameData data, String locale) =>
-      battleBugFor(bug, data, locale);
+  BattleBug _toBattleBug(
+    IndividualBug bug,
+    GameData data,
+    SaveGame save,
+    String locale,
+  ) => battleBugFor(bug, data, save, locale);
 
   /// 내 편성([_team]) → 방어팀 스냅샷(서버 등록용).
   DefenderBug _defenderBugOf(
@@ -395,7 +399,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     SaveGame save,
     String locale,
   ) {
-    final bb = _toBattleBug(bug, data, locale);
+    final bb = _toBattleBug(bug, data, save, locale);
     return DefenderBug(
       speciesId: bug.speciesId,
       // 내가 산 스킨을 상대 화면에도 보이게 실어 보낸다.
@@ -452,10 +456,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     if (save.isInjured(bugId, now)) {
       return (training: false, until: save.injuredUntil(bugId)!);
     }
-    final job = save.trainingJob;
-    if (job != null && job.bugId == bugId && !job.doneAt(now)) {
-      return (training: true, until: job.until);
-    }
+    // 훈련 v2 — 포인트 찍는 중 · 다시 찍기 대기 중.
+    final busy = trainBusyUntil(save, bugId, now);
+    if (busy != null) return (training: true, until: busy);
     return null;
   }
 
@@ -1515,11 +1518,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       final now = ref.read(clockProvider).now().toUtc();
       final pool = _byPower(data, save, locale, [
         for (final b in _adults(save, data, now))
-          if (!save.isInjured(b.id, now) &&
-              !(save.trainingJob != null &&
-                  !save.trainingJob!.doneAt(now) &&
-                  save.trainingJob!.bugId == b.id))
-            b,
+          if (!save.isInjured(b.id, now) && !trainBusy(save, b.id, now)) b,
       ]);
       setState(() {
         final left = [
@@ -3005,8 +3004,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       showCenterToast(context, l.squadInjured);
       return null;
     }
-    final job = save.trainingJob;
-    if (job != null && !job.doneAt(now) && ids.contains(job.bugId)) {
+    if (ids.any((id) => trainBusy(save, id, now))) {
       showCenterToast(context, l.squadTraining);
       return null;
     }

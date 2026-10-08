@@ -304,6 +304,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 슬롯이 새기 때문(아래 자가치유가 이어서 걷어낸다).
     save = save.trimmedToStorage();
 
+    // 훈련 v2 이전(2026-10-08) — 옛 부위 강화·옛 훈련 단계를 포인트 칸으로(멱등). 서버 업로드와 **같은 함수**다.
+    save = _migrateTrainV2(save, data);
+
     // 스킬 필드를 규칙 안으로(만렙·장착 칸). 서버 업로드와 **같은 함수**다.
     final skillCfg = data.skillConfig;
     if (skillCfg != null) save = enforceSkillRules(save, skillCfg);
@@ -634,8 +637,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 비용이 없고, **어느 경로로 들어온 장비든** 지금 규칙을 따르게 된다
     // (서버 세이브 채택·구버전 세이브 로드까지 한 곳에서 걸린다).
     // 훈련소 — 끝난 훈련 반영 · 사라진 곤충의 훈련 기록 정리(어느 경로로 저장돼도 한 곳에서).
+    // 훈련 v2 — 이전(서버 세이브 채택 경로도 여기서 걸린다 · 멱등) · 끝난 찍기·다시 찍기 반영.
+    final data = ref.read(gameDataProvider).value;
+    final trimmed = _withTrimmedItems(withDex).trimmedToStorage();
     final stamped = pruneTraining(
-      finishTrainingIfDue(_withTrimmedItems(withDex).trimmedToStorage(), now),
+      finishTrainPointsIfDue(
+        data == null ? trimmed : _migrateTrainV2(trimmed, data),
+        now,
+      ),
     ).copyWith(lastSeen: now, saveRev: save.saveRev + 1);
     state = AsyncData(stamped);
     await _repo.save(stamped);
@@ -856,6 +865,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
       next = got.save;
       shards = got.shards;
     }
+    // 결투석 — 보스 **재처치**(첫 처치·되찾기 제외)면 오행 1% · 기질 0.5%(design_training_v2.md §3).
+    // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
+    lastDuelStones = const {};
+    if (!firstKill && !reclaim) {
+      final st = rollDuelStones(
+        next,
+        _stoneCfg,
+        rng ?? math.Random(),
+        DuelStoneSource.bossRepeat,
+      );
+      next = st.save;
+      lastDuelStones = st.got;
+    }
     // 요정 — 보스 **첫 처치**면 난이도별 알 1개 확정 + 속성석(§2.8 무료 경로, design_fairy.md §1.4).
     // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
     lastBossFairyEggs = const [];
@@ -957,7 +979,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
       skill: data.skillConfig,
       rng: rng ?? math.Random(),
     );
-    await _commit(r.save);
+    // 결투석 — 10층마다 **첫 도달**(역대 최고 기준, 화석·조각과 같은 판정)에 오행 2 · 기질 1.
+    var saved = r.save;
+    lastDuelStones = const {};
+    if (r.milestone) {
+      final st = grantAbyssDuelStones(saved, _stoneCfg, s0.abyssFloor);
+      saved = st.save;
+      lastDuelStones = st.got;
+    }
+    await _commit(saved);
     return (
       milestone: r.milestone,
       floor: r.save.abyssFloor,
@@ -1740,42 +1770,92 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return (gold: gold, jelly: jelly);
   }
 
-  // ── 훈련소(2026-09-29) ───────────────────────────────────────────────
+  // ── 훈련 v2(2026-10-08, docs/design_training_v2.md) ─────────────────
   //
-  // 솔로 루프와 같은 기기 권위 — 규칙은 core_save/training_progress.dart(서버와 같은 함수).
-  // 서버는 결투 팀을 만들 때 단계를 최대 단계로 자른다.
+  // 솔로 루프와 같은 기기 권위 — 규칙은 core_save/train_points.dart(서버와 같은 함수).
+  // 서버는 업로드 때 배분을 예산·칸 상한으로 자르고(`sanitizeTrainPoints`), 결투 팀을 만들 때도 자른다.
+  // 화면(훈련소 재작성)은 다음 단계 — 여기는 화면이 붙을 API 다.
 
-  /// 훈련 시작. 성공하면 null, 실패하면 사유(`busy`·`maxed`·`materials`·`no_bug`).
-  /// 훈련소 단계 시작 — 길드전 5일차(시작 시점에 센다 — 완료는 젤리로 당길 수 있다).
-  Future<String?> startDuelTraining(String bugId, TrainStat stat) async {
-    final err = await _startDuelTrainingImpl(bugId, stat);
-    if (err == null) {
-      GuildWarTally.add('trainStep', ref.read(clockProvider).now().toUtc());
-    }
-    return err;
+  /// 이전(옛 부위 강화·훈련 단계 → 칸). 기록이 있는 곤충은 건드리지 않는다(멱등).
+  SaveGame _migrateTrainV2(SaveGame s, GameData data) => migrateTrainingV2(
+    s,
+    (data.battleConfig ?? const BattleConfig()).training,
+    speciesOf: (id) => data.speciesById[id],
+    enhance: data.enhanceConfig,
+  );
+
+  /// 이 곤충의 훈련 기록(이전 전이면 옛 투자로 만든 가상 기록).
+  BugTrain bugTrainNow(String bugId) {
+    final data = ref.read(gameDataProvider).requireValue;
+    final s = state.requireValue;
+    final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
+    if (bug == null) return const BugTrain();
+    return bugTrainOf(
+      s,
+      bug,
+      data.species(bug.speciesId),
+      _battleCfg.training,
+      enhance: data.enhanceConfig,
+    );
   }
 
-  Future<String?> _startDuelTrainingImpl(String bugId, TrainStat stat) async {
+  /// 이 곤충의 포인트 예산(보너스 포함)과 칸 상한.
+  ({int budget, Map<TrainSlot, int> caps}) trainLimitsNow(String bugId) {
+    final data = ref.read(gameDataProvider).requireValue;
+    final s = state.requireValue;
+    final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
+    if (bug == null) return (budget: 0, caps: const {});
+    final sp = data.species(bug.speciesId);
+    final cfg = _battleCfg.training;
+    final legacy = legacyTrainPoints(
+      s,
+      bug,
+      sp,
+      cfg,
+      enhance: data.enhanceConfig,
+    );
+    return (
+      budget: trainBudgetOf(s, bug, sp, cfg, enhance: data.enhanceConfig),
+      caps: {
+        for (final sl in TrainSlot.values)
+          sl: trainSlotCapOf(s, bug, sp, sl, cfg, legacy: legacy),
+      },
+    );
+  }
+
+  /// 칸 [slot] 에 [count]포인트 찍기. 성공하면 null, 실패하면 사유
+  /// (`no_bug`·`respec`·`busy`·`maxed`·`points`·`materials`). 재료를 낸 포인트가 남아 있으면 바로 찍힌다.
+  /// 길드전 5일차 훈련 집계는 재료를 내고 시작할 때 센다(옛 훈련소 단계와 같은 자리).
+  Future<String?> allocTrainPointNow(
+    String bugId,
+    TrainSlot slot, {
+    int count = 1,
+  }) async {
     final data = ref.read(gameDataProvider).requireValue;
     final s = state.requireValue;
     final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
     if (bug == null) return 'no_bug';
-    final r = startTraining(
+    final now = ref.read(clockProvider).now().toUtc();
+    final r = allocTrainPoint(
       s,
       _battleCfg.training,
       bug,
       data.species(bug.speciesId),
-      stat,
-      ref.read(clockProvider).now().toUtc(),
+      slot,
+      now,
+      count: count,
+      enhance: data.enhanceConfig,
     );
     if (r.save == null) return r.error;
+    final startedJob = r.save!.trainPointJob != null && s.trainPointJob == null;
     await _commit(r.save!);
+    if (startedJob) GuildWarTally.add('trainStep', now);
     return null;
   }
 
-  /// 지금 훈련을 젤리로 끝낸다. 성공하면 null, 부족하면 `jelly`.
-  Future<String?> finishDuelTrainingWithJelly() async {
-    final r = instantFinishTraining(
+  /// 지금 포인트 찍기를 젤리로 끝낸다. 성공하면 null, 부족하면 `jelly`.
+  Future<String?> finishTrainPointWithJelly() async {
+    final r = instantFinishTrainPoint(
       state.requireValue,
       _battleCfg.training,
       ref.read(clockProvider).now().toUtc(),
@@ -1785,22 +1865,107 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return null;
   }
 
-  /// 훈련 초기화(재료 절반 환불). 돌려받은 재료 수(종류마다), 실패하면 null.
-  Future<int?> resetDuelTraining(String bugId) async {
+  /// 다시 찍기 — 배분을 [next] 로(재료 없음 · 대기). 성공하면 null
+  /// (`busy`·`respec`·`bad`·`maxed`·`points`·`same`).
+  Future<String?> startTrainRespecNow(
+    String bugId,
+    Map<TrainSlot, int> next,
+  ) async {
     final data = ref.read(gameDataProvider).requireValue;
     final s = state.requireValue;
     final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
-    if (bug == null) return null;
-    final r = resetTraining(
+    if (bug == null) return 'no_bug';
+    final r = startTrainRespec(
       s,
       _battleCfg.training,
       bug,
       data.species(bug.speciesId),
+      next,
+      ref.read(clockProvider).now().toUtc(),
+      enhance: data.enhanceConfig,
     );
-    if (r.save == null) return null;
+    if (r.save == null) return r.error;
     await _commit(r.save!);
-    return r.refund;
+    return null;
   }
+
+  /// 다시 찍기 대기를 젤리로 당긴다. 성공하면 null(`none`·`jelly`).
+  Future<String?> finishTrainRespecWithJelly(String bugId) async {
+    final r = instantFinishTrainRespec(
+      state.requireValue,
+      _battleCfg.training,
+      bugId,
+      ref.read(clockProvider).now().toUtc(),
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 다시 찍기 대기 취소(배분은 그대로).
+  Future<String?> cancelTrainRespecNow(String bugId) async {
+    final r = cancelTrainRespec(state.requireValue, bugId);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 이 곤충이 훈련 때문에 출전할 수 없나(찍는 중 · 다시 찍기 대기).
+  bool trainBusyNow(String bugId) => trainBusy(
+    state.requireValue,
+    bugId,
+    ref.read(clockProvider).now().toUtc(),
+  );
+
+  /// 젤리로 결투석 사기. 성공하면 null(`off`·`count`·`jelly`).
+  Future<String?> buyDuelStoneNow(DuelStone kind, {int count = 1}) async {
+    final r = buyDuelStone(
+      state.requireValue,
+      _battleCfg.training.stones,
+      kind,
+      count: count,
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 결투석으로 오행·기질 바꾸기(둘 중 하나만). 성공하면 null(`no_bug`·`bad`·`same`·`stone`).
+  Future<String?> useDuelStoneNow(
+    String bugId, {
+    Element? element,
+    Temperament? temperament,
+  }) async {
+    final r = useDuelStone(
+      state.requireValue,
+      bugId,
+      element: element,
+      temperament: temperament,
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 결투석 드롭 설정.
+  DuelStoneConfig get _stoneCfg => _battleCfg.training.stones;
+
+  /// 마지막 정예·보스·심연 처치에서 떨어진 결투석(화면 알림용 — 다음 단계 UI).
+  Map<DuelStone, int> lastDuelStones = const {};
+
+  // ── 옛 훈련소 화면 다리(화면 재작성 전까지) ──────────────────────────
+  // 옛 화면(training_screen)이 부르는 이름을 v2 로 잇는다 — 옛 능력치 5종을 같은 이름의 칸에 1포인트씩.
+  // 옛 단계를 올리는 함수는 없어졌다(옛 단계는 이전 원본으로만 남는다).
+
+  /// 옛 화면의 "훈련" — 같은 이름의 칸에 1포인트 찍기.
+  Future<String?> startDuelTraining(String bugId, TrainStat stat) =>
+      allocTrainPointNow(bugId, TrainSlot.fromKeyOrNull(stat.key)!);
+
+  /// 옛 화면의 "젤리로 끝내기".
+  Future<String?> finishDuelTrainingWithJelly() => finishTrainPointWithJelly();
+
+  /// 옛 화면의 "초기화" — v2 에는 환불형 초기화가 없다(다시 찍기로 대신). 늘 실패(null).
+  Future<int?> resetDuelTraining(String bugId) async => null;
 
   /// 부상 회복. [viaJelly] 면 남은 시간 비례 젤리를 소비해 즉시 회복,
   /// 아니면 회복 시각이 지났을 때만 정리. 성공 시 true.
@@ -3680,17 +3845,26 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 안 나왔으면 커밋하지 않는다 — 정예마다 세이브를 쓰면 저장이 잦아진다.
   Future<Map<String, int>> grantEliteShards({math.Random? rng}) async {
     final cfg = ref.read(gameDataProvider).value?.skillConfig;
-    if (cfg == null) return const {};
     final s = state.requireValue;
-    final got = core_skill.grantEliteShards(
-      s,
-      cfg,
-      rng ?? math.Random(),
-      tier: s.difficultyTier,
-    );
-    if (got.shards.isEmpty) return const {};
-    await _commit(got.save);
-    return got.shards;
+    final r = rng ?? math.Random();
+    var next = s;
+    var shards = const <String, int>{};
+    if (cfg != null) {
+      final got = core_skill.grantEliteShards(
+        next,
+        cfg,
+        r,
+        tier: s.difficultyTier,
+      );
+      next = got.save;
+      shards = got.shards;
+    }
+    // 결투석(오행석 0.2%, design_training_v2.md §3) — 스킬 조각 **뒤에** 굴린다(같은 seed 의 조각이 안 바뀌게).
+    final st = rollDuelStones(next, _stoneCfg, r, DuelStoneSource.elite);
+    lastDuelStones = st.got;
+    if (shards.isEmpty && st.got.isEmpty) return const {};
+    await _commit(st.save);
+    return shards;
   }
 
   /// 정예 처치 요정 드롭(확률 — 알·속성석·가속기, §2.8 무료 경로). 아무것도 안 나오면 저장하지 않는다.

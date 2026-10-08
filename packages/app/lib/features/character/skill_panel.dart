@@ -70,6 +70,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _header(l, cfg, save, slots, locale),
+        ?_gradeUpHint(l, cfg, save, locale),
         if (save.skillTrainingId != null) ...[
           const SizedBox(height: 6),
           _trainingBar(l, cfg, save, locale),
@@ -134,11 +135,19 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                 art: 'sweep',
               ),
               const SizedBox(width: 5),
-              _button(
-                l.skillGradeUp,
-                () => _open(SkillGradeUpDialog(cfg: cfg, locale: locale)),
-                accent: const Color(0xFFCE93D8),
-                art: 'gradeup',
+              // 놀고 있는 조각으로 승급할 수 있으면 빨간 점(2026-10-08 사장님 — 최상위 유저도 몰라서 수천 개를 쌓아 뒀다).
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _button(
+                    l.skillGradeUp,
+                    () => _open(SkillGradeUpDialog(cfg: cfg, locale: locale)),
+                    accent: const Color(0xFFCE93D8),
+                    art: 'gradeup',
+                  ),
+                  if (skillIdleGradeUps(cfg, save).isNotEmpty)
+                    const Positioned(top: -3, right: -3, child: _RedDot()),
+                ],
               ),
             ],
           ),
@@ -665,6 +674,66 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     _ => l.guildErrGeneric,
   };
 
+  /// 승급 안내 띠 — "안 쓰는 조각으로 영웅 만능 조각 12개를 만들 수 있어요" + 바로 승급 창.
+  Widget? _gradeUpHint(
+    AppLocalizations l,
+    SkillConfig cfg,
+    SaveGame save,
+    String locale,
+  ) {
+    final ups = skillIdleGradeUps(cfg, save);
+    if (ups.isEmpty) return null;
+    // 가장 높은 등급 하나만 크게 말한다(여러 줄이면 안 읽힌다).
+    final top = ups.keys.reduce((a, b) => a.index > b.index ? a : b);
+    const purple = Color(0xFFCE93D8);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: InkWell(
+        onTap: () => _open(SkillGradeUpDialog(cfg: cfg, locale: locale)),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0x33CE93D8),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: purple, width: 1.4),
+          ),
+          child: Row(
+            children: [
+              skillButtonImage(
+                'gradeup',
+                size: 22,
+                fallback: const Icon(Icons.upgrade_rounded, color: purple),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l.skillGradeUpHint(gradeLabel(l, top), '${ups[top]}'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                l.skillGradeUpHintGo,
+                style: const TextStyle(
+                  color: purple,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: purple, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _button(
     String text,
     VoidCallback onTap, {
@@ -769,4 +838,39 @@ class _SkillArt extends StatelessWidget {
       child: art,
     );
   }
+}
+
+/// 처리할 일이 있다는 빨간 점.
+class _RedDot extends StatelessWidget {
+  const _RedDot();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 10,
+    height: 10,
+    decoration: BoxDecoration(
+      color: const Color(0xFFFF4D4D),
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 1.2),
+    ),
+  );
+}
+
+/// **놀고 있는 조각**(장착하지 않은 스킬의 조각 + 그 등급 만능 조각)으로 만들 수 있는 윗등급 만능 조각 수.
+/// 장착 스킬의 조각은 수련 재료라 세지 않는다(승급 창도 기본은 아무것도 고르지 않는다).
+Map<Grade, int> skillIdleGradeUps(SkillConfig cfg, SaveGame save) {
+  final ratio = cfg.gradeUpRatio;
+  if (ratio <= 0) return const {};
+  final out = <Grade, int>{};
+  for (var i = 0; i + 1 < kSkillGrades.length; i++) {
+    final g = kSkillGrades[i];
+    var idle = save.gradeShards(g);
+    for (final d in cfg.skills) {
+      if (d.grade != g || save.equippedSkills.contains(d.id)) continue;
+      idle += save.skillShards[d.id] ?? 0;
+    }
+    final n = idle ~/ ratio;
+    if (n > 0) out[kSkillGrades[i + 1]] = n;
+  }
+  return out;
 }

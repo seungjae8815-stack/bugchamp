@@ -343,3 +343,47 @@ enum TrainStat {
     return null;
   }
 }
+
+/// 훈련 v2(2026-10-08, docs/design_training_v2.md §1.2) — 훈련 포인트를 찍는 칸 10종.
+///
+/// 옛 [TrainStat](훈련소 단계)·부위 강화는 세이브에 남고, 이전([migrateTrainingV2])이 이 칸으로 옮긴다.
+enum TrainSlot {
+  attack('attack'), // 공격(ATK ×)
+  defense('defense'), // 방어(DEF ×)
+  hp('hp'), // 체력(HP ×)
+  speed('speed'), // 속도(SPD ×)
+  evade('evade'), // 회피(확률 +)
+  crit('crit'), // 치명(확률 +)
+  recovery('recovery'), // 회복력(판 안 흡혈 + 판 사이 회복)
+  mass('mass'), // 체급(무게 + · 속도 −) — 실제 크기(mm)·도감은 그대로
+  tech('tech'), // 주특기 기술(치기 뒤집기 · 집기 무는 힘 · 던지기 쿨타임)
+  grit('grit'); // 근성(탭 반격)
+
+  const TrainSlot(this.key);
+  final String key;
+
+  /// 모르는 키는 null — 세이브에서 읽을 때(신버전이 칸을 추가해도 구버전이 죽지 않게).
+  static TrainSlot? fromKeyOrNull(String k) {
+    for (final e in values) {
+      if (e.key == k) return e;
+    }
+    return null;
+  }
+}
+
+/// 결투석(2026-10-08, design_training_v2.md §3) — 곤충 1마리의 오행·기질을 원하는 값으로 바꾼다.
+/// ⚠️ 새 `MaterialKind` 가 아니라 세이브의 별도 맵(`duelStones`) — 구버전 앱이 모르는 재료 키에서 죽었다.
+enum DuelStone {
+  element('element'), // 오행석
+  temperament('temperament'); // 기질석
+
+  const DuelStone(this.key);
+  final String key;
+
+  static DuelStone? fromKeyOrNull(String k) {
+    for (final e in values) {
+      if (e.key == k) return e;
+    }
+    return null;
+  }
+}

@@ -957,6 +957,7 @@
   "buffLuckyWind": "Lucky Wind",
   "buffLuckyWindDesc": "Bug find rate ×2",
   "enhanceTitle": "Enhance Parts",
+  "enhanceMovedToTraining": "Part enhancement has moved to Training Points. Allocate them in the Training Center on the Duel tab.",
   "partHornJaw": "Horn/Jaw",
   "partCuticle": "Cuticle",
   "partWing": "Wings",
@@ -1936,6 +1937,9 @@
     }
   },
   "skillGradeUpPick": "Pick shards to use",
+  "@skillGradeUpHint": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "String"}}},
+  "skillGradeUpHint": "Turn your unused skill shards into {grade} universal shards ×{n}! They work on any skill of that grade.",
+  "skillGradeUpHintGo": "Promote",
   "skillEquip": "Equip",
   "skillUnequip": "Unequip",
   "skillSlotsInfo": "Equipped {n}/{max}",

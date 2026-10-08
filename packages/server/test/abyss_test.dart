@@ -283,7 +283,8 @@ void main() {
       final s = trained();
       final r = actions.mergeSave(s, oldAppJson(s));
       expect(r.save!.duelTraining['bug1']?[TrainStat.attack], 4);
-      expect(r.save!.trainingJob?.bugId, 'bug1');
+      // 훈련 v2(2026-10-08) — 진행 중이던 옛 훈련은 이전 때 끝난 것으로 치고(곤충이 있으면 옛 단계에 반영) 대기열을 비운다.
+      expect(r.save!.trainingJob, isNull);
       expect(r.save!.pvpDefenseIds, ['bug1']);
       expect(r.save!.abyssFloor, 5);
       expect(r.save!.abyssWeek, week);

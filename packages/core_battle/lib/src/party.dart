@@ -15,9 +15,10 @@ Stance preferredStanceOf(Specialty s) => switch (s) {
 /// **앱과 서버가 반드시 같은 결과를 내야 한다.** 한쪽만 달라지면
 /// "클라에선 이겼는데 서버는 졌다고 함"이 발생하므로 이 함수 하나로 통일한다.
 ///
-/// 부위 강화 계수는 `enhance.json`(core_run) 에 있지만, core_battle 은
-/// core_run 을 모르므로(형제 관계) **호출부가 값을 넘긴다**.
-/// 기본값은 §2.2 표와 같다.
+/// 훈련 v2(2026-10-08, docs/design_training_v2.md): 부위 강화는 **훈련 포인트로 흡수**됐다 — 이 함수는
+/// 곤충의 `enhancement` 를 더 이상 읽지 않는다(이전된 곤충이 두 번 세지지 않게). 대신 호출부가 훈련 배분에서
+/// 계산한 배율([trainAtkMult]·[trainDefMult]·[trainHpMult]·[trainSpdMult], core_save `trainingBonusOf`)을 넘긴다.
+/// core_battle 은 core_run·core_save 를 모르므로(형제 관계) 값으로 받는다. 기본 1 = 훈련 없음.
 /// [traitAtkBonus] / [traitHpBonus] 는 **혈통 특성**(§2.5)의 전투 보정이다
 /// (0.35 = +35%). 계수는 `pets.json → traitAttackBonus/traitHpBonus` ×
 /// `traitBattleScale` 이며, core_battle 은 core_run 을 모르므로 호출부가 넘긴다.
@@ -30,18 +31,17 @@ BattleBug buildBattleBug({
   required IndividualBug bug,
   required Species species,
   required String locale,
-  double hornJawPerLevel = 0.04,
-  double cuticlePerLevel = 0.04,
-  double wingPerLevel = 0.03,
-  double buildPerLevel = 0.05,
+  double trainAtkMult = 1,
+  double trainDefMult = 1,
+  double trainHpMult = 1,
+  double trainSpdMult = 1,
   double traitAtkBonus = 0,
   double traitHpBonus = 0,
   double variantAtkBonus = 0,
   double variantHpBonus = 0,
 }) {
   final sm = bug.statMultiplier(species);
-  final e = bug.enhancement;
-  // 특성은 **부위 강화와 곱해진다** — 강화가 이미 최대 +200%(5성 만렙)라
+  // 특성은 **훈련 배율과 곱해진다** — 훈련이 이미 크게 올려서
   // 덧셈으로 붙이면 후반에 체감이 사라진다. 짝짓기 세대를 쌓은 보람이
   // 후반에도 남아야 계통 육성이 죽은 시스템이 되지 않는다.
   return BattleBug(
@@ -53,23 +53,17 @@ BattleBug buildBattleBug({
     maxHp:
         species.baseStats.hp *
         sm *
-        (1 + e.levelOf(BugPart.build) * buildPerLevel) *
+        trainHpMult *
         (1 + traitHpBonus) *
         (1 + variantHpBonus),
     atk:
         species.baseStats.atk *
         sm *
-        (1 + e.levelOf(BugPart.hornJaw) * hornJawPerLevel) *
+        trainAtkMult *
         (1 + traitAtkBonus) *
         (1 + variantAtkBonus),
-    def:
-        species.baseStats.def *
-        sm *
-        (1 + e.levelOf(BugPart.cuticle) * cuticlePerLevel),
-    spd:
-        species.baseStats.spd *
-        sm *
-        (1 + e.levelOf(BugPart.wing) * wingPerLevel),
+    def: species.baseStats.def * sm * trainDefMult,
+    spd: species.baseStats.spd * sm * trainSpdMult,
   );
 }
 
@@ -79,10 +73,10 @@ DuelBug buildDuelBug({
   required IndividualBug bug,
   required Species species,
   required String locale,
-  double hornJawPerLevel = 0.04,
-  double cuticlePerLevel = 0.04,
-  double wingPerLevel = 0.03,
-  double buildPerLevel = 0.05,
+  double trainAtkMult = 1,
+  double trainDefMult = 1,
+  double trainHpMult = 1,
+  double trainSpdMult = 1,
   double traitAtkBonus = 0,
   double traitHpBonus = 0,
   double variantAtkBonus = 0,
@@ -92,10 +86,10 @@ DuelBug buildDuelBug({
     bug: bug,
     species: species,
     locale: locale,
-    hornJawPerLevel: hornJawPerLevel,
-    cuticlePerLevel: cuticlePerLevel,
-    wingPerLevel: wingPerLevel,
-    buildPerLevel: buildPerLevel,
+    trainAtkMult: trainAtkMult,
+    trainDefMult: trainDefMult,
+    trainHpMult: trainHpMult,
+    trainSpdMult: trainSpdMult,
     traitAtkBonus: traitAtkBonus,
     traitHpBonus: traitHpBonus,
     variantAtkBonus: variantAtkBonus,

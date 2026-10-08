@@ -3010,6 +3010,12 @@ abstract class AppLocalizations {
   /// **'Enhance Parts'**
   String get enhanceTitle;
 
+  /// No description provided for @enhanceMovedToTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Part enhancement has moved to Training Points. Allocate them in the Training Center on the Duel tab.'**
+  String get enhanceMovedToTraining;
+
   /// No description provided for @partHornJaw.
   ///
   /// In en, this message translates to:
@@ -5373,6 +5379,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pick shards to use'**
   String get skillGradeUpPick;
+
+  /// No description provided for @skillGradeUpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn your unused skill shards into {grade} universal shards ×{n}! They work on any skill of that grade.'**
+  String skillGradeUpHint(String grade, String n);
+
+  /// No description provided for @skillGradeUpHintGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Promote'**
+  String get skillGradeUpHintGo;
 
   /// No description provided for @skillEquip.
   ///

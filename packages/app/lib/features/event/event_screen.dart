@@ -1040,7 +1040,6 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               b.id: duelBugFor(b, data, save, locale).power,
           }
         : const <String, double>{};
-    final job = save.trainingJob;
     DateTime? restUntil(IndividualBug b) {
       if (!duel) return save.eventFatigue[b.id];
       // 대회 부상은 서버 소유 기록(`eventFatigue`)이 기준 — 결투 부상과 둘 중 늦은 쪽.
@@ -1053,10 +1052,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         if (inj == null) return ev;
         return ev.isAfter(inj) ? ev : inj;
       }
-      if (job != null && job.bugId == b.id && !job.doneAt(now)) {
-        return job.until;
-      }
-      return null;
+      // 훈련 v2 — 포인트 찍는 중 · 다시 찍기 대기 중.
+      return trainBusyUntil(save, b.id, now);
     }
 
     bool resting(IndividualBug b) {
@@ -1116,7 +1113,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                 // 쉬는 곤충을 누르면 이유를 알려 준다(예전엔 아무 반응이 없었다, 2026-09-30).
                 onRestTap: () => showCenterToast(
                   context,
-                  job != null && job.bugId == bug.id && !job.doneAt(now)
+                  trainBusy(save, bug.id, now)
                       ? l.squadTraining
                       : l.squadInjured,
                 ),

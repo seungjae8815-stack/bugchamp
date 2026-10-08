@@ -73,6 +73,7 @@ class CeilingData {
     required this.dex,
     required this.speciesCount,
     required this.forge,
+    required this.training,
   });
 
   factory CeilingData.load() => CeilingData._(
@@ -81,6 +82,9 @@ class CeilingData {
     dex: DexConfig.fromJson(_readData('dex.json')),
     speciesCount: (_readData('species.json')['species'] as List).length,
     forge: ForgeConfig.fromJson(_readData('forge.json')),
+    training: TrainingConfig.fromJson(
+      _readData('battle.json')['training'] as Map<String, dynamic>?,
+    ),
   );
 
   final PetConfig pet;
@@ -88,6 +92,9 @@ class CeilingData {
   final DexConfig dex;
   final int speciesCount;
   final ForgeConfig forge;
+
+  /// 훈련 v2 — 현실적 최고치의 펫 기여(찍은 포인트 × petPerPoint).
+  final TrainingConfig training;
 }
 
 /// 전력의 재료. 유저든 최고치든 이 모양으로 넣는다.
@@ -146,17 +153,16 @@ PowerParts ceilingParts(
     grade: Grade.fromKey(pets['grade'] as String),
     sizeMult: (pets['sizeMult'] as num).toDouble(),
     potential: potential,
-    enhanceTotal:
-        potential *
-        (pets['enhancePerPotential'] as num).toInt() *
-        (pets['parts'] as num).toInt(),
+    // 훈련 v2(2026-10-08) — 부위 강화는 훈련 포인트로 흡수됐다(펫 기여는 trainMult 가 맡는다).
+    enhanceTotal: 0,
     stage: LifeStage.adult,
     level: data.pet.tierCaps.isEmpty ? 1 : data.pet.tierCaps.last,
     trait: BugTrait.values.firstWhere((t) => t.key == pets['trait']),
     variant: BugVariant.values.firstWhere((v) => v.key == pets['variant']),
     passive: null,
-    // 현실적 최고치에는 훈련소를 넣지 않는다(90일 표 정의 밖 — balance_targets.json).
-    trainMult: 1.0,
+    // 훈련 포인트 전부(balance_targets.json → pets.trainPoints) × petPerPoint — 게임의 `trainPetMult` 와 같은 식.
+    trainMult:
+        1 + (pets['trainPoints'] as num).toDouble() * data.training.petPerPoint,
   );
   final bonus = computePetBonus(
     List.filled((pets['count'] as num).toInt(), one),

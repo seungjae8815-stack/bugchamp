@@ -167,7 +167,56 @@
   "resetRefund": 0.5,
   "_crossComment": "2026-09-29 사장님 확정: 펫이 강해지면 사냥도 결투도 강해진다. 훈련 → 방치(펫 기여 × (1 + 훈련 단계 합 × petScale), 부위 강화와 같은 비율) · 수련 레벨 → 결투(체력·공격 × (1 + (레벨-1) × duelLevelBonus), 돌파 티어 레벨 상한으로 자른다). ⚠️ 펫 기여가 늘면 90일 표(balance_sim)가 움직인다 — 시뮬은 훈련을 모른다(가정 곡선 밖).",
   "petScale": 0.005,
-  "duelLevelBonus": 0.005
+  "duelLevelBonus": 0.005,
+  "_v2Comment": "훈련 v2(2026-10-08, docs/design_training_v2.md). 포인트 = 포텐셜 1성당 6 + 수련 5레벨마다 1 + 돌파 6/10/16/24(누적). 칸 10종에 골라 찍는다(칸 상한 합 ≫ 포인트). 포인트를 처음 쓸 때만 재료·시간(n번째 = baseCost·baseSeconds × pointCostGrowth·pointTimeGrowth^(n-1) × gradeMult) — v1 단계 곡선(1.25·1.3)을 102포인트에 걸면 끝이 수십억이라 102번째가 v1 14단계와 비슷하게 닿도록 1.03. 다시 찍기 = 무료 + 대기(30분 + 포인트당 3분, 최대 8시간, instantJelly 공식). 위 perLevel·baseCap·capPerPotential·temperamentMods 등 v1 값은 이전(옛 훈련 단계 → 칸) 환산에만 쓴다.",
+  "points": { "perPotential": 6, "levelsPerPoint": 5, "breakthrough": [6, 10, 16, 24] },
+  "slots": {
+   "attack": { "effect": 0.03, "cap": 30 },
+   "defense": { "effect": 0.03, "cap": 30 },
+   "hp": { "effect": 0.04, "cap": 30 },
+   "speed": { "effect": 0.02, "cap": 20 },
+   "evade": { "effect": 0.006, "cap": 20 },
+   "crit": { "effect": 0.01, "cap": 20 },
+   "recovery": { "effect": 0.015, "cap": 20 },
+   "mass": { "effect": 0.015, "cap": 10 },
+   "tech": { "cap": 10 },
+   "grit": { "effect": 1, "cap": 10 }
+  },
+  "massSpeedPenalty": 0.005,
+  "techBySpecialty": { "strike": 0.04, "grip": 0.03, "toss": 0.03 },
+  "_slotModsComment": "칸 상한 보정 = v1 보정(temperamentMods 등) × 3 (설계 예: 우직 방어 +12 · 회피 −6). 새 칸(체력·속도·체급·기술·근성)은 보정 없음 — 시뮬로 맞출 때 넣는다.",
+  "slotTemperamentMods": {
+   "aggressive": { "attack": 9, "defense": -6, "crit": 3 },
+   "cautious": { "attack": -6, "defense": 3, "evade": 6 },
+   "cunning": { "evade": 6, "crit": 12 },
+   "steadfast": { "defense": 12, "evade": -6, "recovery": 3 },
+   "fickle": { "attack": 3, "defense": 3, "evade": 3, "crit": 3, "recovery": 3 }
+  },
+  "slotSpecialtyMods": {
+   "strike": { "attack": 3, "crit": 3 },
+   "grip": { "defense": 3, "recovery": 3 },
+   "toss": { "evade": 3, "crit": 3 }
+  },
+  "slotTraitMods": {
+   "fierce": { "attack": 6 },
+   "sturdy": { "recovery": 6 },
+   "vital": { "defense": 3, "recovery": 3 },
+   "noble": { "attack": 3, "defense": 3, "evade": 3, "crit": 3, "recovery": 3 }
+  },
+  "pointCostGrowth": 1.03,
+  "pointTimeGrowth": 1.03,
+  "respec": { "baseMinutes": 30, "perPointMinutes": 3, "maxMinutes": 480 },
+  "_petComment": "방치(펫) 기여 = 1 + 찍은 포인트 × petPerPoint(102포인트 ×1.255 — 옛 부위 강화 50 × 0.005 = ×1.25 자리). 이전된 곤충은 max(새 식, 옛 식 = (1 + 부위 강화 합 × legacyEnhancePetScale) × (1 + 옛 훈련 단계 합 × petScale)) — 아무도 약해지지 않게.",
+  "petPerPoint": 0.0025,
+  "legacyEnhancePetScale": 0.005,
+  "stones": {
+   "_comment": "결투석(design_training_v2.md §3, 2026-10-08 사장님 확정). 오행석 = 오행을 원하는 값으로 · 기질석 = 기질을. 젤리 40·60 (§2.8 예외 — 선택이지 능력치가 아니다). 정예 오행 0.2% · 보스 재처치 오행 1%·기질 0.5% · 심연 10층마다 첫 도달 오행 2·기질 1.",
+   "jelly": { "element": 40, "temperament": 60 },
+   "eliteChance": { "element": 0.002 },
+   "bossRepeatChance": { "element": 0.01, "temperament": 0.005 },
+   "abyssEvery": 10,
+   "abyssCount": { "element": 2, "temperament": 1 }
+  }
  },
  "_ticketsComment": "결투 티켓 = 하루 판수 제한(랭킹을 '전력'으로 되돌린다). adDailyLimit 은 광고제거 구매자에게도 동일 적용.",
  "tickets": {
