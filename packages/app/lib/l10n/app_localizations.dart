@@ -10684,6 +10684,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Train at the center'**
   String get trainGoCenter;
+
+  /// No description provided for @duelClutchHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold on!'**
+  String get duelClutchHold;
+
+  /// No description provided for @duelClutchWake.
+  ///
+  /// In en, this message translates to:
+  /// **'Get up!'**
+  String get duelClutchWake;
+
+  /// No description provided for @duelClutchTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the screen like crazy!'**
+  String get duelClutchTapHint;
+
+  /// No description provided for @duelClutchChance.
+  ///
+  /// In en, this message translates to:
+  /// **'Chance {k}/{n}'**
+  String duelClutchChance(int k, int n);
+
+  /// No description provided for @duelClutchSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Held on!'**
+  String get duelClutchSaved;
+
+  /// No description provided for @duelClutchWoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up!'**
+  String get duelClutchWoke;
+
+  /// No description provided for @duelClutchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed…'**
+  String get duelClutchFailed;
+
+  /// No description provided for @duelClutchLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Clutch {n}'**
+  String duelClutchLeft(int n);
 }
 
 class _AppLocalizationsDelegate

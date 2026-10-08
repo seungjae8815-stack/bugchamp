@@ -103,6 +103,14 @@ abstract interface class GameServer {
     required double launch,
   });
 
+  /// 탭 반격 점수(훈련 v2 §4) — 서버가 위기에서 멈춘 판(`clutch: {kind, index, bout, tick}`)을 주면
+  /// 게이지 점수(0~1)를 그 [index] 와 함께 보낸다. 응답은 [duelThrow] 와 같은 모양(`bout` 은 판 처음부터).
+  Future<ServerResult> duelClutch({
+    required String sessionId,
+    required int index,
+    required double score,
+  });
+
   /// 결투 티켓 충전 — 광고 보상(+N장, 하루 상한은 서버가 센다).
   ///
   /// 티켓은 서버 소유라 앱이 로컬로 늘려도 업로드 때 덮인다. 광고를 끝까지 본
@@ -265,6 +273,13 @@ abstract interface class GameServer {
     required String sessionId,
     required double launch,
     String? cardId,
+  });
+
+  /// 대회 탭 반격 점수 — [duelClutch] 와 같은 규칙. 응답은 [eventDuelThrow] 와 같은 모양.
+  Future<ServerResult> eventDuelClutch({
+    required String sessionId,
+    required int index,
+    required double score,
   });
 
   /// 대회 그만하기 — 지금까지의 기록으로 확정(부상은 남은 체력만큼 줄어든다).
@@ -435,6 +450,12 @@ class NoGameServer implements GameServer {
     String? cardId,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
+  Future<ServerResult> eventDuelClutch({
+    required String sessionId,
+    required int index,
+    required double score,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
   Future<ServerResult> eventDuelQuit(String sessionId) async =>
       const ServerResult.fail('unavailable', 0);
   @override
@@ -523,6 +544,12 @@ class NoGameServer implements GameServer {
   Future<ServerResult> duelThrow({
     required String sessionId,
     required double launch,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> duelClutch({
+    required String sessionId,
+    required int index,
+    required double score,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> pvpTicketAd() async =>
@@ -887,6 +914,19 @@ class HttpGameServer implements GameServer {
     'sessionId': sessionId,
     'launch': launch,
     'cardId': ?cardId,
+    // 탭 반격을 안다(1.0.18+) — 서버가 내 곤충 위기에서 판을 멈추고 `clutch` 를 준다.
+    'clutch': true,
+  });
+
+  @override
+  Future<ServerResult> eventDuelClutch({
+    required String sessionId,
+    required int index,
+    required double score,
+  }) => _send('POST', '/event/duel/clutch', {
+    'sessionId': sessionId,
+    'index': index,
+    'score': score,
   });
 
   @override
@@ -1027,8 +1067,23 @@ class HttpGameServer implements GameServer {
   Future<ServerResult> duelThrow({
     required String sessionId,
     required double launch,
-  }) =>
-      _send('POST', '/duel/throw', {'sessionId': sessionId, 'launch': launch});
+  }) => _send('POST', '/duel/throw', {
+    'sessionId': sessionId,
+    'launch': launch,
+    // 탭 반격을 안다(1.0.18+) — 서버가 내 곤충 위기에서 판을 멈추고 `clutch` 를 준다.
+    'clutch': true,
+  });
+
+  @override
+  Future<ServerResult> duelClutch({
+    required String sessionId,
+    required int index,
+    required double score,
+  }) => _send('POST', '/duel/clutch', {
+    'sessionId': sessionId,
+    'index': index,
+    'score': score,
+  });
 
   @override
   Future<ServerResult> pvpTicketAd() =>

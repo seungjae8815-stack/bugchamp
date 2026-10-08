@@ -1958,5 +1958,13 @@
   "duelStoneDone": "変更しました！",
   "duelStonePop": "{stone} +{n}",
   "trainPtSummaryLine": "訓練ポイント {used} / {budget}",
-  "trainGoCenter": "訓練所で振る"
+  "trainGoCenter": "訓練所で振る",
+  "duelClutchHold": "踏ん張れ！",
+  "duelClutchWake": "立て！",
+  "duelClutchTapHint": "画面を連打！",
+  "duelClutchChance": "チャンス {k}/{n}",
+  "duelClutchSaved": "耐えた！",
+  "duelClutchWoke": "立ち上がった！",
+  "duelClutchFailed": "失敗…",
+  "duelClutchLeft": "反撃 {n}"
 }

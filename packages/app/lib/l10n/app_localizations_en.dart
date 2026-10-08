@@ -6371,4 +6371,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainGoCenter => 'Train at the center';
+
+  @override
+  String get duelClutchHold => 'Hold on!';
+
+  @override
+  String get duelClutchWake => 'Get up!';
+
+  @override
+  String get duelClutchTapHint => 'Tap the screen like crazy!';
+
+  @override
+  String duelClutchChance(int k, int n) {
+    return 'Chance $k/$n';
+  }
+
+  @override
+  String get duelClutchSaved => 'Held on!';
+
+  @override
+  String get duelClutchWoke => 'Back up!';
+
+  @override
+  String get duelClutchFailed => 'Failed…';
+
+  @override
+  String duelClutchLeft(int n) {
+    return 'Clutch $n';
+  }
 }

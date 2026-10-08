@@ -12,6 +12,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/skin_badges.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
+import 'clutch_gauge.dart';
 import 'duel_driver.dart';
 import '../../ui/colors.dart';
 
@@ -95,7 +96,8 @@ class DuelArenaScreen extends StatefulWidget {
   State<DuelArenaScreen> createState() => _DuelArenaScreenState();
 }
 
-enum _Phase { aim, waiting, drop, fight, boutEnd, done }
+/// `clutch` = 내 곤충 위기에서 재생을 멈추고 탭 게이지를 띄운 동안(훈련 v2 §4).
+enum _Phase { aim, waiting, drop, fight, clutch, boutEnd, done }
 
 class _DuelArenaScreenState extends State<DuelArenaScreen>
     with SingleTickerProviderStateMixin {
@@ -152,6 +154,13 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         _throw(_quality);
       case _Phase.drop when _t >= _dropSeconds:
         _go(_Phase.fight);
+      // 서버가 준 위기 지점에 닿았다 — 재생을 멈추고 탭 게이지(판 끝 검사보다 먼저).
+      case _Phase.fight when _clutchAt != null && _t >= _clutchAt!:
+        _playEventSfx();
+        _phase = _Phase.clutch;
+        _t = _clutchAt!;
+      case _Phase.clutch:
+        _t = _clutchAt ?? _t; // 멈춘 자리에 붙들어 둔다.
       case _Phase.fight when _t >= _fightSeconds + 0.8:
         _endBout();
       case _Phase.fight:
@@ -205,9 +214,11 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           break;
         case DuelEventKind.evade:
           a.sfxSwipe();
-        // 탭 반격(훈련 v2) — 화면·효과음은 결투장 탭 게이지 작업에서 붙인다.
+        // 탭 반격(훈련 v2 §4) — 위기는 휙, 살아나면 반짝, 실패는 결판 소리가 뒤따른다.
         case DuelEventKind.clutch:
+          a.sfxSwipe();
         case DuelEventKind.clutchSave:
+          a.sfxRare();
         case DuelEventKind.clutchFail:
           break;
       }
@@ -218,6 +229,57 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     final b = _step?.bout;
     if (b == null) return 0;
     return b.ticks / widget.params.tickHz;
+  }
+
+  /// 위기에서 멈춘 판이면 그 시각(초) — 재생이 여기 닿으면 탭 게이지를 띄운다.
+  double? get _clutchAt {
+    final c = _step?.clutch;
+    return c == null ? null : c.tick / widget.params.tickHz;
+  }
+
+  /// 탭 점수를 보내는 중(게이지가 닫히고 서버 응답을 기다리는 동안).
+  bool _clutchSending = false;
+
+  /// 이 판에서 내 곤충이 쓸 수 있는 탭 반격 횟수(근성 칸이 높으면 +1, 엔진과 같은 규칙).
+  int get _clutchUses {
+    final p = widget.params;
+    if (!p.clutchEnabled) return 0;
+    return p.clutchUses + (_curA.gritOf(p) >= p.clutchBonusUseGrit ? 1 : 0);
+  }
+
+  /// [tick] 까지 내 곤충이 쓴 탭 반격 수.
+  int _clutchUsedBy(int tick) =>
+      _step?.bout.events
+          .where(
+            (e) =>
+                e.who == 0 &&
+                e.tick <= tick &&
+                (e.kind == DuelEventKind.clutchSave ||
+                    e.kind == DuelEventKind.clutchFail),
+          )
+          .length ??
+      0;
+
+  /// 게이지 점수를 서버(진행기)로 보내고, 받은 판(처음부터 다시 계산한 같은 판)을 멈춘 자리부터 이어 재생한다.
+  Future<void> _sendClutch(double score) async {
+    final c = _step?.clutch;
+    if (c == null || _clutchSending) return;
+    setState(() => _clutchSending = true);
+    final s = await widget.driver.clutch(c.index, score);
+    if (!mounted) return;
+    if (s == null) {
+      showCenterToast(context, AppLocalizations.of(context).battleServerFailed);
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() {
+      _clutchSending = false;
+      final at = c.tick / widget.params.tickHz;
+      _step = s;
+      // 앞부분 궤적은 같다 — 멈춘 시각부터 이어서. 이미 소리 낸 사건은 다시 울리지 않는다.
+      _phase = _Phase.fight;
+      _t = at;
+    });
   }
 
   /// 게이지 값(0~1) — 바늘이 가운데일수록 1.
@@ -275,6 +337,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     if (_quitting || widget.onQuit == null) return;
     // 싸우는 중 — 이 판의 결과는 서버가 이미 확정했다. 재생만 끝으로 넘기고 그만둔다.
     // 이 판으로 이미 끝났으면(체력 바닥) 그만둘 것 없이 끝까지 간다.
+    // 위기에서 멈춘 판은 결과가 아직 없다 — 그만두지 않는다(점수를 보내 판을 끝낸 뒤에).
+    if (_step?.clutch != null) return;
     if (_phase == _Phase.fight || _phase == _Phase.boutEnd) {
       if (_step?.done ?? true) {
         setState(() => _t = _fightSeconds + 0.8);
@@ -399,13 +463,33 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               children: [
                 _scoreBar(l),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, box) => switch (_phase) {
-                      _Phase.aim ||
-                      _Phase.waiting => _topScene(box, falling: false),
-                      _Phase.drop => _topScene(box, falling: true),
-                      _ => _sideScene(box, l),
-                    },
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: LayoutBuilder(
+                          builder: (context, box) => switch (_phase) {
+                            _Phase.aim ||
+                            _Phase.waiting => _topScene(box, falling: false),
+                            _Phase.drop => _topScene(box, falling: true),
+                            _ => _sideScene(box, l),
+                          },
+                        ),
+                      ),
+                      // 탭 반격 — 위기에서 멈춘 동안 큰 게이지. 보내는 중엔 빙글이만.
+                      if (_phase == _Phase.clutch && _step?.clutch != null)
+                        Positioned.fill(
+                          child: _clutchSending
+                              ? const ColoredBox(
+                                  color: Color(0x66000000),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : _clutchOverlay(),
+                        ),
+                    ],
                   ),
                 ),
                 // 싸움터 바로 아래 — 대회: 지금 받고 있는 강화(장면·결과 문구를 가리지 않게).
@@ -426,6 +510,29 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           ),
         ),
       ),
+    );
+  }
+
+  /// 위기 순간의 탭 게이지(화면 전체를 덮는다 — 아무 데나 두드리면 된다).
+  Widget _clutchOverlay() {
+    final c = _step!.clutch!;
+    final p = widget.params;
+    final uses = math.max(1, _clutchUses);
+    final used = _clutchUsedBy(c.tick);
+    final grit = _curA.gritOf(p);
+    return ClutchGauge(
+      // 위기마다 새 게이지(같은 판에서 두 번째 위기가 와도 처음부터).
+      key: ValueKey('clutch-$_bout-${c.index}'),
+      kind: c.kind,
+      seconds: p.clutchTapSeconds,
+      target: p.clutchTapTarget,
+      chance: math.min(uses, used + 1),
+      chances: uses,
+      threshold: (p.clutchThreshold - grit * p.clutchThresholdPerGrit).clamp(
+        0.0,
+        1.0,
+      ),
+      onDone: _sendClutch,
     );
   }
 
@@ -561,8 +668,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // 그만하기(대회) — 이 판으로 끝나지 않을 때만.
-              if (widget.onQuit != null && !(_step?.done ?? true))
+              // 그만하기(대회) — 이 판으로 끝나지 않을 때만. 위기에서 멈춘 판은 아직 결과가 없어서 안 보인다.
+              if (widget.onQuit != null &&
+                  !(_step?.done ?? true) &&
+                  _step?.clutch == null)
                 TextButton.icon(
                   onPressed: _quitting ? null : _quit,
                   icon: const Icon(Icons.flag_rounded, size: 16),
@@ -573,7 +682,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                   ),
                 ),
               TextButton(
-                onPressed: () => setState(() => _t = _fightSeconds + 0.8),
+                // 위기가 남은 판이면 위기까지만 건너뛴다(탭 게이지는 건너뛸 수 없다).
+                onPressed: () =>
+                    setState(() => _t = _clutchAt ?? _fightSeconds + 0.8),
                 child: Text(
                   l.duelSkip,
                   style: const TextStyle(color: Color(0xCCFFFFFF)),
@@ -755,8 +866,11 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     final halfY = imgH * 0.18;
 
     // 재생 위치(초) → 프레임 보간.
+    // 위기에서 멈춘 동안(clutch)은 멈춘 시각에 붙들어 둔다.
     final playT = _phase == _Phase.fight
         ? _t.clamp(0.0, _fightSeconds)
+        : _phase == _Phase.clutch
+        ? (_clutchAt ?? _fightSeconds).clamp(0.0, _fightSeconds)
         : _fightSeconds;
     final framePos = playT * widget.params.tickHz / widget.params.frameEvery;
     final fi = framePos.floor().clamp(0, bout.frames.length - 1);
@@ -767,7 +881,11 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     double lerp(int k) => f0[k] + (f1[k] - f0[k]) * frac;
 
     final tick = (playT * widget.params.tickHz).round();
-    final ended = _phase != _Phase.fight || playT >= _fightSeconds;
+    // 위기에서 멈춘 판은 아직 끝나지 않았다(결판 연출·문구를 띄우지 않는다).
+    final ended =
+        bout.done &&
+        ((_phase != _Phase.fight && _phase != _Phase.clutch) ||
+            playT >= _fightSeconds);
 
     // 판마다 한 쌍.
     final a = _curA;
@@ -1125,6 +1243,102 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       return out;
     }
 
+    /// 탭 반격 연출 — 살아나면 금빛 반짝 + "버텼다!/일어났다!", 실패면 "실패…"(뒤이어 원래 결판).
+    /// 내 곤충은 크게, 상대(자동 점수)는 작게 짧게.
+    List<Widget> clutchFx() {
+      final out = <Widget>[];
+      final bugs = [a, b];
+      final pos = [pa, pb];
+      for (final e in bout.events) {
+        if (e.kind != DuelEventKind.clutchSave &&
+            e.kind != DuelEventKind.clutchFail) {
+          continue;
+        }
+        final mine = e.who == 0;
+        final life = mine ? 1.3 : 0.8;
+        // 결판 뒤에는 재생 시각이 멈춰 있으니 판 결과 화면의 시간으로 잰다(실패 문구가 결판과 함께 보이게).
+        final dt = ended
+            ? afterEnd + (bout.ticks - e.tick) / widget.params.tickHz
+            : (tick - e.tick) / widget.params.tickHz;
+        if (dt < 0 || dt > life) continue;
+        final k = (dt / life).clamp(0.0, 1.0);
+        final crisis = bout.events
+            .where(
+              (x) =>
+                  x.kind == DuelEventKind.clutch &&
+                  x.who == e.who &&
+                  x.tick == e.tick,
+            )
+            .firstOrNull;
+        final woke = crisis?.value == DuelCrisis.knockout.index;
+        final saved = e.kind == DuelEventKind.clutchSave;
+        final r = w * 0.3 * (bugs[e.who].radius(widget.params) / 12);
+        final at = feet(pos[e.who]);
+        if (saved) {
+          // 금빛 반짝 — 곤충을 감싸며 퍼진다.
+          final glow = r * (mine ? 1.6 : 1.2) * (0.6 + 0.8 * k);
+          out.add(
+            Positioned(
+              left: at.dx - glow / 2,
+              top: at.dy - r * 0.5 - glow / 2,
+              width: glow,
+              height: glow,
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: (1 - k).clamp(0.0, 1.0),
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          Color(0xCCFFF3B0),
+                          Color(0x66FFD54F),
+                          Color(0x00FFD54F),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        final text = !saved
+            ? l.duelClutchFailed
+            : woke
+            ? l.duelClutchWoke
+            : l.duelClutchSaved;
+        final size = mine ? 30.0 : 18.0;
+        out.add(
+          Positioned(
+            left: at.dx - 110,
+            top: at.dy - r - 34 - 30 * k,
+            width: 220,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: (1 - k * k).clamp(0.0, 1.0),
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: saved ? kHoney : const Color(0xFFB0BEC5),
+                    fontSize: size,
+                    fontWeight: FontWeight.w900,
+                    shadows: const [
+                      Shadow(color: Colors.black, blurRadius: 4),
+                      Shadow(color: Colors.black, offset: Offset(2, 2)),
+                      Shadow(color: Colors.black, offset: Offset(-2, -2)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+      return out;
+    }
+
     List<Widget> effects() {
       const life = 0.35;
       final out = <Widget>[...damages()];
@@ -1144,6 +1358,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
             break;
         }
       }
+      out.addAll(clutchFx());
       if (ended) {
         final lp = feet(loser == 0 ? pa : pb);
         switch (bout.finish) {
@@ -1271,7 +1486,27 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [_hpBar(pa.hp, const Color(0xFF6FCF6F))],
+                    children: [
+                      _hpBar(pa.hp, const Color(0xFF6FCF6F)),
+                      // 이 판에 남은 탭 반격(근성 칸이 높으면 2번).
+                      if (_clutchUses > 0 && widget.driver.interactive)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Text(
+                            l.duelClutchLeft(
+                              math.max(0, _clutchUses - _clutchUsedBy(tick)),
+                            ),
+                            style: const TextStyle(
+                              color: kHoney,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              shadows: [
+                                Shadow(color: Colors.black, blurRadius: 3),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 16),

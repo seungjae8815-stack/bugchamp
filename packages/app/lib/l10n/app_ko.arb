@@ -2003,5 +2003,13 @@
   "duelStoneDone": "바꿨어요!",
   "duelStonePop": "{stone} +{n}",
   "trainPtSummaryLine": "훈련 포인트 {used} / {budget}",
-  "trainGoCenter": "훈련소에서 찍기"
+  "trainGoCenter": "훈련소에서 찍기",
+  "duelClutchHold": "버텨라!",
+  "duelClutchWake": "일어나!",
+  "duelClutchTapHint": "화면을 마구 두드려!",
+  "duelClutchChance": "기회 {k}/{n}",
+  "duelClutchSaved": "버텼다!",
+  "duelClutchWoke": "일어났다!",
+  "duelClutchFailed": "실패…",
+  "duelClutchLeft": "반격 {n}"
 }

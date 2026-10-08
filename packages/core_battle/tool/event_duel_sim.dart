@@ -5,6 +5,8 @@
 //   dart run tool/event_duel_sim.dart --set=growth=1.1 --set=baseAtk=40   # event.json → duelWave 덮어쓰기
 //   dart run tool/event_duel_sim.dart --focus=heft            # 그 카드가 나오면 늘 고른다(몰빵 전략)
 //   dart run tool/event_duel_sim.dart --focus=heft --nocap    # 카드 누적 상한·확률 상한을 끈 채로(비교용)
+//   dart run tool/event_duel_sim.dart --set=statCompress=0.3  # 대회 전용 압축 바꿔 보기(없으면 결투 값)
+//   dart run tool/event_duel_sim.dart --nosize                # 사이즈 몫 덜어내기 끄기(예전 경로 비교용)
 //
 // 곤충 = 종 기본 능력치 × 사이즈 배율 × "키운 정도"(강화·수련·훈련을 한 배율로 뭉친 값).
 // 현실적 최고치는 약 ×3.5(부위 강화 만렙 +200~250% · 수련 +40% · 훈련 +25%)라 ×1 ~ ×4 를 본다.
@@ -25,8 +27,10 @@ void main(List<String> args) {
   var gauge = 0.8;
   String? focus;
   var noCap = false;
+  var noSize = false;
   for (final a in args) {
     if (a == '--nocap') noCap = true;
+    if (a == '--nosize') noSize = true;
     final m = RegExp(r'^--([a-z-]+)=(.+)$').firstMatch(a);
     if (m == null) continue;
     switch (m.group(1)) {
@@ -44,17 +48,21 @@ void main(List<String> args) {
   Map<String, dynamic> read(String f) =>
       jsonDecode(File('../app/assets/data/$f').readAsStringSync())
           as Map<String, dynamic>;
-  final p = DuelParams.fromJson({
-    ...?(read('battle.json')['duel'] as Map<String, dynamic>?),
-    if (noCap) 'evadeMax': 99,
-    if (noCap) 'critMax': 99,
-  });
   final ev = read('event.json');
   final spec = EventDuelSpec.fromJson({
     ...?(ev['duelWave'] as Map<String, dynamic>?),
     ...over,
     if (noCap) 'cardCaps': <String, num>{},
   });
+  // 서버·앱과 같은 함수 — 대회 전용 압축(duelWave.statCompress)이 결투 값을 덮어쓴다.
+  final p = eventDuelParamsOf({
+    ...?(read('battle.json')['duel'] as Map<String, dynamic>?),
+    if (noCap) 'evadeMax': 99,
+    if (noCap) 'critMax': 99,
+  }, spec);
+  stdout.writeln(
+    '전력 압축 ${p.statCompress} · 사이즈 스탯 지수 ${p.sizeStatExp}${noSize ? ' (덜어내기 끔)' : ''}',
+  );
   final cards = [
     for (final c in ((ev['cards'] as Map)['list'] as List))
       (
@@ -171,6 +179,8 @@ void main(List<String> args) {
       atk: st.atk * sm * scale,
       def: st.def * sm * scale,
       spd: st.spd * sm * math.sqrt(scale),
+      // 서버 validateDuelTeam 과 같이 — 스탯에 구워진 사이즈 배율을 엔진이 덜어낸다.
+      sizeStatMult: noSize ? 1 : sm,
     );
   }
 

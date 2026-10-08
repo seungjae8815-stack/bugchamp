@@ -6240,4 +6240,32 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trainGoCenter => '훈련소에서 찍기';
+
+  @override
+  String get duelClutchHold => '버텨라!';
+
+  @override
+  String get duelClutchWake => '일어나!';
+
+  @override
+  String get duelClutchTapHint => '화면을 마구 두드려!';
+
+  @override
+  String duelClutchChance(int k, int n) {
+    return '기회 $k/$n';
+  }
+
+  @override
+  String get duelClutchSaved => '버텼다!';
+
+  @override
+  String get duelClutchWoke => '일어났다!';
+
+  @override
+  String get duelClutchFailed => '실패…';
+
+  @override
+  String duelClutchLeft(int n) {
+    return '반격 $n';
+  }
 }

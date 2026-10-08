@@ -83,12 +83,25 @@ class ServerEventDuelDriver extends EventDuelDriver {
   final String sessionId;
 
   @override
-  Future<DuelStep?> next(double launch) async {
-    final res = await server.eventDuelThrow(
+  Future<DuelStep?> next(double launch) async => _parse(
+    await server.eventDuelThrow(
       sessionId: sessionId,
       launch: launch,
       cardId: pendingCard,
-    );
+    ),
+  );
+
+  /// 탭 반격 점수 — 멈춘 웨이브를 같은 seed 로 처음부터 다시 받는다(카드는 이미 썼다).
+  @override
+  Future<DuelStep?> clutch(int index, double score) async => _parse(
+    await server.eventDuelClutch(
+      sessionId: sessionId,
+      index: index,
+      score: score,
+    ),
+  );
+
+  DuelStep? _parse(ServerResult res) {
     final d = res.data;
     if (!res.isOk || d == null || d['bout'] is! Map) {
       error = res.error ?? 'server';
@@ -145,10 +158,27 @@ class LocalEventDuelDriver extends EventDuelDriver {
   final DuelBug Function(int wave) enemyOf;
   final DuelParams params;
 
+  /// 위기에서 멈춘 판의 던지기 값·탭 점수(서버 세션과 같은 규칙).
+  double? _pendingLaunch;
+  final List<double> _scores = [];
+
   @override
   Future<DuelStep?> next(double launch) async {
     run = preview;
     pendingCard = null;
+    _scores.clear();
+    return _fight(launch);
+  }
+
+  @override
+  Future<DuelStep?> clutch(int index, double score) async {
+    final l = _pendingLaunch;
+    if (l == null || index != _scores.length) return null;
+    _scores.add(score.clamp(0.0, 1.0));
+    return _fight(l);
+  }
+
+  DuelStep _fight(double launch) {
     final step = eventDuelFight(
       seed: seed,
       run: run,
@@ -157,7 +187,15 @@ class LocalEventDuelDriver extends EventDuelDriver {
       params: params,
       spec: spec,
       launch: launch,
+      clutchScores: List.of(_scores),
     );
+    // 위기에서 멈췄다 — 진행(run)은 그대로(점수를 받으면 같은 웨이브를 처음부터 다시).
+    if (step.bout.pending != null) {
+      _pendingLaunch = launch;
+      cards = const [];
+      return _step(step.bout);
+    }
+    _pendingLaunch = null;
     run = step.run;
     cards = step.won && !run.over
         ? cfg.drawCards(roundSeed, run.cleared)
@@ -337,10 +375,12 @@ Future<void> playEventDuel({
   bool dev = false,
 }) async {
   final locale = Localizations.localeOf(context).languageCode;
-  final params = DuelParams.fromJson(
-    (data.battleConfig ?? const BattleConfig()).duelJson,
-  );
   final spec = driver.spec;
+  // 대회 전용 압축(`duelWave.statCompress`) — 서버 `eventDuelParams` 와 같은 함수.
+  final params = eventDuelParamsOf(
+    (data.battleConfig ?? const BattleConfig()).duelJson,
+    spec,
+  );
   DuelBug foe(int index) =>
       eventEnemyFor(data, spec, roundSeed, index + 1, locale);
   // 결투 화면에 넘기는 함수들은 **바깥 화면의 context·ref 를 붙잡지 않는다** — 결투 중 바깥 화면이
