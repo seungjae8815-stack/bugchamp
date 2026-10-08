@@ -10294,6 +10294,396 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guild'**
   String get chatTabGuild;
+
+  /// No description provided for @trainSlotHp.
+  ///
+  /// In en, this message translates to:
+  /// **'HP'**
+  String get trainSlotHp;
+
+  /// No description provided for @trainSlotSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get trainSlotSpeed;
+
+  /// No description provided for @trainSlotMass.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight class'**
+  String get trainSlotMass;
+
+  /// No description provided for @trainSlotTech.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialty skill'**
+  String get trainSlotTech;
+
+  /// No description provided for @trainSlotGrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Grit'**
+  String get trainSlotGrit;
+
+  /// No description provided for @trainWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get trainWeight;
+
+  /// No description provided for @trainPtShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Trained {n}'**
+  String trainPtShort(String n);
+
+  /// No description provided for @trainPtUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Points {used} / {budget}'**
+  String trainPtUsed(String used, String budget);
+
+  /// No description provided for @trainPtBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Bonus +{n}'**
+  String trainPtBonus(String n);
+
+  /// No description provided for @trainPtLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} points left'**
+  String trainPtLeft(String n);
+
+  /// No description provided for @trainPtFree.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} paid points unspent — they apply instantly for free'**
+  String trainPtFree(String n);
+
+  /// No description provided for @trainPtNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next point'**
+  String get trainPtNext;
+
+  /// No description provided for @trainPtHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How to earn more points'**
+  String get trainPtHowTitle;
+
+  /// No description provided for @trainPtHowLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Lv.{lv} → +1 (every {k} levels)'**
+  String trainPtHowLevel(String lv, String k);
+
+  /// No description provided for @trainPtHowLevelCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach Lv.{lv} → +1 (level cap — breakthrough first)'**
+  String trainPtHowLevelCap(String lv);
+
+  /// No description provided for @trainPtHowBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakthrough {n} → +{pts}'**
+  String trainPtHowBreak(String n, String pts);
+
+  /// No description provided for @trainPtHowPotential.
+  ///
+  /// In en, this message translates to:
+  /// **'Potential +1★ → +{pts} (synthesis · breeding)'**
+  String trainPtHowPotential(String pts);
+
+  /// No description provided for @trainPtNoPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'No points left — raise level, breakthrough or potential'**
+  String get trainPtNoPoints;
+
+  /// No description provided for @trainPtMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'This slot is maxed'**
+  String get trainPtMaxed;
+
+  /// No description provided for @trainPtRespecBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t add points while a respec is pending'**
+  String get trainPtRespecBusy;
+
+  /// No description provided for @trainPtJobNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Training {slot} +{n}'**
+  String trainPtJobNow(String slot, String n);
+
+  /// No description provided for @trainPtEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'{per} per point · now {now}'**
+  String trainPtEffect(String per, String now);
+
+  /// No description provided for @trainPtPer.
+  ///
+  /// In en, this message translates to:
+  /// **'{per}/pt'**
+  String trainPtPer(String per);
+
+  /// No description provided for @trainMassPer.
+  ///
+  /// In en, this message translates to:
+  /// **'weight {w} · speed {s}'**
+  String trainMassPer(String w, String s);
+
+  /// No description provided for @trainTechFlip.
+  ///
+  /// In en, this message translates to:
+  /// **'Strike: flip chance {v}'**
+  String trainTechFlip(String v);
+
+  /// No description provided for @trainTechBite.
+  ///
+  /// In en, this message translates to:
+  /// **'Grip: bite force {v}'**
+  String trainTechBite(String v);
+
+  /// No description provided for @trainTechCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Toss: cooldown {v}'**
+  String trainTechCooldown(String v);
+
+  /// No description provided for @trainGritDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap counter — mash in a crisis to hold on. Threshold {th} (lower is easier) · {uses}× per bout · wake HP {hp}'**
+  String trainGritDesc(String th, String uses, String hp);
+
+  /// No description provided for @trainGritBonusUse.
+  ///
+  /// In en, this message translates to:
+  /// **'+1 use per bout from {n} points'**
+  String trainGritBonusUse(String n);
+
+  /// No description provided for @trainBusyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs training or waiting on a respec can\'t enter duels or the contest'**
+  String get trainBusyNote;
+
+  /// No description provided for @trainRespec.
+  ///
+  /// In en, this message translates to:
+  /// **'Respec'**
+  String get trainRespec;
+
+  /// No description provided for @trainRespecHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Redistribute your {n} paid points — no materials needed'**
+  String trainRespecHint(String n);
+
+  /// No description provided for @trainRespecEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New build — {n} points left'**
+  String trainRespecEditTitle(String n);
+
+  /// No description provided for @trainRespecApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get trainRespecApply;
+
+  /// No description provided for @trainRespecAskWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to the new build. It takes {time}, and this bug can\'t battle meanwhile. No materials needed.'**
+  String trainRespecAskWait(String time);
+
+  /// No description provided for @trainRespecAskFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to the new build. Your first respec is free with no wait.'**
+  String get trainRespecAskFree;
+
+  /// No description provided for @trainRespecFreeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'First one free · no wait'**
+  String get trainRespecFreeBadge;
+
+  /// No description provided for @trainRespecWaitInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait {time}'**
+  String trainRespecWaitInfo(String time);
+
+  /// No description provided for @trainRespecWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Respec pending · {time}'**
+  String trainRespecWaiting(String time);
+
+  /// No description provided for @trainRespecCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel wait'**
+  String get trainRespecCancel;
+
+  /// No description provided for @trainRespecCancelAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling keeps your current build'**
+  String get trainRespecCancelAsk;
+
+  /// No description provided for @trainRespecSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing changed'**
+  String get trainRespecSame;
+
+  /// No description provided for @trainRespecDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Build changed'**
+  String get trainRespecDone;
+
+  /// No description provided for @trainRespecStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Respec started'**
+  String get trainRespecStarted;
+
+  /// No description provided for @trainRespecInstantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish respec now'**
+  String get trainRespecInstantTitle;
+
+  /// No description provided for @trainRespecPending.
+  ///
+  /// In en, this message translates to:
+  /// **'New build (applies when the wait ends)'**
+  String get trainRespecPending;
+
+  /// No description provided for @trainDuelSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel stats (training · level)'**
+  String get trainDuelSummary;
+
+  /// No description provided for @trainEditPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing — this is what you\'ll get'**
+  String get trainEditPreview;
+
+  /// No description provided for @duelStoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel stones'**
+  String get duelStoneTitle;
+
+  /// No description provided for @duelStoneElement.
+  ///
+  /// In en, this message translates to:
+  /// **'Element stone'**
+  String get duelStoneElement;
+
+  /// No description provided for @duelStoneTemperament.
+  ///
+  /// In en, this message translates to:
+  /// **'Temper stone'**
+  String get duelStoneTemperament;
+
+  /// No description provided for @duelStoneOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'×{n}'**
+  String duelStoneOwned(String n);
+
+  /// No description provided for @duelStoneChangeElement.
+  ///
+  /// In en, this message translates to:
+  /// **'Change element'**
+  String get duelStoneChangeElement;
+
+  /// No description provided for @duelStoneChangeTemperament.
+  ///
+  /// In en, this message translates to:
+  /// **'Change temper'**
+  String get duelStoneChangeTemperament;
+
+  /// No description provided for @duelStoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set element or temper to any value (bloodline trait stays). Changes are inherited by offspring.'**
+  String get duelStoneHint;
+
+  /// No description provided for @duelStonePickElement.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a new element'**
+  String get duelStonePickElement;
+
+  /// No description provided for @duelStonePickTemperament.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a new temper'**
+  String get duelStonePickTemperament;
+
+  /// No description provided for @duelStoneAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Change {from} → {to}? Uses 1 {stone}.'**
+  String duelStoneAsk(String from, String to, String stone);
+
+  /// No description provided for @duelStoneBuyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy {stone}'**
+  String duelStoneBuyTitle(String stone);
+
+  /// No description provided for @duelStoneBuyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no {stone}. Buy one for {n} jelly?'**
+  String duelStoneBuyBody(String stone, String n);
+
+  /// No description provided for @duelStoneBuyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get duelStoneBuyAction;
+
+  /// No description provided for @duelStoneDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed!'**
+  String get duelStoneDone;
+
+  /// No description provided for @duelStonePop.
+  ///
+  /// In en, this message translates to:
+  /// **'{stone} +{n}'**
+  String duelStonePop(String stone, String n);
+
+  /// No description provided for @trainPtSummaryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Training points {used} / {budget}'**
+  String trainPtSummaryLine(String used, String budget);
+
+  /// No description provided for @trainGoCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Train at the center'**
+  String get trainGoCenter;
 }
 
 class _AppLocalizationsDelegate

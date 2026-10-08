@@ -161,6 +161,12 @@ String temperamentLabel(AppLocalizations l, Temperament t) => switch (t) {
   Temperament.fickle => l.temperamentFickle,
 };
 
+/// 결투석(훈련 v2 §3) 이름.
+String duelStoneLabel(AppLocalizations l, DuelStone k) => switch (k) {
+  DuelStone.element => l.duelStoneElement,
+  DuelStone.temperament => l.duelStoneTemperament,
+};
+
 /// 혈통 특성(§2.5) 이름. 짝짓기 자식만 가진다.
 String traitLabel(AppLocalizations l, BugTrait t) => switch (t) {
   BugTrait.none => '',

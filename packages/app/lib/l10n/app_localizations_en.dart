@@ -6114,4 +6114,261 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatTabGuild => 'Guild';
+
+  @override
+  String get trainSlotHp => 'HP';
+
+  @override
+  String get trainSlotSpeed => 'Speed';
+
+  @override
+  String get trainSlotMass => 'Weight class';
+
+  @override
+  String get trainSlotTech => 'Specialty skill';
+
+  @override
+  String get trainSlotGrit => 'Grit';
+
+  @override
+  String get trainWeight => 'Weight';
+
+  @override
+  String trainPtShort(String n) {
+    return 'Trained $n';
+  }
+
+  @override
+  String trainPtUsed(String used, String budget) {
+    return 'Points $used / $budget';
+  }
+
+  @override
+  String trainPtBonus(String n) {
+    return 'Bonus +$n';
+  }
+
+  @override
+  String trainPtLeft(String n) {
+    return '$n points left';
+  }
+
+  @override
+  String trainPtFree(String n) {
+    return '$n paid points unspent — they apply instantly for free';
+  }
+
+  @override
+  String get trainPtNext => 'Next point';
+
+  @override
+  String get trainPtHowTitle => 'How to earn more points';
+
+  @override
+  String trainPtHowLevel(String lv, String k) {
+    return 'Reach Lv.$lv → +1 (every $k levels)';
+  }
+
+  @override
+  String trainPtHowLevelCap(String lv) {
+    return 'Reach Lv.$lv → +1 (level cap — breakthrough first)';
+  }
+
+  @override
+  String trainPtHowBreak(String n, String pts) {
+    return 'Breakthrough $n → +$pts';
+  }
+
+  @override
+  String trainPtHowPotential(String pts) {
+    return 'Potential +1★ → +$pts (synthesis · breeding)';
+  }
+
+  @override
+  String get trainPtNoPoints =>
+      'No points left — raise level, breakthrough or potential';
+
+  @override
+  String get trainPtMaxed => 'This slot is maxed';
+
+  @override
+  String get trainPtRespecBusy => 'Can\'t add points while a respec is pending';
+
+  @override
+  String trainPtJobNow(String slot, String n) {
+    return 'Training $slot +$n';
+  }
+
+  @override
+  String trainPtEffect(String per, String now) {
+    return '$per per point · now $now';
+  }
+
+  @override
+  String trainPtPer(String per) {
+    return '$per/pt';
+  }
+
+  @override
+  String trainMassPer(String w, String s) {
+    return 'weight $w · speed $s';
+  }
+
+  @override
+  String trainTechFlip(String v) {
+    return 'Strike: flip chance $v';
+  }
+
+  @override
+  String trainTechBite(String v) {
+    return 'Grip: bite force $v';
+  }
+
+  @override
+  String trainTechCooldown(String v) {
+    return 'Toss: cooldown $v';
+  }
+
+  @override
+  String trainGritDesc(String th, String uses, String hp) {
+    return 'Tap counter — mash in a crisis to hold on. Threshold $th (lower is easier) · $uses× per bout · wake HP $hp';
+  }
+
+  @override
+  String trainGritBonusUse(String n) {
+    return '+1 use per bout from $n points';
+  }
+
+  @override
+  String get trainBusyNote =>
+      'Bugs training or waiting on a respec can\'t enter duels or the contest';
+
+  @override
+  String get trainRespec => 'Respec';
+
+  @override
+  String trainRespecHint(String n) {
+    return 'Redistribute your $n paid points — no materials needed';
+  }
+
+  @override
+  String trainRespecEditTitle(String n) {
+    return 'New build — $n points left';
+  }
+
+  @override
+  String get trainRespecApply => 'Apply';
+
+  @override
+  String trainRespecAskWait(String time) {
+    return 'Switch to the new build. It takes $time, and this bug can\'t battle meanwhile. No materials needed.';
+  }
+
+  @override
+  String get trainRespecAskFree =>
+      'Switch to the new build. Your first respec is free with no wait.';
+
+  @override
+  String get trainRespecFreeBadge => 'First one free · no wait';
+
+  @override
+  String trainRespecWaitInfo(String time) {
+    return 'Wait $time';
+  }
+
+  @override
+  String trainRespecWaiting(String time) {
+    return 'Respec pending · $time';
+  }
+
+  @override
+  String get trainRespecCancel => 'Cancel wait';
+
+  @override
+  String get trainRespecCancelAsk => 'Cancelling keeps your current build';
+
+  @override
+  String get trainRespecSame => 'Nothing changed';
+
+  @override
+  String get trainRespecDone => 'Build changed';
+
+  @override
+  String get trainRespecStarted => 'Respec started';
+
+  @override
+  String get trainRespecInstantTitle => 'Finish respec now';
+
+  @override
+  String get trainRespecPending => 'New build (applies when the wait ends)';
+
+  @override
+  String get trainDuelSummary => 'Duel stats (training · level)';
+
+  @override
+  String get trainEditPreview => 'Editing — this is what you\'ll get';
+
+  @override
+  String get duelStoneTitle => 'Duel stones';
+
+  @override
+  String get duelStoneElement => 'Element stone';
+
+  @override
+  String get duelStoneTemperament => 'Temper stone';
+
+  @override
+  String duelStoneOwned(String n) {
+    return '×$n';
+  }
+
+  @override
+  String get duelStoneChangeElement => 'Change element';
+
+  @override
+  String get duelStoneChangeTemperament => 'Change temper';
+
+  @override
+  String get duelStoneHint =>
+      'Set element or temper to any value (bloodline trait stays). Changes are inherited by offspring.';
+
+  @override
+  String get duelStonePickElement => 'Pick a new element';
+
+  @override
+  String get duelStonePickTemperament => 'Pick a new temper';
+
+  @override
+  String duelStoneAsk(String from, String to, String stone) {
+    return 'Change $from → $to? Uses 1 $stone.';
+  }
+
+  @override
+  String duelStoneBuyTitle(String stone) {
+    return 'Buy $stone';
+  }
+
+  @override
+  String duelStoneBuyBody(String stone, String n) {
+    return 'You have no $stone. Buy one for $n jelly?';
+  }
+
+  @override
+  String get duelStoneBuyAction => 'Buy';
+
+  @override
+  String get duelStoneDone => 'Changed!';
+
+  @override
+  String duelStonePop(String stone, String n) {
+    return '$stone +$n';
+  }
+
+  @override
+  String trainPtSummaryLine(String used, String budget) {
+    return 'Training points $used / $budget';
+  }
+
+  @override
+  String get trainGoCenter => 'Train at the center';
 }

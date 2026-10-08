@@ -5975,4 +5975,257 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatTabGuild => 'ギルド';
+
+  @override
+  String get trainSlotHp => '体力';
+
+  @override
+  String get trainSlotSpeed => '速度';
+
+  @override
+  String get trainSlotMass => '体格';
+
+  @override
+  String get trainSlotTech => '得意技';
+
+  @override
+  String get trainSlotGrit => '根性';
+
+  @override
+  String get trainWeight => '重さ';
+
+  @override
+  String trainPtShort(String n) {
+    return '訓練 ${n}pt';
+  }
+
+  @override
+  String trainPtUsed(String used, String budget) {
+    return 'ポイント $used / $budget';
+  }
+
+  @override
+  String trainPtBonus(String n) {
+    return 'ボーナス +$n';
+  }
+
+  @override
+  String trainPtLeft(String n) {
+    return '残りポイント $n';
+  }
+
+  @override
+  String trainPtFree(String n) {
+    return '素材支払い済みのポイント $n — 押すとすぐ無料で振れます';
+  }
+
+  @override
+  String get trainPtNext => '次の1pt';
+
+  @override
+  String get trainPtHowTitle => 'ポイントが増える条件';
+
+  @override
+  String trainPtHowLevel(String lv, String k) {
+    return '修練 Lv.$lv 到達 → +1 ($kレベルごと)';
+  }
+
+  @override
+  String trainPtHowLevelCap(String lv) {
+    return '修練 Lv.$lv 到達 → +1 (レベル上限 — 先に突破)';
+  }
+
+  @override
+  String trainPtHowBreak(String n, String pts) {
+    return '突破 $n段 → +$pts';
+  }
+
+  @override
+  String trainPtHowPotential(String pts) {
+    return 'ポテンシャル +1★ → +$pts (合成・交配)';
+  }
+
+  @override
+  String get trainPtNoPoints => '残りポイントがありません — 修練・突破・ポテンシャルで増えます';
+
+  @override
+  String get trainPtMaxed => 'この枠は最大です';
+
+  @override
+  String get trainPtRespecBusy => '振り直し待機中は振れません';
+
+  @override
+  String trainPtJobNow(String slot, String n) {
+    return '$slot +$n 訓練中';
+  }
+
+  @override
+  String trainPtEffect(String per, String now) {
+    return '1pt $per · 現在 $now';
+  }
+
+  @override
+  String trainPtPer(String per) {
+    return '$per/pt';
+  }
+
+  @override
+  String trainMassPer(String w, String s) {
+    return '重さ $w · 速度 $s';
+  }
+
+  @override
+  String trainTechFlip(String v) {
+    return '叩き: ひっくり返し確率 $v';
+  }
+
+  @override
+  String trainTechBite(String v) {
+    return '挟み: 噛む力 $v';
+  }
+
+  @override
+  String trainTechCooldown(String v) {
+    return '投げ: クールタイム $v';
+  }
+
+  @override
+  String trainGritDesc(String th, String uses, String hp) {
+    return 'タップ反撃 — ピンチに連打して踏ん張る。しきい値 $th(低いほど簡単) · 1戦 $uses回 · 起き上がり体力 $hp';
+  }
+
+  @override
+  String trainGritBonusUse(String n) {
+    return '${n}ptから1戦 +1回';
+  }
+
+  @override
+  String get trainBusyNote => '訓練中・振り直し待機中の昆虫は決闘・大会に出られません';
+
+  @override
+  String get trainRespec => '振り直し';
+
+  @override
+  String trainRespecHint(String n) {
+    return '支払い済み ${n}pt の中で配分だけ変えます — 素材は不要';
+  }
+
+  @override
+  String trainRespecEditTitle(String n) {
+    return '新しい配分 — 残り ${n}pt';
+  }
+
+  @override
+  String get trainRespecApply => 'この配分にする';
+
+  @override
+  String trainRespecAskWait(String time) {
+    return '新しい配分に変えます。$time 待つ必要があり、その間この昆虫は出場できません。素材は不要です。';
+  }
+
+  @override
+  String get trainRespecAskFree => '新しい配分に変えます。初回の振り直しなので待ち時間なしで無料です。';
+
+  @override
+  String get trainRespecFreeBadge => '初回無料・待ちなし';
+
+  @override
+  String trainRespecWaitInfo(String time) {
+    return '待機 $time';
+  }
+
+  @override
+  String trainRespecWaiting(String time) {
+    return '振り直し待機中 · $time';
+  }
+
+  @override
+  String get trainRespecCancel => '待機キャンセル';
+
+  @override
+  String get trainRespecCancelAsk => 'キャンセルすると今の配分のままです';
+
+  @override
+  String get trainRespecSame => '変更がありません';
+
+  @override
+  String get trainRespecDone => '配分を変更しました';
+
+  @override
+  String get trainRespecStarted => '振り直しを開始しました';
+
+  @override
+  String get trainRespecInstantTitle => '振り直し即完了';
+
+  @override
+  String get trainRespecPending => '新しい配分(待機後に適用)';
+
+  @override
+  String get trainDuelSummary => '決闘能力値 (訓練・修練反映)';
+
+  @override
+  String get trainEditPreview => '編集中 — 変更後はこうなります';
+
+  @override
+  String get duelStoneTitle => '決闘石';
+
+  @override
+  String get duelStoneElement => '五行石';
+
+  @override
+  String get duelStoneTemperament => '気質石';
+
+  @override
+  String duelStoneOwned(String n) {
+    return '$n個';
+  }
+
+  @override
+  String get duelStoneChangeElement => '五行を変える';
+
+  @override
+  String get duelStoneChangeTemperament => '気質を変える';
+
+  @override
+  String get duelStoneHint => '五行・気質を好きな値に変えます(血統特性はそのまま)。変えた値は交配でも継承されます。';
+
+  @override
+  String get duelStonePickElement => '変える五行を選んでください';
+
+  @override
+  String get duelStonePickTemperament => '変える気質を選んでください';
+
+  @override
+  String duelStoneAsk(String from, String to, String stone) {
+    return '$from → $to に変えますか？$stoneを1個使います。';
+  }
+
+  @override
+  String duelStoneBuyTitle(String stone) {
+    return '$stone購入';
+  }
+
+  @override
+  String duelStoneBuyBody(String stone, String n) {
+    return '$stoneがありません。ゼリー$n個で1個買いますか？';
+  }
+
+  @override
+  String get duelStoneBuyAction => '購入';
+
+  @override
+  String get duelStoneDone => '変更しました！';
+
+  @override
+  String duelStonePop(String stone, String n) {
+    return '$stone +$n';
+  }
+
+  @override
+  String trainPtSummaryLine(String used, String budget) {
+    return '訓練ポイント $used / $budget';
+  }
+
+  @override
+  String get trainGoCenter => '訓練所で振る';
 }

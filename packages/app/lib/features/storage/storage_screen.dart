@@ -20,6 +20,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
+import '../battle/training_screen.dart';
 import 'dex_screen.dart';
 import '../../ui/colors.dart';
 
@@ -3039,10 +3040,7 @@ class StorageScreen extends ConsumerWidget {
                     l,
                     species,
                     bug,
-                    trainLv: trainLevelsOf(
-                      save,
-                      bug.id,
-                    ).values.fold<int>(0, (a, v) => a + v),
+                    trainLv: trainedPointsOf(save, bug.id),
                   ),
                   const SizedBox(height: 6),
                   if (petCfg != null)
@@ -3063,6 +3061,8 @@ class StorageScreen extends ConsumerWidget {
                   if (petCfg != null && effStage == LifeStage.adult) ...[
                     const SizedBox(height: 6),
                     _trainRow(ctx, r, petCfg, save, bug, now),
+                    const SizedBox(height: 6),
+                    _trainPointsRow(ctx, data, save, bug),
                   ],
                   if (petCfg != null &&
                       (effStage == LifeStage.larva ||
@@ -3228,6 +3228,61 @@ class StorageScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+    );
+  }
+
+  /// 훈련 포인트 요약(사용 / 예산) + 훈련소로 가기(훈련 v2 — 부위 강화 자리를 받는다).
+  Widget _trainPointsRow(
+    BuildContext ctx,
+    GameData data,
+    SaveGame save,
+    IndividualBug bug,
+  ) {
+    final l = AppLocalizations.of(ctx);
+    final sp = data.species(bug.speciesId);
+    final cfg = (data.battleConfig ?? const BattleConfig()).training;
+    final rec = bugTrainOf(save, bug, sp, cfg, enhance: data.enhanceConfig);
+    final budget = trainBudgetOf(
+      save,
+      bug,
+      sp,
+      cfg,
+      enhance: data.enhanceConfig,
+    );
+    return _sectionBox(
+      child: Row(
+        children: [
+          const Icon(Icons.fitness_center_rounded, color: _honey, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l.trainPtSummaryLine('${rec.allocated}', '$budget'),
+              key: const ValueKey('bugTrainPoints'),
+              style: _rowTitle,
+            ),
+          ),
+          FilledButton(
+            key: const ValueKey('bugGoTraining'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFE08A2E),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              minimumSize: const Size(0, 36),
+              textStyle: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            onPressed: () {
+              final nav = Navigator.of(ctx);
+              nav.pop();
+              nav.push(
+                MaterialPageRoute<void>(
+                  builder: (_) => TrainingScreen(initialBugId: bug.id),
+                ),
+              );
+            },
+            child: Text(l.trainGoCenter),
+          ),
+        ],
       ),
     );
   }
@@ -3860,7 +3915,6 @@ class StorageScreen extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 /// 곤충 상세의 개체 정보(오행·성별·기질·주특기·크기). 두 칸씩 나란히.
@@ -3979,7 +4033,7 @@ Widget _bugInfoCard(
         cell(
           l.trainingCenter,
           val(
-            trainLv > 0 ? l.trainingSumShort(trainLv) : l.trainingNoneShort,
+            trainLv > 0 ? l.trainPtShort('$trainLv') : l.trainingNoneShort,
             trainLv > 0 ? const Color(0xFF8FD8FF) : const Color(0xB3FFFFFF),
           ),
         ),

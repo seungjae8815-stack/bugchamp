@@ -4714,9 +4714,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 정예 처치 스킬 조각(10% 확률, §2.8). 나오면 몬스터 자리에 작게 띄운다 —
   /// 하루 스무 번쯤이라 가운데 알림으로 띄우면 전투를 가린다.
   Future<void> _eliteSkillShard() async {
-    final got = await ref
-        .read(saveControllerProvider.notifier)
-        .grantEliteShards();
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final got = await ctrl.grantEliteShards();
+    // 결투석(오행석 0.2%) — 조각과 같은 처치에서 굴린다.
+    if (mounted) _duelStonePops(ctrl.lastDuelStones);
     if (!mounted || got.isEmpty) return;
     final l = AppLocalizations.of(context);
     setState(() {
@@ -4823,11 +4824,38 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     });
   }
 
+  /// 결투석 드롭 알림(훈련 v2 §3) — 스킬 조각처럼 몬스터 자리에 작게. 요정 알림보다 아래.
+  void _duelStonePops(Map<DuelStone, int> got) {
+    if (got.isEmpty) return;
+    final l = AppLocalizations.of(context);
+    setState(() {
+      var y = 0.05;
+      for (final e in got.entries) {
+        if (e.value <= 0) continue;
+        _pops.add(
+          _Pop(
+            l.duelStonePop(duelStoneLabel(l, e.key), '${e.value}'),
+            0,
+            e.key == DuelStone.element
+                ? const Color(0xFF7FD3FF)
+                : const Color(0xFFE6B3FF),
+            16,
+            baseX: 0.6,
+            baseY: y,
+          ),
+        );
+        y += 0.12;
+      }
+    });
+  }
+
   /// 보스 처치 기록 + 스킬 조각(§2.8). 받은 조각을 한 줄로 알린다 —
   /// 모르고 지나가면 스킬 화면에 가 볼 이유가 생기지 않는다.
   Future<void> _advanceZoneWithShards() async {
     final ctrl = ref.read(saveControllerProvider.notifier);
     final shards = await ctrl.advanceZone();
+    // 보스 재처치 결투석(오행 1% · 기질 0.5%).
+    if (mounted) _duelStonePops(ctrl.lastDuelStones);
     // 보스 첫 처치 요정 알(+ 속성석) — 조각 알림과 따로 띄운다.
     if (mounted) {
       _fairyDropPops(
@@ -4855,10 +4883,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 심연 층 보스 처치 → 다음 층 · 10층마다 첫 도달 보상 · 조각 안내.
   Future<void> _clearAbyssFloor() async {
     final before = ref.read(saveControllerProvider).requireValue.abyssFloor;
-    final r = await ref
-        .read(saveControllerProvider.notifier)
-        .clearAbyssFloorNow();
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final r = await ctrl.clearAbyssFloorNow();
     if (!mounted) return;
+    // 10층마다 첫 도달 결투석(오행 2 · 기질 1).
+    _duelStonePops(ctrl.lastDuelStones);
     final l = AppLocalizations.of(context);
     if (r.floor < before) {
       showCenterToast(context, l.abyssWeekReset);

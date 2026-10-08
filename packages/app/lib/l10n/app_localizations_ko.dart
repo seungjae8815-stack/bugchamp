@@ -5986,4 +5986,258 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatTabGuild => '길드';
+
+  @override
+  String get trainSlotHp => '체력';
+
+  @override
+  String get trainSlotSpeed => '속도';
+
+  @override
+  String get trainSlotMass => '체급';
+
+  @override
+  String get trainSlotTech => '주특기 기술';
+
+  @override
+  String get trainSlotGrit => '근성';
+
+  @override
+  String get trainWeight => '무게';
+
+  @override
+  String trainPtShort(String n) {
+    return '훈련 $n점';
+  }
+
+  @override
+  String trainPtUsed(String used, String budget) {
+    return '포인트 $used / $budget';
+  }
+
+  @override
+  String trainPtBonus(String n) {
+    return '보너스 +$n';
+  }
+
+  @override
+  String trainPtLeft(String n) {
+    return '남은 포인트 $n';
+  }
+
+  @override
+  String trainPtFree(String n) {
+    return '재료를 이미 낸 포인트 $n개 — 누르면 바로 무료로 찍혀요';
+  }
+
+  @override
+  String get trainPtNext => '다음 1점';
+
+  @override
+  String get trainPtHowTitle => '포인트가 늘어나는 조건';
+
+  @override
+  String trainPtHowLevel(String lv, String k) {
+    return '수련 Lv.$lv 달성 → +1 ($k레벨마다)';
+  }
+
+  @override
+  String trainPtHowLevelCap(String lv) {
+    return '수련 Lv.$lv 달성 → +1 (지금 레벨 상한 — 돌파가 먼저)';
+  }
+
+  @override
+  String trainPtHowBreak(String n, String pts) {
+    return '돌파 $n단 → +$pts';
+  }
+
+  @override
+  String trainPtHowPotential(String pts) {
+    return '포텐셜 1성 오를 때 → +$pts (합성·짝짓기)';
+  }
+
+  @override
+  String get trainPtNoPoints => '남은 포인트가 없어요 — 수련·돌파·포텐셜로 늘어나요';
+
+  @override
+  String get trainPtMaxed => '이 칸은 최대예요';
+
+  @override
+  String get trainPtRespecBusy => '다시 찍기 대기 중엔 찍을 수 없어요';
+
+  @override
+  String trainPtJobNow(String slot, String n) {
+    return '$slot +$n 찍는 중';
+  }
+
+  @override
+  String trainPtEffect(String per, String now) {
+    return '1점 $per · 지금 $now';
+  }
+
+  @override
+  String trainPtPer(String per) {
+    return '$per/점';
+  }
+
+  @override
+  String trainMassPer(String w, String s) {
+    return '무게 $w · 속도 $s';
+  }
+
+  @override
+  String trainTechFlip(String v) {
+    return '치기: 뒤집기 확률 $v';
+  }
+
+  @override
+  String trainTechBite(String v) {
+    return '집기: 무는 힘 $v';
+  }
+
+  @override
+  String trainTechCooldown(String v) {
+    return '던지기: 쿨타임 $v';
+  }
+
+  @override
+  String trainGritDesc(String th, String uses, String hp) {
+    return '탭 반격 — 위기에 화면을 연타해 버텨요. 문턱 $th(낮을수록 쉬움) · 한 판 $uses번 · 깨우기 체력 $hp';
+  }
+
+  @override
+  String trainGritBonusUse(String n) {
+    return '$n점부터 한 판 1번 더';
+  }
+
+  @override
+  String get trainBusyNote => '포인트를 찍는 중이거나 다시 찍기 대기 중인 곤충은 결투·대회에 나갈 수 없어요';
+
+  @override
+  String get trainRespec => '다시 찍기';
+
+  @override
+  String trainRespecHint(String n) {
+    return '재료를 낸 포인트 $n개 안에서 배분만 바꿔요 — 재료는 다시 들지 않아요';
+  }
+
+  @override
+  String trainRespecEditTitle(String n) {
+    return '새 배분 — 남은 포인트 $n';
+  }
+
+  @override
+  String get trainRespecApply => '이대로 바꾸기';
+
+  @override
+  String trainRespecAskWait(String time) {
+    return '새 배분으로 바꿔요. $time 기다려야 하고, 그동안 이 곤충은 출전할 수 없어요. 재료는 다시 들지 않아요.';
+  }
+
+  @override
+  String get trainRespecAskFree => '새 배분으로 바꿔요. 첫 번째 다시 찍기라 기다림 없이 무료예요.';
+
+  @override
+  String get trainRespecFreeBadge => '첫 1회 무료 · 대기 없음';
+
+  @override
+  String trainRespecWaitInfo(String time) {
+    return '대기 $time';
+  }
+
+  @override
+  String trainRespecWaiting(String time) {
+    return '다시 찍기 대기 중 · $time';
+  }
+
+  @override
+  String get trainRespecCancel => '대기 취소';
+
+  @override
+  String get trainRespecCancelAsk => '대기를 취소하면 지금 배분이 그대로 남아요';
+
+  @override
+  String get trainRespecSame => '바뀐 게 없어요';
+
+  @override
+  String get trainRespecDone => '배분을 바꿨어요';
+
+  @override
+  String get trainRespecStarted => '다시 찍기를 시작했어요';
+
+  @override
+  String get trainRespecInstantTitle => '다시 찍기 즉시 완료';
+
+  @override
+  String get trainRespecPending => '새 배분(대기 끝나면 적용)';
+
+  @override
+  String get trainDuelSummary => '결투 능력치 (훈련·수련 반영)';
+
+  @override
+  String get trainEditPreview => '편집 중 — 바꾸면 이렇게 돼요';
+
+  @override
+  String get duelStoneTitle => '결투석';
+
+  @override
+  String get duelStoneElement => '오행석';
+
+  @override
+  String get duelStoneTemperament => '기질석';
+
+  @override
+  String duelStoneOwned(String n) {
+    return '$n개';
+  }
+
+  @override
+  String get duelStoneChangeElement => '오행 바꾸기';
+
+  @override
+  String get duelStoneChangeTemperament => '기질 바꾸기';
+
+  @override
+  String get duelStoneHint =>
+      '오행·기질을 원하는 값으로 바꿔요(혈통 특성은 그대로). 바꾼 값은 짝짓기에도 상속돼요.';
+
+  @override
+  String get duelStonePickElement => '바꿀 오행을 고르세요';
+
+  @override
+  String get duelStonePickTemperament => '바꿀 기질을 고르세요';
+
+  @override
+  String duelStoneAsk(String from, String to, String stone) {
+    return '$from → $to 로 바꿀까요? $stone 1개를 써요.';
+  }
+
+  @override
+  String duelStoneBuyTitle(String stone) {
+    return '$stone 구매';
+  }
+
+  @override
+  String duelStoneBuyBody(String stone, String n) {
+    return '$stone이 없어요. 젤리 $n개로 1개 살까요?';
+  }
+
+  @override
+  String get duelStoneBuyAction => '구매';
+
+  @override
+  String get duelStoneDone => '바꿨어요!';
+
+  @override
+  String duelStonePop(String stone, String n) {
+    return '$stone +$n';
+  }
+
+  @override
+  String trainPtSummaryLine(String used, String budget) {
+    return '훈련 포인트 $used / $budget';
+  }
+
+  @override
+  String get trainGoCenter => '훈련소에서 찍기';
 }
