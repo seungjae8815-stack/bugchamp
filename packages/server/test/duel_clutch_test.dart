@@ -367,10 +367,10 @@ void main() {
   });
 
   group('대회 전력 압축 분리', () {
-    test('대회는 duelWave.statCompress(0.5), 결투는 duel.statCompress(0.3)', () {
+    test('대회는 duelWave.statCompress(0.65), 결투는 duel.statCompress(0.3)', () {
       expect(off.duelParams.statCompress, 0.3);
-      expect(off.eventDuelSpec.statCompress, 0.5);
-      expect(off.eventDuelParams.statCompress, 0.5);
+      expect(off.eventDuelSpec.statCompress, 0.65);
+      expect(off.eventDuelParams.statCompress, 0.65);
       // 나머지 수치는 결투와 같다.
       expect(off.eventDuelParams.sizeStatExp, off.duelParams.sizeStatExp);
       expect(off.eventDuelParams.clutchEnabled, off.duelParams.clutchEnabled);
