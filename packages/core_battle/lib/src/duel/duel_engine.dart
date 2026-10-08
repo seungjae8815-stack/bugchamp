@@ -478,6 +478,16 @@ DuelBout simulateBout({
     return ok;
   }
 
+  // 버티기(장외·뒤집기) 성공의 대가 — 최대 체력 × clutchHoldHpCost 를 잃는다(이것으로는 쓰러지지 않는다).
+  // 공짜로 버티면 조작 앱(늘 만점)이 74% 를 이겼다 — 판을 통째로 살리는 게 아니라 한 번 더 기회를 준다.
+  void holdCost(_Body s) {
+    if (p.clutchHoldHpCost <= 0 || s.hp <= 0) return;
+    s.hp = math.max(
+      s.hp - s.bug.maxHp * p.clutchHoldHpCost,
+      s.bug.maxHp * 0.01,
+    );
+  }
+
   // 장외 위기 성공 — 테두리 안쪽으로 버티고 멈춘다. 물려 있었으면 놓친다(안 놓으면 곧바로 다시 밀린다).
   void holdRim(_Body s) {
     final d = s.dist;
@@ -493,6 +503,7 @@ DuelBout simulateBout({
       gripper = null;
       g.gripCd = p.gripCooldown;
     }
+    holdCost(s);
   }
 
   // 깨우기 성공 체력.
@@ -852,7 +863,9 @@ DuelBout simulateBout({
                   // 버티기(뒤집기) — 성공하면 뒤집기 취소.
                   final held = tryClutch(o, DuelCrisis.flip);
                   if (held == null) break;
-                  if (!held) {
+                  if (held) {
+                    holdCost(o);
+                  } else {
                     o.flipped = true;
                     winner = s.side;
                     finish = DuelFinish.flip;

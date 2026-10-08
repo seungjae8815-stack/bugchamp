@@ -84,6 +84,7 @@ class DuelParams {
     this.clutchEnabled = false,
     this.clutchRimRatio = 1,
     this.clutchRestoreRatio = 0.75,
+    this.clutchHoldHpCost = 0,
     this.clutchThreshold = 0.55,
     this.clutchThresholdPerGrit = 0.02,
     this.clutchWakeHp = 0.10,
@@ -286,6 +287,9 @@ class DuelParams {
   /// 장외 위기를 버티면 되돌아가는 자리(반지름 비율). 속도는 0.
   final double clutchRestoreRatio;
 
+  /// 버티기(장외·뒤집기) 성공의 대가 — 최대 체력 비율만큼 잃는다(이것으로 쓰러지지는 않는다). 0 = 공짜.
+  final double clutchHoldHpCost;
+
   /// 성공 문턱 = clutchThreshold − 근성 × clutchThresholdPerGrit (점수 0~1 이 문턱 이상이면 성공).
   final double clutchThreshold;
   final double clutchThresholdPerGrit;
@@ -399,6 +403,7 @@ class DuelParams {
       clutchEnabled: j['clutchEnabled'] as bool? ?? d.clutchEnabled,
       clutchRimRatio: n('clutchRimRatio', d.clutchRimRatio),
       clutchRestoreRatio: n('clutchRestoreRatio', d.clutchRestoreRatio),
+      clutchHoldHpCost: n('clutchHoldHpCost', d.clutchHoldHpCost),
       clutchThreshold: n('clutchThreshold', d.clutchThreshold),
       clutchThresholdPerGrit: n(
         'clutchThresholdPerGrit',

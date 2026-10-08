@@ -283,6 +283,36 @@ void main() {
       expect(outcome(5, 0.451), DuelEventKind.clutchSave);
     });
 
+    test('버티기 대가(clutchHoldHpCost) — 장외·뒤집기를 버티면 체력을 잃지만 그것으로 쓰러지지는 않는다', () {
+      const costly = DuelParams(clutchEnabled: true, clutchHoldHpCost: 0.36);
+      var checked = 0;
+      for (var s = 1; s < 400 && checked < 4; s++) {
+        final r = simulateBout(
+          seed: s,
+          a: _bug('a', Specialty.grip),
+          b: _bug('b', Specialty.strike, tm: Temperament.aggressive),
+          params: costly,
+          clutchScores: List.filled(3, 1.0),
+        );
+        final hold = r.events.where(
+          (e) =>
+              e.kind == DuelEventKind.clutch &&
+              e.who == 0 &&
+              e.value != DuelCrisis.knockout.index,
+        );
+        if (hold.isEmpty) continue;
+        final t = hold.first.tick;
+        final before = r.frames[(t - 1) ~/ costly.frameEvery][4];
+        final fi = (t ~/ costly.frameEvery) + 1;
+        if (fi >= r.frames.length) continue;
+        final after = r.frames[fi][4];
+        expect(after, lessThan(before));
+        expect(after, greaterThan(0));
+        checked++;
+      }
+      expect(checked, greaterThan(0));
+    });
+
     test('근성은 clutchGritMax 에서 잘린다', () {
       final s = _seedWithPlayerCrisis(a, b);
       final capped = simulateBout(
