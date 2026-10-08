@@ -3163,9 +3163,16 @@ class _RecordingLocalDriver implements DuelDriver {
   String? get error => _inner.error;
 
   @override
-  Future<DuelStep?> next(double launch) async {
-    final s = await _inner.next(launch);
-    if (s != null) onBout(_i++, s.bout.aWon);
+  Future<DuelStep?> next(double launch) async =>
+      _record(await _inner.next(launch));
+
+  @override
+  Future<DuelStep?> clutch(int index, double score) async =>
+      _record(await _inner.clutch(index, score));
+
+  /// 위기에서 멈춘 판(탭 반격 대기)은 아직 끝나지 않았다 — 끝난 판만 센다.
+  DuelStep? _record(DuelStep? s) {
+    if (s != null && s.bout.done) onBout(_i++, s.bout.aWon);
     return s;
   }
 }

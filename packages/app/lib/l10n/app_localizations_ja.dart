@@ -5975,4 +5975,32 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatTabGuild => 'ギルド';
+
+  @override
+  String get duelClutchHold => '踏ん張れ！';
+
+  @override
+  String get duelClutchWake => '立て！';
+
+  @override
+  String get duelClutchTapHint => '画面を連打！';
+
+  @override
+  String duelClutchChance(int k, int n) {
+    return 'チャンス $k/$n';
+  }
+
+  @override
+  String get duelClutchSaved => '耐えた！';
+
+  @override
+  String get duelClutchWoke => '立ち上がった！';
+
+  @override
+  String get duelClutchFailed => '失敗…';
+
+  @override
+  String duelClutchLeft(int n) {
+    return '反撃 $n';
+  }
 }

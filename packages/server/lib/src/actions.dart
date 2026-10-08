@@ -1893,6 +1893,9 @@ class GameActions {
               speciesId: bug.speciesId,
               sizeMm: bug.sizeMm,
               specialty: sp.specialty,
+              // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 스탯에 구워진 사이즈 배율을 알려 주면
+              // 엔진이 `sizeStatExp` 로 덜어낸다. 방치 런·도감은 그대로. 앱 `duelBugFor` 와 같은 값.
+              sizeStatMult: bug.statMultiplier(sp),
             ).withTraining(
               evade: t.evade,
               crit: t.crit,
@@ -1957,12 +1960,15 @@ class GameActions {
     for (var i = 0; i < w.team.length; i++) {
       final sp = speciesById[w.speciesIds[i]];
       if (sp == null) return null;
+      final mid = (sp.sizeMinMm + sp.sizeMaxMm) / 2;
       team.add(
         DuelBug.fromBattleBug(
           w.team[i],
           speciesId: sp.id,
-          sizeMm: (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+          sizeMm: mid,
           specialty: sp.specialty,
+          // 야생 스탯은 내 곤충(사이즈 배율이 구워진) 평균에서 온다 — 중간 크기 배율로 같이 덜어낸다.
+          sizeStatMult: sizeToStatMultiplier(mid, sp.sizeMinMm, sp.sizeMaxMm),
         ),
       );
     }
@@ -2091,10 +2097,53 @@ class GameActions {
   ///
   /// 내 팀은 **매 판 세이브에서 다시 검증**한다(시작 뒤 곤충을 분해·합성했으면 거부).
   /// 시작 때 선차감한 부상은 허용한다(자기 선차감에 자기가 걸리지 않게).
+  ///
+  /// [clutch] = 앱이 탭 반격을 안다(1.0.18+). 그러면 내 곤충 위기에서 판이 멈추고(`clutch` 를 돌려준다)
+  /// `/duel/clutch` 로 점수를 받아 이어 간다. false(구버전 앱)면 자동 점수로 끝까지 — 멈춘 판을 받지 않는다.
   ({ActionResult result, DuelSession? session}) duelThrow(
     SaveGame save,
     DuelSession session, {
     required double launch,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+    bool clutch = false,
+  }) {
+    if (session.finished) {
+      return (
+        result: const ActionResult.fail('session_finished'),
+        session: null,
+      );
+    }
+    // 위기에서 멈춘 판이 있으면 그 점수부터(`/duel/clutch`) — 다음 판을 던져 건너뛰지 못하게.
+    if (session.clutchPending) {
+      return (
+        result: const ActionResult.fail('clutch_pending', status: 409),
+        session: null,
+      );
+    }
+    final q = launch.isFinite
+        ? launch.clamp(0.0, 1.0).toDouble()
+        : duelParams.launchAuto;
+    return _duelPlayBout(
+      save,
+      session,
+      launch: q,
+      clutchScores: clutch ? const <double>[] : null,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+    );
+  }
+
+  /// 탭 반격 점수 — 멈춘 위기([DuelSession.pendingIndex])에 [score](0~1)를 넣고 **같은 seed·같은 던지기 값으로
+  /// 처음부터 다시 계산**해 다음 위기 또는 판 끝까지. [index] 가 멈춘 위기 번호와 다르면 거부
+  /// (같은 위기에 두 번 넣거나 앞질러 넣지 못하게). ⚠️ 점수는 앱이 보낸다 — 조작 앱은 늘 만점(설계 §4).
+  ({ActionResult result, DuelSession? session}) duelClutch(
+    SaveGame save,
+    DuelSession session, {
+    required int index,
+    required double score,
     required Map<String, Species> speciesById,
     required PetConfig petConfig,
     EnhanceConfig? enhance,
@@ -2105,6 +2154,41 @@ class GameActions {
         session: null,
       );
     }
+    if (!session.clutchPending) {
+      return (
+        result: const ActionResult.fail('no_clutch', status: 409),
+        session: null,
+      );
+    }
+    if (index != session.pendingIndex) {
+      return (
+        result: const ActionResult.fail('clutch_index', status: 409),
+        session: null,
+      );
+    }
+    final sc = score.isFinite ? score.clamp(0.0, 1.0).toDouble() : 0.0;
+    return _duelPlayBout(
+      save,
+      session,
+      launch: session.pendingLaunch!,
+      clutchScores: [...?session.clutchScores, sc],
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+    );
+  }
+
+  /// 세션의 다음 판(또는 멈춘 판)을 [launch]·[clutchScores] 로 계산한다. 위기에서 멈추면 판을 넘기지 않고
+  /// 세션에 점수 목록·던지기 값을 남긴다. 끝나면 판을 넘기고, 경기가 끝나면 보상까지.
+  ({ActionResult result, DuelSession? session}) _duelPlayBout(
+    SaveGame save,
+    DuelSession session, {
+    required double launch,
+    required List<double>? clutchScores,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
     final p = duelParams;
     final i = session.nextBout;
     // 승자 연속 — 진 쪽만 다음 곤충으로 바뀐다(내 곤충 = B 가 이긴 판 수번째).
@@ -2123,7 +2207,7 @@ class GameActions {
     if (mine.error != null) {
       return (result: ActionResult.fail(mine.error), session: null);
     }
-    final q = launch.isFinite ? launch.clamp(0.0, 1.0) : p.launchAuto;
+    final q = launch;
     final bout = simulateBout(
       seed: duelBoutSeed(session.seed, i),
       a: mine.team[ia],
@@ -2132,9 +2216,35 @@ class GameActions {
       launchA: q,
       hpA: session.hpA,
       hpB: session.hpB,
+      clutchScores: clutchScores,
     );
+    final stop = bout.pending;
+    if (stop != null) {
+      // 내 곤충 위기 — 판을 넘기지 않는다. 앱은 여기까지 재생하고 탭 게이지를 띄운다.
+      return (
+        result: ActionResult.ok(
+          save,
+          extra: {
+            'index': i,
+            'ia': ia,
+            'ib': ib,
+            'bout': bout.toJson(),
+            'winsA': session.winsA,
+            'winsB': session.winsB,
+            'done': false,
+            'clutch': duelClutchJson(stop, i),
+          },
+        ),
+        session: session.copyWith(
+          clutchScores: clutchScores ?? const [],
+          pendingLaunch: q,
+          pendingIndex: stop.index,
+        ),
+      );
+    }
     final aWon = bout.winner == 0;
     var next = session.copyWith(
+      clearClutch: true,
       winners: [...session.winners, bout.winner],
       launches: [...session.launches, q],
       hpA: aWon ? duelCarryHp(bout.hpPctA, mine.team[ia], p) : 1.0,
@@ -4038,6 +4148,10 @@ class GameActions {
   EventDuelSpec get eventDuelSpec =>
       EventDuelSpec.fromJson(config.event?.duelWaveJson);
 
+  /// 대회용 결투 수치 — `duelWave.statCompress` 가 있으면 결투 값을 덮어쓴다(앱과 같은 함수).
+  DuelParams get eventDuelParams =>
+      eventDuelParamsOf(config.battle.duelJson, eventDuelSpec);
+
   /// 웨이브 [wave] 의 적 — 모습(종)은 회차 seed 로 고른다(앱과 같은 순서: 종 id 정렬).
   DuelBug eventDuelEnemyOf(
     int roundSeed,
@@ -4145,6 +4259,7 @@ class GameActions {
     required Map<String, Species> speciesById,
     required PetConfig petConfig,
     EnhanceConfig? enhance,
+    bool clutch = false,
   }) {
     final cfg = config.event;
     if (cfg == null) return const ActionResult.fail('event_closed');
@@ -4153,8 +4268,11 @@ class GameActions {
     if (!_eventSessionLive(session)) {
       return const ActionResult.fail('event_closed');
     }
+    // 위기에서 멈춘 판이 있으면 그 점수부터(`/event/duel/clutch`).
+    if (session['cl'] is Map) {
+      return const ActionResult.fail('clutch_pending', status: 409);
+    }
     final spec = eventDuelSpec;
-    final roundSeed = (session['roundSeed'] as num).toInt();
     var run = EventDuelRun.fromJson(
       Map<String, dynamic>.from(session['run'] as Map),
     );
@@ -4170,6 +4288,73 @@ class GameActions {
       if (card == null) return const ActionResult.fail('bad_card');
       run = run.applyCard(card.kind, card.value, spec);
     }
+    return _eventDuelResolve(
+      save,
+      session: session,
+      run: run,
+      launch: launch.isFinite ? launch.clamp(0.0, 1.0).toDouble() : 0.0,
+      clutchScores: clutch ? const <double>[] : null,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+    );
+  }
+
+  /// 대회 탭 반격 점수 — 멈춘 위기(세션 `cl.i`)에 [score](0~1)를 넣고 같은 seed·같은 던지기 값으로 그 웨이브를
+  /// 처음부터 다시 싸운다(다음 위기 또는 판 끝까지). [index] 가 멈춘 위기 번호와 다르면 거부.
+  ActionResult eventDuelClutch(
+    SaveGame save, {
+    required Map<String, dynamic> session,
+    required int index,
+    required double score,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    if (config.event == null) return const ActionResult.fail('event_closed');
+    if (session['done'] == true) return const ActionResult.fail('session_done');
+    if (!_eventSessionLive(session)) {
+      return const ActionResult.fail('event_closed');
+    }
+    final cl = session['cl'];
+    if (cl is! Map) return const ActionResult.fail('no_clutch', status: 409);
+    if ((cl['i'] as num?)?.toInt() != index) {
+      return const ActionResult.fail('clutch_index', status: 409);
+    }
+    final sc = score.isFinite ? score.clamp(0.0, 1.0).toDouble() : 0.0;
+    return _eventDuelResolve(
+      save,
+      session: session,
+      // 카드는 멈추기 전에 이미 적용해 세션 run 에 넣어 두었다.
+      run: EventDuelRun.fromJson(
+        Map<String, dynamic>.from(session['run'] as Map),
+      ),
+      launch: (cl['l'] as num).toDouble(),
+      clutchScores: [
+        for (final e in (cl['s'] as List? ?? const [])) (e as num).toDouble(),
+        sc,
+      ],
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+    );
+  }
+
+  /// 지금 웨이브를 [run](카드 적용 뒤)·[launch]·[clutchScores] 로 싸운다. 내 곤충 위기에서 멈추면 진행을
+  /// 넘기지 않고 세션에 `cl`(던지기 값·점수 목록·위기 번호)을 남긴다. 끝나면 카드·점수를 확정한다.
+  ActionResult _eventDuelResolve(
+    SaveGame save, {
+    required Map<String, dynamic> session,
+    required EventDuelRun run,
+    required double launch,
+    required List<double>? clutchScores,
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+  }) {
+    final cfg = config.event!;
+    final spec = eventDuelSpec;
+    final roundSeed = (session['roundSeed'] as num).toInt();
     final bugId = '${session['bugId']}';
     final v = validateDuelTeam(
       save,
@@ -4191,10 +4376,40 @@ class GameActions {
         run: run,
         bug: v.team.first,
         enemy: eventDuelEnemyOf(roundSeed, run.wave, speciesById),
-        params: duelParams,
+        params: eventDuelParams,
         spec: spec,
-        launch: launch.clamp(0.0, 1.0),
+        launch: launch,
+        clutchScores: clutchScores,
       );
+      final stop = step.bout.pending;
+      if (stop != null) {
+        // 내 곤충 위기 — 진행(run)은 그대로, 카드는 이미 썼다. 앱은 여기까지 재생하고 탭 게이지를 띄운다.
+        return ActionResult.ok(
+          save,
+          extra: {
+            'bout': step.bout.toJson(),
+            'won': false,
+            'run': run.toJson(),
+            'cleared': run.cleared,
+            'cards': const <Map<String, dynamic>>[],
+            'done': false,
+            'score': 0,
+            'isBest': false,
+            'clutch': duelClutchJson(stop, 0),
+            'session': {
+              ...session,
+              'run': run.toJson(),
+              'cards': const <String>[],
+              'done': false,
+              'cl': {
+                'l': launch,
+                's': clutchScores ?? const <double>[],
+                'i': stop.index,
+              },
+            },
+          },
+        );
+      }
       run = step.run;
       bout = step.bout;
       won = step.won;
@@ -4231,7 +4446,7 @@ class GameActions {
           'run': run.toJson(),
           'cards': [for (final c in cards) c.id],
           'done': done,
-        },
+        }..remove('cl'),
       },
     );
   }
@@ -4354,7 +4569,7 @@ class GameActions {
           'run': run.toJson(),
           'cards': const <String>[],
           'done': true,
-        },
+        }..remove('cl'),
       },
     );
   }

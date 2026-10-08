@@ -268,8 +268,10 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         roundSeed: roundSeed,
         bug: duelBugFor(bug, data, save, locale),
         enemyOf: (w) => eventEnemyFor(data, spec, roundSeed, w, locale),
-        params: DuelParams.fromJson(
+        // 대회 전용 압축(`duelWave.statCompress`) — 서버 `eventDuelParams` 와 같은 함수.
+        params: eventDuelParamsOf(
           (data.battleConfig ?? const BattleConfig()).duelJson,
+          spec,
         ),
       ),
     );

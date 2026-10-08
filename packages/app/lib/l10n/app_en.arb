@@ -3399,5 +3399,15 @@
   "guildMissionWaitPick": "Wait {min} min",
   "@guildMissionWaitPick": {"placeholders": {"min": {"type": "int"}}},
   "chatTabAll": "All",
-  "chatTabGuild": "Guild"
+  "chatTabGuild": "Guild",
+  "duelClutchHold": "Hold on!",
+  "duelClutchWake": "Get up!",
+  "duelClutchTapHint": "Tap the screen like crazy!",
+  "duelClutchChance": "Chance {k}/{n}",
+  "@duelClutchChance": {"placeholders": {"k": {"type": "int"}, "n": {"type": "int"}}},
+  "duelClutchSaved": "Held on!",
+  "duelClutchWoke": "Back up!",
+  "duelClutchFailed": "Failed…",
+  "duelClutchLeft": "Clutch {n}",
+  "@duelClutchLeft": {"placeholders": {"n": {"type": "int"}}}
 }

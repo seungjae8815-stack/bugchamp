@@ -616,6 +616,68 @@ void main() {
       expect(res.statusCode, 200, reason: text);
       expect((jsonDecode(text) as Map)['skins'], ['gold_rhino', 'albino_stag']);
     });
+
+    // 탭 반격(훈련 v2 §4) 라우트 — 지금 데이터는 clutchEnabled false 라 1.0.18 앱이 clutch 를 알려도
+    // 예전과 같고(멈추지 않음), 멈춘 판이 없으면 /duel/clutch 는 409. 멈춤 흐름은 duel_clutch_test.
+    test(
+      '/duel/throw(clutch: true) · /duel/clutch — 꺼져 있으면 멈추지 않고, 점수는 거부',
+      () async {
+        final h = handler(
+          save: me3,
+          defenders: foeDefenders,
+          otherSaves: {'foe-1': foeSave.toJson()},
+          rpc: leagueRpc,
+        );
+        final offer =
+            jsonDecode(
+                  await (await post(
+                    h,
+                    '/duel/offer',
+                    {},
+                    token: makeToken(),
+                  )).readAsString(),
+                )
+                as Map<String, dynamic>;
+        final slot = (offer['slots'] as List)
+            .cast<Map<String, dynamic>>()
+            .firstWhere((s) => s['userId'] == 'foe-1');
+        final start =
+            jsonDecode(
+                  await (await post(h, '/duel/start', {
+                    'teamBugIds': ['m1', 'm2', 'm3'],
+                    'offerId': offer['offerId'],
+                    'pick': slot['i'],
+                  }, token: makeToken())).readAsString(),
+                )
+                as Map<String, dynamic>;
+        final sid = start['sessionId'];
+        final bad = await post(h, '/duel/clutch', {
+          'sessionId': sid,
+          'score': 1,
+        }, token: makeToken());
+        expect(bad.statusCode, 400);
+        final none = await post(h, '/duel/clutch', {
+          'sessionId': sid,
+          'index': 0,
+          'score': 1,
+        }, token: makeToken());
+        expect(none.statusCode, 409);
+        expect(
+          (jsonDecode(await none.readAsString()) as Map)['error'],
+          'no_clutch',
+        );
+        final thr = await post(h, '/duel/throw', {
+          'sessionId': sid,
+          'launch': 0.7,
+          'clutch': true,
+        }, token: makeToken());
+        final body =
+            jsonDecode(await thr.readAsString()) as Map<String, dynamic>;
+        expect(thr.statusCode, 200, reason: '$body');
+        expect(body.containsKey('clutch'), isFalse);
+        expect((body['bout'] as Map).containsKey('pc'), isFalse);
+      },
+    );
   });
 
   group('결투 티켓 엔드포인트', () {

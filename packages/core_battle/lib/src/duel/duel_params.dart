@@ -95,6 +95,8 @@ class DuelParams {
     this.clutchAutoBase = 0.5,
     this.clutchAutoPerGrit = 0.02,
     this.clutchAutoSpread = 0.15,
+    this.clutchTapSeconds = 1.2,
+    this.clutchTapTarget = 10,
   });
 
   /// 경기장 반지름. 곤충 중심이 이 밖이면 장외.
@@ -310,6 +312,11 @@ class DuelParams {
   final double clutchAutoPerGrit;
   final double clutchAutoSpread;
 
+  /// 앱 탭 게이지(엔진은 안 쓴다) — 게이지가 떠 있는 시간(초)과 만점 연타 수. 점수 = 연타 수 ÷ 목표(박자 보정).
+  /// 앱이 보내는 값이라 조작 앱은 늘 만점이다(설계 §4) — 이 둘은 "사람이 낼 수 있는 점수"만 정한다.
+  final double clutchTapSeconds;
+  final int clutchTapTarget;
+
   int get maxTicks => (roundSeconds * tickHz).round();
   double get dt => 1 / tickHz;
 
@@ -417,6 +424,8 @@ class DuelParams {
       clutchAutoBase: n('clutchAutoBase', d.clutchAutoBase),
       clutchAutoPerGrit: n('clutchAutoPerGrit', d.clutchAutoPerGrit),
       clutchAutoSpread: n('clutchAutoSpread', d.clutchAutoSpread),
+      clutchTapSeconds: n('clutchTapSeconds', d.clutchTapSeconds),
+      clutchTapTarget: i('clutchTapTarget', d.clutchTapTarget),
     );
   }
 }

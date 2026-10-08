@@ -1938,5 +1938,13 @@
   "guildMissionHelperRule": "도와준 길드원: 자기 사냥터 기준 재료·화석 {pct}% + 코인 {coins}",
   "guildMissionWaitPick": "{min}분 기다리기",
   "chatTabAll": "전체",
-  "chatTabGuild": "길드"
+  "chatTabGuild": "길드",
+  "duelClutchHold": "버텨라!",
+  "duelClutchWake": "일어나!",
+  "duelClutchTapHint": "화면을 마구 두드려!",
+  "duelClutchChance": "기회 {k}/{n}",
+  "duelClutchSaved": "버텼다!",
+  "duelClutchWoke": "일어났다!",
+  "duelClutchFailed": "실패…",
+  "duelClutchLeft": "반격 {n}"
 }

@@ -28,12 +28,19 @@ class DuelStep {
   final int trophyDelta;
 
   bool get won => winsA > winsB;
+
+  /// 내 곤충 위기에서 멈춘 판이면 그 자리 — 무대가 여기까지 재생하고 탭 게이지를 띄운다(훈련 v2 §4).
+  DuelClutchPending? get clutch => bout.pending;
 }
 
 /// 판을 하나씩 받아 오는 진행기 — 화면은 이것만 안다(서버 세션 · 로컬 · 미리 받은 판).
 abstract interface class DuelDriver {
   /// 다음 판을 [launch](던지기 게이지 0~1)로 던진다. 실패하면 null([error] 에 사유).
   Future<DuelStep?> next(double launch);
+
+  /// 위기에서 멈춘 판([DuelStep.clutch])에 탭 점수(0~1)를 넣고 이어 간다 — 같은 판을 처음부터 다시 받는다
+  /// (앞부분 궤적은 같다). [index] 는 멈춘 위기 번호. 실패하면 null.
+  Future<DuelStep?> clutch(int index, double score);
 
   /// 판마다 게이지를 받나(빠른 결투는 false — 서버가 이미 다 정했다).
   bool get interactive;
@@ -53,8 +60,15 @@ class ServerDuelDriver implements DuelDriver {
   bool get interactive => true;
 
   @override
-  Future<DuelStep?> next(double launch) async {
-    final res = await server.duelThrow(sessionId: sessionId, launch: launch);
+  Future<DuelStep?> next(double launch) async =>
+      _parse(await server.duelThrow(sessionId: sessionId, launch: launch));
+
+  @override
+  Future<DuelStep?> clutch(int index, double score) async => _parse(
+    await server.duelClutch(sessionId: sessionId, index: index, score: score),
+  );
+
+  DuelStep? _parse(ServerResult res) {
     final d = res.data;
     if (!res.isOk || d == null || d['bout'] is! Map) {
       error = res.error ?? 'server';
@@ -92,6 +106,10 @@ class PrebakedDuelDriver implements DuelDriver {
 
   @override
   bool get interactive => false;
+
+  /// 빠른 결투는 서버가 자동 점수로 끝까지 정했다 — 멈춘 판이 없다.
+  @override
+  Future<DuelStep?> clutch(int index, double score) async => null;
 
   @override
   Future<DuelStep?> next(double launch) async {
@@ -132,6 +150,10 @@ class LocalDuelDriver implements DuelDriver {
   final double rewardMult;
   final List<DuelBout> _done = [];
 
+  /// 위기에서 멈춘 판의 던지기 값·지금까지의 탭 점수(서버 세션과 같은 규칙).
+  double? _pendingLaunch;
+  final List<double> _scores = [];
+
   @override
   String? error;
 
@@ -140,6 +162,19 @@ class LocalDuelDriver implements DuelDriver {
 
   @override
   Future<DuelStep?> next(double launch) async {
+    _scores.clear();
+    return _play(launch);
+  }
+
+  @override
+  Future<DuelStep?> clutch(int index, double score) async {
+    final l = _pendingLaunch;
+    if (l == null || index != _scores.length) return null;
+    _scores.add(score.clamp(0.0, 1.0));
+    return _play(l);
+  }
+
+  DuelStep? _play(double launch) {
     final i = _done.length;
     // 승자 연속 — 대진·시작 체력은 지금까지의 판에서 나온다(서버와 같은 함수).
     final st = duelNextState(_done, mine, foe, params);
@@ -152,7 +187,15 @@ class LocalDuelDriver implements DuelDriver {
       launchA: launch,
       hpA: st.hpA,
       hpB: st.hpB,
+      clutchScores: List.of(_scores),
     );
+    if (b.pending != null) {
+      // 위기에서 멈췄다 — 판을 넘기지 않는다(점수를 받으면 같은 판을 처음부터 다시).
+      _pendingLaunch = launch;
+      final m = DuelMatch(bouts: _done);
+      return DuelStep(bout: b, winsA: m.winsA, winsB: m.winsB, done: false);
+    }
+    _pendingLaunch = null;
     _done.add(b);
     final m = DuelMatch(bouts: _done);
     final done = m.winsA >= foe.length || m.winsB >= mine.length;

@@ -150,11 +150,16 @@ DuelBug _legacyDefenderToDuel(
 ) {
   final b = _defenderToBattleBug(d, index, speciesById, locale);
   final sp = speciesById[d['sp']?.toString() ?? ''];
+  final mid = sp == null ? 50.0 : (sp.sizeMinMm + sp.sizeMaxMm) / 2;
   return DuelBug.fromBattleBug(
     b,
     speciesId: sp?.id ?? '',
-    sizeMm: sp == null ? 50 : (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+    sizeMm: mid,
     specialty: sp?.specialty ?? Specialty.strike,
+    // 옛 행은 실제 크기를 모른다 — 중간 크기 배율로 덜어낸다(결투에서 크기는 무게로만).
+    sizeStatMult: sp == null
+        ? 1
+        : sizeToStatMultiplier(mid, sp.sizeMinMm, sp.sizeMaxMm),
   );
 }
 
@@ -209,6 +214,11 @@ String _newSessionId() {
 /// 몇 분 만에 역산돼 다음 판 게이지 결과를 미리 볼 수 있었다(2026-09-30 점검).
 final Random _seedRng = Random.secure();
 int _secureSeed() => _seedRng.nextInt(0x7fffffff);
+
+/// 앱이 탭 반격(훈련 v2 §4)을 아는가 — 본문 `clutch: true` 또는 헤더 `x-bc-clutch: 1`.
+/// 모르는 앱(1.0.17 이하)에게 위기에서 멈춘 판을 주면 재생이 끊기므로, 알리지 않으면 자동 점수로 끝까지 계산한다.
+bool _clutchCapable(Request req, Map<String, dynamic> body) =>
+    body['clutch'] == true || req.headers['x-bc-clutch'] == '1';
 
 /// 명예의 전당 명단 상한. 참가자 전원을 싣되 끝없이 늘지 않게 막는다.
 const _hallLimit = 500;
@@ -1318,6 +1328,46 @@ Handler buildHandler({
       }
     });
 
+    /// `/event/duel/throw`·`/event/duel/clutch` 공통 마무리 — 세션 저장, 끝났으면 세이브·점수 기록.
+    /// 위기에서 멈춘 판(`clutch`)은 끝나지 않은 판이라 세이브를 싣지 않는다.
+    Future<Response> finishEventDuelStep(
+      AuthedUser user,
+      String sessionId,
+      Map<String, dynamic> data,
+      SaveGame save,
+      ActionResult r,
+    ) async {
+      if (!r.isOk) {
+        _noteForged(ops, user.id, r.error);
+        return _json({'error': r.error}, status: r.status);
+      }
+      await store.saveSession(sessionId, user.id, {
+        'kind': 'eventDuel',
+        ...(r.extra['session'] as Map<String, dynamic>),
+      });
+      final done = r.extra['done'] == true;
+      if (done && r.save != save) await store.save(user.id, r.save!.toJson());
+      var recorded = false;
+      // ⚠️ 회차가 끝났으면 기록하지 않는다(끝난 뒤 점수가 바뀌면 챔피언이 둘이 될 수 있다).
+      if (done &&
+          !user.isAnonymous &&
+          r.extra['isBest'] == true &&
+          actions.eventOpen &&
+          r.save!.eventRoundId == actions.eventRoundId()) {
+        recorded = await _submitEventScore(store, user.id, r.save!, r.extra, [
+          '${data['bugId']}',
+        ]);
+      }
+      final out = Map<String, dynamic>.from(r.extra)..remove('session');
+      return _json({
+        ...out,
+        // 판 사이엔 세이브를 싣지 않는다(이그레스) — 끝났을 때만.
+        if (done) 'save': r.save!.toJson(),
+        'rankEligible': !user.isAnonymous,
+        'recorded': recorded,
+      });
+    }
+
     /// 왕충 선발대회(2회차부터) — **곤충 1마리 · 결투 엔진 웨이브전** 시작.
     /// 참가권 −1 · 그 곤충 부상(등급별)을 여기서 확정하고 세션을 만든다.
     authed.post('/event/duel/start', (Request req) async {
@@ -1397,38 +1447,56 @@ Handler buildHandler({
           speciesById: species,
           petConfig: cfg.pet,
           enhance: cfg.enhance,
+          // 탭 반격을 모르는 앱(1.0.17)은 자동 점수로 끝까지.
+          clutch: _clutchCapable(req, body),
         );
-        if (!r.isOk) {
-          _noteForged(ops, user.id, r.error);
-          return _json({'error': r.error}, status: r.status);
-        }
-        await store.saveSession(sessionId, user.id, {
-          'kind': 'eventDuel',
-          ...(r.extra['session'] as Map<String, dynamic>),
-        });
-        final done = r.extra['done'] == true;
-        if (done && r.save != save) await store.save(user.id, r.save!.toJson());
-        var recorded = false;
-        // ⚠️ 회차가 끝났으면 기록하지 않는다(끝난 뒤 점수가 바뀌면 챔피언이 둘이 될 수 있다).
-        if (done &&
-            !user.isAnonymous &&
-            r.extra['isBest'] == true &&
-            actions.eventOpen &&
-            r.save!.eventRoundId == actions.eventRoundId()) {
-          recorded = await _submitEventScore(store, user.id, r.save!, r.extra, [
-            '${data['bugId']}',
-          ]);
-        }
-        final out = Map<String, dynamic>.from(r.extra)..remove('session');
-        return _json({
-          ...out,
-          // 판 사이엔 세이브를 싣지 않는다(이그레스) — 끝났을 때만.
-          if (done) 'save': r.save!.toJson(),
-          'rankEligible': !user.isAnonymous,
-          'recorded': recorded,
-        });
+        return await finishEventDuelStep(user, sessionId, data, save, r);
       } on StateStoreException catch (e) {
         stderr.writeln('[event/duel/throw] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 대회 탭 반격 점수 — 멈춘 위기(`index`)에 점수(0~1)를 넣고 같은 seed 로 그 웨이브를 다시 싸운다.
+    /// 응답은 `/event/duel/throw` 와 같은 모양.
+    authed.post('/event/duel/clutch', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final sessionId = body['sessionId']?.toString() ?? '';
+      final index = (body['index'] as num?)?.toInt();
+      final score = (body['score'] as num?)?.toDouble();
+      if (sessionId.isEmpty || index == null || score == null) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final row = await store.loadSession(sessionId);
+        if (row == null) return _json({'error': 'no_session'}, status: 404);
+        if (row['user_id']?.toString() != user.id) {
+          return _json({'error': 'forbidden'}, status: 403);
+        }
+        final data = Map<String, dynamic>.from(row['data'] as Map);
+        if (data['kind'] != 'eventDuel') {
+          return _json({'error': 'no_session'}, status: 404);
+        }
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.eventDuelClutch(
+          save,
+          session: data,
+          index: index,
+          score: score,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        return await finishEventDuelStep(user, sessionId, data, save, r);
+      } on StateStoreException catch (e) {
+        stderr.writeln('[event/duel/clutch] ${user.id}: $e');
         return _json({'error': 'store_unavailable'}, status: 503);
       }
     });
@@ -2342,6 +2410,36 @@ Handler buildHandler({
       }
     });
 
+    /// `/duel/throw`·`/duel/clutch` 공통 마무리 — 세션 저장, 판 사이면 그대로, 경기가 끝났으면
+    /// 시즌 점수·세이브·길드전 기록. 위기에서 멈춘 판(`clutch`)도 "판 사이"와 같다(세이브 안 바뀜).
+    Future<Response> finishDuelStep(
+      String uid,
+      String sessionId,
+      ({ActionResult result, DuelSession? session}) r,
+    ) async {
+      if (!r.result.isOk || r.session == null) {
+        _noteForged(ops, uid, r.result.error);
+        return _json({'error': r.result.error}, status: r.result.status);
+      }
+      await store.saveSession(sessionId, uid, r.session!.toJson());
+      if (r.result.extra['done'] != true) {
+        // 판 사이엔 세이브가 안 바뀐다 — 싣지 않는다(이그레스).
+        return _json(r.result.extra);
+      }
+      final scored = await _recordPvpScore(store, actions, uid, r.result.save!);
+      await store.save(uid, scored.toJson());
+      // 길드전 4일차(결투) — 서버가 확정한 승리만 센다.
+      final ex = r.result.extra;
+      if ((ex['winsA'] as num? ?? 0) > (ex['winsB'] as num? ?? 0)) {
+        try {
+          await guildWar.recordServerAction(uid, 'duelWin');
+        } catch (e) {
+          stderr.writeln('[duel/guildWar] $uid: $e');
+        }
+      }
+      return _json({...r.result.extra, 'save': scored.toJson()});
+    }
+
     /// 결투 시작 — 편성 검증 · 티켓 · 트로피/부상 선차감 · 세션(시드는 주지 않는다).
     authed.post('/duel/start', (Request req) async {
       final user = userOf(req);
@@ -2522,35 +2620,60 @@ Handler buildHandler({
           speciesById: species,
           petConfig: cfg.pet,
           enhance: cfg.enhance,
+          // 1.0.18+ 앱만 탭 반격을 받는다 — 모르는 앱(1.0.17)은 자동 점수로 끝까지(멈춘 판을 받지 않게).
+          clutch: _clutchCapable(req, body),
         );
-        if (!r.result.isOk || r.session == null) {
-          _noteForged(ops, user.id, r.result.error);
-          return _json({'error': r.result.error}, status: 400);
-        }
-        await store.saveSession(sessionId, user.id, r.session!.toJson());
-        if (r.result.extra['done'] != true) {
-          // 판 사이엔 세이브가 안 바뀐다 — 싣지 않는다(이그레스).
-          return _json(r.result.extra);
-        }
-        final scored = await _recordPvpScore(
-          store,
-          actions,
-          user.id,
-          r.result.save!,
-        );
-        await store.save(user.id, scored.toJson());
-        // 길드전 4일차(결투) — 서버가 확정한 승리만 센다.
-        final ex = r.result.extra;
-        if ((ex['winsA'] as num? ?? 0) > (ex['winsB'] as num? ?? 0)) {
-          try {
-            await guildWar.recordServerAction(user.id, 'duelWin');
-          } catch (e) {
-            stderr.writeln('[duel/guildWar] ${user.id}: $e');
-          }
-        }
-        return _json({...r.result.extra, 'save': scored.toJson()});
+        return await finishDuelStep(user.id, sessionId, r);
       } on StateStoreException catch (e) {
         stderr.writeln('[duel/throw] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    /// 탭 반격 점수(훈련 v2 §4) — 멈춘 위기(`index`)에 점수(0~1)를 넣고 같은 seed 로 다시 계산해
+    /// 다음 위기 또는 판 끝까지 돌려준다. 응답은 `/duel/throw` 와 같은 모양(`bout` 은 판 처음부터).
+    authed.post('/duel/clutch', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final sessionId = body['sessionId']?.toString() ?? '';
+      final index = (body['index'] as num?)?.toInt();
+      final score = (body['score'] as num?)?.toDouble();
+      if (sessionId.isEmpty || index == null || score == null) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final row = await store.loadSession(sessionId);
+        if (row == null) return _json({'error': 'no_session'}, status: 404);
+        if (row['user_id']?.toString() != user.id) {
+          return _json({'error': 'forbidden'}, status: 403);
+        }
+        final data = Map<String, dynamic>.from(row['data'] as Map);
+        if (!DuelSession.isDuel(data)) {
+          return _json({'error': 'not_duel'}, status: 400);
+        }
+        final session = DuelSession.fromJson(data);
+        if (session.finished) {
+          return _json({'error': 'already_finished'}, status: 409);
+        }
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final r = actions.duelClutch(
+          save,
+          session,
+          index: index,
+          score: score,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        return await finishDuelStep(user.id, sessionId, r);
+      } on StateStoreException catch (e) {
+        stderr.writeln('[duel/clutch] ${user.id}: $e');
         return _json({'error': 'store_unavailable'}, status: 503);
       }
     });

@@ -69,6 +69,9 @@ DuelBug duelBugFor(
     speciesId: bug.speciesId,
     sizeMm: bug.sizeMm,
     specialty: sp.specialty,
+    // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 엔진이 스탯에 구워진 사이즈 배율을 덜어낸다.
+    // 서버 `validateDuelTeam` 과 같은 값이어야 재생·체험이 서버 판과 같다.
+    sizeStatMult: bug.statMultiplier(sp),
   ).withTraining(
     evade: t.evade,
     crit: t.crit,

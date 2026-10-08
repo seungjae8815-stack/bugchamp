@@ -1893,5 +1893,13 @@
   "guildMissionHelperRule": "手伝った仲間: 自分の狩場基準で素材・化石{pct}% + コイン{coins}",
   "guildMissionWaitPick": "{min}分待つ",
   "chatTabAll": "全体",
-  "chatTabGuild": "ギルド"
+  "chatTabGuild": "ギルド",
+  "duelClutchHold": "踏ん張れ！",
+  "duelClutchWake": "立て！",
+  "duelClutchTapHint": "画面を連打！",
+  "duelClutchChance": "チャンス {k}/{n}",
+  "duelClutchSaved": "耐えた！",
+  "duelClutchWoke": "立ち上がった！",
+  "duelClutchFailed": "失敗…",
+  "duelClutchLeft": "反撃 {n}"
 }

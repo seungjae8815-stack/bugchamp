@@ -230,4 +230,26 @@ Future<void> main(List<String> args) async {
       '  ${s.name.padRight(10)} ${(w / species.length * 100).toStringAsFixed(1)}%',
     );
   }
+
+  // ── 4. 같은 종 크기 — 최대 vs 최소(완전 투자 · 서버 편성 경로 = 사이즈 몫 덜어내기 포함) ──
+  // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 목표 60~70%(core_battle duel_sim 4번 표와 같은 질문).
+  stdout.writeln('\n4. 같은 종 크기 — 최대 vs 최소 승률(실제 경로) · 목표 60~70%');
+  final sizeWins = <double>[];
+  for (final sp in species) {
+    IndividualBug sized(double mm, String id) => IndividualBug.fromJson(
+      bugOf(sp, Temperament.fickle, id: id).toJson(),
+    ).copyWith(sizeMm: mm);
+    final big = build(sized(sp.sizeMaxMm, 'big'), sp);
+    final small = build(sized(sp.sizeMinMm, 'small'), sp);
+    final r = duel(big, small).aWin;
+    sizeWins.add(r);
+    stdout.writeln(
+      '  ${'${sp.grade.key} ${sp.id}'.padRight(28)} ${(r * 100).toStringAsFixed(0).padLeft(4)}%',
+    );
+  }
+  sizeWins.sort();
+  final avg = sizeWins.reduce((a, b) => a + b) / sizeWins.length;
+  stdout.writeln(
+    '  평균 ${(avg * 100).toStringAsFixed(1)}% · 최소 ${(sizeWins.first * 100).toStringAsFixed(0)}% · 최대 ${(sizeWins.last * 100).toStringAsFixed(0)}%',
+  );
 }

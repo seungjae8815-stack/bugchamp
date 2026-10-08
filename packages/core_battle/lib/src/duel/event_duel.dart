@@ -30,7 +30,13 @@ class EventDuelSpec {
     this.fallPenalty = 0.3,
     this.injuryMinRatio = 0.2,
     this.cardCaps = const {'evade': 0.24, 'crit': 0.3, 'size': 0.8},
+    this.statCompress,
   });
+
+  /// 대회 전용 전력 압축(`DuelParams.statCompress` 를 덮어쓴다). null = 결투 값 그대로.
+  /// 결투는 0.3(훈련 v2)인데 대회 적은 웨이브마다 ×1.08 로 자라는 '전력 차' 자체가 난이도라, 0.3 에서는
+  /// 도달 웨이브가 절반이 됐다(2026-10-08 측정). 대회는 [eventDuelParamsOf] 로 만든 수치를 쓴다.
+  final double? statCompress;
 
   /// 1웨이브 적의 능력치. 웨이브마다 × [growth].
   final double baseHp;
@@ -102,9 +108,20 @@ class EventDuelSpec {
                 if (e.value is num) '${e.key}': (e.value as num).toDouble(),
             }
           : d.cardCaps,
+      statCompress: (j['statCompress'] as num?)?.toDouble(),
     );
   }
 }
+
+/// 대회(왕충 선발대회)용 결투 수치 — 결투 JSON([duelJson], `battle.json → duel`)에 대회 덮어쓰기
+/// ([EventDuelSpec.statCompress])를 얹는다. 앱·서버·시뮬이 같은 함수로 만든다(한쪽만 덮으면 판이 갈린다).
+DuelParams eventDuelParamsOf(
+  Map<String, dynamic>? duelJson,
+  EventDuelSpec spec,
+) => DuelParams.fromJson({
+  ...?duelJson,
+  if (spec.statCompress != null) 'statCompress': spec.statCompress,
+});
 
 /// 웨이브 [wave] 의 적 한 마리 — **회차 seed 하나로 전부 결정**된다(같은 회차면 모두 같은 적).
 ///

@@ -23,6 +23,9 @@ class DuelSession {
     this.winPoints,
     this.hpA = 1,
     this.hpB = 1,
+    this.clutchScores,
+    this.pendingLaunch,
+    this.pendingIndex,
   });
 
   final String id;
@@ -55,6 +58,21 @@ class DuelSession {
   final double hpA;
   final double hpB;
 
+  /// 탭 반격(훈련 v2 §4) — **지금 판**에서 받은 탭 점수(순서대로). 판이 끝나면 비운다.
+  /// 앱이 탭 반격을 안다고 알렸을 때만 쓴다(구버전은 자동 점수 — 이 값은 늘 null).
+  final List<double>? clutchScores;
+
+  /// 위기에서 멈춘 판의 던지기 값 — 점수를 받으면 같은 값·같은 seed 로 처음부터 다시 계산한다.
+  /// null = 멈춘 판 없음.
+  final double? pendingLaunch;
+
+  /// 멈춘 위기의 번호(= 지금 판에서 받은 점수 수). `/duel/clutch` 의 index 가 이 값이어야 한다
+  /// (같은 위기에 점수를 두 번 넣거나 앞질러 넣지 못하게).
+  final int? pendingIndex;
+
+  /// 위기에서 멈춰 탭 점수를 기다리는 중인가.
+  bool get clutchPending => pendingLaunch != null && pendingIndex != null;
+
   int get winsA => winners.where((w) => w == 0).length;
   int get winsB => winners.where((w) => w == 1).length;
   int get nextBout => winners.length;
@@ -65,6 +83,10 @@ class DuelSession {
     bool? finished,
     double? hpA,
     double? hpB,
+    List<double>? clutchScores,
+    double? pendingLaunch,
+    int? pendingIndex,
+    bool clearClutch = false,
   }) => DuelSession(
     id: id,
     userId: userId,
@@ -82,6 +104,9 @@ class DuelSession {
     winPoints: winPoints,
     hpA: hpA ?? this.hpA,
     hpB: hpB ?? this.hpB,
+    clutchScores: clearClutch ? null : clutchScores ?? this.clutchScores,
+    pendingLaunch: clearClutch ? null : pendingLaunch ?? this.pendingLaunch,
+    pendingIndex: clearClutch ? null : pendingIndex ?? this.pendingIndex,
   );
 
   Map<String, dynamic> toJson() => {
@@ -102,6 +127,9 @@ class DuelSession {
     'winPoints': ?winPoints,
     'hpA': hpA,
     'hpB': hpB,
+    'clutch': ?clutchScores,
+    'pendLaunch': ?pendingLaunch,
+    'pendIdx': ?pendingIndex,
   };
 
   static bool isDuel(Map<String, dynamic> j) => j['kind'] == 'duel';
@@ -133,5 +161,19 @@ class DuelSession {
     winPoints: (j['winPoints'] as num?)?.toInt(),
     hpA: (j['hpA'] as num?)?.toDouble() ?? 1,
     hpB: (j['hpB'] as num?)?.toDouble() ?? 1,
+    clutchScores: j['clutch'] is List
+        ? [for (final e in (j['clutch'] as List)) (e as num).toDouble()]
+        : null,
+    pendingLaunch: (j['pendLaunch'] as num?)?.toDouble(),
+    pendingIndex: (j['pendIdx'] as num?)?.toInt(),
   );
 }
+
+/// 탭 반격 위기 자리(응답 `clutch`) — 앱은 [tick] 까지 재생하고 게이지를 띄운 뒤 [index] 와 점수를
+/// `/duel/clutch`(대회는 `/event/duel/clutch`)로 보낸다. [bout] 은 경기 안의 판 번호(대회는 0).
+Map<String, dynamic> duelClutchJson(DuelClutchPending p, int bout) => {
+  'kind': p.kind.key,
+  'index': p.index,
+  'bout': bout,
+  'tick': p.tick,
+};
