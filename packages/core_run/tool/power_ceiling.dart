@@ -140,6 +140,18 @@ CharacterStats composeStats(RunConfig run, CeilingData data, PowerParts p) {
 double bossDps(CharacterStats s) =>
     baselineHitPower(s, boss: true) * s.attackSpeed;
 
+/// 강화 "현실적 최고치" 레벨 — [ceiling] 의 `upgradeRef` 에 있으면 그 값(2026-10-08 상향 전 상한으로 고정),
+/// 없으면 maxLevel. 시뮬의 강화 채움(`_upgradeFill`)도 같은 기준을 쓴다.
+int? upgradeRefLevel(
+  Map<String, dynamic>? ceiling,
+  UpgradeKind k,
+  int? maxLevel,
+) {
+  final ref = ceiling?['upgradeRef'];
+  final v = ref is Map ? ref[k.key] : null;
+  return v is num ? v.toInt() : maxLevel;
+}
+
 /// 현실적 최고치의 재료 — [level] 은 유저의 지금 레벨(레벨은 %에서 뺀다).
 PowerParts ceilingParts(
   RunConfig run,
@@ -190,7 +202,7 @@ PowerParts ceilingParts(
   return (
     upgrades: {
       for (final e in run.upgrades.entries)
-        if (e.value.maxLevel != null) e.key: e.value.maxLevel!,
+        e.key: ?upgradeRefLevel(spec, e.key, e.value.maxLevel),
     },
     level: level,
     petAttackMult: bonus.attackMult,

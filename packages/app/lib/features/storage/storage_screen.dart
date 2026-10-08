@@ -2934,7 +2934,6 @@ class StorageScreen extends ConsumerWidget {
             final species = data.species(bug.speciesId);
             final locale = Localizations.localeOf(ctx).languageCode;
             final petCfg = data.petConfig;
-            final enhCfg = data.enhanceConfig;
             final now = r.read(clockProvider).now().toUtc();
             final effStage = petCfg == null
                 ? bug.stage
@@ -3075,10 +3074,7 @@ class StorageScreen extends ConsumerWidget {
                     const SizedBox(height: 6),
                     _synthRow(ctx, r, petCfg, save, bug),
                   ],
-                  if (enhCfg != null) ...[
-                    const SizedBox(height: 6),
-                    _enhanceOpenRow(context, ref, data, l, bug),
-                  ],
+                  // 부위 강화는 훈련 v2 에서 훈련 포인트로 흡수됐다(2026-10-08 사장님 — 채집함에서는 아예 뺀다).
                   const SizedBox(height: 12),
                   // 하단 액션: 장착이면 '해제' 단독, 아니면 '장착 + 분해'
                   if (equipped)
@@ -3865,45 +3861,6 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 
-  /// 상세 팝업의 부위강화 자리 — 훈련 v2(2026-10-08)에서 부위 강화는 훈련 포인트로 흡수됐다
-  /// (docs/design_training_v2.md §2). 화면 재작성(훈련소 포인트 배분)은 다음 단계라 지금은 안내만 띄운다.
-  /// 옛 강화 시트는 서버가 `update_required` 로 닫아 눌러도 실패하므로 지웠다.
-  Widget _enhanceOpenRow(
-    BuildContext context,
-    WidgetRef ref,
-    GameData data,
-    AppLocalizations l,
-    IndividualBug bug,
-  ) => _sectionBox(
-    child: Row(
-      children: [
-        const Icon(Icons.handyman, color: Color(0xFF9CCC65), size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l.enhanceTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13.5,
-                ),
-              ),
-              Text(
-                l.enhanceMovedToTraining,
-                style: const TextStyle(
-                  color: Color(0xB3FFFFFF),
-                  fontSize: 11.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 /// 곤충 상세의 개체 정보(오행·성별·기질·주특기·크기). 두 칸씩 나란히.

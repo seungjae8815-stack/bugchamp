@@ -1640,10 +1640,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get enhanceTitle => '부위 강화';
 
   @override
-  String get enhanceMovedToTraining =>
-      '부위 강화는 훈련 포인트로 옮겨졌어요. 결투 탭 훈련소에서 칸을 골라 찍으세요.';
-
-  @override
   String get partHornJaw => '뿔·큰턱';
 
   @override

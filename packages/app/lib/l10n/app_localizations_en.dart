@@ -1683,10 +1683,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enhanceTitle => 'Enhance Parts';
 
   @override
-  String get enhanceMovedToTraining =>
-      'Part enhancement has moved to Training Points. Allocate them in the Training Center on the Duel tab.';
-
-  @override
   String get partHornJaw => 'Horn/Jaw';
 
   @override

@@ -1263,7 +1263,7 @@ class _Player {
   double get _upgradeFill {
     var have = 0, cap = 0;
     for (final e in config.upgrades.entries) {
-      final m = e.value.maxLevel;
+      final m = upgradeRefLevel(_ceilingSpec, e.key, e.value.maxLevel);
       if (m == null) continue;
       cap += m;
       have += math.min(m, levels[e.key] ?? 0);
@@ -3083,3 +3083,7 @@ class _HpTrack {
     regen(skills.healMult * killHealAmount(c, hp: hp, maxHp: max, boss: boss));
   }
 }
+
+/// balance_targets.json → ceiling(강화 채움 기준 `upgradeRef` 를 읽는다).
+final Map<String, dynamic>? _ceilingSpec =
+    BalanceTargets.load().raw['ceiling'] as Map<String, dynamic>?;

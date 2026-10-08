@@ -3010,12 +3010,6 @@ abstract class AppLocalizations {
   /// **'Enhance Parts'**
   String get enhanceTitle;
 
-  /// No description provided for @enhanceMovedToTraining.
-  ///
-  /// In en, this message translates to:
-  /// **'Part enhancement has moved to Training Points. Allocate them in the Training Center on the Duel tab.'**
-  String get enhanceMovedToTraining;
-
   /// No description provided for @partHornJaw.
   ///
   /// In en, this message translates to:

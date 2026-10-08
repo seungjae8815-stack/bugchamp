@@ -18,6 +18,8 @@
   "ceiling": {
     "_upgradesComment": "능력치 강화는 전부 maxLevel.",
     "upgrades": "maxLevel",
+    "_upgradeRefComment": "강화 '현실적 최고치'를 2026-10-08 전 상한으로 **고정**한다. 그날 사장님 확정으로 전투 강화 maxLevel 을 심연(극한 이후) 성장용으로 올렸다(공격·체력·방어 250 · 공속 125 · 보스 105 · 치명 피해 110) — 최고치가 maxLevel 을 따라가면 90일 기준 %가 흔들리고 --fit-tiers 가 쉬운 표를 뽑는다.",
+    "upgradeRef": {"attack": 200, "attackSpeed": 110, "critDamage": 105, "bossDamage": 100, "maxHp": 200, "defense": 175},
     "_petsComment": "장착 곤충 3마리 — 전설 · 포텐셜 5 · 훈련 포인트 전부(5성·80레벨·돌파 4 = 102, 2026-10-08 훈련 v2 — 예전 '부위 강화 포텐셜×10 × 4부위 = 200'은 실제 상한(포텐셜×10 = 50 총합)의 4배였다) · 수련 최종 상한(tierCaps 마지막) · 성충 · 크기 평균 · 특성·이색 없음.",
     "pets": {
       "count": 3,

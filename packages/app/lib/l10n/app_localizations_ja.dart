@@ -1635,10 +1635,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get enhanceTitle => '部位強化';
 
   @override
-  String get enhanceMovedToTraining =>
-      '部位強化はトレーニングポイントに移りました。決闘タブのトレーニング所で振り分けてください。';
-
-  @override
   String get partHornJaw => '角・大顎';
 
   @override
