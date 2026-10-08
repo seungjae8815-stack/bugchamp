@@ -27,6 +27,9 @@ class DuelBug {
     this.crit = 0,
     this.recovery = 0,
     this.evade = 0,
+    this.massMult = 1,
+    this.tech = 0,
+    this.grit = 0,
   });
 
   final String id;
@@ -52,6 +55,15 @@ class DuelBug {
   /// 회피 확률(0~1) — 부딪힘 피해를 통째로 피한다. 훈련소에서 올린다.
   final double evade;
 
+  /// 체급 칸(훈련 v2, docs/design_training_v2.md) — 무게 배율. 실제 크기(mm)·몸 반경은 그대로.
+  final double massMult;
+
+  /// 주특기 기술 칸 — 주특기마다 다른 효과의 비율 보너스(치기 뒤집기 확률 · 집기 무는 힘 · 던지기 쿨타임).
+  final double tech;
+
+  /// 근성 칸(단계) — 탭 반격 성공 문턱·효과·횟수.
+  final int grit;
+
   /// 훈련소 보너스를 입힌다(공격·방어 배율, 회피·치명·회복력 가산). 값은 호출자가
   /// `TrainingConfig.bonuses` 로 계산한다 — core_battle 은 core_run 을 모른다.
   DuelBug withTraining({
@@ -61,6 +73,10 @@ class DuelBug {
     double evade = 0,
     double crit = 0,
     double recovery = 0,
+    double spdMult = 1,
+    double massMult = 1,
+    double tech = 0,
+    int grit = 0,
   }) => DuelBug(
     id: id,
     name: name,
@@ -72,10 +88,13 @@ class DuelBug {
     maxHp: maxHp * hpMult,
     atk: atk * atkMult,
     def: def * defMult,
-    spd: spd,
+    spd: spd * spdMult,
     crit: this.crit + crit,
     recovery: this.recovery + recovery,
     evade: this.evade + evade,
+    massMult: this.massMult * massMult,
+    tech: this.tech + tech,
+    grit: this.grit + grit,
   );
 
   /// 한 판 안에서만 쓰는 전투 수치로 바꾼다(전력 압축·게이지 보너스, 엔진 내부용).
@@ -99,6 +118,9 @@ class DuelBug {
     crit: crit,
     recovery: recovery,
     evade: evade,
+    massMult: massMult,
+    tech: tech,
+    grit: grit,
   );
 
   /// 옛 엔진 유닛에 사이즈·주특기를 붙인다.
@@ -140,6 +162,9 @@ class DuelBug {
     crit: crit,
     recovery: recovery,
     evade: evade,
+    massMult: massMult,
+    tech: tech,
+    grit: grit,
   );
 
   /// 몸 반경.
@@ -149,7 +174,8 @@ class DuelBug {
   /// 무게 — 사이즈가 주되, 단단한(DEF) 곤충이 조금 더 무겁게 버틴다.
   double mass(DuelParams p) =>
       math.pow(math.max(sizeMm, 1) / p.sizeRefMm, p.massExp).toDouble() *
-      (1 + p.defMassWeight * def / (def + 100));
+      (1 + p.defMassWeight * def / (def + 100)) *
+      massMult;
 
   /// 평소 최고 속도.
   double maxSpeed(DuelParams p) =>
@@ -173,6 +199,9 @@ class DuelBug {
     if (crit > 0) 'crit': crit,
     if (recovery > 0) 'rec': recovery,
     if (evade > 0) 'eva': evade,
+    if (massMult != 1) 'mm': massMult,
+    if (tech != 0) 'tech': tech,
+    if (grit != 0) 'grit': grit,
   };
 
   factory DuelBug.fromJson(Map<String, dynamic> j) => DuelBug(
@@ -190,5 +219,8 @@ class DuelBug {
     crit: (j['crit'] as num?)?.toDouble() ?? 0,
     recovery: (j['rec'] as num?)?.toDouble() ?? 0,
     evade: (j['eva'] as num?)?.toDouble() ?? 0,
+    massMult: (j['mm'] as num?)?.toDouble() ?? 1,
+    tech: (j['tech'] as num?)?.toDouble() ?? 0,
+    grit: (j['grit'] as num?)?.toInt() ?? 0,
   );
 }
