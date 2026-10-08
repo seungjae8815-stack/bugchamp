@@ -362,6 +362,11 @@ typedef EventDuelStep = ({EventDuelRun run, DuelBout bout, bool won});
 /// [EventDuelSpec.fallPenalty] 깎이고 같은 웨이브를 다시. 체력이 바닥나면(기절 포함) 부활이 있으면
 /// 그 체력으로 같은 웨이브를, 없으면 끝. 판 시드는 도전 시드·웨이브·누적 틱에서 갈라진다
 /// (다시 싸울 때 같은 판이 되풀이되지 않게).
+///
+/// 탭 반격: [clutchScores] 는 이 웨이브 한 판에서 내 곤충 위기에 순서대로 넣을 점수. 다 떨어졌는데
+/// 새 위기가 오면 판이 멈추고 `bout.pending` 이 채워진다 — 그때 돌려주는 run 은 **입력 그대로**
+/// (won = false)이고, 점수를 하나 늘려 같은 인자로 다시 부르면 같은 판이 이어진다. null 이면 자동 점수.
+/// 적은 늘 자동 점수.
 EventDuelStep eventDuelFight({
   required int seed,
   required EventDuelRun run,
@@ -370,6 +375,7 @@ EventDuelStep eventDuelFight({
   required DuelParams params,
   required EventDuelSpec spec,
   double? launch,
+  List<double>? clutchScores,
 }) {
   final bout = simulateBout(
     seed: duelBoutSeed(seed ^ run.ticks, run.wave),
@@ -378,7 +384,10 @@ EventDuelStep eventDuelFight({
     params: params,
     launchA: launch,
     hpA: run.hpPct,
+    clutchScores: clutchScores,
   );
+  // 내 곤충 위기에서 멈췄다 — 진행 상태는 그대로(점수를 늘려 같은 인자로 다시 부르면 이어진다).
+  if (bout.pending != null) return (run: run, bout: bout, won: false);
   final ticks = run.ticks + bout.ticks;
   if (bout.aWon) {
     final next = run._copy(

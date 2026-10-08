@@ -38,13 +38,85 @@ enum DuelEventKind {
   weak('weak'),
 
   /// 회피 — 부딪힘 피해를 통째로 피했다(who = 피한 쪽).
-  evade('evade');
+  evade('evade'),
+
+  /// 탭 반격 위기가 시작됐다(who = 위기에 빠진 쪽, value = [DuelCrisis.index]).
+  /// 플레이어 쪽이고 점수가 아직 없으면 판이 **이 사건에서 멈춘다**(`DuelBout.pending`).
+  clutch('clutch'),
+
+  /// 탭 반격 성공(who = 살아난 쪽, value = 점수 천분율).
+  clutchSave('clutchSave'),
+
+  /// 탭 반격 실패(who = 위기에 빠진 쪽, value = 점수 천분율) — 뒤이어 결판 사건이 온다.
+  clutchFail('clutchFail');
 
   const DuelEventKind(this.key);
   final String key;
 
   static DuelEventKind fromKey(String k) =>
       values.firstWhere((e) => e.key == k, orElse: () => clash);
+}
+
+/// 탭 반격 위기의 종류(docs/design_training_v2.md §4).
+enum DuelCrisis {
+  /// 버티기(장외) — 성공하면 반지름 `clutchRestoreRatio` 지점으로 되돌아가고 속도 0.
+  ringOut('ringOut'),
+
+  /// 버티기(뒤집기) — 성공하면 뒤집기 취소.
+  flip('flip'),
+
+  /// 깨우기(기절) — 성공하면 체력 = 최대 × (`clutchWakeHp` + 근성 × `clutchWakeHpPerGrit`).
+  knockout('knockout');
+
+  const DuelCrisis(this.key);
+  final String key;
+
+  static DuelCrisis fromKey(String k) =>
+      values.firstWhere((e) => e.key == k, orElse: () => knockout);
+}
+
+/// 플레이어 쪽 위기에서 **점수를 기다리며 멈춘** 자리.
+///
+/// 서버는 상태를 들고 있지 않는다 — 앱이 점수를 보내면 **같은 seed 로 처음부터** 점수 목록을 늘려
+/// 다시 계산한다(같은 입력이면 같은 판이 재현된다).
+@immutable
+class DuelClutchPending {
+  const DuelClutchPending({
+    required this.kind,
+    required this.tick,
+    required this.index,
+    this.bout = 0,
+  });
+
+  final DuelCrisis kind;
+
+  /// 멈춘 틱(이 틱의 `clutch` 사건이 마지막 사건이다).
+  final int tick;
+
+  /// 몇 번째 플레이어 위기인지(0부터) = 지금까지 받은 점수 수. 다음 점수가 이 자리에 들어간다.
+  /// 경기(`simulateDuel`)에서는 경기 전체에서 센다.
+  final int index;
+
+  /// 경기 안의 판 번호(0부터, 한 판 시뮬에서는 0).
+  final int bout;
+
+  DuelClutchPending withBout(int bout, int index) =>
+      DuelClutchPending(kind: kind, tick: tick, index: index, bout: bout);
+
+  Map<String, dynamic> toJson() => {
+    'k': kind.key,
+    't': tick,
+    'i': index,
+    'b': bout,
+  };
+
+  factory DuelClutchPending.fromJson(Map<String, dynamic> j) =>
+      DuelClutchPending(
+        kind: DuelCrisis.fromKey('${j['k']}'),
+        tick: (j['t'] as num).toInt(),
+        index: (j['i'] as num).toInt(),
+        bout: (j['b'] as num?)?.toInt() ?? 0,
+      );
 }
 
 @immutable
@@ -103,9 +175,11 @@ class DuelBout {
     required this.events,
     required this.launchA,
     required this.launchB,
+    this.pending,
   });
 
   /// 0 = A 승, 1 = B 승. 무승부는 없다(시간 판정 → SPD → 무게 → 시드).
+  /// 위기에서 멈춘 판([pending] 이 있음)은 -1 — 아직 끝나지 않았다.
   final int winner;
   final DuelFinish finish;
   final int ticks;
@@ -118,7 +192,24 @@ class DuelBout {
   final double launchA;
   final double launchB;
 
+  /// 플레이어(A) 위기에서 점수를 기다리며 멈췄으면 그 자리. 멈춘 판의 [frames] 는 멈춘 틱 **전까지**의
+  /// 정규 프레임이라, 점수를 넣고 다시 계산한 판의 frames 앞부분과 정확히 같다(events 도 앞부분이 같다).
+  final DuelClutchPending? pending;
+
   bool get aWon => winner == 0;
+
+  /// 끝난 판인가(위기에서 멈추지 않았다).
+  bool get done => pending == null;
+
+  /// 이 판에서 플레이어(A)가 점수를 쓴 위기 수(멈춘 위기는 빼고).
+  int get playerClutches => events
+      .where(
+        (e) =>
+            e.who == 0 &&
+            (e.kind == DuelEventKind.clutchSave ||
+                e.kind == DuelEventKind.clutchFail),
+      )
+      .length;
 
   Map<String, dynamic> toJson() => {
     'w': winner,
@@ -130,6 +221,7 @@ class DuelBout {
     'lb': (launchB * 1000).round(),
     'fr': frames,
     'ev': [for (final e in events) e.toJson()],
+    if (pending != null) 'pc': pending!.toJson(),
   };
 
   factory DuelBout.fromJson(Map<String, dynamic> j) => DuelBout(
@@ -145,12 +237,20 @@ class DuelBout {
         [for (final v in (f as List)) (v as num).toInt()],
     ],
     events: [for (final e in (j['ev'] as List)) DuelEvent.fromJson(e as List)],
+    pending: j['pc'] is Map
+        ? DuelClutchPending.fromJson(Map<String, dynamic>.from(j['pc'] as Map))
+        : null,
   );
 }
 
 /// 판마다 다른 시드 — 같은 경기 시드에서 판 번호로 갈라진다(결정론).
 int duelBoutSeed(int matchSeed, int boutIndex) =>
     (matchSeed ^ (0x9E3779B1 * (boutIndex + 1))) & 0x7fffffff;
+
+/// 탭 반격 자동 점수 전용 난수 — 판 seed 에서 쪽마다 갈라진다. 물리 난수(`Random(seed)`)와 **따로**
+/// 둬서 위기 처리가 물리 난수 소비 순서를 바꾸지 않는다(리플레이·옛 테스트 결정론).
+int duelClutchSeed(int boutSeed, int side) =>
+    (boutSeed ^ (side == 0 ? 0x6E8A5F13 : 0x2C1B3C6D)) & 0x7fffffff;
 
 class _Body {
   _Body(this.bug, this.p, this.side)
@@ -183,6 +283,9 @@ class _Body {
   int dodgedDash = -1;
   int dashId = 0;
 
+  /// 이 판에서 남은 탭 반격 횟수.
+  int clutchLeft = 0;
+
   bool get grounded => air <= 0;
   double get hpPct => bug.maxHp <= 0 ? 0 : (hp / bug.maxHp).clamp(0, 1);
   double get dist => math.sqrt(x * x + y * y);
@@ -191,6 +294,11 @@ class _Body {
 /// 한 판(1:1) 시뮬레이션 — **완전 결정론**(시드·입력이 같으면 결과가 같다, §2.3).
 ///
 /// [launchA]·[launchB] 는 던지기 게이지 값(0~1). 게이지 없이 던지면 `params.launchAuto`.
+///
+/// **탭 반격**(`params.clutchEnabled`): A 가 플레이어 쪽이다. [clutchScores] 는 A 의 위기에 **순서대로**
+/// 넣을 탭 점수(0~1). 목록이 다 떨어졌는데 A 에게 새 위기가 오면 그 틱에서 멈추고
+/// [DuelBout.pending] 에 자리를 적어 돌려준다(winner = -1). null 이면 A 도 자동 점수(구버전 앱·시뮬).
+/// B 는 늘 자동 점수다(판 seed 기반 전용 난수 — [duelClutchSeed]).
 DuelBout simulateBout({
   required int seed,
   required DuelBug a,
@@ -200,9 +308,16 @@ DuelBout simulateBout({
   double? launchB,
   double hpA = 1,
   double hpB = 1,
+  List<double>? clutchScores,
 }) {
   final p = params;
   final rng = math.Random(seed);
+  final clutchRng = [
+    math.Random(duelClutchSeed(seed, 0)),
+    math.Random(duelClutchSeed(seed, 1)),
+  ];
+  var scoreAt = 0;
+  DuelClutchPending? pending;
   final la = (launchA ?? p.launchAuto).clamp(0.0, 1.0);
   final lb = (launchB ?? p.launchAuto).clamp(0.0, 1.0);
   // 전력 압축(A안) — 두 값의 비율만 지수로 누른다(기하평균 유지). 게이지 보너스(B안)는 누른 뒤에 곱한다.
@@ -220,10 +335,15 @@ DuelBout simulateBout({
       : 1 +
             p.launchPowerMax *
                 ((q - p.launchAuto) / (1 - p.launchAuto)).clamp(0.0, 1.0);
-  final (hpa, hpb) = squeeze(a.maxHp, b.maxHp);
-  final (atka, atkb) = squeeze(a.atk, b.atk);
-  final (defa, defb) = squeeze(a.def, b.def);
-  final (spda, spdb) = squeeze(a.spd, b.spd);
+  // 사이즈 몫 덜어내기 — 스탯에 구워진 사이즈 배율을 결투에서는 sizeStatExp 만큼만 남긴다.
+  double unsize(DuelBug x) => p.sizeStatExp == 1 || x.sizeStatMult == 1
+      ? 1
+      : math.pow(x.sizeStatMult, p.sizeStatExp - 1).toDouble();
+  final ua = unsize(a), ub = unsize(b);
+  final (hpa, hpb) = squeeze(a.maxHp * ua, b.maxHp * ub);
+  final (atka, atkb) = squeeze(a.atk * ua, b.atk * ub);
+  final (defa, defb) = squeeze(a.def * ua, b.def * ub);
+  final (spda, spdb) = squeeze(a.spd * ua, b.spd * ub);
   final bodies = [
     _Body(
       a.withCombatStats(
@@ -249,6 +369,11 @@ DuelBout simulateBout({
   // 승자 연속 — 이긴 곤충은 남은 체력으로 들어온다.
   bodies[0].hp = bodies[0].bug.maxHp * hpA.clamp(0.01, 1.0);
   bodies[1].hp = bodies[1].bug.maxHp * hpB.clamp(0.01, 1.0);
+  for (final s in bodies) {
+    s.clutchLeft = !p.clutchEnabled
+        ? 0
+        : p.clutchUses + (s.bug.gritOf(p) >= p.clutchBonusUseGrit ? 1 : 0);
+  }
   final dt = p.dt;
   final radius = p.arenaRadius;
 
@@ -311,6 +436,81 @@ DuelBout simulateBout({
   // (0 에서 자르면 동점이 되고, 동점 처리가 한쪽에 몰려 대칭 대전이 50% 가 안 나왔다).
   void hit(_Body to, double dmg) {
     to.hp -= dmg;
+  }
+
+  // 탭 반격 — 위기에 빠진 [s] 가 살아나나. true = 성공(호출자가 효과를 입힌다), false = 실패·횟수 없음,
+  // null = 플레이어 점수를 기다리며 멈춤([pending] 이 채워진다). 물리 난수(rng)는 건드리지 않는다.
+  bool? tryClutch(_Body s, DuelCrisis kind) {
+    if (s.clutchLeft <= 0) return false;
+    final grit = s.bug.gritOf(p);
+    events.add(
+      DuelEvent(
+        tick: tick,
+        kind: DuelEventKind.clutch,
+        who: s.side,
+        value: kind.index,
+      ),
+    );
+    final double score;
+    final scores = clutchScores;
+    if (s.side == 0 && scores != null) {
+      if (scoreAt >= scores.length) {
+        pending = DuelClutchPending(kind: kind, tick: tick, index: scoreAt);
+        return null;
+      }
+      score = scores[scoreAt++].clamp(0.0, 1.0);
+    } else {
+      score =
+          p.clutchAutoBase +
+          grit * p.clutchAutoPerGrit +
+          (clutchRng[s.side].nextDouble() * 2 - 1) * p.clutchAutoSpread;
+    }
+    s.clutchLeft--;
+    final ok = score >= p.clutchThreshold - grit * p.clutchThresholdPerGrit;
+    events.add(
+      DuelEvent(
+        tick: tick,
+        kind: ok ? DuelEventKind.clutchSave : DuelEventKind.clutchFail,
+        who: s.side,
+        value: (score.clamp(0.0, 1.0) * 1000).round(),
+      ),
+    );
+    return ok;
+  }
+
+  // 버티기(장외·뒤집기) 성공의 대가 — 최대 체력 × clutchHoldHpCost 를 잃는다(이것으로는 쓰러지지 않는다).
+  // 공짜로 버티면 조작 앱(늘 만점)이 74% 를 이겼다 — 판을 통째로 살리는 게 아니라 한 번 더 기회를 준다.
+  void holdCost(_Body s) {
+    if (p.clutchHoldHpCost <= 0 || s.hp <= 0) return;
+    s.hp = math.max(
+      s.hp - s.bug.maxHp * p.clutchHoldHpCost,
+      s.bug.maxHp * 0.01,
+    );
+  }
+
+  // 장외 위기 성공 — 테두리 안쪽으로 버티고 멈춘다. 물려 있었으면 놓친다(안 놓으면 곧바로 다시 밀린다).
+  void holdRim(_Body s) {
+    final d = s.dist;
+    final ux = d > 1e-6 ? s.x / d : 0.0, uy = d > 1e-6 ? s.y / d : 1.0;
+    s.x = ux * radius * p.clutchRestoreRatio;
+    s.y = uy * radius * p.clutchRestoreRatio;
+    s.vx = 0;
+    s.vy = 0;
+    s.air = 0;
+    s.landDamage = 0;
+    final g = gripper;
+    if (g != null) {
+      gripper = null;
+      g.gripCd = p.gripCooldown;
+    }
+    holdCost(s);
+  }
+
+  // 깨우기 성공 체력.
+  void wake(_Body s) {
+    s.hp =
+        s.bug.maxHp *
+        (p.clutchWakeHp + s.bug.gritOf(p) * p.clutchWakeHpPerGrit);
   }
 
   void frame() {
@@ -465,7 +665,7 @@ DuelBout simulateBout({
 
     // 잡기 — 물고 있는 동안 둘이 붙어서 바깥으로 밀려간다.
     if (gripper != null) {
-      final g = gripper;
+      final g = gripper!;
       final o = bodies[1 - g.side];
       var dx = o.x - g.x, dy = o.y - g.y;
       var d = math.max(math.sqrt(dx * dx + dy * dy), 1e-6);
@@ -484,7 +684,8 @@ DuelBout simulateBout({
       final lev = leverage(g, o);
       final acc =
           p.gripForce *
-          (lev * 2 - 0.6).clamp(0.0, 1.4) /
+          (1 + g.bug.techOf(p)) *
+          (lev * 2 - p.gripLevOffset).clamp(0.0, 1.4) /
           (g.m + o.m) /
           guard(o);
       g.vx += px * acc * dt;
@@ -507,7 +708,7 @@ DuelBout simulateBout({
       s.y += s.vy * dt;
     }
     if (gripper != null) {
-      final g = gripper;
+      final g = gripper!;
       final o = bodies[1 - g.side];
       var dx = o.x - g.x, dy = o.y - g.y;
       final d = math.max(math.sqrt(dx * dx + dy * dy), 1e-6);
@@ -656,18 +857,26 @@ DuelBout simulateBout({
                     lev *
                     2 *
                     im *
-                    (1 - p.flipHpGuard * o.hpPct).clamp(0.0, 1.0);
+                    (1 - p.flipHpGuard * o.hpPct).clamp(0.0, 1.0) *
+                    (1 + s.bug.techOf(p));
                 if (rng.nextDouble() < chance) {
-                  o.flipped = true;
-                  winner = s.side;
-                  finish = DuelFinish.flip;
-                  events.add(
-                    DuelEvent(
-                      tick: tick,
-                      kind: DuelEventKind.flip,
-                      who: o.side,
-                    ),
-                  );
+                  // 버티기(뒤집기) — 성공하면 뒤집기 취소.
+                  final held = tryClutch(o, DuelCrisis.flip);
+                  if (held == null) break;
+                  if (held) {
+                    holdCost(o);
+                  } else {
+                    o.flipped = true;
+                    winner = s.side;
+                    finish = DuelFinish.flip;
+                    events.add(
+                      DuelEvent(
+                        tick: tick,
+                        kind: DuelEventKind.flip,
+                        who: o.side,
+                      ),
+                    );
+                  }
                 }
               case Specialty.grip:
                 if (s.gripCd > 0) continue;
@@ -685,8 +894,10 @@ DuelBout simulateBout({
                   DuelEvent(tick: tick, kind: DuelEventKind.grip, who: s.side),
                 );
               case Specialty.toss:
-                if (s.tossCd > 0 || lev < 0.35) continue;
-                s.tossCd = p.tossCooldown;
+                if (s.tossCd > 0 || lev < p.tossLevMin) continue;
+                s.tossCd =
+                    p.tossCooldown *
+                    math.max(p.tossCooldownMin, 1 - s.bug.techOf(p));
                 final sp = p.tossSpeed * (0.5 + lev) / resist(o) / guard(o);
                 o.vx = sx * sp;
                 o.vy = sy * sp;
@@ -705,29 +916,50 @@ DuelBout simulateBout({
                   ),
                 );
             }
-            if (winner != null) break;
+            if (winner != null || pending != null) break;
           }
         }
       }
     }
 
+    if (pending != null) break;
+
     // ── 4. 결판 ──────────────────────────────────────────────────
-    if (winner == null) {
+    // 탭 반격(위기)은 **질 쪽**에게 건다 — 실패하면 예전과 똑같이 결판, 성공하면 되살리고 다시 본다.
+    // 위기 처리는 물리 난수를 쓰지 않으므로, 위기가 모두 실패한 판은 예전 엔진과 같은 판이다.
+    if (winner == null && p.clutchEnabled && p.clutchRimRatio < 1) {
+      // 테두리 근처에서 바깥으로 밀려나는 중이면 미리 건다(clutchRimRatio < 1 일 때만).
+      for (final s in bodies) {
+        if (s.clutchLeft <= 0 || !s.grounded) continue;
+        final d = s.dist;
+        if (d <= radius * p.clutchRimRatio) continue;
+        if (d <= radius && s.x * s.vx + s.y * s.vy <= 0) continue;
+        final held = tryClutch(s, DuelCrisis.ringOut);
+        if (held == null) break;
+        if (held) holdRim(s);
+      }
+      if (pending != null) break;
+    }
+    while (winner == null) {
       final outA = A.grounded && A.dist > radius;
       final outB = B.grounded && B.dist > radius;
-      if (outA || outB) {
-        // 같은 틱에 둘 다 나가면 더 멀리 나간 쪽이 진다.
-        final loser = outA && outB
-            ? (A.dist >= B.dist ? A : B)
-            : (outA ? A : B);
-        winner = 1 - loser.side;
-        finish = DuelFinish.ringOut;
-        events.add(
-          DuelEvent(tick: tick, kind: DuelEventKind.ringOut, who: loser.side),
-        );
+      if (!outA && !outB) break;
+      // 같은 틱에 둘 다 나가면 더 멀리 나간 쪽이 진다.
+      final loser = outA && outB ? (A.dist >= B.dist ? A : B) : (outA ? A : B);
+      final held = tryClutch(loser, DuelCrisis.ringOut);
+      if (held == null) break;
+      if (held) {
+        holdRim(loser);
+        continue;
       }
+      winner = 1 - loser.side;
+      finish = DuelFinish.ringOut;
+      events.add(
+        DuelEvent(tick: tick, kind: DuelEventKind.ringOut, who: loser.side),
+      );
     }
-    if (winner == null && (A.hp <= 0 || B.hp <= 0)) {
+    if (pending != null) break;
+    while (winner == null && (A.hp <= 0 || B.hp <= 0)) {
       final _Body loser;
       if (A.hp <= 0 && B.hp <= 0) {
         final ra = A.hp / A.bug.maxHp, rb = B.hp / B.bug.maxHp;
@@ -735,13 +967,38 @@ DuelBout simulateBout({
       } else {
         loser = A.hp <= 0 ? A : B;
       }
+      // 깨우기(기절) — 성공하면 체력 일부로 일어난다.
+      final held = tryClutch(loser, DuelCrisis.knockout);
+      if (held == null) break;
+      if (held) {
+        wake(loser);
+        continue;
+      }
       winner = 1 - loser.side;
       finish = DuelFinish.knockout;
       events.add(
         DuelEvent(tick: tick, kind: DuelEventKind.knockout, who: loser.side),
       );
     }
+    if (pending != null) break;
     if (tick % p.frameEvery == 0 || winner != null) frame();
+  }
+
+  // 플레이어 위기에서 멈췄다 — 멈춘 틱 전까지의 궤적과 자리를 돌려준다(winner = -1).
+  final stop = pending;
+  if (stop != null) {
+    return DuelBout(
+      winner: -1,
+      finish: DuelFinish.timeUp,
+      ticks: tick,
+      hpPctA: bodies[0].hpPct,
+      hpPctB: bodies[1].hpPct,
+      frames: frames,
+      events: events,
+      launchA: la,
+      launchB: lb,
+      pending: stop,
+    );
   }
 
   if (winner == null) {
@@ -775,9 +1032,14 @@ DuelBout simulateBout({
 /// 한 팀의 곤충이 모두 쓰러지면 끝(3마리씩이면 3~5판).
 @immutable
 class DuelMatch {
-  const DuelMatch({required this.bouts});
+  const DuelMatch({required this.bouts, this.pending});
 
+  /// 판 목록. [pending] 이 있으면 마지막 판이 위기에서 멈춘 판이다.
   final List<DuelBout> bouts;
+
+  /// 플레이어(A) 위기에서 멈췄으면 그 자리 — [DuelClutchPending.bout] 판의
+  /// [DuelClutchPending.index] 번째(경기 전체에서 센다) 점수를 기다린다.
+  final DuelClutchPending? pending;
 
   /// A 가 이긴 판 수 = 쓰러뜨린 B 곤충 수.
   int get winsA => bouts.where((b) => b.winner == 0).length;
@@ -809,6 +1071,7 @@ DuelDuelState duelNextState(
   var ia = 0, ib = 0;
   var ha = 1.0, hb = 1.0;
   for (final b in bouts) {
+    if (b.pending != null) break; // 위기에서 멈춘 판은 아직 끝나지 않았다.
     if (b.winner == 0) {
       ha = duelCarryHp(b.hpPctA, teamA[math.min(ia, teamA.length - 1)], p);
       ib++;
@@ -829,30 +1092,40 @@ double duelCarryHp(double endPct, DuelBug bug, DuelParams p) =>
 /// 자동 결투 — 게이지 없이 끝까지(승자 연속).
 ///
 /// [launchesA] 를 주면 그 판의 게이지 값을 쓴다(없으면 자동값).
+/// [clutchScores] 는 A(플레이어) 위기에 경기 전체에서 순서대로 넣을 탭 점수 — 다 떨어지면
+/// 그 위기에서 멈추고 [DuelMatch.pending] 을 채워 돌려준다. null 이면 A 도 자동 점수.
 DuelMatch simulateDuel({
   required int seed,
   required List<DuelBug> teamA,
   required List<DuelBug> teamB,
   required DuelParams params,
   List<double>? launchesA,
+  List<double>? clutchScores,
 }) {
   final bouts = <DuelBout>[];
+  var used = 0;
   for (var i = 0; i < params.maxBouts; i++) {
     final st = duelNextState(bouts, teamA, teamB, params);
     if (st.ia >= teamA.length || st.ib >= teamB.length) break;
-    bouts.add(
-      simulateBout(
-        seed: duelBoutSeed(seed, i),
-        a: teamA[st.ia],
-        b: teamB[st.ib],
-        params: params,
-        hpA: st.hpA,
-        hpB: st.hpB,
-        launchA: launchesA != null && i < launchesA.length
-            ? launchesA[i]
-            : null,
-      ),
+    final bout = simulateBout(
+      seed: duelBoutSeed(seed, i),
+      a: teamA[st.ia],
+      b: teamB[st.ib],
+      params: params,
+      hpA: st.hpA,
+      hpB: st.hpB,
+      launchA: launchesA != null && i < launchesA.length ? launchesA[i] : null,
+      clutchScores: clutchScores?.sublist(math.min(used, clutchScores.length)),
     );
+    bouts.add(bout);
+    final stop = bout.pending;
+    if (stop != null) {
+      return DuelMatch(
+        bouts: bouts,
+        pending: stop.withBout(i, used + stop.index),
+      );
+    }
+    used += bout.playerClutches;
   }
   return DuelMatch(bouts: bouts);
 }

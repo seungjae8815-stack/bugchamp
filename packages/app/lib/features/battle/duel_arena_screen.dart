@@ -205,6 +205,11 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           break;
         case DuelEventKind.evade:
           a.sfxSwipe();
+        // 탭 반격(훈련 v2) — 화면·효과음은 결투장 탭 게이지 작업에서 붙인다.
+        case DuelEventKind.clutch:
+        case DuelEventKind.clutchSave:
+        case DuelEventKind.clutchFail:
+          break;
       }
     }
   }

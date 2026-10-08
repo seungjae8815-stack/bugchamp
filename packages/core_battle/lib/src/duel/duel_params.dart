@@ -72,6 +72,29 @@ class DuelParams {
     this.launchPowerMax = 0,
     this.leverageStatExp = 1,
     this.leverageMassExp = 1,
+    this.massSpeedExp = 0,
+    this.sizeStatExp = 1,
+    this.gripLevOffset = 0.6,
+    this.tossLevMin = 0.35,
+    this.techMax = 0.3,
+    this.techStrikeScale = 1,
+    this.techGripScale = 1,
+    this.techTossScale = 1,
+    this.tossCooldownMin = 0.5,
+    this.clutchEnabled = false,
+    this.clutchRimRatio = 1,
+    this.clutchRestoreRatio = 0.75,
+    this.clutchHoldHpCost = 0,
+    this.clutchThreshold = 0.55,
+    this.clutchThresholdPerGrit = 0.02,
+    this.clutchWakeHp = 0.10,
+    this.clutchWakeHpPerGrit = 0.01,
+    this.clutchUses = 1,
+    this.clutchBonusUseGrit = 5,
+    this.clutchGritMax = 10,
+    this.clutchAutoBase = 0.5,
+    this.clutchAutoPerGrit = 0.02,
+    this.clutchAutoSpread = 0.15,
   });
 
   /// 경기장 반지름. 곤충 중심이 이 밖이면 장외.
@@ -224,6 +247,69 @@ class DuelParams {
   final double leverageStatExp;
   final double leverageMassExp;
 
+  /// 무거우면 느리다(훈련 v2, 2026-10-08) — 최고 속도·가속 ÷ 무게^massSpeedExp.
+  /// 크기(무게)가 밀기 싸움을 정하면서 손해가 없어 같은 종 최대 대 최소가 80~100% 였다 — 체급에 대가를 둔다.
+  /// 0 = 예전(무게가 속도에 영향 없음).
+  final double massSpeedExp;
+
+  /// 결투에서 스탯에 남기는 사이즈 배율의 몫 — 스탯 × `DuelBug.sizeStatMult`^(sizeStatExp − 1).
+  /// 1 = 그대로(예전), 0 = 사이즈가 스탯에 주는 영향을 결투에서 지운다(무게·반경은 그대로).
+  final double sizeStatExp;
+
+  /// 집기 미는 힘 = gripForce × (지렛대 × 2 − gripLevOffset) — 오프셋이 클수록 작은 스탯 차이가
+  /// 큰 힘 차이로 부풀고(지렛대 0.3 아래는 아예 못 민다), 같은 종 크기 차이가 장외 싸움을 독점한다.
+  final double gripLevOffset;
+
+  /// 던지기: 지렛대가 이 값 아래면 못 던진다.
+  final double tossLevMin;
+
+  /// 주특기 기술(`DuelBug.tech`) 상한 — 치기 뒤집기 확률 ×(1+기술) · 집기 무는 힘 ×(1+기술) ·
+  /// 던지기 쿨타임 ×(1−기술). 위조 세이브가 기술 10 을 적어 와도 이 값에서 자른다.
+  final double techMax;
+
+  /// 주특기별 기술 효과 배율(상한으로 자른 뒤 곱한다) — 같은 기술이 주특기마다 다른 무게라
+  /// (쿨타임 −30% 가 뒤집기 +30% 보다 훨씬 세다) 여기서 맞춘다.
+  final double techStrikeScale;
+  final double techGripScale;
+  final double techTossScale;
+
+  /// 던지기 쿨타임 하한(기본 쿨타임 비율).
+  final double tossCooldownMin;
+
+  /// 탭 반격(근성, docs/design_training_v2.md §4) — 위기(장외·뒤집기·기절)에서 한 번 살아난다.
+  /// false = 예전 엔진(위기 없음). 코드 기본값은 끔, `battle.json → duel` 에서 켠다.
+  final bool clutchEnabled;
+
+  /// 장외 위기가 걸리는 거리(반지름 비율). 1 = **장외 판정이 터지는 순간**(기본).
+  /// 1 미만이면 그 거리 밖에서 바깥으로 움직이는 순간에 걸린다(안 나갈 상황에도 기회를 쓸 수 있다).
+  final double clutchRimRatio;
+
+  /// 장외 위기를 버티면 되돌아가는 자리(반지름 비율). 속도는 0.
+  final double clutchRestoreRatio;
+
+  /// 버티기(장외·뒤집기) 성공의 대가 — 최대 체력 비율만큼 잃는다(이것으로 쓰러지지는 않는다). 0 = 공짜.
+  final double clutchHoldHpCost;
+
+  /// 성공 문턱 = clutchThreshold − 근성 × clutchThresholdPerGrit (점수 0~1 이 문턱 이상이면 성공).
+  final double clutchThreshold;
+  final double clutchThresholdPerGrit;
+
+  /// 깨우기(기절) 성공 체력 = 최대 × (clutchWakeHp + 근성 × clutchWakeHpPerGrit).
+  final double clutchWakeHp;
+  final double clutchWakeHpPerGrit;
+
+  /// 한 판에 곤충마다 쓸 수 있는 횟수 — 근성이 [clutchBonusUseGrit] 이상이면 +1.
+  final int clutchUses;
+  final int clutchBonusUseGrit;
+
+  /// 근성 단계 상한(엔진에서 자른다 — 위조 세이브 방어).
+  final int clutchGritMax;
+
+  /// 자동 점수(상대·구버전 앱·시뮬) = base + 근성 × perGrit + 판 seed 기반 균등 ±spread.
+  final double clutchAutoBase;
+  final double clutchAutoPerGrit;
+  final double clutchAutoSpread;
+
   int get maxTicks => (roundSeconds * tickHz).round();
   double get dt => 1 / tickHz;
 
@@ -305,6 +391,32 @@ class DuelParams {
       launchPowerMax: n('launchPowerMax', d.launchPowerMax),
       leverageStatExp: n('leverageStatExp', d.leverageStatExp),
       leverageMassExp: n('leverageMassExp', d.leverageMassExp),
+      massSpeedExp: n('massSpeedExp', d.massSpeedExp),
+      sizeStatExp: n('sizeStatExp', d.sizeStatExp),
+      gripLevOffset: n('gripLevOffset', d.gripLevOffset),
+      tossLevMin: n('tossLevMin', d.tossLevMin),
+      techMax: n('techMax', d.techMax),
+      techStrikeScale: n('techStrikeScale', d.techStrikeScale),
+      techGripScale: n('techGripScale', d.techGripScale),
+      techTossScale: n('techTossScale', d.techTossScale),
+      tossCooldownMin: n('tossCooldownMin', d.tossCooldownMin),
+      clutchEnabled: j['clutchEnabled'] as bool? ?? d.clutchEnabled,
+      clutchRimRatio: n('clutchRimRatio', d.clutchRimRatio),
+      clutchRestoreRatio: n('clutchRestoreRatio', d.clutchRestoreRatio),
+      clutchHoldHpCost: n('clutchHoldHpCost', d.clutchHoldHpCost),
+      clutchThreshold: n('clutchThreshold', d.clutchThreshold),
+      clutchThresholdPerGrit: n(
+        'clutchThresholdPerGrit',
+        d.clutchThresholdPerGrit,
+      ),
+      clutchWakeHp: n('clutchWakeHp', d.clutchWakeHp),
+      clutchWakeHpPerGrit: n('clutchWakeHpPerGrit', d.clutchWakeHpPerGrit),
+      clutchUses: i('clutchUses', d.clutchUses),
+      clutchBonusUseGrit: i('clutchBonusUseGrit', d.clutchBonusUseGrit),
+      clutchGritMax: i('clutchGritMax', d.clutchGritMax),
+      clutchAutoBase: n('clutchAutoBase', d.clutchAutoBase),
+      clutchAutoPerGrit: n('clutchAutoPerGrit', d.clutchAutoPerGrit),
+      clutchAutoSpread: n('clutchAutoSpread', d.clutchAutoSpread),
     );
   }
 }
