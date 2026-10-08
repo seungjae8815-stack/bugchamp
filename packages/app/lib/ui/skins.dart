@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/widgets.dart';
@@ -82,6 +84,27 @@ SkinView? bugView(SkinOf skinOf, IndividualBug bug) =>
     ? SkinView(bug.variant.key)
     : skinOf(bug.speciesId);
 
+/// **상대** 곤충의 그리기 정보 — 서버가 실어 준 이색 키 [variant]·스킨 효과 키 [skin].
+///
+/// 내 곤충의 [bugView] 와 같은 규칙이다: 이색이 스킨보다 우선하고, 이색은
+/// 전용 그림 없이 색 처리만 쓴다. 둘 다 없으면(구서버·야생) null = 기본 외형.
+/// 모르는 이색 키(신서버가 새 이색을 추가)는 이색이 아닌 것으로 본다.
+SkinView? foeBugView(
+  IapConfig? cfg,
+  String speciesId, {
+  String? variant,
+  String? skin,
+}) {
+  final v = variant == null ? BugVariant.none : BugVariant.fromKey(variant);
+  if (v != BugVariant.none) return SkinView(v.key);
+  if (skin == null) return null;
+  return SkinView(skin, hasArt: cfg?.skinHasArt(skin, speciesId) ?? false);
+}
+
+/// 서버 응답의 이색 키가 실제 이색인지(칩 표시용).
+bool isVariantKey(String? variant) =>
+    variant != null && BugVariant.fromKey(variant) != BugVariant.none;
+
 /// 아레나 테마 스킨을 보유했는지.
 bool hasArenaTheme(IapConfig? cfg, Set<String> ownedSkins) =>
     cfg != null &&
@@ -157,12 +180,24 @@ class SkinAura extends StatefulWidget {
     required this.effect,
     required this.size,
     required this.child,
+    this.boost = 1,
   });
 
   /// 스킨 효과 키(`gold`/`albino`). null 이면 아무것도 안 얹는다.
   final String? effect;
   final double size;
   final Widget child;
+
+  /// 등장 강조(2026-10-08 — 결투 입장). 1 = 평소. 1 보다 크면 그 배율만큼 넓게 번지는
+  /// **바깥 후광 + 큰 반짝임** 한 겹을 더 얹는다(맥동). [boostMinSize] 이상에서만 —
+  /// 목록 썸네일에서 켜면 이웃 칸을 덮고 프레임만 깎는다.
+  ///
+  /// 레이아웃을 바꾸지 않는다: 덧그림은 `Positioned.fill` 의 CustomPaint 가 **자기 영역 밖으로**
+  /// 그린다(결투 무대의 `Positioned(width: base)` 처럼 꽉 끼는 자리에서도 크게 보이게).
+  final double boost;
+
+  /// 등장 강조를 켜는 최소 크기.
+  static const boostMinSize = 48.0;
 
   /// 반짝임을 켜는 최소 크기. 이보다 작으면 후광만.
   ///
@@ -225,6 +260,23 @@ class _SkinAuraState extends State<SkinAura>
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
+        if (widget.boost > 1.01 && s >= SkinAura.boostMinSize)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _c,
+                builder: (_, _) => CustomPaint(
+                  painter: _BoostPainter(
+                    t: _c.value,
+                    boost: widget.boost,
+                    inner: pal.inner,
+                    outer: pal.outer,
+                    sparks: pal.sparks,
+                  ),
+                ),
+              ),
+            ),
+          ),
         glow,
         widget.child,
         if (s >= SkinAura.sparkleMinSize)
@@ -355,4 +407,59 @@ class _SparklePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SparklePainter old) => old.t != t;
+}
+
+/// 등장 강조 한 겹 — **맥동하는 바깥 후광 + 넓게 퍼진 큰 반짝임**([SkinAura.boost]).
+///
+/// 자기 영역(곤충 그림 크기)보다 [boost] 배 넓게 그린다. 반짝임은 평소 것([_SparklePainter])을
+/// 키워 위상만 비켜 다시 그린다 — 새 무늬를 만들지 않아 스킨마다 같은 결로 읽힌다.
+class _BoostPainter extends CustomPainter {
+  _BoostPainter({
+    required this.t,
+    required this.boost,
+    required this.inner,
+    required this.outer,
+    required this.sparks,
+  });
+
+  final double t;
+  final double boost;
+  final Color inner;
+  final Color outer;
+  final List<Color> sparks;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final base = size.shortestSide;
+    final k = (boost - 1).clamp(0.0, 1.5);
+    // 맥동 — 한 바퀴(2.2초)에 두 번 숨 쉰다. 과하지 않게 ±12%.
+    final pulse = 0.88 + 0.12 * (0.5 + 0.5 * math.sin(t * math.pi * 4));
+    final radius = base * 0.5 * boost * pulse;
+    final alpha = (0.35 + 0.25 * k).clamp(0.0, 0.7);
+    final rect = Rect.fromCircle(center: c, radius: radius);
+    canvas.drawCircle(
+      c,
+      radius,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            inner.withValues(alpha: alpha),
+            outer.withValues(alpha: alpha * 0.7),
+            outer.withValues(alpha: 0),
+          ],
+          stops: const [0.15, 0.55, 1],
+        ).createShader(rect),
+    );
+    // 큰 반짝임 — 영역을 boost 배로 키워 평소 반짝임과 겹치지 않게 반 바퀴 비켜 그린다.
+    canvas.save();
+    canvas.translate(c.dx, c.dy);
+    canvas.scale(boost);
+    canvas.translate(-c.dx, -c.dy);
+    _SparklePainter(t: (t + 0.5) % 1.0, sparks: sparks).paint(canvas, size);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_BoostPainter old) => old.t != t || old.boost != boost;
 }

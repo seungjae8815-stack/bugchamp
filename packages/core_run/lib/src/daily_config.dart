@@ -8,6 +8,7 @@ class DailyReward {
     required this.id,
     required this.hour,
     this.gold = 0,
+    this.huntMinutes = 0,
     this.jelly = 0,
     this.chitin = 0,
     this.mineral = 0,
@@ -21,6 +22,12 @@ class DailyReward {
   final int hour;
 
   final int gold;
+
+  /// 이 유저가 지금 자리에서 **몇 분 직접 사냥한 만큼**을 주는가(2026-10-08, `huntMinutesReward`).
+  /// 골드·재료 모두 정액([gold]·[chitin] 등)과 **큰 쪽**이다 — 정액은 첫날 바닥값으로 남는다.
+  /// 정액만 두면 쉬움 3일차부터 0.1분치도 안 됐다(balance_sim 실측).
+  final double huntMinutes;
+
   final int jelly;
   final int chitin;
   final int mineral;
@@ -38,6 +45,7 @@ class DailyReward {
     id: json['id'] as String,
     hour: (json['hour'] as num).toInt(),
     gold: (json['gold'] as num?)?.toInt() ?? 0,
+    huntMinutes: (json['huntMinutes'] as num?)?.toDouble() ?? 0,
     jelly: (json['jelly'] as num?)?.toInt() ?? 0,
     chitin: (json['chitin'] as num?)?.toInt() ?? 0,
     mineral: (json['mineral'] as num?)?.toInt() ?? 0,
@@ -59,6 +67,10 @@ class DailyConfig {
         .toList(),
   );
 }
+
+/// "한 번 더 받기"(추가 1배) 수령 기록 키 — `dailyClaims` 에 슬롯과 나란히 적는다(2026-10-08).
+/// 구버전 앱은 모르는 키라 건너뛴다.
+String dailyBonusKey(String rewardId) => '$rewardId#2';
 
 /// 로컬 날짜 키 'yyyy-MM-dd' (일일 리셋 판정용).
 String dailyDateKey(DateTime localNow) =>

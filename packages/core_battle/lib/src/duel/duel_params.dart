@@ -40,7 +40,7 @@ class DuelParams {
     this.strikeFlipCooldown = 1.4,
     this.strikePushMult = 2.6,
     this.gripSeconds = 1.3,
-    this.gripForce = 1100,
+    this.gripForce = 770,
     this.gripCooldown = 3.2,
     this.gripDps = 0.12,
     this.tossCooldown = 3.2,

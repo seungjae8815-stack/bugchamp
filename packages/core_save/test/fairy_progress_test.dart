@@ -765,6 +765,8 @@ void main() {
     });
 
     test('요정함을 넘으면 알부터, 그다음 품질 낮은 요정부터 가루로 · 동행은 남긴다', () {
+      // 정리 상한 = 요정함 + 산 알 여유 칸(2026-10-08).
+      final lim = cfg.boxCap + cfg.boxPurchaseSlack;
       Fairy q(int n, int roll) => Fairy(
         id: 'f$n',
         kind: kind,
@@ -775,18 +777,15 @@ void main() {
       );
       final s =
           FairyState(
-            fairies: [for (var i = 0; i < cfg.boxCap; i++) q(i, 500 + i)],
+            fairies: [for (var i = 0; i < lim; i++) q(i, 500 + i)],
             eggs: const [FairyEgg(id: 'e1', grade: FairyGrade.rare)],
             companionId: 'f0', // 품질이 가장 낮지만 동행이라 남는다.
-            seq: cfg.boxCap + 1,
+            seq: lim + 1,
           ).copyWith(
-            fairies: [
-              for (var i = 0; i < cfg.boxCap; i++) q(i, 500 + i),
-              q(900, 999),
-            ],
+            fairies: [for (var i = 0; i < lim; i++) q(i, 500 + i), q(900, 999)],
           );
       final out = enforceFairyRules(s, cfg);
-      expect(out.boxUsed, cfg.boxCap);
+      expect(out.boxUsed, lim);
       expect(out.eggs, isEmpty);
       expect(out.fairies.map((x) => x.id), contains('f0'));
       expect(out.fairies.map((x) => x.id), isNot(contains('f1')));
@@ -1062,5 +1061,59 @@ void main() {
       expect((op.extra['autoEggs'] as int) + kept.length, grades.length);
       expect(op.state!.eggs.length, kept.length);
     });
+  });
+
+  test('산 알은 요정함이 차 있어도 여유 칸만큼 들어가고 정리에서도 남는다(2026-10-08)', () {
+    final full = grantFairyEggs(
+      FairyState.empty,
+      cfg,
+      List.filled(cfg.boxCap, FairyGrade.common),
+    ).state!;
+    expect(full.boxUsed, cfg.boxCap);
+    // 드롭 알은 넘쳐 가루.
+    final drop = grantFairyEggs(full, cfg, [FairyGrade.epic]);
+    expect(drop.state!.boxUsed, cfg.boxCap);
+    expect(drop.extra['overflowEggs'], 1);
+    // 산 알은 들어간다.
+    final bought = grantFairyEggs(
+      full,
+      cfg,
+      [FairyGrade.epic, FairyGrade.rare],
+      autoRelease: false,
+      purchased: true,
+    );
+    expect(bought.state!.boxUsed, cfg.boxCap + 2);
+    expect(bought.extra['overflowEggs'], 0);
+    // 다음 로드·업로드 정리에서도 가루가 되지 않는다.
+    final kept = enforceFairyRules(bought.state!, cfg);
+    expect(kept.boxUsed, cfg.boxCap + 2);
+    expect(kept.eggs.where((e) => e.grade == FairyGrade.epic), hasLength(1));
+  });
+
+  test('요정함 확장(젤리) — 10칸씩 · 살수록 비싸짐 · 최대에서 멈춤 · 늘린 칸만큼 알이 더 들어간다', () {
+    var s = FairyState.empty;
+    expect(expandFairyBox(s, cfg, jellyHave: 0).error, 'not_enough_jelly');
+    final costs = <int>[];
+    while (true) {
+      final r = expandFairyBox(s, cfg, jellyHave: 1 << 30);
+      if (!r.isOk) {
+        expect(r.error, 'box_max');
+        break;
+      }
+      costs.add(r.jelly);
+      s = r.state!;
+    }
+    expect(cfg.boxCapOf(s.boxExtra), cfg.boxMax);
+    expect(costs.first, cfg.boxExpandJelly);
+    for (var i = 1; i < costs.length; i++) {
+      expect(costs[i], greaterThan(costs[i - 1]));
+    }
+    final filled = grantFairyEggs(
+      s,
+      cfg,
+      List.filled(cfg.boxMax + 3, FairyGrade.common),
+    );
+    expect(filled.state!.boxUsed, cfg.boxMax);
+    expect(filled.extra['overflowEggs'], 3);
   });
 }

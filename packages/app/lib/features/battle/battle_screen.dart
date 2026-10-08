@@ -23,6 +23,7 @@ import '../../ui/jelly_confirm.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/skin_badges.dart';
 import '../../ui/skins.dart';
 import 'board_preview.dart';
 import 'duel_arena_screen.dart';
@@ -1671,6 +1672,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   element: b.element,
                   power: _duelPower(b),
                   skin: null,
+                  variant: null,
                   bug: b,
                 ),
             ],
@@ -1778,14 +1780,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    c.nickname.isEmpty ? l.opponentWild : _maskName(c.nickname),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          c.nickname.isEmpty
+                              ? l.opponentWild
+                              : _maskName(c.nickname),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      skinBadges(c.skins, size: 16),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Row(
@@ -1796,9 +1807,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           child: SizedBox(
                             width: 30,
                             height: 30,
-                            child: gameImageChain(
-                              ['assets/images/bugs/${t.sp}_adult.webp'],
+                            // 이색·스킨을 입혀 그린다 — 상대가 무지개를 껴도 안 보였다.
+                            child: bugStageImage(
+                              t.sp,
+                              LifeStage.adult,
                               size: 30,
+                              skin: _foeView(t.sp, t.variant, t.skin),
                               fallback: const Icon(
                                 Icons.bug_report,
                                 color: Colors.white54,
@@ -1887,7 +1901,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     required Map<String, SkinView?> mySkins,
     required Map<String, SkinView?> foeSkins,
     required Future<void> Function(DuelStep last) onFinished,
+    List<String> foeBadges = const [],
   }) async {
+    final save = ref.read(saveControllerProvider).value;
+    final myBadges = publicSkins(
+      data.iapConfig,
+      save?.ownedSkins ?? const <String>{},
+    );
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => DuelArenaScreen(
@@ -1898,6 +1918,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           arena: foe.first.element,
           mySkins: mySkins,
           foeSkins: foeSkins,
+          myBadges: myBadges,
+          foeBadges: foeBadges,
           onFinished: onFinished,
         ),
       ),
@@ -1959,6 +1981,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ),
           mySkins: mySkins,
           foeSkins: f.skins,
+          // 서버가 시작 응답에 다시 실어 준 값(없으면 후보 카드의 값).
+          foeBadges: res.data!['skins'] is List
+              ? skinsFromJson(res.data!['skins'])
+              : c.skins,
           onFinished: _adoptDuel,
         );
       } finally {
@@ -2549,7 +2575,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     DuelBug d, {
     IndividualBug? bug,
     SkinView? skin,
+    bool variant = false,
   }) {
+    final isVariant =
+        variant || (bug != null && bug.variant != BugVariant.none);
     Species? sp;
     try {
       sp = data.species(d.speciesId);
@@ -2596,6 +2625,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         elementColor(d.element),
                         lead: elementIcon(d.element, size: 11),
                       ),
+                      if (isVariant)
+                        _chip(l.dexVariant, const Color(0xFFE0A020)),
                       if (bug != null && !bug.trait.isNone)
                         _chip(
                           traitLabel(l, bug.trait),
@@ -2781,6 +2812,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ) => showGameDialog<void>(
     context,
     title: c.nickname.isEmpty ? l.opponentWild : _maskName(c.nickname),
+    titleTrailing: skinBadges(c.skins),
     icon: Icons.groups_rounded,
     content: ConstrainedBox(
       constraints: BoxConstraints(
@@ -2809,7 +2841,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      _bugStats(l, data, locale, c.team[i].bug!),
+                      _bugStats(
+                        l,
+                        data,
+                        locale,
+                        c.team[i].bug!,
+                        skin: _foeView(
+                          c.team[i].sp,
+                          c.team[i].variant,
+                          c.team[i].skin,
+                        ),
+                        variant: isVariantKey(c.team[i].variant),
+                      ),
                     ],
                   ),
                 ),
@@ -2852,18 +2895,15 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       return d != 0 ? d : a.id.compareTo(b.id); // 동점이어도 순서가 흔들리지 않게
     });
 
-  /// 스카우트 팀 → **상대 곤충 id별** 스킨 필터.
-  ///
-  /// 종이 아니라 id 로 푼다 — 같은 종이라도 상대가 샀는지 여부가 다르다.
-  /// 상대 스킨 효과 키 → 그리기 정보. 전용 그림 유무는 iap.json 이 정한다.
-  SkinView? _viewOf(String? effect, String speciesId) {
-    if (effect == null) return null;
-    final cfg = ref.read(gameDataProvider).value?.iapConfig;
-    return SkinView(
-      effect,
-      hasArt: cfg?.skinHasArt(effect, speciesId) ?? false,
-    );
-  }
+  /// 상대 곤충의 이색 키·스킨 효과 키 → 그리기 정보([foeBugView] — 이색이 스킨보다 우선).
+  /// 전용 그림 유무는 iap.json 이 정한다.
+  SkinView? _foeView(String speciesId, String? variant, String? skin) =>
+      foeBugView(
+        ref.read(gameDataProvider).value?.iapConfig,
+        speciesId,
+        variant: variant,
+        skin: skin,
+      );
 
   /// 서버 권위 전투 — 승패·보상을 서버가 확정하고, 앱은 결과를 재생만 한다.
   ///
@@ -2983,7 +3023,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       final m = Map<String, dynamic>.from(e as Map);
       final b = DuelBug.fromJson(m);
       foe.add(b);
-      skins[b.id] = _viewOf(m['skin']?.toString(), b.speciesId);
+      skins[b.id] = _foeView(
+        b.speciesId,
+        m['variant']?.toString(),
+        m['skin']?.toString(),
+      );
     }
     return (foe: foe, skins: skins);
   }
@@ -3140,6 +3184,7 @@ class _Candidate {
     this.rank,
     this.teamPowerOverride,
     this.localFoe,
+    this.skins = const [],
   });
 
   factory _Candidate.fromServer(Map<String, dynamic> m) => _Candidate(
@@ -3150,6 +3195,7 @@ class _Candidate {
     points: (m['points'] as num?)?.toInt() ?? 1,
     power: (m['power'] as num?)?.toDouble() ?? 0,
     teamPowerOverride: (m['teamPower'] as num?)?.toDouble(),
+    skins: skinsFromJson(m['skins']),
     team: [
       for (final t in (m['team'] as List? ?? const []))
         (
@@ -3159,6 +3205,7 @@ class _Candidate {
               .firstOrNull,
           power: (t['power'] as num?)?.toDouble() ?? 0,
           skin: t['skin']?.toString(),
+          variant: t['variant']?.toString(),
           bug: t['bug'] is Map
               ? DuelBug.fromJson(Map<String, dynamic>.from(t['bug'] as Map))
               : null,
@@ -3181,12 +3228,22 @@ class _Candidate {
   final double power;
   final double? teamPowerOverride;
   final List<
-    ({String sp, Element? element, double power, String? skin, DuelBug? bug})
+    ({
+      String sp,
+      Element? element,
+      double power,
+      String? skin,
+      String? variant,
+      DuelBug? bug,
+    })
   >
   team;
 
   /// 개발 실행(서버 없음)에서 쓰는 상대 팀.
   final List<DuelBug>? localFoe;
+
+  /// 상대가 산 곤충 스킨(이름 옆 뱃지). 구서버·야생이면 빈 목록.
+  final List<String> skins;
 
   /// 내 팀과 견줄 전투력 — 곤충 3마리 합.
   double get teamPower =>

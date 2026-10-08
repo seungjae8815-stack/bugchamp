@@ -1209,13 +1209,33 @@ class SaveController extends AsyncNotifier<SaveGame> {
       return;
     }
     final t = cfg.rollTier(rng);
-    final run = ref.read(gameDataProvider).value?.runConfig;
+    final data = ref.read(gameDataProvider).value;
+    final run = data?.runConfig;
+    // 2026-10-08: **이 유저가 지금 자리에서 직접 사냥한 N분치**(교환소와 같은 식) — 정액과 큰 쪽.
+    // 맨몸 기준 골드 표(giftGold)로 재던 시절엔 "2.7분치"가 실제로 18초~1초 미만이었다.
+    final hunt = run == null || data == null || t.huntMinutes <= 0
+        ? null
+        : huntMinutesReward(
+            run,
+            stats: huntStatsOf(
+              s,
+              data,
+              now,
+              guildBonus: ref.read(guildBonusProvider),
+            ),
+            stage: s.stageNumber,
+            minutes: t.huntMinutes,
+            tier: s.difficultyTier,
+            abyssFloor: activeAbyssFloor(s),
+          );
     final gift = GiftMail(
       id: _devUuid.v4(),
       expiry: now.add(Duration(hours: cfg.expiryHours)),
-      // 정액과 **지금 사냥터 분치** 중 큰 쪽(2026-09-18). 서버도 같은 함수를 쓴다.
-      gold: run == null
+      gold: hunt != null
+          ? math.max(t.gold, hunt.gold)
+          : run == null
           ? t.gold
+          // 정액과 **지금 사냥터 분치** 중 큰 쪽(2026-09-18, 옛 데이터용).
           : giftGold(
               run,
               s.stageNumber,
@@ -1224,9 +1244,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
               t.goldMinutes,
             ),
       jelly: t.jelly,
-      chitin: t.chitin,
-      mineral: t.mineral,
-      sap: t.sap,
+      chitin: math.max(t.chitin, hunt?.materialsEach ?? 0),
+      mineral: math.max(t.mineral, hunt?.materialsEach ?? 0),
+      sap: math.max(t.sap, hunt?.materialsEach ?? 0),
+      minutes: hunt == null ? 0 : t.huntMinutes,
     );
     await _commit(s.copyWith(gifts: [...alive, gift], nextGiftAt: reschedule));
   }
@@ -1345,6 +1366,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       now: now,
       fairy: fairyCfg,
       purchaseId: purchaseId,
+      speciesOf: (id) => ref.read(gameDataProvider).value?.speciesById[id],
     );
     // 성장 패스를 샀으면 오늘 몫을 바로 준다(다음 실행까지 기다리게 하지 않는다).
     if (cfg != null) {
@@ -1366,19 +1388,6 @@ class SaveController extends AsyncNotifier<SaveGame> {
   // (2026-09-12). 수령이 서버 경로라 **서버가 돌려준 세이브를 채택**하는 순간
   // 로컬로 올려 둔 무료 2배 횟수가 날아가, 하루 1회 제한이 사실상 없었다.
   // 2배는 이제 [claimGift] 한 곳에서 **서버가 판정하고 센다**.
-
-  /// 이미 수령한 일일보상 [reward] 를 광고 보상으로 **한 번 더**(추가 1배) 지급.
-  /// 점심/저녁 보상 "광고 보고 한 번 더 받기" 흐름용(로컬 전용 — 선물 보너스와 동일).
-  Future<void> grantDailyBonus(DailyReward reward) async {
-    final s = state.requireValue;
-    final mats = Map<MaterialKind, int>.from(s.materials);
-    for (final e in reward.materials.entries) {
-      mats[e.key] = (mats[e.key] ?? 0) + e.value;
-    }
-    await _commit(
-      s.copyWith(gold: addCurrency(s.gold, reward.gold), materials: mats),
-    );
-  }
 
   /// PvP 결과 반영: 승리 시 골드 지급, 트로피 증감(최소 0).
   /// 결투 결과 반영: 골드·트로피 정산 + KO된 내 곤충([koedBugIds])에 부상 회복 타이머 부여.
@@ -1919,30 +1928,79 @@ class SaveController extends AsyncNotifier<SaveGame> {
     state = AsyncData(fresh);
   }
 
+  /// 일일보상 [reward] 의 **지금 금액** — 정액과 "이 유저가 지금 자리에서 직접 사냥한
+  /// [DailyReward.huntMinutes]분치"(교환소와 같은 식) 중 큰 쪽(2026-10-08 사장님 확정).
+  /// 화면 표시와 수령이 같은 값을 쓴다. 서버는 이 값을 넉넉한 상한으로 잘라 지급한다.
+  ({int gold, Map<MaterialKind, int> materials}) dailyRewardAmount(
+    DailyReward reward,
+  ) {
+    final fixed = (gold: reward.gold, materials: reward.materials);
+    if (reward.huntMinutes <= 0) return fixed;
+    final data = ref.read(gameDataProvider).value;
+    final run = data?.runConfig;
+    final s = state.value;
+    if (data == null || run == null || s == null) return fixed;
+    final hunt = huntMinutesReward(
+      run,
+      stats: huntStatsOf(
+        s,
+        data,
+        ref.read(clockProvider).now().toUtc(),
+        guildBonus: ref.read(guildBonusProvider),
+      ),
+      stage: s.stageNumber,
+      minutes: reward.huntMinutes,
+      tier: s.difficultyTier,
+      abyssFloor: activeAbyssFloor(s),
+    );
+    return (
+      gold: math.max(reward.gold, hunt.gold),
+      materials: {
+        for (final k in kBreakthroughMaterials)
+          k: math.max(reward.materials[k] ?? 0, hunt.materialsEach),
+        if (reward.jelly > 0) MaterialKind.jelly: reward.jelly,
+      },
+    );
+  }
+
   /// 일일보상 수령(편지함). 아직 시간 전·오늘 이미 수령이면 false.
   /// 판정은 **로컬 시각** 기준(점심 12시/저녁 18시).
-  Future<bool> claimDaily(DailyReward reward) async {
+  ///
+  /// [bonus] = 받은 뒤 "한 번 더 받기"(1배 더). 슬롯마다 하루 1회 — 2026-10-08 부터 서버가 센다
+  /// (금액이 사냥 분치로 커져서 앱 로컬 지급은 업로드 골드 상한에 잘린다).
+  Future<bool> claimDaily(DailyReward reward, {bool bonus = false}) async {
     final now = ref.read(clockProvider).now(); // 로컬 벽시계
     // 시간 게이트(점심/저녁)는 로컬 UI 판정으로 남긴다 — 서버는 UTC 타임존을
     // 모른다. 서버는 하루에 같은 슬롯을 여러 번 먹는 조작만 막는다.
     if (now.hour < reward.hour) return false;
+    final amt = dailyRewardAmount(reward);
+    final each = amt.materials[MaterialKind.chitin] ?? 0;
 
     final viaServer = await _viaServer(
-      () => ref.read(gameServerProvider).claimDaily(reward.id),
+      () => ref
+          .read(gameServerProvider)
+          .claimDaily(
+            reward.id,
+            gold: amt.gold,
+            materialsEach: each,
+            bonus: bonus,
+          ),
     );
     if (viaServer != null) return viaServer;
 
     final today = dailyDateKey(now);
     final s = state.requireValue;
-    if (s.dailyClaims[reward.id] == today) return false;
+    final key = bonus ? dailyBonusKey(reward.id) : reward.id;
+    if (s.dailyClaims[key] == today) return false;
+    if (bonus && s.dailyClaims[reward.id] != today) return false;
     final mats = Map<MaterialKind, int>.from(s.materials);
-    for (final e in reward.materials.entries) {
+    for (final e in amt.materials.entries) {
       mats[e.key] = (mats[e.key] ?? 0) + e.value;
     }
-    final claims = Map<String, String>.from(s.dailyClaims)..[reward.id] = today;
+    final claims = Map<String, String>.from(s.dailyClaims)..[key] = today;
     await _commit(
       s.copyWith(
-        gold: addCurrency(s.gold, reward.gold),
+        gold: addCurrency(s.gold, amt.gold),
         materials: mats,
         dailyClaims: claims,
       ),
@@ -3553,6 +3611,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<FairyOp> fairySetAutoRelease(FairyGrade? upTo) =>
       _fairyOp((f, _, _) => setFairyAutoRelease(f, upTo));
 
+  /// 요정함 확장(젤리, 2026-10-08) — 10칸씩 최대 60칸. 최대·젤리 부족이면 실패.
+  Future<FairyOp> fairyExpandBox() =>
+      _fairyOp((f, cfg, jelly) => expandFairyBox(f, cfg, jellyHave: jelly));
+
   /// 요정 알 뽑기(젤리). 결과 `extra['grades']`.
   Future<FairyOp> fairyDraw(int times, {math.Random? rng}) => _fairyOp(
     (f, cfg, jelly) => drawFairyEggs(
@@ -3704,7 +3766,22 @@ class SaveController extends AsyncNotifier<SaveGame> {
       id: _uuid.v4(),
       mother: mother,
       father: father,
-      endsAt: now.add(Duration(seconds: cfg.breedingDuration(sp.grade))),
+      // 스킨 계열 편의 보너스(산란 시간 −N%, 2026-10-08). 서버와 같은 함수.
+      endsAt: now.add(
+        Duration(
+          seconds:
+              ref
+                  .read(gameDataProvider)
+                  .value
+                  ?.iapConfig
+                  ?.skinnedBreedSeconds(
+                    cfg.breedingDuration(sp.grade),
+                    s.ownedSkins,
+                    sp.id,
+                  ) ??
+              cfg.breedingDuration(sp.grade),
+        ),
+      ),
       seed: seed,
     );
     // 쿨다운은 **시작할 때** 건다(수령이 아니라). 수령을 미루는 것으로 텀을

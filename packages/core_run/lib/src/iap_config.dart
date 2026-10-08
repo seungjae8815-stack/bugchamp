@@ -52,6 +52,7 @@ class IapGrant {
     this.fairyAccelerators = const {},
     this.fairyEggs = const {},
     this.skillGradeShards = const {},
+    this.bugEggs = const [],
   });
 
   final int jelly;
@@ -78,6 +79,11 @@ class IapGrant {
   /// 스킬 만능 조각(등급 키 → 개수, `Grade.key` — `SaveGame.skillGradeShards`).
   final Map<String, int> skillGradeShards;
 
+  /// 곤충 알(종 id + 보장 포텐셜) — 스킨 구매 덤(2026-10-08 사장님 확정: 그 계열 대표종 4성 알).
+  /// 포텐셜은 야생 공식으로 4성이 3.4% 뿐이라 체감이 크고, 뽑기(5성 8%)·합성으로도 닿는 물건이라 시간 판매다.
+  /// 이색은 붙이지 않는다(결투 능력치 +30% — 결제로 이색을 주면 결투 P2W).
+  final List<({String species, int potential})> bugEggs;
+
   /// 요정 칸이 하나라도 있는가(요정 설정이 있어야 지급할 수 있다 — 알은 요정함 상한을 본다).
   bool get hasFairy =>
       fairyDust > 0 ||
@@ -93,6 +99,7 @@ class IapGrant {
       sap == 0 &&
       incubatorSlots == 0 &&
       !hasFairy &&
+      bugEggs.isEmpty &&
       !skillGradeShards.values.any((v) => v > 0);
 
   static Map<String, int> _intMap(Object? v) => {
@@ -114,6 +121,14 @@ class IapGrant {
     fairyAccelerators: _intMap(json['fairyAccelerators']),
     fairyEggs: _intMap(json['fairyEggs']),
     skillGradeShards: _intMap(json['skillGradeShards']),
+    bugEggs: [
+      for (final e in (json['bugEggs'] as List? ?? const []))
+        if (e is Map && e['species'] is String)
+          (
+            species: e['species'] as String,
+            potential: ((e['potential'] as num?)?.toInt() ?? 1).clamp(1, 5),
+          ),
+    ],
   );
 }
 
@@ -210,6 +225,7 @@ class SkinDef {
     this.speciesPrefix,
     this.releaseBonusPct = 0,
     this.incubateSpeedPct = 0,
+    this.breedSpeedPct = 0,
     this.artSpecies = const {},
   });
 
@@ -231,6 +247,9 @@ class SkinDef {
   /// 이 계열 알의 부화 시간 −N%.
   final int incubateSpeedPct;
 
+  /// 이 계열 짝짓기(산란) 시간 −N%(2026-10-08 사장님 확정 — 스킨 메리트 강화). 편의·시간이라 전력이 아니다.
+  final int breedSpeedPct;
+
   /// **전용 그림이 있는 종**. 여기 있는 종은 `{종}_adult_{n}_{effect}.webp` 를
   /// 쓰고 색 필터를 입히지 않는다 — 그림이 이미 그 색이라 두 번 물들면 뭉갠다.
   final Set<String> artSpecies;
@@ -241,6 +260,7 @@ class SkinDef {
     speciesPrefix: json['speciesPrefix'] as String?,
     releaseBonusPct: (json['releaseBonusPct'] as num?)?.toInt() ?? 0,
     incubateSpeedPct: (json['incubateSpeedPct'] as num?)?.toInt() ?? 0,
+    breedSpeedPct: (json['breedSpeedPct'] as num?)?.toInt() ?? 0,
     artSpecies: {
       for (final x in (json['artSpecies'] as List? ?? const [])) '$x',
     },
@@ -294,7 +314,7 @@ class IapConfig {
   /// ⚠️ 근거는 세이브의 `ownedSkins` — **서버 소유 필드**라 위조할 수 없다.
   /// 방어팀 행에 실어 보내는 `skin` 값(그림용)과 혼동하지 말 것. 그쪽은
   /// 클라가 주장하는 값이고, 이 보너스와 아무 상관이 없다.
-  ({int releaseBonusPct, int incubateSpeedPct}) skinPerkFor(
+  ({int releaseBonusPct, int incubateSpeedPct, int breedSpeedPct}) skinPerkFor(
     Set<String> owned,
     String speciesId,
   ) {
@@ -305,10 +325,11 @@ class IapConfig {
         return (
           releaseBonusPct: s.releaseBonusPct,
           incubateSpeedPct: s.incubateSpeedPct,
+          breedSpeedPct: s.breedSpeedPct,
         );
       }
     }
-    return (releaseBonusPct: 0, incubateSpeedPct: 0);
+    return (releaseBonusPct: 0, incubateSpeedPct: 0, breedSpeedPct: 0);
   }
 
   /// 계열 보너스를 적용한 분해·방생 재료량.
@@ -320,6 +341,14 @@ class IapConfig {
   /// 계열 보너스를 적용한 부화 시간(초). **1초 밑으로는 안 내려간다.**
   int skinnedIncubateSeconds(int base, Set<String> owned, String speciesId) {
     final pct = skinPerkFor(owned, speciesId).incubateSpeedPct;
+    if (pct <= 0) return base;
+    final v = (base * (100 - pct) / 100).round();
+    return v < 1 ? 1 : v;
+  }
+
+  /// 계열 보너스를 적용한 짝짓기(산란) 시간(초). **1초 밑으로는 안 내려간다.**
+  int skinnedBreedSeconds(int base, Set<String> owned, String speciesId) {
+    final pct = skinPerkFor(owned, speciesId).breedSpeedPct;
     if (pct <= 0) return base;
     final v = (base * (100 - pct) / 100).round();
     return v < 1 ? 1 : v;

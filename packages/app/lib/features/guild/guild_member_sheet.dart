@@ -12,6 +12,7 @@ import '../../ui/colors.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/fairy_art.dart';
 import '../../ui/format.dart';
+import '../../ui/skin_badges.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/tier_label.dart';
@@ -108,15 +109,27 @@ class _GuildMemberSheetState extends ConsumerState<GuildMemberSheet> {
         ),
         const SizedBox(height: 10),
         EventBadgeChip(id: m.badge, size: 11, margin: EventBadgeChip.aboveName),
-        Text(
-          rules.maskNickname(m.nickname, fallback: l.nicknameFallback),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
-          ),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                rules.maskNickname(m.nickname, fallback: l.nicknameFallback),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            // 산 곤충 스킨(서버 요약의 skins). 요약이 오기 전·구서버면 없음.
+            skinBadges(
+              d?.skins ?? const [],
+              size: 20,
+              margin: const EdgeInsets.only(left: 6),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Row(

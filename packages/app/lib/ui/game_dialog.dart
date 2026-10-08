@@ -111,6 +111,9 @@ Future<T?> showGameDialog<T>(
   /// 아이콘 대신 그림을 넣고 싶을 때(장비 등). [icon] 보다 우선한다.
   Widget? iconWidget,
   String? subtitle,
+
+  /// 제목 바로 옆(같은 줄)에 붙는 작은 위젯 — 스킨 뱃지 등.
+  Widget? titleTrailing,
   required Widget content,
   List<Widget> actions = const [],
   bool barrierDismissible = true,
@@ -124,6 +127,7 @@ Future<T?> showGameDialog<T>(
       icon: icon,
       iconWidget: iconWidget,
       subtitle: subtitle,
+      titleTrailing: titleTrailing,
       actions: actions,
       child: content,
     ),
@@ -138,15 +142,29 @@ class GameDialog extends StatelessWidget {
     this.icon,
     this.iconWidget,
     this.subtitle,
+    this.titleTrailing,
     this.actions = const [],
   });
 
   final String title;
+
+  /// 제목 바로 옆(같은 줄)에 붙는 작은 위젯 — 스킨 뱃지 등.
+  final Widget? titleTrailing;
   final IconData? icon;
   final Widget? iconWidget;
   final String? subtitle;
   final Widget child;
   final List<Widget> actions;
+
+  Widget _titleText(String title) => Text(
+    title,
+    textAlign: TextAlign.center,
+    style: const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w900,
+      fontSize: 16.5,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -266,15 +284,16 @@ class GameDialog extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            title,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16.5,
+                          if (titleTrailing == null)
+                            _titleText(title)
+                          else
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(child: _titleText(title)),
+                                titleTrailing!,
+                              ],
                             ),
-                          ),
                           if (subtitle != null)
                             Text(
                               subtitle!,

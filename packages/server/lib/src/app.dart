@@ -160,10 +160,32 @@ DuelBug _legacyDefenderToDuel(
 
 /// 결투 상대 1마리의 표시 정보 — 앱이 서버가 싸운 것과 같은 상대를 그린다.
 /// [skin] 은 그림에만 쓴다(전투 계산에는 안 들어간다).
-Map<String, dynamic> _duelFoeJson(DuelBug b, {String? skin}) => {
-  ...b.toJson(),
-  if (skin != null) 'skin': skin,
-};
+/// [variant] 는 이색 키(`rainbow`/`albino`) — 이색이면 앱이 스킨 대신 이색으로 그린다.
+Map<String, dynamic> _duelFoeJson(DuelBug b, {String? skin, String? variant}) =>
+    {
+      ...b.toJson(),
+      if (skin != null) 'skin': skin,
+      if (variant != null) 'variant': variant,
+    };
+
+/// 곤충의 이색 키 — 이색이 아니면(또는 곤충을 모르면) null(응답에서 키를 뺀다).
+String? _variantKeyOf(IndividualBug? b) =>
+    b == null || b.variant == BugVariant.none ? null : b.variant.key;
+
+/// 방어 순서([SaveGame.pvpDefenseIds]) 그대로 그 곤충들의 이색 키.
+/// [defenderDuelTeam] 이 같은 순서로 팀을 만들므로 인덱스가 맞는다.
+List<String?> _defenseVariants(SaveGame opp) {
+  final byId = {for (final b in opp.bugs) b.id: b};
+  return [for (final id in opp.pvpDefenseIds) _variantKeyOf(byId[id])];
+}
+
+/// 남에게 보이는 스킨(이름 옆 뱃지, 2026-10-08) — 그 사람이 산 **곤충 스킨**만,
+/// iap.json `skins` 순서대로. 아레나 테마처럼 곤충이 아닌 스킨(`speciesPrefix` 없음)은 뺀다.
+/// 근거는 서버 소유 필드 `ownedSkins` 라 위조할 수 없다.
+List<String> publicSkinsOf(SaveGame s, IapConfig iap) => [
+  for (final d in iap.skins)
+    if (d.speciesPrefix != null && s.ownedSkins.contains(d.id)) d.id,
+];
 
 /// 곤충 한 마리 전투력(앱 결투 화면의 `_power` 와 같은 식) — 후보·프로필 비교용.
 double _duelPower(DuelBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
@@ -430,25 +452,29 @@ Handler buildHandler({
       memberSummary: (uid) async {
         final save = await loadSave(uid);
         if (save == null) return null;
-        final team =
-            actions.defenderDuelTeam(
-              save,
-              speciesById: species,
-              petConfig: cfg.pet,
-              enhance: cfg.enhance,
-            ) ??
-            const <DuelBug>[];
+        final built = actions.defenderDuelTeam(
+          save,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        );
+        final team = built ?? const <DuelBug>[];
+        final variants = built == null
+            ? const <String?>[]
+            : _defenseVariants(save);
         return guildMemberSummary(
           save,
+          skins: publicSkinsOf(save, cfg.iap),
           team: [
-            for (final x in team)
+            for (var i = 0; i < team.length; i++)
               {
-                'sp': x.speciesId,
-                'element': x.element.name,
-                'specialty': x.specialty.name,
-                'sizeMm': x.sizeMm,
-                'power': _duelPower(x),
-                'bug': x.toJson(),
+                'sp': team[i].speciesId,
+                'element': team[i].element.name,
+                'specialty': team[i].specialty.name,
+                'sizeMm': team[i].sizeMm,
+                'power': _duelPower(team[i]),
+                'variant': ?(i < variants.length ? variants[i] : null),
+                'bug': team[i].toJson(),
               },
           ],
         );
@@ -1022,7 +1048,13 @@ Handler buildHandler({
       try {
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.claimDaily(save, id);
+        final r = actions.claimDaily(
+          save,
+          id,
+          clientGold: (body['gold'] as num?)?.toInt() ?? 0,
+          clientMaterialsEach: (body['materialsEach'] as num?)?.toInt() ?? 0,
+          bonus: body['bonus'] == true,
+        );
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
         await store.save(user.id, r.save!.toJson());
         return _json({'save': r.save!.toJson(), ...r.extra});
@@ -2006,7 +2038,10 @@ Handler buildHandler({
         List<DuelBug> foe,
         List<String> foeSpecies,
         List<String?> foeSkins,
+        List<String?> foeVariants,
         double rewardMult,
+        // 상대가 산 곤충 스킨(이름 옆 뱃지) — 세이브로 만든 상대만, 옛 행·야생은 빈 목록.
+        List<String> ownedSkins,
       })?
     >
     duelFoe(
@@ -2030,7 +2065,7 @@ Handler buildHandler({
                 enhance: cfg.enhance,
               );
         if (fromSave != null) {
-          final byId = {for (final b in opp!.bugs) b.id: b};
+          final variants = _defenseVariants(opp!);
           final skins = <String, String?>{
             for (final d in rows ?? const <Map<String, dynamic>>[])
               '${d['sp']}': _defenderSkin(d),
@@ -2038,11 +2073,15 @@ Handler buildHandler({
           return (
             foe: fromSave,
             foeSpecies: [for (final b in fromSave) b.speciesId],
+            // 이색이면 스킨 대신 이색을 보인다. (예전엔 `variant != null` 이라 — variant 는
+            // none 기본의 non-null enum — 세이브로 만든 상대의 스킨이 늘 지워졌다.)
             foeSkins: [
-              for (final b in fromSave)
-                byId[b.id]?.variant != null ? null : skins[b.speciesId],
+              for (var i = 0; i < fromSave.length; i++)
+                variants[i] != null ? null : skins[fromSave[i].speciesId],
             ],
+            foeVariants: variants,
             rewardMult: 1.0,
+            ownedSkins: publicSkinsOf(opp, cfg.iap),
           );
         }
         if (rows == null || rows.length < actions.duelParams.bestOf) {
@@ -2058,7 +2097,10 @@ Handler buildHandler({
           foeSkins: [
             for (var i = 0; i < legacy.length; i++) _defenderSkin(rows[i]),
           ],
+          // 옛 defenders 행에는 이색 정보가 없다.
+          foeVariants: List<String?>.filled(legacy.length, null),
           rewardMult: 1.0,
+          ownedSkins: const <String>[],
         );
       }
       final wild = actions.buildWildDuelTeam(
@@ -2074,7 +2116,9 @@ Handler buildHandler({
         foe: wild.team,
         foeSpecies: wild.speciesIds,
         foeSkins: List<String?>.filled(wild.team.length, null),
+        foeVariants: List<String?>.filled(wild.team.length, null),
         rewardMult: wild.tier.rewardMult,
+        ownedSkins: const <String>[],
       );
     }
 
@@ -2195,6 +2239,8 @@ Handler buildHandler({
             'rank': ?(real && idleId.isEmpty ? sl.rank : null),
             'trophies': real ? (row!['trophies'] as num?)?.toInt() ?? 0 : 0,
             'points': points,
+            // 상대가 산 곤충 스킨(이름 옆 뱃지) — 비면 생략. 제안(세션)에도 같이 남아 `/duel/start` 가 돌려준다.
+            if (real && foe.ownedSkins.isNotEmpty) 'skins': foe.ownedSkins,
             // 결투 화면에는 **결투 팀 전투력**만(2026-10-01 — 순위표 값이 홈 전투력으로 떨어져 1.84M 로 보였다).
             // 방금 서버가 만든 상대 팀으로 잰 값이라 늘 정확하다.
             'power': teamPower,
@@ -2206,6 +2252,7 @@ Handler buildHandler({
                   'element': foe.foe[k].element.name,
                   'power': _duelPower(foe.foe[k]),
                   'skin': ?foe.foeSkins[k],
+                  'variant': ?foe.foeVariants[k],
                   // 곤충별 능력치·주특기·기질 — 상대를 보고 전략을 짜게(2026-09-29).
                   'bug': foe.foe[k].toJson(),
                 },
@@ -2217,6 +2264,7 @@ Handler buildHandler({
             'foe': [for (final x in foe.foe) x.toJson()],
             'foeSp': foe.foeSpecies,
             'foeSkins': foe.foeSkins,
+            'foeVariants': foe.foeVariants,
             'rewardMult': foe.rewardMult,
           });
         }
@@ -2261,19 +2309,29 @@ Handler buildHandler({
                 enhance: cfg.enhance,
               );
         final list = team ?? const <DuelBug>[];
+        final variants = opp == null || team == null
+            ? const <String?>[]
+            : _defenseVariants(opp);
+        final skins = opp == null
+            ? const <String>[]
+            : publicSkinsOf(opp, cfg.iap);
         return _json({
           'userId': target,
+          if (skins.isNotEmpty) 'skins': skins,
           'league': ?(opp == null
               ? null
               : cfg.battle.leagueAt(pvpLeagueOf(opp, cfg.battle)).id),
           'team': [
-            for (final x in list)
+            for (var i = 0; i < list.length; i++)
               {
-                'sp': x.speciesId,
-                'element': x.element.name,
-                'specialty': x.specialty.name,
-                'sizeMm': x.sizeMm,
-                'power': _duelPower(x),
+                'sp': list[i].speciesId,
+                'element': list[i].element.name,
+                'specialty': list[i].specialty.name,
+                'sizeMm': list[i].sizeMm,
+                'power': _duelPower(list[i]),
+                'variant': ?(i < variants.length ? variants[i] : null),
+                // 곤충을 눌러 능력치를 보게(길드 시트와 같은 방식, 3마리뿐이라 작다).
+                'bug': list[i].toJson(),
               },
           ],
           'teamPower': list.fold<double>(0, (a, x) => a + _duelPower(x)),
@@ -2334,8 +2392,17 @@ Handler buildHandler({
           ],
           foeSpecies: [for (final x in (slot['foeSp'] as List)) '$x'],
           foeSkins: [for (final x in (slot['foeSkins'] as List)) x?.toString()],
+          // 배포 전에 만든 제안에는 없다(null → 이색 없이 그린다).
+          foeVariants: [
+            for (final x in (slot['foeVariants'] as List? ?? const []))
+              x?.toString(),
+          ],
           rewardMult: (slot['rewardMult'] as num?)?.toDouble() ?? 1.0,
         );
+        // 상대 스킨 뱃지 — 배포 전에 만든 제안에는 없다(뱃지 없이 그린다).
+        final foeOwnedSkins = [
+          for (final x in (slot['skins'] as List? ?? const [])) '$x',
+        ];
         final winPoints = (slot['points'] as num).toInt();
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
@@ -2400,9 +2467,14 @@ Handler buildHandler({
             'tickets': started.extra['tickets'],
           if (started.extra['ticketsAt'] != null)
             'ticketsAt': started.extra['ticketsAt'],
+          if (foeOwnedSkins.isNotEmpty) 'skins': foeOwnedSkins,
           'foe': [
             for (var i = 0; i < foe.foe.length; i++)
-              _duelFoeJson(foe.foe[i], skin: foe.foeSkins[i]),
+              _duelFoeJson(
+                foe.foe[i],
+                skin: foe.foeSkins[i],
+                variant: i < foe.foeVariants.length ? foe.foeVariants[i] : null,
+              ),
           ],
         });
       } on StateStoreException catch (e) {

@@ -814,6 +814,12 @@ abstract class AppLocalizations {
   /// **'Purchased'**
   String get storePurchased;
 
+  /// No description provided for @storeStorageFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Your storage is full, so the bonus egg can\'t be added. Free up a slot before buying.'**
+  String get storeStorageFull;
+
   /// No description provided for @storeWeeklyDone.
   ///
   /// In en, this message translates to:
@@ -6067,8 +6073,8 @@ abstract class AppLocalizations {
   /// No description provided for @exchangeHint.
   ///
   /// In en, this message translates to:
-  /// **'Trade jelly for one hour of hunting at your current power'**
-  String get exchangeHint;
+  /// **'Trade jelly for {hours} hours of hunting at your current power'**
+  String exchangeHint(String hours);
 
   /// No description provided for @exchangeToGold.
   ///
@@ -9730,6 +9736,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Spend {jelly} Jelly to add {n} storage slots?'**
   String storageExpandConfirm(int jelly, int n);
+
+  /// No description provided for @fairyBoxExpandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand fairy box'**
+  String get fairyBoxExpandTitle;
+
+  /// No description provided for @fairyBoxExpandConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to add {n} fairy box slots?'**
+  String fairyBoxExpandConfirm(int jelly, int n);
+
+  /// No description provided for @fairyBoxExpanded.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy box expanded!'**
+  String get fairyBoxExpanded;
 
   /// No description provided for @breedingExpandTitle.
   ///

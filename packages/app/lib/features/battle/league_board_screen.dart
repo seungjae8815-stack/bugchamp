@@ -18,6 +18,8 @@ import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/skin_badges.dart';
+import '../../ui/skins.dart';
 import 'board_preview.dart';
 import 'duel_bug_info.dart';
 import '../../ui/colors.dart';
@@ -1034,9 +1036,27 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     final data = ref.read(gameDataProvider).value;
     final team = widget.myTeam!;
     final power = team.fold<double>(0, (a, x) => a + x.power);
+    // 내 곤충의 이색·스킨 — 결투 곤충 id 가 곧 내 곤충 id 다.
+    final bugs = {
+      for (final b
+          in ref.read(saveControllerProvider).value?.bugs ??
+              const <IndividualBug>[])
+        b.id: b,
+    };
+    final skinOf = ref.read(skinOfProvider);
+    bool isVariant(String id) =>
+        (bugs[id]?.variant ?? BugVariant.none) != BugVariant.none;
     return showGameDialog<void>(
       context,
       title: ref.read(saveControllerProvider).value?.nickname ?? '',
+      // 내 스킨 뱃지 — 남들이 내 프로필에서 보는 것과 같은 규칙(곤충 스킨만).
+      titleTrailing: skinBadges(
+        publicSkins(
+          data?.iapConfig,
+          ref.read(saveControllerProvider).value?.ownedSkins ??
+              const <String>{},
+        ),
+      ),
       icon: Icons.person_rounded,
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1061,7 +1081,15 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
               for (final b in team)
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => showDuelBugInfo(context, data, b),
+                    onTap: () => showDuelBugInfo(
+                      context,
+                      data,
+                      b,
+                      skin: bugs[b.id] == null
+                          ? null
+                          : bugView(skinOf, bugs[b.id]!),
+                      variant: isVariant(b.id),
+                    ),
                     child: _profileBug(
                       l,
                       data,
@@ -1070,6 +1098,8 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                         'sp': b.speciesId,
                         'element': b.element.name,
                         'power': b.power,
+                        if (isVariant(b.id)) 'variant': bugs[b.id]!.variant.key,
+                        'skin': ?skinOf(b.speciesId)?.effect,
                       },
                     ),
                   ),
@@ -1110,6 +1140,10 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     await showGameDialog<void>(
       context,
       title: '${r['nickname'] ?? ''}',
+      // 그 사람이 산 곤충 스킨(서버가 세이브의 ownedSkins 에서 골라 준다). 구서버면 없음.
+      titleTrailing: skinBadges(
+        res.isOk ? skinsFromJson(res.data?['skins']) : const [],
+      ),
       icon: Icons.person_rounded,
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1149,6 +1183,13 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                               DuelBug.fromJson(
                                 Map<String, dynamic>.from(t['bug'] as Map),
                               ),
+                              skin: foeBugView(
+                                data?.iapConfig,
+                                '${t['sp']}',
+                                variant: t['variant']?.toString(),
+                                skin: t['skin']?.toString(),
+                              ),
+                              variant: isVariantKey(t['variant']?.toString()),
                             )
                           : null,
                       child: _profileBug(l, data, locale, t),
@@ -1174,6 +1215,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
 
 /// 방어팀 곤충 한 칸(그림·이름·오행·전투력) — `/pvp/profile` 의 `team` 한 줄 모양.
 /// 리그 순위표 프로필과 길드원 정보 시트가 같은 칸을 쓴다.
+/// `variant`(이색 키)·`skin`(스킨 효과 키)이 있으면 그 외형으로 그리고, 이색이면 칩을 단다.
 Widget duelProfileBugTile(
   AppLocalizations l,
   GameData? data,
@@ -1182,6 +1224,7 @@ Widget duelProfileBugTile(
 ) {
   final sp = '${t['sp']}';
   final el = Element.values.where((e) => e.name == t['element']).firstOrNull;
+  final variant = isVariantKey(t['variant']?.toString());
   String name = sp;
   try {
     name = data?.species(sp).name.resolve(locale) ?? sp;
@@ -1196,10 +1239,30 @@ Widget duelProfileBugTile(
           borderRadius: BorderRadius.circular(10),
         ),
         padding: const EdgeInsets.all(4),
-        child: gameImageChain(
-          ['assets/images/bugs/${sp}_adult.webp'],
-          size: 56,
-          fallback: const Icon(Icons.bug_report, color: Colors.white54),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: bugStageImage(
+                sp,
+                LifeStage.adult,
+                size: 56,
+                skin: foeBugView(
+                  data?.iapConfig,
+                  sp,
+                  variant: t['variant']?.toString(),
+                  skin: t['skin']?.toString(),
+                ),
+                fallback: const Icon(Icons.bug_report, color: Colors.white54),
+              ),
+            ),
+            if (variant)
+              Positioned(
+                top: -2,
+                left: -2,
+                child: duelInfoChip(l.dexVariant, kVariantChipColor),
+              ),
+          ],
         ),
       ),
       const SizedBox(height: 4),

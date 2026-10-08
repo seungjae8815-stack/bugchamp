@@ -149,7 +149,7 @@ void main() {
   });
 
   group('주간 묶음', () {
-    test('2시간 가속기 3 · 속성석 2 · 희귀 만능 10 · 이번 주가 적힌다', () {
+    test('2시간 가속기 3 · 속성석 2 · 희귀 만능 20 · 이번 주가 적힌다', () {
       final r = actions.grantPurchase(
         base,
         productId: 'weekly_bundle',
@@ -159,7 +159,7 @@ void main() {
       expect(items(s.fairy, (f) => f.accelerators, 'acc2h'), 3);
       expect(items(s.fairy, (f) => f.stones, 'hp'), 1);
       expect(items(s.fairy, (f) => f.stones, 'attack'), 1);
-      expect(s.skillGradeShards['rare'], 10);
+      expect(s.skillGradeShards['rare'], 20);
       expect(s.weeklyBought['weekly_bundle'], '2026-10-05');
       final p = cfg.iap.byId('weekly_bundle')!;
       expect(
@@ -196,14 +196,14 @@ void main() {
         purchaseId: 'GPA-W2',
       );
       expect(second.isOk, isTrue);
-      expect(second.save!.skillGradeShards['rare'], 20);
+      expect(second.save!.skillGradeShards['rare'], 40);
       // 같은 영수증 재전달은 한 번만.
       final dup = actions.grantPurchase(
         second.save!,
         productId: 'weekly_bundle',
         purchaseId: 'GPA-W2',
       );
-      expect(dup.save!.skillGradeShards['rare'], 20);
+      expect(dup.save!.skillGradeShards['rare'], 40);
     });
   });
 

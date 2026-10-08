@@ -4,6 +4,7 @@ import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
+import 'jelly_cost.dart';
 
 /// 요정 능력치 키 — 데이터 검사가 이 목록으로 오타를 잡는다.
 /// 모르는 키는 로딩을 통과하고 **능력치만 조용히 사라진다**(종 패시브와 같은 구멍).
@@ -149,6 +150,11 @@ class FairyConfig {
     this.mergeDustRefund = 0.7,
     this.hatchSec = const {},
     this.boxCap = 30,
+    this.boxPurchaseSlack = 10,
+    this.boxMax = 30,
+    this.boxExpandAmount = 10,
+    this.boxExpandJelly = 100,
+    this.boxExpandGrowth = 1.12,
     this.releaseDust = const {},
     this.subRatio = 0.5,
     this.subWeight = const {},
@@ -209,6 +215,34 @@ class FairyConfig {
 
   /// 요정함 상한(요정 + 알 + 둥지 속 알). 세이브 크기 방어선(§2.1).
   final int boxCap;
+
+  /// **산 알**은 요정함이 차 있어도 이만큼 더 들어간다(2026-10-08 사장님 확정 — 함이 가득 찬 채 요정 입문
+  /// 패키지를 사면 영웅 알이 말없이 가루가 됐다). 드롭·뽑기 알은 [boxCap] 에서 멈춘다.
+  /// 정리([enforceFairyRules])도 [boxCap] + 이 값까지 둔다.
+  final int boxPurchaseSlack;
+
+  /// 젤리 확장 포함 요정함 최대 칸(2026-10-08 사장님 확정 A안: 10칸씩 · 첫 100젤리에서 살수록 비싸짐 · 최대 60).
+  /// 채집함 확장과 같은 규칙이다 — 칸은 편의(합성 재료를 더 쌓아 둘 뿐)라 P2W 가 아니다.
+  /// 기본값이 [boxCap] 과 같아 설정이 없으면 확장이 없다(구 데이터 호환).
+  final int boxMax;
+  final int boxExpandAmount;
+  final int boxExpandJelly;
+  final double boxExpandGrowth;
+
+  /// 이 요정 상태의 요정함 칸 — 기본 + 젤리로 늘린 칸, [boxMax] 로 자른다.
+  int boxCapOf(int boxExtra) => (boxCap + boxExtra.clamp(0, 1 << 20)).clamp(
+    boxCap,
+    boxMax < boxCap ? boxCap : boxMax,
+  );
+
+  /// 다음 [boxExpandAmount] 칸을 늘리는 젤리. 최대면 null. 살수록 [boxExpandGrowth] 배(5·10 단위 가격표).
+  int? boxExpandCost(int boxExtra) {
+    if (boxCapOf(boxExtra) >= boxMax || boxExpandAmount <= 0) return null;
+    final done = boxExtra ~/ boxExpandAmount;
+    return roundJellyCost(
+      boxExpandJelly * math.pow(boxExpandGrowth, done).toDouble(),
+    );
+  }
 
   /// 등급별 분해·넘친 알 가루. ❌ 젤리 없음(합성으로 무한히 만든 요정을 분해하면 무한 통로).
   final Map<FairyGrade, int> releaseDust;
@@ -395,6 +429,14 @@ class FairyConfig {
     mergeDustRefund: (json['mergeDustRefund'] as num?)?.toDouble() ?? 0.7,
     hatchSec: _byGrade(json['hatchSec'], (v) => v.toInt()),
     boxCap: (json['boxCap'] as num?)?.toInt() ?? 30,
+    boxPurchaseSlack: (json['boxPurchaseSlack'] as num?)?.toInt() ?? 10,
+    boxMax:
+        (json['boxMax'] as num?)?.toInt() ??
+        (json['boxCap'] as num?)?.toInt() ??
+        30,
+    boxExpandAmount: (json['boxExpandAmount'] as num?)?.toInt() ?? 10,
+    boxExpandJelly: (json['boxExpandJelly'] as num?)?.toInt() ?? 100,
+    boxExpandGrowth: (json['boxExpandGrowth'] as num?)?.toDouble() ?? 1.12,
     releaseDust: _byGrade(json['releaseDust'], (v) => v.toInt()),
     subRatio: (json['subRatio'] as num?)?.toDouble() ?? 0.5,
     subWeight: {

@@ -130,6 +130,7 @@ void main() {
         'speciesPrefix',
         'releaseBonusPct', // 편의: 분해·방생 재료
         'incubateSpeedPct', // 편의: 부화 시간
+        'breedSpeedPct', // 편의: 짝짓기(산란) 시간(2026-10-08)
         'artSpecies', // 전용 그림이 있는 종(그림 파일 목록 — 효과 아님)
       };
       for (final s in raw['skins'] as List) {
@@ -148,24 +149,24 @@ void main() {
     test('계열이 맞아야 붙는다 — 사슴벌레 스킨이 장수풍뎅이에 안 붙는다', () {
       final c = iap();
       const owned = {'albino_stag'};
-      expect(c.skinnedIncubateSeconds(600, owned, 'stag_giant'), 540);
+      expect(c.skinnedIncubateSeconds(600, owned, 'stag_giant'), 450);
       expect(c.skinnedIncubateSeconds(600, owned, 'rhino_japanese'), 600);
     });
 
-    test('황금은 재료만, 알비노는 시간만 건드린다', () {
+    // 2026-10-08 사장님 확정: 두 스킨 모두 재료 +30% · 부화 −25% · 짝짓기 −25%(계열만).
+    test('두 스킨 모두 그 계열만 재료·부화·짝짓기 편의', () {
       final c = iap();
-      expect(
-        c.skinnedReleaseMaterial(100, const {'gold_rhino'}, 'rhino_lesser'),
-        115,
-      );
-      expect(
-        c.skinnedIncubateSeconds(600, const {'gold_rhino'}, 'rhino_lesser'),
-        600,
-      );
-      expect(
-        c.skinnedReleaseMaterial(100, const {'albino_stag'}, 'stag_saw'),
-        100,
-      );
+      for (final (skin, mine, other) in [
+        ('gold_rhino', 'rhino_lesser', 'stag_saw'),
+        ('albino_stag', 'stag_saw', 'rhino_lesser'),
+      ]) {
+        final owned = {skin};
+        expect(c.skinnedReleaseMaterial(100, owned, mine), 130);
+        expect(c.skinnedIncubateSeconds(600, owned, mine), 450);
+        expect(c.skinnedBreedSeconds(600, owned, mine), 450);
+        expect(c.skinnedReleaseMaterial(100, owned, other), 100);
+        expect(c.skinnedBreedSeconds(600, owned, other), 600);
+      }
     });
 
     test('부화 시간은 1초 밑으로 안 내려간다', () {

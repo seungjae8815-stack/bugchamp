@@ -75,7 +75,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         Row(
           children: [
             Text(
-              l.fairyBoxTitle('${f.boxUsed}', '${cfg.boxCap}'),
+              l.fairyBoxTitle('${f.boxUsed}', '${cfg.boxCapOf(f.boxExtra)}'),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
@@ -88,6 +88,8 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
                 l.fairyEggCount('${eggs.length}'),
                 style: const TextStyle(color: Colors.white60, fontSize: 12),
               ),
+            const Spacer(),
+            _BoxExpandButton(cfg: cfg, boxExtra: f.boxExtra),
           ],
         ),
         const SizedBox(height: 6),
@@ -567,7 +569,14 @@ class _FairyCell extends ConsumerWidget {
                         ),
                       ),
                       Expanded(
-                        child: Center(child: fairyGlow(fairy, size: 40)),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Center(child: fairyGlow(fairy, size: 40)),
+                            // 고른 표시는 **그림 위에** — 왼쪽 위 구석은 등급 글자에 가렸다(2026-10-08 실기).
+                            if (selected) const _PickedMark(),
+                          ],
+                        ),
                       ),
                       // 동행(착용) 표시 = 이름 **바로 위** 글자 줄 — 다른 칸과 같은 짜임(2026-10-01 사장님).
                       if (companion)
@@ -604,18 +613,27 @@ class _FairyCell extends ConsumerWidget {
                   ),
                 ),
               ),
-              if (selected)
-                const Positioned(
-                  top: 2,
-                  left: 2,
-                  child: Icon(Icons.check_circle, size: 13, color: _honey),
-                ),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// 분해 창에서 고른 칸 표시 — 그림 한가운데 진한 원 + 꿀색 체크.
+class _PickedMark extends StatelessWidget {
+  const _PickedMark();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(
+      color: Color(0xCC000000),
+      shape: BoxShape.circle,
+    ),
+    padding: const EdgeInsets.all(1),
+    child: const Icon(Icons.check_circle, size: 24, color: _honey),
+  );
 }
 
 class _EggCell extends StatelessWidget {
@@ -652,7 +670,13 @@ class _EggCell extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  fairyEggImage(egg.grade, size: 44),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      fairyEggImage(egg.grade, size: 44),
+                      if (selected) const _PickedMark(),
+                    ],
+                  ),
                   Text(
                     fairyGradeLabel(l, egg.grade),
                     style: TextStyle(color: c, fontSize: 10.5),
@@ -660,12 +684,6 @@ class _EggCell extends StatelessWidget {
                 ],
               ),
             ),
-            if (selected)
-              const Positioned(
-                top: 2,
-                left: 2,
-                child: Icon(Icons.check_circle, size: 13, color: _honey),
-              ),
           ],
         ),
       ),
@@ -2016,14 +2034,18 @@ class _ReleaseHubDialogState extends ConsumerState<_ReleaseHubDialog> {
         size: 40,
         fallback: const Icon(Icons.recycling_rounded, color: _honey),
       ),
+      // 다른 팝업과 같은 게임 버튼(기본 머티리얼 버튼은 팝업 배경에 글씨가 묻혔다 — 2026-10-08 실기).
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionClose),
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.of(context).pop(),
+          primary: false,
         ),
-        FilledButton(
-          onPressed: count > 0 && !_busy ? () => _go(cfg) : null,
-          child: Text(l.fairyRelease),
+        gameDialogButton(
+          count > 0 ? '${l.fairyRelease} ($count)' : l.fairyRelease,
+          () {
+            if (count > 0 && !_busy) _go(cfg);
+          },
         ),
       ],
       child: Column(
@@ -2133,26 +2155,13 @@ class _ReleaseHubDialogState extends ConsumerState<_ReleaseHubDialog> {
           : g == FairyGrade.common
           ? fairyGradeLabel(l, g)
           : l.fairyAutoReleaseUpTo(fairyGradeLabel(l, g));
-      return ChoiceChip(
-        label: Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: on
-                ? Colors.black
-                : (g == null ? Colors.white70 : fairyGradeColor(g)),
-          ),
-        ),
-        selected: on,
-        showCheckmark: false,
-        selectedColor: _honey,
-        backgroundColor: const Color(0x33121A10),
-        visualDensity: VisualDensity.compact,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        onSelected: _busy || on
+      return _ReleasePill(
+        text: text,
+        color: g == null ? Colors.white70 : fairyGradeColor(g),
+        on: on,
+        onTap: _busy || on
             ? null
-            : (_) async {
+            : () async {
                 setState(() => _busy = true);
                 await ref
                     .read(saveControllerProvider.notifier)
@@ -2208,20 +2217,12 @@ class _ReleaseHubDialogState extends ConsumerState<_ReleaseHubDialog> {
     final all =
         n > 0 && fIds.every(_fairies.contains) && eIds.every(_eggs.contains);
     final c = fairyGradeColor(g);
-    return ActionChip(
-      label: Text(
-        l.fairyReleaseAllOf(fairyGradeLabel(l, g), '$n'),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: all ? Colors.black : c,
-        ),
-      ),
-      backgroundColor: all ? c : const Color(0x33121A10),
-      side: BorderSide(color: c.withValues(alpha: 0.6)),
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      onPressed: n == 0
+    return _ReleasePill(
+      text: l.fairyReleaseAllOf(fairyGradeLabel(l, g), '$n'),
+      color: c,
+      on: all,
+      dim: n == 0,
+      onTap: n == 0
           ? null
           : () => setState(() {
               if (all) {
@@ -2399,7 +2400,10 @@ class _GachaDialogState extends ConsumerState<_GachaDialog> {
     // 요정함 빈칸보다 많이 뽑으면 **넘친 알은 가루가 된다** — 젤리를 쓰기 전에 알린다(2026-10-01 점검).
     final free = math.max(
       0,
-      cfg.boxCap - ref.read(saveControllerProvider).requireValue.fairy.boxUsed,
+      cfg.boxCapOf(
+            ref.read(saveControllerProvider).requireValue.fairy.boxExtra,
+          ) -
+          ref.read(saveControllerProvider).requireValue.fairy.boxUsed,
     );
     final base = times == 1 ? l.fairyGachaOne : l.fairyGachaTen;
     final ok = await confirmJellySpend(
@@ -2961,4 +2965,125 @@ int _fairyOrder(Fairy a, Fairy b) {
   if (lv != 0) return lv;
   final k = a.kind.compareTo(b.kind);
   return k != 0 ? k : b.quality.compareTo(a.quality);
+}
+
+/// 분해 창의 알약 버튼(자동 분해 등급 · 등급 한꺼번에 고르기).
+///
+/// 머티리얼 칩은 "선택됨 + 누를 수 없음"(지금 고른 자동 분해 등급)을 비활성 회색으로 칠해 글씨가 안 보였다
+/// (2026-10-08 실기). 그래서 진한 판 위에 굵은 글씨 + 그림자로 직접 그린다 — 고른 것은 그 색으로 채운다.
+class _ReleasePill extends StatelessWidget {
+  const _ReleasePill({
+    required this.text,
+    required this.color,
+    required this.on,
+    this.onTap,
+    this.dim = false,
+  });
+
+  final String text;
+  final Color color;
+  final bool on;
+  final bool dim;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: dim ? 0.45 : 1,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: on ? color : const Color(0xE61E1610),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: on ? Colors.white : color.withValues(alpha: 0.8),
+              width: on ? 1.6 : 1.2,
+            ),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color: on ? const Color(0xFF1A1208) : color,
+              shadows: on
+                  ? null
+                  : const [Shadow(color: Color(0xCC000000), blurRadius: 3)],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 요정함 확장 버튼(2026-10-08 사장님 확정 — 젤리 10칸씩, 첫 100젤리에서 살수록 비싸짐, 최대 60칸).
+/// 채집함 확장과 같은 문구·확인창. 최대면 "최대 확장".
+class _BoxExpandButton extends ConsumerWidget {
+  const _BoxExpandButton({required this.cfg, required this.boxExtra});
+
+  final FairyConfig cfg;
+  final int boxExtra;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final cost = cfg.boxExpandCost(boxExtra);
+    if (cfg.boxMax <= cfg.boxCap) return const SizedBox.shrink();
+    if (cost == null) {
+      return Text(
+        l.storageExpandMaxed,
+        style: const TextStyle(color: Colors.white54, fontSize: 11.5),
+      );
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () async {
+        if (!await confirmJellySpend(
+          context,
+          title: l.fairyBoxExpandTitle,
+          body: l.fairyBoxExpandConfirm(cost, cfg.boxExpandAmount),
+          jelly: cost,
+          actionLabel: l.jellyActExpand,
+        )) {
+          return;
+        }
+        final r = await ref
+            .read(saveControllerProvider.notifier)
+            .fairyExpandBox();
+        if (!context.mounted) return;
+        showCenterToast(
+          context,
+          r.isOk ? l.fairyBoxExpanded : _err(l, r.error),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xE61E1610),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _honey.withValues(alpha: 0.8)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.add_box_rounded, size: 14, color: _honey),
+            const SizedBox(width: 3),
+            Text(
+              l.storageExpand(cfg.boxExpandAmount, cost),
+              style: const TextStyle(
+                color: _honey,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+                shadows: [Shadow(color: Color(0xCC000000), blurRadius: 3)],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

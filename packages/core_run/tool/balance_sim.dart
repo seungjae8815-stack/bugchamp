@@ -98,17 +98,10 @@ int _tier = 0;
 /// `--tiers=N` — 회차 N 개를 **연속으로**(이월하며) 돌린다.
 int _tierRuns = 1;
 
-/// 전투 밖에서 하루에 들어오는 골드(일일보상 13,000 + 깜짝선물 약 32,000 +
-/// 미션·결투 보상). **초반에 결정적**이고 후반엔 무의미해진다 —
-/// 그래서 정액으로 둔다(day1 골드의 25% 수준, day25 엔 반올림 오차).
-const _dailyBonusGold = 100000.0;
-
-/// 전투 밖에서 하루에 들어오는 **재료**(3종 각각).
-///
-/// 일일보상 80(점심30+저녁50) + 깜짝선물 약 11회 × 평균 36 = 약 480.
-/// 처치 드롭만 세면 재료가 **덜 남는 것처럼** 보인다 — 실제로는 이만큼이
-/// 매일 더 들어온다(고정값이라 후반일수록 비중은 줄어든다).
-const _dailyBonusMaterials = 480.0;
+// 전투 밖 수입(선물·일일보상·미션·결투)은 2026-10-08 부터 정액이 아니다 —
+// [_Player._offBattleIncomeDay] 가 선물·일일보상을 "이 유저의 사냥 N분치"로 계산하고
+// 나머지(미션·결투)만 [_otherBonusGold] 정액으로 둔다. 옛 정액은 골드 100,000/일 ·
+// 재료 480/일(종류당)이었다(재료는 검증에만 넣고 표 맞추기에는 빠져 있었다).
 
 /// `--mat-cost-growth=` 로 모든 업그레이드의 재료비 증가율을 덮어쓴다(탐색용).
 double? _matCostGrowth;
@@ -153,10 +146,33 @@ List<int> _samplesEcon = const [10, 30, 50, 100, 200, 400, 700];
 /// 한다(정액만 세면 후반 수입을 과소평가해 표가 실제보다 느리게 나온다).
 GiftConfig? _gifts;
 
+/// 일일보상(점심·저녁) 설정 — 2026-10-08 부터 **사냥 N분치**(정액과 큰 쪽) + "한 번 더 받기" 1배.
+DailyConfig? _daily;
+
+/// 선물·일일보상 **밖**의 전투 밖 정액(미션·결투 보상 등).
+/// 옛 `_dailyBonusGold`(100,000) = 일일보상 13,000 + 선물 약 32,000 + 이것. 선물·일일보상은 이제
+/// 따로 계산하므로([_Player._offBattleIncome]) 나머지만 정액으로 남긴다.
+const _otherBonusGold = 55000.0;
+
+/// `--gift-minutes=5,10,20` — 선물 티어별 huntMinutes 를 덮어쓴다(탐색용, JSON 은 그대로).
+List<double>? _giftMinutesOverride;
+
+/// `--daily-minutes=30,60` — 일일보상 슬롯별 huntMinutes 를 덮어쓴다(탐색용).
+List<double>? _dailyMinutesOverride;
+
+/// `--income` — 날짜별 전투 밖 수입(선물·일일보상) 비중 표를 찍는다.
+bool _printIncome = false;
+
+/// `--gift-interval-mult=2` — 선물 간격(intervalMin/MaxSec)을 k 배로 본다(탐색용, JSON 은 그대로).
+double _giftIntervalMult = 1.0;
+
+/// `--run-config=경로` — run_config.json 대신 읽을 파일(fit 결과 표를 저장소 JSON 을 안 고치고 검증할 때).
+String _runConfigPath = '../app/assets/data/run_config.json';
+
 void main(List<String> args) {
   final opts = _parseArgs(args);
   final base =
-      jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
+      jsonDecode(File(_runConfigPath).readAsStringSync())
           as Map<String, dynamic>;
 
   // CLI 로 덮어쓸 값들 — JSON 을 고치기 전에 후보를 빠르게 재보기 위함.
@@ -188,6 +204,14 @@ void main(List<String> args) {
     );
   } catch (_) {
     _gifts = null; // 없으면 예전처럼 정액만 쓴다
+  }
+  try {
+    _daily = DailyConfig.fromJson(
+      jsonDecode(File('../app/assets/data/daily.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+  } catch (_) {
+    _daily = null;
   }
   if (opts.fitZones != null) {
     // ── 사냥터 표 맞추기 ──
@@ -458,6 +482,7 @@ void main(List<String> args) {
     stdout.writeln('  ★ 전 회차 합계: $total일');
     _printBossLog(sim);
     _printEntryLog(sim);
+    if (_printIncome) _printIncomeLog(sim);
     _printSkillBossLog(sim);
     _printFairyBossLog(sim);
     return;
@@ -926,6 +951,59 @@ void _printFairyBossLog(_Player sim) {
   stdout.writeln('');
 }
 
+/// 전투 밖 수입(선물·일일보상)의 비중 — 난이도마다 1·3·7일차와 끝날.
+///   선물·일일 % = 그날 총 골드(처치 + 전투 밖) 중 비중
+///   선물 1개 = 실제 온라인 몇 분치(버프·접속 보너스 포함 처치 골드 기준, 2배 받기 전)
+///   온라인 1시간 중 선물 = 활동 시간당 선물 골드 ÷ (활동 처치 골드 + 선물 골드)
+void _printIncomeLog(_Player sim) {
+  if (sim.incomeLog.isEmpty) return;
+  stdout.writeln('── 전투 밖 수입(선물·일일보상 = 사냥 N분치) ──');
+  stdout.writeln(
+    '  난이도·사냥터 | 누적일 | 난이도 내 일 | 총 골드/일 | 선물 % | 일일 % | 선물 1개=온라인 | 온라인 1h 중 선물 | 처치 % | 서버상한 여유(골드·재료)',
+  );
+  final byTier = <int, List<int>>{};
+  for (var i = 0; i < sim.incomeLog.length; i++) {
+    byTier.putIfAbsent(sim.incomeLog[i].tier, () => []).add(i);
+  }
+  for (final e in byTier.entries) {
+    final idx = e.value;
+    final picks = <int>{
+      for (final d in const [1, 3, 7])
+        if (d <= idx.length) idx[d - 1],
+      idx.last,
+    }.toList()..sort();
+    for (final i in picks) {
+      final r = sim.incomeLog[i];
+      final total =
+          r.online + r.offline + r.giftGold + r.dailyGold + _otherBonusGold;
+      final perMin = r.online / (_activeHoursPerDay * 60);
+      final giftPerHour = r.giftGold / _activeHoursPerDay;
+      final onlineHour = r.online / _activeHoursPerDay;
+      stdout.writeln(
+        '  ${r.tier}·${r.zone.toString().padLeft(2)}         |'
+        ' ${(r.day + 1).toStringAsFixed(0).padLeft(6)} |'
+        ' ${(i - idx.first + 1).toString().padLeft(11)} |'
+        ' ${_short(total).padLeft(10)} |'
+        ' ${(r.giftGold / total * 100).toStringAsFixed(1).padLeft(5)}% |'
+        ' ${(r.dailyGold / total * 100).toStringAsFixed(1).padLeft(5)}% |'
+        ' ${(perMin > 0 ? r.giftEach / perMin : 0).toStringAsFixed(2).padLeft(10)}분 |'
+        ' ${(giftPerHour / (onlineHour + giftPerHour) * 100).toStringAsFixed(1).padLeft(6)}% |'
+        ' ${((r.online + r.offline) / total * 100).toStringAsFixed(1).padLeft(5)}% |'
+        ' x${r.capGold.toStringAsFixed(1)} · x${r.capMats.toStringAsFixed(1)}',
+      );
+    }
+  }
+  var minG = double.infinity, minM = double.infinity;
+  for (final r in sim.incomeLog) {
+    minG = math.min(minG, r.capGold);
+    minM = math.min(minM, r.capMats);
+  }
+  stdout.writeln(
+    '  서버 상한 여유 최저(전 기간, 지금 자리 기준): 골드 x${minG.toStringAsFixed(1)} · 재료 x${minM.toStringAsFixed(1)}',
+  );
+  stdout.writeln('');
+}
+
 /// 사냥터 도착 직후 — 일반 몬스터 20마리를 버티나. 벽은 보스뿐이어야 한다.
 void _printEntryLog(_Player sim) {
   if (sim.entryLog.isEmpty) return;
@@ -1029,10 +1107,13 @@ class _Player {
     while (left > 0) {
       final d = left < 1 ? left : 1.0;
       left -= d;
-      gold += _dailyBonusGold * d;
-      _goldEarned += _dailyBonusGold * d;
+      // ⚠️ 표 맞추기(`--fit-tiers`·`--fit-zones`)도 검증([playDay])과 **같은** 전투 밖 수입을 넣는다.
+      // 예전엔 여기만 정액 10만/일(재료 0)이라 fit 과 검증이 어긋났다(2026-10-08).
+      // 선물은 접속 중에 나온다 — 활동 구간 **한가운데** 능력치로 잰다([playDay] 와 같다).
       _online = true;
-      _run(_activeHoursPerDay * 3600 * d, 1.0);
+      _run(_activeHoursPerDay * 3600 * d / 2, 1.0);
+      _addOffBattleIncome(d);
+      _run(_activeHoursPerDay * 3600 * d / 2, 1.0);
       _online = false;
       _run(_offlineHoursPerDay * 3600 * d, config.offlineEfficiency);
       _forgeDays(d);
@@ -1347,18 +1428,18 @@ class _Player {
   /// 액티브를 **뺀** 전투 능력치 — 보스전은 액티브를 따로 얹는다([_bossDamageIn]).
   CharacterStats get _statsNoActives => _statsWith(activeAvg: false);
 
-  CharacterStats _statsWith({required bool activeAvg}) {
+  CharacterStats _statsWith({required bool activeAvg, bool hunt = false}) {
     final b = baselineStats;
+    // [hunt] = 사냥 능력치(앱 `huntStatsOf`) — 버프·탭 부스트·오행 상극을 뺀다.
+    final tap = hunt ? 1.0 : _tapBoostAvg;
     var s = CharacterStats(
       attack:
           b.attack *
           _passiveAttackMult *
-          _restrainMult *
-          _buffDpsMult *
-          _tapBoostAvg,
+          (hunt ? 1.0 : _restrainMult * _buffDpsMult) *
+          tap,
       // 부스트는 공속에도 실린다 — 얼마나 실리는지는 `boostSpeedFactor` 다.
-      attackSpeed:
-          b.attackSpeed * (1 + (_tapBoostAvg - 1) * config.boostSpeedFactor),
+      attackSpeed: b.attackSpeed * (1 + (tap - 1) * config.boostSpeedFactor),
       rewardMultiplier: b.rewardMultiplier,
       critChance: b.critChance,
       critDamage: b.critDamage,
@@ -1751,55 +1832,221 @@ class _Player {
     bugsCollected: 50,
   );
 
-  void playDay() {
-    // 전투 밖 보상(일일·선물·미션·결투)은 하루 한 번 정액으로 넣는다.
-    // ⚠️ 2026-09-18: **선물 골드가 사냥터 분치로 바뀌었다**(정액과 큰 쪽).
-    //    정액만 세면 후반 수입을 과소평가해 표가 실제보다 느리게 나온다.
-    //    선물 몫을 지금 사냥터 기준으로 다시 계산해 정액과 큰 쪽을 쓴다 —
-    //    게임의 `giftGold` 와 같은 규칙이다.
-    var bonus = _dailyBonusGold;
+  /// 사냥 능력치(앱 `huntStatsOf`) — 실제 전투 능력치에서 **버프·탭 부스트·지속형 액티브를 뺀** 값.
+  /// 펫·장비·종 패시브·스킬 패시브·요정·길드·도감은 들어간다. 교환소·선물·일일보상이 쓴다.
+  /// (오행 상극도 뺀다 — 지역 속성에 따라 켜지는 값이라 앱 사냥 능력치에 없다.)
+  CharacterStats get huntStats => _statsWith(activeAvg: false, hunt: true);
+
+  /// [minutes]분 직접 사냥한 골드·재료(종류당) — 게임과 같은 `huntMinutesReward`.
+  ({double gold, double mats}) _huntMinutes(CharacterStats s, double minutes) {
+    final r = huntMinutesReward(
+      config,
+      stats: s,
+      stage: stage,
+      minutes: minutes,
+      tier: _tier,
+    );
+    return (gold: r.gold.toDouble(), mats: r.materialsEach.toDouble());
+  }
+
+  /// 하루치 전투 밖 수입(2026-10-08 규칙) — 골드·재료(종류당)와 내역.
+  ///
+  /// - 깜짝선물: 활동 시간 ÷ 평균 간격 개. 개당 = 티어 가중 평균의 max(정액, 사냥 huntMinutes 분치)
+  ///   (골드·재료 각각). 무료 2배 하루 [GiftConfig.freeDoubleDaily]회 × 평균 배수(2~4 → 3).
+  ///   패스 보유자 무제한 2배는 기본 유저가 아니라 뺀다.
+  /// - 일일보상: 슬롯마다 max(정액, huntMinutes 분치) × 2("한 번 더 받기" 1배).
+  /// - 그 밖(미션·결투): [_otherBonusGold] 정액.
+  /// 부르는 쪽이 활동 구간 한가운데에서 부른다(그때 능력치·사냥터로 하루치를 잰다).
+  ({
+    double gold,
+    double mats,
+    double giftGold,
+    double dailyGold,
+    double giftEach,
+    double giftCount,
+    double capGold,
+    double capMats,
+  })
+  _offBattleIncomeDay() {
+    final hs = huntStats;
+    final cache = <double, ({double gold, double mats})>{};
+    ({double gold, double mats}) hunt(double m) =>
+        cache.putIfAbsent(m, () => _huntMinutes(hs, m));
+
+    var giftGold = 0.0, giftMats = 0.0, giftEach = 0.0, giftCount = 0.0;
     final gifts = _gifts;
     if (gifts != null && gifts.tiers.isNotEmpty) {
       final w = gifts.tiers.fold<double>(0, (a, t) => a + t.weight);
       if (w > 0) {
-        final perDay =
+        giftCount =
             _activeHoursPerDay *
             3600 /
-            ((gifts.intervalMinSec + gifts.intervalMaxSec) / 2);
-        var each = 0.0;
-        for (final t in gifts.tiers) {
-          each +=
-              t.weight /
-              w *
-              giftGold(config, stage, _tier, t.gold, t.goldMinutes).toDouble();
+            ((gifts.intervalMinSec + gifts.intervalMaxSec) /
+                2 *
+                _giftIntervalMult);
+        var eachMats = 0.0;
+        for (var i = 0; i < gifts.tiers.length; i++) {
+          final t = gifts.tiers[i];
+          final o = _giftMinutesOverride;
+          final minutes = o != null && i < o.length ? o[i] : t.huntMinutes;
+          final h = hunt(minutes);
+          final share = t.weight / w;
+          giftEach += share * math.max(t.gold.toDouble(), h.gold);
+          // 재료 3종을 각각 정액과 비교한다(지금 JSON 은 셋이 같다).
+          eachMats +=
+              share *
+              (math.max(t.chitin.toDouble(), h.mats) +
+                  math.max(t.mineral.toDouble(), h.mats) +
+                  math.max(t.sap.toDouble(), h.mats)) /
+              3;
         }
-        // 무료 2배 1회분도 얹는다(젤리와 달리 골드는 랜덤 배수를 탄다 —
-        // 평균을 쓴다).
         final avgMult = (gifts.adMultiplierMin + gifts.adMultiplierMax) / 2.0;
-        final giftGoldPerDay =
-            each * (perDay + gifts.freeDoubleDaily * (avgMult - 1));
-        // 정액 가정에 이미 선물 몫(약 32,000)이 들어 있다 — 큰 쪽만 쓴다.
-        bonus = giftGoldPerDay > _dailyBonusGold
-            ? giftGoldPerDay
-            : _dailyBonusGold;
+        final units = giftCount + gifts.freeDoubleDaily * (avgMult - 1);
+        giftGold = giftEach * units;
+        giftMats = eachMats * units;
       }
     }
-    gold += bonus;
-    _goldEarned += bonus;
+
+    var dailyGold = 0.0, dailyMats = 0.0;
+    final daily = _daily;
+    if (daily != null) {
+      for (var i = 0; i < daily.rewards.length; i++) {
+        final r = daily.rewards[i];
+        final o = _dailyMinutesOverride;
+        final minutes = o != null && i < o.length ? o[i] : r.huntMinutes;
+        final h = hunt(minutes);
+        // "한 번 더 받기" — 무료로 1배 더.
+        dailyGold += 2 * math.max(r.gold.toDouble(), h.gold);
+        dailyMats +=
+            2 *
+            (math.max(r.chitin.toDouble(), h.mats) +
+                math.max(r.mineral.toDouble(), h.mats) +
+                math.max(r.sap.toDouble(), h.mats)) /
+            3;
+      }
+    }
+    // 서버 상한(`GameActions._huntCap`)과의 여유 — 봉투 = 강화·레벨만 반영한 전력 × 공격 100 ·
+    // 효율 30, 지금 자리. (서버는 가 본 최고 난이도 최종 사냥터와 큰 쪽이라 실제 여유는 이보다 크거나 같다.)
+    final bare = _baseStats;
+    final env = CharacterStats(
+      attack: bare.attack * 100,
+      attackSpeed: bare.attackSpeed,
+      rewardMultiplier: bare.rewardMultiplier,
+      critChance: bare.critChance,
+      critDamage: bare.critDamage,
+      bossDamage: bare.bossDamage,
+      maxHp: bare.maxHp,
+      defense: bare.defense,
+      hpRegen: bare.hpRegen,
+      xpMultiplier: bare.xpMultiplier,
+      bugFind: bare.bugFind,
+      materialFind: bare.materialFind,
+      moveSpeed: bare.moveSpeed,
+      boostBonus: bare.boostBonus,
+    );
+    const capMin = 180.0;
+    final cap = huntMinutesReward(
+      config,
+      stats: env,
+      stage: stage,
+      minutes: capMin,
+      tier: _tier,
+      efficiency: 30,
+    );
+    final app = hunt(capMin);
+    return (
+      gold: giftGold + dailyGold + _otherBonusGold,
+      mats: giftMats + dailyMats,
+      giftGold: giftGold,
+      dailyGold: dailyGold,
+      giftEach: giftEach,
+      giftCount: giftCount,
+      capGold: app.gold > 0 ? cap.gold / app.gold : double.infinity,
+      capMats: app.mats > 0 ? cap.materialsEach / app.mats : double.infinity,
+    );
+  }
+
+  /// [d]일치(소수 가능) 전투 밖 수입을 넣는다 — [playDay]·[playDays] 공용.
+  ({
+    double giftGold,
+    double dailyGold,
+    double giftEach,
+    double giftCount,
+    double capGold,
+    double capMats,
+  })
+  _addOffBattleIncome(double d) {
+    final inc = _offBattleIncomeDay();
+    gold += inc.gold * d;
+    _goldEarned += inc.gold * d;
     for (final k in const [
       MaterialKind.chitin,
       MaterialKind.mineral,
       MaterialKind.sap,
     ]) {
-      materials[k] = (materials[k] ?? 0) + _dailyBonusMaterials;
-      earnedMaterials[k] = (earnedMaterials[k] ?? 0) + _dailyBonusMaterials;
+      materials[k] = (materials[k] ?? 0) + inc.mats * d;
+      earnedMaterials[k] = (earnedMaterials[k] ?? 0) + inc.mats * d;
     }
+    return (
+      giftGold: inc.giftGold * d,
+      dailyGold: inc.dailyGold * d,
+      giftEach: inc.giftEach,
+      giftCount: inc.giftCount * d,
+      capGold: inc.capGold,
+      capMats: inc.capMats,
+    );
+  }
+
+  /// 날짜별 전투 밖 수입 기록(`--income` 표) — [playDay] 에서만 쌓는다.
+  final List<
+    ({
+      int tier,
+      int zone,
+      double day,
+      double giftGold,
+      double dailyGold,
+      double giftEach,
+      double giftCount,
+      double online,
+      double offline,
+      double capGold,
+      double capMats,
+    })
+  >
+  incomeLog = [];
+
+  /// 이번 날 활동·오프라인 처치 골드(버프·접속 보너스 포함 실제 수입).
+  double _onlineGoldAcc = 0, _offlineGoldAcc = 0;
+
+  void playDay() {
+    // 전투 밖 보상(선물·일일·미션·결투) — 2026-10-08 부터 선물·일일보상은 **이 유저의 사냥 N분치**.
+    final day = elapsedDays;
+    final z = config.zoneMode ? config.zoneOf(stage) : 0;
+    _onlineGoldAcc = 0;
+    _offlineGoldAcc = 0;
     // 접속 보너스는 **활동 구간에만** — 켜두는 쪽이 이득이어야 한다.
+    // 선물·일일보상은 활동 구간 **한가운데** 능력치로 잰다 — 선물은 접속 중에 계속 나오고
+    // 하루 시작 시점으로 재면 새 난이도 첫날(강화 0)이 0 에 가깝게 잡힌다.
     _online = true;
-    _run(_activeHoursPerDay * 3600, 1.0);
+    _run(_activeHoursPerDay * 3600 / 2, 1.0);
+    final inc = _addOffBattleIncome(1);
+    _run(_activeHoursPerDay * 3600 / 2, 1.0);
     _online = false;
     _run(_offlineHoursPerDay * 3600, config.offlineEfficiency);
     _forgeDays(1);
+    incomeLog.add((
+      tier: _tier,
+      zone: z,
+      day: day,
+      giftGold: inc.giftGold,
+      dailyGold: inc.dailyGold,
+      giftEach: inc.giftEach,
+      giftCount: inc.giftCount,
+      online: _onlineGoldAcc,
+      offline: _offlineGoldAcc,
+      capGold: inc.capGold,
+      capMats: inc.capMats,
+    ));
   }
 
   /// 회차 시작 직후 도착 기록을 남겨야 하는가(초기화가 끝난 뒤에 잰다).
@@ -2385,6 +2632,11 @@ class _Player {
           prog.gold *
           _buffGoldMult *
           (_online ? 1 + config.onlineGoldBonus : 1.0);
+      if (_online) {
+        _onlineGoldAcc += earned;
+      } else {
+        _offlineGoldAcc += earned;
+      }
       // 공방이 최대가 아니면 처치 골드의 일부를 공방 등급업에 넣는다.
       final toForge = forgeLevel < _ceilingData.forge.maxLevel
           ? earned * (_targets.accumulation['forgeGoldShare'] as num).toDouble()
@@ -2691,6 +2943,34 @@ _Opts _parseArgs(List<String> args) {
     final prc = RegExp(r'^--pet-restrain=(.+)$').firstMatch(a);
     if (prc != null) {
       _petRestrainCount = int.parse(prc.group(1)!);
+      continue;
+    }
+    final gm = RegExp(r'^--gift-minutes=(.+)$').firstMatch(a);
+    if (gm != null) {
+      _giftMinutesOverride = gm.group(1)!.split(',').map(double.parse).toList();
+      continue;
+    }
+    final dm = RegExp(r'^--daily-minutes=(.+)$').firstMatch(a);
+    if (dm != null) {
+      _dailyMinutesOverride = dm
+          .group(1)!
+          .split(',')
+          .map(double.parse)
+          .toList();
+      continue;
+    }
+    final gi = RegExp(r'^--gift-interval-mult=(.+)$').firstMatch(a);
+    if (gi != null) {
+      _giftIntervalMult = double.parse(gi.group(1)!);
+      continue;
+    }
+    final rc = RegExp(r'^--run-config=(.+)$').firstMatch(a);
+    if (rc != null) {
+      _runConfigPath = rc.group(1)!;
+      continue;
+    }
+    if (a == '--income') {
+      _printIncome = true;
       continue;
     }
     final tb = RegExp(r'^--boost=(.+)$').firstMatch(a);

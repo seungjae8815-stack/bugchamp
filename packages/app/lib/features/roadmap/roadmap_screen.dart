@@ -5,6 +5,8 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart' show dialogIcon;
+import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/colors.dart';
@@ -663,22 +665,31 @@ extension on _RoadmapScreenState {
     AppLocalizations l,
     int tier,
   ) async {
-    final go = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.tierMoveTitle(tierName(l, tier))),
-        content: Text(l.tierMoveBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.actionClose),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.tierMoveGo),
-          ),
-        ],
+    // 다른 팝업과 같은 게임 팝업(기본 AlertDialog 는 글씨가 배경에 묻혔다 — 2026-10-08 실기).
+    final go = await showGameDialog<bool>(
+      context,
+      title: l.tierMoveTitle(tierName(l, tier)),
+      iconWidget: dialogIcon('roadmap'),
+      content: Text(
+        l.tierMoveBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Color(0xD9FFFFFF),
+          fontSize: 13.5,
+          height: 1.4,
+        ),
       ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.of(context, rootNavigator: true).pop(false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.tierMoveGo,
+          () => Navigator.of(context, rootNavigator: true).pop(true),
+        ),
+      ],
     );
     if (go == true && context.mounted) {
       Navigator.pop(context, RoadmapTierPick(tier));

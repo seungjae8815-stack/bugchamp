@@ -85,4 +85,38 @@ void main() {
     );
     expect(hard.gold, greaterThan(easy.gold));
   });
+
+  // 깜짝선물·일일보상(2026-10-08) — 사냥 N분치. 교환소와 같은 식이라 교환 시간만큼 = 교환 1회.
+  test('사냥 (교환 시간)분치 = 교환 1회(같은 식)', () {
+    expect(run.exchangeGoldHours, run.exchangeMaterialHours);
+    final ex = exchangeOutput(run, stats: base, stage: stage, trades: 1);
+    final h = huntMinutesReward(
+      run,
+      stats: base,
+      stage: stage,
+      minutes: run.exchangeGoldHours * 60,
+    );
+    expect(h.gold, closeTo(ex.gold, ex.gold * 0.001 + 1));
+    expect(
+      h.materialsEach,
+      closeTo(ex.materialsEach, ex.materialsEach * 0.001 + 1),
+    );
+  });
+
+  test('사냥 분치는 분에 비례하고 골드 배율을 따른다', () {
+    final m10 = huntMinutesReward(run, stats: base, stage: stage, minutes: 10);
+    final m20 = huntMinutesReward(run, stats: base, stage: stage, minutes: 20);
+    expect(m20.gold / m10.gold, closeTo(2, 0.05));
+    final rich = huntMinutesReward(
+      run,
+      stats: scaled(reward: 3),
+      stage: stage,
+      minutes: 10,
+    );
+    expect(rich.gold / m10.gold, closeTo(3, 0.05));
+    expect(
+      huntMinutesReward(run, stats: base, stage: stage, minutes: 0).gold,
+      0,
+    );
+  });
 }

@@ -13,23 +13,16 @@
    "type": "starter",
    "priceKrw": 5500,
    "sort": 20,
-   "grant": {
-    "jelly": 300,
-    "gold": 200000,
-    "chitin": 500,
-    "mineral": 500,
-    "sap": 500,
-    "incubatorSlots": 1
-   },
+   "grant": {"jelly": 400, "incubatorSlots": 1, "fairyAccelerators": {"acc2h": 3}},
    "name": {
     "ko": "스타터 패키지",
     "en": "Starter Pack",
     "ja": "スターターパック"
    },
    "desc": {
-    "ko": "젤리·골드·재료 + 부화기 슬롯 (계정당 1회)",
-    "en": "Jelly, gold, materials + incubator slot (once)",
-    "ja": "ゼリー・ゴールド・素材＋孵化器スロット（1回限り）"
+    "ko": "젤리 400 · 부화기 슬롯 +1 · 2시간 가속기 3 (계정당 1회)",
+    "en": "400 jelly, +1 incubator slot, 3 2h accelerators (once)",
+    "ja": "ゼリー400・孵化器スロット+1・2時間加速器3（1回限り）"
    },
    "image": "starter_pack"
   },
@@ -45,9 +38,9 @@
     "ja": "昆虫学者パス（30日）"
    },
    "desc": {
-    "ko": "오프라인 16시간 · 방치 골드 +30% · 매일 젤리 20",
-    "en": "16h offline cap, +30% idle gold, 20 jelly daily",
-    "ja": "オフライン16時間・放置ゴールド+30%・毎日ゼリー20"
+    "ko": "오프라인 16시간 · 방치 골드 +30% · 매일 젤리 20 · 깜짝선물 자동 수령·항상 2배",
+    "en": "16h offline cap, +30% idle gold, 20 jelly daily, surprise gifts auto-claimed & always doubled",
+    "ja": "オフライン16時間・放置ゴールド+30%・毎日ゼリー20・サプライズギフト自動受取・常に2倍"
    },
    "image": "idle_pass",
    "iosId": "idle_pass_c"
@@ -80,7 +73,7 @@
    "type": "jelly",
    "priceKrw": 5500,
    "sort": 110,
-   "bonusPct": 10,
+   "bonusPct": 9,
    "grant": {
     "jelly": 300
    },
@@ -90,9 +83,9 @@
     "ja": "昆虫ゼリー 中"
    },
    "desc": {
-    "ko": "곤충젤리 300개 (보너스 +10%)",
-    "en": "300 jelly (+10% bonus)",
-    "ja": "昆虫ゼリー300個（+10%）"
+    "ko": "곤충젤리 300개 (보너스 +9%)",
+    "en": "300 jelly (+9% bonus)",
+    "ja": "昆虫ゼリー300個（+9%）"
    },
    "image": "jelly_m"
   },
@@ -169,15 +162,16 @@
    "priceKrw": 3300,
    "sort": 200,
    "skinId": "gold_rhino",
+   "grant": {"jelly": 100, "bugEggs": [{"species": "rhino_japanese", "potential": 4}]},
    "name": {
     "ko": "황금 장수풍뎅이",
     "en": "Golden Rhino Beetle",
     "ja": "黄金カブトムシ"
    },
    "desc": {
-    "ko": "장수풍뎅이 계열이 황금빛으로 · 그 계열 분해·방생 재료 +15%",
-    "en": "Rhinoceros beetles turn gold · +15% materials from that family",
-    "ja": "カブトムシ系が黄金色に・その系統の分解・放生素材+15%"
+    "ko": "장수풍뎅이 계열이 황금빛으로 · 그 계열 분해·방생 재료 +30% · 부화·짝짓기 시간 −25% · 구매 즉시 젤리 100 + 4성 장수풍뎅이 알",
+    "en": "Rhinoceros beetles turn gold · +30% materials from that family · −25% incubation & breeding time · Bonus: 100 jelly + a 4★ Rhino Beetle egg",
+    "ja": "カブトムシ系が黄金色に・その系統の分解・放生素材+30%・孵化・交配時間−25%・購入特典 ゼリー100＋4★カブトムシの卵"
    },
    "image": "skin_gold_rhino"
   },
@@ -188,15 +182,16 @@
    "priceKrw": 3300,
    "sort": 210,
    "skinId": "albino_stag",
+   "grant": {"jelly": 100, "bugEggs": [{"species": "stag_miyama", "potential": 4}]},
    "name": {
     "ko": "알비노 사슴벌레",
     "en": "Albino Stag Beetle",
     "ja": "アルビノクワガタ"
    },
    "desc": {
-    "ko": "사슴벌레 계열이 알비노로 · 그 계열 알 부화 시간 −10%",
-    "en": "Stag beetles turn albino · −10% egg incubation time for that family",
-    "ja": "クワガタ系がアルビノに・その系統の卵の孵化時間−10%"
+    "ko": "사슴벌레 계열이 알비노로 · 그 계열 분해·방생 재료 +30% · 부화·짝짓기 시간 −25% · 구매 즉시 젤리 100 + 4성 사슴벌레 알",
+    "en": "Stag beetles turn albino · +30% materials from that family · −25% incubation & breeding time · Bonus: 100 jelly + a 4★ Stag Beetle egg",
+    "ja": "クワガタ系がアルビノに・その系統の分解・放生素材+30%・孵化・交配時間−25%・購入特典 ゼリー100＋4★ミヤマクワガタの卵"
    },
    "image": "skin_albino_stag"
   },
@@ -232,9 +227,9 @@
     "ja": "無限バフパス（30日）"
    },
    "desc": {
-    "ko": "5가지 버프가 항상 켜져 있어요 (골드·경험치 2배, 공격 강화, 재료·곤충 발견 2배)",
-    "en": "All 5 buffs stay on: 2x gold & XP, stronger attacks, 2x materials & bug finds",
-    "ja": "5種のバフが常時発動（ゴールド・経験値2倍、攻撃強化、素材・虫の発見2倍）"
+    "ko": "5가지 버프가 항상 켜져 있어요 (골드·경험치 2배, 공격 강화, 재료·곤충 발견 2배) · 깜짝선물 자동 수령·항상 2배",
+    "en": "All 5 buffs stay on: 2x gold & XP, stronger attacks, 2x materials & bug finds; surprise gifts auto-claimed & always doubled",
+    "ja": "5種のバフが常時発動（ゴールド・経験値2倍、攻撃強化、素材・虫の発見2倍）・サプライズギフト自動受取・常に2倍"
    },
    "image": "buff_pass"
   },
@@ -265,9 +260,9 @@
     "ja": "妖精入門パック"
    },
    "desc": {
-    "ko": "영웅 요정 알 1 · 희귀 요정 알 3 · 8시간 가속기 3 · 속성석 3 · 요정 가루 300 (계정당 1회)",
-    "en": "1 Epic + 3 Rare fairy eggs, 3 8h accelerators, 3 attribute stones, 300 fairy dust (once)",
-    "ja": "英雄の妖精の卵1・希少の妖精の卵3・8時間加速器3・属性石3・妖精の粉300（1回限り）"
+    "ko": "영웅 요정 알 1 · 희귀 요정 알 3 · 8시간 가속기 3 · 속성석 3(공격·치명 피해·보스 피해) · 요정 가루 300 (계정당 1회)",
+    "en": "1 Epic + 3 Rare fairy eggs, 3 8h accelerators, 3 attribute stones (Attack, Crit DMG, Boss DMG), 300 fairy dust (once)",
+    "ja": "英雄の妖精の卵1・希少の妖精の卵3・8時間加速器3・属性石3（攻撃・会心ダメージ・ボスダメージ）・妖精の粉300（1回限り）"
    },
    "image": "fairy_starter"
   },
@@ -307,9 +302,9 @@
     "ja": "妖精・スキル成長パス（30日）"
    },
    "desc": {
-    "ko": "30일 동안 매일 요정 가루 20 · 희귀 만능 조각 2 · 30분 가속기 1",
-    "en": "Daily for 30 days: 20 fairy dust, 2 Rare universal skill shards, one 30m accelerator",
-    "ja": "30日間毎日 妖精の粉20・希少の万能かけら2・30分加速器1"
+    "ko": "30일 동안 접속한 날마다 요정 가루 20 · 희귀 만능 조각 2 · 30분 가속기 1",
+    "en": "Each day you log in for 30 days: 20 fairy dust, 2 Rare universal skill shards, one 30m accelerator",
+    "ja": "30日間ログインした日ごとに 妖精の粉20・希少の万能かけら2・30分加速器1"
    },
    "image": "growth_pass"
   },
@@ -328,7 +323,7 @@
      "attack": 1
     },
     "skillGradeShards": {
-     "rare": 10
+     "rare": 20
     }
    },
    "name": {
@@ -337,9 +332,9 @@
     "ja": "週間パック"
    },
    "desc": {
-    "ko": "2시간 가속기 3 · 속성석 2 · 희귀 만능 조각 10 (주 1회, 월요일 09시 초기화)",
-    "en": "3 2h accelerators, 2 attribute stones, 10 Rare universal skill shards (once a week, resets Monday 09:00 KST)",
-    "ja": "2時間加速器3・属性石2・希少の万能かけら10（週1回、月曜9時リセット）"
+    "ko": "2시간 가속기 3 · 속성석 2(체력·공격) · 희귀 만능 조각 20 (주 1회, 월요일 09시 초기화)",
+    "en": "3 2h accelerators, 2 attribute stones (HP, Attack), 20 Rare universal skill shards (once a week, resets Monday 09:00 KST)",
+    "ja": "2時間加速器3・属性石2（体力・攻撃）・希少の万能かけら20（週1回、月曜9時リセット）"
    },
    "image": "weekly_bundle"
   }
@@ -349,7 +344,9 @@
    "id": "gold_rhino",
    "speciesPrefix": "rhino_",
    "effect": "gold",
-   "releaseBonusPct": 15,
+   "releaseBonusPct": 30,
+   "incubateSpeedPct": 25,
+   "breedSpeedPct": 25,
    "artSpecies": [
     "rhino_japanese",
     "rhino_lesser"
@@ -359,7 +356,9 @@
    "id": "albino_stag",
    "speciesPrefix": "stag_",
    "effect": "albino",
-   "incubateSpeedPct": 10,
+   "releaseBonusPct": 30,
+   "incubateSpeedPct": 25,
+   "breedSpeedPct": 25,
    "artSpecies": [
     "stag_giant",
     "stag_dorcus",
@@ -376,7 +375,7 @@
  ],
  "buffPassDurationDays": 30,
  "_imageComment": "상품 그림은 assets/images/shop/{image}.webp. 파일이 없으면 UI 가 타입별 아이콘으로 폴백하므로, 아트가 늦어도 화면은 깨지지 않는다.",
- "_skinPerkComment": "스킨 계열 **편의** 보너스(2026-08-19 사장님 결정). releaseBonusPct = 그 계열을 분해·방생할 때 재료 +N%. incubateSpeedPct = 그 계열 알의 부화 시간 −N%. ⚠️ §2.6 \"스탯 직접 판매 금지\"를 지키기 위해 **전투 스탯은 절대 붙이지 않는다**. 왕충 선발대회가 실물 경품이라 결제로 순위가 바뀌면 도박성 시비가 된다. 시간·재료는 전력이 아니라 편의라서 트로피·대회 순위에 영향이 없다. 적용 근거는 세이브의 ownedSkins — **서버 소유 필드**라 위조할 수 없다. (방어팀 행의 skin 값은 그림 전용이고 이 보너스와 무관하다.)",
+ "_skinPerkComment": "2026-10-08 강화(사장님 확정): 두 스킨 모두 그 계열 재료 +30% · 부화 −25% · 짝짓기 −25%(breedSpeedPct), 구매 덤 젤리 100 + 그 계열 대표종 4성 알(grant.bugEggs — 장수풍뎅이 계열엔 희귀 종이 없어 대표종, 이색 없음). 이하 원래 설명: 스킨 계열 **편의** 보너스(2026-08-19 사장님 결정). releaseBonusPct = 그 계열을 분해·방생할 때 재료 +N%. incubateSpeedPct = 그 계열 알의 부화 시간 −N%. ⚠️ §2.6 \"스탯 직접 판매 금지\"를 지키기 위해 **전투 스탯은 절대 붙이지 않는다**. 왕충 선발대회가 실물 경품이라 결제로 순위가 바뀌면 도박성 시비가 된다. 시간·재료는 전력이 아니라 편의라서 트로피·대회 순위에 영향이 없다. 적용 근거는 세이브의 ownedSkins — **서버 소유 필드**라 위조할 수 없다. (방어팀 행의 skin 값은 그림 전용이고 이 보너스와 무관하다.)",
  "_arenaThemeComment": "아레나 테마는 판매 중단(2026-08-19). 비대칭 PvP 라 **상대는 내 배경을 볼 수 없고**(각자 자기 화면에서 싸운다), 배경은 곤충 뒤에 깔려서 산 사람조차 뭐가 바뀌었는지 모른다 — 채도를 1.45배까지 올려도 체감이 없었다. 정의는 남긴다: 이미 산 사람에게는 계속 적용된다(remove_ads 와 같은 방식).",
  "_skinArtComment": "artSpecies = 그 스킨의 **전용 그림이 있는 종**. 여기 적힌 종은 bugs/{종}_adult_{n}_{effect}.webp 를 쓰고 **색 필터를 입히지 않는다**(그림이 이미 그 색이라 두 번 물들면 뭉갠다). 목록에 없는 종은 예전처럼 색 필터 + 후광. 그림이 나오는 대로 한 종씩 추가하면 되고, 파일이 없으면 자동으로 필터로 떨어지므로 순서가 어긋나도 화면은 안 깨진다.",
  "_iosIdComment": "iosId = App Store 전용 제품 ID. idle_pass 는 ASC 에 비소모품으로 잘못 생성돼 있어(유형 변경·ID 재사용 불가) iOS 만 소모품 신규 ID(idle_pass_c)를 쓴다. Play 는 기존 idle_pass 그대로.",

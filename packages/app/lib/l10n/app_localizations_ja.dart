@@ -394,6 +394,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get storePurchased => '購入済み';
 
   @override
+  String get storeStorageFull => '採集箱がいっぱいでおまけの卵を受け取れません。枠を空けてから購入してください。';
+
+  @override
   String get storeWeeklyDone => '今週は購入済み';
 
   @override
@@ -3407,7 +3410,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get exchangeTitle => '交換所';
 
   @override
-  String get exchangeHint => 'ゼリーを今の能力で1時間狩りをした分に交換します';
+  String exchangeHint(String hours) {
+    return 'ゼリーを今の能力で$hours時間狩りをした分に交換します';
+  }
 
   @override
   String get exchangeToGold => 'ゴールドへ';
@@ -5630,6 +5635,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String storageExpandConfirm(int jelly, int n) {
     return 'ゼリー$jelly個で採集箱を$n枠増やしますか？';
   }
+
+  @override
+  String get fairyBoxExpandTitle => '妖精ボックス拡張';
+
+  @override
+  String fairyBoxExpandConfirm(int jelly, int n) {
+    return 'ゼリー$jelly個で妖精ボックスを$n枠増やしますか？';
+  }
+
+  @override
+  String get fairyBoxExpanded => '妖精ボックスが増えました！';
 
   @override
   String get breedingExpandTitle => '交配スロットの拡張';

@@ -273,6 +273,7 @@ Widget bugPoseImage(
   required Widget fallback,
   SkinView? skin,
   Alignment alignment = Alignment.center,
+  double auraBoost = 1,
 }) {
   final n = pose.index + 1;
   final sk = skin != null && skin.hasArt ? '_${skin.effect}' : '';
@@ -298,20 +299,36 @@ Widget bugPoseImage(
     fallback: fallback,
     alignment: alignment,
   );
-  return _skinned(img, skin, size);
+  return _skinned(img, skin, size, boost: auraBoost);
 }
 
 /// 스킨 → **색 필터(전용 그림이 없을 때만) + 후광·반짝임**을 입힌 위젯.
 ///
 /// 한 곳에 모은다 — 성충 프레임과 생애주기 그림이 갈리면 채집함에서는
 /// 반짝이는데 전투에서는 안 반짝이는 식이 된다.
-Widget _skinned(Widget img, SkinView? skin, double size) {
+///
+/// [boost] 는 등장 강조([SkinAura.boost]) — 결투 입장처럼 크게 그릴 때만 1 보다 크게.
+Widget _skinned(Widget img, SkinView? skin, double size, {double boost = 1}) {
   if (skin == null) return img;
   // ⚠️ 전용 그림에는 필터를 얹지 않는다 — 이미 그 색이라 두 번 물들면 뭉갠다.
   final f = skin.hasArt ? null : bugSkinFilter(skin.effect);
   final tinted = f == null ? img : ColorFiltered(colorFilter: f, child: img);
-  return SkinAura(effect: skin.effect, size: size, child: tinted);
+  return SkinAura(effect: skin.effect, size: size, boost: boost, child: tinted);
 }
+
+/// 전용 스킨 그림이 **없는** 그림(결투의 위에서 본 모습 등)에 스킨·이색을 입힌다.
+/// 그 그림에는 스킨판이 없으므로 `hasArt` 와 관계없이 늘 색 필터 + 후광이다.
+Widget skinnedWithoutArt(
+  Widget img,
+  SkinView? skin,
+  double size, {
+  double auraBoost = 1,
+}) => _skinned(
+  img,
+  skin == null ? null : SkinView(skin.effect),
+  size,
+  boost: auraBoost,
+);
 
 /// 생애주기 단계별 곤충 이미지.
 /// - 성충: 종별 `bugs/{id}_adult.webp` → `bugs/{id}.webp`

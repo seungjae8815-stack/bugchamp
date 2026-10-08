@@ -237,6 +237,13 @@
     "mythic": 57600
   },
   "boxCap": 30,
+  "_boxPurchaseSlackComment": "산 알(요정 입문 패키지)은 요정함이 차 있어도 이만큼 더 들어간다(2026-10-08 사장님 확정). 드롭·뽑기 알은 boxCap 에서 멈추고, 정리(enforceFairyRules)는 boxCap + 이 값까지 둔다.",
+  "boxPurchaseSlack": 10,
+  "_boxExpandComment": "요정함 젤리 확장(2026-10-08 사장님 확정 A안) — boxExpandAmount 칸씩, 첫 boxExpandJelly 젤리에서 살수록 boxExpandGrowth 배(채집함 확장과 같은 1.12 · 5·10 단위 가격표), boxMax 칸까지. 칸은 편의(합성 재료를 더 쌓아 둘 뿐)라 P2W 아님. 늘린 칸(fairy.bx)은 기기가 들고 앱 로드·서버 업로드 정리가 boxMax 로 자른다.",
+  "boxMax": 60,
+  "boxExpandAmount": 10,
+  "boxExpandJelly": 100,
+  "boxExpandGrowth": 1.12,
   "_releaseComment": "분해·넘친 알 → 요정 가루. 젤리 없음(합성으로 무한히 만든 요정을 분해하면 무한 통로, §2.6).",
   "releaseDust": {
     "common": 5,

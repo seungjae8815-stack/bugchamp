@@ -321,8 +321,14 @@ abstract interface class GameServer {
   /// 깜짝선물 수령([doubled]=광고 배수).
   Future<ServerResult> claimGift(String giftId, {bool doubled});
 
-  /// 일일보상 수령(UTC 날짜당 1회).
-  Future<ServerResult> claimDaily(String rewardId);
+  /// 일일보상 수령(UTC 날짜당 1회). [gold]·[materialsEach] 는 앱이 계산한 금액(사냥 분치) —
+  /// 서버가 상한으로 자른다. [bonus] = "한 번 더 받기"(슬롯마다 하루 1회).
+  Future<ServerResult> claimDaily(
+    String rewardId, {
+    int gold,
+    int materialsEach,
+    bool bonus,
+  });
 
   /// 로드맵 챕터 클리어 보상(스테이지 기준, 서버 확정).
   Future<ServerResult> claimRoadmap();
@@ -480,8 +486,12 @@ class NoGameServer implements GameServer {
   Future<ServerResult> claimGift(String giftId, {bool doubled = false}) async =>
       const ServerResult.fail('unavailable', 0);
   @override
-  Future<ServerResult> claimDaily(String rewardId) async =>
-      const ServerResult.fail('unavailable', 0);
+  Future<ServerResult> claimDaily(
+    String rewardId, {
+    int gold = 0,
+    int materialsEach = 0,
+    bool bonus = false,
+  }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> claimRoadmap() async =>
       const ServerResult.fail('unavailable', 0);
@@ -956,8 +966,17 @@ class HttpGameServer implements GameServer {
       _send('POST', '/gift/claim', {'giftId': giftId, 'doubled': doubled});
 
   @override
-  Future<ServerResult> claimDaily(String rewardId) =>
-      _send('POST', '/daily/claim', {'rewardId': rewardId});
+  Future<ServerResult> claimDaily(
+    String rewardId, {
+    int gold = 0,
+    int materialsEach = 0,
+    bool bonus = false,
+  }) => _send('POST', '/daily/claim', {
+    'rewardId': rewardId,
+    'gold': gold,
+    'materialsEach': materialsEach,
+    if (bonus) 'bonus': true,
+  });
 
   @override
   Future<ServerResult> claimRoadmap() =>

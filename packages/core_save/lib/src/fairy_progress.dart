@@ -45,8 +45,11 @@ FairyOp grantFairyEggs(
   FairyConfig cfg,
   List<FairyGrade> grades, {
   bool autoRelease = true,
+  bool purchased = false,
 }) {
   if (grades.isEmpty) return FairyOp.ok(s);
+  // 산 알은 함이 차 있어도 [FairyConfig.boxPurchaseSlack] 칸만큼 더 들어간다(2026-10-08).
+  final cap = cfg.boxCapOf(s.boxExtra) + (purchased ? cfg.boxPurchaseSlack : 0);
   final eggs = [...s.eggs];
   var seq = s.seq;
   var dust = s.dust;
@@ -67,7 +70,7 @@ FairyOp grantFairyEggs(
       autoEggs++;
       continue;
     }
-    if (used >= cfg.boxCap) {
+    if (used >= cap) {
       final d = cfg.releaseDust[g] ?? 0;
       dust += d;
       overflow += d;
@@ -89,6 +92,23 @@ FairyOp grantFairyEggs(
       'kept': kept,
     },
   );
+}
+
+/// 요정함 확장(젤리) — [FairyConfig.boxExpandAmount] 칸을 늘린다. 비용은 [FairyOp.jelly](차감은
+/// 호출부, 다른 젤리 작업과 같다). 최대면 `box_max`, 젤리가 모자라면 `not_enough_jelly`.
+FairyOp expandFairyBox(
+  FairyState s,
+  FairyConfig cfg, {
+  required int jellyHave,
+}) {
+  final cost = cfg.boxExpandCost(s.boxExtra);
+  if (cost == null) return const FairyOp.fail('box_max');
+  if (jellyHave < cost) return const FairyOp.fail('not_enough_jelly');
+  final next = (s.boxExtra + cfg.boxExpandAmount).clamp(
+    0,
+    cfg.boxMax - cfg.boxCap,
+  );
+  return FairyOp.ok(s.copyWith(boxExtra: next), jelly: cost);
 }
 
 /// 알 자동 분해 등급을 정한다(null = 끔). [kFairyAutoReleaseMax] 위는 거절한다.
@@ -624,10 +644,15 @@ int fairyStateValue(FairyState s) =>
 /// 규칙 상한 정리 — **앱 로드와 서버 업로드가 같은 함수**를 쓴다.
 ///
 /// - 레벨은 등급 상한까지.
-/// - 요정함 상한([FairyConfig.boxCap])을 넘으면 알부터, 그다음 **등급 → 레벨 → 품질이 낮은 요정부터**
+/// - 요정함 상한([FairyConfig.boxCap] + 산 알 여유)을 넘으면 알부터, 그다음 **등급 → 레벨 → 품질이 낮은 요정부터**
 ///   가루로 바꾼다(분해와 같은 가루 + 레벨업 환급, 동행 요정은 남긴다). 품질만 보던 시절엔 품질 낮은
 ///   신화 50레벨이 일반보다 먼저 사라질 수 있었다(2026-10-01 점검). 세이브 크기 방어선(§2.1).
 FairyState enforceFairyRules(FairyState s, FairyConfig cfg) {
+  // 젤리로 늘린 칸은 설정 최대치까지만(서버 업로드도 이 함수로 자른다 — 채집함 상한과 같다).
+  final maxExtra = cfg.boxMax > cfg.boxCap ? cfg.boxMax - cfg.boxCap : 0;
+  if (s.boxExtra < 0 || s.boxExtra > maxExtra) {
+    s = s.copyWith(boxExtra: s.boxExtra.clamp(0, maxExtra));
+  }
   var fairies = [
     for (final f in s.fairies)
       f.level > cfg.maxLevelOf(f.grade)
@@ -636,7 +661,9 @@ FairyState enforceFairyRules(FairyState s, FairyConfig cfg) {
   ];
   var eggs = [...s.eggs];
   var dust = s.dust;
-  var over = s.boxUsed - cfg.boxCap;
+  // 산 알이 넘친 칸([FairyConfig.boxPurchaseSlack])까지는 둔다 — 드롭·뽑기는 [FairyConfig.boxCap] 에서
+  // 이미 멈추므로 그 위는 산 알뿐이다. 안 두면 다음 로드·업로드에서 산 알이 가루가 된다.
+  var over = s.boxUsed - (cfg.boxCapOf(s.boxExtra) + cfg.boxPurchaseSlack);
   while (over > 0 && eggs.isNotEmpty) {
     dust += cfg.releaseDust[eggs.removeLast().grade] ?? 0;
     over--;

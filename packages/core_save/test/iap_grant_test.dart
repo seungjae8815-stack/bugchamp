@@ -59,11 +59,11 @@ void main() {
   });
 
   group('지급 규칙', () {
-    test('요정함이 차면 넘친 알은 가루 — 높은 등급이 먼저 들어간다', () {
+    test('산 알도 여유 칸까지 차면 넘친 알은 가루 — 높은 등급이 먼저 들어간다', () {
       final full = base.copyWith(
         fairy: base.fairy.copyWith(
           eggs: [
-            for (var i = 0; i < fairy.boxCap - 1; i++)
+            for (var i = 0; i < fairy.boxCap + fairy.boxPurchaseSlack - 1; i++)
               FairyEgg(id: 'x$i', grade: FairyGrade.common),
           ],
           seq: 100,
@@ -75,10 +75,13 @@ void main() {
       expect(s.fairy.dust, 300 + 3 * (fairy.releaseDust[FairyGrade.rare] ?? 0));
     });
 
-    test('기존 상품(스타터·패스)은 예전과 같게 지급된다', () {
+    test('기존 상품(스타터·패스)이 지급된다', () {
       final s = grant(base, 'starter_pack', pid: 'P1');
       expect(s.starterBought, isTrue);
-      expect(s.materialCount(MaterialKind.jelly), 300);
+      // 2026-10-08 구성 변경: 젤리 400 · 부화기 +1 · 2시간 가속기 3(골드·재료 뺌).
+      expect(s.materialCount(MaterialKind.jelly), 400);
+      expect(s.gold, base.gold);
+      expect(s.fairy.accelerators['acc2h'], 3);
       expect(s.incubatorCapacity, base.incubatorCapacity + 1);
       expect(s.redeemedPurchases, {'P1'});
       final p = grant(grant(base, 'idle_pass'), 'idle_pass');
@@ -139,6 +142,73 @@ void main() {
         isNull,
         reason: '만료',
       );
+    });
+  });
+
+  group('스킨 구매 덤(2026-10-08)', () {
+    final species = {
+      for (final j in (_data('species.json')['species'] as List))
+        (j as Map<String, dynamic>)['id'] as String: Species.fromJson(j),
+    };
+    SaveGame buy(SaveGame s, String id, String pid) => applyIapGrant(
+      s,
+      iap.byId(id)!,
+      iap,
+      battle: battle,
+      now: t0,
+      fairy: fairy,
+      purchaseId: pid,
+      speciesOf: (x) => species[x],
+    );
+
+    test('젤리 100 + 그 계열 대표종 4성 알(이색 없음) · 같은 영수증이면 같은 알', () {
+      final a = buy(base, 'skin_gold_rhino', 'R1');
+      expect(a.materialCount(MaterialKind.jelly), 100);
+      final egg = a.bugs.single;
+      expect(egg.speciesId, 'rhino_japanese');
+      expect(egg.potential, 4);
+      expect(egg.stage, LifeStage.egg);
+      expect(egg.variant, BugVariant.none);
+      expect(buy(base, 'skin_gold_rhino', 'R1').bugs.single.sizeMm, egg.sizeMm);
+      expect(
+        buy(base, 'skin_albino_stag', 'A1').bugs.single.speciesId,
+        'stag_miyama',
+      );
+    });
+
+    test('채집함이 가득 차면 사기 전에 막는다', () {
+      final full = base.copyWith(
+        bugs: [
+          for (var i = 0; i < base.storageCapacity; i++)
+            buy(base, 'skin_gold_rhino', 'F$i').bugs.single,
+        ],
+      );
+      expect(
+        iapPurchaseBlock(
+          full,
+          iap.byId('skin_gold_rhino')!,
+          battle: battle,
+          now: t0,
+        ),
+        IapBlock.storageFull,
+      );
+      expect(
+        iapPurchaseBlock(
+          base,
+          iap.byId('skin_gold_rhino')!,
+          battle: battle,
+          now: t0,
+        ),
+        IapBlock.none,
+      );
+    });
+
+    test('스킨 편의 보너스 — 재료 +30% · 부화 −25% · 짝짓기 −25%', () {
+      const owned = {'gold_rhino'};
+      expect(iap.skinnedReleaseMaterial(100, owned, 'rhino_japanese'), 130);
+      expect(iap.skinnedIncubateSeconds(1000, owned, 'rhino_japanese'), 750);
+      expect(iap.skinnedBreedSeconds(1000, owned, 'rhino_japanese'), 750);
+      expect(iap.skinnedBreedSeconds(1000, owned, 'stag_giant'), 1000);
     });
   });
 }

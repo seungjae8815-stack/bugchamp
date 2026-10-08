@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
@@ -30,6 +32,9 @@ enum IapBlock {
 
   /// 주 1회 상품을 이번 주에 이미 샀다.
   thisWeek,
+
+  /// 곤충 알을 주는 상품인데 채집함에 빈칸이 없다(2026-10-08 — 산 알이 정리에서 잘리지 않게 사기 전에 막는다).
+  storageFull,
 }
 
 /// [p] 를 지금 살 수 있는가 — **앱이 결제창을 열기 전에** 본다.
@@ -41,6 +46,10 @@ IapBlock iapPurchaseBlock(
   required BattleConfig battle,
   required DateTime now,
 }) {
+  final eggs = p.grant.bugEggs.length;
+  if (eggs > 0 && s.bugs.length + eggs > s.storageCapacity) {
+    return IapBlock.storageFull;
+  }
   switch (p.type) {
     case IapType.starter:
       return s.starterBought ? IapBlock.owned : IapBlock.none;
@@ -66,7 +75,7 @@ bool iapNeedsFairyConfig(IapProduct p) => p.grant.hasFairy;
 /// 구매 1건을 세이브에 반영한 사본. [purchaseId] 가 있으면 지급 기록에 더한다.
 ///
 /// - 재화·재료·부화기 슬롯·요정(가루·속성석·가속기·알)·스킬 만능 조각은 `grant` 대로.
-///   산 알은 **자동 분해하지 않는다**(`autoRelease: false`). 요정함이 차면 넘친 알은 기존 규칙대로 가루.
+///   산 알은 **자동 분해하지 않는다**(`autoRelease: false`). 요정함이 차 있어도 여유 칸(`boxPurchaseSlack`)만큼 더 들어간다.
 /// - 기간제(곤충학자·무한 버프·성장 패스)는 남은 기간에 **이어 붙인다**.
 /// - 계정당 1회(스타터·입문 패키지)는 표식을 남긴다.
 /// - 주간 묶음은 이번 주 id 를 적는다.
@@ -85,9 +94,11 @@ SaveGame applyIapGrant(
   required DateTime now,
   FairyConfig? fairy,
   String? purchaseId,
+  Species? Function(String speciesId)? speciesOf,
 }) {
   final t = now.toUtc();
   var out = _applyGrantGoods(s, p.grant, fairy);
+  out = _grantBugEggs(out, p.grant, t, purchaseId, speciesOf);
 
   DateTime? extend(DateTime? cur, int days) {
     final base = (cur != null && cur.isAfter(t)) ? cur : t;
@@ -147,6 +158,41 @@ SaveGame? claimGrowthPassDaily(
   );
 }
 
+/// 곤충 알(스킨 구매 덤) — 종·포텐셜 고정, 나머지(크기·기질·오행·성별)는 굴린다. 이색 없음.
+///
+/// 굴림 seed 는 **영수증 id 해시** — 같은 영수증이 다시 와도(중복 지급은 purchaseId 가 막는다) 같은 알이고,
+/// 서버·앱이 같은 결과를 낸다. 종 정보가 없으면(호출부가 [speciesOf] 를 못 줌) 건너뛴다.
+SaveGame _grantBugEggs(
+  SaveGame s,
+  IapGrant g,
+  DateTime t,
+  String? purchaseId,
+  Species? Function(String speciesId)? speciesOf,
+) {
+  if (g.bugEggs.isEmpty || speciesOf == null) return s;
+  final key = purchaseId ?? '${t.microsecondsSinceEpoch}';
+  var h = 0x811c9dc5;
+  for (final c in key.codeUnits) {
+    h = (h ^ c) * 0x01000193 & 0x7fffffff;
+  }
+  final rng = math.Random(h);
+  final bugs = [...s.bugs];
+  for (var i = 0; i < g.bugEggs.length; i++) {
+    final e = g.bugEggs[i];
+    final sp = speciesOf(e.species);
+    if (sp == null) continue;
+    bugs.add(
+      IndividualBug.roll(
+        id: 'iap-${h.toRadixString(36)}-$i',
+        species: sp,
+        rng: rng,
+        potential: e.potential,
+      ).copyWith(stage: LifeStage.egg, stageSince: t),
+    );
+  }
+  return s.copyWith(bugs: bugs);
+}
+
 /// 묶음의 **물건**만 넣는다(재화·재료·슬롯·요정·스킬 조각). 상품 표식·기간은 [applyIapGrant] 몫.
 SaveGame _applyGrantGoods(SaveGame s, IapGrant g, FairyConfig? fairy) {
   final mats = Map<MaterialKind, int>.from(s.materials);
@@ -174,7 +220,13 @@ SaveGame _applyGrantGoods(SaveGame s, IapGrant g, FairyConfig? fairy) {
           if (FairyGrade.fromKeyOrNull(e.key) case final grade?)
             for (var i = 0; i < e.value; i++) grade,
       ]..sort((a, b) => b.index.compareTo(a.index));
-      final op = grantFairyEggs(f, fairy, eggs, autoRelease: false);
+      final op = grantFairyEggs(
+        f,
+        fairy,
+        eggs,
+        autoRelease: false,
+        purchased: true,
+      );
       if (op.state != null) f = op.state!;
     }
   }

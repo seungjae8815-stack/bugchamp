@@ -28,9 +28,13 @@ class _Fake extends http.BaseClient {
     this.notices = const [],
     this.mail = const [],
     this.codes = const [],
+    this.rpc = const {},
   });
 
   final Map<String, Map<String, dynamic>> saves;
+
+  /// RPC 이름 → 돌려줄 JSON(결투 리그 순위 등). 없는 RPC 는 예전처럼 행 삽입으로 다룬다.
+  final Map<String, Object?> rpc;
   final Map<String, List<Map<String, dynamic>>> defenders;
 
   /// 공지·우편·선물코드 테이블(운영이 SQL 로 넣는 행들).
@@ -81,6 +85,15 @@ class _Fake extends http.BaseClient {
       final raw = await request.finalize().bytesToString();
       if (path.contains('/rpc/bump_gift_code')) {
         return http.StreamedResponse(Stream.value(utf8.encode('null')), 200);
+      }
+      for (final e in rpc.entries) {
+        if (path.endsWith('/rpc/${e.key}')) {
+          return http.StreamedResponse(
+            Stream.value(utf8.encode(jsonEncode(e.value))),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
       }
       final row = (jsonDecode(raw) as List).first as Map<String, dynamic>;
       // 1회성 삽입: 이미 있으면 409(기본키 충돌) — 서버가 이걸로 중복을 막는다.
@@ -269,9 +282,12 @@ void main() {
     List<Map<String, dynamic>> codes = const [],
     GuildStore? guildStore,
     GuildMissionStore? guildMissionStore,
+    Map<String, Map<String, dynamic>> otherSaves = const {},
+    Map<String, Object?> rpc = const {},
   }) {
     fake = _Fake(
-      serverHasSave ? {'user-1': (save ?? mySave).toJson()} : {},
+      {if (serverHasSave) 'user-1': (save ?? mySave).toJson(), ...otherSaves},
+      rpc: rpc,
       defenders: defenders,
       notices: notices,
       mail: mail,
@@ -435,6 +451,170 @@ void main() {
       expect(res.statusCode, 200);
       final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
       expect(body['outcome'], isNot('teamA'));
+    });
+  });
+
+  group('결투 상대 이색·스킨 표시', () {
+    IndividualBug adult(String id, {BugVariant v = BugVariant.none}) =>
+        IndividualBug(
+          id: id,
+          speciesId: 'a',
+          sizeMm: 40,
+          potential: 3,
+          temperament: Temperament.aggressive,
+          sex: Sex.male,
+          element: Element.wood,
+          stage: LifeStage.adult,
+          stageSince: _t.subtract(const Duration(days: 30)),
+          variant: v,
+        );
+    // 상대: 첫 곤충만 무지개, 나머지 둘은 평범(스킨 'gold' 로 등록).
+    final foeSave = SaveGame.initial(createdAt: _t).copyWith(
+      bugs: [
+        adult('f1', v: BugVariant.rainbow),
+        adult('f2'),
+        adult('f3'),
+      ],
+      pvpDefenseIds: const ['f1', 'f2', 'f3'],
+    );
+    final me3 = SaveGame.initial(
+      createdAt: _t,
+    ).copyWith(bugs: [adult('m1'), adult('m2'), adult('m3')]);
+    final foeDefenders = {
+      'foe-1': [
+        {..._defender(), 'skin': 'gold'},
+      ],
+    };
+    final leagueRpc = <String, Object?>{
+      'pvp_league_rank_of': const [],
+      'pvp_league_count': 1,
+      'pvp_league_range': [
+        {'user_id': 'foe-1', 'rank': 1, 'nickname': '상대', 'trophies': 10},
+      ],
+      'pvp_league_idle': const [],
+    };
+
+    test('/pvp/profile — 이색 키와 능력치(bug)가 실린다', () async {
+      final h = handler(otherSaves: {'foe-1': foeSave.toJson()});
+      final res = await get(h, '/pvp/profile?user=foe-1', token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      final team = (body['team'] as List).cast<Map<String, dynamic>>();
+      expect(team, hasLength(3));
+      expect(team[0]['variant'], 'rainbow');
+      // 이색이 아니면 키 자체가 없다(구버전 앱·응답 크기).
+      expect(team[1].containsKey('variant'), isFalse);
+      expect(team[0]['bug'], isA<Map<String, dynamic>>());
+    });
+
+    test('/duel/offer — 이색은 variant, 평범한 곤충은 스킨이 실린다', () async {
+      final h = handler(
+        save: me3,
+        defenders: foeDefenders,
+        otherSaves: {'foe-1': foeSave.toJson()},
+        rpc: leagueRpc,
+      );
+      final res = await post(h, '/duel/offer', {}, token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      final slot = (body['slots'] as List)
+          .cast<Map<String, dynamic>>()
+          .firstWhere((s) => s['userId'] == 'foe-1');
+      final team = (slot['team'] as List).cast<Map<String, dynamic>>();
+      expect(team[0]['variant'], 'rainbow');
+      expect(team[0].containsKey('skin'), isFalse); // 이색이면 스킨 대신 이색
+      // 예전 버그: `variant != null`(늘 참)이라 세이브 상대의 스킨이 늘 지워졌다.
+      expect(team[1]['skin'], 'gold');
+      expect(team[1].containsKey('variant'), isFalse);
+    });
+
+    test('/duel/start 응답의 상대에도 이색·스킨이 실린다', () async {
+      final h = handler(
+        save: me3,
+        defenders: foeDefenders,
+        otherSaves: {'foe-1': foeSave.toJson()},
+        rpc: leagueRpc,
+      );
+      final offer =
+          jsonDecode(
+                await (await post(
+                  h,
+                  '/duel/offer',
+                  {},
+                  token: makeToken(),
+                )).readAsString(),
+              )
+              as Map<String, dynamic>;
+      final slot = (offer['slots'] as List)
+          .cast<Map<String, dynamic>>()
+          .firstWhere((s) => s['userId'] == 'foe-1');
+      final res = await post(h, '/duel/start', {
+        'teamBugIds': ['m1', 'm2', 'm3'],
+        'offerId': offer['offerId'],
+        'pick': slot['i'],
+      }, token: makeToken());
+      final text = await res.readAsString();
+      expect(res.statusCode, 200, reason: text);
+      final foe = ((jsonDecode(text) as Map)['foe'] as List)
+          .cast<Map<String, dynamic>>();
+      expect(foe[0]['variant'], 'rainbow');
+      expect(foe[1]['skin'], 'gold');
+    });
+
+    // 스킨 뱃지(2026-10-08) — 산 **곤충 스킨**만 이름 옆에 보인다(아레나 테마 제외).
+    final skinnedFoe = foeSave.copyWith(
+      ownedSkins: const {'arena_theme', 'albino_stag', 'gold_rhino'},
+    );
+
+    test('/pvp/profile — 곤충 스킨만 skins 로 실린다(비곤충 제외)', () async {
+      final h = handler(otherSaves: {'foe-1': skinnedFoe.toJson()});
+      final res = await get(h, '/pvp/profile?user=foe-1', token: makeToken());
+      expect(res.statusCode, 200);
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      // iap.json skins 순서대로, arena_theme 은 빠진다.
+      expect(body['skins'], ['gold_rhino', 'albino_stag']);
+    });
+
+    test('/pvp/profile — 스킨이 없거나 비곤충뿐이면 키가 없다', () async {
+      final h = handler(
+        otherSaves: {
+          'foe-1': foeSave.copyWith(ownedSkins: const {'arena_theme'}).toJson(),
+        },
+      );
+      final res = await get(h, '/pvp/profile?user=foe-1', token: makeToken());
+      final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+      expect(body.containsKey('skins'), isFalse);
+    });
+
+    test('/duel/offer · /duel/start — 상대 skins 가 실린다', () async {
+      final h = handler(
+        save: me3,
+        defenders: foeDefenders,
+        otherSaves: {'foe-1': skinnedFoe.toJson()},
+        rpc: leagueRpc,
+      );
+      final offer =
+          jsonDecode(
+                await (await post(
+                  h,
+                  '/duel/offer',
+                  {},
+                  token: makeToken(),
+                )).readAsString(),
+              )
+              as Map<String, dynamic>;
+      final slot = (offer['slots'] as List)
+          .cast<Map<String, dynamic>>()
+          .firstWhere((s) => s['userId'] == 'foe-1');
+      expect(slot['skins'], ['gold_rhino', 'albino_stag']);
+      final res = await post(h, '/duel/start', {
+        'teamBugIds': ['m1', 'm2', 'm3'],
+        'offerId': offer['offerId'],
+        'pick': slot['i'],
+      }, token: makeToken());
+      final text = await res.readAsString();
+      expect(res.statusCode, 200, reason: text);
+      expect((jsonDecode(text) as Map)['skins'], ['gold_rhino', 'albino_stag']);
     });
   });
 

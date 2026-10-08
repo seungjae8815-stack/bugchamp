@@ -11,6 +11,7 @@ class GiftTier {
     required this.weight,
     this.gold = 0,
     this.goldMinutes = 0,
+    this.huntMinutes = 0,
     this.jelly = 0,
     this.chitin = 0,
     this.mineral = 0,
@@ -24,6 +25,11 @@ class GiftTier {
   /// **큰 쪽**이다(`giftGold`). 0 이면 정액만 쓴다(예전 동작).
   final double goldMinutes;
 
+  /// 이 유저가 지금 자리에서 **몇 분 직접 사냥한 만큼**을 주는가(2026-10-08, `huntMinutesReward`).
+  /// 0 보다 크면 [goldMinutes] 대신 이것을 쓰고, 재료도 같은 분치다(골드·재료 모두 정액과 큰 쪽).
+  /// 구버전 앱은 이 키를 몰라 예전 식([goldMinutes])으로 계산한다.
+  final double huntMinutes;
+
   final int jelly;
   final int chitin;
   final int mineral;
@@ -33,6 +39,7 @@ class GiftTier {
     weight: (json['weight'] as num?)?.toDouble() ?? 1,
     gold: (json['gold'] as num?)?.toInt() ?? 0,
     goldMinutes: (json['goldMinutes'] as num?)?.toDouble() ?? 0,
+    huntMinutes: (json['huntMinutes'] as num?)?.toDouble() ?? 0,
     jelly: (json['jelly'] as num?)?.toInt() ?? 0,
     chitin: (json['chitin'] as num?)?.toInt() ?? 0,
     mineral: (json['mineral'] as num?)?.toInt() ?? 0,

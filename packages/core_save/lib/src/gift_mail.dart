@@ -11,6 +11,7 @@ class GiftMail {
     this.chitin = 0,
     this.mineral = 0,
     this.sap = 0,
+    this.minutes = 0,
   });
 
   final String id;
@@ -24,7 +25,28 @@ class GiftMail {
   final int mineral;
   final int sap;
 
+  /// 사냥 몇 분치로 만든 선물인가(화면 표시용 "사냥 N분치", 2026-10-08). 0 = 예전 선물(표시 안 함).
+  /// 금액은 만들 때 박힌다 — 이 값으로 다시 계산하지 않는다.
+  final double minutes;
+
   bool isExpired(DateTime nowUtc) => !nowUtc.isBefore(expiry);
+
+  /// 금액만 바꾼 사본 — 서버가 상한으로 자를 때 쓴다.
+  GiftMail capped({
+    required int gold,
+    required int chitin,
+    required int mineral,
+    required int sap,
+  }) => GiftMail(
+    id: id,
+    expiry: expiry,
+    gold: gold,
+    jelly: jelly,
+    chitin: chitin,
+    mineral: mineral,
+    sap: sap,
+    minutes: minutes,
+  );
 
   Map<MaterialKind, int> get materials => {
     if (chitin > 0) MaterialKind.chitin: chitin,
@@ -41,6 +63,7 @@ class GiftMail {
     chitin: (json['chitin'] as num?)?.toInt() ?? 0,
     mineral: (json['mineral'] as num?)?.toInt() ?? 0,
     sap: (json['sap'] as num?)?.toInt() ?? 0,
+    minutes: (json['min'] as num?)?.toDouble() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -51,5 +74,6 @@ class GiftMail {
     'chitin': chitin,
     'mineral': mineral,
     'sap': sap,
+    if (minutes > 0) 'min': minutes,
   };
 }

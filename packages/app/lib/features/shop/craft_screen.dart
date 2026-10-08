@@ -228,11 +228,13 @@ class _ProductCard extends ConsumerWidget {
     final name = product.name?.resolve(locale) ?? product.id;
     final desc = product.desc?.resolve(locale);
     final block = _block(ref);
-    final owned = _owned || block != IapBlock.none;
+    // 채집함 가득 참(알을 주는 상품)은 산 것처럼 칠하지 않는다 — 누르면 안내만 한다.
+    final owned =
+        _owned || block == IapBlock.owned || block == IapBlock.thisWeek;
     final ownedLabel = switch (block) {
       IapBlock.owned => l.storePurchased,
       IapBlock.thisWeek => l.storeWeeklyDone,
-      IapBlock.none => l.storeOwned,
+      IapBlock.none || IapBlock.storageFull => l.storeOwned,
     };
     // 패스는 남은 기간을 보여준다.
     //
@@ -247,7 +249,10 @@ class _ProductCard extends ConsumerWidget {
         save.growthPassActive(now) ? save.growthPassExpiresAt : null,
       _ => null,
     };
-    final passLeft = passEndsAt?.difference(now).inDays;
+    // 남은 날은 **올림**(마지막 날이 "0일 남음"으로 보였다 — 2026-10-08 상점 점검).
+    final passLeft = passEndsAt == null
+        ? null
+        : (passEndsAt.difference(now).inMinutes / (24 * 60)).ceil();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -424,10 +429,11 @@ class _ProductCard extends ConsumerWidget {
       now: ref.read(clockProvider).now().toUtc(),
     );
     if (block != IapBlock.none) {
-      showCenterToast(
-        ctx,
-        block == IapBlock.thisWeek ? l.storeWeeklyNext : l.storePurchased,
-      );
+      showCenterToast(ctx, switch (block) {
+        IapBlock.thisWeek => l.storeWeeklyNext,
+        IapBlock.storageFull => l.storeStorageFull,
+        _ => l.storePurchased,
+      });
       return;
     }
     final outcome = await ref.read(iapServiceProvider).buy(product);
@@ -911,7 +917,16 @@ class _ExchangeCardState extends ConsumerState<_ExchangeCard> {
                 const SizedBox(height: 2),
                 Text(
                   !_wantDust
-                      ? l.exchangeHint
+                      ? l.exchangeHint(
+                          _hoursLabel(
+                            ref
+                                    .watch(gameDataProvider)
+                                    .value
+                                    ?.runConfig
+                                    ?.exchangeGoldHours ??
+                                1,
+                          ),
+                        )
                       : dustLeft == null
                       ? l.exchangeHintDust
                       : '${l.exchangeHintDust} · ${l.exchangeDustLeft('$dustLeft')}',
@@ -1264,3 +1279,7 @@ void _showEggOdds(
     ],
   );
 }
+
+/// 교환소 시간 표기 — 정수면 "5", 아니면 "1.5".
+String _hoursLabel(double h) =>
+    h == h.roundToDouble() ? '${h.round()}' : h.toStringAsFixed(1);

@@ -1758,6 +1758,77 @@ void main() {
       expect(r2.error, 'already_claimed');
     });
 
+    test('일일보상(2026-10-08): 앱이 보낸 사냥 분치를 받되 서버 상한으로 자른다', () {
+      final reward = cfg.daily!.rewards.first;
+      expect(reward.huntMinutes, greaterThan(0));
+      final s = SaveGame.initial(createdAt: t0);
+      // 정상 범위 — 정액보다 크면 그 금액.
+      final ok = actions.claimDaily(
+        s,
+        reward.id,
+        clientGold: reward.gold + 777,
+      );
+      expect(ok.save!.gold, reward.gold + 777);
+      // 위조 — 어마어마한 값은 상한으로 잘린다.
+      final forged = actions.claimDaily(
+        s,
+        reward.id,
+        clientGold: 1 << 60,
+        clientMaterialsEach: 1 << 50,
+      );
+      expect(forged.isOk, isTrue);
+      expect(forged.save!.gold, lessThan(1 << 50));
+      expect(
+        forged.save!.materialCount(MaterialKind.chitin),
+        lessThan(1 << 40),
+      );
+      // 구버전 앱(금액 없음) — 정액.
+      expect(actions.claimDaily(s, reward.id).save!.gold, reward.gold);
+    });
+
+    test('일일보상 한 번 더 받기: 받은 뒤에만 · 하루 1회', () {
+      final reward = cfg.daily!.rewards.first;
+      final s = SaveGame.initial(createdAt: t0);
+      expect(
+        actions.claimDaily(s, reward.id, bonus: true).error,
+        'not_claimed',
+      );
+      final first = actions.claimDaily(s, reward.id).save!;
+      final bonus = actions.claimDaily(first, reward.id, bonus: true);
+      expect(bonus.isOk, isTrue);
+      expect(bonus.save!.gold, reward.gold * 2);
+      expect(
+        actions.claimDaily(bonus.save!, reward.id, bonus: true).error,
+        'already_claimed',
+      );
+    });
+
+    test('선물 금액은 서버 상한으로 자른다(앱이 만든 값이라 믿을 수 없다)', () {
+      final forged = GiftMail(
+        id: 'g1',
+        expiry: t0.add(const Duration(hours: 1)),
+        gold: 1 << 60,
+        chitin: 1 << 50,
+        minutes: 20,
+      );
+      final honest = GiftMail(
+        id: 'g2',
+        expiry: t0.add(const Duration(hours: 1)),
+        gold: 5000,
+        chitin: 40,
+      );
+      final s = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(gifts: [forged, honest]);
+      final r1 = actions.claimGift(s, 'g1');
+      expect(r1.isOk, isTrue);
+      expect(r1.save!.gold, lessThan(1 << 50));
+      expect(r1.save!.materialCount(MaterialKind.chitin), lessThan(1 << 40));
+      final r2 = actions.claimGift(s, 'g2');
+      expect(r2.save!.gold, 5000);
+      expect(r2.save!.materialCount(MaterialKind.chitin), 40);
+    });
+
     test('없는 일일보상 슬롯은 거부', () {
       final r = actions.claimDaily(SaveGame.initial(createdAt: t0), 'brunch');
       expect(r.error, 'unknown_reward');
@@ -2314,6 +2385,32 @@ void main() {
           ..remove('fairy');
         final r = actions.mergeSave(before, j);
         expect(r.save!.fairy, before.fairy);
+      });
+
+      test('요정함 확장·자동 분해를 모르는 앱(feat 17)이 올려도 산 칸이 지켜진다', () {
+        final before = withFairy(
+          FairyState(
+            fairies: [fy(1, FairyGrade.common)],
+            seq: 1,
+            boxExtra: 20,
+            autoReleaseUpTo: FairyGrade.rare,
+          ),
+        );
+        final j = before.toJson()..['feat'] = 17;
+        (j['fairy'] as Map)
+          ..remove('bx')
+          ..remove('ar');
+        final r = actions.mergeSave(before, j);
+        expect(r.save!.fairy.boxExtra, 20);
+        expect(r.save!.fairy.autoReleaseUpTo, FairyGrade.rare);
+      });
+
+      test('요정함 확장은 최대치로 자른다(조작 업로드)', () {
+        final before = withFairy(const FairyState(seq: 1));
+        final j = withFairy(const FairyState(seq: 1, boxExtra: 999)).toJson();
+        final r = actions.mergeSave(before, j);
+        final fc = cfg.fairy!;
+        expect(r.save!.fairy.boxExtra, fc.boxMax - fc.boxCap);
       });
 
       test('요정을 아는 앱이 비우면 비운 것으로 본다', () {

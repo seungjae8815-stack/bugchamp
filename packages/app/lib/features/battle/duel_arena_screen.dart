@@ -9,6 +9,7 @@ import '../../domain/audio_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/skin_badges.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
 import 'duel_driver.dart';
@@ -31,6 +32,8 @@ class DuelArenaScreen extends StatefulWidget {
     required this.onFinished,
     this.mySkins = const {},
     this.foeSkins = const {},
+    this.myBadges = const [],
+    this.foeBadges = const [],
     this.foeAt,
     this.foeIndex,
     this.header,
@@ -53,6 +56,11 @@ class DuelArenaScreen extends StatefulWidget {
   final Future<void> Function(DuelStep last) onFinished;
   final Map<String, SkinView?> mySkins;
   final Map<String, SkinView?> foeSkins;
+
+  /// 이름표 옆 스킨 뱃지(2026-10-08) — 내 쪽은 내 `ownedSkins`, 상대는 서버가 준 `skins`.
+  /// 비면 뱃지 없음(구서버·야생).
+  final List<String> myBadges;
+  final List<String> foeBadges;
 
   // ── 왕충 선발대회(곤충 1마리 · 웨이브전)용 — 결투는 비워 둔다 ──
 
@@ -436,10 +444,17 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           Row(
             children: [
               Expanded(
-                child: Text(
-                  a.name,
-                  style: st(const Color(0xFF9CE37D)),
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        a.name,
+                        style: st(const Color(0xFF9CE37D)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    skinBadges(widget.myBadges, size: 16),
+                  ],
                 ),
               ),
               Text(
@@ -451,11 +466,23 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                 ),
               ),
               Expanded(
-                child: Text(
-                  b.name,
-                  textAlign: TextAlign.right,
-                  style: st(const Color(0xFFEF9A9A)),
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    skinBadges(
+                      widget.foeBadges,
+                      size: 16,
+                      margin: const EdgeInsets.only(right: 4),
+                    ),
+                    Flexible(
+                      child: Text(
+                        b.name,
+                        textAlign: TextAlign.right,
+                        style: st(const Color(0xFFEF9A9A)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -603,6 +630,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
 
   // ── 위에서 본 장면: 게이지·떨어지기 ────────────────────────────────
 
+  /// 스킨·이색 곤충의 **입장 후광 배율**(2026-10-08) — 조준 중 1.8, 다 떨어지면 1.35.
+  /// 그 뒤 옆 무대에서 1초 동안 1 로 가라앉는다. 스킨이 없으면 [SkinAura] 자체가 없어 무시된다.
+  double _entranceBoost(double fallen) => 1.8 - 0.45 * fallen;
+
   Widget _topScene(BoxConstraints box, {required bool falling}) {
     final side = math.min(box.maxWidth, box.maxHeight) * 0.9;
     final a = _curA;
@@ -632,17 +663,24 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               scale: scale,
               child: Transform.rotate(
                 angle: dir > 0 ? 0 : math.pi,
-                child: gameImageChain(
-                  [
-                    'assets/images/duel/duel_${d.speciesId}.webp',
-                    'assets/images/bugs/${d.speciesId}_adult.webp',
-                  ],
-                  size: size,
-                  fallback: Icon(
-                    Icons.bug_report,
+                // 떨어질 때도 이색·스킨을 입힌다(경기 본편과 같은 외형).
+                child: skinnedWithoutArt(
+                  gameImageChain(
+                    [
+                      'assets/images/duel/duel_${d.speciesId}.webp',
+                      'assets/images/bugs/${d.speciesId}_adult.webp',
+                    ],
                     size: size,
-                    color: Colors.white,
+                    fallback: Icon(
+                      Icons.bug_report,
+                      size: size,
+                      color: Colors.white,
+                    ),
                   ),
+                  skin,
+                  size,
+                  // 입장 — 조준 중엔 크게, 떨어지며 가라앉는다(스킨·이색만, 큰 크기에서만).
+                  auraBoost: _entranceBoost(falling ? ease : 0),
                 ),
               ),
             ),
@@ -854,6 +892,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         // 옆모습 그림은 가로로 길어 가운데 정렬이면 발 밑이 비어 공중에 뜬다(실기 "날아다닌다").
         alignment: Alignment.bottomCenter,
         skin: skin,
+        // 착지 직후 잠깐 입장 후광이 남았다 사라진다(판 시작 1초).
+        auraBoost: _phase == _Phase.fight
+            ? 1 + (_entranceBoost(1) - 1) * (1 - (playT / 1.0).clamp(0.0, 1.0))
+            : 1,
         fallback: Icon(Icons.bug_report, size: base, color: Colors.white),
       );
       return Positioned(

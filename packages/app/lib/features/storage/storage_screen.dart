@@ -932,7 +932,13 @@ class StorageScreen extends ConsumerWidget {
     if (sp == null) return const SizedBox.shrink();
     final ready = !now.isBefore(slot.endsAt);
     final remaining = slot.endsAt.difference(now);
-    final total = cfg.breedingDuration(sp.grade);
+    final total =
+        data.iapConfig?.skinnedBreedSeconds(
+          cfg.breedingDuration(sp.grade),
+          save.ownedSkins,
+          sp.id,
+        ) ??
+        cfg.breedingDuration(sp.grade);
     final fill = ready
         ? 1.0
         : (total > 0 ? (1 - remaining.inSeconds / total).clamp(0.0, 1.0) : 1.0);

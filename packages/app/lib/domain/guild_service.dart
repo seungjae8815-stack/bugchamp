@@ -130,6 +130,7 @@ class GuildMemberDetail {
     this.equipment = const [],
     this.fairy,
     this.skills = const [],
+    this.skins = const [],
   });
 
   final GuildMemberInfo member;
@@ -149,6 +150,9 @@ class GuildMemberDetail {
   final List<EquipItem> equipment;
   final Fairy? fairy;
   final List<({String id, int level})> skills;
+
+  /// 산 곤충 스킨 id(이름 옆 뱃지, 2026-10-08). 구서버면 빈 목록.
+  final List<String> skins;
 
   factory GuildMemberDetail.fromJson(Map<String, dynamic> j) {
     final m = (j['member'] as Map?)?.cast<String, dynamic>() ?? const {};
@@ -170,6 +174,10 @@ class GuildMemberDetail {
       pets: list('pets', IndividualBug.fromJson),
       team: list('team', (x) => x),
       equipment: list('equipment', EquipItem.tryFromJson),
+      skins: [
+        for (final x in (s?['skins'] as List? ?? const []))
+          if (x != null) '$x',
+      ],
       fairy: fairyJson is Map
           ? _tryParse(() => Fairy.fromJson(fairyJson.cast<String, dynamic>()))
           : null,

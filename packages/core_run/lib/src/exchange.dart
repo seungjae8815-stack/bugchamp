@@ -24,28 +24,89 @@ import 'run_math.dart';
   double efficiency = 1.0,
 }) {
   if (trades <= 0) return (gold: 0, materialsEach: 0);
-  ({double gold, double kills}) hunt(double hours) {
-    if (hours <= 0) return (gold: 0, kills: 0);
-    final d = Duration(milliseconds: (hours * 3600 * 1000).round());
-    final p = simulateIdleProgress(
-      config: c,
-      startStage: stage,
-      stats: stats,
-      elapsed: d,
-      maxAccrual: d,
-      efficiency: efficiency,
-      tier: tier,
-      abyssFloor: abyssFloor,
-    );
-    return (gold: p.gold.toDouble(), kills: p.habitatClears);
-  }
+  final gold = _hunt(
+    c,
+    stats,
+    stage,
+    tier,
+    abyssFloor,
+    efficiency,
+    c.exchangeGoldHours,
+  ).gold;
+  final kills = _hunt(
+    c,
+    stats,
+    stage,
+    tier,
+    abyssFloor,
+    efficiency,
+    c.exchangeMaterialHours,
+  ).kills;
+  return (
+    gold: (gold * trades).round(),
+    materialsEach: (_materialsEach(c, stats, stage, kills) * trades).round(),
+  );
+}
 
-  final gold = hunt(c.exchangeGoldHours).gold * trades;
-  // 재료 = 처치당 기대 수량(확률 × 평균 1.5개 × 깊이 배율 × 넘친 발견 배율) — 실시간 처치와 같은 식.
-  // 3종을 고루 준다(한 종만 주면 부족한 종을 노려 반복 교환하게 된다).
+/// 깜짝선물·일일보상 — 이 능력치로 **[minutes]분 직접 사냥한** 골드·재료(종류당)(2026-10-08 사장님 확정).
+///
+/// 예전엔 맨몸 기준 골드 표(`giftGold`)로 쟀다. 강화·펫·장비 배율이 빠져서 "선물 2.7분치"가 실제로는
+/// 쉬움 초반 18초 · 쉬움 끝 2초 · 보통 이후 1초 미만이었다(balance_sim 실측) — 열어도 아무 일이 없었다.
+/// 교환소([exchangeOutput])와 같은 식이다. [stats] 는 버프·접속 보너스를 뺀 사냥 능력치(`huntStatsOf`).
+/// ⚠️ 앱(금액 계산)과 서버(상한)가 같은 함수를 쓴다. 서버는 [efficiency] 를 넉넉히 줘서 강화만 아는
+/// 전력으로도 정당한 금액이 잘리지 않게 한다.
+({int gold, int materialsEach}) huntMinutesReward(
+  RunConfig c, {
+  required CharacterStats stats,
+  required int stage,
+  required double minutes,
+  int tier = 0,
+  int abyssFloor = 0,
+  double efficiency = 1.0,
+}) {
+  if (minutes <= 0) return (gold: 0, materialsEach: 0);
+  final h = _hunt(c, stats, stage, tier, abyssFloor, efficiency, minutes / 60);
+  return (
+    gold: h.gold.round(),
+    materialsEach: _materialsEach(c, stats, stage, h.kills).round(),
+  );
+}
+
+/// 효율 [efficiency] 로 [hours] 시간 사냥 — 방치 정산([simulateIdleProgress])과 같은 식.
+({double gold, double kills}) _hunt(
+  RunConfig c,
+  CharacterStats stats,
+  int stage,
+  int tier,
+  int abyssFloor,
+  double efficiency,
+  double hours,
+) {
+  if (hours <= 0) return (gold: 0, kills: 0);
+  final d = Duration(milliseconds: (hours * 3600 * 1000).round());
+  final p = simulateIdleProgress(
+    config: c,
+    startStage: stage,
+    stats: stats,
+    elapsed: d,
+    maxAccrual: d,
+    efficiency: efficiency,
+    tier: tier,
+    abyssFloor: abyssFloor,
+  );
+  return (gold: p.gold.toDouble(), kills: p.habitatClears.toDouble());
+}
+
+/// 재료 = 처치당 기대 수량(확률 × 평균 1.5개 × 깊이 배율 × 넘친 발견 배율) — 실시간 처치와 같은 식.
+/// 3종을 고루 준다(한 종만 주면 부족한 종을 노려 반복 교환하게 된다).
+double _materialsEach(
+  RunConfig c,
+  CharacterStats stats,
+  int stage,
+  double kills,
+) {
   final drop = materialDrop(c, stats.materialFind);
   final perKill =
       drop.chance * 1.5 * materialAmountMult(c, stage - 1) * drop.amountMult;
-  final mats = hunt(c.exchangeMaterialHours).kills * perKill * trades / 3;
-  return (gold: gold.round(), materialsEach: mats.round());
+  return kills * perKill / 3;
 }

@@ -4620,8 +4620,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   Widget _skillButton(SkillDef def) {
-    final cd = _skillCd[def.id] ?? 0;
+    var cd = _skillCd[def.id] ?? 0;
     final total = def.cooldown.inMilliseconds / 1000;
+    // 쿨타임이 있는 패시브(탈피 — 쓰러지면 부활)도 링·남은 초를 보인다(2026-10-08 사장님 지시).
+    // 언제 다시 살려 주는지 모르면 믿고 버틸 수 없다. 발동 시각은 _beginDefeat 가 적는다.
+    if (!def.isActive && def.effect == 'revive' && _reviveReadyAt != null) {
+      final left =
+          _reviveReadyAt!.difference(_clock.now()).inMilliseconds / 1000;
+      cd = left > 0 ? left : 0;
+    }
     final on = (_skillOn[def.id] ?? 0) > 0;
     final queued = _skillQueue.contains(def.id);
     final color = gradeColor(def.grade);
@@ -4635,7 +4642,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _ => Icons.auto_awesome_rounded,
     };
     // 패시브는 누를 게 없다 — **둥근 사각**으로 그려 모양만으로 갈리게 한다
-    // (스킬 화면의 장착 칸과 같은 규칙). 쿨타임 링·남은 초도 없다.
+    // (스킬 화면의 장착 칸과 같은 규칙). 쿨타임 링·남은 초는 쿨타임이 있는 패시브(탈피)만.
     final passive = !def.isActive;
     return GestureDetector(
       onTap: passive || cd > 0
@@ -4677,7 +4684,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 ),
               ),
             ),
-            if (!passive && cd > 0 && total > 0) ...[
+            if (cd > 0 && total > 0) ...[
               SizedBox(
                 width: _kSkillBtn,
                 height: _kSkillBtn,
@@ -6324,12 +6331,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final claimedToday = save.dailyClaimedDate(rw.id) == today;
     final unlocked = now.hour >= rw.hour;
     final claimable = unlocked && !claimedToday;
-    // 보상 요약
+    // 보상 요약 — 정액과 사냥 분치 중 큰 쪽(2026-10-08). 수령도 같은 값을 쓴다.
+    final amt = r.read(saveControllerProvider.notifier).dailyRewardAmount(rw);
+    final matSum = amt.materials.entries
+        .where((e) => e.key != MaterialKind.jelly)
+        .fold<int>(0, (a, e) => a + e.value);
     final parts = <String>[
-      if (rw.gold > 0) '💰${formatCompact(rw.gold)}',
+      if (amt.gold > 0) '💰${formatCompact(amt.gold)}',
       if (rw.jelly > 0) '${l.curJelly} ${rw.jelly}',
-      if (rw.chitin + rw.mineral + rw.sap > 0)
-        '🧪${formatCompact(rw.chitin + rw.mineral + rw.sap)}',
+      if (matSum > 0) '🧪${formatCompact(matSum)}',
     ];
     // 그냥 받기(1배) → 수령 후 "광고 보고 한 번 더 받기" 제안 → 수락 시 +1배.
     Future<void> claimDailyThenOffer() async {
@@ -6343,8 +6353,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         icon: rw.id == 'lunch'
             ? Icons.wb_sunny_rounded
             : Icons.nightlight_round,
-        gold: rw.gold,
-        materials: rw.materials,
+        gold: amt.gold,
+        materials: amt.materials,
       );
       if (!ctx.mounted) return;
       final more = await showGameDialog<bool>(
@@ -6372,7 +6382,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (more == true && ctx.mounted) {
         if (!await watchAdForReward(ctx, r, l)) return;
         if (!ctx.mounted) return;
-        await notifier.grantDailyBonus(rw);
+        if (!await notifier.claimDaily(rw, bonus: true)) return;
         if (!ctx.mounted) return;
         await showRewardPopup(
           ctx,
@@ -6380,8 +6390,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           iconWidget: dialogIcon('reward'),
           subtitle: l.rewardGained,
           icon: Icons.play_circle_fill_rounded,
-          gold: rw.gold,
-          materials: rw.materials,
+          gold: amt.gold,
+          materials: amt.materials,
         );
       }
     }

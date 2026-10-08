@@ -406,6 +406,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storePurchased => 'Purchased';
 
   @override
+  String get storeStorageFull =>
+      'Your storage is full, so the bonus egg can\'t be added. Free up a slot before buying.';
+
+  @override
   String get storeWeeklyDone => 'Done this week';
 
   @override
@@ -3494,8 +3498,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exchangeTitle => 'Exchange';
 
   @override
-  String get exchangeHint =>
-      'Trade jelly for one hour of hunting at your current power';
+  String exchangeHint(String hours) {
+    return 'Trade jelly for $hours hours of hunting at your current power';
+  }
 
   @override
   String get exchangeToGold => 'To gold';
@@ -5761,6 +5766,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String storageExpandConfirm(int jelly, int n) {
     return 'Spend $jelly Jelly to add $n storage slots?';
   }
+
+  @override
+  String get fairyBoxExpandTitle => 'Expand fairy box';
+
+  @override
+  String fairyBoxExpandConfirm(int jelly, int n) {
+    return 'Spend $jelly Jelly to add $n fairy box slots?';
+  }
+
+  @override
+  String get fairyBoxExpanded => 'Fairy box expanded!';
 
   @override
   String get breedingExpandTitle => 'Expand breeding slots';

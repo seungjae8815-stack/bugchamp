@@ -673,6 +673,14 @@ DuelBout simulateBout({
                 if (s.gripCd > 0) continue;
                 gripper = s;
                 s.gripTimer = p.gripSeconds;
+                // 물기 시작할 때 **부딪혀 튕겨 나가던 속도를 버린다**(2026-10-08 버그 수정). 안 버리면 문 쪽이
+                // 뒤로 튕기던 속도로 상대를 문 채(물린 쪽은 문 쪽 속도를 따라간다) 자기 테두리 밖으로 미끄러졌다 —
+                // 118mm 풀강 하늘소가 38mm 말벌에게 장외로 45% 만 이겼다(실측, 진 판 전부가 문 지 1.5초 안).
+                // 이 버그가 집기를 깎아 겉보기 균형을 맞추고 있어서 gripForce 를 함께 낮췄다(battle.json).
+                s.vx = 0;
+                s.vy = 0;
+                o.vx = 0;
+                o.vy = 0;
                 events.add(
                   DuelEvent(tick: tick, kind: DuelEventKind.grip, who: s.side),
                 );

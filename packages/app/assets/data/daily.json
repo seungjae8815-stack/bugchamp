@@ -1,7 +1,8 @@
 {
   "schemaVersion": 1,
+  "_huntComment": "huntMinutes = 이 유저가 지금 자리에서 직접 사냥한 N분치(교환소와 같은 식) — 골드·재료 모두 정액과 큰 쪽(2026-10-08 사장님 확정: 점심 3시간·저녁 5시간치). 정액만이던 시절엔 쉬움 3일차부터 0.1분치도 안 됐다. 받은 뒤 \"한 번 더 받기\"로 1배 더(서버가 슬롯마다 하루 1회 센다).",
   "rewards": [
-    { "id": "lunch", "hour": 12, "gold": 5000, "chitin": 30, "mineral": 30, "sap": 30 },
-    { "id": "dinner", "hour": 18, "gold": 8000, "chitin": 50, "mineral": 50, "sap": 50 }
+    { "id": "lunch", "hour": 12, "gold": 5000, "huntMinutes": 180, "chitin": 30, "mineral": 30, "sap": 30 },
+    { "id": "dinner", "hour": 18, "gold": 8000, "huntMinutes": 300, "chitin": 50, "mineral": 50, "sap": 50 }
   ]
 }

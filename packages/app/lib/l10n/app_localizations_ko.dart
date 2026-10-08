@@ -395,6 +395,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storePurchased => '구매 완료';
 
   @override
+  String get storeStorageFull =>
+      '채집함이 가득 차서 덤으로 주는 알을 받을 수 없어요. 칸을 비운 뒤 구매해 주세요.';
+
+  @override
   String get storeWeeklyDone => '이번 주 완료';
 
   @override
@@ -3414,7 +3418,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get exchangeTitle => '교환소';
 
   @override
-  String get exchangeHint => '젤리를 지금 내 능력치로 1시간 사냥한 만큼으로 바꿔요';
+  String exchangeHint(String hours) {
+    return '젤리를 지금 내 능력치로 $hours시간 사냥한 만큼으로 바꿔요';
+  }
 
   @override
   String get exchangeToGold => '골드로';
@@ -5640,6 +5646,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String storageExpandConfirm(int jelly, int n) {
     return '젤리 $jelly개로 채집함을 $n칸 늘릴까요?';
   }
+
+  @override
+  String get fairyBoxExpandTitle => '요정함 확장';
+
+  @override
+  String fairyBoxExpandConfirm(int jelly, int n) {
+    return '젤리 $jelly개로 요정함을 $n칸 늘릴까요?';
+  }
+
+  @override
+  String get fairyBoxExpanded => '요정함이 늘었어요!';
 
   @override
   String get breedingExpandTitle => '짝짓기 슬롯 확장';

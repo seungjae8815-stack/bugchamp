@@ -117,6 +117,8 @@ class GameActions {
         now: t,
         fairy: config.fairy,
         purchaseId: purchaseId,
+        speciesOf: (id) =>
+            config.speciesList.where((x) => x.id == id).firstOrNull,
       ),
     );
   }
@@ -289,6 +291,20 @@ class GameActions {
             else
               b,
         ];
+      }
+    }
+    // 요정 상태 안의 1.0.18 칸 — 알 자동 분해(`ar`) · 젤리로 늘린 요정함(`bx`). 요정 상태는 필드 하나라
+    // 통째로 지키면 1.0.17 의 요정 진행이 사라진다 — 모르는 칸만 저장본 값으로 되돌린다.
+    // (안 되돌리면 1.0.17 기기 한 번 업로드로 산 요정함 칸이 사라진다.)
+    if (feat >= 15 && feat < 18) {
+      final sf = storedJson['fairy'];
+      final cf = incoming['fairy'];
+      if (sf is Map && cf is Map) {
+        final merged = Map<String, dynamic>.from(cf);
+        for (final k in const ['ar', 'bx']) {
+          if (sf.containsKey(k) && !cf.containsKey(k)) merged[k] = sf[k];
+        }
+        out['fairy'] = merged;
       }
     }
     for (final e in _fieldsSinceFeat.entries) {
@@ -1014,28 +1030,7 @@ class GameActions {
     var elapsed = t.difference(stored.lastSeen);
     if (elapsed.isNegative) elapsed = Duration.zero;
 
-    final bare = deriveStats(
-      config.run,
-      upgradeLevels: stored.upgradeLevels,
-      characterLevel: stored.level,
-      bugsCollected: stored.bugs.length,
-    );
-    final stats = CharacterStats(
-      attack: bare.attack * _saveBoundAttackMult,
-      attackSpeed: bare.attackSpeed,
-      rewardMultiplier: bare.rewardMultiplier,
-      critChance: bare.critChance,
-      critDamage: bare.critDamage,
-      bossDamage: bare.bossDamage,
-      maxHp: bare.maxHp,
-      defense: bare.defense,
-      hpRegen: bare.hpRegen,
-      xpMultiplier: bare.xpMultiplier,
-      bugFind: bare.bugFind,
-      materialFind: bare.materialFind,
-      moveSpeed: bare.moveSpeed,
-      boostBonus: bare.boostBonus,
-    );
+    final stats = _envelopeStats(stored);
     // 봉투는 **올라온 세이브가 있는 자리**로 잰다(2026-09-15). 가 본 난이도로는
     // 자유롭게 오갈 수 있어서(B안), 저장본이 쉬움인데 클라가 극한 사냥터 11 에
     // 올라가 60초를 놀면 저장본 기준 봉투(쉬움)로는 극한 수입이 100배라 잘린다.
@@ -1277,6 +1272,94 @@ class GameActions {
         // 앱이 "시즌 종료" 다이얼로그를 그대로 띄울 수 있게 내역을 실어준다.
         if (settled.report != null) 'seasonReport': settled.report,
       },
+    );
+  }
+
+  /// 봉투 능력치 — 강화만 아는 전력에 공격 [_saveBoundAttackMult] 배(펫·장비·버프가 빠진 것을 덮는다).
+  /// 업로드 골드 상한·교환소·선물·일일보상 상한이 같은 능력치를 쓴다.
+  CharacterStats _envelopeStats(SaveGame stored) {
+    final bare = deriveStats(
+      config.run,
+      upgradeLevels: stored.upgradeLevels,
+      characterLevel: stored.level,
+      bugsCollected: stored.bugs.length,
+    );
+    return CharacterStats(
+      attack: bare.attack * _saveBoundAttackMult,
+      attackSpeed: bare.attackSpeed,
+      rewardMultiplier: bare.rewardMultiplier,
+      critChance: bare.critChance,
+      critDamage: bare.critDamage,
+      bossDamage: bare.bossDamage,
+      maxHp: bare.maxHp,
+      defense: bare.defense,
+      hpRegen: bare.hpRegen,
+      xpMultiplier: bare.xpMultiplier,
+      bugFind: bare.bugFind,
+      materialFind: bare.materialFind,
+      moveSpeed: bare.moveSpeed,
+      boostBonus: bare.boostBonus,
+    );
+  }
+
+  /// 사냥 [minutes]분치 보상(선물·일일보상)의 **상한**(2026-10-08) — 앱은 `huntStatsOf` 로 계산한 금액을
+  /// 보내거나 선물에 박아 두고, 서버는 넉넉한 봉투(효율 [_saveBoundEfficiency]·공격 [_saveBoundAttackMult])로
+  /// 잰 값으로 자른다. 지금 자리와 **가 본 최고 난이도의 최종 사냥터** 중 큰 쪽 — 높은 난이도에서 받은 선물을
+  /// 쉬움으로 내려가 열어도 잘리지 않게.
+  ({int gold, int materialsEach}) _huntCap(SaveGame s, double minutes) {
+    if (minutes <= 0) return (gold: 0, materialsEach: 0);
+    final stats = _envelopeStats(s);
+    ({int gold, int materialsEach}) at(int stage, int tier, int floor) =>
+        huntMinutesReward(
+          config.run,
+          stats: stats,
+          stage: stage,
+          minutes: minutes,
+          tier: tier,
+          abyssFloor: floor,
+          efficiency: _saveBoundEfficiency,
+        );
+    final here = at(s.stageNumber, s.difficultyTier, activeAbyssFloor(s));
+    final top = at(
+      config.run.zoneStartStage(config.run.zonesPerTier),
+      s.topTier,
+      activeAbyssFloor(s),
+    );
+    return (
+      gold: max(here.gold, top.gold),
+      materialsEach: max(here.materialsEach, top.materialsEach),
+    );
+  }
+
+  /// 선물 [g] 를 상한으로 자른다 — 선물은 앱이 만들어 세이브에 올리므로 금액을 믿을 수 없다.
+  /// 상한은 선물에 적힌 분이 아니라 **설정의 가장 큰 분**(`huntMinutes`)으로 잰다(분도 앱이 적는다).
+  GiftMail _capGift(SaveGame s, GiftMail g) {
+    final cfg = config.gift;
+    if (cfg == null) return g;
+    var maxMin = 0.0;
+    var maxGold = 0;
+    var maxMat = 0;
+    for (final t in cfg.tiers) {
+      maxMin = max(maxMin, t.huntMinutes);
+      maxGold = max(maxGold, t.gold);
+      maxMat = max(maxMat, max(t.chitin, max(t.mineral, t.sap)));
+    }
+    // 사냥 분치 선물이 없는 설정(구 데이터)이면 예전처럼 그대로 둔다.
+    if (maxMin <= 0) return g;
+    final cap = _huntCap(s, maxMin);
+    final goldCap = max(maxGold, cap.gold);
+    final matCap = max(maxMat, cap.materialsEach);
+    if (g.gold <= goldCap &&
+        g.chitin <= matCap &&
+        g.mineral <= matCap &&
+        g.sap <= matCap) {
+      return g;
+    }
+    return g.capped(
+      gold: min(g.gold, goldCap),
+      chitin: min(g.chitin, matCap),
+      mineral: min(g.mineral, matCap),
+      sap: min(g.sap, matCap),
     );
   }
 
@@ -2578,8 +2661,14 @@ class GameActions {
   /// 지급한다 — 이미 뜬 보상을 못 받게 하면 불만이 크다.
   ActionResult claimGift(SaveGame save, String giftId, {bool doubled = false}) {
     // 규칙(2배 자격·배수·첫 2배 젤리)은 앱과 같은 공용 함수 한 곳에 있다(§4).
+    // 금액은 앱이 만든 값이라 상한으로 자른 뒤 지급한다(2026-10-08 — 사냥 분치로 커졌다).
+    final capped = save.copyWith(
+      gifts: [
+        for (final g in save.gifts) g.id == giftId ? _capGift(save, g) : g,
+      ],
+    );
     final r = claimGiftOn(
-      save,
+      capped,
       config.gift,
       giftId,
       doubled: doubled,
@@ -2603,7 +2692,18 @@ class GameActions {
   /// 앱은 로컬 벽시계로 "점심 12시/저녁 18시" 게이트를 두지만, 서버는
   /// 클라 타임존을 알 수 없다. 그래서 **시간 게이트는 UI(UX)에 맡기고**,
   /// 서버는 하루에 같은 슬롯을 여러 번 먹는 조작만 막는다(UTC 날짜 중복).
-  ActionResult claimDaily(SaveGame save, String rewardId) {
+  ///
+  /// 2026-10-08: 금액 = 정액과 **사냥 [DailyReward.huntMinutes]분치** 중 큰 쪽. 분치는 앱이 펫·장비가 실린
+  /// 능력치로 계산해 보내고([clientGold]·[clientMaterialsEach]) 서버는 봉투 상한([_huntCap])으로 자른다.
+  /// 구버전 앱은 금액을 안 보내서 정액만 받는다. [bonus] = "한 번 더 받기"(1배 더) — 그 슬롯을 오늘 받은
+  /// 뒤에만, 하루 1회([dailyBonusKey]). 예전엔 앱이 로컬로 얹어서 금액이 커지면 업로드 상한에 잘렸다.
+  ActionResult claimDaily(
+    SaveGame save,
+    String rewardId, {
+    int clientGold = 0,
+    int clientMaterialsEach = 0,
+    bool bonus = false,
+  }) {
     final cfg = config.daily;
     if (cfg == null) return const ActionResult.fail('unavailable');
     DailyReward? reward;
@@ -2616,22 +2716,33 @@ class GameActions {
     if (reward == null) return const ActionResult.fail('unknown_reward');
 
     final today = dailyDateKey(now().toUtc());
-    if (save.dailyClaims[rewardId] == today) {
+    final key = bonus ? dailyBonusKey(rewardId) : rewardId;
+    if (save.dailyClaims[key] == today) {
       return const ActionResult.fail('already_claimed');
     }
-    final mats = Map<MaterialKind, int>.from(save.materials);
-    for (final e in reward.materials.entries) {
-      mats[e.key] = (mats[e.key] ?? 0) + e.value;
+    if (bonus && save.dailyClaims[rewardId] != today) {
+      return const ActionResult.fail('not_claimed');
     }
-    final claims = Map<String, String>.from(save.dailyClaims)
-      ..[rewardId] = today;
+    final cap = _huntCap(save, reward.huntMinutes);
+    final gold = max(reward.gold, min(max(clientGold, 0), cap.gold));
+    final each = min(max(clientMaterialsEach, 0), cap.materialsEach);
+    final mats = Map<MaterialKind, int>.from(save.materials);
+    final fixed = reward.materials;
+    for (final k in kBreakthroughMaterials) {
+      final add = max(fixed[k] ?? 0, each);
+      if (add > 0) mats[k] = (mats[k] ?? 0) + add;
+    }
+    if (reward.jelly > 0) {
+      mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + reward.jelly;
+    }
+    final claims = Map<String, String>.from(save.dailyClaims)..[key] = today;
     return ActionResult.ok(
       save.copyWith(
-        gold: addCurrency(save.gold, reward.gold),
+        gold: addCurrency(save.gold, gold),
         materials: mats,
         dailyClaims: claims,
       ),
-      extra: {'gold': reward.gold},
+      extra: {'gold': gold},
     );
   }
 
@@ -2721,7 +2832,16 @@ class GameActions {
       id: _uuid.v4(),
       mother: mother,
       father: father,
-      endsAt: t.add(Duration(seconds: petConfig.breedingDuration(sp.grade))),
+      // 스킨 계열 편의 보너스(산란 시간 −N%, 2026-10-08 — 시간만, 전투 스탯 아님). 앱과 같은 함수.
+      endsAt: t.add(
+        Duration(
+          seconds: config.iap.skinnedBreedSeconds(
+            petConfig.breedingDuration(sp.grade),
+            save.ownedSkins,
+            sp.id,
+          ),
+        ),
+      ),
       // 서버가 정한다 — 클라이언트가 고를 수 없다.
       seed: rng.nextInt(1 << 31),
     );
