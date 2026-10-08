@@ -30,6 +30,7 @@ class DuelBug {
     this.massMult = 1,
     this.tech = 0,
     this.grit = 0,
+    this.sizeStatMult = 1,
   });
 
   final String id;
@@ -64,6 +65,11 @@ class DuelBug {
   /// 근성 칸(단계) — 탭 반격 성공 문턱·효과·횟수.
   final int grit;
 
+  /// 이 곤충 스탯에 **이미 구워진** 사이즈 배율(`sizeToStatMultiplier`, 0.85~1.20). 1 = 모름/없음.
+  /// 엔진이 결투에서만 그 몫을 `sizeStatExp` 로 덜어낸다 — 같은 종 크기 최대 대 최소가 스탯 ×1.41 로
+  /// 80~100% 였다(무게 지수로는 못 줄인다, 2026-10-08 측정). 방치 런·옛 엔진 스탯은 그대로.
+  final double sizeStatMult;
+
   /// 훈련소 보너스를 입힌다(공격·방어 배율, 회피·치명·회복력 가산). 값은 호출자가
   /// `TrainingConfig.bonuses` 로 계산한다 — core_battle 은 core_run 을 모른다.
   DuelBug withTraining({
@@ -95,6 +101,7 @@ class DuelBug {
     massMult: this.massMult * massMult,
     tech: this.tech + tech,
     grit: this.grit + grit,
+    sizeStatMult: sizeStatMult,
   );
 
   /// 한 판 안에서만 쓰는 전투 수치로 바꾼다(전력 압축·게이지 보너스, 엔진 내부용).
@@ -121,6 +128,7 @@ class DuelBug {
     massMult: massMult,
     tech: tech,
     grit: grit,
+    sizeStatMult: sizeStatMult,
   );
 
   /// 옛 엔진 유닛에 사이즈·주특기를 붙인다.
@@ -129,6 +137,7 @@ class DuelBug {
     required String speciesId,
     required double sizeMm,
     required Specialty specialty,
+    double sizeStatMult = 1,
   }) => DuelBug(
     id: b.id,
     name: b.name,
@@ -141,6 +150,7 @@ class DuelBug {
     atk: b.atk,
     def: b.def,
     spd: b.spd,
+    sizeStatMult: sizeStatMult,
   );
 
   DuelBug copyWith({
@@ -165,6 +175,7 @@ class DuelBug {
     massMult: massMult,
     tech: tech,
     grit: grit,
+    sizeStatMult: sizeStatMult,
   );
 
   /// 몸 반경.
@@ -177,9 +188,27 @@ class DuelBug {
       (1 + p.defMassWeight * def / (def + 100)) *
       massMult;
 
-  /// 평소 최고 속도.
-  double maxSpeed(DuelParams p) =>
-      math.min(p.speedCap, p.speedBase + spd * p.speedPerSpd);
+  /// 평소 최고 속도 — 무거우면 느리다(`massSpeedExp`, 사이즈·체급 몫만 · 방어 몫은 빼고).
+  double maxSpeed(DuelParams p) {
+    final base = math.min(p.speedCap, p.speedBase + spd * p.speedPerSpd);
+    if (p.massSpeedExp == 0) return base;
+    final body =
+        math.pow(math.max(sizeMm, 1) / p.sizeRefMm, p.massExp).toDouble() *
+        massMult;
+    return base / math.pow(body, p.massSpeedExp).toDouble();
+  }
+
+  /// 엔진이 쓰는 주특기 기술(0 ~ `techMax`) × 주특기별 배율.
+  double techOf(DuelParams p) =>
+      tech.clamp(0.0, p.techMax) *
+      switch (specialty) {
+        Specialty.strike => p.techStrikeScale,
+        Specialty.grip => p.techGripScale,
+        Specialty.toss => p.techTossScale,
+      };
+
+  /// 엔진이 쓰는 근성 단계(0 ~ `clutchGritMax`).
+  int gritOf(DuelParams p) => grit.clamp(0, p.clutchGritMax);
 
   /// 스카우트·야생 상대 규모를 맞추는 대략적 전력(표시·매칭용, 판정에는 안 쓴다).
   double get power => maxHp * 0.15 + atk + def + spd;
@@ -202,6 +231,7 @@ class DuelBug {
     if (massMult != 1) 'mm': massMult,
     if (tech != 0) 'tech': tech,
     if (grit != 0) 'grit': grit,
+    if (sizeStatMult != 1) 'ssm': sizeStatMult,
   };
 
   factory DuelBug.fromJson(Map<String, dynamic> j) => DuelBug(
@@ -222,5 +252,6 @@ class DuelBug {
     massMult: (j['mm'] as num?)?.toDouble() ?? 1,
     tech: (j['tech'] as num?)?.toDouble() ?? 0,
     grit: (j['grit'] as num?)?.toInt() ?? 0,
+    sizeStatMult: (j['ssm'] as num?)?.toDouble() ?? 1,
   );
 }

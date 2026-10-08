@@ -4,6 +4,10 @@
 //   cd packages\core_battle ; dart run tool/duel_sim.dart
 //   dart run tool/duel_sim.dart --n=600          # 판 수(기본 400)
 //   dart run tool/duel_sim.dart --set=gripForce=200 --set=strikeFlipBase=0.12   # 수치 쓸어보기
+//   dart run tool/duel_sim.dart --quick --set=clutchEnabled=false   # 5번(종 리그전, 느림) 건너뛰기 · 불값 덮어쓰기
+//
+// 표: 1 주특기 상성 · 2 결판 분포 · 3 전력 차이 · 4 같은 종 크기 · 5 종 리그전 · 6 게이지 · 7 오행 ·
+//     8 경기 단위 전력 · 9 기질 · 10 탭 반격(양쪽 자동 점수 · 근성 10 · 조작 앱) · 11 주특기 기술
 //
 // 수치는 `packages/app/assets/data/battle.json → duel` 을 읽는다(없으면 코드 기본값).
 //
@@ -21,8 +25,10 @@ import 'package:core_models/core_models.dart';
 int _n = 400;
 
 void main(List<String> args) {
-  final overrides = <String, num>{};
+  final overrides = <String, Object>{};
+  var quick = false;
   for (final a in args) {
+    if (a == '--quick') quick = true;
     final m = RegExp(r'^--([a-z-]+)=(.+)$').firstMatch(a);
     if (m == null) continue;
     switch (m.group(1)) {
@@ -30,7 +36,9 @@ void main(List<String> args) {
         _n = int.parse(m.group(2)!);
       case 'set':
         final kv = m.group(2)!.split('=');
-        overrides[kv[0]] = num.parse(kv[1]);
+        overrides[kv[0]] = kv[1] == 'true' || kv[1] == 'false'
+            ? kv[1] == 'true'
+            : num.parse(kv[1]);
     }
   }
   final battle =
@@ -170,6 +178,7 @@ void main(List<String> args) {
         atk: st.atk * sm,
         def: st.def * sm,
         spd: st.spd * sm,
+        sizeStatMult: sm,
       );
     }
 
@@ -198,13 +207,14 @@ void main(List<String> args) {
       atk: st.atk * sm,
       def: st.def * sm,
       spd: st.spd * sm,
+      sizeStatMult: sm,
     );
   }
 
   final saveN = _n;
   _n = (saveN / 4).ceil();
   final table = <(Species, double)>[];
-  for (final a in species) {
+  for (final a in quick ? const <Species>[] : species) {
     var sum = 0.0;
     for (final b in species) {
       if (identical(a, b)) continue;
@@ -269,7 +279,114 @@ void main(List<String> args) {
     }
     stdout.writeln('  ×$k : ${pct(w / _n)}');
   }
+
+  // ── 9. 기질 ───────────────────────────────────────────────────
+  // 같은 스탯 · 주특기 섞음 · 기질끼리 맞붙인 평균 승률(거울전 빼고).
+  stdout.writeln('\n── 9. 기질 리그전 (같은 스탯 · 주특기 섞음 · 목표 45~55%) ──');
+  for (final ta in Temperament.values) {
+    var w = 0, games = 0;
+    for (final tb in Temperament.values) {
+      if (ta == tb) continue;
+      for (var i = 0; i < _n ~/ 2; i++) {
+        final r = simulateBout(
+          seed: 3000 + i * 7919 + tb.index * 31,
+          a: unit(Specialty.values[i % 3], tm: ta),
+          b: unit(Specialty.values[(i ~/ 3) % 3], tm: tb),
+          params: p,
+        );
+        if (r.winner == 0) w++;
+        games++;
+      }
+    }
+    stdout.writeln('  ${_tmKo[ta]!.padRight(4)} ${pct(w / games)}');
+  }
+
+  // ── 10. 탭 반격 ───────────────────────────────────────────────
+  stdout.writeln(
+    '\n── 10. 탭 반격 (clutchEnabled=${p.clutchEnabled} · 같은 스탯 · 주특기 섞음) ──',
+  );
+  if (p.clutchEnabled) {
+    var crises = 0, saves = 0, bouts = 0;
+    final byKind = {for (final k in DuelCrisis.values) k: 0};
+    for (var i = 0; i < _n; i++) {
+      final r = simulateBout(
+        seed: 1000 + i * 7919,
+        a: unit(Specialty.values[i % 3], tm: Temperament.values[i % 5]),
+        b: unit(
+          Specialty.values[(i ~/ 3) % 3],
+          tm: Temperament.values[(i ~/ 5) % 5],
+        ),
+        params: p,
+      );
+      bouts++;
+      for (final e in r.events) {
+        if (e.kind == DuelEventKind.clutch) {
+          crises++;
+          byKind[DuelCrisis.values[e.value]] =
+              byKind[DuelCrisis.values[e.value]]! + 1;
+        }
+        if (e.kind == DuelEventKind.clutchSave) saves++;
+      }
+    }
+    stdout.writeln(
+      '  판당 위기 ${(crises / bouts).toStringAsFixed(2)}회 · 성공 ${pct(saves / (crises == 0 ? 1 : crises))} · '
+      '${[for (final e in byKind.entries) '${e.key.key} ${e.value}'].join(' · ')}',
+    );
+    // 근성 10 대 0 · 조작 앱(늘 만점) 대 자동.
+    double vs(DuelBug Function(int) mkA, {List<double>? scores}) {
+      var w = 0;
+      for (var i = 0; i < _n; i++) {
+        final r = simulateBout(
+          seed: 1000 + i * 7919,
+          a: mkA(i).copyWith(temperament: Temperament.values[i % 5]),
+          b: unit(
+            Specialty.values[(i ~/ 3) % 3],
+          ).copyWith(temperament: Temperament.values[(i ~/ 5) % 5]),
+          params: p,
+          clutchScores: scores,
+        );
+        if (r.winner == 0) w++;
+      }
+      return w / _n;
+    }
+
+    final grit10 = vs(
+      (i) => unit(Specialty.values[i % 3]).withTraining(grit: 10),
+    );
+    final cheat = vs(
+      (i) => unit(Specialty.values[i % 3]),
+      scores: List.filled(4, 1.0),
+    );
+    final zero = vs(
+      (i) => unit(Specialty.values[i % 3]),
+      scores: List.filled(4, 0.0),
+    );
+    stdout.writeln(
+      '  근성 10 쪽 ${pct(grit10)} · 늘 만점(조작 앱) ${pct(cheat)} · 늘 0점 ${pct(zero)}',
+    );
+  }
+
+  // ── 11. 주특기 기술 ───────────────────────────────────────────
+  stdout.writeln(
+    '\n── 11. 주특기 기술 (같은 스탯 · 기술 ${p.techMax} 대 0 · 같은 주특기 거울전) ──',
+  );
+  for (final s in Specialty.values) {
+    final r = run((_) => unit(s).withTraining(tech: p.techMax), (_) => unit(s));
+    // 비교 기준 — 같은 10포인트를 공격 칸에 찍었을 때(1포인트 +3%, docs/design_training_v2.md §1.2).
+    final ref = run((_) => unit(s).withTraining(atkMult: 1.3), (_) => unit(s));
+    stdout.writeln(
+      '  ${_spcKo[s]!.padRight(4)} ${pct(r.win)}   (같은 10포인트를 공격 +30% 에: ${pct(ref.win)})',
+    );
+  }
 }
+
+const _tmKo = {
+  Temperament.aggressive: '호전적',
+  Temperament.cautious: '신중',
+  Temperament.cunning: '교활',
+  Temperament.steadfast: '우직',
+  Temperament.fickle: '변덕',
+};
 
 const _spcKo = {
   Specialty.strike: '치기',
