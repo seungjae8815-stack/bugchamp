@@ -347,31 +347,38 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 _jellyButton(
                   cfg.instantJelly(job.until.difference(now)),
                   key: const ValueKey('trainJobInstant'),
-                  onTap: () => _guard(() async {
-                    final jelly = cfg.instantJelly(job.until.difference(now));
-                    if (!await confirmJellySpend(
-                      context,
-                      title: l.trainingInstantTitle,
-                      body: l.skillTrainConfirm('$jelly'),
-                      jelly: jelly,
-                    )) {
-                      return;
-                    }
-                    if (!mounted) return;
-                    final err = await _ctrl.finishTrainPointWithJelly();
-                    if (!mounted) return;
-                    if (err == null) {
-                      _pushNow();
-                      AudioService.instance.sfxEnhance();
-                    } else {
-                      showCenterToast(context, l.notEnoughJelly);
-                    }
-                  }),
+                  onTap: () => _instantFinishJob(l, cfg),
                 ),
               ],
             ),
     );
   }
+
+  /// 찍는 중인 포인트를 젤리로 바로 끝낸다 — 위쪽 진행 카드와 그 칸의 [+] 자리가 같이 쓴다.
+  Future<void> _instantFinishJob(AppLocalizations l, TrainingConfig cfg) =>
+      _guard(() async {
+        final job = ref.read(saveControllerProvider).value?.trainPointJob;
+        if (job == null) return;
+        final now = ref.read(clockProvider).now().toUtc();
+        final jelly = cfg.instantJelly(job.until.difference(now));
+        if (!await confirmJellySpend(
+          context,
+          title: l.trainingInstantTitle,
+          body: l.skillTrainConfirm('$jelly'),
+          jelly: jelly,
+        )) {
+          return;
+        }
+        if (!mounted) return;
+        final err = await _ctrl.finishTrainPointWithJelly();
+        if (!mounted) return;
+        if (err == null) {
+          _pushNow();
+          AudioService.instance.sfxEnhance();
+        } else {
+          showCenterToast(context, l.notEnoughJelly);
+        }
+      });
 
   // ── 곤충 고르기 ──────────────────────────────────────────────────────
 
@@ -1171,6 +1178,17 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   }),
                 ),
               ],
+            )
+          // 이 칸을 찍는 중이면 [+] 자리에 **젤리로 바로 완료**(2026-10-08 사장님 — 위 카드까지 올라가지 않게).
+          else if (jobPlus > 0 && save.trainPointJob != null)
+            _jellyButton(
+              cfg.instantJelly(
+                save.trainPointJob!.until.difference(
+                  ref.read(clockProvider).now().toUtc(),
+                ),
+              ),
+              key: ValueKey('trainSlot:${sl.key}:instant'),
+              onTap: () => _instantFinishJob(l, cfg),
             )
           else
             _roundBtn(

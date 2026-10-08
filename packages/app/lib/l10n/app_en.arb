@@ -3279,7 +3279,7 @@
   "@pvpTicketRefillBody": {"placeholders": {"n": {"type": "int"}, "left": {"type": "int"}}},
   "pvpTicketRefillBody": "Get {n} tickets with jelly. ({left} left today)",
   "starterOfferTitle": "Starter package",
-  "starterOfferBody": "Jelly 300 \u00b7 gold \u00b7 materials \u00b7 +1 incubator slot.\nOnly once per account \u2014 the best value in the shop!",
+  "starterOfferBody": "Only once per account \u2014 the best value in the shop!",
   "starterOfferGo": "See it",
   "@mailGrantTitle": {"placeholders": {"name": {"type": "String"}}},
   "mailGrantTitle": "[From the team] {name}",

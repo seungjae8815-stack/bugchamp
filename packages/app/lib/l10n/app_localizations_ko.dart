@@ -5637,8 +5637,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get starterOfferTitle => '스타터 패키지';
 
   @override
-  String get starterOfferBody =>
-      '젤리 300 · 골드 · 재료 · 부화기 1칸.\n계정당 한 번만 살 수 있는, 상점에서 가장 알찬 구성이에요!';
+  String get starterOfferBody => '계정당 한 번만 살 수 있는, 상점에서 가장 알찬 구성이에요!';
 
   @override
   String get starterOfferGo => '보러 가기';

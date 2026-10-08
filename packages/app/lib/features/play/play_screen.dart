@@ -5045,12 +5045,22 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (!preview && (prefs.getBool('starter_offer_v1') ?? false)) return;
     if (!mounted) return;
     final l = AppLocalizations.of(context);
+    // 구성은 **상품 데이터에서** 읽는다 — 문구에 박아 두면 구성을 바꿀 때 팝업만 옛 내용으로 남는다
+    // (2026-10-08 실기: 스타터를 젤리 400 으로 바꿨는데 팝업은 300).
+    final locale = Localizations.localeOf(context).languageCode;
+    final items = ref
+        .read(gameDataProvider)
+        .value
+        ?.iapConfig
+        ?.byId('starter_pack')
+        ?.desc
+        ?.resolve(locale);
     final go = await showGameDialog<bool>(
       context,
       title: l.starterOfferTitle,
       icon: Icons.card_giftcard_rounded,
       content: Text(
-        l.starterOfferBody,
+        items == null ? l.starterOfferBody : '$items\n${l.starterOfferBody}',
         textAlign: TextAlign.center,
         style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
       ),

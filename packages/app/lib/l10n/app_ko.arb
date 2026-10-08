@@ -1850,7 +1850,7 @@
   "pvpTicketRefillTitle": "티켓 충전",
   "pvpTicketRefillBody": "젤리로 티켓 {n}장을 받아요. (오늘 {left}번 남음)",
   "starterOfferTitle": "스타터 패키지",
-  "starterOfferBody": "젤리 300 · 골드 · 재료 · 부화기 1칸.\n계정당 한 번만 살 수 있는, 상점에서 가장 알찬 구성이에요!",
+  "starterOfferBody": "계정당 한 번만 살 수 있는, 상점에서 가장 알찬 구성이에요!",
   "starterOfferGo": "보러 가기",
   "mailGrantTitle": "[운영자 지급] {name}",
   "mailGrantBody": "운영자가 보낸 보상입니다. 받기를 눌러 수령하세요.",

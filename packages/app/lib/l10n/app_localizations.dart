@@ -9722,7 +9722,7 @@ abstract class AppLocalizations {
   /// No description provided for @starterOfferBody.
   ///
   /// In en, this message translates to:
-  /// **'Jelly 300 · gold · materials · +1 incubator slot.\nOnly once per account — the best value in the shop!'**
+  /// **'Only once per account — the best value in the shop!'**
   String get starterOfferBody;
 
   /// No description provided for @starterOfferGo.

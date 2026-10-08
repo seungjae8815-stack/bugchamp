@@ -5625,8 +5625,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get starterOfferTitle => 'スターターパッケージ';
 
   @override
-  String get starterOfferBody =>
-      'ゼリー300・ゴールド・素材・孵化器1枠。\n1アカウント1回だけ、ショップで一番お得なセットです！';
+  String get starterOfferBody => '1アカウント1回だけ、ショップで一番お得なセットです！';
 
   @override
   String get starterOfferGo => '見に行く';

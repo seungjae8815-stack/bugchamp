@@ -1805,7 +1805,7 @@
   "pvpTicketRefillTitle": "チケット補充",
   "pvpTicketRefillBody": "ゼリーでチケット{n}枚を受け取ります。（本日あと{left}回）",
   "starterOfferTitle": "スターターパッケージ",
-  "starterOfferBody": "ゼリー300・ゴールド・素材・孵化器1枠。\n1アカウント1回だけ、ショップで一番お得なセットです！",
+  "starterOfferBody": "1アカウント1回だけ、ショップで一番お得なセットです！",
   "starterOfferGo": "見に行く",
   "mailGrantTitle": "[運営からの付与] {name}",
   "mailGrantBody": "運営からの報酬です。受け取るをタップしてください。",

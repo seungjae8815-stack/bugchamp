@@ -5758,7 +5758,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get starterOfferBody =>
-      'Jelly 300 · gold · materials · +1 incubator slot.\nOnly once per account — the best value in the shop!';
+      'Only once per account — the best value in the shop!';
 
   @override
   String get starterOfferGo => 'See it';
