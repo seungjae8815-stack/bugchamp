@@ -738,6 +738,30 @@ class AppLocalizationsKo extends AppLocalizations {
   String get bossChallengeFailed => '보스에게 밀려났어요. 더 강해져서 다시 도전하세요';
 
   @override
+  String bossAutoCountdown(int n) {
+    return '$n초 뒤 자동 도전';
+  }
+
+  @override
+  String get bossIntroTitle => '보스가 나타났어요!';
+
+  @override
+  String get bossIntroBody => '잡으면 다음 사냥터로 갈 수 있어요.';
+
+  @override
+  String get bossIntroAuto =>
+      '자동 도전이 켜져 있어요 — 게이지가 차면 잠시 뒤 스스로 도전해요. 설정에서 끌 수 있어요.';
+
+  @override
+  String get bossIntroOk => '알겠어요';
+
+  @override
+  String get settingsGameplay => '게임';
+
+  @override
+  String get settingsAutoBoss => '보스 자동 도전';
+
+  @override
   String get bossFlee => '도망치기';
 
   @override

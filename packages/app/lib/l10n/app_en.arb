@@ -461,6 +461,20 @@
     }
   },
   "bossChallengeFailed": "The boss pushed you back. Grow stronger and try again",
+  "bossAutoCountdown": "Auto challenge in {n}s",
+  "@bossAutoCountdown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "bossIntroTitle": "A boss appeared!",
+  "bossIntroBody": "Defeat it to move on to the next hunting ground.",
+  "bossIntroAuto": "Auto challenge is on — when the gauge fills, you will challenge the boss shortly. You can turn it off in Settings.",
+  "bossIntroOk": "Got it",
+  "settingsGameplay": "Gameplay",
+  "settingsAutoBoss": "Auto boss challenge",
   "bossFlee": "Flee",
   "@bossFlee": {
     "description": "Boss fight - retreat button"

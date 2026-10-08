@@ -762,6 +762,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'The boss pushed you back. Grow stronger and try again';
 
   @override
+  String bossAutoCountdown(int n) {
+    return 'Auto challenge in ${n}s';
+  }
+
+  @override
+  String get bossIntroTitle => 'A boss appeared!';
+
+  @override
+  String get bossIntroBody =>
+      'Defeat it to move on to the next hunting ground.';
+
+  @override
+  String get bossIntroAuto =>
+      'Auto challenge is on — when the gauge fills, you will challenge the boss shortly. You can turn it off in Settings.';
+
+  @override
+  String get bossIntroOk => 'Got it';
+
+  @override
+  String get settingsGameplay => 'Gameplay';
+
+  @override
+  String get settingsAutoBoss => 'Auto boss challenge';
+
+  @override
   String get bossFlee => 'Flee';
 
   @override

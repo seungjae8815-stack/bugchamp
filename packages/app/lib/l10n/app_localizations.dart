@@ -1414,6 +1414,48 @@ abstract class AppLocalizations {
   /// **'The boss pushed you back. Grow stronger and try again'**
   String get bossChallengeFailed;
 
+  /// No description provided for @bossAutoCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto challenge in {n}s'**
+  String bossAutoCountdown(int n);
+
+  /// No description provided for @bossIntroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A boss appeared!'**
+  String get bossIntroTitle;
+
+  /// No description provided for @bossIntroBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat it to move on to the next hunting ground.'**
+  String get bossIntroBody;
+
+  /// No description provided for @bossIntroAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto challenge is on — when the gauge fills, you will challenge the boss shortly. You can turn it off in Settings.'**
+  String get bossIntroAuto;
+
+  /// No description provided for @bossIntroOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get bossIntroOk;
+
+  /// No description provided for @settingsGameplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Gameplay'**
+  String get settingsGameplay;
+
+  /// No description provided for @settingsAutoBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto boss challenge'**
+  String get settingsAutoBoss;
+
   /// Boss fight - retreat button
   ///
   /// In en, this message translates to:

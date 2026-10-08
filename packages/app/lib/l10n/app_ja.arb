@@ -247,6 +247,20 @@
     }
   },
   "bossChallengeFailed": "ボスに押し返されました。強くなって再挑戦しましょう",
+  "bossAutoCountdown": "{n}秒後に自動挑戦",
+  "@bossAutoCountdown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "bossIntroTitle": "ボスが現れた！",
+  "bossIntroBody": "倒すと次の狩り場へ進めます。",
+  "bossIntroAuto": "自動挑戦がオンです — ゲージがたまると少しあとで自動で挑戦します。設定でオフにできます。",
+  "bossIntroOk": "わかった",
+  "settingsGameplay": "ゲーム",
+  "settingsAutoBoss": "ボス自動挑戦",
   "bossFlee": "逃げる",
   "@bossFlee": {
     "description": "ボス戦 — 撤退ボタン"

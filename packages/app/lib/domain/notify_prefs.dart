@@ -46,6 +46,9 @@ class NotifySettings {
     offlineFull: offlineFull ?? this.offlineFull,
     hatchDone: hatchDone ?? this.hatchDone,
     daily: daily ?? this.daily,
+    // 예전엔 이 두 줄이 빠져, 다른 스위치를 건드리면 선물·야간 휴식이 기본값(켬)으로 돌아갔다.
+    gift: gift ?? this.gift,
+    quietHours: quietHours ?? this.quietHours,
   );
 }
 

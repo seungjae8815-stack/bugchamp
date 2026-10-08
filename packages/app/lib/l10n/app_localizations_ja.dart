@@ -736,6 +736,29 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bossChallengeFailed => 'ボスに押し返されました。強くなって再挑戦しましょう';
 
   @override
+  String bossAutoCountdown(int n) {
+    return '$n秒後に自動挑戦';
+  }
+
+  @override
+  String get bossIntroTitle => 'ボスが現れた！';
+
+  @override
+  String get bossIntroBody => '倒すと次の狩り場へ進めます。';
+
+  @override
+  String get bossIntroAuto => '自動挑戦がオンです — ゲージがたまると少しあとで自動で挑戦します。設定でオフにできます。';
+
+  @override
+  String get bossIntroOk => 'わかった';
+
+  @override
+  String get settingsGameplay => 'ゲーム';
+
+  @override
+  String get settingsAutoBoss => 'ボス自動挑戦';
+
+  @override
   String get bossFlee => '逃げる';
 
   @override

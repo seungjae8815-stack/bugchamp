@@ -254,6 +254,20 @@
     }
   },
   "bossChallengeFailed": "보스에게 밀려났어요. 더 강해져서 다시 도전하세요",
+  "bossAutoCountdown": "{n}초 뒤 자동 도전",
+  "@bossAutoCountdown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "bossIntroTitle": "보스가 나타났어요!",
+  "bossIntroBody": "잡으면 다음 사냥터로 갈 수 있어요.",
+  "bossIntroAuto": "자동 도전이 켜져 있어요 — 게이지가 차면 잠시 뒤 스스로 도전해요. 설정에서 끌 수 있어요.",
+  "bossIntroOk": "알겠어요",
+  "settingsGameplay": "게임",
+  "settingsAutoBoss": "보스 자동 도전",
   "bossFlee": "도망치기",
   "@bossFlee": {
     "description": "보스전 — 물러나는 버튼"

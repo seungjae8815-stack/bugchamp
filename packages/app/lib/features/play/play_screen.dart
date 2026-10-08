@@ -25,6 +25,8 @@ import '../../domain/audio_service.dart';
 import '../../domain/combat_power.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/notify_prefs.dart';
+import '../../domain/play_prefs.dart';
+import 'boss_challenge_button.dart';
 import '../../domain/auth_service.dart';
 import '../../domain/cloud_save_service.dart';
 import '../../domain/game_server.dart';
@@ -445,8 +447,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 캠페인 끝을 깼다 — 다음 빌드에서 회차 전환 안내를 띄운다.
   bool _tierClearPending = false;
 
-  /// 사냥터 모드: 지금 보스에 도전 중인가(도전 버튼으로만 켜진다).
+  /// 사냥터 모드: 지금 보스에 도전 중인가(도전 버튼 또는 자동 도전으로 켜진다).
   bool _bossChallenge = false;
+
+  /// 보스 자동 도전 카운트다운(2026-10-08 사장님 확정 — [PlayPrefs.autoBoss]).
+  final _autoBoss = AutoBossCountdown();
+
+  /// 카운트다운이 몬스터 처치 연출 중에 끝났다 — 연출이 끝나면 바로 도전한다.
+  bool _autoBossPending = false;
+
+  /// 처음 게이지가 찼을 때의 안내 팝업이 떠 있다(중복으로 띄우지 않게).
+  bool _bossIntroShowing = false;
 
   /// 강제 닉네임 변경 창을 이번 세션에 띄웠는지(매 빌드마다 뜨면 안 된다).
   bool _renamePrompted = false;
@@ -693,6 +704,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _playerHp = stats.maxHp;
     _spawn(announce: false);
     _ticker = createTicker(_tick)..start();
+    // 보스 자동 도전 설정(기기 로컬). 다 읽기 전엔 자동 도전·첫 안내를 걸지 않는다.
+    if (!PlayPrefs.instance.loaded) unawaited(PlayPrefs.instance.load());
     // 끊기면 **게임을 멈춘다.** 이 게임은 오프라인 플레이를 허용하지 않는다 —
     // 계속 돌게 두면 저장되지 않는 진행이 쌓이고, 앱을 껐다 켜는 순간 서버의
     // 낡은 세이브에 덮여 통째로 사라진다.
@@ -1412,6 +1425,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     _particles.removeWhere((pt) => pt.age > 0.5);
     _tickSkills(dt);
+    _tickAutoBoss(dt);
 
     if (_defeated) {
       _defeatT -= dt;
@@ -3833,31 +3847,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ///
   /// 게이지가 차야 켜진다. 잠겨 있을 땐 남은 마리 수를 이 버튼이 센다 —
   /// 얼마나 더 잡아야 하는지가 보여야 사냥에 목적이 생긴다.
+  ///
+  /// 게이지가 차면 크게 맥동하고, 자동 도전 카운트다운을 같은 판 위쪽 줄에 적는다(2026-10-08).
   Widget _bossChallengeButton(AppLocalizations l) {
     final save = ref.watch(saveControllerProvider).requireValue;
-    final need = _config.bossUnlockKills;
-    final kills = save.zoneKills;
-    final ready = kills >= need;
-    return GestureDetector(
-      onTap: ready ? _startBossChallenge : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: ready ? const Color(0xFFD1443E) : const Color(0x66101A0A),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: ready ? const Color(0xFFFF8A80) : const Color(0x33FFFFFF),
-          ),
-        ),
-        child: Text(
-          ready ? l.bossChallenge : l.bossChallengeLocked(need - kills),
-          style: TextStyle(
-            color: ready ? Colors.white : const Color(0x99FFFFFF),
-            fontSize: 11.5,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ),
+    return BossChallengeButton(
+      kills: save.zoneKills,
+      need: _config.bossUnlockKills,
+      autoSecondsLeft: _autoBoss.secondsLeft,
+      onTap: _startBossChallenge,
     );
   }
 
@@ -5198,16 +5196,98 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 보스 도전 — 게이지가 찼을 때만. 사냥터의 몬스터를 치우고 보스를 부른다.
   void _startBossChallenge() {
-    if (!_config.zoneMode || _bossChallenge || _defeated) return;
-    if (!ref.read(saveControllerProvider.notifier).bossUnlocked) return;
-    setState(() {
-      _bossChallenge = true;
-      _dying = false;
-      _walking = false;
-      _healTeamFull();
-      _enemyAtkAcc = 0;
-      _spawn();
-    });
+    if (!_canStartBoss()) return;
+    setState(_beginBossChallenge);
+  }
+
+  bool _canStartBoss() =>
+      _config.zoneMode &&
+      !_bossChallenge &&
+      !_defeated &&
+      ref.read(saveControllerProvider.notifier).bossUnlocked;
+
+  /// 보스를 부른다(setState 없이 — 틱 안의 자동 도전도 이걸 쓴다).
+  void _beginBossChallenge() {
+    _autoBoss.reset();
+    _autoBossPending = false;
+    _bossChallenge = true;
+    _dying = false;
+    _walking = false;
+    _healTeamFull();
+    _enemyAtkAcc = 0;
+    _spawn();
+  }
+
+  /// 이 화면이 지금 유저 눈앞에 있는가 — 홈 탭이고, 위에 팝업·시트가 없다.
+  ///
+  /// 홈 화면은 [IndexedStack] 이라 다른 탭에서도 런이 돈다. 거기서 자동 도전을 걸면 유저가 못 본
+  /// 사이에 보스전이 끝나고(실패면 게이지 100마리가 비워진다), 최종 보스면 난이도 전환 안내가
+  /// 엉뚱한 화면 위에 뜬다. 그래서 **보고 있을 때만** 센다.
+  bool _playVisible() {
+    if (ref.read(tabIndexProvider) != 0) return false;
+    return ModalRoute.of(context)?.isCurrent ?? true;
+  }
+
+  /// 보스 자동 도전 — 게이지가 차면 [AutoBossCountdown.seconds] 뒤 스스로 도전한다
+  /// (2026-10-08 사장님 확정, 기본 켬 · 설정에서 끈다).
+  ///
+  /// 신규 유저 다수가 [보스 도전] 버튼을 몰라 쉬움 사냥터 1 에서 수만 마리를 잡고도 보스를 한 번도
+  /// 도전하지 않았다. 실패해 게이지가 비면 다시 100마리 뒤에 같은 흐름으로 재도전한다(진행 리듬).
+  /// 심연 층 보스·최종 보스·로드맵으로 내려간 아래 사냥터도 같은 규칙이다. 화면 흐름일 뿐이라
+  /// 방치·오프라인 정산과는 무관하다.
+  void _tickAutoBoss(double dt) {
+    final prefs = PlayPrefs.instance;
+    final save = ref.read(saveControllerProvider).value;
+    final ready =
+        _config.zoneMode &&
+        save != null &&
+        save.zoneKills >= _config.bossUnlockKills &&
+        !_isBoss &&
+        !_bossChallenge &&
+        !_defeated &&
+        !_tierClearPending;
+    final visible = ready && prefs.loaded && _playVisible();
+    // 처음 게이지가 찼을 때 한 번 — 보스가 무엇인지, 자동 도전이 켜져 있다는 것을 알린다.
+    if (visible && !prefs.bossIntroSeen && !_bossIntroShowing) {
+      _bossIntroShowing = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showBossIntro());
+    }
+    final armed =
+        visible &&
+        prefs.bossIntroSeen &&
+        !_bossIntroShowing &&
+        prefs.autoBoss.value;
+    if (_autoBoss.tick(dt, armed: armed)) _autoBossPending = true;
+    if (!armed) {
+      _autoBossPending = false;
+      return;
+    }
+    // 처치 연출(_dying) 도중이면 끝날 때까지 기다린다 — 그 몬스터의 다음 처리가 꼬이지 않게.
+    if (_autoBossPending && !_dying && _canStartBoss()) _beginBossChallenge();
+  }
+
+  /// 처음 게이지가 찼을 때의 안내(기기당 1회 — [PlayPrefs.bossIntroSeen]).
+  Future<void> _showBossIntro() async {
+    if (!mounted) {
+      _bossIntroShowing = false;
+      return;
+    }
+    final l = AppLocalizations.of(context);
+    final auto = PlayPrefs.instance.autoBoss.value;
+    // 닫는 방식(버튼·바깥 탭)과 무관하게 다시 뜨지 않게 먼저 기록한다.
+    unawaited(PlayPrefs.instance.markBossIntroSeen());
+    await showGameDialog<void>(
+      context,
+      title: l.bossIntroTitle,
+      icon: Icons.whatshot_rounded,
+      content: Text(
+        auto ? '${l.bossIntroBody}\n\n${l.bossIntroAuto}' : l.bossIntroBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.45),
+      ),
+      actions: [gameDialogButton(l.bossIntroOk, () => Navigator.pop(context))],
+    );
+    _bossIntroShowing = false;
   }
 
   /// 보스에게서 **도망친다** — 사냥터로 돌아간다(사장님 지시 2026-09-20).
@@ -6746,6 +6826,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           const SizedBox(height: 10),
           const _LanguageSection(),
           const SizedBox(height: 10),
+          if (_config.zoneMode) ...[
+            const _GameplaySection(),
+            const SizedBox(height: 10),
+          ],
           const _NotifySection(),
           // ⚠️ "게임 데이터 초기화" 버튼을 여기 두지 말 것.
           //    확인 다이얼로그가 있어도 **되돌릴 수 없고**, 초기화된 세이브가
@@ -9173,6 +9257,54 @@ class _PulseBoxState extends State<_PulseBox>
         );
       },
       child: widget.child,
+    );
+  }
+}
+
+/// 설정 시트의 게임 섹션 — 보스 자동 도전(2026-10-08, 기기 로컬 [PlayPrefs]).
+class _GameplaySection extends StatelessWidget {
+  const _GameplaySection();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: PlayPrefs.instance.autoBoss,
+      builder: (context, on, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l.settingsGameplay,
+            style: const TextStyle(
+              color: kHoney,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+          Row(
+            children: [
+              const Icon(Icons.whatshot_rounded, color: kHoney, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l.settingsAutoBoss,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+              Switch(
+                key: const ValueKey('autoBossSwitch'),
+                value: on,
+                onChanged: PlayPrefs.instance.setAutoBoss,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
