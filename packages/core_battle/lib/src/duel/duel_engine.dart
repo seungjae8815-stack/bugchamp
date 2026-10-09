@@ -480,13 +480,15 @@ DuelBout simulateBout({
     return ok;
   }
 
-  // 버티기(장외·뒤집기) 성공의 대가 — 최대 체력 × clutchHoldHpCost 를 잃는다(이것으로는 쓰러지지 않는다).
-  // 공짜로 버티면 조작 앱(늘 만점)이 74% 를 이겼다 — 판을 통째로 살리는 게 아니라 한 번 더 기회를 준다.
+  // 버티기(장외·뒤집기) 성공의 대가 — 최대 체력 × clutchHoldHpCost 를 잃되, 남은 체력의 clutchHoldKeepRatio
+  // 아래로는 안 내려간다(이것으로는 쓰러지지 않는다). 공짜로 버티면 조작 앱(늘 만점)이 74% 를 이겼다 — 판을 통째로
+  // 살리는 게 아니라 한 번 더 기회를 준다. 바닥을 "최대 체력 1%"로 두던 시절엔 약할 때 버티면 1% 만 남아
+  // 다음 한 대에 기절했다(2026-10-09 사장님 확정 B안: 버틴 뒤 1초 안 기절 50% → 18%).
   void holdCost(_Body s) {
     if (p.clutchHoldHpCost <= 0 || s.hp <= 0) return;
     s.hp = math.max(
       s.hp - s.bug.maxHp * p.clutchHoldHpCost,
-      s.bug.maxHp * 0.01,
+      s.hp * p.clutchHoldKeepRatio.clamp(0.0, 1.0),
     );
   }
 

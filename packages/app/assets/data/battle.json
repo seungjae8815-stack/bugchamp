@@ -114,6 +114,8 @@
   "clutchRimRatio": 1,
   "clutchRestoreRatio": 0.8,
   "clutchHoldHpCost": 0.36,
+  "_clutchHoldKeepComment": "버티기 대가의 바닥(2026-10-09 사장님 확정 B안) — 최대 체력 × clutchHoldHpCost 를 잃되 남은 체력의 clutchHoldKeepRatio 아래로는 안 잃는다. 예전 바닥(최대 1%)은 체력 37% 아래에서 버티면 1% 만 남아 다음 한 대에 기절했다. 측정(같은 스탯 1500판, 늘 만점): 버틴 뒤 1초 안 기절 50% → 18% · 조작 앱 58 → 62% · 근성 10 자동 64 → 67% · 늘 0점 46 → 44%.",
+  "clutchHoldKeepRatio": 0.5,
   "clutchThreshold": 0.55,
   "_clutchGrit1009Comment": "2026-10-09 출시 전 점검: 근성 10칸이 다른 칸 10포인트보다 훨씬 값져서(빌드 리그전에서 근성 10 이 있는 배분은 모두 57~59%, 없는 배분은 37~43%) 문턱 단계당 0.01 → 0.009. duel_sim 10번 표(1500판): 근성 10 쪽 66 → 63% · 조작 앱 58%(목표 65% 안팎 · 60% 아래).",
   "clutchThresholdPerGrit": 0.009,
