@@ -283,8 +283,9 @@ void main() {
       final s = trained();
       final r = actions.mergeSave(s, oldAppJson(s));
       expect(r.save!.duelTraining['bug1']?[TrainStat.attack], 4);
-      // 훈련 v2(2026-10-08) — 진행 중이던 옛 훈련은 이전 때 끝난 것으로 치고(곤충이 있으면 옛 단계에 반영) 대기열을 비운다.
-      expect(r.save!.trainingJob, isNull);
+      // 구버전 업로드는 서버가 훈련 v2 이전을 하지 않는다(2026-10-09) — 진행 중이던 옛 훈련도 그대로 남고,
+      // 1.0.18 앱이 켜질 때 옮긴다(이전 때 끝난 것으로 치고 대기열을 비운다).
+      expect(r.save!.trainingJob?.bugId, 'bug1');
       expect(r.save!.pvpDefenseIds, ['bug1']);
       expect(r.save!.abyssFloor, 5);
       expect(r.save!.abyssWeek, week);
