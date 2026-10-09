@@ -90,6 +90,8 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        # TestFlight 내부 테스터에게 자동 배포. 심사는 콘솔에서 수동 제출 권장.
-        submit_to_testflight: true
+        # 업로드만 한다 — 내부 테스터는 업로드된 빌드를 심사 없이 받는다. `true` 는 **외부 테스트 베타 심사 제출**이라
+        # '베타 앱 설명'이 없으면 422 로 빌드가 실패한 것처럼 끝났다(2026-10-09, 업로드·처리는 성공).
+        # App Store 심사는 콘솔에서 수동 제출.
+        submit_to_testflight: false
         submit_to_app_store: false
