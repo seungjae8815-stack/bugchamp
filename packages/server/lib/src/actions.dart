@@ -1153,10 +1153,13 @@ class GameActions {
     // 측정(2026-10-05, `core_run/tool/clamp_check.dart --guild` — 펫 x4·장비 x3·광폭화·골드러시·접속 보너스
     // 위에 길드 최대치): 60초 상한 최소 여유 x6.09(극한 사냥터 1) · 교환소 1회 최소 x27.3.
     // 여유가 2배 아래로 내려가면 여기서 길드 버프를 봉투에 넣는다(서버 settle 이 길드를 조회해야 한다).
+    // 깜짝선물·일일보상(사냥 분치) — 기기에서 받으므로 이번 업로드에서 새로 받은 몫을 따로 인정한다.
+    final hunt = _huntRewardAllowance(stored, clientJson, t);
     final maxGain =
         _goldSanityFloor +
         generous +
         exchange.gold +
+        hunt.gold +
         _chapterGrantAllowance(stored, clientJson) +
         _dexGoldAllowance(stored, clientJson);
 
@@ -1171,6 +1174,7 @@ class GameActions {
       }
     }
     _mergeGiftDoubles(stored, merged, t);
+    _mergeDailyClaims(stored, merged);
     // 저장 횟수(`rev`)는 **줄지 않는다** — 이 필드를 모르는 구버전 앱은 키 없이 올린다. 줄면 다른 기기가
     // 앱을 켤 때 동점 판정(`_localIsAhead`)이 서버의 새 세이브를 옛 것으로 본다.
     final clientRev = (merged['rev'] as num?)?.toInt() ?? 0;
@@ -1218,7 +1222,8 @@ class GameActions {
         final client =
             (mats[k.key] as num?)?.toInt() ?? stored.materialCount(k);
         final have = stored.materialCount(k);
-        final allow = _materialSanityFloor + exchange.materialsEach;
+        final allow =
+            _materialSanityFloor + exchange.materialsEach + hunt.materialsEach;
         if (client - have > allow) {
           mats[k.key] = have + allow;
           clampReasons.add('material:${k.key}');
@@ -1494,6 +1499,96 @@ class GameActions {
       mineral: min(g.mineral, matCap),
       sap: min(g.sap, matCap),
     );
+  }
+
+  /// 일일보상 수령 날짜는 **뒤로 가지 않는다**(슬롯마다 저장본과 늦은 쪽). 키를 지웠다 다시 적어
+  /// [_huntRewardAllowance] 의 몫을 또 받는 것을 막는다. 날짜는 'yyyy-MM-dd' 라 문자열 비교가 곧 날짜 비교다.
+  void _mergeDailyClaims(SaveGame stored, Map<String, dynamic> merged) {
+    if (stored.dailyClaims.isEmpty) return;
+    final raw = merged['dailyClaims'];
+    final out = <String, String>{
+      if (raw is Map)
+        for (final e in raw.entries) '${e.key}': '${e.value}',
+    };
+    for (final e in stored.dailyClaims.entries) {
+      final c = out[e.key];
+      if (c == null || c.compareTo(e.value) < 0) out[e.key] = e.value;
+    }
+    merged['dailyClaims'] = out;
+  }
+
+  /// 깜짝선물·일일보상(사냥 분치) 허용치(2026-10-09 출시 전 점검). 둘 다 **기기에서** 받는다(솔로 루프는 기기 권위,
+  /// 서버 `claimDaily`·선물 수령 경로는 앱이 쓰지 않는다). 금액이 사냥 1~5시간치라 60초 봉투로는 바로 잘려
+  /// 받은 골드가 1~2분 뒤 되돌아갔다(쉬움 일일 5시간치 48% · 보통 26% 만 남음 — 재현). 이번 업로드에서 새로 받았을
+  /// 수 있는 몫만큼 넉넉한 봉투([_huntCap])로 인정한다:
+  ///  - 일일보상: `dailyClaims` 에서 날짜가 **앞으로 간** 슬롯마다(한 번 더 받기 `#2` 포함) 그 슬롯의 분치.
+  ///    날짜는 저장본과 합칠 때 뒤로 가지 않는다([_mergeDailyClaims]) — 키를 지웠다 다시 적어 몫을 또 받지 못하게.
+  ///  - 깜짝선물: 저장본에 있다 사라진 선물(최대 `maxActive`) + 업로드 사이에 생겼다 바로 받은 선물 1개. 후자는
+  ///    **다음 선물 시각이 새로 잡힌 흔적**이 있을 때만 센다 — 앱은 예정 시각이 지나야 선물을 만들고 그때
+  ///    다음 시각을 최소 간격 뒤로 잡는다(`maybeSpawnGift`). 기기 시계 차이는 2분까지 봐준다.
+  ///    선물 하나 = 가장 큰 분치 × 최대 배수(2배 받기 2~4배).
+  /// 위조로 늘릴 수 있는 것은 "받았다고 적기"뿐이고, 그 몫도 선물 간격·슬롯 수로 묶인다(다른 상식 상한과 같은 수준).
+  ({int gold, int materialsEach}) _huntRewardAllowance(
+    SaveGame stored,
+    Map<String, dynamic> clientJson,
+    DateTime t,
+  ) {
+    var gold = 0, each = 0;
+    void add(({int gold, int materialsEach}) c, [int times = 1]) {
+      gold = addCurrency(gold, c.gold * times);
+      each = addCurrency(each, c.materialsEach * times);
+    }
+
+    final daily = config.daily;
+    final claims = clientJson['dailyClaims'];
+    if (daily != null && claims is Map) {
+      for (final e in claims.entries) {
+        final key = '${e.key}';
+        final before = stored.dailyClaims[key];
+        if (before != null && '${e.value}'.compareTo(before) <= 0) continue;
+        final id = key.endsWith('#2') ? key.substring(0, key.length - 2) : key;
+        final reward = daily.rewards.where((r) => r.id == id).firstOrNull;
+        if (reward == null || reward.huntMinutes <= 0) continue;
+        add(_huntCap(stored, reward.huntMinutes));
+      }
+    }
+    final gift = config.gift;
+    if (gift != null) {
+      var maxMin = 0.0;
+      for (final t in gift.tiers) {
+        maxMin = max(maxMin, t.huntMinutes);
+      }
+      if (maxMin > 0) {
+        final raw = clientJson['gifts'];
+        final clientIds = <String>{
+          if (raw is List)
+            for (final g in raw)
+              if (g is Map) '${g['id']}',
+        };
+        final gone = min(
+          stored.gifts.where((g) => !clientIds.contains(g.id)).length,
+          max(1, gift.maxActive),
+        );
+        const skew = Duration(minutes: 2);
+        final rawNext = clientJson['nextGiftAt'];
+        final clientNext = rawNext is String
+            ? DateTime.tryParse(rawNext)?.toUtc()
+            : null;
+        final storedNext = stored.nextGiftAt;
+        final due =
+            storedNext == null || !t.isBefore(storedNext.subtract(skew));
+        final rescheduled =
+            clientNext != null &&
+            (storedNext == null || clientNext.isAfter(storedNext)) &&
+            !clientNext.isBefore(
+              t.add(Duration(seconds: gift.intervalMinSec)).subtract(skew),
+            );
+        final fresh = due && rescheduled ? 1 : 0;
+        final mult = max(1, max(gift.adMultiplier, gift.adMultiplierMax));
+        add(_huntCap(stored, maxMin), (gone + fresh) * mult);
+      }
+    }
+    return (gold: gold, materialsEach: each);
   }
 
   /// 교환소 허용치 — 저장본보다 줄어든 젤리 ÷ 교환 1회 젤리 = 교환 횟수로 보고, 골드·재료 각각
