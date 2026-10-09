@@ -4507,7 +4507,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyReleaseConfirm(String n) {
-    return '分解すると妖精の粉を$n個得ます。元に戻せません。';
+    return '分解すると妖精の粉を$n個得ます。\n元に戻せません。';
   }
 
   @override
@@ -5544,7 +5544,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get fairyReleaseHint => '分解する妖精・卵を選んでください。妖精の粉になります（元に戻せません）。';
+  String get fairyReleaseHint => '分解する妖精・卵を選んでください。妖精の粉になります。\n（元に戻せません）';
 
   @override
   String fairyReleasePicked(String n) {
@@ -5561,7 +5561,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyReleaseBulkConfirm(String n, String dust) {
-    return '$n個を分解して妖精の粉$dustを受け取ります。元に戻せません。';
+    return '$n個を分解して妖精の粉$dustを受け取ります。\n元に戻せません。';
   }
 
   @override
@@ -5766,6 +5766,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get fairyBoxExpanded => '妖精ボックスが増えました！';
+
+  @override
+  String fairyBoxExpandSlots(int n) {
+    return '+$n枠';
+  }
 
   @override
   String get breedingExpandTitle => '交配スロットの拡張';
@@ -6432,6 +6437,21 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String duelClutchPower(String p) {
+    return 'タップ力 ×$p';
+  }
+
+  @override
+  String trainGritPower(String p) {
+    return 'タップ力 ×$p';
+  }
+
+  @override
+  String guideTrainGritPower(String p) {
+    return 'タップ力 +$p';
+  }
+
+  @override
   String get guideTrainSlotsTitle => '枠ごとの効果（1ptあたり · 基本上限）';
 
   @override
@@ -6474,7 +6494,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String uses,
     String bonus,
   ) {
-    return '決闘で負けそうな瞬間（場外に押し出されるとき · ひっくり返されるとき · 体力が0になるとき）に試合が止まり、ゲージが出ます。$sec秒間画面を連打してスコアがしきい値$th以上なら生き残ります — 踏ん張りは最大体力の$costを失って土俵の内側に戻り、起き上がりは体力$hpで立ち上がります。1戦$uses回（根性${bonus}ptから1回追加）。根性枠に振るほどしきい値が下がり、起き上がり体力が増えます。相手の虫は自動で反撃します。';
+    return '決闘で負けそうな瞬間（場外に押し出されるとき · ひっくり返されるとき · 体力が0になるとき）に試合が止まり、ゲージが出ます。$sec秒間画面を連打してスコアがしきい値$th以上なら生き残ります — 踏ん張りは最大体力の$costを失って土俵の内側に戻り、起き上がりは体力$hpで立ち上がります。1戦$uses回（根性${bonus}ptから1回追加）。根性枠に振るほどタップ1回の力が強くなり、しきい値が下がり、起き上がり体力が増えます。相手の虫は自動で反撃します。';
   }
 
   @override

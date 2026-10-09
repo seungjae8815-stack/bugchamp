@@ -11,7 +11,8 @@ import '../../ui/colors.dart';
 
 /// 탭 반격(훈련 v2 §4) 게이지 점수(0~1) — [taps] 는 게이지가 뜬 뒤 각 탭의 시각(초, 오름차순).
 ///
-/// 점수 = 연타 몫 × (0.75 + 0.25 × 박자 고르기). 연타 몫 = 탭 수 ÷ [target](최대 1).
+/// 점수 = 연타 몫 × (0.75 + 0.25 × 박자 고르기). 연타 몫 = 탭 수 × [power] ÷ [target](최대 1).
+/// [power] = 탭 한 번의 힘(1 + 근성 × `clutchTapPowerPerGrit`, 2026-10-09) — 근성이 높을수록 덜 쳐도 찬다.
 /// 박자 고르기 = 1 − 탭 간격의 변동계수(간격 2개 이상일 때만, 아니면 0) — 같은 수를 쳐도 고르게 친 쪽이 높다.
 /// [seconds] 이후의 탭은 세지 않는다(게이지가 닫힌 뒤 들어온 탭).
 /// ⚠️ 점수는 앱이 서버로 보낸다 — 조작 앱은 늘 만점이다. 그래서 엔진이 살아나는 폭을 작게 둔다.
@@ -19,13 +20,14 @@ double clutchTapScore(
   List<double> taps, {
   double seconds = 1.2,
   int target = 10,
+  double power = 1,
 }) {
   final t = [
     for (final x in taps)
       if (x >= 0 && x <= seconds) x,
   ];
   if (t.isEmpty || target <= 0) return 0;
-  final count = math.min(1.0, t.length / target);
+  final count = math.min(1.0, t.length * math.max(0.0, power) / target);
   var rhythm = 0.0;
   if (t.length >= 3) {
     final gaps = [for (var i = 1; i < t.length; i++) t[i] - t[i - 1]];
@@ -38,6 +40,12 @@ double clutchTapScore(
     }
   }
   return (count * (0.75 + 0.25 * rhythm)).clamp(0.0, 1.0);
+}
+
+/// 탭 힘 표기 — 1.5 → "1.5", 1.25 → "1.25"(소수 둘째 자리까지, 끝의 0 은 지운다).
+String clutchPowerLabel(double p) {
+  final s = p.toStringAsFixed(2);
+  return s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
 }
 
 /// 보낼 점수 — 두드린 점수와 [floor](자동 점수 기준) 중 큰 쪽(2026-10-09 사장님 확정).
@@ -113,6 +121,7 @@ class ClutchGauge extends StatefulWidget {
     this.tutorial = false,
     this.onTutorialDone,
     this.minScore = 0,
+    this.power = 1,
   });
 
   final DuelCrisis kind;
@@ -138,6 +147,9 @@ class ClutchGauge extends StatefulWidget {
 
   /// 보낼 점수의 바닥(자동 점수 기준, [clutchSendScore]). 게이지에 옅은 띠로 보인다.
   final double minScore;
+
+  /// 탭 한 번의 힘(1 + 근성 × `clutchTapPowerPerGrit`). 1 보다 크면 "탭 힘 ×1.5" 를 보여 준다.
+  final double power;
 
   @override
   State<ClutchGauge> createState() => _ClutchGaugeState();
@@ -191,6 +203,7 @@ class _ClutchGaugeState extends State<ClutchGauge>
         _taps,
         seconds: widget.seconds,
         target: widget.target,
+        power: widget.power,
       );
       widget.onDone(clutchSendScore(score, widget.minScore));
     }
@@ -221,6 +234,7 @@ class _ClutchGaugeState extends State<ClutchGauge>
       _taps,
       seconds: widget.seconds,
       target: widget.target,
+      power: widget.power,
     );
     final running = _stage == _Stage.run || _stage == _Stage.done;
     final left = running ? (1 - _t / widget.seconds).clamp(0.0, 1.0) : 1.0;
@@ -323,6 +337,15 @@ class _ClutchGaugeState extends State<ClutchGauge>
                     ),
                   ),
                   const SizedBox(width: 16),
+                  // 근성이 키운 탭 힘 — 근성을 찍은 보람이 게이지 위에서 보이게(2026-10-09).
+                  if (widget.power > 1.001) ...[
+                    _chip(
+                      l.duelClutchPower(clutchPowerLabel(widget.power)),
+                      const Color(0xFFFFB74D),
+                      key: const ValueKey('clutchPower'),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -349,6 +372,20 @@ class _ClutchGaugeState extends State<ClutchGauge>
       ),
     );
   }
+
+  Widget _chip(String text, Color color, {Key? key}) => Container(
+    key: key,
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: const Color(0xCC000000),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: color, width: 2),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w900),
+    ),
+  );
 
   /// 점수 게이지 — 굵고 크게. 바닥 점수는 옅은 띠, 성공 문턱에 흰 선과 "성공".
   Widget _gauge(AppLocalizations l, double score, List<Shadow> outline) {

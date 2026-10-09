@@ -3069,19 +3069,28 @@ class _BoxExpandButton extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: _honey.withValues(alpha: 0.8)),
         ),
+        // "+10칸 · 젤리 100" 글자 대신 젤리 그림 — 다른 젤리 가격과 같은 모양(2026-10-09 실기).
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.add_box_rounded, size: 14, color: _honey),
             const SizedBox(width: 3),
             Text(
-              l.storageExpand(cfg.boxExpandAmount, cost),
+              l.fairyBoxExpandSlots(cfg.boxExpandAmount),
               style: const TextStyle(
                 color: _honey,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w900,
                 shadows: [Shadow(color: Color(0xCC000000), blurRadius: 3)],
               ),
+            ),
+            const SizedBox(width: 6),
+            jellyPrice(
+              cost: cost,
+              color: _honey,
+              fontSize: 11.5,
+              size: 14,
+              shadow: true,
             ),
           ],
         ),

@@ -95,8 +95,9 @@ class DuelParams {
     this.clutchAutoBase = 0.5,
     this.clutchAutoPerGrit = 0.02,
     this.clutchAutoSpread = 0.15,
-    this.clutchTapSeconds = 1.2,
-    this.clutchTapTarget = 10,
+    this.clutchTapSeconds = 2.0,
+    this.clutchTapTarget = 20,
+    this.clutchTapPowerPerGrit = 0.05,
   });
 
   /// 경기장 반지름. 곤충 중심이 이 밖이면 장외.
@@ -317,6 +318,11 @@ class DuelParams {
   final double clutchTapSeconds;
   final int clutchTapTarget;
 
+  /// 근성 1점당 탭 한 번의 힘(앱 게이지 전용, 2026-10-09 사장님 요청) — 탭 한 번 = 1 + 근성 × 이 값.
+  /// 사람이 칠 때만 의미가 있다(조작 앱·자동 점수는 이미 만점·고정) — 그래서 근성 10 이 낼 수 있는 이득의
+  /// 상한은 "늘 만점"(duel_sim 10번 표의 조작 앱)과 같다.
+  final double clutchTapPowerPerGrit;
+
   int get maxTicks => (roundSeconds * tickHz).round();
   double get dt => 1 / tickHz;
 
@@ -426,6 +432,10 @@ class DuelParams {
       clutchAutoSpread: n('clutchAutoSpread', d.clutchAutoSpread),
       clutchTapSeconds: n('clutchTapSeconds', d.clutchTapSeconds),
       clutchTapTarget: i('clutchTapTarget', d.clutchTapTarget),
+      clutchTapPowerPerGrit: n(
+        'clutchTapPowerPerGrit',
+        d.clutchTapPowerPerGrit,
+      ),
     );
   }
 }

@@ -2902,7 +2902,7 @@
   "fairyDexBtn": "Codex",
   "fairyMergeBtn": "Merge",
   "fairyReleaseBtn": "Release",
-  "fairyReleaseConfirm": "Releasing gives {n} fairy dust. This cannot be undone.",
+  "fairyReleaseConfirm": "Releasing gives {n} fairy dust.\nThis cannot be undone.",
   "@fairyReleaseConfirm": {"placeholders": {"n": {"type": "String"}}},
   "fairyNew": "New fairy!",
   "fairyErrJelly": "Not enough jelly",
@@ -3275,14 +3275,14 @@
   "fairyMergeInvestedConfirm": "{n} leveled-up fairies will be used. You get back {dust} fairy dust (part of what you spent). Merge?",
   "@fairyMergeRefund": {"placeholders": {"dust": {"type": "String"}}},
   "fairyMergeRefund": "{dust} fairy dust returned",
-  "fairyReleaseHint": "Pick fairies and eggs to release. They turn into fairy dust (cannot be undone).",
+  "fairyReleaseHint": "Pick fairies and eggs to release. They turn into fairy dust.\n(Cannot be undone)",
   "@fairyReleasePicked": {"placeholders": {"n": {"type": "String"}}},
   "fairyReleasePicked": "{n} picked",
   "@fairyReleaseAllOf": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "String"}}},
   "fairyReleaseAllOf": "All {grade} ({n})",
   "fairyReleaseEquipped": "Your companion fairy cannot be released",
   "@fairyReleaseBulkConfirm": {"placeholders": {"n": {"type": "String"}, "dust": {"type": "String"}}},
-  "fairyReleaseBulkConfirm": "Release {n} for {dust} fairy dust? This cannot be undone.",
+  "fairyReleaseBulkConfirm": "Release {n} for {dust} fairy dust?\nThis cannot be undone.",
   "@fairyReleaseValuableNote": {"placeholders": {"n": {"type": "String"}}},
   "fairyReleaseValuableNote": "Includes {n} leveled or Legendary+ fairies.",
   "@fairyReleaseDone": {"placeholders": {"dust": {"type": "String"}}},
@@ -3355,6 +3355,14 @@
   "@fairyBoxExpandConfirm": {"placeholders": {"jelly": {"type": "int"}, "n": {"type": "int"}}},
   "fairyBoxExpandConfirm": "Spend {jelly} Jelly to add {n} fairy box slots?",
   "fairyBoxExpanded": "Fairy box expanded!",
+  "fairyBoxExpandSlots": "+{n} slots",
+  "@fairyBoxExpandSlots": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "breedingExpandTitle": "Expand breeding slots",
   "incubatorExpandTitle": "Expand incubator",
   "@slotExpandConfirm": {"placeholders": {"jelly": {"type": "int"}}},
@@ -3595,6 +3603,30 @@
   "duelClutchWoke": "Back up!",
   "duelClutchFailed": "Failed…",
   "duelClutchLeft": "Clutch {n}",
+  "duelClutchPower": "Tap power ×{p}",
+  "@duelClutchPower": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "trainGritPower": "tap power ×{p}",
+  "@trainGritPower": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "guideTrainGritPower": "tap power +{p}",
+  "@guideTrainGritPower": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "@duelClutchLeft": {"placeholders": {"n": {"type": "int"}}},
   "guideTrainSlotsTitle": "Slots (per point · base cap)",
   "guideTrainSlotLine": "{slot} — {effect} · cap {cap}",
@@ -3608,7 +3640,7 @@
   "@guideTrainStoneBody": {"placeholders": {"el": {"type": "String"}, "tm": {"type": "String"}}},
   "guideTrainLegacyNote": "Old part enhancements and training stages were converted into training points with the same effect — no bug got weaker.",
   "guideClutchTitle": "Tap counter (grit)",
-  "guideClutchBody": "When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for {sec}s — if your score reaches the threshold {th}, you survive: holding on costs {cost} of max HP and pulls you back inside, waking up gets you back on your feet with {hp} HP. {uses}× per bout (+1 from {bonus} Grit). More points in Grit lower the threshold and raise wake HP. Opponent bugs counter automatically.",
+  "guideClutchBody": "When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for {sec}s — if your score reaches the threshold {th}, you survive: holding on costs {cost} of max HP and pulls you back inside, waking up gets you back on your feet with {hp} HP. {uses}× per bout (+1 from {bonus} Grit). More points in Grit make each tap stronger, lower the threshold and raise wake HP. Opponent bugs counter automatically.",
   "@guideClutchBody": {"placeholders": {"sec": {"type": "String"}, "th": {"type": "String"}, "cost": {"type": "String"}, "hp": {"type": "String"}, "uses": {"type": "String"}, "bonus": {"type": "String"}}},
   "upgradeBuyMax": "MAX",
   "skillGachaConfirm": "Skill draw ×{times} — this spends {jelly} jelly.",

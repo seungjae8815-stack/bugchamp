@@ -125,9 +125,10 @@
   "clutchAutoBase": 0.5,
   "clutchAutoPerGrit": 0,
   "clutchAutoSpread": 0.1,
-  "_clutchTapComment": "앱 탭 게이지(엔진은 안 쓴다, 2026-10-08): 위기에서 판이 멈추면 clutchTapSeconds 동안 연타 → 점수 = 연타 수 ÷ clutchTapTarget(최대 1)에 박자 고르기를 25% 섞는다(앱 clutch_gauge.dart clutchTapScore). 10번 = 만점 · 문턱 0.55 는 고른 박자로 약 6번. 조작 앱은 늘 만점이라 이 값은 사람이 낼 수 있는 점수만 정한다.",
-  "clutchTapSeconds": 1.2,
-  "clutchTapTarget": 10
+  "_clutchTapComment": "앱 탭 게이지(엔진은 안 쓴다, 2026-10-08): 위기에서 판이 멈추면 clutchTapSeconds 동안 연타 → 점수 = 연타 수 × 탭 힘 ÷ clutchTapTarget(최대 1)에 박자 고르기를 25% 섞는다(앱 clutch_gauge.dart clutchTapScore). 탭 힘 = 1 + 근성 × clutchTapPowerPerGrit. 2026-10-09 사장님 요청(실기: 너무 적게 쳐서 급박하지 않다 · 근성이 탭 힘을 키우게): 1.2초·10번 → 2.0초·20번 + 근성이 탭 힘을 키운다(근성 10 = ×1.5). 고른 박자로 문턱까지 근성 0 약 12번(초당 6번) · 근성 5 약 9번 · 근성 10 약 7번(예전 6번). 조작 앱은 늘 만점이라 이 값들은 사람이 낼 수 있는 점수만 정한다 — 근성 10 의 이득 상한도 \"늘 만점\"과 같아 duel_sim 10번 표(조작 앱 58%) 밖으로 나가지 않는다.",
+  "clutchTapSeconds": 2.0,
+  "clutchTapTarget": 20,
+  "clutchTapPowerPerGrit": 0.05
  },
  "season": {
   "_scheduleComment": "2026-09-29 사장님 확정: 월 09:00 시즌 시작 → 일 09:00 집계 마감 → 정산 기간(settleHours 24시간: 결투 불가, 접속해서 순위 보상·승강을 받는다) → 월 09:00 새 시즌. 심연 주간 순위도 같은 시간표. 1.0.13 이하 앱도 월 09시 경계라 구버전과 경계가 어긋나지 않는다.",

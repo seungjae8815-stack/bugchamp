@@ -102,10 +102,9 @@ class GuideScreen extends ConsumerWidget {
             _signed(-(train.techBySpecialty[Specialty.toss] ?? 0)),
           ),
         ].join(' / '),
-        TrainSlot.grit => l.guideTrainGritEffect(
-          _num(duel.clutchThresholdPerGrit),
-          _pct(duel.clutchWakeHpPerGrit),
-        ),
+        TrainSlot.grit =>
+          '${l.guideTrainGritEffect(_num(duel.clutchThresholdPerGrit), _pct(duel.clutchWakeHpPerGrit))}'
+              ' · ${l.guideTrainGritPower(_pct(duel.clutchTapPowerPerGrit))}',
         _ => _signed(e),
       };
     }

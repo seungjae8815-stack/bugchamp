@@ -7921,7 +7921,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyReleaseConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Releasing gives {n} fairy dust. This cannot be undone.'**
+  /// **'Releasing gives {n} fairy dust.\nThis cannot be undone.'**
   String fairyReleaseConfirm(String n);
 
   /// No description provided for @fairyNew.
@@ -9602,7 +9602,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyReleaseHint.
   ///
   /// In en, this message translates to:
-  /// **'Pick fairies and eggs to release. They turn into fairy dust (cannot be undone).'**
+  /// **'Pick fairies and eggs to release. They turn into fairy dust.\n(Cannot be undone)'**
   String get fairyReleaseHint;
 
   /// No description provided for @fairyReleasePicked.
@@ -9626,7 +9626,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyReleaseBulkConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Release {n} for {dust} fairy dust? This cannot be undone.'**
+  /// **'Release {n} for {dust} fairy dust?\nThis cannot be undone.'**
   String fairyReleaseBulkConfirm(String n, String dust);
 
   /// No description provided for @fairyReleaseValuableNote.
@@ -9964,6 +9964,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fairy box expanded!'**
   String get fairyBoxExpanded;
+
+  /// No description provided for @fairyBoxExpandSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'+{n} slots'**
+  String fairyBoxExpandSlots(int n);
 
   /// No description provided for @breedingExpandTitle.
   ///
@@ -11039,6 +11045,24 @@ abstract class AppLocalizations {
   /// **'Clutch {n}'**
   String duelClutchLeft(int n);
 
+  /// No description provided for @duelClutchPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap power ×{p}'**
+  String duelClutchPower(String p);
+
+  /// No description provided for @trainGritPower.
+  ///
+  /// In en, this message translates to:
+  /// **'tap power ×{p}'**
+  String trainGritPower(String p);
+
+  /// No description provided for @guideTrainGritPower.
+  ///
+  /// In en, this message translates to:
+  /// **'tap power +{p}'**
+  String guideTrainGritPower(String p);
+
   /// No description provided for @guideTrainSlotsTitle.
   ///
   /// In en, this message translates to:
@@ -11090,7 +11114,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideClutchBody.
   ///
   /// In en, this message translates to:
-  /// **'When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for {sec}s — if your score reaches the threshold {th}, you survive: holding on costs {cost} of max HP and pulls you back inside, waking up gets you back on your feet with {hp} HP. {uses}× per bout (+1 from {bonus} Grit). More points in Grit lower the threshold and raise wake HP. Opponent bugs counter automatically.'**
+  /// **'When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for {sec}s — if your score reaches the threshold {th}, you survive: holding on costs {cost} of max HP and pulls you back inside, waking up gets you back on your feet with {hp} HP. {uses}× per bout (+1 from {bonus} Grit). More points in Grit make each tap stronger, lower the threshold and raise wake HP. Opponent bugs counter automatically.'**
   String guideClutchBody(
     String sec,
     String th,

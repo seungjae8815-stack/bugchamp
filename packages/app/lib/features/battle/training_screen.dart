@@ -23,6 +23,7 @@ import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
+import 'clutch_gauge.dart';
 
 const _honey = kHoney;
 
@@ -213,7 +214,14 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 24),
+              // 아래 여백에 폰 하단 바(제스처·버튼 바) 높이를 더한다 — 빼면 맨 아래 결투석 칸의
+              // "오행 바꾸기·기질 바꾸기" 버튼이 하단 바에 가려 잘렸다(2026-10-09 실기).
+              padding: EdgeInsets.fromLTRB(
+                12,
+                10,
+                12,
+                24 + MediaQuery.viewPaddingOf(context).bottom,
+              ),
               children: [
                 _jobCard(l, data, save, cfg, now),
                 const SizedBox(height: 12),
@@ -1245,7 +1253,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         final uses =
             params.clutchUses + (g >= params.clutchBonusUseGrit ? 1 : 0);
         final hp = params.clutchWakeHp + g * params.clutchWakeHpPerGrit;
-        final base = l.trainGritDesc(th.toStringAsFixed(2), '$uses', _pct(hp));
+        final power = 1 + g * params.clutchTapPowerPerGrit;
+        final base =
+            '${l.trainGritDesc(th.toStringAsFixed(2), '$uses', _pct(hp))}'
+            ' · ${l.trainGritPower(clutchPowerLabel(power))}';
         return g < params.clutchBonusUseGrit
             ? '$base · ${l.trainGritBonusUse('${params.clutchBonusUseGrit}')}'
             : base;

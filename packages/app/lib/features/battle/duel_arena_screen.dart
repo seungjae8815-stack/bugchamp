@@ -540,6 +540,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       onTutorialDone: ClutchTutorial.markSeen,
       // 한 번도 못 쳐도 자동 점수(엔진이 상대·구버전 앱에 주는 값의 가운데)보다 손해는 없게.
       minScore: (p.clutchAutoBase + grit * p.clutchAutoPerGrit).clamp(0.0, 1.0),
+      // 근성이 키운 탭 한 번의 힘(2026-10-09) — 근성 10 이면 ×1.5.
+      power: 1 + grit * p.clutchTapPowerPerGrit,
       onDone: _sendClutch,
     );
   }

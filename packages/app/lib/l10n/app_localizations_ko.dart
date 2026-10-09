@@ -4516,7 +4516,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String fairyReleaseConfirm(String n) {
-    return '분해하면 요정 가루 $n개를 얻어요. 되돌릴 수 없어요.';
+    return '분해하면 요정 가루 $n개를 얻어요.\n되돌릴 수 없어요.';
   }
 
   @override
@@ -5553,7 +5553,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get fairyReleaseHint => '분해할 요정·알을 고르세요. 요정 가루로 바뀌어요(되돌릴 수 없어요).';
+  String get fairyReleaseHint => '분해할 요정·알을 고르세요. 요정 가루로 바뀌어요.\n(되돌릴 수 없어요)';
 
   @override
   String fairyReleasePicked(String n) {
@@ -5570,7 +5570,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String fairyReleaseBulkConfirm(String n, String dust) {
-    return '$n개를 분해해 요정 가루 $dust를 받아요. 되돌릴 수 없어요.';
+    return '$n개를 분해해 요정 가루 $dust를 받아요.\n되돌릴 수 없어요.';
   }
 
   @override
@@ -5776,6 +5776,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get fairyBoxExpanded => '요정함이 늘었어요!';
+
+  @override
+  String fairyBoxExpandSlots(int n) {
+    return '+$n칸';
+  }
 
   @override
   String get breedingExpandTitle => '짝짓기 슬롯 확장';
@@ -6443,6 +6448,21 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String duelClutchPower(String p) {
+    return '탭 힘 ×$p';
+  }
+
+  @override
+  String trainGritPower(String p) {
+    return '탭 힘 ×$p';
+  }
+
+  @override
+  String guideTrainGritPower(String p) {
+    return '탭 힘 +$p';
+  }
+
+  @override
   String get guideTrainSlotsTitle => '칸별 효과 (1점당 · 기본 상한)';
 
   @override
@@ -6485,7 +6505,7 @@ class AppLocalizationsKo extends AppLocalizations {
     String uses,
     String bonus,
   ) {
-    return '결투에서 질 뻔한 순간(장외로 밀려날 때 · 뒤집힐 때 · 체력이 0이 될 때) 판이 멈추고 게이지가 떠요. $sec초 동안 화면을 연타해 점수가 문턱 $th 이상이면 살아나요 — 버티기는 최대 체력의 $cost를 잃고 경기장 안쪽으로 돌아오고, 깨우기는 체력 $hp로 일어나요. 한 판에 $uses번(근성 $bonus점부터 1번 더). 근성 칸에 찍을수록 문턱이 낮아지고 깨우기 체력이 늘어요. 상대 곤충은 자동으로 반격해요.';
+    return '결투에서 질 뻔한 순간(장외로 밀려날 때 · 뒤집힐 때 · 체력이 0이 될 때) 판이 멈추고 게이지가 떠요. $sec초 동안 화면을 연타해 점수가 문턱 $th 이상이면 살아나요 — 버티기는 최대 체력의 $cost를 잃고 경기장 안쪽으로 돌아오고, 깨우기는 체력 $hp로 일어나요. 한 판에 $uses번(근성 $bonus점부터 1번 더). 근성 칸에 찍을수록 탭 한 번의 힘이 세지고, 문턱이 낮아지고, 깨우기 체력이 늘어요. 상대 곤충은 자동으로 반격해요.';
   }
 
   @override

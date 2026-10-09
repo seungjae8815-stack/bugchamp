@@ -4617,7 +4617,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyReleaseConfirm(String n) {
-    return 'Releasing gives $n fairy dust. This cannot be undone.';
+    return 'Releasing gives $n fairy dust.\nThis cannot be undone.';
   }
 
   @override
@@ -5674,7 +5674,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fairyReleaseHint =>
-      'Pick fairies and eggs to release. They turn into fairy dust (cannot be undone).';
+      'Pick fairies and eggs to release. They turn into fairy dust.\n(Cannot be undone)';
 
   @override
   String fairyReleasePicked(String n) {
@@ -5691,7 +5691,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyReleaseBulkConfirm(String n, String dust) {
-    return 'Release $n for $dust fairy dust? This cannot be undone.';
+    return 'Release $n for $dust fairy dust?\nThis cannot be undone.';
   }
 
   @override
@@ -5903,6 +5903,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fairyBoxExpanded => 'Fairy box expanded!';
+
+  @override
+  String fairyBoxExpandSlots(int n) {
+    return '+$n slots';
+  }
 
   @override
   String get breedingExpandTitle => 'Expand breeding slots';
@@ -6583,6 +6588,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String duelClutchPower(String p) {
+    return 'Tap power ×$p';
+  }
+
+  @override
+  String trainGritPower(String p) {
+    return 'tap power ×$p';
+  }
+
+  @override
+  String guideTrainGritPower(String p) {
+    return 'tap power +$p';
+  }
+
+  @override
   String get guideTrainSlotsTitle => 'Slots (per point · base cap)';
 
   @override
@@ -6625,7 +6645,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String uses,
     String bonus,
   ) {
-    return 'When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for ${sec}s — if your score reaches the threshold $th, you survive: holding on costs $cost of max HP and pulls you back inside, waking up gets you back on your feet with $hp HP. $uses× per bout (+1 from $bonus Grit). More points in Grit lower the threshold and raise wake HP. Opponent bugs counter automatically.';
+    return 'When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for ${sec}s — if your score reaches the threshold $th, you survive: holding on costs $cost of max HP and pulls you back inside, waking up gets you back on your feet with $hp HP. $uses× per bout (+1 from $bonus Grit). More points in Grit make each tap stronger, lower the threshold and raise wake HP. Opponent bugs counter automatically.';
   }
 
   @override

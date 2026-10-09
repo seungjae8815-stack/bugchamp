@@ -47,6 +47,32 @@ void main() {
       }
       expect(clutchTapScore(even(3), seconds: 1.2, target: 0), 0);
     });
+
+    test('실데이터(2.0초·20번·근성 탭 힘): 근성 0 은 12번, 근성 10 은 7번이면 문턱을 넘는다', () {
+      final p = DuelParams.fromJson(const {
+        'clutchTapSeconds': 2.0,
+        'clutchTapTarget': 20,
+        'clutchTapPowerPerGrit': 0.05,
+      });
+      List<double> in2s(int n) => even(n, span: 1.9);
+      double score(int n, int grit) => clutchTapScore(
+        in2s(n),
+        seconds: p.clutchTapSeconds,
+        target: p.clutchTapTarget,
+        power: 1 + grit * p.clutchTapPowerPerGrit,
+      );
+      // 문턱 = 0.55 − 근성 × 0.009(battle.json).
+      expect(score(12, 0), greaterThanOrEqualTo(0.55));
+      expect(score(10, 0), lessThan(0.55), reason: '예전처럼 6번으로는 안 된다');
+      expect(score(7, 10), greaterThanOrEqualTo(0.55 - 10 * 0.009));
+      expect(score(7, 10), greaterThan(score(7, 0)), reason: '근성이 탭 힘을 키운다');
+    });
+
+    test('탭 힘 표기 — 끝의 0 을 지운다', () {
+      expect(clutchPowerLabel(1.5), '1.5');
+      expect(clutchPowerLabel(1.25), '1.25');
+      expect(clutchPowerLabel(1), '1');
+    });
   });
 
   Widget host(Widget child) => MaterialApp(
@@ -317,8 +343,8 @@ void main() {
     // "위기!" 준비 시간이 지나야 탭을 센다.
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 400));
-    // 연타 — 게이지 아무 데나.
-    for (var i = 0; i < 10; i++) {
+    // 연타 — 게이지 아무 데나(2.0초·20번 기준, 2026-10-09).
+    for (var i = 0; i < 16; i++) {
       await tester.tap(gauge, warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 50));
     }

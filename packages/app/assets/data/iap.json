@@ -20,9 +20,9 @@
     "ja": "スターターパック"
    },
    "desc": {
-    "ko": "젤리 400 · 부화기 슬롯 +1 · 2시간 가속기 3 (계정당 1회)",
-    "en": "400 jelly, +1 incubator slot, 3 2h accelerators (once)",
-    "ja": "ゼリー400・孵化器スロット+1・2時間加速器3（1回限り）"
+    "ko": "젤리 400\n부화기 슬롯 +1\n2시간 가속기 3\n(계정당 1회)",
+    "en": "400 jelly\n+1 incubator slot\n3 2h accelerators\n(once)",
+    "ja": "ゼリー400\n孵化器スロット+1\n2時間加速器3\n（1回限り）"
    },
    "image": "starter_pack"
   },
@@ -38,9 +38,9 @@
     "ja": "昆虫学者パス（30日）"
    },
    "desc": {
-    "ko": "오프라인 16시간 · 방치 골드 +30% · 매일 젤리 20 · 깜짝선물 자동 수령·항상 2배",
-    "en": "16h offline cap, +30% idle gold, 20 jelly daily, surprise gifts auto-claimed & always doubled",
-    "ja": "オフライン16時間・放置ゴールド+30%・毎日ゼリー20・サプライズギフト自動受取・常に2倍"
+    "ko": "오프라인 16시간\n방치 골드 +30%\n매일 젤리 20\n깜짝선물 자동 수령·항상 2배",
+    "en": "16h offline cap\n+30% idle gold\n20 jelly daily\nSurprise gifts auto-claimed & always doubled",
+    "ja": "オフライン16時間\n放置ゴールド+30%\n毎日ゼリー20\nサプライズギフト自動受取・常に2倍"
    },
    "image": "idle_pass",
    "iosId": "idle_pass_c"
@@ -169,9 +169,9 @@
     "ja": "黄金カブトムシ"
    },
    "desc": {
-    "ko": "장수풍뎅이 계열이 황금빛으로 · 그 계열 분해·방생 재료 +30% · 부화·짝짓기 시간 −25% · 구매 즉시 젤리 100 + 4성 장수풍뎅이 알",
-    "en": "Rhinoceros beetles turn gold · +30% materials from that family · −25% incubation & breeding time · Bonus: 100 jelly + a 4★ Rhino Beetle egg",
-    "ja": "カブトムシ系が黄金色に・その系統の分解・放生素材+30%・孵化・交配時間−25%・購入特典 ゼリー100＋4★カブトムシの卵"
+    "ko": "장수풍뎅이 계열이 황금빛으로\n그 계열 분해·방생 재료 +30%\n부화·짝짓기 시간 −25%\n구매 즉시 젤리 100 + 4성 장수풍뎅이 알",
+    "en": "Rhinoceros beetles turn gold\n+30% materials from that family\n−25% incubation & breeding time\nBonus: 100 jelly + a 4★ Rhino Beetle egg",
+    "ja": "カブトムシ系が黄金色に\nその系統の分解・放生素材+30%\n孵化・交配時間−25%\n購入特典 ゼリー100＋4★カブトムシの卵"
    },
    "image": "skin_gold_rhino"
   },
@@ -189,9 +189,9 @@
     "ja": "アルビノクワガタ"
    },
    "desc": {
-    "ko": "사슴벌레 계열이 알비노로 · 그 계열 분해·방생 재료 +30% · 부화·짝짓기 시간 −25% · 구매 즉시 젤리 100 + 4성 사슴벌레 알",
-    "en": "Stag beetles turn albino · +30% materials from that family · −25% incubation & breeding time · Bonus: 100 jelly + a 4★ Stag Beetle egg",
-    "ja": "クワガタ系がアルビノに・その系統の分解・放生素材+30%・孵化・交配時間−25%・購入特典 ゼリー100＋4★ミヤマクワガタの卵"
+    "ko": "사슴벌레 계열이 알비노로\n그 계열 분해·방생 재료 +30%\n부화·짝짓기 시간 −25%\n구매 즉시 젤리 100 + 4성 사슴벌레 알",
+    "en": "Stag beetles turn albino\n+30% materials from that family\n−25% incubation & breeding time\nBonus: 100 jelly + a 4★ Stag Beetle egg",
+    "ja": "クワガタ系がアルビノに\nその系統の分解・放生素材+30%\n孵化・交配時間−25%\n購入特典 ゼリー100＋4★ミヤマクワガタの卵"
    },
    "image": "skin_albino_stag"
   },
@@ -208,9 +208,9 @@
     "ja": "アリーナテーマ"
    },
    "desc": {
-    "ko": "전투 장소 배경이 선명한 톤으로 · 외형 전용, 능력치 영향 없음",
-    "en": "Battle backgrounds get a vivid grade. Cosmetic only.",
-    "ja": "バトル背景が鮮やかなトーンに。見た目のみ。"
+    "ko": "전투 장소 배경이 선명한 톤으로\n외형 전용, 능력치 영향 없음",
+    "en": "Battle backgrounds get a vivid grade.\nCosmetic only.",
+    "ja": "バトル背景が鮮やかなトーンに。\n見た目のみ。"
    },
    "image": "theme_arena",
    "hidden": true
@@ -227,9 +227,9 @@
     "ja": "無限バフパス（30日）"
    },
    "desc": {
-    "ko": "5가지 버프가 항상 켜져 있어요 (골드·경험치 2배, 공격 강화, 재료·곤충 발견 2배) · 깜짝선물 자동 수령·항상 2배",
-    "en": "All 5 buffs stay on: 2x gold & XP, stronger attacks, 2x materials & bug finds; surprise gifts auto-claimed & always doubled",
-    "ja": "5種のバフが常時発動（ゴールド・経験値2倍、攻撃強化、素材・虫の発見2倍）・サプライズギフト自動受取・常に2倍"
+    "ko": "5가지 버프가 항상 켜져 있어요\n(골드·경험치 2배, 공격 강화, 재료·곤충 발견 2배)\n깜짝선물 자동 수령·항상 2배",
+    "en": "All 5 buffs stay on:\n2x gold & XP, stronger attacks, 2x materials & bug finds\nSurprise gifts auto-claimed & always doubled",
+    "ja": "5種のバフが常時発動\n（ゴールド・経験値2倍、攻撃強化、素材・虫の発見2倍）\nサプライズギフト自動受取・常に2倍"
    },
    "image": "buff_pass"
   },
@@ -260,9 +260,9 @@
     "ja": "妖精入門パック"
    },
    "desc": {
-    "ko": "영웅 요정 알 1 · 희귀 요정 알 3 · 8시간 가속기 3 · 속성석 3(공격·치명 피해·보스 피해) · 요정 가루 300 (계정당 1회)",
-    "en": "1 Epic + 3 Rare fairy eggs, 3 8h accelerators, 3 attribute stones (Attack, Crit DMG, Boss DMG), 300 fairy dust (once)",
-    "ja": "英雄の妖精の卵1・希少の妖精の卵3・8時間加速器3・属性石3（攻撃・会心ダメージ・ボスダメージ）・妖精の粉300（1回限り）"
+    "ko": "영웅 요정 알 1 · 희귀 요정 알 3\n8시간 가속기 3\n속성석 3(공격·치명 피해·보스 피해)\n요정 가루 300\n(계정당 1회)",
+    "en": "1 Epic + 3 Rare fairy eggs\n3 8h accelerators\n3 attribute stones (Attack, Crit DMG, Boss DMG)\n300 fairy dust\n(once)",
+    "ja": "英雄の妖精の卵1・希少の妖精の卵3\n8時間加速器3\n属性石3（攻撃・会心ダメージ・ボスダメージ）\n妖精の粉300\n（1回限り）"
    },
    "image": "fairy_starter"
   },
@@ -284,9 +284,9 @@
     "ja": "スキル入門パック"
    },
    "desc": {
-    "ko": "희귀 만능 조각 100 · 영웅 만능 조각 30 (계정당 1회)",
-    "en": "100 Rare + 30 Epic universal skill shards (once)",
-    "ja": "希少の万能かけら100・英雄の万能かけら30（1回限り）"
+    "ko": "희귀 만능 조각 100\n영웅 만능 조각 30\n(계정당 1회)",
+    "en": "100 Rare + 30 Epic universal skill shards\n(once)",
+    "ja": "希少の万能かけら100\n英雄の万能かけら30\n（1回限り）"
    },
    "image": "skill_starter"
   },
@@ -302,9 +302,9 @@
     "ja": "妖精・スキル成長パス（30日）"
    },
    "desc": {
-    "ko": "30일 동안 접속한 날마다 요정 가루 20 · 희귀 만능 조각 2 · 30분 가속기 1",
-    "en": "Each day you log in for 30 days: 20 fairy dust, 2 Rare universal skill shards, one 30m accelerator",
-    "ja": "30日間ログインした日ごとに 妖精の粉20・希少の万能かけら2・30分加速器1"
+    "ko": "30일 동안 접속한 날마다\n요정 가루 20\n희귀 만능 조각 2\n30분 가속기 1",
+    "en": "Each day you log in for 30 days:\n20 fairy dust\n2 Rare universal skill shards\nOne 30m accelerator",
+    "ja": "30日間ログインした日ごとに\n妖精の粉20\n希少の万能かけら2\n30分加速器1"
    },
    "image": "growth_pass"
   },
@@ -332,9 +332,9 @@
     "ja": "週間パック"
    },
    "desc": {
-    "ko": "2시간 가속기 3 · 속성석 2(체력·공격) · 희귀 만능 조각 20 (주 1회, 월요일 09시 초기화)",
-    "en": "3 2h accelerators, 2 attribute stones (HP, Attack), 20 Rare universal skill shards (once a week, resets Monday 09:00 KST)",
-    "ja": "2時間加速器3・属性石2（体力・攻撃）・希少の万能かけら20（週1回、月曜9時リセット）"
+    "ko": "2시간 가속기 3\n속성석 2(체력·공격)\n희귀 만능 조각 20\n(주 1회, 월요일 09시 초기화)",
+    "en": "3 2h accelerators\n2 attribute stones (HP, Attack)\n20 Rare universal skill shards\n(once a week, resets Monday 09:00 KST)",
+    "ja": "2時間加速器3\n属性石2（体力・攻撃）\n希少の万能かけら20\n（週1回、月曜9時リセット）"
    },
    "image": "weekly_bundle"
   }
