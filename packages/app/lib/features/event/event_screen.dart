@@ -1175,11 +1175,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               Stack(
                 alignment: Alignment.topRight,
                 children: [
+                  // 이색·스킨도 목록에서 보이게(2026-10-09 — 고르기 목록만 기본 색이라 이색이 출전 못 하는 줄 알았다).
                   bugStageImage(
                     bug.speciesId,
                     LifeStage.adult,
                     size: 44,
                     fallback: bugAvatar(sp, size: 40),
+                    skin: bugView(ref.read(skinOfProvider), bug),
                   ),
                   if (order != null)
                     Container(
