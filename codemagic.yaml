@@ -23,7 +23,9 @@ workflows:
       groups:
         - bugchamp_ios
       flutter: stable
-      xcode: latest
+      # 코드매직 기본(안정) Xcode 로 고정한다 — `latest` 가 새 27 계열을 가리키던 2026-10-09 에 무료 M2 빌드가
+      # 계정·시간 문제 없이 계속 queued 였다(새 이미지 배정 대기로 추정). 버전을 올릴 땐 docs.codemagic.io/specs 확인.
+      xcode: 26.6
       cocoapods: default
       vars:
         BUNDLE_ID: "com.bugchamp.app"
