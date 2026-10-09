@@ -857,6 +857,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The hunting upgrade Move Speed is now Evasion';
 
   @override
+  String get whatsNewFairyBox =>
+      'Expand the fairy box with jelly (up to 60 slots)';
+
+  @override
   String zoneKillsLabel(int n, int m) {
     return 'Kills $n/$m';
   }

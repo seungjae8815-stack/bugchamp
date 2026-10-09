@@ -826,6 +826,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get whatsNewMoveToEvade => '사냥 강화의 이동속도가 회피로 바뀌었어요';
 
   @override
+  String get whatsNewFairyBox => '요정함을 젤리로 늘릴 수 있어요 (최대 60칸)';
+
+  @override
   String zoneKillsLabel(int n, int m) {
     return '처치 $n/$m';
   }

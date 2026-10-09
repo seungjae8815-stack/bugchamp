@@ -824,6 +824,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNewMoveToEvade => '狩りの強化「移動速度」が「回避」に変わりました';
 
   @override
+  String get whatsNewFairyBox => '妖精ボックスをゼリーで拡張できます(最大60枠)';
+
+  @override
   String zoneKillsLabel(int n, int m) {
     return '討伐 $n/$m';
   }

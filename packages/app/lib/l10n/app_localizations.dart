@@ -1570,6 +1570,12 @@ abstract class AppLocalizations {
   /// **'The hunting upgrade Move Speed is now Evasion'**
   String get whatsNewMoveToEvade;
 
+  /// No description provided for @whatsNewFairyBox.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand the fairy box with jelly (up to 60 slots)'**
+  String get whatsNewFairyBox;
+
   /// No description provided for @zoneKillsLabel.
   ///
   /// In en, this message translates to:

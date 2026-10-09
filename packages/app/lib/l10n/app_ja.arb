@@ -292,6 +292,7 @@
   "whatsNewUpgradeCap": "攻撃・体力・防御の強化上限が250に上がりました",
   "whatsNewGifts": "サプライズギフト・デイリー報酬が大幅に増えました",
   "whatsNewMoveToEvade": "狩りの強化「移動速度」が「回避」に変わりました",
+  "whatsNewFairyBox": "妖精ボックスをゼリーで拡張できます(最大60枠)",
   "zoneKillsLabel": "討伐 {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {

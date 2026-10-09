@@ -527,6 +527,7 @@
   "whatsNewUpgradeCap": "Attack, HP and Defense upgrades now go up to 250",
   "whatsNewGifts": "Surprise gifts and daily rewards are much bigger",
   "whatsNewMoveToEvade": "The hunting upgrade Move Speed is now Evasion",
+  "whatsNewFairyBox": "Expand the fairy box with jelly (up to 60 slots)",
   "zoneKillsLabel": "Kills {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {

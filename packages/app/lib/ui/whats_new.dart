@@ -24,7 +24,7 @@ const _kFreshSave = Duration(minutes: 30);
 /// 업데이트 내용 한 줄.
 typedef WhatsNewItem = ({IconData icon, String text});
 
-/// 1.0.18 업데이트 내용(2026-10-09 사장님 확정 목록).
+/// 1.0.18 업데이트 내용(2026-10-09 사장님 확정 목록 · 요정함 확장 추가).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
   (icon: Icons.fitness_center_rounded, text: l.whatsNewPartsToPoints),
   (icon: Icons.restart_alt_rounded, text: l.whatsNewFreeRespec),
@@ -33,6 +33,7 @@ List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
   (icon: Icons.trending_up_rounded, text: l.whatsNewUpgradeCap),
   (icon: Icons.card_giftcard_rounded, text: l.whatsNewGifts),
   (icon: Icons.shield_moon_rounded, text: l.whatsNewMoveToEvade),
+  (icon: Icons.inventory_2_rounded, text: l.whatsNewFairyBox),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.

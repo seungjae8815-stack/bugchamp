@@ -73,7 +73,9 @@ void main() {
       ),
     );
 
-    testWidgets('사장님 확정 7줄 — 부위 강화·다시 찍기·반격·자동 도전·상한·선물·회피', (tester) async {
+    testWidgets('사장님 확정 8줄 — 부위 강화·다시 찍기·반격·자동 도전·상한·선물·회피·요정함', (
+      tester,
+    ) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
       expect(find.textContaining('훈련 포인트로 옮겨졌어요'), findsOneWidget);
       expect(find.textContaining('첫 다시 찍기는 무료'), findsOneWidget);
@@ -82,7 +84,8 @@ void main() {
       expect(find.textContaining('250'), findsOneWidget);
       expect(find.textContaining('깜짝선물·일일보상'), findsOneWidget);
       expect(find.textContaining('회피'), findsOneWidget);
-      expect(find.byType(Icon), findsNWidgets(7));
+      expect(find.textContaining('요정함'), findsOneWidget);
+      expect(find.byType(Icon), findsNWidgets(8));
     });
 
     for (final lc in const ['en', 'ja']) {
