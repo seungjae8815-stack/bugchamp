@@ -270,15 +270,9 @@ class GameActions {
     // 올라갈 수 있는 한계(1.0.17, 쓰러지면 아래로 — zone_fall.dart). 모르는 앱이 올리면 저장본의 한계를 지킨다.
     17: ['capT', 'capS'],
     // 훈련 v2(1.0.18, docs/design_training_v2.md) — 포인트 배분·찍기 대기열·결투석. 모르는 앱이 올리면 저장본을 지킨다.
-    // 옛 훈련 단계·대기열도 여기서 **얼린다** — 1.0.17 앱은 옛 훈련소로 단계를 계속 올릴 수 있는데, 그 단계가
-    // 이전 상한(옛 투자로 다시 계산하는 칸 상한·보너스 한도)을 늘린다. 저장본 값(이전 때 굳은 값)으로 둔다.
-    19: [
-      'trainPoints',
-      'trainPointJob',
-      'duelStones',
-      'duelTraining',
-      'trainingJob',
-    ],
+    // 옛 훈련 단계·대기열(`duelTraining`·`trainingJob`)은 **이전이 이미 된 계정만** 얼린다 — 아래
+    // [_keepFieldsOldAppDoesNotKnow] 의 따로 처리.
+    19: ['trainPoints', 'trainPointJob', 'duelStones'],
   };
 
   /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.
@@ -389,6 +383,19 @@ class GameActions {
     for (final e in _fieldsSinceFeat.entries) {
       if (feat >= e.key) continue;
       for (final k in e.value) {
+        if (storedJson.containsKey(k)) {
+          out[k] = storedJson[k];
+        } else {
+          out.remove(k);
+        }
+      }
+    }
+    // 옛 훈련 단계·대기열 — 1.0.18 기기가 이미 포인트로 옮긴 계정만 얼린다(그 뒤 1.0.17 기기가 올린 옛 단계가
+    // 이전 상한 — 옛 투자로 다시 계산하는 칸 상한·보너스 한도 — 를 늘리지 못하게). 아직 아무 기기도 옮기지 않았으면
+    // 1.0.17 의 투자를 그대로 받는다: 서버가 먼저 옮겨 굳히던 시절엔 서버 배포~앱 업데이트 사이(iOS 는 심사로 며칠)에
+    // 1.0.17 에서 올린 부위 강화·훈련이 이전에 안 실려 사라졌다(2026-10-09 출시 전 점검). 앱이 켜질 때 직접 옮긴다.
+    if (feat < 19 && stored.trainPoints.isNotEmpty) {
+      for (final k in const ['duelTraining', 'trainingJob']) {
         if (storedJson.containsKey(k)) {
           out[k] = storedJson[k];
         } else {
@@ -1304,7 +1311,12 @@ class GameActions {
     // 클라이언트가 잘린 세이브를 채택해 다음 업로드부터 정상 크기가 된다.
     var capped = enforceStorage(parsed);
     // 훈련 v2 — 이전(멱등, 앱 로드와 같은 함수) → 배분을 예산·칸 상한으로 → 결투석 급증.
-    final tv2 = _enforceTrainV2(stored, capped);
+    // 구버전(1.0.17, feat 19 미만) 업로드는 서버가 이전하지 않는다 — 1.0.18 앱이 켜질 때 그때까지의 투자로 옮긴다.
+    final tv2 = _enforceTrainV2(
+      stored,
+      capped,
+      migrate: ((incomingJson['feat'] as num?)?.toInt() ?? 0) >= 19,
+    );
     if (tv2.clamped) clampReasons.add('train');
     capped = tv2.save;
     final skillCfg = config.skill;
@@ -1367,7 +1379,8 @@ class GameActions {
   /// 결투 팀을 만들 때도 같은 함수로 한 번 더 자른다([trainingBonusOf]).
   ///
   /// 1. **이전** — 기록이 없는 곤충의 옛 부위 강화·옛 훈련 단계를 칸으로 옮긴다(`migrateTrainingV2`, 멱등).
-  ///    1.0.17 앱이 올린 세이브도 여기서 옮겨진다.
+  ///    [migrate] 가 거짓(1.0.17 업로드)이면 옮기지 않는다 — 서버가 먼저 굳히면 그 뒤 1.0.17 투자가 이전에 안 실린다.
+  ///    그동안 결투는 옛 투자로 만든 가상 기록(`bugTrainOf`)으로 같은 값을 낸다.
   /// 2. **배분** — 칸 상한·예산(포텐셜·수련(돌파 상한으로 자름)·돌파 + 옛 투자 한도 안의 보너스)으로 자른다.
   /// 3. **결투석 급증** — 증가가 (쓴 젤리로 살 수 있던 수 + 새 심연 마일스톤 × 개수 + 드롭 여유)를 넘으면 저장본 수로.
   ///
@@ -1375,16 +1388,19 @@ class GameActions {
   /// 업로드마다 세이브를 되받는다).
   ({SaveGame save, bool clamped}) _enforceTrainV2(
     SaveGame stored,
-    SaveGame client,
-  ) {
+    SaveGame client, {
+    bool migrate = true,
+  }) {
     final tr = config.battle.training;
     final byId = {for (final sp in config.speciesList) sp.id: sp};
-    var out = migrateTrainingV2(
-      client,
-      tr,
-      speciesOf: (id) => byId[id],
-      enhance: config.enhance,
-    );
+    var out = !migrate
+        ? client
+        : migrateTrainingV2(
+            client,
+            tr,
+            speciesOf: (id) => byId[id],
+            enhance: config.enhance,
+          );
     final migrated = out;
     out = sanitizeTrainPoints(
       out,
