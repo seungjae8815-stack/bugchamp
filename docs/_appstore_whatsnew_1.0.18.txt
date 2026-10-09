@@ -1,0 +1,59 @@
+========================================
+ App Store — 새로운 기능 (1.0.18 / 20260943)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지(목록: flutter-release 스킬 references/store-text.md).
+※ 범위: 1.0.17(20260942) 이후.
+
+<ko-KR>
+훈련소와 결투가 크게 바뀌었어요
+
+- 깜짝선물은 지금 자리에서 1~3시간 사냥한 만큼, 일일보상은 점심 3시간·저녁 5시간 사냥한 만큼 받습니다. 일일보상은 받은 뒤 한 번 더 받을 수 있어요
+- 교환소: 젤리 10개로 5시간 사냥한 만큼의 골드나 재료를 받습니다
+- 쉬움 난이도의 초반 사냥터가 빨라졌습니다
+- 훈련소 개편: 곤충을 키운 만큼 훈련 포인트가 생기고, 공격·방어·체력·밀어내기 힘·회피·치명·회복력·체급·기술·근성 중에서 골라 찍습니다. 추천 배분 버튼도 있어요. 예전 부위 강화와 훈련은 포인트로 옮겨지고 약해지지 않습니다
+- 결투석: 곤충의 오행이나 기질을 원하는 값으로 바꿀 수 있습니다
+- 결투에서 장외·뒤집기·기절 직전에 화면을 연타하면 버티거나 일어날 수 있습니다(탭 반격). 근성을 찍을수록 탭 힘이 세집니다
+- 결투에서 큰 곤충이 일방적으로 이기던 것을 줄였습니다. 크기는 무게로만 작용해요
+- 보스 게이지가 차면 자동으로 보스에 도전합니다(설정에서 끌 수 있어요)
+- 강화의 이동속도가 회피로 바뀌었고, 장비 옵션에도 회피가 생겼습니다
+- 공격·체력·방어 등 강화 최대 레벨이 올라갔습니다
+- 요정함을 젤리로 늘릴 수 있습니다(최대 60칸)
+- 상점에 요정 입문·스킬 입문·성장 패스·주간 묶음이 생기고, 스타터 패키지와 스킨 혜택이 좋아졌습니다
+- 여러 화면과 문구, 문제를 고쳤습니다
+</ko-KR>
+
+<en-US>
+Big changes to training and duels
+
+- Surprise gifts now give 1 to 3 hours of hunting at your current zone, and daily rewards give 3 hours at lunch and 5 hours at dinner. You can claim each daily reward once more
+- Exchange: 10 jelly now gives 5 hours of hunting worth of gold or materials
+- The early Easy zones go faster
+- Training overhaul: bugs earn training points as they grow. Spend them on Attack, Defense, HP, Push, Evasion, Crit, Recovery, Weight, Technique or Grit. There is a recommended allocation button too. Old part upgrades and training carry over as points, so no bug gets weaker
+- Duel stones: change a bug's element or temperament to the one you want
+- In duels, mash the screen right before a ring-out, flip or knockout to hold on or get back up (tap counter). More Grit makes each tap stronger
+- Big bugs no longer win duels so one-sidedly. Size now works only as weight
+- When the boss gauge fills, the boss challenge starts automatically (you can turn this off in Settings)
+- Movement speed in upgrades is now Evasion, and gear can roll an Evasion option
+- Higher max levels for Attack, HP, Defense and other upgrades
+- Expand the fairy box with jelly (up to 60 slots)
+- New Fairy Starter, Skill Starter, Growth Pass and Weekly Bundle in the shop, and better Starter Pack and skin perks
+- Various screen, text and bug fixes
+</en-US>
+
+<ja-JP>
+訓練所と決闘が大きく変わりました
+
+- サプライズギフトは今の場所で1〜3時間狩りをした分、デイリー報酬は昼3時間・夜5時間狩りをした分を受け取れます。デイリー報酬は受け取った後もう一度受け取れます
+- 交換所: ゼリー10個で5時間狩りをした分のゴールドか素材を受け取れます
+- 「かんたん」序盤の狩り場が早く進むようになりました
+- 訓練所を改編: 虫を育てた分だけ訓練ポイントが増え、攻撃・防御・体力・押し出す力・回避・会心・回復力・体格・技・根性から選んで振ります。おすすめ配分ボタンもあります。以前の部位強化と訓練はポイントに移り、弱くなりません
+- 決闘石: 虫の五行や気質を好きな値に変えられます
+- 決闘で場外・ひっくり返し・気絶の直前に画面を連打すると、踏ん張ったり起き上がったりできます(タップ反撃)。根性を振るほどタップの力が強くなります
+- 決闘で大きい虫が一方的に勝っていたのを抑えました。大きさは重さとしてだけ働きます
+- ボスゲージがたまると自動でボスに挑戦します(設定でオフにできます)
+- 強化の移動速度が回避に変わり、装備オプションにも回避が加わりました
+- 攻撃・体力・防御などの強化の最大レベルが上がりました
+- 妖精ボックスをゼリーで拡張できます(最大60枠)
+- ショップに妖精スターター・スキルスターター・成長パス・週間パックが登場し、スターターパックとスキンの特典が良くなりました
+- いくつかの画面・文言・不具合を修正しました
+</ja-JP>

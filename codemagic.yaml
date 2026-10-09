@@ -79,12 +79,10 @@ workflows:
             --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
             --dart-define=GAME_SERVER_URL="$GAME_SERVER_URL" \
             --dart-define=ADMOB_REWARDED_IOS="$ADMOB_REWARDED_IOS" \
-            --dart-define=APP_STORE_ID="$APP_STORE_ID" \
             --export-options-plist=/Users/builder/export_options.plist
-          # APP_STORE_ID(선택): App Store Connect 의 숫자 Apple ID.
-          # 넣으면 설정의 "게임 평가하기"가 리뷰 페이지를 바로 연다.
-          # 비어 있으면 시스템 리뷰창으로 대체된다(iOS 는 id 없이 스토어를
-          # 열 수 없어, 넣지 않으면 버튼이 아무 반응도 없는 것처럼 보인다).
+          # APP_STORE_ID 는 넘기지 않는다 — 앱 코드 기본값(review_service.dart kAppStoreId, 공개 값)이 실제 id 다.
+          # 넘기면 그룹 변수가 비어 있을 때 빈 문자열이 기본값을 덮어 "게임 평가하기"가 시스템 리뷰창으로 떨어졌다
+          # (2026-10-09 출시 전 점검).
     artifacts:
       - packages/app/build/ios/ipa/*.ipa
     publishing:

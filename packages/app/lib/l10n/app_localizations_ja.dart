@@ -815,7 +815,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNewAutoBoss => 'ボス自動挑戦 — ゲージがたまると自動で挑戦します（設定でオフにできます）';
 
   @override
-  String get whatsNewUpgradeCap => '強化の上限が250に上がりました';
+  String get whatsNewUpgradeCap => '攻撃・体力・防御の強化上限が250に上がりました';
 
   @override
   String get whatsNewGifts => 'サプライズギフト・デイリー報酬が大幅に増えました';

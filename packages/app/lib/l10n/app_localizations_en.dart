@@ -845,7 +845,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Auto boss challenge — challenges the boss on its own when the gauge fills (turn off in Settings)';
 
   @override
-  String get whatsNewUpgradeCap => 'Upgrade cap raised to 250';
+  String get whatsNewUpgradeCap =>
+      'Attack, HP and Defense upgrades now go up to 250';
 
   @override
   String get whatsNewGifts =>

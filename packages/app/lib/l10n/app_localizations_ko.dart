@@ -817,7 +817,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get whatsNewAutoBoss => '보스 자동 도전 — 게이지가 차면 스스로 도전해요 (설정에서 끌 수 있어요)';
 
   @override
-  String get whatsNewUpgradeCap => '강화 상한이 250까지 올랐어요';
+  String get whatsNewUpgradeCap => '공격·체력·방어 강화 상한이 250까지 올랐어요';
 
   @override
   String get whatsNewGifts => '깜짝선물·일일보상이 크게 늘었어요';

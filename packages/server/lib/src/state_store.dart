@@ -500,7 +500,7 @@ class StateStore {
   }) async {
     final uri = Uri.parse(
       '$supabaseUrl/rest/v1/user_mail'
-      // ⚠️ `fairy` 칸은 _sql_20261005_mail_gold_bigint.sql 이 만든다 — SQL 전에 이 서버를 올리면 우편함 전체가 400.
+      // ⚠️ `fairy` 칸은 _sql_20261005_mail_fairy.sql 이 만든다(mail_gold_bigint 포함) — SQL 전에 이 서버를 올리면 우편함 전체가 400.
       '?select=id,title,body,gold,jelly,chitin,mineral,sap,fairy,starts_at,ends_at,created_at'
       '&or=(user_id.is.null,user_id.eq.$userId)'
       '&order=created_at.desc&limit=$limit',

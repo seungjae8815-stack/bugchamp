@@ -52,7 +52,7 @@
 >
 > `remove_ads`(판매 중단)·`theme_arena`(판매 숨김)는 **등록하지 않는다**.
 
-> **유형 근거**: 앱은 젤리만 `buyConsumable`(재구매 가능), 나머지는 `buyNonConsumable`.
+> **유형 근거**: 앱은 소모성(젤리·주간 묶음)과 기간제(패스 3종)를 `buyConsumable`(재구매 가능), 나머지(스타터·스킨·입문 2종)는 `buyNonConsumable` 로 산다(`store_iap_service.dart`).
 > App Store 유형을 앱의 구매 방식과 일치시켜야 한다.
 > **idle_pass** 는 자동갱신 구독이 아니라 소모성으로 등록(앱이 서버 `passExpiresAt`
 > 로 30일 만료를 관리). 구독 그룹/자동갱신 만들지 말 것.
@@ -60,7 +60,14 @@
 ### 각 제품 입력
 - **참조 이름**: 위 표(내부용, 사용자에게 안 보임)
 - **가격**: 한국 원화 기준 티어 선택(다른 나라는 Apple 자동 환산)
-- **현지화(표시 이름/설명)**: ko/en/ja — `iap.json` 의 `name`/`desc` 값 사용
+- **현지화(표시 이름/설명)**: ko/en/ja — `iap.json` 의 `name`/`desc` 값 사용. ⚠️ **스킨 2종은 아래 iOS 전용 설명을 쓴다**
+  (`iap.json` 설명의 "짝짓기·breeding·交配" 는 App Store 심사 1.1 거절 이력 단어다). 설명 칸 길이 한도는 콘솔에서 확인하고, 넘치면 줄을 줄인다.
+
+### 스킨 2종 iOS 설명(지뢰 단어 없는 판)
+| 제품 | ko | en | ja |
+|---|---|---|---|
+| `skin_gold_rhino` | 장수풍뎅이 계열이 황금빛으로 · 그 계열 재료 +30% · 부화·육성 시간 −25% · 구매 즉시 젤리 100 + 4성 장수풍뎅이 알 | Rhinoceros beetles turn gold · +30% materials from that family · −25% hatch & raise time · Bonus: 100 jelly + a 4★ Rhino Beetle egg | カブトムシ系が黄金色に・その系統の素材+30%・孵化・育成時間−25%・購入特典 ゼリー100＋4★カブトムシの卵 |
+| `skin_albino_stag` | 사슴벌레 계열이 알비노로 · 그 계열 재료 +30% · 부화·육성 시간 −25% · 구매 즉시 젤리 100 + 4성 사슴벌레 알 | Stag beetles turn albino · +30% materials from that family · −25% hatch & raise time · Bonus: 100 jelly + a 4★ Stag Beetle egg | クワガタ系がアルビノに・その系統の素材+30%・孵化・育成時間−25%・購入特典 ゼリー100＋4★ミヤマクワガタの卵 |
 - **심사 스크린샷**: 상점 화면 캡처 1장(14개 공통으로 같은 화면 써도 됨)
 - **가격 티어**: 정확한 원화가 티어가 없으면 가장 가까운 티어
 
@@ -113,7 +120,8 @@ npx supabase functions deploy verify-purchase --project-ref rvmpwyycivmtrbbynjyy
 ---
 
 ## 5. 체크리스트
-- [ ] 10개 제품 **제품 ID 정확히** 등록 + 유형 맞음(젤리5+패스2=소모성 / 스타터+스킨2=비소모성)
+- [ ] 14개 제품 **제품 ID 정확히** 등록 + 유형 맞음(젤리5 + 패스3(`idle_pass_c`·`buff_pass`·`growth_pass`) + 주간 묶음 = 소모성 / 스타터 + 스킨2 + 입문2 = 비소모성)
+- [ ] 스킨 2종 설명은 iOS 전용 판(지뢰 단어 없음)
 - [ ] 유료 계약 + 은행/세금
 - [ ] `APPLE_SHARED_SECRET` 시크릿 등록 + 함수 재배포
 - [ ] 샌드박스에서 구매·복원 확인

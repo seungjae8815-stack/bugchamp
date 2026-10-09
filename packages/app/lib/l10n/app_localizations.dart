@@ -1555,7 +1555,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNewUpgradeCap.
   ///
   /// In en, this message translates to:
-  /// **'Upgrade cap raised to 250'**
+  /// **'Attack, HP and Defense upgrades now go up to 250'**
   String get whatsNewUpgradeCap;
 
   /// No description provided for @whatsNewGifts.
