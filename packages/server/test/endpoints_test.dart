@@ -617,10 +617,11 @@ void main() {
       expect((jsonDecode(text) as Map)['skins'], ['gold_rhino', 'albino_stag']);
     });
 
-    // 탭 반격(훈련 v2 §4) 라우트 — 지금 데이터는 clutchEnabled false 라 1.0.18 앱이 clutch 를 알려도
-    // 예전과 같고(멈추지 않음), 멈춘 판이 없으면 /duel/clutch 는 409. 멈춤 흐름은 duel_clutch_test.
+    // 탭 반격(훈련 v2 §4) 라우트 — 멈춘 판이 없으면 /duel/clutch 는 409. 던지기는 실데이터 clutchEnabled 를
+    // 따른다(1.0.18 출시 때 true): 위기에서 멈추면 맞는 번호로 점수를 넣어 이어 가고, 꺼져 있거나 위기가 없으면
+    // 멈추지 않는다. seed 가 서버 비밀 난수라 두 갈래를 다 받아 준다. 켬·끔 각각의 규칙은 duel_clutch_test.
     test(
-      '/duel/throw(clutch: true) · /duel/clutch — 꺼져 있으면 멈추지 않고, 점수는 거부',
+      '/duel/throw(clutch: true) · /duel/clutch — 멈춘 판이 없으면 거부, 멈추면 점수로 이어진다',
       () async {
         final h = handler(
           save: me3,
@@ -674,8 +675,23 @@ void main() {
         final body =
             jsonDecode(await thr.readAsString()) as Map<String, dynamic>;
         expect(thr.statusCode, 200, reason: '$body');
-        expect(body.containsKey('clutch'), isFalse);
-        expect((body['bout'] as Map).containsKey('pc'), isFalse);
+        final clutch = body['clutch'] as Map<String, dynamic>?;
+        if (clutch == null) {
+          expect((body['bout'] as Map).containsKey('pc'), isFalse);
+        } else {
+          final wrong = await post(h, '/duel/clutch', {
+            'sessionId': sid,
+            'index': (clutch['index'] as num).toInt() + 1,
+            'score': 1,
+          }, token: makeToken());
+          expect(wrong.statusCode, 409, reason: '앞질러 넣은 번호는 거부');
+          final ok = await post(h, '/duel/clutch', {
+            'sessionId': sid,
+            'index': clutch['index'],
+            'score': 1,
+          }, token: makeToken());
+          expect(ok.statusCode, 200, reason: await ok.readAsString());
+        }
       },
     );
   });

@@ -18,24 +18,29 @@ import 'package:test/test.dart';
 final t0 = DateTime.utc(2026, 10, 8, 3); // 대회 2회차 기간 안(KST 10-08 12시)
 
 void main() {
-  late GameConfig cfg; // 실제 데이터(clutchEnabled false 그대로)
+  // 실데이터의 clutchEnabled 값(1.0.18 출시 때 true)과 상관없이 끈 것·켠 것을 둘 다 만든다.
+  late GameConfig cfg; // 같은 데이터 + clutchEnabled false
   late GameConfig cfgOn; // 같은 데이터 + clutchEnabled true
   late GameActions off;
   late GameActions on;
 
   setUpAll(() async {
-    cfg = await GameConfig.load(dir: '../app/assets/data');
-    final tmp = Directory.systemTemp.createTempSync('duel_clutch_test');
-    for (final f in Directory(
-      '../app/assets/data',
-    ).listSync().whereType<File>()) {
-      f.copySync('${tmp.path}/${f.uri.pathSegments.last}');
+    Future<GameConfig> withClutch(bool enabled) async {
+      final tmp = Directory.systemTemp.createTempSync('duel_clutch_test');
+      for (final f in Directory(
+        '../app/assets/data',
+      ).listSync().whereType<File>()) {
+        f.copySync('${tmp.path}/${f.uri.pathSegments.last}');
+      }
+      final bf = File('${tmp.path}/battle.json');
+      final b = jsonDecode(bf.readAsStringSync()) as Map<String, dynamic>;
+      (b['duel'] as Map<String, dynamic>)['clutchEnabled'] = enabled;
+      bf.writeAsStringSync(jsonEncode(b));
+      return GameConfig.load(dir: tmp.path);
     }
-    final bf = File('${tmp.path}/battle.json');
-    final b = jsonDecode(bf.readAsStringSync()) as Map<String, dynamic>;
-    (b['duel'] as Map<String, dynamic>)['clutchEnabled'] = true;
-    bf.writeAsStringSync(jsonEncode(b));
-    cfgOn = await GameConfig.load(dir: tmp.path);
+
+    cfg = await withClutch(false);
+    cfgOn = await withClutch(true);
     off = GameActions(config: cfg, now: () => t0);
     on = GameActions(config: cfgOn, now: () => t0);
   });
@@ -277,7 +282,7 @@ void main() {
       }
     });
 
-    test('clutchEnabled false(지금 데이터) — 앱이 clutch 를 알려도 예전과 완전히 같다', () {
+    test('clutchEnabled false — 앱이 clutch 를 알려도 예전과 완전히 같다(끄는 스위치가 살아 있다)', () {
       final s = myBase();
       for (var seed = 1; seed < 30; seed++) {
         final sess = sessionOf(seed, foeOf(3));
