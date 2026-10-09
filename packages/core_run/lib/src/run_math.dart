@@ -52,7 +52,7 @@ CharacterStats capCritChance(CharacterStats s, double cap) {
     xpMultiplier: s.xpMultiplier,
     bugFind: s.bugFind,
     materialFind: s.materialFind,
-    moveSpeed: s.moveSpeed,
+    evade: s.evade,
     boostBonus: s.boostBonus,
   );
 }
@@ -478,10 +478,18 @@ CharacterStats deriveStats(
     xpMultiplier: v(UpgradeKind.xp, 1.0),
     bugFind: v(UpgradeKind.bugFind, 1.0),
     materialFind: v(UpgradeKind.materialFind, 1.0),
-    moveSpeed: v(UpgradeKind.moveSpeed, 1.0),
+    // 회피는 강화 예산(evadeBudgetUpgrade)까지 — 치명확률과 같은 출처별 예산 구조.
+    evade: v(UpgradeKind.evade, 0.0).clamp(0.0, c.evadeBudgetUpgrade),
     boostBonus: v(UpgradeKind.boost, 1.0),
   );
 }
+
+/// 몬스터 물기 한 대가 빗나갈 확률 — 출처를 다 더한 회피에 최종 상한([RunConfig.evadeMax])을 씌운다.
+///
+/// 앱(물기 판정)·시뮬(체력 궤적·보스 생존)이 **같은 함수**를 쓴다. 적응형 위협 기준(맷집)과는
+/// 무관하다 — 위협은 그대로 오고 일부가 빗나갈 뿐이다(기준 밖 = 순수 이득).
+double evadeChance(RunConfig c, CharacterStats s) =>
+    s.evade.clamp(0.0, c.evadeMax);
 
 /// 전투력(CP): 능력치를 하나의 지표로 집계한 **표시용** 값.
 /// 밸런스 계산에 쓰이지 않는 순수 표시 지표라 코드 공식으로 둔다.

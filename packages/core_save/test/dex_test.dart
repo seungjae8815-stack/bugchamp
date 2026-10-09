@@ -222,7 +222,7 @@ void main() {
         xpMultiplier: 1,
         bugFind: 1,
         materialFind: 1,
-        moveSpeed: 1,
+        evade: 0,
         boostBonus: 1,
       );
       final out = cfg.apply(base, 10, 20);
@@ -248,7 +248,7 @@ void main() {
         xpMultiplier: 1,
         bugFind: 1,
         materialFind: 1,
-        moveSpeed: 1,
+        evade: 0,
         boostBonus: 1,
       );
       final out = cfg.apply(base, 0, 0);

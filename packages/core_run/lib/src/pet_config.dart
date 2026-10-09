@@ -827,6 +827,9 @@ CharacterStats applySpeciesPassives(
 
   /// 펫 패시브가 더할 수 있는 치명확률의 상한(예산, RunConfig.critBudgetOther).
   double critBudget = 1.0,
+
+  /// 펫 패시브가 더할 수 있는 회피 확률의 상한(예산, RunConfig.evadeBudgetOther).
+  double evadeBudget = 1.0,
 }) {
   if (passives.isEmpty) return s;
   double v(UpgradeKind k) => passives[k] ?? 0;
@@ -835,7 +838,8 @@ CharacterStats applySpeciesPassives(
     attack: s.attack * (1 + v(UpgradeKind.attack)),
     maxHp: s.maxHp * (1 + v(UpgradeKind.maxHp)),
     attackSpeed: s.attackSpeed * (1 + v(UpgradeKind.attackSpeed)),
-    moveSpeed: s.moveSpeed * (1 + v(UpgradeKind.moveSpeed)),
+    // 회피는 확률이라 치명확률처럼 %p 로 더한다(방아깨비 — 옛 이동속도 패시브 키 그대로).
+    evade: s.evade + math.min(v(UpgradeKind.evade), evadeBudget),
     // 아래는 원래 배율·확률·계수라 그대로 더한다.
     rewardMultiplier: s.rewardMultiplier + v(UpgradeKind.reward),
     critChance: (s.critChance + math.min(v(UpgradeKind.crit), critBudget))

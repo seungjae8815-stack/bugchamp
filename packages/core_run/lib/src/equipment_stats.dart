@@ -75,7 +75,7 @@ CharacterStats applyEquipment(
     bugFind: base.bugFind * m(ItemOptionKind.bugFind),
     materialFind: base.materialFind * m(ItemOptionKind.material),
     // 이동속도는 장비 축에 없다(§3.3) — 그대로 둔다.
-    moveSpeed: base.moveSpeed,
+    evade: base.evade,
     boostBonus: base.boostBonus * m(ItemOptionKind.boost),
   );
 }

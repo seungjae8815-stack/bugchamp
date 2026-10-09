@@ -16,7 +16,7 @@ void main() {
     xpMultiplier: 1,
     bugFind: 0,
     materialFind: 0,
-    moveSpeed: 1,
+    evade: 0,
     boostBonus: 1,
   );
 

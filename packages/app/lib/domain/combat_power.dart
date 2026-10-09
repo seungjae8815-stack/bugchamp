@@ -60,7 +60,7 @@ CharacterStats permanentStatsOf(SaveGame save, GameData data, DateTime now) {
     xpMultiplier: base.xpMultiplier,
     bugFind: base.bugFind,
     materialFind: base.materialFind,
-    moveSpeed: base.moveSpeed,
+    evade: base.evade,
     boostBonus: base.boostBonus,
   );
 }
@@ -101,6 +101,7 @@ CharacterStats huntStatsUncapped(
     s,
     speciesPassivesOf(save, data, now),
     critBudget: config.critBudgetOther,
+    evadeBudget: config.evadeBudgetOther,
   );
   final skills = data.skillConfig;
   if (skills != null && save.equippedSkills.isNotEmpty) {

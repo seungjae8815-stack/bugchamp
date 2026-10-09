@@ -1366,7 +1366,7 @@ class GameActions {
       xpMultiplier: bare.xpMultiplier,
       bugFind: bare.bugFind,
       materialFind: bare.materialFind,
-      moveSpeed: bare.moveSpeed,
+      evade: bare.evade,
       boostBonus: bare.boostBonus,
     );
   }

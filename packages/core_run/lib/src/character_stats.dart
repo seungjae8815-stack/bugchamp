@@ -16,7 +16,7 @@ class CharacterStats {
     required this.xpMultiplier,
     required this.bugFind,
     required this.materialFind,
-    required this.moveSpeed,
+    required this.evade,
     required this.boostBonus,
   });
 
@@ -56,8 +56,11 @@ class CharacterStats {
   /// 재료 획득 배율.
   final double materialFind;
 
-  /// 이동속도 배율(걷기 시간 단축).
-  final double moveSpeed;
+  /// 사냥 회피 확률(0~1, 상한 전) — 몬스터의 물기 한 대가 이 확률로 빗나간다(피해 0).
+  ///
+  /// 실제로 굴릴 때는 [evadeChance](run_math)로 최종 상한(`RunConfig.evadeMax`)을 씌운다.
+  /// ⚠️ 적응형 위협 기준(맷집)에 **넣지 않는다** — 넣으면 위협이 따라 커져 회피가 무의미해진다.
+  final double evade;
 
   /// 탭 부스트 강화 배율.
   final double boostBonus;

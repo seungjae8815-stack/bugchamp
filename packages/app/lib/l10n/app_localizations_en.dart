@@ -712,7 +712,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upMaterialFind => 'Careful Harvest';
 
   @override
-  String get upMoveSpeed => 'Footwork';
+  String get upEvade => 'Evasion';
 
   @override
   String get upBoost => 'Focus';
@@ -2076,7 +2076,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upMaterialFindDesc => 'Increases enhancement materials gained.';
 
   @override
-  String get upMoveSpeedDesc => 'Faster travel to the next hunting spot.';
+  String get upEvadeDesc =>
+      'Chance to dodge a monster\'s attack and take no damage. Works on bosses too.';
 
   @override
   String get upBoostDesc => 'Strengthens the tap-to-boost effect.';
@@ -2948,6 +2949,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skillBlocked => 'Blocked';
 
   @override
+  String get evadePop => 'Dodge!';
+
+  @override
   String get skillGacha => 'Draw';
 
   @override
@@ -3281,6 +3285,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statBugFind => 'Bug Find';
+
+  @override
+  String get statEvade => 'Evasion';
 
   @override
   String get charNoPet => 'No pet';

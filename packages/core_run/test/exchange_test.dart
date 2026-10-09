@@ -30,7 +30,7 @@ void main() {
     xpMultiplier: base.xpMultiplier,
     bugFind: base.bugFind,
     materialFind: base.materialFind * find,
-    moveSpeed: base.moveSpeed,
+    evade: base.evade,
     boostBonus: base.boostBonus,
   );
   final stage = run.zoneStartStage(6);

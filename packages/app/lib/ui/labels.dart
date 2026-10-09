@@ -312,14 +312,14 @@ String upgradeLabel(AppLocalizations l, UpgradeKind k) => switch (k) {
   UpgradeKind.xp => l.upXp,
   UpgradeKind.bugFind => l.upBugFind,
   UpgradeKind.materialFind => l.upMaterialFind,
-  UpgradeKind.moveSpeed => l.upMoveSpeed,
+  UpgradeKind.evade => l.upEvade,
   UpgradeKind.boost => l.upBoost,
   UpgradeKind.bugBuff => l.upBugBuff,
 };
 
 /// 종 패시브(§2.1) 한 줄 — "투지 +25%" 처럼 읽히게 만든다.
 ///
-/// 치명타 확률만 **%p** 다(0.04 = +4%p). 배율 스탯과 같은 '%' 로 쓰면
+/// 치명타 확률·회피는 **%p** 다(0.04 = +4%p). 배율 스탯과 같은 '%' 로 쓰면
 /// "치명타 +4%" 가 상대 증가로 읽혀 실제보다 작아 보인다.
 String passiveText(AppLocalizations l, SpeciesPassive p) {
   final kind = UpgradeKind.fromKeyOrNull(p.statKey);
@@ -328,7 +328,9 @@ String passiveText(AppLocalizations l, SpeciesPassive p) {
   final num = pct == pct.roundToDouble()
       ? pct.toStringAsFixed(0)
       : pct.toStringAsFixed(1);
-  final unit = kind == UpgradeKind.crit ? '%p' : '%';
+  final unit = (kind == UpgradeKind.crit || kind == UpgradeKind.evade)
+      ? '%p'
+      : '%';
   return '${upgradeLabel(l, kind)} +$num$unit';
 }
 

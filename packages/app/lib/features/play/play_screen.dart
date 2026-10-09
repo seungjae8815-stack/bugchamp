@@ -71,8 +71,7 @@ const _onScene = Color(0xFFFFFFFF);
 /// 일반 강화 재료(처치/채집 드롭 대상). 젤리는 프리미엄이라 제외(§E).
 /// 일반 재료 3종은 `game_rules.dart` 한 곳에 있다(앱·서버 공용).
 const _regularMaterials = kRegularMaterials;
-const _walkDuration = 0.6;
-// 부스트 지속시간·속도계수는 밸런스라 run_config.json 에 있다(§6).
+// 걷는 시간(walkSeconds)·부스트 지속시간·속도계수는 밸런스라 run_config.json 에 있다(§6).
 const _deathDuration = 0.4;
 const _defeatDuration = 2.5;
 
@@ -137,7 +136,7 @@ String _statDesc(AppLocalizations l, UpgradeKind k) => switch (k) {
   UpgradeKind.xp => l.upXpDesc,
   UpgradeKind.bugFind => l.upBugFindDesc,
   UpgradeKind.materialFind => l.upMaterialFindDesc,
-  UpgradeKind.moveSpeed => l.upMoveSpeedDesc,
+  UpgradeKind.evade => l.upEvadeDesc,
   UpgradeKind.boost => l.upBoostDesc,
   UpgradeKind.bugBuff => l.upBugBuffDesc,
 };
@@ -189,7 +188,7 @@ IconData _statIcon(UpgradeKind k) => switch (k) {
   UpgradeKind.xp => Icons.school,
   UpgradeKind.bugFind => Icons.pest_control,
   UpgradeKind.materialFind => Icons.inventory_2,
-  UpgradeKind.moveSpeed => Icons.directions_run,
+  UpgradeKind.evade => Icons.air,
   UpgradeKind.boost => Icons.flash_on,
   UpgradeKind.bugBuff => Icons.menu_book,
 };
@@ -205,13 +204,13 @@ Color _statColor(UpgradeKind k) {
     case UpgradeKind.maxHp:
     case UpgradeKind.defense:
     case UpgradeKind.regen:
+    case UpgradeKind.evade: // 회피(옛 이동속도 칸) — 생존 축
       return const Color(0xFF2E6DA4); // 생존
     case UpgradeKind.reward:
     case UpgradeKind.xp:
     case UpgradeKind.bugFind:
     case UpgradeKind.materialFind:
       return const Color(0xFF3E7D4F); // 보상
-    case UpgradeKind.moveSpeed:
     case UpgradeKind.boost:
     case UpgradeKind.bugBuff:
       return const Color(0xFF7E57C2); // 편의
@@ -234,7 +233,8 @@ String _valueSingle(UpgradeKind k, double cur) {
       // 회복은 최대 체력 비율(초당)이다 — %/s 로 읽힌다.
       return '${(cur * 100).toStringAsFixed(2)}%/s';
     case UpgradeKind.crit:
-      // 레벨당 +0.4%p 라 정수로 반올림하면 사도 숫자가 안 바뀌는 레벨이 생긴다.
+    case UpgradeKind.evade:
+      // 레벨당 +0.4%p(회피 +0.125%p)라 정수로 반올림하면 사도 숫자가 안 바뀌는 레벨이 생긴다.
       return '${(cur * 100).toStringAsFixed(1)}%';
     default:
       return 'x${cur.toStringAsFixed(2)}';
@@ -252,6 +252,7 @@ String _valuePair(UpgradeKind k, double cur, double next) {
     case UpgradeKind.regen:
       return '${(cur * 100).toStringAsFixed(2)}%/s → ${(next * 100).toStringAsFixed(2)}%/s';
     case UpgradeKind.crit:
+    case UpgradeKind.evade:
       return '${(cur * 100).toStringAsFixed(1)}% → ${(next * 100).toStringAsFixed(1)}%';
     default:
       return 'x${cur.toStringAsFixed(2)} → x${next.toStringAsFixed(2)}';
@@ -551,6 +552,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 직전에 계산한 "한 대"의 피해량. 죽으면서 무는 한 대에 쓴다.
   double _lastBite = 0;
+
+  /// 직전에 계산한 회피 확률(상한 후) — 죽으면서 무는 한 대도 같은 확률로 빗나간다.
+  double _lastEvade = 0;
   double _enemyLunge = 0; // 적(보스·서식지) 공격 달려듦 모션 값
   double _playerHitFlash = 0;
   double _screenShake = 0;
@@ -1104,9 +1108,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (_lastBite <= 0) return;
     final save = ref.read(saveControllerProvider).value;
     if (save != null && _skillEffectOn(save, 'invulnerable')) return;
+    if (_rollEvade(_lastEvade)) return;
     _spreadDamage(_lastBite);
     _enemyLunge = 1;
     _playerHitFlash = 0.6;
+  }
+
+  /// 회피 판정 — 빗나가면 "회피!" 를 띄우고 true. [chance] 는 상한까지 씌운 값([evadeChance]).
+  /// 연출용 난수(_rng)를 쓴다 — 온라인 화면 판정이라 결정론 대상이 아니다(방치 정산엔 피격이 없다).
+  bool _rollEvade(double chance, {bool walking = false}) {
+    if (chance <= 0 || _rng.nextDouble() >= chance) return false;
+    // 덤벼들었다가 빗나간다 — 이동 중에는 화면에 몬스터가 없으니 모션은 뺀다.
+    if (!walking) _enemyLunge = 1;
+    _pops.add(
+      _Pop(
+        AppLocalizations.of(context).evadePop,
+        (_rng.nextDouble() - 0.5) * 0.2,
+        const Color(0xFFB3E5FC),
+        15,
+        baseX: -0.55,
+        baseY: 0.3,
+      ),
+    );
+    return true;
   }
 
   void _healTeamFraction(double frac) {
@@ -1258,7 +1282,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         xpMultiplier: s.xpMultiplier,
         bugFind: s.bugFind,
         materialFind: s.materialFind * lure,
-        moveSpeed: s.moveSpeed,
+        evade: s.evade,
         boostBonus: s.boostBonus,
       );
     }
@@ -1344,12 +1368,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         incoming * atkInterval * (boss ? _config.bossHitMult : 1.0) * followMul;
     // 죽으면서 무는 한 대는 **첫 물기 크기**(followMul 이 붙지 않은 값)다.
     _lastBite = incoming * atkInterval * (boss ? _config.bossHitMult : 1.0);
+    _lastEvade = evadeChance(_config, stats);
     if (burst <= 0) return;
     // 번데기 방벽(액티브) — 막는다. 타이밍을 맞춰 눌렀으면 반사.
     if (_skillEffectOn(save, 'invulnerable')) {
       _onGuardBlock(save, stats, boss: boss, walking: walking);
       return;
     }
+    // 회피(옛 이동속도 칸, 2026-10-09) — 이 한 대가 빗나간다(피해 0). 위협 자체는 그대로 온다:
+    // 회피는 적응형 위협 기준(맷집) **밖**이라 올린 만큼 순수하게 덜 맞는다.
+    if (_rollEvade(_lastEvade, walking: walking)) return;
     // 팀에 나눠 준다 — 총량은 오늘과 같고, 곤충이 쓰러지면 그 몫이 넘어온다.
     _spreadDamage(burst);
     // 이동 중에는 달려드는 몬스터가 화면에 없다 — 돌진 모션은 빼고
@@ -1508,7 +1536,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _beginDefeat();
         return;
       }
-      if (_walkT >= _walkDuration / stats.moveSpeed) _spawn();
+      // 걷는 시간은 고정(walkSeconds) — 옛 이동속도 강화 칸은 회피가 됐다(2026-10-09).
+      if (_walkT >= _config.walkSeconds) _spawn();
       return;
     }
 
@@ -2285,7 +2314,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final shake = _hitFlash * math.sin(_hitFlash * 40) * 3;
     // 걷는 동안 새 적이 오른쪽에서 슬라이드해 들어옴.
     final walkSlide = _walking
-        ? (1 - (_walkT / _walkDuration).clamp(0.0, 1.0)) * 320
+        ? (1 - (_walkT / math.max(0.01, _config.walkSeconds)).clamp(0.0, 1.0)) *
+              320
         : 0.0;
     final shakeOffset = Offset(
       math.sin(_screenShake * 90) * _screenShake * 4,

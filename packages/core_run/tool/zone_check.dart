@@ -102,7 +102,7 @@ void main(List<String> args) {
     xpMultiplier: bare.xpMultiplier,
     bugFind: bare.bugFind,
     materialFind: bare.materialFind,
-    moveSpeed: bare.moveSpeed,
+    evade: bare.evade,
     boostBonus: bare.boostBonus,
   );
 
@@ -161,6 +161,11 @@ void main(List<String> args) {
     '최고치 대비(곱 기준 · 도감 0 가정): '
     '${axis.entries.map((e) => '${e.key} ${(e.value * 100).toStringAsFixed(0)}%').join(' · ')}',
   );
+  // 회피(옛 이동속도 칸)는 한 대의 크기가 아니라 **맞는 횟수**를 줄인다 — 아래 '한대' 는 그대로다.
+  stdout.writeln(
+    '회피: ${(evadeChance(cfg, st) * 100).toStringAsFixed(1)}% '
+    '(물기 중 이 비율이 빗나간다 · 상한 ${(cfg.evadeMax * 100).toStringAsFixed(0)}%)',
+  );
   stdout.writeln('');
   stdout.writeln('사냥터 | 타격수 | 보스타격 | 한대(캐릭터 %) | 펫체력 뺀 기준이면 | 마리당 초');
   for (var z = 1; z <= cfg.zonesPerTier; z++) {
@@ -194,7 +199,7 @@ void main(List<String> args) {
       xpMultiplier: perm.xpMultiplier,
       bugFind: perm.bugFind,
       materialFind: perm.materialFind,
-      moveSpeed: perm.moveSpeed,
+      evade: perm.evade,
       boostBonus: perm.boostBonus,
     );
     final stChar = CharacterStats(
@@ -210,7 +215,7 @@ void main(List<String> args) {
       xpMultiplier: st.xpMultiplier,
       bugFind: st.bugFind,
       materialFind: st.materialFind,
-      moveSpeed: st.moveSpeed,
+      evade: st.evade,
       boostBonus: st.boostBonus,
     );
     final biteFixed = biteWith(permChar, stChar);
