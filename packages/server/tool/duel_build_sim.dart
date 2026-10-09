@@ -12,6 +12,7 @@
 //   dart run tool/duel_build_sim.dart --only1 --n=200                # 1번 표(기질)만 — 판 수를 늘려 흔들림 줄이기
 //   dart run tool/duel_build_sim.dart --mod=aggressive.attack=2      # training.temperamentMods 덮어쓰기
 //   dart run tool/duel_build_sim.dart --per=crit=0.015               # training.perLevel 덮어쓰기
+//   dart run tool/duel_build_sim.dart --tset=slots.defense.effect=0.05   # training 아래 아무 값(점 경로)
 //
 // 보는 것:
 //  1. 기질별 승률(완전 투자 · 같은 종 거울전) — 목표 45~55%.
@@ -32,6 +33,7 @@ Future<void> main(List<String> args) async {
   final duelOver = <String, Object>{};
   final modOver = <String, num>{};
   final perOver = <String, num>{};
+  final trainOver = <String, num>{};
   for (final a in args) {
     final m = RegExp(r'^--([a-z-]+)=(.+)$').firstMatch(a);
     if (m == null) continue;
@@ -50,12 +52,18 @@ Future<void> main(List<String> args) async {
       case 'per':
         final kv = v.split('=');
         perOver[kv[0]] = num.parse(kv[1]);
+      case 'tset':
+        final kv = v.split('=');
+        trainOver[kv[0]] = num.parse(kv[1]);
     }
   }
 
   // 덮어쓰기는 데이터 폴더 사본에 적어 GameConfig 가 그대로 읽게 한다.
   var dir = '../app/assets/data';
-  if (duelOver.isNotEmpty || modOver.isNotEmpty || perOver.isNotEmpty) {
+  if (duelOver.isNotEmpty ||
+      modOver.isNotEmpty ||
+      perOver.isNotEmpty ||
+      trainOver.isNotEmpty) {
     final tmp = Directory.systemTemp.createTempSync('duel_build_sim');
     for (final f in Directory(dir).listSync().whereType<File>()) {
       f.copySync('${tmp.path}/${f.uri.pathSegments.last}');
@@ -76,9 +84,19 @@ Future<void> main(List<String> args) async {
         (b['training'] as Map<String, dynamic>)['perLevel']
             as Map<String, dynamic>;
     perOver.forEach((k, v) => per[k] = v);
+    trainOver.forEach((path, v) {
+      final parts = path.split('.');
+      var cur = b['training'] as Map<String, dynamic>;
+      for (var i = 0; i < parts.length - 1; i++) {
+        cur =
+            cur.putIfAbsent(parts[i], () => <String, dynamic>{})
+                as Map<String, dynamic>;
+      }
+      cur[parts.last] = v;
+    });
     bf.writeAsStringSync(jsonEncode(b));
     dir = tmp.path;
-    stdout.writeln('덮어쓴 값: $duelOver $modOver $perOver\n');
+    stdout.writeln('덮어쓴 값: $duelOver $modOver $perOver $trainOver\n');
   }
 
   final cfg = await GameConfig.load(dir: dir);

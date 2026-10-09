@@ -233,6 +233,63 @@ void main() {
     await _drain(tester);
   });
 
+  testWidgets('추천 배분 — 다음 추천 칸 · 남는 포인트를 한 번에 채운다', (tester) async {
+    final c = await _pump(
+      tester,
+      _seed(train: const BugTrain(alloc: {TrainSlot.attack: 2}, paid: 6)),
+    );
+    // 집기 종(사슴벌레)의 기본 추천은 균형(★).
+    expect(find.text('균형 ★'), findsOneWidget);
+    expect(find.byKey(const ValueKey('trainPresetNext')), findsOneWidget);
+    await _tap(tester, const ValueKey('trainPresetFill'));
+    final rec = c.read(saveControllerProvider).requireValue.trainPoints['b1']!;
+    expect(rec.allocated, 6);
+    expect(rec.paid, 6);
+    expect(rec.alloc[TrainSlot.attack], greaterThanOrEqualTo(2));
+    expect(c.read(saveControllerProvider).requireValue.trainPointJob, isNull);
+    // 다 채우면 채우기 버튼은 사라진다.
+    expect(find.byKey(const ValueKey('trainPresetFill')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await _drain(tester);
+  });
+
+  testWidgets('추천 배분 — 이 배분으로 다시 찍기 · 편집 중 칩을 누르면 그 배분으로 바뀐다', (tester) async {
+    final c = await _pump(
+      tester,
+      _seed(
+        train: const BugTrain(
+          alloc: {TrainSlot.grit: 6},
+          paid: 6,
+          freeRespec: true,
+        ),
+      ),
+    );
+    await _tap(tester, const ValueKey('trainPresetRespec'));
+    expect(find.text('새 배분 — 남은 포인트 0'), findsOneWidget);
+    // 편집 중 체급형을 누르면 편집 배분이 체급형 비율로 바뀐다(체급 · 체력 · 방어 · 공격 · 밀어내기 힘).
+    await _tap(tester, const ValueKey('trainPreset:heavy'));
+    expect(_value(tester, TrainSlot.grit), startsWith('0 /'));
+    await _tap(tester, const ValueKey('trainRespecApply'));
+    await tester.tap(find.text('이대로 바꾸기').last);
+    await tester.pumpAndSettle();
+    final rec = c.read(saveControllerProvider).requireValue.trainPoints['b1']!;
+    expect(rec.allocated, 6);
+    const heavy = {
+      TrainSlot.mass,
+      TrainSlot.hp,
+      TrainSlot.defense,
+      TrainSlot.attack,
+      TrainSlot.push,
+    };
+    expect(
+      rec.alloc.keys.every(heavy.contains),
+      isTrue,
+      reason: '${rec.alloc}',
+    );
+    expect(tester.takeException(), isNull);
+    await _drain(tester);
+  });
+
   testWidgets('결투석 — 오행 고르기 → 확인하면 바뀐다', (tester) async {
     final c = await _pump(tester, _seed(stones: {DuelStone.element: 1}));
     await _tap(tester, const ValueKey('duelStone:element:use'));

@@ -116,13 +116,36 @@ void main() {
       expect(eff[TrainSlot.attack], lessThanOrEqualTo(18));
       final trained = first(forged);
       final atkPts = eff[TrainSlot.attack] ?? 0;
-      expect(trained.atk, closeTo(plain.atk * (1 + atkPts * 0.03), 1e-6));
-      expect(trained.evade, closeTo((eff[TrainSlot.evade] ?? 0) * 0.006, 1e-9));
+      double e(TrainSlot sl) => tr.slotEffect[sl]!;
+      expect(
+        trained.atk,
+        closeTo(plain.atk * (1 + atkPts * e(TrainSlot.attack)), 1e-6),
+      );
+      expect(
+        trained.evade,
+        closeTo((eff[TrainSlot.evade] ?? 0) * e(TrainSlot.evade), 1e-9),
+      );
       expect(trained.grit, eff[TrainSlot.grit] ?? 0);
       expect(
         trained.massMult,
-        closeTo(1 + (eff[TrainSlot.mass] ?? 0) * 0.015, 1e-9),
+        closeTo(1 + (eff[TrainSlot.mass] ?? 0) * e(TrainSlot.mass), 1e-9),
       );
+      // 밀어내기 힘(2026-10-09 속도 칸 자리)도 같은 상한·예산으로 잘라 결투 유닛에 실린다.
+      final pushed = first(
+        myBase().copyWith(
+          trainPoints: {
+            'b1': const BugTrain(alloc: {TrainSlot.push: 99}, paid: 999),
+          },
+        ),
+      );
+      expect(
+        pushed.pushMult,
+        closeTo(
+          1 + tr.slotBaseCap[TrainSlot.push]!.clamp(0, 18) * e(TrainSlot.push),
+          1e-9,
+        ),
+      );
+      expect(pushed.spd, closeTo(plain.spd, 1e-9)); // 속도는 그대로
 
       // 찍는 중(훈련소 1칸)
       final busy = myBase().copyWith(
@@ -189,9 +212,15 @@ void main() {
       final before = first(s);
       // 뿔 10 → 공격 +40% 를 3% 칸으로 덮는 14포인트 = +42% (같거나 크다)
       expect(before.atk, greaterThanOrEqualTo(plain.atk * 1.4 - 1e-6));
-      // 날개 10 → 속도 15포인트(+30%) · 회피 0.3%p×10 = 3% → 5포인트(3%)
-      expect(before.spd, greaterThanOrEqualTo(plain.spd * 1.3 - 1e-6));
-      expect(before.evade, closeTo(0.03, 1e-9));
+      // 날개 10 → (옛 속도 칸) 밀어내기 힘 15포인트 · 회피 0.3%p×10 = 3% → 5포인트.
+      // 이전 포인트 수는 고정 계수(legacySlotEffect)로 센다 — 칸 효과를 올리면 이전된 곤충도 같이 세진다.
+      final tr = cfg.battle.training;
+      expect(
+        before.pushMult,
+        closeTo(1 + 15 * tr.slotEffect[TrainSlot.push]!, 1e-9),
+      );
+      expect(before.spd, closeTo(plain.spd, 1e-9));
+      expect(before.evade, closeTo(5 * tr.slotEffect[TrainSlot.evade]!, 1e-9));
       // 저장된 이전과 같은 값
       final migrated = migrateTrainingV2(
         s,
@@ -202,6 +231,7 @@ void main() {
       final after = first(migrated);
       expect(after.atk, closeTo(before.atk, 1e-9));
       expect(after.evade, closeTo(before.evade, 1e-9));
+      expect(after.pushMult, closeTo(before.pushMult, 1e-9));
     });
 
     test('방어팀은 상대 세이브의 방어 순서로 서버가 만든다', () {

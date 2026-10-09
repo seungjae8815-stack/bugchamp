@@ -287,4 +287,45 @@ void main() {
       expect(withLs, greaterThan(without));
     });
   });
+
+  group('밀어내기 힘(2026-10-09 속도 칸 자리)', () {
+    test('1 이면 예전 엔진과 같은 판 · JSON 왕복(pm)', () {
+      final a = _bug('a', Specialty.strike);
+      final b = _bug('b', Specialty.grip);
+      for (var s = 0; s < 5; s++) {
+        final r1 = simulateBout(seed: s, a: a.withTraining(), b: b, params: p);
+        final r2 = simulateBout(seed: s, a: a, b: b, params: p);
+        expect(jsonEncode(r1.toJson()), jsonEncode(r2.toJson()));
+      }
+      final pushed = a.withTraining(pushMult: 1.4);
+      expect(pushed.pushMult, 1.4);
+      final back = DuelBug.fromJson(
+        jsonDecode(jsonEncode(pushed.toJson())) as Map<String, dynamic>,
+      );
+      expect(back.pushMult, 1.4);
+      expect(a.toJson().containsKey('pm'), isFalse); // 기본값은 키 생략
+      // 한 판 안 수치·크기를 바꿔도 밀어내기 힘은 그대로 따라간다.
+      expect(pushed.copyWith(sizeMm: 70).pushMult, 1.4);
+      expect(pushed.withCombatStats(maxHp: 1, atk: 1, def: 1).pushMult, 1.4);
+    });
+
+    test('같은 스탯 거울전에서 밀어내기 힘이 큰 쪽이 더 이긴다(주특기 섞음)', () {
+      var w = 0;
+      const n = 240;
+      for (var i = 0; i < n; i++) {
+        final spc = Specialty.values[i % 3];
+        final flip = i.isOdd;
+        final strong = _bug('s', spc).withTraining(pushMult: 1.5);
+        final plain = _bug('p', spc);
+        final r = simulateBout(
+          seed: 4000 + i,
+          a: flip ? plain : strong,
+          b: flip ? strong : plain,
+          params: p,
+        );
+        if (r.winner == (flip ? 1 : 0)) w++;
+      }
+      expect(w / n, greaterThan(0.55));
+    });
+  });
 }

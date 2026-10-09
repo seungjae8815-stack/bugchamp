@@ -1888,7 +1888,7 @@ class GameActions {
             final bug = byId[bugIds[i]]!;
             final sp = speciesById[bug.speciesId]!;
             // 공격·방어·체력·속도는 [validateTeam] 이 이미 입혔다(같은 [trainingBonusOf] — 예산·칸 상한으로 자름).
-            // 여기는 결투 전용 칸(회피·치명·회복력·체급·주특기 기술·근성)만.
+            // 여기는 결투 전용 칸(회피·치명·회복력·체급·밀어내기 힘·주특기 기술·근성)만.
             final t = trainingBonusOf(
               save,
               bug,
@@ -1910,6 +1910,7 @@ class GameActions {
               crit: t.crit,
               recovery: t.recovery,
               massMult: t.massMult,
+              pushMult: t.pushMult,
               tech: t.tech,
               grit: t.grit,
             );

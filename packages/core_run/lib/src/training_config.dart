@@ -42,6 +42,7 @@ class TrainingConfig {
     this.levelsPerPoint = 5,
     this.breakthroughPoints = const [6, 10, 16, 24],
     this.slotEffect = kDefaultSlotEffect,
+    this.legacySlotEffect = kLegacySlotEffect,
     this.slotBaseCap = kDefaultSlotCap,
     this.slotTemperamentMods = const {},
     this.slotSpecialtyMods = const {},
@@ -60,6 +61,8 @@ class TrainingConfig {
     this.petPerPoint = 0.0025,
     this.legacyEnhancePetScale = 0.005,
     this.stones = const DuelStoneConfig(),
+    this.presets = const {},
+    this.presetFor = const {},
   });
 
   // ── 훈련 v2(2026-10-08, docs/design_training_v2.md) ─────────────────────
@@ -78,9 +81,15 @@ class TrainingConfig {
   /// 돌파 단계별 포인트(1단·2단·…). 누적으로 더한다(합 56).
   final List<int> breakthroughPoints;
 
-  /// 칸 1포인트 효과. 공격·방어·체력·속도·체급 = 배율 +, 회피·치명·회복력 = 확률·비율 +,
+  /// 칸 1포인트 효과. 공격·방어·체력·밀어내기 힘·체급 = 배율 +, 회피·치명·회복력 = 확률·비율 +,
   /// 근성 = 단계(1). 주특기 기술은 [techBySpecialty] 가 정한다(여기 값은 쓰지 않는다).
   final Map<TrainSlot, double> slotEffect;
+
+  /// **이전 환산 전용** 1포인트 효과 — 옛 부위 강화·옛 훈련 단계를 몇 포인트로 옮길지 정한다.
+  /// 칸 효과([slotEffect])를 밸런스로 바꿔도 이 값은 **고정**이다: 바꾸면 이전된 곤충의 포인트·보너스
+  /// 포인트·칸 상한이 따라 움직인다(2026-10-09 사장님 확정 — 옛 고인물 보너스 포인트는 그대로).
+  /// 처음 이전(2026-10-08)의 칸 효과 값이며, 날개(옛 속도) 몫은 밀어내기 힘 칸으로 같은 수만큼 옮긴다.
+  final Map<TrainSlot, double> legacySlotEffect;
 
   /// 칸 기본 상한(기질·주특기·혈통 특성 보정을 더한다).
   final Map<TrainSlot, int> slotBaseCap;
@@ -114,6 +123,20 @@ class TrainingConfig {
 
   /// 결투석(오행석·기질석).
   final DuelStoneConfig stones;
+
+  /// 훈련소 "추천 배분"(2026-10-09) — 이름(`balanced`·`tank`·…) → 칸 비율. 순서 = 화면 순서.
+  /// 측정(빌드 리그전)에서 강했던 배분이다. 비율이라 합이 예산과 같을 필요는 없다(core_save `distributeTrainPoints`).
+  final Map<String, Map<TrainSlot, int>> presets;
+
+  /// 주특기마다 먼저 고르는 추천 배분 이름(없으면 [presets] 의 첫 번째).
+  final Map<Specialty, String> presetFor;
+
+  /// [specialty] 의 기본 추천 배분 이름(없으면 null).
+  String? presetIdFor(Specialty specialty) {
+    final id = presetFor[specialty];
+    if (id != null && presets.containsKey(id)) return id;
+    return presets.keys.firstOrNull;
+  }
 
   /// 이 곤충의 포인트 예산(보너스 제외). [level] 은 호출자가 돌파 상한으로 자른 값을 넘긴다.
   int pointBudget({
@@ -175,6 +198,7 @@ class TrainingConfig {
     double crit,
     double recovery,
     double massMult,
+    double pushMult,
     double tech,
     int grit,
   })
@@ -185,13 +209,13 @@ class TrainingConfig {
       atkMult: 1 + v(TrainSlot.attack),
       defMult: 1 + v(TrainSlot.defense),
       hpMult: 1 + v(TrainSlot.hp),
-      spdMult:
-          (1 + v(TrainSlot.speed)) *
-          math.max(0.0, 1 - n(TrainSlot.mass) * massSpeedPenalty),
+      // 속도 칸은 2026-10-09 밀어내기 힘으로 바뀌었다 — 속도는 체급의 대가로만 준다.
+      spdMult: math.max(0.0, 1 - n(TrainSlot.mass) * massSpeedPenalty),
       evade: v(TrainSlot.evade),
       crit: v(TrainSlot.crit),
       recovery: v(TrainSlot.recovery),
       massMult: 1 + v(TrainSlot.mass),
+      pushMult: 1 + v(TrainSlot.push),
       tech: n(TrainSlot.tech) * (techBySpecialty[specialty] ?? 0),
       grit: n(TrainSlot.grit),
     );
@@ -349,6 +373,12 @@ class TrainingConfig {
           if (e.value['effect'] is num)
             e.key: (e.value['effect'] as num).toDouble(),
       },
+      legacySlotEffect: {
+        ...d.legacySlotEffect,
+        for (final e in ((j['legacySlotEffect'] as Map?) ?? const {}).entries)
+          if (TrainSlot.fromKeyOrNull('${e.key}') != null && e.value is num)
+            TrainSlot.fromKeyOrNull('${e.key}')!: (e.value as num).toDouble(),
+      },
       slotBaseCap: {
         ...d.slotBaseCap,
         for (final e in slots.entries)
@@ -384,22 +414,43 @@ class TrainingConfig {
           (j['legacyEnhancePetScale'] as num?)?.toDouble() ??
           d.legacyEnhancePetScale,
       stones: DuelStoneConfig.fromJson(j['stones'] as Map<String, dynamic>?),
+      presets: {
+        for (final e in ((j['presets'] as Map?) ?? const {}).entries)
+          if (!'${e.key}'.startsWith('_') && e.value is Map)
+            '${e.key}': slotMods(e.value),
+      },
+      presetFor: {
+        for (final e in ((j['presetFor'] as Map?) ?? const {}).entries)
+          if (!'${e.key}'.startsWith('_'))
+            Specialty.fromKey('${e.key}'): '${e.value}',
+      },
     );
   }
 }
 
-/// 칸 1포인트 효과 기본값(design_training_v2.md §1.2).
+/// 칸 1포인트 효과 기본값(design_training_v2.md §1.2 · 2026-10-09 출시 전 점검 반영 — `battle.json` 과 같은 값).
 const kDefaultSlotEffect = <TrainSlot, double>{
+  TrainSlot.attack: 0.05,
+  TrainSlot.defense: 0.055,
+  TrainSlot.hp: 0.09,
+  TrainSlot.push: 0.025,
+  TrainSlot.evade: 0.0085,
+  TrainSlot.crit: 0.023,
+  TrainSlot.recovery: 0.016,
+  TrainSlot.mass: 0.010,
+  TrainSlot.tech: 0,
+  TrainSlot.grit: 1,
+};
+
+/// 이전 환산 전용 1포인트 효과(2026-10-08 처음 이전 때의 칸 효과 — **고정**, [TrainingConfig.legacySlotEffect]).
+const kLegacySlotEffect = <TrainSlot, double>{
   TrainSlot.attack: 0.03,
   TrainSlot.defense: 0.03,
   TrainSlot.hp: 0.04,
-  TrainSlot.speed: 0.02,
+  TrainSlot.push: 0.02,
   TrainSlot.evade: 0.006,
   TrainSlot.crit: 0.01,
   TrainSlot.recovery: 0.015,
-  TrainSlot.mass: 0.015,
-  TrainSlot.tech: 0,
-  TrainSlot.grit: 1,
 };
 
 /// 칸 기본 상한(design_training_v2.md §1.2).
@@ -407,7 +458,7 @@ const kDefaultSlotCap = <TrainSlot, int>{
   TrainSlot.attack: 30,
   TrainSlot.defense: 30,
   TrainSlot.hp: 30,
-  TrainSlot.speed: 20,
+  TrainSlot.push: 20,
   TrainSlot.evade: 20,
   TrainSlot.crit: 20,
   TrainSlot.recovery: 20,

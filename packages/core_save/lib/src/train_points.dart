@@ -76,12 +76,18 @@ class BugTrain {
       if (e.value > 0) e.key.key: e.value,
   };
 
-  static Map<TrainSlot, int> _slotsFromJson(Object? raw) => {
-    for (final e in ((raw as Map?) ?? const {}).entries)
-      if (TrainSlot.fromKeyOrNull('${e.key}') case final k?
-          when e.value is num && (e.value as num) > 0)
-        k: (e.value as num).toInt(),
-  };
+  // 옛 키 `speed` 는 밀어내기 힘(push)으로 읽는다([TrainSlot.fromKeyOrNull]). 둘 다 적혀 있으면(세이브를
+  // 고친 경우뿐) 큰 쪽 — 더하면 같은 점수가 두 번 들어간다.
+  static Map<TrainSlot, int> _slotsFromJson(Object? raw) {
+    final out = <TrainSlot, int>{};
+    for (final e in ((raw as Map?) ?? const {}).entries) {
+      final k = TrainSlot.fromKeyOrNull('${e.key}');
+      final v = e.value;
+      if (k == null || v is! num || v <= 0) continue;
+      out[k] = math.max(out[k] ?? 0, v.toInt());
+    }
+    return out;
+  }
 
   Map<String, dynamic> toJson() => {
     'a': _slotsToJson(alloc),
@@ -200,11 +206,15 @@ Map<TrainStat, int> _legacyLevels(
 ///
 /// - 뿔·큰턱 × 옛 공격 훈련 → 공격 칸: (1 + 뿔×4%)(1 + 단계×1.5%) − 1 을 3% 로 덮는 포인트.
 /// - 표피 × 옛 방어 훈련 → 방어 칸(같은 방식).
-/// - 체격 → 체력 칸(5%/Lv → 4%/포인트) · 날개 → 속도 칸(3% → 2%).
+/// - 체격 → 체력 칸(5%/Lv → 4%/포인트) · 날개 → 밀어내기 힘 칸(옛 속도 칸 — 3% → 2% 로 센 포인트 수 그대로).
 /// - 날개 회피(0.3%p/Lv) + 옛 회피 훈련 → 회피 칸 · 옛 치명 → 치명 칸 · 옛 회복력 → 회복력 칸.
 ///
 /// 1:1 이 아니라 효과량 환산인 이유: 칸 1포인트 효과(공격 3%)가 옛 1레벨(뿔 4%)보다 작아 1:1 로 옮기면
 /// 약해진다. 늘 **올림**이라 옮긴 뒤 결투 스탯은 같거나 크다(training_v2_test 가 증명한다).
+///
+/// 환산 계수는 [TrainingConfig.legacySlotEffect](**고정** — 처음 이전 때의 칸 효과)다. 칸 효과를 밸런스로
+/// 올려도 옮긴 포인트·보너스 포인트·칸 상한은 그대로이고, 칸 효과가 오른 만큼 이전된 곤충도 같이 세진다
+/// (2026-10-09 사장님 확정: 옛 고인물 보너스 포인트는 그대로).
 Map<TrainSlot, int> legacyTrainPoints(
   SaveGame s,
   IndividualBug b,
@@ -216,7 +226,7 @@ Map<TrainSlot, int> legacyTrainPoints(
   final lv = _legacyLevels(s, b, sp, cfg);
   final enh = b.enhancement;
   double old(TrainStat st) => (lv[st] ?? 0) * (cfg.perLevel[st] ?? 0);
-  double eff(TrainSlot sl) => cfg.slotEffect[sl] ?? 0;
+  double eff(TrainSlot sl) => cfg.legacySlotEffect[sl] ?? 0;
   final horn = math.max(0, enh.levelOf(BugPart.hornJaw));
   final cut = math.max(0, enh.levelOf(BugPart.cuticle));
   final wing = math.max(0, enh.levelOf(BugPart.wing));
@@ -231,7 +241,7 @@ Map<TrainSlot, int> legacyTrainPoints(
       eff(TrainSlot.defense),
     ),
     TrainSlot.hp: _ptsFor(build * e.build, eff(TrainSlot.hp)),
-    TrainSlot.speed: _ptsFor(wing * e.wing, eff(TrainSlot.speed)),
+    TrainSlot.push: _ptsFor(wing * e.wing, eff(TrainSlot.push)),
     TrainSlot.evade: _ptsFor(
       wing * e.wingEvade + old(TrainStat.evade),
       eff(TrainSlot.evade),
@@ -422,6 +432,7 @@ Map<TrainSlot, int> effectiveAllocOf(
   double crit,
   double recovery,
   double massMult,
+  double pushMult,
   double tech,
   int grit,
 })
@@ -448,6 +459,7 @@ trainingBonusOf(
     crit: t.crit,
     recovery: t.recovery,
     massMult: t.massMult,
+    pushMult: t.pushMult,
     tech: t.tech,
     grit: t.grit,
   );
@@ -736,6 +748,117 @@ TrainOp cancelTrainRespec(SaveGame s, String bugId) {
     save: _putRecord(s, bugId, rec.copyWith(clearPending: true)),
     error: null,
   );
+}
+
+// ── 추천 배분(2026-10-09) ─────────────────────────────────────────────
+
+/// 비율 [weights](칸 → 가중치, `battle.json → training.presets`)대로 [points] 포인트를 칸 상한 안에서 나눈다.
+///
+/// [floor] 는 이미 찍힌 배분 — 그 아래로는 내리지 않는다(남는 포인트 채우기). 1점씩 **목표 몫보다 가장 모자란
+/// 칸**에 준다(동률이면 칸 순서 — 결정론). 비율 칸이 모두 목표에 닿았거나 상한이면 비율이 큰 칸(상한이 남은)
+/// → 그래도 없으면 상한이 남은 아무 칸(칸 순서). 어느 칸에도 못 넣으면 거기서 멈춘다(합이 [points] 보다 작다).
+Map<TrainSlot, int> distributeTrainPoints(
+  Map<TrainSlot, int> weights,
+  int points, {
+  required int Function(TrainSlot) capOf,
+  Map<TrainSlot, int> floor = const {},
+}) {
+  final out = <TrainSlot, int>{
+    for (final sl in TrainSlot.values)
+      sl: math.min(math.max(0, floor[sl] ?? 0), math.max(0, capOf(sl))),
+  };
+  final w = {
+    for (final e in weights.entries)
+      if (e.value > 0) e.key: e.value,
+  };
+  final wsum = w.values.fold<int>(0, (a, b) => a + b);
+  var remaining = points - _sum(out);
+  while (remaining > 0) {
+    TrainSlot? pick;
+    var best = 0.0;
+    if (wsum > 0) {
+      for (final sl in TrainSlot.values) {
+        final wt = w[sl] ?? 0;
+        if (wt <= 0 || out[sl]! >= capOf(sl)) continue;
+        final deficit = points * wt / wsum - out[sl]!;
+        if (deficit > best + 1e-9) {
+          best = deficit;
+          pick = sl;
+        }
+      }
+    }
+    if (pick == null) {
+      var bw = 0;
+      for (final sl in TrainSlot.values) {
+        final wt = w[sl] ?? 0;
+        if (wt > bw && out[sl]! < capOf(sl)) {
+          bw = wt;
+          pick = sl;
+        }
+      }
+    }
+    pick ??= TrainSlot.values.where((sl) => out[sl]! < capOf(sl)).firstOrNull;
+    if (pick == null) break;
+    out[pick] = out[pick]! + 1;
+    remaining--;
+  }
+  out.removeWhere((_, v) => v <= 0);
+  return out;
+}
+
+/// 추천 배분 [weights] 로 다음 1점을 넣을 칸(지금 배분 [alloc] 기준). 넣을 칸이 없으면 null.
+TrainSlot? nextPresetSlot(
+  Map<TrainSlot, int> weights,
+  Map<TrainSlot, int> alloc, {
+  required int Function(TrainSlot) capOf,
+}) {
+  final next = distributeTrainPoints(
+    weights,
+    _sum(alloc) + 1,
+    capOf: capOf,
+    floor: alloc,
+  );
+  for (final sl in TrainSlot.values) {
+    if ((next[sl] ?? 0) > (alloc[sl] ?? 0)) return sl;
+  }
+  return null;
+}
+
+/// 재료를 낸 남는 포인트(다시 찍기로 뺀 몫)를 추천 배분 [weights] 대로 **한 번에** 찍는다 — 지금 배분은
+/// 그대로 두고 남는 몫만 더한다. [allocTrainPoint] 의 "재료 없이 바로" 경로를 칸마다 부른 것과 같다.
+///
+/// error: `no_bug` · `respec`(다시 찍기 대기 중) · `none`(남는 포인트 없음) · `maxed`(넣을 칸이 없음).
+TrainOp fillTrainFreePoints(
+  SaveGame s,
+  TrainingConfig cfg,
+  IndividualBug bug,
+  Species sp,
+  Map<TrainSlot, int> weights,
+  DateTime now, {
+  EnhanceConfig? enhance,
+}) {
+  s = finishTrainPointsIfDue(s, now);
+  if (!s.bugs.any((b) => b.id == bug.id)) return (save: null, error: 'no_bug');
+  final rec = _materialized(s, bug, sp, cfg, enhance);
+  if (rec.pending != null) return (save: null, error: 'respec');
+  final free = rec.paid - rec.allocated;
+  if (free <= 0) return (save: null, error: 'none');
+  final legacy = legacyTrainPoints(s, bug, sp, cfg, enhance: enhance);
+  final job = s.trainPointJob;
+  // 이 곤충이 찍는 중인 칸은 그 몫만큼 상한이 줄어 있다([allocTrainPoint] 의 상한 검사와 같다).
+  int capOf(TrainSlot sl) => math.max(
+    0,
+    trainSlotCapOf(s, bug, sp, sl, cfg, enhance: enhance, legacy: legacy) -
+        (job != null && job.bugId == bug.id && job.slot == sl ? job.count : 0),
+  );
+  final next = distributeTrainPoints(
+    weights,
+    rec.allocated + free,
+    capOf: capOf,
+    floor: rec.alloc,
+  );
+  if (_sameSlots(next, rec.alloc)) return (save: null, error: 'maxed');
+  return (save: _putRecord(s, bug.id, rec.copyWith(alloc: next)), error: null);
 }
 
 /// 사라진 곤충의 v2 기록·대기열을 지운다(바뀐 게 없으면 그대로).

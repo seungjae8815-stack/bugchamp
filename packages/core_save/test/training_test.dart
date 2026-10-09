@@ -324,7 +324,21 @@ void main() {
         expect(n.atkMult, greaterThanOrEqualTo(old.atk - eps), reason: '#$i');
         expect(n.defMult, greaterThanOrEqualTo(old.def - eps), reason: '#$i');
         expect(n.hpMult, greaterThanOrEqualTo(old.hp - eps), reason: '#$i');
-        expect(n.spdMult, greaterThanOrEqualTo(old.spd - eps), reason: '#$i');
+        // 속도 칸은 2026-10-09 밀어내기 힘 칸이 됐다 — 날개 강화는 옛 속도 칸과 **같은 포인트 수**로
+        // 밀어내기 힘에 옮긴다(속도 자체는 죽은 능력치라 옮기지 않는다 · 결투 속도는 체급의 대가로만 준다).
+        final wing = b.enhancement.levelOf(BugPart.wing);
+        final pushPts = wing <= 0 ? 0 : (wing * 0.03 / 0.02 - 1e-9).ceil();
+        expect(
+          served.trainPoints[b.id]?.alloc[TrainSlot.push] ?? 0,
+          pushPts,
+          reason: '#$i',
+        );
+        expect(n.spdMult, closeTo(1, eps), reason: '#$i');
+        expect(
+          n.pushMult,
+          closeTo(1 + pushPts * cfg.slotEffect[TrainSlot.push]!, eps),
+          reason: '#$i',
+        );
         expect(n.evade, greaterThanOrEqualTo(old.evade - eps), reason: '#$i');
         expect(n.crit, greaterThanOrEqualTo(old.crit - eps), reason: '#$i');
         expect(
@@ -364,7 +378,7 @@ void main() {
       // 공격 칸 상한(호전적 30+9+3=42)보다 작아도 옮긴 값 40 은 그대로 — 넘치면 그 칸 상한이 늘어난다.
       final r = startTrainRespec(s, cfg, b, sp, {
         TrainSlot.hp: 30,
-        TrainSlot.speed: 20,
+        TrainSlot.push: 20,
       }, t0);
       expect(r.error, isNull);
       expect(r.save!.trainPoints[b.id]!.pending, isNull); // 대기 없음
@@ -447,7 +461,10 @@ void main() {
       expect(rec.allocated, 6);
       // 결투 계산도 같은 상한으로 자른다(업로드를 거치지 않은 세이브라도).
       final t = trainingBonusOf(forged, b, sp, cfg, enhance: enhance);
-      expect(t.atkMult, lessThanOrEqualTo(1 + 6 * 0.03 + 1e-9));
+      expect(
+        t.atkMult,
+        lessThanOrEqualTo(1 + 6 * cfg.slotEffect[TrainSlot.attack]! + 1e-9),
+      );
     });
 
     test('없는 곤충 기록·대기열은 지운다', () {
@@ -572,7 +589,7 @@ void main() {
       },
       trainPointJob: TrainPointJob(
         bugId: 'b1',
-        slot: TrainSlot.speed,
+        slot: TrainSlot.push,
         count: 2,
         until: t0,
       ),
@@ -597,5 +614,143 @@ void main() {
   test('옛 단계 상한(이전 환산용) — 기본 + 포텐셜 + 기질·주특기·특성', () {
     final b = bug(trait: BugTrait.fierce);
     expect(trainCapOf(b, sp, TrainStat.attack, cfg), 17);
+  });
+
+  test('옛 칸 키 speed(속도 칸)는 밀어내기 힘으로 읽는다 — 배분·대기 배분·대기열', () {
+    final raw = rich([bug()]).toJson()
+      ..['trainPoints'] = {
+        'b1': {
+          'a': {'speed': 18, 'attack': 5},
+          'p': 23,
+          'n': {'speed': 3},
+          'u': t0.toIso8601String(),
+        },
+      }
+      ..['trainPointJob'] = {
+        'b': 'b1',
+        's': 'speed',
+        'n': 2,
+        'u': t0.toIso8601String(),
+      };
+    final s = SaveGame.fromJson(
+      jsonDecode(jsonEncode(raw)) as Map<String, dynamic>,
+    );
+    final r = s.trainPoints['b1']!;
+    expect(r.alloc, {TrainSlot.push: 18, TrainSlot.attack: 5});
+    expect(r.pending, {TrainSlot.push: 3});
+    expect(s.trainPointJob!.slot, TrainSlot.push);
+    // 다시 쓰면 새 키로 — 둘 다 적힌 세이브(고친 경우뿐)는 큰 쪽(더하면 두 번 들어간다).
+    final out = jsonEncode(s.toJson());
+    expect(out.contains('"push":18'), isTrue);
+    expect(out.contains('"speed"'), isFalse);
+    final both = BugTrain.fromJson({
+      'a': {'speed': 4, 'push': 9},
+    })!;
+    expect(both.alloc, {TrainSlot.push: 9});
+  });
+
+  group('추천 배분(2026-10-09)', () {
+    int cap30(TrainSlot sl) => sl == TrainSlot.mass ? 10 : 30;
+
+    test('비율대로 나누고 칸 상한을 넘지 않는다 · 결정론', () {
+      final w = cfg.presets['heavy']!; // 체급 10 · 체력 30 · 방어 30 · 공격 30 · 밀어내기 2
+      final a = distributeTrainPoints(w, 102, capOf: cap30);
+      expect(a.values.fold<int>(0, (x, y) => x + y), 102);
+      expect(a[TrainSlot.mass], 10);
+      expect(a[TrainSlot.hp], 30);
+      expect(a[TrainSlot.defense], 30);
+      expect(a[TrainSlot.attack], 30);
+      expect(a[TrainSlot.push], 2);
+      expect(distributeTrainPoints(w, 102, capOf: cap30), a);
+      // 절반 예산 — 비율 그대로 줄어든다.
+      final h = distributeTrainPoints(w, 51, capOf: cap30);
+      expect(h.values.fold<int>(0, (x, y) => x + y), 51);
+      expect(h[TrainSlot.hp], 15);
+      expect(h[TrainSlot.mass], 5);
+    });
+
+    test('비율 칸이 모두 상한이면 남는 칸으로 · 어느 칸도 없으면 멈춘다', () {
+      final a = distributeTrainPoints(
+        {TrainSlot.hp: 1},
+        12,
+        capOf: (sl) => sl == TrainSlot.hp ? 10 : 1,
+      );
+      expect(a[TrainSlot.hp], 10);
+      expect(a.values.fold<int>(0, (x, y) => x + y), 12);
+      final none = distributeTrainPoints(
+        {TrainSlot.hp: 1},
+        50,
+        capOf: (_) => 2,
+      );
+      expect(
+        none.values.fold<int>(0, (x, y) => x + y),
+        TrainSlot.values.length * 2,
+      );
+    });
+
+    test('바닥(이미 찍은 배분)은 내리지 않고 남는 몫만 더한다 · 다음 추천 칸', () {
+      final w = cfg.presets['tank']!; // 체력 30 · 방어 30 · 회복력 20 · 회피 20 · 체급 2
+      final floor = {TrainSlot.attack: 6, TrainSlot.hp: 4};
+      final a = distributeTrainPoints(w, 20, capOf: cap30, floor: floor);
+      expect(a[TrainSlot.attack], 6);
+      expect(a[TrainSlot.hp]! >= 4, isTrue);
+      expect(a.values.fold<int>(0, (x, y) => x + y), 20);
+      // 체력·방어 비율이 같으면 칸 순서(방어가 먼저).
+      expect(nextPresetSlot(w, const {}, capOf: cap30), TrainSlot.defense);
+      expect(
+        nextPresetSlot(w, const {TrainSlot.defense: 30}, capOf: cap30),
+        TrainSlot.hp,
+      );
+    });
+
+    test('남는 포인트 채우기 — 재료 없이 한 번에 · 지금 배분은 그대로', () {
+      final b = bug(potential: 5, level: 80, tier: 4);
+      final s = rich([b]).copyWith(
+        trainPoints: {
+          b.id: const BugTrain(alloc: {TrainSlot.attack: 10}, paid: 40),
+        },
+      );
+      final r = fillTrainFreePoints(s, cfg, b, sp, cfg.presets['tank']!, t0);
+      expect(r.error, isNull);
+      final rec = r.save!.trainPoints[b.id]!;
+      expect(rec.alloc[TrainSlot.attack], 10);
+      expect(rec.allocated, 40);
+      expect(rec.paid, 40);
+      expect(r.save!.materials, s.materials); // 재료는 들지 않는다
+      expect(r.save!.trainPointJob, isNull);
+      // 남는 포인트가 없으면 none · 다시 찍기 대기 중이면 respec.
+      expect(
+        fillTrainFreePoints(
+          r.save!,
+          cfg,
+          b,
+          sp,
+          cfg.presets['tank']!,
+          t0,
+        ).error,
+        'none',
+      );
+      final pending = s.copyWith(
+        trainPoints: {
+          b.id: BugTrain(
+            alloc: const {TrainSlot.attack: 10},
+            paid: 40,
+            pending: const {TrainSlot.hp: 10},
+            respecUntil: t0.add(const Duration(hours: 1)),
+          ),
+        },
+      );
+      expect(
+        fillTrainFreePoints(
+          pending,
+          cfg,
+          b,
+          sp,
+          cfg.presets['tank']!,
+          t0,
+        ).error,
+        'respec',
+      );
+    });
   });
 }

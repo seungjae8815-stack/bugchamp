@@ -7,7 +7,8 @@
 //   dart run tool/duel_sim.dart --quick --set=clutchEnabled=false   # 5번(종 리그전, 느림) 건너뛰기 · 불값 덮어쓰기
 //
 // 표: 1 주특기 상성 · 2 결판 분포 · 3 전력 차이 · 4 같은 종 크기 · 5 종 리그전 · 6 게이지 · 7 오행 ·
-//     8 경기 단위 전력 · 9 기질 · 10 탭 반격(양쪽 자동 점수 · 근성 10 · 조작 앱) · 11 주특기 기술
+//     8 경기 단위 전력 · 9 기질 · 10 탭 반격(양쪽 자동 점수 · 근성 10 · 조작 앱) · 11 주특기 기술 ·
+//     12 밀어내기 힘(2026-10-09 속도 칸 자리)
 //
 // 수치는 `packages/app/assets/data/battle.json → duel` 을 읽는다(없으면 코드 기본값).
 //
@@ -376,6 +377,20 @@ void main(List<String> args) {
     final ref = run((_) => unit(s).withTraining(atkMult: 1.3), (_) => unit(s));
     stdout.writeln(
       '  ${_spcKo[s]!.padRight(4)} ${pct(r.win)}   (같은 10포인트를 공격 +30% 에: ${pct(ref.win)})',
+    );
+  }
+
+  // ── 12. 밀어내기 힘 ───────────────────────────────────────────
+  // 훈련 칸 밀어내기 힘(DuelBug.pushMult) — 힘겨루기의 내 쪽 몫 · 치기 밀치기 양. 칸 20점 × 0.025 = ×1.5.
+  stdout.writeln('\n── 12. 밀어내기 힘 (같은 스탯 · 같은 주특기 거울전) ──');
+  for (final s in Specialty.values) {
+    final r25 = run(
+      (_) => unit(s).withTraining(pushMult: 1.25),
+      (_) => unit(s),
+    );
+    final r50 = run((_) => unit(s).withTraining(pushMult: 1.5), (_) => unit(s));
+    stdout.writeln(
+      '  ${_spcKo[s]!.padRight(4)} ×1.25 ${pct(r25.win)} · ×1.5 ${pct(r50.win)}',
     );
   }
 }
