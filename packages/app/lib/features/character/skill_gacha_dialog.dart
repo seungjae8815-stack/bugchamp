@@ -9,6 +9,7 @@ import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/toast.dart';
@@ -139,6 +140,21 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
   }
 
   Future<void> _draw(AppLocalizations l, int times, {bool free = false}) async {
+    // 유료 뽑기는 젤리가 빠지기 전에 확인받는다(2026-10-09 점검 — 10회 300젤리가 누르자마자 나갔다).
+    // 요정 뽑기와 같게 1회도 묻는다. 젤리가 모자라면 확인 창 대신 상점 안내가 뜬다.
+    if (!free) {
+      final jelly = widget.cfg.gachaJellyCost * times;
+      if (!await confirmJellySpend(
+        context,
+        title: l.skillGachaTitle,
+        body: l.skillGachaConfirm('$times', '$jelly'),
+        jelly: jelly,
+        actionLabel: l.skillGacha,
+      )) {
+        return;
+      }
+      if (!mounted) return;
+    }
     setState(() => _busy = true);
     final r = await ref
         .read(saveControllerProvider.notifier)
@@ -281,6 +297,21 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
   }
 
   Future<void> _sweep(AppLocalizations l) async {
+    // 무료 소탕을 다 쓴 뒤의 유료 소탕은 확인받는다(2026-10-09 점검 — 젤리가 말없이 빠졌다).
+    final cfg = widget.cfg;
+    final used = ref.read(saveControllerProvider.notifier).skillDailyUsedToday;
+    if (used.sweeps >= cfg.sweepFreePerDay) {
+      if (!await confirmJellySpend(
+        context,
+        title: l.skillSweepTitle,
+        body: l.skillSweepConfirm('${cfg.sweepJellyCost}'),
+        jelly: cfg.sweepJellyCost,
+        actionLabel: l.skillSweep,
+      )) {
+        return;
+      }
+      if (!mounted) return;
+    }
     setState(() => _busy = true);
     final r = await ref.read(saveControllerProvider.notifier).sweepSkillBoss();
     if (!mounted) return;

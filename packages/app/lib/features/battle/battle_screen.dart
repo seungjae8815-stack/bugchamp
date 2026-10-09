@@ -2656,42 +2656,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           lead: temperamentIcon(d.temperament, size: 14),
         ),
         _statRow(l.bugInfoSize, l.bugSize(d.sizeMm.toStringAsFixed(1))),
-        // 훈련소 단계(내 곤충) · 회피·치명·회복력(상대 곤충 — 훈련이 들어간 값).
-        if (bug != null)
-          for (final st in TrainStat.values)
-            if ((trainLevelsOf(
-                      ref.read(saveControllerProvider).requireValue,
-                      bug.id,
-                    )[st] ??
-                    0) >
-                0)
-              _statRow(
-                trainStatLabel(l, st),
-                l.trainingLevel(
-                  trainLevelsOf(
-                    ref.read(saveControllerProvider).requireValue,
-                    bug.id,
-                  )[st]!,
-                  trainCapOf(
-                    bug,
-                    data.species(bug.speciesId),
-                    st,
-                    (data.battleConfig ?? const BattleConfig()).training,
-                  ),
-                ),
-                color: trainStatColor(st),
-              ),
-        if (bug == null) ...[
-          if (d.evade > 0)
-            _statRow(l.trainEvade, '${(d.evade * 100).toStringAsFixed(1)}%'),
-          if (d.crit > 0)
-            _statRow(l.trainCrit, '+${(d.crit * 100).toStringAsFixed(1)}%'),
-          if (d.recovery > 0)
-            _statRow(
-              l.trainRecovery,
-              '+${(d.recovery * 100).toStringAsFixed(1)}%',
-            ),
-        ],
+        // 회피·치명·회복력 — 훈련이 들어간 결투 값(내 곤충·상대 곤충 모두).
+        if (d.evade > 0)
+          _statRow(l.trainEvade, '${(d.evade * 100).toStringAsFixed(1)}%'),
+        if (d.crit > 0)
+          _statRow(l.trainCrit, '+${(d.crit * 100).toStringAsFixed(1)}%'),
+        if (d.recovery > 0)
+          _statRow(
+            l.trainRecovery,
+            '+${(d.recovery * 100).toStringAsFixed(1)}%',
+          ),
+        // 내 곤충 — 훈련 포인트(사용 / 예산)와 칸별 배분(훈련 v2). 옛 "공격 5/12단계"(v1 단계)는 이전 뒤엔
+        // 실제 결투 값과 맞지 않았다(2026-10-09 점검).
+        if (bug != null && sp != null) ..._trainPointRows(l, data, bug, sp),
         if (bug != null) ...[
           _statRow(
             l.bugInfoPotential,
@@ -2702,6 +2679,49 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ],
       ],
     );
+  }
+
+  /// 내 곤충의 훈련 포인트 줄 — "훈련소 포인트 12 / 40" + 찍은 칸 칩(공격 12 · 체력 8 …).
+  /// 곤충 상세(채집함)와 같은 값(`bugTrainOf` · `trainBudgetOf` — 이전 전 곤충도 옮긴 값으로 보인다).
+  List<Widget> _trainPointRows(
+    AppLocalizations l,
+    GameData data,
+    IndividualBug bug,
+    Species sp,
+  ) {
+    final save = ref.read(saveControllerProvider).requireValue;
+    final cfg = (data.battleConfig ?? const BattleConfig()).training;
+    final rec = bugTrainOf(save, bug, sp, cfg, enhance: data.enhanceConfig);
+    final budget = trainBudgetOf(
+      save,
+      bug,
+      sp,
+      cfg,
+      enhance: data.enhanceConfig,
+    );
+    final alloc = [
+      for (final sl in TrainSlot.values)
+        if ((rec.alloc[sl] ?? 0) > 0) (sl, rec.alloc[sl]!),
+    ];
+    return [
+      _statRow(
+        l.trainingCenter,
+        l.trainPtUsed('${rec.allocated}', '$budget'),
+        color: _honey,
+      ),
+      if (alloc.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(left: 64, top: 2, bottom: 2),
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 3,
+            children: [
+              for (final (sl, n) in alloc)
+                _chip('${trainSlotLabel(l, sl)} $n', trainSlotColor(sl)),
+            ],
+          ),
+        ),
+    ];
   }
 
   Widget _chip(String text, Color c, {Widget? lead}) => Container(

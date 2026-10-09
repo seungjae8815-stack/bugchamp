@@ -1085,7 +1085,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventFlyerRule1 =>
-      'Your bug fights **as raised** — potential, part upgrades, training and drills all count (same stats as Duels)';
+      'Your bug fights **as raised** — potential, train levels, breakthroughs and training points all count (same stats as Duels)';
 
   @override
   String get eventFlyerRule2 =>
@@ -1182,7 +1182,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventNormalizeBody(int pct) {
-    return 'Fights with the same stats as Duels — potential, part upgrades, training, drills and traits all count. Losing by ring-out or flip costs $pct% HP and you retry the same wave. When HP runs out, the run ends.';
+    return 'Fights with the same stats as Duels — potential, train levels, breakthroughs, training points and traits all count. Losing by ring-out or flip costs $pct% HP and you retry the same wave. When HP runs out, the run ends.';
   }
 
   @override
@@ -2092,15 +2092,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get materialChitinDesc =>
-      'A hard exoskeleton shard. Used for advanced upgrade costs and horn/jaw enhancement.';
+      'A hard exoskeleton shard. Used for advanced upgrade costs, training points and breakthroughs.';
 
   @override
   String get materialMineralDesc =>
-      'A hard mined mineral. Used for advanced upgrade costs and cuticle enhancement.';
+      'A hard mined mineral. Used for advanced upgrade costs, training points and breakthroughs.';
 
   @override
   String get materialSapDesc =>
-      'Hardened crystallized tree sap. Used for advanced upgrade costs and wing enhancement.';
+      'Hardened crystallized tree sap. Used for advanced upgrade costs, training points and breakthroughs.';
 
   @override
   String get materialJellyDesc =>
@@ -2295,7 +2295,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get materialsHint =>
-      'Materials — used for upgrades, part enhancement & crafting (tap for details)';
+      'Materials — used for upgrades, training, breakthroughs & crafting (tap for details)';
 
   @override
   String get chatHint => 'Type a message';
@@ -2388,7 +2388,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nicknameTaken => 'That nickname is already in use';
 
   @override
-  String get rankPopupTitle => 'Your Ranking';
+  String get rankPopupTitle => 'Progress Ranking';
 
   @override
   String get rankSuffix => 'th';
@@ -2513,6 +2513,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get guestWarnBody =>
       'This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.';
+
+  @override
+  String get guestWarnPurchaseBody =>
+      'Thanks for your purchase! You\'re playing as a guest, so deleting the app or switching devices will lose your purchases and progress. Link a Google (or Apple) account to keep them safe.';
 
   @override
   String get titleStoreName => 'Bug Champ';
@@ -3084,11 +3088,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String skillGradeUpHint(String grade, String n) {
-    return 'Turn your unused skill shards into $grade universal shards ×$n! They work on any skill of that grade.';
+    return 'Unused shards → $grade universal ×$n!';
   }
 
   @override
-  String get skillGradeUpHintGo => 'Promote';
+  String get skillGradeUpHintGo => 'Upgrade';
 
   @override
   String get skillEquip => 'Equip';
@@ -5368,7 +5372,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guideTemperamentBody =>
-      'Temperament decides how a bug moves in duels and which stats it can train higher.';
+      'Temperament decides how a bug moves in duels and which training slots it can put more points into (slot caps).';
 
   @override
   String get guideTempAggressive => 'Charges often — an attacker.';
@@ -5387,7 +5391,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideTrainCapMods(String mods) {
-    return 'Training cap: $mods';
+    return 'Training slot caps: $mods';
   }
 
   @override
@@ -5403,7 +5407,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guidePotentialBody(int perStar, int fodder) {
-    return 'Higher stars raise the part-enhance max level (stars × 10) and the training cap (+$perStar per star). Merge $fodder bugs of the same species to gain a star.';
+    return 'More stars mean more training points ($perStar per star). Merge $fodder bugs of the same species to gain a star.';
   }
 
   @override
@@ -5460,8 +5464,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guideTrainTitle => 'Training ground';
 
   @override
-  String guideTrainBody(int base) {
-    return 'Train 5 duel stats per bug: attack, defense, evasion, crit and recovery. Max stage = $base + potential + temperament/specialty/trait bonuses, so every bug has its own strengths. Mix bugs with different roles in your team!';
+  String guideTrainBody(String perStar, String levels, String bt) {
+    return 'Every bug earns training points — $perStar per potential star · 1 every $levels train levels · $bt per breakthrough tier. Spend them on the slots below. Each slot has a cap, and the caps add up to far more than your points, so you can\'t fill everything — what you pick is your strategy. Slot caps differ by temperament, specialty and bloodline trait.';
   }
 
   @override
@@ -6423,5 +6427,64 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String duelClutchLeft(int n) {
     return 'Clutch $n';
+  }
+
+  @override
+  String get guideTrainSlotsTitle => 'Slots (per point · base cap)';
+
+  @override
+  String guideTrainSlotLine(String slot, String effect, String cap) {
+    return '$slot — $effect · cap $cap';
+  }
+
+  @override
+  String guideTrainGritEffect(String th, String hp) {
+    return 'tap counter threshold −$th · wake HP +$hp';
+  }
+
+  @override
+  String get guideTrainCostBody =>
+      'Materials (chitin, mineral, sap) and training time are paid only the first time you spend a point, rising a little each time. Jelly can skip the wait; a bug in training can\'t enter duels or the contest.';
+
+  @override
+  String guideTrainRespecBody(String base, String per, String max) {
+    return 'Respec — redistribute your paid points. No materials are needed, but you wait $base min + $per min per point (up to $max h) and the bug can\'t fight meanwhile. Jelly can skip the wait.';
+  }
+
+  @override
+  String guideTrainStoneBody(String el, String tm) {
+    return 'Duel stones — an Element stone sets a bug\'s element and a Temper stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element $el · Temper $tm).';
+  }
+
+  @override
+  String get guideTrainLegacyNote =>
+      'Old part enhancements and training stages were converted into training points with the same effect — no bug got weaker.';
+
+  @override
+  String get guideClutchTitle => 'Tap counter (grit)';
+
+  @override
+  String guideClutchBody(
+    String sec,
+    String th,
+    String cost,
+    String hp,
+    String uses,
+    String bonus,
+  ) {
+    return 'When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for ${sec}s — if your score reaches the threshold $th, you survive: holding on costs $cost of max HP and pulls you back inside, waking up gets you back on your feet with $hp HP. $uses× per bout (+1 from $bonus Grit). More points in Grit lower the threshold and raise wake HP. Opponent bugs counter automatically.';
+  }
+
+  @override
+  String get upgradeBuyMax => 'MAX';
+
+  @override
+  String skillGachaConfirm(String times, String jelly) {
+    return 'Skill draw ×$times — this spends $jelly jelly.';
+  }
+
+  @override
+  String skillSweepConfirm(String jelly) {
+    return 'Today\'s free sweeps are used up. Sweep for $jelly jelly?';
   }
 }

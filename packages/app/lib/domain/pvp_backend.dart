@@ -267,7 +267,10 @@ abstract interface class PvpBackend {
   /// 세션 준비 전·네트워크 실패·상위권 밖. **폴백 순위를 지어내지 않는다** —
   /// [leaderboard] 는 화면이 비지 않게 로컬로 폴백하는데, 그 값을 순위로 쓰면
   /// 로그인 직후 경쟁 상황에서 엉뚱한 등수(예: 77위)가 캐시된다.
-  Future<int?> myRank({required PvpProfile me});
+  ///
+  /// [kind] 는 줄 세우는 기준. 구현의 기본값은 **진행도**다 — 랭킹 화면에서 트로피 탭을 없앤 뒤에도
+  /// 앱 시작 팝업이 서버 기본 정렬(트로피) 순위를 보여 주고 있었다(2026-10-09 점검).
+  Future<int?> myRank({required PvpProfile me, RankingKind kind});
 
   /// [name] 을 **다른 유저**가 이미 쓰고 있는지(대소문자 무시).
   ///
@@ -414,7 +417,10 @@ class LocalPvpBackend implements PvpBackend {
 
   /// NPC 사다리 순위는 실제 경쟁이 아니다 — 표시하지 않는다.
   @override
-  Future<int?> myRank({required PvpProfile me}) async => null;
+  Future<int?> myRank({
+    required PvpProfile me,
+    RankingKind kind = RankingKind.stage,
+  }) async => null;
 }
 
 /// 교체 가능한 백엔드 제공자. 기본은 로컬. Supabase 연동 시 override.

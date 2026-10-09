@@ -1048,7 +1048,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get eventFlyerRule1 =>
-      '**育てたまま**戦います — ポテンシャル・部位強化・修練・訓練所がすべて反映(決闘と同じ能力値)';
+      '**育てたまま**戦います — ポテンシャル・修練・突破・訓練ポイントがすべて反映(決闘と同じ能力値)';
 
   @override
   String get eventFlyerRule2 => '敵の五行はウェーブごとに変わります — 自分が苦手な色のウェーブが山場です';
@@ -1138,7 +1138,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventNormalizeBody(int pct) {
-    return '決闘と同じ能力値で戦います — ポテンシャル・部位強化・修練・訓練所・特性がすべて反映されます。場外・ひっくり返しで負けると体力が$pct%減って同じウェーブに再挑戦。体力が尽きたら終了です。';
+    return '決闘と同じ能力値で戦います — ポテンシャル・修練・突破・訓練ポイント・特性がすべて反映されます。場外・ひっくり返しで負けると体力が$pct%減って同じウェーブに再挑戦。体力が尽きたら終了です。';
   }
 
   @override
@@ -2037,14 +2037,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get materialChitinDesc =>
-      '虫の硬い外骨格の欠片。上級ステータス強化の追加コストと部位強化（角・大あご）に使われます。';
+      '虫の硬い外骨格の欠片。上級ステータス強化の追加コストと訓練ポイント・突破に使われます。';
 
   @override
   String get materialMineralDesc =>
-      '地中から採掘した硬い鉱物。上級ステータス強化の追加コストと部位強化（表皮）に使われます。';
+      '地中から採掘した硬い鉱物。上級ステータス強化の追加コストと訓練ポイント・突破に使われます。';
 
   @override
-  String get materialSapDesc => '固まって結晶になった樹液。上級ステータス強化の追加コストと部位強化（羽）に使われます。';
+  String get materialSapDesc => '固まって結晶になった樹液。上級ステータス強化の追加コストと訓練ポイント・突破に使われます。';
 
   @override
   String get materialJellyDesc =>
@@ -2229,7 +2229,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get netStillDown => 'まだ接続できていません';
 
   @override
-  String get materialsHint => '素材 — ステータス・部位強化とクラフトに使用（タップで詳細）';
+  String get materialsHint => '素材 — ステータス強化・訓練・突破とクラフトに使用（タップで詳細）';
 
   @override
   String get chatHint => 'メッセージを入力してください';
@@ -2319,7 +2319,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nicknameTaken => 'そのニックネームは既に使われています';
 
   @override
-  String get rankPopupTitle => 'マイランキング';
+  String get rankPopupTitle => '進行度ランキング';
 
   @override
   String get rankSuffix => '位';
@@ -2439,6 +2439,10 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get guestWarnBody =>
       '現在は端末の仮アカウントです。アプリを削除したり機種を変更すると、集めた虫と順位が消えます。ログインしておくと安全に引き継げます。';
+
+  @override
+  String get guestWarnPurchaseBody =>
+      'ご購入ありがとうございます！今はゲストアカウントなので、アプリを削除したり機種変更すると購入品と記録がすべて失われます。Google（iPhoneはApple）アカウントを連携して守ってください。';
 
   @override
   String get titleStoreName => '昆虫チャンプ';
@@ -3003,11 +3007,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String skillGradeUpHint(String grade, String n) {
-    return '使っていないスキルのかけらで$gradeの万能かけらを$n個作れます！万能かけらはどの$gradeスキルにも使えます。';
+    return '使っていないかけらで$gradeの万能かけらが$n個作れます！';
   }
 
   @override
-  String get skillGradeUpHintGo => '昇級する';
+  String get skillGradeUpHintGo => '昇級';
 
   @override
   String get skillEquip => '装備';
@@ -5243,7 +5247,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get guideTemperamentTitle => '気質（戦いの傾向）';
 
   @override
-  String get guideTemperamentBody => '気質は決闘での動き方の傾向で、訓練所でどの能力値を高く伸ばせるかも決めます。';
+  String get guideTemperamentBody =>
+      '気質は決闘での動き方の傾向で、訓練所でどの枠にポイントを多く振れるか（枠の上限）も決めます。';
 
   @override
   String get guideTempAggressive => '突進が多い攻撃型です。';
@@ -5262,7 +5267,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideTrainCapMods(String mods) {
-    return '訓練上限：$mods';
+    return '訓練枠の上限：$mods';
   }
 
   @override
@@ -5278,7 +5283,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guidePotentialBody(int perStar, int fodder) {
-    return '星が多いほど部位強化の最大レベル（星×10）と訓練の最大段階（星1つにつき+$perStar）が上がります。同じ種$fodder匹を合成すると星が1つ上がります。';
+    return '星が多いほど訓練ポイントが増えます（星1つにつき${perStar}pt）。同じ種$fodder匹を合成すると星が1つ上がります。';
   }
 
   @override
@@ -5335,8 +5340,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get guideTrainTitle => '訓練所';
 
   @override
-  String guideTrainBody(int base) {
-    return '虫ごとに決闘の能力値5種（攻撃・防御・回避・会心・回復力）を訓練します。最大段階 = 基本$base + ポテンシャル + 気質・特技・特性の補正なので、虫ごとに伸ばしやすい能力値が違います。役割の違う虫を混ぜてチームを組みましょう！';
+  String guideTrainBody(String perStar, String levels, String bt) {
+    return '虫ごとに訓練ポイントが貯まります — ポテンシャルの星1つにつき${perStar}pt · 修練$levelsレベルごとに1pt · 突破段階ごとに${bt}pt。ポイントを下の枠に選んで振ります。枠ごとに上限があり、上限の合計はポイントよりずっと多いので全部は振れません — 何に振るかが戦略です。枠の上限は気質・特技・血統特性によって虫ごとに違います。';
   }
 
   @override
@@ -6277,5 +6282,64 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String duelClutchLeft(int n) {
     return '反撃 $n';
+  }
+
+  @override
+  String get guideTrainSlotsTitle => '枠ごとの効果（1ptあたり · 基本上限）';
+
+  @override
+  String guideTrainSlotLine(String slot, String effect, String cap) {
+    return '$slot — $effect · 上限 $cap';
+  }
+
+  @override
+  String guideTrainGritEffect(String th, String hp) {
+    return 'タップ反撃しきい値 −$th · 起き上がり体力 +$hp';
+  }
+
+  @override
+  String get guideTrainCostBody =>
+      'ポイントを初めて振るときだけ素材（キチン・ミネラル・樹液）と訓練時間がかかります（振るほど少しずつ増えます）。時間はゼリーで短縮でき、訓練中の虫は決闘・大会に出られません。';
+
+  @override
+  String guideTrainRespecBody(String base, String per, String max) {
+    return '振り直し — 支払い済みのポイントの中で配分だけ変えます。素材はかからない代わりに$base分 + 1ptごとに$per分（最大$max時間）待つ必要があり、その間は出場できません。待ち時間はゼリーで短縮できます。';
+  }
+
+  @override
+  String guideTrainStoneBody(String el, String tm) {
+    return '決闘石 — 五行石は五行を、気質石は気質を好きな値に変えます（血統特性はそのまま、変えた値は交配でも継承）。精鋭・ボス・深淵で手に入るほか、ゼリーでも買えます（五行石 $el · 気質石 $tm）。';
+  }
+
+  @override
+  String get guideTrainLegacyNote =>
+      '以前の部位強化・訓練段階は同じ効果になるよう訓練ポイントに移しました — 移行で弱くなった虫はいません。';
+
+  @override
+  String get guideClutchTitle => 'タップ反撃（根性）';
+
+  @override
+  String guideClutchBody(
+    String sec,
+    String th,
+    String cost,
+    String hp,
+    String uses,
+    String bonus,
+  ) {
+    return '決闘で負けそうな瞬間（場外に押し出されるとき · ひっくり返されるとき · 体力が0になるとき）に試合が止まり、ゲージが出ます。$sec秒間画面を連打してスコアがしきい値$th以上なら生き残ります — 踏ん張りは最大体力の$costを失って土俵の内側に戻り、起き上がりは体力$hpで立ち上がります。1戦$uses回（根性${bonus}ptから1回追加）。根性枠に振るほどしきい値が下がり、起き上がり体力が増えます。相手の虫は自動で反撃します。';
+  }
+
+  @override
+  String get upgradeBuyMax => '最大';
+
+  @override
+  String skillGachaConfirm(String times, String jelly) {
+    return 'スキルガチャ$times回 — ゼリーを$jelly個使います。';
+  }
+
+  @override
+  String skillSweepConfirm(String jelly) {
+    return '今日の無料掃討は使い切りました。ゼリー$jelly個で掃討しますか？';
   }
 }

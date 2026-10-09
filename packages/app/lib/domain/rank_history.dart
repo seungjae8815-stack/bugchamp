@@ -40,14 +40,23 @@ class RankHistory {
   RankHistory._();
   static final RankHistory instance = RankHistory._();
 
-  static const _kRank = 'rank.last';
-  static const _kTopSince = 'rank.topSince'; // 1위가 된 날(yyyy-MM-dd)
+  /// 기록 키 — 랭킹 축([axis])마다 따로 둔다. 옛 키(`rank.last`)는 트로피 순위였다 — 진행도 순위를 그
+  /// 값과 비교하면 첫 실행에 엉뚱한 "▲37" 이 뜬다(2026-10-09 진행도로 바꿀 때).
+  static String _kRank(String axis) =>
+      axis == 'trophies' ? 'rank.last' : 'rank.$axis.last';
+  static String _kTopSince(String axis) => axis == 'trophies'
+      ? 'rank.topSince' // 1위가 된 날(yyyy-MM-dd)
+      : 'rank.$axis.topSince';
 
   /// [rank] 를 기록하고 직전 값과의 차이를 담은 리포트를 돌려준다.
   ///
   /// [today] 는 **로컬 날짜**(`DateTime.now()`) 기준 — 1위 유지 일수는 사용자가
-  /// 체감하는 달력 날짜로 세는 게 자연스럽다.
-  Future<RankReport> record(int rank, {required DateTime today}) async {
+  /// 체감하는 달력 날짜로 세는 게 자연스럽다. [axis] 는 랭킹 축 키(`RankingKind.key`).
+  Future<RankReport> record(
+    int rank, {
+    required DateTime today,
+    String axis = 'trophies',
+  }) async {
     SharedPreferences p;
     try {
       p = await SharedPreferences.getInstance();
@@ -60,20 +69,20 @@ class RankHistory {
       );
     }
 
-    final previous = p.getInt(_kRank);
+    final previous = p.getInt(_kRank(axis));
     final todayKey = _dateKey(today);
 
     var daysAtTop = 0;
     if (rank == 1) {
-      final since = p.getString(_kTopSince);
+      final since = p.getString(_kTopSince(axis));
       final start = since ?? todayKey;
-      if (since == null) await p.setString(_kTopSince, todayKey);
+      if (since == null) await p.setString(_kTopSince(axis), todayKey);
       daysAtTop = _daysBetween(start, todayKey) + 1; // 당일 = 1일째
     } else {
-      await p.remove(_kTopSince); // 1위에서 내려오면 연속 기록 종료
+      await p.remove(_kTopSince(axis)); // 1위에서 내려오면 연속 기록 종료
     }
 
-    await p.setInt(_kRank, rank);
+    await p.setInt(_kRank(axis), rank);
     return RankReport(rank: rank, previous: previous, daysAtTop: daysAtTop);
   }
 

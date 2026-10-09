@@ -11,7 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/element_wheel.dart';
 import '../../ui/labels.dart';
 import '../../ui/colors.dart';
-import '../battle/training_screen.dart' show trainStatLabel;
+import '../battle/training_screen.dart' show trainSlotLabel;
 
 const _honey = kHoney;
 
@@ -19,8 +19,11 @@ const _honey = kHoney;
 /// 결투·훈련·짝짓기 용어를 한 곳에서 설명한다(2026-10-01 사장님 요청 — 오행 관계도가
 /// 대회 화면 안에만 숨어 있어 어디에도 안 보였다).
 ///
-/// 숫자는 **JSON 에서 읽는다**(§6) — 상극 배율·훈련 상한 보정·특성 %·이색 확률을 문구에
+/// 숫자는 **JSON 에서 읽는다**(§6) — 상극 배율·훈련 칸 상한 보정·특성 %·이색 확률을 문구에
 /// 박으면 밸런스를 바꿀 때 공략집만 옛 값으로 남는다(관계도 "1.5배"가 그렇게 남았다).
+///
+/// 훈련은 v2(포인트 배분 · 칸 10종 · 다시 찍기 · 결투석 · 탭 반격, docs/design_training_v2.md) 기준이다
+/// (2026-10-09 점검 — 옛 v1 훈련 상한 보정·"5가지 능력치"·부위 강화 설명이 남아 있었다).
 class GuideScreen extends ConsumerWidget {
   const GuideScreen({super.key});
 
@@ -70,14 +73,43 @@ class GuideScreen extends ConsumerWidget {
       return '1/${n >= 100 ? (n / 10).round() * 10 : n.round()}';
     }
 
-    String mods(Map<TrainStat, int>? m) {
+    // 칸 상한 보정(v2 — battle.json training.slot*Mods). 옛 v1 보정(temperamentMods 등)은 이전 환산 전용이다.
+    String mods(Map<TrainSlot, int>? m) {
       if (m == null || m.isEmpty) return '';
       return [
-        for (final s in TrainStat.values)
+        for (final s in TrainSlot.values)
           if ((m[s] ?? 0) != 0)
-            '${trainStatLabel(l, s)} ${m[s]! > 0 ? '+' : ''}${m[s]}',
+            '${trainSlotLabel(l, s)} ${m[s]! > 0 ? '+' : ''}${m[s]}',
       ].join(' · ');
     }
+
+    // 칸 1점 효과 — 훈련소 화면(`_effectLine`)과 같은 표기.
+    String slotEffect(TrainSlot sl) {
+      final e = train.slotEffect[sl] ?? 0;
+      return switch (sl) {
+        TrainSlot.evade || TrainSlot.crit => '${_signed(e)}p',
+        TrainSlot.mass => l.trainMassPer(
+          _signed(e),
+          _signed(-train.massSpeedPenalty),
+        ),
+        TrainSlot.tech => [
+          l.trainTechFlip(
+            _signed(train.techBySpecialty[Specialty.strike] ?? 0),
+          ),
+          l.trainTechBite(_signed(train.techBySpecialty[Specialty.grip] ?? 0)),
+          l.trainTechCooldown(
+            _signed(-(train.techBySpecialty[Specialty.toss] ?? 0)),
+          ),
+        ].join(' / '),
+        TrainSlot.grit => l.guideTrainGritEffect(
+          _num(duel.clutchThresholdPerGrit),
+          _pct(duel.clutchWakeHpPerGrit),
+        ),
+        _ => _signed(e),
+      };
+    }
+
+    final respecMax = train.respecMaxMinutes / 60;
 
     return [
       _Section(
@@ -108,7 +140,12 @@ class GuideScreen extends ConsumerWidget {
             (Specialty.grip, l.guideSpecialtyGrip),
             (Specialty.toss, l.guideSpecialtyToss),
           ])
-            _item(specialtyLabel(l, s), desc, mods(train.specialtyMods[s]), l),
+            _item(
+              specialtyLabel(l, s),
+              desc,
+              mods(train.slotSpecialtyMods[s]),
+              l,
+            ),
         ],
       ),
       _Section(
@@ -126,7 +163,7 @@ class GuideScreen extends ConsumerWidget {
             _item(
               temperamentLabel(l, t),
               desc,
-              mods(train.temperamentMods[t]),
+              mods(train.slotTemperamentMods[t]),
               l,
             ),
         ],
@@ -148,7 +185,10 @@ class GuideScreen extends ConsumerWidget {
         title: l.guidePotentialTitle,
         children: [
           _p(
-            l.guidePotentialBody(train.capPerPotential, pet?.synthFodder ?? 3),
+            l.guidePotentialBody(
+              train.pointsPerPotential,
+              pet?.synthFodder ?? 3,
+            ),
           ),
         ],
       ),
@@ -169,7 +209,7 @@ class GuideScreen extends ConsumerWidget {
                 pct(pet?.traitAttackBonus[t] ?? 0),
                 pct(pet?.traitHpBonus[t] ?? 0),
               ),
-              mods(train.traitMods[t]),
+              mods(train.slotTraitMods[t]),
               l,
               color: traitColor(t),
             ),
@@ -226,10 +266,92 @@ class GuideScreen extends ConsumerWidget {
       _Section(
         icon: Icons.fitness_center_rounded,
         title: l.guideTrainTitle,
-        children: [_p(l.guideTrainBody(train.baseCap))],
+        children: [
+          _p(
+            l.guideTrainBody(
+              '${train.pointsPerPotential}',
+              '${train.levelsPerPoint}',
+              train.breakthroughPoints.join('/'),
+            ),
+          ),
+          _sub(l.guideTrainSlotsTitle),
+          for (final sl in TrainSlot.values)
+            _line(
+              l.guideTrainSlotLine(
+                trainSlotLabel(l, sl),
+                slotEffect(sl),
+                '${train.slotBaseCap[sl] ?? 0}',
+              ),
+            ),
+          const SizedBox(height: 8),
+          _p(l.guideTrainCostBody),
+          _p(
+            l.guideTrainRespecBody(
+              '${train.respecBaseMinutes}',
+              '${train.respecPerPointMinutes}',
+              _num(respecMax),
+            ),
+          ),
+          _p(
+            l.guideTrainStoneBody(
+              '${train.stones.jelly[DuelStone.element] ?? 0}',
+              '${train.stones.jelly[DuelStone.temperament] ?? 0}',
+            ),
+          ),
+          _p(l.guideTrainLegacyNote),
+        ],
+      ),
+      _Section(
+        icon: Icons.touch_app_rounded,
+        title: l.guideClutchTitle,
+        children: [
+          _p(
+            l.guideClutchBody(
+              _num(duel.clutchTapSeconds),
+              _num(duel.clutchThreshold),
+              _pct(duel.clutchHoldHpCost),
+              _pct(duel.clutchWakeHp),
+              '${duel.clutchUses}',
+              '${duel.clutchBonusUseGrit}',
+            ),
+          ),
+        ],
       ),
     ];
   }
+
+  /// 0.015 → "1.5%"(소수 첫째 자리까지, 0 은 지운다).
+  static String _pct(double v) {
+    final p = (v * 1000).round() / 10;
+    return p == p.roundToDouble()
+        ? '${p.round()}%'
+        : '${p.toStringAsFixed(1)}%';
+  }
+
+  static String _signed(double v) => v < 0 ? '−${_pct(-v)}' : '+${_pct(v)}';
+
+  /// 1.2 → "1.2", 8.0 → "8", 0.55 → "0.55"(소수 셋째 자리까지, 끝의 0 은 지운다).
+  static String _num(double v) {
+    var t = v.toStringAsFixed(3);
+    if (t.contains('.')) {
+      t = t.replaceFirst(RegExp(r'0+$'), '');
+      if (t.endsWith('.')) t = t.substring(0, t.length - 1);
+    }
+    return t;
+  }
+
+  /// 항목 안의 작은 제목.
+  static Widget _sub(String t) => Padding(
+    padding: const EdgeInsets.only(top: 4, bottom: 4),
+    child: Text(
+      t,
+      style: const TextStyle(
+        color: _honey,
+        fontSize: 12.5,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
 
   /// [e] 가 이기는(상극) 오행.
   static cm.Element _beats(cm.Element e) {

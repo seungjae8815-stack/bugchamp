@@ -48,6 +48,9 @@ class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   bool _notifSetup = false;
 
+  /// 일일 알림 예약 맞추기의 줄(앞 작업이 끝나야 다음이 돈다 — [_syncDailyNotifications]).
+  Future<void> _dailySync = Future.value();
+
   /// 기기 권위 세이브 주기 업로드(서버 연결 시에만 동작).
   late final _uploader = ServerSaveUploader(ref);
 
@@ -98,6 +101,7 @@ class _AppShellState extends ConsumerState<AppShell>
   @override
   void dispose() {
     _uploader.stop();
+    NotifyPrefs.instance.settings.removeListener(_onNotifyChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -121,6 +125,9 @@ class _AppShellState extends ConsumerState<AppShell>
           body: l.notifOfflineBody,
           quiet: notify.quietHours,
         );
+      } else {
+        // 부화·선물과 같게 — 꺼져 있으면 남은 예약도 지운다.
+        unawaited(svc.cancelOfflineFull());
       }
       // 부화 완료 예정 시각마다 알림 — 앱을 꺼둔 채 기다리는 시간이라
       // 알려주지 않으면 알이 다 익은 채 방치된다.
@@ -194,20 +201,56 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 
   /// 첫 프레임 후 1회: 알림 권한 요청 + 일일 보상 시각(daily.json)마다 반복 예약.
+  /// 그 뒤로는 설정 스위치가 바뀔 때마다 예약을 다시 맞춘다([_onNotifyChanged]).
   Future<void> _setupNotifications() async {
     if (_notifSetup || !mounted) return;
     _notifSetup = true;
-    final l = AppLocalizations.of(context);
-    final svc = NotificationService.instance;
     await NotifyPrefs.instance.load();
-    await svc.requestPermission();
+    await NotificationService.instance.requestPermission();
+    if (!mounted) return;
+    await _syncDailyNotifications();
+    // load() 가 값을 바꾼 뒤에 붙인다 — 붙이고 읽으면 위 예약이 한 번 더 돈다.
+    NotifyPrefs.instance.settings.addListener(_onNotifyChanged);
+  }
+
+  /// 설정에서 알림 스위치를 바꿨다 → 꺼진 종류는 **이미 걸린 예약까지** 지우고, 켜진 일일 알림은 다시 건다.
+  ///
+  /// ⚠️ 점심·저녁 알림은 매일 반복 예약이라 기기에 남는다. 예전엔 꺼도 "다음 실행에 예약 안 함"뿐이라
+  /// 이미 걸린 반복 예약이 계속 울렸다(2026-10-09 점검). 방치 가득·부화·선물은 백그라운드로 갈 때 걸고
+  /// 돌아오면 지우는 1회 예약이라 앱이 떠 있는 지금은 남아 있지 않지만, 같은 원칙으로 함께 지운다.
+  void _onNotifyChanged() {
+    if (!mounted) return;
     final np = NotifyPrefs.instance.settings.value;
-    if (!np.enabled || !np.daily) return; // 꺼두면 예약 안 함
+    final svc = NotificationService.instance;
+    if (!np.enabled || !np.offlineFull) unawaited(svc.cancelOfflineFull());
+    if (!np.enabled || !np.hatchDone) unawaited(svc.cancelHatches());
+    if (!np.enabled || !np.gift) unawaited(svc.cancelGift());
+    unawaited(_syncDailyNotifications());
+  }
+
+  /// 일일 알림 예약을 차례대로 맞춘다 — 스위치를 빠르게 껐다 켜도 마지막 설정이 이기게(앞 작업이 끝난 뒤 실행).
+  Future<void> _syncDailyNotifications() => _dailySync = _dailySync
+      .then((_) => _syncDailyOnce())
+      .catchError((Object e) {
+        debugPrint('일일 알림 예약 맞추기 실패(무시): $e');
+      });
+
+  Future<void> _syncDailyOnce() async {
+    final svc = NotificationService.instance;
+    final np = NotifyPrefs.instance.settings.value;
+    if (!np.enabled || !np.daily) {
+      await svc.cancelDaily();
+      return;
+    }
     // gameData 는 비동기 로드(FutureProvider) — 첫 프레임엔 .value 가 아직 null 이라
     // 예약이 통째로 건너뛰어졌다(점심/저녁 알림 미발화의 근본 원인).
     // .future 를 await 해 로드 완료를 보장한 뒤 예약한다.
     final data = await ref.read(gameDataProvider.future);
     if (!mounted) return;
+    // 기다리는 사이 꺼졌으면 걸지 않는다(다음 차례가 지운다).
+    final now = NotifyPrefs.instance.settings.value;
+    if (!now.enabled || !now.daily) return;
+    final l = AppLocalizations.of(context);
     final rewards = data.dailyConfig?.rewards ?? const [];
     for (var i = 0; i < rewards.length; i++) {
       final rw = rewards[i];
@@ -222,6 +265,8 @@ class _AppShellState extends ConsumerState<AppShell>
         body: l.notifRewardBody,
       );
     }
+    // 보상 시각이 줄었으면 남는 옛 반복 예약을 지운다.
+    await svc.cancelDaily(keep: rewards.length);
   }
 
   @override

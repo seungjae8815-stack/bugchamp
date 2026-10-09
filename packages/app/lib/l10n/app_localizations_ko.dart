@@ -1052,7 +1052,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eventFlyerRule1 =>
-      '**키운 그대로** 싸워요 — 포텐셜·부위 강화·수련·훈련소가 모두 반영돼요(결투와 같은 능력치)';
+      '**키운 그대로** 싸워요 — 포텐셜·수련·돌파·훈련 포인트가 모두 반영돼요(결투와 같은 능력치)';
 
   @override
   String get eventFlyerRule2 => '적의 오행은 웨이브마다 바뀌어요 — 내 곤충이 약한 색의 웨이브에서 고비가 와요';
@@ -1142,7 +1142,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String eventNormalizeBody(int pct) {
-    return '결투와 같은 능력치로 싸워요 — 포텐셜·부위 강화·수련·훈련소·특성이 모두 반영돼요. 장외·뒤집기로 지면 체력이 $pct% 깎이고 같은 웨이브를 다시 싸워요. 체력이 바닥나면 끝이에요.';
+    return '결투와 같은 능력치로 싸워요 — 포텐셜·수련·돌파·훈련 포인트·특성이 모두 반영돼요. 장외·뒤집기로 지면 체력이 $pct% 깎이고 같은 웨이브를 다시 싸워요. 체력이 바닥나면 끝이에요.';
   }
 
   @override
@@ -2043,15 +2043,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get materialChitinDesc =>
-      '곤충의 단단한 외골격 조각. 고급 능력치 강화의 추가 비용과 부위 강화(뿔·큰턱)에 사용됩니다.';
+      '곤충의 단단한 외골격 조각. 고급 능력치 강화의 추가 비용과 훈련 포인트 찍기·돌파에 사용됩니다.';
 
   @override
   String get materialMineralDesc =>
-      '땅에서 캔 단단한 광물. 고급 능력치 강화의 추가 비용과 부위 강화(표피)에 사용됩니다.';
+      '땅에서 캔 단단한 광물. 고급 능력치 강화의 추가 비용과 훈련 포인트 찍기·돌파에 사용됩니다.';
 
   @override
   String get materialSapDesc =>
-      '굳어 결정이 된 나무 수액. 고급 능력치 강화의 추가 비용과 부위 강화(날개)에 사용됩니다.';
+      '굳어 결정이 된 나무 수액. 고급 능력치 강화의 추가 비용과 훈련 포인트 찍기·돌파에 사용됩니다.';
 
   @override
   String get materialJellyDesc => '특별한 프리미엄 재화. 상점 제작(올인원 물약)과 특별 상품에 사용됩니다.';
@@ -2237,7 +2237,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get netStillDown => '아직 연결되지 않았어요';
 
   @override
-  String get materialsHint => '재료 — 능력치·부위 강화와 제작에 사용해요 (탭하면 상세)';
+  String get materialsHint => '재료 — 능력치 강화·훈련·돌파와 제작에 사용해요 (탭하면 상세)';
 
   @override
   String get chatHint => '메시지를 입력하세요';
@@ -2327,7 +2327,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get nicknameTaken => '이미 사용 중인 닉네임이에요';
 
   @override
-  String get rankPopupTitle => '내 랭킹';
+  String get rankPopupTitle => '진행도 랭킹';
 
   @override
   String get rankSuffix => '위';
@@ -2447,6 +2447,10 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get guestWarnBody =>
       '지금은 기기 임시 계정이라, 앱을 지우거나 기기를 바꾸면 모아둔 곤충과 순위가 사라져요. 로그인해 두면 안전하게 이어서 할 수 있어요.';
+
+  @override
+  String get guestWarnPurchaseBody =>
+      '구매해 주셔서 감사해요! 지금은 게스트 계정이라 앱을 지우거나 기기를 바꾸면 구매한 상품과 기록을 모두 잃어요. 구글(아이폰은 애플) 계정을 연동해 안전하게 지켜 주세요.';
 
   @override
   String get titleStoreName => '곤충 키우기';
@@ -3011,11 +3015,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String skillGradeUpHint(String grade, String n) {
-    return '안 쓰는 스킬 조각으로 $grade 만능 조각 $n개를 만들 수 있어요! 만능 조각은 $grade 스킬 아무 데나 쓸 수 있어요.';
+    return '안 쓰는 조각으로 $grade 만능 조각 $n개를 만들 수 있어요!';
   }
 
   @override
-  String get skillGradeUpHintGo => '승급하기';
+  String get skillGradeUpHintGo => '승급';
 
   @override
   String get skillEquip => '장착';
@@ -5254,7 +5258,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get guideTemperamentBody =>
-      '기질은 결투에서 곤충이 움직이는 성향이고, 훈련소에서 어떤 능력치를 더 높이 키울 수 있는지도 정해요.';
+      '기질은 결투에서 곤충이 움직이는 성향이고, 훈련소에서 어떤 칸에 포인트를 더 많이 찍을 수 있는지(칸 상한)도 정해요.';
 
   @override
   String get guideTempAggressive => '돌진이 잦은 공격형이에요.';
@@ -5273,7 +5277,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideTrainCapMods(String mods) {
-    return '훈련 상한: $mods';
+    return '훈련 칸 상한: $mods';
   }
 
   @override
@@ -5289,7 +5293,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guidePotentialBody(int perStar, int fodder) {
-    return '별이 높을수록 부위 강화 최대 레벨(별 × 10)과 훈련 최대 단계(별 1개당 +$perStar)가 올라가요. 같은 종 $fodder마리를 합성하면 별이 하나 올라요.';
+    return '별이 높을수록 훈련 포인트가 많아져요(별 1개당 $perStar점). 같은 종 $fodder마리를 합성하면 별이 하나 올라요.';
   }
 
   @override
@@ -5346,8 +5350,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get guideTrainTitle => '훈련소';
 
   @override
-  String guideTrainBody(int base) {
-    return '곤충마다 결투 능력치 5가지(공격·방어·회피·치명·회복력)를 훈련해요. 최대 단계 = 기본 $base + 포텐셜 + 기질·주특기·특성 보정이라, 곤충마다 잘 키울 수 있는 능력치가 달라요. 역할이 다른 곤충을 섞어 팀을 짜 보세요!';
+  String guideTrainBody(String perStar, String levels, String bt) {
+    return '곤충마다 훈련 포인트가 생겨요 — 포텐셜 별 1개당 $perStar점 · 수련 $levels레벨마다 1점 · 돌파 단계마다 $bt점. 포인트를 아래 칸에 골라 찍어요. 칸마다 상한이 있고 상한을 다 합치면 포인트보다 훨씬 많아서 전부 찍을 수는 없어요 — 무엇을 찍을지가 곧 전략이에요. 칸 상한은 기질·주특기·혈통 특성에 따라 곤충마다 달라요.';
   }
 
   @override
@@ -6232,7 +6236,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String duelStoneAsk(String from, String to, String stone) {
-    return '$from → $to 로 바꿀까요? $stone 1개를 써요.';
+    return '$from → $to(으)로 바꿀까요? $stone 1개를 써요.';
   }
 
   @override
@@ -6290,5 +6294,64 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String duelClutchLeft(int n) {
     return '반격 $n';
+  }
+
+  @override
+  String get guideTrainSlotsTitle => '칸별 효과 (1점당 · 기본 상한)';
+
+  @override
+  String guideTrainSlotLine(String slot, String effect, String cap) {
+    return '$slot — $effect · 상한 $cap';
+  }
+
+  @override
+  String guideTrainGritEffect(String th, String hp) {
+    return '탭 반격 문턱 −$th · 깨우기 체력 +$hp';
+  }
+
+  @override
+  String get guideTrainCostBody =>
+      '포인트를 처음 찍을 때만 재료(키틴·미네랄·수액)와 훈련 시간이 들어요(찍을수록 조금씩 늘어나요). 시간은 젤리로 당길 수 있고, 훈련 중인 곤충은 결투·대회에 나갈 수 없어요.';
+
+  @override
+  String guideTrainRespecBody(String base, String per, String max) {
+    return '다시 찍기 — 재료를 낸 포인트 안에서 배분만 바꿔요. 재료는 다시 들지 않는 대신 $base분 + 포인트당 $per분(최대 $max시간)을 기다려야 하고, 그동안 출전할 수 없어요. 대기는 젤리로 당길 수 있어요.';
+  }
+
+  @override
+  String guideTrainStoneBody(String el, String tm) {
+    return '결투석 — 오행석은 오행을, 기질석은 기질을 원하는 값으로 바꿔요(혈통 특성은 그대로, 바꾼 값은 짝짓기에도 상속돼요). 정예·보스·심연에서 얻거나 젤리로 살 수 있어요(오행석 $el · 기질석 $tm).';
+  }
+
+  @override
+  String get guideTrainLegacyNote =>
+      '예전 부위 강화·훈련 단계는 같은 효과가 되도록 훈련 포인트로 옮겨졌어요 — 옮기면서 약해진 곤충은 없어요.';
+
+  @override
+  String get guideClutchTitle => '탭 반격 (근성)';
+
+  @override
+  String guideClutchBody(
+    String sec,
+    String th,
+    String cost,
+    String hp,
+    String uses,
+    String bonus,
+  ) {
+    return '결투에서 질 뻔한 순간(장외로 밀려날 때 · 뒤집힐 때 · 체력이 0이 될 때) 판이 멈추고 게이지가 떠요. $sec초 동안 화면을 연타해 점수가 문턱 $th 이상이면 살아나요 — 버티기는 최대 체력의 $cost를 잃고 경기장 안쪽으로 돌아오고, 깨우기는 체력 $hp로 일어나요. 한 판에 $uses번(근성 $bonus점부터 1번 더). 근성 칸에 찍을수록 문턱이 낮아지고 깨우기 체력이 늘어요. 상대 곤충은 자동으로 반격해요.';
+  }
+
+  @override
+  String get upgradeBuyMax => '최대';
+
+  @override
+  String skillGachaConfirm(String times, String jelly) {
+    return '스킬 뽑기 $times회 — 젤리 $jelly개를 써요.';
+  }
+
+  @override
+  String skillSweepConfirm(String jelly) {
+    return '오늘 무료 소탕을 다 썼어요. 젤리 $jelly개로 소탕할까요?';
   }
 }

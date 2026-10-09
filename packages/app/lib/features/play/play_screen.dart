@@ -49,6 +49,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/guest_warning.dart';
 import '../../ui/nickname_gate.dart';
+import '../../ui/popup_gate.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
@@ -717,9 +718,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final offline = controller.pendingOffline;
     if (offline != null) {
       controller.consumeOffline();
+      // 순위 팝업(앱 셸)이 이 팝업 위에 겹쳐 뜨지 않게 자리를 잡는다 — 닫히면 그 뒤에 뜬다(2026-10-09).
+      StartupPopupGate.hold();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _showOfflineReward(offline);
+        if (!mounted) {
+          StartupPopupGate.release();
+          return;
+        }
+        unawaited(
+          _showOfflineReward(offline).whenComplete(StartupPopupGate.release),
+        );
       });
     }
     // 선물 예약 초기화 + 만료 정리(첫 진입 시).
@@ -728,14 +736,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     });
   }
 
-  /// 복귀 보상 팝업(방치 정산).
-  void _showOfflineReward(OfflineReport r) {
+  /// 복귀 보상 팝업(방치 정산). 닫히면 완료된다.
+  Future<void> _showOfflineReward(OfflineReport r) {
     final l = AppLocalizations.of(context);
     final d = r.accrued;
     final h = d.inHours;
     final m = d.inMinutes % 60;
     final timeStr = h > 0 ? l.durationHm(h, m) : l.durationM(m);
-    showGameDialog<void>(
+    return showGameDialog<void>(
       context,
       title: l.offlineTitle,
       subtitle: l.offlineElapsed(timeStr),
@@ -829,7 +837,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     setState(() {
       _resyncTeamHp(stats.maxHp, _split?.playerHpMult ?? 1.0);
     });
-    _showOfflineReward(report);
+    unawaited(_showOfflineReward(report));
   }
 
   // 유리 깨짐 균열 패턴을 한 번 생성(시드 고정 → 프레임마다 안 흔들림).
@@ -2864,7 +2872,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: Row(
               children: [
-                for (final amount in [1, 10, 100])
+                // "최대"(= 지금 골드·재료로 살 수 있는 만큼, 상한까지) — 2026-10-09 점검.
+                for (final amount in const [1, 10, 100, _kBuyMax])
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2891,9 +2900,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   gold: save.gold,
                   materials: save.materials,
                   buyAmount: _buyAmount,
+                  // "최대"는 넉넉한 수를 넘긴다 — `buyUpgrade` 가 골드·재료·상한에서 스스로 멈춘다
+                  // (꾹 누르기로 연속 구매해도 누르는 순간의 잔액으로 다시 센다).
                   onBuy: () => ref
                       .read(saveControllerProvider.notifier)
-                      .buyUpgrade(kind, count: _buyAmount),
+                      .buyUpgrade(
+                        kind,
+                        count: _buyAmount == _kBuyMax
+                            ? _kBuyMaxLimit
+                            : _buyAmount,
+                      ),
                 );
               },
             ),
@@ -8804,6 +8820,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 }
 
+/// 구매 수량 "최대" 표시값(지금 골드·재료로 살 수 있는 만큼, 상한까지).
+const _kBuyMax = 0;
+
+/// "최대" 구매 한 번에 넘기는 수 — [maxAffordableUpgrades] 기본 한도와 같게 둔다.
+const _kBuyMaxLimit = 1000;
+
 class _AmountButton extends StatelessWidget {
   const _AmountButton({
     required this.amount,
@@ -8816,6 +8838,9 @@ class _AmountButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final label = amount == _kBuyMax
+        ? AppLocalizations.of(context).upgradeBuyMax
+        : '+$amount';
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
@@ -8833,7 +8858,8 @@ class _AmountButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          '+$amount',
+          label,
+          maxLines: 1,
           style: TextStyle(
             color: selected ? kHoneyInk : _onScene,
             fontWeight: FontWeight.w900,
@@ -8947,21 +8973,37 @@ class _UpgradeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final spec = config.upgrade(kind);
-    final batchCost = bulkUpgradeCost(spec, level, buyAmount);
     final cur = spec.valueAt(level);
     final next = spec.valueAt(level + 1);
 
     // 재료 추가비용(있으면).
     final matKind = spec.materialKind;
-    final batchMatCost = bulkUpgradeMaterialCost(spec, level, buyAmount);
     final haveMat = matKind == null ? 0 : (materials[matKind] ?? 0);
+    final maxed = !spec.canBuyAt(level);
+    // 이번에 누르면 오를 레벨 수. ×10·×100 은 **상한까지만** 센다(2026-10-09 점검 — 상한 너머 레벨
+    // 값까지 더해, 남은 3레벨을 살 골드가 있어도 버튼이 꺼졌다). "최대"는 지금 골드·재료가 되는 만큼,
+    // 하나도 못 사면 다음 1레벨 값을 꺼진 채로 보여 준다.
+    final int count;
+    if (buyAmount == _kBuyMax) {
+      final n = maxAffordableUpgrades(
+        spec,
+        level,
+        gold: gold,
+        material: haveMat,
+        limit: _kBuyMaxLimit,
+      );
+      count = n > 0 ? n : upgradeBuyableCount(spec, level, 1);
+    } else {
+      count = upgradeBuyableCount(spec, level, buyAmount);
+    }
+    final batchCost = bulkUpgradeCost(spec, level, count);
+    final batchMatCost = bulkUpgradeMaterialCost(spec, level, count);
     // ⚠️ 구매 가능 판정은 **화면에 적힌 금액(묶음 전체)** 기준이다
     // (2026-09-14 지적). 예전엔 1레벨분만 보고 켰다 — x100 버튼에 12만이
     // 적혀 있는데 1,200원만 있어도 초록으로 켜져서, 누르면 몇 레벨만 오르고
     // 멈췄다. 적힌 값을 못 내면 꺼져 있어야 한다.
     final matOk = matKind == null || haveMat >= batchMatCost;
-    final maxed = !spec.canBuyAt(level);
-    final affordable = !maxed && gold >= batchCost && matOk;
+    final affordable = !maxed && count > 0 && gold >= batchCost && matOk;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -9083,7 +9125,8 @@ class _UpgradeRow extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '+$buyAmount Lv',
+                          // 상한이 가까우면 남은 만큼만(`+3 Lv`) — 적힌 값이 실제로 오를 레벨이다.
+                          '+$count Lv',
                           style: TextStyle(
                             color: affordable
                                 ? Colors.white
@@ -9306,10 +9349,12 @@ class _GameplaySection extends StatelessWidget {
                   ),
                 ),
               ),
+              // 알림 스위치와 같은 꿀색(2026-10-09 점검 — 기본 초록이라 혼자 달랐다).
               Switch(
                 key: const ValueKey('autoBossSwitch'),
                 value: on,
                 onChanged: PlayPrefs.instance.setAutoBoss,
+                activeThumbColor: _honey,
               ),
             ],
           ),

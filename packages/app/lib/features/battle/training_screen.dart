@@ -34,32 +34,7 @@ const _text = Color(0xFFF5F0E0);
 const _dim = Color(0xD9F5F0E0);
 const _bad = Color(0xFFFF9E8F);
 
-/// 옛 능력치 이름(결투 화면·가이드가 아직 쓴다).
-String trainStatLabel(AppLocalizations l, TrainStat s) => switch (s) {
-  TrainStat.attack => l.trainAttack,
-  TrainStat.defense => l.trainDefense,
-  TrainStat.evade => l.trainEvade,
-  TrainStat.crit => l.trainCrit,
-  TrainStat.recovery => l.trainRecovery,
-};
-
-IconData trainStatIcon(TrainStat s) => switch (s) {
-  TrainStat.attack => Icons.flash_on_rounded,
-  TrainStat.defense => Icons.shield_rounded,
-  TrainStat.evade => Icons.air_rounded,
-  TrainStat.crit => Icons.gps_fixed_rounded,
-  TrainStat.recovery => Icons.favorite_rounded,
-};
-
-Color trainStatColor(TrainStat s) => switch (s) {
-  TrainStat.attack => const Color(0xFFFF8A65),
-  TrainStat.defense => const Color(0xFF64B5F6),
-  TrainStat.evade => const Color(0xFF81C784),
-  TrainStat.crit => kHoney,
-  TrainStat.recovery => const Color(0xFFF48FB1),
-};
-
-/// 훈련 v2 칸 이름(훈련소·곤충 상세 공용).
+/// 훈련 v2 칸 이름(훈련소·곤충 상세·결투 곤충 상세·공략집 공용).
 String trainSlotLabel(AppLocalizations l, TrainSlot s) => switch (s) {
   TrainSlot.attack => l.trainAttack,
   TrainSlot.defense => l.trainDefense,

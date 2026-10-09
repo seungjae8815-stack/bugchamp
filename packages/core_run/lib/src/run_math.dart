@@ -271,11 +271,29 @@ int upgradeCost(UpgradeSpec spec, int level) {
   return v >= kMaxCurrency ? kMaxCurrency : clampCurrency(v.roundToDouble());
 }
 
+/// [level] 에서 [count] 레벨을 사려 할 때 **상한(`maxLevel`)까지 실제로 살 수 있는** 레벨 수.
+///
+/// 묶음 구매(×10/×100)가 상한 근처에서 상한 너머 레벨의 비용까지 더해, 남은 3레벨을 살 골드가
+/// 있어도 버튼이 꺼져 있었다(2026-10-09 점검). 비용·구매 판정·버튼 글자가 모두 이 수를 쓴다.
+int upgradeBuyableCount(UpgradeSpec spec, int level, int count) {
+  if (count <= 0) return 0;
+  final max = spec.maxLevel;
+  if (max == null) return count;
+  final left = max - level;
+  if (left <= 0) return 0;
+  return left < count ? left : count;
+}
+
+/// 재화 합을 상한에서 멈춘다(지수 비용을 100개 더하면 int64 를 넘는다).
+int _addCapped(int a, int b) => a >= kMaxCurrency - b ? kMaxCurrency : a + b;
+
 /// [level] 부터 [count] 레벨 연속 구매 총비용(배치 구매 ×10/×100 용).
+/// **상한까지만** 더한다([upgradeBuyableCount]) — 상한 너머 레벨은 살 수 없으니 값도 없다.
 int bulkUpgradeCost(UpgradeSpec spec, int level, int count) {
+  final n = upgradeBuyableCount(spec, level, count);
   var total = 0;
-  for (var i = 0; i < count; i++) {
-    total += upgradeCost(spec, level + i);
+  for (var i = 0; i < n; i++) {
+    total = _addCapped(total, upgradeCost(spec, level + i));
   }
   return total;
 }
@@ -283,17 +301,43 @@ int bulkUpgradeCost(UpgradeSpec spec, int level, int count) {
 /// 업그레이드 [level] → 다음 레벨 구매에 드는 재료 비용(재료 미요구면 0).
 int upgradeMaterialCost(UpgradeSpec spec, int level) {
   if (spec.materialKind == null) return 0;
-  return (spec.materialBaseCost * math.pow(spec.materialCostGrowth, level))
-      .round();
+  final v = spec.materialBaseCost * math.pow(spec.materialCostGrowth, level);
+  return v >= kMaxCurrency ? kMaxCurrency : v.round();
 }
 
-/// [level] 부터 [count] 레벨 연속 구매의 재료 총비용.
+/// [level] 부터 [count] 레벨 연속 구매의 재료 총비용(상한까지만).
 int bulkUpgradeMaterialCost(UpgradeSpec spec, int level, int count) {
+  final n = upgradeBuyableCount(spec, level, count);
   var total = 0;
-  for (var i = 0; i < count; i++) {
-    total += upgradeMaterialCost(spec, level + i);
+  for (var i = 0; i < n; i++) {
+    total = _addCapped(total, upgradeMaterialCost(spec, level + i));
   }
   return total;
+}
+
+/// 가진 [gold]·[material](업그레이드가 요구하는 재료 수)로 [level] 부터 **연속으로 살 수 있는** 레벨 수
+/// ("최대" 구매). 상한·[limit] 에서 멈춘다. 앱 `buyUpgrade` 의 한 레벨씩 사는 판정과 같다.
+int maxAffordableUpgrades(
+  UpgradeSpec spec,
+  int level, {
+  required int gold,
+  int material = 0,
+  int limit = 1000,
+}) {
+  final n = upgradeBuyableCount(spec, level, limit);
+  var g = gold;
+  var m = material;
+  var bought = 0;
+  for (var i = 0; i < n; i++) {
+    final cost = upgradeCost(spec, level + i);
+    if (g < cost) break;
+    final mat = upgradeMaterialCost(spec, level + i);
+    if (spec.materialKind != null && m < mat) break;
+    g -= cost;
+    if (spec.materialKind != null) m -= mat;
+    bought++;
+  }
+  return bought;
 }
 
 /// 캐릭터 레벨 [level] → [level]+1 로 가는 데 필요한 경험치.

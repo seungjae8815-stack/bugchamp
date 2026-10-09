@@ -162,12 +162,18 @@ class SupabasePvpBackend implements PvpBackend {
     }
   }
 
-  /// 상위 [_rankScanLimit] 안에서 내 순위를 찾는다. 밖이면 null(= "순위권 밖").
+  /// 상위 [_rankScanLimit] 안에서 [kind] 기준 내 순위를 찾는다. 밖이면 null(= "순위권 밖").
   ///
   /// 세션(uid)이 없으면 **폴백하지 않고 null** — 로컬 사다리 순위가 진짜 순위인
   /// 것처럼 캐시되는 사고를 막는다(2026-08: 77위로 굳던 버그).
+  ///
+  /// ⚠️ 정렬 축(`sort`)을 **반드시** 넘긴다. 안 넘기면 RPC 기본값(트로피)으로 줄을 세워, 진행도를
+  /// 보여 줘야 할 시작 팝업이 트로피 순위를 띄웠다(2026-10-09 점검).
   @override
-  Future<int?> myRank({required PvpProfile me}) async {
+  Future<int?> myRank({
+    required PvpProfile me,
+    RankingKind kind = RankingKind.stage,
+  }) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return null;
     try {
@@ -175,7 +181,7 @@ class SupabasePvpBackend implements PvpBackend {
       final rows =
           (await _client.rpc(
                 'leaderboard_top',
-                params: {'lim': _rankScanLimit},
+                params: {'lim': _rankScanLimit, 'sort': kind.key},
               ))
               as List;
       for (final r in rows.cast<Map<String, dynamic>>()) {

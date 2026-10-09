@@ -22,6 +22,10 @@ class NotificationService {
   /// 오프라인 가득참 알림 id(고정). 일일 보상은 1부터 사용.
   static const int offlineId = 900;
 
+  /// 일일 보상(점심·저녁) 반복 알림이 쓰는 id 상한(1 ~ dailyIdMax). 보상 시각이 줄어도 옛 예약이
+  /// 남지 않게 끌 때는 이 범위를 전부 취소한다.
+  static const int dailyIdMax = 8;
+
   /// 부화 완료 알림 id 대역. 알 여러 개가 각자 다른 시각에 끝나므로
   /// 슬롯마다 다른 id 를 써야 서로 덮어쓰지 않는다.
   static const int hatchIdBase = 910;
@@ -184,6 +188,19 @@ class NotificationService {
       );
     } catch (e) {
       debugPrint('scheduleDaily($id) failed: $e');
+    }
+  }
+
+  /// 일일 보상 반복 알림을 모두 취소한다.
+  ///
+  /// ⚠️ 반복 예약(`matchDateTimeComponents`)은 **기기에 남아 앱을 꺼도 계속 울린다.** 설정에서 끄면
+  /// 다음 실행에 다시 예약하지 않는 것만으로는 부족하다 — 이미 걸린 예약을 지워야 한다(2026-10-09 점검:
+  /// 알림을 꺼도 점심·저녁 알림이 계속 왔다). [keep] 은 지우지 않을 앞쪽 id 수(방금 다시 예약한 칸).
+  Future<void> cancelDaily({int keep = 0}) async {
+    for (var id = keep + 1; id <= dailyIdMax; id++) {
+      try {
+        await _plugin.cancel(id);
+      } catch (_) {}
     }
   }
 

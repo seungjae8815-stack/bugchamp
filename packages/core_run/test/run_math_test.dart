@@ -1,4 +1,5 @@
-import 'package:core_models/core_models.dart' show ItemOptionKind, kMaxCurrency;
+import 'package:core_models/core_models.dart'
+    show ItemOptionKind, MaterialKind, kMaxCurrency;
 import 'package:core_run/core_run.dart';
 import 'package:test/test.dart';
 
@@ -102,6 +103,112 @@ void main() {
         upgradeCost(spec, 0) + upgradeCost(spec, 1) + upgradeCost(spec, 2),
       );
       expect(bulkUpgradeCost(spec, 5, 1), upgradeCost(spec, 5));
+    });
+
+    // 2026-10-09 점검: 상한 근처에서 ×10·×100 이 상한 너머 레벨 값까지 더해, 남은 레벨을 살 골드가
+    // 있어도 버튼이 꺼졌다. 묶음 비용·살 수 있는 수는 상한까지만 센다.
+    group('상한 근처 묶음 구매', () {
+      const capped = UpgradeSpec(
+        kind: UpgradeKind.attack,
+        baseCost: 15,
+        costGrowth: 1.15,
+        baseValue: 6,
+        perLevel: 4,
+        maxLevel: 50,
+        materialKind: MaterialKind.chitin,
+        materialBaseCost: 2,
+        materialCostGrowth: 1.1,
+      );
+
+      test('살 수 있는 수 = 남은 레벨까지', () {
+        expect(upgradeBuyableCount(capped, 47, 10), 3);
+        expect(upgradeBuyableCount(capped, 47, 100), 3);
+        expect(upgradeBuyableCount(capped, 40, 10), 10);
+        expect(upgradeBuyableCount(capped, 50, 10), 0);
+        expect(upgradeBuyableCount(capped, 55, 1), 0);
+        expect(upgradeBuyableCount(capped, 10, 0), 0);
+        // 상한 없음(구버전 JSON) — 그대로.
+        expect(
+          upgradeBuyableCount(c.upgrade(UpgradeKind.attack), 9999, 100),
+          100,
+        );
+      });
+
+      test('묶음 비용은 상한까지만 더한다', () {
+        final three =
+            upgradeCost(capped, 47) +
+            upgradeCost(capped, 48) +
+            upgradeCost(capped, 49);
+        expect(bulkUpgradeCost(capped, 47, 10), three);
+        expect(bulkUpgradeCost(capped, 47, 100), three);
+        expect(bulkUpgradeCost(capped, 50, 10), 0);
+        final mats =
+            upgradeMaterialCost(capped, 47) +
+            upgradeMaterialCost(capped, 48) +
+            upgradeMaterialCost(capped, 49);
+        expect(bulkUpgradeMaterialCost(capped, 47, 10), mats);
+        expect(bulkUpgradeMaterialCost(capped, 50, 100), 0);
+      });
+
+      test('남은 3레벨 값만 있으면 ×10 이 살 수 있다(= 버튼이 켜진다)', () {
+        final gold = bulkUpgradeCost(capped, 47, 3);
+        final mat = bulkUpgradeMaterialCost(capped, 47, 3);
+        expect(gold >= bulkUpgradeCost(capped, 47, 10), isTrue);
+        expect(mat >= bulkUpgradeMaterialCost(capped, 47, 10), isTrue);
+        expect(maxAffordableUpgrades(capped, 47, gold: gold, material: mat), 3);
+      });
+
+      test('최대 구매 = 골드·재료가 되는 만큼, 상한에서 멈춘다', () {
+        final g5 = bulkUpgradeCost(capped, 10, 5);
+        final m5 = bulkUpgradeMaterialCost(capped, 10, 5);
+        expect(maxAffordableUpgrades(capped, 10, gold: g5, material: m5), 5);
+        // 골드가 1 모자라면 4.
+        expect(
+          maxAffordableUpgrades(capped, 10, gold: g5 - 1, material: m5),
+          4,
+        );
+        // 재료가 모자라면 재료에서 멈춘다.
+        expect(
+          maxAffordableUpgrades(
+            capped,
+            10,
+            gold: kMaxCurrency,
+            material: upgradeMaterialCost(capped, 10),
+          ),
+          1,
+        );
+        // 돈이 넘쳐도 상한까지만.
+        expect(
+          maxAffordableUpgrades(
+            capped,
+            10,
+            gold: kMaxCurrency,
+            material: kMaxCurrency,
+          ),
+          40,
+        );
+        expect(
+          maxAffordableUpgrades(capped, 50, gold: kMaxCurrency, material: 0),
+          0,
+        );
+        // 재료를 안 쓰는 업그레이드는 재료 0 이어도 골드만 본다.
+        final attack = c.upgrade(UpgradeKind.attack);
+        expect(
+          maxAffordableUpgrades(attack, 0, gold: bulkUpgradeCost(attack, 0, 7)),
+          7,
+        );
+      });
+
+      test('지수 비용을 많이 더해도 재화 상한에서 멈춘다(넘침 없음)', () {
+        const steep = UpgradeSpec(
+          kind: UpgradeKind.attack,
+          baseCost: 1e17,
+          costGrowth: 10,
+          baseValue: 1,
+          perLevel: 1,
+        );
+        expect(bulkUpgradeCost(steep, 0, 100), kMaxCurrency);
+      });
     });
   });
 

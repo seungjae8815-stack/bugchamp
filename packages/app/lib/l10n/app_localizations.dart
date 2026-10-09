@@ -1963,7 +1963,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventFlyerRule1.
   ///
   /// In en, this message translates to:
-  /// **'Your bug fights **as raised** — potential, part upgrades, training and drills all count (same stats as Duels)'**
+  /// **'Your bug fights **as raised** — potential, train levels, breakthroughs and training points all count (same stats as Duels)'**
   String get eventFlyerRule1;
 
   /// No description provided for @eventFlyerRule2.
@@ -2113,7 +2113,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventNormalizeBody.
   ///
   /// In en, this message translates to:
-  /// **'Fights with the same stats as Duels — potential, part upgrades, training, drills and traits all count. Losing by ring-out or flip costs {pct}% HP and you retry the same wave. When HP runs out, the run ends.'**
+  /// **'Fights with the same stats as Duels — potential, train levels, breakthroughs, training points and traits all count. Losing by ring-out or flip costs {pct}% HP and you retry the same wave. When HP runs out, the run ends.'**
   String eventNormalizeBody(int pct);
 
   /// No description provided for @eventFatigueLeft.
@@ -3727,19 +3727,19 @@ abstract class AppLocalizations {
   /// No description provided for @materialChitinDesc.
   ///
   /// In en, this message translates to:
-  /// **'A hard exoskeleton shard. Used for advanced upgrade costs and horn/jaw enhancement.'**
+  /// **'A hard exoskeleton shard. Used for advanced upgrade costs, training points and breakthroughs.'**
   String get materialChitinDesc;
 
   /// No description provided for @materialMineralDesc.
   ///
   /// In en, this message translates to:
-  /// **'A hard mined mineral. Used for advanced upgrade costs and cuticle enhancement.'**
+  /// **'A hard mined mineral. Used for advanced upgrade costs, training points and breakthroughs.'**
   String get materialMineralDesc;
 
   /// No description provided for @materialSapDesc.
   ///
   /// In en, this message translates to:
-  /// **'Hardened crystallized tree sap. Used for advanced upgrade costs and wing enhancement.'**
+  /// **'Hardened crystallized tree sap. Used for advanced upgrade costs, training points and breakthroughs.'**
   String get materialSapDesc;
 
   /// No description provided for @materialJellyDesc.
@@ -4051,7 +4051,7 @@ abstract class AppLocalizations {
   /// No description provided for @materialsHint.
   ///
   /// In en, this message translates to:
-  /// **'Materials — used for upgrades, part enhancement & crafting (tap for details)'**
+  /// **'Materials — used for upgrades, training, breakthroughs & crafting (tap for details)'**
   String get materialsHint;
 
   /// No description provided for @chatHint.
@@ -4213,7 +4213,7 @@ abstract class AppLocalizations {
   /// No description provided for @rankPopupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your Ranking'**
+  /// **'Progress Ranking'**
   String get rankPopupTitle;
 
   /// No description provided for @rankSuffix.
@@ -4437,6 +4437,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.'**
   String get guestWarnBody;
+
+  /// No description provided for @guestWarnPurchaseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for your purchase! You\'re playing as a guest, so deleting the app or switching devices will lose your purchases and progress. Link a Google (or Apple) account to keep them safe.'**
+  String get guestWarnPurchaseBody;
 
   /// No description provided for @titleStoreName.
   ///
@@ -5419,13 +5425,13 @@ abstract class AppLocalizations {
   /// No description provided for @skillGradeUpHint.
   ///
   /// In en, this message translates to:
-  /// **'Turn your unused skill shards into {grade} universal shards ×{n}! They work on any skill of that grade.'**
+  /// **'Unused shards → {grade} universal ×{n}!'**
   String skillGradeUpHint(String grade, String n);
 
   /// No description provided for @skillGradeUpHintGo.
   ///
   /// In en, this message translates to:
-  /// **'Promote'**
+  /// **'Upgrade'**
   String get skillGradeUpHintGo;
 
   /// No description provided for @skillEquip.
@@ -9127,7 +9133,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideTemperamentBody.
   ///
   /// In en, this message translates to:
-  /// **'Temperament decides how a bug moves in duels and which stats it can train higher.'**
+  /// **'Temperament decides how a bug moves in duels and which training slots it can put more points into (slot caps).'**
   String get guideTemperamentBody;
 
   /// No description provided for @guideTempAggressive.
@@ -9163,7 +9169,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideTrainCapMods.
   ///
   /// In en, this message translates to:
-  /// **'Training cap: {mods}'**
+  /// **'Training slot caps: {mods}'**
   String guideTrainCapMods(String mods);
 
   /// No description provided for @guideSizeTitle.
@@ -9187,7 +9193,7 @@ abstract class AppLocalizations {
   /// No description provided for @guidePotentialBody.
   ///
   /// In en, this message translates to:
-  /// **'Higher stars raise the part-enhance max level (stars × 10) and the training cap (+{perStar} per star). Merge {fodder} bugs of the same species to gain a star.'**
+  /// **'More stars mean more training points ({perStar} per star). Merge {fodder} bugs of the same species to gain a star.'**
   String guidePotentialBody(int perStar, int fodder);
 
   /// No description provided for @guideTraitTitle.
@@ -9272,8 +9278,8 @@ abstract class AppLocalizations {
   /// No description provided for @guideTrainBody.
   ///
   /// In en, this message translates to:
-  /// **'Train 5 duel stats per bug: attack, defense, evasion, crit and recovery. Max stage = {base} + potential + temperament/specialty/trait bonuses, so every bug has its own strengths. Mix bugs with different roles in your team!'**
-  String guideTrainBody(int base);
+  /// **'Every bug earns training points — {perStar} per potential star · 1 every {levels} train levels · {bt} per breakthrough tier. Spend them on the slots below. Each slot has a cap, and the caps add up to far more than your points, so you can\'t fill everything — what you pick is your strategy. Slot caps differ by temperament, specialty and bloodline trait.'**
+  String guideTrainBody(String perStar, String levels, String bt);
 
   /// No description provided for @bugInfoSizeDetail.
   ///
@@ -10774,6 +10780,85 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clutch {n}'**
   String duelClutchLeft(int n);
+
+  /// No description provided for @guideTrainSlotsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Slots (per point · base cap)'**
+  String get guideTrainSlotsTitle;
+
+  /// No description provided for @guideTrainSlotLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{slot} — {effect} · cap {cap}'**
+  String guideTrainSlotLine(String slot, String effect, String cap);
+
+  /// No description provided for @guideTrainGritEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'tap counter threshold −{th} · wake HP +{hp}'**
+  String guideTrainGritEffect(String th, String hp);
+
+  /// No description provided for @guideTrainCostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials (chitin, mineral, sap) and training time are paid only the first time you spend a point, rising a little each time. Jelly can skip the wait; a bug in training can\'t enter duels or the contest.'**
+  String get guideTrainCostBody;
+
+  /// No description provided for @guideTrainRespecBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Respec — redistribute your paid points. No materials are needed, but you wait {base} min + {per} min per point (up to {max} h) and the bug can\'t fight meanwhile. Jelly can skip the wait.'**
+  String guideTrainRespecBody(String base, String per, String max);
+
+  /// No description provided for @guideTrainStoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel stones — an Element stone sets a bug\'s element and a Temper stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).'**
+  String guideTrainStoneBody(String el, String tm);
+
+  /// No description provided for @guideTrainLegacyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Old part enhancements and training stages were converted into training points with the same effect — no bug got weaker.'**
+  String get guideTrainLegacyNote;
+
+  /// No description provided for @guideClutchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap counter (grit)'**
+  String get guideClutchTitle;
+
+  /// No description provided for @guideClutchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for {sec}s — if your score reaches the threshold {th}, you survive: holding on costs {cost} of max HP and pulls you back inside, waking up gets you back on your feet with {hp} HP. {uses}× per bout (+1 from {bonus} Grit). More points in Grit lower the threshold and raise wake HP. Opponent bugs counter automatically.'**
+  String guideClutchBody(
+    String sec,
+    String th,
+    String cost,
+    String hp,
+    String uses,
+    String bonus,
+  );
+
+  /// No description provided for @upgradeBuyMax.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get upgradeBuyMax;
+
+  /// No description provided for @skillGachaConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill draw ×{times} — this spends {jelly} jelly.'**
+  String skillGachaConfirm(String times, String jelly);
+
+  /// No description provided for @skillSweepConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s free sweeps are used up. Sweep for {jelly} jelly?'**
+  String skillSweepConfirm(String jelly);
 }
 
 class _AppLocalizationsDelegate

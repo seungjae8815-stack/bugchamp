@@ -17,6 +17,7 @@ import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../domain/audio_service.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/guest_warning.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/jelly_short.dart';
 import '../../ui/toast.dart';
@@ -293,9 +294,10 @@ class _ProductCard extends ConsumerWidget {
                 Row(
                   children: [
                     Flexible(
+                      // 두 줄까지 — "요정·스킬 성장 패스 (30일)" 이 한국어에서도 잘렸다(2026-10-09 점검).
                       child: Text(
                         name,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white,
@@ -396,13 +398,22 @@ class _ProductCard extends ConsumerWidget {
                 disabledBackgroundColor: const Color(0x33FFFFFF),
                 padding: EdgeInsets.zero,
               ),
-              child: Text(
-                owned
-                    ? ownedLabel
-                    : (storePrice ?? '₩${formatThousands(product.priceKrw)}'),
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w900,
+              // 한 줄로 줄여 넣는다 — "이번 주 완료"·"Done this week" 가 큰 글씨에서 버튼 밖으로 넘쳤다(2026-10-09 점검).
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    owned
+                        ? ownedLabel
+                        : (storePrice ??
+                              '₩${formatThousands(product.priceKrw)}'),
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -448,6 +459,10 @@ class _ProductCard extends ConsumerWidget {
       PurchaseOutcome.failed => l.storeFailed,
     };
     showCenterToast(ctx, msg);
+    // 게스트가 결제했으면 바로 계정 연동을 권한다 — 앱을 지우면 산 물건까지 잃는다(2026-10-09).
+    if (outcome == PurchaseOutcome.success && ctx.mounted) {
+      await maybeWarnGuest(ctx, ref, 0, afterPurchase: true);
+    }
   }
 }
 
