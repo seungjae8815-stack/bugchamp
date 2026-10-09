@@ -1802,32 +1802,50 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     children: [
                       for (final t in c.team)
                         Padding(
-                          padding: const EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.only(right: 3),
                           child: SizedBox(
-                            width: 30,
-                            height: 30,
+                            width: 27,
+                            height: 27,
                             // 이색·스킨을 입혀 그린다 — 상대가 무지개를 껴도 안 보였다.
                             child: bugStageImage(
                               t.sp,
                               LifeStage.adult,
-                              size: 30,
+                              size: 27,
                               skin: _foeView(t.sp, t.variant, t.skin),
                               fallback: const Icon(
                                 Icons.bug_report,
                                 color: Colors.white54,
-                                size: 22,
+                                size: 20,
                               ),
                             ),
                           ),
                         ),
                       const SizedBox(width: 4),
-                      Icon(Icons.flash_on_rounded, size: 14, color: tone),
-                      Text(
-                        formatCompact(c.teamPower.round()),
-                        style: TextStyle(
-                          color: tone,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w900,
+                      // 전투력은 남은 폭에서 줄여 맞춘다 — 곤충 그림 셋 + 점수판 + 공격 버튼 사이에서
+                      // 숫자가 잘렸다(2026-10-09 점검).
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.flash_on_rounded,
+                                size: 14,
+                                color: tone,
+                              ),
+                              Text(
+                                formatCompact(c.teamPower.round()),
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: tone,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],

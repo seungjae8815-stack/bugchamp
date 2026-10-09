@@ -232,7 +232,8 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('요정 둥지'));
+      // 위 버튼은 짧은 문구(2026-10-09 — 긴 이름을 줄여 맞추면 6~8px 였다).
+      await tester.tap(find.text('둥지').first);
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
       expect(tester.takeException(), isNull);
       // 속성석은 한 줄에 하나(이름 + 효과) — 목록을 끌어 내려 고른다.
@@ -286,7 +287,8 @@ void main() {
       expect(tester.takeException(), isNull);
 
       // 둥지
-      await tester.tap(find.text('요정 둥지'));
+      // 위 버튼은 짧은 문구(2026-10-09 — 긴 이름을 줄여 맞추면 6~8px 였다).
+      await tester.tap(find.text('둥지').first);
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
       expect(find.textContaining('남음'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -308,7 +310,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
 
       // 뽑기 · 도감
-      for (final title in ['요정 알 뽑기', '요정 도감']) {
+      for (final title in ['뽑기', '도감']) {
         await tester.tap(find.text(title).first);
         await tester.pumpAndSettle(const Duration(milliseconds: 300));
         expect(tester.takeException(), isNull, reason: title);

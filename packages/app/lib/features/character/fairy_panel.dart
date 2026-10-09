@@ -187,7 +187,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         const SizedBox(width: 6),
         Expanded(
           child: _btn(
-            l.fairyNest,
+            l.fairyNestBtn,
             fairyNestImage(size: 18),
             () => _open(const _NestDialog()),
             badge: ready,
@@ -196,7 +196,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         const SizedBox(width: 4),
         Expanded(
           child: _btn(
-            l.fairyGacha,
+            l.fairyGachaBtn,
             fairyEggImage(FairyGrade.legendary, size: 18),
             () => _open(const _GachaDialog()),
           ),
@@ -204,7 +204,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         const SizedBox(width: 4),
         Expanded(
           child: _btn(
-            l.fairyDex,
+            l.fairyDexBtn,
             // 그림이 있으면 그림(docs/art_prompts_fairy_fx.md), 없으면 아이콘.
             gameImageChain(
               const ['assets/images/fairies/fairy_dex.webp'],
@@ -221,7 +221,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         const SizedBox(width: 4),
         Expanded(
           child: _btn(
-            l.fairyMerge,
+            l.fairyMergeBtn,
             gameImageChain(
               const ['assets/images/fairies/fairy_automerge.webp'],
               size: 18,
@@ -237,7 +237,7 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         const SizedBox(width: 4),
         Expanded(
           child: _btn(
-            l.fairyRelease,
+            l.fairyReleaseBtn,
             gameImageChain(
               const ['assets/images/fairies/fairy_release.webp'],
               size: 18,
@@ -256,6 +256,8 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
     );
   }
 
+  /// 위 버튼 5개 — 한 칸이 50px 안팎이라 **버튼용 짧은 문구**(`fairy*Btn`)를 쓴다. 긴 이름("요정 알 뽑기",
+  /// "Fairy Egg Draw")을 줄여 맞추던 시절 글씨가 6~8px 까지 작아졌다(2026-10-09 점검).
   Widget _btn(
     String text,
     Widget art,
@@ -282,8 +284,8 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
               text,
               maxLines: 1,
               style: TextStyle(
-                color: badge ? _honey : Colors.white70,
-                fontSize: 10.5,
+                color: badge ? _honey : Colors.white,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w800,
               ),
             ),

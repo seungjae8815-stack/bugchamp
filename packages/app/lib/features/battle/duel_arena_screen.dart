@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
@@ -133,6 +134,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     super.initState();
     _ticker = createTicker(_onTick)..start();
     AudioService.instance.switchBgm('bgm_pvp');
+    // 탭 반격 첫 안내를 봤는지 미리 읽는다(위기는 판이 몇 초 돈 뒤에 온다).
+    unawaited(ClutchTutorial.load());
     if (!widget.driver.interactive) _throw(widget.params.launchAuto);
   }
 
@@ -532,6 +535,11 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         0.0,
         1.0,
       ),
+      // 기기당 첫 위기는 안내 → 탭하면 시작(2026-10-09).
+      tutorial: ClutchTutorial.needed,
+      onTutorialDone: ClutchTutorial.markSeen,
+      // 한 번도 못 쳐도 자동 점수(엔진이 상대·구버전 앱에 주는 값의 가운데)보다 손해는 없게.
+      minScore: (p.clutchAutoBase + grit * p.clutchAutoPerGrit).clamp(0.0, 1.0),
       onDone: _sendClutch,
     );
   }

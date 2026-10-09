@@ -750,7 +750,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get bossIntroAuto =>
-      '자동 도전이 켜져 있어요 — 게이지가 차면 잠시 뒤 스스로 도전해요. 설정에서 끌 수 있어요.';
+      '자동 도전을 켜 둘까요? 게이지가 차면 잠시 뒤 스스로 보스에 도전해요. 설정에서 언제든 바꿀 수 있어요.';
 
   @override
   String get bossIntroOk => '알겠어요';
@@ -772,6 +772,58 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get bossFled => '도망쳤어요 · 게이지가 비워졌어요';
+
+  @override
+  String bossChallengeFailedHp(int pct) {
+    return '보스에게 밀려났어요 · 보스 체력 $pct% 남음';
+  }
+
+  @override
+  String bossAutoPaused(int pct) {
+    return '보스가 아직 강해요 — 보스 체력 $pct% 남음, 강해진 뒤 눌러 주세요';
+  }
+
+  @override
+  String get bossAutoPausedShort => '자동 멈춤';
+
+  @override
+  String get bossIntroKeepOn => '켜 두기';
+
+  @override
+  String get bossIntroTurnOff => '끄기';
+
+  @override
+  String get whatsNewTitle => '업데이트 내용';
+
+  @override
+  String whatsNewSubtitle(String version) {
+    return 'v$version 에서 바뀐 것';
+  }
+
+  @override
+  String get whatsNewOk => '확인';
+
+  @override
+  String get whatsNewPartsToPoints =>
+      '부위 강화가 훈련 포인트로 옮겨졌어요 — 들인 만큼 포인트로 돌려받아서 약해지지 않아요';
+
+  @override
+  String get whatsNewFreeRespec => '훈련 포인트 첫 다시 찍기는 무료예요';
+
+  @override
+  String get whatsNewClutch => '결투 반격 — 위기 때 화면을 연타하면 버텨요';
+
+  @override
+  String get whatsNewAutoBoss => '보스 자동 도전 — 게이지가 차면 스스로 도전해요 (설정에서 끌 수 있어요)';
+
+  @override
+  String get whatsNewUpgradeCap => '강화 상한이 250까지 올랐어요';
+
+  @override
+  String get whatsNewGifts => '깜짝선물·일일보상이 크게 늘었어요';
+
+  @override
+  String get whatsNewMoveToEvade => '사냥 강화의 이동속도가 회피로 바뀌었어요';
 
   @override
   String zoneKillsLabel(int n, int m) {
@@ -2938,7 +2990,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String skillSweepDesc(String tier, String n) {
-    return '잡아 본 가장 높은 난이도($tier)의 보스를 다시 잡은 것으로 쳐서 스킬 조각 $n개를 확정으로 받아요.';
+    return '잡아 본 가장 높은 난이도($tier)의 보스를 다시 잡은 것으로 쳐서 스킬 조각 $n개를 받아요(개수 확정 · 어느 스킬인지는 확률).';
   }
 
   @override
@@ -2973,6 +3025,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get skillSweepLimit => '오늘 소탕을 모두 썼어요';
+
+  @override
+  String get skillSweepOddsTitle => '보스 소탕 확률';
+
+  @override
+  String skillSweepOddsNote(String n, String tier) {
+    return '1회에 한 스킬의 조각 $n개가 나와요(개수 확정). 등급을 먼저 정하고, 같은 등급 안에서는 모든 스킬이 같은 확률이에요. 잡아 본 가장 높은 난이도($tier) 기준이에요.';
+  }
 
   @override
   String skillShardPop(String n) {
@@ -4429,6 +4489,21 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get fairyRelease => '분해';
+
+  @override
+  String get fairyNestBtn => '둥지';
+
+  @override
+  String get fairyGachaBtn => '뽑기';
+
+  @override
+  String get fairyDexBtn => '도감';
+
+  @override
+  String get fairyMergeBtn => '합성';
+
+  @override
+  String get fairyReleaseBtn => '분해';
 
   @override
   String fairyReleaseConfirm(String n) {
@@ -6276,6 +6351,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get duelClutchTapHint => '화면을 마구 두드려!';
+
+  @override
+  String get duelClutchCrisis => '위기!';
+
+  @override
+  String get duelClutchTutorial => '화면을 연타해 흰 선을 넘기세요';
+
+  @override
+  String get duelClutchTapToStart => '화면을 누르면 시작!';
+
+  @override
+  String get duelClutchSuccessMark => '성공';
 
   @override
   String duelClutchChance(int k, int n) {

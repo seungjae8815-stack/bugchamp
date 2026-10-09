@@ -383,7 +383,29 @@ int bestSweepTier(SaveGame s, RunConfig run) {
   return -1;
 }
 
-/// 소탕 1회 — 이미 잡은 보스를 다시 잡은 것으로 치고 조각 **확정**.
+/// 소탕 조각의 등급 가중치 — 잡아 본 가장 높은 난이도 [tier] 의 보스 드롭 가중치(표가 없으면 뽑기 가중치).
+/// [sweepBoss] 와 소탕 창의 확률 화면(확률형 아이템 표시 의무, 2026-10-09)이 **같은 값**을 본다.
+Map<Grade, double> sweepGradeWeights(SkillConfig cfg, int tier) =>
+    cfg.dropGradeWeightsByTier.isEmpty
+    ? cfg.gachaGradeWeights
+    : cfg.dropGradeWeightsByTier[tier.clamp(
+        0,
+        cfg.dropGradeWeightsByTier.length - 1,
+      )];
+
+/// 소탕 등급 확률(합 1, 가중치가 0 인 등급은 뺀다). 같은 등급 안에서는 스킬마다 균등하다([sweepBoss]).
+Map<Grade, double> sweepGradeOdds(SkillConfig cfg, int tier) {
+  final w = sweepGradeWeights(cfg, tier);
+  final total = w.values.fold<double>(0, (a, b) => a + b);
+  if (total <= 0) return const {};
+  return {
+    for (final e in w.entries)
+      if (e.value > 0) e.key: e.value / total,
+  };
+}
+
+/// 소탕 1회 — 이미 잡은 보스를 다시 잡은 것으로 치고 조각을 받는다(**개수 확정** — 어느 스킬인지는
+/// [sweepGradeWeights] 등급 확률 → 그 등급 안에서 균등).
 /// 하루 무료 [SkillConfig.sweepFreePerDay] 회, 그 뒤는 젤리, 합계 [SkillConfig.sweepMaxPerDay] 회.
 /// 결과는 `extra['shards']`(스킬 id → 개수) · `extra['jelly']`.
 SkillOp sweepBoss(
@@ -410,12 +432,7 @@ SkillOp sweepBoss(
   }
   final shards = <String, int>{};
   final n = cfg.sweepShardsFor(tier);
-  final weights = cfg.dropGradeWeightsByTier.isEmpty
-      ? cfg.gachaGradeWeights
-      : cfg.dropGradeWeightsByTier[tier.clamp(
-          0,
-          cfg.dropGradeWeightsByTier.length - 1,
-        )];
+  final weights = sweepGradeWeights(cfg, tier);
   final total = weights.values.fold<double>(0, (a, b) => a + b);
   if (n > 0 && total > 0) {
     var pick = rng.nextDouble() * total;

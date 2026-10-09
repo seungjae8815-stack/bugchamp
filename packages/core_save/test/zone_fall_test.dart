@@ -139,6 +139,31 @@ void main() {
       expect(liftClimbCap(s, run, tier: 1, zone: 2).capStage, z(5));
     });
 
+    // 보스 자동 도전(앱, 2026-10-09)이 같은 판정을 쓴다 — 앞 칸에서만 자동.
+    test('앞 칸 판정: 가 본 최고 칸·한계 칸·심연은 앞 칸, 로드맵으로 내려간 칸은 아니다', () {
+      expect(atClimbFront(at(), run), isTrue, reason: '가 본 최고 사냥터');
+      expect(atClimbFront(at(zone: 3, bestZone: 8), run), isFalse);
+      expect(
+        atClimbFront(at(tier: 0, zone: last, top: 1, bestZone: 6), run),
+        isFalse,
+        reason: '아래 난이도',
+      );
+      final fell = fallOnDefeat(at(), run);
+      expect(atClimbFront(fell, run), isTrue, reason: '쓰러져 내려온 한계 칸');
+      expect(
+        atClimbFront(fell.copyWith(stageNumber: z(2)), run),
+        isFalse,
+        reason: '한계보다 아래',
+      );
+      final abyss = at(
+        tier: 3,
+        zone: last,
+        top: 3,
+        bestZone: last,
+      ).copyWith(abyssUnlocked: true);
+      expect(atClimbFront(enterAbyss(abyss, run, 'w'), run), isTrue);
+    });
+
     test('세이브 왕복', () {
       final s = fallOnDefeat(at(), run);
       final back = SaveGame.fromJson(s.toJson());

@@ -403,6 +403,36 @@ void main() {
         isTrue,
       );
     });
+
+    // 확률형 아이템 표시 의무(2026-10-09) — 소탕 창이 보여 주는 확률이 실제 추첨과 같아야 한다.
+    test('확률 화면 값(sweepGradeOdds)은 합 1 이고 실제 추첨 비율과 맞는다', () {
+      for (var tier = 0; tier < 4; tier++) {
+        final odds = sweepGradeOdds(cfg, tier);
+        expect(
+          odds.values.fold<double>(0, (a, b) => a + b),
+          closeTo(1, 1e-9),
+          reason: '난이도 $tier',
+        );
+      }
+      const tier = 2;
+      final odds = sweepGradeOdds(cfg, tier);
+      final s = fresh().copyWith(bossDex: {run.bossArtId(tier, 1)});
+      final got = <Grade, int>{};
+      const n = 4000;
+      for (var i = 0; i < n; i++) {
+        final op = sweepBoss(s, cfg, run, Random(i), dayKey: day);
+        final id = (op.extra['shards'] as Map<String, int>).keys.single;
+        final g = cfg.byId(id)!.grade;
+        got[g] = (got[g] ?? 0) + 1;
+      }
+      for (final e in odds.entries) {
+        expect(
+          (got[e.key] ?? 0) / n,
+          closeTo(e.value, 0.03),
+          reason: '${e.key}',
+        );
+      }
+    });
   });
 
   group('뽑기·소탕 세이브', () {

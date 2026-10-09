@@ -15,6 +15,9 @@ class StartupPopupGate {
   /// 지금 앞선 팝업이 떠 있거나 뜰 예정인가.
   static bool get busy => _held.value > 0;
 
+  /// 부르는 쪽이 잡은 [own] 자리 말고도 앞선 팝업이 있는가.
+  static bool busyBeyond(int own) => _held.value > own;
+
   /// 앞선 팝업이 뜰 예정이다(띄우기 전에, 같은 프레임 안에서 부른다).
   static void hold() => _held.value++;
 
@@ -24,11 +27,15 @@ class StartupPopupGate {
   }
 
   /// 앞선 팝업이 모두 닫힐 때까지 기다린다(이미 비어 있으면 바로).
-  static Future<void> whenIdle() {
-    if (!busy) return Future.value();
+  ///
+  /// [own] = 부르는 쪽이 이미 잡아 둔 자리 수 — 그만큼은 남아 있어도 기다리지 않는다. 가운데 순서의
+  /// 팝업(업데이트 내용)은 먼저 [hold] 로 뒤 팝업(순위)을 막아 두고, 앞 팝업(방치 보상)만 닫히길 기다린다.
+  static Future<void> whenIdle({int own = 0}) {
+    bool waiting() => _held.value > own;
+    if (!waiting()) return Future.value();
     final done = Completer<void>();
     void check() {
-      if (busy || done.isCompleted) return;
+      if (waiting() || done.isCompleted) return;
       _held.removeListener(check);
       done.complete();
     }

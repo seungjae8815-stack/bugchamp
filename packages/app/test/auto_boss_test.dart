@@ -86,6 +86,46 @@ void main() {
     });
   });
 
+  group('AutoBossFailGuard — 같은 사냥터 자동 도전 2연패면 멈춤(2026-10-09)', () {
+    test('자동 도전이 두 번 연달아 지면 그 사냥터만 멈춘다', () {
+      final g = AutoBossFailGuard();
+      g.enter('0:1');
+      expect(g.recordAutoFail('0:1'), isFalse, reason: '한 번은 그대로 자동');
+      expect(g.pausedAt('0:1'), isFalse);
+      expect(g.recordAutoFail('0:1'), isTrue, reason: '두 번째 — 멈춘다');
+      expect(g.pausedAt('0:1'), isTrue);
+      expect(g.pausedAt('0:2'), isFalse, reason: '다른 사냥터는 상관없다');
+    });
+
+    test('보스를 잡으면(직접·자동) 다시 자동', () {
+      final g = AutoBossFailGuard()
+        ..recordAutoFail('0:1')
+        ..recordAutoFail('0:1');
+      expect(g.pausedAt('0:1'), isTrue);
+      g.recordWin();
+      expect(g.pausedAt('0:1'), isFalse);
+      expect(g.fails, 0);
+    });
+
+    test('다른 사냥터로 가면 기록이 비워진다 — 돌아와도 처음부터', () {
+      final g = AutoBossFailGuard()
+        ..recordAutoFail('1:4')
+        ..recordAutoFail('1:4');
+      g.enter('1:3'); // 쓰러져 한 칸 아래로
+      expect(g.fails, 0);
+      g.enter('1:4');
+      expect(g.pausedAt('1:4'), isFalse);
+    });
+
+    test('같은 사냥터를 계속 알려도(매 프레임) 기록은 유지된다', () {
+      final g = AutoBossFailGuard()..recordAutoFail('abyss:7');
+      for (var i = 0; i < 100; i++) {
+        g.enter('abyss:7');
+      }
+      expect(g.recordAutoFail('abyss:7'), isTrue);
+    });
+  });
+
   group('BossChallengeButton', () {
     Widget host(Widget child) => MaterialApp(
       locale: const Locale('ko'),
@@ -121,6 +161,57 @@ void main() {
       expect(find.text('3초 뒤 자동 도전'), findsOneWidget);
       await tester.tap(find.text('보스 도전'));
       expect(taps, 1);
+    });
+
+    testWidgets('자동 멈춤: 카운트다운 대신 "자동 멈춤" · 누르면 직접 도전', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        host(
+          BossChallengeButton(
+            kills: 100,
+            need: 100,
+            autoPaused: true,
+            onTap: () => taps++,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('자동 멈춤'), findsOneWidget);
+      expect(find.byKey(const ValueKey('bossAutoCountdown')), findsNothing);
+      await tester.tap(find.text('보스 도전'));
+      expect(taps, 1);
+    });
+
+    testWidgets('폭은 최대 110 — 긴 영어 문구도 미션 패널 쪽으로 넘치지 않는다', (tester) async {
+      Widget en(Widget child) => MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: Center(child: child)),
+      );
+      for (final b in [
+        BossChallengeButton(kills: 3, need: 100, onTap: () {}),
+        BossChallengeButton(
+          kills: 100,
+          need: 100,
+          autoSecondsLeft: 3,
+          onTap: () {},
+        ),
+        BossChallengeButton(
+          kills: 100,
+          need: 100,
+          autoPaused: true,
+          onTap: () {},
+        ),
+      ]) {
+        await tester.pumpWidget(en(b));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getSize(find.byType(BossChallengeButton)).width,
+          lessThanOrEqualTo(BossChallengeButton.maxWidth),
+        );
+      }
     });
 
     testWidgets('자동 끔: 카운트다운 줄 없음', (tester) async {

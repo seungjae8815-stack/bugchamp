@@ -747,7 +747,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bossIntroBody => '倒すと次の狩り場へ進めます。';
 
   @override
-  String get bossIntroAuto => '自動挑戦がオンです — ゲージがたまると少しあとで自動で挑戦します。設定でオフにできます。';
+  String get bossIntroAuto =>
+      '自動挑戦をオンにしておきますか？ゲージがたまると少しあとで自動でボスに挑戦します。設定でいつでも変更できます。';
 
   @override
   String get bossIntroOk => 'わかった';
@@ -769,6 +770,58 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get bossFled => '逃げました · ゲージが空に';
+
+  @override
+  String bossChallengeFailedHp(int pct) {
+    return 'ボスに押し返されました · ボス体力 残り$pct%';
+  }
+
+  @override
+  String bossAutoPaused(int pct) {
+    return 'ボスはまだ強いです — ボス体力 残り$pct%。強くなってから押してください';
+  }
+
+  @override
+  String get bossAutoPausedShort => '自動停止中';
+
+  @override
+  String get bossIntroKeepOn => 'オンのまま';
+
+  @override
+  String get bossIntroTurnOff => 'オフにする';
+
+  @override
+  String get whatsNewTitle => 'アップデート内容';
+
+  @override
+  String whatsNewSubtitle(String version) {
+    return 'v$version の変更点';
+  }
+
+  @override
+  String get whatsNewOk => 'OK';
+
+  @override
+  String get whatsNewPartsToPoints =>
+      '部位強化が訓練ポイントに移りました — 投資した分はポイントで戻るので弱くなりません';
+
+  @override
+  String get whatsNewFreeRespec => '訓練ポイントの最初の振り直しは無料です';
+
+  @override
+  String get whatsNewClutch => '決闘の反撃 — ピンチのとき画面を連打すると持ちこたえます';
+
+  @override
+  String get whatsNewAutoBoss => 'ボス自動挑戦 — ゲージがたまると自動で挑戦します（設定でオフにできます）';
+
+  @override
+  String get whatsNewUpgradeCap => '強化の上限が250に上がりました';
+
+  @override
+  String get whatsNewGifts => 'サプライズギフト・デイリー報酬が大幅に増えました';
+
+  @override
+  String get whatsNewMoveToEvade => '狩りの強化「移動速度」が「回避」に変わりました';
 
   @override
   String zoneKillsLabel(int n, int m) {
@@ -2930,7 +2983,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String skillSweepDesc(String tier, String n) {
-    return '倒したことのある最も高い難易度（$tier）のボスを再び倒したものとして、スキルのかけらを$n個確定で受け取ります。';
+    return '倒したことのある最も高い難易度（$tier）のボスを再び倒したものとして、スキルのかけらを$n個受け取ります（個数確定・どのスキルかは確率）。';
   }
 
   @override
@@ -2965,6 +3018,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get skillSweepLimit => '本日の掃討はすべて使いました';
+
+  @override
+  String get skillSweepOddsTitle => 'ボス掃討の確率';
+
+  @override
+  String skillSweepOddsNote(String n, String tier) {
+    return '1回でスキル1種のかけらが$n個出ます（個数確定）。先に等級が決まり、同じ等級のスキルはすべて同じ確率です。倒したことのある最も高い難易度（$tier）が基準です。';
+  }
 
   @override
   String skillShardPop(String n) {
@@ -4419,6 +4480,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get fairyRelease => '分解';
+
+  @override
+  String get fairyNestBtn => '巣';
+
+  @override
+  String get fairyGachaBtn => 'ガチャ';
+
+  @override
+  String get fairyDexBtn => '図鑑';
+
+  @override
+  String get fairyMergeBtn => '合成';
+
+  @override
+  String get fairyReleaseBtn => '分解';
 
   @override
   String fairyReleaseConfirm(String n) {
@@ -6264,6 +6340,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get duelClutchTapHint => '画面を連打！';
+
+  @override
+  String get duelClutchCrisis => 'ピンチ！';
+
+  @override
+  String get duelClutchTutorial => '画面を連打して白い線を超えよう';
+
+  @override
+  String get duelClutchTapToStart => 'タップでスタート！';
+
+  @override
+  String get duelClutchSuccessMark => '成功';
 
   @override
   String duelClutchChance(int k, int n) {

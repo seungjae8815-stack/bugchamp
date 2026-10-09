@@ -28,6 +28,7 @@ import 'battle/league_board_screen.dart' show leagueName;
 import '../ui/event_badge.dart';
 import '../ui/game_dialog.dart';
 import '../ui/rank_popup.dart';
+import '../ui/whats_new.dart';
 import 'battle/battle_screen.dart';
 import 'play/play_screen.dart';
 import 'character/character_screen.dart';
@@ -78,6 +79,9 @@ class _AppShellState extends ConsumerState<AppShell>
       // 서비스가 만들어지던 구조라, 여기서 부르는 것이 **구매 스트림 구독의
       // 유일한 보장**이기도 하다(앱을 끈 사이 끝난 결제를 놓치지 않는다).
       unawaited(ref.read(iapServiceProvider).recoverPending());
+      // 시작 팝업 순서: 방치 보상(홈) → 업데이트 내용 → 순위. 업데이트 내용이 **먼저** 자리를
+      // 잡아야(같은 프레임, 기다리기 전에) 순위 팝업이 그 뒤로 선다(StartupPopupGate).
+      unawaited(showWhatsNewOnStart(context, ref));
       unawaited(showRankPopupOnStart(context, ref));
     });
   }

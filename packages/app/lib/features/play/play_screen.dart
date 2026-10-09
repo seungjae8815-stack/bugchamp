@@ -460,6 +460,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 처음 게이지가 찼을 때의 안내 팝업이 떠 있다(중복으로 띄우지 않게).
   bool _bossIntroShowing = false;
 
+  /// 같은 사냥터에서 자동 도전이 연달아 지면 그 사냥터는 자동을 멈춘다(2026-10-09 사장님 확정).
+  final _autoFails = AutoBossFailGuard();
+
+  /// 지금 보스전이 자동 도전으로 시작됐는가 — 진 도전이 자동 연패에 들어가는지 가른다.
+  bool _bossByAuto = false;
+
+  /// 쓰러진 순간 보스에게 남은 체력(%) — 실패 안내에 싣는다. 보스전이 아니면 null.
+  int? _bossLeftPct;
+
   /// 강제 닉네임 변경 창을 이번 세션에 띄웠는지(매 빌드마다 뜨면 안 된다).
   bool _renamePrompted = false;
 
@@ -1955,6 +1964,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (_isBoss) {
         // 보스를 깼다 → 다음 사냥터. 마지막(최종 보스)이면 회차 전환 안내.
         _bossChallenge = false;
+        // 잡았으면(직접·자동) 자동 연패 기록을 비운다 — 다음 사냥터에서 다시 자동으로 도전한다.
+        _autoFails.recordWin();
+        _bossByAuto = false;
         // 심연 층 보스 → 다음 층(사냥터·스테이지는 그대로, 층만 오른다).
         if (ref.read(saveControllerProvider).requireValue.inAbyss) {
           _habitatIndex = 0;
@@ -2059,6 +2071,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     // 심연 층 보스에게 넣은 피해를 남긴다 — 주간 순위의 동률 판정(같은 층이면 더 깎은 쪽이 위).
     _recordAbyssBossDamage();
+    // 보스에게 남은 체력 — 실패 안내에 싣는다(얼마나 모자랐는지 보여야 다음 판단을 한다).
+    _bossLeftPct = _isBoss && _bossChallenge ? _bossHpLeftPct() : null;
     // 즉시 넘어가지 않고 다친/죽는 연출을 보여준 뒤 후퇴.
     _defeated = true;
     _defeatT = _defeatDuration;
@@ -2077,12 +2091,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (_bossChallenge) {
         unawaited(ref.read(saveControllerProvider.notifier).resetZoneKills());
         _bossChallenge = false;
+        final paused = _endBossChallengeLost();
         if (mounted) {
           showCenterToast(
             context,
-            AppLocalizations.of(context).bossChallengeFailed,
+            _bossLostText(AppLocalizations.of(context), _bossLeftPct, paused),
           );
         }
+        _bossLeftPct = null;
       } else {
         // **일반 몬스터에게 쓰러지면 한 칸 아래로**(2026-10-05 사장님 확정, zone_fall.dart) —
         // 그 사냥터를 버틸 힘이 없다는 뜻이다. 보스 도전이 열린 채로 도착해서, 아래 보스만 다시
@@ -3871,6 +3887,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       kills: save.zoneKills,
       need: _config.bossUnlockKills,
       autoSecondsLeft: _autoBoss.secondsLeft,
+      autoPaused: _autoBossPausedHere(save),
       onTap: _startBossChallenge,
     );
   }
@@ -5232,10 +5249,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       !_defeated &&
       ref.read(saveControllerProvider.notifier).bossUnlocked;
 
-  /// 보스를 부른다(setState 없이 — 틱 안의 자동 도전도 이걸 쓴다).
-  void _beginBossChallenge() {
+  /// 보스를 부른다(setState 없이 — 틱 안의 자동 도전도 이걸 쓴다). [auto] = 자동 도전으로 시작했다.
+  void _beginBossChallenge({bool auto = false}) {
     _autoBoss.reset();
     _autoBossPending = false;
+    _bossByAuto = auto;
     _bossChallenge = true;
     _dying = false;
     _walking = false;
@@ -5259,11 +5277,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ///
   /// 신규 유저 다수가 [보스 도전] 버튼을 몰라 쉬움 사냥터 1 에서 수만 마리를 잡고도 보스를 한 번도
   /// 도전하지 않았다. 실패해 게이지가 비면 다시 100마리 뒤에 같은 흐름으로 재도전한다(진행 리듬).
-  /// 심연 층 보스·최종 보스·로드맵으로 내려간 아래 사냥터도 같은 규칙이다. 화면 흐름일 뿐이라
-  /// 방치·오프라인 정산과는 무관하다.
+  /// 화면 흐름일 뿐이라 방치·오프라인 정산과는 무관하다.
+  ///
+  /// 2026-10-09 보완(사장님 확정):
+  /// - **올라갈 수 있는 가장 높은 칸**([atClimbFront])에서만 자동으로 도전한다. 로드맵으로 일부러 내려간
+  ///   아래 사냥터(농사)에서 자동으로 보스를 잡으면 원치 않게 위로 끌려 올라간다. 쓰러져 내려온 한계 칸과
+  ///   심연은 앞 칸이라 자동 그대로.
+  /// - 같은 사냥터에서 자동 도전이 2번 연달아 지면 그 사냥터는 자동을 멈춘다([AutoBossFailGuard]).
   void _tickAutoBoss(double dt) {
     final prefs = PlayPrefs.instance;
     final save = ref.read(saveControllerProvider).value;
+    if (save != null) _autoFails.enter(_zoneKey(save));
     final ready =
         _config.zoneMode &&
         save != null &&
@@ -5273,7 +5297,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         !_defeated &&
         !_tierClearPending;
     final visible = ready && prefs.loaded && _playVisible();
-    // 처음 게이지가 찼을 때 한 번 — 보스가 무엇인지, 자동 도전이 켜져 있다는 것을 알린다.
+    // 처음 게이지가 찼을 때 한 번 — 보스가 무엇인지 알리고, 자동 도전을 켜 둘지 묻는다.
     if (visible && !prefs.bossIntroSeen && !_bossIntroShowing) {
       _bossIntroShowing = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _showBossIntro());
@@ -5282,37 +5306,85 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         visible &&
         prefs.bossIntroSeen &&
         !_bossIntroShowing &&
-        prefs.autoBoss.value;
+        prefs.autoBoss.value &&
+        _autoBossAllowedHere(save);
     if (_autoBoss.tick(dt, armed: armed)) _autoBossPending = true;
     if (!armed) {
       _autoBossPending = false;
       return;
     }
     // 처치 연출(_dying) 도중이면 끝날 때까지 기다린다 — 그 몬스터의 다음 처리가 꼬이지 않게.
-    if (_autoBossPending && !_dying && _canStartBoss()) _beginBossChallenge();
+    if (_autoBossPending && !_dying && _canStartBoss()) {
+      _beginBossChallenge(auto: true);
+    }
+  }
+
+  /// 연패 기록을 가르는 사냥터 열쇠 — 난이도·사냥터(심연은 층).
+  String _zoneKey(SaveGame s) => s.inAbyss
+      ? 'abyss:${s.abyssFloor}'
+      : '${s.difficultyTier}:${_config.zoneOf(s.stageNumber)}';
+
+  /// 이 칸에서 자동 도전을 걸어도 되는가 — 앞 칸이고, 연패로 멈추지 않았다.
+  bool _autoBossAllowedHere(SaveGame save) =>
+      atClimbFront(save, _config) && !_autoFails.pausedAt(_zoneKey(save));
+
+  /// 버튼에 "자동 멈춤"을 적을까 — 자동 도전은 켜져 있는데 이 칸에서는 연패로 멈췄다.
+  bool _autoBossPausedHere(SaveGame save) =>
+      PlayPrefs.instance.autoBoss.value &&
+      _config.zoneMode &&
+      atClimbFront(save, _config) &&
+      _autoFails.pausedAt(_zoneKey(save));
+
+  /// 보스에게 남은 체력(%, 1~100 — 0 으로 보이면 "다 깎았는데 졌다"로 읽힌다).
+  int _bossHpLeftPct() =>
+      _hpMax <= 0 ? 100 : (_hp / _hpMax * 100).ceil().clamp(1, 100);
+
+  /// 보스전이 지고 끝났다(쓰러짐·도망) — 자동 도전이었으면 연패를 센다. 이번에 멈췄으면 true.
+  bool _endBossChallengeLost() {
+    final auto = _bossByAuto;
+    _bossByAuto = false;
+    final save = ref.read(saveControllerProvider).value;
+    if (!auto || save == null) return false;
+    return _autoFails.recordAutoFail(_zoneKey(save));
+  }
+
+  /// 보스전 실패 안내 — 남은 체력 %를 싣고, 자동이 멈췄으면 "강해진 뒤 눌러 주세요".
+  String _bossLostText(AppLocalizations l, int? leftPct, bool paused) {
+    if (leftPct == null) return l.bossChallengeFailed;
+    return paused
+        ? l.bossAutoPaused(leftPct)
+        : l.bossChallengeFailedHp(leftPct);
   }
 
   /// 처음 게이지가 찼을 때의 안내(기기당 1회 — [PlayPrefs.bossIntroSeen]).
+  /// 자동 도전을 [켜 두기]/[끄기] 중에서 고르게 한다(2026-10-09). 바깥을 눌러 닫으면 지금 설정 그대로.
   Future<void> _showBossIntro() async {
     if (!mounted) {
       _bossIntroShowing = false;
       return;
     }
     final l = AppLocalizations.of(context);
-    final auto = PlayPrefs.instance.autoBoss.value;
     // 닫는 방식(버튼·바깥 탭)과 무관하게 다시 뜨지 않게 먼저 기록한다.
     unawaited(PlayPrefs.instance.markBossIntroSeen());
-    await showGameDialog<void>(
+    final keep = await showGameDialog<bool>(
       context,
       title: l.bossIntroTitle,
       icon: Icons.whatshot_rounded,
       content: Text(
-        auto ? '${l.bossIntroBody}\n\n${l.bossIntroAuto}' : l.bossIntroBody,
+        '${l.bossIntroBody}\n\n${l.bossIntroAuto}',
         textAlign: TextAlign.center,
         style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.45),
       ),
-      actions: [gameDialogButton(l.bossIntroOk, () => Navigator.pop(context))],
+      actions: [
+        gameDialogButton(
+          l.bossIntroTurnOff,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(l.bossIntroKeepOn, () => Navigator.pop(context, true)),
+      ],
     );
+    if (keep != null) await PlayPrefs.instance.setAutoBoss(keep);
     _bossIntroShowing = false;
   }
 
@@ -5346,6 +5418,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
     if (ok != true || !mounted || !_bossChallenge) return;
     _recordAbyssBossDamage();
+    // 자동으로 건 도전에서 도망쳐도 진 것으로 센다(연패 멈춤 — 2026-10-09).
+    final left = _isBoss ? _bossHpLeftPct() : null;
+    final paused = _endBossChallengeLost();
     // 쓰러졌을 때(`_resumeAfterDefeat`)와 **같은 것을 되돌린다** — 게이지,
     // 서식지 자리, 팀 체력, 이월된 공격 게이지.
     unawaited(ref.read(saveControllerProvider.notifier).resetZoneKills());
@@ -5357,7 +5432,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       _enemyAtkAcc = 0;
       _spawn();
     });
-    if (mounted) showCenterToast(context, l.bossFled);
+    if (mounted) {
+      showCenterToast(
+        context,
+        paused && left != null ? l.bossAutoPaused(left) : l.bossFled,
+      );
+    }
   }
 
   /// 보스전 동안 씬 **왼쪽 아래**에 뜨는 도망 버튼.

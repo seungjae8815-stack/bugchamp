@@ -96,3 +96,45 @@ class AutoBossCountdown {
 
   void reset() => _left = null;
 }
+
+/// 자동 도전 연패 멈춤(2026-10-09 사장님 확정).
+///
+/// 보스는 "겨우 잡히는" 체력이라 아직 약할 때 자동 도전을 그대로 두면 100마리마다 지고 게이지가 비워지는
+/// 일이 끝없이 반복된다. 그래서 **같은 사냥터에서 자동 도전이 [maxFails] 번 연달아 지면** 그 사냥터에서는
+/// 자동을 멈춘다([보스 도전] 버튼은 그대로 — 강해진 뒤 직접 누른다).
+///
+/// - 직접 눌러 진 도전은 세지도 비우지도 않는다(자동 도전의 연패만 센다).
+/// - 보스를 잡거나(직접·자동) 다른 사냥터로 가면 기록이 비워져 다시 자동으로 도전한다.
+/// - 기기 메모리에만 둔다 — 앱을 다시 켜면 처음부터(그사이 강해졌을 수 있다).
+class AutoBossFailGuard {
+  AutoBossFailGuard({this.maxFails = 2});
+
+  /// 이만큼 연달아 지면 그 사냥터의 자동 도전을 멈춘다(화면 흐름 규칙 — 밸런스 수치가 아니다).
+  final int maxFails;
+
+  String? _zone;
+  int _fails = 0;
+
+  /// 지금 사냥터에서 연달아 진 자동 도전 수.
+  int get fails => _fails;
+
+  /// 지금 있는 사냥터를 알린다 — 바뀌었으면 기록을 비운다.
+  void enter(String zone) {
+    if (zone == _zone) return;
+    _zone = zone;
+    _fails = 0;
+  }
+
+  /// [zone] 에서 자동 도전이 멈췄는가.
+  bool pausedAt(String zone) => _zone == zone && _fails >= maxFails;
+
+  /// [zone] 에서 자동으로 건 도전이 졌다. 이번에 멈췄으면 true.
+  bool recordAutoFail(String zone) {
+    enter(zone);
+    _fails++;
+    return _fails >= maxFails;
+  }
+
+  /// 보스를 잡았다(직접·자동 모두) — 다시 자동으로 도전한다.
+  void recordWin() => _fails = 0;
+}

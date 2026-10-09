@@ -37,9 +37,7 @@ SaveGame fallOnDefeat(SaveGame s, RunConfig run) {
     );
   }
   final zone = run.zoneOf(s.stageNumber);
-  final front = frontierOf(s, run);
-  final atFront = s.difficultyTier == front.tier && zone >= front.zone;
-  if (!atFront || zone <= 1) {
+  if (!atClimbFront(s, run) || zone <= 1) {
     return s.zoneKills == 0 ? s : s.copyWith(zoneKills: 0);
   }
   return s.copyWith(
@@ -48,6 +46,17 @@ SaveGame fallOnDefeat(SaveGame s, RunConfig run) {
     capTier: s.difficultyTier,
     capStage: run.zoneStartStage(zone - 1),
   );
+}
+
+/// 지금 칸이 **올라갈 수 있는 가장 높은 칸**([frontierOf])인가. 심연은 늘 그렇다(층을 골라 내려갈 수 없다).
+///
+/// 쓰러짐 벌칙([fallOnDefeat])과 보스 자동 도전(앱, 2026-10-09 사장님 확정 — 로드맵으로 일부러 내려간
+/// 아래 사냥터에서는 자동으로 도전하지 않는다)이 같은 판정을 쓴다. 쓰러져 내려온 한계 칸은 앞 칸이다.
+bool atClimbFront(SaveGame s, RunConfig run) {
+  if (s.inAbyss) return true;
+  final front = frontierOf(s, run);
+  return s.difficultyTier == front.tier &&
+      run.zoneOf(s.stageNumber) >= front.zone;
 }
 
 /// 지금 올라갈 수 있는 가장 높은 칸 — 한계가 있으면 한계, 없으면 가 본 최고 난이도의 최고 사냥터.

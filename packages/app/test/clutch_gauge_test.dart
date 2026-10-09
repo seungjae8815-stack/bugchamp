@@ -49,28 +49,42 @@ void main() {
     });
   });
 
-  testWidgets('게이지 — 두드린 만큼 세고 시간이 끝나면 점수를 한 번 준다', (tester) async {
+  Widget host(Widget child) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    locale: const Locale('ko'),
+    home: Scaffold(body: child),
+  );
+
+  testWidgets('게이지 — "위기!" 준비(탭 안 셈) 뒤 두드린 만큼 세고 시간이 끝나면 점수를 한 번 준다', (
+    tester,
+  ) async {
     final got = <double>[];
     await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('ko'),
-        home: Scaffold(
-          body: ClutchGauge(
-            kind: DuelCrisis.knockout,
-            seconds: 1.2,
-            target: 10,
-            chance: 1,
-            chances: 2,
-            threshold: 0.55,
-            onDone: got.add,
-          ),
+      host(
+        ClutchGauge(
+          kind: DuelCrisis.knockout,
+          seconds: 1.2,
+          target: 10,
+          chance: 1,
+          chances: 2,
+          threshold: 0.55,
+          onDone: got.add,
         ),
       ),
     );
+    // 준비 0.7초 — "위기!" 가 크고, 할 일(일어나!)이 아래 줄에. 성공선에 "성공".
+    expect(find.text('위기!'), findsOneWidget);
     expect(find.text('일어나!'), findsOneWidget);
+    expect(find.text('성공'), findsOneWidget);
     expect(find.text('기회 1/2'), findsOneWidget);
+    await tester.tapAt(const Offset(200, 300));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('0'), findsOneWidget, reason: '준비 중 탭은 세지 않는다');
+    for (var i = 0; i < 7; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('위기!'), findsNothing, reason: '준비가 끝났다');
     for (var i = 0; i < 5; i++) {
       await tester.tapAt(const Offset(200, 300));
       await tester.pump(const Duration(milliseconds: 50));
@@ -84,6 +98,73 @@ void main() {
     expect(got.single, inInclusiveRange(0.0, 1.0));
     await tester.pump(const Duration(seconds: 1));
     expect(got, hasLength(1), reason: '한 번만');
+  });
+
+  testWidgets('한 번도 못 쳐도 자동 점수 기준(바닥) 아래로는 안 보낸다', (tester) async {
+    final got = <double>[];
+    await tester.pumpWidget(
+      host(
+        ClutchGauge(
+          kind: DuelCrisis.ringOut,
+          threshold: 0.55,
+          minScore: 0.5,
+          onDone: got.add,
+        ),
+      ),
+    );
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(got, [0.5]);
+    expect(clutchSendScore(0, 0.5), 0.5);
+    expect(clutchSendScore(0.8, 0.5), 0.8);
+    expect(clutchSendScore(1.4, 0), 1.0);
+  });
+
+  testWidgets('첫 안내 — 탭을 기다렸다가, 누르면 바로 연타가 시작된다', (tester) async {
+    final got = <double>[];
+    var seen = 0;
+    await tester.pumpWidget(
+      host(
+        ClutchGauge(
+          kind: DuelCrisis.ringOut,
+          threshold: 0.55,
+          tutorial: true,
+          onTutorialDone: () => seen++,
+          onDone: got.add,
+        ),
+      ),
+    );
+    expect(find.text('화면을 연타해 흰 선을 넘기세요'), findsOneWidget);
+    expect(find.text('화면을 누르면 시작!'), findsOneWidget);
+    // 안 누르면 시간이 흘러도 시작하지 않는다.
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(got, isEmpty);
+    await tester.tapAt(const Offset(200, 300));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(seen, 1);
+    expect(find.text('버텨라!'), findsOneWidget, reason: '준비 없이 바로 연타');
+    for (var i = 0; i < 8; i++) {
+      await tester.tapAt(const Offset(200, 300));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('8'), findsOneWidget, reason: '안내를 넘긴 탭은 세지 않는다');
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(got, hasLength(1));
+    expect(got.single, greaterThan(0.55));
+  });
+
+  test('첫 안내 플래그 — 못 읽었으면 띄우지 않는다 · 보면 다시 안 뜬다', () async {
+    ClutchTutorial.resetForTest();
+    expect(ClutchTutorial.needed, isFalse, reason: '아직 안 읽음');
+    ClutchTutorial.resetForTest(seen: false);
+    expect(ClutchTutorial.needed, isTrue);
+    await ClutchTutorial.markSeen();
+    expect(ClutchTutorial.needed, isFalse);
   });
 
   group('로컬 진행기 — 위기에서 멈추고 점수로 이어 간다(서버 세션과 같은 규칙)', () {
@@ -186,6 +267,8 @@ void main() {
       trophies: 0,
       rewardMult: 1,
     );
+    // 첫 안내는 따로 잰다 — 여기서는 이미 본 기기.
+    ClutchTutorial.resetForTest(seen: true);
     var seed = 1;
     while ((await make(seed).next(0.6))?.clutch == null) {
       seed++;
@@ -231,6 +314,9 @@ void main() {
     }
     expect(gauge, findsOneWidget, reason: '위기에서 게이지가 떠야 한다');
     expect(drv.clutches, 0);
+    // "위기!" 준비 시간이 지나야 탭을 센다.
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
     // 연타 — 게이지 아무 데나.
     for (var i = 0; i < 10; i++) {
       await tester.tap(gauge, warnIfMissed: false);

@@ -264,7 +264,7 @@
   },
   "bossIntroTitle": "보스가 나타났어요!",
   "bossIntroBody": "잡으면 다음 사냥터로 갈 수 있어요.",
-  "bossIntroAuto": "자동 도전이 켜져 있어요 — 게이지가 차면 잠시 뒤 스스로 도전해요. 설정에서 끌 수 있어요.",
+  "bossIntroAuto": "자동 도전을 켜 둘까요? 게이지가 차면 잠시 뒤 스스로 보스에 도전해요. 설정에서 언제든 바꿀 수 있어요.",
   "bossIntroOk": "알겠어요",
   "settingsGameplay": "게임",
   "settingsAutoBoss": "보스 자동 도전",
@@ -284,6 +284,42 @@
   "@bossFled": {
     "description": "도망 직후 알림"
   },
+  "bossChallengeFailedHp": "보스에게 밀려났어요 · 보스 체력 {pct}% 남음",
+  "@bossChallengeFailedHp": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "bossAutoPaused": "보스가 아직 강해요 — 보스 체력 {pct}% 남음, 강해진 뒤 눌러 주세요",
+  "@bossAutoPaused": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "bossAutoPausedShort": "자동 멈춤",
+  "bossIntroKeepOn": "켜 두기",
+  "bossIntroTurnOff": "끄기",
+  "whatsNewTitle": "업데이트 내용",
+  "whatsNewSubtitle": "v{version} 에서 바뀐 것",
+  "@whatsNewSubtitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsNewOk": "확인",
+  "whatsNewPartsToPoints": "부위 강화가 훈련 포인트로 옮겨졌어요 — 들인 만큼 포인트로 돌려받아서 약해지지 않아요",
+  "whatsNewFreeRespec": "훈련 포인트 첫 다시 찍기는 무료예요",
+  "whatsNewClutch": "결투 반격 — 위기 때 화면을 연타하면 버텨요",
+  "whatsNewAutoBoss": "보스 자동 도전 — 게이지가 차면 스스로 도전해요 (설정에서 끌 수 있어요)",
+  "whatsNewUpgradeCap": "강화 상한이 250까지 올랐어요",
+  "whatsNewGifts": "깜짝선물·일일보상이 크게 늘었어요",
+  "whatsNewMoveToEvade": "사냥 강화의 이동속도가 회피로 바뀌었어요",
   "zoneKillsLabel": "처치 {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {
@@ -1022,7 +1058,7 @@
   "skillGachaResult": "{name} 조각 +{n}",
   "skillSweep": "소탕",
   "skillSweepTitle": "보스 소탕",
-  "skillSweepDesc": "잡아 본 가장 높은 난이도({tier})의 보스를 다시 잡은 것으로 쳐서 스킬 조각 {n}개를 확정으로 받아요.",
+  "skillSweepDesc": "잡아 본 가장 높은 난이도({tier})의 보스를 다시 잡은 것으로 쳐서 스킬 조각 {n}개를 받아요(개수 확정 · 어느 스킬인지는 확률).",
   "skillSweepToday": "오늘 {used}/{max}회 사용",
   "skillSweepFree": "무료 소탕 · {n}회 남음",
   "skillSweepPaid": "소탕 · 젤리 {n}",
@@ -1044,6 +1080,18 @@
     "description": "등급별 조각 줄에서 만능 조각 수 앞에 붙는 짧은 말"
   },
   "skillSweepLimit": "오늘 소탕을 모두 썼어요",
+  "skillSweepOddsTitle": "보스 소탕 확률",
+  "skillSweepOddsNote": "1회에 한 스킬의 조각 {n}개가 나와요(개수 확정). 등급을 먼저 정하고, 같은 등급 안에서는 모든 스킬이 같은 확률이에요. 잡아 본 가장 높은 난이도({tier}) 기준이에요.",
+  "@skillSweepOddsNote": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
   "skillShardPop": "조각 +{n}",
   "skillMaterials": "스킬 재료",
   "skillGradeWild": "{grade} 만능",
@@ -1526,6 +1574,11 @@
   "fairyAutoMergeConfirm": "{used}마리를 합쳐 {made}마리가 돼요. 동행 중·레벨 올린 요정은 빠지고, 품질이 낮은 요정부터 써요. 결과 능력치는 새로 정해져요.",
   "fairyAutoMergeNone": "자동으로 합칠 요정이 없어요",
   "fairyRelease": "분해",
+  "fairyNestBtn": "둥지",
+  "fairyGachaBtn": "뽑기",
+  "fairyDexBtn": "도감",
+  "fairyMergeBtn": "합성",
+  "fairyReleaseBtn": "분해",
   "fairyReleaseConfirm": "분해하면 요정 가루 {n}개를 얻어요. 되돌릴 수 없어요.",
   "fairyNew": "새 요정!",
   "fairyErrJelly": "젤리가 모자라요",
@@ -2022,6 +2075,10 @@
   "duelClutchHold": "버텨라!",
   "duelClutchWake": "일어나!",
   "duelClutchTapHint": "화면을 마구 두드려!",
+  "duelClutchCrisis": "위기!",
+  "duelClutchTutorial": "화면을 연타해 흰 선을 넘기세요",
+  "duelClutchTapToStart": "화면을 누르면 시작!",
+  "duelClutchSuccessMark": "성공",
   "duelClutchChance": "기회 {k}/{n}",
   "duelClutchSaved": "버텼다!",
   "duelClutchWoke": "일어났다!",

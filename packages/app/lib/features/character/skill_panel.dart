@@ -112,15 +112,21 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
         children: [
           Row(
             children: [
-              Text(
-                l.skillSlotsInfo('${save.equippedSkills.length}', '$slots'),
-                style: const TextStyle(
-                  color: _honey,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12.5,
+              // 버튼 셋이 먼저 자리를 잡고, 남은 폭에서 말줄임 — 영어("Equipped 2/5")가 길어
+              // 오른쪽 [Upgrade] 버튼이 잘렸다(2026-10-09 점검).
+              Expanded(
+                child: Text(
+                  l.skillSlotsInfo('${save.equippedSkills.length}', '$slots'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _honey,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12.5,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 4),
               _button(
                 l.skillGacha,
                 () => _open(SkillGachaDialog(cfg: cfg, locale: locale)),

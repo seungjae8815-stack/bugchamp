@@ -750,11 +750,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zoneFinalLabel => 'Final Ground';
 
   @override
-  String get bossChallenge => 'Challenge Boss';
+  String get bossChallenge => 'Boss Fight';
 
   @override
   String bossChallengeLocked(int n) {
-    return '$n more kills to challenge';
+    return '$n to boss';
   }
 
   @override
@@ -763,7 +763,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String bossAutoCountdown(int n) {
-    return 'Auto challenge in ${n}s';
+    return 'Auto in ${n}s';
   }
 
   @override
@@ -775,7 +775,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bossIntroAuto =>
-      'Auto challenge is on — when the gauge fills, you will challenge the boss shortly. You can turn it off in Settings.';
+      'Keep auto challenge on? When the gauge fills, you\'ll challenge the boss on your own shortly. You can change this anytime in Settings.';
 
   @override
   String get bossIntroOk => 'Got it';
@@ -798,6 +798,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bossFled => 'Fled - gauge reset';
+
+  @override
+  String bossChallengeFailedHp(int pct) {
+    return 'The boss pushed you back · Boss HP $pct% left';
+  }
+
+  @override
+  String bossAutoPaused(int pct) {
+    return 'The boss is still too strong — Boss HP $pct% left. Tap to challenge once you\'re stronger';
+  }
+
+  @override
+  String get bossAutoPausedShort => 'Auto paused';
+
+  @override
+  String get bossIntroKeepOn => 'Keep on';
+
+  @override
+  String get bossIntroTurnOff => 'Turn off';
+
+  @override
+  String get whatsNewTitle => 'What\'s New';
+
+  @override
+  String whatsNewSubtitle(String version) {
+    return 'Changes in v$version';
+  }
+
+  @override
+  String get whatsNewOk => 'OK';
+
+  @override
+  String get whatsNewPartsToPoints =>
+      'Part upgrades moved to training points — you get points back for what you invested, so you won\'t get weaker';
+
+  @override
+  String get whatsNewFreeRespec => 'Your first training point reset is free';
+
+  @override
+  String get whatsNewClutch =>
+      'Duel clutch — tap the screen rapidly in a crisis to hold on';
+
+  @override
+  String get whatsNewAutoBoss =>
+      'Auto boss challenge — challenges the boss on its own when the gauge fills (turn off in Settings)';
+
+  @override
+  String get whatsNewUpgradeCap => 'Upgrade cap raised to 250';
+
+  @override
+  String get whatsNewGifts =>
+      'Surprise gifts and daily rewards are much bigger';
+
+  @override
+  String get whatsNewMoveToEvade =>
+      'The hunting upgrade Move Speed is now Evasion';
 
   @override
   String zoneKillsLabel(int n, int m) {
@@ -3010,7 +3066,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String skillSweepDesc(String tier, String n) {
-    return 'Counts as defeating a boss again at your highest cleared difficulty ($tier) and gives $n skill shards for sure.';
+    return 'Counts as defeating a boss again at your highest cleared difficulty ($tier) and gives $n skill shards (amount guaranteed; which skill is random).';
   }
 
   @override
@@ -3046,6 +3102,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillSweepLimit => 'No sweeps left today';
+
+  @override
+  String get skillSweepOddsTitle => 'Boss sweep odds';
+
+  @override
+  String skillSweepOddsNote(String n, String tier) {
+    return 'Each sweep gives $n shards of one skill (amount guaranteed). The grade is drawn first, then every skill in that grade is equally likely. Based on your highest cleared difficulty ($tier).';
+  }
 
   @override
   String skillShardPop(String n) {
@@ -4525,6 +4589,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fairyRelease => 'Release';
+
+  @override
+  String get fairyNestBtn => 'Nest';
+
+  @override
+  String get fairyGachaBtn => 'Draw';
+
+  @override
+  String get fairyDexBtn => 'Codex';
+
+  @override
+  String get fairyMergeBtn => 'Merge';
+
+  @override
+  String get fairyReleaseBtn => 'Release';
 
   @override
   String fairyReleaseConfirm(String n) {
@@ -6409,6 +6488,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get duelClutchTapHint => 'Tap the screen like crazy!';
+
+  @override
+  String get duelClutchCrisis => 'Crisis!';
+
+  @override
+  String get duelClutchTutorial => 'Tap rapidly to pass the white line';
+
+  @override
+  String get duelClutchTapToStart => 'Tap to start!';
+
+  @override
+  String get duelClutchSuccessMark => 'Success';
 
   @override
   String duelClutchChance(int k, int n) {

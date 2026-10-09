@@ -274,6 +274,12 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
       ),
       subtitle: l.skillSweepToday('${used.sweeps}', '${cfg.sweepMaxPerDay}'),
       actions: [
+        // 어느 스킬의 조각인지는 무작위(등급 확률 → 같은 등급 안 균등) — 확률형 아이템 표시 의무(2026-10-09).
+        if (tier >= 0)
+          TextButton(
+            onPressed: () => _showSweepOdds(l, tier),
+            child: Text(l.skillGachaOdds),
+          ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l.actionClose),
@@ -293,6 +299,57 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
         textAlign: TextAlign.center,
         style: const TextStyle(color: Colors.white, fontSize: 13),
       ),
+    );
+  }
+
+  /// 소탕 확률 — 스킬 뽑기 확률 화면과 같은 모양(등급별 % · 스킬 1종당 %). 값은 소탕 추첨과 같은 함수.
+  void _showSweepOdds(AppLocalizations l, int tier) {
+    final cfg = widget.cfg;
+    final odds = sweepGradeOdds(cfg, tier);
+    String pct(double v) => (v * 100).toStringAsFixed(v * 100 < 10 ? 2 : 1);
+    showGameDialog<void>(
+      context,
+      title: l.skillSweepOddsTitle,
+      icon: Icons.percent_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final g in kSkillGrades)
+            if (odds[g] != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  l.skillGachaOddsGrade(
+                    gradeLabel(l, g),
+                    pct(odds[g]!),
+                    pct(
+                      odds[g]! /
+                          cfg.skills
+                              .where((s) => s.grade == g)
+                              .length
+                              .clamp(1, 99),
+                    ),
+                  ),
+                  style: TextStyle(color: gradeColor(g), fontSize: 13),
+                ),
+              ),
+          const SizedBox(height: 8),
+          Text(
+            l.skillSweepOddsNote(
+              '${cfg.sweepShardsFor(tier)}',
+              tierName(l, tier),
+            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+          child: Text(l.actionClose),
+        ),
+      ],
     );
   }
 

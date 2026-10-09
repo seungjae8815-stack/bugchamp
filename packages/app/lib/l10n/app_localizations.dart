@@ -1399,13 +1399,13 @@ abstract class AppLocalizations {
   /// No description provided for @bossChallenge.
   ///
   /// In en, this message translates to:
-  /// **'Challenge Boss'**
+  /// **'Boss Fight'**
   String get bossChallenge;
 
   /// No description provided for @bossChallengeLocked.
   ///
   /// In en, this message translates to:
-  /// **'{n} more kills to challenge'**
+  /// **'{n} to boss'**
   String bossChallengeLocked(int n);
 
   /// No description provided for @bossChallengeFailed.
@@ -1417,7 +1417,7 @@ abstract class AppLocalizations {
   /// No description provided for @bossAutoCountdown.
   ///
   /// In en, this message translates to:
-  /// **'Auto challenge in {n}s'**
+  /// **'Auto in {n}s'**
   String bossAutoCountdown(int n);
 
   /// No description provided for @bossIntroTitle.
@@ -1435,7 +1435,7 @@ abstract class AppLocalizations {
   /// No description provided for @bossIntroAuto.
   ///
   /// In en, this message translates to:
-  /// **'Auto challenge is on — when the gauge fills, you will challenge the boss shortly. You can turn it off in Settings.'**
+  /// **'Keep auto challenge on? When the gauge fills, you\'ll challenge the boss on your own shortly. You can change this anytime in Settings.'**
   String get bossIntroAuto;
 
   /// No description provided for @bossIntroOk.
@@ -1479,6 +1479,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fled - gauge reset'**
   String get bossFled;
+
+  /// No description provided for @bossChallengeFailedHp.
+  ///
+  /// In en, this message translates to:
+  /// **'The boss pushed you back · Boss HP {pct}% left'**
+  String bossChallengeFailedHp(int pct);
+
+  /// No description provided for @bossAutoPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'The boss is still too strong — Boss HP {pct}% left. Tap to challenge once you\'re stronger'**
+  String bossAutoPaused(int pct);
+
+  /// No description provided for @bossAutoPausedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto paused'**
+  String get bossAutoPausedShort;
+
+  /// No description provided for @bossIntroKeepOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep on'**
+  String get bossIntroKeepOn;
+
+  /// No description provided for @bossIntroTurnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get bossIntroTurnOff;
+
+  /// No description provided for @whatsNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s New'**
+  String get whatsNewTitle;
+
+  /// No description provided for @whatsNewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes in v{version}'**
+  String whatsNewSubtitle(String version);
+
+  /// No description provided for @whatsNewOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get whatsNewOk;
+
+  /// No description provided for @whatsNewPartsToPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Part upgrades moved to training points — you get points back for what you invested, so you won\'t get weaker'**
+  String get whatsNewPartsToPoints;
+
+  /// No description provided for @whatsNewFreeRespec.
+  ///
+  /// In en, this message translates to:
+  /// **'Your first training point reset is free'**
+  String get whatsNewFreeRespec;
+
+  /// No description provided for @whatsNewClutch.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel clutch — tap the screen rapidly in a crisis to hold on'**
+  String get whatsNewClutch;
+
+  /// No description provided for @whatsNewAutoBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto boss challenge — challenges the boss on its own when the gauge fills (turn off in Settings)'**
+  String get whatsNewAutoBoss;
+
+  /// No description provided for @whatsNewUpgradeCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade cap raised to 250'**
+  String get whatsNewUpgradeCap;
+
+  /// No description provided for @whatsNewGifts.
+  ///
+  /// In en, this message translates to:
+  /// **'Surprise gifts and daily rewards are much bigger'**
+  String get whatsNewGifts;
+
+  /// No description provided for @whatsNewMoveToEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'The hunting upgrade Move Speed is now Evasion'**
+  String get whatsNewMoveToEvade;
 
   /// No description provided for @zoneKillsLabel.
   ///
@@ -5311,7 +5401,7 @@ abstract class AppLocalizations {
   /// No description provided for @skillSweepDesc.
   ///
   /// In en, this message translates to:
-  /// **'Counts as defeating a boss again at your highest cleared difficulty ({tier}) and gives {n} skill shards for sure.'**
+  /// **'Counts as defeating a boss again at your highest cleared difficulty ({tier}) and gives {n} skill shards (amount guaranteed; which skill is random).'**
   String skillSweepDesc(String tier, String n);
 
   /// No description provided for @skillSweepToday.
@@ -5367,6 +5457,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sweeps left today'**
   String get skillSweepLimit;
+
+  /// No description provided for @skillSweepOddsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss sweep odds'**
+  String get skillSweepOddsTitle;
+
+  /// No description provided for @skillSweepOddsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Each sweep gives {n} shards of one skill (amount guaranteed). The grade is drawn first, then every skill in that grade is equally likely. Based on your highest cleared difficulty ({tier}).'**
+  String skillSweepOddsNote(String n, String tier);
 
   /// No description provided for @skillShardPop.
   ///
@@ -7767,6 +7869,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Release'**
   String get fairyRelease;
+
+  /// No description provided for @fairyNestBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Nest'**
+  String get fairyNestBtn;
+
+  /// No description provided for @fairyGachaBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get fairyGachaBtn;
+
+  /// No description provided for @fairyDexBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Codex'**
+  String get fairyDexBtn;
+
+  /// No description provided for @fairyMergeBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get fairyMergeBtn;
+
+  /// No description provided for @fairyReleaseBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Release'**
+  String get fairyReleaseBtn;
 
   /// No description provided for @fairyReleaseConfirm.
   ///
@@ -10750,6 +10882,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the screen like crazy!'**
   String get duelClutchTapHint;
+
+  /// No description provided for @duelClutchCrisis.
+  ///
+  /// In en, this message translates to:
+  /// **'Crisis!'**
+  String get duelClutchCrisis;
+
+  /// No description provided for @duelClutchTutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap rapidly to pass the white line'**
+  String get duelClutchTutorial;
+
+  /// No description provided for @duelClutchTapToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to start!'**
+  String get duelClutchTapToStart;
+
+  /// No description provided for @duelClutchSuccessMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get duelClutchSuccessMark;
 
   /// No description provided for @duelClutchChance.
   ///

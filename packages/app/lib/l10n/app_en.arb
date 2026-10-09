@@ -451,8 +451,8 @@
     }
   },
   "zoneFinalLabel": "Final Ground",
-  "bossChallenge": "Challenge Boss",
-  "bossChallengeLocked": "{n} more kills to challenge",
+  "bossChallenge": "Boss Fight",
+  "bossChallengeLocked": "{n} to boss",
   "@bossChallengeLocked": {
     "placeholders": {
       "n": {
@@ -461,7 +461,7 @@
     }
   },
   "bossChallengeFailed": "The boss pushed you back. Grow stronger and try again",
-  "bossAutoCountdown": "Auto challenge in {n}s",
+  "bossAutoCountdown": "Auto in {n}s",
   "@bossAutoCountdown": {
     "placeholders": {
       "n": {
@@ -471,7 +471,7 @@
   },
   "bossIntroTitle": "A boss appeared!",
   "bossIntroBody": "Defeat it to move on to the next hunting ground.",
-  "bossIntroAuto": "Auto challenge is on — when the gauge fills, you will challenge the boss shortly. You can turn it off in Settings.",
+  "bossIntroAuto": "Keep auto challenge on? When the gauge fills, you'll challenge the boss on your own shortly. You can change this anytime in Settings.",
   "bossIntroOk": "Got it",
   "settingsGameplay": "Gameplay",
   "settingsAutoBoss": "Auto boss challenge",
@@ -491,6 +491,42 @@
   "@bossFled": {
     "description": "Toast right after fleeing"
   },
+  "bossChallengeFailedHp": "The boss pushed you back · Boss HP {pct}% left",
+  "@bossChallengeFailedHp": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "bossAutoPaused": "The boss is still too strong — Boss HP {pct}% left. Tap to challenge once you're stronger",
+  "@bossAutoPaused": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "bossAutoPausedShort": "Auto paused",
+  "bossIntroKeepOn": "Keep on",
+  "bossIntroTurnOff": "Turn off",
+  "whatsNewTitle": "What's New",
+  "whatsNewSubtitle": "Changes in v{version}",
+  "@whatsNewSubtitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsNewOk": "OK",
+  "whatsNewPartsToPoints": "Part upgrades moved to training points — you get points back for what you invested, so you won't get weaker",
+  "whatsNewFreeRespec": "Your first training point reset is free",
+  "whatsNewClutch": "Duel clutch — tap the screen rapidly in a crisis to hold on",
+  "whatsNewAutoBoss": "Auto boss challenge — challenges the boss on its own when the gauge fills (turn off in Settings)",
+  "whatsNewUpgradeCap": "Upgrade cap raised to 250",
+  "whatsNewGifts": "Surprise gifts and daily rewards are much bigger",
+  "whatsNewMoveToEvade": "The hunting upgrade Move Speed is now Evasion",
   "zoneKillsLabel": "Kills {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {
@@ -1832,7 +1868,7 @@
   },
   "skillSweep": "Sweep",
   "skillSweepTitle": "Boss Sweep",
-  "skillSweepDesc": "Counts as defeating a boss again at your highest cleared difficulty ({tier}) and gives {n} skill shards for sure.",
+  "skillSweepDesc": "Counts as defeating a boss again at your highest cleared difficulty ({tier}) and gives {n} skill shards (amount guaranteed; which skill is random).",
   "@skillSweepDesc": {
     "placeholders": {
       "tier": {
@@ -1888,6 +1924,18 @@
     "description": "Short word before the wild shard count"
   },
   "skillSweepLimit": "No sweeps left today",
+  "skillSweepOddsTitle": "Boss sweep odds",
+  "skillSweepOddsNote": "Each sweep gives {n} shards of one skill (amount guaranteed). The grade is drawn first, then every skill in that grade is equally likely. Based on your highest cleared difficulty ({tier}).",
+  "@skillSweepOddsNote": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
   "skillShardPop": "Shard +{n}",
   "@skillShardPop": {
     "placeholders": {
@@ -2846,6 +2894,11 @@
   "@fairyAutoMergeConfirm": {"placeholders": {"used": {"type": "String"}, "made": {"type": "String"}}},
   "fairyAutoMergeNone": "Nothing to auto merge",
   "fairyRelease": "Release",
+  "fairyNestBtn": "Nest",
+  "fairyGachaBtn": "Draw",
+  "fairyDexBtn": "Codex",
+  "fairyMergeBtn": "Merge",
+  "fairyReleaseBtn": "Release",
   "fairyReleaseConfirm": "Releasing gives {n} fairy dust. This cannot be undone.",
   "@fairyReleaseConfirm": {"placeholders": {"n": {"type": "String"}}},
   "fairyNew": "New fairy!",
@@ -3512,6 +3565,10 @@
   "duelClutchHold": "Hold on!",
   "duelClutchWake": "Get up!",
   "duelClutchTapHint": "Tap the screen like crazy!",
+  "duelClutchCrisis": "Crisis!",
+  "duelClutchTutorial": "Tap rapidly to pass the white line",
+  "duelClutchTapToStart": "Tap to start!",
+  "duelClutchSuccessMark": "Success",
   "duelClutchChance": "Chance {k}/{n}",
   "@duelClutchChance": {"placeholders": {"k": {"type": "int"}, "n": {"type": "int"}}},
   "duelClutchSaved": "Held on!",
