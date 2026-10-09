@@ -63,6 +63,21 @@
 - **현지화(표시 이름/설명)**: ko/en/ja — `iap.json` 의 `name`/`desc` 값 사용. ⚠️ **스킨 2종은 아래 iOS 전용 설명을 쓴다**
   (`iap.json` 설명의 "짝짓기·breeding·交配" 는 App Store 심사 1.1 거절 이력 단어다). 설명 칸 길이 한도는 콘솔에서 확인하고, 넘치면 줄을 줄인다.
 
+### iOS 짧은 설명(55자 이하 · 2026-10-09) — App Store Connect 설명 칸은 **55자까지**라 Play 설명을 그대로 못 넣는다
+| 제품 | ko | en | ja |
+|---|---|---|---|
+| `starter_pack` | 젤리 400·부화기 슬롯 +1·2시간 가속기 3 (계정당 1회) | 400 jelly, +1 incubator slot, 3 2h accelerators | ゼリー400・孵化器スロット+1・2時間加速器3(1回限り) |
+| `fairy_starter` | 영웅 요정 알 1·희귀 요정 알 3·8시간 가속기 3 등 (1회) | 1 Epic + 3 Rare fairy eggs, 3 8h accelerators & more | 英雄の妖精の卵1・希少の卵3・8時間加速器3など(1回限り) |
+| `skill_starter` | 희귀 만능 조각 100·영웅 만능 조각 30 (계정당 1회) | 100 Rare + 30 Epic universal skill shards (once) | 希少の万能かけら100・英雄の万能かけら30(1回限り) |
+| `idle_pass_c` | 30일: 오프라인 16시간·방치 골드 +30%·매일 젤리 20 | 30 days: 16h offline, +30% idle gold, 20 jelly daily | 30日間: オフライン16時間・放置ゴールド+30%・毎日ゼリー20 |
+| `buff_pass` | 30일: 버프 5종 항상 켜짐·깜짝선물 자동 수령·2배 | 30 days: all 5 buffs always on, gifts auto x2 | 30日間: バフ5種が常時発動・ギフト自動受取・常に2倍 |
+| `growth_pass` | 30일 동안 접속한 날마다 요정 가루·만능 조각·가속기 | 30 days: daily fairy dust, skill shards & accelerator | 30日間ログインした日ごとに妖精の粉・かけら・加速器 |
+| `weekly_bundle` | 2시간 가속기 3·속성석 2·희귀 만능 조각 20 (주 1회) | 3 2h accelerators, 2 stones, 20 Rare shards (weekly) | 2時間加速器3・属性石2・希少の万能かけら20(週1回) |
+| `skin_gold_rhino` | 장수풍뎅이 계열 황금빛·재료 +30%·부화 시간 −25% 등 | Golden rhino beetles, +30% materials, faster hatching | カブトムシ系が黄金色に・素材+30%・孵化時間−25%など |
+| `skin_albino_stag` | 사슴벌레 계열 알비노·재료 +30%·부화 시간 −25% 등 | Albino stag beetles, +30% materials, faster hatching | クワガタ系がアルビノに・素材+30%・孵化時間−25%など |
+
+> 젤리 5종 설명("곤충젤리 300개 (보너스 +9%)" 등)은 원래 짧아 `iap.json` 그대로. 스킨은 아래 긴 판(지뢰 단어 없음)이 55자를 넘으면 위 짧은 판을 쓴다.
+
 ### 스킨 2종 iOS 설명(지뢰 단어 없는 판)
 | 제품 | ko | en | ja |
 |---|---|---|---|
