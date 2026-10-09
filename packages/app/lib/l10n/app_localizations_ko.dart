@@ -6102,7 +6102,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trainSlotHp => '체력';
 
   @override
-  String get trainSlotSpeed => '속도';
+  String get trainSlotPush => '밀어내기 힘';
 
   @override
   String get trainSlotMass => '체급';
@@ -6195,6 +6195,56 @@ class AppLocalizationsKo extends AppLocalizations {
   String trainMassPer(String w, String s) {
     return '무게 $w · 속도 $s';
   }
+
+  @override
+  String trainPushPer(String p) {
+    return '미는 힘 $p';
+  }
+
+  @override
+  String get trainPresetTitle => '추천 배분';
+
+  @override
+  String get trainPresetBalanced => '균형';
+
+  @override
+  String get trainPresetTank => '체력방어';
+
+  @override
+  String get trainPresetHeavy => '체급형';
+
+  @override
+  String get trainPresetHint => '측정에서 강했던 배분이에요 · ★ 이 곤충 주특기에 추천';
+
+  @override
+  String trainPresetNext(String slot) {
+    return '다음 추천 칸: $slot';
+  }
+
+  @override
+  String trainPresetFill(String n) {
+    return '남은 $n점 추천대로 채우기';
+  }
+
+  @override
+  String get trainPresetRespec => '이 배분으로 다시 찍기';
+
+  @override
+  String get trainPresetFilled => '추천대로 채웠어요';
+
+  @override
+  String get trainPresetApplied => '추천 배분을 넣었어요 — 적용을 눌러야 바뀌어요';
+
+  @override
+  String get trainPresetNoRoom => '추천 칸이 모두 가득 찼어요';
+
+  @override
+  String get guideTrainPushNote =>
+      '밀어내기 힘 — 부딪힐 때 상대를 미는 힘이에요. 치기의 뒤집기·밀치기, 집기의 물고 밀기, 던지기의 던지는 힘이 세져요. 체급과 달리 무게(버티는 힘)는 늘지 않아요. 예전 속도 칸에 찍은 점수는 그대로 밀어내기 힘이 됐어요.';
+
+  @override
+  String get guideTrainPresetBody =>
+      '훈련소의 \'추천 배분\'은 측정에서 강했던 배분이에요(균형 · 체력방어 · 체급형, ★ = 그 곤충 주특기에 추천). 다시 찍기에서 한 번에 넣을 수 있고, 새로 찍을 때는 다음 추천 칸을 알려 줘요.';
 
   @override
   String trainTechFlip(String v) {

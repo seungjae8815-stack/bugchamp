@@ -88,6 +88,7 @@ class GuideScreen extends ConsumerWidget {
       final e = train.slotEffect[sl] ?? 0;
       return switch (sl) {
         TrainSlot.evade || TrainSlot.crit => '${_signed(e)}p',
+        TrainSlot.push => l.trainPushPer(_signed(e)),
         TrainSlot.mass => l.trainMassPer(
           _signed(e),
           _signed(-train.massSpeedPenalty),
@@ -284,6 +285,7 @@ class GuideScreen extends ConsumerWidget {
               ),
             ),
           const SizedBox(height: 8),
+          _p(l.guideTrainPushNote),
           _p(l.guideTrainCostBody),
           _p(
             l.guideTrainRespecBody(
@@ -292,6 +294,7 @@ class GuideScreen extends ConsumerWidget {
               _num(respecMax),
             ),
           ),
+          _p(l.guideTrainPresetBody),
           _p(
             l.guideTrainStoneBody(
               '${train.stones.jelly[DuelStone.element] ?? 0}',

@@ -10499,11 +10499,11 @@ abstract class AppLocalizations {
   /// **'HP'**
   String get trainSlotHp;
 
-  /// No description provided for @trainSlotSpeed.
+  /// No description provided for @trainSlotPush.
   ///
   /// In en, this message translates to:
-  /// **'Speed'**
-  String get trainSlotSpeed;
+  /// **'Push power'**
+  String get trainSlotPush;
 
   /// No description provided for @trainSlotMass.
   ///
@@ -10636,6 +10636,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'weight {w} · speed {s}'**
   String trainMassPer(String w, String s);
+
+  /// No description provided for @trainPushPer.
+  ///
+  /// In en, this message translates to:
+  /// **'push force {p}'**
+  String trainPushPer(String p);
+
+  /// No description provided for @trainPresetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested builds'**
+  String get trainPresetTitle;
+
+  /// No description provided for @trainPresetBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get trainPresetBalanced;
+
+  /// No description provided for @trainPresetTank.
+  ///
+  /// In en, this message translates to:
+  /// **'Tank'**
+  String get trainPresetTank;
+
+  /// No description provided for @trainPresetHeavy.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavyweight'**
+  String get trainPresetHeavy;
+
+  /// No description provided for @trainPresetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Builds that tested strong · ★ suggested for this specialty'**
+  String get trainPresetHint;
+
+  /// No description provided for @trainPresetNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next suggested slot: {slot}'**
+  String trainPresetNext(String slot);
+
+  /// No description provided for @trainPresetFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill {n} spare points'**
+  String trainPresetFill(String n);
+
+  /// No description provided for @trainPresetRespec.
+  ///
+  /// In en, this message translates to:
+  /// **'Respec to this build'**
+  String get trainPresetRespec;
+
+  /// No description provided for @trainPresetFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled with the suggested build'**
+  String get trainPresetFilled;
+
+  /// No description provided for @trainPresetApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested build loaded — tap Apply to confirm'**
+  String get trainPresetApplied;
+
+  /// No description provided for @trainPresetNoRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'All suggested slots are full'**
+  String get trainPresetNoRoom;
+
+  /// No description provided for @guideTrainPushNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Push power — how hard your bug shoves on contact. It strengthens Strike flips and shoves, Grip bite-and-push, and Toss throws. Unlike Weight class it does not add weight (staying power). Points in the old Speed slot became Push power as-is.'**
+  String get guideTrainPushNote;
+
+  /// No description provided for @guideTrainPresetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The Training Center\'s suggested builds are allocations that tested strong (Balanced · Tank · Heavyweight, ★ = suggested for that bug\'s specialty). Load one at once when respeccing; when adding new points it shows the next suggested slot.'**
+  String get guideTrainPresetBody;
 
   /// No description provided for @trainTechFlip.
   ///

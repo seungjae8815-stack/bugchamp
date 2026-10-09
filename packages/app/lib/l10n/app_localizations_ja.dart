@@ -6092,7 +6092,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trainSlotHp => '体力';
 
   @override
-  String get trainSlotSpeed => '速度';
+  String get trainSlotPush => '押し出す力';
 
   @override
   String get trainSlotMass => '体格';
@@ -6185,6 +6185,56 @@ class AppLocalizationsJa extends AppLocalizations {
   String trainMassPer(String w, String s) {
     return '重さ $w · 速度 $s';
   }
+
+  @override
+  String trainPushPer(String p) {
+    return '押す力 $p';
+  }
+
+  @override
+  String get trainPresetTitle => 'おすすめ配分';
+
+  @override
+  String get trainPresetBalanced => 'バランス';
+
+  @override
+  String get trainPresetTank => '体力防御';
+
+  @override
+  String get trainPresetHeavy => '重量型';
+
+  @override
+  String get trainPresetHint => '測定で強かった配分 · ★ この虫の得意技におすすめ';
+
+  @override
+  String trainPresetNext(String slot) {
+    return '次のおすすめ枠: $slot';
+  }
+
+  @override
+  String trainPresetFill(String n) {
+    return '残り${n}ptをおすすめで埋める';
+  }
+
+  @override
+  String get trainPresetRespec => 'この配分で振り直す';
+
+  @override
+  String get trainPresetFilled => 'おすすめで埋めました';
+
+  @override
+  String get trainPresetApplied => 'おすすめ配分を入れました — 適用で確定します';
+
+  @override
+  String get trainPresetNoRoom => 'おすすめ枠がすべて満杯です';
+
+  @override
+  String get guideTrainPushNote =>
+      '押し出す力 — ぶつかった時に相手を押す力です。突きのひっくり返し・押し、挟みの噛みつき押し、投げの投げる力が強くなります。体重級と違い重さ(踏ん張り)は増えません。以前の速度枠のポイントはそのまま押し出す力になりました。';
+
+  @override
+  String get guideTrainPresetBody =>
+      '訓練所の「おすすめ配分」は測定で強かった配分です(バランス · 体力防御 · 重量型、★ = その虫の得意技におすすめ)。振り直しで一度に入れられ、新しく振る時は次のおすすめ枠を教えてくれます。';
 
   @override
   String trainTechFlip(String v) {

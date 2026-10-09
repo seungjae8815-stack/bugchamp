@@ -28,6 +28,7 @@ class DuelBug {
     this.recovery = 0,
     this.evade = 0,
     this.massMult = 1,
+    this.pushMult = 1,
     this.tech = 0,
     this.grit = 0,
     this.sizeStatMult = 1,
@@ -59,6 +60,11 @@ class DuelBug {
   /// 체급 칸(훈련 v2, docs/design_training_v2.md) — 무게 배율. 실제 크기(mm)·몸 반경은 그대로.
   final double massMult;
 
+  /// 밀어내기 힘 칸(훈련 v2, 2026-10-09 속도 칸 대체) — 부딪힐 때 상대를 미는 힘의 배율.
+  /// 힘겨루기(`leverage` — 뒤집기 확률·무는 힘·던지는 속도)의 내 쪽 몫과 치기 밀치기 양에 곱한다.
+  /// 체급과 달리 **버티는 힘(무게)은 늘지 않는다** — 미는 쪽만.
+  final double pushMult;
+
   /// 주특기 기술 칸 — 주특기마다 다른 효과의 비율 보너스(치기 뒤집기 확률 · 집기 무는 힘 · 던지기 쿨타임).
   final double tech;
 
@@ -81,6 +87,7 @@ class DuelBug {
     double recovery = 0,
     double spdMult = 1,
     double massMult = 1,
+    double pushMult = 1,
     double tech = 0,
     int grit = 0,
   }) => DuelBug(
@@ -99,6 +106,7 @@ class DuelBug {
     recovery: this.recovery + recovery,
     evade: this.evade + evade,
     massMult: this.massMult * massMult,
+    pushMult: this.pushMult * pushMult,
     tech: this.tech + tech,
     grit: this.grit + grit,
     sizeStatMult: sizeStatMult,
@@ -126,6 +134,7 @@ class DuelBug {
     recovery: recovery,
     evade: evade,
     massMult: massMult,
+    pushMult: pushMult,
     tech: tech,
     grit: grit,
     sizeStatMult: sizeStatMult,
@@ -173,6 +182,7 @@ class DuelBug {
     recovery: recovery,
     evade: evade,
     massMult: massMult,
+    pushMult: pushMult,
     tech: tech,
     grit: grit,
     sizeStatMult: sizeStatMult,
@@ -229,6 +239,7 @@ class DuelBug {
     if (recovery > 0) 'rec': recovery,
     if (evade > 0) 'eva': evade,
     if (massMult != 1) 'mm': massMult,
+    if (pushMult != 1) 'pm': pushMult,
     if (tech != 0) 'tech': tech,
     if (grit != 0) 'grit': grit,
     if (sizeStatMult != 1) 'ssm': sizeStatMult,
@@ -250,6 +261,7 @@ class DuelBug {
     recovery: (j['rec'] as num?)?.toDouble() ?? 0,
     evade: (j['eva'] as num?)?.toDouble() ?? 0,
     massMult: (j['mm'] as num?)?.toDouble() ?? 1,
+    pushMult: (j['pm'] as num?)?.toDouble() ?? 1,
     tech: (j['tech'] as num?)?.toDouble() ?? 0,
     grit: (j['grit'] as num?)?.toInt() ?? 0,
     sizeStatMult: (j['ssm'] as num?)?.toDouble() ?? 1,

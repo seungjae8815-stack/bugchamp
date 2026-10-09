@@ -15,6 +15,7 @@ import '../../data/game_data.dart';
   double crit,
   double recovery,
   double massMult,
+  double pushMult,
   double tech,
   int grit,
 })
@@ -55,7 +56,7 @@ BattleBug battleBugFor(
 }
 
 /// 개체 → 결투 유닛(결투·왕충 선발대회 공용). 서버 `validateDuelTeam` 과 **같은 계산**이다 —
-/// 훈련 v2 배분(예산·칸 상한으로 자름)·수련 레벨·체급·주특기 기술·근성까지.
+/// 훈련 v2 배분(예산·칸 상한으로 자름)·수련 레벨·체급·밀어내기 힘·주특기 기술·근성까지.
 DuelBug duelBugFor(
   IndividualBug bug,
   GameData data,
@@ -77,6 +78,7 @@ DuelBug duelBugFor(
     crit: t.crit,
     recovery: t.recovery,
     massMult: t.massMult,
+    pushMult: t.pushMult,
     tech: t.tech,
     grit: t.grit,
   );

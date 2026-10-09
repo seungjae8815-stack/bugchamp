@@ -18,13 +18,14 @@ void main() {
     expect(cfg.pointBudget(potential: 1, level: 5, breakthroughTier: 1), 13);
   });
 
-  test('칸 효과·기본 상한(§1.2 표)', () {
-    expect(cfg.slotEffect[TrainSlot.attack], 0.03);
-    expect(cfg.slotEffect[TrainSlot.hp], 0.04);
-    expect(cfg.slotEffect[TrainSlot.evade], 0.006);
-    expect(cfg.slotEffect[TrainSlot.recovery], 0.015);
+  test('칸 효과·기본 상한(§1.2 표 · 2026-10-09 출시 전 점검)', () {
+    expect(cfg.slotEffect[TrainSlot.attack], 0.05);
+    expect(cfg.slotEffect[TrainSlot.defense], 0.055);
+    expect(cfg.slotEffect[TrainSlot.hp], 0.09);
+    expect(cfg.slotEffect[TrainSlot.push], 0.025);
+    expect(cfg.slotEffect[TrainSlot.mass], 0.010);
     expect(cfg.slotBaseCap[TrainSlot.attack], 30);
-    expect(cfg.slotBaseCap[TrainSlot.speed], 20);
+    expect(cfg.slotBaseCap[TrainSlot.push], 20);
     expect(cfg.slotBaseCap[TrainSlot.mass], 10);
     expect(cfg.slotBaseCap[TrainSlot.grit], 10);
     // 우직 방어 +12 · 회피 −6 (설계 예)
@@ -46,21 +47,84 @@ void main() {
     );
   });
 
-  test('체급은 무게 + · 속도 − · 기술은 주특기마다 · 근성은 단계', () {
+  test('체급은 무게 + · 속도 − · 밀어내기 힘은 미는 힘 × · 기술은 주특기마다 · 근성은 단계', () {
     final b = cfg.slotBonuses({
       TrainSlot.mass: 10,
-      TrainSlot.speed: 5,
+      TrainSlot.push: 5,
       TrainSlot.tech: 10,
       TrainSlot.grit: 4,
     }, Specialty.strike);
-    expect(b.massMult, closeTo(1.15, 1e-9));
-    expect(b.spdMult, closeTo(1.10 * 0.95, 1e-9));
+    expect(b.massMult, closeTo(1 + 10 * cfg.slotEffect[TrainSlot.mass]!, 1e-9));
+    expect(b.pushMult, closeTo(1 + 5 * cfg.slotEffect[TrainSlot.push]!, 1e-9));
+    // 속도 칸은 없어졌다 — 속도는 체급의 대가로만 준다.
+    expect(b.spdMult, closeTo(1 - 10 * cfg.massSpeedPenalty, 1e-9));
     expect(b.tech, closeTo(0.4, 1e-9));
     expect(b.grit, 4);
     expect(
       cfg.slotBonuses({TrainSlot.tech: 10}, Specialty.grip).tech,
       closeTo(0.3, 1e-9),
     );
+  });
+
+  test('옛 칸 키 speed 는 밀어내기 힘(push)으로 읽는다', () {
+    final c = TrainingConfig.fromJson({
+      'slots': {
+        'speed': {'effect': 0.07, 'cap': 15},
+      },
+      'presets': {
+        'x': {'speed': 4, 'attack': 2},
+      },
+    });
+    expect(c.slotEffect[TrainSlot.push], 0.07);
+    expect(c.slotBaseCap[TrainSlot.push], 15);
+    expect(c.presets['x'], {TrainSlot.push: 4, TrainSlot.attack: 2});
+    expect(TrainSlot.fromKeyOrNull('speed'), TrainSlot.push);
+    expect(TrainSlot.push.key, 'push');
+  });
+
+  test('이전 환산 계수는 칸 효과와 따로 고정된다(옛 고인물 보너스 포인트 그대로)', () {
+    // 처음 이전(2026-10-08)의 칸 효과 — 밸런스로 slots 를 바꿔도 이 값은 그대로여야 한다.
+    expect(cfg.legacySlotEffect, {
+      TrainSlot.attack: 0.03,
+      TrainSlot.defense: 0.03,
+      TrainSlot.hp: 0.04,
+      TrainSlot.push: 0.02,
+      TrainSlot.evade: 0.006,
+      TrainSlot.crit: 0.01,
+      TrainSlot.recovery: 0.015,
+    });
+    expect(const TrainingConfig().legacySlotEffect, cfg.legacySlotEffect);
+    // 이전된 곤충이 약해지지 않으려면 칸 효과가 환산 계수보다 작으면 안 된다(밀어내기 힘 = 옛 속도 칸은 예외).
+    for (final e in cfg.legacySlotEffect.entries) {
+      if (e.key == TrainSlot.push) continue;
+      expect(
+        cfg.slotEffect[e.key]!,
+        greaterThanOrEqualTo(e.value),
+        reason: e.key.key,
+      );
+    }
+  });
+
+  test('추천 배분 — 칸 키 오타가 없고 주특기마다 기본 배분이 있다', () {
+    final raw =
+        ((jsonDecode(File('../app/assets/data/battle.json').readAsStringSync())
+                    as Map<String, dynamic>)['training']
+                as Map<String, dynamic>)['presets']
+            as Map<String, dynamic>;
+    expect(cfg.presets.keys, ['balanced', 'tank', 'heavy']);
+    for (final e in raw.entries) {
+      if (e.key.startsWith('_')) continue;
+      // 오타 난 칸은 로딩을 통과하고 조용히 빠진다 — 키 수로 잡는다.
+      expect(
+        cfg.presets[e.key]!.length,
+        (e.value as Map).length,
+        reason: e.key,
+      );
+    }
+    for (final s in Specialty.values) {
+      expect(cfg.presets.containsKey(cfg.presetIdFor(s)), isTrue);
+    }
+    expect(cfg.presetIdFor(Specialty.toss), 'heavy');
   });
 
   test('다시 찍기 대기 = 30분 + 포인트당 3분, 최대 8시간', () {

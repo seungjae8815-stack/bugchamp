@@ -39,7 +39,7 @@ String trainSlotLabel(AppLocalizations l, TrainSlot s) => switch (s) {
   TrainSlot.attack => l.trainAttack,
   TrainSlot.defense => l.trainDefense,
   TrainSlot.hp => l.trainSlotHp,
-  TrainSlot.speed => l.trainSlotSpeed,
+  TrainSlot.push => l.trainSlotPush,
   TrainSlot.evade => l.trainEvade,
   TrainSlot.crit => l.trainCrit,
   TrainSlot.recovery => l.trainRecovery,
@@ -52,7 +52,7 @@ IconData trainSlotIcon(TrainSlot s) => switch (s) {
   TrainSlot.attack => Icons.flash_on_rounded,
   TrainSlot.defense => Icons.shield_rounded,
   TrainSlot.hp => Icons.favorite_rounded,
-  TrainSlot.speed => Icons.speed_rounded,
+  TrainSlot.push => Icons.pan_tool_rounded,
   TrainSlot.evade => Icons.air_rounded,
   TrainSlot.crit => Icons.gps_fixed_rounded,
   TrainSlot.recovery => Icons.healing_rounded,
@@ -65,13 +65,21 @@ Color trainSlotColor(TrainSlot s) => switch (s) {
   TrainSlot.attack => const Color(0xFFFF8A65),
   TrainSlot.defense => const Color(0xFF64B5F6),
   TrainSlot.hp => const Color(0xFFEF6F7E),
-  TrainSlot.speed => const Color(0xFF80DEEA),
+  TrainSlot.push => const Color(0xFF80DEEA),
   TrainSlot.evade => const Color(0xFF81C784),
   TrainSlot.crit => kHoney,
   TrainSlot.recovery => const Color(0xFFF48FB1),
   TrainSlot.mass => const Color(0xFFBCAAA4),
   TrainSlot.tech => const Color(0xFFB39DDB),
   TrainSlot.grit => const Color(0xFFFFB74D),
+};
+
+/// 추천 배분 이름(`battle.json → training.presets` 의 키). 모르는 키는 그대로.
+String trainPresetLabel(AppLocalizations l, String id) => switch (id) {
+  'balanced' => l.trainPresetBalanced,
+  'tank' => l.trainPresetTank,
+  'heavy' => l.trainPresetHeavy,
+  _ => id,
 };
 
 String _pct(double v) {
@@ -101,6 +109,9 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
 
   /// 다시 찍기 편집 중인 새 배분(null = 편집 안 함).
   Map<TrainSlot, int>? _draft;
+
+  /// 고른 추천 배분(null = 주특기 기본값 — `TrainingConfig.presetIdFor`).
+  String? _preset;
   bool _working = false;
 
   @override
@@ -372,7 +383,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     return GestureDetector(
       key: ValueKey('trainBug:${b.id}'),
       onTap: () => setState(() {
-        if (_bugId != b.id) _draft = null;
+        if (_bugId != b.id) {
+          _draft = null;
+          _preset = null;
+        }
         _bugId = b.id;
       }),
       child: Container(
@@ -522,6 +536,26 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       ],
       const SizedBox(height: 10),
       _summaryCard(l, current, preview, lm),
+      if (cfg.presets.isNotEmpty) ...[
+        const SizedBox(height: 10),
+        _presetCard(
+          l,
+          cfg,
+          bug,
+          sp,
+          rec,
+          capOf: capOf,
+          allocNow: {
+            ...rec.alloc,
+            if (jobHere != null)
+              jobHere.slot: (rec.alloc[jobHere.slot] ?? 0) + jobHere.count,
+          },
+          free: free,
+          left: left,
+          busyHere: jobHere != null,
+          respecMax: respecMax,
+        ),
+      ],
       const SizedBox(height: 10),
       _respecBar(
         l,
@@ -842,6 +876,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       double crit,
       double recovery,
       double massMult,
+      double pushMult,
       double tech,
       int grit,
     })
@@ -855,6 +890,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       double crit,
       double recovery,
       double massMult,
+      double pushMult,
       double tech,
       int grit,
     })?
@@ -882,9 +918,9 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         false,
       ),
       (
-        l.trainSlotSpeed,
-        now.spdMult - 1,
-        edit == null ? null : edit.spdMult - 1,
+        l.trainSlotPush,
+        now.pushMult - 1,
+        edit == null ? null : edit.pushMult - 1,
         false,
       ),
       (l.trainEvade, now.evade, edit?.evade, true),
@@ -976,6 +1012,194 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     );
   }
 
+  // ── 추천 배분 ─────────────────────────────────────────────────────────
+
+  /// 추천 배분(2026-10-09 사장님 확정) — 측정(빌드 리그전)에서 강했던 배분. 다시 찍기 편집 중이면 누르는
+  /// 즉시 편집 배분에 넣는다(적용은 아래 [적용] 버튼). 평소에는 고른 배분의 **다음 추천 칸**을 알려 주고,
+  /// 재료를 낸 남는 포인트 채우기 · 이 배분으로 다시 찍기로 이어 준다.
+  Widget _presetCard(
+    AppLocalizations l,
+    TrainingConfig cfg,
+    IndividualBug bug,
+    Species sp,
+    BugTrain rec, {
+    required int Function(TrainSlot) capOf,
+    required Map<TrainSlot, int> allocNow,
+    required int free,
+    required int left,
+    required bool busyHere,
+    required int respecMax,
+  }) {
+    final ids = cfg.presets.keys.toList();
+    final star = cfg.presetIdFor(sp.specialty);
+    final sel = ids.contains(_preset) ? _preset! : (star ?? ids.first);
+    final weights = cfg.presets[sel]!;
+    final editing = _draft != null;
+    final next = editing || (free <= 0 && left <= 0)
+        ? null
+        : nextPresetSlot(weights, allocNow, capOf: capOf);
+    final canRespec = rec.paid > 0 && !busyHere && rec.pending == null;
+    void loadIntoDraft(String id) => setState(() {
+      _preset = id;
+      _draft = distributeTrainPoints(cfg.presets[id]!, respecMax, capOf: capOf);
+    });
+    return Container(
+      key: const ValueKey('trainPresetCard'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _panel,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x66B39DDB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.auto_awesome_rounded,
+                color: Color(0xFFB39DDB),
+                size: 18,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                l.trainPresetTitle,
+                style: const TextStyle(
+                  color: _text,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            l.trainPresetHint,
+            style: const TextStyle(color: _dim, fontSize: 11),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final id in ids)
+                _presetChip(
+                  '${trainPresetLabel(l, id)}${id == star ? ' ★' : ''}',
+                  key: ValueKey('trainPreset:$id'),
+                  selected: id == sel,
+                  onTap: () => editing
+                      ? loadIntoDraft(id)
+                      : setState(() => _preset = id),
+                ),
+            ],
+          ),
+          if (next != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  trainSlotIcon(next),
+                  color: trainSlotColor(next),
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    l.trainPresetNext(trainSlotLabel(l, next)),
+                    key: const ValueKey('trainPresetNext'),
+                    style: TextStyle(
+                      color: trainSlotColor(next),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (!editing && (free > 0 || canRespec)) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (free > 0)
+                  Expanded(
+                    child: _solidButton(
+                      l.trainPresetFill('$free'),
+                      const Color(0xFF2E8B57),
+                      key: const ValueKey('trainPresetFill'),
+                      icon: Icons.auto_fix_high_rounded,
+                      onTap: () => _guard(() async {
+                        final err = await _ctrl.fillTrainFreeNow(
+                          bug.id,
+                          weights,
+                        );
+                        if (!mounted) return;
+                        if (err == null) {
+                          _pushNow();
+                          AudioService.instance.sfxEnhance();
+                          showCenterToast(context, l.trainPresetFilled);
+                          return;
+                        }
+                        showCenterToast(context, switch (err) {
+                          'maxed' => l.trainPresetNoRoom,
+                          'respec' => l.trainPtRespecBusy,
+                          _ => l.battleServerFailed,
+                        });
+                      }),
+                    ),
+                  ),
+                if (free > 0 && canRespec) const SizedBox(width: 8),
+                if (canRespec)
+                  Expanded(
+                    child: _solidButton(
+                      l.trainPresetRespec,
+                      const Color(0xFF2E7DBA),
+                      key: const ValueKey('trainPresetRespec'),
+                      icon: Icons.restart_alt_rounded,
+                      onTap: () {
+                        loadIntoDraft(sel);
+                        showCenterToast(context, l.trainPresetApplied);
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _presetChip(
+    String label, {
+    required bool selected,
+    required VoidCallback onTap,
+    Key? key,
+  }) => GestureDetector(
+    key: key,
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: selected ? const Color(0x55B39DDB) : _row,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: selected ? const Color(0xFFD1C4E9) : const Color(0x33FFFFFF),
+          width: selected ? 1.5 : 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: selected ? Colors.white : _text,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    ),
+  );
+
   // ── 칸 ───────────────────────────────────────────────────────────────
 
   /// 칸 효과 한 줄(1포인트 효과 · 지금 합계). 근성은 탭 반격 설명.
@@ -997,6 +1221,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           l.trainMassPer(_signed(e), _signed(-cfg.massSpeedPenalty)),
           '${l.trainWeight} ${_signed(e * pts)}',
         );
+      case TrainSlot.push:
+        return l.trainPtEffect(l.trainPushPer(_signed(e)), _signed(e * pts));
       case TrainSlot.tech:
         final t = cfg.techBySpecialty[sp.specialty] ?? 0;
         return switch (sp.specialty) {

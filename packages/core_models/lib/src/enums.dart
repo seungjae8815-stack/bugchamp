@@ -351,7 +351,7 @@ enum TrainSlot {
   attack('attack'), // 공격(ATK ×)
   defense('defense'), // 방어(DEF ×)
   hp('hp'), // 체력(HP ×)
-  speed('speed'), // 속도(SPD ×)
+  push('push'), // 밀어내기 힘(힘겨루기 · 밀치기 ×) — 2026-10-09 속도 칸 자리(옛 키 'speed' 를 읽는다)
   evade('evade'), // 회피(확률 +)
   crit('crit'), // 치명(확률 +)
   recovery('recovery'), // 회복력(판 안 흡혈 + 판 사이 회복)
@@ -363,12 +363,17 @@ enum TrainSlot {
   final String key;
 
   /// 모르는 키는 null — 세이브에서 읽을 때(신버전이 칸을 추가해도 구버전이 죽지 않게).
+  /// 옛 키 `speed`(속도 칸 — 2026-10-09 밀어내기 힘 칸으로 바뀜)는 [push] 로 읽는다: 이미 찍은 속도
+  /// 점수(이전된 곤충의 날개 강화 몫 포함)가 그대로 밀어내기 힘 점수가 된다.
   static TrainSlot? fromKeyOrNull(String k) {
+    if (k == _legacySpeedKey) return push;
     for (final e in values) {
       if (e.key == k) return e;
     }
     return null;
   }
+
+  static const _legacySpeedKey = 'speed';
 }
 
 /// 결투석(2026-10-08, design_training_v2.md §3) — 곤충 1마리의 오행·기질을 원하는 값으로 바꾼다.

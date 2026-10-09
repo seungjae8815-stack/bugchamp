@@ -6237,7 +6237,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainSlotHp => 'HP';
 
   @override
-  String get trainSlotSpeed => 'Speed';
+  String get trainSlotPush => 'Push power';
 
   @override
   String get trainSlotMass => 'Weight class';
@@ -6331,6 +6331,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String trainMassPer(String w, String s) {
     return 'weight $w · speed $s';
   }
+
+  @override
+  String trainPushPer(String p) {
+    return 'push force $p';
+  }
+
+  @override
+  String get trainPresetTitle => 'Suggested builds';
+
+  @override
+  String get trainPresetBalanced => 'Balanced';
+
+  @override
+  String get trainPresetTank => 'Tank';
+
+  @override
+  String get trainPresetHeavy => 'Heavyweight';
+
+  @override
+  String get trainPresetHint =>
+      'Builds that tested strong · ★ suggested for this specialty';
+
+  @override
+  String trainPresetNext(String slot) {
+    return 'Next suggested slot: $slot';
+  }
+
+  @override
+  String trainPresetFill(String n) {
+    return 'Fill $n spare points';
+  }
+
+  @override
+  String get trainPresetRespec => 'Respec to this build';
+
+  @override
+  String get trainPresetFilled => 'Filled with the suggested build';
+
+  @override
+  String get trainPresetApplied =>
+      'Suggested build loaded — tap Apply to confirm';
+
+  @override
+  String get trainPresetNoRoom => 'All suggested slots are full';
+
+  @override
+  String get guideTrainPushNote =>
+      'Push power — how hard your bug shoves on contact. It strengthens Strike flips and shoves, Grip bite-and-push, and Toss throws. Unlike Weight class it does not add weight (staying power). Points in the old Speed slot became Push power as-is.';
+
+  @override
+  String get guideTrainPresetBody =>
+      'The Training Center\'s suggested builds are allocations that tested strong (Balanced · Tank · Heavyweight, ★ = suggested for that bug\'s specialty). Load one at once when respeccing; when adding new points it shows the next suggested slot.';
 
   @override
   String trainTechFlip(String v) {

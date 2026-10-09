@@ -1853,6 +1853,30 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return null;
   }
 
+  /// 재료를 낸 남는 포인트를 추천 배분 [weights] 대로 한 번에 찍는다(core_save `fillTrainFreePoints`).
+  /// 성공하면 null(`respec`·`none`·`maxed`).
+  Future<String?> fillTrainFreeNow(
+    String bugId,
+    Map<TrainSlot, int> weights,
+  ) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final s = state.requireValue;
+    final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
+    if (bug == null) return 'no_bug';
+    final r = fillTrainFreePoints(
+      s,
+      _battleCfg.training,
+      bug,
+      data.species(bug.speciesId),
+      weights,
+      ref.read(clockProvider).now().toUtc(),
+      enhance: data.enhanceConfig,
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
   /// 지금 포인트 찍기를 젤리로 끝낸다. 성공하면 null, 부족하면 `jelly`.
   Future<String?> finishTrainPointWithJelly() async {
     final r = instantFinishTrainPoint(

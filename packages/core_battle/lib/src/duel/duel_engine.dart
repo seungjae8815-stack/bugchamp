@@ -423,11 +423,13 @@ DuelBout simulateBout({
   double guard(_Body s) => 1 + p.hpGuard * s.hpPct;
   // 들어 올리거나 밀어낼 수 있는 힘의 몫(0~1) — 공격 쪽 ATK×무게 대 방어 쪽 DEF×무게.
   // 체구 비중(C안): 스탯 지수를 낮추고 무게 지수를 올리면 밀기 싸움이 몸집 싸움이 된다.
+  // 밀어내기 힘 칸(pushMult)은 **미는 쪽 몫에만** 곱한다(체급과 달리 버티는 힘은 안 는다).
   double heft(double stat, double m) =>
       math.pow(math.max(stat, 1e-6), p.leverageStatExp).toDouble() *
       math.pow(m, p.leverageMassExp).toDouble();
   double leverage(_Body from, _Body to) {
-    final f = heft(from.bug.atk, from.m) * restrain(from, to);
+    final f =
+        heft(from.bug.atk, from.m) * restrain(from, to) * from.bug.pushMult;
     final r = heft(to.bug.def, to.m) * resist(to);
     return f / (f + r);
   }
@@ -849,7 +851,12 @@ DuelBout simulateBout({
               case Specialty.strike:
                 if (s.strikeCd > 0) continue;
                 s.strikeCd = p.strikeFlipCooldown;
-                final push = impact * (p.strikePushMult - 1) * s.m / o.m;
+                final push =
+                    impact *
+                    (p.strikePushMult - 1) *
+                    s.m /
+                    o.m *
+                    s.bug.pushMult;
                 o.vx += sx * push / resist(o) / guard(o);
                 o.vy += sy * push / resist(o) / guard(o);
                 final chance =
