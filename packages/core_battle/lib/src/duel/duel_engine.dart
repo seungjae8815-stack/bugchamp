@@ -286,6 +286,9 @@ class _Body {
   /// 이 판에서 남은 탭 반격 횟수.
   int clutchLeft = 0;
 
+  /// 탭 반격 성공 직후 피해를 받지 않는 마지막 틱(이 틱 전까지 무적, `clutchInvulSeconds`).
+  int invulUntil = 0;
+
   bool get grounded => air <= 0;
   double get hpPct => bug.maxHp <= 0 ? 0 : (hp / bug.maxHp).clamp(0, 1);
   double get dist => math.sqrt(x * x + y * y);
@@ -436,7 +439,11 @@ DuelBout simulateBout({
 
   // 0 아래로도 내려간다 — 한 충돌에 둘 다 쓰러지면 **더 깊이 깎인 쪽**이 진다
   // (0 에서 자르면 동점이 되고, 동점 처리가 한쪽에 몰려 대칭 대전이 50% 가 안 나왔다).
+  // 탭 반격 성공 직후 무적(2026-10-09 사장님 확정) — 피해만 막는다. 밀림·뒤집기·장외는 그대로 걸린다.
+  bool invul(_Body s) => tick < s.invulUntil;
+
   void hit(_Body to, double dmg) {
+    if (invul(to)) return;
     to.hp -= dmg;
   }
 
@@ -469,6 +476,9 @@ DuelBout simulateBout({
     }
     s.clutchLeft--;
     final ok = score >= p.clutchThreshold - grit * p.clutchThresholdPerGrit;
+    // 살아나면 잠깐 무적 — 체력이 바닥일 때 오는 위기라, 무적이 없으면 살아나도 다음 한 대에 졌다
+    // (같은 세기 상대에게도 성공 뒤 그 판을 이길 확률 장외 35% · 뒤집기 20% · 기절 35%).
+    if (ok) s.invulUntil = tick + (p.clutchInvulSeconds * p.tickHz).round();
     events.add(
       DuelEvent(
         tick: tick,
@@ -653,7 +663,7 @@ DuelBout simulateBout({
               tick: tick,
               kind: DuelEventKind.land,
               who: s.side,
-              value: s.landDamage.round(),
+              value: invul(s) ? 0 : s.landDamage.round(),
             ),
           );
           s.landDamage = 0;
@@ -789,7 +799,7 @@ DuelBout simulateBout({
               (critA ? p.critMult : 1) *
               (weakB ? p.weakMult : 1) *
               spread() *
-              (evadeB ? 0 : 1);
+              (evadeB || invul(B) ? 0 : 1);
           final toA =
               B.bug.atk *
               p.damageK *
@@ -799,7 +809,7 @@ DuelBout simulateBout({
               (critB ? p.critMult : 1) *
               (weakA ? p.weakMult : 1) *
               spread() *
-              (evadeA ? 0 : 1);
+              (evadeA || invul(A) ? 0 : 1);
           hit(B, toB);
           hit(A, toA);
           // 흡혈(회복력) — 준 피해의 일부를 되찾는다. 이번 충돌로 쓰러졌으면 없다.
@@ -822,7 +832,9 @@ DuelBout simulateBout({
             (0, critA, weakB, toB),
             (1, critB, weakA, toA),
           ]) {
-            if (crit) {
+            // 무적인 쪽을 때린 치명·약점은 피해가 0 이라 글씨를 띄우지 않는다.
+            final shielded = invul(bodies[1 - side]);
+            if (crit && !shielded) {
               events.add(
                 DuelEvent(
                   tick: tick,
@@ -832,7 +844,7 @@ DuelBout simulateBout({
                 ),
               );
             }
-            if (weak) {
+            if (weak && !shielded) {
               events.add(
                 DuelEvent(
                   tick: tick,

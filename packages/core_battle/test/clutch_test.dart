@@ -234,6 +234,53 @@ void main() {
     });
   });
 
+  group('탭 반격 — 성공 직후 무적(clutchInvulSeconds)', () {
+    test('살아난 뒤 1초 동안 체력이 줄지 않고, 무적 0 이면 줄 수 있다', () {
+      const p = DuelParams(clutchEnabled: true, clutchInvulSeconds: 1.0);
+      var checked = 0, droppedWithout = 0;
+      for (var s = 1; s < 600 && checked < 30; s++) {
+        DuelBout mk(DuelParams q) => simulateBout(
+          seed: s,
+          a: _bug('a', Specialty.values[s % 3], tm: Temperament.values[s % 5]),
+          b: _bug('b', Specialty.strike, tm: Temperament.aggressive),
+          params: q,
+          clutchScores: const [1, 1, 1, 1],
+        );
+        final r = mk(p);
+        final save = _of(r, DuelEventKind.clutchSave, 0).firstOrNull;
+        if (save == null) continue;
+        // 성공 다음 프레임부터 무적이 끝나기 직전 프레임까지 A 체력(프레임 [4])이 줄지 않는다.
+        final from = save.tick ~/ p.frameEvery + 1;
+        final to = (save.tick + p.tickHz * 1.0 - 1) ~/ p.frameEvery;
+        if (to >= r.frames.length) continue;
+        for (var f = from + 1; f <= to; f++) {
+          expect(
+            r.frames[f][4],
+            greaterThanOrEqualTo(r.frames[f - 1][4]),
+            reason: 'seed $s 프레임 $f: 무적 중 체력이 줄었다',
+          );
+        }
+        checked++;
+        final off = mk(
+          const DuelParams(clutchEnabled: true, clutchInvulSeconds: 0),
+        );
+        final offTo = math.min(to, off.frames.length - 1);
+        for (var f = from + 1; f <= offTo; f++) {
+          if (off.frames[f][4] < off.frames[f - 1][4]) {
+            droppedWithout++;
+            break;
+          }
+        }
+      }
+      expect(checked, greaterThan(10));
+      expect(
+        droppedWithout,
+        greaterThan(0),
+        reason: '무적이 없으면 그 사이에 맞는 판이 있어야 검사가 의미 있다',
+      );
+    });
+  });
+
   group('탭 반격 — 버틴 뒤', () {
     // 2026-10-09 실기 지적: 치기가 뒤집기 판정 전에 넣은 밀치기 속도가 남아 "버텼다!" 직후 장외로 졌다.
     test('뒤집기를 버티면 1.5초 안에 장외로 지지 않는다(센 치기 상대)', () {

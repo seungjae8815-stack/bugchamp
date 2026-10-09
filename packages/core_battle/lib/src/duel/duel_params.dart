@@ -86,6 +86,7 @@ class DuelParams {
     this.clutchRestoreRatio = 0.75,
     this.clutchHoldHpCost = 0,
     this.clutchHoldKeepRatio = 0.5,
+    this.clutchInvulSeconds = 1.0,
     this.clutchThreshold = 0.55,
     this.clutchThresholdPerGrit = 0.02,
     this.clutchWakeHp = 0.10,
@@ -299,6 +300,10 @@ class DuelParams {
   /// (같은 세기 상대에게도 버틴 뒤 1초 안 기절 50%).
   final double clutchHoldKeepRatio;
 
+  /// 탭 반격(버티기·깨우기) 성공 직후 무적 시간(초) — 피해만 막는다(밀림·뒤집기·장외는 그대로). 2026-10-09 사장님 확정.
+  /// 위기는 체력이 바닥일 때 와서, 살아나도 다음 한 대에 지는 경우가 대부분이었다. 0 = 무적 없음.
+  final double clutchInvulSeconds;
+
   /// 성공 문턱 = clutchThreshold − 근성 × clutchThresholdPerGrit (점수 0~1 이 문턱 이상이면 성공).
   final double clutchThreshold;
   final double clutchThresholdPerGrit;
@@ -424,6 +429,7 @@ class DuelParams {
       clutchRestoreRatio: n('clutchRestoreRatio', d.clutchRestoreRatio),
       clutchHoldHpCost: n('clutchHoldHpCost', d.clutchHoldHpCost),
       clutchHoldKeepRatio: n('clutchHoldKeepRatio', d.clutchHoldKeepRatio),
+      clutchInvulSeconds: n('clutchInvulSeconds', d.clutchInvulSeconds),
       clutchThreshold: n('clutchThreshold', d.clutchThreshold),
       clutchThresholdPerGrit: n(
         'clutchThresholdPerGrit',
