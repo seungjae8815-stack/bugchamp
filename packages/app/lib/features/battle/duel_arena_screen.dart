@@ -1265,7 +1265,12 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           continue;
         }
         final mine = e.who == 0;
-        final life = mine ? 1.3 : 0.8;
+        // 상대가 살아나면 무적(clutchInvulSeconds) 동안은 반짝임을 남긴다 — 때려도 안 깎이는 이유가 보이게.
+        final life = mine
+            ? 1.3
+            : e.kind == DuelEventKind.clutchSave
+            ? math.max(0.8, widget.params.clutchInvulSeconds)
+            : 0.8;
         // 결판 뒤에는 재생 시각이 멈춰 있으니 판 결과 화면의 시간으로 잰다(실패 문구가 결판과 함께 보이게).
         final dt = ended
             ? afterEnd + (bout.ticks - e.tick) / widget.params.tickHz
