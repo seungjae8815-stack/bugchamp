@@ -532,7 +532,7 @@ CharacterStats applyFairyStats(CharacterStats s, Map<String, double> bonus) {
     xpMultiplier: s.xpMultiplier,
     bugFind: s.bugFind,
     materialFind: s.materialFind,
-    moveSpeed: s.moveSpeed,
+    evade: s.evade,
     boostBonus: s.boostBonus,
   );
 }

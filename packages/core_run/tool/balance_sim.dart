@@ -480,6 +480,11 @@ void main(List<String> args) {
     }
     stdout.writeln('');
     stdout.writeln('  ★ 전 회차 합계: $total일');
+    // 회피(옛 이동속도 칸, 2026-10-09) — 강화가 회차마다 초기화되므로 회차 안에서 0 → 상한으로 자란다.
+    stdout.writeln(
+      '  회피(활동 중 평균): ${[for (final e in sim.evadeLog.entries)
+        if (e.value.sec > 0) '회차${e.key} ${(e.value.evade / e.value.sec * 100).toStringAsFixed(1)}%'].join(' · ')} · 상한 ${(config.evadeMax * 100).toStringAsFixed(0)}%',
+    );
     _printBossLog(sim);
     _printEntryLog(sim);
     if (_printIncome) _printIncomeLog(sim);
@@ -1416,7 +1421,7 @@ class _Player {
       xpMultiplier: s.xpMultiplier,
       bugFind: s.bugFind,
       materialFind: s.materialFind,
-      moveSpeed: s.moveSpeed,
+      evade: s.evade,
       boostBonus: s.boostBonus,
     );
   }
@@ -1450,12 +1455,17 @@ class _Player {
       xpMultiplier: b.xpMultiplier,
       bugFind: b.bugFind,
       materialFind: b.materialFind,
-      moveSpeed: b.moveSpeed,
+      evade: b.evade,
       boostBonus: b.boostBonus,
     );
     // ⚠️ 장비의 체력·방어를 **반드시** 태운다(applyEquipment 가 한다). 빼면
     // 시뮬이 "피가 닳는다"고 하는데 실기는 안 닳는다.
-    s = applyEquipment(s, gear, critBudget: config.critBudgetGear);
+    s = applyEquipment(
+      s,
+      gear,
+      critBudget: config.critBudgetGear,
+      evadeBudget: config.evadeBudgetGear,
+    );
     s = _ceilingData.dex.apply(s, dexConquered, dexConquered);
     s = _applySkills(s, activeAvg: activeAvg);
     s = _applyFairy(s, activeAvg: activeAvg);
@@ -1540,7 +1550,7 @@ class _Player {
       xpMultiplier: s.xpMultiplier,
       bugFind: s.bugFind,
       materialFind: s.materialFind,
-      moveSpeed: s.moveSpeed,
+      evade: s.evade,
       boostBonus: s.boostBonus,
     );
   }
@@ -1616,7 +1626,7 @@ class _Player {
       xpMultiplier: s.xpMultiplier,
       bugFind: s.bugFind,
       materialFind: s.materialFind,
-      moveSpeed: s.moveSpeed,
+      evade: s.evade,
       boostBonus: s.boostBonus,
     );
   }
@@ -1941,7 +1951,7 @@ class _Player {
       xpMultiplier: bare.xpMultiplier,
       bugFind: bare.bugFind,
       materialFind: bare.materialFind,
-      moveSpeed: bare.moveSpeed,
+      evade: bare.evade,
       boostBonus: bare.boostBonus,
     );
     const capMin = 180.0;
@@ -2080,7 +2090,7 @@ class _Player {
     final hit = baselineHitPower(st);
     final dps = hit * st.attackSpeed;
     final fight = dps <= 0 ? 999.0 : hp / dps;
-    final walk = 0.6 / (st.moveSpeed <= 0 ? 1.0 : st.moveSpeed);
+    final walk = _walkSec;
     final inc =
         habitatThreat(
           config,
@@ -2096,7 +2106,7 @@ class _Player {
     // → 처치 회복. 걷는 동안은 walkThreatMult 로 게이지가 찬다.
     final iv = config.enemyAtkInterval;
     final delay = config.enemyFirstBiteDelay;
-    final h = _HpTrack(max, _skillDefense);
+    final h = _HpTrack(max, _skillDefense, evade: evadeChance(config, st));
     var acc = 0.0;
     for (var i = 0; i < config.habitatsPerStage && !h.dead; i++) {
       // 걷기
@@ -2207,7 +2217,8 @@ class _Player {
           tier: _tier,
         ) *
         100 /
-        (100 + st.defense);
+        (100 + st.defense) *
+        _hitTaken(st);
     final net = inc - st.hpRegen;
     final live = _bossLive(st.maxHp, net);
     final limit = math.min(_bossPatienceSeconds, live / 1.1);
@@ -2236,7 +2247,8 @@ class _Player {
           abyssFloor: floor,
         ) *
         100 /
-        (100 + st.defense);
+        (100 + st.defense) *
+        _hitTaken(st);
     final net = inc - st.hpRegen;
     final live = _bossLive(st.maxHp, net);
     return _bossDamageIn(math.min(_bossPatienceSeconds, live / 1.1)) >= hp;
@@ -2316,6 +2328,14 @@ class _Player {
     return (floors: floor, minutesAtReach: perFloorMin);
   }
 
+  /// 물기 중 실제로 맞는 비율 — 회피(기준 밖)만큼 빗나간다. 보스전처럼 한 줄로 근사하는
+  /// 곳은 기대값으로 곱하고, 마리 단위로 굴리는 곳은 [_HpTrack] 이 몇 대마다 한 대씩 뺀다.
+  double _hitTaken(CharacterStats st) => 1 - evadeChance(config, st);
+
+  /// 몬스터 사이를 걷는 시간(초) — 앱과 같다(walkSeconds ÷ 탭 부스트 이동 배율).
+  double get _walkSec =>
+      config.walkSeconds / (1 + (_tapBoostAvg - 1) * config.boostSpeedFactor);
+
   /// 지금 전력으로 [stage] 의 보스를 잡을 수 있나 — 죽이는 시간 < 버티는 시간.
   /// 앱의 도전 판단(유저가 누른다)을 시뮬이 대신한다. 너무 오래 걸리면(120초)
   /// 유저도 안 누른다고 본다.
@@ -2338,7 +2358,8 @@ class _Player {
           tier: _tier,
         ) *
         100 /
-        (100 + st.defense);
+        (100 + st.defense) *
+        _hitTaken(st);
     final net = inc - st.hpRegen;
     final live = _bossLive(st.maxHp, net);
     // 예전 식(죽이는 시간 ≤ 인내 · 버티는 시간 > 죽이는 시간 × 1.1)과 같다 — 다만 넣는
@@ -2364,6 +2385,13 @@ class _Player {
         // 바꿔도 결과가 안 변한다(2026-08-30 에 실제로 그랬다).
         tier: _tier,
       );
+      if (_online && !fitting) {
+        final e = evadeLog[_tier] ?? (sec: 0.0, evade: 0.0);
+        evadeLog[_tier] = (
+          sec: e.sec + slice,
+          evade: e.evade + evadeChance(config, stats) * slice,
+        );
+      }
       elapsedDays += slice / 3600 / (_activeHoursPerDay + _offlineHoursPerDay);
       for (final m in _samplesEcon) {
         if (prevStage < m && stage >= m) {
@@ -2467,7 +2495,8 @@ class _Player {
                 tier: _tier,
               ) *
               100 /
-              (100 + st.defense);
+              (100 + st.defense) *
+              _hitTaken(st);
           final net = inc - st.hpRegen;
           return (
             kill: dps <= 0 ? 0.0 : hp / dps,
@@ -2488,7 +2517,7 @@ class _Player {
           );
           final dps = hit * st.attackSpeed;
           final fight = dps <= 0 ? 0.0 : hp / dps;
-          final walk = 0.6 / (st.moveSpeed <= 0 ? 1.0 : st.moveSpeed);
+          final walk = _walkSec;
           final tough = toughnessOf(_baseStats);
           final inc =
               habitatThreat(
@@ -2523,9 +2552,11 @@ class _Player {
           final n = config.habitatsPerStage;
           // 이동 중에도 위협이 붙는다(§walkThreatMult). 예전엔 이동이 완전
           // 공짜여서, 몹이 서너 대에 죽는 구간에서 판의 절반이 안전지대였다.
+          // 회피(기준 밖)만큼 빗나간다 — 수지는 기대값으로.
           final dmg =
-              inc * (fight + walk * config.walkThreatMult) * n +
-              bossInc * bossFight;
+              (inc * (fight + walk * config.walkThreatMult) * n +
+                  bossInc * bossFight) *
+              _hitTaken(st);
           final heal =
               (st.hpRegen * fight + st.hpRegen * 2 * walk) * n +
               (st.maxHp * config.killHealPct * n +
@@ -2536,8 +2567,12 @@ class _Player {
           // ── 체력 궤적 ── (앱의 게이지 규칙 그대로: 간격마다 한 대, 게이지
           // 이월, 처치 회복은 killHealAmount)
           hpTrajectory.putIfAbsent(s, () {
-            // 방어형 스킬(흡즙·탈피·번데기 방벽)은 _HpTrack 이 얹는다.
-            final h = _HpTrack(max, _skillDefense);
+            // 방어형 스킬(흡즙·탈피·번데기 방벽)·회피는 _HpTrack 이 얹는다.
+            final h = _HpTrack(
+              max,
+              _skillDefense,
+              evade: evadeChance(config, st),
+            );
             var acc = 0.0;
             void tick(
               double sec,
@@ -2673,6 +2708,9 @@ class _Player {
       _buyUpgrades();
     }
   }
+
+  /// 회차별 활동 중 회피(시간 가중 합) — 표 아래 한 줄로 찍는다.
+  final Map<int, ({double sec, double evade})> evadeLog = {};
 
   void _gainXp(int amount) {
     xp += amount;
@@ -3038,10 +3076,16 @@ typedef _SkillDefense = ({
 /// 쓰러지는 순간 탈피 쿨이 돌았으면 그 자리에서 일어나고(`_beginDefeat`),
 /// 처치 회복은 흡즙 배율을 곱한다(`_healTeamOnKill`).
 class _HpTrack {
-  _HpTrack(this.max, this.skills) : hp = max, low = max;
+  _HpTrack(this.max, this.skills, {this.evade = 0}) : hp = max, low = max;
 
   final double max;
   final _SkillDefense skills;
+
+  /// 회피 확률(상한 후). 앱은 물기마다 주사위를 굴리지만 여기는 결정론이라 **누적해서
+  /// 1 이 찰 때마다 한 대를 뺀다**(20% 면 다섯 대마다 한 대) — 평균은 같고 운은 뺀다.
+  final double evade;
+  double _evadeAcc = 0;
+  int evaded = 0;
   double hp;
   double low;
 
@@ -3063,6 +3107,13 @@ class _HpTrack {
     if (dead || dmg <= 0) return;
     if (_guarded) {
       blocked++;
+      return;
+    }
+    // 앱 순서와 같다: 방벽이 먼저 막고, 그다음 회피 판정(_applyHabitatThreat).
+    _evadeAcc += evade;
+    if (_evadeAcc >= 1) {
+      _evadeAcc -= 1;
+      evaded++;
       return;
     }
     hp -= dmg;

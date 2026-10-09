@@ -135,7 +135,7 @@ CharacterStats applyGuildStats(CharacterStats s, Map<String, double> bonus) {
     xpMultiplier: s.xpMultiplier * (1 + v('xp')),
     bugFind: s.bugFind,
     materialFind: s.materialFind * (1 + v('materialFind')),
-    moveSpeed: s.moveSpeed,
+    evade: s.evade,
     boostBonus: s.boostBonus,
   );
 }

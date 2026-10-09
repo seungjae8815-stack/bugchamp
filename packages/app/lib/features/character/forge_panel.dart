@@ -1520,7 +1520,12 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
     final r = items.optionPool.where((x) => x.kind == k).firstOrNull;
     if (r == null) return '';
     final t = rangeTier();
-    return '${r.min.toStringAsFixed(0)}~${r.maxAt(t).toStringAsFixed(0)}%';
+    final hi = r.maxAt(t);
+    // 10 미만 소수 최대치(회피 3.5 등)는 한 자리까지 — 반올림하면 실제보다 크게 읽힌다.
+    final hiText = hi.toStringAsFixed(
+      hi >= 10 || hi == hi.roundToDouble() ? 0 : 1,
+    );
+    return '${r.min.toStringAsFixed(0)}~$hiText%';
   }
 
   await showGameDialog<void>(

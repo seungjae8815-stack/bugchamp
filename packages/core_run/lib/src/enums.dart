@@ -47,7 +47,12 @@ enum UpgradeKind {
   bugFind('bugFind'), // 곤충 감각 (곤충 조우율)
   materialFind('materialFind'), // 꼼꼼한 손질 (재료 획득)
   // 🏃 진행·편의
-  moveSpeed('moveSpeed'), // 발걸음 (이동속도)
+  /// 회피(2026-10-09 사장님 확정 — 옛 '발걸음(이동속도)' 칸).
+  ///
+  /// ⚠️ **키는 `moveSpeed` 그대로다.** 세이브(`upgradeLevels`)·run_config.json·species.json
+  /// 패시브·구버전 앱 업로드가 모두 이 문자열을 쓴다 — 바꾸면 기존 레벨이 사라진다.
+  /// 이동속도는 사냥 수입에 거의 안 실려(걷기는 처치 사이클의 일부) 회피로 바꿨다.
+  evade('moveSpeed'),
   boost('boost'), // 집중력 (부스트 강화)
   bugBuff('bugBuff'); // 도감 통달 (곤충 버프 증폭)
 

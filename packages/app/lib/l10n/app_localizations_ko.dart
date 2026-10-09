@@ -689,7 +689,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get upMaterialFind => '꼼꼼한 손질';
 
   @override
-  String get upMoveSpeed => '발걸음';
+  String get upEvade => '회피';
 
   @override
   String get upBoost => '집중력';
@@ -2079,7 +2079,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get upMaterialFindDesc => '강화 재료 획득량이 늘어납니다.';
 
   @override
-  String get upMoveSpeedDesc => '다음 사냥터로 이동하는 속도가 빨라집니다.';
+  String get upEvadeDesc => '몬스터의 공격을 확률로 피해 피해를 받지 않습니다. 보스의 공격도 피할 수 있어요.';
 
   @override
   String get upBoostDesc => '화면을 탭할 때 발동하는 부스트 효과가 강해집니다.';
@@ -2798,6 +2798,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get optDefense => '방어';
 
   @override
+  String get optEvade => '회피';
+
+  @override
   String get optGold => '골드 획득';
 
   @override
@@ -2926,6 +2929,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get skillBlocked => '막음';
+
+  @override
+  String get evadePop => '회피!';
 
   @override
   String get skillGacha => '뽑기';
@@ -3267,6 +3273,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get statBugFind => '곤충 발견율';
+
+  @override
+  String get statEvade => '회피';
 
   @override
   String get charNoPet => '펫 없음';

@@ -59,7 +59,7 @@ void main() {
         xpMultiplier: b.xpMultiplier,
         bugFind: b.bugFind,
         materialFind: b.materialFind * 3,
-        moveSpeed: b.moveSpeed,
+        evade: b.evade,
         boostBonus: b.boostBonus,
       );
       return exchangeOutput(

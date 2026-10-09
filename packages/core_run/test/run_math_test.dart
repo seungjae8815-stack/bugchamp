@@ -330,7 +330,73 @@ void main() {
       expect(s.critChance, 0);
       expect(s.critDamage, 2.0);
       expect(s.bossDamage, 1.0);
-      expect(s.moveSpeed, 1.0);
+      expect(s.evade, 0.0);
+    });
+  });
+
+  group('회피(옛 이동속도 칸, 2026-10-09)', () {
+    // 키는 세이브 호환 때문에 moveSpeed 그대로다 — 바꾸면 기존 레벨이 사라진다.
+    test('강화 키는 moveSpeed 그대로', () {
+      expect(UpgradeKind.evade.key, 'moveSpeed');
+      expect(UpgradeKind.fromKeyOrNull('moveSpeed'), UpgradeKind.evade);
+    });
+
+    final ev = RunConfig.fromJson({
+      ..._baseJson(),
+      'evadeMax': 0.3,
+      'evadeBudgetUpgrade': 0.2,
+      'evadeBudgetOther': 0.1,
+      'upgrades': [
+        {
+          'kind': 'moveSpeed',
+          'baseCost': 1,
+          'costGrowth': 1.1,
+          'baseValue': 0.0,
+          'perLevel': 0.01,
+        },
+      ],
+    });
+
+    test('강화 회피는 강화 예산에서 잘린다', () {
+      double at(int lv) => deriveStats(
+        ev,
+        upgradeLevels: {UpgradeKind.evade: lv},
+        characterLevel: 1,
+        bugsCollected: 0,
+      ).evade;
+      expect(at(0), 0);
+      expect(at(10), closeTo(0.10, 1e-9));
+      expect(at(50), closeTo(0.20, 1e-9)); // 0.5 → 예산 0.2
+    });
+
+    test('종 패시브 회피는 %p 로 더해지고 그 외 예산에서 잘린다', () {
+      final base = deriveStats(
+        ev,
+        upgradeLevels: {UpgradeKind.evade: 50},
+        characterLevel: 1,
+        bugsCollected: 0,
+      );
+      final one = applySpeciesPassives(base, {
+        UpgradeKind.evade: 0.02,
+      }, evadeBudget: ev.evadeBudgetOther);
+      expect(one.evade, closeTo(0.22, 1e-9));
+      final many = applySpeciesPassives(base, {
+        UpgradeKind.evade: 0.5,
+      }, evadeBudget: ev.evadeBudgetOther);
+      expect(many.evade, closeTo(0.30, 1e-9));
+    });
+
+    test('최종 상한(evadeMax)을 넘지 않는다', () {
+      final s = deriveStats(
+        ev,
+        upgradeLevels: {UpgradeKind.evade: 50},
+        characterLevel: 1,
+        bugsCollected: 0,
+      );
+      final over = applySpeciesPassives(s, {UpgradeKind.evade: 0.5});
+      expect(over.evade, greaterThan(ev.evadeMax));
+      expect(evadeChance(ev, over), ev.evadeMax);
+      expect(evadeChance(ev, s), closeTo(0.2, 1e-9));
     });
   });
 
@@ -656,7 +722,7 @@ void main() {
         xpMultiplier: 1,
         bugFind: 1,
         materialFind: 1,
-        moveSpeed: 1,
+        evade: 0,
         boostBonus: 1,
       );
       final s2 = CharacterStats(
@@ -672,7 +738,7 @@ void main() {
         xpMultiplier: s1.xpMultiplier,
         bugFind: s1.bugFind,
         materialFind: s1.materialFind,
-        moveSpeed: s1.moveSpeed,
+        evade: s1.evade,
         boostBonus: s1.boostBonus,
       );
       expect(toughnessOf(s2), toughnessOf(s1));
@@ -699,7 +765,7 @@ void main() {
       xpMultiplier: 1,
       bugFind: 1,
       materialFind: 1,
-      moveSpeed: 1,
+      evade: 0,
       boostBonus: 1,
     );
 

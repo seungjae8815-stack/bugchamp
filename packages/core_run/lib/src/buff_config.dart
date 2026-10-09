@@ -127,7 +127,7 @@ CharacterStats applyBuffs(
     xpMultiplier: base.xpMultiplier * xp,
     bugFind: base.bugFind * bug,
     materialFind: base.materialFind * mat,
-    moveSpeed: base.moveSpeed,
+    evade: base.evade,
     boostBonus: base.boostBonus,
   );
 }

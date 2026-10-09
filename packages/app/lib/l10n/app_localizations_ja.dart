@@ -687,7 +687,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upMaterialFind => '丁寧な採取';
 
   @override
-  String get upMoveSpeed => '足取り';
+  String get upEvade => '回避';
 
   @override
   String get upBoost => '集中力';
@@ -2074,7 +2074,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upMaterialFindDesc => '強化素材の獲得量が増えます。';
 
   @override
-  String get upMoveSpeedDesc => '次の狩場への移動速度が速くなります。';
+  String get upEvadeDesc => 'モンスターの攻撃を一定確率でかわし、ダメージを受けません。ボスの攻撃もかわせます。';
 
   @override
   String get upBoostDesc => '画面をタップしたときに発動するブースト効果が強くなります。';
@@ -2791,6 +2791,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optDefense => '防御';
 
   @override
+  String get optEvade => '回避';
+
+  @override
   String get optGold => '金貨獲得';
 
   @override
@@ -2919,6 +2922,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get skillBlocked => 'ブロック';
+
+  @override
+  String get evadePop => '回避!';
 
   @override
   String get skillGacha => 'ガチャ';
@@ -3260,6 +3266,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get statBugFind => '昆虫発見率';
+
+  @override
+  String get statEvade => '回避';
 
   @override
   String get charNoPet => 'ペットなし';

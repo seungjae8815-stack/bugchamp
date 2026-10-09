@@ -226,6 +226,7 @@ class _StatsPanel extends ConsumerWidget {
         ),
         equipmentBonus(save.equippedItems.values, data?.itemConfig),
         critBudget: run.critBudgetGear,
+        evadeBudget: run.evadeBudgetGear,
       ),
       run.critChanceMax,
     );
@@ -245,6 +246,8 @@ class _StatsPanel extends ConsumerWidget {
       (l.statGoldGain, '×${s.rewardMultiplier.toStringAsFixed(2)}'),
       (l.statMaterialGain, '×${s.materialFind.toStringAsFixed(2)}'),
       (l.statBugFind, '×${s.bugFind.toStringAsFixed(2)}'),
+      // 회피(옛 이동속도 강화 칸, 2026-10-09) — 물기가 빗나갈 확률(상한 포함).
+      (l.statEvade, '${(evadeChance(run, s) * 100).toStringAsFixed(1)}%'),
     ];
     final half = (rows.length + 1) ~/ 2;
 

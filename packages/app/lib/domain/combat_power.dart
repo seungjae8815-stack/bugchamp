@@ -60,7 +60,7 @@ CharacterStats permanentStatsOf(SaveGame save, GameData data, DateTime now) {
     xpMultiplier: base.xpMultiplier,
     bugFind: base.bugFind,
     materialFind: base.materialFind,
-    moveSpeed: base.moveSpeed,
+    evade: base.evade,
     boostBonus: base.boostBonus,
   );
 }
@@ -76,6 +76,7 @@ CharacterStats displayStatsOf(SaveGame save, GameData data, DateTime now) =>
       permanentStatsOf(save, data, now),
       equipmentBonus(save.equippedItems.values, data.itemConfig),
       critBudget: data.runConfig!.critBudgetGear,
+      evadeBudget: data.runConfig!.evadeBudgetGear,
     );
 
 /// 화면에 보이는 전투력(홈 상단) — 랭킹 진행도의 동률을 가르는 값이기도 하다.
@@ -101,6 +102,7 @@ CharacterStats huntStatsUncapped(
     s,
     speciesPassivesOf(save, data, now),
     critBudget: config.critBudgetOther,
+    evadeBudget: config.evadeBudgetOther,
   );
   final skills = data.skillConfig;
   if (skills != null && save.equippedSkills.isNotEmpty) {

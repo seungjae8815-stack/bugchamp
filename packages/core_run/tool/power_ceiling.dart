@@ -128,10 +128,15 @@ CharacterStats composeStats(RunConfig run, CeilingData data, PowerParts p) {
     xpMultiplier: base.xpMultiplier,
     bugFind: base.bugFind,
     materialFind: base.materialFind,
-    moveSpeed: base.moveSpeed,
+    evade: base.evade,
     boostBonus: base.boostBonus,
   );
-  s = applyEquipment(s, p.gear, critBudget: run.critBudgetGear);
+  s = applyEquipment(
+    s,
+    p.gear,
+    critBudget: run.critBudgetGear,
+    evadeBudget: run.evadeBudgetGear,
+  );
   s = data.dex.apply(s, p.dexConquered, p.dexConquered);
   return capCritChance(s, run.critChanceMax);
 }

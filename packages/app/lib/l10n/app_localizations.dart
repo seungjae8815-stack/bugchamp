@@ -1324,11 +1324,11 @@ abstract class AppLocalizations {
   /// **'Careful Harvest'**
   String get upMaterialFind;
 
-  /// No description provided for @upMoveSpeed.
+  /// No description provided for @upEvade.
   ///
   /// In en, this message translates to:
-  /// **'Footwork'**
-  String get upMoveSpeed;
+  /// **'Evasion'**
+  String get upEvade;
 
   /// No description provided for @upBoost.
   ///
@@ -3784,11 +3784,11 @@ abstract class AppLocalizations {
   /// **'Increases enhancement materials gained.'**
   String get upMaterialFindDesc;
 
-  /// No description provided for @upMoveSpeedDesc.
+  /// No description provided for @upEvadeDesc.
   ///
   /// In en, this message translates to:
-  /// **'Faster travel to the next hunting spot.'**
-  String get upMoveSpeedDesc;
+  /// **'Chance to dodge a monster\'s attack and take no damage. Works on bosses too.'**
+  String get upEvadeDesc;
 
   /// No description provided for @upBoostDesc.
   ///
@@ -5068,6 +5068,12 @@ abstract class AppLocalizations {
   /// **'Defense'**
   String get optDefense;
 
+  /// No description provided for @optEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'Evasion'**
+  String get optEvade;
+
   /// No description provided for @optGold.
   ///
   /// In en, this message translates to:
@@ -5307,6 +5313,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Blocked'**
   String get skillBlocked;
+
+  /// No description provided for @evadePop.
+  ///
+  /// In en, this message translates to:
+  /// **'Dodge!'**
+  String get evadePop;
 
   /// No description provided for @skillGacha.
   ///
@@ -5817,6 +5829,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bug Find'**
   String get statBugFind;
+
+  /// No description provided for @statEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'Evasion'**
+  String get statEvade;
 
   /// No description provided for @charNoPet.
   ///

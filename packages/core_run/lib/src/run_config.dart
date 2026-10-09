@@ -238,6 +238,11 @@ class RunConfig {
     this.critBudgetUpgrade = 1.0,
     this.critBudgetGear = 1.0,
     this.critBudgetOther = 1.0,
+    this.evadeMax = 0.4,
+    this.evadeBudgetUpgrade = 0.2,
+    this.evadeBudgetGear = 0.1,
+    this.evadeBudgetOther = 0.1,
+    this.walkSeconds = 0.12,
     this.walkThreatMult = 0.0,
     this.boostDecayPerSec = 0.4,
     this.boostSpeedFactor = 1.0,
@@ -428,6 +433,27 @@ class RunConfig {
   final double critBudgetUpgrade;
   final double critBudgetGear;
   final double critBudgetOther;
+
+  /// 사냥 회피 확률의 **최종 상한**(2026-10-09). 출처별 예산([evadeBudgetUpgrade]·
+  /// [evadeBudgetGear]·[evadeBudgetOther])의 합과 같게 둔다 — 치명확률 예산과 같은 구조다.
+  ///
+  /// ⚠️ 회피는 적응형 위협 기준 **밖**(순수 이득)이라 크게 열면 "죽을 듯 말 듯"(한 대 12%)이
+  /// 무너지고 보스 관문(버티는 시간)이 함께 쉬워진다 — 올릴 땐 balance_sim 의 체력 궤적·도착 직후
+  /// 표와 일수를 함께 본다.
+  final double evadeMax;
+
+  /// 회피 출처별 예산 — 강화(옛 이동속도 칸) / 장비 옵션 / 그 외(종 패시브 등).
+  final double evadeBudgetUpgrade;
+  final double evadeBudgetGear;
+  final double evadeBudgetOther;
+
+  /// 몬스터 사이를 걷는 시간(초, 탭 부스트가 줄인다). 예전엔 0.6초 ÷ 이동속도 강화였다.
+  ///
+  /// 이동속도를 회피로 바꾸면서(2026-10-09) **평균 유저가 실제로 걷던 시간**으로 고정했다 —
+  /// 그래야 접속 중 시간당 처치(골드·재료 수입)가 바뀌지 않는다(balance_sim 실측: 강화
+  /// 평균 레벨 96 · 이동속도 ×5.8 → 걷기 0.6÷5.8÷부스트 1.24 ≈ 0.08~0.1초).
+  /// 방치 정산·서버(estimateClears)는 원래부터 이동속도를 모르고 0.6초 근사를 쓴다.
+  final double walkSeconds;
 
   /// 탭을 멈췄을 때 초당 떨어지는 배율.
   final double boostDecayPerSec;
@@ -834,6 +860,12 @@ class RunConfig {
       critBudgetUpgrade: (json['critBudgetUpgrade'] as num?)?.toDouble() ?? 1.0,
       critBudgetGear: (json['critBudgetGear'] as num?)?.toDouble() ?? 1.0,
       critBudgetOther: (json['critBudgetOther'] as num?)?.toDouble() ?? 1.0,
+      evadeMax: (json['evadeMax'] as num?)?.toDouble() ?? 0.4,
+      evadeBudgetUpgrade:
+          (json['evadeBudgetUpgrade'] as num?)?.toDouble() ?? 0.2,
+      evadeBudgetGear: (json['evadeBudgetGear'] as num?)?.toDouble() ?? 0.1,
+      evadeBudgetOther: (json['evadeBudgetOther'] as num?)?.toDouble() ?? 0.1,
+      walkSeconds: (json['walkSeconds'] as num?)?.toDouble() ?? 0.12,
       walkThreatMult: (json['walkThreatMult'] as num?)?.toDouble() ?? 0.0,
       boostDecayPerSec: (json['boostDecayPerSec'] as num?)?.toDouble() ?? 0.4,
       boostSpeedFactor: (json['boostSpeedFactor'] as num?)?.toDouble() ?? 1.0,

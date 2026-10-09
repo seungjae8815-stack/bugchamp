@@ -51,6 +51,9 @@ CharacterStats applyEquipment(
   /// 8부위가 전부 치명확률을 굴려도 이 몫을 넘지 않는다 — 나머지 출처의
   /// 자리를 남겨 두기 위해서다(RunConfig.critBudgetGear).
   double critBudget = 1.0,
+
+  /// 장비가 더할 수 있는 회피 확률의 상한(예산, RunConfig.evadeBudgetGear). 1.0 = 제한 없음.
+  double evadeBudget = 1.0,
 }) {
   if (bonus.isEmpty) return base;
   double m(ItemOptionKind k) => 1 + (bonus[k] ?? 0) / 100.0;
@@ -74,8 +77,8 @@ CharacterStats applyEquipment(
     xpMultiplier: base.xpMultiplier,
     bugFind: base.bugFind * m(ItemOptionKind.bugFind),
     materialFind: base.materialFind * m(ItemOptionKind.material),
-    // 이동속도는 장비 축에 없다(§3.3) — 그대로 둔다.
-    moveSpeed: base.moveSpeed,
+    // 회피도 치명확률처럼 **더하기**(%p)이고 장비 예산에서 잘린다(2026-10-09).
+    evade: base.evade + math.min(add(ItemOptionKind.evade), evadeBudget),
     boostBonus: base.boostBonus * m(ItemOptionKind.boost),
   );
 }

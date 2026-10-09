@@ -213,7 +213,7 @@ CharacterStats _scaled(
   xpMultiplier: s.xpMultiplier,
   bugFind: s.bugFind,
   materialFind: s.materialFind,
-  moveSpeed: s.moveSpeed,
+  evade: s.evade,
   boostBonus: s.boostBonus,
 );
 
@@ -231,6 +231,6 @@ CharacterStats _boosted(CharacterStats s, double mult) => CharacterStats(
   xpMultiplier: s.xpMultiplier,
   bugFind: s.bugFind,
   materialFind: s.materialFind,
-  moveSpeed: s.moveSpeed,
+  evade: s.evade,
   boostBonus: s.boostBonus,
 );

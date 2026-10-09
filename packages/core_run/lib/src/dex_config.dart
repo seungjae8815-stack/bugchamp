@@ -90,7 +90,7 @@ class DexConfig {
       xpMultiplier: s.xpMultiplier,
       bugFind: s.bugFind,
       materialFind: s.materialFind,
-      moveSpeed: s.moveSpeed,
+      evade: s.evade,
       boostBonus: s.boostBonus,
     );
   }

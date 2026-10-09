@@ -56,7 +56,7 @@ void main() {
       xpMultiplier: 1,
       bugFind: 1,
       materialFind: 1,
-      moveSpeed: 1,
+      evade: 0,
       boostBonus: 0,
     );
     final t = applyGuildStats(s, b);
