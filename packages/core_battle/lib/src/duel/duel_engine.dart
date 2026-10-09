@@ -508,6 +508,21 @@ DuelBout simulateBout({
     holdCost(s);
   }
 
+  // 뒤집기 위기 성공 — 그 자리에 버텨 선다. 치기는 뒤집기 판정 **전에** 밀치기 속도를 넣으므로, 뒤집기만 취소하면
+  // 밀쳐진 속도가 남아 "버텼다!" 직후 테두리 밖으로 미끄러져 장외로 졌다(2026-10-09 실기 지적 — 상대가 세면
+  // 버틴 판의 3~4% 가 0.3초 안팎에 장외). 장외 버티기([holdRim])처럼 속도를 버리고, 테두리 근처면 안쪽으로 되돌린다.
+  void holdFlip(_Body s) {
+    s.vx = 0;
+    s.vy = 0;
+    final d = s.dist;
+    final inner = radius * p.clutchRestoreRatio;
+    if (d > inner) {
+      s.x = s.x / d * inner;
+      s.y = s.y / d * inner;
+    }
+    holdCost(s);
+  }
+
   // 깨우기 성공 체력.
   void wake(_Body s) {
     s.hp =
@@ -871,7 +886,7 @@ DuelBout simulateBout({
                   final held = tryClutch(o, DuelCrisis.flip);
                   if (held == null) break;
                   if (held) {
-                    holdCost(o);
+                    holdFlip(o);
                   } else {
                     o.flipped = true;
                     winner = s.side;

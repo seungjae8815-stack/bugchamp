@@ -234,6 +234,64 @@ void main() {
     });
   });
 
+  group('탭 반격 — 버틴 뒤', () {
+    // 2026-10-09 실기 지적: 치기가 뒤집기 판정 전에 넣은 밀치기 속도가 남아 "버텼다!" 직후 장외로 졌다.
+    test('뒤집기를 버티면 1.5초 안에 장외로 지지 않는다(센 치기 상대)', () {
+      final strong = DuelBug(
+        id: 'b',
+        name: 'b',
+        speciesId: 'b',
+        element: Element.wood,
+        temperament: Temperament.aggressive,
+        specialty: Specialty.strike,
+        sizeMm: 80,
+        maxHp: 225,
+        atk: 90,
+        def: 75,
+        spd: 60,
+      );
+      var holds = 0;
+      for (var i = 0; i < 1200; i++) {
+        final r = simulateBout(
+          seed: 5000 + i * 7919,
+          a: _bug('a', Specialty.values[i % 3], tm: Temperament.values[i % 5]),
+          b: strong,
+          params: _on,
+          clutchScores: const [1, 1, 1, 1],
+        );
+        final ev = r.events;
+        for (var k = 0; k < ev.length; k++) {
+          final e = ev[k];
+          if (e.kind != DuelEventKind.clutch ||
+              e.who != 0 ||
+              e.value != DuelCrisis.flip.index) {
+            continue;
+          }
+          final res = ev
+              .skip(k + 1)
+              .firstWhere(
+                (x) =>
+                    x.who == 0 &&
+                    (x.kind == DuelEventKind.clutchSave ||
+                        x.kind == DuelEventKind.clutchFail),
+              );
+          if (res.kind != DuelEventKind.clutchSave) continue;
+          holds++;
+          for (final x in ev.skip(k + 1)) {
+            if (x.kind == DuelEventKind.ringOut && x.who == 0) {
+              expect(
+                x.tick - res.tick,
+                greaterThan(_on.tickHz * 1.5),
+                reason: 'seed ${5000 + i * 7919}: 버틴 직후 장외',
+              );
+            }
+          }
+        }
+      }
+      expect(holds, greaterThan(50), reason: '뒤집기 버티기가 충분히 나와야 검사가 된다');
+    });
+  });
+
   group('탭 반격 — 횟수·문턱', () {
     test('한 판에 곤충마다 1번(근성 5 이상이면 2번)', () {
       var sawTwo = false;
