@@ -591,7 +591,8 @@ void main() {
     expect(back.trainPointJob!.count, 2);
     expect(back.duelStoneCount(DuelStone.element), 3);
     expect(s.toJson()['feat'], kSaveFeatureLevel);
-    expect(kSaveFeatureLevel, 19);
+    // 훈련 v2 필드는 feat 19 부터(20 = 장비 회피 옵션, 2026-10-09).
+    expect(kSaveFeatureLevel, greaterThanOrEqualTo(19));
   });
 
   test('옛 단계 상한(이전 환산용) — 기본 + 포텐셜 + 기질·주특기·특성', () {

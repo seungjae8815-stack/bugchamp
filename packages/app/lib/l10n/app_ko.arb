@@ -967,6 +967,7 @@
   "optCritDamage": "치명타 피해",
   "optMaxHp": "체력",
   "optDefense": "방어",
+  "optEvade": "회피",
   "optGold": "골드 획득",
   "optMaterial": "재료 획득",
   "optBugFind": "곤충 발견율",

@@ -238,8 +238,9 @@ class RunConfig {
     this.critBudgetUpgrade = 1.0,
     this.critBudgetGear = 1.0,
     this.critBudgetOther = 1.0,
-    this.evadeMax = 0.3,
+    this.evadeMax = 0.4,
     this.evadeBudgetUpgrade = 0.2,
+    this.evadeBudgetGear = 0.1,
     this.evadeBudgetOther = 0.1,
     this.walkSeconds = 0.12,
     this.walkThreatMult = 0.0,
@@ -434,15 +435,16 @@ class RunConfig {
   final double critBudgetOther;
 
   /// 사냥 회피 확률의 **최종 상한**(2026-10-09). 출처별 예산([evadeBudgetUpgrade]·
-  /// [evadeBudgetOther])의 합과 같게 둔다 — 치명확률 예산과 같은 구조다.
+  /// [evadeBudgetGear]·[evadeBudgetOther])의 합과 같게 둔다 — 치명확률 예산과 같은 구조다.
   ///
   /// ⚠️ 회피는 적응형 위협 기준 **밖**(순수 이득)이라 크게 열면 "죽을 듯 말 듯"(한 대 12%)이
   /// 무너지고 보스 관문(버티는 시간)이 함께 쉬워진다 — 올릴 땐 balance_sim 의 체력 궤적·도착 직후
   /// 표와 일수를 함께 본다.
   final double evadeMax;
 
-  /// 회피 출처별 예산 — 강화(옛 이동속도 칸) / 그 외(종 패시브 등). 장비 옵션에는 회피가 없다.
+  /// 회피 출처별 예산 — 강화(옛 이동속도 칸) / 장비 옵션 / 그 외(종 패시브 등).
   final double evadeBudgetUpgrade;
+  final double evadeBudgetGear;
   final double evadeBudgetOther;
 
   /// 몬스터 사이를 걷는 시간(초, 탭 부스트가 줄인다). 예전엔 0.6초 ÷ 이동속도 강화였다.
@@ -858,9 +860,10 @@ class RunConfig {
       critBudgetUpgrade: (json['critBudgetUpgrade'] as num?)?.toDouble() ?? 1.0,
       critBudgetGear: (json['critBudgetGear'] as num?)?.toDouble() ?? 1.0,
       critBudgetOther: (json['critBudgetOther'] as num?)?.toDouble() ?? 1.0,
-      evadeMax: (json['evadeMax'] as num?)?.toDouble() ?? 0.3,
+      evadeMax: (json['evadeMax'] as num?)?.toDouble() ?? 0.4,
       evadeBudgetUpgrade:
           (json['evadeBudgetUpgrade'] as num?)?.toDouble() ?? 0.2,
+      evadeBudgetGear: (json['evadeBudgetGear'] as num?)?.toDouble() ?? 0.1,
       evadeBudgetOther: (json['evadeBudgetOther'] as num?)?.toDouble() ?? 0.1,
       walkSeconds: (json['walkSeconds'] as num?)?.toDouble() ?? 0.12,
       walkThreatMult: (json['walkThreatMult'] as num?)?.toDouble() ?? 0.0,

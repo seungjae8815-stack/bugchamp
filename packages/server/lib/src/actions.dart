@@ -281,6 +281,38 @@ class GameActions {
     ],
   };
 
+  /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.
+  static const _optionKeysSinceFeat20 = {'evade'};
+
+  /// [stored] 장비에서 구버전이 모르는 옵션만 뺀 모양이 [incoming] 과 같으면 [stored] 를, 아니면 null.
+  /// (저장본에 그런 옵션이 없으면 되돌릴 것도 없으니 null.)
+  static Object? _restoreDroppedOptions(Object? stored, Object? incoming) {
+    if (stored is! Map || incoming is! Map) return null;
+    if (stored['s'] != incoming['s']) return null;
+    if ((stored['t'] as num?)?.toInt() != (incoming['t'] as num?)?.toInt()) {
+      return null;
+    }
+    final so = stored['o'];
+    final co = incoming['o'];
+    if (so is! List) return null;
+    final kept = [
+      for (final o in so)
+        if (o is Map && !_optionKeysSinceFeat20.contains(o['k'])) o,
+    ];
+    if (kept.length == so.length) return null; // 빠진 옵션이 없다
+    final inc = co is List ? co : const [];
+    if (inc.length != kept.length) return null;
+    for (var i = 0; i < kept.length; i++) {
+      final a = kept[i];
+      final b = inc[i];
+      if (b is! Map || a['k'] != b['k']) return null;
+      if ((a['v'] as num?)?.toDouble() != (b['v'] as num?)?.toDouble()) {
+        return null;
+      }
+    }
+    return stored;
+  }
+
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
   static Map<String, dynamic> _keepFieldsOldAppDoesNotKnow(
     SaveGame stored,
@@ -320,6 +352,38 @@ class GameActions {
           if (sf.containsKey(k) && !cf.containsKey(k)) merged[k] = sf[k];
         }
         out['fairy'] = merged;
+      }
+    }
+    // 장비 옵션 `evade`(회피, 1.0.18 · feat 20) — 1.0.17 이하 앱은 모르는 옵션을 **빼고** 읽어
+    // (ItemOption.tryFromJson) 그대로 다시 올린다. 같은 장비(부위·등급·나머지 옵션이 같다)면 저장본
+    // 장비를 되돌린다. 구버전 기기에서 장비를 바꿨으면(나머지가 다르다) 올라온 새 장비를 그대로 둔다.
+    if (feat < 20) {
+      final se = storedJson['equippedItems'];
+      final ce = incoming['equippedItems'];
+      if (se is Map && ce is Map) {
+        // ⚠️ 타입을 `Map<String, dynamic>` 으로 — SaveGame.fromJson 이 그 타입으로 캐스트한다.
+        out['equippedItems'] = <String, dynamic>{
+          for (final e in ce.entries)
+            '${e.key}': _restoreDroppedOptions(se[e.key], e.value) ?? e.value,
+        };
+      }
+      final ss = storedJson['forgeStack'];
+      final cs = incoming['forgeStack'];
+      if (ss is List && cs is List) {
+        final pool = [...ss];
+        out['forgeStack'] = <dynamic>[
+          for (final item in cs)
+            () {
+              for (var i = 0; i < pool.length; i++) {
+                final r = _restoreDroppedOptions(pool[i], item);
+                if (r != null) {
+                  pool.removeAt(i);
+                  return r;
+                }
+              }
+              return item;
+            }(),
+        ];
       }
     }
     for (final e in _fieldsSinceFeat.entries) {

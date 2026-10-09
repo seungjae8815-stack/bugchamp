@@ -924,17 +924,19 @@ void _critCapTests() {
       );
     });
 
-    test('실데이터: 회피 예산 — 강화 + 그 외 = 상한, 강화 만렙 = 강화 예산(2026-10-09)', () {
+    test('실데이터: 회피 예산 — 강화 + 장비 + 그 외 = 상한, 강화 만렙 = 강화 예산(2026-10-09)', () {
       final cfg = RunConfig.fromJson(
         jsonDecode(
               File('../app/assets/data/run_config.json').readAsStringSync(),
             )
             as Map<String, dynamic>,
       );
+      // 치명확률 예산과 같은 규칙 — 합이 작으면 절대 상한에 못 닿고, 크면 한 출처가 남의 자리를 먹는다.
       expect(
-        cfg.evadeBudgetUpgrade + cfg.evadeBudgetOther,
+        cfg.evadeBudgetUpgrade + cfg.evadeBudgetGear + cfg.evadeBudgetOther,
         closeTo(cfg.evadeMax, 1e-9),
       );
+      expect(cfg.evadeBudgetGear, greaterThan(0));
       // 회피는 기준 밖(순수 이득)이라 크게 열면 피격 리듬이 무너진다 — 절반을 넘기지 않는다.
       expect(cfg.evadeMax, lessThanOrEqualTo(0.5));
       // 키는 옛 이동속도(moveSpeed) 그대로 — 기존 세이브의 레벨이 그대로 회피가 된다.
@@ -942,6 +944,48 @@ void _critCapTests() {
       expect(ev.kind.key, 'moveSpeed');
       expect(ev.valueAt(0), 0.0);
       expect(ev.valueAt(ev.maxLevel!), closeTo(cfg.evadeBudgetUpgrade, 1e-9));
+      // 장비 회피 옵션 — 최상급 한 줄로는 장비 예산을 다 못 채운다(치명확률 호박 15 < 35 와 같은 구조).
+      final items = ItemConfig.fromJson(
+        jsonDecode(File('../app/assets/data/items.json').readAsStringSync())
+            as Map<String, dynamic>,
+      );
+      final r = items.optionPool.firstWhere(
+        (o) => o.kind == ItemOptionKind.evade,
+      );
+      final top = r.maxAt(items.tierCount - 1) / 100;
+      expect(top, lessThan(cfg.evadeBudgetGear));
+      expect(top * 3, greaterThanOrEqualTo(cfg.evadeBudgetGear));
+    });
+
+    test('장비 회피는 더하기(%p)이고 장비 예산에서 잘린다', () {
+      const base = CharacterStats(
+        attack: 100,
+        attackSpeed: 1,
+        rewardMultiplier: 1,
+        critChance: 0,
+        critDamage: 2,
+        bossDamage: 1,
+        maxHp: 100,
+        defense: 0,
+        hpRegen: 0,
+        xpMultiplier: 1,
+        bugFind: 1,
+        materialFind: 1,
+        evade: 0.15,
+        boostBonus: 1,
+      );
+      expect(
+        applyEquipment(base, {
+          ItemOptionKind.evade: 3.5,
+        }, evadeBudget: 0.1).evade,
+        closeTo(0.185, 1e-9),
+      );
+      expect(
+        applyEquipment(base, {
+          ItemOptionKind.evade: 30,
+        }, evadeBudget: 0.1).evade,
+        closeTo(0.25, 1e-9),
+      );
     });
   });
 }

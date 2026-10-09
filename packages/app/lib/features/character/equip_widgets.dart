@@ -63,6 +63,7 @@ String optionLabel(AppLocalizations l, ItemOptionKind k) => switch (k) {
   ItemOptionKind.critDamage => l.optCritDamage,
   ItemOptionKind.maxHp => l.optMaxHp,
   ItemOptionKind.defense => l.optDefense,
+  ItemOptionKind.evade => l.optEvade, // 회피(%p, 2026-10-09)
   ItemOptionKind.gold => l.optGold,
   ItemOptionKind.material => l.optMaterial,
   ItemOptionKind.bugFind => l.optBugFind,
@@ -261,7 +262,8 @@ class ItemOptionList extends StatelessWidget {
           // "23%" 가 좋은 건지 나쁜 건지 읽힌다.
           if (max != null && max > 0)
             Text(
-              '/${max.toStringAsFixed(0)}',
+              // 10 미만 소수 최대치(회피 3.5 등)는 한 자리까지 — 반올림하면 3.5 롤이 "/4" 로 읽힌다.
+              '/${max.toStringAsFixed(max >= 10 || max == max.roundToDouble() ? 0 : 1)}',
               style: TextStyle(
                 color: const Color(0x66FFFFFF),
                 fontSize: dense ? 9 : 10.5,

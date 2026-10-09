@@ -1689,6 +1689,7 @@
   "optCritDamage": "Crit Damage",
   "optMaxHp": "Health",
   "optDefense": "Defense",
+  "optEvade": "Evasion",
   "optGold": "Gold Gain",
   "optMaterial": "Material Gain",
   "optBugFind": "Bug Find",

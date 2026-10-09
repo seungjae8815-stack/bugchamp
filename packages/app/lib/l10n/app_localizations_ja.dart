@@ -2738,6 +2738,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optDefense => '防御';
 
   @override
+  String get optEvade => '回避';
+
+  @override
   String get optGold => '金貨獲得';
 
   @override

@@ -2819,6 +2819,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get optDefense => 'Defense';
 
   @override
+  String get optEvade => 'Evasion';
+
+  @override
   String get optGold => 'Gold Gain';
 
   @override

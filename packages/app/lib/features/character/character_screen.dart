@@ -226,6 +226,7 @@ class _StatsPanel extends ConsumerWidget {
         ),
         equipmentBonus(save.equippedItems.values, data?.itemConfig),
         critBudget: run.critBudgetGear,
+        evadeBudget: run.evadeBudgetGear,
       ),
       run.critChanceMax,
     );

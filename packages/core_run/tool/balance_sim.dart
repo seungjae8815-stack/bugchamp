@@ -1460,7 +1460,12 @@ class _Player {
     );
     // ⚠️ 장비의 체력·방어를 **반드시** 태운다(applyEquipment 가 한다). 빼면
     // 시뮬이 "피가 닳는다"고 하는데 실기는 안 닳는다.
-    s = applyEquipment(s, gear, critBudget: config.critBudgetGear);
+    s = applyEquipment(
+      s,
+      gear,
+      critBudget: config.critBudgetGear,
+      evadeBudget: config.evadeBudgetGear,
+    );
     s = _ceilingData.dex.apply(s, dexConquered, dexConquered);
     s = _applySkills(s, activeAvg: activeAvg);
     s = _applyFairy(s, activeAvg: activeAvg);

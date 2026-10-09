@@ -932,6 +932,7 @@
   "optCritDamage": "会心ダメージ",
   "optMaxHp": "体力",
   "optDefense": "防御",
+  "optEvade": "回避",
   "optGold": "金貨獲得",
   "optMaterial": "素材獲得",
   "optBugFind": "昆虫発見率",

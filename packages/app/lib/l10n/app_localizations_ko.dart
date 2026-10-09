@@ -2746,6 +2746,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get optDefense => '방어';
 
   @override
+  String get optEvade => '회피';
+
+  @override
   String get optGold => '골드 획득';
 
   @override

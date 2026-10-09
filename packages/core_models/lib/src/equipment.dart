@@ -52,8 +52,8 @@ enum EquipSlot {
 /// ⚠️ **이동속도는 없다.** 걷는 시간이 사이클의 7~18% 뿐이고 후반일수록 줄어
 /// (2배로 올려도 3% 단축) 뽑으면 실망하는 옵션이 된다. 제련의 재미는
 /// "나온 옵션이 전부 갖고 싶은 것"에서 나온다 — 죽은 옵션 하나가 굴림 전체를
-/// 김빠지게 한다. (2026-10-09: 이동속도 강화 칸은 **회피**가 됐고 걷는 시간은 고정이다 —
-/// 회피도 장비 옵션에는 없다. 넣으면 옵션 풀이 묽어져 기존 장비 기대치가 바뀐다.)
+/// 김빠지게 한다. (2026-10-09: 이동속도 강화 칸은 **회피**가 됐고 걷는 시간은 고정이다.
+/// 회피는 장비 옵션으로도 새로 넣었다 — [evade].)
 enum ItemOptionKind {
   attack('attack'),
   attackSpeed('attackSpeed'),
@@ -61,6 +61,12 @@ enum ItemOptionKind {
   critDamage('critDamage'),
   maxHp('maxHp'),
   defense('defense'),
+
+  /// 사냥 회피 확률(%p, 2026-10-09 사장님 확정). 치명확률처럼 **더하기**이고 장비 예산
+  /// (RunConfig.evadeBudgetGear)에서 잘린다. ⚠️ 1.0.17 이하 앱은 이 키를 모른다 —
+  /// 세이브 파서가 모르는 옵션을 건너뛰고(ItemOption.tryFromJson), 그 앱이 다시 올린
+  /// 세이브는 서버가 저장본의 회피 옵션을 되돌린다(GameActions._keepFieldsOldAppDoesNotKnow).
+  evade('evade'),
 
   /// 골드 획득.
   gold('gold'),

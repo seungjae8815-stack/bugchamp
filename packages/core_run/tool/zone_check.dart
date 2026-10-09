@@ -119,7 +119,12 @@ void main(List<String> args) {
       equipped.add(trimItemOptions(item, items));
     }
     gearBonus = equipmentBonus(equipped, items);
-    st = applyEquipment(st, gearBonus, critBudget: cfg.critBudgetGear);
+    st = applyEquipment(
+      st,
+      gearBonus,
+      critBudget: cfg.critBudgetGear,
+      evadeBudget: cfg.evadeBudgetGear,
+    );
     gearNote =
         '장비 ${equipped.length}부위 · '
         '공격 +${(gearBonus[ItemOptionKind.attack] ?? 0).toStringAsFixed(0)}% · '

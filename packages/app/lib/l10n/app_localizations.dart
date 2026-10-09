@@ -4978,6 +4978,12 @@ abstract class AppLocalizations {
   /// **'Defense'**
   String get optDefense;
 
+  /// No description provided for @optEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'Evasion'**
+  String get optEvade;
+
   /// No description provided for @optGold.
   ///
   /// In en, this message translates to:
