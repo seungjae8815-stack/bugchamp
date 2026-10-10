@@ -148,7 +148,8 @@ class ItemConfig {
     this.polishMaxStacks = 10,
     this.starMax = 5,
     this.starEffectPerStar = 0.04,
-    this.starNeed = const [1, 2, 3, 4, 5],
+    this.starNeed = const [100, 150, 200, 250, 300],
+    this.starUpMinutes = const [120, 240, 480, 960, 1440],
     this.starTierSlack = 1,
     this.starInheritRatio = 0.5,
     this.starExcludeKinds = const {ItemOptionKind.evade},
@@ -187,8 +188,18 @@ class ItemConfig {
   /// 별 1개당 그 장비 옵션 효과 배율(+4% × 별). 끝까지 키운 유저 ≈ 장비 ×1.6(극한 81 → 약 57일) 목표.
   final double starEffectPerStar;
 
-  /// 별 n → n+1 에 먹일 환생 재료 수([starNeed] 의 n 번째).
+  /// 별 n → n+1 에 먹일 별 재료 수([starNeed] 의 n 번째). 2026-10-10 사장님: 1성에 최소 100개.
   final List<int> starNeed;
+
+  /// 재료가 다 모인 뒤 별 n → n+1 강화에 걸리는 시간(분). 젤리로 당긴다(공방 등급업과 같은 값표).
+  final List<int> starUpMinutes;
+
+  /// 별 [stars] → +1 강화 시간.
+  Duration starUpDuration(int stars) => Duration(
+    minutes: starUpMinutes.isEmpty
+        ? 0
+        : starUpMinutes[stars.clamp(0, starUpMinutes.length - 1)],
+  );
 
   /// 재료 장비 등급은 장착 장비 등급 − 이 값 이상이어야 한다.
   final int starTierSlack;
@@ -248,7 +259,10 @@ class ItemConfig {
           (json['starEffectPerStar'] as num?)?.toDouble() ?? 0.04,
       starNeed: json['starNeed'] is List
           ? [for (final v in json['starNeed'] as List) (v as num).toInt()]
-          : const [1, 2, 3, 4, 5],
+          : const [100, 150, 200, 250, 300],
+      starUpMinutes: json['starUpMinutes'] is List
+          ? [for (final v in json['starUpMinutes'] as List) (v as num).toInt()]
+          : const [120, 240, 480, 960, 1440],
       starTierSlack: (json['starTierSlack'] as num?)?.toInt() ?? 1,
       starInheritRatio: (json['starInheritRatio'] as num?)?.toDouble() ?? 0.5,
       starExcludeKinds: json['starExcludeKinds'] is List
@@ -296,10 +310,15 @@ EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
   final limit = config.tier(item.tier).options;
   // 별·환생 재료도 상한으로(세이브를 고쳐 99성을 적어도 5성).
   final stars = item.stars.clamp(0, config.starMax);
+  // 재료는 다 모인 수(need)까지 들고 있을 수 있다 — 그 뒤 별 강화를 시작한다.
   final int exp = stars >= config.starMax
       ? 0
-      : item.starExp.clamp(0, math.max(0, config.starNeedAt(stars) - 1));
-  final starsOk = stars == item.stars && exp == item.starExp;
+      : item.starExp.clamp(0, math.max(0, config.starNeedAt(stars)));
+  final keepUntil = stars < config.starMax && item.starUntil != null;
+  final starsOk =
+      stars == item.stars &&
+      exp == item.starExp &&
+      (keepUntil || item.starUntil == null);
   if (!clamped &&
       starsOk &&
       keep.length == item.options.length &&
@@ -315,5 +334,10 @@ EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
     keep.sort((a, b) => score(b).compareTo(score(a)));
     keep.removeRange(limit, keep.length);
   }
-  return item.copyWith(options: keep, stars: stars, starExp: exp);
+  return item.copyWith(
+    options: keep,
+    stars: stars,
+    starExp: exp,
+    clearStarUntil: !keepUntil,
+  );
 }

@@ -64,14 +64,14 @@ void main() {
   });
 
   group('다듬기', () {
-    test('비용 — 화석 = 20 × (등급+1) · 젤리 15, 종류 지정은 ×3(젤리는 5 단위)', () {
+    test('비용 — 화석 = 100 × (등급+1) · 젤리 15, 종류 지정은 ×3(젤리는 5 단위)', () {
       expect(forge.polishCost(_amber, pickKind: false), (
-        fossils: 200,
+        fossils: 1000,
         jelly: 15,
       ));
-      expect(forge.polishCost(0, pickKind: false), (fossils: 20, jelly: 15));
+      expect(forge.polishCost(0, pickKind: false), (fossils: 100, jelly: 15));
       expect(forge.polishCost(_amber, pickKind: true), (
-        fossils: 600,
+        fossils: 3000,
         jelly: 45,
       ));
       expect(forge.polishCost(_amber, pickKind: true).jelly % 5, 0);
@@ -190,16 +190,37 @@ void main() {
       expect(canFeedStar(items, _item(stars: items.starMax), t), isFalse);
     });
 
-    test('재료 1·2·3·4·5개마다 별 +1 — 5성까지 15개', () {
+    test('재료 100·150·200·250·300개 + 강화 시간마다 별 +1 — 다 모여도 바로 오르지 않는다', () {
+      expect(items.starNeed, [100, 150, 200, 250, 300]);
+      final t0 = DateTime.utc(2026, 10, 10, 12);
       var t = _item();
       var fed = 0;
       while (t.stars < items.starMax) {
-        t = feedStar(items, t);
-        fed++;
+        final need = items.starNeedAt(t.stars);
+        while (t.starExp < need) {
+          t = feedStar(items, t);
+          fed++;
+        }
+        // 다 모여도 별은 그대로 · 더 먹일 수 없다.
+        expect(canFeedStar(items, t, _item()), isFalse);
+        expect(feedStar(items, t), t);
+        final started = startStarUp(items, t, t0)!;
+        expect(started.starUntil, t0.add(items.starUpDuration(t.stars)));
+        // 시간 전엔 못 끝낸다 · 젤리(force)로는 끝난다.
+        expect(finishStarUp(items, started, t0), isNull);
+        final done = finishStarUp(items, started, started.starUntil!)!;
+        expect(done.stars, t.stars + 1);
+        expect(done.starExp, 0);
+        expect(done.starUntil, isNull);
+        expect(
+          finishStarUp(items, started, t0, force: true)!.stars,
+          t.stars + 1,
+        );
+        t = done;
       }
-      expect(fed, items.starNeed.fold(0, (a, b) => a + b));
-      expect(fed, 15);
+      expect(fed, 1000);
       expect(feedStar(items, t), t); // 만렙이면 그대로
+      expect(startStarUp(items, _item(), t0), isNull); // 재료 없으면 시작 못 한다
     });
 
     test('효과 배율 — 별당 +4% · 회피는 빠진다', () {
@@ -227,6 +248,10 @@ void main() {
     });
 
     test('상한 정리 — 세이브를 고쳐 99성·정성 99 를 적어도 상한으로', () {
+      expect(
+        trimItemOptions(_item(stars: 1, starExp: 9999), items).starExp,
+        items.starNeedAt(1),
+      );
       final cheat = _item(
         stars: 99,
         starExp: 99,

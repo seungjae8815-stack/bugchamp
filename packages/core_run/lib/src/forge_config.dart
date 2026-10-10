@@ -425,29 +425,60 @@ EquipItem applyPolish(EquipItem item, int index, ItemOption candidate) {
   return item.copyWith(options: next);
 }
 
-/// [fodder] 를 [target] 의 환생 재료로 쓸 수 있는지 — 같은 부위 · 등급이 (장착 등급 − `starTierSlack`) 이상 · 별 만렙 아님.
+/// [fodder] 를 [target] 의 별 재료로 쓸 수 있는지 — 같은 부위 · 등급이 (장착 등급 − `starTierSlack`) 이상 ·
+/// 별 만렙 아님 · 강화 진행 중 아님 · 재료가 아직 덜 모임.
 bool canFeedStar(ItemConfig items, EquipItem target, EquipItem fodder) =>
     fodder.slot == target.slot &&
     target.stars < items.starMax &&
+    target.starUntil == null &&
+    target.starExp < items.starNeedAt(target.stars) &&
     fodder.tier >= target.tier - items.starTierSlack;
 
-/// 환생 재료 하나를 먹인다 — 다 차면 별 +1(재료 수는 `starNeed`).
+/// 별 재료 하나를 먹인다. 다 모여도 별은 바로 오르지 않는다 — [startStarUp] 으로 강화 시간을 건다(2026-10-10).
 EquipItem feedStar(ItemConfig items, EquipItem target) {
-  if (target.stars >= items.starMax) return target;
-  final exp = target.starExp + 1;
-  if (exp >= items.starNeedAt(target.stars)) {
-    return target.copyWith(stars: target.stars + 1, starExp: 0);
-  }
-  return target.copyWith(starExp: exp);
+  if (target.stars >= items.starMax || target.starUntil != null) return target;
+  final need = items.starNeedAt(target.stars);
+  if (target.starExp >= need) return target;
+  return target.copyWith(starExp: target.starExp + 1);
 }
 
-/// 새 장비로 바꿀 때 이전 장비의 별 일부를 이어받는다(`starInheritRatio`, 내림 — "환생").
-/// 새 장비가 원래 더 많은 별을 갖고 있으면 그대로 둔다.
+/// 재료가 다 모였으면 별 강화를 시작한다(끝나는 시각 = [now] + `starUpDuration`). 못 하면 null.
+EquipItem? startStarUp(ItemConfig items, EquipItem target, DateTime now) {
+  if (target.stars >= items.starMax || target.starUntil != null) return null;
+  if (target.starExp < items.starNeedAt(target.stars)) return null;
+  return target.copyWith(
+    starUntil: now.toUtc().add(items.starUpDuration(target.stars)),
+  );
+}
+
+/// 별 강화 마치기 — 시간이 됐거나 [force](젤리로 당김)면 별 +1. 못 하면 null.
+EquipItem? finishStarUp(
+  ItemConfig items,
+  EquipItem target,
+  DateTime now, {
+  bool force = false,
+}) {
+  final until = target.starUntil;
+  if (until == null) return null;
+  if (!force && now.toUtc().isBefore(until)) return null;
+  return target.copyWith(
+    stars: (target.stars + 1).clamp(0, items.starMax),
+    starExp: 0,
+    clearStarUntil: true,
+  );
+}
+
+/// 새 장비로 바꿀 때 이전 장비의 별 일부를 이어받는다(`starInheritRatio`, 내림).
+/// 새 장비가 원래 더 많은 별을 갖고 있으면 그대로 둔다. 모으던 재료·진행 중이던 강화는 이어받지 않는다.
 EquipItem inheritStars(ItemConfig items, EquipItem? from, EquipItem to) {
   if (from == null || from.stars <= 0) return to;
   final carried = (from.stars * items.starInheritRatio).floor();
   if (carried <= to.stars) return to;
-  return to.copyWith(stars: carried.clamp(0, items.starMax), starExp: 0);
+  return to.copyWith(
+    stars: carried.clamp(0, items.starMax),
+    starExp: 0,
+    clearStarUntil: true,
+  );
 }
 
 /// 옵션이 **모자란 옛 장비**를 그 등급의 개수만큼 채운다.

@@ -318,6 +318,7 @@ class GameActions {
     final hasV2 =
         stored.containsKey('st') ||
         stored.containsKey('sx') ||
+        stored.containsKey('su') ||
         (stored['o'] is List &&
             (stored['o'] as List).any((o) => o is Map && o.containsKey('p')));
     if (!hasV2) return null;
@@ -346,6 +347,7 @@ class GameActions {
       'o': opts,
       if (stored.containsKey('st')) 'st': stored['st'],
       if (stored.containsKey('sx')) 'sx': stored['sx'],
+      if (stored.containsKey('su')) 'su': stored['su'],
     };
   }
 

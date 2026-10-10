@@ -1257,7 +1257,7 @@
     }
   },
   "missionSwapTitle": "Change Mission",
-  "missionSwapBody": "Swap the {current} mission for {next} with no reward?\nCurrent progress will be lost.",
+  "missionSwapBody": "Swap the {current} mission\nfor {next}?\n\nNo reward, and current progress will be lost.",
   "@missionSwapBody": {
     "placeholders": {
       "current": {
@@ -1268,7 +1268,7 @@
       }
     }
   },
-  "missionSwapImpossible": "No upgrades are left to buy, so this mission can't be completed.\nSwap it for {next} for free.",
+  "missionSwapImpossible": "No upgrades are left to buy,\nso this mission can't be completed.\n\nSwap it for {next} for free.",
   "@missionSwapImpossible": {
     "placeholders": {
       "next": {
@@ -2405,6 +2405,14 @@
       }
     }
   },
+  "polishKindHint": "Pick a type for ×{mult} cost",
+  "@polishKindHint": {
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
   "polishTitle": "Refine Option",
   "polishNow": "Now",
   "polishOld": "Before",
@@ -2449,6 +2457,58 @@
   "polishNoFossil": "Not enough fossils",
   "polishBadKind": "That type is already on the other line",
   "polishFailed": "Can't refine right now",
+  "starMaxed": "Stars are maxed",
+  "starFeedHint": "Star material {have}/{need} — feed same-slot gear from the anvil (filtered auto-forge gear counts too)",
+  "@starFeedHint": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "starUpStart": "Start ★{n} · {time}",
+  "@starUpStart": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "starUpLeft": "★{n} in progress · {left} left",
+  "@starUpLeft": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "starUpFinish": "Finish ★{n}",
+  "@starUpFinish": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "starUpInstantTitle": "Finish star upgrade now",
+  "starUpInstantBody": "Spend jelly to finish ★{n} now?",
+  "@starUpInstantBody": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "starReady": "Star materials ready — start the star upgrade from gear details",
   "starBonus": "Effect +{p}%",
   "@starBonus": {
     "placeholders": {
@@ -2468,8 +2528,8 @@
       }
     }
   },
-  "forgeResultFeed": "Rebirth",
-  "forgeFeedHint": "Can feed your equipped {slot} for rebirth ({have}/{need})",
+  "forgeResultFeed": "Star food",
+  "forgeFeedHint": "Can feed your equipped {slot} as star material ({have}/{need})",
   "@forgeFeedHint": {
     "placeholders": {
       "slot": {

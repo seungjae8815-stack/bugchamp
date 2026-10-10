@@ -531,6 +531,7 @@ class _EquipCell extends ConsumerWidget {
             children: [
               // 환생 별 + 다음 별까지(2026-10-10 장비 v2 — 모루에서 같은 부위 장비를 먹여 올린다).
               itemStarsRow(l, config, now, progress: true),
+              StarUpPanel(slot: slot),
               ItemOptionList(
                 item: now,
                 config: config,

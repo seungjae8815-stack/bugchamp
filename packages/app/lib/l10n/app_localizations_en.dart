@@ -2076,12 +2076,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String missionSwapBody(String current, String next) {
-    return 'Swap the $current mission for $next with no reward?\nCurrent progress will be lost.';
+    return 'Swap the $current mission\nfor $next?\n\nNo reward, and current progress will be lost.';
   }
 
   @override
   String missionSwapImpossible(String next) {
-    return 'No upgrades are left to buy, so this mission can\'t be completed.\nSwap it for $next for free.';
+    return 'No upgrades are left to buy,\nso this mission can\'t be completed.\n\nSwap it for $next for free.';
   }
 
   @override
@@ -3503,6 +3503,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String polishKindHint(String mult) {
+    return 'Pick a type for ×$mult cost';
+  }
+
+  @override
   String get polishTitle => 'Refine Option';
 
   @override
@@ -3551,6 +3556,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get polishFailed => 'Can\'t refine right now';
 
   @override
+  String get starMaxed => 'Stars are maxed';
+
+  @override
+  String starFeedHint(String have, String need) {
+    return 'Star material $have/$need — feed same-slot gear from the anvil (filtered auto-forge gear counts too)';
+  }
+
+  @override
+  String starUpStart(String n, String time) {
+    return 'Start ★$n · $time';
+  }
+
+  @override
+  String starUpLeft(String n, String left) {
+    return '★$n in progress · $left left';
+  }
+
+  @override
+  String starUpFinish(String n) {
+    return 'Finish ★$n';
+  }
+
+  @override
+  String get starUpInstantTitle => 'Finish star upgrade now';
+
+  @override
+  String starUpInstantBody(String n) {
+    return 'Spend jelly to finish ★$n now?';
+  }
+
+  @override
+  String get starReady =>
+      'Star materials ready — start the star upgrade from gear details';
+
+  @override
   String starBonus(String p) {
     return 'Effect +$p%';
   }
@@ -3561,11 +3601,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get forgeResultFeed => 'Rebirth';
+  String get forgeResultFeed => 'Star food';
 
   @override
   String forgeFeedHint(String slot, String have, String need) {
-    return 'Can feed your equipped $slot for rebirth ($have/$need)';
+    return 'Can feed your equipped $slot as star material ($have/$need)';
   }
 
   @override

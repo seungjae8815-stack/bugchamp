@@ -3673,13 +3673,13 @@ abstract class AppLocalizations {
   /// No description provided for @missionSwapBody.
   ///
   /// In en, this message translates to:
-  /// **'Swap the {current} mission for {next} with no reward?\nCurrent progress will be lost.'**
+  /// **'Swap the {current} mission\nfor {next}?\n\nNo reward, and current progress will be lost.'**
   String missionSwapBody(String current, String next);
 
   /// No description provided for @missionSwapImpossible.
   ///
   /// In en, this message translates to:
-  /// **'No upgrades are left to buy, so this mission can\'t be completed.\nSwap it for {next} for free.'**
+  /// **'No upgrades are left to buy,\nso this mission can\'t be completed.\n\nSwap it for {next} for free.'**
   String missionSwapImpossible(String next);
 
   /// No description provided for @missionSwapFreeShort.
@@ -6076,6 +6076,12 @@ abstract class AppLocalizations {
   /// **'{sec}s left'**
   String forgeRushLeft(int sec);
 
+  /// No description provided for @polishKindHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a type for ×{mult} cost'**
+  String polishKindHint(String mult);
+
   /// No description provided for @polishTitle.
   ///
   /// In en, this message translates to:
@@ -6160,6 +6166,54 @@ abstract class AppLocalizations {
   /// **'Can\'t refine right now'**
   String get polishFailed;
 
+  /// No description provided for @starMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Stars are maxed'**
+  String get starMaxed;
+
+  /// No description provided for @starFeedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Star material {have}/{need} — feed same-slot gear from the anvil (filtered auto-forge gear counts too)'**
+  String starFeedHint(String have, String need);
+
+  /// No description provided for @starUpStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start ★{n} · {time}'**
+  String starUpStart(String n, String time);
+
+  /// No description provided for @starUpLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'★{n} in progress · {left} left'**
+  String starUpLeft(String n, String left);
+
+  /// No description provided for @starUpFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish ★{n}'**
+  String starUpFinish(String n);
+
+  /// No description provided for @starUpInstantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish star upgrade now'**
+  String get starUpInstantTitle;
+
+  /// No description provided for @starUpInstantBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend jelly to finish ★{n} now?'**
+  String starUpInstantBody(String n);
+
+  /// No description provided for @starReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Star materials ready — start the star upgrade from gear details'**
+  String get starReady;
+
   /// No description provided for @starBonus.
   ///
   /// In en, this message translates to:
@@ -6175,13 +6229,13 @@ abstract class AppLocalizations {
   /// No description provided for @forgeResultFeed.
   ///
   /// In en, this message translates to:
-  /// **'Rebirth'**
+  /// **'Star food'**
   String get forgeResultFeed;
 
   /// No description provided for @forgeFeedHint.
   ///
   /// In en, this message translates to:
-  /// **'Can feed your equipped {slot} for rebirth ({have}/{need})'**
+  /// **'Can feed your equipped {slot} as star material ({have}/{need})'**
   String forgeFeedHint(String slot, String have, String need);
 
   /// No description provided for @forgeStarUp.

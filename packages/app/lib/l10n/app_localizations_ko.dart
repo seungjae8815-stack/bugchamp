@@ -2023,12 +2023,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String missionSwapBody(String current, String next) {
-    return '$current 미션을 보상 없이 $next 미션으로 바꿀까요?\n지금까지의 진행도는 사라져요.';
+    return '$current 미션을\n$next 미션으로 바꿀까요?\n\n보상은 없고, 지금까지의 진행도는 사라져요.';
   }
 
   @override
   String missionSwapImpossible(String next) {
-    return '더 올릴 수 있는 강화가 없어 깰 수 없는 미션이에요.\n무료로 $next 미션으로 바꿀 수 있어요.';
+    return '더 올릴 수 있는 강화가 없어\n깰 수 없는 미션이에요.\n\n무료로 $next 미션으로 바꿀 수 있어요.';
   }
 
   @override
@@ -3420,6 +3420,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String polishKindHint(String mult) {
+    return '원하는 종류를 고르면 비용 ×$mult';
+  }
+
+  @override
   String get polishTitle => '옵션 다듬기';
 
   @override
@@ -3468,6 +3473,40 @@ class AppLocalizationsKo extends AppLocalizations {
   String get polishFailed => '지금은 다듬을 수 없어요';
 
   @override
+  String get starMaxed => '별 강화가 최대예요';
+
+  @override
+  String starFeedHint(String have, String need) {
+    return '별 재료 $have/$need — 모루에서 같은 부위 장비를 별 재료로 쓰세요(자동 제련에서 걸러진 장비도 쌓여요)';
+  }
+
+  @override
+  String starUpStart(String n, String time) {
+    return '$n성 강화 시작 · $time';
+  }
+
+  @override
+  String starUpLeft(String n, String left) {
+    return '$n성 강화 중 · $left 남음';
+  }
+
+  @override
+  String starUpFinish(String n) {
+    return '$n성 강화 완료';
+  }
+
+  @override
+  String get starUpInstantTitle => '별 강화 즉시 완료';
+
+  @override
+  String starUpInstantBody(String n) {
+    return '남은 시간을 젤리로 당겨 $n성을 바로 완성할까요?';
+  }
+
+  @override
+  String get starReady => '별 재료가 다 모였어요 — 장비 상세에서 별 강화를 시작하세요';
+
+  @override
   String starBonus(String p) {
     return '효과 +$p%';
   }
@@ -3478,11 +3517,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get forgeResultFeed => '환생 재료';
+  String get forgeResultFeed => '별 재료';
 
   @override
   String forgeFeedHint(String slot, String have, String need) {
-    return '낀 $slot의 환생 재료로 쓸 수 있어요 ($have/$need)';
+    return '낀 $slot의 별 재료로 쓸 수 있어요 ($have/$need)';
   }
 
   @override

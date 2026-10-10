@@ -1338,14 +1338,11 @@ Future<bool> showForgeResult(
               .read(saveControllerProvider)
               .value
               ?.equippedItems[item.slot];
-          if (now != null && now.stars > before) {
-            showCenterToast(
-              context,
-              l.forgeStarUp(
-                '${now.stars}',
-                '${(items.starEffectPerStar * now.stars * 100).round()}',
-              ),
-            );
+          // 재료가 다 모였으면 알려 준다 — 별은 장비 상세에서 강화 시간을 걸어야 오른다.
+          if (now != null &&
+              now.stars == before &&
+              now.starExp >= items.starNeedAt(now.stars)) {
+            showCenterToast(context, l.starReady);
           }
         }, primary: false),
       gameDialogButton(l.forgeResultKeep, () async {

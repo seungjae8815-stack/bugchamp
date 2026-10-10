@@ -229,7 +229,7 @@ void main() {
     test('다듬기 — 화석으로 내고 정성 +1, 새 후보는 고를 때만 들어간다', () async {
       final c = make(
         seed().copyWith(
-          materials: {MaterialKind.fossil: 1000, MaterialKind.jelly: 0},
+          materials: {MaterialKind.fossil: 3000, MaterialKind.jelly: 0},
           equippedItems: {EquipSlot.ring: ring},
         ),
       );
@@ -244,7 +244,7 @@ void main() {
       );
       expect(r.error, isNull);
       var save = c.read(saveControllerProvider).requireValue;
-      expect(save.materialCount(MaterialKind.fossil), 1000 - 200);
+      expect(save.materialCount(MaterialKind.fossil), 3000 - 1000);
       // 고르기 전: 이전 값 그대로, 정성만 올랐다.
       expect(save.equippedItems[EquipSlot.ring]!.options[0].value, 5);
       expect(save.equippedItems[EquipSlot.ring]!.options[0].polish, 1);
@@ -307,12 +307,17 @@ void main() {
       final ctrl = c.read(saveControllerProvider.notifier);
       expect(await ctrl.feedTopToStar(), isNull);
       var save = c.read(saveControllerProvider).requireValue;
-      expect(save.equippedItems[EquipSlot.ring]!.stars, 1); // 1성은 재료 1개
+      expect(
+        save.equippedItems[EquipSlot.ring]!.starExp,
+        1,
+      ); // 1성은 재료 100개 — 아직 0성
+      expect(save.equippedItems[EquipSlot.ring]!.stars, 0);
       expect(save.forgeStack.length, 1);
       expect(await ctrl.feedTopToStar(), isNull); // 등급 8(= 9 − 1)도 된다
       save = c.read(saveControllerProvider).requireValue;
-      expect(save.equippedItems[EquipSlot.ring]!.stars, 1);
-      expect(save.equippedItems[EquipSlot.ring]!.starExp, 1); // 2성은 2개
+      expect(save.equippedItems[EquipSlot.ring]!.starExp, 2);
+      // 재료가 덜 모이면 강화를 시작할 수 없다.
+      expect(await ctrl.startStarUp(EquipSlot.ring), 'not_ready');
     });
 
     test('새 장비로 바꾸면 별 절반을 이어받는다(환생)', () async {

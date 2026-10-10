@@ -184,6 +184,7 @@ class EquipItem {
     required this.options,
     this.stars = 0,
     this.starExp = 0,
+    this.starUntil,
   });
 
   final EquipSlot slot;
@@ -199,8 +200,11 @@ class EquipItem {
   /// ⚠️ 1.0.18 이하 앱은 이 키를 버린다 → 서버가 feat 21 미만 업로드에서 되돌린다.
   final int stars;
 
-  /// 다음 별까지 먹인 환생 재료 수.
+  /// 다음 별까지 먹인 별 재료 수.
   final int starExp;
+
+  /// 별 강화 진행 중이면 끝나는 시각(UTC) — 재료가 다 모이면 시작한다(2026-10-10). null = 진행 중 아님.
+  final DateTime? starUntil;
 
   EquipItem copyWith({
     EquipSlot? slot,
@@ -208,12 +212,15 @@ class EquipItem {
     List<ItemOption>? options,
     int? stars,
     int? starExp,
+    DateTime? starUntil,
+    bool clearStarUntil = false,
   }) => EquipItem(
     slot: slot ?? this.slot,
     tier: tier ?? this.tier,
     options: options ?? this.options,
     stars: stars ?? this.stars,
     starExp: starExp ?? this.starExp,
+    starUntil: clearStarUntil ? null : (starUntil ?? this.starUntil),
   );
 
   Map<String, dynamic> toJson() => {
@@ -222,6 +229,7 @@ class EquipItem {
     'o': [for (final o in options) o.toJson()],
     if (stars > 0) 'st': stars,
     if (starExp > 0) 'sx': starExp,
+    if (starUntil != null) 'su': starUntil!.toUtc().toIso8601String(),
   };
 
   factory EquipItem.fromJson(Map<String, dynamic> json) => EquipItem(
@@ -233,6 +241,7 @@ class EquipItem {
     ],
     stars: (json['st'] as num?)?.toInt() ?? 0,
     starExp: (json['sx'] as num?)?.toInt() ?? 0,
+    starUntil: DateTime.tryParse('${json['su'] ?? ''}')?.toUtc(),
   );
 
   /// 모르는 **부위**면 null — 세이브에서 읽을 때 쓴다. 모르는 **옵션**은
@@ -253,6 +262,7 @@ class EquipItem {
       ],
       stars: (json['st'] as num?)?.toInt() ?? 0,
       starExp: (json['sx'] as num?)?.toInt() ?? 0,
+      starUntil: DateTime.tryParse('${json['su'] ?? ''}')?.toUtc(),
     );
   }
 

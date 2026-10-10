@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +10,9 @@ import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/colors.dart';
+import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/jelly_short.dart';
 import '../../ui/toast.dart';
 import 'equip_widgets.dart';
@@ -204,36 +208,25 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
           style: const TextStyle(color: kHoney, fontSize: 11.5),
         ),
         const SizedBox(height: 10),
-        // 종류 고르기 — 무작위(기본) 또는 원하는 종류(비용 × polishKindMult).
-        DropdownButtonHideUnderline(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: const Color(0x22000000),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0x33FFFFFF)),
-            ),
-            child: DropdownButton<ItemOptionKind?>(
-              value: _kind,
-              isExpanded: true,
-              dropdownColor: const Color(0xFF2B2420),
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              items: [
-                DropdownMenuItem(value: null, child: Text(l.polishRandomKind)),
-                for (final k in kinds)
-                  DropdownMenuItem(
-                    value: k,
-                    child: Text(
-                      l.polishPickKind(
-                        optionLabel(l, k),
-                        '${forge.polishKindMult}',
-                      ),
-                    ),
-                  ),
-              ],
-              onChanged: _busy ? null : (v) => setState(() => _kind = v),
-            ),
-          ),
+        // 종류 고르기 — 무작위(기본) 또는 원하는 종류(비용 × polishKindMult). 드롭다운은 기본 글자 모양이라
+        // 게임 화면과 안 맞았다(2026-10-10 실기 지적) — 칩으로.
+        Text(
+          l.polishKindHint('${forge.polishKindMult}'),
+          style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            _kindChip(l.polishRandomKind, _kind == null, () {
+              if (!_busy) setState(() => _kind = null);
+            }),
+            for (final k in kinds)
+              _kindChip(optionLabel(l, k), _kind == k, () {
+                if (!_busy) setState(() => _kind = k);
+              }),
+          ],
         ),
         const SizedBox(height: 10),
         Row(
@@ -281,6 +274,29 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
       ],
     );
   }
+
+  Widget _kindChip(String text, bool on, VoidCallback onTap) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: on ? kHoney.withValues(alpha: 0.22) : const Color(0x22000000),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: on ? kHoney : const Color(0x44FFFFFF),
+          width: on ? 1.4 : 1,
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: on ? kHoney : const Color(0xDDFFFFFF),
+          fontSize: 12,
+          fontWeight: on ? FontWeight.w900 : FontWeight.w700,
+        ),
+      ),
+    ),
+  );
 
   Future<void> _roll({required bool payJelly}) async {
     final l = AppLocalizations.of(context);
@@ -373,4 +389,166 @@ Widget itemStarsRow(
       ],
     ),
   );
+}
+
+/// 낀 장비의 **별 강화** 칸(2026-10-10 사장님 개편 — 옛 이름 환생).
+/// 재료(같은 부위 장비) 진행 → 다 모이면 강화 시작 → 남은 시간(젤리로 당기기) → 완료.
+class StarUpPanel extends ConsumerStatefulWidget {
+  const StarUpPanel({super.key, required this.slot});
+  final EquipSlot slot;
+
+  @override
+  ConsumerState<StarUpPanel> createState() => _StarUpPanelState();
+}
+
+class _StarUpPanelState extends ConsumerState<StarUpPanel> {
+  Timer? _tick;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      final it = ref
+          .read(saveControllerProvider)
+          .value
+          ?.equippedItems[widget.slot];
+      if (mounted && it?.starUntil != null) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final data = ref.watch(gameDataProvider).value;
+    final items = data?.itemConfig;
+    final forge = data?.forgeConfig;
+    final item = ref
+        .watch(saveControllerProvider)
+        .value
+        ?.equippedItems[widget.slot];
+    if (items == null || forge == null || item == null) {
+      return const SizedBox.shrink();
+    }
+    const hint = TextStyle(color: Color(0x99FFFFFF), fontSize: 11);
+    if (item.stars >= items.starMax) {
+      return Text(l.starMaxed, style: hint);
+    }
+    final need = items.starNeedAt(item.stars);
+    final until = item.starUntil;
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    Widget wrap(Widget child) => Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 2),
+      child: child,
+    );
+
+    if (until == null) {
+      if (item.starExp < need) {
+        return wrap(
+          Text(l.starFeedHint('${item.starExp}', '$need'), style: hint),
+        );
+      }
+      return wrap(
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _busy
+                ? null
+                : () => _run(() => ctrl.startStarUp(widget.slot)),
+            child: Text(
+              l.starUpStart(
+                '${item.stars + 1}',
+                formatShortDuration(items.starUpDuration(item.stars)),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final left = until.difference(DateTime.now().toUtc());
+    if (left <= Duration.zero) {
+      return wrap(
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _busy ? null : () => _finish(l, items, viaJelly: false),
+            child: Text(l.starUpFinish('${item.stars + 1}')),
+          ),
+        ),
+      );
+    }
+    final jelly = forge.levelUpJelly(left);
+    return wrap(
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              l.starUpLeft('${item.stars + 1}', formatShortDuration(left)),
+              style: const TextStyle(
+                color: kHoney,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: _busy
+                ? null
+                : () async {
+                    final ok = await confirmJellySpend(
+                      context,
+                      title: l.starUpInstantTitle,
+                      body: l.starUpInstantBody('${item.stars + 1}'),
+                      jelly: jelly,
+                    );
+                    if (ok && mounted) await _finish(l, items, viaJelly: true);
+                  },
+            child: jellyPrice(cost: jelly, fontSize: 12.5, size: 15),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _run(Future<String?> Function() f) async {
+    setState(() => _busy = true);
+    await f();
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _finish(
+    AppLocalizations l,
+    ItemConfig items, {
+    required bool viaJelly,
+  }) async {
+    setState(() => _busy = true);
+    final err = await ref
+        .read(saveControllerProvider.notifier)
+        .finishStarUp(widget.slot, viaJelly: viaJelly);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (err == null) {
+      final now = ref
+          .read(saveControllerProvider)
+          .value
+          ?.equippedItems[widget.slot];
+      if (now != null) {
+        showCenterToast(
+          context,
+          l.forgeStarUp(
+            '${now.stars}',
+            '${(items.starEffectPerStar * now.stars * 100).round()}',
+          ),
+        );
+      }
+    } else if (err == 'not_enough_jelly') {
+      await showJellyShort(context);
+    }
+  }
 }

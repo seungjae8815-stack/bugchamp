@@ -5,7 +5,9 @@ import 'dart:math' as math;
 import 'package:core_gathering/core_gathering.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:core_run/core_run.dart' as forge_lib show forgeOnce;
+import 'package:core_run/core_run.dart'
+    as forge_lib
+    show forgeOnce, startStarUp, finishStarUp;
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -3169,8 +3171,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
   }
 
-  /// 모루 맨 위 장비를 **같은 부위 장착 장비의 환생 재료**로 쓴다(2026-10-10 장비 v2).
-  /// 재료 수가 차면 별 +1. 실패 이유: `no_item`·`no_target`(그 부위에 낀 것 없음)·`not_allowed`(부위·등급·만렙).
+  /// 모루 맨 위 장비를 **같은 부위 장착 장비의 별 재료**로 쓴다(2026-10-10 장비 v2).
+  /// 재료가 다 모이면 [startStarUp] 으로 강화 시간을 건다. 실패 이유: `no_item`·`no_target`·`not_allowed`.
   Future<String?> feedTopToStar() async {
     final items = ref.read(gameDataProvider).value?.itemConfig;
     final s = state.requireValue;
@@ -3299,6 +3301,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 보였다(2026-09-22 사장님 지적). 종류별 기대값은 그대로다.
     final sold = <MaterialKind, int>{};
     MaterialKind? saleKind;
+    final equipped = Map<EquipSlot, EquipItem>.from(s.equippedItems);
+    var fed = 0;
 
     for (var i = 0; i < times; i++) {
       if (have < 1) {
@@ -3334,8 +3338,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
           break;
         }
       } else {
-        final kind = saleKind ??= sellMaterialFor(_forgeRng);
-        sold[kind] = (sold[kind] ?? 0) + forge.sellMaterialCount(item.tier);
+        // 같은 부위 낀 장비가 받을 수 있으면 **별 재료로 먼저**(2026-10-10 — 1성에 100개라 하나씩 누를 수 없다).
+        final target = equipped[item.slot];
+        if (target != null && canFeedStar(items, target, item)) {
+          equipped[item.slot] = feedStar(items, target);
+          fed++;
+        } else {
+          final kind = saleKind ??= sellMaterialFor(_forgeRng);
+          sold[kind] = (sold[kind] ?? 0) + forge.sellMaterialCount(item.tier);
+        }
       }
     }
 
@@ -3352,6 +3363,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.copyWith(
         materials: mats,
         forgeStack: stack,
+        equippedItems: fed > 0 ? equipped : null,
         // 제련 미션(2026-09-15). 필터에 걸려 버려진 것도 화석은 탔으므로 센다.
         missionProgress: forged <= 0
             ? null
@@ -3419,6 +3431,50 @@ class SaveController extends AsyncNotifier<SaveGame> {
       ..[MaterialKind.jelly] = have - cost;
     await _commit(s.copyWith(forgeStack: stack, materials: mats));
     return true;
+  }
+
+  /// 낀 장비 [slot] 의 별 강화를 시작한다(재료가 다 모였을 때). 실패면 이유.
+  Future<String?> startStarUp(EquipSlot slot) async {
+    final items = ref.read(gameDataProvider).value?.itemConfig;
+    final s = state.requireValue;
+    final cur = s.equippedItems[slot];
+    if (items == null || cur == null) return 'no_item';
+    final next = forge_lib.startStarUp(
+      items,
+      cur,
+      ref.read(clockProvider).now(),
+    );
+    if (next == null) return 'not_ready';
+    await _commit(s.copyWith(equippedItems: {...s.equippedItems, slot: next}));
+    return null;
+  }
+
+  /// 낀 장비 [slot] 의 별 강화를 마친다. [viaJelly] = 남은 시간만큼 젤리로 당김(공방 등급업과 같은 값표).
+  /// 실패면 이유(`not_ready`·`not_enough_jelly`).
+  Future<String?> finishStarUp(EquipSlot slot, {bool viaJelly = false}) async {
+    final data = ref.read(gameDataProvider).value;
+    final items = data?.itemConfig;
+    final forge = data?.forgeConfig;
+    final s = state.requireValue;
+    final cur = s.equippedItems[slot];
+    if (items == null || forge == null || cur == null) return 'no_item';
+    final now = ref.read(clockProvider).now().toUtc();
+    var mats = s.materials;
+    if (viaJelly && cur.starUntil != null) {
+      final jelly = forge.levelUpJelly(cur.starUntil!.difference(now));
+      final have = s.materialCount(MaterialKind.jelly);
+      if (have < jelly) return 'not_enough_jelly';
+      mats = {...s.materials, MaterialKind.jelly: have - jelly};
+    }
+    final next = forge_lib.finishStarUp(items, cur, now, force: viaJelly);
+    if (next == null) return 'not_ready';
+    await _commit(
+      s.copyWith(
+        equippedItems: {...s.equippedItems, slot: next},
+        materials: mats,
+      ),
+    );
+    return null;
   }
 
   /// 옵션 한 줄 **다듬기**(2026-10-10 장비 v2, 옛 재굴림 대체) — 모루 맨 위(`equipped: false`) 또는

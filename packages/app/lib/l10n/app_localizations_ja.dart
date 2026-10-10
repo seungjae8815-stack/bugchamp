@@ -2018,12 +2018,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String missionSwapBody(String current, String next) {
-    return '$currentミッションを報酬なしで$nextミッションに変えますか？\nこれまでの進行度は消えます。';
+    return '$currentミッションを\n$nextミッションに変えますか？\n\n報酬はなく、これまでの進行度は消えます。';
   }
 
   @override
   String missionSwapImpossible(String next) {
-    return 'これ以上上げられる強化がないため、クリアできないミッションです。\n無料で$nextミッションに変えられます。';
+    return 'これ以上上げられる強化がないため、\nクリアできないミッションです。\n\n無料で$nextミッションに変えられます。';
   }
 
   @override
@@ -3413,6 +3413,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String polishKindHint(String mult) {
+    return '種類を選ぶとコスト×$mult';
+  }
+
+  @override
   String get polishTitle => 'オプション磨き';
 
   @override
@@ -3461,6 +3466,40 @@ class AppLocalizationsJa extends AppLocalizations {
   String get polishFailed => '今は磨けません';
 
   @override
+  String get starMaxed => '星強化は最大です';
+
+  @override
+  String starFeedHint(String have, String need) {
+    return '星素材 $have/$need — 金床で同じ部位の装備を星素材に(自動製錬で除外された装備もたまります)';
+  }
+
+  @override
+  String starUpStart(String n, String time) {
+    return '$nつ星強化開始 · $time';
+  }
+
+  @override
+  String starUpLeft(String n, String left) {
+    return '$nつ星強化中 · 残り$left';
+  }
+
+  @override
+  String starUpFinish(String n) {
+    return '$nつ星強化完了';
+  }
+
+  @override
+  String get starUpInstantTitle => '星強化を即完了';
+
+  @override
+  String starUpInstantBody(String n) {
+    return 'ゼリーで残り時間を短縮して$nつ星を完成させますか？';
+  }
+
+  @override
+  String get starReady => '星素材がそろいました — 装備詳細で星強化を始めてください';
+
+  @override
   String starBonus(String p) {
     return '効果 +$p%';
   }
@@ -3471,11 +3510,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get forgeResultFeed => '転生素材';
+  String get forgeResultFeed => '星素材';
 
   @override
   String forgeFeedHint(String slot, String have, String need) {
-    return '装備中の$slotの転生素材にできます（$have/$need）';
+    return '装備中の$slotの星素材にできます（$have/$need）';
   }
 
   @override
