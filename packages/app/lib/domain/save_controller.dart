@@ -1133,16 +1133,79 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return bought;
   }
 
-  /// 미션 [id] 완료 보상 수집. 목표 미달·정의 없음이면 false.
-  /// 수집 시 티어(claims)가 1 오르고(→ 목표 상승), 카운터형은 목표만큼 차감(초과분 이월).
-  Future<bool> claimMission(String id) async {
+  /// 미션 [def] 의 **지금 보상**(화면 표시·수령이 같은 값). 젤리는 [MaterialKind.jelly] 로 담는다.
+  ///
+  /// 2026-10-10 사장님 확정: `huntMinutes` 가 있는 미션은 "이 유저가 지금 자리에서 직접 사냥한 N분치"
+  /// (선물·일일보상·교환소와 같은 `huntMinutesReward`) — 옛 식(`rewardGrowth^claims`)은 목표 상한 뒤로 받을 때마다
+  /// 1.6배씩 커져 쉬움에서 94만~10억 골드가 됐다. 젤리 미션은 하루 `jellyPerDay` 번까지만(넘으면 0).
+  ({int gold, Map<MaterialKind, int> materials}) missionRewardAmount(
+    MissionDef def,
+  ) {
+    final data = ref.read(gameDataProvider).value;
+    final s = state.value;
+    if (data == null || s == null) {
+      return (gold: 0, materials: const <MaterialKind, int>{});
+    }
+    final now = ref.read(clockProvider).now();
+    if (def.reward == 'jelly') {
+      final ok = missionJellyAvailable(s, def, dailyDateKey(now));
+      return (
+        gold: 0,
+        materials: {
+          if (ok) MaterialKind.jelly: def.rewardAt(s.missionClaimCount(def.id)),
+        },
+      );
+    }
+    final run = data.runConfig;
+    int amount;
+    if (def.huntMinutes > 0 && run != null) {
+      final hunt = huntMinutesReward(
+        run,
+        stats: huntStatsOf(
+          s,
+          data,
+          now.toUtc(),
+          guildBonus: ref.read(guildBonusProvider),
+        ),
+        stage: s.stageNumber,
+        minutes: def.huntMinutes,
+        tier: s.difficultyTier,
+        abyssFloor: activeAbyssFloor(s),
+      );
+      amount = math.max(
+        1,
+        def.reward == 'gold' ? hunt.gold : hunt.materialsEach,
+      );
+    } else {
+      amount = def.rewardAt(s.missionClaimCount(def.id));
+    }
+    return switch (def.reward) {
+      'gold' => (gold: amount, materials: const <MaterialKind, int>{}),
+      'material' when def.rewardMaterial != null => (
+        gold: 0,
+        materials: {def.rewardMaterial!: amount},
+      ),
+      _ => (gold: 0, materials: const <MaterialKind, int>{}),
+    };
+  }
+
+  /// 미션 [id] 완료 보상 수집 — **실제로 준 보상**을 돌려준다(목표 미달·정의 없음이면 null).
+  /// 수집 시 티어(claims)가 1 오르고(→ 목표 상승) 다음 미션으로 넘어간다. 오늘 젤리 한도를 다 쓴 젤리 미션은
+  /// 젤리 없이 넘어간다(빈 보상).
+  Future<({int gold, Map<MaterialKind, int> materials})?> claimMission(
+    String id,
+  ) async {
     final viaServer = await _viaServer(
       () => ref.read(gameServerProvider).claimMission(id),
     );
-    if (viaServer != null) return viaServer;
+    if (viaServer != null) {
+      return viaServer
+          ? (gold: 0, materials: const <MaterialKind, int>{})
+          : null;
+    }
 
     final cfg = ref.read(gameDataProvider).requireValue.missionConfig;
-    if (cfg == null) return false;
+    if (cfg == null) return null;
     MissionDef? def;
     for (final d in cfg.missions) {
       if (d.id == id) {
@@ -1150,38 +1213,35 @@ class SaveController extends AsyncNotifier<SaveGame> {
         break;
       }
     }
-    if (def == null) return false;
+    if (def == null) return null;
     final s = state.requireValue;
     final claims = s.missionClaimCount(id);
     // 화면과 같은 목표(강화 미션은 남은 강화 레벨로 줄어든다 · 목표 0 은 못 받는다).
     final run = ref.read(gameDataProvider).requireValue.runConfig;
-    if (!missionClaimable(s, def, run)) return false;
+    if (!missionClaimable(s, def, run)) return null;
 
-    // 보상 지급.
-    var gold = s.gold;
+    // 보상 지급 — 화면과 같은 함수.
+    final reward = missionRewardAmount(def);
     final mats = Map<MaterialKind, int>.from(s.materials);
-    final amount = def.rewardAt(claims);
-    switch (def.reward) {
-      case 'gold':
-        gold += amount;
-      case 'jelly':
-        mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + amount;
-      case 'material':
-        final m = def.rewardMaterial;
-        if (m != null) mats[m] = (mats[m] ?? 0) + amount;
+    for (final e in reward.materials.entries) {
+      mats[e.key] = (mats[e.key] ?? 0) + e.value;
     }
+    final today = dailyDateKey(ref.read(clockProvider).now());
+    final gotJelly = (reward.materials[MaterialKind.jelly] ?? 0) > 0;
 
     // 티어 +1(다음 미션으로 순환) & 진행도 전체 초기화(다음 미션은 0부터 새로).
     final claimsMap = Map<String, int>.from(s.missionClaims)..[id] = claims + 1;
     await _commit(
       s.copyWith(
-        gold: gold,
+        gold: addCurrency(s.gold, reward.gold),
         materials: mats,
         missionClaims: claimsMap,
         missionProgress: const {},
+        // 오늘 젤리를 받은 횟수(하루 한도 — 서버가 날짜를 뒤로 돌리지 못하게 합친다).
+        dailyClaims: gotJelly ? markMissionJelly(s, def, today) : null,
       ),
     );
-    return true;
+    return reward;
   }
 
   /// 진행 중인 미션을 보상 없이 다음 미션으로 바꾼다(젤리 `swapJelly`, 깰 수 없는 미션은 무료).

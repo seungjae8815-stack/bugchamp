@@ -173,17 +173,23 @@ void main(List<String> args) {
         '(평균 ${firstDoubleJelly.toStringAsFixed(1)})',
   ));
 
-  // ── 3. 미션 — 젤리 보상 미션의 현재 티어값. 하루 몇 번 도느냐는 진행도에
-  //      따라 다르지만, 보수적으로 하루 1회전으로 잡는다.
+  // ── 3. 미션 — 젤리 보상 미션의 현재 티어값 × 하루 받는 횟수.
+  //      2026-10-10: 목표 상한(사냥 1,000마리)으로 한 바퀴가 온라인 사냥 약 45분이 돼 활동 2시간이면 2바퀴를 넘는다 →
+  //      하루 한도(`jellyPerDay`)까지 받는다고 잡는다(한도가 없는 미션은 예전처럼 1회전/일).
   var missionJelly = 0.0;
+  final perDayNotes = <String>[];
   for (final d in missions.missions) {
     if (d.reward != 'jelly') continue;
-    missionJelly += d.rewardAt(_missionClaims);
+    final times = d.jellyPerDay > 0 ? d.jellyPerDay : 1;
+    missionJelly += d.rewardAt(_missionClaims) * times;
+    perDayNotes.add(
+      '${d.id} ${d.jellyPerDay > 0 ? '하루 한도 $times번' : '1회전/일 가정'}',
+    );
   }
   rows.add((
     name: '미션',
     perDay: missionJelly,
-    note: '$_missionClaims티어 · 1회전/일 가정',
+    note: '$_missionClaims티어 · ${perDayNotes.join(', ')}',
   ));
 
   // ── 4. 리그 승급 + 시즌 종료 — 주간이라 7로 나눈다.

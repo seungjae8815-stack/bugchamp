@@ -525,7 +525,7 @@
   "whatsNewStar": "Star upgrade — feed same-slot gear to add stars and boost options (up to 5)",
   "whatsNewTranscend": "Forge Transcend — at max forge grade, raise every option’s max",
   "whatsNewHuntDefense": "Hunting HP, defense and regen upgrades now clearly reduce damage (zone monsters changed)",
-  "whatsNewMissionSwap": "Mission goals stay reasonable · swap a mission for 5 jelly",
+  "whatsNewMissionSwap": "Mission goals are capped · rewards = 10 min of hunting here · swap a mission for 5 jelly",
   "whatsNewTrainEqual": "Training points now follow the same rule for every bug (up to 102)",
   "whatsNewSkillUnlock": "Wild shards unlock skills · Pupa Guard lasts longer each level",
   "zoneKillsLabel": "Kills {n}/{m}",
@@ -1256,6 +1256,15 @@
       }
     }
   },
+  "missionJellyDoneToday": "You got all {n} mission jelly rewards today — moved on to the next mission without jelly (more tomorrow)",
+  "@missionJellyDoneToday": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "missionJellyDoneShort": "Jelly done today · more tomorrow",
   "missionSwapTitle": "Change Mission",
   "missionSwapBody": "Swap the {current} mission\nfor {next}?\n\nNo reward, and current progress will be lost.",
   "@missionSwapBody": {
@@ -3999,6 +4008,17 @@
   },
   "guideHuntTitle": "Hunting & missions",
   "guideHuntDefenseBody": "Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.",
+  "guideMissionRewardBody": "Mission rewards equal {minutes} minutes of hunting in your current zone (gold or chitin), so they fit any difficulty. Forge-mission jelly is given up to {times} times a day; after that the mission moves on without jelly.",
+  "@guideMissionRewardBody": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      }
+    }
+  },
   "guideMissionSwapBody": "If a mission is too hard, tap it to swap to the next one for {jelly} jelly (free when it can’t be completed).",
   "@guideMissionSwapBody": {
     "placeholders": {

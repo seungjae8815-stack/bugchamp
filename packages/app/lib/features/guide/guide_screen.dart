@@ -379,6 +379,14 @@ class GuideScreen extends ConsumerWidget {
         title: l.guideHuntTitle,
         children: [
           _p(l.guideHuntDefenseBody),
+          // 미션 보상(2026-10-10): 사냥 N분치 · 젤리 미션은 하루 N번까지.
+          if (missions != null && _missionMinutes(missions) > 0)
+            _p(
+              l.guideMissionRewardBody(
+                '${_missionMinutes(missions)}',
+                '${_missionJellyPerDay(missions)}',
+              ),
+            ),
           if (missions != null && missions.swapJelly > 0)
             _p(l.guideMissionSwapBody('${missions.swapJelly}')),
         ],
@@ -540,4 +548,21 @@ class _Section extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// 미션 보상의 사냥 분치(가장 큰 값, 분 — 반올림).
+int _missionMinutes(MissionConfig m) {
+  var best = 0.0;
+  for (final d in m.missions) {
+    if (d.huntMinutes > best) best = d.huntMinutes;
+  }
+  return best.round();
+}
+
+/// 젤리 미션의 하루 한도(없으면 0).
+int _missionJellyPerDay(MissionConfig m) {
+  for (final d in m.missions) {
+    if (d.reward == 'jelly') return d.jellyPerDay;
+  }
+  return 0;
 }

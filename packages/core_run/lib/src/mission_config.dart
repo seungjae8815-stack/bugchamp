@@ -18,6 +18,8 @@ class MissionDef {
     this.rewardGrowth = 1.0,
     this.rewardMax = 0,
     this.rewardMaterial,
+    this.huntMinutes = 0,
+    this.jellyPerDay = 0,
   });
 
   final String id;
@@ -59,7 +61,17 @@ class MissionDef {
     return goalMax > 0 && raw > goalMax ? goalMax : raw;
   }
 
-  /// [claims] 티어의 보상량.
+  /// 보상 = 이 유저가 지금 자리에서 **[huntMinutes]분 직접 사냥한 만큼**(골드·재료, 2026-10-10 사장님 확정).
+  /// 0 이면 옛 식([rewardAt]). 목표에 상한(`goalMax`)을 건 뒤로 한 바퀴가 온라인 사냥 약 45분이 되자
+  /// `rewardGrowth^claims` 가 받을 때마다 1.6배씩 커져 쉬움에서 94만~10억 골드가 됐다 — 선물·일일보상·교환소와
+  /// 같은 `huntMinutesReward` 로 바꿔 난이도 어디서든 알맞은 크기로 둔다. 젤리 보상에는 쓰지 않는다.
+  final double huntMinutes;
+
+  /// 젤리 보상을 **하루에 몇 번까지** 주는가(0 = 제한 없음, 2026-10-10 사장님 확정 2). 한 바퀴가 빨라져
+  /// 앱을 오래 켜 두면 하루 30개까지 나왔다(접속 시간 비례 = 젤리 수도꼭지 §2.6). 넘으면 젤리 없이 다음 미션으로.
+  final int jellyPerDay;
+
+  /// [claims] 티어의 보상량(옛 식 — [huntMinutes] 가 0 인 미션과 젤리 미션).
   int rewardAt(int claims) {
     final raw = rewardBase * math.pow(rewardGrowth, claims);
     final capped = rewardMax > 0 && raw > rewardMax ? rewardMax : raw;
@@ -80,6 +92,8 @@ class MissionDef {
     rewardBase: (json['rewardBase'] as num).toDouble(),
     rewardGrowth: (json['rewardGrowth'] as num?)?.toDouble() ?? 1.0,
     rewardMax: (json['rewardMax'] as num?)?.toDouble() ?? 0,
+    huntMinutes: (json['huntMinutes'] as num?)?.toDouble() ?? 0,
+    jellyPerDay: (json['jellyPerDay'] as num?)?.toInt() ?? 0,
   );
 }
 

@@ -1561,7 +1561,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNewMissionSwap.
   ///
   /// In en, this message translates to:
-  /// **'Mission goals stay reasonable · swap a mission for 5 jelly'**
+  /// **'Mission goals are capped · rewards = 10 min of hunting here · swap a mission for 5 jelly'**
   String get whatsNewMissionSwap;
 
   /// No description provided for @whatsNewTrainEqual.
@@ -3663,6 +3663,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Crafted {name}!'**
   String craftedSnack(String name);
+
+  /// No description provided for @missionJellyDoneToday.
+  ///
+  /// In en, this message translates to:
+  /// **'You got all {n} mission jelly rewards today — moved on to the next mission without jelly (more tomorrow)'**
+  String missionJellyDoneToday(String n);
+
+  /// No description provided for @missionJellyDoneShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly done today · more tomorrow'**
+  String get missionJellyDoneShort;
 
   /// No description provided for @missionSwapTitle.
   ///
@@ -11491,6 +11503,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.'**
   String get guideHuntDefenseBody;
+
+  /// No description provided for @guideMissionRewardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission rewards equal {minutes} minutes of hunting in your current zone (gold or chitin), so they fit any difficulty. Forge-mission jelly is given up to {times} times a day; after that the mission moves on without jelly.'**
+  String guideMissionRewardBody(String minutes, String times);
 
   /// No description provided for @guideMissionSwapBody.
   ///

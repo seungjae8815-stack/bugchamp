@@ -114,4 +114,38 @@ void main() {
     ).copyWith(missionProgress: {hunt.id: hunt.goalAt(0)});
     expect(applyMissionSwap(done, cfg, run).error, 'claimable');
   });
+
+  group('젤리 미션 하루 한도(2026-10-10)', () {
+    final forge = cfg.missions.firstWhere((m) => m.reward == 'jelly');
+    const today = '2026-10-10';
+
+    test('하루 jellyPerDay(2)번까지 받고, 다음 날 다시 열린다', () {
+      expect(forge.jellyPerDay, 2);
+      var s = SaveGame.initial(createdAt: _t);
+      expect(missionJellyAvailable(s, forge, today), isTrue);
+      s = s.copyWith(dailyClaims: markMissionJelly(s, forge, today));
+      expect(missionJellyAvailable(s, forge, today), isTrue);
+      s = s.copyWith(dailyClaims: markMissionJelly(s, forge, today));
+      expect(missionJellyAvailable(s, forge, today), isFalse);
+      // 다 찼으면 기록도 그대로(세 번째 칸을 만들지 않는다).
+      expect(markMissionJelly(s, forge, today), s.dailyClaims);
+      expect(missionJellyAvailable(s, forge, '2026-10-11'), isTrue);
+    });
+
+    test('기록 키는 일일보상 슬롯과 겹치지 않는다(서버 사냥 분치 허용치에 안 잡힌다)', () {
+      expect(missionJellyKey(forge.id, 0), 'mission:${forge.id}');
+      expect(missionJellyKey(forge.id, 1), 'mission:${forge.id}#2');
+    });
+
+    test('젤리가 아닌 미션은 한도가 없다', () {
+      final s = SaveGame.initial(createdAt: _t);
+      expect(missionJellyAvailable(s, hunt, today), isTrue);
+      expect(markMissionJelly(s, hunt, today), s.dailyClaims);
+    });
+
+    test('목표 상한이 있는 사냥·강화 미션은 사냥 분치(huntMinutes)로 준다 — 받을수록 커지는 옛 식이 아니다', () {
+      expect(hunt.huntMinutes, greaterThan(0));
+      expect(power.huntMinutes, greaterThan(0));
+    });
+  });
 }

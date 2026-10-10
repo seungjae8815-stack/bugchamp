@@ -40,6 +40,33 @@ bool missionClaimable(SaveGame s, MissionDef def, RunConfig? run) {
 bool missionImpossible(SaveGame s, MissionDef def, RunConfig? run) =>
     missionGoal(s, def, run) <= 0;
 
+/// 미션 젤리 하루 한도 기록 키(2026-10-10) — `dailyClaims` 에 날짜로 적는다(`mission:forge`, `mission:forge#2` …).
+/// `dailyClaims` 는 서버가 저장본과 합칠 때 날짜가 뒤로 가지 않아(서버 `_mergeDailyClaims`) 지웠다 다시 적어
+/// 또 받지 못한다. 일일보상 슬롯 id 가 아니라 서버의 사냥 분치 허용치에도 안 잡힌다. 구버전 앱은 모르는 키를 그대로 들고 다닌다.
+String missionJellyKey(String missionId, int n) =>
+    n == 0 ? 'mission:$missionId' : 'mission:$missionId#${n + 1}';
+
+/// 오늘([today] = `dailyDateKey`) 미션 [def] 로 젤리를 더 받을 수 있나. 한도가 없으면 늘 참.
+bool missionJellyAvailable(SaveGame s, MissionDef def, String today) {
+  if (def.reward != 'jelly' || def.jellyPerDay <= 0) return true;
+  for (var n = 0; n < def.jellyPerDay; n++) {
+    if (s.dailyClaims[missionJellyKey(def.id, n)] != today) return true;
+  }
+  return false;
+}
+
+/// 젤리를 받은 기록을 남긴 `dailyClaims`(비어 있는 첫 칸에 [today]). 한도가 없거나 다 찼으면 그대로.
+Map<String, String> markMissionJelly(SaveGame s, MissionDef def, String today) {
+  if (def.reward != 'jelly' || def.jellyPerDay <= 0) return s.dailyClaims;
+  for (var n = 0; n < def.jellyPerDay; n++) {
+    final k = missionJellyKey(def.id, n);
+    if (s.dailyClaims[k] != today) {
+      return {...s.dailyClaims, k: today};
+    }
+  }
+  return s.dailyClaims;
+}
+
 /// 지금 미션을 바꾸는 젤리(깰 수 없으면 0).
 int missionSwapCost(SaveGame s, MissionConfig cfg, RunConfig? run) {
   if (cfg.missions.isEmpty) return 0;

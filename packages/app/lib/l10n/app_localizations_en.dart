@@ -851,7 +851,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNewMissionSwap =>
-      'Mission goals stay reasonable · swap a mission for 5 jelly';
+      'Mission goals are capped · rewards = 10 min of hunting here · swap a mission for 5 jelly';
 
   @override
   String get whatsNewTrainEqual =>
@@ -2071,6 +2071,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String craftedSnack(String name) {
     return 'Crafted $name!';
   }
+
+  @override
+  String missionJellyDoneToday(String n) {
+    return 'You got all $n mission jelly rewards today — moved on to the next mission without jelly (more tomorrow)';
+  }
+
+  @override
+  String get missionJellyDoneShort => 'Jelly done today · more tomorrow';
 
   @override
   String get missionSwapTitle => 'Change Mission';
@@ -6896,6 +6904,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get guideHuntDefenseBody =>
       'Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.';
+
+  @override
+  String guideMissionRewardBody(String minutes, String times) {
+    return 'Mission rewards equal $minutes minutes of hunting in your current zone (gold or chitin), so they fit any difficulty. Forge-mission jelly is given up to $times times a day; after that the mission moves on without jelly.';
+  }
 
   @override
   String guideMissionSwapBody(String jelly) {

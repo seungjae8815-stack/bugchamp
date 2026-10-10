@@ -1619,6 +1619,7 @@ class GameActions {
   ///    **다음 선물 시각이 새로 잡힌 흔적**이 있을 때만 센다 — 앱은 예정 시각이 지나야 선물을 만들고 그때
   ///    다음 시각을 최소 간격 뒤로 잡는다(`maybeSpawnGift`). 기기 시계 차이는 2분까지 봐준다.
   ///    선물 하나 = 가장 큰 분치 × 최대 배수(2배 받기 2~4배).
+  ///  - 미션: `huntMinutes` 미션의 받은 횟수가 늘어난 만큼(업로드당 최대 3번) 그 분치(2026-10-10).
   /// 위조로 늘릴 수 있는 것은 "받았다고 적기"뿐이고, 그 몫도 선물 간격·슬롯 수로 묶인다(다른 상식 상한과 같은 수준).
   ({int gold, int materialsEach}) _huntRewardAllowance(
     SaveGame stored,
@@ -1678,6 +1679,18 @@ class GameActions {
         final fresh = due && rescheduled ? 1 : 0;
         final mult = max(1, max(gift.adMultiplier, gift.adMultiplierMax));
         add(_huntCap(stored, maxMin), (gone + fresh) * mult);
+      }
+    }
+    // 미션(2026-10-10): `huntMinutes` 미션은 사냥 N분치를 준다 — 받은 횟수가 저장본보다 늘어난 만큼.
+    // 한 바퀴가 온라인 사냥 약 45분이라 한 업로드에 여러 번은 없다(위조로 횟수를 부풀려도 3번까지만 센다).
+    final missions = config.mission;
+    final rawClaims = clientJson['missionClaims'];
+    if (missions != null && rawClaims is Map) {
+      for (final def in missions.missions) {
+        if (def.huntMinutes <= 0) continue;
+        final now = (rawClaims[def.id] as num?)?.toInt() ?? 0;
+        final fresh = min(3, now - stored.missionClaimCount(def.id));
+        if (fresh > 0) add(_huntCap(stored, def.huntMinutes), fresh);
       }
     }
     return (gold: gold, materialsEach: each);
@@ -3049,21 +3062,44 @@ class GameActions {
     if (def == null) return const ActionResult.fail('unknown_mission');
 
     final claims = save.missionClaimCount(missionId);
-    final goal = def.goalAt(claims);
-    if (save.missionProgressCount(missionId) < goal) {
+    // 앱과 같은 목표(강화 미션은 남은 강화 레벨로 줄어든다 · 목표 0 은 못 받는다).
+    if (!missionClaimable(save, def, config.run)) {
       return const ActionResult.fail('goal_not_reached');
     }
 
+    // 보상도 앱과 같은 규칙(2026-10-10): `huntMinutes` 미션은 사냥 N분치(옛 1.6배 성장 없음) · 젤리 미션은 하루
+    // `jellyPerDay` 번까지. ⚠️ 지금 앱은 이 경로를 쓰지 않는다(기기 권위) — 조작된 클라가 불러도 옛 식으로 새지 않게 맞춘다.
+    // 분치는 강화만 아는 전력(`_envelopeStats`) · 효율 1 이라 앱 금액보다 작거나 같다.
     var gold = save.gold;
     final mats = Map<MaterialKind, int>.from(save.materials);
-    final amount = def.rewardAt(claims);
+    var dailyClaims = save.dailyClaims;
+    int hunt(bool asGold) {
+      final r = huntMinutesReward(
+        config.run,
+        stats: _envelopeStats(save),
+        stage: save.stageNumber,
+        minutes: def!.huntMinutes,
+        tier: save.difficultyTier,
+        abyssFloor: activeAbyssFloor(save),
+      );
+      return max(1, asGold ? r.gold : r.materialsEach);
+    }
+
+    var amount = 0;
     switch (def.reward) {
       case 'gold':
-        gold += amount;
+        amount = def.huntMinutes > 0 ? hunt(true) : def.rewardAt(claims);
+        gold = addCurrency(gold, amount);
       case 'jelly':
-        mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + amount;
+        final today = dailyDateKey(now().toUtc());
+        if (missionJellyAvailable(save, def, today)) {
+          amount = def.rewardAt(claims);
+          mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + amount;
+          dailyClaims = markMissionJelly(save, def, today);
+        }
       case 'material':
         final m = def.rewardMaterial;
+        amount = def.huntMinutes > 0 ? hunt(false) : def.rewardAt(claims);
         if (m != null) mats[m] = (mats[m] ?? 0) + amount;
     }
 
@@ -3075,6 +3111,7 @@ class GameActions {
         materials: mats,
         missionClaims: claimsMap,
         missionProgress: const {},
+        dailyClaims: dailyClaims,
       ),
       extra: {'reward': def.reward, 'amount': amount},
     );

@@ -5566,13 +5566,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     MissionConfig cfg,
     MissionDef def,
   ) {
-    final claims = save.missionClaimCount(def.id);
     final run = _data.runConfig;
     // 강화 미션은 남은 강화 레벨로 줄어든다(2026-10-10) — 목표 0 = 깰 수 없음(무료 교체).
     final goal = missionGoal(save, def, run);
     final progress = save.missionProgressCount(def.id);
     final claimable = missionClaimable(save, def, run);
     final impossible = goal <= 0;
+    // 젤리 미션은 하루 jellyPerDay 번까지(2026-10-10) — 다 받았으면 미리 알려 준다(받아도 젤리 없이 넘어간다).
+    final jellyDone =
+        def.reward == 'jelly' &&
+        !missionJellyAvailable(
+          save,
+          def,
+          dailyDateKey(ref.read(clockProvider).now()),
+        );
     final canSwap = cfg.swapJelly > 0 && cfg.missions.length > 1;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -5580,7 +5587,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         behavior: HitTestBehavior.opaque,
         // 못 받는 미션을 누르면 교체 창(2026-10-10 사장님 요청 — 깨기 어려운 미션을 젤리로 바꾼다).
         onTap: claimable
-            ? () => _claimMission(l, def, claims)
+            ? () => _claimMission(l, def)
             : (canSwap ? () => _swapMission(l, save, cfg, def) : null),
         child: _PulseBox(
           // ⚠️ 깜빡임은 **스스로** 돌아야 한다. 예전엔 부모(_tapHint)의 값을 읽어
@@ -5660,6 +5667,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     ),
                   ],
                 ),
+              if (jellyDone)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    l.missionJellyDoneShort,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 8,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -5732,19 +5751,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 미션 보상 수령 — **무엇을 받았는지 보여 준다**(실기 지적 2026-09-18).
   ///
   /// 예전엔 "완료!" 토스트뿐이라 골드인지 젤리인지 재료인지 알 수 없었다.
-  /// 보상은 **화면에서 계산**한다 — 컨트롤러는 성공 여부만 돌려주고(서버 경로도
-  /// 마찬가지) 값은 같은 정의에서 나오므로 서로 어긋나지 않는다.
-  Future<void> _claimMission(
-    AppLocalizations l,
-    MissionDef def,
-    int claims,
-  ) async {
-    final amount = def.rewardAt(claims);
-    final ok = await ref
+  /// 보상은 컨트롤러가 **실제로 준 값**을 그대로 보인다(사냥 분치·하루 젤리 한도 — 2026-10-10).
+  Future<void> _claimMission(AppLocalizations l, MissionDef def) async {
+    final got = await ref
         .read(saveControllerProvider.notifier)
         .claimMission(def.id);
-    if (!ok || !mounted) return;
+    if (got == null || !mounted) return;
     AudioService.instance.sfxMission();
+    if (got.gold <= 0 && got.materials.isEmpty) {
+      // 오늘 젤리 한도를 다 쓴 젤리 미션 — 젤리 없이 다음 미션으로 넘어갔다.
+      showCenterToast(context, l.missionJellyDoneToday('${def.jellyPerDay}'));
+      return;
+    }
     await showRewardPopup(
       context,
       title: l.missionClaimedSnack,
@@ -5754,14 +5772,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         size: 30,
         fallback: Icon(missionIcon(def.type), color: _honey, size: 22),
       ),
-      gold: def.reward == 'gold' ? amount : 0,
-      materials: switch (def.reward) {
-        'jelly' => {MaterialKind.jelly: amount},
-        'material' when def.rewardMaterial != null => {
-          def.rewardMaterial!: amount,
-        },
-        _ => const {},
-      },
+      gold: got.gold,
+      materials: got.materials,
     );
   }
 

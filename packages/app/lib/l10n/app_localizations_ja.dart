@@ -818,7 +818,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNewMissionSwap =>
-      'ミッションの目標が大きくなりすぎません · ゼリー5個で別のミッションに変更できます';
+      'ミッション目標に上限 · 報酬は今の狩り場10分分 · ゼリー5個で別のミッションに変更できます';
 
   @override
   String get whatsNewTrainEqual => '訓練ポイントはすべての虫が同じ基準(最大102)になりました';
@@ -2012,6 +2012,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String craftedSnack(String name) {
     return '$name を製作！';
   }
+
+  @override
+  String missionJellyDoneToday(String n) {
+    return '今日のミッションゼリー$n回をすべて受け取りました — ゼリーなしで次のミッションへ進みました(明日また受け取れます)';
+  }
+
+  @override
+  String get missionJellyDoneShort => '今日のゼリー受取済 · 明日また';
 
   @override
   String get missionSwapTitle => 'ミッション変更';
@@ -6740,6 +6748,11 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get guideHuntDefenseBody =>
       'モンスターの攻撃は狩り場ごとに決まっています。根性(体力)・打たれ強さ(防御)・回復力を上げると受けるダメージがそのまま減り、同じ狩り場で強くなるほど痛くなくなります。ボスで詰まったら、その狩り場で強化して再挑戦しましょう。';
+
+  @override
+  String guideMissionRewardBody(String minutes, String times) {
+    return 'ミッション報酬は今の狩り場で$minutes分狩った分(ゴールド・キチン)なので、どの難易度でもちょうどいい大きさです。製錬ミッションのゼリーは1日$times回まで、その後はゼリーなしで次のミッションへ進みます。';
+  }
 
   @override
   String guideMissionSwapBody(String jelly) {

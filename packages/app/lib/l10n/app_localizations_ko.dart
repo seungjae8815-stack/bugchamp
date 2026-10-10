@@ -820,7 +820,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNewMissionSwap =>
-      '미션 목표가 너무 커지지 않아요 · 젤리 5개로 다른 미션으로 바꿀 수 있어요';
+      '미션 목표는 상한까지 · 보상은 지금 사냥터 10분치 · 젤리 5개로 다른 미션으로 바꿀 수 있어요';
 
   @override
   String get whatsNewTrainEqual => '훈련 포인트를 모든 곤충이 같은 기준(최대 102점)으로 받아요';
@@ -2017,6 +2017,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String craftedSnack(String name) {
     return '$name 제작 완료!';
   }
+
+  @override
+  String missionJellyDoneToday(String n) {
+    return '오늘 미션 젤리 $n번을 다 받았어요 — 젤리 없이 다음 미션으로 넘어갔어요(내일 다시 받을 수 있어요)';
+  }
+
+  @override
+  String get missionJellyDoneShort => '오늘 젤리 다 받음 · 내일 다시';
 
   @override
   String get missionSwapTitle => '미션 바꾸기';
@@ -6751,6 +6759,11 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get guideHuntDefenseBody =>
       '몬스터의 공격은 사냥터마다 정해져 있어요. 근성(체력)·맷집(방어)·회복력을 올리면 받는 피해가 그대로 줄어들고, 같은 사냥터에 머물며 강해질수록 점점 덜 아파요. 보스에서 막히면 그 사냥터에서 더 강화하고 다시 도전하세요.';
+
+  @override
+  String guideMissionRewardBody(String minutes, String times) {
+    return '미션 보상은 지금 사냥터에서 $minutes분 사냥한 만큼(골드·키틴)이라 어느 난이도에서든 알맞은 크기예요. 제련 미션 젤리는 하루 $times번까지 받고, 그 뒤엔 젤리 없이 다음 미션으로 넘어가요.';
+  }
 
   @override
   String guideMissionSwapBody(String jelly) {

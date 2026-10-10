@@ -130,6 +130,23 @@ void main() {
         expect(m.rewardAt(100), lessThanOrEqualTo(m.rewardMax.round()));
       }
     });
+
+    // 2026-10-10: 목표 상한(goalMax)이 있으면 한 바퀴 속도에 바닥이 생겨(온라인 사냥 약 45분) 켜 둔 시간에
+    // 비례해 미션이 돈다 = 접속 시간 비례 수도꼭지(§2.6). 젤리 미션은 하루 한도가 반드시 있어야 한다.
+    test('젤리 보상 미션에는 하루 한도(jellyPerDay)가 있다', () {
+      for (final m in missions.missions.where((m) => m.reward == 'jelly')) {
+        expect(m.jellyPerDay, greaterThan(0), reason: m.id);
+      }
+    });
+
+    // 같은 이유로 지수 성장(rewardGrowth^claims)이 끝없이 자란다 — 목표 상한이 있는 골드·재료 미션은
+    // 사냥 분치(huntMinutes)로 준다(받을 때마다 1.6배 → 쉬움에서 94만~10억 골드였다).
+    test('목표 상한이 있는 골드·재료 미션은 사냥 분치로 준다', () {
+      for (final m in missions.missions) {
+        if (m.reward == 'jelly' || m.goalMax <= 0) continue;
+        expect(m.huntMinutes, greaterThan(0), reason: m.id);
+      }
+    });
   });
 
   group('젤리 지급처 재정리(2026-09-28 사장님 확정)', () {
