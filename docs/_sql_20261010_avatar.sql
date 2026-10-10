@@ -6,14 +6,14 @@
 --       데이터는 바꾸지 않는다(칸 추가만). 구버전 앱·서버는 avatar 를 모르고 무시한다. 서버 전용 함수의 권한(revoke)은 다시 건다.
 -- 순서: 운영 서버 재배포보다 먼저가 좋다(순서가 바뀌어도 깨지지 않는다 — 그동안 남의 그림이 기본으로 보일 뿐).
 --       새 앱은 이 칸이 없으면 그림만 빼고 프로필을 다시 올린다.
--- 기준(지금 운영 DB 정의): leaderboard_top = _sql_20260929_rank_abyss · pvp_league_top = _sql_20261001_pvp_board_power ·
---       abyss_top = _sql_20260929_abyss_weekly · event_top = _sql_20260826_badge · chat_stamp_badge = _sql_20260915_chat_badge.
---       ⚠️ 적용 대기 중인 _sql_20261005_rank_hidden.sql 도 avatar 를 돌려주게 함께 고쳤다 — 그 파일은 **이 파일 다음에** 돌린다.
+-- 기준(지금 운영 DB 정의): leaderboard_top·abyss_top = _sql_20261005_rank_hidden(2026-10-10 확인 — rank_hidden 칸이 있다 = 이미 적용,
+--       숨긴 계정 건너뛰기 조건을 그대로 둔다) · pvp_league_top = _sql_20261001_pvp_board_power · event_top = _sql_20260826_badge ·
+--       chat_stamp_badge = _sql_20260915_chat_badge.
 -- 안 바꾸는 것: pvp_league_range·pvp_league_idle(결투 후보) — 서버가 상대 그림을 그 사람 세이브에서 읽는다.
 -- 되돌리기: 맨 아래 ROLLBACK 절(옛 반환 형식으로 다시 만든다 · 칸은 지우지 않는다).
 
--- ⓪ 먼저 확인 — false 여야 한다. true 면 대기 중이던 rank_hidden SQL 이 이미 돌았다는 뜻이니 **여기서 멈추고 알려 줄 것**
---    (그때는 아래 leaderboard_top·abyss_top 에 rank_hidden 조건을 넣은 판으로 다시 준다).
+-- ⓪ 먼저 확인 — true 여야 한다(rank_hidden 이 적용된 DB 기준으로 쓴 판이다 · 2026-10-10 사장님 확인 true).
+--    false 면 아래 rank_hidden 조건이 없는 칸을 가리켜 실패한다 — 멈추고 알려 줄 것.
 select exists(
   select 1 from information_schema.columns
   where table_name = 'profiles' and column_name = 'rank_hidden') as rank_hidden_already_applied;
@@ -73,6 +73,7 @@ language sql stable security definer set search_path = public as $$
                p.id
            ) as rank
     from profiles p
+    where not p.rank_hidden          -- 2026-10-05 개발자·운영 계정 제외(rank_hidden — 그대로 둔다)
   )
   select r.rank, r.id, r.nickname, r.trophies, r.level, r.stage, r.tier,
          r.badge, r.power, r.abyss_best, r.avatar
@@ -117,6 +118,7 @@ language sql stable security definer set search_path = public as $$
   left join profiles p on p.id = s.user_id
   left join defenders d on d.id = s.user_id
   where s.week_id = p_week and s.floor > 1
+    and not coalesce(p.rank_hidden, false)   -- 2026-10-05 개발자·운영 계정 제외(그대로 둔다)
   order by s.floor desc, s.boss_pm desc, s.updated_at asc
   limit lim;
 $$;
@@ -168,16 +170,19 @@ union all
 select '⑥ 서버 전용 함수는 앱이 못 부른다', not exists(
          select 1 from information_schema.routine_privileges
          where routine_name in ('pvp_league_top', 'abyss_top')
-           and grantee in ('anon', 'authenticated', 'PUBLIC'));
+           and grantee in ('anon', 'authenticated', 'PUBLIC'))
+union all
+select '⑦ 숨긴 계정 건너뛰기가 그대로다', (
+         select count(*) = 2 from pg_proc p
+         where p.proname in ('leaderboard_top', 'abyss_top')
+           and pg_get_functiondef(p.oid) like '%rank_hidden%');
 
 -- ROLLBACK (문제가 생기면 — 서버·앱은 avatar 가 없어도 기본 프로필로 동작한다)
 -- begin;
---   drop function if exists leaderboard_top(int, text);
---   (docs/_sql_20260929_rank_abyss.sql 의 create function leaderboard_top ... 를 다시 실행)
+--   drop function if exists leaderboard_top(int, text);  ·  drop function if exists abyss_top(text, int);
+--   (`git show 9fa3ed6:docs/_sql_20261005_rank_hidden.sql` 의 leaderboard_top·abyss_top 정의 + abyss_top revoke 를 다시 실행 — avatar 없는 판)
 --   drop function if exists pvp_league_top(text, text, int);
 --   (docs/_sql_20261001_pvp_board_power.sql 의 pvp_league_top 정의 + revoke 를 다시 실행)
---   drop function if exists abyss_top(text, int);
---   (docs/_sql_20260929_abyss_weekly.sql 의 abyss_top 정의 + revoke 를 다시 실행)
 --   drop function if exists event_top(text, int);
 --   (docs/_sql_20260826_badge.sql 의 event_top 정의를 다시 실행)
 --   (docs/_sql_20260915_chat_badge.sql 의 chat_stamp_badge 함수를 다시 실행 — 그림 찍기만 빠진다)

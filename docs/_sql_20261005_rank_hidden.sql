@@ -6,8 +6,9 @@
 -- 위험: leaderboard_top·abyss_top·abyss_rank_of 를 다시 만든다(반환 형식은 그대로 — create or replace).
 --       결투 리그 순위(pvp_season_scores)는 건드리지 않는다.
 -- 되돌리기: update profiles set rank_hidden = false where ...; (함수는 그대로 둬도 결과가 같다)
--- ⚠️ 2026-10-10: 프로필 그림 SQL(_sql_20261010_avatar.sql)이 leaderboard_top·abyss_top 반환에 avatar 를 더했다 —
---    이 파일도 avatar 를 돌려주게 고쳤으므로 **그 파일 다음에** 돌린다(먼저 돌리면 create or replace 가 반환 형식이 달라 실패한다).
+-- ✅ 이미 적용됨(2026-10-10 확인 — profiles.rank_hidden 칸 있음). 그 뒤 프로필 그림 SQL(_sql_20261010_avatar.sql)이 두 함수를
+--    rank_hidden 조건 그대로 두고 avatar 반환을 더해 다시 만든다. 이 파일을 다시 돌릴 일이 있으면 avatar 포함판(지금 내용)으로 —
+--    옛 판(avatar 없음)으로 돌리면 create or replace 가 반환 형식이 달라 실패한다.
 
 -- ① 먼저 대상 확인 — 1줄이어야 한다(닉네임이 겹치면 id 로 고른다).
 select id, nickname, tier, stage, level, abyss_best from profiles where nickname = '오리';
