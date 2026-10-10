@@ -6651,7 +6651,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String duelStoneElemInfo(String win, String lose, String mult) {
-    return 'Deals ×$mult damage to $win · takes ×$mult from $lose';
+    return 'Strong vs $win, weak vs $lose (damage ×$mult)';
   }
 
   @override

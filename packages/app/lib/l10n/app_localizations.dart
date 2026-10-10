@@ -11129,7 +11129,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelStoneElemInfo.
   ///
   /// In en, this message translates to:
-  /// **'Deals ×{mult} damage to {win} · takes ×{mult} from {lose}'**
+  /// **'Strong vs {win}, weak vs {lose} (damage ×{mult})'**
   String duelStoneElemInfo(String win, String lose, String mult);
 
   /// No description provided for @duelStoneTempCaps.

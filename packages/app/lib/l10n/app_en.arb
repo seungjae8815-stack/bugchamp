@@ -3768,7 +3768,7 @@
       }
     }
   },
-  "duelStoneElemInfo": "Deals ×{mult} damage to {win} · takes ×{mult} from {lose}",
+  "duelStoneElemInfo": "Strong vs {win}, weak vs {lose} (damage ×{mult})",
   "@duelStoneElemInfo": {
     "placeholders": {
       "win": {
