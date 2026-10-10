@@ -59,16 +59,12 @@ class EventBadgeChip extends StatelessWidget {
     required this.id,
     this.size = 11,
     this.compact = false,
-    this.stacked = false,
     this.margin = const EdgeInsets.only(left: 6),
   });
 
   final String id;
   final double size;
   final bool compact;
-
-  /// 아이콘 위 · 이름 아래(두 줄까지) — 채팅의 그림 밑 좁은 칸용(2026-10-10 사장님: 아이콘만 말고 무슨 뱃지인지 보이게).
-  final bool stacked;
 
   /// 칩 바깥 여백. 이름 **옆**에 붙일 땐 왼쪽을 띄우고(기본), 이름 **위**에
   /// 올릴 땐 아래를 띄운다([aboveName]).
@@ -89,36 +85,6 @@ class EventBadgeChip extends StatelessWidget {
         child: Tooltip(
           message: label,
           child: Icon(icon, size: size + 2, color: color),
-        ),
-      );
-    }
-
-    if (stacked) {
-      return Container(
-        margin: margin,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.55)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: size + 3, color: color),
-            Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: color,
-                fontSize: size,
-                fontWeight: FontWeight.w900,
-                height: 1.1,
-              ),
-            ),
-          ],
         ),
       );
     }

@@ -682,16 +682,14 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
     // 보여줄 때도 필터를 건다 — 목록 갱신 전에 서버에 들어간 과거 메시지 대비.
     final body = _rules.mask(m.body);
 
-    // 프로필 그림(2026-10-10 사장님): 그림 **밑에 닉네임**(두 줄까지 — 8자 한글도 안 잘리게), 옆에는 말풍선만.
-    // 남의 글 = [그림·닉네임][말풍선][⋯], 내 글 = [⋯][말풍선][그림·닉네임]. 긴 글은 말풍선만 길어져 간격이 일정하다.
-    // 내 글은 서버가 찍은 값이 아니라 **지금 고른 그림**을 쓴다(바꾸자마자 보이게). 운영자 글은 예전처럼 이름줄 + 말풍선.
+    // 프로필 그림(2026-10-10 사장님) — 아래 배치 참고. 내 글은 서버가 찍은 값이 아니라 **지금 고른 그림**을 쓴다
+    // (바꾸자마자 보이게). 운영자 글은 그림 없이 이름줄 + 말풍선.
     final name = _rules.maskNickname(
       m.nickname,
       fallback: l.nicknameFallback,
       isAdmin: m.isAdmin,
     );
     final bubble = Container(
-      constraints: const BoxConstraints(maxWidth: 260),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: m.isAdmin
@@ -780,39 +778,32 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       );
     }
 
-    // 그림 + 그 밑 닉네임(두 줄까지) + 대회 뱃지·[길드] 표시. 칸 폭은 그림보다 조금 넓게 — 닉네임 최대 8자.
-    final who = SizedBox(
-      width: 70,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AvatarCircle(
-            id: mine ? (save.avatar ?? m.avatar) : m.avatar,
-            size: 48,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: mine ? kHoney : const Color(0xCCFFFFFF),
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              height: 1.15,
-            ),
-          ),
-          // 대회 뱃지(2026-09-15) — 자랑거리는 남이 봐야 자랑거리다. 그림 밑 좁은 칸이라 아이콘 위·이름 아래(2026-10-10).
-          if (m.badge.isNotEmpty)
-            EventBadgeChip(
-              id: m.badge,
-              size: 9,
-              stacked: true,
-              margin: const EdgeInsets.only(top: 3),
-            ),
-          if (guildTag != null) ...[const SizedBox(height: 2), guildTag],
-        ],
+    // 2026-10-10 사장님(다른 게임 참고): 그림이 [닉네임 줄 + 말풍선] 높이만큼 크게 옆에 있고, 닉네임 줄 끝에 시간,
+    // 말풍선은 늘 **가로 끝까지 같은 폭**(긴 글·짧은 글이 섞여도 가지런하다). 내 글은 좌우만 뒤집는다(그림 오른쪽).
+    final avatar = AvatarCircle(
+      id: mine ? (save.avatar ?? m.avatar) : m.avatar,
+      size: 58,
+    );
+    final nameText = Text(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: mine ? kHoney : const Color(0xFFFFE6A8),
+        fontSize: 12.5,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+    // 대회 뱃지(2026-09-15) — 무슨 뱃지인지 이름까지(아이콘만 두지 않는다, 2026-10-10 사장님).
+    final badge = m.badge.isEmpty
+        ? null
+        : EventBadgeChip(id: m.badge, size: 9, margin: EdgeInsets.zero);
+    final time = Text(
+      _chatTime(m.createdAt),
+      style: const TextStyle(
+        color: Color(0x88FFFFFF),
+        fontSize: 10.5,
+        fontWeight: FontWeight.w700,
       ),
     );
     // 신고·차단(남의 글)·삭제(내 글)는 이 버튼으로(2026-10-03). 말풍선 꾹 누르기는
@@ -821,7 +812,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       onTap: () => mine ? _deleteMine(m, l) : _actions(m, l),
       borderRadius: BorderRadius.circular(10),
       child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         child: Icon(
           Icons.more_horiz_rounded,
           size: 16,
@@ -829,18 +820,52 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
         ),
       ),
     );
+    final nameRow = Row(
+      children: mine
+          ? [
+              more,
+              time,
+              const Spacer(),
+              if (badge != null) ...[badge, const SizedBox(width: 4)],
+              if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
+              Flexible(child: nameText),
+            ]
+          : [
+              if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
+              Flexible(child: nameText),
+              if (badge != null) ...[const SizedBox(width: 4), badge],
+              const Spacer(),
+              time,
+              more,
+            ],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: mine
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: mine
-            ? [more, Flexible(child: bubble), const SizedBox(width: 6), who]
-            : [who, const SizedBox(width: 6), Flexible(child: bubble), more],
+        children: [
+          if (!mine) ...[avatar, const SizedBox(width: 8)],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [nameRow, const SizedBox(height: 3), bubble],
+            ),
+          ),
+          if (mine) ...[const SizedBox(width: 8), avatar],
+        ],
       ),
     );
+  }
+
+  /// 채팅 시각 — 오늘이면 `21:37`, 아니면 `10/9 21:37`(기기 시간대).
+  static String _chatTime(DateTime at) {
+    final t = at.toLocal();
+    final now = DateTime.now();
+    final hm =
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+    final today =
+        t.year == now.year && t.month == now.month && t.day == now.day;
+    return today ? hm : '${t.month}/${t.day} $hm';
   }
 
   static const _helpPrefix = '#help:';
