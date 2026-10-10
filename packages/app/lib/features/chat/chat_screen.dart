@@ -18,6 +18,7 @@ import '../../ui/toast.dart';
 import '../../ui/colors.dart';
 import '../../ui/avatar.dart';
 import '../guild/guild_mission_tab.dart' show guildHelpMission;
+import 'chat_unread.dart';
 
 /// 전체 채팅 화면.
 ///
@@ -312,6 +313,16 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
     if (mounted) _merge(list);
   }
 
+  /// 채팅창을 보고 있는 동안 받은 글은 읽은 것으로 — 홈 채팅 바의 NEW 를 지운다(서버 시각 기준, chat_unread.dart).
+  void _markSeen() {
+    DateTime? latest;
+    for (final x in _messages) {
+      if (_isTemp(x.id)) continue;
+      if (latest == null || x.createdAt.isAfter(latest)) latest = x.createdAt;
+    }
+    if (latest != null) ref.read(chatSeenProvider.notifier).markSeen(latest);
+  }
+
   /// 서버 목록을 합친다 — 이미 있는 글(같은 id)은 그대로, 새 글만 붙이고, 서버 글로 바뀐 내 임시 글은 뺀다.
   void _merge(List<ChatMessage> list) {
     if (list.isEmpty) return;
@@ -334,6 +345,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
         _messages.removeRange(0, _messages.length - _rules.historyLimit);
       }
     });
+    _markSeen();
     _jumpToBottom();
   }
 
@@ -351,6 +363,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
         ..addAll(list);
       _loading = false;
     });
+    _markSeen();
     _jumpToBottom();
     _sub = svc.subscribe(guildId: widget.guildId, mixed: !widget.guildOnly).listen((
       m,
@@ -382,6 +395,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
           _messages.removeRange(0, _messages.length - _rules.historyLimit);
         }
       });
+      _markSeen();
       _jumpToBottom();
     });
   }
@@ -694,9 +708,12 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       decoration: BoxDecoration(
         color: m.isAdmin
             ? const Color(0x333F7FB5)
-            : (mine ? const Color(0x33EBA52F) : const Color(0x22FFFFFF)),
+            : (mine ? const Color(0x38EBA52F) : const Color(0x22FFFFFF)),
         borderRadius: BorderRadius.circular(12),
-        border: m.isAdmin ? Border.all(color: const Color(0x883F7FB5)) : null,
+        // 내 글은 왼쪽에 같이 두되 꿀빛 말풍선·테두리로 구분한다(2026-10-10 사장님).
+        border: m.isAdmin
+            ? Border.all(color: const Color(0x883F7FB5))
+            : (mine ? Border.all(color: const Color(0xAAEBA52F)) : null),
       ),
       // 선택 가능한 글자 — 꾹 누르면 복사, 안드로이드는 설치된 번역 앱(구글 번역 등)의
       // "번역"이 같이 뜬다(Flutter 가 시스템 텍스트 처리 메뉴를 붙인다). 채팅 번역 서버를
@@ -779,10 +796,20 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
     }
 
     // 2026-10-10 사장님(다른 게임 참고): 그림이 [닉네임 줄 + 말풍선] 높이만큼 크게 옆에 있고, 닉네임 줄 끝에 시간,
-    // 말풍선은 늘 **가로 끝까지 같은 폭**(긴 글·짧은 글이 섞여도 가지런하다). 내 글은 좌우만 뒤집는다(그림 오른쪽).
-    final avatar = AvatarCircle(
-      id: mine ? (save.avatar ?? m.avatar) : m.avatar,
-      size: 58,
+    // 말풍선은 늘 **가로 끝까지 같은 폭**(긴 글·짧은 글이 섞여도 가지런하다). 내 글도 왼쪽 — 꿀빛 말풍선·테두리·그림 빛으로 구분.
+    final avatar = Container(
+      decoration: mine
+          ? BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: kHoney.withValues(alpha: 0.55), blurRadius: 8),
+              ],
+            )
+          : null,
+      child: AvatarCircle(
+        id: mine ? (save.avatar ?? m.avatar) : m.avatar,
+        size: 58,
+      ),
     );
     final nameText = Text(
       name,
@@ -821,37 +848,28 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       ),
     );
     final nameRow = Row(
-      children: mine
-          ? [
-              more,
-              time,
-              const Spacer(),
-              if (badge != null) ...[badge, const SizedBox(width: 4)],
-              if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
-              Flexible(child: nameText),
-            ]
-          : [
-              if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
-              Flexible(child: nameText),
-              if (badge != null) ...[const SizedBox(width: 4), badge],
-              const Spacer(),
-              time,
-              more,
-            ],
+      children: [
+        if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
+        Flexible(child: nameText),
+        if (badge != null) ...[const SizedBox(width: 4), badge],
+        const Spacer(),
+        time,
+        more,
+      ],
     );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!mine) ...[avatar, const SizedBox(width: 8)],
+          avatar,
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [nameRow, const SizedBox(height: 3), bubble],
             ),
           ),
-          if (mine) ...[const SizedBox(width: 8), avatar],
         ],
       ),
     );

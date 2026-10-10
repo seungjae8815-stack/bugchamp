@@ -40,6 +40,7 @@ import '../../domain/server_sync.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/chat_screen.dart';
+import '../chat/chat_unread.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
 import '../../ui/fairy_art.dart';
@@ -3495,17 +3496,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     padding: const EdgeInsets.fromLTRB(10, 0, 10, 7),
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.of(
-        context,
-      ).push(MaterialPageRoute<void>(builder: (_) => const ChatScreen())),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: const Color(0x33000000),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0x22FFFFFF)),
-        ),
+      onTap: () {
+        // 연 순간 지금 보이는 마지막 글까지 읽은 것으로(채팅창 안에서도 새 글을 받을 때마다 갱신한다).
+        final last = ref.read(chatLatestProvider).value;
+        if (last != null) {
+          ref.read(chatSeenProvider.notifier).markSeen(last.createdAt);
+        }
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (_) => const ChatScreen()));
+      },
+      // 안 읽은 남의 글이 있으면 꿀빛 테두리 + NEW, 새 글이 막 들어오면 반짝인다(2026-10-10 사장님 — 참여 유도).
+      child: ChatBarFrame(
         child: Row(
           children: [
             const Icon(
@@ -3590,6 +3592,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 },
               ),
             ),
+            const ChatNewPill(),
           ],
         ),
       ),
