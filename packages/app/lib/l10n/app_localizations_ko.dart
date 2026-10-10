@@ -2019,6 +2019,34 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get missionSwapTitle => '미션 바꾸기';
+
+  @override
+  String missionSwapBody(String current, String next) {
+    return '$current 미션을 보상 없이 $next 미션으로 바꿀까요?\n지금까지의 진행도는 사라져요.';
+  }
+
+  @override
+  String missionSwapImpossible(String next) {
+    return '더 올릴 수 있는 강화가 없어 깰 수 없는 미션이에요.\n무료로 $next 미션으로 바꿀 수 있어요.';
+  }
+
+  @override
+  String get missionSwapFreeShort => '누르면 무료 교체';
+
+  @override
+  String get missionSwapAction => '바꾸기';
+
+  @override
+  String get missionSwapFree => '무료로 바꾸기';
+
+  @override
+  String get missionSwapped => '미션을 바꿨어요';
+
+  @override
+  String get missionSwapFailed => '지금은 미션을 바꿀 수 없어요';
+
+  @override
   String get missionsTitle => '미션';
 
   @override
@@ -3103,6 +3131,29 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get skillNextSlotHint => '새 난이도에 가면 칸이 늘어나요';
+
+  @override
+  String skillShardProgressWild(String have, String wild, String need) {
+    return '조각 $have+만능 $wild/$need';
+  }
+
+  @override
+  String get skillUnlock => '해금';
+
+  @override
+  String skillUnlockTitle(String name) {
+    return '$name 해금';
+  }
+
+  @override
+  String skillUnlockCostWithAny(String n, String any) {
+    return '조각 $n + 만능 $any';
+  }
+
+  @override
+  String skillUnlocked(String name) {
+    return '$name 해금!';
+  }
 
   @override
   String skillShardProgress(String have, String need) {

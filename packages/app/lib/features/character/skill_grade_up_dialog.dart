@@ -174,25 +174,36 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
     );
   }
 
-  /// 등급 사다리 — `조각 ▸ 조각 ▸ 조각 ▸ 조각`. 사이의 화살표를 누르면
-  /// 그 구간(아래 등급 → 위 등급)이 선택된다.
+  /// 등급 사다리 — `조각 ▸ 조각 ▸ 조각 ▸ 조각`. 화살표나 **조각 그림**을 누르면 구간이 바뀐다.
+  ///
+  /// 조각 그림 = "이 등급 만능을 만든다"(그 등급으로 들어오는 구간, 맨 아래 등급은 첫 구간). 예전엔 작은
+  /// 화살표(약 26×36)만 눌려서 아래 → 위 조각을 차례로 눌러도 반응이 없었다(2026-10-10 실기 지적).
+  /// 이 규칙이면 아래 → 위 순서로 눌러도 마지막에 누른 위 등급 구간에 멈춘다.
   ///
   /// 고른 구간은 화살표가 **꿀색으로 차고**, 양 끝 조각이 커진다. 무엇에서
   /// 무엇으로 가는지 한 줄에 다 보인다.
   Widget _ladder(AppLocalizations l, SkillConfig cfg, SaveGame save) {
     final grades = kSkillGrades;
+    // 칸마다 폭을 나눠 가진다 — 누르는 영역이 줄 전체를 덮고, 좁은 폰에서도 넘치지 않는다.
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (var i = 0; i < grades.length; i++) ...[
-          if (i > 0) _arrow(grades[i - 1]),
-          _rung(l, cfg, save, grades[i]),
+          if (i > 0) Expanded(flex: 2, child: _arrow(grades[i - 1])),
+          Expanded(flex: 3, child: _rung(l, cfg, save, grades[i])),
         ],
       ],
     );
   }
 
-  /// 사다리 한 칸 — 그 등급의 조각 그림과 보유 수.
+  /// 구간 고르기 — [from] 에서 한 단계 위로.
+  void _select(Grade from) => setState(() {
+    if (_from == from) return;
+    _from = from;
+    _picked.clear();
+    _times = 1;
+  });
+
+  /// 사다리 한 칸 — 그 등급의 조각 그림과 보유 수. 누르면 그 등급으로 **들어오는** 구간.
   Widget _rung(AppLocalizations l, SkillConfig cfg, SaveGame save, Grade g) {
     // 이번 변환에 관계된 등급(출발·도착)만 또렷하게.
     final to = SkillConfig.nextGrade(_from);
@@ -201,22 +212,33 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
     for (final def in cfg.skills) {
       if (def.grade == g) own += save.skillShards[def.id] ?? 0;
     }
-    return Opacity(
-      opacity: lit ? 1 : 0.4,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          skillShardImage(g, size: lit ? 34 : 26),
-          const SizedBox(height: 2),
-          Text(
-            '$own',
-            style: TextStyle(
-              color: gradeColor(g),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
+    final grades = kSkillGrades;
+    final i = grades.indexOf(g);
+    final from = i <= 0 ? grades.first : grades[i - 1];
+    return InkWell(
+      onTap: () => _select(from),
+      borderRadius: BorderRadius.circular(10),
+      child: SizedBox(
+        height: 60,
+        child: Opacity(
+          opacity: lit ? 1 : 0.4,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              skillShardImage(g, size: lit ? 34 : 26),
+              const SizedBox(height: 2),
+              Text(
+                '$own',
+                style: TextStyle(
+                  color: gradeColor(g),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -225,14 +247,10 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
   Widget _arrow(Grade from) {
     final on = _from == from;
     return InkWell(
-      onTap: () => setState(() {
-        _from = from;
-        _picked.clear();
-        _times = 1;
-      }),
+      onTap: () => _select(from),
       borderRadius: BorderRadius.circular(9),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+      child: SizedBox(
+        height: 60,
         child: Icon(
           Icons.chevron_right_rounded,
           size: on ? 26 : 20,

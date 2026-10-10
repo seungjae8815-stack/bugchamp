@@ -1256,6 +1256,31 @@
       }
     }
   },
+  "missionSwapTitle": "Change Mission",
+  "missionSwapBody": "Swap the {current} mission for {next} with no reward?\nCurrent progress will be lost.",
+  "@missionSwapBody": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "missionSwapImpossible": "No upgrades are left to buy, so this mission can't be completed.\nSwap it for {next} for free.",
+  "@missionSwapImpossible": {
+    "placeholders": {
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "missionSwapFreeShort": "Tap to swap free",
+  "missionSwapAction": "Swap",
+  "missionSwapFree": "Swap free",
+  "missionSwapped": "Mission changed",
+  "missionSwapFailed": "Can't change the mission right now",
   "missionsTitle": "Missions",
   "missionKillMonsters": "Hunt Monsters",
   "missionKillBosses": "Defeat Bosses",
@@ -2019,6 +2044,48 @@
     }
   },
   "skillNextSlotHint": "More slots open at new difficulties",
+  "skillShardProgressWild": "Shards {have}+{wild} wild/{need}",
+  "@skillShardProgressWild": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "wild": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "skillUnlock": "Unlock",
+  "skillUnlockTitle": "Unlock {name}",
+  "@skillUnlockTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "skillUnlockCostWithAny": "{n} shards + {any} wild",
+  "@skillUnlockCostWithAny": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "any": {
+        "type": "String"
+      }
+    }
+  },
+  "skillUnlocked": "{name} unlocked!",
+  "@skillUnlocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "skillShardProgress": "Shards {have}/{need}",
   "@skillShardProgress": {
     "placeholders": {

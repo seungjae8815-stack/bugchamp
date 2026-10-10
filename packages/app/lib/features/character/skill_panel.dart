@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
@@ -399,6 +400,13 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     final equipped = save.equippedSkills.contains(def.id);
     final have = save.skillShards[def.id] ?? 0;
     final need = owned ? cfg.shardsForLevel(def, lv) : cfg.unlockShards;
+    // 모자란 만큼 메울 수 있는 그 등급 만능 조각(수련·해금 둘 다, 2026-10-10) — 진행도에 같이 보여야
+    // "만능 조각이 있는데 왜 안 되지"가 안 생긴다.
+    final wild = math.min(
+      save.gradeShards(def.grade),
+      math.max(0, need - have),
+    );
+    final canUnlock = !owned && skillUnlockCost(save, cfg, def).enough;
     final color = gradeColor(def.grade);
     final training = save.skillTrainingId == def.id;
 
@@ -492,7 +500,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                               child: LinearProgressIndicator(
                                 value: need <= 0
                                     ? 1
-                                    : (have / need).clamp(0.0, 1.0),
+                                    : ((have + wild) / need).clamp(0.0, 1.0),
                                 minHeight: 4,
                                 backgroundColor: const Color(0x22FFFFFF),
                                 color: color,
@@ -501,7 +509,13 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            l.skillShardProgress('$have', '$need'),
+                            wild > 0
+                                ? l.skillShardProgressWild(
+                                    '$have',
+                                    '$wild',
+                                    '$need',
+                                  )
+                                : l.skillShardProgress('$have', '$need'),
                             style: const TextStyle(
                               color: Colors.white54,
                               fontSize: 10.5,
@@ -533,6 +547,15 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                     ),
                   ],
                 ],
+              ),
+            ] else if (canUnlock) ...[
+              const SizedBox(width: 8),
+              Center(
+                child: _button(
+                  l.skillUnlock,
+                  () => _unlock(l, cfg, save, def, locale),
+                  on: true,
+                ),
               ),
             ],
           ],
@@ -569,6 +592,50 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     final err = await _ctrl.toggleSkill(def.id);
     if (!mounted || err == null) return;
     showCenterToast(context, err == 'slots_full' ? l.skillSlotsFull : err);
+  }
+
+  /// 만능 조각을 섞어 해금 — 무엇을 얼마나 태우는지 먼저 보여 주고 확인받는다(만능은 되돌릴 수 없다).
+  Future<void> _unlock(
+    AppLocalizations l,
+    SkillConfig cfg,
+    SaveGame save,
+    SkillDef def,
+    String locale,
+  ) async {
+    final cost = skillUnlockCost(save, cfg, def);
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.skillUnlockTitle(def.name.resolve(locale)),
+      icon: Icons.lock_open_rounded,
+      content: Text(
+        '${_effectText(l, def, 1)}\n\n'
+        '${l.skillUnlockCostWithAny('${cost.shards}', '${cost.gradeShards}')}',
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 13),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.of(context, rootNavigator: true).pop(false),
+          child: Text(l.actionCancel),
+        ),
+        FilledButton(
+          onPressed: cost.enough
+              ? () => Navigator.of(context, rootNavigator: true).pop(true)
+              : null,
+          child: Text(cost.enough ? l.skillUnlock : l.skillErrNotEnoughShards),
+        ),
+      ],
+    );
+    if (ok != true || !mounted) return;
+    final err = await _ctrl.unlockSkill(def.id);
+    if (!mounted) return;
+    showCenterToast(
+      context,
+      err == null
+          ? l.skillUnlocked(def.name.resolve(locale))
+          : _errText(l, err),
+    );
   }
 
   Future<void> _train(

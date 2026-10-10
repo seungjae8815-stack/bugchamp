@@ -14,6 +14,7 @@ class MissionDef {
     required this.rewardBase,
     this.goalGrowth = 1.0,
     this.goalStep = 0,
+    this.goalMax = 0,
     this.rewardGrowth = 1.0,
     this.rewardMax = 0,
     this.rewardMaterial,
@@ -30,6 +31,10 @@ class MissionDef {
 
   /// reachStage 마일스톤 증가폭(티어당).
   final int goalStep;
+
+  /// 목표 상한(0 = 무제한, 2026-10-10 사장님 확정). `goalGrowth` 가 지수라 받을수록 끝없이 커져
+  /// 사냥 20번째 1,734마리 · 강화 20번째 2,850레벨이 됐다(강화는 상한이 있어 영영 못 깬다).
+  final int goalMax;
 
   /// 보상 종류: 'gold' | 'material' | 'jelly'.
   final String reward;
@@ -48,8 +53,11 @@ class MissionDef {
   final double rewardMax;
 
   /// [claims] 티어의 목표치.
-  int goalAt(int claims) =>
-      (goalBase * math.pow(goalGrowth, claims)).round() + goalStep * claims;
+  int goalAt(int claims) {
+    final raw =
+        (goalBase * math.pow(goalGrowth, claims)).round() + goalStep * claims;
+    return goalMax > 0 && raw > goalMax ? goalMax : raw;
+  }
 
   /// [claims] 티어의 보상량.
   int rewardAt(int claims) {
@@ -64,6 +72,7 @@ class MissionDef {
     goalBase: (json['goalBase'] as num).toDouble(),
     goalGrowth: (json['goalGrowth'] as num?)?.toDouble() ?? 1.0,
     goalStep: (json['goalStep'] as num?)?.toInt() ?? 0,
+    goalMax: (json['goalMax'] as num?)?.toInt() ?? 0,
     reward: json['reward'] as String,
     rewardMaterial: json['rewardMaterial'] != null
         ? MaterialKind.fromKey(json['rewardMaterial'] as String)
@@ -74,17 +83,39 @@ class MissionDef {
   );
 }
 
+/// 미션 교체 횟수를 적는 `missionClaims` 키(2026-10-10).
+///
+/// 순환 위치 = `missionClaims` 값의 **합** % 미션 수라, 이 키를 1 올리면 보상 없이 다음 미션으로 넘어간다.
+/// 세이브 필드를 새로 만들지 않은 이유: 구버전 앱·서버도 같은 합으로 순환 위치를 재서 어긋나지 않고,
+/// 모르는 키도 그대로 들고 올린다. 미션 id 와 겹치지 않게 `_` 로 시작한다.
+const String kMissionSwapKey = '_swap';
+
 /// 미션 설정 전체 (assets/data/missions.json 에서 로드).
 @immutable
 class MissionConfig {
-  const MissionConfig({required this.missions});
+  const MissionConfig({required this.missions, this.swapJelly = 0});
 
   final List<MissionDef> missions;
+
+  /// 진행 중인 미션을 다음 미션으로 바꾸는 젤리(0 = 교체 없음). 깰 수 없는 미션은 무료.
+  /// 젤리 소비라 5 단위(§2.6 가격 단위) — 젤리 미션 보상(최대 3)보다 비싸 교체로 젤리를 벌 수 없다.
+  final int swapJelly;
+
+  /// 지금 진행 중인 미션의 순번(받은 횟수 + 교체 횟수의 합 % 미션 수).
+  int activeIndex(Map<String, int> claims) {
+    if (missions.isEmpty) return 0;
+    var total = 0;
+    for (final v in claims.values) {
+      total += v;
+    }
+    return total % missions.length;
+  }
 
   factory MissionConfig.fromJson(Map<String, dynamic> json) => MissionConfig(
     missions: (json['missions'] as List)
         .cast<Map<String, dynamic>>()
         .map(MissionDef.fromJson)
         .toList(),
+    swapJelly: (json['swapJelly'] as num?)?.toInt() ?? 0,
   );
 }

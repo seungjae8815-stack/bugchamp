@@ -1114,9 +1114,16 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     );
   }
 
-  /// 상대 프로필 — 방어팀 곤충 3마리와 전투력(서버가 그 사람의 세이브로 계산).
-  Future<void> _showProfile(AppLocalizations l, Map<String, dynamic> r) async {
-    final id = '${r['user_id']}';
+  /// 상대 프로필 응답 캐시(사람 → 받은 시각·응답) — 같은 사람을 다시 누르면 기다리지 않는다.
+  static final Map<String, ({DateTime at, ServerResult res})> _profileCache =
+      {};
+  static const _profileTtl = Duration(minutes: 3);
+
+  /// [previewPower] 는 서버 없는 개발 빌드의 가짜 프로필 전투력.
+  Future<ServerResult> _loadProfile(String id, double previewPower) async {
+    final hit = _profileCache[id];
+    final now = DateTime.now();
+    if (hit != null && now.difference(hit.at) < _profileTtl) return hit.res;
     final server = ref.read(gameServerProvider);
     final res = !server.available && !kReleaseMode
         ? ServerResult.ok(
@@ -1124,25 +1131,37 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
               for (final sp
                   in ref.read(gameDataProvider).requireValue.allSpecies)
                 sp.id,
-            ], (r['power'] as num?)?.toDouble() ?? 1e6),
+            ], previewPower),
           )
         : await server.pvpProfile(id);
-    if (!mounted) return;
+    if (res.isOk) _profileCache[id] = (at: now, res: res);
+    return res;
+  }
+
+  /// 상대 프로필 — 방어팀 곤충 3마리와 전투력(서버가 그 사람의 세이브로 계산).
+  ///
+  /// 창은 **누르자마자** 연다(2026-10-10 실기 지적). 예전엔 서버 응답(0.2~0.5초, 새 서버 인스턴스면 더)을 받은 뒤에야
+  /// 열어서, 그동안 아무 반응이 없어 "느리다"로 읽혔다. 이름·전투력은 순위표 값으로 바로 그리고 곤충만 받아서 채운다.
+  Future<void> _showProfile(AppLocalizations l, Map<String, dynamic> r) async {
+    final id = '${r['user_id']}';
+    final power = (r['power'] as num?)?.toDouble() ?? 0;
+    final profile = _loadProfile(id, power > 0 ? power : 1e6);
     final data = ref.read(gameDataProvider).value;
     final locale = Localizations.localeOf(context).languageCode;
-    final team = res.isOk
-        ? [
-            for (final t in (res.data?['team'] as List? ?? const []))
-              Map<String, dynamic>.from(t as Map),
-          ]
-        : const <Map<String, dynamic>>[];
-    final power = (r['power'] as num?)?.toDouble() ?? 0;
     await showGameDialog<void>(
       context,
       title: '${r['nickname'] ?? ''}',
       // 그 사람이 산 곤충 스킨(서버가 세이브의 ownedSkins 에서 골라 준다). 구서버면 없음.
-      titleTrailing: skinBadges(
-        res.isOk ? skinsFromJson(res.data?['skins']) : const [],
+      titleTrailing: FutureBuilder<ServerResult>(
+        future: profile,
+        builder: (_, snap) {
+          final res = snap.data;
+          return skinBadges(
+            res != null && res.isOk
+                ? skinsFromJson(res.data?['skins'])
+                : const [],
+          );
+        },
       ),
       icon: Icons.person_rounded,
       content: Column(
@@ -1164,39 +1183,66 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
               ],
             ),
           const SizedBox(height: 10),
-          if (team.isEmpty)
-            Text(
-              res.isOk ? l.profileNoTeam : l.battleServerFailed,
-              style: const TextStyle(color: Color(0xCCFFFFFF)),
-            )
-          else
-            Row(
-              children: [
-                for (final t in team)
-                  Expanded(
-                    child: GestureDetector(
-                      // 곤충을 누르면 능력치(서버가 그 사람 세이브로 계산한 값).
-                      onTap: t['bug'] is Map
-                          ? () => showDuelBugInfo(
-                              context,
-                              data,
-                              DuelBug.fromJson(
-                                Map<String, dynamic>.from(t['bug'] as Map),
-                              ),
-                              skin: foeBugView(
-                                data?.iapConfig,
-                                '${t['sp']}',
-                                variant: t['variant']?.toString(),
-                                skin: t['skin']?.toString(),
-                              ),
-                              variant: isVariantKey(t['variant']?.toString()),
-                            )
-                          : null,
-                      child: _profileBug(l, data, locale, t),
+          FutureBuilder<ServerResult>(
+            future: profile,
+            builder: (context, snap) {
+              final res = snap.data;
+              if (res == null) {
+                return const SizedBox(
+                  height: 96,
+                  child: Center(
+                    child: SizedBox(
+                      width: 26,
+                      height: 26,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: kHoney,
+                      ),
                     ),
                   ),
-              ],
-            ),
+                );
+              }
+              final team = res.isOk
+                  ? [
+                      for (final t in (res.data?['team'] as List? ?? const []))
+                        Map<String, dynamic>.from(t as Map),
+                    ]
+                  : const <Map<String, dynamic>>[];
+              if (team.isEmpty) {
+                return Text(
+                  res.isOk ? l.profileNoTeam : l.battleServerFailed,
+                  style: const TextStyle(color: Color(0xCCFFFFFF)),
+                );
+              }
+              return Row(
+                children: [
+                  for (final t in team)
+                    Expanded(
+                      child: GestureDetector(
+                        // 곤충을 누르면 능력치(서버가 그 사람 세이브로 계산한 값).
+                        onTap: t['bug'] is Map
+                            ? () => showDuelBugInfo(
+                                context,
+                                data,
+                                DuelBug.fromJson(
+                                  Map<String, dynamic>.from(t['bug'] as Map),
+                                ),
+                                skin: foeBugView(
+                                  data?.iapConfig,
+                                  '${t['sp']}',
+                                  variant: t['variant']?.toString(),
+                                  skin: t['skin']?.toString(),
+                                ),
+                                variant: isVariantKey(t['variant']?.toString()),
+                              )
+                            : null,
+                        child: _profileBug(l, data, locale, t),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ],
       ),
       actions: [

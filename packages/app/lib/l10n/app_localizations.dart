@@ -3664,6 +3664,54 @@ abstract class AppLocalizations {
   /// **'Crafted {name}!'**
   String craftedSnack(String name);
 
+  /// No description provided for @missionSwapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Mission'**
+  String get missionSwapTitle;
+
+  /// No description provided for @missionSwapBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap the {current} mission for {next} with no reward?\nCurrent progress will be lost.'**
+  String missionSwapBody(String current, String next);
+
+  /// No description provided for @missionSwapImpossible.
+  ///
+  /// In en, this message translates to:
+  /// **'No upgrades are left to buy, so this mission can\'t be completed.\nSwap it for {next} for free.'**
+  String missionSwapImpossible(String next);
+
+  /// No description provided for @missionSwapFreeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to swap free'**
+  String get missionSwapFreeShort;
+
+  /// No description provided for @missionSwapAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get missionSwapAction;
+
+  /// No description provided for @missionSwapFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap free'**
+  String get missionSwapFree;
+
+  /// No description provided for @missionSwapped.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission changed'**
+  String get missionSwapped;
+
+  /// No description provided for @missionSwapFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t change the mission right now'**
+  String get missionSwapFailed;
+
   /// No description provided for @missionsTitle.
   ///
   /// In en, this message translates to:
@@ -5577,6 +5625,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More slots open at new difficulties'**
   String get skillNextSlotHint;
+
+  /// No description provided for @skillShardProgressWild.
+  ///
+  /// In en, this message translates to:
+  /// **'Shards {have}+{wild} wild/{need}'**
+  String skillShardProgressWild(String have, String wild, String need);
+
+  /// No description provided for @skillUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get skillUnlock;
+
+  /// No description provided for @skillUnlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock {name}'**
+  String skillUnlockTitle(String name);
+
+  /// No description provided for @skillUnlockCostWithAny.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} shards + {any} wild'**
+  String skillUnlockCostWithAny(String n, String any);
+
+  /// No description provided for @skillUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} unlocked!'**
+  String skillUnlocked(String name);
 
   /// No description provided for @skillShardProgress.
   ///

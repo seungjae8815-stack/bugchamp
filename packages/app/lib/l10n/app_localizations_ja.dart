@@ -2014,6 +2014,34 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get missionSwapTitle => 'ミッション変更';
+
+  @override
+  String missionSwapBody(String current, String next) {
+    return '$currentミッションを報酬なしで$nextミッションに変えますか？\nこれまでの進行度は消えます。';
+  }
+
+  @override
+  String missionSwapImpossible(String next) {
+    return 'これ以上上げられる強化がないため、クリアできないミッションです。\n無料で$nextミッションに変えられます。';
+  }
+
+  @override
+  String get missionSwapFreeShort => 'タップで無料変更';
+
+  @override
+  String get missionSwapAction => '変更';
+
+  @override
+  String get missionSwapFree => '無料で変更';
+
+  @override
+  String get missionSwapped => 'ミッションを変更しました';
+
+  @override
+  String get missionSwapFailed => '今はミッションを変更できません';
+
+  @override
   String get missionsTitle => 'ミッション';
 
   @override
@@ -3096,6 +3124,29 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get skillNextSlotHint => '新しい難易度で枠が増えます';
+
+  @override
+  String skillShardProgressWild(String have, String wild, String need) {
+    return 'かけら $have+万能 $wild/$need';
+  }
+
+  @override
+  String get skillUnlock => '解放';
+
+  @override
+  String skillUnlockTitle(String name) {
+    return '$name 解放';
+  }
+
+  @override
+  String skillUnlockCostWithAny(String n, String any) {
+    return 'かけら $n + 万能 $any';
+  }
+
+  @override
+  String skillUnlocked(String name) {
+    return '$name 解放！';
+  }
 
   @override
   String skillShardProgress(String have, String need) {

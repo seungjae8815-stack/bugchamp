@@ -45,6 +45,40 @@ void main() {
       final s = grantSkillShards(maxed, cfg, {legend.id: 4});
       expect(s.skillShards[legend.id], 4);
     });
+
+    test('만능 조각을 섞어 해금 — 자기 조각 먼저, 모자란 만큼 만능(2026-10-10)', () {
+      final s0 = fresh().copyWith(
+        skillShards: {legend.id: 30},
+        skillGradeShards: {legend.grade.key: cfg.unlockShards},
+      );
+      final cost = skillUnlockCost(s0, cfg, legend);
+      expect(cost.shards, 30);
+      expect(cost.gradeShards, cfg.unlockShards - 30);
+      expect(cost.enough, isTrue);
+
+      final r = unlockSkill(s0, cfg, legend.id);
+      expect(r.isOk, isTrue);
+      expect(r.save!.skillLevels[legend.id], 1);
+      expect(r.save!.skillShards[legend.id], isNull);
+      expect(r.save!.gradeShards(legend.grade), 30);
+      // 만능은 그 등급만 — 다른 등급 스킬은 못 연다.
+      expect(unlockSkill(s0, cfg, common.id).error, 'not_enough_shards');
+      // 이미 가진 스킬은 다시 열지 않는다.
+      expect(unlockSkill(r.save!, cfg, legend.id).error, 'already_owned');
+    });
+
+    test('만능 조각이 모자라면 해금하지 않는다 · 자동으로 태우지도 않는다', () {
+      final s0 = fresh().copyWith(
+        skillShards: {legend.id: 10},
+        skillGradeShards: {legend.grade.key: 5},
+      );
+      expect(skillUnlockCost(s0, cfg, legend).enough, isFalse);
+      expect(unlockSkill(s0, cfg, legend.id).error, 'not_enough_shards');
+      // 조각을 받아도 만능은 그대로(해금은 유저가 고른 스킬에만).
+      final s1 = grantSkillShards(s0, cfg, {legend.id: 1});
+      expect(s1.skillLevels[legend.id], isNull);
+      expect(s1.gradeShards(legend.grade), 5);
+    });
   });
 
   group('수련', () {

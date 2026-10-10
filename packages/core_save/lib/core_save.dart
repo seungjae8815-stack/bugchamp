@@ -14,6 +14,7 @@ export 'src/gift_claim.dart';
 export 'src/gift_mail.dart';
 export 'src/iap_grant.dart';
 export 'src/idle_drops.dart';
+export 'src/mission_progress.dart';
 export 'src/pvp_league.dart';
 export 'src/save_game.dart';
 export 'src/save_migrations.dart';

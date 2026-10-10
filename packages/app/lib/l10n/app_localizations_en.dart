@@ -2072,6 +2072,34 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get missionSwapTitle => 'Change Mission';
+
+  @override
+  String missionSwapBody(String current, String next) {
+    return 'Swap the $current mission for $next with no reward?\nCurrent progress will be lost.';
+  }
+
+  @override
+  String missionSwapImpossible(String next) {
+    return 'No upgrades are left to buy, so this mission can\'t be completed.\nSwap it for $next for free.';
+  }
+
+  @override
+  String get missionSwapFreeShort => 'Tap to swap free';
+
+  @override
+  String get missionSwapAction => 'Swap';
+
+  @override
+  String get missionSwapFree => 'Swap free';
+
+  @override
+  String get missionSwapped => 'Mission changed';
+
+  @override
+  String get missionSwapFailed => 'Can\'t change the mission right now';
+
+  @override
   String get missionsTitle => 'Missions';
 
   @override
@@ -3183,6 +3211,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skillNextSlotHint => 'More slots open at new difficulties';
+
+  @override
+  String skillShardProgressWild(String have, String wild, String need) {
+    return 'Shards $have+$wild wild/$need';
+  }
+
+  @override
+  String get skillUnlock => 'Unlock';
+
+  @override
+  String skillUnlockTitle(String name) {
+    return 'Unlock $name';
+  }
+
+  @override
+  String skillUnlockCostWithAny(String n, String any) {
+    return '$n shards + $any wild';
+  }
+
+  @override
+  String skillUnlocked(String name) {
+    return '$name unlocked!';
+  }
 
   @override
   String skillShardProgress(String have, String need) {

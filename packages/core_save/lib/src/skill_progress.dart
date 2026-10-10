@@ -69,6 +69,50 @@ SaveGame _unlockReady(SaveGame s, SkillConfig cfg) {
   return s.copyWith(skillShards: bag, skillLevels: levels);
 }
 
+/// 해금에 드는 것 — 그 스킬 조각을 먼저, 모자란 만큼 **그 등급 만능 조각**으로 1:1(2026-10-10 실기 지적).
+/// 만능 조각은 "그 등급 스킬 아무 데나"인데 해금에는 못 써서, 만능 조각을 들고도 미해금 스킬을 못 열었다.
+/// 자기 조각만으로 다 차면 [grantSkillShards] 가 이미 자동으로 열었으므로 여기는 만능을 섞을 때만 쓰인다.
+({int shards, int gradeShards, bool enough}) skillUnlockCost(
+  SaveGame s,
+  SkillConfig cfg,
+  SkillDef def,
+) {
+  final fromOwn = math.min(cfg.unlockShards, s.skillShards[def.id] ?? 0);
+  final short = cfg.unlockShards - fromOwn;
+  return (
+    shards: fromOwn,
+    gradeShards: short,
+    enough: short <= s.gradeShards(def.grade),
+  );
+}
+
+/// 만능 조각을 섞어 해금(레벨 1). 만능은 자동으로 태우지 않는다 — 유저가 고른 스킬에만 쓴다.
+SkillOp unlockSkill(SaveGame s, SkillConfig cfg, String id) {
+  final def = cfg.byId(id);
+  if (def == null) return const SkillOp.fail('unknown_skill');
+  if ((s.skillLevels[id] ?? 0) > 0) return const SkillOp.fail('already_owned');
+  final cost = skillUnlockCost(s, cfg, def);
+  if (!cost.enough) return const SkillOp.fail('not_enough_shards');
+  final bag = Map<String, int>.from(s.skillShards);
+  final left = (bag[id] ?? 0) - cost.shards;
+  if (left > 0) {
+    bag[id] = left;
+  } else {
+    bag.remove(id);
+  }
+  return SkillOp.ok(
+    s.copyWith(
+      skillShards: bag,
+      skillGradeShards: _addGrade(
+        s.skillGradeShards,
+        def.grade,
+        -cost.gradeShards,
+      ),
+      skillLevels: {...s.skillLevels, id: 1},
+    ),
+  );
+}
+
 /// 레벨 +1 수련에 드는 것. 모자란 조각은 **그 등급 만능 조각**으로 1:1 메운다.
 ({int shards, int gradeShards, bool enough}) skillTrainCost(
   SaveGame s,

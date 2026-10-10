@@ -252,6 +252,7 @@ void main() {
       'scoutRefreshJelly': battle.scoutRefreshJelly,
       'ticketRefillJelly': battle.ticketRefillJelly,
       'exchangeJellyPerTrade': run.exchangeJellyPerTrade,
+      'missionSwapJelly': missions.swapJelly,
     };
     flat.forEach((k, v) {
       expect(v % 5, 0, reason: '$k = $v — 젤리 소비는 5 단위여야 한다');

@@ -47,6 +47,7 @@ import '../../ui/concept_card.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/jelly_confirm.dart';
 import '../../ui/guest_warning.dart';
 import '../../ui/nickname_gate.dart';
 import '../../ui/popup_gate.dart';
@@ -5512,7 +5513,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   );
 
   Widget _questAndResources(AppLocalizations l, SaveGame save) {
-    final missions = _data.missionConfig?.missions ?? const <MissionDef>[];
+    final mcfg = _data.missionConfig;
+    final missions = mcfg?.missions ?? const <MissionDef>[];
     return Container(
       width: 120,
       padding: const EdgeInsets.all(7),
@@ -5545,31 +5547,39 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           const SizedBox(height: 5),
           // 한 번에 하나의 미션만 노출. 수집하면 다음 미션으로 순환.
           if (missions.isNotEmpty)
-            _missionRow(l, save, missions[_activeMissionIndex(save, missions)]),
+            _missionRow(
+              l,
+              save,
+              mcfg!,
+              missions[mcfg.activeIndex(save.missionClaims)],
+            ),
         ],
       ),
     );
   }
 
-  /// 현재 노출할 미션 인덱스. 총 수집 횟수만큼 다음 미션으로 순환.
-  int _activeMissionIndex(SaveGame save, List<MissionDef> missions) {
-    var totalClaims = 0;
-    for (final v in save.missionClaims.values) {
-      totalClaims += v;
-    }
-    return totalClaims % missions.length;
-  }
-
-  Widget _missionRow(AppLocalizations l, SaveGame save, MissionDef def) {
+  Widget _missionRow(
+    AppLocalizations l,
+    SaveGame save,
+    MissionConfig cfg,
+    MissionDef def,
+  ) {
     final claims = save.missionClaimCount(def.id);
-    final goal = def.goalAt(claims);
+    final run = _data.runConfig;
+    // 강화 미션은 남은 강화 레벨로 줄어든다(2026-10-10) — 목표 0 = 깰 수 없음(무료 교체).
+    final goal = missionGoal(save, def, run);
     final progress = save.missionProgressCount(def.id);
-    final claimable = progress >= goal;
+    final claimable = missionClaimable(save, def, run);
+    final impossible = goal <= 0;
+    final canSwap = cfg.swapJelly > 0 && cfg.missions.length > 1;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: claimable ? () => _claimMission(l, def, claims) : null,
+        // 못 받는 미션을 누르면 교체 창(2026-10-10 사장님 요청 — 깨기 어려운 미션을 젤리로 바꾼다).
+        onTap: claimable
+            ? () => _claimMission(l, def, claims)
+            : (canSwap ? () => _swapMission(l, save, cfg, def) : null),
         child: _PulseBox(
           // ⚠️ 깜빡임은 **스스로** 돌아야 한다. 예전엔 부모(_tapHint)의 값을 읽어
           //    계산했는데, 미션 목록은 바텀시트라 부모가 갱신돼도 다시 그려지지
@@ -5604,38 +5614,117 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     ),
                   ),
                   if (claimable)
-                    const Icon(Icons.card_giftcard, size: 12, color: _honey),
+                    const Icon(Icons.card_giftcard, size: 12, color: _honey)
+                  else if (canSwap)
+                    Icon(
+                      Icons.swap_horiz_rounded,
+                      size: 12,
+                      color: impossible ? _honey : const Color(0x99FFFFFF),
+                    ),
                 ],
               ),
               const SizedBox(height: 3),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: (progress / goal).clamp(0.0, 1.0),
-                        minHeight: 4,
-                        backgroundColor: const Color(0x33FFFFFF),
-                        valueColor: const AlwaysStoppedAnimation(_honey),
+              if (impossible)
+                Text(
+                  l.missionSwapFreeShort,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _honey,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: (progress / goal).clamp(0.0, 1.0),
+                          minHeight: 4,
+                          backgroundColor: const Color(0x33FFFFFF),
+                          valueColor: const AlwaysStoppedAnimation(_honey),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$progress/$goal',
-                    style: const TextStyle(
-                      color: Color(0xCCFFFFFF),
-                      fontSize: 8.5,
+                    const SizedBox(width: 4),
+                    Text(
+                      '$progress/$goal',
+                      style: const TextStyle(
+                        color: Color(0xCCFFFFFF),
+                        fontSize: 8.5,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// 미션 교체 — 보상 없이 다음 미션으로(젤리 `swapJelly`, 깰 수 없는 미션은 무료).
+  Future<void> _swapMission(
+    AppLocalizations l,
+    SaveGame save,
+    MissionConfig cfg,
+    MissionDef def,
+  ) async {
+    final run = _data.runConfig;
+    final next =
+        cfg.missions[(cfg.activeIndex(save.missionClaims) + 1) %
+            cfg.missions.length];
+    final jelly = missionSwapCost(save, cfg, run);
+    final body = jelly <= 0
+        ? l.missionSwapImpossible(missionLabel(l, next.type))
+        : l.missionSwapBody(
+            missionLabel(l, def.type),
+            missionLabel(l, next.type),
+          );
+    final bool ok;
+    if (jelly > 0) {
+      ok = await confirmJellySpend(
+        context,
+        title: l.missionSwapTitle,
+        body: body,
+        jelly: jelly,
+        actionLabel: l.missionSwapAction,
+      );
+    } else {
+      ok =
+          await showGameDialog<bool>(
+            context,
+            title: l.missionSwapTitle,
+            icon: Icons.swap_horiz_rounded,
+            content: Text(
+              body,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+            actions: [
+              gameDialogButton(
+                l.actionCancel,
+                () => Navigator.pop(context, false),
+                primary: false,
+              ),
+              gameDialogButton(
+                l.missionSwapFree,
+                () => Navigator.pop(context, true),
+              ),
+            ],
+          ) ==
+          true;
+    }
+    if (!ok || !mounted) return;
+    final err = await ref.read(saveControllerProvider.notifier).swapMission();
+    if (!mounted) return;
+    showCenterToast(context, switch (err) {
+      null => l.missionSwapped,
+      'not_enough_jelly' => l.notEnoughJelly,
+      _ => l.missionSwapFailed,
+    });
   }
 
   /// 미션 보상 수령 — **무엇을 받았는지 보여 준다**(실기 지적 2026-09-18).

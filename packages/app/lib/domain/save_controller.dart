@@ -16,6 +16,7 @@ import 'package:core_save/core_save.dart'
     show
         startSkillTraining,
         completeSkillTraining,
+        unlockSkill,
         grantEliteShards,
         drawSkills,
         sweepBoss;
@@ -1033,11 +1034,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final cfg = ref.read(gameDataProvider).requireValue.missionConfig;
     if (cfg == null || cfg.missions.isEmpty) return null;
     final s = state.requireValue;
-    var totalClaims = 0;
-    for (final v in s.missionClaims.values) {
-      totalClaims += v;
-    }
-    final active = cfg.missions[totalClaims % cfg.missions.length];
+    final active = cfg.missions[cfg.activeIndex(s.missionClaims)];
     // reachStage 는 stageNumber 파생이라 카운터를 쓰지 않는다.
     if (active.type != type || active.type == MissionType.reachStage) {
       return null;
@@ -1113,8 +1110,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (def == null) return false;
     final s = state.requireValue;
     final claims = s.missionClaimCount(id);
-    final goal = def.goalAt(claims);
-    if (s.missionProgressCount(id) < goal) return false;
+    // 화면과 같은 목표(강화 미션은 남은 강화 레벨로 줄어든다 · 목표 0 은 못 받는다).
+    final run = ref.read(gameDataProvider).requireValue.runConfig;
+    if (!missionClaimable(s, def, run)) return false;
 
     // 보상 지급.
     var gold = s.gold;
@@ -1141,6 +1139,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
       ),
     );
     return true;
+  }
+
+  /// 진행 중인 미션을 보상 없이 다음 미션으로 바꾼다(젤리 `swapJelly`, 깰 수 없는 미션은 무료).
+  /// 실패면 이유 키(`no_swap`·`claimable`·`not_enough_jelly`), 성공이면 null.
+  Future<String?> swapMission() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final cfg = data.missionConfig;
+    if (cfg == null) return 'no_swap';
+    final r = applyMissionSwap(state.requireValue, cfg, data.runConfig);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
   }
 
   /// 도달 스테이지 갱신(최고 기록만). 기기 권위 — 로컬 즉시 반영.
@@ -3595,6 +3605,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 눌렀는데 아무 일도 없으면 고장으로 읽힌다.
   Future<String?> toggleSkill(String id) =>
       _skillOp((s, cfg) => toggleSkillEquip(s, cfg, id));
+
+  /// 만능 조각을 섞어 미해금 스킬을 연다(2026-10-10). 규칙은 `core_save` 한 곳.
+  Future<String?> unlockSkill(String id) =>
+      _skillOp((s, cfg) => core_skill.unlockSkill(s, cfg, id));
 
   /// 스킬 수련 시작(조각 + 부족분 만능 조각, 타이머). 규칙은 `core_save` 한 곳.
   Future<String?> startSkillTraining(String id) => _skillOp(
