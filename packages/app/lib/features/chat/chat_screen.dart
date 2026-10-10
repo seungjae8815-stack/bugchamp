@@ -688,7 +688,8 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
         ? null
         : AvatarCircle(
             id: mine ? (save.avatar ?? m.avatar) : m.avatar,
-            size: 36,
+            // 윗줄 아이디(⋯ 버튼 포함 약 28) + 아랫줄 한 줄 글(약 34)을 합친 높이 — 두 줄을 감싸는 크기(사장님 요청).
+            size: 60,
           );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
