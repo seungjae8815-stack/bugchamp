@@ -6636,6 +6636,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duelStoneChangeTemperament => 'Change temper';
 
   @override
+  String duelStoneWhere(
+    String elite,
+    String bossEl,
+    String bossTm,
+    String every,
+    String abEl,
+    String abTm,
+    String jEl,
+    String jTm,
+  ) {
+    return 'Found from: elites (element $elite%) · repeat boss kills (element $bossEl% · temperament $bossTm%) · first clear of every $every abyss floors (element $abEl · temperament $abTm) · or jelly $jEl/$jTm';
+  }
+
+  @override
+  String duelStoneElemInfo(String win, String lose, String mult) {
+    return 'Deals ×$mult damage to $win · takes ×$mult from $lose';
+  }
+
+  @override
+  String duelStoneTempCaps(String caps) {
+    return 'Training slot caps $caps';
+  }
+
+  @override
+  String get duelStoneCurrent => 'Current';
+
+  @override
   String get duelStoneHint =>
       'Set element or temper to any value (bloodline trait stays). Changes are inherited by offspring.';
 

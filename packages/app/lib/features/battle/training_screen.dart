@@ -1875,6 +1875,21 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
             l.duelStoneHint,
             style: const TextStyle(color: _dim, fontSize: 11.5),
           ),
+          const SizedBox(height: 4),
+          // 얻는 곳(2026-10-10 사장님 요청 — 어디서 나는지 몰랐다). 수치는 battle.json → training.stones.
+          Text(
+            l.duelStoneWhere(
+              _pct(cfg.stones.eliteChance[DuelStone.element] ?? 0),
+              _pct(cfg.stones.bossRepeatChance[DuelStone.element] ?? 0),
+              _pct(cfg.stones.bossRepeatChance[DuelStone.temperament] ?? 0),
+              '${cfg.stones.abyssEvery}',
+              '${cfg.stones.abyssCount[DuelStone.element] ?? 0}',
+              '${cfg.stones.abyssCount[DuelStone.temperament] ?? 0}',
+              '${cfg.stones.jelly[DuelStone.element] ?? 0}',
+              '${cfg.stones.jelly[DuelStone.temperament] ?? 0}',
+            ),
+            style: const TextStyle(color: _honey, fontSize: 11, height: 1.35),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -1921,36 +1936,70 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     final cur = save.bugs.where((b) => b.id == bug.id).firstOrNull;
     if (cur == null) return;
     final isEl = kind == DuelStone.element;
+    final data = ref.read(gameDataProvider).requireValue;
+    final mult = _params(data).restrainMult;
+    final multText = mult.toStringAsFixed(mult == mult.roundToDouble() ? 0 : 1);
+    // 고를 때 무엇이 달라지는지 보여 준다(2026-10-10 사장님 요청) — 오행은 상극, 기질은 싸우는 방식·훈련 칸 상한.
+    String elementInfo(Element e) {
+      final win = Element.values.firstWhere((x) => e.restrains(x));
+      final lose = Element.values.firstWhere((x) => x.restrains(e));
+      return l.duelStoneElemInfo(
+        elementLabel(l, win),
+        elementLabel(l, lose),
+        multText,
+      );
+    }
+
+    String tempInfo(Temperament t) {
+      final mods = cfg.slotTemperamentMods[t] ?? const {};
+      final caps = [
+        for (final e in mods.entries)
+          if (e.value != 0)
+            '${trainSlotLabel(l, e.key)} ${e.value > 0 ? '+' : ''}${e.value}',
+      ].join(' · ');
+      final style = _tempStyle(l, t);
+      return caps.isEmpty ? style : '$style\n${l.duelStoneTempCaps(caps)}';
+    }
+
     final picked = await showGameDialog<Object>(
       context,
       title: isEl ? l.duelStonePickElement : l.duelStonePickTemperament,
       icon: isEl ? Icons.diamond_rounded : Icons.psychology_rounded,
-      content: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        alignment: WrapAlignment.center,
-        children: [
-          if (isEl)
-            for (final e in Element.values)
-              _pickOption(
-                key: ValueKey('stonePick:${e.name}'),
-                icon: elementIcon(e, size: 20),
-                label: elementLabel(l, e),
-                color: elementColor(e),
-                current: e == cur.element,
-                onTap: () => Navigator.pop(context, e),
-              )
-          else
-            for (final t in Temperament.values)
-              _pickOption(
-                key: ValueKey('stonePick:${t.name}'),
-                icon: temperamentIcon(t, size: 18),
-                label: temperamentLabel(l, t),
-                color: const Color(0xFFE9D9A6),
-                current: t == cur.temperament,
-                onTap: () => Navigator.pop(context, t),
-              ),
-        ],
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.55,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isEl)
+                for (final e in Element.values)
+                  _pickOption(
+                    key: ValueKey('stonePick:${e.name}'),
+                    icon: elementIcon(e, size: 22),
+                    label: elementLabel(l, e),
+                    desc: elementInfo(e),
+                    color: elementColor(e),
+                    current: e == cur.element,
+                    currentLabel: l.duelStoneCurrent,
+                    onTap: () => Navigator.pop(context, e),
+                  )
+              else
+                for (final t in Temperament.values)
+                  _pickOption(
+                    key: ValueKey('stonePick:${t.name}'),
+                    icon: temperamentIcon(t, size: 20),
+                    label: temperamentLabel(l, t),
+                    desc: tempInfo(t),
+                    color: const Color(0xFFE9D9A6),
+                    current: t == cur.temperament,
+                    currentLabel: l.duelStoneCurrent,
+                    onTap: () => Navigator.pop(context, t),
+                  ),
+            ],
+          ),
+        ),
       ),
       actions: [
         gameDialogButton(
@@ -1992,38 +2041,73 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     }
   });
 
+  /// 결투석 고르기 한 줄 — 이름 + 무엇이 달라지는지([desc]). 지금 값은 흐리게, 이름 옆에 [currentLabel].
   Widget _pickOption({
     required Key key,
     required Widget icon,
     required String label,
+    required String desc,
     required Color color,
     required bool current,
+    required String currentLabel,
     required VoidCallback onTap,
   }) => GestureDetector(
     key: key,
+    behavior: HitTestBehavior.opaque,
     onTap: current ? null : onTap,
     child: Opacity(
-      opacity: current ? 0.45 : 1,
+      opacity: current ? 0.5 : 1,
       child: Container(
-        width: 96,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
         decoration: BoxDecoration(
           color: const Color(0xFF2A2417),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.8), width: 1.5),
         ),
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            icon,
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w900,
-                fontSize: 13,
+            Padding(padding: const EdgeInsets.only(top: 2), child: icon),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      if (current) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          currentLabel,
+                          style: const TextStyle(
+                            color: _dim,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    desc,
+                    style: const TextStyle(
+                      color: _text,
+                      fontSize: 11.5,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -2031,6 +2115,21 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       ),
     ),
   );
+
+  /// 기질의 싸우는 방식(가이드와 같은 문구).
+  String _tempStyle(AppLocalizations l, Temperament t) => switch (t) {
+    Temperament.aggressive => l.guideTempAggressive,
+    Temperament.cautious => l.guideTempCautious,
+    Temperament.cunning => l.guideTempCunning,
+    Temperament.steadfast => l.guideTempSteadfast,
+    Temperament.fickle => l.guideTempFickle,
+  };
+
+  /// 확률(0.002) → '0.2'.
+  String _pct(double p) {
+    final v = p * 100;
+    return v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+  }
 
   // ── 공용 ─────────────────────────────────────────────────────────────
 

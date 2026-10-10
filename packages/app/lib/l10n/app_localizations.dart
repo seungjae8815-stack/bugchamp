@@ -11111,6 +11111,39 @@ abstract class AppLocalizations {
   /// **'Change temper'**
   String get duelStoneChangeTemperament;
 
+  /// No description provided for @duelStoneWhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Found from: elites (element {elite}%) · repeat boss kills (element {bossEl}% · temperament {bossTm}%) · first clear of every {every} abyss floors (element {abEl} · temperament {abTm}) · or jelly {jEl}/{jTm}'**
+  String duelStoneWhere(
+    String elite,
+    String bossEl,
+    String bossTm,
+    String every,
+    String abEl,
+    String abTm,
+    String jEl,
+    String jTm,
+  );
+
+  /// No description provided for @duelStoneElemInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Deals ×{mult} damage to {win} · takes ×{mult} from {lose}'**
+  String duelStoneElemInfo(String win, String lose, String mult);
+
+  /// No description provided for @duelStoneTempCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Training slot caps {caps}'**
+  String duelStoneTempCaps(String caps);
+
+  /// No description provided for @duelStoneCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get duelStoneCurrent;
+
   /// No description provided for @duelStoneHint.
   ///
   /// In en, this message translates to:

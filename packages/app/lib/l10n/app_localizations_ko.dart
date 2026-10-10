@@ -6494,6 +6494,33 @@ class AppLocalizationsKo extends AppLocalizations {
   String get duelStoneChangeTemperament => '기질 바꾸기';
 
   @override
+  String duelStoneWhere(
+    String elite,
+    String bossEl,
+    String bossTm,
+    String every,
+    String abEl,
+    String abTm,
+    String jEl,
+    String jTm,
+  ) {
+    return '얻는 곳: 정예 몬스터(오행석 $elite%) · 보스 다시 잡기(오행석 $bossEl% · 기질석 $bossTm%) · 심연 $every층마다 첫 도달(오행석 $abEl · 기질석 $abTm) · 없으면 젤리 $jEl·$jTm';
+  }
+
+  @override
+  String duelStoneElemInfo(String win, String lose, String mult) {
+    return '$win에게 주는 피해 ×$mult · $lose에게서 받는 피해 ×$mult';
+  }
+
+  @override
+  String duelStoneTempCaps(String caps) {
+    return '훈련 칸 상한 $caps';
+  }
+
+  @override
+  String get duelStoneCurrent => '지금';
+
+  @override
   String get duelStoneHint =>
       '오행·기질을 원하는 값으로 바꿔요(혈통 특성은 그대로). 바꾼 값은 짝짓기에도 상속돼요.';
 

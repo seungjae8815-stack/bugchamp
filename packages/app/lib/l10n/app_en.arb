@@ -3739,6 +3739,58 @@
   "@duelStoneOwned": {"placeholders": {"n": {"type": "String"}}},
   "duelStoneChangeElement": "Change element",
   "duelStoneChangeTemperament": "Change temper",
+  "duelStoneWhere": "Found from: elites (element {elite}%) · repeat boss kills (element {bossEl}% · temperament {bossTm}%) · first clear of every {every} abyss floors (element {abEl} · temperament {abTm}) · or jelly {jEl}/{jTm}",
+  "@duelStoneWhere": {
+    "placeholders": {
+      "elite": {
+        "type": "String"
+      },
+      "bossEl": {
+        "type": "String"
+      },
+      "bossTm": {
+        "type": "String"
+      },
+      "every": {
+        "type": "String"
+      },
+      "abEl": {
+        "type": "String"
+      },
+      "abTm": {
+        "type": "String"
+      },
+      "jEl": {
+        "type": "String"
+      },
+      "jTm": {
+        "type": "String"
+      }
+    }
+  },
+  "duelStoneElemInfo": "Deals ×{mult} damage to {win} · takes ×{mult} from {lose}",
+  "@duelStoneElemInfo": {
+    "placeholders": {
+      "win": {
+        "type": "String"
+      },
+      "lose": {
+        "type": "String"
+      },
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
+  "duelStoneTempCaps": "Training slot caps {caps}",
+  "@duelStoneTempCaps": {
+    "placeholders": {
+      "caps": {
+        "type": "String"
+      }
+    }
+  },
+  "duelStoneCurrent": "Current",
   "duelStoneHint": "Set element or temper to any value (bloodline trait stays). Changes are inherited by offspring.",
   "duelStonePickElement": "Pick a new element",
   "duelStonePickTemperament": "Pick a new temper",

@@ -6484,6 +6484,33 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelStoneChangeTemperament => '気質を変える';
 
   @override
+  String duelStoneWhere(
+    String elite,
+    String bossEl,
+    String bossTm,
+    String every,
+    String abEl,
+    String abTm,
+    String jEl,
+    String jTm,
+  ) {
+    return '入手: 精鋭モンスター(五行石 $elite%) · ボス再討伐(五行石 $bossEl% · 気質石 $bossTm%) · 深淵$every層ごとの初到達(五行石 $abEl · 気質石 $abTm) · なければゼリー $jEl·$jTm';
+  }
+
+  @override
+  String duelStoneElemInfo(String win, String lose, String mult) {
+    return '$winに与えるダメージ ×$mult · $loseから受けるダメージ ×$mult';
+  }
+
+  @override
+  String duelStoneTempCaps(String caps) {
+    return '訓練枠の上限 $caps';
+  }
+
+  @override
+  String get duelStoneCurrent => '現在';
+
+  @override
   String get duelStoneHint => '五行・気質を好きな値に変えます(血統特性はそのまま)。変えた値は交配でも継承されます。';
 
   @override
