@@ -11390,10 +11390,64 @@ abstract class AppLocalizations {
   /// **'Duel stones — an Element stone sets a bug\'s element and a Temper stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).'**
   String guideTrainStoneBody(String el, String tm);
 
+  /// No description provided for @guideDuelPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Combat power reflects real win chances — not just attack, HP and defense but also evasion, crit, recovery, push, weight, technique and grit. Twice the power wins about 67% of the time.'**
+  String get guideDuelPower;
+
+  /// No description provided for @guideGearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear — refining & stars'**
+  String get guideGearTitle;
+
+  /// No description provided for @guideGearPolishBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Refining: reroll one option line and keep the old or new value. Costs {fossil} fossils per grade step or {jelly} jelly; picking a type costs ×{mult}. Each refine adds care to that line, raising the lowest possible roll by {floor} (up to {floorMax}).'**
+  String guideGearPolishBody(
+    String fossil,
+    String jelly,
+    String mult,
+    String floor,
+    String floorMax,
+  );
+
+  /// No description provided for @guideGearStarBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After {need} materials, a {hours}-hour upgrade raises the star (jelly can skip it). Each star adds +{per} to option effects (except evasion), up to {max}. New gear inherits {inherit} of the stars.'**
+  String guideGearStarBody(
+    String need,
+    String hours,
+    String per,
+    String max,
+    String inherit,
+  );
+
+  /// No description provided for @guideHuntTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunting & missions'**
+  String get guideHuntTitle;
+
+  /// No description provided for @guideHuntDefenseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.'**
+  String get guideHuntDefenseBody;
+
+  /// No description provided for @guideMissionSwapBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If a mission is too hard, tap it to swap to the next one for {jelly} jelly (free when it can’t be completed).'**
+  String guideMissionSwapBody(String jelly);
+
   /// No description provided for @guideTrainLegacyNote.
   ///
   /// In en, this message translates to:
-  /// **'Old part enhancements and training stages were converted into training points with the same effect — no bug got weaker.'**
+  /// **'Old part upgrades and training were converted into training points. Every bug now earns points by the same rules (potential, level, breakthrough); bugs above that were adjusted and got one free reset.'**
   String get guideTrainLegacyNote;
 
   /// No description provided for @guideClutchTitle.

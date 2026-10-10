@@ -3915,7 +3915,59 @@
   "@guideTrainRespecBody": {"placeholders": {"base": {"type": "String"}, "per": {"type": "String"}, "max": {"type": "String"}}},
   "guideTrainStoneBody": "Duel stones — an Element stone sets a bug's element and a Temper stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).",
   "@guideTrainStoneBody": {"placeholders": {"el": {"type": "String"}, "tm": {"type": "String"}}},
-  "guideTrainLegacyNote": "Old part enhancements and training stages were converted into training points with the same effect — no bug got weaker.",
+  "guideDuelPower": "Combat power reflects real win chances — not just attack, HP and defense but also evasion, crit, recovery, push, weight, technique and grit. Twice the power wins about 67% of the time.",
+  "guideGearTitle": "Gear — refining & stars",
+  "guideGearPolishBody": "Refining: reroll one option line and keep the old or new value. Costs {fossil} fossils per grade step or {jelly} jelly; picking a type costs ×{mult}. Each refine adds care to that line, raising the lowest possible roll by {floor} (up to {floorMax}).",
+  "@guideGearPolishBody": {
+    "placeholders": {
+      "fossil": {
+        "type": "String"
+      },
+      "jelly": {
+        "type": "String"
+      },
+      "mult": {
+        "type": "String"
+      },
+      "floor": {
+        "type": "String"
+      },
+      "floorMax": {
+        "type": "String"
+      }
+    }
+  },
+  "guideGearStarBody": "Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After {need} materials, a {hours}-hour upgrade raises the star (jelly can skip it). Each star adds +{per} to option effects (except evasion), up to {max}. New gear inherits {inherit} of the stars.",
+  "@guideGearStarBody": {
+    "placeholders": {
+      "need": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      },
+      "per": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "inherit": {
+        "type": "String"
+      }
+    }
+  },
+  "guideHuntTitle": "Hunting & missions",
+  "guideHuntDefenseBody": "Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.",
+  "guideMissionSwapBody": "If a mission is too hard, tap it to swap to the next one for {jelly} jelly (free when it can’t be completed).",
+  "@guideMissionSwapBody": {
+    "placeholders": {
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
+  "guideTrainLegacyNote": "Old part upgrades and training were converted into training points. Every bug now earns points by the same rules (potential, level, breakthrough); bugs above that were adjusted and got one free reset.",
   "guideClutchTitle": "Tap counter (grit)",
   "guideClutchBody": "When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for {sec}s — if your score reaches the threshold {th}, you survive: holding on costs {cost} of max HP and pulls you back inside, waking up gets you back on your feet with {hp} HP. {uses}× per bout (+1 from {bonus} Grit). More points in Grit make each tap stronger, lower the threshold and raise wake HP. Opponent bugs counter automatically.",
   "@guideClutchBody": {"placeholders": {"sec": {"type": "String"}, "th": {"type": "String"}, "cost": {"type": "String"}, "hp": {"type": "String"}, "uses": {"type": "String"}, "bonus": {"type": "String"}}},

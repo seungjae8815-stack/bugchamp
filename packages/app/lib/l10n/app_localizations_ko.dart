@@ -6686,8 +6686,49 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get guideDuelPower =>
+      '전투력은 실제로 이길 확률을 반영해요 — 공격·체력·방어뿐 아니라 회피·치명·회복력·밀어내기 힘·체급·기술·근성까지 들어가요. 전투력이 2배면 약 67% 이겨요.';
+
+  @override
+  String get guideGearTitle => '장비 — 다듬기 · 별 강화';
+
+  @override
+  String guideGearPolishBody(
+    String fossil,
+    String jelly,
+    String mult,
+    String floor,
+    String floorMax,
+  ) {
+    return '다듬기: 옵션 한 줄을 다시 굴리고 이전 값과 새 값 중 남길 쪽을 골라요. 비용은 화석(등급 1칸마다 $fossil개) 또는 젤리 $jelly개, 원하는 종류를 지정하면 ×$mult. 다듬을 때마다 그 줄의 정성이 쌓여 나올 수 있는 가장 낮은 값이 $floor씩 올라가요(최대 $floorMax).';
+  }
+
+  @override
+  String guideGearStarBody(
+    String need,
+    String hours,
+    String per,
+    String max,
+    String inherit,
+  ) {
+    return '별 강화: 같은 부위 장비를 별 재료로 먹여요(모루의 별 재료 버튼, 자동 제련에서 걸러진 장비도 쌓여요). 재료 $need개가 모이면 강화 시간 $hours시간을 거쳐 별이 올라요(젤리로 당길 수 있어요). 별 1개마다 옵션 효과 +$per(회피 제외), 최대 $max성. 새 장비로 바꾸면 별의 $inherit을 이어받아요.';
+  }
+
+  @override
+  String get guideHuntTitle => '사냥 · 미션';
+
+  @override
+  String get guideHuntDefenseBody =>
+      '몬스터의 공격은 사냥터마다 정해져 있어요. 근성(체력)·맷집(방어)·회복력을 올리면 받는 피해가 그대로 줄어들고, 같은 사냥터에 머물며 강해질수록 점점 덜 아파요. 보스에서 막히면 그 사냥터에서 더 강화하고 다시 도전하세요.';
+
+  @override
+  String guideMissionSwapBody(String jelly) {
+    return '미션이 어려우면 미션을 눌러 젤리 $jelly개로 다음 미션으로 바꿀 수 있어요(깰 수 없는 미션은 무료).';
+  }
+
+  @override
   String get guideTrainLegacyNote =>
-      '예전 부위 강화·훈련 단계는 같은 효과가 되도록 훈련 포인트로 옮겨졌어요 — 옮기면서 약해진 곤충은 없어요.';
+      '예전 부위 강화·훈련 단계는 훈련 포인트로 옮겨졌어요. 모든 곤충이 같은 기준(포텐셜·수련·돌파)으로 포인트를 받고, 그보다 많이 찍혀 있던 곤충은 조정되며 무료 다시 찍기 1회가 생겨요.';
 
   @override
   String get guideClutchTitle => '탭 반격 (근성)';

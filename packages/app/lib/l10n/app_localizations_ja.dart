@@ -6675,8 +6675,49 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get guideDuelPower =>
+      '戦闘力は実際の勝率を反映します — 攻撃・体力・防御だけでなく、回避・会心・回復力・押し出す力・体重・技・根性も含まれます。戦闘力が2倍なら約67%で勝ちます。';
+
+  @override
+  String get guideGearTitle => '装備 — 磨き・星強化';
+
+  @override
+  String guideGearPolishBody(
+    String fossil,
+    String jelly,
+    String mult,
+    String floor,
+    String floorMax,
+  ) {
+    return '磨き: オプション1行を振り直し、以前の値と新しい値のどちらを残すか選びます。費用は化石(等級1段ごとに$fossil個)かゼリー$jelly個、種類を指定すると×$mult。磨くたびにその行の丹精がたまり、出せる最低値が$floorずつ上がります(最大$floorMax)。';
+  }
+
+  @override
+  String guideGearStarBody(
+    String need,
+    String hours,
+    String per,
+    String max,
+    String inherit,
+  ) {
+    return '星強化: 同じ部位の装備を星素材にします(金床の星素材ボタン、自動製錬で除外された装備もたまります)。素材が$need個そろうと強化時間$hours時間で星が上がります(ゼリーで短縮可)。星1つごとにオプション効果+$per(回避除く)、最大$maxつ星。新しい装備に替えると星の$inheritを引き継ぎます。';
+  }
+
+  @override
+  String get guideHuntTitle => '狩り・ミッション';
+
+  @override
+  String get guideHuntDefenseBody =>
+      'モンスターの攻撃は狩り場ごとに決まっています。根性(体力)・打たれ強さ(防御)・回復力を上げると受けるダメージがそのまま減り、同じ狩り場で強くなるほど痛くなくなります。ボスで詰まったら、その狩り場で強化して再挑戦しましょう。';
+
+  @override
+  String guideMissionSwapBody(String jelly) {
+    return 'ミッションが難しければ、タップしてゼリー$jelly個で次のミッションに変えられます(クリアできないミッションは無料)。';
+  }
+
+  @override
   String get guideTrainLegacyNote =>
-      '以前の部位強化・訓練段階は同じ効果になるよう訓練ポイントに移しました — 移行で弱くなった虫はいません。';
+      '以前の部位強化・訓練段階は訓練ポイントに移りました。すべての虫が同じ基準(ポテンシャル・修練・突破)でポイントを得て、それより多く振られていた虫は調整され、無料の振り直しが1回付きます。';
 
   @override
   String get guideClutchTitle => 'タップ反撃（根性）';

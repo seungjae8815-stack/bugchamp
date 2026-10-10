@@ -6829,8 +6829,49 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get guideDuelPower =>
+      'Combat power reflects real win chances — not just attack, HP and defense but also evasion, crit, recovery, push, weight, technique and grit. Twice the power wins about 67% of the time.';
+
+  @override
+  String get guideGearTitle => 'Gear — refining & stars';
+
+  @override
+  String guideGearPolishBody(
+    String fossil,
+    String jelly,
+    String mult,
+    String floor,
+    String floorMax,
+  ) {
+    return 'Refining: reroll one option line and keep the old or new value. Costs $fossil fossils per grade step or $jelly jelly; picking a type costs ×$mult. Each refine adds care to that line, raising the lowest possible roll by $floor (up to $floorMax).';
+  }
+
+  @override
+  String guideGearStarBody(
+    String need,
+    String hours,
+    String per,
+    String max,
+    String inherit,
+  ) {
+    return 'Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After $need materials, a $hours-hour upgrade raises the star (jelly can skip it). Each star adds +$per to option effects (except evasion), up to $max. New gear inherits $inherit of the stars.';
+  }
+
+  @override
+  String get guideHuntTitle => 'Hunting & missions';
+
+  @override
+  String get guideHuntDefenseBody =>
+      'Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.';
+
+  @override
+  String guideMissionSwapBody(String jelly) {
+    return 'If a mission is too hard, tap it to swap to the next one for $jelly jelly (free when it can’t be completed).';
+  }
+
+  @override
   String get guideTrainLegacyNote =>
-      'Old part enhancements and training stages were converted into training points with the same effect — no bug got weaker.';
+      'Old part upgrades and training were converted into training points. Every bug now earns points by the same rules (potential, level, breakthrough); bugs above that were adjusted and got one free reset.';
 
   @override
   String get guideClutchTitle => 'Tap counter (grit)';

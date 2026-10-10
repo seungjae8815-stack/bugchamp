@@ -65,6 +65,9 @@ class GuideScreen extends ConsumerWidget {
     final train = battle.training;
     final duel = DuelParams.fromJson(battle.duelJson);
     final pet = data.petConfig;
+    final items = data.itemConfig;
+    final forge = data.forgeConfig;
+    final missions = data.missionConfig;
     String pct(double v) => '${(v * 100).round()}%';
     // 확률은 데이터에 소수(0.0033)로 있어 1/303 처럼 보인다 — 100 이상은 10 단위로 읽기 좋게.
     String odds(double p) {
@@ -261,6 +264,8 @@ class GuideScreen extends ConsumerWidget {
               duel.weakMult.toStringAsFixed(1),
             ),
           ),
+          // 실전 전투력(2026-10-10) — 전투력 비 = 이길 확률 비.
+          _p(l.guideDuelPower),
         ],
       ),
       _Section(
@@ -300,6 +305,23 @@ class GuideScreen extends ConsumerWidget {
               '${train.stones.jelly[DuelStone.temperament] ?? 0}',
             ),
           ),
+          _p(
+            l.duelStoneWhere(
+              _num((train.stones.eliteChance[DuelStone.element] ?? 0) * 100),
+              _num(
+                (train.stones.bossRepeatChance[DuelStone.element] ?? 0) * 100,
+              ),
+              _num(
+                (train.stones.bossRepeatChance[DuelStone.temperament] ?? 0) *
+                    100,
+              ),
+              '${train.stones.abyssEvery}',
+              '${train.stones.abyssCount[DuelStone.element] ?? 0}',
+              '${train.stones.abyssCount[DuelStone.temperament] ?? 0}',
+              '${train.stones.jelly[DuelStone.element] ?? 0}',
+              '${train.stones.jelly[DuelStone.temperament] ?? 0}',
+            ),
+          ),
           _p(l.guideTrainLegacyNote),
         ],
       ),
@@ -317,6 +339,42 @@ class GuideScreen extends ConsumerWidget {
               '${duel.clutchBonusUseGrit}',
             ),
           ),
+        ],
+      ),
+      // 장비 v2(2026-10-10) — 다듬기 · 별 강화.
+      if (items != null && forge != null)
+        _Section(
+          icon: Icons.construction_rounded,
+          title: l.guideGearTitle,
+          children: [
+            _p(
+              l.guideGearPolishBody(
+                '${forge.polishFossilPerTier}',
+                '${forge.rerollJelly}',
+                '${forge.polishKindMult}',
+                _pct(items.polishFloorPerStack),
+                _pct(items.polishFloorPerStack * items.polishMaxStacks),
+              ),
+            ),
+            _p(
+              l.guideGearStarBody(
+                items.starNeed.join('/'),
+                items.starUpMinutes.map((m) => _num(m / 60)).join('/'),
+                _pct(items.starEffectPerStar),
+                '${items.starMax}',
+                _pct(items.starInheritRatio),
+              ),
+            ),
+          ],
+        ),
+      // 사냥(2026-10-10 적응형 위협 제거) · 미션 교체.
+      _Section(
+        icon: Icons.landscape_rounded,
+        title: l.guideHuntTitle,
+        children: [
+          _p(l.guideHuntDefenseBody),
+          if (missions != null && missions.swapJelly > 0)
+            _p(l.guideMissionSwapBody('${missions.swapJelly}')),
         ],
       ),
     ];
