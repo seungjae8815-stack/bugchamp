@@ -842,6 +842,11 @@ RunConfig _fitTiers(Map<String, dynamic> base, RunConfig config, _Opts opts) {
     final weights = [for (var k = 0; k < n; k++) 1 + 0.1 * k];
     final wSum = weights.fold(0.0, (a, v) => a + v);
     final zoneDays = [for (final w in weights) days[t] * w / wSum];
+    // `--fit-keep-gold`(2026-10-10): 골드 표는 지금 값 그대로 — 체력·위협·보스만 다시 뽑는다.
+    // 새 표 골드가 낮게 나오면 기존 유저 눈에 보상이 깎여 보인다(쉬움 C안과 같은 원칙).
+    final keepGold = opts.fitKeepGold && t < config.zoneTiers.length
+        ? config.zoneTiers[t].gold
+        : null;
 
     ({double fill, Map<String, dynamic> table, _Player end}) run(double g1) {
       final p = player.copy();
@@ -865,7 +870,10 @@ RunConfig _fitTiers(Map<String, dynamic> base, RunConfig config, _Opts opts) {
         final tough = entry.maxHp * (100 + entry.defense) / 100;
         th.add((biteK * tough / config.enemyAtkInterval * 100).round() / 100);
         gd.add(
-          (g1 * math.pow(opts.fitGoldStep, k - 1) * 100).roundToDouble() / 100,
+          keepGold != null && k - 1 < keepGold.length
+              ? keepGold[k - 1]
+              : (g1 * math.pow(opts.fitGoldStep, k - 1) * 100).roundToDouble() /
+                    100,
         );
         bh.add(
           (baselineHitPower(entry, boss: true) * opts.fitHits * 4)
@@ -874,12 +882,26 @@ RunConfig _fitTiers(Map<String, dynamic> base, RunConfig config, _Opts opts) {
         p.config = withTables([...tables, table()]);
         p._ceilPetsCache = null;
         p.stage = config.zoneStartStage(k);
-        p.playDays(zoneDays[k - 1]);
+        final firstBoss = opts.fitFirstBoss;
+        if (t == 0 && k == 1 && firstBoss != null) {
+          // 첫 보스를 잡을 수 있게 되는 때까지만(최대 zoneDays) 머문다 — 6분 단위.
+          var stayed = 0.0;
+          while (stayed < zoneDays[0]) {
+            p.playDays(0.005);
+            stayed += 0.005;
+            if (stayed >= 0.01 && p.bossHpAtLimit(1.0) >= firstBoss) break;
+          }
+        } else {
+          p.playDays(zoneDays[k - 1]);
+        }
         // 보스 = **머문 뒤 전력으로 버틸 수 있는 시간 안에 겨우 잡히는** 체력.
         // 위협이 적응형이라 버티는 시간은 전력과 무관하게 거의 일정하다 —
         // 그래서 체력을 그 시간에 맞추면 전력이 조금만 모자라도 못 잡는
         // **확실한 관문**이 된다(타격 수로 잡으면 20초 만에 뚫려 일정이 무너졌다).
         bh[k - 1] = p.bossHpAtLimit(opts.fitBossMargin).roundToDouble();
+        if (t == 0 && k == 1 && opts.fitFirstBoss != null) {
+          bh[0] = opts.fitFirstBoss!;
+        }
         p.gold += p.zoneClearGold(k); // 보스를 깨면 받는 클리어 보상
       }
       return (fill: p._upgradeFill, table: table(), end: p);
@@ -888,8 +910,10 @@ RunConfig _fitTiers(Map<String, dynamic> base, RunConfig config, _Opts opts) {
     // 로그 공간 이분 탐색. 골드를 아무리 줘도 못 닿거나(강화·장비가 꽉 차도
     // 펫·도감 곡선이 모자람) 아무리 줄여도 넘으면 끝값을 쓰고 알린다.
     var lo = math.log(1e-3), hi = math.log(1e9);
-    var best = run(math.exp(hi));
-    if (best.fill < goals[t]) {
+    var best = run(keepGold != null ? keepGold.first : math.exp(hi));
+    if (keepGold != null) {
+      // 골드 유지 — 탐색하지 않는다(사냥터마다 지금 표 값을 아래에서 덮어쓴다).
+    } else if (best.fill < goals[t]) {
       stdout.writeln(
         '  ⚠️ 난이도 $t: 골드를 최대로 줘도 강화 채움 '
         '${(best.fill * 100).toStringAsFixed(1)}% < 목표 '
@@ -2833,6 +2857,8 @@ class _Opts {
     this.fitTiers = false,
     this.fitBossMargin = 0.95,
     this.fitDays,
+    this.fitKeepGold = false,
+    this.fitFirstBoss,
   });
   final Map<String, dynamic> overrides;
 
@@ -2852,6 +2878,15 @@ class _Opts {
 
   /// `--fit-days=14,21,33,24` : 표를 뽑을 때 쓸 난이도별 일정(없으면 목표 일수).
   final List<double>? fitDays;
+
+  /// `--fit-keep-gold` : 골드 표는 지금 값 그대로 두고 체력·위협·보스만 다시 뽑는다.
+  final bool fitKeepGold;
+
+  /// `--fit-first-boss=150000` : 난이도 0 의 첫 사냥터 보스 체력을 이 값으로 **고정**하고,
+  /// 첫 사냥터에는 그 보스를 잡을 수 있게 되는 때까지만 머문다고 보고 표를 뽑는다.
+  /// 적응형 위협이 없으면 첫 보스가 '버티는 시간'으로 막지 못해 보스를 손으로 낮추면
+  /// 사냥터 2 에 약한 채 도착하는데, fit 은 길게 머문 전력으로 사냥터 2 를 뽑아 도착 직후 죽는다.
+  final double? fitFirstBoss;
 
   /// 공격·체력 스탯의 레벨당 곱연산 성장률(null 이면 현행 덧셈).
   final double? mult;
@@ -2894,6 +2929,8 @@ _Opts _parseArgs(List<String> args) {
   List<double>? fitZones;
   var fitHits = 8.0, fitBite = 0.12, fitGoldStep = 1.6;
   var fitTiers = false;
+  var fitKeepGold = false;
+  double? fitFirstBoss;
   var fitBossMargin = 0.95;
   List<double>? fitDays;
   for (final a in args) {
@@ -2914,6 +2951,15 @@ _Opts _parseArgs(List<String> args) {
     }
     if (a == '--fit-tiers') {
       fitTiers = true;
+      continue;
+    }
+    if (a == '--fit-keep-gold') {
+      fitKeepGold = true;
+      continue;
+    }
+    final ffb = RegExp(r'^--fit-first-boss=(.+)$').firstMatch(a);
+    if (ffb != null) {
+      fitFirstBoss = double.parse(ffb.group(1)!);
       continue;
     }
     final fh = RegExp(r'^--fit-hits=(.+)$').firstMatch(a);
@@ -3109,6 +3155,8 @@ _Opts _parseArgs(List<String> args) {
     fitTiers: fitTiers,
     fitBossMargin: fitBossMargin,
     fitDays: fitDays,
+    fitKeepGold: fitKeepGold,
+    fitFirstBoss: fitFirstBoss,
   );
 }
 

@@ -48,20 +48,26 @@ void main() {
   /// 난이도별 표(2026-09-15)가 들어온 뒤로 적응형 위협의 회차 배율은
   /// **표의 threatAdaptMult** 다. 예전 곱셈(2.0^회차 = 극한 x8)은 한 대가
   /// 체력의 96% 라 극한을 아무도 못 깼다(balance_sim 실측 미완주).
-  test('난이도는 위협도(맞는 아픔)로 온다 — 오를수록 아프되 한 방은 아니다', () {
-    // 표의 절대값보다 적응형 몫이 커지도록 맷집을 크게 준다.
-    final easy = habitatThreat(cfg, 199, playerToughness: 1e12);
-    final extreme = habitatThreat(cfg, 199, playerToughness: 1e12, tier: 3);
-    final m0 = cfg.zoneTier(0)?.threatAdaptMult ?? cfg.tierThreat(0);
-    final m3 = cfg.zoneTier(3)?.threatAdaptMult ?? cfg.tierThreat(3);
-    expect(extreme / easy, closeTo(m3 / m0, 0.01));
-    expect(m3, greaterThan(m0), reason: '어려운 회차가 더 아파야 한다');
-    // 한 대 = 맷집 × pct × 간격 × 배율 — 극한에서도 체력의 절반을 넘지 않는다.
-    expect(
-      cfg.threatAdaptTargetPct * cfg.enemyAtkInterval * m3,
-      lessThan(0.5),
-      reason: '극한 한 대가 체력의 절반을 넘으면 두 대에 죽는다',
-    );
+  // 2026-10-10 사장님 확정: 적응형 위협 제거 — 위협은 사냥터 표만 쓴다(강화 근성·맷집이 상쇄되지 않게).
+  test('위협은 내 맷집과 무관하다 — 근성·맷집을 올리면 한 대가 그대로 작아진다', () {
+    expect(cfg.threatAdaptTargetPct, 0);
+    final weak = habitatThreat(cfg, 199, playerToughness: 1e3);
+    final strong = habitatThreat(cfg, 199, playerToughness: 1e12);
+    expect(strong, weak);
+  });
+
+  test('난이도는 위협도(맞는 아픔)로 온다 — 같은 사냥터라도 어려운 난이도가 더 아프다', () {
+    // 사냥터 2(난이도 첫 사냥터 다음)와 마지막. 극한 4~6 은 시뮬 장비 모델 탓에 표가 움푹 꺼져 있다
+    // (2026-10-10 다시 뽑은 표 · 예전 표도 같았다) — 그 칸은 balance_sim 도착 판정 '밋밋함' 으로 본다.
+    for (final z in [2, cfg.zonesPerTier]) {
+      final depth = cfg.zoneStartStage(z) - 1;
+      var prev = habitatThreat(cfg, depth);
+      for (var t = 1; t < 4; t++) {
+        final th = habitatThreat(cfg, depth, tier: t);
+        expect(th, greaterThan(prev), reason: '사냥터 $z 회차 $t');
+        prev = th;
+      }
+    }
   });
 
   /// 난이도별 표에서는 배율이 아니라 **표 자체**가 오른다 — 같은 사냥터라도
