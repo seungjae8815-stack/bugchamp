@@ -3540,7 +3540,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             alignment: PlaceholderAlignment.middle,
                             child: Padding(
                               padding: const EdgeInsets.only(right: 4),
-                              child: AvatarCircle(id: last.avatar, size: 16),
+                              child: AvatarCircle(
+                                // 내 글은 지금 고른 그림(서버가 찍은 값을 기다리지 않는다).
+                                id:
+                                    last.userId ==
+                                        r.read(authServiceProvider).userId
+                                    ? (r
+                                              .read(saveControllerProvider)
+                                              .value
+                                              ?.avatar ??
+                                          last.avatar)
+                                    : last.avatar,
+                                size: 16,
+                              ),
                             ),
                           ),
                         // 운영자 메시지는 홈 채팅바에서도 구분된다 — 여기가
@@ -3591,29 +3603,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: const Color(0x33000000),
-            border: Border.all(
-              color: _honey.withValues(alpha: 0.7),
-              width: 1.5,
-            ),
-          ),
-          child: gameImageChain(
-            const [
-              'assets/images/character/portrait.webp',
-              'assets/images/character/idle.webp',
-            ],
-            size: 44,
-            fallback: const Center(
-              child: Text('🧑‍🌾', style: TextStyle(fontSize: 24)),
-            ),
-          ),
-        ),
+        // 프로필 그림(2026-10-10 사장님 — 고른 그림이 홈 초상화를 대신한다). 고르지 않았으면 기본 프로필.
+        AvatarCircle(id: save.avatar, size: 44),
         Positioned(
           bottom: -3,
           child: Container(

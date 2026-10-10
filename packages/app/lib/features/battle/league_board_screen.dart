@@ -741,7 +741,6 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     required int zone,
     VoidCallback? onTap,
   }) {
-    final sp = '${r['sp'] ?? ''}';
     // 내 줄은 **지금 내 출정 팀**으로 직접 잰다(서버 기록은 결투를 해야 생기고, 비어 있으면 숫자가
     // 빠졌다 — 2026-10-01 실기). 홈 전투력(캐릭터 포함)은 결투 화면에 쓰지 않는다.
     final myTeam = widget.myTeam;
@@ -773,46 +772,27 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           children: [
             SizedBox(width: 44, child: Center(child: _rankBadge(rank))),
             const SizedBox(width: 6),
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(3),
-              child: gameImageChain(
-                [
-                  'assets/images/bugs/${sp}_adult.webp',
-                  'assets/images/bugs/$sp.webp',
-                ],
-                size: 42,
-                fallback: const Icon(Icons.bug_report, color: Colors.black45),
-              ),
+            // 프로필 그림(2026-10-10 사장님 — 대표 곤충 그림 자리를 대신한다). 내 줄은 지금 고른 그림.
+            AvatarCircle(
+              id: mine
+                  ? ref.watch(saveControllerProvider).value?.avatar
+                  : r['avatar'] as String?,
+              size: 50,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 프로필 그림(2026-10-10) — 순위 함수가 `profiles.avatar` 를 함께 돌려준다(없으면 기본).
-                  Row(
-                    children: [
-                      AvatarCircle(id: r['avatar'] as String?, size: 22),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          '${r['nickname'] ?? ''}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    '${r['nickname'] ?? ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   if (power > 0)
                     Row(

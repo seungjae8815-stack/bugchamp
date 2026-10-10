@@ -539,9 +539,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // 점수 칸이 왼쪽으로 딸려온다 — 줄마다 트로피 위치가 달라 보이던
           // 원인이다(2026-08-27 실기). Expanded 하나면 남는 공간이 전부
           // 이름 칸으로 가고 점수는 항상 오른쪽 끝에 붙는다.
-          // 프로필 그림(2026-10-10) — 순위 숫자와 이름 사이.
-          AvatarCircle(id: e.profile.avatar, size: top ? 36 : 30),
-          const SizedBox(width: 8),
+          // 프로필 그림(2026-10-10) — 순위 숫자와 이름 사이. 크게(사장님 요청) · 내 줄은 지금 고른 그림.
+          AvatarCircle(
+            id: e.isMe
+                ? (ref.watch(saveControllerProvider).value?.avatar ??
+                      e.profile.avatar)
+                : e.profile.avatar,
+            size: top ? 50 : 44,
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

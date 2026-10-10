@@ -209,7 +209,7 @@ class _EventHallSectionState extends ConsumerState<EventHallSection> {
               // 입상자의 프로필 그림(2026-10-10).
               AvatarCircle(
                 id: e['avatar'] as String?,
-                size: rank == 1 ? 46 : 38,
+                size: rank == 1 ? 62 : 52,
               ),
               const SizedBox(height: 4),
               Text(
@@ -308,8 +308,8 @@ class _EventHallSectionState extends ConsumerState<EventHallSection> {
             ),
           ),
           const SizedBox(width: 6),
-          AvatarCircle(id: e['avatar'] as String?, size: 26),
-          const SizedBox(width: 6),
+          AvatarCircle(id: e['avatar'] as String?, size: 38),
+          const SizedBox(width: 8),
           Expanded(
             // 뱃지는 이름 **위** — 옆에 두면 이름이 잘린다(랭킹과 같은 이유).
             child: Column(

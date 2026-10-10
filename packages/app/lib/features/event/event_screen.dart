@@ -1475,8 +1475,14 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   ),
                   const SizedBox(width: 6),
                   // 프로필 그림(2026-10-10) — 서버가 순위 함수의 `avatar` 를 그대로 실어 준다.
-                  AvatarCircle(id: e['avatar'] as String?, size: 28),
-                  const SizedBox(width: 6),
+                  AvatarCircle(
+                    id: e['isMe'] == true
+                        ? (ref.watch(saveControllerProvider).value?.avatar ??
+                              e['avatar'] as String?)
+                        : e['avatar'] as String?,
+                    size: 42,
+                  ),
+                  const SizedBox(width: 8),
                   // 이름 칸이 **남는 폭을 전부** 가져간다(Expanded). Flexible +
                   // Spacer 로 두면 이름 길이에 따라 웨이브 칸의 시작점이 줄마다
                   // 달라진다(2026-09-02 지적).
