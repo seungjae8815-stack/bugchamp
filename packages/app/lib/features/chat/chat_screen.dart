@@ -262,10 +262,41 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
   ChatRules get _rules =>
       ref.read(gameDataProvider).value?.chatRules ?? const ChatRules();
 
+  /// 앱이 백그라운드에 있던 동안 올라온 글 — 실시간 구독은 그 사이 글을 다시 보내 주지 않는다(2026-10-10).
+  /// 돌아오면 최근 글을 다시 받아 빈 곳을 채운다.
+  AppLifecycleListener? _lifecycle;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _lifecycle = AppLifecycleListener(onResume: _refill);
+  }
+
+  Future<void> _refill() async {
+    if (_loading) return;
+    final list = await ref
+        .read(chatServiceProvider)
+        .recent(
+          limit: _rules.historyLimit,
+          guildId: widget.guildId,
+          mixed: !widget.guildOnly,
+        );
+    if (!mounted || list.isEmpty) return;
+    setState(() {
+      // 서버 목록 + 아직 서버 글로 바뀌지 않은 내 임시 글(같은 사람·같은 내용이 목록에 없을 때만).
+      final temps = [
+        for (final x in _messages)
+          if (_isTemp(x.id) &&
+              !list.any((m) => m.userId == x.userId && m.body == x.body))
+            x,
+      ];
+      _messages
+        ..clear()
+        ..addAll(list)
+        ..addAll(temps);
+    });
+    _jumpToBottom();
   }
 
   Future<void> _load() async {
@@ -323,6 +354,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
 
   @override
   void dispose() {
+    _lifecycle?.dispose();
     _sub?.cancel();
     _input.dispose();
     _scroll.dispose();

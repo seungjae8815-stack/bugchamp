@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:core_models/core_models.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -155,7 +155,34 @@ class SupabaseChatService implements ChatService {
   @override
   Stream<ChatMessage> subscribe({String? guildId, bool mixed = false}) {
     final controller = _events ??= StreamController<ChatMessage>.broadcast();
-    _channel ??= _client
+    _ensureChannel();
+    // 개별 구독자가 떠나도 채널은 유지한다 — 정리는 [dispose] 한 곳에서만.
+    return controller.stream.where(
+      (m) => chatMessageVisible(m, guildId: guildId, mixed: mixed),
+    );
+  }
+
+  /// 지금 채널의 구독 상태(null = 아직 응답 없음).
+  RealtimeSubscribeStatus? _status;
+  Timer? _retry;
+  int _retryCount = 0;
+  bool _disposed = false;
+
+  /// 다시 붙는 간격(초) — 계속 실패하면 마지막 값으로 반복한다.
+  static const _retrySeconds = [2, 5, 10, 30];
+
+  /// 채널이 없으면 연다. ⚠️ 구독 상태를 **지켜본다**(2026-10-10 실기 지적 — 채팅이 실시간으로 안 바뀜).
+  /// 예전엔 한 번 열면 끝이라, 폰이 잠겼다 돌아오며 토큰이 만료된 채 다시 붙다 실패하는 식으로 채널이 조용히
+  /// 죽으면 앱을 다시 켤 때까지 새 글이 오지 않았다. 오류·닫힘·시간 초과면 간격을 두고 새 채널로 다시 붙는다.
+  void _ensureChannel() {
+    final controller = _events;
+    if (_channel != null || controller == null || _disposed) return;
+    _lifecycle ??= AppLifecycleListener(
+      onPause: () => _pausedAt = DateTime.now(),
+      onResume: _onResumed,
+    );
+    late final RealtimeChannel ch;
+    ch = _client
         .channel('public:chat_messages')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -169,11 +196,55 @@ class SupabaseChatService implements ChatService {
             }
           },
         )
-        .subscribe();
-    // 개별 구독자가 떠나도 채널은 유지한다 — 정리는 [dispose] 한 곳에서만.
-    return controller.stream.where(
-      (m) => chatMessageVisible(m, guildId: guildId, mixed: mixed),
-    );
+        .subscribe((status, error) {
+          // 지운 옛 채널이 닫히며 부르는 콜백은 무시한다(안 그러면 다시 붙기가 꼬리를 문다).
+          if (!identical(_channel, ch)) return;
+          _status = status;
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            _retryCount = 0;
+            return;
+          }
+          debugPrint('[chat] 실시간 $status ${error ?? ''}');
+          _scheduleReconnect();
+        });
+    _channel = ch;
+  }
+
+  void _scheduleReconnect() {
+    if (_disposed || _events == null) return;
+    _retry?.cancel();
+    final sec = _retrySeconds[_retryCount.clamp(0, _retrySeconds.length - 1)];
+    _retryCount++;
+    _retry = Timer(Duration(seconds: sec), _reconnectNow);
+  }
+
+  /// 지금 채널을 버리고 새로 연다.
+  void _reconnectNow() {
+    _retry?.cancel();
+    final old = _channel;
+    _channel = null;
+    _status = null;
+    if (old != null) unawaited(_client.removeChannel(old));
+    _ensureChannel();
+  }
+
+  AppLifecycleListener? _lifecycle;
+  DateTime? _pausedAt;
+
+  /// 앱이 다시 앞으로 왔을 때 — 구독이 살아 있지 않거나 30초 넘게 나가 있었으면 새로 붙는다.
+  /// (상태가 subscribed 로 남은 채 소켓만 죽어 있는 경우까지 덮는다. 다시 붙기는 채널 하나라 싸다.)
+  void _onResumed() {
+    if (_disposed || _events == null) return;
+    final away = _pausedAt == null
+        ? Duration.zero
+        : DateTime.now().difference(_pausedAt!);
+    _pausedAt = null;
+    if (_status == RealtimeSubscribeStatus.subscribed &&
+        away < const Duration(seconds: 30)) {
+      return;
+    }
+    _retryCount = 0;
+    _reconnectNow();
   }
 
   @override
@@ -258,6 +329,10 @@ class SupabaseChatService implements ChatService {
 
   @override
   void dispose() {
+    _disposed = true;
+    _retry?.cancel();
+    _lifecycle?.dispose();
+    _lifecycle = null;
     final ch = _channel;
     _channel = null;
     if (ch != null) _client.removeChannel(ch);

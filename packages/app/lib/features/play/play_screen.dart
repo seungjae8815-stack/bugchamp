@@ -823,6 +823,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
     unawaited(_settleOnResume());
+    // 홈 채팅 바 — 나가 있던 동안의 마지막 글을 다시 받는다(실시간 구독은 그 사이 글을 안 보내 준다, 2026-10-10).
+    ref.invalidate(chatLatestProvider);
   }
 
   void _onConnectionChanged() {
