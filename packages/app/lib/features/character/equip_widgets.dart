@@ -129,6 +129,7 @@ class ItemOptionList extends StatelessWidget {
     this.compare,
     this.dense = false,
     this.onPolish,
+    this.maxMult = 1,
   });
 
   final EquipItem item;
@@ -139,6 +140,9 @@ class ItemOptionList extends StatelessWidget {
   /// 옵션 줄(0-based)을 **다듬기** 창으로 연다(2026-10-10 장비 v2 — 화석·젤리 · 종류 지정 · 이전/새 고르기).
   /// null 이면 버튼을 안 그린다. 비용은 창에서 고르므로(화석/젤리) 버튼엔 값을 안 적는다.
   final void Function(int index)? onPolish;
+
+  /// 공방 초월로 오른 옵션 최대치 배율(화면의 "/최대" 표시).
+  final double maxMult;
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +161,9 @@ class ItemOptionList extends StatelessWidget {
           o.value,
           // 그 등급의 최대치를 옆에 보여 준다 — 최대가 얼마인지 모르면
           // "잘 뽑았다"를 알 수 없어 계속 돌릴 이유가 안 보인다(2026-09-14).
-          max: ranges[o.kind]?.maxAt(item.tier),
+          max: ranges[o.kind] == null
+              ? null
+              : ranges[o.kind]!.maxAt(item.tier) * maxMult,
           perfectLabel: l.optPerfect,
           // 옵션마다 따로 굴린다 — 통째로 굴리면 마음에 드는 한 줄까지
           // 같이 날아가서 원하는 조합을 못 맞춘다(2026-09-09 확정).

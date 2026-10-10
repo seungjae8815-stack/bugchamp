@@ -3591,6 +3591,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'Star materials ready — start the star upgrade from gear details';
 
   @override
+  String forgeTranscendTitle(String n, String max) {
+    return 'Forge Transcend $n (max $max)';
+  }
+
+  @override
+  String forgeTranscendBody(String pct, String total) {
+    return 'Transcending restarts the forge from Grass, but every grade’s option max rises by +$pct% (+$total% total after this step).';
+  }
+
+  @override
+  String get forgeTranscendWarn =>
+      '⚠️ All equipped and anvil gear disappears (including stars and care).';
+
+  @override
+  String get forgeTranscendAction => 'Transcend';
+
+  @override
+  String get forgeTranscendConfirmTitle => 'Really transcend?';
+
+  @override
+  String get forgeTranscendConfirmBody =>
+      'All equipped and anvil gear will disappear,\nand the forge restarts from Grass.\n\nThis cannot be undone.';
+
+  @override
+  String get forgeTranscendDone => 'Forge transcended! Option max increased';
+
+  @override
+  String get forgeTranscendFailed => 'Can’t transcend right now';
+
+  @override
+  String forgeTranscendMaxed(String pct) {
+    return 'Forge fully transcended — option max +$pct%';
+  }
+
+  @override
   String starBonus(String p) {
     return 'Effect +$p%';
   }
@@ -6847,14 +6882,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String guideGearStarBody(
-    String need,
-    String hours,
-    String per,
-    String max,
-    String inherit,
-  ) {
-    return 'Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After $need materials, a $hours-hour upgrade raises the star (jelly can skip it). Each star adds +$per to option effects (except evasion), up to $max. New gear inherits $inherit of the stars.';
+  String guideGearStarBody(String need, String hours, String per, String max) {
+    return 'Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After $need materials, an upgrade timer ($hours hours at Amber, shorter for lower grades) raises the star (jelly can skip it). Each star adds +$per to option effects (except evasion), up to $max. Stars stay with that item — new gear starts from zero.';
+  }
+
+  @override
+  String guideGearTranscendBody(String level, String pct, String max) {
+    return 'Forge Transcend: at forge grade $level (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +$pct per step (up to $max steps).';
   }
 
   @override

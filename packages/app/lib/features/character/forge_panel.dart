@@ -1051,6 +1051,7 @@ class _StackSide extends StatelessWidget {
     this.highlight = false,
     this.onPolish,
     this.starProgress = false,
+    this.maxMult = 1,
   });
 
   final String label;
@@ -1065,8 +1066,11 @@ class _StackSide extends StatelessWidget {
   /// 옵션 줄 다듬기(장비 v2) — null 이면 버튼 없음.
   final void Function(int index)? onPolish;
 
-  /// 환생 별 옆에 다음 별까지 진행을 보인다(낀 쪽 — 환생 재료를 먹이는 대상).
+  /// 별 옆에 다음 별까지 진행을 보인다(낀 쪽 — 별 재료를 먹이는 대상).
   final bool starProgress;
+
+  /// 공방 초월 옵션 최대치 배율(표시).
+  final double maxMult;
 
   @override
   Widget build(BuildContext context) {
@@ -1164,6 +1168,7 @@ class _StackSide extends StatelessWidget {
                         config: config,
                         compare: compare,
                         onPolish: onPolish,
+                        maxMult: maxMult,
                       ),
                   ],
                 ),
@@ -1220,6 +1225,14 @@ Future<bool> showForgeResult(
               item: cur,
               config: items,
               locale: locale,
+              maxMult:
+                  forge?.transcendMaxMult(
+                    ref
+                        .read(saveControllerProvider)
+                        .requireValue
+                        .forgeTranscend,
+                  ) ??
+                  1,
               // 낀 쪽에도 다듬기 버튼을 둔다. 기능이기도 하지만, 한쪽에만
               // 버튼이 있으면 **두 칸의 옵션 줄이 서로 어긋나** 비교가
               // 안 된다(2026-09-10 지적).
@@ -1257,6 +1270,14 @@ Future<bool> showForgeResult(
               item: shown,
               config: items,
               locale: locale,
+              maxMult:
+                  forge?.transcendMaxMult(
+                    ref
+                        .read(saveControllerProvider)
+                        .requireValue
+                        .forgeTranscend,
+                  ) ??
+                  1,
               compare: cur,
               highlight: true,
               onPolish: forge == null
@@ -1595,7 +1616,7 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
     final r = items.optionPool.where((x) => x.kind == k).firstOrNull;
     if (r == null) return '';
     final t = rangeTier();
-    final hi = r.maxAt(t);
+    final hi = r.maxAt(t) * (forge?.transcendMaxMult(save.forgeTranscend) ?? 1);
     // 10 미만 소수 최대치(회피 3.5 등)는 한 자리까지 — 반올림하면 실제보다 크게 읽힌다.
     final hiText = hi.toStringAsFixed(
       hi >= 10 || hi == hi.roundToDouble() ? 0 : 1,
@@ -1789,6 +1810,132 @@ class _GradeBody extends ConsumerStatefulWidget {
 }
 
 class _GradeBodyState extends ConsumerState<_GradeBody> {
+  /// 공방 초월 칸(2026-10-10 사장님 확정) — 최대 레벨에서만 보인다. 장비가 전부 사라지는 되돌릴 수 없는 일이라
+  /// 경고를 크게, 확인을 두 번 받는다.
+  Widget _transcendBox(AppLocalizations l, SaveGame save, SaveController ctrl) {
+    final n = save.forgeTranscend;
+    final pct = (forge.transcendStep * 100).round();
+    if (n >= forge.transcendMax) {
+      return Text(
+        l.forgeTranscendMaxed('${(forge.transcendStep * n * 100).round()}'),
+        style: const TextStyle(color: _honey, fontWeight: FontWeight.w800),
+      );
+    }
+    final cost = forge.transcendFossilCost(n);
+    final have = save.materialCount(MaterialKind.fossil);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0x33E8B84A),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _honey.withValues(alpha: 0.8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.forgeTranscendTitle('${n + 1}', '${forge.transcendMax}'),
+            style: const TextStyle(
+              color: _honey,
+              fontWeight: FontWeight.w900,
+              fontSize: 13.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.forgeTranscendBody(
+              '$pct',
+              '${(forge.transcendStep * (n + 1) * 100).round()}',
+            ),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.forgeTranscendWarn,
+            style: const TextStyle(
+              color: Color(0xFFFF8A80),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => _transcend(l, ctrl, cost, have),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(l.forgeTranscendAction),
+                  const SizedBox(width: 6),
+                  materialImage(
+                    MaterialKind.fossil,
+                    size: 15,
+                    fallback: const Icon(Icons.diamond_outlined, size: 14),
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    '$cost',
+                    style: TextStyle(
+                      color: have >= cost ? null : const Color(0xFFFF8A80),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _transcend(
+    AppLocalizations l,
+    SaveController ctrl,
+    int cost,
+    int have,
+  ) async {
+    if (have < cost) {
+      showCenterToast(context, l.polishNoFossil);
+      return;
+    }
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.forgeTranscendConfirmTitle,
+      icon: Icons.warning_amber_rounded,
+      content: Text(
+        l.forgeTranscendConfirmBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.forgeTranscendAction,
+          () => Navigator.pop(context, true),
+          color: const Color(0xFFB23A2E),
+        ),
+      ],
+    );
+    if (ok != true || !mounted) return;
+    final err = await ctrl.transcendForge();
+    if (!mounted) return;
+    showCenterToast(
+      context,
+      err == null ? l.forgeTranscendDone : l.forgeTranscendFailed,
+    );
+  }
+
   /// 업그레이드 남은 시간을 **초 단위로 갱신**하기 위한 티커.
   ///
   /// 예전엔 남은 시간이 아예 없었다 — "업그레이드 중"만 떠서 얼마나 더
@@ -1850,12 +1997,14 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
           for (var i = 0; i < items.tierCount; i++)
             _oddsRow(locale, i, cur[i], next[i], maxed),
           const SizedBox(height: 12),
-          if (maxed)
+          if (maxed) ...[
             Text(
               l.forgeMaxLevel,
               style: const TextStyle(color: Color(0x99FFFFFF)),
-            )
-          else if (upAt != null) ...[
+            ),
+            const SizedBox(height: 10),
+            _transcendBox(l, save, ctrl),
+          ] else if (upAt != null) ...[
             Row(
               children: [
                 const Icon(

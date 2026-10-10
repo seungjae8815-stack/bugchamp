@@ -658,6 +658,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
   SaveGame _withTrimmedItems(SaveGame save) {
     final cfg = ref.read(gameDataProvider).value?.itemConfig;
     if (cfg == null) return save;
+    final mm = _maxMult(save);
     var changed = false;
     final equipped = <EquipSlot, EquipItem>{};
     for (final e in save.equippedItems.entries) {
@@ -667,7 +668,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
       final t = fillMissingOptions(
         rng: _forgeRng,
         items: cfg,
-        item: trimItemOptions(e.value, cfg),
+        item: trimItemOptions(e.value, cfg, maxMult: mm),
+        maxMult: mm,
       );
       if (!identical(t, e.value)) changed = true;
       equipped[e.key] = t;
@@ -677,13 +679,49 @@ class SaveController extends AsyncNotifier<SaveGame> {
       final t = fillMissingOptions(
         rng: _forgeRng,
         items: cfg,
-        item: trimItemOptions(i, cfg),
+        item: trimItemOptions(i, cfg, maxMult: mm),
+        maxMult: mm,
       );
       if (!identical(t, i)) changed = true;
       stack.add(t);
     }
     if (!changed) return save;
     return save.copyWith(equippedItems: equipped, forgeStack: stack);
+  }
+
+  /// 공방 초월 단계의 옵션 최대치 배율(굴림·상한 정리·화면 표시가 같은 값).
+  double _maxMult(SaveGame s) =>
+      ref
+          .read(gameDataProvider)
+          .value
+          ?.forgeConfig
+          ?.transcendMaxMult(s.forgeTranscend) ??
+      1;
+
+  /// 공방 초월(2026-10-10 사장님 확정) — 공방 최대 레벨에서 화석을 내고 초월한다. 낀 장비·모루가 **전부 사라지고**
+  /// 공방 레벨이 0(풀잎)부터 다시, 대신 모든 등급의 옵션 최대치가 오른다(`transcendMaxMult`).
+  /// 실패 이유: `not_max`(최대 레벨 아님 · 등급업 중) · `maxed`(초월 끝) · `not_enough_fossil`.
+  Future<String?> transcendForge() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return 'not_max';
+    final s = state.requireValue;
+    if (s.forgeLevel < forge.maxLevel || s.forgeUpAt != null) return 'not_max';
+    if (s.forgeTranscend >= forge.transcendMax) return 'maxed';
+    final cost = forge.transcendFossilCost(s.forgeTranscend);
+    final have = s.materialCount(MaterialKind.fossil);
+    if (have < cost) return 'not_enough_fossil';
+    await _commit(
+      s.copyWith(
+        forgeTranscend: s.forgeTranscend + 1,
+        forgeLevel: 0,
+        forgeSteps: 0,
+        clearForgeUpAt: true,
+        equippedItems: const {},
+        forgeStack: const [],
+        materials: {...s.materials, MaterialKind.fossil: have - cost},
+      ),
+    );
+    return null;
   }
 
   /// 보유 곤충을 훑어 도감을 갱신한 세이브. 바뀐 게 없으면 [save] 그대로.
@@ -3319,6 +3357,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         forge: forge,
         // 최대 레벨을 내렸을 때(20→16, 2026-09-15) 이미 넘은 계정도 최대로 본다.
         forgeLevel: math.min(s.forgeLevel, forge.maxLevel),
+        maxMult: _maxMult(s),
       );
       have--;
       forged++;
@@ -3520,6 +3559,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       item: target,
       index: index,
       kind: kind,
+      maxMult: _maxMult(s),
     );
     if (r == null) return (candidate: null, error: 'bad_kind');
     final mats = Map<MaterialKind, int>.from(s.materials)

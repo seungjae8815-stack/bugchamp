@@ -362,7 +362,13 @@ class GuideScreen extends ConsumerWidget {
                 items.starUpMinutes.map((m) => _num(m / 60)).join('/'),
                 _pct(items.starEffectPerStar),
                 '${items.starMax}',
-                _pct(items.starInheritRatio),
+              ),
+            ),
+            _p(
+              l.guideGearTranscendBody(
+                '${forge.maxLevel + 1}',
+                _pct(forge.transcendStep),
+                '${forge.transcendMax}',
               ),
             ),
           ],

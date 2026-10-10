@@ -2509,6 +2509,42 @@
     }
   },
   "starReady": "Star materials ready — start the star upgrade from gear details",
+  "forgeTranscendTitle": "Forge Transcend {n} (max {max})",
+  "@forgeTranscendTitle": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "forgeTranscendBody": "Transcending restarts the forge from Grass, but every grade’s option max rises by +{pct}% (+{total}% total after this step).",
+  "@forgeTranscendBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "forgeTranscendWarn": "⚠️ All equipped and anvil gear disappears (including stars and care).",
+  "forgeTranscendAction": "Transcend",
+  "forgeTranscendConfirmTitle": "Really transcend?",
+  "forgeTranscendConfirmBody": "All equipped and anvil gear will disappear,\nand the forge restarts from Grass.\n\nThis cannot be undone.",
+  "forgeTranscendDone": "Forge transcended! Option max increased",
+  "forgeTranscendFailed": "Can’t transcend right now",
+  "forgeTranscendMaxed": "Forge fully transcended — option max +{pct}%",
+  "@forgeTranscendMaxed": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "starBonus": "Effect +{p}%",
   "@starBonus": {
     "placeholders": {
@@ -3937,7 +3973,7 @@
       }
     }
   },
-  "guideGearStarBody": "Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After {need} materials, a {hours}-hour upgrade raises the star (jelly can skip it). Each star adds +{per} to option effects (except evasion), up to {max}. New gear inherits {inherit} of the stars.",
+  "guideGearStarBody": "Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After {need} materials, an upgrade timer ({hours} hours at Amber, shorter for lower grades) raises the star (jelly can skip it). Each star adds +{per} to option effects (except evasion), up to {max}. Stars stay with that item — new gear starts from zero.",
   "@guideGearStarBody": {
     "placeholders": {
       "need": {
@@ -3951,8 +3987,19 @@
       },
       "max": {
         "type": "String"
+      }
+    }
+  },
+  "guideGearTranscendBody": "Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps).",
+  "@guideGearTranscendBody": {
+    "placeholders": {
+      "level": {
+        "type": "String"
       },
-      "inherit": {
+      "pct": {
+        "type": "String"
+      },
+      "max": {
         "type": "String"
       }
     }

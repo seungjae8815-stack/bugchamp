@@ -240,11 +240,65 @@ void main() {
       expect(bonus[ItemOptionKind.evade], closeTo(3, 1e-9));
     });
 
-    test('바꿀 때 별 절반(내림)을 이어받는다 · 새 장비 별이 더 많으면 그대로', () {
+    test('새 장비로 바꾸면 별은 초기화된다(이어받기 없음, 2026-10-10 사장님)', () {
       final old = _item(stars: 5);
-      expect(inheritStars(items, old, _item(tier: _amber)).stars, 2);
-      expect(inheritStars(items, old, _item(stars: 3)).stars, 3);
-      expect(inheritStars(items, null, _item()).stars, 0);
+      expect(items.starInheritRatio, 0);
+      expect(inheritStars(items, old, _item(tier: _amber)).stars, 0);
+      expect(
+        inheritStars(items, old, _item(stars: 3)).stars,
+        3,
+      ); // 새 장비 자기 별은 그대로
+    });
+
+    test('별 강화 시간은 장비 등급마다 다르다 — 풀잎 0.2배 ~ 호박 1배', () {
+      final top = items.tierCount - 1;
+      expect(items.starUpDuration(0, tier: top), const Duration(hours: 2));
+      expect(items.starUpDuration(4, tier: top), const Duration(hours: 24));
+      expect(items.starUpDuration(0, tier: 0), const Duration(minutes: 24));
+      for (var t = 1; t <= top; t++) {
+        expect(
+          items.starUpDuration(2, tier: t),
+          greaterThan(items.starUpDuration(2, tier: t - 1)),
+        );
+      }
+    });
+
+    test('공방 초월 — 단계마다 옵션 최대치 +15% · 굴림·상한 정리가 같은 배율을 쓴다', () {
+      expect(forge.transcendMaxMult(0), 1);
+      expect(forge.transcendMaxMult(5), closeTo(1.75, 1e-9));
+      expect(forge.transcendMaxMult(9), closeTo(1.75, 1e-9)); // 상한
+      expect(forge.transcendFossilCost(0), forge.transcendFossilBase);
+      final range = items.optionPool.firstWhere(
+        (r) => r.kind == ItemOptionKind.attack,
+      );
+      final hi = range.maxAt(_amber);
+      // 초월 5단계 최대치를 넘는 값은 상한 정리에서 잘리고, 그 아래는 그대로.
+      final big = _item(
+        options: [
+          ItemOption(kind: ItemOptionKind.attack, value: hi * 1.6),
+          const ItemOption(kind: ItemOptionKind.critDamage, value: 10),
+        ],
+      );
+      expect(trimItemOptions(big, items).options[0].value, hi);
+      expect(
+        trimItemOptions(big, items, maxMult: 1.75).options[0].value,
+        hi * 1.6,
+      );
+      // 굴림도 높아진 최대치까지 나온다.
+      var top = 0.0;
+      for (var seed = 0; seed < 400; seed++) {
+        final r = polishOptionAt(
+          rng: Random(seed),
+          items: items,
+          item: _item(),
+          index: 0,
+          kind: ItemOptionKind.attack,
+          maxMult: 1.75,
+        )!;
+        top = r.candidate.value > top ? r.candidate.value : top;
+        expect(r.candidate.value, lessThanOrEqualTo(hi * 1.75 + 0.05));
+      }
+      expect(top, greaterThan(hi));
     });
 
     test('상한 정리 — 세이브를 고쳐 99성·정성 99 를 적어도 상한으로', () {

@@ -36,6 +36,9 @@ class ForgeConfig {
     this.rerollJelly = 15,
     this.polishFossilPerTier = 20,
     this.polishKindMult = 3,
+    this.transcendMax = 5,
+    this.transcendStep = 0.15,
+    this.transcendFossilBase = 10000,
     this.sellMaterialBase = 2,
     this.sellMaterialPerTier = 1,
     this.rushSeconds = 60,
@@ -156,6 +159,21 @@ class ForgeConfig {
 
   /// 옵션 종류를 지정해 다듬을 때 비용 배율(화석·젤리 모두).
   final int polishKindMult;
+
+  /// 공방 초월(2026-10-10 사장님 확정) — 공방 최대 레벨에서 초월하면 장비가 전부 사라지고 공방이 **풀잎부터 다시**,
+  /// 대신 모든 등급의 옵션 최대치가 단계마다 [transcendStep] 씩 오른다(5단계 +75%).
+  final int transcendMax;
+  final double transcendStep;
+
+  /// 초월 비용(화석) = 이 값 × (지금 단계 + 1). 젤리로 사지 못한다(단계 = 영구 능력치 — §2.6).
+  final int transcendFossilBase;
+
+  /// 초월 [n] 단계의 옵션 최대치 배율.
+  double transcendMaxMult(int n) =>
+      1 + transcendStep * n.clamp(0, transcendMax);
+
+  /// 초월 [n] 단계 → [n]+1 비용(화석).
+  int transcendFossilCost(int n) => transcendFossilBase * (n + 1);
 
   /// 다듬기 1회 비용 — 화석으로 낼 때 / 젤리로 낼 때.
   ({int fossils, int jelly}) polishCost(int tier, {required bool pickKind}) {
@@ -288,6 +306,10 @@ class ForgeConfig {
       rerollJelly: (json['rerollJelly'] as num?)?.toInt() ?? 15,
       polishFossilPerTier: (json['polishFossilPerTier'] as num?)?.toInt() ?? 20,
       polishKindMult: (json['polishKindMult'] as num?)?.toInt() ?? 3,
+      transcendMax: (json['transcendMax'] as num?)?.toInt() ?? 5,
+      transcendStep: (json['transcendStep'] as num?)?.toDouble() ?? 0.15,
+      transcendFossilBase:
+          (json['transcendFossilBase'] as num?)?.toInt() ?? 10000,
       sellMaterialBase:
           ((json['sell'] as Map<String, dynamic>?)?['materialBase'] as num?)
               ?.toInt() ??
@@ -318,6 +340,7 @@ class ForgeConfig {
 ///
 /// 옵션 개수·최대치는 **그 등급의 규칙**을 그대로 따른다(`forgeOnce` 와 같은 코드).
 EquipItem rerollOptions({
+  double maxMult = 1,
   required math.Random rng,
   required ItemConfig items,
   required EquipItem item,
@@ -328,7 +351,7 @@ EquipItem rerollOptions({
   for (var i = 0; i < count && pool.isNotEmpty; i++) {
     final r = pool.removeAt(rng.nextInt(pool.length));
     final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
-    final hi = r.maxAt(item.tier);
+    final hi = r.maxAt(item.tier) * maxMult;
     final v = r.min + roll * (hi - r.min);
     options.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
   }
@@ -346,6 +369,7 @@ EquipItem rerollOptions({
 /// 무엇보다 그 장비의 축이 하나로 줄어든다.
 /// 등급·부위는 그대로다(등급을 젤리로 바꾸면 §2.6 P2W 금지선을 넘는다).
 EquipItem rerollOptionAt({
+  double maxMult = 1,
   required math.Random rng,
   required ItemConfig items,
   required EquipItem item,
@@ -362,7 +386,7 @@ EquipItem rerollOptionAt({
   if (pool.isEmpty) return item;
   final r = pool[rng.nextInt(pool.length)];
   final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
-  final hi = r.maxAt(item.tier);
+  final hi = r.maxAt(item.tier) * maxMult;
   final v = r.min + roll * (hi - r.min);
   final next = [...item.options];
   next[index] = ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10);
@@ -376,6 +400,7 @@ EquipItem rerollOptionAt({
 /// - [kept] = 정성만 오른 지금 장비(이전 값 유지를 고르면 이것), [candidate] = 새 값(고르면 [applyPolish]).
 /// 정성은 **어느 쪽을 골라도 오른다** — 투자한 만큼 다음 굴림이 좋아진다.
 ({EquipItem kept, ItemOption candidate})? polishOptionAt({
+  double maxMult = 1,
   required math.Random rng,
   required ItemConfig items,
   required EquipItem item,
@@ -403,7 +428,7 @@ EquipItem rerollOptionAt({
     math.pow(rng.nextDouble(), items.optionCurve).toDouble(),
     floor,
   );
-  final hi = r.maxAt(item.tier);
+  final hi = r.maxAt(item.tier) * maxMult;
   final v = r.min + roll * (hi - r.min);
   final cur = [...item.options];
   cur[index] = cur[index].copyWith(polish: polish);
@@ -447,7 +472,9 @@ EquipItem? startStarUp(ItemConfig items, EquipItem target, DateTime now) {
   if (target.stars >= items.starMax || target.starUntil != null) return null;
   if (target.starExp < items.starNeedAt(target.stars)) return null;
   return target.copyWith(
-    starUntil: now.toUtc().add(items.starUpDuration(target.stars)),
+    starUntil: now.toUtc().add(
+      items.starUpDuration(target.stars, tier: target.tier),
+    ),
   );
 }
 
@@ -490,6 +517,7 @@ EquipItem inheritStars(ItemConfig items, EquipItem? from, EquipItem to) {
 /// ⚠️ 이미 있는 옵션은 **건드리지 않는다**(값이 바뀌면 그것도 손해다).
 /// 중복도 피한다 — 같은 축 두 줄은 합산이라 한 줄과 다를 바가 없다.
 EquipItem fillMissingOptions({
+  double maxMult = 1,
   required math.Random rng,
   required ItemConfig items,
   required EquipItem item,
@@ -502,13 +530,14 @@ EquipItem fillMissingOptions({
   while (next.length < want && pool.isNotEmpty) {
     final r = pool.removeAt(rng.nextInt(pool.length));
     final roll = math.pow(rng.nextDouble(), items.optionCurve).toDouble();
-    final v = r.min + roll * (r.maxAt(item.tier) - r.min);
+    final v = r.min + roll * (r.maxAt(item.tier) * maxMult - r.min);
     next.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
   }
   return item.copyWith(options: next);
 }
 
 EquipItem forgeOnce({
+  double maxMult = 1,
   required math.Random rng,
   required ItemConfig items,
   required ForgeConfig forge,
@@ -543,7 +572,7 @@ EquipItem forgeOnce({
     // 최대치는 **등급별**이다 — 예전엔 모든 등급이 같은 풀에서 굴려,
     // 풀잎이 호박과 똑같은 15% 공격을 뽑을 수 있었다(2026-09-07). 그러면
     // 상위 등급의 이점이 "같은 숫자를 더 많이"뿐이라 모을 이유가 없다.
-    final hi = r.maxAt(tier);
+    final hi = r.maxAt(tier) * maxMult;
     final v = r.min + roll * (hi - r.min);
     // 소수 한 자리까지만 — 화면에서 읽기 쉬우라고.
     options.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));

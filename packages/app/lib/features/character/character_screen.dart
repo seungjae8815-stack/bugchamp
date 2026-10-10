@@ -535,6 +535,19 @@ class _EquipCell extends ConsumerWidget {
               ItemOptionList(
                 item: now,
                 config: config,
+                maxMult:
+                    ref
+                        .read(gameDataProvider)
+                        .value
+                        ?.forgeConfig
+                        ?.transcendMaxMult(
+                          ref
+                                  .read(saveControllerProvider)
+                                  .value
+                                  ?.forgeTranscend ??
+                              0,
+                        ) ??
+                    1,
                 onPolish: forge == null
                     ? null
                     : (i) async {

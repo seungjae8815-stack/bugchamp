@@ -150,6 +150,7 @@ class ItemConfig {
     this.starEffectPerStar = 0.04,
     this.starNeed = const [100, 150, 200, 250, 300],
     this.starUpMinutes = const [120, 240, 480, 960, 1440],
+    this.starTierTimeMin = 0.2,
     this.starTierSlack = 1,
     this.starInheritRatio = 0.5,
     this.starExcludeKinds = const {ItemOptionKind.evade},
@@ -194,12 +195,18 @@ class ItemConfig {
   /// 재료가 다 모인 뒤 별 n → n+1 강화에 걸리는 시간(분). 젤리로 당긴다(공방 등급업과 같은 값표).
   final List<int> starUpMinutes;
 
-  /// 별 [stars] → +1 강화 시간.
-  Duration starUpDuration(int stars) => Duration(
-    minutes: starUpMinutes.isEmpty
-        ? 0
-        : starUpMinutes[stars.clamp(0, starUpMinutes.length - 1)],
-  );
+  /// 강화 시간의 등급 배율 — 가장 낮은 등급 [starTierTimeMin] ~ 가장 높은 등급 1.0(2026-10-10 사장님: 등급마다 다르게).
+  final double starTierTimeMin;
+
+  /// 별 [stars] → +1 강화 시간. 등급 [tier] 가 낮을수록 짧다(호박 = [starUpMinutes] 그대로).
+  Duration starUpDuration(int stars, {int? tier}) {
+    if (starUpMinutes.isEmpty) return Duration.zero;
+    final base = starUpMinutes[stars.clamp(0, starUpMinutes.length - 1)];
+    final top = tierCount <= 1 ? 1 : tierCount - 1;
+    final t = (tier ?? top).clamp(0, top);
+    final mult = starTierTimeMin + (1 - starTierTimeMin) * t / top;
+    return Duration(seconds: (base * 60 * mult).round());
+  }
 
   /// 재료 장비 등급은 장착 장비 등급 − 이 값 이상이어야 한다.
   final int starTierSlack;
@@ -263,6 +270,7 @@ class ItemConfig {
       starUpMinutes: json['starUpMinutes'] is List
           ? [for (final v in json['starUpMinutes'] as List) (v as num).toInt()]
           : const [120, 240, 480, 960, 1440],
+      starTierTimeMin: (json['starTierTimeMin'] as num?)?.toDouble() ?? 0.2,
       starTierSlack: (json['starTierSlack'] as num?)?.toInt() ?? 1,
       starInheritRatio: (json['starInheritRatio'] as num?)?.toDouble() ?? 0.5,
       starExcludeKinds: json['starExcludeKinds'] is List
@@ -287,7 +295,11 @@ class ItemConfig {
 ///
 /// ⚠️ 값을 **깎지는 않는다**. 개편 전 옵션은 옛 최대치(공격 15)로 굴려져
 /// 새 최대치(30)보다 낮다 — 깎을 이유가 없고, 건드리면 "가만있는데 약해졌다"가 된다.
-EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
+EquipItem trimItemOptions(
+  EquipItem item,
+  ItemConfig config, {
+  double maxMult = 1,
+}) {
   final live = {for (final r in config.optionPool) r.kind: r};
   // 값이 **지금 등급 최대치를 넘으면** 최대치로 맞춘다(2026-09-14, 치명확률
   // 예산제로 호박 67 → 15). 위의 "깎지 않는다" 원칙은 최대치가 **올랐을 때**
@@ -298,7 +310,7 @@ EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
   for (final o in item.options) {
     final r = live[o.kind];
     if (r == null) continue;
-    final hi = r.maxAt(item.tier);
+    final hi = r.maxAt(item.tier) * maxMult;
     final pol = o.polish.clamp(0, config.polishMaxStacks);
     if (o.value > hi || pol != o.polish) {
       keep.add(o.copyWith(value: o.value > hi ? hi : o.value, polish: pol));
@@ -327,7 +339,7 @@ EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
   }
   if (keep.length > limit) {
     double score(ItemOption o) {
-      final hi = live[o.kind]!.maxAt(item.tier);
+      final hi = live[o.kind]!.maxAt(item.tier) * maxMult;
       return hi <= 0 ? 0 : o.value / hi;
     }
 

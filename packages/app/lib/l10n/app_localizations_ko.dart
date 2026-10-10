@@ -3507,6 +3507,40 @@ class AppLocalizationsKo extends AppLocalizations {
   String get starReady => '별 재료가 다 모였어요 — 장비 상세에서 별 강화를 시작하세요';
 
   @override
+  String forgeTranscendTitle(String n, String max) {
+    return '공방 초월 $n단계 (최대 $max)';
+  }
+
+  @override
+  String forgeTranscendBody(String pct, String total) {
+    return '초월하면 공방이 풀잎 등급부터 다시 시작하지만, 모든 등급의 옵션 최대치가 +$pct% 올라요(이번 단계까지 합계 +$total%).';
+  }
+
+  @override
+  String get forgeTranscendWarn => '⚠️ 낀 장비와 모루 위 장비가 전부 사라져요(별·정성 포함).';
+
+  @override
+  String get forgeTranscendAction => '공방 초월';
+
+  @override
+  String get forgeTranscendConfirmTitle => '정말 초월할까요?';
+
+  @override
+  String get forgeTranscendConfirmBody =>
+      '낀 장비와 모루 위 장비가 전부 사라지고,\n공방이 풀잎 등급부터 다시 시작해요.\n\n되돌릴 수 없어요.';
+
+  @override
+  String get forgeTranscendDone => '공방을 초월했어요! 옵션 최대치가 올랐어요';
+
+  @override
+  String get forgeTranscendFailed => '지금은 초월할 수 없어요';
+
+  @override
+  String forgeTranscendMaxed(String pct) {
+    return '공방 초월 완료 — 옵션 최대치 +$pct%';
+  }
+
+  @override
   String starBonus(String p) {
     return '효과 +$p%';
   }
@@ -6704,14 +6738,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String guideGearStarBody(
-    String need,
-    String hours,
-    String per,
-    String max,
-    String inherit,
-  ) {
-    return '별 강화: 같은 부위 장비를 별 재료로 먹여요(모루의 별 재료 버튼, 자동 제련에서 걸러진 장비도 쌓여요). 재료 $need개가 모이면 강화 시간 $hours시간을 거쳐 별이 올라요(젤리로 당길 수 있어요). 별 1개마다 옵션 효과 +$per(회피 제외), 최대 $max성. 새 장비로 바꾸면 별의 $inherit을 이어받아요.';
+  String guideGearStarBody(String need, String hours, String per, String max) {
+    return '별 강화: 같은 부위 장비를 별 재료로 먹여요(모루의 별 재료 버튼, 자동 제련에서 걸러진 장비도 쌓여요). 재료 $need개가 모이면 강화 시간(호박 기준 $hours시간, 낮은 등급일수록 짧아요)을 거쳐 별이 올라요(젤리로 당길 수 있어요). 별 1개마다 옵션 효과 +$per(회피 제외), 최대 $max성. 별은 그 장비에만 붙어서 새 장비로 바꾸면 처음부터예요.';
+  }
+
+  @override
+  String guideGearTranscendBody(String level, String pct, String max) {
+    return '공방 초월: 공방 $level등급(최대)에서 초월하면 낀 장비와 모루 위 장비가 전부 사라지고 공방이 풀잎 등급부터 다시 시작해요. 대신 모든 등급의 옵션 최대치가 단계마다 +$pct 올라요(최대 $max단계).';
   }
 
   @override

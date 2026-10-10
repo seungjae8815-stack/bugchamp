@@ -6214,6 +6214,60 @@ abstract class AppLocalizations {
   /// **'Star materials ready — start the star upgrade from gear details'**
   String get starReady;
 
+  /// No description provided for @forgeTranscendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge Transcend {n} (max {max})'**
+  String forgeTranscendTitle(String n, String max);
+
+  /// No description provided for @forgeTranscendBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcending restarts the forge from Grass, but every grade’s option max rises by +{pct}% (+{total}% total after this step).'**
+  String forgeTranscendBody(String pct, String total);
+
+  /// No description provided for @forgeTranscendWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ All equipped and anvil gear disappears (including stars and care).'**
+  String get forgeTranscendWarn;
+
+  /// No description provided for @forgeTranscendAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcend'**
+  String get forgeTranscendAction;
+
+  /// No description provided for @forgeTranscendConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Really transcend?'**
+  String get forgeTranscendConfirmTitle;
+
+  /// No description provided for @forgeTranscendConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All equipped and anvil gear will disappear,\nand the forge restarts from Grass.\n\nThis cannot be undone.'**
+  String get forgeTranscendConfirmBody;
+
+  /// No description provided for @forgeTranscendDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge transcended! Option max increased'**
+  String get forgeTranscendDone;
+
+  /// No description provided for @forgeTranscendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can’t transcend right now'**
+  String get forgeTranscendFailed;
+
+  /// No description provided for @forgeTranscendMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge fully transcended — option max +{pct}%'**
+  String forgeTranscendMaxed(String pct);
+
   /// No description provided for @starBonus.
   ///
   /// In en, this message translates to:
@@ -11417,14 +11471,14 @@ abstract class AppLocalizations {
   /// No description provided for @guideGearStarBody.
   ///
   /// In en, this message translates to:
-  /// **'Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After {need} materials, a {hours}-hour upgrade raises the star (jelly can skip it). Each star adds +{per} to option effects (except evasion), up to {max}. New gear inherits {inherit} of the stars.'**
-  String guideGearStarBody(
-    String need,
-    String hours,
-    String per,
-    String max,
-    String inherit,
-  );
+  /// **'Stars: feed same-slot gear as star material (the anvil button; filtered auto-forge gear counts too). After {need} materials, an upgrade timer ({hours} hours at Amber, shorter for lower grades) raises the star (jelly can skip it). Each star adds +{per} to option effects (except evasion), up to {max}. Stars stay with that item — new gear starts from zero.'**
+  String guideGearStarBody(String need, String hours, String per, String max);
+
+  /// No description provided for @guideGearTranscendBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps).'**
+  String guideGearTranscendBody(String level, String pct, String max);
 
   /// No description provided for @guideHuntTitle.
   ///

@@ -104,7 +104,10 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
     final floorPct = (nextPolish * items.polishFloorPerStack * 100).round();
 
     Widget line(String tag, ItemOption o, {bool hi = false}) {
-      final max = ranges[o.kind]?.maxAt(item.tier);
+      final mm = forge.transcendMaxMult(save?.forgeTranscend ?? 0);
+      final max = ranges[o.kind] == null
+          ? null
+          : ranges[o.kind]!.maxAt(item.tier) * mm;
       return Container(
         margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),

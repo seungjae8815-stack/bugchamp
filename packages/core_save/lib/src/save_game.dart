@@ -21,8 +21,9 @@ const int kSaveSchemaVersion = 18;
 /// 그 뒤에 생긴 필드를 저장본 값으로 지킨다(`GameActions.mergeSave`).
 /// 새 필드를 더하면 이 값을 올리고 서버의 목록에 추가한다.
 /// 20(2026-10-09): 장비 옵션 `evade`(회피) — 필드가 아니라 **옵션 키**라 서버가 장비 단위로 되돌린다.
-/// 21(2026-10-10): 장비 v2 — 장비 `st`(환생 별)·`sx`(환생 재료)·옵션 `p`(정성). 역시 장비 안의 키라 서버가 장비 단위로 되돌린다.
-const int kSaveFeatureLevel = 21;
+/// 21(2026-10-10): 장비 v2 — 장비 `st`(별)·`sx`(별 재료)·`su`(별 강화 끝)·옵션 `p`(정성). 장비 안의 키라 서버가 장비 단위로 되돌린다.
+/// 22(2026-10-10): 공방 초월 `forgeTranscend`.
+const int kSaveFeatureLevel = 22;
 
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
@@ -582,6 +583,7 @@ class SaveGame {
     this.skillAutoCast = true,
     this.fairy = FairyState.empty,
     this.forgeLevel = 0,
+    this.forgeTranscend = 0,
     this.forgeSteps = 0,
     this.forgeUpAt,
     this.autoForgeOptions = const {},
@@ -1222,6 +1224,11 @@ class SaveGame {
   /// 공방 등급(0부터). 등급 확률 창의 위치를 정한다.
   final int forgeLevel;
 
+  /// 공방 초월 단계(0~5, 2026-10-10 사장님 확정). 공방 최대 레벨에서 초월하면 장비가 전부 사라지고 공방 레벨이
+  /// 처음부터지만, 초월한 공방은 레벨 1부터 최대 레벨의 등급 확률로 뽑고 레벨을 올릴수록 옵션 최대치가 오른다
+  /// (`ForgeConfig.transcendMaxMult`). 기기 권위 — 구버전 업로드는 서버가 저장본 값을 지킨다(feat 22).
+  final int forgeTranscend;
+
   /// 다음 등급업에 부어둔 골드 **칸 수**(0~`levelUpSteps`).
   /// 한 번에 다 못 내도 조금씩 부어둘 수 있게 나눠 받는다.
   final int forgeSteps;
@@ -1439,6 +1446,7 @@ class SaveGame {
     skillLevels: const {},
     equippedSkills: const [],
     forgeLevel: 0,
+    forgeTranscend: 0,
     forgeSteps: 0,
     autoForgeOptions: const {},
     autoForgeMinTier: 0,
@@ -1554,6 +1562,7 @@ class SaveGame {
     bool? skillAutoCast,
     FairyState? fairy,
     int? forgeLevel,
+    int? forgeTranscend,
     int? forgeSteps,
     DateTime? forgeUpAt,
     bool clearForgeUpAt = false,
@@ -1686,6 +1695,7 @@ class SaveGame {
     skillAutoCast: skillAutoCast ?? this.skillAutoCast,
     fairy: fairy ?? this.fairy,
     forgeLevel: forgeLevel ?? this.forgeLevel,
+    forgeTranscend: forgeTranscend ?? this.forgeTranscend,
     forgeSteps: forgeSteps ?? this.forgeSteps,
     // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
     forgeUpAt: clearForgeUpAt ? null : (forgeUpAt ?? this.forgeUpAt),
@@ -1984,6 +1994,7 @@ class SaveGame {
         ? FairyState.fromJson(Map<String, dynamic>.from(json['fairy'] as Map))
         : FairyState.empty,
     forgeLevel: (json['forgeLevel'] as num?)?.toInt() ?? 0,
+    forgeTranscend: (json['forgeTranscend'] as num?)?.toInt() ?? 0,
     forgeSteps: (json['forgeSteps'] as num?)?.toInt() ?? 0,
     forgeUpAt: json['forgeUpAt'] == null
         ? null
@@ -2189,6 +2200,7 @@ class SaveGame {
       'skillTrainingEndsAt': skillTrainingEndsAt!.toUtc().toIso8601String(),
     },
     if (forgeLevel != 0) 'forgeLevel': forgeLevel,
+    if (forgeTranscend != 0) 'forgeTranscend': forgeTranscend,
     if (forgeSteps != 0) 'forgeSteps': forgeSteps,
     if (forgeUpAt != null) 'forgeUpAt': forgeUpAt!.toUtc().toIso8601String(),
     if (autoForgeOptions.isNotEmpty)

@@ -3500,6 +3500,40 @@ class AppLocalizationsJa extends AppLocalizations {
   String get starReady => '星素材がそろいました — 装備詳細で星強化を始めてください';
 
   @override
+  String forgeTranscendTitle(String n, String max) {
+    return '工房超越 $n段階（最大$max）';
+  }
+
+  @override
+  String forgeTranscendBody(String pct, String total) {
+    return '超越すると工房は草等級からやり直しですが、すべての等級のオプション最大値が+$pct%上がります(この段階まで合計+$total%)。';
+  }
+
+  @override
+  String get forgeTranscendWarn => '⚠️ 装備中と金床の上の装備がすべて消えます(星・丹精を含む)。';
+
+  @override
+  String get forgeTranscendAction => '工房超越';
+
+  @override
+  String get forgeTranscendConfirmTitle => '本当に超越しますか？';
+
+  @override
+  String get forgeTranscendConfirmBody =>
+      '装備中と金床の上の装備がすべて消え、\n工房は草等級からやり直しです。\n\n元に戻せません。';
+
+  @override
+  String get forgeTranscendDone => '工房を超越しました！オプション最大値が上がりました';
+
+  @override
+  String get forgeTranscendFailed => '今は超越できません';
+
+  @override
+  String forgeTranscendMaxed(String pct) {
+    return '工房超越完了 — オプション最大値+$pct%';
+  }
+
+  @override
   String starBonus(String p) {
     return '効果 +$p%';
   }
@@ -6693,14 +6727,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String guideGearStarBody(
-    String need,
-    String hours,
-    String per,
-    String max,
-    String inherit,
-  ) {
-    return '星強化: 同じ部位の装備を星素材にします(金床の星素材ボタン、自動製錬で除外された装備もたまります)。素材が$need個そろうと強化時間$hours時間で星が上がります(ゼリーで短縮可)。星1つごとにオプション効果+$per(回避除く)、最大$maxつ星。新しい装備に替えると星の$inheritを引き継ぎます。';
+  String guideGearStarBody(String need, String hours, String per, String max) {
+    return '星強化: 同じ部位の装備を星素材にします(金床の星素材ボタン、自動製錬で除外された装備もたまります)。素材が$need個そろうと強化時間(琥珀で$hours時間、低い等級ほど短い)を経て星が上がります(ゼリーで短縮可)。星1つごとにオプション効果+$per(回避除く)、最大$maxつ星。星はその装備だけのもので、新しい装備はゼロからです。';
+  }
+
+  @override
+  String guideGearTranscendBody(String level, String pct, String max) {
+    return '工房超越: 工房$level等級(最大)で超越すると、装備中と金床の上の装備がすべて消え、工房は草等級からやり直しです。代わりにすべての等級のオプション最大値が段階ごとに+$pct上がります(最大$max段階)。';
   }
 
   @override

@@ -273,6 +273,8 @@ class GameActions {
     // 옛 훈련 단계·대기열(`duelTraining`·`trainingJob`)은 **이전이 이미 된 계정만** 얼린다 — 아래
     // [_keepFieldsOldAppDoesNotKnow] 의 따로 처리.
     19: ['trainPoints', 'trainPointJob', 'duelStones'],
+    // 공방 초월(1.0.19, 2026-10-10) — 모르는 앱이 올리면 저장본의 초월 단계를 지킨다.
+    22: ['forgeTranscend'],
   };
 
   /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.

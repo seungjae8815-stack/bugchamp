@@ -320,7 +320,7 @@ void main() {
       expect(await ctrl.startStarUp(EquipSlot.ring), 'not_ready');
     });
 
-    test('새 장비로 바꾸면 별 절반을 이어받는다(환생)', () async {
+    test('새 장비로 바꾸면 별은 초기화된다(이어받기 없음)', () async {
       final c = make(
         seed().copyWith(
           equippedItems: {EquipSlot.ring: ring.copyWith(stars: 5)},
@@ -333,7 +333,30 @@ void main() {
             const EquipItem(slot: EquipSlot.ring, tier: 9, options: []),
           );
       final save = c.read(saveControllerProvider).requireValue;
-      expect(save.equippedItems[EquipSlot.ring]!.stars, 2);
+      expect(save.equippedItems[EquipSlot.ring]!.stars, 0);
+    });
+
+    test('공방 초월 — 최대 레벨에서만 · 장비 전부 사라짐 · 공방 풀잎부터 · 화석', () async {
+      final forge = ForgeConfig.fromJson(_read('forge.json'));
+      final c = make(
+        seed().copyWith(
+          forgeLevel: forge.maxLevel,
+          equippedItems: {EquipSlot.ring: ring},
+          forgeStack: const [ring],
+          materials: {MaterialKind.fossil: forge.transcendFossilCost(0)},
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.transcendForge(), isNull);
+      final save = c.read(saveControllerProvider).requireValue;
+      expect(save.forgeTranscend, 1);
+      expect(save.forgeLevel, 0);
+      expect(save.equippedItems, isEmpty);
+      expect(save.forgeStack, isEmpty);
+      expect(save.materialCount(MaterialKind.fossil), 0);
+      // 최대 레벨이 아니면 못 한다.
+      expect(await ctrl.transcendForge(), 'not_max');
     });
 
     test('교체 판단: 목표 옵션이 있으면 등급보다 그게 우선이다', () async {
