@@ -5,10 +5,11 @@
 ※ 범위: 1.0.18(20260944) 이후.
 
 <ko-KR>
-장비 다듬기와 환생이 생겼어요
+장비 다듬기, 별 강화, 공방 초월이 생겼어요
 
 - 장비 옵션 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 남길 쪽을 고릅니다. 원하는 옵션 종류를 지정할 수도 있고, 다듬을수록 정성이 쌓여 낮은 값이 덜 나와요
-- 장비 환생: 같은 부위 장비를 재료로 먹여 별을 올리면 옵션 효과가 커집니다(최대 5성)
+- 별 강화: 같은 부위 장비를 재료로 모아 강화 시간을 거치면 별이 오르고 옵션 효과가 커집니다(최대 5성, 젤리로 시간을 당길 수 있어요)
+- 공방 초월: 공방 최대 등급에서 초월하면 공방이 처음부터 다시 시작하는 대신 옵션 최대치가 올라갑니다
 - 근성·맷집·회복력 강화를 올리면 사냥에서 받는 피해가 확실히 줄어듭니다. 사냥터 몬스터 수치가 바뀌었어요
 - 결투 전투력이 실제로 이길 확률을 반영하도록 바뀌었습니다
 - 미션 목표가 너무 커지지 않게 바꾸고, 젤리로 다른 미션으로 바꿀 수 있습니다
@@ -19,10 +20,11 @@
 </ko-KR>
 
 <en-US>
-Gear refining and rebirth are here
+Gear refining, star upgrades and Forge Transcend are here
 
 - Refine gear options: reroll one line with fossils or jelly, then keep the old or the new value. You can pick the option type, and each refine raises the minimum roll
-- Gear rebirth: feed same-slot gear to add stars and boost option effects (up to 5 stars)
+- Star upgrade: collect same-slot gear as material, and after an upgrade timer the star rises and option effects grow (up to 5 stars; jelly can skip the timer)
+- Forge Transcend: at the max forge grade, restart the forge from the beginning to raise every option's maximum
 - HP, defense and regen upgrades now clearly reduce hunting damage. Zone monster values have changed
 - Duel combat power now reflects real win chances
 - Mission goals no longer grow too large, and you can swap a mission with jelly
@@ -33,10 +35,11 @@ Gear refining and rebirth are here
 </en-US>
 
 <ja-JP>
-装備の磨きと転生が登場
+装備の磨き、星強化、工房超越が登場
 
 - 装備オプションの磨き: 化石かゼリーでオプション1行を振り直し、以前の値と新しい値のどちらを残すか選べます。種類の指定もでき、磨くほど低い値が出にくくなります
-- 装備の転生: 同じ部位の装備を素材にして星を上げると、オプション効果が大きくなります(最大5つ星)
+- 星強化: 同じ部位の装備を素材として集め、強化時間を経ると星が上がり、オプション効果が大きくなります(最大5つ星、ゼリーで時間を短縮できます)
+- 工房超越: 工房の最大等級で超越すると、工房は最初からやり直しになる代わりにオプションの最大値が上がります
 - 体力・防御・回復の強化で、狩りで受けるダメージがはっきり減ります。狩り場のモンスターの数値が変わりました
 - 決闘の戦闘力が実際の勝率を反映するようになりました
 - ミッションの目標が大きくなりすぎないようにし、ゼリーで別のミッションに変更できます

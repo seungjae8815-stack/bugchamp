@@ -6,7 +6,7 @@ import 'package:app/ui/whats_new.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// 1.0.18 "업데이트 내용" 창(2026-10-09 사장님 확정) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
+/// "업데이트 내용" 창(1.0.18 도입 · 1.0.19 내용) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
 void main() {
   group('막 시작한 세이브에는 띄우지 않는다', () {
     final now = DateTime.utc(2026, 10, 9, 12);
@@ -73,18 +73,19 @@ void main() {
       ),
     );
 
-    testWidgets('사장님 확정 8줄 — 부위 강화·다시 찍기·반격·자동 도전·상한·선물·회피·요정함', (
+    testWidgets('1.0.19 8줄 — 전투력·다듬기·별 강화·초월·사냥 방어·미션·훈련 기준·스킬', (
       tester,
     ) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(find.textContaining('훈련 포인트로 옮겨졌어요'), findsOneWidget);
-      expect(find.textContaining('첫 다시 찍기는 무료'), findsOneWidget);
-      expect(find.textContaining('위기 때 화면을 연타'), findsOneWidget);
-      expect(find.textContaining('보스 자동 도전'), findsOneWidget);
-      expect(find.textContaining('250'), findsOneWidget);
-      expect(find.textContaining('깜짝선물·일일보상'), findsOneWidget);
-      expect(find.textContaining('회피'), findsOneWidget);
-      expect(find.textContaining('요정함'), findsOneWidget);
+      expect(kWhatsNewVersion, '1.0.19');
+      expect(find.textContaining('실전 전투력'), findsOneWidget);
+      expect(find.textContaining('장비 다듬기'), findsOneWidget);
+      expect(find.textContaining('별 강화'), findsOneWidget);
+      expect(find.textContaining('공방 초월'), findsOneWidget);
+      expect(find.textContaining('근성·맷집·회복력'), findsOneWidget);
+      expect(find.textContaining('젤리 5개'), findsOneWidget);
+      expect(find.textContaining('102점'), findsOneWidget);
+      expect(find.textContaining('번데기 방벽'), findsOneWidget);
       expect(find.byType(Icon), findsNWidgets(8));
     });
 

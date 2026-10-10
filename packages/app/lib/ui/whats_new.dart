@@ -12,7 +12,7 @@ import 'game_dialog.dart';
 import 'popup_gate.dart';
 
 /// 이 빌드의 "업데이트 내용" 판. 내용([whatsNewItems])을 바꾸면 이 값도 바꾼다 — 기기마다 판마다 한 번 뜬다.
-const kWhatsNewVersion = '1.0.18';
+const kWhatsNewVersion = '1.0.19';
 
 /// 기기 플래그 — 마지막으로 보여 준 판(세이브가 아니라 기기 설정: 진행·보상과 무관한 안내라서).
 const kWhatsNewSeenKey = 'whatsNew.seen';
@@ -24,16 +24,17 @@ const _kFreshSave = Duration(minutes: 30);
 /// 업데이트 내용 한 줄.
 typedef WhatsNewItem = ({IconData icon, String text});
 
-/// 1.0.18 업데이트 내용(2026-10-09 사장님 확정 목록 · 요정함 확장 추가).
+/// 1.0.19 업데이트 내용(2026-10-10 — 이번 판에서 바뀐 것 중 유저가 알아야 할 8가지).
+/// 훈련 포인트 기준 통일은 불리할 수 있는 변경이라 숨기지 않고 넣는다(공지·출시노트와 같은 원칙).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
-  (icon: Icons.fitness_center_rounded, text: l.whatsNewPartsToPoints),
-  (icon: Icons.restart_alt_rounded, text: l.whatsNewFreeRespec),
-  (icon: Icons.touch_app_rounded, text: l.whatsNewClutch),
-  (icon: Icons.whatshot_rounded, text: l.whatsNewAutoBoss),
-  (icon: Icons.trending_up_rounded, text: l.whatsNewUpgradeCap),
-  (icon: Icons.card_giftcard_rounded, text: l.whatsNewGifts),
-  (icon: Icons.shield_moon_rounded, text: l.whatsNewMoveToEvade),
-  (icon: Icons.inventory_2_rounded, text: l.whatsNewFairyBox),
+  (icon: Icons.bolt_rounded, text: l.whatsNewDuelPower),
+  (icon: Icons.auto_fix_high_rounded, text: l.whatsNewPolish),
+  (icon: Icons.star_rounded, text: l.whatsNewStar),
+  (icon: Icons.local_fire_department_rounded, text: l.whatsNewTranscend),
+  (icon: Icons.shield_rounded, text: l.whatsNewHuntDefense),
+  (icon: Icons.swap_horiz_rounded, text: l.whatsNewMissionSwap),
+  (icon: Icons.fitness_center_rounded, text: l.whatsNewTrainEqual),
+  (icon: Icons.extension_rounded, text: l.whatsNewSkillUnlock),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.

@@ -2,13 +2,13 @@
 
 올리는 곳: **운영 패널** `https://bugchamp-server-867649520275.asia-northeast3.run.app/admin`
 한도: 제목 100자 · 본문 1000자(언어마다). 기간 공지 — `endsAt` = 출시일 + 2주(pinned 아님).
-⚠️ 불리할 수 있는 변경(훈련 보너스 폐지 · 전투력 숫자 · 사냥터 수치)을 숨기지 않고 적었다.
+⚠️ 불리할 수 있는 변경(훈련 보너스 폐지 · 전투력 숫자 · 사냥터 수치 · 초월하면 장비가 사라짐)을 숨기지 않고 적었다.
 
 ## 한국어
 
 ### 제목
 ```
-1.0.19 업데이트 — 장비 다듬기·환생, 사냥 강화 개편
+1.0.19 업데이트 — 장비 다듬기·별 강화·공방 초월, 사냥 강화 개편
 ```
 
 ### 본문
@@ -17,7 +17,8 @@
 
 [ 장비 ]
 - 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 고를 수 있어요. 원하는 옵션 종류도 지정할 수 있고, 다듬을수록 낮은 값이 덜 나와요
-- 환생: 같은 부위 장비를 먹여 별을 올리면 옵션 효과가 커져요(최대 5성, 새 장비로 바꾸면 별 절반을 이어받아요)
+- 별 강화: 같은 부위 장비를 재료로 모으면(1성 100개) 강화 시간을 거쳐 별이 올라 옵션 효과가 커져요(최대 5성, 젤리로 시간 단축). 별은 그 장비에만 붙어서 새 장비로 바꾸면 처음부터예요
+- 공방 초월: 공방 최대 등급에서 화석으로 초월하면 장비가 전부 사라지고 공방이 풀잎부터 다시 시작하지만, 모든 등급의 옵션 최대치가 단계마다 +15% 올라요(최대 5단계)
 
 [ 사냥 ]
 - 근성·맷집·회복력 강화를 올리면 받는 피해가 확실히 줄어요. 그에 맞춰 사냥터 몬스터 수치가 바뀌었고, 난이도마다 첫 보스는 조금 더 단단해요
@@ -36,7 +37,7 @@
 
 ### Title
 ```
-Update 1.0.19 — Gear refining & rebirth, hunting upgrades
+Update 1.0.19 — Gear refining, stars & Forge Transcend, hunting upgrades
 ```
 
 ### Body
@@ -44,27 +45,28 @@ Update 1.0.19 — Gear refining & rebirth, hunting upgrades
 Update 1.0.19 is here.
 
 [ Gear ]
-- Refine: reroll one option line with fossils or jelly and keep the old or new value. You can pick the type, and each refine raises the minimum roll
-- Rebirth: feed same-slot gear to add stars and boost option effects (up to 5; new gear inherits half the stars)
+- Refine: reroll an option with fossils or jelly, keep old or new, pick the type. Each refine raises the minimum
+- Stars: feed same-slot gear (100 for the 1st star), wait the timer (jelly skips it) and options grow, up to 5. New gear starts at zero
+- Forge Transcend: at max forge grade, spend fossils. All gear disappears and the forge restarts from Grass, but option max rises +15% per step (up to 5)
 
 [ Hunting ]
-- HP, defense and regen upgrades now clearly reduce damage. Zone monster values changed to match, and each difficulty's first boss is a bit tougher
-- Mission goals stay reasonable, and you can swap a mission for 5 jelly
+- HP, defense and regen upgrades now clearly cut damage. Zone monsters changed; each difficulty's first boss is tougher
+- Mission goals stay reasonable; swap a mission for 5 jelly
 
 [ Duels & training ]
-- Combat power now reflects real win chances, so numbers changed (2x power ≈ 67% win)
-- Training points now follow the same rules for every bug (up to 102). Bugs above 102 from pre-update investment are adjusted and get one free reset. Past part-upgrade investors received jelly by mail
+- Combat power now reflects real win chances (2x power ≈ 67% win)
+- Training points follow one rule for every bug (max 102). Bugs above 102 are adjusted with one free reset. Past part-upgrade investors got jelly by mail
 
 [ More ]
 - Wild shards unlock skills · Pupa Guard grows with level
-- Fixed live chat updates and gear selling removing the next item
+- Fixed live chat and gear selling removing the next item
 ```
 
 ## 日本語
 
 ### タイトル
 ```
-1.0.19 アップデート — 装備の磨き・転生、狩りの強化を改編
+1.0.19 アップデート — 装備の磨き・星強化・工房超越、狩りの強化を改編
 ```
 
 ### 本文
@@ -73,7 +75,8 @@ Update 1.0.19 is here.
 
 [ 装備 ]
 - 磨き: 化石かゼリーでオプション1行を振り直し、以前の値と新しい値を選べます。種類の指定もでき、磨くほど低い値が出にくくなります
-- 転生: 同じ部位の装備で星を上げるとオプション効果が大きくなります(最大5つ星、新しい装備に替えると星の半分を引き継ぎます)
+- 星強化: 同じ部位の装備を素材として集めると(1つ星は100個)強化時間を経て星が上がり、オプション効果が大きくなります(最大5つ星、ゼリーで短縮可)。星はその装備だけのもので、新しい装備はゼロからです
+- 工房超越: 工房の最大等級で化石を使って超越すると、装備がすべて消え工房は草からやり直しですが、すべての等級のオプション最大値が段階ごとに+15%上がります(最大5段階)
 
 [ 狩り ]
 - 体力・防御・回復の強化で受けるダメージがはっきり減ります。それに合わせて狩り場のモンスターの数値が変わり、各難易度の最初のボスは少し硬くなりました
