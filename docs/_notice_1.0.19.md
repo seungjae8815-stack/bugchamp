@@ -2,7 +2,7 @@
 
 올리는 곳: **운영 패널** `https://bugchamp-server-867649520275.asia-northeast3.run.app/admin`
 한도: 제목 100자 · 본문 1000자(언어마다). 기간 공지 — `endsAt` = 출시일 + 2주(pinned 아님).
-⚠️ 불리할 수 있는 변경(훈련 보너스 폐지 · 전투력 숫자 · 사냥터 수치 · 초월하면 장비가 사라짐)을 숨기지 않고 적었다.
+⚠️ 불리할 수 있는 변경(훈련 보너스 폐지 · 전투력 숫자 · 사냥터 수치 · 초월하면 장비가 사라짐 · 미션 보상 정리)을 숨기지 않고 적었다.
 
 ## 한국어
 
@@ -22,7 +22,7 @@
 
 [ 사냥 ]
 - 근성·맷집·회복력 강화를 올리면 받는 피해가 확실히 줄어요. 그에 맞춰 사냥터 몬스터 수치가 바뀌었고, 난이도마다 첫 보스는 조금 더 단단해요
-- 미션 목표가 너무 커지지 않게 바꾸고, 젤리 5개로 다른 미션으로 바꿀 수 있어요
+- 미션 목표가 너무 커지지 않게 바꾸고, 젤리 5개로 다른 미션으로 바꿀 수 있어요. 받을수록 끝없이 커지던 미션 보상은 지금 사냥터에서 10분 사냥한 만큼(골드·키틴)으로 바꿨고, 제련 미션 젤리는 하루 2번까지예요
 
 [ 결투·훈련 ]
 - 전투력이 실제로 이길 확률을 반영하도록 바뀌어 숫자가 달라졌어요(2배면 약 67% 승리)
@@ -42,8 +42,6 @@ Update 1.0.19 — Gear refining, stars & Forge Transcend, hunting upgrades
 
 ### Body
 ```
-Update 1.0.19 is here.
-
 [ Gear ]
 - Refine: reroll an option with fossils or jelly, keep old or new, pick the type. Each refine raises the minimum
 - Stars: feed same-slot gear (100 for the 1st star), wait the timer (jelly skips it) and options grow, up to 5. New gear starts at zero
@@ -51,7 +49,7 @@ Update 1.0.19 is here.
 
 [ Hunting ]
 - HP, defense and regen upgrades now clearly cut damage. Zone monsters changed; each difficulty's first boss is tougher
-- Mission goals stay reasonable; swap a mission for 5 jelly
+- Mission goals capped; swap for 5 jelly. Rewards = 10 min of hunting here; forge jelly 2×/day
 
 [ Duels & training ]
 - Combat power now reflects real win chances (2x power ≈ 67% win)
@@ -59,7 +57,7 @@ Update 1.0.19 is here.
 
 [ More ]
 - Wild shards unlock skills · Pupa Guard grows with level
-- Fixed live chat and gear selling removing the next item
+- Fixed live chat and a gear selling bug
 ```
 
 ## 日本語
@@ -80,7 +78,7 @@ Update 1.0.19 is here.
 
 [ 狩り ]
 - 体力・防御・回復の強化で受けるダメージがはっきり減ります。それに合わせて狩り場のモンスターの数値が変わり、各難易度の最初のボスは少し硬くなりました
-- ミッションの目標が大きくなりすぎないようにし、ゼリー5個で別のミッションに変更できます
+- ミッションの目標が大きくなりすぎないようにし、ゼリー5個で別のミッションに変更できます。報酬は今の狩り場で10分狩った分(ゴールド・キチン)になり、製錬ミッションのゼリーは1日2回までです
 
 [ 決闘・訓練 ]
 - 戦闘力が実際の勝率を反映するようになり、数値が変わりました(2倍なら約67%で勝利)
