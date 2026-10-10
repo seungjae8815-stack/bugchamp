@@ -336,6 +336,25 @@ void main() {
       expect(save.equippedItems[EquipSlot.ring]!.stars, 0);
     });
 
+    test('모루 맨 위 장비 끼기(교체) — 끼기와 모루에서 빼기를 한 번에', () async {
+      const top = EquipItem(slot: EquipSlot.ring, tier: 3, options: []);
+      final c = make(
+        seed().copyWith(
+          equippedItems: {EquipSlot.ring: ring.copyWith(stars: 2)},
+          forgeStack: const [ring, top],
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      expect(
+        await c.read(saveControllerProvider.notifier).equipForgeTop(),
+        isTrue,
+      );
+      final save = c.read(saveControllerProvider).requireValue;
+      expect(save.equippedItems[EquipSlot.ring]!.tier, 3);
+      expect(save.equippedItems[EquipSlot.ring]!.stars, 0);
+      expect(save.forgeStack, const [ring], reason: '맨 위 하나만 빠진다');
+    });
+
     test('공방 초월 — 최대 레벨에서만 · 장비 전부 사라짐 · 공방 풀잎부터 · 화석', () async {
       final forge = ForgeConfig.fromJson(_read('forge.json'));
       final c = make(
@@ -344,6 +363,7 @@ void main() {
           equippedItems: {EquipSlot.ring: ring},
           forgeStack: const [ring],
           materials: {MaterialKind.fossil: forge.transcendFossilCost(0)},
+          autoForgeMinTier: 8,
         ),
       );
       await c.read(saveControllerProvider.future);
@@ -355,6 +375,8 @@ void main() {
       expect(save.equippedItems, isEmpty);
       expect(save.forgeStack, isEmpty);
       expect(save.materialCount(MaterialKind.fossil), 0);
+      // 등급 필터는 풀린다(공방이 풀잎부터라 남으면 다 팔려 화석만 탄다).
+      expect(save.autoForgeMinTier, 0);
       // 최대 레벨이 아니면 못 한다.
       expect(await ctrl.transcendForge(), 'not_max');
     });

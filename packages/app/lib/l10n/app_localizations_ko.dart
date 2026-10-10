@@ -804,29 +804,29 @@ class AppLocalizationsKo extends AppLocalizations {
   String get whatsNewOk => '확인';
 
   @override
-  String get whatsNewPartsToPoints =>
-      '부위 강화가 훈련 포인트로 옮겨졌어요 — 들인 만큼 포인트로 돌려받아서 약해지지 않아요';
+  String get whatsNewDuelPower => '결투 전투력이 모든 능력치를 반영한 실전 전투력으로 바뀌었어요';
 
   @override
-  String get whatsNewFreeRespec => '훈련 포인트 첫 다시 찍기는 무료예요';
+  String get whatsNewPolish => '장비 다듬기 — 옵션 종류를 고르고, 이전 값과 새 값 중 남길 쪽을 골라요';
 
   @override
-  String get whatsNewClutch => '결투 반격 — 위기 때 화면을 연타하면 버텨요';
+  String get whatsNewStar => '별 강화 — 같은 부위 장비를 재료로 별을 올리면 옵션 효과가 커져요 (최대 5성)';
 
   @override
-  String get whatsNewAutoBoss => '보스 자동 도전 — 게이지가 차면 스스로 도전해요 (설정에서 끌 수 있어요)';
+  String get whatsNewTranscend => '공방 초월 — 공방 최대 등급에서 초월하면 옵션 최대치가 올라요';
 
   @override
-  String get whatsNewUpgradeCap => '공격·체력·방어 강화 상한이 250까지 올랐어요';
+  String get whatsNewHuntDefense => '사냥의 근성·맷집·회복력 강화가 바로 체감돼요 (사냥터 몬스터 수치 변경)';
 
   @override
-  String get whatsNewGifts => '깜짝선물·일일보상이 크게 늘었어요';
+  String get whatsNewMissionSwap =>
+      '미션 목표가 너무 커지지 않아요 · 젤리 5개로 다른 미션으로 바꿀 수 있어요';
 
   @override
-  String get whatsNewMoveToEvade => '사냥 강화의 이동속도가 회피로 바뀌었어요';
+  String get whatsNewTrainEqual => '훈련 포인트를 모든 곤충이 같은 기준(최대 102점)으로 받아요';
 
   @override
-  String get whatsNewFairyBox => '요정함을 젤리로 늘릴 수 있어요 (최대 60칸)';
+  String get whatsNewSkillUnlock => '만능 조각으로 스킬 해금 · 번데기 방벽이 레벨마다 길어져요';
 
   @override
   String zoneKillsLabel(int n, int m) {
@@ -3445,11 +3445,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get polishRandomKind => '종류도 무작위';
 
   @override
-  String polishPickKind(String kind, String mult) {
-    return '$kind(비용 ×$mult)';
-  }
-
-  @override
   String polishHint(String have) {
     return '어느 쪽을 골라도 정성이 올라요 · 화석 $have개 보유';
   }
@@ -3541,6 +3536,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get forgeStarLoseTitle => '별이 사라져요';
+
+  @override
+  String forgeStarLoseBody(String stars, String exp) {
+    return '지금 낀 장비의 별 $stars개와 모은 별 재료 $exp개(강화 중이면 그 시간까지)가 사라지고, 새 장비는 별 0부터 시작해요.\n\n그래도 바꿀까요?';
+  }
+
+  @override
   String starBonus(String p) {
     return '효과 +$p%';
   }
@@ -3561,11 +3564,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String forgeStarUp(String n, String p) {
     return '$n성 달성! 옵션 효과 +$p%';
-  }
-
-  @override
-  String forgeStarInherit(String n) {
-    return '별 $n개를 이어받았어요';
   }
 
   @override

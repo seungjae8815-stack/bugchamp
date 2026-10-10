@@ -20,6 +20,8 @@ import 'training_progress.dart';
 /// **이전**: 옛 부위 강화(곤충의 `enhancement` — 세이브에 남는다)와 옛 훈련 단계([SaveGame.duelTraining])를
 /// **같은 효과량이 되는 포인트**로 칸에 옮긴다([legacyTrainPoints]). 예산을 넘친 만큼은 보너스 포인트로
 /// 영구히 남기고, 칸 상한을 넘친 칸은 그 칸의 상한이 옮긴 값까지 늘어난다 — **아무도 약해지지 않는다.**
+/// ⚠️ 2026-10-10 사장님 확정으로 보너스·넘친 칸 상한을 **없앴다**(새 유저와의 공정함 — 옛 투자자에게는 젤리 보상).
+/// 이전 자체(옛 투자 → 칸)는 그대로이고, 기본 예산·칸 상한을 넘친 몫만 [sanitizeTrainPoints] 가 자른다.
 
 /// 곤충 1마리의 훈련 포인트 기록.
 @immutable
@@ -872,8 +874,8 @@ SaveGame pruneTrainPoints(SaveGame s) {
   return s.copyWith(trainPoints: all, clearTrainPointJob: jobGone);
 }
 
-/// **서버 업로드 검사** — 기록을 칸 상한·예산 안으로 자른다(배분·대기 배분 모두). 재료를 낸 포인트는
-/// 예산을, 보너스는 옛 투자 총량을 넘지 않는다. 없는 곤충 기록은 지운다. 바뀐 게 없으면 [s] 그대로.
+/// **서버 업로드 검사 · 앱 로드/저장** — 기록을 칸 상한·예산 안으로 자른다(배분·대기 배분 모두). 재료를 낸 포인트는
+/// 기본 예산을 넘지 않는다(보너스는 2026-10-10 폐지 — 잘린 곤충은 무료 다시 찍기). 없는 곤충 기록은 지운다. 바뀐 게 없으면 [s] 그대로.
 SaveGame sanitizeTrainPoints(
   SaveGame s,
   TrainingConfig cfg, {

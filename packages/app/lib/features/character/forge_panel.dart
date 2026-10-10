@@ -41,6 +41,9 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   bool _autoOn = false;
   bool _busy = false;
 
+  /// 모루 결과 창을 보는 중 — 이 동안 망치질은 쌓지 않는다([_onStrikeDone]).
+  bool _viewing = false;
+
   /// 자동 제련에서 필터에 걸려 **판** 재료 — 모루 위로 떠오르는 표시용
   /// (사장님 지시 2026-09-18).
   ///
@@ -198,7 +201,9 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
 
   /// 망치가 마지막으로 내리친 순간 — 여기서 [_strikes] 개가 나온다.
   Future<void> _onStrikeDone() async {
-    if (_busy) return;
+    // 결과 창을 보는 동안은 쌓지 않는다 — 창의 버튼(판매·별 재료·교체·다듬기)은 모두 "모루 맨 위"를 처리하는데,
+    // 그 사이 새 장비가 올라오면 보지도 못한 장비가 팔리거나 사라졌다(2026-10-10 출시 전 점검).
+    if (_busy || _viewing) return;
     _busy = true;
     final data = ref.read(gameDataProvider).value;
     final forge = data?.forgeConfig;
@@ -277,14 +282,27 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   /// 교체/버리기를 **누른 뒤에만** 모루에서 없앤다.
   Future<void> _openTop() async {
     final stack = ref.read(saveControllerProvider).requireValue.forgeStack;
-    if (stack.isEmpty) return;
-    // 하나를 처리하면 **다음 것이 바로 뜬다.** 예전엔 매번 모루를 다시
-    // 눌러야 했다 — 10칸을 비우려면 10번을 더 눌러야 하는 셈이었다
-    // (2026-09-09 지적).
-    _soldInRow.clear();
-    while (mounted && await _openOne()) {
-      if (!mounted) return;
-      setState(() {});
+    if (stack.isEmpty || _viewing) return;
+    // 자동 제련은 창을 보는 동안 **멈췄다가** 닫으면 다시 켠다. 끄는 것만으로는 돌던 한 바퀴가 끝까지 돌며
+    // 한 번 더 쌓으므로 [_viewing] 으로 망치질 자체를 무시하고, 이미 쌓는 중이면 끝날 때까지 기다린다.
+    final resume = _autoOn;
+    _viewing = true;
+    if (resume) setState(() => _autoOn = false);
+    try {
+      while (_busy && mounted) {
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+      }
+      // 하나를 처리하면 **다음 것이 바로 뜬다.** 예전엔 매번 모루를 다시
+      // 눌러야 했다 — 10칸을 비우려면 10번을 더 눌러야 하는 셈이었다
+      // (2026-09-09 지적).
+      _soldInRow.clear();
+      while (mounted && await _openOne()) {
+        if (!mounted) return;
+        setState(() {});
+      }
+    } finally {
+      _viewing = false;
+      if (resume && mounted) setState(() => _autoOn = true);
     }
     // 판 재료는 **멈췄을 때 한 번에** 보여 준다(2026-10-10 실기 지적 — 한 개 팔 때마다 보상 창이 떴다).
     if (_soldInRow.isNotEmpty && mounted) {
@@ -1367,19 +1385,42 @@ Future<bool> showForgeResult(
           }
         }, primary: false),
       gameDialogButton(l.forgeResultKeep, () async {
-        // ⚠️ 굴린 뒤라면 **굴린 것**을 껴야 한다.
-        final ctrl = ref.read(saveControllerProvider.notifier);
-        final carried = cur == null
-            ? 0
-            : (cur!.stars * items.starInheritRatio).floor();
-        await ctrl.equipItem(shown);
-        await ctrl.takeForgeItem();
+        // 별은 이어받지 않는다(2026-10-10 사장님) — 별·별 재료·강화 중인 장비를 바꾸면 그 투자가 사라지므로 한 번 더 묻는다.
+        final old = cur;
+        if (old != null &&
+            (old.stars > 0 || old.starExp > 0 || old.starUntil != null)) {
+          final ok = await showGameDialog<bool>(
+            context,
+            title: l.forgeStarLoseTitle,
+            icon: Icons.warning_amber_rounded,
+            content: Text(
+              l.forgeStarLoseBody('${old.stars}', '${old.starExp}'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            actions: [
+              gameDialogButton(
+                l.actionCancel,
+                () => Navigator.pop(context, false),
+                primary: false,
+              ),
+              gameDialogButton(
+                l.forgeResultKeep,
+                () => Navigator.pop(context, true),
+                color: const Color(0xFFB23A2E),
+              ),
+            ],
+          );
+          if (ok != true || !context.mounted) return;
+        }
+        // ⚠️ 굴린 뒤라면 **굴린 것**을 껴야 한다 — 다듬은 장비도 모루 맨 위에 있으므로 맨 위를 낀다.
+        await ref.read(saveControllerProvider.notifier).equipForgeTop();
         if (!context.mounted) return;
         Navigator.pop(context, true);
-        // 별 이어받기(환생) — 무엇이 넘어갔는지 알려 준다.
-        if (carried > shown.stars && context.mounted) {
-          showCenterToast(context, l.forgeStarInherit('$carried'));
-        }
       }),
     ],
   );

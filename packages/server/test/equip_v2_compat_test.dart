@@ -80,6 +80,81 @@ void main() {
     expect(got.options[0].value, 3.3);
   });
 
+  test('1.0.18 앱이 다시 올려도 진행 중인 별 강화 끝 시각(su)이 되돌아온다', () {
+    final until = t0.add(const Duration(hours: 3));
+    final s = stored().copyWith(
+      equippedItems: {
+        EquipSlot.ring: ring.copyWith(starExp: 150, starUntil: until),
+      },
+    );
+    final r = actions.mergeSave(s, oldAppReupload(s));
+    expect(r.isOk, isTrue, reason: r.error);
+    expect(r.save!.equippedItems[EquipSlot.ring]!.starUntil, until);
+    // 서버 세이브 왕복(결투 뒤 채택 경로)에서도 남는다.
+    final back = SaveGame.fromJson(r.save!.toJson());
+    expect(back.equippedItems[EquipSlot.ring]!.starUntil, until);
+  });
+
+  test('공방 초월 단계는 1.0.18(feat 20)·장비 v2 개발 빌드(feat 21) 업로드에서 저장본 값으로 지킨다', () {
+    final s = stored().copyWith(forgeTranscend: 2);
+    final old = oldAppReupload(s)..remove('forgeTranscend');
+    expect(actions.mergeSave(s, old).save!.forgeTranscend, 2);
+    final dev = s.toJson()
+      ..['feat'] = 21
+      ..remove('forgeTranscend');
+    expect(actions.mergeSave(s, dev).save!.forgeTranscend, 2);
+  });
+
+  test('초월 직후(feat 22) 장비·모루가 빈 업로드를 막거나 되돌리지 않는다', () {
+    final s = stored().copyWith(
+      forgeLevel: 19,
+      materials: {MaterialKind.fossil: 20000},
+    );
+    final up = s.copyWith(
+      forgeTranscend: 1,
+      forgeLevel: 0,
+      equippedItems: const {},
+      forgeStack: const [],
+      materials: {MaterialKind.fossil: 10000},
+    );
+    final r = actions.mergeSave(s, up.toJson());
+    expect(r.isOk, isTrue, reason: r.error);
+    expect(r.save!.forgeTranscend, 1);
+    expect(r.save!.forgeLevel, 0);
+    expect(r.save!.equippedItems, isEmpty);
+    expect(r.save!.forgeStack, isEmpty);
+  });
+
+  test('훈련 보너스 폐지 — 넘친 기록은 첫 업로드에서 한 번만 자르고, 다음 업로드는 되돌리지 않는다', () {
+    const bug = IndividualBug(
+      id: 'b1',
+      speciesId: 'stag_dorcus',
+      sizeMm: 40,
+      potential: 3, // 예산 18
+      temperament: Temperament.aggressive,
+      sex: Sex.male,
+      element: Element.wood,
+    );
+    final s = stored().copyWith(
+      bugs: const [bug],
+      trainPoints: const {
+        'b1': BugTrain(
+          alloc: {TrainSlot.attack: 15, TrainSlot.defense: 10},
+          paid: 25,
+          bonus: 7,
+        ),
+      },
+    );
+    final r1 = actions.mergeSave(s, s.toJson());
+    expect(r1.isOk, isTrue, reason: r1.error);
+    expect(r1.extra['clampReasons'], contains('train'));
+    final rec = r1.save!.trainPoints['b1']!;
+    expect(rec.alloc.values.fold<int>(0, (a, b) => a + b), 18);
+    expect(rec.freeRespec, isTrue);
+    final r2 = actions.mergeSave(r1.save!, r1.save!.toJson());
+    expect(r2.extra['clamped'], isFalse, reason: '${r2.extra}');
+  });
+
   test('새 앱(feat 21)이 별을 비웠으면 그 값을 받는다(되돌리지 않는다)', () {
     final s = stored();
     final j = s.toJson();

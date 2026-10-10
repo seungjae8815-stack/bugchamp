@@ -1528,53 +1528,53 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get whatsNewOk;
 
-  /// No description provided for @whatsNewPartsToPoints.
+  /// No description provided for @whatsNewDuelPower.
   ///
   /// In en, this message translates to:
-  /// **'Part upgrades moved to training points — you get points back for what you invested, so you won\'t get weaker'**
-  String get whatsNewPartsToPoints;
+  /// **'Duel combat power now reflects every stat — real win chances'**
+  String get whatsNewDuelPower;
 
-  /// No description provided for @whatsNewFreeRespec.
+  /// No description provided for @whatsNewPolish.
   ///
   /// In en, this message translates to:
-  /// **'Your first training point reset is free'**
-  String get whatsNewFreeRespec;
+  /// **'Gear refining — pick the option type and keep the old or new value'**
+  String get whatsNewPolish;
 
-  /// No description provided for @whatsNewClutch.
+  /// No description provided for @whatsNewStar.
   ///
   /// In en, this message translates to:
-  /// **'Duel clutch — tap the screen rapidly in a crisis to hold on'**
-  String get whatsNewClutch;
+  /// **'Star upgrade — feed same-slot gear to add stars and boost options (up to 5)'**
+  String get whatsNewStar;
 
-  /// No description provided for @whatsNewAutoBoss.
+  /// No description provided for @whatsNewTranscend.
   ///
   /// In en, this message translates to:
-  /// **'Auto boss challenge — challenges the boss on its own when the gauge fills (turn off in Settings)'**
-  String get whatsNewAutoBoss;
+  /// **'Forge Transcend — at max forge grade, raise every option’s max'**
+  String get whatsNewTranscend;
 
-  /// No description provided for @whatsNewUpgradeCap.
+  /// No description provided for @whatsNewHuntDefense.
   ///
   /// In en, this message translates to:
-  /// **'Attack, HP and Defense upgrades now go up to 250'**
-  String get whatsNewUpgradeCap;
+  /// **'Hunting HP, defense and regen upgrades now clearly reduce damage (zone monsters changed)'**
+  String get whatsNewHuntDefense;
 
-  /// No description provided for @whatsNewGifts.
+  /// No description provided for @whatsNewMissionSwap.
   ///
   /// In en, this message translates to:
-  /// **'Surprise gifts and daily rewards are much bigger'**
-  String get whatsNewGifts;
+  /// **'Mission goals stay reasonable · swap a mission for 5 jelly'**
+  String get whatsNewMissionSwap;
 
-  /// No description provided for @whatsNewMoveToEvade.
+  /// No description provided for @whatsNewTrainEqual.
   ///
   /// In en, this message translates to:
-  /// **'The hunting upgrade Move Speed is now Evasion'**
-  String get whatsNewMoveToEvade;
+  /// **'Training points now follow the same rule for every bug (up to 102)'**
+  String get whatsNewTrainEqual;
 
-  /// No description provided for @whatsNewFairyBox.
+  /// No description provided for @whatsNewSkillUnlock.
   ///
   /// In en, this message translates to:
-  /// **'Expand the fairy box with jelly (up to 60 slots)'**
-  String get whatsNewFairyBox;
+  /// **'Wild shards unlock skills · Pupa Guard lasts longer each level'**
+  String get whatsNewSkillUnlock;
 
   /// No description provided for @zoneKillsLabel.
   ///
@@ -6118,12 +6118,6 @@ abstract class AppLocalizations {
   /// **'Random type'**
   String get polishRandomKind;
 
-  /// No description provided for @polishPickKind.
-  ///
-  /// In en, this message translates to:
-  /// **'{kind} (cost ×{mult})'**
-  String polishPickKind(String kind, String mult);
-
   /// No description provided for @polishHint.
   ///
   /// In en, this message translates to:
@@ -6268,6 +6262,18 @@ abstract class AppLocalizations {
   /// **'Forge fully transcended — option max +{pct}%'**
   String forgeTranscendMaxed(String pct);
 
+  /// No description provided for @forgeStarLoseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stars will be lost'**
+  String get forgeStarLoseTitle;
+
+  /// No description provided for @forgeStarLoseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The {stars} stars and {exp} star materials on your current gear (and any upgrade in progress) will be lost. New gear starts at 0 stars.\n\nSwap anyway?'**
+  String forgeStarLoseBody(String stars, String exp);
+
   /// No description provided for @starBonus.
   ///
   /// In en, this message translates to:
@@ -6297,12 +6303,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} stars! Option effect +{p}%'**
   String forgeStarUp(String n, String p);
-
-  /// No description provided for @forgeStarInherit.
-  ///
-  /// In en, this message translates to:
-  /// **'Inherited {n} stars'**
-  String forgeStarInherit(String n);
 
   /// No description provided for @forgeRerollHint.
   ///

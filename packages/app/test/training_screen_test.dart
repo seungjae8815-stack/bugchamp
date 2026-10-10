@@ -153,6 +153,29 @@ void main() {
     await _drain(tester);
   });
 
+  testWidgets('보너스로 예산을 넘던 기록은 앱 로드에서 바로 잘리고 무료 다시 찍기가 생긴다(서버와 같은 함수)', (
+    tester,
+  ) async {
+    final c = await _pump(
+      tester,
+      _seed(
+        train: const BugTrain(
+          alloc: {TrainSlot.attack: 15, TrainSlot.defense: 10},
+          paid: 25,
+          bonus: 7,
+        ),
+      ),
+    );
+    final rec = c.read(saveControllerProvider).requireValue.trainPoints['b1']!;
+    final used = rec.alloc.values.fold<int>(0, (a, b) => a + b);
+    expect(used, 18, reason: '예산(포텐셜 3 = 18)까지만 남는다');
+    expect(rec.paid, 18);
+    expect(rec.freeRespec, isTrue);
+    expect(find.text('포인트 18 / 18'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await _drain(tester);
+  });
+
   testWidgets('재료를 낸 포인트가 남아 있으면 [+] 는 바로 무료로 찍힌다', (tester) async {
     final c = await _pump(
       tester,

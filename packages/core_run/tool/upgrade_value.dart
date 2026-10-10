@@ -10,7 +10,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
 void main() {
@@ -91,7 +90,6 @@ void main() {
         UpgradeKind.boost => '탭 부스트 ${pct(s1.boostBonus / s0.boostBonus - 1)}',
         UpgradeKind.bugBuff =>
           '곤충 수 보너스(보상) ${pct(s1.rewardMultiplier / s0.rewardMultiplier - 1)}',
-        _ => '',
       };
       final c = _cost(run, k, base) / atkCost;
       stdout.writeln(

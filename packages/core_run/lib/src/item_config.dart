@@ -152,7 +152,7 @@ class ItemConfig {
     this.starUpMinutes = const [120, 240, 480, 960, 1440],
     this.starTierTimeMin = 0.2,
     this.starTierSlack = 1,
-    this.starInheritRatio = 0.5,
+    this.starInheritRatio = 0,
     this.starExcludeKinds = const {ItemOptionKind.evade},
   });
 
@@ -199,11 +199,11 @@ class ItemConfig {
   final double starTierTimeMin;
 
   /// 별 [stars] → +1 강화 시간. 등급 [tier] 가 낮을수록 짧다(호박 = [starUpMinutes] 그대로).
-  Duration starUpDuration(int stars, {int? tier}) {
+  Duration starUpDuration(int stars, {required int tier}) {
     if (starUpMinutes.isEmpty) return Duration.zero;
     final base = starUpMinutes[stars.clamp(0, starUpMinutes.length - 1)];
     final top = tierCount <= 1 ? 1 : tierCount - 1;
-    final t = (tier ?? top).clamp(0, top);
+    final t = tier.clamp(0, top);
     final mult = starTierTimeMin + (1 - starTierTimeMin) * t / top;
     return Duration(seconds: (base * 60 * mult).round());
   }
@@ -272,7 +272,7 @@ class ItemConfig {
           : const [120, 240, 480, 960, 1440],
       starTierTimeMin: (json['starTierTimeMin'] as num?)?.toDouble() ?? 0.2,
       starTierSlack: (json['starTierSlack'] as num?)?.toInt() ?? 1,
-      starInheritRatio: (json['starInheritRatio'] as num?)?.toDouble() ?? 0.5,
+      starInheritRatio: (json['starInheritRatio'] as num?)?.toDouble() ?? 0,
       starExcludeKinds: json['starExcludeKinds'] is List
           ? {
               for (final v in json['starExcludeKinds'] as List)

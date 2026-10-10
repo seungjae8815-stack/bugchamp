@@ -830,35 +830,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatsNewOk => 'OK';
 
   @override
-  String get whatsNewPartsToPoints =>
-      'Part upgrades moved to training points — you get points back for what you invested, so you won\'t get weaker';
+  String get whatsNewDuelPower =>
+      'Duel combat power now reflects every stat — real win chances';
 
   @override
-  String get whatsNewFreeRespec => 'Your first training point reset is free';
+  String get whatsNewPolish =>
+      'Gear refining — pick the option type and keep the old or new value';
 
   @override
-  String get whatsNewClutch =>
-      'Duel clutch — tap the screen rapidly in a crisis to hold on';
+  String get whatsNewStar =>
+      'Star upgrade — feed same-slot gear to add stars and boost options (up to 5)';
 
   @override
-  String get whatsNewAutoBoss =>
-      'Auto boss challenge — challenges the boss on its own when the gauge fills (turn off in Settings)';
+  String get whatsNewTranscend =>
+      'Forge Transcend — at max forge grade, raise every option’s max';
 
   @override
-  String get whatsNewUpgradeCap =>
-      'Attack, HP and Defense upgrades now go up to 250';
+  String get whatsNewHuntDefense =>
+      'Hunting HP, defense and regen upgrades now clearly reduce damage (zone monsters changed)';
 
   @override
-  String get whatsNewGifts =>
-      'Surprise gifts and daily rewards are much bigger';
+  String get whatsNewMissionSwap =>
+      'Mission goals stay reasonable · swap a mission for 5 jelly';
 
   @override
-  String get whatsNewMoveToEvade =>
-      'The hunting upgrade Move Speed is now Evasion';
+  String get whatsNewTrainEqual =>
+      'Training points now follow the same rule for every bug (up to 102)';
 
   @override
-  String get whatsNewFairyBox =>
-      'Expand the fairy box with jelly (up to 60 slots)';
+  String get whatsNewSkillUnlock =>
+      'Wild shards unlock skills · Pupa Guard lasts longer each level';
 
   @override
   String zoneKillsLabel(int n, int m) {
@@ -3528,11 +3529,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get polishRandomKind => 'Random type';
 
   @override
-  String polishPickKind(String kind, String mult) {
-    return '$kind (cost ×$mult)';
-  }
-
-  @override
   String polishHint(String have) {
     return 'Care rises whichever you keep · $have fossils';
   }
@@ -3626,6 +3622,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get forgeStarLoseTitle => 'Stars will be lost';
+
+  @override
+  String forgeStarLoseBody(String stars, String exp) {
+    return 'The $stars stars and $exp star materials on your current gear (and any upgrade in progress) will be lost. New gear starts at 0 stars.\n\nSwap anyway?';
+  }
+
+  @override
   String starBonus(String p) {
     return 'Effect +$p%';
   }
@@ -3646,11 +3650,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String forgeStarUp(String n, String p) {
     return '$n stars! Option effect +$p%';
-  }
-
-  @override
-  String forgeStarInherit(String n) {
-    return 'Inherited $n stars';
   }
 
   @override

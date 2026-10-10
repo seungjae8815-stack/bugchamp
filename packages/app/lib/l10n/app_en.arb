@@ -520,14 +520,14 @@
     }
   },
   "whatsNewOk": "OK",
-  "whatsNewPartsToPoints": "Part upgrades moved to training points — you get points back for what you invested, so you won't get weaker",
-  "whatsNewFreeRespec": "Your first training point reset is free",
-  "whatsNewClutch": "Duel clutch — tap the screen rapidly in a crisis to hold on",
-  "whatsNewAutoBoss": "Auto boss challenge — challenges the boss on its own when the gauge fills (turn off in Settings)",
-  "whatsNewUpgradeCap": "Attack, HP and Defense upgrades now go up to 250",
-  "whatsNewGifts": "Surprise gifts and daily rewards are much bigger",
-  "whatsNewMoveToEvade": "The hunting upgrade Move Speed is now Evasion",
-  "whatsNewFairyBox": "Expand the fairy box with jelly (up to 60 slots)",
+  "whatsNewDuelPower": "Duel combat power now reflects every stat — real win chances",
+  "whatsNewPolish": "Gear refining — pick the option type and keep the old or new value",
+  "whatsNewStar": "Star upgrade — feed same-slot gear to add stars and boost options (up to 5)",
+  "whatsNewTranscend": "Forge Transcend — at max forge grade, raise every option’s max",
+  "whatsNewHuntDefense": "Hunting HP, defense and regen upgrades now clearly reduce damage (zone monsters changed)",
+  "whatsNewMissionSwap": "Mission goals stay reasonable · swap a mission for 5 jelly",
+  "whatsNewTrainEqual": "Training points now follow the same rule for every bug (up to 102)",
+  "whatsNewSkillUnlock": "Wild shards unlock skills · Pupa Guard lasts longer each level",
   "zoneKillsLabel": "Kills {n}/{m}",
   "@zoneKillsLabel": {
     "placeholders": {
@@ -2432,17 +2432,6 @@
     }
   },
   "polishRandomKind": "Random type",
-  "polishPickKind": "{kind} (cost ×{mult})",
-  "@polishPickKind": {
-    "placeholders": {
-      "kind": {
-        "type": "String"
-      },
-      "mult": {
-        "type": "String"
-      }
-    }
-  },
   "polishHint": "Care rises whichever you keep · {have} fossils",
   "@polishHint": {
     "placeholders": {
@@ -2545,6 +2534,18 @@
       }
     }
   },
+  "forgeStarLoseTitle": "Stars will be lost",
+  "forgeStarLoseBody": "The {stars} stars and {exp} star materials on your current gear (and any upgrade in progress) will be lost. New gear starts at 0 stars.\n\nSwap anyway?",
+  "@forgeStarLoseBody": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      },
+      "exp": {
+        "type": "String"
+      }
+    }
+  },
   "starBonus": "Effect +{p}%",
   "@starBonus": {
     "placeholders": {
@@ -2586,14 +2587,6 @@
         "type": "String"
       },
       "p": {
-        "type": "String"
-      }
-    }
-  },
-  "forgeStarInherit": "Inherited {n} stars",
-  "@forgeStarInherit": {
-    "placeholders": {
-      "n": {
         "type": "String"
       }
     }

@@ -351,36 +351,38 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       _loading = false;
     });
     _jumpToBottom();
-    _sub = svc
-        .subscribe(guildId: widget.guildId, mixed: !widget.guildOnly)
-        .listen((m) {
-          if (!mounted) return;
-          _lastLive = DateTime.now();
-          setState(() {
-            // 같은 글이 세 경로로 들어올 수 있다 —
-            //  ① 내가 즉시 띄운 것(`local:`)  ② 서비스가 보낸 자체 방송(`echo:`)
-            //  ③ 서버 실시간 브로드캐스트(진짜 id)
-            // 셋을 합쳐 **한 줄만** 남긴다. 안 그러면 같은 말이 두세 번 보인다.
-            final dup = _messages.any(
-              (x) =>
-                  !_isTemp(x.id) &&
-                  x.userId == m.userId &&
-                  x.body == m.body &&
-                  m.createdAt.difference(x.createdAt).abs() <
-                      const Duration(seconds: 20),
-            );
-            _messages.removeWhere(
-              (x) => _isTemp(x.id) && x.userId == m.userId && x.body == m.body,
-            );
-            // ③ 이 이미 들어와 있으면 ②(에코)는 버린다.
-            if (!(dup && _isTemp(m.id))) _messages.add(m);
-            // 화면에 무한정 쌓이지 않게 상한 유지.
-            if (_messages.length > _rules.historyLimit) {
-              _messages.removeRange(0, _messages.length - _rules.historyLimit);
-            }
-          });
-          _jumpToBottom();
-        });
+    _sub = svc.subscribe(guildId: widget.guildId, mixed: !widget.guildOnly).listen((
+      m,
+    ) {
+      if (!mounted) return;
+      _lastLive = DateTime.now();
+      // 안전망 조회(8초 · 복귀 시 채우기)가 같은 글을 먼저 받아 두었으면 실시간이 늦게 준 것은 버린다(2026-10-10 점검).
+      if (!_isTemp(m.id) && _messages.any((x) => x.id == m.id)) return;
+      setState(() {
+        // 같은 글이 세 경로로 들어올 수 있다 —
+        //  ① 내가 즉시 띄운 것(`local:`)  ② 서비스가 보낸 자체 방송(`echo:`)
+        //  ③ 서버 실시간 브로드캐스트(진짜 id)
+        // 셋을 합쳐 **한 줄만** 남긴다. 안 그러면 같은 말이 두세 번 보인다.
+        final dup = _messages.any(
+          (x) =>
+              !_isTemp(x.id) &&
+              x.userId == m.userId &&
+              x.body == m.body &&
+              m.createdAt.difference(x.createdAt).abs() <
+                  const Duration(seconds: 20),
+        );
+        _messages.removeWhere(
+          (x) => _isTemp(x.id) && x.userId == m.userId && x.body == m.body,
+        );
+        // ③ 이 이미 들어와 있으면 ②(에코)는 버린다.
+        if (!(dup && _isTemp(m.id))) _messages.add(m);
+        // 화면에 무한정 쌓이지 않게 상한 유지.
+        if (_messages.length > _rules.historyLimit) {
+          _messages.removeRange(0, _messages.length - _rules.historyLimit);
+        }
+      });
+      _jumpToBottom();
+    });
   }
 
   void _jumpToBottom() {

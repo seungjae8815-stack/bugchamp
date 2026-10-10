@@ -201,6 +201,8 @@ class SupabaseChatService implements ChatService {
           if (!identical(_channel, ch)) return;
           _status = status;
           if (status == RealtimeSubscribeStatus.subscribed) {
+            // 클라이언트가 스스로 다시 붙었으면 걸어 둔 재연결은 취소한다 — 안 그러면 멀쩡한 채널을 버리고 새로 연다.
+            _retry?.cancel();
             _retryCount = 0;
             return;
           }
@@ -394,7 +396,12 @@ final chatLatestProvider = StreamProvider<ChatMessage?>((ref) {
     latest = m;
     if (!out.isClosed) out.add(m);
   });
-  final timer = Timer.periodic(_latestPoll, (_) => poll());
+  // 앱이 앞에 있을 때만 — 백그라운드에서도 돌면 시간당 80번 헛조회다(복귀하면 다음 주기에 채운다).
+  final timer = Timer.periodic(_latestPoll, (_) {
+    final st = WidgetsBinding.instance.lifecycleState;
+    if (st != null && st != AppLifecycleState.resumed) return;
+    poll();
+  });
   ref.onDispose(() {
     timer.cancel();
     unawaited(sub.cancel());

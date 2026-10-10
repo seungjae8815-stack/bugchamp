@@ -719,6 +719,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
         equippedItems: const {},
         forgeStack: const [],
         materials: {...s.materials, MaterialKind.fossil: have - cost},
+        // 등급 필터는 풀잎부터 다시 시작하는 공방에 맞게 푼다 — "호박 이상"이 남으면 거의 다 팔리고(낀 장비도 없어
+        // 별 재료로도 안 간다) 화석만 끝까지 탄다(2026-10-10 출시 전 점검). 옵션 필터는 등급과 무관해서 남긴다.
+        autoForgeMinTier: 0,
       ),
     );
     return null;
@@ -1823,16 +1826,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
   // ── 훈련 v2(2026-10-08, docs/design_training_v2.md) ─────────────────
   //
   // 솔로 루프와 같은 기기 권위 — 규칙은 core_save/train_points.dart(서버와 같은 함수).
-  // 서버는 업로드 때 배분을 예산·칸 상한으로 자르고(`sanitizeTrainPoints`), 결투 팀을 만들 때도 자른다.
+  // 서버는 업로드 때 배분을 예산·칸 상한으로 자르고(`sanitizeTrainPoints` — 앱도 로드·저장마다 같은 함수), 결투 팀을 만들 때도 자른다.
   // 화면(훈련소 재작성)은 다음 단계 — 여기는 화면이 붙을 API 다.
 
-  /// 이전(옛 부위 강화·훈련 단계 → 칸). 기록이 있는 곤충은 건드리지 않는다(멱등).
-  SaveGame _migrateTrainV2(SaveGame s, GameData data) => migrateTrainingV2(
-    s,
-    (data.battleConfig ?? const BattleConfig()).training,
-    speciesOf: (id) => data.speciesById[id],
-    enhance: data.enhanceConfig,
-  );
+  /// 이전(옛 부위 강화·훈련 단계 → 칸) + 지금 규칙(예산·칸 상한 = 기본)으로 자르기 — 서버 업로드
+  /// (`_enforceTrainV2`)와 **같은 두 함수·같은 순서**다. 둘 다 멱등이라 바뀐 게 없으면 [s] 그대로.
+  /// 자르기를 앱도 하는 이유(2026-10-10 출시 전 점검): 보너스 폐지 뒤 서버만 자르면 보너스 계정 전원이 첫 업로드에서
+  /// 한꺼번에 되돌림(clamped)을 받아 운영 요약이 'train' 으로 덮이고, 업로드 전·오프라인 동안 훈련소가 예산을 넘겨 보였다.
+  SaveGame _migrateTrainV2(SaveGame s, GameData data) {
+    final cfg = (data.battleConfig ?? const BattleConfig()).training;
+    final migrated = migrateTrainingV2(
+      s,
+      cfg,
+      speciesOf: (id) => data.speciesById[id],
+      enhance: data.enhanceConfig,
+    );
+    final pet = data.petConfig;
+    if (pet == null) return migrated;
+    return sanitizeTrainPoints(
+      migrated,
+      cfg,
+      speciesOf: (id) => data.speciesById[id],
+      levelCapOf: pet.levelCap,
+      enhance: data.enhanceConfig,
+    );
+  }
 
   /// 이 곤충의 훈련 기록(이전 전이면 옛 투자로 만든 가상 기록).
   BugTrain bugTrainNow(String bugId) {
@@ -3197,16 +3215,37 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 부위에 장비를 낀다. **가방이 없으므로 기존 것은 사라진다**(§3.4) —
   /// 창고·보유상한·자동분해가 통째로 필요 없어지고, 세이브에 남는 장비는 8개뿐이다.
   ///
-  /// 환생 별은 **절반(내림)을 이어받는다**(2026-10-10 장비 v2) — 높은 등급이 나와도 별 때문에 못 바꾸는 일이 없게.
+  /// 별은 **이어받지 않는다**(2026-10-10 사장님 — `starInheritRatio` 0). 바꾸기 전 확인은 화면이 받는다.
   Future<void> equipItem(EquipItem item) async {
     final s = state.requireValue;
+    await _commit(
+      s.copyWith(
+        equippedItems: {...s.equippedItems, item.slot: _inherit(s, item)},
+      ),
+    );
+  }
+
+  /// 모루 맨 위 장비를 낀다(교체) — 끼기와 모루에서 빼기를 **한 번에** 저장한다. 두 번 나눠 저장하면 그 사이 앱이
+  /// 꺼질 때 장착과 모루에 같은 장비가 하나씩 남았다(2026-10-10 출시 전 점검). 결과 창에서 다듬은 장비도 모루 맨 위에
+  /// 그대로 있으므로 맨 위를 낀다. 비었으면 false.
+  Future<bool> equipForgeTop() async {
+    final s = state.requireValue;
+    if (s.forgeStack.isEmpty) return false;
+    final item = s.forgeStack.last;
+    await _commit(
+      s.copyWith(
+        equippedItems: {...s.equippedItems, item.slot: _inherit(s, item)},
+        forgeStack: s.forgeStack.sublist(0, s.forgeStack.length - 1),
+      ),
+    );
+    return true;
+  }
+
+  EquipItem _inherit(SaveGame s, EquipItem item) {
     final items = ref.read(gameDataProvider).value?.itemConfig;
-    final next = items == null
+    return items == null
         ? item
         : inheritStars(items, s.equippedItems[item.slot], item);
-    await _commit(
-      s.copyWith(equippedItems: {...s.equippedItems, item.slot: next}),
-    );
   }
 
   /// 모루 맨 위 장비를 **같은 부위 장착 장비의 별 재료**로 쓴다(2026-10-10 장비 v2).

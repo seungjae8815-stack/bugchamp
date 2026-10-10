@@ -802,29 +802,29 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNewOk => 'OK';
 
   @override
-  String get whatsNewPartsToPoints =>
-      '部位強化が訓練ポイントに移りました — 投資した分はポイントで戻るので弱くなりません';
+  String get whatsNewDuelPower => '決闘の戦闘力がすべての能力値を反映した実戦戦闘力になりました';
 
   @override
-  String get whatsNewFreeRespec => '訓練ポイントの最初の振り直しは無料です';
+  String get whatsNewPolish => '装備の磨き — オプションの種類を選び、以前の値と新しい値のどちらを残すか選べます';
 
   @override
-  String get whatsNewClutch => '決闘の反撃 — ピンチのとき画面を連打すると持ちこたえます';
+  String get whatsNewStar => '星強化 — 同じ部位の装備を素材に星を上げるとオプション効果が上がります(最大5つ星)';
 
   @override
-  String get whatsNewAutoBoss => 'ボス自動挑戦 — ゲージがたまると自動で挑戦します（設定でオフにできます）';
+  String get whatsNewTranscend => '工房超越 — 工房の最大等級で超越するとオプション最大値が上がります';
 
   @override
-  String get whatsNewUpgradeCap => '攻撃・体力・防御の強化上限が250に上がりました';
+  String get whatsNewHuntDefense => '狩りの体力・防御・回復の強化がはっきり効きます(狩り場のモンスター数値を変更)';
 
   @override
-  String get whatsNewGifts => 'サプライズギフト・デイリー報酬が大幅に増えました';
+  String get whatsNewMissionSwap =>
+      'ミッションの目標が大きくなりすぎません · ゼリー5個で別のミッションに変更できます';
 
   @override
-  String get whatsNewMoveToEvade => '狩りの強化「移動速度」が「回避」に変わりました';
+  String get whatsNewTrainEqual => '訓練ポイントはすべての虫が同じ基準(最大102)になりました';
 
   @override
-  String get whatsNewFairyBox => '妖精ボックスをゼリーで拡張できます(最大60枠)';
+  String get whatsNewSkillUnlock => '万能かけらでスキル解放 · 蛹の防壁がレベルごとに長くなります';
 
   @override
   String zoneKillsLabel(int n, int m) {
@@ -3438,11 +3438,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get polishRandomKind => '種類もランダム';
 
   @override
-  String polishPickKind(String kind, String mult) {
-    return '$kind（コスト×$mult）';
-  }
-
-  @override
   String polishHint(String have) {
     return 'どちらを選んでも丹精が上がります · 化石 $have個';
   }
@@ -3534,6 +3529,14 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get forgeStarLoseTitle => '星が消えます';
+
+  @override
+  String forgeStarLoseBody(String stars, String exp) {
+    return '今の装備の星$stars個と集めた星素材$exp個(強化中ならその時間も)が消え、新しい装備は星0からです。\n\nそれでも替えますか？';
+  }
+
+  @override
   String starBonus(String p) {
     return '効果 +$p%';
   }
@@ -3554,11 +3557,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String forgeStarUp(String n, String p) {
     return '$nつ星達成！オプション効果 +$p%';
-  }
-
-  @override
-  String forgeStarInherit(String n) {
-    return '星を$n個引き継ぎました';
   }
 
   @override

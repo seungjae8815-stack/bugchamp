@@ -334,7 +334,7 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
 
   Future<void> _take(ItemOption cand) async {
     setState(() => _busy = true);
-    await ref
+    final ok = await ref
         .read(saveControllerProvider.notifier)
         .choosePolish(
           index: widget.index,
@@ -343,6 +343,10 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
           slot: widget.slot,
         );
     if (!mounted) return;
+    // 그 사이 장비가 바뀌어 새 값을 못 얹었으면 말해 준다(조용히 사라진 것처럼 보이지 않게).
+    if (!ok) {
+      showCenterToast(context, AppLocalizations.of(context).polishFailed);
+    }
     setState(() {
       _busy = false;
       _candidate = null;
@@ -467,7 +471,9 @@ class _StarUpPanelState extends ConsumerState<StarUpPanel> {
             child: Text(
               l.starUpStart(
                 '${item.stars + 1}',
-                formatShortDuration(items.starUpDuration(item.stars)),
+                formatShortDuration(
+                  items.starUpDuration(item.stars, tier: item.tier),
+                ),
               ),
             ),
           ),

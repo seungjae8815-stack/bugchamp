@@ -205,7 +205,10 @@ void main() {
         expect(canFeedStar(items, t, _item()), isFalse);
         expect(feedStar(items, t), t);
         final started = startStarUp(items, t, t0)!;
-        expect(started.starUntil, t0.add(items.starUpDuration(t.stars)));
+        expect(
+          started.starUntil,
+          t0.add(items.starUpDuration(t.stars, tier: t.tier)),
+        );
         // 시간 전엔 못 끝낸다 · 젤리(force)로는 끝난다.
         expect(finishStarUp(items, started, t0), isNull);
         final done = finishStarUp(items, started, started.starUntil!)!;
