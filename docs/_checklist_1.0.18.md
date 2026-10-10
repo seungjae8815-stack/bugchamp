@@ -80,7 +80,8 @@
 4. [ ] 상품 등록
    - Play: 4종 신규 + 스타터·주간 묶음·스킨 2종 설명 갱신(`docs/iap_products_table.md`)
    - App Store Connect: 4종 신규(입문 2종 비소모성 · 성장 패스·주간 묶음 소모성) + **스킨 설명은 iOS 전용 판**(`docs/appstore_iap.md` — 지뢰 단어 없음) + 1.0.18 버전 제출에 IAP 첨부
-5. [ ] Edge Function 재배포: `daily-report`(`--no-verify-jwt`) · `verify-purchase` (안 하면 새 상품 결제 알림·일일 매출이 ₩0)
+5. [x] Edge Function 재배포: `daily-report`(`--no-verify-jwt`) · `verify-purchase` (안 하면 새 상품 결제 알림·일일 매출이 ₩0)
+   → 2026-10-10 완료: `daily-report` v5(JWT 검증 끔) · `verify-purchase` v12. `ops-watchdog` 은 가격표를 안 써서 그대로
 6. [ ] 빌드(개발 일 — 최신 main, 탭 반격 켜짐 커밋 이후): AAB(dart-define 3종 · `release_cadence.md` §3 검증) · **릴리즈 APK 실기 켜 보기** · iOS `ios-release`(main 푸시 후)
 7. [x] Play 는 **관리형 게시**로 심사 통과시켜 두기 · iOS 는 **수동 출시**로 대기
 8. [x] 운영 서버 배포(최신 main — 탭 반격·선물 상한·훈련 이전 수정 포함). ⚠️ `--set-env-vars`·`--set-secrets` 붙이지 말 것
