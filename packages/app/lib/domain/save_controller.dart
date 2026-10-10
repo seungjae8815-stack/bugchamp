@@ -1244,6 +1244,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return reward;
   }
 
+  /// 프로필 그림을 바꾼다(2026-10-10 사장님 확정 — 모두 무료). 채팅·순위표의 그림은 Supabase `profiles.avatar` 라
+  /// 화면이 바꾼 직후 랭킹 프로필을 올린다(`pushMyRankProfile`).
+  Future<void> setAvatar(String id) async {
+    final s = state.requireValue;
+    if (s.avatar == id) return;
+    await _commit(s.copyWith(avatar: id));
+  }
+
   /// 진행 중인 미션을 보상 없이 다음 미션으로 바꾼다(젤리 `swapJelly`, 깰 수 없는 미션은 무료).
   /// 실패면 이유 키(`no_swap`·`claimable`·`not_enough_jelly`), 성공이면 null.
   Future<String?> swapMission() async {

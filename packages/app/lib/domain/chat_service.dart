@@ -29,13 +29,14 @@ abstract interface class ChatService {
   /// 메시지 전송. 성공 시 true.
   /// **금칙어·길이·도배 검사는 호출 전에 [ChatRules.check] 로 끝내야 한다.**
   ///
-  /// [badge] 는 **먼저 띄우는 내 화면용**일 뿐이다 — 서버에는 보내지 않는다.
-  /// 저장되는 뱃지는 DB 트리거가 `profiles.badge` 에서 찍는다.
+  /// [badge]·[avatar] 는 **먼저 띄우는 내 화면용**일 뿐이다 — 서버에는 보내지 않는다.
+  /// 저장되는 뱃지·그림은 DB 트리거가 `profiles.badge`·`profiles.avatar` 에서 찍는다.
   Future<bool> send({
     required String nickname,
     required String body,
     String badge = '',
     String? guildId,
+    String? avatar,
   });
 
   /// 메시지 신고(UGC 정책 필수). 같은 메시지를 두 번 신고해도 오류가 아니다.
@@ -80,6 +81,7 @@ class NoChatService implements ChatService {
     required String body,
     String badge = '',
     String? guildId,
+    String? avatar,
   }) async => false;
   @override
   Future<bool> report({
@@ -255,6 +257,7 @@ class SupabaseChatService implements ChatService {
     required String body,
     String badge = '',
     String? guildId,
+    String? avatar,
   }) async {
     final uid = _uid;
     if (uid == null) return false;
@@ -281,6 +284,7 @@ class SupabaseChatService implements ChatService {
           createdAt: DateTime.now().toUtc(),
           badge: badge,
           guildId: guildId,
+          avatar: avatar,
         ),
       );
       return true;

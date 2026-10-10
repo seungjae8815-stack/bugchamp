@@ -155,6 +155,22 @@ void main() {
     expect(r2.extra['clamped'], isFalse, reason: '${r2.extra}');
   });
 
+  test(
+    '프로필 그림(feat 23) — 1.0.18(feat 20)·장비 v2 개발 빌드(feat 22) 업로드는 저장본 그림을 지킨다',
+    () {
+      final s = stored().copyWith(avatar: 'avatar_05');
+      final old = oldAppReupload(s)..remove('avatar');
+      expect(actions.mergeSave(s, old).save!.avatar, 'avatar_05');
+      final dev = s.toJson()
+        ..['feat'] = 22
+        ..remove('avatar');
+      expect(actions.mergeSave(s, dev).save!.avatar, 'avatar_05');
+      // 새 앱이 바꾸면 그 값을 받는다.
+      final now = s.copyWith(avatar: 'avatar_12').toJson();
+      expect(actions.mergeSave(s, now).save!.avatar, 'avatar_12');
+    },
+  );
+
   test('새 앱(feat 21)이 별을 비웠으면 그 값을 받는다(되돌리지 않는다)', () {
     final s = stored();
     final j = s.toJson();

@@ -55,6 +55,7 @@ class SupabasePvpBackend implements PvpBackend {
               difficultyTier: (r['tier'] as num?)?.toInt() ?? 0,
               power: (r['power'] as num?)?.toDouble(),
               abyssBest: (r['abyss_best'] as num?)?.toInt() ?? 0,
+              avatar: r['avatar'] as String?,
             ),
           ),
       ];
@@ -199,9 +200,9 @@ class SupabasePvpBackend implements PvpBackend {
   /// 덮어썼다(2026-09-09). 축을 늘릴 때 고칠 자리가 여기 하나여야 한다.
   ///
   /// 전투력은 **모를 때(null) 싣지 않는다** — 0 으로 올리면 서버의 멀쩡한
-  /// 값을 지운다. 그리고 `power` 컬럼이 아직 없는 DB(SQL 적용 전)에서는
-  /// upsert 전체가 실패해 랭킹이 통째로 폴백으로 떨어지므로, 그때는 전투력만
-  /// 빼고 한 번 더 올린다.
+  /// 값을 지운다. 그리고 `power`·`avatar` 컬럼(또는 그 쓰기 권한)이 아직 없는 DB(SQL 적용 전)에서는
+  /// upsert 전체가 실패해 랭킹이 통째로 폴백으로 떨어지므로, 그때는 그림 → 전투력 순으로
+  /// 빼고 다시 올린다(2026-10-10 프로필 그림).
   Future<void> _upsertProfile(String uid, PvpProfile me) async {
     final row = <String, dynamic>{
       'id': uid,
@@ -214,14 +215,22 @@ class SupabasePvpBackend implements PvpBackend {
       'tier': me.difficultyTier,
     };
     final power = me.power;
-    if (power == null || !power.isFinite) {
-      await _client.from('profiles').upsert(row);
-      return;
-    }
-    try {
-      await _client.from('profiles').upsert({...row, 'power': power});
-    } on PostgrestException {
-      await _client.from('profiles').upsert(row);
+    final withPower = <String, dynamic>{
+      ...row,
+      if (power != null && power.isFinite) 'power': power,
+    };
+    final attempts = <Map<String, dynamic>>[
+      if (me.avatar != null) {...withPower, 'avatar': me.avatar},
+      withPower,
+      if (withPower.length > row.length) row,
+    ];
+    for (var i = 0; i < attempts.length; i++) {
+      try {
+        await _client.from('profiles').upsert(attempts[i]);
+        return;
+      } on PostgrestException {
+        if (i == attempts.length - 1) rethrow;
+      }
     }
   }
 

@@ -114,6 +114,17 @@ void main() {
       expect(restored.adUseCount(kAdFeaturePvpTicket, '2026-08-07'), 0);
     });
 
+    test('프로필 그림(2026-10-10) — 고르면 왕복하고, 고르지 않았으면 키를 쓰지 않는다', () {
+      final none = _sampleSave();
+      expect(none.avatar, isNull);
+      expect(none.toJson().containsKey('avatar'), isFalse);
+      expect(SaveGame.fromJson(none.toJson()).avatar, isNull);
+      final picked = none.copyWith(avatar: 'avatar_07');
+      expect(picked.toJson()['avatar'], 'avatar_07');
+      expect(SaveGame.fromJson(picked.toJson()).avatar, 'avatar_07');
+      expect(kSaveFeatureLevel, greaterThanOrEqualTo(23));
+    });
+
     test('새 필드가 붙어도 스키마 버전은 그대로(구버전 앱이 읽을 수 있게)', () {
       expect(_sampleSave().toJson()['schemaVersion'], kSaveSchemaVersion);
       expect(kSaveSchemaVersion, 18);

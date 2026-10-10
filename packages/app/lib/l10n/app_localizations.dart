@@ -1528,6 +1528,12 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get whatsNewOk;
 
+  /// No description provided for @whatsNewAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile pictures — tap your portrait (top-left) and pick from 21 (shown in chat, rankings, duels, events)'**
+  String get whatsNewAvatar;
+
   /// No description provided for @whatsNewDuelPower.
   ///
   /// In en, this message translates to:
@@ -2973,6 +2979,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sound effects'**
   String get settingsSfx;
+
+  /// No description provided for @avatarPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile picture'**
+  String get avatarPickTitle;
+
+  /// No description provided for @avatarPickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown in chat, rankings, duels and the Bug King Trials'**
+  String get avatarPickHint;
+
+  /// No description provided for @avatarChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile picture changed'**
+  String get avatarChanged;
 
   /// No description provided for @settingsNickname.
   ///

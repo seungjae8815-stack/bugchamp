@@ -23,7 +23,8 @@ const int kSaveSchemaVersion = 18;
 /// 20(2026-10-09): 장비 옵션 `evade`(회피) — 필드가 아니라 **옵션 키**라 서버가 장비 단위로 되돌린다.
 /// 21(2026-10-10): 장비 v2 — 장비 `st`(별)·`sx`(별 재료)·`su`(별 강화 끝)·옵션 `p`(정성). 장비 안의 키라 서버가 장비 단위로 되돌린다.
 /// 22(2026-10-10): 공방 초월 `forgeTranscend`.
-const int kSaveFeatureLevel = 22;
+/// 23(2026-10-10): 프로필 그림 `avatar`.
+const int kSaveFeatureLevel = 23;
 
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
@@ -595,6 +596,7 @@ class SaveGame {
     this.blockedUserIds = const {},
     this.bugFilterMinGrade = Grade.common,
     this.nicknameSet = false,
+    this.avatar,
     this.eventRewardRound,
     this.pvpScoreSeason,
     this.pvpRankRewardSeason,
@@ -707,6 +709,11 @@ class SaveGame {
   /// 닉네임을 (기본값에서) 실제로 한 번 이상 확정했는지.
   /// 첫 설정은 무료, 이후 변경은 유료(젤리) — see SaveController.renamePlayer.
   final bool nicknameSet;
+
+  /// 프로필 그림 id(2026-10-10 사장님 확정, 1.0.19 — `assets/data/avatars.json`). null = 고르지 않음 = 기본 프로필.
+  /// 모두 무료라 서버는 검사하지 않는다(채팅·순위의 그림은 `profiles.avatar` 에서 온다 — 앱이 고를 때 올린다).
+  /// 구버전 앱(feat 23 미만) 업로드는 서버가 저장본 값을 지킨다.
+  final String? avatar;
 
   /// 활성 버프별 만료 UTC 시각. now 이후면 활성으로 취급.
   final Map<BuffKind, DateTime> buffExpiry;
@@ -1480,6 +1487,7 @@ class SaveGame {
     int? bestStage,
     String? nickname,
     bool? nicknameSet,
+    String? avatar,
     Map<BuffKind, DateTime>? buffExpiry,
     Map<String, int>? missionProgress,
     Map<String, int>? missionClaims,
@@ -1609,6 +1617,7 @@ class SaveGame {
     bestStage: bestStage ?? this.bestStage,
     nickname: nickname ?? this.nickname,
     nicknameSet: nicknameSet ?? this.nicknameSet,
+    avatar: avatar ?? this.avatar,
     buffExpiry: buffExpiry ?? this.buffExpiry,
     missionProgress: missionProgress ?? this.missionProgress,
     missionClaims: missionClaims ?? this.missionClaims,
@@ -1808,6 +1817,7 @@ class SaveGame {
     nicknameSet:
         json['nicknameSet'] as bool? ??
         (json['nickname'] as String? ?? kDefaultNickname) != kDefaultNickname,
+    avatar: json['avatar'] as String?,
     buffExpiry: _buffsFromJson(
       json['buffExpiry'] as Map<String, dynamic>? ?? const {},
     ),
@@ -2080,6 +2090,8 @@ class SaveGame {
     if (bestStage > stageNumber) 'bestStage': bestStage,
     'nickname': nickname,
     'nicknameSet': nicknameSet,
+    // 고르지 않았으면(기본 프로필) 키를 안 쓴다 — 구버전 업로드의 "몰라서 안 보냄"과 갈리게 서버가 feat 로 구분한다.
+    if (avatar != null) 'avatar': avatar,
     'buffExpiry': {
       for (final e in buffExpiry.entries)
         e.key.key: e.value.toUtc().toIso8601String(),

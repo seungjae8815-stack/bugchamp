@@ -34,6 +34,7 @@ import 'training_screen.dart';
 import '../../ui/toast.dart';
 import '../../domain/server_sync.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 
 const _honey = kHoney;
 
@@ -1783,6 +1784,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 children: [
                   Row(
                     children: [
+                      // 상대 프로필 그림(2026-10-10) — 야생 팀(이름 없음)은 그리지 않는다.
+                      if (c.nickname.isNotEmpty) ...[
+                        AvatarCircle(id: c.avatar, size: 22),
+                        const SizedBox(width: 5),
+                      ],
                       Flexible(
                         child: Text(
                           c.nickname.isEmpty
@@ -1921,6 +1927,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     required Map<String, SkinView?> foeSkins,
     required Future<void> Function(DuelStep last) onFinished,
     List<String> foeBadges = const [],
+    String? foeAvatar,
   }) async {
     final save = ref.read(saveControllerProvider).value;
     final myBadges = publicSkins(
@@ -1939,6 +1946,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           foeSkins: foeSkins,
           myBadges: myBadges,
           foeBadges: foeBadges,
+          // 프로필 그림(2026-10-10) — 내 것은 늘(고르지 않았으면 기본), 상대는 사람일 때만.
+          myAvatar: save?.avatar ?? '',
+          foeAvatar: foeAvatar,
           onFinished: onFinished,
         ),
       ),
@@ -2004,6 +2014,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           foeBadges: res.data!['skins'] is List
               ? skinsFromJson(res.data!['skins'])
               : c.skins,
+          // 상대 프로필 그림 — 사람일 때만(야생 팀은 이름이 비어 있다).
+          foeAvatar: c.nickname.isEmpty ? null : (c.avatar ?? ''),
           onFinished: _adoptDuel,
         );
       } finally {
@@ -3229,6 +3241,7 @@ class _Candidate {
     this.teamPowerOverride,
     this.localFoe,
     this.skins = const [],
+    this.avatar,
   });
 
   factory _Candidate.fromServer(Map<String, dynamic> m) => _Candidate(
@@ -3240,6 +3253,7 @@ class _Candidate {
     power: (m['power'] as num?)?.toDouble() ?? 0,
     teamPowerOverride: (m['teamPower'] as num?)?.toDouble(),
     skins: skinsFromJson(m['skins']),
+    avatar: m['avatar'] as String?,
     team: [
       for (final t in (m['team'] as List? ?? const []))
         (
@@ -3258,6 +3272,9 @@ class _Candidate {
   );
 
   /// 제안 안의 칸 번호(`/duel/start` 의 pick).
+  /// 상대의 프로필 그림(2026-10-10, 서버가 순위 함수의 `avatar` 를 실어 준다). null = 기본.
+  final String? avatar;
+
   final int index;
   final String? userId;
 

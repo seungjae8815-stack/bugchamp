@@ -1,0 +1,196 @@
+{
+ "schemaVersion": 1,
+ "_comment": "프로필 그림(2026-10-10 사장님 확정, 1.0.19) — 모두 무료. 내 프로필 창에서 고르면 채팅·랭킹·결투 순위표·결투장·왕충 선발대회에 보인다. 고르지 않은 사람(세이브 avatar null)은 default. 그림은 색 원 + 곤충만, 갈색 테는 앱이 그린다(ui/avatar.dart). 프롬프트: docs/art_prompts_avatars.md. ⚠️ id 는 profiles.avatar 의 SQL 검사(^avatar_[a-z0-9_]{1,24}$)와 맞아야 한다 — 새 그림을 넣을 때 이 꼴을 지킨다. 모르는 id(새 버전 그림)는 구버전 앱에서 기본으로 보인다.",
+ "default": "avatar_default",
+ "avatars": [
+  {
+   "id": "avatar_01",
+   "image": "assets/images/avatars/avatar_01.webp",
+   "name": {
+    "ko": "사슴벌레 탐험가",
+    "en": "Stag Explorer",
+    "ja": "クワガタ探検家"
+   }
+  },
+  {
+   "id": "avatar_02",
+   "image": "assets/images/avatars/avatar_02.webp",
+   "name": {
+    "ko": "장수풍뎅이 챔피언",
+    "en": "Rhino Champion",
+    "ja": "カブトムシ王者"
+   }
+  },
+  {
+   "id": "avatar_03",
+   "image": "assets/images/avatars/avatar_03.webp",
+   "name": {
+    "ko": "사마귀 검객",
+    "en": "Mantis Fighter",
+    "ja": "カマキリ剣士"
+   }
+  },
+  {
+   "id": "avatar_04",
+   "image": "assets/images/avatars/avatar_04.webp",
+   "name": {
+    "ko": "꽃왕관 무당벌레",
+    "en": "Daisy Ladybug",
+    "ja": "花冠テントウ"
+   }
+  },
+  {
+   "id": "avatar_05",
+   "image": "assets/images/avatars/avatar_05.webp",
+   "name": {
+    "ko": "꿀벌 요리사",
+    "en": "Honey Bee",
+    "ja": "ミツバチ"
+   }
+  },
+  {
+   "id": "avatar_06",
+   "image": "assets/images/avatars/avatar_06.webp",
+   "name": {
+    "ko": "반딧불이 등불",
+    "en": "Firefly Lantern",
+    "ja": "ホタルの灯"
+   }
+  },
+  {
+   "id": "avatar_07",
+   "image": "assets/images/avatars/avatar_07.webp",
+   "name": {
+    "ko": "장수말벌 비행사",
+    "en": "Hornet Aviator",
+    "ja": "スズメバチ飛行士"
+   }
+  },
+  {
+   "id": "avatar_08",
+   "image": "assets/images/avatars/avatar_08.webp",
+   "name": {
+    "ko": "목도리 호랑나비",
+    "en": "Scarf Butterfly",
+    "ja": "マフラーのアゲハ"
+   }
+  },
+  {
+   "id": "avatar_09",
+   "image": "assets/images/avatars/avatar_09.webp",
+   "name": {
+    "ko": "개미 광부",
+    "en": "Ant Miner",
+    "ja": "アリの鉱夫"
+   }
+  },
+  {
+   "id": "avatar_10",
+   "image": "assets/images/avatars/avatar_10.webp",
+   "name": {
+    "ko": "잠자리 조종사",
+    "en": "Dragonfly Pilot",
+    "ja": "トンボの操縦士"
+   }
+  },
+  {
+   "id": "avatar_11",
+   "image": "assets/images/avatars/avatar_11.webp",
+   "name": {
+    "ko": "매미 가수",
+    "en": "Cicada Singer",
+    "ja": "セミの歌手"
+   }
+  },
+  {
+   "id": "avatar_12",
+   "image": "assets/images/avatars/avatar_12.webp",
+   "name": {
+    "ko": "물장군",
+    "en": "Water Bug",
+    "ja": "タガメ"
+   }
+  },
+  {
+   "id": "avatar_13",
+   "image": "assets/images/avatars/avatar_13.webp",
+   "name": {
+    "ko": "비단벌레 보석",
+    "en": "Jewel Beetle",
+    "ja": "タマムシの宝石"
+   }
+  },
+  {
+   "id": "avatar_14",
+   "image": "assets/images/avatars/avatar_14.webp",
+   "name": {
+    "ko": "하늘소",
+    "en": "Longhorn",
+    "ja": "カミキリムシ"
+   }
+  },
+  {
+   "id": "avatar_15",
+   "image": "assets/images/avatars/avatar_15.webp",
+   "name": {
+    "ko": "밀짚모자 방아깨비",
+    "en": "Straw Hat Hopper",
+    "ja": "麦わらショウリョウ"
+   }
+  },
+  {
+   "id": "avatar_16",
+   "image": "assets/images/avatars/avatar_16.webp",
+   "name": {
+    "ko": "태양 소똥구리",
+    "en": "Sun Scarab",
+    "ja": "太陽のスカラベ"
+   }
+  },
+  {
+   "id": "avatar_17",
+   "image": "assets/images/avatars/avatar_17.webp",
+   "name": {
+    "ko": "달빛 나방",
+    "en": "Moon Moth",
+    "ja": "月夜のガ"
+   }
+  },
+  {
+   "id": "avatar_18",
+   "image": "assets/images/avatars/avatar_18.webp",
+   "name": {
+    "ko": "바구미 학자",
+    "en": "Weevil Scholar",
+    "ja": "ゾウムシ博士"
+   }
+  },
+  {
+   "id": "avatar_19",
+   "image": "assets/images/avatars/avatar_19.webp",
+   "name": {
+    "ko": "바이올린 귀뚜라미",
+    "en": "Violin Cricket",
+    "ja": "バイオリンコオロギ"
+   }
+  },
+  {
+   "id": "avatar_20",
+   "image": "assets/images/avatars/avatar_20.webp",
+   "name": {
+    "ko": "새싹 애벌레",
+    "en": "Sprout Caterpillar",
+    "ja": "新芽イモムシ"
+   }
+  },
+  {
+   "id": "avatar_default",
+   "image": "assets/images/avatars/avatar_default.webp",
+   "name": {
+    "ko": "기본",
+    "en": "Default",
+    "ja": "デフォルト"
+   }
+  }
+ ]
+}

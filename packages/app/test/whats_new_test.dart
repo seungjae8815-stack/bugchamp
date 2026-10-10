@@ -73,11 +73,12 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.19 8줄 — 전투력·다듬기·별 강화·초월·사냥 방어·미션·훈련 기준·스킬', (
+    testWidgets('1.0.19 9줄 — 프로필 그림·전투력·다듬기·별 강화·초월·사냥 방어·미션·훈련 기준·스킬', (
       tester,
     ) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
       expect(kWhatsNewVersion, '1.0.19');
+      expect(find.textContaining('프로필 그림'), findsOneWidget);
       expect(find.textContaining('실전 전투력'), findsOneWidget);
       expect(find.textContaining('장비 다듬기'), findsOneWidget);
       expect(find.textContaining('별 강화'), findsOneWidget);
@@ -86,7 +87,7 @@ void main() {
       expect(find.textContaining('젤리 5개'), findsOneWidget);
       expect(find.textContaining('102점'), findsOneWidget);
       expect(find.textContaining('번데기 방벽'), findsOneWidget);
-      expect(find.byType(Icon), findsNWidgets(8));
+      expect(find.byType(Icon), findsNWidgets(9));
     });
 
     for (final lc in const ['en', 'ja']) {

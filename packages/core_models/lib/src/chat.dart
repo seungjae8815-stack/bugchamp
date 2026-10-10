@@ -14,6 +14,7 @@ class ChatMessage {
     this.isAdmin = false,
     this.badge = '',
     this.guildId,
+    this.avatar,
   });
 
   /// 서버가 부여한 메시지 id(신고·차단 대상 식별용).
@@ -43,6 +44,10 @@ class ChatMessage {
   /// 읽기·쓰기는 DB 정책이 **전체 + 내 길드**로 막는다 — 앱이 거르는 건 화면 분리용이다.
   final String? guildId;
 
+  /// 보낸 사람의 프로필 그림 id(2026-10-10). **DB 트리거가 넣을 때 `profiles.avatar` 에서 찍는다**(뱃지와 같은 방식).
+  /// null = 기본 프로필(고르지 않음 · 컬럼이 없는 옛 스키마).
+  final String? avatar;
+
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
     id: json['id'].toString(),
     userId: json['user_id'] as String,
@@ -53,6 +58,7 @@ class ChatMessage {
     isAdmin: json['is_admin'] == true,
     badge: json['badge'] as String? ?? '',
     guildId: json['guild_id']?.toString(),
+    avatar: json['avatar'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -64,6 +70,7 @@ class ChatMessage {
     'is_admin': isAdmin,
     if (badge.isNotEmpty) 'badge': badge,
     'guild_id': ?guildId,
+    'avatar': ?avatar,
   };
 }
 

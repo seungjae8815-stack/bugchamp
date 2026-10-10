@@ -8,12 +8,15 @@
 
 ### 제목
 ```
-1.0.19 업데이트 — 장비 다듬기·별 강화·공방 초월, 사냥 강화 개편
+1.0.19 업데이트 — 프로필 그림 · 장비 다듬기·별 강화·공방 초월 · 사냥 개편
 ```
 
 ### 본문
 ```
 1.0.19 업데이트가 나왔어요.
+
+[ 프로필 그림 ]
+- 홈 왼쪽 위 초상화를 눌러 21개 중에서 골라 보세요. 채팅·랭킹·결투·왕충 선발대회에 보여요
 
 [ 장비 ]
 - 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 고를 수 있어요. 원하는 옵션 종류도 지정할 수 있고, 다듬을수록 낮은 값이 덜 나와요
@@ -37,15 +40,18 @@
 
 ### Title
 ```
-Update 1.0.19 — Gear refining, stars & Forge Transcend, hunting upgrades
+Update 1.0.19 — Profile pictures, gear refining, stars & Forge Transcend
 ```
 
 ### Body
 ```
+[ Profile ]
+- Tap your portrait (top-left) to pick 1 of 21 pictures
+
 [ Gear ]
-- Refine: reroll an option with fossils or jelly, keep old or new, pick the type. Each refine raises the minimum
-- Stars: feed same-slot gear (100 for the 1st star), wait the timer (jelly skips it) and options grow, up to 5. New gear starts at zero
-- Forge Transcend: at max forge grade, spend fossils. All gear disappears and the forge restarts from Grass, but option max rises +15% per step (up to 5)
+- Refine: reroll an option (fossils or jelly), keep old or new, pick the type
+- Stars: feed same-slot gear (100 for the 1st), wait the timer and options grow, up to 5. New gear starts at zero
+- Forge Transcend: at max grade, spend fossils. All gear disappears and the forge restarts from Grass; option max +15% per step (up to 5)
 
 [ Hunting ]
 - HP, defense and regen upgrades now clearly cut damage. Zone monsters changed; each difficulty's first boss is tougher
@@ -64,12 +70,15 @@ Update 1.0.19 — Gear refining, stars & Forge Transcend, hunting upgrades
 
 ### タイトル
 ```
-1.0.19 アップデート — 装備の磨き・星強化・工房超越、狩りの強化を改編
+1.0.19 アップデート — プロフィール画像・装備の磨き・星強化・工房超越
 ```
 
 ### 本文
 ```
 1.0.19 アップデートが配信されました。
+
+[ プロフィール画像 ]
+- ホーム左上の肖像をタップして21種から選べます。チャット・ランキング・決闘・王虫選抜大会に表示されます
 
 [ 装備 ]
 - 磨き: 化石かゼリーでオプション1行を振り直し、以前の値と新しい値を選べます。種類の指定もでき、磨くほど低い値が出にくくなります

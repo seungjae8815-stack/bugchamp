@@ -802,6 +802,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNewOk => 'OK';
 
   @override
+  String get whatsNewAvatar =>
+      'プロフィール画像 — ホーム左上の肖像をタップして21種から選べます(チャット・ランキング・決闘・大会に表示)';
+
+  @override
   String get whatsNewDuelPower => '決闘の戦闘力がすべての能力値を反映した実戦戦闘力になりました';
 
   @override
@@ -1620,6 +1624,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsSfx => '効果音';
+
+  @override
+  String get avatarPickTitle => 'プロフィール画像';
+
+  @override
+  String get avatarPickHint => 'チャット・ランキング・決闘・王虫選抜大会に表示されます';
+
+  @override
+  String get avatarChanged => 'プロフィール画像を変更しました';
 
   @override
   String get settingsNickname => 'ニックネーム';

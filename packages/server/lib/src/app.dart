@@ -1235,6 +1235,8 @@ Handler buildHandler({
                 'score': r['score'],
                 'wave': r['wave'],
                 'badge': r['badge'] ?? '',
+                // 프로필 그림(2026-10-10) — 순위 함수(`event_top`)가 `profiles.avatar` 를 돌려줄 때부터(SQL 적용 뒤).
+                'avatar': ?r['avatar'],
                 'isMe': r['user_id'] == user.id,
               },
           ],
@@ -1270,6 +1272,7 @@ Handler buildHandler({
                 'nickname': r['nickname'],
                 'score': r['score'],
                 'wave': r['wave'],
+                'avatar': ?r['avatar'],
                 'badge':
                     ev.badgeFor(
                       (r['rank'] as num?)?.toInt(),
@@ -2139,6 +2142,8 @@ Handler buildHandler({
         double rewardMult,
         // 상대가 산 곤충 스킨(이름 옆 뱃지) — 세이브로 만든 상대만, 옛 행·야생은 빈 목록.
         List<String> ownedSkins,
+        // 상대의 프로필 그림(2026-10-10) — 세이브로 만든 상대만(고르지 않았으면 null = 기본).
+        String? avatar,
       })?
     >
     duelFoe(
@@ -2179,6 +2184,7 @@ Handler buildHandler({
             foeVariants: variants,
             rewardMult: 1.0,
             ownedSkins: publicSkinsOf(opp, cfg.iap),
+            avatar: opp.avatar,
           );
         }
         if (rows == null || rows.length < actions.duelParams.bestOf) {
@@ -2198,6 +2204,7 @@ Handler buildHandler({
           foeVariants: List<String?>.filled(legacy.length, null),
           rewardMult: 1.0,
           ownedSkins: const <String>[],
+          avatar: null,
         );
       }
       final wild = actions.buildWildDuelTeam(
@@ -2216,6 +2223,7 @@ Handler buildHandler({
         foeVariants: List<String?>.filled(wild.team.length, null),
         rewardMult: wild.tier.rewardMult,
         ownedSkins: const <String>[],
+        avatar: null,
       );
     }
 
@@ -2341,6 +2349,8 @@ Handler buildHandler({
             'points': points,
             // 상대가 산 곤충 스킨(이름 옆 뱃지) — 비면 생략. 제안(세션)에도 같이 남아 `/duel/start` 가 돌려준다.
             if (real && foe.ownedSkins.isNotEmpty) 'skins': foe.ownedSkins,
+            // 상대 프로필 그림(2026-10-10) — 상대 세이브에서(SQL 의 profiles.avatar 를 기다리지 않는다). 기본이면 생략.
+            'avatar': ?(real ? foe.avatar : null),
             // 결투 화면에는 **결투 팀 전투력**만(2026-10-01 — 순위표 값이 홈 전투력으로 떨어져 1.84M 로 보였다).
             // 방금 서버가 만든 상대 팀으로 잰 값이라 늘 정확하다.
             'power': teamPower,
@@ -2418,6 +2428,8 @@ Handler buildHandler({
         return _json({
           'userId': target,
           if (skins.isNotEmpty) 'skins': skins,
+          // 프로필 그림(2026-10-10) — 상대 세이브에서. 고르지 않았으면 생략(앱이 기본으로 그린다).
+          'avatar': ?opp?.avatar,
           'league': ?(opp == null
               ? null
               : cfg.battle.leagueAt(pvpLeagueOf(opp, cfg.battle)).id),

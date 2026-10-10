@@ -88,6 +88,7 @@ class _FakeChat implements ChatService {
     required String body,
     String badge = '',
     String? guildId,
+    String? avatar,
   }) async {
     sent.add((body: body, guildId: guildId));
     return true;

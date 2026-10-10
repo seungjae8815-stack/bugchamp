@@ -24,9 +24,10 @@ const _kFreshSave = Duration(minutes: 30);
 /// 업데이트 내용 한 줄.
 typedef WhatsNewItem = ({IconData icon, String text});
 
-/// 1.0.19 업데이트 내용(2026-10-10 — 이번 판에서 바뀐 것 중 유저가 알아야 할 8가지).
+/// 1.0.19 업데이트 내용(2026-10-10 — 이번 판에서 바뀐 것 중 유저가 알아야 할 9가지 · 프로필 그림 추가).
 /// 훈련 포인트 기준 통일은 불리할 수 있는 변경이라 숨기지 않고 넣는다(공지·출시노트와 같은 원칙).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
+  (icon: Icons.face_rounded, text: l.whatsNewAvatar),
   (icon: Icons.bolt_rounded, text: l.whatsNewDuelPower),
   (icon: Icons.auto_fix_high_rounded, text: l.whatsNewPolish),
   (icon: Icons.star_rounded, text: l.whatsNewStar),

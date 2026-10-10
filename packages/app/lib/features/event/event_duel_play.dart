@@ -446,6 +446,8 @@ Future<void> playEventDuel({
         params: params,
         arena: mine.element,
         mySkins: {mine.id: bugView(ref.read(skinOfProvider), bug)},
+        // 내 프로필 그림(2026-10-10) — 상대는 웨이브 적이라 그리지 않는다.
+        myAvatar: ref.read(saveControllerProvider).value?.avatar ?? '',
         showDuelResult: false,
         // 장외·뒤집기·시간으로 졌지만 체력이 남았으면 — 왜 또 싸우는지 알려 준다.
         boutNote: (s) {

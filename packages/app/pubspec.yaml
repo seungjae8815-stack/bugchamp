@@ -131,6 +131,7 @@ flutter:
     - assets/images/ui/rank/
     - assets/images/ui/dlg/
     - assets/images/shop/
+    - assets/images/avatars/
     - assets/sounds/
 
   # 타이틀 제목용. Jua (SIL OFL 1.1 — 상업 이용·번들 배포 가능, Jua-OFL.txt 동봉).

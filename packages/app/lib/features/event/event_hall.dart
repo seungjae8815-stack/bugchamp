@@ -7,6 +7,7 @@ import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 
 const _honey = kHoney;
 
@@ -205,6 +206,12 @@ class _EventHallSectionState extends ConsumerState<EventHallSection> {
                 ],
               ),
               const SizedBox(height: 4),
+              // 입상자의 프로필 그림(2026-10-10).
+              AvatarCircle(
+                id: e['avatar'] as String?,
+                size: rank == 1 ? 46 : 38,
+              ),
+              const SizedBox(height: 4),
               Text(
                 name(e),
                 maxLines: 1,
@@ -300,6 +307,8 @@ class _EventHallSectionState extends ConsumerState<EventHallSection> {
               ),
             ),
           ),
+          const SizedBox(width: 6),
+          AvatarCircle(id: e['avatar'] as String?, size: 26),
           const SizedBox(width: 6),
           Expanded(
             // 뱃지는 이름 **위** — 옆에 두면 이름이 잘린다(랭킹과 같은 이유).

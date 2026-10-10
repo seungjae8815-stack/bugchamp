@@ -830,6 +830,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatsNewOk => 'OK';
 
   @override
+  String get whatsNewAvatar =>
+      'Profile pictures — tap your portrait (top-left) and pick from 21 (shown in chat, rankings, duels, events)';
+
+  @override
   String get whatsNewDuelPower =>
       'Duel combat power now reflects every stat — real win chances';
 
@@ -1676,6 +1680,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSfx => 'Sound effects';
+
+  @override
+  String get avatarPickTitle => 'Profile picture';
+
+  @override
+  String get avatarPickHint =>
+      'Shown in chat, rankings, duels and the Bug King Trials';
+
+  @override
+  String get avatarChanged => 'Profile picture changed';
 
   @override
   String get settingsNickname => 'Nickname';

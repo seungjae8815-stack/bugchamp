@@ -24,6 +24,7 @@ import '../../ui/skins.dart';
 import 'board_preview.dart';
 import 'duel_bug_info.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 
 /// 순위표(2026-09-29 사장님 요청 — 다른 게임의 리그 화면을 참고).
 ///
@@ -794,15 +795,24 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${r['nickname'] ?? ''}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  // 프로필 그림(2026-10-10) — 순위 함수가 `profiles.avatar` 를 함께 돌려준다(없으면 기본).
+                  Row(
+                    children: [
+                      AvatarCircle(id: r['avatar'] as String?, size: 22),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          '${r['nickname'] ?? ''}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   if (power > 0)
                     Row(
@@ -1171,7 +1181,8 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           );
         },
       ),
-      icon: Icons.person_rounded,
+      // 그 사람의 프로필 그림(2026-10-10).
+      iconWidget: AvatarCircle(id: r['avatar'] as String?, size: 40),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

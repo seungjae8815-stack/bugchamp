@@ -64,6 +64,7 @@ import '../../domain/review_service.dart';
 import '../../domain/notice_service.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 
 const _uuid = Uuid();
 const _honey = kHoney;
@@ -3533,6 +3534,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   return Text.rich(
                     TextSpan(
                       children: [
+                        // 프로필 그림(2026-10-10) — 한 줄에 들어가게 작게.
+                        if (!last.isAdmin)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: AvatarCircle(id: last.avatar, size: 16),
+                            ),
+                          ),
                         // 운영자 메시지는 홈 채팅바에서도 구분된다 — 여기가
                         // 대부분의 유저가 채팅을 접하는 유일한 자리다.
                         TextSpan(
@@ -8475,7 +8485,43 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               children: [
                 Row(
                   children: [
-                    _portrait(save),
+                    // 프로필 그림(2026-10-10 사장님 확정) — 누르면 고르기 창. 채팅·랭킹·결투·대회에 이 그림이 보인다.
+                    GestureDetector(
+                      key: const ValueKey('profileAvatarButton'),
+                      onTap: () async {
+                        await showAvatarPicker(ctx, ref);
+                        if (ctx.mounted) setD(() {});
+                      },
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          AvatarCircle(
+                            id: ref.read(saveControllerProvider).value?.avatar,
+                            size: 58,
+                          ),
+                          Positioned(
+                            right: -3,
+                            bottom: -3,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: kHoney,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF1F2E13),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.edit_rounded,
+                                size: 12,
+                                color: Color(0xFF1F2E13),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: editing

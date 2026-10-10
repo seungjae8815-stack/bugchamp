@@ -36,6 +36,8 @@ Map<String, dynamic> previewLeagueBoard({
           ? myPower
           : myPower * (1.6 - r * 0.018) * (0.9 + rng.nextDouble() * 0.2),
       'badge': '',
+      // 미리보기용 프로필 그림(개발 전용 가짜 데이터) — 내 줄은 기본.
+      'avatar': mine ? null : _previewAvatar(r),
       'sp': speciesIds[rng.nextInt(speciesIds.length)],
     });
   }
@@ -78,6 +80,7 @@ Map<String, dynamic> previewAbyssBoard({
       'floor': floor,
       'boss_pm': rng.nextInt(1000),
       'power': 5e8 * (1.5 - r * 0.02),
+      'avatar': mine ? null : _previewAvatar(r + 7),
       'sp': speciesIds[rng.nextInt(speciesIds.length)],
     });
   }
@@ -164,3 +167,7 @@ const _names = [
   '하늘소',
   '물장군',
 ];
+
+/// 미리보기 줄마다 다른 프로필 그림(avatars.json 의 1~20번).
+String _previewAvatar(int r) =>
+    'avatar_${(r * 3 % 20 + 1).toString().padLeft(2, '0')}';

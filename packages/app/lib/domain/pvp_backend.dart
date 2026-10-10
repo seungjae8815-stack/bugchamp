@@ -40,6 +40,7 @@ class PvpProfile {
     this.difficultyTier = 0,
     this.power,
     this.abyssBest = 0,
+    this.avatar,
   });
 
   /// 내 세이브에서 랭킹 프로필을 만든다.
@@ -63,6 +64,7 @@ class PvpProfile {
     difficultyTier: save.rankProgress.tier,
     power: power,
     abyssBest: save.abyssBest,
+    avatar: save.avatar,
   );
 
   final String id;
@@ -88,6 +90,9 @@ class PvpProfile {
   /// 심연 역대 최고 층(2026-09-29) — 진행도 랭킹에서 극한 최종 사냥터 **다음** 기준. 0 = 심연 전.
   /// 서버가 세이브 업로드 때 자른 값으로 적는다(앱은 이 칸을 쓰지 않는다).
   final int abyssBest;
+
+  /// 프로필 그림 id(2026-10-10). null = 기본 프로필(고르지 않음 · SQL 적용 전 DB).
+  final String? avatar;
 
   /// 이 랭킹 종류에서 줄 세우기에 쓰는 점수.
   int scoreFor(RankingKind kind) => switch (kind) {

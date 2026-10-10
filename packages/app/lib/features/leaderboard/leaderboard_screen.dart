@@ -17,6 +17,7 @@ import '../../ui/labels.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 
 const _honey = kHoney;
 
@@ -538,6 +539,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // 점수 칸이 왼쪽으로 딸려온다 — 줄마다 트로피 위치가 달라 보이던
           // 원인이다(2026-08-27 실기). Expanded 하나면 남는 공간이 전부
           // 이름 칸으로 가고 점수는 항상 오른쪽 끝에 붙는다.
+          // 프로필 그림(2026-10-10) — 순위 숫자와 이름 사이.
+          AvatarCircle(id: e.profile.avatar, size: top ? 36 : 30),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

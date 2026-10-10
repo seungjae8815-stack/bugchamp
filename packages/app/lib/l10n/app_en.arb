@@ -520,6 +520,7 @@
     }
   },
   "whatsNewOk": "OK",
+  "whatsNewAvatar": "Profile pictures — tap your portrait (top-left) and pick from 21 (shown in chat, rankings, duels, events)",
   "whatsNewDuelPower": "Duel combat power now reflects every stat — real win chances",
   "whatsNewPolish": "Gear refining — pick the option type and keep the old or new value",
   "whatsNewStar": "Star upgrade — feed same-slot gear to add stars and boost options (up to 5)",
@@ -962,6 +963,9 @@
   "settingsSound": "Sound",
   "settingsBgm": "Music",
   "settingsSfx": "Sound effects",
+  "avatarPickTitle": "Profile picture",
+  "avatarPickHint": "Shown in chat, rankings, duels and the Bug King Trials",
+  "avatarChanged": "Profile picture changed",
   "settingsNickname": "Nickname",
   "settingsNicknameHint": "Enter a name",
   "actionSave": "Save",

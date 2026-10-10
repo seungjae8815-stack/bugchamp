@@ -16,6 +16,7 @@ import '../../ui/event_badge.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 import '../guild/guild_mission_tab.dart' show guildHelpMission;
 
 /// 전체 채팅 화면.
@@ -445,6 +446,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
           createdAt: now,
           badge: badge,
           guildId: _sendGuildId,
+          avatar: save.avatar,
         ),
       );
     });
@@ -458,6 +460,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
           body: body,
           badge: badge,
           guildId: _sendGuildId,
+          avatar: save.avatar,
         );
     if (!mounted) return;
     setState(() {
@@ -689,6 +692,11 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 프로필 그림(2026-10-10) — DB 트리거가 `profiles.avatar` 에서 찍는다. 운영자 글은 그리지 않는다.
+              if (!m.isAdmin) ...[
+                AvatarCircle(id: m.avatar, size: 22),
+                const SizedBox(width: 5),
+              ],
               if (m.isAdmin) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(

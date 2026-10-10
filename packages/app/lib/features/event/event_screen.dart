@@ -27,6 +27,7 @@ import 'event_hall.dart';
 import 'event_intro.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 
 const _honey = kHoney;
 
@@ -1472,6 +1473,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  // 프로필 그림(2026-10-10) — 서버가 순위 함수의 `avatar` 를 그대로 실어 준다.
+                  AvatarCircle(id: e['avatar'] as String?, size: 28),
                   const SizedBox(width: 6),
                   // 이름 칸이 **남는 폭을 전부** 가져간다(Expanded). Flexible +
                   // Spacer 로 두면 이름 길이에 따라 웨이브 칸의 시작점이 줄마다

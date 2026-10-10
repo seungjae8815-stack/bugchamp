@@ -16,6 +16,7 @@ import '../../ui/toast.dart';
 import 'clutch_gauge.dart';
 import 'duel_driver.dart';
 import '../../ui/colors.dart';
+import '../../ui/avatar.dart';
 
 /// 곤충 배틀 스타디움 — **던질 때는 위에서, 싸울 때는 옆에서**(docs/design_duel.md §7).
 ///
@@ -36,6 +37,8 @@ class DuelArenaScreen extends StatefulWidget {
     this.foeSkins = const {},
     this.myBadges = const [],
     this.foeBadges = const [],
+    this.myAvatar,
+    this.foeAvatar,
     this.foeAt,
     this.foeIndex,
     this.header,
@@ -63,6 +66,10 @@ class DuelArenaScreen extends StatefulWidget {
   /// 비면 뱃지 없음(구서버·야생).
   final List<String> myBadges;
   final List<String> foeBadges;
+
+  /// 점수판 이름표 옆 프로필 그림(2026-10-10). null = 그리지 않음(야생·개발 상대). 기본 프로필은 빈 문자열을 넘긴다.
+  final String? myAvatar;
+  final String? foeAvatar;
 
   // ── 왕충 선발대회(곤충 1마리 · 웨이브전)용 — 결투는 비워 둔다 ──
 
@@ -568,6 +575,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               Expanded(
                 child: Row(
                   children: [
+                    if (widget.myAvatar != null) ...[
+                      AvatarCircle(id: widget.myAvatar, size: 24),
+                      const SizedBox(width: 5),
+                    ],
                     Flexible(
                       child: Text(
                         a.name,
@@ -604,6 +615,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (widget.foeAvatar != null) ...[
+                      const SizedBox(width: 5),
+                      AvatarCircle(id: widget.foeAvatar, size: 24),
+                    ],
                   ],
                 ),
               ),

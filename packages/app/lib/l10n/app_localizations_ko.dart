@@ -804,6 +804,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get whatsNewOk => '확인';
 
   @override
+  String get whatsNewAvatar =>
+      '프로필 그림 — 홈 왼쪽 위 초상화를 눌러 21개 중에서 골라요(채팅·랭킹·결투·대회에 보여요)';
+
+  @override
   String get whatsNewDuelPower => '결투 전투력이 모든 능력치를 반영한 실전 전투력으로 바뀌었어요';
 
   @override
@@ -1626,6 +1630,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsSfx => '효과음';
+
+  @override
+  String get avatarPickTitle => '프로필 그림';
+
+  @override
+  String get avatarPickHint => '고른 그림이 채팅·랭킹·결투·왕충 선발대회에 보여요';
+
+  @override
+  String get avatarChanged => '프로필 그림을 바꿨어요';
 
   @override
   String get settingsNickname => '닉네임';
