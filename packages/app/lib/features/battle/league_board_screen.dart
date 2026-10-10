@@ -9,6 +9,7 @@ import 'package:flutter/material.dart' hide Element;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
+import 'duel_bug_build.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
@@ -229,7 +230,11 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
             // 결투 팀 전투력만(홈 전투력은 캐릭터 포함이라 결투 화면에 쓰지 않는다 — 모르면 0 = 숨김).
             myPower: widget.myTeam == null || widget.myTeam!.isEmpty
                 ? 0
-                : widget.myTeam!.fold<double>(0, (a, x) => a + x.power),
+                : widget.myTeam!.fold<double>(
+                    0,
+                    (a, x) =>
+                        a + duelPowerOf(x, ref.read(gameDataProvider).value),
+                  ),
             speciesIds: species,
             cfg: cfg,
             now: now,
@@ -740,7 +745,10 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     // 빠졌다 — 2026-10-01 실기). 홈 전투력(캐릭터 포함)은 결투 화면에 쓰지 않는다.
     final myTeam = widget.myTeam;
     final power = mine && !_abyss && myTeam != null && myTeam.isNotEmpty
-        ? myTeam.fold<double>(0, (a, x) => a + x.power)
+        ? myTeam.fold<double>(
+            0,
+            (a, x) => a + duelPowerOf(x, ref.read(gameDataProvider).value),
+          )
         : (r['power'] as num?)?.toDouble() ?? 0;
     final score = _abyss
         ? l.boardFloorShort((r['floor'] as num?)?.toInt() ?? 0)
@@ -1035,7 +1043,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
   Future<void> _showMyTeam(AppLocalizations l) {
     final data = ref.read(gameDataProvider).value;
     final team = widget.myTeam!;
-    final power = team.fold<double>(0, (a, x) => a + x.power);
+    final power = team.fold<double>(0, (a, x) => a + duelPowerOf(x, data));
     // 내 곤충의 이색·스킨 — 결투 곤충 id 가 곧 내 곤충 id 다.
     final bugs = {
       for (final b
@@ -1097,7 +1105,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                       {
                         'sp': b.speciesId,
                         'element': b.element.name,
-                        'power': b.power,
+                        'power': duelPowerOf(b, data),
                         if (isVariant(b.id)) 'variant': bugs[b.id]!.variant.key,
                         'skin': ?skinOf(b.speciesId)?.effect,
                       },

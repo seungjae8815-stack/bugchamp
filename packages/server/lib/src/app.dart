@@ -192,8 +192,9 @@ List<String> publicSkinsOf(SaveGame s, IapConfig iap) => [
     if (d.speciesPrefix != null && s.ownedSkins.contains(d.id)) d.id,
 ];
 
-/// 곤충 한 마리 전투력(앱 결투 화면의 `_power` 와 같은 식) — 후보·프로필 비교용.
-double _duelPower(DuelBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
+/// 곤충 한 마리 **실전 전투력**(앱과 같은 [DuelBug.powerIn], 2026-10-10) — 후보·프로필 비교·안 싸운 상대 점수 구간.
+double _duelPower(DuelBug b, GameActions actions) =>
+    b.powerIn(actions.duelParams);
 
 /// 방어팀 행의 스킨 효과 키(`gold`/`albino`). 없으면 null.
 ///
@@ -458,7 +459,7 @@ Handler buildHandler({
         teamPowerOf: (uid) async {
           final team = await defenseTeamOf(uid);
           if (team == null || team.isEmpty) return null;
-          return team.fold<double>(0, (a, x) => a + _duelPower(x));
+          return team.fold<double>(0, (a, x) => a + _duelPower(x, actions));
         },
         // 길드전 6일차(보스) 점수 — 서버가 확정한 공격만 센다.
         onDamage: (uid, gid, dmg) =>
@@ -498,7 +499,7 @@ Handler buildHandler({
                 'element': team[i].element.name,
                 'specialty': team[i].specialty.name,
                 'sizeMm': team[i].sizeMm,
-                'power': _duelPower(team[i]),
+                'power': _duelPower(team[i], actions),
                 'variant': ?(i < variants.length ? variants[i] : null),
                 'bug': team[i].toJson(),
               },
@@ -2277,7 +2278,7 @@ Handler buildHandler({
         );
         final myPower = (myTeam ?? const <DuelBug>[]).fold<double>(
           0,
-          (a, x) => a + _duelPower(x),
+          (a, x) => a + _duelPower(x, actions),
         );
         final usedIds = {
           for (final sl in slots)
@@ -2306,7 +2307,10 @@ Handler buildHandler({
               final f = await duelFoe(save, id, '', locale);
               if (f == null) continue;
               usedIds.add(id);
-              final p = f.foe.fold<double>(0, (a, x) => a + _duelPower(x));
+              final p = f.foe.fold<double>(
+                0,
+                (a, x) => a + _duelPower(x, actions),
+              );
               foe = f;
               row = cand;
               real = true;
@@ -2326,7 +2330,7 @@ Handler buildHandler({
           if (foe == null) continue;
           final teamPower = foe.foe.fold<double>(
             0,
-            (a, x) => a + _duelPower(x),
+            (a, x) => a + _duelPower(x, actions),
           );
           final entry = <String, dynamic>{
             'i': i,
@@ -2346,7 +2350,7 @@ Handler buildHandler({
                 {
                   'sp': foe.foeSpecies[k],
                   'element': foe.foe[k].element.name,
-                  'power': _duelPower(foe.foe[k]),
+                  'power': _duelPower(foe.foe[k], actions),
                   'skin': ?foe.foeSkins[k],
                   'variant': ?foe.foeVariants[k],
                   // 곤충별 능력치·주특기·기질 — 상대를 보고 전략을 짜게(2026-09-29).
@@ -2424,13 +2428,16 @@ Handler buildHandler({
                 'element': list[i].element.name,
                 'specialty': list[i].specialty.name,
                 'sizeMm': list[i].sizeMm,
-                'power': _duelPower(list[i]),
+                'power': _duelPower(list[i], actions),
                 'variant': ?(i < variants.length ? variants[i] : null),
                 // 곤충을 눌러 능력치를 보게(길드 시트와 같은 방식, 3마리뿐이라 작다).
                 'bug': list[i].toJson(),
               },
           ],
-          'teamPower': list.fold<double>(0, (a, x) => a + _duelPower(x)),
+          'teamPower': list.fold<double>(
+            0,
+            (a, x) => a + _duelPower(x, actions),
+          ),
         });
       } on StateStoreException catch (e) {
         stderr.writeln('[pvp/profile] ${user.id}: $e');
@@ -4411,7 +4418,7 @@ Future<SaveGame> _recordPvpScore(
       : null;
   final power = (team ?? const <DuelBug>[]).fold<double>(
     0,
-    (a, x) => a + _duelPower(x),
+    (a, x) => a + _duelPower(x, actions),
   );
   try {
     await store.submitPvpSeasonScore(

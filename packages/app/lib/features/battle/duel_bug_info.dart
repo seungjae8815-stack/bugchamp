@@ -2,6 +2,7 @@ import 'package:core_battle/core_battle.dart';
 import 'package:flutter/material.dart' hide Element;
 
 import '../../data/game_data.dart';
+import 'duel_bug_build.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
@@ -91,7 +92,7 @@ Future<bool?> showDuelBugInfo(
           ),
         row(
           l.statCombatPower,
-          formatCompact(d.power.round()),
+          formatCompact(duelPowerOf(d, data).round()),
           c: const Color(0xFFEBD24A),
         ),
         row(l.statHp, formatCompact(d.maxHp.round())),

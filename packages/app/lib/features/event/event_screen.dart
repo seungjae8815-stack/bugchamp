@@ -999,7 +999,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                             color: kHoney,
                           ),
                           Text(
-                            formatCompact(d.power.round()),
+                            formatCompact(duelPowerOf(d, data).round()),
                             style: const TextStyle(
                               color: kHoney,
                               fontSize: 14,
@@ -1039,7 +1039,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     final power = duel
         ? {
             for (final b in adults)
-              b.id: duelBugFor(b, data, save, locale).power,
+              b.id: duelPowerOf(duelBugFor(b, data, save, locale), data),
           }
         : const <String, double>{};
     DateTime? restUntil(IndividualBug b) {

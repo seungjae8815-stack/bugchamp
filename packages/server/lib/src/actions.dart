@@ -1672,14 +1672,26 @@ class GameActions {
     var out = (cap == save.storageCapacity && inc == save.incubatorCapacity)
         ? save
         : save.copyWith(storageCapacity: cap, incubatorCapacity: inc);
-    // 모루 위 제련 결과도 상한을 강제한다. 앱은 [kMaxForgeStack] 에서 멈추지만
-    // 조작 업로드가 수천 개를 실으면 세이브가 비대해진다 — 곤충 3만 마리
-    // 13.6MB 사고(§2.1)와 같은 경로다. 최근 것부터 남긴다.
-    if (out.forgeStack.length > kMaxForgeStack) {
+    // 모루 위 제련 결과도 상한을 강제한다. 조작 업로드가 수천 개를 실으면 세이브가 비대해진다 —
+    // 곤충 3만 마리 13.6MB 사고(§2.1)와 같은 경로다. 최근 것부터 남긴다.
+    // ⚠️ 상한은 **젤리로 넓힌 칸까지**다(앱 `_forgeCap` 과 같은 식, 최대 `stackExpandMax`). 예전엔 10 으로 잘라서,
+    // 결투가 끝나 앱이 서버 세이브를 채택할 때마다 넓힌 칸의 장비가 사라졌다(2026-10-10 발견).
+    final forge = config.forge;
+    // (이 함수의 `max` 는 채집함 상한 지역 변수라 clamp 로 쓴다.)
+    final stackCap = forge == null
+        ? kMaxForgeStack
+        : (kMaxForgeStack +
+                  out.forgeStackBought.clamp(0, 1 << 20) *
+                      forge.stackExpandStep)
+              .clamp(
+                kMaxForgeStack,
+                forge.stackExpandMax < kMaxForgeStack
+                    ? kMaxForgeStack
+                    : forge.stackExpandMax,
+              );
+    if (out.forgeStack.length > stackCap) {
       out = out.copyWith(
-        forgeStack: out.forgeStack.sublist(
-          out.forgeStack.length - kMaxForgeStack,
-        ),
+        forgeStack: out.forgeStack.sublist(out.forgeStack.length - stackCap),
       );
     }
     return out.trimmedToStorage();

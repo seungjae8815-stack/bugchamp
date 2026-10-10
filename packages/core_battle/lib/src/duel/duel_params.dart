@@ -87,6 +87,8 @@ class DuelParams {
     this.clutchHoldHpCost = 0,
     this.clutchHoldKeepRatio = 0.5,
     this.clutchInvulSeconds = 1.0,
+    this.powerWeights = kDuelPowerWeights,
+    this.powerScale = kDuelPowerScale,
     this.clutchThreshold = 0.55,
     this.clutchThresholdPerGrit = 0.02,
     this.clutchWakeHp = 0.10,
@@ -304,6 +306,14 @@ class DuelParams {
   /// 위기는 체력이 바닥일 때 와서, 살아나도 다음 한 대에 지는 경우가 대부분이었다. 0 = 무적 없음.
   final double clutchInvulSeconds;
 
+  /// 실전 전투력 가중치 12개(순서는 [DuelBug.powerFeatures]) — 2026-10-10 사장님 확정.
+  /// `server/tool/duel_power_fit.dart` 가 실제 곤충 1,000마리 · 20만 판으로 맞춘 값이다(전투력 비 = 이길 확률 비).
+  /// 엔진 수치를 바꾸면 이 값도 다시 맞춘다 — 판정에는 안 쓰고 표시·자동 편성·후보 점수 구간에만 쓴다.
+  final List<double> powerWeights;
+
+  /// 전투력 크기 맞춤 상수(같은 집단에서 옛 전투력 중앙값과 같아지게).
+  final double powerScale;
+
   /// 성공 문턱 = clutchThreshold − 근성 × clutchThresholdPerGrit (점수 0~1 이 문턱 이상이면 성공).
   final double clutchThreshold;
   final double clutchThresholdPerGrit;
@@ -430,6 +440,10 @@ class DuelParams {
       clutchHoldHpCost: n('clutchHoldHpCost', d.clutchHoldHpCost),
       clutchHoldKeepRatio: n('clutchHoldKeepRatio', d.clutchHoldKeepRatio),
       clutchInvulSeconds: n('clutchInvulSeconds', d.clutchInvulSeconds),
+      powerWeights: j['powerWeights'] is List
+          ? [for (final v in j['powerWeights'] as List) (v as num).toDouble()]
+          : d.powerWeights,
+      powerScale: n('powerScale', d.powerScale),
       clutchThreshold: n('clutchThreshold', d.clutchThreshold),
       clutchThresholdPerGrit: n(
         'clutchThresholdPerGrit',
@@ -452,3 +466,22 @@ class DuelParams {
     );
   }
 }
+
+/// 실전 전투력 가중치 기본값 — `battle.json → duel.powerWeights` 와 같은 값(설명은 [DuelParams.powerWeights]).
+const List<double> kDuelPowerWeights = [
+  0.9324,
+  0.7350,
+  2.2860,
+  0.1164,
+  2.2844,
+  0.8329,
+  1.1656,
+  0.7309,
+  4.4394,
+  1.0862,
+  0.9890,
+  0.0762,
+];
+
+/// 실전 전투력 크기 맞춤 상수 기본값 — `battle.json → duel.powerScale`.
+const double kDuelPowerScale = 0.014108;

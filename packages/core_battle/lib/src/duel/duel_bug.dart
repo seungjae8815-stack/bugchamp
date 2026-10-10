@@ -220,8 +220,44 @@ class DuelBug {
   /// 엔진이 쓰는 근성 단계(0 ~ `clutchGritMax`).
   int gritOf(DuelParams p) => grit.clamp(0, p.clutchGritMax);
 
-  /// 스카우트·야생 상대 규모를 맞추는 대략적 전력(표시·매칭용, 판정에는 안 쓴다).
-  double get power => maxHp * 0.15 + atk + def + spd;
+  /// 실전 전투력의 특징값 12개 — **엔진이 실제로 쓰는 값**(사이즈 몫을 덜어낸 능력치 · 회피·치명 상한).
+  /// 순서는 [DuelParams.powerWeights] 와 같다. 맞춤 도구(`server/tool/duel_power_fit.dart`)도 이 함수를 쓴다.
+  List<double> powerFeatures(DuelParams p) {
+    final u = p.sizeStatExp == 1 || sizeStatMult == 1
+        ? 1.0
+        : math.pow(sizeStatMult, p.sizeStatExp - 1).toDouble();
+    double ln(double v) => math.log(math.max(v, 1e-9));
+    return [
+      ln(atk * u),
+      ln(maxHp * u),
+      ln(1 + math.max(0, def * u) / 100),
+      ln(spd * u),
+      -math.log(1 - evade.clamp(0.0, p.evadeMax)),
+      crit.clamp(0.0, p.critMax),
+      recovery,
+      ln(math.max(sizeMm, 1) / p.sizeRefMm),
+      ln(massMult),
+      ln(pushMult),
+      techOf(p),
+      gritOf(p).toDouble(),
+    ];
+  }
+
+  /// **실전 전투력**(2026-10-10 사장님 확정) — 전투력 비가 곧 이길 확률 비다(2배면 약 67%).
+  ///
+  /// 옛 값(공격 + 방어 + 속도 + 체력 × 0.15)은 공격을 키운 곤충이 부풀었다 — 엔진은 방어를 100/(100+방어)로
+  /// 체감시키고, 회피·치명·회복력·밀어내기 힘·체급·기술·근성은 아예 몰랐다. 그래서 자동 편성이 균형 있게 키운
+  /// 곤충을 뺐다(실기 지적). 판정에는 안 쓴다 — 표시·자동 편성·후보 점수 구간용.
+  double powerIn(DuelParams p) {
+    final w = p.powerWeights;
+    final f = powerFeatures(p);
+    if (w.length < f.length) return maxHp * 0.15 + atk + def + spd;
+    var z = 0.0;
+    for (var i = 0; i < f.length; i++) {
+      z += w[i] * f[i];
+    }
+    return p.powerScale * math.exp(z);
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,

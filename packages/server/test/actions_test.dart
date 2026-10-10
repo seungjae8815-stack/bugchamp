@@ -2503,6 +2503,32 @@ void main() {
       expect(r.save!.forgeStack.last.tier, 49 % 10);
     });
 
+    test('젤리로 넓힌 모루 칸은 자르지 않는다 — 결투 뒤 채택 때 장비가 사라지던 버그(2026-10-10)', () {
+      final forge = actions.config.forge!;
+      List<EquipItem> items(int n) => [
+        for (var i = 0; i < n; i++)
+          EquipItem(slot: EquipSlot.tool, tier: i % 10, options: const []),
+      ];
+      final bought =
+          (forge.stackExpandMax - kMaxForgeStack) ~/ forge.stackExpandStep;
+      final client = stored().copyWith(
+        forgeStackBought: bought,
+        forgeStack: items(forge.stackExpandMax),
+      );
+      final r = actions.mergeSave(stored(), client.toJson());
+      expect(r.save!.forgeStack.length, forge.stackExpandMax);
+
+      // 산 칸 수를 부풀려도 최대 칸까지만.
+      final forged = stored().copyWith(
+        forgeStackBought: 999,
+        forgeStack: items(50),
+      );
+      expect(
+        actions.mergeSave(stored(), forged.toJson()).save!.forgeStack.length,
+        forge.stackExpandMax,
+      );
+    });
+
     // t0 = 2026-07-20(월) 12:00 UTC → 이번 시즌 시작은 같은 날 09:00 KST(=00:00 UTC).
     final curStart = DateTime.utc(2026, 7, 20);
     final lastWeek = curStart.subtract(const Duration(days: 7));

@@ -361,7 +361,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// ⚠️ 선택 목록이 `_power(_toBattleBug(...))`(훈련·수련 빠짐)를 쓰던 시절, 목록 384 · 상세 437 처럼
   /// 같은 곤충이 두 숫자로 보였다(2026-10-01 실기 지적). 정렬·자동 편성도 실제 세기와 어긋났다.
   double _bugPower(IndividualBug bug, GameData data, String locale) =>
-      _toDuelBug(bug, data, locale).power;
+      duelPowerOf(_toDuelBug(bug, data, locale), data);
 
   PvpProfile _me(SaveGame save) => PvpProfile.me(
     save,
@@ -1605,7 +1605,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         data,
         save,
         locale,
-      ).fold<double>(0, (a, x) => a + x.power),
+      ).fold<double>(0, (a, x) => a + duelPowerOf(x, data)),
       speciesIds: [for (final sp in species) sp.id],
       cfg: cfg,
       now: now,
@@ -1681,7 +1681,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ];
   }
 
-  double _duelPower(DuelBug b) => b.atk + b.def + b.spd + b.maxHp * 0.15;
+  double _duelPower(DuelBug b) =>
+      duelPowerOf(b, ref.read(gameDataProvider).value);
 
   /// 후보 5명 고르기 — 이기면 받는 점수를 크게 보여 준다(지면 0점).
   Future<_Candidate?> _pickOpponent(
@@ -1746,9 +1747,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     BuildContext sheet,
   ) {
     final ratio = myPower <= 0 ? 1.0 : c.teamPower / myPower;
-    final tone = ratio > 1.1
+    // 실전 전투력은 비가 곧 이길 확률 비라(2026-10-10) 옛 1.1·0.9 를 1.25·0.8 로 옮겼다(약 56% · 44%).
+    final tone = ratio > 1.25
         ? const Color(0xFFEF6B4A)
-        : (ratio < 0.9 ? const Color(0xFF6FCF6F) : const Color(0xFFE9D9A6));
+        : (ratio < 0.8 ? const Color(0xFF6FCF6F) : const Color(0xFFE9D9A6));
     return GestureDetector(
       // 카드(이름)를 누르면 상대 곤충 상세, 공격 버튼을 눌러야 시작한다.
       onTap: () => _showFoeDetail(l, data, locale, c),
@@ -2660,7 +2662,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         const SizedBox(height: 10),
         _statRow(
           l.statCombatPower,
-          formatCompact(d.power.round()),
+          formatCompact(duelPowerOf(d, data).round()),
           color: const Color(0xFFEBD24A),
         ),
         _statRow(l.statHp, formatCompact(d.maxHp.round())),
@@ -3017,8 +3019,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   // 1:1 · 3판 2선승 · 판마다 던지기(docs/design_duel.md). 승패는 서버가 확정하고 앱은
   // 궤적을 재생만 한다. 서버가 없으면(개발 실행) 같은 엔진을 앱에서 돌린다.
 
-  DuelParams _duelParams(GameData data) =>
-      DuelParams.fromJson((data.battleConfig ?? const BattleConfig()).duelJson);
+  DuelParams _duelParams(GameData data) => duelParamsOf(data);
 
   /// 보유 곤충 → 결투 유닛(서버 `validateDuelTeam` 과 같은 스탯 계산).
   DuelBug _toDuelBug(IndividualBug bug, GameData data, String locale) =>

@@ -55,6 +55,23 @@ BattleBug battleBugFor(
   );
 }
 
+/// 결투 수치(`battle.json → duel`) — 재생·실전 전투력이 같은 값을 본다. 설정 객체가 같으면 다시 만들지 않는다.
+DuelParams duelParamsOf(GameData? data) {
+  final cfg = data?.battleConfig;
+  if (cfg == null) return const DuelParams();
+  if (!identical(cfg, _paramsCfg) || _params == null) {
+    _paramsCfg = cfg;
+    _params = DuelParams.fromJson(cfg.duelJson);
+  }
+  return _params!;
+}
+
+BattleConfig? _paramsCfg;
+DuelParams? _params;
+
+/// 곤충 한 마리 **실전 전투력**(서버 `_duelPower` 와 같은 [DuelBug.powerIn], 2026-10-10).
+double duelPowerOf(DuelBug d, GameData? data) => d.powerIn(duelParamsOf(data));
+
 /// 개체 → 결투 유닛(결투·왕충 선발대회 공용). 서버 `validateDuelTeam` 과 **같은 계산**이다 —
 /// 훈련 v2 배분(예산·칸 상한으로 자름)·수련 레벨·체급·밀어내기 힘·주특기 기술·근성까지.
 DuelBug duelBugFor(
