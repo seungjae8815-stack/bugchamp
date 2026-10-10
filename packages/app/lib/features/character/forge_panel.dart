@@ -24,6 +24,26 @@ import '../../ui/colors.dart';
 
 const _honey = kHoney;
 
+/// 별 재료가 낀 장비에 들어간 순간(2026-10-10 사장님 요청) — 위쪽 장비 칸이 이걸 보고 그 칸 위에 "★+N" 을 잠깐 띄운다.
+/// 자동 제련은 필터에 걸린 장비를 조용히 별 재료로 먹여서, 표시가 없으면 무슨 일이 일어났는지 안 보였다.
+/// [seq] 는 같은 부위·같은 개수가 연달아 와도 새 표시로 알아보게 하는 번호다.
+typedef StarFeedPulse = ({Map<EquipSlot, int> fed, int seq});
+
+class StarFeedPulseNotifier extends Notifier<StarFeedPulse?> {
+  @override
+  StarFeedPulse? build() => null;
+
+  void show(Map<EquipSlot, int> fed) {
+    if (fed.isEmpty) return;
+    state = (fed: Map.unmodifiable(fed), seq: (state?.seq ?? 0) + 1);
+  }
+}
+
+final starFeedPulseProvider =
+    NotifierProvider<StarFeedPulseNotifier, StarFeedPulse?>(
+      StarFeedPulseNotifier.new,
+    );
+
 /// 장비 칸 **바로 밑**에 붙는 공방 조작부.
 ///
 /// 가운데 [제련], 그 옆에 자동 제련 아이콘, 아래에 [공방 등급].
@@ -228,6 +248,8 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     setState(() {});
     // 필터에 걸려 **판** 재료를 모루 위에 띄운다(창은 열지 않는다).
     _showSold(r.sold);
+    // 별 재료로 들어간 것은 그 장비 칸 위에 띄운다.
+    ref.read(starFeedPulseProvider.notifier).show(r.fed);
     if (r.kept == 0 && !_autoOn) {
       // 손으로 두드렸는데 아무것도 안 쌓이면 고장으로 보인다 — 이유를 말한다.
       showCenterToast(context, l.forgeFiltered);
@@ -1373,6 +1395,7 @@ Future<bool> showForgeResult(
           if (!context.mounted) return;
           Navigator.pop(context, true);
           if (err != null) return;
+          ref.read(starFeedPulseProvider.notifier).show({item.slot: 1});
           final now = ref
               .read(saveControllerProvider)
               .value

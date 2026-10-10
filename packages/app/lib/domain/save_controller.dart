@@ -3382,6 +3382,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
       /// 필터에 걸려 **판** 장비의 대금(재료 -> 수량). 화면이 모루 위에 띄운다.
       Map<MaterialKind, int> sold,
+
+      /// 필터에 걸려 **낀 장비의 별 재료**로 들어간 수(부위 -> 개수). 화면이 그 장비 칸 위에 "★+N" 을 띄운다.
+      Map<EquipSlot, int> fed,
     })
   >
   forgeMany(int times) async {
@@ -3393,6 +3396,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       dry: false,
       hit: false,
       sold: <MaterialKind, int>{},
+      fed: <EquipSlot, int>{},
     );
     final data = ref.read(gameDataProvider).value;
     final items = data?.itemConfig;
@@ -3408,6 +3412,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         dry: false,
         hit: false,
         sold: const <MaterialKind, int>{},
+        fed: const <EquipSlot, int>{},
       );
     }
     var have = s.materialCount(MaterialKind.fossil);
@@ -3420,6 +3425,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         dry: true,
         hit: false,
         sold: const <MaterialKind, int>{},
+        fed: const <EquipSlot, int>{},
       );
     }
 
@@ -3439,7 +3445,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final sold = <MaterialKind, int>{};
     MaterialKind? saleKind;
     final equipped = Map<EquipSlot, EquipItem>.from(s.equippedItems);
-    var fed = 0;
+    final fed = <EquipSlot, int>{};
 
     for (var i = 0; i < times; i++) {
       if (have < 1) {
@@ -3480,7 +3486,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         final target = equipped[item.slot];
         if (target != null && canFeedStar(items, target, item)) {
           equipped[item.slot] = feedStar(items, target);
-          fed++;
+          fed[item.slot] = (fed[item.slot] ?? 0) + 1;
         } else {
           final kind = saleKind ??= sellMaterialFor(_forgeRng);
           sold[kind] = (sold[kind] ?? 0) + forge.sellMaterialCount(item.tier);
@@ -3501,7 +3507,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.copyWith(
         materials: mats,
         forgeStack: stack,
-        equippedItems: fed > 0 ? equipped : null,
+        equippedItems: fed.isNotEmpty ? equipped : null,
         // 제련 미션(2026-09-15). 필터에 걸려 버려진 것도 화석은 탔으므로 센다.
         missionProgress: forged <= 0
             ? null
@@ -3516,6 +3522,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       dry: dry,
       hit: hit,
       sold: sold,
+      fed: fed,
     );
   }
 

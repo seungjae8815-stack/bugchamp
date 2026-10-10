@@ -477,6 +477,11 @@ class _EquipCell extends ConsumerWidget {
                   ),
                 ),
               ),
+            // 별 강화 — 별 개수·별 재료 진행·강화 중/강화 가능(2026-10-10 사장님 요청: 자동 제련이 별 재료를
+            // 먹이는 게 칸 위에 보여야 한다). 별 재료가 하나도 없는 새 장비에는 아무것도 그리지 않는다.
+            if (item != null) ..._starMarks(item!),
+            // 별 재료가 들어간 순간 "★+N" 이 칸 위로 떠오른다.
+            if (item != null) Positioned.fill(child: _StarFeedPop(slot: slot)),
             // 낀 칸에는 **글씨를 안 넣는다.** 등급은 테두리·바탕색이 이미
             // 말하고 있어서, 이름까지 얹으면 그림 자리만 깎아먹는다.
             // 빈 칸만 어느 부위인지 알려 준다.
@@ -505,6 +510,83 @@ class _EquipCell extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// 칸 위의 별 표시 — 왼쪽 위 별 개수 · 아래 별 재료 막대 · 오른쪽 위 강화 중(모래시계)/강화 가능(위 화살표).
+  List<Widget> _starMarks(EquipItem it) {
+    if (config.starMax <= 0) return const [];
+    final maxed = it.stars >= config.starMax;
+    final need = maxed ? 0 : config.starNeedAt(it.stars);
+    final upgrading = it.starUntil != null;
+    final ready = !maxed && !upgrading && need > 0 && it.starExp >= need;
+    final showBar = !maxed && (it.starExp > 0 || upgrading);
+    return [
+      if (it.stars > 0)
+        Positioned(
+          left: 2,
+          top: 2,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+            decoration: BoxDecoration(
+              color: const Color(0xAA0D1408),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.star_rounded, size: 10, color: _honey),
+                Text(
+                  '${it.stars}',
+                  style: const TextStyle(
+                    color: _honey,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      if (upgrading || ready)
+        Positioned(
+          right: 2,
+          top: 2,
+          child: Container(
+            padding: const EdgeInsets.all(1.5),
+            decoration: const BoxDecoration(
+              color: Color(0xAA0D1408),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              upgrading
+                  ? Icons.hourglass_top_rounded
+                  : Icons.keyboard_double_arrow_up_rounded,
+              size: 11,
+              color: upgrading ? Colors.white : _honey,
+            ),
+          ),
+        ),
+      if (showBar)
+        Positioned(
+          left: 4,
+          right: 4,
+          bottom: 3,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: upgrading || need <= 0
+                  ? 1
+                  : (it.starExp / need).clamp(0.0, 1.0),
+              minHeight: 3.5,
+              backgroundColor: const Color(0x66000000),
+              valueColor: AlwaysStoppedAnimation(
+                ready ? const Color(0xFFFFE082) : _honey,
+              ),
+            ),
+          ),
+        ),
+    ];
   }
 
   /// 낀 장비의 상세 — **여기서도 옵션을 바꿀 수 있다**.
@@ -579,3 +661,83 @@ Widget _box(Widget child) => Container(
   ),
   child: child,
 );
+
+/// 별 재료가 들어간 순간 장비 칸 위로 "★+N" 이 떠오르는 표시(약 1.1초). 모루가 [starFeedPulseProvider] 로 알린다.
+class _StarFeedPop extends ConsumerStatefulWidget {
+  const _StarFeedPop({required this.slot});
+  final EquipSlot slot;
+
+  @override
+  ConsumerState<_StarFeedPop> createState() => _StarFeedPopState();
+}
+
+class _StarFeedPopState extends ConsumerState<_StarFeedPop>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  );
+  int _n = 0;
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(starFeedPulseProvider, (_, next) {
+      final n = next?.fed[widget.slot] ?? 0;
+      if (n <= 0) return;
+      // 자동 제련이 빠르게 이어지면 숫자를 쌓아 보인다(아직 떠 있는 동안 온 것은 더한다).
+      setState(() => _n = _c.isAnimating ? _n + n : n);
+      _c.forward(from: 0);
+    });
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) {
+          if (!_c.isAnimating) return const SizedBox.shrink();
+          final t = Curves.easeOut.transform(_c.value);
+          final fade = _c.value < 0.7 ? 1.0 : (1 - (_c.value - 0.7) / 0.3);
+          return Align(
+            alignment: Alignment(0, 0.3 - 0.9 * t),
+            child: Opacity(
+              opacity: fade.clamp(0.0, 1.0),
+              child: Transform.scale(
+                scale: 0.8 + 0.35 * (1 - (t - 0.3).abs().clamp(0.0, 1.0)),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xCC0D1408),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _honey, width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, size: 12, color: _honey),
+                      Text(
+                        '+$_n',
+                        style: const TextStyle(
+                          color: _honey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
