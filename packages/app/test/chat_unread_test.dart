@@ -33,6 +33,22 @@ void main() {
     );
   });
 
+  test('차단한 사람 글·내 임시 글(기기 시각)은 NEW 를 띄우지 않는다', () {
+    const seen = (at: null, loaded: true);
+    expect(
+      chatUnread(_msg('bad', t0), seen, 'me', blocked: (u) => u == 'bad'),
+      isFalse,
+    );
+    final echo = ChatMessage(
+      id: 'echo:1',
+      userId: 'other',
+      nickname: 'x',
+      body: 'hi',
+      createdAt: t0,
+    );
+    expect(chatUnread(echo, seen, 'me'), isFalse);
+  });
+
   test('읽음 기록은 뒤로 가지 않고 기기에 남는다', () async {
     SharedPreferences.setMockInitialValues({});
     final c = ProviderContainer();

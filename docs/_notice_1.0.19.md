@@ -16,7 +16,7 @@
 1.0.19 업데이트가 나왔어요.
 
 [ 프로필 그림 ]
-- 홈 왼쪽 위 초상화를 눌러 21개 중에서 골라 보세요. 채팅·랭킹·결투·왕충 선발대회에 보여요
+- 홈 왼쪽 위 초상화 → 프로필 카드의 그림을 눌러 21개 중에서 골라 보세요. 채팅·랭킹·결투·왕충 선발대회에 보여요
 
 [ 장비 ]
 - 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 고를 수 있어요. 원하는 옵션 종류도 지정할 수 있고, 다듬을수록 낮은 값이 덜 나와요
@@ -46,7 +46,7 @@ Update 1.0.19 — Profile pictures, gear refining, stars & Forge Transcend
 ### Body
 ```
 [ Profile ]
-- Tap your portrait (top-left) to pick 1 of 21 pictures
+- Tap your portrait, then its picture, to pick 1 of 21
 
 [ Gear ]
 - Refine: reroll an option (fossils or jelly), keep old or new, pick the type
@@ -78,7 +78,7 @@ Update 1.0.19 — Profile pictures, gear refining, stars & Forge Transcend
 1.0.19 アップデートが配信されました。
 
 [ プロフィール画像 ]
-- ホーム左上の肖像をタップして21種から選べます。チャット・ランキング・決闘・王虫選抜大会に表示されます
+- ホーム左上の肖像 → カードの画像をタップして21種から選べます。チャット・ランキング・決闘・王虫選抜大会に表示されます
 
 [ 装備 ]
 - 磨き: 化石かゼリーでオプション1行を振り直し、以前の値と新しい値を選べます。種類の指定もでき、磨くほど低い値が出にくくなります

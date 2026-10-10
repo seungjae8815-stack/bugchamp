@@ -542,7 +542,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // 프로필 그림(2026-10-10) — 순위 숫자와 이름 사이. 크게(사장님 요청) · 내 줄은 지금 고른 그림.
           AvatarCircle(
             id: e.isMe
-                ? (ref.watch(saveControllerProvider).value?.avatar ??
+                ? (ref.watch(
+                        saveControllerProvider.select((s) => s.value?.avatar),
+                      ) ??
                       e.profile.avatar)
                 : e.profile.avatar,
             size: top ? 50 : 44,

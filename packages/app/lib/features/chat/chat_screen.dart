@@ -315,9 +315,12 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
 
   /// 채팅창을 보고 있는 동안 받은 글은 읽은 것으로 — 홈 채팅 바의 NEW 를 지운다(서버 시각 기준, chat_unread.dart).
   void _markSeen() {
+    // 홈 채팅 바는 **전체 글**만 본다 — 길드 전용 창(보이지 않아도 살아 있다)이 길드 글로 읽음을 찍으면
+    // 안 본 전체 글의 NEW 가 꺼졌다(2026-10-10 점검). 임시 글(내 echo·local)은 기기 시각이라 빼다.
+    if (widget.guildOnly) return;
     DateTime? latest;
     for (final x in _messages) {
-      if (_isTemp(x.id)) continue;
+      if (_isTemp(x.id) || x.guildId != null) continue;
       if (latest == null || x.createdAt.isAfter(latest)) latest = x.createdAt;
     }
     if (latest != null) ref.read(chatSeenProvider.notifier).markSeen(latest);
@@ -835,15 +838,19 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
     );
     // 신고·차단(남의 글)·삭제(내 글)는 이 버튼으로(2026-10-03). 말풍선 꾹 누르기는
     // **글자 선택**에 내줬다 — 안드로이드는 거기서 기기 번역이 뜬다. App Store UGC 심사 필수라 늘 보인다.
+    // 누르는 영역은 40×28 — 보이는 아이콘은 작게 두되 UGC 심사상 쉽게 눌려야 한다(2026-10-10 점검).
     final more = InkWell(
       onTap: () => mine ? _deleteMine(m, l) : _actions(m, l),
       borderRadius: BorderRadius.circular(10),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Icon(
-          Icons.more_horiz_rounded,
-          size: 16,
-          color: Color(0x99FFFFFF),
+      child: const SizedBox(
+        width: 40,
+        height: 28,
+        child: Center(
+          child: Icon(
+            Icons.more_horiz_rounded,
+            size: 16,
+            color: Color(0x99FFFFFF),
+          ),
         ),
       ),
     );
@@ -855,8 +862,19 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
           child: Row(
             children: [
               if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
-              Flexible(child: nameText),
-              if (badge != null) ...[const SizedBox(width: 4), badge],
+              Flexible(flex: 3, child: nameText),
+              // 좁은 화면(360dp · 큰 글꼴)에서는 뱃지가 작아진다 — 닉네임이 먼저 보이게(2026-10-10 점검).
+              if (badge != null) ...[
+                const SizedBox(width: 4),
+                Flexible(
+                  flex: 2,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: badge,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

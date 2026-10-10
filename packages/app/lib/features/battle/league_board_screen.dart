@@ -775,7 +775,9 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
             // 프로필 그림(2026-10-10 사장님 — 대표 곤충 그림 자리를 대신한다). 내 줄은 지금 고른 그림.
             AvatarCircle(
               id: mine
-                  ? ref.watch(saveControllerProvider).value?.avatar
+                  ? ref.watch(
+                      saveControllerProvider.select((s) => s.value?.avatar),
+                    )
                   : r['avatar'] as String?,
               size: 50,
             ),

@@ -26,6 +26,13 @@ const int kSaveSchemaVersion = 18;
 /// 23(2026-10-10): 프로필 그림 `avatar`.
 const int kSaveFeatureLevel = 23;
 
+/// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
+/// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
+final RegExp kAvatarIdPattern = RegExp(r'^avatar_[a-z0-9_]{1,24}$');
+
+/// [id] 가 프로필 그림 id 꼴인가.
+bool isAvatarId(Object? id) => id is String && kAvatarIdPattern.hasMatch(id);
+
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///
 /// 50 인 이유: `deriveStats` 의 곤충 수 버프가 `min(bugsCollected, 50)` 이라

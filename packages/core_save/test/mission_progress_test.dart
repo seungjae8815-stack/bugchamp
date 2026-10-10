@@ -132,6 +132,16 @@ void main() {
       expect(missionJellyAvailable(s, forge, '2026-10-11'), isTrue);
     });
 
+    test('오늘 이후 날짜(시계를 앞으로 돌렸다 되돌림)는 이미 받은 것으로 본다', () {
+      var s = SaveGame.initial(createdAt: _t);
+      // 미래(10-12)로 두 칸을 채운 뒤 오늘(10-10)로 돌아오면 더 받을 수 없다.
+      s = s.copyWith(dailyClaims: markMissionJelly(s, forge, '2026-10-12'));
+      s = s.copyWith(dailyClaims: markMissionJelly(s, forge, '2026-10-12'));
+      expect(missionJellyAvailable(s, forge, today), isFalse);
+      // 다음 날(10-13)부터 다시 열린다.
+      expect(missionJellyAvailable(s, forge, '2026-10-13'), isTrue);
+    });
+
     test('기록 키는 일일보상 슬롯과 겹치지 않는다(서버 사냥 분치 허용치에 안 잡힌다)', () {
       expect(missionJellyKey(forge.id, 0), 'mission:${forge.id}');
       expect(missionJellyKey(forge.id, 1), 'mission:${forge.id}#2');

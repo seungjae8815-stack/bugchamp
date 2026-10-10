@@ -93,6 +93,29 @@ void main() {
     }
   });
 
+  test('미래 날짜로 적은 일일보상은 허용치를 열지 않는다(2026-10-10 점검 — 2099-01-01 우회)', () {
+    final c = at(0, 8, 0.5);
+    final client = c.stored.copyWith(
+      gold: c.stored.gold + c.daily5h * 2,
+      dailyClaims: {
+        'dinner': '2099-01-01',
+        dailyBonusKey('dinner'): '2099-01-01',
+      },
+    );
+    final r = actions.mergeSave(c.stored, client.toJson());
+    expect(r.extra['clampReasons'], contains('gold'));
+    // 내일 날짜(기기 시간대가 서버 UTC 보다 앞선 경우)는 인정한다.
+    final tomorrow = dailyDateKey(t0.add(const Duration(days: 1)));
+    final ok = c.stored.copyWith(
+      gold: c.stored.gold + c.daily5h,
+      dailyClaims: {'dinner': tomorrow},
+    );
+    expect(
+      actions.mergeSave(c.stored, ok.toJson()).extra['clamped'],
+      isNot(true),
+    );
+  });
+
   test('저장본에 있던 선물(3시간치)을 4배로 받은 직후 업로드는 잘리지 않는다', () {
     for (final (tier, zone, fill) in cases) {
       final c = at(tier, zone, fill);

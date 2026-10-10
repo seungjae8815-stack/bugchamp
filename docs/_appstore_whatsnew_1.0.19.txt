@@ -7,7 +7,7 @@
 <ko-KR>
 장비 다듬기, 별 강화, 공방 초월과 프로필 그림이 생겼어요
 
-- 프로필 그림: 홈 왼쪽 위 초상화를 눌러 21개 중에서 고르면 채팅, 랭킹, 결투, 왕충 선발대회에 보입니다
+- 프로필 그림: 홈 왼쪽 위 초상화를 누르고 프로필 카드의 그림을 눌러 21개 중에서 고르면 채팅, 랭킹, 결투, 왕충 선발대회에 보입니다
 - 장비 옵션 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 남길 쪽을 고릅니다. 원하는 옵션 종류를 지정할 수도 있고, 다듬을수록 정성이 쌓여 낮은 값이 덜 나와요
 - 별 강화: 같은 부위 장비를 재료로 모아 강화 시간을 거치면 별이 오르고 옵션 효과가 커집니다(최대 5성, 젤리로 시간을 당길 수 있어요)
 - 공방 초월: 공방 최대 등급에서 초월하면 공방이 처음부터 다시 시작하는 대신 옵션 최대치가 올라갑니다
@@ -23,7 +23,7 @@
 <en-US>
 Gear refining, star upgrades, Forge Transcend and profile pictures are here
 
-- Profile pictures: tap your portrait at the top-left and pick from 21; it shows in chat, rankings, duels and the Bug King Trials
+- Profile pictures: tap your portrait at the top-left, then the picture on your card, and pick from 21; it shows in chat, rankings, duels and the Bug King Trials
 - Refine gear options: reroll one line with fossils or jelly, then keep the old or the new value. You can pick the option type, and each refine raises the minimum roll
 - Star upgrade: collect same-slot gear as material, and after an upgrade timer the star rises and option effects grow (up to 5 stars; jelly can skip the timer)
 - Forge Transcend: at the max forge grade, restart the forge from the beginning to raise every option's maximum
@@ -39,7 +39,7 @@ Gear refining, star upgrades, Forge Transcend and profile pictures are here
 <ja-JP>
 装備の磨き、星強化、工房超越とプロフィール画像が登場
 
-- プロフィール画像: ホーム左上の肖像をタップして21種から選ぶと、チャット・ランキング・決闘・王虫選抜大会に表示されます
+- プロフィール画像: ホーム左上の肖像をタップし、カードの画像から21種を選ぶと、チャット・ランキング・決闘・王虫選抜大会に表示されます
 - 装備オプションの磨き: 化石かゼリーでオプション1行を振り直し、以前の値と新しい値のどちらを残すか選べます。種類の指定もでき、磨くほど低い値が出にくくなります
 - 星強化: 同じ部位の装備を素材として集め、強化時間を経ると星が上がり、オプション効果が大きくなります(最大5つ星、ゼリーで時間を短縮できます)
 - 工房超越: 工房の最大等級で超越すると、工房は最初からやり直しになる代わりにオプションの最大値が上がります

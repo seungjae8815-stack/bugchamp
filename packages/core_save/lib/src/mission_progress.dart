@@ -50,17 +50,22 @@ String missionJellyKey(String missionId, int n) =>
 bool missionJellyAvailable(SaveGame s, MissionDef def, String today) {
   if (def.reward != 'jelly' || def.jellyPerDay <= 0) return true;
   for (var n = 0; n < def.jellyPerDay; n++) {
-    if (s.dailyClaims[missionJellyKey(def.id, n)] != today) return true;
+    if (_slotFree(s.dailyClaims[missionJellyKey(def.id, n)], today))
+      return true;
   }
   return false;
 }
+
+/// 그 칸이 오늘 비어 있나 — 오늘 **이후** 날짜(시계를 앞으로 돌렸다 되돌린 흔적)도 받은 것으로 본다(2026-10-10 점검).
+bool _slotFree(String? date, String today) =>
+    date == null || date.compareTo(today) < 0;
 
 /// 젤리를 받은 기록을 남긴 `dailyClaims`(비어 있는 첫 칸에 [today]). 한도가 없거나 다 찼으면 그대로.
 Map<String, String> markMissionJelly(SaveGame s, MissionDef def, String today) {
   if (def.reward != 'jelly' || def.jellyPerDay <= 0) return s.dailyClaims;
   for (var n = 0; n < def.jellyPerDay; n++) {
     final k = missionJellyKey(def.id, n);
-    if (s.dailyClaims[k] != today) {
+    if (_slotFree(s.dailyClaims[k], today)) {
       return {...s.dailyClaims, k: today};
     }
   }

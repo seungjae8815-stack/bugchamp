@@ -1219,6 +1219,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 화면과 같은 목표(강화 미션은 남은 강화 레벨로 줄어든다 · 목표 0 은 못 받는다).
     final run = ref.read(gameDataProvider).requireValue.runConfig;
     if (!missionClaimable(s, def, run)) return null;
+    // 사냥 분치 미션은 게임 데이터(runConfig)가 있어야 금액을 잴 수 있다 — 없으면 받지 않는다(옛 1.6배 식으로 떨어지지 않게).
+    if (def.huntMinutes > 0 && run == null) return null;
 
     // 보상 지급 — 화면과 같은 함수.
     final reward = missionRewardAmount(def);

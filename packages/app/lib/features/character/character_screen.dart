@@ -479,9 +479,15 @@ class _EquipCell extends ConsumerWidget {
               ),
             // 별 강화 — 별 개수·별 재료 진행·강화 중/강화 가능(2026-10-10 사장님 요청: 자동 제련이 별 재료를
             // 먹이는 게 칸 위에 보여야 한다). 별 재료가 하나도 없는 새 장비에는 아무것도 그리지 않는다.
-            if (item != null) ..._starMarks(item!),
+            if (item != null)
+              ..._starMarks(item!, ref.read(clockProvider).now().toUtc()),
             // 별 재료가 들어간 순간 "★+N" 이 칸 위로 떠오른다.
-            if (item != null) Positioned.fill(child: _StarFeedPop(slot: slot)),
+            // 키를 준다 — 첫 별 재료가 들어가 막대·아이콘이 새로 생겨도 이 표시가 같은 자리로 맞춰져 애니메이션이 끊기지 않는다.
+            if (item != null)
+              Positioned.fill(
+                key: const ValueKey('starFeedPop'),
+                child: _StarFeedPop(slot: slot),
+              ),
             // 낀 칸에는 **글씨를 안 넣는다.** 등급은 테두리·바탕색이 이미
             // 말하고 있어서, 이름까지 얹으면 그림 자리만 깎아먹는다.
             // 빈 칸만 어느 부위인지 알려 준다.
@@ -513,13 +519,15 @@ class _EquipCell extends ConsumerWidget {
   }
 
   /// 칸 위의 별 표시 — 왼쪽 위 별 개수 · 아래 별 재료 막대 · 오른쪽 위 강화 중(모래시계)/강화 가능(위 화살표).
-  List<Widget> _starMarks(EquipItem it) {
+  List<Widget> _starMarks(EquipItem it, DateTime now) {
     if (config.starMax <= 0) return const [];
     final maxed = it.stars >= config.starMax;
     final need = maxed ? 0 : config.starNeedAt(it.stars);
-    final upgrading = it.starUntil != null;
+    // 강화 시간이 끝났으면 모래시계가 아니라 "받기"(체크) — 완료 처리는 장비 상세에서 한다(2026-10-10 점검).
+    final finished = it.starUntil != null && !now.isBefore(it.starUntil!);
+    final upgrading = it.starUntil != null && !finished;
     final ready = !maxed && !upgrading && need > 0 && it.starExp >= need;
-    final showBar = !maxed && (it.starExp > 0 || upgrading);
+    final showBar = !maxed && (it.starExp > 0 || it.starUntil != null);
     return [
       if (it.stars > 0)
         Positioned(
@@ -548,7 +556,7 @@ class _EquipCell extends ConsumerWidget {
             ),
           ),
         ),
-      if (upgrading || ready)
+      if (upgrading || ready || finished)
         Positioned(
           right: 2,
           top: 2,
@@ -559,9 +567,11 @@ class _EquipCell extends ConsumerWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              upgrading
-                  ? Icons.hourglass_top_rounded
-                  : Icons.keyboard_double_arrow_up_rounded,
+              finished
+                  ? Icons.check_circle_rounded
+                  : (upgrading
+                        ? Icons.hourglass_top_rounded
+                        : Icons.keyboard_double_arrow_up_rounded),
               size: 11,
               color: upgrading ? Colors.white : _honey,
             ),

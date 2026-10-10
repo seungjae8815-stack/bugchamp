@@ -831,7 +831,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNewAvatar =>
-      'Profile pictures — tap your portrait (top-left) and pick from 21 (shown in chat, rankings, duels, events)';
+      'Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, events)';
 
   @override
   String get whatsNewDuelPower =>
@@ -1680,6 +1680,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSfx => 'Sound effects';
+
+  @override
+  String get chatNewBadge => 'NEW';
 
   @override
   String get avatarPickTitle => 'Profile picture';

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'pvp_backend.dart';
@@ -228,8 +229,15 @@ class SupabasePvpBackend implements PvpBackend {
       try {
         await _client.from('profiles').upsert(attempts[i]);
         return;
-      } on PostgrestException {
-        if (i == attempts.length - 1) rethrow;
+      } on PostgrestException catch (e) {
+        // 칸·권한 문제(그림·전투력 칸이 없는 옛 DB)일 때만 빼고 다시 — 다른 오류(닉네임 등)는 같은 요청을 세 번 보내지 않는다.
+        final columnIssue =
+            e.code == '42703' || // 없는 칸
+            e.code == '42501' || // 권한
+            e.code == 'PGRST204' || // 스키마 캐시에 없는 칸
+            e.code == '23514'; // 검사 위반(그림 꼴)
+        if (i == attempts.length - 1 || !columnIssue) rethrow;
+        debugPrint('[rank] 프로필 업로드 재시도(${e.code}): ${e.message}');
       }
     }
   }

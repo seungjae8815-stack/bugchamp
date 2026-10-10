@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:core_save/core_save.dart' show isAvatarId;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -206,7 +207,12 @@ Future<void> showAvatarPicker(BuildContext context, WidgetRef ref) async {
       }, primary: false),
     ],
   );
-  if (picked == null || picked == cur || !context.mounted) return;
+  if (picked == null ||
+      picked == cur ||
+      !isAvatarId(picked) ||
+      !context.mounted) {
+    return;
+  }
   await ref.read(saveControllerProvider.notifier).setAvatar(picked);
   pushMyRankProfile(ref);
   if (context.mounted) showCenterToast(context, l.avatarChanged);

@@ -171,6 +171,21 @@ void main() {
     },
   );
 
+  test('프로필 그림 꼴(avatar_*)이 아니면 받지 않는다 — 긴 문자열이 상대 응답에 실려 나가지 않게', () {
+    final s = stored().copyWith(avatar: 'avatar_05');
+    final bad = s.toJson()..['avatar'] = 'x' * 5000;
+    expect(actions.mergeSave(s, bad).save!.avatar, 'avatar_05');
+    final none = stored();
+    final bad2 = none.toJson()..['avatar'] = 'AVATAR_01';
+    expect(actions.mergeSave(none, bad2).save!.avatar, isNull);
+    final boot = actions.sanitizeBootstrap(
+      none.toJson()..['avatar'] = 'x' * 50,
+    );
+    expect(boot.containsKey('avatar'), isFalse);
+    expect(isAvatarId('avatar_12'), isTrue);
+    expect(isAvatarId('avatar_'), isFalse);
+  });
+
   test('새 앱(feat 21)이 별을 비웠으면 그 값을 받는다(되돌리지 않는다)', () {
     final s = stored();
     final j = s.toJson();

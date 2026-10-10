@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/auth_service.dart';
 import '../../domain/chat_service.dart';
+import '../../domain/save_controller.dart';
+import '../../l10n/app_localizations.dart';
 import '../../ui/colors.dart';
 
 /// 안 읽은 채팅 표시(2026-10-10 사장님 — 채팅이 올라와도 화면에 아무 표시가 없어 참여할 계기가 없었다).
@@ -63,9 +65,17 @@ final chatSeenProvider = NotifierProvider<ChatSeenNotifier, ChatSeen>(
 );
 
 /// 안 읽은 남의 글이 있나 — 기기 기록을 다 읽기 전에는 띄우지 않는다(켤 때마다 NEW 가 번쩍이지 않게).
-bool chatUnread(ChatMessage? last, ChatSeen seen, String? myId) {
+bool chatUnread(
+  ChatMessage? last,
+  ChatSeen seen,
+  String? myId, {
+  bool Function(String userId)? blocked,
+}) {
   if (last == null || !seen.loaded) return false;
   if (myId != null && last.userId == myId) return false;
+  // 내 임시 글(기기 시각)·차단한 사람 글은 알리지 않는다(2026-10-10 점검 — 차단한 글을 NEW 로 키우지 않게).
+  if (last.id.startsWith('echo:') || last.id.startsWith('local:')) return false;
+  if (blocked != null && blocked(last.userId)) return false;
   final at = seen.at;
   return at == null || last.createdAt.isAfter(at);
 }
@@ -75,7 +85,10 @@ final chatHasUnreadProvider = Provider<bool>((ref) {
   final last = ref.watch(chatLatestProvider).value;
   final seen = ref.watch(chatSeenProvider);
   final myId = ref.watch(authServiceProvider).userId;
-  return chatUnread(last, seen, myId);
+  final blocked = ref.watch(
+    saveControllerProvider.select((s) => s.value?.blockedUserIds),
+  );
+  return chatUnread(last, seen, myId, blocked: blocked?.contains);
 });
 
 /// 채팅 바 오른쪽의 빨간 NEW.
@@ -94,9 +107,9 @@ class ChatNewPill extends ConsumerWidget {
         borderRadius: BorderRadius.circular(999),
         boxShadow: const [BoxShadow(color: Color(0x88FF4D4D), blurRadius: 6)],
       ),
-      child: const Text(
-        'NEW',
-        style: TextStyle(
+      child: Text(
+        AppLocalizations.of(context).chatNewBadge,
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 9.5,
           fontWeight: FontWeight.w900,
@@ -151,10 +164,12 @@ class _ChatBarFrameState extends ConsumerState<ChatBarFrame>
       final a = prev?.value;
       final b = next.value;
       if (b == null || a?.id == b.id) return;
+      final blocked = ref.read(saveControllerProvider).value?.blockedUserIds;
       if (!chatUnread(
         b,
         ref.read(chatSeenProvider),
         ref.read(authServiceProvider).userId,
+        blocked: blocked?.contains,
       )) {
         return;
       }

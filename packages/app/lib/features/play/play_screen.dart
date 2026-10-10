@@ -3499,7 +3499,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       onTap: () {
         // 연 순간 지금 보이는 마지막 글까지 읽은 것으로(채팅창 안에서도 새 글을 받을 때마다 갱신한다).
         final last = ref.read(chatLatestProvider).value;
-        if (last != null) {
+        if (last != null &&
+            !last.id.startsWith('echo:') &&
+            !last.id.startsWith('local:')) {
           ref.read(chatSeenProvider.notifier).markSeen(last.createdAt);
         }
         Navigator.of(
@@ -5597,7 +5599,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           // ⚠️ 깜빡임은 **스스로** 돌아야 한다. 예전엔 부모(_tapHint)의 값을 읽어
           //    계산했는데, 미션 목록은 바텀시트라 부모가 갱신돼도 다시 그려지지
           //    않아 한 프레임 값에 멈춰 있었다(=깜빡이지 않았다).
-          active: claimable,
+          // 오늘 젤리를 다 받은 젤리 미션은 깜빡이지 않는다 — 눌러도 빈손이다(2026-10-10 점검).
+          active: claimable && !jellyDone,
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
           child: Column(
             mainAxisSize: MainAxisSize.min,

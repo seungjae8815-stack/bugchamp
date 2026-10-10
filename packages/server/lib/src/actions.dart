@@ -1259,6 +1259,14 @@ class GameActions {
     }
     _mergeGiftDoubles(stored, merged, t);
     _mergeDailyClaims(stored, merged);
+    // 프로필 그림은 꼴(avatar_*)만 받는다 — 아니면 저장본 값(2026-10-10 점검).
+    if (merged.containsKey('avatar') && !isAvatarId(merged['avatar'])) {
+      if (stored.avatar != null) {
+        merged['avatar'] = stored.avatar;
+      } else {
+        merged.remove('avatar');
+      }
+    }
     // 저장 횟수(`rev`)는 **줄지 않는다** — 이 필드를 모르는 구버전 앱은 키 없이 올린다. 줄면 다른 기기가
     // 앱을 켤 때 동점 판정(`_localIsAhead`)이 서버의 새 세이브를 옛 것으로 본다.
     final clientRev = (merged['rev'] as num?)?.toInt() ?? 0;
@@ -1538,7 +1546,11 @@ class GameActions {
   /// 보내거나 선물에 박아 두고, 서버는 넉넉한 봉투(효율 [_saveBoundEfficiency]·공격 [_saveBoundAttackMult])로
   /// 잰 값으로 자른다. 지금 자리와 **가 본 최고 난이도의 최종 사냥터** 중 큰 쪽 — 높은 난이도에서 받은 선물을
   /// 쉬움으로 내려가 열어도 잘리지 않게.
-  ({int gold, int materialsEach}) _huntCap(SaveGame s, double minutes) {
+  ({int gold, int materialsEach}) _huntCap(
+    SaveGame s,
+    double minutes, {
+    bool hereOnly = false,
+  }) {
     if (minutes <= 0) return (gold: 0, materialsEach: 0);
     final stats = _envelopeStats(s);
     ({int gold, int materialsEach}) at(int stage, int tier, int floor) =>
@@ -1552,6 +1564,7 @@ class GameActions {
           efficiency: _saveBoundEfficiency,
         );
     final here = at(s.stageNumber, s.difficultyTier, activeAbyssFloor(s));
+    if (hereOnly) return here;
     final top = at(
       config.run.zoneStartStage(config.run.zonesPerTier),
       s.topTier,
@@ -1621,7 +1634,7 @@ class GameActions {
   ///    **다음 선물 시각이 새로 잡힌 흔적**이 있을 때만 센다 — 앱은 예정 시각이 지나야 선물을 만들고 그때
   ///    다음 시각을 최소 간격 뒤로 잡는다(`maybeSpawnGift`). 기기 시계 차이는 2분까지 봐준다.
   ///    선물 하나 = 가장 큰 분치 × 최대 배수(2배 받기 2~4배).
-  ///  - 미션: `huntMinutes` 미션의 받은 횟수가 늘어난 만큼(업로드당 최대 3번) 그 분치(2026-10-10).
+  ///  - 미션: `huntMinutes` 미션의 받은 횟수가 늘어났으면 업로드당 1개분 · 지금 자리 · 보상 종류대로(2026-10-10).
   /// 위조로 늘릴 수 있는 것은 "받았다고 적기"뿐이고, 그 몫도 선물 간격·슬롯 수로 묶인다(다른 상식 상한과 같은 수준).
   ({int gold, int materialsEach}) _huntRewardAllowance(
     SaveGame stored,
@@ -1636,11 +1649,15 @@ class GameActions {
 
     final daily = config.daily;
     final claims = clientJson['dailyClaims'];
+    // 기기 날짜(시간대)는 서버 UTC 보다 최대 하루 앞설 수 있다 — 그보다 미래 날짜는 "받았다"로 치지 않는다
+    // (2026-10-10 점검: `2099-01-01` 을 적으면 허용치가 매 업로드 열렸다).
+    final latestDay = dailyDateKey(t.toUtc().add(const Duration(days: 1)));
     if (daily != null && claims is Map) {
       for (final e in claims.entries) {
         final key = '${e.key}';
         final before = stored.dailyClaims[key];
         if (before != null && '${e.value}'.compareTo(before) <= 0) continue;
+        if ('${e.value}'.compareTo(latestDay) > 0) continue;
         final id = key.endsWith('#2') ? key.substring(0, key.length - 2) : key;
         final reward = daily.rewards.where((r) => r.id == id).firstOrNull;
         if (reward == null || reward.huntMinutes <= 0) continue;
@@ -1683,16 +1700,24 @@ class GameActions {
         add(_huntCap(stored, maxMin), (gone + fresh) * mult);
       }
     }
-    // 미션(2026-10-10): `huntMinutes` 미션은 사냥 N분치를 준다 — 받은 횟수가 저장본보다 늘어난 만큼.
-    // 한 바퀴가 온라인 사냥 약 45분이라 한 업로드에 여러 번은 없다(위조로 횟수를 부풀려도 3번까지만 센다).
+    // 미션(2026-10-10): `huntMinutes` 미션은 사냥 N분치를 준다 — 받은 횟수가 저장본보다 늘어난 미션 **1개분**만,
+    // **지금 자리** 기준으로(최고 난이도 끝까지 넓히지 않는다), 보상 종류대로(골드 미션은 골드만 · 재료 미션은 재료만).
+    // 한 바퀴가 온라인 사냥 약 45분이라 한 업로드(60초)에 둘은 없다. 받은 횟수는 기기 권위라 부풀릴 수 있어(점검 지적)
+    // 업로드당 한 번으로 묶는다 — 다른 상식 상한과 같은 수준의 방어다.
     final missions = config.mission;
     final rawClaims = clientJson['missionClaims'];
     if (missions != null && rawClaims is Map) {
+      var counted = false;
       for (final def in missions.missions) {
-        if (def.huntMinutes <= 0) continue;
+        if (counted || def.huntMinutes <= 0) continue;
         final now = (rawClaims[def.id] as num?)?.toInt() ?? 0;
-        final fresh = min(3, now - stored.missionClaimCount(def.id));
-        if (fresh > 0) add(_huntCap(stored, def.huntMinutes), fresh);
+        if (now <= stored.missionClaimCount(def.id)) continue;
+        final c = _huntCap(stored, def.huntMinutes, hereOnly: true);
+        add((
+          gold: def.reward == 'gold' ? c.gold : 0,
+          materialsEach: def.reward == 'material' ? c.materialsEach : 0,
+        ));
+        counted = true;
       }
     }
     return (gold: gold, materialsEach: each);
@@ -1895,6 +1920,10 @@ class GameActions {
       } else {
         out.remove(k);
       }
+    }
+    // 프로필 그림 꼴 검사(mergeSave 와 같은 규칙).
+    if (out.containsKey('avatar') && !isAvatarId(out['avatar'])) {
+      out.remove('avatar');
     }
     return out;
   }

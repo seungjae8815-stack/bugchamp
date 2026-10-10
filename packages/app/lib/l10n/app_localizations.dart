@@ -1531,7 +1531,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNewAvatar.
   ///
   /// In en, this message translates to:
-  /// **'Profile pictures — tap your portrait (top-left) and pick from 21 (shown in chat, rankings, duels, events)'**
+  /// **'Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, events)'**
   String get whatsNewAvatar;
 
   /// No description provided for @whatsNewDuelPower.
@@ -2979,6 +2979,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sound effects'**
   String get settingsSfx;
+
+  /// No description provided for @chatNewBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW'**
+  String get chatNewBadge;
 
   /// No description provided for @avatarPickTitle.
   ///

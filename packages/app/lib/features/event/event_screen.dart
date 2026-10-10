@@ -1477,7 +1477,11 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   // 프로필 그림(2026-10-10) — 서버가 순위 함수의 `avatar` 를 그대로 실어 준다.
                   AvatarCircle(
                     id: e['isMe'] == true
-                        ? (ref.watch(saveControllerProvider).value?.avatar ??
+                        ? (ref.watch(
+                                saveControllerProvider.select(
+                                  (s) => s.value?.avatar,
+                                ),
+                              ) ??
                               e['avatar'] as String?)
                         : e['avatar'] as String?,
                     size: 42,
