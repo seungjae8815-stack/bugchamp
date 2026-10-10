@@ -682,153 +682,158 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
     // 보여줄 때도 필터를 건다 — 목록 갱신 전에 서버에 들어간 과거 메시지 대비.
     final body = _rules.mask(m.body);
 
-    // 프로필 그림(2026-10-10 사장님): 남의 글 = [그림][윗줄 아이디 · 아랫줄 글], 내 글 = [윗줄 아이디 · 아랫줄 글][그림].
-    // 내 글은 서버가 찍은 값이 아니라 **지금 고른 그림**을 쓴다(바꾸자마자 보이게). 운영자 글은 그림 없이.
-    final avatar = m.isAdmin
-        ? null
-        : AvatarCircle(
+    // 프로필 그림(2026-10-10 사장님): 그림 **밑에 닉네임**(두 줄까지 — 8자 한글도 안 잘리게), 옆에는 말풍선만.
+    // 남의 글 = [그림·닉네임][말풍선][⋯], 내 글 = [⋯][말풍선][그림·닉네임]. 긴 글은 말풍선만 길어져 간격이 일정하다.
+    // 내 글은 서버가 찍은 값이 아니라 **지금 고른 그림**을 쓴다(바꾸자마자 보이게). 운영자 글은 예전처럼 이름줄 + 말풍선.
+    final name = _rules.maskNickname(
+      m.nickname,
+      fallback: l.nicknameFallback,
+      isAdmin: m.isAdmin,
+    );
+    final bubble = Container(
+      constraints: const BoxConstraints(maxWidth: 260),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: m.isAdmin
+            ? const Color(0x333F7FB5)
+            : (mine ? const Color(0x33EBA52F) : const Color(0x22FFFFFF)),
+        borderRadius: BorderRadius.circular(12),
+        border: m.isAdmin ? Border.all(color: const Color(0x883F7FB5)) : null,
+      ),
+      // 선택 가능한 글자 — 꾹 누르면 복사, 안드로이드는 설치된 번역 앱(구글 번역 등)의
+      // "번역"이 같이 뜬다(Flutter 가 시스템 텍스트 처리 메뉴를 붙인다). 채팅 번역 서버를
+      // 따로 두지 않는다(2026-10-03 사장님 — 비용).
+      child: SelectableText(
+        body,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13.5,
+          height: 1.35,
+        ),
+      ),
+    );
+    // 전체 탭에 섞여 보이는 내 길드 글 — [길드] 표시로 가른다(2026-10-05).
+    final guildTag = !widget.guildOnly && m.guildId != null
+        ? Container(
+            key: const ValueKey('chatGuildTag'),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: BoxDecoration(
+              color: const Color(0x337FBF5A),
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(color: const Color(0x997FBF5A)),
+            ),
+            child: Text(
+              l.chatTabGuild,
+              style: const TextStyle(
+                color: Color(0xFF9CE37D),
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          )
+        : null;
+
+    // 운영자 글 — 그림 없이 [운영자] 이름줄 + 말풍선(공지 성격, 신고·차단 대상 아님).
+    if (m.isAdmin) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3F7FB5),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    l.chatAdminBadge,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Color(0xFF9FD3F5),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            bubble,
+          ],
+        ),
+      );
+    }
+
+    // 그림 + 그 밑 닉네임(두 줄까지) + 대회 뱃지·[길드] 표시. 칸 폭은 그림보다 조금 넓게 — 닉네임 최대 8자.
+    final who = SizedBox(
+      width: 70,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AvatarCircle(
             id: mine ? (save.avatar ?? m.avatar) : m.avatar,
-            // 윗줄 아이디(⋯ 버튼 포함 약 28) + 아랫줄 한 줄 글(약 34)을 합친 높이 — 두 줄을 감싸는 크기(사장님 요청).
-            size: 60,
-          );
+            size: 48,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: mine ? kHoney : const Color(0xCCFFFFFF),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+            ),
+          ),
+          // 대회 뱃지(2026-09-15) — 자랑거리는 남이 봐야 자랑거리다. 그림 밑 좁은 칸이라 아이콘만.
+          if (m.badge.isNotEmpty)
+            EventBadgeChip(id: m.badge, size: 9, compact: true),
+          if (guildTag != null) ...[const SizedBox(height: 2), guildTag],
+        ],
+      ),
+    );
+    // 신고·차단(남의 글)·삭제(내 글)는 이 버튼으로(2026-10-03). 말풍선 꾹 누르기는
+    // **글자 선택**에 내줬다 — 안드로이드는 거기서 기기 번역이 뜬다. App Store UGC 심사 필수라 늘 보인다.
+    final more = InkWell(
+      onTap: () => mine ? _deleteMine(m, l) : _actions(m, l),
+      borderRadius: BorderRadius.circular(10),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Icon(
+          Icons.more_horiz_rounded,
+          size: 16,
+          color: Color(0x99FFFFFF),
+        ),
+      ),
+    );
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: mine
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
-        children: [
-          if (!mine && avatar != null) ...[avatar, const SizedBox(width: 8)],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: mine
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (m.isAdmin) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3F7FB5),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          l.chatAdminBadge,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                    // 전체 탭에 섞여 보이는 내 길드 글 — [길드] 표시로 가른다(2026-10-05).
-                    if (!widget.guildOnly && m.guildId != null) ...[
-                      Container(
-                        key: const ValueKey('chatGuildTag'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x337FBF5A),
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(color: const Color(0x997FBF5A)),
-                        ),
-                        child: Text(
-                          l.chatTabGuild,
-                          style: const TextStyle(
-                            color: Color(0xFF9CE37D),
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                    Text(
-                      // 이미 등록된 부적절한 닉네임은 표시 단계에서 대체한다.
-                      // 운영자 이름은 예약어라 일반 유저는 쓸 수 없다(그래서 안 가린다).
-                      _rules.maskNickname(
-                        m.nickname,
-                        fallback: l.nicknameFallback,
-                        isAdmin: m.isAdmin,
-                      ),
-                      style: TextStyle(
-                        color: m.isAdmin
-                            ? const Color(0xFF9FD3F5)
-                            : (mine ? kHoney : const Color(0x99FFFFFF)),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    // 대회 뱃지(2026-09-15) — 자랑거리는 남이 봐야 자랑거리다.
-                    // 순위표를 열지 않는 사람도 채팅에서는 본다.
-                    if (!m.isAdmin) EventBadgeChip(id: m.badge, size: 9.5),
-                    // 신고·차단(남의 글)·삭제(내 글)는 이 버튼으로(2026-10-03). 말풍선 꾹 누르기는
-                    // **글자 선택**에 내줬다 — 안드로이드는 거기서 기기 번역이 뜬다.
-                    // 운영자 메시지는 신고·차단 대상이 아니다(공지 성격).
-                    if (!m.isAdmin)
-                      InkWell(
-                        onTap: () => mine ? _deleteMine(m, l) : _actions(m, l),
-                        borderRadius: BorderRadius.circular(10),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          child: Icon(
-                            Icons.more_horiz_rounded,
-                            size: 16,
-                            color: Color(0x99FFFFFF),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: m.isAdmin
-                        ? const Color(0x333F7FB5)
-                        : (mine
-                              ? const Color(0x33EBA52F)
-                              : const Color(0x22FFFFFF)),
-                    borderRadius: BorderRadius.circular(12),
-                    border: m.isAdmin
-                        ? Border.all(color: const Color(0x883F7FB5))
-                        : null,
-                  ),
-                  // 선택 가능한 글자 — 꾹 누르면 복사, 안드로이드는 설치된 번역 앱(구글 번역 등)의
-                  // "번역"이 같이 뜬다(Flutter 가 시스템 텍스트 처리 메뉴를 붙인다). 채팅 번역 서버를
-                  // 따로 두지 않는다(2026-10-03 사장님 — 비용).
-                  child: SelectableText(
-                    body,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.5,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (mine && avatar != null) ...[const SizedBox(width: 8), avatar],
-        ],
+        children: mine
+            ? [more, Flexible(child: bubble), const SizedBox(width: 6), who]
+            : [who, const SizedBox(width: 6), Flexible(child: bubble), more],
       ),
     );
   }
