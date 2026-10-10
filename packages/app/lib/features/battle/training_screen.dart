@@ -738,8 +738,13 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     final cap = data.petConfig?.levelCap(bug.breakthroughTier);
     final nextLv = k <= 0 ? null : (bug.level ~/ k + 1) * k;
     final tier = bug.breakthroughTier;
+    // 마지막 돌파까지 끝내고 레벨 상한(80)에 닿았으면 수련으로는 더 안 생긴다 — 예전엔 "Lv.85 달성 → +1
+    // (돌파가 먼저)"가 떠서 할 수 없는 일을 안내했다(2026-10-10 유저 문의).
+    final maxTier = data.petConfig?.maxTier;
+    final levelDone =
+        cap != null && bug.level >= cap && maxTier != null && tier >= maxTier;
     final how = <String>[
-      if (nextLv != null)
+      if (nextLv != null && !levelDone)
         cap != null && nextLv > cap
             ? l.trainPtHowLevelCap('$nextLv')
             : l.trainPtHowLevel('$nextLv', '$k'),

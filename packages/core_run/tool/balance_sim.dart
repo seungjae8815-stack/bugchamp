@@ -78,6 +78,9 @@ double _gearScale = 1.0;
 /// `--gear-stars=n` 환생 별 n 개(효과 배율 `ItemConfig.starMult`, 회피 제외). 끝까지 투자한 유저의 상한을 잰다
 /// (첫날부터 적용 = 가장 빠른 경우). 목표: q 0.9 · 5성 ≈ 57일(사장님 확정, docs/design_equipment_v2.md).
 double _gearPolish = 0;
+
+/// `--print-threat-refit` — 도착 맷집 기준 위협 표를 출력한다([_printThreatRefit]).
+bool _printThreat = false;
 int _gearStars = 0;
 
 /// 탭 부스트 — **활동 시간에만** 걸리는 평균 배율.
@@ -493,6 +496,7 @@ void main(List<String> args) {
     );
     _printBossLog(sim);
     _printEntryLog(sim);
+    if (_printThreat) _printThreatRefit(sim, config);
     if (_printIncome) _printIncomeLog(sim);
     _printSkillBossLog(sim);
     _printFairyBossLog(sim);
@@ -1035,6 +1039,23 @@ void _printEntryLog(_Player sim) {
     );
   }
   stdout.writeln('');
+}
+
+/// `--print-threat-refit` — 도착 맷집 기준 위협 표(한 대 = 목표)를 run_config 의 zoneTiers 모양으로.
+/// 기록이 없는 사냥터는 지금 값을 둔다. 적응형을 끈 채(`--set=threatAdaptTargetPct=0`) 몇 번 되풀이해 굳힌다.
+void _printThreatRefit(_Player sim, RunConfig config) {
+  final out = <List<double>>[];
+  for (var t = 0; t < config.zoneTiers.length; t++) {
+    final cur = config.zoneTiers[t].threat;
+    final row = [...cur];
+    for (final e in sim.entryLog) {
+      if (e.tier == t && e.zone >= 1 && e.zone <= row.length) {
+        row[e.zone - 1] = (e.refThreat * 100).roundToDouble() / 100;
+      }
+    }
+    out.add(row);
+  }
+  stdout.writeln('threatRefit: ${jsonEncode(out)}');
 }
 
 /// 보스를 깬 날과 그때 전력이 최고치의 몇 %였나. 최종 보스 줄에 목표를 붙인다.
@@ -2084,6 +2105,7 @@ class _Player {
       double low,
       bool dead,
       int revived,
+      double refThreat,
     })
   >
   entryLog = [];
@@ -2153,6 +2175,9 @@ class _Player {
       if (!bitten) h.bite(inc * iv); // 죽으면서 무는 한 대
       h.killHeal(config);
     }
+    // 적응형 없이 표만 쓸 때 이 사냥터 위협이 얼마면 한 대가 목표(fitBite, 난이도 첫 사냥터 ×0.6)인가 —
+    // `--print-threat-refit` 이 이 값으로 표를 낸다(2026-10-10 적응형 위협 제거 검토).
+    final target = z == 1 ? 0.12 * 0.6 : 0.12;
     entryLog.add((
       tier: _tier,
       zone: z,
@@ -2161,6 +2186,7 @@ class _Player {
       low: math.max(0.0, h.low) / max,
       dead: h.dead,
       revived: h.revived,
+      refThreat: target * toughnessOf(st) / iv,
     ));
   }
 
@@ -2929,6 +2955,10 @@ _Opts _parseArgs(List<String> args) {
     final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
     if (es != null) {
       _gearScale = double.parse(es.group(1)!);
+      continue;
+    }
+    if (a == '--print-threat-refit') {
+      _printThreat = true;
       continue;
     }
     final gp = RegExp(r'^--gear-polish=(.+)$').firstMatch(a);
