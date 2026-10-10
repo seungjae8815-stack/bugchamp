@@ -46,6 +46,7 @@ class SkillDef {
     required this.perLevel,
     this.cooldown = Duration.zero,
     this.duration = Duration.zero,
+    this.durationPerLevel = 0,
     this.timing = const {},
   });
 
@@ -66,6 +67,15 @@ class SkillDef {
 
   final Duration cooldown;
   final Duration duration;
+
+  /// 레벨당 지속 시간 증가(초). 번데기 방벽처럼 **켜짐 여부**가 효과라 효과값([perLevel])으로는
+  /// 자랄 데가 없는 스킬용(2026-10-10 — 방벽이 수련해도 아무것도 안 늘었다).
+  final double durationPerLevel;
+
+  /// 레벨 [level](1부터)에서의 지속 시간(초). 앱 발동·설명·밸런스 시뮬이 같은 값을 본다.
+  double durationAt(int level) =>
+      duration.inMilliseconds / 1000 +
+      durationPerLevel * (level - 1).clamp(0, 1 << 20);
 
   /// 직접 눌렀을 때만 붙는 타이밍 보너스 수치(스킬마다 키가 다르다). 없으면 빈 맵.
   final Map<String, double> timing;
@@ -90,6 +100,7 @@ class SkillDef {
     perLevel: (json['perLevel'] as num?)?.toDouble() ?? 0,
     cooldown: Duration(seconds: (json['cooldown'] as num?)?.toInt() ?? 0),
     duration: Duration(seconds: (json['duration'] as num?)?.toInt() ?? 0),
+    durationPerLevel: (json['durationPerLevel'] as num?)?.toDouble() ?? 0,
     timing: {
       if (json['timing'] is Map)
         for (final e in (json['timing'] as Map).entries)

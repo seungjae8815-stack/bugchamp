@@ -568,7 +568,11 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     final v = def.valueAt(lv);
     String pct(double x) => (x * 100).toStringAsFixed(x * 100 < 10 ? 1 : 0);
     String mult(double x) => x.toStringAsFixed(x == x.roundToDouble() ? 0 : 1);
-    final d = '${def.duration.inSeconds}';
+    // 지속 시간도 레벨로 자랄 수 있다(번데기 방벽) — 소수 한 자리까지.
+    final dur = def.durationAt(lv);
+    final d = dur == dur.roundToDouble()
+        ? dur.toStringAsFixed(0)
+        : dur.toStringAsFixed(1);
     final text = switch (def.effect) {
       'materialFind' when def.isActive => l.skillFxMaterialBurst(mult(v), d),
       'materialFind' => l.skillFxMaterialFind(pct(v)),

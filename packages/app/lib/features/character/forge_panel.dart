@@ -280,11 +280,28 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
     // 하나를 처리하면 **다음 것이 바로 뜬다.** 예전엔 매번 모루를 다시
     // 눌러야 했다 — 10칸을 비우려면 10번을 더 눌러야 하는 셈이었다
     // (2026-09-09 지적).
+    _soldInRow.clear();
     while (mounted && await _openOne()) {
       if (!mounted) return;
       setState(() {});
     }
+    // 판 재료는 **멈췄을 때 한 번에** 보여 준다(2026-10-10 실기 지적 — 한 개 팔 때마다 보상 창이 떴다).
+    if (_soldInRow.isNotEmpty && mounted) {
+      final got = Map<MaterialKind, int>.from(_soldInRow);
+      _soldInRow.clear();
+      final l = AppLocalizations.of(context);
+      await showRewardPopup(
+        context,
+        title: l.forgeResultDrop,
+        subtitle: l.rewardGained,
+        iconWidget: dialogAsset('assets/images/ui/anvil.webp'),
+        materials: got,
+      );
+    }
   }
+
+  /// 이번에 연달아 판 재료 합계(모루를 열어 처리한 것 — 자동 제련 표시 [_sold] 와 다르다).
+  final Map<MaterialKind, int> _soldInRow = {};
 
   /// 맨 위 하나를 열어 처리한다. 다음 것을 이어서 열어도 되면 true.
   ///
@@ -293,10 +310,18 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
   Future<bool> _openOne() async {
     final top = ref.read(saveControllerProvider).requireValue.forgeStack;
     if (top.isEmpty) return false;
-    final done = await showForgeResult(context, ref, top.last);
-    if (!done) return false; // 바깥을 눌러 닫았다 — 여기서 멈춘다.
-    await ref.read(saveControllerProvider.notifier).takeForgeItem();
-    return true;
+    // 모루에서 빼는 일은 **창의 버튼이 한다**(교체 = 끼고 빼기 · 판매 = 팔면서 빼기). 예전엔 여기서 한 번 더
+    // 뺐는데, 판매가 이미 빼 둔 뒤라 **다음 장비가 보지도 못한 채 재료 없이 사라졌다**(2026-10-10 발견).
+    return showForgeResult(
+      context,
+      ref,
+      top.last,
+      onSold: (got) {
+        for (final e in got.entries) {
+          _soldInRow[e.key] = (_soldInRow[e.key] ?? 0) + e.value;
+        }
+      },
+    );
   }
 
   @override
@@ -1147,13 +1172,16 @@ class _StackSide extends StatelessWidget {
 
 /// 제련 결과 — **지금 낀 것과 나란히**. 가방이 없으니 여기서 정한다.
 ///
-/// 교체나 버리기를 **눌렀을 때만** true. 바깥을 눌러 닫으면 false 라서
-/// 호출부가 모루에 그대로 남겨 둘 수 있다.
+/// 교체나 판매를 **눌렀을 때만** true — 그때 버튼이 모루 맨 위에서 직접 뺀다(호출부는 다시 빼지 않는다).
+/// 바깥을 눌러 닫으면 false 라서 모루에 그대로 남는다.
+///
+/// [onSold] 를 주면 판 재료를 넘기고 보상 창은 띄우지 않는다(연달아 팔 때 호출부가 모아서 한 번에).
 Future<bool> showForgeResult(
   BuildContext context,
   WidgetRef ref,
-  EquipItem item,
-) async {
+  EquipItem item, {
+  void Function(Map<MaterialKind, int> got)? onSold,
+}) async {
   final l = AppLocalizations.of(context);
   final locale = Localizations.localeOf(context).languageCode;
   final data = ref.read(gameDataProvider).value;
@@ -1269,6 +1297,10 @@ Future<bool> showForgeResult(
               .sellTopItem();
           if (!context.mounted) return;
           Navigator.pop(context, true);
+          if (onSold != null) {
+            onSold(got);
+            return;
+          }
           if (got.isEmpty || !context.mounted) return;
           await showRewardPopup(
             context,
@@ -1280,9 +1312,12 @@ Future<bool> showForgeResult(
         },
         primary: false,
       ),
-      gameDialogButton(l.forgeResultKeep, () {
+      gameDialogButton(l.forgeResultKeep, () async {
         // ⚠️ 굴린 뒤라면 **굴린 것**을 껴야 한다.
-        ref.read(saveControllerProvider.notifier).equipItem(shown);
+        final ctrl = ref.read(saveControllerProvider.notifier);
+        await ctrl.equipItem(shown);
+        await ctrl.takeForgeItem();
+        if (!context.mounted) return;
         Navigator.pop(context, true);
       }),
     ],

@@ -403,6 +403,17 @@ void main() {
 
     /// 2026-09-15: 최대 레벨 16 에서 최상위 등급은 **귀하다**(주력이면 극한에서
     /// 장비가 최고치를 크게 넘친다). 그래도 뽑을 수는 있어야 목표가 남는다.
+    // 2026-10-10 실기 지적: 번데기 방벽은 효과값이 켜짐 여부(perLevel 0)라 수련해도 아무것도 안 늘었다.
+    // 수련은 조각·시간을 쓰는 행동이라 **모든 스킬이 레벨로 뭔가 자라야** 한다(효과값 또는 지속 시간).
+    test('모든 스킬은 레벨이 오르면 효과값이나 지속 시간이 자란다', () {
+      for (final d in skills.skills) {
+        final grows =
+            d.valueAt(skills.maxLevel) > d.valueAt(1) ||
+            d.durationAt(skills.maxLevel) > d.durationAt(1);
+        expect(grows, isTrue, reason: '${d.id} — 수련해도 아무것도 안 늘어난다');
+      }
+    });
+
     test('공방 최고 레벨에서 최상위 등급에 닿는다(창이 헛돌지 않게)', () {
       final w = forge.tierWeights(forge.maxLevel, items.tierCount);
       expect(w.last, greaterThan(0.03));

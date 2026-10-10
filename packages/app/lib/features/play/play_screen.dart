@@ -4533,7 +4533,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         );
         AudioService.instance.sfxHit();
       case 'invulnerable':
-        _skillOn[def.id] = def.duration.inMilliseconds / 1000;
+        _skillOn[def.id] = def.durationAt(lv);
         _guardRefunded = false;
         _guardReflect =
             manual &&
@@ -4542,7 +4542,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             _timeToBite() <= def.timingValue('window');
         timed = _guardReflect;
       default:
-        _skillOn[def.id] = def.duration.inMilliseconds / 1000;
+        _skillOn[def.id] = def.durationAt(lv);
     }
     _pops.add(
       _Pop(

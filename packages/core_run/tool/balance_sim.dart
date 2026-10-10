@@ -1525,14 +1525,14 @@ class _Player {
       final v = def.valueAt(lv);
       switch (def.effect) {
         case 'attackSpeed':
-          final up = (def.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
+          final up = (def.durationAt(lv) / cd).clamp(0.0, 1.0);
           atkSpeed *= 1 + (v - 1) * up;
         case 'burstDamage' || 'areaDamage':
           // 쿨마다 "값 초 분량" 한 방(skillBurstDamage) → 초당 피해 × (1 + 값/쿨).
           attack *= 1 + v / cd;
         case 'petPower':
           // 여왕의 부름 — 곤충 몫(_petShare)만 × 값. 캐릭터 몫은 그대로.
-          final up = (def.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
+          final up = (def.durationAt(lv) / cd).clamp(0.0, 1.0);
           attack *= 1 + _petShare * (v - 1) * up;
       }
     }
@@ -1695,7 +1695,7 @@ class _Player {
       final def = cfg.byId(id);
       if (def?.effect != 'invulnerable' || !def!.isActive) continue;
       final cd = def.cooldown.inMilliseconds / 1000;
-      final dur = def.duration.inMilliseconds / 1000;
+      final dur = def.durationAt(eq.levels[id] ?? eq.lv);
       if (cd > 0 && dur > 0) guard = (duration: dur, cooldown: cd);
     }
     return (
@@ -1757,7 +1757,7 @@ class _Player {
       final def = cfg.byId(id);
       if (def == null || !def.isActive) continue;
       final cd = def.cooldown.inMilliseconds / 1000;
-      final dur = def.duration.inMilliseconds / 1000;
+      final dur = def.durationAt(eq.lv);
       final v = def.valueAt(eq.lv);
       // 0 초에 첫 발, 그 뒤 쿨마다.
       for (var t = 0.0; t < sec; t += cd <= 0 ? sec : cd) {
