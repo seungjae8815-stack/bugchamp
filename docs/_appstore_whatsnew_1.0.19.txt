@@ -1,0 +1,47 @@
+========================================
+ App Store — 새로운 기능 (1.0.19 / 20260945)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지(목록: flutter-release 스킬 references/store-text.md).
+※ 범위: 1.0.18(20260944) 이후.
+
+<ko-KR>
+장비 다듬기와 환생이 생겼어요
+
+- 장비 옵션 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 남길 쪽을 고릅니다. 원하는 옵션 종류를 지정할 수도 있고, 다듬을수록 정성이 쌓여 낮은 값이 덜 나와요
+- 장비 환생: 같은 부위 장비를 재료로 먹여 별을 올리면 옵션 효과가 커집니다(최대 5성)
+- 근성·맷집·회복력 강화를 올리면 사냥에서 받는 피해가 확실히 줄어듭니다. 사냥터 몬스터 수치가 바뀌었어요
+- 결투 전투력이 실제로 이길 확률을 반영하도록 바뀌었습니다
+- 미션 목표가 너무 커지지 않게 바꾸고, 젤리로 다른 미션으로 바꿀 수 있습니다
+- 만능 조각으로 스킬을 해금할 수 있습니다
+- 번데기 방벽이 레벨마다 무적 시간이 늘어납니다
+- 훈련 포인트를 모든 곤충이 같은 기준으로 받도록 맞췄습니다
+- 채팅이 실시간으로 바뀌지 않던 문제와 장비 판매 등 여러 문제를 고쳤습니다
+</ko-KR>
+
+<en-US>
+Gear refining and rebirth are here
+
+- Refine gear options: reroll one line with fossils or jelly, then keep the old or the new value. You can pick the option type, and each refine raises the minimum roll
+- Gear rebirth: feed same-slot gear to add stars and boost option effects (up to 5 stars)
+- HP, defense and regen upgrades now clearly reduce hunting damage. Zone monster values have changed
+- Duel combat power now reflects real win chances
+- Mission goals no longer grow too large, and you can swap a mission with jelly
+- Wild shards can now unlock skills
+- Pupa Guard lasts longer with each level
+- Training points now follow the same rules for every bug
+- Fixed live chat updates, gear selling and other issues
+</en-US>
+
+<ja-JP>
+装備の磨きと転生が登場
+
+- 装備オプションの磨き: 化石かゼリーでオプション1行を振り直し、以前の値と新しい値のどちらを残すか選べます。種類の指定もでき、磨くほど低い値が出にくくなります
+- 装備の転生: 同じ部位の装備を素材にして星を上げると、オプション効果が大きくなります(最大5つ星)
+- 体力・防御・回復の強化で、狩りで受けるダメージがはっきり減ります。狩り場のモンスターの数値が変わりました
+- 決闘の戦闘力が実際の勝率を反映するようになりました
+- ミッションの目標が大きくなりすぎないようにし、ゼリーで別のミッションに変更できます
+- 万能かけらでスキルを解放できます
+- 蛹の防壁はレベルごとに無敵時間が伸びます
+- 訓練ポイントはすべての虫が同じ基準で得られるようになりました
+- チャットのリアルタイム更新や装備の売却など、いくつかの問題を修正しました
+</ja-JP>
