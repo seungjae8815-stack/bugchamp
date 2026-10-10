@@ -847,12 +847,20 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
         ),
       ),
     );
+    // ⚠️ 왼쪽(닉네임·뱃지)을 **하나의 Expanded** 로 묶는다 — `Flexible(이름) + Spacer()` 는 남는 폭을 반씩 나눠
+    // 이름 길이에 따라 시간·⋯ 위치가 줄마다 달라졌다(2026-10-10 실기 지적, 랭킹 줄과 같은 원인). 시간·⋯ 는 늘 오른쪽 끝.
     final nameRow = Row(
       children: [
-        if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
-        Flexible(child: nameText),
-        if (badge != null) ...[const SizedBox(width: 4), badge],
-        const Spacer(),
+        Expanded(
+          child: Row(
+            children: [
+              if (guildTag != null) ...[guildTag, const SizedBox(width: 4)],
+              Flexible(child: nameText),
+              if (badge != null) ...[const SizedBox(width: 4), badge],
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
         time,
         more,
       ],
