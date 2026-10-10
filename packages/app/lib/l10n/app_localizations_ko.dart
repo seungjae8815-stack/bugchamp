@@ -3420,7 +3420,83 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get forgeRerollHint => '등급·부위는 그대로, 옵션만 다시 굴려요';
+  String get polishTitle => '옵션 다듬기';
+
+  @override
+  String get polishNow => '지금';
+
+  @override
+  String get polishOld => '이전';
+
+  @override
+  String get polishNew => '새 값';
+
+  @override
+  String polishStacks(String n, String max, String floor) {
+    return '정성 $n/$max · 다음 굴림은 최대의 $floor% 이상';
+  }
+
+  @override
+  String get polishRandomKind => '종류도 무작위';
+
+  @override
+  String polishPickKind(String kind, String mult) {
+    return '$kind(비용 ×$mult)';
+  }
+
+  @override
+  String polishHint(String have) {
+    return '어느 쪽을 골라도 정성이 올라요 · 화석 $have개 보유';
+  }
+
+  @override
+  String get polishChooseHint => '남길 값을 고르세요 — 어느 쪽이든 정성은 올랐어요';
+
+  @override
+  String get polishKeepOld => '이전 값 유지';
+
+  @override
+  String get polishTakeNew => '새 값으로';
+
+  @override
+  String get polishNoFossil => '화석이 모자라요';
+
+  @override
+  String get polishBadKind => '다른 줄에 있는 종류는 고를 수 없어요';
+
+  @override
+  String get polishFailed => '지금은 다듬을 수 없어요';
+
+  @override
+  String starBonus(String p) {
+    return '효과 +$p%';
+  }
+
+  @override
+  String starProgress(String have, String need) {
+    return '다음 별 $have/$need';
+  }
+
+  @override
+  String get forgeResultFeed => '환생 재료';
+
+  @override
+  String forgeFeedHint(String slot, String have, String need) {
+    return '낀 $slot의 환생 재료로 쓸 수 있어요 ($have/$need)';
+  }
+
+  @override
+  String forgeStarUp(String n, String p) {
+    return '$n성 달성! 옵션 효과 +$p%';
+  }
+
+  @override
+  String forgeStarInherit(String n) {
+    return '별 $n개를 이어받았어요';
+  }
+
+  @override
+  String get forgeRerollHint => '등급·부위는 그대로 · 다듬기 버튼으로 옵션을 바꿔요';
 
   @override
   String forgeRushOn(int s) {

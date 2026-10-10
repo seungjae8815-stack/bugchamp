@@ -117,19 +117,32 @@ enum ItemOptionKind {
 /// 제련으로 굴려진 하위 옵션 하나. [value] 는 **퍼센트**(12.0 = +12%).
 @immutable
 class ItemOption {
-  const ItemOption({required this.kind, required this.value});
+  const ItemOption({required this.kind, required this.value, this.polish = 0});
 
   final ItemOptionKind kind;
   final double value;
 
-  ItemOption copyWith({ItemOptionKind? kind, double? value}) =>
-      ItemOption(kind: kind ?? this.kind, value: value ?? this.value);
+  /// 정성(2026-10-10, 장비 v2) — 이 줄을 다듬은 횟수. 수치 굴림의 바닥을 올린다(`ForgeConfig.polishFloor`).
+  /// 0 이면 JSON 에 안 적는다. ⚠️ 1.0.18 이하 앱은 이 키를 버린다 → 서버가 feat 21 미만 업로드에서 되돌린다.
+  final int polish;
 
-  Map<String, dynamic> toJson() => {'k': kind.key, 'v': value};
+  ItemOption copyWith({ItemOptionKind? kind, double? value, int? polish}) =>
+      ItemOption(
+        kind: kind ?? this.kind,
+        value: value ?? this.value,
+        polish: polish ?? this.polish,
+      );
+
+  Map<String, dynamic> toJson() => {
+    'k': kind.key,
+    'v': value,
+    if (polish > 0) 'p': polish,
+  };
 
   factory ItemOption.fromJson(Map<String, dynamic> json) => ItemOption(
     kind: ItemOptionKind.fromKey(json['k'] as String),
     value: (json['v'] as num).toDouble(),
+    polish: (json['p'] as num?)?.toInt() ?? 0,
   );
 
   /// 모르는 옵션 축이면 null — 세이브에서 읽을 때 쓴다. 신버전이 옵션을 추가해도
@@ -137,15 +150,22 @@ class ItemOption {
   static ItemOption? tryFromJson(Map<String, dynamic> json) {
     final kind = ItemOptionKind.fromKeyOrNull(json['k'] as String? ?? '');
     if (kind == null) return null;
-    return ItemOption(kind: kind, value: (json['v'] as num?)?.toDouble() ?? 0);
+    return ItemOption(
+      kind: kind,
+      value: (json['v'] as num?)?.toDouble() ?? 0,
+      polish: (json['p'] as num?)?.toInt() ?? 0,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
-      other is ItemOption && other.kind == kind && other.value == value;
+      other is ItemOption &&
+      other.kind == kind &&
+      other.value == value &&
+      other.polish == polish;
 
   @override
-  int get hashCode => Object.hash(kind, value);
+  int get hashCode => Object.hash(kind, value, polish);
 
   @override
   String toString() => '${kind.key}+$value%';
@@ -162,6 +182,8 @@ class EquipItem {
     required this.slot,
     required this.tier,
     required this.options,
+    this.stars = 0,
+    this.starExp = 0,
   });
 
   final EquipSlot slot;
@@ -173,17 +195,33 @@ class EquipItem {
   /// 제련으로 굴려진 하위 옵션(등급이 개수를 정한다).
   final List<ItemOption> options;
 
-  EquipItem copyWith({EquipSlot? slot, int? tier, List<ItemOption>? options}) =>
-      EquipItem(
-        slot: slot ?? this.slot,
-        tier: tier ?? this.tier,
-        options: options ?? this.options,
-      );
+  /// 환생 별(0~5, 2026-10-10 장비 v2) — 옵션 효과 배율(`ItemConfig.starMult`). 0 이면 JSON 에 안 적는다.
+  /// ⚠️ 1.0.18 이하 앱은 이 키를 버린다 → 서버가 feat 21 미만 업로드에서 되돌린다.
+  final int stars;
+
+  /// 다음 별까지 먹인 환생 재료 수.
+  final int starExp;
+
+  EquipItem copyWith({
+    EquipSlot? slot,
+    int? tier,
+    List<ItemOption>? options,
+    int? stars,
+    int? starExp,
+  }) => EquipItem(
+    slot: slot ?? this.slot,
+    tier: tier ?? this.tier,
+    options: options ?? this.options,
+    stars: stars ?? this.stars,
+    starExp: starExp ?? this.starExp,
+  );
 
   Map<String, dynamic> toJson() => {
     's': slot.key,
     't': tier,
     'o': [for (final o in options) o.toJson()],
+    if (stars > 0) 'st': stars,
+    if (starExp > 0) 'sx': starExp,
   };
 
   factory EquipItem.fromJson(Map<String, dynamic> json) => EquipItem(
@@ -193,6 +231,8 @@ class EquipItem {
       for (final o in (json['o'] as List? ?? const []))
         ItemOption.fromJson(Map<String, dynamic>.from(o as Map)),
     ],
+    stars: (json['st'] as num?)?.toInt() ?? 0,
+    starExp: (json['sx'] as num?)?.toInt() ?? 0,
   );
 
   /// 모르는 **부위**면 null — 세이브에서 읽을 때 쓴다. 모르는 **옵션**은
@@ -211,9 +251,12 @@ class EquipItem {
         for (final o in (json['o'] as List? ?? const []))
           ?ItemOption.tryFromJson(Map<String, dynamic>.from(o as Map)),
       ],
+      stars: (json['st'] as num?)?.toInt() ?? 0,
+      starExp: (json['sx'] as num?)?.toInt() ?? 0,
     );
   }
 
   @override
-  String toString() => 'EquipItem(${slot.key}, t$tier, $options)';
+  String toString() =>
+      'EquipItem(${slot.key}, t$tier${stars > 0 ? ' ★$stars' : ''}, $options)';
 }

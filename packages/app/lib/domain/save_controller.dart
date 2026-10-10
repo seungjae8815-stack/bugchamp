@@ -3156,11 +3156,39 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 부위에 장비를 낀다. **가방이 없으므로 기존 것은 사라진다**(§3.4) —
   /// 창고·보유상한·자동분해가 통째로 필요 없어지고, 세이브에 남는 장비는 8개뿐이다.
+  ///
+  /// 환생 별은 **절반(내림)을 이어받는다**(2026-10-10 장비 v2) — 높은 등급이 나와도 별 때문에 못 바꾸는 일이 없게.
   Future<void> equipItem(EquipItem item) async {
     final s = state.requireValue;
+    final items = ref.read(gameDataProvider).value?.itemConfig;
+    final next = items == null
+        ? item
+        : inheritStars(items, s.equippedItems[item.slot], item);
     await _commit(
-      s.copyWith(equippedItems: {...s.equippedItems, item.slot: item}),
+      s.copyWith(equippedItems: {...s.equippedItems, item.slot: next}),
     );
+  }
+
+  /// 모루 맨 위 장비를 **같은 부위 장착 장비의 환생 재료**로 쓴다(2026-10-10 장비 v2).
+  /// 재료 수가 차면 별 +1. 실패 이유: `no_item`·`no_target`(그 부위에 낀 것 없음)·`not_allowed`(부위·등급·만렙).
+  Future<String?> feedTopToStar() async {
+    final items = ref.read(gameDataProvider).value?.itemConfig;
+    final s = state.requireValue;
+    if (items == null || s.forgeStack.isEmpty) return 'no_item';
+    final fodder = s.forgeStack.last;
+    final target = s.equippedItems[fodder.slot];
+    if (target == null) return 'no_target';
+    if (!canFeedStar(items, target, fodder)) return 'not_allowed';
+    await _commit(
+      s.copyWith(
+        equippedItems: {
+          ...s.equippedItems,
+          fodder.slot: feedStar(items, target),
+        },
+        forgeStack: [...s.forgeStack]..removeLast(),
+      ),
+    );
+    return null;
   }
 
   /// 제련 1회 — 화석 조각 1개를 태워 장비 하나를 뽑아 **모루 위에 쌓는다**.
@@ -3393,49 +3421,90 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
-  /// 옵션 **한 칸만** 다시 굴린다 — 모루 맨 위(`equipped: false`) 또는
-  /// 이미 낀 장비(`equipped: true`, 부위를 [slot] 으로 지정).
+  /// 옵션 한 줄 **다듬기**(2026-10-10 장비 v2, 옛 재굴림 대체) — 모루 맨 위(`equipped: false`) 또는
+  /// 이미 낀 장비(`equipped: true`, 부위 [slot]).
   ///
-  /// 사장님 확정(2026-09-09): 두 옵션을 각각 바꿀 수 있어야 하고, **이미 낀
-  /// 장비도** 바꿀 수 있어야 한다. 낀 것을 못 바꾸면 좋은 등급을 뽑고도
-  /// 옵션이 나쁘면 버려야 해서, 등급을 모으는 의미가 줄어든다.
-  Future<bool> rerollOption({
+  /// 비용(화석 또는 젤리, [kind] 를 지정하면 ×`polishKindMult`)을 내고 그 줄의 정성을 올린 뒤 **새 후보**를
+  /// 돌려준다. 새 값을 쓸지는 화면이 물어보고 [choosePolish] 로 정한다 — 안 고르면 이전 값이 남는다.
+  /// 화석 경로가 같은 결과에 닿으므로 젤리는 시간 절약이다(§2.6).
+  /// 실패 이유: `no_item` · `bad_kind`(다른 줄에 있는 종류) · `not_enough_fossil` · `not_enough_jelly`.
+  Future<({ItemOption? candidate, String? error})> polishOption({
     required int index,
     bool equipped = false,
     EquipSlot? slot,
+    ItemOptionKind? kind,
+    required bool payJelly,
   }) async {
     final data = ref.read(gameDataProvider).value;
     final items = data?.itemConfig;
     final forge = data?.forgeConfig;
-    if (items == null || forge == null) return false;
+    if (items == null || forge == null) {
+      return (candidate: null, error: 'no_item');
+    }
     final s = state.requireValue;
-
     final target = equipped
         ? (slot == null ? null : s.equippedItems[slot])
         : (s.forgeStack.isEmpty ? null : s.forgeStack.last);
-    if (target == null || index >= target.options.length) return false;
-
-    final cost = forge.rerollJelly;
-    final have = s.materialCount(MaterialKind.jelly);
-    if (have < cost) return false;
-
-    final next = rerollOptionAt(
+    if (target == null || index >= target.options.length) {
+      return (candidate: null, error: 'no_item');
+    }
+    final cost = forge.polishCost(target.tier, pickKind: kind != null);
+    final payKind = payJelly ? MaterialKind.jelly : MaterialKind.fossil;
+    final price = payJelly ? cost.jelly : cost.fossils;
+    final have = s.materialCount(payKind);
+    if (have < price) {
+      return (
+        candidate: null,
+        error: payJelly ? 'not_enough_jelly' : 'not_enough_fossil',
+      );
+    }
+    final r = polishOptionAt(
       rng: _forgeRng,
       items: items,
       item: target,
       index: index,
+      kind: kind,
     );
+    if (r == null) return (candidate: null, error: 'bad_kind');
     final mats = Map<MaterialKind, int>.from(s.materials)
-      ..[MaterialKind.jelly] = have - cost;
-
+      ..[payKind] = have - price;
     if (equipped) {
       final eq = Map<EquipSlot, EquipItem>.from(s.equippedItems)
-        ..[slot!] = next;
+        ..[slot!] = r.kept;
       await _commit(s.copyWith(equippedItems: eq, materials: mats));
     } else {
       final stack = [...s.forgeStack];
-      stack[stack.length - 1] = next;
+      stack[stack.length - 1] = r.kept;
       await _commit(s.copyWith(forgeStack: stack, materials: mats));
+    }
+    return (candidate: r.candidate, error: null);
+  }
+
+  /// 다듬기 결과에서 **새 값**을 고른다. 그 사이 그 장비가 바뀌었으면(교체·판매) 아무것도 안 한다.
+  Future<bool> choosePolish({
+    required int index,
+    required ItemOption candidate,
+    bool equipped = false,
+    EquipSlot? slot,
+  }) async {
+    final s = state.requireValue;
+    final target = equipped
+        ? (slot == null ? null : s.equippedItems[slot])
+        : (s.forgeStack.isEmpty ? null : s.forgeStack.last);
+    if (target == null ||
+        index >= target.options.length ||
+        target.options[index].polish != candidate.polish) {
+      return false;
+    }
+    final next = applyPolish(target, index, candidate);
+    if (equipped) {
+      final eq = Map<EquipSlot, EquipItem>.from(s.equippedItems)
+        ..[slot!] = next;
+      await _commit(s.copyWith(equippedItems: eq));
+    } else {
+      final stack = [...s.forgeStack];
+      stack[stack.length - 1] = next;
+      await _commit(s.copyWith(forgeStack: stack));
     }
     return true;
   }

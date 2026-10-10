@@ -307,6 +307,48 @@ class GameActions {
     return stored;
   }
 
+  /// feat 21(장비 v2) 키 — 1.0.18 이하 앱은 `EquipItem.tryFromJson` 이 s/t/o 만 읽어 **버리고** 올린다.
+  /// [incoming] 이 [stored] 와 같은 장비(부위·등급·옵션 종류·값이 같다)면 저장본의 별(`st`)·환생 재료(`sx`)·
+  /// 옵션 정성(`p`)을 얹은 사본을, 아니면 null(구버전 기기에서 장비를 바꿨으면 새 장비를 그대로 둔다).
+  static Map<String, dynamic>? _restoreEquipV2(
+    Object? stored,
+    Object? incoming,
+  ) {
+    if (stored is! Map || incoming is! Map) return null;
+    final hasV2 =
+        stored.containsKey('st') ||
+        stored.containsKey('sx') ||
+        (stored['o'] is List &&
+            (stored['o'] as List).any((o) => o is Map && o.containsKey('p')));
+    if (!hasV2) return null;
+    if (stored['s'] != incoming['s']) return null;
+    if ((stored['t'] as num?)?.toInt() != (incoming['t'] as num?)?.toInt()) {
+      return null;
+    }
+    final so = stored['o'];
+    final co = incoming['o'];
+    if (so is! List || co is! List || so.length != co.length) return null;
+    final opts = <dynamic>[];
+    for (var i = 0; i < so.length; i++) {
+      final a = so[i];
+      final b = co[i];
+      if (a is! Map || b is! Map || a['k'] != b['k']) return null;
+      if ((a['v'] as num?)?.toDouble() != (b['v'] as num?)?.toDouble()) {
+        return null;
+      }
+      opts.add(<String, dynamic>{
+        ...Map<String, dynamic>.from(b),
+        if (a.containsKey('p')) 'p': a['p'],
+      });
+    }
+    return <String, dynamic>{
+      ...Map<String, dynamic>.from(incoming),
+      'o': opts,
+      if (stored.containsKey('st')) 'st': stored['st'],
+      if (stored.containsKey('sx')) 'sx': stored['sx'],
+    };
+  }
+
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
   static Map<String, dynamic> _keepFieldsOldAppDoesNotKnow(
     SaveGame stored,
@@ -370,6 +412,35 @@ class GameActions {
             () {
               for (var i = 0; i < pool.length; i++) {
                 final r = _restoreDroppedOptions(pool[i], item);
+                if (r != null) {
+                  pool.removeAt(i);
+                  return r;
+                }
+              }
+              return item;
+            }(),
+        ];
+      }
+    }
+    // 장비 v2 키(feat 21) — 같은 장비면 저장본의 별·환생 재료·정성을 얹는다(위 회피 복원 뒤의 모양 기준).
+    if (feat < 21) {
+      final se = storedJson['equippedItems'];
+      final ce = out['equippedItems'];
+      if (se is Map && ce is Map) {
+        out['equippedItems'] = <String, dynamic>{
+          for (final e in ce.entries)
+            '${e.key}': _restoreEquipV2(se[e.key], e.value) ?? e.value,
+        };
+      }
+      final ss = storedJson['forgeStack'];
+      final cs = out['forgeStack'];
+      if (ss is List && cs is List) {
+        final pool = [...ss];
+        out['forgeStack'] = <dynamic>[
+          for (final item in cs)
+            () {
+              for (var i = 0; i < pool.length; i++) {
+                final r = _restoreEquipV2(pool[i], item);
                 if (r != null) {
                   pool.removeAt(i);
                   return r;

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/colors.dart';
-import '../../ui/jelly_confirm.dart';
 
 /// 등급 색 — `items.json` 의 ARGB 문자열을 그대로 쓴다(코드에 색 하드코딩 금지).
 Color tierColor(ItemConfig cfg, int tier) {
@@ -129,8 +128,7 @@ class ItemOptionList extends StatelessWidget {
     required this.config,
     this.compare,
     this.dense = false,
-    this.rerollCost,
-    this.onReroll,
+    this.onPolish,
   });
 
   final EquipItem item;
@@ -138,14 +136,9 @@ class ItemOptionList extends StatelessWidget {
   final EquipItem? compare;
   final bool dense;
 
-  /// 옵션 한 칸을 다시 굴리는 젤리 값. null 이면 버튼을 안 그린다.
-  ///
-  /// **부위 기본 스탯 줄에는 안 붙인다** — 그건 옵션이 아니라 그 부위의
-  /// 고정 성능이라 바꿀 수 있는 값이 아니다(바꾸면 부위의 정체가 사라진다).
-  final int? rerollCost;
-
-  /// 옵션 인덱스(0-based)를 받아 재굴림을 실행한다.
-  final void Function(int index)? onReroll;
+  /// 옵션 줄(0-based)을 **다듬기** 창으로 연다(2026-10-10 장비 v2 — 화석·젤리 · 종류 지정 · 이전/새 고르기).
+  /// null 이면 버튼을 안 그린다. 비용은 창에서 고르므로(화석/젤리) 버튼엔 값을 안 적는다.
+  final void Function(int index)? onPolish;
 
   @override
   Widget build(BuildContext context) {
@@ -168,35 +161,11 @@ class ItemOptionList extends StatelessWidget {
           perfectLabel: l.optPerfect,
           // 옵션마다 따로 굴린다 — 통째로 굴리면 마음에 드는 한 줄까지
           // 같이 날아가서 원하는 조합을 못 맞춘다(2026-09-09 확정).
-          onReroll: onReroll == null
-              ? null
-              : () => _confirmReroll(context, l, optionLabel(l, o.kind), i),
+          onReroll: onPolish == null ? null : () => onPolish!(i),
         ),
       );
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
-  }
-
-  /// 재굴림은 누를 때마다 젤리가 빠진다 — 확인받고 나서 굴린다.
-  /// 모자라면 확인 창이 상점 안내로 바뀐다(호출부의 "젤리가 모자라요"는 예비용).
-  Future<void> _confirmReroll(
-    BuildContext context,
-    AppLocalizations l,
-    String option,
-    int index,
-  ) async {
-    final cost = rerollCost ?? 0;
-    if (!await confirmJellySpend(
-      context,
-      title: l.forgeReroll,
-      body: l.forgeRerollConfirm(cost, option),
-      jelly: cost,
-      actionLabel: l.jellyActReroll,
-    )) {
-      return;
-    }
-    if (!context.mounted) return;
-    onReroll?.call(index);
   }
 
   Widget _row(
@@ -288,8 +257,8 @@ class ItemOptionList extends StatelessWidget {
                   )
                 : null,
           ),
-          // 옵션 줄 오른쪽에 **새로고침 + 젤리 + 값**. 눌러 보기 전에
-          // 무엇을 얼마에 바꾸는지 보여야 한다(2026-09-09 확정).
+          // 옵션 줄 오른쪽에 **다듬기** 버튼(2026-10-10 장비 v2). 비용은 창에서 화석/젤리로 고르므로
+          // 버튼엔 값을 안 적는다(예전엔 새로고침 + 젤리 + 값).
           // ⚠️ 자리를 **있든 없든 늘 잡는다**(화살표 칸과 같은 원칙).
           // 조건부로 붙이면 버튼이 있는 줄만 라벨·값이 왼쪽으로 밀려
           // 글자 정렬이 어긋난다(2026-09-09 지적).
@@ -298,8 +267,8 @@ class ItemOptionList extends StatelessWidget {
           // 49px 만 남아 "치명타 확률"이 잘린다(2026-09-10 지적).
           // 좁은 쪽은 호출부가 비교창 **아래 전용 줄**로 뺀다.
           SizedBox(
-            width: (rerollCost == null || dense) ? 0 : 46,
-            child: (!dense && onReroll != null && rerollCost != null)
+            width: (onPolish == null || dense) ? 0 : 30,
+            child: (!dense && onReroll != null)
                 ? GestureDetector(
                     onTap: onReroll,
                     child: Container(
@@ -313,35 +282,10 @@ class ItemOptionList extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(color: const Color(0x887E57C2)),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.refresh_rounded,
-                            size: 11,
-                            color: Color(0xFFCE93D8),
-                          ),
-                          if (!dense) ...[
-                            const SizedBox(width: 1),
-                            materialImage(
-                              MaterialKind.jelly,
-                              size: 10,
-                              fallback: const Icon(
-                                Icons.bubble_chart,
-                                size: 9,
-                                color: Color(0xFFCE93D8),
-                              ),
-                            ),
-                            Text(
-                              '$rerollCost',
-                              style: const TextStyle(
-                                color: Color(0xFFCE93D8),
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ],
+                      child: const Icon(
+                        Icons.auto_fix_high_rounded,
+                        size: 13,
+                        color: Color(0xFFCE93D8),
                       ),
                     ),
                   )

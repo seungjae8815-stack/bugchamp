@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
@@ -142,6 +144,14 @@ class ItemConfig {
     required this.slots,
     required this.optionPool,
     this.optionCurve = 1.0,
+    this.polishFloorPerStack = 0.04,
+    this.polishMaxStacks = 10,
+    this.starMax = 5,
+    this.starEffectPerStar = 0.04,
+    this.starNeed = const [1, 2, 3, 4, 5],
+    this.starTierSlack = 1,
+    this.starInheritRatio = 0.5,
+    this.starExcludeKinds = const {ItemOptionKind.evade},
   });
 
   final List<ItemTierDef> tiers;
@@ -162,6 +172,44 @@ class ItemConfig {
   /// 다만 장비 평균이 내려가면 진행이 느려지므로 `balance_sim --equip-scale`
   /// 로 함께 확인한다.
   final double optionCurve;
+
+  // ── 장비 v2(2026-10-10 사장님 확정, docs/design_equipment_v2.md) ──
+
+  /// 다듬기 정성 1회당 수치 굴림 바닥(등급 범위 대비). 정성 10 이면 0.4 = 최대의 40% 아래로는 안 나온다.
+  final double polishFloorPerStack;
+
+  /// 정성 상한.
+  final int polishMaxStacks;
+
+  /// 환생 별 상한.
+  final int starMax;
+
+  /// 별 1개당 그 장비 옵션 효과 배율(+4% × 별). 끝까지 키운 유저 ≈ 장비 ×1.6(극한 81 → 약 57일) 목표.
+  final double starEffectPerStar;
+
+  /// 별 n → n+1 에 먹일 환생 재료 수([starNeed] 의 n 번째).
+  final List<int> starNeed;
+
+  /// 재료 장비 등급은 장착 장비 등급 − 이 값 이상이어야 한다.
+  final int starTierSlack;
+
+  /// 새 장비로 바꿀 때 이어받는 별 비율(내림) — 높은 등급이 나와도 별 때문에 못 바꾸는 일이 없게.
+  final double starInheritRatio;
+
+  /// 별 효과에서 빼는 옵션(회피 — 예산 상한이 있고 호박 4 이상이면 극한이 무너진다, items.json 경고).
+  final Set<ItemOptionKind> starExcludeKinds;
+
+  /// 별 [stars] 개 장비에서 옵션 [kind] 의 효과 배율.
+  double starMult(int stars, ItemOptionKind kind) =>
+      stars <= 0 || starExcludeKinds.contains(kind)
+      ? 1
+      : 1 + starEffectPerStar * stars.clamp(0, starMax);
+
+  /// 별 [stars] → +1 에 필요한 재료 수(만렙이면 0).
+  int starNeedAt(int stars) {
+    if (stars >= starMax || starNeed.isEmpty) return 0;
+    return starNeed[stars.clamp(0, starNeed.length - 1)];
+  }
 
   int get tierCount => tiers.length;
 
@@ -192,6 +240,23 @@ class ItemConfig {
           .map(ItemOptionRange.fromJson)
           .toList(growable: false),
       optionCurve: (json['optionCurve'] as num?)?.toDouble() ?? 1.0,
+      polishFloorPerStack:
+          (json['polishFloorPerStack'] as num?)?.toDouble() ?? 0.04,
+      polishMaxStacks: (json['polishMaxStacks'] as num?)?.toInt() ?? 10,
+      starMax: (json['starMax'] as num?)?.toInt() ?? 5,
+      starEffectPerStar:
+          (json['starEffectPerStar'] as num?)?.toDouble() ?? 0.04,
+      starNeed: json['starNeed'] is List
+          ? [for (final v in json['starNeed'] as List) (v as num).toInt()]
+          : const [1, 2, 3, 4, 5],
+      starTierSlack: (json['starTierSlack'] as num?)?.toInt() ?? 1,
+      starInheritRatio: (json['starInheritRatio'] as num?)?.toDouble() ?? 0.5,
+      starExcludeKinds: json['starExcludeKinds'] is List
+          ? {
+              for (final v in json['starExcludeKinds'] as List)
+                ?ItemOptionKind.fromKeyOrNull('$v'),
+            }
+          : const {ItemOptionKind.evade},
     );
   }
 }
@@ -220,15 +285,25 @@ EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
     final r = live[o.kind];
     if (r == null) continue;
     final hi = r.maxAt(item.tier);
-    if (o.value > hi) {
-      keep.add(ItemOption(kind: o.kind, value: hi));
+    final pol = o.polish.clamp(0, config.polishMaxStacks);
+    if (o.value > hi || pol != o.polish) {
+      keep.add(o.copyWith(value: o.value > hi ? hi : o.value, polish: pol));
       clamped = true;
     } else {
       keep.add(o);
     }
   }
   final limit = config.tier(item.tier).options;
-  if (!clamped && keep.length == item.options.length && keep.length <= limit) {
+  // 별·환생 재료도 상한으로(세이브를 고쳐 99성을 적어도 5성).
+  final stars = item.stars.clamp(0, config.starMax);
+  final int exp = stars >= config.starMax
+      ? 0
+      : item.starExp.clamp(0, math.max(0, config.starNeedAt(stars) - 1));
+  final starsOk = stars == item.stars && exp == item.starExp;
+  if (!clamped &&
+      starsOk &&
+      keep.length == item.options.length &&
+      keep.length <= limit) {
     return item;
   }
   if (keep.length > limit) {
@@ -240,5 +315,5 @@ EquipItem trimItemOptions(EquipItem item, ItemConfig config) {
     keep.sort((a, b) => score(b).compareTo(score(a)));
     keep.removeRange(limit, keep.length);
   }
-  return item.copyWith(options: keep);
+  return item.copyWith(options: keep, stars: stars, starExp: exp);
 }

@@ -3503,8 +3503,84 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get polishTitle => 'Refine Option';
+
+  @override
+  String get polishNow => 'Now';
+
+  @override
+  String get polishOld => 'Before';
+
+  @override
+  String get polishNew => 'New';
+
+  @override
+  String polishStacks(String n, String max, String floor) {
+    return 'Care $n/$max · next roll at least $floor% of max';
+  }
+
+  @override
+  String get polishRandomKind => 'Random type';
+
+  @override
+  String polishPickKind(String kind, String mult) {
+    return '$kind (cost ×$mult)';
+  }
+
+  @override
+  String polishHint(String have) {
+    return 'Care rises whichever you keep · $have fossils';
+  }
+
+  @override
+  String get polishChooseHint => 'Pick one to keep — care has risen either way';
+
+  @override
+  String get polishKeepOld => 'Keep old';
+
+  @override
+  String get polishTakeNew => 'Take new';
+
+  @override
+  String get polishNoFossil => 'Not enough fossils';
+
+  @override
+  String get polishBadKind => 'That type is already on the other line';
+
+  @override
+  String get polishFailed => 'Can\'t refine right now';
+
+  @override
+  String starBonus(String p) {
+    return 'Effect +$p%';
+  }
+
+  @override
+  String starProgress(String have, String need) {
+    return 'Next star $have/$need';
+  }
+
+  @override
+  String get forgeResultFeed => 'Rebirth';
+
+  @override
+  String forgeFeedHint(String slot, String have, String need) {
+    return 'Can feed your equipped $slot for rebirth ($have/$need)';
+  }
+
+  @override
+  String forgeStarUp(String n, String p) {
+    return '$n stars! Option effect +$p%';
+  }
+
+  @override
+  String forgeStarInherit(String n) {
+    return 'Inherited $n stars';
+  }
+
+  @override
   String get forgeRerollHint =>
-      'Same tier and slot — only the options are rerolled';
+      'Grade and slot stay · use Refine to change an option';
 
   @override
   String forgeRushOn(int s) {

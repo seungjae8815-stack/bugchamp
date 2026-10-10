@@ -34,6 +34,8 @@ class ForgeConfig {
     this.autoStrikeMax = 10,
     this.autoStrikeFullFromTier = 1,
     this.rerollJelly = 15,
+    this.polishFossilPerTier = 20,
+    this.polishKindMult = 3,
     this.sellMaterialBase = 2,
     this.sellMaterialPerTier = 1,
     this.rushSeconds = 60,
@@ -147,6 +149,22 @@ class ForgeConfig {
   /// 등급은 안 바뀐다 — 등급을 젤리로 바꾸면 그건 물건을 사는 것이다.
   /// 옵션은 제련을 계속 돌리면 언젠가 나오는 조합이라, 파는 것은 시간 절약이다.
   final int rerollJelly;
+
+  /// 다듬기 화석 비용 = 이 값 × (등급 + 1)(2026-10-10 장비 v2 — 풀잎 20 · 호박 200 ≈ 접속 1시간).
+  /// 화석 경로가 있어 젤리([rerollJelly])는 시간 절약이다(§2.6 — 젤리로만 되면 스탯 판매).
+  final int polishFossilPerTier;
+
+  /// 옵션 종류를 지정해 다듬을 때 비용 배율(화석·젤리 모두).
+  final int polishKindMult;
+
+  /// 다듬기 1회 비용 — 화석으로 낼 때 / 젤리로 낼 때.
+  ({int fossils, int jelly}) polishCost(int tier, {required bool pickKind}) {
+    final m = pickKind ? polishKindMult : 1;
+    return (
+      fossils: polishFossilPerTier * (tier.clamp(0, 1 << 10) + 1) * m,
+      jelly: rerollJelly * m,
+    );
+  }
 
   /// 장비를 팔 때 주는 일반 재료 — `base + perTier * 등급`.
   ///
@@ -268,6 +286,8 @@ class ForgeConfig {
       fossilMinPerDrop: (fs['minPerDrop'] as num?)?.toInt() ?? 1,
       autoStrikeMax: (json['autoStrikeMax'] as num?)?.toInt() ?? 10,
       rerollJelly: (json['rerollJelly'] as num?)?.toInt() ?? 15,
+      polishFossilPerTier: (json['polishFossilPerTier'] as num?)?.toInt() ?? 20,
+      polishKindMult: (json['polishKindMult'] as num?)?.toInt() ?? 3,
       sellMaterialBase:
           ((json['sell'] as Map<String, dynamic>?)?['materialBase'] as num?)
               ?.toInt() ??
@@ -312,7 +332,7 @@ EquipItem rerollOptions({
     final v = r.min + roll * (hi - r.min);
     options.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
   }
-  return EquipItem(slot: item.slot, tier: item.tier, options: options);
+  return item.copyWith(options: options);
 }
 
 /// 옵션 **한 칸만** 다시 굴린다(0-based [index]).
@@ -346,7 +366,88 @@ EquipItem rerollOptionAt({
   final v = r.min + roll * (hi - r.min);
   final next = [...item.options];
   next[index] = ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10);
-  return EquipItem(slot: item.slot, tier: item.tier, options: next);
+  return item.copyWith(options: next);
+}
+
+/// 다듬기(2026-10-10 장비 v2, 옛 재굴림 대체) — 줄 [index] 의 **새 후보**를 굴린다. 고르는 건 호출부다.
+///
+/// - [kind] 를 주면 그 종류로(다른 줄에 이미 있는 종류면 null), 안 주면 다른 줄과 겹치지 않게 무작위.
+/// - 정성 +1(상한 `polishMaxStacks`) — 굴림 바닥 = 정성 × `polishFloorPerStack`(등급 범위 대비).
+/// - [kept] = 정성만 오른 지금 장비(이전 값 유지를 고르면 이것), [candidate] = 새 값(고르면 [applyPolish]).
+/// 정성은 **어느 쪽을 골라도 오른다** — 투자한 만큼 다음 굴림이 좋아진다.
+({EquipItem kept, ItemOption candidate})? polishOptionAt({
+  required math.Random rng,
+  required ItemConfig items,
+  required EquipItem item,
+  required int index,
+  ItemOptionKind? kind,
+}) {
+  if (index < 0 || index >= item.options.length) return null;
+  final others = {
+    for (var i = 0; i < item.options.length; i++)
+      if (i != index) item.options[i].kind,
+  };
+  final pool = items.optionPool
+      .where(
+        (r) => !others.contains(r.kind) && (kind == null || r.kind == kind),
+      )
+      .toList(growable: false);
+  if (pool.isEmpty) return null;
+  final r = pool[rng.nextInt(pool.length)];
+  final polish = math.min(
+    item.options[index].polish + 1,
+    items.polishMaxStacks,
+  );
+  final floor = (polish * items.polishFloorPerStack).clamp(0.0, 1.0);
+  final roll = math.max(
+    math.pow(rng.nextDouble(), items.optionCurve).toDouble(),
+    floor,
+  );
+  final hi = r.maxAt(item.tier);
+  final v = r.min + roll * (hi - r.min);
+  final cur = [...item.options];
+  cur[index] = cur[index].copyWith(polish: polish);
+  return (
+    kept: item.copyWith(options: cur),
+    candidate: ItemOption(
+      kind: r.kind,
+      value: (v * 10).roundToDouble() / 10,
+      polish: polish,
+    ),
+  );
+}
+
+/// 다듬기 결과에서 **새 값**을 고른다.
+EquipItem applyPolish(EquipItem item, int index, ItemOption candidate) {
+  if (index < 0 || index >= item.options.length) return item;
+  final next = [...item.options];
+  next[index] = candidate;
+  return item.copyWith(options: next);
+}
+
+/// [fodder] 를 [target] 의 환생 재료로 쓸 수 있는지 — 같은 부위 · 등급이 (장착 등급 − `starTierSlack`) 이상 · 별 만렙 아님.
+bool canFeedStar(ItemConfig items, EquipItem target, EquipItem fodder) =>
+    fodder.slot == target.slot &&
+    target.stars < items.starMax &&
+    fodder.tier >= target.tier - items.starTierSlack;
+
+/// 환생 재료 하나를 먹인다 — 다 차면 별 +1(재료 수는 `starNeed`).
+EquipItem feedStar(ItemConfig items, EquipItem target) {
+  if (target.stars >= items.starMax) return target;
+  final exp = target.starExp + 1;
+  if (exp >= items.starNeedAt(target.stars)) {
+    return target.copyWith(stars: target.stars + 1, starExp: 0);
+  }
+  return target.copyWith(starExp: exp);
+}
+
+/// 새 장비로 바꿀 때 이전 장비의 별 일부를 이어받는다(`starInheritRatio`, 내림 — "환생").
+/// 새 장비가 원래 더 많은 별을 갖고 있으면 그대로 둔다.
+EquipItem inheritStars(ItemConfig items, EquipItem? from, EquipItem to) {
+  if (from == null || from.stars <= 0) return to;
+  final carried = (from.stars * items.starInheritRatio).floor();
+  if (carried <= to.stars) return to;
+  return to.copyWith(stars: carried.clamp(0, items.starMax), starExp: 0);
 }
 
 /// 옵션이 **모자란 옛 장비**를 그 등급의 개수만큼 채운다.
@@ -373,7 +474,7 @@ EquipItem fillMissingOptions({
     final v = r.min + roll * (r.maxAt(item.tier) - r.min);
     next.add(ItemOption(kind: r.kind, value: (v * 10).roundToDouble() / 10));
   }
-  return EquipItem(slot: item.slot, tier: item.tier, options: next);
+  return item.copyWith(options: next);
 }
 
 EquipItem forgeOnce({

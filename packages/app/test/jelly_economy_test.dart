@@ -253,6 +253,8 @@ void main() {
       'ticketRefillJelly': battle.ticketRefillJelly,
       'exchangeJellyPerTrade': run.exchangeJellyPerTrade,
       'missionSwapJelly': missions.swapJelly,
+      'polishJelly': forge.polishCost(0, pickKind: false).jelly,
+      'polishKindJelly': forge.polishCost(0, pickKind: true).jelly,
     };
     flat.forEach((k, v) {
       expect(v % 5, 0, reason: '$k = $v — 젤리 소비는 5 단위여야 한다');

@@ -21,7 +21,8 @@ const int kSaveSchemaVersion = 18;
 /// 그 뒤에 생긴 필드를 저장본 값으로 지킨다(`GameActions.mergeSave`).
 /// 새 필드를 더하면 이 값을 올리고 서버의 목록에 추가한다.
 /// 20(2026-10-09): 장비 옵션 `evade`(회피) — 필드가 아니라 **옵션 키**라 서버가 장비 단위로 되돌린다.
-const int kSaveFeatureLevel = 20;
+/// 21(2026-10-10): 장비 v2 — 장비 `st`(환생 별)·`sx`(환생 재료)·옵션 `p`(정성). 역시 장비 안의 키라 서버가 장비 단위로 되돌린다.
+const int kSaveFeatureLevel = 21;
 
 /// 채집함 기본 칸 수(구조적 기본값 — 확장 비용·상한은 pets.json §6).
 ///

@@ -3413,7 +3413,83 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get forgeRerollHint => '等級・部位はそのまま、オプションのみ再抽選';
+  String get polishTitle => 'オプション磨き';
+
+  @override
+  String get polishNow => '現在';
+
+  @override
+  String get polishOld => '以前';
+
+  @override
+  String get polishNew => '新しい値';
+
+  @override
+  String polishStacks(String n, String max, String floor) {
+    return '丹精 $n/$max · 次は最大の$floor%以上';
+  }
+
+  @override
+  String get polishRandomKind => '種類もランダム';
+
+  @override
+  String polishPickKind(String kind, String mult) {
+    return '$kind（コスト×$mult）';
+  }
+
+  @override
+  String polishHint(String have) {
+    return 'どちらを選んでも丹精が上がります · 化石 $have個';
+  }
+
+  @override
+  String get polishChooseHint => '残す値を選んでください — どちらでも丹精は上がりました';
+
+  @override
+  String get polishKeepOld => '以前の値を残す';
+
+  @override
+  String get polishTakeNew => '新しい値にする';
+
+  @override
+  String get polishNoFossil => '化石が足りません';
+
+  @override
+  String get polishBadKind => '他の行にある種類は選べません';
+
+  @override
+  String get polishFailed => '今は磨けません';
+
+  @override
+  String starBonus(String p) {
+    return '効果 +$p%';
+  }
+
+  @override
+  String starProgress(String have, String need) {
+    return '次の星 $have/$need';
+  }
+
+  @override
+  String get forgeResultFeed => '転生素材';
+
+  @override
+  String forgeFeedHint(String slot, String have, String need) {
+    return '装備中の$slotの転生素材にできます（$have/$need）';
+  }
+
+  @override
+  String forgeStarUp(String n, String p) {
+    return '$nつ星達成！オプション効果 +$p%';
+  }
+
+  @override
+  String forgeStarInherit(String n) {
+    return '星を$n個引き継ぎました';
+  }
+
+  @override
+  String get forgeRerollHint => '等級と部位はそのまま · 磨きボタンでオプションを変えます';
 
   @override
   String forgeRushOn(int s) {

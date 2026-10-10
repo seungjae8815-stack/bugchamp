@@ -20,8 +20,11 @@ Map<ItemOptionKind, double> equipmentBonus(
     // 고정이면 같은 등급끼리는 값도 같아서 **아이템끼리 고를 이유가 없다** —
     // 장비는 이제 무작위 옵션 2개로만 이루어진다.
     // 옛 세이브의 장비도 옵션만 읽히므로 그대로 동작한다(값만 작아진다).
+    // 환생 별(2026-10-10)은 저장 값이 아니라 **효과 배율**로 붙는다 — 옵션 값은 그대로 등급 최대 이하라
+    // 상한 자르기·필터 표시를 안 건드린다. 회피는 별 효과에서 빠진다(`starExcludeKinds`).
     for (final o in item.options) {
-      out[o.kind] = (out[o.kind] ?? 0) + o.value;
+      out[o.kind] =
+          (out[o.kind] ?? 0) + o.value * config.starMult(item.stars, o.kind);
     }
   }
   return out;

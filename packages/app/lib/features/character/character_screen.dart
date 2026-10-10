@@ -10,10 +10,10 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
-import '../../ui/toast.dart';
 import 'character_scene.dart';
 import 'equip_widgets.dart';
 import 'fairy_panel.dart';
+import 'polish_dialog.dart';
 import 'forge_panel.dart';
 import 'skill_panel.dart';
 import '../../ui/colors.dart';
@@ -525,23 +525,29 @@ class _EquipCell extends ConsumerWidget {
           final now =
               ref.read(saveControllerProvider).value?.equippedItems[slot] ??
               item!;
-          return ItemOptionList(
-            item: now,
-            config: config,
-            rerollCost: forge?.rerollJelly,
-            onReroll: forge == null
-                ? null
-                : (i) async {
-                    final ok = await ref
-                        .read(saveControllerProvider.notifier)
-                        .rerollOption(index: i, equipped: true, slot: slot);
-                    if (!ctx.mounted) return;
-                    if (!ok) {
-                      showCenterToast(ctx, l.forgeNoJelly);
-                      return;
-                    }
-                    setLocal(() {});
-                  },
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 환생 별 + 다음 별까지(2026-10-10 장비 v2 — 모루에서 같은 부위 장비를 먹여 올린다).
+              itemStarsRow(l, config, now, progress: true),
+              ItemOptionList(
+                item: now,
+                config: config,
+                onPolish: forge == null
+                    ? null
+                    : (i) async {
+                        await showPolishDialog(
+                          ctx,
+                          index: i,
+                          equipped: true,
+                          slot: slot,
+                        );
+                        if (!ctx.mounted) return;
+                        setLocal(() {});
+                      },
+              ),
+            ],
           );
         },
       ),

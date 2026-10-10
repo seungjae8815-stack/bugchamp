@@ -74,6 +74,12 @@ const _passiveAttackMult = 1.08;
 /// 갖춘 유저). 장비 자체는 이제 공방 규칙으로 계산한다(`_Player._forgeDays`).
 double _gearScale = 1.0;
 
+/// 장비 v2(2026-10-10) — `--gear-polish=q` 다듬기·고르기로 빌드 줄 굴림이 최소 q(등급 범위 대비),
+/// `--gear-stars=n` 환생 별 n 개(효과 배율 `ItemConfig.starMult`, 회피 제외). 끝까지 투자한 유저의 상한을 잰다
+/// (첫날부터 적용 = 가장 빠른 경우). 목표: q 0.9 · 5성 ≈ 57일(사장님 확정, docs/design_equipment_v2.md).
+double _gearPolish = 0;
+int _gearStars = 0;
+
 /// 탭 부스트 — **활동 시간에만** 걸리는 평균 배율.
 ///
 /// ⚠️ `boostSpeedFactor = 1.0` 이라 데미지와 공속에 **둘 다** 실린다
@@ -1374,7 +1380,10 @@ class _Player {
       return;
     }
     final n = gearDraws[top];
-    final roll = math.pow(n / (n + 1), items.optionCurve).toDouble();
+    final roll = math.max(
+      math.pow(n / (n + 1), items.optionCurve).toDouble(),
+      _gearPolish,
+    );
     final build =
         (_targets.ceiling['gear'] as Map<String, dynamic>)['build']
             as Map<String, dynamic>;
@@ -1385,7 +1394,8 @@ class _Player {
       out[kind] =
           (r.min + (r.maxAt(top) - r.min) * roll) *
           (e.value as num).toDouble() *
-          _gearScale;
+          _gearScale *
+          items.starMult(_gearStars, kind);
     }
     gear = out;
   }
@@ -2919,6 +2929,16 @@ _Opts _parseArgs(List<String> args) {
     final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
     if (es != null) {
       _gearScale = double.parse(es.group(1)!);
+      continue;
+    }
+    final gp = RegExp(r'^--gear-polish=(.+)$').firstMatch(a);
+    if (gp != null) {
+      _gearPolish = double.parse(gp.group(1)!);
+      continue;
+    }
+    final gs = RegExp(r'^--gear-stars=(\d+)$').firstMatch(a);
+    if (gs != null) {
+      _gearStars = int.parse(gs.group(1)!);
       continue;
     }
     if (a == '--no-fairy') {

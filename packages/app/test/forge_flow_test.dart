@@ -216,6 +216,121 @@ void main() {
       expect(save.equippedItems[EquipSlot.tool]!.tier, 5);
     });
 
+    // ── 장비 v2(2026-10-10): 다듬기 · 환생 별 ──
+    const ring = EquipItem(
+      slot: EquipSlot.ring,
+      tier: 9,
+      options: [
+        ItemOption(kind: ItemOptionKind.attack, value: 5),
+        ItemOption(kind: ItemOptionKind.critDamage, value: 10),
+      ],
+    );
+
+    test('다듬기 — 화석으로 내고 정성 +1, 새 후보는 고를 때만 들어간다', () async {
+      final c = make(
+        seed().copyWith(
+          materials: {MaterialKind.fossil: 1000, MaterialKind.jelly: 0},
+          equippedItems: {EquipSlot.ring: ring},
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+
+      final r = await ctrl.polishOption(
+        index: 0,
+        equipped: true,
+        slot: EquipSlot.ring,
+        payJelly: false,
+      );
+      expect(r.error, isNull);
+      var save = c.read(saveControllerProvider).requireValue;
+      expect(save.materialCount(MaterialKind.fossil), 1000 - 200);
+      // 고르기 전: 이전 값 그대로, 정성만 올랐다.
+      expect(save.equippedItems[EquipSlot.ring]!.options[0].value, 5);
+      expect(save.equippedItems[EquipSlot.ring]!.options[0].polish, 1);
+
+      expect(
+        await ctrl.choosePolish(
+          index: 0,
+          candidate: r.candidate!,
+          equipped: true,
+          slot: EquipSlot.ring,
+        ),
+        isTrue,
+      );
+      save = c.read(saveControllerProvider).requireValue;
+      expect(save.equippedItems[EquipSlot.ring]!.options[0], r.candidate);
+    });
+
+    test('다듬기 — 화석·젤리가 모자라면 아무것도 안 바뀐다', () async {
+      final c = make(
+        seed().copyWith(
+          materials: {MaterialKind.fossil: 10, MaterialKind.jelly: 5},
+          equippedItems: {EquipSlot.ring: ring},
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(
+        (await ctrl.polishOption(
+          index: 0,
+          equipped: true,
+          slot: EquipSlot.ring,
+          payJelly: false,
+        )).error,
+        'not_enough_fossil',
+      );
+      expect(
+        (await ctrl.polishOption(
+          index: 0,
+          equipped: true,
+          slot: EquipSlot.ring,
+          payJelly: true,
+        )).error,
+        'not_enough_jelly',
+      );
+      final save = c.read(saveControllerProvider).requireValue;
+      expect(save.equippedItems[EquipSlot.ring], ring);
+    });
+
+    test('환생 재료 — 모루 맨 위 같은 부위 장비를 먹이면 별이 오르고 모루에서 빠진다', () async {
+      final c = make(
+        seed().copyWith(
+          equippedItems: {EquipSlot.ring: ring},
+          forgeStack: const [
+            EquipItem(slot: EquipSlot.ring, tier: 8, options: []),
+            EquipItem(slot: EquipSlot.ring, tier: 9, options: []),
+          ],
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.feedTopToStar(), isNull);
+      var save = c.read(saveControllerProvider).requireValue;
+      expect(save.equippedItems[EquipSlot.ring]!.stars, 1); // 1성은 재료 1개
+      expect(save.forgeStack.length, 1);
+      expect(await ctrl.feedTopToStar(), isNull); // 등급 8(= 9 − 1)도 된다
+      save = c.read(saveControllerProvider).requireValue;
+      expect(save.equippedItems[EquipSlot.ring]!.stars, 1);
+      expect(save.equippedItems[EquipSlot.ring]!.starExp, 1); // 2성은 2개
+    });
+
+    test('새 장비로 바꾸면 별 절반을 이어받는다(환생)', () async {
+      final c = make(
+        seed().copyWith(
+          equippedItems: {EquipSlot.ring: ring.copyWith(stars: 5)},
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      await c
+          .read(saveControllerProvider.notifier)
+          .equipItem(
+            const EquipItem(slot: EquipSlot.ring, tier: 9, options: []),
+          );
+      final save = c.read(saveControllerProvider).requireValue;
+      expect(save.equippedItems[EquipSlot.ring]!.stars, 2);
+    });
+
     test('교체 판단: 목표 옵션이 있으면 등급보다 그게 우선이다', () async {
       final c = make(
         seed().copyWith(

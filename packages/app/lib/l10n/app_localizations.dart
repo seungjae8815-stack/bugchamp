@@ -6076,10 +6076,130 @@ abstract class AppLocalizations {
   /// **'{sec}s left'**
   String forgeRushLeft(int sec);
 
+  /// No description provided for @polishTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine Option'**
+  String get polishTitle;
+
+  /// No description provided for @polishNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get polishNow;
+
+  /// No description provided for @polishOld.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get polishOld;
+
+  /// No description provided for @polishNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get polishNew;
+
+  /// No description provided for @polishStacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Care {n}/{max} · next roll at least {floor}% of max'**
+  String polishStacks(String n, String max, String floor);
+
+  /// No description provided for @polishRandomKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Random type'**
+  String get polishRandomKind;
+
+  /// No description provided for @polishPickKind.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} (cost ×{mult})'**
+  String polishPickKind(String kind, String mult);
+
+  /// No description provided for @polishHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Care rises whichever you keep · {have} fossils'**
+  String polishHint(String have);
+
+  /// No description provided for @polishChooseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one to keep — care has risen either way'**
+  String get polishChooseHint;
+
+  /// No description provided for @polishKeepOld.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep old'**
+  String get polishKeepOld;
+
+  /// No description provided for @polishTakeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Take new'**
+  String get polishTakeNew;
+
+  /// No description provided for @polishNoFossil.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough fossils'**
+  String get polishNoFossil;
+
+  /// No description provided for @polishBadKind.
+  ///
+  /// In en, this message translates to:
+  /// **'That type is already on the other line'**
+  String get polishBadKind;
+
+  /// No description provided for @polishFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t refine right now'**
+  String get polishFailed;
+
+  /// No description provided for @starBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Effect +{p}%'**
+  String starBonus(String p);
+
+  /// No description provided for @starProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Next star {have}/{need}'**
+  String starProgress(String have, String need);
+
+  /// No description provided for @forgeResultFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebirth'**
+  String get forgeResultFeed;
+
+  /// No description provided for @forgeFeedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Can feed your equipped {slot} for rebirth ({have}/{need})'**
+  String forgeFeedHint(String slot, String have, String need);
+
+  /// No description provided for @forgeStarUp.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} stars! Option effect +{p}%'**
+  String forgeStarUp(String n, String p);
+
+  /// No description provided for @forgeStarInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherited {n} stars'**
+  String forgeStarInherit(String n);
+
   /// No description provided for @forgeRerollHint.
   ///
   /// In en, this message translates to:
-  /// **'Same tier and slot — only the options are rerolled'**
+  /// **'Grade and slot stay · use Refine to change an option'**
   String get forgeRerollHint;
 
   /// No description provided for @forgeRushOn.

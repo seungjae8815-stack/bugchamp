@@ -19,6 +19,7 @@ import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
 import 'equip_widgets.dart';
+import 'polish_dialog.dart';
 import '../../ui/colors.dart';
 
 const _honey = kHoney;
@@ -1048,8 +1049,8 @@ class _StackSide extends StatelessWidget {
     required this.locale,
     this.compare,
     this.highlight = false,
-    this.rerollCost,
-    this.onReroll,
+    this.onPolish,
+    this.starProgress = false,
   });
 
   final String label;
@@ -1060,8 +1061,12 @@ class _StackSide extends StatelessWidget {
 
   /// 새로 뽑은 쪽인가 — 테두리·이름표를 꿀색으로 세워 **낀 것과 확실히 가른다**.
   final bool highlight;
-  final int? rerollCost;
-  final void Function(int index)? onReroll;
+
+  /// 옵션 줄 다듬기(장비 v2) — null 이면 버튼 없음.
+  final void Function(int index)? onPolish;
+
+  /// 환생 별 옆에 다음 별까지 진행을 보인다(낀 쪽 — 환생 재료를 먹이는 대상).
+  final bool starProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -1152,12 +1157,13 @@ class _StackSide extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     if (item != null)
+                      itemStarsRow(l, config, item!, progress: starProgress),
+                    if (item != null)
                       ItemOptionList(
                         item: item!,
                         config: config,
                         compare: compare,
-                        rerollCost: rerollCost,
-                        onReroll: onReroll,
+                        onPolish: onPolish,
                       ),
                   ],
                 ),
@@ -1214,22 +1220,21 @@ Future<bool> showForgeResult(
               item: cur,
               config: items,
               locale: locale,
-              // 낀 쪽에도 재굴림 버튼을 둔다. 기능이기도 하지만, 한쪽에만
+              // 낀 쪽에도 다듬기 버튼을 둔다. 기능이기도 하지만, 한쪽에만
               // 버튼이 있으면 **두 칸의 옵션 줄이 서로 어긋나** 비교가
               // 안 된다(2026-09-10 지적).
-              rerollCost: cur == null ? null : forge?.rerollJelly,
-              onReroll: (forge == null || cur == null)
+              starProgress: true,
+              onPolish: (forge == null || cur == null)
                   ? null
                   : (i) async {
                       final slot = cur!.slot;
-                      final ok = await ref
-                          .read(saveControllerProvider.notifier)
-                          .rerollOption(index: i, equipped: true, slot: slot);
+                      await showPolishDialog(
+                        ctx,
+                        index: i,
+                        equipped: true,
+                        slot: slot,
+                      );
                       if (!ctx.mounted) return;
-                      if (!ok) {
-                        showCenterToast(ctx, l.forgeNoJelly);
-                        return;
-                      }
                       final now = ref
                           .read(saveControllerProvider)
                           .requireValue
@@ -1254,18 +1259,11 @@ Future<bool> showForgeResult(
               locale: locale,
               compare: cur,
               highlight: true,
-              rerollCost: forge?.rerollJelly,
-              onReroll: forge == null
+              onPolish: forge == null
                   ? null
                   : (i) async {
-                      final ok = await ref
-                          .read(saveControllerProvider.notifier)
-                          .rerollOption(index: i);
+                      await showPolishDialog(ctx, index: i, equipped: false);
                       if (!ctx.mounted) return;
-                      if (!ok) {
-                        showCenterToast(ctx, l.forgeNoJelly);
-                        return;
-                      }
                       final stack = ref
                           .read(saveControllerProvider)
                           .requireValue
@@ -1278,6 +1276,20 @@ Future<bool> showForgeResult(
               l.forgeRerollHint,
               style: const TextStyle(color: Color(0x88FFFFFF), fontSize: 10.5),
             ),
+            // 환생 재료로 쓸 수 있으면 무엇에 먹이는지 알려 준다(2026-10-10 장비 v2).
+            if (cur != null && canFeedStar(items, cur!, shown))
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  l.forgeFeedHint(
+                    slotLabel(l, shown.slot),
+                    '${cur!.starExp}',
+                    '${items.starNeedAt(cur!.stars)}',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: _honey, fontSize: 11),
+                ),
+              ),
           ],
         ),
       ),
@@ -1312,13 +1324,44 @@ Future<bool> showForgeResult(
         },
         primary: false,
       ),
+      // **환생 재료로**(2026-10-10 장비 v2) — 같은 부위 낀 장비의 별을 올린다. 쓸 수 없으면 버튼을 안 그린다.
+      if (cur != null && canFeedStar(items, cur!, item))
+        gameDialogButton(l.forgeResultFeed, () async {
+          final before = cur!.stars;
+          final err = await ref
+              .read(saveControllerProvider.notifier)
+              .feedTopToStar();
+          if (!context.mounted) return;
+          Navigator.pop(context, true);
+          if (err != null) return;
+          final now = ref
+              .read(saveControllerProvider)
+              .value
+              ?.equippedItems[item.slot];
+          if (now != null && now.stars > before) {
+            showCenterToast(
+              context,
+              l.forgeStarUp(
+                '${now.stars}',
+                '${(items.starEffectPerStar * now.stars * 100).round()}',
+              ),
+            );
+          }
+        }, primary: false),
       gameDialogButton(l.forgeResultKeep, () async {
         // ⚠️ 굴린 뒤라면 **굴린 것**을 껴야 한다.
         final ctrl = ref.read(saveControllerProvider.notifier);
+        final carried = cur == null
+            ? 0
+            : (cur!.stars * items.starInheritRatio).floor();
         await ctrl.equipItem(shown);
         await ctrl.takeForgeItem();
         if (!context.mounted) return;
         Navigator.pop(context, true);
+        // 별 이어받기(환생) — 무엇이 넘어갔는지 알려 준다.
+        if (carried > shown.stars && context.mounted) {
+          showCenterToast(context, l.forgeStarInherit('$carried'));
+        }
       }),
     ],
   );

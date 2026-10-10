@@ -2405,7 +2405,104 @@
       }
     }
   },
-  "forgeRerollHint": "Same tier and slot — only the options are rerolled",
+  "polishTitle": "Refine Option",
+  "polishNow": "Now",
+  "polishOld": "Before",
+  "polishNew": "New",
+  "polishStacks": "Care {n}/{max} · next roll at least {floor}% of max",
+  "@polishStacks": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "floor": {
+        "type": "String"
+      }
+    }
+  },
+  "polishRandomKind": "Random type",
+  "polishPickKind": "{kind} (cost ×{mult})",
+  "@polishPickKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
+  "polishHint": "Care rises whichever you keep · {have} fossils",
+  "@polishHint": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      }
+    }
+  },
+  "polishChooseHint": "Pick one to keep — care has risen either way",
+  "polishKeepOld": "Keep old",
+  "polishTakeNew": "Take new",
+  "polishNoFossil": "Not enough fossils",
+  "polishBadKind": "That type is already on the other line",
+  "polishFailed": "Can't refine right now",
+  "starBonus": "Effect +{p}%",
+  "@starBonus": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "starProgress": "Next star {have}/{need}",
+  "@starProgress": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "forgeResultFeed": "Rebirth",
+  "forgeFeedHint": "Can feed your equipped {slot} for rebirth ({have}/{need})",
+  "@forgeFeedHint": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      },
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "forgeStarUp": "{n} stars! Option effect +{p}%",
+  "@forgeStarUp": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "forgeStarInherit": "Inherited {n} stars",
+  "@forgeStarInherit": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "forgeRerollHint": "Grade and slot stay · use Refine to change an option",
   "forgeRushOn": "Rush {s}s",
   "@forgeRushOn": {
     "placeholders": {

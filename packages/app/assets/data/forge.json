@@ -42,6 +42,9 @@
   "materialPerTier": 1
  },
  "rerollJelly": 15,
+ "_polishComment": "다듬기 비용(2026-10-10 장비 v2): 화석 polishFossilPerTier × (등급+1) — 풀잎 20 · 호박 200(접속 약 1시간) 또는 젤리 rerollJelly(15). 종류를 지정하면 둘 다 × polishKindMult(젤리 45). 화석 경로가 같은 결과에 닿으므로 젤리는 시간 절약이다(§2.6 — 젤리로만 되면 스탯 판매).",
+ "polishFossilPerTier": 20,
+ "polishKindMult": 3,
  "_rerollComment": "옵션 재굴림(2026-09-09). 모루 위 장비의 **옵션만** 다시 굴린다 — 등급은 그대로다. 등급을 젤리로 바꾸면 그건 물건을 사는 것이라 §2.6 P2W 금지선을 넘는다. 옵션은 제련을 계속 돌리면 언젠가 나오는 조합이라, 파는 것은 **시간 절약**이다(가챠 각주와 같은 논리). 제련은 유저가 가장 오래 붙잡는 무한 루프인데 젤리 통로가 하나도 없었다.",
  "rushSeconds": 60,
  "rushJelly": 10,

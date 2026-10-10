@@ -1232,7 +1232,27 @@
       }
     }
   },
-  "forgeRerollHint": "등급·부위는 그대로, 옵션만 다시 굴려요",
+  "polishTitle": "옵션 다듬기",
+  "polishNow": "지금",
+  "polishOld": "이전",
+  "polishNew": "새 값",
+  "polishStacks": "정성 {n}/{max} · 다음 굴림은 최대의 {floor}% 이상",
+  "polishRandomKind": "종류도 무작위",
+  "polishPickKind": "{kind}(비용 ×{mult})",
+  "polishHint": "어느 쪽을 골라도 정성이 올라요 · 화석 {have}개 보유",
+  "polishChooseHint": "남길 값을 고르세요 — 어느 쪽이든 정성은 올랐어요",
+  "polishKeepOld": "이전 값 유지",
+  "polishTakeNew": "새 값으로",
+  "polishNoFossil": "화석이 모자라요",
+  "polishBadKind": "다른 줄에 있는 종류는 고를 수 없어요",
+  "polishFailed": "지금은 다듬을 수 없어요",
+  "starBonus": "효과 +{p}%",
+  "starProgress": "다음 별 {have}/{need}",
+  "forgeResultFeed": "환생 재료",
+  "forgeFeedHint": "낀 {slot}의 환생 재료로 쓸 수 있어요 ({have}/{need})",
+  "forgeStarUp": "{n}성 달성! 옵션 효과 +{p}%",
+  "forgeStarInherit": "별 {n}개를 이어받았어요",
+  "forgeRerollHint": "등급·부위는 그대로 · 다듬기 버튼으로 옵션을 바꿔요",
   "forgeRushOn": "가속 {s}초",
   "@forgeRushOn": {
     "placeholders": {
