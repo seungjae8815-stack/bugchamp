@@ -34,7 +34,8 @@ Supabase 스키마 변경 SQL 의 **적용 여부**를 기록한다.
 | `_sql_20261005_mail_gold_bigint.sql` | 운영 우편·선물코드 골드 칸 integer → bigint (100억 우편이 22003 으로 실패). 서버 상한 1,000조는 이미 배포 | 적용됨(2026-10-09 확인 — `user_mail.fairy` 칸 있음) |
 | `_sql_20261005_mail_fairy.sql` | 운영 우편 골드·재료 칸 bigint(1조 이상) + 요정 재료 칸 `user_mail.fairy` jsonb. ⚠️ **서버 재배포보다 먼저**(새 서버가 `fairy` 칸을 읽는다) | 적용됨(2026-10-09 확인 — `user_mail.fairy` 칸 있음) |
 | `_sql_20261005_phantom_clears_check.sql` | **조회 전용** — 최종 보스 직후 난이도 자동 전환 경쟁 버그로 생긴 유령 사냥터 클리어(도감에 보스 없는 `wN@T`) 계정 찾기 | 대기 |
-| `_sql_20261005_rank_hidden.sql` | 개발자·운영 계정 랭킹 제외 — `profiles.rank_hidden` + `leaderboard_top`·`abyss_top`·`abyss_rank_of` 가 건너뜀. 개발자 계정 "오리" 숨김 | 대기 |
+| `_sql_20261005_rank_hidden.sql` | 개발자·운영 계정 랭킹 제외 — `profiles.rank_hidden` + `leaderboard_top`·`abyss_top`·`abyss_rank_of` 가 건너뜀. 개발자 계정 "오리" 숨김. ⚠️ 2026-10-10 avatar 반환을 더했다 — **`_sql_20261010_avatar.sql` 다음에** 돌린다 | 대기 |
+| `_sql_20261010_avatar.sql` | 1.0.19 프로필 그림 — `profiles.avatar`(형식 검사 · 앱 UPDATE 권한) · `chat_messages.avatar` + `chat_stamp_badge` 가 그림도 찍기 · `leaderboard_top`·`pvp_league_top`·`abyss_top`·`event_top` 이 avatar 반환(drop→create, 서버 전용 revoke 다시). 데이터 변경 없음. 운영 서버 배포 전에(순서가 바뀌어도 깨지지 않음) | 대기 |
 
 > `미확인` = 이 대장을 만들기(2026-09-08) 전에 있던 파일이라 적용 여부를 알 수 없다.
 > 다음에 각 파일을 다룰 때 확인해서 `적용` / `대기` / `폐기` 로 바꾼다.

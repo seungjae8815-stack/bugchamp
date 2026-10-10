@@ -6,6 +6,8 @@
 -- 위험: leaderboard_top·abyss_top·abyss_rank_of 를 다시 만든다(반환 형식은 그대로 — create or replace).
 --       결투 리그 순위(pvp_season_scores)는 건드리지 않는다.
 -- 되돌리기: update profiles set rank_hidden = false where ...; (함수는 그대로 둬도 결과가 같다)
+-- ⚠️ 2026-10-10: 프로필 그림 SQL(_sql_20261010_avatar.sql)이 leaderboard_top·abyss_top 반환에 avatar 를 더했다 —
+--    이 파일도 avatar 를 돌려주게 고쳤으므로 **그 파일 다음에** 돌린다(먼저 돌리면 create or replace 가 반환 형식이 달라 실패한다).
 
 -- ① 먼저 대상 확인 — 1줄이어야 한다(닉네임이 겹치면 id 로 고른다).
 select id, nickname, tier, stage, level, abyss_best from profiles where nickname = '오리';
@@ -17,11 +19,11 @@ alter table profiles add column if not exists rank_hidden boolean not null defau
 create or replace function leaderboard_top(lim int, sort text default 'trophies')
 returns table(rank bigint, id uuid, nickname text,
               trophies int, level int, stage int, tier int, badge text,
-              power double precision, abyss_best int)
+              power double precision, abyss_best int, avatar text)
 language sql stable security definer set search_path = public as $$
   with ranked as (
     select p.id, p.nickname, p.trophies, p.level, p.stage, p.tier,
-           coalesce(p.badge, '') as badge, p.power, p.abyss_best,
+           coalesce(p.badge, '') as badge, p.power, p.abyss_best, p.avatar,
            row_number() over (
              order by
                case sort
@@ -43,7 +45,7 @@ language sql stable security definer set search_path = public as $$
     where not p.rank_hidden          -- 2026-10-05 개발자·운영 계정 제외
   )
   select r.rank, r.id, r.nickname, r.trophies, r.level, r.stage, r.tier,
-         r.badge, r.power, r.abyss_best
+         r.badge, r.power, r.abyss_best, r.avatar
   from ranked r
   order by r.rank
   limit lim;
@@ -68,12 +70,13 @@ $$;
 
 create or replace function abyss_top(p_week text, lim int default 100)
 returns table(rank bigint, user_id uuid, nickname text, floor int, boss_pm int,
-              updated_at timestamptz, power double precision, badge text, sp text)
+              updated_at timestamptz, power double precision, badge text, sp text, avatar text)
 language sql stable security definer set search_path = public as $$
   select row_number() over (order by s.floor desc, s.boss_pm desc, s.updated_at asc) as rank,
          s.user_id, coalesce(nullif(p.nickname, ''), s.nickname), s.floor, s.boss_pm, s.updated_at,
          coalesce(p.power, 0)::double precision, coalesce(p.badge, ''),
-         coalesce(d.team -> 0 ->> 'sp', '')
+         coalesce(d.team -> 0 ->> 'sp', ''),
+         p.avatar
   from abyss_weekly_scores s
   left join profiles p on p.id = s.user_id
   left join defenders d on d.id = s.user_id
