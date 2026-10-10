@@ -266,11 +266,37 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
   /// 돌아오면 최근 글을 다시 받아 빈 곳을 채운다.
   AppLifecycleListener? _lifecycle;
 
+  /// 실시간이 조용할 때 직접 확인하는 안전망(2026-10-10 실기 지적 — 켜 둔 채 채팅이 안 바뀜).
+  /// 실시간 구독은 폰·통신·절전에 따라 **오류 없이** 끊길 수 있다(서버 구독 목록에서 빠져 있었다).
+  /// 열린 화면에서만, [_pollGap] 동안 실시간 글이 없을 때만 최근 글을 받아 새 것만 붙인다(작은 조회 1번).
+  Timer? _poll;
+  DateTime _lastLive = DateTime.now();
+  bool _polling = false;
+  static const _pollGap = Duration(seconds: 8);
+
   @override
   void initState() {
     super.initState();
     _load();
     _lifecycle = AppLifecycleListener(onResume: _refill);
+    _poll = Timer.periodic(_pollGap, (_) => _checkNew());
+  }
+
+  Future<void> _checkNew() async {
+    if (_loading || _polling || !mounted) return;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
+    if (DateTime.now().difference(_lastLive) < _pollGap) return;
+    _polling = true;
+    try {
+      final list = await ref
+          .read(chatServiceProvider)
+          .recent(limit: 20, guildId: widget.guildId, mixed: !widget.guildOnly);
+      if (mounted) _merge(list);
+    } finally {
+      _polling = false;
+    }
   }
 
   Future<void> _refill() async {
@@ -282,19 +308,30 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
           guildId: widget.guildId,
           mixed: !widget.guildOnly,
         );
-    if (!mounted || list.isEmpty) return;
+    if (mounted) _merge(list);
+  }
+
+  /// 서버 목록을 합친다 — 이미 있는 글(같은 id)은 그대로, 새 글만 붙이고, 서버 글로 바뀐 내 임시 글은 뺀다.
+  void _merge(List<ChatMessage> list) {
+    if (list.isEmpty) return;
+    final have = {for (final x in _messages) x.id};
+    final fresh = [
+      for (final m in list)
+        if (!have.contains(m.id)) m,
+    ];
+    if (fresh.isEmpty) return;
     setState(() {
-      // 서버 목록 + 아직 서버 글로 바뀌지 않은 내 임시 글(같은 사람·같은 내용이 목록에 없을 때만).
-      final temps = [
-        for (final x in _messages)
-          if (_isTemp(x.id) &&
-              !list.any((m) => m.userId == x.userId && m.body == x.body))
-            x,
-      ];
+      _messages.removeWhere(
+        (x) =>
+            _isTemp(x.id) &&
+            fresh.any((m) => m.userId == x.userId && m.body == x.body),
+      );
       _messages
-        ..clear()
-        ..addAll(list)
-        ..addAll(temps);
+        ..addAll(fresh)
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      if (_messages.length > _rules.historyLimit) {
+        _messages.removeRange(0, _messages.length - _rules.historyLimit);
+      }
     });
     _jumpToBottom();
   }
@@ -318,6 +355,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
         .subscribe(guildId: widget.guildId, mixed: !widget.guildOnly)
         .listen((m) {
           if (!mounted) return;
+          _lastLive = DateTime.now();
           setState(() {
             // 같은 글이 세 경로로 들어올 수 있다 —
             //  ① 내가 즉시 띄운 것(`local:`)  ② 서비스가 보낸 자체 방송(`echo:`)
@@ -354,6 +392,7 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
 
   @override
   void dispose() {
+    _poll?.cancel();
     _lifecycle?.dispose();
     _sub?.cancel();
     _input.dispose();

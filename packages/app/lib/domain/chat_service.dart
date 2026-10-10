@@ -358,22 +358,50 @@ final chatServiceProvider = Provider<ChatService>((ref) {
 /// 홈 상단 채팅 바에 보여줄 **가장 최근 메시지 1건**.
 ///
 /// 처음엔 최근 목록에서 마지막 하나를 집고, 그 뒤로는 실시간 구독으로 갱신한다.
+/// 실시간이 조용히 끊길 수 있어(2026-10-10 실기 지적 — 서버 구독 목록에서 빠진 채 켜져 있었다)
+/// [_latestPoll] 마다 최근 1건을 직접 확인하는 안전망을 둔다(작은 조회 1번).
 /// 채팅이 미연결이거나 아직 아무 말도 없으면 null → 바는 안내 문구를 보여준다.
-final chatLatestProvider = StreamProvider<ChatMessage?>((ref) async* {
+final chatLatestProvider = StreamProvider<ChatMessage?>((ref) {
   final svc = ref.watch(chatServiceProvider);
-  if (!svc.available) {
-    yield null;
-    return;
-  }
+  if (!svc.available) return Stream.value(null);
+  final out = StreamController<ChatMessage?>();
   ChatMessage? latest;
-  try {
-    final recent = await svc.recent(limit: 1);
-    if (recent.isNotEmpty) latest = recent.last;
-  } catch (_) {
-    // 조회 실패는 조용히 넘긴다 — 홈 화면이 채팅 때문에 깨지면 안 된다.
+  var first = true;
+  Future<void> poll() async {
+    var list = const <ChatMessage>[];
+    try {
+      list = await svc.recent(limit: 1);
+    } catch (_) {
+      // 조회 실패는 조용히 넘긴다 — 홈 화면이 채팅 때문에 깨지면 안 된다.
+    }
+    if (out.isClosed) return;
+    final m = list.isEmpty ? null : list.last;
+    final newer =
+        m != null &&
+        m.id != latest?.id &&
+        (latest == null || m.createdAt.isAfter(latest!.createdAt));
+    if (newer) {
+      latest = m;
+      out.add(m);
+    } else if (first && latest == null) {
+      out.add(null);
+    }
+    first = false;
   }
-  yield latest;
-  await for (final m in svc.subscribe()) {
-    yield latest = m;
-  }
+
+  unawaited(poll());
+  final sub = svc.subscribe().listen((m) {
+    latest = m;
+    if (!out.isClosed) out.add(m);
+  });
+  final timer = Timer.periodic(_latestPoll, (_) => poll());
+  ref.onDispose(() {
+    timer.cancel();
+    unawaited(sub.cancel());
+    unawaited(out.close());
+  });
+  return out.stream;
 });
+
+/// 홈 채팅 바 안전망 간격.
+const _latestPoll = Duration(seconds: 45);
