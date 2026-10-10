@@ -22,7 +22,11 @@ void main() {
         id: id,
         speciesId: 'stag_giant',
         sizeMm: 70,
-        potential: 3,
+        // 예산이 넉넉한 곤충(5성·80레벨·돌파 4 = 102점) — 옛 투자가 예산 안이라 이전이 그대로 남는다.
+        // (2026-10-10 부터 예산을 넘친 몫은 보너스 없이 잘린다 — core_save training_test 가 본다.)
+        potential: 5,
+        level: 80,
+        breakthroughTier: 4,
         temperament: Temperament.aggressive,
         sex: Sex.male,
         element: Element.wood,
@@ -138,9 +142,11 @@ void main() {
     );
     final r = actions.mergeSave(s, client.toJson());
     final rec = r.save!.trainPoints['b1']!;
-    // 3성 1레벨 = 18포인트, 옛 투자 없음 → 보너스 0
-    expect(rec.allocated, 18);
-    expect(rec.paid, 18);
+    // 5성 80레벨 돌파 4 = 102포인트 · 보너스는 적어도 인정하지 않는다 · 칸은 상한까지(공격·근성 99 → 상한)
+    expect(rec.allocated, lessThanOrEqualTo(102));
+    expect(rec.alloc[TrainSlot.grit], lessThanOrEqualTo(10));
+    expect(rec.alloc[TrainSlot.attack], lessThan(99));
+    expect(rec.paid, 102);
     expect(rec.bonus, 0);
     expect(r.extra['clamped'], isTrue);
     expect(r.extra['clampReasons'], contains('train'));

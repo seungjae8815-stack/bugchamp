@@ -336,7 +336,11 @@ BugTrain bugTrainOf(
     migratedRecordOf(s, b, sp, cfg, enhance: enhance) ??
     const BugTrain();
 
-/// 포인트 예산 = 기본 예산 + 보너스(옛 투자 총량을 넘지 않게 자른다 — 세이브를 고쳐 보너스를 적어도 소용없다).
+/// 포인트 예산 = 기본 예산(포텐셜·수련·돌파)뿐이다.
+///
+/// ⚠️ 2026-10-10 사장님 확정: 이전 보너스(옛 투자가 예산을 넘친 몫)를 **없앴다** — 뒤에 시작한 유저는 영원히 못
+/// 가지는 몫이라 같은 곤충끼리 결투가 갈렸다(최대 +50). 옛 투자자에게는 부위 강화 보상 젤리를 우편으로 보냈고,
+/// 줄어든 곤충은 무료 다시 찍기 1회를 받는다([sanitizeTrainPoints]). [BugTrain.bonus] 는 세이브 호환으로만 남는다.
 int trainBudgetOf(
   SaveGame s,
   IndividualBug b,
@@ -344,16 +348,10 @@ int trainBudgetOf(
   TrainingConfig cfg, {
   int? levelCap,
   EnhanceConfig? enhance,
-}) {
-  final rec = bugTrainOf(s, b, sp, cfg, enhance: enhance);
-  final legacy = rec.bonus <= 0
-      ? 0
-      : _sum(legacyTrainPoints(s, b, sp, cfg, enhance: enhance));
-  return trainBaseBudget(b, cfg, levelCap: levelCap) +
-      rec.bonus.clamp(0, legacy);
-}
+}) => trainBaseBudget(b, cfg, levelCap: levelCap);
 
-/// 칸 [slot] 상한 = 기본 + 기질·주특기·특성 보정, 이전으로 옮긴 값이 더 크면 그 값.
+/// 칸 [slot] 상한 = 기본 + 기질·주특기·특성 보정. 옛 투자로 상한을 넘던 것도 2026-10-10 부터 인정하지 않는다
+/// (예산 보너스와 같은 이유 — [trainBudgetOf]).
 int trainSlotCapOf(
   SaveGame s,
   IndividualBug b,
@@ -369,9 +367,7 @@ int trainSlotCapOf(
     specialty: sp.specialty,
     trait: b.trait,
   );
-  final l =
-      (legacy ?? legacyTrainPoints(s, b, sp, cfg, enhance: enhance))[slot];
-  return math.max(base, l ?? 0);
+  return base;
 }
 
 /// [alloc] 을 칸 상한·예산으로 자른다(넘치면 칸 순서의 **뒤에서부터** 깎는다 — 결정론).
@@ -894,33 +890,27 @@ SaveGame sanitizeTrainPoints(
     final sp = speciesOf(b.speciesId);
     if (sp == null) continue;
     final rec = e.value;
-    final legacy = legacyTrainPoints(pruned, b, sp, cfg, enhance: enhance);
-    final legacyTotal = _sum(legacy);
-    final bonus = rec.bonus.clamp(0, legacyTotal);
-    final budget =
-        trainBaseBudget(b, cfg, levelCap: levelCapOf(b.breakthroughTier)) +
-        bonus;
-    int capOf(TrainSlot sl) => trainSlotCapOf(
-      pruned,
+    // 보너스·옛 칸 상한은 2026-10-10 부터 인정하지 않는다([trainBudgetOf]) — 예산은 기본뿐.
+    final budget = trainBaseBudget(
       b,
-      sp,
-      sl,
       cfg,
-      enhance: enhance,
-      legacy: legacy,
+      levelCap: levelCapOf(b.breakthroughTier),
     );
+    int capOf(TrainSlot sl) =>
+        trainSlotCapOf(pruned, b, sp, sl, cfg, enhance: enhance);
     final paid = rec.paid.clamp(0, budget);
     final alloc = clampAlloc(rec.alloc, capOf: capOf, budget: paid);
     final pending = rec.pending == null
         ? null
         : clampAlloc(rec.pending!, capOf: capOf, budget: paid);
+    // 배분이 잘렸으면(보너스로 찍었던 몫) 무료 다시 찍기 1회 — 뒤에서부터 깎인 자리를 직접 다시 고르게.
+    final trimmed = !_sameSlots(alloc, rec.alloc);
     final fixed = BugTrain(
       alloc: alloc,
       paid: paid,
-      bonus: bonus,
       pending: pending,
       respecUntil: pending == null ? null : rec.respecUntil,
-      freeRespec: rec.freeRespec,
+      freeRespec: rec.freeRespec || trimmed,
     );
     if (!_sameRecord(fixed, rec)) {
       (next ??= Map<String, BugTrain>.from(pruned.trainPoints))[e.key] = fixed;

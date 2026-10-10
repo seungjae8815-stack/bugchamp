@@ -194,8 +194,12 @@ void main() {
 
     test('훈련 v2 — 옛 부위 강화는 이전 전이어도 같은 값(가상 이전) · 날개 회피는 회피 칸으로', () {
       final old = myBase();
+      // 예산이 넉넉한 곤충 — 옛 투자가 예산 안이라 가상 이전 값이 그대로 실린다(넘친 몫은 2026-10-10 부터 잘린다).
       final b1 = old.bugs.first.copyWith(
         enhancement: const PartLevels(hornJaw: 10, wing: 10),
+        potential: 5,
+        level: 80,
+        breakthroughTier: 4,
       );
       final s = old.copyWith(bugs: [b1, ...old.bugs.skip(1)]);
       DuelBug first(SaveGame x) => actions

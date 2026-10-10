@@ -263,7 +263,9 @@ void main() {
       );
     }
 
-    test('무작위 400계정 — 이전 뒤 결투 스탯이 모두 같거나 크다(서버 상한 자르기 포함)', () {
+    // 2026-10-10 사장님 확정: 예산 보너스·옛 칸 상한을 없앴다(새 유저와의 공정함 — 옛 투자자에게는 젤리 보상).
+    // 옛 투자가 예산·칸 상한 **안**이면 예전처럼 아무도 약해지지 않고, **넘치면** 잘린 뒤 무료 다시 찍기 1회.
+    test('무작위 400계정 — 예산 안이면 이전 뒤 결투 스탯이 같거나 크고, 넘치면 예산으로 잘리고 무료 다시 찍기', () {
       final rng = math.Random(20261008);
       for (var i = 0; i < 400; i++) {
         final potential = 1 + rng.nextInt(5);
@@ -303,7 +305,6 @@ void main() {
           speciesOf: speciesOf,
           enhance: enhance,
         );
-        // 서버 업로드 검사를 거쳐도 그대로여야 한다.
         final served = sanitizeTrainPoints(
           after,
           cfg,
@@ -311,6 +312,33 @@ void main() {
           levelCapOf: pet.levelCap,
           enhance: enhance,
         );
+        final legacy = legacyTrainPoints(before, b, sp, cfg, enhance: enhance);
+        final budget = trainBaseBudget(
+          b,
+          cfg,
+          levelCap: pet.levelCap(b.breakthroughTier),
+        );
+        final fits =
+            legacy.values.fold(0, (a, v) => a + v) <= budget &&
+            legacy.entries.every(
+              (e) => e.value <= trainSlotCapOf(before, b, sp, e.key, cfg),
+            );
+        final rec = served.trainPoints[b.id];
+        if (!fits) {
+          // 넘친 몫은 잘린다 — 예산·칸 상한 안, 무료 다시 찍기.
+          expect(rec, isNotNull, reason: '#$i');
+          expect(rec!.allocated, lessThanOrEqualTo(budget), reason: '#$i');
+          for (final e in rec.alloc.entries) {
+            expect(
+              e.value,
+              lessThanOrEqualTo(trainSlotCapOf(served, b, sp, e.key, cfg)),
+              reason: '#$i ${e.key}',
+            );
+          }
+          expect(rec.freeRespec, isTrue, reason: '#$i');
+          continue;
+        }
+        // 예산 안이면 서버 업로드 검사를 거쳐도 그대로여야 한다.
         expect(identical(served, after), isTrue, reason: '정상 이전이 서버에서 잘렸다 #$i');
         final n = trainingBonusOf(
           served,
@@ -357,28 +385,40 @@ void main() {
       }
     });
 
-    test('예산을 넘친 만큼은 보너스 포인트 · 첫 다시 찍기는 대기 없음', () {
+    test('예산을 넘친 이전은 예산으로 잘린다(보너스 없음) · 첫 다시 찍기는 대기 없음', () {
       final b = bug(
         potential: 5,
         enhancement: const PartLevels(hornJaw: 30, cuticle: 20),
       );
-      final s = migrateTrainingV2(
+      final migrated = migrateTrainingV2(
         rich([b]),
         cfg,
         speciesOf: speciesOf,
         enhance: enhance,
       );
+      // 뿔 30 → 공격 (1.2 / 0.03) = 40 · 표피 20 → 방어 (0.8/0.03 → 27) — 이전 직후엔 옮긴 그대로.
+      expect(migrated.trainPoints[b.id]!.alloc[TrainSlot.attack], 40);
+      expect(migrated.trainPoints[b.id]!.alloc[TrainSlot.defense], 27);
+      final s = sanitizeTrainPoints(
+        migrated,
+        cfg,
+        speciesOf: speciesOf,
+        levelCapOf: pet.levelCap,
+        enhance: enhance,
+      );
       final rec = s.trainPoints[b.id]!;
-      // 뿔 30 → 공격 (1.2 / 0.03) = 40 · 표피 20 → 방어 (0.8/0.03 → 27)
-      expect(rec.alloc[TrainSlot.attack], 40);
-      expect(rec.alloc[TrainSlot.defense], 27);
-      expect(rec.paid, 67);
-      expect(rec.bonus, 67 - trainBaseBudget(b, cfg));
+      final budget = trainBaseBudget(b, cfg, levelCap: pet.levelCap(0));
+      expect(rec.allocated, lessThanOrEqualTo(budget));
+      expect(rec.bonus, 0);
+      expect(rec.paid, budget); // 재료를 낸 몫도 예산까지만
       expect(rec.freeRespec, isTrue);
-      // 공격 칸 상한(호전적 30+9+3=42)보다 작아도 옮긴 값 40 은 그대로 — 넘치면 그 칸 상한이 늘어난다.
+      expect(
+        trainBudgetOf(s, b, sp, cfg, enhance: enhance),
+        trainBaseBudget(b, cfg),
+      );
       final r = startTrainRespec(s, cfg, b, sp, {
-        TrainSlot.hp: 30,
-        TrainSlot.push: 20,
+        TrainSlot.hp: 10,
+        TrainSlot.push: 5,
       }, t0);
       expect(r.error, isNull);
       expect(r.save!.trainPoints[b.id]!.pending, isNull); // 대기 없음
