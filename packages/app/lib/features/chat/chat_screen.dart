@@ -803,9 +803,14 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
               height: 1.15,
             ),
           ),
-          // 대회 뱃지(2026-09-15) — 자랑거리는 남이 봐야 자랑거리다. 그림 밑 좁은 칸이라 아이콘만.
+          // 대회 뱃지(2026-09-15) — 자랑거리는 남이 봐야 자랑거리다. 그림 밑 좁은 칸이라 아이콘 위·이름 아래(2026-10-10).
           if (m.badge.isNotEmpty)
-            EventBadgeChip(id: m.badge, size: 9, compact: true),
+            EventBadgeChip(
+              id: m.badge,
+              size: 9,
+              stacked: true,
+              margin: const EdgeInsets.only(top: 3),
+            ),
           if (guildTag != null) ...[const SizedBox(height: 2), guildTag],
         ],
       ),
