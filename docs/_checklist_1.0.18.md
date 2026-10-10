@@ -82,9 +82,10 @@
    - App Store Connect: 4종 신규(입문 2종 비소모성 · 성장 패스·주간 묶음 소모성) + **스킨 설명은 iOS 전용 판**(`docs/appstore_iap.md` — 지뢰 단어 없음) + 1.0.18 버전 제출에 IAP 첨부
 5. [ ] Edge Function 재배포: `daily-report`(`--no-verify-jwt`) · `verify-purchase` (안 하면 새 상품 결제 알림·일일 매출이 ₩0)
 6. [ ] 빌드(개발 일 — 최신 main, 탭 반격 켜짐 커밋 이후): AAB(dart-define 3종 · `release_cadence.md` §3 검증) · **릴리즈 APK 실기 켜 보기** · iOS `ios-release`(main 푸시 후)
-7. [ ] Play 는 **관리형 게시**로 심사 통과시켜 두기 · iOS 는 **수동 출시**로 대기
-8. [ ] 운영 서버 배포(최신 main — 탭 반격·선물 상한·훈련 이전 수정 포함). ⚠️ `--set-env-vars`·`--set-secrets` 붙이지 말 것
-9. [ ] 같은 날: Play 게시 → `LATEST_VERSION_ANDROID`·`MIN_SUPPORTED_VERSION_ANDROID` 를 최종 빌드번호로. iOS 는 실제 반영 뒤에 `*_IOS`
+7. [x] Play 는 **관리형 게시**로 심사 통과시켜 두기 · iOS 는 **수동 출시**로 대기
+8. [x] 운영 서버 배포(최신 main — 탭 반격·선물 상한·훈련 이전 수정 포함). ⚠️ `--set-env-vars`·`--set-secrets` 붙이지 말 것
+9. [x] 같은 날: Play 게시 → `LATEST_VERSION_ANDROID`·`MIN_SUPPORTED_VERSION_ANDROID` 를 최종 빌드번호로. iOS 는 실제 반영 뒤에 `*_IOS`
+   → 2026-10-10 완료: 서버 `bugchamp-server-00126-thb`(10:03 KST) · iOS 09:50 출시 확인 · 강제 업데이트 양쪽 20260944(`00127-7jx`)
 10. [ ] 공지(`docs/_notice_1.0.18.md`) 게시
 11. [ ] 스킨 기존 구매자에게 운영 우편 젤리 100(4성 알은 우편으로 못 준다 — 필요하면 따로)
 12. [ ] 시험용 서버(`bugchamp-server-dev`) 삭제 · 운영 서버에 `CLUTCH_TEST_USERS` 를 넣었다면 정리
