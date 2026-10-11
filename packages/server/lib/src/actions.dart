@@ -4032,7 +4032,10 @@ class GameActions {
     var jelly = 0;
     if (played != null && rank != null) {
       final id = cfg.leagueAt(from).id;
-      jelly = trophies <= 0 ? 0 : cfg.seasonRankJelly(rank, league: id);
+      // 경쟁 인원 보정(2026-10-11) — 사람이 적은 리그에서는 순위 젤리를 줄이거나 주지 않는다.
+      jelly = trophies <= 0
+          ? 0
+          : cfg.leagueRankJelly(rank, league: id, people: total);
       league = cfg.leagueAfterSeason(
         from,
         rank: rank,

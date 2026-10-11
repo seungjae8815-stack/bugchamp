@@ -84,6 +84,11 @@ class BattleConfig {
     this.leagueRankRewards = const {},
     this.leaguePromotePct = 0.2,
     this.leagueDemotePct = 0.2,
+    this.rankRewardMinPeople = 0,
+    this.rankRewardFullPeople = 0,
+    this.rankRewardTopShare = 1,
+    this.leaguePromoteMinPeople = 0,
+    this.leagueMergeBelowPeople = 0,
     this.leagueBoardSize = 100,
     this.seasonSettleHours = 24,
     this.matchAbovePoints = const [3, 4, 5],
@@ -172,6 +177,22 @@ class BattleConfig {
   final double leaguePromotePct;
   final double leagueDemotePct;
 
+  /// 리그 순위 보상의 **경쟁 인원 보정**(2026-10-11 사장님 확정 — 사람이 적은 상위 리그 독식 방지).
+  /// 출시 초기엔 상위 리그가 1~4명이라 먼저 올라간 사람이 매주 1위 젤리를 거저 받았다(골드 혼자 = 매주 60).
+  /// 인원 = 그 주 그 리그에서 결투한 사람(결산의 `total`). [rankRewardMinPeople] 명 미만이면 순위 젤리 없음 ·
+  /// 금액 × min(1, 인원 ÷ [rankRewardFullPeople]) · 보상 순위는 인원 × [rankRewardTopShare](내림)까지.
+  /// 사람이 늘면 저절로 원래 표로 돌아간다. 0·0·1 = 보정 없음(옛 규칙).
+  final int rankRewardMinPeople;
+  final int rankRewardFullPeople;
+  final double rankRewardTopShare;
+
+  /// 승급 문턱·소수 리그 합류(2026-10-11 사장님 확정 — 혼자 빈 상위 리그로 올라가 독식하던 문제).
+  /// 그 주 그 리그 결투 인원이 [leaguePromoteMinPeople] 명 미만이면 **아무도 승급하지 않는다**(10명 = 최소 2명이 함께 올라간다).
+  /// [leagueMergeBelowPeople] 명 미만인 리그(맨 아래 제외)에서 뛴 사람은 결산 때 **아래 리그로 합류**한다 —
+  /// 벌칙 강등이 아니라 리그 정리(남이 쉬어 혼자 남은 경우 포함). 0 = 끔(옛 규칙).
+  final int leaguePromoteMinPeople;
+  final int leagueMergeBelowPeople;
+
   /// 순위표에 보여 주는 인원(리그마다).
   final int leagueBoardSize;
 
@@ -220,6 +241,17 @@ class BattleConfig {
     return 0;
   }
 
+  /// 리그 결산 젤리 — [seasonRankJelly] 에 경쟁 인원 보정([people] 명)을 얹는다.
+  int leagueRankJelly(int rank, {required String league, required int people}) {
+    if (people < rankRewardMinPeople) return 0;
+    if (rank > (people * rankRewardTopShare).floor()) return 0;
+    final base = seasonRankJelly(rank, league: league);
+    if (rankRewardFullPeople <= 0 || people >= rankRewardFullPeople) {
+      return base;
+    }
+    return (base * people / rankRewardFullPeople).round();
+  }
+
   /// 리그 순번(0 = 첫 리그). 모르는 id 면 0.
   int leagueIndexOf(String id) {
     final i = leagues.indexWhere((l) => l.id == id);
@@ -232,7 +264,9 @@ class BattleConfig {
   /// (2명 리그면 1등만 승급, 4명 이하는 강등 없음 — 혼자 남은 리그에서 떨어지지 않게).
   ({int promote, int demote}) leagueZones(int total) {
     if (total <= 1) return (promote: 0, demote: 0);
-    final up = math.max(1, (total * leaguePromotePct).round());
+    final up = total < leaguePromoteMinPeople
+        ? 0
+        : math.max(1, (total * leaguePromotePct).round());
     final down = total < 5 ? 0 : (total * leagueDemotePct).round();
     return (promote: up, demote: math.min(down, total - up));
   }
@@ -245,6 +279,10 @@ class BattleConfig {
     required int total,
     required int trophies,
   }) {
+    // 인원이 모자란 리그는 아래 리그와 합친다(맨 아래는 그대로).
+    if (league > 0 && total > 0 && total < leagueMergeBelowPeople) {
+      return league - 1;
+    }
     final z = leagueZones(total);
     if (trophies > 0 && rank >= 1 && rank <= z.promote) {
       return math.min(league + 1, leagues.length - 1);
@@ -433,6 +471,16 @@ class BattleConfig {
       leaguePromotePct:
           (season?['leaguePromotePct'] as num?)?.toDouble() ?? 0.2,
       leagueDemotePct: (season?['leagueDemotePct'] as num?)?.toDouble() ?? 0.2,
+      rankRewardMinPeople:
+          (season?['rankRewardMinPeople'] as num?)?.toInt() ?? 0,
+      rankRewardFullPeople:
+          (season?['rankRewardFullPeople'] as num?)?.toInt() ?? 0,
+      rankRewardTopShare:
+          (season?['rankRewardTopShare'] as num?)?.toDouble() ?? 1,
+      leaguePromoteMinPeople:
+          (season?['leaguePromoteMinPeople'] as num?)?.toInt() ?? 0,
+      leagueMergeBelowPeople:
+          (season?['leagueMergeBelowPeople'] as num?)?.toInt() ?? 0,
       leagueBoardSize: (season?['leagueBoardSize'] as num?)?.toInt() ?? 100,
       seasonSettleHours: (season?['settleHours'] as num?)?.toInt() ?? 24,
       matchAbovePoints: _ints(match?['abovePoints']) ?? const [3, 4, 5],

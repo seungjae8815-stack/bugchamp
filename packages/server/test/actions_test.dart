@@ -3406,6 +3406,26 @@ void _forfeitTests(GameActions actions, SaveGame base) {
       expect(zero.save!.pvpLeague, 1);
     });
 
+    test('경쟁 인원이 적은 리그는 순위 젤리를 줄인다(2026-10-11)', () {
+      final small = GameActions(config: _SmallLeagueConfig(), now: () => t0);
+      final s = base().copyWith(pvpScoreSeason: '2026-07-13', pvpLeague: 2);
+      int jellyOf(int rank, int total) => small
+          .settlePvpLeague(
+            s,
+            played: '2026-07-13',
+            lastEnded: '2026-07-13',
+            rank: rank,
+            total: total,
+            trophies: 30,
+          )
+          .save!
+          .materialCount(MaterialKind.jelly);
+      expect(jellyOf(1, 1), 0, reason: '혼자면 순위 젤리 없음');
+      expect(jellyOf(1, 4), 40, reason: '4명 = 100 × 0.4');
+      expect(jellyOf(3, 4), 0, reason: '상위 절반까지만');
+      expect(jellyOf(1, 12), 100, reason: '10명 이상 전액');
+    });
+
     test('개편 전 세이브는 첫 업로드에서 리셋 전 트로피로 리그를 확정한다', () {
       // 지난 시즌에 800(플래티넘)을 들고 경계를 넘겼다 — 리셋 뒤 0 으로 유도하면 브론즈가 된다.
       final st = base().copyWith(
@@ -3459,5 +3479,20 @@ class _RankConfig extends _Config {
       SeasonRankReward(maxRank: 3, jelly: 30),
       SeasonRankReward(maxRank: 10, jelly: 10),
     ],
+  );
+}
+
+class _SmallLeagueConfig extends _Config {
+  @override
+  final BattleConfig battle = const BattleConfig(
+    seasonRankRewards: [
+      SeasonRankReward(maxRank: 1, jelly: 100),
+      SeasonRankReward(maxRank: 2, jelly: 50),
+      SeasonRankReward(maxRank: 3, jelly: 30),
+      SeasonRankReward(maxRank: 10, jelly: 10),
+    ],
+    rankRewardMinPeople: 3,
+    rankRewardFullPeople: 10,
+    rankRewardTopShare: 0.5,
   );
 }

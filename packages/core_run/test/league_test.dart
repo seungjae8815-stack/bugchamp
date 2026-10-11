@@ -12,10 +12,27 @@ void main() {
 
   test('승강 구간 — 상위·하위 20%, 작은 리그는 줄인다', () {
     expect(b.leagueZones(100), (promote: 20, demote: 20));
-    expect(b.leagueZones(10), (promote: 2, demote: 2));
-    expect(b.leagueZones(4), (promote: 1, demote: 0), reason: '4명 이하는 강등 없음');
-    expect(b.leagueZones(2), (promote: 1, demote: 0));
+    expect(b.leagueZones(10), (
+      promote: 2,
+      demote: 2,
+    ), reason: '10명부터 승급(2명 함께)');
+    expect(b.leagueZones(9), (promote: 0, demote: 2), reason: '10명 미만은 승급 없음');
+    expect(b.leagueZones(4), (promote: 0, demote: 0), reason: '4명 이하는 강등도 없음');
     expect(b.leagueZones(1), (promote: 0, demote: 0), reason: '혼자면 그대로');
+  });
+
+  test('소수 리그 합류 — 3명 미만 리그는 아래로(브론즈 제외) · 2026-10-11', () {
+    // 골드에 혼자 · 둘이면 실버로.
+    expect(b.leagueAfterSeason(2, rank: 1, total: 1, trophies: 30), 1);
+    expect(b.leagueAfterSeason(2, rank: 2, total: 2, trophies: 5), 1);
+    // 3명이면 남는다(승급은 10명부터라 없음).
+    expect(b.leagueAfterSeason(2, rank: 1, total: 3, trophies: 30), 2);
+    // 브론즈는 내려갈 곳이 없다.
+    expect(b.leagueAfterSeason(0, rank: 1, total: 1, trophies: 30), 0);
+    // 실버 4명 1위 — 승급 없음(지금 실버 상황).
+    expect(b.leagueAfterSeason(1, rank: 1, total: 4, trophies: 74), 1);
+    // 브론즈 21명 1위 — 승급.
+    expect(b.leagueAfterSeason(0, rank: 1, total: 21, trophies: 49), 1);
   });
 
   test('결산 — 맨 위·맨 아래 리그에서는 넘어가지 않는다', () {
@@ -110,5 +127,36 @@ void main() {
         for (final x in s.skip(1)) x.points,
       ], everyElement(b.matchWildPoints));
     });
+  });
+
+  test('경쟁 인원 보정 — 소수 리그 독식 방지(2026-10-11)', () {
+    // 골드 혼자·둘이면 순위 젤리 없음.
+    expect(b.leagueRankJelly(1, league: 'gold', people: 1), 0);
+    expect(b.leagueRankJelly(1, league: 'gold', people: 2), 0);
+    // 실버 4명 — 상위 절반(2명)만, 금액 × 0.4.
+    expect(b.leagueRankJelly(1, league: 'silver', people: 4), 16);
+    expect(b.leagueRankJelly(2, league: 'silver', people: 4), 8);
+    expect(b.leagueRankJelly(3, league: 'silver', people: 4), 0);
+    // 10명 이상이면 원래 표 그대로.
+    for (final lg in b.leagues) {
+      for (final r in [1, 2, 3, 5]) {
+        expect(
+          b.leagueRankJelly(r, league: lg.id, people: 10),
+          b.seasonRankJelly(r, league: lg.id),
+          reason: '${lg.id} $r위',
+        );
+      }
+      expect(
+        b.leagueRankJelly(10, league: lg.id, people: 30),
+        b.seasonRankJelly(10, league: lg.id),
+      );
+    }
+    // 인원이 늘수록 1위 보상이 줄지 않는다.
+    var prev = 0;
+    for (var n = 1; n <= 20; n++) {
+      final j = b.leagueRankJelly(1, league: 'diamond', people: n);
+      expect(j, greaterThanOrEqualTo(prev), reason: '$n명');
+      prev = j;
+    }
   });
 }
