@@ -57,6 +57,7 @@ import '../../ui/skins.dart';
 import '../leaderboard/leaderboard_screen.dart';
 import '../character/item_gallery.dart';
 import 'monster_gallery.dart';
+import '../battle/duel_capture_screen.dart';
 import '../storage/skin_gallery.dart';
 import '../event/event_screen.dart';
 import '../roadmap/roadmap_screen.dart';
@@ -7892,6 +7893,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
+                    // 홍보 숏폼 촬영 — 아무 곤충이나 붙여 결투를 재생한다(서버·세이브 무관).
+                    _devSection('촬영 모드', [
+                      _devBtn('결투 촬영', () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const DuelCaptureScreen(),
+                          ),
+                        );
+                      }),
+                      // 결투 밖(뽑기·부화 등)을 찍을 때 — 효과음·결과 시각을 로그로 남긴다.
+                      _devBtn(
+                        AudioService.captureLog ? '촬영 로그 끄기' : '촬영 로그 켜기',
+                        () {
+                          AudioService.captureLog = !AudioService.captureLog;
+                          Navigator.pop(context);
+                          toast(
+                            AudioService.captureLog ? '촬영 로그 켬' : '촬영 로그 끔',
+                          );
+                        },
+                      ),
+                    ]),
                     // 설정 화면에서 옮겨온 것 — 유저가 잘못 눌러 진행도를 통째로
                     // 잃는 사고가 나서, 개발자 모드 안으로만 남긴다.
                     _devSection('세이브', [

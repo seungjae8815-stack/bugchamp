@@ -47,6 +47,8 @@ class DuelArenaScreen extends StatefulWidget {
     this.mineStatus,
     this.boutNote,
     this.onQuit,
+    this.playbackSpeed = 1,
+    this.cinematic = false,
   });
 
   final List<DuelBug> mine;
@@ -99,6 +101,14 @@ class DuelArenaScreen extends StatefulWidget {
   /// 그만하기(대회) — 조준 중에만 버튼이 보인다. 호출자가 확인·확정·결과까지 하고
   /// true 를 돌려주면 무대를 닫는다.
   final Future<bool> Function()? onQuit;
+
+  // ── 홍보 영상 촬영(개발 빌드 전용 `DuelCaptureScreen`)용 — 결투·대회는 기본값 그대로 ──
+
+  /// 재생 속도 배율(1 = 실제 속도). 연출·효과음 시각이 모두 함께 늘어난다.
+  final double playbackSpeed;
+
+  /// 촬영 모드 — 건너뛰기 버튼을 숨기고, 결판 직전·탭 반격 순간을 저절로 느리게 보여 준다.
+  final bool cinematic;
 
   @override
   State<DuelArenaScreen> createState() => _DuelArenaScreenState();
@@ -156,7 +166,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
     final dt = (now - _last).inMicroseconds / 1e6;
     _last = now;
     if (dt <= 0 || dt > 0.25) return; // 앱이 멈췄다 돌아온 틈은 건너뛴다
-    setState(() => _t += dt);
+    setState(() => _t += dt * widget.playbackSpeed * _cinematicSlow);
     switch (_phase) {
       case _Phase.aim when _quitting:
         _t = 0;
@@ -233,6 +243,86 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           break;
       }
     }
+  }
+
+  /// 촬영 모드의 저절로 느려지는 구간 — 결판 사건 직전 0.9초 ~ 직후 0.3초, 탭 반격 사건 앞뒤.
+  double get _cinematicSlow {
+    const slow = 0.3;
+    final b = _step?.bout;
+    if (!widget.cinematic || _phase != _Phase.fight || b == null) return 1;
+    final hz = widget.params.tickHz;
+    for (final e in b.events) {
+      final at = e.tick / hz;
+      switch (e.kind) {
+        case DuelEventKind.ringOut:
+        case DuelEventKind.flip:
+        case DuelEventKind.knockout:
+          if (_t >= at - 0.9 && _t <= at + 0.3) return slow;
+        case DuelEventKind.clutch:
+        case DuelEventKind.clutchSave:
+          if (_t >= at - 0.4 && _t <= at + 0.6) return slow;
+        default:
+          break;
+      }
+    }
+    return 1;
+  }
+
+  /// 촬영 모드 카메라 — 판마다 한 번, 1/30초 간격으로 초점·배율을 계산해 부드럽게 이어 둔다.
+  /// `fx` = 화면 좌우(경기장 반지름 비), `fd` = 깊이, `z` = 배율. 결판 뒤에는 마지막 값을 유지한다.
+  DuelBout? _camBout;
+  List<({double fx, double fd, double z})> _camTrack = const [];
+
+  ({double fx, double fd, double z}) _cameraAt(DuelBout bout, double playT) {
+    if (!identical(_camBout, bout)) {
+      _camBout = bout;
+      _camTrack = _cameraTrackOf(bout);
+    }
+    final i = (playT * 30).round().clamp(0, _camTrack.length - 1);
+    return _camTrack[i];
+  }
+
+  List<({double fx, double fd, double z})> _cameraTrackOf(DuelBout bout) {
+    final p = widget.params;
+    final r = p.arenaRadius;
+    final reach = (_curA.radius(p) + _curB.radius(p)) * 1.35;
+    final hz = p.tickHz;
+    final slow = <(double, double)>[
+      for (final e in bout.events)
+        if (e.kind == DuelEventKind.ringOut ||
+            e.kind == DuelEventKind.flip ||
+            e.kind == DuelEventKind.knockout)
+          (e.tick / hz - 0.9, e.tick / hz + 0.3)
+        else if (e.kind == DuelEventKind.clutch ||
+            e.kind == DuelEventKind.clutchSave)
+          (e.tick / hz - 0.4, e.tick / hz + 0.6),
+    ];
+    final n = (bout.ticks / hz * 30).ceil() + 1;
+    final out = <({double fx, double fd, double z})>[];
+    double? sx, sd, sz;
+    for (var i = 0; i < n; i++) {
+      final t = i / 30;
+      final fi = (t * hz / p.frameEvery).floor().clamp(
+        0,
+        bout.frames.length - 1,
+      );
+      final f = bout.frames[fi];
+      final ax = f[0] / 10, ay = f[1] / 10, bx = f[6] / 10, by = f[7] / 10;
+      final dist = math.sqrt(math.pow(ax - bx, 2) + math.pow(ay - by, 2));
+      var tz = dist < reach ? 1.75 : 1.45;
+      if (slow.any((s) => t >= s.$1 && t <= s.$2)) tz = 2.0;
+      // 두 곤충이 모두 화면 안에 들어오게(좌우 폭 = 반지름 비 × 그림 폭 0.352).
+      final span = (ay - by).abs() / r * 0.352;
+      if (span > 0) tz = math.min(tz, 0.72 / span);
+      tz = tz.clamp(1.0, 2.0);
+      final tx = (ay + by) / 2 / r;
+      final td = ((ax / r).clamp(-1.4, 1.4) + (bx / r).clamp(-1.4, 1.4)) / 2;
+      sx = sx == null ? tx : sx + (tx - sx) * 0.14;
+      sd = sd == null ? td : sd + (td - sd) * 0.14;
+      sz = sz == null ? tz : sz + (tz - sz) * 0.08;
+      out.add((fx: sx, fd: sd, z: sz));
+    }
+    return out;
   }
 
   double get _fightSeconds {
@@ -630,6 +720,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   }
 
   Widget _bottomBar(AppLocalizations l) {
+    if (widget.cinematic) return const SizedBox(height: 24);
     if (_phase == _Phase.aim && widget.driver.interactive) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
@@ -1249,6 +1340,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           );
           final crit = tagged(DuelEventKind.crit);
           final weak = tagged(DuelEventKind.weak);
+          // 촬영 모드 — 연타 숫자가 겹쳐 글자 덩어리가 된다(편집에서 자막·문구를 따로 얹는다).
+          if (widget.cinematic) continue;
           final head = feet(pos[v]).translate(
             (v == 0 ? -1 : 1) * w * 0.03,
             -w * 0.3 * (bugs[v].radius(widget.params) / 12),
@@ -1280,6 +1373,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           continue;
         }
         final mine = e.who == 0;
+        // 촬영 모드 — 상대의 "실패…"가 결판 문구와 겹쳐 읽히지 않는다.
+        if (widget.cinematic && !mine && e.kind == DuelEventKind.clutchFail) {
+          continue;
+        }
         // 상대가 살아나면 무적(clutchInvulSeconds) 동안은 반짝임을 남긴다 — 때려도 안 깎이는 이유가 보이게.
         final life = mine
             ? 1.3
@@ -1452,59 +1549,78 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         }
       }
     }
+    // 무대·곤충·효과(촬영 모드에서는 카메라가 두 곤충 쪽으로 당겨 잡는다). 체력·결판 문구는 카메라 밖.
+    final world = <Widget>[
+      // 무대 — 위아래 끝을 배경색으로 흐려 네모 그림이 떠 보이지 않게 한다.
+      Positioned(
+        left: cx - imgW / 2,
+        top: cy - imgH * 0.47,
+        width: imgW,
+        height: imgH,
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0x00000000),
+              Color(0xFF000000),
+              Color(0xFF000000),
+              Color(0x00000000),
+            ],
+            stops: [0, 0.14, 0.84, 1],
+          ).createShader(rect),
+          child: gameImageChain(
+            ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
+            size: imgH,
+            fit: BoxFit.fill,
+            fallback: Center(
+              child: Container(
+                width: halfX * 2.3,
+                height: halfY * 2.6,
+                decoration: BoxDecoration(
+                  gradient: const RadialGradient(
+                    colors: [Color(0xFF9B7A48), Color(0xFF5A4028)],
+                  ),
+                  borderRadius: BorderRadius.all(
+                    Radius.elliptical(halfX * 2.3, halfY * 2.6),
+                  ),
+                  border: Border.all(color: const Color(0xFF3A2814), width: 4),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      shadow(a, pa),
+      shadow(b, pb),
+      for (final (side, d, p, skin) in order) fighter(d, side, p, skin),
+      ...effects(),
+    ];
+    final cam = widget.cinematic ? _cameraAt(bout, playT) : null;
     return Transform.translate(
       offset: Offset(shake, 0),
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-          // 무대 — 위아래 끝을 배경색으로 흐려 네모 그림이 떠 보이지 않게 한다.
-          Positioned(
-            left: cx - imgW / 2,
-            top: cy - imgH * 0.47,
-            width: imgW,
-            height: imgH,
-            child: ShaderMask(
-              blendMode: BlendMode.dstIn,
-              shaderCallback: (rect) => const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0x00000000),
-                  Color(0xFF000000),
-                  Color(0xFF000000),
-                  Color(0x00000000),
-                ],
-                stops: [0, 0.14, 0.84, 1],
-              ).createShader(rect),
-              child: gameImageChain(
-                ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
-                size: imgH,
-                fit: BoxFit.fill,
-                fallback: Center(
-                  child: Container(
-                    width: halfX * 2.3,
-                    height: halfY * 2.6,
-                    decoration: BoxDecoration(
-                      gradient: const RadialGradient(
-                        colors: [Color(0xFF9B7A48), Color(0xFF5A4028)],
-                      ),
-                      borderRadius: BorderRadius.all(
-                        Radius.elliptical(halfX * 2.3, halfY * 2.6),
-                      ),
-                      border: Border.all(
-                        color: const Color(0xFF3A2814),
-                        width: 4,
-                      ),
-                    ),
+          if (cam == null)
+            ...world
+          else
+            Positioned.fill(
+              child: Transform(
+                // 초점(두 곤충 사이 몸통 높이)을 화면 가운데 조금 아래로 가져와 배율만큼 키운다.
+                transform: Matrix4.identity()
+                  ..translateByDouble(cx, h * 0.55, 0, 1)
+                  ..scaleByDouble(cam.z, cam.z, 1, 1)
+                  ..translateByDouble(
+                    -(cx + cam.fx * halfX),
+                    -(cy - cam.fd * halfY - w * 0.09),
+                    0,
+                    1,
                   ),
-                ),
+                child: Stack(clipBehavior: Clip.none, children: world),
               ),
             ),
-          ),
-          shadow(a, pa),
-          shadow(b, pb),
-          for (final (side, d, p, skin) in order) fighter(d, side, p, skin),
-          ...effects(),
           // 체력.
           Positioned(
             left: 16,
@@ -1544,7 +1660,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               ],
             ),
           ),
-          if (ended)
+          // 촬영 모드는 결판 문구를 편집에서 얹는다(겹쳐 두 겹으로 보이지 않게).
+          if (ended && !widget.cinematic)
             Positioned(
               left: 0,
               right: 0,

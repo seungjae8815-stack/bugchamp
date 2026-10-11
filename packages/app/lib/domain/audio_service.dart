@@ -191,7 +191,16 @@ class AudioService {
     await _persist();
   }
 
+  /// 홍보 영상 촬영 모드(개발 빌드 `DuelCaptureScreen`)가 켠다 — 화면 녹화엔 소리가 안 담겨서
+  /// 편집 때 같은 시각에 같은 효과음을 깔 수 있게 로그로 남긴다.
+  static bool captureLog = false;
+
   Future<void> _playSfx(String name) async {
+    if (captureLog) {
+      debugPrint(
+        '[capture-sfx] ${DateTime.now().millisecondsSinceEpoch} $name',
+      );
+    }
     if (!_ready || !settings.value.sfxOn) return;
     try {
       final p = _sfx.putIfAbsent(

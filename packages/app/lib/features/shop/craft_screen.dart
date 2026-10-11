@@ -619,6 +619,12 @@ class _GachaCard extends ConsumerWidget {
     final sp = data.speciesById[bug.speciesId];
     if (sp == null) return;
     final locale = Localizations.localeOf(context).languageCode;
+    if (AudioService.captureLog) {
+      debugPrint(
+        '[capture-gacha] ${DateTime.now().millisecondsSinceEpoch} '
+        '${bug.speciesId} ${sp.grade.key} ${bug.potential} ${bug.variant.key}',
+      );
+    }
     AudioService.instance.sfxRare();
     await showGameDialog<void>(
       context,
