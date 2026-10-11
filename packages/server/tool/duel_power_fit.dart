@@ -8,19 +8,22 @@
 // 실행:
 //   cd packages\server ; dart run tool/duel_power_fit.dart
 //   dart run tool/duel_power_fit.dart --bugs=300 --opp=40 --n=4   # 곤충 수 · 곤충당 상대 수 · 짝마다 판 수
+//   dart run tool/duel_power_fit.dart --grade=1   # 개체 등급 켬(등급 배율·종 배율·롤 — 롤은 id 로 정해진다)
 //
 // 출력: 가중치(지수) · 옛/새 전투력의 예측력(따로 남겨 둔 짝의 로그 손실·정확도) · 다트 상수 한 줄.
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:server/src/actions.dart';
 import 'package:server/src/game_config.dart';
 
 Future<void> main(List<String> args) async {
-  var nBugs = 300, nOpp = 40, nBout = 4;
+  var nBugs = 300, nOpp = 40, nBout = 4, grade = 0;
   for (final a in args) {
     final m = RegExp(r'^--([a-z]+)=(\d+)$').firstMatch(a);
     if (m == null) continue;
@@ -32,6 +35,8 @@ Future<void> main(List<String> args) async {
         nOpp = v;
       case 'n':
         nBout = v;
+      case 'grade':
+        grade = v;
     }
   }
   final cfg = await GameConfig.load(dir: '../app/assets/data');
@@ -39,7 +44,20 @@ Future<void> main(List<String> args) async {
   final actions = GameActions(config: cfg, now: () => t0);
   final p = actions.duelParams;
   final tr = cfg.battle.training;
-  final pet = cfg.pet;
+  final pet = grade == 0
+      ? cfg.pet
+      : PetConfig.fromJson({
+          ...jsonDecode(
+            File('../app/assets/data/pets.json').readAsStringSync(),
+          ),
+          'individualGrade': <String, dynamic>{
+            ...(jsonDecode(
+                  File('../app/assets/data/pets.json').readAsStringSync(),
+                )['individualGrade']
+                as Map),
+            'enabled': true,
+          },
+        });
   final species = cfg.speciesById.values.toList()
     ..sort((a, b) => a.id.compareTo(b.id));
   final rng = math.Random(20261010);
