@@ -6539,6 +6539,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String igTrainPtHowGrade(String pts) {
+    return 'Grade up one step → +$pts (grade up)';
+  }
+
+  @override
   String get trainPtNoPoints =>
       'No points left — raise level, breakthrough or potential';
 
@@ -6962,5 +6967,234 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String skillSweepConfirm(String jelly) {
     return 'Today\'s free sweeps are used up. Sweep for $jelly jelly?';
+  }
+
+  @override
+  String igSpeciesRarity(String grade) {
+    return 'Species rarity $grade';
+  }
+
+  @override
+  String get igGradeLabel => 'Grade';
+
+  @override
+  String get igDexMaxGrade => 'Best grade';
+
+  @override
+  String get igQualityTitle => 'Stat quality';
+
+  @override
+  String igQualityAvg(String pct) {
+    return 'Avg $pct%';
+  }
+
+  @override
+  String get igQualityHint =>
+      'Set from the egg · each grade-up rerolls every stat and keeps the better value';
+
+  @override
+  String get igStatHp => 'HP';
+
+  @override
+  String get igStatAtk => 'ATK';
+
+  @override
+  String get igStatDef => 'DEF';
+
+  @override
+  String get igStatSpd => 'SPD';
+
+  @override
+  String get igStatSize => 'Size';
+
+  @override
+  String get igStatCrit => 'Crit';
+
+  @override
+  String get igStatEvade => 'Evade';
+
+  @override
+  String get igStatRecovery => 'Recovery';
+
+  @override
+  String get igStatPush => 'Push';
+
+  @override
+  String get igToEssence => 'Turn into essence';
+
+  @override
+  String get igToEssenceEgg => 'Hatch the egg first to turn it into essence';
+
+  @override
+  String get igToEssencePinned =>
+      'Equipped, hatching, training or locked bugs can\'t be converted';
+
+  @override
+  String igToEssenceConfirm(String n, String name) {
+    return 'You get $n $name essence. This bug will be gone.';
+  }
+
+  @override
+  String get igToEssencePotionWarn => 'Stats raised with potions will be lost';
+
+  @override
+  String igEssenceGot(String name, String n) {
+    return '$name essence +$n';
+  }
+
+  @override
+  String get igGradeUp => 'Grade up';
+
+  @override
+  String igGradeUpDesc(String name, String have, String need) {
+    return '$name essence $have / $need';
+  }
+
+  @override
+  String get igGradeUpMax => 'Already at the top grade';
+
+  @override
+  String get igGradeUpEgg => 'Hatch the egg first to grade it up';
+
+  @override
+  String igPotionUse(String n, String have) {
+    return 'Growth potions $n (own $have)';
+  }
+
+  @override
+  String igPotionHint(String step) {
+    return 'Each potion raises the floor of the new rolls by $step. Potion gains stay all the way to Legendary.';
+  }
+
+  @override
+  String igGradeUpDone(String grade) {
+    return 'Now $grade!';
+  }
+
+  @override
+  String igGradeUpImproved(String n) {
+    return '$n stats improved';
+  }
+
+  @override
+  String get igNoEssence => 'Not enough essence';
+
+  @override
+  String get igGradeFailed => 'Can\'t do that';
+
+  @override
+  String get igVaultTitle => 'Essence vault';
+
+  @override
+  String get igVaultButton => 'Essence';
+
+  @override
+  String get igVaultEmpty =>
+      'No essence yet. Turn bugs into essence to collect it.';
+
+  @override
+  String get igVaultHint => 'Essence grades up bugs of the same species';
+
+  @override
+  String igPotionOwned(String n) {
+    return 'Growth potions: $n';
+  }
+
+  @override
+  String get igBulkEssence => 'To essence';
+
+  @override
+  String igBulkDone(String n) {
+    return 'Turned $n bugs into essence';
+  }
+
+  @override
+  String igBulkSkipped(String eggs, String pinned) {
+    return 'Skipped $eggs eggs · $pinned protected';
+  }
+
+  @override
+  String get igBulkNone => 'No bugs to convert';
+
+  @override
+  String get igPotionShopTitle => 'Growth potion';
+
+  @override
+  String igPotionBuy(String n) {
+    return 'Buy $n';
+  }
+
+  @override
+  String igPotionBuyConfirm(String n, String jelly) {
+    return '$n growth potions — this spends $jelly jelly.';
+  }
+
+  @override
+  String igPotionBought(String n) {
+    return 'Growth potion +$n';
+  }
+
+  @override
+  String get igPotionDailyLimit => 'Daily limit reached';
+
+  @override
+  String gachaPityLeftGrade(int n) {
+    return 'Epic or better guaranteed within $n draws';
+  }
+
+  @override
+  String get gachaDescGrade =>
+      'Rare grade or better guaranteed · 10× variant chance';
+
+  @override
+  String get eggOddsIndividualHead => 'Individual grade';
+
+  @override
+  String get eggOddsSpeciesHead =>
+      'Species rarity (all species of a rarity are equally likely)';
+
+  @override
+  String get igFilterTitle => 'Choose species rarity to keep';
+
+  @override
+  String igFilterSnack(String grade) {
+    return 'Species below $grade rarity are released for materials';
+  }
+
+  @override
+  String get igAutoFilterRarity => 'Target species rarity';
+
+  @override
+  String igAutoFilterGrade(String grade) {
+    return 'Individual grade $grade or lower';
+  }
+
+  @override
+  String igBulkConfirm(String n) {
+    return 'Turn $n bugs into essence. They will be gone.';
+  }
+
+  @override
+  String igBulkConfirmTotal(String n) {
+    return 'Essence gained: $n';
+  }
+
+  @override
+  String igBulkPotionWarn(String n) {
+    return 'Includes $n potion-raised bugs — their raised stats will be lost';
+  }
+
+  @override
+  String igBulkDoneGain(String n, String e) {
+    return 'Turned $n bugs into essence · +$e essence';
+  }
+
+  @override
+  String get igPotionShopDescBase =>
+      'Add them when grading up for better new rolls.';
+
+  @override
+  String igPotionLeftToday(String n) {
+    return '$n more available today';
   }
 }

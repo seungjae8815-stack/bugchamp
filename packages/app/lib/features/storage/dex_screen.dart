@@ -8,6 +8,7 @@ import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
@@ -597,6 +598,12 @@ class DexScreen extends ConsumerWidget {
   ) {
     final found = entry != null;
     final need = _needLevel(context);
+    // 개체 등급(2026-10-11) — 켜지면 "최고 포텐셜 N★" 대신 "최고 등급 이름".
+    final gradeOn =
+        ProviderScope.containerOf(
+          context,
+        ).read(gameDataProvider).value?.petConfig?.individualGrade.enabled ??
+        false;
     showGameDialog<void>(
       context,
       title: found ? sp.name.resolve(locale) : '???',
@@ -632,7 +639,12 @@ class DexScreen extends ConsumerWidget {
             ],
             const SizedBox(height: 10),
             _row(l.dexMaxSize, formatSizeMm(entry.maxSizeMm)),
-            _row(l.dexMaxPotential, '${entry.maxPotential}★'),
+            gradeOn
+                ? _row(
+                    l.igDexMaxGrade,
+                    potentialText(l, entry.maxPotential, true),
+                  )
+                : _row(l.dexMaxPotential, '${entry.maxPotential}★'),
             // 미달이면 **얼마나 남았는지** 보여준다 — "아니오"만 뜨면 무엇을
             // 해야 하는지 알 수 없다(수련 레벨이 기준이라는 걸 화면에서 처음 본다).
             _row(

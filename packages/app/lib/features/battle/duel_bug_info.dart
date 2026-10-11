@@ -1,10 +1,12 @@
 import 'package:core_battle/core_battle.dart';
+import 'package:core_models/core_models.dart' show IndividualBug;
 import 'package:flutter/material.dart' hide Element;
 
 import '../../data/game_data.dart';
 import 'duel_bug_build.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
@@ -25,6 +27,8 @@ Future<bool?> showDuelBugInfo(
   String? confirm,
   SkinView? skin,
   bool variant = false,
+  // 저장 곤충(내 곤충) — 개체 등급이 켜졌으면 등급을 여기서 읽는다(DuelBug 에는 포텐셜이 없다).
+  IndividualBug? bug,
 }) {
   final l = AppLocalizations.of(context);
   final locale = Localizations.localeOf(context).languageCode;
@@ -35,8 +39,18 @@ Future<bool?> showDuelBugInfo(
     final sp = data?.species(d.speciesId);
     if (sp != null) {
       name = sp.name.resolve(locale);
-      grade = gradeLabel(l, sp.grade);
-      gradeC = gradeColor(sp.grade);
+      final on = individualGradeOn(data!);
+      if (on && bug != null) {
+        grade = gradeLabel(l, bug.individualGrade);
+        gradeC = gradeColor(bug.individualGrade);
+      } else if (on) {
+        // 남의 곤충(서버 결투 정보에 포텐셜이 없다) — 개체 등급처럼 읽히지 않게 "종 희귀도"로 적는다.
+        grade = l.igSpeciesRarity(gradeLabel(l, sp.grade));
+        gradeC = gradeColor(sp.grade);
+      } else {
+        grade = gradeLabel(l, sp.grade);
+        gradeC = gradeColor(sp.grade);
+      }
     }
   } catch (_) {}
   Widget row(String k, String v, {Color? c, Widget? lead}) => Padding(

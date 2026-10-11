@@ -75,7 +75,7 @@ IdleDrops rollIdleDrops({
         // 버려진 롤로 되감으면 천장이 허공에 쓰인다.
         final rarePlus = sp.grade.index >= Grade.rare.index;
         // 온라인과 같은 분포: rng*rng 라 고포텐셜이 드물다.
-        final potential = 1 + (rng.nextDouble() * rng.nextDouble() * 4).floor();
+        final potential = pet.wildPotential(rng.nextDouble(), rng.nextDouble());
         if (!save.acceptsGrade(sp.grade)) {
           final base = pet.releaseMaterial(sp.grade);
           final give = iap == null

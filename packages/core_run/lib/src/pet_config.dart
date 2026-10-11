@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'jelly_cost.dart';
 
 import 'package:core_models/core_models.dart';
+
+import 'individual_grade_config.dart';
 import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
@@ -37,6 +39,7 @@ class PetConfig {
     required this.stageMult,
     required this.stageDurationsSec,
     this.potentialScale = 0.06,
+    this.individualGrade = const IndividualGradeConfig(),
     this.enhanceScale = 0.005,
     this.maxEquip = 3,
     this.accelerateJelly = 2,
@@ -121,6 +124,9 @@ class PetConfig {
 
   /// 포텐셜 1당 기여 증폭.
   final double potentialScale;
+
+  /// 개체 등급 개편(2026-10-11, `pets.json → individualGrade`). 꺼져 있으면 옛 규칙.
+  final IndividualGradeConfig individualGrade;
 
   /// 강화 레벨 합 1당 기여 증폭.
   final double enhanceScale;
@@ -285,8 +291,21 @@ class PetConfig {
   /// 값이 안 나온다 — 야생에 없는 것(5성)을 파는 게 유일하게 성립하는 축이다.
   final Map<int, double> gachaPotentialWeights;
 
+  /// 야생 알의 포텐셜(= 개체 등급). 난수 **두 개**를 받는다 — 옛 공식(`1 + floor(r1·r2·4)`)과 소비 횟수를 맞춰
+  /// 켜고 끌 때 다른 롤 순서가 밀리지 않게. 개체 등급이 켜지면 `wildWeights`(일반 80 · … · 전설 0)를 r1 로 고른다.
+  int wildPotential(double r1, double r2) => individualGrade.enabled
+      ? IndividualGradeConfig.pickWith(individualGrade.wildWeights, r1)
+      : (1 + (r1 * r2 * 4).floor()).clamp(1, 5);
+
   /// 뽑기 포텐셜 롤. 표가 비어 있으면 0(호출부가 야생 공식으로 폴백).
+  /// 개체 등급이 켜지면 `gachaGradeWeights`(희귀 70 · 영웅 27 · 전설 3).
   int rollGachaPotential(double roll) {
+    if (individualGrade.enabled) {
+      return IndividualGradeConfig.pickWith(
+        individualGrade.gachaGradeWeights,
+        roll,
+      );
+    }
     if (gachaPotentialWeights.isEmpty) return 0;
     final total = gachaPotentialWeights.values.fold<double>(0, (a, b) => a + b);
     if (total <= 0) return 0;
@@ -518,6 +537,9 @@ class PetConfig {
           LifeStage.fromKey(e.key): (e.value as num).toInt(),
       },
       potentialScale: (json['potentialScale'] as num?)?.toDouble() ?? 0.06,
+      individualGrade: IndividualGradeConfig.fromJson(
+        json['individualGrade'] as Map<String, dynamic>?,
+      ),
       enhanceScale: (json['enhanceScale'] as num?)?.toDouble() ?? 0.005,
       maxEquip: (json['maxEquip'] as num?)?.toInt() ?? 3,
       accelerateJelly: (json['accelerateJelly'] as num?)?.toInt() ?? 2,
@@ -739,6 +761,10 @@ typedef PetStat = ({
   double trainMult,
 });
 
+/// 야생 알 포텐셜 — 설정이 없으면(로딩 전) 옛 공식. 난수 두 개를 늘 쓴다([PetConfig.wildPotential]).
+int wildPotentialOf(PetConfig? cfg, double r1, double r2) =>
+    cfg?.wildPotential(r1, r2) ?? (1 + (r1 * r2 * 4).floor()).clamp(1, 5);
+
 /// 개체 + 종 → [PetStat]. **조립을 한 곳에 모은다.**
 ///
 /// 예전엔 화면 6곳이 각자 이 레코드를 손으로 채웠다. 필드를 하나 늘릴 때마다
@@ -751,7 +777,8 @@ PetStat petStatOf(
   DateTime now, {
   double trainMult = 1,
 }) => (
-  grade: species.grade,
+  // 개체 등급(2026-10-11): 펫 기여 비율은 **개체 등급**으로 — 꺼져 있으면 종 등급(옛 규칙).
+  grade: cfg.individualGrade.enabled ? bug.individualGrade : species.grade,
   sizeMult: bug.statMultiplier(species),
   potential: bug.potential,
   // 훈련 v2(2026-10-08): 부위 강화는 훈련 포인트로 이전됐다 — 펫 기여는 [trainMult]

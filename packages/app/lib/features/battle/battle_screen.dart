@@ -23,6 +23,7 @@ import '../../ui/jelly_confirm.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/skin_badges.dart';
 import '../../ui/skins.dart';
 import 'board_preview.dart';
@@ -1375,8 +1376,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ? '${m ~/ 60}:${(m % 60).toString().padLeft(2, '0')}'
         : '${m + 1}m';
     final slot = _team.indexOf(bug.id); // 출정 칸(0~2), 없으면 -1
-    final grade = gradeColor(sp.grade);
-    final stars = List.filled(bug.potential, '★').join();
+    final grade = gradeColor(shownGrade(data, bug, sp));
+    // 개체 등급이 켜지면 별 대신 등급 이름.
+    final stars = potentialText(l, bug.potential, individualGradeOn(data));
     return GestureDetector(
       // 누르면 상세(능력치·특성) — 어떤 곤충을 먼저 회복할지 고르게(2026-10-01).
       onTap: () => _showRecoveryDetail(data, locale, bug, jelly),
@@ -1420,7 +1422,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
-                          gradeLabel(l, sp.grade),
+                          gradeLabel(l, shownGrade(data, bug, sp)),
                           style: TextStyle(
                             color: grade,
                             fontSize: 10,
@@ -2223,11 +2225,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: gradeColor(sp!.grade).withValues(alpha: 0.9),
+                        color: gradeColor(
+                          shownGrade(data, bug, sp!),
+                        ).withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        gradeLabel(AppLocalizations.of(context), sp.grade),
+                        gradeLabel(
+                          AppLocalizations.of(context),
+                          shownGrade(data, bug, sp),
+                        ),
                         style: const TextStyle(
                           color: Color(0xFF1B1A14),
                           fontSize: 9.5,
@@ -2473,7 +2480,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ? const Color(0x66EF9A9A)
                     : (used
                           ? _honey
-                          : gradeColor(sp.grade).withValues(alpha: 0.7)),
+                          : gradeColor(
+                              shownGrade(data, bug, sp),
+                            ).withValues(alpha: 0.7)),
               ),
             ),
             child: Column(
@@ -2517,13 +2526,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: gradeColor(sp.grade).withValues(alpha: 0.28),
+                    color: gradeColor(
+                      shownGrade(data, bug, sp),
+                    ).withValues(alpha: 0.28),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
-                    gradeLabel(AppLocalizations.of(ctx), sp.grade),
+                    gradeLabel(
+                      AppLocalizations.of(ctx),
+                      shownGrade(data, bug, sp),
+                    ),
                     style: TextStyle(
-                      color: gradeColor(sp.grade),
+                      color: gradeColor(shownGrade(data, bug, sp)),
                       fontSize: 8.5,
                       fontWeight: FontWeight.w900,
                     ),
@@ -2649,7 +2663,24 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     spacing: 4,
                     runSpacing: 3,
                     children: [
-                      if (sp != null)
+                      // 내 곤충이면 개체 등급(켜졌을 때) + 종 희귀도 작게.
+                      if (sp != null &&
+                          bug != null &&
+                          individualGradeOn(data)) ...[
+                        _chip(
+                          gradeLabel(l, bug.individualGrade),
+                          gradeColor(bug.individualGrade),
+                        ),
+                        _chip(
+                          l.igSpeciesRarity(gradeLabel(l, sp.grade)),
+                          gradeColor(sp.grade).withValues(alpha: 0.75),
+                        ),
+                      ] else if (sp != null && individualGradeOn(data))
+                        _chip(
+                          l.igSpeciesRarity(gradeLabel(l, sp.grade)),
+                          gradeColor(sp.grade),
+                        )
+                      else if (sp != null)
                         _chip(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
                       _chip(
                         elementLabel(l, d.element),
@@ -2703,9 +2734,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         if (bug != null && sp != null) ..._trainPointRows(l, data, bug, sp),
         if (bug != null) ...[
           _statRow(
-            l.bugInfoPotential,
-            '★' * bug.potential,
-            color: const Color(0xFFFFC928),
+            individualGradeOn(data) ? l.igGradeLabel : l.bugInfoPotential,
+            potentialText(l, bug.potential, individualGradeOn(data)),
+            color: potentialColor(bug.potential, individualGradeOn(data)),
           ),
           _statRow('Lv', '${bug.level}'),
         ],

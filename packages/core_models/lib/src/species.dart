@@ -48,6 +48,7 @@ class Species {
     this.passive,
     this.availableFrom,
     this.availableUntil,
+    this.gradeScale = 1,
   });
 
   /// 안정적 식별자 (예: 'stag_beetle_common').
@@ -85,6 +86,10 @@ class Species {
   final DateTime? availableFrom;
   final DateTime? availableUntil;
 
+  /// 개체 등급 개편(2026-10-11)의 **종 능력치 배율**(체력·공격·방어) — 같은 등급이면 종끼리 비슷하게
+  /// 싸우도록 리그전으로 맞춘 값(`server/tool/grade_duel_sim.dart --league --fit`). 개체 등급이 켜졌을 때만 쓴다.
+  final double gradeScale;
+
   /// 이 시각에 드롭 풀에 들어가는가.
   bool availableAt(DateTime now) =>
       (availableFrom == null || !now.isBefore(availableFrom!)) &&
@@ -111,6 +116,7 @@ class Species {
     availableUntil: json['until'] == null
         ? null
         : DateTime.parse(json['until'] as String).toUtc(),
+    gradeScale: (json['gradeScale'] as num?)?.toDouble() ?? 1,
   );
 
   Map<String, dynamic> toJson() => {

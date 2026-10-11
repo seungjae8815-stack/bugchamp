@@ -277,6 +277,9 @@ class GameActions {
     22: ['forgeTranscend'],
     // 프로필 그림(1.0.19, 2026-10-10) — 모르는 앱(1.0.18)이 올리면 저장본의 그림을 지킨다.
     23: ['avatar'],
+    // 개체 등급(2026-10-11, docs/design_individual_grade.md) — 정수·성장물약·물약 구매 기록.
+    // 곤충 안의 롤(`rl`)·뽑기 출신(`gc`)은 [_keepFieldsOldAppDoesNotKnow] 의 따로 처리(같은 곤충이면 되돌린다).
+    24: ['essence', 'potions', 'potionBuyDay', 'potionBuyN'],
   };
 
   /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.
@@ -377,6 +380,28 @@ class GameActions {
           for (final b in list)
             if (b is Map && su.containsKey(b['id']) && b['su'] == null)
               (Map<String, dynamic>.from(b)..['su'] = su[b['id']])
+            else
+              b,
+        ];
+      }
+    }
+    // 곤충의 롤·뽑기 출신(개체 등급, feat 24) — 모르는 앱은 떨어뜨린다. 같은 곤충이면 저장본 값을 되돌린다
+    // (안 되돌리면 등급 올리기로 좋아진 롤이 처음 롤로 돌아간다).
+    if (feat < 24) {
+      final keep = {
+        for (final b in stored.bugs)
+          if (b.rolls != null || b.fromGacha)
+            b.id: {
+              if (b.rolls != null) 'rl': b.rolls,
+              if (b.fromGacha) 'gc': true,
+            },
+      };
+      final list = out['bugs'];
+      if (keep.isNotEmpty && list is List) {
+        out['bugs'] = [
+          for (final b in list)
+            if (b is Map && keep.containsKey(b['id']))
+              (Map<String, dynamic>.from(b)..addAll(keep[b['id']]!))
             else
               b,
         ];
@@ -1410,6 +1435,11 @@ class GameActions {
       if (!identical(sk, capped)) clampReasons.add('skill');
       capped = sk;
     }
+    {
+      final gr = _enforceGrade(stored, capped);
+      if (!identical(gr, capped)) clampReasons.add('grade');
+      capped = gr;
+    }
     final fairyCfg = config.fairy;
     if (fairyCfg != null) {
       // 재굴림 칸(서버 소유)은 **잘림 판정 전에** 저장본으로 맞춘다. 1.0.15 앱은 이 칸을 몰라 늘 비워 올려서,
@@ -1472,6 +1502,46 @@ class GameActions {
   ///
   /// [clamped] 는 2·3 에서 잘렸을 때만 참이다(이전은 정상 동작이라 알리지 않는다 — 알리면 1.0.17 기기가
   /// 업로드마다 세이브를 되받는다).
+  /// 개체 등급(2026-10-11) 업로드 검사 — 롤 정리 · 정수 급증 · 물약 급증. 꺼져 있으면 롤 정리만.
+  ///
+  /// 정수는 **이번 업로드에서 사라진 곤충**의 정수 가치만큼만 늘 수 있다(분해·방생으로 사라진 것도 넉넉히 센다).
+  /// 물약은 쓴 젤리 ÷ 가격(하루 상한) + 드롭 여유(업로드당 [kPotionDropSlack])만큼. 기기 권위라 완벽하지 않다 —
+  /// 곤충 롤과 같은 처지이고, 결투·대회 팀은 [validateDuelTeam] 이 롤 범위(0~100)로 자른다.
+  static const kPotionDropSlack = 5;
+  SaveGame _enforceGrade(SaveGame stored, SaveGame client) {
+    var out = sanitizeGradeRolls(client);
+    final cfg = config.pet.individualGrade;
+    if (!cfg.enabled) return out;
+    final byId = {for (final sp in config.speciesList) sp.id: sp};
+    final now = {for (final b in out.bugs) b.id};
+    final allow = <String, int>{};
+    for (final b in stored.bugs) {
+      if (now.contains(b.id)) continue;
+      final sp = byId[b.speciesId];
+      if (sp == null) continue;
+      allow[sp.id] = (allow[sp.id] ?? 0) + cfg.essenceOf(b, sp.grade);
+    }
+    var changed = false;
+    final bag = Map<String, int>.from(out.essence);
+    for (final e in out.essence.entries) {
+      final cap = (stored.essence[e.key] ?? 0) + (allow[e.key] ?? 0);
+      if (e.value > cap) {
+        bag[e.key] = cap;
+        changed = true;
+      }
+    }
+    if (changed) out = out.copyWith(essence: bag);
+    final diff =
+        stored.materialCount(MaterialKind.jelly) -
+        out.materialCount(MaterialKind.jelly);
+    final spent = diff > 0 ? diff : 0;
+    final byJelly = cfg.potionJelly <= 0 ? 0 : spent ~/ cfg.potionJelly;
+    final bought = byJelly < cfg.potionDailyBuy ? byJelly : cfg.potionDailyBuy;
+    final potCap = stored.growthPotions + bought + kPotionDropSlack;
+    if (out.growthPotions > potCap) out = out.copyWith(growthPotions: potCap);
+    return out;
+  }
+
   ({SaveGame save, bool clamped}) _enforceTrainV2(
     SaveGame stored,
     SaveGame client, {
@@ -2204,22 +2274,36 @@ class GameActions {
               levelCap: petConfig.levelCap(bug.breakthroughTier),
               enhance: enhance,
             );
-            return DuelBug.fromBattleBug(
-              v.team[i],
-              speciesId: bug.speciesId,
-              sizeMm: bug.sizeMm,
-              specialty: sp.specialty,
-              // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 스탯에 구워진 사이즈 배율을 알려 주면
-              // 엔진이 `sizeStatExp` 로 덜어낸다. 방치 런·도감은 그대로. 앱 `duelBugFor` 와 같은 값.
-              sizeStatMult: bug.statMultiplier(sp),
-            ).withTraining(
-              evade: t.evade,
-              crit: t.crit,
-              recovery: t.recovery,
-              massMult: t.massMult,
-              pushMult: t.pushMult,
-              tech: t.tech,
-              grit: t.grit,
+            final d =
+                DuelBug.fromBattleBug(
+                  v.team[i],
+                  speciesId: bug.speciesId,
+                  sizeMm: bug.sizeMm,
+                  specialty: sp.specialty,
+                  // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 스탯에 구워진 사이즈 배율을 알려 주면
+                  // 엔진이 `sizeStatExp` 로 덜어낸다. 방치 런·도감은 그대로. 앱 `duelBugFor` 와 같은 값.
+                  sizeStatMult: bug.statMultiplier(sp),
+                ).withTraining(
+                  evade: t.evade,
+                  crit: t.crit,
+                  recovery: t.recovery,
+                  massMult: t.massMult,
+                  pushMult: t.pushMult,
+                  tech: t.tech,
+                  grit: t.grit,
+                );
+            // 개체 등급(2026-10-11) — 등급 배율 × 종 배율 × 롤 · 타고난 치명·회피·회복력 · 밀어내기.
+            // 꺼져 있으면 중립. 앱 `duelBugFor` 와 같은 함수.
+            final m = petConfig.individualGrade.battleMods(bug, sp);
+            return d.withTraining(
+              hpMult: m.hp,
+              atkMult: m.atk,
+              defMult: m.def,
+              spdMult: m.spd,
+              crit: m.crit,
+              evade: m.evade,
+              recovery: m.recovery,
+              pushMult: m.push,
             );
           }(),
       ],

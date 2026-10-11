@@ -922,6 +922,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
       next = st.save;
       lastDuelStones = st.got;
     }
+    // 성장물약(개체 등급) — 첫 처치 1개 확정 · 재처치 2%(되찾기 제외). 결투석 뒤에 굴린다.
+    lastPotions = 0;
+    if (firstKill || !reclaim) {
+      final po = rollPotionDrop(
+        next,
+        _gradeCfg,
+        rng ?? math.Random(),
+        PotionSource.boss,
+        firstKill: firstKill,
+      );
+      next = po.save;
+      lastPotions = po.got;
+    }
     // 요정 — 보스 **첫 처치**면 난이도별 알 1개 확정 + 속성석(§2.8 무료 경로, design_fairy.md §1.4).
     // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
     lastBossFairyEggs = const [];
@@ -1030,6 +1043,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
       final st = grantAbyssDuelStones(saved, _stoneCfg, s0.abyssFloor);
       saved = st.save;
       lastDuelStones = st.got;
+      final po = rollPotionDrop(
+        saved,
+        _gradeCfg,
+        math.Random(),
+        PotionSource.abyssMilestone,
+      );
+      saved = po.save;
+      lastPotions = po.got;
     }
     await _commit(saved);
     return (
@@ -1233,16 +1254,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
     // 티어 +1(다음 미션으로 순환) & 진행도 전체 초기화(다음 미션은 0부터 새로).
     final claimsMap = Map<String, int>.from(s.missionClaims)..[id] = claims + 1;
-    await _commit(
-      s.copyWith(
-        gold: addCurrency(s.gold, reward.gold),
-        materials: mats,
-        missionClaims: claimsMap,
-        missionProgress: const {},
-        // 오늘 젤리를 받은 횟수(하루 한도 — 서버가 날짜를 뒤로 돌리지 못하게 합친다).
-        dailyClaims: gotJelly ? markMissionJelly(s, def, today) : null,
-      ),
+    final claimed = s.copyWith(
+      gold: addCurrency(s.gold, reward.gold),
+      materials: mats,
+      missionClaims: claimsMap,
+      missionProgress: const {},
+      // 오늘 젤리를 받은 횟수(하루 한도 — 서버가 날짜를 뒤로 돌리지 못하게 합친다).
+      dailyClaims: gotJelly ? markMissionJelly(s, def, today) : null,
     );
+    // 성장물약 — 그날 첫 미션 보상에 1개(개체 등급).
+    final po = rollPotionDrop(
+      claimed,
+      _gradeCfg,
+      math.Random(),
+      PotionSource.mission,
+      dayKey: today,
+    );
+    lastPotions = po.got;
+    await _commit(po.save);
     return reward;
   }
 
@@ -1913,8 +1942,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
     final pet = data.petConfig;
     if (pet == null) return migrated;
+    // 개체 등급(2026-10-11) — 등급 올리기를 안 한 곤충의 롤은 처음 롤(서버 업로드와 같은 정리).
     return sanitizeTrainPoints(
-      migrated,
+      sanitizeGradeRolls(migrated),
       cfg,
       speciesOf: (id) => data.speciesById[id],
       levelCapOf: pet.levelCap,
@@ -2114,6 +2144,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 마지막 정예·보스·심연 처치에서 떨어진 결투석(화면 알림용 — 다음 단계 UI).
   Map<DuelStone, int> lastDuelStones = const {};
+
+  /// 마지막 보상에서 받은 성장물약 수(정예·보스·심연·미션) — 화면이 띄운다.
+  int lastPotions = 0;
+
+  /// 개체 등급 설정(`pets.json → individualGrade`). 꺼져 있으면 물약도 안 굴린다.
+  IndividualGradeConfig get _gradeCfg =>
+      ref.read(gameDataProvider).value?.petConfig?.individualGrade ??
+      const IndividualGradeConfig();
 
   // ── 옛 훈련소 화면 다리(화면 재작성 전까지) ──────────────────────────
   // 옛 화면(training_screen)이 부르는 이름을 v2 로 잇는다 — 옛 능력치 5종을 같은 이름의 칸에 1포인트씩.
@@ -2521,6 +2559,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
     await _commit(s.copyWith(bugs: bugs));
+  }
+
+  /// (개발) 개체 등급 시험용 — 모든 종 정수 +200 · 성장물약 +10.
+  Future<void> devGradeKit() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final s = state.requireValue;
+    final bag = Map<String, int>.from(s.essence);
+    for (final sp in data.allSpecies) {
+      bag[sp.id] = (bag[sp.id] ?? 0) + 200;
+    }
+    await _commit(
+      s.copyWith(essence: bag, growthPotions: s.growthPotions + 10),
+    );
   }
 
   /// (개발) 스킨 보유를 켜고 끈다.
@@ -3145,7 +3196,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 등급: 가중치 롤. 천장이면 보장 등급 미만을 잘라낸다.
     var weights = Map<Grade, double>.from(cfg.gachaWeights);
     weights.remove(Grade.common); // 어떤 설정이 와도 일반은 안 나온다
-    if (pityDue) {
+    final ig = cfg.individualGrade;
+    // 개체 등급(2026-10-11): 천장은 **영웅 이상 개체** — 종 희귀도는 확률대로 고른다.
+    if (pityDue && !ig.enabled) {
       weights = {
         for (final e in weights.entries)
           if (e.key.index >= cfg.gachaPityGrade.index) e.key: e.value,
@@ -3179,6 +3232,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // 야생에 없는 것(5성)을 파는 게 유일하게 성립하는 축이다.
       // 표가 비어 있으면 야생 공식으로 떨어진다(구버전 데이터 호환).
       potential: () {
+        if (ig.enabled) {
+          final r = rng.nextDouble();
+          final w = pityDue
+              ? [
+                  for (var i = 0; i < ig.gachaGradeWeights.length; i++)
+                    i + 1 >= ig.gachaPityMinPotential
+                        ? ig.gachaGradeWeights[i]
+                        : 0.0,
+                ]
+              : ig.gachaGradeWeights;
+          return IndividualGradeConfig.pickWith(w, r);
+        }
         final p = cfg.rollGachaPotential(rng.nextDouble());
         return p > 0
             ? p.clamp(1, 5)
@@ -3188,7 +3253,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
               );
       }(),
       variantChance: cfg.gachaVariantChance,
-    ).copyWith(stage: LifeStage.egg, stageSince: now);
+    ).copyWith(stage: LifeStage.egg, stageSince: now, fromGacha: ig.enabled);
 
     final mats = Map<MaterialKind, int>.from(s.materials);
     mats[MaterialKind.jelly] =
@@ -3200,7 +3265,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
         // ⚠️ **보장 등급이 나왔을 때만** 되감는다. 영웅에서 초기화하면
         // 전설을 노리는 유저의 카운터가 계속 리셋돼, "N회 안에 확정"이
         // 정작 목표에는 닿지 않는다.
-        gachaPity: grade.index >= cfg.gachaPityGrade.index
+        gachaPity:
+            (ig.enabled
+                ? bug.potential >= ig.gachaPityMinPotential
+                : grade.index >= cfg.gachaPityGrade.index)
             ? 0
             : s.gachaPity + 1,
       ),
@@ -4181,8 +4249,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 결투석(오행석 0.2%, design_training_v2.md §3) — 스킬 조각 **뒤에** 굴린다(같은 seed 의 조각이 안 바뀌게).
     final st = rollDuelStones(next, _stoneCfg, r, DuelStoneSource.elite);
     lastDuelStones = st.got;
-    if (shards.isEmpty && st.got.isEmpty) return const {};
-    await _commit(st.save);
+    // 성장물약(개체 등급, 정예 0.3%) — 결투석 **뒤에** 굴린다.
+    final po = rollPotionDrop(st.save, _gradeCfg, r, PotionSource.elite);
+    lastPotions = po.got;
+    if (shards.isEmpty && st.got.isEmpty && po.got == 0) return const {};
+    await _commit(po.save);
     return shards;
   }
 
@@ -4825,6 +4896,68 @@ class SaveController extends AsyncNotifier<SaveGame> {
       !s.pinnedBugIds.contains(b.id) &&
       !isPreciousBug(b) &&
       b.potential <= targetPotential;
+
+  // ── 개체 등급(2026-10-11, docs/design_individual_grade.md) ───────────────
+  // 규칙은 core_save `individual_grade.dart` 한 곳(서버와 같은 함수) — 여기는 데이터를 넘기고 저장만 한다.
+
+  /// 곤충들을 그 종 **정수**로 바꾼다(알·보호 곤충은 건너뛴다). 꺼져 있으면 실패('off').
+  Future<GradeOp> convertBugsToEssence(Iterable<String> ids) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    if (!_gradeCfg.enabled) return const GradeOp.fail('off');
+    final r = convertToEssence(
+      state.requireValue,
+      ids,
+      _gradeCfg,
+      data.speciesById,
+    );
+    if (r.isOk) await _commit(r.save!);
+    return r;
+  }
+
+  /// 곤충 [id] 를 한 등급 올린다 — 그 종 정수 + 성장물약 [potions] 개.
+  Future<GradeOp> gradeUpBug(String id, {int potions = 0}) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    if (!_gradeCfg.enabled) return const GradeOp.fail('off');
+    final r = gradeUp(
+      state.requireValue,
+      id,
+      _gradeCfg,
+      data.speciesById,
+      math.Random(),
+      potions: potions,
+    );
+    if (r.isOk) await _commit(r.save!);
+    return r;
+  }
+
+  /// 성장물약 [n] 개를 젤리로 산다(하루 상한).
+  Future<GradeOp> buyGrowthPotions(int n) async {
+    if (!_gradeCfg.enabled) return const GradeOp.fail('off');
+    final r = buyPotions(
+      state.requireValue,
+      n,
+      _gradeCfg,
+      dailyDateKey(ref.read(clockProvider).now()),
+    );
+    if (r.isOk) await _commit(r.save!);
+    return r;
+  }
+
+  /// 오늘 더 살 수 있는 성장물약 수.
+  int growthPotionsLeftToday() {
+    final s = state.value;
+    if (s == null) return 0;
+    final today = dailyDateKey(ref.read(clockProvider).now());
+    final bought = s.potionBuyDay == today ? s.potionBuyCount : 0;
+    return math.max(0, _gradeCfg.potionDailyBuy - bought);
+  }
+
+  /// 마지막 보상의 성장물약 수를 한 번만 꺼낸다(화면 알림용 — 같은 값을 두 번 띄우지 않게 비운다).
+  int takeLastPotions() {
+    final n = lastPotions;
+    lastPotions = 0;
+    return n;
+  }
 
   /// 곤충 잠금 켜기/끄기 — 잠근 곤충은 합성·분해 재료에서 빠진다.
   Future<bool> toggleBugLock(String bugId) async {

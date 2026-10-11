@@ -18,6 +18,7 @@ import '../../ui/art.dart';
 import '../../ui/element_wheel.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/toast.dart';
 import '../battle/arena_widgets.dart';
@@ -674,7 +675,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
         size: 40,
         fallback: bugAvatar(sp, size: 36),
       ),
-      subtitle: gradeLabel(l, sp.grade),
+      subtitle: gradeLabel(l, shownGrade(widget.data, bug, sp)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

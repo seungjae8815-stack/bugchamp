@@ -21,6 +21,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
 import 'clutch_gauge.dart';
@@ -105,6 +106,14 @@ class TrainingScreen extends ConsumerStatefulWidget {
 }
 
 class _TrainingScreenState extends ConsumerState<TrainingScreen> {
+  /// 곤충 한 마리의 표시 등급(켜지면 개체 등급, 꺼지면 종 등급).
+  Grade _gradeOf(IndividualBug b, Species sp) =>
+      _gradeOn ? b.individualGrade : sp.grade;
+
+  /// 개체 등급이 켜졌나(켜지면 별 대신 등급 이름).
+  bool get _gradeOn =>
+      individualGradeOn(ref.read(gameDataProvider).requireValue);
+
   String? _bugId;
   Timer? _tick;
 
@@ -404,16 +413,18 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           color: on ? const Color(0x33EBA52F) : const Color(0x22FFFFFF),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: on ? _honey : gradeColor(sp.grade).withValues(alpha: 0.6),
+            color: on
+                ? _honey
+                : gradeColor(_gradeOf(b, sp)).withValues(alpha: 0.6),
             width: on ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
             Text(
-              gradeLabel(l, sp.grade),
+              gradeLabel(l, _gradeOf(b, sp)),
               style: TextStyle(
-                color: gradeColor(sp.grade),
+                color: gradeColor(_gradeOf(b, sp)),
                 fontSize: 9,
                 fontWeight: FontWeight.w900,
               ),
@@ -442,14 +453,16 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 ],
               ),
             ),
-            Text(
-              '★' * b.potential,
-              style: const TextStyle(
-                color: Color(0xFFFFC928),
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
+            // 켜지면 위쪽 이름표가 이미 개체 등급이다(두 번 보이지 않게).
+            if (!_gradeOn)
+              Text(
+                potentialText(l, b.potential, _gradeOn),
+                style: TextStyle(
+                  color: potentialColor(b.potential, _gradeOn),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
@@ -645,8 +658,21 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 runSpacing: 3,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  _chip(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
-                  _chip('★' * bug.potential, const Color(0xFFFFC928)),
+                  _chip(
+                    gradeLabel(l, _gradeOf(bug, sp)),
+                    gradeColor(_gradeOf(bug, sp)),
+                  ),
+                  // 켜지면 종 희귀도를 작게 덧붙인다.
+                  if (_gradeOn)
+                    _chip(
+                      l.igSpeciesRarity(gradeLabel(l, sp.grade)),
+                      gradeColor(sp.grade),
+                    ),
+                  if (!_gradeOn)
+                    _chip(
+                      potentialText(l, bug.potential, _gradeOn),
+                      potentialColor(bug.potential, _gradeOn),
+                    ),
                   _chip('Lv.${bug.level}', const Color(0xFFCFD8DC)),
                   _chip(
                     elementLabel(l, bug.element),
@@ -750,7 +776,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
             : l.trainPtHowLevel('$nextLv', '$k'),
       if (tier < cfg.breakthroughPoints.length)
         l.trainPtHowBreak('${tier + 1}', '${cfg.breakthroughPoints[tier]}'),
-      if (bug.potential < 5) l.trainPtHowPotential('${cfg.pointsPerPotential}'),
+      if (bug.potential < 5)
+        _gradeOn
+            ? l.igTrainPtHowGrade('${cfg.pointsPerPotential}')
+            : l.trainPtHowPotential('${cfg.pointsPerPotential}'),
     ];
     return Container(
       padding: const EdgeInsets.all(12),
