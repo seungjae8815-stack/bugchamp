@@ -4266,8 +4266,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'You skipped duels last week, so you moved down one league';
 
   @override
-  String get leagueZoneHint =>
-      'Closes every Sunday 09:00 · top 20% promote · bottom 20% demote';
+  String leagueZoneHint(int min, int up, int down) {
+    return 'Closes every Sunday 09:00 · in leagues of $min+ players, top $up% promote · bottom $down% demote';
+  }
 
   @override
   String get duelSquadTitle => 'Squad';
@@ -4491,8 +4492,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leagueInfoCurrent => 'Now';
 
   @override
-  String get leagueInfoAllHint =>
-      'Jelly = 1st place in that league · Gold = season-end reward';
+  String leagueInfoAllHint(int full) {
+    return 'Jelly = 1st place in that league (with $full+ players) · Gold = season-end reward';
+  }
 
   @override
   String get boardPromoteLine => '▲ Promotion zone above';
@@ -7255,5 +7257,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String igPotionLeftToday(String n) {
     return '$n more available today';
+  }
+
+  @override
+  String boardFewPartial(int n, int full) {
+    return 'This league has $n players this week — at $full, promotion and full rewards open';
+  }
+
+  @override
+  String boardFewNoReward(int n, int min) {
+    return 'This league has $n players this week — with fewer than $min, there are no rank rewards';
+  }
+
+  @override
+  String boardFewMerge(int n, int min) {
+    return 'This league has $n players this week — with fewer than $min, there are no rank rewards and it merges into the league below at settlement';
+  }
+
+  @override
+  String get leagueRewardsNone =>
+      'No rank rewards are available with the current number of players';
+
+  @override
+  String leagueMyMerge(String league) {
+    return '▼ Too few players — merging into $league League at settlement';
+  }
+
+  @override
+  String guideDuelLeague(int min, int up, int down, int reward, int full) {
+    return 'Each week you compete with your own league for stars (win points). If $min+ players battled that week, the top $up% promote and the bottom $down% demote; with fewer than $min, nobody promotes. Rank jelly starts at $reward+ players and goes to the top half of players, reduced in proportion until there are $full. Leagues with fewer than $reward players merge into the league below at settlement, and skipping a week drops you one league.';
   }
 }

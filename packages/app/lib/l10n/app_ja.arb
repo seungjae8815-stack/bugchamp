@@ -1397,7 +1397,7 @@
   "leagueResultStay": "{league}リーグ残留",
   "leagueResultRank": "先週 {total}人中 {rank}位",
   "leagueResultInactive": "先週決闘を休んだため1段階降格しました",
-  "leagueZoneHint": "毎週日曜9時締切・上位20%昇格・下位20%降格",
+  "leagueZoneHint": "毎週日曜9時締切・{min}人以上のリーグで上位{up}%昇格・下位{down}%降格",
   "duelSquadTitle": "出陣昆虫",
   "recoveryRoom": "回復室",
   "trainingCenter": "訓練所",
@@ -1462,7 +1462,7 @@
   "leagueInfoSeason": "シーズン終了報酬",
   "leagueInfoAll": "リーグ別報酬",
   "leagueInfoCurrent": "現在",
-  "leagueInfoAllHint": "ゼリー＝そのリーグの1位報酬・ゴールド＝シーズン終了報酬",
+  "leagueInfoAllHint": "ゼリー＝そのリーグの1位報酬（{full}人以上のとき）・ゴールド＝シーズン終了報酬",
   "boardPromoteLine": "▲ ここより上は昇格圏",
   "boardDemoteLine": "▼ ここより下は降格圏",
   "squadAutoFilled": "出陣昆虫を自動で編成しました。確認してもう一度開始を押してください",
@@ -2185,5 +2185,11 @@
   "igBulkPotionWarn": "ポーションで育てた昆虫が{n}匹含まれます — 上げた能力が失われます",
   "igBulkDoneGain": "{n}匹をエッセンスにしました · エッセンス +{e}",
   "igPotionShopDescBase": "等級アップ時に入れると新しく振る能力が良くなります。",
-  "igPotionLeftToday": "今日はあと{n}個買えます"
+  "igPotionLeftToday": "今日はあと{n}個買えます",
+  "boardFewPartial": "今週このリーグは{n}人 — {full}人になると昇格と満額報酬が開放されます",
+  "boardFewNoReward": "今週このリーグは{n}人 — {min}人未満だと順位報酬はありません",
+  "boardFewMerge": "今週このリーグは{n}人 — {min}人未満だと順位報酬がなく、精算時に下のリーグへ合流します",
+  "leagueRewardsNone": "今の人数では受け取れる順位報酬がありません",
+  "leagueMyMerge": "▼ 人数が少ないため精算時に{league}リーグへ合流",
+  "guideDuelLeague": "リーグでは毎週同じリーグ同士で星（勝利ポイント）を競います。その週に決闘した人数が{min}人以上なら上位{up}%昇格・下位{down}%降格、{min}人未満なら昇格はありません。順位ゼリーは{reward}人以上から人数の半分までが受け取り、{full}人に満たないと人数に応じて減ります。{reward}人未満のリーグは精算時に下のリーグへ合流し、1週休むと1段階下がります。"
 }

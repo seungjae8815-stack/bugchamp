@@ -4170,7 +4170,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leagueResultInactive => '지난주 결투를 쉬어서 한 단계 내려갔어요';
 
   @override
-  String get leagueZoneHint => '매주 일요일 09시 마감 · 상위 20% 승급 · 하위 20% 강등';
+  String leagueZoneHint(int min, int up, int down) {
+    return '매주 일요일 09시 마감 · $min명 이상 리그에서 상위 $up% 승급 · 하위 $down% 강등';
+  }
 
   @override
   String get duelSquadTitle => '출정 곤충';
@@ -4391,7 +4393,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get leagueInfoCurrent => '현재';
 
   @override
-  String get leagueInfoAllHint => '젤리 = 그 리그 1위 보상 · 골드 = 시즌 종료 보상';
+  String leagueInfoAllHint(int full) {
+    return '젤리 = 그 리그 1위 보상($full명 이상일 때) · 골드 = 시즌 종료 보상';
+  }
 
   @override
   String get boardPromoteLine => '▲ 이 위로 승급 구간';
@@ -7103,5 +7107,33 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String igPotionLeftToday(String n) {
     return '오늘 $n개 더 살 수 있어요';
+  }
+
+  @override
+  String boardFewPartial(int n, int full) {
+    return '이번 주 이 리그는 $n명 — $full명이 되면 승급·전체 보상이 열려요';
+  }
+
+  @override
+  String boardFewNoReward(int n, int min) {
+    return '이번 주 이 리그는 $n명 — $min명 미만이면 순위 보상이 없어요';
+  }
+
+  @override
+  String boardFewMerge(int n, int min) {
+    return '이번 주 이 리그는 $n명 — $min명 미만이면 순위 보상이 없고 결산 때 아래 리그로 합쳐져요';
+  }
+
+  @override
+  String get leagueRewardsNone => '지금 인원으로는 받을 수 있는 순위 보상이 없어요';
+
+  @override
+  String leagueMyMerge(String league) {
+    return '▼ 인원이 적어 결산 때 $league 리그로 합류';
+  }
+
+  @override
+  String guideDuelLeague(int min, int up, int down, int reward, int full) {
+    return '리그는 매주 같은 리그끼리 별(승리 점수)로 겨뤄요. 그 주 결투한 인원이 $min명 이상이면 상위 $up% 승급 · 하위 $down% 강등이고, $min명 미만이면 승급이 없어요. 순위 젤리는 $reward명 이상일 때부터 인원의 절반까지 받고, $full명이 안 되면 인원만큼 줄어들어요. $reward명 미만인 리그는 결산 때 아래 리그로 합쳐지고, 한 주를 쉬면 한 단계 내려가요.';
   }
 }

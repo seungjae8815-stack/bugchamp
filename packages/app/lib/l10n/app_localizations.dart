@@ -7273,8 +7273,8 @@ abstract class AppLocalizations {
   /// No description provided for @leagueZoneHint.
   ///
   /// In en, this message translates to:
-  /// **'Closes every Sunday 09:00 · top 20% promote · bottom 20% demote'**
-  String get leagueZoneHint;
+  /// **'Closes every Sunday 09:00 · in leagues of {min}+ players, top {up}% promote · bottom {down}% demote'**
+  String leagueZoneHint(int min, int up, int down);
 
   /// No description provided for @duelSquadTitle.
   ///
@@ -7663,8 +7663,8 @@ abstract class AppLocalizations {
   /// No description provided for @leagueInfoAllHint.
   ///
   /// In en, this message translates to:
-  /// **'Jelly = 1st place in that league · Gold = season-end reward'**
-  String get leagueInfoAllHint;
+  /// **'Jelly = 1st place in that league (with {full}+ players) · Gold = season-end reward'**
+  String leagueInfoAllHint(int full);
 
   /// No description provided for @boardPromoteLine.
   ///
@@ -12032,6 +12032,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} more available today'**
   String igPotionLeftToday(String n);
+
+  /// No description provided for @boardFewPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'This league has {n} players this week — at {full}, promotion and full rewards open'**
+  String boardFewPartial(int n, int full);
+
+  /// No description provided for @boardFewNoReward.
+  ///
+  /// In en, this message translates to:
+  /// **'This league has {n} players this week — with fewer than {min}, there are no rank rewards'**
+  String boardFewNoReward(int n, int min);
+
+  /// No description provided for @boardFewMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'This league has {n} players this week — with fewer than {min}, there are no rank rewards and it merges into the league below at settlement'**
+  String boardFewMerge(int n, int min);
+
+  /// No description provided for @leagueRewardsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No rank rewards are available with the current number of players'**
+  String get leagueRewardsNone;
+
+  /// No description provided for @leagueMyMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'▼ Too few players — merging into {league} League at settlement'**
+  String leagueMyMerge(String league);
+
+  /// No description provided for @guideDuelLeague.
+  ///
+  /// In en, this message translates to:
+  /// **'Each week you compete with your own league for stars (win points). If {min}+ players battled that week, the top {up}% promote and the bottom {down}% demote; with fewer than {min}, nobody promotes. Rank jelly starts at {reward}+ players and goes to the top half of players, reduced in proportion until there are {full}. Leagues with fewer than {reward} players merge into the league below at settlement, and skipping a week drops you one league.'**
+  String guideDuelLeague(int min, int up, int down, int reward, int full);
 }
 
 class _AppLocalizationsDelegate

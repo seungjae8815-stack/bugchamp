@@ -1472,7 +1472,7 @@
   "leagueResultStay": "{league} 리그 유지",
   "leagueResultRank": "지난주 {total}명 중 {rank}위",
   "leagueResultInactive": "지난주 결투를 쉬어서 한 단계 내려갔어요",
-  "leagueZoneHint": "매주 일요일 09시 마감 · 상위 20% 승급 · 하위 20% 강등",
+  "leagueZoneHint": "매주 일요일 09시 마감 · {min}명 이상 리그에서 상위 {up}% 승급 · 하위 {down}% 강등",
   "duelSquadTitle": "출정 곤충",
   "recoveryRoom": "회복실",
   "trainingCenter": "훈련소",
@@ -1537,7 +1537,7 @@
   "leagueInfoSeason": "시즌 종료 보상",
   "leagueInfoAll": "리그별 보상",
   "leagueInfoCurrent": "현재",
-  "leagueInfoAllHint": "젤리 = 그 리그 1위 보상 · 골드 = 시즌 종료 보상",
+  "leagueInfoAllHint": "젤리 = 그 리그 1위 보상({full}명 이상일 때) · 골드 = 시즌 종료 보상",
   "boardPromoteLine": "▲ 이 위로 승급 구간",
   "boardDemoteLine": "▼ 이 아래로 강등 구간",
   "squadAutoFilled": "출정 곤충을 자동으로 채웠어요. 확인하고 전투 시작을 다시 눌러 주세요",
@@ -2261,5 +2261,11 @@
   "igBulkPotionWarn": "물약으로 키운 곤충 {n}마리가 들어 있어요 — 키운 능력치가 사라져요",
   "igBulkDoneGain": "{n}마리를 정수로 바꿨어요 · 정수 +{e}",
   "igPotionShopDescBase": "등급을 올릴 때 넣으면 새로 굴리는 능력치가 더 좋아져요.",
-  "igPotionLeftToday": "오늘 {n}개 더 살 수 있어요"
+  "igPotionLeftToday": "오늘 {n}개 더 살 수 있어요",
+  "boardFewPartial": "이번 주 이 리그는 {n}명 — {full}명이 되면 승급·전체 보상이 열려요",
+  "boardFewNoReward": "이번 주 이 리그는 {n}명 — {min}명 미만이면 순위 보상이 없어요",
+  "boardFewMerge": "이번 주 이 리그는 {n}명 — {min}명 미만이면 순위 보상이 없고 결산 때 아래 리그로 합쳐져요",
+  "leagueRewardsNone": "지금 인원으로는 받을 수 있는 순위 보상이 없어요",
+  "leagueMyMerge": "▼ 인원이 적어 결산 때 {league} 리그로 합류",
+  "guideDuelLeague": "리그는 매주 같은 리그끼리 별(승리 점수)로 겨뤄요. 그 주 결투한 인원이 {min}명 이상이면 상위 {up}% 승급 · 하위 {down}% 강등이고, {min}명 미만이면 승급이 없어요. 순위 젤리는 {reward}명 이상일 때부터 인원의 절반까지 받고, {full}명이 안 되면 인원만큼 줄어들어요. {reward}명 미만인 리그는 결산 때 아래 리그로 합쳐지고, 한 주를 쉬면 한 단계 내려가요."
 }

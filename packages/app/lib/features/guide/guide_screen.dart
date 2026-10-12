@@ -266,6 +266,16 @@ class GuideScreen extends ConsumerWidget {
           ),
           // 실전 전투력(2026-10-10) — 전투력 비 = 이길 확률 비.
           _p(l.guideDuelPower),
+          // 리그 승강·순위 보상(2026-10-11 경쟁 인원 보정 · 승급 문턱 · 소수 리그 합류).
+          _p(
+            l.guideDuelLeague(
+              battle.leaguePromoteMinPeople,
+              (battle.leaguePromotePct * 100).round(),
+              (battle.leagueDemotePct * 100).round(),
+              battle.rankRewardMinPeople,
+              battle.rankRewardFullPeople,
+            ),
+          ),
         ],
       ),
       _Section(

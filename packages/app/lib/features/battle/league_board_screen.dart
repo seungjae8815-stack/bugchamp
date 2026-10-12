@@ -22,6 +22,7 @@ import '../../ui/labels.dart';
 import '../../ui/skin_badges.dart';
 import '../../ui/skins.dart';
 import 'board_preview.dart';
+import 'league_rules_view.dart';
 import 'duel_bug_info.dart';
 import '../../ui/colors.dart';
 import '../../ui/avatar.dart';
@@ -29,7 +30,8 @@ import '../../ui/avatar.dart';
 /// 순위표(2026-09-29 사장님 요청 — 다른 게임의 리그 화면을 참고).
 ///
 /// - **결투 리그**: 리그 = 등급 하나. 같은 리그의 이번 주 승리 점수 순위 상위 100명 · 상위 20% 승급 ·
-///   하위 20% 강등. 월 09시 시작 → 일 09시 마감 → 월 09시까지 정산 기간(서버가 결산).
+///   하위 20% 강등(2026-10-11 — 10명 미만 승급 없음 · 3명 미만 위 리그는 아래로 합류 · 순위 젤리 인원 보정,
+///   [LeagueRulesView]). 월 09시 시작 → 일 09시 마감 → 월 09시까지 정산 기간(서버가 결산).
 /// - **심연**: 이번 주 전체 최고 층 순위(층 → 벽 보스 피해 → 먼저 도달). 같은 시간표.
 ///
 /// 순위는 전부 **서버 전용 기록**에서 온다(앱이 쓰는 `profiles.trophies` 가 아니다).
@@ -297,13 +299,16 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
         : null;
     final myId = _myId;
     final total = (d['total'] as num?)?.toInt() ?? top.length;
-    final promote = (d['promote'] as num?)?.toInt() ?? 0;
-    final demote = (d['demote'] as num?)?.toInt() ?? 0;
+    // 승강·보상은 이번 주 이 리그 인원으로 결산과 같은 함수로 잰다(2026-10-11 규칙).
+    final rules = _rules(d);
+    final promote = rules?.promote ?? 0;
+    final demote = rules?.demote ?? 0;
     final myRow = top.where((r) => r['user_id'] == myId).firstOrNull;
 
     return Column(
       children: [
         if (widget.showHeader) _header(l, d),
+        ?(rules == null ? null : _fewNotice(l, rules)),
         Expanded(
           child: top.isEmpty
               ? _message(l.boardEmpty)
@@ -320,13 +325,8 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                           !_abyss && promote > 0 && rank == promote + 1;
                       final demoteLine =
                           !_abyss && demote > 0 && rank == total - demote + 1;
-                      final zone = _abyss
-                          ? 0
-                          : (rank <= promote
-                                ? 1
-                                : (demote > 0 && rank > total - demote
-                                      ? -1
-                                      : 0));
+                      final trophies = (r['trophies'] as num?)?.toInt() ?? 0;
+                      final zone = rules?.zoneOf(rank, trophies) ?? 0;
                       final mine = r['user_id'] == myId;
                       final row = _row(
                         l,
@@ -334,6 +334,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                         rank,
                         mine: mine,
                         zone: zone,
+                        jelly: rules?.jellyFor(rank, trophies) ?? 0,
                         onTap: _abyss || mine || r['user_id'] == null
                             ? null
                             : () => _showProfile(l, r),
@@ -394,6 +395,12 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                         (me['rank'] as num).toInt(),
                         mine: true,
                         zone: 0,
+                        jelly:
+                            rules?.jellyFor(
+                              (me['rank'] as num).toInt(),
+                              (me['trophies'] as num?)?.toInt() ?? 0,
+                            ) ??
+                            0,
                         onTap: _abyss || (widget.myTeam?.isEmpty ?? true)
                             ? null
                             : () => _showMyTeam(l),
@@ -415,8 +422,9 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
         : ends.difference(DateTime.now().toUtc().add(_clockSkew));
     final league = '${d['league'] ?? ''}';
     final data = ref.read(gameDataProvider).value;
-    final promote = (d['promote'] as num?)?.toInt() ?? 0;
-    final demote = (d['demote'] as num?)?.toInt() ?? 0;
+    final rules = _rules(d);
+    final promote = rules?.promote ?? 0;
+    final demote = rules?.demote ?? 0;
     final h = widget.headerHeight;
     // 집계 중에는 마감까지, 정산 기간에는 새 시즌까지 남은 시간.
     final timeLabel = closed
@@ -704,6 +712,69 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     );
   }
 
+  /// 결투 리그 규칙(이번 주 인원 기준) — 심연이면 null.
+  LeagueRulesView? _rules(Map<String, dynamic> d) {
+    if (_abyss) return null;
+    final cfg =
+        ref.read(gameDataProvider).value?.battleConfig ?? const BattleConfig();
+    final top = d['top'] as List? ?? const [];
+    return LeagueRulesView(
+      cfg,
+      league: '${d['league'] ?? ''}',
+      total: (d['total'] as num?)?.toInt() ?? top.length,
+    );
+  }
+
+  /// 심연 순위 보상표(인원 보정 없음) — 구간 모양으로.
+  List<({int from, int to, int jelly})> _abyssRanges(GameData data) {
+    final out = <({int from, int to, int jelly})>[];
+    var from = 1;
+    for (final r
+        in data.runConfig?.abyss.rankRewards ?? const <SeasonRankReward>[]) {
+      if (r.maxRank < from) continue;
+      out.add((from: from, to: r.maxRank, jelly: r.jelly));
+      from = r.maxRank + 1;
+    }
+    return out;
+  }
+
+  /// 사람이 적은 리그 안내 한 줄(인원이 차면 없음).
+  Widget? _fewNotice(
+    AppLocalizations l,
+    LeagueRulesView rules, {
+    bool inDialog = false,
+  }) {
+    final text = leagueFewNoticeText(l, rules);
+    if (text == null) return null;
+    return Container(
+      width: double.infinity,
+      margin: inDialog
+          ? const EdgeInsets.only(bottom: 8)
+          : const EdgeInsets.fromLTRB(12, 2, 12, 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x33FFC928),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.groups_rounded, size: 16, color: Color(0xFFFFC928)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _zoneLine(String text, Color c) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: Row(
@@ -739,6 +810,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     int rank, {
     required bool mine,
     required int zone,
+    int jelly = 0,
     VoidCallback? onTap,
   }) {
     // 내 줄은 **지금 내 출정 팀**으로 직접 잰다(서버 기록은 결투를 해야 생기고, 비어 있으면 숫자가
@@ -861,6 +933,23 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                           fontSize: 10.5,
                         ),
                       ),
+                    // 이대로 끝나면 받는 순위 젤리(인원 보정 반영) — 못 받는 순위는 비운다.
+                    if (!_abyss && jelly > 0)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          jellyIcon(size: 12),
+                          const SizedBox(width: 2),
+                          Text(
+                            '$jelly',
+                            style: const TextStyle(
+                              color: Color(0xFF9BE7FF),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -912,31 +1001,31 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
     GameData data,
     Map<String, dynamic> d,
   ) {
-    final b = data.battleConfig ?? const BattleConfig();
     final league = '${d['league'] ?? ''}';
-    final table = _abyss
-        ? (data.runConfig?.abyss.rankRewards ?? const <SeasonRankReward>[])
-        : (b.leagueRankRewards[league] ?? b.seasonRankRewards);
+    final rules = _rules(d);
+    // 결투 리그 = 이번 주 인원으로 보정한 표(받을 수 있는 순위만) · 심연 = 원래 표.
+    final ranges = rules?.rewardRanges() ?? _abyssRanges(data);
     final me = d['me'] is Map ? d['me'] as Map : null;
     final myRank = (me?['rank'] as num?)?.toInt();
     final myScore = _abyss
         ? (me?['floor'] as num?)?.toInt() ?? 0
         : (me?['trophies'] as num?)?.toInt() ?? 0;
     int jellyAt(int rank) {
-      for (final r in table) {
-        if (rank <= r.maxRank) return r.jelly;
+      for (final r in ranges) {
+        if (rank >= r.from && rank <= r.to) return r.jelly;
       }
       return 0;
     }
 
-    final nowJelly = myRank == null || myScore <= (_abyss ? 1 : 0)
+    final nowJelly = myRank == null
         ? 0
-        : jellyAt(myRank);
-    var from = 1;
+        : rules != null
+        ? rules.jellyFor(myRank, myScore)
+        : (myScore <= 1 ? 0 : jellyAt(myRank));
     final rows = <Widget>[];
-    for (final r in table) {
-      if (r.maxRank < from) continue;
-      final hit = myRank != null && myRank >= from && myRank <= r.maxRank;
+    for (final r in ranges) {
+      final from = r.from;
+      final hit = myRank != null && myRank >= from && myRank <= r.to;
       rows.add(
         Container(
           margin: const EdgeInsets.symmetric(vertical: 2),
@@ -949,9 +1038,9 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
             children: [
               Expanded(
                 child: Text(
-                  r.maxRank == from
+                  r.to == from
                       ? l.pvpRankN(from)
-                      : l.eventRankRange(from, r.maxRank),
+                      : l.eventRankRange(from, r.to),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -971,7 +1060,6 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           ),
         ),
       );
-      from = r.maxRank + 1;
     }
     return showGameDialog<void>(
       context,
@@ -1018,6 +1106,16 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
               ],
             ),
           ),
+          if (rules != null) ?_fewNotice(l, rules, inDialog: true),
+          if (rows.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text(
+                l.leagueRewardsNone,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xCCFFFFFF)),
+              ),
+            ),
           ...rows,
           if (widget.rewardExtra != null) ...[
             const SizedBox(height: 10),
@@ -1347,6 +1445,24 @@ Widget duelProfileBugTile(
     ],
   );
 }
+
+/// 사람이 적은 리그 안내 문구(순위표·리그 정보 창 공용). 인원이 차면 null.
+String? leagueFewNoticeText(AppLocalizations l, LeagueRulesView rules) =>
+    switch (rules.notice) {
+      LeagueFewNotice.none => null,
+      LeagueFewNotice.partial => l.boardFewPartial(
+        rules.total,
+        rules.fullPeople,
+      ),
+      LeagueFewNotice.noReward => l.boardFewNoReward(
+        rules.total,
+        rules.cfg.rankRewardMinPeople,
+      ),
+      LeagueFewNotice.merge => l.boardFewMerge(
+        rules.total,
+        rules.cfg.leagueMergeBelowPeople,
+      ),
+    };
 
 /// 리그 id → 화면 이름(결투 화면·순위표·결산 팝업 공용).
 String leagueName(AppLocalizations l, String id) => switch (id) {

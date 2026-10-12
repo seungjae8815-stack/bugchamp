@@ -31,6 +31,7 @@ import 'duel_arena_screen.dart';
 import 'duel_bug_build.dart';
 import 'duel_driver.dart';
 import 'league_board_screen.dart';
+import 'league_rules_view.dart';
 import 'training_screen.dart';
 import '../../ui/toast.dart';
 import '../../domain/server_sync.dart';
@@ -785,24 +786,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final myRank = (me?['rank'] as num?)?.toInt();
     final myScore = (me?['trophies'] as num?)?.toInt() ?? 0;
     final total = (board?['total'] as num?)?.toInt() ?? 0;
-    final promote = (board?['promote'] as num?)?.toInt() ?? 0;
-    final demote = (board?['demote'] as num?)?.toInt() ?? 0;
-    // 지금 리그의 순위 구간 표.
-    final table = cfg.leagueRankRewards[curId] ?? cfg.seasonRankRewards;
-    var myJelly = 0;
-    if (myRank != null && myScore > 0) {
-      for (final r in table) {
-        if (myRank <= r.maxRank) {
-          myJelly = r.jelly;
-          break;
-        }
-      }
-    }
+    // 이번 주 인원으로 보정한 승강·순위 젤리(2026-10-11) — 서버 결산과 같은 함수.
+    // 순위표를 아직 못 받았으면(인원 모름) 원래 표를 보여 준다.
+    final rules = LeagueRulesView(cfg, league: curId, total: total);
+    final promote = rules.promote;
+    final demote = rules.demote;
+    final myJelly = myRank == null ? 0 : rules.jellyFor(myRank, myScore);
+    final ranges = rules.rewardRanges(fullTable: board == null);
+    final fewNotice = board == null ? null : leagueFewNoticeText(l, rules);
     final rankRows = <Widget>[];
-    var from = 1;
-    for (final r in table) {
-      if (r.maxRank < from) continue;
-      final hit = myRank != null && myRank >= from && myRank <= r.maxRank;
+    for (final r in ranges) {
+      final from = r.from;
+      final hit = myRank != null && myRank >= from && myRank <= r.to;
       rankRows.add(
         Container(
           margin: const EdgeInsets.symmetric(vertical: 1),
@@ -815,9 +810,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             children: [
               Expanded(
                 child: Text(
-                  r.maxRank == from
+                  r.to == from
                       ? l.pvpRankN(from)
-                      : l.eventRankRange(from, r.maxRank),
+                      : l.eventRankRange(from, r.to),
                   style: cell,
                 ),
               ),
@@ -826,7 +821,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ),
         ),
       );
-      from = r.maxRank + 1;
     }
     final seasonGold = cfg.seasonRewardAt(cur).gold;
     // 다음 주 리그(승급권·유지·강등권) — 서버 결산과 같은 함수.
@@ -840,6 +834,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           );
     final zone = nextIdx > cur
         ? l.leagueMyPromote(leagueName(l, cfg.leagueAt(nextIdx).id))
+        : nextIdx < cur && rules.merges
+        ? l.leagueMyMerge(leagueName(l, cfg.leagueAt(nextIdx).id))
         : nextIdx < cur
         ? l.leagueMyDemote(leagueName(l, cfg.leagueAt(nextIdx).id))
         : l.leagueMyStay;
@@ -955,8 +951,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               myBox,
+              if (fewNotice != null) ...[
+                Text(
+                  fewNotice,
+                  style: const TextStyle(
+                    color: Color(0xFFFFC928),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
               Text(
-                l.leagueZoneHint,
+                l.leagueZoneHint(
+                  cfg.leaguePromoteMinPeople,
+                  (cfg.leaguePromotePct * 100).round(),
+                  (cfg.leagueDemotePct * 100).round(),
+                ),
                 style: const TextStyle(
                   color: Color(0xAAFFFFFF),
                   fontSize: 11.5,
@@ -965,6 +976,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               const SizedBox(height: 10),
               Text(l.leagueInfoRank, style: head),
               const SizedBox(height: 4),
+              if (rankRows.isEmpty) Text(l.leagueRewardsNone, style: cell),
               ...rankRows,
               const SizedBox(height: 10),
               Row(
@@ -1037,7 +1049,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 ),
               const SizedBox(height: 4),
               Text(
-                l.leagueInfoAllHint,
+                l.leagueInfoAllHint(cfg.rankRewardFullPeople),
                 style: const TextStyle(
                   color: Color(0x88FFFFFF),
                   fontSize: 10.5,

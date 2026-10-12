@@ -4161,7 +4161,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get leagueResultInactive => '先週決闘を休んだため1段階降格しました';
 
   @override
-  String get leagueZoneHint => '毎週日曜9時締切・上位20%昇格・下位20%降格';
+  String leagueZoneHint(int min, int up, int down) {
+    return '毎週日曜9時締切・$min人以上のリーグで上位$up%昇格・下位$down%降格';
+  }
 
   @override
   String get duelSquadTitle => '出陣昆虫';
@@ -4382,7 +4384,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get leagueInfoCurrent => '現在';
 
   @override
-  String get leagueInfoAllHint => 'ゼリー＝そのリーグの1位報酬・ゴールド＝シーズン終了報酬';
+  String leagueInfoAllHint(int full) {
+    return 'ゼリー＝そのリーグの1位報酬（$full人以上のとき）・ゴールド＝シーズン終了報酬';
+  }
 
   @override
   String get boardPromoteLine => '▲ ここより上は昇格圏';
@@ -7092,5 +7096,33 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String igPotionLeftToday(String n) {
     return '今日はあと$n個買えます';
+  }
+
+  @override
+  String boardFewPartial(int n, int full) {
+    return '今週このリーグは$n人 — $full人になると昇格と満額報酬が開放されます';
+  }
+
+  @override
+  String boardFewNoReward(int n, int min) {
+    return '今週このリーグは$n人 — $min人未満だと順位報酬はありません';
+  }
+
+  @override
+  String boardFewMerge(int n, int min) {
+    return '今週このリーグは$n人 — $min人未満だと順位報酬がなく、精算時に下のリーグへ合流します';
+  }
+
+  @override
+  String get leagueRewardsNone => '今の人数では受け取れる順位報酬がありません';
+
+  @override
+  String leagueMyMerge(String league) {
+    return '▼ 人数が少ないため精算時に$leagueリーグへ合流';
+  }
+
+  @override
+  String guideDuelLeague(int min, int up, int down, int reward, int full) {
+    return 'リーグでは毎週同じリーグ同士で星（勝利ポイント）を競います。その週に決闘した人数が$min人以上なら上位$up%昇格・下位$down%降格、$min人未満なら昇格はありません。順位ゼリーは$reward人以上から人数の半分までが受け取り、$full人に満たないと人数に応じて減ります。$reward人未満のリーグは精算時に下のリーグへ合流し、1週休むと1段階下がります。';
   }
 }
