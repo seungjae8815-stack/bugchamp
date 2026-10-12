@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart'
-    show kMaxForgeStack, SaveGame, forgeCostTranscend;
+    show kMaxForgeStack, SaveGame, forgeCostTranscend, starsCarryOver;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1409,16 +1409,20 @@ Future<bool> showForgeResult(
           }
         }, primary: false),
       gameDialogButton(l.forgeResultKeep, () async {
-        // 별은 이어받지 않는다(2026-10-10 사장님) — 별·별 재료·강화 중인 장비를 바꾸면 그 투자가 사라지므로 한 번 더 묻는다.
+        // 같은 등급이면 별을 이어받는다(2026-10-12 사장님 확정, core_save `starsCarryOver`) — 다른 등급이면
+        // 별·별 재료·강화 중인 투자가 사라지므로 경고한다. 어느 쪽이든 한 번 더 묻는다.
         final old = cur;
         if (old != null &&
             (old.stars > 0 || old.starExp > 0 || old.starUntil != null)) {
+          final carry = starsCarryOver(old, item);
           final ok = await showGameDialog<bool>(
             context,
-            title: l.forgeStarLoseTitle,
-            icon: Icons.warning_amber_rounded,
+            title: carry ? l.forgeStarCarryTitle : l.forgeStarLoseTitle,
+            icon: carry ? Icons.star_rounded : Icons.warning_amber_rounded,
             content: Text(
-              l.forgeStarLoseBody('${old.stars}', '${old.starExp}'),
+              carry
+                  ? l.forgeStarCarryBody('${old.stars}', '${old.starExp}')
+                  : l.forgeStarLoseBody('${old.stars}', '${old.starExp}'),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -1435,7 +1439,7 @@ Future<bool> showForgeResult(
               gameDialogButton(
                 l.forgeResultKeep,
                 () => Navigator.pop(context, true),
-                color: const Color(0xFFB23A2E),
+                color: carry ? null : const Color(0xFFB23A2E),
               ),
             ],
           );

@@ -3292,37 +3292,35 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 부위에 장비를 낀다. **가방이 없으므로 기존 것은 사라진다**(§3.4) —
   /// 창고·보유상한·자동분해가 통째로 필요 없어지고, 세이브에 남는 장비는 8개뿐이다.
   ///
-  /// 별은 **이어받지 않는다**(2026-10-10 사장님 — `starInheritRatio` 0). 바꾸기 전 확인은 화면이 받는다.
+  /// 같은 등급으로 바꾸면 별을 **이어받는다**(2026-10-12 사장님 확정 — core_save `equipWithStarCarry`).
+  /// 등급이 다르면 초기화. 바꾸기 전 확인은 화면이 받는다.
   Future<void> equipItem(EquipItem item) async {
     final s = state.requireValue;
+    final items = ref.read(gameDataProvider).value?.itemConfig;
     await _commit(
-      s.copyWith(
-        equippedItems: {...s.equippedItems, item.slot: _inherit(s, item)},
-      ),
+      items == null
+          ? s.copyWith(equippedItems: {...s.equippedItems, item.slot: item})
+          : equipWithStarCarry(s, items, item),
     );
   }
 
   /// 모루 맨 위 장비를 낀다(교체) — 끼기와 모루에서 빼기를 **한 번에** 저장한다. 두 번 나눠 저장하면 그 사이 앱이
   /// 꺼질 때 장착과 모루에 같은 장비가 하나씩 남았다(2026-10-10 출시 전 점검). 결과 창에서 다듬은 장비도 모루 맨 위에
-  /// 그대로 있으므로 맨 위를 낀다. 비었으면 false.
+  /// 그대로 있으므로 맨 위를 낀다. 비었으면 false. 별 인계는 [equipItem] 과 같다.
   Future<bool> equipForgeTop() async {
     final s = state.requireValue;
     if (s.forgeStack.isEmpty) return false;
     final item = s.forgeStack.last;
+    final items = ref.read(gameDataProvider).value?.itemConfig;
     await _commit(
-      s.copyWith(
-        equippedItems: {...s.equippedItems, item.slot: _inherit(s, item)},
-        forgeStack: s.forgeStack.sublist(0, s.forgeStack.length - 1),
-      ),
+      items == null
+          ? s.copyWith(
+              equippedItems: {...s.equippedItems, item.slot: item},
+              forgeStack: s.forgeStack.sublist(0, s.forgeStack.length - 1),
+            )
+          : equipWithStarCarry(s, items, item, popForgeTop: true),
     );
     return true;
-  }
-
-  EquipItem _inherit(SaveGame s, EquipItem item) {
-    final items = ref.read(gameDataProvider).value?.itemConfig;
-    return items == null
-        ? item
-        : inheritStars(items, s.equippedItems[item.slot], item);
   }
 
   /// 모루 맨 위 장비를 **같은 부위 장착 장비의 별 재료**로 쓴다(2026-10-10 장비 v2).

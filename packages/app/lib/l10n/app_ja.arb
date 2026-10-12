@@ -1215,6 +1215,8 @@
   "forgeTranscendMaxed": "工房超越完了 — オプション最大値+{pct}%",
   "forgeStarLoseTitle": "星が消えます",
   "forgeStarLoseBody": "今の装備の星{stars}個と集めた星素材{exp}個(強化中ならその時間も)が消え、新しい装備は星0からです。\n\nそれでも替えますか？",
+  "forgeStarCarryTitle": "星を引き継ぎます",
+  "forgeStarCarryBody": "同じ等級の装備なので、今の装備の星★{stars}と集めた星素材{exp}個(強化中ならその時間も)を新しい装備がそのまま引き継ぎます。丹精(磨き)はオプションに付くものなので新しい装備のままです。\n\n替えますか？",
   "starBonus": "効果 +{p}%",
   "starProgress": "次の星 {have}/{need}",
   "forgeResultFeed": "星素材",

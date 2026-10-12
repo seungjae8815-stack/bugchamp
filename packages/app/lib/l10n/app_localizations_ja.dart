@@ -3607,6 +3607,14 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get forgeStarCarryTitle => '星を引き継ぎます';
+
+  @override
+  String forgeStarCarryBody(String stars, String exp) {
+    return '同じ等級の装備なので、今の装備の星★$starsと集めた星素材$exp個(強化中ならその時間も)を新しい装備がそのまま引き継ぎます。丹精(磨き)はオプションに付くものなので新しい装備のままです。\n\n替えますか？';
+  }
+
+  @override
   String starBonus(String p) {
     return '効果 +$p%';
   }

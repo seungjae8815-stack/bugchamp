@@ -3701,6 +3701,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get forgeStarCarryTitle => 'Stars carry over';
+
+  @override
+  String forgeStarCarryBody(String stars, String exp) {
+    return 'Same grade, so the new gear keeps your current gear\'s ★$stars stars and $exp star materials (and any upgrade in progress). Care (polish) belongs to the options, so the new gear keeps its own.\n\nSwap?';
+  }
+
+  @override
   String starBonus(String p) {
     return 'Effect +$p%';
   }

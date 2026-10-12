@@ -6382,6 +6382,18 @@ abstract class AppLocalizations {
   /// **'The {stars} stars and {exp} star materials on your current gear (and any upgrade in progress) will be lost. New gear starts at 0 stars.\n\nSwap anyway?'**
   String forgeStarLoseBody(String stars, String exp);
 
+  /// No description provided for @forgeStarCarryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stars carry over'**
+  String get forgeStarCarryTitle;
+
+  /// No description provided for @forgeStarCarryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Same grade, so the new gear keeps your current gear\'s ★{stars} stars and {exp} star materials (and any upgrade in progress). Care (polish) belongs to the options, so the new gear keeps its own.\n\nSwap?'**
+  String forgeStarCarryBody(String stars, String exp);
+
   /// No description provided for @starBonus.
   ///
   /// In en, this message translates to:

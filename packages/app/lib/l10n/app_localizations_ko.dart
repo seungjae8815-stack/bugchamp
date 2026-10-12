@@ -3614,6 +3614,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get forgeStarCarryTitle => '별을 이어받아요';
+
+  @override
+  String forgeStarCarryBody(String stars, String exp) {
+    return '같은 등급 장비라 지금 낀 장비의 별 ★$stars와 모은 별 재료 $exp개(강화 중이면 그 시간까지)를 새 장비가 그대로 이어받아요. 정성(다듬기)은 옵션에 붙은 것이라 새 장비 그대로예요.\n\n바꿀까요?';
+  }
+
+  @override
   String starBonus(String p) {
     return '효과 +$p%';
   }

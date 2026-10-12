@@ -2575,6 +2575,9 @@
       }
     }
   },
+  "forgeStarCarryTitle": "Stars carry over",
+  "forgeStarCarryBody": "Same grade, so the new gear keeps your current gear's ★{stars} stars and {exp} star materials (and any upgrade in progress). Care (polish) belongs to the options, so the new gear keeps its own.\n\nSwap?",
+  "@forgeStarCarryBody": {"placeholders": {"stars": {"type": "String"}, "exp": {"type": "String"}}},
   "starBonus": "Effect +{p}%",
   "@starBonus": {
     "placeholders": {

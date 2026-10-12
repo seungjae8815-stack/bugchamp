@@ -320,7 +320,7 @@ void main() {
       expect(await ctrl.startStarUp(EquipSlot.ring), 'not_ready');
     });
 
-    test('새 장비로 바꾸면 별은 초기화된다(이어받기 없음)', () async {
+    test('다른 등급으로 바꾸면 별은 초기화된다', () async {
       final c = make(
         seed().copyWith(
           equippedItems: {EquipSlot.ring: ring.copyWith(stars: 5)},
@@ -330,10 +330,45 @@ void main() {
       await c
           .read(saveControllerProvider.notifier)
           .equipItem(
-            const EquipItem(slot: EquipSlot.ring, tier: 9, options: []),
+            const EquipItem(slot: EquipSlot.ring, tier: 8, options: []),
           );
       final save = c.read(saveControllerProvider).requireValue;
       expect(save.equippedItems[EquipSlot.ring]!.stars, 0);
+    });
+
+    test('같은 등급으로 바꾸면 별을 이어받는다(2026-10-12) — 모루 맨 위 끼기', () async {
+      const top = EquipItem(
+        slot: EquipSlot.ring,
+        tier: 9,
+        options: [ItemOption(kind: ItemOptionKind.attack, value: 7)],
+      );
+      final until = t0.add(const Duration(hours: 2));
+      final c = make(
+        seed().copyWith(
+          equippedItems: {
+            EquipSlot.ring: ring.copyWith(
+              stars: 4,
+              starExp: 50,
+              starUntil: until,
+            ),
+          },
+          forgeStack: const [top],
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      expect(
+        await c.read(saveControllerProvider.notifier).equipForgeTop(),
+        isTrue,
+      );
+      final save = c.read(saveControllerProvider).requireValue;
+      final got = save.equippedItems[EquipSlot.ring]!;
+      expect(got.stars, 4);
+      expect(got.starExp, 50);
+      expect(got.starUntil, until);
+      // 옵션(정성 포함)은 새 장비 것 — 로드 때 등급 개수만큼 채워질 수 있어 첫 줄만 본다.
+      expect(got.options.first, top.options.first);
+      expect(got.options.every((o) => o.polish == 0), isTrue);
+      expect(save.forgeStack, isEmpty);
     });
 
     test('모루 맨 위 장비 끼기(교체) — 끼기와 모루에서 빼기를 한 번에', () async {

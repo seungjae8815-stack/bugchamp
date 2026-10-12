@@ -1282,6 +1282,8 @@
   "forgeTranscendMaxed": "공방 초월 완료 — 옵션 최대치 +{pct}%",
   "forgeStarLoseTitle": "별이 사라져요",
   "forgeStarLoseBody": "지금 낀 장비의 별 {stars}개와 모은 별 재료 {exp}개(강화 중이면 그 시간까지)가 사라지고, 새 장비는 별 0부터 시작해요.\n\n그래도 바꿀까요?",
+  "forgeStarCarryTitle": "별을 이어받아요",
+  "forgeStarCarryBody": "같은 등급 장비라 지금 낀 장비의 별 ★{stars}와 모은 별 재료 {exp}개(강화 중이면 그 시간까지)를 새 장비가 그대로 이어받아요. 정성(다듬기)은 옵션에 붙은 것이라 새 장비 그대로예요.\n\n바꿀까요?",
   "starBonus": "효과 +{p}%",
   "starProgress": "다음 별 {have}/{need}",
   "forgeResultFeed": "별 재료",
