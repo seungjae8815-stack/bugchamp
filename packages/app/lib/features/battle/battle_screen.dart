@@ -573,9 +573,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final locale = Localizations.localeOf(context).languageCode;
     final adults = _adults(save, data, now);
 
-    // 최초 진입: 파워 상위 3마리 자동 편성(부상 곤충 제외).
+    // 최초 진입: **저장된 출정 명단(= 방어팀 `pvpDefenseIds`)을 그대로** 불러온다 — 다친 곤충도 칸에
+    // "회복 중"으로 남는다. 예전엔 명단이 화면에만 있어 앱을 다시 켜면 "센 3마리, 다친 곤충 제외"로
+    // 새로 짜여 회복 중인 곤충이 빠졌다(2026-10-12 유저 문의). 저장된 명단이 없을 때만 자동 편성.
     if (!_initialized) {
       _initialized = true;
+      final adultIdSet = {for (final b in adults) b.id};
+      final saved = [
+        for (final id in save.pvpDefenseIds)
+          if (adultIdSet.contains(id)) id,
+      ];
+      if (saved.isNotEmpty) {
+        for (var i = 0; i < 3; i++) {
+          _team[i] = i < saved.length ? saved[i] : null;
+        }
+      }
+    }
+    if (_team.every((id) => id == null)) {
       final sorted =
           [
             for (final b in adults)
@@ -1550,6 +1564,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           _team[i] ??= left.removeAt(0);
         }
       });
+      _persistTeam();
       showCenterToast(context, l.squadAutoFilled);
       return;
     }
@@ -2097,6 +2112,15 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     if (from == to) return;
     final item = _team.removeAt(from);
     _team.insert(to, item);
+    _persistTeam();
+  }
+
+  /// 출정 명단을 저장한다(= 방어팀). 3칸이 다 찼을 때만 — 방어팀은 3마리가 있어야 선다.
+  /// 공격 명단이 곧 방어팀이다(사장님 확정 2026-10-12): 다친 곤충도 명단에 남고 방어에는 그대로 선다.
+  void _persistTeam() {
+    final ids = _team.whereType<String>().toList();
+    if (ids.length != 3) return;
+    unawaited(ref.read(saveControllerProvider.notifier).setPvpDefense(ids));
   }
 
   /// 드래그 중 손가락을 따라오는 축소 피드백(종 초상).
@@ -2899,6 +2923,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           }
           _team[slot] = bug.id;
         });
+        _persistTeam();
     }
     if (sheet != null && sheet.mounted) Navigator.pop(sheet);
   }
