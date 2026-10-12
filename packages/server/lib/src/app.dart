@@ -248,6 +248,10 @@ const _hallCacheTtl = Duration(minutes: 10);
   int status = 200,
 }) => (status, body);
 
+final _uuidRe = RegExp(
+  r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+);
+
 Response _json(Map<String, dynamic> body, {int status = 200}) => Response(
   status,
   body: jsonEncode(body),
@@ -3545,6 +3549,12 @@ Handler buildHandler({
     }) async {
       if (userId == null && nickname == null) {
         return (400, <String, dynamic>{'error': 'user_or_nickname_required'});
+      }
+      // 운영 패널의 "계정 id" 칸에 닉네임을 넣으면 DB 가 uuid 가 아니라고 거절해 503 이 났다
+      // (2026-10-12 "헤라헤라"). uuid 꼴이 아니면 닉네임으로 찾는다.
+      if (userId != null && !_uuidRe.hasMatch(userId)) {
+        nickname ??= userId;
+        userId = null;
       }
       try {
         if (userId == null) {

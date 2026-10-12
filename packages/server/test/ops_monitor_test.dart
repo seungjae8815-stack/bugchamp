@@ -75,4 +75,22 @@ void main() {
     expect(sent.length, 1);
     expect(sent.single, contains('세이브가 너무 큼'));
   });
+
+  test('요약에 5xx 를 요청·횟수·이유로 적는다(2026-10-12 — 오류 1 만 와서 무엇인지 몰랐다)', () {
+    final m = make();
+    m.recordResponse(
+      '/admin/user',
+      503,
+      Duration.zero,
+      method: 'POST',
+      reason: '[admin/user] StateStoreException: load 실패: 400 invalid uuid',
+    );
+    m.recordResponse('/save', 500, Duration.zero, method: 'POST');
+    m.recordResponse('/save', 500, Duration.zero, method: 'POST');
+    final t = m.summaryText(now)!;
+    expect(t, contains('오류 내역'));
+    expect(t, contains('POST /save 500 ×2'));
+    expect(t, contains('POST /admin/user 503 ×1'));
+    expect(t, contains('invalid uuid'));
+  });
 }

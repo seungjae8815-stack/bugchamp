@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:shelf/shelf.dart';
 
 /// 서버 운영 감시(2026-09-15) — 이상 신호를 **세고 모았다가** 전용 봇으로 보낸다.
@@ -50,17 +52,31 @@ class OpsMonitor {
   int _requests = 0;
   int _errors = 0;
   int _slow = 0;
+
+  /// 5xx 를 **어떤 요청이 · 몇 번 · 무슨 이유로** 냈는지(`POST /x 503` → 횟수·마지막 이유).
+  /// 요약에 "오류 1"만 오면 무엇인지 알 수 없었다(2026-10-12 사장님 요청).
+  final Map<String, int> _errorCount = {};
+  final Map<String, String> _errorReason = {};
   final Map<String, Set<String>> _clampsByUser = {};
   final Map<String, int> _clampCount = {};
   final Map<String, String> _forged = {};
   final Map<String, int> _bigSaves = {};
 
   /// 요청 하나가 끝났다(미들웨어가 부른다).
-  void recordResponse(String path, int status, Duration took) {
+  void recordResponse(
+    String path,
+    int status,
+    Duration took, {
+    String method = '',
+    String? reason,
+  }) {
     _requests++;
     if (took >= slowRequest) _slow++;
     if (status >= 500) {
       _errors++;
+      final key = '${method.isEmpty ? '' : '$method '}$path $status';
+      _errorCount[key] = (_errorCount[key] ?? 0) + 1;
+      if (reason != null && reason.isNotEmpty) _errorReason[key] = reason;
       final now = _clock();
       if (now.difference(_windowStart) > errorWindow) {
         _windowStart = now;
@@ -76,11 +92,12 @@ class OpsMonitor {
                 .take(3)
                 .map((e) => '${e.key} ${e.value}')
                 .join(' · ');
+        final why = reason == null ? '' : '\n마지막 이유: ${_short(reason)}';
         _alertOnce(
           'error_burst',
           '🚨 서버 오류 급증\n'
               '${errorWindow.inMinutes}분 동안 5xx $_windowErrors건\n'
-              '$top\n'
+              '$top$why\n'
               '확인: gcloud run services logs read bugchamp-server --region asia-northeast3 --limit 50',
         );
       }
@@ -141,6 +158,8 @@ class OpsMonitor {
     _requests = 0;
     _errors = 0;
     _slow = 0;
+    _errorCount.clear();
+    _errorReason.clear();
     _clampsByUser.clear();
     _clampCount.clear();
     _forged.clear();
@@ -165,6 +184,17 @@ class OpsMonitor {
     final b = StringBuffer()
       ..writeln('📊 서버 요약 ${kst(_summaryStart)}~${kst(now)} (KST)')
       ..writeln('요청 $_requests · 오류(5xx) $_errors · 느린 응답 $_slow');
+    if (_errorCount.isNotEmpty) {
+      final errs = _errorCount.entries.toList()
+        ..sort((a, c) => c.value.compareTo(a.value));
+      b.writeln('❌ 오류 내역');
+      for (final e in errs.take(6)) {
+        final why = _errorReason[e.key];
+        b.writeln(
+          '  ${e.key} ×${e.value}${why == null ? '' : '\n    ${_short(why)}'}',
+        );
+      }
+    }
     if (_clampsByUser.isNotEmpty) {
       final users = _clampsByUser.entries.toList()
         ..sort(
@@ -196,6 +226,12 @@ class OpsMonitor {
     return b.toString().trimRight();
   }
 
+  /// 이유 한 줄 — 텔레그램이 길게 늘어지지 않게 자른다.
+  static String _short(String s) {
+    final one = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return one.length <= 180 ? one : '${one.substring(0, 180)}…';
+  }
+
   static String _kb(int bytes) => '${(bytes / 1024).round()}KB';
 
   static String _reasonLabel(String r) => switch (r) {
@@ -210,19 +246,44 @@ class OpsMonitor {
 }
 
 /// 모든 요청의 상태 코드·걸린 시간을 [OpsMonitor] 에 넘긴다.
+///
+/// 5xx 이면 **그 요청을 처리하며 서버가 남긴 마지막 로그 한 줄**(예: `[admin/user] StateStoreException…`)을
+/// 이유로 함께 넘긴다 — 핸들러마다 고치지 않고 Zone 의 print 를 엿듣는다(출력은 그대로 나간다).
 Middleware opsMiddleware(OpsMonitor monitor) => (Handler inner) {
   return (Request req) async {
     final sw = Stopwatch()..start();
+    final path = '/${req.url.path}';
+    String? lastLine;
     try {
-      final res = await inner(req);
-      monitor.recordResponse('/${req.url.path}', res.statusCode, sw.elapsed);
+      final res = await runZoned(
+        () => Future.sync(() => inner(req)),
+        zoneSpecification: ZoneSpecification(
+          print: (self, parent, zone, line) {
+            lastLine = line;
+            parent.print(zone, line);
+          },
+        ),
+      );
+      monitor.recordResponse(
+        path,
+        res.statusCode,
+        sw.elapsed,
+        method: req.method,
+        reason: res.statusCode >= 500 ? lastLine : null,
+      );
       if (res.statusCode == 413) {
-        monitor.recordTooLarge('/${req.url.path}', req.contentLength ?? 0);
+        monitor.recordTooLarge(path, req.contentLength ?? 0);
       }
       return res;
     } catch (e) {
       // 처리되지 않은 예외는 shelf 가 500 으로 바꾼다 — 여기서 세고 다시 던진다.
-      monitor.recordResponse('/${req.url.path}', 500, sw.elapsed);
+      monitor.recordResponse(
+        path,
+        500,
+        sw.elapsed,
+        method: req.method,
+        reason: '${e.runtimeType}: $e',
+      );
       rethrow;
     }
   };
