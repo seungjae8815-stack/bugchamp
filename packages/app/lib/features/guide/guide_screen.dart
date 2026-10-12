@@ -65,6 +65,8 @@ class GuideScreen extends ConsumerWidget {
     final train = battle.training;
     final duel = DuelParams.fromJson(battle.duelJson);
     final pet = data.petConfig;
+    // 개체 등급이 켜지면 포텐셜(★)·합성 대신 등급·정수 문구(2026-10-12 출시 점검).
+    final gradeOn = pet?.individualGrade.enabled ?? false;
     final items = data.itemConfig;
     final forge = data.forgeConfig;
     final missions = data.missionConfig;
@@ -185,13 +187,15 @@ class GuideScreen extends ConsumerWidget {
       ),
       _Section(
         icon: Icons.star_rounded,
-        title: l.guidePotentialTitle,
+        title: gradeOn ? l.guidePotentialTitleGrade : l.guidePotentialTitle,
         children: [
           _p(
-            l.guidePotentialBody(
-              train.pointsPerPotential,
-              pet?.synthFodder ?? 3,
-            ),
+            gradeOn
+                ? l.guidePotentialBodyGrade(train.pointsPerPotential)
+                : l.guidePotentialBody(
+                    train.pointsPerPotential,
+                    pet?.synthFodder ?? 3,
+                  ),
           ),
         ],
       ),
@@ -283,11 +287,17 @@ class GuideScreen extends ConsumerWidget {
         title: l.guideTrainTitle,
         children: [
           _p(
-            l.guideTrainBody(
-              '${train.pointsPerPotential}',
-              '${train.levelsPerPoint}',
-              train.breakthroughPoints.join('/'),
-            ),
+            gradeOn
+                ? l.guideTrainBodyGrade(
+                    '${train.pointsPerPotential}',
+                    '${train.levelsPerPoint}',
+                    train.breakthroughPoints.join('/'),
+                  )
+                : l.guideTrainBody(
+                    '${train.pointsPerPotential}',
+                    '${train.levelsPerPoint}',
+                    train.breakthroughPoints.join('/'),
+                  ),
           ),
           _sub(l.guideTrainSlotsTitle),
           for (final sl in TrainSlot.values)
@@ -332,7 +342,7 @@ class GuideScreen extends ConsumerWidget {
               '${train.stones.jelly[DuelStone.temperament] ?? 0}',
             ),
           ),
-          _p(l.guideTrainLegacyNote),
+          _p(gradeOn ? l.guideTrainLegacyNoteGrade : l.guideTrainLegacyNote),
         ],
       ),
       _Section(

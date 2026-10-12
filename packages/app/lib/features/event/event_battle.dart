@@ -695,7 +695,10 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            l.eventNormalizeBody(
+            // 개체 등급이 켜지면 "포텐셜" 대신 등급·능력치 품질.
+            (individualGradeOn(widget.data)
+                ? l.eventNormalizeBodyGrade
+                : l.eventNormalizeBody)(
               (EventDuelSpec.fromJson(
                         widget.data.eventConfig?.duelWaveJson,
                       ).fallPenalty *

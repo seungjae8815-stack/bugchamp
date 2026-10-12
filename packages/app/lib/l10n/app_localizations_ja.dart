@@ -7041,12 +7041,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get igPotionDailyLimit => '今日はもう買えません';
 
   @override
-  String gachaPityLeftGrade(int n) {
-    return '$n回以内に英雄以上確定';
+  String gachaPityLeftGrade(int n, String grade) {
+    return '$n回以内に$grade以上確定';
   }
 
   @override
-  String get gachaDescGrade => '希少等級以上確定 · 色違い確率10倍';
+  String gachaDescGrade(String grade) {
+    return '$grade等級以上確定 · 色違い確率10倍';
+  }
 
   @override
   String get eggOddsIndividualHead => '個体等級';
@@ -7125,4 +7127,85 @@ class AppLocalizationsJa extends AppLocalizations {
   String guideDuelLeague(int min, int up, int down, int reward, int full) {
     return 'リーグでは毎週同じリーグ同士で星（勝利ポイント）を競います。その週に決闘した人数が$min人以上なら上位$up%昇格・下位$down%降格、$min人未満なら昇格はありません。順位ゼリーは$reward人以上から人数の半分までが受け取り、$full人に満たないと人数に応じて減ります。$reward人未満のリーグは精算時に下のリーグへ合流し、1週休むと1段階下がります。';
   }
+
+  @override
+  String get igEssenceWarnTitle => '大切な虫です — 変えると次が失われます';
+
+  @override
+  String get igEssenceWarnVariant => '色違い(とても珍しい色)';
+
+  @override
+  String igEssenceWarnLevel(String level) {
+    return '修練Lv$level';
+  }
+
+  @override
+  String igEssenceWarnBreak(String tier) {
+    return '突破$tier段階';
+  }
+
+  @override
+  String get igEssenceWarnEnhance => '部位強化';
+
+  @override
+  String igEssenceVariantAgain(String name) {
+    return '本当に色違いの$nameをエッセンスに変えますか？\n色違いは取り戻せません。';
+  }
+
+  @override
+  String igNeedMoreEssence(String n) {
+    return 'エッセンスがあと$n個必要です';
+  }
+
+  @override
+  String igRarityBadge(String grade) {
+    return '希少度$grade';
+  }
+
+  @override
+  String disassembleEssenceHint(String name, String n) {
+    return '分解の代わりにエッセンスに変えると$nameのエッセンス$n個 — 同じ種の等級上げに使えます。';
+  }
+
+  @override
+  String get forgeTranscendNotRunning => '進行中の超越はありません — 受け取り済みです';
+
+  @override
+  String get forgeTranscendNotReady => '超越はまだ終わっていません';
+
+  @override
+  String get guidePotentialTitleGrade => '個体等級（一般〜伝説）';
+
+  @override
+  String guidePotentialBodyGrade(int perGrade) {
+    return '等級が高いほど能力値が良く、訓練ポイントが増えます（1段階ごとに${perGrade}pt）。同じ種の虫をエッセンスに変えて集め、等級上げで1段階ずつ上げます。上げるたびに能力値品質を振り直し、良いほうが残ります。';
+  }
+
+  @override
+  String guideTrainBodyGrade(String perGrade, String levels, String bt) {
+    return '虫ごとに訓練ポイントが貯まります — 個体等級1段階ごとに${perGrade}pt · 修練$levelsレベルごとに1pt · 突破段階ごとに${bt}pt。ポイントを下の枠に選んで振ります。枠ごとに上限があり、上限の合計はポイントよりずっと多いので全部は振れません — 何に振るかが戦略です。枠の上限は気質・特技・血統特性によって虫ごとに違います。';
+  }
+
+  @override
+  String get guideTrainLegacyNoteGrade =>
+      '以前の部位強化・訓練段階は訓練ポイントに移りました。すべての虫が同じ基準(等級・修練・突破)でポイントを得て、それより多く振られていた虫は調整され、無料の振り直しが1回付きます。';
+
+  @override
+  String get eventFlyerRule1Grade =>
+      '**育てたまま**戦います — 等級・能力値品質・修練・突破・訓練ポイントがすべて反映(決闘と同じ能力値)';
+
+  @override
+  String eventNormalizeBodyGrade(int pct) {
+    return '決闘と同じ能力値で戦います — 等級・能力値品質・修練・突破・訓練ポイント・特性がすべて反映されます。場外・ひっくり返しで負けると体力が$pct%減って同じウェーブに再挑戦。体力が尽きたら終了です。';
+  }
+
+  @override
+  String get bugLockedToastGrade => 'ロックしました — エッセンス化・分解に使いません';
+
+  @override
+  String get trainPtNoPointsGrade => '残りポイントがありません — 修練・突破・等級上げで増えます';
+
+  @override
+  String get guildWarBreedHintGrade =>
+      '交配の受け取り・孵化の受け取り・等級上げでポイントを獲得。ゼリーで即完了したものはカウントされません。';
 }

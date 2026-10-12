@@ -363,7 +363,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   /// 곤충 한 마리의 **결투 전투력** — 상세 창·순위표·서버 편성 검증과 같은 값(훈련소·수련 레벨 포함).
   /// ⚠️ 선택 목록이 `_power(_toBattleBug(...))`(훈련·수련 빠짐)를 쓰던 시절, 목록 384 · 상세 437 처럼
   /// 같은 곤충이 두 숫자로 보였다(2026-10-01 실기 지적). 정렬·자동 편성도 실제 세기와 어긋났다.
+  ///
+  /// 1초마다 다시 그리는 화면이라 정렬 비교 함수 안에서 매번 `duelBugFor` 를 만들지 않게,
+  /// 세이브가 바뀔 때만 다시 계산하는 [duelPowerByBugProvider] 값을 먼저 쓴다(같은 함수 · 같은 값).
   double _bugPower(IndividualBug bug, GameData data, String locale) =>
+      ref.read(duelPowerByBugProvider)[bug.id] ??
       duelPowerOf(_toDuelBug(bug, data, locale), data);
 
   PvpProfile _me(SaveGame save) => PvpProfile.me(
@@ -373,6 +377,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       ref.read(gameDataProvider).value,
       ref.read(clockProvider).now().toUtc(),
     ),
+    now: ref.read(clockProvider).now().toUtc(),
+    battle: ref.read(gameDataProvider).value?.battleConfig,
   );
 
   /// 성충 개체 목록.
@@ -1232,11 +1238,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               final ta = _team.contains(a.$1.id) ? 0 : 1;
               final tb = _team.contains(b.$1.id) ? 0 : 1;
               if (ta != tb) return ta - tb;
-              final g = data
-                  .species(b.$1.speciesId)
-                  .grade
-                  .index
-                  .compareTo(data.species(a.$1.speciesId).grade.index);
+              // 켜지면 개체 등급 → 종 희귀도, 꺼지면 종 등급 → 포텐셜(`bugGradeSortKey`).
+              final g = bugGradeSortKey(
+                data,
+                b.$1,
+              ).compareTo(bugGradeSortKey(data, a.$1));
               if (g != 0) return g;
               return _bugPower(
                 b.$1,

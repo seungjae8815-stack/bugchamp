@@ -31,6 +31,16 @@ String potentialText(AppLocalizations l, int potential, bool on) =>
 Color potentialColor(int potential, bool on) =>
     on ? gradeColor(gradeOfPotential(potential)) : const Color(0xFFFFC928);
 
+/// 곤충 목록 정렬 키 — **클수록 위**. 켜지면 개체 등급(포텐셜) → 종 희귀도, 꺼지면 종 등급 → 포텐셜(예전 그대로).
+///
+/// 목록마다 "종 등급 → 포텐셜" 두 줄 비교를 따로 들고 있으면 켰을 때 한 곳씩 빠진다(2026-10-12 점검:
+/// 채집함·짝짓기·훈련소·회복실·대회가 모두 종 희귀도 우선이었다) — 그래서 한 함수로 모은다.
+int bugGradeSortKey(GameData data, IndividualBug bug) {
+  final species = data.speciesById[bug.speciesId]?.grade.index ?? -1;
+  final pot = bug.potential.clamp(0, 9);
+  return individualGradeOn(data) ? pot * 10 + species : species * 10 + pot;
+}
+
 /// 곤충 칸에 붙는 작은 등급 이름표(별 줄 자리에 들어간다).
 Widget individualGradeTag(
   AppLocalizations l,

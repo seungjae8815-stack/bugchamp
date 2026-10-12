@@ -42,7 +42,7 @@ Map<String, dynamic> _species(String id, String grade) => {
   'sizeMaxMm': 60,
 };
 
-GameData _data() => GameData.fromDecoded(
+GameData _data({bool gradeOn = false}) => GameData.fromDecoded(
   species: {
     'species': [_species('alpha', 'common'), _species('beta', 'rare')],
   },
@@ -64,10 +64,21 @@ GameData _data() => GameData.fromDecoded(
     'spawns': <dynamic>[],
   },
   // 합성 재료 수(synthFodder)·최대 포텐셜은 실제 밸런스를 쓴다.
-  petConfig:
-      jsonDecode(File('assets/data/pets.json').readAsStringSync())
-          as Map<String, dynamic>,
+  // 개체 등급 스위치만 테스트가 정한다 — 켜지면 옛 합성은 없어지므로(정수 등급 올리기가 대체),
+  // 출시 때 pets.json 을 켜도 옛 합성 규칙 테스트가 그대로 돌게.
+  petConfig: _pets(gradeOn),
 );
+
+Map<String, dynamic> _pets(bool gradeOn) {
+  final j =
+      jsonDecode(File('assets/data/pets.json').readAsStringSync())
+          as Map<String, dynamic>;
+  final ig = Map<String, dynamic>.from(
+    (j['individualGrade'] as Map?) ?? const <String, dynamic>{},
+  );
+  ig['enabled'] = gradeOn;
+  return {...j, 'individualGrade': ig};
+}
 
 void main() {
   final t0 = DateTime.utc(2026, 8, 15, 12);
@@ -95,10 +106,10 @@ void main() {
     enhancement: enhancement,
   );
 
-  ProviderContainer container(SaveGame seed) {
+  ProviderContainer container(SaveGame seed, {bool gradeOn = false}) {
     final c = ProviderContainer(
       overrides: [
-        gameDataProvider.overrideWith((ref) => _data()),
+        gameDataProvider.overrideWith((ref) => _data(gradeOn: gradeOn)),
         saveRepositoryProvider.overrideWithValue(_FakeRepo(seed)),
         clockProvider.overrideWithValue(FixedClock(t0)),
       ],
@@ -377,6 +388,27 @@ void main() {
     final s = c.read(saveControllerProvider).requireValue;
     expect(s.bugs.map((b) => b.id), contains('shiny'));
     expect(s.bugs.firstWhere((b) => b.id == 'target').potential, 2);
+  });
+
+  // 2026-10-12 출시 점검: 화면은 숨겼지만 옛 경로가 불리면 3마리 → +1 이 등급 올리기 비용을 우회한다.
+  test('개체 등급이 켜져 있으면 옛 합성(수동·자동)은 아무것도 하지 않는다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        bug('a1', 'alpha'),
+        bug('a2', 'alpha'),
+        bug('a3', 'alpha'),
+        bug('target', 'alpha'),
+      ],
+    );
+    final c = container(seed, gradeOn: true);
+    final k = await ctrl(seed, c);
+
+    expect(await k.synthesize('target'), isFalse);
+    expect((await k.autoSynthesize()).fused, 0);
+    final s = c.read(saveControllerProvider).requireValue;
+    expect(s.bugs, hasLength(4));
+    expect(s.bugs.firstWhere((b) => b.id == 'target').potential, 1);
   });
 
   test('수동 합성은 투자한 개체도 지키고, 재료가 모자라면 아무것도 안 한다', () async {

@@ -191,11 +191,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           b,
     ];
     // 등급 높은 순 → 포텐셜 → 많이 찍은 곤충 → 수련 레벨 → 크기 → id(고정).
+    // 켜지면 개체 등급 → 종 희귀도, 꺼지면 종 등급 → 포텐셜(`bugGradeSortKey`).
     adults.sort((a, b) {
-      final ga = data.species(a.speciesId).grade.index;
-      final gb = data.species(b.speciesId).grade.index;
-      if (ga != gb) return gb.compareTo(ga);
-      if (a.potential != b.potential) return b.potential.compareTo(a.potential);
+      final g = bugGradeSortKey(data, b).compareTo(bugGradeSortKey(data, a));
+      if (g != 0) return g;
       final tr = trainedPointsOf(
         save,
         b.id,
@@ -1520,7 +1519,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         return;
       }
       if (left <= 0) {
-        showCenterToast(context, l.trainPtNoPoints);
+        showCenterToast(
+          context,
+          (_gradeOn ? l.trainPtNoPointsGrade : l.trainPtNoPoints),
+        );
         return;
       }
       final q = trainPointQuote(rec, cfg, sp.grade);
@@ -1541,7 +1543,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       'busy' => l.trainingBusy,
       'materials' => l.trainingNoMaterials,
       'maxed' => l.trainPtMaxed,
-      'points' => l.trainPtNoPoints,
+      'points' => (_gradeOn ? l.trainPtNoPointsGrade : l.trainPtNoPoints),
       'respec' => l.trainPtRespecBusy,
       _ => l.battleServerFailed,
     });
@@ -1803,7 +1805,8 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               'busy' => l.trainingBusy,
               'respec' => l.trainPtRespecBusy,
               'maxed' => l.trainPtMaxed,
-              'points' => l.trainPtNoPoints,
+              'points' =>
+                (_gradeOn ? l.trainPtNoPointsGrade : l.trainPtNoPoints),
               _ => l.battleServerFailed,
             });
           }),

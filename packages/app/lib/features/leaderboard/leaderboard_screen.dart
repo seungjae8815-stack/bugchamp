@@ -50,6 +50,8 @@ final myRankProvider = FutureProvider<int?>((ref) async {
                 ref.read(gameDataProvider).value,
                 ref.read(clockProvider).now().toUtc(),
               ),
+              now: ref.read(clockProvider).now().toUtc(),
+              battle: ref.read(gameDataProvider).value?.battleConfig,
             ),
       limit: 50,
     );
@@ -282,6 +284,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         data,
         ref.read(clockProvider).now().toUtc(),
       ),
+      // 진행도 내 줄의 심연 값 = 이번 주 층(주가 바뀌고 아직 안 들어갔으면 0 — 서버 값과 같게).
+      now: ref.read(clockProvider).now().toUtc(),
+      battle: data.battleConfig,
     );
 
     if (_abyss) {

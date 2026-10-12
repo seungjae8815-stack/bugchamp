@@ -207,6 +207,15 @@ class EventIntroScreen extends ConsumerWidget {
                   context,
                   l,
                   ref.watch(gameDataProvider).asData?.value.eventConfig,
+                  gradeOn:
+                      ref
+                          .watch(gameDataProvider)
+                          .asData
+                          ?.value
+                          .petConfig
+                          ?.individualGrade
+                          .enabled ??
+                      false,
                 ),
               ),
             ),
@@ -240,8 +249,9 @@ class EventIntroScreen extends ConsumerWidget {
   Widget _flyer(
     BuildContext context,
     AppLocalizations l,
-    EventConfig? cfg,
-  ) => Container(
+    EventConfig? cfg, {
+    bool gradeOn = false,
+  }) => Container(
     decoration: BoxDecoration(
       color: _paper,
       borderRadius: BorderRadius.circular(16),
@@ -445,7 +455,8 @@ class EventIntroScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               for (final t in [
-                l.eventFlyerRule1,
+                // 개체 등급이 켜지면 "포텐셜" 대신 등급·능력치 품질.
+                gradeOn ? l.eventFlyerRule1Grade : l.eventFlyerRule1,
                 l.eventFlyerRule2,
                 l.eventFlyerRule3,
                 if (cfg != null)

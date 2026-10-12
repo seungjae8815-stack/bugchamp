@@ -7199,13 +7199,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get igPotionDailyLimit => 'Daily limit reached';
 
   @override
-  String gachaPityLeftGrade(int n) {
-    return 'Epic or better guaranteed within $n draws';
+  String gachaPityLeftGrade(int n, String grade) {
+    return 'Within $n draws: $grade or better guaranteed';
   }
 
   @override
-  String get gachaDescGrade =>
-      'Rare grade or better guaranteed · 10× variant chance';
+  String gachaDescGrade(String grade) {
+    return '$grade grade or better guaranteed · 10× variant chance';
+  }
 
   @override
   String get eggOddsIndividualHead => 'Individual grade';
@@ -7287,4 +7288,88 @@ class AppLocalizationsEn extends AppLocalizations {
   String guideDuelLeague(int min, int up, int down, int reward, int full) {
     return 'Each week you compete with your own league for stars (win points). If $min+ players battled that week, the top $up% promote and the bottom $down% demote; with fewer than $min, nobody promotes. Rank jelly starts at $reward+ players and goes to the top half of players, reduced in proportion until there are $full. Leagues with fewer than $reward players merge into the league below at settlement, and skipping a week drops you one league.';
   }
+
+  @override
+  String get igEssenceWarnTitle => 'This bug is precious — converting loses:';
+
+  @override
+  String get igEssenceWarnVariant => 'Variant colors (very rare)';
+
+  @override
+  String igEssenceWarnLevel(String level) {
+    return 'Training Lv$level';
+  }
+
+  @override
+  String igEssenceWarnBreak(String tier) {
+    return 'Breakthrough tier $tier';
+  }
+
+  @override
+  String get igEssenceWarnEnhance => 'Part upgrades';
+
+  @override
+  String igEssenceVariantAgain(String name) {
+    return 'Really convert the variant $name into essence?\nVariants can\'t be recovered.';
+  }
+
+  @override
+  String igNeedMoreEssence(String n) {
+    return '$n more essence needed';
+  }
+
+  @override
+  String igRarityBadge(String grade) {
+    return 'Rarity $grade';
+  }
+
+  @override
+  String disassembleEssenceHint(String name, String n) {
+    return 'Convert to $name essence instead (×$n) — used to raise the grade of the same species.';
+  }
+
+  @override
+  String get forgeTranscendNotRunning =>
+      'No transcendence in progress — already claimed';
+
+  @override
+  String get forgeTranscendNotReady => 'Transcendence isn\'t finished yet';
+
+  @override
+  String get guidePotentialTitleGrade => 'Individual grade (Common–Legendary)';
+
+  @override
+  String guidePotentialBodyGrade(int perGrade) {
+    return 'Higher grades mean better stats and more training points ($perGrade per grade). Convert bugs of the same species into essence, then use Raise grade to climb one step at a time. Each raise rerolls stat quality and keeps the better value.';
+  }
+
+  @override
+  String guideTrainBodyGrade(String perGrade, String levels, String bt) {
+    return 'Every bug earns training points — $perGrade per individual grade · 1 every $levels train levels · $bt per breakthrough tier. Spend them on the slots below. Each slot has a cap, and the caps add up to far more than your points, so you can\'t fill everything — what you pick is your strategy. Slot caps differ by temperament, specialty and bloodline trait.';
+  }
+
+  @override
+  String get guideTrainLegacyNoteGrade =>
+      'Old part upgrades and training were converted into training points. Every bug now earns points by the same rules (grade, level, breakthrough); bugs above that were adjusted and got one free reset.';
+
+  @override
+  String get eventFlyerRule1Grade =>
+      'Your bug fights **as raised** — grade, stat quality, train levels, breakthroughs and training points all count (same stats as Duels)';
+
+  @override
+  String eventNormalizeBodyGrade(int pct) {
+    return 'Fights with the same stats as Duels — grade, stat quality, train levels, breakthroughs, training points and traits all count. Losing by ring-out or flip costs $pct% HP and you retry the same wave. When HP runs out, the run ends.';
+  }
+
+  @override
+  String get bugLockedToastGrade =>
+      'Locked — it won\'t be converted to essence or dismantled';
+
+  @override
+  String get trainPtNoPointsGrade =>
+      'No points left — raise level, breakthrough or grade';
+
+  @override
+  String get guildWarBreedHintGrade =>
+      'Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don\'t count.';
 }

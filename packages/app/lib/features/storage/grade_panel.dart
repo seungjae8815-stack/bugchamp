@@ -165,10 +165,14 @@ Widget gradeActionsCard(
   final have = save.essence[bug.speciesId] ?? 0;
   final name = sp.name.resolve(locale);
 
+  // 정수가 모자라면 버튼을 끈다 — 켜 둔 채 누르게 하면 창까지 열고 나서야 "부족"을 알게 된다.
+  final short = !isEgg && !maxed && have < need;
   final upDesc = isEgg
       ? l.igGradeUpEgg
       : maxed
       ? l.igGradeUpMax
+      : short
+      ? '${l.igGradeUpDesc(name, '$have', '$need')} · ${l.igNeedMoreEssence('${need - have}')}'
       : l.igGradeUpDesc(name, '$have', '$need');
   final essenceReason = isEgg
       ? l.igToEssenceEgg
@@ -205,7 +209,7 @@ Widget gradeActionsCard(
                   Text(
                     upDesc,
                     style: TextStyle(
-                      color: !isEgg && !maxed && have < need
+                      color: short
                           ? const Color(0xFFFF8A65)
                           : const Color(0xB3FFFFFF),
                       fontSize: 11.5,
@@ -215,7 +219,7 @@ Widget gradeActionsCard(
               ),
             ),
             FilledButton(
-              onPressed: isEgg || maxed
+              onPressed: isEgg || maxed || short
                   ? null
                   : () => _openGradeUp(ctx, r, data, bug.id),
               style: FilledButton.styleFrom(
@@ -240,7 +244,7 @@ Widget gradeActionsCard(
             OutlinedButton(
               onPressed: essenceReason != null
                   ? null
-                  : () => _confirmToEssence(ctx, r, data, bug),
+                  : () => confirmBugToEssence(ctx, r, data, bug),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFFB39DDB),
                 side: const BorderSide(color: Color(0x66B39DDB)),
@@ -255,8 +259,23 @@ Widget gradeActionsCard(
   );
 }
 
-/// 정수로 바꾸기 — 받을 양을 보여 주고 확인받는다. 물약으로 키운 곤충이면 한 줄 더 경고한다.
-Future<void> _confirmToEssence(
+/// 이 곤충을 정수로 바꾸면 잃는 것(사유 문구) — 이색·수련·돌파·부위 강화·물약 롤.
+///
+/// 장착·훈련 포인트·잠금(`pinnedBugIds`)은 여기 없다 — 그런 곤충은 버튼부터 꺼져 있고 규칙 함수도 거절한다.
+List<String> preciousReasons(AppLocalizations l, IndividualBug bug) => [
+  if (bug.variant != BugVariant.none) l.igEssenceWarnVariant,
+  if (bug.level > 1) l.igEssenceWarnLevel('${bug.level}'),
+  if (bug.breakthroughTier > 0) l.igEssenceWarnBreak('${bug.breakthroughTier}'),
+  if (bug.enhancement.total > 0) l.igEssenceWarnEnhance,
+  if (bug.rolls != null) l.igToEssencePotionWarn,
+];
+
+/// 정수로 바꾸기 — 받을 양을 보여 주고 확인받는다.
+///
+/// 아끼던 곤충(`isPreciousBug` — 이색·수련·돌파·부위 강화·물약 롤)이면 **무엇을 잃는지 사유를 적은 경고**로 묻고,
+/// 이색이면 한 번 더 묻는다(설계 문서 §2.4 — 1/300 개체가 버튼 한 번에 사라지면 그게 곧 클레임이다).
+/// 분해 확인 창의 "정수로 바꾸기"도 이 함수를 탄다.
+Future<void> confirmBugToEssence(
   BuildContext ctx,
   WidgetRef r,
   GameData data,
@@ -267,12 +286,15 @@ Future<void> _confirmToEssence(
   final sp = data.species(bug.speciesId);
   final name = sp.name.resolve(Localizations.localeOf(ctx).languageCode);
   final gain = cfg.essenceOf(bug, sp.grade);
+  final reasons = preciousReasons(l, bug);
+  final precious = reasons.isNotEmpty;
   // 결과 알림은 앱 화면 기준으로 — 곤충이 사라지면 이 창도 닫힌다(분해와 같은 이유).
   final host = Navigator.of(ctx).context;
+  const warn = Color(0xFFFF8A65);
   final go = await showGameDialog<bool>(
     ctx,
     title: l.igToEssence,
-    icon: Icons.blur_on_rounded,
+    icon: precious ? Icons.warning_amber_rounded : Icons.blur_on_rounded,
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -281,17 +303,31 @@ Future<void> _confirmToEssence(
           textAlign: TextAlign.center,
           style: const TextStyle(color: Colors.white, fontSize: 13),
         ),
-        if (bug.rolls != null) ...[
-          const SizedBox(height: 8),
+        if (precious) ...[
+          const SizedBox(height: 10),
           Text(
-            l.igToEssencePotionWarn,
+            l.igEssenceWarnTitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Color(0xFFFF8A65),
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
+              color: warn,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
             ),
           ),
+          const SizedBox(height: 4),
+          for (final s in reasons)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '· $s',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: warn,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
         ],
       ],
     ),
@@ -301,10 +337,44 @@ Future<void> _confirmToEssence(
         () => Navigator.pop(ctx, false),
         primary: false,
       ),
-      gameDialogButton(l.igToEssence, () => Navigator.pop(ctx, true)),
+      gameDialogButton(
+        l.igToEssence,
+        () => Navigator.pop(ctx, true),
+        color: precious ? const Color(0xFFB3452F) : null,
+      ),
     ],
   );
   if (go != true || !ctx.mounted) return;
+  // 이색은 반드시 한 번 더 — 되찾을 수 없는 1/300 개체다.
+  if (bug.variant != BugVariant.none) {
+    final again = await showGameDialog<bool>(
+      ctx,
+      title: l.igToEssence,
+      icon: Icons.warning_amber_rounded,
+      content: Text(
+        l.igEssenceVariantAgain(name),
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: warn,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.pop(ctx, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.igToEssence,
+          () => Navigator.pop(ctx, true),
+          color: const Color(0xFFB3452F),
+        ),
+      ],
+    );
+    if (again != true || !ctx.mounted) return;
+  }
   final res = await r
       .read(saveControllerProvider.notifier)
       .convertBugsToEssence([bug.id]);
@@ -383,6 +453,11 @@ Future<void> _openGradeUp(
               fontWeight: FontWeight.w800,
             ),
           ),
+          if (have < need)
+            Text(
+              l.igNeedMoreEssence('${need - have}'),
+              style: const TextStyle(color: Color(0xFFFF8A65), fontSize: 12),
+            ),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -428,7 +503,9 @@ Future<void> _openGradeUp(
         () => Navigator.pop(ctx, false),
         primary: false,
       ),
-      gameDialogButton(l.igGradeUp, () => Navigator.pop(ctx, true)),
+      // 정수가 모자라면 올리기 버튼을 두지 않는다(필요/보유는 위 줄이 말한다).
+      if (have >= need)
+        gameDialogButton(l.igGradeUp, () => Navigator.pop(ctx, true)),
     ],
   );
   if (go != true || !ctx.mounted) return;

@@ -2094,10 +2094,12 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
             _wide(l.forgeTranscendClaim, () async {
               final err = await ctrl.claimForgeTranscend();
               if (!mounted) return;
-              showCenterToast(
-                context,
-                err == null ? l.forgeTranscendDone : l.forgeTranscendFailed,
-              );
+              showCenterToast(context, switch (err) {
+                null => l.forgeTranscendDone,
+                'none' => l.forgeTranscendNotRunning,
+                'not_ready' => l.forgeTranscendNotReady,
+                _ => l.forgeTranscendFailed,
+              });
             })
           else
             _wide(
@@ -2117,10 +2119,13 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
                 if (!mounted) return;
                 final err = await ctrl.rushForgeTranscend();
                 if (!mounted) return;
-                showCenterToast(
-                  context,
-                  err == null ? l.forgeTranscendDone : l.notEnoughJelly,
-                );
+                // 실패 이유마다 다른 문구 — 예전엔 무엇이든 "젤리 부족"이라 이미 받은 초월도 젤리 탓으로 보였다.
+                showCenterToast(context, switch (err) {
+                  null => l.forgeTranscendDone,
+                  'not_enough_jelly' => l.notEnoughJelly,
+                  'none' => l.forgeTranscendNotRunning,
+                  _ => l.forgeTranscendFailed,
+                });
               },
             ),
         ],

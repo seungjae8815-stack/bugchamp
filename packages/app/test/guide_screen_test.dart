@@ -47,9 +47,11 @@ void main() {
     // 펼친 뒤 그 항목의 내용이 보이는지 — 목록은 화면 밖을 그리지 않으므로 하나씩 확인한다.
     // 훈련은 v2(포인트·칸) 기준 — 칸 상한 보정은 battle.json training.slotTemperamentMods(옛 v1 의 3배).
     final opened = <String>{};
+    // 개체 등급(pets.json individualGrade.enabled)이 켜지면 포텐셜 항목이 "개체 등급"으로 바뀐다.
+    final gradeOn = _data().petConfig?.individualGrade.enabled ?? false;
     for (final (title, inside) in [
       ('기질 (싸움 성향)', '훈련 칸 상한: 공격 +9 · 방어 -6 · 치명 +3'),
-      ('포텐셜 (1~5성)', '별 1개당 6점'),
+      gradeOn ? ('개체 등급 (일반~전설)', '한 단계마다 6점') : ('포텐셜 (1~5성)', '별 1개당 6점'),
       ('혈통 특성 (짝짓기 전용)', '맹렬'),
       ('이색 개체', '1/300'),
       ('훈련소', '돌파 단계마다 6/10/16/24점'),

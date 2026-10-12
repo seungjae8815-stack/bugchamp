@@ -5796,12 +5796,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     AudioService.instance.sfxMission();
     // 성장물약(개체 등급 — 그날 첫 미션 1개). 보상 창과 따로 짧게 알린다.
     final potions = ref.read(saveControllerProvider.notifier).takeLastPotions();
-    if (potions > 0) showCenterToast(context, l.igPotionBought('$potions'));
+    final potionLine = potions > 0 ? l.igPotionBought('$potions') : null;
     if (got.gold <= 0 && got.materials.isEmpty) {
       // 오늘 젤리 한도를 다 쓴 젤리 미션 — 젤리 없이 다음 미션으로 넘어갔다.
-      showCenterToast(context, l.missionJellyDoneToday('${def.jellyPerDay}'));
+      // 물약 알림과 한 토스트로 합친다 — 따로 띄우면 바로 뒤 토스트가 물약 알림을 덮었다(2026-10-12 점검).
+      final limit = l.missionJellyDoneToday('${def.jellyPerDay}');
+      showCenterToast(
+        context,
+        potionLine == null ? limit : '$limit\n$potionLine',
+      );
       return;
     }
+    if (potionLine != null) showCenterToast(context, potionLine);
     await showRewardPopup(
       context,
       title: l.missionClaimedSnack,

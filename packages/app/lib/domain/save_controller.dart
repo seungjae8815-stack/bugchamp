@@ -4660,7 +4660,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 합성 — 길드전 1일차.
+  ///
+  /// 개체 등급이 켜져 있으면 실패한다 — 정수 등급 올리기가 이 합성을 대체한다(화면은 이미 숨긴다).
+  /// 옛 경로가 남아 불리면 3마리 → +1 이 등급 올리기 비용(6·6·6·10)을 우회한다.
   Future<bool> synthesize(String targetId) async {
+    if (_gradeCfg.enabled) return false;
     final ok = await _synthesizeImpl(targetId);
     if (ok) GuildWarTally.add('synth', ref.read(clockProvider).now().toUtc());
     return ok;
@@ -4715,6 +4719,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
     if (cfg == null || cfg.synthFodder <= 0) return _emptySynth();
+    // 개체 등급이 켜져 있으면 옛 합성은 없다(정수 등급 올리기가 대체) — 아무것도 소비하지 않는다.
+    if (_gradeCfg.enabled) return _emptySynth();
     final s = state.requireValue;
 
     // 재료로 쓸 수 있는 개체인지 — 위 안전장치 + 사용자가 고른 필터.
@@ -4952,7 +4958,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
       math.Random(),
       potions: potions,
     );
-    if (r.isOk) await _commit(r.save!);
+    if (r.isOk) {
+      await _commit(r.save!);
+      // 등급 올리기가 옛 합성(3마리 → +1)을 대체한다 — 길드전 1일차 "합성" 점수도 그대로 잡는다.
+      GuildWarTally.add('synth', ref.read(clockProvider).now().toUtc());
+    }
     return r;
   }
 

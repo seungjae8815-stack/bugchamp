@@ -222,7 +222,16 @@ class ServerSaveUploader {
       _ref.read(gameDataProvider).value,
       now,
     );
-    unawaited(backend.pushTrophies(me: PvpProfile.me(save, power: power)));
+    unawaited(
+      backend.pushTrophies(
+        me: PvpProfile.me(
+          save,
+          power: power,
+          now: now,
+          battle: _ref.read(gameDataProvider).value?.battleConfig,
+        ),
+      ),
+    );
   }
 
   /// 변경분이 있으면 서버에 올린다. 이미 올린 상태면 건너뛴다.

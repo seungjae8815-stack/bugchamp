@@ -55,7 +55,12 @@ Future<void> showRankPopupOnStart(BuildContext context, WidgetRef ref) async {
     ref.read(clockProvider).now().toUtc(),
   );
   final rank = await backend.myRank(
-    me: PvpProfile.me(save, power: power),
+    me: PvpProfile.me(
+      save,
+      power: power,
+      now: ref.read(clockProvider).now().toUtc(),
+      battle: data?.battleConfig,
+    ),
     kind: _popupKind,
   );
   if (rank == null || !context.mounted) return;

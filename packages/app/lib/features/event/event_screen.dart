@@ -790,7 +790,16 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          l.eventNormalizeBody(
+          // 개체 등급이 켜지면 "포텐셜" 대신 등급·능력치 품질.
+          ((ref
+                      .read(gameDataProvider)
+                      .value
+                      ?.petConfig
+                      ?.individualGrade
+                      .enabled ??
+                  false)
+              ? l.eventNormalizeBodyGrade
+              : l.eventNormalizeBody)(
             (EventDuelSpec.fromJson(
                       ref
                           .read(gameDataProvider)
@@ -1034,16 +1043,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       return st == LifeStage.adult;
     }).toList();
     // 쉬고 있는 곤충은 뒤로 — 지금 고를 수 없으니 눈에 먼저 들어올 이유가 없다.
-    int gradeIdx(IndividualBug b) =>
-        data.speciesById[b.speciesId]?.grade.index ?? -1;
+    // 켜지면 개체 등급 → 종 희귀도, 꺼지면 종 등급 → 포텐셜(`bugGradeSortKey`).
+    int gradeIdx(IndividualBug b) => bugGradeSortKey(data, b);
     final duel = _duelMode;
-    final locale = Localizations.localeOf(context).languageCode;
     // 1마리 모드: 결투와 같은 능력치의 전투력 — 가장 잘 키운 곤충이 맨 앞.
+    // build 마다 전 성충을 다시 계산하지 않게, 세이브가 바뀔 때만 다시 계산하는 provider 를 쓴다(같은 값).
     final power = duel
-        ? {
-            for (final b in adults)
-              b.id: duelPowerOf(duelBugFor(b, data, save, locale), data),
-          }
+        ? ref.watch(duelPowerByBugProvider)
         : const <String, double>{};
     DateTime? restUntil(IndividualBug b) {
       if (!duel) return save.eventFatigue[b.id];

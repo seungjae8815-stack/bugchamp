@@ -228,5 +228,14 @@ void pushMyRankProfile(WidgetRef ref) {
     ref.read(gameDataProvider).value,
     ref.read(clockProvider).now().toUtc(),
   );
-  unawaited(backend.pushTrophies(me: PvpProfile.me(save, power: power)));
+  unawaited(
+    backend.pushTrophies(
+      me: PvpProfile.me(
+        save,
+        power: power,
+        now: ref.read(clockProvider).now().toUtc(),
+        battle: ref.read(gameDataProvider).value?.battleConfig,
+      ),
+    ),
+  );
 }

@@ -11952,14 +11952,14 @@ abstract class AppLocalizations {
   /// No description provided for @gachaPityLeftGrade.
   ///
   /// In en, this message translates to:
-  /// **'Epic or better guaranteed within {n} draws'**
-  String gachaPityLeftGrade(int n);
+  /// **'Within {n} draws: {grade} or better guaranteed'**
+  String gachaPityLeftGrade(int n, String grade);
 
   /// No description provided for @gachaDescGrade.
   ///
   /// In en, this message translates to:
-  /// **'Rare grade or better guaranteed · 10× variant chance'**
-  String get gachaDescGrade;
+  /// **'{grade} grade or better guaranteed · 10× variant chance'**
+  String gachaDescGrade(String grade);
 
   /// No description provided for @eggOddsIndividualHead.
   ///
@@ -12068,6 +12068,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Each week you compete with your own league for stars (win points). If {min}+ players battled that week, the top {up}% promote and the bottom {down}% demote; with fewer than {min}, nobody promotes. Rank jelly starts at {reward}+ players and goes to the top half of players, reduced in proportion until there are {full}. Leagues with fewer than {reward} players merge into the league below at settlement, and skipping a week drops you one league.'**
   String guideDuelLeague(int min, int up, int down, int reward, int full);
+
+  /// No description provided for @igEssenceWarnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This bug is precious — converting loses:'**
+  String get igEssenceWarnTitle;
+
+  /// No description provided for @igEssenceWarnVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant colors (very rare)'**
+  String get igEssenceWarnVariant;
+
+  /// No description provided for @igEssenceWarnLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Training Lv{level}'**
+  String igEssenceWarnLevel(String level);
+
+  /// No description provided for @igEssenceWarnBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakthrough tier {tier}'**
+  String igEssenceWarnBreak(String tier);
+
+  /// No description provided for @igEssenceWarnEnhance.
+  ///
+  /// In en, this message translates to:
+  /// **'Part upgrades'**
+  String get igEssenceWarnEnhance;
+
+  /// No description provided for @igEssenceVariantAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Really convert the variant {name} into essence?\nVariants can\'t be recovered.'**
+  String igEssenceVariantAgain(String name);
+
+  /// No description provided for @igNeedMoreEssence.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} more essence needed'**
+  String igNeedMoreEssence(String n);
+
+  /// No description provided for @igRarityBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity {grade}'**
+  String igRarityBadge(String grade);
+
+  /// No description provided for @disassembleEssenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to {name} essence instead (×{n}) — used to raise the grade of the same species.'**
+  String disassembleEssenceHint(String name, String n);
+
+  /// No description provided for @forgeTranscendNotRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'No transcendence in progress — already claimed'**
+  String get forgeTranscendNotRunning;
+
+  /// No description provided for @forgeTranscendNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcendence isn\'t finished yet'**
+  String get forgeTranscendNotReady;
+
+  /// No description provided for @guidePotentialTitleGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual grade (Common–Legendary)'**
+  String get guidePotentialTitleGrade;
+
+  /// No description provided for @guidePotentialBodyGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher grades mean better stats and more training points ({perGrade} per grade). Convert bugs of the same species into essence, then use Raise grade to climb one step at a time. Each raise rerolls stat quality and keeps the better value.'**
+  String guidePotentialBodyGrade(int perGrade);
+
+  /// No description provided for @guideTrainBodyGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Every bug earns training points — {perGrade} per individual grade · 1 every {levels} train levels · {bt} per breakthrough tier. Spend them on the slots below. Each slot has a cap, and the caps add up to far more than your points, so you can\'t fill everything — what you pick is your strategy. Slot caps differ by temperament, specialty and bloodline trait.'**
+  String guideTrainBodyGrade(String perGrade, String levels, String bt);
+
+  /// No description provided for @guideTrainLegacyNoteGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Old part upgrades and training were converted into training points. Every bug now earns points by the same rules (grade, level, breakthrough); bugs above that were adjusted and got one free reset.'**
+  String get guideTrainLegacyNoteGrade;
+
+  /// No description provided for @eventFlyerRule1Grade.
+  ///
+  /// In en, this message translates to:
+  /// **'Your bug fights **as raised** — grade, stat quality, train levels, breakthroughs and training points all count (same stats as Duels)'**
+  String get eventFlyerRule1Grade;
+
+  /// No description provided for @eventNormalizeBodyGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Fights with the same stats as Duels — grade, stat quality, train levels, breakthroughs, training points and traits all count. Losing by ring-out or flip costs {pct}% HP and you retry the same wave. When HP runs out, the run ends.'**
+  String eventNormalizeBodyGrade(int pct);
+
+  /// No description provided for @bugLockedToastGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked — it won\'t be converted to essence or dismantled'**
+  String get bugLockedToastGrade;
+
+  /// No description provided for @trainPtNoPointsGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'No points left — raise level, breakthrough or grade'**
+  String get trainPtNoPointsGrade;
+
+  /// No description provided for @guildWarBreedHintGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don\'t count.'**
+  String get guildWarBreedHintGrade;
 }
 
 class _AppLocalizationsDelegate

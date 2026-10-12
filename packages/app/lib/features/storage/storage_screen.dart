@@ -229,8 +229,11 @@ class StorageScreen extends ConsumerWidget {
           _toolButton(
             label: l.storageFilterButton,
             // 지금 기준을 버튼에 달아 둔다 — 열어보지 않아도 무엇을 받는지 보인다.
+            // 켜지면 이 필터는 **종 희귀도**를 본다 — 등급 이름만 두면 개체 등급 필터로 읽힌다.
             badge: min == Grade.common
                 ? l.storageFilterAll
+                : individualGradeOn(data)
+                ? l.igRarityBadge(gradeLabel(l, min))
                 : gradeLabel(l, min),
             badgeColor: min == Grade.common
                 ? const Color(0x66FFFFFF)
@@ -826,16 +829,13 @@ class StorageScreen extends ConsumerWidget {
     }).toList();
     // 좋은 개체가 위로 오게 정렬한다 — 목록이 길어지면 등급이 섞여 있는 것만으로
     // 짝을 고르는 게 일이 된다. 쿨다운 중인 개체는 지금 못 쓰므로 맨 뒤로.
-    int gradeIdx(IndividualBug b) =>
-        data.speciesById[b.speciesId]?.grade.index ?? -1;
     list.sort((a, b) {
       final ac = save.breedOnCooldown(a.id, now) ? 1 : 0;
       final bc = save.breedOnCooldown(b.id, now) ? 1 : 0;
       if (ac != bc) return ac - bc;
-      final g = gradeIdx(b).compareTo(gradeIdx(a));
+      // 켜지면 개체 등급 → 종 희귀도, 꺼지면 종 등급 → 포텐셜(`bugGradeSortKey`).
+      final g = bugGradeSortKey(data, b).compareTo(bugGradeSortKey(data, a));
       if (g != 0) return g;
-      final p = b.potential.compareTo(a.potential);
-      if (p != 0) return p;
       return b.sizeMm.compareTo(a.sizeMm);
     });
     return list;
@@ -2007,10 +2007,8 @@ class StorageScreen extends ConsumerWidget {
     // 아래에 묻혀 일반 알을 먼저 돌리게 된다.
     // 등급 → 포텐셜 → 사이즈 순(보관함 목록과 같은 기준).
     eggs.sort((a, b) {
-      final ga = data.species(a.speciesId).grade.index;
-      final gb = data.species(b.speciesId).grade.index;
-      if (ga != gb) return gb.compareTo(ga);
-      if (a.potential != b.potential) return b.potential.compareTo(a.potential);
+      final g = bugGradeSortKey(data, b).compareTo(bugGradeSortKey(data, a));
+      if (g != 0) return g;
       return b.sizeMm.compareTo(a.sizeMm);
     });
     showGameDialog<void>(
@@ -2164,29 +2162,34 @@ class StorageScreen extends ConsumerWidget {
               // 포텐셜 + 오행. 목록이 이미 **등급 → 포텐셜 → 사이즈** 순으로
               // 정렬돼 있는데 화면에는 그 근거가 하나도 없었다 — 왜 이 순서인지
               // 보이지 않으면 정렬이 없는 것과 같다.
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (individualGradeOn(data))
-                    individualGradeTag(l, bug.potential, fontSize: 8.5)
-                  else ...[
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 11,
-                      color: Color(0xFFFFE24A),
-                    ),
-                    Text(
-                      '${bug.potential}',
-                      style: const TextStyle(
+              // 영어 "Legendary" 가 좁은 칸을 넘지 않게 줄이기만 한다.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (individualGradeOn(data))
+                      individualGradeTag(l, bug.potential, fontSize: 8.5)
+                    else ...[
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 11,
                         color: Color(0xFFFFE24A),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
                       ),
-                    ),
+                      Text(
+                        '${bug.potential}',
+                        style: const TextStyle(
+                          color: Color(0xFFFFE24A),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 5),
+                    elementIcon(bug.element, size: 11),
                   ],
-                  const SizedBox(width: 5),
-                  elementIcon(bug.element, size: 11),
-                ],
+                ),
               ),
             ],
           ),
@@ -2359,8 +2362,11 @@ class StorageScreen extends ConsumerWidget {
           : effectiveStage(b.stage, b.stageSince, now, cfg);
       return (bug: b, stage: st, equipped: save.isEquipped(b.id));
     }).toList();
-    int gradeRank(IndividualBug b) =>
-        data.speciesById[b.speciesId]?.grade.index ?? -1;
+    // 켜지면 개체 등급 → 종 희귀도(`bugGradeSortKey`), 꺼지면 예전 순서(종 등급 → 단계 → 포텐셜) 그대로.
+    final gradeOn = individualGradeOn(data);
+    int gradeRank(IndividualBug b) => gradeOn
+        ? bugGradeSortKey(data, b)
+        : data.speciesById[b.speciesId]?.grade.index ?? -1;
     list.sort((a, b) {
       if (a.equipped != b.equipped) return a.equipped ? -1 : 1;
       final gr = gradeRank(b.bug) - gradeRank(a.bug);
@@ -2587,17 +2593,23 @@ class StorageScreen extends ConsumerWidget {
             // 성별은 **짝짓기의 전제 조건**인데(§2.5 같은 종 ♂+♀) 그리드에
             // 안 보여서, 짝을 지으려면 칸을 하나씩 열어 봐야 했다. 알·유충은
             // 아직 성별이 정해져 봐야 쓸 데가 없으므로 성충에만 붙인다.
+            // 칸이 좁아 영어 "Legendary"·일본어 등급 이름이 넘쳤다(2026-10-12 출시 점검) —
+            // 줄 폭에 맞춰 **줄이기만** 한다(scaleDown 이라 높이도 늘지 않아 아래 전투력 줄과 겹치지 않는다).
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (stage == LifeStage.adult) ...[
-                    sexArt(bug.sex, size: 10),
-                    const SizedBox(width: 3),
+              padding: const EdgeInsets.only(bottom: 4, left: 3, right: 3),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (stage == LifeStage.adult) ...[
+                      sexArt(bug.sex, size: 10),
+                      const SizedBox(width: 3),
+                    ],
+                    _potentialMark(context, data, bug.potential, 8.5),
                   ],
-                  _potentialMark(context, data, bug.potential, 8.5),
-                ],
+                ),
               ),
             ),
             // 결투 전투력(성충만, 2026-10-12 사장님 요청) — 결투 탭·순위표와 같은 값. 칸이 좁아 줄여서 맞춘다.
@@ -3310,16 +3322,50 @@ class StorageScreen extends ConsumerWidget {
                                       // 훈련 v2 — 포인트를 찍은 곤충도(재료를 낸 투자).
                                       if (isPreciousBug(bug) ||
                                           trainedPointsOf(save, bug.id) > 0) {
-                                        final go = await showGameDialog<bool>(
+                                        // 개체 등급이 켜졌으면 **정수라는 대안**을 알려 준다 — 분해는 재료,
+                                        // 정수는 같은 종 등급 올리기(2026-10-12 출시 점검). 알·잠긴 곤충은 정수 불가라 빼고.
+                                        final essence =
+                                            gradeOn &&
+                                                petCfg != null &&
+                                                !save.pinnedBugIds.contains(
+                                                  bug.id,
+                                                )
+                                            ? petCfg.individualGrade.essenceOf(
+                                                bug,
+                                                species.grade,
+                                              )
+                                            : 0;
+                                        final go = await showGameDialog<Object>(
                                           ctx,
                                           title: l.disassembleAction,
                                           icon: Icons.warning_amber_rounded,
-                                          content: Text(
-                                            l.disassembleConfirm,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 13,
-                                            ),
+                                          content: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                l.disassembleConfirm,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              if (essence > 0) ...[
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  l.disassembleEssenceHint(
+                                                    species.name.resolve(
+                                                      locale,
+                                                    ),
+                                                    '$essence',
+                                                  ),
+                                                  style: const TextStyle(
+                                                    color: Color(0xFFB39DDB),
+                                                    fontSize: 12.5,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                           actions: [
                                             gameDialogButton(
@@ -3327,6 +3373,15 @@ class StorageScreen extends ConsumerWidget {
                                               () => Navigator.pop(ctx, false),
                                               primary: false,
                                             ),
+                                            if (essence > 0)
+                                              gameDialogButton(
+                                                l.igToEssence,
+                                                () => Navigator.pop(
+                                                  ctx,
+                                                  'essence',
+                                                ),
+                                                primary: false,
+                                              ),
                                             gameDialogButton(
                                               l.disassembleAction,
                                               () => Navigator.pop(ctx, true),
@@ -3334,7 +3389,18 @@ class StorageScreen extends ConsumerWidget {
                                             ),
                                           ],
                                         );
-                                        if (go != true || !ctx.mounted) return;
+                                        if (!ctx.mounted) return;
+                                        if (go == 'essence') {
+                                          // 정수 쪽 확인 창(사유 경고 · 이색 두 번 확인)을 그대로 탄다.
+                                          await confirmBugToEssence(
+                                            ctx,
+                                            r,
+                                            data,
+                                            bug,
+                                          );
+                                          return;
+                                        }
+                                        if (go != true) return;
                                       }
                                       final res = await r
                                           .read(saveControllerProvider.notifier)
@@ -4252,7 +4318,15 @@ Widget _lockButton(
           .read(saveControllerProvider.notifier)
           .toggleBugLock(bugId);
       if (ctx.mounted) {
-        showCenterToast(ctx, now ? l.bugLockedToast : l.bugUnlockedToast);
+        final gradeOn = individualGradeOn(
+          r.read(gameDataProvider).requireValue,
+        );
+        showCenterToast(
+          ctx,
+          now
+              ? (gradeOn ? l.bugLockedToastGrade : l.bugLockedToast)
+              : l.bugUnlockedToast,
+        );
       }
     },
     child: Container(

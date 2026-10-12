@@ -618,8 +618,11 @@ class DexScreen extends ConsumerWidget {
               style: const TextStyle(color: Color(0x99FFFFFF), height: 1.4),
             )
           else ...[
+            // 켜지면 종 등급은 "종 희귀도"다 — 등급 이름만 두면 개체 등급처럼 읽힌다.
             Text(
-              gradeLabel(l, sp.grade),
+              gradeOn
+                  ? l.igSpeciesRarity(gradeLabel(l, sp.grade))
+                  : gradeLabel(l, sp.grade),
               style: TextStyle(
                 color: gradeColor(sp.grade),
                 fontWeight: FontWeight.w900,

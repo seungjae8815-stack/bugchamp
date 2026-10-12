@@ -7052,12 +7052,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get igPotionDailyLimit => '오늘은 더 살 수 없어요';
 
   @override
-  String gachaPityLeftGrade(int n) {
-    return '$n회 안에 영웅 이상 확정';
+  String gachaPityLeftGrade(int n, String grade) {
+    return '$n회 안에 $grade 이상 확정';
   }
 
   @override
-  String get gachaDescGrade => '희귀 등급 이상 보장 · 이색 확률 10배';
+  String gachaDescGrade(String grade) {
+    return '$grade 등급 이상 보장 · 이색 확률 10배';
+  }
 
   @override
   String get eggOddsIndividualHead => '개체 등급';
@@ -7136,4 +7138,85 @@ class AppLocalizationsKo extends AppLocalizations {
   String guideDuelLeague(int min, int up, int down, int reward, int full) {
     return '리그는 매주 같은 리그끼리 별(승리 점수)로 겨뤄요. 그 주 결투한 인원이 $min명 이상이면 상위 $up% 승급 · 하위 $down% 강등이고, $min명 미만이면 승급이 없어요. 순위 젤리는 $reward명 이상일 때부터 인원의 절반까지 받고, $full명이 안 되면 인원만큼 줄어들어요. $reward명 미만인 리그는 결산 때 아래 리그로 합쳐지고, 한 주를 쉬면 한 단계 내려가요.';
   }
+
+  @override
+  String get igEssenceWarnTitle => '아끼던 곤충이에요 — 바꾸면 이것들이 사라져요';
+
+  @override
+  String get igEssenceWarnVariant => '이색 곤충(아주 드물게 나오는 색)';
+
+  @override
+  String igEssenceWarnLevel(String level) {
+    return '수련 Lv$level';
+  }
+
+  @override
+  String igEssenceWarnBreak(String tier) {
+    return '돌파 $tier단계';
+  }
+
+  @override
+  String get igEssenceWarnEnhance => '부위 강화';
+
+  @override
+  String igEssenceVariantAgain(String name) {
+    return '정말 이색 $name을(를) 정수로 바꿀까요?\n이색은 되찾을 수 없어요.';
+  }
+
+  @override
+  String igNeedMoreEssence(String n) {
+    return '정수 $n개 더 필요해요';
+  }
+
+  @override
+  String igRarityBadge(String grade) {
+    return '희귀도 $grade';
+  }
+
+  @override
+  String disassembleEssenceHint(String name, String n) {
+    return '분해 대신 정수로 바꾸면 $name 정수 $n개 — 같은 종 등급 올리기에 쓸 수 있어요.';
+  }
+
+  @override
+  String get forgeTranscendNotRunning => '진행 중인 초월이 없어요 — 이미 받았어요';
+
+  @override
+  String get forgeTranscendNotReady => '초월이 아직 끝나지 않았어요';
+
+  @override
+  String get guidePotentialTitleGrade => '개체 등급 (일반~전설)';
+
+  @override
+  String guidePotentialBodyGrade(int perGrade) {
+    return '등급이 높을수록 능력치가 좋고 훈련 포인트가 많아져요(한 단계마다 $perGrade점). 같은 종 곤충을 정수로 바꿔 모은 뒤 등급 올리기로 한 단계씩 올려요. 올릴 때마다 능력치 품질을 다시 굴려 더 좋은 쪽이 남아요.';
+  }
+
+  @override
+  String guideTrainBodyGrade(String perGrade, String levels, String bt) {
+    return '곤충마다 훈련 포인트가 생겨요 — 개체 등급 한 단계마다 $perGrade점 · 수련 $levels레벨마다 1점 · 돌파 단계마다 $bt점. 포인트를 아래 칸에 골라 찍어요. 칸마다 상한이 있고 상한을 다 합치면 포인트보다 훨씬 많아서 전부 찍을 수는 없어요 — 무엇을 찍을지가 곧 전략이에요. 칸 상한은 기질·주특기·혈통 특성에 따라 곤충마다 달라요.';
+  }
+
+  @override
+  String get guideTrainLegacyNoteGrade =>
+      '예전 부위 강화·훈련 단계는 훈련 포인트로 옮겨졌어요. 모든 곤충이 같은 기준(등급·수련·돌파)으로 포인트를 받고, 그보다 많이 찍혀 있던 곤충은 조정되며 무료 다시 찍기 1회가 생겨요.';
+
+  @override
+  String get eventFlyerRule1Grade =>
+      '**키운 그대로** 싸워요 — 등급·능력치 품질·수련·돌파·훈련 포인트가 모두 반영돼요(결투와 같은 능력치)';
+
+  @override
+  String eventNormalizeBodyGrade(int pct) {
+    return '결투와 같은 능력치로 싸워요 — 등급·능력치 품질·수련·돌파·훈련 포인트·특성이 모두 반영돼요. 장외·뒤집기로 지면 체력이 $pct% 깎이고 같은 웨이브를 다시 싸워요. 체력이 바닥나면 끝이에요.';
+  }
+
+  @override
+  String get bugLockedToastGrade => '잠갔어요 — 정수·분해로 쓰지 않아요';
+
+  @override
+  String get trainPtNoPointsGrade => '남은 포인트가 없어요 — 수련·돌파·등급 올리기로 늘어나요';
+
+  @override
+  String get guildWarBreedHintGrade =>
+      '짝짓기 수령·부화 수령·등급 올리기로 점수를 얻어요. 젤리로 즉시 완료한 건 세지 않아요.';
 }

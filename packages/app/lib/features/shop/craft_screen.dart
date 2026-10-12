@@ -544,7 +544,12 @@ class _GachaCard extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            gradeOn ? l.gachaDescGrade : l.gachaDesc,
+            // 켜지면 보장 등급을 JSON(gachaGradeWeights 의 첫 0 아닌 칸)에서 읽는다 — 문구에 박아 두면 확률을 바꿔도 화면이 거짓말한다.
+            gradeOn
+                ? l.gachaDescGrade(
+                    gradeLabel(l, _gachaFloorGrade(cfg.individualGrade)),
+                  )
+                : l.gachaDesc,
             style: const TextStyle(
               color: Color(0xB3FFFFFF),
               fontSize: 11.5,
@@ -554,7 +559,17 @@ class _GachaCard extends ConsumerWidget {
           if (toPity > 0) ...[
             const SizedBox(height: 4),
             Text(
-              gradeOn ? l.gachaPityLeftGrade(toPity) : l.gachaPityLeft(toPity),
+              gradeOn
+                  ? l.gachaPityLeftGrade(
+                      toPity,
+                      gradeLabel(
+                        l,
+                        gradeOfPotential(
+                          cfg.individualGrade.gachaPityMinPotential,
+                        ),
+                      ),
+                    )
+                  : l.gachaPityLeft(toPity),
               style: const TextStyle(
                 color: Color(0xFFE9A6FF),
                 fontSize: 11,
@@ -1495,3 +1510,12 @@ void _showEggOdds(
 /// 교환소 시간 표기 — 정수면 "5", 아니면 "1.5".
 String _hoursLabel(double h) =>
     h == h.roundToDouble() ? '${h.round()}' : h.toStringAsFixed(1);
+
+/// 뽑기가 보장하는 가장 낮은 개체 등급 — `gachaGradeWeights` 의 첫 0 아닌 칸(지금 희귀).
+Grade _gachaFloorGrade(IndividualGradeConfig ig) {
+  final w = ig.gachaGradeWeights;
+  for (var i = 0; i < w.length; i++) {
+    if (w[i] > 0) return gradeOfPotential(i + 1);
+  }
+  return Grade.common;
+}

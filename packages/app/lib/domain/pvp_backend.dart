@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart' show BattleConfig;
 import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -52,7 +53,15 @@ class PvpProfile {
   ///
   /// [power] 는 홈 상단 전투력(`displayCombatPower`)이다. 게임 데이터가 없어
   /// 모르면 null — **올리지 않는다**(0 으로 올리면 서버 값을 덮어쓴다).
-  factory PvpProfile.me(SaveGame save, {double? power}) => PvpProfile(
+  ///
+  /// [now]·[battle] 을 주면 심연 값이 **이번 주** 기준이 된다 — 주가 바뀌었는데 아직 심연에 안 들어갔으면 0
+  /// (서버 `abyssScoreFor` 와 같다). 안 주면 세이브의 주를 그대로 믿는다(예전 동작).
+  factory PvpProfile.me(
+    SaveGame save, {
+    double? power,
+    DateTime? now,
+    BattleConfig? battle,
+  }) => PvpProfile(
     id: 'me',
     nickname: save.nickname,
     trophies: save.pvpTrophies,
@@ -64,7 +73,10 @@ class PvpProfile {
     difficultyTier: save.rankProgress.tier,
     power: power,
     // 진행도 랭킹의 심연 값 = 이번 주 지금 층(서버가 올리는 값과 같은 함수). 역대 최고가 아니다.
-    abyssBest: abyssRankFloorOf(save),
+    abyssBest: abyssRankFloorOf(
+      save,
+      week: now == null || battle == null ? null : abyssWeekId(now, battle),
+    ),
     avatar: save.avatar,
   );
 

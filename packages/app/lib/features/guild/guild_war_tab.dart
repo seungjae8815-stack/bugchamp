@@ -27,8 +27,13 @@ String guildWarThemeLabel(AppLocalizations l, String? theme) => switch (theme) {
   _ => l.guildWarClash,
 };
 
-String guildWarThemeHint(AppLocalizations l, String? theme) => switch (theme) {
-  'breed' => l.guildWarBreedHint,
+/// [gradeOn] = 개체 등급이 켜졌나 — 켜지면 합성이 없어지고 등급 올리기가 그 점수를 받는다.
+String guildWarThemeHint(
+  AppLocalizations l,
+  String? theme, {
+  bool gradeOn = false,
+}) => switch (theme) {
+  'breed' => gradeOn ? l.guildWarBreedHintGrade : l.guildWarBreedHint,
   'forge' => l.guildWarForgeHint,
   'hunt' => l.guildWarHuntHint,
   'duel' => l.guildWarDuelHint,
@@ -254,7 +259,18 @@ class _GuildWarTabState extends ConsumerState<GuildWarTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        guildWarThemeHint(l, v.theme),
+                        guildWarThemeHint(
+                          l,
+                          v.theme,
+                          gradeOn:
+                              ref
+                                  .watch(gameDataProvider)
+                                  .value
+                                  ?.petConfig
+                                  ?.individualGrade
+                                  .enabled ??
+                              false,
+                        ),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12.5,
