@@ -33,6 +33,8 @@ class IndividualBug {
     this.synthUps = 0,
     this.rolls,
     this.fromGacha = false,
+    this.newGen = false,
+    this.legacySynthUps,
     Element? element,
   }) : _element = element;
 
@@ -96,6 +98,14 @@ class IndividualBug {
 
   /// 알 뽑기에서 나온 개체 — 정수로 바꿀 때 종 희귀도 가치를 받지 않는다(설계 확정 2026-10-11).
   final bool fromGacha;
+
+  /// 개체 등급이 **켜진 뒤 생긴** 곤충(2026-10-12 사장님 확정, JSON `ng`) — 정수 가치가 새 등급 누적으로 매겨진다.
+  /// 없으면 업데이트 전 곤충(들인 마릿수만큼, `IndividualGradeConfig.essenceOf`). 서버는 저장본에 없던 **새 id** 에만 허용한다.
+  final bool newGen;
+
+  /// 업데이트 전 곤충이 **처음 새 규칙으로 등급을 올릴 때** 그때까지의 옛 합성 단계(JSON `ls`). null = 아직 안 올림.
+  /// 옛 합성 단계와 새 등급 올리기 단계를 가른다 — 정수 가치가 서로 달라서다(무한 증식 방지 불변식).
+  final int? legacySynthUps;
 
   /// 지금 능력치 롤(저장값 또는 처음 롤).
   List<int> get statRolls => rolls ?? initialRollsOf(id);
@@ -428,6 +438,8 @@ class IndividualBug {
     int? synthUps,
     List<int>? rolls,
     bool? fromGacha,
+    bool? newGen,
+    int? legacySynthUps,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -449,6 +461,8 @@ class IndividualBug {
     synthUps: synthUps ?? this.synthUps,
     rolls: rolls ?? this.rolls,
     fromGacha: fromGacha ?? this.fromGacha,
+    newGen: newGen ?? this.newGen,
+    legacySynthUps: legacySynthUps ?? this.legacySynthUps,
     element: element ?? this.element,
   );
 
@@ -488,13 +502,16 @@ class IndividualBug {
         ? BugVariant.none
         : BugVariant.fromKey(json['variant'] as String),
     synthUps: (json['su'] as num?)?.toInt() ?? 0,
-    rolls: json['rl'] is List
+    // 숫자가 아닌 칸이 섞이면 롤을 통째로 버린다(처음 롤로) — 모르는 값은 던지지 않고 무시한다.
+    rolls: json['rl'] is List && (json['rl'] as List).every((v) => v is num)
         ? [
             for (final v in json['rl'] as List)
               ((v as num).toInt()).clamp(0, 100),
           ]
         : null,
     fromGacha: json['gc'] == true,
+    newGen: json['ng'] == true,
+    legacySynthUps: json['ls'] is num ? (json['ls'] as num).toInt() : null,
     element: json['element'] == null
         ? null
         : Element.fromKeyOrNull(json['element'] as String),
@@ -524,6 +541,9 @@ class IndividualBug {
     // 등급 올리기로 좋아진 롤만(처음 롤은 id 로 다시 계산한다) · 뽑기 출신만 — 세이브 크기(§3).
     if (rolls != null) 'rl': rolls,
     if (fromGacha) 'gc': true,
+    if (newGen) 'ng': true,
+    // 0 이어도 싣는다 — null(아직 새 규칙으로 안 올림)과 갈라야 한다.
+    if (legacySynthUps != null) 'ls': legacySynthUps,
     'element': element.key,
   };
 

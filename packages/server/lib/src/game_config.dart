@@ -80,6 +80,26 @@ class GameConfig implements GameConfigLike {
   /// 기본 경로 — 리포지토리 구조 기준. 환경변수 `GAME_DATA_DIR` 로 덮어쓴다.
   static const defaultDir = 'packages/app/assets/data';
 
+  /// 개체 등급 서버 스위치(2026-10-12 사장님 확정) — 환경변수 `INDIVIDUAL_GRADE` 가 `0`/`1` 이면
+  /// `pets.json → individualGrade.enabled` 를 덮어쓴다. 없거나 다른 값이면 pets.json 그대로(켜짐).
+  /// `0` 은 **긴급 끄기**용 — 재배포 없이 Cloud Run 환경변수만 바꿔 서버 쪽 등급 규칙(결투 보정·정수 검사)을 끈다.
+  /// ⚠️ 앱 번들은 따로 켜져 있으므로 끄면 앱·서버 결투 능력치가 갈린다 — 정말 급할 때만.
+  static Map<String, dynamic> withIndividualGradeEnv(
+    Map<String, dynamic> pets,
+    String? env,
+  ) {
+    final v = env?.trim();
+    if (v != '0' && v != '1') return pets;
+    final ig = pets['individualGrade'];
+    return {
+      ...pets,
+      'individualGrade': {
+        if (ig is Map) ...Map<String, dynamic>.from(ig),
+        'enabled': v == '1',
+      },
+    };
+  }
+
   static Future<GameConfig> load({String? dir}) async {
     final base = dir ?? Platform.environment['GAME_DATA_DIR'] ?? defaultDir;
 
@@ -123,7 +143,12 @@ class GameConfig implements GameConfigLike {
       battle: BattleConfig.fromJson(await read('battle.json')),
       run: RunConfig.fromJson(await read('run_config.json')),
       forge: forgeJson == null ? null : ForgeConfig.fromJson(forgeJson),
-      pet: PetConfig.fromJson(await read('pets.json')),
+      pet: PetConfig.fromJson(
+        withIndividualGradeEnv(
+          await read('pets.json'),
+          Platform.environment['INDIVIDUAL_GRADE'],
+        ),
+      ),
       enhance: EnhanceConfig.fromJson(await read('enhance.json')),
       mission: missionJson == null ? null : MissionConfig.fromJson(missionJson),
       gift: giftJson == null ? null : GiftConfig.fromJson(giftJson),

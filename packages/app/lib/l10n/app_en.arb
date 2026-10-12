@@ -4097,7 +4097,7 @@
   "igGradeUpEgg": "Hatch the egg first to grade it up",
   "igPotionUse": "Growth potions {n} (own {have})",
   "@igPotionUse": {"placeholders": {"n": {"type": "String"}, "have": {"type": "String"}}},
-  "igPotionHint": "Each potion raises the floor of the new rolls by {step}. Potion gains stay all the way to Legendary.",
+  "igPotionHint": "Each potion adds +{step} to the new stat rolls (up to 100). Potion gains stay all the way to Legendary.",
   "@igPotionHint": {"placeholders": {"step": {"type": "String"}}},
   "igGradeUpDone": "Now {grade}!",
   "@igGradeUpDone": {"placeholders": {"grade": {"type": "String"}}},

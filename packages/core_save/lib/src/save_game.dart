@@ -25,7 +25,8 @@ const int kSaveSchemaVersion = 18;
 /// 21(2026-10-10): 장비 v2 — 장비 `st`(별)·`sx`(별 재료)·`su`(별 강화 끝)·옵션 `p`(정성). 장비 안의 키라 서버가 장비 단위로 되돌린다.
 /// 22(2026-10-10): 공방 초월 `forgeTranscend`.
 /// 23(2026-10-10): 프로필 그림 `avatar`.
-/// 24(2026-10-11): 개체 등급 — `essence`·`potions`·`potionBuyDay`·`potionBuyN` · 곤충 `rl`(롤)·`gc`(뽑기 출신).
+/// 24(2026-10-11): 개체 등급 — `essence`·`potions`·`potionBuyDay`·`potionBuyN`·`gLp`(전설 천장) · 곤충 `rl`(롤)·`gc`(뽑기 출신)·
+///    `ng`(켜진 뒤 생김)·`ls`(옛 합성 단계). 1.0.20 출시 전에 더한 키라 같은 수준에 묶는다(24·25 를 쓴 앱이 아직 없다).
 /// 25(2026-10-12): 공방 초월 시간 — 진행 중 초월 끝 시각 `ftAt`.
 const int kSaveFeatureLevel = 25;
 
@@ -251,6 +252,15 @@ class BreedingSlot {
   /// **앱과 서버가 같은 함수를 쓴다** — 공식이 두 벌이면 "앱에선 화 속성인데
   /// 서버가 준 건 수 속성"처럼 조용히 갈린다. 결정론: 같은 [seed] → 같은 자식.
   IndividualBug hatch({
+    required String id,
+    required Species species,
+    required PetConfig cfg,
+  }) => _breed(id: id, species: species, cfg: cfg).copyWith(
+    // 개체 등급이 켜진 뒤 생긴 곤충 표식(정수 가치 — `IndividualGradeConfig.essenceOf`). rng 와 무관.
+    newGen: cfg.individualGrade.enabled,
+  );
+
+  IndividualBug _breed({
     required String id,
     required Species species,
     required PetConfig cfg,
@@ -596,6 +606,10 @@ class SaveGame {
     this.growthPotions = 0,
     this.potionBuyDay,
     this.potionBuyCount = 0,
+    this.gachaLegendPity = 0,
+    this.potionSrvDay,
+    this.potionSrvBought = 0,
+    this.potionSrvDrops = 0,
     this.skillTrainingId,
     this.skillTrainingEndsAt,
     this.skillGachaPity = 0,
@@ -1228,12 +1242,22 @@ class SaveGame {
   /// 애벌레 이상 곤충을 정수로 바꿔 모은다. ⚠️ 새 `MaterialKind` 가 아니다(구버전 크래시, skillShards 와 같은 이유).
   final Map<String, int> essence;
 
-  /// 성장물약 개수 — 등급 올리기에 넣으면 새 롤의 바닥이 오른다.
+  /// 성장물약 개수 — 등급 올리기에 넣으면 새 롤에 1개당 +3점(`potionRollBonus`).
   final int growthPotions;
 
   /// 성장물약 젤리 구매 하루 기록(기기 날짜 키 · 그날 산 개수) — 하루 상한(`potionDailyBuy`).
   final String? potionBuyDay;
   final int potionBuyCount;
+
+  /// 알 뽑기 **전설 천장** — 전설(포텐셜 5) 없이 뽑은 횟수(`IndividualGradeConfig.gachaLegendPity`, 2026-10-12).
+  /// 개체 등급이 켜져 있을 때만 센다. JSON `gLp`.
+  final int gachaLegendPity;
+
+  /// 성장물약 업로드 검사의 **서버 하루 기록**(서버 소유 — `GameActions._serverOwnedKeys`, 2026-10-12).
+  /// 서버 날짜 · 그날 인정한 젤리 구매 수 · 그날 인정한 확률 드롭 수. 기기는 쓰지 않는다.
+  final String? potionSrvDay;
+  final int potionSrvBought;
+  final int potionSrvDrops;
 
   /// 등급 만능 조각(`Grade.key` → 개수) — 같은 등급 조각 10개를 올려 만든 한 단계
   /// 위 등급의 조각. 그 등급 스킬 아무 데나 1:1 로 쓴다(§2.8).
@@ -1602,6 +1626,10 @@ class SaveGame {
     int? growthPotions,
     String? potionBuyDay,
     int? potionBuyCount,
+    int? gachaLegendPity,
+    String? potionSrvDay,
+    int? potionSrvBought,
+    int? potionSrvDrops,
     String? skillTrainingId,
     DateTime? skillTrainingEndsAt,
     bool clearSkillTraining = false,
@@ -1738,6 +1766,10 @@ class SaveGame {
     growthPotions: growthPotions ?? this.growthPotions,
     potionBuyDay: potionBuyDay ?? this.potionBuyDay,
     potionBuyCount: potionBuyCount ?? this.potionBuyCount,
+    gachaLegendPity: gachaLegendPity ?? this.gachaLegendPity,
+    potionSrvDay: potionSrvDay ?? this.potionSrvDay,
+    potionSrvBought: potionSrvBought ?? this.potionSrvBought,
+    potionSrvDrops: potionSrvDrops ?? this.potionSrvDrops,
     // 수련이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
     skillTrainingId: clearSkillTraining
         ? null
@@ -2039,6 +2071,10 @@ class SaveGame {
     growthPotions: math.max(0, (json['potions'] as num?)?.toInt() ?? 0),
     potionBuyDay: json['potionBuyDay'] as String?,
     potionBuyCount: (json['potionBuyN'] as num?)?.toInt() ?? 0,
+    gachaLegendPity: (json['gLp'] as num?)?.toInt() ?? 0,
+    potionSrvDay: json['psD'] as String?,
+    potionSrvBought: (json['psB'] as num?)?.toInt() ?? 0,
+    potionSrvDrops: (json['psR'] as num?)?.toInt() ?? 0,
     skillGradeShards: _intMapFromJson(
       json['skillGradeShards'] as Map<String, dynamic>? ?? const {},
     ),
@@ -2260,6 +2296,10 @@ class SaveGame {
     if (growthPotions > 0) 'potions': growthPotions,
     if (potionBuyDay != null) 'potionBuyDay': potionBuyDay,
     if (potionBuyCount > 0) 'potionBuyN': potionBuyCount,
+    if (gachaLegendPity > 0) 'gLp': gachaLegendPity,
+    if (potionSrvDay != null) 'psD': potionSrvDay,
+    if (potionSrvBought > 0) 'psB': potionSrvBought,
+    if (potionSrvDrops > 0) 'psR': potionSrvDrops,
     // ⚠️ **비어 있어도 항상 싣는다** — 서버가 "이 앱은 스킬 필드를 안다"를 알아보는
     // 표식이다. 이 키가 없는 업로드(스킬 이전 앱)는 조각·수련을 모르고 올린 것이라
     // 서버가 저장본 값을 지킨다(`GameActions._enforceSkills`).

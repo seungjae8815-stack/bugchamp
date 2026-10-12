@@ -415,7 +415,7 @@ Future<void> _openGradeUp(
             ],
           ),
           Text(
-            l.igPotionHint('${cfg.potionFloorStep}'),
+            l.igPotionHint('${cfg.potionRollBonus}'),
             textAlign: TextAlign.center,
             style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
           ),

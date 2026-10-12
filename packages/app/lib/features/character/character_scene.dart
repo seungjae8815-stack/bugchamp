@@ -237,6 +237,14 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
               ).copyWith(
                 stage: LifeStage.egg,
                 stageSince: ref.read(clockProvider).now().toUtc(),
+                newGen:
+                    ref
+                        .read(gameDataProvider)
+                        .value
+                        ?.petConfig
+                        ?.individualGrade
+                        .enabled ??
+                    false,
               ),
         );
   }

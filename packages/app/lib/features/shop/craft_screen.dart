@@ -1474,6 +1474,15 @@ void _showEggOdds(
                 ),
                 style: body,
               ),
+            // 전설 천장(2026-10-12, 개체 등급이 켜져 있을 때만) — 영웅 이상 천장과 따로 센다.
+            if (ig.enabled && ig.gachaLegendPity > 0)
+              Text(
+                l.eggOddsPity(
+                  '${ig.gachaLegendPity}',
+                  gradeLabel(l, Grade.legendary),
+                ),
+                style: body,
+              ),
             const SizedBox(height: 6),
             Text(
               l.eggOddsNote,

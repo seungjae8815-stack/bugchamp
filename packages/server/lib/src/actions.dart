@@ -124,6 +124,7 @@ class GameActions {
         purchaseId: purchaseId,
         speciesOf: (id) =>
             config.speciesList.where((x) => x.id == id).firstOrNull,
+        newGen: config.pet.individualGrade.enabled,
       ),
     );
   }
@@ -195,6 +196,10 @@ class GameActions {
     'abyssRewardWeek',
     // 심연 층 시간 예산 기준(2026-09-30). 지우면 예산이 다시 차서 층 상한이 풀린다.
     'abyssFloorAt',
+    // 성장물약 업로드 검사의 서버 하루 기록(2026-10-12) — 지우면 하루 구매·확률 드롭 인정치가 다시 찬다.
+    'psD',
+    'psB',
+    'psR',
   };
 
   /// 옛 결투 경로(`/battle`·`/battle/manual/*`, 1.0.13 이하 앱)의 점수를 **새 체계**로 자른다.
@@ -279,7 +284,7 @@ class GameActions {
     23: ['avatar'],
     // 개체 등급(2026-10-11, docs/design_individual_grade.md) — 정수·성장물약·물약 구매 기록.
     // 곤충 안의 롤(`rl`)·뽑기 출신(`gc`)은 [_keepFieldsOldAppDoesNotKnow] 의 따로 처리(같은 곤충이면 되돌린다).
-    24: ['essence', 'potions', 'potionBuyDay', 'potionBuyN'],
+    24: ['essence', 'potions', 'potionBuyDay', 'potionBuyN', 'gLp'],
     // 공방 초월 시간(1.0.20, 2026-10-12) — 모르는 앱(1.0.19)이 올리면 저장본의 진행 중 초월 끝 시각을 지킨다.
     25: ['ftAt'],
   };
@@ -387,15 +392,20 @@ class GameActions {
         ];
       }
     }
-    // 곤충의 롤·뽑기 출신(개체 등급, feat 24) — 모르는 앱은 떨어뜨린다. 같은 곤충이면 저장본 값을 되돌린다
-    // (안 되돌리면 등급 올리기로 좋아진 롤이 처음 롤로 돌아간다).
+    // 곤충의 롤·뽑기 출신·켜진 뒤 생김·옛 합성 단계(개체 등급, feat 24) — 모르는 앱은 떨어뜨린다.
+    // 같은 곤충이면 저장본 값을 되돌린다(안 되돌리면 등급 올리기로 좋아진 롤이 처음 롤로 돌아간다).
     if (feat < 24) {
       final keep = {
         for (final b in stored.bugs)
-          if (b.rolls != null || b.fromGacha)
+          if (b.rolls != null ||
+              b.fromGacha ||
+              b.newGen ||
+              b.legacySynthUps != null)
             b.id: {
               if (b.rolls != null) 'rl': b.rolls,
               if (b.fromGacha) 'gc': true,
+              if (b.newGen) 'ng': true,
+              if (b.legacySynthUps != null) 'ls': b.legacySynthUps,
             },
       };
       final list = out['bugs'];
@@ -1286,6 +1296,7 @@ class GameActions {
     }
     _mergeGiftDoubles(stored, merged, t);
     _mergeDailyClaims(stored, merged);
+    _mergePotionBuy(stored, merged, t);
     // 프로필 그림은 꼴(avatar_*)만 받는다 — 아니면 저장본 값(2026-10-10 점검).
     if (merged.containsKey('avatar') && !isAvatarId(merged['avatar'])) {
       if (stored.avatar != null) {
@@ -1438,9 +1449,9 @@ class GameActions {
       capped = sk;
     }
     {
-      final gr = _enforceGrade(stored, capped);
-      if (!identical(gr, capped)) clampReasons.add('grade');
-      capped = gr;
+      final gr = _enforceGrade(stored, capped, t);
+      if (gr.clamped) clampReasons.add('grade');
+      capped = gr.save;
     }
     final fairyCfg = config.fairy;
     if (fairyCfg != null) {
@@ -1504,16 +1515,29 @@ class GameActions {
   ///
   /// [clamped] 는 2·3 에서 잘렸을 때만 참이다(이전은 정상 동작이라 알리지 않는다 — 알리면 1.0.17 기기가
   /// 업로드마다 세이브를 되받는다).
-  /// 개체 등급(2026-10-11) 업로드 검사 — 롤 정리 · 정수 급증 · 물약 급증. 꺼져 있으면 롤 정리만.
+  /// 개체 등급(2026-10-11) 업로드 검사 — 곤충 등급 필드 · 롤 정리 · 정수 급증 · 물약 급증.
+  /// 꺼져 있으면 곤충 등급 필드·롤 정리만.
   ///
   /// 정수는 **이번 업로드에서 사라진 곤충**의 정수 가치만큼만 늘 수 있다(분해·방생으로 사라진 것도 넉넉히 센다).
-  /// 물약은 쓴 젤리 ÷ 가격(하루 상한) + 드롭 여유(업로드당 [kPotionDropSlack])만큼. 기기 권위라 완벽하지 않다 —
-  /// 곤충 롤과 같은 처지이고, 결투·대회 팀은 [validateDuelTeam] 이 롤 범위(0~100)로 자른다.
-  static const kPotionDropSlack = 5;
-  SaveGame _enforceGrade(SaveGame stored, SaveGame client) {
-    var out = sanitizeGradeRolls(client);
+  /// 저장본에 **알**로 있던 곤충은 유충으로 본 가치로 센다 — 앱에서 부화 → 바로 정수로 바꾸면 허용치 0 이라
+  /// 곤충·정수를 둘 다 잃었다(2026-10-12 출시 전 점검). 저장본에 없던 곤충(마지막 업로드 뒤 생겨 젤리로 바로 부화)은
+  /// 보이지 않으므로 이번에 쓴 젤리 1개당 [kUnseenEssencePerJelly] 를 종 구분 없이 얹는다(뽑기 30젤리 → 영웅 216 까지).
+  ///
+  /// 물약은 근거가 있는 만큼만(2026-10-12 — 업로드마다 +5 여유는 하루 수천 개였다):
+  ///  - 젤리 구매: 쓴 젤리 ÷ 가격, **서버 날짜 하루** `potionDailyBuy` 까지(`psB`).
+  ///  - 보스 첫 처치: 새로 모은 보스 수 × `potionBossFirst` · 심연 10층 첫 도달: 새 마일스톤 × `potionAbyss10`.
+  ///  - 그날 첫 미션: `dailyClaims['potion:mission']` 날짜가 앞으로 갔으면 1.
+  ///  - 확률 드롭(정예·보스 재처치): 서버 날짜 하루 `potionDropDaily` 개(`psR`).
+  /// 기기 권위라 완벽하지 않다 — 결투·대회 팀은 [validateDuelTeam] 이 롤 범위(0~100)로 자른다.
+  static const kUnseenEssencePerJelly = 8;
+  ({SaveGame save, bool clamped}) _enforceGrade(
+    SaveGame stored,
+    SaveGame client,
+    DateTime t,
+  ) {
+    var out = sanitizeGradeRolls(guardGradeBugFields(stored, client));
     final cfg = config.pet.individualGrade;
-    if (!cfg.enabled) return out;
+    if (!cfg.enabled) return (save: out, clamped: !identical(out, client));
     final byId = {for (final sp in config.speciesList) sp.id: sp};
     final now = {for (final b in out.bugs) b.id};
     final allow = <String, int>{};
@@ -1521,27 +1545,160 @@ class GameActions {
       if (now.contains(b.id)) continue;
       final sp = byId[b.speciesId];
       if (sp == null) continue;
-      allow[sp.id] = (allow[sp.id] ?? 0) + cfg.essenceOf(b, sp.grade);
+      final asSeen = b.stage == LifeStage.egg
+          ? b.copyWith(stage: LifeStage.larva)
+          : b;
+      allow[sp.id] = (allow[sp.id] ?? 0) + cfg.essenceOf(asSeen, sp.grade);
     }
-    var changed = false;
-    final bag = Map<String, int>.from(out.essence);
-    for (final e in out.essence.entries) {
-      final cap = (stored.essence[e.key] ?? 0) + (allow[e.key] ?? 0);
-      if (e.value > cap) {
-        bag[e.key] = cap;
-        changed = true;
-      }
-    }
-    if (changed) out = out.copyWith(essence: bag);
     final diff =
         stored.materialCount(MaterialKind.jelly) -
         out.materialCount(MaterialKind.jelly);
     final spent = diff > 0 ? diff : 0;
+    var unseen = spent * kUnseenEssencePerJelly;
+    var changed = false;
+    final bag = Map<String, int>.from(out.essence);
+    for (final e in out.essence.entries) {
+      final cap = (stored.essence[e.key] ?? 0) + (allow[e.key] ?? 0);
+      if (e.value <= cap) continue;
+      final extra = min(unseen, e.value - cap);
+      unseen -= extra;
+      if (e.value > cap + extra) {
+        bag[e.key] = cap + extra;
+        changed = true;
+      }
+    }
+    if (changed) out = out.copyWith(essence: bag);
+
+    // 물약.
+    final today = dailyDateKey(t.toUtc());
+    final sameDay = stored.potionSrvDay == today;
+    final boughtUsed = sameDay ? stored.potionSrvBought : 0;
+    final dropsUsed = sameDay ? stored.potionSrvDrops : 0;
     final byJelly = cfg.potionJelly <= 0 ? 0 : spent ~/ cfg.potionJelly;
-    final bought = byJelly < cfg.potionDailyBuy ? byJelly : cfg.potionDailyBuy;
-    final potCap = stored.growthPotions + bought + kPotionDropSlack;
-    if (out.growthPotions > potCap) out = out.copyWith(growthPotions: potCap);
-    return out;
+    final buyLeft = max(0, min(byJelly, cfg.potionDailyBuy - boughtUsed));
+    final dropLeft = max(0, cfg.potionDropDaily - dropsUsed);
+    final slots = {for (final x in bossDexSlots(config.run)) x.id};
+    final newBosses = out.bossDex
+        .where((id) => slots.contains(id) && !stored.bossDex.contains(id))
+        .length;
+    const missionKey = 'potion:mission';
+    final latestDay = dailyDateKey(t.toUtc().add(const Duration(days: 1)));
+    final m = out.dailyClaims[missionKey];
+    final before = stored.dailyClaims[missionKey];
+    final mission =
+        m != null &&
+            (before == null || m.compareTo(before) > 0) &&
+            m.compareTo(latestDay) <= 0
+        ? 1
+        : 0;
+    final fixed =
+        newBosses * cfg.potionBossFirst +
+        abyssNewMilestones(stored, out) * cfg.potionAbyss10 +
+        mission;
+    final gain = out.growthPotions - stored.growthPotions;
+    final cap = fixed + buyLeft + dropLeft;
+    final took = max(0, min(gain, cap) - fixed);
+    final usedBuy = min(took, buyLeft);
+    final usedDrop = took - usedBuy;
+    if (gain > cap) {
+      out = out.copyWith(growthPotions: stored.growthPotions + cap);
+    }
+    // 잘림 판정은 서버 하루 기록을 적기 **전에** — 기록은 서버 소유라 기기가 되받을 필요가 없다.
+    final clamped = !identical(out, client);
+    // 서버 하루 기록(서버 소유) — 쓴 몫이 있을 때만 적는다(날이 바뀌었으면 그날 몫부터 새로).
+    if (usedBuy > 0 || usedDrop > 0) {
+      out = out.copyWith(
+        potionSrvDay: today,
+        potionSrvBought: boughtUsed + usedBuy,
+        potionSrvDrops: dropsUsed + usedDrop,
+      );
+    }
+    return (save: out, clamped: clamped);
+  }
+
+  /// 같은 곤충 id 의 개체 등급 필드를 저장본과 맞춘다(2026-10-12 출시 전 점검 — 위조로 정수를 부풀리는 길).
+  ///  - 합성 단계(`su`)는 **줄지 않는다** · 태생 등급(포텐셜 − 합성 단계)은 **오르지 않는다** — 줄이면 태생 몫에
+  ///    종 희귀도 가치가 곱해져 정수가 커진다.
+  ///  - 뽑기 출신(`gc`)은 지워지지 않는다(지우면 희귀도 가치를 받는다).
+  ///  - 켜진 뒤 생김(`ng`)은 저장본 값 그대로 — **새 id 에만** 붙을 수 있다(붙이면 새 등급 누적으로 가치가 커진다).
+  ///  - 옛 합성 단계(`ls`)는 한 번 적히면 고정, 처음 적힐 때는 저장본 합성 단계를 넘지 못한다.
+  static SaveGame guardGradeBugFields(SaveGame stored, SaveGame client) {
+    final old = {for (final b in stored.bugs) b.id: b};
+    var changed = false;
+    final bugs = <IndividualBug>[];
+    for (final b in client.bugs) {
+      final o = old[b.id];
+      if (o == null) {
+        bugs.add(b);
+        continue;
+      }
+      var su = max(b.synthUps, o.synthUps);
+      final oBorn = max(1, o.potential - o.synthUps);
+      if (b.potential - su > oBorn) su = b.potential - oBorn;
+      if (su < 0) su = 0;
+      final gc = b.fromGacha || o.fromGacha;
+      final ng = o.newGen;
+      int? ls;
+      if (ng) {
+        ls = null;
+      } else if (o.legacySynthUps != null) {
+        ls = o.legacySynthUps;
+      } else if (b.legacySynthUps != null) {
+        ls = min(b.legacySynthUps!, o.synthUps);
+      }
+      if (su == b.synthUps &&
+          gc == b.fromGacha &&
+          ng == b.newGen &&
+          ls == b.legacySynthUps) {
+        bugs.add(b);
+        continue;
+      }
+      changed = true;
+      final j = b.toJson()
+        ..remove('su')
+        ..remove('gc')
+        ..remove('ng')
+        ..remove('ls');
+      bugs.add(
+        IndividualBug.fromJson({
+          ...j,
+          if (su > 0) 'su': su,
+          if (gc) 'gc': true,
+          if (ng) 'ng': true,
+          if (ls != null) 'ls': ls,
+        }),
+      );
+    }
+    return changed ? client.copyWith(bugs: bugs) : client;
+  }
+
+  /// 성장물약 젤리 구매 하루 기록 병합(2026-10-12) — **날짜는 뒤로 가지 않고**, 같은 날이면 개수가 줄지 않는다.
+  /// 서버의 내일(기기 시간대 여유)보다 미래 날짜는 받지 않는다. 시계를 되돌려 하루 상한을 다시 채우는 길을 막는다
+  /// (앱 `buyPotions` 도 기록보다 이른 날짜를 거절한다).
+  static void _mergePotionBuy(
+    SaveGame stored,
+    Map<String, dynamic> merged,
+    DateTime now,
+  ) {
+    final sDay = stored.potionBuyDay;
+    if (sDay == null) return;
+    final cDay = merged['potionBuyDay'] as String?;
+    final cN = (merged['potionBuyN'] as num?)?.toInt() ?? 0;
+    final latest = dailyDateKey(now.toUtc().add(const Duration(days: 1)));
+    if (cDay == sDay) {
+      merged['potionBuyN'] = max(cN, stored.potionBuyCount);
+    } else if (cDay != null &&
+        cDay.compareTo(sDay) > 0 &&
+        cDay.compareTo(latest) <= 0) {
+      return;
+    } else {
+      merged['potionBuyDay'] = sDay;
+      if (stored.potionBuyCount > 0) {
+        merged['potionBuyN'] = stored.potionBuyCount;
+      } else {
+        merged.remove('potionBuyN');
+      }
+    }
   }
 
   ({SaveGame save, bool clamped}) _enforceTrainV2(
@@ -2969,15 +3126,18 @@ class GameActions {
         levelCap: petConfig.levelCap(bug.breakthroughTier),
         enhance: enhance,
       );
+      // 개체 등급(2026-10-12 점검) — 내 곤충 쪽은 결투에서 등급 배율·롤을 받는데 야생 기준(내 상위 3마리 평균)에는
+      // 안 실려, 켜면 야생이 등급만큼 약하게(또는 세게) 만들어졌다. 결투 팀과 같은 [battleMods] 를 곱한다(꺼지면 중립).
+      final m = petConfig.individualGrade.battleMods(bug, sp);
       mine.add(
         buildBattleBug(
           bug: bug,
           species: sp,
           locale: 'ko',
-          trainAtkMult: tb.atkMult,
-          trainDefMult: tb.defMult,
-          trainHpMult: tb.hpMult,
-          trainSpdMult: tb.spdMult,
+          trainAtkMult: tb.atkMult * m.atk,
+          trainDefMult: tb.defMult * m.def,
+          trainHpMult: tb.hpMult * m.hp,
+          trainSpdMult: tb.spdMult * m.spd,
         ),
       );
     }

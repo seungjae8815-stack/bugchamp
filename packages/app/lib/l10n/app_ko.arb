@@ -2229,7 +2229,7 @@
   "igGradeUpMax": "최고 등급이에요",
   "igGradeUpEgg": "알은 부화시켜야 등급을 올릴 수 있어요",
   "igPotionUse": "성장물약 {n}개 (보유 {have})",
-  "igPotionHint": "물약 1개마다 새로 굴리는 능력치의 바닥이 {step}점 올라가요. 물약 효과는 전설까지 그대로 남아요.",
+  "igPotionHint": "물약 1개마다 새로 굴리는 능력치 +{step}점(100점까지). 물약 효과는 전설까지 그대로 남아요.",
   "igGradeUpDone": "{grade} 등급이 됐어요!",
   "igGradeUpImproved": "좋아진 능력치 {n}칸",
   "igNoEssence": "정수가 부족해요",

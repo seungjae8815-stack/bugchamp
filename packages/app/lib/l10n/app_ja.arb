@@ -2153,7 +2153,7 @@
   "igGradeUpMax": "最高等級です",
   "igGradeUpEgg": "卵は孵化させると等級を上げられます",
   "igPotionUse": "成長ポーション {n}個 (所持 {have})",
-  "igPotionHint": "ポーション1個ごとに新しく振る能力の下限が{step}上がります。ポーションの効果は伝説までそのまま残ります。",
+  "igPotionHint": "ポーション1個ごとに新しく振る能力 +{step}点(100点まで)。ポーションの効果は伝説までそのまま残ります。",
   "igGradeUpDone": "{grade}になりました！",
   "igGradeUpImproved": "向上した能力 {n}個",
   "igNoEssence": "エッセンスが足りません",

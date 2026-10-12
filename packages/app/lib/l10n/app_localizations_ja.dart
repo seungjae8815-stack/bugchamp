@@ -6967,7 +6967,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String igPotionHint(String step) {
-    return 'ポーション1個ごとに新しく振る能力の下限が$step上がります。ポーションの効果は伝説までそのまま残ります。';
+    return 'ポーション1個ごとに新しく振る能力 +$step点(100点まで)。ポーションの効果は伝説までそのまま残ります。';
   }
 
   @override

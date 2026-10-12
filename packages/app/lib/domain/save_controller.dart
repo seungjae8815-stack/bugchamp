@@ -1556,6 +1556,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       fairy: fairyCfg,
       purchaseId: purchaseId,
       speciesOf: (id) => ref.read(gameDataProvider).value?.speciesById[id],
+      newGen: _gradeCfg.enabled,
     );
     // 성장 패스를 샀으면 오늘 몫을 바로 준다(다음 실행까지 기다리게 하지 않는다).
     if (cfg != null) {
@@ -3240,38 +3241,40 @@ class SaveController extends AsyncNotifier<SaveGame> {
     ];
     if (pool.isEmpty) return (bug: null, error: 'off');
     final sp = pool[rng.nextInt(pool.length)];
-    final bug = IndividualBug.roll(
-      id: const Uuid().v4(),
-      species: sp,
-      rng: rng,
-      // ⚠️ **여기가 뽑기의 존재 이유다.** 야생 공식은 5성이 수학적으로
-      // 불가능하고 4성도 3.4% 뿐이다(1 + floor(r*r*4) → 1~4). 곤충 자체는
-      // 1분에 한 마리씩 나오므로 등급만 팔아서는 젤리 값이 안 나온다 —
-      // 야생에 없는 것(5성)을 파는 게 유일하게 성립하는 축이다.
-      // 표가 비어 있으면 야생 공식으로 떨어진다(구버전 데이터 호환).
-      potential: () {
-        if (ig.enabled) {
-          final r = rng.nextDouble();
-          final w = pityDue
-              ? [
-                  for (var i = 0; i < ig.gachaGradeWeights.length; i++)
-                    i + 1 >= ig.gachaPityMinPotential
-                        ? ig.gachaGradeWeights[i]
-                        : 0.0,
-                ]
-              : ig.gachaGradeWeights;
-          return IndividualGradeConfig.pickWith(w, r);
-        }
-        final p = cfg.rollGachaPotential(rng.nextDouble());
-        return p > 0
-            ? p.clamp(1, 5)
-            : (1 + (rng.nextDouble() * rng.nextDouble() * 4).floor()).clamp(
-                1,
-                5,
+    final bug =
+        IndividualBug.roll(
+          id: const Uuid().v4(),
+          species: sp,
+          rng: rng,
+          // ⚠️ **여기가 뽑기의 존재 이유다.** 야생 공식은 5성이 수학적으로
+          // 불가능하고 4성도 3.4% 뿐이다(1 + floor(r*r*4) → 1~4). 곤충 자체는
+          // 1분에 한 마리씩 나오므로 등급만 팔아서는 젤리 값이 안 나온다 —
+          // 야생에 없는 것(5성)을 파는 게 유일하게 성립하는 축이다.
+          // 표가 비어 있으면 야생 공식으로 떨어진다(구버전 데이터 호환).
+          potential: () {
+            if (ig.enabled) {
+              // 영웅 이상 천장 + 전설 천장(2026-10-12, 50회) — 난수는 늘 하나(천장이어도 소비).
+              return ig.gachaPotential(
+                rng.nextDouble(),
+                epicPity: pityDue,
+                legendPity: ig.legendPityDue(s.gachaLegendPity),
               );
-      }(),
-      variantChance: cfg.gachaVariantChance,
-    ).copyWith(stage: LifeStage.egg, stageSince: now, fromGacha: ig.enabled);
+            }
+            final p = cfg.rollGachaPotential(rng.nextDouble());
+            return p > 0
+                ? p.clamp(1, 5)
+                : (1 + (rng.nextDouble() * rng.nextDouble() * 4).floor()).clamp(
+                    1,
+                    5,
+                  );
+          }(),
+          variantChance: cfg.gachaVariantChance,
+        ).copyWith(
+          stage: LifeStage.egg,
+          stageSince: now,
+          fromGacha: ig.enabled,
+          newGen: ig.enabled,
+        );
 
     final mats = Map<MaterialKind, int>.from(s.materials);
     mats[MaterialKind.jelly] =
@@ -3289,6 +3292,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
                 : grade.index >= cfg.gachaPityGrade.index)
             ? 0
             : s.gachaPity + 1,
+        // 전설 천장은 전설이 나왔을 때만 되감는다(켜져 있을 때만 센다).
+        gachaLegendPity: !ig.enabled
+            ? s.gachaLegendPity
+            : (bug.potential >= kPotentialMax ? 0 : s.gachaLegendPity + 1),
       ),
     );
     return (bug: bug, error: null);

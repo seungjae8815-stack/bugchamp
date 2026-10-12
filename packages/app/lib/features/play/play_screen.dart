@@ -1795,13 +1795,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             _rng.nextDouble(),
             _rng.nextDouble(),
           );
-          bug = IndividualBug.roll(
-            id: _uuid.v4(),
-            species: sp,
-            rng: _rng,
-            potential: potential.clamp(1, 5),
-            variantChance: _data.petConfig?.variantWildChance ?? 0,
-          ).copyWith(stage: LifeStage.egg, stageSince: _clock.now().toUtc());
+          bug =
+              IndividualBug.roll(
+                id: _uuid.v4(),
+                species: sp,
+                rng: _rng,
+                potential: potential.clamp(1, 5),
+                variantChance: _data.petConfig?.variantWildChance ?? 0,
+              ).copyWith(
+                stage: LifeStage.egg,
+                stageSince: _clock.now().toUtc(),
+                // 개체 등급이 켜진 뒤 생긴 곤충 표식(정수 가치 — essenceOf).
+                newGen: _data.petConfig?.individualGrade.enabled ?? false,
+              );
           // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
           if (sp.grade.index >= Grade.rare.index) {
             AudioService.instance.sfxRare();

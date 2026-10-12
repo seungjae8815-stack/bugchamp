@@ -146,4 +146,39 @@ void main() {
       }
     });
   });
+
+  group('세이브 키(2026-10-12)', () {
+    Map<String, dynamic> base() => {
+      'id': 'a',
+      'speciesId': 'x',
+      'sizeMm': 30,
+      'potential': 3,
+    };
+
+    test('ng·ls 왕복 — ls 는 0 이어도 싣는다, 없으면 키 없음', () {
+      final b = IndividualBug.fromJson({...base(), 'ng': true, 'ls': 0});
+      expect(b.newGen, isTrue);
+      expect(b.legacySynthUps, 0);
+      final j = b.toJson();
+      expect(j['ng'], true);
+      expect(j['ls'], 0);
+      final plain = IndividualBug.fromJson(base()).toJson();
+      expect(plain.containsKey('ng'), isFalse);
+      expect(plain.containsKey('ls'), isFalse);
+    });
+
+    test('롤에 숫자가 아닌 값이 섞이면 던지지 않고 처음 롤로(모르는 값은 무시)', () {
+      final b = IndividualBug.fromJson({
+        ...base(),
+        'rl': [1, 'x', null, 3],
+      });
+      expect(b.rolls, isNull);
+      expect(b.statRolls, IndividualBug.initialRollsOf('a'));
+      expect(IndividualBug.fromJson({...base(), 'rl': 'oops'}).rolls, isNull);
+      expect(
+        IndividualBug.fromJson({...base(), 'ls': 'x'}).legacySynthUps,
+        isNull,
+      );
+    });
+  });
 }
