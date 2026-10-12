@@ -174,12 +174,14 @@ class IndividualGradeConfig {
     );
   }
 
-  /// 등급 올리기 — 칸마다 새 롤 = 0~100 무작위 + 물약 수 × [potionRollBonus](100 상한), **기존 값과 큰 쪽**
-  /// (내려가지 않는다). 칸마다 난수를 한 번씩만 쓴다.
+  /// 등급 올리기 — 칸마다 **기존 값과 새 롤(0~100) 중 큰 쪽에 물약 수 × [potionRollBonus] 를 더한다**(100 상한,
+  /// 내려가지 않는다). 칸마다 난수를 한 번씩만 쓴다.
+  /// 물약 점수를 새 롤에만 더하면(큰 쪽을 고르기 전) 이미 높은 칸에는 효과가 없어, 전설까지 물약 12개를 써도
+  /// 평균 84 → 90점뿐이었다. 사장님께 보인 효과(평균 약 97점 · 물약 없으면 84점, 2026-10-12 확정)는 이 규칙이다.
   List<int> rollUp(List<int> old, math.Random rng, int potions) {
     final bonus = potions.clamp(0, potionMaxPerUse) * potionRollBonus;
     return [
-      for (final v in old) math.max(v, math.min(100, rng.nextInt(101) + bonus)),
+      for (final v in old) math.min(100, math.max(v, rng.nextInt(101)) + bonus),
     ];
   }
 
