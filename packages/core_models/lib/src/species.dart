@@ -104,6 +104,7 @@ class Species {
   /// 개체 등급 개편(2026-10-11)의 **종 능력치 배율**(체력·공격·방어) — 같은 등급이면 종끼리 비슷하게
   /// 싸우도록 리그전으로 맞춘 값(`server/tool/grade_duel_sim.dart --league --fit`). 개체 등급이 켜졌을 때만 쓴다.
   final double gradeScale;
+
   /// 변태 방식 — 단계 이름 표시에만 쓴다(JSON `metamorphosis`, 없으면 완전변태).
   final Metamorphosis metamorphosis;
 
