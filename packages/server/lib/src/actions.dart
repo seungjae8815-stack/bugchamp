@@ -3859,9 +3859,10 @@ class GameActions {
   /// 진행도 랭킹의 심연 값(`profiles.abyss_best`) — **이번 주 지금 깬 층**(2026-10-05 사장님 확정:
   /// 약해져 내려가면 랭킹도 내려간다). 주가 바뀌면 0 부터. 역대 최고(`abyssBest`)는 마일스톤 판정에만 쓴다.
   int abyssRankFloor(SaveGame save) {
-    final week = abyssWeekId(now().toUtc(), config.battle);
-    if (!save.abyssUnlocked || save.abyssWeek != week) return 0;
-    return max(0, save.abyssFloor - 1);
+    return abyssRankFloorOf(
+      save,
+      week: abyssWeekId(now().toUtc(), config.battle),
+    );
   }
 
   /// 진행도 랭킹의 심연 값을 새로 적어야 하면 (적을 값, 표식을 찍은 세이브). 이미 적은 값이면 null.

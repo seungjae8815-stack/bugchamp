@@ -63,7 +63,8 @@ class PvpProfile {
     stageNumber: save.rankProgress.stage,
     difficultyTier: save.rankProgress.tier,
     power: power,
-    abyssBest: save.abyssBest,
+    // 진행도 랭킹의 심연 값 = 이번 주 지금 층(서버가 올리는 값과 같은 함수). 역대 최고가 아니다.
+    abyssBest: abyssRankFloorOf(save),
     avatar: save.avatar,
   );
 

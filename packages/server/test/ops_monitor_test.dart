@@ -24,7 +24,7 @@ void main() {
     expect(sent, isEmpty);
     m.recordResponse('/save', 503, Duration.zero);
     expect(sent.single, contains('서버 오류 급증'));
-    expect(sent.single, contains('/save 20'));
+    expect(sent.single, contains('세이브 자동 저장(60초마다)(/save) 20번'));
     for (var i = 0; i < 30; i++) {
       m.recordResponse('/sync', 500, Duration.zero);
     }
@@ -83,14 +83,33 @@ void main() {
       503,
       Duration.zero,
       method: 'POST',
-      reason: '[admin/user] StateStoreException: load 실패: 400 invalid uuid',
+      reason:
+          '[admin/user] StateStoreException: load 실패: 400 invalid input syntax for type uuid',
     );
     m.recordResponse('/save', 500, Duration.zero, method: 'POST');
     m.recordResponse('/save', 500, Duration.zero, method: 'POST');
     final t = m.summaryText(now)!;
-    expect(t, contains('오류 내역'));
-    expect(t, contains('POST /save 500 ×2'));
-    expect(t, contains('POST /admin/user 503 ×1'));
-    expect(t, contains('invalid uuid'));
+    expect(t, contains('오류 3건'));
+    expect(t, contains('세이브 자동 저장(60초마다) — 2번'));
+    expect(t, contains('운영 패널 · 유저 조회 — 1번'));
+    expect(t, contains('유저 영향: 없음'));
+    expect(t, contains('POST /admin/user 503'));
+  });
+
+  test('오류 설명 — 원문에 따라 무슨 일인지 쉬운 말로', () {
+    final uuid = OpsMonitor.explainError(
+      'POST /admin/user 503',
+      1,
+      'invalid input syntax for type uuid: "x"',
+    );
+    expect(uuid, contains('계정 ID 칸에 닉네임'));
+    final bug = OpsMonitor.explainError(
+      'POST /duel/start 500',
+      2,
+      "TypeError: Null check operator used on a null value",
+    );
+    expect(bug, contains('버그일 가능성'));
+    expect(bug, contains('결투'));
+    expect(bug, contains('유저 영향: 있음'));
   });
 }

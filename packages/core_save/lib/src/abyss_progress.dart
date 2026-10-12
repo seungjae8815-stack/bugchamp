@@ -12,6 +12,15 @@ import 'skill_progress.dart';
 String abyssWeekId(DateTime now, BattleConfig battle) =>
     seasonIdOf(seasonStartAt(now, battle), battle);
 
+/// 진행도 랭킹의 심연 값 — **이번 주 지금 깬 층**(2026-10-05 사장님 확정: 약해져 내려가면 랭킹도 내려간다).
+/// [week] 가 세이브의 주와 다르면(주가 바뀌었는데 아직 안 들어옴) 0. 역대 최고(`abyssBest`)가 아니다 —
+/// 앱의 내 줄이 역대 최고로 그려져 서버 값(0)과 달랐다(2026-10-12 사장님 지적: 내려갔다 왔는데 26층).
+int abyssRankFloorOf(SaveGame save, {String? week}) {
+  if (!save.abyssUnlocked) return 0;
+  if (week != null && save.abyssWeek != week) return 0;
+  return math.max(0, save.abyssFloor - 1);
+}
+
 /// 심연에서 고정되는 난이도(극한 = 표의 마지막).
 int abyssTier(RunConfig run) =>
     run.zoneTiers.isEmpty ? 3 : run.zoneTiers.length - 1;

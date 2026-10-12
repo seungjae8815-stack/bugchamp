@@ -90,9 +90,11 @@ class OpsMonitor {
             (_windowErrorPaths.entries.toList()
                   ..sort((a, b) => b.value.compareTo(a.value)))
                 .take(3)
-                .map((e) => '${e.key} ${e.value}')
+                .map((e) => '${_featureOf(e.key)}(${e.key}) ${e.value}번')
                 .join(' · ');
-        final why = reason == null ? '' : '\n마지막 이유: ${_short(reason)}';
+        final why = reason == null
+            ? ''
+            : '\n마지막 오류: ${_whatHappened(500, reason)}\n원문: ${_short(reason)}';
         _alertOnce(
           'error_burst',
           '🚨 서버 오류 급증\n'
@@ -187,12 +189,9 @@ class OpsMonitor {
     if (_errorCount.isNotEmpty) {
       final errs = _errorCount.entries.toList()
         ..sort((a, c) => c.value.compareTo(a.value));
-      b.writeln('❌ 오류 내역');
+      b.writeln('❌ 오류 ${_errors}건');
       for (final e in errs.take(6)) {
-        final why = _errorReason[e.key];
-        b.writeln(
-          '  ${e.key} ×${e.value}${why == null ? '' : '\n    ${_short(why)}'}',
-        );
+        b.writeln(explainError(e.key, e.value, _errorReason[e.key]));
       }
     }
     if (_clampsByUser.isNotEmpty) {
@@ -224,6 +223,110 @@ class OpsMonitor {
       }
     }
     return b.toString().trimRight();
+  }
+
+  /// 오류 하나를 **사장님이 읽을 수 있는 말**로(2026-10-12 사장님 요청 — `POST /admin/user 503` 과
+  /// 원문 예외만으로는 무엇인지 알 수 없었다). [key] = `방식 경로 상태`.
+  ///
+  /// ```
+  /// • 운영 패널 · 유저 조회 — 1번
+  ///   무슨 일: 계정 ID 칸에 닉네임 같은 다른 값이 들어가 DB가 거절했어요
+  ///   유저 영향: 없음(운영 패널 — 사장님만 씀)
+  ///   (POST /admin/user · 503 · 원문: …)
+  /// ```
+  static String explainError(String key, int count, String? reason) {
+    final parts = key.split(' ');
+    final status = int.tryParse(parts.last) ?? 500;
+    final path = parts.length >= 2 ? parts[parts.length - 2] : key;
+    final feature = _featureOf(path);
+    final what = _whatHappened(status, reason);
+    final impact = _impactOf(path, status);
+    final raw = reason == null ? '' : ' · 원문: ${_short(reason)}';
+    return '• $feature — $count번\n'
+        '  무슨 일: $what\n'
+        '  유저 영향: $impact\n'
+        '  ($key$raw)';
+  }
+
+  /// 경로 → 기능 이름.
+  static String _featureOf(String path) {
+    const names = <String, String>{
+      '/admin/user': '운영 패널 · 유저 조회',
+      '/admin/grant': '운영 패널 · 상품 지급',
+      '/admin/mail': '운영 패널 · 우편 보내기',
+      '/admin': '운영 패널',
+      '/save': '세이브 자동 저장(60초마다)',
+      '/sync': '방치 보상 정산',
+      '/state': '세이브 불러오기',
+      '/session': '기기 접속 확인',
+      '/duel': '결투',
+      '/battle': '옛 결투(구버전 앱)',
+      '/pvp/profile': '상대 프로필 보기',
+      '/pvp': '결투 순위·상대 찾기',
+      '/event': '왕충 선발대회',
+      '/purchase': '결제 지급',
+      '/mail': '우편함',
+      '/notices': '공지',
+      '/support': '문의하기',
+      '/code': '쿠폰 코드',
+      '/abyss': '심연',
+      '/guild': '길드',
+      '/fairy': '요정',
+      '/telegram': '텔레그램 봇',
+      '/version': '앱 버전 확인',
+    };
+    for (final e in names.entries) {
+      if (path == e.key || path.startsWith('${e.key}/')) return e.value;
+    }
+    return '기타 기능';
+  }
+
+  /// 상태·원문 → 무슨 일이 있었나.
+  static String _whatHappened(int status, String? reason) {
+    final r = (reason ?? '').toLowerCase();
+    if (r.contains('invalid input syntax for type uuid')) {
+      return '계정 ID 칸에 닉네임 같은 다른 값이 들어가 DB가 거절했어요';
+    }
+    if (r.contains('timeout') || r.contains('timed out')) {
+      return 'DB(저장소) 응답이 너무 늦어 포기했어요 — 잠깐 몰리면 생겨요';
+    }
+    if (r.contains('socketexception') ||
+        r.contains('connection') ||
+        r.contains('clientexception')) {
+      return 'DB(저장소)와 연결이 잠깐 끊겼어요 — 대개 일시적이에요';
+    }
+    if (r.contains('statestoreexception') || r.contains('postgrest')) {
+      return 'DB(저장소)에 읽기·쓰기를 요청했는데 실패했어요';
+    }
+    if (r.contains('null check') ||
+        r.contains('typeerror') ||
+        r.contains('rangeerror') ||
+        r.contains('formatexception') ||
+        r.contains('nosuchmethod')) {
+      return '서버 코드가 예상 못 한 값을 만나 멈췄어요 — 버그일 가능성이 커요';
+    }
+    return switch (status) {
+      503 => 'DB(저장소)나 외부 서비스에 닿지 못했어요',
+      502 || 504 => '서버가 제때 응답하지 못했어요(시간 초과)',
+      _ => '서버 안에서 처리하다 실패했어요 — 원문을 보고 확인이 필요해요',
+    };
+  }
+
+  /// 유저에게 영향이 있었나.
+  static String _impactOf(String path, int status) {
+    if (path.startsWith('/admin') || path.startsWith('/telegram')) {
+      return '없음(운영 도구 — 사장님만 씀)';
+    }
+    if (path == '/save') {
+      return '거의 없음(60초 뒤 다시 올린다) · 계속 반복되면 그 유저 저장이 막힌 것';
+    }
+    if (path.startsWith('/purchase')) {
+      return '있음 — 결제 지급이 늦어졌을 수 있어요(앱이 다시 시도) · 반복되면 확인 필요';
+    }
+    if (path.startsWith('/duel') || path.startsWith('/event')) {
+      return '있음 — 그 판이 오류로 끝났을 수 있어요(티켓·참가권은 확인 필요)';
+    }
+    return '있음 — 그 기능을 누른 유저에게 오류가 보였어요(다시 누르면 대개 됨)';
   }
 
   /// 이유 한 줄 — 텔레그램이 길게 늘어지지 않게 자른다.
