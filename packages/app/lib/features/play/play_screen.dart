@@ -1790,8 +1790,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         } else if (!save.storageFull) {
           // 채집함이 가득 차면 개체 롤 자체를 건너뛴다 — 굴려서 버리면
           // 연출만 뜨고 실제로는 안 들어와 버그로 보인다.
-          final potential =
-              1 + (_rng.nextDouble() * _rng.nextDouble() * 4).floor();
+          final potential = wildPotentialOf(
+            _data.petConfig,
+            _rng.nextDouble(),
+            _rng.nextDouble(),
+          );
           bug = IndividualBug.roll(
             id: _uuid.v4(),
             species: sp,
@@ -4789,6 +4792,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final got = await ctrl.grantEliteShards();
     // 결투석(오행석 0.2%) — 조각과 같은 처치에서 굴린다.
     if (mounted) _duelStonePops(ctrl.lastDuelStones);
+    // 성장물약(개체 등급 — 정예 0.3%).
+    if (mounted) _potionPop();
     if (!mounted || got.isEmpty) return;
     final l = AppLocalizations.of(context);
     setState(() {
@@ -4895,6 +4900,25 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     });
   }
 
+  /// 성장물약 알림(개체 등급 2026-10-11) — 결투석 알림보다 아래에 작게. 한 번 띄우면 비운다.
+  void _potionPop() {
+    final n = ref.read(saveControllerProvider.notifier).takeLastPotions();
+    if (n <= 0) return;
+    final l = AppLocalizations.of(context);
+    setState(() {
+      _pops.add(
+        _Pop(
+          l.igPotionBought('$n'),
+          0,
+          const Color(0xFF80DEEA),
+          16,
+          baseX: 0.6,
+          baseY: 0.3,
+        ),
+      );
+    });
+  }
+
   /// 결투석 드롭 알림(훈련 v2 §3) — 스킬 조각처럼 몬스터 자리에 작게. 요정 알림보다 아래.
   void _duelStonePops(Map<DuelStone, int> got) {
     if (got.isEmpty) return;
@@ -4927,6 +4951,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final shards = await ctrl.advanceZone();
     // 보스 재처치 결투석(오행 1% · 기질 0.5%).
     if (mounted) _duelStonePops(ctrl.lastDuelStones);
+    // 성장물약(개체 등급 — 보스 첫 처치 확정 · 재처치 확률).
+    if (mounted) _potionPop();
     // 보스 첫 처치 요정 알(+ 속성석) — 조각 알림과 따로 띄운다.
     if (mounted) {
       _fairyDropPops(
@@ -4959,6 +4985,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (!mounted) return;
     // 10층마다 첫 도달 결투석(오행 2 · 기질 1).
     _duelStonePops(ctrl.lastDuelStones);
+    // 성장물약(개체 등급 — 10층마다 첫 도달).
+    _potionPop();
     final l = AppLocalizations.of(context);
     if (r.floor < before) {
       showCenterToast(context, l.abyssWeekReset);
@@ -5766,6 +5794,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         .claimMission(def.id);
     if (got == null || !mounted) return;
     AudioService.instance.sfxMission();
+    // 성장물약(개체 등급 — 그날 첫 미션 1개). 보상 창과 따로 짧게 알린다.
+    final potions = ref.read(saveControllerProvider.notifier).takeLastPotions();
+    if (potions > 0) showCenterToast(context, l.igPotionBought('$potions'));
     if (got.gold <= 0 && got.materials.isEmpty) {
       // 오늘 젤리 한도를 다 쓴 젤리 미션 — 젤리 없이 다음 미션으로 넘어갔다.
       showCenterToast(context, l.missionJellyDoneToday('${def.jellyPerDay}'));
@@ -8010,6 +8041,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         await ctrl.devClearBugs();
                         toast('채집함 초기화');
                       }, danger: true),
+                    ]),
+                    _devSection('개체 등급', [
+                      _devBtn('정수 +200(전 종)·물약 +10', () async {
+                        await ctrl.devGradeKit();
+                        toast('정수·물약 넣음');
+                      }),
                     ]),
                     _devSection('스테이지 (현재 $_stage)', [
                       _devBtn('초기화(1)', () {

@@ -6398,6 +6398,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String igTrainPtHowGrade(String pts) {
+    return '등급이 한 단계 오를 때 → +$pts (등급 올리기)';
+  }
+
+  @override
   String get trainPtNoPoints => '남은 포인트가 없어요 — 수련·돌파·포텐셜로 늘어나요';
 
   @override
@@ -6816,5 +6821,228 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String skillSweepConfirm(String jelly) {
     return '오늘 무료 소탕을 다 썼어요. 젤리 $jelly개로 소탕할까요?';
+  }
+
+  @override
+  String igSpeciesRarity(String grade) {
+    return '종 희귀도 $grade';
+  }
+
+  @override
+  String get igGradeLabel => '등급';
+
+  @override
+  String get igDexMaxGrade => '최고 등급';
+
+  @override
+  String get igQualityTitle => '능력치 품질';
+
+  @override
+  String igQualityAvg(String pct) {
+    return '평균 $pct%';
+  }
+
+  @override
+  String get igQualityHint => '알 때부터 정해져 있어요 · 등급을 올리면 칸마다 다시 굴려 더 좋은 쪽이 남아요';
+
+  @override
+  String get igStatHp => '체력';
+
+  @override
+  String get igStatAtk => '공격';
+
+  @override
+  String get igStatDef => '방어';
+
+  @override
+  String get igStatSpd => '속도';
+
+  @override
+  String get igStatSize => '크기';
+
+  @override
+  String get igStatCrit => '치명';
+
+  @override
+  String get igStatEvade => '회피';
+
+  @override
+  String get igStatRecovery => '회복력';
+
+  @override
+  String get igStatPush => '밀어내기';
+
+  @override
+  String get igToEssence => '정수로 바꾸기';
+
+  @override
+  String get igToEssenceEgg => '알은 부화시켜야 정수로 바꿀 수 있어요';
+
+  @override
+  String get igToEssencePinned => '장착·부화·훈련·잠금 중인 곤충은 바꿀 수 없어요';
+
+  @override
+  String igToEssenceConfirm(String n, String name) {
+    return '$name 정수 $n개를 받아요. 이 곤충은 사라져요.';
+  }
+
+  @override
+  String get igToEssencePotionWarn => '물약으로 키운 능력치가 사라져요';
+
+  @override
+  String igEssenceGot(String name, String n) {
+    return '$name 정수 +$n';
+  }
+
+  @override
+  String get igGradeUp => '등급 올리기';
+
+  @override
+  String igGradeUpDesc(String name, String have, String need) {
+    return '$name 정수 $have / $need';
+  }
+
+  @override
+  String get igGradeUpMax => '최고 등급이에요';
+
+  @override
+  String get igGradeUpEgg => '알은 부화시켜야 등급을 올릴 수 있어요';
+
+  @override
+  String igPotionUse(String n, String have) {
+    return '성장물약 $n개 (보유 $have)';
+  }
+
+  @override
+  String igPotionHint(String step) {
+    return '물약 1개마다 새로 굴리는 능력치의 바닥이 $step점 올라가요. 물약 효과는 전설까지 그대로 남아요.';
+  }
+
+  @override
+  String igGradeUpDone(String grade) {
+    return '$grade 등급이 됐어요!';
+  }
+
+  @override
+  String igGradeUpImproved(String n) {
+    return '좋아진 능력치 $n칸';
+  }
+
+  @override
+  String get igNoEssence => '정수가 부족해요';
+
+  @override
+  String get igGradeFailed => '할 수 없어요';
+
+  @override
+  String get igVaultTitle => '정수 보관함';
+
+  @override
+  String get igVaultButton => '정수';
+
+  @override
+  String get igVaultEmpty => '아직 정수가 없어요. 곤충을 정수로 바꿔 모아요.';
+
+  @override
+  String get igVaultHint => '정수는 같은 종 곤충의 등급을 올릴 때 써요';
+
+  @override
+  String igPotionOwned(String n) {
+    return '성장물약 $n개';
+  }
+
+  @override
+  String get igBulkEssence => '정수로';
+
+  @override
+  String igBulkDone(String n) {
+    return '$n마리를 정수로 바꿨어요';
+  }
+
+  @override
+  String igBulkSkipped(String eggs, String pinned) {
+    return '알 $eggs · 보호 $pinned마리는 건너뛰었어요';
+  }
+
+  @override
+  String get igBulkNone => '정수로 바꿀 곤충이 없어요';
+
+  @override
+  String get igPotionShopTitle => '성장물약';
+
+  @override
+  String igPotionBuy(String n) {
+    return '$n개 사기';
+  }
+
+  @override
+  String igPotionBuyConfirm(String n, String jelly) {
+    return '성장물약 $n개 — 젤리 $jelly개를 써요.';
+  }
+
+  @override
+  String igPotionBought(String n) {
+    return '성장물약 +$n';
+  }
+
+  @override
+  String get igPotionDailyLimit => '오늘은 더 살 수 없어요';
+
+  @override
+  String gachaPityLeftGrade(int n) {
+    return '$n회 안에 영웅 이상 확정';
+  }
+
+  @override
+  String get gachaDescGrade => '희귀 등급 이상 보장 · 이색 확률 10배';
+
+  @override
+  String get eggOddsIndividualHead => '개체 등급';
+
+  @override
+  String get eggOddsSpeciesHead => '종 희귀도 (같은 희귀도 안의 종은 모두 같은 확률)';
+
+  @override
+  String get igFilterTitle => '받을 종 희귀도 고르기';
+
+  @override
+  String igFilterSnack(String grade) {
+    return '종 희귀도 $grade 미만은 자동으로 놓아주고 재료로 바꿔요';
+  }
+
+  @override
+  String get igAutoFilterRarity => '대상 종 희귀도';
+
+  @override
+  String igAutoFilterGrade(String grade) {
+    return '개체 등급 $grade 이하만';
+  }
+
+  @override
+  String igBulkConfirm(String n) {
+    return '$n마리를 정수로 바꿔요. 이 곤충들은 사라져요.';
+  }
+
+  @override
+  String igBulkConfirmTotal(String n) {
+    return '받는 정수 $n개';
+  }
+
+  @override
+  String igBulkPotionWarn(String n) {
+    return '물약으로 키운 곤충 $n마리가 들어 있어요 — 키운 능력치가 사라져요';
+  }
+
+  @override
+  String igBulkDoneGain(String n, String e) {
+    return '$n마리를 정수로 바꿨어요 · 정수 +$e';
+  }
+
+  @override
+  String get igPotionShopDescBase => '등급을 올릴 때 넣으면 새로 굴리는 능력치가 더 좋아져요.';
+
+  @override
+  String igPotionLeftToday(String n) {
+    return '오늘 $n개 더 살 수 있어요';
   }
 }

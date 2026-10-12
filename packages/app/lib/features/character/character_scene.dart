@@ -229,9 +229,11 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
                 id: _uuid.v4(),
                 species: species,
                 rng: _rng,
-                potential:
-                    (1 + (_rng.nextDouble() * _rng.nextDouble() * 4).floor())
-                        .clamp(1, 5),
+                potential: wildPotentialOf(
+                  ref.read(gameDataProvider).value?.petConfig,
+                  _rng.nextDouble(),
+                  _rng.nextDouble(),
+                ),
               ).copyWith(
                 stage: LifeStage.egg,
                 stageSince: ref.read(clockProvider).now().toUtc(),

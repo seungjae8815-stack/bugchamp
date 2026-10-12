@@ -83,20 +83,44 @@ DuelBug duelBugFor(
   final sp = data.species(bug.speciesId);
   final t = _trainOf(bug, data, save);
   return DuelBug.fromBattleBug(
-    battleBugFor(bug, data, save, locale),
-    speciesId: bug.speciesId,
-    sizeMm: bug.sizeMm,
-    specialty: sp.specialty,
-    // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 엔진이 스탯에 구워진 사이즈 배율을 덜어낸다.
-    // 서버 `validateDuelTeam` 과 같은 값이어야 재생·체험이 서버 판과 같다.
-    sizeStatMult: bug.statMultiplier(sp),
-  ).withTraining(
-    evade: t.evade,
-    crit: t.crit,
-    recovery: t.recovery,
-    massMult: t.massMult,
-    pushMult: t.pushMult,
-    tech: t.tech,
-    grit: t.grit,
-  );
+        battleBugFor(bug, data, save, locale),
+        speciesId: bug.speciesId,
+        sizeMm: bug.sizeMm,
+        specialty: sp.specialty,
+        // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 엔진이 스탯에 구워진 사이즈 배율을 덜어낸다.
+        // 서버 `validateDuelTeam` 과 같은 값이어야 재생·체험이 서버 판과 같다.
+        sizeStatMult: bug.statMultiplier(sp),
+      )
+      .withTraining(
+        evade: t.evade,
+        crit: t.crit,
+        recovery: t.recovery,
+        massMult: t.massMult,
+        pushMult: t.pushMult,
+        tech: t.tech,
+        grit: t.grit,
+      )
+      .withGradeMods(data.petConfig?.individualGrade, bug, sp);
+}
+
+/// 개체 등급 보정(2026-10-11) — 서버 `validateDuelTeam` 과 같은 [IndividualGradeConfig.battleMods].
+extension on DuelBug {
+  DuelBug withGradeMods(
+    IndividualGradeConfig? cfg,
+    IndividualBug bug,
+    Species sp,
+  ) {
+    if (cfg == null) return this;
+    final m = cfg.battleMods(bug, sp);
+    return withTraining(
+      hpMult: m.hp,
+      atkMult: m.atk,
+      defMult: m.def,
+      spdMult: m.spd,
+      crit: m.crit,
+      evade: m.evade,
+      recovery: m.recovery,
+      pushMult: m.push,
+    );
+  }
 }

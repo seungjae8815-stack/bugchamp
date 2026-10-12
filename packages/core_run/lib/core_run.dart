@@ -26,6 +26,7 @@ export 'src/enhance_config.dart';
 export 'src/enums.dart';
 export 'src/equipment_stats.dart';
 export 'src/forge_config.dart';
+export 'src/individual_grade_config.dart';
 export 'src/item_config.dart';
 export 'src/iap_config.dart';
 export 'src/mission_config.dart';

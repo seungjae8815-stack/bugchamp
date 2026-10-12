@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:server/src/actions.dart';
 import 'package:server/src/duel_session.dart';
@@ -11,10 +14,55 @@ final t0 = DateTime.utc(2026, 9, 28, 12);
 void main() {
   late GameConfig cfg;
   late GameActions actions;
+  // 이 파일의 수치 기대값은 훈련·강화 규칙만 본다 — 개체 등급 보정(켜면 곱해진다)은 끈 설정으로 잰다.
+  // 등급 보정 자체는 아래 '개체 등급' 테스트와 core_run individual_grade_test 가 본다.
+  late PetConfig pet;
+  late PetConfig petGradeOn;
 
   setUpAll(() async {
     cfg = await GameConfig.load(dir: '../app/assets/data');
     actions = GameActions(config: cfg, now: () => t0);
+    final raw =
+        jsonDecode(File('../app/assets/data/pets.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final grade = Map<String, dynamic>.from(raw['individualGrade'] as Map);
+    pet = PetConfig.fromJson({
+      ...raw,
+      'individualGrade': {...grade, 'enabled': false},
+    });
+    petGradeOn = PetConfig.fromJson({
+      ...raw,
+      'individualGrade': {...grade, 'enabled': true},
+    });
+  });
+
+  test('개체 등급 — 켜면 편성 검증이 등급 배율을 입힌다(일반 = 전설의 1/1.52)', () {
+    IndividualBug b(String id, int pot) => IndividualBug(
+      id: id,
+      speciesId: 'stag_giant',
+      sizeMm: 60,
+      potential: pot,
+      temperament: Temperament.aggressive,
+      sex: Sex.male,
+      element: Element.wood,
+      stage: LifeStage.adult,
+      stageSince: t0.subtract(const Duration(days: 30)),
+    );
+    final s = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(bugs: [b('x', 1), b('y', 5), b('z', 5)], lastSeen: t0);
+    DuelBug first(PetConfig pc) => actions
+        .validateDuelTeam(
+          s,
+          ['x', 'y', 'z'],
+          speciesById: cfg.speciesById,
+          petConfig: pc,
+        )
+        .team
+        .first;
+    final off = first(pet);
+    final on = first(petGradeOn);
+    expect(on.atk, lessThan(off.atk), reason: '켜면 일반 등급은 전설 기준보다 약하다');
   });
 
   IndividualBug adult(String id, String sp, {double size = 60}) =>
@@ -49,7 +97,7 @@ void main() {
         s,
         ids,
         speciesById: cfg.speciesById,
-        petConfig: cfg.pet,
+        petConfig: pet,
         enhance: cfg.enhance,
       );
       expect(ok.error, isNull);
@@ -62,12 +110,7 @@ void main() {
       expect(ok.team.first.specialty, Specialty.grip);
 
       String? err(List<String> t) => actions
-          .validateDuelTeam(
-            s,
-            t,
-            speciesById: cfg.speciesById,
-            petConfig: cfg.pet,
-          )
+          .validateDuelTeam(s, t, speciesById: cfg.speciesById, petConfig: pet)
           .error;
       expect(err(['b1', 'b2']), 'team_size');
       expect(err(['b1', 'b1', 'b2']), 'duplicate_bug');
@@ -81,7 +124,7 @@ void main() {
             s,
             ids,
             speciesById: cfg.speciesById,
-            petConfig: cfg.pet,
+            petConfig: pet,
             enhance: cfg.enhance,
           )
           .team
@@ -162,7 +205,7 @@ void main() {
             s,
             ids,
             speciesById: cfg.speciesById,
-            petConfig: cfg.pet,
+            petConfig: pet,
           )
           .error;
       expect(err(busy), 'bug_training');
@@ -207,7 +250,7 @@ void main() {
             x,
             ids,
             speciesById: cfg.speciesById,
-            petConfig: cfg.pet,
+            petConfig: pet,
             enhance: cfg.enhance,
           )
           .team
@@ -243,7 +286,7 @@ void main() {
       final team = actions.defenderDuelTeam(
         opp,
         speciesById: cfg.speciesById,
-        petConfig: cfg.pet,
+        petConfig: pet,
         enhance: cfg.enhance,
       );
       expect(team!.map((b) => b.id), ['b3', 'b1', 'b2']);
@@ -252,7 +295,7 @@ void main() {
         actions.defenderDuelTeam(
           myBase(),
           speciesById: cfg.speciesById,
-          petConfig: cfg.pet,
+          petConfig: pet,
         ),
         isNull,
       );
@@ -270,7 +313,7 @@ void main() {
         myTeamBugIds: ids,
         rewardMult: 1.0,
         speciesById: cfg.speciesById,
-        petConfig: cfg.pet,
+        petConfig: pet,
         winPoints: winPoints,
       );
       expect(r.isOk, isTrue, reason: r.error);
@@ -307,7 +350,7 @@ void main() {
           session,
           launch: 0.8,
           speciesById: cfg.speciesById,
-          petConfig: cfg.pet,
+          petConfig: pet,
           enhance: cfg.enhance,
         );
         expect(r.result.isOk, isTrue, reason: r.result.error);
@@ -356,7 +399,7 @@ void main() {
           session!,
           launch: 0.8,
           speciesById: cfg.speciesById,
-          petConfig: cfg.pet,
+          petConfig: pet,
           enhance: cfg.enhance,
         );
         expect(r.result.isOk, isTrue, reason: r.result.error);
@@ -381,7 +424,7 @@ void main() {
         session,
         launch: 0.5,
         speciesById: cfg.speciesById,
-        petConfig: cfg.pet,
+        petConfig: pet,
       );
       expect(again.result.error, 'session_finished');
     });
@@ -397,7 +440,7 @@ void main() {
           session!,
           launch: 0.5,
           speciesById: cfg.speciesById,
-          petConfig: cfg.pet,
+          petConfig: pet,
         );
         save = r.result.save!;
         session = r.session;
@@ -437,7 +480,7 @@ void main() {
                     st.session,
                     launch: 0.42,
                     speciesById: cfg.speciesById,
-                    petConfig: cfg.pet,
+                    petConfig: pet,
                     enhance: cfg.enhance,
                   )
                   .result

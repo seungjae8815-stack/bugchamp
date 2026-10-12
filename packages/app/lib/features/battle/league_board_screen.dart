@@ -1089,6 +1089,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                           ? null
                           : bugView(skinOf, bugs[b.id]!),
                       variant: isVariant(b.id),
+                      bug: bugs[b.id],
                     ),
                     child: _profileBug(
                       l,

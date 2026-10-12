@@ -21,7 +21,9 @@ import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../battle/training_screen.dart';
+import '../../ui/bug_grade.dart';
 import 'dex_screen.dart';
+import 'grade_panel.dart';
 import '../../ui/colors.dart';
 
 const _honey = kHoney;
@@ -236,12 +238,20 @@ class StorageScreen extends ConsumerWidget {
             onTap: () => _showBugFilter(context, ref, l),
           ),
           const Spacer(),
-          _toolButton(
-            label: l.autoSynthTitle,
-            asset: 'assets/images/ui/auto_synth.webp',
-            fallbackIcon: Icons.auto_awesome_motion_outlined,
-            onTap: () => _runAutoSynth(context, ref, data, l),
-          ),
+          // 개체 등급이 켜지면 합성(같은 종 3마리 → +1)은 등급 올리기로 바뀐다 — 그 자리에 정수 보관함.
+          if (individualGradeOn(data))
+            _toolButton(
+              label: l.igVaultButton,
+              fallbackIcon: Icons.blur_on_rounded,
+              onTap: () => showEssenceVault(context, ref, data),
+            )
+          else
+            _toolButton(
+              label: l.autoSynthTitle,
+              asset: 'assets/images/ui/auto_synth.webp',
+              fallbackIcon: Icons.auto_awesome_motion_outlined,
+              onTap: () => _runAutoSynth(context, ref, data, l),
+            ),
           const SizedBox(width: 8),
           _toolButton(
             label: l.autoReleaseTitle,
@@ -337,11 +347,17 @@ class StorageScreen extends ConsumerWidget {
     AppLocalizations l,
   ) => showGameDialog<void>(
     ctx,
-    title: l.storageFilterTitle,
+    title: individualGradeOn(ref.read(gameDataProvider).requireValue)
+        ? l.igFilterTitle
+        : l.storageFilterTitle,
     iconWidget: dialogIcon('filter'),
     content: Consumer(
       builder: (context, r, _) {
         final save = r.watch(saveControllerProvider).requireValue;
+        // 개체 등급이 켜지면 이 필터가 보는 것은 **종 희귀도**라고 적는다.
+        final rarityWord = individualGradeOn(
+          r.read(gameDataProvider).requireValue,
+        );
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,6 +384,8 @@ class StorageScreen extends ConsumerWidget {
             Text(
               save.bugFilterMinGrade == Grade.common
                   ? l.storageFilterAll
+                  : rarityWord
+                  ? l.igFilterSnack(gradeLabel(l, save.bugFilterMinGrade))
                   : l.storageFilterSnack(gradeLabel(l, save.bugFilterMinGrade)),
               style: const TextStyle(
                 color: Color(0x99FFFFFF),
@@ -471,7 +489,9 @@ class StorageScreen extends ConsumerWidget {
     AppLocalizations l,
   ) async {
     final ctrl = ref.read(saveControllerProvider.notifier);
-    final ok = await showGameDialog<bool>(
+    final gradeOn = individualGradeOn(data);
+    // 개체 등급이 켜지면 같은 대상을 **정수로** 바꾸는 버튼이 하나 더 붙는다(분해 = 재료, 정수 = 등급 올리기).
+    final ok = await showGameDialog<Object>(
       ctx,
       title: l.autoReleaseTitle,
       iconWidget: dialogAsset('assets/images/ui/auto_release.webp'),
@@ -493,9 +513,24 @@ class StorageScreen extends ConsumerWidget {
       ),
       actions: [
         gameDialogButton(l.actionClose, () => Navigator.pop(ctx, false)),
+        if (gradeOn)
+          gameDialogButton(
+            l.igBulkEssence,
+            () => Navigator.pop(ctx, 'essence'),
+            primary: false,
+          ),
         gameDialogButton(l.autoReleaseRun, () => Navigator.pop(ctx, true)),
       ],
     );
+    if (ok == 'essence') {
+      final p = await ctrl.autoRelease(
+        dryRun: true,
+        filter: ref.read(autoReleaseFilterProvider),
+      );
+      if (!ctx.mounted) return;
+      await convertBulkToEssence(ctx, ref, data, p.consumed);
+      return;
+    }
     if (ok != true) return;
     final done = await ctrl.autoRelease(
       filter: ref.read(autoReleaseFilterProvider),
@@ -542,7 +577,7 @@ class StorageScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            l.autoFilterGrades,
+            individualGradeOn(data) ? l.igAutoFilterRarity : l.autoFilterGrades,
             style: const TextStyle(
               color: _honey,
               fontSize: 11.5,
@@ -566,7 +601,11 @@ class StorageScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            l.autoFilterPotential(filter.maxPotential),
+            individualGradeOn(data)
+                ? l.igAutoFilterGrade(
+                    gradeLabel(l, gradeOfPotential(filter.maxPotential)),
+                  )
+                : l.autoFilterPotential(filter.maxPotential),
             style: const TextStyle(
               color: _honey,
               fontSize: 11.5,
@@ -579,8 +618,12 @@ class StorageScreen extends ConsumerWidget {
             children: [
               for (var p = 1; p <= 5; p++)
                 _gradeChip(
-                  label: '$p★',
-                  color: _honey,
+                  label: individualGradeOn(data)
+                      ? gradeLabel(l, gradeOfPotential(p))
+                      : '$p★',
+                  color: individualGradeOn(data)
+                      ? gradeColor(gradeOfPotential(p))
+                      : _honey,
                   selected: filter.maxPotential == p,
                   onTap: () => r
                       .read(filterProvider.notifier)
@@ -1221,7 +1264,9 @@ class StorageScreen extends ConsumerWidget {
             color: const Color(0x22000000),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: gradeColor(sp.grade).withValues(alpha: 0.7),
+              color: gradeColor(
+                shownGrade(data, bug, sp),
+              ).withValues(alpha: 0.7),
               width: 1.4,
             ),
           ),
@@ -1241,14 +1286,19 @@ class StorageScreen extends ConsumerWidget {
                     size: 60,
                     fallback: bugAvatar(sp, size: 50),
                   ),
-                  Positioned(
-                    left: -6,
-                    top: -4,
-                    child: _eggBadge(
-                      gradeLabel(AppLocalizations.of(ctx), sp.grade),
-                      gradeColor(sp.grade),
+                  // 켜지면 아래 줄 이름표가 이미 개체 등급이다(두 번 보이지 않게).
+                  if (!individualGradeOn(data))
+                    Positioned(
+                      left: -6,
+                      top: -4,
+                      child: _eggBadge(
+                        gradeLabel(
+                          AppLocalizations.of(ctx),
+                          shownGrade(data, bug, sp),
+                        ),
+                        gradeColor(shownGrade(data, bug, sp)),
+                      ),
                     ),
-                  ),
                   if (waiting)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -1292,7 +1342,7 @@ class StorageScreen extends ConsumerWidget {
                 children: [
                   sexArt(bug.sex, size: 12),
                   const SizedBox(width: 3),
-                  _stars(bug.potential, 9),
+                  _potentialMark(ctx, data, bug.potential, 9),
                 ],
               ),
               // 오행·특성은 이제 **상속되는 값**이라(§2.5) 짝을 고르는 기준이다.
@@ -2044,7 +2094,9 @@ class StorageScreen extends ConsumerWidget {
               // 일반 알을 먼저 돌려 버린다.
               color: variant
                   ? kHoney
-                  : gradeColor(sp.grade).withValues(alpha: 0.7),
+                  : gradeColor(
+                      shownGrade(data, bug, sp),
+                    ).withValues(alpha: 0.7),
               width: variant ? 1.8 : 1,
             ),
           ),
@@ -2081,14 +2133,16 @@ class StorageScreen extends ConsumerWidget {
                       child: _eggBadge(l.dexVariant, const Color(0xFFE0A020)),
                     ),
                   // 등급 — 테두리 색만으로는 구분이 어렵다.
-                  Positioned(
-                    left: -4,
-                    top: -2,
-                    child: _eggBadge(
-                      gradeLabel(l, sp.grade),
-                      gradeColor(sp.grade),
+                  // 켜지면 아래 줄 이름표가 이미 개체 등급이다(두 번 보이지 않게).
+                  if (!individualGradeOn(data))
+                    Positioned(
+                      left: -4,
+                      top: -2,
+                      child: _eggBadge(
+                        gradeLabel(l, shownGrade(data, bug, sp)),
+                        gradeColor(shownGrade(data, bug, sp)),
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -2105,19 +2159,23 @@ class StorageScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    size: 11,
-                    color: Color(0xFFFFE24A),
-                  ),
-                  Text(
-                    '${bug.potential}',
-                    style: const TextStyle(
+                  if (individualGradeOn(data))
+                    individualGradeTag(l, bug.potential, fontSize: 8.5)
+                  else ...[
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 11,
                       color: Color(0xFFFFE24A),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
                     ),
-                  ),
+                    Text(
+                      '${bug.potential}',
+                      style: const TextStyle(
+                        color: Color(0xFFFFE24A),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: 5),
                   elementIcon(bug.element, size: 11),
                 ],
@@ -2179,7 +2237,16 @@ class StorageScreen extends ConsumerWidget {
             spacing: 4,
             runSpacing: 3,
             children: [
-              _eggBadge(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
+              _eggBadge(
+                gradeLabel(l, shownGrade(data, bug, sp)),
+                gradeColor(shownGrade(data, bug, sp)),
+              ),
+              // 켜지면 종 희귀도를 작게 덧붙인다(부화·짝짓기 시간은 종 기준).
+              if (individualGradeOn(data))
+                _eggBadge(
+                  l.igSpeciesRarity(gradeLabel(l, sp.grade)),
+                  gradeColor(sp.grade).withValues(alpha: 0.7),
+                ),
               if (!bug.trait.isNone)
                 _eggBadge(traitLabel(l, bug.trait), traitColor(bug.trait)),
               if (bug.variant != BugVariant.none)
@@ -2188,8 +2255,11 @@ class StorageScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           row(
-            l.bugInfoPotential,
-            val('★' * bug.potential, const Color(0xFFFFC928)),
+            individualGradeOn(data) ? l.igGradeLabel : l.bugInfoPotential,
+            val(
+              potentialText(l, bug.potential, individualGradeOn(data)),
+              potentialColor(bug.potential, individualGradeOn(data)),
+            ),
           ),
           row(
             l.bugInfoSex,
@@ -2352,7 +2422,11 @@ class StorageScreen extends ConsumerWidget {
     return GestureDetector(
       onTap: () => _showBugDetail(context, ref, data, bug.id),
       child: Container(
-        decoration: _gradeFrame(species.grade, equipped: equipped),
+        // 개체 등급이 켜지면 테두리도 개체 등급(종 희귀도는 상세에 작게).
+        decoration: _gradeFrame(
+          individualGradeOn(data) ? bug.individualGrade : species.grade,
+          equipped: equipped,
+        ),
         foregroundDecoration: injured
             ? BoxDecoration(
                 // 회색조 + 어둡게 = "지금은 쓸 수 없다"가 한눈에 읽힌다.
@@ -2503,7 +2577,7 @@ class StorageScreen extends ConsumerWidget {
                     sexArt(bug.sex, size: 10),
                     const SizedBox(width: 3),
                   ],
-                  _stars(bug.potential, 8.5),
+                  _potentialMark(context, data, bug.potential, 8.5),
                 ],
               ),
             ),
@@ -2512,6 +2586,20 @@ class StorageScreen extends ConsumerWidget {
       ),
     );
   }
+
+  /// 포텐셜 표시 — 개체 등급이 켜지면 등급 이름표, 꺼지면 예전 별.
+  Widget _potentialMark(
+    BuildContext context,
+    GameData data,
+    int potential,
+    double size,
+  ) => individualGradeOn(data)
+      ? individualGradeTag(
+          AppLocalizations.of(context),
+          potential,
+          fontSize: size,
+        )
+      : _stars(potential, size);
 
   Widget _stars(int n, double size) => Row(
     mainAxisAlignment: MainAxisAlignment.center,
@@ -2695,7 +2783,7 @@ class StorageScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0x33FFFFFF)),
                 )
-              : _gradeFrame(species!.grade, equipped: true),
+              : _gradeFrame(shownGrade(data, bug, species!), equipped: true),
           child: bug == null
               ? const Center(
                   child: Icon(
@@ -2748,7 +2836,7 @@ class StorageScreen extends ConsumerWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6, top: 1),
-                      child: _stars(bug.potential, 11),
+                      child: _potentialMark(context, data, bug.potential, 11),
                     ),
                   ],
                 ),
@@ -2921,6 +3009,8 @@ class StorageScreen extends ConsumerWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      // 내용이 길면(성충·품질 카드) 시트 맨 위가 상태 표시줄 밑으로 들어갔다 — 위쪽 안전 영역을 지킨다.
+      useSafeArea: true,
       backgroundColor: const Color(0xF2141F0E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -2940,6 +3030,9 @@ class StorageScreen extends ConsumerWidget {
                 ? bug.stage
                 : effectiveStage(bug.stage, bug.stageSince, now, petCfg);
             final equipped = save.isEquipped(bug.id);
+            // 개체 등급(2026-10-11) — 켜지면 등급 이름·테두리는 개체 등급, 종 등급은 "종 희귀도"로 작게.
+            final gradeOn = individualGradeOn(data);
+            final shownGrade = gradeOn ? bug.individualGrade : species.grade;
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
               child: Column(
@@ -2953,7 +3046,7 @@ class StorageScreen extends ConsumerWidget {
                         width: 62,
                         height: 62,
                         padding: const EdgeInsets.all(4),
-                        decoration: _gradeFrame(species.grade),
+                        decoration: _gradeFrame(shownGrade),
                         child: bugStageImage(
                           bug.speciesId,
                           effStage,
@@ -2979,9 +3072,9 @@ class StorageScreen extends ConsumerWidget {
                             Row(
                               children: [
                                 Text(
-                                  gradeLabel(l, species.grade),
+                                  gradeLabel(l, shownGrade),
                                   style: TextStyle(
-                                    color: _gradeBright(species.grade),
+                                    color: _gradeBright(shownGrade),
                                     fontWeight: FontWeight.w800,
                                     fontSize: 12,
                                   ),
@@ -2998,7 +3091,19 @@ class StorageScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: 2),
-                            _stars(bug.potential, 13),
+                            if (gradeOn)
+                              Text(
+                                l.igSpeciesRarity(gradeLabel(l, species.grade)),
+                                style: TextStyle(
+                                  color: gradeColor(
+                                    species.grade,
+                                  ).withValues(alpha: 0.9),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            else
+                              _potentialMark(ctx, data, bug.potential, 13),
                             // 혈통 특성(§2.5) — 짝짓기 자식만 가진다.
                             // 야생 개체와 구분되는 유일한 표식이라 이름 바로
                             // 아래, 포텐셜과 같은 줄 높이에 둔다.
@@ -3042,6 +3147,10 @@ class StorageScreen extends ConsumerWidget {
                     bug,
                     trainLv: trainedPointsOf(save, bug.id),
                   ),
+                  if (gradeOn) ...[
+                    const SizedBox(height: 6),
+                    gradeQualityCard(l, species, bug),
+                  ],
                   const SizedBox(height: 6),
                   if (petCfg != null)
                     _injuryCard(ctx, r, petCfg, save, bug, now),
@@ -3070,7 +3179,11 @@ class StorageScreen extends ConsumerWidget {
                     const SizedBox(height: 6),
                     _evolveRow(ctx, r, petCfg, save, bug, effStage, now),
                   ],
-                  if (petCfg != null) ...[
+                  // 개체 등급이 켜지면 합성은 등급 올리기·정수로 바뀐다.
+                  if (petCfg != null && gradeOn) ...[
+                    const SizedBox(height: 6),
+                    gradeActionsCard(ctx, r, data, save, bug),
+                  ] else if (petCfg != null) ...[
                     const SizedBox(height: 6),
                     _synthRow(ctx, r, petCfg, save, bug),
                   ],
@@ -3371,7 +3484,8 @@ class StorageScreen extends ConsumerWidget {
     // 여기만 `petStatOf` 를 안 쓴다 — 호출부가 **이미 해석한 단계**를 넘기므로
     // (다시 계산하면 같은 화면 안에서 한 프레임 어긋날 수 있다) 단계만 갈아끼운다.
     final c = petContribution((
-      grade: sp.grade,
+      // `petStatOf` 와 같은 규칙 — 켜지면 개체 등급이 기여 비율을 정한다.
+      grade: cfg.individualGrade.enabled ? bug.individualGrade : sp.grade,
       sizeMult: bug.statMultiplier(sp),
       potential: bug.potential,
       enhanceTotal: 0, // 훈련 v2 — 부위 강화는 trainMult(훈련 포인트)로 이전

@@ -11,6 +11,7 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/fairy_art.dart';
 import '../../ui/format.dart';
 import '../../ui/labels.dart';
@@ -109,7 +110,13 @@ class _StoreSection extends ConsumerWidget {
         }
         // 젤리 소비처(뽑기·교환소)를 상품보다 **위**에 둔다 — 젤리를 이미
         // 가진 사람이 쓸 곳을 먼저 봐야, 젤리가 남아서 안 사는 상태가 끊긴다.
-        if (j == 0) return const _GachaCard();
+        if (j == 0) {
+          // 개체 등급이 켜지면 성장물약(등급 올리기 재료)을 뽑기 바로 아래에.
+          if (!individualGradeOn(data)) return const _GachaCard();
+          return const Column(
+            children: [_GachaCard(), SizedBox(height: 8), _PotionCard()],
+          );
+        }
         if (j == 1) return const _ExchangeCard();
         final idx = j - 2;
         if (idx == products.length) return _restoreRow(context, ref, l);
@@ -483,6 +490,8 @@ class _GachaCard extends ConsumerWidget {
     final toPity = cfg.gachaEpicPity <= 0
         ? 0
         : cfg.gachaEpicPity - save.gachaPity;
+    // 개체 등급(2026-10-11) — 뽑기는 희귀 이상 개체, 천장은 영웅 이상 개체.
+    final gradeOn = cfg.individualGrade.enabled;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -535,7 +544,7 @@ class _GachaCard extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            l.gachaDesc,
+            gradeOn ? l.gachaDescGrade : l.gachaDesc,
             style: const TextStyle(
               color: Color(0xB3FFFFFF),
               fontSize: 11.5,
@@ -545,7 +554,7 @@ class _GachaCard extends ConsumerWidget {
           if (toPity > 0) ...[
             const SizedBox(height: 4),
             Text(
-              l.gachaPityLeft(toPity),
+              gradeOn ? l.gachaPityLeftGrade(toPity) : l.gachaPityLeft(toPity),
               style: const TextStyle(
                 color: Color(0xFFE9A6FF),
                 fontSize: 11,
@@ -646,17 +655,40 @@ class _GachaCard extends ConsumerWidget {
           Text(
             sp.name.resolve(locale),
             style: TextStyle(
-              color: gradeColor(sp.grade),
+              color: gradeColor(shownGrade(data, bug, sp)),
               fontWeight: FontWeight.w900,
               fontSize: 16,
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            '${gradeLabel(l, sp.grade)} · ${bug.potential}★'
-            '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
-            style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 12.5),
-          ),
+          if (cfg.individualGrade.enabled)
+            // 개체 등급이 주인공 — 등급 이름을 그 색으로, 종 희귀도는 옆에 작게.
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: gradeLabel(l, bug.individualGrade),
+                    style: TextStyle(
+                      color: gradeColor(bug.individualGrade),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                  ),
+                  TextSpan(
+                    text:
+                        ' · ${l.igSpeciesRarity(gradeLabel(l, sp.grade))}'
+                        '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
+                  ),
+                ],
+              ),
+              style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 12.5),
+            )
+          else
+            Text(
+              '${gradeLabel(l, sp.grade)} · ${bug.potential}★'
+              '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
+              style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 12.5),
+            ),
           const SizedBox(height: 6),
           Text(
             l.gachaResultHint,
@@ -667,6 +699,140 @@ class _GachaCard extends ConsumerWidget {
       ),
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );
+  }
+}
+
+/// 성장물약 구매(개체 등급 2026-10-11 — §2.8 예외, 사장님 확정). 젤리 `potionJelly` 개씩 · 하루 상한.
+class _PotionCard extends ConsumerWidget {
+  const _PotionCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).requireValue.petConfig;
+    if (cfg == null || !cfg.individualGrade.enabled) {
+      return const SizedBox.shrink();
+    }
+    final ig = cfg.individualGrade;
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final left = ctrl.growthPotionsLeftToday();
+    final jellyHave = save.materialCount(MaterialKind.jelly);
+    // "최대" = 오늘 남은 수와 가진 젤리로 살 수 있는 수 중 작은 쪽(최소 1 — 모자라면 확인 창이 상점 안내).
+    final affordable = ig.potionJelly <= 0 ? left : jellyHave ~/ ig.potionJelly;
+    final maxN = math.max(1, math.min(left, affordable));
+
+    Widget buyBtn(int n, {bool primary = false}) => Expanded(
+      child: FilledButton(
+        onPressed: left <= 0 ? null : () => _buy(context, ref, l, ig, n),
+        style: FilledButton.styleFrom(
+          backgroundColor: primary
+              ? const Color(0xFF2E8C9A)
+              : const Color(0xFF3B5D63),
+          minimumSize: const Size(0, 38),
+        ),
+        child: jellyPrice(cost: n * ig.potionJelly, label: l.igPotionBuy('$n')),
+      ),
+    );
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0x22000000),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x6680DEEA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🧪', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(
+                l.igPotionShopTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                l.igPotionOwned('${save.growthPotions}'),
+                style: const TextStyle(
+                  color: Color(0xFFB2EBF2),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            // 남은 수가 0 이면 이 줄에선 빼고 아래 "오늘은 더 살 수 없어요"만 보인다.
+            left > 0
+                ? '${l.igPotionShopDescBase} ${l.igPotionLeftToday('$left')}'
+                : l.igPotionShopDescBase,
+            style: const TextStyle(
+              color: Color(0xB3FFFFFF),
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (left <= 0)
+            Text(
+              l.igPotionDailyLimit,
+              style: const TextStyle(
+                color: Color(0xFFFF8A65),
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            )
+          else
+            Row(
+              children: [
+                buyBtn(1),
+                if (maxN > 1) ...[
+                  const SizedBox(width: 8),
+                  buyBtn(maxN, primary: true),
+                ],
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _buy(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l,
+    IndividualGradeConfig ig,
+    int n,
+  ) async {
+    final jelly = n * ig.potionJelly;
+    if (!await confirmJellySpend(
+      context,
+      title: l.igPotionShopTitle,
+      body: l.igPotionBuyConfirm('$n', '$jelly'),
+      jelly: jelly,
+      actionLabel: l.igPotionBuy('$n'),
+    )) {
+      return;
+    }
+    if (!context.mounted) return;
+    final r = await ref
+        .read(saveControllerProvider.notifier)
+        .buyGrowthPotions(n);
+    if (!context.mounted) return;
+    showCenterToast(context, switch (r.error) {
+      null => l.igPotionBought('$n'),
+      'daily_limit' => l.igPotionDailyLimit,
+      'no_jelly' => l.notEnoughJelly,
+      _ => l.igGradeFailed,
+    });
   }
 }
 
@@ -1233,6 +1399,8 @@ void _showEggOdds(
     0,
     (a, b) => a + b,
   );
+  final ig = cfg.individualGrade;
+  final igTotal = ig.gachaGradeWeights.fold<double>(0, (a, b) => a + b);
   int speciesOf(Grade g) =>
       data.allSpecies.where((s) => s.grade == g).length.clamp(1, 999);
   const head = TextStyle(
@@ -1252,7 +1420,10 @@ void _showEggOdds(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l.eggOddsGradeHead, style: head),
+            Text(
+              ig.enabled ? l.eggOddsSpeciesHead : l.eggOddsGradeHead,
+              style: head,
+            ),
             const SizedBox(height: 4),
             for (final g in Grade.values.reversed)
               if ((cfg.gachaWeights[g] ?? 0) > 0 && gTotal > 0)
@@ -1265,21 +1436,41 @@ void _showEggOdds(
                   style: body.copyWith(color: gradeColor(g)),
                 ),
             const SizedBox(height: 10),
-            Text(l.eggOddsPotentialHead, style: head),
-            const SizedBox(height: 4),
-            for (final e in cfg.gachaPotentialWeights.entries)
-              if (e.value > 0 && pTotal > 0)
-                Text(
-                  '${'★' * e.key}  ${pct(e.value / pTotal)}%',
-                  style: body.copyWith(color: const Color(0xFFFFC928)),
-                ),
+            if (ig.enabled) ...[
+              // 개체 등급(2026-10-11) — 포텐셜 대신 등급(희귀 70% · 영웅 27% · 전설 3%).
+              Text(l.eggOddsIndividualHead, style: head),
+              const SizedBox(height: 4),
+              for (var i = ig.gachaGradeWeights.length - 1; i >= 0; i--)
+                if (ig.gachaGradeWeights[i] > 0 && igTotal > 0)
+                  Text(
+                    '${gradeLabel(l, gradeOfPotential(i + 1))}  '
+                    '${pct(ig.gachaGradeWeights[i] / igTotal)}%',
+                    style: body.copyWith(
+                      color: gradeColor(gradeOfPotential(i + 1)),
+                    ),
+                  ),
+            ] else ...[
+              Text(l.eggOddsPotentialHead, style: head),
+              const SizedBox(height: 4),
+              for (final e in cfg.gachaPotentialWeights.entries)
+                if (e.value > 0 && pTotal > 0)
+                  Text(
+                    '${'★' * e.key}  ${pct(e.value / pTotal)}%',
+                    style: body.copyWith(color: const Color(0xFFFFC928)),
+                  ),
+            ],
             const SizedBox(height: 10),
             Text(l.eggOddsVariant(pct(cfg.gachaVariantChance)), style: body),
             if (cfg.gachaEpicPity > 0)
               Text(
                 l.eggOddsPity(
                   '${cfg.gachaEpicPity}',
-                  gradeLabel(l, cfg.gachaPityGrade),
+                  ig.enabled
+                      ? gradeLabel(
+                          l,
+                          gradeOfPotential(ig.gachaPityMinPotential),
+                        )
+                      : gradeLabel(l, cfg.gachaPityGrade),
                 ),
                 style: body,
               ),

@@ -392,3 +392,21 @@ enum DuelStone {
     return null;
   }
 }
+
+/// 개체 능력치 롤 칸(개체 등급 개편 2026-10-11, docs/design_individual_grade.md).
+///
+/// 크기(무게)는 이미 [IndividualBug.sizeMm] 로 굴려져 있어 여기 없다(품질 막대의 다섯 번째 칸으로 보여 준다).
+/// 순서가 곧 저장 순서(`IndividualBug.rolls`) — **뒤에만 붙인다**.
+enum StatRoll {
+  hp('hp'),
+  atk('atk'),
+  def('def'),
+  spd('spd'),
+  crit('crit'),
+  evade('evade'),
+  recovery('recovery'),
+  push('push');
+
+  const StatRoll(this.key);
+  final String key;
+}

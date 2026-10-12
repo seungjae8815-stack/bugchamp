@@ -17,6 +17,7 @@ import '../../ui/art.dart';
 import '../../ui/format.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/skins.dart';
 import '../../ui/toast.dart';
 import '../battle/duel_bug_build.dart';
@@ -824,6 +825,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
       data,
       duelBugFor(bug, data, save, locale),
       confirm: picked ? l.squadRelease : l.squadDeploy,
+      bug: bug,
     );
     if (ok != true || !mounted) return;
     setState(() {
@@ -851,7 +853,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         border: Border.all(
           color: sp == null
               ? const Color(0x44FFFFFF)
-              : gradeColor(sp.grade).withValues(alpha: 0.8),
+              : gradeColor(shownGrade(data, bug!, sp)).withValues(alpha: 0.8),
           width: 1.6,
         ),
         gradient: const LinearGradient(
@@ -966,14 +968,14 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: gradeColor(
-                                sp.grade,
+                                shownGrade(data, bug, sp),
                               ).withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Text(
-                              gradeLabel(l, sp.grade),
+                              gradeLabel(l, shownGrade(data, bug, sp)),
                               style: TextStyle(
-                                color: gradeColor(sp.grade),
+                                color: gradeColor(shownGrade(data, bug, sp)),
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -1166,7 +1168,13 @@ class _EventScreenState extends ConsumerState<EventScreen> {
             border: Border.all(
               color: order != null
                   ? _honey
-                  : gradeColor(sp.grade).withValues(alpha: 0.6),
+                  : gradeColor(
+                      shownGrade(
+                        ref.read(gameDataProvider).requireValue,
+                        bug,
+                        sp,
+                      ),
+                    ).withValues(alpha: 0.6),
               width: order != null ? 2 : 1.2,
             ),
           ),

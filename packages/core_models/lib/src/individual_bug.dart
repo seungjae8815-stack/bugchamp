@@ -31,6 +31,8 @@ class IndividualBug {
     this.trait = BugTrait.none,
     this.variant = BugVariant.none,
     this.synthUps = 0,
+    this.rolls,
+    this.fromGacha = false,
     Element? element,
   }) : _element = element;
 
@@ -84,6 +86,34 @@ class IndividualBug {
   /// ([bornPotential])로 판정한다 — 합성으로 5성을 무한히 만들어 분해하면 젤리가 무한히 나왔다.
   /// 이 필드가 생기기 전 개체는 0(= 기존 5성은 젤리 유지, 사장님 확정).
   final int synthUps;
+
+  /// 능력치 롤([StatRoll] 순서, 0~100 · 50 = 가운데). null = **id 로 정해지는 처음 롤**([initialRollsOf]).
+  ///
+  /// 공용 rng 를 쓰지 않고 id 로 정한다 — 롤 소비 순서(짝짓기 슬롯·방치 드롭)를 건드리지 않고,
+  /// 기존 개체도 같은 함수로 롤을 받고, 서버가 처음 롤을 다시 계산할 수 있다.
+  /// 등급 올리기로 롤이 좋아진 개체만 값을 싣는다(세이브 크기).
+  final List<int>? rolls;
+
+  /// 알 뽑기에서 나온 개체 — 정수로 바꿀 때 종 희귀도 가치를 받지 않는다(설계 확정 2026-10-11).
+  final bool fromGacha;
+
+  /// 지금 능력치 롤(저장값 또는 처음 롤).
+  List<int> get statRolls => rolls ?? initialRollsOf(id);
+
+  /// 개체 등급(= 포텐셜 1~5 → 일반~전설).
+  Grade get individualGrade =>
+      Grade.values[(potential - 1).clamp(0, Grade.values.length - 1)];
+
+  /// id 로 정해지는 처음 롤 — 플랫폼·버전이 바뀌어도 같아야 해서 [String.hashCode] 대신 FNV-1a.
+  static List<int> initialRollsOf(String id) {
+    var h = 0x811c9dc5;
+    for (final c in id.codeUnits) {
+      h ^= c;
+      h = (h * 0x01000193) & 0xffffffff;
+    }
+    final rng = Random(h);
+    return [for (var i = 0; i < StatRoll.values.length; i++) rng.nextInt(101)];
+  }
 
   /// 획득 시점 포텐셜(합성으로 오른 몫을 뺀 값).
   int get bornPotential => potential - synthUps;
@@ -235,6 +265,7 @@ class IndividualBug {
     double traitNewChance = 0,
     Map<BugTrait, double> traitWeights = const {},
     double variantChance = 0,
+    List<double>? childPotentialWeights,
   }) {
     var size = parentAvgSizeMm * (1 + nextGaussian(rng) * sizeVariancePct);
     if (rng.nextDouble() < mutationChance) size *= (1 + mutationBonusPct);
@@ -251,6 +282,21 @@ class IndividualBug {
       pot = basePot - 1;
     }
     pot = pot.clamp(kPotentialMin, kPotentialMax);
+    // 개체 등급 개편(2026-10-11): 자식 등급은 **주운 알과 같은 확률** — 부모 등급을 물려주면
+    // 오른 개체가 높은 등급 알을 낳아 정수가 폭증한다(시뮬 3.7일 → 27일). 같은 r 을 쓴다(rng 소비 그대로).
+    if (childPotentialWeights != null && childPotentialWeights.isNotEmpty) {
+      final total = childPotentialWeights.fold<double>(0, (a, b) => a + b);
+      var acc = 0.0;
+      pot = childPotentialWeights.length;
+      for (var i = 0; i < childPotentialWeights.length; i++) {
+        acc += childPotentialWeights[i] / total;
+        if (r < acc) {
+          pot = i + 1;
+          break;
+        }
+      }
+      pot = pot.clamp(kPotentialMin, kPotentialMax);
+    }
 
     // 부모 값이 하나라도 없으면(구버전 슬롯) 상속을 건너뛰고 예전처럼 랜덤 —
     // 이미 돌고 있던 짝짓기가 수령 시점에 터지지 않게 한다.
@@ -380,6 +426,8 @@ class IndividualBug {
     BugTrait? trait,
     BugVariant? variant,
     int? synthUps,
+    List<int>? rolls,
+    bool? fromGacha,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -399,6 +447,8 @@ class IndividualBug {
     trait: trait ?? this.trait,
     variant: variant ?? this.variant,
     synthUps: synthUps ?? this.synthUps,
+    rolls: rolls ?? this.rolls,
+    fromGacha: fromGacha ?? this.fromGacha,
     element: element ?? this.element,
   );
 
@@ -438,6 +488,13 @@ class IndividualBug {
         ? BugVariant.none
         : BugVariant.fromKey(json['variant'] as String),
     synthUps: (json['su'] as num?)?.toInt() ?? 0,
+    rolls: json['rl'] is List
+        ? [
+            for (final v in json['rl'] as List)
+              ((v as num).toInt()).clamp(0, 100),
+          ]
+        : null,
+    fromGacha: json['gc'] == true,
     element: json['element'] == null
         ? null
         : Element.fromKeyOrNull(json['element'] as String),
@@ -464,6 +521,9 @@ class IndividualBug {
     if (variant != BugVariant.none) 'variant': variant.key,
     // 합성 안 한 개체(대다수)는 키를 싣지 않는다 — 세이브 크기(§3). 짧은 키.
     if (synthUps > 0) 'su': synthUps,
+    // 등급 올리기로 좋아진 롤만(처음 롤은 id 로 다시 계산한다) · 뽑기 출신만 — 세이브 크기(§3).
+    if (rolls != null) 'rl': rolls,
+    if (fromGacha) 'gc': true,
     'element': element.key,
   };
 

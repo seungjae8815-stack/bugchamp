@@ -6388,6 +6388,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String igTrainPtHowGrade(String pts) {
+    return '等級が1段階上がると → +$pts (等級アップ)';
+  }
+
+  @override
   String get trainPtNoPoints => '残りポイントがありません — 修練・突破・ポテンシャルで増えます';
 
   @override
@@ -6805,5 +6810,228 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String skillSweepConfirm(String jelly) {
     return '今日の無料掃討は使い切りました。ゼリー$jelly個で掃討しますか？';
+  }
+
+  @override
+  String igSpeciesRarity(String grade) {
+    return '種の希少度 $grade';
+  }
+
+  @override
+  String get igGradeLabel => '等級';
+
+  @override
+  String get igDexMaxGrade => '最高等級';
+
+  @override
+  String get igQualityTitle => '能力品質';
+
+  @override
+  String igQualityAvg(String pct) {
+    return '平均 $pct%';
+  }
+
+  @override
+  String get igQualityHint => '卵の時から決まっています · 等級を上げると各能力を振り直し、良い方が残ります';
+
+  @override
+  String get igStatHp => '体力';
+
+  @override
+  String get igStatAtk => '攻撃';
+
+  @override
+  String get igStatDef => '防御';
+
+  @override
+  String get igStatSpd => '速度';
+
+  @override
+  String get igStatSize => 'サイズ';
+
+  @override
+  String get igStatCrit => '会心';
+
+  @override
+  String get igStatEvade => '回避';
+
+  @override
+  String get igStatRecovery => '回復力';
+
+  @override
+  String get igStatPush => '押し出し';
+
+  @override
+  String get igToEssence => 'エッセンスにする';
+
+  @override
+  String get igToEssenceEgg => '卵は孵化させるとエッセンスにできます';
+
+  @override
+  String get igToEssencePinned => '装備・孵化・訓練・ロック中の昆虫は変換できません';
+
+  @override
+  String igToEssenceConfirm(String n, String name) {
+    return '$nameのエッセンスを$n個獲得します。この昆虫はいなくなります。';
+  }
+
+  @override
+  String get igToEssencePotionWarn => 'ポーションで上げた能力が失われます';
+
+  @override
+  String igEssenceGot(String name, String n) {
+    return '$nameのエッセンス +$n';
+  }
+
+  @override
+  String get igGradeUp => '等級アップ';
+
+  @override
+  String igGradeUpDesc(String name, String have, String need) {
+    return '$nameのエッセンス $have / $need';
+  }
+
+  @override
+  String get igGradeUpMax => '最高等級です';
+
+  @override
+  String get igGradeUpEgg => '卵は孵化させると等級を上げられます';
+
+  @override
+  String igPotionUse(String n, String have) {
+    return '成長ポーション $n個 (所持 $have)';
+  }
+
+  @override
+  String igPotionHint(String step) {
+    return 'ポーション1個ごとに新しく振る能力の下限が$step上がります。ポーションの効果は伝説までそのまま残ります。';
+  }
+
+  @override
+  String igGradeUpDone(String grade) {
+    return '$gradeになりました！';
+  }
+
+  @override
+  String igGradeUpImproved(String n) {
+    return '向上した能力 $n個';
+  }
+
+  @override
+  String get igNoEssence => 'エッセンスが足りません';
+
+  @override
+  String get igGradeFailed => 'できません';
+
+  @override
+  String get igVaultTitle => 'エッセンス保管庫';
+
+  @override
+  String get igVaultButton => 'エッセンス';
+
+  @override
+  String get igVaultEmpty => 'まだエッセンスがありません。昆虫をエッセンスにして集めましょう。';
+
+  @override
+  String get igVaultHint => 'エッセンスは同じ種の昆虫の等級アップに使います';
+
+  @override
+  String igPotionOwned(String n) {
+    return '成長ポーション $n個';
+  }
+
+  @override
+  String get igBulkEssence => 'エッセンスへ';
+
+  @override
+  String igBulkDone(String n) {
+    return '$n匹をエッセンスにしました';
+  }
+
+  @override
+  String igBulkSkipped(String eggs, String pinned) {
+    return '卵$eggs個・保護中$pinned匹はスキップしました';
+  }
+
+  @override
+  String get igBulkNone => '変換できる昆虫がいません';
+
+  @override
+  String get igPotionShopTitle => '成長ポーション';
+
+  @override
+  String igPotionBuy(String n) {
+    return '$n個購入';
+  }
+
+  @override
+  String igPotionBuyConfirm(String n, String jelly) {
+    return '成長ポーション$n個 — ゼリーを$jelly個使います。';
+  }
+
+  @override
+  String igPotionBought(String n) {
+    return '成長ポーション +$n';
+  }
+
+  @override
+  String get igPotionDailyLimit => '今日はもう買えません';
+
+  @override
+  String gachaPityLeftGrade(int n) {
+    return '$n回以内に英雄以上確定';
+  }
+
+  @override
+  String get gachaDescGrade => '希少等級以上確定 · 色違い確率10倍';
+
+  @override
+  String get eggOddsIndividualHead => '個体等級';
+
+  @override
+  String get eggOddsSpeciesHead => '種の希少度 (同じ希少度の種はすべて同じ確率)';
+
+  @override
+  String get igFilterTitle => '受け取る種の希少度を選ぶ';
+
+  @override
+  String igFilterSnack(String grade) {
+    return '種の希少度$grade未満は自動で逃がして素材にします';
+  }
+
+  @override
+  String get igAutoFilterRarity => '対象の種の希少度';
+
+  @override
+  String igAutoFilterGrade(String grade) {
+    return '個体等級$grade以下のみ';
+  }
+
+  @override
+  String igBulkConfirm(String n) {
+    return '$n匹をエッセンスにします。この昆虫たちはいなくなります。';
+  }
+
+  @override
+  String igBulkConfirmTotal(String n) {
+    return '獲得エッセンス $n個';
+  }
+
+  @override
+  String igBulkPotionWarn(String n) {
+    return 'ポーションで育てた昆虫が$n匹含まれます — 上げた能力が失われます';
+  }
+
+  @override
+  String igBulkDoneGain(String n, String e) {
+    return '$n匹をエッセンスにしました · エッセンス +$e';
+  }
+
+  @override
+  String get igPotionShopDescBase => '等級アップ時に入れると新しく振る能力が良くなります。';
+
+  @override
+  String igPotionLeftToday(String n) {
+    return '今日はあと$n個買えます';
   }
 }

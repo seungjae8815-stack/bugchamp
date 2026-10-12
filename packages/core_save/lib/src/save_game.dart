@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:math';
 
 import 'package:core_models/core_models.dart';
@@ -24,7 +25,8 @@ const int kSaveSchemaVersion = 18;
 /// 21(2026-10-10): 장비 v2 — 장비 `st`(별)·`sx`(별 재료)·`su`(별 강화 끝)·옵션 `p`(정성). 장비 안의 키라 서버가 장비 단위로 되돌린다.
 /// 22(2026-10-10): 공방 초월 `forgeTranscend`.
 /// 23(2026-10-10): 프로필 그림 `avatar`.
-const int kSaveFeatureLevel = 23;
+/// 24(2026-10-11): 개체 등급 — `essence`·`potions`·`potionBuyDay`·`potionBuyN` · 곤충 `rl`(롤)·`gc`(뽑기 출신).
+const int kSaveFeatureLevel = 24;
 
 /// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
 /// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
@@ -278,6 +280,11 @@ class BreedingSlot {
         (motherVariant != BugVariant.none || fatherVariant != BugVariant.none)
         ? cfg.variantBreedParentChance
         : cfg.variantBreedChance,
+    // 개체 등급(2026-10-11): 자식 등급은 주운 알과 같은 확률(부모 등급을 물려주면 정수가 폭증).
+    childPotentialWeights:
+        cfg.individualGrade.enabled && cfg.individualGrade.breedChildWild
+        ? cfg.individualGrade.wildWeights
+        : null,
   );
 }
 
@@ -423,7 +430,9 @@ bool isPreciousBug(IndividualBug b) =>
     b.variant != BugVariant.none ||
     b.level > 1 ||
     b.breakthroughTier > 0 ||
-    b.enhancement.total > 0;
+    b.enhancement.total > 0 ||
+    // 개체 등급을 올린 곤충(롤 저장) — 물약·정수를 쏟았다. 일괄 정수 변환·자동 분해가 조용히 지우지 않게.
+    b.rolls != null;
 
 /// 재료로 쓸 때 **덜 아까운 것부터**의 순서(작을수록 먼저 쓴다).
 /// 상한 정리([keepBugIds])와 같은 축을 반대 방향으로 본다.
@@ -582,6 +591,10 @@ class SaveGame {
     this.equippedSkills = const [],
     this.skillShards = const {},
     this.skillGradeShards = const {},
+    this.essence = const {},
+    this.growthPotions = 0,
+    this.potionBuyDay,
+    this.potionBuyCount = 0,
     this.skillTrainingId,
     this.skillTrainingEndsAt,
     this.skillGachaPity = 0,
@@ -1209,6 +1222,17 @@ class SaveGame {
   /// 크래시가 났다 — 별도 필드면 구버전은 필드째 무시한다.
   final Map<String, int> skillShards;
 
+  /// 곤충 정수(종 id → 개수) — 개체 등급 올리기 재료(2026-10-11, docs/design_individual_grade.md).
+  /// 애벌레 이상 곤충을 정수로 바꿔 모은다. ⚠️ 새 `MaterialKind` 가 아니다(구버전 크래시, skillShards 와 같은 이유).
+  final Map<String, int> essence;
+
+  /// 성장물약 개수 — 등급 올리기에 넣으면 새 롤의 바닥이 오른다.
+  final int growthPotions;
+
+  /// 성장물약 젤리 구매 하루 기록(기기 날짜 키 · 그날 산 개수) — 하루 상한(`potionDailyBuy`).
+  final String? potionBuyDay;
+  final int potionBuyCount;
+
   /// 등급 만능 조각(`Grade.key` → 개수) — 같은 등급 조각 10개를 올려 만든 한 단계
   /// 위 등급의 조각. 그 등급 스킬 아무 데나 1:1 로 쓴다(§2.8).
   final Map<String, int> skillGradeShards;
@@ -1567,6 +1591,10 @@ class SaveGame {
     List<String>? equippedSkills,
     Map<String, int>? skillShards,
     Map<String, int>? skillGradeShards,
+    Map<String, int>? essence,
+    int? growthPotions,
+    String? potionBuyDay,
+    int? potionBuyCount,
     String? skillTrainingId,
     DateTime? skillTrainingEndsAt,
     bool clearSkillTraining = false,
@@ -1697,6 +1725,10 @@ class SaveGame {
     equippedSkills: equippedSkills ?? this.equippedSkills,
     skillShards: skillShards ?? this.skillShards,
     skillGradeShards: skillGradeShards ?? this.skillGradeShards,
+    essence: essence ?? this.essence,
+    growthPotions: growthPotions ?? this.growthPotions,
+    potionBuyDay: potionBuyDay ?? this.potionBuyDay,
+    potionBuyCount: potionBuyCount ?? this.potionBuyCount,
     // 수련이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
     skillTrainingId: clearSkillTraining
         ? null
@@ -1989,6 +2021,12 @@ class SaveGame {
     skillShards: _intMapFromJson(
       json['skillShards'] as Map<String, dynamic>? ?? const {},
     ),
+    essence: _intMapFromJson(
+      json['essence'] as Map<String, dynamic>? ?? const {},
+    ),
+    growthPotions: math.max(0, (json['potions'] as num?)?.toInt() ?? 0),
+    potionBuyDay: json['potionBuyDay'] as String?,
+    potionBuyCount: (json['potionBuyN'] as num?)?.toInt() ?? 0,
     skillGradeShards: _intMapFromJson(
       json['skillGradeShards'] as Map<String, dynamic>? ?? const {},
     ),
@@ -2203,6 +2241,10 @@ class SaveGame {
     if (skillLevels.isNotEmpty) 'skillLevels': skillLevels,
     if (equippedSkills.isNotEmpty) 'equippedSkills': equippedSkills,
     if (skillShards.isNotEmpty) 'skillShards': skillShards,
+    if (essence.isNotEmpty) 'essence': essence,
+    if (growthPotions > 0) 'potions': growthPotions,
+    if (potionBuyDay != null) 'potionBuyDay': potionBuyDay,
+    if (potionBuyCount > 0) 'potionBuyN': potionBuyCount,
     // ⚠️ **비어 있어도 항상 싣는다** — 서버가 "이 앱은 스킬 필드를 안다"를 알아보는
     // 표식이다. 이 키가 없는 업로드(스킬 이전 앱)는 조각·수련을 모르고 올린 것이라
     // 서버가 저장본 값을 지킨다(`GameActions._enforceSkills`).

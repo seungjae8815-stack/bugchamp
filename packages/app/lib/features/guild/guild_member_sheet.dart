@@ -15,6 +15,7 @@ import '../../ui/format.dart';
 import '../../ui/skin_badges.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
+import '../../ui/bug_grade.dart';
 import '../../ui/tier_label.dart';
 import '../battle/league_board_screen.dart' show duelProfileBugTile;
 import '../character/equip_widgets.dart';
@@ -264,7 +265,7 @@ class _GuildMemberSheetState extends ConsumerState<GuildMemberSheet> {
                   ),
                 ),
                 Text(
-                  '${'★' * b.potential.clamp(0, 5)} · ${b.sizeMm.toStringAsFixed(1)}mm',
+                  '${potentialText(AppLocalizations.of(context), b.potential.clamp(0, 5), data != null && individualGradeOn(data))} · ${b.sizeMm.toStringAsFixed(1)}mm',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: _honey, fontSize: 10.5),

@@ -10955,6 +10955,12 @@ abstract class AppLocalizations {
   /// **'Potential +1★ → +{pts} (synthesis · breeding)'**
   String trainPtHowPotential(String pts);
 
+  /// No description provided for @igTrainPtHowGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade up one step → +{pts} (grade up)'**
+  String igTrainPtHowGrade(String pts);
+
   /// No description provided for @trainPtNoPoints.
   ///
   /// In en, this message translates to:
@@ -11588,6 +11594,360 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today\'s free sweeps are used up. Sweep for {jelly} jelly?'**
   String skillSweepConfirm(String jelly);
+
+  /// No description provided for @igSpeciesRarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Species rarity {grade}'**
+  String igSpeciesRarity(String grade);
+
+  /// No description provided for @igGradeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get igGradeLabel;
+
+  /// No description provided for @igDexMaxGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Best grade'**
+  String get igDexMaxGrade;
+
+  /// No description provided for @igQualityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stat quality'**
+  String get igQualityTitle;
+
+  /// No description provided for @igQualityAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg {pct}%'**
+  String igQualityAvg(String pct);
+
+  /// No description provided for @igQualityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set from the egg · each grade-up rerolls every stat and keeps the better value'**
+  String get igQualityHint;
+
+  /// No description provided for @igStatHp.
+  ///
+  /// In en, this message translates to:
+  /// **'HP'**
+  String get igStatHp;
+
+  /// No description provided for @igStatAtk.
+  ///
+  /// In en, this message translates to:
+  /// **'ATK'**
+  String get igStatAtk;
+
+  /// No description provided for @igStatDef.
+  ///
+  /// In en, this message translates to:
+  /// **'DEF'**
+  String get igStatDef;
+
+  /// No description provided for @igStatSpd.
+  ///
+  /// In en, this message translates to:
+  /// **'SPD'**
+  String get igStatSpd;
+
+  /// No description provided for @igStatSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get igStatSize;
+
+  /// No description provided for @igStatCrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Crit'**
+  String get igStatCrit;
+
+  /// No description provided for @igStatEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'Evade'**
+  String get igStatEvade;
+
+  /// No description provided for @igStatRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get igStatRecovery;
+
+  /// No description provided for @igStatPush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get igStatPush;
+
+  /// No description provided for @igToEssence.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn into essence'**
+  String get igToEssence;
+
+  /// No description provided for @igToEssenceEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatch the egg first to turn it into essence'**
+  String get igToEssenceEgg;
+
+  /// No description provided for @igToEssencePinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped, hatching, training or locked bugs can\'t be converted'**
+  String get igToEssencePinned;
+
+  /// No description provided for @igToEssenceConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'You get {n} {name} essence. This bug will be gone.'**
+  String igToEssenceConfirm(String n, String name);
+
+  /// No description provided for @igToEssencePotionWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Stats raised with potions will be lost'**
+  String get igToEssencePotionWarn;
+
+  /// No description provided for @igEssenceGot.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} essence +{n}'**
+  String igEssenceGot(String name, String n);
+
+  /// No description provided for @igGradeUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade up'**
+  String get igGradeUp;
+
+  /// No description provided for @igGradeUpDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} essence {have} / {need}'**
+  String igGradeUpDesc(String name, String have, String need);
+
+  /// No description provided for @igGradeUpMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Already at the top grade'**
+  String get igGradeUpMax;
+
+  /// No description provided for @igGradeUpEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatch the egg first to grade it up'**
+  String get igGradeUpEgg;
+
+  /// No description provided for @igPotionUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potions {n} (own {have})'**
+  String igPotionUse(String n, String have);
+
+  /// No description provided for @igPotionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each potion raises the floor of the new rolls by {step}. Potion gains stay all the way to Legendary.'**
+  String igPotionHint(String step);
+
+  /// No description provided for @igGradeUpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Now {grade}!'**
+  String igGradeUpDone(String grade);
+
+  /// No description provided for @igGradeUpImproved.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} stats improved'**
+  String igGradeUpImproved(String n);
+
+  /// No description provided for @igNoEssence.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough essence'**
+  String get igNoEssence;
+
+  /// No description provided for @igGradeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t do that'**
+  String get igGradeFailed;
+
+  /// No description provided for @igVaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Essence vault'**
+  String get igVaultTitle;
+
+  /// No description provided for @igVaultButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Essence'**
+  String get igVaultButton;
+
+  /// No description provided for @igVaultEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No essence yet. Turn bugs into essence to collect it.'**
+  String get igVaultEmpty;
+
+  /// No description provided for @igVaultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Essence grades up bugs of the same species'**
+  String get igVaultHint;
+
+  /// No description provided for @igPotionOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potions: {n}'**
+  String igPotionOwned(String n);
+
+  /// No description provided for @igBulkEssence.
+  ///
+  /// In en, this message translates to:
+  /// **'To essence'**
+  String get igBulkEssence;
+
+  /// No description provided for @igBulkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned {n} bugs into essence'**
+  String igBulkDone(String n);
+
+  /// No description provided for @igBulkSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped {eggs} eggs · {pinned} protected'**
+  String igBulkSkipped(String eggs, String pinned);
+
+  /// No description provided for @igBulkNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No bugs to convert'**
+  String get igBulkNone;
+
+  /// No description provided for @igPotionShopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potion'**
+  String get igPotionShopTitle;
+
+  /// No description provided for @igPotionBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy {n}'**
+  String igPotionBuy(String n);
+
+  /// No description provided for @igPotionBuyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} growth potions — this spends {jelly} jelly.'**
+  String igPotionBuyConfirm(String n, String jelly);
+
+  /// No description provided for @igPotionBought.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potion +{n}'**
+  String igPotionBought(String n);
+
+  /// No description provided for @igPotionDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily limit reached'**
+  String get igPotionDailyLimit;
+
+  /// No description provided for @gachaPityLeftGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Epic or better guaranteed within {n} draws'**
+  String gachaPityLeftGrade(int n);
+
+  /// No description provided for @gachaDescGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Rare grade or better guaranteed · 10× variant chance'**
+  String get gachaDescGrade;
+
+  /// No description provided for @eggOddsIndividualHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual grade'**
+  String get eggOddsIndividualHead;
+
+  /// No description provided for @eggOddsSpeciesHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Species rarity (all species of a rarity are equally likely)'**
+  String get eggOddsSpeciesHead;
+
+  /// No description provided for @igFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose species rarity to keep'**
+  String get igFilterTitle;
+
+  /// No description provided for @igFilterSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Species below {grade} rarity are released for materials'**
+  String igFilterSnack(String grade);
+
+  /// No description provided for @igAutoFilterRarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Target species rarity'**
+  String get igAutoFilterRarity;
+
+  /// No description provided for @igAutoFilterGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual grade {grade} or lower'**
+  String igAutoFilterGrade(String grade);
+
+  /// No description provided for @igBulkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn {n} bugs into essence. They will be gone.'**
+  String igBulkConfirm(String n);
+
+  /// No description provided for @igBulkConfirmTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Essence gained: {n}'**
+  String igBulkConfirmTotal(String n);
+
+  /// No description provided for @igBulkPotionWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes {n} potion-raised bugs — their raised stats will be lost'**
+  String igBulkPotionWarn(String n);
+
+  /// No description provided for @igBulkDoneGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned {n} bugs into essence · +{e} essence'**
+  String igBulkDoneGain(String n, String e);
+
+  /// No description provided for @igPotionShopDescBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Add them when grading up for better new rolls.'**
+  String get igPotionShopDescBase;
+
+  /// No description provided for @igPotionLeftToday.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} more available today'**
+  String igPotionLeftToday(String n);
 }
 
 class _AppLocalizationsDelegate

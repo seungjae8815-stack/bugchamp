@@ -63,9 +63,11 @@ GameData _data() => GameData.fromDecoded(
     'spawns': <dynamic>[],
   },
   // 펫 보너스 수식은 실제 밸런스로 검증한다(더미면 순위가 뒤집힐 수 있다).
+  // 이 테스트는 종 등급이 기여를 정하는 옛 규칙의 순위를 본다 — 개체 등급(켜지면 포텐셜이 기여를 정한다)은 끈다.
   petConfig:
-      jsonDecode(File('assets/data/pets.json').readAsStringSync())
-          as Map<String, dynamic>,
+      (jsonDecode(File('assets/data/pets.json').readAsStringSync())
+            as Map<String, dynamic>)
+        ..['individualGrade'] = {'enabled': false},
 );
 
 void main() {

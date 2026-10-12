@@ -3,6 +3,7 @@
   "species": [
     {
       "id": "stag_dorcus",
+      "gradeScale": 2.53,
       "name": {
         "ko": "애사슴벌레",
         "en": "Dorcus Stag Beetle",
@@ -30,6 +31,7 @@
     },
     {
       "id": "stag_saw",
+      "gradeScale": 2.19,
       "name": {
         "ko": "톱사슴벌레",
         "en": "Saw Stag Beetle",
@@ -57,6 +59,7 @@
     },
     {
       "id": "rhino_lesser",
+      "gradeScale": 3.11,
       "name": {
         "ko": "외뿔장수풍뎅이",
         "en": "Lesser Rhinoceros Beetle",
@@ -84,6 +87,7 @@
     },
     {
       "id": "mantis_jumping",
+      "gradeScale": 2.76,
       "name": {
         "ko": "좀사마귀",
         "en": "Asian Jumping Mantis",
@@ -111,6 +115,7 @@
     },
     {
       "id": "longhorn_saw",
+      "gradeScale": 2.46,
       "name": {
         "ko": "톱하늘소",
         "en": "Saw Longhorn Beetle",
@@ -138,6 +143,7 @@
     },
     {
       "id": "grasshopper_longheaded",
+      "gradeScale": 2.70,
       "name": {
         "ko": "방아깨비",
         "en": "Oriental Longheaded Grasshopper",
@@ -166,6 +172,7 @@
     },
     {
       "id": "stag_flat",
+      "gradeScale": 1.79,
       "name": {
         "ko": "넓적사슴벌레",
         "en": "Flat Stag Beetle",
@@ -193,6 +200,7 @@
     },
     {
       "id": "rhino_japanese",
+      "gradeScale": 1.74,
       "name": {
         "ko": "장수풍뎅이",
         "en": "Rhinoceros Beetle",
@@ -220,6 +228,7 @@
     },
     {
       "id": "mantis_widebelly",
+      "gradeScale": 1.65,
       "name": {
         "ko": "넓적배사마귀",
         "en": "Wide-bellied Mantis",
@@ -247,6 +256,7 @@
     },
     {
       "id": "longhorn_whitespot",
+      "gradeScale": 2.03,
       "name": {
         "ko": "알락하늘소",
         "en": "White-spotted Longhorn Beetle",
@@ -274,6 +284,7 @@
     },
     {
       "id": "katydid",
+      "gradeScale": 2.54,
       "name": {
         "ko": "여치",
         "en": "Katydid",
@@ -301,6 +312,7 @@
     },
     {
       "id": "stag_miyama",
+      "gradeScale": 1.27,
       "name": {
         "ko": "사슴벌레",
         "en": "Miyama Stag Beetle",
@@ -328,6 +340,7 @@
     },
     {
       "id": "mantis_giant",
+      "gradeScale": 1.51,
       "name": {
         "ko": "왕사마귀",
         "en": "Giant Asian Mantis",
@@ -355,6 +368,7 @@
     },
     {
       "id": "longhorn_oak",
+      "gradeScale": 1.36,
       "name": {
         "ko": "참나무하늘소",
         "en": "Oak Longhorn Beetle",
@@ -382,6 +396,7 @@
     },
     {
       "id": "chafer_flower",
+      "gradeScale": 1.71,
       "name": {
         "ko": "장수꽃무지",
         "en": "Flower Chafer",
@@ -409,6 +424,7 @@
     },
     {
       "id": "stag_giant",
+      "gradeScale": 1.02,
       "name": {
         "ko": "왕사슴벌레",
         "en": "Giant Stag Beetle",
@@ -436,6 +452,7 @@
     },
     {
       "id": "water_bug_giant",
+      "gradeScale": 1.04,
       "name": {
         "ko": "물장군",
         "en": "Giant Water Bug",
@@ -463,6 +480,7 @@
     },
     {
       "id": "stag_twospot",
+      "gradeScale": 1.13,
       "name": {
         "ko": "두점박이사슴벌레",
         "en": "Two-spotted Stag Beetle",
@@ -490,6 +508,7 @@
     },
     {
       "id": "longhorn_relict",
+      "gradeScale": 0.77,
       "name": {
         "ko": "장수하늘소",
         "en": "Relict Longhorn Beetle",
@@ -517,6 +536,7 @@
     },
     {
       "id": "hornet_giant",
+      "gradeScale": 1.23,
       "name": {
         "ko": "장수말벌",
         "en": "Asian Giant Hornet",
