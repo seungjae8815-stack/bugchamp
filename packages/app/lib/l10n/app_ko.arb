@@ -646,6 +646,7 @@
   "stageNymph": "약충",
   "stageMolting": "탈피 중",
   "stageAdult": "성충",
+  "bugDuelPower": "🔥 결투 전투력 {power}",
   "evolveTitle": "진화",
   "evolveNext": "{next}까지 {time}",
   "evolveReady": "진화 준비 완료",

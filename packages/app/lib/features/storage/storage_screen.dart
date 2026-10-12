@@ -20,6 +20,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
+import '../battle/duel_bug_build.dart';
 import '../battle/training_screen.dart';
 import 'dex_screen.dart';
 import '../../ui/colors.dart';
@@ -2325,6 +2326,8 @@ class StorageScreen extends ConsumerWidget {
       );
     }
     final items = _sorted(data, save, ref.read(clockProvider).now().toUtc());
+    // 결투 전투력(2026-10-12) — 세이브가 바뀔 때만 다시 계산한다(그리드 칸마다 계산하지 않는다).
+    final powers = ref.watch(duelPowerByBugProvider);
     return GridView.builder(
       padding: const EdgeInsets.all(10),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -2336,7 +2339,15 @@ class StorageScreen extends ConsumerWidget {
       itemCount: items.length,
       itemBuilder: (context, i) {
         final it = items[i];
-        return _bugCell(context, ref, data, it.bug, it.stage, it.equipped);
+        return _bugCell(
+          context,
+          ref,
+          data,
+          it.bug,
+          it.stage,
+          it.equipped,
+          it.stage == LifeStage.adult ? powers[it.bug.id] : null,
+        );
       },
     );
   }
@@ -2349,6 +2360,7 @@ class StorageScreen extends ConsumerWidget {
     IndividualBug bug,
     LifeStage stage,
     bool equipped,
+    double? duelPower,
   ) {
     final species = data.species(bug.speciesId);
     final now = ref.read(clockProvider).now().toUtc();
@@ -2514,6 +2526,26 @@ class StorageScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            // 결투 전투력(성충만, 2026-10-12 사장님 요청) — 결투 탭·순위표와 같은 값. 칸이 좁아 줄여서 맞춘다.
+            if (duelPower != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3, left: 2, right: 2),
+                child: SizedBox(
+                  height: 11,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '🔥${formatCompact(duelPower.round())}',
+                      key: ValueKey('duelPower_${bug.id}'),
+                      style: const TextStyle(
+                        color: Color(0xFFFFB27A),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -3006,6 +3038,26 @@ class StorageScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             _stars(bug.potential, 13),
+                            // 결투 전투력(성충만) — 홈의 캐릭터 전투력과 헷갈리지 않게 이름을 붙인다.
+                            if (effStage == LifeStage.adult &&
+                                r.watch(duelPowerByBugProvider)[bug.id] !=
+                                    null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                l.bugDuelPower(
+                                  formatCompact(
+                                    r
+                                        .watch(duelPowerByBugProvider)[bug.id]!
+                                        .round(),
+                                  ),
+                                ),
+                                style: const TextStyle(
+                                  color: Color(0xFFFFB27A),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
                             // 혈통 특성(§2.5) — 짝짓기 자식만 가진다.
                             // 야생 개체와 구분되는 유일한 표식이라 이름 바로
                             // 아래, 포텐셜과 같은 줄 높이에 둔다.

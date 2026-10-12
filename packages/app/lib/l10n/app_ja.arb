@@ -618,6 +618,7 @@
   "stageNymph": "若虫",
   "stageMolting": "脱皮中",
   "stageAdult": "成虫",
+  "bugDuelPower": "🔥 決闘戦闘力 {power}",
   "evolveTitle": "進化",
   "evolveNext": "{next}まで {time}",
   "evolveReady": "進化準備完了",

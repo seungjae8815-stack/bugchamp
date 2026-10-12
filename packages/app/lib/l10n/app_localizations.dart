@@ -3304,6 +3304,12 @@ abstract class AppLocalizations {
   /// **'Adult'**
   String get stageAdult;
 
+  /// No description provided for @bugDuelPower.
+  ///
+  /// In en, this message translates to:
+  /// **'🔥 Duel power {power}'**
+  String bugDuelPower(String power);
+
   /// No description provided for @evolveTitle.
   ///
   /// In en, this message translates to:

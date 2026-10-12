@@ -2,8 +2,11 @@ import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
+import '../../domain/providers.dart';
+import '../../domain/save_controller.dart';
 
 /// 훈련 v2 보너스(배분을 예산·칸 상한으로 자름 · 수련 레벨 보너스 포함). 서버 `validateTeam` 과 같은 계산.
 ({
@@ -100,3 +103,49 @@ DuelBug duelBugFor(
     grit: t.grit,
   );
 }
+
+/// 곤충별 **결투 전투력**(id → [duelPowerOf]) — 채집함 그리드·상세가 쓴다(2026-10-12 사장님 요청).
+/// 결투 탭·순위표와 같은 값이다(새 공식 아님). 단계와 무관하게 다 계산해 두고, 성충만 보여 주는 건 화면 몫이다.
+///
+/// 그리드가 50~100마리라 같은 입력이면 다시 계산하지 않는다 — 전투력이 보는 세이브 칸(곤충 목록·훈련 포인트·
+/// 옛 훈련 단계)과 게임 데이터가 **같은 객체**면 지난 결과를 그대로 돌려준다(세이브는 불변이라 바뀌면 새 객체다).
+Map<String, double> duelPowersOf(SaveGame save, GameData data) {
+  final c = _powerCache;
+  if (c != null &&
+      identical(c.bugs, save.bugs) &&
+      identical(c.trainPoints, save.trainPoints) &&
+      identical(c.duelTraining, save.duelTraining) &&
+      identical(c.data, data)) {
+    return c.result;
+  }
+  final result = <String, double>{
+    for (final b in save.bugs)
+      if (data.speciesById.containsKey(b.speciesId))
+        b.id: duelPowerOf(duelBugFor(b, data, save, 'ko'), data),
+  };
+  _powerCache = (
+    bugs: save.bugs,
+    trainPoints: save.trainPoints,
+    duelTraining: save.duelTraining,
+    data: data,
+    result: result,
+  );
+  return result;
+}
+
+({
+  Object bugs,
+  Object trainPoints,
+  Object duelTraining,
+  GameData data,
+  Map<String, double> result,
+})?
+_powerCache;
+
+/// [duelPowersOf] 를 세이브가 바뀔 때만 다시 보는 provider. 결과가 같은 객체면 구독 위젯은 다시 그리지 않는다.
+final duelPowerByBugProvider = Provider<Map<String, double>>((ref) {
+  final save = ref.watch(saveControllerProvider).value;
+  final data = ref.watch(gameDataProvider).value;
+  if (save == null || data == null) return const {};
+  return duelPowersOf(save, data);
+});

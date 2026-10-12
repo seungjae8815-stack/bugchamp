@@ -1804,6 +1804,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stageAdult => '성충';
 
   @override
+  String bugDuelPower(String power) {
+    return '🔥 결투 전투력 $power';
+  }
+
+  @override
   String get evolveTitle => '진화';
 
   @override

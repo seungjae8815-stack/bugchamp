@@ -1051,6 +1051,8 @@
   "stageNymph": "Nymph",
   "stageMolting": "Molting",
   "stageAdult": "Adult",
+  "bugDuelPower": "🔥 Duel power {power}",
+  "@bugDuelPower": {"placeholders": {"power": {"type": "String"}}},
   "evolveTitle": "Evolve",
   "evolveNext": "{time} to {next}",
   "@evolveNext": {

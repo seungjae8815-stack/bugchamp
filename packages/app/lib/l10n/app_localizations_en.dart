@@ -1856,6 +1856,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stageAdult => 'Adult';
 
   @override
+  String bugDuelPower(String power) {
+    return '🔥 Duel power $power';
+  }
+
+  @override
   String get evolveTitle => 'Evolve';
 
   @override

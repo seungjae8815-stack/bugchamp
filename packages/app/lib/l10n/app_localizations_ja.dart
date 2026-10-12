@@ -1799,6 +1799,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stageAdult => '成虫';
 
   @override
+  String bugDuelPower(String power) {
+    return '🔥 決闘戦闘力 $power';
+  }
+
+  @override
   String get evolveTitle => '進化';
 
   @override
