@@ -7124,7 +7124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String igPotionHint(String step) {
-    return 'Each potion raises the floor of the new rolls by $step. Potion gains stay all the way to Legendary.';
+    return 'Each potion adds +$step to the new stat rolls (up to 100). Potion gains stay all the way to Legendary.';
   }
 
   @override

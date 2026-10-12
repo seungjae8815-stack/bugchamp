@@ -11838,7 +11838,7 @@ abstract class AppLocalizations {
   /// No description provided for @igPotionHint.
   ///
   /// In en, this message translates to:
-  /// **'Each potion raises the floor of the new rolls by {step}. Potion gains stay all the way to Legendary.'**
+  /// **'Each potion adds +{step} to the new stat rolls (up to 100). Potion gains stay all the way to Legendary.'**
   String igPotionHint(String step);
 
   /// No description provided for @igGradeUpDone.

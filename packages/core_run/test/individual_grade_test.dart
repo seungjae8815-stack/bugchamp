@@ -18,6 +18,8 @@ void main() {
     int pot, {
     LifeStage stage = LifeStage.larva,
     bool gacha = false,
+    bool newGen = true,
+    int su = 0,
   }) => IndividualBug(
     id: 'b$pot$stage$gacha',
     speciesId: 'x',
@@ -27,6 +29,15 @@ void main() {
     sex: Sex.male,
     stage: stage,
     fromGacha: gacha,
+    newGen: newGen,
+    synthUps: su,
+  );
+
+  /// 앱·서버 `gradeUp` 과 같은 필드 변화(core_save) — 업데이트 전 곤충은 처음 올릴 때 옛 합성 단계를 적는다.
+  IndividualBug up(IndividualBug b) => b.copyWith(
+    potential: b.potential + 1,
+    synthUps: b.synthUps + 1,
+    legacySynthUps: !b.newGen && b.legacySynthUps == null ? b.synthUps : null,
   );
 
   test('실데이터 — 확정 값(설계 표)', () {
@@ -57,19 +68,48 @@ void main() {
 
   test('올리고 바꾸기를 반복해도 정수가 늘지 않는다(올린 몫은 들인 만큼만)', () {
     for (final grade in Grade.values) {
-      for (var p = 1; p < 5; p++) {
-        final before = bug(p).copyWith(id: 'loop');
-        final after = before.copyWith(
-          potential: p + 1,
-          synthUps: before.synthUps + 1,
-        );
-        expect(
-          g.essenceOf(after, grade) - g.essenceOf(before, grade),
-          g.upgradeCost(p),
-          reason: '${grade.key} $p→${p + 1}',
-        );
+      for (final ng in [true, false]) {
+        for (final gacha in [true, false]) {
+          // 태생 등급 × 옛 합성 단계(업데이트 전 곤충만 의미)마다 전설까지 올려 본다.
+          for (var born = 1; born <= 5; born++) {
+            for (var su = 0; born + su <= 5; su++) {
+              if (ng && su > 0) continue; // 켜진 뒤 생긴 곤충은 옛 합성이 없다
+              var b = bug(born + su, gacha: gacha, newGen: ng, su: su);
+              while (b.potential < 5) {
+                final a = up(b);
+                expect(
+                  g.essenceOf(a, grade) - g.essenceOf(b, grade),
+                  g.upgradeCost(b.potential),
+                  reason:
+                      '${grade.key} ng=$ng gc=$gacha born=$born su=$su '
+                      '${b.potential}→${a.potential}',
+                );
+                b = a;
+              }
+            }
+          }
+        }
       }
     }
+  });
+
+  test('업데이트 전 곤충 — 들인 마릿수만큼(희귀도 × (태생 기본 + 3 × 옛 합성 단계))', () {
+    // 옛 합성 5★(태생 1·합성 4) = 13 × r.
+    expect(g.essenceOf(bug(5, newGen: false, su: 4), Grade.common), 13);
+    expect(g.essenceOf(bug(5, newGen: false, su: 4), Grade.legendary), 13 * 28);
+    // 옛 태생 5★ 전설 종 = 6 × 28 = 168(새 규칙이면 2,160 × 28 = 60,480 이었다).
+    expect(g.essenceOf(bug(5, newGen: false), Grade.legendary), 168);
+    expect(g.essenceOf(bug(1, newGen: false), Grade.rare), 3);
+    expect(g.essenceOf(bug(2, newGen: false), Grade.common), 3);
+    // 옛 합성 5★ 를 새로 올린 적 없이 그대로 바꾸면 위 값 — 올린 뒤엔 들인 정수가 그대로 더해진다.
+    final legacy = bug(3, newGen: false, su: 1);
+    final once = up(legacy);
+    expect(once.legacySynthUps, 1);
+    expect(
+      g.essenceOf(once, Grade.epic) - g.essenceOf(legacy, Grade.epic),
+      g.upgradeCost(3),
+    );
+    // 옛 합성 단계를 늘려 적으면(위조) 정수는 커질 수 있다 — 서버가 `ls` 를 저장본 합성 단계로 묶는다.
   });
 
   test('등급 배율 — 전설 = 1(지금 다 키운 5★), 아래는 비율', () {
@@ -85,20 +125,93 @@ void main() {
     expect(g.pushFactor(50), 1.0);
   });
 
-  test('등급 올리기 롤 — 내려가지 않고, 물약이 바닥을 올린다', () {
+  test('등급 올리기 롤 — 내려가지 않고, 물약 1개 = 새 롤 +3점(100 상한)', () {
+    expect(g.potionRollBonus, 3);
     final rng = Random(7);
     const old = [10, 50, 90, 0, 100, 30, 70, 60];
     for (var i = 0; i < 500; i++) {
       final up = g.rollUp(old, rng, 3);
       for (var k = 0; k < old.length; k++) {
         expect(up[k], greaterThanOrEqualTo(old[k]));
-        expect(up[k], greaterThanOrEqualTo(15), reason: '물약 3개 = 바닥 15');
+        expect(up[k], greaterThanOrEqualTo(9), reason: '물약 3개 = +9');
         expect(up[k], lessThanOrEqualTo(100));
       }
     }
-    // 물약은 한 번에 최대 3개까지만 효과가 있다.
+    // 물약은 한 번에 최대 3개까지만 효과가 있다 — 9개를 넣어도 +9 와 같은 결과.
     final a = g.rollUp(const [0, 0, 0, 0, 0, 0, 0, 0], Random(1), 9);
-    expect(a.every((v) => v >= 15), isTrue);
+    final b = g.rollUp(const [0, 0, 0, 0, 0, 0, 0, 0], Random(1), 3);
+    expect(a, b);
+    expect(a.every((v) => v >= 9), isTrue);
+  });
+
+  test('물약 분포 — 일반에서 전설까지 4번, 매번 3개면 평균 약 90점(없으면 약 84점)', () {
+    double mean(int potions) {
+      final rng = Random(11);
+      var sum = 0.0, n = 0;
+      for (var i = 0; i < 4000; i++) {
+        var r = IndividualBug.initialRollsOf('bug$i');
+        for (var k = 0; k < 4; k++) {
+          r = g.rollUp(r, rng, potions);
+        }
+        for (final v in r) {
+          sum += v;
+          n++;
+        }
+      }
+      return sum / n;
+    }
+
+    // ⚠️ 확정 규칙(새 롤 + 물약 수 × 3, 한 번 최대 3개)으로는 평균 약 89.6점이다 — 지시서의 "약 97점"은
+    // 이 규칙으로 나오지 않는다(97 근처는 물약 효과가 올릴 때마다 쌓이는 규칙 ≈ 95). 사장님 확인 대기(2026-10-12).
+    expect(mean(0), closeTo(84, 1.5));
+    expect(mean(3), closeTo(89.6, 1.5));
+  });
+
+  group('뽑기 천장', () {
+    test('전설 천장 50 — 49번 전설 없이 뽑았으면 50번째는 전설', () {
+      expect(g.gachaLegendPity, 50);
+      expect(g.legendPityDue(48), isFalse);
+      expect(g.legendPityDue(49), isTrue);
+      for (final r in [0.0, 0.5, 0.999]) {
+        expect(g.gachaPotential(r, legendPity: true), 5);
+      }
+    });
+
+    test('영웅 이상 천장 — 영웅·전설만', () {
+      for (var i = 0; i < 100; i++) {
+        expect(
+          g.gachaPotential(i / 100, epicPity: true),
+          greaterThanOrEqualTo(4),
+        );
+      }
+    });
+
+    test('평소 — 희귀 이상(설정 확률)', () {
+      final rng = Random(5);
+      final c = List.filled(6, 0);
+      for (var i = 0; i < 20000; i++) {
+        c[g.gachaPotential(rng.nextDouble())]++;
+      }
+      expect(c[1] + c[2], 0);
+      expect(c[5] / 20000, closeTo(0.03, 0.006));
+    });
+
+    test('두 천장을 함께 돌리면 50번 안에 전설이 반드시 하나 나온다', () {
+      final rng = Random(9);
+      var epic = 0, legend = 0, worst = 0, since = 0;
+      for (var i = 0; i < 20000; i++) {
+        final p = g.gachaPotential(
+          rng.nextDouble(),
+          epicPity: epic >= 10 - 1,
+          legendPity: g.legendPityDue(legend),
+        );
+        epic = p >= g.gachaPityMinPotential ? 0 : epic + 1;
+        legend = p >= 5 ? 0 : legend + 1;
+        since = p >= 5 ? 0 : since + 1;
+        if (since > worst) worst = since;
+      }
+      expect(worst, lessThan(50));
+    });
   });
 
   test('등급 고르기 — 야생 확률', () {

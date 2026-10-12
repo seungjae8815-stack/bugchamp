@@ -6978,7 +6978,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String igPotionHint(String step) {
-    return '물약 1개마다 새로 굴리는 능력치의 바닥이 $step점 올라가요. 물약 효과는 전설까지 그대로 남아요.';
+    return '물약 1개마다 새로 굴리는 능력치 +$step점(100점까지). 물약 효과는 전설까지 그대로 남아요.';
   }
 
   @override

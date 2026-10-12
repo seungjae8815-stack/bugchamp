@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:core_models/core_models.dart';
@@ -37,6 +39,8 @@ void main() {
     int pot = 1,
     LifeStage stage = LifeStage.adult,
     bool gacha = false,
+    bool newGen = true,
+    int su = 0,
   }) => IndividualBug(
     id: id,
     speciesId: sp,
@@ -46,6 +50,8 @@ void main() {
     sex: Sex.male,
     stage: stage,
     fromGacha: gacha,
+    newGen: newGen,
+    synthUps: su,
   );
 
   SaveGame save(List<IndividualBug> bugs) =>
@@ -146,13 +152,70 @@ void main() {
       );
     });
 
-    test('물약은 소모되고 롤 바닥을 올린다', () {
+    test('물약은 소모되고 새 롤에 +3점씩 더한다', () {
       final s = save([
         b('k').copyWith(rolls: const [0, 0, 0, 0, 0, 0, 0, 0]),
       ]).copyWith(essence: {'stag_c': 5}, growthPotions: 3);
       final r = gradeUp(s, 'k', cfg, byId, Random(2), potions: 3);
       expect(r.save!.growthPotions, 0);
-      expect(r.save!.bugs.first.statRolls.every((v) => v >= 15), isTrue);
+      expect(r.save!.bugs.first.statRolls.every((v) => v >= 9), isTrue);
+    });
+
+    test('업데이트 전 곤충 — 처음 올릴 때 옛 합성 단계를 적는다(한 번만)', () {
+      final s = save([
+        b('old', pot: 3, su: 2, newGen: false),
+      ]).copyWith(essence: {'stag_c': 9999});
+      final r1 = gradeUp(s, 'old', cfg, byId, Random(1));
+      expect(r1.save!.bugs.first.legacySynthUps, 2);
+      expect(r1.save!.bugs.first.synthUps, 3);
+      final r2 = gradeUp(r1.save!, 'old', cfg, byId, Random(1));
+      expect(r2.save!.bugs.first.legacySynthUps, 2, reason: '처음 적은 값 고정');
+      // 새 곤충은 적지 않는다.
+      final n = gradeUp(
+        save([b('new')]).copyWith(essence: {'stag_c': 99}),
+        'new',
+        cfg,
+        byId,
+        Random(1),
+      );
+      expect(n.save!.bugs.first.legacySynthUps, isNull);
+    });
+
+    test('불변식 — 올리기·바꾸기를 반복해도 정수가 늘지 않는다(업데이트 전·후 곤충)', () {
+      for (final sp in ['stag_c', 'longhorn_l']) {
+        for (final start in [
+          b('x', sp: sp, pot: 1),
+          b('x', sp: sp, pot: 2, gacha: true),
+          b('x', sp: sp, pot: 5, su: 4, newGen: false),
+          b('x', sp: sp, pot: 2, su: 1, newGen: false),
+          b('x', sp: sp, pot: 3, newGen: false),
+          b('x', sp: sp, pot: 1, newGen: false),
+        ]) {
+          // 곤충 하나 + 정수 넉넉히 — 올리기 → 바꾸기 → 그 정수로 같은 곤충을 다시 만들 수는 없으니,
+          // "올린 뒤 바꾼 정수 == 올리기 전 바꾼 정수 + 들인 정수" 로 잰다.
+          var s0 = save([start]).copyWith(essence: {sp: 100000});
+          while (s0.bugs.first.potential < 5) {
+            final conv0 = convertToEssence(s0, ['x'], cfg, byId);
+            final gainBefore = conv0.save!.essence[sp]! - s0.essence[sp]!;
+            final up = gradeUp(s0, 'x', cfg, byId, Random(3));
+            final cost = up.extra['cost'] as int;
+            final conv1 = convertToEssence(up.save!, ['x'], cfg, byId);
+            final gainAfter = conv1.save!.essence[sp]! - up.save!.essence[sp]!;
+            expect(
+              gainAfter,
+              gainBefore + cost,
+              reason:
+                  '$sp ${start.potential}/${start.synthUps}/ng=${start.newGen}',
+            );
+            expect(
+              conv1.save!.essence[sp],
+              conv0.save!.essence[sp],
+              reason: '올리고 바꾸나 바로 바꾸나 정수가 같다',
+            );
+            s0 = up.save!;
+          }
+        }
+      }
     });
   });
 
@@ -169,6 +232,12 @@ void main() {
       expect(buyPotions(s, 4, cfg, '2026-10-12').error, 'daily_limit');
       expect(buyPotions(s, 3, cfg, '2026-10-12').isOk, isTrue);
       expect(buyPotions(s, 10, cfg, '2026-10-13').isOk, isTrue);
+    });
+
+    test('기록보다 이른 날짜는 거절(시계를 되돌려 하루 상한을 다시 채우지 못하게)', () {
+      final s = buyPotions(rich(), 10, cfg, '2026-10-12').save!;
+      expect(buyPotions(s, 1, cfg, '2026-10-11').error, 'daily_limit');
+      expect(buyPotions(s, 1, cfg, '2026-10-13').isOk, isTrue);
     });
 
     test('젤리 부족은 실패', () {
@@ -188,8 +257,63 @@ void main() {
     expect(back.growthPotions, 4);
     expect(back.potionBuyDay, '2026-10-12');
     expect(back.potionBuyCount, 2);
+    final g2 = SaveGame.fromJson(
+      SaveGame.initial()
+          .copyWith(
+            gachaLegendPity: 7,
+            potionSrvDay: '2026-10-12',
+            potionSrvBought: 3,
+            potionSrvDrops: 1,
+          )
+          .toJson(),
+    );
+    expect(g2.gachaLegendPity, 7);
+    expect(g2.potionSrvDay, '2026-10-12');
+    expect(g2.potionSrvBought, 3);
+    expect(g2.potionSrvDrops, 1);
     final empty = SaveGame.initial().toJson();
+    expect(empty.containsKey('gLp'), isFalse);
+    expect(empty.containsKey('psD'), isFalse);
     expect(empty.containsKey('essence'), isFalse);
     expect(empty.containsKey('potions'), isFalse);
+  });
+
+  group('짝짓기 자식(켠 상태)', () {
+    final raw =
+        jsonDecode(File('../app/assets/data/pets.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final pets = PetConfig.fromJson(raw);
+    BreedingSlot slot(int seed) => BreedingSlot.from(
+      id: 's$seed',
+      mother: b('m', pot: 5).copyWith(sex: Sex.female),
+      father: b('f', pot: 5),
+      endsAt: DateTime.utc(2026),
+      seed: seed,
+    );
+
+    test('부모가 전설이어도 자식 등급은 야생 확률 · 켜진 뒤 생긴 표식', () {
+      final c = List.filled(6, 0);
+      for (var i = 0; i < 4000; i++) {
+        final kid = slot(i).hatch(id: 'k$i', species: common, cfg: pets);
+        expect(kid.newGen, isTrue);
+        expect(kid.stage, LifeStage.egg);
+        c[kid.potential]++;
+      }
+      expect(c[5], 0, reason: '야생 전설 0');
+      expect(c[1] / 4000, closeTo(0.80, 0.03));
+    });
+
+    test('꺼져 있으면 옛 규칙(부모 등급 상속) · 표식 없음', () {
+      final off = PetConfig.fromJson({
+        ...raw,
+        'individualGrade': {
+          ...(raw['individualGrade'] as Map<String, dynamic>),
+          'enabled': false,
+        },
+      });
+      final kid = slot(1).hatch(id: 'k', species: common, cfg: off);
+      expect(kid.newGen, isFalse);
+      expect(kid.potential, greaterThanOrEqualTo(4));
+    });
   });
 }

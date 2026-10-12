@@ -82,7 +82,7 @@ GradeOp convertToEssence(
 }
 
 /// 곤충 [bugId] 를 한 등급 올린다 — 그 종 정수 [IndividualGradeConfig.upgradeCost] 개 + 물약 [potions] 개.
-/// 롤은 칸마다 다시 굴려 큰 쪽(내려가지 않는다), 물약이 새 롤의 바닥을 올린다.
+/// 롤은 칸마다 다시 굴려 큰 쪽(내려가지 않는다), 물약 1개마다 새 롤 +[IndividualGradeConfig.potionRollBonus]점.
 /// 합성 단계(`synthUps`)도 1 올린다 — 분해 젤리는 태생 등급(`bornPotential`)으로만 준다(무한 젤리 차단).
 GradeOp gradeUp(
   SaveGame s,
@@ -106,10 +106,13 @@ GradeOp gradeUp(
   if (have < cost) return const GradeOp.fail('no_essence');
   final before = b.statRolls;
   final after = cfg.rollUp(before, rng, potions);
+  // 업데이트 전 곤충은 처음 올릴 때 옛 합성 단계를 따로 적는다 — 옛 단계(3마리분)와 새 단계(들인 정수)의
+  // 정수 가치가 달라서, 섞이면 올리기·바꾸기 반복으로 정수가 늘어난다(`essenceOf`).
   final up = b.copyWith(
     potential: b.potential + 1,
     synthUps: b.synthUps + 1,
     rolls: after,
+    legacySynthUps: !b.newGen && b.legacySynthUps == null ? b.synthUps : null,
   );
   final bag = Map<String, int>.from(s.essence);
   final left = have - cost;
@@ -138,7 +141,13 @@ GradeOp buyPotions(
   String dayKey,
 ) {
   if (count <= 0) return const GradeOp.fail('none');
-  final today = s.potionBuyDay == dayKey ? s.potionBuyCount : 0;
+  // 기록보다 이른 날짜(시계를 되돌림)면 거절 — 날짜를 바꿔 가며 하루 상한을 다시 채우지 못하게(2026-10-12).
+  // 날짜 키는 'yyyy-MM-dd' 라 문자열 비교가 곧 날짜 비교다.
+  final last = s.potionBuyDay;
+  if (last != null && dayKey.compareTo(last) < 0) {
+    return const GradeOp.fail('daily_limit');
+  }
+  final today = last == dayKey ? s.potionBuyCount : 0;
   if (today + count > cfg.potionDailyBuy) {
     return const GradeOp.fail('daily_limit');
   }

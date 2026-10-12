@@ -95,10 +95,11 @@ SaveGame applyIapGrant(
   FairyConfig? fairy,
   String? purchaseId,
   Species? Function(String speciesId)? speciesOf,
+  bool newGen = false,
 }) {
   final t = now.toUtc();
   var out = _applyGrantGoods(s, p.grant, fairy);
-  out = _grantBugEggs(out, p.grant, t, purchaseId, speciesOf);
+  out = _grantBugEggs(out, p.grant, t, purchaseId, speciesOf, newGen);
 
   DateTime? extend(DateTime? cur, int days) {
     final base = (cur != null && cur.isAfter(t)) ? cur : t;
@@ -168,6 +169,7 @@ SaveGame _grantBugEggs(
   DateTime t,
   String? purchaseId,
   Species? Function(String speciesId)? speciesOf,
+  bool newGen,
 ) {
   if (g.bugEggs.isEmpty || speciesOf == null) return s;
   final key = purchaseId ?? '${t.microsecondsSinceEpoch}';
@@ -187,7 +189,14 @@ SaveGame _grantBugEggs(
         species: sp,
         rng: rng,
         potential: e.potential,
-      ).copyWith(stage: LifeStage.egg, stageSince: t),
+        // 결제 알은 뽑기 출신처럼 종 희귀도 가치를 받지 않는다(2026-10-12 — 산 4성 전설 종이 정수 6,048 이 되지 않게).
+        // [newGen] = 개체 등급이 켜진 뒤 생긴 곤충 표식(호출부가 설정의 enabled 를 넘긴다).
+      ).copyWith(
+        stage: LifeStage.egg,
+        stageSince: t,
+        fromGacha: true,
+        newGen: newGen,
+      ),
     );
   }
   return s.copyWith(bugs: bugs);

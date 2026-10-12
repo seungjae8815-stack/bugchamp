@@ -16,10 +16,12 @@ class IndividualGradeConfig {
     this.breedChildWild = true,
     this.essenceCosts = const [6, 6, 6, 10],
     this.essenceRarity = const {},
-    this.potionFloorStep = 5,
+    this.potionRollBonus = 3,
     this.potionMaxPerUse = 3,
     this.gachaGradeWeights = const [0, 0, 0.70, 0.27, 0.03],
     this.gachaPityMinPotential = 4,
+    this.gachaLegendPity = 50,
+    this.potionDropDaily = 3,
     this.potionJelly = 10,
     this.potionDailyBuy = 10,
     this.potionEliteChance = 0.003,
@@ -50,13 +52,22 @@ class IndividualGradeConfig {
   /// 종 희귀도별 정수 가치(곤충 1마리 = 등급 누적 × 이 값). 뽑기 출신은 1.
   final Map<Grade, double> essenceRarity;
 
-  /// 물약 1개당 새로 굴리는 롤의 바닥(0~100 점) · 한 번에 넣을 수 있는 최대 수.
-  final int potionFloorStep;
+  /// 물약 1개당 새로 굴리는 롤에 **더하는 점수**(0~100 점, 100 상한 — 2026-10-12 사장님 확정) ·
+  /// 한 번에 넣을 수 있는 최대 수. 예전 "바닥 +5점"은 전설까지 12개를 넣어도 평균 84 → 86점이라 효과가 없었다.
+  final int potionRollBonus;
   final int potionMaxPerUse;
 
   /// 뽑기 개체 등급 확률(일반 → 전설) · 천장(이 포텐셜 이상 확정).
   final List<double> gachaGradeWeights;
   final int gachaPityMinPotential;
+
+  /// 뽑기 **전설 천장**(2026-10-12 사장님 확정) — 이 횟수 안에 전설(포텐셜 5)이 안 나오면 이 번째는 전설 확정.
+  /// 영웅 이상 천장(`PetConfig.gachaEpicPity`)과 따로 센다(세이브 `gachaLegendPity`). 0 = 끔.
+  final int gachaLegendPity;
+
+  /// 확률 물약 드롭(정예·보스 재처치)을 서버가 인정하는 **하루 개수**(서버 날짜) — 업로드마다 여유를 주던 시절
+  /// 업로드 60초마다 +5 가 쌓였다(2026-10-12 점검).
+  final int potionDropDaily;
 
   /// 성장물약 — 젤리 가격·하루 구매 상한(§2.8 예외, 사장님 확정) · 무료 획득(직접 사냥만).
   final int potionJelly;
@@ -82,13 +93,27 @@ class IndividualGradeConfig {
   /// 곤충 1마리를 정수로 바꿀 때 받는 양. **알은 0**(애벌레 이상만 — 부화기를 거치게).
   /// 종 희귀도 가치는 **태어난 등급 몫에만** 곱한다 — 등급 올리기로 얹은 몫은 들인 정수 그대로 돌려준다.
   /// (다 곱하면 정수 30 으로 올린 전설 종이 1,008 로 돌아와 올리기·바꾸기 반복이 무한 정수가 됐다.)
+  ///
+  /// **업데이트 전 곤충**(표식 `newGen` 없음 — 2026-10-12 사장님 확정 "들인 마릿수만큼"):
+  /// 희귀도 가치 × (태생 기본 + 3 × 옛 합성 단계). 태생 기본 = 1성 1 · b성(b≥2) b+1.
+  /// 옛 규칙의 5★ 는 합성 13마리·태생 5★ 는 드물 뿐이라, 새 등급 누적(2,160)으로 치면 횡재가 됐다.
+  /// 새 규칙으로 올린 몫(옛 합성 단계 [IndividualBug.legacySynthUps] 뒤의 단계)은 들인 정수 그대로.
   int essenceOf(IndividualBug bug, Grade speciesRarity) {
     if (bug.stage == LifeStage.egg) return 0;
     final r = bug.fromGacha ? 1.0 : (essenceRarity[speciesRarity] ?? 1.0);
-    final born = (bug.potential - bug.synthUps).clamp(1, bug.potential);
-    return (cumulative(born) * r).round() +
+    final su = bug.synthUps.clamp(0, bug.potential - 1);
+    final born = bug.potential - su;
+    if (bug.newGen) {
+      return (cumulative(born) * r).round() +
+          cumulative(bug.potential) -
+          cumulative(born);
+    }
+    final legacy = (bug.legacySynthUps ?? su).clamp(0, su);
+    final fresh = su - legacy;
+    final base = born <= 1 ? 1 : born + 1;
+    return (r * (base + 3 * legacy)).round() +
         cumulative(bug.potential) -
-        cumulative(born);
+        cumulative(bug.potential - fresh);
   }
 
   /// 체력·공격·방어 등급 배율(전설 = 1).
@@ -149,14 +174,35 @@ class IndividualGradeConfig {
     );
   }
 
-  /// 등급 올리기 — 칸마다 다시 굴려 **기존 값과 큰 쪽**(내려가지 않는다). 물약이 새 롤의 바닥을 올린다.
+  /// 등급 올리기 — 칸마다 새 롤 = 0~100 무작위 + 물약 수 × [potionRollBonus](100 상한), **기존 값과 큰 쪽**
+  /// (내려가지 않는다). 칸마다 난수를 한 번씩만 쓴다.
   List<int> rollUp(List<int> old, math.Random rng, int potions) {
-    final floor = (potions.clamp(0, potionMaxPerUse) * potionFloorStep).clamp(
-      0,
-      100,
-    );
-    return [for (final v in old) math.max(v, floor + rng.nextInt(101 - floor))];
+    final bonus = potions.clamp(0, potionMaxPerUse) * potionRollBonus;
+    return [
+      for (final v in old) math.max(v, math.min(100, rng.nextInt(101) + bonus)),
+    ];
   }
+
+  /// 뽑기 개체 등급 — [r](0~1) 하나로 고른다(소비 횟수 그대로). [epicPity] = 영웅 이상 천장 차례,
+  /// [legendPity] = 전설 천장 차례(전설 확정). 앱 뽑기와 테스트가 같은 함수를 쓴다.
+  int gachaPotential(
+    double r, {
+    bool epicPity = false,
+    bool legendPity = false,
+  }) {
+    if (legendPity) return 5;
+    final w = epicPity
+        ? [
+            for (var i = 0; i < gachaGradeWeights.length; i++)
+              i + 1 >= gachaPityMinPotential ? gachaGradeWeights[i] : 0.0,
+          ]
+        : gachaGradeWeights;
+    return pickWith(w, r).clamp(1, 5);
+  }
+
+  /// 전설 천장 차례인가 — 지금까지 전설 없이 [count] 번 뽑았다.
+  bool legendPityDue(int count) =>
+      gachaLegendPity > 0 && count >= gachaLegendPity - 1;
 
   /// [weights](일반 → 전설)에서 [r](0~1) 로 포텐셜(1~5)을 고른다 — 호출부가 난수를 넘긴다(소비 횟수를 맞추려고).
   static int pickWith(List<double> weights, double r) {
@@ -204,14 +250,18 @@ class IndividualGradeConfig {
         for (final e in ((j['essenceRarity'] as Map?) ?? const {}).entries)
           Grade.fromKey('${e.key}'): (e.value as num).toDouble(),
       },
-      potionFloorStep:
-          (j['potionFloorStep'] as num?)?.toInt() ?? d.potionFloorStep,
+      potionRollBonus:
+          (j['potionRollBonus'] as num?)?.toInt() ?? d.potionRollBonus,
       potionMaxPerUse:
           (j['potionMaxPerUse'] as num?)?.toInt() ?? d.potionMaxPerUse,
       gachaGradeWeights: dl('gachaGradeWeights', d.gachaGradeWeights),
       gachaPityMinPotential:
           (j['gachaPityMinPotential'] as num?)?.toInt() ??
           d.gachaPityMinPotential,
+      gachaLegendPity:
+          (j['gachaLegendPity'] as num?)?.toInt() ?? d.gachaLegendPity,
+      potionDropDaily:
+          (j['potionDropDaily'] as num?)?.toInt() ?? d.potionDropDaily,
       potionJelly: (j['potionJelly'] as num?)?.toInt() ?? d.potionJelly,
       potionDailyBuy:
           (j['potionDailyBuy'] as num?)?.toInt() ?? d.potionDailyBuy,

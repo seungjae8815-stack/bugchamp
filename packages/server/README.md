@@ -140,6 +140,24 @@ gcloud run deploy bugchamp-server --source . --region asia-northeast3
 환경변수를 바꿀 땐 배포와 분리해 `services update --update-env-vars` 를 쓴다
 (`update` 는 지정한 것만 바꾼다).
 
+### 개체 등급(1.0.20) — 출시 순서와 긴급 끄기
+
+개체 등급은 `pets.json → individualGrade.enabled = true` 로 **앱 번들과 서버가 함께 켜진 채** 나간다.
+서버를 먼저 올리면 1.0.19 앱 유저에게 결투 등급 보정·정수 검사가 먼저 걸리므로
+**1.0.20 서버 배포 = 스토어 게시 = 강제 업데이트(`MIN_SUPPORTED_VERSION_*`)를 같은 때**(10/19 월 09:00 KST)에 묶는다.
+
+문제가 생겨 서버 쪽만 급히 끌 때(재배포 없음 — 앱 번들은 켜진 채라 결투 능력치가 앱·서버에서 갈린다, 정말 급할 때만):
+
+```powershell
+gcloud run services update bugchamp-server --region asia-northeast3 --update-env-vars INDIVIDUAL_GRADE=0
+```
+
+다시 켤 때(환경변수를 지우면 pets.json 값 = 켜짐):
+
+```powershell
+gcloud run services update bugchamp-server --region asia-northeast3 --remove-env-vars INDIVIDUAL_GRADE
+```
+
 ### 최초 1회 (서비스 생성)
 
 ```powershell

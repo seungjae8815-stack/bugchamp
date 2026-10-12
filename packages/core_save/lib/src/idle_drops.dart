@@ -94,7 +94,11 @@ IdleDrops rollIdleDrops({
               rng: rng,
               potential: potential.clamp(1, 5),
               variantChance: pet.variantWildChance,
-            ).copyWith(stage: LifeStage.egg, stageSince: now),
+            ).copyWith(
+              stage: LifeStage.egg,
+              stageSince: now,
+              newGen: pet.individualGrade.enabled,
+            ),
           );
           bugRoom--;
           if (rarePlus) pity = 0;
