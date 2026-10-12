@@ -698,32 +698,39 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ?.transcendMaxMult(s.forgeTranscend) ??
       1;
 
-  /// 공방 초월(2026-10-10 사장님 확정) — 공방 최대 레벨에서 화석을 내고 초월한다. 낀 장비·모루가 **전부 사라지고**
-  /// 공방 레벨이 0(풀잎)부터 다시, 대신 모든 등급의 옵션 최대치가 오른다(`transcendMaxMult`).
-  /// 실패 이유: `not_max`(최대 레벨 아님 · 등급업 중) · `maxed`(초월 끝) · `not_enough_fossil`.
+  /// 공방 초월(2026-10-10 사장님 확정, 2026-10-12 시간 추가) — 공방 최대 레벨에서 화석을 내고 초월한다.
+  /// 낀 장비·모루가 **전부 사라지고** 공방 레벨이 0(풀잎)부터 다시(누르는 순간), 옵션 최대치가 오르는 효과는
+  /// 시간이 끝나 수령할 때 붙는다(core_save `startForgeTranscend`).
+  /// 실패 이유: `in_progress` · `not_max`(최대 레벨 아님 · 등급업 중) · `maxed`(초월 끝) · `not_enough_fossil`.
   Future<String?> transcendForge() async {
     final forge = ref.read(gameDataProvider).value?.forgeConfig;
     if (forge == null) return 'not_max';
-    final s = state.requireValue;
-    if (s.forgeLevel < forge.maxLevel || s.forgeUpAt != null) return 'not_max';
-    if (s.forgeTranscend >= forge.transcendMax) return 'maxed';
-    final cost = forge.transcendFossilCost(s.forgeTranscend);
-    final have = s.materialCount(MaterialKind.fossil);
-    if (have < cost) return 'not_enough_fossil';
-    await _commit(
-      s.copyWith(
-        forgeTranscend: s.forgeTranscend + 1,
-        forgeLevel: 0,
-        forgeSteps: 0,
-        clearForgeUpAt: true,
-        equippedItems: const {},
-        forgeStack: const [],
-        materials: {...s.materials, MaterialKind.fossil: have - cost},
-        // 등급 필터는 풀잎부터 다시 시작하는 공방에 맞게 푼다 — "호박 이상"이 남으면 거의 다 팔리고(낀 장비도 없어
-        // 별 재료로도 안 간다) 화석만 끝까지 탄다(2026-10-10 출시 전 점검). 옵션 필터는 등급과 무관해서 남긴다.
-        autoForgeMinTier: 0,
-      ),
-    );
+    final now = ref.read(clockProvider).now().toUtc();
+    final r = startForgeTranscend(state.requireValue, forge, now);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 시간이 끝난 공방 초월을 수령한다. 실패 이유: `none` · `not_ready`.
+  Future<String?> claimForgeTranscend() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return 'none';
+    final now = ref.read(clockProvider).now().toUtc();
+    final r = claimForgeTranscendSave(state.requireValue, forge, now);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 진행 중 공방 초월을 젤리로 즉시 끝낸다(값표는 공방 등급업과 같다). 실패 이유: `none` · `not_enough_jelly`.
+  Future<String?> rushForgeTranscend() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return 'none';
+    final now = ref.read(clockProvider).now().toUtc();
+    final r = rushForgeTranscendSave(state.requireValue, forge, now);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
     return null;
   }
 
@@ -3364,37 +3371,35 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 부위에 장비를 낀다. **가방이 없으므로 기존 것은 사라진다**(§3.4) —
   /// 창고·보유상한·자동분해가 통째로 필요 없어지고, 세이브에 남는 장비는 8개뿐이다.
   ///
-  /// 별은 **이어받지 않는다**(2026-10-10 사장님 — `starInheritRatio` 0). 바꾸기 전 확인은 화면이 받는다.
+  /// 같은 등급으로 바꾸면 별을 **이어받는다**(2026-10-12 사장님 확정 — core_save `equipWithStarCarry`).
+  /// 등급이 다르면 초기화. 바꾸기 전 확인은 화면이 받는다.
   Future<void> equipItem(EquipItem item) async {
     final s = state.requireValue;
+    final items = ref.read(gameDataProvider).value?.itemConfig;
     await _commit(
-      s.copyWith(
-        equippedItems: {...s.equippedItems, item.slot: _inherit(s, item)},
-      ),
+      items == null
+          ? s.copyWith(equippedItems: {...s.equippedItems, item.slot: item})
+          : equipWithStarCarry(s, items, item),
     );
   }
 
   /// 모루 맨 위 장비를 낀다(교체) — 끼기와 모루에서 빼기를 **한 번에** 저장한다. 두 번 나눠 저장하면 그 사이 앱이
   /// 꺼질 때 장착과 모루에 같은 장비가 하나씩 남았다(2026-10-10 출시 전 점검). 결과 창에서 다듬은 장비도 모루 맨 위에
-  /// 그대로 있으므로 맨 위를 낀다. 비었으면 false.
+  /// 그대로 있으므로 맨 위를 낀다. 비었으면 false. 별 인계는 [equipItem] 과 같다.
   Future<bool> equipForgeTop() async {
     final s = state.requireValue;
     if (s.forgeStack.isEmpty) return false;
     final item = s.forgeStack.last;
+    final items = ref.read(gameDataProvider).value?.itemConfig;
     await _commit(
-      s.copyWith(
-        equippedItems: {...s.equippedItems, item.slot: _inherit(s, item)},
-        forgeStack: s.forgeStack.sublist(0, s.forgeStack.length - 1),
-      ),
+      items == null
+          ? s.copyWith(
+              equippedItems: {...s.equippedItems, item.slot: item},
+              forgeStack: s.forgeStack.sublist(0, s.forgeStack.length - 1),
+            )
+          : equipWithStarCarry(s, items, item, popForgeTop: true),
     );
     return true;
-  }
-
-  EquipItem _inherit(SaveGame s, EquipItem item) {
-    final items = ref.read(gameDataProvider).value?.itemConfig;
-    return items == null
-        ? item
-        : inheritStars(items, s.equippedItems[item.slot], item);
   }
 
   /// 모루 맨 위 장비를 **같은 부위 장착 장비의 별 재료**로 쓴다(2026-10-10 장비 v2).
@@ -3882,7 +3887,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (s.forgeUpAt != null) return false; // 이미 업그레이드 중
     if (s.forgeLevel >= forge.maxLevel) return false;
     if (s.forgeSteps >= forge.levelUpSteps) return false;
-    final cost = forge.levelUpStepGold(s.forgeLevel);
+    final cost = forge.levelUpStepGold(
+      s.forgeLevel,
+      transcend: forgeCostTranscend(s),
+    );
     if (s.gold < cost) return false;
 
     final steps = s.forgeSteps + 1;
@@ -3893,7 +3901,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
         gold: s.gold - cost,
         forgeSteps: steps,
         // 칸을 다 채우면 그때 업그레이드(시간)가 시작된다.
-        forgeUpAt: full ? now.add(forge.levelUpDuration(s.forgeLevel)) : null,
+        forgeUpAt: full
+            ? now.add(
+                forge.levelUpDuration(
+                  s.forgeLevel,
+                  transcend: forgeCostTranscend(s),
+                ),
+              )
+            : null,
       ),
     );
     return true;

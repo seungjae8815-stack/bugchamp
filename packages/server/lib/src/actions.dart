@@ -280,6 +280,8 @@ class GameActions {
     // 개체 등급(2026-10-11, docs/design_individual_grade.md) — 정수·성장물약·물약 구매 기록.
     // 곤충 안의 롤(`rl`)·뽑기 출신(`gc`)은 [_keepFieldsOldAppDoesNotKnow] 의 따로 처리(같은 곤충이면 되돌린다).
     24: ['essence', 'potions', 'potionBuyDay', 'potionBuyN'],
+    // 공방 초월 시간(1.0.20, 2026-10-12) — 모르는 앱(1.0.19)이 올리면 저장본의 진행 중 초월 끝 시각을 지킨다.
+    25: ['ftAt'],
   };
 
   /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.

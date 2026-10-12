@@ -20,6 +20,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
+import '../battle/duel_bug_build.dart';
 import '../battle/training_screen.dart';
 import '../../ui/bug_grade.dart';
 import 'dex_screen.dart';
@@ -1736,7 +1737,14 @@ class StorageScreen extends ConsumerWidget {
               final ok = await ctrl.collectIncubated(occupant.key);
               if (!ok) return;
               AudioService.instance.sfxHatch();
-              if (ctx.mounted) _snack(ctx, l.incubatorCollectedSnack);
+              if (ctx.mounted) {
+                _snack(
+                  ctx,
+                  (sp?.isIncompleteMetamorphosis ?? false)
+                      ? l.incubatorCollectedNymphSnack
+                      : l.incubatorCollectedSnack,
+                );
+              }
             }
           // 부화 중 탭 → 광고 보고 시간 당기기. 대기 자체가 이탈 지점이라
           // "기다림을 줄일 수단"을 주는 대신 광고 노출을 얻는다.
@@ -2388,6 +2396,8 @@ class StorageScreen extends ConsumerWidget {
       );
     }
     final items = _sorted(data, save, ref.read(clockProvider).now().toUtc());
+    // 결투 전투력(2026-10-12) — 세이브가 바뀔 때만 다시 계산한다(그리드 칸마다 계산하지 않는다).
+    final powers = ref.watch(duelPowerByBugProvider);
     return GridView.builder(
       padding: const EdgeInsets.all(10),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -2399,7 +2409,15 @@ class StorageScreen extends ConsumerWidget {
       itemCount: items.length,
       itemBuilder: (context, i) {
         final it = items[i];
-        return _bugCell(context, ref, data, it.bug, it.stage, it.equipped);
+        return _bugCell(
+          context,
+          ref,
+          data,
+          it.bug,
+          it.stage,
+          it.equipped,
+          it.stage == LifeStage.adult ? powers[it.bug.id] : null,
+        );
       },
     );
   }
@@ -2412,6 +2430,7 @@ class StorageScreen extends ConsumerWidget {
     IndividualBug bug,
     LifeStage stage,
     bool equipped,
+    double? duelPower,
   ) {
     final species = data.species(bug.speciesId);
     final now = ref.read(clockProvider).now().toUtc();
@@ -2581,6 +2600,26 @@ class StorageScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            // 결투 전투력(성충만, 2026-10-12 사장님 요청) — 결투 탭·순위표와 같은 값. 칸이 좁아 줄여서 맞춘다.
+            if (duelPower != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3, left: 2, right: 2),
+                child: SizedBox(
+                  height: 11,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '🔥${formatCompact(duelPower.round())}',
+                      key: ValueKey('duelPower_${bug.id}'),
+                      style: const TextStyle(
+                        color: Color(0xFFFFB27A),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -3081,7 +3120,7 @@ class StorageScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '${stageLabel(l, effStage)}'
+                                  '${stageLabel(l, effStage, species)}'
                                   '${effStage == LifeStage.adult ? ' Lv.${bug.level}' : ''}',
                                   style: const TextStyle(
                                     color: Color(0xCCFFFFFF),
@@ -3104,6 +3143,26 @@ class StorageScreen extends ConsumerWidget {
                               )
                             else
                               _potentialMark(ctx, data, bug.potential, 13),
+                            // 결투 전투력(성충만) — 홈의 캐릭터 전투력과 헷갈리지 않게 이름을 붙인다.
+                            if (effStage == LifeStage.adult &&
+                                r.watch(duelPowerByBugProvider)[bug.id] !=
+                                    null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                l.bugDuelPower(
+                                  formatCompact(
+                                    r
+                                        .watch(duelPowerByBugProvider)[bug.id]!
+                                        .round(),
+                                  ),
+                                ),
+                                style: const TextStyle(
+                                  color: Color(0xFFFFB27A),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
                             // 혈통 특성(§2.5) — 짝짓기 자식만 가진다.
                             // 야생 개체와 구분되는 유일한 표식이라 이름 바로
                             // 아래, 포텐셜과 같은 줄 높이에 둔다.
@@ -3177,7 +3236,16 @@ class StorageScreen extends ConsumerWidget {
                       (effStage == LifeStage.larva ||
                           effStage == LifeStage.pupa)) ...[
                     const SizedBox(height: 6),
-                    _evolveRow(ctx, r, petCfg, save, bug, effStage, now),
+                    _evolveRow(
+                      ctx,
+                      r,
+                      petCfg,
+                      save,
+                      bug,
+                      species,
+                      effStage,
+                      now,
+                    ),
                   ],
                   // 개체 등급이 켜지면 합성은 등급 올리기·정수로 바뀐다.
                   if (petCfg != null && gradeOn) ...[
@@ -3851,6 +3919,7 @@ class StorageScreen extends ConsumerWidget {
     PetConfig petCfg,
     SaveGame save,
     IndividualBug bug,
+    Species? species,
     LifeStage effStage,
     DateTime now,
   ) {
@@ -3881,7 +3950,7 @@ class StorageScreen extends ConsumerWidget {
                             ? l.evolveReady
                             : l.evolveNext(
                                 _mmss(rem),
-                                stageLabel(l, effStage.next),
+                                stageLabel(l, effStage.next, species),
                               )),
                   style: const TextStyle(
                     color: Color(0xB3FFFFFF),
@@ -3899,7 +3968,7 @@ class StorageScreen extends ConsumerWidget {
                   title: l.evolveAccelTitle,
                   body: l.evolveAccelConfirm(
                     petCfg.accelerateJelly,
-                    stageLabel(l, effStage.next),
+                    stageLabel(l, effStage.next, species),
                   ),
                   jelly: petCfg.accelerateJelly,
                   actionLabel: l.accelerateAction,

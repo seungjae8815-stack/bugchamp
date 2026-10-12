@@ -3286,11 +3286,29 @@ abstract class AppLocalizations {
   /// **'Pupa'**
   String get stagePupa;
 
+  /// No description provided for @stageNymph.
+  ///
+  /// In en, this message translates to:
+  /// **'Nymph'**
+  String get stageNymph;
+
+  /// No description provided for @stageMolting.
+  ///
+  /// In en, this message translates to:
+  /// **'Molting'**
+  String get stageMolting;
+
   /// No description provided for @stageAdult.
   ///
   /// In en, this message translates to:
   /// **'Adult'**
   String get stageAdult;
+
+  /// No description provided for @bugDuelPower.
+  ///
+  /// In en, this message translates to:
+  /// **'🔥 Duel power {power}'**
+  String bugDuelPower(String power);
 
   /// No description provided for @evolveTitle.
   ///
@@ -3549,6 +3567,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hatched into a larva!'**
   String get incubatorCollectedSnack;
+
+  /// No description provided for @incubatorCollectedNymphSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatched into a nymph!'**
+  String get incubatorCollectedNymphSnack;
 
   /// No description provided for @incubatorExpandedSnack.
   ///
@@ -6298,6 +6322,54 @@ abstract class AppLocalizations {
   /// **'Can’t transcend right now'**
   String get forgeTranscendFailed;
 
+  /// No description provided for @forgeTranscendTimeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}, and even low grades cost at least {floorGold} gold · {floorHours}h.'**
+  String forgeTranscendTimeNote(
+    String hours,
+    String gold,
+    String time,
+    String floorGold,
+    String floorHours,
+  );
+
+  /// No description provided for @forgeTranscendStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcend started! Claim it in {hours}h to raise option max'**
+  String forgeTranscendStarted(String hours);
+
+  /// No description provided for @forgeTranscendInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge Transcend {n} in progress'**
+  String forgeTranscendInProgress(String n);
+
+  /// No description provided for @forgeTranscendInProgressBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim it when done to raise option max to +{total}% total. You can keep forging and upgrading meanwhile.'**
+  String forgeTranscendInProgressBody(String total);
+
+  /// No description provided for @forgeTranscendClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim transcend'**
+  String get forgeTranscendClaim;
+
+  /// No description provided for @forgeTranscendRushTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish transcend now'**
+  String get forgeTranscendRushTitle;
+
+  /// No description provided for @forgeTranscendRushConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to finish the transcend now?'**
+  String forgeTranscendRushConfirm(int jelly);
+
   /// No description provided for @forgeTranscendMaxed.
   ///
   /// In en, this message translates to:
@@ -6315,6 +6387,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The {stars} stars and {exp} star materials on your current gear (and any upgrade in progress) will be lost. New gear starts at 0 stars.\n\nSwap anyway?'**
   String forgeStarLoseBody(String stars, String exp);
+
+  /// No description provided for @forgeStarCarryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stars carry over'**
+  String get forgeStarCarryTitle;
+
+  /// No description provided for @forgeStarCarryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Same grade, so the new gear keeps your current gear\'s ★{stars} stars and {exp} star materials (and any upgrade in progress). Care (polish) belongs to the options, so the new gear keeps its own.\n\nSwap?'**
+  String forgeStarCarryBody(String stars, String exp);
 
   /// No description provided for @starBonus.
   ///
@@ -9758,7 +9842,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideLifeBody.
   ///
   /// In en, this message translates to:
-  /// **'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels.'**
+  /// **'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels. Mantises, grasshoppers and the giant water bug have no pupa — they grow by molting (Egg → Nymph → Molting → Adult).'**
   String get guideLifeBody;
 
   /// No description provided for @guideDuelTitle.
@@ -11525,7 +11609,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideGearTranscendBody.
   ///
   /// In en, this message translates to:
-  /// **'Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps).'**
+  /// **'Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost more gold and time.'**
   String guideGearTranscendBody(String level, String pct, String max);
 
   /// No description provided for @guideHuntTitle.

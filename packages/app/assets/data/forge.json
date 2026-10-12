@@ -25,7 +25,12 @@
   "baseSeconds": 3600,
   "growth": 1.28,
   "jellyPerHour": 2,
-  "jellyMin": 5
+  "jellyMin": 5,
+  "_transcendComment": "초월 뒤 등급업(2026-10-12 사장님 재확정): 초월 단계 t>0(진행 중 초월도 센다)이면 골드 = max(원래 비용, 원래 transcendGoldFloorLevel 레벨 비용 약 263억) x transcendGoldMult^t, 시간 = max(원래 시간, transcendTimeFloorHours) x transcendTimeMult^t. 앞쪽 레벨도 싸지 않고 전체는 단계마다 1.5배. 근거: 원래 0→19 가 약 55조 골드·385시간(최상위 유저 수입으로 약 425시간)이라 x100^t 는 4만 시간이 되어 폐기. t=0 이면 원래와 같다.",
+  "transcendGoldMult": 1.5,
+  "transcendTimeMult": 1.5,
+  "transcendGoldFloorLevel": 13,
+  "transcendTimeFloorHours": 12
  },
  "_fossilComment": "화석 조각 = 망치. 처치당 **잡는 데 걸린 시간에 비례**해 쌓인다 — 스테이지를 보지 않으므로 낮은 난이도로 내려가도 시간당 획득이 같다. ⚠️ 재료처럼 지수로 키우면 안 된다(소비가 영원히 1개 고정이라 무한 잉여). 온라인 1시간 = 200개(제련 10분치), 오프라인 3시간 = 200개.",
  "fossil": {
@@ -49,6 +54,9 @@
  "transcendMax": 5,
  "transcendStep": 0.15,
  "transcendFossilBase": 10000,
+ "_transcendTimeComment": "초월 시간(2026-10-12 사장님 확정): 다음 단계 n(1~5)에 transcendBaseHours + transcendStepHours x (n-1) 시간 = 24·36·48·60·72. 화석·장비·모루는 누르는 순간 사라지고 공방이 0레벨로 돌아가며, 옵션 최대치 효과는 시간이 끝나 수령할 때 붙는다. 젤리 즉시완료는 등급업과 같은 값표(levelUp.jellyPerHour·jellyMin). 진행 중엔 공방 제련·등급업은 되고 다시 초월만 못 한다.",
+ "transcendBaseHours": 24,
+ "transcendStepHours": 12,
  "_rerollComment": "옵션 재굴림(2026-09-09). 모루 위 장비의 **옵션만** 다시 굴린다 — 등급은 그대로다. 등급을 젤리로 바꾸면 그건 물건을 사는 것이라 §2.6 P2W 금지선을 넘는다. 옵션은 제련을 계속 돌리면 언젠가 나오는 조합이라, 파는 것은 **시간 절약**이다(가챠 각주와 같은 논리). 제련은 유저가 가장 오래 붙잡는 무한 루프인데 젤리 통로가 하나도 없었다.",
  "rushSeconds": 60,
  "rushJelly": 10,

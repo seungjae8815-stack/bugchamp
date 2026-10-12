@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:server/src/actions.dart';
 import 'package:server/src/game_config.dart';
@@ -170,6 +174,66 @@ void main() {
       expect(actions.mergeSave(s, now).save!.avatar, 'avatar_12');
     },
   );
+
+  test(
+    '공방 초월 시간(feat 25) — 1.0.19(feat 23)·개체 등급 빌드(feat 24) 업로드는 진행 중 끝 시각을 지킨다',
+    () {
+      final at = t0.add(const Duration(hours: 20));
+      final s = stored().copyWith(forgeTranscendAt: at);
+      for (final feat in [23, 24]) {
+        final old = s.toJson()
+          ..['feat'] = feat
+          ..remove('ftAt');
+        final r = actions.mergeSave(s, old);
+        expect(r.isOk, isTrue, reason: r.error);
+        expect(r.save!.forgeTranscendAt, at, reason: 'feat $feat');
+      }
+      // 새 앱(feat 25)이 수령해서 비우면 그대로 받는다.
+      final claimed = s
+          .copyWith(forgeTranscend: 1, clearForgeTranscendAt: true)
+          .toJson();
+      final r = actions.mergeSave(s, claimed);
+      expect(r.save!.forgeTranscendAt, isNull);
+      expect(r.save!.forgeTranscend, 1);
+      // 새 앱이 시작한 초월은 그대로 받는다.
+      final none = stored();
+      final started = none.copyWith(forgeTranscendAt: at).toJson();
+      expect(actions.mergeSave(none, started).save!.forgeTranscendAt, at);
+    },
+  );
+
+  test('같은 등급 교체로 별을 이어받은 업로드(새 장비에 별이 갑자기 생김)를 자르지 않는다(2026-10-12)', () {
+    final until = t0.add(const Duration(hours: 4));
+    final s = stored().copyWith(
+      equippedItems: {
+        EquipSlot.ring: ring.copyWith(starExp: 40, starUntil: until),
+      },
+      forgeStack: const [
+        EquipItem(
+          slot: EquipSlot.ring,
+          tier: 9,
+          options: [ItemOption(kind: ItemOptionKind.defense, value: 8)],
+        ),
+      ],
+    );
+    final swapped = equipWithStarCarry(
+      s,
+      ItemConfig.fromJson(
+        jsonDecode(File('../app/assets/data/items.json').readAsStringSync())
+            as Map<String, dynamic>,
+      ),
+      s.forgeStack.last,
+      popForgeTop: true,
+    );
+    final r = actions.mergeSave(s, swapped.toJson());
+    expect(r.isOk, isTrue, reason: r.error);
+    final got = r.save!.equippedItems[EquipSlot.ring]!;
+    expect(got.options.single.kind, ItemOptionKind.defense);
+    expect(got.stars, 3);
+    expect(got.starExp, 40);
+    expect(got.starUntil, until);
+    expect(r.save!.forgeStack, isEmpty);
+  });
 
   test('프로필 그림 꼴(avatar_*)이 아니면 받지 않는다 — 긴 문자열이 상대 응답에 실려 나가지 않게', () {
     final s = stored().copyWith(avatar: 'avatar_05');

@@ -28,6 +28,10 @@ class ForgeConfig {
     this.levelUpGrowth = 1.28,
     this.levelUpJellyPerHour = 2,
     this.levelUpJellyMin = 5,
+    this.levelUpTranscendGoldMult = 1,
+    this.levelUpTranscendTimeMult = 1,
+    this.levelUpTranscendGoldFloorLevel = 0,
+    this.levelUpTranscendTimeFloorHours = 0,
     this.fossilPerSecond = 0.0556,
     this.fossilOfflineRatio = 0.333,
     this.fossilMinPerDrop = 1,
@@ -39,6 +43,8 @@ class ForgeConfig {
     this.transcendMax = 5,
     this.transcendStep = 0.15,
     this.transcendFossilBase = 10000,
+    this.transcendBaseHours = 0,
+    this.transcendStepHours = 0,
     this.sellMaterialBase = 2,
     this.sellMaterialPerTier = 1,
     this.rushSeconds = 60,
@@ -97,6 +103,24 @@ class ForgeConfig {
   /// 즉시완료 젤리 — 남은 시간 1시간당.
   final int levelUpJellyPerHour;
   final int levelUpJellyMin;
+
+  /// 초월 뒤 등급업(2026-10-12 사장님 재확정) — 초월 단계 t>0 이면 골드 =
+  /// max(원래 비용(레벨), 원래 비용([levelUpTranscendGoldFloorLevel])) × 이 값^t.
+  /// 앞쪽 레벨도 싸지 않고 전체는 단계마다 이 배율만큼 오른다. t=0 이면 원래 비용 그대로.
+  final double levelUpTranscendGoldMult;
+
+  /// 초월 뒤 등급업 시간 — t>0 이면 max(원래 시간, [levelUpTranscendTimeFloorHours]시간) × 이 값^t
+  /// (즉시 완료 젤리도 시간에서 나와 따라 오른다).
+  final double levelUpTranscendTimeMult;
+
+  /// 초월 뒤 골드 바닥 = 이 레벨의 원래 등급업 비용.
+  final int levelUpTranscendGoldFloorLevel;
+
+  /// 초월 뒤 시간 바닥(시간).
+  final int levelUpTranscendTimeFloorHours;
+
+  /// 등급업 골드 상한 — int64(9.2e18) 넘침 방지. 초월 뒤 후반 비용이 이 값을 넘으면 여기서 자른다.
+  static const int levelUpGoldCap = 9000000000000000000;
 
   /// 화석 조각 **온라인 초당 기대 획득**.
   ///
@@ -168,6 +192,17 @@ class ForgeConfig {
   /// 초월 비용(화석) = 이 값 × (지금 단계 + 1). 젤리로 사지 못한다(단계 = 영구 능력치 — §2.6).
   final int transcendFossilBase;
 
+  /// 초월에 걸리는 시간(2026-10-12 사장님 확정) — 지금 단계 n(0부터) → n+1 에
+  /// [transcendBaseHours] + [transcendStepHours] × n 시간(24·36·48·60·72). 0 이면 즉시.
+  /// 즉시 완료 젤리는 등급업과 같은 값표([levelUpJelly]).
+  final int transcendBaseHours;
+  final int transcendStepHours;
+
+  /// 초월 [n] 단계 → [n]+1 에 걸리는 시간.
+  Duration transcendDuration(int n) => Duration(
+    hours: transcendBaseHours + transcendStepHours * n.clamp(0, transcendMax),
+  );
+
   /// 초월 [n] 단계의 옵션 최대치 배율.
   double transcendMaxMult(int n) =>
       1 + transcendStep * n.clamp(0, transcendMax);
@@ -210,8 +245,20 @@ class ForgeConfig {
   int stackExpandCost(int bought) =>
       roundJellyCost(stackExpandJelly * math.pow(1.35, bought).toDouble());
 
-  /// 현재 레벨 [level] → [level]+1 에 드는 **총** 골드.
-  int levelUpGold(int level) {
+  /// 현재 레벨 [level] → [level]+1 에 드는 **총** 골드. [transcend] = 초월 단계(진행 중 포함 —
+  /// core_save `forgeCostTranscend`). t>0 이면 [levelUpTranscendGoldMult] 주석의 식. [levelUpGoldCap] 에서 자른다.
+  int levelUpGold(int level, {int transcend = 0}) {
+    var v = _baseLevelUpGold(level);
+    if (transcend > 0) {
+      v =
+          math.max(v, _baseLevelUpGold(levelUpTranscendGoldFloorLevel)) *
+          math.pow(levelUpTranscendGoldMult, transcend);
+    }
+    if (!v.isFinite || v >= levelUpGoldCap) return levelUpGoldCap;
+    return v.round();
+  }
+
+  double _baseLevelUpGold(int level) {
     final on = levelUpLateFrom > 0 && levelUpLateGoldGrowth > 0;
     final beyond = on ? math.max(0, level - levelUpLateFrom) : 0;
     final late = levelUpLateSpan > 0
@@ -219,30 +266,34 @@ class ForgeConfig {
         : beyond;
     final end = beyond - late;
     final early = level - beyond;
-    return (levelUpGoldBase *
-            math.pow(levelUpGoldGrowth, early) *
-            math.pow(on ? levelUpLateGoldGrowth : 1, late) *
-            math.pow(
-              levelUpEndGoldGrowth <= 0
-                  ? levelUpGoldGrowth
-                  : levelUpEndGoldGrowth,
-              end,
-            ))
-        .round();
+    return levelUpGoldBase *
+        math.pow(levelUpGoldGrowth, early) *
+        math.pow(on ? levelUpLateGoldGrowth : 1, late) *
+        math.pow(
+          levelUpEndGoldGrowth <= 0 ? levelUpGoldGrowth : levelUpEndGoldGrowth,
+          end,
+        );
   }
 
   /// 칸 하나에 드는 골드(총액을 [levelUpSteps] 로 나눈 값).
-  int levelUpStepGold(int level) {
+  int levelUpStepGold(int level, {int transcend = 0}) {
     final steps = levelUpSteps <= 0 ? 1 : levelUpSteps;
     // 정수 올림 나눗셈 — 후반 비용(수경)은 double 로 나누면 정밀도가 모자라
-    // 칸 × 10 이 총액보다 몇 골드 작아진다.
-    return (levelUpGold(level) + steps - 1) ~/ steps;
+    // 칸 × 10 이 총액보다 몇 골드 작아진다. (상한 9e18 + 칸 수는 int64 안이다.)
+    return (levelUpGold(level, transcend: transcend) + steps - 1) ~/ steps;
   }
 
-  /// 등급업에 걸리는 시간 — 현재 레벨 [level] → [level]+1.
-  Duration levelUpDuration(int level) => Duration(
-    seconds: (levelUpBaseSeconds * math.pow(levelUpGrowth, level)).round(),
-  );
+  /// 등급업에 걸리는 시간 — 현재 레벨 [level] → [level]+1. [transcend] = 초월 단계(진행 중 포함).
+  /// t>0 이면 max(원래 시간, [levelUpTranscendTimeFloorHours]시간) × [levelUpTranscendTimeMult]^t.
+  Duration levelUpDuration(int level, {int transcend = 0}) {
+    var sec = levelUpBaseSeconds * math.pow(levelUpGrowth, level).toDouble();
+    if (transcend > 0) {
+      sec =
+          math.max(sec, levelUpTranscendTimeFloorHours * 3600.0) *
+          math.pow(levelUpTranscendTimeMult, transcend);
+    }
+    return Duration(seconds: sec.round());
+  }
 
   /// 남은 시간 [remaining] 을 즉시 끝내는 젤리 값.
   int levelUpJelly(Duration remaining) {
@@ -299,6 +350,14 @@ class ForgeConfig {
       levelUpGrowth: (lv['growth'] as num?)?.toDouble() ?? 1.28,
       levelUpJellyPerHour: (lv['jellyPerHour'] as num?)?.toInt() ?? 2,
       levelUpJellyMin: (lv['jellyMin'] as num?)?.toInt() ?? 5,
+      levelUpTranscendGoldMult:
+          (lv['transcendGoldMult'] as num?)?.toDouble() ?? 1,
+      levelUpTranscendTimeMult:
+          (lv['transcendTimeMult'] as num?)?.toDouble() ?? 1,
+      levelUpTranscendGoldFloorLevel:
+          (lv['transcendGoldFloorLevel'] as num?)?.toInt() ?? 0,
+      levelUpTranscendTimeFloorHours:
+          (lv['transcendTimeFloorHours'] as num?)?.toInt() ?? 0,
       fossilPerSecond: (fs['perSecondOnline'] as num?)?.toDouble() ?? 0.0556,
       fossilOfflineRatio: (fs['offlineRatio'] as num?)?.toDouble() ?? 0.333,
       fossilMinPerDrop: (fs['minPerDrop'] as num?)?.toInt() ?? 1,
@@ -310,6 +369,8 @@ class ForgeConfig {
       transcendStep: (json['transcendStep'] as num?)?.toDouble() ?? 0.15,
       transcendFossilBase:
           (json['transcendFossilBase'] as num?)?.toInt() ?? 10000,
+      transcendBaseHours: (json['transcendBaseHours'] as num?)?.toInt() ?? 0,
+      transcendStepHours: (json['transcendStepHours'] as num?)?.toInt() ?? 0,
       sellMaterialBase:
           ((json['sell'] as Map<String, dynamic>?)?['materialBase'] as num?)
               ?.toInt() ??

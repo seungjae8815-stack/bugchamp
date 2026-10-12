@@ -320,7 +320,7 @@ void main() {
       expect(await ctrl.startStarUp(EquipSlot.ring), 'not_ready');
     });
 
-    test('새 장비로 바꾸면 별은 초기화된다(이어받기 없음)', () async {
+    test('다른 등급으로 바꾸면 별은 초기화된다', () async {
       final c = make(
         seed().copyWith(
           equippedItems: {EquipSlot.ring: ring.copyWith(stars: 5)},
@@ -330,10 +330,45 @@ void main() {
       await c
           .read(saveControllerProvider.notifier)
           .equipItem(
-            const EquipItem(slot: EquipSlot.ring, tier: 9, options: []),
+            const EquipItem(slot: EquipSlot.ring, tier: 8, options: []),
           );
       final save = c.read(saveControllerProvider).requireValue;
       expect(save.equippedItems[EquipSlot.ring]!.stars, 0);
+    });
+
+    test('같은 등급으로 바꾸면 별을 이어받는다(2026-10-12) — 모루 맨 위 끼기', () async {
+      const top = EquipItem(
+        slot: EquipSlot.ring,
+        tier: 9,
+        options: [ItemOption(kind: ItemOptionKind.attack, value: 7)],
+      );
+      final until = t0.add(const Duration(hours: 2));
+      final c = make(
+        seed().copyWith(
+          equippedItems: {
+            EquipSlot.ring: ring.copyWith(
+              stars: 4,
+              starExp: 50,
+              starUntil: until,
+            ),
+          },
+          forgeStack: const [top],
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      expect(
+        await c.read(saveControllerProvider.notifier).equipForgeTop(),
+        isTrue,
+      );
+      final save = c.read(saveControllerProvider).requireValue;
+      final got = save.equippedItems[EquipSlot.ring]!;
+      expect(got.stars, 4);
+      expect(got.starExp, 50);
+      expect(got.starUntil, until);
+      // 옵션(정성 포함)은 새 장비 것 — 로드 때 등급 개수만큼 채워질 수 있어 첫 줄만 본다.
+      expect(got.options.first, top.options.first);
+      expect(got.options.every((o) => o.polish == 0), isTrue);
+      expect(save.forgeStack, isEmpty);
     });
 
     test('모루 맨 위 장비 끼기(교체) — 끼기와 모루에서 빼기를 한 번에', () async {
@@ -370,15 +405,69 @@ void main() {
       final ctrl = c.read(saveControllerProvider.notifier);
       expect(await ctrl.transcendForge(), isNull);
       final save = c.read(saveControllerProvider).requireValue;
-      expect(save.forgeTranscend, 1);
+      // 효과(단계)는 시간이 끝나 수령할 때 붙는다(2026-10-12).
+      expect(save.forgeTranscend, 0);
+      expect(save.forgeTranscendAt, t0.add(forge.transcendDuration(0)));
       expect(save.forgeLevel, 0);
       expect(save.equippedItems, isEmpty);
       expect(save.forgeStack, isEmpty);
       expect(save.materialCount(MaterialKind.fossil), 0);
       // 등급 필터는 풀린다(공방이 풀잎부터라 남으면 다 팔려 화석만 탄다).
       expect(save.autoForgeMinTier, 0);
-      // 최대 레벨이 아니면 못 한다.
-      expect(await ctrl.transcendForge(), 'not_max');
+      // 진행 중에는 다시 못 한다.
+      expect(await ctrl.transcendForge(), 'in_progress');
+      // 아직 시간이 안 됐으면 못 받는다.
+      expect(await ctrl.claimForgeTranscend(), 'not_ready');
+    });
+
+    test('공방 초월 수령 — 시간이 끝나면 단계 +1', () async {
+      final forge = ForgeConfig.fromJson(_read('forge.json'));
+      final at = t0.subtract(const Duration(minutes: 1));
+      final c = make(seed().copyWith(forgeTranscendAt: at));
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.claimForgeTranscend(), isNull);
+      final s = c.read(saveControllerProvider).requireValue;
+      expect(s.forgeTranscend, 1);
+      expect(s.forgeTranscendAt, isNull);
+      expect(forge.transcendMaxMult(s.forgeTranscend), greaterThan(1));
+    });
+
+    test('공방 초월 젤리 즉시 완료 — 등급업과 같은 값표', () async {
+      final forge = ForgeConfig.fromJson(_read('forge.json'));
+      final c = make(
+        seed().copyWith(
+          forgeTranscendAt: t0.add(const Duration(hours: 24)),
+          materials: {MaterialKind.jelly: 100},
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.rushForgeTranscend(), isNull);
+      final s = c.read(saveControllerProvider).requireValue;
+      expect(s.forgeTranscend, 1);
+      expect(
+        s.materialCount(MaterialKind.jelly),
+        100 - forge.levelUpJelly(const Duration(hours: 24)),
+      );
+    });
+
+    test('초월 뒤 등급업 칸 골드 — 진행 중인 초월도 단계에 센다', () async {
+      final forge = ForgeConfig.fromJson(_read('forge.json'));
+      // 1단계 완료 + 2단계 진행 중 → 비용 단계 2.
+      final step = forge.levelUpStepGold(0, transcend: 2);
+      expect(step, greaterThan(forge.levelUpStepGold(0, transcend: 1)));
+      final c = make(
+        seed().copyWith(
+          forgeTranscend: 1,
+          forgeTranscendAt: t0.add(const Duration(hours: 30)),
+          gold: step,
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.payForgeStep(), isTrue);
+      expect(c.read(saveControllerProvider).requireValue.gold, 0);
     });
 
     test('교체 판단: 목표 옵션이 있으면 등급보다 그게 우선이다', () async {
