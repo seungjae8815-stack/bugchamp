@@ -84,6 +84,7 @@
     },
     {
       "id": "mantis_jumping",
+      "metamorphosis": "incomplete",
       "name": {
         "ko": "좀사마귀",
         "en": "Asian Jumping Mantis",
@@ -138,6 +139,7 @@
     },
     {
       "id": "grasshopper_longheaded",
+      "metamorphosis": "incomplete",
       "name": {
         "ko": "방아깨비",
         "en": "Oriental Longheaded Grasshopper",
@@ -220,6 +222,7 @@
     },
     {
       "id": "mantis_widebelly",
+      "metamorphosis": "incomplete",
       "name": {
         "ko": "넓적배사마귀",
         "en": "Wide-bellied Mantis",
@@ -274,6 +277,7 @@
     },
     {
       "id": "katydid",
+      "metamorphosis": "incomplete",
       "name": {
         "ko": "여치",
         "en": "Katydid",
@@ -328,6 +332,7 @@
     },
     {
       "id": "mantis_giant",
+      "metamorphosis": "incomplete",
       "name": {
         "ko": "왕사마귀",
         "en": "Giant Asian Mantis",
@@ -436,6 +441,7 @@
     },
     {
       "id": "water_bug_giant",
+      "metamorphosis": "incomplete",
       "name": {
         "ko": "물장군",
         "en": "Giant Water Bug",
@@ -543,5 +549,6 @@
       }
     }
   ],
+  "_metamorphosisComment": "불완전변태(2026-10-12 사장님 확정): 사마귀·메뚜기류·물장군은 번데기가 없어 단계 이름을 알 → 약충 → 탈피 중 → 성충 으로 보여 준다(규칙·시간은 같다, 문구만). 없으면 complete.",
   "_passiveComment": "종 고유 패시브(§2.1) — 그 종을 애완펫으로 장착했을 때만 붙는다. 20종이 등급 말고는 구분이 없어서 \"장수풍뎅이를 갖고 싶다\"가 아니라 \"전설을 갖고 싶다\"가 됐던 문제를 푼다. stat 은 UpgradeKind.key 이고, 오타는 data_test 의 패시브 키 유효성 검사가 잡는다. 값은 등급대로 올라간다(일반 0.06~0.08 → 전설 0.30~0.35). crit 만 확률(%p)이라 한 자릿수다. ⚠️ 패시브는 적응형 몬스터 체력 기준(§7) 밖이다 — 기준에 넣으면 어떤 종을 껴도 같아져 종 구분이 사라진다."
 }

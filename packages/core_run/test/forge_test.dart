@@ -25,6 +25,7 @@ void main() {
   _critCapTests();
   _optionTierTests();
   _autoStrikeTests();
+  _transcendCostTests();
   group('장비 데이터(items.json)', () {
     final items = _items();
 
@@ -1230,6 +1231,79 @@ void _forgeSinkTests() {
       for (var i = 0; i < 8; i++) {
         expect(f.stackExpandCost(i) % 5, 0);
       }
+    });
+  });
+}
+
+/// 공방 초월 시간·초월 뒤 등급업 비용(2026-10-12 사장님 확정).
+void _transcendCostTests() {
+  group('공방 초월 — 시간 · 초월 뒤 등급업 비용', () {
+    final forge = _forge();
+
+    test('초월 시간 = 24·36·48·60·72시간(다음 단계 1~5)', () {
+      expect(
+        [
+          for (var n = 0; n < forge.transcendMax; n++)
+            forge.transcendDuration(n),
+        ],
+        [
+          for (final h in [24, 36, 48, 60, 72]) Duration(hours: h),
+        ],
+      );
+    });
+
+    test('초월 즉시 완료 젤리 = 등급업과 같은 값표(시간당 2, 5·10 단위)', () {
+      expect(forge.levelUpJelly(forge.transcendDuration(0)), 50); // 24h × 2
+      expect(forge.levelUpJelly(forge.transcendDuration(4)), 140); // 72h × 2
+      for (var n = 0; n < forge.transcendMax; n++) {
+        expect(forge.levelUpJelly(forge.transcendDuration(n)) % 5, 0);
+      }
+    });
+
+    test('초월 단계 t 마다 등급업 골드 ×100^t · 시간 ×1.5^t', () {
+      expect(forge.levelUpTranscendGoldMult, 100);
+      expect(forge.levelUpTranscendTimeMult, 1.5);
+      for (final lv in [0, 5, 12]) {
+        expect(
+          forge.levelUpGold(lv, transcend: 1) / forge.levelUpGold(lv),
+          closeTo(100, 1e-6),
+        );
+        expect(
+          forge.levelUpGold(lv, transcend: 2) / forge.levelUpGold(lv),
+          closeTo(10000, 1e-6),
+        );
+        expect(
+          forge.levelUpDuration(lv, transcend: 2).inSeconds,
+          closeTo(forge.levelUpDuration(lv).inSeconds * 2.25, 3),
+        );
+      }
+      // 기본값(0)은 예전 값 그대로.
+      expect(forge.levelUpGold(7, transcend: 0), forge.levelUpGold(7));
+    });
+
+    test('즉시 완료 젤리는 늘어난 시간을 따라 오른다', () {
+      final lv = 15;
+      expect(
+        forge.levelUpJelly(forge.levelUpDuration(lv, transcend: 3)),
+        greaterThan(forge.levelUpJelly(forge.levelUpDuration(lv))),
+      );
+    });
+
+    test('골드는 int64 를 넘지 않는다 — 넘으면 상한에서 자르고 칸 합도 넘치지 않는다', () {
+      for (var t = 0; t <= forge.transcendMax; t++) {
+        for (var lv = 0; lv < forge.maxLevel; lv++) {
+          final g = forge.levelUpGold(lv, transcend: t);
+          expect(g, greaterThan(0), reason: 'lv $lv t $t');
+          expect(g, lessThanOrEqualTo(ForgeConfig.levelUpGoldCap));
+          final step = forge.levelUpStepGold(lv, transcend: t);
+          expect(step, greaterThan(0), reason: 'lv $lv t $t');
+          expect(step * forge.levelUpSteps, greaterThanOrEqualTo(g));
+        }
+      }
+      expect(
+        forge.levelUpGold(forge.maxLevel - 1, transcend: forge.transcendMax),
+        ForgeConfig.levelUpGoldCap,
+      );
     });
   });
 }

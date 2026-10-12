@@ -698,32 +698,39 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ?.transcendMaxMult(s.forgeTranscend) ??
       1;
 
-  /// 공방 초월(2026-10-10 사장님 확정) — 공방 최대 레벨에서 화석을 내고 초월한다. 낀 장비·모루가 **전부 사라지고**
-  /// 공방 레벨이 0(풀잎)부터 다시, 대신 모든 등급의 옵션 최대치가 오른다(`transcendMaxMult`).
-  /// 실패 이유: `not_max`(최대 레벨 아님 · 등급업 중) · `maxed`(초월 끝) · `not_enough_fossil`.
+  /// 공방 초월(2026-10-10 사장님 확정, 2026-10-12 시간 추가) — 공방 최대 레벨에서 화석을 내고 초월한다.
+  /// 낀 장비·모루가 **전부 사라지고** 공방 레벨이 0(풀잎)부터 다시(누르는 순간), 옵션 최대치가 오르는 효과는
+  /// 시간이 끝나 수령할 때 붙는다(core_save `startForgeTranscend`).
+  /// 실패 이유: `in_progress` · `not_max`(최대 레벨 아님 · 등급업 중) · `maxed`(초월 끝) · `not_enough_fossil`.
   Future<String?> transcendForge() async {
     final forge = ref.read(gameDataProvider).value?.forgeConfig;
     if (forge == null) return 'not_max';
-    final s = state.requireValue;
-    if (s.forgeLevel < forge.maxLevel || s.forgeUpAt != null) return 'not_max';
-    if (s.forgeTranscend >= forge.transcendMax) return 'maxed';
-    final cost = forge.transcendFossilCost(s.forgeTranscend);
-    final have = s.materialCount(MaterialKind.fossil);
-    if (have < cost) return 'not_enough_fossil';
-    await _commit(
-      s.copyWith(
-        forgeTranscend: s.forgeTranscend + 1,
-        forgeLevel: 0,
-        forgeSteps: 0,
-        clearForgeUpAt: true,
-        equippedItems: const {},
-        forgeStack: const [],
-        materials: {...s.materials, MaterialKind.fossil: have - cost},
-        // 등급 필터는 풀잎부터 다시 시작하는 공방에 맞게 푼다 — "호박 이상"이 남으면 거의 다 팔리고(낀 장비도 없어
-        // 별 재료로도 안 간다) 화석만 끝까지 탄다(2026-10-10 출시 전 점검). 옵션 필터는 등급과 무관해서 남긴다.
-        autoForgeMinTier: 0,
-      ),
-    );
+    final now = ref.read(clockProvider).now().toUtc();
+    final r = startForgeTranscend(state.requireValue, forge, now);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 시간이 끝난 공방 초월을 수령한다. 실패 이유: `none` · `not_ready`.
+  Future<String?> claimForgeTranscend() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return 'none';
+    final now = ref.read(clockProvider).now().toUtc();
+    final r = claimForgeTranscendSave(state.requireValue, forge, now);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 진행 중 공방 초월을 젤리로 즉시 끝낸다(값표는 공방 등급업과 같다). 실패 이유: `none` · `not_enough_jelly`.
+  Future<String?> rushForgeTranscend() async {
+    final forge = ref.read(gameDataProvider).value?.forgeConfig;
+    if (forge == null) return 'none';
+    final now = ref.read(clockProvider).now().toUtc();
+    final r = rushForgeTranscendSave(state.requireValue, forge, now);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
     return null;
   }
 
@@ -3803,7 +3810,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (s.forgeUpAt != null) return false; // 이미 업그레이드 중
     if (s.forgeLevel >= forge.maxLevel) return false;
     if (s.forgeSteps >= forge.levelUpSteps) return false;
-    final cost = forge.levelUpStepGold(s.forgeLevel);
+    final cost = forge.levelUpStepGold(
+      s.forgeLevel,
+      transcend: s.forgeTranscend,
+    );
     if (s.gold < cost) return false;
 
     final steps = s.forgeSteps + 1;
@@ -3814,7 +3824,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
         gold: s.gold - cost,
         forgeSteps: steps,
         // 칸을 다 채우면 그때 업그레이드(시간)가 시작된다.
-        forgeUpAt: full ? now.add(forge.levelUpDuration(s.forgeLevel)) : null,
+        forgeUpAt: full
+            ? now.add(
+                forge.levelUpDuration(
+                  s.forgeLevel,
+                  transcend: s.forgeTranscend,
+                ),
+              )
+            : null,
       ),
     );
     return true;

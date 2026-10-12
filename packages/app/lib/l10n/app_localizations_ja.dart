@@ -1790,6 +1790,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get stagePupa => 'さなぎ';
 
   @override
+  String get stageNymph => '若虫';
+
+  @override
+  String get stageMolting => '脱皮中';
+
+  @override
   String get stageAdult => '成虫';
 
   @override
@@ -1944,6 +1950,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get incubatorCollectedSnack => '幼虫に孵化しました！';
+
+  @override
+  String get incubatorCollectedNymphSnack => '若虫に孵化しました！';
 
   @override
   String get incubatorExpandedSnack => '孵化器のスロットが増えました！';
@@ -3546,6 +3555,37 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get forgeTranscendFailed => '今は超越できません';
+
+  @override
+  String forgeTranscendTimeNote(String hours, String gold, String time) {
+    return '超越には$hours時間かかります(ゼリーで即完了可)。超越するほど工房アップグレードのゴールド×$gold・時間×$time。';
+  }
+
+  @override
+  String forgeTranscendStarted(String hours) {
+    return '超越を開始しました！$hours時間後に受け取るとオプション最大値が上がります';
+  }
+
+  @override
+  String forgeTranscendInProgress(String n) {
+    return '工房超越 $n段階 進行中';
+  }
+
+  @override
+  String forgeTranscendInProgressBody(String total) {
+    return '完了して受け取るとオプション最大値が合計+$total%になります。その間も製錬・アップグレードはできます。';
+  }
+
+  @override
+  String get forgeTranscendClaim => '超越を受け取る';
+
+  @override
+  String get forgeTranscendRushTitle => '工房超越を即完了';
+
+  @override
+  String forgeTranscendRushConfirm(int jelly) {
+    return 'ゼリー$jelly個で超越を今すぐ終えますか？';
+  }
 
   @override
   String forgeTranscendMaxed(String pct) {
@@ -5636,7 +5676,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guideLifeBody =>
-      '卵 → 幼虫 → さなぎ → 成虫の順に育ちます。卵は孵化器に入れると幼虫になり、幼虫からは時間が経つと自然に成虫になります。修練・交配・決闘は成虫だけができます。';
+      '卵 → 幼虫 → さなぎ → 成虫の順に育ちます。卵は孵化器に入れると幼虫になり、幼虫からは時間が経つと自然に成虫になります。修練・交配・決闘は成虫だけができます。カマキリ・バッタの仲間・タガメはさなぎにならず脱皮で育ちます(卵 → 若虫 → 脱皮中 → 成虫)。';
 
   @override
   String get guideDuelTitle => '決闘';
@@ -6755,7 +6795,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideGearTranscendBody(String level, String pct, String max) {
-    return '工房超越: 工房$level等級(最大)で超越すると、装備中と金床の上の装備がすべて消え、工房は草等級からやり直しです。代わりにすべての等級のオプション最大値が段階ごとに+$pct上がります(最大$max段階)。';
+    return '工房超越: 工房$level等級(最大)で超越すると、装備中と金床の上の装備がすべて消え、工房は草等級からやり直しです。代わりにすべての等級のオプション最大値が段階ごとに+$pct上がります(最大$max段階)。超越には時間がかかり(ゼリーで即完了)、効果は完了して受け取ったときに付きます。超越するほど工房アップグレードのゴールド・時間が大きく上がります。';
   }
 
   @override

@@ -404,7 +404,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
           icon: Icons.workspace_premium_rounded,
           label: l.forgeGradeButton,
           sub: '${save.forgeLevel + 1}',
-          busy: save.forgeUpAt != null,
+          busy: save.forgeUpAt != null || save.forgeTranscendAt != null,
           onTap: () => showForgeGrade(context, ref),
         ),
         Expanded(
@@ -1927,6 +1927,19 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
               fontWeight: FontWeight.w800,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            l.forgeTranscendTimeNote(
+              '${forge.transcendDuration(n).inHours}',
+              _mult(forge.levelUpTranscendGoldMult),
+              _mult(forge.levelUpTranscendTimeMult),
+            ),
+            style: const TextStyle(
+              color: Color(0xCCFFFFFF),
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+          ),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
@@ -1992,11 +2005,118 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
       ],
     );
     if (ok != true || !mounted) return;
+    final hours = forge
+        .transcendDuration(
+          ref.read(saveControllerProvider).requireValue.forgeTranscend,
+        )
+        .inHours;
     final err = await ctrl.transcendForge();
     if (!mounted) return;
     showCenterToast(
       context,
-      err == null ? l.forgeTranscendDone : l.forgeTranscendFailed,
+      err != null
+          ? l.forgeTranscendFailed
+          : (hours > 0
+                ? l.forgeTranscendStarted('$hours')
+                : l.forgeTranscendDone),
+    );
+  }
+
+  /// 배율 표시 — 정수면 소수점 없이(×100), 아니면 한 자리(×1.5).
+  String _mult(double v) =>
+      v == v.roundToDouble() ? '${v.round()}' : v.toStringAsFixed(1);
+
+  /// 진행 중인 공방 초월(2026-10-12 사장님 확정) — 남은 시간 · 젤리 즉시 완료 · 끝나면 수령.
+  /// 공방 레벨과 무관하게 보인다(초월 직후 공방은 풀잎부터 다시라 최대 레벨 칸 밖이다).
+  Widget _transcendProgress(
+    AppLocalizations l,
+    SaveGame save,
+    SaveController ctrl,
+    DateTime at,
+    DateTime now,
+  ) {
+    final n = save.forgeTranscend + 1;
+    final done = !now.isBefore(at);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0x33E8B84A),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _honey.withValues(alpha: 0.8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l.forgeTranscendInProgress('$n'),
+                  style: const TextStyle(
+                    color: _honey,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+              Text(
+                done ? l.forgeReady : remainLabel(l, at.difference(now)),
+                style: TextStyle(
+                  color: done ? _honey : Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.forgeTranscendInProgressBody(
+              '${(forge.transcendStep * n * 100).round()}',
+            ),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (done)
+            _wide(l.forgeTranscendClaim, () async {
+              final err = await ctrl.claimForgeTranscend();
+              if (!mounted) return;
+              showCenterToast(
+                context,
+                err == null ? l.forgeTranscendDone : l.forgeTranscendFailed,
+              );
+            })
+          else
+            _wide(
+              '${l.forgeRush} · ${forge.levelUpJelly(at.difference(now))}',
+              () async {
+                final cost = forge.levelUpJelly(
+                  at.difference(ref.read(clockProvider).now().toUtc()),
+                );
+                if (!await confirmJellySpend(
+                  context,
+                  title: l.forgeTranscendRushTitle,
+                  body: l.forgeTranscendRushConfirm(cost),
+                  jelly: cost,
+                )) {
+                  return;
+                }
+                if (!mounted) return;
+                final err = await ctrl.rushForgeTranscend();
+                if (!mounted) return;
+                showCenterToast(
+                  context,
+                  err == null ? l.forgeTranscendDone : l.notEnoughJelly,
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 
@@ -2061,13 +2181,19 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
           for (var i = 0; i < items.tierCount; i++)
             _oddsRow(locale, i, cur[i], next[i], maxed),
           const SizedBox(height: 12),
+          if (save.forgeTranscendAt != null) ...[
+            _transcendProgress(l, save, ctrl, save.forgeTranscendAt!, now),
+            const SizedBox(height: 12),
+          ],
           if (maxed) ...[
             Text(
               l.forgeMaxLevel,
               style: const TextStyle(color: Color(0x99FFFFFF)),
             ),
-            const SizedBox(height: 10),
-            _transcendBox(l, save, ctrl),
+            if (save.forgeTranscendAt == null) ...[
+              const SizedBox(height: 10),
+              _transcendBox(l, save, ctrl),
+            ],
           ] else if (upAt != null) ...[
             Row(
               children: [
@@ -2146,7 +2272,7 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
             const SizedBox(height: 8),
             _wide(
               '${l.forgeStep(save.forgeSteps, forge.levelUpSteps)} · '
-              '${formatCompact(forge.levelUpStepGold(save.forgeLevel))}',
+              '${formatCompact(forge.levelUpStepGold(save.forgeLevel, transcend: save.forgeTranscend))}',
               () async {
                 if (!await ctrl.payForgeStep() && context.mounted) {
                   showCenterToast(context, l.notEnoughGold);

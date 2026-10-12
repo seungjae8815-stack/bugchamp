@@ -1048,6 +1048,8 @@
   "stageEgg": "Egg",
   "stageLarva": "Larva",
   "stagePupa": "Pupa",
+  "stageNymph": "Nymph",
+  "stageMolting": "Molting",
   "stageAdult": "Adult",
   "evolveTitle": "Evolve",
   "evolveNext": "{time} to {next}",
@@ -1185,6 +1187,7 @@
   },
   "incubatorPlacedSnack": "Incubation started!",
   "incubatorCollectedSnack": "Hatched into a larva!",
+  "incubatorCollectedNymphSnack": "Hatched into a nymph!",
   "incubatorExpandedSnack": "Incubator slot added!",
   "incubatorEmptySlot": "Empty slot",
   "incubatorWaitingEggs": "Waiting eggs ({n})",
@@ -2540,6 +2543,18 @@
   "forgeTranscendConfirmBody": "All equipped and anvil gear will disappear,\nand the forge restarts from Grass.\n\nThis cannot be undone.",
   "forgeTranscendDone": "Forge transcended! Option max increased",
   "forgeTranscendFailed": "Can’t transcend right now",
+  "forgeTranscendTimeNote": "Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}.",
+  "@forgeTranscendTimeNote": {"placeholders": {"hours": {"type": "String"}, "gold": {"type": "String"}, "time": {"type": "String"}}},
+  "forgeTranscendStarted": "Transcend started! Claim it in {hours}h to raise option max",
+  "@forgeTranscendStarted": {"placeholders": {"hours": {"type": "String"}}},
+  "forgeTranscendInProgress": "Forge Transcend {n} in progress",
+  "@forgeTranscendInProgress": {"placeholders": {"n": {"type": "String"}}},
+  "forgeTranscendInProgressBody": "Claim it when done to raise option max to +{total}% total. You can keep forging and upgrading meanwhile.",
+  "@forgeTranscendInProgressBody": {"placeholders": {"total": {"type": "String"}}},
+  "forgeTranscendClaim": "Claim transcend",
+  "forgeTranscendRushTitle": "Finish transcend now",
+  "forgeTranscendRushConfirm": "Spend {jelly} Jelly to finish the transcend now?",
+  "@forgeTranscendRushConfirm": {"placeholders": {"jelly": {"type": "int"}}},
   "forgeTranscendMaxed": "Forge fully transcended — option max +{pct}%",
   "@forgeTranscendMaxed": {
     "placeholders": {
@@ -3492,7 +3507,7 @@
   "@guideVariantBody": {"placeholders": {"wild": {"type": "String"}, "breed": {"type": "String"}, "parent": {"type": "String"}, "gacha": {"type": "String"}, "pet": {"type": "String"}, "duel": {"type": "String"}}},
   "guideVariantBody": "Very rarely a bug with different colors (rainbow / albino) appears. Chance: wild {wild} · breeding {breed} · variant parent {parent} · egg draw {gacha}. As a pet its stats are +{pet}, in duels +{duel}.",
   "guideLifeTitle": "Life stages",
-  "guideLifeBody": "Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels.",
+  "guideLifeBody": "Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels. Mantises, grasshoppers and the giant water bug have no pupa — they grow by molting (Egg → Nymph → Molting → Adult).",
   "guideDuelTitle": "Duels",
   "@guideDuelBody": {"placeholders": {"sec": {"type": "int"}, "weak": {"type": "String"}}},
   "guideDuelBody": "A bout is a {sec}-second 1:1 physical fight in a round arena. Win by ring-out, flipping, or knockout; when time runs out, remaining HP % decides. A match is 3 bugs, winner stays on. Hitting the side or back deals ×{weak} damage, and critical hits and evasion also apply.",
@@ -3997,7 +4012,7 @@
       }
     }
   },
-  "guideGearTranscendBody": "Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps).",
+  "guideGearTranscendBody": "Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost much more gold and time.",
   "@guideGearTranscendBody": {
     "placeholders": {
       "level": {

@@ -1686,7 +1686,14 @@ class StorageScreen extends ConsumerWidget {
               final ok = await ctrl.collectIncubated(occupant.key);
               if (!ok) return;
               AudioService.instance.sfxHatch();
-              if (ctx.mounted) _snack(ctx, l.incubatorCollectedSnack);
+              if (ctx.mounted) {
+                _snack(
+                  ctx,
+                  (sp?.isIncompleteMetamorphosis ?? false)
+                      ? l.incubatorCollectedNymphSnack
+                      : l.incubatorCollectedSnack,
+                );
+              }
             }
           // 부화 중 탭 → 광고 보고 시간 당기기. 대기 자체가 이탈 지점이라
           // "기다림을 줄일 수단"을 주는 대신 광고 노출을 얻는다.
@@ -2988,7 +2995,7 @@ class StorageScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '${stageLabel(l, effStage)}'
+                                  '${stageLabel(l, effStage, species)}'
                                   '${effStage == LifeStage.adult ? ' Lv.${bug.level}' : ''}',
                                   style: const TextStyle(
                                     color: Color(0xCCFFFFFF),
@@ -3068,7 +3075,16 @@ class StorageScreen extends ConsumerWidget {
                       (effStage == LifeStage.larva ||
                           effStage == LifeStage.pupa)) ...[
                     const SizedBox(height: 6),
-                    _evolveRow(ctx, r, petCfg, save, bug, effStage, now),
+                    _evolveRow(
+                      ctx,
+                      r,
+                      petCfg,
+                      save,
+                      bug,
+                      species,
+                      effStage,
+                      now,
+                    ),
                   ],
                   if (petCfg != null) ...[
                     const SizedBox(height: 6),
@@ -3737,6 +3753,7 @@ class StorageScreen extends ConsumerWidget {
     PetConfig petCfg,
     SaveGame save,
     IndividualBug bug,
+    Species? species,
     LifeStage effStage,
     DateTime now,
   ) {
@@ -3767,7 +3784,7 @@ class StorageScreen extends ConsumerWidget {
                             ? l.evolveReady
                             : l.evolveNext(
                                 _mmss(rem),
-                                stageLabel(l, effStage.next),
+                                stageLabel(l, effStage.next, species),
                               )),
                   style: const TextStyle(
                     color: Color(0xB3FFFFFF),
@@ -3785,7 +3802,7 @@ class StorageScreen extends ConsumerWidget {
                   title: l.evolveAccelTitle,
                   body: l.evolveAccelConfirm(
                     petCfg.accelerateJelly,
-                    stageLabel(l, effStage.next),
+                    stageLabel(l, effStage.next, species),
                   ),
                   jelly: petCfg.accelerateJelly,
                   actionLabel: l.accelerateAction,

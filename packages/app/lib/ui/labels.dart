@@ -270,12 +270,18 @@ String materialLabel(AppLocalizations l, MaterialKind k) => switch (k) {
   MaterialKind.fossil => l.materialFossil,
 };
 
-String stageLabel(AppLocalizations l, LifeStage s) => switch (s) {
-  LifeStage.egg => l.stageEgg,
-  LifeStage.larva => l.stageLarva,
-  LifeStage.pupa => l.stagePupa,
-  LifeStage.adult => l.stageAdult,
-};
+/// 생애주기 단계 이름. 불완전변태 종(사마귀·메뚜기류·물장군 — `species.json → metamorphosis`)은
+/// 번데기가 없어 **알 → 약충 → 탈피 중 → 성충** 으로 보여 준다(2026-10-12 사장님 확정, 규칙은 같다).
+/// [species] 를 모르면(null) 완전변태 이름.
+String stageLabel(AppLocalizations l, LifeStage s, Species? species) {
+  final incomplete = species?.isIncompleteMetamorphosis ?? false;
+  return switch (s) {
+    LifeStage.egg => l.stageEgg,
+    LifeStage.larva => incomplete ? l.stageNymph : l.stageLarva,
+    LifeStage.pupa => incomplete ? l.stageMolting : l.stagePupa,
+    LifeStage.adult => l.stageAdult,
+  };
+}
 
 String materialDesc(AppLocalizations l, MaterialKind k) => switch (k) {
   MaterialKind.chitin => l.materialChitinDesc,

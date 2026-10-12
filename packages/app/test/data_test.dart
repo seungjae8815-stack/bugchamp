@@ -36,6 +36,34 @@ void main() {
       expect(() => list.map(Species.fromJson).toList(), returnsNormally);
     });
 
+    test('불완전변태 = 사마귀 3종·방아깨비·여치·물장군 (나머지는 완전변태)', () {
+      // 2026-10-12 사장님 확정 — 번데기 없이 탈피로 자라는 종만 단계 이름을 약충·탈피 중으로 보여 준다.
+      const incomplete = {
+        'mantis_giant',
+        'mantis_jumping',
+        'mantis_widebelly',
+        'grasshopper_longheaded',
+        'katydid',
+        'water_bug_giant',
+      };
+      for (final s in species) {
+        expect(
+          s.isIncompleteMetamorphosis,
+          incomplete.contains(s.id),
+          reason: s.id,
+        );
+      }
+      // 오타("incomplet")는 조용히 완전변태가 되므로 원문 값도 본다.
+      for (final m in list) {
+        final v = m['metamorphosis'];
+        expect(
+          v == null || v == 'complete' || v == 'incomplete',
+          isTrue,
+          reason: '${m['id']}: $v',
+        );
+      }
+    });
+
     test('사이즈 범위 유효 (0 < min < max)', () {
       for (final s in species) {
         expect(s.sizeMinMm, greaterThan(0), reason: s.id);

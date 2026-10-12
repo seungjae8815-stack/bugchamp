@@ -171,6 +171,33 @@ void main() {
     },
   );
 
+  test(
+    '공방 초월 시간(feat 25) — 1.0.19(feat 23)·개체 등급 빌드(feat 24) 업로드는 진행 중 끝 시각을 지킨다',
+    () {
+      final at = t0.add(const Duration(hours: 20));
+      final s = stored().copyWith(forgeTranscendAt: at);
+      for (final feat in [23, 24]) {
+        final old = s.toJson()
+          ..['feat'] = feat
+          ..remove('ftAt');
+        final r = actions.mergeSave(s, old);
+        expect(r.isOk, isTrue, reason: r.error);
+        expect(r.save!.forgeTranscendAt, at, reason: 'feat $feat');
+      }
+      // 새 앱(feat 25)이 수령해서 비우면 그대로 받는다.
+      final claimed = s
+          .copyWith(forgeTranscend: 1, clearForgeTranscendAt: true)
+          .toJson();
+      final r = actions.mergeSave(s, claimed);
+      expect(r.save!.forgeTranscendAt, isNull);
+      expect(r.save!.forgeTranscend, 1);
+      // 새 앱이 시작한 초월은 그대로 받는다.
+      final none = stored();
+      final started = none.copyWith(forgeTranscendAt: at).toJson();
+      expect(actions.mergeSave(none, started).save!.forgeTranscendAt, at);
+    },
+  );
+
   test('프로필 그림 꼴(avatar_*)이 아니면 받지 않는다 — 긴 문자열이 상대 응답에 실려 나가지 않게', () {
     final s = stored().copyWith(avatar: 'avatar_05');
     final bad = s.toJson()..['avatar'] = 'x' * 5000;

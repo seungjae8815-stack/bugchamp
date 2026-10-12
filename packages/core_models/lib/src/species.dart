@@ -31,6 +31,20 @@ class SpeciesPassive {
   Map<String, dynamic> toJson() => {'stat': statKey, 'value': value};
 }
 
+/// 변태 방식(2026-10-12 사장님 확정). 불완전변태(사마귀·메뚜기류·물장군)는 번데기 없이 탈피로 자라서
+/// 단계 이름만 **알 → 약충 → 탈피 중 → 성충** 으로 보여 준다(생애주기 규칙·시간은 같다).
+enum Metamorphosis {
+  complete('complete'),
+  incomplete('incomplete');
+
+  const Metamorphosis(this.key);
+  final String key;
+
+  /// 모르는 값·없음은 완전변태.
+  static Metamorphosis fromKey(String? key) =>
+      key == 'incomplete' ? incomplete : complete;
+}
+
 /// 종(Species) 정의. **밸런스 데이터**이므로 실제 값은 assets/data/species.json 에서 로드한다.
 /// 이 클래스는 그 JSON 한 항목을 담는 불변 모델이다 (§2.1).
 @immutable
@@ -48,6 +62,7 @@ class Species {
     this.passive,
     this.availableFrom,
     this.availableUntil,
+    this.metamorphosis = Metamorphosis.complete,
   });
 
   /// 안정적 식별자 (예: 'stag_beetle_common').
@@ -85,6 +100,13 @@ class Species {
   final DateTime? availableFrom;
   final DateTime? availableUntil;
 
+  /// 변태 방식 — 단계 이름 표시에만 쓴다(JSON `metamorphosis`, 없으면 완전변태).
+  final Metamorphosis metamorphosis;
+
+  /// 불완전변태(번데기 없음)인가.
+  bool get isIncompleteMetamorphosis =>
+      metamorphosis == Metamorphosis.incomplete;
+
   /// 이 시각에 드롭 풀에 들어가는가.
   bool availableAt(DateTime now) =>
       (availableFrom == null || !now.isBefore(availableFrom!)) &&
@@ -111,6 +133,7 @@ class Species {
     availableUntil: json['until'] == null
         ? null
         : DateTime.parse(json['until'] as String).toUtc(),
+    metamorphosis: Metamorphosis.fromKey(json['metamorphosis'] as String?),
   );
 
   Map<String, dynamic> toJson() => {
@@ -126,6 +149,8 @@ class Species {
     if (passive != null) 'passive': passive!.toJson(),
     if (availableFrom != null) 'from': availableFrom!.toIso8601String(),
     if (availableUntil != null) 'until': availableUntil!.toIso8601String(),
+    if (metamorphosis != Metamorphosis.complete)
+      'metamorphosis': metamorphosis.key,
   };
 
   @override

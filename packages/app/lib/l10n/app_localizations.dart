@@ -3286,6 +3286,18 @@ abstract class AppLocalizations {
   /// **'Pupa'**
   String get stagePupa;
 
+  /// No description provided for @stageNymph.
+  ///
+  /// In en, this message translates to:
+  /// **'Nymph'**
+  String get stageNymph;
+
+  /// No description provided for @stageMolting.
+  ///
+  /// In en, this message translates to:
+  /// **'Molting'**
+  String get stageMolting;
+
   /// No description provided for @stageAdult.
   ///
   /// In en, this message translates to:
@@ -3549,6 +3561,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hatched into a larva!'**
   String get incubatorCollectedSnack;
+
+  /// No description provided for @incubatorCollectedNymphSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatched into a nymph!'**
+  String get incubatorCollectedNymphSnack;
 
   /// No description provided for @incubatorExpandedSnack.
   ///
@@ -6297,6 +6315,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Can’t transcend right now'**
   String get forgeTranscendFailed;
+
+  /// No description provided for @forgeTranscendTimeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}.'**
+  String forgeTranscendTimeNote(String hours, String gold, String time);
+
+  /// No description provided for @forgeTranscendStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcend started! Claim it in {hours}h to raise option max'**
+  String forgeTranscendStarted(String hours);
+
+  /// No description provided for @forgeTranscendInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge Transcend {n} in progress'**
+  String forgeTranscendInProgress(String n);
+
+  /// No description provided for @forgeTranscendInProgressBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim it when done to raise option max to +{total}% total. You can keep forging and upgrading meanwhile.'**
+  String forgeTranscendInProgressBody(String total);
+
+  /// No description provided for @forgeTranscendClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim transcend'**
+  String get forgeTranscendClaim;
+
+  /// No description provided for @forgeTranscendRushTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish transcend now'**
+  String get forgeTranscendRushTitle;
+
+  /// No description provided for @forgeTranscendRushConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {jelly} Jelly to finish the transcend now?'**
+  String forgeTranscendRushConfirm(int jelly);
 
   /// No description provided for @forgeTranscendMaxed.
   ///
@@ -9758,7 +9818,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideLifeBody.
   ///
   /// In en, this message translates to:
-  /// **'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels.'**
+  /// **'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels. Mantises, grasshoppers and the giant water bug have no pupa — they grow by molting (Egg → Nymph → Molting → Adult).'**
   String get guideLifeBody;
 
   /// No description provided for @guideDuelTitle.
@@ -11519,7 +11579,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideGearTranscendBody.
   ///
   /// In en, this message translates to:
-  /// **'Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps).'**
+  /// **'Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost much more gold and time.'**
   String guideGearTranscendBody(String level, String pct, String max);
 
   /// No description provided for @guideHuntTitle.

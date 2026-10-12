@@ -1847,6 +1847,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stagePupa => 'Pupa';
 
   @override
+  String get stageNymph => 'Nymph';
+
+  @override
+  String get stageMolting => 'Molting';
+
+  @override
   String get stageAdult => 'Adult';
 
   @override
@@ -2001,6 +2007,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get incubatorCollectedSnack => 'Hatched into a larva!';
+
+  @override
+  String get incubatorCollectedNymphSnack => 'Hatched into a nymph!';
 
   @override
   String get incubatorExpandedSnack => 'Incubator slot added!';
@@ -3640,6 +3649,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgeTranscendFailed => 'Can’t transcend right now';
+
+  @override
+  String forgeTranscendTimeNote(String hours, String gold, String time) {
+    return 'Transcending takes ${hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×$gold · time ×$time.';
+  }
+
+  @override
+  String forgeTranscendStarted(String hours) {
+    return 'Transcend started! Claim it in ${hours}h to raise option max';
+  }
+
+  @override
+  String forgeTranscendInProgress(String n) {
+    return 'Forge Transcend $n in progress';
+  }
+
+  @override
+  String forgeTranscendInProgressBody(String total) {
+    return 'Claim it when done to raise option max to +$total% total. You can keep forging and upgrading meanwhile.';
+  }
+
+  @override
+  String get forgeTranscendClaim => 'Claim transcend';
+
+  @override
+  String get forgeTranscendRushTitle => 'Finish transcend now';
+
+  @override
+  String forgeTranscendRushConfirm(int jelly) {
+    return 'Spend $jelly Jelly to finish the transcend now?';
+  }
 
   @override
   String forgeTranscendMaxed(String pct) {
@@ -5770,7 +5810,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guideLifeBody =>
-      'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels.';
+      'Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels. Mantises, grasshoppers and the giant water bug have no pupa — they grow by molting (Egg → Nymph → Molting → Adult).';
 
   @override
   String get guideDuelTitle => 'Duels';
@@ -6912,7 +6952,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideGearTranscendBody(String level, String pct, String max) {
-    return 'Forge Transcend: at forge grade $level (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +$pct per step (up to $max steps).';
+    return 'Forge Transcend: at forge grade $level (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +$pct per step (up to $max steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost much more gold and time.';
   }
 
   @override

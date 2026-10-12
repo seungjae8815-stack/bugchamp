@@ -1795,6 +1795,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get stagePupa => '번데기';
 
   @override
+  String get stageNymph => '약충';
+
+  @override
+  String get stageMolting => '탈피 중';
+
+  @override
   String get stageAdult => '성충';
 
   @override
@@ -1949,6 +1955,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get incubatorCollectedSnack => '유충으로 부화했어요!';
+
+  @override
+  String get incubatorCollectedNymphSnack => '약충으로 부화했어요!';
 
   @override
   String get incubatorExpandedSnack => '부화기 슬롯이 늘었어요!';
@@ -3553,6 +3562,37 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get forgeTranscendFailed => '지금은 초월할 수 없어요';
+
+  @override
+  String forgeTranscendTimeNote(String hours, String gold, String time) {
+    return '초월에 $hours시간이 걸려요(젤리로 즉시 완료 가능). 초월할수록 공방 등급업 골드 ×$gold · 시간 ×$time.';
+  }
+
+  @override
+  String forgeTranscendStarted(String hours) {
+    return '초월을 시작했어요! $hours시간 뒤 받으면 옵션 최대치가 올라요';
+  }
+
+  @override
+  String forgeTranscendInProgress(String n) {
+    return '공방 초월 $n단계 진행 중';
+  }
+
+  @override
+  String forgeTranscendInProgressBody(String total) {
+    return '끝나고 받으면 옵션 최대치가 합계 +$total%가 돼요. 그동안에도 제련·등급업은 할 수 있어요.';
+  }
+
+  @override
+  String get forgeTranscendClaim => '초월 완료 받기';
+
+  @override
+  String get forgeTranscendRushTitle => '공방 초월 즉시 완료';
+
+  @override
+  String forgeTranscendRushConfirm(int jelly) {
+    return '젤리 $jelly개로 초월을 지금 끝낼까요?';
+  }
 
   @override
   String forgeTranscendMaxed(String pct) {
@@ -5645,7 +5685,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get guideLifeBody =>
-      '알 → 유충 → 번데기 → 성충 순서로 자라요. 알은 부화기에 넣어야 유충이 되고, 유충부터는 시간이 지나면 저절로 성충이 돼요. 수련·짝짓기·결투는 성충만 할 수 있어요.';
+      '알 → 유충 → 번데기 → 성충 순서로 자라요. 알은 부화기에 넣어야 유충이 되고, 유충부터는 시간이 지나면 저절로 성충이 돼요. 수련·짝짓기·결투는 성충만 할 수 있어요. 사마귀·메뚜기류·물장군은 번데기 없이 탈피로 자라요(알 → 약충 → 탈피 중 → 성충).';
 
   @override
   String get guideDuelTitle => '결투';
@@ -6766,7 +6806,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideGearTranscendBody(String level, String pct, String max) {
-    return '공방 초월: 공방 $level등급(최대)에서 초월하면 낀 장비와 모루 위 장비가 전부 사라지고 공방이 풀잎 등급부터 다시 시작해요. 대신 모든 등급의 옵션 최대치가 단계마다 +$pct 올라요(최대 $max단계).';
+    return '공방 초월: 공방 $level등급(최대)에서 초월하면 낀 장비와 모루 위 장비가 전부 사라지고 공방이 풀잎 등급부터 다시 시작해요. 대신 모든 등급의 옵션 최대치가 단계마다 +$pct 올라요(최대 $max단계). 초월에는 시간이 걸리고(젤리로 즉시 완료) 효과는 끝나고 받을 때 붙어요. 초월할수록 공방 등급업 골드·시간이 크게 올라요.';
   }
 
   @override

@@ -370,15 +370,62 @@ void main() {
       final ctrl = c.read(saveControllerProvider.notifier);
       expect(await ctrl.transcendForge(), isNull);
       final save = c.read(saveControllerProvider).requireValue;
-      expect(save.forgeTranscend, 1);
+      // 효과(단계)는 시간이 끝나 수령할 때 붙는다(2026-10-12).
+      expect(save.forgeTranscend, 0);
+      expect(save.forgeTranscendAt, t0.add(forge.transcendDuration(0)));
       expect(save.forgeLevel, 0);
       expect(save.equippedItems, isEmpty);
       expect(save.forgeStack, isEmpty);
       expect(save.materialCount(MaterialKind.fossil), 0);
       // 등급 필터는 풀린다(공방이 풀잎부터라 남으면 다 팔려 화석만 탄다).
       expect(save.autoForgeMinTier, 0);
-      // 최대 레벨이 아니면 못 한다.
-      expect(await ctrl.transcendForge(), 'not_max');
+      // 진행 중에는 다시 못 한다.
+      expect(await ctrl.transcendForge(), 'in_progress');
+      // 아직 시간이 안 됐으면 못 받는다.
+      expect(await ctrl.claimForgeTranscend(), 'not_ready');
+    });
+
+    test('공방 초월 수령 — 시간이 끝나면 단계 +1', () async {
+      final forge = ForgeConfig.fromJson(_read('forge.json'));
+      final at = t0.subtract(const Duration(minutes: 1));
+      final c = make(seed().copyWith(forgeTranscendAt: at));
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.claimForgeTranscend(), isNull);
+      final s = c.read(saveControllerProvider).requireValue;
+      expect(s.forgeTranscend, 1);
+      expect(s.forgeTranscendAt, isNull);
+      expect(forge.transcendMaxMult(s.forgeTranscend), greaterThan(1));
+    });
+
+    test('공방 초월 젤리 즉시 완료 — 등급업과 같은 값표', () async {
+      final forge = ForgeConfig.fromJson(_read('forge.json'));
+      final c = make(
+        seed().copyWith(
+          forgeTranscendAt: t0.add(const Duration(hours: 24)),
+          materials: {MaterialKind.jelly: 100},
+        ),
+      );
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.rushForgeTranscend(), isNull);
+      final s = c.read(saveControllerProvider).requireValue;
+      expect(s.forgeTranscend, 1);
+      expect(
+        s.materialCount(MaterialKind.jelly),
+        100 - forge.levelUpJelly(const Duration(hours: 24)),
+      );
+    });
+
+    test('초월 뒤 등급업 칸 골드는 ×100^단계', () async {
+      final forge = ForgeConfig.fromJson(_read('forge.json'));
+      final step = forge.levelUpStepGold(0, transcend: 1);
+      final c = make(seed().copyWith(forgeTranscend: 1, gold: step));
+      await c.read(saveControllerProvider.future);
+      final ctrl = c.read(saveControllerProvider.notifier);
+      expect(await ctrl.payForgeStep(), isTrue);
+      expect(c.read(saveControllerProvider).requireValue.gold, 0);
+      expect(step, greaterThan(forge.levelUpStepGold(0) * 99));
     });
 
     test('교체 판단: 목표 옵션이 있으면 등급보다 그게 우선이다', () async {

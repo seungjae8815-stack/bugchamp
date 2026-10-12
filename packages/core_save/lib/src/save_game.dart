@@ -24,7 +24,9 @@ const int kSaveSchemaVersion = 18;
 /// 21(2026-10-10): 장비 v2 — 장비 `st`(별)·`sx`(별 재료)·`su`(별 강화 끝)·옵션 `p`(정성). 장비 안의 키라 서버가 장비 단위로 되돌린다.
 /// 22(2026-10-10): 공방 초월 `forgeTranscend`.
 /// 23(2026-10-10): 프로필 그림 `avatar`.
-const int kSaveFeatureLevel = 23;
+/// 24: 개체 등급(feature/individual-grade 브랜치가 쓴다 — 합칠 때 순서를 맞추려고 비워 둔다).
+/// 25(2026-10-12): 공방 초월 시간 — 진행 중 초월 끝 시각 `ftAt`.
+const int kSaveFeatureLevel = 25;
 
 /// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
 /// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
@@ -592,6 +594,7 @@ class SaveGame {
     this.fairy = FairyState.empty,
     this.forgeLevel = 0,
     this.forgeTranscend = 0,
+    this.forgeTranscendAt,
     this.forgeSteps = 0,
     this.forgeUpAt,
     this.autoForgeOptions = const {},
@@ -1243,6 +1246,11 @@ class SaveGame {
   /// (`ForgeConfig.transcendMaxMult`). 기기 권위 — 구버전 업로드는 서버가 저장본 값을 지킨다(feat 22).
   final int forgeTranscend;
 
+  /// 진행 중인 공방 초월이 끝나는 시각(UTC, 2026-10-12 사장님 확정). null 이면 진행 중이 아니다.
+  /// 초월을 누르면 화석·장비·모루·공방 레벨은 바로 정리되고, [forgeTranscend] 는 이 시각이 지나 수령할 때 +1 이다
+  /// (`forge_transcend.dart`). JSON `ftAt` — 기기 권위, 구버전 업로드는 서버가 저장본 값을 지킨다(feat 25).
+  final DateTime? forgeTranscendAt;
+
   /// 다음 등급업에 부어둔 골드 **칸 수**(0~`levelUpSteps`).
   /// 한 번에 다 못 내도 조금씩 부어둘 수 있게 나눠 받는다.
   final int forgeSteps;
@@ -1578,6 +1586,8 @@ class SaveGame {
     FairyState? fairy,
     int? forgeLevel,
     int? forgeTranscend,
+    DateTime? forgeTranscendAt,
+    bool clearForgeTranscendAt = false,
     int? forgeSteps,
     DateTime? forgeUpAt,
     bool clearForgeUpAt = false,
@@ -1712,6 +1722,9 @@ class SaveGame {
     fairy: fairy ?? this.fairy,
     forgeLevel: forgeLevel ?? this.forgeLevel,
     forgeTranscend: forgeTranscend ?? this.forgeTranscend,
+    forgeTranscendAt: clearForgeTranscendAt
+        ? null
+        : (forgeTranscendAt ?? this.forgeTranscendAt),
     forgeSteps: forgeSteps ?? this.forgeSteps,
     // 등급업이 끝나면 **null 로 지워야** 한다 — `??` 만으로는 못 지운다.
     forgeUpAt: clearForgeUpAt ? null : (forgeUpAt ?? this.forgeUpAt),
@@ -2012,6 +2025,9 @@ class SaveGame {
         : FairyState.empty,
     forgeLevel: (json['forgeLevel'] as num?)?.toInt() ?? 0,
     forgeTranscend: (json['forgeTranscend'] as num?)?.toInt() ?? 0,
+    forgeTranscendAt: json['ftAt'] is String
+        ? DateTime.tryParse(json['ftAt'] as String)?.toUtc()
+        : null,
     forgeSteps: (json['forgeSteps'] as num?)?.toInt() ?? 0,
     forgeUpAt: json['forgeUpAt'] == null
         ? null
@@ -2220,6 +2236,8 @@ class SaveGame {
     },
     if (forgeLevel != 0) 'forgeLevel': forgeLevel,
     if (forgeTranscend != 0) 'forgeTranscend': forgeTranscend,
+    if (forgeTranscendAt != null)
+      'ftAt': forgeTranscendAt!.toUtc().toIso8601String(),
     if (forgeSteps != 0) 'forgeSteps': forgeSteps,
     if (forgeUpAt != null) 'forgeUpAt': forgeUpAt!.toUtc().toIso8601String(),
     if (autoForgeOptions.isNotEmpty)
