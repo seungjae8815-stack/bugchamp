@@ -3557,8 +3557,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forgeTranscendFailed => '今は超越できません';
 
   @override
-  String forgeTranscendTimeNote(String hours, String gold, String time) {
-    return '超越には$hours時間かかります(ゼリーで即完了可)。超越するほど工房アップグレードのゴールド×$gold・時間×$time。';
+  String forgeTranscendTimeNote(
+    String hours,
+    String gold,
+    String time,
+    String floorGold,
+    String floorHours,
+  ) {
+    return '超越には$hours時間かかります(ゼリーで即完了可)。超越すると工房アップグレードのゴールド×$gold・時間×$time(段階ごと)、低い等級でも最低$floorGoldゴールド・$floorHours時間からです。';
   }
 
   @override
@@ -6795,7 +6801,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideGearTranscendBody(String level, String pct, String max) {
-    return '工房超越: 工房$level等級(最大)で超越すると、装備中と金床の上の装備がすべて消え、工房は草等級からやり直しです。代わりにすべての等級のオプション最大値が段階ごとに+$pct上がります(最大$max段階)。超越には時間がかかり(ゼリーで即完了)、効果は完了して受け取ったときに付きます。超越するほど工房アップグレードのゴールド・時間が大きく上がります。';
+    return '工房超越: 工房$level等級(最大)で超越すると、装備中と金床の上の装備がすべて消え、工房は草等級からやり直しです。代わりにすべての等級のオプション最大値が段階ごとに+$pct上がります(最大$max段階)。超越には時間がかかり(ゼリーで即完了)、効果は完了して受け取ったときに付きます。超越するほど工房アップグレードのゴールド・時間が段階ごとに上がります。';
   }
 
   @override

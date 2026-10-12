@@ -3651,8 +3651,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgeTranscendFailed => 'Can’t transcend right now';
 
   @override
-  String forgeTranscendTimeNote(String hours, String gold, String time) {
-    return 'Transcending takes ${hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×$gold · time ×$time.';
+  String forgeTranscendTimeNote(
+    String hours,
+    String gold,
+    String time,
+    String floorGold,
+    String floorHours,
+  ) {
+    return 'Transcending takes ${hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×$gold · time ×$time, and even low grades cost at least $floorGold gold · ${floorHours}h.';
   }
 
   @override
@@ -6952,7 +6958,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideGearTranscendBody(String level, String pct, String max) {
-    return 'Forge Transcend: at forge grade $level (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +$pct per step (up to $max steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost much more gold and time.';
+    return 'Forge Transcend: at forge grade $level (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +$pct per step (up to $max steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost more gold and time.';
   }
 
   @override

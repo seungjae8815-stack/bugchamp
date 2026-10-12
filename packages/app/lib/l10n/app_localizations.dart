@@ -6319,8 +6319,14 @@ abstract class AppLocalizations {
   /// No description provided for @forgeTranscendTimeNote.
   ///
   /// In en, this message translates to:
-  /// **'Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}.'**
-  String forgeTranscendTimeNote(String hours, String gold, String time);
+  /// **'Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}, and even low grades cost at least {floorGold} gold · {floorHours}h.'**
+  String forgeTranscendTimeNote(
+    String hours,
+    String gold,
+    String time,
+    String floorGold,
+    String floorHours,
+  );
 
   /// No description provided for @forgeTranscendStarted.
   ///
@@ -11579,7 +11585,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideGearTranscendBody.
   ///
   /// In en, this message translates to:
-  /// **'Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost much more gold and time.'**
+  /// **'Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost more gold and time.'**
   String guideGearTranscendBody(String level, String pct, String max);
 
   /// No description provided for @guideHuntTitle.

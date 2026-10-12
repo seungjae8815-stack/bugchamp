@@ -3564,8 +3564,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get forgeTranscendFailed => '지금은 초월할 수 없어요';
 
   @override
-  String forgeTranscendTimeNote(String hours, String gold, String time) {
-    return '초월에 $hours시간이 걸려요(젤리로 즉시 완료 가능). 초월할수록 공방 등급업 골드 ×$gold · 시간 ×$time.';
+  String forgeTranscendTimeNote(
+    String hours,
+    String gold,
+    String time,
+    String floorGold,
+    String floorHours,
+  ) {
+    return '초월에 $hours시간이 걸려요(젤리로 즉시 완료 가능). 초월하면 공방 등급업 골드 ×$gold · 시간 ×$time(단계마다), 낮은 등급도 최소 $floorGold골드 · $floorHours시간부터예요.';
   }
 
   @override
@@ -6806,7 +6812,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideGearTranscendBody(String level, String pct, String max) {
-    return '공방 초월: 공방 $level등급(최대)에서 초월하면 낀 장비와 모루 위 장비가 전부 사라지고 공방이 풀잎 등급부터 다시 시작해요. 대신 모든 등급의 옵션 최대치가 단계마다 +$pct 올라요(최대 $max단계). 초월에는 시간이 걸리고(젤리로 즉시 완료) 효과는 끝나고 받을 때 붙어요. 초월할수록 공방 등급업 골드·시간이 크게 올라요.';
+    return '공방 초월: 공방 $level등급(최대)에서 초월하면 낀 장비와 모루 위 장비가 전부 사라지고 공방이 풀잎 등급부터 다시 시작해요. 대신 모든 등급의 옵션 최대치가 단계마다 +$pct 올라요(최대 $max단계). 초월에는 시간이 걸리고(젤리로 즉시 완료) 효과는 끝나고 받을 때 붙어요. 초월할수록 공방 등급업 골드·시간이 단계마다 올라요.';
   }
 
   @override

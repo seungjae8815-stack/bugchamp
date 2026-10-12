@@ -2543,8 +2543,8 @@
   "forgeTranscendConfirmBody": "All equipped and anvil gear will disappear,\nand the forge restarts from Grass.\n\nThis cannot be undone.",
   "forgeTranscendDone": "Forge transcended! Option max increased",
   "forgeTranscendFailed": "Can’t transcend right now",
-  "forgeTranscendTimeNote": "Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}.",
-  "@forgeTranscendTimeNote": {"placeholders": {"hours": {"type": "String"}, "gold": {"type": "String"}, "time": {"type": "String"}}},
+  "forgeTranscendTimeNote": "Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}, and even low grades cost at least {floorGold} gold · {floorHours}h.",
+  "@forgeTranscendTimeNote": {"placeholders": {"hours": {"type": "String"}, "gold": {"type": "String"}, "time": {"type": "String"}, "floorGold": {"type": "String"}, "floorHours": {"type": "String"}}},
   "forgeTranscendStarted": "Transcend started! Claim it in {hours}h to raise option max",
   "@forgeTranscendStarted": {"placeholders": {"hours": {"type": "String"}}},
   "forgeTranscendInProgress": "Forge Transcend {n} in progress",
@@ -4012,7 +4012,7 @@
       }
     }
   },
-  "guideGearTranscendBody": "Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost much more gold and time.",
+  "guideGearTranscendBody": "Forge Transcend: at forge grade {level} (max), transcending removes all equipped and anvil gear and restarts the forge from Grass, but every grade’s option max rises by +{pct} per step (up to {max} steps). Transcending takes time (Jelly finishes it now) and the bonus applies when you claim it. Each transcend makes forge upgrades cost more gold and time.",
   "@guideGearTranscendBody": {
     "placeholders": {
       "level": {

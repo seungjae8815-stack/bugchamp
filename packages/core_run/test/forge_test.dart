@@ -1260,50 +1260,81 @@ void _transcendCostTests() {
       }
     });
 
-    test('초월 단계 t 마다 등급업 골드 ×100^t · 시간 ×1.5^t', () {
-      expect(forge.levelUpTranscendGoldMult, 100);
-      expect(forge.levelUpTranscendTimeMult, 1.5);
-      for (final lv in [0, 5, 12]) {
+    test('초월 0단계는 원래 비용·시간 그대로', () {
+      for (var lv = 0; lv < forge.maxLevel; lv++) {
+        expect(forge.levelUpGold(lv, transcend: 0), forge.levelUpGold(lv));
         expect(
-          forge.levelUpGold(lv, transcend: 1) / forge.levelUpGold(lv),
-          closeTo(100, 1e-6),
-        );
-        expect(
-          forge.levelUpGold(lv, transcend: 2) / forge.levelUpGold(lv),
-          closeTo(10000, 1e-6),
-        );
-        expect(
-          forge.levelUpDuration(lv, transcend: 2).inSeconds,
-          closeTo(forge.levelUpDuration(lv).inSeconds * 2.25, 3),
+          forge.levelUpDuration(lv, transcend: 0),
+          forge.levelUpDuration(lv),
         );
       }
-      // 기본값(0)은 예전 값 그대로.
-      expect(forge.levelUpGold(7, transcend: 0), forge.levelUpGold(7));
     });
 
+    test(
+      '초월 t>0 — 골드 = max(원래, 13레벨 원래) × 1.5^t · 시간 = max(원래, 12시간) × 1.5^t',
+      () {
+        expect(forge.levelUpTranscendGoldMult, 1.5);
+        expect(forge.levelUpTranscendTimeMult, 1.5);
+        expect(forge.levelUpTranscendGoldFloorLevel, 13);
+        expect(forge.levelUpTranscendTimeFloorHours, 12);
+        final floor = forge.levelUpGold(13).toDouble(); // 약 263억
+        expect(floor, closeTo(2.63e10, 0.01e10));
+        for (var t = 1; t <= forge.transcendMax; t++) {
+          final m = pow(1.5, t);
+          for (var lv = 0; lv < forge.maxLevel; lv++) {
+            final base = max(forge.levelUpGold(lv).toDouble(), floor);
+            expect(
+              forge.levelUpGold(lv, transcend: t) / base,
+              closeTo(m, 1e-6),
+              reason: 'lv $lv t $t',
+            );
+            final sec = max(
+              forge.levelUpDuration(lv).inSeconds.toDouble(),
+              12 * 3600.0,
+            );
+            expect(
+              forge.levelUpDuration(lv, transcend: t).inSeconds,
+              closeTo(sec * m, sec * m * 1e-4 + 3),
+              reason: 'lv $lv t $t',
+            );
+          }
+        }
+        // 앞쪽 레벨도 싸지 않다 — 0레벨 등급업이 바닥 비용·12시간 × 1.5.
+        expect(forge.levelUpGold(0, transcend: 1), (floor * 1.5).round());
+        expect(
+          forge.levelUpDuration(0, transcend: 1),
+          const Duration(hours: 18),
+        );
+      },
+    );
+
     test('즉시 완료 젤리는 늘어난 시간을 따라 오른다', () {
-      final lv = 15;
+      const lv = 15;
       expect(
         forge.levelUpJelly(forge.levelUpDuration(lv, transcend: 3)),
         greaterThan(forge.levelUpJelly(forge.levelUpDuration(lv))),
       );
     });
 
-    test('골드는 int64 를 넘지 않는다 — 넘으면 상한에서 자르고 칸 합도 넘치지 않는다', () {
+    test('골드는 int64 상한(9e18)에 닿지 않는다 — t=5 · 18레벨 ≈ 1.8e14', () {
       for (var t = 0; t <= forge.transcendMax; t++) {
         for (var lv = 0; lv < forge.maxLevel; lv++) {
           final g = forge.levelUpGold(lv, transcend: t);
-          expect(g, greaterThan(0), reason: 'lv $lv t $t');
-          expect(g, lessThanOrEqualTo(ForgeConfig.levelUpGoldCap));
+          expect(
+            g,
+            lessThan(ForgeConfig.levelUpGoldCap),
+            reason: 'lv $lv t $t',
+          );
           final step = forge.levelUpStepGold(lv, transcend: t);
-          expect(step, greaterThan(0), reason: 'lv $lv t $t');
           expect(step * forge.levelUpSteps, greaterThanOrEqualTo(g));
         }
       }
-      expect(
-        forge.levelUpGold(forge.maxLevel - 1, transcend: forge.transcendMax),
-        ForgeConfig.levelUpGoldCap,
+      final top = forge.levelUpGold(
+        forge.maxLevel - 1,
+        transcend: forge.transcendMax,
       );
+      expect(top, greaterThan(1.5e14));
+      expect(top, lessThan(2.0e14));
     });
   });
 }

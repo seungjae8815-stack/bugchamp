@@ -98,3 +98,9 @@ SaveGame _complete(SaveGame s, ForgeConfig forge) => s.copyWith(
   forgeTranscend: (s.forgeTranscend + 1).clamp(0, forge.transcendMax),
   clearForgeTranscendAt: true,
 );
+
+/// 공방 등급업 비용에 쓰는 초월 단계 = 완료한 단계 + (진행 중이면 1)(2026-10-12 사장님 재확정).
+/// 진행 중을 빼면 24~72시간 동안 이전 단계의 싼 비용으로 다시 올리는 구멍이 생긴다.
+/// 화면 표시·골드 차감·시간이 모두 이 값을 쓴다.
+int forgeCostTranscend(SaveGame s) =>
+    s.forgeTranscend + (s.forgeTranscendAt != null ? 1 : 0);

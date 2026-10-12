@@ -417,15 +417,22 @@ void main() {
       );
     });
 
-    test('초월 뒤 등급업 칸 골드는 ×100^단계', () async {
+    test('초월 뒤 등급업 칸 골드 — 진행 중인 초월도 단계에 센다', () async {
       final forge = ForgeConfig.fromJson(_read('forge.json'));
-      final step = forge.levelUpStepGold(0, transcend: 1);
-      final c = make(seed().copyWith(forgeTranscend: 1, gold: step));
+      // 1단계 완료 + 2단계 진행 중 → 비용 단계 2.
+      final step = forge.levelUpStepGold(0, transcend: 2);
+      expect(step, greaterThan(forge.levelUpStepGold(0, transcend: 1)));
+      final c = make(
+        seed().copyWith(
+          forgeTranscend: 1,
+          forgeTranscendAt: t0.add(const Duration(hours: 30)),
+          gold: step,
+        ),
+      );
       await c.read(saveControllerProvider.future);
       final ctrl = c.read(saveControllerProvider.notifier);
       expect(await ctrl.payForgeStep(), isTrue);
       expect(c.read(saveControllerProvider).requireValue.gold, 0);
-      expect(step, greaterThan(forge.levelUpStepGold(0) * 99));
     });
 
     test('교체 판단: 목표 옵션이 있으면 등급보다 그게 우선이다', () async {

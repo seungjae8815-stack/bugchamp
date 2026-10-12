@@ -92,13 +92,21 @@ void main() {
     expect(claimForgeTranscendSave(done, _forge, t0).error, 'none');
   });
 
-  test('진행 중에도 공방 등급업 비용은 완료한 단계 기준이다', () {
+  test('진행 중인 초월도 등급업 비용 단계에 센다 — 이전 싼 비용으로 다시 올리는 구멍 차단', () {
     final s = startForgeTranscend(maxed(transcend: 1), _forge, t0).save!;
     expect(s.forgeTranscend, 1);
+    expect(forgeCostTranscend(s), 2);
     expect(
-      _forge.levelUpStepGold(s.forgeLevel, transcend: s.forgeTranscend),
-      _forge.levelUpStepGold(0, transcend: 1),
+      _forge.levelUpStepGold(s.forgeLevel, transcend: forgeCostTranscend(s)),
+      _forge.levelUpStepGold(0, transcend: 2),
     );
+    final done = claimForgeTranscendSave(
+      s,
+      _forge,
+      t0.add(const Duration(days: 3)),
+    ).save!;
+    expect(forgeCostTranscend(done), 2, reason: '수령해도 비용 단계는 그대로');
+    expect(forgeCostTranscend(maxed()), 0);
   });
 
   test('젤리 즉시 완료 — 등급업과 같은 값표, 모자라면 실패', () {

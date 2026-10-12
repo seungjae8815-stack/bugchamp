@@ -3812,7 +3812,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (s.forgeSteps >= forge.levelUpSteps) return false;
     final cost = forge.levelUpStepGold(
       s.forgeLevel,
-      transcend: s.forgeTranscend,
+      transcend: forgeCostTranscend(s),
     );
     if (s.gold < cost) return false;
 
@@ -3828,7 +3828,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
             ? now.add(
                 forge.levelUpDuration(
                   s.forgeLevel,
-                  transcend: s.forgeTranscend,
+                  transcend: forgeCostTranscend(s),
                 ),
               )
             : null,

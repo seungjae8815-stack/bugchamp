@@ -3,7 +3,8 @@ import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
-import 'package:core_save/core_save.dart' show kMaxForgeStack, SaveGame;
+import 'package:core_save/core_save.dart'
+    show kMaxForgeStack, SaveGame, forgeCostTranscend;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1933,6 +1934,9 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
               '${forge.transcendDuration(n).inHours}',
               _mult(forge.levelUpTranscendGoldMult),
               _mult(forge.levelUpTranscendTimeMult),
+              // 다음 단계(n+1)의 가장 싼 등급업 = 바닥 비용·바닥 시간.
+              formatCompact(forge.levelUpGold(0, transcend: n + 1)),
+              '${forge.levelUpDuration(0, transcend: n + 1).inHours}',
             ),
             style: const TextStyle(
               color: Color(0xCCFFFFFF),
@@ -2272,7 +2276,7 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
             const SizedBox(height: 8),
             _wide(
               '${l.forgeStep(save.forgeSteps, forge.levelUpSteps)} · '
-              '${formatCompact(forge.levelUpStepGold(save.forgeLevel, transcend: save.forgeTranscend))}',
+              '${formatCompact(forge.levelUpStepGold(save.forgeLevel, transcend: forgeCostTranscend(save)))}',
               () async {
                 if (!await ctrl.payForgeStep() && context.mounted) {
                   showCenterToast(context, l.notEnoughGold);
