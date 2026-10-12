@@ -7208,4 +7208,33 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get guildWarBreedHintGrade =>
       '交配の受け取り・孵化の受け取り・等級上げでポイントを獲得。ゼリーで即完了したものはカウントされません。';
+
+  @override
+  String get whatsNew20Grade => '虫ごとに等級(一般〜伝説)がつきました。同じ種の虫をエッセンスに変えて等級を上げましょう';
+
+  @override
+  String get whatsNew20Potion => '成長ポーション: 等級アップ時に入れると全能力がポーション1個につき+3点';
+
+  @override
+  String get whatsNew20Pet =>
+      'ペット効果も虫の等級に従います — 低い等級のペットは弱くなりました。エッセンスで等級を上げると戻ります';
+
+  @override
+  String get whatsNew20Gacha => '卵ガチャ: 10回以内に英雄以上、50回以内に伝説確定';
+
+  @override
+  String get whatsNew20Transcend =>
+      '工房超越に時間がかかり(ゼリーで即完了)、超越後の工房等級アップは段階ごとに高くなります';
+
+  @override
+  String get whatsNew20StarCarry => '同じ等級の装備に替えると星を引き継ぎます';
+
+  @override
+  String get whatsNew20Power => '採集箱で虫ごとの決闘戦闘力が見えます';
+
+  @override
+  String get whatsNew20League => 'リーグ順位表に今週の人数に合わせた報酬・昇格区間が表示されます';
+
+  @override
+  String get whatsNew20Nymph => 'カマキリ・バッタ類・タガメはさなぎにならず、若虫→脱皮で育ちます';
 }

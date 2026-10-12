@@ -4187,5 +4187,14 @@
   "@eventNormalizeBodyGrade": {"placeholders": {"pct": {"type": "int"}}},
   "bugLockedToastGrade": "Locked — it won't be converted to essence or dismantled",
   "trainPtNoPointsGrade": "No points left — raise level, breakthrough or grade",
-  "guildWarBreedHintGrade": "Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don't count."
+  "guildWarBreedHintGrade": "Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don't count.",
+  "whatsNew20Grade": "Every bug now has a grade (Common–Legendary). Turn same-species bugs into essence to grade up",
+  "whatsNew20Potion": "Growth potions: add them when grading up for +3 to every stat each",
+  "whatsNew20Pet": "Pet bonuses now follow the bug's grade — low-grade pets got weaker. Grade them up with essence to recover",
+  "whatsNew20Gacha": "Egg draw: Epic+ within 10, Legendary within 50",
+  "whatsNew20Transcend": "Forge Transcend now takes time (finish with jelly), and forge grade-ups cost more after each step",
+  "whatsNew20StarCarry": "Swapping to gear of the same grade keeps its stars",
+  "whatsNew20Power": "See each bug's duel power in the collection",
+  "whatsNew20League": "League board shows this week's rewards and promotion zones for the number of players",
+  "whatsNew20Nymph": "Mantises, grasshoppers and giant water bugs grow as nymphs and molt — no pupa"
 }

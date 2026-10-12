@@ -7219,4 +7219,34 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get guildWarBreedHintGrade =>
       '짝짓기 수령·부화 수령·등급 올리기로 점수를 얻어요. 젤리로 즉시 완료한 건 세지 않아요.';
+
+  @override
+  String get whatsNew20Grade =>
+      '곤충마다 등급(일반~전설)이 생겼어요. 같은 종 곤충을 정수로 바꿔 등급을 올려 보세요';
+
+  @override
+  String get whatsNew20Potion => '성장물약: 등급을 올릴 때 넣으면 모든 능력치가 물약 1개당 +3점';
+
+  @override
+  String get whatsNew20Pet =>
+      '펫 효과도 곤충 등급을 따라요 — 낮은 등급 펫은 약해졌어요. 같은 종을 정수로 바꿔 올리면 회복돼요';
+
+  @override
+  String get whatsNew20Gacha => '알 뽑기: 10회 안에 영웅 이상, 50회 안에 전설 확정';
+
+  @override
+  String get whatsNew20Transcend =>
+      '공방 초월에 시간이 걸리고(젤리로 즉시 완료), 초월 뒤 공방 등급업은 단계마다 비싸져요';
+
+  @override
+  String get whatsNew20StarCarry => '같은 등급 장비로 바꾸면 별을 그대로 이어받아요';
+
+  @override
+  String get whatsNew20Power => '채집함에서 곤충마다 결투 전투력이 보여요';
+
+  @override
+  String get whatsNew20League => '리그 순위표에 이번 주 인원에 맞춘 보상·승급 구간이 보여요';
+
+  @override
+  String get whatsNew20Nymph => '사마귀·메뚜기류·물장군은 번데기 없이 약충 → 탈피로 자라요';
 }

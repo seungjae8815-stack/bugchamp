@@ -12188,6 +12188,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don\'t count.'**
   String get guildWarBreedHintGrade;
+
+  /// No description provided for @whatsNew20Grade.
+  ///
+  /// In en, this message translates to:
+  /// **'Every bug now has a grade (Common–Legendary). Turn same-species bugs into essence to grade up'**
+  String get whatsNew20Grade;
+
+  /// No description provided for @whatsNew20Potion.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potions: add them when grading up for +3 to every stat each'**
+  String get whatsNew20Potion;
+
+  /// No description provided for @whatsNew20Pet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet bonuses now follow the bug\'s grade — low-grade pets got weaker. Grade them up with essence to recover'**
+  String get whatsNew20Pet;
+
+  /// No description provided for @whatsNew20Gacha.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg draw: Epic+ within 10, Legendary within 50'**
+  String get whatsNew20Gacha;
+
+  /// No description provided for @whatsNew20Transcend.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge Transcend now takes time (finish with jelly), and forge grade-ups cost more after each step'**
+  String get whatsNew20Transcend;
+
+  /// No description provided for @whatsNew20StarCarry.
+  ///
+  /// In en, this message translates to:
+  /// **'Swapping to gear of the same grade keeps its stars'**
+  String get whatsNew20StarCarry;
+
+  /// No description provided for @whatsNew20Power.
+  ///
+  /// In en, this message translates to:
+  /// **'See each bug\'s duel power in the collection'**
+  String get whatsNew20Power;
+
+  /// No description provided for @whatsNew20League.
+  ///
+  /// In en, this message translates to:
+  /// **'League board shows this week\'s rewards and promotion zones for the number of players'**
+  String get whatsNew20League;
+
+  /// No description provided for @whatsNew20Nymph.
+  ///
+  /// In en, this message translates to:
+  /// **'Mantises, grasshoppers and giant water bugs grow as nymphs and molt — no pupa'**
+  String get whatsNew20Nymph;
 }
 
 class _AppLocalizationsDelegate

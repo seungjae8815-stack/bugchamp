@@ -7372,4 +7372,39 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get guildWarBreedHintGrade =>
       'Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don\'t count.';
+
+  @override
+  String get whatsNew20Grade =>
+      'Every bug now has a grade (Common–Legendary). Turn same-species bugs into essence to grade up';
+
+  @override
+  String get whatsNew20Potion =>
+      'Growth potions: add them when grading up for +3 to every stat each';
+
+  @override
+  String get whatsNew20Pet =>
+      'Pet bonuses now follow the bug\'s grade — low-grade pets got weaker. Grade them up with essence to recover';
+
+  @override
+  String get whatsNew20Gacha =>
+      'Egg draw: Epic+ within 10, Legendary within 50';
+
+  @override
+  String get whatsNew20Transcend =>
+      'Forge Transcend now takes time (finish with jelly), and forge grade-ups cost more after each step';
+
+  @override
+  String get whatsNew20StarCarry =>
+      'Swapping to gear of the same grade keeps its stars';
+
+  @override
+  String get whatsNew20Power => 'See each bug\'s duel power in the collection';
+
+  @override
+  String get whatsNew20League =>
+      'League board shows this week\'s rewards and promotion zones for the number of players';
+
+  @override
+  String get whatsNew20Nymph =>
+      'Mantises, grasshoppers and giant water bugs grow as nymphs and molt — no pupa';
 }

@@ -6,7 +6,7 @@ import 'package:app/ui/whats_new.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// "업데이트 내용" 창(1.0.18 도입 · 1.0.19 내용) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
+/// "업데이트 내용" 창(1.0.18 도입 · 1.0.20 내용) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
 void main() {
   group('막 시작한 세이브에는 띄우지 않는다', () {
     final now = DateTime.utc(2026, 10, 9, 12);
@@ -73,20 +73,20 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.19 9줄 — 프로필 그림·전투력·다듬기·별 강화·초월·사냥 방어·미션·훈련 기준·스킬', (
+    testWidgets('1.0.20 9줄 — 개체 등급·물약·펫·뽑기 천장·초월 시간·별 인계·전투력·리그·약충', (
       tester,
     ) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(kWhatsNewVersion, '1.0.19');
-      expect(find.textContaining('프로필 그림'), findsOneWidget);
-      expect(find.textContaining('실전 전투력'), findsOneWidget);
-      expect(find.textContaining('장비 다듬기'), findsOneWidget);
-      expect(find.textContaining('별 강화'), findsOneWidget);
+      expect(kWhatsNewVersion, '1.0.20');
+      expect(find.textContaining('등급(일반~전설)'), findsOneWidget);
+      expect(find.textContaining('성장물약'), findsOneWidget);
+      expect(find.textContaining('펫 효과'), findsOneWidget);
+      expect(find.textContaining('50회 안에 전설'), findsOneWidget);
       expect(find.textContaining('공방 초월'), findsOneWidget);
-      expect(find.textContaining('근성·맷집·회복력'), findsOneWidget);
-      expect(find.textContaining('젤리 5개'), findsOneWidget);
-      expect(find.textContaining('102점'), findsOneWidget);
-      expect(find.textContaining('번데기 방벽'), findsOneWidget);
+      expect(find.textContaining('별을 그대로'), findsOneWidget);
+      expect(find.textContaining('결투 전투력'), findsOneWidget);
+      expect(find.textContaining('리그 순위표'), findsOneWidget);
+      expect(find.textContaining('약충'), findsOneWidget);
       expect(find.byType(Icon), findsNWidgets(9));
     });
 
