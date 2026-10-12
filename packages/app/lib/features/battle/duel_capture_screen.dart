@@ -91,6 +91,15 @@ const _scenes = <_Scene>[
     winner: 0,
   ),
   _Scene(
+    '다윗과 골리앗 — 말벌이 버티고 역전',
+    _Shot('hornet_giant', 28, Element.fire, Temperament.cunning),
+    _Shot('longhorn_relict', 118, Element.metal, Temperament.steadfast),
+    arena: Element.earth,
+    winner: 0,
+    needSave: true,
+    maxSeconds: 25,
+  ),
+  _Scene(
     '탭 반격으로 버티고 역전',
     _Shot('stag_twospot', 66, Element.water, Temperament.steadfast),
     _Shot('mantis_giant', 92, Element.fire, Temperament.aggressive),
@@ -98,6 +107,15 @@ const _scenes = <_Scene>[
     winner: 0,
     needSave: true,
     maxSeconds: 22,
+  ),
+  _Scene(
+    '상극 한 방 — 물이 불을 이긴다',
+    _Shot('water_bug_giant', 68, Element.water, Temperament.aggressive),
+    _Shot('rhino_japanese', 82, Element.fire, Temperament.steadfast),
+    arena: Element.water,
+    finishes: {DuelFinish.knockout},
+    winner: 0,
+    maxSeconds: 14,
   ),
   _Scene(
     '무지개 이색 왕사마귀',

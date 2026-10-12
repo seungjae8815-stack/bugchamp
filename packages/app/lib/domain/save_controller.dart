@@ -2364,6 +2364,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(state.requireValue.copyWith(upgradeLevels: lv));
   }
 
+  /// (개발) 사냥터 게이지를 [n] 마리로 — 보스 도전을 바로 다시 열어 본다(촬영·확인용).
+  Future<void> devSetZoneKills(int n) async {
+    await _commit(state.requireValue.copyWith(zoneKills: n));
+  }
+
+  /// (개발) 강화 한 종류를 [level] 로.
+  Future<void> devSetUpgrade(UpgradeKind k, int level) async {
+    final s = state.requireValue;
+    await _commit(s.copyWith(upgradeLevels: {...s.upgradeLevels, k: level}));
+  }
+
   /// (개발) 심연 층을 [n] 만큼 올린다(층 보스를 잡은 것처럼 실제 함수로 — 10층마다 첫 도달 보상 포함).
   Future<void> devAbyssFloors(int n) async {
     for (var i = 0; i < n; i++) {

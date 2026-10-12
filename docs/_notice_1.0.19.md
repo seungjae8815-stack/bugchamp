@@ -2,7 +2,7 @@
 
 올리는 곳: **운영 패널** `https://bugchamp-server-867649520275.asia-northeast3.run.app/admin`
 한도: 제목 100자 · 본문 1000자(언어마다). 기간 공지 — `endsAt` = 출시일 + 2주(pinned 아님).
-⚠️ 불리할 수 있는 변경(훈련 보너스 폐지 · 전투력 숫자 · 사냥터 수치 · 초월하면 장비가 사라짐 · 미션 보상 정리)을 숨기지 않고 적었다.
+⚠️ 불리할 수 있는 변경(리그 승급·순위 젤리 인원 보정 · 훈련 보너스 폐지 · 전투력 숫자 · 사냥터 수치 · 초월하면 장비가 사라짐 · 미션 보상 정리)을 숨기지 않고 적었다.
 
 ## 한국어
 
@@ -16,10 +16,10 @@
 1.0.19 업데이트가 나왔어요.
 
 [ 프로필 그림 ]
-- 홈 왼쪽 위 초상화 → 프로필 카드의 그림을 눌러 21개 중에서 골라 보세요. 채팅·랭킹·결투·왕충 선발대회에 보여요
+- 홈 왼쪽 위 초상화 → 카드의 그림을 눌러 21개 중에서 골라 보세요
 
 [ 장비 ]
-- 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 고를 수 있어요. 원하는 옵션 종류도 지정할 수 있고, 다듬을수록 낮은 값이 덜 나와요
+- 다듬기: 화석이나 젤리로 옵션 한 줄을 다시 굴리고, 이전 값과 새 값 중 골라요. 종류도 지정할 수 있어요
 - 별 강화: 같은 부위 장비를 재료로 모으면(1성 100개) 강화 시간을 거쳐 별이 올라 옵션 효과가 커져요(최대 5성, 젤리로 시간 단축). 별은 그 장비에만 붙어서 새 장비로 바꾸면 처음부터예요
 - 공방 초월: 공방 최대 등급에서 화석으로 초월하면 장비가 전부 사라지고 공방이 풀잎부터 다시 시작하지만, 모든 등급의 옵션 최대치가 단계마다 +15% 올라요(최대 5단계)
 
@@ -30,6 +30,9 @@
 [ 결투·훈련 ]
 - 전투력이 실제로 이길 확률을 반영하도록 바뀌어 숫자가 달라졌어요(2배면 약 67% 승리)
 - 훈련 포인트를 모든 곤충이 같은 기준(최대 102점)으로 받도록 맞췄어요. 업데이트 전 투자로 102점을 넘던 곤충은 넘친 만큼 조정되고 무료 다시 찍기 1회가 생겨요. 예전 부위 강화 투자에는 우편으로 젤리를 보내 드렸어요
+
+[ 결투 리그 ]
+- 이번 주부터 리그에서 결투한 사람이 10명 미만이면 승급이 없고, 3명 미만인 리그(브론즈 제외)는 결산 때 아래 리그로 합쳐져요. 순위 젤리는 인원이 적으면 줄고(3명 미만은 없음), 인원의 절반 안 순위만 받아요
 
 [ 그 밖에 ]
 - 만능 조각으로 스킬 해금 · 번데기 방벽 레벨 성장
@@ -46,20 +49,23 @@ Update 1.0.19 — Profile pictures, gear refining, stars & Forge Transcend
 ### Body
 ```
 [ Profile ]
-- Tap your portrait, then its picture, to pick 1 of 21
+- Tap your portrait to pick 1 of 21 pictures
 
 [ Gear ]
 - Refine: reroll an option (fossils or jelly), keep old or new, pick the type
-- Stars: feed same-slot gear (100 for the 1st), wait the timer and options grow, up to 5. New gear starts at zero
-- Forge Transcend: at max grade, spend fossils. All gear disappears and the forge restarts from Grass; option max +15% per step (up to 5)
+- Stars: feed same-slot gear, wait, options grow (max 5). New gear starts at 0
+- Transcend: at max forge grade, all gear is lost and the forge restarts; option max +15% per step (max 5)
 
 [ Hunting ]
-- HP, defense and regen upgrades now clearly cut damage. Zone monsters changed; each difficulty's first boss is tougher
+- HP/defense/regen now cut damage. Zone stats changed; first bosses are tougher
 - Mission goals capped; swap for 5 jelly. Rewards = 10 min of hunting here; forge jelly 2×/day
 
 [ Duels & training ]
 - Combat power now reflects real win chances (2x power ≈ 67% win)
-- Training points follow one rule for every bug (max 102). Bugs above 102 are adjusted with one free reset. Past part-upgrade investors got jelly by mail
+- Training points: max 102 for every bug. Bugs above it get trimmed + 1 free reset. Part-upgrade investors got jelly by mail
+
+[ Duel leagues ]
+- No promotion if under 10 dueled in a league; leagues under 3 (not Bronze) merge down. Rank jelly shrinks in small leagues, top half only
 
 [ More ]
 - Wild shards unlock skills · Pupa Guard grows with level
@@ -92,6 +98,9 @@ Update 1.0.19 — Profile pictures, gear refining, stars & Forge Transcend
 [ 決闘・訓練 ]
 - 戦闘力が実際の勝率を反映するようになり、数値が変わりました(2倍なら約67%で勝利)
 - 訓練ポイントはすべての虫が同じ基準(最大102)になりました。アップデート前の投資で102を超えていた虫は調整され、無料の振り直しが1回付きます。以前の部位強化への投資にはゼリーを郵便でお送りしました
+
+[ 決闘リーグ ]
+- 今週から、リーグで決闘した人が10人未満なら昇格はなく、3人未満のリーグ(ブロンズ除く)は精算時に下のリーグへ合流します。順位ゼリーは人数が少ないほど減り(3人未満はなし)、人数の半分以内の順位だけが受け取れます。1人だけのリーグが毎週1位報酬を受け取っていたのを防ぐためです
 
 [ その他 ]
 - 万能かけらでスキル解放 · 蛹の防壁がレベルで成長

@@ -8066,6 +8066,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                             .devMaxUpgrades();
                         toast('강화 전부 최대');
                       }),
+                      _devBtn('보스 도전 열기(게이지 100)', () async {
+                        await ref
+                            .read(saveControllerProvider.notifier)
+                            .devSetZoneKills(100);
+                        toast('보스 도전 열림');
+                      }),
+                      _devBtn('채집력 +20', () async {
+                        final ctrl = ref.read(saveControllerProvider.notifier);
+                        final lv =
+                            ref
+                                .read(saveControllerProvider)
+                                .requireValue
+                                .upgradeLevels[UpgradeKind.attack] ??
+                            0;
+                        await ctrl.devSetUpgrade(UpgradeKind.attack, lv + 20);
+                        toast('채집력 Lv.${lv + 20}');
+                      }),
                       _devBtn('심연 층 +10', () async {
                         await ref
                             .read(saveControllerProvider.notifier)
