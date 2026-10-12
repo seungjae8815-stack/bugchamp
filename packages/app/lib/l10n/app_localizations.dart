@@ -11838,7 +11838,7 @@ abstract class AppLocalizations {
   /// No description provided for @igPotionHint.
   ///
   /// In en, this message translates to:
-  /// **'Each potion adds +{step} to the new stat rolls (up to 100). Potion gains stay all the way to Legendary.'**
+  /// **'Each potion adds +{step} to every stat after the grade up (up to 100). Potion gains stay all the way to Legendary.'**
   String igPotionHint(String step);
 
   /// No description provided for @igGradeUpDone.
@@ -12024,7 +12024,7 @@ abstract class AppLocalizations {
   /// No description provided for @igPotionShopDescBase.
   ///
   /// In en, this message translates to:
-  /// **'Add them when grading up for better new rolls.'**
+  /// **'Add them when grading up: +3 to every stat per potion.'**
   String get igPotionShopDescBase;
 
   /// No description provided for @igPotionLeftToday.

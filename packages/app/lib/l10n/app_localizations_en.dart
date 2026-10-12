@@ -7124,7 +7124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String igPotionHint(String step) {
-    return 'Each potion adds +$step to the new stat rolls (up to 100). Potion gains stay all the way to Legendary.';
+    return 'Each potion adds +$step to every stat after the grade up (up to 100). Potion gains stay all the way to Legendary.';
   }
 
   @override
@@ -7253,7 +7253,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get igPotionShopDescBase =>
-      'Add them when grading up for better new rolls.';
+      'Add them when grading up: +3 to every stat per potion.';
 
   @override
   String igPotionLeftToday(String n) {

@@ -6967,7 +6967,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String igPotionHint(String step) {
-    return 'ポーション1個ごとに新しく振る能力 +$step点(100点まで)。ポーションの効果は伝説までそのまま残ります。';
+    return 'ポーション1個ごとに等級アップ後の全能力 +$step点(100点まで)。ポーションの効果は伝説までそのまま残ります。';
   }
 
   @override
@@ -7093,7 +7093,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get igPotionShopDescBase => '等級アップ時に入れると新しく振る能力が良くなります。';
+  String get igPotionShopDescBase => '等級アップ時に入れると全能力がポーション1個につき+3点上がります。';
 
   @override
   String igPotionLeftToday(String n) {
