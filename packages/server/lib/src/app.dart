@@ -655,7 +655,16 @@ Handler buildHandler({
         }
         final reasons = r.extra['clampReasons'];
         if (reasons is List) {
-          ops.recordClamp(user.id, [for (final x in reasons) '$x']);
+          final rawDetail = r.extra['clampDetail'];
+          final detail = <String, String>{
+            if (rawDetail is Map)
+              for (final e in rawDetail.entries) '${e.key}': '${e.value}',
+          };
+          ops.recordClamp(user.id, [for (final x in reasons) '$x'], detail);
+          // 요약은 1시간치만 들고 있다 — 지난 기록은 Cloud Run 로그에서 찾는다.
+          for (final e in detail.entries) {
+            stderr.writeln('[save/clamp] ${user.id} ${e.key} ${e.value}');
+          }
         }
 
         // 끝난 회차의 대회 보상을 여기서 지급한다. **`/event` 가 아니다** —

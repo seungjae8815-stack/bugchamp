@@ -111,6 +111,11 @@ void main() {
         s.copyWith(gold: s.gold + out.gold).toJson(),
       );
       expect(r.extra['clampReasons'], contains('gold'));
+      // 운영 요약에 증가량·허용치 내역이 실린다(2026-10-12 — 사유만으로는 원인을 몰랐다).
+      expect(
+        (r.extra['clampDetail'] as Map)['gold'],
+        allOf(contains('허용'), contains('선물·일일·미션'), contains('교환')),
+      );
     });
   }
 }

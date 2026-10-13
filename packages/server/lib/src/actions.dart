@@ -1276,13 +1276,15 @@ class GameActions {
     // 여유가 2배 아래로 내려가면 여기서 길드 버프를 봉투에 넣는다(서버 settle 이 길드를 조회해야 한다).
     // 깜짝선물·일일보상(사냥 분치) — 기기에서 받으므로 이번 업로드에서 새로 받은 몫을 따로 인정한다.
     final hunt = _huntRewardAllowance(stored, clientJson, t);
+    final chapterGold = _chapterGrantAllowance(stored, clientJson);
+    final dexGold = _dexGoldAllowance(stored, clientJson);
     final maxGain =
         _goldSanityFloor +
         generous +
         exchange.gold +
         hunt.gold +
-        _chapterGrantAllowance(stored, clientJson) +
-        _dexGoldAllowance(stored, clientJson);
+        chapterGold +
+        dexGold;
 
     final merged = Map<String, dynamic>.from(clientJson);
     // 보호 필드는 서버 저장본 값으로 (없는 키/null 까지 정확히).
@@ -1327,9 +1329,17 @@ class GameActions {
     final clientGold = (merged['gold'] as num?)?.toInt() ?? stored.gold;
     // 무엇이 잘렸나 — 운영 요약(OpsMonitor)이 "누가 무엇을" 보여 주는 데 쓴다.
     final clampReasons = <String>[];
+    // 잘린 금액·허용치 내역 — 사유만 남기면 정상 유저가 왜 잘렸는지 알 수 없었다(2026-10-12 운영 요약).
+    final clampDetail = <String, String>{};
     if (clientGold - stored.gold > maxGain) {
       merged['gold'] = stored.gold + maxGain;
       clampReasons.add('gold');
+      clampDetail['gold'] =
+          '+${_shortAmount(clientGold - stored.gold)} / 허용 ${_shortAmount(maxGain)} '
+          '(방치 ${_shortAmount(generous)} · 선물·일일·미션 ${_shortAmount(hunt.gold)} · '
+          '교환 ${_shortAmount(exchange.gold)} · 클리어 ${_shortAmount(chapterGold)} · '
+          '도감 ${_shortAmount(dexGold)} · 기본 ${_shortAmount(_goldSanityFloor)}) · '
+          '${elapsed.inSeconds}초 · 난이도 $envTier 스테이지 $envStage';
     }
 
     // 젤리(프리미엄) 상식 상한 — 결제로 사는 재화라 급증을 막는다.
@@ -1344,6 +1354,7 @@ class GameActions {
       if (clientJelly - storedJelly > jellyAllow) {
         mats['jelly'] = storedJelly + jellyAllow;
         clampReasons.add('jelly');
+        clampDetail['jelly'] = '+${clientJelly - storedJelly} / 허용 $jellyAllow';
       }
 
       // 일반 재료도 급증을 막는다 — 여기가 비어 있던 탓에 조작 업로드가
@@ -1496,6 +1507,7 @@ class GameActions {
       extra: {
         'clamped': clampReasons.isNotEmpty,
         if (clampReasons.isNotEmpty) 'clampReasons': clampReasons,
+        if (clampDetail.isNotEmpty) 'clampDetail': clampDetail,
         'season': settled.report != null,
         // 앱이 "시즌 종료" 다이얼로그를 그대로 띄울 수 있게 내역을 실어준다.
         if (settled.report != null) 'seasonReport': settled.report,
@@ -5504,3 +5516,20 @@ abstract interface class GameConfigLike {
 /// 일반 채집으로 나오는 재료(젤리는 프리미엄이라 제외 — 앱과 동일).
 /// 일반 재료 3종은 `game_rules.dart` 한 곳에 있다(앱과 같은 목록이어야 한다).
 const _regularMaterials = kRegularMaterials;
+
+/// 운영 요약용 대략 표기(1.2억 · 3,500만 → 3500만). 정확한 값이 아니라 크기를 읽기 위한 것이다.
+String _shortAmount(int v) {
+  if (v < 0) return '-${_shortAmount(-v)}';
+  const units = [
+    (10000000000000000, '경'),
+    (1000000000000, '조'),
+    (100000000, '억'),
+    (10000, '만'),
+  ];
+  for (final (base, name) in units) {
+    if (v < base) continue;
+    final x = v / base;
+    return x < 10 ? '${x.toStringAsFixed(1)}$name' : '${x.round()}$name';
+  }
+  return '$v';
+}

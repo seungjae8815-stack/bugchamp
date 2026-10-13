@@ -59,6 +59,9 @@ class OpsMonitor {
   final Map<String, String> _errorReason = {};
   final Map<String, Set<String>> _clampsByUser = {};
   final Map<String, int> _clampCount = {};
+
+  /// 계정별 마지막 잘림 내역(사유 → "증가 / 허용 (항목별)").
+  final Map<String, Map<String, String>> _clampDetail = {};
   final Map<String, String> _forged = {};
   final Map<String, int> _bigSaves = {};
 
@@ -107,11 +110,17 @@ class OpsMonitor {
     _maybeSummary();
   }
 
-  /// 업로드가 상한에 잘렸다 — [reasons] 는 `mergeSave` 의 `clampReasons`.
-  void recordClamp(String uid, List<String> reasons) {
+  /// 업로드가 상한에 잘렸다 — [reasons] 는 `mergeSave` 의 `clampReasons`, [detail] 은 `clampDetail`
+  /// (얼마가 늘었고 허용치가 항목별로 얼마였나 — 정상 유저가 잘렸는지 가르는 근거).
+  void recordClamp(
+    String uid,
+    List<String> reasons, [
+    Map<String, String> detail = const {},
+  ]) {
     if (reasons.isEmpty) return;
     (_clampsByUser[uid] ??= <String>{}).addAll(reasons);
     _clampCount[uid] = (_clampCount[uid] ?? 0) + 1;
+    if (detail.isNotEmpty) (_clampDetail[uid] ??= {}).addAll(detail);
   }
 
   /// 위조 곤충으로 편성하려다 거부됐다.
@@ -164,6 +173,7 @@ class OpsMonitor {
     _errorReason.clear();
     _clampsByUser.clear();
     _clampCount.clear();
+    _clampDetail.clear();
     _forged.clear();
     _bigSaves.clear();
     if (text != null) send(text);
@@ -206,6 +216,9 @@ class OpsMonitor {
           '  ${e.key.substring(0, e.key.length < 8 ? e.key.length : 8)} '
           '${e.value.map(_reasonLabel).toSet().join('·')} ×${_clampCount[e.key]}',
         );
+        for (final d in (_clampDetail[e.key] ?? const {}).entries) {
+          b.writeln('    ${_reasonLabel(d.key)} ${d.value}');
+        }
       }
     }
     if (_forged.isNotEmpty) {

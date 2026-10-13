@@ -43,7 +43,11 @@ void main() {
 
   test('1시간 요약 — 잘린 업로드·위조·큰 세이브를 모아 보낸다', () {
     final m = make();
-    m.recordClamp('3f2a0000-aaaa', ['gold', 'jelly']);
+    m.recordClamp(
+      '3f2a0000-aaaa',
+      ['gold', 'jelly'],
+      {'gold': '+3.1억 / 허용 2.0억'},
+    );
     m.recordClamp('3f2a0000-aaaa', ['material:chitin']);
     m.recordForged('bbbb1111', 'potential');
     m.recordSaveSize('cccc2222', 400 * 1024);
@@ -54,6 +58,7 @@ void main() {
     final text = sent.single;
     expect(text, contains('서버 요약'));
     expect(text, contains('3f2a0000 골드·젤리·재료 ×2'));
+    expect(text, contains('골드 +3.1억 / 허용 2.0억'), reason: '얼마가 넘었는지 보인다');
     expect(text, contains('bbbb1111 potential'));
     expect(text, contains('cccc2222 400KB'));
   });
