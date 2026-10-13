@@ -846,7 +846,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 패스 보유자는 쌓인 선물을 **자동으로** 받는다(2배). 선물은 접속 1시간에
     // 5.5개씩 나와서 탭 노동이 만만치 않다 — 그 노동을 없애는 게 패스의 값이다.
     unawaited(ctrl.autoClaimGifts());
-    if (!await ctrl.settleOffline()) return;
+    // 복귀 정산은 앱 셸이 업로드 전에 먼저 했을 수 있다 — 결과([pendingOffline])로 판단한다.
+    await ctrl.settleOffline();
     final report = ctrl.pendingOffline;
     if (report == null || !mounted) return;
     ctrl.consumeOffline();

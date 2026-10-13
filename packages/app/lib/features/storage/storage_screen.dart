@@ -18,6 +18,7 @@ import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
+import '../../ui/safe_grid.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../battle/duel_bug_build.dart';
@@ -72,7 +73,7 @@ class StorageScreen extends ConsumerWidget {
           // 오른쪽은 이미 가진 것을 어떻게 정리할지(합성·분해)로 나눈다.
           _toolBar(context, ref, data, l, save),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
-          Expanded(child: _grid(context, ref, data, l, save)),
+          Expanded(child: SafeGrid(child: _grid(context, ref, data, l, save))),
           _breedingBar(context, ref, data, l, save),
           _incubatorBar(context, ref, data, l, save),
         ],

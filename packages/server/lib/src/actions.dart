@@ -196,6 +196,9 @@ class GameActions {
     'abyssRewardWeek',
     // 심연 층 시간 예산 기준(2026-09-30). 지우면 예산이 다시 차서 층 상한이 풀린다.
     'abyssFloorAt',
+    // 골드 허용치 이월(2026-10-13) — 기기가 늘리면 이월 몫만큼 골드를 부풀린다.
+    'gC',
+    'gCU',
     // 성장물약 업로드 검사의 서버 하루 기록(2026-10-12) — 지우면 하루 구매·확률 드롭 인정치가 다시 찬다.
     'psD',
     'psB',
@@ -543,6 +546,10 @@ class GameActions {
   /// 챕터 보상은 아래 [_chapterGrantAllowance] 로 따로 인정하므로 이 바닥은
   /// 작아도 된다.
   static const _goldSanityFloor = 200000;
+
+  /// 이 이상 쉬었다 온 업로드만 남은 방치 허용치를 [_goldCarryWindow] 동안 넘긴다(60초 주기 업로드는 해당 없음).
+  static const _goldCarryMinGap = Duration(minutes: 2);
+  static const _goldCarryWindow = Duration(minutes: 5);
 
   /// 젤리(프리미엄 재화) 급증 상한의 바닥. 솔로 획득(선물·분해)은 소량이라
   /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
@@ -1278,13 +1285,20 @@ class GameActions {
     final hunt = _huntRewardAllowance(stored, clientJson, t);
     final chapterGold = _chapterGrantAllowance(stored, clientJson);
     final dexGold = _dexGoldAllowance(stored, clientJson);
+    // 지난 업로드에서 넘어온 방치 허용치([SaveGame.goldCarry]) — 기한 안에서만.
+    final carryUntil = stored.goldCarryUntil;
+    final carryAvail =
+        stored.goldCarry > 0 && carryUntil != null && t.isBefore(carryUntil)
+        ? stored.goldCarry
+        : 0;
     final maxGain =
         _goldSanityFloor +
         generous +
         exchange.gold +
         hunt.gold +
         chapterGold +
-        dexGold;
+        dexGold +
+        carryAvail;
 
     final merged = Map<String, dynamic>.from(clientJson);
     // 보호 필드는 서버 저장본 값으로 (없는 키/null 까지 정확히).
@@ -1338,8 +1352,31 @@ class GameActions {
           '+${_shortAmount(clientGold - stored.gold)} / 허용 ${_shortAmount(maxGain)} '
           '(방치 ${_shortAmount(generous)} · 선물·일일·미션 ${_shortAmount(hunt.gold)} · '
           '교환 ${_shortAmount(exchange.gold)} · 클리어 ${_shortAmount(chapterGold)} · '
-          '도감 ${_shortAmount(dexGold)} · 기본 ${_shortAmount(_goldSanityFloor)}) · '
+          '도감 ${_shortAmount(dexGold)} · 이월 ${_shortAmount(carryAvail)} · '
+          '기본 ${_shortAmount(_goldSanityFloor)}) · '
           '${elapsed.inSeconds}초 · 난이도 $envTier 스테이지 $envStage';
+    }
+
+    // 허용치 이월 — 오래 쉬었다 돌아온 업로드(앱 복귀 때 연결 확인)는 방치 보상 골드가 아직 안 실린
+    // 채로 먼저 닿는다. 그 업로드가 다 쓰지 않은 방치 몫을 잠깐 넘겨 두면, 몇 초 뒤 올라오는 방치 보상이
+    // 잘리지 않는다. 한 번에 받을 수 있었던 몫을 나눠 받는 것이라 새로 늘어나는 허용치는 없다.
+    final accepted = max(0, min(clientGold - stored.gold, maxGain));
+    final leftover = maxGain - accepted;
+    final int carry;
+    final DateTime? carryTo;
+    if (elapsed >= _goldCarryMinGap) {
+      carry = min(leftover, generous + carryAvail);
+      carryTo = t.add(_goldCarryWindow);
+    } else {
+      carry = min(leftover, carryAvail);
+      carryTo = carryUntil;
+    }
+    if (carry > 0 && carryTo != null) {
+      merged['gC'] = carry;
+      merged['gCU'] = carryTo.toIso8601String();
+    } else {
+      merged.remove('gC');
+      merged.remove('gCU');
     }
 
     // 젤리(프리미엄) 상식 상한 — 결제로 사는 재화라 급증을 막는다.
@@ -1461,7 +1498,10 @@ class GameActions {
     }
     {
       final gr = _enforceGrade(stored, capped, t);
-      if (gr.clamped) clampReasons.add('grade');
+      if (gr.clamped) {
+        clampReasons.add('grade');
+        if (gr.detail.isNotEmpty) clampDetail['grade'] = gr.detail;
+      }
       capped = gr.save;
     }
     final fairyCfg = config.fairy;
@@ -1542,14 +1582,27 @@ class GameActions {
   ///  - 확률 드롭(정예·보스 재처치): 서버 날짜 하루 `potionDropDaily` 개(`psR`).
   /// 기기 권위라 완벽하지 않다 — 결투·대회 팀은 [validateDuelTeam] 이 롤 범위(0~100)로 자른다.
   static const kUnseenEssencePerJelly = 8;
-  ({SaveGame save, bool clamped}) _enforceGrade(
+  ({SaveGame save, bool clamped, String detail}) _enforceGrade(
     SaveGame stored,
     SaveGame client,
     DateTime t,
   ) {
     var out = sanitizeGradeRolls(guardGradeBugFields(stored, client));
+    // 무엇을 되돌렸나 — 운영 요약에 싣는다(2026-10-13, 사유만으로는 정상 유저인지 알 수 없었다).
+    final notes = <String>[];
+    if (!identical(out, client)) {
+      final before = {for (final b in client.bugs) b.id: b};
+      final n = out.bugs.where((b) => !identical(before[b.id], b)).length;
+      notes.add('곤충 등급 기록 $n마리');
+    }
     final cfg = config.pet.individualGrade;
-    if (!cfg.enabled) return (save: out, clamped: !identical(out, client));
+    if (!cfg.enabled) {
+      return (
+        save: out,
+        clamped: !identical(out, client),
+        detail: notes.join(' · '),
+      );
+    }
     final byId = {for (final sp in config.speciesList) sp.id: sp};
     final now = {for (final b in out.bugs) b.id};
     final allow = <String, int>{};
@@ -1577,6 +1630,8 @@ class GameActions {
       if (e.value > cap + extra) {
         bag[e.key] = cap + extra;
         changed = true;
+        final had = stored.essence[e.key] ?? 0;
+        notes.add('정수 ${e.key} +${e.value - had} / 허용 ${cap + extra - had}');
       }
     }
     if (changed) out = out.copyWith(essence: bag);
@@ -1614,6 +1669,10 @@ class GameActions {
     final usedDrop = took - usedBuy;
     if (gain > cap) {
       out = out.copyWith(growthPotions: stored.growthPotions + cap);
+      notes.add(
+        '물약 +$gain / 허용 $cap (보스 ${newBosses * cfg.potionBossFirst} · 미션 $mission · '
+        '구매 $buyLeft · 드롭 $dropLeft, 오늘 드롭 인정 $dropsUsed)',
+      );
     }
     // 잘림 판정은 서버 하루 기록을 적기 **전에** — 기록은 서버 소유라 기기가 되받을 필요가 없다.
     final clamped = !identical(out, client);
@@ -1625,7 +1684,7 @@ class GameActions {
         potionSrvDrops: dropsUsed + usedDrop,
       );
     }
-    return (save: out, clamped: clamped);
+    return (save: out, clamped: clamped, detail: notes.join(' · '));
   }
 
   /// 같은 곤충 id 의 개체 등급 필드를 저장본과 맞춘다(2026-10-12 출시 전 점검 — 위조로 정수를 부풀리는 길).

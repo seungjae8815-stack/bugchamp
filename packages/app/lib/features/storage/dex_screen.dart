@@ -11,6 +11,7 @@ import '../../ui/art.dart';
 import '../../ui/bug_grade.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/safe_grid.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 import '../../ui/tier_label.dart';
@@ -90,7 +91,7 @@ class DexScreen extends ConsumerWidget {
           children: [
             summary,
             const Divider(height: 1, color: Color(0x22FFFFFF)),
-            Expanded(child: bugGrid),
+            Expanded(child: SafeGrid(child: bugGrid)),
           ],
         ),
       );
@@ -119,7 +120,7 @@ class DexScreen extends ConsumerWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  bugGrid,
+                  SafeGrid(child: bugGrid),
                   _bossList(
                     context,
                     l,

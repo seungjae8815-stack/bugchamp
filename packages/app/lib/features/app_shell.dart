@@ -176,7 +176,13 @@ class _AppShellState extends ConsumerState<AppShell>
       // 백그라운드에 둔 사이 다른 기기가 켜졌으면 409 → "다른 기기에서 접속 중" 덮개.
       // ⚠️ 복귀 때 서버 세이브를 통째로 받아 오지 않는다(2026-10-04 검토): 방치 보상은 서버가 아니라
       // 기기가 `lastSeen` 으로 정산하므로(`_settleOnResume`) 받아 와도 보상은 같고, 업로드 전 진행만 잃는다.
-      unawaited(_uploader.reconnect());
+      // ⚠️ 방치 보상을 **먼저** 정산하고 올린다(2026-10-13). 정산 전 세이브가 먼저 닿으면 서버의 마지막 시각이
+      // 지금으로 바뀌어, 몇 초 뒤 올라가는 방치 보상 골드가 "0초 만에 번 돈"으로 잘렸다(운영 요약 1.0.20).
+      // 팝업은 홈 화면이 [SaveController.pendingOffline] 으로 띄운다.
+      unawaited(() async {
+        await ref.read(saveControllerProvider.notifier).settleOffline();
+        await _uploader.reconnect();
+      }());
       // 백그라운드에서 끝난 결제·보류된 결제를 복귀 즉시 다시 본다.
       unawaited(ref.read(iapServiceProvider).recoverPending());
       // 백그라운드에 오래 두면 그 사이 강제 업데이트·점검이 걸릴 수 있다.

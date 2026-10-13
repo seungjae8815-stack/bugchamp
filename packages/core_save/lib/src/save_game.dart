@@ -653,6 +653,8 @@ class SaveGame {
     this.abyssScoreWeek,
     this.abyssRankMark,
     this.abyssFloorAt,
+    this.goldCarry = 0,
+    this.goldCarryUntil,
     this.abyssRewardWeek,
     this.eventBadges = const {},
     this.difficultyTier = 0,
@@ -952,6 +954,12 @@ class SaveGame {
   /// 인정할 때마다 그만큼 앞으로 민다. 업로드마다 경과 시간을 올림으로 재던 시절엔 1초마다 올리면
   /// 매번 한 층씩 늘어 300번에 305층이 됐다(2026-09-30 점검).
   final DateTime? abyssFloorAt;
+
+  /// 업로드 골드 허용치 이월(서버 소유, 2026-10-13). 오래 쉬었다 돌아온 업로드가 방치 허용치를 다 쓰지
+  /// 않으면 남은 몫을 [goldCarryUntil] 까지 다음 업로드로 넘긴다 — 앱 복귀 때 연결 확인 업로드가 방치
+  /// 보상보다 먼저 서버에 닿으면, 몇 초 뒤 올라온 방치 보상 골드가 "0초 만에 번 돈"으로 잘렸다.
+  final int goldCarry;
+  final DateTime? goldCarryUntil;
 
   /// 주간 순위 보상을 판정한 주. **서버 소유** — 지우면 같은 주 보상을 반복해 받는다.
   final String? abyssRewardWeek;
@@ -1592,6 +1600,8 @@ class SaveGame {
     String? abyssScoreWeek,
     String? abyssRankMark,
     DateTime? abyssFloorAt,
+    int? goldCarry,
+    DateTime? goldCarryUntil,
     String? abyssRewardWeek,
     Set<String>? eventBadges,
     int? difficultyTier,
@@ -1732,6 +1742,8 @@ class SaveGame {
     abyssScoreWeek: abyssScoreWeek ?? this.abyssScoreWeek,
     abyssRankMark: abyssRankMark ?? this.abyssRankMark,
     abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
+    goldCarry: goldCarry ?? this.goldCarry,
+    goldCarryUntil: goldCarryUntil ?? this.goldCarryUntil,
     abyssRewardWeek: abyssRewardWeek ?? this.abyssRewardWeek,
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
@@ -2002,6 +2014,10 @@ class SaveGame {
     abyssFloorAt: json['abyssFloorAt'] == null
         ? null
         : DateTime.tryParse(json['abyssFloorAt'] as String)?.toUtc(),
+    goldCarry: (json['gC'] as num?)?.toInt() ?? 0,
+    goldCarryUntil: json['gCU'] is String
+        ? DateTime.tryParse(json['gCU'] as String)?.toUtc()
+        : null,
     abyssRewardWeek: json['abyssRewardWeek'] as String?,
     eventBadges:
         (json['eventBadges'] as List?)?.cast<String>().toSet() ?? const {},
@@ -2257,6 +2273,9 @@ class SaveGame {
     if (abyssScoreWeek != null) 'abyssScoreWeek': abyssScoreWeek,
     if (abyssRankMark != null) 'abyRk': abyssRankMark,
     if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),
+    if (goldCarry > 0) 'gC': goldCarry,
+    if (goldCarry > 0 && goldCarryUntil != null)
+      'gCU': goldCarryUntil!.toIso8601String(),
     if (abyssRewardWeek != null) 'abyssRewardWeek': abyssRewardWeek,
     if (eventBadges.isNotEmpty) 'eventBadges': eventBadges.toList(),
     if (difficultyTier > 0) 'difficultyTier': difficultyTier,
