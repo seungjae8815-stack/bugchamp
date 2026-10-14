@@ -7605,7 +7605,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passiveCardHint =>
-      'Applies only while equipped as a pet (idle hunting). Grows with this bug\'s grade and its species rarity.';
+      'Grows with this bug\'s grade and its species rarity.';
 
   @override
   String get passiveNone => 'No passive';

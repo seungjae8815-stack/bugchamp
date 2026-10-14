@@ -34,6 +34,8 @@ Future<bool> confirmJellySpend(
     context,
     title: title,
     icon: Icons.bolt_rounded,
+    // 즉시 완료 그림(2026-10-14) — 그림이 없으면 번개 아이콘.
+    iconWidget: gameIcon('instant', size: 40, fallback: Icons.bolt_rounded),
     content: Text(
       body,
       textAlign: TextAlign.center,

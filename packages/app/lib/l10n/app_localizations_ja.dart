@@ -7431,7 +7431,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passiveCardTitle => 'ペットパッシブ';
 
   @override
-  String get passiveCardHint => 'ペットとして装備したときだけ(放置狩り)付きます。虫の等級と種の希少度で大きくなります。';
+  String get passiveCardHint => '虫の等級と種の希少度で大きくなります。';
 
   @override
   String get passiveNone => 'パッシブなし';

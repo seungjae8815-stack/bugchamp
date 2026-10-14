@@ -4271,7 +4271,7 @@
   "@storageViewCount": {"placeholders": {"shown": {"type": "String"}, "total": {"type": "String"}}},
   "storageViewEmpty": "No bugs match.\nTry changing the view filter.",
   "passiveCardTitle": "Pet passive",
-  "passiveCardHint": "Applies only while equipped as a pet (idle hunting). Grows with this bug's grade and its species rarity.",
+  "passiveCardHint": "Grows with this bug's grade and its species rarity.",
   "passiveNone": "No passive",
   "passiveReroll": "Reroll passive",
   "passiveRerollDesc": "Rerolls the passive stat value. Which stat it boosts stays the same.\nThe cost is used whether you keep the new value or not.",

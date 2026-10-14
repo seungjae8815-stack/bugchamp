@@ -4580,7 +4580,12 @@ class StorageScreen extends ConsumerWidget {
                         _snack(ctx, l.breakthroughDoneSnack);
                       }
                     },
-                    icon: const Icon(Icons.bolt, size: 15),
+                    icon: gameIcon(
+                      'instant',
+                      size: 17,
+                      fallback: Icons.bolt,
+                      color: Colors.white,
+                    ),
                     label: Text(l.breakthroughInstant(jellyCost)),
                     style: _pillStyle(const Color(0xFF2E6DA4)),
                   ),

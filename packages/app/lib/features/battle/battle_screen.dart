@@ -1399,6 +1399,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       context,
       title: l.squadDetailTitle,
       icon: Icons.healing_rounded,
+      iconWidget: _bugTitleArt(data, bug),
       content: _bugStats(
         l,
         data,
@@ -2516,42 +2517,54 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            for (final (role, slot) in const [
-              (DuelRole.attack, TrainSlot.attack),
-              (DuelRole.defense, TrainSlot.defense),
-              (DuelRole.hp, TrainSlot.hp),
-            ])
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
+            // 역할 세 줄은 **묶음째 가운데**(2026-10-14 사장님) — 줄 안은 왼쪽 맞춤이라 화살표가 세로로 맞는다.
+            Center(
+              child: IntrinsicWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _roleImage(role, size: 21),
-                    const SizedBox(width: 6),
-                    SizedBox(
-                      width: 64,
-                      child: Text(
-                        duelRoleLabel(l, role),
-                        style: TextStyle(
-                          color: duelRoleColor(role),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
+                    for (final (role, slot) in const [
+                      (DuelRole.attack, TrainSlot.attack),
+                      (DuelRole.defense, TrainSlot.defense),
+                      (DuelRole.hp, TrainSlot.hp),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _roleImage(role, size: 21),
+                            const SizedBox(width: 6),
+                            SizedBox(
+                              width: 64,
+                              child: Text(
+                                duelRoleLabel(l, role),
+                                style: TextStyle(
+                                  color: duelRoleColor(role),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              '→',
+                              style: TextStyle(color: Colors.white54),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              l.duelTeamAuraHelpRole(trainSlotLabel(l, slot)),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const Text('→', style: TextStyle(color: Colors.white54)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        l.duelTeamAuraHelpRole(trainSlotLabel(l, slot)),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
+            ),
             const SizedBox(height: 10),
             Text(
               l.duelTeamAuraHelpCap('${(aura.capPerStat * 100).round()}%'),
@@ -3108,6 +3121,24 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     ),
   );
 
+  /// 곤충 상세 창 제목 옆 그림 = **그 곤충 자신**(스킨·이색 반영). 예전엔 코드 아이콘(벌레·회복)이었다(2026-10-14 사장님).
+  Widget _bugTitleArt(GameData data, IndividualBug bug) {
+    final sp = data.speciesById[bug.speciesId];
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: bugStageImage(
+        bug.speciesId,
+        LifeStage.adult,
+        size: 40,
+        fallback: sp == null
+            ? const Icon(Icons.bug_report_rounded, color: _honey)
+            : bugAvatar(sp, size: 36),
+        skin: bugView(ref.read(skinOfProvider), bug),
+      ),
+    );
+  }
+
   /// 내 곤충 상세 — 출정 / 취소.
   Future<void> _showBugDetail(
     BuildContext? sheet,
@@ -3125,6 +3156,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       context,
       title: l.squadDetailTitle,
       icon: Icons.bug_report_rounded,
+      iconWidget: _bugTitleArt(data, bug),
       content: _bugStats(
         l,
         data,

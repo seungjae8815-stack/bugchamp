@@ -2348,7 +2348,7 @@
   "storageViewCount": "{shown}/{total}마리",
   "storageViewEmpty": "조건에 맞는 곤충이 없어요.\n보기 조건을 바꿔 보세요.",
   "passiveCardTitle": "펫 패시브",
-  "passiveCardHint": "애완펫으로 장착했을 때만(방치 사냥) 붙어요. 곤충 등급과 종 희귀도에 따라 커져요.",
+  "passiveCardHint": "곤충 등급과 종 희귀도에 따라 커져요.",
   "passiveNone": "패시브 없음",
   "passiveReroll": "패시브 다시 굴리기",
   "passiveRerollDesc": "패시브 능력치를 다시 굴려요. 어떤 능력인지(종류)는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.",

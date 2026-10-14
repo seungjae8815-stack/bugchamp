@@ -12552,7 +12552,7 @@ abstract class AppLocalizations {
   /// No description provided for @passiveCardHint.
   ///
   /// In en, this message translates to:
-  /// **'Applies only while equipped as a pet (idle hunting). Grows with this bug\'s grade and its species rarity.'**
+  /// **'Grows with this bug\'s grade and its species rarity.'**
   String get passiveCardHint;
 
   /// No description provided for @passiveNone.

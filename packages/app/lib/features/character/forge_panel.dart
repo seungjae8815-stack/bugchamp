@@ -1501,6 +1501,12 @@ Future<bool> showForgeStrikePick(
     context,
     title: l.forgeStrikePick,
     icon: Icons.hardware_outlined,
+    // 자동 버튼과 같은 그림(2026-10-14 사장님).
+    iconWidget: gameIcon(
+      'forge_auto',
+      size: 40,
+      fallback: Icons.hardware_outlined,
+    ),
     content: StatefulBuilder(
       builder: (context, setLocal) => SizedBox(
         width: double.maxFinite,

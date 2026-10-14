@@ -7443,8 +7443,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveCardTitle => '펫 패시브';
 
   @override
-  String get passiveCardHint =>
-      '애완펫으로 장착했을 때만(방치 사냥) 붙어요. 곤충 등급과 종 희귀도에 따라 커져요.';
+  String get passiveCardHint => '곤충 등급과 종 희귀도에 따라 커져요.';
 
   @override
   String get passiveNone => '패시브 없음';

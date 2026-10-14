@@ -590,6 +590,11 @@ class _AppShellState extends ConsumerState<AppShell>
       context,
       title: l.exitTitle,
       icon: Icons.exit_to_app_rounded,
+      iconWidget: gameIcon(
+        'game_exit',
+        size: 40,
+        fallback: Icons.exit_to_app_rounded,
+      ),
       content: Text(
         l.exitConfirm,
         style: const TextStyle(

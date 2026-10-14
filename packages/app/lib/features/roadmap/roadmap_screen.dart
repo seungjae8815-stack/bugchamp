@@ -784,21 +784,46 @@ class _ZoneRow extends StatelessWidget {
                       // ⚠️ 검은색으로 칠하면 **어두운 카드 위에서 아무것도 안
                       // 보인다**(2026-09-14 지적: "보스들이 안 나와"). 형태가
                       // 읽히도록 밝은 회색으로 찍고 살짝 비친다.
+                      // 보스 테두리 그림(뿔·가시 틀, 2026-10-14) — 지금 화면은 사냥터 목록이라
+                      // 예전 스테이지 칸(_NodeTile)에만 붙였을 땐 보이지 않았다. 틀 안쪽에 보스를 넣는다.
                       SizedBox(
                         width: 74,
                         height: 74,
-                        child: conquered || here
-                            ? art
-                            : Opacity(
-                                opacity: 0.55,
-                                child: ColorFiltered(
-                                  colorFilter: const ColorFilter.mode(
-                                    Color(0xFF8A96A0),
-                                    BlendMode.srcIn,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Padding(
+                                padding: const EdgeInsets.all(9),
+                                child: conquered || here
+                                    ? art
+                                    : Opacity(
+                                        opacity: 0.55,
+                                        child: ColorFiltered(
+                                          colorFilter: const ColorFilter.mode(
+                                            Color(0xFF8A96A0),
+                                            BlendMode.srcIn,
+                                          ),
+                                          child: art,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: Opacity(
+                                  opacity: conquered || here ? 1 : 0.6,
+                                  child: gameImage(
+                                    'assets/images/ui/icon/roadmap_boss_frame.webp',
+                                    width: 74,
+                                    height: 74,
+                                    fit: BoxFit.fill,
+                                    fallback: const SizedBox.shrink(),
                                   ),
-                                  child: art,
                                 ),
                               ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
