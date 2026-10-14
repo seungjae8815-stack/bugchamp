@@ -1005,10 +1005,10 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                               ),
                             ),
                           ),
-                          const Icon(
-                            Icons.flash_on_rounded,
-                            size: 15,
-                            color: kHoney,
+                          gameIcon(
+                            'combat_power',
+                            size: 17,
+                            fallback: Icons.flash_on_rounded,
                           ),
                           Text(
                             formatCompact(duelPowerOf(d, data).round()),

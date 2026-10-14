@@ -372,10 +372,15 @@ Widget itemStarsRow(
       mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < cfg.starMax; i++)
-          Icon(
-            i < item.stars ? Icons.star_rounded : Icons.star_outline_rounded,
-            size: 14,
+          // 빈 별은 같은 그림을 흑백·반투명으로(그림이 없으면 예전 빈 별 아이콘).
+          gameIcon(
+            'equip_star',
+            size: 16,
+            fallback: i < item.stars
+                ? Icons.star_rounded
+                : Icons.star_outline_rounded,
             color: i < item.stars ? kHoney : const Color(0x55FFFFFF),
+            dim: i >= item.stars,
           ),
         const SizedBox(width: 4),
         if (item.stars > 0)

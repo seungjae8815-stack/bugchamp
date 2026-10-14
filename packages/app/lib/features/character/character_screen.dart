@@ -542,7 +542,12 @@ class _EquipCell extends ConsumerWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.star_rounded, size: 10, color: _honey),
+                gameIcon(
+                  'equip_star',
+                  size: 12,
+                  fallback: Icons.star_rounded,
+                  color: _honey,
+                ),
                 Text(
                   '${it.stars}',
                   style: const TextStyle(
@@ -730,7 +735,12 @@ class _StarFeedPopState extends ConsumerState<_StarFeedPop>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.star_rounded, size: 12, color: _honey),
+                      gameIcon(
+                        'equip_star',
+                        size: 14,
+                        fallback: Icons.star_rounded,
+                        color: _honey,
+                      ),
                       Text(
                         '+$_n',
                         style: const TextStyle(

@@ -5,7 +5,7 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../ui/art.dart' show dialogIcon;
+import '../../ui/art.dart' show dialogIcon, gameImage;
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/tier_label.dart';
@@ -976,13 +976,25 @@ class _NodeTile extends StatelessWidget {
 
     if (isBoss) {
       // 뿔·가시는 칸 안쪽 여백에 그린다 — 바깥으로 삐져나가면 상위 Stack 이 잘라낸다.
+      // 테두리 그림(`roadmap_boss_frame.webp`, 가운데가 투명한 사각 틀)은 칸 **위에** 겹친다.
+      // 그림이 없으면 예전처럼 뿔·가시를 그린다 — 칸 바깥 여백에만 그려서 위아래 순서가 상관없다.
       tile = Stack(
         children: [
-          Positioned.fill(child: CustomPaint(painter: _BossFrame(border))),
           Positioned.fill(
             child: Padding(
               padding: EdgeInsets.all(size * _bossInsetFrac),
               child: tile,
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: gameImage(
+                'assets/images/ui/icon/roadmap_boss_frame.webp',
+                width: size,
+                height: size,
+                fit: BoxFit.fill,
+                fallback: CustomPaint(painter: _BossFrame(border)),
+              ),
             ),
           ),
         ],

@@ -185,7 +185,15 @@ class _TicketBarState extends ConsumerState<TicketBar> {
                 children: [
                   Row(
                     children: [
-                      const Text('⚔️', style: TextStyle(fontSize: 13)),
+                      gameImage(
+                        'assets/images/ui/icon/duel_ticket.webp',
+                        width: 16,
+                        height: 16,
+                        fallback: const Text(
+                          '⚔️',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
@@ -1212,7 +1220,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 ),
               )
             // 결투 티켓과 같은 표식 — 누르면 티켓 한 장이 나간다는 걸 그림으로.
-            : const Text('⚔️', style: TextStyle(fontSize: 18)),
+            : gameImage(
+                'assets/images/ui/icon/duel_ticket.webp',
+                width: 22,
+                height: 22,
+                fallback: const Text('⚔️', style: TextStyle(fontSize: 18)),
+              ),
         label: Text(
           l.battleStart,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
@@ -1513,16 +1526,30 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    '⚔ ${formatCompact(_bugPower(bug, data, locale).round())}'
-                    ' · Lv.${bug.level} · $stars',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFEBD24A),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  // 전투력 표식은 모든 화면에서 같은 그림(2026-10-14).
+                  Row(
+                    children: [
+                      gameIcon(
+                        'combat_power',
+                        size: 13,
+                        fallback: Icons.flash_on_rounded,
+                        color: const Color(0xFFEBD24A),
+                      ),
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text(
+                          '${formatCompact(_bugPower(bug, data, locale).round())}'
+                          ' · Lv.${bug.level} · $stars',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFEBD24A),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
                     '${l.injuryTitle} · $time',
@@ -1886,9 +1913,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.flash_on_rounded,
-                                size: 14,
+                              gameIcon(
+                                'combat_power',
+                                size: 16,
+                                fallback: Icons.flash_on_rounded,
                                 color: tone,
                               ),
                               Text(
@@ -2416,11 +2444,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ),
                   ),
                   alignment: Alignment.center,
-                  child: Icon(
-                    _roleIcon(slotRole),
-                    size: 11,
-                    color: duelRoleColor(slotRole),
-                  ),
+                  child: _roleImage(slotRole, size: 14),
                 ),
               ),
           ],
@@ -2434,6 +2458,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     DuelRole.defense => trainSlotIcon(TrainSlot.defense),
     DuelRole.hp => trainSlotIcon(TrainSlot.hp),
   };
+
+  /// 역할 그림(`role_*.webp`) — 없으면 [_roleIcon] 을 역할 색으로.
+  Widget _roleImage(DuelRole r, {required double size}) => gameIcon(
+    switch (r) {
+      DuelRole.attack => 'role_attack',
+      DuelRole.defense => 'role_defense',
+      DuelRole.hp => 'role_hp',
+    },
+    size: size,
+    fallback: _roleIcon(r),
+    color: duelRoleColor(r),
+  );
 
   /// 출정 칸 아래 **팀 오라** 한 줄(1.0.21 D3) — "팀 오라: 공격 +12% · 체력 +8%". 누르면 규칙 안내.
   /// 서버 `validateDuelTeam` 과 같은 [teamAuraTotals](능력치마다 상한).
@@ -2461,6 +2497,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         context,
         title: l.duelTeamAuraTitle,
         icon: Icons.campaign_rounded,
+        iconWidget: gameIcon(
+          'team_aura',
+          size: 40,
+          fallback: Icons.campaign_rounded,
+        ),
         // 역할마다 한 줄(2026-10-14 사장님 — 한 문장에 몰려 있어 읽기 어려웠다).
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2484,7 +2525,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
                   children: [
-                    Icon(_roleIcon(role), size: 18, color: duelRoleColor(role)),
+                    _roleImage(role, size: 21),
                     const SizedBox(width: 6),
                     SizedBox(
                       width: 64,
@@ -2535,7 +2576,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.campaign_rounded, size: 14, color: _honey),
+            gameIcon(
+              'team_aura',
+              size: 16,
+              fallback: Icons.campaign_rounded,
+              color: _honey,
+            ),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
@@ -2767,22 +2813,49 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontSize: 10),
                 ),
-                Text(
-                  '⚔ ${formatCompact(_bugPower(bug, data, locale).round())}',
-                  style: const TextStyle(
-                    color: Color(0xFFEBD24A),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    gameIcon(
+                      'combat_power',
+                      size: 10,
+                      fallback: Icons.flash_on_rounded,
+                      color: const Color(0xFFEBD24A),
+                    ),
+                    const SizedBox(width: 1),
+                    Text(
+                      formatCompact(_bugPower(bug, data, locale).round()),
+                      style: const TextStyle(
+                        color: Color(0xFFEBD24A),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
                 injured
-                    ? Text(
-                        '🩹 ${formatClock(until.difference(now))}',
-                        style: const TextStyle(
-                          color: Color(0xFFEF9A9A),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          gameImage(
+                            'assets/images/ui/icon/injury.webp',
+                            width: 11,
+                            height: 11,
+                            fallback: const Text(
+                              '🩹',
+                              style: TextStyle(fontSize: 9),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            formatClock(until.difference(now)),
+                            style: const TextStyle(
+                              color: Color(0xFFEF9A9A),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       )
                     : Text(
                         'Lv.${bug.level}',
@@ -2911,11 +2984,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                               ? duelRoleChipText(l, role, d.aura)
                               : duelRoleLabel(l, role),
                           duelRoleColor(role),
-                          lead: Icon(
-                            _roleIcon(role),
-                            size: 11,
-                            color: duelRoleColor(role),
-                          ),
+                          lead: _roleImage(role, size: 13),
                         ),
                       if (isVariant)
                         _chip(l.dexVariant, const Color(0xFFE0A020)),

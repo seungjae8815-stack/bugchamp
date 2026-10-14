@@ -100,6 +100,26 @@ IconData trainSlotIcon(TrainSlot s) => switch (s) {
   TrainSlot.command => Icons.campaign_rounded,
 };
 
+/// 훈련 칸 그림(`assets/images/ui/icon/train_*.webp`) — 그림이 없으면 [trainSlotIcon] 을 칸 색으로 그린다.
+Widget trainSlotImage(TrainSlot s, {double size = 24}) => gameIcon(
+  switch (s) {
+    TrainSlot.attack => 'train_attack',
+    TrainSlot.defense => 'train_defense',
+    TrainSlot.hp => 'train_hp',
+    TrainSlot.push => 'train_push',
+    TrainSlot.evade => 'train_evade',
+    TrainSlot.crit => 'train_crit',
+    TrainSlot.recovery => 'train_recovery',
+    TrainSlot.mass => 'train_weight',
+    TrainSlot.tech => 'train_tech',
+    TrainSlot.grit => 'train_grit',
+    TrainSlot.command => 'train_command',
+  },
+  size: size,
+  fallback: trainSlotIcon(s),
+  color: trainSlotColor(s),
+);
+
 Color trainSlotColor(TrainSlot s) => switch (s) {
   TrainSlot.attack => const Color(0xFFFF8A65),
   TrainSlot.defense => const Color(0xFF64B5F6),
@@ -1183,11 +1203,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  trainSlotIcon(next),
-                  color: trainSlotColor(next),
-                  size: 16,
-                ),
+                trainSlotImage(next, size: 19),
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
@@ -1395,7 +1411,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       ),
       child: Row(
         children: [
-          Icon(trainSlotIcon(sl), color: c, size: 24),
+          trainSlotImage(sl, size: 28),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -1897,12 +1913,15 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    isEl ? Icons.diamond_rounded : Icons.psychology_rounded,
+                  gameIcon(
+                    isEl ? 'stone_element' : 'stone_temperament',
+                    fallback: isEl
+                        ? Icons.diamond_rounded
+                        : Icons.psychology_rounded,
                     color: isEl
                         ? const Color(0xFF7FD3FF)
                         : const Color(0xFFE6B3FF),
-                    size: 22,
+                    size: 26,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -2057,6 +2076,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       context,
       title: isEl ? l.duelStonePickElement : l.duelStonePickTemperament,
       icon: isEl ? Icons.diamond_rounded : Icons.psychology_rounded,
+      iconWidget: _stoneIcon(isEl),
       content: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.55,
@@ -2113,6 +2133,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       l.duelStoneAsk(from, to, name),
       isEl ? l.duelStoneChangeElement : l.duelStoneChangeTemperament,
       icon: isEl ? Icons.diamond_rounded : Icons.psychology_rounded,
+      iconWidget: _stoneIcon(isEl),
     );
     if (!ok || !mounted) return;
     final err = await _ctrl.useDuelStoneNow(
@@ -2225,16 +2246,25 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
 
   // ── 공용 ─────────────────────────────────────────────────────────────
 
+  /// 결투석 팝업 제목 그림(오행석·기질석).
+  Widget _stoneIcon(bool isEl) => gameIcon(
+    isEl ? 'stone_element' : 'stone_temperament',
+    size: 40,
+    fallback: isEl ? Icons.diamond_rounded : Icons.psychology_rounded,
+  );
+
   Future<bool> _ask(
     String title,
     String body,
     String ok, {
     IconData icon = Icons.help_outline_rounded,
+    Widget? iconWidget,
   }) async {
     final r = await showGameDialog<bool>(
       context,
       title: title,
       icon: icon,
+      iconWidget: iconWidget,
       content: Text(
         body,
         style: const TextStyle(color: _text, fontSize: 13.5, height: 1.4),

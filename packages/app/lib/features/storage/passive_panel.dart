@@ -91,7 +91,11 @@ Widget petPassiveCard(
             alignment: Alignment.centerRight,
             child: OutlinedButton.icon(
               onPressed: () => _openPassiveReroll(ctx, r, data, bug.id),
-              icon: const Icon(Icons.casino_rounded, size: 16),
+              icon: gameIcon(
+                'passive_reroll',
+                size: 19,
+                fallback: Icons.casino_rounded,
+              ),
               label: Text(l.passiveReroll),
               style: OutlinedButton.styleFrom(
                 foregroundColor: kHoney,
@@ -148,6 +152,7 @@ Future<void> _openPassiveReroll(
     ctx,
     title: l.passiveReroll,
     icon: Icons.casino_rounded,
+    iconWidget: _rerollIcon(),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -281,6 +286,7 @@ Future<void> _pickPassiveRoll(
     ctx,
     title: l.passiveRerollPickTitle,
     icon: Icons.casino_rounded,
+    iconWidget: _rerollIcon(),
     barrierDismissible: false,
     content: Column(
       mainAxisSize: MainAxisSize.min,
@@ -313,3 +319,7 @@ Future<void> _pickPassiveRoll(
       .read(saveControllerProvider.notifier)
       .pickPassiveReroll(accept: take == true);
 }
+
+/// 패시브 재굴림 팝업 제목 그림 — 없으면 예전 주사위 아이콘.
+Widget _rerollIcon() =>
+    gameIcon('passive_reroll', size: 40, fallback: Icons.casino_rounded);

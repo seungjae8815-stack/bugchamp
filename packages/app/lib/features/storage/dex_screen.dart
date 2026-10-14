@@ -561,7 +561,15 @@ class DexScreen extends ConsumerWidget {
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('👑', style: TextStyle(fontSize: 11)),
+                        gameImage(
+                          'assets/images/ui/icon/dex_crown.webp',
+                          width: 14,
+                          height: 14,
+                          fallback: const Text(
+                            '👑',
+                            style: TextStyle(fontSize: 11),
+                          ),
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           l.dexCompleteShort,
@@ -583,7 +591,15 @@ class DexScreen extends ConsumerWidget {
                             color: _honey,
                           ),
                         if (variant)
-                          const Text('✨', style: TextStyle(fontSize: 10)),
+                          gameImage(
+                            'assets/images/ui/icon/variant_shiny.webp',
+                            width: 13,
+                            height: 13,
+                            fallback: const Text(
+                              '✨',
+                              style: TextStyle(fontSize: 10),
+                            ),
+                          ),
                       ],
                     ),
             ),
@@ -686,14 +702,31 @@ class DexScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: const Color(0xFFCE7AE0)),
                 ),
-                child: Text(
-                  '👑 ${l.dexComplete}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFFE9C2FF),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12.5,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    gameImage(
+                      'assets/images/ui/icon/dex_crown.webp',
+                      width: 18,
+                      height: 18,
+                      fallback: const Text(
+                        '👑',
+                        style: TextStyle(fontSize: 12.5),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        l.dexComplete,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFFE9C2FF),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

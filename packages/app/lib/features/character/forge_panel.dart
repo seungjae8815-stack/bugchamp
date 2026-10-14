@@ -403,6 +403,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
         // 온다(가장 자주 누르는 버튼이 엄지 정중앙이어야 한다).
         _SquareButton(
           icon: Icons.workspace_premium_rounded,
+          art: 'forge_grade',
           label: l.forgeGradeButton,
           sub: '${save.forgeLevel + 1}',
           busy: save.forgeUpAt != null || save.forgeTranscendAt != null,
@@ -554,6 +555,8 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
             const SizedBox(height: 6),
             _SquareButton(
               icon: _autoOn ? Icons.stop_rounded : Icons.autorenew_rounded,
+              // 켜져 있을 땐 "멈춤" 아이콘 그대로 — 그림은 꺼져 있을 때(자동 시작)만.
+              art: _autoOn ? null : 'forge_auto',
               label: l.forgeAutoShort,
               on: _autoOn,
               onTap: _toggleAuto,
@@ -646,12 +649,16 @@ class _SquareButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.art,
     this.sub,
     this.on = false,
     this.busy = false,
   });
 
   final IconData icon;
+
+  /// 아이콘 그림 이름(`assets/images/ui/icon/<art>.webp`) — 없으면 [icon].
+  final String? art;
   final String label;
   final String? sub;
   final VoidCallback onTap;
@@ -685,11 +692,20 @@ class _SquareButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              busy ? Icons.hourglass_bottom_rounded : icon,
-              color: fg,
-              size: 18,
-            ),
+            if (art != null && !busy)
+              // 판 그림은 여백이 거의 없어 아이콘보다 크게 — 아래 숫자가 있으면 조금 작게.
+              gameImage(
+                'assets/images/ui/icon/$art.webp',
+                width: sub == null ? 30 : 24,
+                height: sub == null ? 30 : 24,
+                fallback: Icon(icon, color: fg, size: 18),
+              )
+            else
+              Icon(
+                busy ? Icons.hourglass_bottom_rounded : icon,
+                color: fg,
+                size: 18,
+              ),
             Text(
               label,
               maxLines: 1,
@@ -1418,6 +1434,9 @@ Future<bool> showForgeResult(
             context,
             title: carry ? l.forgeStarCarryTitle : l.forgeStarLoseTitle,
             icon: carry ? Icons.star_rounded : Icons.warning_amber_rounded,
+            iconWidget: carry
+                ? gameIcon('equip_star', size: 40, fallback: Icons.star_rounded)
+                : null,
             content: Text(
               carry
                   ? l.forgeStarCarryBody('${old.stars}', '${old.starExp}')
@@ -1869,6 +1888,11 @@ Future<void> showForgeGrade(BuildContext context, WidgetRef ref) async {
     context,
     title: AppLocalizations.of(context).forgeGradeButton,
     icon: Icons.workspace_premium_rounded,
+    iconWidget: gameIcon(
+      'forge_grade',
+      size: 40,
+      fallback: Icons.workspace_premium_rounded,
+    ),
     content: _GradeBody(forge: forge, items: items),
     actions: [
       gameDialogButton(

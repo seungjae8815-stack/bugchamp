@@ -7,6 +7,7 @@ import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/bug_grade.dart';
 import '../../ui/colors.dart';
 import '../../ui/game_dialog.dart';
@@ -202,7 +203,7 @@ Widget gradeActionsCard(
       children: [
         Row(
           children: [
-            const Icon(Icons.trending_up_rounded, color: kHoney, size: 20),
+            gameIcon('star_up', size: 23, fallback: Icons.trending_up_rounded),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -305,6 +306,7 @@ Future<void> confirmBugToEssence(
     ctx,
     title: l.igToEssence,
     icon: precious ? Icons.warning_amber_rounded : Icons.blur_on_rounded,
+    iconWidget: precious ? null : _essenceIcon(),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -431,6 +433,11 @@ Future<void> _openGradeUp(
     ctx,
     title: l.igGradeUp,
     icon: Icons.trending_up_rounded,
+    iconWidget: gameIcon(
+      'star_up',
+      size: 40,
+      fallback: Icons.trending_up_rounded,
+    ),
     content: StatefulBuilder(
       builder: (context, setState) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -479,6 +486,8 @@ Future<void> _openGradeUp(
                 icon: const Icon(Icons.remove_circle_outline),
                 color: Colors.white,
               ),
+              _potionIcon(20),
+              const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   l.igPotionUse('$potions', '${save.growthPotions}'),
@@ -635,6 +644,7 @@ Future<void> showEssenceVault(BuildContext ctx, WidgetRef ref, GameData data) {
     ctx,
     title: l.igVaultTitle,
     icon: Icons.blur_on_rounded,
+    iconWidget: _essenceIcon(),
     content: ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 360),
       child: SingleChildScrollView(
@@ -642,13 +652,21 @@ Future<void> showEssenceVault(BuildContext ctx, WidgetRef ref, GameData data) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l.igPotionOwned('${save.growthPotions}'),
-              style: const TextStyle(
-                color: Color(0xFFB2EBF2),
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-              ),
+            Row(
+              children: [
+                _potionIcon(20),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    l.igPotionOwned('${save.growthPotions}'),
+                    style: const TextStyle(
+                      color: Color(0xFFB2EBF2),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             if (entries.isEmpty)
@@ -740,6 +758,7 @@ Future<void> convertBulkToEssence(
     ctx,
     title: l.igToEssence,
     icon: Icons.blur_on_rounded,
+    iconWidget: _essenceIcon(),
     content: Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -823,3 +842,15 @@ Future<void> convertBulkToEssence(
     eggs + pinned > 0 ? '$head\n${l.igBulkSkipped('$eggs', '$pinned')}' : head,
   );
 }
+
+/// 정수 팝업 제목 그림(`essence.webp`) — 없으면 예전 아이콘.
+Widget _essenceIcon() =>
+    gameIcon('essence', size: 40, fallback: Icons.blur_on_rounded);
+
+/// 성장물약 그림(`potion.webp`) — 없으면 플라스크 아이콘.
+Widget _potionIcon(double size) => gameIcon(
+  'potion',
+  size: size,
+  fallback: Icons.science_rounded,
+  color: const Color(0xFFB2EBF2),
+);

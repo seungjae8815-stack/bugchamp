@@ -2901,13 +2901,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       vertical: 4,
                     ),
                     decoration: _glass(),
-                    child: Text(
-                      '⚡ x${_boostMult.toStringAsFixed(1)}',
-                      style: const TextStyle(
-                        color: _honey,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        gameImage(
+                          'assets/images/ui/icon/boost.webp',
+                          width: 16,
+                          height: 16,
+                          fallback: const Text(
+                            '⚡',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          'x${_boostMult.toStringAsFixed(1)}',
+                          style: const TextStyle(
+                            color: _honey,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -3285,10 +3300,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.local_fire_department,
+                        gameIcon(
+                          'combat_power',
+                          size: 15,
+                          fallback: Icons.local_fire_department,
                           color: _honey,
-                          size: 13,
                         ),
                         const SizedBox(width: 3),
                         Flexible(
@@ -5457,6 +5473,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       context,
       title: l.bossIntroTitle,
       icon: Icons.whatshot_rounded,
+      iconWidget: gameIcon(
+        'boss_challenge',
+        size: 40,
+        fallback: Icons.whatshot_rounded,
+      ),
       content: Text(
         '${l.bossIntroBody}\n\n${l.bossIntroAuto}',
         textAlign: TextAlign.center,
@@ -9730,7 +9751,11 @@ class _GameplaySection extends StatelessWidget {
           ),
           Row(
             children: [
-              const Icon(Icons.whatshot_rounded, color: kHoney, size: 18),
+              gameIcon(
+                'boss_challenge',
+                size: 21,
+                fallback: Icons.whatshot_rounded,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

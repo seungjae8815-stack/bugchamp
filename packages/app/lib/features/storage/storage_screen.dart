@@ -304,7 +304,7 @@ class StorageScreen extends ConsumerWidget {
                   badgeColor: min == Grade.common
                       ? const Color(0x66FFFFFF)
                       : gradeColor(min),
-                  asset: 'assets/images/ui/dlg/filter.webp',
+                  asset: 'assets/images/ui/icon/filter_tile.webp',
                   fallbackIcon: Icons.filter_alt_outlined,
                   onTap: () => _showBugFilter(context, ref, l),
                 ),
@@ -316,6 +316,7 @@ class StorageScreen extends ConsumerWidget {
           if (individualGradeOn(data))
             _toolButton(
               label: l.igVaultButton,
+              asset: 'assets/images/ui/icon/essence.webp',
               fallbackIcon: Icons.blur_on_rounded,
               onTap: () => showEssenceVault(context, ref, data),
             )
@@ -841,7 +842,12 @@ class StorageScreen extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('🧬', style: TextStyle(fontSize: 18)),
+                gameImage(
+                  'assets/images/ui/icon/breeding.webp',
+                  width: 24,
+                  height: 24,
+                  fallback: const Text('🧬', style: TextStyle(fontSize: 18)),
+                ),
                 const SizedBox(width: 8),
                 Text(
                   l.breedingTitle,
@@ -946,7 +952,15 @@ class StorageScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Text('🧬', style: TextStyle(fontSize: 20)),
+                      gameImage(
+                        'assets/images/ui/icon/breeding.webp',
+                        width: 26,
+                        height: 26,
+                        fallback: const Text(
+                          '🧬',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         l.breedingTitle,
@@ -1080,11 +1094,24 @@ class StorageScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${sp.name.resolve(locale)} 🧬🥚',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: _rowTitle,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        sp.name.resolve(locale),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _rowTitle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    gameImage(
+                      'assets/images/ui/icon/breeding.webp',
+                      width: 18,
+                      height: 18,
+                      fallback: const Text('🧬🥚', style: _rowTitle),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 ClipRRect(
@@ -1472,7 +1499,12 @@ class StorageScreen extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('🥚', style: TextStyle(fontSize: 18)),
+                gameImage(
+                  'assets/images/ui/icon/incubator.webp',
+                  width: 24,
+                  height: 24,
+                  fallback: const Text('🥚', style: TextStyle(fontSize: 18)),
+                ),
                 const SizedBox(width: 8),
                 Text(
                   l.incubatorTitle,
@@ -1548,7 +1580,15 @@ class StorageScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Text('🥚', style: TextStyle(fontSize: 20)),
+                      gameImage(
+                        'assets/images/ui/icon/incubator.webp',
+                        width: 26,
+                        height: 26,
+                        fallback: const Text(
+                          '🥚',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         l.incubatorTitle,
@@ -3135,9 +3175,17 @@ class StorageScreen extends ConsumerWidget {
                   // 부상 표시는 칸 한가운데 크게 — 구석의 작은 이모지는
                   // 그리드에서 눈에 들어오지 않았다.
                   if (injured)
-                    const Positioned.fill(
+                    Positioned.fill(
                       child: Center(
-                        child: Text('🩹', style: TextStyle(fontSize: 30)),
+                        child: gameImage(
+                          'assets/images/ui/icon/injury.webp',
+                          width: 38,
+                          height: 38,
+                          fallback: const Text(
+                            '🩹',
+                            style: TextStyle(fontSize: 30),
+                          ),
+                        ),
                       ),
                     ),
                   // 혈통 특성 표식 — 짝짓기로 만든 개체를 그리드에서 바로
@@ -3211,14 +3259,28 @@ class StorageScreen extends ConsumerWidget {
                   height: 11,
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(
-                      '🔥${formatCompact(duelPower.round())}',
-                      key: ValueKey('duelPower_${bug.id}'),
-                      style: const TextStyle(
-                        color: Color(0xFFFFB27A),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        gameImage(
+                          'assets/images/ui/icon/combat_power.webp',
+                          width: 11,
+                          height: 11,
+                          fallback: const Text(
+                            '🔥',
+                            style: TextStyle(fontSize: 9),
+                          ),
+                        ),
+                        Text(
+                          formatCompact(duelPower.round()),
+                          key: ValueKey('duelPower_${bug.id}'),
+                          style: const TextStyle(
+                            color: Color(0xFFFFB27A),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -4209,13 +4271,29 @@ class StorageScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '🩹 ${l.injuryTitle}  ${_remainLabel(l, remaining)}',
-                    style: const TextStyle(
-                      color: Color(0xFFEF9A9A),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
+                  Row(
+                    children: [
+                      gameImage(
+                        'assets/images/ui/icon/injury.webp',
+                        width: 18,
+                        height: 18,
+                        fallback: const Text(
+                          '🩹',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '${l.injuryTitle}  ${_remainLabel(l, remaining)}',
+                          style: const TextStyle(
+                            color: Color(0xFFEF9A9A),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(l.injuryDesc, style: _rowSub),
@@ -4448,7 +4526,12 @@ class StorageScreen extends ConsumerWidget {
       return _sectionBox(
         child: Row(
           children: [
-            const Icon(Icons.auto_graph, color: _honey, size: 20),
+            gameIcon(
+              'breakthrough',
+              size: 23,
+              fallback: Icons.auto_graph,
+              color: _honey,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -4558,7 +4641,12 @@ class StorageScreen extends ConsumerWidget {
       return _sectionBox(
         child: Row(
           children: [
-            const Icon(Icons.workspace_premium, color: _honey, size: 20),
+            gameIcon(
+              'max_grade',
+              size: 23,
+              fallback: Icons.workspace_premium,
+              color: _honey,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -4580,7 +4668,12 @@ class StorageScreen extends ConsumerWidget {
     return _sectionBox(
       child: Row(
         children: [
-          const Icon(Icons.auto_graph, color: _honey, size: 20),
+          gameIcon(
+            'breakthrough',
+            size: 23,
+            fallback: Icons.auto_graph,
+            color: _honey,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -4638,7 +4731,12 @@ class StorageScreen extends ConsumerWidget {
     return _sectionBox(
       child: Row(
         children: [
-          const Icon(Icons.spa, color: Color(0xFF9CCC65), size: 20),
+          gameIcon(
+            'growth',
+            size: 23,
+            fallback: Icons.spa,
+            color: const Color(0xFF9CCC65),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -4720,7 +4818,12 @@ class StorageScreen extends ConsumerWidget {
     return _sectionBox(
       child: Row(
         children: [
-          const Icon(Icons.auto_awesome_motion, color: _honey, size: 20),
+          gameIcon(
+            'star_up',
+            size: 23,
+            fallback: Icons.auto_awesome_motion,
+            color: _honey,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

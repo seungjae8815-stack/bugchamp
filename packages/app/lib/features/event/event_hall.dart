@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/colors.dart';
 import '../../ui/avatar.dart';
@@ -195,15 +196,25 @@ class _EventHallSectionState extends ConsumerState<EventHallSection> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             if (e != null) ...[
-              Icon(
-                rank == 1
-                    ? Icons.emoji_events_rounded
-                    : Icons.military_tech_rounded,
-                color: color,
-                size: rank == 1 ? 34 : 26,
-                shadows: [
-                  Shadow(color: color.withValues(alpha: 0.6), blurRadius: 12),
-                ],
+              // 1위 금 · 2위 은 · 3위 동 그림(2026-10-14 사장님 확정) — 없으면 예전 메달 아이콘.
+              gameImage(
+                switch (rank) {
+                  1 => 'assets/images/ui/icon/badge_champion.webp',
+                  2 => 'assets/images/ui/icon/badge_silver.webp',
+                  _ => 'assets/images/ui/icon/badge_bronze.webp',
+                },
+                width: rank == 1 ? 40 : 31,
+                height: rank == 1 ? 40 : 31,
+                fallback: Icon(
+                  rank == 1
+                      ? Icons.emoji_events_rounded
+                      : Icons.military_tech_rounded,
+                  color: color,
+                  size: rank == 1 ? 34 : 26,
+                  shadows: [
+                    Shadow(color: color.withValues(alpha: 0.6), blurRadius: 12),
+                  ],
+                ),
               ),
               const SizedBox(height: 4),
               // 입상자의 프로필 그림(2026-10-10).

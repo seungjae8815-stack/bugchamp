@@ -14,9 +14,11 @@ import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import 'art.dart';
 
-/// 종류별 (이름, 색, 아이콘). 모르는 종류면 null.
-(String, Color, IconData)? _styleOf(AppLocalizations l, String id) {
+/// 종류별 (이름, 색, 아이콘, 그림 이름 `assets/images/ui/icon/<그림>.webp`). 모르는 종류면 null.
+/// 그림이 없으면(참가 뱃지는 아직 없다) 아이콘을 색으로 그린다.
+(String, Color, IconData, String)? _styleOf(AppLocalizations l, String id) {
   final b = parseEventBadge(id);
   if (b == null) return null;
   return switch (b.kind) {
@@ -24,22 +26,26 @@ import '../l10n/app_localizations.dart';
       l.badgeChampion(b.round),
       const Color(0xFFFFC24D),
       Icons.emoji_events_rounded,
+      'badge_champion',
     ),
     'silver' => (
       l.badgeSilver(b.round),
       const Color(0xFFC0C7D0),
       Icons.military_tech_rounded,
+      'badge_silver',
     ),
     'bronze' => (
       l.badgeBronze(b.round),
       const Color(0xFFCD8A4E),
       Icons.military_tech_rounded,
+      'badge_bronze',
     ),
     // 입상 = 4~10위(2026-10-14 — 2·3위는 은·동으로 갈라졌다). 금·은·동과 헷갈리지 않게 청록(천 리본 그림과 같은 색).
     'finalist' => (
       l.badgeFinalist(b.round),
       const Color(0xFF4FB3A9),
       Icons.workspace_premium_rounded,
+      'badge_finalist',
     ),
     // 참가 — 입상보다 한 톤 가라앉힌 초록. 금·은 옆에서 튀지 않되 "나도
     // 나갔다"는 건 보여야 한다(2026-09-15).
@@ -47,6 +53,7 @@ import '../l10n/app_localizations.dart';
       l.badgeParticipant(b.round),
       const Color(0xFF8FD19E),
       Icons.local_florist_rounded,
+      'badge_participant',
     ),
     _ => null,
   };
@@ -88,15 +95,15 @@ class EventBadgeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = _styleOf(AppLocalizations.of(context), id);
     if (style == null) return const SizedBox.shrink();
-    final (label, color, icon) = style;
+    final (label, color, icon, art) = style;
+    // 그림은 여백이 거의 없어 아이콘보다 조금 크게.
+    Widget mark() =>
+        gameIcon(art, size: (size + 2) * 1.15, fallback: icon, color: color);
 
     if (compact) {
       return Padding(
         padding: const EdgeInsets.only(left: 3),
-        child: Tooltip(
-          message: label,
-          child: Icon(icon, size: size + 2, color: color),
-        ),
+        child: Tooltip(message: label, child: mark()),
       );
     }
 
@@ -111,7 +118,7 @@ class EventBadgeChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: size + 2, color: color),
+          mark(),
           const SizedBox(width: 3),
           Text(
             label,

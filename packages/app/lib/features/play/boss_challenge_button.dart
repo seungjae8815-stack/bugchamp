@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../ui/art.dart';
 
 /// 사냥터의 [보스 도전] 버튼(2026-10-08 강조 개편).
 ///
@@ -197,10 +198,11 @@ class _BossChallengeButtonState extends State<BossChallengeButton>
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.whatshot_rounded,
-                    color: Color(0xFFFFF59D),
-                    size: 15,
+                  gameIcon(
+                    'boss_challenge',
+                    size: 18,
+                    fallback: Icons.whatshot_rounded,
+                    color: const Color(0xFFFFF59D),
                   ),
                   const SizedBox(width: 4),
                   Text(

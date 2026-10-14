@@ -762,7 +762,12 @@ class _PotionCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Text('🧪', style: TextStyle(fontSize: 18)),
+              gameImage(
+                'assets/images/ui/icon/potion.webp',
+                width: 24,
+                height: 24,
+                fallback: const Text('🧪', style: TextStyle(fontSize: 18)),
+              ),
               const SizedBox(width: 6),
               Text(
                 l.igPotionShopTitle,

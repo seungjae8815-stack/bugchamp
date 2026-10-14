@@ -871,10 +871,10 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
                   if (power > 0)
                     Row(
                       children: [
-                        const Icon(
-                          Icons.flash_on_rounded,
-                          size: 14,
-                          color: kHoney,
+                        gameIcon(
+                          'combat_power',
+                          size: 16,
+                          fallback: Icons.flash_on_rounded,
                         ),
                         Text(
                           formatCompact(power.round()),
@@ -1162,7 +1162,11 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.flash_on_rounded, size: 18, color: kHoney),
+              gameIcon(
+                'combat_power',
+                size: 21,
+                fallback: Icons.flash_on_rounded,
+              ),
               Text(
                 l.profileCombatPower(formatCompact(power.round())),
                 style: const TextStyle(
@@ -1271,7 +1275,11 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.flash_on_rounded, size: 18, color: kHoney),
+                gameIcon(
+                  'combat_power',
+                  size: 21,
+                  fallback: Icons.flash_on_rounded,
+                ),
                 Text(
                   l.profileCombatPower(formatCompact(power.round())),
                   style: const TextStyle(
