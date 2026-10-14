@@ -7431,7 +7431,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get passiveRerollDesc =>
-      '大きさだけを振り直します。種類はそのままです。\n新しい値を選んでも選ばなくてもコストは消費されます。';
+      'パッシブの能力値を振り直します。どの能力か(種類)はそのままです。\n新しい値を選んでも選ばなくてもコストは消費されます。';
 
   @override
   String passiveRerollCurrent(String value) {

@@ -2349,7 +2349,7 @@
   "passiveCardHint": "애완펫으로 장착했을 때만(방치 사냥) 붙어요. 곤충 등급과 종 희귀도에 따라 커져요.",
   "passiveNone": "패시브 없음",
   "passiveReroll": "패시브 다시 굴리기",
-  "passiveRerollDesc": "크기만 다시 굴려요. 종류는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.",
+  "passiveRerollDesc": "패시브 능력치를 다시 굴려요. 어떤 능력인지(종류)는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.",
   "passiveRerollCurrent": "지금 값: {value}",
   "passiveRerollEssence": "정수 {n}",
   "passiveRerollEssenceHave": "{name} 정수 보유 {have}",

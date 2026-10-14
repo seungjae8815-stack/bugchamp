@@ -12558,7 +12558,7 @@ abstract class AppLocalizations {
   /// No description provided for @passiveRerollDesc.
   ///
   /// In en, this message translates to:
-  /// **'Rerolls only the size. The type stays the same.\nThe cost is used whether you keep the new value or not.'**
+  /// **'Rerolls the passive stat value. Which stat it boosts stays the same.\nThe cost is used whether you keep the new value or not.'**
   String get passiveRerollDesc;
 
   /// No description provided for @passiveRerollCurrent.

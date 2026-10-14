@@ -7605,7 +7605,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passiveRerollDesc =>
-      'Rerolls only the size. The type stays the same.\nThe cost is used whether you keep the new value or not.';
+      'Rerolls the passive stat value. Which stat it boosts stays the same.\nThe cost is used whether you keep the new value or not.';
 
   @override
   String passiveRerollCurrent(String value) {

@@ -7444,7 +7444,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get passiveRerollDesc =>
-      '크기만 다시 굴려요. 종류는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.';
+      '패시브 능력치를 다시 굴려요. 어떤 능력인지(종류)는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.';
 
   @override
   String passiveRerollCurrent(String value) {

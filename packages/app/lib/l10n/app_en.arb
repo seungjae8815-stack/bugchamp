@@ -4270,7 +4270,7 @@
   "passiveCardHint": "Applies only while equipped as a pet (idle hunting). Grows with this bug's grade and its species rarity.",
   "passiveNone": "No passive",
   "passiveReroll": "Reroll passive",
-  "passiveRerollDesc": "Rerolls only the size. The type stays the same.\nThe cost is used whether you keep the new value or not.",
+  "passiveRerollDesc": "Rerolls the passive stat value. Which stat it boosts stays the same.\nThe cost is used whether you keep the new value or not.",
   "passiveRerollCurrent": "Current: {value}",
   "@passiveRerollCurrent": {"placeholders": {"value": {"type": "String"}}},
   "passiveRerollEssence": "Essence {n}",
