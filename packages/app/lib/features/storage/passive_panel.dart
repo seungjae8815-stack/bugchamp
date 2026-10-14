@@ -12,7 +12,6 @@ import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/labels.dart';
 import '../../ui/toast.dart';
-import 'grade_panel.dart' show rollQualityColor;
 
 /// 펫 패시브 v2(2026-10-14, docs/design_growth_1021.md §1·§2)의 채집함 화면 조각 —
 /// 곤충 상세의 **펫 패시브 카드** + **크기 다시 굴리기**(정수 또는 젤리 → 지금 값/새 값 고르기).
@@ -33,7 +32,6 @@ Widget petPassiveCard(
   final sp = data.species(bug.speciesId);
   final p = passiveOf(bug, sp, petCfg);
   final v2 = petCfg.passiveV2.enabled;
-  final roll = bug.passiveRollValue;
   final showRoll = v2 && p != null && !isEgg;
   final String main;
   if (p == null) {
@@ -65,15 +63,6 @@ Widget petPassiveCard(
               ),
             ),
             const Spacer(),
-            if (showRoll)
-              Text(
-                l.passiveRollLabel('$roll'),
-                style: TextStyle(
-                  color: rollQualityColor(roll),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
           ],
         ),
         const SizedBox(height: 2),
@@ -169,16 +158,6 @@ Future<void> _openPassiveReroll(
             color: kHoney,
             fontSize: 14,
             fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          l.passiveRollLabel('${bug.passiveRollValue}'),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: rollQualityColor(bug.passiveRollValue),
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 8),
@@ -289,15 +268,6 @@ Future<void> _pickPassiveRoll(
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                l.passiveRollLabel('$roll'),
-                style: TextStyle(
-                  color: rollQualityColor(roll),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],

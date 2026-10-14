@@ -2461,14 +2461,67 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         context,
         title: l.duelTeamAuraTitle,
         icon: Icons.campaign_rounded,
-        content: Text(
-          l.duelTeamAuraHelp('${(aura.capPerStat * 100).round()}%'),
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            height: 1.5,
-          ),
+        // 역할마다 한 줄(2026-10-14 사장님 — 한 문장에 몰려 있어 읽기 어려웠다).
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l.duelTeamAuraHelp,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (final (role, slot) in const [
+              (DuelRole.attack, TrainSlot.attack),
+              (DuelRole.defense, TrainSlot.defense),
+              (DuelRole.hp, TrainSlot.hp),
+            ])
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    Icon(_roleIcon(role), size: 18, color: duelRoleColor(role)),
+                    const SizedBox(width: 6),
+                    SizedBox(
+                      width: 64,
+                      child: Text(
+                        duelRoleLabel(l, role),
+                        style: TextStyle(
+                          color: duelRoleColor(role),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const Text('→', style: TextStyle(color: Colors.white54)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        l.duelTeamAuraHelpRole(trainSlotLabel(l, slot)),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 10),
+            Text(
+              l.duelTeamAuraHelpCap('${(aura.capPerStat * 100).round()}%'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
         actions: [
           gameDialogButton(

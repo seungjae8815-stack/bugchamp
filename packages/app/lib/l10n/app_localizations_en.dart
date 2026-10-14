@@ -6621,8 +6621,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duelTeamAuraNone => 'Team aura: none';
 
   @override
-  String duelTeamAuraHelp(String cap) {
-    return 'Each bug you field boosts the whole team.\nAttacker → ATK · Defender → DEF · Tank → HP\nUp to +$cap per stat\nThe Command slot in Training makes it bigger.';
+  String get duelTeamAuraHelp => 'Each bug you field boosts the whole team.';
+
+  @override
+  String duelTeamAuraHelpCap(String cap) {
+    return 'Up to +$cap per stat\nThe Command slot in Training makes it bigger.';
+  }
+
+  @override
+  String duelTeamAuraHelpRole(String stat) {
+    return 'Team $stat ↑';
   }
 
   @override
@@ -7586,11 +7594,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passiveCardTitle => 'Pet passive';
 
   @override
-  String passiveRollLabel(String roll) {
-    return 'Roll $roll/100';
-  }
-
-  @override
   String get passiveCardHint =>
       'Applies only while equipped as a pet (idle hunting). Grows with this bug\'s grade and its species rarity.';
 
@@ -7602,7 +7605,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passiveRerollDesc =>
-      'Rerolls only the size (roll). The type stays the same.\nThe cost is used whether you keep the new value or not.';
+      'Rerolls only the size. The type stays the same.\nThe cost is used whether you keep the new value or not.';
 
   @override
   String passiveRerollCurrent(String value) {

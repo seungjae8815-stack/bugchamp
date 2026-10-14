@@ -6481,8 +6481,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get duelTeamAuraNone => '팀 오라: 없음';
 
   @override
-  String duelTeamAuraHelp(String cap) {
-    return '출전한 곤충마다 팀 전체 능력치를 올려 줘요.\n공격형 → 공격 · 방어형 → 방어 · 체력형 → 체력\n능력치마다 최대 +$cap\n훈련소 \'지휘\' 칸을 찍으면 더 커져요.';
+  String get duelTeamAuraHelp => '출전한 곤충마다 팀 전체 능력치를 올려 줘요.';
+
+  @override
+  String duelTeamAuraHelpCap(String cap) {
+    return '능력치마다 최대 +$cap\n훈련소 \'지휘\' 칸을 찍으면 더 커져요.';
+  }
+
+  @override
+  String duelTeamAuraHelpRole(String stat) {
+    return '팀 $stat ↑';
   }
 
   @override
@@ -7425,11 +7433,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveCardTitle => '펫 패시브';
 
   @override
-  String passiveRollLabel(String roll) {
-    return '롤 $roll/100';
-  }
-
-  @override
   String get passiveCardHint =>
       '애완펫으로 장착했을 때만(방치 사냥) 붙어요. 곤충 등급과 종 희귀도에 따라 커져요.';
 
@@ -7441,7 +7444,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get passiveRerollDesc =>
-      '크기(롤)만 다시 굴려요. 종류는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.';
+      '크기만 다시 굴려요. 종류는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.';
 
   @override
   String passiveRerollCurrent(String value) {

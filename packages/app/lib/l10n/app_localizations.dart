@@ -11090,8 +11090,20 @@ abstract class AppLocalizations {
   /// No description provided for @duelTeamAuraHelp.
   ///
   /// In en, this message translates to:
-  /// **'Each bug you field boosts the whole team.\nAttacker → ATK · Defender → DEF · Tank → HP\nUp to +{cap} per stat\nThe Command slot in Training makes it bigger.'**
-  String duelTeamAuraHelp(String cap);
+  /// **'Each bug you field boosts the whole team.'**
+  String get duelTeamAuraHelp;
+
+  /// No description provided for @duelTeamAuraHelpCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to +{cap} per stat\nThe Command slot in Training makes it bigger.'**
+  String duelTeamAuraHelpCap(String cap);
+
+  /// No description provided for @duelTeamAuraHelpRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Team {stat} ↑'**
+  String duelTeamAuraHelpRole(String stat);
 
   /// No description provided for @trainWeight.
   ///
@@ -12525,12 +12537,6 @@ abstract class AppLocalizations {
   /// **'Pet passive'**
   String get passiveCardTitle;
 
-  /// No description provided for @passiveRollLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Roll {roll}/100'**
-  String passiveRollLabel(String roll);
-
   /// No description provided for @passiveCardHint.
   ///
   /// In en, this message translates to:
@@ -12552,7 +12558,7 @@ abstract class AppLocalizations {
   /// No description provided for @passiveRerollDesc.
   ///
   /// In en, this message translates to:
-  /// **'Rerolls only the size (roll). The type stays the same.\nThe cost is used whether you keep the new value or not.'**
+  /// **'Rerolls only the size. The type stays the same.\nThe cost is used whether you keep the new value or not.'**
   String get passiveRerollDesc;
 
   /// No description provided for @passiveRerollCurrent.

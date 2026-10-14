@@ -1673,12 +1673,21 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
   };
   var minTier = save.autoForgeMinTier;
 
-  // 범위를 보여 줄 기준 등급. 등급 필터를 걸었으면 그 등급, "전부"면 **가장 높은 등급**의 최대치까지.
-  // 예전엔 "지금 공방 레벨에서 나올 수 있는 가장 높은 등급"이라, 공방이 낮으면 전부를 골라도 나무 범위(쿨감 1~1%)만
-  // 보여 "등급마다 최대가 다르다"가 안 보였다(2026-10-14 사장님 지적).
+  // 범위를 보여 줄 기준 등급. 등급 필터를 걸었으면 그 등급, 아니면 지금
+  // 공방 레벨에서 **실제로 나올 수 있는 가장 높은 등급**(확률 1% 이상).
+  // 최대치를 모르면 어떤 옵션을 노릴지 정할 수 없다(2026-09-14 지적 · 2026-10-14 사장님 재확인 — 그대로).
   int rangeTier() {
     if (minTier > 0) return minTier;
-    return items == null ? 0 : items.tierCount - 1;
+    if (items == null || forge == null) return 0;
+    final w = forge.tierWeights(
+      math.min(save.forgeLevel, forge.maxLevel),
+      items.tierCount,
+    );
+    var top = 0;
+    for (var i = 0; i < w.length; i++) {
+      if (w[i] >= 0.01) top = i;
+    }
+    return top;
   }
 
   String rangeOf(ItemOptionKind k) {

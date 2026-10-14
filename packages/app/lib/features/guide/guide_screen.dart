@@ -112,7 +112,7 @@ class GuideScreen extends ConsumerWidget {
               ' · ${l.guideTrainGritPower(_pct(duel.clutchTapPowerPerGrit))}',
         // 지휘(1.0.21 D3) — 1점 효과 + 팀 오라 규칙(역할 · 상한).
         TrainSlot.command =>
-          '${_signed(e)} · ${l.duelTeamAuraHelp(pct(battle.teamAura.capPerStat))}',
+          '${_signed(e)} · ${l.duelTeamAuraHelp} ${l.duelTeamAuraHelpCap(pct(battle.teamAura.capPerStat)).replaceAll('\n', ' · ')}',
         _ => _signed(e),
       };
     }

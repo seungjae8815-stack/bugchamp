@@ -6471,8 +6471,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelTeamAuraNone => 'チームオーラ: なし';
 
   @override
-  String duelTeamAuraHelp(String cap) {
-    return '出場した虫ごとにチーム全体の能力が上がります。\n攻撃型 → 攻撃 · 防御型 → 防御 · 体力型 → 体力\n能力ごとに最大 +$cap\n訓練所の「指揮」枠で大きくなります。';
+  String get duelTeamAuraHelp => '出場した虫ごとにチーム全体の能力が上がります。';
+
+  @override
+  String duelTeamAuraHelpCap(String cap) {
+    return '能力ごとに最大 +$cap\n訓練所の「指揮」枠で大きくなります。';
+  }
+
+  @override
+  String duelTeamAuraHelpRole(String stat) {
+    return 'チームの$stat ↑';
   }
 
   @override
@@ -7413,11 +7421,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passiveCardTitle => 'ペットパッシブ';
 
   @override
-  String passiveRollLabel(String roll) {
-    return 'ロール $roll/100';
-  }
-
-  @override
   String get passiveCardHint => 'ペットとして装備したときだけ(放置狩り)付きます。虫の等級と種の希少度で大きくなります。';
 
   @override
@@ -7428,7 +7431,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get passiveRerollDesc =>
-      '大きさ(ロール)だけを振り直します。種類はそのままです。\n新しい値を選んでも選ばなくてもコストは消費されます。';
+      '大きさだけを振り直します。種類はそのままです。\n新しい値を選んでも選ばなくてもコストは消費されます。';
 
   @override
   String passiveRerollCurrent(String value) {
