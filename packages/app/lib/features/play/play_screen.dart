@@ -8040,9 +8040,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   void _devHatchReveal(int n, {bool great = false}) {
     Navigator.pop(context);
     final save = ref.read(saveControllerProvider).value;
+    // 장착·잠금 곤충은 뒤로 — 앞에 두면 "정수로 바꾸기" 버튼이 안 나와 확인할 수 없었다(2026-10-15).
+    final pinned = save?.pinnedBugIds ?? const <String>{};
     final ids = [
       for (final b in save?.bugs ?? const <IndividualBug>[])
-        if (b.stage != LifeStage.egg) b.id,
+        if (b.stage != LifeStage.egg && !pinned.contains(b.id)) b.id,
+      for (final b in save?.bugs ?? const <IndividualBug>[])
+        if (b.stage != LifeStage.egg && pinned.contains(b.id)) b.id,
     ].take(n).toList();
     if (ids.isEmpty) {
       showCenterToast(context, '곤충이 없어요 — 채집함 채우기 먼저');
@@ -8230,6 +8234,43 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         await ctrl.devClearBugs();
                         toast('채집함 초기화');
                       }, danger: true),
+                    ]),
+                    // 1.0.21 확인용(2026-10-14) — 새 상태에선 보기 힘든 것을 만들어 본다.
+                    _devSection('1.0.21 확인', [
+                      _devBtn('방치 2시간 다시 정산(복귀 팝업)', () async {
+                        Navigator.pop(context);
+                        final ok = await ctrl.devReplayOffline(
+                          const Duration(hours: 2),
+                        );
+                        final r = ctrl.pendingOffline;
+                        if (!ok || r == null || !mounted) return;
+                        ctrl.consumeOffline();
+                        await _showOfflineReward(r);
+                      }),
+                      _devBtn('곤충 전부 업데이트 전 곤충으로(무료 재굴림)', () async {
+                        await ctrl.devMakeLegacyBugs();
+                        toast('업데이트 전 곤충으로 바꿈');
+                      }),
+                      _devBtn('업데이트 첫 실행 재현(알 해제·다시 찍기 선물)', () async {
+                        Navigator.pop(context);
+                        final (eggs, gift) = await ctrl.devReplayUpdate1021();
+                        if (!mounted) return;
+                        final l = AppLocalizations.of(context);
+                        if (eggs > 0) {
+                          await ctrl.autoEquipBest();
+                          if (!mounted) return;
+                          showCenterToast(context, l.eggUnequipAutoToast);
+                          await Future<void>.delayed(
+                            const Duration(seconds: 2),
+                          );
+                        }
+                        if (gift > 0 && mounted) {
+                          showCenterToast(context, l.respecGift1021Toast);
+                        }
+                        if (eggs == 0 && gift == 0 && mounted) {
+                          showCenterToast(context, '알·훈련 곤충이 없어 재현할 것이 없어요');
+                        }
+                      }),
                     ]),
                     _devSection('개체 등급', [
                       _devBtn('정수 +200(전 종)·물약 +10', () async {

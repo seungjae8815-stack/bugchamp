@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,6 +57,12 @@ List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
     image: 'equip_star',
     text: l.whatsNew21Gear,
   ),
+  (icon: Icons.bolt_rounded, image: 'boost', text: l.whatsNew21Buff),
+  (
+    icon: Icons.trending_up_rounded,
+    image: 'combat_power',
+    text: l.whatsNew21Stats,
+  ),
   (
     icon: Icons.emoji_events_rounded,
     image: 'badge_champion',
@@ -85,8 +92,16 @@ Future<void> showWhatsNewOnStart(BuildContext context, WidgetRef ref) async {
     }
     if (prefs.getString(kWhatsNewSeenKey) == kWhatsNewVersion) return;
     if (!context.mounted) return;
-    final save = ref.read(saveControllerProvider).value;
-    if (save == null) return;
+    // 저장본이 다 읽힐 때까지 기다린다(2026-10-15 에뮬 확인) — 서버에 못 닿으면(오프라인·서버 없음) 동기화가
+    // 저장본을 읽지 않고 끝나서, `.value` 로 보면 늘 비어 있어 업데이트 안내가 영영 안 떴다.
+    final SaveGame save;
+    try {
+      save = await ref.read(saveControllerProvider.future);
+    } catch (e) {
+      debugPrint('업데이트 내용: 세이브 읽기 실패(건너뜀): $e');
+      return;
+    }
+    if (!context.mounted) return;
     // 닫는 방식(버튼·바깥 탭·앱 종료)과 무관하게 다시 뜨지 않게 먼저 적는다.
     await prefs.setString(kWhatsNewSeenKey, kWhatsNewVersion);
     if (isFreshSave(save.createdAt, ref.read(clockProvider).now())) return;

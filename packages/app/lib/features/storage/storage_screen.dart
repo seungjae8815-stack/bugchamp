@@ -3954,19 +3954,34 @@ class StorageScreen extends ConsumerWidget {
                                 r.watch(duelPowerByBugProvider)[bug.id] !=
                                     null) ...[
                               const SizedBox(height: 2),
-                              Text(
-                                l.bugDuelPower(
-                                  formatCompact(
-                                    r
-                                        .watch(duelPowerByBugProvider)[bug.id]!
-                                        .round(),
+                              // 전투력 표식은 모든 화면에서 같은 그림(2026-10-15 — 이모지가 남아 있었다).
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  gameIcon(
+                                    'combat_power',
+                                    size: 14,
+                                    fallback: Icons.flash_on_rounded,
+                                    color: const Color(0xFFFFB27A),
                                   ),
-                                ),
-                                style: const TextStyle(
-                                  color: Color(0xFFFFB27A),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    l.bugDuelPower(
+                                      formatCompact(
+                                        r
+                                            .watch(
+                                              duelPowerByBugProvider,
+                                            )[bug.id]!
+                                            .round(),
+                                      ),
+                                    ),
+                                    style: const TextStyle(
+                                      color: Color(0xFFFFB27A),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                             // 혈통 특성(§2.5) — 짝짓기 자식만 가진다.
@@ -4482,28 +4497,32 @@ class StorageScreen extends ConsumerWidget {
       passive: passiveOf(bug, sp, cfg), // 펫 패시브 v2 — 합산과 같은 함수
       trainMult: trainMult,
     ), cfg);
-    return _sectionBox(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l.petEffectTitle,
-            style: const TextStyle(
-              color: _honey,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
+    // 폭은 다른 카드처럼 가득 — 글자 폭만큼만 좁게 떠 있었다(2026-10-15 에뮬 확인).
+    return SizedBox(
+      width: double.infinity,
+      child: _sectionBox(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.petEffectTitle,
+              style: const TextStyle(
+                color: _honey,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l.petAtkBonus((c.attack * 100).toStringAsFixed(1)),
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-          ),
-          Text(
-            l.petHpBonus((c.hp * 100).toStringAsFixed(1)),
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              l.petAtkBonus((c.attack * 100).toStringAsFixed(1)),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+            Text(
+              l.petHpBonus((c.hp * 100).toStringAsFixed(1)),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }

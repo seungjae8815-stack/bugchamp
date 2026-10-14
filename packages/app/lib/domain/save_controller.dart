@@ -2702,6 +2702,67 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// (개발) 개체 등급 시험용 — 모든 종 정수 +200 · 성장물약 +10.
+  /// (개발) 방치 정산을 [away] 전에 나간 것처럼 다시 돌린다 — 복귀 팝업(버프 더 받음/놓침)을 바로 보려고(2026-10-14).
+  /// 보상이 생겼으면 true([pendingOffline] 을 화면이 띄운다).
+  Future<bool> devReplayOffline(Duration away) async {
+    final data = ref.read(gameDataProvider).value;
+    final s = state.value;
+    if (data == null || s == null) return false;
+    final now = ref.read(clockProvider).now().toUtc();
+    final settled = _applyOffline(
+      s.copyWith(lastSeen: now.subtract(away)),
+      data,
+      now,
+    );
+    await _commit(settled);
+    return pendingOffline != null;
+  }
+
+  /// (개발) 가진 곤충을 전부 **업데이트 전 곤충**으로 — 패시브 v2 표식·무료 재굴림 사용 횟수를 지운다(무료 재굴림 5번 확인용).
+  Future<void> devMakeLegacyBugs() async {
+    final s = state.requireValue;
+    await _commit(
+      s.copyWith(
+        bugs: [
+          for (final b in s.bugs)
+            IndividualBug.fromJson(
+              b.toJson()
+                ..remove('p2')
+                ..remove('pfu'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// (개발) 1.0.21 업데이트 첫 실행 재현 — 알 하나를 펫 칸에 억지로 넣고, 기념 무료 다시 찍기 표식을 지운 뒤
+  /// 앱 시작과 같은 처리(알 내리기 · 선물)를 돌린다. 돌려준 값 = (내린 알 수, 선물 받은 곤충 수).
+  Future<(int, int)> devReplayUpdate1021() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final now = ref.read(clockProvider).now().toUtc();
+    var s = state.requireValue;
+    final egg = s.bugs.where((b) => b.stage == LifeStage.egg).firstOrNull;
+    if (egg != null && !s.equippedBugIds.contains(egg.id)) {
+      final eq = [...s.equippedBugIds];
+      if (eq.length >= (data.petConfig?.maxEquip ?? 3)) eq.removeLast();
+      s = s.copyWith(equippedBugIds: [...eq, egg.id]);
+    }
+    s = s.copyWith(
+      dailyClaims: Map<String, String>.from(s.dailyClaims)
+        ..remove(kRespecGift1021Key),
+      trainPoints: {
+        for (final e in s.trainPoints.entries)
+          e.key: e.value.copyWith(freeRespec: false),
+      },
+    );
+    final before = s.equippedBugIds.length;
+    s = _unequipEggs(s, data, now);
+    final eggsOff = before - s.equippedBugIds.length;
+    final gift = grantRespecGift1021(s);
+    await _commit(gift.save);
+    return (eggsOff, gift.granted);
+  }
+
   Future<void> devGradeKit() async {
     final data = ref.read(gameDataProvider).requireValue;
     final s = state.requireValue;

@@ -2849,7 +2849,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               children: [
                 // 출정 중 표시(2026-10-01 실기 지적 — 테두리 색만으로는 몰랐다). 몇 번 칸인지까지.
                 // 그림 **위에 겹친다**(2026-10-14 사장님) — 위에 따로 줄을 두면 출정 중인 칸만 키가 커졌다.
+                // 폭은 칸 전체 — 그림 폭(44)에 가두면 "출정 중 · N번"이 "출정 …"로 잘렸다(2026-10-15 에뮬 확인).
                 SizedBox(
+                  width: double.infinity,
                   height: 44,
                   child: Stack(
                     clipBehavior: Clip.none,

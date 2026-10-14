@@ -3403,7 +3403,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugDuelPower.
   ///
   /// In en, this message translates to:
-  /// **'🔥 Duel power {power}'**
+  /// **'Duel power {power}'**
   String bugDuelPower(String power);
 
   /// No description provided for @evolveTitle.
@@ -11630,7 +11630,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelStoneWhere.
   ///
   /// In en, this message translates to:
-  /// **'Found from: elites (element {elite}%) · repeat boss kills (element {bossEl}% · temperament {bossTm}%) · first clear of every {every} abyss floors (element {abEl} · temperament {abTm}) · or jelly {jEl}/{jTm}'**
+  /// **'Found from: elites (element {elite}%, while idle only with Gatherer\'s Touch on) · repeat boss kills (element {bossEl}% · temperament {bossTm}%) · first clear of every {every} abyss floors (element {abEl} · temperament {abTm}) · Gatherer\'s Touch doubles the chance · or jelly {jEl}/{jTm}'**
   String duelStoneWhere(
     String elite,
     String bossEl,
@@ -12896,6 +12896,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Gear \'Skill cooldown\' option · star materials carry over · element stones for fairy rerolls'**
   String get whatsNew21Gear;
+
+  /// No description provided for @whatsNew21Buff.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions)'**
+  String get whatsNew21Buff;
+
+  /// No description provided for @whatsNew21Stats.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold, XP and crit damage bonuses now multiply instead of add, so they hit harder · gear and fairy crit damage now shows 1/10 the number (same or stronger effect) · home power now includes skills, fairies, dex, evasion and regen'**
+  String get whatsNew21Stats;
 
   /// No description provided for @whatsNew21Badge.
   ///

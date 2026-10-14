@@ -84,13 +84,19 @@ Future<void> showHatchReveal(
       ),
       actions: [
         if (canEssence)
-          gameDialogButton(
-            l.igToEssence,
-            () => nav.pop('essence'),
-            primary: false,
-            // 아주 좋은 개체는 흐린 색 — 눈에 덜 띄게(사장님 확정 제안).
-            color: great ? const Color(0x66B39DDB) : const Color(0xFF7E57C2),
-          ),
+          // 보통 개체는 보라 단색 버튼(눈에 띄게), 아주 좋은 개체는 흐린 보조 버튼(사장님 확정 제안).
+          // 보조 버튼은 색을 받지 않아 둘이 같아 보였다(2026-10-14 에뮬 점검).
+          great
+              ? gameDialogButton(
+                  l.igToEssence,
+                  () => nav.pop('essence'),
+                  primary: false,
+                )
+              : gameDialogButton(
+                  l.igToEssence,
+                  () => nav.pop('essence'),
+                  color: const Color(0xFF7E57C2),
+                ),
         if (more > 0)
           gameDialogButton(
             l.hatchRevealSkipAll,
@@ -139,7 +145,7 @@ Future<void> showHatchReveal(
         }
       }
       if (!context.mounted) return;
-      await confirmBugToEssence(context, ref, data, bug);
+      await confirmBugToEssence(context, ref, data, bug, closeHost: false);
       if (!context.mounted) return;
       final still = ref
           .read(saveControllerProvider)

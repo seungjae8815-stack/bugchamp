@@ -1931,7 +1931,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String bugDuelPower(String power) {
-    return '🔥 Duel power $power';
+    return 'Duel power $power';
   }
 
   @override
@@ -7005,7 +7005,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String jEl,
     String jTm,
   ) {
-    return 'Found from: elites (element $elite%) · repeat boss kills (element $bossEl% · temperament $bossTm%) · first clear of every $every abyss floors (element $abEl · temperament $abTm) · or jelly $jEl/$jTm';
+    return 'Found from: elites (element $elite%, while idle only with Gatherer\'s Touch on) · repeat boss kills (element $bossEl% · temperament $bossTm%) · first clear of every $every abyss floors (element $abEl · temperament $abTm) · Gatherer\'s Touch doubles the chance · or jelly $jEl/$jTm';
   }
 
   @override
@@ -7837,6 +7837,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get whatsNew21Gear =>
       'Gear \'Skill cooldown\' option · star materials carry over · element stones for fairy rerolls';
+
+  @override
+  String get whatsNew21Buff =>
+      'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions)';
+
+  @override
+  String get whatsNew21Stats =>
+      'Gold, XP and crit damage bonuses now multiply instead of add, so they hit harder · gear and fairy crit damage now shows 1/10 the number (same or stronger effect) · home power now includes skills, fairies, dex, evasion and regen';
 
   @override
   String get whatsNew21Badge =>

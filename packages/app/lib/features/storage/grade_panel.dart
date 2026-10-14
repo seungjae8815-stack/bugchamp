@@ -287,12 +287,16 @@ List<String> preciousReasons(AppLocalizations l, IndividualBug bug) => [
 /// 아끼던 곤충(`isPreciousBug` — 이색·수련·돌파·부위 강화·물약 롤)이면 **무엇을 잃는지 사유를 적은 경고**로 묻고,
 /// 이색이면 한 번 더 묻는다(설계 문서 §2.4 — 1/300 개체가 버튼 한 번에 사라지면 그게 곧 클레임이다).
 /// 분해 확인 창의 "정수로 바꾸기"도 이 함수를 탄다.
+///
+/// [closeHost] 가 참이면(기본 — 곤충 상세에서 부를 때) 끝난 뒤 [ctx] 의 창(곤충 상세)을 닫는다 — 곤충이 사라졌다.
+/// 부화 공개 창처럼 **다른 창에서** 부를 땐 거짓으로 — 닫으면 그 뒤의 화면(홈)까지 닫혀 까만 화면이 됐다(2026-10-14 에뮬 점검).
 Future<void> confirmBugToEssence(
   BuildContext ctx,
   WidgetRef r,
   GameData data,
-  IndividualBug bug,
-) async {
+  IndividualBug bug, {
+  bool closeHost = true,
+}) async {
   final l = AppLocalizations.of(ctx);
   final cfg = data.petConfig!.individualGrade;
   final sp = data.species(bug.speciesId);
@@ -400,7 +404,7 @@ Future<void> confirmBugToEssence(
     });
     return;
   }
-  Navigator.pop(ctx); // 곤충 상세(바텀시트) 닫기 — 곤충이 사라졌다.
+  if (closeHost) Navigator.pop(ctx); // 곤충 상세(바텀시트) 닫기 — 곤충이 사라졌다.
   if (host.mounted) showCenterToast(host, l.igEssenceGot(name, '$gain'));
 }
 

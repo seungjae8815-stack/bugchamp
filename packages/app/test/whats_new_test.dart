@@ -86,9 +86,12 @@ void main() {
       expect(find.textContaining('치기 주특기'), findsOneWidget);
       expect(find.textContaining('스킬 쿨타임 감소'), findsOneWidget);
       expect(find.textContaining('금·은·동'), findsOneWidget);
+      // 2026-10-15 추가 — 버프 방치 적용 · 보너스 곱/치명 피해 표시 1/10(불리해 보이는 변경은 숨기지 않는다).
+      expect(find.textContaining('꺼 둔 동안에도'), findsOneWidget);
+      expect(find.textContaining('표시만 1/10'), findsOneWidget);
       expect(
         whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
-        hasLength(8),
+        hasLength(10),
       );
       expect(tester.takeException(), isNull);
     });

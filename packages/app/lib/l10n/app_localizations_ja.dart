@@ -1872,7 +1872,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String bugDuelPower(String power) {
-    return '🔥 決闘戦闘力 $power';
+    return '決闘戦闘力 $power';
   }
 
   @override
@@ -6847,7 +6847,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String jEl,
     String jTm,
   ) {
-    return '入手: 精鋭モンスター(五行石 $elite%) · ボス再討伐(五行石 $bossEl% · 気質石 $bossTm%) · 深淵$every層ごとの初到達(五行石 $abEl · 気質石 $abTm) · なければゼリー $jEl·$jTm';
+    return '入手: 精鋭モンスター(五行石 $elite%、放置中は「採集の手」バフ中のみ) · ボス再討伐(五行石 $bossEl% · 気質石 $bossTm%) · 深淵$every層ごとの初到達(五行石 $abEl · 気質石 $abTm) · 「採集の手」で確率×2 · なければゼリー $jEl·$jTm';
   }
 
   @override
@@ -7656,6 +7656,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew21Gear => '装備「スキルクールタイム短縮」オプション・星素材の繰り越し・妖精再抽選の属性石';
+
+  @override
+  String get whatsNew21Buff =>
+      'バフがアプリを閉じている間も適用されます · 「採集の手」はレア素材(属性石・決闘石・成長ポーション)も2倍';
+
+  @override
+  String get whatsNew21Stats =>
+      'ゴールド・経験値・クリティカルダメージのボーナスが加算から乗算になり強くなります · 装備・妖精のクリティカルダメージは表示のみ1/10(効果は同じか強い) · ホームの戦闘力にスキル・妖精・図鑑・回避・回復を反映';
 
   @override
   String get whatsNew21Badge => '大会バッジが金・銀・銅・入賞・参加に分かれます';

@@ -1877,7 +1877,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String bugDuelPower(String power) {
-    return '🔥 결투 전투력 $power';
+    return '결투 전투력 $power';
   }
 
   @override
@@ -6857,7 +6857,7 @@ class AppLocalizationsKo extends AppLocalizations {
     String jEl,
     String jTm,
   ) {
-    return '얻는 곳: 정예 몬스터(오행석 $elite%) · 보스 다시 잡기(오행석 $bossEl% · 기질석 $bossTm%) · 심연 $every층마다 첫 도달(오행석 $abEl · 기질석 $abTm) · 없으면 젤리 $jEl·$jTm';
+    return '얻는 곳: 정예 몬스터(오행석 $elite%, 방치 중엔 채집가의 손길 버프가 켜졌을 때만) · 보스 다시 잡기(오행석 $bossEl% · 기질석 $bossTm%) · 심연 $every층마다 첫 도달(오행석 $abEl · 기질석 $abTm) · 채집가의 손길 버프면 확률 ×2 · 없으면 젤리 $jEl·$jTm';
   }
 
   @override
@@ -7668,6 +7668,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNew21Gear => '장비 \'스킬 쿨타임 감소\' 옵션 · 별 재료 이월 · 요정 재굴림 속성석';
+
+  @override
+  String get whatsNew21Buff =>
+      '버프가 앱을 꺼 둔 동안에도 적용돼요 · 채집가의 손길은 희귀 재료(속성석·결투석·성장물약)도 2배';
+
+  @override
+  String get whatsNew21Stats =>
+      '골드·경험치·치명 피해 보너스가 더하기에서 곱하기로 바뀌어 더 세져요 · 장비·요정 치명 피해는 표시만 1/10(효과는 같거나 더 셈) · 홈 전투력에 스킬·요정·도감·회피·회복 반영';
 
   @override
   String get whatsNew21Badge => '대회 뱃지가 금·은·동·입상·참가로 나뉘어요';
