@@ -454,7 +454,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       config,
       upgradeLevels: save.upgradeLevels,
       characterLevel: save.level,
-      bugsCollected: save.bugs.length,
+      bugsCollected: save.bugBuffCount,
     );
     // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(iap.json §6).
     final iap = data.iapConfig;

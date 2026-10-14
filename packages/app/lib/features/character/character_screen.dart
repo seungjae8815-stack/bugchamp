@@ -222,7 +222,7 @@ class _StatsPanel extends ConsumerWidget {
           run,
           upgradeLevels: save.upgradeLevels,
           characterLevel: save.level,
-          bugsCollected: save.bugs.length,
+          bugsCollected: save.bugBuffCount,
         ),
         equipmentBonus(save.equippedItems.values, data?.itemConfig),
         critBudget: run.critBudgetGear,

@@ -2181,7 +2181,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get upBoostDesc => '화면을 탭할 때 발동하는 부스트 효과가 강해집니다.';
 
   @override
-  String get upBugBuffDesc => '보유한 곤충 수에 따른 보상 보너스가 커집니다.';
+  String get upBugBuffDesc =>
+      '보유한 곤충 수 + 도감에서 발견한 종 수(합쳐 최대 50)만큼 골드 보너스가 커집니다.';
 
   @override
   String get tagCommonMaterial => '일반 재료';

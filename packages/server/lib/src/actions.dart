@@ -2003,7 +2003,7 @@ class GameActions {
       config.run,
       upgradeLevels: stored.upgradeLevels,
       characterLevel: stored.level,
-      bugsCollected: stored.bugs.length,
+      bugsCollected: stored.bugBuffCount,
     );
     return CharacterStats(
       attack: bare.attack * _saveBoundAttackMult,
@@ -3162,7 +3162,7 @@ class GameActions {
       run,
       upgradeLevels: save.upgradeLevels,
       characterLevel: save.level,
-      bugsCollected: save.bugs.length,
+      bugsCollected: save.bugBuffCount,
     );
 
     // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(앱과 동일).

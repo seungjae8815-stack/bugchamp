@@ -2239,7 +2239,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upBoostDesc => 'Strengthens the tap-to-boost effect.';
 
   @override
-  String get upBugBuffDesc => 'Bonus scales with the number of bugs collected.';
+  String get upBugBuffDesc =>
+      'Gold bonus grows with bugs owned + species discovered in the Codex (up to 50 combined).';
 
   @override
   String get tagCommonMaterial => 'Material';

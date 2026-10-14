@@ -808,6 +808,11 @@ class SaveGame {
   /// 도감에 등록된(=한 번이라도 보유한) 종 수.
   int get dexDiscovered => dex.length;
 
+  /// **도감 통달**(`UpgradeKind.bugBuff`)이 세는 수 = 보유 곤충 + 발견한 종(2026-10-14 사장님 확정). 상한 50 은
+  /// `deriveStats` 가 자른다 — 예전엔 보유 곤충만 세서 곤충을 정수로 바꾸면 골드가 줄었다(1.0.21 핵심 반복과 충돌).
+  /// 상한이 그대로라 50마리를 채운 계정·밸런스 시뮬(50 가정)·서버 골드 상한은 달라지지 않는다. 앱·서버 공용.
+  int get bugBuffCount => bugs.length + dexDiscovered;
+
   /// 정복한 종 수. [needLevel] 은 `dex.json → conquerLevel`(설정을 모르므로
   /// 호출부가 넘긴다). 기준을 올리기 전 기록은 그대로 인정된다.
   int dexConqueredWith(int needLevel) =>

@@ -1333,7 +1333,7 @@
   "upMaterialFindDesc": "Increases enhancement materials gained.",
   "upEvadeDesc": "Chance to dodge a monster's attack and take no damage. Works on bosses too.",
   "upBoostDesc": "Strengthens the tap-to-boost effect.",
-  "upBugBuffDesc": "Bonus scales with the number of bugs collected.",
+  "upBugBuffDesc": "Gold bonus grows with bugs owned + species discovered in the Codex (up to 50 combined).",
   "tagCommonMaterial": "Material",
   "tagPremium": "Premium",
   "materialChitinDesc": "A hard exoskeleton shard. Used for advanced upgrade costs, training points and breakthroughs.",

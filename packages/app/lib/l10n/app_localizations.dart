@@ -3961,7 +3961,7 @@ abstract class AppLocalizations {
   /// No description provided for @upBugBuffDesc.
   ///
   /// In en, this message translates to:
-  /// **'Bonus scales with the number of bugs collected.'**
+  /// **'Gold bonus grows with bugs owned + species discovered in the Codex (up to 50 combined).'**
   String get upBugBuffDesc;
 
   /// No description provided for @tagCommonMaterial.

@@ -2176,7 +2176,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upBoostDesc => '画面をタップしたときに発動するブースト効果が強くなります。';
 
   @override
-  String get upBugBuffDesc => '所持している虫の数に応じた報酬ボーナスが大きくなります。';
+  String get upBugBuffDesc =>
+      '所持している虫の数＋図鑑で発見した種の数（合計最大50）に応じてゴールドボーナスが大きくなります。';
 
   @override
   String get tagCommonMaterial => '一般素材';

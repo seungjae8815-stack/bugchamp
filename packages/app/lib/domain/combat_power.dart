@@ -9,7 +9,7 @@ CharacterStats baseStatsOf(SaveGame save, RunConfig config) => deriveStats(
   config,
   upgradeLevels: save.upgradeLevels,
   characterLevel: save.level,
-  bugsCollected: save.bugs.length,
+  bugsCollected: save.bugBuffCount,
 );
 
 /// 장착 곤충(펫) 보너스까지 반영한 **영구** 능력치 — 버프는 뺀다.
