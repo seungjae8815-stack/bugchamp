@@ -1332,7 +1332,7 @@
   "upBugFindDesc": "Increases the chance to find bugs.",
   "upMaterialFindDesc": "Increases enhancement materials gained.",
   "upEvadeDesc": "Chance to dodge a monster's attack and take no damage. Works on bosses too.",
-  "upBoostDesc": "Strengthens the tap-to-boost effect.",
+  "upBoostDesc": "Each tap fills the boost more, so you keep max boost with fewer taps.",
   "upBugBuffDesc": "Gold bonus grows with bugs owned + species discovered in the Codex (up to 50 combined).",
   "tagCommonMaterial": "Material",
   "tagPremium": "Premium",

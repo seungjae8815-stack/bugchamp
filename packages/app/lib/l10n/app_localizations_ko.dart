@@ -2178,7 +2178,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get upEvadeDesc => '몬스터의 공격을 확률로 피해 피해를 받지 않습니다. 보스의 공격도 피할 수 있어요.';
 
   @override
-  String get upBoostDesc => '화면을 탭할 때 발동하는 부스트 효과가 강해집니다.';
+  String get upBoostDesc => '탭 한 번에 부스트가 더 많이 차서, 덜 눌러도 최대 부스트를 오래 유지해요.';
 
   @override
   String get upBugBuffDesc =>

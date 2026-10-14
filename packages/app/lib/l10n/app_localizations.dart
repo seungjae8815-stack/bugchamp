@@ -3955,7 +3955,7 @@ abstract class AppLocalizations {
   /// No description provided for @upBoostDesc.
   ///
   /// In en, this message translates to:
-  /// **'Strengthens the tap-to-boost effect.'**
+  /// **'Each tap fills the boost more, so you keep max boost with fewer taps.'**
   String get upBoostDesc;
 
   /// No description provided for @upBugBuffDesc.

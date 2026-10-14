@@ -2173,7 +2173,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upEvadeDesc => 'モンスターの攻撃を一定確率でかわし、ダメージを受けません。ボスの攻撃もかわせます。';
 
   @override
-  String get upBoostDesc => '画面をタップしたときに発動するブースト効果が強くなります。';
+  String get upBoostDesc => '1回のタップでブーストが多くたまり、少ないタップで最大ブーストを長く保てます。';
 
   @override
   String get upBugBuffDesc =>

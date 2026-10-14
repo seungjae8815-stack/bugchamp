@@ -53,7 +53,10 @@ void main(List<String> args) {
     cfg,
     upgradeLevels: levels,
     characterLevel: level,
-    bugsCollected: (data['bugs'] as List?)?.length ?? 0,
+    // 도감 통달 = 보유 곤충 + 발견한 종(2026-10-14, SaveGame.bugBuffCount 와 같은 값).
+    bugsCollected:
+        ((data['bugs'] as List?)?.length ?? 0) +
+        ((data['dex'] as Map?)?.length ?? 0),
   );
 
   // ── 장착 곤충(펫) — 앱의 permanentStatsOf 와 같은 조립 ──

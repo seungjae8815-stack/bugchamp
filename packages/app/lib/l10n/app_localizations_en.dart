@@ -2236,7 +2236,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Chance to dodge a monster\'s attack and take no damage. Works on bosses too.';
 
   @override
-  String get upBoostDesc => 'Strengthens the tap-to-boost effect.';
+  String get upBoostDesc =>
+      'Each tap fills the boost more, so you keep max boost with fewer taps.';
 
   @override
   String get upBugBuffDesc =>

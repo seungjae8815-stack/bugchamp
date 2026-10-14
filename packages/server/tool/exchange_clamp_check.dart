@@ -39,7 +39,7 @@ Future<void> main() async {
             run,
             upgradeLevels: stored.upgradeLevels,
             characterLevel: stored.level,
-            bugsCollected: stored.bugs.length,
+            bugsCollected: stored.bugBuffCount,
           ),
           stage: stage,
           trades: 1,

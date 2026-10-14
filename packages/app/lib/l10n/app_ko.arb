@@ -768,7 +768,7 @@
   "upBugFindDesc": "곤충(개체)을 발견할 확률이 올라갑니다.",
   "upMaterialFindDesc": "강화 재료 획득량이 늘어납니다.",
   "upEvadeDesc": "몬스터의 공격을 확률로 피해 피해를 받지 않습니다. 보스의 공격도 피할 수 있어요.",
-  "upBoostDesc": "화면을 탭할 때 발동하는 부스트 효과가 강해집니다.",
+  "upBoostDesc": "탭 한 번에 부스트가 더 많이 차서, 덜 눌러도 최대 부스트를 오래 유지해요.",
   "upBugBuffDesc": "보유한 곤충 수 + 도감에서 발견한 종 수(합쳐 최대 50)만큼 골드 보너스가 커집니다.",
   "tagCommonMaterial": "일반 재료",
   "tagPremium": "프리미엄 재화",
