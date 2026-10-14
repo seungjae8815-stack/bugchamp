@@ -4767,11 +4767,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fairyRerollStoneTitle => '属性石を入れる';
 
   @override
-  String get fairyRerollStoneHint => '入れた属性石のサブ能力が出る確率が上がります(1個使用)。';
+  String get fairyRerollStoneHint => '入れた属性石の付加能力が出る確率が上がります（1個使用）。';
 
   @override
   String get fairyRerollConfirm =>
-      '基本・サブ能力の数値を\n引き直します。\nサブ能力の種類も変わることがあります。\n\n個体値は今より下がらず、\n結果が気に入らなければ\n今の値を残せます。\n\n1日の回数に上限があります。';
+      '基本・付加能力の数値を\n再抽選します。\n付加能力の種類も変わることがあります。\n\n個体値は今より下がらず、\n結果が気に入らなければ\n今の値を残せます。\n\n1日の回数に上限があります。';
 
   @override
   String get fairyRerollPick => 'どちらにしますか？';
@@ -5691,7 +5691,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideSizeBody(String min, String max) {
-    return 'サイズは種ごとの範囲内で決まります。大きいほど能力値が×$min〜×$maxに上がり、決闘で押されにくく場外に落ちにくくなります。';
+    return 'サイズは種ごとの範囲内で決まります。大きいほどペットの能力値が×$min〜×$maxに上がり、決闘では重くなって押されにくく場外に落ちにくくなります（決闘の能力値はサイズに関係ありません）。';
   }
 
   @override
@@ -5780,7 +5780,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyRerollStoneEffect(String stat, String p) {
-    return '振り直したサブ能力が$p%の確率で「$stat」になります';
+    return '再抽選した付加能力が$p%の確率で「$stat」になります';
   }
 
   @override
@@ -6478,7 +6478,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelCommanderBadge => '指揮官';
 
   @override
-  String get duelTeamAuraHelpCommander => '指揮は3匹それぞれの役割に加わります。旗は指揮を一番多く振った虫です。';
+  String get duelTeamAuraHelpCommander =>
+      '指揮を振った虫は、それぞれ自分の役割のオーラを大きくします（3匹とも）。旗は指揮を一番多く振った虫です。';
 
   @override
   String get duelTeamAuraTitle => 'チームオーラ';
@@ -7359,12 +7360,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eggIncubatorFullExpand(String n) {
-    return '孵化器が満杯 · ゼリー$nで1枠拡張';
+    return '孵化器がいっぱい · ゼリー$nで1枠拡張';
   }
 
   @override
   String eggIncubatorFullWait(String time) {
-    return '孵化器が満杯 · 次の卵まで $time';
+    return '孵化器がいっぱい · 次の卵まで $time';
   }
 
   @override
@@ -7443,11 +7444,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passiveNone => 'パッシブなし';
 
   @override
-  String get passiveReroll => 'パッシブ振り直し';
+  String get passiveReroll => 'パッシブ再抽選';
 
   @override
   String get passiveRerollDesc =>
-      'パッシブの能力値を振り直します。どの能力か(種類)はそのままです。\n新しい値を選んでも選ばなくてもコストは消費されます。';
+      'パッシブの能力値を再抽選します。どの能力か（種類）はそのままです。\n新しい値を選んでも選ばなくてもコストは消費されます。';
 
   @override
   String passiveRerollCurrent(String value) {
@@ -7466,7 +7467,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get passiveRerollJellyConfirm =>
-      'ゼリーでパッシブの大きさを振り直しますか?\n現在の値を維持してもゼリーは消費されます。';
+      'ゼリーでパッシブの能力値を再抽選しますか？\n現在の値を維持してもゼリーは消費されます。';
 
   @override
   String get passiveRerollJellyAction => '振る';
@@ -7493,10 +7494,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passiveRerollNoEssence => 'エッセンスが足りません';
 
   @override
-  String get passiveRerollEgg => '孵化してから振り直せます';
+  String get passiveRerollEgg => '孵化してから再抽選できます';
 
   @override
-  String get dexPassiveV2 => 'ペットパッシブは個体ごとに違います(等級・希少度で大きくなります)';
+  String get dexPassiveV2 => 'ペットパッシブは個体ごとに違います（個体等級・種の希少度で大きくなります）';
 
   @override
   String dexPassiveLegacy(String kind) {

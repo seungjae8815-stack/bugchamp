@@ -7365,7 +7365,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       ],
                     ],
                   ),
-                  if (_showBuildDetail) ...[
+                  // 빌드 메모는 개발 빌드에서만(한국어 고정 문구 — 2026-10-14 점검).
+                  if (_showBuildDetail && !kReleaseMode) ...[
                     const SizedBox(height: 6),
                     Text(
                       '$kBuildDate · $kBuildHighlights',

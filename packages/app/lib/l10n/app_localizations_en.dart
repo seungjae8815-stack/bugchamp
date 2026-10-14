@@ -4877,7 +4877,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fairyRerollTitle => 'Fairy reroll';
 
   @override
-  String get fairyRerollStoneTitle => 'Add an element stone?';
+  String get fairyRerollStoneTitle => 'Add element stone';
 
   @override
   String get fairyRerollStoneHint =>
@@ -5824,7 +5824,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideSizeBody(String min, String max) {
-    return 'Size is rolled within the species\' range. Bigger bugs get stats ×$min~×$max, are harder to push and less likely to fall out of the ring in duels.';
+    return 'Size is rolled within the species\' range. Bigger bugs give pet stats ×$min~×$max, and in duels they are heavier — harder to push and less likely to fall out of the ring (duel stats don\'t depend on size).';
   }
 
   @override
@@ -5913,7 +5913,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyRerollStoneEffect(String stat, String p) {
-    return 'The rerolled sub-stat becomes $stat with $p% chance';
+    return 'The rerolled bonus stat becomes $stat with $p% chance';
   }
 
   @override
@@ -6612,7 +6612,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duelRoleDefense => 'Defender';
 
   @override
-  String get duelRoleHp => 'Tank';
+  String get duelRoleHp => 'Vitality';
 
   @override
   String duelRoleChip(String role, String pct) {
@@ -6629,7 +6629,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get duelTeamAuraHelpCommander =>
-      'Every bug\'s Command adds to its own role. The flag marks the bug with the most Command.';
+      'Each bug\'s Command grows the aura of its own role (all three count). The flag marks the bug with the most Command.';
 
   @override
   String get duelTeamAuraTitle => 'Team aura';
@@ -7531,7 +7531,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eggIncubatorFullExpand(String n) {
-    return 'Incubator full · expand 1 slot for $n jelly';
+    return 'Incubator full · +1 slot ($n jelly)';
   }
 
   @override
@@ -7540,14 +7540,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rarityFilterButton => 'Species rarity to keep';
+  String get rarityFilterButton => 'Rarity filter';
 
   @override
   String get rarityFilterAll => 'All species';
 
   @override
   String rarityFilterAtLeast(String grade) {
-    return '$grade species+';
+    return '$grade+ species';
   }
 
   @override
@@ -7641,7 +7641,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passiveRerollJellyConfirm =>
-      'Reroll the passive size with jelly?\nThe jelly is used even if you keep the current value.';
+      'Reroll the passive stat value with jelly?\nThe jelly is used even if you keep the current value.';
 
   @override
   String get passiveRerollJellyAction => 'Reroll';
@@ -7672,7 +7672,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dexPassiveV2 =>
-      'Pet passives differ per bug (they grow with grade and rarity)';
+      'Pet passives differ per bug (they grow with the bug\'s grade and species rarity)';
 
   @override
   String dexPassiveLegacy(String kind) {

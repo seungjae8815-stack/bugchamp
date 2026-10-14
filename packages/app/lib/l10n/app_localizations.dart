@@ -8293,7 +8293,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyRerollStoneTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add an element stone?'**
+  /// **'Add element stone'**
   String get fairyRerollStoneTitle;
 
   /// No description provided for @fairyRerollStoneHint.
@@ -9835,7 +9835,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideSizeBody.
   ///
   /// In en, this message translates to:
-  /// **'Size is rolled within the species\' range. Bigger bugs get stats ×{min}~×{max}, are harder to push and less likely to fall out of the ring in duels.'**
+  /// **'Size is rolled within the species\' range. Bigger bugs give pet stats ×{min}~×{max}, and in duels they are heavier — harder to push and less likely to fall out of the ring (duel stats don\'t depend on size).'**
   String guideSizeBody(String min, String max);
 
   /// No description provided for @guidePotentialTitle.
@@ -9962,7 +9962,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyRerollStoneEffect.
   ///
   /// In en, this message translates to:
-  /// **'The rerolled sub-stat becomes {stat} with {p}% chance'**
+  /// **'The rerolled bonus stat becomes {stat} with {p}% chance'**
   String fairyRerollStoneEffect(String stat, String p);
 
   /// No description provided for @fairyStoneBuyTitle.
@@ -11072,7 +11072,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelRoleHp.
   ///
   /// In en, this message translates to:
-  /// **'Tank'**
+  /// **'Vitality'**
   String get duelRoleHp;
 
   /// No description provided for @duelRoleChip.
@@ -11096,7 +11096,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelTeamAuraHelpCommander.
   ///
   /// In en, this message translates to:
-  /// **'Every bug\'s Command adds to its own role. The flag marks the bug with the most Command.'**
+  /// **'Each bug\'s Command grows the aura of its own role (all three count). The flag marks the bug with the most Command.'**
   String get duelTeamAuraHelpCommander;
 
   /// No description provided for @duelTeamAuraTitle.
@@ -12432,7 +12432,7 @@ abstract class AppLocalizations {
   /// No description provided for @eggIncubatorFullExpand.
   ///
   /// In en, this message translates to:
-  /// **'Incubator full · expand 1 slot for {n} jelly'**
+  /// **'Incubator full · +1 slot ({n} jelly)'**
   String eggIncubatorFullExpand(String n);
 
   /// No description provided for @eggIncubatorFullWait.
@@ -12444,7 +12444,7 @@ abstract class AppLocalizations {
   /// No description provided for @rarityFilterButton.
   ///
   /// In en, this message translates to:
-  /// **'Species rarity to keep'**
+  /// **'Rarity filter'**
   String get rarityFilterButton;
 
   /// No description provided for @rarityFilterAll.
@@ -12456,7 +12456,7 @@ abstract class AppLocalizations {
   /// No description provided for @rarityFilterAtLeast.
   ///
   /// In en, this message translates to:
-  /// **'{grade} species+'**
+  /// **'{grade}+ species'**
   String rarityFilterAtLeast(String grade);
 
   /// No description provided for @rarityFilterOnly.
@@ -12606,7 +12606,7 @@ abstract class AppLocalizations {
   /// No description provided for @passiveRerollJellyConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Reroll the passive size with jelly?\nThe jelly is used even if you keep the current value.'**
+  /// **'Reroll the passive stat value with jelly?\nThe jelly is used even if you keep the current value.'**
   String get passiveRerollJellyConfirm;
 
   /// No description provided for @passiveRerollJellyAction.
@@ -12666,7 +12666,7 @@ abstract class AppLocalizations {
   /// No description provided for @dexPassiveV2.
   ///
   /// In en, this message translates to:
-  /// **'Pet passives differ per bug (they grow with grade and rarity)'**
+  /// **'Pet passives differ per bug (they grow with the bug\'s grade and species rarity)'**
   String get dexPassiveV2;
 
   /// No description provided for @dexPassiveLegacy.

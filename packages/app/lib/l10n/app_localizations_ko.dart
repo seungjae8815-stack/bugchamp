@@ -3665,7 +3665,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String starCarry(String n) {
-    return '다음 별 몫 +$n개 이월';
+    return '다음 별로 +$n개 이월';
   }
 
   @override
@@ -5700,7 +5700,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideSizeBody(String min, String max) {
-    return '크기는 종마다 정해진 범위 안에서 정해져요. 클수록 능력치가 ×$min~×$max로 높아지고, 결투에서 잘 밀리지 않고 장외로 덜 떨어져요.';
+    return '크기는 종마다 정해진 범위 안에서 정해져요. 클수록 펫 능력치가 ×$min~×$max로 높아지고, 결투에서는 무거워져 잘 밀리지 않고 장외로 덜 떨어져요(결투 능력치는 크기와 상관없어요).';
   }
 
   @override
@@ -6489,7 +6489,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get duelTeamAuraHelpCommander =>
-      '지휘는 세 마리 모두 각자 역할에 더해져요. 깃발은 지휘를 가장 많이 찍은 곤충이에요.';
+      '지휘를 찍은 곤충은 각자 자기 역할의 오라를 키워요(세 마리 모두). 깃발은 지휘를 가장 많이 찍은 곤충이에요.';
 
   @override
   String get duelTeamAuraTitle => '팀 오라';
@@ -7404,7 +7404,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storageViewButton => '보기';
 
   @override
-  String get storageViewTitle => '채집함 보기 거르기';
+  String get storageViewTitle => '채집함 보기 설정';
 
   @override
   String get storageViewHint => '보이는 목록만 거르고 곤충은 그대로예요';
@@ -7450,7 +7450,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveCardTitle => '펫 패시브';
 
   @override
-  String get passiveCardHint => '곤충 등급과 종 희귀도에 따라 커져요.';
+  String get passiveCardHint => '개체 등급과 종 희귀도에 따라 커져요.';
 
   @override
   String get passiveNone => '패시브 없음';
@@ -7479,7 +7479,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get passiveRerollJellyConfirm =>
-      '젤리로 패시브 크기를 다시 굴릴까요?\n지금 값을 유지해도 젤리는 사용돼요.';
+      '젤리로 패시브 능력치를 다시 굴릴까요?\n지금 값을 유지해도 젤리는 사용돼요.';
 
   @override
   String get passiveRerollJellyAction => '굴리기';
@@ -7506,10 +7506,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveRerollNoEssence => '정수가 부족해요';
 
   @override
-  String get passiveRerollEgg => '부화한 뒤에 굴릴 수 있어요';
+  String get passiveRerollEgg => '부화한 뒤에 다시 굴릴 수 있어요';
 
   @override
-  String get dexPassiveV2 => '펫 패시브는 개체마다 달라요 (등급·희귀도에 따라 커져요)';
+  String get dexPassiveV2 => '펫 패시브는 개체마다 달라요 (개체 등급·종 희귀도에 따라 커져요)';
 
   @override
   String dexPassiveLegacy(String kind) {
