@@ -3236,8 +3236,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   Widget _topBar(AppLocalizations l, SaveGame save) {
     final xpNeed = xpForNextLevel(save.level);
-    // 장비 포함(표시용) — 랭킹 전투력과 같은 함수.
-    final cp = combatPower(displayStatsOf(save, _data, _clock.now().toUtc()));
+    // 장비·펫 패시브 포함(표시용) — 랭킹 전투력과 같은 함수.
+    final cp = displayCombatPower(save, _data, _clock.now().toUtc()) ?? 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 8, 6),
       child: Column(
@@ -8547,7 +8547,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 캐릭터 카드도 홈 상단과 같은 값(장비 포함)으로 보인다.
     final base = displayStatsOf(save, _data, _clock.now().toUtc());
     final rows = <(String, String)>[
-      (l.statCombatPower, formatCompact(combatPower(base))),
+      (
+        l.statCombatPower,
+        formatCompact(
+          displayCombatPower(save, _data, _clock.now().toUtc()) ??
+              combatPower(base),
+        ),
+      ),
       (l.statAttack, formatCompact(base.attack)),
       (l.statAttackSpeed, '${base.attackSpeed.toStringAsFixed(2)}/s'),
       (l.statCrit, '${(base.critChance * 100).toStringAsFixed(1)}%'),

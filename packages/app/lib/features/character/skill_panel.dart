@@ -589,7 +589,21 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
       _ => def.effect,
     };
     if (def.cooldown <= Duration.zero) return text;
-    return '$text · ${l.skillCooldown('${def.cooldown.inSeconds}')}';
+    // 장비 "스킬 쿨타임 감소"가 있으면 줄어든 값을 보여 준다(사냥 화면 `_skillCdMult` 와 같은 식).
+    final secs = (def.cooldown.inMilliseconds / 1000 * _cooldownMult()).round();
+    return '$text · ${l.skillCooldown('$secs')}';
+  }
+
+  double _cooldownMult() {
+    final save = ref.read(saveControllerProvider).value;
+    final data = ref.read(gameDataProvider).value;
+    final run = data?.runConfig;
+    if (save == null || data == null || run == null) return 1;
+    return 1 -
+        equipmentSkillCooldownCut(
+          equipmentBonus(save.equippedItems.values, data.itemConfig),
+          budget: run.skillCooldownBudgetGear,
+        );
   }
 
   Future<void> _toggle(AppLocalizations l, SkillDef def) async {

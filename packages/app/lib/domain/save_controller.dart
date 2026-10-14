@@ -345,6 +345,24 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
     }
 
+    // 자가치유: 1.0.21 전에 장착해 둔 알은 내린다(2026-10-14 — 알은 장착 불가, 능력치를 숨기므로 펫 효과도 부화 뒤에).
+    final petCfg = data.petConfig;
+    if (petCfg != null && save.equippedBugIds.isNotEmpty) {
+      final eggs = {
+        for (final b in save.bugs)
+          if (effectiveStage(b.stage, b.stageSince, now, petCfg) ==
+              LifeStage.egg)
+            b.id,
+      };
+      if (save.equippedBugIds.any(eggs.contains)) {
+        save = save.copyWith(
+          equippedBugIds: save.equippedBugIds
+              .where((id) => !eggs.contains(id))
+              .toList(),
+        );
+      }
+    }
+
     save = _applySeason(save, data, now);
 
     save = save.copyWith(lastSeen: now);

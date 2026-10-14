@@ -1532,7 +1532,8 @@ class GameActions {
     final int carry;
     final DateTime? carryTo;
     if (elapsed >= _goldCarryMinGap) {
-      carry = min(leftover, generous + carryAvail);
+      // 이번 공백의 방치 몫까지만 — 옛 이월을 더하면 긴 공백마다 쌓여 며칠치가 한 번에 열렸다(10-14 점검).
+      carry = min(leftover, generous);
       carryTo = t.add(_goldCarryWindow);
     } else {
       carry = min(leftover, carryAvail);

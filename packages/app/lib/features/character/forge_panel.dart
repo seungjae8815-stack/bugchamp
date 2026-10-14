@@ -1389,7 +1389,7 @@ Future<bool> showForgeResult(
       // **환생 재료로**(2026-10-10 장비 v2) — 같은 부위 낀 장비의 별을 올린다. 쓸 수 없으면 버튼을 안 그린다.
       if (cur != null && canFeedStar(items, cur!, item))
         gameDialogButton(l.forgeResultFeed, () async {
-          final before = cur!.stars;
+          final wasReady = starReady(items, cur!);
           final err = await ref
               .read(saveControllerProvider.notifier)
               .feedTopToStar();
@@ -1401,10 +1401,9 @@ Future<bool> showForgeResult(
               .read(saveControllerProvider)
               .value
               ?.equippedItems[item.slot];
-          // 재료가 다 모였으면 알려 준다 — 별은 장비 상세에서 강화 시간을 걸어야 오른다.
-          if (now != null &&
-              now.stars == before &&
-              now.starExp >= items.starNeedAt(now.stars)) {
+          // 재료가 **방금** 다 모였으면 알려 준다 — 별은 장비 상세에서 강화 시간을 걸어야 오른다.
+          // 이미 모인 뒤(남는 재료는 다음 별로 이월)에 먹일 때마다 다시 띄우지 않는다.
+          if (now != null && !wasReady && starReady(items, now)) {
             showCenterToast(context, l.starReady);
           }
         }, primary: false),

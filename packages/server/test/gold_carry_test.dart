@@ -92,6 +92,21 @@ void main() {
     expect(reasons(r), contains('gold'));
   });
 
+  test('3분 간격 업로드가 이어져도 이월은 쌓이지 않는다(한 공백 몫까지)', () {
+    final t0 = DateTime.utc(2026, 10, 13, 13);
+    now = t0;
+    var s = stored(t0, const Duration(minutes: 3));
+    s = actions.mergeSave(s, s.toJson()).save!;
+    final first = s.goldCarry;
+    expect(first, greaterThan(0));
+    // 골드 없이 3분마다 10번 — 옛 이월을 더하던 시절엔 기한이 계속 늘며 10배로 쌓였다.
+    for (var i = 1; i <= 10; i++) {
+      now = t0.add(Duration(minutes: 3 * i));
+      s = actions.mergeSave(s, s.toJson()).save!;
+    }
+    expect(s.goldCarry, lessThanOrEqualTo((first * 1.5).ceil()));
+  });
+
   test('기기가 이월 필드를 올려도 서버 값이 이긴다', () {
     final t0 = DateTime.utc(2026, 10, 13, 12);
     now = t0;

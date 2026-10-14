@@ -344,7 +344,9 @@ class DuelBug {
     tech: (j['tech'] as num?)?.toDouble() ?? 0,
     grit: (j['grit'] as num?)?.toInt() ?? 0,
     sizeStatMult: (j['ssm'] as num?)?.toDouble() ?? 1,
-    auraRole: DuelRole.fromKeyOrNull(j['ar'] as String?),
+    auraRole: DuelRole.fromKeyOrNull(
+      j['ar'] is String ? j['ar'] as String : null,
+    ),
     aura: (j['av'] as num?)?.toDouble() ?? 0,
     auraApplied: j['aa'] == 1 || j['aa'] == true,
   );
