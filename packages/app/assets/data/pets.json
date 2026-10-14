@@ -42,7 +42,7 @@
  "disassembleJellyMinPotential": 5,
  "levelBonus": 0.015,
  "trainBaseCost": 200,
- "_trainCostComment": "수련 레벨 비용 = trainBaseCost × trainCostGrowth^(레벨−1). 2026-10-14 사장님 확정 1.18 → 1.20: 비용은 난이도와 상관없이 고정인데 수입은 난이도마다 수십 배라, 1.18 에서는 보통부터 3마리 80레벨이 첫날 수입 이하(극한 1%)였다. 1.20 이면 한 마리 1→80 약 18억(1.18 은 5.3억) — 쉬움 첫 회차는 55레벨 근처, 보통은 3마리에 약 3일. balance_sim 은 곤충 골드 지출을 모델하지 않는다(90일 표 밖).",
+ "_trainCostComment": "수련 레벨 비용 = trainBaseCost × trainCostGrowth^(레벨−1). 2026-10-14 사장님 확정 1.18 → 1.20: 비용은 난이도와 상관없이 고정인데 수입은 난이도마다 수십 배라, 1.18 에서는 보통부터 3마리 80레벨이 첫날 수입 이하(극한 1%)였다. 1.20 이면 한 마리 1→80 약 18억(1.18 은 5.3억) — 쉬움 첫 회차는 55레벨 근처, 보통은 3마리 80레벨 = 첫날 총골드의 약 7.3일치(전액 투입 가정, 1.18 은 2.2일치 — 2026-10-14 balance_sim --income 재측정). balance_sim 은 곤충 골드 지출을 모델하지 않는다(90일 표 밖).",
  "trainCostGrowth": 1.20,
  "trainJellyCost": 5,
  "trainJellyLevels": 5,
