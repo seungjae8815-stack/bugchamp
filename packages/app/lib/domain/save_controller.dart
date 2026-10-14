@@ -5009,7 +5009,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
   // 규칙은 core_save `rollPassiveReroll`·`applyPassiveRoll`(서버와 같은 함수) — 여기는 저장만 한다.
 
   /// 곤충 [bugId] 의 패시브 크기를 다시 굴린다 — 그 종 정수 또는 젤리([useJelly])를 **먼저 낸다**.
-  /// 곤충은 아직 그대로이고 결과 `extra['roll']`(새 롤)을 화면이 지금 값과 비교해 [choosePassiveRoll] 로 고른다.
+  /// 곤충은 아직 그대로이고 결과는 세이브의 대기(`passiveReroll*`)와 `extra['roll']` 에 남는다 — 화면이 지금 값과 비교해
+  /// [pickPassiveReroll] 로 고른다(앱을 껐다 켜도 대기가 남아 다시 고를 수 있다).
   /// 비용은 고르든 안 고르든 쓰인다(요정 재굴림·장비 다듬기와 같은 문법).
   Future<GradeOp> rerollPassive(String bugId, {required bool useJelly}) async {
     final cfg =
@@ -5026,9 +5027,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return r;
   }
 
-  /// 재굴림 결과 [roll] 을 곤충 [bugId] 에 적는다("새 값으로"). 지금 값을 지키려면 부르지 않는다.
-  Future<void> choosePassiveRoll(String bugId, int roll) async {
-    await _commit(applyPassiveRoll(state.requireValue, bugId, roll));
+  /// 대기 중인 재굴림 결과를 고른다 — [accept] 면 새 값, 아니면 지금 값. 어느 쪽이든 대기를 지운다(2026-10-14).
+  Future<void> pickPassiveReroll({required bool accept}) async {
+    await _commit(choosePassiveReroll(state.requireValue, accept: accept));
   }
 
   /// 오늘 더 살 수 있는 성장물약 수.

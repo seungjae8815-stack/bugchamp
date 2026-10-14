@@ -97,4 +97,31 @@ void main() {
       'off',
     );
   });
+
+  test('결과는 세이브에 대기로 남고(앱을 꺼도) · 고르기 전엔 다시 못 굴린다 · 고르면 지운다', () {
+    final a = rollPassiveReroll(
+      save(essence: 9),
+      cfg,
+      'b1',
+      Random(1),
+      useJelly: false,
+    );
+    final pending = a.save!;
+    expect(pending.passiveRerollBug, 'b1');
+    expect(pending.passiveRerollRoll, a.extra['roll']);
+    // 세이브 왕복(앱 재시작)에도 남는다.
+    final back = SaveGame.fromJson(pending.toJson());
+    expect(back.passiveRerollBug, 'b1');
+    expect(back.passiveRerollRoll, a.extra['roll']);
+    expect(
+      rollPassiveReroll(back, cfg, 'b1', Random(2), useJelly: false).error,
+      'pending',
+    );
+    final keep = choosePassiveReroll(back, accept: false);
+    expect(keep.passiveRerollBug, isNull);
+    expect(keep.bugs.single.passiveRoll, isNull);
+    final take = choosePassiveReroll(back, accept: true);
+    expect(take.passiveRerollBug, isNull);
+    expect(take.bugs.single.passiveRoll, a.extra['roll']);
+  });
 }

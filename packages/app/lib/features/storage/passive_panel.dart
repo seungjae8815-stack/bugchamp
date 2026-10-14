@@ -128,6 +128,22 @@ Future<void> _openPassiveReroll(
   final petCfg = data.petConfig!;
   final cfg = petCfg.passiveV2;
   final save = r.read(saveControllerProvider).requireValue;
+  // 고르지 않은 결과가 남아 있으면(앱을 껐다 켬 등) 새로 굴리지 않고 그것부터 고른다(2026-10-14).
+  // 다른 곤충의 결과여도 그 곤충 것으로 먼저 고르게 한다 — 비용은 이미 냈다.
+  final pendingId = save.passiveRerollBug;
+  final pendingRoll = save.passiveRerollRoll;
+  if (pendingId != null && pendingRoll != null) {
+    final pb = save.bugs.where((b) => b.id == pendingId).firstOrNull;
+    if (pb == null) {
+      await r
+          .read(saveControllerProvider.notifier)
+          .pickPassiveReroll(accept: false);
+    } else {
+      await _pickPassiveRoll(ctx, r, data, pb, pendingRoll);
+      return;
+    }
+  }
+  if (!ctx.mounted) return;
   final bug = save.bugs.where((b) => b.id == bugId).firstOrNull;
   if (bug == null) return;
   final sp = data.species(bug.speciesId);
@@ -225,8 +241,24 @@ Future<void> _openPassiveReroll(
     return;
   }
   final newRoll = res.extra['roll'] as int;
+  await _pickPassiveRoll(ctx, r, data, bug, newRoll);
+}
+
+/// 지금 값 / 새 값([newRoll]) 비교 창 — 고른 결과를 세이브의 대기에서 반영하고 지운다.
+Future<void> _pickPassiveRoll(
+  BuildContext ctx,
+  WidgetRef r,
+  GameData data,
+  IndividualBug bug,
+  int newRoll,
+) async {
+  final l = AppLocalizations.of(ctx);
+  final petCfg = data.petConfig!;
+  final sp = data.species(bug.speciesId);
+  final nav = Navigator.of(ctx, rootNavigator: true);
+  final cur = passiveOf(bug, sp, petCfg);
   final next = passiveOf(bug.copyWith(passiveRoll: newRoll), sp, petCfg);
-  if (next == null) return;
+  if (cur == null || next == null) return;
 
   Widget side(String title, SpeciesPassive p, int roll, {bool hi = false}) =>
       Expanded(
@@ -307,8 +339,7 @@ Future<void> _openPassiveReroll(
       gameDialogButton(l.passiveRerollTakeNew, () => nav.pop(true)),
     ],
   );
-  if (take != true) return;
   await r
       .read(saveControllerProvider.notifier)
-      .choosePassiveRoll(bugId, newRoll);
+      .pickPassiveReroll(accept: take == true);
 }

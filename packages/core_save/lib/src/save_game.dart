@@ -660,6 +660,8 @@ class SaveGame {
     this.abyssFloorAt,
     this.goldCarry = 0,
     this.goldCarryUntil,
+    this.passiveRerollBug,
+    this.passiveRerollRoll,
     this.abyssRewardWeek,
     this.eventBadges = const {},
     this.difficultyTier = 0,
@@ -965,6 +967,11 @@ class SaveGame {
   /// 보상보다 먼저 서버에 닿으면, 몇 초 뒤 올라온 방치 보상 골드가 "0초 만에 번 돈"으로 잘렸다.
   final int goldCarry;
   final DateTime? goldCarryUntil;
+
+  /// 펫 패시브 크기 재굴림의 **고르지 않은 결과**(2026-10-14 사장님 확정, JSON `pRr` = {b, r}) — 비용을 낸 뒤
+  /// 새 값/지금 값을 고르기 전에 앱이 꺼져도 남는다(요정 재굴림과 같은 문법). 있으면 새로 굴리기 전에 먼저 고른다.
+  final String? passiveRerollBug;
+  final int? passiveRerollRoll;
 
   /// 주간 순위 보상을 판정한 주. **서버 소유** — 지우면 같은 주 보상을 반복해 받는다.
   final String? abyssRewardWeek;
@@ -1607,6 +1614,9 @@ class SaveGame {
     DateTime? abyssFloorAt,
     int? goldCarry,
     DateTime? goldCarryUntil,
+    String? passiveRerollBug,
+    int? passiveRerollRoll,
+    bool clearPassiveReroll = false,
     String? abyssRewardWeek,
     Set<String>? eventBadges,
     int? difficultyTier,
@@ -1749,6 +1759,12 @@ class SaveGame {
     abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
     goldCarry: goldCarry ?? this.goldCarry,
     goldCarryUntil: goldCarryUntil ?? this.goldCarryUntil,
+    passiveRerollBug: clearPassiveReroll
+        ? null
+        : (passiveRerollBug ?? this.passiveRerollBug),
+    passiveRerollRoll: clearPassiveReroll
+        ? null
+        : (passiveRerollRoll ?? this.passiveRerollRoll),
     abyssRewardWeek: abyssRewardWeek ?? this.abyssRewardWeek,
     eventBadges: eventBadges ?? this.eventBadges,
     difficultyTier: difficultyTier ?? this.difficultyTier,
@@ -2020,6 +2036,12 @@ class SaveGame {
         ? null
         : DateTime.tryParse(json['abyssFloorAt'] as String)?.toUtc(),
     goldCarry: (json['gC'] as num?)?.toInt() ?? 0,
+    passiveRerollBug: json['pRr'] is Map
+        ? '${(json['pRr'] as Map)['b']}'
+        : null,
+    passiveRerollRoll: json['pRr'] is Map && (json['pRr'] as Map)['r'] is num
+        ? (((json['pRr'] as Map)['r'] as num).toInt()).clamp(0, 100)
+        : null,
     goldCarryUntil: json['gCU'] is String
         ? DateTime.tryParse(json['gCU'] as String)?.toUtc()
         : null,
@@ -2279,6 +2301,8 @@ class SaveGame {
     if (abyssRankMark != null) 'abyRk': abyssRankMark,
     if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),
     if (goldCarry > 0) 'gC': goldCarry,
+    if (passiveRerollBug != null && passiveRerollRoll != null)
+      'pRr': {'b': passiveRerollBug, 'r': passiveRerollRoll},
     if (goldCarry > 0 && goldCarryUntil != null)
       'gCU': goldCarryUntil!.toIso8601String(),
     if (abyssRewardWeek != null) 'abyssRewardWeek': abyssRewardWeek,

@@ -275,6 +275,8 @@ GradeOp rollPassiveReroll(
   final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
   if (bug == null) return const GradeOp.fail('no_bug');
   if (bug.stage == LifeStage.egg) return const GradeOp.fail('egg');
+  // 고르지 않은 결과가 남아 있으면 그것부터 고른다(2026-10-14 — 비용을 두 번 내지 않게).
+  if (s.passiveRerollBug != null) return const GradeOp.fail('pending');
   var next = s;
   if (useJelly) {
     final jelly = s.materialCount(MaterialKind.jelly);
@@ -294,13 +296,25 @@ GradeOp rollPassiveReroll(
       essence: {...s.essence, bug.speciesId: have - cfg.rerollEssence},
     );
   }
+  final roll = rng.nextInt(101);
   return GradeOp.ok(
-    next,
+    next.copyWith(passiveRerollBug: bugId, passiveRerollRoll: roll),
     extra: {
-      'roll': rng.nextInt(101),
+      'roll': roll,
       'cost': useJelly ? cfg.rerollJelly : cfg.rerollEssence,
     },
   );
+}
+
+/// 대기 중인 재굴림 결과를 고른다 — [accept] 면 새 롤을 적고, 아니면 지금 값을 지킨다. 어느 쪽이든 대기를 지운다.
+/// 그 사이 곤충이 사라졌으면 대기만 지운다.
+SaveGame choosePassiveReroll(SaveGame s, {required bool accept}) {
+  final id = s.passiveRerollBug;
+  final roll = s.passiveRerollRoll;
+  final cleared = s.copyWith(clearPassiveReroll: true);
+  if (!accept || id == null || roll == null) return cleared;
+  if (!s.bugs.any((b) => b.id == id)) return cleared;
+  return applyPassiveRoll(cleared, id, roll);
 }
 
 /// 재굴림 결과를 고른다 — 새 롤 [roll] 을 [bugId] 에 적는다(지금 값을 지키려면 부르지 않는다).
