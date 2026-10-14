@@ -141,7 +141,10 @@ void main() {
       expect(missed.bugs, greaterThan(0));
       expect(missed.fairyStones, greaterThan(0));
       // 채집꾼(희귀 ×2)·광폭화(처치 수) — 속성석 기댓값이 두 배를 넘는다.
-      expect(full.fairyStones, greaterThan(none.fairyStones * 2));
+      // 채집꾼이 없던 사람은 방치 희귀 드롭이 0 — 전부 놓친 몫(2026-10-14 사장님 확정).
+      expect(none.fairyStones, 0);
+      expect(none.potions, 0);
+      expect(full.fairyStones, greaterThan(0));
       expect(missed.isEmpty, isFalse);
     });
 
@@ -269,6 +272,22 @@ void main() {
         rng: Random(1),
       );
       expect(identical(none.save, base), isTrue);
+      // 채집꾼이 꺼져 있으면(배율 1) 방치 희귀 드롭은 없다(2026-10-14 사장님 확정 — 버프 켠 사람만).
+      final off = rollIdleRareDrops(
+        base,
+        rolls: 200000,
+        run: run,
+        fairy: fairy,
+        stones: stones,
+        grade: grade,
+        rareMult: 1.0,
+        now: t0,
+        rng: Random(1),
+      );
+      expect(identical(off.save, base), isTrue);
+      expect(off.fairyStones + off.potions, 0);
+      expect(idleRareDropsOn(1.0), isFalse);
+      expect(idleRareDropsOn(2.0), isTrue);
     });
   });
 

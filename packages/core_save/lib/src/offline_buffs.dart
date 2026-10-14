@@ -200,7 +200,10 @@ OfflineGain expectedOfflineGain(
             math.max(1, (2 * md.amountMult).round())) /
         2;
     mats += p.clears * md.chance * perDrop;
-    final elites = p.clears * run.eliteChance;
+    // 방치 희귀 드롭은 **채집꾼 버프가 켜진 구간만**(2026-10-14 사장님 확정) — 버프가 없으면 0(놓친 몫으로만 보인다).
+    final elites = idleRareDropsOn(p.rareMult)
+        ? p.clears * run.eliteChance
+        : 0.0;
     if (fairy != null && fairy.subWeight.isNotEmpty) {
       fStones +=
           elites * math.min(1.0, fairy.drops.eliteStoneChance * p.rareMult);
@@ -278,6 +281,10 @@ class IdleRareDrops {
   final int potions;
 }
 
+/// 방치 중 희귀 드롭이 나오는 구간인가 — **채집꾼 버프(희귀 배율 > 1)가 켜진 구간만**(2026-10-14 사장님 확정).
+/// 버프가 없던 사람에게는 0 이고, 복귀 팝업의 "놓쳤어요"에 버프를 켰을 때의 기댓값으로 보인다.
+bool idleRareDropsOn(double rareMult) => rareMult > 1.0;
+
 /// 방치 처치 [rolls]번 중 정예(`run.eliteChance`)에게서 굴리는 희귀 드롭(2026-10-14 사장님 확정) —
 /// 요정 속성석 · 결투석 · 성장물약(서버 날짜 하루 `potionDropDaily` 한도 안). 온라인 정예와 같은 확률에
 /// 채집꾼 배율 [rareMult] 를 곱한다. 요정 알·가속기·스킬 조각은 굴리지 않는다(온라인 전용).
@@ -292,7 +299,9 @@ IdleRareDrops rollIdleRareDrops(
   required DateTime now,
   required math.Random rng,
 }) {
-  if (rolls <= 0 || run.eliteChance <= 0) return IdleRareDrops(save: save);
+  if (rolls <= 0 || run.eliteChance <= 0 || !idleRareDropsOn(rareMult)) {
+    return IdleRareDrops(save: save);
+  }
   final subs = fairy?.subWeight.keys.toList() ?? const <String>[];
   final fairyGot = <String, int>{};
   final stoneGot = <DuelStone, int>{};
