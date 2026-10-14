@@ -143,9 +143,12 @@ def run(name, check):
         if out is None:
             continue
         y0, y1, x0, x1, _ = boxes[idx]
-        img = base.cut_cell(a, bg, bglike, k, resid, (y0, y1, x0, x1))
+        # 화면에서 최대 64논리px(3배 기기 192px)라 256(테두리 틀은 칸이 커서 384)이면 넉넉하다.
+        # 무손실 514px 로 두면 42장이 4.6MB 였다 — 기존 아이콘(15~45KB)처럼 손실 압축.
+        side = 384 if out == 'roadmap_boss_frame' else 256
+        img = base.cut_cell(a, bg, bglike, k, resid, (y0, y1, x0, x1), target=side)
         dst = os.path.join(OUT, out + '.webp')
-        img.save(dst, 'WEBP', lossless=True)
+        img.save(dst, 'WEBP', quality=88, alpha_quality=100, method=6)
         print('    -> %-26s %dx%d %4.0f KB' % (out + '.webp', img.width, img.height, os.path.getsize(dst) / 1024))
 
 
