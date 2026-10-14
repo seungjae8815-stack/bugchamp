@@ -83,7 +83,17 @@ CharacterStats displayStatsOf(SaveGame save, GameData data, DateTime now) =>
 /// 게임 데이터가 아직 없으면 null(모르는 값을 0 으로 올리면 서버를 덮어쓴다).
 double? displayCombatPower(SaveGame save, GameData? data, DateTime now) {
   if (data?.runConfig == null) return null;
-  return combatPower(displayStatsOf(save, data!, now));
+  // 펫 패시브도 넣는다(2026-10-14 사장님 확인 — 패시브 v2 로 등급·희귀도에 따라 공격 최대 +35%까지 자라서,
+  // 빼 두면 패시브를 키워도 숫자가 그대로였다). 사냥 능력치([huntStatsUncapped])와 같은 순서·예산으로 얹는다.
+  final config = data!.runConfig!;
+  return combatPower(
+    applySpeciesPassives(
+      displayStatsOf(save, data, now),
+      speciesPassivesOf(save, data, now),
+      critBudget: config.critBudgetOther,
+      evadeBudget: config.evadeBudgetOther,
+    ),
+  );
 }
 
 /// 사냥 능력치 — 플레이 화면의 실제 능력치에서 **버프·지속형 액티브만 뺀** 값(치명 상한 전).
