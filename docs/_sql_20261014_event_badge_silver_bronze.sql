@@ -26,11 +26,15 @@ set data = jsonb_set(
 where id = '17e3d543-a240-4e18-8930-bd663205d7d7'
   and data->'eventBadges' ? 'finalist:1';
 
--- 대표 뱃지(순위표·채팅). 둘 다 다른 뱃지가 없어서 그대로 바꾼다.
+-- 대표 뱃지(순위표·채팅) = 급(champion 5 > silver 4 > bronze 3 > finalist 2 > participant 1) → 최근 회차.
+-- ⚠️ 2회차 보상이 이 SQL 보다 먼저 나가면 profiles.badge 가 이미 'finalist:2' 일 수 있다(2026-10-14 점검) —
+--    그래서 '지금 값이 새 뱃지보다 급이 낮으면' 덮는다. champion:N 이면 그대로 두고, bronze:2 는 bronze:1 과 같은 급이라 최근 회차 유지.
 update profiles set badge = 'silver:1'
-where id = '397e2be2-b6b0-4ea2-b81b-4fa51731fc73' and badge = 'finalist:1';
+where id = '397e2be2-b6b0-4ea2-b81b-4fa51731fc73'
+  and (badge is null or badge = '' or badge like 'finalist:%' or badge like 'bronze:%' or badge like 'participant:%');
 update profiles set badge = 'bronze:1'
-where id = '17e3d543-a240-4e18-8930-bd663205d7d7' and badge = 'finalist:1';
+where id = '17e3d543-a240-4e18-8930-bd663205d7d7'
+  and (badge is null or badge = '' or badge like 'finalist:%' or badge like 'participant:%');
 
 -- 확인
 select s.id, s.data->'eventBadges' as badges, p.badge
