@@ -4113,6 +4113,7 @@
   "@skillSweepConfirm": {"placeholders": {"jelly": {"type": "String"}}},
   "igSpeciesRarity": "Species rarity {grade}",
   "@igSpeciesRarity": {"placeholders": {"grade": {"type": "String"}}},
+  "eggPickRarity": "Rarity",
   "igGradeLabel": "Grade",
   "igDexMaxGrade": "Best grade",
   "igQualityTitle": "Stat quality",

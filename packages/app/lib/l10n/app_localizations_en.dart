@@ -7151,6 +7151,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get eggPickRarity => 'Rarity';
+
+  @override
   String get igGradeLabel => 'Grade';
 
   @override

@@ -7006,6 +7006,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get eggPickRarity => '희귀도';
+
+  @override
   String get igGradeLabel => '등급';
 
   @override

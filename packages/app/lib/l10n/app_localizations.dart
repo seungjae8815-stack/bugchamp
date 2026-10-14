@@ -11859,6 +11859,12 @@ abstract class AppLocalizations {
   /// **'Species rarity {grade}'**
   String igSpeciesRarity(String grade);
 
+  /// No description provided for @eggPickRarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity'**
+  String get eggPickRarity;
+
   /// No description provided for @igGradeLabel.
   ///
   /// In en, this message translates to:

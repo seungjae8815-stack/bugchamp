@@ -2233,6 +2233,7 @@
   "skillGachaConfirm": "스킬 뽑기 {times}회 — 젤리 {jelly}개를 써요.",
   "skillSweepConfirm": "오늘 무료 소탕을 다 썼어요. 젤리 {jelly}개로 소탕할까요?",
   "igSpeciesRarity": "종 희귀도 {grade}",
+  "eggPickRarity": "희귀도",
   "igGradeLabel": "등급",
   "igDexMaxGrade": "최고 등급",
   "igQualityTitle": "능력치 품질",

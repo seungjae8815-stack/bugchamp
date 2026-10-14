@@ -2371,8 +2371,8 @@ class StorageScreen extends ConsumerWidget {
                     crossAxisCount: 3,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
-                    // 알 42 + 이름 + 종 희귀도·부화 시간 + 개체 등급·속성 줄이 들어가는 비율.
-                    childAspectRatio: 0.74,
+                    // 알 42 + 이름 · 부화 시간 · 희귀도 · 등급 · 속성 다섯 줄(2026-10-14 사장님 — 한 줄에 몰려 헷갈렸다).
+                    childAspectRatio: 0.58,
                   ),
                   itemCount: eggs.length,
                   itemBuilder: (_, i) =>
@@ -2442,11 +2442,8 @@ class StorageScreen extends ConsumerWidget {
             border: Border.all(
               // 이색은 **테두리부터** 다르다 — 1/300 이라 목록에서 놓치면
               // 일반 알을 먼저 돌려 버린다.
-              color: variant
-                  ? kHoney
-                  : gradeColor(
-                      shownGrade(data, bug, sp),
-                    ).withValues(alpha: 0.7),
+              // 테두리는 등급·희귀도 어느 쪽 색도 쓰지 않는다 — 두 색이 섞여 헷갈렸다(2026-10-14). 줄마다 이름을 붙였다.
+              color: variant ? kHoney : const Color(0x33FFFFFF),
               width: variant ? 1.8 : 1,
             ),
           ),
@@ -2488,17 +2485,6 @@ class StorageScreen extends ConsumerWidget {
                         const Color(0xFFE0A020),
                       ),
                     ),
-                  // 등급 — 테두리 색만으로는 구분이 어렵다.
-                  // 켜지면 아래 줄 이름표가 이미 개체 등급이다(두 번 보이지 않게).
-                  if (!individualGradeOn(data))
-                    Positioned(
-                      left: -4,
-                      top: -2,
-                      child: _eggBadge(
-                        gradeLabel(l, shownGrade(data, bug, sp)),
-                        gradeColor(shownGrade(data, bug, sp)),
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -2508,95 +2494,43 @@ class StorageScreen extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.white, fontSize: 10),
               ),
-              const SizedBox(height: 2),
-              // 종 희귀도(색 점 + 글자) · 부화 시간(1.0.21) — 야생 알은 개체 등급이 모두 일반이라 테두리가
-              // 다 같아 보였다. 무엇을 먼저 넣을지는 종 희귀도와 걸리는 시간이 정한다.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: gradeColor(sp.grade),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xAA000000),
-                          width: 0.5,
-                        ),
+              const SizedBox(height: 3),
+              // 부화 시간 · 희귀도(종) · 등급(개체) · 속성 — 줄마다 이름을 붙인다(2026-10-14 사장님). 예전엔 종 희귀도와
+              // 개체 등급이 이름 없이 색 글자로만 붙어 있어 어느 것이 무엇인지 헷갈렸다.
+              if (data.petConfig != null)
+                _eggInfoLine(
+                  icon: const Icon(
+                    Icons.hourglass_bottom_rounded,
+                    size: 10,
+                    color: Color(0xAAFFFFFF),
+                  ),
+                  value: remainLabel(
+                    l,
+                    Duration(
+                      seconds: _incubateSeconds(
+                        data,
+                        r.read(saveControllerProvider).requireValue,
+                        sp,
                       ),
                     ),
-                    const SizedBox(width: 3),
-                    Text(
-                      gradeLabel(l, sp.grade),
-                      style: TextStyle(
-                        color: gradeColor(sp.grade),
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    if (data.petConfig != null) ...[
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.hourglass_bottom_rounded,
-                        size: 10,
-                        color: Color(0xAAFFFFFF),
-                      ),
-                      Text(
-                        remainLabel(
-                          l,
-                          Duration(
-                            seconds: _incubateSeconds(
-                              data,
-                              r.read(saveControllerProvider).requireValue,
-                              sp,
-                            ),
-                          ),
-                        ),
-                        style: const TextStyle(
-                          color: Color(0xCCFFFFFF),
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ],
+                  ),
+                  color: const Color(0xCCFFFFFF),
                 ),
+              _eggInfoLine(
+                label: l.eggPickRarity,
+                value: gradeLabel(l, sp.grade),
+                color: gradeColor(sp.grade),
               ),
-              const SizedBox(height: 2),
-              // 포텐셜 + 오행. 목록이 이미 **등급 → 포텐셜 → 사이즈** 순으로
-              // 정렬돼 있는데 화면에는 그 근거가 하나도 없었다 — 왜 이 순서인지
-              // 보이지 않으면 정렬이 없는 것과 같다.
-              // 영어 "Legendary" 가 좁은 칸을 넘지 않게 줄이기만 한다.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (individualGradeOn(data))
-                      individualGradeTag(l, bug.potential, fontSize: 8.5)
-                    else ...[
-                      const Icon(
-                        Icons.star_rounded,
-                        size: 11,
-                        color: Color(0xFFFFE24A),
-                      ),
-                      Text(
-                        '${bug.potential}',
-                        style: const TextStyle(
-                          color: Color(0xFFFFE24A),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(width: 5),
-                    elementIcon(bug.element, size: 11),
-                  ],
-                ),
+              _eggInfoLine(
+                label: l.igGradeLabel,
+                value: gradeLabel(l, shownGrade(data, bug, sp)),
+                color: gradeColor(shownGrade(data, bug, sp)),
+              ),
+              _eggInfoLine(
+                label: l.bugInfoElement,
+                icon: elementIcon(bug.element, size: 10),
+                value: elementLabel(l, bug.element),
+                color: elementColor(bug.element),
               ),
             ],
           ),
@@ -2604,6 +2538,40 @@ class StorageScreen extends ConsumerWidget {
       ),
     );
   }
+
+  /// 알 고르기 칸의 한 줄 — "이름 값"(이름은 흐리게, 값은 색). 좁은 칸이라 넘치면 줄인다.
+  Widget _eggInfoLine({
+    String? label,
+    Widget? icon,
+    required String value,
+    required Color color,
+  }) => Padding(
+    padding: const EdgeInsets.only(top: 1),
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (label != null) ...[
+            Text(
+              label,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 9),
+            ),
+            const SizedBox(width: 3),
+          ],
+          if (icon != null) ...[icon, const SizedBox(width: 2)],
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   /// 알 위에 얹는 작은 이름표(특성·이색). 알 그림이 42px 뿐이라 글자를
   /// 8px 까지 줄이고 테두리를 넣어 배경과 안 섞이게 한다.

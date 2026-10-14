@@ -2157,6 +2157,7 @@
   "skillGachaConfirm": "スキルガチャ{times}回 — ゼリーを{jelly}個使います。",
   "skillSweepConfirm": "今日の無料掃討は使い切りました。ゼリー{jelly}個で掃討しますか？",
   "igSpeciesRarity": "種の希少度 {grade}",
+  "eggPickRarity": "希少度",
   "igGradeLabel": "等級",
   "igDexMaxGrade": "最高等級",
   "igQualityTitle": "能力品質",
