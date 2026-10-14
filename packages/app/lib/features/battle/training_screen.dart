@@ -856,6 +856,14 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              // 훈련 포인트 그림(2026-10-14) — 남은 포인트가 이 동전으로 읽히게.
+              gameIcon(
+                'train_point',
+                size: 24,
+                fallback: Icons.star_rounded,
+                color: const Color(0xFF8FD8FF),
+              ),
+              const SizedBox(width: 6),
               Text(
                 l.trainPtUsed('$used', '$budget'),
                 key: const ValueKey('trainPoints'),

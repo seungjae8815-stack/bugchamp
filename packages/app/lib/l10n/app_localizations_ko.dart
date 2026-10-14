@@ -6485,6 +6485,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get duelCommanderBadge => '지휘관';
+
+  @override
+  String get duelTeamAuraHelpCommander =>
+      '지휘는 세 마리 모두 각자 역할에 더해져요. 깃발은 지휘를 가장 많이 찍은 곤충이에요.';
+
+  @override
   String get duelTeamAuraTitle => '팀 오라';
 
   @override

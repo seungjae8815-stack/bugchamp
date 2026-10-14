@@ -46,6 +46,7 @@ JOBS = {
     'sheet_marks_1': ('2x2', ['dex_crown', 'variant_shiny', 'equip_star', 'max_grade']),
     'sheet_marks_2': ('1x3', ['breakthrough', 'growth', 'star_up']),
     'sheet_tiles': ('1x3', [None, 'forge_grade', 'forge_auto']),
+    'sheet_extra_1': ('2x2', ['train_level', 'train_point', 'instant', 'game_exit']),
     'essence': ('1', ['essence']),
     'passive_reroll': ('1', ['passive_reroll']),
     'filter_tile': ('1', ['filter_tile']),

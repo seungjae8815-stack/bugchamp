@@ -4604,10 +4604,11 @@ class StorageScreen extends ConsumerWidget {
       return _sectionBox(
         child: Row(
           children: [
-            const Icon(
-              Icons.fitness_center,
-              color: Color(0xFF9CCC65),
-              size: 20,
+            gameIcon(
+              'train_level',
+              size: 24,
+              fallback: Icons.fitness_center,
+              color: const Color(0xFF9CCC65),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -5041,9 +5042,17 @@ Widget _bugInfoCard(
         if (!hideStats)
           cell(
             l.trainingCenter,
-            val(
-              trainLv > 0 ? l.trainPtShort('$trainLv') : l.trainingNoneShort,
-              trainLv > 0 ? const Color(0xFF8FD8FF) : const Color(0xB3FFFFFF),
+            withIcon(
+              gameIcon(
+                'train_point',
+                size: 14,
+                fallback: Icons.star_rounded,
+                color: const Color(0xFF8FD8FF),
+              ),
+              val(
+                trainLv > 0 ? l.trainPtShort('$trainLv') : l.trainingNoneShort,
+                trainLv > 0 ? const Color(0xFF8FD8FF) : const Color(0xB3FFFFFF),
+              ),
             ),
           ),
         // 이색 — 값은 종류(무지개·알비노). 예전엔 "이색 | 이색"으로 같은 말이 두 번 보였다.

@@ -11087,6 +11087,18 @@ abstract class AppLocalizations {
   /// **'Team aura: {list}'**
   String duelTeamAura(String list);
 
+  /// No description provided for @duelCommanderBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Leader'**
+  String get duelCommanderBadge;
+
+  /// No description provided for @duelTeamAuraHelpCommander.
+  ///
+  /// In en, this message translates to:
+  /// **'Every bug\'s Command adds to its own role. The flag marks the bug with the most Command.'**
+  String get duelTeamAuraHelpCommander;
+
   /// No description provided for @duelTeamAuraTitle.
   ///
   /// In en, this message translates to:

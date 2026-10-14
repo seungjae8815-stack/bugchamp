@@ -6625,6 +6625,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get duelCommanderBadge => 'Leader';
+
+  @override
+  String get duelTeamAuraHelpCommander =>
+      'Every bug\'s Command adds to its own role. The flag marks the bug with the most Command.';
+
+  @override
   String get duelTeamAuraTitle => 'Team aura';
 
   @override

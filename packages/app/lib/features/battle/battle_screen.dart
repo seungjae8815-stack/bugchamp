@@ -2193,6 +2193,39 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   );
 
   /// 수동/자동 토글 + 큰 전투 시작 버튼.
+  /// 출정 곤충 중 **지휘관**(2026-10-14 사장님 확정) — 지휘 칸을 1점 이상 찍은 곤충 중 가장 많이 찍은 한 마리,
+  /// 같으면 결투 전투력이 높은 쪽. 아무도 안 찍었으면 null. **표시용**이다 — 지휘는 세 마리 모두 각자 역할 오라에
+  /// 더해진다(서버 `applyTeamAura`). 이 표시로 판정이 바뀌지 않는다.
+  String? _commanderId(GameData data, SaveGame save) {
+    final cfg = (data.battleConfig ?? const BattleConfig()).training;
+    final powers = ref.read(duelPowerByBugProvider);
+    String? best;
+    var bestPts = 0;
+    var bestPower = -1.0;
+    for (final id in _team.whereType<String>()) {
+      final bug = save.bugs.where((b) => b.id == id).firstOrNull;
+      final sp = bug == null ? null : data.speciesById[bug.speciesId];
+      if (bug == null || sp == null) continue;
+      final pts =
+          bugTrainOf(
+            save,
+            bug,
+            sp,
+            cfg,
+            enhance: data.enhanceConfig,
+          ).alloc[TrainSlot.command] ??
+          0;
+      if (pts <= 0) continue;
+      final power = powers[id] ?? 0;
+      if (pts > bestPts || (pts == bestPts && power > bestPower)) {
+        best = id;
+        bestPts = pts;
+        bestPower = power;
+      }
+    }
+    return best;
+  }
+
   Widget _teamSlot(GameData data, SaveGame save, String locale, int index) {
     final id = _team[index];
     final bug = id == null
@@ -2203,6 +2236,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           );
     final sp = bug == null ? null : data.species(bug.speciesId);
     final slotRole = sp?.duelRole;
+    final isCommander = bug != null && _commanderId(data, save) == bug.id;
     const slotH = 128.0;
     final card = GestureDetector(
       onTap: () => bug == null
@@ -2427,6 +2461,45 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
             // 전투 순서 배지 ①②③
             Positioned(top: -6, left: -2, child: _orderBadge(index)),
+            // 지휘관 깃발(2026-10-14) — 순서 배지(왼쪽)·역할 표식(오른쪽) 사이 위 가운데.
+            if (isCommander)
+              Positioned(
+                top: -9,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: Center(
+                    child: Container(
+                      key: ValueKey('duelCommander:$index'),
+                      padding: const EdgeInsets.fromLTRB(3, 1, 6, 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xE61B1A14),
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(color: _honey, width: 1.2),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          gameIcon(
+                            'train_command',
+                            size: 15,
+                            fallback: Icons.flag_rounded,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            AppLocalizations.of(context).duelCommanderBadge,
+                            style: const TextStyle(
+                              color: _honey,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             // 결투 팀 역할(1.0.21 D3) — 공격형·방어형·체력형 작은 표식.
             if (slotRole != null)
               Positioned(
@@ -2566,6 +2639,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
             ),
             const SizedBox(height: 10),
+            Text(
+              l.duelTeamAuraHelpCommander,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _honey, fontSize: 12, height: 1.4),
+            ),
+            const SizedBox(height: 4),
             Text(
               l.duelTeamAuraHelpCap('${(aura.capPerStat * 100).round()}%'),
               textAlign: TextAlign.center,

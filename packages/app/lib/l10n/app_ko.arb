@@ -2108,6 +2108,8 @@
   "duelRoleHp": "체력형",
   "duelRoleChip": "{role} {pct}",
   "duelTeamAura": "팀 오라: {list}",
+  "duelCommanderBadge": "지휘관",
+  "duelTeamAuraHelpCommander": "지휘는 세 마리 모두 각자 역할에 더해져요. 깃발은 지휘를 가장 많이 찍은 곤충이에요.",
   "duelTeamAuraTitle": "팀 오라",
   "duelTeamAuraNone": "팀 오라: 없음",
   "duelTeamAuraHelp": "출전한 곤충마다 팀 전체 능력치를 올려 줘요.",

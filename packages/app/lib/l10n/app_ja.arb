@@ -2032,6 +2032,8 @@
   "duelRoleHp": "体力型",
   "duelRoleChip": "{role} {pct}",
   "duelTeamAura": "チームオーラ: {list}",
+  "duelCommanderBadge": "指揮官",
+  "duelTeamAuraHelpCommander": "指揮は3匹それぞれの役割に加わります。旗は指揮を一番多く振った虫です。",
   "duelTeamAuraTitle": "チームオーラ",
   "duelTeamAuraNone": "チームオーラ: なし",
   "duelTeamAuraHelp": "出場した虫ごとにチーム全体の能力が上がります。",

@@ -6475,6 +6475,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get duelCommanderBadge => '指揮官';
+
+  @override
+  String get duelTeamAuraHelpCommander => '指揮は3匹それぞれの役割に加わります。旗は指揮を一番多く振った虫です。';
+
+  @override
   String get duelTeamAuraTitle => 'チームオーラ';
 
   @override
