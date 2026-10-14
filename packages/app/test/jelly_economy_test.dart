@@ -258,6 +258,7 @@ void main() {
     final run = RunConfig.fromJson(_readJson('assets/data/run_config.json'));
     final battle = BattleConfig.fromJson(_readJson('assets/data/battle.json'));
     final forge = ForgeConfig.fromJson(_readJson('assets/data/forge.json'));
+    final fairy = FairyConfig.fromJson(_readJson('assets/data/fairies.json'));
 
     final flat = <String, int>{
       'accelerateJelly': pet.accelerateJelly,
@@ -272,6 +273,11 @@ void main() {
       'missionSwapJelly': missions.swapJelly,
       'polishJelly': forge.polishCost(0, pickKind: false).jelly,
       'polishKindJelly': forge.polishCost(0, pickKind: true).jelly,
+      // 1.0.20~21 새 소비처(2026-10-14 점검 — 목록에 없으면 계수를 바꿔도 안 걸린다).
+      'forgeRerollJelly': forge.rerollJelly,
+      'potionJelly': pet.individualGrade.potionJelly,
+      'passiveRerollJelly': pet.passiveV2.rerollJelly,
+      'fairyRerollJelly': fairy.rerollJelly,
     };
     flat.forEach((k, v) {
       expect(v % 5, 0, reason: '$k = $v — 젤리 소비는 5 단위여야 한다');
