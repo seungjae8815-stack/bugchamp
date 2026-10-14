@@ -124,7 +124,8 @@ void main() {
     for (final s in Specialty.values) {
       expect(cfg.presets.containsKey(cfg.presetIdFor(s)), isTrue);
     }
-    expect(cfg.presetIdFor(Specialty.toss), 'heavy');
+    // 던지기 ★ 는 2026-10-14 균형형으로(체급형은 다른 주특기 상대로 41~43% — 사장님 확정).
+    expect(cfg.presetIdFor(Specialty.toss), 'balanced');
   });
 
   test('다시 찍기 대기 = 30분 + 포인트당 3분, 최대 8시간', () {

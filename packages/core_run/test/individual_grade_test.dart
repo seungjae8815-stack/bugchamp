@@ -272,7 +272,7 @@ void main() {
       final m = j as Map<String, dynamic>;
       expect(m.containsKey('gradeScale'), isTrue, reason: '${m['id']} 종 배율 없음');
       final sp = Species.fromJson(m);
-      expect(sp.gradeScale, inInclusiveRange(0.5, 4.0), reason: sp.id);
+      expect(sp.gradeScale, inInclusiveRange(0.5, 5.0), reason: sp.id); // 외뿔장수풍뎅이 4.6(2026-10-14 사장님 확정 — 가장 작은 종)
     }
     for (final grade in Grade.values) {
       expect(g.essenceRarity.containsKey(grade), isTrue, reason: grade.key);

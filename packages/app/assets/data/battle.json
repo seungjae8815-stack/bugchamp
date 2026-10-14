@@ -247,7 +247,7 @@
    "tank": { "hp": 30, "defense": 30, "recovery": 20, "evade": 20, "mass": 2 },
    "heavy": { "mass": 10, "hp": 30, "defense": 30, "attack": 30, "push": 2 }
   },
-  "presetFor": { "strike": "balanced", "grip": "balanced", "toss": "heavy" },
+  "presetFor": { "strike": "balanced", "grip": "balanced", "toss": "balanced" },
   "massSpeedPenalty": 0.005,
   "techBySpecialty": { "strike": 0.04, "grip": 0.03, "toss": 0.03 },
   "_slotModsComment": "칸 상한 보정 = v1 보정(temperamentMods 등) × 3 (설계 예: 우직 방어 +12 · 회피 −6). 새 칸(체력·밀어내기 힘·체급·기술·근성)은 보정 없음 — 시뮬로 맞출 때 넣는다. 지휘 칸(1.0.21 D3)은 기질만 ±2(우직·신중 +2 · 호전적·변덕 −2 · 교활 0 — 사장님 확정, 오라 크기에 직접 곱하지 않는다).",
