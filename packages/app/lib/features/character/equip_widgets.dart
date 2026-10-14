@@ -155,15 +155,17 @@ class ItemOptionList extends StatelessWidget {
     final ranges = {for (final r in config.optionPool) r.kind: r};
     for (var i = 0; i < item.options.length; i++) {
       final o = item.options[i];
+      // 화면 값 = **효과(%)** — 저장 눈금 × `effectScale`(치명 피해 0.1, 2026-10-14 곱 전환). 최대치도 같은 눈금.
+      final sc = config.effectScaleOf(o.kind);
       rows.add(
         _row(
           optionLabel(l, o.kind),
-          o.value,
+          o.value * sc,
           // 그 등급의 최대치를 옆에 보여 준다 — 최대가 얼마인지 모르면
           // "잘 뽑았다"를 알 수 없어 계속 돌릴 이유가 안 보인다(2026-09-14).
           max: ranges[o.kind] == null
               ? null
-              : ranges[o.kind]!.maxAt(item.tier) * maxMult,
+              : ranges[o.kind]!.maxAt(item.tier) * maxMult * sc,
           perfectLabel: l.optPerfect,
           // 옵션마다 따로 굴린다 — 통째로 굴리면 마음에 드는 한 줄까지
           // 같이 날아가서 원하는 조합을 못 맞춘다(2026-09-09 확정).

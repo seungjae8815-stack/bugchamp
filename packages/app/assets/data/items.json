@@ -181,6 +181,8 @@
   },
   {
    "kind": "critDamage",
+   "_effectScaleComment": "치명 피해는 곱(2026-10-14 사장님 확정): 효과 = 강화 치명 피해 × (1 + 옵션 합 × effectScale / 100). 저장 값·범위(min·maxByTier)·서버 자르기는 옛 눈금 그대로 두고 효과와 화면만 이 배율로 읽는다(범위를 줄이면 trimItemOptions 가 기존 장비를 새 최대치로 잘라 모두 최대가 된다). 호박 최대 70 → 화면 +7%.",
+   "effectScale": 0.1,
    "min": 1,
    "maxByTier": [
     2.9,

@@ -22,9 +22,13 @@ Map<ItemOptionKind, double> equipmentBonus(
     // 옛 세이브의 장비도 옵션만 읽히므로 그대로 동작한다(값만 작아진다).
     // 환생 별(2026-10-10)은 저장 값이 아니라 **효과 배율**로 붙는다 — 옵션 값은 그대로 등급 최대 이하라
     // 상한 자르기·필터 표시를 안 건드린다. 회피는 별 효과에서 빠진다(`starExcludeKinds`).
+    // 효과 배율(`effectScale`, 치명 피해 0.1 — 2026-10-14 곱 전환)도 여기서 — 결과 맵은 **효과(%)** 단위다.
     for (final o in item.options) {
       out[o.kind] =
-          (out[o.kind] ?? 0) + o.value * config.starMult(item.stars, o.kind);
+          (out[o.kind] ?? 0) +
+          o.value *
+              config.starMult(item.stars, o.kind) *
+              config.effectScaleOf(o.kind);
     }
   }
   return out;
@@ -80,7 +84,9 @@ CharacterStats applyEquipment(
     critChance:
         (base.critChance + math.min(add(ItemOptionKind.critChance), critBudget))
             .clamp(0.0, 1.0),
-    critDamage: base.critDamage + add(ItemOptionKind.critDamage),
+    // 치명 피해는 **곱**(2026-10-14 사장님 확정 — 펫 패시브·도감과 같은 이유). 가산이면 강화로 2.0 → 18.5 까지
+    // 자라는 기본값에 묽어졌다. 옵션 눈금은 효과 배율(items.json `effectScale` 0.1)로 이미 줄여 [equipmentBonus] 가 넘긴다.
+    critDamage: base.critDamage * m(ItemOptionKind.critDamage),
     bossDamage: base.bossDamage * m(ItemOptionKind.bossDamage),
     maxHp: base.maxHp * m(ItemOptionKind.maxHp),
     defense: base.defense * m(ItemOptionKind.defense),

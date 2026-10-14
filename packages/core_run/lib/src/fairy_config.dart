@@ -511,8 +511,9 @@ class FairyDexMilestone {
 /// **적응형 위협 기준 밖**이다(스킬·종 패시브와 같은 층, §2.8) — 기준에 넣으면 요정을 데려오는 순간
 /// 몬스터도 세져 요정을 고르는 의미가 사라진다.
 ///
-/// - 공격·체력·공격속도는 **비율**, 치명 피해는 **가산**, 보스 피해는 **곱**(종 패시브와 같은 이유 — 가산이면
-///   강화로 11배까지 자라는 보스 피해에 묽어진다).
+/// - 공격·체력·공격속도는 **비율**, 치명 피해·보스 피해는 **곱**(종 패시브와 같은 이유 — 가산이면 강화로 자라는
+///   기본값(치명 피해 2.0 → 18.5 · 보스 피해 11배)에 묽어진다. 치명 피해 곱 전환 2026-10-14 사장님 확정 —
+///   비중은 fairies.json 에서 같이 낮췄다).
 /// - 방어는 **"받는 피해 −v"** 로 읽히게 바꾼다([fairyDefenseFor]). 방어력에 절대값을 더하면 초반엔 과하고
 ///   후반엔 무의미해져, 같은 "+8%" 가 단계마다 다른 뜻이 된다.
 /// - 곤충 몫(`petShare`)은 능력치가 아니라 곤충 피해 배율이다 — [fairyPetMult].
@@ -524,7 +525,7 @@ CharacterStats applyFairyStats(CharacterStats s, Map<String, double> bonus) {
     attack: s.attack * (1 + v('attack')),
     maxHp: s.maxHp * (1 + v('hp')),
     attackSpeed: s.attackSpeed * (1 + v('attackSpeed')),
-    critDamage: s.critDamage + v('critDamage'),
+    critDamage: s.critDamage * (1 + v('critDamage')),
     bossDamage: s.bossDamage * (1 + v('bossDamage')),
     defense: fairyDefenseFor(s.defense, v('defense')),
     rewardMultiplier: s.rewardMultiplier,

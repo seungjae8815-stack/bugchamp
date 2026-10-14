@@ -24,7 +24,7 @@ void main() {
     expect(identical(applyFairyStats(base, const {}), base), isTrue);
   });
 
-  test('공격·체력·공속은 비율 · 치명 피해는 가산 · 보스 피해는 곱', () {
+  test('공격·체력·공속은 비율 · 치명 피해·보스 피해는 곱', () {
     final s = applyFairyStats(base, const {
       'attack': 0.1,
       'hp': 0.2,
@@ -35,7 +35,8 @@ void main() {
     expect(s.attack, closeTo(110, 1e-9));
     expect(s.maxHp, closeTo(1200, 1e-9));
     expect(s.attackSpeed, closeTo(1.05, 1e-9));
-    expect(s.critDamage, closeTo(2.3, 1e-9));
+    // 치명 피해는 곱(2026-10-14 사장님 확정) — 2 × 1.3. 가산(2.3)이면 강화로 자란 기본값에 묽어진다.
+    expect(s.critDamage, closeTo(2.6, 1e-9));
     expect(s.bossDamage, closeTo(3.3, 1e-9));
     // 요정이 건드리지 않는 능력치는 그대로.
     expect(s.critChance, base.critChance);

@@ -98,10 +98,22 @@ class ItemOptionRange {
     required this.min,
     required this.max,
     this.maxByTier = const [],
+    this.effectScale = 1.0,
   });
 
   final ItemOptionKind kind;
   final double min;
+
+  /// 저장된 옵션 값(굴림 눈금) → **실제 효과(%)** 배율. 기본 1 = 눈금 그대로.
+  ///
+  /// 치명 피해(2026-10-14 사장님 확정 — 가산 → 곱)는 0.1 이다: 강화 치명 피해가 2.0 → 18.5 까지 자라
+  /// 가산이면 후반에 묽어지고, 곱으로 같은 숫자를 쓰면 ×2.3 이 된다. 범위(`maxByTier`)를 줄이면
+  /// [trimItemOptions] 가 기존 장비 값을 새 최대치로 잘라 **모두 최대**가 되므로, 저장 값·범위·서버 자르기는
+  /// 그대로 두고 효과와 화면만 이 배율로 읽는다(환생 별 [ItemConfig.starMult] 와 같은 방식).
+  final double effectScale;
+
+  /// 저장 값 [raw] 의 화면·효과 값(%).
+  double effectOf(double raw) => raw * effectScale;
 
   /// 등급별 최대치가 없을 때 쓰는 값(구버전 데이터 호환).
   final double max;
@@ -133,6 +145,7 @@ class ItemOptionRange {
           for (final v in (json['maxByTier'] as List? ?? const []))
             (v as num).toDouble(),
         ],
+        effectScale: (json['effectScale'] as num?)?.toDouble() ?? 1.0,
       );
 }
 
@@ -216,6 +229,14 @@ class ItemConfig {
 
   /// 별 효과에서 빼는 옵션(회피 — 예산 상한이 있고 호박 4 이상이면 극한이 무너진다, items.json 경고).
   final Set<ItemOptionKind> starExcludeKinds;
+
+  /// 옵션 [kind] 의 저장 값 → 효과(%) 배율([ItemOptionRange.effectScale]). 풀에 없으면 1.
+  double effectScaleOf(ItemOptionKind kind) {
+    for (final r in optionPool) {
+      if (r.kind == kind) return r.effectScale;
+    }
+    return 1.0;
+  }
 
   /// 별 [stars] 개 장비에서 옵션 [kind] 의 효과 배율.
   double starMult(int stars, ItemOptionKind kind) =>

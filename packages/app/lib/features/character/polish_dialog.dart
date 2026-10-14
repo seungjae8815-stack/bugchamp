@@ -106,9 +106,12 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
 
     Widget line(String tag, ItemOption o, {bool hi = false}) {
       final mm = forge.transcendMaxMult(save?.forgeTranscend ?? 0);
+      // 화면 값 = 효과(%) — 저장 눈금 × `effectScale`(치명 피해 0.1, 2026-10-14 곱 전환).
+      final sc = items.effectScaleOf(o.kind);
+      final shown = o.value * sc;
       final max = ranges[o.kind] == null
           ? null
-          : ranges[o.kind]!.maxAt(item.tier) * mm;
+          : ranges[o.kind]!.maxAt(item.tier) * mm * sc;
       return Container(
         margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -140,7 +143,7 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
               ),
             ),
             Text(
-              '+${o.value.toStringAsFixed(o.value >= 10 ? 0 : 1)}%',
+              '+${shown.toStringAsFixed(shown >= 10 ? 0 : 1)}%',
               style: TextStyle(
                 color: hi ? kHoney : const Color(0xFFC5E1A5),
                 fontSize: 13,

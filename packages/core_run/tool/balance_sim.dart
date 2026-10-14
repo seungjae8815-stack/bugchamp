@@ -1444,7 +1444,8 @@ class _Player {
           (r.min + (r.maxAt(top) - r.min) * roll) *
           (e.value as num).toDouble() *
           _gearScale *
-          items.starMult(_gearStars, kind);
+          items.starMult(_gearStars, kind) *
+          r.effectScale; // 저장 눈금 → 효과(%) — 앱 `equipmentBonus` 와 같은 단위
     }
     gear = out;
   }

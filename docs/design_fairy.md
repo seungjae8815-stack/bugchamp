@@ -166,7 +166,7 @@
 1. ✅ 모델·설정·규칙 함수 + 단위테스트(2026-09-30 — `core_models/src/fairy.dart` · `core_run/src/fairy_config.dart` · `core_save/src/fairy_progress.dart` · `app/assets/data/fairies.json` · 테스트 41개 · 같은 날 부가 능력치·판타지 이름 · 10-01 개체값으로 개편)
 2. 저장·서버 호환(`save-compat-reviewer`)
 3. ✅ 방치 런 반영 + 날아다니는 표시 + 스킬 발동(2026-10-01)
-   - 능력치: core_run `applyFairyStats` — 공격·체력·공속 비율 · 치명 피해 가산 · 보스 피해 곱 · **방어 = 받는 피해 −v**(`fairyDefenseFor`, 어느 방어력에서도 정확히 −v) · 곤충 몫 = 곤충 피해 배율(`fairyPetMult`).
+   - 능력치: core_run `applyFairyStats` — 공격·체력·공속 비율 · 치명 피해 곱(2026-10-14 가산 → 곱, 비중 ÷10) · 보스 피해 곱 · **방어 = 받는 피해 −v**(`fairyDefenseFor`, 어느 방어력에서도 정확히 −v) · 곤충 몫 = 곤충 피해 배율(`fairyPetMult`).
      `_stats()` 에서 스킬 패시브 다음·도감 앞(기준 밖). 홈 전투력(`permanentStatsOf`)에는 넣지 않았다 — 장비·스킬도 빠져 있어 셋을 함께 정한다.
    - 스킬: 늘 자동(`fairySkillShouldCast` — 회복은 체력 60% 아래 · 보스 일격은 보스전만 · 버티기는 쓰러지는 순간). 쿨·지속은 화면 세션에만(스킬 바와 같은 이유).
    - 표시: 캐릭터 머리 오른쪽 위 · 날갯짓 `_1`/`_2` 번갈아 · 시전하면 `_cast` + 앞으로 살짝 · 둥실 · 등급 빛. 그림이 없으면 등급 빛 속 🧚.

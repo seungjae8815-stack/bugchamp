@@ -201,7 +201,9 @@ PowerParts ceilingParts(
     final kind = ItemOptionKind.fromKey(k);
     final range = data.items.optionPool.firstWhere((r) => r.kind == kind);
     final v = range.min + (range.maxAt(tierIdx) - range.min) * roll;
-    gear[kind] = (gear[kind] ?? 0) + v * (n as num).toDouble();
+    // 저장 눈금 → 효과(%)(`effectScale`, 치명 피해 0.1) — 앱 `equipmentBonus` 와 같은 단위.
+    gear[kind] =
+        (gear[kind] ?? 0) + v * range.effectScale * (n as num).toDouble();
   });
 
   return (

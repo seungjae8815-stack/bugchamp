@@ -1720,12 +1720,15 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
     final r = items.optionPool.where((x) => x.kind == k).firstOrNull;
     if (r == null) return '';
     final t = rangeTier();
-    final hi = r.maxAt(t) * (forge?.transcendMaxMult(save.forgeTranscend) ?? 1);
+    // 화면 값 = 효과(%) — 저장 눈금 × `effectScale`(치명 피해 0.1, 2026-10-14 곱 전환).
+    final hi =
+        r.effectOf(r.maxAt(t)) *
+        (forge?.transcendMaxMult(save.forgeTranscend) ?? 1);
+    final lo = r.effectOf(r.min);
     // 10 미만 소수 최대치(회피 3.5 등)는 한 자리까지 — 반올림하면 실제보다 크게 읽힌다.
-    final hiText = hi.toStringAsFixed(
-      hi >= 10 || hi == hi.roundToDouble() ? 0 : 1,
-    );
-    return '${r.min.toStringAsFixed(0)}~$hiText%';
+    String pct(double v) =>
+        v.toStringAsFixed(v >= 10 || v == v.roundToDouble() ? 0 : 1);
+    return '${pct(lo)}~${pct(hi)}%';
   }
 
   await showGameDialog<void>(

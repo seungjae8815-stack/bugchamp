@@ -106,7 +106,7 @@
         "ja": "雷の妖精"
       },
       "stats": {
-        "critDamage": 4.0
+        "critDamage": 0.4
       },
       "skill": {
         "effect": "critWindow",
@@ -253,13 +253,14 @@
     "mythic": 500
   },
   "_subComment": "부가 능력치: 요정마다 하나(부화할 때 굴린다). subWeight 의 키가 나올 수 있는 능력치 전부 — 기본 능력치와 같은 것이 나오면 두 겹. 도감은 종류×등급과 종류×부가 두 축.",
+  "_critDamageComment": "치명 피해는 곱(2026-10-14 사장님 확정): 효과 = 강화 치명 피해 × (1 + 값). 가산이던 시절 비중(볼테아 4 · 부가 1.5)을 강화 치명 피해 10(중반)에서 같은 효과가 되게 ÷10 — 볼테아 0.4 · 부가 0.15. 측정(balance_sim --tiers=4 --fairy-kind=voltea --fairy-sub=hp): 보스 관문 +31·27·27·29% → +31·27·26·29% · 70 → 69일. 후반(강화 치명 피해 15~18)에는 예전보다 1.5배쯤 세다(묽어지지 않게).",
   "subRatio": 0.5,
   "subWeight": {
     "attack": 1.0,
     "hp": 1.0,
     "defense": 1.0,
     "attackSpeed": 0.5,
-    "critDamage": 1.5,
+    "critDamage": 0.15,
     "bossDamage": 1.0,
     "petShare": 1.0
   },
