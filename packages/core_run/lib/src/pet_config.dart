@@ -53,7 +53,7 @@ class PetConfig {
     this.releaseMaterialByGrade = const {},
     this.levelBonus = 0.06,
     this.trainBaseCost = 200,
-    this.trainCostGrowth = 1.18,
+    this.trainCostGrowth = 1.20,
     this.trainJellyCost = 3,
     this.trainJellyLevels = 5,
     this.tierCaps = const [10, 20, 35, 55, 80],
@@ -559,7 +559,7 @@ class PetConfig {
           (json['disassembleJellyPerPotential'] as num?)?.toDouble() ?? 1.0,
       levelBonus: (json['levelBonus'] as num?)?.toDouble() ?? 0.06,
       trainBaseCost: (json['trainBaseCost'] as num?)?.toDouble() ?? 200,
-      trainCostGrowth: (json['trainCostGrowth'] as num?)?.toDouble() ?? 1.18,
+      trainCostGrowth: (json['trainCostGrowth'] as num?)?.toDouble() ?? 1.20,
       trainJellyCost: (json['trainJellyCost'] as num?)?.toInt() ?? 3,
       trainJellyLevels: (json['trainJellyLevels'] as num?)?.toInt() ?? 5,
       tierCaps:

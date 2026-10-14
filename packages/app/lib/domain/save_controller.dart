@@ -346,28 +346,32 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
 
     // 자가치유: 1.0.21 전에 장착해 둔 알은 내린다(2026-10-14 — 알은 장착 불가, 능력치를 숨기므로 펫 효과도 부화 뒤에).
-    final petCfg = data.petConfig;
-    if (petCfg != null && save.equippedBugIds.isNotEmpty) {
-      final eggs = {
-        for (final b in save.bugs)
-          if (effectiveStage(b.stage, b.stageSince, now, petCfg) ==
-              LifeStage.egg)
-            b.id,
-      };
-      if (save.equippedBugIds.any(eggs.contains)) {
-        save = save.copyWith(
-          equippedBugIds: save.equippedBugIds
-              .where((id) => !eggs.contains(id))
-              .toList(),
-        );
-      }
-    }
+    save = _unequipEggs(save, data, now);
 
     save = _applySeason(save, data, now);
 
     save = save.copyWith(lastSeen: now);
     await repo.save(save);
     return save;
+  }
+
+  /// 장착 칸에 **알**이 있으면 내린다 — 알은 장착할 수 없다(2026-10-14). 앱 시작([build])과
+  /// **서버 세이브 채택**([adoptServerSave]) 양쪽에서 부른다. 채택 쪽을 빼면 다른 기기·구버전이
+  /// 알을 장착한 채 올린 세이브가 다음 재시작까지 그대로 보인다(2026-10-14 점검).
+  SaveGame _unequipEggs(SaveGame save, GameData data, DateTime now) {
+    final petCfg = data.petConfig;
+    if (petCfg == null || save.equippedBugIds.isEmpty) return save;
+    final eggs = {
+      for (final b in save.bugs)
+        if (effectiveStage(b.stage, b.stageSince, now, petCfg) == LifeStage.egg)
+          b.id,
+    };
+    if (!save.equippedBugIds.any(eggs.contains)) return save;
+    return save.copyWith(
+      equippedBugIds: save.equippedBugIds
+          .where((id) => !eggs.contains(id))
+          .toList(),
+    );
   }
 
   /// 시즌 경계(주간·KST 월 09:00)를 넘겼으면 소프트리셋·보상을 적용한다.
@@ -2287,6 +2291,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // 성장 패스 오늘 몫 — 결제 직후 서버 세이브를 채택하는 경로(`_grantViaServer`)가 여기다.
       // 이 기기에서 이미 받았다면 채택본에도 오늘 키가 있어(올린 뒤 결제) 두 번 나가지 않는다.
       save = _claimGrowthDaily(save, data);
+      // 채택본에 장착된 알이 있으면 내린다(앱 시작과 같은 규칙).
+      save = _unequipEggs(save, data, now);
     }
     // 저장 횟수는 **이어 센다**(둘 중 큰 쪽) — 채택한 뒤의 저장이 이 기기의 옛 횟수보다 작으면
     // 다음 실행의 동점 판정([SaveGame.saveRev])이 거꾸로 간다.

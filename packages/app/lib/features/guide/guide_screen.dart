@@ -11,7 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../../ui/element_wheel.dart';
 import '../../ui/labels.dart';
 import '../../ui/colors.dart';
-import '../battle/training_screen.dart' show trainSlotLabel;
+import '../battle/training_screen.dart' show duelRoleLabel, trainSlotLabel;
 
 const _honey = kHoney;
 
@@ -110,9 +110,13 @@ class GuideScreen extends ConsumerWidget {
         TrainSlot.grit =>
           '${l.guideTrainGritEffect(_num(duel.clutchThresholdPerGrit), _pct(duel.clutchWakeHpPerGrit))}'
               ' · ${l.guideTrainGritPower(_pct(duel.clutchTapPowerPerGrit))}',
-        // 지휘(1.0.21 D3) — 1점 효과 + 팀 오라 규칙(역할 · 상한).
+        // 지휘(1.0.21 D3) — 1점 효과 + 팀 오라 규칙(역할→능력치 짝 · 상한). 팀 오라 창(battle_screen)과 같은 문구.
         TrainSlot.command =>
-          '${_signed(e)} · ${l.duelTeamAuraHelp} ${l.duelTeamAuraHelpCap(pct(battle.teamAura.capPerStat)).replaceAll('\n', ' · ')}',
+          '${_signed(e)} · ${l.duelTeamAuraHelp} '
+              '${[
+                for (final (r, sl) in const [(DuelRole.attack, TrainSlot.attack), (DuelRole.defense, TrainSlot.defense), (DuelRole.hp, TrainSlot.hp)]) '${duelRoleLabel(l, r)} → ${l.duelTeamAuraHelpRole(trainSlotLabel(l, sl))}',
+              ].join(' · ')} · '
+              '${l.duelTeamAuraHelpCap(pct(battle.teamAura.capPerStat)).replaceAll('\n', ' · ')}',
         _ => _signed(e),
       };
     }
