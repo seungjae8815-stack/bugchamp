@@ -871,8 +871,7 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
               controller: _stoneScroll,
               padding: const EdgeInsets.only(right: 6),
               children: [
-                _stoneRow(
-                  l,
+                _fairyStoneRow(
                   selected: _stone == null,
                   icon: const Icon(
                     Icons.block_rounded,
@@ -885,8 +884,7 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
                   onTap: () => setState(() => _stone = null),
                 ),
                 for (final sub in cfg.subWeight.keys)
-                  _stoneRow(
-                    l,
+                  _fairyStoneRow(
                     selected: _stone == sub,
                     icon: fairyStoneImage(sub, size: 30),
                     name: l.fairyStoneName(fairyStatLabel(l, sub)),
@@ -941,67 +939,6 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
         ),
       ),
       child: Center(child: child),
-    ),
-  );
-
-  Widget _stoneRow(
-    AppLocalizations l, {
-    required bool selected,
-    required Widget icon,
-    required String name,
-    required String effect,
-    required Widget trailing,
-    required VoidCallback onTap,
-  }) => Padding(
-    padding: const EdgeInsets.only(bottom: 5),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? _honey.withValues(alpha: 0.18)
-              : const Color(0x22000000),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? _honey : const Color(0x22FFFFFF),
-            width: selected ? 1.6 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            SizedBox(width: 32, height: 32, child: Center(child: icon)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    effect,
-                    style: const TextStyle(
-                      color: Colors.white60,
-                      fontSize: 10.5,
-                      height: 1.25,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            trailing,
-          ],
-        ),
-      ),
     ),
   );
 
@@ -1445,58 +1382,74 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
     FairyConfig cfg,
   ) {
     final l = AppLocalizations.of(context);
-    return showDialog<String>(
-      context: context,
-      barrierColor: const Color(0xB3000000),
-      builder: (ctx) => fairyButtons(
-        AlertDialog(
-          title: Text(l.fairyRerollStoneTitle),
-          content: SizedBox(
-            width: double.maxFinite,
+    // 게임 창 모양(showGameDialog) · 둥지 속성석과 같은 줄 모양(2026-10-14 사장님 — 기본 창이라 어색했다).
+    return showGameDialog<String>(
+      context,
+      title: l.fairyRerollStoneTitle,
+      iconWidget: fairyStoneImage(owned.first, size: 36),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l.fairyRerollStoneHint,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 280),
             child: ListView(
               shrinkWrap: true,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    l.fairyRerollStoneHint,
-                    style: const TextStyle(
-                      color: Color(0xB3FFFFFF),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  dense: true,
-                  leading: const Icon(
+                _fairyStoneRow(
+                  selected: false,
+                  icon: const Icon(
                     Icons.block_rounded,
+                    size: 22,
                     color: Colors.white38,
                   ),
-                  title: Text(l.fairyStoneNone),
-                  onTap: () => Navigator.of(ctx).pop(''),
+                  name: l.fairyStoneNone,
+                  effect: '',
+                  trailing: const SizedBox.shrink(),
+                  onTap: () =>
+                      Navigator.of(context, rootNavigator: true).pop(''),
                 ),
                 for (final sub in owned)
-                  ListTile(
-                    dense: true,
-                    leading: fairyStoneImage(sub, size: 28),
-                    title: Text(l.fairyStoneName(fairyStatLabel(l, sub))),
-                    subtitle: Text(
-                      l.fairyStoneEffect(
-                        fairyStatLabel(l, sub),
-                        (cfg.stoneChance * 100).round().toString(),
-                      ),
+                  _fairyStoneRow(
+                    selected: false,
+                    icon: fairyStoneImage(sub, size: 30),
+                    name: l.fairyStoneName(fairyStatLabel(l, sub)),
+                    effect: l.fairyRerollStoneEffect(
+                      fairyStatLabel(l, sub),
+                      (cfg.stoneChance * 100).round().toString(),
                     ),
                     trailing: Text(
                       '×${fs.stones[sub]}',
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                    onTap: () => Navigator.of(ctx).pop(sub),
+                    onTap: () =>
+                        Navigator.of(context, rootNavigator: true).pop(sub),
                   ),
               ],
             ),
           ),
-        ),
+        ],
       ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.of(context, rootNavigator: true).pop(),
+          primary: false,
+        ),
+      ],
     );
   }
 
@@ -1527,6 +1480,67 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
     Navigator.of(context).pop();
   }
 }
+
+/// 속성석 한 줄(그림 · 이름 · 효과 · 오른쪽 개수/가격) — 둥지와 재굴림 창이 같은 모양을 쓴다.
+Widget _fairyStoneRow({
+  required bool selected,
+  required Widget icon,
+  required String name,
+  required String effect,
+  required Widget trailing,
+  required VoidCallback onTap,
+}) => Padding(
+  padding: const EdgeInsets.only(bottom: 5),
+  child: InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      decoration: BoxDecoration(
+        color: selected
+            ? _honey.withValues(alpha: 0.18)
+            : const Color(0x22000000),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: selected ? _honey : const Color(0x22FFFFFF),
+          width: selected ? 1.6 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(width: 32, height: 32, child: Center(child: icon)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  effect,
+                  style: const TextStyle(
+                    color: Colors.white60,
+                    fontSize: 10.5,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          trailing,
+        ],
+      ),
+    ),
+  ),
+);
 
 /// 오늘 남은 재굴림 횟수(KST 날짜 — 서버와 같은 기준. 실제 판정은 서버가 한다).
 int _rerollLeft(FairyState fs, FairyConfig cfg) {

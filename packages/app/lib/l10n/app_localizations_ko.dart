@@ -5778,6 +5778,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String fairyRerollStoneEffect(String stat, String p) {
+    return '다시 굴린 부가 능력치가 $p% 확률로 \'$stat\'(으)로 나와요';
+  }
+
+  @override
   String get fairyStoneBuyTitle => '속성석 구입';
 
   @override
@@ -6470,11 +6475,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get duelTeamAuraTitle => '팀 오라';
+
+  @override
   String get duelTeamAuraNone => '팀 오라: 없음';
 
   @override
   String duelTeamAuraHelp(String cap) {
-    return '출전한 곤충마다 팀 전체에 역할 능력치를 올려 줘요(공격형 = 공격 · 방어형 = 방어 · 체력형 = 체력). 능력치마다 최대 +$cap.';
+    return '출전한 곤충마다 팀 전체 능력치를 올려 줘요.\n공격형 → 공격 · 방어형 → 방어 · 체력형 → 체력\n능력치마다 최대 +$cap\n훈련소 \'지휘\' 칸을 찍으면 더 커져요.';
   }
 
   @override

@@ -9947,6 +9947,12 @@ abstract class AppLocalizations {
   /// **'The hatched fairy\'s sub-stat becomes {stat} with {p}% chance'**
   String fairyStoneEffect(String stat, String p);
 
+  /// No description provided for @fairyRerollStoneEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'The rerolled sub-stat becomes {stat} with {p}% chance'**
+  String fairyRerollStoneEffect(String stat, String p);
+
   /// No description provided for @fairyStoneBuyTitle.
   ///
   /// In en, this message translates to:
@@ -11069,6 +11075,12 @@ abstract class AppLocalizations {
   /// **'Team aura: {list}'**
   String duelTeamAura(String list);
 
+  /// No description provided for @duelTeamAuraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Team aura'**
+  String get duelTeamAuraTitle;
+
   /// No description provided for @duelTeamAuraNone.
   ///
   /// In en, this message translates to:
@@ -11078,7 +11090,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelTeamAuraHelp.
   ///
   /// In en, this message translates to:
-  /// **'Each fielded bug gives the whole team its role stat (attacker = ATK · defender = DEF · tank = HP). Up to +{cap} per stat.'**
+  /// **'Each bug you field boosts the whole team.\nAttacker → ATK · Defender → DEF · Tank → HP\nUp to +{cap} per stat\nThe Command slot in Training makes it bigger.'**
   String duelTeamAuraHelp(String cap);
 
   /// No description provided for @trainWeight.

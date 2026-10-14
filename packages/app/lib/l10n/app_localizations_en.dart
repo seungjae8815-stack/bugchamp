@@ -5902,6 +5902,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String fairyRerollStoneEffect(String stat, String p) {
+    return 'The rerolled sub-stat becomes $stat with $p% chance';
+  }
+
+  @override
   String get fairyStoneBuyTitle => 'Buy element stone';
 
   @override
@@ -6610,11 +6615,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get duelTeamAuraTitle => 'Team aura';
+
+  @override
   String get duelTeamAuraNone => 'Team aura: none';
 
   @override
   String duelTeamAuraHelp(String cap) {
-    return 'Each fielded bug gives the whole team its role stat (attacker = ATK · defender = DEF · tank = HP). Up to +$cap per stat.';
+    return 'Each bug you field boosts the whole team.\nAttacker → ATK · Defender → DEF · Tank → HP\nUp to +$cap per stat\nThe Command slot in Training makes it bigger.';
   }
 
   @override

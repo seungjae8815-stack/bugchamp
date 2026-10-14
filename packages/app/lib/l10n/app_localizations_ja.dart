@@ -5769,6 +5769,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String fairyRerollStoneEffect(String stat, String p) {
+    return '振り直したサブ能力が$p%の確率で「$stat」になります';
+  }
+
+  @override
   String get fairyStoneBuyTitle => '属性石の購入';
 
   @override
@@ -6460,11 +6465,14 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get duelTeamAuraTitle => 'チームオーラ';
+
+  @override
   String get duelTeamAuraNone => 'チームオーラ: なし';
 
   @override
   String duelTeamAuraHelp(String cap) {
-    return '出場した虫ごとにチーム全体の役割能力値が上がります(攻撃型 = 攻撃 · 防御型 = 防御 · 体力型 = 体力)。能力値ごとに最大 +$cap。';
+    return '出場した虫ごとにチーム全体の能力が上がります。\n攻撃型 → 攻撃 · 防御型 → 防御 · 体力型 → 体力\n能力ごとに最大 +$cap\n訓練所の「指揮」枠で大きくなります。';
   }
 
   @override

@@ -304,6 +304,7 @@ class StorageScreen extends ConsumerWidget {
                   badgeColor: min == Grade.common
                       ? const Color(0x66FFFFFF)
                       : gradeColor(min),
+                  asset: 'assets/images/ui/dlg/filter.webp',
                   fallbackIcon: Icons.filter_alt_outlined,
                   onTap: () => _showBugFilter(context, ref, l),
                 ),

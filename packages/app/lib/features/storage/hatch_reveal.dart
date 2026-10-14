@@ -20,8 +20,10 @@ const _greatAvg = 85;
 Future<void> showHatchReveal(
   BuildContext context,
   WidgetRef ref,
-  List<String> bugIds,
-) async {
+  List<String> bugIds, {
+  // 개발자 모드 미리보기 전용 — 9칸 값을 이것으로 바꿔 보여 준다(세이브와 무관).
+  List<int>? previewRolls,
+}) async {
   for (var i = 0; i < bugIds.length; i++) {
     if (!context.mounted) return;
     final save = ref.read(saveControllerProvider).value;
@@ -39,6 +41,7 @@ Future<void> showHatchReveal(
         bug: bug,
         species: sp,
         skin: bugView(ref.read(skinOfProvider), bug),
+        previewRolls: previewRolls,
       ),
       actions: [
         if (more > 0)
@@ -60,10 +63,16 @@ Future<void> showHatchReveal(
 }
 
 class _RevealBody extends StatefulWidget {
-  const _RevealBody({required this.bug, required this.species, this.skin});
+  const _RevealBody({
+    required this.bug,
+    required this.species,
+    this.skin,
+    this.previewRolls,
+  });
   final IndividualBug bug;
   final Species species;
   final SkinView? skin;
+  final List<int>? previewRolls;
 
   @override
   State<_RevealBody> createState() => _RevealBodyState();
@@ -82,6 +91,21 @@ class _RevealBodyState extends State<_RevealBody>
   List<(String, int)> _rows(AppLocalizations l) {
     final r = widget.bug.statRolls;
     int at(StatRoll s) => s.index < r.length ? r[s.index] : 50;
+    final p = widget.previewRolls;
+    if (p != null && p.length >= 9) {
+      final names = [
+        l.igStatHp,
+        l.igStatAtk,
+        l.igStatDef,
+        l.igStatSpd,
+        l.igStatSize,
+        l.igStatCrit,
+        l.igStatEvade,
+        l.igStatRecovery,
+        l.igStatPush,
+      ];
+      return [for (var i = 0; i < 9; i++) (names[i], p[i])];
+    }
     return [
       (l.igStatHp, at(StatRoll.hp)),
       (l.igStatAtk, at(StatRoll.atk)),

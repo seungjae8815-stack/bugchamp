@@ -59,6 +59,7 @@ import '../character/item_gallery.dart';
 import 'monster_gallery.dart';
 import '../battle/duel_capture_screen.dart';
 import '../storage/skin_gallery.dart';
+import '../storage/hatch_reveal.dart';
 import '../event/event_screen.dart';
 import '../roadmap/roadmap_screen.dart';
 import '../notice/notice_screen.dart';
@@ -7893,6 +7894,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return '참가권 ${r.data?['tickets']}/${r.data?['max']}';
   }
 
+  /// 개발자 모드 — 부화 공개 연출 미리보기. 알이 아닌 곤충 [n] 마리로 띄운다(없으면 안내).
+  void _devHatchReveal(int n, {bool great = false}) {
+    Navigator.pop(context);
+    final save = ref.read(saveControllerProvider).value;
+    final ids = [
+      for (final b in save?.bugs ?? const <IndividualBug>[])
+        if (b.stage != LifeStage.egg) b.id,
+    ].take(n).toList();
+    if (ids.isEmpty) {
+      showCenterToast(context, '곤충이 없어요 — 채집함 채우기 먼저');
+      return;
+    }
+    unawaited(
+      showHatchReveal(
+        context,
+        ref,
+        ids,
+        previewRolls: great ? const [92, 88, 95, 81, 90, 86, 97, 84, 89] : null,
+      ),
+    );
+  }
+
   void _showDevTools(AppLocalizations l) {
     final stageCtrl = TextEditingController();
     void toast(String m) => showCenterToast(context, m);
@@ -8071,6 +8094,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         await ctrl.devGradeKit();
                         toast('정수·물약 넣음');
                       }),
+                      // 부화 공개 연출 미리보기(2026-10-14) — 가진 곤충으로 연출만 띄운다(세이브는 그대로).
+                      _devBtn('부화 연출 1마리', () => _devHatchReveal(1)),
+                      _devBtn(
+                        '부화 연출 평균 85↑',
+                        () => _devHatchReveal(1, great: true),
+                      ),
+                      _devBtn('부화 연출 3마리 차례로', () => _devHatchReveal(3)),
                     ]),
                     _devSection('스테이지 (현재 $_stage)', [
                       _devBtn('초기화(1)', () {

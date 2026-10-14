@@ -2456,9 +2456,26 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     return GestureDetector(
       key: const ValueKey('duelTeamAura'),
       behavior: HitTestBehavior.opaque,
-      onTap: () => showCenterToast(
+      // 네 줄짜리 설명이라 토스트(1.6초)로는 다 못 읽었다 — 닫을 때까지 보이는 작은 창(2026-10-14).
+      onTap: () => showGameDialog<void>(
         context,
-        l.duelTeamAuraHelp('${(aura.capPerStat * 100).round()}%'),
+        title: l.duelTeamAuraTitle,
+        icon: Icons.campaign_rounded,
+        content: Text(
+          l.duelTeamAuraHelp('${(aura.capPerStat * 100).round()}%'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          gameDialogButton(
+            l.actionClose,
+            () => Navigator.of(context, rootNavigator: true).pop(),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.only(top: 4),
