@@ -21,7 +21,7 @@ class IndividualGradeConfig {
     this.gachaGradeWeights = const [0, 0, 0.70, 0.27, 0.03],
     this.gachaPityMinPotential = 4,
     this.gachaLegendPity = 50,
-    this.potionDropDaily = 3,
+    this.potionDropDaily = 10,
     this.potionJelly = 10,
     this.potionDailyBuy = 10,
     this.potionEliteChance = 0.003,

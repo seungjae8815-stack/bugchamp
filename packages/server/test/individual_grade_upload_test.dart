@@ -327,16 +327,18 @@ void main() {
     });
 
     test('서버 하루 기록은 서버 소유 — 올라온 값을 믿지 않는다', () {
+      // 오늘 확률 드롭 몫을 다 쓴 상태(한도는 설정값 — 2026-10-14 3 → 10).
+      final daily = on.config.pet.individualGrade.potionDropDaily;
       final s = stored(
         [],
-      ).copyWith(potionSrvDay: dailyDateKey(t0), potionSrvDrops: 3);
+      ).copyWith(potionSrvDay: dailyDateKey(t0), potionSrvDrops: daily);
       final reset = s.toJson()
         ..remove('psD')
         ..remove('psR')
         ..['potions'] = 3;
       final out = on.mergeSave(s, reset).save!;
       expect(out.growthPotions, 0);
-      expect(out.potionSrvDrops, 3);
+      expect(out.potionSrvDrops, daily);
     });
   });
 

@@ -316,4 +316,60 @@ void main() {
       expect(kid.potential, greaterThanOrEqualTo(4));
     });
   });
+
+  group('확률 물약 하루 한도(2026-10-14) — 서버와 같은 potionDropDaily 에서 조용히 멈춘다', () {
+    final t = DateTime.utc(2026, 10, 14, 3);
+    final day = dailyDateKey(t);
+    test('한도까지 주고 그 뒤로는 0개 · 기록은 서버가 합칠 수 있는 꼴', () {
+      var s = SaveGame.initial(createdAt: t);
+      final rng = _AlwaysZero();
+      var total = 0;
+      for (var i = 0; i < cfg.potionDropDaily + 5; i++) {
+        final r = rollPotionDrop(s, cfg, rng, PotionSource.elite, now: t);
+        s = r.save;
+        total += r.got;
+      }
+      expect(total, cfg.potionDropDaily);
+      expect(s.growthPotions, cfg.potionDropDaily);
+      expect(potionDropsOn(s, day), cfg.potionDropDaily);
+      expect(
+        s.dailyClaims[kPotionDropKey],
+        '$day:${cfg.potionDropDaily.toString().padLeft(2, '0')}',
+      );
+      // 다음 서버 날짜에는 다시 받는다.
+      final next = rollPotionDrop(
+        s,
+        cfg,
+        rng,
+        PotionSource.boss,
+        now: t.add(const Duration(days: 1)),
+      );
+      expect(next.got, 1);
+    });
+    test('보스 첫 처치는 한도에 세지 않는다', () {
+      var s = SaveGame.initial(createdAt: t);
+      final rng = _AlwaysZero();
+      for (var i = 0; i < cfg.potionDropDaily; i++) {
+        s = rollPotionDrop(s, cfg, rng, PotionSource.elite, now: t).save;
+      }
+      final first = rollPotionDrop(
+        s,
+        cfg,
+        rng,
+        PotionSource.boss,
+        firstKill: true,
+        now: t,
+      );
+      expect(first.got, cfg.potionBossFirst);
+    });
+  });
+}
+
+class _AlwaysZero implements Random {
+  @override
+  double nextDouble() => 0;
+  @override
+  int nextInt(int max) => 0;
+  @override
+  bool nextBool() => false;
 }

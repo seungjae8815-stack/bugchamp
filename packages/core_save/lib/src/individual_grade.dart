@@ -184,6 +184,7 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
   PotionSource src, {
   bool firstKill = false,
   String? dayKey,
+  DateTime? now,
 }) {
   if (!cfg.enabled) return (save: s, got: 0);
   var got = 0;
@@ -210,7 +211,35 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
         got: 1,
       );
   }
+  // 확률 드롭(정예·보스 재처치)은 **서버 날짜(UTC) 하루 `potionDropDaily` 개**까지만 — 서버 업로드 검사와 같은
+  // 한도다(2026-10-14). 앱이 모르고 더 주면 서버가 1분 안에 되돌려 "물약이 사라졌다"가 됐다. 안내 없이 멈춘다
+  // (사장님 확정). 난수는 위에서 이미 썼다 — 한도에 걸려도 같은 seed 의 다른 보상 순서가 안 바뀐다.
+  final capped =
+      src == PotionSource.elite || (src == PotionSource.boss && !firstKill);
+  if (capped && got > 0 && now != null && cfg.potionDropDaily > 0) {
+    final today = dailyDateKey(now.toUtc());
+    final used = potionDropsOn(s, today);
+    if (used >= cfg.potionDropDaily) return (save: s, got: 0);
+    got = math.min(got, cfg.potionDropDaily - used);
+    s = s.copyWith(
+      dailyClaims: {
+        ...s.dailyClaims,
+        kPotionDropKey: '$today:${(used + got).toString().padLeft(2, '0')}',
+      },
+    );
+  }
   return (save: grantPotions(s, got), got: got);
+}
+
+/// 기기의 하루 확률 물약 드롭 기록 키(`dailyClaims`) — 값은 `yyyy-MM-dd:NN`(두 자리라 문자열 비교가 곧 순서다.
+/// 서버가 dailyClaims 를 합칠 때 늦은 쪽을 남긴다).
+const kPotionDropKey = 'potion:drop';
+
+/// [day] 에 기기에서 받은 확률 물약 수.
+int potionDropsOn(SaveGame s, String day) {
+  final v = s.dailyClaims[kPotionDropKey];
+  if (v == null || !v.startsWith('$day:')) return 0;
+  return int.tryParse(v.substring(day.length + 1)) ?? 0;
 }
 
 /// 롤 정리(서버 업로드 · 앱 로드 공용) — **등급 올리기를 한 적 없는 곤충(합성 단계 0)의 롤은 처음 롤**이다.

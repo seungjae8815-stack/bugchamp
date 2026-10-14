@@ -938,6 +938,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         rng ?? math.Random(),
         PotionSource.boss,
         firstKill: firstKill,
+        now: ref.read(clockProvider).now(),
       );
       next = po.save;
       lastPotions = po.got;
@@ -4283,7 +4284,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final st = rollDuelStones(next, _stoneCfg, r, DuelStoneSource.elite);
     lastDuelStones = st.got;
     // 성장물약(개체 등급, 정예 0.3%) — 결투석 **뒤에** 굴린다.
-    final po = rollPotionDrop(st.save, _gradeCfg, r, PotionSource.elite);
+    final po = rollPotionDrop(
+      st.save,
+      _gradeCfg,
+      r,
+      PotionSource.elite,
+      now: ref.read(clockProvider).now(),
+    );
     lastPotions = po.got;
     if (shards.isEmpty && st.got.isEmpty && po.got == 0) return const {};
     await _commit(po.save);
