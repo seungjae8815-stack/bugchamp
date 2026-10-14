@@ -39,6 +39,8 @@ class DuelParams {
     this.strikeFlipBase = 0.13,
     this.strikeFlipCooldown = 1.4,
     this.strikePushMult = 2.6,
+    this.strikeStaggerSeconds = 3.3,
+    this.strikeHitDamage = 3.3,
     this.gripSeconds = 1.3,
     this.gripForce = 770,
     this.gripCooldown = 3.2,
@@ -166,6 +168,17 @@ class DuelParams {
   final double strikeFlipBase;
   final double strikeFlipCooldown;
   final double strikePushMult;
+
+  /// 치기 경직(초, **치기 기술 1 당** — 실제 시간 = 이 값 × 기술[DuelBug.techOf], 기술 0 이면 옛 치기) — 치기에 맞아
+  /// 튕겨 나간 쪽은 같은 충돌에서 주특기를 못 쓰고, 그 시간 동안 주특기가 멈춘다
+  /// (2026-10-14 사장님 확정 — 치기 약함 수정). 던지기(공중에 뜸)·집기(물림)는 원래 상대의 반격 주특기를 막았는데
+  /// 치기만 못 막아, 치기가 먼저 밀쳐도 같은 충돌에서 집기가 물면서 속도를 0 으로 지워 밀치기가 사라졌다
+  /// (다 키운 곤충 집기 대 치기 71%). 0 = 옛 규칙. 기본값 = battle.json 값.
+  final double strikeStaggerSeconds;
+
+  /// 치기 한 방의 덧붙는 피해(충돌 피해 식 × 이 값 × 치기 기술) — 집기의 물기 피해·던지기의 떨어짐 피해 자리(2026-10-14).
+  /// 기술 칸이 치기에서만 뒤집기 확률 하나에 걸려 집기(무는 힘)·던지기(쿨타임)보다 가치가 낮았다.
+  final double strikeHitDamage;
 
   /// 집기: 물고 버티는 시간 · 미는 힘 · 쿨타임 · 물고 있는 동안 초당 피해(ATK 비율).
   final double gripSeconds;
@@ -389,6 +402,8 @@ class DuelParams {
       strikeFlipBase: n('strikeFlipBase', d.strikeFlipBase),
       strikeFlipCooldown: n('strikeFlipCooldown', d.strikeFlipCooldown),
       strikePushMult: n('strikePushMult', d.strikePushMult),
+      strikeStaggerSeconds: n('strikeStaggerSeconds', d.strikeStaggerSeconds),
+      strikeHitDamage: n('strikeHitDamage', d.strikeHitDamage),
       gripSeconds: n('gripSeconds', d.gripSeconds),
       gripForce: n('gripForce', d.gripForce),
       gripCooldown: n('gripCooldown', d.gripCooldown),

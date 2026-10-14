@@ -31,7 +31,34 @@ class EventDuelSpec {
     this.injuryMinRatio = 0.2,
     this.cardCaps = const {'evade': 0.24, 'crit': 0.3, 'size': 0.8},
     this.statCompress,
+    this.speciesScale = const {},
   });
+
+  /// 대회 전용 종 배율(종 id → 체력·공격·방어 배율, 없으면 1) — 2026-10-14 사장님 확정.
+  /// 종 배율(species.json gradeScale)은 3마리 결투에 맞추므로, 곤충 1마리 웨이브전에서는 종마다 도달 웨이브가
+  /// 벌어진다(치기 종이 멀리 간다). 대회에서만 이 값을 한 번 더 곱해 종별 도달 웨이브를 모은다.
+  /// 적용은 [eventDuelFight] 한 곳(서버 판정·앱 재생·시뮬 공용). 맞추는 도구: server/tool/duel_build_sim.dart --event-fit.
+  final Map<String, double> speciesScale;
+
+  /// [speciesId] 의 대회 종 배율(없으면 1).
+  double speciesScaleOf(String speciesId) => speciesScale[speciesId] ?? 1;
+
+  /// 대회 종 배율만 바꾼 사본(측정 도구용).
+  EventDuelSpec withSpeciesScale(Map<String, double> scale) => EventDuelSpec(
+    baseHp: baseHp,
+    baseAtk: baseAtk,
+    baseDef: baseDef,
+    baseSpd: baseSpd,
+    growth: growth,
+    enemySizeMm: enemySizeMm,
+    healPct: healPct,
+    maxWave: maxWave,
+    fallPenalty: fallPenalty,
+    injuryMinRatio: injuryMinRatio,
+    cardCaps: cardCaps,
+    statCompress: statCompress,
+    speciesScale: scale,
+  );
 
   /// 대회 전용 전력 압축(`DuelParams.statCompress` 를 덮어쓴다). null = 결투 값 그대로.
   /// 결투는 0.3(훈련 v2)인데 대회 적은 웨이브마다 ×1.08 로 자라는 '전력 차' 자체가 난이도라, 0.3 에서는
@@ -109,6 +136,12 @@ class EventDuelSpec {
             }
           : d.cardCaps,
       statCompress: (j['statCompress'] as num?)?.toDouble(),
+      speciesScale: j['speciesScale'] is Map
+          ? {
+              for (final e in (j['speciesScale'] as Map).entries)
+                if (e.value is num) '${e.key}': (e.value as num).toDouble(),
+            }
+          : d.speciesScale,
     );
   }
 }
@@ -394,9 +427,12 @@ EventDuelStep eventDuelFight({
   double? launch,
   List<double>? clutchScores,
 }) {
+  // 대회 전용 종 배율([EventDuelSpec.speciesScale]) — 카드보다 먼저(곤충 자체의 몫).
+  final f = spec.speciesScaleOf(bug.speciesId);
+  final me = f == 1 ? bug : bug.withTraining(hpMult: f, atkMult: f, defMult: f);
   final bout = simulateBout(
     seed: duelBoutSeed(seed ^ run.ticks, run.wave),
-    a: run.dress(bug),
+    a: run.dress(me),
     b: enemy,
     params: params,
     launchA: launch,

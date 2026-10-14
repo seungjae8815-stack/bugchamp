@@ -3,7 +3,7 @@
   "species": [
     {
       "id": "stag_dorcus",
-      "gradeScale": 2.53,
+      "gradeScale": 3.05,
       "name": {
         "ko": "애사슴벌레",
         "en": "Dorcus Stag Beetle",
@@ -32,7 +32,7 @@
     },
     {
       "id": "stag_saw",
-      "gradeScale": 2.19,
+      "gradeScale": 2.23,
       "name": {
         "ko": "톱사슴벌레",
         "en": "Saw Stag Beetle",
@@ -61,7 +61,7 @@
     },
     {
       "id": "rhino_lesser",
-      "gradeScale": 3.11,
+      "gradeScale": 3.50,
       "name": {
         "ko": "외뿔장수풍뎅이",
         "en": "Lesser Rhinoceros Beetle",
@@ -90,7 +90,7 @@
     },
     {
       "id": "mantis_jumping",
-      "gradeScale": 2.76,
+      "gradeScale": 3.06,
       "metamorphosis": "incomplete",
       "name": {
         "ko": "좀사마귀",
@@ -120,7 +120,7 @@
     },
     {
       "id": "longhorn_saw",
-      "gradeScale": 2.46,
+      "gradeScale": 2.65,
       "name": {
         "ko": "톱하늘소",
         "en": "Saw Longhorn Beetle",
@@ -149,7 +149,7 @@
     },
     {
       "id": "grasshopper_longheaded",
-      "gradeScale": 2.70,
+      "gradeScale": 2.40,
       "metamorphosis": "incomplete",
       "name": {
         "ko": "방아깨비",
@@ -180,7 +180,7 @@
     },
     {
       "id": "stag_flat",
-      "gradeScale": 1.79,
+      "gradeScale": 1.92,
       "name": {
         "ko": "넓적사슴벌레",
         "en": "Flat Stag Beetle",
@@ -209,7 +209,7 @@
     },
     {
       "id": "rhino_japanese",
-      "gradeScale": 1.74,
+      "gradeScale": 2.14,
       "name": {
         "ko": "장수풍뎅이",
         "en": "Rhinoceros Beetle",
@@ -238,7 +238,7 @@
     },
     {
       "id": "mantis_widebelly",
-      "gradeScale": 1.65,
+      "gradeScale": 1.54,
       "metamorphosis": "incomplete",
       "name": {
         "ko": "넓적배사마귀",
@@ -268,7 +268,7 @@
     },
     {
       "id": "longhorn_whitespot",
-      "gradeScale": 2.03,
+      "gradeScale": 2.55,
       "name": {
         "ko": "알락하늘소",
         "en": "White-spotted Longhorn Beetle",
@@ -297,7 +297,7 @@
     },
     {
       "id": "katydid",
-      "gradeScale": 2.54,
+      "gradeScale": 2.65,
       "metamorphosis": "incomplete",
       "name": {
         "ko": "여치",
@@ -356,7 +356,7 @@
     },
     {
       "id": "mantis_giant",
-      "gradeScale": 1.51,
+      "gradeScale": 1.52,
       "metamorphosis": "incomplete",
       "name": {
         "ko": "왕사마귀",
@@ -386,7 +386,7 @@
     },
     {
       "id": "longhorn_oak",
-      "gradeScale": 1.36,
+      "gradeScale": 1.67,
       "name": {
         "ko": "참나무하늘소",
         "en": "Oak Longhorn Beetle",
@@ -415,7 +415,7 @@
     },
     {
       "id": "chafer_flower",
-      "gradeScale": 1.71,
+      "gradeScale": 2.22,
       "name": {
         "ko": "장수꽃무지",
         "en": "Flower Chafer",
@@ -444,7 +444,7 @@
     },
     {
       "id": "stag_giant",
-      "gradeScale": 1.02,
+      "gradeScale": 1.14,
       "name": {
         "ko": "왕사슴벌레",
         "en": "Giant Stag Beetle",
@@ -473,7 +473,7 @@
     },
     {
       "id": "water_bug_giant",
-      "gradeScale": 1.04,
+      "gradeScale": 1.09,
       "metamorphosis": "incomplete",
       "name": {
         "ko": "물장군",
@@ -503,7 +503,7 @@
     },
     {
       "id": "stag_twospot",
-      "gradeScale": 1.13,
+      "gradeScale": 1.18,
       "name": {
         "ko": "두점박이사슴벌레",
         "en": "Two-spotted Stag Beetle",
@@ -532,7 +532,7 @@
     },
     {
       "id": "longhorn_relict",
-      "gradeScale": 0.77,
+      "gradeScale": 0.75,
       "name": {
         "ko": "장수하늘소",
         "en": "Relict Longhorn Beetle",
@@ -561,7 +561,7 @@
     },
     {
       "id": "hornet_giant",
-      "gradeScale": 1.23,
+      "gradeScale": 1.25,
       "name": {
         "ko": "장수말벌",
         "en": "Asian Giant Hornet",
@@ -590,6 +590,7 @@
     }
   ],
   "_metamorphosisComment": "불완전변태(2026-10-12 사장님 확정): 사마귀·메뚜기류·물장군은 번데기가 없어 단계 이름을 알 → 약충 → 탈피 중 → 성충 으로 보여 준다(규칙·시간은 같다, 문구만). 없으면 complete.",
+  "_gradeScaleComment": "종 배율 gradeScale(결투·대회 체력·공격·방어에 등급 배율과 함께 곱한다 · 속도 제외 · 전설 종 평균 1.00). 2026-10-14 다시 맞춤(사장님 확정): 예전 값은 1:1 리그전(옛 훈련 최대치)으로 맞춰 실제 결투인 3마리 승자 연속 + 팀 오라에서 방어형 3마리 61% · 체력형 3마리 43% 로 갈렸다. 새 기준 = 무작위 3마리 팀(종·기질·순서 무작위, 다 키운 전설 개체 102점 균형 배분, 오라 켬)에서 그 종이 낀 팀의 승률을 종 희귀도 목표 일반 46 · 고급 48 · 희귀 50 · 영웅 52 · 전설 54% 에 맞춤, 범위 0.5~3.5 — server/tool/duel_build_sim.dart --team-fit --min=0.5 --max=3.5(점검 --team-eval). 같은 날 치기 약함을 엔진에서 고쳤다(battle.json → duel._strikeFixComment) — 고치기 전에는 치기 종을 5.56배까지 올려야 했다. 결과: 종 출전 승률 43.4~55.5% · 역할 조합 44~54% · 1:1 리그전 37~60%. ⚠️ 외뿔장수풍뎅이(15~28mm, 가장 작다)는 상한 3.5 에 걸려 목표에 못 닿는다(출전 43% · 1:1 37% — 목표까지 4.6 이 필요).",
   "_duelRoleComment": "결투 팀 역할(1.0.21 D3, 2026-10-14 사장님 확정, docs/design_growth_1021.md §3) — attack(공격형)·defense(방어형)·hp(체력형). 출전한 곤충마다 팀 전체에 그 역할 능력치 +%(battle.json → duel.teamAura · 훈련 지휘 칸). 분류는 종 기본 능력치(체력/3·공격·방어) 비율이 가장 높은 축 — 경계의 사슴벌레·장수꽃무지는 체력형에 희귀 종을 두려고 체력형으로 옮겼다. 없거나 모르는 값이면 오라 없음(data_test 가 모든 종에 있는지 본다).",
   "_passiveComment": "종 고유 패시브(§2.1) — 그 종을 애완펫으로 장착했을 때만 붙는다. 20종이 등급 말고는 구분이 없어서 \"장수풍뎅이를 갖고 싶다\"가 아니라 \"전설을 갖고 싶다\"가 됐던 문제를 푼다. stat 은 UpgradeKind.key 이고, 오타는 data_test 의 패시브 키 유효성 검사가 잡는다. 값은 등급대로 올라간다(일반 0.06~0.08 → 전설 0.30~0.35). crit 만 확률(%p)이라 한 자릿수다. ⚠️ 패시브는 적응형 몬스터 체력 기준(§7) 밖이다 — 기준에 넣으면 어떤 종을 껴도 같아져 종 구분이 사라진다."
 }

@@ -876,10 +876,22 @@ DuelBout simulateBout({
             // 상대 방향 단위 벡터.
             final sx = s == A ? nx : -nx, sy = s == A ? ny : -ny;
             final lev = leverage(s, o);
+            var staggered = false;
             switch (s.bug.specialty) {
               case Specialty.strike:
                 if (s.strikeCd > 0) continue;
                 s.strikeCd = p.strikeFlipCooldown;
+                // 밀쳐진 쪽은 이 충돌에서 주특기를 못 쓰고 잠시 멈춘다(던지기·집기와 같다 —
+                // [DuelParams.strikeStaggerSeconds]).
+                // 치기 기술이 클수록 경직·한 방 피해가 커진다(기술 0 = 옛 치기).
+                final tech = s.bug.techOf(p);
+                final st = p.strikeStaggerSeconds * tech;
+                if (st > 0) {
+                  staggered = true;
+                  o.strikeCd = math.max(o.strikeCd, st);
+                  o.gripCd = math.max(o.gripCd, st);
+                  o.tossCd = math.max(o.tossCd, st);
+                }
                 final push =
                     impact *
                     (p.strikePushMult - 1) *
@@ -888,6 +900,20 @@ DuelBout simulateBout({
                     s.bug.pushMult;
                 o.vx += sx * push / resist(o) / guard(o);
                 o.vy += sy * push / resist(o) / guard(o);
+                // 치기 한 방 — 집기(물고 있는 동안 피해)·던지기(떨어질 때 피해)처럼 치기도 기술만큼 제 피해를 준다
+                // ([DuelParams.strikeHitDamage], 2026-10-14). 뒤집기 확률은 이 피해를 받은 뒤의 체력으로 본다.
+                if (p.strikeHitDamage > 0 && tech > 0) {
+                  hit(
+                    o,
+                    s.bug.atk *
+                        p.damageK *
+                        im *
+                        p.strikeHitDamage *
+                        tech *
+                        defFactor(o) *
+                        restrain(s, o),
+                  );
+                }
                 final chance =
                     p.strikeFlipBase *
                     lev *
@@ -952,7 +978,7 @@ DuelBout simulateBout({
                   ),
                 );
             }
-            if (winner != null || pending != null) break;
+            if (winner != null || pending != null || staggered) break;
           }
         }
       }

@@ -17,6 +17,9 @@
 //   dart run tool/duel_build_sim.dart --aura --aura-base=0.02,0.03,0.04,0.05,0.06 --aura-cap=0.2
 //       --tset=slots.command.effect=0.006                            # 오라 수치 덮어쓰기(한 줄로)
 //   dart run tool/duel_build_sim.dart --aura=2                       # 표 번호만(쉼표로 여러 개)
+//   dart run tool/duel_build_sim.dart --team-eval                    # 종 배율(gradeScale) 점검 — 3마리 경기·1:1·대회
+//   dart run tool/duel_build_sim.dart --team-fit --rounds=10 --m=20000 --vm=60000
+//       # 종 배율을 3마리 경기 "종 출전 승률"로 다시 맞춘다(결과 표를 species.json 에 손으로 옮긴다)
 //
 // 보는 것:
 //  1. 기질별 승률(완전 투자 · 같은 종 거울전) — 목표 45~55%.
@@ -140,6 +143,13 @@ Future<void> main(List<String> args) async {
       n,
       only.isEmpty ? {1, 2, 3} : only.toSet(),
     );
+    return;
+  }
+
+  if (args.any(
+    (a) => a == '--team-fit' || a == '--team-eval' || a == '--event-fit',
+  )) {
+    _teamFit(actions, cfg, species, t0, args);
     return;
   }
 
@@ -540,5 +550,509 @@ void _auraTables(
       w3 += match(build(sps, withAura: true), build(sps, withAura: false));
     }
     stdout.writeln('  오라 있는 팀 ${pct(w3 / n)}');
+  }
+}
+
+// ── 종 배율(species.json → gradeScale) 3마리 경기 맞추기(2026-10-14 사장님 확정) ─────────────────
+//
+// 예전 배율은 1:1 리그전(grade_duel_sim --league --fit)으로 맞췄는데, 실제 결투는 3마리 승자 연속 + 팀 오라라
+// 방어형 3마리 ≈ 61% · 체력형 3마리 ≈ 43% 로 갈렸다. 여기서는 **무작위 3마리 팀**(종·기질·순서 무작위, 같은 종 중복 허용)
+// 끼리 붙여 종마다 "그 종이 낀 팀의 승률(출전 승률)"을 재고, 종 희귀도 목표(일반 46 · 고급 48 · 희귀 50 · 영웅 52 ·
+// 전설 54% — 1:1 때 사장님 확정 차등을 그대로)에 맞춰 체력·공격·방어 배율만 곱으로 고친다(속도 제외 — 예전과 같다).
+//
+// 곤충 = 다 키운 전설 개체(포텐셜 5 · 80레벨 · 돌파 4 · 102점 추천 배분 'balanced') · 롤 50 고정(id 롤 잡음 제거) ·
+// 오행 같음(상극 없음) · 오라 켬. 배율은 결투 능력치에 마지막으로 곱해지는 값이라(battleMods) 만든 곤충의
+// 체력·공격·방어에 비율을 곱하는 것과 같다 — 반복마다 곤충을 다시 만들지 않는다.
+// 정규화: 전설 종 배율 평균 = 지금 값(1.00) — 대회 최상위 눈금을 지킨다.
+void _teamFit(
+  GameActions actions,
+  GameConfig cfg,
+  List<Species> species,
+  DateTime t0,
+  List<String> args,
+) {
+  int opt(String k, int d) {
+    for (final a in args) {
+      if (a.startsWith('--$k=')) return int.parse(a.substring(k.length + 3));
+    }
+    return d;
+  }
+
+  double optD(String k, double d) {
+    for (final a in args) {
+      if (a.startsWith('--$k=')) return double.parse(a.substring(k.length + 3));
+    }
+    return d;
+  }
+
+  final fit = args.contains('--team-fit');
+  final rounds = opt('rounds', 8);
+  final m = opt('m', 20000);
+  final vm = opt('vm', 40000);
+  final cn = opt('cn', 600);
+  final n1 = opt('n1', 200);
+  final evSeeds = opt('ev', 4);
+  final gain = optD('gain', 2.0);
+  final flat = args.contains('--flat');
+  // 배율 범위(--min=0.5 --max=3.5) — 한 종이 혼자 튀지 않게(그 종은 목표에 못 닿을 수 있다).
+  final lo = optD('min', 0.01), hi = optD('max', 100.0);
+  // --temp=cunning 처럼 주면 3마리 경기의 기질을 그것 하나로(--aura 표는 교활 고정이다).
+  final fixT = [
+    for (final a in args)
+      if (a.startsWith('--temp=')) Temperament.values.byName(a.substring(7)),
+  ].firstOrNull;
+
+  final p = actions.duelParams;
+  final tr = cfg.battle.training;
+  final aura = cfg.battle.teamAura;
+  final ace = tr.presets['balanced'] ?? const {TrainSlot.attack: 1};
+  final temps = Temperament.values;
+  const goalByGrade = {
+    Grade.common: 0.46,
+    Grade.uncommon: 0.48,
+    Grade.rare: 0.50,
+    Grade.epic: 0.52,
+    Grade.legendary: 0.54,
+  };
+  double goal(Species s) => flat ? 0.5 : goalByGrade[s.grade]!;
+
+  // 종 × 기질 기본 곤충(지금 배율 s0 로 만들어진 값).
+  final base = <String, Map<Temperament, DuelBug>>{};
+  for (final sp in species) {
+    base[sp.id] = {};
+    for (final t in temps) {
+      final b = IndividualBug(
+        id: 'f_${sp.id}_${t.name}',
+        speciesId: sp.id,
+        sizeMm: (sp.sizeMinMm + sp.sizeMaxMm) / 2,
+        potential: 5,
+        temperament: t,
+        sex: Sex.male,
+        element: Element.wood,
+        stage: LifeStage.adult,
+        stageSince: t0.subtract(const Duration(days: 60)),
+        level: 80,
+        breakthroughTier: 4,
+        rolls: List.filled(StatRoll.values.length, 50),
+      );
+      final budget = trainBaseBudget(b, tr, levelCap: cfg.pet.levelCap(4));
+      int capOf(TrainSlot sl) => tr.slotCap(
+        sl,
+        temperament: t,
+        specialty: sp.specialty,
+        trait: b.trait,
+      );
+      // 기본 = 모든 종 균형 배분(--aura 표와 같은 기준 · 종을 가로지르는 리그전에서 가장 강한 배분).
+      // --star = 주특기별 ★ 배분(presetFor — 던지기 = 체급형. 다른 종 상대로는 약하다, 2026-10-14 측정).
+      final preset = !args.contains('--star')
+          ? ace
+          : (tr.presets[tr.presetIdFor(sp.specialty)] ?? ace);
+      final alloc = distributeTrainPoints(preset, budget, capOf: capOf);
+      final save =
+          SaveGame.initial(
+            createdAt: t0.subtract(const Duration(days: 90)),
+          ).copyWith(
+            bugs: [b],
+            trainPoints: {b.id: BugTrain(alloc: alloc, paid: budget)},
+          );
+      final v = actions.validateDuelTeam(
+        save,
+        [b.id],
+        speciesById: cfg.speciesById,
+        petConfig: cfg.pet,
+        enhance: cfg.enhance,
+        teamSize: 1,
+      );
+      if (v.error != null) throw StateError('${sp.id}: ${v.error}');
+      base[sp.id]![t] = v.team.first;
+    }
+  }
+  final s0 = {for (final sp in species) sp.id: sp.gradeScale};
+
+  DuelBug scaled(DuelBug d, double f, String id) => DuelBug(
+    id: id,
+    name: d.name,
+    speciesId: d.speciesId,
+    element: d.element,
+    temperament: d.temperament,
+    specialty: d.specialty,
+    sizeMm: d.sizeMm,
+    maxHp: d.maxHp * f,
+    atk: d.atk * f,
+    def: d.def * f,
+    spd: d.spd,
+    crit: d.crit,
+    recovery: d.recovery,
+    evade: d.evade,
+    massMult: d.massMult,
+    pushMult: d.pushMult,
+    tech: d.tech,
+    grit: d.grit,
+    sizeStatMult: d.sizeStatMult,
+    auraRole: d.auraRole,
+    aura: d.aura,
+  );
+
+  /// [scale] = 종 배율(절대값). 곤충은 s0 로 만들어졌으니 비율을 곱한다.
+  List<DuelBug> team(
+    List<(Species, Temperament)> picks,
+    Map<String, double> scale,
+    String side,
+  ) {
+    final t = [
+      for (var i = 0; i < picks.length; i++)
+        scaled(
+          base[picks[i].$1.id]![picks[i].$2]!,
+          scale[picks[i].$1.id]! / s0[picks[i].$1.id]!,
+          '$side$i',
+        ),
+    ];
+    return aura.enabled ? applyTeamAura(t, capPerStat: aura.capPerStat) : t;
+  }
+
+  double play(List<DuelBug> a, List<DuelBug> b, int seed) {
+    final flip = seed.isOdd;
+    final r = simulateDuel(
+      seed: seed,
+      teamA: flip ? b : a,
+      teamB: flip ? a : b,
+      params: p,
+    );
+    final w = r.winner(p);
+    if (w == null) return 0.5;
+    return (flip ? w == 1 : w == 0) ? 1 : 0;
+  }
+
+  String pct(double v) => '${(v * 100).toStringAsFixed(1)}%';
+
+  /// 종 출전 승률 — 무작위 3마리 대 3마리 [games]경기. [rngSeed] 가 같으면 같은 팀·같은 판(반복 비교용).
+  Map<String, double> presence(
+    Map<String, double> scale,
+    int games,
+    int rngSeed,
+  ) {
+    final rng = math.Random(rngSeed);
+    final w = {for (final s in species) s.id: 0.0};
+    final c = {for (final s in species) s.id: 0};
+    (Species, Temperament) pick() => (
+      species[rng.nextInt(species.length)],
+      fixT ?? temps[rng.nextInt(temps.length)],
+    );
+    for (var i = 0; i < games; i++) {
+      final a = [pick(), pick(), pick()];
+      final b = [pick(), pick(), pick()];
+      final r = play(
+        team(a, scale, 'a'),
+        team(b, scale, 'b'),
+        rngSeed * 7919 + i,
+      );
+      for (final x in a) {
+        w[x.$1.id] = w[x.$1.id]! + r;
+        c[x.$1.id] = c[x.$1.id]! + 1;
+      }
+      for (final x in b) {
+        w[x.$1.id] = w[x.$1.id]! + 1 - r;
+        c[x.$1.id] = c[x.$1.id]! + 1;
+      }
+    }
+    return {for (final s in species) s.id: w[s.id]! / c[s.id]!};
+  }
+
+  /// 역할 조합 리그전(무작위 종·기질) — 조합마다 다른 조합 전부 상대 평균.
+  Map<String, double> comps(Map<String, double> scale, int games) {
+    const roleOf = {
+      'A': DuelRole.attack,
+      'D': DuelRole.defense,
+      'H': DuelRole.hp,
+    };
+    const names = [
+      'AAA',
+      'DDD',
+      'HHH',
+      'ADH',
+      'AAD',
+      'AAH',
+      'DDA',
+      'DDH',
+      'HHA',
+      'HHD',
+    ];
+    final byRole = {
+      for (final r in DuelRole.values)
+        r: [
+          for (final s in species)
+            if (s.duelRole == r) s,
+        ],
+    };
+    final rng = math.Random(4242);
+    List<(Species, Temperament)> draw(String c) => [
+      for (final ch in c.split(''))
+        (
+          byRole[roleOf[ch]]![rng.nextInt(byRole[roleOf[ch]]!.length)],
+          fixT ?? temps[rng.nextInt(temps.length)],
+        ),
+    ]..shuffle(rng);
+    final tot = {for (final k in names) k: 0.0};
+    var seed = 900000000;
+    for (var i = 0; i < names.length; i++) {
+      for (var j = i + 1; j < names.length; j++) {
+        var w = 0.0;
+        for (var g = 0; g < games; g++) {
+          w += play(
+            team(draw(names[i]), scale, 'a'),
+            team(draw(names[j]), scale, 'b'),
+            seed++,
+          );
+        }
+        tot[names[i]] = tot[names[i]]! + w / games;
+        tot[names[j]] = tot[names[j]]! + 1 - w / games;
+      }
+    }
+    return {for (final k in names) k: tot[k]! / (names.length - 1)};
+  }
+
+  /// 1:1 리그전(20종 서로 · 기질은 판마다 돌아가며) — 예전 배율을 맞춘 질문(목표 43~58%).
+  Map<String, double> league(Map<String, double> scale) {
+    final w = {for (final s in species) s.id: 0.0};
+    final c = {for (final s in species) s.id: 0};
+    var seed = 500000000;
+    for (var i = 0; i < species.length; i++) {
+      for (var j = i + 1; j < species.length; j++) {
+        final x = species[i], y = species[j];
+        for (var g = 0; g < n1; g++) {
+          final a = scaled(
+            base[x.id]![temps[g % 5]]!,
+            scale[x.id]! / s0[x.id]!,
+            'a',
+          );
+          final b = scaled(
+            base[y.id]![temps[(g ~/ 5) % 5]]!,
+            scale[y.id]! / s0[y.id]!,
+            'b',
+          );
+          final flip = g.isOdd;
+          final bout = simulateBout(
+            seed: seed++,
+            a: flip ? b : a,
+            b: flip ? a : b,
+            params: p,
+          );
+          final aWon = flip ? !bout.aWon : bout.aWon;
+          final r = bout.winner < 0 ? 0.5 : (aWon ? 1.0 : 0.0);
+          w[x.id] = w[x.id]! + r;
+          w[y.id] = w[y.id]! + 1 - r;
+          c[x.id] = c[x.id]! + 1;
+          c[y.id] = c[y.id]! + 1;
+        }
+      }
+    }
+    return {for (final s in species) s.id: w[s.id]! / c[s.id]!};
+  }
+
+  /// 대회(곤충 1마리 웨이브전 · 카드 없음 · 오라 없음) 평균 도달 웨이브 — 기질 5 × 회차 [evSeeds].
+  Map<String, double> eventWaves(
+    Map<String, double> scale, {
+    Map<String, double>? ev,
+  }) {
+    final spec = ev == null
+        ? actions.eventDuelSpec
+        : actions.eventDuelSpec.withSpeciesScale(ev);
+    final ep = actions.eventDuelParams;
+    final out = <String, double>{};
+    for (final sp in species) {
+      var sum = 0, cnt = 0;
+      for (final t in temps) {
+        final me = scaled(
+          base[sp.id]![t]!,
+          scale[sp.id]! / s0[sp.id]!,
+          'me',
+        ).withAura(null, 0);
+        for (var rs = 1; rs <= evSeeds; rs++) {
+          final roundSeed = rs * 9973;
+          var run = const EventDuelRun();
+          while (!run.over) {
+            run = eventDuelFight(
+              seed: roundSeed * 31 + 7,
+              run: run,
+              bug: me,
+              enemy: actions.eventDuelEnemyOf(
+                roundSeed,
+                run.wave,
+                cfg.speciesById,
+              ),
+              params: ep,
+              spec: spec,
+            ).run;
+          }
+          sum += run.cleared;
+          cnt++;
+        }
+      }
+      out[sp.id] = sum / cnt;
+    }
+    return out;
+  }
+
+  String row(Species s) =>
+      '${s.grade.key.padRight(10)} ${(s.duelRole?.name ?? '-').padRight(8)} ${s.id.padRight(24)}';
+
+  void report(String title, Map<String, double> scale) {
+    stdout.writeln('\n=== $title ===');
+    final pr = presence(scale, vm, 31337);
+    stdout.writeln(
+      '· 종 출전 승률(무작위 3마리 팀 $vm경기 · 목표 43~57%, 희귀도 목표 ${flat ? '50' : '46~54'}%)',
+    );
+    final order = species.toList()
+      ..sort((a, b) => pr[b.id]!.compareTo(pr[a.id]!));
+    for (final s in order) {
+      stdout.writeln(
+        '  ${row(s)} ${pct(pr[s.id]!).padLeft(6)} (목표 ${pct(goal(s))}) · 배율 ${scale[s.id]!.toStringAsFixed(2)}',
+      );
+    }
+    final pv = pr.values.toList()..sort();
+    stdout.writeln('  범위 ${pct(pv.first)} ~ ${pct(pv.last)}');
+    final cm = comps(scale, cn);
+    stdout.writeln('· 역할 조합 평균 승률(다른 9조합 상대 · 쌍마다 $cn경기 · 목표 45~55%)');
+    stdout.writeln(
+      '  ${cm.entries.map((e) => '${e.key} ${pct(e.value)}').join(' · ')}',
+    );
+    final lg = league(scale);
+    final lo = species.toList()..sort((a, b) => lg[b.id]!.compareTo(lg[a.id]!));
+    stdout.writeln('· 1:1 리그전(20종 · 쌍마다 $n1판 · 목표 43~58%)');
+    for (final s in lo) {
+      stdout.writeln('  ${row(s)} ${pct(lg[s.id]!)}');
+    }
+  }
+
+  var scale = Map<String, double>.from(s0);
+  if (args.contains('--event-fit')) {
+    // 대회 전용 종 배율(event.json → duelWave.speciesScale) — 종별 도달 웨이브를 전체 평균 둘레로 모은다
+    // (희귀도 기울기: 일반 −6% · 고급 −3% · 희귀 0 · 영웅 +3% · 전설 +6%). 종 배율(gradeScale)은 지금 데이터 그대로.
+    const tilt = {
+      Grade.common: 0.94,
+      Grade.uncommon: 0.97,
+      Grade.rare: 1.00,
+      Grade.epic: 1.03,
+      Grade.legendary: 1.06,
+    };
+    final ev0 = {
+      for (final sp in species)
+        sp.id: actions.eventDuelSpec.speciesScaleOf(sp.id),
+    };
+    final w0 = eventWaves(scale, ev: {for (final sp in species) sp.id: 1.0});
+    // --event-mean=18.5 처럼 주면 그 평균에 맞춘다(기본 = 배율 없는 지금 평균). 2026-10-14 는 2회차 실제 상태
+    // (옛 종 배율·옛 치기) 평균 18.5 로 맞췄다 — 이번 수정으로 대회 전체 난이도가 움직이지 않게.
+    final mean = optD(
+      'event-mean',
+      w0.values.reduce((a, b) => a + b) / w0.length,
+    );
+    final norm =
+        species.map((sp) => tilt[sp.grade]!).reduce((a, b) => a + b) /
+        species.length;
+    double target(Species sp) => mean * tilt[sp.grade]! / norm;
+    // 웨이브 1개 ≈ 전력 × growth^(1/압축) — 차이를 배율로 옮기는 이득.
+    final g = actions.eventDuelSpec.growth;
+    final c =
+        actions.eventDuelSpec.statCompress ?? actions.duelParams.statCompress;
+    final k = math.log(g) / c;
+    var ev = {for (final sp in species) sp.id: 1.0};
+    stdout.writeln(
+      '대회 맞추기: 평균 ${mean.toStringAsFixed(1)}웨이브(배율 없음) · 웨이브 1개 ≈ 배율 ×${math.exp(k).toStringAsFixed(3)}',
+    );
+    for (var r = 0; r < rounds; r++) {
+      final w = eventWaves(scale, ev: ev);
+      final dev = species
+          .map((sp) => (w[sp.id]! - target(sp)).abs())
+          .reduce(math.max);
+      stdout.writeln('  ${r + 1}회 전: 목표와 최대 차이 ${dev.toStringAsFixed(1)}웨이브');
+      ev = {
+        for (final sp in species)
+          sp.id:
+              ev[sp.id]! *
+              math.exp(0.8 * math.pow(0.85, r) * k * (target(sp) - w[sp.id]!)),
+      };
+    }
+    ev = {for (final sp in species) sp.id: (ev[sp.id]! * 100).round() / 100};
+    final w1 = eventWaves(scale, ev: ev);
+    final wNow = eventWaves(scale, ev: ev0);
+    stdout.writeln(
+      '\n대회 도달 웨이브(카드 없음 · 기질 5 × 회차 $evSeeds) — 배율 없음 → 새 배율(목표)',
+    );
+    for (final sp in species) {
+      stdout.writeln(
+        '  ${row(sp)} ${w0[sp.id]!.toStringAsFixed(1).padLeft(5)} → ${w1[sp.id]!.toStringAsFixed(1).padLeft(5)}'
+        ' (목표 ${target(sp).toStringAsFixed(1)}) · 배율 ${ev[sp.id]!.toStringAsFixed(2)}',
+      );
+    }
+    String spread(Map<String, double> w) {
+      final v = w.values.toList()..sort();
+      final m = v.reduce((a, b) => a + b) / v.length;
+      final sd = math.sqrt(
+        v.map((x) => (x - m) * (x - m)).reduce((a, b) => a + b) / v.length,
+      );
+      return '${v.first.toStringAsFixed(1)}~${v.last.toStringAsFixed(1)} · 평균 ${m.toStringAsFixed(1)} · 표준편차 ${sd.toStringAsFixed(1)}';
+    }
+
+    stdout.writeln('  배율 없음 ${spread(w0)}');
+    stdout.writeln('  데이터 지금 값 ${spread(wNow)}');
+    stdout.writeln('  새 배율 ${spread(w1)}');
+    stdout.writeln(
+      '  json: ${species.map((sp) => '"${sp.id}": ${ev[sp.id]!.toStringAsFixed(2)}').join(', ')}',
+    );
+    return;
+  }
+  if (!fit) {
+    report('지금 배율', scale);
+    final ev = eventWaves(scale);
+    stdout.writeln('· 대회 도달 웨이브(카드 없음 · 기질 5 × 회차 $evSeeds)');
+    for (final s in species) {
+      stdout.writeln('  ${row(s)} ${ev[s.id]!.toStringAsFixed(1)}');
+    }
+    return;
+  }
+
+  final legs = species.where((s) => s.grade == Grade.legendary).toList();
+  final legMean =
+      legs.map((s) => s0[s.id]!).reduce((a, b) => a + b) / legs.length;
+  stdout.writeln(
+    '맞추기: $rounds회 × $m경기(같은 팀·판 반복) · 이득 $gain · 전설 종 평균 ${legMean.toStringAsFixed(2)} 유지',
+  );
+  for (var r = 0; r < rounds; r++) {
+    final pr = presence(scale, m, 271828);
+    final dev = species
+        .map((s) => (pr[s.id]! - goal(s)).abs())
+        .reduce(math.max);
+    stdout.writeln('  ${r + 1}회 전: 목표와 최대 차이 ${pct(dev)}');
+    final step = gain * math.pow(0.85, r);
+    for (final s in species) {
+      scale[s.id] = scale[s.id]! * math.exp(step * (goal(s) - pr[s.id]!));
+    }
+    final lm =
+        legs.map((s) => scale[s.id]!).reduce((a, b) => a + b) / legs.length;
+    scale = {
+      for (final s in species)
+        s.id: (scale[s.id]! * legMean / lm).clamp(lo, hi).toDouble(),
+    };
+  }
+  // 두 자리로(데이터에 그대로 옮길 값).
+  scale = {for (final s in species) s.id: (scale[s.id]! * 100).round() / 100};
+
+  stdout.writeln('\n새 배율(지금 → 새):');
+  for (final s in species) {
+    stdout.writeln(
+      '  ${row(s)} ${s0[s.id]!.toStringAsFixed(2)} → ${scale[s.id]!.toStringAsFixed(2)}',
+    );
+  }
+  stdout.writeln(
+    '  json: ${species.map((s) => '"${s.id}": ${scale[s.id]!.toStringAsFixed(2)}').join(', ')}',
+  );
+  if (args.contains('--no-report')) return;
+  report('새 배율', scale);
+  final e0 = eventWaves(s0), e1 = eventWaves(scale);
+  stdout.writeln('· 대회 도달 웨이브(카드 없음 · 기질 5 × 회차 $evSeeds) 지금 → 새');
+  for (final s in species) {
+    stdout.writeln(
+      '  ${row(s)} ${e0[s.id]!.toStringAsFixed(1)} → ${e1[s.id]!.toStringAsFixed(1)}',
+    );
   }
 }
