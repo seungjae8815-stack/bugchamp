@@ -631,6 +631,75 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineXpLabel => '経験値';
 
   @override
+  String offlineRareLine(String items) {
+    return '✨ 精鋭から $items';
+  }
+
+  @override
+  String offlineRareFairyStone(int count) {
+    return '属性石 $count';
+  }
+
+  @override
+  String offlineRareDuelStone(int count) {
+    return '決闘石 $count';
+  }
+
+  @override
+  String offlineRarePotion(int count) {
+    return '成長ポーション $count';
+  }
+
+  @override
+  String get offlineBuffBonusTitle => 'バフのおかげで多くもらえました';
+
+  @override
+  String get offlineBuffMissedTitle => 'バフが付いていたら、もっともらえました';
+
+  @override
+  String get offlineBuffMissedButton => 'バフを発動しに行く';
+
+  @override
+  String offlineGainGold(String amount) {
+    return 'ゴールド +$amount';
+  }
+
+  @override
+  String offlineGainXp(String amount) {
+    return '経験値 +$amount';
+  }
+
+  @override
+  String offlineGainMaterials(String count) {
+    return '素材 約+$count';
+  }
+
+  @override
+  String offlineGainBugs(int count) {
+    return '虫 約$count匹';
+  }
+
+  @override
+  String offlineGainBugsRare(int count, int rare) {
+    return '虫 約$count匹（レア以上 約$rare）';
+  }
+
+  @override
+  String offlineGainFairyStones(int count) {
+    return '属性石 約+$count';
+  }
+
+  @override
+  String offlineGainDuelStones(int count) {
+    return '決闘石 約+$count';
+  }
+
+  @override
+  String offlineGainPotions(int count) {
+    return '成長ポーション 約+$count';
+  }
+
+  @override
   String durationHm(int h, int m) {
     return '$h時間 $m分';
   }
@@ -1684,6 +1753,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get buffSheetTitle => 'バフを発動';
 
   @override
+  String get buffSheetOfflineNote => 'アプリを閉じている間（放置報酬）にも適用されます';
+
+  @override
   String get buffWatchAd => '無料で発動';
 
   @override
@@ -1718,7 +1790,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get buffGatherer => '採集の手';
 
   @override
-  String get buffGathererDesc => '素材獲得 ×2';
+  String get buffGathererDesc => '素材獲得 ×2・属性石・決闘石・成長ポーション確率 ×2';
 
   @override
   String get buffLuckyWind => '幸運の風';
@@ -3392,6 +3464,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get statHp => '体力';
+
+  @override
+  String get statLevelBonus => 'レベルボーナス（攻撃・体力）';
 
   @override
   String get statGoldGain => '金貨獲得';

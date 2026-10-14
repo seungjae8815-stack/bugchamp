@@ -7,6 +7,9 @@
 // `--guild` : 길드 버프 최대치(guild.json skills — 공격 +8%·골드 +10%)를 실제 유저 쪽에 얹는다.
 //             서버 봉투에는 길드 버프가 없다(서버는 길드를 조회하지 않는다) — 여유가 2배 이상이면 흡수된다.
 //             교환소 허용치(`_exchangeAllowance`)도 같이 잰다.
+// `--passive-gold` : 펫 골드 패시브 최대(3마리 × pets.json passiveV2 reward) · 도감 전 종 발견 골드를 실제 유저 쪽에
+//             **곱으로** 얹는다(2026-10-14 — 가산이던 시절엔 강화로 자란 골드 배율에 묽어져 거의 0 이었다).
+//             서버 봉투에는 없다(서버는 펫·도감을 안 본다). 비교용으로 예전 가산일 때 배율도 함께 찍는다.
 import 'dart:convert';
 import 'dart:io';
 import 'package:core_run/core_run.dart';
@@ -26,6 +29,35 @@ void main(List<String> args) {
   if (withGuild) {
     print('길드 버프 최대: 공격 x$guildAtk · 골드 x$guildGold (실제 유저 쪽에만)');
   }
+  // 펫 골드 패시브(3마리 합) · 도감 발견 골드 — 곱(지금 규칙)과 가산(예전 규칙)의 추가분.
+  final withPassiveGold = args.contains('--passive-gold');
+  var passiveAdd = 0.0;
+  if (withPassiveGold) {
+    final pets =
+        jsonDecode(File('$dir/pets.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final v2 = pets['passiveV2'] as Map<String, dynamic>? ?? const {};
+    final kinds = v2['kinds'] as Map<String, dynamic>? ?? const {};
+    final petGold = 3 * ((kinds['reward'] as num?)?.toDouble() ?? 0);
+    final dex =
+        jsonDecode(File('$dir/dex.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final species =
+        (jsonDecode(File('$dir/species.json').readAsStringSync())
+                as Map<String, dynamic>)['species']
+            as List;
+    final dexGold =
+        ((dex['rewardPerDiscover'] as num?)?.toDouble() ?? 0) * species.length;
+    _passiveGoldMul = (1 + petGold) * (1 + dexGold);
+    passiveAdd = petGold + dexGold;
+    print(
+      '골드 패시브 최대: 펫 +${(petGold * 100).round()}% · 도감 +${(dexGold * 100).round()}% '
+      '→ 곱 x${_passiveGoldMul.toStringAsFixed(2)} (예전 가산이면 골드 배율에 +${passiveAdd.toStringAsFixed(2)})',
+    );
+  }
+  // 예전 가산 규칙이었다면 이 골드 배율에서 몇 배였나(비교용).
+  double addGain(double reward) =>
+      reward <= 0 ? 1.0 : (reward + passiveAdd) / reward;
   final run = RunConfig.fromJson(
     jsonDecode(File('$dir/run_config.json').readAsStringSync())
         as Map<String, dynamic>,
@@ -75,7 +107,8 @@ void main(List<String> args) {
     final goldPerKill =
         rewardGold(run, depth, goldRush) *
         (1 + run.onlineGoldBonus) *
-        guildGold;
+        guildGold *
+        _passiveGoldMul;
     final actual = window / perKill * goldPerKill;
 
     final ratio = actual <= 0 ? double.infinity : bound / actual;
@@ -84,7 +117,8 @@ void main(List<String> args) {
       '${stage.toString().padLeft(7)} | '
       '${bound.toStringAsFixed(0).padLeft(15)} | '
       '${actual.toStringAsFixed(0).padLeft(13)} | '
-      'x${ratio.toStringAsFixed(2)}$mark',
+      'x${ratio.toStringAsFixed(2)}$mark'
+      '${_oldCol(ratio, addGain(serverStats.rewardMultiplier))}',
     );
   }
 
@@ -133,7 +167,8 @@ void main(List<String> args) {
             tier: tier,
           ) *
           (1 + run.onlineGoldBonus) *
-          guildGold;
+          guildGold *
+          _passiveGoldMul;
       final actual = window / perKill * goldPerKill;
       final ratio = actual <= 0 ? double.infinity : bound / actual;
       final mark = ratio < 1.0 ? '  ← 잘린다!' : (ratio < 2.0 ? '  ← 여유 부족' : '');
@@ -141,7 +176,8 @@ void main(List<String> args) {
         '      $tier·${zone.toString().padLeft(2)} | '
         '${bound.toStringAsFixed(0).padLeft(15)} | '
         '${actual.toStringAsFixed(0).padLeft(13)} | '
-        'x${ratio.toStringAsFixed(2)}$mark',
+        'x${ratio.toStringAsFixed(2)}$mark'
+        '${_oldCol(ratio, addGain(serverStats.rewardMultiplier))}',
       );
     }
   }
@@ -177,7 +213,7 @@ void main(List<String> args) {
         stats: _scaled(
           serverStats,
           atk: petAtk * 3.0 * guildAtk, // 펫 x4 · 장비 x3 · 길드
-          reward: guildGold,
+          reward: guildGold * _passiveGoldMul,
         ),
         stage: stage,
         trades: 1,
@@ -189,11 +225,20 @@ void main(List<String> args) {
         '      $tier·${zone.toString().padLeft(2)} | '
         '${server.toString().padLeft(15)} | '
         '${app.toString().padLeft(13)} | '
-        'x${ratio.toStringAsFixed(2)}$mark',
+        'x${ratio.toStringAsFixed(2)}$mark'
+        '${_oldCol(ratio, addGain(serverStats.rewardMultiplier))}',
       );
     }
   }
 }
+
+/// `--passive-gold` 의 골드 곱(펫 골드 패시브 3마리 × 도감 발견). 없으면 1.
+var _passiveGoldMul = 1.0;
+
+/// `--passive-gold` 일 때 예전 가산 규칙의 여유배수를 옆에 붙인다(지금 여유 × 곱 ÷ 가산 배율).
+String _oldCol(double ratio, double addGain) => _passiveGoldMul == 1.0
+    ? ''
+    : '  (예전 가산 x${(ratio * _passiveGoldMul / addGain).toStringAsFixed(2)})';
 
 /// 공격·보상 배율만 바꾼 능력치(앱 쪽 펫·장비·길드 버프 근사).
 CharacterStats _scaled(

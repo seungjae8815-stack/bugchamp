@@ -656,6 +656,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineXpLabel => 'XP';
 
   @override
+  String offlineRareLine(String items) {
+    return '✨ From elites: $items';
+  }
+
+  @override
+  String offlineRareFairyStone(int count) {
+    return 'Attribute Stone $count';
+  }
+
+  @override
+  String offlineRareDuelStone(int count) {
+    return 'Duel stone $count';
+  }
+
+  @override
+  String offlineRarePotion(int count) {
+    return 'Growth potion $count';
+  }
+
+  @override
+  String get offlineBuffBonusTitle => 'Extra from your buffs';
+
+  @override
+  String get offlineBuffMissedTitle => 'With buffs on, you\'d have earned more';
+
+  @override
+  String get offlineBuffMissedButton => 'Turn on buffs';
+
+  @override
+  String offlineGainGold(String amount) {
+    return 'Gold +$amount';
+  }
+
+  @override
+  String offlineGainXp(String amount) {
+    return 'XP +$amount';
+  }
+
+  @override
+  String offlineGainMaterials(String count) {
+    return 'Materials ~+$count';
+  }
+
+  @override
+  String offlineGainBugs(int count) {
+    return '~$count bugs';
+  }
+
+  @override
+  String offlineGainBugsRare(int count, int rare) {
+    return '~$count bugs (~$rare Rare+)';
+  }
+
+  @override
+  String offlineGainFairyStones(int count) {
+    return 'Attribute Stones ~+$count';
+  }
+
+  @override
+  String offlineGainDuelStones(int count) {
+    return 'Duel stones ~+$count';
+  }
+
+  @override
+  String offlineGainPotions(int count) {
+    return 'Growth potions ~+$count';
+  }
+
+  @override
   String durationHm(int h, int m) {
     return '${h}h ${m}m';
   }
@@ -1741,6 +1810,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buffSheetTitle => 'Activate a buff';
 
   @override
+  String get buffSheetOfflineNote =>
+      'Also applies while the app is closed (idle rewards)';
+
+  @override
   String get buffWatchAd => 'Activate free';
 
   @override
@@ -1775,7 +1848,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get buffGatherer => 'Gatherer\'s Touch';
 
   @override
-  String get buffGathererDesc => 'Material gain ×2';
+  String get buffGathererDesc =>
+      'Material gain ×2 · stone & potion drop rate ×2';
 
   @override
   String get buffLuckyWind => 'Lucky Wind';
@@ -3483,6 +3557,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statHp => 'Health';
+
+  @override
+  String get statLevelBonus => 'Level bonus (ATK·HP)';
 
   @override
   String get statGoldGain => 'Gold Gain';

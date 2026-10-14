@@ -872,10 +872,14 @@ PetBonus computePetBonus(Iterable<PetStat> pets, PetConfig cfg) {
 /// 층이다. 기준 안에 넣으면 어떤 종을 껴도 몬스터가 같이 세져서 종을 고르는
 /// 의미가 사라진다(= 종 패시브를 넣은 이유 자체가 무너진다).
 ///
-/// 공격·체력처럼 큰 스탯은 비율로, 확률·계수는 **가산**으로 얹는다.
-/// ⚠️ **보스 피해만은 곱이다(2026-09-22).** 기본값이 1.0 이라 가산이면 +22% 가 정확히
-/// 22% 일 것 같지만, 강화로 1.0 → 최대 11.0 까지 자라서 후반엔 +2% 로 묽어졌다
-/// (물장군 "보스 피해 +25%" 가 극한에서 +2~3%). 화면 문구도 곱으로 읽힌다.
+/// **확률(치명확률·회피)만 %p 가산**(+예산)이고, 나머지 배율·계수는 전부 **곱**이다.
+/// ⚠️ 보스 피해를 곱으로 바꾼 것(2026-09-22)과 같은 이유로 2026-10-14(사장님 확정) 나머지도 곱으로 바꿨다 —
+/// 골드·경험치·곤충 조우·재료·치명 피해는 강화로 기본값 1~2 에서 수 배~수십 배까지 자라서, 가산이면
+/// "+35%" 가 후반에 +0.5% 로 묽어졌다(물장군 "보스 피해 +25%" 가 극한에서 +2~3% 이던 것과 같은 꼴).
+/// 화면 문구("골드 +35%")도 곱으로 읽힌다.
+/// - 방어는 방어 점수를 더하지 않고 **맷집(100 + 방어)을 곱한다**([defenseScaled]) — 받는 피해 ÷ (1 + v).
+/// - 체력을 곱하면 **회복도 같이 곱한다** — 회복은 최대 체력의 비율이라, 안 곱하면 체력이 커진 만큼 묽어진다
+///   (장비 체력 옵션과 같은 규칙, `applyEquipment`).
 CharacterStats applySpeciesPassives(
   CharacterStats s,
   Map<UpgradeKind, double> passives, {
@@ -895,19 +899,31 @@ CharacterStats applySpeciesPassives(
     attackSpeed: s.attackSpeed * (1 + v(UpgradeKind.attackSpeed)),
     // 회피는 확률이라 치명확률처럼 %p 로 더한다(방아깨비 — 옛 이동속도 패시브 키 그대로).
     evade: s.evade + math.min(v(UpgradeKind.evade), evadeBudget),
-    // 아래는 원래 배율·확률·계수라 그대로 더한다.
-    rewardMultiplier: s.rewardMultiplier + v(UpgradeKind.reward),
+    // 배율·계수는 곱(위 주석 — 가산이면 강화로 자란 기본값에 묽어진다). 확률(치명확률)만 %p 가산.
+    rewardMultiplier: s.rewardMultiplier * (1 + v(UpgradeKind.reward)),
     critChance: (s.critChance + math.min(v(UpgradeKind.crit), critBudget))
         .clamp(0.0, 1.0),
-    critDamage: s.critDamage + v(UpgradeKind.critDamage),
+    critDamage: s.critDamage * (1 + v(UpgradeKind.critDamage)),
     bossDamage: s.bossDamage * (1 + v(UpgradeKind.bossDamage)),
-    defense: s.defense + v(UpgradeKind.defense) * 100,
-    hpRegen: s.hpRegen * (1 + v(UpgradeKind.regen)),
-    xpMultiplier: s.xpMultiplier + v(UpgradeKind.xp),
-    bugFind: s.bugFind + v(UpgradeKind.bugFind),
-    materialFind: s.materialFind + v(UpgradeKind.materialFind),
+    defense: defenseScaled(s.defense, v(UpgradeKind.defense)),
+    // 회복 = 최대 체력 비율 — 체력 배율도 같이 탄다.
+    hpRegen:
+        s.hpRegen * (1 + v(UpgradeKind.regen)) * (1 + v(UpgradeKind.maxHp)),
+    xpMultiplier: s.xpMultiplier * (1 + v(UpgradeKind.xp)),
+    bugFind: s.bugFind * (1 + v(UpgradeKind.bugFind)),
+    materialFind: s.materialFind * (1 + v(UpgradeKind.materialFind)),
     boostBonus: s.boostBonus + v(UpgradeKind.boost),
   );
+}
+
+/// 맷집(`100 + 방어`)을 `1 + up` 배로 늘린 방어력 — 받는 피해가 정확히 `÷ (1 + up)` 이 된다.
+///
+/// 피격 공식이 `위협 × 100 / (100 + 방어)` 라 어느 단계에서도 같은 뜻이다. 방어 점수를 더하면
+/// (예전 `+ up × 100`) 강화로 방어가 수백이 된 후반엔 "+35%" 가 몇 % 로 묽어졌다.
+/// 방어 0 에서는 예전 가산과 값이 같다(`100 × (1 + up) − 100 = up × 100`).
+double defenseScaled(double defense, double up) {
+  if (up <= 0) return defense;
+  return (100 + defense) * (1 + up) - 100;
 }
 
 /// 저장된 단계·시각으로부터 [now] 기준 **실제 도달 단계**를 계산(경과분 자동 진화).

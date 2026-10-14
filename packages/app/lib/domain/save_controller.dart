@@ -459,66 +459,120 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(iap.json §6).
     final iap = data.iapConfig;
     final passOn = save.passActive(now);
-    final raw = computeOfflineReward(
+    final maxAccrual = passOn
+        ? Duration(hours: iap?.passOfflineCapHours ?? 12)
+        : kMaxOfflineAccrual;
+    final accrued = elapsed > maxAccrual ? maxAccrual : elapsed;
+    // 버프는 꺼 둔 동안에도 실제 시간으로 돈다(2026-10-14 사장님 확정) — 정산 구간(나간 때부터 상한까지)을
+    // 버프 만료 시각으로 잘라 구간마다 그때 켜져 있던 버프를 입힌다(core_save `offline_buffs.dart`).
+    final buffs = data.buffConfig;
+    OfflinePlan plan(List<BuffSpan> spans) => planOffline(
       config: config,
+      base: stats,
+      buffs: buffs,
+      spans: spans,
       stageNumber: save.stageNumber,
-      stats: stats,
-      elapsed: elapsed,
       tier: save.difficultyTier,
       // 심연이면 층 배율(서버 정산과 같은 규칙).
       abyssFloor: activeAbyssFloor(save),
       // 끝에 눌러앉으면 방치 수입도 깎인다(온라인과 같은 규칙).
       finalStage: data.roadmapConfig?.finalStage,
       efficiency: config.offlineEfficiency,
-      maxAccrual: passOn
-          ? Duration(hours: iap?.passOfflineCapHours ?? 12)
-          : kMaxOfflineAccrual,
     );
-    final maxAccrual = passOn
-        ? Duration(hours: iap?.passOfflineCapHours ?? 12)
-        : kMaxOfflineAccrual;
-    // 방치 중 처치 수 — 사냥터 게이지와 **곤충·재료 드롭**이 같은 값을 쓴다.
-    final clears = estimateClears(
-      config: config,
-      stageNumber: save.stageNumber,
-      stats: stats,
-      elapsed: elapsed,
-      tier: save.difficultyTier,
-      abyssFloor: activeAbyssFloor(save),
-      efficiency: config.offlineEfficiency,
-      maxAccrual: maxAccrual,
-    );
-    // 곤충·재료 드롭(2026-10-04) — 처치마다 온라인과 같은 규칙으로 굴린다. 서버 `/sync` 와 같은 함수.
-    // 기기 권위 전환(2026-07) 뒤 앱이 `/sync` 를 안 불러 오프라인 드롭이 통째로 빠져 있었다.
-    final pet = data.petConfig;
-    final drops = pet == null
-        ? null
-        : rollIdleDrops(
-            save: save,
-            rolls: clears.floor().clamp(0, _maxOfflineRolls),
-            species: data.allSpecies,
-            run: config,
-            pet: pet,
-            iap: iap,
-            bugFind: stats.bugFind,
-            materialFind: stats.materialFind,
-            now: now,
-            rng: math.Random(),
-            newId: _devUuid.v4,
-          );
+    final actual = plan(offlineBuffSpans(save, save.lastSeen, accrued));
     // 길드 버프 골드(1.0.15) — 방치가 주 플레이라 오프라인에도 건다(사장님 확정).
     // 길드 조회보다 먼저 돌기 때문에 기기 캐시를 쓴다([GuildBuffCache]).
     final guildGold = kGuildOpen
         ? 1 + (GuildBuffCache.bonus['gold'] ?? 0)
         : 1.0;
+    final goldMult =
+        (passOn ? (iap?.passIdleGoldMult ?? 1.2) : 1.0) * guildGold;
+    // 방치 중 처치 수 — 사냥터 게이지와 **곤충·재료 드롭**이 같은 값을 쓴다.
+    final clears = actual.clears;
+    // 곤충·재료 드롭(2026-10-04) — 처치마다 온라인과 같은 규칙으로 굴린다. 서버 `/sync` 와 같은 함수.
+    // 기기 권위 전환(2026-07) 뒤 앱이 `/sync` 를 안 불러 오프라인 드롭이 통째로 빠져 있었다.
+    // 버프 구간마다 그 구간의 곤충·재료 찾기로 굴린다(곤충은 채집함 여유를 이어서 센다).
+    final pet = data.petConfig;
+    final rng = math.Random();
+    final rolls = actual.rolls(maxRolls: _maxOfflineRolls);
+    IdleDrops? drops;
+    if (pet != null) {
+      var cur = save;
+      final newBugs = <IndividualBug>[];
+      var blocked = 0;
+      for (var i = 0; i < actual.parts.length; i++) {
+        final part = actual.parts[i];
+        final d = rollIdleDrops(
+          save: cur,
+          rolls: rolls[i],
+          species: data.allSpecies,
+          run: config,
+          pet: pet,
+          iap: iap,
+          bugFind: part.stats.bugFind,
+          materialFind: part.stats.materialFind,
+          now: now,
+          rng: rng,
+          newId: _devUuid.v4,
+        );
+        newBugs.addAll(d.bugs);
+        blocked += d.blocked;
+        cur = cur.copyWith(
+          materials: d.materials,
+          rarePity: d.rarePity,
+          bugs: d.bugs.isEmpty ? null : [...cur.bugs, ...d.bugs],
+        );
+      }
+      drops = IdleDrops(
+        bugs: newBugs,
+        materials: cur.materials,
+        rarePity: cur.rarePity,
+        blocked: blocked,
+      );
+    }
+    // 방치 정예 희귀 드롭(2026-10-14 사장님 확정) — 요정 속성석 · 결투석 · 성장물약(하루 한도 안).
+    // 처치 × 정예 비율만큼, 온라인과 같은 확률에 채집꾼 배율. 곤충 드롭 **뒤에** 굴린다.
+    final fairyCfg = data.fairyConfig;
+    var rareSave = save;
+    var fairyStones = 0, duelStones = 0, potions = 0;
+    for (var i = 0; i < actual.parts.length; i++) {
+      final r = rollIdleRareDrops(
+        rareSave,
+        rolls: rolls[i],
+        run: config,
+        fairy: fairyCfg,
+        stones: _stoneCfg,
+        grade: _gradeCfg,
+        rareMult: actual.parts[i].rareMult,
+        now: now,
+        rng: rng,
+      );
+      rareSave = r.save;
+      fairyStones += r.fairyStones;
+      duelStones += r.duelStones.values.fold(0, (a, b) => a + b);
+      potions += r.potions;
+    }
+    // 팝업의 "버프로 더 받았어요 / 놓쳤어요" — 기댓값 비교(난수를 또 굴리지 않는다).
+    OfflineGain expect(OfflinePlan p) => expectedOfflineGain(
+      p,
+      save: save,
+      run: config,
+      species: data.allSpecies,
+      fairy: fairyCfg,
+      stones: _stoneCfg,
+      grade: _gradeCfg,
+      now: now,
+      goldMult: goldMult,
+    );
+    final got = expect(actual);
+    final none = expect(plan([BuffSpan(accrued, const <BuffKind>{})]));
+    final full = expect(plan([BuffSpan(accrued, BuffKind.values.toSet())]));
+    final bonus = got.minus(none);
+    final missed = buffs == null ? null : full.minus(got);
     final report = OfflineReport(
-      gold:
-          (raw.gold *
-                  (passOn ? (iap?.passIdleGoldMult ?? 1.2) : 1.0) *
-                  guildGold)
-              .round(),
-      xp: raw.xp,
-      accrued: raw.accrued,
+      gold: (actual.gold * goldMult).round(),
+      xp: actual.xp,
+      accrued: actual.accrued,
     );
     if (report.isEmpty) return save;
 
@@ -556,6 +610,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
       bugs: drops?.bugs.length ?? 0,
       materials: gained,
       bugsBlocked: drops?.blocked ?? 0,
+      fairyStones: fairyStones,
+      duelStones: duelStones,
+      potions: potions,
+      buffBonus: bonus.isEmpty ? null : bonus,
+      buffMissed: (missed == null || missed.isEmpty) ? null : missed,
     );
     // 사냥터 모드: 방치 중 잡은 수도 도전 게이지에 쌓인다(서버 정산과 같은 규칙).
     int? zoneKills;
@@ -572,6 +631,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ? null
           : [...save.bugs, ...drops.bugs],
       rarePity: drops?.rarePity,
+      fairy: identical(rareSave.fairy, save.fairy) ? null : rareSave.fairy,
+      duelStones: identical(rareSave.duelStones, save.duelStones)
+          ? null
+          : rareSave.duelStones,
+      growthPotions: rareSave.growthPotions == save.growthPotions
+          ? null
+          : rareSave.growthPotions,
+      dailyClaims: identical(rareSave.dailyClaims, save.dailyClaims)
+          ? null
+          : rareSave.dailyClaims,
     );
   }
 
@@ -954,12 +1023,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 결투석 — 보스 **재처치**(첫 처치·되찾기 제외)면 오행 1% · 기질 0.5%(design_training_v2.md §3).
     // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
     lastDuelStones = const {};
+    // 채집꾼 버프 — 희귀 드롭(결투석·물약 확률) 배율(2026-10-14 사장님 확정, buffs.json `rareDrop`).
+    final rareMult = _rareDropMult();
     if (!firstKill && !reclaim) {
       final st = rollDuelStones(
         next,
         _stoneCfg,
         rng ?? math.Random(),
         DuelStoneSource.bossRepeat,
+        rareMult: rareMult,
       );
       next = st.save;
       lastDuelStones = st.got;
@@ -974,6 +1046,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         PotionSource.boss,
         firstKill: firstKill,
         now: ref.read(clockProvider).now(),
+        rareMult: rareMult,
       );
       next = po.save;
       lastPotions = po.got;
@@ -2193,6 +2266,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
   int lastPotions = 0;
 
   /// 개체 등급 설정(`pets.json → individualGrade`). 꺼져 있으면 물약도 안 굴린다.
+  /// 지금 켜진 버프의 희귀 드롭 배율(채집꾼 `buffs.json → rareDrop`, 무한 버프 패스면 늘 켜짐).
+  double _rareDropMult() {
+    final s = state.value;
+    if (s == null) return 1.0;
+    return rareDropMultOf(
+      s.activeBuffs(ref.read(clockProvider).now().toUtc()),
+      ref.read(gameDataProvider).value?.buffConfig,
+    );
+  }
+
   IndividualGradeConfig get _gradeCfg =>
       ref.read(gameDataProvider).value?.petConfig?.individualGrade ??
       const IndividualGradeConfig();
@@ -4330,7 +4413,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
       shards = got.shards;
     }
     // 결투석(오행석 0.2%, design_training_v2.md §3) — 스킬 조각 **뒤에** 굴린다(같은 seed 의 조각이 안 바뀌게).
-    final st = rollDuelStones(next, _stoneCfg, r, DuelStoneSource.elite);
+    // 채집꾼 버프면 확률 ×`rareDrop`(2026-10-14 사장님 확정) — 스킬 조각은 그대로(§2.8).
+    final rareMult = _rareDropMult();
+    final st = rollDuelStones(
+      next,
+      _stoneCfg,
+      r,
+      DuelStoneSource.elite,
+      rareMult: rareMult,
+    );
     lastDuelStones = st.got;
     // 성장물약(개체 등급, 정예 0.3%) — 결투석 **뒤에** 굴린다.
     final po = rollPotionDrop(
@@ -4339,6 +4430,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       r,
       PotionSource.elite,
       now: ref.read(clockProvider).now(),
+      rareMult: rareMult,
     );
     lastPotions = po.got;
     if (shards.isEmpty && st.got.isEmpty && po.got == 0) return const {};
@@ -4357,7 +4449,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final cfg = ref.read(gameDataProvider).value?.fairyConfig;
     if (cfg == null) return const FairyOp.fail('off');
     final s = state.requireValue;
-    final r = fairyEliteDrop(s.fairy, cfg, rng ?? math.Random());
+    final r = fairyEliteDrop(
+      s.fairy,
+      cfg,
+      rng ?? math.Random(),
+      stoneMult: _rareDropMult(),
+    );
     if (identical(r.state, s.fairy)) return r;
     await _commit(s.copyWith(fairy: r.state));
     return r;

@@ -62,6 +62,8 @@ class _Cfg implements GameConfigLike {
   @override
   final FairyConfig? fairy = null;
   @override
+  final BuffConfig? buffs = null;
+  @override
   List<Species> get speciesList => [testSpecies];
 }
 

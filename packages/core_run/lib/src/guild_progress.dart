@@ -119,6 +119,7 @@ int guildPointsUsed(List<GuildSkillDef> defs, Map<String, int> levels) {
 
 /// 방치 런 스탯에 길드 버프를 건다 — **적응형 기준 밖**(§7, 버프·장비와 같은 층).
 /// 결투·대회에는 싣지 않는다(이 함수는 방치 런 `_stats()` 에서만 부른다).
+/// 체력을 곱하면 회복도 같이 곱한다(2026-10-14) — 회복은 최대 체력 비율이다.
 CharacterStats applyGuildStats(CharacterStats s, Map<String, double> bonus) {
   if (bonus.isEmpty) return s;
   double v(String k) => bonus[k] ?? 0;
@@ -131,7 +132,7 @@ CharacterStats applyGuildStats(CharacterStats s, Map<String, double> bonus) {
     bossDamage: s.bossDamage,
     maxHp: s.maxHp * (1 + v('hp')),
     defense: s.defense,
-    hpRegen: s.hpRegen,
+    hpRegen: s.hpRegen * (1 + v('hp')),
     xpMultiplier: s.xpMultiplier * (1 + v('xp')),
     bugFind: s.bugFind,
     materialFind: s.materialFind * (1 + v('materialFind')),

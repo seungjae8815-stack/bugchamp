@@ -960,12 +960,16 @@ SaveGame _addStones(SaveGame s, Map<DuelStone, int> got) {
 
 /// 정예·보스 재처치 결투석 드롭. 종류마다 한 번씩 굴린다(오행 → 기질 순 — 순서를 바꾸면 같은 seed 의
 /// 결과가 달라진다). 아무것도 안 나오면 [s] 그대로.
+///
+/// [rareMult] — 희귀 드롭 버프 배율(채집꾼 `buffs.json → rareDrop`, 2026-10-14). 확률에만 곱하므로
+/// 난수 소비 수는 그대로다.
 ({SaveGame save, Map<DuelStone, int> got}) rollDuelStones(
   SaveGame s,
   DuelStoneConfig cfg,
   math.Random rng,
-  DuelStoneSource source,
-) {
+  DuelStoneSource source, {
+  double rareMult = 1.0,
+}) {
   final table = switch (source) {
     DuelStoneSource.elite => cfg.eliteChance,
     DuelStoneSource.bossRepeat => cfg.bossRepeatChance,
@@ -974,7 +978,7 @@ SaveGame _addStones(SaveGame s, Map<DuelStone, int> got) {
   for (final k in DuelStone.values) {
     final p = table[k] ?? 0;
     if (p <= 0) continue;
-    if (rng.nextDouble() < p) got[k] = 1;
+    if (rng.nextDouble() < p * rareMult) got[k] = 1;
   }
   return (save: _addStones(s, got), got: got);
 }
@@ -1051,11 +1055,13 @@ TrainOp useDuelStone(
 /// (60초)에 한 번도 드물다 — 네트워크가 끊긴 채 몇 시간 논 경우까지 덮게 넉넉히 둔다(스킬 조각 여유와 같은 역할).
 const kDuelStoneDropSlack = 10;
 
-/// 결투석 증가 허용치 = 쓴 젤리로 살 수 있던 수 + 새 심연 마일스톤 × 마일스톤 개수 + 드롭 여유.
+/// 결투석 증가 허용치 = 쓴 젤리로 살 수 있던 수 + 새 심연 마일스톤 × 마일스톤 개수 + 드롭 여유
+/// + [idleDrops](경과 시간 기반 정예 드롭 허용치 — `rareDropUploadAllowance`, 방치 정산·채집꾼 버프 몫).
 int duelStoneAllowance(
   DuelStoneConfig cfg, {
   required int jellySpent,
   required int abyssMilestones,
+  int idleDrops = 0,
 }) {
   final cheapest = cfg.jelly.values
       .where((p) => p > 0)
@@ -1064,6 +1070,7 @@ int duelStoneAllowance(
   final perMilestone = cfg.abyssCount.values.fold<int>(0, (a, b) => a + b);
   return bought +
       math.max(0, abyssMilestones) * perMilestone +
+      math.max<int>(0, idleDrops) +
       kDuelStoneDropSlack;
 }
 

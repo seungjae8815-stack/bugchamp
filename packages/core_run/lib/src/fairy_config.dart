@@ -516,6 +516,7 @@ class FairyDexMilestone {
 /// - 방어는 **"받는 피해 −v"** 로 읽히게 바꾼다([fairyDefenseFor]). 방어력에 절대값을 더하면 초반엔 과하고
 ///   후반엔 무의미해져, 같은 "+8%" 가 단계마다 다른 뜻이 된다.
 /// - 곤충 몫(`petShare`)은 능력치가 아니라 곤충 피해 배율이다 — [fairyPetMult].
+/// - 체력을 곱하면 **회복도 같이 곱한다**(2026-10-14) — 회복은 최대 체력 비율이라 안 곱하면 묽어진다.
 CharacterStats applyFairyStats(CharacterStats s, Map<String, double> bonus) {
   if (bonus.isEmpty) return s;
   double v(String k) => bonus[k] ?? 0;
@@ -528,7 +529,7 @@ CharacterStats applyFairyStats(CharacterStats s, Map<String, double> bonus) {
     defense: fairyDefenseFor(s.defense, v('defense')),
     rewardMultiplier: s.rewardMultiplier,
     critChance: s.critChance,
-    hpRegen: s.hpRegen,
+    hpRegen: s.hpRegen * (1 + v('hp')),
     xpMultiplier: s.xpMultiplier,
     bugFind: s.bugFind,
     materialFind: s.materialFind,

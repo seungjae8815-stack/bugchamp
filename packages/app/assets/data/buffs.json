@@ -20,7 +20,9 @@
   },
   {
    "kind": "gatherer",
-   "materialFind": 2.0
+   "materialFind": 2.0,
+   "_rareDropComment": "희귀 드롭 확률 배율(2026-10-14 사장님 확정) — 정예·보스 재처치의 요정 속성석·결투석·성장물약. 온라인 사냥과 방치 정산 둘 다. 물약 하루 한도(pets.json potionDropDaily)는 그대로. 스킬 조각은 곱하지 않는다(§2.8 온라인만). 서버 업로드 허용치도 이 값(모든 버프의 곱)을 쓴다.",
+   "rareDrop": 2.0
   },
   {
    "kind": "luckyWind",

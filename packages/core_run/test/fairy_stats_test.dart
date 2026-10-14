@@ -39,7 +39,9 @@ void main() {
     expect(s.bossDamage, closeTo(3.3, 1e-9));
     // 요정이 건드리지 않는 능력치는 그대로.
     expect(s.critChance, base.critChance);
-    expect(s.hpRegen, base.hpRegen);
+    // 회복은 최대 체력 비율이라 체력 배율을 따라간다(2026-10-14) — 초당 회복 / 최대 체력이 그대로.
+    expect(s.hpRegen, closeTo(6, 1e-9));
+    expect(s.hpRegen / s.maxHp, closeTo(base.hpRegen / base.maxHp, 1e-12));
   });
 
   test('방어 v = 어느 방어력에서도 받는 피해 정확히 −v', () {

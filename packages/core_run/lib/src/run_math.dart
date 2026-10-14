@@ -450,7 +450,7 @@ CharacterStats deriveStats(
     return spec.valueAt(upgradeLevels[k] ?? 0);
   }
 
-  final levelScale = 1 + 0.03 * (characterLevel - 1);
+  final levelScale = 1 + c.levelStatPerLevel * (characterLevel - 1);
   final bugBuffAmp = v(UpgradeKind.bugBuff, 1.0);
   final bugBuff = 1 + 0.01 * bugBuffAmp * math.min(bugsCollected, 50);
 
@@ -503,7 +503,11 @@ double combatPower(CharacterStats s) {
       s.attackSpeed *
       (1 + s.critChance * (s.critDamage - 1)) *
       s.bossDamage;
-  final effectiveHp = s.maxHp * (1 + s.defense / 100);
+  // 생존력 = 방어로 늘어난 체력 + 회복 10초분, 회피만큼 덜 맞는다(2026-10-14 — 회피·회복력을 올려도 숫자가
+  // 그대로라 "죽은 강화"처럼 보였다). 회피는 최종 상한(evadeMax 0.4)을 넘지 않게 0.9 에서 자른다.
+  final effectiveHp =
+      (s.maxHp * (1 + s.defense / 100) + s.hpRegen * 10) /
+      (1 - s.evade.clamp(0.0, 0.9));
   return dps * 6 + effectiveHp * 0.4;
 }
 
@@ -539,11 +543,27 @@ class OfflineReport {
     this.bugs = 0,
     this.materials = const {},
     this.bugsBlocked = 0,
+    this.fairyStones = 0,
+    this.duelStones = 0,
+    this.potions = 0,
+    this.buffBonus,
+    this.buffMissed,
   });
 
   final int gold;
   final int xp;
   final Duration accrued;
+
+  /// 방치 중 정예에게서 나온 희귀 드롭(2026-10-14) — 요정 속성석 · 결투석 · 성장물약(하루 한도 안).
+  final int fairyStones;
+  final int duelStones;
+  final int potions;
+
+  /// 켜져 있던 버프로 **더 받은** 몫(버프 없이 계산한 값과의 차이). 없으면 null.
+  final OfflineGain? buffBonus;
+
+  /// 정산 구간 내내 버프 5종이 다 켜져 있었다면 **더 받았을** 몫(지금 받은 값과의 차이). 없으면 null.
+  final OfflineGain? buffMissed;
 
   /// 방치 중 얻은 곤충 수(알) · 재료(드롭 + 자동 방생 환산, 화석 포함) — 팝업 표시용(2026-10-04).
   final int bugs;
@@ -559,6 +579,60 @@ class OfflineReport {
     xp: 0,
     accrued: Duration.zero,
   );
+}
+
+/// 방치 보상의 한 몫(버프로 더 받은 것 · 놓친 것) — 복귀 팝업 표시용(2026-10-14).
+///
+/// 골드·경험치는 정확한 값이고, 재료·곤충·희귀 드롭은 **기댓값**이다(난수를 또 굴리지 않는다 —
+/// 화면은 "약"으로 보여 준다).
+@immutable
+class OfflineGain {
+  const OfflineGain({
+    this.gold = 0,
+    this.xp = 0,
+    this.materials = 0,
+    this.bugs = 0,
+    this.rareBugs = 0,
+    this.fairyStones = 0,
+    this.duelStones = 0,
+    this.potions = 0,
+  });
+
+  final int gold;
+  final int xp;
+  final double materials;
+  final double bugs;
+
+  /// [bugs] 중 희귀 종 이상.
+  final double rareBugs;
+  final double fairyStones;
+  final double duelStones;
+  final double potions;
+
+  /// [other] 를 뺀 몫(음수는 0) — 화면에 보일 "더 받은/놓친" 차이.
+  OfflineGain minus(OfflineGain other) {
+    double d(double a, double b) => a > b ? a - b : 0;
+    return OfflineGain(
+      gold: gold > other.gold ? gold - other.gold : 0,
+      xp: xp > other.xp ? xp - other.xp : 0,
+      materials: d(materials, other.materials),
+      bugs: d(bugs, other.bugs),
+      rareBugs: d(rareBugs, other.rareBugs),
+      fairyStones: d(fairyStones, other.fairyStones),
+      duelStones: d(duelStones, other.duelStones),
+      potions: d(potions, other.potions),
+    );
+  }
+
+  /// 화면에 "약 1" 이상으로 보일 것이 하나도 없으면 참 — 0.3마리 같은 몫은 말하지 않는다.
+  bool get isEmpty =>
+      gold <= 0 &&
+      xp <= 0 &&
+      materials < 0.5 &&
+      bugs < 0.5 &&
+      fairyStones < 0.5 &&
+      duelStones < 0.5 &&
+      potions < 0.5;
 }
 
 /// 방치 진행 결과 — 골드/경험치뿐 아니라 **스테이지 진행**과 처치 수를 함께 낸다.

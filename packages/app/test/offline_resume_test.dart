@@ -6,6 +6,7 @@ import 'package:app/data/save_repository.dart';
 import 'package:app/domain/providers.dart';
 import 'package:app/domain/save_controller.dart';
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,7 +31,7 @@ Map<String, dynamic> _readJson(String rel) =>
 
 Map<String, dynamic> _name(String s) => {'ko': s, 'en': s, 'ja': s};
 
-GameData _data({bool pets = false}) => GameData.fromDecoded(
+GameData _data({bool pets = false, bool buffs = false}) => GameData.fromDecoded(
   species: {
     'species': [
       {
@@ -64,6 +65,9 @@ GameData _data({bool pets = false}) => GameData.fromDecoded(
   // 방치 수식은 실제 밸런스 값으로 검증한다(더미 값이면 의미가 없다).
   runConfig: _readJson('assets/data/run_config.json'),
   petConfig: pets ? _readJson('assets/data/pets.json') : null,
+  buffConfig: buffs ? _readJson('assets/data/buffs.json') : null,
+  fairyConfig: buffs ? _readJson('assets/data/fairies.json') : null,
+  battleConfig: buffs ? _readJson('assets/data/battle.json') : null,
 );
 
 void main() {
@@ -242,6 +246,60 @@ void main() {
       expect(ctrl.pendingOffline!.bugsBlocked, greaterThan(0)); // 팝업이 안내한다
       expect(after.bugs.length, kDefaultStorageCapacity);
       expect(ctrl.pendingOffline!.materials, isNotEmpty);
+    });
+  });
+
+  // 2026-10-14 사장님 확정: 버프는 꺼 둔 동안에도 돌고(만료 시각까지), 팝업이 더 받은 몫·놓친 몫을 알린다.
+  group('방치 정산의 버프', () {
+    Future<SaveController> boot(SaveGame seed, DateTime now) async {
+      final c = ProviderContainer(
+        overrides: [
+          gameDataProvider.overrideWith(
+            (ref) => _data(pets: true, buffs: true),
+          ),
+          saveRepositoryProvider.overrideWithValue(_FakeRepo(seed)),
+          clockProvider.overrideWithValue(FixedClock(now)),
+        ],
+      );
+      addTearDown(c.dispose);
+      await c.read(saveControllerProvider.future);
+      return c.read(saveControllerProvider.notifier);
+    }
+
+    final seed = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(lastSeen: t0, stageNumber: 30, level: 5);
+    final back = t0.add(const Duration(hours: 8));
+
+    test('버프 없이 나가면 골드는 그대로, 팝업은 놓친 몫과 버프 버튼을 보여 준다', () async {
+      final r = (await boot(seed, back)).pendingOffline!;
+      expect(r.buffBonus, isNull);
+      expect(r.buffMissed, isNotNull);
+      expect(r.buffMissed!.gold, greaterThan(r.gold)); // 골드 ×2 + 광폭화 처치 수
+      expect(r.buffMissed!.bugs, greaterThan(0));
+    });
+
+    test('골드 러시가 정산 중간(3시간 뒤)에 끝나면 그 3시간만 골드 ×2', () async {
+      final none = (await boot(seed, back)).pendingOffline!;
+      final rush = (await boot(
+        seed.copyWith(
+          buffExpiry: {BuffKind.goldRush: t0.add(const Duration(hours: 3))},
+        ),
+        back,
+      )).pendingOffline!;
+      // 3/8 구간만 두 배 → 약 1.375배.
+      expect(rush.gold / none.gold, closeTo(1.375, 0.03));
+      expect(rush.buffBonus!.gold, rush.gold - none.gold);
+      expect(rush.buffMissed, isNotNull); // 나머지 5시간·다른 버프는 놓쳤다
+    });
+
+    test('무한 버프 패스면 다 받았고 놓친 몫이 없다', () async {
+      final r = (await boot(
+        seed.copyWith(buffPassExpiresAt: t0.add(const Duration(days: 30))),
+        back,
+      )).pendingOffline!;
+      expect(r.buffBonus, isNotNull);
+      expect(r.buffMissed, isNull);
     });
   });
 }

@@ -62,6 +62,8 @@ class _Config implements GameConfigLike {
   final BattleConfig battle = const BattleConfig();
 
   @override
+  final BuffConfig? buffs = null;
+  @override
   List<Species> get speciesList => [testSpecies];
 
   @override

@@ -783,6 +783,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final h = d.inHours;
     final m = d.inMinutes % 60;
     final timeStr = h > 0 ? l.durationHm(h, m) : l.durationM(m);
+    final rare = <String>[
+      if (r.fairyStones > 0) l.offlineRareFairyStone(r.fairyStones),
+      if (r.duelStones > 0) l.offlineRareDuelStone(r.duelStones),
+      if (r.potions > 0) l.offlineRarePotion(r.potions),
+    ];
     return showGameDialog<void>(
       context,
       title: l.offlineTitle,
@@ -824,9 +829,102 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
           ],
+          // 방치 정예 희귀 드롭(2026-10-14) — 속성석·결투석·성장물약.
+          if (rare.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              l.offlineRareLine(rare.join(' · ')),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFCE93D8),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+          // 버프로 더 받은 몫 · 놓친 몫(2026-10-14 사장님 확정). 재료·곤충·희귀 드롭은 기댓값("약").
+          if (r.buffBonus != null)
+            _offlineGainBox(
+              l,
+              l.offlineBuffBonusTitle,
+              r.buffBonus!,
+              const Color(0xFF81C784),
+            ),
+          if (r.buffMissed != null)
+            _offlineGainBox(
+              l,
+              l.offlineBuffMissedTitle,
+              r.buffMissed!,
+              const Color(0xFFFFB74D),
+            ),
         ],
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [
+        // 놓친 사람에게만 — 버프 화면으로 바로 간다.
+        if (r.buffMissed != null && _data.buffConfig != null)
+          gameDialogButton(l.offlineBuffMissedButton, () {
+            Navigator.pop(context);
+            unawaited(_showBuffSheet(l));
+          }),
+        gameDialogButton(l.actionClose, () => Navigator.pop(context)),
+      ],
+    );
+  }
+
+  /// 복귀 팝업의 "버프 덕분에 더 받았어요 / 켜져 있었다면 더 받았을 거예요" 상자.
+  Widget _offlineGainBox(
+    AppLocalizations l,
+    String title,
+    OfflineGain g,
+    Color color,
+  ) {
+    final items = <String>[
+      if (g.gold > 0) l.offlineGainGold(formatCompact(g.gold)),
+      if (g.xp > 0) l.offlineGainXp(formatCompact(g.xp)),
+      if (g.materials >= 0.5)
+        l.offlineGainMaterials(formatCompact(g.materials.round())),
+      if (g.bugs >= 0.5)
+        g.rareBugs >= 0.5
+            ? l.offlineGainBugsRare(g.bugs.round(), g.rareBugs.round())
+            : l.offlineGainBugs(g.bugs.round()),
+      if (g.fairyStones >= 0.5) l.offlineGainFairyStones(g.fairyStones.round()),
+      if (g.duelStones >= 0.5) l.offlineGainDuelStones(g.duelStones.round()),
+      if (g.potions >= 0.5) l.offlineGainPotions(g.potions.round()),
+    ];
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: color,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            items.join(' · '),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              height: 1.35,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -8633,6 +8731,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       (l.statCrit, '${(base.critChance * 100).toStringAsFixed(1)}%'),
       (l.statMaxHp, formatCompact(base.maxHp)),
       (l.statDefense, formatCompact(base.defense)),
+      // 캐릭터 레벨 효과(2026-10-14) — 레벨당 공격·체력 +N%(회복도 체력 비율이라 같이 오른다). 어디에도 안내가 없었다.
+      (
+        l.statLevelBonus,
+        '+${(_config.levelStatPerLevel * (save.level - 1) * 100).toStringAsFixed(0)}%',
+      ),
     ];
     showDialog<void>(
       context: context,
@@ -8977,6 +9080,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       color: _onScene,
                       fontWeight: FontWeight.w900,
                       fontSize: 16,
+                    ),
+                  ),
+                  // 버프는 꺼 둔 동안에도 돈다(2026-10-14) — 방치 정산이 만료 시각까지 입힌다.
+                  const SizedBox(height: 4),
+                  Text(
+                    l.buffSheetOfflineNote,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: _onScene.withValues(alpha: 0.75),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
                     ),
                   ),
                   const SizedBox(height: 12),

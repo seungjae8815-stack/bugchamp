@@ -171,7 +171,8 @@ GradeOp buyPotions(
 SaveGame grantPotions(SaveGame s, int count) =>
     count <= 0 ? s : s.copyWith(growthPotions: s.growthPotions + count);
 
-/// 성장물약 무료 획득처(직접 사냥만 — 방치 정산 X).
+/// 성장물약 무료 획득처. 정예 확률 드롭은 **방치 정산에서도** 굴린다(2026-10-14 사장님 확정 —
+/// `offline_buffs.dart rollIdleRareDrops`, 같은 하루 한도 [grantDropPotions]).
 enum PotionSource { elite, boss, abyssMilestone, mission }
 
 /// 무료 물약 굴리기 — 정예 [IndividualGradeConfig.potionEliteChance] · 보스 첫 처치 확정, 재처치 확률 ·
@@ -185,16 +186,18 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
   bool firstKill = false,
   String? dayKey,
   DateTime? now,
+  double rareMult = 1.0,
 }) {
   if (!cfg.enabled) return (save: s, got: 0);
   var got = 0;
+  // [rareMult] — 채집꾼 버프의 희귀 드롭 배율(2026-10-14). 확률 드롭에만 곱한다(난수 소비 수는 그대로).
   switch (src) {
     case PotionSource.elite:
-      if (rng.nextDouble() < cfg.potionEliteChance) got = 1;
+      if (rng.nextDouble() < cfg.potionEliteChance * rareMult) got = 1;
     case PotionSource.boss:
       got = firstKill
           ? cfg.potionBossFirst
-          : (rng.nextDouble() < cfg.potionBossChance ? 1 : 0);
+          : (rng.nextDouble() < cfg.potionBossChance * rareMult ? 1 : 0);
     case PotionSource.abyssMilestone:
       got = cfg.potionAbyss10;
     case PotionSource.mission:
@@ -217,18 +220,42 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
   final capped =
       src == PotionSource.elite || (src == PotionSource.boss && !firstKill);
   if (capped && got > 0 && now != null && cfg.potionDropDaily > 0) {
-    final today = dailyDateKey(now.toUtc());
-    final used = potionDropsOn(s, today);
-    if (used >= cfg.potionDropDaily) return (save: s, got: 0);
-    got = math.min(got, cfg.potionDropDaily - used);
-    s = s.copyWith(
-      dailyClaims: {
-        ...s.dailyClaims,
-        kPotionDropKey: '$today:${(used + got).toString().padLeft(2, '0')}',
-      },
-    );
+    return grantDropPotions(s, cfg, got, now);
   }
   return (save: grantPotions(s, got), got: got);
+}
+
+/// 확률 드롭 물약 [count]개를 **서버 날짜(UTC) 하루 `potionDropDaily` 개** 한도 안에서 넣는다
+/// (정예·보스 재처치·방치 정예 공용 — 서버 업로드 검사 `psR` 과 같은 한도). 받은 수를 돌려준다.
+({SaveGame save, int got}) grantDropPotions(
+  SaveGame s,
+  IndividualGradeConfig cfg,
+  int count,
+  DateTime now,
+) {
+  if (count <= 0) return (save: s, got: 0);
+  if (cfg.potionDropDaily <= 0) {
+    return (save: grantPotions(s, count), got: count);
+  }
+  final today = dailyDateKey(now.toUtc());
+  final used = potionDropsOn(s, today);
+  if (used >= cfg.potionDropDaily) return (save: s, got: 0);
+  final got = math.min(count, cfg.potionDropDaily - used);
+  s = s.copyWith(
+    dailyClaims: {
+      ...s.dailyClaims,
+      kPotionDropKey: '$today:${(used + got).toString().padLeft(2, '0')}',
+    },
+  );
+  return (save: grantPotions(s, got), got: got);
+}
+
+/// 오늘(서버 날짜 UTC) 확률 드롭으로 더 받을 수 있는 물약 수. 한도가 없으면 큰 수.
+int potionDropRoom(SaveGame s, IndividualGradeConfig cfg, DateTime now) {
+  if (!cfg.enabled) return 0;
+  if (cfg.potionDropDaily <= 0) return 1 << 20;
+  final used = potionDropsOn(s, dailyDateKey(now.toUtc()));
+  return math.max(0, cfg.potionDropDaily - used);
 }
 
 /// 기기의 하루 확률 물약 드롭 기록 키(`dailyClaims`) — 값은 `yyyy-MM-dd:NN`(두 자리라 문자열 비교가 곧 순서다.

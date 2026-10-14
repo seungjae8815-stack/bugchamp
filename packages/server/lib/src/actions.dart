@@ -1111,7 +1111,13 @@ class GameActions {
   /// 5. **기존 요정 고쳐 쓰기.** 저장본에 있던 id 의 등급·종류·부가·개체값은 저장본 값으로([_keepFairyIdentity]).
   ///
   /// 레벨 ≤ 등급 상한 · 요정함 상한은 `enforceFairyRules`(앱 로드와 같은 함수).
-  SaveGame _enforceFairy(SaveGame stored, SaveGame client, FairyConfig cfg) {
+  /// [idleStones] — 경과 시간 기반 정예 속성석 허용치(`rareDropUploadAllowance` — 방치 정산·채집꾼 버프 몫, 2026-10-14).
+  SaveGame _enforceFairy(
+    SaveGame stored,
+    SaveGame client,
+    FairyConfig cfg, {
+    int idleStones = 0,
+  }) {
     final before = stored.fairy;
     var f = _fairyKnownKeysOnly(enforceFairyRules(client.fairy, cfg), cfg);
     // 이미 있던 요정·알의 **정체는 바뀌지 않는다**(레벨만 오른다). 가치 검사는 새 id 만 깎으므로,
@@ -1162,6 +1168,7 @@ class GameActions {
         (cheapest >= 1 << 30 ? 0 : jellySpent ~/ cheapest) +
         newBosses * cfg.drops.bossFirstStones +
         dexNew.fold<int>(0, (a, m) => a + m.acceleratorCount) +
+        max(0, idleStones) +
         _fairyItemSlack;
     if (items(f) - items(before) > itemAllow) {
       f = f.copyWith(stones: before.stones, accelerators: before.accelerators);
@@ -1653,10 +1660,19 @@ class GameActions {
     var capped = enforceStorage(parsed);
     // 훈련 v2 — 이전(멱등, 앱 로드와 같은 함수) → 배분을 예산·칸 상한으로 → 결투석 급증.
     // 구버전(1.0.17, feat 19 미만) 업로드는 서버가 이전하지 않는다 — 1.0.18 앱이 켜질 때 그때까지의 투자로 옮긴다.
+    // 정예 희귀 드롭 허용치(경과 시간 기반, 2026-10-14) — 방치 정산·채집꾼 버프로 느는 속성석·결투석 몫.
+    final rareAllow = rareDropUploadAllowance(
+      elapsed: elapsed,
+      run: config.run,
+      fairy: config.fairy,
+      stones: config.battle.training.stones,
+      buffs: config.buffs,
+    );
     final tv2 = _enforceTrainV2(
       stored,
       capped,
       migrate: ((incomingJson['feat'] as num?)?.toInt() ?? 0) >= 19,
+      idleStones: rareAllow.duelStones,
     );
     if (tv2.clamped) clampReasons.add('train');
     capped = tv2.save;
@@ -1688,7 +1704,12 @@ class GameActions {
         }
         capped = capped.copyWith(fairy: rr);
       }
-      final fy = _enforceFairy(stored, capped, fairyCfg);
+      final fy = _enforceFairy(
+        stored,
+        capped,
+        fairyCfg,
+        idleStones: rareAllow.fairyStones,
+      );
       if (!identical(fy, capped)) clampReasons.add('fairy');
       capped = fy;
     }
@@ -1957,6 +1978,7 @@ class GameActions {
     SaveGame stored,
     SaveGame client, {
     bool migrate = true,
+    int idleStones = 0,
   }) {
     final tr = config.battle.training;
     final byId = {for (final sp in config.speciesList) sp.id: sp};
@@ -1988,6 +2010,7 @@ class GameActions {
       tr.stones,
       jellySpent: jellySpent,
       abyssMilestones: abyssNewMilestones(stored, out),
+      idleDrops: idleStones,
     );
     if (stones(out) - stones(stored) > allow) {
       out = out.copyWith(duelStones: stored.duelStones);
@@ -5792,6 +5815,9 @@ abstract interface class GameConfigLike {
 
   /// 요정 — 업로드의 등급 가치 급증 상한·요정함 상한에만 쓴다(처리는 기기 권위).
   FairyConfig? get fairy;
+
+  /// 버프 — 업로드의 희귀 드롭 허용치(채집꾼 배율)에만 쓴다. 없으면 배율 1.
+  BuffConfig? get buffs;
 
   /// 드롭 롤 대상 종 목록.
   List<Species> get speciesList;

@@ -3,6 +3,7 @@ import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 
 import '../data/game_data.dart';
+import 'guild_service.dart' show GuildBuffCache, kGuildOpen;
 
 /// 업그레이드·레벨·곤충 수만의 순수 능력치(펫·버프·장비 미포함).
 CharacterStats baseStatsOf(SaveGame save, RunConfig config) => deriveStats(
@@ -83,15 +84,14 @@ CharacterStats displayStatsOf(SaveGame save, GameData data, DateTime now) =>
 /// 게임 데이터가 아직 없으면 null(모르는 값을 0 으로 올리면 서버를 덮어쓴다).
 double? displayCombatPower(SaveGame save, GameData? data, DateTime now) {
   if (data?.runConfig == null) return null;
-  // 펫 패시브도 넣는다(2026-10-14 사장님 확인 — 패시브 v2 로 등급·희귀도에 따라 공격 최대 +35%까지 자라서,
-  // 빼 두면 패시브를 키워도 숫자가 그대로였다). 사냥 능력치([huntStatsUncapped])와 같은 순서·예산으로 얹는다.
-  final config = data!.runConfig!;
+  // **사냥 능력치 그대로**(2026-10-14 사장님 확정) — 펫 패시브·스킬 패시브·동행 요정·길드·도감까지. 예전엔 장비(+펫
+  // 패시브)만 넣어 스킬·요정·도감을 키워도 숫자가 그대로였다. 버프·지속형 액티브는 뺀다(켜 둘 때만이라).
   return combatPower(
-    applySpeciesPassives(
-      displayStatsOf(save, data, now),
-      speciesPassivesOf(save, data, now),
-      critBudget: config.critBudgetOther,
-      evadeBudget: config.evadeBudgetOther,
+    huntStatsUncapped(
+      save,
+      data!,
+      now,
+      guildBonus: kGuildOpen ? GuildBuffCache.bonus : const {},
     ),
   );
 }

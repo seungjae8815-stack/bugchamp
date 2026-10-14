@@ -52,7 +52,8 @@ class DexConfig {
   /// 정복 1종당 최대체력 배율 가산.
   final double hpPerConquer;
 
-  /// 발견 1종당 골드 배율 가산 — 도감을 채우는 초반 동기.
+  /// 발견 1종당 골드 +% — 도감을 채우는 초반 동기. 골드 배율에 `1 + 이 값 × 발견 수` 를 **곱한다**
+  /// (2026-10-14 — 더하면 강화로 자란 골드 배율에 묽어져 후반에 +0.3% 였다).
   final double rewardPerDiscover;
 
   /// [discovered]종 발견 · [conquered]종 정복 상태에서 **받을 수 있는** 마일스톤 중
@@ -77,16 +78,20 @@ class DexConfig {
   /// 부화기를 돌려 키운 결과다. 시간을 쓴 쪽에 보상이 가야 한다.
   CharacterStats apply(CharacterStats s, int discovered, int conquered) {
     if (discovered <= 0 && conquered <= 0) return s;
+    final hpMult = 1 + hpPerConquer * conquered;
     return CharacterStats(
       attack: s.attack * (1 + attackPerConquer * conquered),
-      maxHp: s.maxHp * (1 + hpPerConquer * conquered),
-      rewardMultiplier: s.rewardMultiplier + rewardPerDiscover * discovered,
+      maxHp: s.maxHp * hpMult,
+      // 곱 — 가산이면 강화로 자란 골드 배율(후반 수십 배)에 묽어진다(2026-10-14 사장님 확정).
+      rewardMultiplier:
+          s.rewardMultiplier * (1 + rewardPerDiscover * discovered),
       attackSpeed: s.attackSpeed,
       critChance: s.critChance,
       critDamage: s.critDamage,
       bossDamage: s.bossDamage,
       defense: s.defense,
-      hpRegen: s.hpRegen,
+      // 회복 = 최대 체력 비율 — 체력 배율을 같이 탄다(장비 체력 옵션과 같은 규칙).
+      hpRegen: s.hpRegen * hpMult,
       xpMultiplier: s.xpMultiplier,
       bugFind: s.bugFind,
       materialFind: s.materialFind,

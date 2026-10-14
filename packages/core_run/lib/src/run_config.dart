@@ -244,6 +244,7 @@ class RunConfig {
     this.skillCooldownBudgetGear = 0.3,
     this.evadeBudgetOther = 0.1,
     this.walkSeconds = 0.12,
+    this.levelStatPerLevel = 0.03,
     this.walkThreatMult = 0.0,
     this.boostDecayPerSec = 0.4,
     this.boostSpeedFactor = 1.0,
@@ -458,6 +459,9 @@ class RunConfig {
   /// 평균 레벨 96 · 이동속도 ×5.8 → 걷기 0.6÷5.8÷부스트 1.24 ≈ 0.08~0.1초).
   /// 방치 정산·서버(estimateClears)는 원래부터 이동속도를 모르고 0.6초 근사를 쓴다.
   final double walkSeconds;
+
+  /// 캐릭터 레벨 1당 공격·체력(회복도 따라감) 증가율(2026-10-14 — 코드 0.03 을 JSON 으로). 레벨 L = ×(1 + 값 × (L−1)).
+  final double levelStatPerLevel;
 
   /// 탭을 멈췄을 때 초당 떨어지는 배율.
   final double boostDecayPerSec;
@@ -872,6 +876,8 @@ class RunConfig {
           (json['skillCooldownBudgetGear'] as num?)?.toDouble() ?? 0.3,
       evadeBudgetOther: (json['evadeBudgetOther'] as num?)?.toDouble() ?? 0.1,
       walkSeconds: (json['walkSeconds'] as num?)?.toDouble() ?? 0.12,
+      levelStatPerLevel:
+          (json['levelStatPerLevel'] as num?)?.toDouble() ?? 0.03,
       walkThreatMult: (json['walkThreatMult'] as num?)?.toDouble() ?? 0.0,
       boostDecayPerSec: (json['boostDecayPerSec'] as num?)?.toDouble() ?? 0.4,
       boostSpeedFactor: (json['boostSpeedFactor'] as num?)?.toDouble() ?? 1.0,

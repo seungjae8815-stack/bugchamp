@@ -760,7 +760,14 @@ FairyOp fairyBossDrop(
 /// 정예 처치 요정 드롭(확률) — 알 · 속성석 · 가속기. 결과 `extra` 는 [fairyBossDrop] 과 같고 `accel` 이 더 있다.
 ///
 /// 굴리는 순서 고정(알 → 속성석 → 가속기) — 바꾸면 같은 seed 의 결과가 달라진다.
-FairyOp fairyEliteDrop(FairyState s, FairyConfig cfg, math.Random rng) {
+///
+/// [stoneMult] — 속성석 확률 배율(채집꾼 버프 `buffs.json → rareDrop`, 2026-10-14). 알·가속기는 그대로.
+FairyOp fairyEliteDrop(
+  FairyState s,
+  FairyConfig cfg,
+  math.Random rng, {
+  double stoneMult = 1.0,
+}) {
   final d = cfg.drops;
   final eggs = <FairyGrade>[];
   if (rng.nextDouble() < d.eliteEggChance) {
@@ -769,7 +776,7 @@ FairyOp fairyEliteDrop(FairyState s, FairyConfig cfg, math.Random rng) {
   }
   final stones = <String, int>{};
   final subs = cfg.subWeight.keys.toList();
-  if (rng.nextDouble() < d.eliteStoneChance && subs.isNotEmpty) {
+  if (rng.nextDouble() < d.eliteStoneChance * stoneMult && subs.isNotEmpty) {
     stones[subs[rng.nextInt(subs.length)]] = 1;
   }
   final accel = d.eliteAccelId;

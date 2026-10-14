@@ -46,6 +46,8 @@ class _Cfg implements GameConfigLike {
   @override
   final FairyConfig? fairy = FairyConfig.fromJson(_data('fairies.json'));
   @override
+  final BuffConfig? buffs = BuffConfig.fromJson(_data('buffs.json'));
+  @override
   List<Species> get speciesList => const [];
 }
 

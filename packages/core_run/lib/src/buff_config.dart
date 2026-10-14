@@ -14,6 +14,7 @@ class BuffSpec {
     this.attackSpeed = 1.0,
     this.materialFind = 1.0,
     this.bugFind = 1.0,
+    this.rareDrop = 1.0,
   });
 
   final BuffKind kind;
@@ -24,6 +25,10 @@ class BuffSpec {
   final double materialFind;
   final double bugFind;
 
+  /// 정예·보스 재처치 **희귀 드롭** 확률 배율(요정 속성석·결투석·성장물약, 2026-10-14 사장님 확정 — 채집꾼).
+  /// 온라인 사냥과 방치 정산 둘 다. 스킬 조각은 곱하지 않는다(§2.8).
+  final double rareDrop;
+
   factory BuffSpec.fromJson(Map<String, dynamic> json) => BuffSpec(
     kind: BuffKind.fromKey(json['kind'] as String)!,
     gold: (json['gold'] as num?)?.toDouble() ?? 1.0,
@@ -32,6 +37,7 @@ class BuffSpec {
     attackSpeed: (json['attackSpeed'] as num?)?.toDouble() ?? 1.0,
     materialFind: (json['materialFind'] as num?)?.toDouble() ?? 1.0,
     bugFind: (json['bugFind'] as num?)?.toDouble() ?? 1.0,
+    rareDrop: (json['rareDrop'] as num?)?.toDouble() ?? 1.0,
   );
 }
 
@@ -78,6 +84,9 @@ class BuffConfig {
   final int freeCooldownSeconds;
 
   BuffSpec? spec(BuffKind kind) => specs[kind];
+
+  /// 모든 버프가 켜졌을 때의 희귀 드롭 배율 — 서버 업로드 허용치가 쓴다(가장 운 좋은 정상 유저).
+  double get maxRareDropMult => rareDropMultOf(BuffKind.values, this);
 
   factory BuffConfig.fromJson(Map<String, dynamic> json) {
     final list = (json['buffs'] as List).cast<Map<String, dynamic>>().map(
@@ -130,4 +139,15 @@ CharacterStats applyBuffs(
     evade: base.evade,
     boostBonus: base.boostBonus,
   );
+}
+
+/// 켜진 버프들의 희귀 드롭 배율(곱). 설정이 없거나 해당 버프가 없으면 1.
+/// 확률에 곱하므로 난수 소비 수는 그대로다(같은 seed 의 다른 보상이 안 바뀐다).
+double rareDropMultOf(Iterable<BuffKind> active, BuffConfig? config) {
+  if (config == null) return 1.0;
+  var m = 1.0;
+  for (final k in active) {
+    m *= config.spec(k)?.rareDrop ?? 1.0;
+  }
+  return m;
 }

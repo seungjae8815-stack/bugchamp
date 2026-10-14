@@ -1228,6 +1228,96 @@ abstract class AppLocalizations {
   /// **'XP'**
   String get offlineXpLabel;
 
+  /// No description provided for @offlineRareLine.
+  ///
+  /// In en, this message translates to:
+  /// **'✨ From elites: {items}'**
+  String offlineRareLine(String items);
+
+  /// No description provided for @offlineRareFairyStone.
+  ///
+  /// In en, this message translates to:
+  /// **'Attribute Stone {count}'**
+  String offlineRareFairyStone(int count);
+
+  /// No description provided for @offlineRareDuelStone.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel stone {count}'**
+  String offlineRareDuelStone(int count);
+
+  /// No description provided for @offlineRarePotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potion {count}'**
+  String offlineRarePotion(int count);
+
+  /// No description provided for @offlineBuffBonusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra from your buffs'**
+  String get offlineBuffBonusTitle;
+
+  /// No description provided for @offlineBuffMissedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'With buffs on, you\'d have earned more'**
+  String get offlineBuffMissedTitle;
+
+  /// No description provided for @offlineBuffMissedButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on buffs'**
+  String get offlineBuffMissedButton;
+
+  /// No description provided for @offlineGainGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold +{amount}'**
+  String offlineGainGold(String amount);
+
+  /// No description provided for @offlineGainXp.
+  ///
+  /// In en, this message translates to:
+  /// **'XP +{amount}'**
+  String offlineGainXp(String amount);
+
+  /// No description provided for @offlineGainMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials ~+{count}'**
+  String offlineGainMaterials(String count);
+
+  /// No description provided for @offlineGainBugs.
+  ///
+  /// In en, this message translates to:
+  /// **'~{count} bugs'**
+  String offlineGainBugs(int count);
+
+  /// No description provided for @offlineGainBugsRare.
+  ///
+  /// In en, this message translates to:
+  /// **'~{count} bugs (~{rare} Rare+)'**
+  String offlineGainBugsRare(int count, int rare);
+
+  /// No description provided for @offlineGainFairyStones.
+  ///
+  /// In en, this message translates to:
+  /// **'Attribute Stones ~+{count}'**
+  String offlineGainFairyStones(int count);
+
+  /// No description provided for @offlineGainDuelStones.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel stones ~+{count}'**
+  String offlineGainDuelStones(int count);
+
+  /// No description provided for @offlineGainPotions.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potions ~+{count}'**
+  String offlineGainPotions(int count);
+
   /// No description provided for @durationHm.
   ///
   /// In en, this message translates to:
@@ -3094,6 +3184,12 @@ abstract class AppLocalizations {
   /// **'Activate a buff'**
   String get buffSheetTitle;
 
+  /// No description provided for @buffSheetOfflineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Also applies while the app is closed (idle rewards)'**
+  String get buffSheetOfflineNote;
+
   /// No description provided for @buffWatchAd.
   ///
   /// In en, this message translates to:
@@ -3157,7 +3253,7 @@ abstract class AppLocalizations {
   /// No description provided for @buffGathererDesc.
   ///
   /// In en, this message translates to:
-  /// **'Material gain ×2'**
+  /// **'Material gain ×2 · stone & potion drop rate ×2'**
   String get buffGathererDesc;
 
   /// No description provided for @buffLuckyWind.
@@ -6021,6 +6117,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Health'**
   String get statHp;
+
+  /// No description provided for @statLevelBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Level bonus (ATK·HP)'**
+  String get statLevelBonus;
 
   /// No description provided for @statGoldGain.
   ///

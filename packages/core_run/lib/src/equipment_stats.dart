@@ -35,10 +35,9 @@ Map<ItemOptionKind, double> equipmentBonus(
 double equipmentSkillCooldownCut(
   Map<ItemOptionKind, double> bonus, {
   double budget = 1.0,
-}) => math.min(
-  (bonus[ItemOptionKind.skillCooldown] ?? 0) / 100.0,
-  budget,
-).clamp(0.0, 0.9);
+}) => math
+    .min((bonus[ItemOptionKind.skillCooldown] ?? 0) / 100.0, budget)
+    .clamp(0.0, 0.9);
 
 /// 장비가 늘려주는 채집함 칸(채집함 부위 전용).
 int equipmentStorageSlots(Iterable<EquipItem> equipped, ItemConfig? config) {

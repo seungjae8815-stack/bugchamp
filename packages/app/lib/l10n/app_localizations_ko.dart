@@ -633,6 +633,75 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineXpLabel => '경험치';
 
   @override
+  String offlineRareLine(String items) {
+    return '✨ 정예에게서 $items';
+  }
+
+  @override
+  String offlineRareFairyStone(int count) {
+    return '속성석 $count';
+  }
+
+  @override
+  String offlineRareDuelStone(int count) {
+    return '결투석 $count';
+  }
+
+  @override
+  String offlineRarePotion(int count) {
+    return '성장물약 $count';
+  }
+
+  @override
+  String get offlineBuffBonusTitle => '버프 덕분에 더 받았어요';
+
+  @override
+  String get offlineBuffMissedTitle => '버프가 켜져 있었다면 더 받았을 거예요';
+
+  @override
+  String get offlineBuffMissedButton => '버프 켜러 가기';
+
+  @override
+  String offlineGainGold(String amount) {
+    return '골드 +$amount';
+  }
+
+  @override
+  String offlineGainXp(String amount) {
+    return '경험치 +$amount';
+  }
+
+  @override
+  String offlineGainMaterials(String count) {
+    return '재료 약 +$count';
+  }
+
+  @override
+  String offlineGainBugs(int count) {
+    return '곤충 약 $count마리';
+  }
+
+  @override
+  String offlineGainBugsRare(int count, int rare) {
+    return '곤충 약 $count마리(희귀 이상 약 $rare)';
+  }
+
+  @override
+  String offlineGainFairyStones(int count) {
+    return '속성석 약 +$count';
+  }
+
+  @override
+  String offlineGainDuelStones(int count) {
+    return '결투석 약 +$count';
+  }
+
+  @override
+  String offlineGainPotions(int count) {
+    return '성장물약 약 +$count';
+  }
+
+  @override
   String durationHm(int h, int m) {
     return '$h시간 $m분';
   }
@@ -1689,6 +1758,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get buffSheetTitle => '버프 활성화';
 
   @override
+  String get buffSheetOfflineNote => '앱을 꺼 둔 동안(방치 보상)에도 적용돼요';
+
+  @override
   String get buffWatchAd => '무료로 켜기';
 
   @override
@@ -1723,7 +1795,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get buffGatherer => '채집가의 손길';
 
   @override
-  String get buffGathererDesc => '재료 획득 ×2';
+  String get buffGathererDesc => '재료 획득 ×2 · 속성석·결투석·성장물약 확률 ×2';
 
   @override
   String get buffLuckyWind => '행운의 바람';
@@ -3399,6 +3471,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get statHp => '체력';
+
+  @override
+  String get statLevelBonus => '레벨 보너스(공격·체력)';
 
   @override
   String get statGoldGain => '골드 획득';
