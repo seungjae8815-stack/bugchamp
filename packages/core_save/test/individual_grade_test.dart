@@ -9,9 +9,13 @@ import 'package:test/test.dart';
 
 // 개체 등급 개편(2026-10-11, docs/design_individual_grade.md) — 정수·등급 올리기·물약.
 void main() {
+  // 규칙(정수·올리기·짝짓기) 검사용 고정 값 — 실데이터 값은 core_run individual_grade_test 가 본다
+  // (2026-10-14 기본값이 100% 일반 · 4·4·5·6 으로 바뀌어도 이 테스트의 계산은 그대로).
   const cfg = IndividualGradeConfig(
     enabled: true,
     essenceRarity: {Grade.common: 1, Grade.legendary: 28},
+    wildWeights: [0.80, 0.15, 0.04, 0.01, 0.0],
+    essenceCosts: [6, 6, 6, 10],
   );
   const common = Species(
     id: 'stag_c',
@@ -291,7 +295,7 @@ void main() {
       seed: seed,
     );
 
-    test('부모가 전설이어도 자식 등급은 야생 확률 · 켜진 뒤 생긴 표식', () {
+    test('부모가 전설이어도 자식 등급은 야생 확률(2026-10-14 = 100% 일반) · 켜진 뒤 생긴 표식', () {
       final c = List.filled(6, 0);
       for (var i = 0; i < 4000; i++) {
         final kid = slot(i).hatch(id: 'k$i', species: common, cfg: pets);
@@ -300,7 +304,7 @@ void main() {
         c[kid.potential]++;
       }
       expect(c[5], 0, reason: '야생 전설 0');
-      expect(c[1] / 4000, closeTo(0.80, 0.03));
+      expect(c[1], 4000, reason: '짝짓기 자식도 야생과 같이 100% 일반(1.0.21)');
     });
 
     test('꺼져 있으면 옛 규칙(부모 등급 상속) · 표식 없음', () {

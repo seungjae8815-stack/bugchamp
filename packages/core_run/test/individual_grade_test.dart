@@ -42,28 +42,29 @@ void main() {
 
   test('실데이터 — 확정 값(설계 표)', () {
     expect(g.statMult, [1.0, 1.1, 1.22, 1.36, 1.52]);
-    expect(g.essenceCosts, [6, 6, 6, 10]);
-    expect(g.wildWeights.last, 0, reason: '야생 전설 0');
+    // 2026-10-14(1.0.21): 야생·짝짓기 100% 일반 + 올리기 4·4·5·6(무료 전설 약 4주 유지).
+    expect(g.essenceCosts, [4, 4, 5, 6]);
+    expect(g.wildWeights, [1.0, 0.0, 0.0, 0.0, 0.0], reason: '야생은 일반만');
     expect(g.gachaGradeWeights.last, 0.03);
     expect(g.potionMaxPerUse, 3);
     expect(g.potionJelly % 5, 0, reason: '젤리 가격은 5 단위(§2.6)');
   });
 
-  test('정수 — 등급 누적 · 올리기 비용 · 전설 = 2,160', () {
+  test('정수 — 등급 누적 · 올리기 비용 · 전설 = 480', () {
     expect(
       [for (var p = 1; p <= 5; p++) g.cumulative(p)],
-      [1, 6, 36, 216, 2160],
+      [1, 4, 16, 80, 480],
     );
-    expect(g.upgradeCost(1), 5);
-    expect(g.upgradeCost(4), 2160 - 216);
+    expect(g.upgradeCost(1), 3);
+    expect(g.upgradeCost(4), 480 - 80);
     expect(g.upgradeCost(5), 0);
   });
 
   test('정수로 바꾸기 — 알은 0 · 뽑기 출신은 희귀도 가치 없음', () {
     expect(g.essenceOf(bug(3, stage: LifeStage.egg), Grade.legendary), 0);
     expect(g.essenceOf(bug(1), Grade.common), 1);
-    expect(g.essenceOf(bug(2), Grade.legendary), (6 * 28).round());
-    expect(g.essenceOf(bug(2, gacha: true), Grade.legendary), 6);
+    expect(g.essenceOf(bug(2), Grade.legendary), (4 * 28).round());
+    expect(g.essenceOf(bug(2, gacha: true), Grade.legendary), 4);
   });
 
   test('올리고 바꾸기를 반복해도 정수가 늘지 않는다(올린 몫은 들인 만큼만)', () {
@@ -220,8 +221,7 @@ void main() {
     for (var i = 0; i < n; i++) {
       c[IndividualGradeConfig.pick(g.wildWeights, rng) - 1]++;
     }
-    expect(c[0] / n, closeTo(0.80, 0.02));
-    expect(c[4], 0);
+    expect(c[0], n, reason: '야생은 100% 일반(2026-10-14)');
   });
 
   test('설정이 없으면 꺼짐(옛 규칙)', () {

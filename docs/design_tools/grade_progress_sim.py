@@ -7,7 +7,7 @@
 - 하루 드롭 ≈ 198알(§2.4: 6,600처치 × 3%) — 활동 2시간 90알, 나머지 22시간 108알.
 - 채집함 50칸(부화 중인 알 포함). 차면 새 알은 버려진다(획득 차단).
 - 부화기·짝짓기 모두 **수동 수령**: 활동 2시간 동안 10분마다 + 하루 4번(08·12·18·23시) 들여다본다.
-- 야생 개체 등급: 일반 80 · 고급 15 · 희귀 4 · 영웅 1 · 전설 0.
+- 야생 개체 등급: pets.json individualGrade.wildWeights(2026-10-14 = 100% 일반).
 - 정수: 애벌레 이상만(알 불가). 1마리 = 등급 누적 비용 × 종 희귀도 가치.
 - 짝짓기: 키우는 개체 + 같은 종 반대 성별 1마리. 자식 = 높은 부모 등급에서 유지 60 · 상승 10 · 하락 30. 부화 뒤 성충까지 1시간(가정).
 사용: python -I grade_progress_sim.py
@@ -26,9 +26,11 @@ run = json.load(open(f"{DATA}/run_config.json", encoding="utf-8"))
 
 GRADES = ["common", "uncommon", "rare", "epic", "legendary"]
 KO_G = ["일반", "고급", "희귀", "영웅", "전설"]
-WILD = [0.80, 0.15, 0.04, 0.01, 0.0]
-COSTS = [6, 6, 6, 10]                                   # 등급 올리기 배수(일반→고급 … 영웅→전설)
-VAL = [1, 6, 36, 216, 2160]                              # 그 등급 1마리 = 정수(누적)
+WILD = pets["individualGrade"]["wildWeights"]   # 2026-10-14: 실데이터를 읽는다(100% 일반)
+COSTS = pets["individualGrade"]["essenceCosts"]     # 등급 올리기 배수(일반→고급 … 영웅→전설)
+VAL = [1]
+for _c in COSTS:
+    VAL.append(VAL[-1] * _c)                             # 그 등급 1마리 = 정수(누적)
 RARITY_MULT = {"common": 1, "uncommon": 1.6, "rare": 3, "epic": 5.5, "legendary": 26}
 HATCH = {g: s // 60 for g, s in pets["incubateDurationsSec"].items()}
 BREED = {g: s // 60 for g, s in pets["breedingDurationsSec"].items()}
