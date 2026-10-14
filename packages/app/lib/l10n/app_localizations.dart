@@ -3652,6 +3652,42 @@ abstract class AppLocalizations {
   /// **'Incubating'**
   String get incubatingLabel;
 
+  /// No description provided for @hatchRevealGreat.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent stats!'**
+  String get hatchRevealGreat;
+
+  /// No description provided for @hatchRevealAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Stat average {avg}'**
+  String hatchRevealAvg(String avg);
+
+  /// No description provided for @hatchRevealOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get hatchRevealOk;
+
+  /// No description provided for @hatchRevealNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next ({n} left)'**
+  String hatchRevealNext(String n);
+
+  /// No description provided for @hatchRevealSkipAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip all'**
+  String get hatchRevealSkipAll;
+
+  /// No description provided for @hatchRevealTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatched!'**
+  String get hatchRevealTitle;
+
   /// No description provided for @disassembleSnack.
   ///
   /// In en, this message translates to:

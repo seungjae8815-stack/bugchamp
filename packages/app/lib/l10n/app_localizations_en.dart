@@ -2066,6 +2066,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incubatingLabel => 'Incubating';
 
   @override
+  String get hatchRevealGreat => 'Excellent stats!';
+
+  @override
+  String hatchRevealAvg(String avg) {
+    return 'Stat average $avg';
+  }
+
+  @override
+  String get hatchRevealOk => 'OK';
+
+  @override
+  String hatchRevealNext(String n) {
+    return 'Next ($n left)';
+  }
+
+  @override
+  String get hatchRevealSkipAll => 'Skip all';
+
+  @override
+  String get hatchRevealTitle => 'Hatched!';
+
+  @override
   String get disassembleSnack => 'Disassembled';
 
   @override

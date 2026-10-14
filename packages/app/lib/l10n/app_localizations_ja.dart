@@ -2007,6 +2007,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get incubatingLabel => '孵化中';
 
   @override
+  String get hatchRevealGreat => 'とても良い能力値です！';
+
+  @override
+  String hatchRevealAvg(String avg) {
+    return '能力値の平均 $avg';
+  }
+
+  @override
+  String get hatchRevealOk => 'OK';
+
+  @override
+  String hatchRevealNext(String n) {
+    return '次へ（残り$n匹）';
+  }
+
+  @override
+  String get hatchRevealSkipAll => 'すべてスキップ';
+
+  @override
+  String get hatchRevealTitle => '孵化しました！';
+
+  @override
   String get disassembleSnack => '分解完了';
 
   @override

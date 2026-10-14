@@ -26,6 +26,7 @@ import '../battle/training_screen.dart';
 import '../../ui/bug_grade.dart';
 import 'dex_screen.dart';
 import 'grade_panel.dart';
+import 'hatch_reveal.dart';
 import 'passive_panel.dart';
 import '../../ui/colors.dart';
 
@@ -1610,18 +1611,23 @@ class StorageScreen extends ConsumerWidget {
                         child: Center(
                           child: FilledButton.icon(
                             onPressed: () async {
-                              var got = 0;
+                              final got = <String>[];
                               for (final id in doneIds) {
                                 if (await r
                                     .read(saveControllerProvider.notifier)
                                     .collectIncubated(id)) {
-                                  got++;
+                                  got.add(id);
                                 }
                               }
-                              if (got == 0) return;
+                              if (got.isEmpty) return;
                               AudioService.instance.sfxHatch();
                               if (ctx.mounted) {
-                                _snack(ctx, l.incubatorCollectAllDone(got));
+                                _snack(
+                                  ctx,
+                                  l.incubatorCollectAllDone(got.length),
+                                );
+                                // 부화 공개 연출(2026-10-14) — 차례로, 모두 건너뛰기 가능.
+                                await showHatchReveal(ctx, r, got);
                               }
                             },
                             icon: const Icon(Icons.done_all_rounded, size: 17),
@@ -1820,6 +1826,7 @@ class StorageScreen extends ConsumerWidget {
                       ? l.incubatorCollectedNymphSnack
                       : l.incubatorCollectedSnack,
                 );
+                await showHatchReveal(ctx, r, [occupant.key]);
               }
             }
           // 부화 중 탭 → 광고 보고 시간 당기기. 대기 자체가 이탈 지점이라
@@ -2116,6 +2123,7 @@ class StorageScreen extends ConsumerWidget {
                     ? l.incubatorCollectedNymphSnack
                     : l.incubatorCollectedSnack,
               );
+              await showHatchReveal(ctx, r, [bug.id]);
             }
           },
         );
@@ -3919,169 +3927,186 @@ class StorageScreen extends ConsumerWidget {
                                       ),
                                     ),
                             ),
-                            const SizedBox(width: 8),
-                            // 부화 중이면 **버튼이 스스로 말한다** — 눌러서 토스트로
-                            // 알게 하는 건 한 번 더 헛걸음시키는 것이다(2026-09-01).
-                            OutlinedButton.icon(
-                              onPressed: hatching
-                                  ? null
-                                  : () async {
-                                      // 보상 팝업은 **앱 화면(네비게이터)** 기준으로 띄운다. 이 창을 연
-                                      // `context` 는 곤충 칸이라, 분해로 곤충이 빠지면 칸도 사라져
-                                      // `AppLocalizations.of` 가 null 로 앱을 죽였다(1.0.14 Crashlytics,
-                                      // 2026-10-03). 네비게이터는 앱이 떠 있는 동안 계속 살아 있다.
-                                      final host = Navigator.of(
-                                        context,
-                                      ).context;
-                                      // 이색·키운 개체는 **한 번 더 묻는다**.
-                                      // 되찾을 수 없는데 버튼 한 번에 사라지면
-                                      // 그게 곧 클레임이다(2026-09-25 제보).
-                                      // 훈련 v2 — 포인트를 찍은 곤충도(재료를 낸 투자).
-                                      if (isPreciousBug(bug) ||
-                                          trainedPointsOf(save, bug.id) > 0) {
-                                        // 개체 등급이 켜졌으면 **정수라는 대안**을 알려 준다 — 분해는 재료,
-                                        // 정수는 같은 종 등급 올리기(2026-10-12 출시 점검). 알·잠긴 곤충은 정수 불가라 빼고.
-                                        final essence =
-                                            gradeOn &&
-                                                petCfg != null &&
-                                                !save.pinnedBugIds.contains(
-                                                  bug.id,
-                                                )
-                                            ? petCfg.individualGrade.essenceOf(
-                                                bug,
-                                                species.grade,
-                                              )
-                                            : 0;
-                                        final go = await showGameDialog<Object>(
-                                          ctx,
-                                          title: l.disassembleAction,
-                                          icon: Icons.warning_amber_rounded,
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                l.disassembleConfirm,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                              if (essence > 0) ...[
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  l.disassembleEssenceHint(
-                                                    species.name.resolve(
-                                                      locale,
-                                                    ),
-                                                    '$essence',
-                                                  ),
-                                                  style: const TextStyle(
-                                                    color: Color(0xFFB39DDB),
-                                                    fontSize: 12.5,
-                                                    fontWeight: FontWeight.w800,
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                          actions: [
-                                            gameDialogButton(
-                                              l.actionCancel,
-                                              () => Navigator.pop(ctx, false),
-                                              primary: false,
-                                            ),
-                                            if (essence > 0)
-                                              gameDialogButton(
-                                                l.igToEssence,
-                                                () => Navigator.pop(
-                                                  ctx,
-                                                  'essence',
-                                                ),
-                                                primary: false,
-                                              ),
-                                            gameDialogButton(
-                                              l.disassembleAction,
-                                              () => Navigator.pop(ctx, true),
-                                              color: const Color(0xFFB3452F),
-                                            ),
-                                          ],
-                                        );
-                                        if (!ctx.mounted) return;
-                                        if (go == 'essence') {
-                                          // 정수 쪽 확인 창(사유 경고 · 이색 두 번 확인)을 그대로 탄다.
-                                          await confirmBugToEssence(
-                                            ctx,
-                                            r,
-                                            data,
-                                            bug,
-                                          );
-                                          return;
-                                        }
-                                        if (go != true) return;
-                                      }
-                                      final res = await r
-                                          .read(saveControllerProvider.notifier)
-                                          .disassembleBug(bug.id);
-                                      if (!ctx.mounted) return;
-                                      if (!res.ok) {
-                                        // 실패를 침묵으로 두면 "전설 알이 분해가 안 된다"가
-                                        // 버그로 읽힌다 — 사유를 말해 준다.
-                                        showCenterToast(
+                            // 부화 중인 알은 위 부화기 버튼이 상태(남은 시간·즉시 부화)를 보여 준다 — 아래에 같은 "부화 중"을
+                            // 한 번 더 그리지 않는다(2026-10-14).
+                            if (!hatching) ...[
+                              const SizedBox(width: 8),
+                              OutlinedButton.icon(
+                                onPressed: hatching
+                                    ? null
+                                    : () async {
+                                        // 보상 팝업은 **앱 화면(네비게이터)** 기준으로 띄운다. 이 창을 연
+                                        // `context` 는 곤충 칸이라, 분해로 곤충이 빠지면 칸도 사라져
+                                        // `AppLocalizations.of` 가 null 로 앱을 죽였다(1.0.14 Crashlytics,
+                                        // 2026-10-03). 네비게이터는 앱이 떠 있는 동안 계속 살아 있다.
+                                        final host = Navigator.of(
                                           context,
-                                          switch (res.error) {
+                                        ).context;
+                                        // 이색·키운 개체는 **한 번 더 묻는다**.
+                                        // 되찾을 수 없는데 버튼 한 번에 사라지면
+                                        // 그게 곧 클레임이다(2026-09-25 제보).
+                                        // 훈련 v2 — 포인트를 찍은 곤충도(재료를 낸 투자).
+                                        if (isPreciousBug(bug) ||
+                                            trainedPointsOf(save, bug.id) > 0) {
+                                          // 개체 등급이 켜졌으면 **정수라는 대안**을 알려 준다 — 분해는 재료,
+                                          // 정수는 같은 종 등급 올리기(2026-10-12 출시 점검). 알·잠긴 곤충은 정수 불가라 빼고.
+                                          final essence =
+                                              gradeOn &&
+                                                  petCfg != null &&
+                                                  !save.pinnedBugIds.contains(
+                                                    bug.id,
+                                                  )
+                                              ? petCfg.individualGrade
+                                                    .essenceOf(
+                                                      bug,
+                                                      species.grade,
+                                                    )
+                                              : 0;
+                                          final go =
+                                              await showGameDialog<Object>(
+                                                ctx,
+                                                title: l.disassembleAction,
+                                                icon:
+                                                    Icons.warning_amber_rounded,
+                                                content: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      l.disassembleConfirm,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                    if (essence > 0) ...[
+                                                      const SizedBox(height: 8),
+                                                      Text(
+                                                        l.disassembleEssenceHint(
+                                                          species.name.resolve(
+                                                            locale,
+                                                          ),
+                                                          '$essence',
+                                                        ),
+                                                        style: const TextStyle(
+                                                          color: Color(
+                                                            0xFFB39DDB,
+                                                          ),
+                                                          fontSize: 12.5,
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                                actions: [
+                                                  gameDialogButton(
+                                                    l.actionCancel,
+                                                    () => Navigator.pop(
+                                                      ctx,
+                                                      false,
+                                                    ),
+                                                    primary: false,
+                                                  ),
+                                                  if (essence > 0)
+                                                    gameDialogButton(
+                                                      l.igToEssence,
+                                                      () => Navigator.pop(
+                                                        ctx,
+                                                        'essence',
+                                                      ),
+                                                      primary: false,
+                                                    ),
+                                                  gameDialogButton(
+                                                    l.disassembleAction,
+                                                    () => Navigator.pop(
+                                                      ctx,
+                                                      true,
+                                                    ),
+                                                    color: const Color(
+                                                      0xFFB3452F,
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                          if (!ctx.mounted) return;
+                                          if (go == 'essence') {
+                                            // 정수 쪽 확인 창(사유 경고 · 이색 두 번 확인)을 그대로 탄다.
+                                            await confirmBugToEssence(
+                                              ctx,
+                                              r,
+                                              data,
+                                              bug,
+                                            );
+                                            return;
+                                          }
+                                          if (go != true) return;
+                                        }
+                                        final res = await r
+                                            .read(
+                                              saveControllerProvider.notifier,
+                                            )
+                                            .disassembleBug(bug.id);
+                                        if (!ctx.mounted) return;
+                                        if (!res.ok) {
+                                          // 실패를 침묵으로 두면 "전설 알이 분해가 안 된다"가
+                                          // 버그로 읽힌다 — 사유를 말해 준다.
+                                          showCenterToast(context, switch (res
+                                              .error) {
                                             'equipped' => l.disassembleEquipped,
                                             'incubating' =>
                                               l.disassembleIncubating,
                                             'locked' => l.disassembleLocked,
                                             _ => l.disassembleFailed,
-                                          },
-                                        );
-                                        return;
-                                      }
-                                      Navigator.pop(ctx);
-                                      // 무엇이 얼마나 들어왔는지 **아이콘으로** 보여준다 —
-                                      // 재료가 2~32 개라 "분해 완료"만으로는 아무것도 안
-                                      // 들어온 것처럼 보인다(2026-09-01 지적).
-                                      // 글자보다 아이콘이 어느 재화인지 즉시 갈린다.
-                                      final gained = <MaterialKind, int>{
-                                        if (res.kind != null)
-                                          res.kind!: res.amount,
-                                        if (res.jelly > 0)
-                                          MaterialKind.jelly: res.jelly,
-                                      };
-                                      if (!host.mounted) return;
-                                      if (gained.isEmpty) {
-                                        showCenterToast(
+                                          });
+                                          return;
+                                        }
+                                        Navigator.pop(ctx);
+                                        // 무엇이 얼마나 들어왔는지 **아이콘으로** 보여준다 —
+                                        // 재료가 2~32 개라 "분해 완료"만으로는 아무것도 안
+                                        // 들어온 것처럼 보인다(2026-09-01 지적).
+                                        // 글자보다 아이콘이 어느 재화인지 즉시 갈린다.
+                                        final gained = <MaterialKind, int>{
+                                          if (res.kind != null)
+                                            res.kind!: res.amount,
+                                          if (res.jelly > 0)
+                                            MaterialKind.jelly: res.jelly,
+                                        };
+                                        if (!host.mounted) return;
+                                        if (gained.isEmpty) {
+                                          showCenterToast(
+                                            host,
+                                            l.disassembleSnack,
+                                          );
+                                          return;
+                                        }
+                                        await showRewardPopup(
                                           host,
-                                          l.disassembleSnack,
+                                          title: l.disassembleSnack,
+                                          icon: Icons.call_split,
+                                          materials: gained,
                                         );
-                                        return;
-                                      }
-                                      await showRewardPopup(
-                                        host,
-                                        title: l.disassembleSnack,
-                                        icon: Icons.call_split,
-                                        materials: gained,
-                                      );
-                                    },
-                              icon: Icon(
-                                hatching
-                                    ? Icons.hourglass_bottom_rounded
-                                    : Icons.call_split,
-                                size: 18,
-                              ),
-                              label: Text(
-                                hatching
-                                    ? l.incubatingLabel
-                                    : l.disassembleAction,
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFFEF9A9A),
-                                side: const BorderSide(
-                                  color: Color(0x55EF9A9A),
+                                      },
+                                icon: Icon(
+                                  hatching
+                                      ? Icons.hourglass_bottom_rounded
+                                      : Icons.call_split,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  hatching
+                                      ? l.incubatingLabel
+                                      : l.disassembleAction,
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFEF9A9A),
+                                  side: const BorderSide(
+                                    color: Color(0x55EF9A9A),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
                         );
                       },

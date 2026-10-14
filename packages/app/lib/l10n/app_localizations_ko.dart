@@ -2012,6 +2012,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get incubatingLabel => '부화 중';
 
   @override
+  String get hatchRevealGreat => '아주 좋은 능력치예요!';
+
+  @override
+  String hatchRevealAvg(String avg) {
+    return '능력치 평균 $avg';
+  }
+
+  @override
+  String get hatchRevealOk => '확인';
+
+  @override
+  String hatchRevealNext(String n) {
+    return '다음 ($n마리 남음)';
+  }
+
+  @override
+  String get hatchRevealSkipAll => '모두 건너뛰기';
+
+  @override
+  String get hatchRevealTitle => '부화했어요!';
+
+  @override
   String get disassembleSnack => '분해 완료';
 
   @override
