@@ -1048,9 +1048,29 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     final duel = _duelMode;
     // 1마리 모드: 결투와 같은 능력치의 전투력 — 가장 잘 키운 곤충이 맨 앞.
     // build 마다 전 성충을 다시 계산하지 않게, 세이브가 바뀔 때만 다시 계산하는 provider 를 쓴다(같은 값).
-    final power = duel
+    // 대회 전용 종 배율(`duelWave.speciesScale`)이 있는 종은 그 배율을 얹은 값으로 — 엔진(`eventDuelFight`)과 같은 몫.
+    final basePower = duel
         ? ref.watch(duelPowerByBugProvider)
         : const <String, double>{};
+    final spec = duel
+        ? EventDuelSpec.fromJson(data.eventConfig?.duelWaveJson)
+        : null;
+    final power = <String, double>{
+      for (final b in adults)
+        if (basePower[b.id] != null)
+          b.id: switch (spec?.speciesScaleOf(b.speciesId) ?? 1) {
+            1 => basePower[b.id]!,
+            final f => duelPowerOf(
+              duelBugFor(
+                b,
+                data,
+                save,
+                'ko',
+              ).withTraining(hpMult: f, atkMult: f, defMult: f),
+              data,
+            ),
+          },
+    };
     DateTime? restUntil(IndividualBug b) {
       if (!duel) return save.eventFatigue[b.id];
       // 대회 부상은 서버 소유 기록(`eventFatigue`)이 기준 — 결투 부상과 둘 중 늦은 쪽.
