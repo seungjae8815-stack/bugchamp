@@ -1369,6 +1369,10 @@
       }
     }
   },
+  "badgeSilver": "R{round} 2nd",
+  "@badgeSilver": {"placeholders": {"round": {"type": "int"}}},
+  "badgeBronze": "R{round} 3rd",
+  "@badgeBronze": {"placeholders": {"round": {"type": "int"}}},
   "badgeFinalist": "R{round} Finalist",
   "@badgeFinalist": {
     "placeholders": {

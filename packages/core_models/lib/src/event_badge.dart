@@ -23,7 +23,10 @@ library;
 /// 모르는 종류는 0 — 대표로 뽑지 않는다. 신버전 서버가 종류를 늘려도 구버전이
 /// 그걸 챔피언보다 앞에 세우는 일이 없어야 한다.
 int eventBadgeWeight(String kind) => switch (kind) {
-  'champion' => 3,
+  // 1위 금 · 2위 은 · 3위 동 · 4~10위 입상 · 나머지 참가(2026-10-14 사장님 확정 — 예전엔 2~10위가 모두 입상이었다).
+  'champion' => 5,
+  'silver' => 4,
+  'bronze' => 3,
   'finalist' => 2,
   'participant' => 1,
   _ => 0,

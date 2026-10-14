@@ -15,7 +15,8 @@ void main() {
 
   test('순위 구간은 위에서부터 먼저 맞는 하나만 적용된다', () {
     expect(cfg.tierForRank(1)!.maxRank, 1);
-    expect(cfg.tierForRank(2)!.maxRank, 3);
+    expect(cfg.tierForRank(2)!.maxRank, 2);
+    expect(cfg.tierForRank(3)!.maxRank, 3);
     expect(cfg.tierForRank(4)!.maxRank, 10);
   });
 
@@ -96,11 +97,18 @@ void main() {
       expect(cfg.badgeFor(null, roundNo: no), 'participant:$no');
       expect(cfg.badgeFor(11, roundNo: no), 'participant:$no');
       expect(cfg.badgeFor(1, roundNo: no), 'champion:$no');
+      expect(cfg.badgeFor(2, roundNo: no), 'silver:$no');
+      expect(cfg.badgeFor(3, roundNo: no), 'bronze:$no');
+      expect(cfg.badgeFor(4, roundNo: no), 'finalist:$no');
     });
 
     test('대표 뱃지는 급이 먼저, 같은 급이면 최근 회차', () {
       expect(bestEventBadge(['participant:2', 'champion:1']), 'champion:1');
       expect(bestEventBadge(['finalist:1', 'finalist:3']), 'finalist:3');
+      // 금 > 은 > 동 > 입상 > 참가(2026-10-14).
+      expect(bestEventBadge(['bronze:3', 'silver:1']), 'silver:1');
+      expect(bestEventBadge(['finalist:5', 'bronze:1']), 'bronze:1');
+      expect(bestEventBadge(['silver:2', 'champion:1']), 'champion:1');
       expect(bestEventBadge(['participant:1', 'mystery:9']), 'participant:1');
       expect(bestEventBadge(const []), '');
     });

@@ -789,6 +789,8 @@
   "eventRewardApply": "경품 신청하기",
   "eventRewardClaim": "받기",
   "badgeChampion": "{round}회차 챔피언",
+  "badgeSilver": "{round}회차 2위",
+  "badgeBronze": "{round}회차 3위",
   "badgeFinalist": "{round}회차 입상",
   "nicknameBadChars": "한글·영문·숫자만 쓸 수 있어요 (이모지·자음/모음 하나는 안 돼요)",
   "nicknameSameName": "지금 쓰는 이름과 다른 이름을 지어 주세요.",

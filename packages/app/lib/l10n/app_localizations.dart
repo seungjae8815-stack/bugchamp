@@ -4078,6 +4078,18 @@ abstract class AppLocalizations {
   /// **'R{round} Champion'**
   String badgeChampion(int round);
 
+  /// No description provided for @badgeSilver.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round} 2nd'**
+  String badgeSilver(int round);
+
+  /// No description provided for @badgeBronze.
+  ///
+  /// In en, this message translates to:
+  /// **'R{round} 3rd'**
+  String badgeBronze(int round);
+
   /// No description provided for @badgeFinalist.
   ///
   /// In en, this message translates to:

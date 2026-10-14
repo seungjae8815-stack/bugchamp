@@ -25,10 +25,21 @@ import '../l10n/app_localizations.dart';
       const Color(0xFFFFC24D),
       Icons.emoji_events_rounded,
     ),
+    'silver' => (
+      l.badgeSilver(b.round),
+      const Color(0xFFC0C7D0),
+      Icons.military_tech_rounded,
+    ),
+    'bronze' => (
+      l.badgeBronze(b.round),
+      const Color(0xFFCD8A4E),
+      Icons.military_tech_rounded,
+    ),
+    // 입상 = 4~10위(2026-10-14 — 2·3위는 은·동으로 갈라졌다). 금·은·동과 헷갈리지 않게 청록(천 리본 그림과 같은 색).
     'finalist' => (
       l.badgeFinalist(b.round),
-      const Color(0xFFB0BEC5),
-      Icons.military_tech_rounded,
+      const Color(0xFF4FB3A9),
+      Icons.workspace_premium_rounded,
     ),
     // 참가 — 입상보다 한 톤 가라앉힌 초록. 금·은 옆에서 튀지 않되 "나도
     // 나갔다"는 건 보여야 한다(2026-09-15).

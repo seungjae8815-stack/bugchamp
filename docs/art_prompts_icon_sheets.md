@@ -131,7 +131,7 @@ sheet_buttons
 자를 순서: top-left = 1위 금 트로피 (`badge_champion`) · top-right = 2위 은메달 (`badge_silver`) · bottom-left = 3위 동메달 (`badge_bronze`) · bottom-right = 입상 4~10위 (`badge_finalist`)
 
 ```
-Use the attached image only as the art style reference. Do NOT copy its subject. Make a sprite sheet of 4 separate small game icons, four icons in a 2x2 grid (top row 2, bottom row 2). top-left: "Champion": a shining golden trophy cup with two leaf-shaped handles and a tiny crowned beetle on its front, rich gold accent; top-right: round medal "Second Place": a silver medal with a laurel wreath around a small beetle silhouette and a short blue ribbon on top, silver accent; bottom-left: round medal "Third Place": a bronze medal with a laurel wreath around a small beetle silhouette and a short dark red ribbon on top, warm bronze accent; bottom-right: round badge "Finalist": a carved honey-amber wooden medal with a small star and a tiny beetle silhouette in the center and a short moss-green ribbon on top - clearly plainer than gold, silver and bronze, honey amber accent. Style for every icon: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with the accent colors named above, semi-realistic painterly shading, bold readable silhouettes that stay clear at very small size, thick warm brown outline around each icon, high detail, all icons the same size and the same style. Plain flat pale sage-green background everywhere. IMPORTANT: no glow, no aura, no halo, no light rays and no sparkles outside each outline - the flat pale sage-green background must touch each thick brown outline directly on every side (the background will be removed by color). Leave WIDE empty sage-green gaps between icons so each one can be cut out separately; icons must not touch or overlap. no text, no letters, no numbers, no labels, no border ring, no frame, no grid lines, no watermark, no logo. Composition: keep all icons in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off).
+Use the attached image only as the art style reference. Do NOT copy its subject. Make a sprite sheet of 4 separate small game icons, four icons in a 2x2 grid (top row 2, bottom row 2). top-left: "Champion": a shining golden trophy cup with two leaf-shaped handles and a tiny crowned beetle on its front, rich gold accent; top-right: round medal "Second Place": a silver medal with a laurel wreath around a small beetle silhouette and a short blue ribbon on top, silver accent; bottom-left: round medal "Third Place": a bronze medal with a laurel wreath around a small beetle silhouette and a short dark red ribbon on top, warm bronze accent; bottom-right: round prize ribbon rosette "Finalist": a pleated deep-teal fabric rosette with two short teal ribbon tails hanging down, a cream fabric center with a small embroidered beetle silhouette - made of cloth, NOT a metal medal, absolutely no gold, no silver, no bronze, no shine of metal, deep teal and cream accent. Style for every icon: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with the accent colors named above, semi-realistic painterly shading, bold readable silhouettes that stay clear at very small size, thick warm brown outline around each icon, high detail, all icons the same size and the same style. Plain flat pale sage-green background everywhere. IMPORTANT: no glow, no aura, no halo, no light rays and no sparkles outside each outline - the flat pale sage-green background must touch each thick brown outline directly on every side (the background will be removed by color). Leave WIDE empty sage-green gaps between icons so each one can be cut out separately; icons must not touch or overlap. no text, no letters, no numbers, no labels, no border ring, no frame, no grid lines, no watermark, no logo. Composition: keep all icons in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off).
 ```
 
 파일명
@@ -200,4 +200,22 @@ Use the attached image only as the art style reference. Do NOT copy its subject.
 
 ```
 roadmap_boss_frame
+```
+
+---
+
+### 8-다시. 입상(4~10위)만 다시 그리기
+
+> 사장님(10-14): 입상 그림이 너무 금메달 같다 → 금속 메달이 아니라 **청록색 천 리본(로제트)** 으로. 시트 8번의 나머지 3개(금·은·동)는 그대로 쓰고 이것만 다시 그리세요.
+
+참고 그림: `jelly.webp`
+
+```
+Use the attached image only as the art style reference. Do NOT copy its subject. Small game badge icon "Finalist": a round pleated prize ribbon rosette made of deep-teal fabric, with two short teal ribbon tails hanging down below it, a cream fabric center with a small embroidered brown beetle silhouette. It must look like soft cloth, NOT a metal medal - absolutely no gold, no silver, no bronze, no metallic shine, no coin. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with deep teal and cream as the main colors, semi-realistic painterly shading, bold readable silhouette that stays clear at very small size, thick warm brown outline, high detail. One single badge centered, square 1:1 image, plain flat pale sage-green background. IMPORTANT: no glow, no aura, no halo, no light rays and no sparkles outside the outline - the flat pale sage-green background must touch the thick brown outline directly on every side (the background will be removed by color). no text, no letters, no numbers, no border ring, no frame, no watermark, no logo. Composition: keep the main subject and everything important in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off).
+```
+
+파일명
+
+```
+badge_finalist
 ```

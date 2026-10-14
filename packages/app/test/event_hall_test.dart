@@ -52,9 +52,13 @@ Map<String, dynamic> _entry(int rank, String name, {bool me = false}) => {
   'nickname': name,
   'score': 1000000 * (30 - rank),
   'wave': 30 - rank,
-  'badge': rank == 1
-      ? 'champion:1'
-      : (rank <= 10 ? 'finalist:1' : 'participant:1'),
+  'badge': switch (rank) {
+    1 => 'champion:1',
+    2 => 'silver:1',
+    3 => 'bronze:1',
+    <= 10 => 'finalist:1',
+    _ => 'participant:1',
+  },
   'isMe': me,
 };
 

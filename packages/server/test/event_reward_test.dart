@@ -153,12 +153,16 @@ void main() {
     });
 
     /// champion 은 회차당 **딱 1명**이다 — 흔하면 표식이 아니다.
-    test('2위는 champion 이 아니라 finalist 다', () {
-      final r = a.grantEventReward(played(closed), round, 2);
-      expect(
-        (r.extra['eventReward'] as Map)['badge'],
-        'finalist:${ev.roundNo}',
-      );
+    /// 1위 금 · 2위 은 · 3위 동 · 4~10위 입상(2026-10-14 사장님 확정).
+    test('2위 은 · 3위 동 · 4~10위 입상', () {
+      String badgeOf(int rank) =>
+          (a.grantEventReward(played(closed), round, rank).extra['eventReward']
+                  as Map)['badge']
+              as String;
+      expect(badgeOf(2), 'silver:${ev.roundNo}');
+      expect(badgeOf(3), 'bronze:${ev.roundNo}');
+      expect(badgeOf(4), 'finalist:${ev.roundNo}');
+      expect(badgeOf(10), 'finalist:${ev.roundNo}');
     });
 
     /// 순위 뱃지는 10명뿐이다. 나온 사람 전원에게 남는 표식이 있어야 한다

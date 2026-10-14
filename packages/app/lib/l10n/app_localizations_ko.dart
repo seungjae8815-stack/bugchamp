@@ -2250,6 +2250,16 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String badgeSilver(int round) {
+    return '$round회차 2위';
+  }
+
+  @override
+  String badgeBronze(int round) {
+    return '$round회차 3위';
+  }
+
+  @override
   String badgeFinalist(int round) {
     return '$round회차 입상';
   }

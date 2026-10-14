@@ -2311,6 +2311,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String badgeSilver(int round) {
+    return 'R$round 2nd';
+  }
+
+  @override
+  String badgeBronze(int round) {
+    return 'R$round 3rd';
+  }
+
+  @override
   String badgeFinalist(int round) {
     return 'R$round Finalist';
   }

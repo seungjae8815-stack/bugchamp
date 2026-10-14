@@ -761,6 +761,8 @@
   "eventRewardApply": "賞品を申し込む",
   "eventRewardClaim": "受け取る",
   "badgeChampion": "{round}回 チャンピオン",
+  "badgeSilver": "{round}回 2位",
+  "badgeBronze": "{round}回 3位",
   "badgeFinalist": "{round}回 入賞",
   "nicknameBadChars": "文字と数字のみ使えます（絵文字・単独の記号は不可）",
   "nicknameSameName": "今の名前とは違う名前を入力してください。",

@@ -2243,6 +2243,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String badgeSilver(int round) {
+    return '$round回 2位';
+  }
+
+  @override
+  String badgeBronze(int round) {
+    return '$round回 3位';
+  }
+
+  @override
   String badgeFinalist(int round) {
     return '$round回 入賞';
   }
