@@ -2031,6 +2031,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get hatchRevealSkipAll => '모두 건너뛰기';
 
   @override
+  String hatchRevealGreatEssenceWarn(String avg) {
+    return '능력치가 아주 좋은 곤충이에요(평균 $avg점).\n그래도 정수로 바꿀까요?';
+  }
+
+  @override
   String get hatchRevealTitle => '부화했어요!';
 
   @override
@@ -2847,6 +2852,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get autoTeamAlready => '이미 최고 팀이에요';
+
+  @override
+  String teamPowerAura(String power) {
+    return '(오라 +$power)';
+  }
 
   @override
   String teamPower(String power) {
@@ -7425,7 +7435,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storageViewStageOther => '그 외';
 
   @override
-  String get storageViewGrade => '등급';
+  String get storageViewGrade => '개체 등급';
 
   @override
   String storageViewGradeAtLeast(String grade) {
@@ -7456,11 +7466,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveNone => '패시브 없음';
 
   @override
-  String get passiveReroll => '패시브 다시 굴리기';
+  String get passiveReroll => '패시브 재굴림';
 
   @override
   String get passiveRerollDesc =>
-      '패시브 능력치를 다시 굴려요. 어떤 능력인지(종류)는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.';
+      '패시브 능력치를 재굴림해요. 어떤 능력인지(종류)는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.';
 
   @override
   String passiveRerollCurrent(String value) {
@@ -7479,10 +7489,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get passiveRerollJellyConfirm =>
-      '젤리로 패시브 능력치를 다시 굴릴까요?\n지금 값을 유지해도 젤리는 사용돼요.';
+      '젤리로 패시브 능력치를 재굴림할까요?\n지금 값을 유지해도 젤리는 사용돼요.';
 
   @override
-  String get passiveRerollJellyAction => '굴리기';
+  String get passiveRerollJellyAction => '재굴림';
 
   @override
   String get passiveRerollPickTitle => '값을 고르세요';
@@ -7506,7 +7516,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveRerollNoEssence => '정수가 부족해요';
 
   @override
-  String get passiveRerollEgg => '부화한 뒤에 다시 굴릴 수 있어요';
+  String get passiveRerollEgg => '부화한 뒤에 재굴림할 수 있어요';
 
   @override
   String get dexPassiveV2 => '펫 패시브는 개체마다 달라요 (개체 등급·종 희귀도에 따라 커져요)';
@@ -7515,4 +7525,93 @@ class AppLocalizationsKo extends AppLocalizations {
   String dexPassiveLegacy(String kind) {
     return '업데이트 전 곤충: $kind';
   }
+
+  @override
+  String get storageViewPassive => '패시브 종류';
+
+  @override
+  String get storageViewRole => '결투 역할';
+
+  @override
+  String get duelTeamAuraMaxed => '(최대)';
+
+  @override
+  String igGradeUpPassive(String kind, String from, String to) {
+    return '펫 패시브 $kind $from → $to';
+  }
+
+  @override
+  String get guidePassiveTitle => '펫 패시브';
+
+  @override
+  String guidePassiveBody(String grade, String rarity, String roll) {
+    return '펫으로 장착한 곤충만 사냥 능력치 하나를 올려 줘요(같은 종류를 여러 마리 끼면 더해져요). 어떤 능력치인지(종류)는 곤충마다 달라요 — 업데이트 전부터 있던 곤충은 그 종의 패시브 종류 그대로예요.\n크기 = 개체 등급($grade) × 종 희귀도($rarity) × 타고난 세기($roll~100%). 등급을 올리면 커지고, 정확한 값은 부화한 뒤에 보여요.';
+  }
+
+  @override
+  String guidePassiveReroll(String essence, String jelly) {
+    return '재굴림: 그 종 정수 $essence개 또는 젤리 $jelly개로 크기를 다시 정하고, 새 값과 지금 값 중 골라요. 종류는 바뀌지 않아요.';
+  }
+
+  @override
+  String get guideAuraTitle => '팀 역할 · 지휘';
+
+  @override
+  String get guideAuraBody =>
+      '종마다 결투 역할(공격형·방어형·체력형)이 있어요. 3마리 결투(리그·방어팀·길드전)에 나간 곤충마다 팀 전체의 역할 능력치를 올려 줘요(대회에는 없어요).';
+
+  @override
+  String guideAuraSize(String base, String perPoint, String cap) {
+    return '곤충 1마리 = 개체 등급 기본 $base + 훈련 \'지휘\' 칸 1점당 $perPoint. 팀 합은 능력치마다 최대 $cap — 한 역할로만 모으면 상한에 닿으니 역할을 섞어 짜 보세요.';
+  }
+
+  @override
+  String get whatsNew21Grade =>
+      '야생·짝짓기 알은 모두 일반 등급이에요. 정수로 등급을 올려 키워요(비용 4·4·5·6으로 내림)';
+
+  @override
+  String get whatsNew21Passive =>
+      '펫 패시브가 개체 등급·종 희귀도를 따라 커져요 — 업데이트 전 곤충은 대부분 낮아져서 곤충마다 무료 재굴림 5번을 드려요';
+
+  @override
+  String get whatsNew21Egg =>
+      '알은 펫으로 장착할 수 없어요(장착해 둔 알은 내리고 다른 곤충으로 채워요) · 알 능력치는 부화할 때 공개돼요';
+
+  @override
+  String get whatsNew21Aura =>
+      '결투 팀 역할 오라와 훈련 \'지휘\' 칸이 생겼어요 — 모든 곤충 훈련 다시 찍기 1회 무료(대기 없음)';
+
+  @override
+  String get whatsNew21Train => '수련 비용이 올랐어요(높은 레벨일수록 더 많이)';
+
+  @override
+  String get whatsNew21Duel => '치기 주특기를 손보고 종마다 결투 배율을 다시 맞췄어요';
+
+  @override
+  String get whatsNew21Gear => '장비 \'스킬 쿨타임 감소\' 옵션 · 별 재료 이월 · 요정 재굴림 속성석';
+
+  @override
+  String get whatsNew21Badge => '대회 뱃지가 금·은·동·입상·참가로 나뉘어요';
+
+  @override
+  String passiveRerollFree(String n) {
+    return '무료 재굴림 ($n회 남음)';
+  }
+
+  @override
+  String passiveRerollFreeHint(String n) {
+    return '업데이트 전부터 있던 곤충은 무료로 $n번 재굴림할 수 있어요.';
+  }
+
+  @override
+  String passiveRerollTitleBug(String name) {
+    return '$name 패시브 재굴림';
+  }
+
+  @override
+  String get eggUnequipAutoToast => '장착해 둔 알을 내리고 다른 곤충을 펫으로 채웠어요';
+
+  @override
+  String get respecGift1021Toast =>
+      '1.0.21 업데이트 기념 — 모든 곤충의 훈련 다시 찍기가 한 번 무료예요(대기 없음)';
 }

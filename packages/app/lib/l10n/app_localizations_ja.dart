@@ -2026,6 +2026,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get hatchRevealSkipAll => 'すべてスキップ';
 
   @override
+  String hatchRevealGreatEssenceWarn(String avg) {
+    return '能力値がとても良い虫です（平均$avg点）。\nそれでもエッセンスに変えますか？';
+  }
+
+  @override
   String get hatchRevealTitle => '孵化しました！';
 
   @override
@@ -2840,6 +2845,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get autoTeamAlready => 'すでに最適なチームです';
+
+  @override
+  String teamPowerAura(String power) {
+    return '（オーラ +$power）';
+  }
 
   @override
   String teamPower(String power) {
@@ -7413,7 +7423,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get storageViewStageOther => 'その他';
 
   @override
-  String get storageViewGrade => '等級';
+  String get storageViewGrade => '個体等級';
 
   @override
   String storageViewGradeAtLeast(String grade) {
@@ -7470,7 +7480,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'ゼリーでパッシブの能力値を再抽選しますか？\n現在の値を維持してもゼリーは消費されます。';
 
   @override
-  String get passiveRerollJellyAction => '振る';
+  String get passiveRerollJellyAction => '再抽選';
 
   @override
   String get passiveRerollPickTitle => '値を選んでください';
@@ -7503,4 +7513,92 @@ class AppLocalizationsJa extends AppLocalizations {
   String dexPassiveLegacy(String kind) {
     return 'アップデート前の虫: $kind';
   }
+
+  @override
+  String get storageViewPassive => 'パッシブの種類';
+
+  @override
+  String get storageViewRole => '決闘の役割';
+
+  @override
+  String get duelTeamAuraMaxed => '（最大）';
+
+  @override
+  String igGradeUpPassive(String kind, String from, String to) {
+    return 'ペットパッシブ $kind $from → $to';
+  }
+
+  @override
+  String get guidePassiveTitle => 'ペットパッシブ';
+
+  @override
+  String guidePassiveBody(String grade, String rarity, String roll) {
+    return 'ペットとして装備した虫だけが狩りの能力を1つ上げます（同じ種類を複数装備すると合算）。どの能力か（種類）は虫ごとに違います — アップデート前からいる虫はその種のパッシブの種類のままです。\n大きさ = 個体等級（$grade）× 種の希少度（$rarity）× 生まれつきの強さ（$roll〜100%）。等級を上げると大きくなり、正確な値は孵化後に見えます。';
+  }
+
+  @override
+  String guidePassiveReroll(String essence, String jelly) {
+    return '再抽選: その種のエッセンス$essence個またはゼリー$jelly個で大きさを決め直し、新しい値と今の値から選びます。種類は変わりません。';
+  }
+
+  @override
+  String get guideAuraTitle => 'チームの役割・指揮';
+
+  @override
+  String get guideAuraBody =>
+      '種ごとに決闘の役割（攻撃型・防御型・体力型）があります。3匹の決闘（リーグ・防衛チーム・ギルド戦）に出た虫ごとにチーム全体の役割の能力が上がります（大会にはありません）。';
+
+  @override
+  String guideAuraSize(String base, String perPoint, String cap) {
+    return '虫1匹 = 個体等級の基本 $base + 訓練「指揮」1ポイントごとに $perPoint。チーム合計は能力ごとに最大 $cap — 1つの役割だけでそろえると上限に届くので、役割を混ぜて組みましょう。';
+  }
+
+  @override
+  String get whatsNew21Grade =>
+      '野生・交配の卵はすべて一般等級です。エッセンスで等級を上げて育てましょう（コストを4・4・5・6に引き下げ）';
+
+  @override
+  String get whatsNew21Passive =>
+      'ペットパッシブが個体等級・種の希少度に合わせて大きくなります — アップデート前の虫はほとんど下がるため、虫ごとに無料再抽選5回をお渡しします';
+
+  @override
+  String get whatsNew21Egg =>
+      '卵はペットにできません（装備していた卵は外し、別の虫で埋めます）・卵の能力は孵化時に公開されます';
+
+  @override
+  String get whatsNew21Aura =>
+      '決闘のチーム役割オーラと訓練「指揮」枠を追加 — すべての虫の振り直しが1回無料（待ち時間なし）';
+
+  @override
+  String get whatsNew21Train => '修練のコストが上がりました（高いレベルほど多く）';
+
+  @override
+  String get whatsNew21Duel => '突きの得意技を調整し、種ごとの決闘倍率を合わせ直しました';
+
+  @override
+  String get whatsNew21Gear => '装備「スキルクールタイム短縮」オプション・星素材の繰り越し・妖精再抽選の属性石';
+
+  @override
+  String get whatsNew21Badge => '大会バッジが金・銀・銅・入賞・参加に分かれます';
+
+  @override
+  String passiveRerollFree(String n) {
+    return '無料再抽選（残り$n回）';
+  }
+
+  @override
+  String passiveRerollFreeHint(String n) {
+    return 'アップデート前からいる虫は無料で$n回再抽選できます。';
+  }
+
+  @override
+  String passiveRerollTitleBug(String name) {
+    return '$nameのパッシブ再抽選';
+  }
+
+  @override
+  String get eggUnequipAutoToast => '装備していた卵を外し、別の虫をペットにしました';
+
+  @override
+  String get respecGift1021Toast => '1.0.21記念 — すべての虫の振り直しが1回無料です（待ち時間なし）';
 }

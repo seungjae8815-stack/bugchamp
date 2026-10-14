@@ -232,6 +232,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 마지막 로드 시 계산된 오프라인 보상(UI 가 1회 표시 후 [consumeOffline]).
   OfflineReport? pendingOffline;
 
+  /// 앱 시작 때 장착 칸에서 내린 알 수(2026-10-14) — 화면이 펫을 다시 채우고 한 번 알린다(UI 가 읽고 0 으로).
+  int pendingEggUnequip = 0;
+
+  /// 앱 시작 때 1.0.21 기념 무료 다시 찍기를 받은 곤충 수 — 화면이 한 번 알린다(UI 가 읽고 0 으로).
+  int pendingRespecGift = 0;
+
   /// 마지막 로드 시 정산된 시즌 종료(UI 가 1회 표시 후 [consumeSeason]).
   SeasonReport? pendingSeason;
 
@@ -346,7 +352,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
 
     // 자가치유: 1.0.21 전에 장착해 둔 알은 내린다(2026-10-14 — 알은 장착 불가, 능력치를 숨기므로 펫 효과도 부화 뒤에).
+    final equippedBefore = save.equippedBugIds.length;
     save = _unequipEggs(save, data, now);
+    pendingEggUnequip = equippedBefore - save.equippedBugIds.length;
+
+    // 1.0.21 업데이트 기념 무료 다시 찍기(곤충마다 1회 · 한 번만) — 새 '지휘' 칸을 대기 없이 써 보게.
+    final gift = grantRespecGift1021(save);
+    save = gift.save;
+    pendingRespecGift = gift.granted;
 
     save = _applySeason(save, data, now);
 
@@ -5036,7 +5049,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 곤충은 아직 그대로이고 결과는 세이브의 대기(`passiveReroll*`)와 `extra['roll']` 에 남는다 — 화면이 지금 값과 비교해
   /// [pickPassiveReroll] 로 고른다(앱을 껐다 켜도 대기가 남아 다시 고를 수 있다).
   /// 비용은 고르든 안 고르든 쓰인다(요정 재굴림·장비 다듬기와 같은 문법).
-  Future<GradeOp> rerollPassive(String bugId, {required bool useJelly}) async {
+  /// [free] 면 업데이트 전 곤충의 무료 재굴림(`passiveV2.legacyFreeRerolls`)을 쓴다 — 정수·젤리를 내지 않는다.
+  Future<GradeOp> rerollPassive(
+    String bugId, {
+    required bool useJelly,
+    bool free = false,
+  }) async {
     final cfg =
         ref.read(gameDataProvider).value?.petConfig?.passiveV2 ??
         const PassiveV2Config();
@@ -5046,6 +5064,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       bugId,
       math.Random(),
       useJelly: useJelly,
+      free: free,
     );
     if (r.isOk) await _commit(r.save!);
     return r;

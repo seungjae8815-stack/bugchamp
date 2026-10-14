@@ -19,6 +19,7 @@ class PassiveV2Config {
     this.rollMin = 0.8,
     this.rerollEssence = 3,
     this.rerollJelly = 10,
+    this.legacyFreeRerolls = 0,
   });
 
   final bool enabled;
@@ -38,6 +39,15 @@ class PassiveV2Config {
   /// 크기 재굴림 비용 — 그 종 정수(무료 경로) 또는 젤리.
   final int rerollEssence;
   final int rerollJelly;
+
+  /// 업데이트 전 곤충(`p2` 없음)이 곤충마다 받는 **무료** 크기 재굴림 횟수(2026-10-14 사장님 확정 5 — 1.0.21 에서 옛 곤충
+  /// 패시브가 대부분 낮아진 것을 스스로 메우게). 펫 전용이라 결투 P2W 밖.
+  final int legacyFreeRerolls;
+
+  /// [bug] 가 무료 재굴림을 몇 번 더 쓸 수 있나(업데이트 전 곤충만).
+  int freeRerollsLeft(IndividualBug bug) => bug.passiveV2
+      ? 0
+      : (legacyFreeRerolls - bug.passiveFreeUsed).clamp(0, legacyFreeRerolls);
 
   List<String> get kindKeys => kinds.keys.toList(growable: false);
 
@@ -93,6 +103,8 @@ class PassiveV2Config {
       rollMin: (j['rollMin'] as num?)?.toDouble() ?? d.rollMin,
       rerollEssence: (j['rerollEssence'] as num?)?.toInt() ?? d.rerollEssence,
       rerollJelly: (j['rerollJelly'] as num?)?.toInt() ?? d.rerollJelly,
+      legacyFreeRerolls:
+          (j['legacyFreeRerolls'] as num?)?.toInt() ?? d.legacyFreeRerolls,
     );
   }
 }

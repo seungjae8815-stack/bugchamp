@@ -2085,6 +2085,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hatchRevealSkipAll => 'Skip all';
 
   @override
+  String hatchRevealGreatEssenceWarn(String avg) {
+    return 'This bug has excellent stats (average $avg).\nConvert it to essence anyway?';
+  }
+
+  @override
   String get hatchRevealTitle => 'Hatched!';
 
   @override
@@ -2928,6 +2933,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoTeamAlready => 'Already the best team';
+
+  @override
+  String teamPowerAura(String power) {
+    return '(aura +$power)';
+  }
 
   @override
   String teamPower(String power) {
@@ -7585,7 +7595,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageViewStageOther => 'Others';
 
   @override
-  String get storageViewGrade => 'Grade';
+  String get storageViewGrade => 'Individual grade';
 
   @override
   String storageViewGradeAtLeast(String grade) {
@@ -7678,4 +7688,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String dexPassiveLegacy(String kind) {
     return 'Bugs from before the update: $kind';
   }
+
+  @override
+  String get storageViewPassive => 'Passive type';
+
+  @override
+  String get storageViewRole => 'Duel role';
+
+  @override
+  String get duelTeamAuraMaxed => ' (max)';
+
+  @override
+  String igGradeUpPassive(String kind, String from, String to) {
+    return 'Pet passive $kind $from → $to';
+  }
+
+  @override
+  String get guidePassiveTitle => 'Pet passive';
+
+  @override
+  String guidePassiveBody(String grade, String rarity, String roll) {
+    return 'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug — bugs from before the update keep their species\' passive type.\nSize = individual grade ($grade) × species rarity ($rarity) × innate strength ($roll–100%). It grows as you grade up; the exact value shows after hatching.';
+  }
+
+  @override
+  String guidePassiveReroll(String essence, String jelly) {
+    return 'Reroll: spend $essence essence of that species or $jelly jelly to reroll the size, then keep the new or current value. The type never changes.';
+  }
+
+  @override
+  String get guideAuraTitle => 'Team roles & Command';
+
+  @override
+  String get guideAuraBody =>
+      'Each species has a duel role (Attacker, Defender, Tank). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in events).';
+
+  @override
+  String guideAuraSize(String base, String perPoint, String cap) {
+    return 'Per bug = grade base $base + $perPoint per point in the \'Command\' training slot. The team total caps at $cap per stat — stacking one role hits the cap, so mix roles.';
+  }
+
+  @override
+  String get whatsNew21Grade =>
+      'Wild and bred eggs are all Common now. Grade them up with essence (cost lowered to 4/4/5/6)';
+
+  @override
+  String get whatsNew21Passive =>
+      'Pet passives now grow with grade and species rarity — most older bugs dropped, so each gets 5 free rerolls';
+
+  @override
+  String get whatsNew21Egg =>
+      'Eggs can\'t be pets (equipped eggs were swapped for other bugs) · egg stats are revealed on hatching';
+
+  @override
+  String get whatsNew21Aura =>
+      'New duel team role auras and a \'Command\' training slot — every bug gets one free respec (no wait)';
+
+  @override
+  String get whatsNew21Train =>
+      'Training level-up costs went up (more at higher levels)';
+
+  @override
+  String get whatsNew21Duel =>
+      'Strike specialty reworked and per-species duel scaling rebalanced';
+
+  @override
+  String get whatsNew21Gear =>
+      'Gear \'Skill cooldown\' option · star materials carry over · element stones for fairy rerolls';
+
+  @override
+  String get whatsNew21Badge =>
+      'Event badges are now gold, silver, bronze, finalist and participant';
+
+  @override
+  String passiveRerollFree(String n) {
+    return 'Free reroll ($n left)';
+  }
+
+  @override
+  String passiveRerollFreeHint(String n) {
+    return 'Bugs from before the update get $n free rerolls.';
+  }
+
+  @override
+  String passiveRerollTitleBug(String name) {
+    return '$name · Reroll passive';
+  }
+
+  @override
+  String get eggUnequipAutoToast =>
+      'Eggs were removed from your pets and the slots were refilled';
+
+  @override
+  String get respecGift1021Toast =>
+      '1.0.21 gift — every bug gets one free respec (no wait)';
 }

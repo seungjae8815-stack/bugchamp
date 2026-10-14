@@ -1066,3 +1066,33 @@ int duelStoneAllowance(
       math.max(0, abyssMilestones) * perMilestone +
       kDuelStoneDropSlack;
 }
+
+/// 1.0.21 업데이트 기념 무료 다시 찍기 표식(`dailyClaims` 키 — 서버가 합칠 때 지우지 않는다).
+const kRespecGift1021Key = 'gift:respec1021';
+
+/// 1.0.21 업데이트 기념(2026-10-14 사장님 확정): 훈련 포인트를 찍은 곤충마다 **대기 없는 다시 찍기 1회**.
+/// 새 '지휘' 칸을 써 보려면 다 찍어 둔 102점을 옮겨야 하는데 대기가 최대 수 시간이었다. 한 번만 준다(표식).
+/// 앱 시작([SaveController.build])에서 부른다. [granted] = 이번에 새로 무료가 붙은 곤충 수.
+({SaveGame save, int granted}) grantRespecGift1021(SaveGame s) {
+  if (s.dailyClaims.containsKey(kRespecGift1021Key)) {
+    return (save: s, granted: 0);
+  }
+  var granted = 0;
+  final tp = <String, BugTrain>{};
+  for (final e in s.trainPoints.entries) {
+    final r = e.value;
+    if (r.allocated > 0 && !r.freeRespec) {
+      granted++;
+      tp[e.key] = r.copyWith(freeRespec: true);
+    } else {
+      tp[e.key] = r;
+    }
+  }
+  return (
+    save: s.copyWith(
+      trainPoints: tp,
+      dailyClaims: {...s.dailyClaims, kRespecGift1021Key: '1'},
+    ),
+    granted: granted,
+  );
+}

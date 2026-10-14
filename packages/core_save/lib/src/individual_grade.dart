@@ -270,6 +270,7 @@ GradeOp rollPassiveReroll(
   String bugId,
   math.Random rng, {
   required bool useJelly,
+  bool free = false,
 }) {
   if (!cfg.enabled) return const GradeOp.fail('off');
   final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
@@ -278,7 +279,18 @@ GradeOp rollPassiveReroll(
   // 고르지 않은 결과가 남아 있으면 그것부터 고른다(2026-10-14 — 비용을 두 번 내지 않게).
   if (s.passiveRerollBug != null) return const GradeOp.fail('pending');
   var next = s;
-  if (useJelly) {
+  if (free) {
+    // 업데이트 전 곤충의 무료 재굴림(2026-10-14 사장님 확정) — 굴리는 순간 한 번을 쓴다(고르든 안 고르든).
+    if (cfg.freeRerollsLeft(bug) <= 0) return const GradeOp.fail('no_free');
+    next = s.copyWith(
+      bugs: [
+        for (final b in s.bugs)
+          b.id == bugId
+              ? b.copyWith(passiveFreeUsed: b.passiveFreeUsed + 1)
+              : b,
+      ],
+    );
+  } else if (useJelly) {
     final jelly = s.materialCount(MaterialKind.jelly);
     if (cfg.rerollJelly <= 0 || jelly < cfg.rerollJelly) {
       return const GradeOp.fail('no_jelly');
@@ -301,7 +313,8 @@ GradeOp rollPassiveReroll(
     next.copyWith(passiveRerollBug: bugId, passiveRerollRoll: roll),
     extra: {
       'roll': roll,
-      'cost': useJelly ? cfg.rerollJelly : cfg.rerollEssence,
+      'cost': free ? 0 : (useJelly ? cfg.rerollJelly : cfg.rerollEssence),
+      if (free) 'free': true,
     },
   );
 }

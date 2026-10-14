@@ -3682,6 +3682,12 @@ abstract class AppLocalizations {
   /// **'Skip all'**
   String get hatchRevealSkipAll;
 
+  /// No description provided for @hatchRevealGreatEssenceWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'This bug has excellent stats (average {avg}).\nConvert it to essence anyway?'**
+  String hatchRevealGreatEssenceWarn(String avg);
+
   /// No description provided for @hatchRevealTitle.
   ///
   /// In en, this message translates to:
@@ -5139,6 +5145,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Already the best team'**
   String get autoTeamAlready;
+
+  /// No description provided for @teamPowerAura.
+  ///
+  /// In en, this message translates to:
+  /// **'(aura +{power})'**
+  String teamPowerAura(String power);
 
   /// No description provided for @teamPower.
   ///
@@ -12522,7 +12534,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageViewGrade.
   ///
   /// In en, this message translates to:
-  /// **'Grade'**
+  /// **'Individual grade'**
   String get storageViewGrade;
 
   /// No description provided for @storageViewGradeAtLeast.
@@ -12674,6 +12686,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bugs from before the update: {kind}'**
   String dexPassiveLegacy(String kind);
+
+  /// No description provided for @storageViewPassive.
+  ///
+  /// In en, this message translates to:
+  /// **'Passive type'**
+  String get storageViewPassive;
+
+  /// No description provided for @storageViewRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel role'**
+  String get storageViewRole;
+
+  /// No description provided for @duelTeamAuraMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **' (max)'**
+  String get duelTeamAuraMaxed;
+
+  /// No description provided for @igGradeUpPassive.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet passive {kind} {from} → {to}'**
+  String igGradeUpPassive(String kind, String from, String to);
+
+  /// No description provided for @guidePassiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet passive'**
+  String get guidePassiveTitle;
+
+  /// No description provided for @guidePassiveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug — bugs from before the update keep their species\' passive type.\nSize = individual grade ({grade}) × species rarity ({rarity}) × innate strength ({roll}–100%). It grows as you grade up; the exact value shows after hatching.'**
+  String guidePassiveBody(String grade, String rarity, String roll);
+
+  /// No description provided for @guidePassiveReroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll: spend {essence} essence of that species or {jelly} jelly to reroll the size, then keep the new or current value. The type never changes.'**
+  String guidePassiveReroll(String essence, String jelly);
+
+  /// No description provided for @guideAuraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Team roles & Command'**
+  String get guideAuraTitle;
+
+  /// No description provided for @guideAuraBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Each species has a duel role (Attacker, Defender, Tank). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in events).'**
+  String get guideAuraBody;
+
+  /// No description provided for @guideAuraSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Per bug = grade base {base} + {perPoint} per point in the \'Command\' training slot. The team total caps at {cap} per stat — stacking one role hits the cap, so mix roles.'**
+  String guideAuraSize(String base, String perPoint, String cap);
+
+  /// No description provided for @whatsNew21Grade.
+  ///
+  /// In en, this message translates to:
+  /// **'Wild and bred eggs are all Common now. Grade them up with essence (cost lowered to 4/4/5/6)'**
+  String get whatsNew21Grade;
+
+  /// No description provided for @whatsNew21Passive.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet passives now grow with grade and species rarity — most older bugs dropped, so each gets 5 free rerolls'**
+  String get whatsNew21Passive;
+
+  /// No description provided for @whatsNew21Egg.
+  ///
+  /// In en, this message translates to:
+  /// **'Eggs can\'t be pets (equipped eggs were swapped for other bugs) · egg stats are revealed on hatching'**
+  String get whatsNew21Egg;
+
+  /// No description provided for @whatsNew21Aura.
+  ///
+  /// In en, this message translates to:
+  /// **'New duel team role auras and a \'Command\' training slot — every bug gets one free respec (no wait)'**
+  String get whatsNew21Aura;
+
+  /// No description provided for @whatsNew21Train.
+  ///
+  /// In en, this message translates to:
+  /// **'Training level-up costs went up (more at higher levels)'**
+  String get whatsNew21Train;
+
+  /// No description provided for @whatsNew21Duel.
+  ///
+  /// In en, this message translates to:
+  /// **'Strike specialty reworked and per-species duel scaling rebalanced'**
+  String get whatsNew21Duel;
+
+  /// No description provided for @whatsNew21Gear.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear \'Skill cooldown\' option · star materials carry over · element stones for fairy rerolls'**
+  String get whatsNew21Gear;
+
+  /// No description provided for @whatsNew21Badge.
+  ///
+  /// In en, this message translates to:
+  /// **'Event badges are now gold, silver, bronze, finalist and participant'**
+  String get whatsNew21Badge;
+
+  /// No description provided for @passiveRerollFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free reroll ({n} left)'**
+  String passiveRerollFree(String n);
+
+  /// No description provided for @passiveRerollFreeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs from before the update get {n} free rerolls.'**
+  String passiveRerollFreeHint(String n);
+
+  /// No description provided for @passiveRerollTitleBug.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · Reroll passive'**
+  String passiveRerollTitleBug(String name);
+
+  /// No description provided for @eggUnequipAutoToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Eggs were removed from your pets and the slots were refilled'**
+  String get eggUnequipAutoToast;
+
+  /// No description provided for @respecGift1021Toast.
+  ///
+  /// In en, this message translates to:
+  /// **'1.0.21 gift — every bug gets one free respec (no wait)'**
+  String get respecGift1021Toast;
 }
 
 class _AppLocalizationsDelegate

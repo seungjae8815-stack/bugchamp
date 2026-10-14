@@ -124,4 +124,61 @@ void main() {
     expect(take.passiveRerollBug, isNull);
     expect(take.bugs.single.passiveRoll, a.extra['roll']);
   });
+
+  /// 업데이트 전 곤충 무료 재굴림(2026-10-14 사장님 확정 — 곤충마다 5번).
+  test('무료 재굴림: 업데이트 전 곤충만 · 비용 없음 · 곤충마다 5번', () {
+    const free = PassiveV2Config(
+      enabled: true,
+      kinds: {'attack': 0.35},
+      rerollEssence: 3,
+      rerollJelly: 10,
+      legacyFreeRerolls: 5,
+    );
+    var s = save();
+    for (var i = 1; i <= 5; i++) {
+      final r = rollPassiveReroll(
+        s,
+        free,
+        'b1',
+        Random(i),
+        useJelly: false,
+        free: true,
+      );
+      expect(r.isOk, isTrue, reason: '$i번째');
+      expect(r.extra['cost'], 0);
+      expect(r.save!.essence['stag_saw'], 0, reason: '정수를 쓰지 않는다');
+      expect(r.save!.bugs.single.passiveFreeUsed, i);
+      s = choosePassiveReroll(r.save!, accept: true);
+    }
+    expect(free.freeRerollsLeft(s.bugs.single), 0);
+    expect(
+      rollPassiveReroll(
+        s,
+        free,
+        'b1',
+        Random(9),
+        useJelly: false,
+        free: true,
+      ).error,
+      'no_free',
+    );
+    // 새 곤충(p2)은 무료가 없다.
+    final v2 = save().copyWith(bugs: [bug().copyWith(passiveV2: true)]);
+    expect(free.freeRerollsLeft(v2.bugs.single), 0);
+    expect(
+      rollPassiveReroll(
+        v2,
+        free,
+        'b1',
+        Random(1),
+        useJelly: false,
+        free: true,
+      ).error,
+      'no_free',
+    );
+    // 사용 횟수는 세이브에 남는다.
+    final j = s.bugs.single.toJson();
+    expect(j['pfu'], 5);
+    expect(IndividualBug.fromJson(j).passiveFreeUsed, 5);
+  });
 }

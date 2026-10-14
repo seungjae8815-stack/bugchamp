@@ -6,7 +6,7 @@ import 'package:app/ui/whats_new.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// "업데이트 내용" 창(1.0.18 도입 · 1.0.20 내용) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
+/// "업데이트 내용" 창(1.0.18 도입 · 1.0.21 내용) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
 void main() {
   group('막 시작한 세이브에는 띄우지 않는다', () {
     final now = DateTime.utc(2026, 10, 9, 12);
@@ -73,21 +73,24 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.20 9줄 — 개체 등급·물약·펫·뽑기 천장·초월 시간·별 인계·전투력·리그·약충', (
+    testWidgets('1.0.21 8줄 — 일반 알·패시브 무료 재굴림·알 펫 금지·팀 오라·수련 비용·치기·장비·뱃지', (
       tester,
     ) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(kWhatsNewVersion, '1.0.20');
-      expect(find.textContaining('등급(일반~전설)'), findsOneWidget);
-      expect(find.textContaining('성장물약'), findsOneWidget);
-      expect(find.textContaining('펫 효과'), findsOneWidget);
-      expect(find.textContaining('50회 안에 전설'), findsOneWidget);
-      expect(find.textContaining('공방 초월'), findsOneWidget);
-      expect(find.textContaining('별을 그대로'), findsOneWidget);
-      expect(find.textContaining('결투 전투력'), findsOneWidget);
-      expect(find.textContaining('리그 순위표'), findsOneWidget);
-      expect(find.textContaining('약충'), findsOneWidget);
-      expect(find.byType(Icon), findsNWidgets(9));
+      expect(kWhatsNewVersion, '1.0.21');
+      expect(find.textContaining('모두 일반 등급'), findsOneWidget);
+      expect(find.textContaining('무료 재굴림 5번'), findsOneWidget);
+      expect(find.textContaining('펫으로 장착할 수 없어요'), findsOneWidget);
+      expect(find.textContaining('다시 찍기 1회 무료'), findsOneWidget);
+      expect(find.textContaining('수련 비용'), findsOneWidget);
+      expect(find.textContaining('치기 주특기'), findsOneWidget);
+      expect(find.textContaining('스킬 쿨타임 감소'), findsOneWidget);
+      expect(find.textContaining('금·은·동'), findsOneWidget);
+      expect(
+        whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
+        hasLength(8),
+      );
+      expect(tester.takeException(), isNull);
     });
 
     for (final lc in const ['en', 'ja']) {

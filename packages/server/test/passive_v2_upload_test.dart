@@ -55,4 +55,28 @@ void main() {
     expect(got.passiveV2, isTrue);
     expect(got.passiveRoll, 97);
   });
+
+  /// 무료 재굴림 사용 횟수(`pfu`, 2026-10-14) — 줄지 않고, 구버전이 떨궈도 되돌린다.
+  test('무료 재굴림 사용 횟수는 줄지 않는다 · 구버전이 떨군 것도 되돌린다', () {
+    final s = stored([b('x').copyWith(passiveFreeUsed: 3)]);
+    // 0 으로 고쳐 올려도 3 그대로.
+    final forged = s.copyWith(bugs: [b('x')]);
+    expect(
+      actions.mergeSave(s, forged.toJson()).save!.bugs.single.passiveFreeUsed,
+      3,
+    );
+    // 늘어난 것은 받는다.
+    final used = s.copyWith(bugs: [b('x').copyWith(passiveFreeUsed: 4)]);
+    expect(
+      actions.mergeSave(s, used.toJson()).save!.bugs.single.passiveFreeUsed,
+      4,
+    );
+    // 구버전(feat 25) — 모르는 키를 떨궈 올림.
+    final j = s.toJson()..['feat'] = 25;
+    j['bugs'] = [
+      for (final m in j['bugs'] as List)
+        Map<String, dynamic>.from(m as Map)..remove('pfu'),
+    ];
+    expect(actions.mergeSave(s, j).save!.bugs.single.passiveFreeUsed, 3);
+  });
 }

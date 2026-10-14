@@ -223,7 +223,9 @@
     "rarityFactor": { "common": 0.57, "uncommon": 0.68, "rare": 0.78, "epic": 0.89, "legendary": 1.0 },
     "rollMin": 0.8,
     "rerollEssence": 3,
-    "rerollJelly": 10
+    "rerollJelly": 10,
+    "_legacyFreeComment": "업데이트 전 곤충(p2 없음)은 곤충마다 무료 크기 재굴림 legacyFreeRerolls 번(2026-10-14 사장님 확정 5 — 1.0.21 에서 옛 곤충 패시브가 대부분 낮아진 것을 스스로 메우게). 사용 횟수는 곤충 pfu, 서버는 줄지 않게 지킨다. 펫 전용이라 결투 P2W 밖, 젤리 수입·소비와 무관.",
+    "legacyFreeRerolls": 5
   },
   "individualGrade": {
     "enabled": true,

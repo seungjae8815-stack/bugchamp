@@ -752,6 +752,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) controller.maybeSpawnGift();
     });
+    // 1.0.21 업데이트 직후 한 번 — 장착해 둔 알을 내렸으면 펫을 다시 채우고 알린다 · 무료 다시 찍기 선물을 알린다.
+    final eggsOff = controller.pendingEggUnequip;
+    final respecGift = controller.pendingRespecGift;
+    controller.pendingEggUnequip = 0;
+    controller.pendingRespecGift = 0;
+    if (eggsOff > 0 || respecGift > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final l = AppLocalizations.of(context);
+        if (eggsOff > 0) {
+          await controller.autoEquipBest();
+          if (!mounted) return;
+          showCenterToast(context, l.eggUnequipAutoToast);
+          if (respecGift > 0) {
+            await Future<void>.delayed(const Duration(seconds: 2));
+          }
+        }
+        if (respecGift > 0 && mounted) {
+          showCenterToast(context, l.respecGift1021Toast);
+        }
+      });
+    }
   }
 
   /// 복귀 보상 팝업(방치 정산). 닫히면 완료된다.

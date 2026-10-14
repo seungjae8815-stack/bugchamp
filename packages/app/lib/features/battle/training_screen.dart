@@ -72,12 +72,20 @@ Color duelRoleColor(DuelRole r) => switch (r) {
   DuelRole.hp => trainSlotColor(TrainSlot.hp),
 };
 
-/// 팀 오라 요약 한 줄("팀 오라: 공격 +12% · 체력 +8%") — 결투 탭 출정 칸 아래.
-String duelTeamAuraText(AppLocalizations l, Map<DuelRole, double> totals) {
+/// 팀 오라 요약 한 줄("팀 오라: 공격 +20%(최대) · 체력 +8%") — 결투 탭 출정 칸 아래.
+/// [capPerStat] 를 주면 상한에 닿은 능력치 뒤에 "(최대)"를 붙인다 — 더 찍어도 안 오른다는 표시(1.0.21).
+String duelTeamAuraText(
+  AppLocalizations l,
+  Map<DuelRole, double> totals, {
+  double? capPerStat,
+}) {
+  bool atCap(double v) =>
+      capPerStat != null && capPerStat > 0 && v >= capPerStat - 1e-9;
   final parts = [
     for (final r in DuelRole.values)
       if ((totals[r] ?? 0) > 0)
-        '${duelRoleStatLabel(l, r)} ${_signed(totals[r]!)}',
+        '${duelRoleStatLabel(l, r)} ${_signed(totals[r]!)}'
+            '${atCap(totals[r]!) ? l.duelTeamAuraMaxed : ''}',
   ];
   return parts.isEmpty ? l.duelTeamAuraNone : l.duelTeamAura(parts.join(' · '));
 }

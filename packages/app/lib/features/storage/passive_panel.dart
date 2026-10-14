@@ -96,7 +96,14 @@ Widget petPassiveCard(
                 size: 19,
                 fallback: Icons.casino_rounded,
               ),
-              label: Text(l.passiveReroll),
+              // 업데이트 전 곤충은 무료 횟수가 남아 있으면 버튼에 바로 보인다(2026-10-14).
+              label: Text(
+                petCfg.passiveV2.freeRerollsLeft(bug) > 0
+                    ? l.passiveRerollFree(
+                        '${petCfg.passiveV2.freeRerollsLeft(bug)}',
+                      )
+                    : l.passiveReroll,
+              ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: kHoney,
                 side: BorderSide(color: kHoney.withValues(alpha: 0.6)),
@@ -110,7 +117,7 @@ Widget petPassiveCard(
   );
 }
 
-/// 다시 굴리기 — 비용(정수/젤리)을 고르고, 내고, 지금 값/새 값 중 고른다. 비용은 어느 쪽이든 쓰인다.
+/// 재굴림 — 비용(정수/젤리)을 고르고, 내고, 지금 값/새 값 중 고른다. 비용은 어느 쪽이든 쓰인다.
 Future<void> _openPassiveReroll(
   BuildContext ctx,
   WidgetRef r,
@@ -145,12 +152,14 @@ Future<void> _openPassiveReroll(
   if (cur == null) return;
   final have = save.essence[bug.speciesId] ?? 0;
   final essenceOk = cfg.rerollEssence > 0 && have >= cfg.rerollEssence;
+  // 업데이트 전 곤충의 무료 재굴림(2026-10-14 사장님 확정 — 곤충마다 5번).
+  final freeLeft = cfg.freeRerollsLeft(bug);
   final nav = Navigator.of(ctx, rootNavigator: true);
 
-  // true = 젤리 · false = 정수 · null = 취소
-  final useJelly = await showGameDialog<bool>(
+  // 'jelly' · 'essence' · 'free' · null = 취소
+  final how = await showGameDialog<String>(
     ctx,
-    title: l.passiveReroll,
+    title: l.passiveRerollTitleBug(name),
     icon: Icons.casino_rounded,
     iconWidget: _rerollIcon(),
     content: Column(
@@ -172,6 +181,18 @@ Future<void> _openPassiveReroll(
           style: const TextStyle(color: Colors.white, fontSize: 12.5),
         ),
         const SizedBox(height: 6),
+        if (freeLeft > 0) ...[
+          Text(
+            l.passiveRerollFreeHint('${cfg.legacyFreeRerolls}'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF8FE3A0),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
         Text(
           l.passiveRerollEssenceHave(name, '$have'),
           textAlign: TextAlign.center,
@@ -186,20 +207,30 @@ Future<void> _openPassiveReroll(
     ),
     actions: [
       TextButton(onPressed: () => nav.pop(), child: Text(l.actionCancel)),
+      // 무료가 남아 있으면 그것부터(정수·젤리 버튼은 그대로 둔다 — 무료를 아끼고 싶은 사람도 있다).
+      if (freeLeft > 0)
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF3E8E4E),
+          ),
+          onPressed: () => nav.pop('free'),
+          child: Text(l.passiveRerollFree('$freeLeft')),
+        ),
       if (cfg.rerollEssence > 0)
         FilledButton(
           // 정수가 모자라면 끈다 — 눌러 보고 나서야 "부족"을 알게 하지 않는다.
-          onPressed: essenceOk ? () => nav.pop(false) : null,
+          onPressed: essenceOk ? () => nav.pop('essence') : null,
           child: Text(l.passiveRerollEssence('${cfg.rerollEssence}')),
         ),
       if (cfg.rerollJelly > 0)
         FilledButton(
-          onPressed: () => nav.pop(true),
+          onPressed: () => nav.pop('jelly'),
           child: jellyPrice(cost: cfg.rerollJelly),
         ),
     ],
   );
-  if (useJelly == null || !ctx.mounted) return;
+  if (how == null || !ctx.mounted) return;
+  final useJelly = how == 'jelly';
   if (useJelly) {
     // 젤리 확인 창(모자라면 상점 안내로 바뀐다).
     final ok = await confirmJellySpend(
@@ -213,13 +244,14 @@ Future<void> _openPassiveReroll(
   }
   final res = await r
       .read(saveControllerProvider.notifier)
-      .rerollPassive(bugId, useJelly: useJelly);
+      .rerollPassive(bugId, useJelly: useJelly, free: how == 'free');
   if (!ctx.mounted) return;
   if (!res.isOk) {
     showCenterToast(ctx, switch (res.error) {
       'no_jelly' => l.notEnoughJelly,
       'no_essence' => l.passiveRerollNoEssence,
       'egg' => l.passiveRerollEgg,
+      'no_free' => l.igGradeFailed,
       _ => l.igGradeFailed,
     });
     return;
@@ -284,7 +316,10 @@ Future<void> _pickPassiveRoll(
   // 닫기로 빠져나가지 못하게 — 이미 낸 비용의 결과는 반드시 고르게 한다.
   final take = await showGameDialog<bool>(
     ctx,
-    title: l.passiveRerollPickTitle,
+    // 어느 곤충의 결과인지(대기 결과는 다른 곤충 것일 수 있다 — 2026-10-14 점검).
+    title: l.passiveRerollTitleBug(
+      sp.name.resolve(Localizations.localeOf(ctx).languageCode),
+    ),
     icon: Icons.casino_rounded,
     iconWidget: _rerollIcon(),
     barrierDismissible: false,

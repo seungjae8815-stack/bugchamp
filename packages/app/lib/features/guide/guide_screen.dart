@@ -206,6 +206,29 @@ class GuideScreen extends ConsumerWidget {
           ),
         ],
       ),
+      // 펫 패시브 v2(1.0.21) — 종류는 곤충마다 · 크기 = 개체 등급 × 종 희귀도 × 타고난 세기. 숫자는 pets.json passiveV2.
+      if (pet != null && pet.passiveV2.enabled)
+        _Section(
+          icon: Icons.pets_rounded,
+          title: l.guidePassiveTitle,
+          children: [
+            _p(
+              l.guidePassiveBody(
+                _rangePct(pet.passiveV2.gradeFactor),
+                _rangePct(pet.passiveV2.rarityFactor.values),
+                _pct(pet.passiveV2.rollMin),
+              ),
+            ),
+            _p(
+              l.guidePassiveReroll(
+                '${pet.passiveV2.rerollEssence}',
+                '${pet.passiveV2.rerollJelly}',
+              ),
+            ),
+            if (pet.passiveV2.legacyFreeRerolls > 0)
+              _p(l.passiveRerollFreeHint('${pet.passiveV2.legacyFreeRerolls}')),
+          ],
+        ),
       _Section(
         icon: Icons.auto_awesome_rounded,
         title: l.guideTraitTitle,
@@ -289,6 +312,32 @@ class GuideScreen extends ConsumerWidget {
           ),
         ],
       ),
+      // 팀 역할 오라 · 지휘(1.0.21) — 숫자는 battle.json duel.teamAura · training.slots.command.
+      if (battle.teamAura.enabled)
+        _Section(
+          icon: Icons.campaign_rounded,
+          title: l.guideAuraTitle,
+          children: [
+            _p(l.guideAuraBody),
+            for (final (r, sl) in const [
+              (DuelRole.attack, TrainSlot.attack),
+              (DuelRole.defense, TrainSlot.defense),
+              (DuelRole.hp, TrainSlot.hp),
+            ])
+              _line(
+                '${duelRoleLabel(l, r)} → '
+                '${l.duelTeamAuraHelpRole(trainSlotLabel(l, sl))}',
+              ),
+            const SizedBox(height: 6),
+            _p(
+              l.guideAuraSize(
+                _rangePct(battle.teamAura.baseByGrade),
+                '${_pct(train.slotEffect[TrainSlot.command] ?? 0)}p',
+                _pct(battle.teamAura.capPerStat),
+              ),
+            ),
+          ],
+        ),
       _Section(
         icon: Icons.fitness_center_rounded,
         title: l.guideTrainTitle,
@@ -427,6 +476,19 @@ class GuideScreen extends ConsumerWidget {
     return p == p.roundToDouble()
         ? '${p.round()}%'
         : '${p.toStringAsFixed(1)}%';
+  }
+
+  /// 값 목록의 최소~최대("30~100%") — 하나뿐이면 그 값.
+  static String _rangePct(Iterable<double> vs) {
+    if (vs.isEmpty) return '-';
+    var lo = vs.first, hi = vs.first;
+    for (final v in vs) {
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    if (lo == hi) return _pct(lo);
+    final a = _pct(lo);
+    return '${a.substring(0, a.length - 1)}~${_pct(hi)}';
   }
 
   static String _signed(double v) => v < 0 ? '−${_pct(-v)}' : '+${_pct(v)}';

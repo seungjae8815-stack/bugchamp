@@ -1,4 +1,5 @@
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -544,7 +545,34 @@ Future<void> _openGradeUp(
   AudioService.instance.sfxLevelUp();
   final before = (res.extra['before'] as List?)?.cast<int>() ?? const [];
   final after = (res.extra['after'] as List?)?.cast<int>() ?? const [];
-  await _showGradeUpResult(ctx, l, to, before, after);
+  // 펫 패시브 이전 → 이후(1.0.21) — 크기가 개체 등급을 따라 커진다. 값은 화면·합산과 같은 `passiveOf`.
+  String? passiveLine;
+  final petCfg = data.petConfig;
+  if (petCfg != null) {
+    IndividualBug? upgraded;
+    for (final b in r.read(saveControllerProvider).requireValue.bugs) {
+      if (b.id == bugId) upgraded = b;
+    }
+    final pb = passiveOf(bug, sp, petCfg);
+    final pa = upgraded == null ? null : passiveOf(upgraded, sp, petCfg);
+    if (pb != null && pa != null) {
+      passiveLine = l.igGradeUpPassive(
+        passiveKindLabel(l, pa.statKey),
+        _passiveValuePart(l, pb),
+        _passiveValuePart(l, pa),
+      );
+    }
+  }
+  await _showGradeUpResult(ctx, l, to, before, after, passiveLine);
+}
+
+/// 패시브 한 줄("골드 +5.4%")에서 크기만("+5.4%") — 종류 이름은 한 번만 쓴다.
+String _passiveValuePart(AppLocalizations l, SpeciesPassive p) {
+  final full = passiveText(l, p);
+  final kind = passiveKindLabel(l, p.statKey);
+  return kind.isNotEmpty && full.startsWith('$kind ')
+      ? full.substring(kind.length + 1)
+      : full;
 }
 
 /// 등급 올리기 결과 — 칸마다 이전 → 이후(좋아진 칸은 강조).
@@ -553,8 +581,9 @@ Future<void> _showGradeUpResult(
   AppLocalizations l,
   Grade to,
   List<int> before,
-  List<int> after,
-) {
+  List<int> after, [
+  String? passiveLine,
+]) {
   var improved = 0;
   final rows = <Widget>[];
   for (final s in StatRoll.values) {
@@ -622,6 +651,17 @@ Future<void> _showGradeUpResult(
         ),
         const SizedBox(height: 6),
         ...rows,
+        if (passiveLine != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            passiveLine,
+            style: const TextStyle(
+              color: kHoney,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ],
     ),
     actions: [gameDialogButton(l.actionClose, () => Navigator.pop(ctx))],

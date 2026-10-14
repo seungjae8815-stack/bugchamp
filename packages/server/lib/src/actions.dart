@@ -518,10 +518,12 @@ class GameActions {
     if (feat < 26) {
       final keep = {
         for (final b in stored.bugs)
-          if (b.passiveV2 || b.passiveRoll != null)
+          if (b.passiveV2 || b.passiveRoll != null || b.passiveFreeUsed > 0)
             b.id: {
               if (b.passiveV2) 'p2': true,
               if (b.passiveRoll != null) 'pr': b.passiveRoll,
+              // 무료 재굴림 사용 횟수(`pfu`) — 되돌리지 않으면 구버전 기기 한 번 업로드로 무료 5번이 다시 생긴다.
+              if (b.passiveFreeUsed > 0) 'pfu': b.passiveFreeUsed,
             },
       };
       final list = out['bugs'];
@@ -1880,6 +1882,8 @@ class GameActions {
       // 패시브 v2 표식도 저장본 그대로(2026-10-14) — 옛 곤충에 붙여 패시브 종류를 바꾸거나, 새 곤충에서 떼어 종 패시브로
       // 되돌리지 못하게. 새 id 에만 붙을 수 있다(위 `o == null` 분기).
       final p2 = o.passiveV2;
+      // 무료 패시브 재굴림 사용 횟수는 줄지 않는다(2026-10-14) — 0 으로 고쳐 올려 무료 5번을 다시 받지 못하게.
+      final pfu = max(b.passiveFreeUsed, o.passiveFreeUsed);
       int? ls;
       if (ng) {
         ls = null;
@@ -1892,6 +1896,7 @@ class GameActions {
           gc == b.fromGacha &&
           ng == b.newGen &&
           p2 == b.passiveV2 &&
+          pfu == b.passiveFreeUsed &&
           ls == b.legacySynthUps) {
         bugs.add(b);
         continue;
@@ -1902,6 +1907,7 @@ class GameActions {
         ..remove('gc')
         ..remove('ng')
         ..remove('p2')
+        ..remove('pfu')
         ..remove('ls');
       bugs.add(
         IndividualBug.fromJson({
@@ -1910,6 +1916,7 @@ class GameActions {
           if (gc) 'gc': true,
           if (ng) 'ng': true,
           if (p2) 'p2': true,
+          if (pfu > 0) 'pfu': pfu,
           if (ls != null) 'ls': ls,
         }),
       );

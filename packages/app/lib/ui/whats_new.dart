@@ -7,12 +7,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/providers.dart';
 import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
+import 'art.dart';
 import 'colors.dart';
 import 'game_dialog.dart';
 import 'popup_gate.dart';
 
 /// 이 빌드의 "업데이트 내용" 판. 내용([whatsNewItems])을 바꾸면 이 값도 바꾼다 — 기기마다 판마다 한 번 뜬다.
-const kWhatsNewVersion = '1.0.20';
+const kWhatsNewVersion = '1.0.21';
 
 /// 기기 플래그 — 마지막으로 보여 준 판(세이브가 아니라 기기 설정: 진행·보상과 무관한 안내라서).
 const kWhatsNewSeenKey = 'whatsNew.seen';
@@ -21,21 +22,45 @@ const kWhatsNewSeenKey = 'whatsNew.seen';
 /// 옮겨졌어요"는 처음 하는 사람에게 뜻이 없다). 첫 실행에서 본 것으로만 적는다.
 const _kFreshSave = Duration(minutes: 30);
 
-/// 업데이트 내용 한 줄.
-typedef WhatsNewItem = ({IconData icon, String text});
+/// 업데이트 내용 한 줄 — [image] 는 게임 아이콘 그림 이름(`assets/images/ui/icon/<image>.webp`),
+/// 그림이 없으면 [icon] 으로 그린다.
+typedef WhatsNewItem = ({IconData icon, String? image, String text});
 
-/// 1.0.20 업데이트 내용(2026-10-12 — 개체 등급 개편 · 공방 초월 시간 · 별 인계 · 리그 표시 등).
+/// 1.0.21 업데이트 내용(2026-10-14 — 일반 알 · 펫 패시브 v2 · 알 펫 금지 · 팀 오라·지휘 · 수련 비용 · 치기 · 장비 · 뱃지).
 /// 펫 효과가 약해질 수 있는 변경은 숨기지 않고 넣는다(공지·출시노트와 같은 원칙).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
-  (icon: Icons.military_tech_rounded, text: l.whatsNew20Grade),
-  (icon: Icons.science_rounded, text: l.whatsNew20Potion),
-  (icon: Icons.pets_rounded, text: l.whatsNew20Pet),
-  (icon: Icons.egg_rounded, text: l.whatsNew20Gacha),
-  (icon: Icons.local_fire_department_rounded, text: l.whatsNew20Transcend),
-  (icon: Icons.star_rounded, text: l.whatsNew20StarCarry),
-  (icon: Icons.bolt_rounded, text: l.whatsNew20Power),
-  (icon: Icons.emoji_events_rounded, text: l.whatsNew20League),
-  (icon: Icons.bug_report_rounded, text: l.whatsNew20Nymph),
+  (
+    icon: Icons.military_tech_rounded,
+    image: 'essence',
+    text: l.whatsNew21Grade,
+  ),
+  (
+    icon: Icons.pets_rounded,
+    image: 'passive_reroll',
+    text: l.whatsNew21Passive,
+  ),
+  (icon: Icons.egg_rounded, image: 'incubator', text: l.whatsNew21Egg),
+  (icon: Icons.campaign_rounded, image: 'team_aura', text: l.whatsNew21Aura),
+  (
+    icon: Icons.trending_up_rounded,
+    image: 'train_level',
+    text: l.whatsNew21Train,
+  ),
+  (
+    icon: Icons.sports_mma_rounded,
+    image: 'role_attack',
+    text: l.whatsNew21Duel,
+  ),
+  (
+    icon: Icons.construction_rounded,
+    image: 'equip_star',
+    text: l.whatsNew21Gear,
+  ),
+  (
+    icon: Icons.emoji_events_rounded,
+    image: 'badge_champion',
+    text: l.whatsNew21Badge,
+  ),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.
@@ -123,7 +148,13 @@ class WhatsNewBody extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0x88EBA52F)),
                   ),
-                  child: Icon(items[i].icon, color: kHoney, size: 16),
+                  child: items[i].image == null
+                      ? Icon(items[i].icon, color: kHoney, size: 16)
+                      : gameIcon(
+                          items[i].image!,
+                          size: 20,
+                          fallback: items[i].icon,
+                        ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(

@@ -40,6 +40,8 @@ class StorageViewFilter {
     this.stage = StorageViewStage.all,
     this.minGrade,
     this.speciesId,
+    this.passiveKey,
+    this.role,
   });
 
   final StorageViewStage stage;
@@ -50,20 +52,40 @@ class StorageViewFilter {
   /// 이 종만(null = 전체).
   final String? speciesId;
 
+  /// 이 펫 패시브 종류만(`UpgradeKind.key`, null = 전체) — 값은 `passiveOf` 로 낸다(1.0.21).
+  final String? passiveKey;
+
+  /// 이 결투 역할(종의 `duelRole`)만(null = 전체, 1.0.21).
+  final DuelRole? role;
+
   bool get isActive =>
-      stage != StorageViewStage.all || minGrade != null || speciesId != null;
+      stage != StorageViewStage.all ||
+      minGrade != null ||
+      speciesId != null ||
+      passiveKey != null ||
+      role != null;
 
   StorageViewFilter copyWith({
     StorageViewStage? stage,
     Grade? Function()? minGrade,
     String? Function()? speciesId,
+    String? Function()? passiveKey,
+    DuelRole? Function()? role,
   }) => StorageViewFilter(
     stage: stage ?? this.stage,
     minGrade: minGrade == null ? this.minGrade : minGrade(),
     speciesId: speciesId == null ? this.speciesId : speciesId(),
+    passiveKey: passiveKey == null ? this.passiveKey : passiveKey(),
+    role: role == null ? this.role : role(),
   );
 
-  bool accepts(LifeStage st, Grade grade, String species) {
+  bool accepts(
+    LifeStage st,
+    Grade grade,
+    String species, {
+    String? passive,
+    DuelRole? duelRole,
+  }) {
     final stageOk = switch (stage) {
       StorageViewStage.all => true,
       StorageViewStage.egg => st == LifeStage.egg,
@@ -73,8 +95,29 @@ class StorageViewFilter {
     if (!stageOk) return false;
     if (minGrade != null && grade.index < minGrade!.index) return false;
     if (speciesId != null && species != speciesId) return false;
+    if (passiveKey != null && passive != passiveKey) return false;
+    if (role != null && duelRole != role) return false;
     return true;
   }
+
+  /// [bug] 가 이 조건에 맞는가 — 그리드·보이는 수가 같은 판정을 쓴다.
+  bool acceptsBug(GameData data, IndividualBug bug, LifeStage st) {
+    final sp = data.species(bug.speciesId);
+    return accepts(
+      st,
+      shownGrade(data, bug, sp),
+      bug.speciesId,
+      passive: passiveKey == null ? null : storagePassiveKeyOf(data, bug),
+      duelRole: sp.duelRole,
+    );
+  }
+}
+
+/// 곤충의 펫 패시브 종류(`UpgradeKind.key`) — 화면·합산과 같은 `passiveOf`. 설정이 없으면 종 패시브.
+String? storagePassiveKeyOf(GameData data, IndividualBug bug) {
+  final sp = data.species(bug.speciesId);
+  final cfg = data.petConfig;
+  return cfg == null ? sp.passive?.statKey : passiveOf(bug, sp, cfg)?.statKey;
 }
 
 /// 앱을 켜 둔 동안 유지되는 보기 조건(자동 합성·분해 필터와 같은 방식 — 세이브 밖).
@@ -2328,8 +2371,8 @@ class StorageScreen extends ConsumerWidget {
                     crossAxisCount: 3,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
-                    // 알 42 + 이름 + 포텐셜·속성 줄이 들어가는 비율.
-                    childAspectRatio: 0.86,
+                    // 알 42 + 이름 + 종 희귀도·부화 시간 + 개체 등급·속성 줄이 들어가는 비율.
+                    childAspectRatio: 0.74,
                   ),
                   itemCount: eggs.length,
                   itemBuilder: (_, i) =>
@@ -2464,6 +2507,63 @@ class StorageScreen extends ConsumerWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.white, fontSize: 10),
+              ),
+              const SizedBox(height: 2),
+              // 종 희귀도(색 점 + 글자) · 부화 시간(1.0.21) — 야생 알은 개체 등급이 모두 일반이라 테두리가
+              // 다 같아 보였다. 무엇을 먼저 넣을지는 종 희귀도와 걸리는 시간이 정한다.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: gradeColor(sp.grade),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xAA000000),
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      gradeLabel(l, sp.grade),
+                      style: TextStyle(
+                        color: gradeColor(sp.grade),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    if (data.petConfig != null) ...[
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.hourglass_bottom_rounded,
+                        size: 10,
+                        color: Color(0xAAFFFFFF),
+                      ),
+                      Text(
+                        remainLabel(
+                          l,
+                          Duration(
+                            seconds: _incubateSeconds(
+                              data,
+                              r.read(saveControllerProvider).requireValue,
+                              sp,
+                            ),
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xCCFFFFFF),
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
               const SizedBox(height: 2),
               // 포텐셜 + 오행. 목록이 이미 **등급 → 포텐셜 → 사이즈** 순으로
@@ -2725,15 +2825,11 @@ class StorageScreen extends ConsumerWidget {
       );
     }
     final view = ref.watch(storageViewFilterProvider);
-    final items = _sorted(data, save, ref.read(clockProvider).now().toUtc())
-        .where(
-          (it) => view.accepts(
-            it.stage,
-            shownGrade(data, it.bug, data.species(it.bug.speciesId)),
-            it.bug.speciesId,
-          ),
-        )
-        .toList();
+    final items = _sorted(
+      data,
+      save,
+      ref.read(clockProvider).now().toUtc(),
+    ).where((it) => view.acceptsBug(data, it.bug, it.stage)).toList();
     if (items.isEmpty) {
       // 거른 결과가 비면 이유와 되돌리기를 함께 보여 준다 — 빈 화면만 있으면 곤충이 사라진 줄 안다.
       return Center(
@@ -2806,11 +2902,7 @@ class StorageScreen extends ConsumerWidget {
       final st = cfg == null
           ? b.stage
           : effectiveStage(b.stage, b.stageSince, now, cfg);
-      return view.accepts(
-        st,
-        shownGrade(data, b, data.species(b.speciesId)),
-        b.speciesId,
-      );
+      return view.acceptsBug(data, b, st);
     }).length;
     final parts = <String>[
       if (view.stage != StorageViewStage.all) _viewStageLabel(l, view.stage),
@@ -2819,6 +2911,8 @@ class StorageScreen extends ConsumerWidget {
       if (view.speciesId != null)
         data.speciesById[view.speciesId]?.name.resolve(locale) ??
             view.speciesId!,
+      if (view.passiveKey != null) _passiveKindName(l, view.passiveKey!),
+      if (view.role != null) duelRoleLabel(l, view.role!),
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
@@ -2903,6 +2997,12 @@ class StorageScreen extends ConsumerWidget {
     );
   }
 
+  /// 패시브 종류 이름 — 모르는 키(데이터 실수)는 키 그대로 보여 눈에 띄게.
+  String _passiveKindName(AppLocalizations l, String key) {
+    final t = passiveKindLabel(l, key);
+    return t.isEmpty ? key : t;
+  }
+
   String _viewStageLabel(AppLocalizations l, StorageViewStage s) => switch (s) {
     StorageViewStage.all => l.storageViewAll,
     StorageViewStage.egg => l.storageViewStageEgg,
@@ -2910,7 +3010,7 @@ class StorageScreen extends ConsumerWidget {
     StorageViewStage.other => l.storageViewStageOther,
   };
 
-  /// 보기 조건 시트 — 단계 · 등급(이상) · 종. 칩을 누르면 바로 적용된다.
+  /// 보기 조건 시트 — 단계 · 개체 등급(이상) · 종 · 패시브 종류 · 결투 역할. 칩을 누르면 바로 적용된다.
   void _showViewFilter(BuildContext context, GameData data) {
     showModalBottomSheet<void>(
       context: context,
@@ -2939,6 +3039,23 @@ class StorageScreen extends ConsumerWidget {
                 if (g != 0) return g;
                 return a.name.resolve(locale).compareTo(b.name.resolve(locale));
               });
+            // 패시브 종류 = 새 곤충이 받을 수 있는 종류(표 순서) + 업데이트 전 곤충이 실제로 가진 종 패시브 종류.
+            // 가진 곤충의 패시브 종류만(종 거르기와 같은 원칙 — 눌렀는데 빈 목록이 뜨지 않게). 순서는 데이터 순서.
+            final owned = {
+              for (final b in save.bugs) ?storagePassiveKeyOf(data, b),
+            };
+            final passiveKeys = <String>[
+              for (final k
+                  in data.petConfig?.passiveV2.kinds.keys ?? const <String>[])
+                if (owned.contains(k)) k,
+              for (final k in owned)
+                if (!(data.petConfig?.passiveV2.kinds.containsKey(k) ?? false))
+                  k,
+            ];
+            final selPassive = view.passiveKey;
+            if (selPassive != null && !passiveKeys.contains(selPassive)) {
+              passiveKeys.add(selPassive);
+            }
             Widget head(String t) => Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 6),
               child: Text(
@@ -3039,6 +3156,48 @@ class StorageScreen extends ConsumerWidget {
                           selected: view.speciesId == sp.id,
                           onTap: () =>
                               ctrl.set(view.copyWith(speciesId: () => sp.id)),
+                        ),
+                    ],
+                  ),
+                  head(l.storageViewPassive),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _gradeChip(
+                        label: l.storageViewAll,
+                        color: neutral,
+                        selected: view.passiveKey == null,
+                        onTap: () =>
+                            ctrl.set(view.copyWith(passiveKey: () => null)),
+                      ),
+                      for (final k in passiveKeys)
+                        _gradeChip(
+                          label: _passiveKindName(l, k),
+                          color: _honey,
+                          selected: view.passiveKey == k,
+                          onTap: () =>
+                              ctrl.set(view.copyWith(passiveKey: () => k)),
+                        ),
+                    ],
+                  ),
+                  head(l.storageViewRole),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _gradeChip(
+                        label: l.storageViewAll,
+                        color: neutral,
+                        selected: view.role == null,
+                        onTap: () => ctrl.set(view.copyWith(role: () => null)),
+                      ),
+                      for (final r in DuelRole.values)
+                        _gradeChip(
+                          label: duelRoleLabel(l, r),
+                          color: neutral,
+                          selected: view.role == r,
+                          onTap: () => ctrl.set(view.copyWith(role: () => r)),
                         ),
                     ],
                   ),

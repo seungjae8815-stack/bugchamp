@@ -37,6 +37,7 @@ class IndividualBug {
     this.legacySynthUps,
     this.passiveV2 = false,
     this.passiveRoll,
+    this.passiveFreeUsed = 0,
     Element? element,
   }) : _element = element;
 
@@ -116,6 +117,10 @@ class IndividualBug {
 
   /// 패시브 크기 롤(0~100, JSON `pr`) — 재굴림한 개체만 싣는다. 없으면 id 로 정해지는 [initialPassiveRollOf].
   final int? passiveRoll;
+
+  /// 업데이트 전 곤충의 **무료 패시브 재굴림**을 몇 번 썼나(JSON `pfu`, 2026-10-14 사장님 확정 — 1.0.21 에서
+  /// 옛 곤충 패시브가 대부분 낮아져 곤충마다 무료 재굴림 `passiveV2.legacyFreeRerolls`(5)번). 0 이면 싣지 않는다.
+  final int passiveFreeUsed;
 
   /// 지금 패시브 크기 롤(저장값 또는 처음 롤).
   int get passiveRollValue => passiveRoll ?? initialPassiveRollOf(id);
@@ -470,6 +475,7 @@ class IndividualBug {
     int? legacySynthUps,
     bool? passiveV2,
     int? passiveRoll,
+    int? passiveFreeUsed,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -495,6 +501,7 @@ class IndividualBug {
     legacySynthUps: legacySynthUps ?? this.legacySynthUps,
     passiveV2: passiveV2 ?? this.passiveV2,
     passiveRoll: passiveRoll ?? this.passiveRoll,
+    passiveFreeUsed: passiveFreeUsed ?? this.passiveFreeUsed,
     element: element ?? this.element,
   );
 
@@ -548,6 +555,9 @@ class IndividualBug {
     passiveRoll: json['pr'] is num
         ? ((json['pr'] as num).toInt()).clamp(0, 100)
         : null,
+    passiveFreeUsed: json['pfu'] is num
+        ? ((json['pfu'] as num).toInt()).clamp(0, 999)
+        : 0,
     element: json['element'] == null
         ? null
         : Element.fromKeyOrNull(json['element'] as String),
@@ -582,6 +592,7 @@ class IndividualBug {
     if (legacySynthUps != null) 'ls': legacySynthUps,
     if (passiveV2) 'p2': true,
     if (passiveRoll != null) 'pr': passiveRoll,
+    if (passiveFreeUsed > 0) 'pfu': passiveFreeUsed,
     'element': element.key,
   };
 

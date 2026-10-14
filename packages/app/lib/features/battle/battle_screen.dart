@@ -1802,7 +1802,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                l.opponentPickHint(formatCompact(myPower.round())),
+                l.opponentPickHint(
+                  formatCompact(myPower.round()) +
+                      _auraSuffix(l, _myAuraPower(data, save, locale)),
+                ),
                 style: const TextStyle(color: Color(0xAAFFFFFF), fontSize: 12),
               ),
               const SizedBox(height: 10),
@@ -2677,7 +2680,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                duelTeamAuraText(l, totals),
+                duelTeamAuraText(l, totals, capPerStat: aura.capPerStat),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -2747,8 +2750,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     // 지금 편성의 전투력 — 무엇을 바꿔야 세지는지 바로 보인다.
                     Text(
                       l.teamPower(
-                        formatCompact(_myTeamPowerSum(data, save, locale)),
-                      ),
+                            formatCompact(_myTeamPowerSum(data, save, locale)),
+                          ) +
+                          _auraSuffix(l, _myAuraPower(data, save, locale)),
                       style: const TextStyle(
                         color: _honey,
                         fontWeight: FontWeight.w900,
@@ -3386,6 +3390,33 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         save,
         locale,
       ).fold<double>(0, (a, x) => a + duelPowerOf(x, data));
+
+  /// 지금 편성에서 **팀 오라로 늘어난 전투력**(2026-10-14 사장님 확정) — 곤충별 전투력(출정 칸·채집함)은 오라 없이 그
+  /// 곤충 혼자의 값이라, 세 칸을 더해도 팀 전투력과 맞지 않았다. 그 차이를 따로 보여 준다(0 이면 표시 안 함).
+  double _myAuraPower(GameData data, SaveGame save, String locale) {
+    final bugs = [
+      for (final id in _team.whereType<String>())
+        for (final b in save.bugs)
+          if (b.id == id) b,
+    ];
+    if (bugs.isEmpty) return 0;
+    final solo = bugs.fold<double>(
+      0,
+      (a, b) => a + duelPowerOf(duelBugFor(b, data, save, locale), data),
+    );
+    final team = duelTeamFor(
+      bugs,
+      data,
+      save,
+      locale,
+    ).fold<double>(0, (a, x) => a + duelPowerOf(x, data));
+    final d = team - solo;
+    return d > 0.5 ? d : 0;
+  }
+
+  /// "(오라 +N)" — 오라 몫이 없으면 빈 문자열.
+  String _auraSuffix(AppLocalizations l, double aura) =>
+      aura <= 0 ? '' : ' ${l.teamPowerAura(formatCompact(aura.round()))}';
 
   /// 전투력이 높은 순으로 정렬한 사본.
   List<IndividualBug> _byPower(
