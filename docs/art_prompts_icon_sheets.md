@@ -219,3 +219,21 @@ Use the attached image only as the art style reference. Do NOT copy its subject.
 ```
 badge_finalist
 ```
+
+---
+
+### 10-다시. 대회 참가 뱃지만 그리기 (시트 10번에서 빠짐)
+
+> 한 판이라도 뛴 사람 전원이 받는 뱃지. 입상(청록 리본)·금·은·동과 헷갈리지 않게 **초록 잎 모양**이고 금속이 아닙니다.
+
+참고 그림: `jelly.webp` (`C:\Users\Lenovo\Desktop\coding\BugChamp\packages\app\assets\images\materials\jelly.webp`)
+
+```
+Use the attached image only as the art style reference. Do NOT copy its subject. Small game badge icon "Participant": a single fresh green leaf shaped like a badge, with a small white five-petal flower and a tiny brown beetle silhouette on the leaf, a short light-green fabric ribbon tied at the leaf stem. Soft natural look - NOT a medal, NOT a rosette, absolutely no gold, no silver, no bronze, no metal, no teal. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with fresh leaf green as the main color, semi-realistic painterly shading, bold readable silhouette that stays clear at very small size, thick warm brown outline, high detail. One single badge centered, square 1:1 image, plain flat pale sage-green background. IMPORTANT: no glow, no aura, no halo, no light rays and no sparkles outside the outline - the flat pale sage-green background must touch the thick brown outline directly on every side (the background will be removed by color). no text, no letters, no numbers, no border ring, no frame, no watermark, no logo. Composition: keep the main subject and everything important in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off).
+```
+
+파일명
+
+```
+badge_participant
+```

@@ -54,6 +54,7 @@ JOBS = {
     'role_hp': ('1', ['role_hp']),
     'team_aura': ('1', ['team_aura']),
     'badge_finalist': ('1', ['badge_finalist']),
+    'badge_participant': ('1', ['badge_participant']),
     'roadmap_boss_frame': ('1', ['roadmap_boss_frame']),
 }
 
