@@ -1,4 +1,6 @@
-# Bug Champ — 아이콘 시트 12장 (Gemini)
+# Bug Champ — 아이콘 시트 (Gemini)
+
+> 🆕 **2026-10-14 새로 그릴 것 = 11번 시트 한 장뿐**(수련 레벨·훈련 포인트·즉시 완료·게임 종료). 나머지 시트·입상·참가 뱃지는 이미 받아서 앱에 넣었습니다.
 
 > 한 장에 3~4개씩 묶었습니다(같은 화풍·같은 틀끼리). 받으면 제가 잘라서 각 파일명으로 넣습니다.
 > 이 파일이 `art_prompts_1021_icons.md` · `art_prompts_icons_v2.md` 를 **대신합니다**(같은 그림 41장을 시트로 묶음).
@@ -172,7 +174,23 @@ Use the attached image only as the art style reference. Do NOT copy its subject.
 sheet_marks_2
 ```
 
-### 11. 네모 판 버튼 3종 (필터·공방 등급·공방 자동)
+### 11. 추가 ① 수련 레벨·훈련 포인트·즉시 완료·게임 종료
+
+참고 그림: `jelly.webp`
+
+자를 순서: top-left = 수련 레벨 (`train_level`) · top-right = 훈련 포인트 (`train_point`) · bottom-left = 즉시 완료 (`instant`) · bottom-right = 게임 종료 (`game_exit`)
+
+```
+Use the attached image only as the art style reference. Do NOT copy its subject. Make a sprite sheet of 4 separate small game icons, four icons in a 2x2 grid (top row 2, bottom row 2). top-left: "Training Level": a small beetle lifting a tiny wooden log barbell over its head, with a small upward leaf arrow beside it, warm orange accent; top-right: "Training Point": a round honey-amber token coin with a small carved star and a tiny beetle crest in the middle, slightly glossy like hard candy (not metal), honey amber accent; bottom-left: "Instant Complete": a bold zig-zag lightning bolt made of glowing green jelly with a small round jelly drop at its tip, bright green and yellow accent; bottom-right: "Exit Game": a small rounded wooden door slightly ajar with a little beetle walking out through it and a tiny curved arrow pointing outward, warm bark brown accent. Style for every icon: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with the accent colors named above, semi-realistic painterly shading, bold readable silhouettes that stay clear at very small size, thick warm brown outline around each icon, high detail, all icons the same size and the same style. Plain flat pale sage-green background everywhere. IMPORTANT: no glow, no aura, no halo, no light rays and no sparkles outside each outline - the flat pale sage-green background must touch each thick brown outline directly on every side (the background will be removed by color). Leave WIDE empty sage-green gaps between icons so each one can be cut out separately; icons must not touch or overlap. no text, no letters, no numbers, no labels, no border ring, no frame, no grid lines, no watermark, no logo. Composition: keep all icons in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off).
+```
+
+파일명
+
+```
+sheet_extra_1
+```
+
+### 12. 네모 판 버튼 3종 (필터·공방 등급·공방 자동)
 
 참고 그림: `auto_synth.webp`
 
@@ -188,7 +206,7 @@ Use the attached image as the style AND board reference (keep its rounded square
 sheet_tiles
 ```
 
-### 12. 로드맵 보스 칸 테두리 (틀이 달라 한 장)
+### 13. 로드맵 보스 칸 테두리 (틀이 달라 한 장)
 
 참고 그림: `auto_synth.webp`
 
@@ -200,40 +218,4 @@ Use the attached image only as the art style reference. Do NOT copy its subject.
 
 ```
 roadmap_boss_frame
-```
-
----
-
-### 8-다시. 입상(4~10위)만 다시 그리기
-
-> 사장님(10-14): 입상 그림이 너무 금메달 같다 → 금속 메달이 아니라 **청록색 천 리본(로제트)** 으로. 시트 8번의 나머지 3개(금·은·동)는 그대로 쓰고 이것만 다시 그리세요.
-
-참고 그림: `jelly.webp`
-
-```
-Use the attached image only as the art style reference. Do NOT copy its subject. Small game badge icon "Finalist": a round pleated prize ribbon rosette made of deep-teal fabric, with two short teal ribbon tails hanging down below it, a cream fabric center with a small embroidered brown beetle silhouette. It must look like soft cloth, NOT a metal medal - absolutely no gold, no silver, no bronze, no metallic shine, no coin. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with deep teal and cream as the main colors, semi-realistic painterly shading, bold readable silhouette that stays clear at very small size, thick warm brown outline, high detail. One single badge centered, square 1:1 image, plain flat pale sage-green background. IMPORTANT: no glow, no aura, no halo, no light rays and no sparkles outside the outline - the flat pale sage-green background must touch the thick brown outline directly on every side (the background will be removed by color). no text, no letters, no numbers, no border ring, no frame, no watermark, no logo. Composition: keep the main subject and everything important in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off).
-```
-
-파일명
-
-```
-badge_finalist
-```
-
----
-
-### 10-다시. 대회 참가 뱃지만 그리기 (시트 10번에서 빠짐)
-
-> 한 판이라도 뛴 사람 전원이 받는 뱃지. 입상(청록 리본)·금·은·동과 헷갈리지 않게 **초록 잎 모양**이고 금속이 아닙니다.
-
-참고 그림: `jelly.webp` (`C:\Users\Lenovo\Desktop\coding\BugChamp\packages\app\assets\images\materials\jelly.webp`)
-
-```
-Use the attached image only as the art style reference. Do NOT copy its subject. Small game badge icon "Participant": a single fresh green leaf shaped like a badge, with a small white five-petal flower and a tiny brown beetle silhouette on the leaf, a short light-green fabric ribbon tied at the leaf stem. Soft natural look - NOT a medal, NOT a rosette, absolutely no gold, no silver, no bronze, no metal, no teal. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream) with fresh leaf green as the main color, semi-realistic painterly shading, bold readable silhouette that stays clear at very small size, thick warm brown outline, high detail. One single badge centered, square 1:1 image, plain flat pale sage-green background. IMPORTANT: no glow, no aura, no halo, no light rays and no sparkles outside the outline - the flat pale sage-green background must touch the thick brown outline directly on every side (the background will be removed by color). no text, no letters, no numbers, no border ring, no frame, no watermark, no logo. Composition: keep the main subject and everything important in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off).
-```
-
-파일명
-
-```
-badge_participant
 ```
