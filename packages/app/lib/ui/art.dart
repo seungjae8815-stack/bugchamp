@@ -652,6 +652,53 @@ Widget dialogIcon(
   fallback: Icon(fallback, size: size * 0.75, color: kHoney),
 );
 
+/// 게임 아이콘 그림(`assets/images/ui/icon/<name>.webp`, 2026-10-14 시트 41장) — 예전에 Material 아이콘·이모지로
+/// 그리던 자리를 바꾼다. 그림이 없으면(구버전 번들 등) [fallback] 아이콘을 [color] 로 그린다.
+/// [dim] 이면 흑백·반투명(빈 별·잠김 등) — 같은 그림을 두 벌 그리지 않는다.
+Widget gameIcon(
+  String name, {
+  double size = 24,
+  IconData fallback = Icons.auto_awesome_rounded,
+  Color color = kHoney,
+  bool dim = false,
+}) {
+  final img = gameImage(
+    'assets/images/ui/icon/$name.webp',
+    width: size,
+    height: size,
+    fallback: Icon(fallback, size: size * 0.85, color: color),
+  );
+  if (!dim) return img;
+  return Opacity(
+    opacity: 0.45,
+    child: ColorFiltered(
+      colorFilter: const ColorFilter.matrix(<double>[
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+        0.2126,
+        0.7152,
+        0.0722,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+      ]),
+      child: img,
+    ),
+  );
+}
+
 /// 이미 있는 아트를 팝업 제목에 그대로 쓴다(새로 그릴 필요가 없던 것들).
 Widget dialogAsset(
   String assetPath, {
