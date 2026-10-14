@@ -51,10 +51,7 @@ void main() {
   });
 
   test('정수 — 등급 누적 · 올리기 비용 · 전설 = 480', () {
-    expect(
-      [for (var p = 1; p <= 5; p++) g.cumulative(p)],
-      [1, 4, 16, 80, 480],
-    );
+    expect([for (var p = 1; p <= 5; p++) g.cumulative(p)], [1, 4, 16, 80, 480]);
     expect(g.upgradeCost(1), 3);
     expect(g.upgradeCost(4), 480 - 80);
     expect(g.upgradeCost(5), 0);

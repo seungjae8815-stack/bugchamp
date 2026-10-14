@@ -37,7 +37,7 @@ int sizeRollOf(Species sp, IndividualBug bug) {
 }
 
 /// 롤 값 색 — 낮으면 붉게, 가운데 노랗게, 높으면 푸르게.
-Color _rollColor(int v) {
+Color rollQualityColor(int v) {
   if (v >= 85) return const Color(0xFF4FC3F7);
   if (v >= 60) return const Color(0xFF81C784);
   if (v >= 35) return const Color(0xFFFFD54F);
@@ -90,7 +90,7 @@ Widget gradeQualityCard(
               value: hidden ? 0 : e.$2 / 100,
               minHeight: 6,
               backgroundColor: const Color(0x22FFFFFF),
-              valueColor: AlwaysStoppedAnimation(_rollColor(e.$2)),
+              valueColor: AlwaysStoppedAnimation(rollQualityColor(e.$2)),
             ),
           ),
         ),
@@ -100,7 +100,7 @@ Widget gradeQualityCard(
             hidden ? l.hiddenStatValue : '${e.$2}',
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: hidden ? const Color(0x88FFFFFF) : _rollColor(e.$2),
+              color: hidden ? const Color(0x88FFFFFF) : rollQualityColor(e.$2),
               fontSize: 11,
               fontWeight: FontWeight.w900,
             ),
@@ -137,7 +137,7 @@ Widget gradeQualityCard(
               style: TextStyle(
                 color: hidden
                     ? const Color(0x88FFFFFF)
-                    : _rollColor(avg.round()),
+                    : rollQualityColor(avg.round()),
                 fontWeight: FontWeight.w900,
                 fontSize: 12.5,
               ),

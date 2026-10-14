@@ -295,9 +295,16 @@ class GameActions {
   /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.
   static const _optionKeysSinceFeat20 = {'evade'};
 
+  /// feat 26(1.0.21)에 풀로 돌아온 장비 옵션 — 1.0.20 이하 앱은 자기 풀에 없는 옵션이라 빼고 올린다.
+  static const _optionKeysSinceFeat26 = {'skillCooldown'};
+
   /// [stored] 장비에서 구버전이 모르는 옵션만 뺀 모양이 [incoming] 과 같으면 [stored] 를, 아니면 null.
   /// (저장본에 그런 옵션이 없으면 되돌릴 것도 없으니 null.)
-  static Object? _restoreDroppedOptions(Object? stored, Object? incoming) {
+  static Object? _restoreDroppedOptions(
+    Object? stored,
+    Object? incoming, [
+    Set<String> dropped = _optionKeysSinceFeat20,
+  ]) {
     if (stored is! Map || incoming is! Map) return null;
     if (stored['s'] != incoming['s']) return null;
     if ((stored['t'] as num?)?.toInt() != (incoming['t'] as num?)?.toInt()) {
@@ -308,7 +315,7 @@ class GameActions {
     if (so is! List) return null;
     final kept = [
       for (final o in so)
-        if (o is Map && !_optionKeysSinceFeat20.contains(o['k'])) o,
+        if (o is Map && !dropped.contains(o['k'])) o,
     ];
     if (kept.length == so.length) return null; // 빠진 옵션이 없다
     final inc = co is List ? co : const [];
@@ -454,6 +461,28 @@ class GameActions {
         ];
       }
     }
+    // 곤충의 패시브 v2 표식·크기 롤(`p2`·`pr`, feat 26 — 1.0.21) — 모르는 앱은 떨어뜨린다. 같은 곤충이면 저장본 값을 되돌린다
+    // (안 되돌리면 새 곤충의 패시브 종류가 종 패시브로 돌아가고, 재굴림한 크기가 처음 롤로 돌아간다).
+    if (feat < 26) {
+      final keep = {
+        for (final b in stored.bugs)
+          if (b.passiveV2 || b.passiveRoll != null)
+            b.id: {
+              if (b.passiveV2) 'p2': true,
+              if (b.passiveRoll != null) 'pr': b.passiveRoll,
+            },
+      };
+      final list = out['bugs'];
+      if (keep.isNotEmpty && list is List) {
+        out['bugs'] = [
+          for (final b in list)
+            if (b is Map && keep.containsKey(b['id']))
+              (Map<String, dynamic>.from(b)..addAll(keep[b['id']]!))
+            else
+              b,
+        ];
+      }
+    }
     // 요정 상태 안의 1.0.18 칸 — 알 자동 분해(`ar`) · 젤리로 늘린 요정함(`bx`). 요정 상태는 필드 하나라
     // 통째로 지키면 1.0.17 의 요정 진행이 사라진다 — 모르는 칸만 저장본 값으로 되돌린다.
     // (안 되돌리면 1.0.17 기기 한 번 업로드로 산 요정함 칸이 사라진다.)
@@ -490,6 +519,40 @@ class GameActions {
             () {
               for (var i = 0; i < pool.length; i++) {
                 final r = _restoreDroppedOptions(pool[i], item);
+                if (r != null) {
+                  pool.removeAt(i);
+                  return r;
+                }
+              }
+              return item;
+            }(),
+        ];
+      }
+    }
+    // 스킬 쿨타임 감소 옵션(feat 26) — 1.0.20 이하 앱은 자기 풀에 없어 지우고 올린다. 같은 장비면 저장본으로 되돌린다.
+    // (feat 20 미만 앱은 회피까지 함께 지우므로 두 키를 한 번에 본다.)
+    if (feat < 26) {
+      final keys = feat < 20
+          ? {..._optionKeysSinceFeat20, ..._optionKeysSinceFeat26}
+          : _optionKeysSinceFeat26;
+      final se = storedJson['equippedItems'];
+      final ce = out['equippedItems'];
+      if (se is Map && ce is Map) {
+        out['equippedItems'] = <String, dynamic>{
+          for (final e in ce.entries)
+            '${e.key}':
+                _restoreDroppedOptions(se[e.key], e.value, keys) ?? e.value,
+        };
+      }
+      final ss = storedJson['forgeStack'];
+      final cs = out['forgeStack'];
+      if (ss is List && cs is List) {
+        final pool = [...ss];
+        out['forgeStack'] = <dynamic>[
+          for (final item in cs)
+            () {
+              for (var i = 0; i < pool.length; i++) {
+                final r = _restoreDroppedOptions(pool[i], item, keys);
                 if (r != null) {
                   pool.removeAt(i);
                   return r;
@@ -1753,6 +1816,9 @@ class GameActions {
       if (su < 0) su = 0;
       final gc = b.fromGacha || o.fromGacha;
       final ng = o.newGen;
+      // 패시브 v2 표식도 저장본 그대로(2026-10-14) — 옛 곤충에 붙여 패시브 종류를 바꾸거나, 새 곤충에서 떼어 종 패시브로
+      // 되돌리지 못하게. 새 id 에만 붙을 수 있다(위 `o == null` 분기).
+      final p2 = o.passiveV2;
       int? ls;
       if (ng) {
         ls = null;
@@ -1764,6 +1830,7 @@ class GameActions {
       if (su == b.synthUps &&
           gc == b.fromGacha &&
           ng == b.newGen &&
+          p2 == b.passiveV2 &&
           ls == b.legacySynthUps) {
         bugs.add(b);
         continue;
@@ -1773,6 +1840,7 @@ class GameActions {
         ..remove('su')
         ..remove('gc')
         ..remove('ng')
+        ..remove('p2')
         ..remove('ls');
       bugs.add(
         IndividualBug.fromJson({
@@ -1780,6 +1848,7 @@ class GameActions {
           if (su > 0) 'su': su,
           if (gc) 'gc': true,
           if (ng) 'ng': true,
+          if (p2) 'p2': true,
           if (ls != null) 'ls': ls,
         }),
       );

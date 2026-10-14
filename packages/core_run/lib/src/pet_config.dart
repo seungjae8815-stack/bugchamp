@@ -1,3 +1,4 @@
+import 'passive_v2_config.dart';
 import 'dart:math' as math;
 
 import 'jelly_cost.dart';
@@ -40,6 +41,7 @@ class PetConfig {
     required this.stageDurationsSec,
     this.potentialScale = 0.06,
     this.individualGrade = const IndividualGradeConfig(),
+    this.passiveV2 = const PassiveV2Config(),
     this.enhanceScale = 0.005,
     this.maxEquip = 3,
     this.accelerateJelly = 2,
@@ -127,6 +129,9 @@ class PetConfig {
 
   /// 개체 등급 개편(2026-10-11, `pets.json → individualGrade`). 꺼져 있으면 옛 규칙.
   final IndividualGradeConfig individualGrade;
+
+  /// 펫 패시브 v2(2026-10-14, `pets.json → passiveV2`). 꺼져 있으면 종 패시브 그대로(옛 규칙).
+  final PassiveV2Config passiveV2;
 
   /// 강화 레벨 합 1당 기여 증폭.
   final double enhanceScale;
@@ -540,6 +545,9 @@ class PetConfig {
       individualGrade: IndividualGradeConfig.fromJson(
         json['individualGrade'] as Map<String, dynamic>?,
       ),
+      passiveV2: PassiveV2Config.fromJson(
+        json['passiveV2'] as Map<String, dynamic>?,
+      ),
       enhanceScale: (json['enhanceScale'] as num?)?.toDouble() ?? 0.005,
       maxEquip: (json['maxEquip'] as num?)?.toInt() ?? 3,
       accelerateJelly: (json['accelerateJelly'] as num?)?.toInt() ?? 2,
@@ -788,9 +796,29 @@ PetStat petStatOf(
   level: bug.level,
   trait: bug.trait,
   variant: bug.variant,
-  passive: species.passive,
+  passive: passiveOf(bug, species, cfg),
   trainMult: trainMult,
 );
+
+/// [bug] 의 펫 패시브(종류·크기). 패시브 v2 가 꺼져 있으면 종 패시브 그대로(옛 규칙).
+/// 화면·합산이 모두 이 함수를 거친다 — 갈리면 "화면에 본 패시브와 실제 효과가 다르다"가 된다.
+SpeciesPassive? passiveOf(IndividualBug bug, Species species, PetConfig cfg) {
+  final v2 = cfg.passiveV2;
+  if (!v2.enabled) return species.passive;
+  final kind = v2.kindOf(bug, species.passive?.statKey);
+  if (kind == null) return null;
+  // 옛 곤충의 종 패시브 종류가 표에 없으면(데이터 실수) 옛 값 그대로 — 조용히 사라지지 않게.
+  if (!v2.kinds.containsKey(kind)) return species.passive;
+  return SpeciesPassive(
+    statKey: kind,
+    value: v2.valueAt(
+      kind,
+      bug.individualGrade,
+      species.grade,
+      bug.passiveRollValue,
+    ),
+  );
+}
 
 /// 펫 1마리가 기여하는 공격/체력 배율(장착 효과 표시·합산 공용).
 ({double attack, double hp}) petContribution(PetStat p, PetConfig cfg) {

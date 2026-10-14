@@ -347,6 +347,12 @@ String passiveText(AppLocalizations l, SpeciesPassive p) {
   return '${upgradeLabel(l, kind)} +$num$unit';
 }
 
+/// 패시브 **종류만**(크기 없이) — 알(크기는 부화 뒤 공개)·도감의 옛 곤충 안내.
+String passiveKindLabel(AppLocalizations l, String statKey) {
+  final kind = UpgradeKind.fromKeyOrNull(statKey);
+  return kind == null ? '' : upgradeLabel(l, kind);
+}
+
 /// 타이머 남은 시간 라벨(1시간↑ "N시간 M분" / 1분↑ "N분" / 그 미만 "N초").
 ///
 /// 부화기·돌파·부상·짝짓기·공방이 전부 같은 모양으로 보여야 한다 —

@@ -200,6 +200,30 @@
  "_expandRoundComment": "확장 비용을 자릿수에 맞는 눈금으로 **올림**한다. [상한, 눈금] 목록이며 상한 0 은 \"그 이상 전부\". 50/56/63/70 처럼 나오면 값을 읽는 순간 \"얼마 모아야 하지\"가 계산이 안 된다 — 50/60/65/75 면 바로 읽힌다. ⚠️ 반드시 올림(ceil)이다. 반올림하면 37.6과 42.1이 둘 다 40이 되어 가격이 두 번 같아진다(부화기에서 실제로 그랬다).",
  "_breakthroughComment": "돌파 기준(2026-08-31 상향). 예전 값(골드 2만~60만 · 재료 100~1500 · 10분~4시간)은 후반 골드 수입에 비해 너무 싸서, 돌파가 '기다리면 되는 것'이었다. 골드 x4~17 · 재료 x3~5 · 시간 x6 으로 올린다 — 티어마다 x5 로 커지므로 마지막 티어(5성 상한 80레벨)는 확실한 장기 목표가 된다. 즉시완료 젤리는 roundJellyCost 로 5·10 단위(1티어 15 · 마지막 티어 80). ⚠️ 도감 정복 기준(dex.json → conquerLevel 10)은 **돌파 없이** 닿는 첫 상한(tierCaps[0]=10)이라 이 상향의 영향을 받지 않는다 — 도감과 돌파는 각각의 목표다.",
   "_individualGradeComment": "개체 등급 개편(2026-10-11 사장님 확정, docs/design_individual_grade.md). 2026-10-14 사장님 확정(1.0.21): 야생·짝짓기 알은 100% 일반(wildWeights — 키우는 맛·알 뽑기의 의미) + 등급 올리기 4·4·5·6(전설 = 정수 480, 6·6·6·10 그대로면 무료 전설 120일+ → 4·4·5·6 이면 23~31일, docs/design_tools/grade_progress_sim.py). 개체 등급 = 포텐셜(1 일반~5 전설), 종 grade = 종 희귀도. statMult 는 전설 = 지금 다 키운 5★ 기준(아래는 ÷ 전설 값). 정수: 애벌레 이상만, 등급 누적 × 종 희귀도 가치(뽑기 출신 1). 물약: 새 롤(0~100) + potionRollBonus점/개(100 상한, 2026-10-12), 한 번 최대 maxPerUse, 젤리 판매 = §2.8 예외. 업데이트 전 곤충(ng 없음) 정수 = 희귀도 × (태생 기본 + 3 × 옛 합성 단계). 뽑기 전설 천장 gachaLegendPity. 확률 물약 드롭은 서버가 하루 potionDropDaily 개까지 인정(서버 UTC 날짜, 앱도 같은 한도에서 안내 없이 멈춤 — 2026-10-14 3 → 10). enabled=false 면 옛 규칙(서버는 env INDIVIDUAL_GRADE=0 으로 긴급 끄기).",
+  "_passiveV2Comment": "펫 패시브 v2(2026-10-14 사장님 확정, docs/design_growth_1021.md). 1.0.21 뒤에 생긴 곤충(p2)은 패시브 종류가 개체마다 kinds 중 하나(id 로 정해짐), 업데이트 전 곤충은 그 종의 패시브 종류. 크기 = kinds 최대치(전설 종·전설 등급·롤 100) × gradeFactor[개체 등급] × rarityFactor[종 희귀도] × (rollMin + (1-rollMin) × 롤/100). 예: 골드 일반 종·일반 등급 ≈ 6% · 일반 종·전설 등급 ≈ 20% · 전설 종·전설 등급 35%. 크기 재굴림 = 그 종 정수 rerollEssence 또는 젤리 rerollJelly(펫 전용이라 결투 P2W 밖, 요정 재굴림·장비 다듬기와 같은 원칙). ⚠️ kinds 순서 = 종류 배정 — 새 종류는 맨 뒤에만 붙인다(중간에 넣으면 이미 생긴 곤충의 종류가 바뀐다). 크기를 바꾸면 balance_sim --tiers=4 (--passive-attack) 와 clamp_check 를 다시 잰다.",
+  "passiveV2": {
+    "enabled": true,
+    "kinds": {
+      "attack": 0.35,
+      "maxHp": 0.35,
+      "defense": 0.35,
+      "regen": 0.35,
+      "critDamage": 0.35,
+      "bossDamage": 0.35,
+      "reward": 0.35,
+      "materialFind": 0.35,
+      "bugFind": 0.35,
+      "xp": 0.35,
+      "attackSpeed": 0.20,
+      "crit": 0.06,
+      "moveSpeed": 0.04
+    },
+    "gradeFactor": [0.30, 0.45, 0.60, 0.80, 1.00],
+    "rarityFactor": { "common": 0.57, "uncommon": 0.68, "rare": 0.78, "epic": 0.89, "legendary": 1.0 },
+    "rollMin": 0.8,
+    "rerollEssence": 3,
+    "rerollJelly": 10
+  },
   "individualGrade": {
     "enabled": true,
     "statMult": [1.0, 1.1, 1.22, 1.36, 1.52],

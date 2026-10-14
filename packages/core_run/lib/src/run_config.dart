@@ -241,6 +241,7 @@ class RunConfig {
     this.evadeMax = 0.4,
     this.evadeBudgetUpgrade = 0.2,
     this.evadeBudgetGear = 0.1,
+    this.skillCooldownBudgetGear = 0.3,
     this.evadeBudgetOther = 0.1,
     this.walkSeconds = 0.12,
     this.walkThreatMult = 0.0,
@@ -445,6 +446,9 @@ class RunConfig {
   /// 회피 출처별 예산 — 강화(옛 이동속도 칸) / 장비 옵션 / 그 외(종 패시브 등).
   final double evadeBudgetUpgrade;
   final double evadeBudgetGear;
+
+  /// 장비 옵션 "스킬 쿨타임 감소"의 합 상한(2026-10-14 사장님 확정 — 8부위가 다 굴려도 이만큼까지).
+  final double skillCooldownBudgetGear;
   final double evadeBudgetOther;
 
   /// 몬스터 사이를 걷는 시간(초, 탭 부스트가 줄인다). 예전엔 0.6초 ÷ 이동속도 강화였다.
@@ -864,6 +868,8 @@ class RunConfig {
       evadeBudgetUpgrade:
           (json['evadeBudgetUpgrade'] as num?)?.toDouble() ?? 0.2,
       evadeBudgetGear: (json['evadeBudgetGear'] as num?)?.toDouble() ?? 0.1,
+      skillCooldownBudgetGear:
+          (json['skillCooldownBudgetGear'] as num?)?.toDouble() ?? 0.3,
       evadeBudgetOther: (json['evadeBudgetOther'] as num?)?.toDouble() ?? 0.1,
       walkSeconds: (json['walkSeconds'] as num?)?.toDouble() ?? 0.12,
       walkThreatMult: (json['walkThreatMult'] as num?)?.toDouble() ?? 0.0,

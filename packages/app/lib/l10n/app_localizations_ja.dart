@@ -7340,4 +7340,79 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get storageViewEmpty => '条件に合う昆虫がいません。\n表示の条件を変えてみてください。';
+
+  @override
+  String get passiveCardTitle => 'ペットパッシブ';
+
+  @override
+  String passiveRollLabel(String roll) {
+    return 'ロール $roll/100';
+  }
+
+  @override
+  String get passiveCardHint => 'ペットとして装備したときだけ(放置狩り)付きます。虫の等級と種の希少度で大きくなります。';
+
+  @override
+  String get passiveNone => 'パッシブなし';
+
+  @override
+  String get passiveReroll => 'パッシブ振り直し';
+
+  @override
+  String get passiveRerollDesc =>
+      '大きさ(ロール)だけを振り直します。種類はそのままです。\n新しい値を選んでも選ばなくてもコストは消費されます。';
+
+  @override
+  String passiveRerollCurrent(String value) {
+    return '現在の値: $value';
+  }
+
+  @override
+  String passiveRerollEssence(String n) {
+    return 'エッセンス $n';
+  }
+
+  @override
+  String passiveRerollEssenceHave(String name, String have) {
+    return '$nameのエッセンス 所持 $have';
+  }
+
+  @override
+  String get passiveRerollJellyConfirm =>
+      'ゼリーでパッシブの大きさを振り直しますか?\n現在の値を維持してもゼリーは消費されます。';
+
+  @override
+  String get passiveRerollJellyAction => '振る';
+
+  @override
+  String get passiveRerollPickTitle => '値を選んでください';
+
+  @override
+  String get passiveRerollNow => '現在の値';
+
+  @override
+  String get passiveRerollNew => '新しい値';
+
+  @override
+  String get passiveRerollTakeNew => '新しい値に';
+
+  @override
+  String get passiveRerollKeep => '現在の値を維持';
+
+  @override
+  String get passiveRerollPaid => 'コストはすでに消費されました。';
+
+  @override
+  String get passiveRerollNoEssence => 'エッセンスが足りません';
+
+  @override
+  String get passiveRerollEgg => '孵化してから振り直せます';
+
+  @override
+  String get dexPassiveV2 => 'ペットパッシブは個体ごとに違います(等級・希少度で大きくなります)';
+
+  @override
+  String dexPassiveLegacy(String kind) {
+    return 'アップデート前の虫: $kind';
+  }
 }

@@ -32,6 +32,7 @@ export 'src/iap_config.dart';
 export 'src/mission_config.dart';
 export 'src/monster_config.dart';
 export 'src/pet_attack.dart';
+export 'src/passive_v2_config.dart';
 export 'src/pet_config.dart';
 export 'src/run_config.dart';
 export 'src/run_math.dart';

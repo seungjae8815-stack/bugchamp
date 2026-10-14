@@ -1199,6 +1199,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   bool get _isWorldGate =>
       _config.worldSize > 0 && _stage % _config.worldSize == 0;
 
+  /// 장비 옵션 "스킬 쿨타임 감소"(2026-10-14) — 스킬 쿨타임에 곱하는 값(1 − 감소, 장비 예산에서 잘림).
+  double get _skillCdMult {
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null) return 1;
+    return 1 -
+        equipmentSkillCooldownCut(
+          equipmentBonus(save.equippedItems.values, _data.itemConfig),
+          budget: _config.skillCooldownBudgetGear,
+        );
+  }
+
   /// 장비 공격 배율(기준 밖·순수 이득) vs 권장치. 권장의 85% 미만이면 경고.
   List<Widget> _gateGearHint(AppLocalizations l) {
     final save = ref.read(saveControllerProvider).requireValue;
@@ -2101,7 +2112,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final now = _clock.now();
     if (revive != null &&
         (_reviveReadyAt == null || !now.isBefore(_reviveReadyAt!))) {
-      _reviveReadyAt = now.add(revive.cooldown);
+      _reviveReadyAt = now.add(revive.cooldown * _skillCdMult);
       _playerHp = _playerHpMax * revive.hpFraction;
       _enemyAtkAcc = 0;
       _playerHitFlash = 0;
@@ -4518,7 +4529,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final locale = Localizations.localeOf(context).languageCode;
     _skillCd[def.id] = _devNoSkillCd
         ? _devSkillCd
-        : def.cooldown.inMilliseconds / 1000;
+        : def.cooldown.inMilliseconds / 1000 * _skillCdMult;
     // 스킬 효과 — 그림이 없는 스킬이면 아무것도 안 뜬다(gameImage 폴백).
     _fxId = def.id;
     _fxT = 0;
@@ -4702,7 +4713,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   Widget _skillButton(SkillDef def) {
     var cd = _skillCd[def.id] ?? 0;
-    final total = def.cooldown.inMilliseconds / 1000;
+    final total = def.cooldown.inMilliseconds / 1000 * _skillCdMult;
     // 쿨타임이 있는 패시브(탈피 — 쓰러지면 부활)도 링·남은 초를 보인다(2026-10-08 사장님 지시).
     // 언제 다시 살려 주는지 모르면 믿고 버틸 수 없다. 발동 시각은 _beginDefeat 가 적는다.
     if (!def.isActive && def.effect == 'revive' && _reviveReadyAt != null) {

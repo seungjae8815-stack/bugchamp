@@ -68,7 +68,11 @@ const _buffDpsMult = 1.4;
 // 실제로는 그만큼 쉬워지는데도. 그래서 체감과 계속 어긋났다.
 
 /// 종 고유 패시브 — 펫 3마리 장착분. 능력치가 갈리므로 공격 기여는 일부다.
-const _passiveAttackMult = 1.08;
+/// `--passive-attack=x` 로 바꿔 볼 수 있다(2026-10-14 패시브 v2 — 등급과 함께 커지는 개체 패시브의 영향 측정).
+var _passiveAttackMult = 1.08;
+
+/// `--gear-skill-cd=x` — 장비 옵션 스킬 쿨타임 감소(0~0.3, 2026-10-14). 스킬 쿨타임에 (1 − x)를 곱한다.
+var _gearSkillCd = 0.0;
 
 /// `--equip-scale=k` — 공방 모델이 뽑은 장비 옵션 값을 k 배로 본다(장비를 더/덜
 /// 갖춘 유저). 장비 자체는 이제 공방 규칙으로 계산한다(`_Player._forgeDays`).
@@ -1575,7 +1579,7 @@ class _Player {
     for (final id in equipped) {
       final def = cfg.byId(id);
       if (def == null || !def.isActive) continue;
-      final cd = def.cooldown.inMilliseconds / 1000;
+      final cd = def.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
       if (cd <= 0) continue;
       final v = def.valueAt(lv);
       switch (def.effect) {
@@ -1649,7 +1653,7 @@ class _Player {
     final def = cfg.byId(f.kind);
     if (activeAvg && def != null) {
       final sk = def.skill;
-      final cd = sk.cooldown.inMilliseconds / 1000;
+      final cd = sk.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
       final up = cd <= 0
           ? 0.0
           : (sk.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
@@ -1749,7 +1753,7 @@ class _Player {
     for (final id in eq.equipped) {
       final def = cfg.byId(id);
       if (def?.effect != 'invulnerable' || !def!.isActive) continue;
-      final cd = def.cooldown.inMilliseconds / 1000;
+      final cd = def.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
       final dur = def.durationAt(eq.levels[id] ?? eq.lv);
       if (cd > 0 && dur > 0) guard = (duration: dur, cooldown: cd);
     }
@@ -1763,7 +1767,7 @@ class _Player {
           ? null
           : (
               hpFraction: r.hpFraction,
-              cooldown: r.cooldown.inMilliseconds / 1000,
+              cooldown: r.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd),
             ),
       guard: guard,
     );
@@ -1811,7 +1815,7 @@ class _Player {
     for (final id in eq.equipped) {
       final def = cfg.byId(id);
       if (def == null || !def.isActive) continue;
-      final cd = def.cooldown.inMilliseconds / 1000;
+      final cd = def.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
       final dur = def.durationAt(eq.lv);
       final v = def.valueAt(eq.lv);
       // 0 초에 첫 발, 그 뒤 쿨마다.
@@ -1842,7 +1846,7 @@ class _Player {
     final def = f == null ? null : cfg?.byId(f.kind);
     if (cfg == null || f == null || def == null || sec <= 0) return 0;
     final sk = def.skill;
-    final cd = sk.cooldown.inMilliseconds / 1000;
+    final cd = sk.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
     final dur = sk.duration.inMilliseconds / 1000;
     final v = cfg.skillValue(f);
     var extra = 0.0;
@@ -2998,6 +3002,16 @@ _Opts _parseArgs(List<String> args) {
       continue;
     }
     // 장비 옵션 값을 배율로 조절한다(장비를 더/덜 갖춘 유저).
+    final gsc = RegExp(r'^--gear-skill-cd=(.+)$').firstMatch(a);
+    if (gsc != null) {
+      _gearSkillCd = double.parse(gsc.group(1)!);
+      continue;
+    }
+    final pa = RegExp(r'^--passive-attack=(.+)$').firstMatch(a);
+    if (pa != null) {
+      _passiveAttackMult = double.parse(pa.group(1)!);
+      continue;
+    }
     final es = RegExp(r'^--equip-scale=(.+)$').firstMatch(a);
     if (es != null) {
       _gearScale = double.parse(es.group(1)!);

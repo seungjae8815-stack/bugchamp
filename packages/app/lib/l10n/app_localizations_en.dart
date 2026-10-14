@@ -7513,4 +7513,81 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get storageViewEmpty =>
       'No bugs match.\nTry changing the view filter.';
+
+  @override
+  String get passiveCardTitle => 'Pet passive';
+
+  @override
+  String passiveRollLabel(String roll) {
+    return 'Roll $roll/100';
+  }
+
+  @override
+  String get passiveCardHint =>
+      'Applies only while equipped as a pet (idle hunting). Grows with this bug\'s grade and its species rarity.';
+
+  @override
+  String get passiveNone => 'No passive';
+
+  @override
+  String get passiveReroll => 'Reroll passive';
+
+  @override
+  String get passiveRerollDesc =>
+      'Rerolls only the size (roll). The type stays the same.\nThe cost is used whether you keep the new value or not.';
+
+  @override
+  String passiveRerollCurrent(String value) {
+    return 'Current: $value';
+  }
+
+  @override
+  String passiveRerollEssence(String n) {
+    return 'Essence $n';
+  }
+
+  @override
+  String passiveRerollEssenceHave(String name, String have) {
+    return '$name essence owned: $have';
+  }
+
+  @override
+  String get passiveRerollJellyConfirm =>
+      'Reroll the passive size with jelly?\nThe jelly is used even if you keep the current value.';
+
+  @override
+  String get passiveRerollJellyAction => 'Reroll';
+
+  @override
+  String get passiveRerollPickTitle => 'Pick a value';
+
+  @override
+  String get passiveRerollNow => 'Current';
+
+  @override
+  String get passiveRerollNew => 'New';
+
+  @override
+  String get passiveRerollTakeNew => 'Take new';
+
+  @override
+  String get passiveRerollKeep => 'Keep current';
+
+  @override
+  String get passiveRerollPaid => 'The cost has already been used.';
+
+  @override
+  String get passiveRerollNoEssence => 'Not enough essence';
+
+  @override
+  String get passiveRerollEgg => 'Hatch it first to reroll';
+
+  @override
+  String get dexPassiveV2 =>
+      'Pet passives differ per bug (they grow with grade and rarity)';
+
+  @override
+  String dexPassiveLegacy(String kind) {
+    return 'Bugs from before the update: $kind';
+  }
 }

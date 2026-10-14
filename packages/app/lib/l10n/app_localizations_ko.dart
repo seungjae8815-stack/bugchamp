@@ -7352,4 +7352,80 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get storageViewEmpty => '조건에 맞는 곤충이 없어요.\n보기 조건을 바꿔 보세요.';
+
+  @override
+  String get passiveCardTitle => '펫 패시브';
+
+  @override
+  String passiveRollLabel(String roll) {
+    return '롤 $roll/100';
+  }
+
+  @override
+  String get passiveCardHint =>
+      '애완펫으로 장착했을 때만(방치 사냥) 붙어요. 곤충 등급과 종 희귀도에 따라 커져요.';
+
+  @override
+  String get passiveNone => '패시브 없음';
+
+  @override
+  String get passiveReroll => '패시브 다시 굴리기';
+
+  @override
+  String get passiveRerollDesc =>
+      '크기(롤)만 다시 굴려요. 종류는 그대로예요.\n새 값을 고르든 안 고르든 비용은 사용돼요.';
+
+  @override
+  String passiveRerollCurrent(String value) {
+    return '지금 값: $value';
+  }
+
+  @override
+  String passiveRerollEssence(String n) {
+    return '정수 $n';
+  }
+
+  @override
+  String passiveRerollEssenceHave(String name, String have) {
+    return '$name 정수 보유 $have';
+  }
+
+  @override
+  String get passiveRerollJellyConfirm =>
+      '젤리로 패시브 크기를 다시 굴릴까요?\n지금 값을 유지해도 젤리는 사용돼요.';
+
+  @override
+  String get passiveRerollJellyAction => '굴리기';
+
+  @override
+  String get passiveRerollPickTitle => '값을 고르세요';
+
+  @override
+  String get passiveRerollNow => '지금 값';
+
+  @override
+  String get passiveRerollNew => '새 값';
+
+  @override
+  String get passiveRerollTakeNew => '새 값으로';
+
+  @override
+  String get passiveRerollKeep => '지금 값 유지';
+
+  @override
+  String get passiveRerollPaid => '비용은 이미 사용됐어요.';
+
+  @override
+  String get passiveRerollNoEssence => '정수가 부족해요';
+
+  @override
+  String get passiveRerollEgg => '부화한 뒤에 굴릴 수 있어요';
+
+  @override
+  String get dexPassiveV2 => '펫 패시브는 개체마다 달라요 (등급·희귀도에 따라 커져요)';
+
+  @override
+  String dexPassiveLegacy(String kind) {
+    return '업데이트 전 곤충: $kind';
+  }
 }

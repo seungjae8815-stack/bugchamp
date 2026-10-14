@@ -35,6 +35,8 @@ class IndividualBug {
     this.fromGacha = false,
     this.newGen = false,
     this.legacySynthUps,
+    this.passiveV2 = false,
+    this.passiveRoll,
     Element? element,
   }) : _element = element;
 
@@ -107,6 +109,34 @@ class IndividualBug {
   /// 옛 합성 단계와 새 등급 올리기 단계를 가른다 — 정수 가치가 서로 달라서다(무한 증식 방지 불변식).
   final int? legacySynthUps;
 
+  /// 패시브 v2(2026-10-14 사장님 확정, JSON `p2`) — 1.0.21 뒤에 생긴 곤충은 펫 패시브 **종류가 개체마다**
+  /// (id 로 정해지는 [passivePickOf]) 다르다. 없으면 업데이트 전 곤충 — 종류는 그 종의 패시브 그대로.
+  /// 서버는 저장본에 없던 **새 id** 에만 허용한다([newGen] 과 같은 이유 — 옛 곤충을 바꿔 종류를 고르지 못하게).
+  final bool passiveV2;
+
+  /// 패시브 크기 롤(0~100, JSON `pr`) — 재굴림한 개체만 싣는다. 없으면 id 로 정해지는 [initialPassiveRollOf].
+  final int? passiveRoll;
+
+  /// 지금 패시브 크기 롤(저장값 또는 처음 롤).
+  int get passiveRollValue => passiveRoll ?? initialPassiveRollOf(id);
+
+  static int _fnv(String id) {
+    var h = 0x811c9dc5;
+    for (final c in id.codeUnits) {
+      h ^= c;
+      h = (h * 0x01000193) & 0xffffffff;
+    }
+    return h;
+  }
+
+  /// id 로 정해지는 처음 패시브 크기 롤(0~100) — 능력치 롤과 다른 씨앗.
+  static int initialPassiveRollOf(String id) =>
+      Random(_fnv(id) ^ 0x5bd1e995).nextInt(101);
+
+  /// id 로 정해지는 패시브 종류 자리(0 ~ [n]−1) — 목록은 데이터(`pets.json → passiveV2.kinds`)가 정한다.
+  static int passivePickOf(String id, int n) =>
+      n <= 0 ? 0 : Random(_fnv(id) ^ 0x27d4eb2d).nextInt(n);
+
   /// 지금 능력치 롤(저장값 또는 처음 롤).
   List<int> get statRolls => rolls ?? initialRollsOf(id);
 
@@ -116,12 +146,7 @@ class IndividualBug {
 
   /// id 로 정해지는 처음 롤 — 플랫폼·버전이 바뀌어도 같아야 해서 [String.hashCode] 대신 FNV-1a.
   static List<int> initialRollsOf(String id) {
-    var h = 0x811c9dc5;
-    for (final c in id.codeUnits) {
-      h ^= c;
-      h = (h * 0x01000193) & 0xffffffff;
-    }
-    final rng = Random(h);
+    final rng = Random(_fnv(id));
     return [for (var i = 0; i < StatRoll.values.length; i++) rng.nextInt(101)];
   }
 
@@ -222,6 +247,8 @@ class IndividualBug {
       sex: resolvedSex,
       element: element,
       variant: _rollVariant(rng, variantChance),
+      // 난수를 쓰지 않는다(종류·크기는 id 로) — 기존 롤 순서 그대로.
+      passiveV2: true,
     );
   }
 
@@ -348,6 +375,7 @@ class IndividualBug {
       trait: trait,
       stage: LifeStage.egg,
       variant: variant,
+      passiveV2: true,
     );
   }
 
@@ -440,6 +468,8 @@ class IndividualBug {
     bool? fromGacha,
     bool? newGen,
     int? legacySynthUps,
+    bool? passiveV2,
+    int? passiveRoll,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -463,6 +493,8 @@ class IndividualBug {
     fromGacha: fromGacha ?? this.fromGacha,
     newGen: newGen ?? this.newGen,
     legacySynthUps: legacySynthUps ?? this.legacySynthUps,
+    passiveV2: passiveV2 ?? this.passiveV2,
+    passiveRoll: passiveRoll ?? this.passiveRoll,
     element: element ?? this.element,
   );
 
@@ -512,6 +544,10 @@ class IndividualBug {
     fromGacha: json['gc'] == true,
     newGen: json['ng'] == true,
     legacySynthUps: json['ls'] is num ? (json['ls'] as num).toInt() : null,
+    passiveV2: json['p2'] == true,
+    passiveRoll: json['pr'] is num
+        ? ((json['pr'] as num).toInt()).clamp(0, 100)
+        : null,
     element: json['element'] == null
         ? null
         : Element.fromKeyOrNull(json['element'] as String),
@@ -544,6 +580,8 @@ class IndividualBug {
     if (newGen) 'ng': true,
     // 0 이어도 싣는다 — null(아직 새 규칙으로 안 올림)과 갈라야 한다.
     if (legacySynthUps != null) 'ls': legacySynthUps,
+    if (passiveV2) 'p2': true,
+    if (passiveRoll != null) 'pr': passiveRoll,
     'element': element.key,
   };
 

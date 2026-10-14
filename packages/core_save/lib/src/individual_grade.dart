@@ -259,3 +259,54 @@ SaveGame sanitizeGradeRolls(SaveGame s) {
   ];
   return changed ? s.copyWith(bugs: bugs) : s;
 }
+
+/// 펫 패시브 크기 재굴림(2026-10-14 사장님 확정, `pets.json → passiveV2`) — 그 종 정수 [PassiveV2Config.rerollEssence]
+/// 또는 젤리 [PassiveV2Config.rerollJelly] 를 내고 새 롤(0~100)을 굴린다. 곤충은 아직 그대로 —
+/// 화면이 새 값/지금 값을 보여 주고 [applyPassiveRoll] 로 고른다(요정 재굴림·장비 다듬기와 같은 문법, 손해 없음).
+/// 알은 굴리지 못한다(능력치가 숨겨진 상태). 결과 `extra['roll']`(새 롤) · `extra['cost']`.
+GradeOp rollPassiveReroll(
+  SaveGame s,
+  PassiveV2Config cfg,
+  String bugId,
+  math.Random rng, {
+  required bool useJelly,
+}) {
+  if (!cfg.enabled) return const GradeOp.fail('off');
+  final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
+  if (bug == null) return const GradeOp.fail('no_bug');
+  if (bug.stage == LifeStage.egg) return const GradeOp.fail('egg');
+  var next = s;
+  if (useJelly) {
+    final jelly = s.materialCount(MaterialKind.jelly);
+    if (cfg.rerollJelly <= 0 || jelly < cfg.rerollJelly) {
+      return const GradeOp.fail('no_jelly');
+    }
+    next = s.copyWith(
+      materials: Map<MaterialKind, int>.from(s.materials)
+        ..[MaterialKind.jelly] = jelly - cfg.rerollJelly,
+    );
+  } else {
+    final have = s.essence[bug.speciesId] ?? 0;
+    if (cfg.rerollEssence <= 0 || have < cfg.rerollEssence) {
+      return const GradeOp.fail('no_essence');
+    }
+    next = s.copyWith(
+      essence: {...s.essence, bug.speciesId: have - cfg.rerollEssence},
+    );
+  }
+  return GradeOp.ok(
+    next,
+    extra: {
+      'roll': rng.nextInt(101),
+      'cost': useJelly ? cfg.rerollJelly : cfg.rerollEssence,
+    },
+  );
+}
+
+/// 재굴림 결과를 고른다 — 새 롤 [roll] 을 [bugId] 에 적는다(지금 값을 지키려면 부르지 않는다).
+SaveGame applyPassiveRoll(SaveGame s, String bugId, int roll) => s.copyWith(
+  bugs: [
+    for (final b in s.bugs)
+      b.id == bugId ? b.copyWith(passiveRoll: roll.clamp(0, 100)) : b,
+  ],
+);

@@ -12410,6 +12410,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No bugs match.\nTry changing the view filter.'**
   String get storageViewEmpty;
+
+  /// No description provided for @passiveCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet passive'**
+  String get passiveCardTitle;
+
+  /// No description provided for @passiveRollLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Roll {roll}/100'**
+  String passiveRollLabel(String roll);
+
+  /// No description provided for @passiveCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies only while equipped as a pet (idle hunting). Grows with this bug\'s grade and its species rarity.'**
+  String get passiveCardHint;
+
+  /// No description provided for @passiveNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No passive'**
+  String get passiveNone;
+
+  /// No description provided for @passiveReroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll passive'**
+  String get passiveReroll;
+
+  /// No description provided for @passiveRerollDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Rerolls only the size (roll). The type stays the same.\nThe cost is used whether you keep the new value or not.'**
+  String get passiveRerollDesc;
+
+  /// No description provided for @passiveRerollCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {value}'**
+  String passiveRerollCurrent(String value);
+
+  /// No description provided for @passiveRerollEssence.
+  ///
+  /// In en, this message translates to:
+  /// **'Essence {n}'**
+  String passiveRerollEssence(String n);
+
+  /// No description provided for @passiveRerollEssenceHave.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} essence owned: {have}'**
+  String passiveRerollEssenceHave(String name, String have);
+
+  /// No description provided for @passiveRerollJellyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll the passive size with jelly?\nThe jelly is used even if you keep the current value.'**
+  String get passiveRerollJellyConfirm;
+
+  /// No description provided for @passiveRerollJellyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll'**
+  String get passiveRerollJellyAction;
+
+  /// No description provided for @passiveRerollPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a value'**
+  String get passiveRerollPickTitle;
+
+  /// No description provided for @passiveRerollNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get passiveRerollNow;
+
+  /// No description provided for @passiveRerollNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get passiveRerollNew;
+
+  /// No description provided for @passiveRerollTakeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Take new'**
+  String get passiveRerollTakeNew;
+
+  /// No description provided for @passiveRerollKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current'**
+  String get passiveRerollKeep;
+
+  /// No description provided for @passiveRerollPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'The cost has already been used.'**
+  String get passiveRerollPaid;
+
+  /// No description provided for @passiveRerollNoEssence.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough essence'**
+  String get passiveRerollNoEssence;
+
+  /// No description provided for @passiveRerollEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatch it first to reroll'**
+  String get passiveRerollEgg;
+
+  /// No description provided for @dexPassiveV2.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet passives differ per bug (they grow with grade and rarity)'**
+  String get dexPassiveV2;
+
+  /// No description provided for @dexPassiveLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs from before the update: {kind}'**
+  String dexPassiveLegacy(String kind);
 }
 
 class _AppLocalizationsDelegate

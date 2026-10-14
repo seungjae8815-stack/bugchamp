@@ -26,6 +26,7 @@ import '../battle/training_screen.dart';
 import '../../ui/bug_grade.dart';
 import 'dex_screen.dart';
 import 'grade_panel.dart';
+import 'passive_panel.dart';
 import '../../ui/colors.dart';
 
 const _honey = kHoney;
@@ -3818,6 +3819,11 @@ class StorageScreen extends ConsumerWidget {
                     const SizedBox(height: 6),
                     gradeQualityCard(l, species, bug, hidden: isEgg),
                   ],
+                  // 펫 패시브 v2(2026-10-14) — 개체마다 다른 패시브. 알은 종류만(크기는 부화 뒤).
+                  if (petCfg != null) ...[
+                    const SizedBox(height: 6),
+                    petPassiveCard(ctx, r, data, bug, isEgg: isEgg),
+                  ],
                   const SizedBox(height: 6),
                   if (petCfg != null)
                     _injuryCard(ctx, r, petCfg, save, bug, now),
@@ -4238,7 +4244,7 @@ class StorageScreen extends ConsumerWidget {
       level: bug.level,
       trait: bug.trait,
       variant: bug.variant,
-      passive: sp.passive,
+      passive: passiveOf(bug, sp, cfg), // 펫 패시브 v2 — 합산과 같은 함수
       trainMult: trainMult,
     ), cfg);
     return _sectionBox(

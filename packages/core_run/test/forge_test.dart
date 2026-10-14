@@ -713,10 +713,29 @@ void _optionTierTests() {
 
     test('효과가 구현되지 않은 축은 풀에 없다 — 2칸 중 하나가 꽝이 된다', () {
       // ⚠️ 나중에 구현하면 그때 풀에 되돌린다(equipment_stats 에 반영 후).
-      const dead = {'skillDamage', 'skillCooldown', 'offline', 'pet'};
+      // 스킬 쿨타임 감소는 2026-10-14 되살렸다(equipmentSkillCooldownCut · 플레이 화면 스킬 쿨타임).
+      const dead = {'skillDamage', 'offline', 'pet'};
       for (final r in cfg.optionPool) {
         expect(dead.contains(r.kind.key), isFalse, reason: r.kind.key);
       }
+    });
+
+    test('스킬 쿨타임 감소 — 풀에 있고 합은 장비 예산에서 잘린다', () {
+      expect(
+        cfg.optionPool.any((r) => r.kind == ItemOptionKind.skillCooldown),
+        isTrue,
+      );
+      expect(
+        equipmentSkillCooldownCut({ItemOptionKind.skillCooldown: 12}),
+        closeTo(0.12, 1e-9),
+      );
+      expect(
+        equipmentSkillCooldownCut({
+          ItemOptionKind.skillCooldown: 48,
+        }, budget: 0.3),
+        0.3,
+      );
+      expect(equipmentSkillCooldownCut(const {}), 0);
     });
 
     test('제련 결과가 그 등급 최대치를 넘지 않는다', () {

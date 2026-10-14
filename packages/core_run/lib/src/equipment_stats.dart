@@ -30,6 +30,16 @@ Map<ItemOptionKind, double> equipmentBonus(
   return out;
 }
 
+/// 장비 옵션 "스킬 쿨타임 감소"(2026-10-14 사장님 확정) — 0 ~ [budget](`RunConfig.skillCooldownBudgetGear`).
+/// 캐릭터 스킬 쿨타임에 (1 − 이 값)을 곱한다. 능력치(CharacterStats)가 아니라 따로 둔다 — 스킬 쪽 시간 축이라서.
+double equipmentSkillCooldownCut(
+  Map<ItemOptionKind, double> bonus, {
+  double budget = 1.0,
+}) => math.min(
+  (bonus[ItemOptionKind.skillCooldown] ?? 0) / 100.0,
+  budget,
+).clamp(0.0, 0.9);
+
 /// 장비가 늘려주는 채집함 칸(채집함 부위 전용).
 int equipmentStorageSlots(Iterable<EquipItem> equipped, ItemConfig? config) {
   if (config == null) return 0;

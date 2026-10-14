@@ -608,6 +608,12 @@ class DexScreen extends ConsumerWidget {
           context,
         ).read(gameDataProvider).value?.petConfig?.individualGrade.enabled ??
         false;
+    // 펫 패시브 v2(2026-10-14) — 켜지면 패시브는 개체마다 달라 종 하나로 말할 수 없다.
+    final passiveV2On =
+        ProviderScope.containerOf(
+          context,
+        ).read(gameDataProvider).value?.petConfig?.passiveV2.enabled ??
+        false;
     showGameDialog<void>(
       context,
       title: found ? sp.name.resolve(locale) : '???',
@@ -694,7 +700,7 @@ class DexScreen extends ConsumerWidget {
           ],
           // 패시브는 **미발견이어도 보여준다** — "이 종을 잡으면 뭐가 좋은지"가
           // 보여야 도감이 목표가 된다. 정체(이름·생김새)만 감춘다.
-          if (sp.passive != null) ...[
+          if (sp.passive != null || passiveV2On) ...[
             const SizedBox(height: 10),
             Container(
               width: double.infinity,
@@ -708,21 +714,44 @@ class DexScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l.speciesPassiveTitle,
+                    passiveV2On ? l.passiveCardTitle : l.speciesPassiveTitle,
                     style: const TextStyle(
                       color: Color(0x99FFFFFF),
                       fontSize: 10.5,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    passiveText(l, sp.passive!),
-                    style: const TextStyle(
-                      color: _honey,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
+                  if (passiveV2On) ...[
+                    Text(
+                      l.dexPassiveV2,
+                      style: const TextStyle(
+                        color: _honey,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
+                    // 업데이트 전 곤충은 종 패시브 **종류**를 그대로 가진다(크기는 새 규칙).
+                    if (sp.passive != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        l.dexPassiveLegacy(
+                          passiveKindLabel(l, sp.passive!.statKey),
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xCCFFFFFF),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ] else
+                    Text(
+                      passiveText(l, sp.passive!),
+                      style: const TextStyle(
+                        color: _honey,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
                   const SizedBox(height: 2),
                   Text(
                     l.speciesPassiveHint,
