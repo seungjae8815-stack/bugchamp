@@ -48,7 +48,43 @@ String trainSlotLabel(AppLocalizations l, TrainSlot s) => switch (s) {
   TrainSlot.mass => l.trainSlotMass,
   TrainSlot.tech => l.trainSlotTech,
   TrainSlot.grit => l.trainSlotGrit,
+  TrainSlot.command => l.trainSlotCommand,
 };
+
+/// 결투 팀 역할 이름(공격형·방어형·체력형, 1.0.21 D3).
+String duelRoleLabel(AppLocalizations l, DuelRole r) => switch (r) {
+  DuelRole.attack => l.duelRoleAttack,
+  DuelRole.defense => l.duelRoleDefense,
+  DuelRole.hp => l.duelRoleHp,
+};
+
+/// 역할이 올려 주는 능력치 이름(공격·방어·체력).
+String duelRoleStatLabel(AppLocalizations l, DuelRole r) => switch (r) {
+  DuelRole.attack => l.trainAttack,
+  DuelRole.defense => l.trainDefense,
+  DuelRole.hp => l.trainSlotHp,
+};
+
+/// 역할 색 — 훈련 칸 색과 맞춘다(공격·방어·체력).
+Color duelRoleColor(DuelRole r) => switch (r) {
+  DuelRole.attack => trainSlotColor(TrainSlot.attack),
+  DuelRole.defense => trainSlotColor(TrainSlot.defense),
+  DuelRole.hp => trainSlotColor(TrainSlot.hp),
+};
+
+/// 팀 오라 요약 한 줄("팀 오라: 공격 +12% · 체력 +8%") — 결투 탭 출정 칸 아래.
+String duelTeamAuraText(AppLocalizations l, Map<DuelRole, double> totals) {
+  final parts = [
+    for (final r in DuelRole.values)
+      if ((totals[r] ?? 0) > 0)
+        '${duelRoleStatLabel(l, r)} ${_signed(totals[r]!)}',
+  ];
+  return parts.isEmpty ? l.duelTeamAuraNone : l.duelTeamAura(parts.join(' · '));
+}
+
+/// 곤충 역할 칩 문구("공격형 +4%").
+String duelRoleChipText(AppLocalizations l, DuelRole r, double value) =>
+    l.duelRoleChip(duelRoleLabel(l, r), _signed(value));
 
 IconData trainSlotIcon(TrainSlot s) => switch (s) {
   TrainSlot.attack => Icons.flash_on_rounded,
@@ -61,6 +97,7 @@ IconData trainSlotIcon(TrainSlot s) => switch (s) {
   TrainSlot.mass => Icons.fitness_center_rounded,
   TrainSlot.tech => Icons.sports_martial_arts_rounded,
   TrainSlot.grit => Icons.touch_app_rounded,
+  TrainSlot.command => Icons.campaign_rounded,
 };
 
 Color trainSlotColor(TrainSlot s) => switch (s) {
@@ -74,6 +111,7 @@ Color trainSlotColor(TrainSlot s) => switch (s) {
   TrainSlot.mass => const Color(0xFFBCAAA4),
   TrainSlot.tech => const Color(0xFFB39DDB),
   TrainSlot.grit => const Color(0xFFFFB74D),
+  TrainSlot.command => const Color(0xFFFFF176),
 };
 
 /// 추천 배분 이름(`battle.json → training.presets` 의 키). 모르는 키는 그대로.
@@ -685,6 +723,11 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                     specialtyLabel(l, sp.specialty),
                     const Color(0xFFBFE3A6),
                   ),
+                  if (sp.duelRole != null)
+                    _chip(
+                      duelRoleLabel(l, sp.duelRole!),
+                      duelRoleColor(sp.duelRole!),
+                    ),
                   _chip(
                     l.bugSize(bug.sizeMm.toStringAsFixed(1)),
                     const Color(0xFFCFD8DC),
@@ -920,6 +963,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       double pushMult,
       double tech,
       int grit,
+      double aura,
     })
     now,
     ({
@@ -934,6 +978,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       double pushMult,
       double tech,
       int grit,
+      double aura,
     })?
     edit,
     double lm,
@@ -1250,10 +1295,25 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     DuelParams params,
     Species sp,
     TrainSlot sl,
-    int pts,
-  ) {
+    int pts, {
+    IndividualBug? bug,
+  }) {
     final e = cfg.slotEffect[sl] ?? 0;
     switch (sl) {
+      case TrainSlot.command:
+        // 지휘(1.0.21 D3) — 이 곤충이 3마리 결투에서 팀 전체에 주는 오라(개체 등급 기본 + 지휘).
+        final role = sp.duelRole;
+        final aura =
+            (ref.read(gameDataProvider).value?.battleConfig ??
+                    const BattleConfig())
+                .teamAura;
+        if (role == null || !aura.enabled) return l.trainCommandNoRole;
+        final base = bug == null ? 0.0 : aura.baseFor(bug.potential);
+        return l.trainCommandEffect(
+          duelRoleStatLabel(l, role),
+          _signed(e),
+          _signed(base + e * pts),
+        );
       case TrainSlot.evade:
       case TrainSlot.crit:
         return l.trainPtEffect('${_signed(e)}p', '${_signed(e * pts)}p');
@@ -1386,7 +1446,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  _effectLine(l, cfg, params, sp, sl, shown),
+                  _effectLine(l, cfg, params, sp, sl, shown, bug: bug),
                   style: const TextStyle(
                     color: _dim,
                     fontSize: 11,

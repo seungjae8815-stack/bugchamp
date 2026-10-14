@@ -344,7 +344,7 @@ enum TrainStat {
   }
 }
 
-/// 훈련 v2(2026-10-08, docs/design_training_v2.md §1.2) — 훈련 포인트를 찍는 칸 10종.
+/// 훈련 v2(2026-10-08, docs/design_training_v2.md §1.2) — 훈련 포인트를 찍는 칸 11종(지휘 칸은 1.0.21).
 ///
 /// 옛 [TrainStat](훈련소 단계)·부위 강화는 세이브에 남고, 이전([migrateTrainingV2])이 이 칸으로 옮긴다.
 enum TrainSlot {
@@ -357,7 +357,10 @@ enum TrainSlot {
   recovery('recovery'), // 회복력(판 안 흡혈 + 판 사이 회복)
   mass('mass'), // 체급(무게 + · 속도 −) — 실제 크기(mm)·도감은 그대로
   tech('tech'), // 주특기 기술(치기 뒤집기 · 집기 무는 힘 · 던지기 쿨타임)
-  grit('grit'); // 근성(탭 반격)
+  grit('grit'), // 근성(탭 반격)
+  // 지휘(1.0.21 D3, 2026-10-14) — 팀 역할 오라 +(docs/design_growth_1021.md §3). **맨 뒤에만 붙인다**:
+  // 예산을 넘친 배분은 칸 순서의 뒤에서부터 깎인다(`clampAlloc`) — 기존 칸 배분은 그대로 남는다.
+  command('command');
 
   const TrainSlot(this.key);
   final String key;
@@ -374,6 +377,25 @@ enum TrainSlot {
   }
 
   static const _legacySpeedKey = 'speed';
+}
+
+/// 결투 팀 역할(1.0.21 D3, 2026-10-14 사장님 확정, docs/design_growth_1021.md §3) — 종마다 하나
+/// (`species.json → duelRole`). 3마리 결투에 나서면 **팀 전체**에 그 역할 능력치 +%(팀 오라).
+enum DuelRole {
+  attack('attack'), // 공격형 — 팀 공격 +
+  defense('defense'), // 방어형 — 팀 방어 +
+  hp('hp'); // 체력형 — 팀 체력 +
+
+  const DuelRole(this.key);
+  final String key;
+
+  /// 모르는 키·null 은 null(오라 없음) — 데이터가 새 역할을 더해도 구버전이 죽지 않게.
+  static DuelRole? fromKeyOrNull(String? k) {
+    for (final e in values) {
+      if (e.key == k) return e;
+    }
+    return null;
+  }
 }
 
 /// 결투석(2026-10-08, design_training_v2.md §3) — 곤충 1마리의 오행·기질을 원하는 값으로 바꾼다.

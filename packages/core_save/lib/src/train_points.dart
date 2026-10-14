@@ -433,6 +433,7 @@ Map<TrainSlot, int> effectiveAllocOf(
   double pushMult,
   double tech,
   int grit,
+  double aura,
 })
 trainingBonusOf(
   SaveGame s,
@@ -460,6 +461,7 @@ trainingBonusOf(
     pushMult: t.pushMult,
     tech: t.tech,
     grit: t.grit,
+    aura: t.aura,
   );
 }
 

@@ -37,4 +37,5 @@ export 'src/pet_config.dart';
 export 'src/run_config.dart';
 export 'src/run_math.dart';
 export 'src/skill_config.dart';
+export 'src/team_aura_config.dart';
 export 'src/training_config.dart';

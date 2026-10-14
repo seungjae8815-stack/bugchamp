@@ -32,6 +32,9 @@ class DuelBug {
     this.tech = 0,
     this.grit = 0,
     this.sizeStatMult = 1,
+    this.auraRole,
+    this.aura = 0,
+    this.auraApplied = false,
   });
 
   final String id;
@@ -76,6 +79,57 @@ class DuelBug {
   /// 80~100% 였다(무게 지수로는 못 줄인다, 2026-10-08 측정). 방치 런·옛 엔진 스탯은 그대로.
   final double sizeStatMult;
 
+  /// 팀 역할 오라(1.0.21 D3, docs/design_growth_1021.md §3) — 이 곤충이 **팀 전체**에 주는 능력치(종 역할).
+  /// null = 오라 없음(대회·야생·옛 방어 행).
+  final DuelRole? auraRole;
+
+  /// 이 곤충의 오라 크기(비율, 개체 등급 기본 + 지휘 칸). 팀 합은 [applyTeamAura] 가 능력치마다 자른다.
+  final double aura;
+
+  /// 팀 오라가 이미 능력치에 입혀졌나 — 직렬화된 팀(제안·세션)을 다시 읽어 또 입히지 않게.
+  final bool auraApplied;
+
+  /// 오라 역할·크기를 붙인다(능력치는 그대로 — 입히는 것은 [applyTeamAura]).
+  DuelBug withAura(DuelRole? role, double value) => _copy(
+    auraRole: role,
+    aura: role == null ? 0 : math.max(0, value),
+    clearAuraRole: role == null,
+  );
+
+  DuelBug _copy({
+    double? maxHp,
+    double? atk,
+    double? def,
+    double? spd,
+    DuelRole? auraRole,
+    bool clearAuraRole = false,
+    double? aura,
+    bool? auraApplied,
+  }) => DuelBug(
+    id: id,
+    name: name,
+    speciesId: speciesId,
+    element: element,
+    temperament: temperament,
+    specialty: specialty,
+    sizeMm: sizeMm,
+    maxHp: maxHp ?? this.maxHp,
+    atk: atk ?? this.atk,
+    def: def ?? this.def,
+    spd: spd ?? this.spd,
+    crit: crit,
+    recovery: recovery,
+    evade: evade,
+    massMult: massMult,
+    pushMult: pushMult,
+    tech: tech,
+    grit: grit,
+    sizeStatMult: sizeStatMult,
+    auraRole: clearAuraRole ? null : (auraRole ?? this.auraRole),
+    aura: aura ?? this.aura,
+    auraApplied: auraApplied ?? this.auraApplied,
+  );
+
   /// 훈련소 보너스를 입힌다(공격·방어 배율, 회피·치명·회복력 가산). 값은 호출자가
   /// `TrainingConfig.bonuses` 로 계산한다 — core_battle 은 core_run 을 모른다.
   DuelBug withTraining({
@@ -110,6 +164,9 @@ class DuelBug {
     tech: this.tech + tech,
     grit: this.grit + grit,
     sizeStatMult: sizeStatMult,
+    auraRole: auraRole,
+    aura: aura,
+    auraApplied: auraApplied,
   );
 
   /// 한 판 안에서만 쓰는 전투 수치로 바꾼다(전력 압축·게이지 보너스, 엔진 내부용).
@@ -118,27 +175,7 @@ class DuelBug {
     required double atk,
     required double def,
     double? spd,
-  }) => DuelBug(
-    id: id,
-    name: name,
-    speciesId: speciesId,
-    element: element,
-    temperament: temperament,
-    specialty: specialty,
-    sizeMm: sizeMm,
-    maxHp: maxHp,
-    atk: atk,
-    def: def,
-    spd: spd ?? this.spd,
-    crit: crit,
-    recovery: recovery,
-    evade: evade,
-    massMult: massMult,
-    pushMult: pushMult,
-    tech: tech,
-    grit: grit,
-    sizeStatMult: sizeStatMult,
-  );
+  }) => _copy(maxHp: maxHp, atk: atk, def: def, spd: spd);
 
   /// 옛 엔진 유닛에 사이즈·주특기를 붙인다.
   factory DuelBug.fromBattleBug(
@@ -186,6 +223,9 @@ class DuelBug {
     tech: tech,
     grit: grit,
     sizeStatMult: sizeStatMult,
+    auraRole: auraRole,
+    aura: aura,
+    auraApplied: auraApplied,
   );
 
   /// 몸 반경.
@@ -279,6 +319,9 @@ class DuelBug {
     if (tech != 0) 'tech': tech,
     if (grit != 0) 'grit': grit,
     if (sizeStatMult != 1) 'ssm': sizeStatMult,
+    if (auraRole != null) 'ar': auraRole!.key,
+    if (auraRole != null && aura > 0) 'av': aura,
+    if (auraApplied) 'aa': 1,
   };
 
   factory DuelBug.fromJson(Map<String, dynamic> j) => DuelBug(
@@ -301,5 +344,45 @@ class DuelBug {
     tech: (j['tech'] as num?)?.toDouble() ?? 0,
     grit: (j['grit'] as num?)?.toInt() ?? 0,
     sizeStatMult: (j['ssm'] as num?)?.toDouble() ?? 1,
+    auraRole: DuelRole.fromKeyOrNull(j['ar'] as String?),
+    aura: (j['av'] as num?)?.toDouble() ?? 0,
+    auraApplied: j['aa'] == 1 || j['aa'] == true,
   );
+}
+
+/// 팀 오라 합(능력치마다 [capPerStat] 까지) — 화면 요약과 [applyTeamAura] 가 같은 값을 쓴다.
+Map<DuelRole, double> teamAuraTotals(
+  Iterable<DuelBug> team, {
+  required double capPerStat,
+}) {
+  final sum = <DuelRole, double>{};
+  for (final b in team) {
+    final r = b.auraRole;
+    if (r == null || b.aura <= 0) continue;
+    sum[r] = (sum[r] ?? 0) + b.aura;
+  }
+  return {
+    for (final e in sum.entries)
+      e.key: math.min(e.value, math.max(0.0, capPerStat)),
+  };
+}
+
+/// **팀 역할 오라**(1.0.21 D3)를 입힌 복사본 — 공격형 합 → 공격 ×, 방어형 합 → 방어 ×, 체력형 합 → 최대 체력 ×
+/// (능력치마다 [capPerStat] 까지). 3마리 결투(리그 결투·방어팀·길드전)에만 쓴다 — 왕충 선발대회(1마리)는 아니다.
+/// 이미 입힌 팀(직렬화된 제안·세션을 다시 읽은 것)은 그대로 돌려준다 — 두 번 입히지 않는다.
+List<DuelBug> applyTeamAura(List<DuelBug> team, {required double capPerStat}) {
+  if (team.isEmpty || team.any((b) => b.auraApplied)) return team;
+  final t = teamAuraTotals(team, capPerStat: capPerStat);
+  final a = 1 + (t[DuelRole.attack] ?? 0);
+  final d = 1 + (t[DuelRole.defense] ?? 0);
+  final h = 1 + (t[DuelRole.hp] ?? 0);
+  return [
+    for (final b in team)
+      b._copy(
+        atk: b.atk * a,
+        def: b.def * d,
+        maxHp: b.maxHp * h,
+        auraApplied: true,
+      ),
+  ];
 }

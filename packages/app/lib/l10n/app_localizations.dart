@@ -10985,6 +10985,66 @@ abstract class AppLocalizations {
   /// **'Grit'**
   String get trainSlotGrit;
 
+  /// No description provided for @trainSlotCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Command'**
+  String get trainSlotCommand;
+
+  /// No description provided for @trainCommandEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole team {stat} {per} per point · this bug\'s aura {total}'**
+  String trainCommandEffect(String stat, String per, String total);
+
+  /// No description provided for @trainCommandNoRole.
+  ///
+  /// In en, this message translates to:
+  /// **'This species has no team role — no aura'**
+  String get trainCommandNoRole;
+
+  /// No description provided for @duelRoleAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attacker'**
+  String get duelRoleAttack;
+
+  /// No description provided for @duelRoleDefense.
+  ///
+  /// In en, this message translates to:
+  /// **'Defender'**
+  String get duelRoleDefense;
+
+  /// No description provided for @duelRoleHp.
+  ///
+  /// In en, this message translates to:
+  /// **'Tank'**
+  String get duelRoleHp;
+
+  /// No description provided for @duelRoleChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{role} {pct}'**
+  String duelRoleChip(String role, String pct);
+
+  /// No description provided for @duelTeamAura.
+  ///
+  /// In en, this message translates to:
+  /// **'Team aura: {list}'**
+  String duelTeamAura(String list);
+
+  /// No description provided for @duelTeamAuraNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Team aura: none'**
+  String get duelTeamAuraNone;
+
+  /// No description provided for @duelTeamAuraHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Each fielded bug gives the whole team its role stat (attacker = ATK · defender = DEF · tank = HP). Up to +{cap} per stat.'**
+  String duelTeamAuraHelp(String cap);
+
   /// No description provided for @trainWeight.
   ///
   /// In en, this message translates to:

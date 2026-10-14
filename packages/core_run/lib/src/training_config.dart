@@ -82,7 +82,7 @@ class TrainingConfig {
   final List<int> breakthroughPoints;
 
   /// 칸 1포인트 효과. 공격·방어·체력·밀어내기 힘·체급 = 배율 +, 회피·치명·회복력 = 확률·비율 +,
-  /// 근성 = 단계(1). 주특기 기술은 [techBySpecialty] 가 정한다(여기 값은 쓰지 않는다).
+  /// 근성 = 단계(1), 지휘 = 팀 오라 +(비율). 주특기 기술은 [techBySpecialty] 가 정한다(여기 값은 쓰지 않는다).
   final Map<TrainSlot, double> slotEffect;
 
   /// **이전 환산 전용** 1포인트 효과 — 옛 부위 강화·옛 훈련 단계를 몇 포인트로 옮길지 정한다.
@@ -201,6 +201,7 @@ class TrainingConfig {
     double pushMult,
     double tech,
     int grit,
+    double aura,
   })
   slotBonuses(Map<TrainSlot, int> alloc, Specialty specialty) {
     int n(TrainSlot s) => math.max(0, alloc[s] ?? 0);
@@ -218,6 +219,8 @@ class TrainingConfig {
       pushMult: 1 + v(TrainSlot.push),
       tech: n(TrainSlot.tech) * (techBySpecialty[specialty] ?? 0),
       grit: n(TrainSlot.grit),
+      // 지휘 칸(1.0.21 D3) — 이 곤충의 팀 오라에 더하는 몫(팀 합은 `duel.teamAura.capPerStat` 까지).
+      aura: v(TrainSlot.command),
     );
   }
 
@@ -440,6 +443,7 @@ const kDefaultSlotEffect = <TrainSlot, double>{
   TrainSlot.mass: 0.010,
   TrainSlot.tech: 0,
   TrainSlot.grit: 1,
+  TrainSlot.command: 0.015,
 };
 
 /// 이전 환산 전용 1포인트 효과(2026-10-08 처음 이전 때의 칸 효과 — **고정**, [TrainingConfig.legacySlotEffect]).
@@ -465,6 +469,7 @@ const kDefaultSlotCap = <TrainSlot, int>{
   TrainSlot.mass: 10,
   TrainSlot.tech: 10,
   TrainSlot.grit: 10,
+  TrainSlot.command: 10,
 };
 
 /// 결투석 설정(`battle.json → training.stones`, design_training_v2.md §3).

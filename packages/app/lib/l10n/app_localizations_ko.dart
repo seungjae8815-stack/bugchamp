@@ -6418,6 +6418,44 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trainSlotGrit => '근성';
 
   @override
+  String get trainSlotCommand => '지휘';
+
+  @override
+  String trainCommandEffect(String stat, String per, String total) {
+    return '1점 팀 전체 $stat $per · 이 곤충 오라 $total';
+  }
+
+  @override
+  String get trainCommandNoRole => '역할이 없는 종이라 오라가 없어요';
+
+  @override
+  String get duelRoleAttack => '공격형';
+
+  @override
+  String get duelRoleDefense => '방어형';
+
+  @override
+  String get duelRoleHp => '체력형';
+
+  @override
+  String duelRoleChip(String role, String pct) {
+    return '$role $pct';
+  }
+
+  @override
+  String duelTeamAura(String list) {
+    return '팀 오라: $list';
+  }
+
+  @override
+  String get duelTeamAuraNone => '팀 오라: 없음';
+
+  @override
+  String duelTeamAuraHelp(String cap) {
+    return '출전한 곤충마다 팀 전체에 역할 능력치를 올려 줘요(공격형 = 공격 · 방어형 = 방어 · 체력형 = 체력). 능력치마다 최대 +$cap.';
+  }
+
+  @override
   String get trainWeight => '무게';
 
   @override

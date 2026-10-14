@@ -407,6 +407,56 @@ class GameActions {
     return <String, dynamic>{...Map<String, dynamic>.from(incoming), 'sx': sx};
   }
 
+  /// 구버전 앱(feat 26 미만)이 떨어뜨린 훈련 지휘 칸을 저장본에서 되돌린다 — 바뀔 키(`trainPoints`·`trainPointJob`)만
+  /// 돌려준다(없으면 null). 곤충 id 가 같고 올라온 기록에 그 칸이 없을 때만 얹는다.
+  static Map<String, dynamic>? _restoreCommandSlot(
+    Map<String, dynamic> storedJson,
+    Map<String, dynamic> incoming,
+  ) {
+    final key = TrainSlot.command.key;
+    final out = <String, dynamic>{};
+    final st = storedJson['trainPoints'];
+    final ct = incoming['trainPoints'];
+    if (st is Map && ct is Map) {
+      Map<String, dynamic>? slots(Object? m) =>
+          m is Map ? Map<String, dynamic>.from(m) : null;
+      var changed = false;
+      final merged = <String, dynamic>{};
+      for (final e in ct.entries) {
+        final c = e.value;
+        final s = st[e.key];
+        if (c is! Map || s is! Map) {
+          merged['${e.key}'] = c;
+          continue;
+        }
+        final rec = Map<String, dynamic>.from(c);
+        for (final field in const ['a', 'n']) {
+          final sv = slots(s[field])?[key];
+          if (sv is! num || sv <= 0) continue;
+          // 대기 배분은 올라온 기록에도 대기가 있을 때만(다시 찍기를 끝냈으면 그 결과를 믿는다).
+          if (field == 'n' && rec['n'] is! Map) continue;
+          final cs = slots(rec[field]) ?? <String, dynamic>{};
+          if (cs.containsKey(key)) continue;
+          rec[field] = {...cs, key: sv};
+          changed = true;
+        }
+        merged['${e.key}'] = rec;
+      }
+      if (changed) out['trainPoints'] = merged;
+    }
+    final sj = storedJson['trainPointJob'];
+    if (sj is Map &&
+        sj['s'] == key &&
+        incoming['trainPointJob'] == null &&
+        (incoming['bugs'] as List?)?.any(
+              (b) => b is Map && b['id'] == sj['b'],
+            ) ==
+            true) {
+      out['trainPointJob'] = Map<String, dynamic>.from(sj);
+    }
+    return out.isEmpty ? null : out;
+  }
+
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
   static Map<String, dynamic> _keepFieldsOldAppDoesNotKnow(
     SaveGame stored,
@@ -482,6 +532,14 @@ class GameActions {
               b,
         ];
       }
+    }
+    // 훈련 지휘 칸(`command`, feat 26 — 1.0.21 D3) — 1.0.20 이하 앱은 모르는 칸 키를 건너뛰고 읽어(`TrainSlot.fromKeyOrNull`)
+    // 배분·대기 배분에서 빼고 올린다. 같은 곤충이면 저장본의 지휘 칸 점수를 되돌린다(안 되돌리면 구버전 기기 한 번 업로드로
+    // 찍어 둔 지휘가 사라진다). 구버전 앱이 그 몫을 다른 칸에 다시 찍었으면 예산을 넘친 만큼은 업로드 정리
+    // (`sanitizeTrainPoints` — 칸 순서 뒤에서부터)가 지휘 칸부터 깎는다. 지휘 칸을 찍는 중이던 대기열도 되살린다.
+    if (feat < 26) {
+      final restored = _restoreCommandSlot(storedJson, out);
+      if (restored != null) out.addAll(restored);
     }
     // 요정 상태 안의 1.0.18 칸 — 알 자동 분해(`ar`) · 젤리로 늘린 요정함(`bx`). 요정 상태는 필드 하나라
     // 통째로 지키면 1.0.17 의 요정 진행이 사라진다 — 모르는 칸만 저장본 값으로 되돌린다.
@@ -2567,7 +2625,37 @@ class GameActions {
 
   /// 결투 편성 검증 → 출전 순서대로 결투 유닛. 검증 기준은 [validateTeam] 과 **같다**
   /// (보유·부상·성충·위조) — 한쪽만 느슨하면 그쪽으로 우회한다.
+  ///
+  /// **팀 역할 오라**(1.0.21 D3)는 3마리 결투에만 입힌다([teamSize] 를 안 넘긴 경로 — 리그 결투·방어팀·길드전).
+  /// 왕충 선발대회(`teamSize: 1`)에는 붙지 않는다. 앱 `myDuelTeam` 과 같은 함수([duelAuraOf]·[applyTeamAura]).
   ({List<DuelBug> team, String? error}) validateDuelTeam(
+    SaveGame save,
+    List<String> bugIds, {
+    required Map<String, Species> speciesById,
+    required PetConfig petConfig,
+    EnhanceConfig? enhance,
+    bool allowInjured = false,
+    int? teamSize,
+  }) {
+    final built = _buildDuelTeam(
+      save,
+      bugIds,
+      speciesById: speciesById,
+      petConfig: petConfig,
+      enhance: enhance,
+      allowInjured: allowInjured,
+      teamSize: teamSize,
+    );
+    if (built.error != null || teamSize != null) return built;
+    final aura = config.battle.teamAura;
+    if (!aura.enabled) return built;
+    return (
+      team: applyTeamAura(built.team, capPerStat: aura.capPerStat),
+      error: null,
+    );
+  }
+
+  ({List<DuelBug> team, String? error}) _buildDuelTeam(
     SaveGame save,
     List<String> bugIds, {
     required Map<String, Species> speciesById,
@@ -2638,16 +2726,28 @@ class GameActions {
             // 개체 등급(2026-10-11) — 등급 배율 × 종 배율 × 롤 · 타고난 치명·회피·회복력 · 밀어내기.
             // 꺼져 있으면 중립. 앱 `duelBugFor` 와 같은 함수.
             final m = petConfig.individualGrade.battleMods(bug, sp);
-            return d.withTraining(
-              hpMult: m.hp,
-              atkMult: m.atk,
-              defMult: m.def,
-              spdMult: m.spd,
-              crit: m.crit,
-              evade: m.evade,
-              recovery: m.recovery,
-              pushMult: m.push,
+            // 팀 역할 오라(1.0.21 D3) — 역할·크기만 붙인다(입히는 것은 [validateDuelTeam] 의 applyTeamAura).
+            final aura = duelAuraOf(
+              save,
+              bug,
+              sp,
+              tr,
+              config.battle.teamAura,
+              levelCap: petConfig.levelCap(bug.breakthroughTier),
+              enhance: enhance,
             );
+            return d
+                .withTraining(
+                  hpMult: m.hp,
+                  atkMult: m.atk,
+                  defMult: m.def,
+                  spdMult: m.spd,
+                  crit: m.crit,
+                  evade: m.evade,
+                  recovery: m.recovery,
+                  pushMult: m.push,
+                )
+                .withAura(aura.role, aura.value);
           }(),
       ],
       error: null,

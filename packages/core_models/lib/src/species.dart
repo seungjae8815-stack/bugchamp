@@ -64,6 +64,7 @@ class Species {
     this.availableUntil,
     this.gradeScale = 1,
     this.metamorphosis = Metamorphosis.complete,
+    this.duelRole,
   });
 
   /// 안정적 식별자 (예: 'stag_beetle_common').
@@ -105,6 +106,9 @@ class Species {
   /// 싸우도록 리그전으로 맞춘 값(`server/tool/grade_duel_sim.dart --league --fit`). 개체 등급이 켜졌을 때만 쓴다.
   final double gradeScale;
 
+  /// 결투 팀 역할(1.0.21 D3) — 3마리 결투에서 팀 전체에 주는 오라 능력치. 없거나 모르는 값이면 null(오라 없음).
+  final DuelRole? duelRole;
+
   /// 변태 방식 — 단계 이름 표시에만 쓴다(JSON `metamorphosis`, 없으면 완전변태).
   final Metamorphosis metamorphosis;
 
@@ -140,6 +144,7 @@ class Species {
         : DateTime.parse(json['until'] as String).toUtc(),
     gradeScale: (json['gradeScale'] as num?)?.toDouble() ?? 1,
     metamorphosis: Metamorphosis.fromKey(json['metamorphosis'] as String?),
+    duelRole: DuelRole.fromKeyOrNull(json['duelRole'] as String?),
   );
 
   Map<String, dynamic> toJson() => {
@@ -157,6 +162,7 @@ class Species {
     if (availableUntil != null) 'until': availableUntil!.toIso8601String(),
     if (metamorphosis != Metamorphosis.complete)
       'metamorphosis': metamorphosis.key,
+    if (duelRole != null) 'duelRole': duelRole!.key,
   };
 
   @override

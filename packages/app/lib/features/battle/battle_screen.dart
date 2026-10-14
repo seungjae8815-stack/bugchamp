@@ -690,10 +690,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           style: const TextStyle(color: Color(0xB3FFFFFF)),
                         ),
                       )
-                    : Row(
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          for (var i = 0; i < 3; i++)
-                            Expanded(child: _teamSlot(data, save, locale, i)),
+                          Row(
+                            children: [
+                              for (var i = 0; i < 3; i++)
+                                Expanded(
+                                  child: _teamSlot(data, save, locale, i),
+                                ),
+                            ],
+                          ),
+                          _teamAuraLine(l, data, save, locale),
                         ],
                       ),
               ),
@@ -1215,12 +1223,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   bool _starting = false;
 
-  /// 지금 출정 칸의 결투 유닛(빈 칸은 뺀다) — 순위표 내 줄·미리보기 전투력.
-  List<DuelBug> _myDuelTeam(GameData data, SaveGame save, String locale) => [
-    for (final id in _team.whereType<String>())
-      for (final b in save.bugs)
-        if (b.id == id) _toDuelBug(b, data, locale),
-  ];
+  /// 지금 출정 칸의 결투 유닛(빈 칸은 뺀다) — 순위표 내 줄·미리보기 전투력. 팀 역할 오라(1.0.21 D3)까지 입힌다
+  /// (서버 `validateDuelTeam` 과 같은 [duelTeamFor]).
+  List<DuelBug> _myDuelTeam(GameData data, SaveGame save, String locale) =>
+      duelTeamFor(
+        [
+          for (final id in _team.whereType<String>())
+            for (final b in save.bugs)
+              if (b.id == id) b,
+        ],
+        data,
+        save,
+        locale,
+      );
 
   // ── 회복실 ─────────────────────────────────────────────────────────
 
@@ -1729,14 +1744,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ) {
     final ids = _team.whereType<String>().toList();
     final save = ref.read(saveControllerProvider).requireValue;
-    final myPower = ids.fold<double>(
-      0,
-      (a, id) =>
-          a +
-          _duelPower(
-            _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
-          ),
-    );
+    final myPower = duelTeamFor(
+      [for (final id in ids) save.bugs.firstWhere((b) => b.id == id)],
+      data,
+      save,
+      locale,
+    ).fold<double>(0, (a, x) => a + _duelPower(x));
     return showModalBottomSheet<_Candidate>(
       context: context,
       isScrollControlled: true,
@@ -2007,10 +2020,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     if (ids == null) return;
     if (!await _takeTicket(l)) return;
     await ref.read(saveControllerProvider.notifier).setPvpDefense(ids);
-    final mine = [
-      for (final id in ids)
-        _toDuelBug(save.bugs.firstWhere((b) => b.id == id), data, locale),
-    ];
+    // 팀 역할 오라(1.0.21 D3)까지 — 서버 `validateDuelTeam` 과 같은 체력으로 재생한다.
+    final mine = duelTeamFor(
+      [for (final id in ids) save.bugs.firstWhere((b) => b.id == id)],
+      data,
+      save,
+      locale,
+    );
     final mySkins = _mySkins(save, ids);
 
     final server = ref.read(gameServerProvider);
@@ -2157,6 +2173,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             orElse: () => null,
           );
     final sp = bug == null ? null : data.species(bug.speciesId);
+    final slotRole = sp?.duelRole;
     const slotH = 128.0;
     final card = GestureDetector(
       onTap: () => bug == null
@@ -2381,6 +2398,94 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
             // 전투 순서 배지 ①②③
             Positioned(top: -6, left: -2, child: _orderBadge(index)),
+            // 결투 팀 역할(1.0.21 D3) — 공격형·방어형·체력형 작은 표식.
+            if (slotRole != null)
+              Positioned(
+                top: -6,
+                right: -2,
+                child: Container(
+                  key: ValueKey('duelRoleBadge:$index'),
+                  width: 19,
+                  height: 19,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B1A14),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: duelRoleColor(slotRole),
+                      width: 1.4,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    _roleIcon(slotRole),
+                    size: 11,
+                    color: duelRoleColor(slotRole),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _roleIcon(DuelRole r) => switch (r) {
+    DuelRole.attack => trainSlotIcon(TrainSlot.attack),
+    DuelRole.defense => trainSlotIcon(TrainSlot.defense),
+    DuelRole.hp => trainSlotIcon(TrainSlot.hp),
+  };
+
+  /// 출정 칸 아래 **팀 오라** 한 줄(1.0.21 D3) — "팀 오라: 공격 +12% · 체력 +8%". 누르면 규칙 안내.
+  /// 서버 `validateDuelTeam` 과 같은 [teamAuraTotals](능력치마다 상한).
+  Widget _teamAuraLine(
+    AppLocalizations l,
+    GameData data,
+    SaveGame save,
+    String locale,
+  ) {
+    final aura = (data.battleConfig ?? const BattleConfig()).teamAura;
+    if (!aura.enabled || _team.every((id) => id == null)) {
+      return const SizedBox.shrink();
+    }
+    final team = [
+      for (final id in _team.whereType<String>())
+        for (final b in save.bugs)
+          if (b.id == id) duelBugFor(b, data, save, locale),
+    ];
+    final totals = teamAuraTotals(team, capPerStat: aura.capPerStat);
+    return GestureDetector(
+      key: const ValueKey('duelTeamAura'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showCenterToast(
+        context,
+        l.duelTeamAuraHelp('${(aura.capPerStat * 100).round()}%'),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.campaign_rounded, size: 14, color: _honey),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                duelTeamAuraText(l, totals),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 3)],
+                ),
+              ),
+            ),
+            const SizedBox(width: 3),
+            const Icon(
+              Icons.info_outline_rounded,
+              size: 12,
+              color: Color(0x99FFFFFF),
+            ),
           ],
         ),
       ),
@@ -2729,6 +2834,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         elementColor(d.element),
                         lead: elementIcon(d.element, size: 11),
                       ),
+                      // 결투 팀 역할(1.0.21 D3) — 내 곤충이면 오라 크기까지.
+                      if (sp?.duelRole case final role?)
+                        _chip(
+                          d.aura > 0
+                              ? duelRoleChipText(l, role, d.aura)
+                              : duelRoleLabel(l, role),
+                          duelRoleColor(role),
+                          lead: Icon(
+                            _roleIcon(role),
+                            size: 11,
+                            color: duelRoleColor(role),
+                          ),
+                        ),
                       if (isVariant)
                         _chip(l.dexVariant, const Color(0xFFE0A020)),
                       if (bug != null && !bug.trait.isNone)
@@ -2992,17 +3110,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   ///
   /// `_teamPower` 는 상대 스케일 계산용 **평균**이라 용도가 다르다 — 화면에는
   /// "팀 전체가 얼마나 센가"인 합이 맞다.
-  double _myTeamPowerSum(GameData data, SaveGame save, String locale) {
-    var sum = 0.0;
-    for (final id in _team.whereType<String>()) {
-      final bug = save.bugs.cast<IndividualBug?>().firstWhere(
-        (b) => b!.id == id,
-        orElse: () => null,
-      );
-      if (bug != null) sum += _bugPower(bug, data, locale);
-    }
-    return sum;
-  }
+  double _myTeamPowerSum(GameData data, SaveGame save, String locale) =>
+      // 팀 역할 오라(1.0.21 D3)까지 입힌 팀 — 서버가 순위표·후보에 쓰는 방어팀 전투력과 같은 값.
+      _myDuelTeam(
+        data,
+        save,
+        locale,
+      ).fold<double>(0, (a, x) => a + duelPowerOf(x, data));
 
   /// 전투력이 높은 순으로 정렬한 사본.
   List<IndividualBug> _byPower(

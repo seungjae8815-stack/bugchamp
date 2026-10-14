@@ -21,6 +21,7 @@ import '../../domain/save_controller.dart';
   double pushMult,
   double tech,
   int grit,
+  double aura,
 })
 _trainOf(IndividualBug bug, GameData data, SaveGame save) => trainingBonusOf(
   save,
@@ -103,11 +104,54 @@ DuelBug duelBugFor(
         tech: t.tech,
         grit: t.grit,
       )
-      .withGradeMods(data.petConfig?.individualGrade, bug, sp);
+      .withGradeMods(data.petConfig?.individualGrade, bug, sp)
+      .withAuraOf(bug, sp, data, save);
+}
+
+/// 출전 팀 → 결투 유닛 + **팀 역할 오라**(1.0.21 D3). 서버 `validateDuelTeam`(3마리 경로)과 같은
+/// [applyTeamAura] — 재생 체력 막대·팀 전투력이 서버 판과 같다. 왕충 선발대회(1마리)는 [duelBugFor] 를 그대로 쓴다.
+List<DuelBug> duelTeamFor(
+  Iterable<IndividualBug> bugs,
+  GameData data,
+  SaveGame save,
+  String locale,
+) {
+  final team = [for (final b in bugs) duelBugFor(b, data, save, locale)];
+  final aura = (data.battleConfig ?? const BattleConfig()).teamAura;
+  if (!aura.enabled) return team;
+  return applyTeamAura(team, capPerStat: aura.capPerStat);
+}
+
+/// 이 곤충의 팀 오라(역할·크기) — 서버 `validateDuelTeam` 과 같은 [duelAuraOf].
+({DuelRole? role, double value}) duelAuraFor(
+  IndividualBug bug,
+  GameData data,
+  SaveGame save,
+) {
+  final cfg = data.battleConfig ?? const BattleConfig();
+  return duelAuraOf(
+    save,
+    bug,
+    data.species(bug.speciesId),
+    cfg.training,
+    cfg.teamAura,
+    levelCap: data.petConfig?.levelCap(bug.breakthroughTier),
+    enhance: data.enhanceConfig,
+  );
 }
 
 /// 개체 등급 보정(2026-10-11) — 서버 `validateDuelTeam` 과 같은 [IndividualGradeConfig.battleMods].
 extension on DuelBug {
+  DuelBug withAuraOf(
+    IndividualBug bug,
+    Species sp,
+    GameData data,
+    SaveGame save,
+  ) {
+    final a = duelAuraFor(bug, data, save);
+    return withAura(a.role, a.value);
+  }
+
   DuelBug withGradeMods(
     IndividualGradeConfig? cfg,
     IndividualBug bug,

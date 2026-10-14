@@ -194,6 +194,38 @@ void main() {
         expect(kinds.length, greaterThanOrEqualTo(8), reason: '서로 다른 축 수');
       });
     });
+
+    // ── 결투 팀 역할(1.0.21 D3) ──────────────────────────────────
+    //
+    // `duelRole` 은 모르는 값이면 null(오라 없음)로 읽힌다 — 오타가 나면 그 종만 조용히 오라가 사라진다.
+    group('결투 팀 역할', () {
+      test('모든 종이 유효한 역할(attack·defense·hp)을 가진다', () {
+        final raw = (_readJson('assets/data/species.json')['species'] as List)
+            .cast<Map<String, dynamic>>();
+        for (final j in raw) {
+          expect(
+            DuelRole.fromKeyOrNull(j['duelRole'] as String?),
+            isNotNull,
+            reason: '${j['id']}: duelRole "${j['duelRole']}"',
+          );
+        }
+        for (final s in species) {
+          expect(s.duelRole, isNotNull, reason: s.id);
+        }
+      });
+
+      test('세 역할 모두 있고, 역할마다 희귀(rare) 이상 종이 있다', () {
+        for (final r in DuelRole.values) {
+          final of = species.where((s) => s.duelRole == r).toList();
+          expect(of, isNotEmpty, reason: r.key);
+          expect(
+            of.any((s) => s.grade.index >= Grade.rare.index),
+            isTrue,
+            reason: '${r.key} 에 희귀 이상 종이 없다',
+          );
+        }
+      });
+    });
   });
 
   group('dex.json', () {

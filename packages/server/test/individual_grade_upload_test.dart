@@ -423,6 +423,7 @@ void main() {
           )
           .team;
       final pet = on.config.pet;
+      final wants = <DuelBug>[];
       for (var i = 0; i < 3; i++) {
         final bug = bugs[i];
         final sp = byId(on)[bug.speciesId]!;
@@ -474,6 +475,25 @@ void main() {
                   recovery: m.recovery,
                   pushMult: m.push,
                 );
+        // 팀 역할 오라(1.0.21 D3) — 3마리 결투는 같은 공용 함수로 오라를 붙이고 입힌다.
+        final aura = duelAuraOf(
+          s,
+          bug,
+          sp,
+          on.config.battle.training,
+          on.config.battle.teamAura,
+          levelCap: pet.levelCap(bug.breakthroughTier),
+          enhance: on.config.enhance,
+        );
+        wants.add(want.withAura(aura.role, aura.value));
+      }
+      final auraed = applyTeamAura(
+        wants,
+        capPerStat: on.config.battle.teamAura.capPerStat,
+      );
+      for (var i = 0; i < 3; i++) {
+        final bug = bugs[i];
+        final want = auraed[i];
         final got = team[i];
         expect(got.maxHp, closeTo(want.maxHp, 1e-6), reason: bug.id);
         expect(got.atk, closeTo(want.atk, 1e-6), reason: bug.id);

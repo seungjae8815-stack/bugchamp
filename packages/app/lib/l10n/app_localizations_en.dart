@@ -6558,6 +6558,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainSlotGrit => 'Grit';
 
   @override
+  String get trainSlotCommand => 'Command';
+
+  @override
+  String trainCommandEffect(String stat, String per, String total) {
+    return 'Whole team $stat $per per point · this bug\'s aura $total';
+  }
+
+  @override
+  String get trainCommandNoRole => 'This species has no team role — no aura';
+
+  @override
+  String get duelRoleAttack => 'Attacker';
+
+  @override
+  String get duelRoleDefense => 'Defender';
+
+  @override
+  String get duelRoleHp => 'Tank';
+
+  @override
+  String duelRoleChip(String role, String pct) {
+    return '$role $pct';
+  }
+
+  @override
+  String duelTeamAura(String list) {
+    return 'Team aura: $list';
+  }
+
+  @override
+  String get duelTeamAuraNone => 'Team aura: none';
+
+  @override
+  String duelTeamAuraHelp(String cap) {
+    return 'Each fielded bug gives the whole team its role stat (attacker = ATK · defender = DEF · tank = HP). Up to +$cap per stat.';
+  }
+
+  @override
   String get trainWeight => 'Weight';
 
   @override

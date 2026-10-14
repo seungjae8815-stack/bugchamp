@@ -6408,6 +6408,44 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trainSlotGrit => '根性';
 
   @override
+  String get trainSlotCommand => '指揮';
+
+  @override
+  String trainCommandEffect(String stat, String per, String total) {
+    return '1pt チーム全体 $stat $per · この虫のオーラ $total';
+  }
+
+  @override
+  String get trainCommandNoRole => '役割のない種なのでオーラはありません';
+
+  @override
+  String get duelRoleAttack => '攻撃型';
+
+  @override
+  String get duelRoleDefense => '防御型';
+
+  @override
+  String get duelRoleHp => '体力型';
+
+  @override
+  String duelRoleChip(String role, String pct) {
+    return '$role $pct';
+  }
+
+  @override
+  String duelTeamAura(String list) {
+    return 'チームオーラ: $list';
+  }
+
+  @override
+  String get duelTeamAuraNone => 'チームオーラ: なし';
+
+  @override
+  String duelTeamAuraHelp(String cap) {
+    return '出場した虫ごとにチーム全体の役割能力値が上がります(攻撃型 = 攻撃 · 防御型 = 防御 · 体力型 = 体力)。能力値ごとに最大 +$cap。';
+  }
+
+  @override
   String get trainWeight => '重さ';
 
   @override

@@ -136,7 +136,9 @@
   "_clutchTapComment": "앱 탭 게이지(엔진은 안 쓴다, 2026-10-08): 위기에서 판이 멈추면 clutchTapSeconds 동안 연타 → 점수 = 연타 수 × 탭 힘 ÷ clutchTapTarget(최대 1)에 박자 고르기를 25% 섞는다(앱 clutch_gauge.dart clutchTapScore). 탭 힘 = 1 + 근성 × clutchTapPowerPerGrit. 2026-10-09 사장님 요청(실기: 너무 적게 쳐서 급박하지 않다 · 근성이 탭 힘을 키우게): 1.2초·10번 → 2.0초·20번 + 근성이 탭 힘을 키운다(근성 10 = ×1.5). 고른 박자로 문턱까지 근성 0 약 12번(초당 6번) · 근성 5 약 9번 · 근성 10 약 7번(예전 6번). 조작 앱은 늘 만점이라 이 값들은 사람이 낼 수 있는 점수만 정한다 — 근성 10 의 이득 상한도 \"늘 만점\"과 같아 duel_sim 10번 표(조작 앱 58%) 밖으로 나가지 않는다.",
   "clutchTapSeconds": 2.0,
   "clutchTapTarget": 20,
-  "clutchTapPowerPerGrit": 0.05
+  "clutchTapPowerPerGrit": 0.05,
+  "_teamAuraComment": "결투 팀 역할 오라(1.0.21 D3, 2026-10-14 사장님 확정, docs/design_growth_1021.md §3): 종마다 역할(species.json → duelRole: attack·defense·hp). 3마리 결투(리그 결투·방어팀·길드전)에 나선 곤충마다 팀 전체에 그 역할 능력치(공격·방어·최대 체력) +%. 곤충 1마리 오라 = baseByGrade[개체 등급 일반~전설] + 지휘 칸 포인트 × training.slots.command.effect. 팀 합은 능력치마다 capPerStat 까지. 왕충 선발대회(1마리)에는 붙지 않는다(대회 기록 비교 유지). 판정은 서버라 앱·서버 같은 날 배포. 측정은 server/tool/duel_build_sim.dart --aura.",
+  "teamAura": { "enabled": true, "baseByGrade": [0.02, 0.03, 0.04, 0.05, 0.06], "capPerStat": 0.20 }
  },
  "season": {
   "_scheduleComment": "2026-09-29 사장님 확정: 월 09:00 시즌 시작 → 일 09:00 집계 마감 → 정산 기간(settleHours 24시간: 결투 불가, 접속해서 순위 보상·승강을 받는다) → 월 09:00 새 시즌. 심연 주간 순위도 같은 시간표. 1.0.13 이하 앱도 월 09시 경계라 구버전과 경계가 어긋나지 않는다.",
@@ -233,7 +235,8 @@
    "recovery": { "effect": 0.016, "cap": 20 },
    "mass": { "effect": 0.010, "cap": 10 },
    "tech": { "cap": 10 },
-   "grit": { "effect": 1, "cap": 10 }
+   "grit": { "effect": 1, "cap": 10 },
+   "command": { "effect": 0.015, "cap": 10 }
   },
   "_presetsComment": "훈련소 '추천 배분'(2026-10-09 사장님 확정) — 칸 비율(합이 예산과 같을 필요 없음). 다시 찍기 편집에서 한 번에 적용하거나, 재료를 낸 남는 포인트를 이 비율로 채운다. 빌드 리그전(102포인트 · 전 종 × 5기질, 탭 반격 켬)에서 강했던 배분: 균형 56% · 체급형 55% · 체력방어 52%(주특기별로는 치기·집기 = 균형 62~64%, 던지기 = 체급형 76% · 체력방어 71%). presetFor = 주특기마다 먼저 고르는(★) 배분.",
   "presets": {
@@ -244,13 +247,13 @@
   "presetFor": { "strike": "balanced", "grip": "balanced", "toss": "heavy" },
   "massSpeedPenalty": 0.005,
   "techBySpecialty": { "strike": 0.04, "grip": 0.03, "toss": 0.03 },
-  "_slotModsComment": "칸 상한 보정 = v1 보정(temperamentMods 등) × 3 (설계 예: 우직 방어 +12 · 회피 −6). 새 칸(체력·밀어내기 힘·체급·기술·근성)은 보정 없음 — 시뮬로 맞출 때 넣는다.",
+  "_slotModsComment": "칸 상한 보정 = v1 보정(temperamentMods 등) × 3 (설계 예: 우직 방어 +12 · 회피 −6). 새 칸(체력·밀어내기 힘·체급·기술·근성)은 보정 없음 — 시뮬로 맞출 때 넣는다. 지휘 칸(1.0.21 D3)은 기질만 ±2(우직·신중 +2 · 호전적·변덕 −2 · 교활 0 — 사장님 확정, 오라 크기에 직접 곱하지 않는다).",
   "slotTemperamentMods": {
-   "aggressive": { "attack": 9, "defense": -6, "crit": 3 },
-   "cautious": { "attack": -6, "defense": 3, "evade": 6 },
+   "aggressive": { "attack": 9, "defense": -6, "crit": 3, "command": -2 },
+   "cautious": { "attack": -6, "defense": 3, "evade": 6, "command": 2 },
    "cunning": { "evade": 6, "crit": 12 },
-   "steadfast": { "defense": 12, "evade": -6, "recovery": 3 },
-   "fickle": { "attack": 3, "defense": 3, "evade": 3, "crit": 3, "recovery": 3 }
+   "steadfast": { "defense": 12, "evade": -6, "recovery": 3, "command": 2 },
+   "fickle": { "attack": 3, "defense": 3, "evade": 3, "crit": 3, "recovery": 3, "command": -2 }
   },
   "slotSpecialtyMods": {
    "strike": { "attack": 3, "crit": 3 },

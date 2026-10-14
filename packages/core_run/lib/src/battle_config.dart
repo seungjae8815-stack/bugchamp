@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'team_aura_config.dart';
 import 'training_config.dart';
 
 import 'package:meta/meta.dart';
@@ -165,6 +166,9 @@ class BattleConfig {
   /// core_run 은 core_battle 을 모르므로(형제) 모델(`DuelParams`)이 아니라 **원본 맵**으로 들고,
   /// 앱·서버가 `DuelParams.fromJson(cfg.duelJson)` 으로 만든다 — 같은 JSON 한 곳에서.
   final Map<String, dynamic> duelJson;
+
+  /// 결투 팀 역할 오라(`duel.teamAura`, 1.0.21 D3) — 앱·서버가 같은 값을 읽는다.
+  TeamAuraConfig get teamAura => TeamAuraConfig.fromJson(duelJson['teamAura']);
 
   /// **리그별** 시즌 순위 보상(2026-09-29 사장님 확정 — 리그마다 차등). 키 = 리그 id.
   /// 없는 리그는 [seasonRankRewards](옛 전체 순위 표)로 떨어진다.
