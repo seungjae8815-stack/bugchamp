@@ -4205,7 +4205,11 @@ class StorageScreen extends ConsumerWidget {
     return _sectionBox(
       child: Row(
         children: [
-          const Icon(Icons.fitness_center_rounded, color: _honey, size: 20),
+          gameIcon(
+            'train_point',
+            size: 24,
+            fallback: Icons.fitness_center_rounded,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

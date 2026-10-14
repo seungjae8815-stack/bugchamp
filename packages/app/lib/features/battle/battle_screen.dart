@@ -2844,34 +2844,52 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 출정 중 표시(2026-10-01 실기 지적 — 테두리 색만으로는 몰랐다). 몇 번 칸인지까지.
-                if (used)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 2),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _honey,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(ctx).duelPickDeployed(usedAt + 1),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: kHoneyInk,
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w900,
+                // 그림 **위에 겹친다**(2026-10-14 사장님) — 위에 따로 줄을 두면 출정 중인 칸만 키가 커졌다.
+                SizedBox(
+                  height: 44,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      bugStageImage(
+                        bug.speciesId,
+                        LifeStage.adult,
+                        size: 44,
+                        fallback: bugAvatar(sp, size: 38),
+                        skin: bugView(ref.watch(skinOfProvider), bug),
                       ),
-                    ),
+                      if (used)
+                        Positioned(
+                          top: -2,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _honey,
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                AppLocalizations.of(
+                                  ctx,
+                                ).duelPickDeployed(usedAt + 1),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: kHoneyInk,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                bugStageImage(
-                  bug.speciesId,
-                  LifeStage.adult,
-                  size: 44,
-                  fallback: bugAvatar(sp, size: 38),
-                  skin: bugView(ref.watch(skinOfProvider), bug),
                 ),
                 const SizedBox(height: 2),
                 // 등급은 테두리 색만으로는 구분이 어렵다 — 글자로 못 박는다.
@@ -3162,6 +3180,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         l.trainingCenter,
         l.trainPtUsed('${rec.allocated}', '$budget'),
         color: _honey,
+        lead: gameIcon('train_point', size: 16, fallback: Icons.star_rounded),
       ),
       if (alloc.isNotEmpty)
         Padding(
