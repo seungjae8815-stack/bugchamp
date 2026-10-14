@@ -512,21 +512,28 @@ EquipItem applyPolish(EquipItem item, int index, ItemOption candidate) {
 }
 
 /// [fodder] 를 [target] 의 별 재료로 쓸 수 있는지 — 같은 부위 · 등급이 (장착 등급 − `starTierSlack`) 이상 ·
-/// 별 만렙 아님 · 강화 진행 중 아님 · 재료가 아직 덜 모임.
+/// 별 만렙 아님 · 재료가 만렙까지 남은 합([ItemConfig.starNeedRemaining])보다 적음.
+/// **강화 시간이 도는 중에도 받는다**(2026-10-14 사장님 확정 — 다음 별 몫으로 이월). 예전엔 이번 별 몫이 차거나
+/// 강화 중이면 같은 부위 장비가 일반 재료로 팔려 "별이 꽉 차면 적립이 안 된다"로 보였다.
 bool canFeedStar(ItemConfig items, EquipItem target, EquipItem fodder) =>
     fodder.slot == target.slot &&
     target.stars < items.starMax &&
-    target.starUntil == null &&
-    target.starExp < items.starNeedAt(target.stars) &&
+    target.starExp < items.starNeedRemaining(target.stars) &&
     fodder.tier >= target.tier - items.starTierSlack;
 
 /// 별 재료 하나를 먹인다. 다 모여도 별은 바로 오르지 않는다 — [startStarUp] 으로 강화 시간을 건다(2026-10-10).
+/// 이번 별 몫을 넘긴 재료는 다음 별로 이월된다([finishStarUp] 이 이번 몫만 뺀다).
 EquipItem feedStar(ItemConfig items, EquipItem target) {
-  if (target.stars >= items.starMax || target.starUntil != null) return target;
-  final need = items.starNeedAt(target.stars);
-  if (target.starExp >= need) return target;
+  if (target.stars >= items.starMax) return target;
+  if (target.starExp >= items.starNeedRemaining(target.stars)) return target;
   return target.copyWith(starExp: target.starExp + 1);
 }
+
+/// 이번 별 강화에 쓸 재료가 다 모였나(강화를 시작할 수 있나) — 화면의 "★ 준비 완료" 표시용.
+bool starReady(ItemConfig items, EquipItem target) =>
+    target.stars < items.starMax &&
+    target.starUntil == null &&
+    target.starExp >= items.starNeedAt(target.stars);
 
 /// 재료가 다 모였으면 별 강화를 시작한다(끝나는 시각 = [now] + `starUpDuration`). 못 하면 null.
 EquipItem? startStarUp(ItemConfig items, EquipItem target, DateTime now) {
@@ -549,9 +556,14 @@ EquipItem? finishStarUp(
   final until = target.starUntil;
   if (until == null) return null;
   if (!force && now.toUtc().isBefore(until)) return null;
+  final next = (target.stars + 1).clamp(0, items.starMax);
+  // 이번 별 몫만 빼고 나머지는 다음 별로 넘긴다(만렙이면 0, 2026-10-14).
+  final left = target.starExp - items.starNeedAt(target.stars);
   return target.copyWith(
-    stars: (target.stars + 1).clamp(0, items.starMax),
-    starExp: 0,
+    stars: next,
+    starExp: next >= items.starMax
+        ? 0
+        : left.clamp(0, items.starNeedRemaining(next)),
     clearStarUntil: true,
   );
 }

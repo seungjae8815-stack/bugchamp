@@ -30,7 +30,7 @@ void main() {
     test('처음 보는 종이 등록된다', () {
       final dex = updatedDex(
         current: const {},
-        bugs: [bug('alpha', size: 42, potential: 3)],
+        bugs: [bug('alpha', size: 42, potential: 3, stage: LifeStage.larva)],
         stageOf: asStored,
       );
       expect(dex.keys, ['alpha']);
@@ -42,12 +42,12 @@ void main() {
     test('최대치만 남는다 — 더 작은 개체가 기록을 덮어쓰지 않는다', () {
       var dex = updatedDex(
         current: const {},
-        bugs: [bug('alpha', size: 60, potential: 4)],
+        bugs: [bug('alpha', size: 60, potential: 4, stage: LifeStage.larva)],
         stageOf: asStored,
       );
       dex = updatedDex(
         current: dex,
-        bugs: [bug('alpha', size: 30, potential: 1)],
+        bugs: [bug('alpha', size: 30, potential: 1, stage: LifeStage.larva)],
         stageOf: asStored,
       );
       expect(dex['alpha']!.maxSizeMm, 60);
@@ -70,6 +70,29 @@ void main() {
       expect(dex['alpha']!.raisedToAdult, isTrue, reason: '한 번 정복하면 유지');
     });
 
+    // 2026-10-14 사장님 확정 — 알 크기는 부화 전까지 숨긴다. 도감에 먼저 적히면 새어 나간다.
+    test('알은 발견·등급·이색만 남기고 최대 크기는 적지 않는다', () {
+      var dex = updatedDex(
+        current: const {},
+        bugs: [
+          bug('alpha', size: 58, potential: 4),
+          bug('beta', size: 70).copyWith(variant: BugVariant.rainbow),
+        ],
+        stageOf: asStored,
+      );
+      expect(dex.keys, containsAll(['alpha', 'beta']), reason: '발견은 기록');
+      expect(dex['alpha']!.maxSizeMm, 0);
+      expect(dex['alpha']!.maxPotential, 4);
+      expect(dex['beta']!.variantFound, isTrue);
+      // 부화해 유충이 되면 그때 크기가 적힌다.
+      dex = updatedDex(
+        current: dex,
+        bugs: [bug('alpha', size: 58, potential: 4, stage: LifeStage.larva)],
+        stageOf: asStored,
+      );
+      expect(dex['alpha']!.maxSizeMm, 58);
+    });
+
     test('바뀔 게 없으면 **같은 인스턴스**를 돌려준다 — 헛 저장·업로드 방지', () {
       final first = updatedDex(
         current: const {},
@@ -88,9 +111,9 @@ void main() {
       final dex = updatedDex(
         current: const {},
         bugs: [
-          bug('alpha', size: 30),
+          bug('alpha', size: 30, stage: LifeStage.larva),
           bug('beta', size: 70, stage: LifeStage.adult),
-          bug('alpha', size: 55),
+          bug('alpha', size: 55, stage: LifeStage.larva),
         ],
         stageOf: asStored,
       );

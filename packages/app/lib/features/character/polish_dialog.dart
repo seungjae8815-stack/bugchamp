@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:core_models/core_models.dart';
@@ -389,9 +390,17 @@ Widget itemStarsRow(
         if (progress && need > 0) ...[
           const SizedBox(width: 6),
           Text(
-            l.starProgress('${item.starExp}', '$need'),
+            l.starProgress('${math.min(item.starExp, need)}', '$need'),
             style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10.5),
           ),
+          // 이번 별 몫을 넘긴 재료는 다음 별로 이월된다(2026-10-14).
+          if (item.starExp > need) ...[
+            const SizedBox(width: 6),
+            Text(
+              l.starCarry('${item.starExp - need}'),
+              style: const TextStyle(color: kHoney, fontSize: 10.5),
+            ),
+          ],
         ],
       ],
     ),

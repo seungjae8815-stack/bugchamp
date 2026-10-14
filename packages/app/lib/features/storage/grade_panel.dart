@@ -45,8 +45,14 @@ Color _rollColor(int v) {
 }
 
 /// 곤충 상세의 **능력치 품질** — 9칸(체력·공격·방어·속도·크기·치명·회피·회복력·밀어내기) + 평균.
-/// 알도 보여 준다(롤은 알 때부터 정해져 있다 — 설계 확정).
-Widget gradeQualityCard(AppLocalizations l, Species sp, IndividualBug bug) {
+/// 롤은 알 때부터 정해져 있지만 **알이면 숫자를 숨긴다**([hidden]) — 처음엔 알도 보여 주기로 했으나
+/// 2026-10-14 사장님 확정으로 뒤집었다(능력치 숫자만 부화 뒤 공개, 등급·이색 같은 표식은 그대로).
+Widget gradeQualityCard(
+  AppLocalizations l,
+  Species sp,
+  IndividualBug bug, {
+  bool hidden = false,
+}) {
   final r = bug.statRolls;
   int at(StatRoll s) => s.index < r.length ? r[s.index] : 50;
   final rows = <(String, int)>[
@@ -81,7 +87,7 @@ Widget gradeQualityCard(AppLocalizations l, Species sp, IndividualBug bug) {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
-              value: e.$2 / 100,
+              value: hidden ? 0 : e.$2 / 100,
               minHeight: 6,
               backgroundColor: const Color(0x22FFFFFF),
               valueColor: AlwaysStoppedAnimation(_rollColor(e.$2)),
@@ -91,10 +97,10 @@ Widget gradeQualityCard(AppLocalizations l, Species sp, IndividualBug bug) {
         SizedBox(
           width: 28,
           child: Text(
-            '${e.$2}',
+            hidden ? l.hiddenStatValue : '${e.$2}',
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: _rollColor(e.$2),
+              color: hidden ? const Color(0x88FFFFFF) : _rollColor(e.$2),
               fontSize: 11,
               fontWeight: FontWeight.w900,
             ),
@@ -125,9 +131,13 @@ Widget gradeQualityCard(AppLocalizations l, Species sp, IndividualBug bug) {
             ),
             const Spacer(),
             Text(
-              l.igQualityAvg(avg.toStringAsFixed(0)),
+              l.igQualityAvg(
+                hidden ? l.hiddenStatValue : avg.toStringAsFixed(0),
+              ),
               style: TextStyle(
-                color: _rollColor(avg.round()),
+                color: hidden
+                    ? const Color(0x88FFFFFF)
+                    : _rollColor(avg.round()),
                 fontWeight: FontWeight.w900,
                 fontSize: 12.5,
               ),
@@ -138,7 +148,7 @@ Widget gradeQualityCard(AppLocalizations l, Species sp, IndividualBug bug) {
         for (final e in rows) bar(e),
         const SizedBox(height: 3),
         Text(
-          l.igQualityHint,
+          hidden ? l.eggStatsHidden : l.igQualityHint,
           style: const TextStyle(color: Color(0x88FFFFFF), fontSize: 10.5),
         ),
       ],

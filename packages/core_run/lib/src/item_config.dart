@@ -229,6 +229,16 @@ class ItemConfig {
     return starNeed[stars.clamp(0, starNeed.length - 1)];
   }
 
+  /// 별 [stars] 에서 만렙까지 남은 재료 합 — 별 재료를 **여기까지 모아 둘 수 있다**(2026-10-14 사장님 확정).
+  /// 이번 별 몫만 받던 시절엔 재료가 다 찼거나 강화 시간이 도는 동안 같은 부위 장비가 일반 재료로 팔렸다.
+  int starNeedRemaining(int stars) {
+    var sum = 0;
+    for (var s = stars < 0 ? 0 : stars; s < starMax; s++) {
+      sum += starNeedAt(s);
+    }
+    return sum;
+  }
+
   int get tierCount => tiers.length;
 
   ItemSlotDef? slot(EquipSlot s) => slots[s];
@@ -322,10 +332,10 @@ EquipItem trimItemOptions(
   final limit = config.tier(item.tier).options;
   // 별·환생 재료도 상한으로(세이브를 고쳐 99성을 적어도 5성).
   final stars = item.stars.clamp(0, config.starMax);
-  // 재료는 다 모인 수(need)까지 들고 있을 수 있다 — 그 뒤 별 강화를 시작한다.
+  // 재료는 만렙까지 남은 합(이월 포함, 2026-10-14)까지 들고 있을 수 있다.
   final int exp = stars >= config.starMax
       ? 0
-      : item.starExp.clamp(0, math.max(0, config.starNeedAt(stars)));
+      : item.starExp.clamp(0, math.max(0, config.starNeedRemaining(stars)));
   final keepUntil = stars < config.starMax && item.starUntil != null;
   final starsOk =
       stars == item.stars &&

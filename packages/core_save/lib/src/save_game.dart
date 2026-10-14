@@ -28,7 +28,9 @@ const int kSaveSchemaVersion = 18;
 /// 24(2026-10-11): 개체 등급 — `essence`·`potions`·`potionBuyDay`·`potionBuyN`·`gLp`(전설 천장) · 곤충 `rl`(롤)·`gc`(뽑기 출신)·
 ///    `ng`(켜진 뒤 생김)·`ls`(옛 합성 단계). 1.0.20 출시 전에 더한 키라 같은 수준에 묶는다(24·25 를 쓴 앱이 아직 없다).
 /// 25(2026-10-12): 공방 초월 시간 — 진행 중 초월 끝 시각 `ftAt`.
-const int kSaveFeatureLevel = 25;
+/// 26(2026-10-14): 별 재료 이월 — 장비 `sx` 가 이번 별 몫이 아니라 만렙까지 남은 합까지(구버전은 불러올 때 이번 몫으로 자른다 →
+///    서버가 같은 장비·같은 별이면 저장본과 큰 쪽을 지킨다, `_keepStarCarry`).
+const int kSaveFeatureLevel = 26;
 
 /// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
 /// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
@@ -408,10 +410,13 @@ Map<String, DexEntry> updatedDex({
   Map<String, DexEntry>? next;
   for (final b in bugs) {
     final before = (next ?? current)[b.speciesId] ?? const DexEntry();
+    final stage = stageOf(b);
     final after = before.merge(
-      sizeMm: b.sizeMm,
+      // 알은 크기를 기록하지 않는다(2026-10-14 사장님 확정 — 알 능력치는 부화 뒤에 공개).
+      // 알을 줍자마자 도감 최대 크기가 바뀌면 크기 롤이 새어 나간다. 발견·등급·이색은 그대로 남긴다.
+      sizeMm: stage == LifeStage.egg ? 0 : b.sizeMm,
       potential: b.potential,
-      adult: stageOf(b) == LifeStage.adult,
+      adult: stage == LifeStage.adult,
       variant: b.variant != BugVariant.none,
       level: b.level,
     );

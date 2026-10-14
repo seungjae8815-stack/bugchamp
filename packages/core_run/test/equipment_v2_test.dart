@@ -201,10 +201,10 @@ void main() {
           t = feedStar(items, t);
           fed++;
         }
-        // 다 모여도 별은 그대로 · 더 먹일 수 없다.
-        expect(canFeedStar(items, t, _item()), isFalse);
-        expect(feedStar(items, t), t);
+        // 다 모여도 별은 그대로 — 강화를 시작할 수 있다(준비 완료).
+        expect(starReady(items, t), isTrue);
         final started = startStarUp(items, t, t0)!;
+        expect(starReady(items, started), isFalse, reason: '강화 중');
         expect(
           started.starUntil,
           t0.add(items.starUpDuration(t.stars, tier: t.tier)),
@@ -223,7 +223,30 @@ void main() {
       }
       expect(fed, 1000);
       expect(feedStar(items, t), t); // 만렙이면 그대로
+      expect(canFeedStar(items, t, _item()), isFalse);
       expect(startStarUp(items, _item(), t0), isNull); // 재료 없으면 시작 못 한다
+    });
+
+    test('재료 이월(2026-10-14) — 다 모였거나 강화 중이어도 계속 쌓이고, 끝나면 남은 몫이 다음 별로 간다', () {
+      final t0 = DateTime.utc(2026, 10, 14, 12);
+      var t = _item();
+      for (var i = 0; i < 130; i++) {
+        expect(canFeedStar(items, t, _item()), isTrue);
+        t = feedStar(items, t);
+      }
+      expect(t.starExp, 130);
+      expect(starReady(items, t), isTrue);
+      var started = startStarUp(items, t, t0)!;
+      // 강화 중에도 받는다.
+      expect(canFeedStar(items, started, _item()), isTrue);
+      started = feedStar(items, started);
+      final done = finishStarUp(items, started, started.starUntil!)!;
+      expect(done.stars, 1);
+      expect(done.starExp, 31, reason: '131 − 100');
+      // 남은 합(150+200+250+300=900)을 넘게는 쌓이지 않는다.
+      var full = done.copyWith(starExp: items.starNeedRemaining(1));
+      expect(canFeedStar(items, full, _item()), isFalse);
+      expect(feedStar(items, full), full);
     });
 
     test('효과 배율 — 별당 +4% · 회피는 빠진다', () {
@@ -305,10 +328,12 @@ void main() {
     });
 
     test('상한 정리 — 세이브를 고쳐 99성·정성 99 를 적어도 상한으로', () {
+      // 재료는 만렙까지 남은 합까지(이월 포함, 2026-10-14) — 1성이면 150+200+250+300.
       expect(
         trimItemOptions(_item(stars: 1, starExp: 9999), items).starExp,
-        items.starNeedAt(1),
+        items.starNeedRemaining(1),
       );
+      expect(items.starNeedRemaining(1), 900);
       final cheat = _item(
         stars: 99,
         starExp: 99,

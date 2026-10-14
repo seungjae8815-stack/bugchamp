@@ -322,7 +322,11 @@ FairyOp mergeFairies(
   if (cfg.subWeight.isEmpty) return const FairyOp.fail('off');
   final refund = _refund(cfg, picked);
   final seq = s.seq + 1;
-  final sub = cfg.rollSub(rng);
+  // 재료가 **모두 같은 부가**면 그 부가로 확정(2026-10-14 사장님 확정 — 짝짓기 "부모가 같으면 확정"과 같은 문법).
+  // 합성이 부가를 새로 굴려 고등급 요정에 속성석을 쓸 길이 없었다. 난수는 그대로 소비한다(뒤 개체값 순서 유지).
+  final rolled = cfg.rollSub(rng);
+  final sameSub = picked.every((f) => f.sub == first.sub);
+  final sub = sameSub ? first.sub : rolled;
   final baseRoll = cfg.rollQuality(rng);
   final subRoll = cfg.rollQuality(rng);
   final made = Fairy(
@@ -402,6 +406,11 @@ FairyOp autoMergeFairies(
 /// 재굴림(2026-10-04, 조정안 C) — 가진 요정의 **부가 능력치·개체값을 새로 굴려 대기 결과로 적는다.**
 /// 요정은 아직 그대로다 — [chooseFairyReroll] 로 새 값/원래 값을 고른다(나빠지지 않는다).
 ///
+/// 2026-10-14 사장님 확정:
+///  - [stoneSub] 를 주면 그 속성석 1개를 더 써서 그 부가가 나올 확률을 올린다(알 넣기와 같은 `rollSub(stoneSub:)`).
+///  - **개체값은 내려가지 않는다** — 기본·부가 개체값은 칸마다 지금 값과 새로 굴린 값 중 큰 쪽(곤충 등급 올리기의 능력치 롤과 같은 규칙).
+///    굴릴수록 수치가 쌓여 투자할 의미가 생긴다. 부가 종류가 바뀌어도 부가 개체값은 그대로 이어받는다.
+///
 /// ⚠️ **서버만 부른다**(`/fairy/reroll`). 기기에서 굴리면 서버의 정체 고정(`_keepFairyIdentity`)이 되돌리고,
 /// 그 고정을 풀면 개체값 위조가 열린다. 하루 횟수([today] = KST 날짜 키)도 서버가 센다.
 /// 굴리는 순서는 합성과 같다(부가 → 기본 개체값 → 부가 개체값). 결과 `extra['reroll']`.
@@ -412,6 +421,7 @@ FairyOp rollFairyReroll(
   required String fairyId,
   required String today,
   required int jellyHave,
+  String? stoneSub,
 }) {
   if (cfg.rerollJelly <= 0 ||
       cfg.rerollDailyCap <= 0 ||
@@ -419,19 +429,37 @@ FairyOp rollFairyReroll(
     return const FairyOp.fail('off');
   }
   if (s.reroll != null) return const FairyOp.fail('reroll_pending');
-  if (s.fairyById(fairyId) == null) return const FairyOp.fail('no_fairy');
+  final f = s.fairyById(fairyId);
+  if (f == null) return const FairyOp.fail('no_fairy');
+  var stones = s.stones;
+  if (stoneSub != null) {
+    if (!cfg.subWeight.containsKey(stoneSub)) {
+      return const FairyOp.fail('bad_sub');
+    }
+    if ((s.stones[stoneSub] ?? 0) <= 0) return const FairyOp.fail('no_stone');
+    stones = _add(s.stones, stoneSub, -1);
+  }
   final used = s.rerollDay == today ? s.rerollCount : 0;
   if (used >= cfg.rerollDailyCap) return const FairyOp.fail('reroll_cap');
   if (jellyHave < cfg.rerollJelly)
     return const FairyOp.fail('not_enough_jelly');
+  // 굴리는 순서는 그대로(부가 → 기본 개체값 → 부가 개체값).
+  final sub = cfg.rollSub(rng, stoneSub: stoneSub);
+  final baseRoll = cfg.rollQuality(rng);
+  final subRoll = cfg.rollQuality(rng);
   final r = FairyReroll(
     fairyId: fairyId,
-    sub: cfg.rollSub(rng),
-    baseRoll: cfg.rollQuality(rng),
-    subRoll: cfg.rollQuality(rng),
+    sub: sub,
+    baseRoll: math.max(f.baseRoll, baseRoll),
+    subRoll: math.max(f.subRoll, subRoll),
   );
   return FairyOp.ok(
-    s.copyWith(reroll: r, rerollDay: today, rerollCount: used + 1),
+    s.copyWith(
+      reroll: r,
+      rerollDay: today,
+      rerollCount: used + 1,
+      stones: stones,
+    ),
     jelly: cfg.rerollJelly,
     extra: {'reroll': r},
   );

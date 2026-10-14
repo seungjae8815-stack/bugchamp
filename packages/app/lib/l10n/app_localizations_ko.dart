@@ -3632,6 +3632,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String starCarry(String n) {
+    return '다음 별 몫 +$n개 이월';
+  }
+
+  @override
   String starProgress(String have, String need) {
     return '다음 별 $have/$need';
   }
@@ -4736,8 +4741,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get fairyRerollTitle => '요정 재굴림';
 
   @override
+  String get fairyRerollStoneTitle => '속성석 넣기';
+
+  @override
+  String get fairyRerollStoneHint => '넣은 속성석의 부가 능력치가 나올 확률이 올라가요(1개 사용).';
+
+  @override
   String get fairyRerollConfirm =>
-      '기본·부가 능력치를\n새로 굴려요.\n부가 종류도 바뀔 수 있어요.\n\n결과가 마음에 들지 않으면\n지금 값을 지킬 수 있어요.\n\n하루 횟수가 정해져 있어요.';
+      '기본·부가 능력치를\n새로 굴려요.\n부가 종류도 바뀔 수 있어요.\n\n개체값은 지금보다 내려가지 않고,\n결과가 마음에 들지 않으면\n지금 값을 지킬 수 있어요.\n\n하루 횟수가 정해져 있어요.';
 
   @override
   String get fairyRerollPick => '어느 쪽으로 할까요?';
@@ -4762,7 +4773,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String fairyMergeHint(String n) {
-    return '같은 종류·등급 $n마리 → 같은 종류 한 등급 위 1마리. 기본·부가 능력치는 새 등급에서 새로 정해져요.';
+    return '같은 종류·등급 $n마리 → 같은 종류 한 등급 위 1마리. 기본·부가 능력치는 새 등급에서 새로 정해져요. 재료가 모두 같은 부가면 그 부가가 이어져요.';
   }
 
   @override
@@ -7249,4 +7260,96 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNew20Nymph => '사마귀·메뚜기류·물장군은 번데기 없이 약충 → 탈피로 자라요';
+
+  @override
+  String get hiddenStatValue => '??';
+
+  @override
+  String get eggStatsHidden => '부화하면 공개돼요';
+
+  @override
+  String eggSizeHidden(String min, String max) {
+    return '??mm (범위 $min~$max)';
+  }
+
+  @override
+  String eggToIncubator(String time) {
+    return '부화기에 넣기 · $time';
+  }
+
+  @override
+  String eggIncubatorFullExpand(String n) {
+    return '부화기 가득 참 · 젤리 $n으로 1칸 확장';
+  }
+
+  @override
+  String eggIncubatorFullWait(String time) {
+    return '부화기 가득 참 · 먼저 끝나는 알 $time';
+  }
+
+  @override
+  String get rarityFilterButton => '받을 종 희귀도';
+
+  @override
+  String get rarityFilterAll => '모든 종';
+
+  @override
+  String rarityFilterAtLeast(String grade) {
+    return '$grade 종 이상';
+  }
+
+  @override
+  String rarityFilterOnly(String grade) {
+    return '$grade 종만';
+  }
+
+  @override
+  String get rarityFilterHint =>
+      '종마다 정해진 희귀도(종 희귀도)로 걸러요 — 곤충 하나하나의 개체 등급과는 상관없어요. 이미 가진 곤충에는 영향이 없어요.';
+
+  @override
+  String get storageViewButton => '보기';
+
+  @override
+  String get storageViewTitle => '채집함 보기 거르기';
+
+  @override
+  String get storageViewHint => '보이는 목록만 거르고 곤충은 그대로예요';
+
+  @override
+  String get storageViewAll => '전체';
+
+  @override
+  String get storageViewStage => '단계';
+
+  @override
+  String get storageViewStageEgg => '알';
+
+  @override
+  String get storageViewStageAdult => '성충';
+
+  @override
+  String get storageViewStageOther => '그 외';
+
+  @override
+  String get storageViewGrade => '등급';
+
+  @override
+  String storageViewGradeAtLeast(String grade) {
+    return '$grade 이상';
+  }
+
+  @override
+  String get storageViewSpecies => '종';
+
+  @override
+  String get storageViewReset => '초기화';
+
+  @override
+  String storageViewCount(String shown, String total) {
+    return '$shown/$total마리';
+  }
+
+  @override
+  String get storageViewEmpty => '조건에 맞는 곤충이 없어요.\n보기 조건을 바꿔 보세요.';
 }

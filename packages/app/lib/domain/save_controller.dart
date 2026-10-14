@@ -3531,7 +3531,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       );
     }
 
-    final want = s.autoForgeOptions;
+    final want = _liveForgeOptions(s.autoForgeOptions);
     final minTier = s.autoForgeMinTier;
     final stack = [...s.forgeStack];
     // 멈출 기준이 있을 때만 멈춘다. 필터가 비어 있으면 **전부가 목표**라
@@ -3866,6 +3866,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return item;
   }
 
+  /// 자동 제련 필터 중 **실제로 장비에 붙는 옵션**(`optionPool`)만 — 9월 개편 때 풀에서 뺀 옵션이 저장돼 있으면
+  /// 어떤 장비도 맞추지 못해 전부 버려졌다(2026-10-14). 남는 게 없으면 필터 없음(전부 쌓기)과 같다.
+  Set<ItemOptionKind> _liveForgeOptions(Set<ItemOptionKind> want) {
+    final items = ref.read(gameDataProvider).value?.itemConfig;
+    if (items == null || want.isEmpty) return want;
+    return {
+      for (final k in want)
+        if (items.optionPool.any((r) => r.kind == k)) k,
+    };
+  }
+
   /// 지금 낀 것보다 나은지 — 자동 제련의 교체 판단.
   ///
   /// 목표 옵션을 지정했으면 **그 옵션이 붙었는지**가 우선이고, 없으면 등급으로 본다.
@@ -3873,7 +3884,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     final cur = s.equippedItems[candidate.slot];
     if (cur == null) return true;
-    final want = s.autoForgeOptions;
+    final want = _liveForgeOptions(s.autoForgeOptions);
     if (want.isNotEmpty) {
       int hits(EquipItem i) =>
           i.options.where((o) => want.contains(o.kind)).length;
@@ -4132,8 +4143,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 요정 재굴림(2026-10-04, 조정안 C) — **서버가 굴린다**(기기에서 굴리면 서버의 정체 고정이 되돌린다).
   /// 직전에 세이브를 올리고(안 그러면 최근 진행이 서버 저장본으로 덮인다) 응답 세이브를 채택한다.
   /// 결과는 대기로 적힌다 — [fairyRerollChoose] 로 고른다. 오류 키는 서버 것 그대로(`reroll_cap` 등).
-  Future<FairyOp> fairyReroll(String id) =>
-      _fairyServerOp((server) => server.fairyReroll(id));
+  /// [stoneSub] 를 주면 그 속성석 1개를 함께 써서 그 부가가 나올 확률을 올린다(2026-10-14, 서버가 깎는다).
+  Future<FairyOp> fairyReroll(String id, {String? stoneSub}) =>
+      _fairyServerOp((server) => server.fairyReroll(id, stoneSub: stoneSub));
 
   /// 재굴림 결과 고르기 — [accept] 면 새 값, 아니면 원래 값을 지킨다.
   Future<FairyOp> fairyRerollChoose({required bool accept}) =>
@@ -5031,7 +5043,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     if (s.isEquipped(bugId)) return;
     if (s.equippedBugIds.length >= maxEquip) return;
-    if (!s.bugs.any((b) => b.id == bugId)) return;
+    final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
+    if (bug == null) return;
+    // 알은 장착하지 않는다(2026-10-14 사장님 확정 — 알 능력치를 숨기므로 펫 효과도 부화 뒤에).
+    if (petCfg != null) {
+      final now = ref.read(clockProvider).now().toUtc();
+      if (effectiveStage(bug.stage, bug.stageSince, now, petCfg) ==
+          LifeStage.egg) {
+        return;
+      }
+    }
     await _commit(s.copyWith(equippedBugIds: [...s.equippedBugIds, bugId]));
   }
 
@@ -5054,6 +5075,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (final b in s.bugs) {
       final sp = data.speciesById[b.speciesId];
       if (sp == null) continue;
+      // 알은 장착 후보에서 뺀다(2026-10-14 — 알은 장착 불가).
+      if (effectiveStage(b.stage, b.stageSince, now, cfg) == LifeStage.egg) {
+        continue;
+      }
       final c = petContribution(
         petStatOf(
           b,

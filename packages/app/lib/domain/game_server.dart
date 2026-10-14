@@ -292,7 +292,7 @@ abstract interface class GameServer {
   Future<ServerResult> eventDuelHeal(String bugId);
 
   /// 요정 재굴림(2026-10-04) — 서버가 굴려 대기 결과로 적는다. 응답 `save` 를 채택한다.
-  Future<ServerResult> fairyReroll(String fairyId);
+  Future<ServerResult> fairyReroll(String fairyId, {String? stoneSub});
 
   /// 재굴림 결과 고르기 — [accept] 면 새 값, 아니면 원래 값.
   Future<ServerResult> fairyRerollChoose({required bool accept});
@@ -462,7 +462,7 @@ class NoGameServer implements GameServer {
   Future<ServerResult> eventAdTicket() async =>
       const ServerResult.fail('unavailable', 0);
   @override
-  Future<ServerResult> fairyReroll(String fairyId) async =>
+  Future<ServerResult> fairyReroll(String fairyId, {String? stoneSub}) async =>
       const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> fairyRerollChoose({required bool accept}) async =>
@@ -946,8 +946,11 @@ class HttpGameServer implements GameServer {
       _send('POST', '/event/ad-ticket', const {});
 
   @override
-  Future<ServerResult> fairyReroll(String fairyId) =>
-      _send('POST', '/fairy/reroll', {'fairyId': fairyId});
+  Future<ServerResult> fairyReroll(String fairyId, {String? stoneSub}) => _send(
+    'POST',
+    '/fairy/reroll',
+    {'fairyId': fairyId, 'stoneSub': ?stoneSub},
+  );
 
   @override
   Future<ServerResult> fairyRerollChoose({required bool accept}) =>

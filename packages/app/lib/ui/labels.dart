@@ -176,6 +176,13 @@ String traitLabel(AppLocalizations l, BugTrait t) => switch (t) {
   BugTrait.noble => l.traitNoble,
 };
 
+/// 이색 종류 이름(무지개·알비노). 없으면 빈 문자열.
+String variantLabel(AppLocalizations l, BugVariant v) => switch (v) {
+  BugVariant.none => '',
+  BugVariant.rainbow => l.variantRainbow,
+  BugVariant.albino => l.variantAlbino,
+};
+
 /// 특성 색 — 무엇에 특화됐는지 색으로 먼저 읽히게 한다
 /// (공격 계열=붉은색, 방어 계열=푸른색, 양쪽=보라).
 Color traitColor(BugTrait t) => switch (t) {

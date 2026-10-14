@@ -3625,6 +3625,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String starCarry(String n) {
+    return '次の星へ +$n 繰り越し';
+  }
+
+  @override
   String starProgress(String have, String need) {
     return '次の星 $have/$need';
   }
@@ -4727,8 +4732,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fairyRerollTitle => '妖精の再抽選';
 
   @override
+  String get fairyRerollStoneTitle => '属性石を入れる';
+
+  @override
+  String get fairyRerollStoneHint => '入れた属性石のサブ能力が出る確率が上がります(1個使用)。';
+
+  @override
   String get fairyRerollConfirm =>
-      '基本・サブ能力の数値を\n引き直します。\nサブ能力の種類も変わることがあります。\n\n結果が気に入らなければ\n今の値を残せます。\n\n1日の回数に上限があります。';
+      '基本・サブ能力の数値を\n引き直します。\nサブ能力の種類も変わることがあります。\n\n個体値は今より下がらず、\n結果が気に入らなければ\n今の値を残せます。\n\n1日の回数に上限があります。';
 
   @override
   String get fairyRerollPick => 'どちらにしますか？';
@@ -4753,7 +4764,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyMergeHint(String n) {
-    return '同じ種類・等級$n体 → 同じ種類の1段階上1体。基本・付加能力は新しい等級で改めて決まります。';
+    return '同じ種類・等級$n体 → 同じ種類の1段階上1体。基本・付加能力は新しい等級で改めて決まります。素材の付加能力がすべて同じなら、その付加能力を引き継ぎます。';
   }
 
   @override
@@ -7237,4 +7248,96 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew20Nymph => 'カマキリ・バッタ類・タガメはさなぎにならず、若虫→脱皮で育ちます';
+
+  @override
+  String get hiddenStatValue => '??';
+
+  @override
+  String get eggStatsHidden => '孵化すると公開されます';
+
+  @override
+  String eggSizeHidden(String min, String max) {
+    return '??mm（範囲 $min〜$max）';
+  }
+
+  @override
+  String eggToIncubator(String time) {
+    return '孵化器に入れる · $time';
+  }
+
+  @override
+  String eggIncubatorFullExpand(String n) {
+    return '孵化器が満杯 · ゼリー$nで1枠拡張';
+  }
+
+  @override
+  String eggIncubatorFullWait(String time) {
+    return '孵化器が満杯 · 次の卵まで $time';
+  }
+
+  @override
+  String get rarityFilterButton => '受け取る種の希少度';
+
+  @override
+  String get rarityFilterAll => 'すべての種';
+
+  @override
+  String rarityFilterAtLeast(String grade) {
+    return '$grade種以上';
+  }
+
+  @override
+  String rarityFilterOnly(String grade) {
+    return '$grade種のみ';
+  }
+
+  @override
+  String get rarityFilterHint =>
+      '種ごとに決まった希少度（種の希少度）で絞り込みます。個体ごとの等級とは関係ありません。すでに持っている昆虫には影響しません。';
+
+  @override
+  String get storageViewButton => '表示';
+
+  @override
+  String get storageViewTitle => '採集箱の表示を絞り込む';
+
+  @override
+  String get storageViewHint => '表示だけを絞り込みます。昆虫はそのままです';
+
+  @override
+  String get storageViewAll => 'すべて';
+
+  @override
+  String get storageViewStage => '段階';
+
+  @override
+  String get storageViewStageEgg => '卵';
+
+  @override
+  String get storageViewStageAdult => '成虫';
+
+  @override
+  String get storageViewStageOther => 'その他';
+
+  @override
+  String get storageViewGrade => '等級';
+
+  @override
+  String storageViewGradeAtLeast(String grade) {
+    return '$grade以上';
+  }
+
+  @override
+  String get storageViewSpecies => '種';
+
+  @override
+  String get storageViewReset => 'リセット';
+
+  @override
+  String storageViewCount(String shown, String total) {
+    return '$shown/$total匹';
+  }
+
+  @override
+  String get storageViewEmpty => '条件に合う昆虫がいません。\n表示の条件を変えてみてください。';
 }

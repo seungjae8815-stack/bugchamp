@@ -543,7 +543,10 @@ class DexScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 1),
             Text(
-              found ? formatSizeMm(entry.maxSizeMm) : '—',
+              // 알로만 만난 종은 크기 기록이 없다(2026-10-14 — 알 크기는 부화 뒤 공개).
+              found && entry.maxSizeMm > 0
+                  ? formatSizeMm(entry.maxSizeMm)
+                  : '—',
               style: TextStyle(
                 color: found ? _honey : const Color(0x44FFFFFF),
                 fontSize: 10.5,
@@ -642,7 +645,10 @@ class DexScreen extends ConsumerWidget {
               ),
             ],
             const SizedBox(height: 10),
-            _row(l.dexMaxSize, formatSizeMm(entry.maxSizeMm)),
+            _row(
+              l.dexMaxSize,
+              entry.maxSizeMm > 0 ? formatSizeMm(entry.maxSizeMm) : '—',
+            ),
             gradeOn
                 ? _row(
                     l.igDexMaxGrade,

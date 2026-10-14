@@ -201,6 +201,14 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
     _chance = -1;
     _chanceLeft = 0;
     if (species == null || cfg == null) return;
+    // 받을 종 희귀도 필터(§2.1) — 스폰할 때 걸러도, 필터를 바꾸기 전에 나와 있던 곤충이나 남는 종이 없어
+    // 전체에서 세운 곤충은 그대로 채집함에 들어왔다(2026-10-14 점검). 잡기 전에 한 번 더 보고, 걸리면
+    // "잡았다"를 띄우지 않고 그 자리에 받을 수 있는 종을 새로 세운다(놓친 것처럼 날아간다).
+    final save = ref.read(saveControllerProvider).value;
+    if (save != null && !save.acceptsGrade(species.grade)) {
+      setState(() => _wild[idx] = _rollWild(idx));
+      return;
+    }
 
     _cooldown = cfg.sceneCatchCooldown;
     final locale = Localizations.localeOf(context).languageCode;
@@ -217,6 +225,7 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
     } else {
       AudioService.instance.sfxCatch();
     }
+    final pet = ref.read(gameDataProvider).value?.petConfig;
     // 획득 경로는 방치 드롭과 **같다** — 알로 들어가 부화기를 거친다.
     // 여기만 성충으로 주면 부화기 루프를 통째로 건너뛰게 된다.
     await ref
@@ -230,10 +239,12 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
                 species: species,
                 rng: _rng,
                 potential: wildPotentialOf(
-                  ref.read(gameDataProvider).value?.petConfig,
+                  pet,
                   _rng.nextDouble(),
                   _rng.nextDouble(),
                 ),
+                // 이색 — 실시간 사냥과 같은 야생 확률(빠져 있어 채집망에서는 이색이 나오지 않았다, 2026-10-14).
+                variantChance: pet?.variantWildChance ?? 0,
               ).copyWith(
                 stage: LifeStage.egg,
                 stageSince: ref.read(clockProvider).now().toUtc(),

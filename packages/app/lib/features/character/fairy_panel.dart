@@ -1401,6 +1401,18 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
         showCenterToast(context, l.fairyRerollCap);
         return;
       }
+      // 가진 속성석이 있으면 넣을지 먼저 고른다(2026-10-14) — 없으면 예전처럼 바로 확인.
+      String? stone;
+      final owned = [
+        for (final sub in cfg.subWeight.keys)
+          if ((fs.stones[sub] ?? 0) > 0) sub,
+      ];
+      if (owned.isNotEmpty) {
+        final picked = await _pickRerollStone(owned, fs, cfg);
+        if (picked == null || !mounted) return; // 닫음 = 취소
+        stone = picked.isEmpty ? null : picked;
+      }
+      if (!mounted) return;
       final ok = await confirmJellySpend(
         context,
         title: l.fairyRerollTitle,
@@ -1409,7 +1421,7 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
       );
       if (!ok || !mounted) return;
       setState(() => _busy = true);
-      final r = await ctrl.fairyReroll(f.id);
+      final r = await ctrl.fairyReroll(f.id, stoneSub: stone);
       if (!mounted) return;
       setState(() => _busy = false);
       if (!r.isOk) {
@@ -1423,6 +1435,68 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
       barrierDismissible: false,
       barrierColor: const Color(0xB3000000),
       builder: (_) => fairyButtons(const _RerollChooseDialog()),
+    );
+  }
+
+  /// 재굴림에 넣을 속성석 — 고르면 그 부가 키, "속성석 없이"면 '', 닫으면 null(취소).
+  Future<String?> _pickRerollStone(
+    List<String> owned,
+    FairyState fs,
+    FairyConfig cfg,
+  ) {
+    final l = AppLocalizations.of(context);
+    return showDialog<String>(
+      context: context,
+      barrierColor: const Color(0xB3000000),
+      builder: (ctx) => fairyButtons(
+        AlertDialog(
+          title: Text(l.fairyRerollStoneTitle),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    l.fairyRerollStoneHint,
+                    style: const TextStyle(
+                      color: Color(0xB3FFFFFF),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(
+                    Icons.block_rounded,
+                    color: Colors.white38,
+                  ),
+                  title: Text(l.fairyStoneNone),
+                  onTap: () => Navigator.of(ctx).pop(''),
+                ),
+                for (final sub in owned)
+                  ListTile(
+                    dense: true,
+                    leading: fairyStoneImage(sub, size: 28),
+                    title: Text(l.fairyStoneName(fairyStatLabel(l, sub))),
+                    subtitle: Text(
+                      l.fairyStoneEffect(
+                        fairyStatLabel(l, sub),
+                        (cfg.stoneChance * 100).round().toString(),
+                      ),
+                    ),
+                    trailing: Text(
+                      '×${fs.stones[sub]}',
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    onTap: () => Navigator.of(ctx).pop(sub),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

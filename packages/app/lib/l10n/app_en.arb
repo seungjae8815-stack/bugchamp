@@ -2588,6 +2588,12 @@
       }
     }
   },
+  "starCarry": "+{n} carried to next star",
+  "@starCarry": {
+    "placeholders": {
+      "n": {"type": "String"}
+    }
+  },
   "starProgress": "Next star {have}/{need}",
   "@starProgress": {
     "placeholders": {
@@ -3166,7 +3172,9 @@
   "fairyMergeEpicNote": "Epic → Legendary merges need {n} fairies.",
   "fairyReroll": "Reroll ({left} left)",
   "fairyRerollTitle": "Fairy reroll",
-  "fairyRerollConfirm": "Rerolls the base and bonus values. The bonus stat itself may change too. If you don't like the result, you can keep the current values.\n\nUses per day are limited.",
+  "fairyRerollStoneTitle": "Add an element stone?",
+  "fairyRerollStoneHint": "Raises the chance of that bonus stat (uses 1 stone).",
+  "fairyRerollConfirm": "Rerolls the base and bonus values. The bonus stat itself may change too. Values never go below the current ones, and you can keep the current result if you prefer.\n\nUses per day are limited.",
   "fairyRerollPick": "Which one do you want?",
   "fairyRerollNow": "Current",
   "fairyRerollNew": "New",
@@ -3176,7 +3184,7 @@
   "fairyRerollNetwork": "Needs a server connection. Please try again shortly.",
   "@fairyReroll": {"placeholders": {"left": {"type": "String"}}},
   "@offlineBugsBlocked": {"placeholders": {"count": {"type": "int"}}},
-  "fairyMergeHint": "{n} of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade.",
+  "fairyMergeHint": "{n} of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade. If all materials share the same bonus stat, it carries over.",
   "@fairyMergeHint": {"placeholders": {"n": {"type": "String"}}},
   "@fairyMergeEpicNote": {"placeholders": {"n": {"type": "String"}}},
   "fairyMergePick": "Materials {n}/{max}",
@@ -4196,5 +4204,38 @@
   "whatsNew20StarCarry": "Swapping to gear of the same grade keeps its stars",
   "whatsNew20Power": "See each bug's duel power in the collection",
   "whatsNew20League": "League board shows this week's rewards and promotion zones for the number of players",
-  "whatsNew20Nymph": "Mantises, grasshoppers and giant water bugs grow as nymphs and molt — no pupa"
+  "whatsNew20Nymph": "Mantises, grasshoppers and giant water bugs grow as nymphs and molt — no pupa",
+  "hiddenStatValue": "??",
+  "eggStatsHidden": "Revealed when it hatches",
+  "eggSizeHidden": "??mm (range {min}–{max})",
+  "@eggSizeHidden": {"placeholders": {"min": {"type": "String"}, "max": {"type": "String"}}},
+  "eggToIncubator": "Put in incubator · {time}",
+  "@eggToIncubator": {"placeholders": {"time": {"type": "String"}}},
+  "eggIncubatorFullExpand": "Incubator full · expand 1 slot for {n} jelly",
+  "@eggIncubatorFullExpand": {"placeholders": {"n": {"type": "String"}}},
+  "eggIncubatorFullWait": "Incubator full · next egg done in {time}",
+  "@eggIncubatorFullWait": {"placeholders": {"time": {"type": "String"}}},
+  "rarityFilterButton": "Species rarity to keep",
+  "rarityFilterAll": "All species",
+  "rarityFilterAtLeast": "{grade} species+",
+  "@rarityFilterAtLeast": {"placeholders": {"grade": {"type": "String"}}},
+  "rarityFilterOnly": "{grade} species only",
+  "@rarityFilterOnly": {"placeholders": {"grade": {"type": "String"}}},
+  "rarityFilterHint": "Filters by each species' fixed rarity — not by an individual bug's grade. Bugs you already own are not affected.",
+  "storageViewButton": "View",
+  "storageViewTitle": "Filter storage view",
+  "storageViewHint": "Only changes what's shown — your bugs are untouched",
+  "storageViewAll": "All",
+  "storageViewStage": "Stage",
+  "storageViewStageEgg": "Eggs",
+  "storageViewStageAdult": "Adults",
+  "storageViewStageOther": "Others",
+  "storageViewGrade": "Grade",
+  "storageViewGradeAtLeast": "{grade}+",
+  "@storageViewGradeAtLeast": {"placeholders": {"grade": {"type": "String"}}},
+  "storageViewSpecies": "Species",
+  "storageViewReset": "Reset",
+  "storageViewCount": "{shown}/{total} bugs",
+  "@storageViewCount": {"placeholders": {"shown": {"type": "String"}, "total": {"type": "String"}}},
+  "storageViewEmpty": "No bugs match.\nTry changing the view filter."
 }

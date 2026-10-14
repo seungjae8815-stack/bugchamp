@@ -368,6 +368,38 @@ class GameActions {
     };
   }
 
+  /// 같은 장비(부위·등급·옵션 종류·값)이고 별 수가 같으면 별 재료(`sx`)를 저장본과 큰 쪽으로 — 구버전 앱이
+  /// 이월분을 이번 별 몫으로 잘라 올려도 사라지지 않게(feat 26). 아니면 null.
+  static Map<String, dynamic>? _keepStarCarry(
+    Object? stored,
+    Object? incoming,
+  ) {
+    if (stored is! Map || incoming is! Map) return null;
+    final sx = (stored['sx'] as num?)?.toInt() ?? 0;
+    if (sx <= 0) return null;
+    if (stored['s'] != incoming['s']) return null;
+    if ((stored['t'] as num?)?.toInt() != (incoming['t'] as num?)?.toInt()) {
+      return null;
+    }
+    if ((stored['st'] as num?)?.toInt() != (incoming['st'] as num?)?.toInt()) {
+      return null;
+    }
+    final so = stored['o'];
+    final co = incoming['o'];
+    if (so is! List || co is! List || so.length != co.length) return null;
+    for (var i = 0; i < so.length; i++) {
+      final a = so[i];
+      final b = co[i];
+      if (a is! Map || b is! Map || a['k'] != b['k']) return null;
+      if ((a['v'] as num?)?.toDouble() != (b['v'] as num?)?.toDouble()) {
+        return null;
+      }
+    }
+    final cx = (incoming['sx'] as num?)?.toInt() ?? 0;
+    if (cx >= sx) return null;
+    return <String, dynamic>{...Map<String, dynamic>.from(incoming), 'sx': sx};
+  }
+
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
   static Map<String, dynamic> _keepFieldsOldAppDoesNotKnow(
     SaveGame stored,
@@ -495,6 +527,18 @@ class GameActions {
               return item;
             }(),
         ];
+      }
+    }
+    // 별 재료 이월(feat 26, 2026-10-14) — 1.0.20 이하 앱은 불러올 때 별 재료(`sx`)를 이번 별 몫(need)까지 잘라 올린다.
+    // 같은 장비 · 같은 별이면 저장본 재료를 지킨다(큰 쪽). 별이 올랐으면(강화를 끝냈으면) 올라온 값을 믿는다.
+    if (feat < 26) {
+      final se = storedJson['equippedItems'];
+      final ce = out['equippedItems'];
+      if (se is Map && ce is Map) {
+        out['equippedItems'] = <String, dynamic>{
+          for (final e in ce.entries)
+            '${e.key}': _keepStarCarry(se[e.key], e.value) ?? e.value,
+        };
       }
     }
     for (final e in _fieldsSinceFeat.entries) {
@@ -3997,7 +4041,8 @@ class GameActions {
   /// 요정 재굴림 — **서버가 굴린다**(2026-10-04, 조정안 C). 기기에서 굴리면 [_keepFairyIdentity] 가 되돌리고,
   /// 그 고정을 풀면 개체값 위조가 열린다. 결과는 대기로 적고 [fairyRerollChoose] 로 고른다.
   /// 하루 횟수는 KST 날짜 — 서버 시계라 기기 시계로 늘릴 수 없다.
-  ActionResult fairyReroll(SaveGame save, String fairyId) {
+  /// [stoneSub] 를 주면 그 속성석 1개를 함께 써서 그 부가가 나올 확률을 올린다(2026-10-14). 개체값은 내려가지 않는다.
+  ActionResult fairyReroll(SaveGame save, String fairyId, {String? stoneSub}) {
     final cfg = config.fairy;
     if (cfg == null) return const ActionResult.fail('off');
     final k = now().toUtc().add(const Duration(hours: 9));
@@ -4010,6 +4055,7 @@ class GameActions {
       fairyId: fairyId,
       today: today,
       jellyHave: save.materialCount(MaterialKind.jelly),
+      stoneSub: stoneSub,
     );
     if (!op.isOk) return ActionResult.fail(op.error!);
     final paid = spendJelly(save, op.jelly, reason: 'fairy_reroll');

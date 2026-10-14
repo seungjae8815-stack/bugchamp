@@ -1345,7 +1345,7 @@ Future<bool> showForgeResult(
                 child: Text(
                   l.forgeFeedHint(
                     slotLabel(l, shown.slot),
-                    '${cur!.starExp}',
+                    '${math.min(cur!.starExp, items.starNeedAt(cur!.stars))}',
                     '${items.starNeedAt(cur!.stars)}',
                   ),
                   textAlign: TextAlign.center,
@@ -1660,7 +1660,18 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
   final save = ref.read(saveControllerProvider).requireValue;
   final items = ref.read(gameDataProvider).value?.itemConfig;
   final forge = ref.read(gameDataProvider).value?.forgeConfig;
-  final want = {...save.autoForgeOptions};
+  // 실제로 장비에 붙는 옵션만(`optionPool`) — 9월 개편 때 풀에서 뺀 옵션(스킬 피해·오프라인 등)까지 그리던 시절,
+  // 그것만 체크하면 "체크한 능력치가 하나라도 붙은 것만 쌓기"를 어떤 장비도 못 맞춰 자동 제련이 전부 버렸다(2026-10-14).
+  final kinds = items == null
+      ? ItemOptionKind.values
+      : [
+          for (final k in ItemOptionKind.values)
+            if (items.optionPool.any((r) => r.kind == k)) k,
+        ];
+  final want = {
+    for (final k in save.autoForgeOptions)
+      if (kinds.contains(k)) k,
+  };
   var minTier = save.autoForgeMinTier;
 
   // 범위를 보여 줄 기준 등급. 등급 필터를 걸었으면 그 등급, 아니면 지금
@@ -1782,7 +1793,7 @@ Future<void> showForgeFilter(BuildContext context, WidgetRef ref) async {
                   // 48px 이라(터치 타깃 규격) 15줄이 세로로 훌쩍 벌어진다
                   // (2026-08-30 지적). 목록이 길어 한눈에 훑어야 하는
                   // 화면이라, 직접 그려 줄 간격을 좁힌다.
-                  for (final k in ItemOptionKind.values)
+                  for (final k in kinds)
                     InkWell(
                       onTap: () => setLocal(() {
                         want.contains(k) ? want.remove(k) : want.add(k);

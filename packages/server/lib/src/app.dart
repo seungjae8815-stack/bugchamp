@@ -937,7 +937,13 @@ Handler buildHandler({
       try {
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        final r = actions.fairyReroll(save, id);
+        // 속성석(선택, 2026-10-14) — 앱이 고른 부가 키. 없으면 예전과 같다(구버전 앱).
+        final stone = body['stoneSub']?.toString();
+        final r = actions.fairyReroll(
+          save,
+          id,
+          stoneSub: stone == null || stone.isEmpty ? null : stone,
+        );
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
         await store.save(user.id, r.save!.toJson());
         return _json({'save': r.save!.toJson(), ...r.extra});

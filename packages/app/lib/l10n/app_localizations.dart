@@ -6406,6 +6406,12 @@ abstract class AppLocalizations {
   /// **'Effect +{p}%'**
   String starBonus(String p);
 
+  /// No description provided for @starCarry.
+  ///
+  /// In en, this message translates to:
+  /// **'+{n} carried to next star'**
+  String starCarry(String n);
+
   /// No description provided for @starProgress.
   ///
   /// In en, this message translates to:
@@ -8236,10 +8242,22 @@ abstract class AppLocalizations {
   /// **'Fairy reroll'**
   String get fairyRerollTitle;
 
+  /// No description provided for @fairyRerollStoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an element stone?'**
+  String get fairyRerollStoneTitle;
+
+  /// No description provided for @fairyRerollStoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Raises the chance of that bonus stat (uses 1 stone).'**
+  String get fairyRerollStoneHint;
+
   /// No description provided for @fairyRerollConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Rerolls the base and bonus values. The bonus stat itself may change too. If you don\'t like the result, you can keep the current values.\n\nUses per day are limited.'**
+  /// **'Rerolls the base and bonus values. The bonus stat itself may change too. Values never go below the current ones, and you can keep the current result if you prefer.\n\nUses per day are limited.'**
   String get fairyRerollConfirm;
 
   /// No description provided for @fairyRerollPick.
@@ -8287,7 +8305,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyMergeHint.
   ///
   /// In en, this message translates to:
-  /// **'{n} of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade.'**
+  /// **'{n} of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade. If all materials share the same bonus stat, it carries over.'**
   String fairyMergeHint(String n);
 
   /// No description provided for @fairyMergePick.
@@ -12242,6 +12260,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mantises, grasshoppers and giant water bugs grow as nymphs and molt — no pupa'**
   String get whatsNew20Nymph;
+
+  /// No description provided for @hiddenStatValue.
+  ///
+  /// In en, this message translates to:
+  /// **'??'**
+  String get hiddenStatValue;
+
+  /// No description provided for @eggStatsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Revealed when it hatches'**
+  String get eggStatsHidden;
+
+  /// No description provided for @eggSizeHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'??mm (range {min}–{max})'**
+  String eggSizeHidden(String min, String max);
+
+  /// No description provided for @eggToIncubator.
+  ///
+  /// In en, this message translates to:
+  /// **'Put in incubator · {time}'**
+  String eggToIncubator(String time);
+
+  /// No description provided for @eggIncubatorFullExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubator full · expand 1 slot for {n} jelly'**
+  String eggIncubatorFullExpand(String n);
+
+  /// No description provided for @eggIncubatorFullWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubator full · next egg done in {time}'**
+  String eggIncubatorFullWait(String time);
+
+  /// No description provided for @rarityFilterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Species rarity to keep'**
+  String get rarityFilterButton;
+
+  /// No description provided for @rarityFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All species'**
+  String get rarityFilterAll;
+
+  /// No description provided for @rarityFilterAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} species+'**
+  String rarityFilterAtLeast(String grade);
+
+  /// No description provided for @rarityFilterOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade} species only'**
+  String rarityFilterOnly(String grade);
+
+  /// No description provided for @rarityFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters by each species\' fixed rarity — not by an individual bug\'s grade. Bugs you already own are not affected.'**
+  String get rarityFilterHint;
+
+  /// No description provided for @storageViewButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get storageViewButton;
+
+  /// No description provided for @storageViewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter storage view'**
+  String get storageViewTitle;
+
+  /// No description provided for @storageViewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only changes what\'s shown — your bugs are untouched'**
+  String get storageViewHint;
+
+  /// No description provided for @storageViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get storageViewAll;
+
+  /// No description provided for @storageViewStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage'**
+  String get storageViewStage;
+
+  /// No description provided for @storageViewStageEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'Eggs'**
+  String get storageViewStageEgg;
+
+  /// No description provided for @storageViewStageAdult.
+  ///
+  /// In en, this message translates to:
+  /// **'Adults'**
+  String get storageViewStageAdult;
+
+  /// No description provided for @storageViewStageOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get storageViewStageOther;
+
+  /// No description provided for @storageViewGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get storageViewGrade;
+
+  /// No description provided for @storageViewGradeAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'{grade}+'**
+  String storageViewGradeAtLeast(String grade);
+
+  /// No description provided for @storageViewSpecies.
+  ///
+  /// In en, this message translates to:
+  /// **'Species'**
+  String get storageViewSpecies;
+
+  /// No description provided for @storageViewReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get storageViewReset;
+
+  /// No description provided for @storageViewCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{shown}/{total} bugs'**
+  String storageViewCount(String shown, String total);
+
+  /// No description provided for @storageViewEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No bugs match.\nTry changing the view filter.'**
+  String get storageViewEmpty;
 }
 
 class _AppLocalizationsDelegate

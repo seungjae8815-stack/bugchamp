@@ -3719,6 +3719,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String starCarry(String n) {
+    return '+$n carried to next star';
+  }
+
+  @override
   String starProgress(String have, String need) {
     return 'Next star $have/$need';
   }
@@ -4840,8 +4845,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fairyRerollTitle => 'Fairy reroll';
 
   @override
+  String get fairyRerollStoneTitle => 'Add an element stone?';
+
+  @override
+  String get fairyRerollStoneHint =>
+      'Raises the chance of that bonus stat (uses 1 stone).';
+
+  @override
   String get fairyRerollConfirm =>
-      'Rerolls the base and bonus values. The bonus stat itself may change too. If you don\'t like the result, you can keep the current values.\n\nUses per day are limited.';
+      'Rerolls the base and bonus values. The bonus stat itself may change too. Values never go below the current ones, and you can keep the current result if you prefer.\n\nUses per day are limited.';
 
   @override
   String get fairyRerollPick => 'Which one do you want?';
@@ -4867,7 +4879,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyMergeHint(String n) {
-    return '$n of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade.';
+    return '$n of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade. If all materials share the same bonus stat, it carries over.';
   }
 
   @override
@@ -7407,4 +7419,98 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get whatsNew20Nymph =>
       'Mantises, grasshoppers and giant water bugs grow as nymphs and molt — no pupa';
+
+  @override
+  String get hiddenStatValue => '??';
+
+  @override
+  String get eggStatsHidden => 'Revealed when it hatches';
+
+  @override
+  String eggSizeHidden(String min, String max) {
+    return '??mm (range $min–$max)';
+  }
+
+  @override
+  String eggToIncubator(String time) {
+    return 'Put in incubator · $time';
+  }
+
+  @override
+  String eggIncubatorFullExpand(String n) {
+    return 'Incubator full · expand 1 slot for $n jelly';
+  }
+
+  @override
+  String eggIncubatorFullWait(String time) {
+    return 'Incubator full · next egg done in $time';
+  }
+
+  @override
+  String get rarityFilterButton => 'Species rarity to keep';
+
+  @override
+  String get rarityFilterAll => 'All species';
+
+  @override
+  String rarityFilterAtLeast(String grade) {
+    return '$grade species+';
+  }
+
+  @override
+  String rarityFilterOnly(String grade) {
+    return '$grade species only';
+  }
+
+  @override
+  String get rarityFilterHint =>
+      'Filters by each species\' fixed rarity — not by an individual bug\'s grade. Bugs you already own are not affected.';
+
+  @override
+  String get storageViewButton => 'View';
+
+  @override
+  String get storageViewTitle => 'Filter storage view';
+
+  @override
+  String get storageViewHint =>
+      'Only changes what\'s shown — your bugs are untouched';
+
+  @override
+  String get storageViewAll => 'All';
+
+  @override
+  String get storageViewStage => 'Stage';
+
+  @override
+  String get storageViewStageEgg => 'Eggs';
+
+  @override
+  String get storageViewStageAdult => 'Adults';
+
+  @override
+  String get storageViewStageOther => 'Others';
+
+  @override
+  String get storageViewGrade => 'Grade';
+
+  @override
+  String storageViewGradeAtLeast(String grade) {
+    return '$grade+';
+  }
+
+  @override
+  String get storageViewSpecies => 'Species';
+
+  @override
+  String get storageViewReset => 'Reset';
+
+  @override
+  String storageViewCount(String shown, String total) {
+    return '$shown/$total bugs';
+  }
+
+  @override
+  String get storageViewEmpty =>
+      'No bugs match.\nTry changing the view filter.';
 }

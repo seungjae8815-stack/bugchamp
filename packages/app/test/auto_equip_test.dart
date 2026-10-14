@@ -73,18 +73,23 @@ GameData _data() => GameData.fromDecoded(
 void main() {
   final t0 = DateTime.utc(2026, 8, 8, 12);
 
-  IndividualBug bug(String id, String sp, {int potential = 3, int level = 1}) =>
-      IndividualBug(
-        id: id,
-        speciesId: sp,
-        sizeMm: 40,
-        potential: potential,
-        temperament: Temperament.steadfast,
-        sex: Sex.male,
-        stage: LifeStage.adult,
-        stageSince: t0.subtract(const Duration(days: 30)),
-        level: level,
-      );
+  IndividualBug bug(
+    String id,
+    String sp, {
+    int potential = 3,
+    int level = 1,
+    LifeStage stage = LifeStage.adult,
+  }) => IndividualBug(
+    id: id,
+    speciesId: sp,
+    sizeMm: 40,
+    potential: potential,
+    temperament: Temperament.steadfast,
+    sex: Sex.male,
+    stage: stage,
+    stageSince: t0.subtract(const Duration(days: 30)),
+    level: level,
+  );
 
   ProviderContainer container(SaveGame seed) {
     final c = ProviderContainer(
@@ -161,5 +166,31 @@ void main() {
       await c.read(saveControllerProvider.notifier).autoEquipBest(),
       isFalse,
     );
+  });
+
+  // 2026-10-14 사장님 확정 — 알은 장착할 수 없다(능력치를 부화 뒤에 공개).
+  test('알은 자동 장착 후보에서 빠진다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [
+        bug('egg', 'high', potential: 5, stage: LifeStage.egg),
+        bug('c1', 'low'),
+      ],
+    );
+    final c = container(seed);
+    await c.read(saveControllerProvider.future);
+    await c.read(saveControllerProvider.notifier).autoEquipBest();
+    expect(c.read(saveControllerProvider).requireValue.equippedBugIds, ['c1']);
+  });
+
+  test('알은 직접 장착해도 거절된다', () async {
+    final seed = SaveGame.initial(createdAt: t0).copyWith(
+      lastSeen: t0,
+      bugs: [bug('egg', 'high', stage: LifeStage.egg)],
+    );
+    final c = container(seed);
+    await c.read(saveControllerProvider.future);
+    await c.read(saveControllerProvider.notifier).equipBug('egg');
+    expect(c.read(saveControllerProvider).requireValue.equippedBugIds, isEmpty);
   });
 }

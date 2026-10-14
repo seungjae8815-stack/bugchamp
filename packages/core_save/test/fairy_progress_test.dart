@@ -1116,4 +1116,116 @@ void main() {
     expect(filled.state!.boxUsed, cfg.boxMax);
     expect(filled.extra['overflowEggs'], 3);
   });
+
+  group('2026-10-14 부가 능력치 — 재굴림 속성석 · 개체값 안 내려감 · 합성 같은 부가 확정', () {
+    test('합성 재료가 모두 같은 부가면 결과도 그 부가 — 다르면 굴린다', () {
+      final target = subs[2];
+      for (var seed = 0; seed < 30; seed++) {
+        final same = withFairies([
+          f(1, b: target),
+          f(2, b: target),
+          f(3, b: target),
+        ]);
+        final m =
+            mergeFairies(same, cfg, [
+                  'f1',
+                  'f2',
+                  'f3',
+                ], Random(seed)).extra['fairy']!
+                as Fairy;
+        expect(m.sub, target);
+      }
+      final mixed = {
+        for (var seed = 0; seed < 60; seed++)
+          (mergeFairies(
+                    withFairies([
+                      f(1, b: subs[0]),
+                      f(2, b: subs[1]),
+                      f(3, b: subs[2]),
+                    ]),
+                    cfg,
+                    ['f1', 'f2', 'f3'],
+                    Random(seed),
+                  ).extra['fairy']!
+                  as Fairy)
+              .sub,
+      };
+      expect(mixed.length, greaterThan(2), reason: '섞인 재료는 새로 굴린다');
+    });
+
+    test('재굴림 개체값은 지금 값보다 내려가지 않는다', () {
+      final hi = Fairy(
+        id: 'f1',
+        kind: kind,
+        grade: FairyGrade.common,
+        sub: sub,
+        baseRoll: 950,
+        subRoll: 900,
+      );
+      for (var seed = 0; seed < 50; seed++) {
+        final r = rollFairyReroll(
+          withFairies([hi]),
+          cfg,
+          Random(seed),
+          fairyId: 'f1',
+          today: 'd',
+          jellyHave: 999,
+        ).state!.reroll!;
+        expect(r.baseRoll, greaterThanOrEqualTo(950));
+        expect(r.subRoll, greaterThanOrEqualTo(900));
+      }
+    });
+
+    test('속성석을 넣으면 1개를 쓰고 그 부가가 더 자주 나온다 · 없으면 실패', () {
+      final target = subs.last;
+      final base = FairyState(fairies: [f(1)], seq: 1, stones: {target: 1});
+      final op = rollFairyReroll(
+        base,
+        cfg,
+        Random(3),
+        fairyId: 'f1',
+        today: 'd',
+        jellyHave: 999,
+        stoneSub: target,
+      );
+      expect(op.isOk, isTrue);
+      expect(op.state!.stones[target] ?? 0, 0);
+      expect(op.jelly, cfg.rerollJelly);
+      expect(
+        rollFairyReroll(
+          op.state!.copyWith(clearReroll: true),
+          cfg,
+          Random(3),
+          fairyId: 'f1',
+          today: 'd',
+          jellyHave: 999,
+          stoneSub: target,
+        ).error,
+        'no_stone',
+      );
+      var withStone = 0, without = 0;
+      for (var seed = 0; seed < 400; seed++) {
+        final a = rollFairyReroll(
+          FairyState(fairies: [f(1)], seq: 1, stones: {target: 1}),
+          cfg,
+          Random(seed),
+          fairyId: 'f1',
+          today: 'd',
+          jellyHave: 999,
+          stoneSub: target,
+        ).state!.reroll!;
+        final b = rollFairyReroll(
+          FairyState(fairies: [f(1)], seq: 1),
+          cfg,
+          Random(seed),
+          fairyId: 'f1',
+          today: 'd',
+          jellyHave: 999,
+        ).state!.reroll!;
+        if (a.sub == target) withStone++;
+        if (b.sub == target) without++;
+      }
+      expect(withStone, greaterThan(without * 2));
+    });
+  });
 }
