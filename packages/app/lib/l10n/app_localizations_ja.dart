@@ -7731,7 +7731,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew21Buff =>
-      'バフがアプリを閉じている間も適用されます · 「採集の手」はレア素材(属性石・決闘石・成長ポーション)も2倍';
+      'バフがアプリを閉じている間も適用されます · 「採集の手」はレア素材(属性石・決闘石・成長ポーション)も2倍 · 無料で発動するときは1分待ちます(ゼリー・無限バフパスは即時)';
 
   @override
   String get whatsNew21Stats =>

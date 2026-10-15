@@ -77,4 +77,18 @@ void main() {
     expect(find.text(l.offlineRowPotion), findsOneWidget);
     expect(t.takeException(), isNull);
   });
+
+  testWidgets('더 받은 몫이 비워진 짧은 버프라도 받은 희귀 드롭은 보인다', (t) async {
+    const r = OfflineReport(
+      gold: 100,
+      xp: 10,
+      accrued: Duration(hours: 2),
+      potions: 1,
+      buffMissed: OfflineGain(gold: 50, potions: 0.2),
+    );
+    await pump(t, offlineRewardTable(l, r)!);
+    expect(find.text(l.offlineColBuffGot), findsOneWidget);
+    expect(find.textContaining('+1 · '), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
 }

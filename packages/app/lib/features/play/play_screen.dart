@@ -9183,8 +9183,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           return true;
         }
       }
-      await prefs.setString('buff_free_v1', '$today|${used + 1}');
-      freeAt[kind] = now; // 시트가 이 맵을 그대로 보므로 제자리 갱신
+      // 대기가 끝난 **지금** 시각으로 적는다 — 대기 전 시각이면 쿨다운이 1분 일찍 풀리고, 자정을 걸치면
+      // 무료 횟수가 어제 날짜에 적혀 1회가 덤으로 생겼다(2026-10-15 점검).
+      final at = ref.read(clockProvider).now().toUtc();
+      final day = dailyDateKey(at);
+      final p2 = (prefs.getString('buff_free_v1') ?? '|').split('|');
+      final used2 = p2[0] == day ? (int.tryParse(p2[1]) ?? 0) : 0;
+      await prefs.setString('buff_free_v1', '$day|${used2 + 1}');
+      freeAt[kind] = at; // 시트가 이 맵을 그대로 보므로 제자리 갱신
       await _saveBuffFreeAt(freeAt);
       return true;
     }

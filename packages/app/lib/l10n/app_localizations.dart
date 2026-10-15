@@ -13020,7 +13020,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNew21Buff.
   ///
   /// In en, this message translates to:
-  /// **'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions)'**
+  /// **'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)'**
   String get whatsNew21Buff;
 
   /// No description provided for @whatsNew21Stats.

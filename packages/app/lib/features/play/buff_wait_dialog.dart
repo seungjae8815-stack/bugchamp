@@ -76,6 +76,9 @@ class _BuffWaitState extends State<_BuffWait> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (!mounted) return;
+      // 위에 다른 창(대기 중 패스를 산 뒤 뜨는 계정 연동 권유 등)이 떠 있는 동안은 멈춘다 —
+      // 그때 끝나면 pop 이 그 창을 닫아 대기 화면이 영영 남았다(2026-10-15 점검).
+      if (ModalRoute.of(context)?.isCurrent == false) return;
       _ms += 100;
       if (_ms >= widget.seconds * 1000) {
         _close(BuffWaitResult.done);
@@ -98,6 +101,12 @@ class _BuffWaitState extends State<_BuffWait> with WidgetsBindingObserver {
     if (_closed) return;
     _closed = true;
     _timer?.cancel();
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) {
+      // 맨 위가 아니면 이 창만 정확히 뺀다(결과는 null → 취소).
+      route.navigator?.removeRoute(route);
+      return;
+    }
     Navigator.of(context).pop(r);
   }
 

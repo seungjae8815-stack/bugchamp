@@ -7913,7 +7913,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew21Buff =>
-      'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions)';
+      'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)';
 
   @override
   String get whatsNew21Stats =>

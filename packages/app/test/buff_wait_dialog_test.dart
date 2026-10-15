@@ -66,4 +66,25 @@ void main() {
     });
     expect(r, BuffWaitResult.jelly);
   });
+
+  testWidgets('위에 다른 창이 떠 있는 동안은 멈추고, 닫히면 이어서 done', (t) async {
+    final r = await run(t, (l) async {
+      await t.pump(const Duration(seconds: 10));
+      final nav = t.state<NavigatorState>(find.byType(Navigator).first);
+      nav.push(
+        DialogRoute<bool>(
+          context: nav.context,
+          builder: (_) => const Text('over'),
+        ),
+      );
+      await t.pump();
+      await t.pump(const Duration(seconds: 70));
+      expect(find.text('over'), findsOneWidget);
+      nav.pop();
+      await t.pump();
+      await t.pump(const Duration(seconds: 51));
+    });
+    expect(r, BuffWaitResult.done);
+    expect(t.takeException(), isNull);
+  });
 }

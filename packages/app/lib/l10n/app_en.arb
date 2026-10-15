@@ -4376,7 +4376,7 @@
   "whatsNew21Train": "Training level-up costs went up (more at higher levels)",
   "whatsNew21Duel": "Strike specialty reworked and per-species duel scaling rebalanced",
   "whatsNew21Gear": "Gear 'Skill cooldown' option · star materials carry over · element stones for fairy rerolls",
-  "whatsNew21Buff": "Buffs now apply while the app is closed · Gatherer's Touch also doubles rare drops (element stones, duel stones, growth potions)",
+  "whatsNew21Buff": "Buffs now apply while the app is closed · Gatherer's Touch also doubles rare drops (element stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)",
   "whatsNew21Stats": "Gold, XP and crit damage bonuses now multiply instead of add, so they hit harder · gear and fairy crit damage now shows 1/10 the number (same or stronger effect) · home power now includes skills, fairies, dex, evasion and regen",
   "whatsNew21Badge": "Event badges are now gold, silver, bronze, finalist and participant",
   "passiveRerollFree": "Free reroll ({n} left)",

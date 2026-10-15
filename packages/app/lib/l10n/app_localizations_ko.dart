@@ -7743,7 +7743,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNew21Buff =>
-      '버프가 앱을 꺼 둔 동안에도 적용돼요 · 채집가의 손길은 희귀 재료(속성석·결투석·성장물약)도 2배';
+      '버프가 앱을 꺼 둔 동안에도 적용돼요 · 채집가의 손길은 희귀 재료(속성석·결투석·성장물약)도 2배 · 무료로 켤 땐 1분 기다려요(젤리·무한 버프 패스는 바로)';
 
   @override
   String get whatsNew21Stats =>

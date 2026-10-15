@@ -12,7 +12,7 @@
 - 결투에 팀 역할(공격형·방어형·체력형) 오라와 훈련 지휘 칸이 생겼습니다. 모든 곤충 훈련 다시 찍기 1회가 무료예요
 - 알은 펫으로 쓸 수 없고, 능력치는 부화할 때 공개됩니다
 - 야생에서 얻는 알은 모두 일반 등급입니다. 정수로 등급을 올리는 비용이 낮아졌어요
-- 버프가 앱을 꺼 둔 동안에도 적용되고, 채집가의 손길은 희귀 재료도 2배로 줍니다
+- 버프가 앱을 꺼 둔 동안에도 적용되고, 채집가의 손길은 희귀 재료도 2배로 줍니다. 무료로 켤 때는 1분 기다립니다
 - 골드·경험치·치명 피해 보너스가 곱하기로 바뀌어 더 강해졌습니다. 장비와 요정의 치명 피해는 표시만 1/10 로 바뀌었어요
 - 장비에 스킬 쿨타임 감소 옵션이 생기고, 별 재료가 다음 별로 이어집니다
 - 요정 다시 굴리기에 속성석을 쓸 수 있습니다
@@ -28,7 +28,7 @@ Growth and duels, refreshed
 - Duels add team role auras (Attack, Defense, Vitality) and a Command training slot. One free training reset for every bug
 - Eggs can no longer be pets, and their stats are revealed when they hatch
 - Eggs found in the wild are all Common. Grading up with essence now costs less
-- Buffs now apply while the app is closed, and Gatherer's Touch also doubles rare materials
+- Buffs now apply while the app is closed, and Gatherer's Touch also doubles rare materials. Free activation takes one minute
 - Gold, XP and crit damage bonuses now multiply, so they are stronger. Gear and fairy crit damage now shows one tenth of the old number
 - Gear can roll Skill Cooldown, and star materials carry over to the next star
 - Fairy rerolls can use element stones
@@ -44,7 +44,7 @@ Growth and duels, refreshed
 - 決闘にチーム役割(攻撃型・防御型・体力型)のオーラと訓練の指揮枠が加わりました。すべての虫の訓練振り直しが1回無料です
 - 卵はペットにできず、能力値は孵化したときに公開されます
 - 野生で手に入る卵はすべて一般等級です。エッセンスで等級を上げる費用が下がりました
-- バフがアプリを閉じている間も適用され、「採集の手」はレア素材も2倍になります
+- バフがアプリを閉じている間も適用され、「採集の手」はレア素材も2倍になります。無料で発動するときは1分待ちます
 - ゴールド・経験値・クリティカルダメージのボーナスが乗算になり強くなりました。装備と妖精のクリティカルダメージは表示だけ1/10になりました
 - 装備にスキルクールタイム短縮オプションが加わり、星素材が次の星に引き継がれます
 - 妖精の再抽選に属性石を使えます

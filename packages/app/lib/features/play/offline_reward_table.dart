@@ -23,9 +23,11 @@ Widget? offlineRewardTable(
   final bonus = r.buffBonus;
   final missed = r.buffMissed;
   if (bonus == null && missed == null) return null;
-  final hadBuff = bonus != null;
+  // 버프가 켜졌던 사람 — 더 받은 몫이 있거나, 희귀 드롭을 받았다(방치 희귀 드롭은 버프 구간에서만 나온다).
+  // 더 받은 몫이 작아 비워진(null) 짧은 버프에서 받은 물약이 "✕"로 사라지던 것을 막는다(2026-10-15 점검).
+  final hadBuff = bonus != null || r.fairyStones + r.duelStones + r.potions > 0;
   // 실제 값에 더하거나 뺄 몫 — 켜 둔 사람은 −더 받은 몫, 없던 사람은 +놓친 몫.
-  final g = hadBuff ? bonus : missed!;
+  final g = hadBuff ? (bonus ?? const OfflineGain()) : missed!;
   final sign = hadBuff ? -1.0 : 1.0;
 
   // 희귀 드롭 하루 예상(2026-10-15 사장님) — 채집가의 손길을 켜 둔 기대값(받은 몫 + 놓친 몫)을

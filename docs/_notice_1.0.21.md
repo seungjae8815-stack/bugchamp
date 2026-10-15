@@ -34,6 +34,7 @@
 
 [ 버프·능력치 ]
 - 버프가 앱을 꺼 둔 동안에도 적용돼요. 채집가의 손길은 희귀 재료(속성석·결투석·성장물약)도 2배
+- 버프를 무료로 켤 땐 1분 기다려요(젤리·무한 버프 패스는 바로)
 - 골드·경험치·치명 피해 보너스가 곱하기로 바뀌어 더 세져요
 - 장비·요정 치명 피해는 표시만 1/10로 바뀌어요(효과는 같거나 더 세요)
 
@@ -53,13 +54,13 @@ Update 1.0.21 — Pet passives, team auras & idle buffs
 ```
 [ Pet passives ]
 - Pet passives differ per bug and grow with grade and species rarity
-- Older bugs keep their passive type but most get smaller: 5 free rerolls each
+- Older bugs: same type, mostly smaller; 5 free rerolls each
 - Reroll: 3 essence or 10 jelly, then keep the better pick
 
 [ Duels ]
-- Team role auras: Attack/Defense/Vitality bugs boost the team (max +20% per stat, not in Contest)
+- Team role auras boost the whole team (max +20%/stat, not in Contest)
 - New Command training slot. One free reset per bug
-- Strike reworked, species duel scaling rebalanced. Applies to Round 2 from now; set scores stay
+- Strike reworked, species scaling rebalanced (Round 2 too; set scores stay)
 
 [ Bugs & eggs ]
 - Wild and paired eggs are all Common. Grade-up cost now 4/4/5/6 essence
@@ -68,6 +69,7 @@ Update 1.0.21 — Pet passives, team auras & idle buffs
 
 [ Buffs & stats ]
 - Buffs apply while the app is closed. Gatherer's Touch doubles rare drops
+- Free buffs take 1 min to activate (jelly/pass: instant)
 - Gold, XP and crit damage bonuses now multiply
 - Gear/fairy crit damage shows 1/10 the number (same or stronger)
 
@@ -104,6 +106,7 @@ Update 1.0.21 — Pet passives, team auras & idle buffs
 
 [ バフ・能力値 ]
 - バフがアプリを閉じている間も適用されます。「採集の手」はレア素材(属性石・決闘石・成長ポーション)も2倍
+- 無料でバフを発動するときは1分待ちます(ゼリー・無限バフパスは即時)
 - ゴールド・経験値・クリティカルダメージのボーナスが乗算になり強くなります
 - 装備・妖精のクリティカルダメージは表示のみ1/10になります(効果は同じか強い)
 
