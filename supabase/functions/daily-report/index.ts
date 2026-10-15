@@ -90,23 +90,47 @@ Deno.serve(async (req) => {
   // D1 리텐션 — 어제 신규 중 오늘 돌아온 비율. 분모가 0이면 표시하지 않는다.
   const d1 = s.d1_new > 0 ? Math.round((s.d1_returned / s.d1_new) * 100) : null
 
+  // 2026-10-15 개편: 활동은 세이브 안의 lastSeen(앱이 플레이할 때 적는 시각) 기준.
+  // saves.updated_at 은 일괄 SQL 등으로 플레이 안 한 계정도 갱신돼 월간이 812(실제 289)로 부풀었다.
+  // '진짜 이용자' = 닉네임 있고 레벨 5 이상 — 앱을 깔 때마다 익명 계정이 생겨 테스트 설치가 섞인다.
+  // SQL 이 아직 옛 함수면 real_* 키가 없다 → 옛 모양으로 보낸다(배포 순서가 어긋나도 깨지지 않게).
+  const v2 = s.real_users !== undefined
+  const payerPct =
+    v2 && s.real_users > 0 ? ((s.payers / s.real_users) * 100).toFixed(1) : null
+
+  const activity = v2
+    ? `🎮 이용자 활동(24h·7일·30일): ${fmt(s.real_dau)} · ${fmt(s.real_wau)} · ${fmt(s.real_mau)}명\n` +
+      `   (전체 접속 ${fmt(s.dau)} · ${fmt(s.wau)} · ${fmt(s.mau)}명)\n` +
+      `🌱 정착 사용자: ${fmt(s.retained)}명\n`
+    : `🎮 실사용(24h): ${fmt(s.dau)}명\n` +
+      `📆 주간(7일): ${fmt(s.wau)}명\n` +
+      `🗓 월간(30일): ${fmt(s.mau)}명\n` +
+      `🌱 정착 사용자: ${fmt(s.retained)}명\n`
+
+  const accounts = v2
+    ? `🆕 오늘 신규 설치: ${fmt(s.new_today)}명 (닉네임까지 ${fmt(s.new_named_today)}명)\n` +
+      `👤 누적 이용자: ${fmt(s.real_users)}명\n` +
+      `💳 누적 결제자: ${fmt(s.payers)}명` +
+      (payerPct === null ? '' : ` (이용자의 ${payerPct}%)`) +
+      `\n` +
+      `🔑 로그인 유저: ${fmt(s.linked)}명 ` +
+      `(구글 ${fmt(s.linked_google)}·애플 ${fmt(s.linked_apple)}) · 누적 계정 ${fmt(s.installs)}\n`
+    : `🔑 로그인 유저: ${fmt(s.linked)}명 ` +
+      `(구글 ${fmt(s.linked_google)}·애플 ${fmt(s.linked_apple)})\n` +
+      `💾 세이브 보유자: ${fmt(s.saves_total)}명\n` +
+      `👥 누적 계정(익명포함): ${fmt(s.installs)}명\n` +
+      `🆕 오늘 신규: ${fmt(s.new_today)}명\n`
+
   const msg =
     `🐛 곤충키우기 (Bug Champ)\n` +
     `📅 ${kstDate()} 리포트\n` +
     `\n` +
-    `🎮 실사용(24h): ${fmt(s.dau)}명\n` +
-    `📆 주간(7일): ${fmt(s.wau)}명\n` +
-    `🗓 월간(30일): ${fmt(s.mau)}명\n` +
-    `🌱 정착 사용자: ${fmt(s.retained)}명\n` +
+    activity +
     (d1 === null
       ? `🔁 D1 리텐션: -\n`
       : `🔁 D1 리텐션: ${d1}% (${fmt(s.d1_new)}명 중 ${fmt(s.d1_returned)}명)\n`) +
     `\n` +
-    `🔑 로그인 유저: ${fmt(s.linked)}명 ` +
-    `(구글 ${fmt(s.linked_google)}·애플 ${fmt(s.linked_apple)})\n` +
-    `💾 세이브 보유자: ${fmt(s.saves_total)}명\n` +
-    `👥 누적 계정(익명포함): ${fmt(s.installs)}명\n` +
-    `🆕 오늘 신규: ${fmt(s.new_today)}명\n` +
+    accounts +
     `\n` +
     revenueLines
 

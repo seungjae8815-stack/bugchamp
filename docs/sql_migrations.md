@@ -37,6 +37,7 @@ Supabase 스키마 변경 SQL 의 **적용 여부**를 기록한다.
 | `_sql_20261005_rank_hidden.sql` | 개발자·운영 계정 랭킹 제외 — `profiles.rank_hidden` + `leaderboard_top`·`abyss_top`·`abyss_rank_of` 가 건너뜀. 개발자 계정 "오리" 숨김. 파일은 2026-10-10 avatar 반환 포함판으로 고침(다시 돌릴 때만 의미) | ✅ 적용(2026-10-10 DB 확인 — `profiles.rank_hidden` 칸 있음, 대장 누락) |
 | `_sql_20261014_event_badge_silver_bronze.sql` | 대회 뱃지 개편(1.0.21: 1위 금·2위 은·3위 동·4~10위 입상) — **1회차 2·3위 2명**의 `finalist:1` 을 `silver:1`·`bronze:1` 로(saves.eventBadges + profiles.badge, 조건부라 재실행 안전). ⚠️ **1.0.21 서버 배포 뒤**(1.0.20 서버는 silver/bronze 를 몰라 대표 뱃지를 덮을 수 있다). 실행 뒤 마지막 select 로 확인, 안 바뀌었으면 한 번 더 | 대기 |
 | `_sql_20261010_avatar.sql` | 1.0.19 프로필 그림 — `profiles.avatar`(형식 검사 · 앱 UPDATE 권한) · `chat_messages.avatar` + `chat_stamp_badge` 가 그림도 찍기 · `leaderboard_top`·`pvp_league_top`·`abyss_top`·`event_top` 이 avatar 반환(drop→create, 서버 전용 revoke 다시). 데이터 변경 없음. rank_hidden 적용 DB 기준(숨김 조건 유지). 운영 서버 배포 전에(순서가 바뀌어도 깨지지 않음) | ✅ 적용 2026-10-10 (확인 7줄 모두 true) |
+| `_sql_20261015_daily_stats_real_users.sql` | 텔레그램 일일 리포트 — `bugchamp_daily_stats` 활동을 `saves.updated_at` 대신 세이브 `lastSeen` 기준으로(월간 812 → 실제 289) · 새 키 `real_dau/wau/mau`·`real_users`(닉네임+레벨5↑)·`payers`·`new_named_today` · `retained` 는 진짜 이용자만. 함수 본문만 교체, 데이터 변경 없음. 리포트 함수(daily-report)는 새 키가 없으면 옛 모양 | ✅ 적용 2026-10-15 (real_users 308 · mau 290 · real_mau 164 · payers 7) |
 
 > `미확인` = 이 대장을 만들기(2026-09-08) 전에 있던 파일이라 적용 여부를 알 수 없다.
 > 다음에 각 파일을 다룰 때 확인해서 `적용` / `대기` / `폐기` 로 바꾼다.

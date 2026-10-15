@@ -68,6 +68,7 @@ create index if not exists verified_purchases_env_idx
 
 -- 곤충키우기 일일 통계: service_role(Edge Function)만 실행.
 -- ※ saves 는 user_id 컬럼이 없다 — **id 가 곧 auth.users.id** 다.
+-- ⚠️ 2026-10-15 개편본은 docs/_sql_20261015_daily_stats_real_users.sql (lastSeen 기준 · 진짜 이용자 · 결제자). 아래는 옛 본문.
 create or replace function public.bugchamp_daily_stats()
 returns jsonb language plpgsql security definer
 set search_path = public, auth as $$
