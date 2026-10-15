@@ -30,9 +30,11 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     double got,
     double delta, {
     bool exact = false,
+    bool always = false,
   }) {
     final other = got + sign * delta;
-    if (got <= 0 && other < 0.5) return;
+    // 희귀 드롭(속성석·결투석·성장물약)은 0 이어도 줄을 남긴다(2026-10-15 사장님 — "버프 없으면 0"이 보여야 한다).
+    if (!always && got <= 0 && other < 0.5) return;
     rows.add(_Row(icon, name, got, other < 0 ? 0 : other, exact));
   }
 
@@ -99,18 +101,21 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     l.offlineRowFairyStone,
     r.fairyStones.toDouble(),
     g.fairyStones,
+    always: true,
   );
   add(
     gameIcon('stone_element', size: 22, fallback: Icons.hexagon_rounded),
     l.offlineRowDuelStone,
     r.duelStones.toDouble(),
     g.duelStones,
+    always: true,
   );
   add(
     gameIcon('potion', size: 22, fallback: Icons.science_rounded),
     l.offlineRowPotion,
     r.potions.toDouble(),
     g.potions,
+    always: true,
   );
 
   const got = Color(0xFFEBA52F);
@@ -124,15 +129,20 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     return approx && !exact ? l.offlineApprox('+$n') : '+$n';
   }
 
+  // 머리말은 한 줄 — 칸이 좁으면 글자를 줄인다("버프 있어서 받음"이 두 줄로 꺾였다, 2026-10-15 실기).
   Widget head(String t, bool on) => Expanded(
     flex: 3,
-    child: Text(
-      t,
-      textAlign: TextAlign.right,
-      style: TextStyle(
-        color: on ? got : dim,
-        fontSize: 11.5,
-        fontWeight: FontWeight.w900,
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Text(
+        t,
+        maxLines: 1,
+        style: TextStyle(
+          color: on ? got : dim,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     ),
   );

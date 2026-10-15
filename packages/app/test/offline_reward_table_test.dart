@@ -59,6 +59,10 @@ void main() {
     expect(find.text(l.offlineColBuffGot), findsOneWidget);
     expect(find.text('+411'), findsOneWidget);
     expect(find.text('+242'), findsOneWidget);
+    // 희귀 드롭은 0 이어도 줄이 남는다(버프 없으면 0 이 보여야 한다).
+    expect(find.text(l.offlineRowFairyStone), findsOneWidget);
+    expect(find.text(l.offlineRowDuelStone), findsOneWidget);
+    expect(find.text(l.offlineRowPotion), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 }
