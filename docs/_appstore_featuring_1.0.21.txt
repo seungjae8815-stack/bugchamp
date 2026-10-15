@@ -1,0 +1,30 @@
+========================================
+ App Store — 피처링 요청 세부사항 (1.0.21)
+========================================
+※ App Store 팀에게만 보이는 칸. 약 1000자. 이모지 금지 · 심사 지뢰 단어 금지(flutter-release 스킬 목록) — 같은 규칙으로 썼다.
+※ 에디터 팀은 영어로 읽는 경우가 많다 — 영어 칸이 하나뿐이면 영어판을 쓴다(한국어판은 한국 스토어 팀용).
+
+[한국어]
+
+Bug Champ는 한국의 1인 개발자가 만든 곤충 채집·육성 게임입니다. 숲과 사냥터를 탐험하며 장수풍뎅이, 사슴벌레, 사마귀 등 실제 곤충을 모티브로 한 20종을 모으고, 알에서 부화시켜 성충으로 키운 뒤, 곤충끼리 원형 경기장에서 밀고 뒤집는 물리 결투로 다른 플레이어와 겨룹니다.
+
+1.0.21 업데이트에서는 육성과 결투를 크게 다듬었습니다.
+- 곤충마다 펫 능력이 달라 같은 종이라도 개체마다 개성이 생깁니다.
+- 결투에 팀 역할(공격형·방어형·체력형)과 지휘 훈련을 더해, 강한 한 종만 고르는 대신 팀 조합을 고민하게 했습니다.
+- 알은 부화하는 순간 능력치가 공개되는 연출로 바뀌었습니다.
+- 앱을 꺼 둔 동안에도 버프가 적용되고, 돌아오면 무엇을 얼마나 받았는지 한눈에 보여 줍니다.
+
+광고 없이 운영하며, 결투와 대회 순위에는 능력치를 파는 상품을 싣지 않는다는 원칙을 지키고 있습니다. 결제는 시간 절약과 편의에만 쓰입니다. 매 회차 열리는 왕충 선발대회와 주간 리그가 있고, 한국어·영어·일본어를 지원합니다. 곤충 도감과 손으로 그린 일러스트로, 아이부터 어른까지 자연과 곤충에 관심을 갖게 하는 게임을 목표로 합니다.
+
+
+[English]
+
+Bug Champ is an insect collecting and raising game by a solo developer in Korea. Players collect 20 species inspired by real insects like rhinoceros beetles, stag beetles and mantises, hatch them from eggs, raise them, and send them into physics-based arena duels where bugs push, flip and toss each other.
+
+Version 1.0.21 is a major update to raising and dueling:
+- Every bug has its own pet ability, so no two feel the same.
+- Team roles and a Command slot reward building a team, not picking one strongest species.
+- Eggs now reveal their stats in a hatching moment.
+- Buffs keep working while the app is closed, with a clear summary on return.
+
+The game runs without ads, and we keep a firm rule: nothing that raises duel or contest stats is sold. Purchases only save time or add convenience. It has a recurring King Bug Contest, weekly leagues, and Korean, English and Japanese. With a field guide and hand-drawn art, we hope to spark curiosity about insects for all ages.
