@@ -119,27 +119,49 @@ def darken(canvas, stops, color=(8, 12, 6)):
     return Image.composite(Image.new('RGB', (w, h), color), canvas, vgrad(w, h, stops))
 
 
+def fx_text(canvas, cx, top, text, path, size, fill, outline=INK, ow=0.08, shadow=True):
+    """매끈한 외곽선 글자(2배로 그려 둥글게 부풀린 뒤 줄임) + 흐린 그림자. 반환: 글자 높이."""
+    k = 2
+    f = font(path, size * k)
+    l, t, r, b = f.getbbox(text)
+    o = int(f.size * ow)                      # 외곽선 두께(2배 기준)
+    pad = o * 3 + 8
+    W, H = r - l + pad * 2, b - t + pad * 2
+    m = Image.new('L', (W, H), 0)
+    ImageDraw.Draw(m).text((pad - l, pad - t), text, font=f, fill=255)
+    # 둥근 팽창: 흐리고 문턱 → 매끈한 외곽선
+    ol = m.filter(ImageFilter.GaussianBlur(o * 0.55)).point(lambda v: 255 if v > 18 else 0)
+    ol = ol.filter(ImageFilter.GaussianBlur(1.2))
+    layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    layer.paste(Image.new('RGBA', (W, H), outline + (255,)), (0, 0), ol)
+    layer.paste(Image.new('RGBA', (W, H), fill + (255,)), (0, 0), m)
+    layer = layer.resize((W // k, H // k), Image.LANCZOS)
+    x = int(cx - layer.width / 2)
+    y = int(top - pad // k)
+    if shadow:
+        sh_a = ol.resize((W // k, H // k), Image.LANCZOS).filter(ImageFilter.GaussianBlur(size * 0.06))
+        sh_a = sh_a.point(lambda v: int(v * 0.75))
+        sh = Image.new('RGBA', sh_a.size, (0, 0, 0, 255))
+        sh.putalpha(sh_a)
+        canvas.paste(sh, (x + int(size * 0.03), y + int(size * 0.07)), sh)
+    canvas.paste(layer, (x, y), layer)
+    return (b - t) / k
+
+
 def headline(canvas, lines, lang, top, w, size, colors=(CREAM, GOLD)):
     """굵은 외곽선 제목 여러 줄. 반환: 마지막 줄 아래 y."""
-    d = ImageDraw.Draw(canvas)
     path = FONT[lang][0]
     y = top
     for i, line in enumerate(lines):
-        f = fit(path, line, w * 0.9, size)
-        sw = max(4, int(f.size * 0.09))
-        # 그림자
-        d.text((w / 2 + f.size * 0.04, y + f.size * 0.07), line, font=f, fill=(0, 0, 0),
-               anchor='mt', stroke_width=sw, stroke_fill=(0, 0, 0))
-        d.text((w / 2, y), line, font=f, fill=colors[i % len(colors)], anchor='mt',
-               stroke_width=sw, stroke_fill=INK)
-        y += f.size * 1.08
+        f = fit(path, line, w * 0.86, size)
+        fx_text(canvas, w / 2, y, line, path, f.size, colors[i % len(colors)])
+        y += f.size * 1.12
     return y
 
 
 def subline(canvas, text, lang, y, w, size, fill=(240, 236, 220)):
-    d = ImageDraw.Draw(canvas)
     f = fit(FONT[lang][1], text, w * 0.88, size)
-    d.text((w / 2, y), text, font=f, fill=fill, anchor='mt', stroke_width=int(max(2, f.size // 12)), stroke_fill=(0, 0, 0))
+    fx_text(canvas, w / 2, y, text, FONT[lang][1], f.size, fill, outline=(0, 0, 0), ow=0.07)
     return y + f.size * 1.3
 
 
